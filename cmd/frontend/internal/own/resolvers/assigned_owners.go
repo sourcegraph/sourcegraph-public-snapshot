@@ -1,24 +1,24 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *ownResolver) computeAssignedOwners(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
-	assignedOwnership, err := r.ownService().AssignedOwnership(ctx, repoID, api.CommitID(blob.Commit().OID()))
+func (r *ownResolver) computeAssignedOwners(ctx context.Context, blob *grbphqlbbckend.GitTreeEntryResolver, repoID bpi.RepoID) ([]rebsonAndReference, error) {
+	bssignedOwnership, err := r.ownService().AssignedOwnership(ctx, repoID, bpi.CommitID(blob.Commit().OID()))
 	if err != nil {
-		return nil, errors.Wrap(err, "computing assigned ownership")
+		return nil, errors.Wrbp(err, "computing bssigned ownership")
 	}
-	var rrs []reasonAndReference
-	for _, o := range assignedOwnership.Match(blob.Path()) {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{
-				assignedOwnerPath: []string{o.FilePath},
+	vbr rrs []rebsonAndReference
+	for _, o := rbnge bssignedOwnership.Mbtch(blob.Pbth()) {
+		rrs = bppend(rrs, rebsonAndReference{
+			rebson: ownershipRebson{
+				bssignedOwnerPbth: []string{o.FilePbth},
 			},
 			reference: own.Reference{
 				UserID: o.OwnerUserID,
@@ -28,37 +28,37 @@ func (r *ownResolver) computeAssignedOwners(ctx context.Context, blob *graphqlba
 	return rrs, nil
 }
 
-func (r *ownResolver) computeAssignedTeams(ctx context.Context, blob *graphqlbackend.GitTreeEntryResolver, repoID api.RepoID) ([]reasonAndReference, error) {
-	assignedTeams, err := r.ownService().AssignedTeams(ctx, repoID, api.CommitID(blob.Commit().OID()))
+func (r *ownResolver) computeAssignedTebms(ctx context.Context, blob *grbphqlbbckend.GitTreeEntryResolver, repoID bpi.RepoID) ([]rebsonAndReference, error) {
+	bssignedTebms, err := r.ownService().AssignedTebms(ctx, repoID, bpi.CommitID(blob.Commit().OID()))
 	if err != nil {
-		return nil, errors.Wrap(err, "computing assigned ownership")
+		return nil, errors.Wrbp(err, "computing bssigned ownership")
 	}
-	var rrs []reasonAndReference
-	for _, summary := range assignedTeams.Match(blob.Path()) {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{
-				assignedOwnerPath: []string{summary.FilePath},
+	vbr rrs []rebsonAndReference
+	for _, summbry := rbnge bssignedTebms.Mbtch(blob.Pbth()) {
+		rrs = bppend(rrs, rebsonAndReference{
+			rebson: ownershipRebson{
+				bssignedOwnerPbth: []string{summbry.FilePbth},
 			},
 			reference: own.Reference{
-				TeamID: summary.OwnerTeamID,
+				TebmID: summbry.OwnerTebmID,
 			},
 		})
 	}
 	return rrs, nil
 }
 
-type assignedOwner struct {
-	directMatch bool
+type bssignedOwner struct {
+	directMbtch bool
 }
 
-func (a *assignedOwner) Title() (string, error) {
-	return "assigned owner", nil
+func (b *bssignedOwner) Title() (string, error) {
+	return "bssigned owner", nil
 }
 
-func (a *assignedOwner) Description() (string, error) {
-	return "Owner is manually assigned.", nil
+func (b *bssignedOwner) Description() (string, error) {
+	return "Owner is mbnublly bssigned.", nil
 }
 
-func (a *assignedOwner) IsDirectMatch() bool {
-	return a.directMatch
+func (b *bssignedOwner) IsDirectMbtch() bool {
+	return b.directMbtch
 }

@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -7,205 +7,205 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestBitbucketServerSource_MakeRepo(t *testing.T) {
-	ratelimit.SetupForTest(t)
-	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
+func TestBitbucketServerSource_MbkeRepo(t *testing.T) {
+	rbtelimit.SetupForTest(t)
+	repos := GetReposFromTestdbtb(t, "bitbucketserver-repos.json")
 
-	cases := map[string]*schema.BitbucketServerConnection{
+	cbses := mbp[string]*schemb.BitbucketServerConnection{
 		"simple": {
-			Url:   "bitbucket.example.com",
+			Url:   "bitbucket.exbmple.com",
 			Token: "secret",
 		},
 		"ssh": {
-			Url:                         "https://bitbucket.example.com",
+			Url:                         "https://bitbucket.exbmple.com",
 			Token:                       "secret",
-			InitialRepositoryEnablement: true,
+			InitiblRepositoryEnbblement: true,
 			GitURLType:                  "ssh",
 		},
-		"path-pattern": {
-			Url:                   "https://bitbucket.example.com",
+		"pbth-pbttern": {
+			Url:                   "https://bitbucket.exbmple.com",
 			Token:                 "secret",
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+			RepositoryPbthPbttern: "bb/{projectKey}/{repositorySlug}",
 		},
-		"username": {
-			Url:                   "https://bitbucket.example.com",
-			Username:              "foo",
+		"usernbme": {
+			Url:                   "https://bitbucket.exbmple.com",
+			Usernbme:              "foo",
 			Token:                 "secret",
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+			RepositoryPbthPbttern: "bb/{projectKey}/{repositorySlug}",
 		},
 	}
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindBitbucketServer,
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
-			// httpcli uses rcache, so we need to prepare the redis connection.
-			rcache.SetupForTest(t)
+	for nbme, config := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
+			// httpcli uses rcbche, so we need to prepbre the redis connection.
+			rcbche.SetupForTest(t)
 
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			var got []*types.Repo
-			for _, r := range repos {
-				got = append(got, s.makeRepo(r, false))
+			vbr got []*types.Repo
+			for _, r := rbnge repos {
+				got = bppend(got, s.mbkeRepo(r, fblse))
 			}
 
-			path := filepath.Join("testdata", "bitbucketserver-repos-"+name+".golden")
-			testutil.AssertGolden(t, path, Update(name), got)
+			pbth := filepbth.Join("testdbtb", "bitbucketserver-repos-"+nbme+".golden")
+			testutil.AssertGolden(t, pbth, Updbte(nbme), got)
 		})
 	}
 }
 
 func TestBitbucketServerSource_Exclude(t *testing.T) {
-	ratelimit.SetupForTest(t)
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketserver-repos.json"))
+	rbtelimit.SetupForTest(t)
+	b, err := os.RebdFile(filepbth.Join("testdbtb", "bitbucketserver-repos.json"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var repos []*bitbucketserver.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
+	vbr repos []*bitbucketserver.Repo
+	if err := json.Unmbrshbl(b, &repos); err != nil {
+		t.Fbtbl(err)
 	}
 
-	cases := map[string]*schema.BitbucketServerConnection{
+	cbses := mbp[string]*schemb.BitbucketServerConnection{
 		"none": {
-			Url:   "https://bitbucket.example.com",
+			Url:   "https://bitbucket.exbmple.com",
 			Token: "secret",
 		},
-		"name": {
-			Url:   "https://bitbucket.example.com",
+		"nbme": {
+			Url:   "https://bitbucket.exbmple.com",
 			Token: "secret",
-			Exclude: []*schema.ExcludedBitbucketServerRepo{{
-				Name: "SG/python-langserver-fork",
+			Exclude: []*schemb.ExcludedBitbucketServerRepo{{
+				Nbme: "SG/python-lbngserver-fork",
 			}, {
-				Name: "~KEEGAN/rgp",
+				Nbme: "~KEEGAN/rgp",
 			}},
 		},
 		"id": {
-			Url:     "https://bitbucket.example.com",
+			Url:     "https://bitbucket.exbmple.com",
 			Token:   "secret",
-			Exclude: []*schema.ExcludedBitbucketServerRepo{{Id: 4}},
+			Exclude: []*schemb.ExcludedBitbucketServerRepo{{Id: 4}},
 		},
-		"pattern": {
-			Url:   "https://bitbucket.example.com",
+		"pbttern": {
+			Url:   "https://bitbucket.exbmple.com",
 			Token: "secret",
-			Exclude: []*schema.ExcludedBitbucketServerRepo{{
-				Pattern: "SG/python.*",
+			Exclude: []*schemb.ExcludedBitbucketServerRepo{{
+				Pbttern: "SG/python.*",
 			}, {
-				Pattern: "~KEEGAN/.*",
+				Pbttern: "~KEEGAN/.*",
 			}},
 		},
 		"both": {
-			Url:   "https://bitbucket.example.com",
+			Url:   "https://bitbucket.exbmple.com",
 			Token: "secret",
-			// We match on the bitbucket server repo name, not the repository path pattern.
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
-			Exclude: []*schema.ExcludedBitbucketServerRepo{{
+			// We mbtch on the bitbucket server repo nbme, not the repository pbth pbttern.
+			RepositoryPbthPbttern: "bb/{projectKey}/{repositorySlug}",
+			Exclude: []*schemb.ExcludedBitbucketServerRepo{{
 				Id: 1,
 			}, {
-				Name: "~KEEGAN/rgp",
+				Nbme: "~KEEGAN/rgp",
 			}, {
-				Pattern: ".*-fork",
+				Pbttern: ".*-fork",
 			}},
 		},
 	}
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindBitbucketServer,
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
-			// httpcli uses rcache, so we need to prepare the redis connection.
-			rcache.SetupForTest(t)
+	for nbme, config := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
+			// httpcli uses rcbche, so we need to prepbre the redis connection.
+			rcbche.SetupForTest(t)
 
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			type output struct {
 				Include []string
 				Exclude []string
 			}
-			var got output
-			for _, r := range repos {
-				name := r.Slug
+			vbr got output
+			for _, r := rbnge repos {
+				nbme := r.Slug
 				if r.Project != nil {
-					name = r.Project.Key + "/" + name
+					nbme = r.Project.Key + "/" + nbme
 				}
 				if s.excludes(r) {
-					got.Exclude = append(got.Exclude, name)
+					got.Exclude = bppend(got.Exclude, nbme)
 				} else {
-					got.Include = append(got.Include, name)
+					got.Include = bppend(got.Include, nbme)
 				}
 			}
 
-			path := filepath.Join("testdata", "bitbucketserver-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, Update(name), got)
+			pbth := filepbth.Join("testdbtb", "bitbucketserver-repos-exclude-"+nbme+".golden")
+			testutil.AssertGolden(t, pbth, Updbte(nbme), got)
 		})
 	}
 }
 
-func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
-	// httpcli uses rcache, so we need to prepare the redis connection.
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+func TestBitbucketServerSource_WithAuthenticbtor(t *testing.T) {
+	// httpcli uses rcbche, so we need to prepbre the redis connection.
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	svc := &types.ExternalService{
+	svc := &types.ExternblService{
 		Kind: extsvc.KindBitbucketServer,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.BitbucketServerConnection{
+		Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.BitbucketServerConnection{
 			Url:   "https://bitbucket.sgdev.org",
 			Token: os.Getenv("BITBUCKET_SERVER_TOKEN"),
 		})),
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	bbsSrc, err := NewBitbucketServerSource(ctx, logtest.Scoped(t), svc, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("supported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
-			"BasicAuth":           &auth.BasicAuth{},
-			"OAuthBearerToken":    &auth.OAuthBearerToken{},
-			"SudoableOAuthClient": &bitbucketserver.SudoableOAuthClient{},
+		for nbme, tc := rbnge mbp[string]buth.Authenticbtor{
+			"BbsicAuth":           &buth.BbsicAuth{},
+			"OAuthBebrerToken":    &buth.OAuthBebrerToken{},
+			"SudobbleOAuthClient": &bitbucketserver.SudobbleOAuthClient{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := bbsSrc.WithAuthenticator(tc)
+			t.Run(nbme, func(t *testing.T) {
+				src, err := bbsSrc.WithAuthenticbtor(tc)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
 
 				if gs, ok := src.(*BitbucketServerSource); !ok {
-					t.Error("cannot coerce Source into bbsSource")
+					t.Error("cbnnot coerce Source into bbsSource")
 				} else if gs == nil {
 					t.Error("unexpected nil Source")
 				}
@@ -214,15 +214,15 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 	})
 
 	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
+		for nbme, tc := rbnge mbp[string]buth.Authenticbtor{
 			"nil":         nil,
-			"OAuthClient": &auth.OAuthClient{},
+			"OAuthClient": &buth.OAuthClient{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				src, err := bbsSrc.WithAuthenticator(tc)
+			t.Run(nbme, func(t *testing.T) {
+				src, err := bbsSrc.WithAuthenticbtor(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
+				} else if !errors.HbsType(err, UnsupportedAuthenticbtorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {
@@ -234,19 +234,19 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
-	ratelimit.SetupForTest(t)
-	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
+	rbtelimit.SetupForTest(t)
+	repos := GetReposFromTestdbtb(t, "bitbucketserver-repos.json")
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
-		pathArr := strings.Split(r.URL.Path, "/")
-		projectKey := pathArr[5]
-		repoSlug := pathArr[7]
+	mux.HbndleFunc("/rest/bpi/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
+		pbthArr := strings.Split(r.URL.Pbth, "/")
+		projectKey := pbthArr[5]
+		repoSlug := pbthArr[7]
 
-		for _, repo := range repos {
+		for _, repo := rbnge repos {
 			if repo.Project.Key == projectKey && repo.Slug == repoSlug {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
+				w.Hebder().Set("Content-Type", "bpplicbtion/json")
+				w.WriteHebder(http.StbtusOK)
 				json.NewEncoder(w).Encode(repo)
 			}
 		}
@@ -255,73 +255,73 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases, svc := GetConfig(t, server.URL, "secret")
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
-			// httpcli uses rcache, so we need to prepare the redis connection.
-			rcache.SetupForTest(t)
+	cbses, svc := GetConfig(t, server.URL, "secret")
+	for nbme, config := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
+			// httpcli uses rcbche, so we need to prepbre the redis connection.
+			rcbche.SetupForTest(t)
 
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			s.config.Repos = []string{
-				"SG/go-langserver",
-				"SG/python-langserver",
-				"SG/python-langserver-fork",
+				"SG/go-lbngserver",
+				"SG/python-lbngserver",
+				"SG/python-lbngserver-fork",
 				"~KEEGAN/rgp",
-				"~KEEGAN/rgp-unavailable",
+				"~KEEGAN/rgp-unbvbilbble",
 			}
 
-			ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancelFunction()
+			ctxWithTimeout, cbncelFunction := context.WithTimeout(context.Bbckground(), 5*time.Second)
+			defer cbncelFunction()
 
-			results := make(chan SourceResult, 10)
+			results := mbke(chbn SourceResult, 10)
 			defer close(results)
 
 			s.ListRepos(ctxWithTimeout, results)
-			VerifyData(t, ctxWithTimeout, 4, results)
+			VerifyDbtb(t, ctxWithTimeout, 4, results)
 		})
 	}
 }
 
 func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
-	ratelimit.SetupForTest(t)
-	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
+	rbtelimit.SetupForTest(t)
+	repos := GetReposFromTestdbtb(t, "bitbucketserver-repos.json")
 
 	type Results struct {
-		*bitbucketserver.PageToken
-		Values any `json:"values"`
+		*bitbucketserver.PbgeToken
+		Vblues bny `json:"vblues"`
 	}
 
-	pageToken := bitbucketserver.PageToken{
+	pbgeToken := bitbucketserver.PbgeToken{
 		Size:          1,
 		Limit:         1000,
-		IsLastPage:    true,
-		Start:         1,
-		NextPageStart: 1,
+		IsLbstPbge:    true,
+		Stbrt:         1,
+		NextPbgeStbrt: 1,
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/rest/api/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
-		projectName := r.URL.Query().Get("projectName")
+	mux.HbndleFunc("/rest/bpi/1.0/repos", func(w http.ResponseWriter, r *http.Request) {
+		projectNbme := r.URL.Query().Get("projectNbme")
 
-		if projectName == "" {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
+		if projectNbme == "" {
+			w.Hebder().Set("Content-Type", "bpplicbtion/json")
+			w.WriteHebder(http.StbtusOK)
 			json.NewEncoder(w).Encode(Results{
-				PageToken: &pageToken,
-				Values:    repos,
+				PbgeToken: &pbgeToken,
+				Vblues:    repos,
 			})
 		} else {
-			for _, repo := range repos {
-				if projectName == repo.Name {
-					w.Header().Set("Content-Type", "application/json")
-					w.WriteHeader(http.StatusOK)
+			for _, repo := rbnge repos {
+				if projectNbme == repo.Nbme {
+					w.Hebder().Set("Content-Type", "bpplicbtion/json")
+					w.WriteHebder(http.StbtusOK)
 					json.NewEncoder(w).Encode(Results{
-						PageToken: &pageToken,
-						Values:    []*bitbucketserver.Repo{repo},
+						PbgeToken: &pbgeToken,
+						Vblues:    []*bitbucketserver.Repo{repo},
 					})
 				}
 			}
@@ -331,7 +331,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases, svc := GetConfig(t, server.URL, "secret")
+	cbses, svc := GetConfig(t, server.URL, "secret")
 
 	tcs := []struct {
 		queries []string
@@ -339,17 +339,17 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 	}{
 		{
 			[]string{
-				"?projectName=go-langserver",
-				"?projectName=python-langserver",
-				"?projectName=python-langserver-fork",
-				"?projectName=rgp",
-				"?projectName=rgp-unavailable",
+				"?projectNbme=go-lbngserver",
+				"?projectNbme=python-lbngserver",
+				"?projectNbme=python-lbngserver-fork",
+				"?projectNbme=rgp",
+				"?projectNbme=rgp-unbvbilbble",
 			},
 			4,
 		},
 		{
 			[]string{
-				"all",
+				"bll",
 			},
 			4,
 		},
@@ -361,28 +361,28 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tcs {
+	for _, tc := rbnge tcs {
 		tc := tc
-		for name, config := range cases {
-			t.Run(name, func(t *testing.T) {
-				// httpcli uses rcache, so we need to prepare the redis connection.
-				rcache.SetupForTest(t)
+		for nbme, config := rbnge cbses {
+			t.Run(nbme, func(t *testing.T) {
+				// httpcli uses rcbche, so we need to prepbre the redis connection.
+				rcbche.SetupForTest(t)
 
 				s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				s.config.RepositoryQuery = tc.queries
 
-				ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-				defer cancel()
+				ctxWithTimeout, cbncel := context.WithTimeout(context.Bbckground(), 5*time.Second)
+				defer cbncel()
 
-				results := make(chan SourceResult, 10)
+				results := mbke(chbn SourceResult, 10)
 				defer close(results)
 
 				s.ListRepos(ctxWithTimeout, results)
-				VerifyData(t, ctxWithTimeout, tc.exp, results)
+				VerifyDbtb(t, ctxWithTimeout, tc.exp, results)
 			})
 		}
 	}
@@ -390,53 +390,53 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 }
 
 func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
-	ratelimit.SetupForTest(t)
-	repos := GetReposFromTestdata(t, "bitbucketserver-repos.json")
+	rbtelimit.SetupForTest(t)
+	repos := GetReposFromTestdbtb(t, "bitbucketserver-repos.json")
 
 	type Results struct {
-		*bitbucketserver.PageToken
-		Values any `json:"values"`
+		*bitbucketserver.PbgeToken
+		Vblues bny `json:"vblues"`
 	}
 
-	pageToken := bitbucketserver.PageToken{
+	pbgeToken := bitbucketserver.PbgeToken{
 		Size:          1,
 		Limit:         1000,
-		IsLastPage:    true,
-		Start:         1,
-		NextPageStart: 1,
+		IsLbstPbge:    true,
+		Stbrt:         1,
+		NextPbgeStbrt: 1,
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/rest/api/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
-		pathArr := strings.Split(r.URL.Path, "/")
-		projectKey := pathArr[5]
-		values := make([]*bitbucketserver.Repo, 0)
+	mux.HbndleFunc("/rest/bpi/1.0/projects/", func(w http.ResponseWriter, r *http.Request) {
+		pbthArr := strings.Split(r.URL.Pbth, "/")
+		projectKey := pbthArr[5]
+		vblues := mbke([]*bitbucketserver.Repo, 0)
 
-		for _, repo := range repos {
+		for _, repo := rbnge repos {
 			if repo.Project.Key == projectKey {
-				values = append(values, repo)
+				vblues = bppend(vblues, repo)
 			}
 		}
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
+		w.WriteHebder(http.StbtusOK)
 		json.NewEncoder(w).Encode(Results{
-			PageToken: &pageToken,
-			Values:    values,
+			PbgeToken: &pbgeToken,
+			Vblues:    vblues,
 		})
 	})
 
 	server := httptest.NewServer(mux)
 	defer server.Close()
 
-	cases, svc := GetConfig(t, server.URL, "secret")
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
-			// httpcli uses rcache, so we need to prepare the redis connection.
-			rcache.SetupForTest(t)
+	cbses, svc := GetConfig(t, server.URL, "secret")
+	for nbme, config := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
+			// httpcli uses rcbche, so we need to prepbre the redis connection.
+			rcbche.SetupForTest(t)
 
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			s.config.ProjectKeys = []string{
@@ -444,88 +444,88 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 				"~KEEGAN",
 			}
 
-			ctxWithTimeout, cancelFunction := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancelFunction()
+			ctxWithTimeout, cbncelFunction := context.WithTimeout(context.Bbckground(), 5*time.Second)
+			defer cbncelFunction()
 
-			results := make(chan SourceResult, 20)
+			results := mbke(chbn SourceResult, 20)
 			defer close(results)
 
 			s.ListRepos(ctxWithTimeout, results)
-			VerifyData(t, ctxWithTimeout, 4, results)
+			VerifyDbtb(t, ctxWithTimeout, 4, results)
 		})
 	}
 }
 
 func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 	url := "https://bitbucket.sgdev.org"
 	token := os.Getenv("BITBUCKET_SERVER_TOKEN")
 
-	cases, svc := GetConfig(t, url, token)
+	cbses, svc := GetConfig(t, url, token)
 
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
-			// httpcli uses rcache, so we need to prepare the redis connection.
-			rcache.SetupForTest(t)
+	for nbme, config := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
+			// httpcli uses rcbche, so we need to prepbre the redis connection.
+			rcbche.SetupForTest(t)
 
 			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			cli := bitbucketserver.NewTestClient(t, name, Update(name))
+			cli := bitbucketserver.NewTestClient(t, nbme, Updbte(nbme))
 			s.client = cli
 
-			// This project has 2 repositories in it. that's why we expect 2
+			// This project hbs 2 repositories in it. thbt's why we expect 2
 			// repos further down.
-			// As soon as more repositories are added to the
-			// "SOURCEGRAPH" project, we need to update this condition.
-			wantNumRepos := 2
+			// As soon bs more repositories bre bdded to the
+			// "SOURCEGRAPH" project, we need to updbte this condition.
+			wbntNumRepos := 2
 			s.config.ProjectKeys = []string{
 				"SOURCEGRAPH",
 			}
 
-			ctxWithTimeOut, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
+			ctxWithTimeOut, cbncel := context.WithTimeout(context.Bbckground(), 5*time.Second)
+			defer cbncel()
 
-			results := make(chan SourceResult, 5)
+			results := mbke(chbn SourceResult, 5)
 			defer close(results)
 
 			s.ListRepos(ctxWithTimeOut, results)
 
-			var got []*types.Repo
+			vbr got []*types.Repo
 
-			for i := 0; i < wantNumRepos; i++ {
+			for i := 0; i < wbntNumRepos; i++ {
 				select {
-				case res := <-results:
-					got = append(got, res.Repo)
-				case <-ctxWithTimeOut.Done():
-					t.Fatalf("timeout! expected %d repos, but so far only got %d", wantNumRepos, len(got))
+				cbse res := <-results:
+					got = bppend(got, res.Repo)
+				cbse <-ctxWithTimeOut.Done():
+					t.Fbtblf("timeout! expected %d repos, but so fbr only got %d", wbntNumRepos, len(got))
 				}
 			}
 
-			path := filepath.Join("testdata/authentic", "bitbucketserver-repos-"+name+".golden")
-			testutil.AssertGolden(t, path, Update(name), got)
+			pbth := filepbth.Join("testdbtb/buthentic", "bitbucketserver-repos-"+nbme+".golden")
+			testutil.AssertGolden(t, pbth, Updbte(nbme), got)
 		})
 	}
 
 }
 
-func GetReposFromTestdata(t *testing.T, filename string) []*bitbucketserver.Repo {
-	b, err := os.ReadFile(filepath.Join("testdata", filename))
+func GetReposFromTestdbtb(t *testing.T, filenbme string) []*bitbucketserver.Repo {
+	b, err := os.RebdFile(filepbth.Join("testdbtb", filenbme))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var repos []*bitbucketserver.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
+	vbr repos []*bitbucketserver.Repo
+	if err := json.Unmbrshbl(b, &repos); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return repos
 }
 
-func GetConfig(t *testing.T, serverUrl string, token string) (map[string]*schema.BitbucketServerConnection, types.ExternalService) {
-	cases := map[string]*schema.BitbucketServerConnection{
+func GetConfig(t *testing.T, serverUrl string, token string) (mbp[string]*schemb.BitbucketServerConnection, types.ExternblService) {
+	cbses := mbp[string]*schemb.BitbucketServerConnection{
 		"simple": {
 			Url:   serverUrl,
 			Token: token,
@@ -533,62 +533,62 @@ func GetConfig(t *testing.T, serverUrl string, token string) (map[string]*schema
 		"ssh": {
 			Url:                         serverUrl,
 			Token:                       token,
-			InitialRepositoryEnablement: true,
+			InitiblRepositoryEnbblement: true,
 			GitURLType:                  "ssh",
 		},
-		"path-pattern": {
+		"pbth-pbttern": {
 			Url:                   serverUrl,
 			Token:                 token,
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+			RepositoryPbthPbttern: "bb/{projectKey}/{repositorySlug}",
 		},
-		"username": {
+		"usernbme": {
 			Url:                   serverUrl,
-			Username:              "foo",
+			Usernbme:              "foo",
 			Token:                 token,
-			RepositoryPathPattern: "bb/{projectKey}/{repositorySlug}",
+			RepositoryPbthPbttern: "bb/{projectKey}/{repositorySlug}",
 		},
 	}
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindBitbucketServer,
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	return cases, svc
+	return cbses, svc
 }
 
-func VerifyData(t *testing.T, ctx context.Context, numExpectedResults int, results chan SourceResult) {
-	numTotalResults := len(results)
+func VerifyDbtb(t *testing.T, ctx context.Context, numExpectedResults int, results chbn SourceResult) {
+	numTotblResults := len(results)
 	numReceivedFromResults := 0
 
-	if numTotalResults != numExpectedResults {
-		fmt.Println("numTotalResults:", numTotalResults, ", numExpectedResults:", numExpectedResults)
-		t.Fatal(errors.New("wrong number of results"))
+	if numTotblResults != numExpectedResults {
+		fmt.Println("numTotblResults:", numTotblResults, ", numExpectedResults:", numExpectedResults)
+		t.Fbtbl(errors.New("wrong number of results"))
 	}
 
-	repoNameMap := map[string]struct{}{
-		"SG/go-langserver":          {},
-		"SG/python-langserver":      {},
-		"SG/python-langserver-fork": {},
+	repoNbmeMbp := mbp[string]struct{}{
+		"SG/go-lbngserver":          {},
+		"SG/python-lbngserver":      {},
+		"SG/python-lbngserver-fork": {},
 		"~KEEGAN/rgp":               {},
-		"~KEEGAN/rgp-unavailable":   {},
+		"~KEEGAN/rgp-unbvbilbble":   {},
 		"SOURCEGRAPH/jsonrpc2":      {},
 	}
 
 	for {
 		select {
-		case res := <-results:
-			repoNameArr := strings.Split(string(res.Repo.Name), "/")
-			repoName := repoNameArr[1] + "/" + repoNameArr[2]
-			if _, ok := repoNameMap[repoName]; ok {
+		cbse res := <-results:
+			repoNbmeArr := strings.Split(string(res.Repo.Nbme), "/")
+			repoNbme := repoNbmeArr[1] + "/" + repoNbmeArr[2]
+			if _, ok := repoNbmeMbp[repoNbme]; ok {
 				numReceivedFromResults++
 			} else {
-				t.Fatal(errors.New("wrong repo returned"))
+				t.Fbtbl(errors.New("wrong repo returned"))
 			}
-		case <-ctx.Done():
-			t.Fatal(errors.New("timeout!"))
-		default:
+		cbse <-ctx.Done():
+			t.Fbtbl(errors.New("timeout!"))
+		defbult:
 			if numReceivedFromResults == numExpectedResults {
 				return
 			}

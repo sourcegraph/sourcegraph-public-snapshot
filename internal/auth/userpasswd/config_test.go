@@ -1,38 +1,38 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestValidateCustom(t *testing.T) {
-	tests := map[string]struct {
+func TestVblidbteCustom(t *testing.T) {
+	tests := mbp[string]struct {
 		input        conf.Unified
-		wantProblems conf.Problems
+		wbntProblems conf.Problems
 	}{
 		"single": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
+					{Builtin: &schemb.BuiltinAuthProvider{Type: "builtin"}},
 				},
 			}},
-			wantProblems: nil,
+			wbntProblems: nil,
 		},
 		"multiple": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
-					{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}},
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
+					{Builtin: &schemb.BuiltinAuthProvider{Type: "builtin"}},
+					{Builtin: &schemb.BuiltinAuthProvider{Type: "builtin"}},
 				},
 			}},
-			wantProblems: conf.NewSiteProblems("at most 1"),
+			wbntProblems: conf.NewSiteProblems("bt most 1"),
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			conf.TestVblidbtor(t, test.input, vblidbteConfig, test.wbntProblems)
 		})
 	}
 }

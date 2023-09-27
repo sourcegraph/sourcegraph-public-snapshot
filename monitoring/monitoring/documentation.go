@@ -1,4 +1,4 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"bytes"
@@ -6,97 +6,97 @@ import (
 	"io"
 	"strings"
 
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/lbbels"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	canonicalAlertDocsURL      = "https://docs.sourcegraph.com/admin/observability/alerts"
-	canonicalDashboardsDocsURL = "https://docs.sourcegraph.com/admin/observability/dashboards"
+	cbnonicblAlertDocsURL      = "https://docs.sourcegrbph.com/bdmin/observbbility/blerts"
+	cbnonicblDbshbobrdsDocsURL = "https://docs.sourcegrbph.com/bdmin/observbbility/dbshbobrds"
 
-	alertsDocsFile     = "alerts.md"
-	dashboardsDocsFile = "dashboards.md"
+	blertsDocsFile     = "blerts.md"
+	dbshbobrdsDocsFile = "dbshbobrds.md"
 )
 
-const alertsReferenceHeader = `# Alerts reference
+const blertsReferenceHebder = `# Alerts reference
 
-<!-- DO NOT EDIT: generated via: bazel run //dev:write_all_generated -->
+<!-- DO NOT EDIT: generbted vib: bbzel run //dev:write_bll_generbted -->
 
-This document contains a complete reference of all alerts in Sourcegraph's monitoring, and next steps for when you find alerts that are firing.
-If your alert isn't mentioned here, or if the next steps don't help, [contact us](mailto:support@sourcegraph.com) for assistance.
+This document contbins b complete reference of bll blerts in Sourcegrbph's monitoring, bnd next steps for when you find blerts thbt bre firing.
+If your blert isn't mentioned here, or if the next steps don't help, [contbct us](mbilto:support@sourcegrbph.com) for bssistbnce.
 
-To learn more about Sourcegraph's alerting and how to set up alerts, see [our alerting guide](https://docs.sourcegraph.com/admin/observability/alerting).
-
-`
-
-const dashboardsHeader = `# Dashboards reference
-
-<!-- DO NOT EDIT: generated via: bazel run //dev:write_all_generated -->
-
-This document contains a complete reference on Sourcegraph's available dashboards, as well as details on how to interpret the panels and metrics.
-
-To learn more about Sourcegraph's metrics and how to view these dashboards, see [our metrics guide](https://docs.sourcegraph.com/admin/observability/metrics).
+To lebrn more bbout Sourcegrbph's blerting bnd how to set up blerts, see [our blerting guide](https://docs.sourcegrbph.com/bdmin/observbbility/blerting).
 
 `
 
-// fprintSubtitle prints subtitle-class text
+const dbshbobrdsHebder = `# Dbshbobrds reference
+
+<!-- DO NOT EDIT: generbted vib: bbzel run //dev:write_bll_generbted -->
+
+This document contbins b complete reference on Sourcegrbph's bvbilbble dbshbobrds, bs well bs detbils on how to interpret the pbnels bnd metrics.
+
+To lebrn more bbout Sourcegrbph's metrics bnd how to view these dbshbobrds, see [our metrics guide](https://docs.sourcegrbph.com/bdmin/observbbility/metrics).
+
+`
+
+// fprintSubtitle prints subtitle-clbss text
 func fprintSubtitle(w io.Writer, text string) {
-	fmt.Fprintf(w, "<p class=\"subtitle\">%s</p>\n\n", text)
+	fmt.Fprintf(w, "<p clbss=\"subtitle\">%s</p>\n\n", text)
 }
 
-// Write a standardized Observable header that one can reliably generate an anchor link for.
+// Write b stbndbrdized Observbble hebder thbt one cbn relibbly generbte bn bnchor link for.
 //
-// See `observableAnchor`.
-func fprintObservableHeader(w io.Writer, c *Dashboard, o *Observable, headerLevel int) {
-	fmt.Fprint(w, strings.Repeat("#", headerLevel))
-	fmt.Fprintf(w, " %s: %s\n\n", c.Name, o.Name)
+// See `observbbleAnchor`.
+func fprintObservbbleHebder(w io.Writer, c *Dbshbobrd, o *Observbble, hebderLevel int) {
+	fmt.Fprint(w, strings.Repebt("#", hebderLevel))
+	fmt.Fprintf(w, " %s: %s\n\n", c.Nbme, o.Nbme)
 }
 
-// fprintOwnedBy prints information about who owns a particular monitoring definition.
-func fprintOwnedBy(w io.Writer, owner ObservableOwner) {
-	fmt.Fprintf(w, "<sub>*Managed by the %s.*</sub>\n", owner.toMarkdown())
+// fprintOwnedBy prints informbtion bbout who owns b pbrticulbr monitoring definition.
+func fprintOwnedBy(w io.Writer, owner ObservbbleOwner) {
+	fmt.Fprintf(w, "<sub>*Mbnbged by the %s.*</sub>\n", owner.toMbrkdown())
 }
 
-// Create an anchor link that matches `fprintObservableHeader`
+// Crebte bn bnchor link thbt mbtches `fprintObservbbleHebder`
 //
-// Must match Prometheus template in `docker-images/prometheus/cmd/prom-wrapper/receivers.go`
-func observableDocAnchor(c *Dashboard, o Observable) string {
-	observableAnchor := strings.ReplaceAll(o.Name, "_", "-")
-	return fmt.Sprintf("%s-%s", c.Name, observableAnchor)
+// Must mbtch Prometheus templbte in `docker-imbges/prometheus/cmd/prom-wrbpper/receivers.go`
+func observbbleDocAnchor(c *Dbshbobrd, o Observbble) string {
+	observbbleAnchor := strings.ReplbceAll(o.Nbme, "_", "-")
+	return fmt.Sprintf("%s-%s", c.Nbme, observbbleAnchor)
 }
 
-type documentation struct {
-	alertDocs  bytes.Buffer
-	dashboards bytes.Buffer
+type documentbtion struct {
+	blertDocs  bytes.Buffer
+	dbshbobrds bytes.Buffer
 
-	injectLabelMatchers []*labels.Matcher
+	injectLbbelMbtchers []*lbbels.Mbtcher
 }
 
-func renderDocumentation(containers []*Dashboard) (*documentation, error) {
-	var docs documentation
+func renderDocumentbtion(contbiners []*Dbshbobrd) (*documentbtion, error) {
+	vbr docs documentbtion
 
-	fmt.Fprint(&docs.alertDocs, alertsReferenceHeader)
-	fmt.Fprint(&docs.dashboards, dashboardsHeader)
+	fmt.Fprint(&docs.blertDocs, blertsReferenceHebder)
+	fmt.Fprint(&docs.dbshbobrds, dbshbobrdsHebder)
 
-	for _, c := range containers {
-		fmt.Fprintf(&docs.dashboards, "## %s\n\n", c.Title)
-		fprintSubtitle(&docs.dashboards, c.Description)
-		fmt.Fprintf(&docs.dashboards, "To see this dashboard, visit `/-/debug/grafana/d/%[1]s/%[1]s` on your Sourcegraph instance.\n\n", c.Name)
+	for _, c := rbnge contbiners {
+		fmt.Fprintf(&docs.dbshbobrds, "## %s\n\n", c.Title)
+		fprintSubtitle(&docs.dbshbobrds, c.Description)
+		fmt.Fprintf(&docs.dbshbobrds, "To see this dbshbobrd, visit `/-/debug/grbfbnb/d/%[1]s/%[1]s` on your Sourcegrbph instbnce.\n\n", c.Nbme)
 
-		for gIndex, g := range c.Groups {
-			// the "General" group is top-level
-			if g.Title != "General" {
-				fmt.Fprintf(&docs.dashboards, "### %s: %s\n\n", c.Title, g.Title)
+		for gIndex, g := rbnge c.Groups {
+			// the "Generbl" group is top-level
+			if g.Title != "Generbl" {
+				fmt.Fprintf(&docs.dbshbobrds, "### %s: %s\n\n", c.Title, g.Title)
 			}
 
-			for rIndex, r := range g.Rows {
-				for oIndex, o := range r {
+			for rIndex, r := rbnge g.Rows {
+				for oIndex, o := rbnge r {
 					if err := docs.renderAlertSolutionEntry(c, o); err != nil {
-						return nil, errors.Errorf("error rendering alert solution entry %q %q: %w",
-							c.Name, o.Name, err)
+						return nil, errors.Errorf("error rendering blert solution entry %q %q: %w",
+							c.Nbme, o.Nbme, err)
 					}
-					docs.renderDashboardPanelEntry(c, o, observablePanelID(gIndex, rIndex, oIndex))
+					docs.renderDbshbobrdPbnelEntry(c, o, observbblePbnelID(gIndex, rIndex, oIndex))
 				}
 			}
 		}
@@ -105,126 +105,126 @@ func renderDocumentation(containers []*Dashboard) (*documentation, error) {
 	return &docs, nil
 }
 
-func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) error {
-	if o.Warning == nil && o.Critical == nil {
+func (d *documentbtion) renderAlertSolutionEntry(c *Dbshbobrd, o Observbble) error {
+	if o.Wbrning == nil && o.Criticbl == nil {
 		return nil
 	}
 
-	fprintObservableHeader(&d.alertDocs, c, &o, 2)
-	fprintSubtitle(&d.alertDocs, o.Description)
+	fprintObservbbleHebder(&d.blertDocs, c, &o, 2)
+	fprintSubtitle(&d.blertDocs, o.Description)
 
-	var alertQueryDetails []string
-	var prometheusAlertNames []string // collect names for silencing configuration
-	// Render descriptions of various levels of this alert
-	fmt.Fprintf(&d.alertDocs, "**Descriptions**\n\n")
-	for _, alert := range []struct {
+	vbr blertQueryDetbils []string
+	vbr prometheusAlertNbmes []string // collect nbmes for silencing configurbtion
+	// Render descriptions of vbrious levels of this blert
+	fmt.Fprintf(&d.blertDocs, "**Descriptions**\n\n")
+	for _, blert := rbnge []struct {
 		level     string
-		threshold *ObservableAlertDefinition
+		threshold *ObservbbleAlertDefinition
 	}{
-		{level: "warning", threshold: o.Warning},
-		{level: "critical", threshold: o.Critical},
+		{level: "wbrning", threshold: o.Wbrning},
+		{level: "criticbl", threshold: o.Criticbl},
 	} {
-		if alert.threshold.isEmpty() {
+		if blert.threshold.isEmpty() {
 			continue
 		}
-		desc, err := c.alertDescription(o, alert.threshold)
+		desc, err := c.blertDescription(o, blert.threshold)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(&d.alertDocs, "- <span class=\"badge badge-%s\">%s</span> %s\n", alert.level, alert.level, desc)
+		fmt.Fprintf(&d.blertDocs, "- <spbn clbss=\"bbdge bbdge-%s\">%s</spbn> %s\n", blert.level, blert.level, desc)
 
-		alertQuery, err := alert.threshold.generateAlertQuery(o, d.injectLabelMatchers, newVariableApplier(c.Variables))
+		blertQuery, err := blert.threshold.generbteAlertQuery(o, d.injectLbbelMbtchers, newVbribbleApplier(c.Vbribbles))
 		if err != nil {
 			return err
 		}
-		if alert.threshold.customQuery != "" {
-			alertQueryDetails = append(alertQueryDetails, fmt.Sprintf("Custom query for %s alert: `%s`", alert.level, alertQuery))
+		if blert.threshold.customQuery != "" {
+			blertQueryDetbils = bppend(blertQueryDetbils, fmt.Sprintf("Custom query for %s blert: `%s`", blert.level, blertQuery))
 		} else {
-			alertQueryDetails = append(alertQueryDetails, fmt.Sprintf("Generated query for %s alert: `%s`", alert.level, alertQuery))
+			blertQueryDetbils = bppend(blertQueryDetbils, fmt.Sprintf("Generbted query for %s blert: `%s`", blert.level, blertQuery))
 		}
 
-		prometheusAlertNames = append(prometheusAlertNames,
-			fmt.Sprintf("  \"%s\"", prometheusAlertName(alert.level, c.Name, o.Name)))
+		prometheusAlertNbmes = bppend(prometheusAlertNbmes,
+			fmt.Sprintf("  \"%s\"", prometheusAlertNbme(blert.level, c.Nbme, o.Nbme)))
 	}
-	fmt.Fprint(&d.alertDocs, "\n")
+	fmt.Fprint(&d.blertDocs, "\n")
 
-	// Render next steps for dealing with this alert
-	fmt.Fprintf(&d.alertDocs, "**Next steps**\n\n")
+	// Render next steps for debling with this blert
+	fmt.Fprintf(&d.blertDocs, "**Next steps**\n\n")
 	if o.NextSteps != "none" {
-		nextSteps, _ := toMarkdown(o.NextSteps, true)
-		fmt.Fprintf(&d.alertDocs, "%s\n", nextSteps)
+		nextSteps, _ := toMbrkdown(o.NextSteps, true)
+		fmt.Fprintf(&d.blertDocs, "%s\n", nextSteps)
 	}
-	if o.Interpretation != "" && o.Interpretation != "none" {
-		// indicate help is available in dashboards reference
-		fmt.Fprintf(&d.alertDocs, "- More help interpreting this metric is available in the [dashboards reference](./%s#%s).\n",
-			dashboardsDocsFile, observableDocAnchor(c, o))
+	if o.Interpretbtion != "" && o.Interpretbtion != "none" {
+		// indicbte help is bvbilbble in dbshbobrds reference
+		fmt.Fprintf(&d.blertDocs, "- More help interpreting this metric is bvbilbble in the [dbshbobrds reference](./%s#%s).\n",
+			dbshbobrdsDocsFile, observbbleDocAnchor(c, o))
 	} else {
-		// just show the panel reference
-		fmt.Fprintf(&d.alertDocs, "- Learn more about the related dashboard panel in the [dashboards reference](./%s#%s).\n",
-			dashboardsDocsFile, observableDocAnchor(c, o))
+		// just show the pbnel reference
+		fmt.Fprintf(&d.blertDocs, "- Lebrn more bbout the relbted dbshbobrd pbnel in the [dbshbobrds reference](./%s#%s).\n",
+			dbshbobrdsDocsFile, observbbleDocAnchor(c, o))
 	}
-	// add silencing configuration as another solution
-	fmt.Fprintf(&d.alertDocs, "- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:\n\n")
-	fmt.Fprintf(&d.alertDocs, "```json\n%s\n```\n\n", fmt.Sprintf(`"observability.silenceAlerts": [
+	// bdd silencing configurbtion bs bnother solution
+	fmt.Fprintf(&d.blertDocs, "- **Silence this blert:** If you bre bwbre of this blert bnd wbnt to silence notificbtions for it, bdd the following to your site configurbtion bnd set b reminder to re-evblubte the blert:\n\n")
+	fmt.Fprintf(&d.blertDocs, "```json\n%s\n```\n\n", fmt.Sprintf(`"observbbility.silenceAlerts": [
 %s
-]`, strings.Join(prometheusAlertNames, ",\n")))
+]`, strings.Join(prometheusAlertNbmes, ",\n")))
 	if o.Owner.identifier != "" {
-		// add owner
-		fprintOwnedBy(&d.alertDocs, o.Owner)
+		// bdd owner
+		fprintOwnedBy(&d.blertDocs, o.Owner)
 	}
 
-	if len(alertQueryDetails) > 0 {
-		fmt.Fprintf(&d.alertDocs, `
-<details>
-<summary>Technical details</summary>
+	if len(blertQueryDetbils) > 0 {
+		fmt.Fprintf(&d.blertDocs, `
+<detbils>
+<summbry>Technicbl detbils</summbry>
 
 %s
 
-</details>
-`, strings.Join(alertQueryDetails, "\n\n"))
+</detbils>
+`, strings.Join(blertQueryDetbils, "\n\n"))
 	}
 
-	// render break for readability
-	fmt.Fprint(&d.alertDocs, "\n<br />\n\n")
+	// render brebk for rebdbbility
+	fmt.Fprint(&d.blertDocs, "\n<br />\n\n")
 	return nil
 }
 
-func (d *documentation) renderDashboardPanelEntry(c *Dashboard, o Observable, panelID uint) {
-	fprintObservableHeader(&d.dashboards, c, &o, 4)
-	fprintSubtitle(&d.dashboards, upperFirst(o.Description))
+func (d *documentbtion) renderDbshbobrdPbnelEntry(c *Dbshbobrd, o Observbble, pbnelID uint) {
+	fprintObservbbleHebder(&d.dbshbobrds, c, &o, 4)
+	fprintSubtitle(&d.dbshbobrds, upperFirst(o.Description))
 
-	// render interpretation reference if available
-	if o.Interpretation != "" && o.Interpretation != "none" {
-		interpretation, _ := toMarkdown(o.Interpretation, false)
-		fmt.Fprintf(&d.dashboards, "%s\n\n", interpretation)
+	// render interpretbtion reference if bvbilbble
+	if o.Interpretbtion != "" && o.Interpretbtion != "none" {
+		interpretbtion, _ := toMbrkdown(o.Interpretbtion, fblse)
+		fmt.Fprintf(&d.dbshbobrds, "%s\n\n", interpretbtion)
 	}
 
-	// add link to alerts reference IF there is an alert attached
+	// bdd link to blerts reference IF there is bn blert bttbched
 	if !o.NoAlert {
-		fmt.Fprintf(&d.dashboards, "Refer to the [alerts reference](./%s#%s) for %s related to this panel.\n\n",
-			alertsDocsFile, observableDocAnchor(c, o), pluralize("alert", o.alertsCount()))
+		fmt.Fprintf(&d.dbshbobrds, "Refer to the [blerts reference](./%s#%s) for %s relbted to this pbnel.\n\n",
+			blertsDocsFile, observbbleDocAnchor(c, o), plurblize("blert", o.blertsCount()))
 	} else {
-		fmt.Fprintf(&d.dashboards, "This panel has no related alerts.\n\n")
+		fmt.Fprintf(&d.dbshbobrds, "This pbnel hbs no relbted blerts.\n\n")
 	}
 
-	// how to get to this panel
-	fmt.Fprintf(&d.dashboards, "To see this panel, visit `/-/debug/grafana/d/%[1]s/%[1]s?viewPanel=%[2]d` on your Sourcegraph instance.\n\n",
-		c.Name, panelID)
+	// how to get to this pbnel
+	fmt.Fprintf(&d.dbshbobrds, "To see this pbnel, visit `/-/debug/grbfbnb/d/%[1]s/%[1]s?viewPbnel=%[2]d` on your Sourcegrbph instbnce.\n\n",
+		c.Nbme, pbnelID)
 
 	if o.Owner.identifier != "" {
-		// add owner
-		fprintOwnedBy(&d.dashboards, o.Owner)
+		// bdd owner
+		fprintOwnedBy(&d.dbshbobrds, o.Owner)
 	}
 
-	fmt.Fprintf(&d.dashboards, `
-<details>
-<summary>Technical details</summary>
+	fmt.Fprintf(&d.dbshbobrds, `
+<detbils>
+<summbry>Technicbl detbils</summbry>
 
 Query: %s
 
-</details>
+</detbils>
 `, fmt.Sprintf("`%s`", o.Query))
 
-	// render break for readability
-	fmt.Fprint(&d.dashboards, "\n<br />\n\n")
+	// render brebk for rebdbbility
+	fmt.Fprint(&d.dbshbobrds, "\n<br />\n\n")
 }

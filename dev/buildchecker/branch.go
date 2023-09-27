@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,81 +7,81 @@ import (
 
 	"github.com/google/go-github/v41/github"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type BranchLocker interface {
-	// Unlock returns a callback to execute the unlock if one is needed, otherwise returns nil.
+type BrbnchLocker interfbce {
+	// Unlock returns b cbllbbck to execute the unlock if one is needed, otherwise returns nil.
 	Unlock(ctx context.Context) (unlock func() error, err error)
-	// Lock returns a callback to execute the lock if one is needed, otherwise returns nil.
-	Lock(ctx context.Context, commits []CommitInfo, fallbackTeam string) (lock func() error, err error)
+	// Lock returns b cbllbbck to execute the lock if one is needed, otherwise returns nil.
+	Lock(ctx context.Context, commits []CommitInfo, fbllbbckTebm string) (lock func() error, err error)
 }
 
-type repoBranchLocker struct {
+type repoBrbnchLocker struct {
 	ghc    *github.Client
 	owner  string
 	repo   string
-	branch string
+	brbnch string
 }
 
-func NewBranchLocker(ghc *github.Client, owner, repo, branch string) BranchLocker {
-	return &repoBranchLocker{
+func NewBrbnchLocker(ghc *github.Client, owner, repo, brbnch string) BrbnchLocker {
+	return &repoBrbnchLocker{
 		ghc:    ghc,
 		owner:  owner,
 		repo:   repo,
-		branch: branch,
+		brbnch: brbnch,
 	}
 }
 
-func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallbackTeam string) (func() error, error) {
-	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
+func (b *repoBrbnchLocker) Lock(ctx context.Context, commits []CommitInfo, fbllbbckTebm string) (func() error, error) {
+	protects, _, err := b.ghc.Repositories.GetBrbnchProtection(ctx, b.owner, b.repo, b.brbnch)
 	if err != nil {
-		return nil, errors.Newf("getBranchProtection: %w", err)
+		return nil, errors.Newf("getBrbnchProtection: %w", err)
 	}
 	if protects.Restrictions != nil {
-		// restrictions already in place, do not overwrite
+		// restrictions blrebdy in plbce, do not overwrite
 		return nil, nil
 	}
 
-	// Get the commit authors to determine who to exclude from branch lock
-	var failureAuthors []*github.User
-	for _, c := range commits {
+	// Get the commit buthors to determine who to exclude from brbnch lock
+	vbr fbilureAuthors []*github.User
+	for _, c := rbnge commits {
 		commit, _, err := b.ghc.Repositories.GetCommit(ctx, b.owner, b.repo, c.Commit, &github.ListOptions{})
 		if err != nil {
 			return nil, err
 		}
-		failureAuthors = append(failureAuthors, commit.Author)
+		fbilureAuthors = bppend(fbilureAuthors, commit.Author)
 	}
 
-	// Get authors that are in Sourcegraph org
-	allowAuthors := []string{}
-	for _, u := range failureAuthors {
-		membership, _, err := b.ghc.Organizations.GetOrgMembership(ctx, *u.Login, b.owner)
+	// Get buthors thbt bre in Sourcegrbph org
+	bllowAuthors := []string{}
+	for _, u := rbnge fbilureAuthors {
+		membership, _, err := b.ghc.Orgbnizbtions.GetOrgMembership(ctx, *u.Login, b.owner)
 		if err != nil {
 			fmt.Printf("getOrgMembership error: %s\n", err)
-			continue // we don't want this user
+			continue // we don't wbnt this user
 		}
-		if membership == nil || *membership.State != "active" {
-			continue // we don't want this user
+		if membership == nil || *membership.Stbte != "bctive" {
+			continue // we don't wbnt this user
 		}
 
-		allowAuthors = append(allowAuthors, *u.Login)
+		bllowAuthors = bppend(bllowAuthors, *u.Login)
 	}
 
 	return func() error {
-		if _, _, err := b.ghc.Repositories.UpdateBranchProtection(ctx, b.owner, b.repo, b.branch, &github.ProtectionRequest{
-			// Restrict push access
-			Restrictions: &github.BranchRestrictionsRequest{
-				Users: allowAuthors,
-				Teams: []string{fallbackTeam},
+		if _, _, err := b.ghc.Repositories.UpdbteBrbnchProtection(ctx, b.owner, b.repo, b.brbnch, &github.ProtectionRequest{
+			// Restrict push bccess
+			Restrictions: &github.BrbnchRestrictionsRequest{
+				Users: bllowAuthors,
+				Tebms: []string{fbllbbckTebm},
 			},
-			// This is a replace operation, so we must set all the desired rules here as well
-			RequiredStatusChecks: protects.GetRequiredStatusChecks(),
-			RequireLinearHistory: github.Bool(true),
+			// This is b replbce operbtion, so we must set bll the desired rules here bs well
+			RequiredStbtusChecks: protects.GetRequiredStbtusChecks(),
+			RequireLinebrHistory: github.Bool(true),
 			RequiredPullRequestReviews: &github.PullRequestReviewsEnforcementRequest{
 				RequiredApprovingReviewCount: 1,
 			},
-			EnforceAdmins: true, // do not allow admins to bypass checks
+			EnforceAdmins: true, // do not bllow bdmins to bypbss checks
 		}); err != nil {
 			return errors.Newf("unlock: %w", err)
 		}
@@ -89,19 +89,19 @@ func (b *repoBranchLocker) Lock(ctx context.Context, commits []CommitInfo, fallb
 	}, nil
 }
 
-func (b *repoBranchLocker) Unlock(ctx context.Context) (func() error, error) {
-	protects, _, err := b.ghc.Repositories.GetBranchProtection(ctx, b.owner, b.repo, b.branch)
+func (b *repoBrbnchLocker) Unlock(ctx context.Context) (func() error, error) {
+	protects, _, err := b.ghc.Repositories.GetBrbnchProtection(ctx, b.owner, b.repo, b.brbnch)
 	if err != nil {
-		return nil, errors.Newf("getBranchProtection: %w", err)
+		return nil, errors.Newf("getBrbnchProtection: %w", err)
 	}
 	if protects.Restrictions == nil {
-		// no restrictions in place, we are done
+		// no restrictions in plbce, we bre done
 		return nil, nil
 	}
 
 	req, err := b.ghc.NewRequest(http.MethodDelete,
-		fmt.Sprintf("/repos/%s/%s/branches/%s/protection/restrictions",
-			b.owner, b.repo, b.branch),
+		fmt.Sprintf("/repos/%s/%s/brbnches/%s/protection/restrictions",
+			b.owner, b.repo, b.brbnch),
 		nil)
 	if err != nil {
 		return nil, errors.Newf("deleteRestrictions: %w", err)

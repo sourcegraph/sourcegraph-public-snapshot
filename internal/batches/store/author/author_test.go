@@ -1,93 +1,93 @@
-package author
+pbckbge buthor
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestGetChangesetAuthorForUser(t *testing.T) {
+func TestGetChbngesetAuthorForUser(t *testing.T) {
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userStore := db.Users()
 
 	t.Run("User ID doesnt exist", func(t *testing.T) {
-		author, err := GetChangesetAuthorForUser(ctx, userStore, 0)
+		buthor, err := GetChbngesetAuthorForUser(ctx, userStore, 0)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if author != nil {
-			t.Fatalf("got non-nil author email when author doesnt exist: %v", author)
+		if buthor != nil {
+			t.Fbtblf("got non-nil buthor embil when buthor doesnt exist: %v", buthor)
 		}
 	})
 
-	t.Run("User exists but doesn't have an email", func(t *testing.T) {
+	t.Run("User exists but doesn't hbve bn embil", func(t *testing.T) {
 
-		user, err := userStore.Create(ctx, database.NewUser{
-			Username: "mary",
+		user, err := userStore.Crebte(ctx, dbtbbbse.NewUser{
+			Usernbme: "mbry",
 		})
 		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
+			t.Fbtblf("fbiled to crebte test user: %v", err)
 		}
 
-		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
+		buthor, err := GetChbngesetAuthorForUser(ctx, userStore, user.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if author != nil {
-			t.Fatalf("got non-nil author email when user doesnt have an email: %v", author)
+		if buthor != nil {
+			t.Fbtblf("got non-nil buthor embil when user doesnt hbve bn embil: %v", buthor)
 		}
 	})
 
-	t.Run("User exists and has an e-mail but doesn't have a display name", func(t *testing.T) {
+	t.Run("User exists bnd hbs bn e-mbil but doesn't hbve b displby nbme", func(t *testing.T) {
 
-		user, err := userStore.Create(ctx, database.NewUser{
-			Username:        "jane",
-			Email:           "jane1@doe.com",
-			EmailIsVerified: true,
+		user, err := userStore.Crebte(ctx, dbtbbbse.NewUser{
+			Usernbme:        "jbne",
+			Embil:           "jbne1@doe.com",
+			EmbilIsVerified: true,
 		})
 		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
+			t.Fbtblf("fbiled to crebte test user: %v", err)
 		}
-		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
+		buthor, err := GetChbngesetAuthorForUser(ctx, userStore, user.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.Equal(t, author.Name, user.Username)
+		bssert.Equbl(t, buthor.Nbme, user.Usernbme)
 	})
 
 	t.Run("User exists", func(t *testing.T) {
 
-		user, err := userStore.Create(ctx, database.NewUser{
-			Username:        "johnny",
-			Email:           "john@test.com",
-			EmailIsVerified: true,
-			DisplayName:     "John Tester",
+		user, err := userStore.Crebte(ctx, dbtbbbse.NewUser{
+			Usernbme:        "johnny",
+			Embil:           "john@test.com",
+			EmbilIsVerified: true,
+			DisplbyNbme:     "John Tester",
 		})
 
-		userEmail := "john@test.com"
+		userEmbil := "john@test.com"
 
 		if err != nil {
-			t.Fatalf("failed to create test user: %v", err)
+			t.Fbtblf("fbiled to crebte test user: %v", err)
 		}
-		author, err := GetChangesetAuthorForUser(ctx, userStore, user.ID)
+		buthor, err := GetChbngesetAuthorForUser(ctx, userStore, user.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if author.Email != userEmail {
-			t.Fatalf("found incorrect email: %v", author)
+		if buthor.Embil != userEmbil {
+			t.Fbtblf("found incorrect embil: %v", buthor)
 		}
 
-		if author.Name != user.DisplayName {
-			t.Fatalf("found incorrect name: %v", author)
+		if buthor.Nbme != user.DisplbyNbme {
+			t.Fbtblf("found incorrect nbme: %v", buthor)
 		}
 	})
 }

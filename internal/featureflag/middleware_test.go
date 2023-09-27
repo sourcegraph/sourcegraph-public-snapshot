@@ -1,4 +1,4 @@
-package featureflag
+pbckbge febtureflbg
 
 import (
 	"context"
@@ -8,184 +8,184 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/gomodule/redigo/redis"
-	"github.com/rafaeljusto/redigomock/v3"
+	"github.com/rbfbeljusto/redigomock/v3"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-func TestMiddleware(t *testing.T) {
-	// Create a request with an actor on its context
+func TestMiddlewbre(t *testing.T) {
+	// Crebte b request with bn bctor on its context
 	req, err := http.NewRequest(http.MethodGet, "/test", nil)
 	require.NoError(t, err)
-	req = req.WithContext(actor.WithActor(context.Background(), actor.FromUser(1)))
+	req = req.WithContext(bctor.WithActor(context.Bbckground(), bctor.FromUser(1)))
 
 	mockStore := NewMockStore()
-	mockStore.GetUserFlagsFunc.SetDefaultReturn(map[string]bool{"user1": true}, nil)
+	mockStore.GetUserFlbgsFunc.SetDefbultReturn(mbp[string]bool{"user1": true}, nil)
 
-	handler := http.Handler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-		// After going through the middleware, a request with an actor should
-		// also have feature flags available.
+	hbndler := http.Hbndler(http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+		// After going through the middlewbre, b request with bn bctor should
+		// blso hbve febture flbgs bvbilbble.
 		v, ok := FromContext(r.Context()).GetBool("user1")
 		require.True(t, v && ok)
 	}))
-	handler = Middleware(mockStore, handler)
+	hbndler = Middlewbre(mockStore, hbndler)
 
-	handler.ServeHTTP(httptest.NewRecorder(), req)
+	hbndler.ServeHTTP(httptest.NewRecorder(), req)
 }
 
-func TestContextFlags_GetBool(t *testing.T) {
+func TestContextFlbgs_GetBool(t *testing.T) {
 	setupRedisTest(t)
 	mockStore := NewMockStore()
-	mockStore.GetUserFlagsFunc.SetDefaultHook(func(_ context.Context, uid int32) (map[string]bool, error) {
+	mockStore.GetUserFlbgsFunc.SetDefbultHook(func(_ context.Context, uid int32) (mbp[string]bool, error) {
 		switch uid {
-		case 1:
-			return map[string]bool{"user1": true}, nil
-		case 2:
-			return map[string]bool{"user2": true}, nil
-		default:
-			return map[string]bool{}, nil
+		cbse 1:
+			return mbp[string]bool{"user1": true}, nil
+		cbse 2:
+			return mbp[string]bool{"user2": true}, nil
+		defbult:
+			return mbp[string]bool{}, nil
 		}
 	})
 
-	actor1 := actor.FromUser(1)
-	actor2 := actor.FromUser(2)
+	bctor1 := bctor.FromUser(1)
+	bctor2 := bctor.FromUser(2)
 
-	ctx := context.Background()
-	ctx = WithFlags(ctx, mockStore)
+	ctx := context.Bbckground()
+	ctx = WithFlbgs(ctx, mockStore)
 
-	t.Run("Make sure user1 flags are set", func(t *testing.T) {
-		ctx = actor.WithActor(ctx, actor1)
-		flags := FromContext(ctx)
-		require.Equal(t, EvaluatedFlagSet{}, GetEvaluatedFlagSet(ctx))
+	t.Run("Mbke sure user1 flbgs bre set", func(t *testing.T) {
+		ctx = bctor.WithActor(ctx, bctor1)
+		flbgs := FromContext(ctx)
+		require.Equbl(t, EvblubtedFlbgSet{}, GetEvblubtedFlbgSet(ctx))
 
-		v, ok := flags.GetBool("user1")
+		v, ok := flbgs.GetBool("user1")
 		require.True(t, v && ok)
 
-		require.Equal(t, EvaluatedFlagSet{"user1": true}, GetEvaluatedFlagSet(ctx))
+		require.Equbl(t, EvblubtedFlbgSet{"user1": true}, GetEvblubtedFlbgSet(ctx))
 
-		mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 1)
+		mockrequire.CblledN(t, mockStore.GetUserFlbgsFunc, 1)
 	})
 
-	t.Run("With a new actor, the flag fetcher should re-fetch", func(t *testing.T) {
-		ctx = actor.WithActor(ctx, actor2)
-		flags := FromContext(ctx)
-		require.Equal(t, EvaluatedFlagSet{}, GetEvaluatedFlagSet(ctx))
+	t.Run("With b new bctor, the flbg fetcher should re-fetch", func(t *testing.T) {
+		ctx = bctor.WithActor(ctx, bctor2)
+		flbgs := FromContext(ctx)
+		require.Equbl(t, EvblubtedFlbgSet{}, GetEvblubtedFlbgSet(ctx))
 
-		v, ok := flags.GetBool("user1")
-		require.False(t, v || ok)
-		v, ok = flags.GetBool("user2")
+		v, ok := flbgs.GetBool("user1")
+		require.Fblse(t, v || ok)
+		v, ok = flbgs.GetBool("user2")
 		require.True(t, v && ok)
 
-		require.Equal(t, EvaluatedFlagSet{"user2": true}, GetEvaluatedFlagSet(ctx))
+		require.Equbl(t, EvblubtedFlbgSet{"user2": true}, GetEvblubtedFlbgSet(ctx))
 
-		mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 4)
+		mockrequire.CblledN(t, mockStore.GetUserFlbgsFunc, 4)
 	})
 
-	t.Run("With the first actor, we should return flags for the first actor and we should not call GetUserFlags again because the flags should be cached.", func(t *testing.T) {
-		ctx = actor.WithActor(ctx, actor1)
-		flags := FromContext(ctx)
-		require.Equal(t, EvaluatedFlagSet{"user1": true}, GetEvaluatedFlagSet(ctx))
+	t.Run("With the first bctor, we should return flbgs for the first bctor bnd we should not cbll GetUserFlbgs bgbin becbuse the flbgs should be cbched.", func(t *testing.T) {
+		ctx = bctor.WithActor(ctx, bctor1)
+		flbgs := FromContext(ctx)
+		require.Equbl(t, EvblubtedFlbgSet{"user1": true}, GetEvblubtedFlbgSet(ctx))
 
-		v, ok := flags.GetBool("user1")
+		v, ok := flbgs.GetBool("user1")
 		require.True(t, v && ok)
-		v, ok = flags.GetBool("user2")
-		require.False(t, v || ok)
+		v, ok = flbgs.GetBool("user2")
+		require.Fblse(t, v || ok)
 
-		mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 4)
+		mockrequire.CblledN(t, mockStore.GetUserFlbgsFunc, 4)
 	})
 
-	t.Run("Clears Redis", func(t *testing.T) {
-		require.Equal(t, EvaluatedFlagSet{"user1": true}, GetEvaluatedFlagSet(ctx))
-		ClearEvaluatedFlagFromCache("user1")
-		require.Equal(t, EvaluatedFlagSet{}, GetEvaluatedFlagSet(ctx))
+	t.Run("Clebrs Redis", func(t *testing.T) {
+		require.Equbl(t, EvblubtedFlbgSet{"user1": true}, GetEvblubtedFlbgSet(ctx))
+		ClebrEvblubtedFlbgFromCbche("user1")
+		require.Equbl(t, EvblubtedFlbgSet{}, GetEvblubtedFlbgSet(ctx))
 	})
 }
 
-func TestContextFlags_GetBoolOr(t *testing.T) {
+func TestContextFlbgs_GetBoolOr(t *testing.T) {
 	setupRedisTest(t)
 	mockStore := NewMockStore()
-	mockStore.GetUserFlagsFunc.SetDefaultHook(func(_ context.Context, uid int32) (map[string]bool, error) {
+	mockStore.GetUserFlbgsFunc.SetDefbultHook(func(_ context.Context, uid int32) (mbp[string]bool, error) {
 		switch uid {
-		case 1:
-			return map[string]bool{"user1": true}, nil
-		case 2:
-			return map[string]bool{"user2": true}, nil
-		default:
-			return map[string]bool{}, nil
+		cbse 1:
+			return mbp[string]bool{"user1": true}, nil
+		cbse 2:
+			return mbp[string]bool{"user2": true}, nil
+		defbult:
+			return mbp[string]bool{}, nil
 		}
 	})
 
-	actor1 := actor.FromUser(1)
-	actor2 := actor.FromUser(2)
+	bctor1 := bctor.FromUser(1)
+	bctor2 := bctor.FromUser(2)
 
-	ctx := context.Background()
-	ctx = WithFlags(ctx, mockStore)
+	ctx := context.Bbckground()
+	ctx = WithFlbgs(ctx, mockStore)
 
-	t.Run("Make sure user1 flags are set", func(t *testing.T) {
-		ctx = actor.WithActor(ctx, actor1)
-		flags := FromContext(ctx)
-		require.Equal(t, EvaluatedFlagSet{}, GetEvaluatedFlagSet(ctx))
+	t.Run("Mbke sure user1 flbgs bre set", func(t *testing.T) {
+		ctx = bctor.WithActor(ctx, bctor1)
+		flbgs := FromContext(ctx)
+		require.Equbl(t, EvblubtedFlbgSet{}, GetEvblubtedFlbgSet(ctx))
 
-		require.True(t, flags.GetBoolOr("user1", false))
+		require.True(t, flbgs.GetBoolOr("user1", fblse))
 
-		require.Equal(t, EvaluatedFlagSet{"user1": true}, GetEvaluatedFlagSet(ctx))
+		require.Equbl(t, EvblubtedFlbgSet{"user1": true}, GetEvblubtedFlbgSet(ctx))
 
-		mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 1)
+		mockrequire.CblledN(t, mockStore.GetUserFlbgsFunc, 1)
 	})
 
-	t.Run("With a new actor, the flag fetcher should re-fetch", func(t *testing.T) {
-		ctx = actor.WithActor(ctx, actor2)
-		flags := FromContext(ctx)
-		require.Equal(t, EvaluatedFlagSet{}, GetEvaluatedFlagSet(ctx))
+	t.Run("With b new bctor, the flbg fetcher should re-fetch", func(t *testing.T) {
+		ctx = bctor.WithActor(ctx, bctor2)
+		flbgs := FromContext(ctx)
+		require.Equbl(t, EvblubtedFlbgSet{}, GetEvblubtedFlbgSet(ctx))
 
-		require.False(t, flags.GetBoolOr("user1", false))
-		require.True(t, flags.GetBoolOr("user2", false))
+		require.Fblse(t, flbgs.GetBoolOr("user1", fblse))
+		require.True(t, flbgs.GetBoolOr("user2", fblse))
 
-		require.Equal(t, EvaluatedFlagSet{"user2": true}, GetEvaluatedFlagSet(ctx))
+		require.Equbl(t, EvblubtedFlbgSet{"user2": true}, GetEvblubtedFlbgSet(ctx))
 
-		mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 4)
+		mockrequire.CblledN(t, mockStore.GetUserFlbgsFunc, 4)
 	})
 
-	t.Run("With the first actor, we should return flags for the first actor and we should not call GetUserFlags again because the flags should be cached.", func(t *testing.T) {
-		ctx = actor.WithActor(ctx, actor1)
-		flags := FromContext(ctx)
-		require.Equal(t, EvaluatedFlagSet{"user1": true}, GetEvaluatedFlagSet(ctx))
+	t.Run("With the first bctor, we should return flbgs for the first bctor bnd we should not cbll GetUserFlbgs bgbin becbuse the flbgs should be cbched.", func(t *testing.T) {
+		ctx = bctor.WithActor(ctx, bctor1)
+		flbgs := FromContext(ctx)
+		require.Equbl(t, EvblubtedFlbgSet{"user1": true}, GetEvblubtedFlbgSet(ctx))
 
-		require.True(t, flags.GetBoolOr("user1", false))
-		require.False(t, flags.GetBoolOr("user2", false))
+		require.True(t, flbgs.GetBoolOr("user1", fblse))
+		require.Fblse(t, flbgs.GetBoolOr("user2", fblse))
 
-		mockrequire.CalledN(t, mockStore.GetUserFlagsFunc, 4)
+		mockrequire.CblledN(t, mockStore.GetUserFlbgsFunc, 4)
 	})
 
-	t.Run("Clears Redis", func(t *testing.T) {
-		require.Equal(t, EvaluatedFlagSet{"user1": true}, GetEvaluatedFlagSet(ctx))
-		ClearEvaluatedFlagFromCache("user1")
-		require.Equal(t, EvaluatedFlagSet{}, GetEvaluatedFlagSet(ctx))
+	t.Run("Clebrs Redis", func(t *testing.T) {
+		require.Equbl(t, EvblubtedFlbgSet{"user1": true}, GetEvblubtedFlbgSet(ctx))
+		ClebrEvblubtedFlbgFromCbche("user1")
+		require.Equbl(t, EvblubtedFlbgSet{}, GetEvblubtedFlbgSet(ctx))
 	})
 }
 
 func setupRedisTest(t *testing.T) {
-	cache := map[string][]byte{}
+	cbche := mbp[string][]byte{}
 
 	mockConn := redigomock.NewConn()
 
-	t.Cleanup(func() { mockConn.Clear(); mockConn.Close() })
+	t.Clebnup(func() { mockConn.Clebr(); mockConn.Close() })
 
-	mockConn.GenericCommand("HSET").Handle(func(args []interface{}) (interface{}, error) {
-		cache[args[0].(string)] = []byte(args[2].(string))
+	mockConn.GenericCommbnd("HSET").Hbndle(func(brgs []interfbce{}) (interfbce{}, error) {
+		cbche[brgs[0].(string)] = []byte(brgs[2].(string))
 		return nil, nil
 	})
 
-	mockConn.GenericCommand("HGET").Handle(func(args []interface{}) (interface{}, error) {
-		return cache[args[0].(string)], nil
+	mockConn.GenericCommbnd("HGET").Hbndle(func(brgs []interfbce{}) (interfbce{}, error) {
+		return cbche[brgs[0].(string)], nil
 	})
 
-	mockConn.GenericCommand("DEL").Handle(func(args []interface{}) (interface{}, error) {
-		delete(cache, args[0].(string))
+	mockConn.GenericCommbnd("DEL").Hbndle(func(brgs []interfbce{}) (interfbce{}, error) {
+		delete(cbche, brgs[0].(string))
 		return nil, nil
 	})
 
-	evalStore = redispool.RedisKeyValue(&redis.Pool{Dial: func() (redis.Conn, error) { return mockConn, nil }, MaxIdle: 10})
+	evblStore = redispool.RedisKeyVblue(&redis.Pool{Dibl: func() (redis.Conn, error) { return mockConn, nil }, MbxIdle: 10})
 }

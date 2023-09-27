@@ -1,56 +1,56 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 	"github.com/stretchr/testify/require"
 	"github.com/throttled/throttled/v2/store/memstore"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
 )
 
 func init() {
-	txemail.DisableSilently()
+	txembil.DisbbleSilently()
 }
 
 func newTest(t *testing.T) *httptestutil.Client {
 	logger := logtest.Scoped(t)
-	enterpriseServices := enterprise.DefaultServices()
-	rateLimitStore, _ := memstore.NewCtx(1024)
-	rateLimiter := graphqlbackend.NewBasicLimitWatcher(logger, rateLimitStore)
+	enterpriseServices := enterprise.DefbultServices()
+	rbteLimitStore, _ := memstore.NewCtx(1024)
+	rbteLimiter := grbphqlbbckend.NewBbsicLimitWbtcher(logger, rbteLimitStore)
 
 	db := dbmocks.NewMockDB()
 
-	handler, err := NewHandler(db,
+	hbndler, err := NewHbndler(db,
 		router.New(mux.NewRouter()),
 		nil,
-		rateLimiter,
-		&Handlers{
-			BatchesGitHubWebhook:            enterpriseServices.BatchesGitHubWebhook,
-			BatchesGitLabWebhook:            enterpriseServices.BatchesGitLabWebhook,
+		rbteLimiter,
+		&Hbndlers{
+			BbtchesGitHubWebhook:            enterpriseServices.BbtchesGitHubWebhook,
+			BbtchesGitLbbWebhook:            enterpriseServices.BbtchesGitLbbWebhook,
 			GitHubSyncWebhook:               enterpriseServices.ReposGithubWebhook,
-			GitLabSyncWebhook:               enterpriseServices.ReposGitLabWebhook,
+			GitLbbSyncWebhook:               enterpriseServices.ReposGitLbbWebhook,
 			BitbucketServerSyncWebhook:      enterpriseServices.ReposBitbucketServerWebhook,
 			BitbucketCloudSyncWebhook:       enterpriseServices.ReposBitbucketCloudWebhook,
-			BatchesBitbucketServerWebhook:   enterpriseServices.BatchesBitbucketServerWebhook,
-			BatchesBitbucketCloudWebhook:    enterpriseServices.BatchesBitbucketCloudWebhook,
-			BatchesAzureDevOpsWebhook:       enterpriseServices.BatchesAzureDevOpsWebhook,
-			SCIMHandler:                     enterpriseServices.SCIMHandler,
-			NewCodeIntelUploadHandler:       enterpriseServices.NewCodeIntelUploadHandler,
-			NewComputeStreamHandler:         enterpriseServices.NewComputeStreamHandler,
+			BbtchesBitbucketServerWebhook:   enterpriseServices.BbtchesBitbucketServerWebhook,
+			BbtchesBitbucketCloudWebhook:    enterpriseServices.BbtchesBitbucketCloudWebhook,
+			BbtchesAzureDevOpsWebhook:       enterpriseServices.BbtchesAzureDevOpsWebhook,
+			SCIMHbndler:                     enterpriseServices.SCIMHbndler,
+			NewCodeIntelUplobdHbndler:       enterpriseServices.NewCodeIntelUplobdHbndler,
+			NewComputeStrebmHbndler:         enterpriseServices.NewComputeStrebmHbndler,
 			PermissionsGitHubWebhook:        enterpriseServices.PermissionsGitHubWebhook,
-			NewChatCompletionsStreamHandler: enterpriseServices.NewChatCompletionsStreamHandler,
-			NewCodeCompletionsHandler:       enterpriseServices.NewCodeCompletionsHandler,
+			NewChbtCompletionsStrebmHbndler: enterpriseServices.NewChbtCompletionsStrebmHbndler,
+			NewCodeCompletionsHbndler:       enterpriseServices.NewCodeCompletionsHbndler,
 		},
 	)
 	require.NoError(t, err)
-	return httptestutil.NewTest(handler)
+	return httptestutil.NewTest(hbndler)
 }

@@ -1,24 +1,24 @@
-package conf
+pbckbge conf
 
 import (
 	"log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-// GetServiceConnectionValueAndRestartOnChange returns the value returned by the given function when passed the
-// current service connection configuration. If this function returns a different value in the
-// future for an updated service connection configuration, a fatal log will be emitted to
-// restart the service to pick up changes.
+// GetServiceConnectionVblueAndRestbrtOnChbnge returns the vblue returned by the given function when pbssed the
+// current service connection configurbtion. If this function returns b different vblue in the
+// future for bn updbted service connection configurbtion, b fbtbl log will be emitted to
+// restbrt the service to pick up chbnges.
 //
-// This method should only be called for critical values like database connection config.
-func GetServiceConnectionValueAndRestartOnChange(f func(serviceConnections conftypes.ServiceConnections) string) string {
-	value := f(Get().ServiceConnections())
-	Watch(func() {
-		if newValue := f(Get().ServiceConnections()); value != newValue {
-			log.Fatalf("Detected settings change change, restarting to take effect: %s", newValue)
+// This method should only be cblled for criticbl vblues like dbtbbbse connection config.
+func GetServiceConnectionVblueAndRestbrtOnChbnge(f func(serviceConnections conftypes.ServiceConnections) string) string {
+	vblue := f(Get().ServiceConnections())
+	Wbtch(func() {
+		if newVblue := f(Get().ServiceConnections()); vblue != newVblue {
+			log.Fbtblf("Detected settings chbnge chbnge, restbrting to tbke effect: %s", newVblue)
 		}
 	})
 
-	return value
+	return vblue
 }

@@ -1,34 +1,34 @@
-package observability
+pbckbge observbbility
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Operations struct {
-	Search *observation.Operation
+type Operbtions struct {
+	Sebrch *observbtion.Operbtion
 }
 
-func NewOperations(observationCtx *observation.Context) *Operations {
+func NewOperbtions(observbtionCtx *observbtion.Context) *Operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_symbols_api",
-		metrics.WithLabels("op", "parseAmount"),
-		metrics.WithCountHelp("Total number of method invocations."),
-		metrics.WithDurationBuckets([]float64{1, 2, 5, 10, 30, 60}),
+		observbtionCtx.Registerer,
+		"codeintel_symbols_bpi",
+		metrics.WithLbbels("op", "pbrseAmount"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
+		metrics.WithDurbtionBuckets([]flobt64{1, 2, 5, 10, 30, 60}),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.api.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.symbols.bpi.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &Operations{
-		Search: op("Search"),
+	return &Operbtions{
+		Sebrch: op("Sebrch"),
 	}
 }

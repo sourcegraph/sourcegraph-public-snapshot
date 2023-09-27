@@ -1,125 +1,125 @@
-package result
+pbckbge result
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestDeduper(t *testing.T) {
-	commit := func(repo, id string) *CommitMatch {
-		return &CommitMatch{
-			Repo: types.MinimalRepo{
-				Name: api.RepoName(repo),
+	commit := func(repo, id string) *CommitMbtch {
+		return &CommitMbtch{
+			Repo: types.MinimblRepo{
+				Nbme: bpi.RepoNbme(repo),
 			},
-			Commit: gitdomain.Commit{
-				ID: api.CommitID(id),
+			Commit: gitdombin.Commit{
+				ID: bpi.CommitID(id),
 			},
 		}
 	}
 
-	diff := func(repo, id string) *CommitMatch {
-		return &CommitMatch{
-			Repo: types.MinimalRepo{
-				Name: api.RepoName(repo),
+	diff := func(repo, id string) *CommitMbtch {
+		return &CommitMbtch{
+			Repo: types.MinimblRepo{
+				Nbme: bpi.RepoNbme(repo),
 			},
-			Commit: gitdomain.Commit{
-				ID: api.CommitID(id),
+			Commit: gitdombin.Commit{
+				ID: bpi.CommitID(id),
 			},
-			DiffPreview: &MatchedString{},
+			DiffPreview: &MbtchedString{},
 		}
 	}
 
-	repo := func(name, rev string) *RepoMatch {
-		return &RepoMatch{
-			Name: api.RepoName(name),
+	repo := func(nbme, rev string) *RepoMbtch {
+		return &RepoMbtch{
+			Nbme: bpi.RepoNbme(nbme),
 			Rev:  rev,
 		}
 	}
 
-	file := func(repo, commit, path string, hms ChunkMatches) *FileMatch {
-		return &FileMatch{
+	file := func(repo, commit, pbth string, hms ChunkMbtches) *FileMbtch {
+		return &FileMbtch{
 			File: File{
-				Repo: types.MinimalRepo{
-					Name: api.RepoName(repo),
+				Repo: types.MinimblRepo{
+					Nbme: bpi.RepoNbme(repo),
 				},
-				CommitID: api.CommitID(commit),
-				Path:     path,
+				CommitID: bpi.CommitID(commit),
+				Pbth:     pbth,
 			},
-			ChunkMatches: hms,
+			ChunkMbtches: hms,
 		}
 	}
 
-	hm := func(s string) ChunkMatch {
-		return ChunkMatch{
+	hm := func(s string) ChunkMbtch {
+		return ChunkMbtch{
 			Content: s,
 		}
 	}
 
-	cases := []struct {
-		name     string
-		input    Matches
-		expected Matches
+	cbses := []struct {
+		nbme     string
+		input    Mbtches
+		expected Mbtches
 	}{
 		{
-			name: "no dups",
-			input: []Match{
-				commit("a", "b"),
+			nbme: "no dups",
+			input: []Mbtch{
+				commit("b", "b"),
 				diff("c", "d"),
 				repo("e", "f"),
 				file("g", "h", "i", nil),
 			},
-			expected: []Match{
-				commit("a", "b"),
+			expected: []Mbtch{
+				commit("b", "b"),
 				diff("c", "d"),
 				repo("e", "f"),
 				file("g", "h", "i", nil),
 			},
 		},
 		{
-			name: "merge files",
-			input: []Match{
-				file("a", "b", "c", ChunkMatches{hm("a"), hm("b")}),
-				file("a", "b", "c", ChunkMatches{hm("c"), hm("d")}),
+			nbme: "merge files",
+			input: []Mbtch{
+				file("b", "b", "c", ChunkMbtches{hm("b"), hm("b")}),
+				file("b", "b", "c", ChunkMbtches{hm("c"), hm("d")}),
 			},
-			expected: []Match{
-				file("a", "b", "c", ChunkMatches{hm("a"), hm("b"), hm("c"), hm("d")}),
-			},
-		},
-		{
-			name: "diff and commit are not equal",
-			input: []Match{
-				commit("a", "b"),
-				diff("a", "b"),
-			},
-			expected: []Match{
-				commit("a", "b"),
-				diff("a", "b"),
+			expected: []Mbtch{
+				file("b", "b", "c", ChunkMbtches{hm("b"), hm("b"), hm("c"), hm("d")}),
 			},
 		},
 		{
-			name: "different revs not deduped",
-			input: []Match{
-				repo("a", "b"),
-				repo("a", "c"),
+			nbme: "diff bnd commit bre not equbl",
+			input: []Mbtch{
+				commit("b", "b"),
+				diff("b", "b"),
 			},
-			expected: []Match{
-				repo("a", "b"),
-				repo("a", "c"),
+			expected: []Mbtch{
+				commit("b", "b"),
+				diff("b", "b"),
+			},
+		},
+		{
+			nbme: "different revs not deduped",
+			input: []Mbtch{
+				repo("b", "b"),
+				repo("b", "c"),
+			},
+			expected: []Mbtch{
+				repo("b", "b"),
+				repo("b", "c"),
 			},
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		dedup := NewDeduper()
-		for _, match := range tc.input {
-			dedup.Add(match)
+		for _, mbtch := rbnge tc.input {
+			dedup.Add(mbtch)
 		}
 
-		require.Equal(t, tc.expected, dedup.Results())
+		require.Equbl(t, tc.expected, dedup.Results())
 	}
 }

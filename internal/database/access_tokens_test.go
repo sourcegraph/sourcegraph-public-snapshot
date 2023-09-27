@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,233 +6,233 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestAccessTokens(t *testing.T) {
-	// perform test setup and teardown
+	// perform test setup bnd tebrdown
 	prevConfg := conf.Get()
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		Log: &schema.Log{
-			SecurityEventLog: &schema.SecurityEventLog{Location: "database"},
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+		Log: &schemb.Log{
+			SecurityEventLog: &schemb.SecurityEventLog{Locbtion: "dbtbbbse"},
 		},
 	}})
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		conf.Mock(prevConfg)
 	})
 
-	t.Run("TestAccessTokens_parallel", func(t *testing.T) {
-		t.Run("testAccessTokens_Create", testAccessTokens_Create)
+	t.Run("TestAccessTokens_pbrbllel", func(t *testing.T) {
+		t.Run("testAccessTokens_Crebte", testAccessTokens_Crebte)
 		t.Run("testAccessTokens_Delete", testAccessTokens_Delete)
-		t.Run("testAccessTokens_Create", testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent)
+		t.Run("testAccessTokens_Crebte", testAccessTokens_CrebteInternbl_DoesNotCbptureSecurityEvent)
 		t.Run("testAccessTokens_List", testAccessTokens_List)
 		t.Run("testAccessTokens_Lookup", testAccessTokens_Lookup)
 		t.Run("testAccessToken_Lookup_deletedUser", testAccessTokens_Lookup_deletedUser)
-		t.Run("testAccessTokens_tokenSHA256Hash", testAccessTokens_tokenSHA256Hash)
+		t.Run("testAccessTokens_tokenSHA256Hbsh", testAccessTokens_tokenSHA256Hbsh)
 	})
 
 }
 
-// 🚨 SECURITY: This tests the routine that creates access tokens and returns the token secret value
+// 🚨 SECURITY: This tests the routine thbt crebtes bccess tokens bnd returns the token secret vblue
 // to the user.
 //
-// testAccessTokens_Create requires the site_config to be mocked to enable security event logging to the database.
+// testAccessTokens_Crebte requires the site_config to be mocked to enbble security event logging to the dbtbbbse.
 // This test is run in TestAccessTokens
-func testAccessTokens_Create(t *testing.T) {
-	t.Parallel()
+func testAccessTokens_Crebte(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	subject, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u1",
-		Password:              "p1",
-		EmailVerificationCode: "c1",
+	subject, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p1",
+		EmbilVerificbtionCode: "c1",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	creator, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c2",
+	crebtor, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c2",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
-	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenCrebted, 0)
+	tid0, tv0, err := db.AccessTokens().Crebte(ctx, subject.ID, []string{"b", "b"}, "n0", crebtor.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 1)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenCrebted, 1)
 
-	if !strings.HasPrefix(tv0, "sgp_") {
-		t.Errorf("got %q, want prefix 'sgp_'", tv0)
+	if !strings.HbsPrefix(tv0, "sgp_") {
+		t.Errorf("got %q, wbnt prefix 'sgp_'", tv0)
 	}
 
 	got, err := db.AccessTokens().GetByID(ctx, tid0)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := tid0; got.ID != want {
-		t.Errorf("got %v, want %v", got.ID, want)
+	if wbnt := tid0; got.ID != wbnt {
+		t.Errorf("got %v, wbnt %v", got.ID, wbnt)
 	}
-	if want := subject.ID; got.SubjectUserID != want {
-		t.Errorf("got %v, want %v", got.SubjectUserID, want)
+	if wbnt := subject.ID; got.SubjectUserID != wbnt {
+		t.Errorf("got %v, wbnt %v", got.SubjectUserID, wbnt)
 	}
-	if want := "n0"; got.Note != want {
-		t.Errorf("got %q, want %q", got.Note, want)
+	if wbnt := "n0"; got.Note != wbnt {
+		t.Errorf("got %q, wbnt %q", got.Note, wbnt)
 	}
 
-	gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, "a")
+	gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, "b")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := subject.ID; gotSubjectUserID != want {
-		t.Errorf("got %v, want %v", gotSubjectUserID, want)
+	if wbnt := subject.ID; gotSubjectUserID != wbnt {
+		t.Errorf("got %v, wbnt %v", gotSubjectUserID, wbnt)
 	}
 
 	ts, err := db.AccessTokens().List(ctx, AccessTokensListOptions{SubjectUserID: subject.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := 1; len(ts) != want {
-		t.Errorf("got %d access tokens, want %d", len(ts), want)
+	if wbnt := 1; len(ts) != wbnt {
+		t.Errorf("got %d bccess tokens, wbnt %d", len(ts), wbnt)
 	}
-	if want := []string{"a", "b"}; !reflect.DeepEqual(ts[0].Scopes, want) {
-		t.Errorf("got token scopes %q, want %q", ts[0].Scopes, want)
+	if wbnt := []string{"b", "b"}; !reflect.DeepEqubl(ts[0].Scopes, wbnt) {
+		t.Errorf("got token scopes %q, wbnt %q", ts[0].Scopes, wbnt)
 	}
 
-	// Accidentally passing the creator's UID in SubjectUserID should not return anything.
-	ts, err = db.AccessTokens().List(ctx, AccessTokensListOptions{SubjectUserID: creator.ID})
+	// Accidentblly pbssing the crebtor's UID in SubjectUserID should not return bnything.
+	ts, err = db.AccessTokens().List(ctx, AccessTokensListOptions{SubjectUserID: crebtor.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := 0; len(ts) != want {
-		t.Errorf("got %d access tokens, want %d", len(ts), want)
+	if wbnt := 0; len(ts) != wbnt {
+		t.Errorf("got %d bccess tokens, wbnt %d", len(ts), wbnt)
 	}
 }
 
-// testAccessTokens_Delete requires the site_config to be mocked to enable security event logging to the database
+// testAccessTokens_Delete requires the site_config to be mocked to enbble security event logging to the dbtbbbse
 // This test is run in TestAccessTokens
 func testAccessTokens_Delete(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	subject, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u1",
-		Password:              "p1",
-		EmailVerificationCode: "c1",
+	subject, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p1",
+		EmbilVerificbtionCode: "c1",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	creator, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c2",
+	crebtor, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c2",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Create context with valid actor; required by logging
-	subjectActor := actor.FromUser(subject.ID)
-	ctxWithActor := actor.WithActor(context.Background(), subjectActor)
+	// Crebte context with vblid bctor; required by logging
+	subjectActor := bctor.FromUser(subject.ID)
+	ctxWithActor := bctor.WithActor(context.Bbckground(), subjectActor)
 
-	tid0, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid0, _, err := db.AccessTokens().Crebte(ctxWithActor, subject.ID, []string{"b", "b"}, "n0", crebtor.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, tv1, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	_, tv1, err := db.AccessTokens().Crebte(ctxWithActor, subject.ID, []string{"b", "b"}, "n0", crebtor.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	tid2, _, err := db.AccessTokens().Create(ctxWithActor, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid2, _, err := db.AccessTokens().Crebte(ctxWithActor, subject.ID, []string{"b", "b"}, "n0", crebtor.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 0)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 0)
 	err = db.AccessTokens().DeleteByID(ctxWithActor, tid0)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 1)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 1)
 	err = db.AccessTokens().DeleteByToken(ctxWithActor, tv1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 2)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenDeleted, 2)
 
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenHardDeleted, 0)
-	err = db.AccessTokens().HardDeleteByID(ctxWithActor, tid2)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenHbrdDeleted, 0)
+	err = db.AccessTokens().HbrdDeleteByID(ctxWithActor, tid2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenHardDeleted, 1)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenHbrdDeleted, 1)
 }
 
-func assertSecurityEventCount(t *testing.T, db DB, event SecurityEventName, expectedCount int) {
+func bssertSecurityEventCount(t *testing.T, db DB, event SecurityEventNbme, expectedCount int) {
 	t.Helper()
 
-	row := db.SecurityEventLogs().Handle().QueryRowContext(context.Background(), "SELECT count(name) FROM security_event_logs WHERE name = $1", event)
-	var count int
-	if err := row.Scan(&count); err != nil {
-		t.Fatal("couldn't read security events count")
+	row := db.SecurityEventLogs().Hbndle().QueryRowContext(context.Bbckground(), "SELECT count(nbme) FROM security_event_logs WHERE nbme = $1", event)
+	vbr count int
+	if err := row.Scbn(&count); err != nil {
+		t.Fbtbl("couldn't rebd security events count")
 	}
-	assert.Equal(t, expectedCount, count)
+	bssert.Equbl(t, expectedCount, count)
 }
 
 // This test is run in TestAccessTokens
-func testAccessTokens_CreateInternal_DoesNotCaptureSecurityEvent(t *testing.T) {
-	t.Parallel()
+func testAccessTokens_CrebteInternbl_DoesNotCbptureSecurityEvent(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	subject, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u1",
-		Password:              "p1",
-		EmailVerificationCode: "c1",
+	subject, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p1",
+		EmbilVerificbtionCode: "c1",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	creator, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c2",
+	crebtor, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c2",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
-	_, _, err = db.AccessTokens().CreateInternal(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenCrebted, 0)
+	_, _, err = db.AccessTokens().CrebteInternbl(ctx, subject.ID, []string{"b", "b"}, "n0", crebtor.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertSecurityEventCount(t, db, SecurityEventAccessTokenCreated, 0)
+	bssertSecurityEventCount(t, db, SecurityEventAccessTokenCrebted, 0)
 
 }
 
@@ -242,53 +242,53 @@ func testAccessTokens_List(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	subject1, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u1",
-		Password:              "p1",
-		EmailVerificationCode: "c1",
+	subject1, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p1",
+		EmbilVerificbtionCode: "c1",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	subject2, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c2",
+	subject2, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c2",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "n0", subject1.ID)
+	_, _, err = db.AccessTokens().Crebte(ctx, subject1.ID, []string{"b", "b"}, "n0", subject1.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, _, err = db.AccessTokens().Create(ctx, subject1.ID, []string{"a", "b"}, "n1", subject1.ID)
+	_, _, err = db.AccessTokens().Crebte(ctx, subject1.ID, []string{"b", "b"}, "n1", subject1.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	{
-		// List all tokens.
+		// List bll tokens.
 		ts, err := db.AccessTokens().List(ctx, AccessTokensListOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := 2; len(ts) != want {
-			t.Errorf("got %d access tokens, want %d", len(ts), want)
+		if wbnt := 2; len(ts) != wbnt {
+			t.Errorf("got %d bccess tokens, wbnt %d", len(ts), wbnt)
 		}
 		count, err := db.AccessTokens().Count(ctx, AccessTokensListOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := 2; count != want {
-			t.Errorf("got %d, want %d", count, want)
+		if wbnt := 2; count != wbnt {
+			t.Errorf("got %d, wbnt %d", count, wbnt)
 		}
 	}
 
@@ -296,10 +296,10 @@ func testAccessTokens_List(t *testing.T) {
 		// List subject1's tokens.
 		ts, err := db.AccessTokens().List(ctx, AccessTokensListOptions{SubjectUserID: subject1.ID})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := 2; len(ts) != want {
-			t.Errorf("got %d access tokens, want %d", len(ts), want)
+		if wbnt := 2; len(ts) != wbnt {
+			t.Errorf("got %d bccess tokens, wbnt %d", len(ts), wbnt)
 		}
 	}
 
@@ -307,15 +307,15 @@ func testAccessTokens_List(t *testing.T) {
 		// List subject2's tokens.
 		ts, err := db.AccessTokens().List(ctx, AccessTokensListOptions{SubjectUserID: subject2.ID})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := 0; len(ts) != want {
-			t.Errorf("got %d access tokens, want %d", len(ts), want)
+		if wbnt := 0; len(ts) != wbnt {
+			t.Errorf("got %d bccess tokens, wbnt %d", len(ts), wbnt)
 		}
 	}
 }
 
-// 🚨 SECURITY: This tests the routine that verifies access tokens, which the security of the entire
+// 🚨 SECURITY: This tests the routine thbt verifies bccess tokens, which the security of the entire
 // system depends on.
 // This test is run in TestAccessTokens
 func testAccessTokens_Lookup(t *testing.T) {
@@ -323,175 +323,175 @@ func testAccessTokens_Lookup(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	subject, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u1",
-		Password:              "p1",
-		EmailVerificationCode: "c1",
+	subject, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p1",
+		EmbilVerificbtionCode: "c1",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	creator, err := db.Users().Create(ctx, NewUser{
-		Email:                 "u2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c2",
+	crebtor, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "u2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c2",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	tid0, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a", "b"}, "n0", creator.ID)
+	tid0, tv0, err := db.AccessTokens().Crebte(ctx, subject.ID, []string{"b", "b"}, "n0", crebtor.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, scope := range []string{"a", "b"} {
+	for _, scope := rbnge []string{"b", "b"} {
 		gotSubjectUserID, err := db.AccessTokens().Lookup(ctx, tv0, scope)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := subject.ID; gotSubjectUserID != want {
-			t.Errorf("got %v, want %v", gotSubjectUserID, want)
+		if wbnt := subject.ID; gotSubjectUserID != wbnt {
+			t.Errorf("got %v, wbnt %v", gotSubjectUserID, wbnt)
 		}
 	}
 
-	// Lookup with a nonexistent scope and ensure it fails.
+	// Lookup with b nonexistent scope bnd ensure it fbils.
 	if _, err := db.AccessTokens().Lookup(ctx, tv0, "x"); err == nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Lookup with an empty scope and ensure it fails.
+	// Lookup with bn empty scope bnd ensure it fbils.
 	if _, err := db.AccessTokens().Lookup(ctx, tv0, ""); err == nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Delete a token and ensure Lookup fails on it.
+	// Delete b token bnd ensure Lookup fbils on it.
 	if err := db.AccessTokens().DeleteByID(ctx, tid0); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
-		t.Fatal(err)
+	if _, err := db.AccessTokens().Lookup(ctx, tv0, "b"); err == nil {
+		t.Fbtbl(err)
 	}
 
-	// Try to Lookup a token that was never created.
-	if _, err := db.AccessTokens().Lookup(ctx, "abcdefg" /* this token value was never created */, "a"); err == nil {
-		t.Fatal(err)
+	// Try to Lookup b token thbt wbs never crebted.
+	if _, err := db.AccessTokens().Lookup(ctx, "bbcdefg" /* this token vblue wbs never crebted */, "b"); err == nil {
+		t.Fbtbl(err)
 	}
 }
 
-// 🚨 SECURITY: This tests that deleting the subject or creator user of an access token invalidates
-// the token, and that no new access tokens may be created for deleted users.
+// 🚨 SECURITY: This tests thbt deleting the subject or crebtor user of bn bccess token invblidbtes
+// the token, bnd thbt no new bccess tokens mby be crebted for deleted users.
 // This test is run in TestAccessTokens
 func testAccessTokens_Lookup_deletedUser(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	t.Parallel()
+	t.Pbrbllel()
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	t.Run("subject", func(t *testing.T) {
-		subject, err := db.Users().Create(ctx, NewUser{
-			Email:                 "u1@example.com",
-			Username:              "u1",
-			Password:              "p1",
-			EmailVerificationCode: "c1",
+		subject, err := db.Users().Crebte(ctx, NewUser{
+			Embil:                 "u1@exbmple.com",
+			Usernbme:              "u1",
+			Pbssword:              "p1",
+			EmbilVerificbtionCode: "c1",
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		creator, err := db.Users().Create(ctx, NewUser{
-			Email:                 "u2@example.com",
-			Username:              "u2",
-			Password:              "p2",
-			EmailVerificationCode: "c2",
+		crebtor, err := db.Users().Crebte(ctx, NewUser{
+			Embil:                 "u2@exbmple.com",
+			Usernbme:              "u2",
+			Pbssword:              "p2",
+			EmbilVerificbtionCode: "c2",
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		_, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID)
+		_, tv0, err := db.AccessTokens().Crebte(ctx, subject.ID, []string{"b"}, "n0", crebtor.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if err := db.Users().Delete(ctx, subject.ID); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
-			t.Fatal("Lookup: want error looking up token for deleted subject user")
+		if _, err := db.AccessTokens().Lookup(ctx, tv0, "b"); err == nil {
+			t.Fbtbl("Lookup: wbnt error looking up token for deleted subject user")
 		}
 
-		if _, _, err := db.AccessTokens().Create(ctx, subject.ID, nil, "n0", creator.ID); err == nil {
-			t.Fatal("Create: want error creating token for deleted subject user")
+		if _, _, err := db.AccessTokens().Crebte(ctx, subject.ID, nil, "n0", crebtor.ID); err == nil {
+			t.Fbtbl("Crebte: wbnt error crebting token for deleted subject user")
 		}
 	})
 
-	t.Run("creator", func(t *testing.T) {
-		subject, err := db.Users().Create(ctx, NewUser{
-			Email:                 "u3@example.com",
-			Username:              "u3",
-			Password:              "p3",
-			EmailVerificationCode: "c3",
+	t.Run("crebtor", func(t *testing.T) {
+		subject, err := db.Users().Crebte(ctx, NewUser{
+			Embil:                 "u3@exbmple.com",
+			Usernbme:              "u3",
+			Pbssword:              "p3",
+			EmbilVerificbtionCode: "c3",
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		creator, err := db.Users().Create(ctx, NewUser{
-			Email:                 "u4@example.com",
-			Username:              "u4",
-			Password:              "p4",
-			EmailVerificationCode: "c4",
+		crebtor, err := db.Users().Crebte(ctx, NewUser{
+			Embil:                 "u4@exbmple.com",
+			Usernbme:              "u4",
+			Pbssword:              "p4",
+			EmbilVerificbtionCode: "c4",
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		_, tv0, err := db.AccessTokens().Create(ctx, subject.ID, []string{"a"}, "n0", creator.ID)
+		_, tv0, err := db.AccessTokens().Crebte(ctx, subject.ID, []string{"b"}, "n0", crebtor.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if err := db.Users().Delete(ctx, creator.ID); err != nil {
-			t.Fatal(err)
+		if err := db.Users().Delete(ctx, crebtor.ID); err != nil {
+			t.Fbtbl(err)
 		}
-		if _, err := db.AccessTokens().Lookup(ctx, tv0, "a"); err == nil {
-			t.Fatal("Lookup: want error looking up token for deleted creator user")
+		if _, err := db.AccessTokens().Lookup(ctx, tv0, "b"); err == nil {
+			t.Fbtbl("Lookup: wbnt error looking up token for deleted crebtor user")
 		}
 
-		if _, _, err := db.AccessTokens().Create(ctx, subject.ID, nil, "n0", creator.ID); err == nil {
-			t.Fatal("Create: want error creating token for deleted creator user")
+		if _, _, err := db.AccessTokens().Crebte(ctx, subject.ID, nil, "n0", crebtor.ID); err == nil {
+			t.Fbtbl("Crebte: wbnt error crebting token for deleted crebtor user")
 		}
 	})
 }
 
 // This test is run in TestAccessTokens
-func testAccessTokens_tokenSHA256Hash(t *testing.T) {
-	testCases := []struct {
-		name      string
+func testAccessTokens_tokenSHA256Hbsh(t *testing.T) {
+	testCbses := []struct {
+		nbme      string
 		token     string
-		wantError bool
+		wbntError bool
 	}{
-		{name: "empty", token: ""},
-		{name: "short", token: "abc123"},
-		{name: "invalid", token: "×", wantError: true},
+		{nbme: "empty", token: ""},
+		{nbme: "short", token: "bbc123"},
+		{nbme: "invblid", token: "×", wbntError: true},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			hash, err := tokenSHA256Hash(tc.token)
-			if tc.wantError {
-				assert.ErrorContains(t, err, "invalid token")
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbsh, err := tokenSHA256Hbsh(tc.token)
+			if tc.wbntError {
+				bssert.ErrorContbins(t, err, "invblid token")
 			} else {
-				assert.NoError(t, err)
-				if len(hash) != 32 {
-					t.Errorf("got %d characters, want 32", len(hash))
+				bssert.NoError(t, err)
+				if len(hbsh) != 32 {
+					t.Errorf("got %d chbrbcters, wbnt 32", len(hbsh))
 				}
 			}
 		})

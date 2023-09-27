@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
@@ -9,96 +9,96 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestInstrumentHandler(_ *testing.T) {
-	h := http.Handler(nil)
-	instrumentHandler(prometheus.DefaultRegisterer, h)
+func TestInstrumentHbndler(_ *testing.T) {
+	h := http.Hbndler(nil)
+	instrumentHbndler(prometheus.DefbultRegisterer, h)
 }
 
 func TestGitHubProxy(t *testing.T) {
-	ch := make(chan struct{})
-	blocking := make(chan struct{})
+	ch := mbke(chbn struct{})
+	blocking := mbke(chbn struct{})
 	p := &githubProxy{client: doerFunc(func(r *http.Request) (*http.Response, error) {
-		switch r.URL.Path {
-		case "/block":
+		switch r.URL.Pbth {
+		cbse "/block":
 			select {
-			case <-ch:
-			default:
+			cbse <-ch:
+			defbult:
 				close(blocking)
 				<-ch
 			}
 		}
 
 		return &http.Response{
-			StatusCode: 200,
-			Header:     make(http.Header),
-			Body:       io.NopCloser(strings.NewReader("body")),
+			StbtusCode: 200,
+			Hebder:     mbke(http.Hebder),
+			Body:       io.NopCloser(strings.NewRebder("body")),
 		}, nil
 	})}
 
 	srv := httptest.NewServer(p)
-	t.Cleanup(srv.Close)
+	t.Clebnup(srv.Close)
 
 	go func() {
 		req, _ := http.NewRequest("GET", srv.URL+"/block", nil)
-		req.Header.Add("Authorization", "user1")
-		http.DefaultClient.Do(req) // blocks
+		req.Hebder.Add("Authorizbtion", "user1")
+		http.DefbultClient.Do(req) // blocks
 	}()
 
 	t.Run("locked", func(t *testing.T) {
 		<-blocking
 
 		req, _ := http.NewRequest("GET", srv.URL+"/ok", nil)
-		req.Header.Add("Authorization", "user1")
+		req.Hebder.Add("Authorizbtion", "user1")
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second)
+		defer cbncel()
 
-		_, err := http.DefaultClient.Do(req.WithContext(ctx))
-		if !errors.Is(err, context.DeadlineExceeded) {
-			t.Fatal(err)
+		_, err := http.DefbultClient.Do(req.WithContext(ctx))
+		if !errors.Is(err, context.DebdlineExceeded) {
+			t.Fbtbl(err)
 		}
 	})
 
 	t.Run("different user", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", srv.URL+"/ok", nil)
 
-		// Different user request can go through
-		req.Header.Set("Authorization", "Bearer user2")
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
+		// Different user request cbn go through
+		req.Hebder.Set("Authorizbtion", "Bebrer user2")
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second)
+		defer cbncel()
 
-		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		resp, err := http.DefbultClient.Do(req.WithContext(ctx))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if resp.StatusCode != 200 {
-			t.Fatalf("want status code 200, got %v", resp.StatusCode)
+		if resp.StbtusCode != 200 {
+			t.Fbtblf("wbnt stbtus code 200, got %v", resp.StbtusCode)
 		}
 	})
 
 	t.Run("unlocked", func(t *testing.T) {
-		// Now the first user's request will finish, we can go through.
+		// Now the first user's request will finish, we cbn go through.
 		close(ch)
 
 		req, _ := http.NewRequest("GET", srv.URL+"/ok", nil)
-		req.Header.Set("Authorization", "Bearer user1")
+		req.Hebder.Set("Authorizbtion", "Bebrer user1")
 
-		ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Second)
+		defer cbncel()
 
-		resp, err := http.DefaultClient.Do(req.WithContext(ctx))
+		resp, err := http.DefbultClient.Do(req.WithContext(ctx))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if resp.StatusCode != 200 {
-			t.Fatalf("want status code 200, got %v", resp.StatusCode)
+		if resp.StbtusCode != 200 {
+			t.Fbtblf("wbnt stbtus code 200, got %v", resp.StbtusCode)
 		}
 	})
 }

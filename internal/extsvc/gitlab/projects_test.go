@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -6,102 +6,102 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
 )
 
-// TestClient_GetProject tests the behavior of GetProject.
+// TestClient_GetProject tests the behbvior of GetProject.
 func TestClient_GetProject(t *testing.T) {
 	mock := mockHTTPResponseBody{
 		responseBody: `
 {
 	"id": 1,
-	"path_with_namespace": "n1/n2/r",
+	"pbth_with_nbmespbce": "n1/n2/r",
 	"description": "d",
 	"forks_count": 1,
-	"star_count": 100,
-	"web_url": "https://gitlab.example.com/n1/n2/r",
-	"http_url_to_repo": "https://gitlab.example.com/n1/n2/r.git",
-	"ssh_url_to_repo": "git@gitlab.example.com:n1/n2/r.git"
+	"stbr_count": 100,
+	"web_url": "https://gitlbb.exbmple.com/n1/n2/r",
+	"http_url_to_repo": "https://gitlbb.exbmple.com/n1/n2/r.git",
+	"ssh_url_to_repo": "git@gitlbb.exbmple.com:n1/n2/r.git"
 }
 `,
 	}
 	c := newTestClient(t)
 	c.httpClient = &mock
 
-	want := Project{
+	wbnt := Project{
 		ForksCount: 1,
-		StarCount:  100,
+		StbrCount:  100,
 		ProjectCommon: ProjectCommon{
 			ID:                1,
-			PathWithNamespace: "n1/n2/r",
+			PbthWithNbmespbce: "n1/n2/r",
 			Description:       "d",
-			WebURL:            "https://gitlab.example.com/n1/n2/r",
-			HTTPURLToRepo:     "https://gitlab.example.com/n1/n2/r.git",
-			SSHURLToRepo:      "git@gitlab.example.com:n1/n2/r.git",
+			WebURL:            "https://gitlbb.exbmple.com/n1/n2/r",
+			HTTPURLToRepo:     "https://gitlbb.exbmple.com/n1/n2/r.git",
+			SSHURLToRepo:      "git@gitlbb.exbmple.com:n1/n2/r.git",
 		},
 	}
 
-	// Test first fetch (cache empty)
-	proj, err := c.GetProject(context.Background(), GetProjectOp{PathWithNamespace: "n1/n2/r"})
+	// Test first fetch (cbche empty)
+	proj, err := c.GetProject(context.Bbckground(), GetProjectOp{PbthWithNbmespbce: "n1/n2/r"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if proj == nil {
 		t.Error("proj == nil")
 	}
 	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to miss cache once", mock.count)
+		t.Errorf("mock.count == %d, expected to miss cbche once", mock.count)
 	}
-	if !reflect.DeepEqual(proj, &want) {
-		t.Errorf("got project %+v, want %+v", proj, &want)
+	if !reflect.DeepEqubl(proj, &wbnt) {
+		t.Errorf("got project %+v, wbnt %+v", proj, &wbnt)
 	}
 
-	// Test that proj is cached (and therefore NOT fetched) from client on second request.
-	proj, err = c.GetProject(context.Background(), GetProjectOp{PathWithNamespace: "n1/n2/r"})
+	// Test thbt proj is cbched (bnd therefore NOT fetched) from client on second request.
+	proj, err = c.GetProject(context.Bbckground(), GetProjectOp{PbthWithNbmespbce: "n1/n2/r"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if proj == nil {
 		t.Error("proj == nil")
 	}
 	if mock.count != 1 {
-		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
+		t.Errorf("mock.count == %d, expected to hit cbche", mock.count)
 	}
-	if !reflect.DeepEqual(proj, &want) {
-		t.Errorf("got project %+v, want %+v", proj, &want)
+	if !reflect.DeepEqubl(proj, &wbnt) {
+		t.Errorf("got project %+v, wbnt %+v", proj, &wbnt)
 	}
 
-	// Test the `NoCache: true` option
-	proj, err = c.GetProject(context.Background(), GetProjectOp{PathWithNamespace: "n1/n2/r", CommonOp: CommonOp{NoCache: true}})
+	// Test the `NoCbche: true` option
+	proj, err = c.GetProject(context.Bbckground(), GetProjectOp{PbthWithNbmespbce: "n1/n2/r", CommonOp: CommonOp{NoCbche: true}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if proj == nil {
 		t.Error("proj == nil")
 	}
 	if mock.count != 2 {
-		t.Errorf("mock.count == %d, expected to hit cache", mock.count)
+		t.Errorf("mock.count == %d, expected to hit cbche", mock.count)
 	}
-	if !reflect.DeepEqual(proj, &want) {
-		t.Errorf("got project %+v, want %+v", proj, &want)
+	if !reflect.DeepEqubl(proj, &wbnt) {
+		t.Errorf("got project %+v, wbnt %+v", proj, &wbnt)
 	}
 }
 
-// TestClient_GetProject_nonexistent tests the behavior of GetProject when called
-// on a project that does not exist.
+// TestClient_GetProject_nonexistent tests the behbvior of GetProject when cblled
+// on b project thbt does not exist.
 func TestClient_GetProject_nonexistent(t *testing.T) {
-	mock := mockHTTPEmptyResponse{http.StatusNotFound}
+	mock := mockHTTPEmptyResponse{http.StbtusNotFound}
 	c := newTestClient(t)
 	c.httpClient = &mock
 
-	proj, err := c.GetProject(context.Background(), GetProjectOp{PathWithNamespace: "doesnt/exist"})
+	proj, err := c.GetProject(context.Bbckground(), GetProjectOp{PbthWithNbmespbce: "doesnt/exist"})
 	if !IsNotFound(err) {
-		t.Errorf("got err == %v, want IsNotFound(err) == true", err)
+		t.Errorf("got err == %v, wbnt IsNotFound(err) == true", err)
 	}
 	if !errcode.IsNotFound(err) {
-		t.Errorf("expected a not found error")
+		t.Errorf("expected b not found error")
 	}
 	if proj != nil {
 		t.Error("proj != nil")
@@ -109,125 +109,125 @@ func TestClient_GetProject_nonexistent(t *testing.T) {
 }
 
 func TestClient_ForkProject(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// We'll grab a project to use in the other tests.
-	project, err := createTestClient(t).GetProject(ctx, GetProjectOp{
-		PathWithNamespace: "sourcegraph/src-cli",
-		CommonOp:          CommonOp{NoCache: true},
+	// We'll grbb b project to use in the other tests.
+	project, err := crebteTestClient(t).GetProject(ctx, GetProjectOp{
+		PbthWithNbmespbce: "sourcegrbph/src-cli",
+		CommonOp:          CommonOp{NoCbche: true},
 	})
-	assert.Nil(t, err)
+	bssert.Nil(t, err)
 
 	t.Run("success", func(t *testing.T) {
-		// For this test to be updated, src-cli must _not_ have been forked into
-		// the user associated with $GITLAB_TOKEN.
+		// For this test to be updbted, src-cli must _not_ hbve been forked into
+		// the user bssocibted with $GITLAB_TOKEN.
 
-		name := "sourcegraph-src-cli"
-		fork, err := createTestClient(t).ForkProject(ctx, project, nil, name)
-		assert.Nil(t, err)
-		assert.NotNil(t, fork)
+		nbme := "sourcegrbph-src-cli"
+		fork, err := crebteTestClient(t).ForkProject(ctx, project, nil, nbme)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, fork)
 
-		assert.Nil(t, err)
-		forkName, err := fork.Name()
-		assert.Nil(t, err)
-		assert.Equal(t, name, forkName)
+		bssert.Nil(t, err)
+		forkNbme, err := fork.Nbme()
+		bssert.Nil(t, err)
+		bssert.Equbl(t, nbme, forkNbme)
 	})
 
-	t.Run("already forked", func(t *testing.T) {
-		// For this test to be updated, src-cli must have been forked into the user
-		// associated with $GITLAB_TOKEN.
-		name := "sourcegraph-src-cli"
-		fork, err := createTestClient(t).ForkProject(ctx, project, nil, name)
-		assert.Nil(t, err)
-		assert.NotNil(t, fork)
+	t.Run("blrebdy forked", func(t *testing.T) {
+		// For this test to be updbted, src-cli must hbve been forked into the user
+		// bssocibted with $GITLAB_TOKEN.
+		nbme := "sourcegrbph-src-cli"
+		fork, err := crebteTestClient(t).ForkProject(ctx, project, nil, nbme)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, fork)
 
-		assert.Nil(t, err)
-		forkName, err := fork.Name()
-		assert.Nil(t, err)
-		assert.Equal(t, name, forkName)
+		bssert.Nil(t, err)
+		forkNbme, err := fork.Nbme()
+		bssert.Nil(t, err)
+		bssert.Equbl(t, nbme, forkNbme)
 	})
 
 	t.Run("error", func(t *testing.T) {
-		name := "sourcegraph-src-cli"
-		mock := mockHTTPEmptyResponse{http.StatusNotFound}
+		nbme := "sourcegrbph-src-cli"
+		mock := mockHTTPEmptyResponse{http.StbtusNotFound}
 		c := newTestClient(t)
 		c.httpClient = &mock
 
-		fork, err := c.ForkProject(ctx, project, nil, name)
-		assert.Nil(t, fork)
-		assert.NotNil(t, err)
+		fork, err := c.ForkProject(ctx, project, nil, nbme)
+		bssert.Nil(t, fork)
+		bssert.NotNil(t, err)
 	})
 }
 
-func TestProjectCommon_Name(t *testing.T) {
+func TestProjectCommon_Nbme(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for name, pc := range map[string]ProjectCommon{
-			"empty":      {PathWithNamespace: ""},
-			"no slashes": {PathWithNamespace: "foo"},
+		for nbme, pc := rbnge mbp[string]ProjectCommon{
+			"empty":      {PbthWithNbmespbce: ""},
+			"no slbshes": {PbthWithNbmespbce: "foo"},
 		} {
-			t.Run(name, func(t *testing.T) {
-				name, err := pc.Name()
-				assert.Equal(t, "", name)
-				assert.NotNil(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				nbme, err := pc.Nbme()
+				bssert.Equbl(t, "", nbme)
+				bssert.NotNil(t, err)
 			})
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			pc   ProjectCommon
-			want string
+			wbnt string
 		}{
-			"single namespace": {
-				pc:   ProjectCommon{PathWithNamespace: "foo/bar"},
-				want: "bar",
+			"single nbmespbce": {
+				pc:   ProjectCommon{PbthWithNbmespbce: "foo/bbr"},
+				wbnt: "bbr",
 			},
-			"nested namespaces": {
-				pc:   ProjectCommon{PathWithNamespace: "foo/bar/quux/baz"},
-				want: "baz",
+			"nested nbmespbces": {
+				pc:   ProjectCommon{PbthWithNbmespbce: "foo/bbr/quux/bbz"},
+				wbnt: "bbz",
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				name, err := tc.pc.Name()
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, name)
+			t.Run(nbme, func(t *testing.T) {
+				nbme, err := tc.pc.Nbme()
+				bssert.Nil(t, err)
+				bssert.Equbl(t, tc.wbnt, nbme)
 			})
 		}
 	})
 }
 
-func TestProjectCommon_Namespace(t *testing.T) {
+func TestProjectCommon_Nbmespbce(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for name, pc := range map[string]ProjectCommon{
-			"empty":      {PathWithNamespace: ""},
-			"no slashes": {PathWithNamespace: "foo"},
+		for nbme, pc := rbnge mbp[string]ProjectCommon{
+			"empty":      {PbthWithNbmespbce: ""},
+			"no slbshes": {PbthWithNbmespbce: "foo"},
 		} {
-			t.Run(name, func(t *testing.T) {
-				ns, err := pc.Namespace()
-				assert.Equal(t, "", ns)
-				assert.NotNil(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				ns, err := pc.Nbmespbce()
+				bssert.Equbl(t, "", ns)
+				bssert.NotNil(t, err)
 			})
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			pc   ProjectCommon
-			want string
+			wbnt string
 		}{
-			"single namespace": {
-				pc:   ProjectCommon{PathWithNamespace: "foo/bar"},
-				want: "foo",
+			"single nbmespbce": {
+				pc:   ProjectCommon{PbthWithNbmespbce: "foo/bbr"},
+				wbnt: "foo",
 			},
-			"nested namespaces": {
-				pc:   ProjectCommon{PathWithNamespace: "foo/bar/quux/baz"},
-				want: "foo/bar/quux",
+			"nested nbmespbces": {
+				pc:   ProjectCommon{PbthWithNbmespbce: "foo/bbr/quux/bbz"},
+				wbnt: "foo/bbr/quux",
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				ns, err := tc.pc.Namespace()
-				assert.Nil(t, err)
-				assert.Equal(t, tc.want, ns)
+			t.Run(nbme, func(t *testing.T) {
+				ns, err := tc.pc.Nbmespbce()
+				bssert.Nil(t, err)
+				bssert.Equbl(t, tc.wbnt, ns)
 			})
 		}
 	})

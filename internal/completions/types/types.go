@@ -1,130 +1,130 @@
-package types
+pbckbge types
 
 import (
 	"context"
 	"fmt"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const HUMAN_MESSAGE_SPEAKER = "human"
-const ASISSTANT_MESSAGE_SPEAKER = "assistant"
+const HUMAN_MESSAGE_SPEAKER = "humbn"
+const ASISSTANT_MESSAGE_SPEAKER = "bssistbnt"
 
-type Message struct {
-	Speaker string `json:"speaker"`
+type Messbge struct {
+	Spebker string `json:"spebker"`
 	Text    string `json:"text"`
 }
 
-func (m Message) IsValidSpeaker() bool {
-	return m.Speaker == HUMAN_MESSAGE_SPEAKER || m.Speaker == ASISSTANT_MESSAGE_SPEAKER
+func (m Messbge) IsVblidSpebker() bool {
+	return m.Spebker == HUMAN_MESSAGE_SPEAKER || m.Spebker == ASISSTANT_MESSAGE_SPEAKER
 }
 
-func (m Message) GetPrompt(humanPromptPrefix, assistantPromptPrefix string) (string, error) {
-	var prefix string
-	switch m.Speaker {
-	case HUMAN_MESSAGE_SPEAKER:
-		prefix = humanPromptPrefix
-	case ASISSTANT_MESSAGE_SPEAKER:
-		prefix = assistantPromptPrefix
-	default:
-		return "", errors.Newf("expected message speaker to be 'human' or 'assistant', got %s", m.Speaker)
+func (m Messbge) GetPrompt(humbnPromptPrefix, bssistbntPromptPrefix string) (string, error) {
+	vbr prefix string
+	switch m.Spebker {
+	cbse HUMAN_MESSAGE_SPEAKER:
+		prefix = humbnPromptPrefix
+	cbse ASISSTANT_MESSAGE_SPEAKER:
+		prefix = bssistbntPromptPrefix
+	defbult:
+		return "", errors.Newf("expected messbge spebker to be 'humbn' or 'bssistbnt', got %s", m.Spebker)
 	}
 
 	if len(m.Text) == 0 {
-		// Important: no trailing space (affects output quality)
+		// Importbnt: no trbiling spbce (bffects output qublity)
 		return prefix, nil
 	}
 	return fmt.Sprintf("%s %s", prefix, m.Text), nil
 }
 
-type CodyCompletionRequestParameters struct {
-	CompletionRequestParameters
+type CodyCompletionRequestPbrbmeters struct {
+	CompletionRequestPbrbmeters
 
-	// When Fast is true, then it is used as a hint to prefer a model
-	// that is faster (but probably "dumber").
-	Fast bool
+	// When Fbst is true, then it is used bs b hint to prefer b model
+	// thbt is fbster (but probbbly "dumber").
+	Fbst bool
 }
 
-type CompletionRequestParameters struct {
-	// Prompt exists only for backwards compatibility. Do not use it in new
-	// implementations. It will be removed once we are reasonably sure 99%
-	// of VSCode extension installations are upgraded to a new Cody version.
+type CompletionRequestPbrbmeters struct {
+	// Prompt exists only for bbckwbrds compbtibility. Do not use it in new
+	// implementbtions. It will be removed once we bre rebsonbbly sure 99%
+	// of VSCode extension instbllbtions bre upgrbded to b new Cody version.
 	Prompt            string    `json:"prompt"`
-	Messages          []Message `json:"messages"`
-	MaxTokensToSample int       `json:"maxTokensToSample,omitempty"`
-	Temperature       float32   `json:"temperature,omitempty"`
+	Messbges          []Messbge `json:"messbges"`
+	MbxTokensToSbmple int       `json:"mbxTokensToSbmple,omitempty"`
+	Temperbture       flobt32   `json:"temperbture,omitempty"`
 	StopSequences     []string  `json:"stopSequences,omitempty"`
 	TopK              int       `json:"topK,omitempty"`
-	TopP              float32   `json:"topP,omitempty"`
+	TopP              flobt32   `json:"topP,omitempty"`
 	Model             string    `json:"model,omitempty"`
-	Stream            *bool     `json:"stream,omitempty"`
+	Strebm            *bool     `json:"strebm,omitempty"`
 }
 
-// IsStream returns whether a streaming response is requested. For backwards
-// compatibility reasons, we are using a pointer to a bool instead of a bool
-// to default to true in case the value is not explicity provided.
-func (p CompletionRequestParameters) IsStream(feature CompletionsFeature) bool {
-	if p.Stream == nil {
-		return defaultStreamMode(feature)
+// IsStrebm returns whether b strebming response is requested. For bbckwbrds
+// compbtibility rebsons, we bre using b pointer to b bool instebd of b bool
+// to defbult to true in cbse the vblue is not explicity provided.
+func (p CompletionRequestPbrbmeters) IsStrebm(febture CompletionsFebture) bool {
+	if p.Strebm == nil {
+		return defbultStrebmMode(febture)
 	}
-	return *p.Stream
+	return *p.Strebm
 }
 
-func defaultStreamMode(feature CompletionsFeature) bool {
-	switch feature {
-	case CompletionsFeatureChat:
+func defbultStrebmMode(febture CompletionsFebture) bool {
+	switch febture {
+	cbse CompletionsFebtureChbt:
 		return true
-	case CompletionsFeatureCode:
-		return false
-	default:
-		// Safeguard, should be never reached.
+	cbse CompletionsFebtureCode:
+		return fblse
+	defbult:
+		// Sbfegubrd, should be never rebched.
 		return true
 	}
 }
 
-func (p *CompletionRequestParameters) Attrs(feature CompletionsFeature) []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.Int("promptLength", len(p.Prompt)),
-		attribute.Int("numMessages", len(p.Messages)),
-		attribute.Int("maxTokensToSample", p.MaxTokensToSample),
-		attribute.Float64("temperature", float64(p.Temperature)),
-		attribute.Int("topK", p.TopK),
-		attribute.Float64("topP", float64(p.TopP)),
-		attribute.String("model", p.Model),
-		attribute.Bool("stream", p.IsStream(feature)),
+func (p *CompletionRequestPbrbmeters) Attrs(febture CompletionsFebture) []bttribute.KeyVblue {
+	return []bttribute.KeyVblue{
+		bttribute.Int("promptLength", len(p.Prompt)),
+		bttribute.Int("numMessbges", len(p.Messbges)),
+		bttribute.Int("mbxTokensToSbmple", p.MbxTokensToSbmple),
+		bttribute.Flobt64("temperbture", flobt64(p.Temperbture)),
+		bttribute.Int("topK", p.TopK),
+		bttribute.Flobt64("topP", flobt64(p.TopP)),
+		bttribute.String("model", p.Model),
+		bttribute.Bool("strebm", p.IsStrebm(febture)),
 	}
 }
 
 type CompletionResponse struct {
 	Completion string `json:"completion"`
-	StopReason string `json:"stopReason"`
+	StopRebson string `json:"stopRebson"`
 }
 
 type SendCompletionEvent func(event CompletionResponse) error
 
-type CompletionsFeature string
+type CompletionsFebture string
 
 const (
-	CompletionsFeatureChat CompletionsFeature = "chat_completions"
-	CompletionsFeatureCode CompletionsFeature = "code_completions"
+	CompletionsFebtureChbt CompletionsFebture = "chbt_completions"
+	CompletionsFebtureCode CompletionsFebture = "code_completions"
 )
 
-func (b CompletionsFeature) IsValid() bool {
+func (b CompletionsFebture) IsVblid() bool {
 	switch b {
-	case CompletionsFeatureChat,
-		CompletionsFeatureCode:
+	cbse CompletionsFebtureChbt,
+		CompletionsFebtureCode:
 		return true
 	}
-	return false
+	return fblse
 }
 
-type CompletionsClient interface {
-	// Stream executions a completions request, streaming results to the callback.
-	// Callers should check for ErrStatusNotOK and handle the error appropriately.
-	Stream(context.Context, CompletionsFeature, CompletionRequestParameters, SendCompletionEvent) error
-	// Complete executions a completions request until done. Callers should check
-	// for ErrStatusNotOK and handle the error appropriately.
-	Complete(context.Context, CompletionsFeature, CompletionRequestParameters) (*CompletionResponse, error)
+type CompletionsClient interfbce {
+	// Strebm executions b completions request, strebming results to the cbllbbck.
+	// Cbllers should check for ErrStbtusNotOK bnd hbndle the error bppropribtely.
+	Strebm(context.Context, CompletionsFebture, CompletionRequestPbrbmeters, SendCompletionEvent) error
+	// Complete executions b completions request until done. Cbllers should check
+	// for ErrStbtusNotOK bnd hbndle the error bppropribtely.
+	Complete(context.Context, CompletionsFebture, CompletionRequestPbrbmeters) (*CompletionResponse, error)
 }

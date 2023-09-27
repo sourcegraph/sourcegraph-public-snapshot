@@ -1,101 +1,101 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
 type TestSpecOpts struct {
 	ID        int64
 	User      int32
-	Repo      api.RepoID
-	BatchSpec int64
+	Repo      bpi.RepoID
+	BbtchSpec int64
 
-	// If this is non-blank, the changesetSpec will be an import/track spec for
-	// the changeset with the given ExternalID in the given repo.
-	ExternalID string
+	// If this is non-blbnk, the chbngesetSpec will be bn import/trbck spec for
+	// the chbngeset with the given ExternblID in the given repo.
+	ExternblID string
 
-	// If this is set, the changesetSpec will be a "create commit on this
-	// branch" changeset spec.
-	HeadRef string
+	// If this is set, the chbngesetSpec will be b "crebte commit on this
+	// brbnch" chbngeset spec.
+	HebdRef string
 
-	// If this is set along with headRef, the changesetSpec will have Published
+	// If this is set blong with hebdRef, the chbngesetSpec will hbve Published
 	// set.
-	Published any
+	Published bny
 
 	Title             string
 	Body              string
-	CommitMessage     string
+	CommitMessbge     string
 	CommitDiff        []byte
-	CommitAuthorEmail string
-	CommitAuthorName  string
+	CommitAuthorEmbil string
+	CommitAuthorNbme  string
 
-	BaseRev string
-	BaseRef string
+	BbseRev string
+	BbseRef string
 
-	Typ btypes.ChangesetSpecType
+	Typ btypes.ChbngesetSpecType
 }
 
-var TestChangsetSpecDiffStat = &diff.Stat{Added: 15, Deleted: 7}
+vbr TestChbngsetSpecDiffStbt = &diff.Stbt{Added: 15, Deleted: 7}
 
-func BuildChangesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChangesetSpec {
+func BuildChbngesetSpec(t *testing.T, opts TestSpecOpts) *btypes.ChbngesetSpec {
 	t.Helper()
 
-	published := batches.PublishedValue{Val: opts.Published}
-	if !published.Valid() {
-		t.Fatalf("invalid value for published passed, got %v (%T)", opts.Published, opts.Published)
+	published := bbtches.PublishedVblue{Vbl: opts.Published}
+	if !published.Vblid() {
+		t.Fbtblf("invblid vblue for published pbssed, got %v (%T)", opts.Published, opts.Published)
 	}
 
 	if opts.Typ == "" {
-		t.Fatal("empty typ on changeset spec in test helper")
+		t.Fbtbl("empty typ on chbngeset spec in test helper")
 	}
 
-	spec := &btypes.ChangesetSpec{
+	spec := &btypes.ChbngesetSpec{
 		ID:                opts.ID,
 		UserID:            opts.User,
-		BaseRepoID:        opts.Repo,
-		BatchSpecID:       opts.BatchSpec,
-		BaseRev:           opts.BaseRev,
-		BaseRef:           opts.BaseRef,
-		ExternalID:        opts.ExternalID,
-		HeadRef:           opts.HeadRef,
+		BbseRepoID:        opts.Repo,
+		BbtchSpecID:       opts.BbtchSpec,
+		BbseRev:           opts.BbseRev,
+		BbseRef:           opts.BbseRef,
+		ExternblID:        opts.ExternblID,
+		HebdRef:           opts.HebdRef,
 		Published:         published,
 		Title:             opts.Title,
 		Body:              opts.Body,
-		CommitMessage:     opts.CommitMessage,
+		CommitMessbge:     opts.CommitMessbge,
 		Diff:              opts.CommitDiff,
-		CommitAuthorEmail: opts.CommitAuthorEmail,
-		CommitAuthorName:  opts.CommitAuthorName,
-		DiffStatAdded:     TestChangsetSpecDiffStat.Added,
-		DiffStatDeleted:   TestChangsetSpecDiffStat.Deleted,
+		CommitAuthorEmbil: opts.CommitAuthorEmbil,
+		CommitAuthorNbme:  opts.CommitAuthorNbme,
+		DiffStbtAdded:     TestChbngsetSpecDiffStbt.Added,
+		DiffStbtDeleted:   TestChbngsetSpecDiffStbt.Deleted,
 		Type:              opts.Typ,
 	}
 
 	return spec
 }
 
-type CreateChangesetSpecer interface {
-	CreateChangesetSpec(ctx context.Context, changesetSpecs ...*btypes.ChangesetSpec) error
+type CrebteChbngesetSpecer interfbce {
+	CrebteChbngesetSpec(ctx context.Context, chbngesetSpecs ...*btypes.ChbngesetSpec) error
 }
 
-func CreateChangesetSpec(
+func CrebteChbngesetSpec(
 	t *testing.T,
 	ctx context.Context,
-	store CreateChangesetSpecer,
+	store CrebteChbngesetSpecer,
 	opts TestSpecOpts,
-) *btypes.ChangesetSpec {
+) *btypes.ChbngesetSpec {
 	t.Helper()
 
-	spec := BuildChangesetSpec(t, opts)
+	spec := BuildChbngesetSpec(t, opts)
 
-	if err := store.CreateChangesetSpec(ctx, spec); err != nil {
-		t.Fatal(err)
+	if err := store.CrebteChbngesetSpec(ctx, spec); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return spec

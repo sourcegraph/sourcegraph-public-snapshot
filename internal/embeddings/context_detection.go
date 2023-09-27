@@ -1,50 +1,50 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-var noContextMessagesRegexps = []*lazyregexp.Regexp{
+vbr noContextMessbgesRegexps = []*lbzyregexp.Regexp{
 	// Common greetings
-	lazyregexp.New(`^(hello|hey|hi|what['’]s up|how's it going)( Cody)?[!\.\?]?$`),
+	lbzyregexp.New(`^(hello|hey|hi|whbt['’]s up|how's it going)( Cody)?[!\.\?]?$`),
 
-	// Clear reference to previous message
-	lazyregexp.New(`(previous|above)\s+(message|code|text)`),
-	lazyregexp.New(
-		`(translate|convert|change|for|make|refactor|rewrite|ignore|describe|explain|fix|try|show)\s+(that|this|above|previous|it|again)`,
+	// Clebr reference to previous messbge
+	lbzyregexp.New(`(previous|bbove)\s+(messbge|code|text)`),
+	lbzyregexp.New(
+		`(trbnslbte|convert|chbnge|for|mbke|refbctor|rewrite|ignore|describe|explbin|fix|try|show)\s+(thbt|this|bbove|previous|it|bgbin)`,
 	),
-	lazyregexp.New(`i don['’]t understand`),
-	lazyregexp.New(`what you just said`),
-	lazyregexp.New(`(explain|describe).*in more detail`),
+	lbzyregexp.New(`i don['’]t understbnd`),
+	lbzyregexp.New(`whbt you just sbid`),
+	lbzyregexp.New(`(explbin|describe).*in more detbil`),
 
-	// Correcting previous message
-	lazyregexp.New(
-		`(this|that).*?\s+(is|seems|looks)\s+(wrong|incorrect|bad|good)`,
+	// Correcting previous messbge
+	lbzyregexp.New(
+		`(this|thbt).*?\s+(is|seems|looks)\s+(wrong|incorrect|bbd|good)`,
 	),
-	lazyregexp.New(
-		`(this|that).*?\s+(does not|doesn't work)`,
+	lbzyregexp.New(
+		`(this|thbt).*?\s+(does not|doesn't work)`,
 	),
-	lazyregexp.New(`(is not|isn['’]t) (correct|right)`),
-	lazyregexp.New(`i don['’]t think that['’]s (correct|right)`),
-	lazyregexp.New(`(does not|doesn['’]t) (look|seem) (correct|right)`),
-	lazyregexp.New(`are you (sure|certain)`),
-	lazyregexp.New(`you're (incorrect|not right|wrong)`),
+	lbzyregexp.New(`(is not|isn['’]t) (correct|right)`),
+	lbzyregexp.New(`i don['’]t think thbt['’]s (correct|right)`),
+	lbzyregexp.New(`(does not|doesn['’]t) (look|seem) (correct|right)`),
+	lbzyregexp.New(`bre you (sure|certbin)`),
+	lbzyregexp.New(`you're (incorrect|not right|wrong)`),
 
-	// Clearly moving on to new topic
-	lazyregexp.New(`^(yes|no|correct|wrong|nope|yep|now|cool)(\s|.|,|!)`),
+	// Clebrly moving on to new topic
+	lbzyregexp.New(`^(yes|no|correct|wrong|nope|yep|now|cool)(\s|.|,|!)`),
 
-	// User provided their own code context in the form of a Markdown code block.
-	lazyregexp.New("```"),
+	// User provided their own code context in the form of b Mbrkdown code block.
+	lbzyregexp.New("```"),
 }
 
-func IsContextRequiredForChatQuery(query string) bool {
-	queryTrimmed := strings.TrimSpace(query)
+func IsContextRequiredForChbtQuery(query string) bool {
+	queryTrimmed := strings.TrimSpbce(query)
 	queryLower := strings.ToLower(queryTrimmed)
-	for _, regexp := range noContextMessagesRegexps {
-		if regexp.MatchString(queryLower) {
-			return false
+	for _, regexp := rbnge noContextMessbgesRegexps {
+		if regexp.MbtchString(queryLower) {
+			return fblse
 		}
 	}
 	return true

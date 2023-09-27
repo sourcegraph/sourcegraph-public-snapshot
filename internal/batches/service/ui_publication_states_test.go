@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"strconv"
@@ -6,125 +6,125 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-func TestUiPublicationStates_Add(t *testing.T) {
-	var ps UiPublicationStates
+func TestUiPublicbtionStbtes_Add(t *testing.T) {
+	vbr ps UiPublicbtionStbtes
 
-	// Add a single publication state, ensuring that ps.rand is initialised.
-	if err := ps.Add("foo", batcheslib.PublishedValue{Val: true}); err != nil {
+	// Add b single publicbtion stbte, ensuring thbt ps.rbnd is initiblised.
+	if err := ps.Add("foo", bbtcheslib.PublishedVblue{Vbl: true}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if len(ps.rand) != 1 {
-		t.Errorf("unexpected number of elements: %d", len(ps.rand))
+	if len(ps.rbnd) != 1 {
+		t.Errorf("unexpected number of elements: %d", len(ps.rbnd))
 	}
 
-	// Add another publication state.
-	if err := ps.Add("bar", batcheslib.PublishedValue{Val: true}); err != nil {
+	// Add bnother publicbtion stbte.
+	if err := ps.Add("bbr", bbtcheslib.PublishedVblue{Vbl: true}); err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if len(ps.rand) != 2 {
-		t.Errorf("unexpected number of elements: %d", len(ps.rand))
+	if len(ps.rbnd) != 2 {
+		t.Errorf("unexpected number of elements: %d", len(ps.rbnd))
 	}
 
-	// Try to add a duplicate publication state.
-	if err := ps.Add("bar", batcheslib.PublishedValue{Val: true}); err == nil {
+	// Try to bdd b duplicbte publicbtion stbte.
+	if err := ps.Add("bbr", bbtcheslib.PublishedVblue{Vbl: true}); err == nil {
 		t.Error("unexpected nil error")
 	}
-	if len(ps.rand) != 2 {
-		t.Errorf("unexpected number of elements: %d", len(ps.rand))
+	if len(ps.rbnd) != 2 {
+		t.Errorf("unexpected number of elements: %d", len(ps.rbnd))
 	}
 }
 
-func TestUiPublicationStates_get(t *testing.T) {
-	var ps UiPublicationStates
+func TestUiPublicbtionStbtes_get(t *testing.T) {
+	vbr ps UiPublicbtionStbtes
 
-	// Verify that an uninitialised UiPublicationStates can have get() called
-	// without panicking.
+	// Verify thbt bn uninitiblised UiPublicbtionStbtes cbn hbve get() cblled
+	// without pbnicking.
 	ps.get(0)
 
-	ps.id = map[int64]*btypes.ChangesetUiPublicationState{
-		1: &btypes.ChangesetUiPublicationStateDraft,
-		2: &btypes.ChangesetUiPublicationStateUnpublished,
+	ps.id = mbp[int64]*btypes.ChbngesetUiPublicbtionStbte{
+		1: &btypes.ChbngesetUiPublicbtionStbteDrbft,
+		2: &btypes.ChbngesetUiPublicbtionStbteUnpublished,
 		3: nil,
 	}
 
-	for id, want := range map[int64]*btypes.ChangesetUiPublicationState{
-		1: &btypes.ChangesetUiPublicationStateDraft,
-		2: &btypes.ChangesetUiPublicationStateUnpublished,
+	for id, wbnt := rbnge mbp[int64]*btypes.ChbngesetUiPublicbtionStbte{
+		1: &btypes.ChbngesetUiPublicbtionStbteDrbft,
+		2: &btypes.ChbngesetUiPublicbtionStbteUnpublished,
 		3: nil,
 		4: nil,
 	} {
-		t.Run(strconv.FormatInt(id, 10), func(t *testing.T) {
-			if have := ps.get(id); have != want {
-				t.Errorf("unexpected result: have=%v want=%v", have, want)
+		t.Run(strconv.FormbtInt(id, 10), func(t *testing.T) {
+			if hbve := ps.get(id); hbve != wbnt {
+				t.Errorf("unexpected result: hbve=%v wbnt=%v", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
-	var (
-		changesetUI = &btypes.ChangesetSpec{
+func TestUiPublicbtionStbtes_prepbreAndVblidbte(t *testing.T) {
+	vbr (
+		chbngesetUI = &btypes.ChbngesetSpec{
 			ID:        1,
-			RandID:    "1",
-			Published: batcheslib.PublishedValue{Val: nil},
-			Type:      btypes.ChangesetSpecTypeBranch,
+			RbndID:    "1",
+			Published: bbtcheslib.PublishedVblue{Vbl: nil},
+			Type:      btypes.ChbngesetSpecTypeBrbnch,
 		}
-		changesetPublished = &btypes.ChangesetSpec{
+		chbngesetPublished = &btypes.ChbngesetSpec{
 			ID:        2,
-			RandID:    "2",
-			Published: batcheslib.PublishedValue{Val: true},
-			Type:      btypes.ChangesetSpecTypeBranch,
+			RbndID:    "2",
+			Published: bbtcheslib.PublishedVblue{Vbl: true},
+			Type:      btypes.ChbngesetSpecTypeBrbnch,
 		}
-		changesetUnwired = &btypes.ChangesetSpec{
+		chbngesetUnwired = &btypes.ChbngesetSpec{
 			ID:        3,
-			RandID:    "3",
-			Published: batcheslib.PublishedValue{Val: true},
-			Type:      btypes.ChangesetSpecTypeBranch,
+			RbndID:    "3",
+			Published: bbtcheslib.PublishedVblue{Vbl: true},
+			Type:      btypes.ChbngesetSpecTypeBrbnch,
 		}
 
-		mappings = btypes.RewirerMappings{
+		mbppings = btypes.RewirerMbppings{
 			{
-				// This should be ignored, since it has a zero ChangesetSpecID.
-				ChangesetSpecID: 0,
-				ChangesetSpec:   changesetUnwired,
+				// This should be ignored, since it hbs b zero ChbngesetSpecID.
+				ChbngesetSpecID: 0,
+				ChbngesetSpec:   chbngesetUnwired,
 			},
 			{
-				ChangesetSpecID: 1,
-				ChangesetSpec:   changesetUI,
+				ChbngesetSpecID: 1,
+				ChbngesetSpec:   chbngesetUI,
 			},
 			{
-				ChangesetSpecID: 2,
-				ChangesetSpec:   changesetPublished,
+				ChbngesetSpecID: 2,
+				ChbngesetSpec:   chbngesetPublished,
 			},
 		}
 	)
 
 	t.Run("errors", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			changesetUIs map[string]batcheslib.PublishedValue
+		for nbme, tc := rbnge mbp[string]struct {
+			chbngesetUIs mbp[string]bbtcheslib.PublishedVblue
 		}{
-			"spec not in mappings": {
-				changesetUIs: map[string]batcheslib.PublishedValue{
-					changesetUnwired.RandID: {Val: true},
+			"spec not in mbppings": {
+				chbngesetUIs: mbp[string]bbtcheslib.PublishedVblue{
+					chbngesetUnwired.RbndID: {Vbl: true},
 				},
 			},
 			"spec with published field": {
-				changesetUIs: map[string]batcheslib.PublishedValue{
-					changesetPublished.RandID: {Val: true},
+				chbngesetUIs: mbp[string]bbtcheslib.PublishedVblue{
+					chbngesetPublished.RbndID: {Vbl: true},
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var ps UiPublicationStates
-				for rid, pv := range tc.changesetUIs {
+			t.Run(nbme, func(t *testing.T) {
+				vbr ps UiPublicbtionStbtes
+				for rid, pv := rbnge tc.chbngesetUIs {
 					ps.Add(rid, pv)
 				}
 
-				if err := ps.prepareAndValidate(mappings); err == nil {
+				if err := ps.prepbreAndVblidbte(mbppings); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -132,32 +132,32 @@ func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		var ps UiPublicationStates
+		vbr ps UiPublicbtionStbtes
 
-		ps.Add(changesetUI.RandID, batcheslib.PublishedValue{Val: true})
-		if err := ps.prepareAndValidate(mappings); err != nil {
+		ps.Add(chbngesetUI.RbndID, bbtcheslib.PublishedVblue{Vbl: true})
+		if err := ps.prepbreAndVblidbte(mbppings); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		if len(ps.rand) != 0 {
-			t.Errorf("unexpected elements remaining in ps.rand: %+v", ps.rand)
+		if len(ps.rbnd) != 0 {
+			t.Errorf("unexpected elements rembining in ps.rbnd: %+v", ps.rbnd)
 		}
 
-		want := map[int64]*btypes.ChangesetUiPublicationState{
-			changesetUI.ID: &btypes.ChangesetUiPublicationStatePublished,
+		wbnt := mbp[int64]*btypes.ChbngesetUiPublicbtionStbte{
+			chbngesetUI.ID: &btypes.ChbngesetUiPublicbtionStbtePublished,
 		}
-		if diff := cmp.Diff(want, ps.id); diff != "" {
-			t.Errorf("unexpected ps.id (-want +have):\n%s", diff)
+		if diff := cmp.Diff(wbnt, ps.id); diff != "" {
+			t.Errorf("unexpected ps.id (-wbnt +hbve):\n%s", diff)
 		}
 	})
 }
 
-func TestUiPublicationStates_prepareEmpty(t *testing.T) {
-	for name, ps := range map[string]UiPublicationStates{
+func TestUiPublicbtionStbtes_prepbreEmpty(t *testing.T) {
+	for nbme, ps := rbnge mbp[string]UiPublicbtionStbtes{
 		"nil":   {},
-		"empty": {rand: map[string]batcheslib.PublishedValue{}},
+		"empty": {rbnd: mbp[string]bbtcheslib.PublishedVblue{}},
 	} {
-		t.Run(name, func(t *testing.T) {
-			if err := ps.prepareAndValidate(btypes.RewirerMappings{}); err != nil {
+		t.Run(nbme, func(t *testing.T) {
+			if err := ps.prepbreAndVblidbte(btypes.RewirerMbppings{}); err != nil {
 				t.Errorf("unexpected error: %v", err)
 			}
 		})

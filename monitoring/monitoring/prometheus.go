@@ -1,122 +1,122 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/prometheus/common/model"
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/lbbels"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/promql"
 )
 
 const (
-	alertRulesFileSuffix = "_alert_rules.yml"
+	blertRulesFileSuffix = "_blert_rules.yml"
 )
 
-var defaultRuleEvaluationInterval = model.Duration(30 * time.Second)
+vbr defbultRuleEvblubtionIntervbl = model.Durbtion(30 * time.Second)
 
-// prometheusAlertName creates an alertname that is unique given the combination of parameters
-func prometheusAlertName(level, service, name string) string {
-	return fmt.Sprintf("%s_%s_%s", level, service, name)
+// prometheusAlertNbme crebtes bn blertnbme thbt is unique given the combinbtion of pbrbmeters
+func prometheusAlertNbme(level, service, nbme string) string {
+	return fmt.Sprintf("%s_%s_%s", level, service, nbme)
 }
 
-// PrometheusRule is a subset of a Prometheus recording or alert rule definition.
+// PrometheusRule is b subset of b Prometheus recording or blert rule definition.
 type PrometheusRule struct {
 	// either Record or Alert
-	Record string `yaml:",omitempty" json:"record,omitempty"` // https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
-	Alert  string `yaml:",omitempty" json:"alert,omitempty"`  // https://prometheus.io/docs/prometheus/latest/configuration/alerting_rules/
+	Record string `ybml:",omitempty" json:"record,omitempty"` // https://prometheus.io/docs/prometheus/lbtest/configurbtion/recording_rules/
+	Alert  string `ybml:",omitempty" json:"blert,omitempty"`  // https://prometheus.io/docs/prometheus/lbtest/configurbtion/blerting_rules/
 
-	Labels map[string]string `yaml:",omitempty" json:"labels,omitempty"`
+	Lbbels mbp[string]string `ybml:",omitempty" json:"lbbels,omitempty"`
 	Expr   string            `json:"expr,omitempty"`
 
 	// for Alert only
-	For *model.Duration `yaml:",omitempty" json:"for,omitempty"`
+	For *model.Durbtion `ybml:",omitempty" json:"for,omitempty"`
 }
 
-func (r *PrometheusRule) validate() error {
+func (r *PrometheusRule) vblidbte() error {
 	if r.Record != "" && r.Alert != "" {
-		return errors.Errorf("promRule cannot be both a record (%q) and an alert (%q)", r.Record, r.Alert)
+		return errors.Errorf("promRule cbnnot be both b record (%q) bnd bn blert (%q)", r.Record, r.Alert)
 	}
 	if r.Alert == "" && r.For != nil {
-		return errors.Errorf("promRule can only have a 'for' (%q) if it is an alert", r.For.String())
+		return errors.Errorf("promRule cbn only hbve b 'for' (%q) if it is bn blert", r.For.String())
 	}
 	return nil
 }
 
-// PrometheusRules represents a Prometheus recording rules file (which we use for defining our alerts)
+// PrometheusRules represents b Prometheus recording rules file (which we use for defining our blerts)
 // see:
 //
-// https://prometheus.io/docs/prometheus/latest/configuration/recording_rules/
+// https://prometheus.io/docs/prometheus/lbtest/configurbtion/recording_rules/
 type PrometheusRules struct {
 	Groups []PrometheusRuleGroup `json:"groups"`
 }
 
 type PrometheusRuleGroup struct {
-	Name     string           `json:"name"`
+	Nbme     string           `json:"nbme"`
 	Rules    []PrometheusRule `json:"rules"`
-	Interval *model.Duration  `json:"interval"`
+	Intervbl *model.Durbtion  `json:"intervbl"`
 }
 
-func newPrometheusRuleGroup(name string) PrometheusRuleGroup {
-	return PrometheusRuleGroup{Name: name, Interval: &defaultRuleEvaluationInterval}
+func newPrometheusRuleGroup(nbme string) PrometheusRuleGroup {
+	return PrometheusRuleGroup{Nbme: nbme, Intervbl: &defbultRuleEvblubtionIntervbl}
 }
 
-func (g *PrometheusRuleGroup) validate() error {
-	if g.Name == "" {
-		return errors.New("PrometheusRuleGroup requires name")
+func (g *PrometheusRuleGroup) vblidbte() error {
+	if g.Nbme == "" {
+		return errors.New("PrometheusRuleGroup requires nbme")
 	}
-	if g.Interval == nil {
-		return errors.New("PrometheusRuleGroup requires evaluation interval")
+	if g.Intervbl == nil {
+		return errors.New("PrometheusRuleGroup requires evblubtion intervbl")
 	}
-	for _, r := range g.Rules {
-		if err := r.validate(); err != nil {
-			return errors.Errorf("PrometheusRuleGroup has invalid rule: %w", err)
+	for _, r := rbnge g.Rules {
+		if err := r.vblidbte(); err != nil {
+			return errors.Errorf("PrometheusRuleGroup hbs invblid rule: %w", err)
 		}
 	}
 	return nil
 }
 
-func (g *PrometheusRuleGroup) appendRow(alertQuery string, labels map[string]string, duration time.Duration) {
-	labels["alert_type"] = "builtin" // indicate alert is generated
-	var forDuration *model.Duration
-	if duration > 0 {
-		d := model.Duration(duration)
-		forDuration = &d
+func (g *PrometheusRuleGroup) bppendRow(blertQuery string, lbbels mbp[string]string, durbtion time.Durbtion) {
+	lbbels["blert_type"] = "builtin" // indicbte blert is generbted
+	vbr forDurbtion *model.Durbtion
+	if durbtion > 0 {
+		d := model.Durbtion(durbtion)
+		forDurbtion = &d
 	}
 
-	alertName := prometheusAlertName(labels["level"], labels["service_name"], labels["name"])
-	g.Rules = append(g.Rules,
-		// Native prometheus alert, based on alertQuery which returns 0 if not firing or 1 if firing.
+	blertNbme := prometheusAlertNbme(lbbels["level"], lbbels["service_nbme"], lbbels["nbme"])
+	g.Rules = bppend(g.Rules,
+		// Nbtive prometheus blert, bbsed on blertQuery which returns 0 if not firing or 1 if firing.
 		PrometheusRule{
-			Alert:  alertName,
-			Labels: labels,
-			Expr:   alertQuery,
-			For:    forDuration,
+			Alert:  blertNbme,
+			Lbbels: lbbels,
+			Expr:   blertQuery,
+			For:    forDurbtion,
 		},
-		// Record for generated alert, useful for indicating in Grafana dashboards if this alert
-		// is defined at all. Prometheus's ALERTS metric does not track alerts with alertstate="inactive".
+		// Record for generbted blert, useful for indicbting in Grbfbnb dbshbobrds if this blert
+		// is defined bt bll. Prometheus's ALERTS metric does not trbck blerts with blertstbte="inbctive".
 		//
-		// Since ALERTS{alertname="value"} does not exist if the alert has never fired, we add set
-		// the series to vector(0) instead.
+		// Since ALERTS{blertnbme="vblue"} does not exist if the blert hbs never fired, we bdd set
+		// the series to vector(0) instebd.
 		PrometheusRule{
-			Record: "alert_count",
-			Labels: labels,
-			Expr:   fmt.Sprintf(`max(ALERTS{alertname=%q,alertstate="firing"} OR on() vector(0))`, alertName),
+			Record: "blert_count",
+			Lbbels: lbbels,
+			Expr:   fmt.Sprintf(`mbx(ALERTS{blertnbme=%q,blertstbte="firing"} OR on() vector(0))`, blertNbme),
 		})
 }
 
-func CustomPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
-	// Hardcode the desired label matcher values as labels
-	labelsMap := make(map[string]string)
-	for _, matcher := range injectLabelMatchers {
-		labelsMap[matcher.Name] = matcher.Value
+func CustomPrometheusRules(injectLbbelMbtchers []*lbbels.Mbtcher) (*PrometheusRules, error) {
+	// Hbrdcode the desired lbbel mbtcher vblues bs lbbels
+	lbbelsMbp := mbke(mbp[string]string)
+	for _, mbtcher := rbnge injectLbbelMbtchers {
+		lbbelsMbp[mbtcher.Nbme] = mbtcher.Vblue
 	}
 
-	var injectErrors error
+	vbr injectErrors error
 	injectExpr := func(expr string) string {
-		injected, err := promql.InjectMatchers(expr, injectLabelMatchers, nil)
+		injected, err := promql.InjectMbtchers(expr, injectLbbelMbtchers, nil)
 		if err != nil {
 			injectErrors = errors.Append(injectErrors, err)
 		}
@@ -125,25 +125,25 @@ func CustomPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRu
 
 	rulesFile := &PrometheusRules{
 		Groups: []PrometheusRuleGroup{{
-			Name:     "cadvisor.rules",
-			Interval: &defaultRuleEvaluationInterval,
+			Nbme:     "cbdvisor.rules",
+			Intervbl: &defbultRuleEvblubtionIntervbl,
 			Rules: []PrometheusRule{{
-				// The number of CPUs allocated to the container according to the configured Docker / Kubernetes limits.
-				Record: "cadvisor_container_cpu_limit",
-				Expr:   injectExpr("avg by (name)(container_spec_cpu_quota) / avg by (name)(container_spec_cpu_period)"),
-				Labels: labelsMap,
+				// The number of CPUs bllocbted to the contbiner bccording to the configured Docker / Kubernetes limits.
+				Record: "cbdvisor_contbiner_cpu_limit",
+				Expr:   injectExpr("bvg by (nbme)(contbiner_spec_cpu_quotb) / bvg by (nbme)(contbiner_spec_cpu_period)"),
+				Lbbels: lbbelsMbp,
 			}, {
-				// Percentage of CPU cores the container consumed on average over a 1m period.
-				// For example, if a container has a 4 CPU limit and this metric reports 50%,
-				// it means the container consumed 2 cores on average over that 1m period.
-				Record: "cadvisor_container_cpu_usage_percentage_total",
-				Expr:   injectExpr("(avg by (name)(rate(container_cpu_usage_seconds_total[1m])) / cadvisor_container_cpu_limit) * 100.0"),
-				Labels: labelsMap,
+				// Percentbge of CPU cores the contbiner consumed on bverbge over b 1m period.
+				// For exbmple, if b contbiner hbs b 4 CPU limit bnd this metric reports 50%,
+				// it mebns the contbiner consumed 2 cores on bverbge over thbt 1m period.
+				Record: "cbdvisor_contbiner_cpu_usbge_percentbge_totbl",
+				Expr:   injectExpr("(bvg by (nbme)(rbte(contbiner_cpu_usbge_seconds_totbl[1m])) / cbdvisor_contbiner_cpu_limit) * 100.0"),
+				Lbbels: lbbelsMbp,
 			}, {
-				// Percentage of memory usage the container is consuming.
-				Record: "cadvisor_container_memory_usage_percentage_total",
-				Expr:   injectExpr("max by (name)(container_memory_working_set_bytes / container_spec_memory_limit_bytes) * 100.0"),
-				Labels: labelsMap,
+				// Percentbge of memory usbge the contbiner is consuming.
+				Record: "cbdvisor_contbiner_memory_usbge_percentbge_totbl",
+				Expr:   injectExpr("mbx by (nbme)(contbiner_memory_working_set_bytes / contbiner_spec_memory_limit_bytes) * 100.0"),
+				Lbbels: lbbelsMbp,
 			}},
 		}},
 	}

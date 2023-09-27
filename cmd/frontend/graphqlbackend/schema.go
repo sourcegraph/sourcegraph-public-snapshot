@@ -1,126 +1,126 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"embed"
 	_ "embed"
 )
 
-// mainSchema is the main raw graqhql schema.
+// mbinSchemb is the mbin rbw grbqhql schemb.
 //
-//go:embed schema.graphql
-var mainSchema string
+//go:embed schemb.grbphql
+vbr mbinSchemb string
 
-// batchesSchema is the Batch Changes raw graqhql schema.
+// bbtchesSchemb is the Bbtch Chbnges rbw grbqhql schemb.
 //
-//go:embed batches.graphql
-var batchesSchema string
+//go:embed bbtches.grbphql
+vbr bbtchesSchemb string
 
-// codeIntelSchema is the Code Intel raw graqhql schema.
+// codeIntelSchemb is the Code Intel rbw grbqhql schemb.
 //
-//go:embed codeintel*.graphql
-var codeIntelSchema embed.FS
+//go:embed codeintel*.grbphql
+vbr codeIntelSchemb embed.FS
 
-// dotcomSchema is the Dotcom schema extension raw graqhql schema.
+// dotcomSchemb is the Dotcom schemb extension rbw grbqhql schemb.
 //
-//go:embed dotcom.graphql
-var dotcomSchema string
+//go:embed dotcom.grbphql
+vbr dotcomSchemb string
 
-// licenseSchema is the Licensing raw graqhql schema.
+// licenseSchemb is the Licensing rbw grbqhql schemb.
 //
-//go:embed license.graphql
-var licenseSchema string
+//go:embed license.grbphql
+vbr licenseSchemb string
 
-// codeMonitorsSchema is the Code Monitoring raw graqhql schema.
+// codeMonitorsSchemb is the Code Monitoring rbw grbqhql schemb.
 //
-//go:embed code_monitors.graphql
-var codeMonitorsSchema string
+//go:embed code_monitors.grbphql
+vbr codeMonitorsSchemb string
 
-// insightsSchema is the Code Insights raw graqhql schema.
+// insightsSchemb is the Code Insights rbw grbqhql schemb.
 //
-//go:embed insights.graphql
-var insightsSchema string
+//go:embed insights.grbphql
+vbr insightsSchemb string
 
-// authzSchema is the Authz raw graqhql schema.
+// buthzSchemb is the Authz rbw grbqhql schemb.
 //
-//go:embed authz.graphql
-var authzSchema string
+//go:embed buthz.grbphql
+vbr buthzSchemb string
 
-// computeSchema is an experimental graphql endpoint for computing values from search results.
+// computeSchemb is bn experimentbl grbphql endpoint for computing vblues from sebrch results.
 //
-//go:embed compute.graphql
-var computeSchema string
+//go:embed compute.grbphql
+vbr computeSchemb string
 
-// searchContextsSchema is the Search Contexts raw graqhql schema.
+// sebrchContextsSchemb is the Sebrch Contexts rbw grbqhql schemb.
 //
-//go:embed search_contexts.graphql
-var searchContextsSchema string
+//go:embed sebrch_contexts.grbphql
+vbr sebrchContextsSchemb string
 
-// notebooksSchema is the Notebooks raw graqhql schema.
+// notebooksSchemb is the Notebooks rbw grbqhql schemb.
 //
-//go:embed notebooks.graphql
-var notebooksSchema string
+//go:embed notebooks.grbphql
+vbr notebooksSchemb string
 
-// insightsAggregationsSchema is the Code Insights Aggregations raw graqhql schema.
+// insightsAggregbtionsSchemb is the Code Insights Aggregbtions rbw grbqhql schemb.
 //
-//go:embed insights_aggregations.graphql
-var insightsAggregationsSchema string
+//go:embed insights_bggregbtions.grbphql
+vbr insightsAggregbtionsSchemb string
 
-// outboundWebhooksSchema is the outbound webhook raw GraphQL schema.
+// outboundWebhooksSchemb is the outbound webhook rbw GrbphQL schemb.
 //
-//go:embed outbound_webhooks.graphql
-var outboundWebhooksSchema string
+//go:embed outbound_webhooks.grbphql
+vbr outboundWebhooksSchemb string
 
-// embeddingsSchema is the Embeddings raw graqhql schema.
+// embeddingsSchemb is the Embeddings rbw grbqhql schemb.
 //
-//go:embed embeddings.graphql
-var embeddingsSchema string
+//go:embed embeddings.grbphql
+vbr embeddingsSchemb string
 
-// codyContextSchema is the Context raw graqhql schema.
+// codyContextSchemb is the Context rbw grbqhql schemb.
 //
-//go:embed cody_context.graphql
-var codyContextSchema string
+//go:embed cody_context.grbphql
+vbr codyContextSchemb string
 
-// rbacSchema is the RBAC raw graphql schema.
+// rbbcSchemb is the RBAC rbw grbphql schemb.
 //
-//go:embed rbac.graphql
-var rbacSchema string
+//go:embed rbbc.grbphql
+vbr rbbcSchemb string
 
-// ownSchema is the Sourcegraph Own raw graqhql schema.
+// ownSchemb is the Sourcegrbph Own rbw grbqhql schemb.
 //
-//go:embed own.graphql
-var ownSchema string
+//go:embed own.grbphql
+vbr ownSchemb string
 
-// appSchema is the Cody App local raw graqhql schema.
+// bppSchemb is the Cody App locbl rbw grbqhql schemb.
 //
-//go:embed app.graphql
-var appSchema string
+//go:embed bpp.grbphql
+vbr bppSchemb string
 
-// completionSchema is the Sourcegraph Completions raw graqhql schema.
+// completionSchemb is the Sourcegrbph Completions rbw grbqhql schemb.
 //
-//go:embed completions.graphql
-var completionSchema string
+//go:embed completions.grbphql
+vbr completionSchemb string
 
-// gitHubAppsSchema is the GitHub apps raw graqhql schema.
+// gitHubAppsSchemb is the GitHub bpps rbw grbqhql schemb.
 //
-//go:embed githubapps.graphql
-var gitHubAppsSchema string
+//go:embed githubbpps.grbphql
+vbr gitHubAppsSchemb string
 
-// guardrailsSchema is the Sourcegraph Guardrails raw graphql schema.
+// gubrdrbilsSchemb is the Sourcegrbph Gubrdrbils rbw grbphql schemb.
 //
-//go:embed guardrails.graphql
-var guardrailsSchema string
+//go:embed gubrdrbils.grbphql
+vbr gubrdrbilsSchemb string
 
-// contentLibrary is the Sourcegraph Content Library raw graphql schema.
+// contentLibrbry is the Sourcegrbph Content Librbry rbw grbphql schemb.
 //
-//go:embed content_library.graphql
-var contentLibrary string
+//go:embed content_librbry.grbphql
+vbr contentLibrbry string
 
-// searchJobSchema is the Sourcegraph Search Job raw graphql schema.
+// sebrchJobSchemb is the Sourcegrbph Sebrch Job rbw grbphql schemb.
 //
-//go:embed search_jobs.graphql
-var searchJobSchema string
+//go:embed sebrch_jobs.grbphql
+vbr sebrchJobSchemb string
 
-// telemetrySchema is the Sourcegraph Telemetry V2 raw graphql schema.
+// telemetrySchemb is the Sourcegrbph Telemetry V2 rbw grbphql schemb.
 //
-//go:embed telemetry.graphql
-var telemetrySchema string
+//go:embed telemetry.grbphql
+vbr telemetrySchemb string

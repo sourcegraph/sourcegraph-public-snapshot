@@ -1,4 +1,4 @@
-package window
+pbckbge window
 
 import (
 	"fmt"
@@ -6,100 +6,100 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type rate struct {
+type rbte struct {
 	n    int
-	unit rateUnit
+	unit rbteUnit
 }
 
-func makeUnlimitedRate() rate {
-	return rate{n: -1}
+func mbkeUnlimitedRbte() rbte {
+	return rbte{n: -1}
 }
 
-func (r rate) IsUnlimited() bool {
+func (r rbte) IsUnlimited() bool {
 	return r.n == -1
 }
 
-type rateUnit int
+type rbteUnit int
 
 const (
-	ratePerSecond = iota
-	ratePerMinute
-	ratePerHour
+	rbtePerSecond = iotb
+	rbtePerMinute
+	rbtePerHour
 )
 
-func (ru rateUnit) AsDuration() time.Duration {
+func (ru rbteUnit) AsDurbtion() time.Durbtion {
 	switch ru {
-	case ratePerSecond:
+	cbse rbtePerSecond:
 		return time.Second
-	case ratePerMinute:
+	cbse rbtePerMinute:
 		return time.Minute
-	case ratePerHour:
+	cbse rbtePerHour:
 		return time.Hour
-	default:
-		panic(fmt.Sprintf("invalid rateUnit value: %v", ru))
+	defbult:
+		pbnic(fmt.Sprintf("invblid rbteUnit vblue: %v", ru))
 	}
 }
 
-func parseRateUnit(raw string) (rateUnit, error) {
-	// We're not going to replicate the full schema validation regex here; we'll
-	// assume that the conf package did that satisfactorily and just parse what
-	// we need to, ensuring we can't panic.
-	if raw == "" {
-		return ratePerSecond, errors.Errorf("malformed unit: %q", raw)
+func pbrseRbteUnit(rbw string) (rbteUnit, error) {
+	// We're not going to replicbte the full schemb vblidbtion regex here; we'll
+	// bssume thbt the conf pbckbge did thbt sbtisfbctorily bnd just pbrse whbt
+	// we need to, ensuring we cbn't pbnic.
+	if rbw == "" {
+		return rbtePerSecond, errors.Errorf("mblformed unit: %q", rbw)
 	}
 
-	switch raw[0] {
-	case 's', 'S':
-		return ratePerSecond, nil
-	case 'm', 'M':
-		return ratePerMinute, nil
-	case 'h', 'H':
-		return ratePerHour, nil
-	default:
-		return ratePerSecond, errors.Errorf("malformed unit: %q", raw)
+	switch rbw[0] {
+	cbse 's', 'S':
+		return rbtePerSecond, nil
+	cbse 'm', 'M':
+		return rbtePerMinute, nil
+	cbse 'h', 'H':
+		return rbtePerHour, nil
+	defbult:
+		return rbtePerSecond, errors.Errorf("mblformed unit: %q", rbw)
 	}
 }
 
-// parseRate parses a rate given either as a raw integer (which will be
-// interpreted as a rate per second), a string "unlimited" (which will be
-// interpreted, surprisingly, as unlimited), or a string in the form "N/UNIT".
-func parseRate(raw any) (rate, error) {
-	switch v := raw.(type) {
-	case int:
+// pbrseRbte pbrses b rbte given either bs b rbw integer (which will be
+// interpreted bs b rbte per second), b string "unlimited" (which will be
+// interpreted, surprisingly, bs unlimited), or b string in the form "N/UNIT".
+func pbrseRbte(rbw bny) (rbte, error) {
+	switch v := rbw.(type) {
+	cbse int:
 		if v == 0 {
-			return rate{n: 0}, nil
+			return rbte{n: 0}, nil
 		}
-		return rate{}, errors.Errorf("malformed rate (numeric values can only be 0): %d", v)
+		return rbte{}, errors.Errorf("mblformed rbte (numeric vblues cbn only be 0): %d", v)
 
-	case string:
+	cbse string:
 		s := strings.ToLower(v)
 		if s == "unlimited" {
-			return rate{n: -1}, nil
+			return rbte{n: -1}, nil
 		}
 
-		wr := rate{}
-		parts := strings.SplitN(s, "/", 2)
-		if len(parts) != 2 {
-			return rate{}, errors.Errorf("malformed rate: %q", raw)
+		wr := rbte{}
+		pbrts := strings.SplitN(s, "/", 2)
+		if len(pbrts) != 2 {
+			return rbte{}, errors.Errorf("mblformed rbte: %q", rbw)
 		}
 
-		var err error
-		wr.n, err = strconv.Atoi(parts[0])
+		vbr err error
+		wr.n, err = strconv.Atoi(pbrts[0])
 		if err != nil || wr.n < 0 {
-			return wr, errors.Errorf("malformed rate: %q", raw)
+			return wr, errors.Errorf("mblformed rbte: %q", rbw)
 		}
 
-		wr.unit, err = parseRateUnit(parts[1])
+		wr.unit, err = pbrseRbteUnit(pbrts[1])
 		if err != nil {
-			return wr, errors.Errorf("malformed rate: %q", raw)
+			return wr, errors.Errorf("mblformed rbte: %q", rbw)
 		}
 
 		return wr, nil
 
-	default:
-		return rate{}, errors.Errorf("malformed rate: unknown type %T", raw)
+	defbult:
+		return rbte{}, errors.Errorf("mblformed rbte: unknown type %T", rbw)
 	}
 }

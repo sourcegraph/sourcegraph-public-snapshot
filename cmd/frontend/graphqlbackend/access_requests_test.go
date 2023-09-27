@@ -1,82 +1,82 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestAccessRequestNode(t *testing.T) {
 	mockAccessRequest := &types.AccessRequest{
 		ID:             1,
-		Email:          "a1@example.com",
-		Name:           "a1",
-		CreatedAt:      time.Now(),
-		AdditionalInfo: "af1",
-		Status:         types.AccessRequestStatusPending,
+		Embil:          "b1@exbmple.com",
+		Nbme:           "b1",
+		CrebtedAt:      time.Now(),
+		AdditionblInfo: "bf1",
+		Stbtus:         types.AccessRequestStbtusPending,
 	}
 	db := dbmocks.NewMockDB()
 
-	accessRequestStore := dbmocks.NewMockAccessRequestStore()
-	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
-	accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
+	bccessRequestStore := dbmocks.NewMockAccessRequestStore()
+	db.AccessRequestsFunc.SetDefbultReturn(bccessRequestStore)
+	bccessRequestStore.GetByIDFunc.SetDefbultReturn(mockAccessRequest, nil)
 
 	userStore := dbmocks.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(userStore)
-	userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	db.UsersFunc.SetDefbultReturn(userStore)
+	userStore.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 	RunTest(t, &Test{
-		Schema:  mustParseGraphQLSchema(t, db),
+		Schemb:  mustPbrseGrbphQLSchemb(t, db),
 		Context: ctx,
 		Query: `
 		query AccessRequestID($id: ID!){
 			node(id: $id) {
-				__typename
+				__typenbme
 				... on AccessRequest {
-					name
+					nbme
 				}
 			}
 		}`,
 		ExpectedResult: `{
 			"node": {
-				"__typename": "AccessRequest",
-				"name": "a1"
+				"__typenbme": "AccessRequest",
+				"nbme": "b1"
 			}
 		}`,
-		Variables: map[string]any{
-			"id": string(marshalAccessRequestID(mockAccessRequest.ID)),
+		Vbribbles: mbp[string]bny{
+			"id": string(mbrshblAccessRequestID(mockAccessRequest.ID)),
 		},
 	})
 }
 
 func TestAccessRequestsQuery(t *testing.T) {
-	const accessRequestsQuery = `
-	query GetAccessRequests($first: Int, $after: String, $before: String, $last: Int) {
-		accessRequests(first: $first, after: $after, before: $before, last: $last) {
+	const bccessRequestsQuery = `
+	query GetAccessRequests($first: Int, $bfter: String, $before: String, $lbst: Int) {
+		bccessRequests(first: $first, bfter: $bfter, before: $before, lbst: $lbst) {
 			nodes {
 				id
-				name
-				email
-				status
-				createdAt
-				additionalInfo
+				nbme
+				embil
+				stbtus
+				crebtedAt
+				bdditionblInfo
 			}
-			totalCount
-			pageInfo {
-				hasNextPage
-				hasPreviousPage
-				startCursor
+			totblCount
+			pbgeInfo {
+				hbsNextPbge
+				hbsPreviousPbge
+				stbrtCursor
 				endCursor
 			}
 		}
@@ -85,193 +85,193 @@ func TestAccessRequestsQuery(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
 	userStore := dbmocks.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(userStore)
+	db.UsersFunc.SetDefbultReturn(userStore)
 
-	accessRequestStore := dbmocks.NewMockAccessRequestStore()
-	db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+	bccessRequestStore := dbmocks.NewMockAccessRequestStore()
+	db.AccessRequestsFunc.SetDefbultReturn(bccessRequestStore)
 
-	t.Parallel()
+	t.Pbrbllel()
 
-	t.Run("non-admin user", func(t *testing.T) {
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	t.Run("non-bdmin user", func(t *testing.T) {
+		userStore.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Context:        ctx,
-			Query:          accessRequestsQuery,
+			Query:          bccessRequestsQuery,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"accessRequests"},
-					Message:       auth.ErrMustBeSiteAdmin.Error(),
-					ResolverError: auth.ErrMustBeSiteAdmin,
+					Pbth:          []bny{"bccessRequests"},
+					Messbge:       buth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: buth.ErrMustBeSiteAdmin,
 				},
 			},
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"first": 10,
 			},
 		})
 	})
 
-	t.Run("admin user", func(t *testing.T) {
-		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+	t.Run("bdmin user", func(t *testing.T) {
+		crebtedAtTime, _ := time.Pbrse(time.RFC3339, "2023-02-24T14:48:30Z")
 		mockAccessRequests := []*types.AccessRequest{
-			{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: createdAtTime, AdditionalInfo: "af1", Status: types.AccessRequestStatusPending},
-			{ID: 2, Email: "a2@example.com", Name: "a2", CreatedAt: createdAtTime, Status: types.AccessRequestStatusApproved},
-			{ID: 3, Email: "a3@example.com", Name: "a3", CreatedAt: createdAtTime, Status: types.AccessRequestStatusRejected},
+			{ID: 1, Embil: "b1@exbmple.com", Nbme: "b1", CrebtedAt: crebtedAtTime, AdditionblInfo: "bf1", Stbtus: types.AccessRequestStbtusPending},
+			{ID: 2, Embil: "b2@exbmple.com", Nbme: "b2", CrebtedAt: crebtedAtTime, Stbtus: types.AccessRequestStbtusApproved},
+			{ID: 3, Embil: "b3@exbmple.com", Nbme: "b3", CrebtedAt: crebtedAtTime, Stbtus: types.AccessRequestStbtusRejected},
 		}
 
-		accessRequestStore.ListFunc.SetDefaultReturn(mockAccessRequests, nil)
-		accessRequestStore.CountFunc.SetDefaultReturn(len(mockAccessRequests), nil)
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		bccessRequestStore.ListFunc.SetDefbultReturn(mockAccessRequests, nil)
+		bccessRequestStore.CountFunc.SetDefbultReturn(len(mockAccessRequests), nil)
+		userStore.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query:   accessRequestsQuery,
+			Query:   bccessRequestsQuery,
 			ExpectedResult: `{
-				"accessRequests": {
+				"bccessRequests": {
 					"nodes": [
 						{
 							"id": "QWNjZXNzUmVxdWVzdDox",
-							"name": "a1",
-							"email": "a1@example.com",
-							"status": "PENDING",
-							"createdAt": "2023-02-24T14:48:30Z",
-							"additionalInfo": "af1"
+							"nbme": "b1",
+							"embil": "b1@exbmple.com",
+							"stbtus": "PENDING",
+							"crebtedAt": "2023-02-24T14:48:30Z",
+							"bdditionblInfo": "bf1"
 						},
 						{
 							"id": "QWNjZXNzUmVxdWVzdDoy",
-							"name": "a2",
-							"email": "a2@example.com",
-							"status": "APPROVED",
-							"createdAt": "2023-02-24T14:48:30Z",
-							"additionalInfo": ""
+							"nbme": "b2",
+							"embil": "b2@exbmple.com",
+							"stbtus": "APPROVED",
+							"crebtedAt": "2023-02-24T14:48:30Z",
+							"bdditionblInfo": ""
 						},
 						{
 							"id": "QWNjZXNzUmVxdWVzdDoz",
-							"name": "a3",
-							"email": "a3@example.com",
-							"status": "REJECTED",
-							"createdAt": "2023-02-24T14:48:30Z",
-							"additionalInfo": ""
+							"nbme": "b3",
+							"embil": "b3@exbmple.com",
+							"stbtus": "REJECTED",
+							"crebtedAt": "2023-02-24T14:48:30Z",
+							"bdditionblInfo": ""
 						}
 					],
-					"totalCount": 3,
-					"pageInfo": {
-						"hasNextPage": false,
-						"hasPreviousPage": false,
-						"startCursor": "QWNjZXNzUmVxdWVzdDox",
+					"totblCount": 3,
+					"pbgeInfo": {
+						"hbsNextPbge": fblse,
+						"hbsPreviousPbge": fblse,
+						"stbrtCursor": "QWNjZXNzUmVxdWVzdDox",
 						"endCursor": "QWNjZXNzUmVxdWVzdDoz"
 					}
 				}
 			}`,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"first": 10,
 			},
 		})
 	})
 }
 
-func TestSetAccessRequestStatusMutation(t *testing.T) {
-	const setAccessRequestStatusMutation = `
-	mutation SetAccessRequestStatus($id: ID!, $status: AccessRequestStatus!) {
-		setAccessRequestStatus(id: $id, status: $status) {
-			alwaysNil
+func TestSetAccessRequestStbtusMutbtion(t *testing.T) {
+	const setAccessRequestStbtusMutbtion = `
+	mutbtion SetAccessRequestStbtus($id: ID!, $stbtus: AccessRequestStbtus!) {
+		setAccessRequestStbtus(id: $id, stbtus: $stbtus) {
+			blwbysNil
 		}
 	}`
 	db := dbmocks.NewMockDB()
-	db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+	db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 		return f(db)
 	})
 
 	userStore := dbmocks.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(userStore)
+	db.UsersFunc.SetDefbultReturn(userStore)
 
-	t.Parallel()
+	t.Pbrbllel()
 
-	t.Run("non-admin user", func(t *testing.T) {
-		accessRequestStore := dbmocks.NewMockAccessRequestStore()
-		db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+	t.Run("non-bdmin user", func(t *testing.T) {
+		bccessRequestStore := dbmocks.NewMockAccessRequestStore()
+		db.AccessRequestsFunc.SetDefbultReturn(bccessRequestStore)
 
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userStore.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Context:        ctx,
-			Query:          setAccessRequestStatusMutation,
-			ExpectedResult: `{"setAccessRequestStatus": null }`,
+			Query:          setAccessRequestStbtusMutbtion,
+			ExpectedResult: `{"setAccessRequestStbtus": null }`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"setAccessRequestStatus"},
-					Message:       auth.ErrMustBeSiteAdmin.Error(),
-					ResolverError: auth.ErrMustBeSiteAdmin,
+					Pbth:          []bny{"setAccessRequestStbtus"},
+					Messbge:       buth.ErrMustBeSiteAdmin.Error(),
+					ResolverError: buth.ErrMustBeSiteAdmin,
 				},
 			},
-			Variables: map[string]any{
-				"id":     string(marshalAccessRequestID(1)),
-				"status": string(types.AccessRequestStatusApproved),
+			Vbribbles: mbp[string]bny{
+				"id":     string(mbrshblAccessRequestID(1)),
+				"stbtus": string(types.AccessRequestStbtusApproved),
 			},
 		})
-		assert.Len(t, accessRequestStore.UpdateFunc.History(), 0)
+		bssert.Len(t, bccessRequestStore.UpdbteFunc.History(), 0)
 	})
 
-	t.Run("existing access request", func(t *testing.T) {
-		accessRequestStore := dbmocks.NewMockAccessRequestStore()
-		db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+	t.Run("existing bccess request", func(t *testing.T) {
+		bccessRequestStore := dbmocks.NewMockAccessRequestStore()
+		db.AccessRequestsFunc.SetDefbultReturn(bccessRequestStore)
 
-		createdAtTime, _ := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
-		mockAccessRequest := &types.AccessRequest{ID: 1, Email: "a1@example.com", Name: "a1", CreatedAt: createdAtTime, AdditionalInfo: "af1", Status: types.AccessRequestStatusPending}
-		accessRequestStore.GetByIDFunc.SetDefaultReturn(mockAccessRequest, nil)
-		accessRequestStore.UpdateFunc.SetDefaultReturn(mockAccessRequest, nil)
+		crebtedAtTime, _ := time.Pbrse(time.RFC3339, "2023-02-24T14:48:30Z")
+		mockAccessRequest := &types.AccessRequest{ID: 1, Embil: "b1@exbmple.com", Nbme: "b1", CrebtedAt: crebtedAtTime, AdditionblInfo: "bf1", Stbtus: types.AccessRequestStbtusPending}
+		bccessRequestStore.GetByIDFunc.SetDefbultReturn(mockAccessRequest, nil)
+		bccessRequestStore.UpdbteFunc.SetDefbultReturn(mockAccessRequest, nil)
 		userID := int32(123)
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
+		userStore.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: userID, SiteAdmin: true}, nil)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Context:        ctx,
-			Query:          setAccessRequestStatusMutation,
-			ExpectedResult: `{"setAccessRequestStatus": { "alwaysNil": null } }`,
-			Variables: map[string]any{
-				"id":     string(marshalAccessRequestID(1)),
-				"status": string(types.AccessRequestStatusApproved),
+			Query:          setAccessRequestStbtusMutbtion,
+			ExpectedResult: `{"setAccessRequestStbtus": { "blwbysNil": null } }`,
+			Vbribbles: mbp[string]bny{
+				"id":     string(mbrshblAccessRequestID(1)),
+				"stbtus": string(types.AccessRequestStbtusApproved),
 			},
 		})
-		assert.Len(t, accessRequestStore.UpdateFunc.History(), 1)
-		assert.Equal(t, types.AccessRequest{ID: mockAccessRequest.ID, DecisionByUserID: &userID, Status: types.AccessRequestStatusApproved}, *accessRequestStore.UpdateFunc.History()[0].Arg1)
+		bssert.Len(t, bccessRequestStore.UpdbteFunc.History(), 1)
+		bssert.Equbl(t, types.AccessRequest{ID: mockAccessRequest.ID, DecisionByUserID: &userID, Stbtus: types.AccessRequestStbtusApproved}, *bccessRequestStore.UpdbteFunc.History()[0].Arg1)
 	})
 
-	t.Run("non-existing access request", func(t *testing.T) {
-		accessRequestStore := dbmocks.NewMockAccessRequestStore()
-		db.AccessRequestsFunc.SetDefaultReturn(accessRequestStore)
+	t.Run("non-existing bccess request", func(t *testing.T) {
+		bccessRequestStore := dbmocks.NewMockAccessRequestStore()
+		db.AccessRequestsFunc.SetDefbultReturn(bccessRequestStore)
 
-		notFoundErr := &database.ErrAccessRequestNotFound{ID: 1}
-		accessRequestStore.GetByIDFunc.SetDefaultReturn(nil, notFoundErr)
+		notFoundErr := &dbtbbbse.ErrAccessRequestNotFound{ID: 1}
+		bccessRequestStore.GetByIDFunc.SetDefbultReturn(nil, notFoundErr)
 
-		userStore.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		userStore.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
 			Context:        ctx,
-			Query:          setAccessRequestStatusMutation,
-			ExpectedResult: `{"setAccessRequestStatus": null }`,
+			Query:          setAccessRequestStbtusMutbtion,
+			ExpectedResult: `{"setAccessRequestStbtus": null }`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"setAccessRequestStatus"},
-					Message:       "access_request with ID 1 not found",
+					Pbth:          []bny{"setAccessRequestStbtus"},
+					Messbge:       "bccess_request with ID 1 not found",
 					ResolverError: notFoundErr,
 				},
 			},
-			Variables: map[string]any{
-				"id":     string(marshalAccessRequestID(1)),
-				"status": string(types.AccessRequestStatusApproved),
+			Vbribbles: mbp[string]bny{
+				"id":     string(mbrshblAccessRequestID(1)),
+				"stbtus": string(types.AccessRequestStbtusApproved),
 			},
 		})
-		assert.Len(t, accessRequestStore.UpdateFunc.History(), 0)
+		bssert.Len(t, bccessRequestStore.UpdbteFunc.History(), 0)
 	})
 }

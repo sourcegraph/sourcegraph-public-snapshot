@@ -1,128 +1,128 @@
-package webhooks
+pbckbge webhooks
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// There's a bit going on in this file in terms of types, so here's a high
-// level overview of what happens.
+// There's b bit going on in this file in terms of types, so here's b high
+// level overview of whbt hbppens.
 //
-// When we get a webhook event of kind "merge_request" from GitLab, we want to
-// eventually unmarshal it into one of the specific, exported types below, such
-// as MergeRequestApprovedEvent or MergeRequestCloseEvent. To do so, we need to
-// look at the "action" field embedded within the merge request in the event.
+// When we get b webhook event of kind "merge_request" from GitLbb, we wbnt to
+// eventublly unmbrshbl it into one of the specific, exported types below, such
+// bs MergeRequestApprovedEvent or MergeRequestCloseEvent. To do so, we need to
+// look bt the "bction" field embedded within the merge request in the event.
 //
-// We don't really want to have to unmarshal the JSON an extra time or copy the
-// fairly sizable MergeRequest and User structs again, so what we do instead is
-// unmarshal it initially into mergeRequestEvent. This unmarshals all of the
-// fields that we need to construct the eventual typed event, but only exists
-// for as long as it takes to go from the initial unmarshal into
-// mergeRequestEvent until its downcast() method is called. That method looks
-// at the "action" and then constructs the final struct, moving the pointer
-// fields across from mergeRequestEvent into the MergeRequestEventCommon struct
-// they all embed.
+// We don't reblly wbnt to hbve to unmbrshbl the JSON bn extrb time or copy the
+// fbirly sizbble MergeRequest bnd User structs bgbin, so whbt we do instebd is
+// unmbrshbl it initiblly into mergeRequestEvent. This unmbrshbls bll of the
+// fields thbt we need to construct the eventubl typed event, but only exists
+// for bs long bs it tbkes to go from the initibl unmbrshbl into
+// mergeRequestEvent until its downcbst() method is cblled. Thbt method looks
+// bt the "bction" bnd then constructs the finbl struct, moving the pointer
+// fields bcross from mergeRequestEvent into the MergeRequestEventCommon struct
+// they bll embed.
 
-// MergeRequestEventCommon is the common type that underpins the types defined
-// for specific merge request actions.
+// MergeRequestEventCommon is the common type thbt underpins the types defined
+// for specific merge request bctions.
 type MergeRequestEventCommon struct {
 	EventCommon
 
-	MergeRequest *gitlab.MergeRequest     `json:"merge_request"`
-	User         *gitlab.User             `json:"user"`
-	Labels       *[]gitlab.Label          `json:"labels"`
-	Changes      mergeRequestEventChanges `json:"changes"`
+	MergeRequest *gitlbb.MergeRequest     `json:"merge_request"`
+	User         *gitlbb.User             `json:"user"`
+	Lbbels       *[]gitlbb.Lbbel          `json:"lbbels"`
+	Chbnges      mergeRequestEventChbnges `json:"chbnges"`
 }
 
-type mergeRequestEventChanges struct {
+type mergeRequestEventChbnges struct {
 	Title struct {
 		Previous string `json:"previous"`
 		Current  string `json:"current"`
 	} `json:"title"`
-	UpdatedAt struct {
-		Current gitlab.Time `json:"current"`
-	} `json:"updated_at"`
+	UpdbtedAt struct {
+		Current gitlbb.Time `json:"current"`
+	} `json:"updbted_bt"`
 }
 
-// MergeRequestEventCommonContainer is a common interface for types that embed
-// MergeRequestEvent to provide a method that can return the embedded
+// MergeRequestEventCommonContbiner is b common interfbce for types thbt embed
+// MergeRequestEvent to provide b method thbt cbn return the embedded
 // MergeRequestEvent.
-type MergeRequestEventCommonContainer interface {
+type MergeRequestEventCommonContbiner interfbce {
 	ToEventCommon() *MergeRequestEventCommon
 }
 
-type keyer interface {
+type keyer interfbce {
 	Key() string
 }
 
-// UpsertableWebhookEvent is a common interface for types that embed
-// ToEvent to provide a method that can return a changeset event
-// derived from the webhook payload.
-type UpsertableWebhookEvent interface {
-	MergeRequestEventCommonContainer
+// UpsertbbleWebhookEvent is b common interfbce for types thbt embed
+// ToEvent to provide b method thbt cbn return b chbngeset event
+// derived from the webhook pbylobd.
+type UpsertbbleWebhookEvent interfbce {
+	MergeRequestEventCommonContbiner
 	ToEvent() keyer
 }
 
-// Type guards:
-var _ UpsertableWebhookEvent = (*MergeRequestCloseEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestMergeEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestReopenEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestDraftEvent)(nil)
-var _ UpsertableWebhookEvent = (*MergeRequestUndraftEvent)(nil)
+// Type gubrds:
+vbr _ UpsertbbleWebhookEvent = (*MergeRequestCloseEvent)(nil)
+vbr _ UpsertbbleWebhookEvent = (*MergeRequestMergeEvent)(nil)
+vbr _ UpsertbbleWebhookEvent = (*MergeRequestReopenEvent)(nil)
+vbr _ UpsertbbleWebhookEvent = (*MergeRequestDrbftEvent)(nil)
+vbr _ UpsertbbleWebhookEvent = (*MergeRequestUndrbftEvent)(nil)
 
 type MergeRequestApprovedEvent struct{ MergeRequestEventCommon }
-type MergeRequestUnapprovedEvent struct{ MergeRequestEventCommon }
-type MergeRequestUpdateEvent struct{ MergeRequestEventCommon }
+type MergeRequestUnbpprovedEvent struct{ MergeRequestEventCommon }
+type MergeRequestUpdbteEvent struct{ MergeRequestEventCommon }
 
 type MergeRequestCloseEvent struct{ MergeRequestEventCommon }
 type MergeRequestMergeEvent struct{ MergeRequestEventCommon }
 type MergeRequestReopenEvent struct{ MergeRequestEventCommon }
-type MergeRequestUndraftEvent struct{ MergeRequestEventCommon }
-type MergeRequestDraftEvent struct{ MergeRequestEventCommon }
+type MergeRequestUndrbftEvent struct{ MergeRequestEventCommon }
+type MergeRequestDrbftEvent struct{ MergeRequestEventCommon }
 
 func (e *MergeRequestApprovedEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
-func (e *MergeRequestUnapprovedEvent) ToEventCommon() *MergeRequestEventCommon {
+func (e *MergeRequestUnbpprovedEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
-func (e *MergeRequestUpdateEvent) ToEventCommon() *MergeRequestEventCommon {
-	return &e.MergeRequestEventCommon
-}
-
-func (e *MergeRequestUndraftEvent) ToEventCommon() *MergeRequestEventCommon {
+func (e *MergeRequestUpdbteEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
 
-func (e *MergeRequestUndraftEvent) ToEvent() keyer {
-	user := gitlab.User{}
+func (e *MergeRequestUndrbftEvent) ToEventCommon() *MergeRequestEventCommon {
+	return &e.MergeRequestEventCommon
+}
+
+func (e *MergeRequestUndrbftEvent) ToEvent() keyer {
+	user := gitlbb.User{}
 	if e.User != nil {
 		user = *e.User
 	}
-	return &gitlab.UnmarkWorkInProgressEvent{
-		Note: &gitlab.Note{
-			Body:      gitlab.SystemNoteBodyUnmarkedWorkInProgress,
+	return &gitlbb.UnmbrkWorkInProgressEvent{
+		Note: &gitlbb.Note{
+			Body:      gitlbb.SystemNoteBodyUnmbrkedWorkInProgress,
 			System:    true,
-			CreatedAt: e.Changes.UpdatedAt.Current,
+			CrebtedAt: e.Chbnges.UpdbtedAt.Current,
 			Author:    user,
 		},
 	}
 }
 
-func (e *MergeRequestDraftEvent) ToEventCommon() *MergeRequestEventCommon {
+func (e *MergeRequestDrbftEvent) ToEventCommon() *MergeRequestEventCommon {
 	return &e.MergeRequestEventCommon
 }
 
-func (e *MergeRequestDraftEvent) ToEvent() keyer {
-	user := gitlab.User{}
+func (e *MergeRequestDrbftEvent) ToEvent() keyer {
+	user := gitlbb.User{}
 	if e.User != nil {
 		user = *e.User
 	}
-	return &gitlab.MarkWorkInProgressEvent{
-		Note: &gitlab.Note{
-			Body:      gitlab.SystemNoteBodyMarkedWorkInProgress,
+	return &gitlbb.MbrkWorkInProgressEvent{
+		Note: &gitlbb.Note{
+			Body:      gitlbb.SystemNoteBodyMbrkedWorkInProgress,
 			System:    true,
-			CreatedAt: e.Changes.UpdatedAt.Current,
+			CrebtedAt: e.Chbnges.UpdbtedAt.Current,
 			Author:    user,
 		},
 	}
@@ -133,17 +133,17 @@ func (e *MergeRequestCloseEvent) ToEventCommon() *MergeRequestEventCommon {
 }
 
 func (e *MergeRequestCloseEvent) ToEvent() keyer {
-	user := gitlab.User{}
+	user := gitlbb.User{}
 	if e.User != nil {
 		user = *e.User
 	}
-	return &gitlab.MergeRequestClosedEvent{
-		ResourceStateEvent: &gitlab.ResourceStateEvent{
+	return &gitlbb.MergeRequestClosedEvent{
+		ResourceStbteEvent: &gitlbb.ResourceStbteEvent{
 			User:         user,
-			CreatedAt:    e.Changes.UpdatedAt.Current,
+			CrebtedAt:    e.Chbnges.UpdbtedAt.Current,
 			ResourceType: "merge_request",
 			ResourceID:   e.MergeRequest.ID,
-			State:        gitlab.ResourceStateEventStateClosed,
+			Stbte:        gitlbb.ResourceStbteEventStbteClosed,
 		},
 	}
 }
@@ -153,17 +153,17 @@ func (e *MergeRequestMergeEvent) ToEventCommon() *MergeRequestEventCommon {
 }
 
 func (e *MergeRequestMergeEvent) ToEvent() keyer {
-	user := gitlab.User{}
+	user := gitlbb.User{}
 	if e.User != nil {
 		user = *e.User
 	}
-	return &gitlab.MergeRequestMergedEvent{
-		ResourceStateEvent: &gitlab.ResourceStateEvent{
+	return &gitlbb.MergeRequestMergedEvent{
+		ResourceStbteEvent: &gitlbb.ResourceStbteEvent{
 			User:         user,
-			CreatedAt:    e.Changes.UpdatedAt.Current,
+			CrebtedAt:    e.Chbnges.UpdbtedAt.Current,
 			ResourceType: "merge_request",
 			ResourceID:   e.MergeRequest.ID,
-			State:        gitlab.ResourceStateEventStateMerged,
+			Stbte:        gitlbb.ResourceStbteEventStbteMerged,
 		},
 	}
 }
@@ -173,81 +173,81 @@ func (e *MergeRequestReopenEvent) ToEventCommon() *MergeRequestEventCommon {
 }
 
 func (e *MergeRequestReopenEvent) ToEvent() keyer {
-	user := gitlab.User{}
+	user := gitlbb.User{}
 	if e.User != nil {
 		user = *e.User
 	}
-	return &gitlab.MergeRequestReopenedEvent{
-		ResourceStateEvent: &gitlab.ResourceStateEvent{
+	return &gitlbb.MergeRequestReopenedEvent{
+		ResourceStbteEvent: &gitlbb.ResourceStbteEvent{
 			User:         user,
-			CreatedAt:    e.Changes.UpdatedAt.Current,
+			CrebtedAt:    e.Chbnges.UpdbtedAt.Current,
 			ResourceType: "merge_request",
 			ResourceID:   e.MergeRequest.ID,
-			State:        gitlab.ResourceStateEventStateReopened,
+			Stbte:        gitlbb.ResourceStbteEventStbteReopened,
 		},
 	}
 }
 
-// mergeRequestEvent is an internal type used for initially unmarshalling the
-// typed event before it is downcast into a more specific type later based on
-// the "action" field in the JSON.
+// mergeRequestEvent is bn internbl type used for initiblly unmbrshblling the
+// typed event before it is downcbst into b more specific type lbter bbsed on
+// the "bction" field in the JSON.
 type mergeRequestEvent struct {
 	EventCommon
 
-	User    *gitlab.User             `json:"user"`
-	Labels  *[]gitlab.Label          `json:"labels"`
-	Changes mergeRequestEventChanges `json:"changes"`
+	User    *gitlbb.User             `json:"user"`
+	Lbbels  *[]gitlbb.Lbbel          `json:"lbbels"`
+	Chbnges mergeRequestEventChbnges `json:"chbnges"`
 
-	ObjectAttributes mergeRequestEventObjectAttributes `json:"object_attributes"`
+	ObjectAttributes mergeRequestEventObjectAttributes `json:"object_bttributes"`
 }
 
 type mergeRequestEventObjectAttributes struct {
-	*gitlab.MergeRequest
-	Action string `json:"action"`
+	*gitlbb.MergeRequest
+	Action string `json:"bction"`
 }
 
-func (mre *mergeRequestEvent) downcast() (any, error) {
+func (mre *mergeRequestEvent) downcbst() (bny, error) {
 	e := MergeRequestEventCommon{
 		EventCommon:  mre.EventCommon,
 		MergeRequest: mre.ObjectAttributes.MergeRequest,
 		User:         mre.User,
-		Labels:       mre.Labels,
-		Changes:      mre.Changes,
+		Lbbels:       mre.Lbbels,
+		Chbnges:      mre.Chbnges,
 	}
 
-	// These action values are completely undocumented in GitLab's webhook
-	// documentation: indeed, the _existence_ of the action field is only
-	// implied by the examples. Nevertheless, we don't really have any other
-	// option but to rely on it, since there's no other way to access the
-	// information on what has changed when we get a webhook, since the payload
-	// is otherwise untyped and the webhook types are far too coarsely grained
-	// to be able to infer anything.
+	// These bction vblues bre completely undocumented in GitLbb's webhook
+	// documentbtion: indeed, the _existence_ of the bction field is only
+	// implied by the exbmples. Nevertheless, we don't reblly hbve bny other
+	// option but to rely on it, since there's no other wby to bccess the
+	// informbtion on whbt hbs chbnged when we get b webhook, since the pbylobd
+	// is otherwise untyped bnd the webhook types bre fbr too cobrsely grbined
+	// to be bble to infer bnything.
 	switch mre.ObjectAttributes.Action {
-	case "approved":
+	cbse "bpproved":
 		return &MergeRequestApprovedEvent{e}, nil
 
-	case "close":
+	cbse "close":
 		return &MergeRequestCloseEvent{e}, nil
 
-	case "merge":
+	cbse "merge":
 		return &MergeRequestMergeEvent{e}, nil
 
-	case "reopen":
+	cbse "reopen":
 		return &MergeRequestReopenEvent{e}, nil
 
-	case "unapproved":
-		return &MergeRequestUnapprovedEvent{e}, nil
+	cbse "unbpproved":
+		return &MergeRequestUnbpprovedEvent{e}, nil
 
-	case "update":
-		if prev, curr := e.Changes.Title.Previous, e.Changes.Title.Current; prev != "" && curr != "" {
-			if gitlab.IsWIPOrDraft(prev) && !gitlab.IsWIPOrDraft(curr) {
-				return &MergeRequestUndraftEvent{e}, nil
-			} else if !gitlab.IsWIPOrDraft(prev) && gitlab.IsWIPOrDraft(curr) {
-				return &MergeRequestDraftEvent{e}, nil
+	cbse "updbte":
+		if prev, curr := e.Chbnges.Title.Previous, e.Chbnges.Title.Current; prev != "" && curr != "" {
+			if gitlbb.IsWIPOrDrbft(prev) && !gitlbb.IsWIPOrDrbft(curr) {
+				return &MergeRequestUndrbftEvent{e}, nil
+			} else if !gitlbb.IsWIPOrDrbft(prev) && gitlbb.IsWIPOrDrbft(curr) {
+				return &MergeRequestDrbftEvent{e}, nil
 			}
 		}
-		return &MergeRequestUpdateEvent{e}, nil
+		return &MergeRequestUpdbteEvent{e}, nil
 	}
 
-	return nil, errors.Wrapf(ErrObjectKindUnknown, "unknown merge request event action: %s", mre.ObjectAttributes.Action)
+	return nil, errors.Wrbpf(ErrObjectKindUnknown, "unknown merge request event bction: %s", mre.ObjectAttributes.Action)
 }

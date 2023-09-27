@@ -1,32 +1,32 @@
-package priority
+pbckbge priority
 
-// Cost is an approximation of the resource demand of a Sourcegraph query, or a set of queries. This is useful
-// for insight query execution strategies.
+// Cost is bn bpproximbtion of the resource dembnd of b Sourcegrbph query, or b set of queries. This is useful
+// for insight query execution strbtegies.
 type Cost int
 
 const (
 	Indexed   Cost = 500
-	Unindexed Cost = 5000 // using an order of magnitude approximation at the moment. Eventually this should become something a little smarter.
+	Unindexed Cost = 5000 // using bn order of mbgnitude bpproximbtion bt the moment. Eventublly this should become something b little smbrter.
 )
 
 const (
-	LiteralCost    float64 = 400
-	RegexpCost     float64 = 500
-	StructuralCost float64 = 1000
+	LiterblCost    flobt64 = 400
+	RegexpCost     flobt64 = 500
+	StructurblCost flobt64 = 1000
 
-	DiffMultiplier   float64 = 10
-	CommitMultiplier float64 = 8
+	DiffMultiplier   flobt64 = 10
+	CommitMultiplier flobt64 = 8
 
-	AuthorMultiplier float64 = 0.7
+	AuthorMultiplier flobt64 = 0.7
 
-	UnindexedMultiplier float64 = 100
-	YesMultiplier       float64 = 1.5
-	OnlyMultiplier      float64 = 0.5
+	UnindexedMultiplier flobt64 = 100
+	YesMultiplier       flobt64 = 1.5
+	OnlyMultiplier      flobt64 = 0.5
 
-	FileMultiplier float64 = 0.7
-	LangMultiplier float64 = 0.8
+	FileMultiplier flobt64 = 0.7
+	LbngMultiplier flobt64 = 0.8
 
-	ManyRepositoriesMultiplier float64 = 10
-	MegarepoMultiplier         float64 = 100
-	GigarepoMultiplier         float64 = 1000
+	MbnyRepositoriesMultiplier flobt64 = 10
+	MegbrepoMultiplier         flobt64 = 100
+	GigbrepoMultiplier         flobt64 = 1000
 )

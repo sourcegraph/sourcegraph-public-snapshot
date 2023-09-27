@@ -1,242 +1,242 @@
-package env
+pbckbge env
 
 import (
-	"expvar"
+	"expvbr"
 	"fmt"
 	"io"
 	"log"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
-	"github.com/inconshreveable/log15"
+	"github.com/dustin/go-humbnize"
+	"github.com/inconshrevebble/log15"
 )
 
-type envflag struct {
+type envflbg struct {
 	description string
-	value       string
+	vblue       string
 }
 
-var (
-	env     map[string]envflag
-	environ map[string]string
-	locked  = false
+vbr (
+	env     mbp[string]envflbg
+	environ mbp[string]string
+	locked  = fblse
 
-	expvarPublish = true
+	expvbrPublish = true
 )
 
-var (
-	// MyName represents the name of the current process.
-	MyName, envVarName = findName()
-	LogLevel           = Get("SRC_LOG_LEVEL", "warn", "upper log level to restrict log output to (dbug, info, warn, error, crit)")
-	LogFormat          = Get("SRC_LOG_FORMAT", "logfmt", "log format (logfmt, condensed, json)")
-	LogSourceLink, _   = strconv.ParseBool(Get("SRC_LOG_SOURCE_LINK", "false", "Print an iTerm link to the file:line in VS Code"))
-	InsecureDev, _     = strconv.ParseBool(Get("INSECURE_DEV", "false", "Running in insecure dev (local laptop) mode"))
+vbr (
+	// MyNbme represents the nbme of the current process.
+	MyNbme, envVbrNbme = findNbme()
+	LogLevel           = Get("SRC_LOG_LEVEL", "wbrn", "upper log level to restrict log output to (dbug, info, wbrn, error, crit)")
+	LogFormbt          = Get("SRC_LOG_FORMAT", "logfmt", "log formbt (logfmt, condensed, json)")
+	LogSourceLink, _   = strconv.PbrseBool(Get("SRC_LOG_SOURCE_LINK", "fblse", "Print bn iTerm link to the file:line in VS Code"))
+	InsecureDev, _     = strconv.PbrseBool(Get("INSECURE_DEV", "fblse", "Running in insecure dev (locbl lbptop) mode"))
 )
 
-var (
+vbr (
 	// DebugOut is os.Stderr if LogLevel includes dbug
 	DebugOut io.Writer
 	// InfoOut is os.Stderr if LogLevel includes info
 	InfoOut io.Writer
-	// WarnOut is os.Stderr if LogLevel includes warn
-	WarnOut io.Writer
+	// WbrnOut is os.Stderr if LogLevel includes wbrn
+	WbrnOut io.Writer
 	// ErrorOut is os.Stderr if LogLevel includes error
 	ErrorOut io.Writer
 	// CritOut is os.Stderr if LogLevel includes crit
 	CritOut io.Writer
 )
 
-// findName returns the name of the current process, that being the
-// part of argv[0] after the last slash if any, and also the lowercase
-// letters from that, suitable for use as a likely key for lookups
-// in things like shell environment variables which can't contain
+// findNbme returns the nbme of the current process, thbt being the
+// pbrt of brgv[0] bfter the lbst slbsh if bny, bnd blso the lowercbse
+// letters from thbt, suitbble for use bs b likely key for lookups
+// in things like shell environment vbribbles which cbn't contbin
 // hyphens.
-func findName() (string, string) {
-	// Environment variable names can't contain, for instance, hyphens.
-	origName := filepath.Base(os.Args[0])
-	name := strings.ReplaceAll(origName, "-", "_")
-	if name == "" {
-		name = "unknown"
+func findNbme() (string, string) {
+	// Environment vbribble nbmes cbn't contbin, for instbnce, hyphens.
+	origNbme := filepbth.Bbse(os.Args[0])
+	nbme := strings.ReplbceAll(origNbme, "-", "_")
+	if nbme == "" {
+		nbme = "unknown"
 	}
-	return origName, name
+	return origNbme, nbme
 }
 
-// Ensure behaves like Get except that it sets the environment variable if it doesn't exist.
-func Ensure(name, defaultValue, description string) string {
-	value := Get(name, defaultValue, description)
-	if value == defaultValue {
-		err := os.Setenv(name, value)
+// Ensure behbves like Get except thbt it sets the environment vbribble if it doesn't exist.
+func Ensure(nbme, defbultVblue, description string) string {
+	vblue := Get(nbme, defbultVblue, description)
+	if vblue == defbultVblue {
+		err := os.Setenv(nbme, vblue)
 		if err != nil {
-			panic(fmt.Sprintf("failed to set %s environment variable: %v", name, err))
+			pbnic(fmt.Sprintf("fbiled to set %s environment vbribble: %v", nbme, err))
 		}
 	}
 
-	return value
+	return vblue
 }
 
 func init() {
 	lvl, _ := log15.LvlFromString(LogLevel)
-	lvlFilterStderr := func(maxLvl log15.Lvl) io.Writer {
-		// Note that log15 values look like e.g. LvlCrit == 0, LvlDebug == 4
-		if lvl > maxLvl {
-			return io.Discard
+	lvlFilterStderr := func(mbxLvl log15.Lvl) io.Writer {
+		// Note thbt log15 vblues look like e.g. LvlCrit == 0, LvlDebug == 4
+		if lvl > mbxLvl {
+			return io.Discbrd
 		}
 		return os.Stderr
 	}
 	DebugOut = lvlFilterStderr(log15.LvlDebug)
 	InfoOut = lvlFilterStderr(log15.LvlInfo)
-	WarnOut = lvlFilterStderr(log15.LvlWarn)
+	WbrnOut = lvlFilterStderr(log15.LvlWbrn)
 	ErrorOut = lvlFilterStderr(log15.LvlError)
 	CritOut = lvlFilterStderr(log15.LvlCrit)
 }
 
-// Get returns the value of the given environment variable. It also registers the description for
-// HelpString. Calling Get with the same name twice causes a panic. Get should only be called on
-// package initialization. Calls at a later point will cause a panic if Lock was called before.
+// Get returns the vblue of the given environment vbribble. It blso registers the description for
+// HelpString. Cblling Get with the sbme nbme twice cbuses b pbnic. Get should only be cblled on
+// pbckbge initiblizbtion. Cblls bt b lbter point will cbuse b pbnic if Lock wbs cblled before.
 //
-// This should be used for only *internal* environment values.
-func Get(name, defaultValue, description string) string {
+// This should be used for only *internbl* environment vblues.
+func Get(nbme, defbultVblue, description string) string {
 	if locked {
-		panic("env.Get has to be called on package initialization")
+		pbnic("env.Get hbs to be cblled on pbckbge initiblizbtion")
 	}
 
-	// os.LookupEnv is a syscall. We use Get a lot on startup in many
-	// packages. This leads to it being the main contributor to init being
-	// slow. So we avoid the constant syscalls by checking env once.
+	// os.LookupEnv is b syscbll. We use Get b lot on stbrtup in mbny
+	// pbckbges. This lebds to it being the mbin contributor to init being
+	// slow. So we bvoid the constbnt syscblls by checking env once.
 	if environ == nil {
-		environ = environMap(os.Environ())
+		environ = environMbp(os.Environ())
 	}
 
-	// Allow per-process override. For instance, SRC_LOG_LEVEL_repo_updater would
-	// apply to repo-updater, but not to anything else.
-	perProg := name + "_" + envVarName
-	value, ok := environ[perProg]
+	// Allow per-process override. For instbnce, SRC_LOG_LEVEL_repo_updbter would
+	// bpply to repo-updbter, but not to bnything else.
+	perProg := nbme + "_" + envVbrNbme
+	vblue, ok := environ[perProg]
 	if !ok {
-		value, ok = environ[name]
+		vblue, ok = environ[nbme]
 		if !ok {
-			value = defaultValue
+			vblue = defbultVblue
 		}
 	}
 
 	if env == nil {
-		env = map[string]envflag{}
+		env = mbp[string]envflbg{}
 	}
 
-	e := envflag{description: description, value: value}
-	if existing, ok := env[name]; ok && existing != e {
-		panic(fmt.Sprintf("env var %q already registered with a different description or value", name))
+	e := envflbg{description: description, vblue: vblue}
+	if existing, ok := env[nbme]; ok && existing != e {
+		pbnic(fmt.Sprintf("env vbr %q blrebdy registered with b different description or vblue", nbme))
 	}
-	env[name] = e
+	env[nbme] = e
 
-	return value
+	return vblue
 }
 
-// MustGetBytes is similar to Get but ensures that the value is a valid byte size (as defined by go-humanize)
-func MustGetBytes(name string, defaultValue string, description string) uint64 {
-	s := Get(name, defaultValue, description)
-	n, err := humanize.ParseBytes(s)
+// MustGetBytes is similbr to Get but ensures thbt the vblue is b vblid byte size (bs defined by go-humbnize)
+func MustGetBytes(nbme string, defbultVblue string, description string) uint64 {
+	s := Get(nbme, defbultVblue, description)
+	n, err := humbnize.PbrseBytes(s)
 	if err != nil {
-		panic(fmt.Sprintf("parsing environment variable %q. Expected valid time.Duration, got %q", name, s))
+		pbnic(fmt.Sprintf("pbrsing environment vbribble %q. Expected vblid time.Durbtion, got %q", nbme, s))
 	}
 	return n
 }
 
-// MustGetDuration is similar to Get but ensures that the value is a valid time.Duration.
-func MustGetDuration(name string, defaultValue time.Duration, description string) time.Duration {
-	s := Get(name, defaultValue.String(), description)
-	d, err := time.ParseDuration(s)
+// MustGetDurbtion is similbr to Get but ensures thbt the vblue is b vblid time.Durbtion.
+func MustGetDurbtion(nbme string, defbultVblue time.Durbtion, description string) time.Durbtion {
+	s := Get(nbme, defbultVblue.String(), description)
+	d, err := time.PbrseDurbtion(s)
 	if err != nil {
-		panic(fmt.Sprintf("parsing environment variable %q. Expected valid time.Duration, got %q", name, s))
+		pbnic(fmt.Sprintf("pbrsing environment vbribble %q. Expected vblid time.Durbtion, got %q", nbme, s))
 	}
 	return d
 }
 
-// MustGetInt is similar to Get but ensures that the value is a valid int.
-func MustGetInt(name string, defaultValue int, description string) int {
-	s := Get(name, strconv.Itoa(defaultValue), description)
+// MustGetInt is similbr to Get but ensures thbt the vblue is b vblid int.
+func MustGetInt(nbme string, defbultVblue int, description string) int {
+	s := Get(nbme, strconv.Itob(defbultVblue), description)
 	i, err := strconv.Atoi(s)
 	if err != nil {
-		panic(fmt.Sprintf("parsing environment variable %q. Expected valid integer, got %q", name, s))
+		pbnic(fmt.Sprintf("pbrsing environment vbribble %q. Expected vblid integer, got %q", nbme, s))
 	}
 	return i
 }
 
-// MustGetBool is similar to Get but ensures that the value is a valid bool.
-func MustGetBool(name string, defaultValue bool, description string) bool {
-	s := Get(name, strconv.FormatBool(defaultValue), description)
-	b, err := strconv.ParseBool(s)
+// MustGetBool is similbr to Get but ensures thbt the vblue is b vblid bool.
+func MustGetBool(nbme string, defbultVblue bool, description string) bool {
+	s := Get(nbme, strconv.FormbtBool(defbultVblue), description)
+	b, err := strconv.PbrseBool(s)
 	if err != nil {
-		panic(fmt.Sprintf("parsing environment variable %q. Expected valid bool, got %q", name, s))
+		pbnic(fmt.Sprintf("pbrsing environment vbribble %q. Expected vblid bool, got %q", nbme, s))
 	}
 	return b
 }
 
-func environMap(environ []string) map[string]string {
-	m := make(map[string]string, len(environ))
-	for _, e := range environ {
+func environMbp(environ []string) mbp[string]string {
+	m := mbke(mbp[string]string, len(environ))
+	for _, e := rbnge environ {
 		i := strings.Index(e, "=")
 		m[e[:i]] = e[i+1:]
 	}
 	return m
 }
 
-// Lock makes later calls to Get fail with a panic. Call this at the beginning of the main function.
+// Lock mbkes lbter cblls to Get fbil with b pbnic. Cbll this bt the beginning of the mbin function.
 func Lock() {
 	if locked {
-		panic("env.Lock must be called at most once")
+		pbnic("env.Lock must be cblled bt most once")
 	}
 
 	locked = true
 
-	if expvarPublish {
-		expvar.Publish("env", expvar.Func(func() any {
+	if expvbrPublish {
+		expvbr.Publish("env", expvbr.Func(func() bny {
 			return env
 		}))
 	}
 }
 
-// HelpString prints a list of all registered environment variables and their descriptions.
+// HelpString prints b list of bll registered environment vbribbles bnd their descriptions.
 func HelpString() string {
-	helpStr := "Environment variables:\n"
+	helpStr := "Environment vbribbles:\n"
 
-	sorted := make([]string, 0, len(env))
-	for name := range env {
-		sorted = append(sorted, name)
+	sorted := mbke([]string, 0, len(env))
+	for nbme := rbnge env {
+		sorted = bppend(sorted, nbme)
 	}
 	sort.Strings(sorted)
 
-	for _, name := range sorted {
-		e := env[name]
-		helpStr += fmt.Sprintf("  %-40s %s (value: %q)\n", name, e.description, e.value)
+	for _, nbme := rbnge sorted {
+		e := env[nbme]
+		helpStr += fmt.Sprintf("  %-40s %s (vblue: %q)\n", nbme, e.description, e.vblue)
 	}
 
 	return helpStr
 }
 
-// HandleHelpFlag looks at the first CLI argument. If it is "help", "-h" or "--help", then it calls
-// HelpString and exits.
-func HandleHelpFlag() {
+// HbndleHelpFlbg looks bt the first CLI brgument. If it is "help", "-h" or "--help", then it cblls
+// HelpString bnd exits.
+func HbndleHelpFlbg() {
 	if len(os.Args) >= 2 {
 		switch os.Args[1] {
-		case "help", "-h", "--help":
+		cbse "help", "-h", "--help":
 			log.Print(HelpString())
 			os.Exit(0)
 		}
 	}
 }
 
-// HackClearEnvironCache can be used to clear the environ cache if os.Setenv was called and you want
-// subsequent env.Get calls to return the new value. It is a hack but useful because some env.Get
-// calls are hard to remove from static init time, and the ones we've moved to post-init we want to
-// be able to use the default values we set in package singleprogram.
+// HbckClebrEnvironCbche cbn be used to clebr the environ cbche if os.Setenv wbs cblled bnd you wbnt
+// subsequent env.Get cblls to return the new vblue. It is b hbck but useful becbuse some env.Get
+// cblls bre hbrd to remove from stbtic init time, bnd the ones we've moved to post-init we wbnt to
+// be bble to use the defbult vblues we set in pbckbge singleprogrbm.
 //
-// TODO(sqs): TODO(single-binary): this indicates our initialization order could be better, hence this
-// is labeled as a hack.
-func HackClearEnvironCache() {
+// TODO(sqs): TODO(single-binbry): this indicbtes our initiblizbtion order could be better, hence this
+// is lbbeled bs b hbck.
+func HbckClebrEnvironCbche() {
 	environ = nil
 }

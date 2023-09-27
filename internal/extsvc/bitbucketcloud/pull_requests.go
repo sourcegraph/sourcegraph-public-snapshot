@@ -1,4 +1,4 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"bytes"
@@ -8,194 +8,194 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type PullRequestInput struct {
 	Title        string
 	Description  string
-	SourceBranch string
+	SourceBrbnch string
 	Reviewers    []Account
 
-	// The following fields are optional.
+	// The following fields bre optionbl.
 	//
-	// If SourceRepo is provided, only FullName is actually used.
+	// If SourceRepo is provided, only FullNbme is bctublly used.
 	SourceRepo        *Repo
-	DestinationBranch *string
-	CloseSourceBranch bool `json:"close_source_branch"`
+	DestinbtionBrbnch *string
+	CloseSourceBrbnch bool `json:"close_source_brbnch"`
 }
 
-// CreatePullRequest opens a new pull request.
+// CrebtePullRequest opens b new pull request.
 //
-// Invoking CreatePullRequest with the same repo and options will succeed: the
-// same PR will be returned each time, and will be updated accordingly on
-// Bitbucket with any changed information in the options.
-func (c *client) CreatePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error) {
-	data, err := json.Marshal(&input)
+// Invoking CrebtePullRequest with the sbme repo bnd options will succeed: the
+// sbme PR will be returned ebch time, bnd will be updbted bccordingly on
+// Bitbucket with bny chbnged informbtion in the options.
+func (c *client) CrebtePullRequest(ctx context.Context, repo *Repo, input PullRequestInput) (*PullRequest, error) {
+	dbtb, err := json.Mbrshbl(&input)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling request")
+		return nil, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests", repo.FullName), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests", repo.FullNbme), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if code, err := c.do(ctx, req, &pr); err != nil {
-		return nil, errors.Wrap(errcode.MaybeMakeNonRetryable(code, err), "sending request")
+		return nil, errors.Wrbp(errcode.MbybeMbkeNonRetrybble(code, err), "sending request")
 	}
 	return &pr, nil
 }
 
-// DeclinePullRequest declines (closes without merging) a pull request.
+// DeclinePullRequest declines (closes without merging) b pull request.
 //
-// Invoking DeclinePullRequest on an already declined PR will error.
+// Invoking DeclinePullRequest on bn blrebdy declined PR will error.
 func (c *client) DeclinePullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
-	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/decline", repo.FullName, id), nil)
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/decline", repo.FullNbme, id), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err := c.do(ctx, req, &pr); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
 	return &pr, nil
 }
 
-// GetPullRequest retrieves a single pull request.
+// GetPullRequest retrieves b single pull request.
 func (c *client) GetPullRequest(ctx context.Context, repo *Repo, id int64) (*PullRequest, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullName, id), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullNbme, id), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err := c.do(ctx, req, &pr); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
 	return &pr, nil
 }
 
-// GetPullRequestStatuses retrieves the statuses for a pull request.
+// GetPullRequestStbtuses retrieves the stbtuses for b pull request.
 //
-// Each item in the result set is a *PullRequestStatus.
-func (c *client) GetPullRequestStatuses(repo *Repo, id int64) (*PaginatedResultSet, error) {
-	u, err := url.Parse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/statuses", repo.FullName, id))
+// Ebch item in the result set is b *PullRequestStbtus.
+func (c *client) GetPullRequestStbtuses(repo *Repo, id int64) (*PbginbtedResultSet, error) {
+	u, err := url.Pbrse(fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/stbtuses", repo.FullNbme, id))
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing URL")
+		return nil, errors.Wrbp(err, "pbrsing URL")
 	}
 
-	return NewPaginatedResultSet(u, func(ctx context.Context, req *http.Request) (*PageToken, []any, error) {
-		var page struct {
-			*PageToken
-			Values []*PullRequestStatus `json:"values"`
+	return NewPbginbtedResultSet(u, func(ctx context.Context, req *http.Request) (*PbgeToken, []bny, error) {
+		vbr pbge struct {
+			*PbgeToken
+			Vblues []*PullRequestStbtus `json:"vblues"`
 		}
 
-		if _, err := c.do(ctx, req, &page); err != nil {
+		if _, err := c.do(ctx, req, &pbge); err != nil {
 			return nil, nil, err
 		}
 
-		values := []any{}
-		for _, value := range page.Values {
-			values = append(values, value)
+		vblues := []bny{}
+		for _, vblue := rbnge pbge.Vblues {
+			vblues = bppend(vblues, vblue)
 		}
 
-		return page.PageToken, values, nil
+		return pbge.PbgeToken, vblues, nil
 	}), nil
 }
 
-// UpdatePullRequest updates a pull request.
-func (c *client) UpdatePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error) {
-	data, err := json.Marshal(&input)
+// UpdbtePullRequest updbtes b pull request.
+func (c *client) UpdbtePullRequest(ctx context.Context, repo *Repo, id int64, input PullRequestInput) (*PullRequest, error) {
+	dbtb, err := json.Mbrshbl(&input)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling request")
+		return nil, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullName, id), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d", repo.FullNbme, id), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var updated PullRequest
-	if _, err := c.do(ctx, req, &updated); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+	vbr updbted PullRequest
+	if _, err := c.do(ctx, req, &updbted); err != nil {
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
-	return &updated, nil
+	return &updbted, nil
 }
 
 type CommentInput struct {
-	// The content, as Markdown.
+	// The content, bs Mbrkdown.
 	Content string
 }
 
-// CreatePullRequestComment adds a comment to a pull request.
-func (c *client) CreatePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error) {
-	data, err := json.Marshal(&input)
+// CrebtePullRequestComment bdds b comment to b pull request.
+func (c *client) CrebtePullRequestComment(ctx context.Context, repo *Repo, id int64, input CommentInput) (*Comment, error) {
+	dbtb, err := json.Mbrshbl(&input)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling request")
+		return nil, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/comments", repo.FullName, id), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/comments", repo.FullNbme, id), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var comment Comment
+	vbr comment Comment
 	if _, err := c.do(ctx, req, &comment); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
 	return &comment, nil
 }
 
-// MergePullRequestOpts are the options available when merging a pull request.
+// MergePullRequestOpts bre the options bvbilbble when merging b pull request.
 //
-// All fields are optional.
+// All fields bre optionbl.
 type MergePullRequestOpts struct {
-	Message           *string        `json:"message,omitempty"`
-	CloseSourceBranch *bool          `json:"close_source_branch,omitempty"`
-	MergeStrategy     *MergeStrategy `json:"merge_strategy,omitempty"`
+	Messbge           *string        `json:"messbge,omitempty"`
+	CloseSourceBrbnch *bool          `json:"close_source_brbnch,omitempty"`
+	MergeStrbtegy     *MergeStrbtegy `json:"merge_strbtegy,omitempty"`
 }
 
 // MergePullRequest merges the given pull request.
 func (c *client) MergePullRequest(ctx context.Context, repo *Repo, id int64, opts MergePullRequestOpts) (*PullRequest, error) {
-	data, err := json.Marshal(&opts)
+	dbtb, err := json.Mbrshbl(&opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling request")
+		return nil, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/merge", repo.FullName, id), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/pullrequests/%d/merge", repo.FullNbme, id), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err := c.do(ctx, req, &pr); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
 	return &pr, nil
 }
 
-var _ json.Marshaler = &PullRequestInput{}
+vbr _ json.Mbrshbler = &PullRequestInput{}
 
-func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
-	type branch struct {
-		Name string `json:"name"`
+func (input *PullRequestInput) MbrshblJSON() ([]byte, error) {
+	type brbnch struct {
+		Nbme string `json:"nbme"`
 	}
 
 	type repository struct {
-		FullName string `json:"full_name"`
+		FullNbme string `json:"full_nbme"`
 	}
 
 	type source struct {
-		Branch     branch      `json:"branch"`
+		Brbnch     brbnch      `json:"brbnch"`
 		Repository *repository `json:"repository,omitempty"`
 	}
 
@@ -203,45 +203,45 @@ func (input *PullRequestInput) MarshalJSON() ([]byte, error) {
 		Title             string  `json:"title"`
 		Description       string  `json:"description,omitempty"`
 		Source            source  `json:"source"`
-		Destination       *source `json:"destination,omitempty"`
-		CloseSourceBranch bool    `json:"close_source_branch,omitempty"`
+		Destinbtion       *source `json:"destinbtion,omitempty"`
+		CloseSourceBrbnch bool    `json:"close_source_brbnch,omitempty"`
 	}
 
 	req := request{
 		Title:       input.Title,
 		Description: input.Description,
 		Source: source{
-			Branch: branch{Name: input.SourceBranch},
+			Brbnch: brbnch{Nbme: input.SourceBrbnch},
 		},
-		CloseSourceBranch: input.CloseSourceBranch,
+		CloseSourceBrbnch: input.CloseSourceBrbnch,
 	}
 	if input.SourceRepo != nil {
 		req.Source.Repository = &repository{
-			FullName: input.SourceRepo.FullName,
+			FullNbme: input.SourceRepo.FullNbme,
 		}
 	}
-	if input.DestinationBranch != nil {
-		req.Destination = &source{
-			Branch: branch{Name: *input.DestinationBranch},
+	if input.DestinbtionBrbnch != nil {
+		req.Destinbtion = &source{
+			Brbnch: brbnch{Nbme: *input.DestinbtionBrbnch},
 		}
 	}
 
-	return json.Marshal(&req)
+	return json.Mbrshbl(&req)
 }
 
-var _ json.Marshaler = &CommentInput{}
+vbr _ json.Mbrshbler = &CommentInput{}
 
-func (ci *CommentInput) MarshalJSON() ([]byte, error) {
+func (ci *CommentInput) MbrshblJSON() ([]byte, error) {
 	type content struct {
-		Raw string `json:"raw"`
+		Rbw string `json:"rbw"`
 	}
 	type comment struct {
 		Content content `json:"content"`
 	}
 
-	return json.Marshal(&comment{
+	return json.Mbrshbl(&comment{
 		Content: content{
-			Raw: ci.Content,
+			Rbw: ci.Content,
 		},
 	})
 }

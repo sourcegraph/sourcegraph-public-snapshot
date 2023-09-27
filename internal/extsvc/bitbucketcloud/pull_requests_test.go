@@ -1,391 +1,391 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
 )
 
-func TestClient_CreatePullRequest_Fork(t *testing.T) {
-	// WHEN UPDATING: this test requires a new branch in a fork of
-	// https://bitbucket.org/sourcegraph-testing/src-cli/src/master/ to open a
-	// pull request. The simplest way to accomplish this is to do the following,
-	// replacing XX with the next number after the branch currently in this
-	// test, and FORK with the user and repo src-cli was forked to:
+func TestClient_CrebtePullRequest_Fork(t *testing.T) {
+	// WHEN UPDATING: this test requires b new brbnch in b fork of
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/src/mbster/ to open b
+	// pull request. The simplest wby to bccomplish this is to do the following,
+	// replbcing XX with the next number bfter the brbnch currently in this
+	// test, bnd FORK with the user bnd repo src-cli wbs forked to:
 	//
 	// $ cd /tmp
 	// $ git clone git@bitbucket.org:FORK.git
 	// $ cd src-cli
-	// $ git checkout -b branch-fork-XX
-	// $ git commit --allow-empty -m "new branch"
-	// $ git push origin branch-fork-XX
+	// $ git checkout -b brbnch-fork-XX
+	// $ git commit --bllow-empty -m "new brbnch"
+	// $ git push origin brbnch-fork-XX
 	//
-	// Then update this test with the new branch number, and run the test suite
-	// with the appropriate -update flag.
+	// Then updbte this test with the new brbnch number, bnd run the test suite
+	// with the bppropribte -updbte flbg.
 
-	branch := "branch-fork-00"
-	fork := "aharvey-sg/src-cli-testing"
-	ctx := context.Background()
+	brbnch := "brbnch-fork-00"
+	fork := "bhbrvey-sg/src-cli-testing"
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 	commonOpts := PullRequestInput{
-		Title:        "Sourcegraph test " + branch,
-		Description:  "This is a PR created by the Sourcegraph test suite.",
-		SourceBranch: branch,
+		Title:        "Sourcegrbph test " + brbnch,
+		Description:  "This is b PR crebted by the Sourcegrbph test suite.",
+		SourceBrbnch: brbnch,
 		SourceRepo: &Repo{
-			FullName: fork,
+			FullNbme: fork,
 		},
 	}
 
-	t.Run("invalid destination branch", func(t *testing.T) {
+	t.Run("invblid destinbtion brbnch", func(t *testing.T) {
 		opts := commonOpts
-		dest := "this-branch-should-never-exist"
-		opts.DestinationBranch = &dest
+		dest := "this-brbnch-should-never-exist"
+		opts.DestinbtionBrbnch = &dest
 
-		pr, err := c.CreatePullRequest(ctx, repo, opts)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
+		pr, err := c.CrebtePullRequest(ctx, repo, opts)
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
 	})
 
-	var id int64
-	t.Run("valid, omitted destination branch", func(t *testing.T) {
+	vbr id int64
+	t.Run("vblid, omitted destinbtion brbnch", func(t *testing.T) {
 		opts := commonOpts
 
-		pr, err := c.CreatePullRequest(ctx, repo, opts)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		pr, err := c.CrebtePullRequest(ctx, repo, opts)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 		id = pr.ID
 	})
 
-	t.Run("recreated", func(t *testing.T) {
-		// Bitbucket has the interesting behaviour that creating the same PR
-		// multiple times succeeds, but without actually changing the PR. Let's
-		// ensure that's still the case.
+	t.Run("recrebted", func(t *testing.T) {
+		// Bitbucket hbs the interesting behbviour thbt crebting the sbme PR
+		// multiple times succeeds, but without bctublly chbnging the PR. Let's
+		// ensure thbt's still the cbse.
 		opts := commonOpts
 
-		pr, err := c.CreatePullRequest(ctx, repo, opts)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		pr, err := c.CrebtePullRequest(ctx, repo, opts)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 
-		// As an extra sanity check, let's check the ID against the previous
-		// creation.
-		assert.Equal(t, id, pr.ID)
+		// As bn extrb sbnity check, let's check the ID bgbinst the previous
+		// crebtion.
+		bssert.Equbl(t, id, pr.ID)
 	})
 }
 
-func TestClient_CreatePullRequest_SameOrigin(t *testing.T) {
-	// WHEN UPDATING: this test requires a new branch in
-	// https://bitbucket.org/sourcegraph-testing/src-cli/src/master/ to open a
-	// pull request. The simplest way to accomplish this is to do the following,
-	// replacing XX with the next number after the branch currently in this
-	// test, assuming you have an account set up with an SSH key that can push
-	// to sourcegraph-testing/src-cli:
+func TestClient_CrebtePullRequest_SbmeOrigin(t *testing.T) {
+	// WHEN UPDATING: this test requires b new brbnch in
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/src/mbster/ to open b
+	// pull request. The simplest wby to bccomplish this is to do the following,
+	// replbcing XX with the next number bfter the brbnch currently in this
+	// test, bssuming you hbve bn bccount set up with bn SSH key thbt cbn push
+	// to sourcegrbph-testing/src-cli:
 	//
 	// $ cd /tmp
-	// $ git clone git@bitbucket.org:sourcegraph-testing/src-cli.git
+	// $ git clone git@bitbucket.org:sourcegrbph-testing/src-cli.git
 	// $ cd src-cli
-	// $ git checkout -b branch-XX
-	// $ git commit --allow-empty -m "new branch"
-	// $ git push origin branch-XX
+	// $ git checkout -b brbnch-XX
+	// $ git commit --bllow-empty -m "new brbnch"
+	// $ git push origin brbnch-XX
 	//
-	// Then update this test with the new branch number, and run the test suite
-	// with the appropriate -update flag.
+	// Then updbte this test with the new brbnch number, bnd run the test suite
+	// with the bppropribte -updbte flbg.
 
-	branch := "branch-00"
-	ctx := context.Background()
+	brbnch := "brbnch-00"
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 	commonOpts := PullRequestInput{
-		Title:        "Sourcegraph test " + branch,
-		Description:  "This is a PR created by the Sourcegraph test suite.",
-		SourceBranch: branch,
+		Title:        "Sourcegrbph test " + brbnch,
+		Description:  "This is b PR crebted by the Sourcegrbph test suite.",
+		SourceBrbnch: brbnch,
 	}
 
-	// We'll test the two cases with an explicit destination branch: that it's
-	// valid, and that it's invalid. We'll test the omitted destination branch
-	// case in the fork test.
+	// We'll test the two cbses with bn explicit destinbtion brbnch: thbt it's
+	// vblid, bnd thbt it's invblid. We'll test the omitted destinbtion brbnch
+	// cbse in the fork test.
 
-	t.Run("invalid destination branch", func(t *testing.T) {
+	t.Run("invblid destinbtion brbnch", func(t *testing.T) {
 		opts := commonOpts
-		dest := "this-branch-should-never-exist"
-		opts.DestinationBranch = &dest
+		dest := "this-brbnch-should-never-exist"
+		opts.DestinbtionBrbnch = &dest
 
-		pr, err := c.CreatePullRequest(ctx, repo, opts)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
+		pr, err := c.CrebtePullRequest(ctx, repo, opts)
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
 	})
 
-	var id int64
-	t.Run("valid destination branch", func(t *testing.T) {
+	vbr id int64
+	t.Run("vblid destinbtion brbnch", func(t *testing.T) {
 		opts := commonOpts
-		dest := "master"
-		opts.DestinationBranch = &dest
+		dest := "mbster"
+		opts.DestinbtionBrbnch = &dest
 
-		pr, err := c.CreatePullRequest(ctx, repo, opts)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		pr, err := c.CrebtePullRequest(ctx, repo, opts)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 		id = pr.ID
 	})
 
-	t.Run("recreated", func(t *testing.T) {
-		// Bitbucket has the interesting behaviour that creating the same PR
-		// multiple times succeeds, but without actually changing the PR. Let's
-		// ensure that's still the case.
+	t.Run("recrebted", func(t *testing.T) {
+		// Bitbucket hbs the interesting behbviour thbt crebting the sbme PR
+		// multiple times succeeds, but without bctublly chbnging the PR. Let's
+		// ensure thbt's still the cbse.
 		opts := commonOpts
-		dest := "master"
-		opts.DestinationBranch = &dest
+		dest := "mbster"
+		opts.DestinbtionBrbnch = &dest
 
-		pr, err := c.CreatePullRequest(ctx, repo, opts)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		pr, err := c.CrebtePullRequest(ctx, repo, opts)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 
-		// As an extra sanity check, let's check the ID against the previous
-		// creation.
-		assert.Equal(t, id, pr.ID)
+		// As bn extrb sbnity check, let's check the ID bgbinst the previous
+		// crebtion.
+		bssert.Equbl(t, id, pr.ID)
 	})
 }
 
-func TestClient_CreatePullRequestComment(t *testing.T) {
+func TestClient_CrebtePullRequestComment(t *testing.T) {
 	// WHEN UPDATING: this test expects
-	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/pull-requests/1/blwbys-open-pr
 	// to be open.
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 	input := CommentInput{
-		Content: "A test comment created at " + time.Now().Format(time.RFC822),
+		Content: "A test comment crebted bt " + time.Now().Formbt(time.RFC822),
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		pr, err := c.CreatePullRequestComment(ctx, repo, 0, input)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
-		assert.True(t, errcode.IsNotFound(err))
+		pr, err := c.CrebtePullRequestComment(ctx, repo, 0, input)
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
+		bssert.True(t, errcode.IsNotFound(err))
 	})
 
 	t.Run("found", func(t *testing.T) {
-		comment, err := c.CreatePullRequestComment(ctx, repo, 1, input)
-		assert.Nil(t, err)
-		assert.NotNil(t, comment)
-		assertGolden(t, comment)
+		comment, err := c.CrebtePullRequestComment(ctx, repo, 1, input)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, comment)
+		bssertGolden(t, comment)
 	})
 }
 
 func TestClient_DeclinePullRequest(t *testing.T) {
-	// WHEN UPDATING: this test expects a PR in
-	// https://bitbucket.org/sourcegraph-testing/src-cli/ to be open. Note that
-	// PRs cannot be reopened after being declined, so we can't use a stable ID
-	// here — this must use a PR that is open and can be safely declined, such
-	// as one created in the CreatePullRequest tests above. Update the ID below
-	// with such a PR before updating!
+	// WHEN UPDATING: this test expects b PR in
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/ to be open. Note thbt
+	// PRs cbnnot be reopened bfter being declined, so we cbn't use b stbble ID
+	// here — this must use b PR thbt is open bnd cbn be sbfely declined, such
+	// bs one crebted in the CrebtePullRequest tests bbove. Updbte the ID below
+	// with such b PR before updbting!
 
-	var id int64 = 2
-	ctx := context.Background()
+	vbr id int64 = 2
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 
 	t.Run("not found", func(t *testing.T) {
 		pr, err := c.DeclinePullRequest(ctx, repo, 0)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
-		assert.True(t, errcode.IsNotFound(err))
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
+		bssert.True(t, errcode.IsNotFound(err))
 	})
 
 	t.Run("found", func(t *testing.T) {
 		pr, err := c.DeclinePullRequest(ctx, repo, id)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 	})
 
-	t.Run("already declined", func(t *testing.T) {
-		// Given the above behaviour around CreatePullRequest being able to be
-		// called multiple times with no apparent effect, one might expect that
-		// you could do the same with declined pull requests. One cannot:
-		// repeated invocations of DeclinePullRequest for the same ID will fail.
+	t.Run("blrebdy declined", func(t *testing.T) {
+		// Given the bbove behbviour bround CrebtePullRequest being bble to be
+		// cblled multiple times with no bppbrent effect, one might expect thbt
+		// you could do the sbme with declined pull requests. One cbnnot:
+		// repebted invocbtions of DeclinePullRequest for the sbme ID will fbil.
 		pr, err := c.DeclinePullRequest(ctx, repo, id)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
 	})
 }
 
 func TestClient_GetPullRequest(t *testing.T) {
 	// WHEN UPDATING: this test expects
-	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/pull-requests/1/blwbys-open-pr
 	// to be open.
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 
 	t.Run("not found", func(t *testing.T) {
 		pr, err := c.GetPullRequest(ctx, repo, 0)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
-		assert.True(t, errcode.IsNotFound(err))
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
+		bssert.True(t, errcode.IsNotFound(err))
 	})
 
 	t.Run("found", func(t *testing.T) {
 		pr, err := c.GetPullRequest(ctx, repo, 1)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 	})
 }
 
-func TestClient_GetPullRequestStatuses(t *testing.T) {
+func TestClient_GetPullRequestStbtuses(t *testing.T) {
 	// WHEN UPDATING: this test expects
-	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/6 to be
-	// open and have at least one pipeline build, and
-	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1 to be
-	// open and have no builds. This shouldn't require any action on your part.
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/pull-requests/6 to be
+	// open bnd hbve bt lebst one pipeline build, bnd
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/pull-requests/1 to be
+	// open bnd hbve no builds. This shouldn't require bny bction on your pbrt.
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		rs, err := c.GetPullRequestStatuses(repo, 0)
-		// The first error doesn't trigger until we actually request a page.
-		assert.Nil(t, err)
-		assert.NotNil(t, rs)
+		rs, err := c.GetPullRequestStbtuses(repo, 0)
+		// The first error doesn't trigger until we bctublly request b pbge.
+		bssert.Nil(t, err)
+		bssert.NotNil(t, rs)
 
-		status, err := rs.Next(ctx)
-		assert.Nil(t, status)
-		assert.NotNil(t, err)
-		assert.True(t, errcode.IsNotFound(err))
+		stbtus, err := rs.Next(ctx)
+		bssert.Nil(t, stbtus)
+		bssert.NotNil(t, err)
+		bssert.True(t, errcode.IsNotFound(err))
 	})
 
-	t.Run("no statuses", func(t *testing.T) {
-		rs, err := c.GetPullRequestStatuses(repo, 1)
-		assert.Nil(t, err)
-		assert.NotNil(t, rs)
+	t.Run("no stbtuses", func(t *testing.T) {
+		rs, err := c.GetPullRequestStbtuses(repo, 1)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, rs)
 
-		status, err := rs.Next(ctx)
-		assert.Nil(t, status)
-		assert.Nil(t, err)
+		stbtus, err := rs.Next(ctx)
+		bssert.Nil(t, stbtus)
+		bssert.Nil(t, err)
 	})
 
-	t.Run("has statuses", func(t *testing.T) {
-		rs, err := c.GetPullRequestStatuses(repo, 6)
-		// The first error doesn't trigger until we actually request a page.
-		assert.Nil(t, err)
-		assert.NotNil(t, rs)
+	t.Run("hbs stbtuses", func(t *testing.T) {
+		rs, err := c.GetPullRequestStbtuses(repo, 6)
+		// The first error doesn't trigger until we bctublly request b pbge.
+		bssert.Nil(t, err)
+		bssert.NotNil(t, rs)
 
-		statuses, err := rs.All(ctx)
-		assert.Nil(t, err)
-		assert.NotEmpty(t, statuses)
-		assertGolden(t, statuses)
+		stbtuses, err := rs.All(ctx)
+		bssert.Nil(t, err)
+		bssert.NotEmpty(t, stbtuses)
+		bssertGolden(t, stbtuses)
 	})
 }
 
 func TestClient_MergePullRequest(t *testing.T) {
-	// WHEN UPDATING: this test expects a PR in
-	// https://bitbucket.org/sourcegraph-testing/src-cli/ to be open. Note that
-	// PRs cannot be reopened after being declined or merged, so we can't use a
-	// stable ID here — this must use a PR that is open and can be safely
-	// merged, ideally with more than one commit on the branch (to test the
-	// squashing strategy). Update the ID below with such a PR before updating!
+	// WHEN UPDATING: this test expects b PR in
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/ to be open. Note thbt
+	// PRs cbnnot be reopened bfter being declined or merged, so we cbn't use b
+	// stbble ID here — this must use b PR thbt is open bnd cbn be sbfely
+	// merged, ideblly with more thbn one commit on the brbnch (to test the
+	// squbshing strbtegy). Updbte the ID below with such b PR before updbting!
 	//
-	// After updating, check that the PR was actually merged, that the commit
-	// onto master was squashed, and that the source branch was deleted.
-	var id int64 = 4
-	ctx := context.Background()
+	// After updbting, check thbt the PR wbs bctublly merged, thbt the commit
+	// onto mbster wbs squbshed, bnd thbt the source brbnch wbs deleted.
+	vbr id int64 = 4
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 
-	message := "This is a merge commit from Sourcegraph's test suite."
-	closeSourceBranch := true
-	mergeStrategy := MergeStrategySquash
+	messbge := "This is b merge commit from Sourcegrbph's test suite."
+	closeSourceBrbnch := true
+	mergeStrbtegy := MergeStrbtegySqubsh
 	opts := MergePullRequestOpts{
-		Message:           &message,
-		CloseSourceBranch: &closeSourceBranch,
-		MergeStrategy:     &mergeStrategy,
+		Messbge:           &messbge,
+		CloseSourceBrbnch: &closeSourceBrbnch,
+		MergeStrbtegy:     &mergeStrbtegy,
 	}
 
 	t.Run("not found", func(t *testing.T) {
 		pr, err := c.MergePullRequest(ctx, repo, 0, opts)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
-		assert.True(t, errcode.IsNotFound(err))
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
+		bssert.True(t, errcode.IsNotFound(err))
 	})
 
 	t.Run("found", func(t *testing.T) {
 		pr, err := c.MergePullRequest(ctx, repo, id, opts)
-		assert.Nil(t, err)
-		assert.NotNil(t, pr)
-		assertGolden(t, pr)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, pr)
+		bssertGolden(t, pr)
 	})
 
-	t.Run("already merged", func(t *testing.T) {
+	t.Run("blrebdy merged", func(t *testing.T) {
 		pr, err := c.MergePullRequest(ctx, repo, id, opts)
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
 	})
 }
 
-func TestClient_UpdatePullRequest(t *testing.T) {
+func TestClient_UpdbtePullRequest(t *testing.T) {
 	// WHEN UPDATING: this test expects
-	// https://bitbucket.org/sourcegraph-testing/src-cli/pull-requests/1/always-open-pr
+	// https://bitbucket.org/sourcegrbph-testing/src-cli/pull-requests/1/blwbys-open-pr
 	// to be open.
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	c := newTestClient(t)
 
 	repo := &Repo{
-		FullName: "sourcegraph-testing/src-cli",
+		FullNbme: "sourcegrbph-testing/src-cli",
 	}
 
 	t.Run("not found", func(t *testing.T) {
-		pr, err := c.UpdatePullRequest(ctx, repo, 0, PullRequestInput{})
-		assert.Nil(t, pr)
-		assert.NotNil(t, err)
-		assert.True(t, errcode.IsNotFound(err))
+		pr, err := c.UpdbtePullRequest(ctx, repo, 0, PullRequestInput{})
+		bssert.Nil(t, pr)
+		bssert.NotNil(t, err)
+		bssert.True(t, errcode.IsNotFound(err))
 	})
 
 	t.Run("found", func(t *testing.T) {
 		pr, err := c.GetPullRequest(ctx, repo, 1)
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 
-		updated, err := c.UpdatePullRequest(ctx, repo, 1, PullRequestInput{
+		updbted, err := c.UpdbtePullRequest(ctx, repo, 1, PullRequestInput{
 			Title:             pr.Title,
-			Description:       "This PR is _always_ open.\n\nUpdated by the Sourcegraph test suite at " + time.Now().Format(time.RFC3339),
-			SourceBranch:      pr.Source.Branch.Name,
+			Description:       "This PR is _blwbys_ open.\n\nUpdbted by the Sourcegrbph test suite bt " + time.Now().Formbt(time.RFC3339),
+			SourceBrbnch:      pr.Source.Brbnch.Nbme,
 			SourceRepo:        &pr.Source.Repo,
-			DestinationBranch: &pr.Destination.Branch.Name,
+			DestinbtionBrbnch: &pr.Destinbtion.Brbnch.Nbme,
 		})
-		assert.Nil(t, err)
-		assert.NotNil(t, updated)
-		assertGolden(t, updated)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, updbted)
+		bssertGolden(t, updbted)
 	})
 }

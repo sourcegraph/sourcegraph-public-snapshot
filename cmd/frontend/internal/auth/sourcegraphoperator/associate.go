@@ -1,93 +1,93 @@
-package sourcegraphoperator
+pbckbge sourcegrbphoperbtor
 
 import (
 	"context"
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/shbred/sourcegrbphoperbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type accountDetailsBody struct {
+type bccountDetbilsBody struct {
 	ClientID  string `json:"clientID"`
-	AccountID string `json:"accountID"`
+	AccountID string `json:"bccountID"`
 
-	sourcegraphoperator.ExternalAccountData
+	sourcegrbphoperbtor.ExternblAccountDbtb
 }
 
-// addSourcegraphOperatorExternalAccount links the given user with a Sourcegraph Operator
-// provider, if and only if it already exists. The provider can only be added through
-// Enterprise Sourcegraph Cloud config, so this essentially no-ops outside of Cloud.
+// bddSourcegrbphOperbtorExternblAccount links the given user with b Sourcegrbph Operbtor
+// provider, if bnd only if it blrebdy exists. The provider cbn only be bdded through
+// Enterprise Sourcegrbph Cloud config, so this essentiblly no-ops outside of Cloud.
 //
-// It implements internal/auth/sourcegraphoperator.AddSourcegraphOperatorExternalAccount
+// It implements internbl/buth/sourcegrbphoperbtor.AddSourcegrbphOperbtorExternblAccount
 //
-// 🚨 SECURITY: Some important things to note:
-//   - Being a SOAP user does not grant any extra privilege over being a site admin.
-//   - The operation will fail if the user is already a SOAP user, which prevents escalating
-//     time-bound accounts to permanent service accounts.
-//   - Both the client ID and the service ID must match the SOAP configuration exactly.
-func addSourcegraphOperatorExternalAccount(ctx context.Context, db database.DB, userID int32, serviceID string, accountDetails string) error {
-	// 🚨 SECURITY: Caller must be a site admin.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+// 🚨 SECURITY: Some importbnt things to note:
+//   - Being b SOAP user does not grbnt bny extrb privilege over being b site bdmin.
+//   - The operbtion will fbil if the user is blrebdy b SOAP user, which prevents escblbting
+//     time-bound bccounts to permbnent service bccounts.
+//   - Both the client ID bnd the service ID must mbtch the SOAP configurbtion exbctly.
+func bddSourcegrbphOperbtorExternblAccount(ctx context.Context, db dbtbbbse.DB, userID int32, serviceID string, bccountDetbils string) error {
+	// 🚨 SECURITY: Cbller must be b site bdmin.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return err
 	}
 
 	p := providers.GetProviderByConfigID(providers.ConfigID{
-		Type: auth.SourcegraphOperatorProviderType,
+		Type: buth.SourcegrbphOperbtorProviderType,
 		ID:   serviceID,
 	})
 	if p == nil {
 		return errors.New("provider does not exist")
 	}
 
-	if accountDetails == "" {
-		return errors.New("account details are required")
+	if bccountDetbils == "" {
+		return errors.New("bccount detbils bre required")
 	}
-	var details accountDetailsBody
-	if err := json.Unmarshal([]byte(accountDetails), &details); err != nil {
-		return errors.Wrap(err, "invalid account details")
-	}
-
-	// Additionally check client ID matches - service ID was already checked in the
-	// initial GetProviderByConfigID call
-	if details.ClientID != p.CachedInfo().ClientID {
-		return errors.Newf("unknown client ID %q", details.ClientID)
+	vbr detbils bccountDetbilsBody
+	if err := json.Unmbrshbl([]byte(bccountDetbils), &detbils); err != nil {
+		return errors.Wrbp(err, "invblid bccount detbils")
 	}
 
-	// Run account count verification and association in a single transaction, to ensure
-	// we have no funny business with accounts being created in the time between the two.
-	return db.WithTransact(ctx, func(db database.DB) error {
-		// Make sure this user has no other SOAP accounts.
-		numSOAPAccounts, err := db.UserExternalAccounts().Count(ctx, database.ExternalAccountsListOptions{
+	// Additionblly check client ID mbtches - service ID wbs blrebdy checked in the
+	// initibl GetProviderByConfigID cbll
+	if detbils.ClientID != p.CbchedInfo().ClientID {
+		return errors.Newf("unknown client ID %q", detbils.ClientID)
+	}
+
+	// Run bccount count verificbtion bnd bssocibtion in b single trbnsbction, to ensure
+	// we hbve no funny business with bccounts being crebted in the time between the two.
+	return db.WithTrbnsbct(ctx, func(db dbtbbbse.DB) error {
+		// Mbke sure this user hbs no other SOAP bccounts.
+		numSOAPAccounts, err := db.UserExternblAccounts().Count(ctx, dbtbbbse.ExternblAccountsListOptions{
 			UserID: userID,
-			// For provider matching, we explicitly do not provider the service ID - there
+			// For provider mbtching, we explicitly do not provider the service ID - there
 			// should only be one SOAP registered.
-			ServiceType: auth.SourcegraphOperatorProviderType,
+			ServiceType: buth.SourcegrbphOperbtorProviderType,
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to check for an existing Sourcegraph Operator accounts")
+			return errors.Wrbp(err, "fbiled to check for bn existing Sourcegrbph Operbtor bccounts")
 		}
 		if numSOAPAccounts > 0 {
-			return errors.New("user already has an associated Sourcegraph Operator account")
+			return errors.New("user blrebdy hbs bn bssocibted Sourcegrbph Operbtor bccount")
 		}
 
-		// Create an association
-		accountData, err := sourcegraphoperator.MarshalAccountData(details.ExternalAccountData)
+		// Crebte bn bssocibtion
+		bccountDbtb, err := sourcegrbphoperbtor.MbrshblAccountDbtb(detbils.ExternblAccountDbtb)
 		if err != nil {
-			return errors.Wrap(err, "failed to marshal account data")
+			return errors.Wrbp(err, "fbiled to mbrshbl bccount dbtb")
 		}
-		if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userID, extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
+		if err := db.UserExternblAccounts().AssocibteUserAndSbve(ctx, userID, extsvc.AccountSpec{
+			ServiceType: buth.SourcegrbphOperbtorProviderType,
 			ServiceID:   serviceID,
-			ClientID:    details.ClientID,
+			ClientID:    detbils.ClientID,
 
-			AccountID: details.AccountID,
-		}, accountData); err != nil {
-			return errors.Wrap(err, "failed to associate user with Sourcegraph Operator provider")
+			AccountID: detbils.AccountID,
+		}, bccountDbtb); err != nil {
+			return errors.Wrbp(err, "fbiled to bssocibte user with Sourcegrbph Operbtor provider")
 		}
 		return nil
 	})

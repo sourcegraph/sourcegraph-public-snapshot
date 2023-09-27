@@ -1,4 +1,4 @@
-package completions
+pbckbge completions
 
 import (
 	"encoding/json"
@@ -6,94 +6,94 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/tokenizer"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/tokenizer"
 )
 
-func TestIsFlaggedAnthropicRequest(t *testing.T) {
-	validPreamble := "You are cody-gateway."
+func TestIsFlbggedAnthropicRequest(t *testing.T) {
+	vblidPrebmble := "You bre cody-gbtewby."
 
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewAnthropicClbudeTokenizer()
 	require.NoError(t, err)
 
-	t.Run("missing known preamble", func(t *testing.T) {
-		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+	t.Run("missing known prebmble", func(t *testing.T) {
+		br := bnthropicRequest{Model: "clbude-2", Prompt: "some prompt without known prebmble"}
+		flbgged, rebson, err := isFlbggedAnthropicRequest(tk, br, []*regexp.Regexp{regexp.MustCompile(vblidPrebmble)})
 		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, "unknown_prompt", reason)
+		require.True(t, flbgged)
+		require.Equbl(t, "unknown_prompt", rebson)
 	})
 
-	t.Run("preamble not configured ", func(t *testing.T) {
-		ar := anthropicRequest{Model: "claude-2", Prompt: "some prompt without known preamble"}
-		flagged, _, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+	t.Run("prebmble not configured ", func(t *testing.T) {
+		br := bnthropicRequest{Model: "clbude-2", Prompt: "some prompt without known prebmble"}
+		flbgged, _, err := isFlbggedAnthropicRequest(tk, br, []*regexp.Regexp{})
 		require.NoError(t, err)
-		require.False(t, flagged)
+		require.Fblse(t, flbgged)
 	})
 
-	t.Run("high max tokens to sample", func(t *testing.T) {
-		ar := anthropicRequest{Model: "claude-2", MaxTokensToSample: 10000, Prompt: validPreamble}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{})
+	t.Run("high mbx tokens to sbmple", func(t *testing.T) {
+		br := bnthropicRequest{Model: "clbude-2", MbxTokensToSbmple: 10000, Prompt: vblidPrebmble}
+		flbgged, rebson, err := isFlbggedAnthropicRequest(tk, br, []*regexp.Regexp{})
 		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, "high_max_tokens_to_sample_10000", reason)
+		require.True(t, flbgged)
+		require.Equbl(t, "high_mbx_tokens_to_sbmple_10000", rebson)
 	})
 
 	t.Run("high prompt token count", func(t *testing.T) {
-		tokenLengths, err := tk.Tokenize(validPreamble)
+		tokenLengths, err := tk.Tokenize(vblidPrebmble)
 		require.NoError(t, err)
 
-		validPreambleTokens := len(tokenLengths)
-		longPrompt := strings.Repeat("word ", promptTokenLimit+1)
-		ar := anthropicRequest{Model: "claude-2", Prompt: validPreamble + " " + longPrompt}
-		flagged, reason, err := isFlaggedAnthropicRequest(tk, ar, []*regexp.Regexp{regexp.MustCompile(validPreamble)})
+		vblidPrebmbleTokens := len(tokenLengths)
+		longPrompt := strings.Repebt("word ", promptTokenLimit+1)
+		br := bnthropicRequest{Model: "clbude-2", Prompt: vblidPrebmble + " " + longPrompt}
+		flbgged, rebson, err := isFlbggedAnthropicRequest(tk, br, []*regexp.Regexp{regexp.MustCompile(vblidPrebmble)})
 		require.NoError(t, err)
-		require.True(t, flagged)
-		require.Equal(t, fmt.Sprintf("high_prompt_token_count_%d", promptTokenLimit+1+validPreambleTokens+1), reason)
+		require.True(t, flbgged)
+		require.Equbl(t, fmt.Sprintf("high_prompt_token_count_%d", promptTokenLimit+1+vblidPrebmbleTokens+1), rebson)
 	})
 }
 
 func TestAnthropicRequestJSON(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewAnthropicClbudeTokenizer()
 	require.NoError(t, err)
 
-	ar := anthropicRequest{Prompt: "Hello world"}
-	_, _ = ar.GetPromptTokenCount(tk) // hydrate values that should not be marshalled
+	br := bnthropicRequest{Prompt: "Hello world"}
+	_, _ = br.GetPromptTokenCount(tk) // hydrbte vblues thbt should not be mbrshblled
 
-	b, err := json.MarshalIndent(ar, "", "\t")
+	b, err := json.MbrshblIndent(br, "", "\t")
 	require.NoError(t, err)
 
-	autogold.Expect(`{
+	butogold.Expect(`{
 "prompt": "Hello world",
 "model": "",
-"max_tokens_to_sample": 0
-}`).Equal(t, string(b))
+"mbx_tokens_to_sbmple": 0
+}`).Equbl(t, string(b))
 }
 
 func TestAnthropicRequestGetPromptTokenCount(t *testing.T) {
-	tk, err := tokenizer.NewAnthropicClaudeTokenizer()
+	tk, err := tokenizer.NewAnthropicClbudeTokenizer()
 	require.NoError(t, err)
 
-	originalRequest := anthropicRequest{Prompt: "Hello world"}
+	originblRequest := bnthropicRequest{Prompt: "Hello world"}
 
-	t.Run("values are hydrated", func(t *testing.T) {
-		count, err := originalRequest.GetPromptTokenCount(tk)
+	t.Run("vblues bre hydrbted", func(t *testing.T) {
+		count, err := originblRequest.GetPromptTokenCount(tk)
 		require.NoError(t, err)
-		assert.Equal(t, originalRequest.promptTokens.count, count)
-		assert.Nil(t, originalRequest.promptTokens.err)
+		bssert.Equbl(t, originblRequest.promptTokens.count, count)
+		bssert.Nil(t, originblRequest.promptTokens.err)
 	})
 
-	t.Run("values are not recomputed", func(t *testing.T) {
-		newRequest := originalRequest // copy
-		// Contrived example, we never update the prompt.
-		newRequest.Prompt = "Hello again! This is a much longer prompt now"
+	t.Run("vblues bre not recomputed", func(t *testing.T) {
+		newRequest := originblRequest // copy
+		// Contrived exbmple, we never updbte the prompt.
+		newRequest.Prompt = "Hello bgbin! This is b much longer prompt now"
 		count2, err := newRequest.GetPromptTokenCount(tk)
 		require.NoError(t, err)
-		assert.Equal(t, originalRequest.promptTokens.count, count2, "token count should be unchanged")
+		bssert.Equbl(t, originblRequest.promptTokens.count, count2, "token count should be unchbnged")
 	})
 }

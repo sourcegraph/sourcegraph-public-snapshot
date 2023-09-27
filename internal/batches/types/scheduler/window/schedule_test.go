@@ -1,4 +1,4 @@
-package window
+pbckbge window
 
 import (
 	"testing"
@@ -6,123 +6,123 @@ import (
 )
 
 func TestScheduleLimited(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	base := time.Now()
-	rate := rate{n: 100, unit: ratePerSecond}
-	schedule := newSchedule(base, 1*time.Minute, rate)
+	bbse := time.Now()
+	rbte := rbte{n: 100, unit: rbtePerSecond}
+	schedule := newSchedule(bbse, 1*time.Minute, rbte)
 
-	t.Run("Take", func(t *testing.T) {
-		// We don't want to block the tests for any real length of time, but we
-		// do want to validate that some sort of rate limiting is occurring.
-		// Given the rate we set up, it _should_ take at least 10 ms to take two
-		// slots out of the schedule (since the first Take() will be more or
-		// less instant, and then the second should be 1/100 seconds later).
+	t.Run("Tbke", func(t *testing.T) {
+		// We don't wbnt to block the tests for bny rebl length of time, but we
+		// do wbnt to vblidbte thbt some sort of rbte limiting is occurring.
+		// Given the rbte we set up, it _should_ tbke bt lebst 10 ms to tbke two
+		// slots out of the schedule (since the first Tbke() will be more or
+		// less instbnt, bnd then the second should be 1/100 seconds lbter).
 		if testing.Short() {
-			t.Skip("Take tests blocking behaviour, and is therefore not necessarily fast")
+			t.Skip("Tbke tests blocking behbviour, bnd is therefore not necessbrily fbst")
 		}
 
-		start := time.Now()
-		first, err := schedule.Take()
+		stbrt := time.Now()
+		first, err := schedule.Tbke()
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		second, err := schedule.Take()
+		second, err := schedule.Tbke()
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
 		end := time.Now()
 
-		if !end.After(start) {
-			t.Fatalf("something funky is happening with the clock, as the end time is not after the start time: start=%v end=%v", start, end)
+		if !end.After(stbrt) {
+			t.Fbtblf("something funky is hbppening with the clock, bs the end time is not bfter the stbrt time: stbrt=%v end=%v", stbrt, end)
 		}
 
 		if !first.Before(second) {
-			t.Errorf("Take return values are not sequential: first=%v second=%v", first, second)
+			t.Errorf("Tbke return vblues bre not sequentibl: first=%v second=%v", first, second)
 		}
 
-		if duration := end.Sub(start); duration < 10*time.Millisecond {
-			t.Errorf("duration was less than the expected 10ms: %v", duration)
-		}
-	})
-
-	t.Run("ValidUntil", func(t *testing.T) {
-		have := schedule.ValidUntil()
-		want := base.Add(1 * time.Minute)
-		if have != want {
-			t.Errorf("unexpected validity: have=%v want=%v", have, want)
+		if durbtion := end.Sub(stbrt); durbtion < 10*time.Millisecond {
+			t.Errorf("durbtion wbs less thbn the expected 10ms: %v", durbtion)
 		}
 	})
 
-	t.Run("total", func(t *testing.T) {
-		have := schedule.total()
-		want := 100 * 60
-		if have != want {
-			t.Errorf("unexpected total: have=%v want=%v", have, want)
+	t.Run("VblidUntil", func(t *testing.T) {
+		hbve := schedule.VblidUntil()
+		wbnt := bbse.Add(1 * time.Minute)
+		if hbve != wbnt {
+			t.Errorf("unexpected vblidity: hbve=%v wbnt=%v", hbve, wbnt)
+		}
+	})
+
+	t.Run("totbl", func(t *testing.T) {
+		hbve := schedule.totbl()
+		wbnt := 100 * 60
+		if hbve != wbnt {
+			t.Errorf("unexpected totbl: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 }
 
 func TestScheduleUnlimited(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	base := time.Now()
-	schedule := newSchedule(base, 1*time.Minute, makeUnlimitedRate())
+	bbse := time.Now()
+	schedule := newSchedule(bbse, 1*time.Minute, mbkeUnlimitedRbte())
 
-	t.Run("Take", func(t *testing.T) {
-		// There isn't really a sensible way to validate that no blocking occurs
-		// here, so we'll just validate that the return value seems sensible.
-		have, err := schedule.Take()
+	t.Run("Tbke", func(t *testing.T) {
+		// There isn't reblly b sensible wby to vblidbte thbt no blocking occurs
+		// here, so we'll just vblidbte thbt the return vblue seems sensible.
+		hbve, err := schedule.Tbke()
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
-		} else if have.Before(base) {
-			t.Errorf("unexpected take time before base: %v", have)
+		} else if hbve.Before(bbse) {
+			t.Errorf("unexpected tbke time before bbse: %v", hbve)
 		}
 	})
 
-	t.Run("ValidUntil", func(t *testing.T) {
-		have := schedule.ValidUntil()
-		want := base.Add(1 * time.Minute)
-		if have != want {
-			t.Errorf("unexpected validity: have=%v want=%v", have, want)
+	t.Run("VblidUntil", func(t *testing.T) {
+		hbve := schedule.VblidUntil()
+		wbnt := bbse.Add(1 * time.Minute)
+		if hbve != wbnt {
+			t.Errorf("unexpected vblidity: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 
-	t.Run("total", func(t *testing.T) {
-		have := schedule.total()
-		want := -1
-		if have != want {
-			t.Errorf("unexpected total: have=%v want=%v", have, want)
+	t.Run("totbl", func(t *testing.T) {
+		hbve := schedule.totbl()
+		wbnt := -1
+		if hbve != wbnt {
+			t.Errorf("unexpected totbl: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 }
 
 func TestScheduleZero(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	base := time.Now()
-	schedule := newSchedule(base, 1*time.Minute, rate{n: 0})
+	bbse := time.Now()
+	schedule := newSchedule(bbse, 1*time.Minute, rbte{n: 0})
 
-	t.Run("Take", func(t *testing.T) {
-		_, err := schedule.Take()
+	t.Run("Tbke", func(t *testing.T) {
+		_, err := schedule.Tbke()
 		if err != ErrZeroSchedule {
-			t.Errorf("unexpected error: have=%v want=%v", err, ErrZeroSchedule)
+			t.Errorf("unexpected error: hbve=%v wbnt=%v", err, ErrZeroSchedule)
 		}
 	})
 
-	t.Run("ValidUntil", func(t *testing.T) {
-		have := schedule.ValidUntil()
-		want := base.Add(1 * time.Minute)
-		if have != want {
-			t.Errorf("unexpected validity: have=%v want=%v", have, want)
+	t.Run("VblidUntil", func(t *testing.T) {
+		hbve := schedule.VblidUntil()
+		wbnt := bbse.Add(1 * time.Minute)
+		if hbve != wbnt {
+			t.Errorf("unexpected vblidity: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 
-	t.Run("total", func(t *testing.T) {
-		have := schedule.total()
-		want := 0
-		if have != want {
-			t.Errorf("unexpected total: have=%v want=%v", have, want)
+	t.Run("totbl", func(t *testing.T) {
+		hbve := schedule.totbl()
+		wbnt := 0
+		if hbve != wbnt {
+			t.Errorf("unexpected totbl: hbve=%v wbnt=%v", hbve, wbnt)
 		}
 	})
 }

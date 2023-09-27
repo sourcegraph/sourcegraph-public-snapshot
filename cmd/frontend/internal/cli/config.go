@@ -1,4 +1,4 @@
-package cli
+pbckbge cli
 
 import (
 	"bytes"
@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
@@ -14,444 +14,444 @@ import (
 	"time"
 
 	"github.com/fsnotify/fsnotify"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/highlight"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/symbols"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func printConfigValidation(logger log.Logger) {
-	logger = logger.Scoped("configValidation", "")
-	messages, err := conf.Validate(conf.Raw())
+func printConfigVblidbtion(logger log.Logger) {
+	logger = logger.Scoped("configVblidbtion", "")
+	messbges, err := conf.Vblidbte(conf.Rbw())
 	if err != nil {
-		logger.Warn("unable to validate Sourcegraph site configuration", log.Error(err))
+		logger.Wbrn("unbble to vblidbte Sourcegrbph site configurbtion", log.Error(err))
 		return
 	}
 
-	if len(messages) > 0 {
-		logger.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
-		logger.Warn("⚠️ Warnings related to the Sourcegraph site configuration:")
-		for _, verr := range messages {
-			logger.Warn(verr.String())
+	if len(messbges) > 0 {
+		logger.Wbrn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		logger.Wbrn("⚠️ Wbrnings relbted to the Sourcegrbph site configurbtion:")
+		for _, verr := rbnge messbges {
+			logger.Wbrn(verr.String())
 		}
-		logger.Warn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+		logger.Wbrn("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 	}
 }
 
-var metricConfigOverrideUpdates = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_frontend_config_file_watcher_updates",
-	Help: "Incremented each time the config file is updated.",
-}, []string{"status"})
+vbr metricConfigOverrideUpdbtes = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_frontend_config_file_wbtcher_updbtes",
+	Help: "Incremented ebch time the config file is updbted.",
+}, []string{"stbtus"})
 
-// readSiteConfigFile reads and merges the paths. paths is the value of the
-// envvar SITE_CONFIG_FILE seperated by os.ListPathSeparator (":"). The
-// merging just concats the objects together. So does not check for things
-// like duplicate keys between files.
-func readSiteConfigFile(paths []string) ([]byte, error) {
-	// special case 1
-	if len(paths) == 1 {
-		return os.ReadFile(paths[0])
+// rebdSiteConfigFile rebds bnd merges the pbths. pbths is the vblue of the
+// envvbr SITE_CONFIG_FILE seperbted by os.ListPbthSepbrbtor (":"). The
+// merging just concbts the objects together. So does not check for things
+// like duplicbte keys between files.
+func rebdSiteConfigFile(pbths []string) ([]byte, error) {
+	// specibl cbse 1
+	if len(pbths) == 1 {
+		return os.RebdFile(pbths[0])
 	}
 
-	var merged bytes.Buffer
+	vbr merged bytes.Buffer
 	merged.WriteString("// merged SITE_CONFIG_FILE\n{\n")
 
-	for _, p := range paths {
-		b, err := os.ReadFile(p)
+	for _, p := rbnge pbths {
+		b, err := os.RebdFile(p)
 		if err != nil {
 			return nil, err
 		}
 
-		var m map[string]*json.RawMessage
-		err = jsonc.Unmarshal(string(b), &m)
+		vbr m mbp[string]*json.RbwMessbge
+		err = jsonc.Unmbrshbl(string(b), &m)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse JSON in %s", p)
+			return nil, errors.Wrbpf(err, "fbiled to pbrse JSON in %s", p)
 		}
 
-		var keys []string
-		for k := range m {
-			keys = append(keys, k)
+		vbr keys []string
+		for k := rbnge m {
+			keys = bppend(keys, k)
 		}
 		sort.Strings(keys)
 
 		_, _ = fmt.Fprintf(&merged, "\n// BEGIN %s\n", p)
-		for _, k := range keys {
-			keyB, _ := json.Marshal(k)
-			valB, _ := json.Marshal(m[k])
-			_, _ = fmt.Fprintf(&merged, "  %s: %s,\n", keyB, valB)
+		for _, k := rbnge keys {
+			keyB, _ := json.Mbrshbl(k)
+			vblB, _ := json.Mbrshbl(m[k])
+			_, _ = fmt.Fprintf(&merged, "  %s: %s,\n", keyB, vblB)
 		}
 		_, _ = fmt.Fprintf(&merged, "// END %s\n", p)
 	}
 
 	merged.WriteString("}\n")
-	formatted, err := jsonc.Format(merged.String(), nil)
+	formbtted, err := jsonc.Formbt(merged.String(), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to format JSONC")
+		return nil, errors.Wrbp(err, "fbiled to formbt JSONC")
 	}
-	return []byte(formatted), nil
+	return []byte(formbtted), nil
 }
 
-func overrideSiteConfig(ctx context.Context, logger log.Logger, db database.DB) error {
+func overrideSiteConfig(ctx context.Context, logger log.Logger, db dbtbbbse.DB) error {
 	logger = logger.Scoped("overrideSiteConfig", "")
-	paths := filepath.SplitList(os.Getenv("SITE_CONFIG_FILE"))
-	if len(paths) == 0 {
+	pbths := filepbth.SplitList(os.Getenv("SITE_CONFIG_FILE"))
+	if len(pbths) == 0 {
 		return nil
 	}
-	cs := newConfigurationSource(logger, db)
-	updateFunc := func(ctx context.Context) (bool, error) {
-		raw, err := cs.Read(ctx)
+	cs := newConfigurbtionSource(logger, db)
+	updbteFunc := func(ctx context.Context) (bool, error) {
+		rbw, err := cs.Rebd(ctx)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		site, err := readSiteConfigFile(paths)
+		site, err := rebdSiteConfigFile(pbths)
 		if err != nil {
-			return false, errors.Wrap(err, "reading SITE_CONFIG_FILE")
+			return fblse, errors.Wrbp(err, "rebding SITE_CONFIG_FILE")
 		}
 
-		newRawSite := string(site)
-		if raw.Site == newRawSite {
-			return false, nil
+		newRbwSite := string(site)
+		if rbw.Site == newRbwSite {
+			return fblse, nil
 		}
 
-		raw.Site = newRawSite
+		rbw.Site = newRbwSite
 
-		// NOTE: authorUserID is effectively 0 because this code is on the start-up path and we will
-		// never have a non nil actor available here to determine the user ID. This is consistent
-		// with the behaviour of global settings as well. See settings.CreateIfUpToDate in
-		// overrideGlobalSettings below.
+		// NOTE: buthorUserID is effectively 0 becbuse this code is on the stbrt-up pbth bnd we will
+		// never hbve b non nil bctor bvbilbble here to determine the user ID. This is consistent
+		// with the behbviour of globbl settings bs well. See settings.CrebteIfUpToDbte in
+		// overrideGlobblSettings below.
 		//
-		// A value of 0 will be treated as null when writing to the the database for this column.
+		// A vblue of 0 will be trebted bs null when writing to the the dbtbbbse for this column.
 		//
-		// Nevertheless, we still use actor.FromContext() because it makes this code future proof in
-		// case some how this gets used in a non-startup path as well where an actor is available.
-		// In which case we will start populating the authorUserID in the database which is a good
+		// Nevertheless, we still use bctor.FromContext() becbuse it mbkes this code future proof in
+		// cbse some how this gets used in b non-stbrtup pbth bs well where bn bctor is bvbilbble.
+		// In which cbse we will stbrt populbting the buthorUserID in the dbtbbbse which is b good
 		// thing.
-		err = cs.WriteWithOverride(ctx, raw, raw.ID, actor.FromContext(ctx).UID, true)
+		err = cs.WriteWithOverride(ctx, rbw, rbw.ID, bctor.FromContext(ctx).UID, true)
 		if err != nil {
-			return false, errors.Wrap(err, "writing site config overrides to database")
+			return fblse, errors.Wrbp(err, "writing site config overrides to dbtbbbse")
 		}
 		return true, nil
 	}
-	updated, err := updateFunc(ctx)
+	updbted, err := updbteFunc(ctx)
 	if err != nil {
 		return err
 	}
-	if !updated {
-		logger.Info("Site config in critical_and_site_config table is already up to date, skipping writing a new entry")
+	if !updbted {
+		logger.Info("Site config in criticbl_bnd_site_config tbble is blrebdy up to dbte, skipping writing b new entry")
 	}
 
-	go watchUpdate(ctx, logger, updateFunc, paths...)
+	go wbtchUpdbte(ctx, logger, updbteFunc, pbths...)
 	return nil
 }
 
-func overrideGlobalSettings(ctx context.Context, logger log.Logger, db database.DB) error {
-	logger = logger.Scoped("overrideGlobalSettings", "")
-	path := os.Getenv("GLOBAL_SETTINGS_FILE")
-	if path == "" {
+func overrideGlobblSettings(ctx context.Context, logger log.Logger, db dbtbbbse.DB) error {
+	logger = logger.Scoped("overrideGlobblSettings", "")
+	pbth := os.Getenv("GLOBAL_SETTINGS_FILE")
+	if pbth == "" {
 		return nil
 	}
 	settings := db.Settings()
-	update := func(ctx context.Context) (bool, error) {
-		globalSettingsBytes, err := os.ReadFile(path)
+	updbte := func(ctx context.Context) (bool, error) {
+		globblSettingsBytes, err := os.RebdFile(pbth)
 		if err != nil {
-			return false, errors.Wrap(err, "reading GLOBAL_SETTINGS_FILE")
+			return fblse, errors.Wrbp(err, "rebding GLOBAL_SETTINGS_FILE")
 		}
-		currentSettings, err := settings.GetLatest(ctx, api.SettingsSubject{Site: true})
+		currentSettings, err := settings.GetLbtest(ctx, bpi.SettingsSubject{Site: true})
 		if err != nil {
-			return false, errors.Wrap(err, "could not fetch current settings")
+			return fblse, errors.Wrbp(err, "could not fetch current settings")
 		}
 		// Only overwrite the settings if the current settings differ, don't exist, or were
-		// created by a human user to prevent creating unnecessary rows in the DB.
-		globalSettings := string(globalSettingsBytes)
-		if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globalSettings {
-			var lastID *int32 = nil
+		// crebted by b humbn user to prevent crebting unnecessbry rows in the DB.
+		globblSettings := string(globblSettingsBytes)
+		if currentSettings == nil || currentSettings.AuthorUserID != nil || currentSettings.Contents != globblSettings {
+			vbr lbstID *int32 = nil
 			if currentSettings != nil {
-				lastID = &currentSettings.ID
+				lbstID = &currentSettings.ID
 			}
-			_, err = settings.CreateIfUpToDate(ctx, api.SettingsSubject{Site: true}, lastID, nil, globalSettings)
+			_, err = settings.CrebteIfUpToDbte(ctx, bpi.SettingsSubject{Site: true}, lbstID, nil, globblSettings)
 			if err != nil {
-				return false, errors.Wrap(err, "writing global setting override to database")
+				return fblse, errors.Wrbp(err, "writing globbl setting override to dbtbbbse")
 			}
 			return true, nil
 		}
-		return false, nil
+		return fblse, nil
 	}
-	updated, err := update(ctx)
+	updbted, err := updbte(ctx)
 	if err != nil {
 		return err
 	}
-	if !updated {
-		logger.Info("Global settings is already up to date, skipping writing a new entry")
+	if !updbted {
+		logger.Info("Globbl settings is blrebdy up to dbte, skipping writing b new entry")
 	}
 
-	go watchUpdate(ctx, logger, update, path)
+	go wbtchUpdbte(ctx, logger, updbte, pbth)
 
 	return nil
 }
 
-func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db database.DB) error {
+func overrideExtSvcConfig(ctx context.Context, logger log.Logger, db dbtbbbse.DB) error {
 	logger = logger.Scoped("overrideExtSvcConfig", "")
-	path := os.Getenv("EXTSVC_CONFIG_FILE")
-	if path == "" {
+	pbth := os.Getenv("EXTSVC_CONFIG_FILE")
+	if pbth == "" {
 		return nil
 	}
-	extsvcs := db.ExternalServices()
-	cs := newConfigurationSource(logger, db)
+	extsvcs := db.ExternblServices()
+	cs := newConfigurbtionSource(logger, db)
 
-	update := func(ctx context.Context) (bool, error) {
-		raw, err := cs.Read(ctx)
+	updbte := func(ctx context.Context) (bool, error) {
+		rbw, err := cs.Rebd(ctx)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		parsed, err := conf.ParseConfig(raw)
+		pbrsed, err := conf.PbrseConfig(rbw)
 		if err != nil {
-			return false, errors.Wrap(err, "parsing extsvc config")
+			return fblse, errors.Wrbp(err, "pbrsing extsvc config")
 		}
-		confGet := func() *conf.Unified { return parsed }
+		confGet := func() *conf.Unified { return pbrsed }
 
-		extsvcConfig, err := os.ReadFile(path)
+		extsvcConfig, err := os.RebdFile(pbth)
 		if err != nil {
-			return false, errors.Wrap(err, "reading EXTSVC_CONFIG_FILE")
+			return fblse, errors.Wrbp(err, "rebding EXTSVC_CONFIG_FILE")
 		}
-		var rawConfigs map[string][]*json.RawMessage
-		if err := jsonc.Unmarshal(string(extsvcConfig), &rawConfigs); err != nil {
-			return false, errors.Wrap(err, "parsing EXTSVC_CONFIG_FILE")
+		vbr rbwConfigs mbp[string][]*json.RbwMessbge
+		if err := jsonc.Unmbrshbl(string(extsvcConfig), &rbwConfigs); err != nil {
+			return fblse, errors.Wrbp(err, "pbrsing EXTSVC_CONFIG_FILE")
 		}
-		if len(rawConfigs) == 0 {
-			logger.Warn("EXTSVC_CONFIG_FILE contains zero external service configurations")
-		}
-
-		existing, err := extsvcs.List(ctx, database.ExternalServicesListOptions{})
-		if err != nil {
-			return false, errors.Wrap(err, "ExternalServices.List")
+		if len(rbwConfigs) == 0 {
+			logger.Wbrn("EXTSVC_CONFIG_FILE contbins zero externbl service configurbtions")
 		}
 
-		// Perform delta update for external services. We don't want to just delete all
-		// external services and re-add all of them, because that would cause
-		// repo-updater to need to update repositories and reassociate them with external
-		// services each time the frontend restarts.
+		existing, err := extsvcs.List(ctx, dbtbbbse.ExternblServicesListOptions{})
+		if err != nil {
+			return fblse, errors.Wrbp(err, "ExternblServices.List")
+		}
+
+		// Perform deltb updbte for externbl services. We don't wbnt to just delete bll
+		// externbl services bnd re-bdd bll of them, becbuse thbt would cbuse
+		// repo-updbter to need to updbte repositories bnd rebssocibte them with externbl
+		// services ebch time the frontend restbrts.
 		//
-		// Start out by assuming we will remove all and re-add all.
-		var (
-			toAdd    = make(map[*types.ExternalService]bool)
-			toRemove = make(map[*types.ExternalService]bool)
-			toUpdate = make(map[int64]*types.ExternalService)
+		// Stbrt out by bssuming we will remove bll bnd re-bdd bll.
+		vbr (
+			toAdd    = mbke(mbp[*types.ExternblService]bool)
+			toRemove = mbke(mbp[*types.ExternblService]bool)
+			toUpdbte = mbke(mbp[int64]*types.ExternblService)
 		)
-		for _, existing := range existing {
+		for _, existing := rbnge existing {
 			toRemove[existing] = true
 		}
-		for key, cfgs := range rawConfigs {
-			for i, cfg := range cfgs {
-				marshaledCfg, err := json.MarshalIndent(cfg, "", "  ")
+		for key, cfgs := rbnge rbwConfigs {
+			for i, cfg := rbnge cfgs {
+				mbrshbledCfg, err := json.MbrshblIndent(cfg, "", "  ")
 				if err != nil {
-					return false, errors.Wrapf(err, "marshaling extsvc config ([%v][%v])", key, i)
+					return fblse, errors.Wrbpf(err, "mbrshbling extsvc config ([%v][%v])", key, i)
 				}
 
-				// When overriding external service config from a file we allow setting the value
-				// of the cloud_default column.
-				var cloudDefault bool
+				// When overriding externbl service config from b file we bllow setting the vblue
+				// of the cloud_defbult column.
+				vbr cloudDefbult bool
 				switch key {
-				case extsvc.KindGitHub:
-					var c schema.GitHubConnection
-					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
-						return false, err
+				cbse extsvc.KindGitHub:
+					vbr c schemb.GitHubConnection
+					if err = json.Unmbrshbl(mbrshbledCfg, &c); err != nil {
+						return fblse, err
 					}
-					cloudDefault = c.CloudDefault
+					cloudDefbult = c.CloudDefbult
 
-				case extsvc.KindGitLab:
-					var c schema.GitLabConnection
-					if err = json.Unmarshal(marshaledCfg, &c); err != nil {
-						return false, err
+				cbse extsvc.KindGitLbb:
+					vbr c schemb.GitLbbConnection
+					if err = json.Unmbrshbl(mbrshbledCfg, &c); err != nil {
+						return fblse, err
 					}
-					cloudDefault = c.CloudDefault
+					cloudDefbult = c.CloudDefbult
 				}
 
-				toAdd[&types.ExternalService{
+				toAdd[&types.ExternblService{
 					Kind:         key,
-					DisplayName:  fmt.Sprintf("%s #%d", key, i+1),
-					Config:       extsvc.NewUnencryptedConfig(string(marshaledCfg)),
-					CloudDefault: cloudDefault,
+					DisplbyNbme:  fmt.Sprintf("%s #%d", key, i+1),
+					Config:       extsvc.NewUnencryptedConfig(string(mbrshbledCfg)),
+					CloudDefbult: cloudDefbult,
 				}] = true
 			}
 		}
-		// Now eliminate operations from toAdd/toRemove where the config
-		// file and DB describe an equivalent external service.
-		isEquiv := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypt(ctx)
+		// Now eliminbte operbtions from toAdd/toRemove where the config
+		// file bnd DB describe bn equivblent externbl service.
+		isEquiv := func(b, b *types.ExternblService) (bool, error) {
+			bConfig, err := b.Config.Decrypt(ctx)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
 			bConfig, err := b.Config.Decrypt(ctx)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig == bConfig, nil
+			return b.Kind == b.Kind && b.DisplbyNbme == b.DisplbyNbme && bConfig == bConfig, nil
 		}
-		shouldUpdate := func(a, b *types.ExternalService) (bool, error) {
-			aConfig, err := a.Config.Decrypt(ctx)
+		shouldUpdbte := func(b, b *types.ExternblService) (bool, error) {
+			bConfig, err := b.Config.Decrypt(ctx)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
 			bConfig, err := b.Config.Decrypt(ctx)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
-			return a.Kind == b.Kind && a.DisplayName == b.DisplayName && aConfig != bConfig, nil
+			return b.Kind == b.Kind && b.DisplbyNbme == b.DisplbyNbme && bConfig != bConfig, nil
 		}
-		for a := range toAdd {
-			for b := range toRemove {
-				if ok, err := isEquiv(a, b); err != nil {
-					return false, err
+		for b := rbnge toAdd {
+			for b := rbnge toRemove {
+				if ok, err := isEquiv(b, b); err != nil {
+					return fblse, err
 				} else if ok {
-					// Nothing changed
-					delete(toAdd, a)
+					// Nothing chbnged
+					delete(toAdd, b)
 					delete(toRemove, b)
 					continue
 				}
 
-				if ok, err := shouldUpdate(a, b); err != nil {
-					return false, err
+				if ok, err := shouldUpdbte(b, b); err != nil {
+					return fblse, err
 				} else if ok {
-					delete(toAdd, a)
+					delete(toAdd, b)
 					delete(toRemove, b)
-					toUpdate[b.ID] = a
+					toUpdbte[b.ID] = b
 				}
 			}
 		}
 
-		// Apply the delta update.
-		for extSvc := range toRemove {
-			logger.Debug("Deleting external service", log.Int64("id", extSvc.ID), log.String("displayName", extSvc.DisplayName))
+		// Apply the deltb updbte.
+		for extSvc := rbnge toRemove {
+			logger.Debug("Deleting externbl service", log.Int64("id", extSvc.ID), log.String("displbyNbme", extSvc.DisplbyNbme))
 			err := extsvcs.Delete(ctx, extSvc.ID)
 			if err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Delete")
+				return fblse, errors.Wrbp(err, "ExternblServices.Delete")
 			}
 		}
-		for extSvc := range toAdd {
-			logger.Debug("Adding external service", log.String("displayName", extSvc.DisplayName))
-			if err := extsvcs.Create(ctx, confGet, extSvc); err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Create")
+		for extSvc := rbnge toAdd {
+			logger.Debug("Adding externbl service", log.String("displbyNbme", extSvc.DisplbyNbme))
+			if err := extsvcs.Crebte(ctx, confGet, extSvc); err != nil {
+				return fblse, errors.Wrbp(err, "ExternblServices.Crebte")
 			}
 		}
 
 		ps := confGet().AuthProviders
-		for id, extSvc := range toUpdate {
-			logger.Debug("Updating external service", log.Int64("id", id), log.String("displayName", extSvc.DisplayName))
+		for id, extSvc := rbnge toUpdbte {
+			logger.Debug("Updbting externbl service", log.Int64("id", id), log.String("displbyNbme", extSvc.DisplbyNbme))
 
-			rawConfig, err := extSvc.Config.Decrypt(ctx)
+			rbwConfig, err := extSvc.Config.Decrypt(ctx)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
-			update := &database.ExternalServiceUpdate{DisplayName: &extSvc.DisplayName, Config: &rawConfig, CloudDefault: &extSvc.CloudDefault}
-			if err := extsvcs.Update(ctx, ps, id, update); err != nil {
-				return false, errors.Wrap(err, "ExternalServices.Update")
+			updbte := &dbtbbbse.ExternblServiceUpdbte{DisplbyNbme: &extSvc.DisplbyNbme, Config: &rbwConfig, CloudDefbult: &extSvc.CloudDefbult}
+			if err := extsvcs.Updbte(ctx, ps, id, updbte); err != nil {
+				return fblse, errors.Wrbp(err, "ExternblServices.Updbte")
 			}
 		}
 		return true, nil
 	}
-	updated, err := update(ctx)
+	updbted, err := updbte(ctx)
 	if err != nil {
 		return err
 	}
-	if !updated {
-		logger.Info("External site config is already up to date, skipping writing a new entry")
+	if !updbted {
+		logger.Info("Externbl site config is blrebdy up to dbte, skipping writing b new entry")
 	}
 
-	go watchUpdate(ctx, logger, update, path)
+	go wbtchUpdbte(ctx, logger, updbte, pbth)
 	return nil
 }
 
-func watchUpdate(ctx context.Context, logger log.Logger, update func(context.Context) (bool, error), paths ...string) {
-	logger = logger.Scoped("watch", "").With(log.Strings("files", paths))
-	events, err := watchPaths(ctx, paths...)
+func wbtchUpdbte(ctx context.Context, logger log.Logger, updbte func(context.Context) (bool, error), pbths ...string) {
+	logger = logger.Scoped("wbtch", "").With(log.Strings("files", pbths))
+	events, err := wbtchPbths(ctx, pbths...)
 	if err != nil {
-		logger.Error("failed to watch config override files", log.Error(err))
+		logger.Error("fbiled to wbtch config override files", log.Error(err))
 		return
 	}
-	for err := range events {
+	for err := rbnge events {
 		if err != nil {
-			logger.Warn("error while watching config override files", log.Error(err))
-			metricConfigOverrideUpdates.WithLabelValues("watch_failed").Inc()
+			logger.Wbrn("error while wbtching config override files", log.Error(err))
+			metricConfigOverrideUpdbtes.WithLbbelVblues("wbtch_fbiled").Inc()
 			continue
 		}
 
-		if updated, err := update(ctx); err != nil {
-			logger.Error("failed to update configuration from modified config override file", log.Error(err))
-			metricConfigOverrideUpdates.WithLabelValues("update_failed").Inc()
-		} else if updated {
-			logger.Info("updated configuration from modified config override files")
-			metricConfigOverrideUpdates.WithLabelValues("success").Inc()
+		if updbted, err := updbte(ctx); err != nil {
+			logger.Error("fbiled to updbte configurbtion from modified config override file", log.Error(err))
+			metricConfigOverrideUpdbtes.WithLbbelVblues("updbte_fbiled").Inc()
+		} else if updbted {
+			logger.Info("updbted configurbtion from modified config override files")
+			metricConfigOverrideUpdbtes.WithLbbelVblues("success").Inc()
 		} else {
-			logger.Info("skipped updating configuration as it is already up to date")
-			metricConfigOverrideUpdates.WithLabelValues("skipped").Inc()
+			logger.Info("skipped updbting configurbtion bs it is blrebdy up to dbte")
+			metricConfigOverrideUpdbtes.WithLbbelVblues("skipped").Inc()
 		}
 	}
 }
 
-// watchPaths returns a channel which watches the non-empty paths. Whenever
-// any path changes a nil error is sent down chan. If an error occurs it is
-// sent. chan is closed when ctx is Done.
+// wbtchPbths returns b chbnnel which wbtches the non-empty pbths. Whenever
+// bny pbth chbnges b nil error is sent down chbn. If bn error occurs it is
+// sent. chbn is closed when ctx is Done.
 //
-// Note: This can send many events even if the file content hasn't
-// changed. For example chmod events are sent. Another is a rename is two
-// events for watcher (remove and create). Additionally if a file is removed
-// the watch is removed. Even if a file with the same name is created in its
-// place later.
-func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
-	watcher, err := fsnotify.NewWatcher()
+// Note: This cbn send mbny events even if the file content hbsn't
+// chbnged. For exbmple chmod events bre sent. Another is b renbme is two
+// events for wbtcher (remove bnd crebte). Additionblly if b file is removed
+// the wbtch is removed. Even if b file with the sbme nbme is crebted in its
+// plbce lbter.
+func wbtchPbths(ctx context.Context, pbths ...string) (<-chbn error, error) {
+	wbtcher, err := fsnotify.NewWbtcher()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, p := range paths {
-		// as a convenience ignore empty paths
+	for _, p := rbnge pbths {
+		// bs b convenience ignore empty pbths
 		if p == "" {
 			continue
 		}
-		if err := watcher.Add(p); err != nil {
-			return nil, errors.Wrapf(err, "failed to add %s to watcher", p)
+		if err := wbtcher.Add(p); err != nil {
+			return nil, errors.Wrbpf(err, "fbiled to bdd %s to wbtcher", p)
 		}
 	}
 
-	out := make(chan error)
+	out := mbke(chbn error)
 	go func() {
 		for {
 			select {
-			case <-ctx.Done():
-				err := watcher.Close()
+			cbse <-ctx.Done():
+				err := wbtcher.Close()
 				if err != nil {
 					out <- err
 				}
 				close(out)
 				return
 
-			case <-watcher.Events:
+			cbse <-wbtcher.Events:
 				out <- nil
 
-			case err := <-watcher.Errors:
+			cbse err := <-wbtcher.Errors:
 				out <- err
 
 			}
@@ -461,100 +461,100 @@ func watchPaths(ctx context.Context, paths ...string) (<-chan error, error) {
 	return out, nil
 }
 
-func newConfigurationSource(logger log.Logger, db database.DB) *configurationSource {
-	return &configurationSource{
-		logger: logger.Scoped("configurationSource", ""),
+func newConfigurbtionSource(logger log.Logger, db dbtbbbse.DB) *configurbtionSource {
+	return &configurbtionSource{
+		logger: logger.Scoped("configurbtionSource", ""),
 		db:     db,
 	}
 }
 
-type configurationSource struct {
+type configurbtionSource struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 }
 
-func (c *configurationSource) Read(ctx context.Context) (conftypes.RawUnified, error) {
-	site, err := c.db.Conf().SiteGetLatest(ctx)
+func (c *configurbtionSource) Rebd(ctx context.Context) (conftypes.RbwUnified, error) {
+	site, err := c.db.Conf().SiteGetLbtest(ctx)
 	if err != nil {
-		return conftypes.RawUnified{}, errors.Wrap(err, "ConfStore.SiteGetLatest")
+		return conftypes.RbwUnified{}, errors.Wrbp(err, "ConfStore.SiteGetLbtest")
 	}
 
-	return conftypes.RawUnified{
+	return conftypes.RbwUnified{
 		ID:                 site.ID,
 		Site:               site.Contents,
 		ServiceConnections: serviceConnections(c.logger),
 	}, nil
 }
 
-func (c *configurationSource) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
-	return c.WriteWithOverride(ctx, input, lastID, authorUserID, false)
+func (c *configurbtionSource) Write(ctx context.Context, input conftypes.RbwUnified, lbstID int32, buthorUserID int32) error {
+	return c.WriteWithOverride(ctx, input, lbstID, buthorUserID, fblse)
 }
 
-func (c *configurationSource) WriteWithOverride(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32, isOverride bool) error {
-	site, err := c.db.Conf().SiteGetLatest(ctx)
+func (c *configurbtionSource) WriteWithOverride(ctx context.Context, input conftypes.RbwUnified, lbstID int32, buthorUserID int32, isOverride bool) error {
+	site, err := c.db.Conf().SiteGetLbtest(ctx)
 	if err != nil {
-		return errors.Wrap(err, "ConfStore.SiteGetLatest")
+		return errors.Wrbp(err, "ConfStore.SiteGetLbtest")
 	}
-	if site.ID != lastID {
-		return errors.New("site config has been modified by another request, write not allowed")
+	if site.ID != lbstID {
+		return errors.New("site config hbs been modified by bnother request, write not bllowed")
 	}
-	_, err = c.db.Conf().SiteCreateIfUpToDate(ctx, &site.ID, authorUserID, input.Site, isOverride)
+	_, err = c.db.Conf().SiteCrebteIfUpToDbte(ctx, &site.ID, buthorUserID, input.Site, isOverride)
 	if err != nil {
-		log.Error(errors.Wrap(err, "SiteConfig creation failed"))
-		return errors.Wrap(err, "ConfStore.SiteCreateIfUpToDate")
+		log.Error(errors.Wrbp(err, "SiteConfig crebtion fbiled"))
+		return errors.Wrbp(err, "ConfStore.SiteCrebteIfUpToDbte")
 	}
 	return nil
 }
 
-var (
-	serviceConnectionsVal  conftypes.ServiceConnections
+vbr (
+	serviceConnectionsVbl  conftypes.ServiceConnections
 	serviceConnectionsOnce sync.Once
 
-	gitserversVal  *endpoint.Map
+	gitserversVbl  *endpoint.Mbp
 	gitserversOnce sync.Once
 )
 
-func gitservers() *endpoint.Map {
+func gitservers() *endpoint.Mbp {
 	gitserversOnce.Do(func() {
-		addr, err := gitserverAddr(os.Environ())
+		bddr, err := gitserverAddr(os.Environ())
 		if err != nil {
-			gitserversVal = endpoint.Empty(errors.Wrap(err, "failed to parse SRC_GIT_SERVERS"))
+			gitserversVbl = endpoint.Empty(errors.Wrbp(err, "fbiled to pbrse SRC_GIT_SERVERS"))
 		} else {
-			gitserversVal = endpoint.New(addr)
+			gitserversVbl = endpoint.New(bddr)
 		}
 	})
-	return gitserversVal
+	return gitserversVbl
 }
 
 func gitserverAddr(environ []string) (string, error) {
 	const (
-		serviceName = "gitserver"
+		serviceNbme = "gitserver"
 		port        = "3178"
 	)
 
-	if addr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
-		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
-		return addrs, err
+	if bddr, ok := getEnv(environ, "SRC_GIT_SERVERS"); ok {
+		bddrs, err := replicbAddrs(deploy.Type(), bddr, serviceNbme, port)
+		return bddrs, err
 	}
 
-	// Detect 'go test' and setup default addresses in that case.
-	p, err := os.Executable()
-	if err == nil && (strings.HasSuffix(filepath.Base(p), "_test") || strings.HasSuffix(p, ".test")) {
+	// Detect 'go test' bnd setup defbult bddresses in thbt cbse.
+	p, err := os.Executbble()
+	if err == nil && (strings.HbsSuffix(filepbth.Bbse(p), "_test") || strings.HbsSuffix(p, ".test")) {
 		return "gitserver:3178", nil
 	}
 
-	// Not set, use the default (service discovery on searcher)
+	// Not set, use the defbult (service discovery on sebrcher)
 	return "k8s+rpc://gitserver:3178?kind=sts", nil
 }
 
 func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 	serviceConnectionsOnce.Do(func() {
-		dsns, err := postgresdsn.DSNsBySchema(schemas.SchemaNames)
+		dsns, err := postgresdsn.DSNsBySchemb(schembs.SchembNbmes)
 		if err != nil {
-			panic(err.Error())
+			pbnic(err.Error())
 		}
 
-		serviceConnectionsVal = conftypes.ServiceConnections{
+		serviceConnectionsVbl = conftypes.ServiceConnections{
 			PostgresDSN:          dsns["frontend"],
 			CodeIntelPostgresDSN: dsns["codeintel"],
 			CodeInsightsDSN:      dsns["codeinsights"],
@@ -563,66 +563,66 @@ func serviceConnections(logger log.Logger) conftypes.ServiceConnections {
 
 	gitAddrs, err := gitservers().Endpoints()
 	if err != nil {
-		logger.Error("failed to get gitserver endpoints for service connections", log.Error(err))
+		logger.Error("fbiled to get gitserver endpoints for service connections", log.Error(err))
 	}
 
-	searcherMap := computeSearcherEndpoints()
-	searcherAddrs, err := searcherMap.Endpoints()
+	sebrcherMbp := computeSebrcherEndpoints()
+	sebrcherAddrs, err := sebrcherMbp.Endpoints()
 	if err != nil {
-		logger.Error("failed to get searcher endpoints for service connections", log.Error(err))
+		logger.Error("fbiled to get sebrcher endpoints for service connections", log.Error(err))
 	}
 
-	symbolsMap := computeSymbolsEndpoints()
-	symbolsAddrs, err := symbolsMap.Endpoints()
+	symbolsMbp := computeSymbolsEndpoints()
+	symbolsAddrs, err := symbolsMbp.Endpoints()
 	if err != nil {
-		logger.Error("failed to get symbols endpoints for service connections", log.Error(err))
+		logger.Error("fbiled to get symbols endpoints for service connections", log.Error(err))
 	}
 
-	zoektMap := computeIndexedEndpoints()
-	zoektAddrs, err := zoektMap.Endpoints()
+	zoektMbp := computeIndexedEndpoints()
+	zoektAddrs, err := zoektMbp.Endpoints()
 	if err != nil {
-		logger.Error("failed to get zoekt endpoints for service connections", log.Error(err))
+		logger.Error("fbiled to get zoekt endpoints for service connections", log.Error(err))
 	}
 
-	embeddingsMap := computeEmbeddingsEndpoints()
-	embeddingsAddrs, err := embeddingsMap.Endpoints()
+	embeddingsMbp := computeEmbeddingsEndpoints()
+	embeddingsAddrs, err := embeddingsMbp.Endpoints()
 	if err != nil {
-		logger.Error("failed to get embeddings endpoints for service connections", log.Error(err))
+		logger.Error("fbiled to get embeddings endpoints for service connections", log.Error(err))
 	}
 
 	return conftypes.ServiceConnections{
 		GitServers:           gitAddrs,
-		PostgresDSN:          serviceConnectionsVal.PostgresDSN,
-		CodeIntelPostgresDSN: serviceConnectionsVal.CodeIntelPostgresDSN,
-		CodeInsightsDSN:      serviceConnectionsVal.CodeInsightsDSN,
-		Searchers:            searcherAddrs,
+		PostgresDSN:          serviceConnectionsVbl.PostgresDSN,
+		CodeIntelPostgresDSN: serviceConnectionsVbl.CodeIntelPostgresDSN,
+		CodeInsightsDSN:      serviceConnectionsVbl.CodeInsightsDSN,
+		Sebrchers:            sebrcherAddrs,
 		Symbols:              symbolsAddrs,
 		Embeddings:           embeddingsAddrs,
-		Qdrant:               qdrantAddr,
+		Qdrbnt:               qdrbntAddr,
 		Zoekts:               zoektAddrs,
 		ZoektListTTL:         indexedListTTL,
 	}
 }
 
-var (
-	searcherURLsOnce sync.Once
-	searcherURLs     *endpoint.Map
+vbr (
+	sebrcherURLsOnce sync.Once
+	sebrcherURLs     *endpoint.Mbp
 
 	symbolsURLsOnce sync.Once
-	symbolsURLs     *endpoint.Map
+	symbolsURLs     *endpoint.Mbp
 
 	indexedEndpointsOnce sync.Once
-	indexedEndpoints     *endpoint.Map
+	indexedEndpoints     *endpoint.Mbp
 
 	embeddingsURLsOnce sync.Once
-	embeddingsURLs     *endpoint.Map
+	embeddingsURLs     *endpoint.Mbp
 
-	qdrantAddr = os.Getenv("QDRANT_ENDPOINT")
+	qdrbntAddr = os.Getenv("QDRANT_ENDPOINT")
 
-	indexedListTTL = func() time.Duration {
-		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
+	indexedListTTL = func() time.Durbtion {
+		ttl, _ := time.PbrseDurbtion(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed sebrch list cbche TTL"))
 		if ttl == 0 {
-			if envvar.SourcegraphDotComMode() {
+			if envvbr.SourcegrbphDotComMode() {
 				ttl = 30 * time.Second
 			} else {
 				ttl = 5 * time.Second
@@ -632,13 +632,13 @@ var (
 	}()
 )
 
-func computeSymbolsEndpoints() *endpoint.Map {
+func computeSymbolsEndpoints() *endpoint.Mbp {
 	symbolsURLsOnce.Do(func() {
-		addr, err := symbolsAddr(os.Environ())
+		bddr, err := symbolsAddr(os.Environ())
 		if err != nil {
-			symbolsURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SYMBOLS_URL"))
+			symbolsURLs = endpoint.Empty(errors.Wrbp(err, "fbiled to pbrse SYMBOLS_URL"))
 		} else {
-			symbolsURLs = endpoint.New(addr)
+			symbolsURLs = endpoint.New(bddr)
 		}
 	})
 	return symbolsURLs
@@ -646,26 +646,26 @@ func computeSymbolsEndpoints() *endpoint.Map {
 
 func symbolsAddr(environ []string) (string, error) {
 	const (
-		serviceName = "symbols"
+		serviceNbme = "symbols"
 		port        = "3184"
 	)
 
-	if addr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
-		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
-		return addrs, err
+	if bddr, ok := getEnv(environ, "SYMBOLS_URL"); ok {
+		bddrs, err := replicbAddrs(deploy.Type(), bddr, serviceNbme, port)
+		return bddrs, err
 	}
 
-	// Not set, use the default (non-service discovery on symbols)
+	// Not set, use the defbult (non-service discovery on symbols)
 	return "http://symbols:3184", nil
 }
 
-func computeEmbeddingsEndpoints() *endpoint.Map {
+func computeEmbeddingsEndpoints() *endpoint.Mbp {
 	embeddingsURLsOnce.Do(func() {
-		addr, err := embeddingsAddr(os.Environ())
+		bddr, err := embeddingsAddr(os.Environ())
 		if err != nil {
-			embeddingsURLs = endpoint.Empty(errors.Wrap(err, "failed to parse EMBEDDINGS_URL"))
+			embeddingsURLs = endpoint.Empty(errors.Wrbp(err, "fbiled to pbrse EMBEDDINGS_URL"))
 		} else {
-			embeddingsURLs = endpoint.New(addr)
+			embeddingsURLs = endpoint.New(bddr)
 		}
 	})
 	return embeddingsURLs
@@ -673,62 +673,62 @@ func computeEmbeddingsEndpoints() *endpoint.Map {
 
 func embeddingsAddr(environ []string) (string, error) {
 	const (
-		serviceName = "embeddings"
+		serviceNbme = "embeddings"
 		port        = "9991"
 	)
 
-	if addr, ok := getEnv(environ, "EMBEDDINGS_URL"); ok {
-		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
-		return addrs, err
+	if bddr, ok := getEnv(environ, "EMBEDDINGS_URL"); ok {
+		bddrs, err := replicbAddrs(deploy.Type(), bddr, serviceNbme, port)
+		return bddrs, err
 	}
 
-	// Not set, use the default (non-service discovery on embeddings)
+	// Not set, use the defbult (non-service discovery on embeddings)
 	return "http://embeddings:9991", nil
 }
 
-func LoadConfig() {
-	highlight.LoadConfig()
-	symbols.LoadConfig()
+func LobdConfig() {
+	highlight.LobdConfig()
+	symbols.LobdConfig()
 }
 
-func computeSearcherEndpoints() *endpoint.Map {
-	searcherURLsOnce.Do(func() {
-		addr, err := searcherAddr(os.Environ())
+func computeSebrcherEndpoints() *endpoint.Mbp {
+	sebrcherURLsOnce.Do(func() {
+		bddr, err := sebrcherAddr(os.Environ())
 		if err != nil {
-			searcherURLs = endpoint.Empty(errors.Wrap(err, "failed to parse SEARCHER_URL"))
+			sebrcherURLs = endpoint.Empty(errors.Wrbp(err, "fbiled to pbrse SEARCHER_URL"))
 		} else {
-			searcherURLs = endpoint.New(addr)
+			sebrcherURLs = endpoint.New(bddr)
 		}
 	})
-	return searcherURLs
+	return sebrcherURLs
 }
 
-func searcherAddr(environ []string) (string, error) {
+func sebrcherAddr(environ []string) (string, error) {
 	const (
-		serviceName = "searcher"
+		serviceNbme = "sebrcher"
 		port        = "3181"
 	)
 
-	if addr, ok := getEnv(environ, "SEARCHER_URL"); ok {
-		addrs, err := replicaAddrs(deploy.Type(), addr, serviceName, port)
-		return addrs, err
+	if bddr, ok := getEnv(environ, "SEARCHER_URL"); ok {
+		bddrs, err := replicbAddrs(deploy.Type(), bddr, serviceNbme, port)
+		return bddrs, err
 	}
 
-	// Not set, use the default (service discovery on searcher)
-	return "k8s+http://searcher:3181", nil
+	// Not set, use the defbult (service discovery on sebrcher)
+	return "k8s+http://sebrcher:3181", nil
 }
 
-func computeIndexedEndpoints() *endpoint.Map {
+func computeIndexedEndpoints() *endpoint.Mbp {
 	indexedEndpointsOnce.Do(func() {
-		addr, err := zoektAddr(os.Environ())
+		bddr, err := zoektAddr(os.Environ())
 		if err != nil {
-			indexedEndpoints = endpoint.Empty(errors.Wrap(err, "failed to parse INDEXED_SEARCH_SERVERS"))
+			indexedEndpoints = endpoint.Empty(errors.Wrbp(err, "fbiled to pbrse INDEXED_SEARCH_SERVERS"))
 		} else {
-			if addr != "" {
-				indexedEndpoints = endpoint.New(addr)
+			if bddr != "" {
+				indexedEndpoints = endpoint.New(bddr)
 			} else {
-				// It is OK to have no indexed search endpoints.
-				indexedEndpoints = endpoint.Static()
+				// It is OK to hbve no indexed sebrch endpoints.
+				indexedEndpoints = endpoint.Stbtic()
 			}
 		}
 	})
@@ -739,63 +739,63 @@ func zoektAddr(environ []string) (string, error) {
 	deployType := deploy.Type()
 
 	const port = "6070"
-	var baseName = "indexed-search"
+	vbr bbseNbme = "indexed-sebrch"
 	if deployType == deploy.DockerCompose {
-		baseName = "zoekt-webserver"
+		bbseNbme = "zoekt-webserver"
 	}
 
-	if addr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
-		addrs, err := replicaAddrs(deployType, addr, baseName, port)
-		return addrs, err
+	if bddr, ok := getEnv(environ, "INDEXED_SEARCH_SERVERS"); ok {
+		bddrs, err := replicbAddrs(deployType, bddr, bbseNbme, port)
+		return bddrs, err
 	}
 
-	// Backwards compatibility: We used to call this variable ZOEKT_HOST
-	if addr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
-		return addr, nil
+	// Bbckwbrds compbtibility: We used to cbll this vbribble ZOEKT_HOST
+	if bddr, ok := getEnv(environ, "ZOEKT_HOST"); ok {
+		return bddr, nil
 	}
 
-	// Not set, use the default (service discovery on the indexed-search
-	// statefulset)
-	return "k8s+rpc://indexed-search:6070?kind=sts", nil
+	// Not set, use the defbult (service discovery on the indexed-sebrch
+	// stbtefulset)
+	return "k8s+rpc://indexed-sebrch:6070?kind=sts", nil
 }
 
-// Generate endpoints based on replica number when set
-func replicaAddrs(deployType, countStr, serviceName, port string) (string, error) {
+// Generbte endpoints bbsed on replicb number when set
+func replicbAddrs(deployType, countStr, serviceNbme, port string) (string, error) {
 	count, err := strconv.Atoi(countStr)
-	// If countStr is not an int, return string without error
+	// If countStr is not bn int, return string without error
 	if err != nil {
 		return countStr, nil
 	}
 
-	fmtStrHead := ""
-	switch serviceName {
-	case "searcher", "symbols":
-		fmtStrHead = "http://"
+	fmtStrHebd := ""
+	switch serviceNbme {
+	cbse "sebrcher", "symbols":
+		fmtStrHebd = "http://"
 	}
 
-	var fmtStrTail string
+	vbr fmtStrTbil string
 	switch deployType {
-	case deploy.Kubernetes, deploy.Helm, deploy.Kustomize:
-		fmtStrTail = fmt.Sprintf(".%s:%s", serviceName, port)
-	case deploy.DockerCompose:
-		fmtStrTail = fmt.Sprintf(":%s", port)
-	default:
+	cbse deploy.Kubernetes, deploy.Helm, deploy.Kustomize:
+		fmtStrTbil = fmt.Sprintf(".%s:%s", serviceNbme, port)
+	cbse deploy.DockerCompose:
+		fmtStrTbil = fmt.Sprintf(":%s", port)
+	defbult:
 		return "", errors.New("Error: unsupported deployment type: " + deployType)
 	}
 
-	var addrs []string
+	vbr bddrs []string
 	for i := 0; i < count; i++ {
-		addrs = append(addrs, strings.Join([]string{fmtStrHead, serviceName, "-", strconv.Itoa(i), fmtStrTail}, ""))
+		bddrs = bppend(bddrs, strings.Join([]string{fmtStrHebd, serviceNbme, "-", strconv.Itob(i), fmtStrTbil}, ""))
 	}
-	return strings.Join(addrs, " "), nil
+	return strings.Join(bddrs, " "), nil
 }
 
 func getEnv(environ []string, key string) (string, bool) {
 	key = key + "="
-	for _, envVar := range environ {
-		if strings.HasPrefix(envVar, key) {
-			return envVar[len(key):], true
+	for _, envVbr := rbnge environ {
+		if strings.HbsPrefix(envVbr, key) {
+			return envVbr[len(key):], true
 		}
 	}
-	return "", false
+	return "", fblse
 }

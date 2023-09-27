@@ -1,28 +1,28 @@
-package contentlibrary
+pbckbge contentlibrbry
 
 import (
 	"context"
 
-	logger "github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	logger "github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// Init initializes the given enterpriseServices to include the required
-// resolvers for the search content library.
+// Init initiblizes the given enterpriseServices to include the required
+// resolvers for the sebrch content librbry.
 func Init(
 	_ context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	logger := logger.Scoped("contentlibrary", "sourcegraph content library")
-	enterpriseServices.ContentLibraryResolver = graphqlbackend.NewContentLibraryResolver(db, logger)
+	logger := logger.Scoped("contentlibrbry", "sourcegrbph content librbry")
+	enterpriseServices.ContentLibrbryResolver = grbphqlbbckend.NewContentLibrbryResolver(db, logger)
 	return nil
 }

@@ -1,73 +1,73 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestPythonPackagesSource_ListRepos(t *testing.T) {
-	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
+func TestPythonPbckbgesSource_ListRepos(t *testing.T) {
+	ctx := context.Bbckground()
+	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimblPbckbgeRepoRef{
 		{
-			Scheme: dependencies.PythonPackagesScheme,
-			Name:   "requests",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{
-				{Version: "2.27.1"}, // test deduplication with version from config
-				{Version: "2.27.2"}, // test multiple versions of the same module
+			Scheme: dependencies.PythonPbckbgesScheme,
+			Nbme:   "requests",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{
+				{Version: "2.27.1"}, // test deduplicbtion with version from config
+				{Version: "2.27.2"}, // test multiple versions of the sbme module
 			},
 		},
 		{
-			Scheme:   dependencies.PythonPackagesScheme,
-			Name:     "numpy",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "1.22.3"}},
+			Scheme:   dependencies.PythonPbckbgesScheme,
+			Nbme:     "numpy",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: "1.22.3"}},
 		},
 		{
-			Scheme:   dependencies.PythonPackagesScheme,
-			Name:     "lofi",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "foobar"}}, // test that we create a repo for this package even if it's missing.
+			Scheme:   dependencies.PythonPbckbgesScheme,
+			Nbme:     "lofi",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: "foobbr"}}, // test thbt we crebte b repo for this pbckbge even if it's missing.
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindPythonPackages,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.PythonPackagesConnection{
+	svc := types.ExternblService{
+		Kind: extsvc.KindPythonPbckbges,
+		Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.PythonPbckbgesConnection{
 			Urls: []string{
 				"https://pypi.org/simple",
 			},
 			Dependencies: []string{
 				"requests==2.27.1",
-				"lavaclient==0.3.7",
-				"randio==0.1.1",
-				"pytimeparse==1.1.8",
+				"lbvbclient==0.3.7",
+				"rbndio==0.1.1",
+				"pytimepbrse==1.1.8",
 			},
 		})),
 	}
 
-	cf, save := NewClientFactory(t, t.Name())
-	t.Cleanup(func() { save(t) })
+	cf, sbve := NewClientFbctory(t, t.Nbme())
+	t.Clebnup(func() { sbve(t) })
 
-	src, err := NewPythonPackagesSource(ctx, &svc, cf)
+	src, err := NewPythonPbckbgesSource(ctx, &svc, cf)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	src.SetDependenciesService(depsSvc)
 
 	repos, err := ListAll(ctx, src)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	sort.SliceStable(repos, func(i, j int) bool {
-		return repos[i].Name < repos[j].Name
+	sort.SliceStbble(repos, func(i, j int) bool {
+		return repos[i].Nbme < repos[j].Nbme
 	})
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdbtb/sources/"+t.Nbme(), Updbte(t.Nbme()), repos)
 }

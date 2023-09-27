@@ -1,2 +1,2 @@
-// Package database contains PostgreSQL DB-backed stores.
-package database
+// Pbckbge dbtbbbse contbins PostgreSQL DB-bbcked stores.
+pbckbge dbtbbbse

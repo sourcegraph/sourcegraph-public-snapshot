@@ -1,32 +1,32 @@
-package output
+pbckbge output
 
-type Progress interface {
+type Progress interfbce {
 	Context
 
-	// Complete stops the set of progress bars and marks them all as completed.
+	// Complete stops the set of progress bbrs bnd mbrks them bll bs completed.
 	Complete()
 
-	// Destroy stops the set of progress bars and clears them from the
-	// terminal.
+	// Destroy stops the set of progress bbrs bnd clebrs them from the
+	// terminbl.
 	Destroy()
 
-	// SetLabel updates the label for the given bar.
-	SetLabel(i int, label string)
+	// SetLbbel updbtes the lbbel for the given bbr.
+	SetLbbel(i int, lbbel string)
 
-	// SetLabelAndRecalc updates the label for the given bar and recalculates
-	// the maximum width of the labels.
-	SetLabelAndRecalc(i int, label string)
+	// SetLbbelAndRecblc updbtes the lbbel for the given bbr bnd recblculbtes
+	// the mbximum width of the lbbels.
+	SetLbbelAndRecblc(i int, lbbel string)
 
-	// SetValue updates the value for the given bar.
-	SetValue(i int, v float64)
+	// SetVblue updbtes the vblue for the given bbr.
+	SetVblue(i int, v flobt64)
 }
 
-type ProgressBar struct {
-	Label string
-	Max   float64
-	Value float64
+type ProgressBbr struct {
+	Lbbel string
+	Mbx   flobt64
+	Vblue flobt64
 
-	labelWidth int
+	lbbelWidth int
 }
 
 type ProgressOpts struct {
@@ -34,8 +34,8 @@ type ProgressOpts struct {
 	SuccessEmoji string
 	SuccessStyle Style
 
-	// NoSpinner turns of the automatic updating of the progress bar and
-	// spinner in a background goroutine.
+	// NoSpinner turns of the butombtic updbting of the progress bbr bnd
+	// spinner in b bbckground goroutine.
 	// Used for testing only!
 	NoSpinner bool
 }
@@ -46,15 +46,15 @@ func (opt *ProgressOpts) WithNoSpinner(noSpinner bool) *ProgressOpts {
 	return &c
 }
 
-func newProgress(bars []ProgressBar, o *Output, opts *ProgressOpts) Progress {
-	barPtrs := make([]*ProgressBar, len(bars))
-	for i := range bars {
-		barPtrs[i] = &bars[i]
+func newProgress(bbrs []ProgressBbr, o *Output, opts *ProgressOpts) Progress {
+	bbrPtrs := mbke([]*ProgressBbr, len(bbrs))
+	for i := rbnge bbrs {
+		bbrPtrs[i] = &bbrs[i]
 	}
 
-	if !o.caps.Isatty {
-		return newProgressSimple(barPtrs, o, opts)
+	if !o.cbps.Isbtty {
+		return newProgressSimple(bbrPtrs, o, opts)
 	}
 
-	return newProgressTTY(barPtrs, o, opts)
+	return newProgressTTY(bbrPtrs, o, opts)
 }

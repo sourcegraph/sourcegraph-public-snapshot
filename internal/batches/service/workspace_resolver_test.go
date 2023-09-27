@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"context"
@@ -14,125 +14,125 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	strebmbpi "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestSetDefaultQueryCount(t *testing.T) {
-	for in, want := range map[string]string{
-		"":                     hardCodedCount,
+func TestSetDefbultQueryCount(t *testing.T) {
+	for in, wbnt := rbnge mbp[string]string{
+		"":                     hbrdCodedCount,
 		"count:10":             "count:10",
-		"count:all":            "count:all",
-		"r:foo":                "r:foo" + hardCodedCount,
+		"count:bll":            "count:bll",
+		"r:foo":                "r:foo" + hbrdCodedCount,
 		"r:foo count:10":       "r:foo count:10",
-		"r:foo count:10 f:bar": "r:foo count:10 f:bar",
-		"r:foo count:":         "r:foo count:" + hardCodedCount,
-		"r:foo count:xyz":      "r:foo count:xyz" + hardCodedCount,
+		"r:foo count:10 f:bbr": "r:foo count:10 f:bbr",
+		"r:foo count:":         "r:foo count:" + hbrdCodedCount,
+		"r:foo count:xyz":      "r:foo count:xyz" + hbrdCodedCount,
 	} {
 		t.Run(in, func(t *testing.T) {
-			have := setDefaultQueryCount(in)
-			if have != want {
-				t.Errorf("unexpected query: have %q; want %q", have, want)
+			hbve := setDefbultQueryCount(in)
+			if hbve != wbnt {
+				t.Errorf("unexpected query: hbve %q; wbnt %q", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
-	ctx := context.Background()
+func TestService_ResolveWorkspbcesForBbtchSpec(t *testing.T) {
+	ctx := context.Bbckground()
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := store.New(db, &observation.TestContext, nil)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := store.New(db, &observbtion.TestContext, nil)
 
-	u := bt.CreateTestUser(t, db, false)
+	u := bt.CrebteTestUser(t, db, fblse)
 
-	rs, _ := bt.CreateTestRepos(t, ctx, db, 7)
-	unsupported, _ := bt.CreateAWSCodeCommitTestRepos(t, ctx, db, 1)
-	// Allow access to all repos but rs[4].
+	rs, _ := bt.CrebteTestRepos(t, ctx, db, 7)
+	unsupported, _ := bt.CrebteAWSCodeCommitTestRepos(t, ctx, db, 1)
+	// Allow bccess to bll repos but rs[4].
 	bt.MockRepoPermissions(t, db, u.ID, rs[0].ID, rs[1].ID, rs[2].ID, rs[3].ID, rs[5].ID, rs[6].ID, unsupported[0].ID)
 
-	defaultBranches := map[api.RepoName]defaultBranch{
-		rs[0].Name:          {branch: "branch-1", commit: api.CommitID("6f152ece24b9424edcd4da2b82989c5c2bea64c3")},
-		rs[1].Name:          {branch: "branch-2", commit: api.CommitID("2840a42c7809c22b16fda7099c725d1ef197961c")},
-		rs[2].Name:          {branch: "branch-3", commit: api.CommitID("aead85d33485e115b33ec4045c55bac97e03fd26")},
-		rs[3].Name:          {branch: "branch-4", commit: api.CommitID("26ac0350471daac3401a9314fd64e714370837a6")},
-		rs[4].Name:          {branch: "branch-6", commit: api.CommitID("010b133ece7a79187cad209b27099232485a5476")},
-		rs[5].Name:          {branch: "branch-7", commit: api.CommitID("ee0c70114fc1a92c96ceae495519a4d3df979efe")},
-		unsupported[0].Name: {branch: "branch-5", commit: api.CommitID("c167bd633e2868585b86ef129d07f63dee46b84a")},
-		// No entry for rs[6], is not cloned yet. This is to test we don't error when some repos are results of a
-		// search but not yet cloned.
+	defbultBrbnches := mbp[bpi.RepoNbme]defbultBrbnch{
+		rs[0].Nbme:          {brbnch: "brbnch-1", commit: bpi.CommitID("6f152ece24b9424edcd4db2b82989c5c2beb64c3")},
+		rs[1].Nbme:          {brbnch: "brbnch-2", commit: bpi.CommitID("2840b42c7809c22b16fdb7099c725d1ef197961c")},
+		rs[2].Nbme:          {brbnch: "brbnch-3", commit: bpi.CommitID("bebd85d33485e115b33ec4045c55bbc97e03fd26")},
+		rs[3].Nbme:          {brbnch: "brbnch-4", commit: bpi.CommitID("26bc0350471dbbc3401b9314fd64e714370837b6")},
+		rs[4].Nbme:          {brbnch: "brbnch-6", commit: bpi.CommitID("010b133ece7b79187cbd209b27099232485b5476")},
+		rs[5].Nbme:          {brbnch: "brbnch-7", commit: bpi.CommitID("ee0c70114fc1b92c96cebe495519b4d3df979efe")},
+		unsupported[0].Nbme: {brbnch: "brbnch-5", commit: bpi.CommitID("c167bd633e2868585b86ef129d07f63dee46b84b")},
+		// No entry for rs[6], is not cloned yet. This is to test we don't error when some repos bre results of b
+		// sebrch but not yet cloned.
 	}
-	steps := []batcheslib.Step{{Run: "echo 1"}}
-	buildRepoWorkspace := func(repo *types.Repo, branch, commit string, fileMatches []string) *RepoWorkspace {
-		sort.Strings(fileMatches)
-		if branch == "" {
-			branch = defaultBranches[repo.Name].branch
+	steps := []bbtcheslib.Step{{Run: "echo 1"}}
+	buildRepoWorkspbce := func(repo *types.Repo, brbnch, commit string, fileMbtches []string) *RepoWorkspbce {
+		sort.Strings(fileMbtches)
+		if brbnch == "" {
+			brbnch = defbultBrbnches[repo.Nbme].brbnch
 		}
 		if commit == "" {
-			commit = string(defaultBranches[repo.Name].commit)
+			commit = string(defbultBrbnches[repo.Nbme].commit)
 		}
-		return &RepoWorkspace{
+		return &RepoWorkspbce{
 			RepoRevision: &RepoRevision{
 				Repo:        repo,
-				Branch:      branch,
-				Commit:      api.CommitID(commit),
-				FileMatches: fileMatches,
+				Brbnch:      brbnch,
+				Commit:      bpi.CommitID(commit),
+				FileMbtches: fileMbtches,
 			},
-			Path:               "",
-			OnlyFetchWorkspace: false,
+			Pbth:               "",
+			OnlyFetchWorkspbce: fblse,
 		}
 	}
-	buildIgnoredRepoWorkspace := func(repo *types.Repo, branch, commit string, fileMatches []string) *RepoWorkspace {
-		ws := buildRepoWorkspace(repo, branch, commit, fileMatches)
+	buildIgnoredRepoWorkspbce := func(repo *types.Repo, brbnch, commit string, fileMbtches []string) *RepoWorkspbce {
+		ws := buildRepoWorkspbce(repo, brbnch, commit, fileMbtches)
 		ws.Ignored = true
 		return ws
 	}
-	buildUnsupportedRepoWorkspace := func(repo *types.Repo, branch, commit string, fileMatches []string) *RepoWorkspace {
-		ws := buildRepoWorkspace(repo, branch, commit, fileMatches)
+	buildUnsupportedRepoWorkspbce := func(repo *types.Repo, brbnch, commit string, fileMbtches []string) *RepoWorkspbce {
+		ws := buildRepoWorkspbce(repo, brbnch, commit, fileMbtches)
 		ws.Unsupported = true
 		return ws
 	}
 
-	newGitserverClient := func(commitMap map[api.CommitID]bool, branches map[string]api.CommitID) gitserver.Client {
+	newGitserverClient := func(commitMbp mbp[bpi.CommitID]bool, brbnches mbp[string]bpi.CommitID) gitserver.Client {
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, short bool) (string, api.CommitID, error) {
-			if res, ok := defaultBranches[repo]; ok {
-				return res.branch, res.commit, nil
+		gitserverClient.GetDefbultBrbnchFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, short bool) (string, bpi.CommitID, error) {
+			if res, ok := defbultBrbnches[repo]; ok {
+				return res.brbnch, res.commit, nil
 			}
-			return "", "", &gitdomain.RepoNotExistError{Repo: repo}
+			return "", "", &gitdombin.RepoNotExistError{Repo: repo}
 		})
 
-		gitserverClient.StatFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, s string) (fs.FileInfo, error) {
-			hasBatchIgnore, ok := commitMap[commit]
+		gitserverClient.StbtFunc.SetDefbultHook(func(ctx context.Context, _ buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, s string) (fs.FileInfo, error) {
+			hbsBbtchIgnore, ok := commitMbp[commit]
 			if !ok {
 				return nil, errors.Newf("unknown commit: %s", commit)
 			}
-			if hasBatchIgnore {
-				return &fileutil.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
+			if hbsBbtchIgnore {
+				return &fileutil.FileInfo{Nbme_: ".bbtchignore", Mode_: 0}, nil
 			}
 			return nil, os.ErrNotExist
 		})
 
-		gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, spec string, rro gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-			if commit, ok := branches[spec]; ok {
+		gitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, spec string, rro gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+			if commit, ok := brbnches[spec]; ok {
 				return commit, nil
 			}
 			return "", errors.Newf("unknown spec: %s", spec)
@@ -141,559 +141,559 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		return gitserverClient
 	}
 
-	t.Run("repositoriesMatchingQuery", func(t *testing.T) {
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
-				// In our test the search API returns the same results for both.
-				{RepositoriesMatchingQuery: "repohasfile:horse.txt duplicate"},
+	t.Run("repositoriesMbtchingQuery", func(t *testing.T) {
+		bbtchSpec := &bbtcheslib.BbtchSpec{
+			On: []bbtcheslib.OnQueryOrRepository{
+				{RepositoriesMbtchingQuery: "repohbsfile:horse.txt"},
+				// In our test the sebrch API returns the sbme results for both.
+				{RepositoriesMbtchingQuery: "repohbsfile:horse.txt duplicbte"},
 				// This query returns 0 results.
-				{RepositoriesMatchingQuery: "select:repo r:sourcegraph"},
+				{RepositoriesMbtchingQuery: "select:repo r:sourcegrbph"},
 			},
 			Steps: steps,
 		}
 
-		gs := newGitserverClient(map[api.CommitID]bool{
-			defaultBranches[rs[0].Name].commit:          false,
-			defaultBranches[rs[1].Name].commit:          true,
-			defaultBranches[rs[2].Name].commit:          true,
-			defaultBranches[rs[3].Name].commit:          false,
-			defaultBranches[unsupported[0].Name].commit: false,
+		gs := newGitserverClient(mbp[bpi.CommitID]bool{
+			defbultBrbnches[rs[0].Nbme].commit:          fblse,
+			defbultBrbnches[rs[1].Nbme].commit:          true,
+			defbultBrbnches[rs[2].Nbme].commit:          true,
+			defbultBrbnches[rs[3].Nbme].commit:          fblse,
+			defbultBrbnches[unsupported[0].Nbme].commit: fblse,
 		}, nil)
 
-		eventMatches := []streamhttp.EventMatch{
-			&streamhttp.EventContentMatch{
-				Type:         streamhttp.ContentMatchType,
-				Path:         "repo-0/test",
+		eventMbtches := []strebmhttp.EventMbtch{
+			&strebmhttp.EventContentMbtch{
+				Type:         strebmhttp.ContentMbtchType,
+				Pbth:         "repo-0/test",
 				RepositoryID: int32(rs[0].ID),
 			},
-			&streamhttp.EventContentMatch{
-				Type:         streamhttp.ContentMatchType,
-				Path:         "repo-0/duplicate-test",
+			&strebmhttp.EventContentMbtch{
+				Type:         strebmhttp.ContentMbtchType,
+				Pbth:         "repo-0/duplicbte-test",
 				RepositoryID: int32(rs[0].ID),
 			},
-			&streamhttp.EventRepoMatch{
-				Type:         streamhttp.RepoMatchType,
+			&strebmhttp.EventRepoMbtch{
+				Type:         strebmhttp.RepoMbtchType,
 				RepositoryID: int32(rs[1].ID),
 			},
-			&streamhttp.EventPathMatch{
-				Type:         streamhttp.PathMatchType,
-				Path:         "repo-2/readme",
+			&strebmhttp.EventPbthMbtch{
+				Type:         strebmhttp.PbthMbtchType,
+				Pbth:         "repo-2/rebdme",
 				RepositoryID: int32(rs[2].ID),
 			},
-			&streamhttp.EventSymbolMatch{
-				Type:         streamhttp.SymbolMatchType,
-				Path:         "repo-3/readme",
+			&strebmhttp.EventSymbolMbtch{
+				Type:         strebmhttp.SymbolMbtchType,
+				Pbth:         "repo-3/rebdme",
 				RepositoryID: int32(rs[3].ID),
 			},
-			&streamhttp.EventPathMatch{
-				Type:         streamhttp.PathMatchType,
-				Path:         "unsupported/path",
+			&strebmhttp.EventPbthMbtch{
+				Type:         strebmhttp.PbthMbtchType,
+				Pbth:         "unsupported/pbth",
 				RepositoryID: int32(unsupported[0].ID),
 			},
 			// Result for rs[6] which is not cloned yet.
-			&streamhttp.EventPathMatch{
-				Type:         streamhttp.RepoMatchType,
+			&strebmhttp.EventPbthMbtch{
+				Type:         strebmhttp.RepoMbtchType,
 				RepositoryID: int32(rs[6].ID),
 			},
 		}
-		searchMatches := map[string][]streamhttp.EventMatch{
-			"repohasfile:horse.txt count:all":           eventMatches,
-			"repohasfile:horse.txt duplicate count:all": eventMatches,
-			// No results for this one. rs[5] should not appear in the result, as
-			// it didn't match anything in the search results.
-			"select:repo r:sourcegraph count:all": {},
+		sebrchMbtches := mbp[string][]strebmhttp.EventMbtch{
+			"repohbsfile:horse.txt count:bll":           eventMbtches,
+			"repohbsfile:horse.txt duplicbte count:bll": eventMbtches,
+			// No results for this one. rs[5] should not bppebr in the result, bs
+			// it didn't mbtch bnything in the sebrch results.
+			"select:repo r:sourcegrbph count:bll": {},
 		}
 
-		want := []*RepoWorkspace{
-			buildRepoWorkspace(rs[0], "", "", []string{"repo-0/test", "repo-0/duplicate-test"}),
-			buildIgnoredRepoWorkspace(rs[1], "", "", []string{}),
-			buildIgnoredRepoWorkspace(rs[2], "", "", []string{"repo-2/readme"}),
-			buildRepoWorkspace(rs[3], "", "", []string{"repo-3/readme"}),
-			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{"unsupported/path"}),
+		wbnt := []*RepoWorkspbce{
+			buildRepoWorkspbce(rs[0], "", "", []string{"repo-0/test", "repo-0/duplicbte-test"}),
+			buildIgnoredRepoWorkspbce(rs[1], "", "", []string{}),
+			buildIgnoredRepoWorkspbce(rs[2], "", "", []string{"repo-2/rebdme"}),
+			buildRepoWorkspbce(rs[3], "", "", []string{"repo-3/rebdme"}),
+			buildUnsupportedRepoWorkspbce(unsupported[0], "", "", []string{"unsupported/pbth"}),
 		}
-		resolveWorkspacesAndCompare(t, s, gs, u, searchMatches, batchSpec, want)
+		resolveWorkspbcesAndCompbre(t, s, gs, u, sebrchMbtches, bbtchSpec, wbnt)
 	})
 
 	t.Run("repositories", func(t *testing.T) {
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				{Repository: string(rs[0].Name)},
-				{Repository: string(rs[1].Name), Branch: "non-default-branch"},
-				{Repository: string(rs[2].Name), Branches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
-				{Repository: string(rs[3].Name)},
-				{Repository: string(unsupported[0].Name)},
+		bbtchSpec := &bbtcheslib.BbtchSpec{
+			On: []bbtcheslib.OnQueryOrRepository{
+				{Repository: string(rs[0].Nbme)},
+				{Repository: string(rs[1].Nbme), Brbnch: "non-defbult-brbnch"},
+				{Repository: string(rs[2].Nbme), Brbnches: []string{"other-non-defbult-brbnch", "yet-bnother-non-defbult-brbnch"}},
+				{Repository: string(rs[3].Nbme)},
+				{Repository: string(unsupported[0].Nbme)},
 			},
 			Steps: steps,
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit: false,
-				"d34db33f":                         false,
-				"c0ff33":                           false,
-				"b33a":                             false,
-				defaultBranches[rs[3].Name].commit: true,
-				defaultBranches[unsupported[0].Name].commit: false,
+			mbp[bpi.CommitID]bool{
+				defbultBrbnches[rs[0].Nbme].commit: fblse,
+				"d34db33f":                         fblse,
+				"c0ff33":                           fblse,
+				"b33b":                             fblse,
+				defbultBrbnches[rs[3].Nbme].commit: true,
+				defbultBrbnches[unsupported[0].Nbme].commit: fblse,
 			},
-			map[string]api.CommitID{
-				defaultBranches[rs[0].Name].branch:          defaultBranches[rs[0].Name].commit,
-				"non-default-branch":                        "d34db33f",
-				"other-non-default-branch":                  "c0ff33",
-				"yet-another-non-default-branch":            "b33a",
-				defaultBranches[rs[3].Name].branch:          defaultBranches[rs[3].Name].commit,
-				defaultBranches[unsupported[0].Name].branch: defaultBranches[unsupported[0].Name].commit,
+			mbp[string]bpi.CommitID{
+				defbultBrbnches[rs[0].Nbme].brbnch:          defbultBrbnches[rs[0].Nbme].commit,
+				"non-defbult-brbnch":                        "d34db33f",
+				"other-non-defbult-brbnch":                  "c0ff33",
+				"yet-bnother-non-defbult-brbnch":            "b33b",
+				defbultBrbnches[rs[3].Nbme].brbnch:          defbultBrbnches[rs[3].Nbme].commit,
+				defbultBrbnches[unsupported[0].Nbme].brbnch: defbultBrbnches[unsupported[0].Nbme].commit,
 			},
 		)
 
-		want := []*RepoWorkspace{
-			buildRepoWorkspace(rs[0], "", "", []string{}),
-			buildRepoWorkspace(rs[1], "non-default-branch", "d34db33f", []string{}),
-			buildRepoWorkspace(rs[2], "other-non-default-branch", "c0ff33", []string{}),
-			buildRepoWorkspace(rs[2], "yet-another-non-default-branch", "b33a", []string{}),
-			buildIgnoredRepoWorkspace(rs[3], "", "", []string{}),
-			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
+		wbnt := []*RepoWorkspbce{
+			buildRepoWorkspbce(rs[0], "", "", []string{}),
+			buildRepoWorkspbce(rs[1], "non-defbult-brbnch", "d34db33f", []string{}),
+			buildRepoWorkspbce(rs[2], "other-non-defbult-brbnch", "c0ff33", []string{}),
+			buildRepoWorkspbce(rs[2], "yet-bnother-non-defbult-brbnch", "b33b", []string{}),
+			buildIgnoredRepoWorkspbce(rs[3], "", "", []string{}),
+			buildUnsupportedRepoWorkspbce(unsupported[0], "", "", []string{}),
 		}
 
-		resolveWorkspacesAndCompare(t, s, gs, u, map[string][]streamhttp.EventMatch{}, batchSpec, want)
+		resolveWorkspbcesAndCompbre(t, s, gs, u, mbp[string][]strebmhttp.EventMbtch{}, bbtchSpec, wbnt)
 	})
 
 	t.Run("repositories overriding previous queries", func(t *testing.T) {
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				// This query is just a placeholder; we'll set up the search
+		bbtchSpec := &bbtcheslib.BbtchSpec{
+			On: []bbtcheslib.OnQueryOrRepository{
+				// This query is just b plbceholder; we'll set up the sebrch
 				// results further down to return rs[2].
-				{RepositoriesMatchingQuery: "r:rs-2"},
-				{Repository: string(rs[0].Name)},
-				{Repository: string(rs[1].Name), Branch: "non-default-branch"},
-				{Repository: string(rs[1].Name), Branch: "a-different-non-default-branch"},
-				{Repository: string(rs[2].Name), Branches: []string{"other-non-default-branch", "yet-another-non-default-branch"}},
-				{Repository: string(rs[3].Name)},
-				{Repository: string(unsupported[0].Name)},
+				{RepositoriesMbtchingQuery: "r:rs-2"},
+				{Repository: string(rs[0].Nbme)},
+				{Repository: string(rs[1].Nbme), Brbnch: "non-defbult-brbnch"},
+				{Repository: string(rs[1].Nbme), Brbnch: "b-different-non-defbult-brbnch"},
+				{Repository: string(rs[2].Nbme), Brbnches: []string{"other-non-defbult-brbnch", "yet-bnother-non-defbult-brbnch"}},
+				{Repository: string(rs[3].Nbme)},
+				{Repository: string(unsupported[0].Nbme)},
 			},
 			Steps: steps,
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit: false,
-				"d34db33f":                         false,
-				"c4a1":                             false,
-				"c0ff33":                           false,
-				"b33a":                             false,
-				defaultBranches[rs[3].Name].commit: true,
-				defaultBranches[unsupported[0].Name].commit: false,
+			mbp[bpi.CommitID]bool{
+				defbultBrbnches[rs[0].Nbme].commit: fblse,
+				"d34db33f":                         fblse,
+				"c4b1":                             fblse,
+				"c0ff33":                           fblse,
+				"b33b":                             fblse,
+				defbultBrbnches[rs[3].Nbme].commit: true,
+				defbultBrbnches[unsupported[0].Nbme].commit: fblse,
 			},
-			map[string]api.CommitID{
-				defaultBranches[rs[0].Name].branch:          defaultBranches[rs[0].Name].commit,
-				"non-default-branch":                        "d34db33f",
-				"a-different-non-default-branch":            "c4a1",
-				"other-non-default-branch":                  "c0ff33",
-				"yet-another-non-default-branch":            "b33a",
-				defaultBranches[rs[3].Name].branch:          defaultBranches[rs[3].Name].commit,
-				defaultBranches[unsupported[0].Name].branch: defaultBranches[unsupported[0].Name].commit,
+			mbp[string]bpi.CommitID{
+				defbultBrbnches[rs[0].Nbme].brbnch:          defbultBrbnches[rs[0].Nbme].commit,
+				"non-defbult-brbnch":                        "d34db33f",
+				"b-different-non-defbult-brbnch":            "c4b1",
+				"other-non-defbult-brbnch":                  "c0ff33",
+				"yet-bnother-non-defbult-brbnch":            "b33b",
+				defbultBrbnches[rs[3].Nbme].brbnch:          defbultBrbnches[rs[3].Nbme].commit,
+				defbultBrbnches[unsupported[0].Nbme].brbnch: defbultBrbnches[unsupported[0].Nbme].commit,
 			},
 		)
 
-		searchMatches := map[string][]streamhttp.EventMatch{
-			"r:rs-2 count:all": {
-				&streamhttp.EventPathMatch{
-					Type:         streamhttp.PathMatchType,
-					Path:         "repo-2/readme",
+		sebrchMbtches := mbp[string][]strebmhttp.EventMbtch{
+			"r:rs-2 count:bll": {
+				&strebmhttp.EventPbthMbtch{
+					Type:         strebmhttp.PbthMbtchType,
+					Pbth:         "repo-2/rebdme",
 					RepositoryID: int32(rs[2].ID),
-					Branches:     []string{"main"},
+					Brbnches:     []string{"mbin"},
 				},
 			},
 		}
 
-		want := []*RepoWorkspace{
-			buildRepoWorkspace(rs[0], "", "", []string{}),
-			// Note that only the last rs[1] result is included.
-			buildRepoWorkspace(rs[1], "a-different-non-default-branch", "c4a1", []string{}),
-			// Note that this doesn't include rs[2] "main".
-			buildRepoWorkspace(rs[2], "other-non-default-branch", "c0ff33", []string{}),
-			buildRepoWorkspace(rs[2], "yet-another-non-default-branch", "b33a", []string{}),
-			buildIgnoredRepoWorkspace(rs[3], "", "", []string{}),
-			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
+		wbnt := []*RepoWorkspbce{
+			buildRepoWorkspbce(rs[0], "", "", []string{}),
+			// Note thbt only the lbst rs[1] result is included.
+			buildRepoWorkspbce(rs[1], "b-different-non-defbult-brbnch", "c4b1", []string{}),
+			// Note thbt this doesn't include rs[2] "mbin".
+			buildRepoWorkspbce(rs[2], "other-non-defbult-brbnch", "c0ff33", []string{}),
+			buildRepoWorkspbce(rs[2], "yet-bnother-non-defbult-brbnch", "b33b", []string{}),
+			buildIgnoredRepoWorkspbce(rs[3], "", "", []string{}),
+			buildUnsupportedRepoWorkspbce(unsupported[0], "", "", []string{}),
 		}
 
-		resolveWorkspacesAndCompare(t, s, gs, u, searchMatches, batchSpec, want)
+		resolveWorkspbcesAndCompbre(t, s, gs, u, sebrchMbtches, bbtchSpec, wbnt)
 	})
 
-	t.Run("repositoriesMatchingQuery and repositories", func(t *testing.T) {
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				{RepositoriesMatchingQuery: "repohasfile:horse.txt"},
-				{Repository: string(rs[2].Name)},
-				{Repository: string(rs[3].Name)},
+	t.Run("repositoriesMbtchingQuery bnd repositories", func(t *testing.T) {
+		bbtchSpec := &bbtcheslib.BbtchSpec{
+			On: []bbtcheslib.OnQueryOrRepository{
+				{RepositoriesMbtchingQuery: "repohbsfile:horse.txt"},
+				{Repository: string(rs[2].Nbme)},
+				{Repository: string(rs[3].Nbme)},
 			},
 			Steps: steps,
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit:          false,
-				defaultBranches[rs[1].Name].commit:          false,
-				defaultBranches[rs[2].Name].commit:          false,
-				defaultBranches[rs[3].Name].commit:          false,
-				defaultBranches[unsupported[0].Name].commit: false,
+			mbp[bpi.CommitID]bool{
+				defbultBrbnches[rs[0].Nbme].commit:          fblse,
+				defbultBrbnches[rs[1].Nbme].commit:          fblse,
+				defbultBrbnches[rs[2].Nbme].commit:          fblse,
+				defbultBrbnches[rs[3].Nbme].commit:          fblse,
+				defbultBrbnches[unsupported[0].Nbme].commit: fblse,
 			},
-			map[string]api.CommitID{
-				defaultBranches[rs[2].Name].branch: defaultBranches[rs[2].Name].commit,
-				defaultBranches[rs[3].Name].branch: defaultBranches[rs[3].Name].commit,
+			mbp[string]bpi.CommitID{
+				defbultBrbnches[rs[2].Nbme].brbnch: defbultBrbnches[rs[2].Nbme].commit,
+				defbultBrbnches[rs[3].Nbme].brbnch: defbultBrbnches[rs[3].Nbme].commit,
 			},
 		)
 
-		eventMatches := []streamhttp.EventMatch{
-			&streamhttp.EventContentMatch{
-				Type:         streamhttp.ContentMatchType,
-				Path:         "test",
+		eventMbtches := []strebmhttp.EventMbtch{
+			&strebmhttp.EventContentMbtch{
+				Type:         strebmhttp.ContentMbtchType,
+				Pbth:         "test",
 				RepositoryID: int32(rs[0].ID),
 			},
-			&streamhttp.EventRepoMatch{
-				Type:         streamhttp.RepoMatchType,
+			&strebmhttp.EventRepoMbtch{
+				Type:         strebmhttp.RepoMbtchType,
 				RepositoryID: int32(rs[1].ID),
 			},
-			// Included in the search results and explicitly listed
-			&streamhttp.EventRepoMatch{
-				Type:         streamhttp.RepoMatchType,
+			// Included in the sebrch results bnd explicitly listed
+			&strebmhttp.EventRepoMbtch{
+				Type:         strebmhttp.RepoMbtchType,
 				RepositoryID: int32(rs[2].ID),
 			},
-			&streamhttp.EventRepoMatch{
-				Type:         streamhttp.RepoMatchType,
+			&strebmhttp.EventRepoMbtch{
+				Type:         strebmhttp.RepoMbtchType,
 				RepositoryID: int32(unsupported[0].ID),
 			},
 		}
-		searchMatches := map[string][]streamhttp.EventMatch{
-			"repohasfile:horse.txt count:all": eventMatches,
+		sebrchMbtches := mbp[string][]strebmhttp.EventMbtch{
+			"repohbsfile:horse.txt count:bll": eventMbtches,
 		}
 
-		want := []*RepoWorkspace{
-			buildRepoWorkspace(rs[0], "", "", []string{"test"}),
-			buildRepoWorkspace(rs[1], "", "", []string{}),
-			buildRepoWorkspace(rs[2], "", "", []string{}),
-			buildRepoWorkspace(rs[3], "", "", []string{}),
-			buildUnsupportedRepoWorkspace(unsupported[0], "", "", []string{}),
+		wbnt := []*RepoWorkspbce{
+			buildRepoWorkspbce(rs[0], "", "", []string{"test"}),
+			buildRepoWorkspbce(rs[1], "", "", []string{}),
+			buildRepoWorkspbce(rs[2], "", "", []string{}),
+			buildRepoWorkspbce(rs[3], "", "", []string{}),
+			buildUnsupportedRepoWorkspbce(unsupported[0], "", "", []string{}),
 		}
 
-		resolveWorkspacesAndCompare(t, s, gs, u, searchMatches, batchSpec, want)
+		resolveWorkspbcesAndCompbre(t, s, gs, u, sebrchMbtches, bbtchSpec, wbnt)
 	})
 
-	t.Run("workspaces with skipped steps", func(t *testing.T) {
-		conditionalSteps := []batcheslib.Step{
+	t.Run("workspbces with skipped steps", func(t *testing.T) {
+		conditionblSteps := []bbtcheslib.Step{
 			// Step should only execute in rs[1]
-			{Run: "echo 1", If: fmt.Sprintf(`${{ eq repository.name %q }}`, rs[1].Name)},
+			{Run: "echo 1", If: fmt.Sprintf(`${{ eq repository.nbme %q }}`, rs[1].Nbme)},
 		}
-		batchSpec := &batcheslib.BatchSpec{
-			On: []batcheslib.OnQueryOrRepository{
-				{Repository: string(rs[0].Name)},
-				{Repository: string(rs[1].Name)},
+		bbtchSpec := &bbtcheslib.BbtchSpec{
+			On: []bbtcheslib.OnQueryOrRepository{
+				{Repository: string(rs[0].Nbme)},
+				{Repository: string(rs[1].Nbme)},
 			},
-			Steps: conditionalSteps,
+			Steps: conditionblSteps,
 		}
 
 		gs := newGitserverClient(
-			map[api.CommitID]bool{
-				defaultBranches[rs[0].Name].commit: false,
-				defaultBranches[rs[1].Name].commit: false,
+			mbp[bpi.CommitID]bool{
+				defbultBrbnches[rs[0].Nbme].commit: fblse,
+				defbultBrbnches[rs[1].Nbme].commit: fblse,
 			},
-			map[string]api.CommitID{
-				defaultBranches[rs[0].Name].branch: defaultBranches[rs[0].Name].commit,
-				defaultBranches[rs[1].Name].branch: defaultBranches[rs[1].Name].commit,
+			mbp[string]bpi.CommitID{
+				defbultBrbnches[rs[0].Nbme].brbnch: defbultBrbnches[rs[0].Nbme].commit,
+				defbultBrbnches[rs[1].Nbme].brbnch: defbultBrbnches[rs[1].Nbme].commit,
 			},
 		)
 
-		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
+		ws1 := buildRepoWorkspbce(rs[1], "", "", []string{})
 
-		// ws0 has no steps to run, so it is excluded.
-		// TODO: Later we might want to add an additional flag to the workspace
-		// to indicate this in the UI.
-		want := []*RepoWorkspace{ws1}
-		resolveWorkspacesAndCompare(t, s, gs, u, map[string][]streamhttp.EventMatch{}, batchSpec, want)
+		// ws0 hbs no steps to run, so it is excluded.
+		// TODO: Lbter we might wbnt to bdd bn bdditionbl flbg to the workspbce
+		// to indicbte this in the UI.
+		wbnt := []*RepoWorkspbce{ws1}
+		resolveWorkspbcesAndCompbre(t, s, gs, u, mbp[string][]strebmhttp.EventMbtch{}, bbtchSpec, wbnt)
 	})
 }
 
-func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Client, u *types.User, matches map[string][]streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
+func resolveWorkspbcesAndCompbre(t *testing.T, s *store.Store, gs gitserver.Client, u *types.User, mbtches mbp[string][]strebmhttp.EventMbtch, spec *bbtcheslib.BbtchSpec, wbnt []*RepoWorkspbce) {
 	t.Helper()
 
-	wr := &workspaceResolver{
+	wr := &workspbceResolver{
 		store:               s,
 		gitserverClient:     gs,
-		frontendInternalURL: newStreamSearchTestServer(t, matches),
+		frontendInternblURL: newStrebmSebrchTestServer(t, mbtches),
 	}
-	ctx := actor.WithActor(context.Background(), actor.FromUser(u.ID))
-	have, err := wr.ResolveWorkspacesForBatchSpec(ctx, spec)
+	ctx := bctor.WithActor(context.Bbckground(), bctor.FromUser(u.ID))
+	hbve, err := wr.ResolveWorkspbcesForBbtchSpec(ctx, spec)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatalf("returned workspaces wrong. (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtblf("returned workspbces wrong. (-wbnt +got):\n%s", diff)
 	}
 }
 
-func newStreamSearchTestServer(t *testing.T, matches map[string][]streamhttp.EventMatch) string {
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		q, err := url.QueryUnescape(req.URL.Query().Get("q"))
+func newStrebmSebrchTestServer(t *testing.T, mbtches mbp[string][]strebmhttp.EventMbtch) string {
+	ts := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		q, err := url.QueryUnescbpe(req.URL.Query().Get("q"))
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 		if q == "" {
-			http.Error(w, "no query passed", http.StatusBadRequest)
+			http.Error(w, "no query pbssed", http.StbtusBbdRequest)
 			return
 		}
 
 		v := req.URL.Query().Get("v")
-		if v != searchAPIVersion {
-			http.Error(w, "wrong search api version", http.StatusBadRequest)
+		if v != sebrchAPIVersion {
+			http.Error(w, "wrong sebrch bpi version", http.StbtusBbdRequest)
 			return
 		}
 
-		match, ok := matches[q]
+		mbtch, ok := mbtches[q]
 		if !ok {
 			t.Logf("unknown query %q", q)
-			http.Error(w, fmt.Sprintf("unknown query %q", q), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("unknown query %q", q), http.StbtusBbdRequest)
 			return
 		}
 
 		type ev struct {
-			Name  string
-			Value any
+			Nbme  string
+			Vblue bny
 		}
-		ew, err := streamhttp.NewWriter(w)
+		ew, err := strebmhttp.NewWriter(w)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 		ew.Event("progress", ev{
-			Name:  "progress",
-			Value: &streamapi.Progress{MatchCount: len(match)},
+			Nbme:  "progress",
+			Vblue: &strebmbpi.Progress{MbtchCount: len(mbtch)},
 		})
-		ew.Event("matches", match)
+		ew.Event("mbtches", mbtch)
 		ew.Event("done", struct{}{})
 	}))
 
-	t.Cleanup(ts.Close)
+	t.Clebnup(ts.Close)
 
 	return ts.URL
 }
 
-type defaultBranch struct {
-	branch string
-	commit api.CommitID
+type defbultBrbnch struct {
+	brbnch string
+	commit bpi.CommitID
 }
 
-func TestFindWorkspaces(t *testing.T) {
+func TestFindWorkspbces(t *testing.T) {
 	repoRevs := []*RepoRevision{
-		{Repo: &types.Repo{ID: 1, Name: "github.com/sourcegraph/automation-testing"}, FileMatches: []string{}},
-		{Repo: &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph"}, FileMatches: []string{}},
-		{Repo: &types.Repo{ID: 3, Name: "bitbucket.sgdev.org/SOUR/automation-testing"}, FileMatches: []string{}},
-		// This one has file matches.
+		{Repo: &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/butombtion-testing"}, FileMbtches: []string{}},
+		{Repo: &types.Repo{ID: 2, Nbme: "github.com/sourcegrbph/sourcegrbph"}, FileMbtches: []string{}},
+		{Repo: &types.Repo{ID: 3, Nbme: "bitbucket.sgdev.org/SOUR/butombtion-testing"}, FileMbtches: []string{}},
+		// This one hbs file mbtches.
 		{
 			Repo: &types.Repo{
 				ID:   4,
-				Name: "github.com/sourcegraph/src-cli",
+				Nbme: "github.com/sourcegrbph/src-cli",
 			},
-			FileMatches: []string{"a/b", "a/b/c", "d/e/f"},
+			FileMbtches: []string{"b/b", "b/b/c", "d/e/f"},
 		},
 	}
-	steps := []batcheslib.Step{{Run: "echo 1"}}
+	steps := []bbtcheslib.Step{{Run: "echo 1"}}
 
-	type finderResults map[repoRevKey][]string
+	type finderResults mbp[repoRevKey][]string
 
-	tests := map[string]struct {
-		spec          *batcheslib.BatchSpec
+	tests := mbp[string]struct {
+		spec          *bbtcheslib.BbtchSpec
 		finderResults finderResults
 
-		// workspaces in which repo/path they are executed
-		wantWorkspaces []*RepoWorkspace
-		wantErr        error
+		// workspbces in which repo/pbth they bre executed
+		wbntWorkspbces []*RepoWorkspbce
+		wbntErr        error
 	}{
-		"no workspace configuration": {
-			spec:          &batcheslib.BatchSpec{Steps: steps},
+		"no workspbce configurbtion": {
+			spec:          &bbtcheslib.BbtchSpec{Steps: steps},
 			finderResults: finderResults{},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[0], Path: ""},
-				{RepoRevision: repoRevs[1], Path: ""},
-				{RepoRevision: repoRevs[2], Path: ""},
-				{RepoRevision: repoRevs[3], Path: ""},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[0], Pbth: ""},
+				{RepoRevision: repoRevs[1], Pbth: ""},
+				{RepoRevision: repoRevs[2], Pbth: ""},
+				{RepoRevision: repoRevs[3], Pbth: ""},
 			},
 		},
 
-		"workspace configuration matching no repos": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce configurbtion mbtching no repos": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
-					{In: "this-does-not-match", RootAtLocationOf: "package.json"},
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
+					{In: "this-does-not-mbtch", RootAtLocbtionOf: "pbckbge.json"},
 				},
 			},
 			finderResults: finderResults{},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[0], Path: ""},
-				{RepoRevision: repoRevs[1], Path: ""},
-				{RepoRevision: repoRevs[2], Path: ""},
-				{RepoRevision: repoRevs[3], Path: ""},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[0], Pbth: ""},
+				{RepoRevision: repoRevs[1], Pbth: ""},
+				{RepoRevision: repoRevs[2], Pbth: ""},
+				{RepoRevision: repoRevs[3], Pbth: ""},
 			},
 		},
 
-		"workspace configuration matching 2 repos with no results": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce configurbtion mbtching 2 repos with no results": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
-					{In: "*automation-testing", RootAtLocationOf: "package.json"},
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
+					{In: "*butombtion-testing", RootAtLocbtionOf: "pbckbge.json"},
 				},
 			},
 			finderResults: finderResults{
 				repoRevs[0].Key(): []string{},
 				repoRevs[2].Key(): []string{},
 			},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[1], Path: ""},
-				{RepoRevision: repoRevs[3], Path: ""},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[1], Pbth: ""},
+				{RepoRevision: repoRevs[3], Pbth: ""},
 			},
 		},
 
-		"workspace configuration matching 2 repos with 3 results each": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce configurbtion mbtching 2 repos with 3 results ebch": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
-					{In: "*automation-testing", RootAtLocationOf: "package.json"},
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
+					{In: "*butombtion-testing", RootAtLocbtionOf: "pbckbge.json"},
 				},
 			},
 			finderResults: finderResults{
-				repoRevs[0].Key(): {"a/b", "a/b/c", "d/e/f"},
-				repoRevs[2].Key(): {"a/b", "a/b/c", "d/e/f"},
+				repoRevs[0].Key(): {"b/b", "b/b/c", "d/e/f"},
+				repoRevs[2].Key(): {"b/b", "b/b/c", "d/e/f"},
 			},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[0], Path: "a/b"},
-				{RepoRevision: repoRevs[0], Path: "a/b/c"},
-				{RepoRevision: repoRevs[0], Path: "d/e/f"},
-				{RepoRevision: repoRevs[1], Path: ""},
-				{RepoRevision: repoRevs[2], Path: "a/b"},
-				{RepoRevision: repoRevs[2], Path: "a/b/c"},
-				{RepoRevision: repoRevs[2], Path: "d/e/f"},
-				{RepoRevision: repoRevs[3], Path: ""},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[0], Pbth: "b/b"},
+				{RepoRevision: repoRevs[0], Pbth: "b/b/c"},
+				{RepoRevision: repoRevs[0], Pbth: "d/e/f"},
+				{RepoRevision: repoRevs[1], Pbth: ""},
+				{RepoRevision: repoRevs[2], Pbth: "b/b"},
+				{RepoRevision: repoRevs[2], Pbth: "b/b/c"},
+				{RepoRevision: repoRevs[2], Pbth: "d/e/f"},
+				{RepoRevision: repoRevs[3], Pbth: ""},
 			},
 		},
 
-		"workspace configuration matches repo with OnlyFetchWorkspace": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce configurbtion mbtches repo with OnlyFetchWorkspbce": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
 					{
-						OnlyFetchWorkspace: true,
-						In:                 "*automation-testing",
-						RootAtLocationOf:   "package.json",
+						OnlyFetchWorkspbce: true,
+						In:                 "*butombtion-testing",
+						RootAtLocbtionOf:   "pbckbge.json",
 					},
 				},
 			},
 			finderResults: finderResults{
-				repoRevs[0].Key(): {"a/b", "a/b/c", "d/e/f"},
-				repoRevs[2].Key(): {"a/b", "a/b/c", "d/e/f"},
+				repoRevs[0].Key(): {"b/b", "b/b/c", "d/e/f"},
+				repoRevs[2].Key(): {"b/b", "b/b/c", "d/e/f"},
 			},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[0], Path: "a/b", OnlyFetchWorkspace: true},
-				{RepoRevision: repoRevs[0], Path: "a/b/c", OnlyFetchWorkspace: true},
-				{RepoRevision: repoRevs[0], Path: "d/e/f", OnlyFetchWorkspace: true},
-				{RepoRevision: repoRevs[1], Path: ""},
-				{RepoRevision: repoRevs[2], Path: "a/b", OnlyFetchWorkspace: true},
-				{RepoRevision: repoRevs[2], Path: "a/b/c", OnlyFetchWorkspace: true},
-				{RepoRevision: repoRevs[2], Path: "d/e/f", OnlyFetchWorkspace: true},
-				{RepoRevision: repoRevs[3], Path: ""},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[0], Pbth: "b/b", OnlyFetchWorkspbce: true},
+				{RepoRevision: repoRevs[0], Pbth: "b/b/c", OnlyFetchWorkspbce: true},
+				{RepoRevision: repoRevs[0], Pbth: "d/e/f", OnlyFetchWorkspbce: true},
+				{RepoRevision: repoRevs[1], Pbth: ""},
+				{RepoRevision: repoRevs[2], Pbth: "b/b", OnlyFetchWorkspbce: true},
+				{RepoRevision: repoRevs[2], Pbth: "b/b/c", OnlyFetchWorkspbce: true},
+				{RepoRevision: repoRevs[2], Pbth: "d/e/f", OnlyFetchWorkspbce: true},
+				{RepoRevision: repoRevs[3], Pbth: ""},
 			},
 		},
 
-		"workspace configuration without 'in' matches all": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce configurbtion without 'in' mbtches bll": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
 					{
-						RootAtLocationOf: "package.json",
+						RootAtLocbtionOf: "pbckbge.json",
 					},
 				},
 			},
 			finderResults: finderResults{
-				repoRevs[0].Key(): {"a/b"},
-				repoRevs[2].Key(): {"a/b"},
+				repoRevs[0].Key(): {"b/b"},
+				repoRevs[2].Key(): {"b/b"},
 			},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[0], Path: "a/b"},
-				{RepoRevision: repoRevs[2], Path: "a/b"},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[0], Pbth: "b/b"},
+				{RepoRevision: repoRevs[2], Pbth: "b/b"},
 			},
 		},
-		"workspace configuration matching two repos": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce configurbtion mbtching two repos": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
 					{
-						RootAtLocationOf: "package.json",
-						In:               string(repoRevs[0].Repo.Name),
+						RootAtLocbtionOf: "pbckbge.json",
+						In:               string(repoRevs[0].Repo.Nbme),
 					},
 					{
-						RootAtLocationOf: "go.mod",
-						In:               string(repoRevs[0].Repo.Name),
+						RootAtLocbtionOf: "go.mod",
+						In:               string(repoRevs[0].Repo.Nbme),
 					},
 				},
 			},
 			finderResults: finderResults{
-				repoRevs[0].Key(): {"a/b"},
+				repoRevs[0].Key(): {"b/b"},
 			},
-			wantErr: errors.New(`repository github.com/sourcegraph/automation-testing matches multiple workspaces.in globs in the batch spec. glob: "github.com/sourcegraph/automation-testing"`),
+			wbntErr: errors.New(`repository github.com/sourcegrbph/butombtion-testing mbtches multiple workspbces.in globs in the bbtch spec. glob: "github.com/sourcegrbph/butombtion-testing"`),
 		},
-		"workspace gets subset of search_result_paths": {
-			spec: &batcheslib.BatchSpec{
+		"workspbce gets subset of sebrch_result_pbths": {
+			spec: &bbtcheslib.BbtchSpec{
 				Steps: steps,
-				Workspaces: []batcheslib.WorkspaceConfiguration{
+				Workspbces: []bbtcheslib.WorkspbceConfigurbtion{
 					{
 						In:               "*src-cli",
-						RootAtLocationOf: "package.json",
+						RootAtLocbtionOf: "pbckbge.json",
 					},
 				},
 			},
 			finderResults: finderResults{
-				repoRevs[3].Key(): {"a/b", "d"},
+				repoRevs[3].Key(): {"b/b", "d"},
 			},
-			wantWorkspaces: []*RepoWorkspace{
-				{RepoRevision: repoRevs[0], Path: ""},
-				{RepoRevision: repoRevs[1], Path: ""},
-				{RepoRevision: repoRevs[2], Path: ""},
-				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Branch: repoRevs[3].Branch, Commit: repoRevs[3].Commit, FileMatches: []string{"a/b", "a/b/c"}}, Path: "a/b"},
-				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Branch: repoRevs[3].Branch, Commit: repoRevs[3].Commit, FileMatches: []string{"d/e/f"}}, Path: "d"},
+			wbntWorkspbces: []*RepoWorkspbce{
+				{RepoRevision: repoRevs[0], Pbth: ""},
+				{RepoRevision: repoRevs[1], Pbth: ""},
+				{RepoRevision: repoRevs[2], Pbth: ""},
+				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Brbnch: repoRevs[3].Brbnch, Commit: repoRevs[3].Commit, FileMbtches: []string{"b/b", "b/b/c"}}, Pbth: "b/b"},
+				{RepoRevision: &RepoRevision{Repo: repoRevs[3].Repo, Brbnch: repoRevs[3].Brbnch, Commit: repoRevs[3].Commit, FileMbtches: []string{"d/e/f"}}, Pbth: "d"},
 			},
 		},
 	}
 
-	for name, tt := range tests {
-		t.Run(name, func(t *testing.T) {
+	for nbme, tt := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
 			finder := &mockDirectoryFinder{results: tt.finderResults}
-			workspaces, err := findWorkspaces(context.Background(), tt.spec, finder, repoRevs)
+			workspbces, err := findWorkspbces(context.Bbckground(), tt.spec, finder, repoRevs)
 			if err != nil {
-				if tt.wantErr != nil {
-					require.Exactly(t, tt.wantErr.Error(), err.Error(), "wrong error returned")
+				if tt.wbntErr != nil {
+					require.Exbctly(t, tt.wbntErr.Error(), err.Error(), "wrong error returned")
 				} else {
-					t.Fatalf("unexpected err: %s", err)
+					t.Fbtblf("unexpected err: %s", err)
 				}
 			}
 
-			// Sort by ID, easier than by name for tests.
-			sort.Slice(workspaces, func(i, j int) bool {
-				if workspaces[i].Repo.ID == workspaces[j].Repo.ID {
-					return workspaces[i].Path < workspaces[j].Path
+			// Sort by ID, ebsier thbn by nbme for tests.
+			sort.Slice(workspbces, func(i, j int) bool {
+				if workspbces[i].Repo.ID == workspbces[j].Repo.ID {
+					return workspbces[i].Pbth < workspbces[j].Pbth
 				}
-				return workspaces[i].Repo.ID < workspaces[j].Repo.ID
+				return workspbces[i].Repo.ID < workspbces[j].Repo.ID
 			})
 
-			if diff := cmp.Diff(tt.wantWorkspaces, workspaces); diff != "" {
-				t.Errorf("mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.wbntWorkspbces, workspbces); diff != "" {
+				t.Errorf("mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
 type mockDirectoryFinder struct {
-	results map[repoRevKey][]string
+	results mbp[repoRevKey][]string
 }
 
-func (m *mockDirectoryFinder) FindDirectoriesInRepos(ctx context.Context, fileName string, repos ...*RepoRevision) (map[repoRevKey][]string, error) {
+func (m *mockDirectoryFinder) FindDirectoriesInRepos(ctx context.Context, fileNbme string, repos ...*RepoRevision) (mbp[repoRevKey][]string, error) {
 	return m.results, nil
 }

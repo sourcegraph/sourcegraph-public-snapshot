@@ -1,575 +1,575 @@
-package codeowners_test
+pbckbge codeowners_test
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
 )
 
-func TestParseGithubExample(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(
-		`# This is a comment.
-# Each line is a file pattern followed by one or more owners.
+func TestPbrseGithubExbmple(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(
+		`# This is b comment.
+# Ebch line is b file pbttern followed by one or more owners.
 
-# These owners will be the default owners for everything in
-# the repo. Unless a later match takes precedence,
-# @global-owner1 and @global-owner2 will be requested for
-# review when someone opens a pull request.
-*       @global-owner1 @global-owner2
+# These owners will be the defbult owners for everything in
+# the repo. Unless b lbter mbtch tbkes precedence,
+# @globbl-owner1 bnd @globbl-owner2 will be requested for
+# review when someone opens b pull request.
+*       @globbl-owner1 @globbl-owner2
 
-# Order is important; the last matching pattern takes the most
-# precedence. When someone opens a pull request that only
-# modifies JS files, only @js-owner and not the global
-# owner(s) will be requested for a review.
-*.js    @js-owner #This is an inline comment.
+# Order is importbnt; the lbst mbtching pbttern tbkes the most
+# precedence. When someone opens b pull request thbt only
+# modifies JS files, only @js-owner bnd not the globbl
+# owner(s) will be requested for b review.
+*.js    @js-owner #This is bn inline comment.
 
-# You can also use email addresses if you prefer. They'll be
-# used to look up users just like we do for commit author
-# emails.
-*.go docs@example.com
+# You cbn blso use embil bddresses if you prefer. They'll be
+# used to look up users just like we do for commit buthor
+# embils.
+*.go docs@exbmple.com
 
-# Teams can be specified as code owners as well. Teams should
-# be identified in the format @org/team-name. Teams must have
-# explicit write access to the repository. In this example,
-# the octocats team in the octo-org organization owns all .txt files.
-*.txt @octo-org/octocats
+# Tebms cbn be specified bs code owners bs well. Tebms should
+# be identified in the formbt @org/tebm-nbme. Tebms must hbve
+# explicit write bccess to the repository. In this exbmple,
+# the octocbts tebm in the octo-org orgbnizbtion owns bll .txt files.
+*.txt @octo-org/octocbts
 
-# In this example, @doctocat owns any files in the build/logs
-# directory at the root of the repository and any of its
+# In this exbmple, @doctocbt owns bny files in the build/logs
+# directory bt the root of the repository bnd bny of its
 # subdirectories.
-/build/logs/ @doctocat
+/build/logs/ @doctocbt
 
-# The docs/* pattern will match files like
-# docs/getting-started.md but not further nested files like
-# docs/build-app/troubleshooting.md.
-docs/*  docs@example.com
+# The docs/* pbttern will mbtch files like
+# docs/getting-stbrted.md but not further nested files like
+# docs/build-bpp/troubleshooting.md.
+docs/*  docs@exbmple.com
 
-# In this example, @octocat owns any file in an apps directory
-# anywhere in your repository.
-apps/ @octocat
+# In this exbmple, @octocbt owns bny file in bn bpps directory
+# bnywhere in your repository.
+bpps/ @octocbt
 
-# In this example, @doctocat owns any file in the /docs
-# directory in the root of your repository and any of its
+# In this exbmple, @doctocbt owns bny file in the /docs
+# directory in the root of your repository bnd bny of its
 # subdirectories.
-/docs/ @doctocat
+/docs/ @doctocbt
 
-# In this example, any change inside the /scripts directory
-# will require approval from @doctocat or @octocat.
-/scripts/ @doctocat @octocat
+# In this exbmple, bny chbnge inside the /scripts directory
+# will require bpprovbl from @doctocbt or @octocbt.
+/scripts/ @doctocbt @octocbt
 
-# In this example, @octocat owns any file in the /apps
-# directory in the root of your repository except for the /apps/github
-# subdirectory, as its owners are left empty.
-/apps/ @octocat
-/apps/github`))
+# In this exbmple, @octocbt owns bny file in the /bpps
+# directory in the root of your repository except for the /bpps/github
+# subdirectory, bs its owners bre left empty.
+/bpps/ @octocbt
+/bpps/github`))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{
+	wbnt := []*codeownerspb.Rule{
 		{
-			Pattern: "*",
+			Pbttern: "*",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "global-owner1"},
-				{Handle: "global-owner2"},
+				{Hbndle: "globbl-owner1"},
+				{Hbndle: "globbl-owner2"},
 			},
 			LineNumber: 8,
 		},
 		{
-			Pattern: "*.js",
+			Pbttern: "*.js",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "js-owner"},
+				{Hbndle: "js-owner"},
 			},
 			LineNumber: 14,
 		},
 		{
-			Pattern: "*.go",
+			Pbttern: "*.go",
 			Owner: []*codeownerspb.Owner{
-				{Email: "docs@example.com"},
+				{Embil: "docs@exbmple.com"},
 			},
 			LineNumber: 19,
 		},
 		{
-			Pattern: "*.txt",
+			Pbttern: "*.txt",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "octo-org/octocats"},
+				{Hbndle: "octo-org/octocbts"},
 			},
 			LineNumber: 25,
 		},
 		{
-			Pattern: "/build/logs/",
+			Pbttern: "/build/logs/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "doctocat"},
+				{Hbndle: "doctocbt"},
 			},
 			LineNumber: 30,
 		},
 		{
-			Pattern: "docs/*",
+			Pbttern: "docs/*",
 			Owner: []*codeownerspb.Owner{
-				{Email: "docs@example.com"},
+				{Embil: "docs@exbmple.com"},
 			},
 			LineNumber: 35,
 		},
 		{
-			Pattern: "apps/",
+			Pbttern: "bpps/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "octocat"},
+				{Hbndle: "octocbt"},
 			},
 			LineNumber: 39,
 		},
 		{
-			Pattern: "/docs/",
+			Pbttern: "/docs/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "doctocat"},
+				{Hbndle: "doctocbt"},
 			},
 			LineNumber: 44,
 		},
 		{
-			Pattern: "/scripts/",
+			Pbttern: "/scripts/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "doctocat"},
-				{Handle: "octocat"},
+				{Hbndle: "doctocbt"},
+				{Hbndle: "octocbt"},
 			},
 			LineNumber: 48,
 		},
 		{
-			Pattern: "/apps/",
+			Pbttern: "/bpps/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "octocat"},
+				{Hbndle: "octocbt"},
 			},
 			LineNumber: 53,
 		},
 		{
-			Pattern:    "/apps/github",
+			Pbttern:    "/bpps/github",
 			Owner:      nil,
 			LineNumber: 54,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseGitlabExample(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(
-		`# This is an example of a CODEOWNERS file.
-# Lines that start with '#' are ignored.
+func TestPbrseGitlbbExbmple(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(
+		`# This is bn exbmple of b CODEOWNERS file.
+# Lines thbt stbrt with '#' bre ignored.
 
-# app/ @commented-rule
+# bpp/ @commented-rule
 
-# Specify a default Code Owner by using a wildcard:
-* @default-codeowner
+# Specify b defbult Code Owner by using b wildcbrd:
+* @defbult-codeowner
 
-# Specify multiple Code Owners by using a tab or space:
+# Specify multiple Code Owners by using b tbb or spbce:
 * @multiple @code @owners
 
-# Rules defined later in the file take precedence over the rules
+# Rules defined lbter in the file tbke precedence over the rules
 # defined before.
-# For example, for all files with a filename ending in '.rb':
+# For exbmple, for bll files with b filenbme ending in '.rb':
 *.rb @ruby-owner
 
-# Files with a '#' can still be accessed by escaping the pound sign:
+# Files with b '#' cbn still be bccessed by escbping the pound sign:
 \#file_with_pound.rb @owner-file-with-pound
 
-# Specify multiple Code Owners separated by spaces or tabs.
-# In the following case the CODEOWNERS file from the root of the repo
-# has 3 Code Owners (@multiple @code @owners):
+# Specify multiple Code Owners sepbrbted by spbces or tbbs.
+# In the following cbse the CODEOWNERS file from the root of the repo
+# hbs 3 Code Owners (@multiple @code @owners):
 CODEOWNERS @multiple @code @owners
 
-# You can use both usernames or email addresses to match
-# users. Everything else is ignored. For example, this code
-# specifies the '@legal' and a user with email 'janedoe@gitlab.com' as the
+# You cbn use both usernbmes or embil bddresses to mbtch
+# users. Everything else is ignored. For exbmple, this code
+# specifies the '@legbl' bnd b user with embil 'jbnedoe@gitlbb.com' bs the
 # owner for the LICENSE file:
-LICENSE @legal this_does_not_match janedoe@gitlab.com
+LICENSE @legbl this_does_not_mbtch jbnedoe@gitlbb.com
 
-# Use group names to match groups, and nested groups to specify
-# them as owners for a file:
+# Use group nbmes to mbtch groups, bnd nested groups to specify
+# them bs owners for b file:
 README @group @group/with-nested/subgroup
 
-# End a path in a '/' to specify the Code Owners for every file
-# nested in that directory, on any level:
-/docs/ @all-docs
+# End b pbth in b '/' to specify the Code Owners for every file
+# nested in thbt directory, on bny level:
+/docs/ @bll-docs
 
-# End a path in '/*' to specify Code Owners for every file in
-# a directory, but not nested deeper. This code matches
+# End b pbth in '/*' to specify Code Owners for every file in
+# b directory, but not nested deeper. This code mbtches
 # 'docs/index.md' but not 'docs/projects/index.md':
 /docs/* @root-docs
 
-# Include '/**' to specify Code Owners for all subdirectories
-# in a directory. This rule matches 'docs/projects/index.md' or
+# Include '/**' to specify Code Owners for bll subdirectories
+# in b directory. This rule mbtches 'docs/projects/index.md' or
 # 'docs/development/index.md'
 /docs/**/*.md @root-docs
 
-# This code makes matches a 'lib' directory nested anywhere in the repository:
+# This code mbkes mbtches b 'lib' directory nested bnywhere in the repository:
 lib/ @lib-owner
 
-# This code match only a 'config' directory in the root of the repository:
+# This code mbtch only b 'config' directory in the root of the repository:
 /config/ @config-owner
 
-# If the path contains spaces, escape them like this:
-path\ with\ spaces/ @space-owner
+# If the pbth contbins spbces, escbpe them like this:
+pbth\ with\ spbces/ @spbce-owner
 
 # Code Owners section:
-[Documentation]
+[Documentbtion]
 ee/docs    @docs
 docs       @docs
 
-[Database]
-README.md  @database
-model/db   @database
+[Dbtbbbse]
+README.md  @dbtbbbse
+model/db   @dbtbbbse
 
-# This section is combined with the previously defined [Documentation] section:
+# This section is combined with the previously defined [Documentbtion] section:
 [DOCUMENTATION]
 README.md  @docs
 `))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{
+	wbnt := []*codeownerspb.Rule{
 		{
-			Pattern: "*",
+			Pbttern: "*",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "default-codeowner"},
+				{Hbndle: "defbult-codeowner"},
 			},
 			LineNumber: 7,
 		},
 		{
-			Pattern: "*",
+			Pbttern: "*",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "multiple"},
-				{Handle: "code"},
-				{Handle: "owners"},
+				{Hbndle: "multiple"},
+				{Hbndle: "code"},
+				{Hbndle: "owners"},
 			},
 			LineNumber: 10,
 		},
 		{
-			Pattern: "*.rb",
+			Pbttern: "*.rb",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "ruby-owner"},
+				{Hbndle: "ruby-owner"},
 			}, LineNumber: 15,
 		},
 		{
-			Pattern: "#file_with_pound.rb",
+			Pbttern: "#file_with_pound.rb",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "owner-file-with-pound"},
+				{Hbndle: "owner-file-with-pound"},
 			},
 			LineNumber: 18,
 		},
 		{
-			Pattern: "CODEOWNERS",
+			Pbttern: "CODEOWNERS",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "multiple"},
-				{Handle: "code"},
-				{Handle: "owners"},
+				{Hbndle: "multiple"},
+				{Hbndle: "code"},
+				{Hbndle: "owners"},
 			},
 			LineNumber: 23,
 		},
 		{
-			Pattern: "LICENSE",
+			Pbttern: "LICENSE",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "legal"},
-				{Handle: "this_does_not_match"},
-				{Email: "janedoe@gitlab.com"},
+				{Hbndle: "legbl"},
+				{Hbndle: "this_does_not_mbtch"},
+				{Embil: "jbnedoe@gitlbb.com"},
 			},
 			LineNumber: 29,
 		},
 		{
-			Pattern: "README",
+			Pbttern: "README",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "group"},
-				{Handle: "group/with-nested/subgroup"},
+				{Hbndle: "group"},
+				{Hbndle: "group/with-nested/subgroup"},
 			},
 			LineNumber: 33,
 		},
 		{
-			Pattern: "/docs/",
+			Pbttern: "/docs/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "all-docs"},
+				{Hbndle: "bll-docs"},
 			},
 			LineNumber: 37,
 		},
 		{
-			Pattern: "/docs/*",
+			Pbttern: "/docs/*",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "root-docs"},
+				{Hbndle: "root-docs"},
 			},
 			LineNumber: 42,
 		},
 		{
-			Pattern: "/docs/**/*.md",
+			Pbttern: "/docs/**/*.md",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "root-docs"},
+				{Hbndle: "root-docs"},
 			},
 			LineNumber: 47,
 		},
 		{
-			Pattern: "lib/",
+			Pbttern: "lib/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "lib-owner"},
+				{Hbndle: "lib-owner"},
 			},
 			LineNumber: 50,
 		},
 		{
-			Pattern: "/config/",
+			Pbttern: "/config/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "config-owner"},
+				{Hbndle: "config-owner"},
 			},
 			LineNumber: 53,
 		},
 		{
-			Pattern: "path with spaces/",
+			Pbttern: "pbth with spbces/",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "space-owner"},
+				{Hbndle: "spbce-owner"},
 			},
 			LineNumber: 56,
 		},
 		{
-			Pattern: "ee/docs",
+			Pbttern: "ee/docs",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "docs"},
+				{Hbndle: "docs"},
 			},
-			SectionName: "documentation",
+			SectionNbme: "documentbtion",
 			LineNumber:  60,
 		},
 		{
-			Pattern: "docs",
+			Pbttern: "docs",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "docs"},
+				{Hbndle: "docs"},
 			},
-			SectionName: "documentation",
+			SectionNbme: "documentbtion",
 			LineNumber:  61,
 		},
 		{
-			Pattern: "README.md",
+			Pbttern: "README.md",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "database"},
+				{Hbndle: "dbtbbbse"},
 			},
-			SectionName: "database",
+			SectionNbme: "dbtbbbse",
 			LineNumber:  64,
 		},
 		{
-			Pattern: "model/db",
+			Pbttern: "model/db",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "database"},
+				{Hbndle: "dbtbbbse"},
 			},
-			SectionName: "database",
+			SectionNbme: "dbtbbbse",
 			LineNumber:  65,
 		},
 		{
-			Pattern: "README.md",
+			Pbttern: "README.md",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "docs"},
+				{Hbndle: "docs"},
 			},
-			SectionName: "documentation",
+			SectionNbme: "documentbtion",
 			LineNumber:  69,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseAtHandle(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader("README.md @readme-team"))
+func TestPbrseAtHbndle(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder("README.md @rebdme-tebm"))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{{
-		Pattern: "README.md",
+	wbnt := []*codeownerspb.Rule{{
+		Pbttern: "README.md",
 		Owner: []*codeownerspb.Owner{
-			{Handle: "readme-team"},
+			{Hbndle: "rebdme-tebm"},
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseAtHandleSupportsNesting(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader("README.md @readme-team/readme-subteam"))
+func TestPbrseAtHbndleSupportsNesting(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder("README.md @rebdme-tebm/rebdme-subtebm"))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{{
-		Pattern: "README.md",
+	wbnt := []*codeownerspb.Rule{{
+		Pbttern: "README.md",
 		Owner: []*codeownerspb.Owner{
-			{Handle: "readme-team/readme-subteam"},
+			{Hbndle: "rebdme-tebm/rebdme-subtebm"},
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseEmailHandle(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader("README.md me@example.com"))
+func TestPbrseEmbilHbndle(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder("README.md me@exbmple.com"))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{{
-		Pattern: "README.md",
+	wbnt := []*codeownerspb.Rule{{
+		Pbttern: "README.md",
 		Owner: []*codeownerspb.Owner{
-			{Email: "me@example.com"},
+			{Embil: "me@exbmple.com"},
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseTwoHandles(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader("README.md @readme-team me@example.com"))
+func TestPbrseTwoHbndles(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder("README.md @rebdme-tebm me@exbmple.com"))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{{
-		Pattern: "README.md",
+	wbnt := []*codeownerspb.Rule{{
+		Pbttern: "README.md",
 		Owner: []*codeownerspb.Owner{
-			{Handle: "readme-team"},
-			{Email: "me@example.com"},
+			{Hbndle: "rebdme-tebm"},
+			{Embil: "me@exbmple.com"},
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParsePathWithSpaces(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(`path\ with\ spaces/* @space-owner`))
+func TestPbrsePbthWithSpbces(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(`pbth\ with\ spbces/* @spbce-owner`))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{{
-		Pattern: "path with spaces/*",
+	wbnt := []*codeownerspb.Rule{{
+		Pbttern: "pbth with spbces/*",
 		Owner: []*codeownerspb.Owner{
-			{Handle: "space-owner"},
+			{Hbndle: "spbce-owner"},
 		},
 		LineNumber: 1,
 	}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseSection(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(
+func TestPbrseSection(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(
 		`[PM]
 own/codeowners/* @own-pms
 
-# Optional approvers.
+# Optionbl bpprovers.
 ^[Eng]
 own/codeowners/* @own-engs
 
-# Multiple approvers required.
+# Multiple bpprovers required.
 [Eng][2]
 own/codeowners/* @own-engs
 
-# Case-insensitivity.
+# Cbse-insensitivity.
 [pm]
 own/codeowners/* @own-pms
 `))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{
+	wbnt := []*codeownerspb.Rule{
 		{
-			Pattern:     "own/codeowners/*",
-			SectionName: "pm",
+			Pbttern:     "own/codeowners/*",
+			SectionNbme: "pm",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-pms"},
+				{Hbndle: "own-pms"},
 			},
 			LineNumber: 2,
 		},
 		{
-			Pattern:     "own/codeowners/*",
-			SectionName: "eng",
+			Pbttern:     "own/codeowners/*",
+			SectionNbme: "eng",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-engs"},
+				{Hbndle: "own-engs"},
 			},
 			LineNumber: 6,
 		},
 		{
-			Pattern:     "own/codeowners/*",
-			SectionName: "eng",
+			Pbttern:     "own/codeowners/*",
+			SectionNbme: "eng",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-engs"},
+				{Hbndle: "own-engs"},
 			},
 			LineNumber: 10,
 		},
 		{
-			Pattern:     "own/codeowners/*",
-			SectionName: "pm",
+			Pbttern:     "own/codeowners/*",
+			SectionNbme: "pm",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-pms"},
+				{Hbndle: "own-pms"},
 			},
 			LineNumber: 14,
 		}}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseManySections(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(
+func TestPbrseMbnySections(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(
 		`own/codeowners/* @own-eng
 		[PM]
 		own/codeowners/* @own-pms
 		[docs]
 		own/**/*.md @own-docs`))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{
+	wbnt := []*codeownerspb.Rule{
 		{
-			Pattern: "own/codeowners/*",
+			Pbttern: "own/codeowners/*",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-eng"},
+				{Hbndle: "own-eng"},
 			},
 			LineNumber: 1,
 		},
 		{
-			Pattern:     "own/codeowners/*",
-			SectionName: "pm",
+			Pbttern:     "own/codeowners/*",
+			SectionNbme: "pm",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-pms"},
+				{Hbndle: "own-pms"},
 			},
 			LineNumber: 3,
 		},
 		{
-			Pattern:     "own/**/*.md",
-			SectionName: "docs",
+			Pbttern:     "own/**/*.md",
+			SectionNbme: "docs",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "own-docs"},
+				{Hbndle: "own-docs"},
 			},
 			LineNumber: 5,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-func TestParseEmptyString(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(""))
+func TestPbrseEmptyString(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(""))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	bssert.Equbl(t, &codeownerspb.File{}, got)
 }
 
-func TestParseBlankString(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader("  "))
+func TestPbrseBlbnkString(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder("  "))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	bssert.Equbl(t, &codeownerspb.File{}, got)
 }
 
-func TestParseComment(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(" # This is a comment "))
+func TestPbrseComment(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(" # This is b comment "))
 	require.NoError(t, err)
-	assert.Equal(t, &codeownerspb.File{}, got)
+	bssert.Equbl(t, &codeownerspb.File{}, got)
 }
 
-func TestParseRuleWithComment(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(`/escaped\#/is/pattern @and-then # Inline comment`))
+func TestPbrseRuleWithComment(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(`/escbped\#/is/pbttern @bnd-then # Inline comment`))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{
+	wbnt := []*codeownerspb.Rule{
 		{
-			Pattern: "/escaped#/is/pattern",
+			Pbttern: "/escbped#/is/pbttern",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "and-then"},
+				{Hbndle: "bnd-then"},
 			},
 			LineNumber: 1,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }
 
-// Note: Should a # within [Section name] not be treated as a comment-start
-// even if it is not escaped?
-func TestParseSectionWithComment(t *testing.T) {
-	got, err := codeowners.Parse(strings.NewReader(
+// Note: Should b # within [Section nbme] not be trebted bs b comment-stbrt
+// even if it is not escbped?
+func TestPbrseSectionWithComment(t *testing.T) {
+	got, err := codeowners.Pbrse(strings.NewRebder(
 		`[Section] # Inline comment
-		/pattern @owner`))
+		/pbttern @owner`))
 	require.NoError(t, err)
-	want := []*codeownerspb.Rule{
+	wbnt := []*codeownerspb.Rule{
 		{
-			Pattern:     "/pattern",
-			SectionName: "section",
+			Pbttern:     "/pbttern",
+			SectionNbme: "section",
 			Owner: []*codeownerspb.Owner{
-				{Handle: "owner"},
+				{Hbndle: "owner"},
 			},
 			LineNumber: 2,
 		},
 	}
-	assert.Equal(t, &codeownerspb.File{Rule: want}, got)
+	bssert.Equbl(t, &codeownerspb.File{Rule: wbnt}, got)
 }

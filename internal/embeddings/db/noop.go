@@ -1,58 +1,58 @@
-package db
+pbckbge db
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func NewNoopDB() VectorDB {
 	return noopDB{}
 }
 
-var _ VectorDB = noopDB{}
+vbr _ VectorDB = noopDB{}
 
 type noopDB struct{}
 
-func (noopDB) Search(context.Context, SearchParams) ([]ChunkResult, error) {
+func (noopDB) Sebrch(context.Context, SebrchPbrbms) ([]ChunkResult, error) {
 	return nil, nil
 }
-func (noopDB) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
+func (noopDB) PrepbreUpdbte(ctx context.Context, modelID string, modelDims uint64) error {
 	return nil
 }
-func (noopDB) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {
-	return false, nil
+func (noopDB) HbsIndex(ctx context.Context, modelID string, repoID bpi.RepoID, revision bpi.CommitID) (bool, error) {
+	return fblse, nil
 }
-func (noopDB) InsertChunks(context.Context, InsertParams) error {
+func (noopDB) InsertChunks(context.Context, InsertPbrbms) error {
 	return nil
 }
-func (noopDB) FinalizeUpdate(context.Context, FinalizeUpdateParams) error {
+func (noopDB) FinblizeUpdbte(context.Context, FinblizeUpdbtePbrbms) error {
 	return nil
 }
 
-var ErrDisabled = errors.New("Qdrant is disabled. Enable by setting QDRANT_ENDPOINT")
+vbr ErrDisbbled = errors.New("Qdrbnt is disbbled. Enbble by setting QDRANT_ENDPOINT")
 
-func NewDisabledDB() VectorDB {
-	return disabledDB{}
+func NewDisbbledDB() VectorDB {
+	return disbbledDB{}
 }
 
-var _ VectorDB = disabledDB{}
+vbr _ VectorDB = disbbledDB{}
 
-type disabledDB struct{}
+type disbbledDB struct{}
 
-func (disabledDB) Search(context.Context, SearchParams) ([]ChunkResult, error) {
-	return nil, ErrDisabled
+func (disbbledDB) Sebrch(context.Context, SebrchPbrbms) ([]ChunkResult, error) {
+	return nil, ErrDisbbled
 }
-func (disabledDB) PrepareUpdate(ctx context.Context, modelID string, modelDims uint64) error {
-	return ErrDisabled
+func (disbbledDB) PrepbreUpdbte(ctx context.Context, modelID string, modelDims uint64) error {
+	return ErrDisbbled
 }
-func (disabledDB) HasIndex(ctx context.Context, modelID string, repoID api.RepoID, revision api.CommitID) (bool, error) {
-	return false, ErrDisabled
+func (disbbledDB) HbsIndex(ctx context.Context, modelID string, repoID bpi.RepoID, revision bpi.CommitID) (bool, error) {
+	return fblse, ErrDisbbled
 }
-func (disabledDB) InsertChunks(context.Context, InsertParams) error {
-	return ErrDisabled
+func (disbbledDB) InsertChunks(context.Context, InsertPbrbms) error {
+	return ErrDisbbled
 }
-func (disabledDB) FinalizeUpdate(context.Context, FinalizeUpdateParams) error {
-	return ErrDisabled
+func (disbbledDB) FinblizeUpdbte(context.Context, FinblizeUpdbtePbrbms) error {
+	return ErrDisbbled
 }

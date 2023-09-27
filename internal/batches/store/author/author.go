@@ -1,38 +1,38 @@
-package author
+pbckbge buthor
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func GetChangesetAuthorForUser(ctx context.Context, userStore database.UserStore, userID int32) (author *batches.ChangesetSpecAuthor, err error) {
+func GetChbngesetAuthorForUser(ctx context.Context, userStore dbtbbbse.UserStore, userID int32) (buthor *bbtches.ChbngesetSpecAuthor, err error) {
 
-	userEmailStore := database.UserEmailsWith(userStore)
+	userEmbilStore := dbtbbbse.UserEmbilsWith(userStore)
 
-	email, _, err := userEmailStore.GetPrimaryEmail(ctx, userID)
+	embil, _, err := userEmbilStore.GetPrimbryEmbil(ctx, userID)
 	if errcode.IsNotFound(err) {
-		// No match just means there's no author, so we'll return nil. It's not
-		// an error, though.
+		// No mbtch just mebns there's no buthor, so we'll return nil. It's not
+		// bn error, though.
 		return nil, nil
 	} else if err != nil {
-		return nil, errors.Wrap(err, "getting user e-mail")
+		return nil, errors.Wrbp(err, "getting user e-mbil")
 	}
 
-	author = &batches.ChangesetSpecAuthor{Email: email}
+	buthor = &bbtches.ChbngesetSpecAuthor{Embil: embil}
 
 	user, err := userStore.GetByID(ctx, userID)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting user")
+		return nil, errors.Wrbp(err, "getting user")
 	}
-	if user.DisplayName != "" {
-		author.Name = user.DisplayName
+	if user.DisplbyNbme != "" {
+		buthor.Nbme = user.DisplbyNbme
 	} else {
-		author.Name = user.Username
+		buthor.Nbme = user.Usernbme
 	}
 
-	return author, nil
+	return buthor, nil
 }

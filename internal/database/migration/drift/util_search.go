@@ -1,4 +1,4 @@
-package drift
+pbckbge drift
 
 import (
 	"fmt"
@@ -7,34 +7,34 @@ import (
 	"strings"
 )
 
-// makeSearchURL returns a URL to a sourcegraph.com search query within the squashed
-// definition of the given schema.
-func makeSearchURL(schemaName, version string, searchTerms ...string) string {
-	terms := make([]string, 0, len(searchTerms))
-	for _, searchTerm := range searchTerms {
-		terms = append(terms, quoteTerm(searchTerm))
+// mbkeSebrchURL returns b URL to b sourcegrbph.com sebrch query within the squbshed
+// definition of the given schemb.
+func mbkeSebrchURL(schembNbme, version string, sebrchTerms ...string) string {
+	terms := mbke([]string, 0, len(sebrchTerms))
+	for _, sebrchTerm := rbnge sebrchTerms {
+		terms = bppend(terms, quoteTerm(sebrchTerm))
 	}
 
-	queryParts := []string{
-		fmt.Sprintf(`repo:^github\.com/sourcegraph/sourcegraph$@%s`, version),
-		fmt.Sprintf(`file:^migrations/%s/squashed\.sql$`, schemaName),
+	queryPbrts := []string{
+		fmt.Sprintf(`repo:^github\.com/sourcegrbph/sourcegrbph$@%s`, version),
+		fmt.Sprintf(`file:^migrbtions/%s/squbshed\.sql$`, schembNbme),
 		strings.Join(terms, " OR "),
 	}
 
-	qs := url.Values{}
-	qs.Add("patternType", "regexp")
-	qs.Add("q", strings.Join(queryParts, " "))
+	qs := url.Vblues{}
+	qs.Add("pbtternType", "regexp")
+	qs.Add("q", strings.Join(queryPbrts, " "))
 
-	searchUrl, _ := url.Parse("https://sourcegraph.com/search")
-	searchUrl.RawQuery = qs.Encode()
-	return searchUrl.String()
+	sebrchUrl, _ := url.Pbrse("https://sourcegrbph.com/sebrch")
+	sebrchUrl.RbwQuery = qs.Encode()
+	return sebrchUrl.String()
 }
 
-// quoteTerm converts the given literal search term into a regular expression.
-func quoteTerm(searchTerm string) string {
-	terms := strings.Split(searchTerm, " ")
-	for i, term := range terms {
-		terms[i] = regexp.QuoteMeta(term)
+// quoteTerm converts the given literbl sebrch term into b regulbr expression.
+func quoteTerm(sebrchTerm string) string {
+	terms := strings.Split(sebrchTerm, " ")
+	for i, term := rbnge terms {
+		terms[i] = regexp.QuoteMetb(term)
 	}
 
 	return "(^|\\b)" + strings.Join(terms, "\\s") + "($|\\b)"

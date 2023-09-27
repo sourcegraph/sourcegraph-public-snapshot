@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestCodeHostStore_CRUDCodeHost(t *testing.T) {
@@ -20,100 +20,100 @@ func TestCodeHostStore_CRUDCodeHost(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	ten := int32(10)
 	twenty := int32(20)
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 	codeHost := &types.CodeHost{
 		Kind:                        extsvc.KindGitHub,
 		URL:                         "https://github.com/",
-		APIRateLimitQuota:           &ten,
-		APIRateLimitIntervalSeconds: &ten,
-		GitRateLimitQuota:           &ten,
-		GitRateLimitIntervalSeconds: &ten,
+		APIRbteLimitQuotb:           &ten,
+		APIRbteLimitIntervblSeconds: &ten,
+		GitRbteLimitQuotb:           &ten,
+		GitRbteLimitIntervblSeconds: &ten,
 	}
-	updatedCodeHost := &types.CodeHost{
+	updbtedCodeHost := &types.CodeHost{
 		Kind:                        extsvc.KindGitHub,
 		URL:                         "https://github.com/",
-		APIRateLimitQuota:           &twenty,
-		APIRateLimitIntervalSeconds: &twenty,
-		GitRateLimitQuota:           &twenty,
-		GitRateLimitIntervalSeconds: &twenty,
+		APIRbteLimitQuotb:           &twenty,
+		APIRbteLimitIntervblSeconds: &twenty,
+		GitRbteLimitQuotb:           &twenty,
+		GitRbteLimitIntervblSeconds: &twenty,
 	}
 
-	err := db.CodeHosts().Create(ctx, codeHost)
+	err := db.CodeHosts().Crebte(ctx, codeHost)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Create the external service so that the code host appears when we GetByID after.
-	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
-	es := &types.ExternalService{
+	// Crebte the externbl service so thbt the code host bppebrs when we GetByID bfter.
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "bbc"}`)
+	es := &types.ExternblService{
 		CodeHostID: &codeHost.ID,
 		Kind:       codeHost.Kind,
 		Config:     extsvcConfig,
 	}
-	err = db.ExternalServices().Create(ctx, confGet, es)
+	err = db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Code host id should be set correctly in the external service.
-	es2, err := db.ExternalServices().GetByID(ctx, es.ID)
+	// Code host id should be set correctly in the externbl service.
+	es2, err := db.ExternblServices().GetByID(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if *es2.CodeHostID != codeHost.ID {
-		t.Fatalf("external service code host id does not match, expected: %+v, got:%+v", codeHost.ID, *es2.CodeHostID)
+		t.Fbtblf("externbl service code host id does not mbtch, expected: %+v, got:%+v", codeHost.ID, *es2.CodeHostID)
 	}
 
-	// Should get back the same one by id
+	// Should get bbck the sbme one by id
 	got, err := db.CodeHosts().GetByID(ctx, codeHost.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(codeHost, got, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(codeHost, got, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 
-	// Should get back the same one by url
+	// Should get bbck the sbme one by url
 	got, err = db.CodeHosts().GetByURL(ctx, codeHost.URL)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(codeHost, got, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(codeHost, got, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 
-	// update the code host
-	updatedCodeHost.ID = codeHost.ID
-	err = db.CodeHosts().Update(ctx, updatedCodeHost)
+	// updbte the code host
+	updbtedCodeHost.ID = codeHost.ID
+	err = db.CodeHosts().Updbte(ctx, updbtedCodeHost)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Should get back the same one by url
+	// Should get bbck the sbme one by url
 	got, err = db.CodeHosts().GetByID(ctx, codeHost.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(updatedCodeHost, got, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(updbtedCodeHost, got, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 
 	err = db.CodeHosts().Delete(ctx, codeHost.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// Now, it shouldn't exit
 	_, err = db.CodeHosts().GetByID(ctx, codeHost.ID)
-	var expected errCodeHostNotFound
+	vbr expected errCodeHostNotFound
 	if !errors.As(err, &expected) {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
@@ -123,54 +123,54 @@ func TestCodeHostStore_List(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	ten := int32(10)
 	twenty := int32(20)
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 	codeHostOne := &types.CodeHost{
 		Kind:                        extsvc.KindGitHub,
 		URL:                         "https://github.com/",
-		APIRateLimitQuota:           &ten,
-		APIRateLimitIntervalSeconds: &ten,
-		GitRateLimitQuota:           &ten,
-		GitRateLimitIntervalSeconds: &ten,
+		APIRbteLimitQuotb:           &ten,
+		APIRbteLimitIntervblSeconds: &ten,
+		GitRbteLimitQuotb:           &ten,
+		GitRbteLimitIntervblSeconds: &ten,
 	}
 	codeHostTwo := &types.CodeHost{
-		Kind:                        extsvc.KindGitLab,
-		URL:                         "https://gitlab.com/",
-		APIRateLimitQuota:           &twenty,
-		APIRateLimitIntervalSeconds: &twenty,
-		GitRateLimitQuota:           &twenty,
-		GitRateLimitIntervalSeconds: &twenty,
+		Kind:                        extsvc.KindGitLbb,
+		URL:                         "https://gitlbb.com/",
+		APIRbteLimitQuotb:           &twenty,
+		APIRbteLimitIntervblSeconds: &twenty,
+		GitRbteLimitQuotb:           &twenty,
+		GitRbteLimitIntervblSeconds: &twenty,
 	}
 
-	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
-	err := db.CodeHosts().Create(ctx, codeHostOne)
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "bbc"}`)
+	err := db.CodeHosts().Crebte(ctx, codeHostOne)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = db.CodeHosts().Create(ctx, codeHostTwo)
+	err = db.CodeHosts().Crebte(ctx, codeHostTwo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Create the external service so that the first code host appears when we GetByID after.
-	err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
+	// Crebte the externbl service so thbt the first code host bppebrs when we GetByID bfter.
+	err = db.ExternblServices().Crebte(ctx, confGet, &types.ExternblService{
 		CodeHostID: &codeHostOne.ID,
 		Kind:       codeHostOne.Kind,
 		Config:     extsvcConfig,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name     string
+		nbme     string
 		listOpts ListCodeHostsOpts
 		results  []*types.CodeHost
 	}{
 		{
-			name: "get 1 by id",
+			nbme: "get 1 by id",
 			listOpts: ListCodeHostsOpts{
 				ID: int32(1),
 				LimitOffset: &LimitOffset{
@@ -180,7 +180,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{codeHostOne},
 		},
 		{
-			name: "get 1 by url",
+			nbme: "get 1 by url",
 			listOpts: ListCodeHostsOpts{
 				URL: "https://github.com/",
 				LimitOffset: &LimitOffset{
@@ -190,7 +190,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{codeHostOne},
 		},
 		{
-			name: "get all, non-deleted",
+			nbme: "get bll, non-deleted",
 			listOpts: ListCodeHostsOpts{
 				LimitOffset: &LimitOffset{
 					Limit: 10,
@@ -199,7 +199,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{codeHostOne},
 		},
 		{
-			name: "get all, with deleted",
+			nbme: "get bll, with deleted",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				LimitOffset: &LimitOffset{
@@ -209,10 +209,10 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{codeHostOne, codeHostTwo},
 		},
 		{
-			name: "list with search",
+			nbme: "list with sebrch",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				Search:         "gitlab",
+				Sebrch:         "gitlbb",
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
@@ -220,10 +220,10 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{codeHostTwo},
 		},
 		{
-			name: "list with search matching none",
+			nbme: "list with sebrch mbtching none",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				Search:         "bitbucket",
+				Sebrch:         "bitbucket",
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
@@ -231,7 +231,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{},
 		},
 		{
-			name: "cursor test",
+			nbme: "cursor test",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(2),
@@ -242,7 +242,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{codeHostTwo},
 		},
 		{
-			name: "cursor test, no matches",
+			nbme: "cursor test, no mbtches",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
@@ -253,7 +253,7 @@ func TestCodeHostStore_List(t *testing.T) {
 			results: []*types.CodeHost{},
 		},
 		{
-			name: "cursor test, use next",
+			nbme: "cursor test, use next",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				LimitOffset: &LimitOffset{
@@ -264,25 +264,25 @@ func TestCodeHostStore_List(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			result := []*types.CodeHost{}
 			ch, next, err := db.CodeHosts().List(ctx, test.listOpts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			result = append(result, ch...)
+			result = bppend(result, ch...)
 			for next != 0 {
 				test.listOpts.Cursor = next
 				ch, next, err = db.CodeHosts().List(ctx, test.listOpts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				result = append(result, ch...)
+				result = bppend(result, ch...)
 			}
 
 			if diff := cmp.Diff(result, test.results); diff != "" {
-				t.Fatalf("unexpected code host, got %+v\n", diff)
+				t.Fbtblf("unexpected code host, got %+v\n", diff)
 			}
 		})
 	}
@@ -294,115 +294,115 @@ func TestCodeHostStore_Count(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	quotaOne := int32(10)
-	quotaTwo := int32(20)
+	ctx := context.Bbckground()
+	quotbOne := int32(10)
+	quotbTwo := int32(20)
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 	codeHostOne := &types.CodeHost{
 		Kind:                        extsvc.KindGitHub,
 		URL:                         "https://github.com/",
-		APIRateLimitQuota:           &quotaOne,
-		APIRateLimitIntervalSeconds: &quotaOne,
-		GitRateLimitQuota:           &quotaOne,
-		GitRateLimitIntervalSeconds: &quotaOne,
+		APIRbteLimitQuotb:           &quotbOne,
+		APIRbteLimitIntervblSeconds: &quotbOne,
+		GitRbteLimitQuotb:           &quotbOne,
+		GitRbteLimitIntervblSeconds: &quotbOne,
 	}
 	codeHostTwo := &types.CodeHost{
-		Kind:                        extsvc.KindGitLab,
-		URL:                         "https://gitlab.com/",
-		APIRateLimitQuota:           &quotaTwo,
-		APIRateLimitIntervalSeconds: &quotaTwo,
-		GitRateLimitQuota:           &quotaTwo,
-		GitRateLimitIntervalSeconds: &quotaTwo,
+		Kind:                        extsvc.KindGitLbb,
+		URL:                         "https://gitlbb.com/",
+		APIRbteLimitQuotb:           &quotbTwo,
+		APIRbteLimitIntervblSeconds: &quotbTwo,
+		GitRbteLimitQuotb:           &quotbTwo,
+		GitRbteLimitIntervblSeconds: &quotbTwo,
 	}
 
-	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "abc"}`)
-	err := db.CodeHosts().Create(ctx, codeHostOne)
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "repositoryQuery": ["none"], "token": "bbc"}`)
+	err := db.CodeHosts().Crebte(ctx, codeHostOne)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	err = db.CodeHosts().Create(ctx, codeHostTwo)
+	err = db.CodeHosts().Crebte(ctx, codeHostTwo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Create the external service so that the first code host appears when we GetByID after.
-	err = db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
+	// Crebte the externbl service so thbt the first code host bppebrs when we GetByID bfter.
+	err = db.ExternblServices().Crebte(ctx, confGet, &types.ExternblService{
 		CodeHostID: &codeHostOne.ID,
 		Kind:       codeHostOne.Kind,
 		Config:     extsvcConfig,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name        string
+		nbme        string
 		listOpts    ListCodeHostsOpts
-		wantResults int32
+		wbntResults int32
 	}{
 		{
-			name: "count with get 1 by id",
+			nbme: "count with get 1 by id",
 			listOpts: ListCodeHostsOpts{
 				ID: int32(1),
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
-			wantResults: 1,
+			wbntResults: 1,
 		},
 		{
-			name: "count with get 1 by url",
+			nbme: "count with get 1 by url",
 			listOpts: ListCodeHostsOpts{
 				URL: "https://github.com/",
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
-			wantResults: 1,
+			wbntResults: 1,
 		},
 		{
-			name: "count with get all, non-deleted",
+			nbme: "count with get bll, non-deleted",
 			listOpts: ListCodeHostsOpts{
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
-			wantResults: 1,
+			wbntResults: 1,
 		},
 		{
-			name: "count with get all, with deleted",
-			listOpts: ListCodeHostsOpts{
-				IncludeDeleted: true,
-				LimitOffset: &LimitOffset{
-					Limit: 10,
-				},
-			},
-			wantResults: 2,
-		},
-		{
-			name: "count with search",
+			nbme: "count with get bll, with deleted",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				Search:         "gitlab",
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
-			wantResults: 1,
+			wbntResults: 2,
 		},
 		{
-			name: "count with search matching none",
+			nbme: "count with sebrch",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
-				Search:         "bitbucket",
+				Sebrch:         "gitlbb",
 				LimitOffset: &LimitOffset{
 					Limit: 10,
 				},
 			},
-			wantResults: 0,
+			wbntResults: 1,
 		},
 		{
-			name: "count with cursor",
+			nbme: "count with sebrch mbtching none",
+			listOpts: ListCodeHostsOpts{
+				IncludeDeleted: true,
+				Sebrch:         "bitbucket",
+				LimitOffset: &LimitOffset{
+					Limit: 10,
+				},
+			},
+			wbntResults: 0,
+		},
+		{
+			nbme: "count with cursor",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(2),
@@ -410,10 +410,10 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			wantResults: 1,
+			wbntResults: 1,
 		},
 		{
-			name: "count with cursor, no matches",
+			nbme: "count with cursor, no mbtches",
 			listOpts: ListCodeHostsOpts{
 				IncludeDeleted: true,
 				Cursor:         int32(3),
@@ -421,19 +421,19 @@ func TestCodeHostStore_Count(t *testing.T) {
 					Limit: 10,
 				},
 			},
-			wantResults: 0,
+			wbntResults: 0,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			count, err := db.CodeHosts().Count(ctx, test.listOpts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if count != test.wantResults {
-				t.Fatalf("unexpected code host count, got %d, expected: %d\n", count, test.wantResults)
+			if count != test.wbntResults {
+				t.Fbtblf("unexpected code host count, got %d, expected: %d\n", count, test.wbntResults)
 			}
 		})
 	}

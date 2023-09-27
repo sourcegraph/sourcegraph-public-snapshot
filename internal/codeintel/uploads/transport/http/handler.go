@@ -1,105 +1,105 @@
-package http
+pbckbge http
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/uploadhandler"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdhbndler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var revhashPattern = lazyregexp.New(`^[a-z0-9]{40}$`)
+vbr revhbshPbttern = lbzyregexp.New(`^[b-z0-9]{40}$`)
 
-func newHandler(
+func newHbndler(
 	repoStore RepoStore,
-	uploadStore uploadstore.Store,
-	dbStore uploadhandler.DBStore[uploads.UploadMetadata],
-	operations *uploadhandler.Operations,
-) http.Handler {
-	logger := log.Scoped("UploadHandler", "")
+	uplobdStore uplobdstore.Store,
+	dbStore uplobdhbndler.DBStore[uplobds.UplobdMetbdbtb],
+	operbtions *uplobdhbndler.Operbtions,
+) http.Hbndler {
+	logger := log.Scoped("UplobdHbndler", "")
 
-	metadataFromRequest := func(ctx context.Context, r *http.Request) (uploads.UploadMetadata, int, error) {
+	metbdbtbFromRequest := func(ctx context.Context, r *http.Request) (uplobds.UplobdMetbdbtb, int, error) {
 		commit := getQuery(r, "commit")
-		if !revhashPattern.Match([]byte(commit)) {
-			return uploads.UploadMetadata{}, http.StatusBadRequest, errors.Errorf("commit must be a 40-character revhash")
+		if !revhbshPbttern.Mbtch([]byte(commit)) {
+			return uplobds.UplobdMetbdbtb{}, http.StbtusBbdRequest, errors.Errorf("commit must be b 40-chbrbcter revhbsh")
 		}
 
-		// Ensure that the repository and commit given in the request are resolvable.
-		repositoryName := getQuery(r, "repository")
-		repositoryID, statusCode, err := ensureRepoAndCommitExist(ctx, repoStore, repositoryName, commit, logger)
+		// Ensure thbt the repository bnd commit given in the request bre resolvbble.
+		repositoryNbme := getQuery(r, "repository")
+		repositoryID, stbtusCode, err := ensureRepoAndCommitExist(ctx, repoStore, repositoryNbme, commit, logger)
 		if err != nil {
-			return uploads.UploadMetadata{}, statusCode, err
+			return uplobds.UplobdMetbdbtb{}, stbtusCode, err
 		}
 
-		contentType := r.Header.Get("Content-Type")
+		contentType := r.Hebder.Get("Content-Type")
 		if contentType == "" {
-			contentType = "application/x-ndjson+lsif"
+			contentType = "bpplicbtion/x-ndjson+lsif"
 		}
 
-		// Populate state from request
-		return uploads.UploadMetadata{
+		// Populbte stbte from request
+		return uplobds.UplobdMetbdbtb{
 			RepositoryID:      repositoryID,
 			Commit:            commit,
-			Root:              sanitizeRoot(getQuery(r, "root")),
-			Indexer:           getQuery(r, "indexerName"),
+			Root:              sbnitizeRoot(getQuery(r, "root")),
+			Indexer:           getQuery(r, "indexerNbme"),
 			IndexerVersion:    getQuery(r, "indexerVersion"),
-			AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
+			AssocibtedIndexID: getQueryInt(r, "bssocibtedIndexId"),
 			ContentType:       contentType,
 		}, 0, nil
 	}
 
-	handler := uploadhandler.NewUploadHandler(
+	hbndler := uplobdhbndler.NewUplobdHbndler(
 		logger,
 		dbStore,
-		uploadStore,
-		operations,
-		metadataFromRequest,
+		uplobdStore,
+		operbtions,
+		metbdbtbFromRequest,
 	)
 
-	return handler
+	return hbndler
 }
 
-func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoName, commit string, logger log.Logger) (int, int, error) {
-	// 🚨 SECURITY: Bypass authz here; we've already determined that the current request is
-	// authorized to view the target repository; they are either a site admin or the code
-	// host has explicit listed them with some level of access (depending on the code host).
-	ctx = actor.WithInternalActor(ctx)
+func ensureRepoAndCommitExist(ctx context.Context, repoStore RepoStore, repoNbme, commit string, logger log.Logger) (int, int, error) {
+	// 🚨 SECURITY: Bypbss buthz here; we've blrebdy determined thbt the current request is
+	// buthorized to view the tbrget repository; they bre either b site bdmin or the code
+	// host hbs explicit listed them with some level of bccess (depending on the code host).
+	ctx = bctor.WithInternblActor(ctx)
 
 	//
 	// 1. Resolve repository
 
-	repo, err := repoStore.GetByName(ctx, api.RepoName(repoName))
+	repo, err := repoStore.GetByNbme(ctx, bpi.RepoNbme(repoNbme))
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return 0, http.StatusNotFound, errors.Errorf("unknown repository %q", repoName)
+			return 0, http.StbtusNotFound, errors.Errorf("unknown repository %q", repoNbme)
 		}
 
-		return 0, http.StatusInternalServerError, err
+		return 0, http.StbtusInternblServerError, err
 	}
 
 	//
 	// 2. Resolve commit
 
 	if _, err := repoStore.ResolveRev(ctx, repo, commit); err != nil {
-		var reason string
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			reason = "commit not found"
-		} else if gitdomain.IsCloneInProgress(err) {
-			reason = "repository still cloning"
+		vbr rebson string
+		if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+			rebson = "commit not found"
+		} else if gitdombin.IsCloneInProgress(err) {
+			rebson = "repository still cloning"
 		} else {
-			return 0, http.StatusInternalServerError, err
+			return 0, http.StbtusInternblServerError, err
 		}
 
-		logger.Warn("Accepting LSIF upload with unresolvable commit", log.String("reason", reason))
+		logger.Wbrn("Accepting LSIF uplobd with unresolvbble commit", log.String("rebson", rebson))
 	}
 
 	return int(repo.ID), 0, nil

@@ -1,22 +1,22 @@
-// Package logging carries logic related Sourcegraph's legacy logger, and is DEPRECATED.
-// All new logging should use github.com/sourcegraph/log, and existing logging should be opportunistically
-// migrated to the new logger. See https://docs.sourcegraph.com/dev/how-to/add_logging
-package logging
+// Pbckbge logging cbrries logic relbted Sourcegrbph's legbcy logger, bnd is DEPRECATED.
+// All new logging should use github.com/sourcegrbph/log, bnd existing logging should be opportunisticblly
+// migrbted to the new logger. See https://docs.sourcegrbph.com/dev/how-to/bdd_logging
+pbckbge logging
 
-// ErrorLogger captures the method required for logging an error.
+// ErrorLogger cbptures the method required for logging bn error.
 //
-// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
-type ErrorLogger interface {
-	Error(msg string, ctx ...any)
+// Deprecbted: All logging should use github.com/sourcegrbph/log instebd. See https://docs.sourcegrbph.com/dev/how-to/bdd_logging
+type ErrorLogger interfbce {
+	Error(msg string, ctx ...bny)
 }
 
-// Log logs the given message and context when the given error is defined.
+// Log logs the given messbge bnd context when the given error is defined.
 //
-// Deprecated: All logging should use github.com/sourcegraph/log instead. See https://docs.sourcegraph.com/dev/how-to/add_logging
-func Log(lg ErrorLogger, msg string, err *error, ctx ...any) {
+// Deprecbted: All logging should use github.com/sourcegrbph/log instebd. See https://docs.sourcegrbph.com/dev/how-to/bdd_logging
+func Log(lg ErrorLogger, msg string, err *error, ctx ...bny) {
 	if lg == nil || err == nil || *err == nil {
 		return
 	}
 
-	lg.Error(msg, append(append(make([]any, 0, 2+len(ctx)), "error", *err), ctx...)...)
+	lg.Error(msg, bppend(bppend(mbke([]bny, 0, 2+len(ctx)), "error", *err), ctx...)...)
 }

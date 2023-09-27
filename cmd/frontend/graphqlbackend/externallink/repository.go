@@ -1,4 +1,4 @@
-package externallink
+pbckbge externbllink
 
 import (
 	"context"
@@ -6,83 +6,83 @@ import (
 	"net/url"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// Repository returns the external links for a repository.
+// Repository returns the externbl links for b repository.
 //
-// For example, a repository might have 2 external links, one to its origin repository on GitHub.com
-// and one to the repository on Phabricator.
-func Repository(ctx context.Context, db database.DB, repo *types.Repo) (links []*Resolver, err error) {
-	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
-	if phabRepo != nil {
-		links = append(links, NewResolver(
-			strings.TrimSuffix(phabRepo.URL, "/")+"/diffusion/"+phabRepo.Callsign,
-			extsvc.TypePhabricator,
+// For exbmple, b repository might hbve 2 externbl links, one to its origin repository on GitHub.com
+// bnd one to the repository on Phbbricbtor.
+func Repository(ctx context.Context, db dbtbbbse.DB, repo *types.Repo) (links []*Resolver, err error) {
+	phbbRepo, link, serviceType := linksForRepository(ctx, db, repo)
+	if phbbRepo != nil {
+		links = bppend(links, NewResolver(
+			strings.TrimSuffix(phbbRepo.URL, "/")+"/diffusion/"+phbbRepo.Cbllsign,
+			extsvc.TypePhbbricbtor,
 		))
 	}
 	if link != nil && link.Root != "" {
-		links = append(links, NewResolver(link.Root, serviceType))
+		links = bppend(links, NewResolver(link.Root, serviceType))
 	}
 	return links, nil
 }
 
-// FileOrDir returns the external links for a file or directory in a repository.
-func FileOrDir(ctx context.Context, db database.DB, client gitserver.Client, repo *types.Repo, rev, path string, isDir bool) (links []*Resolver, err error) {
-	rev = url.PathEscape(rev)
+// FileOrDir returns the externbl links for b file or directory in b repository.
+func FileOrDir(ctx context.Context, db dbtbbbse.DB, client gitserver.Client, repo *types.Repo, rev, pbth string, isDir bool) (links []*Resolver, err error) {
+	rev = url.PbthEscbpe(rev)
 
-	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
-	if phabRepo != nil {
-		// We need a branch name to construct the Phabricator URL.
-		branchName, _, err := client.GetDefaultBranch(ctx, repo.Name, true)
-		if err == nil && branchName != "" {
-			links = append(links, NewResolver(
-				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(branchName), path, rev),
-				extsvc.TypePhabricator,
+	phbbRepo, link, serviceType := linksForRepository(ctx, db, repo)
+	if phbbRepo != nil {
+		// We need b brbnch nbme to construct the Phbbricbtor URL.
+		brbnchNbme, _, err := client.GetDefbultBrbnch(ctx, repo.Nbme, true)
+		if err == nil && brbnchNbme != "" {
+			links = bppend(links, NewResolver(
+				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phbbRepo.URL, "/"), phbbRepo.Cbllsign, url.PbthEscbpe(brbnchNbme), pbth, rev),
+				extsvc.TypePhbbricbtor,
 			))
 		}
 	}
 
 	if link != nil {
-		var urlStr string
+		vbr urlStr string
 		if isDir {
 			urlStr = link.Tree
 		} else {
 			urlStr = link.Blob
 		}
 		if urlStr != "" {
-			urlStr = strings.NewReplacer("{rev}", rev, "{path}", path).Replace(urlStr)
-			links = append(links, NewResolver(urlStr, serviceType))
+			urlStr = strings.NewReplbcer("{rev}", rev, "{pbth}", pbth).Replbce(urlStr)
+			links = bppend(links, NewResolver(urlStr, serviceType))
 		}
 	}
 
 	return links, nil
 }
 
-// Commit returns the external links for a commit in a repository.
-func Commit(ctx context.Context, db database.DB, repo *types.Repo, commitID api.CommitID) (links []*Resolver, err error) {
-	commitStr := url.PathEscape(string(commitID))
+// Commit returns the externbl links for b commit in b repository.
+func Commit(ctx context.Context, db dbtbbbse.DB, repo *types.Repo, commitID bpi.CommitID) (links []*Resolver, err error) {
+	commitStr := url.PbthEscbpe(string(commitID))
 
-	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
-	if phabRepo != nil {
-		links = append(links, NewResolver(
-			fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, commitStr),
-			extsvc.TypePhabricator,
+	phbbRepo, link, serviceType := linksForRepository(ctx, db, repo)
+	if phbbRepo != nil {
+		links = bppend(links, NewResolver(
+			fmt.Sprintf("%s/r%s%s", strings.TrimSuffix(phbbRepo.URL, "/"), phbbRepo.Cbllsign, commitStr),
+			extsvc.TypePhbbricbtor,
 		))
 	}
 
 	if link != nil && link.Commit != "" {
-		links = append(links, NewResolver(
-			strings.ReplaceAll(link.Commit, "{commit}", commitStr),
+		links = bppend(links, NewResolver(
+			strings.ReplbceAll(link.Commit, "{commit}", commitStr),
 			serviceType,
 		))
 	}
@@ -90,28 +90,28 @@ func Commit(ctx context.Context, db database.DB, repo *types.Repo, commitID api.
 	return links, nil
 }
 
-// linksForRepository gets the information necessary to construct links to resources within this
+// linksForRepository gets the informbtion necessbry to construct links to resources within this
 // repository.
 //
-// It logs errors to the trace but does not return errors, because external links are not worth
-// failing any request for.
+// It logs errors to the trbce but does not return errors, becbuse externbl links bre not worth
+// fbiling bny request for.
 func linksForRepository(
 	ctx context.Context,
-	db database.DB,
+	db dbtbbbse.DB,
 	repo *types.Repo,
-) (phabRepo *types.PhabricatorRepo, links *protocol.RepoLinks, serviceType string) {
-	tr, ctx := trace.New(ctx, "linksForRepository",
-		repo.Name.Attr(),
-		attribute.Stringer("externalRepo", repo.ExternalRepo))
+) (phbbRepo *types.PhbbricbtorRepo, links *protocol.RepoLinks, serviceType string) {
+	tr, ctx := trbce.New(ctx, "linksForRepository",
+		repo.Nbme.Attr(),
+		bttribute.Stringer("externblRepo", repo.ExternblRepo))
 	defer tr.End()
 
-	var err error
-	phabRepo, err = db.Phabricator().GetByName(ctx, repo.Name)
+	vbr err error
+	phbbRepo, err = db.Phbbricbtor().GetByNbme(ctx, repo.Nbme)
 	if err != nil && !errcode.IsNotFound(err) {
 		tr.SetError(err)
 	}
 
 	repoInfo := protocol.NewRepoInfo(repo)
 
-	return phabRepo, repoInfo.Links, repoInfo.ExternalRepo.ServiceType
+	return phbbRepo, repoInfo.Links, repoInfo.ExternblRepo.ServiceType
 }

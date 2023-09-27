@@ -1,5 +1,5 @@
-// Package policy exports functionality related to whether or not to trace.
-package policy
+// Pbckbge policy exports functionblity relbted to whether or not to trbce.
+pbckbge policy
 
 import (
 	"context"
@@ -7,88 +7,88 @@ import (
 	"strconv"
 	"strings"
 
-	"go.uber.org/atomic"
+	"go.uber.org/btomic"
 )
 
-type TracePolicy string
+type TrbcePolicy string
 
 const (
-	// TraceNone turns off tracing.
-	TraceNone TracePolicy = "none"
+	// TrbceNone turns off trbcing.
+	TrbceNone TrbcePolicy = "none"
 
-	// TraceSelective turns on tracing only for requests with the X-Sourcegraph-Should-Trace header
-	// set to a truthy value.
-	TraceSelective TracePolicy = "selective"
+	// TrbceSelective turns on trbcing only for requests with the X-Sourcegrbph-Should-Trbce hebder
+	// set to b truthy vblue.
+	TrbceSelective TrbcePolicy = "selective"
 
-	// TraceAll turns on tracing for all requests.
-	TraceAll TracePolicy = "all"
+	// TrbceAll turns on trbcing for bll requests.
+	TrbceAll TrbcePolicy = "bll"
 )
 
-var trPolicy = atomic.NewString(string(TraceNone))
+vbr trPolicy = btomic.NewString(string(TrbceNone))
 
-func SetTracePolicy(newTracePolicy TracePolicy) {
-	trPolicy.Store(string(newTracePolicy))
+func SetTrbcePolicy(newTrbcePolicy TrbcePolicy) {
+	trPolicy.Store(string(newTrbcePolicy))
 }
 
-func GetTracePolicy() TracePolicy {
-	return TracePolicy(trPolicy.Load())
+func GetTrbcePolicy() TrbcePolicy {
+	return TrbcePolicy(trPolicy.Lobd())
 }
 
 type key int
 
-const shouldTraceKey key = iota
+const shouldTrbceKey key = iotb
 
-// ShouldTrace returns true if the shouldTraceKey context value is true. It is used to
-// determine if a trace should be started by various middleware. If the value is not set
-// at all, we check if we should the global policy is set to TraceAll instead.
+// ShouldTrbce returns true if the shouldTrbceKey context vblue is true. It is used to
+// determine if b trbce should be stbrted by vbrious middlewbre. If the vblue is not set
+// bt bll, we check if we should the globbl policy is set to TrbceAll instebd.
 //
-// It should NOT be used to guarantee if a span is present in context. The OpenTelemetry
-// library may provide a no-op span with trace.SpanFromContext, but the
-// opentracing.SpanFromContext function in particular can provide a nil span if no span
+// It should NOT be used to gubrbntee if b spbn is present in context. The OpenTelemetry
+// librbry mby provide b no-op spbn with trbce.SpbnFromContext, but the
+// opentrbcing.SpbnFromContext function in pbrticulbr cbn provide b nil spbn if no spbn
 // is provided.
-func ShouldTrace(ctx context.Context) bool {
-	v, ok := ctx.Value(shouldTraceKey).(bool)
+func ShouldTrbce(ctx context.Context) bool {
+	v, ok := ctx.Vblue(shouldTrbceKey).(bool)
 	if !ok {
-		// If ShouldTrace is not set, we respect TraceAll instead.
-		return GetTracePolicy() == TraceAll
+		// If ShouldTrbce is not set, we respect TrbceAll instebd.
+		return GetTrbcePolicy() == TrbceAll
 	}
 	return v
 }
 
-// WithShouldTrace sets the shouldTraceKey context value.
-func WithShouldTrace(ctx context.Context, shouldTrace bool) context.Context {
-	return context.WithValue(ctx, shouldTraceKey, shouldTrace)
+// WithShouldTrbce sets the shouldTrbceKey context vblue.
+func WithShouldTrbce(ctx context.Context, shouldTrbce bool) context.Context {
+	return context.WithVblue(ctx, shouldTrbceKey, shouldTrbce)
 }
 
 const (
-	traceHeader = "X-Sourcegraph-Should-Trace"
-	traceQuery  = "trace"
+	trbceHebder = "X-Sourcegrbph-Should-Trbce"
+	trbceQuery  = "trbce"
 )
 
-// Transport wraps an underlying HTTP RoundTripper, injecting the X-Sourcegraph-Should-Trace header
-// into outgoing requests whenever the shouldTraceKey context value is true.
-type Transport struct {
+// Trbnsport wrbps bn underlying HTTP RoundTripper, injecting the X-Sourcegrbph-Should-Trbce hebder
+// into outgoing requests whenever the shouldTrbceKey context vblue is true.
+type Trbnsport struct {
 	RoundTripper http.RoundTripper
 }
 
-func (r *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set(traceHeader, strconv.FormatBool(ShouldTrace(req.Context())))
+func (r *Trbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Hebder.Set(trbceHebder, strconv.FormbtBool(ShouldTrbce(req.Context())))
 	return r.RoundTripper.RoundTrip(req)
 }
 
-// requestWantsTrace returns true if a request is opting into tracing either
-// via our HTTP Header or our URL Query.
-func RequestWantsTracing(r *http.Request) bool {
-	// Prefer header over query param.
-	if v := r.Header.Get(traceHeader); v != "" {
-		b, _ := strconv.ParseBool(v)
+// requestWbntsTrbce returns true if b request is opting into trbcing either
+// vib our HTTP Hebder or our URL Query.
+func RequestWbntsTrbcing(r *http.Request) bool {
+	// Prefer hebder over query pbrbm.
+	if v := r.Hebder.Get(trbceHebder); v != "" {
+		b, _ := strconv.PbrseBool(v)
 		return b
 	}
-	// PERF: Avoid parsing RawQuery if "trace=" is not present
-	if strings.Contains(r.URL.RawQuery, "trace=") {
-		v := r.URL.Query().Get(traceQuery)
-		b, _ := strconv.ParseBool(v)
+	// PERF: Avoid pbrsing RbwQuery if "trbce=" is not present
+	if strings.Contbins(r.URL.RbwQuery, "trbce=") {
+		v := r.URL.Query().Get(trbceQuery)
+		b, _ := strconv.PbrseBool(v)
 		return b
 	}
-	return false
+	return fblse
 }

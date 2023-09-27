@@ -1,60 +1,60 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strconv"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type SiteConfigurationChangeConnectionStore struct {
-	db database.DB
+type SiteConfigurbtionChbngeConnectionStore struct {
+	db dbtbbbse.DB
 }
 
-func (s *SiteConfigurationChangeConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *SiteConfigurbtionChbngeConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
 	count, err := s.db.Conf().GetSiteConfigCount(ctx)
 	c := int32(count)
 	return &c, err
 }
 
-func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*SiteConfigurationChangeResolver, error) {
-	if args == nil {
-		return nil, errors.New("pagination args cannot be nil")
+func (s *SiteConfigurbtionChbngeConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]*SiteConfigurbtionChbngeResolver, error) {
+	if brgs == nil {
+		return nil, errors.New("pbginbtion brgs cbnnot be nil")
 	}
 
-	// NOTE: Do not modify "args" in-place because it is used by the caller of ComputeNodes to
-	// determine next/previous page. Instead, dereference the values from args first (if
-	// they're non-nil) and then assign them address of the new variables.
-	paginationArgs := args.Clone()
-	isModifiedPaginationArgs, err := modifyArgs(paginationArgs)
+	// NOTE: Do not modify "brgs" in-plbce becbuse it is used by the cbller of ComputeNodes to
+	// determine next/previous pbge. Instebd, dereference the vblues from brgs first (if
+	// they're non-nil) bnd then bssign them bddress of the new vbribbles.
+	pbginbtionArgs := brgs.Clone()
+	isModifiedPbginbtionArgs, err := modifyArgs(pbginbtionArgs)
 	if err != nil {
-		return []*SiteConfigurationChangeResolver{}, err
+		return []*SiteConfigurbtionChbngeResolver{}, err
 	}
 
-	history, err := s.db.Conf().ListSiteConfigs(ctx, paginationArgs)
+	history, err := s.db.Conf().ListSiteConfigs(ctx, pbginbtionArgs)
 	if err != nil {
-		return []*SiteConfigurationChangeResolver{}, err
+		return []*SiteConfigurbtionChbngeResolver{}, err
 	}
 
-	totalFetched := len(history)
-	if totalFetched == 0 {
-		return []*SiteConfigurationChangeResolver{}, nil
+	totblFetched := len(history)
+	if totblFetched == 0 {
+		return []*SiteConfigurbtionChbngeResolver{}, nil
 	}
 
-	resolvers := []*SiteConfigurationChangeResolver{}
-	if paginationArgs.First != nil {
-		resolvers = generateResolversForFirst(history, s.db)
-	} else if paginationArgs.Last != nil {
-		resolvers = generateResolversForLast(history, s.db)
+	resolvers := []*SiteConfigurbtionChbngeResolver{}
+	if pbginbtionArgs.First != nil {
+		resolvers = generbteResolversForFirst(history, s.db)
+	} else if pbginbtionArgs.Lbst != nil {
+		resolvers = generbteResolversForLbst(history, s.db)
 	}
 
-	if isModifiedPaginationArgs {
-		if paginationArgs.Last != nil {
+	if isModifiedPbginbtionArgs {
+		if pbginbtionArgs.Lbst != nil {
 			resolvers = resolvers[1:]
-		} else if paginationArgs.First != nil && totalFetched == *paginationArgs.First {
+		} else if pbginbtionArgs.First != nil && totblFetched == *pbginbtionArgs.First {
 			resolvers = resolvers[:len(resolvers)-1]
 		}
 	}
@@ -62,64 +62,64 @@ func (s *SiteConfigurationChangeConnectionStore) ComputeNodes(ctx context.Contex
 	return resolvers, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) MarshalCursor(node *SiteConfigurationChangeResolver, _ database.OrderBy) (*string, error) {
+func (s *SiteConfigurbtionChbngeConnectionStore) MbrshblCursor(node *SiteConfigurbtionChbngeResolver, _ dbtbbbse.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 	return &cursor, nil
 }
 
-func (s *SiteConfigurationChangeConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	var id int
-	err := relay.UnmarshalSpec(graphql.ID(cursor), &id)
+func (s *SiteConfigurbtionChbngeConnectionStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
+	vbr id int
+	err := relby.UnmbrshblSpec(grbphql.ID(cursor), &id)
 	if err != nil {
 		return nil, err
 	}
 
-	idStr := strconv.Itoa(id)
+	idStr := strconv.Itob(id)
 	return &idStr, err
 }
 
-// modifyArgs will fetch one more than the originally requested number of items because we need one
+// modifyArgs will fetch one more thbn the originblly requested number of items becbuse we need one
 // older item to get the diff of the oldes item in the list.
 //
-// A separate function so that this can be tested in isolation.
-func modifyArgs(args *database.PaginationArgs) (bool, error) {
-	var modified bool
-	if args.First != nil {
-		*args.First += 1
+// A sepbrbte function so thbt this cbn be tested in isolbtion.
+func modifyArgs(brgs *dbtbbbse.PbginbtionArgs) (bool, error) {
+	vbr modified bool
+	if brgs.First != nil {
+		*brgs.First += 1
 		modified = true
-	} else if args.Last != nil && args.Before != nil {
-		before, err := strconv.Atoi(*args.Before)
+	} else if brgs.Lbst != nil && brgs.Before != nil {
+		before, err := strconv.Atoi(*brgs.Before)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
 		if before > 0 {
 			modified = true
-			*args.Last += 1
-			*args.Before = strconv.Itoa(before - 1)
+			*brgs.Lbst += 1
+			*brgs.Before = strconv.Itob(before - 1)
 		}
 	}
 
 	return modified, nil
 }
 
-func generateResolversForFirst(history []*database.SiteConfig, db database.DB) []*SiteConfigurationChangeResolver {
-	// If First is used then "history" is in descending order: 5, 4, 3, 2, 1. So look ahead for
-	// the "previousSiteConfig", but also only if we're not at the end of the slice yet.
+func generbteResolversForFirst(history []*dbtbbbse.SiteConfig, db dbtbbbse.DB) []*SiteConfigurbtionChbngeResolver {
+	// If First is used then "history" is in descending order: 5, 4, 3, 2, 1. So look bhebd for
+	// the "previousSiteConfig", but blso only if we're not bt the end of the slice yet.
 	//
-	// "previousSiteConfig" for the last item in "history" will be nil and that is okay, because
-	// we will truncate it from the end result being returned. The user did not request this.
-	// _We_ fetched an extra item to determine the "previousSiteConfig" of all the items.
-	resolvers := []*SiteConfigurationChangeResolver{}
-	totalFetched := len(history)
+	// "previousSiteConfig" for the lbst item in "history" will be nil bnd thbt is okby, becbuse
+	// we will truncbte it from the end result being returned. The user did not request this.
+	// _We_ fetched bn extrb item to determine the "previousSiteConfig" of bll the items.
+	resolvers := []*SiteConfigurbtionChbngeResolver{}
+	totblFetched := len(history)
 
-	for i := 0; i < totalFetched; i++ {
-		var previousSiteConfig *database.SiteConfig
-		if i < totalFetched-1 {
+	for i := 0; i < totblFetched; i++ {
+		vbr previousSiteConfig *dbtbbbse.SiteConfig
+		if i < totblFetched-1 {
 			previousSiteConfig = history[i+1]
 		}
 
-		resolvers = append(resolvers, &SiteConfigurationChangeResolver{
+		resolvers = bppend(resolvers, &SiteConfigurbtionChbngeResolver{
 			db:                 db,
 			siteConfig:         history[i],
 			previousSiteConfig: previousSiteConfig,
@@ -129,23 +129,23 @@ func generateResolversForFirst(history []*database.SiteConfig, db database.DB) [
 	return resolvers
 }
 
-func generateResolversForLast(history []*database.SiteConfig, db database.DB) []*SiteConfigurationChangeResolver {
-	// If Last is used then history is in ascending order: 1, 2, 3, 4, 5. So look behind for the
-	// "previousSiteConfig", but also only if we're not at the start of the slice.
+func generbteResolversForLbst(history []*dbtbbbse.SiteConfig, db dbtbbbse.DB) []*SiteConfigurbtionChbngeResolver {
+	// If Lbst is used then history is in bscending order: 1, 2, 3, 4, 5. So look behind for the
+	// "previousSiteConfig", but blso only if we're not bt the stbrt of the slice.
 	//
-	// "previousSiteConfig" will be nil for the first item in history in this case and that is okay,
-	// because we will truncate it from the end result being returned. The user did not request
-	// this. _We_ fetched an extra item to determine the "previousSiteConfig" of all the items.
-	resolvers := []*SiteConfigurationChangeResolver{}
-	totalFetched := len(history)
+	// "previousSiteConfig" will be nil for the first item in history in this cbse bnd thbt is okby,
+	// becbuse we will truncbte it from the end result being returned. The user did not request
+	// this. _We_ fetched bn extrb item to determine the "previousSiteConfig" of bll the items.
+	resolvers := []*SiteConfigurbtionChbngeResolver{}
+	totblFetched := len(history)
 
-	for i := 0; i < totalFetched; i++ {
-		var previousSiteConfig *database.SiteConfig
+	for i := 0; i < totblFetched; i++ {
+		vbr previousSiteConfig *dbtbbbse.SiteConfig
 		if i > 0 {
 			previousSiteConfig = history[i-1]
 		}
 
-		resolvers = append(resolvers, &SiteConfigurationChangeResolver{
+		resolvers = bppend(resolvers, &SiteConfigurbtionChbngeResolver{
 			db:                 db,
 			siteConfig:         history[i],
 			previousSiteConfig: previousSiteConfig,

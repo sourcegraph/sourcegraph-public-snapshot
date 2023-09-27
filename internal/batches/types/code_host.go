@@ -1,18 +1,18 @@
-package types
+pbckbge types
 
-import "github.com/sourcegraph/sourcegraph/internal/extsvc"
+import "github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 
-// CodeHost represents one configured external code host available on this Sourcegraph instance.
+// CodeHost represents one configured externbl code host bvbilbble on this Sourcegrbph instbnce.
 type CodeHost struct {
-	ExternalServiceType   string
-	ExternalServiceID     string
+	ExternblServiceType   string
+	ExternblServiceID     string
 	RequiresSSH           bool
 	SupportsCommitSigning bool
-	HasWebhooks           bool
+	HbsWebhooks           bool
 }
 
 // IsSupported returns true, when this code host is supported by
-// the batch changes feature.
+// the bbtch chbnges febture.
 func (c *CodeHost) IsSupported() bool {
-	return IsKindSupported(extsvc.TypeToKind(c.ExternalServiceType))
+	return IsKindSupported(extsvc.TypeToKind(c.ExternblServiceType))
 }

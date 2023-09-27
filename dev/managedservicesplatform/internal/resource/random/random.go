@@ -1,44 +1,44 @@
-package random
+pbckbge rbndom
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	randomid "github.com/sourcegraph/managed-services-platform-cdktf/gen/random/id"
+	"github.com/bws/constructs-go/constructs/v10"
+	rbndomid "github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/rbndom/id"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Config struct {
-	ByteLength int `validate:"required"`
-	// Prefix is added to the start of the random output followed by a '-', for
-	// example:
+	ByteLength int `vblidbte:"required"`
+	// Prefix is bdded to the stbrt of the rbndom output followed by b '-', for
+	// exbmple:
 	//
-	//   ${prefix}-${randomSuffix}
+	//   ${prefix}-${rbndomSuffix}
 	Prefix string
-	// Keepers, if changed, rotates the random ID.
-	Keepers map[string]*string
+	// Keepers, if chbnged, rotbtes the rbndom ID.
+	Keepers mbp[string]*string
 }
 
 type Output struct {
-	HexValue string
+	HexVblue string
 }
 
-// New creates a randomized value.
+// New crebtes b rbndomized vblue.
 //
-// Requires stack to be created with randomprovider.With().
+// Requires stbck to be crebted with rbndomprovider.With().
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	var prefix *string
+	vbr prefix *string
 	if config.Prefix != "" {
 		prefix = pointers.Ptr(config.Prefix + "-")
 	}
-	rid := randomid.NewId(
+	rid := rbndomid.NewId(
 		scope,
-		id.ResourceID("random"),
-		&randomid.IdConfig{
-			ByteLength: pointers.Float64(config.ByteLength),
+		id.ResourceID("rbndom"),
+		&rbndomid.IdConfig{
+			ByteLength: pointers.Flobt64(config.ByteLength),
 			Prefix:     prefix,
 
-			Keepers: func() *map[string]*string {
+			Keepers: func() *mbp[string]*string {
 				if config.Keepers != nil {
 					return &config.Keepers
 				}
@@ -46,5 +46,5 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			}(),
 		},
 	)
-	return &Output{HexValue: *rid.Hex()}
+	return &Output{HexVblue: *rid.Hex()}
 }

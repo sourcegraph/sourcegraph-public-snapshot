@@ -1,4 +1,4 @@
-package inference
+pbckbge inference
 
 import (
 	"context"
@@ -7,53 +7,53 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/unpack/unpacktest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/pbths"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck/unpbcktest"
 )
 
-func testService(t *testing.T, repositoryContents map[string]string) *Service {
-	repositoryPaths := make([]string, 0, len(repositoryContents))
-	for path := range repositoryContents {
-		repositoryPaths = append(repositoryPaths, path)
+func testService(t *testing.T, repositoryContents mbp[string]string) *Service {
+	repositoryPbths := mbke([]string, 0, len(repositoryContents))
+	for pbth := rbnge repositoryContents {
+		repositoryPbths = bppend(repositoryPbths, pbth)
 	}
-	sort.Strings(repositoryPaths)
+	sort.Strings(repositoryPbths)
 
-	// Real deal
-	sandboxService := luasandbox.NewService()
+	// Rebl debl
+	sbndboxService := lubsbndbox.NewService()
 
-	// Fake deal
+	// Fbke debl
 	gitService := NewMockGitService()
-	gitService.LsFilesFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, commit string, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-		var patterns []*paths.GlobPattern
-		for _, spec := range pathspecs {
-			pattern, err := paths.Compile(string(spec))
+	gitService.LsFilesFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, commit string, pbthspecs ...gitdombin.Pbthspec) ([]string, error) {
+		vbr pbtterns []*pbths.GlobPbttern
+		for _, spec := rbnge pbthspecs {
+			pbttern, err := pbths.Compile(string(spec))
 			if err != nil {
 				return nil, err
 			}
 
-			patterns = append(patterns, pattern)
+			pbtterns = bppend(pbtterns, pbttern)
 		}
 
-		return filterPaths(repositoryPaths, patterns, nil), nil
+		return filterPbths(repositoryPbths, pbtterns, nil), nil
 	})
-	gitService.ArchiveFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, opts gitserver.ArchiveOptions) (io.ReadCloser, error) {
-		files := map[string]string{}
-		for _, spec := range opts.Pathspecs {
-			if contents, ok := repositoryContents[strings.TrimPrefix(string(spec), ":(literal)")]; ok {
+	gitService.ArchiveFunc.SetDefbultHook(func(ctx context.Context, repoNbme bpi.RepoNbme, opts gitserver.ArchiveOptions) (io.RebdCloser, error) {
+		files := mbp[string]string{}
+		for _, spec := rbnge opts.Pbthspecs {
+			if contents, ok := repositoryContents[strings.TrimPrefix(string(spec), ":(literbl)")]; ok {
 				files[string(spec)] = contents
 			}
 		}
 
-		return unpacktest.CreateTarArchive(t, files), nil
+		return unpbcktest.CrebteTbrArchive(t, files), nil
 	})
 
-	return newService(&observation.TestContext, sandboxService, gitService, ratelimit.NewInstrumentedLimiter("TestInference", rate.NewLimiter(rate.Limit(100), 1)), 100, 1024*1024)
+	return newService(&observbtion.TestContext, sbndboxService, gitService, rbtelimit.NewInstrumentedLimiter("TestInference", rbte.NewLimiter(rbte.Limit(100), 1)), 100, 1024*1024)
 }

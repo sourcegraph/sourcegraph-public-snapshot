@@ -1,29 +1,29 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestWebhooksIntegration(t *testing.T) {
+func TestWebhooksIntegrbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
+	db := dbtbbbse.NewDB(logger, sqlDB)
 
-	user := bt.CreateTestUser(t, db, false)
+	user := bt.CrebteTestUser(t, db, fblse)
 
 	t.Run("GitHubWebhook", testGitHubWebhook(db, user.ID))
 	t.Run("BitbucketServerWebhook", testBitbucketServerWebhook(db, user.ID))
-	t.Run("GitLabWebhook", testGitLabWebhook(sqlDB))
+	t.Run("GitLbbWebhook", testGitLbbWebhook(sqlDB))
 	t.Run("BitbucketCloudWebhook", testBitbucketCloudWebhook(sqlDB))
 }

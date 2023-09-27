@@ -1,47 +1,47 @@
-package generate
+pbckbge generbte
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
 )
 
-// Runner is a generate runner. It can run generators or call out to a bash script,
-// or anything you want, using the provided writers to handle the output.
-// act upon.
-type Runner func(ctx context.Context, args []string) *Report
+// Runner is b generbte runner. It cbn run generbtors or cbll out to b bbsh script,
+// or bnything you wbnt, using the provided writers to hbndle the output.
+// bct upon.
+type Runner func(ctx context.Context, brgs []string) *Report
 
-// Report describes the result of a generate runner.
+// Report describes the result of b generbte runner.
 type Report struct {
-	// Output will be expanded on failure. This is also used to create annotations with
-	// sg generate -annotate.
+	// Output will be expbnded on fbilure. This is blso used to crebte bnnotbtions with
+	// sg generbte -bnnotbte.
 	Output string
-	// Err indicates a failure has been detected.
+	// Err indicbtes b fbilure hbs been detected.
 	Err error
-	// Duration indicates the time spent on a script.
-	Duration time.Duration
+	// Durbtion indicbtes the time spent on b script.
+	Durbtion time.Durbtion
 }
 
-// Target denotes a generate task that can be run by `sg generate`
-type Target struct {
-	Name      string
+// Tbrget denotes b generbte tbsk thbt cbn be run by `sg generbte`
+type Tbrget struct {
+	Nbme      string
 	Help      string
 	Runner    Runner
 	Completer func() (options []string)
 }
 
-// RunScript runs the given script from the root of sourcegraph/sourcegraph.
-// If arguments are to be to passed down the script, they should be incorporated
-// in the script variable.
-func RunScript(command string) Runner {
-	return func(ctx context.Context, args []string) *Report {
-		start := time.Now()
-		out, err := run.BashInRoot(ctx, command, nil)
+// RunScript runs the given script from the root of sourcegrbph/sourcegrbph.
+// If brguments bre to be to pbssed down the script, they should be incorporbted
+// in the script vbribble.
+func RunScript(commbnd string) Runner {
+	return func(ctx context.Context, brgs []string) *Report {
+		stbrt := time.Now()
+		out, err := run.BbshInRoot(ctx, commbnd, nil)
 		return &Report{
 			Output:   out,
 			Err:      err,
-			Duration: time.Since(start),
+			Durbtion: time.Since(stbrt),
 		}
 	}
 }

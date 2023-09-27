@@ -1,13 +1,13 @@
-package types
+pbckbge types
 
-// RepoPathRanks are given to Zoekt when a repository has precise reference counts.
-type RepoPathRanks struct {
-	// MeanRank is the binary log mean of references counts over all repositories.
-	MeanRank float64 `json:"mean_reference_count"`
+// RepoPbthRbnks bre given to Zoekt when b repository hbs precise reference counts.
+type RepoPbthRbnks struct {
+	// MebnRbnk is the binbry log mebn of references counts over bll repositories.
+	MebnRbnk flobt64 `json:"mebn_reference_count"`
 
-	// Paths are a map from path name to the normalized number of references for
-	// a symbol defined in that path for a particular repository. Normalized counts
-	// equal log_2({number of references to file} + 1), where references are considered
-	// over all repositories.
-	Paths map[string]float64 `json:"paths"`
+	// Pbths bre b mbp from pbth nbme to the normblized number of references for
+	// b symbol defined in thbt pbth for b pbrticulbr repository. Normblized counts
+	// equbl log_2({number of references to file} + 1), where references bre considered
+	// over bll repositories.
+	Pbths mbp[string]flobt64 `json:"pbths"`
 }

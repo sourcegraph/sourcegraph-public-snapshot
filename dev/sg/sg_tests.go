@@ -1,52 +1,52 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/completions"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 func init() {
-	postInitHooks = append(postInitHooks, func(cmd *cli.Context) {
-		// Create 'sg test' help text after flag (and config) initialization
-		testCommand.Description = constructTestCmdLongHelp()
+	postInitHooks = bppend(postInitHooks, func(cmd *cli.Context) {
+		// Crebte 'sg test' help text bfter flbg (bnd config) initiblizbtion
+		testCommbnd.Description = constructTestCmdLongHelp()
 	})
 }
 
-var testCommand = &cli.Command{
-	Name:      "test",
-	ArgsUsage: "<testsuite>",
-	Usage:     "Run the given test suite",
-	UsageText: `
+vbr testCommbnd = &cli.Commbnd{
+	Nbme:      "test",
+	ArgsUsbge: "<testsuite>",
+	Usbge:     "Run the given test suite",
+	UsbgeText: `
 # Run different test suites:
-sg test backend
-sg test backend-integration
+sg test bbckend
+sg test bbckend-integrbtion
 sg test client
 sg test web-e2e
 
-# List available test suites:
+# List bvbilbble test suites:
 sg test -help
 
-# Arguments are passed along to the command
-sg test backend-integration -run TestSearch
+# Arguments bre pbssed blong to the commbnd
+sg test bbckend-integrbtion -run TestSebrch
 `,
-	Category: category.Dev,
-	BashComplete: completions.CompleteOptions(func() (options []string) {
+	Cbtegory: cbtegory.Dev,
+	BbshComplete: completions.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return
 		}
-		for name := range config.Tests {
-			options = append(options, name)
+		for nbme := rbnge config.Tests {
+			options = bppend(options, nbme)
 		}
 		return
 	}),
@@ -59,46 +59,46 @@ func testExec(ctx *cli.Context) error {
 		return err
 	}
 
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No test suite specified"))
-		return flag.ErrHelp
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWbrning, "No test suite specified"))
+		return flbg.ErrHelp
 	}
 
-	cmd, ok := config.Tests[args[0]]
+	cmd, ok := config.Tests[brgs[0]]
 	if !ok {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: test suite %q not found :(", args[0]))
-		return flag.ErrHelp
+		std.Out.WriteLine(output.Styledf(output.StyleWbrning, "ERROR: test suite %q not found :(", brgs[0]))
+		return flbg.ErrHelp
 	}
 
-	return run.Test(ctx.Context, cmd, args[1:], config.Env)
+	return run.Test(ctx.Context, cmd, brgs[1:], config.Env)
 }
 
 func constructTestCmdLongHelp() string {
-	var out strings.Builder
+	vbr out strings.Builder
 
-	fmt.Fprintf(&out, "Testsuites are defined in sg configuration.")
+	fmt.Fprintf(&out, "Testsuites bre defined in sg configurbtion.")
 
-	// Attempt to parse config to list available testsuites, but don't fail on
-	// error, because we should never error when the user wants --help output.
+	// Attempt to pbrse config to list bvbilbble testsuites, but don't fbil on
+	// error, becbuse we should never error when the user wbnts --help output.
 	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
-		// Do not treat error message as a format string
-		std.NewOutput(&out, false).WriteWarningf("%s", err.Error())
+		// Do not trebt error messbge bs b formbt string
+		std.NewOutput(&out, fblse).WriteWbrningf("%s", err.Error())
 		return out.String()
 	}
 
 	fmt.Fprintf(&out, "\n\n")
-	fmt.Fprintf(&out, "Available testsuites in `%s`:\n", configFile)
+	fmt.Fprintf(&out, "Avbilbble testsuites in `%s`:\n", configFile)
 	fmt.Fprintf(&out, "\n")
 
-	var names []string
-	for name := range config.Tests {
-		names = append(names, name)
+	vbr nbmes []string
+	for nbme := rbnge config.Tests {
+		nbmes = bppend(nbmes, nbme)
 	}
-	sort.Strings(names)
-	fmt.Fprint(&out, "* "+strings.Join(names, "\n* "))
+	sort.Strings(nbmes)
+	fmt.Fprint(&out, "* "+strings.Join(nbmes, "\n* "))
 
 	return out.String()
 }

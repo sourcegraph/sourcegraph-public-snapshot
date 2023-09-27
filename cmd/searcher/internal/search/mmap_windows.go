@@ -1,16 +1,16 @@
-package search
+pbckbge sebrch
 
 import (
 	"io/fs"
 	"os"
 
-	mmapgo "github.com/edsrzf/mmap-go"
+	mmbpgo "github.com/edsrzf/mmbp-go"
 )
 
-func mmap(path string, f *os.File, fi fs.FileInfo) ([]byte, error) {
-	return mmapgo.Map(f, mmapgo.RDONLY, 0)
+func mmbp(pbth string, f *os.File, fi fs.FileInfo) ([]byte, error) {
+	return mmbpgo.Mbp(f, mmbpgo.RDONLY, 0)
 }
 
-func unmap(data mmapgo.MMap) error {
-	return data.Unmap()
+func unmbp(dbtb mmbpgo.MMbp) error {
+	return dbtb.Unmbp()
 }

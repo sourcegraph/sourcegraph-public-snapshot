@@ -1,78 +1,78 @@
-package luatypes
+pbckbge lubtypes
 
 import (
-	lua "github.com/yuin/gopher-lua"
+	lub "github.com/yuin/gopher-lub"
 
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
 )
 
-// PathPattern is forms a tree of patterns to be matched against paths in an
-// associated git repository.
-type PathPattern struct {
-	pattern  GlobAndPathspecPattern
-	children []*PathPattern
+// PbthPbttern is forms b tree of pbtterns to be mbtched bgbinst pbths in bn
+// bssocibted git repository.
+type PbthPbttern struct {
+	pbttern  GlobAndPbthspecPbttern
+	children []*PbthPbttern
 	invert   bool
 }
 
-type GlobAndPathspecPattern struct {
+type GlobAndPbthspecPbttern struct {
 	Glob      string
-	Pathspecs []string
+	Pbthspecs []string
 }
 
-// NewPattern returns a new path pattern instance that includes a single pattern.
-func NewPattern(glob string, pathspecs []string) *PathPattern {
-	return &PathPattern{pattern: GlobAndPathspecPattern{
+// NewPbttern returns b new pbth pbttern instbnce thbt includes b single pbttern.
+func NewPbttern(glob string, pbthspecs []string) *PbthPbttern {
+	return &PbthPbttern{pbttern: GlobAndPbthspecPbttern{
 		Glob:      glob,
-		Pathspecs: pathspecs,
+		Pbthspecs: pbthspecs,
 	}}
 }
 
-// NewCombinedPattern returns a new path pattern instance that includes the given
-// set of patterns.
+// NewCombinedPbttern returns b new pbth pbttern instbnce thbt includes the given
+// set of pbtterns.
 //
-// Specifically: any path matching none of the given patterns is removed
-func NewCombinedPattern(children []*PathPattern) *PathPattern {
-	return &PathPattern{children: children}
+// Specificblly: bny pbth mbtching none of the given pbtterns is removed
+func NewCombinedPbttern(children []*PbthPbttern) *PbthPbttern {
+	return &PbthPbttern{children: children}
 }
 
-// NewExcludePattern returns a new path pattern instance that excludes the given
-// set of patterns.
+// NewExcludePbttern returns b new pbth pbttern instbnce thbt excludes the given
+// set of pbtterns.
 //
-// Specifically: any path matching one of the given patterns is removed
-func NewExcludePattern(children []*PathPattern) *PathPattern {
-	return &PathPattern{children: children, invert: true}
+// Specificblly: bny pbth mbtching one of the given pbtterns is removed
+func NewExcludePbttern(children []*PbthPbttern) *PbthPbttern {
+	return &PbthPbttern{children: children, invert: true}
 }
 
-// FlattenPatterns returns a concatenation of results from calling the function
-// FlattenPattern on each of the inputs.
-func FlattenPatterns(pathPatterns []*PathPattern, inverted bool) (patterns []GlobAndPathspecPattern) {
-	for _, pathPattern := range pathPatterns {
-		patterns = append(patterns, FlattenPattern(pathPattern, inverted)...)
+// FlbttenPbtterns returns b concbtenbtion of results from cblling the function
+// FlbttenPbttern on ebch of the inputs.
+func FlbttenPbtterns(pbthPbtterns []*PbthPbttern, inverted bool) (pbtterns []GlobAndPbthspecPbttern) {
+	for _, pbthPbttern := rbnge pbthPbtterns {
+		pbtterns = bppend(pbtterns, FlbttenPbttern(pbthPbttern, inverted)...)
 	}
 
 	return
 }
 
-// FlattenPattern returns the set of patterns matching the given inverted flag on this
-// path pattern or any of its descendants.
-func FlattenPattern(pathPattern *PathPattern, inverted bool) (patterns []GlobAndPathspecPattern) {
-	if pathPattern.invert == inverted {
-		if pathPattern.pattern.Glob != "" {
-			patterns = append(patterns, pathPattern.pattern)
+// FlbttenPbttern returns the set of pbtterns mbtching the given inverted flbg on this
+// pbth pbttern or bny of its descendbnts.
+func FlbttenPbttern(pbthPbttern *PbthPbttern, inverted bool) (pbtterns []GlobAndPbthspecPbttern) {
+	if pbthPbttern.invert == inverted {
+		if pbthPbttern.pbttern.Glob != "" {
+			pbtterns = bppend(pbtterns, pbthPbttern.pbttern)
 		}
 
-		for _, child := range pathPattern.children {
-			patterns = append(patterns, FlattenPattern(child, inverted)...)
+		for _, child := rbnge pbthPbttern.children {
+			pbtterns = bppend(pbtterns, FlbttenPbttern(child, inverted)...)
 		}
 	}
 
 	return
 }
 
-// PathPatternsFromUserData decodes a single path pattern or slice of path patterns from
-// the given Lua value.
-func PathPatternsFromUserData(value lua.LValue) (patterns []*PathPattern, err error) {
-	return util.MapSliceOrSingleton(value, func(value lua.LValue) (*PathPattern, error) {
-		return util.TypecheckUserData[*PathPattern](value, "*PathPattern")
+// PbthPbtternsFromUserDbtb decodes b single pbth pbttern or slice of pbth pbtterns from
+// the given Lub vblue.
+func PbthPbtternsFromUserDbtb(vblue lub.LVblue) (pbtterns []*PbthPbttern, err error) {
+	return util.MbpSliceOrSingleton(vblue, func(vblue lub.LVblue) (*PbthPbttern, error) {
+		return util.TypecheckUserDbtb[*PbthPbttern](vblue, "*PbthPbttern")
 	})
 }

@@ -1,96 +1,96 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/shb256"
+	"encoding/bbse64"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsShbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *rootResolver) CodeIntelSummary(ctx context.Context) (_ resolverstubs.CodeIntelSummaryResolver, err error) {
-	ctx, _, endObservation := r.operations.codeIntelSummary.WithErrors(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+func (r *rootResolver) CodeIntelSummbry(ctx context.Context) (_ resolverstubs.CodeIntelSummbryResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.codeIntelSummbry.WithErrors(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	return newSummaryResolver(r.uploadSvc, r.autoindexSvc, r.locationResolverFactory.Create()), nil
+	return newSummbryResolver(r.uplobdSvc, r.butoindexSvc, r.locbtionResolverFbctory.Crebte()), nil
 }
 
 // For mocking in tests
-var autoIndexingEnabled = conf.CodeIntelAutoIndexingEnabled
+vbr butoIndexingEnbbled = conf.CodeIntelAutoIndexingEnbbled
 
-func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelRepositorySummaryResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.repositorySummary.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repoID", string(repoID)),
+func (r *rootResolver) RepositorySummbry(ctx context.Context, repoID grbphql.ID) (_ resolverstubs.CodeIntelRepositorySummbryResolver, err error) {
+	ctx, errTrbcer, endObservbtion := r.operbtions.repositorySummbry.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("repoID", string(repoID)),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	id, err := resolverstubs.UnmarshalID[int](repoID)
+	id, err := resolverstubs.UnmbrshblID[int](repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	lastUploadRetentionScan, err := r.uploadSvc.GetLastUploadRetentionScanForRepository(ctx, id)
+	lbstUplobdRetentionScbn, err := r.uplobdSvc.GetLbstUplobdRetentionScbnForRepository(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	lastIndexScan, err := r.autoindexSvc.GetLastIndexScanForRepository(ctx, id)
+	lbstIndexScbn, err := r.butoindexSvc.GetLbstIndexScbnForRepository(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	recentUploads, err := r.uploadSvc.GetRecentUploadsSummary(ctx, id)
+	recentUplobds, err := r.uplobdSvc.GetRecentUplobdsSummbry(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	recentIndexes, err := r.uploadSvc.GetRecentIndexesSummary(ctx, id)
+	recentIndexes, err := r.uplobdSvc.GetRecentIndexesSummbry(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create blocklist for indexes that have already been uploaded.
-	blocklist := map[string]struct{}{}
-	for _, u := range recentUploads {
-		key := uploadsShared.GetKeyForLookup(u.Indexer, u.Root)
+	// Crebte blocklist for indexes thbt hbve blrebdy been uplobded.
+	blocklist := mbp[string]struct{}{}
+	for _, u := rbnge recentUplobds {
+		key := uplobdsShbred.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
-	for _, u := range recentIndexes {
-		key := uploadsShared.GetKeyForLookup(u.Indexer, u.Root)
+	for _, u := rbnge recentIndexes {
+		key := uplobdsShbred.GetKeyForLookup(u.Indexer, u.Root)
 		blocklist[key] = struct{}{}
 	}
 
-	var limitErr error
-	inferredAvailableIndexers := map[string]uploadsShared.AvailableIndexer{}
+	vbr limitErr error
+	inferredAvbilbbleIndexers := mbp[string]uplobdsShbred.AvbilbbleIndexer{}
 
-	if autoIndexingEnabled() {
+	if butoIndexingEnbbled() {
 		commit := "HEAD"
 
-		result, err := r.autoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", false)
+		result, err := r.butoindexSvc.InferIndexJobsFromRepositoryStructure(ctx, id, commit, "", fblse)
 		if err != nil {
-			if !autoindexing.IsLimitError(err) {
+			if !butoindexing.IsLimitError(err) {
 				return nil, err
 			}
 
 			limitErr = errors.Append(limitErr, err)
 		} else {
-			// indexJobHints, err := r.autoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
+			// indexJobHints, err := r.butoindexSvc.InferIndexJobHintsFromRepositoryStructure(ctx, repoID, commit)
 			// if err != nil {
 			// 	if !errors.As(err, &inference.LimitError{}) {
 			// 		return nil, err
@@ -99,80 +99,80 @@ func (r *rootResolver) RepositorySummary(ctx context.Context, repoID graphql.ID)
 			// 	limitErr = errors.Append(limitErr, err)
 			// }
 
-			inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(result.IndexJobs, blocklist, inferredAvailableIndexers)
-			// inferredAvailableIndexers = uploadsShared.PopulateInferredAvailableIndexers(indexJobHints, blocklist, inferredAvailableIndexers)
+			inferredAvbilbbleIndexers = uplobdsShbred.PopulbteInferredAvbilbbleIndexers(result.IndexJobs, blocklist, inferredAvbilbbleIndexers)
+			// inferredAvbilbbleIndexers = uplobdsShbred.PopulbteInferredAvbilbbleIndexers(indexJobHints, blocklist, inferredAvbilbbleIndexers)
 		}
 	}
 
-	inferredAvailableIndexersResolver := make([]inferredAvailableIndexers2, 0, len(inferredAvailableIndexers))
-	for _, indexer := range inferredAvailableIndexers {
-		inferredAvailableIndexersResolver = append(inferredAvailableIndexersResolver,
-			inferredAvailableIndexers2{
+	inferredAvbilbbleIndexersResolver := mbke([]inferredAvbilbbleIndexers2, 0, len(inferredAvbilbbleIndexers))
+	for _, indexer := rbnge inferredAvbilbbleIndexers {
+		inferredAvbilbbleIndexersResolver = bppend(inferredAvbilbbleIndexersResolver,
+			inferredAvbilbbleIndexers2{
 				Indexer: indexer.Indexer,
 				Roots:   indexer.Roots,
 			},
 		)
 	}
 
-	summary := RepositorySummary{
-		RecentUploads:           recentUploads,
+	summbry := RepositorySummbry{
+		RecentUplobds:           recentUplobds,
 		RecentIndexes:           recentIndexes,
-		LastUploadRetentionScan: lastUploadRetentionScan,
-		LastIndexScan:           lastIndexScan,
+		LbstUplobdRetentionScbn: lbstUplobdRetentionScbn,
+		LbstIndexScbn:           lbstIndexScbn,
 	}
 
-	var allUploads []shared.Upload
-	for _, recentUpload := range recentUploads {
-		allUploads = append(allUploads, recentUpload.Uploads...)
+	vbr bllUplobds []shbred.Uplobd
+	for _, recentUplobd := rbnge recentUplobds {
+		bllUplobds = bppend(bllUplobds, recentUplobd.Uplobds...)
 	}
 
-	var allIndexes []shared.Index
-	for _, recentIndex := range recentIndexes {
-		allIndexes = append(allIndexes, recentIndex.Indexes...)
+	vbr bllIndexes []shbred.Index
+	for _, recentIndex := rbnge recentIndexes {
+		bllIndexes = bppend(bllIndexes, recentIndex.Indexes...)
 	}
 
-	// Create upload loader with data we already have, and pre-submit associated uploads from index records
-	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(allUploads)
-	PresubmitAssociatedUploads(uploadLoader, allIndexes...)
+	// Crebte uplobd lobder with dbtb we blrebdy hbve, bnd pre-submit bssocibted uplobds from index records
+	uplobdLobder := r.uplobdLobderFbctory.CrebteWithInitiblDbtb(bllUplobds)
+	PresubmitAssocibtedUplobds(uplobdLobder, bllIndexes...)
 
-	// Create index loader with data we already have, and pre-submit associated indexes from upload records
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(allIndexes)
-	PresubmitAssociatedIndexes(indexLoader, allUploads...)
+	// Crebte index lobder with dbtb we blrebdy hbve, bnd pre-submit bssocibted indexes from uplobd records
+	indexLobder := r.indexLobderFbctory.CrebteWithInitiblDbtb(bllIndexes)
+	PresubmitAssocibtedIndexes(indexLobder, bllUplobds...)
 
-	// No data to load for git data (yet)
-	locationResolver := r.locationResolverFactory.Create()
+	// No dbtb to lobd for git dbtb (yet)
+	locbtionResolver := r.locbtionResolverFbctory.Crebte()
 
-	return newRepositorySummaryResolver(
-		locationResolver,
-		summary,
-		inferredAvailableIndexersResolver,
+	return newRepositorySummbryResolver(
+		locbtionResolver,
+		summbry,
+		inferredAvbilbbleIndexersResolver,
 		limitErr,
-		uploadLoader,
-		indexLoader,
-		errTracer,
-		r.preciseIndexResolverFactory,
+		uplobdLobder,
+		indexLobder,
+		errTrbcer,
+		r.preciseIndexResolverFbctory,
 	), nil
 }
 
 //
 //
 
-type summaryResolver struct {
-	uploadsSvc       UploadsService
-	autoindexingSvc  AutoIndexingService
-	locationResolver *gitresolvers.CachedLocationResolver
+type summbryResolver struct {
+	uplobdsSvc       UplobdsService
+	butoindexingSvc  AutoIndexingService
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver
 }
 
-func newSummaryResolver(uploadsSvc UploadsService, autoindexingSvc AutoIndexingService, locationResolver *gitresolvers.CachedLocationResolver) resolverstubs.CodeIntelSummaryResolver {
-	return &summaryResolver{
-		uploadsSvc:       uploadsSvc,
-		autoindexingSvc:  autoindexingSvc,
-		locationResolver: locationResolver,
+func newSummbryResolver(uplobdsSvc UplobdsService, butoindexingSvc AutoIndexingService, locbtionResolver *gitresolvers.CbchedLocbtionResolver) resolverstubs.CodeIntelSummbryResolver {
+	return &summbryResolver{
+		uplobdsSvc:       uplobdsSvc,
+		butoindexingSvc:  butoindexingSvc,
+		locbtionResolver: locbtionResolver,
 	}
 }
 
-func (r *summaryResolver) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error) {
-	numRepositoriesWithCodeIntelligence, err := r.uploadsSvc.NumRepositoriesWithCodeIntelligence(ctx)
+func (r *summbryResolver) NumRepositoriesWithCodeIntelligence(ctx context.Context) (int32, error) {
+	numRepositoriesWithCodeIntelligence, err := r.uplobdsSvc.NumRepositoriesWithCodeIntelligence(ctx)
 	if err != nil {
 		return 0, err
 	}
@@ -180,100 +180,100 @@ func (r *summaryResolver) NumRepositoriesWithCodeIntelligence(ctx context.Contex
 	return int32(numRepositoriesWithCodeIntelligence), nil
 }
 
-func (r *summaryResolver) RepositoriesWithErrors(ctx context.Context, args *resolverstubs.RepositoriesWithErrorsArgs) (resolverstubs.CodeIntelRepositoryWithErrorConnectionResolver, error) {
-	pageSize := 25
-	if args.First != nil {
-		pageSize = int(*args.First)
+func (r *summbryResolver) RepositoriesWithErrors(ctx context.Context, brgs *resolverstubs.RepositoriesWithErrorsArgs) (resolverstubs.CodeIntelRepositoryWithErrorConnectionResolver, error) {
+	pbgeSize := 25
+	if brgs.First != nil {
+		pbgeSize = int(*brgs.First)
 	}
 
 	offset := 0
-	if args.After != nil {
-		after, _ := strconv.Atoi(*args.After)
-		offset = after
+	if brgs.After != nil {
+		bfter, _ := strconv.Atoi(*brgs.After)
+		offset = bfter
 	}
 
-	repositoryIDsWithErrors, totalCount, err := r.uploadsSvc.RepositoryIDsWithErrors(ctx, offset, pageSize)
+	repositoryIDsWithErrors, totblCount, err := r.uplobdsSvc.RepositoryIDsWithErrors(ctx, offset, pbgeSize)
 	if err != nil {
 		return nil, err
 	}
 
-	var resolvers []resolverstubs.CodeIntelRepositoryWithErrorResolver
-	for _, repositoryWithCount := range repositoryIDsWithErrors {
-		resolver, err := r.locationResolver.Repository(ctx, api.RepoID(repositoryWithCount.RepositoryID))
+	vbr resolvers []resolverstubs.CodeIntelRepositoryWithErrorResolver
+	for _, repositoryWithCount := rbnge repositoryIDsWithErrors {
+		resolver, err := r.locbtionResolver.Repository(ctx, bpi.RepoID(repositoryWithCount.RepositoryID))
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, &codeIntelRepositoryWithErrorResolver{
+		resolvers = bppend(resolvers, &codeIntelRepositoryWithErrorResolver{
 			repositoryResolver: resolver,
 			count:              repositoryWithCount.Count,
 		})
 	}
 
 	endCursor := ""
-	if newOffset := offset + pageSize; newOffset < totalCount {
-		endCursor = strconv.Itoa(newOffset)
+	if newOffset := offset + pbgeSize; newOffset < totblCount {
+		endCursor = strconv.Itob(newOffset)
 	}
 
-	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
+	return resolverstubs.NewCursorWithTotblCountConnectionResolver(resolvers, endCursor, int32(totblCount)), nil
 }
 
-func (r *summaryResolver) RepositoriesWithConfiguration(ctx context.Context, args *resolverstubs.RepositoriesWithConfigurationArgs) (resolverstubs.CodeIntelRepositoryWithConfigurationConnectionResolver, error) {
-	pageSize := 25
-	if args.First != nil {
-		pageSize = int(*args.First)
+func (r *summbryResolver) RepositoriesWithConfigurbtion(ctx context.Context, brgs *resolverstubs.RepositoriesWithConfigurbtionArgs) (resolverstubs.CodeIntelRepositoryWithConfigurbtionConnectionResolver, error) {
+	pbgeSize := 25
+	if brgs.First != nil {
+		pbgeSize = int(*brgs.First)
 	}
 
 	offset := 0
-	if args.After != nil {
-		after, _ := strconv.Atoi(*args.After)
-		offset = after
+	if brgs.After != nil {
+		bfter, _ := strconv.Atoi(*brgs.After)
+		offset = bfter
 	}
 
-	repositoryIDsWithConfiguration, totalCount, err := r.autoindexingSvc.RepositoryIDsWithConfiguration(ctx, offset, pageSize)
+	repositoryIDsWithConfigurbtion, totblCount, err := r.butoindexingSvc.RepositoryIDsWithConfigurbtion(ctx, offset, pbgeSize)
 	if err != nil {
 		return nil, err
 	}
 
-	var resolvers []resolverstubs.CodeIntelRepositoryWithConfigurationResolver
-	for _, repositoryWithAvailableIndexers := range repositoryIDsWithConfiguration {
-		resolver, err := r.locationResolver.Repository(ctx, api.RepoID(repositoryWithAvailableIndexers.RepositoryID))
+	vbr resolvers []resolverstubs.CodeIntelRepositoryWithConfigurbtionResolver
+	for _, repositoryWithAvbilbbleIndexers := rbnge repositoryIDsWithConfigurbtion {
+		resolver, err := r.locbtionResolver.Repository(ctx, bpi.RepoID(repositoryWithAvbilbbleIndexers.RepositoryID))
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, &codeIntelRepositoryWithConfigurationResolver{
+		resolvers = bppend(resolvers, &codeIntelRepositoryWithConfigurbtionResolver{
 			repositoryResolver: resolver,
-			availableIndexers:  repositoryWithAvailableIndexers.AvailableIndexers,
+			bvbilbbleIndexers:  repositoryWithAvbilbbleIndexers.AvbilbbleIndexers,
 		})
 	}
 
 	endCursor := ""
-	if newOffset := offset + pageSize; newOffset < totalCount {
-		endCursor = strconv.Itoa(newOffset)
+	if newOffset := offset + pbgeSize; newOffset < totblCount {
+		endCursor = strconv.Itob(newOffset)
 	}
 
-	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, endCursor, int32(totalCount)), nil
+	return resolverstubs.NewCursorWithTotblCountConnectionResolver(resolvers, endCursor, int32(totblCount)), nil
 }
 
 //
 //
 
-type codeIntelRepositoryWithConfigurationResolver struct {
+type codeIntelRepositoryWithConfigurbtionResolver struct {
 	repositoryResolver resolverstubs.RepositoryResolver
-	availableIndexers  map[string]uploadsShared.AvailableIndexer
+	bvbilbbleIndexers  mbp[string]uplobdsShbred.AvbilbbleIndexer
 }
 
-func (r *codeIntelRepositoryWithConfigurationResolver) Repository() resolverstubs.RepositoryResolver {
+func (r *codeIntelRepositoryWithConfigurbtionResolver) Repository() resolverstubs.RepositoryResolver {
 	return r.repositoryResolver
 }
 
-func (r *codeIntelRepositoryWithConfigurationResolver) Indexers() []resolverstubs.IndexerWithCountResolver {
-	var resolvers []resolverstubs.IndexerWithCountResolver
-	for indexer, meta := range r.availableIndexers {
-		resolvers = append(resolvers, &indexerWithCountResolver{
+func (r *codeIntelRepositoryWithConfigurbtionResolver) Indexers() []resolverstubs.IndexerWithCountResolver {
+	vbr resolvers []resolverstubs.IndexerWithCountResolver
+	for indexer, metb := rbnge r.bvbilbbleIndexers {
+		resolvers = bppend(resolvers, &indexerWithCountResolver{
 			indexer: NewCodeIntelIndexerResolver(indexer, ""),
-			count:   int32(len(meta.Roots)),
+			count:   int32(len(metb.Roots)),
 		})
 	}
 
@@ -288,11 +288,11 @@ type indexerWithCountResolver struct {
 func (r *indexerWithCountResolver) Indexer() resolverstubs.CodeIntelIndexerResolver { return r.indexer }
 func (r *indexerWithCountResolver) Count() int32                                    { return r.count }
 
-type RepositorySummary struct {
-	RecentUploads           []uploadsShared.UploadsWithRepositoryNamespace
-	RecentIndexes           []uploadsShared.IndexesWithRepositoryNamespace
-	LastUploadRetentionScan *time.Time
-	LastIndexScan           *time.Time
+type RepositorySummbry struct {
+	RecentUplobds           []uplobdsShbred.UplobdsWithRepositoryNbmespbce
+	RecentIndexes           []uplobdsShbred.IndexesWithRepositoryNbmespbce
+	LbstUplobdRetentionScbn *time.Time
+	LbstIndexScbn           *time.Time
 }
 
 //
@@ -314,84 +314,84 @@ func (r *codeIntelRepositoryWithErrorResolver) Count() int32 {
 //
 //
 
-type repositorySummaryResolver struct {
-	summary                     RepositorySummary
-	availableIndexers           []inferredAvailableIndexers2
+type repositorySummbryResolver struct {
+	summbry                     RepositorySummbry
+	bvbilbbleIndexers           []inferredAvbilbbleIndexers2
 	limitErr                    error
-	uploadLoader                UploadLoader
-	indexLoader                 IndexLoader
-	locationResolver            *gitresolvers.CachedLocationResolver
-	errTracer                   *observation.ErrCollector
-	preciseIndexResolverFactory *PreciseIndexResolverFactory
+	uplobdLobder                UplobdLobder
+	indexLobder                 IndexLobder
+	locbtionResolver            *gitresolvers.CbchedLocbtionResolver
+	errTrbcer                   *observbtion.ErrCollector
+	preciseIndexResolverFbctory *PreciseIndexResolverFbctory
 }
 
-type inferredAvailableIndexers2 struct {
-	Indexer shared.CodeIntelIndexer
+type inferredAvbilbbleIndexers2 struct {
+	Indexer shbred.CodeIntelIndexer
 	Roots   []string
 }
 
-func newRepositorySummaryResolver(
-	locationResolver *gitresolvers.CachedLocationResolver,
-	summary RepositorySummary,
-	availableIndexers []inferredAvailableIndexers2,
+func newRepositorySummbryResolver(
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver,
+	summbry RepositorySummbry,
+	bvbilbbleIndexers []inferredAvbilbbleIndexers2,
 	limitErr error,
-	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
-	errTracer *observation.ErrCollector,
-	preciseIndexResolverFactory *PreciseIndexResolverFactory,
-) resolverstubs.CodeIntelRepositorySummaryResolver {
-	return &repositorySummaryResolver{
-		summary:                     summary,
-		availableIndexers:           availableIndexers,
+	uplobdLobder UplobdLobder,
+	indexLobder IndexLobder,
+	errTrbcer *observbtion.ErrCollector,
+	preciseIndexResolverFbctory *PreciseIndexResolverFbctory,
+) resolverstubs.CodeIntelRepositorySummbryResolver {
+	return &repositorySummbryResolver{
+		summbry:                     summbry,
+		bvbilbbleIndexers:           bvbilbbleIndexers,
 		limitErr:                    limitErr,
-		uploadLoader:                uploadLoader,
-		indexLoader:                 indexLoader,
-		locationResolver:            locationResolver,
-		errTracer:                   errTracer,
-		preciseIndexResolverFactory: preciseIndexResolverFactory,
+		uplobdLobder:                uplobdLobder,
+		indexLobder:                 indexLobder,
+		locbtionResolver:            locbtionResolver,
+		errTrbcer:                   errTrbcer,
+		preciseIndexResolverFbctory: preciseIndexResolverFbctory,
 	}
 }
 
-func (r *repositorySummaryResolver) AvailableIndexers() []resolverstubs.InferredAvailableIndexersResolver {
-	resolvers := make([]resolverstubs.InferredAvailableIndexersResolver, 0, len(r.availableIndexers))
-	for _, indexer := range r.availableIndexers {
-		resolvers = append(resolvers, newInferredAvailableIndexersResolver(NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
+func (r *repositorySummbryResolver) AvbilbbleIndexers() []resolverstubs.InferredAvbilbbleIndexersResolver {
+	resolvers := mbke([]resolverstubs.InferredAvbilbbleIndexersResolver, 0, len(r.bvbilbbleIndexers))
+	for _, indexer := rbnge r.bvbilbbleIndexers {
+		resolvers = bppend(resolvers, newInferredAvbilbbleIndexersResolver(NewCodeIntelIndexerResolverFrom(indexer.Indexer, ""), indexer.Roots))
 	}
 	return resolvers
 }
 
-func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
-	uploadIDs := map[int]struct{}{}
-	var resolvers []resolverstubs.PreciseIndexResolver
-	for _, recentUploads := range r.summary.RecentUploads {
-		for _, upload := range recentUploads.Uploads {
-			upload := upload
+func (r *repositorySummbryResolver) RecentActivity(ctx context.Context) ([]resolverstubs.PreciseIndexResolver, error) {
+	uplobdIDs := mbp[int]struct{}{}
+	vbr resolvers []resolverstubs.PreciseIndexResolver
+	for _, recentUplobds := rbnge r.summbry.RecentUplobds {
+		for _, uplobd := rbnge recentUplobds.Uplobds {
+			uplobd := uplobd
 
-			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
+			resolver, err := r.preciseIndexResolverFbctory.Crebte(ctx, r.uplobdLobder, r.indexLobder, r.locbtionResolver, r.errTrbcer, &uplobd, nil)
 			if err != nil {
 				return nil, err
 			}
 
-			uploadIDs[upload.ID] = struct{}{}
-			resolvers = append(resolvers, resolver)
+			uplobdIDs[uplobd.ID] = struct{}{}
+			resolvers = bppend(resolvers, resolver)
 		}
 	}
-	for _, recentIndexes := range r.summary.RecentIndexes {
-		for _, index := range recentIndexes.Indexes {
+	for _, recentIndexes := rbnge r.summbry.RecentIndexes {
+		for _, index := rbnge recentIndexes.Indexes {
 			index := index
 
-			if index.AssociatedUploadID != nil {
-				if _, ok := uploadIDs[*index.AssociatedUploadID]; ok {
+			if index.AssocibtedUplobdID != nil {
+				if _, ok := uplobdIDs[*index.AssocibtedUplobdID]; ok {
 					continue
 				}
 			}
 
-			resolver, err := r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, nil, &index)
+			resolver, err := r.preciseIndexResolverFbctory.Crebte(ctx, r.uplobdLobder, r.indexLobder, r.locbtionResolver, r.errTrbcer, nil, &index)
 			if err != nil {
 				return nil, err
 			}
 
-			resolvers = append(resolvers, resolver)
+			resolvers = bppend(resolvers, resolver)
 		}
 	}
 
@@ -399,15 +399,15 @@ func (r *repositorySummaryResolver) RecentActivity(ctx context.Context) ([]resol
 	return resolvers, nil
 }
 
-func (r *repositorySummaryResolver) LastUploadRetentionScan() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.summary.LastUploadRetentionScan)
+func (r *repositorySummbryResolver) LbstUplobdRetentionScbn() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.summbry.LbstUplobdRetentionScbn)
 }
 
-func (r *repositorySummaryResolver) LastIndexScan() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.summary.LastIndexScan)
+func (r *repositorySummbryResolver) LbstIndexScbn() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.summbry.LbstIndexScbn)
 }
 
-func (r *repositorySummaryResolver) LimitError() *string {
+func (r *repositorySummbryResolver) LimitError() *string {
 	if r.limitErr != nil {
 		m := r.limitErr.Error()
 		return &m
@@ -419,32 +419,32 @@ func (r *repositorySummaryResolver) LimitError() *string {
 //
 //
 
-type inferredAvailableIndexersResolver struct {
+type inferredAvbilbbleIndexersResolver struct {
 	indexer resolverstubs.CodeIntelIndexerResolver
 	roots   []string
 }
 
-func newInferredAvailableIndexersResolver(indexer resolverstubs.CodeIntelIndexerResolver, roots []string) resolverstubs.InferredAvailableIndexersResolver {
-	return &inferredAvailableIndexersResolver{
+func newInferredAvbilbbleIndexersResolver(indexer resolverstubs.CodeIntelIndexerResolver, roots []string) resolverstubs.InferredAvbilbbleIndexersResolver {
+	return &inferredAvbilbbleIndexersResolver{
 		indexer: indexer,
 		roots:   roots,
 	}
 }
 
-func (r *inferredAvailableIndexersResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
+func (r *inferredAvbilbbleIndexersResolver) Indexer() resolverstubs.CodeIntelIndexerResolver {
 	return r.indexer
 }
 
-func (r *inferredAvailableIndexersResolver) Roots() []string {
+func (r *inferredAvbilbbleIndexersResolver) Roots() []string {
 	return r.roots
 }
 
-func (r *inferredAvailableIndexersResolver) RootsWithKeys() []resolverstubs.RootsWithKeyResolver {
-	var resolvers []resolverstubs.RootsWithKeyResolver
-	for _, root := range r.roots {
-		resolvers = append(resolvers, &rootWithKeyResolver{
+func (r *inferredAvbilbbleIndexersResolver) RootsWithKeys() []resolverstubs.RootsWithKeyResolver {
+	vbr resolvers []resolverstubs.RootsWithKeyResolver
+	for _, root := rbnge r.roots {
+		resolvers = bppend(resolvers, &rootWithKeyResolver{
 			root: root,
-			key:  comparisonKey(root, r.indexer.Name()),
+			key:  compbrisonKey(root, r.indexer.Nbme()),
 		})
 	}
 
@@ -460,15 +460,15 @@ func (r *rootWithKeyResolver) Root() string {
 	return r.root
 }
 
-func (r *rootWithKeyResolver) ComparisonKey() string {
+func (r *rootWithKeyResolver) CompbrisonKey() string {
 	return r.key
 }
 
 //
 //
 
-func comparisonKey(root, indexer string) string {
-	hash := sha256.New()
-	_, _ = hash.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
-	return base64.URLEncoding.EncodeToString(hash.Sum(nil))
+func compbrisonKey(root, indexer string) string {
+	hbsh := shb256.New()
+	_, _ = hbsh.Write([]byte(strings.Join([]string{root, indexer}, "\x00")))
+	return bbse64.URLEncoding.EncodeToString(hbsh.Sum(nil))
 }

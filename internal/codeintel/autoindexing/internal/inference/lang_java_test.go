@@ -1,88 +1,88 @@
-package inference
+pbckbge inference
 
 import (
 	"testing"
 )
 
-func TestJavaGenerator(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
-			description: "JVM project with lsif-java.json",
-			repositoryContents: map[string]string{
-				"lsif-java.json": "",
-				"src/java/com/sourcegraph/codeintel/dumb.java": "",
-				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+func TestJbvbGenerbtor(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
+			description: "JVM project with lsif-jbvb.json",
+			repositoryContents: mbp[string]string{
+				"lsif-jbvb.json": "",
+				"src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
+				"src/jbvb/com/sourcegrbph/codeintel/fun.scblb": "",
 			},
 		},
-		generatorTestCase{
-			description: "JVM project with Gradle",
-			repositoryContents: map[string]string{
-				"build.gradle": "",
-				"src/java/com/sourcegraph/codeintel/dumb.java": "",
-				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+		generbtorTestCbse{
+			description: "JVM project with Grbdle",
+			repositoryContents: mbp[string]string{
+				"build.grbdle": "",
+				"src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
+				"src/jbvb/com/sourcegrbph/codeintel/fun.scblb": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "JVM project with SBT",
-			repositoryContents: map[string]string{
+			repositoryContents: mbp[string]string{
 				"build.sbt": "",
-				"src/java/com/sourcegraph/codeintel/dumb.java": "",
-				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+				"src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
+				"src/jbvb/com/sourcegrbph/codeintel/fun.scblb": "",
 			},
 		},
-		generatorTestCase{
-			description: "JVM project with Maven",
-			repositoryContents: map[string]string{
+		generbtorTestCbse{
+			description: "JVM project with Mbven",
+			repositoryContents: mbp[string]string{
 				"pom.xml": "",
-				"src/java/com/sourcegraph/codeintel/dumb.java": "",
-				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+				"src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
+				"src/jbvb/com/sourcegrbph/codeintel/fun.scblb": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "JVM project without build file",
-			repositoryContents: map[string]string{
-				"src/java/com/sourcegraph/codeintel/dumb.java": "",
-				"src/java/com/sourcegraph/codeintel/fun.scala": "",
+			repositoryContents: mbp[string]string{
+				"src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
+				"src/jbvb/com/sourcegrbph/codeintel/fun.scblb": "",
 			},
 		},
-		generatorTestCase{
-			description: "JVM project with Maven build file but no sources",
-			repositoryContents: map[string]string{
+		generbtorTestCbse{
+			description: "JVM project with Mbven build file but no sources",
+			repositoryContents: mbp[string]string{
 				"pom.xml": "",
 			},
 		},
-		generatorTestCase{
-			description: "JVM project with Gradle build file but no sources",
-			repositoryContents: map[string]string{
-				"build.gradle": "",
+		generbtorTestCbse{
+			description: "JVM project with Grbdle build file but no sources",
+			repositoryContents: mbp[string]string{
+				"build.grbdle": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "JVM project with SBT build file but no sources",
-			repositoryContents: map[string]string{
+			repositoryContents: mbp[string]string{
 				"build.sbt": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "JVM project with Mill build file but no sources",
-			repositoryContents: map[string]string{
+			repositoryContents: mbp[string]string{
 				"build.sc": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "Nested JVM project with top-level build file",
-			repositoryContents: map[string]string{
+			repositoryContents: mbp[string]string{
 				"build.sbt": "",
-				"my-module/src/java/com/sourcegraph/codeintel/dumb.java": "",
+				"my-module/src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
 				"my-module/pom.xml": "",
 			},
 		},
-		generatorTestCase{
+		generbtorTestCbse{
 			description: "Nested JVM project WITHOUT top-level build file",
-			repositoryContents: map[string]string{
-				"my-module/src/java/com/sourcegraph/codeintel/dumb.java": "",
+			repositoryContents: mbp[string]string{
+				"my-module/src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
 				"my-module/pom.xml": "",
-				"our-module/src/java/com/sourcegraph/codeintel/dumb.java": "",
+				"our-module/src/jbvb/com/sourcegrbph/codeintel/dumb.jbvb": "",
 				"our-module/pom.xml": "",
 			},
 		},

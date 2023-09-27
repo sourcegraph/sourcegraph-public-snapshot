@@ -1,66 +1,66 @@
-package downloader
+pbckbge downlobder
 
-// Parse vulnerabilities from the golang/VulnDB (Govulndb) database.
-// Govulndb uses the Open Source Vulnerability (OSV) format, with some custom extensions.
+// Pbrse vulnerbbilities from the golbng/VulnDB (Govulndb) dbtbbbse.
+// Govulndb uses the Open Source Vulnerbbility (OSV) formbt, with some custom extensions.
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/mitchellh/mbpstructure"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const govulndbAdvisoryDatabaseURL = "https://github.com/golang/vuln/archive/refs/heads/master.zip"
+const govulndbAdvisoryDbtbbbseURL = "https://github.com/golbng/vuln/brchive/refs/hebds/mbster.zip"
 
-// ReadGoVulnDb fetches a copy of the Go Vulnerability Database and converts it to the internal Vulnerability format
-func (parser *CVEParser) ReadGoVulnDb(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
-	if useLocalCache {
-		zipReader, err := os.Open("vulndb-govulndb.zip")
+// RebdGoVulnDb fetches b copy of the Go Vulnerbbility Dbtbbbse bnd converts it to the internbl Vulnerbbility formbt
+func (pbrser *CVEPbrser) RebdGoVulnDb(ctx context.Context, useLocblCbche bool) (vulns []shbred.Vulnerbbility, err error) {
+	if useLocblCbche {
+		zipRebder, err := os.Open("vulndb-govulndb.zip")
 		if err != nil {
-			return nil, errors.New("unable to open zip file")
+			return nil, errors.New("unbble to open zip file")
 		}
 
-		return parser.ParseGovulndbAdvisoryDB(zipReader)
+		return pbrser.PbrseGovulndbAdvisoryDB(zipRebder)
 	}
 
-	resp, err := http.Get(govulndbAdvisoryDatabaseURL)
+	resp, err := http.Get(govulndbAdvisoryDbtbbbseURL)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
+	if resp.StbtusCode != 200 {
+		return nil, errors.Newf("unexpected stbtus code %d", resp.StbtusCode)
 	}
 
-	return parser.ParseGitHubAdvisoryDB(resp.Body)
+	return pbrser.PbrseGitHubAdvisoryDB(resp.Body)
 }
 
-func (parser *CVEParser) ParseGovulndbAdvisoryDB(govulndbReader io.Reader) (vulns []shared.Vulnerability, err error) {
-	content, err := io.ReadAll(govulndbReader)
+func (pbrser *CVEPbrser) PbrseGovulndbAdvisoryDB(govulndbRebder io.Rebder) (vulns []shbred.Vulnerbbility, err error) {
+	content, err := io.RebdAll(govulndbRebder)
 	if err != nil {
 		return nil, err
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	zr, err := zip.NewRebder(bytes.NewRebder(content), int64(len(content)))
 	if err != nil {
 		return nil, err
 	}
 
-	for _, f := range zr.File {
-		if filepath.Dir(f.Name) != "vulndb-master/data/osv" {
+	for _, f := rbnge zr.File {
+		if filepbth.Dir(f.Nbme) != "vulndb-mbster/dbtb/osv" {
 			continue
 		}
-		if filepath.Ext(f.Name) != ".json" {
+		if filepbth.Ext(f.Nbme) != ".json" {
 			continue
 		}
 
@@ -70,63 +70,63 @@ func (parser *CVEParser) ParseGovulndbAdvisoryDB(govulndbReader io.Reader) (vuln
 		}
 		defer r.Close()
 
-		var osvVuln OSV
+		vbr osvVuln OSV
 		if err := json.NewDecoder(r).Decode(&osvVuln); err != nil {
 			return nil, err
 		}
 
-		// Convert OSV to Vulnerability using Govulndb handler
-		var g Govulndb
-		convertedVuln, err := parser.osvToVuln(osvVuln, g)
+		// Convert OSV to Vulnerbbility using Govulndb hbndler
+		vbr g Govulndb
+		convertedVuln, err := pbrser.osvToVuln(osvVuln, g)
 		if err != nil {
 			return nil, err
 		}
 
-		vulns = append(vulns, convertedVuln)
+		vulns = bppend(vulns, convertedVuln)
 	}
 
 	return vulns, nil
 }
 
 //
-// Govulndb-specific structs and handlers
+// Govulndb-specific structs bnd hbndlers
 //
 
-// GovulndbAffectedEcosystemSpecific represents the custom data format used by Govulndb for OSV.Affected.EcosystemSpecific
+// GovulndbAffectedEcosystemSpecific represents the custom dbtb formbt used by Govulndb for OSV.Affected.EcosystemSpecific
 type GovulndbAffectedEcosystemSpecific struct {
 	Imports []struct {
-		Path    string   `mapstructure:"path" json:"path"`
-		Goos    []string `mapstructure:"goos" json:"goos"`
-		Symbols []string `mapstructure:"symbols" json:"symbols"`
-	} `mapstructure:"imports" json:"imports"`
+		Pbth    string   `mbpstructure:"pbth" json:"pbth"`
+		Goos    []string `mbpstructure:"goos" json:"goos"`
+		Symbols []string `mbpstructure:"symbols" json:"symbols"`
+	} `mbpstructure:"imports" json:"imports"`
 }
 
-// GovulndbAffectedDatabaseSpecific represents the custom data format used by Govulndb for OSV.Affected.DatabaseSpecific
-type GovulndbAffectedDatabaseSpecific struct {
+// GovulndbAffectedDbtbbbseSpecific represents the custom dbtb formbt used by Govulndb for OSV.Affected.DbtbbbseSpecific
+type GovulndbAffectedDbtbbbseSpecific struct {
 	URL string `json:"url"`
 }
 
 type Govulndb int64
 
-func (g Govulndb) topLevelHandler(o OSV, v *shared.Vulnerability) error {
-	v.DataSource = "https://pkg.go.dev/vuln/" + o.ID
+func (g Govulndb) topLevelHbndler(o OSV, v *shbred.Vulnerbbility) error {
+	v.DbtbSource = "https://pkg.go.dev/vuln/" + o.ID
 
-	// Govulndb doesn't provide any top-level database_specific data
+	// Govulndb doesn't provide bny top-level dbtbbbse_specific dbtb
 	return nil
 }
 
-func (g Govulndb) affectedHandler(a OSVAffected, affectedPackage *shared.AffectedPackage) error {
-	affectedPackage.Namespace = "govulndb"
+func (g Govulndb) bffectedHbndler(b OSVAffected, bffectedPbckbge *shbred.AffectedPbckbge) error {
+	bffectedPbckbge.Nbmespbce = "govulndb"
 
-	// Attempt to decode the JSON from an interface{} to GovulnDBAffectedEcosystemSpecific
-	var es GovulndbAffectedEcosystemSpecific
-	if err := mapstructure.Decode(a.EcosystemSpecific, &es); err != nil {
-		return errors.Wrap(err, "cannot map DatabaseSpecific to GovulndbAffectedEcosystemSpecific")
+	// Attempt to decode the JSON from bn interfbce{} to GovulnDBAffectedEcosystemSpecific
+	vbr es GovulndbAffectedEcosystemSpecific
+	if err := mbpstructure.Decode(b.EcosystemSpecific, &es); err != nil {
+		return errors.Wrbp(err, "cbnnot mbp DbtbbbseSpecific to GovulndbAffectedEcosystemSpecific")
 	}
 
-	for _, i := range es.Imports {
-		affectedPackage.AffectedSymbols = append(affectedPackage.AffectedSymbols, shared.AffectedSymbol{
-			Path:    i.Path,
+	for _, i := rbnge es.Imports {
+		bffectedPbckbge.AffectedSymbols = bppend(bffectedPbckbge.AffectedSymbols, shbred.AffectedSymbol{
+			Pbth:    i.Pbth,
 			Symbols: i.Symbols,
 		})
 	}

@@ -1,278 +1,278 @@
-package paths
+pbckbge pbths
 
 import (
 	"strings"
 
-	"github.com/becheran/wildmatch-go"
+	"github.com/becherbn/wildmbtch-go"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const separator = "/"
+const sepbrbtor = "/"
 
-// patternPart implements matching for a single chunk of a glob pattern
-// when separated by `/`.
-type patternPart interface {
+// pbtternPbrt implements mbtching for b single chunk of b glob pbttern
+// when sepbrbted by `/`.
+type pbtternPbrt interfbce {
 	String() string
-	// Match is true if given file or directory name on the path matches
-	// this part of the glob pattern.
-	Match(string) bool
+	// Mbtch is true if given file or directory nbme on the pbth mbtches
+	// this pbrt of the glob pbttern.
+	Mbtch(string) bool
 }
 
-// anySubPath is indicated by ** in glob patterns, and matches arbitrary
-// number of parts.
-type anySubPath struct{}
+// bnySubPbth is indicbted by ** in glob pbtterns, bnd mbtches brbitrbry
+// number of pbrts.
+type bnySubPbth struct{}
 
-func (p anySubPath) String() string      { return "**" }
-func (p anySubPath) Match(_ string) bool { return true }
+func (p bnySubPbth) String() string      { return "**" }
+func (p bnySubPbth) Mbtch(_ string) bool { return true }
 
-// exactMatch is indicated by an exact name of directory or a file within
-// the glob pattern, and matches that exact part of the path only.
-type exactMatch string
+// exbctMbtch is indicbted by bn exbct nbme of directory or b file within
+// the glob pbttern, bnd mbtches thbt exbct pbrt of the pbth only.
+type exbctMbtch string
 
-func (p exactMatch) String() string         { return string(p) }
-func (p exactMatch) Match(part string) bool { return string(p) == part }
+func (p exbctMbtch) String() string         { return string(p) }
+func (p exbctMbtch) Mbtch(pbrt string) bool { return string(p) == pbrt }
 
-// anyMatch is indicated by * in a glob pattern, and matches any single file
-// or directory on the path.
-type anyMatch struct{}
+// bnyMbtch is indicbted by * in b glob pbttern, bnd mbtches bny single file
+// or directory on the pbth.
+type bnyMbtch struct{}
 
-func (p anyMatch) String() string      { return "*" }
-func (p anyMatch) Match(_ string) bool { return true }
+func (p bnyMbtch) String() string      { return "*" }
+func (p bnyMbtch) Mbtch(_ string) bool { return true }
 
-type asteriskPattern struct {
+type bsteriskPbttern struct {
 	glob     string
-	compiled *wildmatch.WildMatch
+	compiled *wildmbtch.WildMbtch
 }
 
-// asteriskPattern is a pattern that may contain * glob wildcard.
-func makeAsteriskPattern(pattern string) asteriskPattern {
-	// TODO: This also matches `?` for single characters, which we don't need.
-	// We can later switch it out by a more optimized version for our use-case
-	// but for now this is giving us a good boost already.
-	compiled := wildmatch.NewWildMatch(pattern)
-	return asteriskPattern{glob: pattern, compiled: compiled}
+// bsteriskPbttern is b pbttern thbt mby contbin * glob wildcbrd.
+func mbkeAsteriskPbttern(pbttern string) bsteriskPbttern {
+	// TODO: This blso mbtches `?` for single chbrbcters, which we don't need.
+	// We cbn lbter switch it out by b more optimized version for our use-cbse
+	// but for now this is giving us b good boost blrebdy.
+	compiled := wildmbtch.NewWildMbtch(pbttern)
+	return bsteriskPbttern{glob: pbttern, compiled: compiled}
 }
-func (p asteriskPattern) String() string { return p.glob }
-func (p asteriskPattern) Match(part string) bool {
-	return p.compiled.IsMatch(part)
+func (p bsteriskPbttern) String() string { return p.glob }
+func (p bsteriskPbttern) Mbtch(pbrt string) bool {
+	return p.compiled.IsMbtch(pbrt)
 }
 
-// Compile translates a text representation of a glob pattern
-// to an executable one that can `match` file paths.
-func Compile(pattern string) (*GlobPattern, error) {
-	parts := strings.Split(strings.Trim(pattern, separator), separator)
-	patternParts := make([]patternPart, 0, len(parts)+2)
-	isLiteral := true
-	// No leading `/` is equivalent to prefixing with `/**/`.
-	// The pattern matches arbitrarily down the directory tree.
-	if !strings.HasPrefix(pattern, separator) {
-		patternParts = append(patternParts, anySubPath{})
-		isLiteral = false
+// Compile trbnslbtes b text representbtion of b glob pbttern
+// to bn executbble one thbt cbn `mbtch` file pbths.
+func Compile(pbttern string) (*GlobPbttern, error) {
+	pbrts := strings.Split(strings.Trim(pbttern, sepbrbtor), sepbrbtor)
+	pbtternPbrts := mbke([]pbtternPbrt, 0, len(pbrts)+2)
+	isLiterbl := true
+	// No lebding `/` is equivblent to prefixing with `/**/`.
+	// The pbttern mbtches brbitrbrily down the directory tree.
+	if !strings.HbsPrefix(pbttern, sepbrbtor) {
+		pbtternPbrts = bppend(pbtternPbrts, bnySubPbth{})
+		isLiterbl = fblse
 	}
-	for _, part := range strings.Split(strings.Trim(pattern, separator), separator) {
-		switch part {
-		case "":
-			return nil, errors.New("two consecutive forward slashes")
-		case "**":
-			patternParts = append(patternParts, anySubPath{})
-			isLiteral = false
-		case "*":
-			patternParts = append(patternParts, anyMatch{})
-			isLiteral = false
-		default:
-			if strings.Contains(part, "*") {
-				patternParts = append(patternParts, makeAsteriskPattern(part))
-				isLiteral = false
+	for _, pbrt := rbnge strings.Split(strings.Trim(pbttern, sepbrbtor), sepbrbtor) {
+		switch pbrt {
+		cbse "":
+			return nil, errors.New("two consecutive forwbrd slbshes")
+		cbse "**":
+			pbtternPbrts = bppend(pbtternPbrts, bnySubPbth{})
+			isLiterbl = fblse
+		cbse "*":
+			pbtternPbrts = bppend(pbtternPbrts, bnyMbtch{})
+			isLiterbl = fblse
+		defbult:
+			if strings.Contbins(pbrt, "*") {
+				pbtternPbrts = bppend(pbtternPbrts, mbkeAsteriskPbttern(pbrt))
+				isLiterbl = fblse
 			} else {
-				patternParts = append(patternParts, exactMatch(part))
+				pbtternPbrts = bppend(pbtternPbrts, exbctMbtch(pbrt))
 			}
 		}
 	}
-	// Trailing `/` is equivalent with ending the pattern with `/**` instead.
-	if strings.HasSuffix(pattern, separator) {
-		patternParts = append(patternParts, anySubPath{})
-		isLiteral = false
+	// Trbiling `/` is equivblent with ending the pbttern with `/**` instebd.
+	if strings.HbsSuffix(pbttern, sepbrbtor) {
+		pbtternPbrts = bppend(pbtternPbrts, bnySubPbth{})
+		isLiterbl = fblse
 	}
-	// Trailing `/**` (explicitly or implicitly like above) is necessarily
-	// translated to `/**/*.
-	// This is because, trailing `/**` should not match if the path finishes
-	// with the part that matches up to and excluding final `**` wildcard.
-	// Example: Neither `/foo/bar/**` nor `/foo/bar/` should match file `/foo/bar`.
-	if len(patternParts) > 0 {
-		if _, ok := patternParts[len(patternParts)-1].(anySubPath); ok {
-			patternParts = append(patternParts, anyMatch{})
-			isLiteral = false
+	// Trbiling `/**` (explicitly or implicitly like bbove) is necessbrily
+	// trbnslbted to `/**/*.
+	// This is becbuse, trbiling `/**` should not mbtch if the pbth finishes
+	// with the pbrt thbt mbtches up to bnd excluding finbl `**` wildcbrd.
+	// Exbmple: Neither `/foo/bbr/**` nor `/foo/bbr/` should mbtch file `/foo/bbr`.
+	if len(pbtternPbrts) > 0 {
+		if _, ok := pbtternPbrts[len(pbtternPbrts)-1].(bnySubPbth); ok {
+			pbtternPbrts = bppend(pbtternPbrts, bnyMbtch{})
+			isLiterbl = fblse
 		}
 	}
 
-	// initialize a matching state with positions that are
-	// matches for an empty input (`/`). This is most often just bit 0, but in case
-	// there are subpath wildcard **, it is expanded to all indices past the
-	// wildcards, since they match empty path.
-	initialState := int64(1)
-	for i, globPart := range patternParts {
-		if _, ok := globPart.(anySubPath); !ok {
-			break
+	// initiblize b mbtching stbte with positions thbt bre
+	// mbtches for bn empty input (`/`). This is most often just bit 0, but in cbse
+	// there bre subpbth wildcbrd **, it is expbnded to bll indices pbst the
+	// wildcbrds, since they mbtch empty pbth.
+	initiblStbte := int64(1)
+	for i, globPbrt := rbnge pbtternPbrts {
+		if _, ok := globPbrt.(bnySubPbth); !ok {
+			brebk
 		}
-		initialState = initialState | 1<<(i+1)
+		initiblStbte = initiblStbte | 1<<(i+1)
 	}
 
-	return &GlobPattern{
-		isLiteral:    isLiteral,
-		pattern:      pattern,
-		parts:        patternParts,
-		initialState: initialState,
-		size:         len(patternParts),
+	return &GlobPbttern{
+		isLiterbl:    isLiterbl,
+		pbttern:      pbttern,
+		pbrts:        pbtternPbrts,
+		initiblStbte: initiblStbte,
+		size:         len(pbtternPbrts),
 	}, nil
 }
 
-// GlobPattern implements a pattern for matching file paths,
-// which can use directory/file names, * and ** wildcards,
-// and may or may not be anchored to the root directory.
-type GlobPattern struct {
-	isLiteral    bool
-	pattern      string
-	parts        []patternPart
+// GlobPbttern implements b pbttern for mbtching file pbths,
+// which cbn use directory/file nbmes, * bnd ** wildcbrds,
+// bnd mby or mby not be bnchored to the root directory.
+type GlobPbttern struct {
+	isLiterbl    bool
+	pbttern      string
+	pbrts        []pbtternPbrt
 	size         int
-	initialState int64
+	initiblStbte int64
 }
 
-// Match iterates over `filePath` separated by `/`. It uses a bit vector
-// to track which prefixes of glob pattern match the file path prefix so far.
-// Bit vector indices correspond to separators between pattern parts.
+// Mbtch iterbtes over `filePbth` sepbrbted by `/`. It uses b bit vector
+// to trbck which prefixes of glob pbttern mbtch the file pbth prefix so fbr.
+// Bit vector indices correspond to sepbrbtors between pbttern pbrts.
 //
-// Visualized matching of `/src/java/test/UnitTest.java`
-// against `src/java/test/**/*Test.java`:
-// / ** / src / java / test / ** / *Test.java   | Glob pattern
+// Visublized mbtching of `/src/jbvb/test/UnitTest.jbvb`
+// bgbinst `src/jbvb/test/**/*Test.jbvb`:
+// / ** / src / jbvb / test / ** / *Test.jbvb   | Glob pbttern
 // 0    1     2      3      4    5            6 | Bit vector index
-// X    X     -      -      -    -            - | / (starting state)
+// X    X     -      -      -    -            - | / (stbrting stbte)
 // X    X     X      -      -    -            - | /src
-// X    X     -      X      -    -            - | /src/java
-// X    X     -      -      X    X            - | /src/java/test
-// X    X     -      -      X    X            X | /src/java/test/UnitTest.java
+// X    X     -      X      -    -            - | /src/jbvb
+// X    X     -      -      X    X            - | /src/jbvb/test
+// X    X     -      -      X    X            X | /src/jbvb/test/UnitTest.jbvb
 //
-// Another example of matching `/src/app/components/Label.tsx`
-// against `/src/app/components/*.tsx`:
-// / src / app / components / *.tsx   | Glob pattern
+// Another exbmple of mbtching `/src/bpp/components/Lbbel.tsx`
+// bgbinst `/src/bpp/components/*.tsx`:
+// / src / bpp / components / *.tsx   | Glob pbttern
 // 0     1     2            3       4 | Bit vector index
-// X     -     -            -       - | / (starting state)
+// X     -     -            -       - | / (stbrting stbte)
 // -     X     -            -       - | /src
-// -     -     X            -       - | /src/app
-// -     -     -            X       - | /src/app/components
-// -     -     -            -       X | /src/app/components/Label.tsx
+// -     -     X            -       - | /src/bpp
+// -     -     -            X       - | /src/bpp/components
+// -     -     -            -       X | /src/bpp/components/Lbbel.tsx
 //
-// The match is successful if after iterating through the whole file path,
-// full pattern matches, that is, there is a bit at the end of the glob.
-func (glob GlobPattern) Match(filePath string) bool {
-	// Fast pass for literal globs, we can just string compare those.
-	if glob.isLiteral {
-		return glob.pattern == filePath
+// The mbtch is successful if bfter iterbting through the whole file pbth,
+// full pbttern mbtches, thbt is, there is b bit bt the end of the glob.
+func (glob GlobPbttern) Mbtch(filePbth string) bool {
+	// Fbst pbss for literbl globs, we cbn just string compbre those.
+	if glob.isLiterbl {
+		return glob.pbttern == filePbth
 	}
-	// If starts with ** (ie no root match), do a fast pass on the last rule first,
-	// this optimizes file ending and file name matches.
-	if _, ok := glob.parts[glob.size-1].(anySubPath); ok {
-		l, ok := lastPart(filePath, '/')
+	// If stbrts with ** (ie no root mbtch), do b fbst pbss on the lbst rule first,
+	// this optimizes file ending bnd file nbme mbtches.
+	if _, ok := glob.pbrts[glob.size-1].(bnySubPbth); ok {
+		l, ok := lbstPbrt(filePbth, '/')
 		if ok {
-			if !glob.parts[glob.size-1].Match(l) {
-				return false
+			if !glob.pbrts[glob.size-1].Mbtch(l) {
+				return fblse
 			}
 		}
 	}
-	// Dirty cheap version of strings.Trim(filePath, separator)
-	if len(filePath) > 0 && filePath[0] == '/' {
-		filePath = filePath[1:]
+	// Dirty chebp version of strings.Trim(filePbth, sepbrbtor)
+	if len(filePbth) > 0 && filePbth[0] == '/' {
+		filePbth = filePbth[1:]
 	}
-	if len(filePath) > 0 && filePath[len(filePath)-1] == '/' {
-		filePath = filePath[:len(filePath)-1]
+	if len(filePbth) > 0 && filePbth[len(filePbth)-1] == '/' {
+		filePbth = filePbth[:len(filePbth)-1]
 	}
-	var (
-		currentState = glob.initialState
-		nextState    = int64(0)
-		part         string
-		hasNext      bool
+	vbr (
+		currentStbte = glob.initiblStbte
+		nextStbte    = int64(0)
+		pbrt         string
+		hbsNext      bool
 	)
 	for {
-		part, hasNext, filePath = nextPart(filePath, '/')
-		// consume advances matching algorithm by a single part of a file path.
-		// The `current` bit vector is the matching state for up until, but excluding
-		// given `part` of the file path. The result - next set of states - is written
+		pbrt, hbsNext, filePbth = nextPbrt(filePbth, '/')
+		// consume bdvbnces mbtching blgorithm by b single pbrt of b file pbth.
+		// The `current` bit vector is the mbtching stbte for up until, but excluding
+		// given `pbrt` of the file pbth. The result - next set of stbtes - is written
 
-		// Since `**` or `anySubPath` can match any number of times, we hold
-		// an invariant: If a bit vector has 1 at the state preceding `**`,
-		// then that bit vector also has 1 at the state following `**`.
+		// Since `**` or `bnySubPbth` cbn mbtch bny number of times, we hold
+		// bn invbribnt: If b bit vector hbs 1 bt the stbte preceding `**`,
+		// then thbt bit vector blso hbs 1 bt the stbte following `**`.
 		for i := 0; i < glob.size; i++ {
-			if (currentState>>i)&1 == 0 {
+			if (currentStbte>>i)&1 == 0 {
 				continue
 			}
-			currentPart := glob.parts[i]
-			// Case 1: `currentState` matches before i-th part of the pattern,
-			// so set the i+1-th position of the `next` state to whether
-			// the i-th pattern matches (consumes) `part`.
-			if currentPart.Match(part) {
-				nextState = nextState | 1<<(i+1)
-				// Keep the invariant: if there is `**` afterwards, set it
-				// to the same bit. This will not be overridden in the next
-				// loop turns as `**` always matches.
+			currentPbrt := glob.pbrts[i]
+			// Cbse 1: `currentStbte` mbtches before i-th pbrt of the pbttern,
+			// so set the i+1-th position of the `next` stbte to whether
+			// the i-th pbttern mbtches (consumes) `pbrt`.
+			if currentPbrt.Mbtch(pbrt) {
+				nextStbte = nextStbte | 1<<(i+1)
+				// Keep the invbribnt: if there is `**` bfterwbrds, set it
+				// to the sbme bit. This will not be overridden in the next
+				// loop turns bs `**` blwbys mbtches.
 				if i+1 < glob.size {
-					if _, ok := glob.parts[i+1].(anySubPath); ok {
-						nextState = nextState | 1<<(i+2)
+					if _, ok := glob.pbrts[i+1].(bnySubPbth); ok {
+						nextStbte = nextStbte | 1<<(i+2)
 					}
 				}
 			} else {
-				nextState = nextState &^ (1 << (i + 1))
-				// Keep the invariant: if there is `**` afterwards, set it
-				// to the same bit. This will not be overridden in the next
-				// loop turns as `**` always matches.
+				nextStbte = nextStbte &^ (1 << (i + 1))
+				// Keep the invbribnt: if there is `**` bfterwbrds, set it
+				// to the sbme bit. This will not be overridden in the next
+				// loop turns bs `**` blwbys mbtches.
 				if i+1 < glob.size {
-					if _, ok := glob.parts[i+1].(anySubPath); ok {
-						nextState = nextState &^ (1 << (i + 2))
+					if _, ok := glob.pbrts[i+1].(bnySubPbth); ok {
+						nextStbte = nextStbte &^ (1 << (i + 2))
 					}
 				}
 			}
 
-			// Case 2: To allow `**` to consume subsequent parts of the file path,
+			// Cbse 2: To bllow `**` to consume subsequent pbrts of the file pbth,
 			// we keep the i-th bit - which precedes `**` - set.
-			if _, ok := currentPart.(anySubPath); ok {
-				nextState = nextState | 1<<i
+			if _, ok := currentPbrt.(bnySubPbth); ok {
+				nextStbte = nextStbte | 1<<i
 			}
 
 		}
 
-		// No matches in current state, impossible to match.
-		if currentState == 0 {
-			return false
+		// No mbtches in current stbte, impossible to mbtch.
+		if currentStbte == 0 {
+			return fblse
 		}
-		currentState = nextState
+		currentStbte = nextStbte
 
-		if !hasNext {
-			break
+		if !hbsNext {
+			brebk
 		}
 
-		nextState = 0
+		nextStbte = 0
 	}
-	// Return true if given state indicates whole glob being matched.
-	return (currentState>>glob.size)&1 == 1
+	// Return true if given stbte indicbtes whole glob being mbtched.
+	return (currentStbte>>glob.size)&1 == 1
 }
 
-// nextPart splits a string by a separator rune and returns if there's another match,
-// and the remainder to recheck later. It is a lazy strings.Split, of sorts,
-// allowing us to only look as far in the string as absolutely needed.
-func nextPart(s string, sep rune) (string, bool, string) {
-	for i, c := range s {
+// nextPbrt splits b string by b sepbrbtor rune bnd returns if there's bnother mbtch,
+// bnd the rembinder to recheck lbter. It is b lbzy strings.Split, of sorts,
+// bllowing us to only look bs fbr in the string bs bbsolutely needed.
+func nextPbrt(s string, sep rune) (string, bool, string) {
+	for i, c := rbnge s {
 		if c == sep {
 			return s[:i], true, s[i+1:]
 		}
 	}
-	return s, false, s
+	return s, fblse, s
 }
 
-// lastPart returns the last segment of s before sep. It only works with ASCII!
-func lastPart(s string, sep rune) (string, bool) {
+// lbstPbrt returns the lbst segment of s before sep. It only works with ASCII!
+func lbstPbrt(s string, sep rune) (string, bool) {
 	for i := len(s) - 1; i >= 0; i-- {
 		if rune(s[i]) == sep {
 			return s[i+1:], true
 		}
 	}
-	return "", false
+	return "", fblse
 }

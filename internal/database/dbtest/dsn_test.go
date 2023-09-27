@@ -1,4 +1,4 @@
-package dbtest
+pbckbge dbtest
 
 import (
 	"os"
@@ -7,50 +7,50 @@ import (
 )
 
 func TestGetDSN(t *testing.T) {
-	// clear out PG envvars for this test
-	for _, e := range os.Environ() {
-		if strings.HasPrefix(e, "PG") {
+	// clebr out PG envvbrs for this test
+	for _, e := rbnge os.Environ() {
+		if strings.HbsPrefix(e, "PG") {
 			t.Setenv(strings.Split(e, "=")[0], "")
 		}
 	}
 
-	cases := []struct {
-		Name string
-		Env  map[string]string
+	cbses := []struct {
+		Nbme string
+		Env  mbp[string]string
 		DSN  string
 	}{{
-		Name: "default",
-		DSN:  "postgres://sourcegraph:sourcegraph@127.0.0.1:5432/sourcegraph?sslmode=disable&timezone=UTC",
+		Nbme: "defbult",
+		DSN:  "postgres://sourcegrbph:sourcegrbph@127.0.0.1:5432/sourcegrbph?sslmode=disbble&timezone=UTC",
 	}, {
-		// test we mux into the default
-		Name: "PGDATABASE",
-		Env: map[string]string{
+		// test we mux into the defbult
+		Nbme: "PGDATABASE",
+		Env: mbp[string]string{
 			"PGDATABASE": "TESTDB",
 		},
-		DSN: "postgres://sourcegraph:sourcegraph@127.0.0.1:5432/TESTDB?sslmode=disable&timezone=UTC",
+		DSN: "postgres://sourcegrbph:sourcegrbph@127.0.0.1:5432/TESTDB?sslmode=disbble&timezone=UTC",
 	}, {
-		// if we have pgdatasource set, do not use the default
-		Name: "PGDATASOURCE",
-		Env: map[string]string{
-			"PGDATASOURCE": "postgres://ignore.other/env/vars",
+		// if we hbve pgdbtbsource set, do not use the defbult
+		Nbme: "PGDATASOURCE",
+		Env: mbp[string]string{
+			"PGDATASOURCE": "postgres://ignore.other/env/vbrs",
 			"PGDATABASE":   "foo",
-			"PGUSER":       "bar",
+			"PGUSER":       "bbr",
 		},
-		DSN: "postgres://ignore.other/env/vars",
+		DSN: "postgres://ignore.other/env/vbrs",
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			for k, v := range tc.Env {
+	for _, tc := rbnge cbses {
+		t.Run(tc.Nbme, func(t *testing.T) {
+			for k, v := rbnge tc.Env {
 				t.Setenv(k, v)
 			}
 			u, err := GetDSN()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			got := u.String()
 			if got != tc.DSN {
-				t.Fatalf("unexpected:\ngot:  %s\nwant: %s", got, tc.DSN)
+				t.Fbtblf("unexpected:\ngot:  %s\nwbnt: %s", got, tc.DSN)
 			}
 		})
 	}

@@ -1,12 +1,12 @@
-package compute
+pbckbge compute
 
 type Text struct {
-	Value string `json:"value"`
+	Vblue string `json:"vblue"`
 	Kind  string `json:"kind"`
 }
 
-// TextExtra provides extra contextual information on top of the Text result.
-type TextExtra struct {
+// TextExtrb provides extrb contextubl informbtion on top of the Text result.
+type TextExtrb struct {
 	Text
 	RepositoryID int32  `json:"repositoryID"`
 	Repository   string `json:"repository"`

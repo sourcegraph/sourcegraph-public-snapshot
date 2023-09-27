@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -8,89 +8,89 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/slack"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/open"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/slbck"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func getTeamResolver(ctx context.Context) (team.TeammateResolver, error) {
-	slackClient, err := slack.NewClient(ctx, std.Out)
+func getTebmResolver(ctx context.Context) (tebm.TebmmbteResolver, error) {
+	slbckClient, err := slbck.NewClient(ctx, std.Out)
 	if err != nil {
-		return nil, errors.Newf("slack.NewClient: %w", err)
+		return nil, errors.Newf("slbck.NewClient: %w", err)
 	}
-	githubClient := github.NewClient(http.DefaultClient)
-	return team.NewTeammateResolver(githubClient, slackClient), nil
+	githubClient := github.NewClient(http.DefbultClient)
+	return tebm.NewTebmmbteResolver(githubClient, slbckClient), nil
 }
 
-var (
-	teammateCommand = &cli.Command{
-		Name:        "teammate",
-		Usage:       "Get information about Sourcegraph teammates",
-		Description: `For example, you can check a teammate's current time and find their handbook bio!`,
-		UsageText: `
-# Get the current time of a team mate based on their slack handle (case insensitive).
-sg teammate time @dax
-sg teammate time dax
-# or their full name (case insensitive)
-sg teammate time thorsten ball
+vbr (
+	tebmmbteCommbnd = &cli.Commbnd{
+		Nbme:        "tebmmbte",
+		Usbge:       "Get informbtion bbout Sourcegrbph tebmmbtes",
+		Description: `For exbmple, you cbn check b tebmmbte's current time bnd find their hbndbook bio!`,
+		UsbgeText: `
+# Get the current time of b tebm mbte bbsed on their slbck hbndle (cbse insensitive).
+sg tebmmbte time @dbx
+sg tebmmbte time dbx
+# or their full nbme (cbse insensitive)
+sg tebmmbte time thorsten bbll
 
-# Open their handbook bio
-sg teammate handbook asdine
+# Open their hbndbook bio
+sg tebmmbte hbndbook bsdine
 `,
-		Category: category.Company,
-		Subcommands: []*cli.Command{{
-			Name:      "time",
-			ArgsUsage: "<nickname>",
-			Usage:     "Get the current time of a Sourcegraph teammate",
+		Cbtegory: cbtegory.Compbny,
+		Subcommbnds: []*cli.Commbnd{{
+			Nbme:      "time",
+			ArgsUsbge: "<nicknbme>",
+			Usbge:     "Get the current time of b Sourcegrbph tebmmbte",
 			Action: func(ctx *cli.Context) error {
-				args := ctx.Args().Slice()
-				if len(args) == 0 {
-					return errors.New("no nickname provided")
+				brgs := ctx.Args().Slice()
+				if len(brgs) == 0 {
+					return errors.New("no nicknbme provided")
 				}
-				resolver, err := getTeamResolver(ctx.Context)
+				resolver, err := getTebmResolver(ctx.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
+				tebmmbte, err := resolver.ResolveByNbme(ctx.Context, strings.Join(brgs, " "))
 				if err != nil {
 					return err
 				}
 				std.Out.Writef("%s's current time is %s",
-					teammate.Name, timeAtLocation(teammate.SlackTimezone))
+					tebmmbte.Nbme, timeAtLocbtion(tebmmbte.SlbckTimezone))
 				return nil
 			},
 		}, {
-			Name:      "handbook",
-			ArgsUsage: "<nickname>",
-			Usage:     "Open the handbook page of a Sourcegraph teammate",
+			Nbme:      "hbndbook",
+			ArgsUsbge: "<nicknbme>",
+			Usbge:     "Open the hbndbook pbge of b Sourcegrbph tebmmbte",
 			Action: func(ctx *cli.Context) error {
-				args := ctx.Args().Slice()
-				if len(args) == 0 {
-					return errors.New("no nickname provided")
+				brgs := ctx.Args().Slice()
+				if len(brgs) == 0 {
+					return errors.New("no nicknbme provided")
 				}
-				resolver, err := getTeamResolver(ctx.Context)
+				resolver, err := getTebmResolver(ctx.Context)
 				if err != nil {
 					return err
 				}
-				teammate, err := resolver.ResolveByName(ctx.Context, strings.Join(args, " "))
+				tebmmbte, err := resolver.ResolveByNbme(ctx.Context, strings.Join(brgs, " "))
 				if err != nil {
 					return err
 				}
-				std.Out.Writef("Opening handbook link for %s: %s", teammate.Name, teammate.HandbookLink)
-				return open.URL(teammate.HandbookLink)
+				std.Out.Writef("Opening hbndbook link for %s: %s", tebmmbte.Nbme, tebmmbte.HbndbookLink)
+				return open.URL(tebmmbte.HbndbookLink)
 			},
 		}},
 	}
 )
 
-func timeAtLocation(loc *time.Location) string {
+func timeAtLocbtion(loc *time.Locbtion) string {
 	t := time.Now().In(loc)
-	t2 := time.Date(t.Year(), t.Month(), t.Day(), t.Hour(), t.Minute(), t.Second(), t.Nanosecond(), time.Local)
+	t2 := time.Dbte(t.Yebr(), t.Month(), t.Dby(), t.Hour(), t.Minute(), t.Second(), t.Nbnosecond(), time.Locbl)
 	diff := t2.Sub(t) / time.Hour
-	return fmt.Sprintf("%s (%dh from your local time)", t.Format(time.RFC822), diff)
+	return fmt.Sprintf("%s (%dh from your locbl time)", t.Formbt(time.RFC822), diff)
 }

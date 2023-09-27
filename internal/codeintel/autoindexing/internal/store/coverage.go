@@ -1,98 +1,98 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []shared.RepositoryWithCount, err error) {
-	ctx, _, endObservation := s.operations.topRepositoriesToConfigure.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("limit", limit),
+func (s *store) TopRepositoriesToConfigure(ctx context.Context, limit int) (_ []shbred.RepositoryWithCount, err error) {
+	ctx, _, endObservbtion := s.operbtions.topRepositoriesToConfigure.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("limit", limit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return scanRepositoryWithCounts(s.db.Query(ctx, sqlf.Sprintf(
+	return scbnRepositoryWithCounts(s.db.Query(ctx, sqlf.Sprintf(
 		topRepositoriesToConfigureQuery,
-		pq.Array(eventLogNames),
+		pq.Arrby(eventLogNbmes),
 		eventLogsWindow/time.Hour,
 		limit,
 	)))
 }
 
-var eventLogNames = []string{
-	"codeintel.searchDefinitions.xrepo",
-	"codeintel.searchDefinitions",
-	"codeintel.searchHover",
-	"codeintel.searchReferences.xrepo",
-	"codeintel.searchReferences",
+vbr eventLogNbmes = []string{
+	"codeintel.sebrchDefinitions.xrepo",
+	"codeintel.sebrchDefinitions",
+	"codeintel.sebrchHover",
+	"codeintel.sebrchReferences.xrepo",
+	"codeintel.sebrchReferences",
 }
 
-// about one month
+// bbout one month
 const eventLogsWindow = time.Hour * 24 * 30
 
 const topRepositoriesToConfigureQuery = `
 SELECT
 	r.id,
-	COUNT(*) as num_events
+	COUNT(*) bs num_events
 FROM event_logs e
-JOIN repo r ON r.id = (e.argument->'repositoryId')::integer
+JOIN repo r ON r.id = (e.brgument->'repositoryId')::integer
 WHERE
-	e.name = ANY(%s) AND
-	e.timestamp >= NOW() - (%s * '1 hour'::interval) AND
-	r.deleted_at IS NULL AND
+	e.nbme = ANY(%s) AND
+	e.timestbmp >= NOW() - (%s * '1 hour'::intervbl) AND
+	r.deleted_bt IS NULL AND
 	r.blocked IS NULL
 GROUP BY r.id
 ORDER BY num_events DESC, id
 LIMIT %s
 `
 
-func (s *store) RepositoryIDsWithConfiguration(ctx context.Context, offset, limit int) (_ []shared.RepositoryWithAvailableIndexers, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.repositoryIDsWithConfiguration.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("offset", offset),
-		attribute.Int("limit", limit),
+func (s *store) RepositoryIDsWithConfigurbtion(ctx context.Context, offset, limit int) (_ []shbred.RepositoryWithAvbilbbleIndexers, totblCount int, err error) {
+	ctx, _, endObservbtion := s.operbtions.repositoryIDsWithConfigurbtion.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("offset", offset),
+		bttribute.Int("limit", limit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return scanRepositoryWithAvailableIndexersSlice(s.db.Query(ctx, sqlf.Sprintf(
-		repositoriesWithConfigurationQuery,
+	return scbnRepositoryWithAvbilbbleIndexersSlice(s.db.Query(ctx, sqlf.Sprintf(
+		repositoriesWithConfigurbtionQuery,
 		limit,
 		offset,
 	)))
 }
 
-const repositoriesWithConfigurationQuery = `
+const repositoriesWithConfigurbtionQuery = `
 SELECT
 	r.id,
-	cai.available_indexers,
+	cbi.bvbilbble_indexers,
 	COUNT(*) OVER() AS count
-FROM cached_available_indexers cai
-JOIN repo r ON r.id = cai.repository_id
+FROM cbched_bvbilbble_indexers cbi
+JOIN repo r ON r.id = cbi.repository_id
 WHERE
-	available_indexers != '{}'::jsonb AND
-	r.deleted_at IS NULL AND
+	bvbilbble_indexers != '{}'::jsonb AND
+	r.deleted_bt IS NULL AND
 	r.blocked IS NULL
 ORDER BY num_events DESC
 LIMIT %s
 OFFSET %s
 `
 
-func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getLastIndexScanForRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
+func (s *store) GetLbstIndexScbnForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, _, endObservbtion := s.operbtions.getLbstIndexScbnForRepository.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	t, ok, err := basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(lastIndexScanForRepositoryQuery, repositoryID)))
+	t, ok, err := bbsestore.ScbnFirstTime(s.db.Query(ctx, sqlf.Sprintf(lbstIndexScbnForRepositoryQuery, repositoryID)))
 	if err != nil {
 		return nil, err
 	}
@@ -103,74 +103,74 @@ func (s *store) GetLastIndexScanForRepository(ctx context.Context, repositoryID 
 	return &t, nil
 }
 
-const lastIndexScanForRepositoryQuery = `
-SELECT last_index_scan_at FROM lsif_last_index_scan WHERE repository_id = %s
+const lbstIndexScbnForRepositoryQuery = `
+SELECT lbst_index_scbn_bt FROM lsif_lbst_index_scbn WHERE repository_id = %s
 `
 
-func (s *store) SetConfigurationSummary(ctx context.Context, repositoryID int, numEvents int, availableIndexers map[string]shared.AvailableIndexer) (err error) {
-	ctx, _, endObservation := s.operations.setConfigurationSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.Int("numEvents", numEvents),
-		attribute.Int("numIndexers", len(availableIndexers)),
+func (s *store) SetConfigurbtionSummbry(ctx context.Context, repositoryID int, numEvents int, bvbilbbleIndexers mbp[string]shbred.AvbilbbleIndexer) (err error) {
+	ctx, _, endObservbtion := s.operbtions.setConfigurbtionSummbry.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.Int("numEvents", numEvents),
+		bttribute.Int("numIndexers", len(bvbilbbleIndexers)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	payload, err := json.Marshal(availableIndexers)
+	pbylobd, err := json.Mbrshbl(bvbilbbleIndexers)
 	if err != nil {
 		return err
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(setConfigurationSummaryQuery, repositoryID, numEvents, payload))
+	return s.db.Exec(ctx, sqlf.Sprintf(setConfigurbtionSummbryQuery, repositoryID, numEvents, pbylobd))
 }
 
-const setConfigurationSummaryQuery = `
-INSERT INTO cached_available_indexers (repository_id, num_events, available_indexers)
+const setConfigurbtionSummbryQuery = `
+INSERT INTO cbched_bvbilbble_indexers (repository_id, num_events, bvbilbble_indexers)
 VALUES (%s, %s, %s)
 ON CONFLICT(repository_id) DO UPDATE
 SET
 	num_events = EXCLUDED.num_events,
-	available_indexers = EXCLUDED.available_indexers
+	bvbilbble_indexers = EXCLUDED.bvbilbble_indexers
 `
 
-func (s *store) TruncateConfigurationSummary(ctx context.Context, numRecordsToRetain int) (err error) {
-	ctx, _, endObservation := s.operations.truncateConfigurationSummary.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numRecordsToRetain", numRecordsToRetain),
+func (s *store) TruncbteConfigurbtionSummbry(ctx context.Context, numRecordsToRetbin int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.truncbteConfigurbtionSummbry.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numRecordsToRetbin", numRecordsToRetbin),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(truncateConfigurationSummaryQuery, numRecordsToRetain))
+	return s.db.Exec(ctx, sqlf.Sprintf(truncbteConfigurbtionSummbryQuery, numRecordsToRetbin))
 }
 
-const truncateConfigurationSummaryQuery = `
-WITH safe AS (
+const truncbteConfigurbtionSummbryQuery = `
+WITH sbfe AS (
 	SELECT id
-	FROM cached_available_indexers
+	FROM cbched_bvbilbble_indexers
 	ORDER BY num_events DESC
 	LIMIT %s
 )
-DELETE FROM cached_available_indexers
-WHERE id NOT IN (SELECT id FROM safe)
+DELETE FROM cbched_bvbilbble_indexers
+WHERE id NOT IN (SELECT id FROM sbfe)
 `
 
 //
 //
 
-func scanRepositoryWithCount(s dbutil.Scanner) (rc shared.RepositoryWithCount, _ error) {
-	return rc, s.Scan(&rc.RepositoryID, &rc.Count)
+func scbnRepositoryWithCount(s dbutil.Scbnner) (rc shbred.RepositoryWithCount, _ error) {
+	return rc, s.Scbn(&rc.RepositoryID, &rc.Count)
 }
 
-var scanRepositoryWithCounts = basestore.NewSliceScanner(scanRepositoryWithCount)
+vbr scbnRepositoryWithCounts = bbsestore.NewSliceScbnner(scbnRepositoryWithCount)
 
-func scanRepositoryWithAvailableIndexers(s dbutil.Scanner) (rai shared.RepositoryWithAvailableIndexers, count int, _ error) {
-	var rawPayload string
-	if err := s.Scan(&rai.RepositoryID, &rawPayload, &count); err != nil {
-		return rai, 0, err
+func scbnRepositoryWithAvbilbbleIndexers(s dbutil.Scbnner) (rbi shbred.RepositoryWithAvbilbbleIndexers, count int, _ error) {
+	vbr rbwPbylobd string
+	if err := s.Scbn(&rbi.RepositoryID, &rbwPbylobd, &count); err != nil {
+		return rbi, 0, err
 	}
-	if err := json.Unmarshal([]byte(rawPayload), &rai.AvailableIndexers); err != nil {
-		return rai, 0, err
+	if err := json.Unmbrshbl([]byte(rbwPbylobd), &rbi.AvbilbbleIndexers); err != nil {
+		return rbi, 0, err
 	}
 
-	return rai, count, nil
+	return rbi, count, nil
 }
 
-var scanRepositoryWithAvailableIndexersSlice = basestore.NewSliceWithCountScanner(scanRepositoryWithAvailableIndexers)
+vbr scbnRepositoryWithAvbilbbleIndexersSlice = bbsestore.NewSliceWithCountScbnner(scbnRepositoryWithAvbilbbleIndexers)

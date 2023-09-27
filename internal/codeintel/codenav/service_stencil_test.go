@@ -1,4 +1,4 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"context"
@@ -6,127 +6,127 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
+	shbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	sgtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestStencil(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
-	mockUploadSvc := NewMockUploadService()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
-	hunkCache, _ := NewHunkCache(50)
+	hunkCbche, _ := NewHunkCbche(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockRepoStore, mockLsifStore, mockUplobdSvc, mockGitserverClient)
 
-	// Set up request state
-	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	// Set up request stbte
+	mockRequestStbte := RequestStbte{}
+	mockRequestStbte.SetLocblCommitCbche(mockRepoStore, mockGitserverClient)
+	mockRequestStbte.SetLocblGitTreeTrbnslbtor(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPbth, hunkCbche)
+	uplobds := []uplobdsshbred.Dump{
+		{ID: 50, Commit: "debdbeef", Root: "sub1/"},
+		{ID: 51, Commit: "debdbeef", Root: "sub2/"},
+		{ID: 52, Commit: "debdbeef", Root: "sub3/"},
+		{ID: 53, Commit: "debdbeef", Root: "sub4/"},
 	}
-	mockRequestState.SetUploadsDataLoader(uploads)
+	mockRequestStbte.SetUplobdsDbtbLobder(uplobds)
 
-	expectedRanges := []shared.Range{
-		{Start: shared.Position{Line: 10, Character: 20}, End: shared.Position{Line: 10, Character: 30}},
-		{Start: shared.Position{Line: 11, Character: 20}, End: shared.Position{Line: 11, Character: 30}},
-		{Start: shared.Position{Line: 12, Character: 20}, End: shared.Position{Line: 12, Character: 30}},
-		{Start: shared.Position{Line: 13, Character: 20}, End: shared.Position{Line: 13, Character: 30}},
-		{Start: shared.Position{Line: 14, Character: 20}, End: shared.Position{Line: 14, Character: 30}},
-		{Start: shared.Position{Line: 15, Character: 20}, End: shared.Position{Line: 15, Character: 30}},
-		{Start: shared.Position{Line: 16, Character: 20}, End: shared.Position{Line: 16, Character: 30}},
-		{Start: shared.Position{Line: 17, Character: 20}, End: shared.Position{Line: 17, Character: 30}},
-		{Start: shared.Position{Line: 18, Character: 20}, End: shared.Position{Line: 18, Character: 30}},
-		{Start: shared.Position{Line: 19, Character: 20}, End: shared.Position{Line: 19, Character: 30}},
+	expectedRbnges := []shbred.Rbnge{
+		{Stbrt: shbred.Position{Line: 10, Chbrbcter: 20}, End: shbred.Position{Line: 10, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 11, Chbrbcter: 20}, End: shbred.Position{Line: 11, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 12, Chbrbcter: 20}, End: shbred.Position{Line: 12, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 13, Chbrbcter: 20}, End: shbred.Position{Line: 13, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 14, Chbrbcter: 20}, End: shbred.Position{Line: 14, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 15, Chbrbcter: 20}, End: shbred.Position{Line: 15, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 16, Chbrbcter: 20}, End: shbred.Position{Line: 16, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 17, Chbrbcter: 20}, End: shbred.Position{Line: 17, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 18, Chbrbcter: 20}, End: shbred.Position{Line: 18, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 19, Chbrbcter: 20}, End: shbred.Position{Line: 19, Chbrbcter: 30}},
 	}
 	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
-	mockLsifStore.GetStencilFunc.PushReturn(expectedRanges, nil)
+	mockLsifStore.GetStencilFunc.PushReturn(expectedRbnges, nil)
 
-	mockRequest := PositionalRequestArgs{
+	mockRequest := PositionblRequestArgs{
 		RequestArgs: RequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
 			Limit:        50,
 		},
-		Path:      mockPath,
+		Pbth:      mockPbth,
 		Line:      10,
-		Character: 20,
+		Chbrbcter: 20,
 	}
-	ranges, err := svc.GetStencil(context.Background(), mockRequest, mockRequestState)
+	rbnges, err := svc.GetStencil(context.Bbckground(), mockRequest, mockRequestStbte)
 	if err != nil {
-		t.Fatalf("unexpected error querying hover: %s", err)
+		t.Fbtblf("unexpected error querying hover: %s", err)
 	}
 
-	if diff := cmp.Diff(expectedRanges, ranges); diff != "" {
-		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnges, rbnges); diff != "" {
+		t.Errorf("unexpected rbnge (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestStencilWithDuplicateRanges(t *testing.T) {
+func TestStencilWithDuplicbteRbnges(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
-	mockUploadSvc := NewMockUploadService()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
-	hunkCache, _ := NewHunkCache(50)
+	hunkCbche, _ := NewHunkCbche(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockRepoStore, mockLsifStore, mockUplobdSvc, mockGitserverClient)
 
-	// Set up request state
-	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	// Set up request stbte
+	mockRequestStbte := RequestStbte{}
+	mockRequestStbte.SetLocblCommitCbche(mockRepoStore, mockGitserverClient)
+	mockRequestStbte.SetLocblGitTreeTrbnslbtor(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPbth, hunkCbche)
+	uplobds := []uplobdsshbred.Dump{
+		{ID: 50, Commit: "debdbeef", Root: "sub1/"},
+		{ID: 51, Commit: "debdbeef", Root: "sub2/"},
+		{ID: 52, Commit: "debdbeef", Root: "sub3/"},
+		{ID: 53, Commit: "debdbeef", Root: "sub4/"},
 	}
-	mockRequestState.SetUploadsDataLoader(uploads)
+	mockRequestStbte.SetUplobdsDbtbLobder(uplobds)
 
-	expectedRanges := []shared.Range{
-		{Start: shared.Position{Line: 10, Character: 20}, End: shared.Position{Line: 10, Character: 30}},
-		{Start: shared.Position{Line: 11, Character: 20}, End: shared.Position{Line: 11, Character: 30}},
-		{Start: shared.Position{Line: 12, Character: 20}, End: shared.Position{Line: 12, Character: 30}},
-		{Start: shared.Position{Line: 13, Character: 20}, End: shared.Position{Line: 13, Character: 30}},
-		{Start: shared.Position{Line: 14, Character: 20}, End: shared.Position{Line: 14, Character: 30}},
-		{Start: shared.Position{Line: 15, Character: 20}, End: shared.Position{Line: 15, Character: 30}},
-		{Start: shared.Position{Line: 16, Character: 20}, End: shared.Position{Line: 16, Character: 30}},
-		{Start: shared.Position{Line: 17, Character: 20}, End: shared.Position{Line: 17, Character: 30}},
-		{Start: shared.Position{Line: 18, Character: 20}, End: shared.Position{Line: 18, Character: 30}},
-		{Start: shared.Position{Line: 19, Character: 20}, End: shared.Position{Line: 19, Character: 30}},
+	expectedRbnges := []shbred.Rbnge{
+		{Stbrt: shbred.Position{Line: 10, Chbrbcter: 20}, End: shbred.Position{Line: 10, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 11, Chbrbcter: 20}, End: shbred.Position{Line: 11, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 12, Chbrbcter: 20}, End: shbred.Position{Line: 12, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 13, Chbrbcter: 20}, End: shbred.Position{Line: 13, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 14, Chbrbcter: 20}, End: shbred.Position{Line: 14, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 15, Chbrbcter: 20}, End: shbred.Position{Line: 15, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 16, Chbrbcter: 20}, End: shbred.Position{Line: 16, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 17, Chbrbcter: 20}, End: shbred.Position{Line: 17, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 18, Chbrbcter: 20}, End: shbred.Position{Line: 18, Chbrbcter: 30}},
+		{Stbrt: shbred.Position{Line: 19, Chbrbcter: 20}, End: shbred.Position{Line: 19, Chbrbcter: 30}},
 	}
 	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
 
-	// Duplicate the ranges to test that we dedupe them
-	mockLsifStore.GetStencilFunc.PushReturn(append(expectedRanges, expectedRanges...), nil)
+	// Duplicbte the rbnges to test thbt we dedupe them
+	mockLsifStore.GetStencilFunc.PushReturn(bppend(expectedRbnges, expectedRbnges...), nil)
 
-	mockRequest := PositionalRequestArgs{
+	mockRequest := PositionblRequestArgs{
 		RequestArgs: RequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
 			Limit:        50,
 		},
-		Path:      mockPath,
+		Pbth:      mockPbth,
 		Line:      10,
-		Character: 20,
+		Chbrbcter: 20,
 	}
-	ranges, err := svc.GetStencil(context.Background(), mockRequest, mockRequestState)
+	rbnges, err := svc.GetStencil(context.Bbckground(), mockRequest, mockRequestStbte)
 	if err != nil {
-		t.Fatalf("unexpected error querying hover: %s", err)
+		t.Fbtblf("unexpected error querying hover: %s", err)
 	}
 
-	if diff := cmp.Diff(expectedRanges, ranges); diff != "" {
-		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnges, rbnges); diff != "" {
+		t.Errorf("unexpected rbnge (-wbnt +got):\n%s", diff)
 	}
 }

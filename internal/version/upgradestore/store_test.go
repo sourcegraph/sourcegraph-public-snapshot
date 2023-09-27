@@ -1,166 +1,166 @@
-package upgradestore
+pbckbge upgrbdestore
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestGetServiceVersion(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := New(db)
 
 	t.Run("fresh db", func(t *testing.T) {
 		_, ok, err := store.GetServiceVersion(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 		if ok {
-			t.Fatalf("did not expect value")
+			t.Fbtblf("did not expect vblue")
 		}
 	})
 
-	t.Run("after updates", func(t *testing.T) {
-		if err := store.UpdateServiceVersion(ctx, "1.2.3"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+	t.Run("bfter updbtes", func(t *testing.T) {
+		if err := store.UpdbteServiceVersion(ctx, "1.2.3"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		if err := store.UpdateServiceVersion(ctx, "1.2.4"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.UpdbteServiceVersion(ctx, "1.2.4"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		if err := store.UpdateServiceVersion(ctx, "1.3.0"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.UpdbteServiceVersion(ctx, "1.3.0"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
 		version, ok, err := store.GetServiceVersion(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 		if !ok {
-			t.Fatalf("unexpected value, got none")
+			t.Fbtblf("unexpected vblue, got none")
 		}
 		if version != "1.3.0" {
-			t.Errorf("unexpected version. want=%s have=%s", "1.3.0", version)
+			t.Errorf("unexpected version. wbnt=%s hbve=%s", "1.3.0", version)
 		}
 	})
 
-	t.Run("missing table", func(t *testing.T) {
+	t.Run("missing tbble", func(t *testing.T) {
 		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
 		_, ok, err := store.GetServiceVersion(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 		if ok {
-			t.Fatalf("did not expect value")
+			t.Fbtblf("did not expect vblue")
 		}
 	})
 }
 
 func TestSetServiceVersion(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := New(db)
 
-	if err := store.UpdateServiceVersion(ctx, "1.2.3"); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if err := store.UpdbteServiceVersion(ctx, "1.2.3"); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if err := store.SetServiceVersion(ctx, "1.2.5"); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	version, _, err := store.GetServiceVersion(ctx)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
-	if want := "1.2.5"; version != want {
-		t.Fatalf("unexpected version. want=%q have=%q", want, version)
+	if wbnt := "1.2.5"; version != wbnt {
+		t.Fbtblf("unexpected version. wbnt=%q hbve=%q", wbnt, version)
 	}
 }
 
 func TestGetFirstServiceVersion(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := New(db)
 
 	t.Run("fresh db", func(t *testing.T) {
 		_, ok, err := store.GetFirstServiceVersion(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 		if ok {
-			t.Fatalf("did not expect value")
+			t.Fbtblf("did not expect vblue")
 		}
 	})
 
-	t.Run("after updates", func(t *testing.T) {
-		if err := store.UpdateServiceVersion(ctx, "1.2.3"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+	t.Run("bfter updbtes", func(t *testing.T) {
+		if err := store.UpdbteServiceVersion(ctx, "1.2.3"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		if err := store.UpdateServiceVersion(ctx, "1.2.4"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.UpdbteServiceVersion(ctx, "1.2.4"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		if err := store.UpdateServiceVersion(ctx, "1.3.0"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.UpdbteServiceVersion(ctx, "1.3.0"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
 		firstVersion, ok, err := store.GetFirstServiceVersion(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 		if !ok {
-			t.Fatalf("unexpected value, got none")
+			t.Fbtblf("unexpected vblue, got none")
 		}
 		if firstVersion != "1.2.3" {
-			t.Errorf("unexpected first version. want=%s have=%s", "1.2.3", firstVersion)
+			t.Errorf("unexpected first version. wbnt=%s hbve=%s", "1.2.3", firstVersion)
 		}
 	})
 
-	t.Run("missing table", func(t *testing.T) {
+	t.Run("missing tbble", func(t *testing.T) {
 		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
 		_, ok, err := store.GetFirstServiceVersion(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 		if ok {
-			t.Fatalf("did not expect value")
+			t.Fbtblf("did not expect vblue")
 		}
 	})
 }
 
-func TestUpdateServiceVersion(t *testing.T) {
-	ctx := context.Background()
+func TestUpdbteServiceVersion(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := New(db)
 
-	t.Run("update sequence", func(t *testing.T) {
-		for _, tc := range []struct {
+	t.Run("updbte sequence", func(t *testing.T) {
+		for _, tc := rbnge []struct {
 			version string
 			err     error
 		}{
@@ -169,264 +169,264 @@ func TestUpdateServiceVersion(t *testing.T) {
 			{"0.1.0", nil},
 			{"0.2.0", nil},
 			{"1.0.0", nil},
-			{"1.2.0", &UpgradeError{
+			{"1.2.0", &UpgrbdeError{
 				Service:  "frontend",
-				Previous: semver.MustParse("1.0.0"),
-				Latest:   semver.MustParse("1.2.0"),
+				Previous: semver.MustPbrse("1.0.0"),
+				Lbtest:   semver.MustPbrse("1.2.0"),
 			}},
-			{"2.1.0", &UpgradeError{
+			{"2.1.0", &UpgrbdeError{
 				Service:  "frontend",
-				Previous: semver.MustParse("1.0.0"),
-				Latest:   semver.MustParse("2.1.0"),
+				Previous: semver.MustPbrse("1.0.0"),
+				Lbtest:   semver.MustPbrse("2.1.0"),
 			}},
-			{"0.3.0", nil}, // rollback
-			{"non-semantic-version-is-always-valid", nil},
-			{"1.0.0", nil}, // back to semantic version is allowed
-			{"2.1.0", &UpgradeError{
+			{"0.3.0", nil}, // rollbbck
+			{"non-sembntic-version-is-blwbys-vblid", nil},
+			{"1.0.0", nil}, // bbck to sembntic version is bllowed
+			{"2.1.0", &UpgrbdeError{
 				Service:  "frontend",
-				Previous: semver.MustParse("1.0.0"),
-				Latest:   semver.MustParse("2.1.0"),
-			}}, // upgrade policy violation returns
+				Previous: semver.MustPbrse("1.0.0"),
+				Lbtest:   semver.MustPbrse("2.1.0"),
+			}}, // upgrbde policy violbtion returns
 		} {
-			have := store.UpdateServiceVersion(ctx, tc.version)
-			want := tc.err
+			hbve := store.UpdbteServiceVersion(ctx, tc.version)
+			wbnt := tc.err
 
-			if !errors.Is(have, want) {
-				t.Fatal(cmp.Diff(have, want))
+			if !errors.Is(hbve, wbnt) {
+				t.Fbtbl(cmp.Diff(hbve, wbnt))
 			}
 
 			t.Logf("version = %q", tc.version)
 		}
 	})
 
-	t.Run("missing table", func(t *testing.T) {
+	t.Run("missing tbble", func(t *testing.T) {
 		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if err := store.UpdateServiceVersion(ctx, "0.0.1"); err == nil {
-			t.Fatalf("expected error, got none")
+		if err := store.UpdbteServiceVersion(ctx, "0.0.1"); err == nil {
+			t.Fbtblf("expected error, got none")
 		}
 	})
 }
 
-func TestValidateUpgrade(t *testing.T) {
-	ctx := context.Background()
+func TestVblidbteUpgrbde(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := New(db)
 
-	t.Run("missing table", func(t *testing.T) {
+	t.Run("missing tbble", func(t *testing.T) {
 		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if err := store.ValidateUpgrade(ctx, "frontend", "0.0.1"); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.VblidbteUpgrbde(ctx, "frontend", "0.0.1"); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 	})
 }
 
-func TestClaimAutoUpgrade(t *testing.T) {
-	ctx := context.Background()
+func TestClbimAutoUpgrbde(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("basic", func(t *testing.T) {
+	t.Run("bbsic", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := New(db)
 
-		if err := store.EnsureUpgradeTable(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.EnsureUpgrbdeTbble(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err := store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim but failed")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim but fbiled")
 		}
 	})
 
-	t.Run("basic sequential (first in-progress)", func(t *testing.T) {
+	t.Run("bbsic sequentibl (first in-progress)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := New(db)
 
-		if err := store.EnsureUpgradeTable(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.EnsureUpgrbdeTbble(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err := store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 
-		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err = store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if claimed {
-			t.Fatal("expected unsuccessful autoupgrade claim")
+		if clbimed {
+			t.Fbtbl("expected unsuccessful butoupgrbde clbim")
 		}
 	})
 
-	t.Run("basic sequential (first failed)", func(t *testing.T) {
+	t.Run("bbsic sequentibl (first fbiled)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := New(db)
 
-		if err := store.EnsureUpgradeTable(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.EnsureUpgrbdeTbble(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err := store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 
-		if err := store.SetUpgradeStatus(ctx, false); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.SetUpgrbdeStbtus(ctx, fblse); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err = store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 	})
 
-	t.Run("basic sequential (first succeeded)", func(t *testing.T) {
+	t.Run("bbsic sequentibl (first succeeded)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := New(db)
 
-		if err := store.EnsureUpgradeTable(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.EnsureUpgrbdeTbble(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err := store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 
-		if err := store.SetUpgradeStatus(ctx, true); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.SetUpgrbdeStbtus(ctx, true); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err = store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if claimed {
-			t.Fatal("expected unsuccessful autoupgrade claim")
+		if clbimed {
+			t.Fbtbl("expected unsuccessful butoupgrbde clbim")
 		}
 	})
 
-	t.Run("basic sequential (first succeeded, older version)", func(t *testing.T) {
+	t.Run("bbsic sequentibl (first succeeded, older version)", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 		store := New(db)
 
-		if err := store.EnsureUpgradeTable(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.EnsureUpgrbdeTbble(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.1.0")
+		clbimed, err := store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.1.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 
-		if err := store.SetUpgradeStatus(ctx, true); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.SetUpgrbdeStbtus(ctx, true); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+		clbimed, err = store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 	})
 
-	t.Run("stale heartbeat", func(t *testing.T) {
+	t.Run("stble hebrtbebt", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 		clock := glock.NewMockClock()
-		store := newStore(basestore.NewWithHandle(db.Handle()), clock)
+		store := newStore(bbsestore.NewWithHbndle(db.Hbndle()), clock)
 
-		if err := store.EnsureUpgradeTable(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.EnsureUpgrbdeTbble(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		claimed, err := store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.1.0")
+		clbimed, err := store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.1.0")
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		if !claimed {
-			t.Fatal("expected successful autoupgrade claim")
+		if !clbimed {
+			t.Fbtbl("expected successful butoupgrbde clbim")
 		}
 
-		if err := store.Heartbeat(ctx); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := store.Hebrtbebt(ctx); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		// first test that we cant claim if 15s havent elapsed
+		// first test thbt we cbnt clbim if 15s hbvent elbpsed
 		{
-			clock.Advance(time.Second * 10)
+			clock.Advbnce(time.Second * 10)
 
-			claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+			clbimed, err = store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 			if err != nil {
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
 
-			if claimed {
-				t.Fatal("expected unsuccessful autoupgrade claim")
+			if clbimed {
+				t.Fbtbl("expected unsuccessful butoupgrbde clbim")
 			}
 		}
 
-		// then test that we can claim if 15s have elapsed
+		// then test thbt we cbn clbim if 15s hbve elbpsed
 		{
-			clock.Advance(time.Second * 21)
+			clock.Advbnce(time.Second * 21)
 
-			claimed, err = store.ClaimAutoUpgrade(ctx, "v4.2.0", "v6.9.0")
+			clbimed, err = store.ClbimAutoUpgrbde(ctx, "v4.2.0", "v6.9.0")
 			if err != nil {
-				t.Fatalf("unexpected error: %s", err)
+				t.Fbtblf("unexpected error: %s", err)
 			}
 
-			if !claimed {
-				t.Fatal("expected successful autoupgrade claim")
+			if !clbimed {
+				t.Fbtbl("expected successful butoupgrbde clbim")
 			}
 		}
 	})

@@ -1,4 +1,4 @@
-package workspace
+pbckbge workspbce
 
 import (
 	"context"
@@ -8,64 +8,64 @@ import (
 	"net/http/httputil"
 	"net/url"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const SchemeExecutorToken = "token-executor"
 
-// These env vars should be set for git commands. We want to make sure it never hangs on interactive input.
-var gitStdEnv = []string{
+// These env vbrs should be set for git commbnds. We wbnt to mbke sure it never hbngs on interbctive input.
+vbr gitStdEnv = []string{
 	"GIT_TERMINAL_PROMPT=0",
 	// We don't support LFS so don't even try to get these files. There is no endpoint
-	// for that on the executor git clone endpoint anyways and this will 404.
+	// for thbt on the executor git clone endpoint bnywbys bnd this will 404.
 	"GIT_LFS_SKIP_SMUDGE=1",
 }
 
 func cloneRepo(
 	ctx context.Context,
-	workspaceDir string,
+	workspbceDir string,
 	job types.Job,
-	cmd command.Command,
+	cmd commbnd.Commbnd,
 	logger cmdlogger.Logger,
 	options CloneOptions,
-	operations *command.Operations,
+	operbtions *commbnd.Operbtions,
 ) (err error) {
-	repoPath := workspaceDir
+	repoPbth := workspbceDir
 	if job.RepositoryDirectory != "" {
-		repoPath = filepath.Join(workspaceDir, job.RepositoryDirectory)
+		repoPbth = filepbth.Join(workspbceDir, job.RepositoryDirectory)
 
-		if !strings.HasPrefix(repoPath, workspaceDir) {
-			return errors.Newf("invalid repo path %q not a subdirectory of %q", repoPath, workspaceDir)
+		if !strings.HbsPrefix(repoPbth, workspbceDir) {
+			return errors.Newf("invblid repo pbth %q not b subdirectory of %q", repoPbth, workspbceDir)
 		}
 
-		if err := os.MkdirAll(repoPath, os.ModePerm); err != nil {
-			return errors.Wrap(err, "creating repo directory")
+		if err := os.MkdirAll(repoPbth, os.ModePerm); err != nil {
+			return errors.Wrbp(err, "crebting repo directory")
 		}
 	}
 
-	proxyURL, cleanup, err := newGitProxyServer(options, job)
+	proxyURL, clebnup, err := newGitProxyServer(options, job)
 	defer func() {
-		err = errors.Append(err, cleanup())
+		err = errors.Append(err, clebnup())
 	}()
 	if err != nil {
-		return errors.Wrap(err, "spawning git proxy server")
+		return errors.Wrbp(err, "spbwning git proxy server")
 	}
 
-	cloneURL, err := makeRelativeURL(proxyURL, job.RepositoryName)
+	cloneURL, err := mbkeRelbtiveURL(proxyURL, job.RepositoryNbme)
 	if err != nil {
 		return err
 	}
 
-	fetchCommand := []string{
+	fetchCommbnd := []string{
 		"git",
-		"-C", repoPath,
+		"-C", repoPbth,
 		"-c", "protocol.version=2",
 		"fetch",
 		"--progress",
@@ -74,67 +74,67 @@ func cloneRepo(
 		job.Commit,
 	}
 
-	appendFetchArg := func(arg string) {
-		l := len(fetchCommand)
+	bppendFetchArg := func(brg string) {
+		l := len(fetchCommbnd)
 		insertPos := l - 2
-		fetchCommand = append(fetchCommand[:insertPos+1], fetchCommand[insertPos:]...)
-		fetchCommand[insertPos] = arg
+		fetchCommbnd = bppend(fetchCommbnd[:insertPos+1], fetchCommbnd[insertPos:]...)
+		fetchCommbnd[insertPos] = brg
 	}
 
-	if job.FetchTags {
-		appendFetchArg("--tags")
+	if job.FetchTbgs {
+		bppendFetchArg("--tbgs")
 	}
 
-	if job.ShallowClone {
-		if !job.FetchTags {
-			appendFetchArg("--no-tags")
+	if job.ShbllowClone {
+		if !job.FetchTbgs {
+			bppendFetchArg("--no-tbgs")
 		}
-		appendFetchArg("--depth=1")
+		bppendFetchArg("--depth=1")
 	}
 
-	// For a sparse checkout, we want to add a blob filter so we only fetch the minimum set of files initially.
-	if len(job.SparseCheckout) > 0 {
-		appendFetchArg("--filter=blob:none")
+	// For b spbrse checkout, we wbnt to bdd b blob filter so we only fetch the minimum set of files initiblly.
+	if len(job.SpbrseCheckout) > 0 {
+		bppendFetchArg("--filter=blob:none")
 	}
 
-	gitCommands := []command.Spec{
-		{Key: "setup.git.init", Env: gitStdEnv, Command: []string{"git", "-C", repoPath, "init"}, Operation: operations.SetupGitInit},
-		{Key: "setup.git.add-remote", Env: gitStdEnv, Command: []string{"git", "-C", repoPath, "remote", "add", "origin", cloneURL.String()}, Operation: operations.SetupAddRemote},
-		// Disable gc, this can improve performance and should never run for executor clones.
-		{Key: "setup.git.disable-gc", Env: gitStdEnv, Command: []string{"git", "-C", repoPath, "config", "--local", "gc.auto", "0"}, Operation: operations.SetupGitDisableGC},
-		{Key: "setup.git.fetch", Env: gitStdEnv, Command: fetchCommand, Operation: operations.SetupGitFetch},
+	gitCommbnds := []commbnd.Spec{
+		{Key: "setup.git.init", Env: gitStdEnv, Commbnd: []string{"git", "-C", repoPbth, "init"}, Operbtion: operbtions.SetupGitInit},
+		{Key: "setup.git.bdd-remote", Env: gitStdEnv, Commbnd: []string{"git", "-C", repoPbth, "remote", "bdd", "origin", cloneURL.String()}, Operbtion: operbtions.SetupAddRemote},
+		// Disbble gc, this cbn improve performbnce bnd should never run for executor clones.
+		{Key: "setup.git.disbble-gc", Env: gitStdEnv, Commbnd: []string{"git", "-C", repoPbth, "config", "--locbl", "gc.buto", "0"}, Operbtion: operbtions.SetupGitDisbbleGC},
+		{Key: "setup.git.fetch", Env: gitStdEnv, Commbnd: fetchCommbnd, Operbtion: operbtions.SetupGitFetch},
 	}
 
-	if len(job.SparseCheckout) > 0 {
-		gitCommands = append(gitCommands, command.Spec{
-			Key:       "setup.git.sparse-checkout-config",
+	if len(job.SpbrseCheckout) > 0 {
+		gitCommbnds = bppend(gitCommbnds, commbnd.Spec{
+			Key:       "setup.git.spbrse-checkout-config",
 			Env:       gitStdEnv,
-			Command:   []string{"git", "-C", repoPath, "config", "--local", "core.sparseCheckout", "1"},
-			Operation: operations.SetupGitSparseCheckoutConfig,
+			Commbnd:   []string{"git", "-C", repoPbth, "config", "--locbl", "core.spbrseCheckout", "1"},
+			Operbtion: operbtions.SetupGitSpbrseCheckoutConfig,
 		})
-		gitCommands = append(gitCommands, command.Spec{
-			Key:       "setup.git.sparse-checkout-set",
+		gitCommbnds = bppend(gitCommbnds, commbnd.Spec{
+			Key:       "setup.git.spbrse-checkout-set",
 			Env:       gitStdEnv,
-			Command:   append([]string{"git", "-C", repoPath, "sparse-checkout", "set", "--no-cone", "--"}, job.SparseCheckout...),
-			Operation: operations.SetupGitSparseCheckoutSet,
+			Commbnd:   bppend([]string{"git", "-C", repoPbth, "spbrse-checkout", "set", "--no-cone", "--"}, job.SpbrseCheckout...),
+			Operbtion: operbtions.SetupGitSpbrseCheckoutSet,
 		})
 	}
 
-	checkoutCommand := []string{
+	checkoutCommbnd := []string{
 		"git",
-		"-C", repoPath,
+		"-C", repoPbth,
 		"checkout",
 		"--progress",
 		"--force",
 		job.Commit,
 	}
 
-	// Sparse checkouts need to fetch additional blobs, so we need to add
-	// auth config here.
-	if len(job.SparseCheckout) > 0 {
-		checkoutCommand = []string{
+	// Spbrse checkouts need to fetch bdditionbl blobs, so we need to bdd
+	// buth config here.
+	if len(job.SpbrseCheckout) > 0 {
+		checkoutCommbnd = []string{
 			"git",
-			"-C", repoPath,
+			"-C", repoPbth,
 			"-c", "protocol.version=2",
 			"checkout",
 			"--progress",
@@ -143,88 +143,88 @@ func cloneRepo(
 		}
 	}
 
-	gitCommands = append(gitCommands, command.Spec{
+	gitCommbnds = bppend(gitCommbnds, commbnd.Spec{
 		Key:       "setup.git.checkout",
 		Env:       gitStdEnv,
-		Command:   checkoutCommand,
-		Operation: operations.SetupGitCheckout,
+		Commbnd:   checkoutCommbnd,
+		Operbtion: operbtions.SetupGitCheckout,
 	})
 
-	// This is for LSIF, it relies on the origin being set to the upstream repo
+	// This is for LSIF, it relies on the origin being set to the upstrebm repo
 	// for indexing.
-	gitCommands = append(gitCommands, command.Spec{
+	gitCommbnds = bppend(gitCommbnds, commbnd.Spec{
 		Key: "setup.git.set-remote",
 		Env: gitStdEnv,
-		Command: []string{
+		Commbnd: []string{
 			"git",
-			"-C", repoPath,
+			"-C", repoPbth,
 			"remote",
 			"set-url",
 			"origin",
-			job.RepositoryName,
+			job.RepositoryNbme,
 		},
-		Operation: operations.SetupGitSetRemoteUrl,
+		Operbtion: operbtions.SetupGitSetRemoteUrl,
 	})
 
-	for _, spec := range gitCommands {
+	for _, spec := rbnge gitCommbnds {
 		if err = cmd.Run(ctx, logger, spec); err != nil {
-			return errors.Wrap(err, fmt.Sprintf("failed %s", spec.Key))
+			return errors.Wrbp(err, fmt.Sprintf("fbiled %s", spec.Key))
 		}
 	}
 
 	return nil
 }
 
-// newGitProxyServer creates a new HTTP proxy to the Sourcegraph instance on a random port.
-// It handles authentication and additional headers required. The cleanup function
-// should be called after the clone operations are done and _before_ the job is started.
-// This is used so that we never have to tell git about the credentials used here.
+// newGitProxyServer crebtes b new HTTP proxy to the Sourcegrbph instbnce on b rbndom port.
+// It hbndles buthenticbtion bnd bdditionbl hebders required. The clebnup function
+// should be cblled bfter the clone operbtions bre done bnd _before_ the job is stbrted.
+// This is used so thbt we never hbve to tell git bbout the credentibls used here.
 //
-// In the future, this will be used to provide different access tokens per job,
-// so that we can tell _which_ job misused the token and also scope its access
-// to the particular repo in question.
+// In the future, this will be used to provide different bccess tokens per job,
+// so thbt we cbn tell _which_ job misused the token bnd blso scope its bccess
+// to the pbrticulbr repo in question.
 func newGitProxyServer(options CloneOptions, job types.Job) (string, func() error, error) {
-	// Get new random free port.
+	// Get new rbndom free port.
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return "", func() error { return nil }, err
 	}
-	cleanupListener := func() error { return listener.Close() }
+	clebnupListener := func() error { return listener.Close() }
 
-	upstream, err := makeRelativeURL(
+	upstrebm, err := mbkeRelbtiveURL(
 		options.EndpointURL,
-		options.GitServicePath,
+		options.GitServicePbth,
 	)
 	if err != nil {
-		return "", cleanupListener, err
+		return "", clebnupListener, err
 	}
 
-	proxy := newReverseProxy(upstream, options.ExecutorToken, job.Token, options.ExecutorName, job.ID)
+	proxy := newReverseProxy(upstrebm, options.ExecutorToken, job.Token, options.ExecutorNbme, job.ID)
 
-	go http.Serve(listener, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Prevent queries for repos other than this jobs repo.
-		// This is _not_ a security measure, that should be handled by additional
-		// clone tokens. This is mostly a gate to finding when we accidentally
-		// would access another repo.
-		if !strings.HasPrefix(r.URL.Path, "/"+job.RepositoryName+"/") {
-			w.WriteHeader(http.StatusForbidden)
+	go http.Serve(listener, http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Prevent queries for repos other thbn this jobs repo.
+		// This is _not_ b security mebsure, thbt should be hbndled by bdditionbl
+		// clone tokens. This is mostly b gbte to finding when we bccidentblly
+		// would bccess bnother repo.
+		if !strings.HbsPrefix(r.URL.Pbth, "/"+job.RepositoryNbme+"/") {
+			w.WriteHebder(http.StbtusForbidden)
 			return
 		}
 
-		// TODO: We might want to limit throughput here to the same level we limit it _inside_ the firecracker VM.
+		// TODO: We might wbnt to limit throughput here to the sbme level we limit it _inside_ the firecrbcker VM.
 		proxy.ServeHTTP(w, r)
 	}))
 
-	return fmt.Sprintf("http://127.0.0.1:%d", listener.Addr().(*net.TCPAddr).Port), cleanupListener, nil
+	return fmt.Sprintf("http://127.0.0.1:%d", listener.Addr().(*net.TCPAddr).Port), clebnupListener, nil
 }
 
-func makeRelativeURL(base string, path ...string) (*url.URL, error) {
-	baseURL, err := url.Parse(base)
+func mbkeRelbtiveURL(bbse string, pbth ...string) (*url.URL, error) {
+	bbseURL, err := url.Pbrse(bbse)
 	if err != nil {
 		return nil, err
 	}
 
-	urlx, err := baseURL.ResolveReference(&url.URL{Path: filepath.Join(path...)}), nil
+	urlx, err := bbseURL.ResolveReference(&url.URL{Pbth: filepbth.Join(pbth...)}), nil
 	if err != nil {
 		return nil, err
 	}
@@ -232,28 +232,28 @@ func makeRelativeURL(base string, path ...string) (*url.URL, error) {
 	return urlx, nil
 }
 
-func newReverseProxy(upstream *url.URL, accessToken string, jobToken string, executorName string, jobId int) *httputil.ReverseProxy {
-	proxy := httputil.NewSingleHostReverseProxy(upstream)
+func newReverseProxy(upstrebm *url.URL, bccessToken string, jobToken string, executorNbme string, jobId int) *httputil.ReverseProxy {
+	proxy := httputil.NewSingleHostReverseProxy(upstrebm)
 	superDirector := proxy.Director
 	proxy.Director = func(req *http.Request) {
 		superDirector(req)
 
-		req.Host = upstream.Host
-		// Add authentication. We don't add this in the git clone URL directly
-		// to never tell git about the clone secret.
+		req.Host = upstrebm.Host
+		// Add buthenticbtion. We don't bdd this in the git clone URL directly
+		// to never tell git bbout the clone secret.
 
-		// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
+		// If there is no token set, we mby be tblking with b version of Sourcegrbph thbt is behind.
 		if len(jobToken) > 0 {
-			req.Header.Set("Authorization", fmt.Sprintf("%s %s", "Bearer", jobToken))
+			req.Hebder.Set("Authorizbtion", fmt.Sprintf("%s %s", "Bebrer", jobToken))
 		} else {
-			req.Header.Set("Authorization", fmt.Sprintf("%s %s", SchemeExecutorToken, accessToken))
+			req.Hebder.Set("Authorizbtion", fmt.Sprintf("%s %s", SchemeExecutorToken, bccessToken))
 		}
-		req.Header.Set("X-Sourcegraph-Actor-UID", "internal")
-		req.Header.Set("X-Sourcegraph-Job-ID", strconv.Itoa(jobId))
-		// When using the reverse proxy, setting the username on req.User is not respected. If a username must be set,
-		// you have to use .SetBasicAuth(). However, this will set the Authorization using the username + password.
-		// So to avoid confusion, set the executor name in a specific HTTP header.
-		req.Header.Set("X-Sourcegraph-Executor-Name", executorName)
+		req.Hebder.Set("X-Sourcegrbph-Actor-UID", "internbl")
+		req.Hebder.Set("X-Sourcegrbph-Job-ID", strconv.Itob(jobId))
+		// When using the reverse proxy, setting the usernbme on req.User is not respected. If b usernbme must be set,
+		// you hbve to use .SetBbsicAuth(). However, this will set the Authorizbtion using the usernbme + pbssword.
+		// So to bvoid confusion, set the executor nbme in b specific HTTP hebder.
+		req.Hebder.Set("X-Sourcegrbph-Executor-Nbme", executorNbme)
 	}
 	return proxy
 }

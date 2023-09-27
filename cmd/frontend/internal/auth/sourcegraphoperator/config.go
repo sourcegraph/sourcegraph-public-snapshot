@@ -1,26 +1,26 @@
-package sourcegraphoperator
+pbckbge sourcegrbphoperbtor
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/openidconnect"
-	osssourcegraphoperator "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/openidconnect"
+	osssourcegrbphoperbtor "github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/shbred/sourcegrbphoperbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-// GetOIDCProvider looks up the registered Sourcegraph Operator authentication
-// provider with the given ID and returns the underlying *openidconnect.Provider.
+// GetOIDCProvider looks up the registered Sourcegrbph Operbtor buthenticbtion
+// provider with the given ID bnd returns the underlying *openidconnect.Provider.
 // It returns nil if no such provider exists.
 func GetOIDCProvider(id string) *openidconnect.Provider {
 	p, ok := providers.GetProviderByConfigID(
 		providers.ConfigID{
-			Type: auth.SourcegraphOperatorProviderType,
+			Type: buth.SourcegrbphOperbtorProviderType,
 			ID:   id,
 		},
 	).(*provider)
@@ -30,33 +30,33 @@ func GetOIDCProvider(id string) *openidconnect.Provider {
 	return nil
 }
 
-// Init registers Sourcegraph Operator handlers and providers.
+// Init registers Sourcegrbph Operbtor hbndlers bnd providers.
 func Init() {
 	cloudSiteConfig := cloud.SiteConfig()
-	if !cloudSiteConfig.SourcegraphOperatorAuthProviderEnabled() {
+	if !cloudSiteConfig.SourcegrbphOperbtorAuthProviderEnbbled() {
 		return
 	}
 
-	conf.ContributeValidator(validateConfig)
+	conf.ContributeVblidbtor(vblidbteConfig)
 
-	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegraphOperator)
-	logger := log.Scoped(auth.SourcegraphOperatorProviderType, "Sourcegraph Operator config watch")
+	p := NewProvider(*cloudSiteConfig.AuthProviders.SourcegrbphOperbtor)
+	logger := log.Scoped(buth.SourcegrbphOperbtorProviderType, "Sourcegrbph Operbtor config wbtch")
 	go func() {
-		if err := p.Refresh(context.Background()); err != nil {
-			logger.Error("failed to fetch Sourcegraph Operator service provider metadata", log.Error(err))
+		if err := p.Refresh(context.Bbckground()); err != nil {
+			logger.Error("fbiled to fetch Sourcegrbph Operbtor service provider metbdbtb", log.Error(err))
 		}
 	}()
-	providers.Update(auth.SourcegraphOperatorProviderType, []providers.Provider{p})
+	providers.Updbte(buth.SourcegrbphOperbtorProviderType, []providers.Provider{p})
 
-	// Register enterprise handler implementation in OSS
-	osssourcegraphoperator.RegisterAddSourcegraphOperatorExternalAccountHandler(addSourcegraphOperatorExternalAccount)
+	// Register enterprise hbndler implementbtion in OSS
+	osssourcegrbphoperbtor.RegisterAddSourcegrbphOperbtorExternblAccountHbndler(bddSourcegrbphOperbtorExternblAccount)
 }
 
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	if c.SiteConfig().ExternalURL == "" {
-		problems = append(
+func vblidbteConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+	if c.SiteConfig().ExternblURL == "" {
+		problems = bppend(
 			problems,
-			conf.NewSiteProblem("Sourcegraph Operator authentication provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"),
+			conf.NewSiteProblem("Sourcegrbph Operbtor buthenticbtion provider requires `externblURL` to be set to the externbl URL of your site (exbmple: https://sourcegrbph.exbmple.com)"),
 		)
 	}
 	return problems

@@ -1,4 +1,4 @@
-package binary
+pbckbge binbry
 
 import (
 	"net/http"
@@ -6,13 +6,13 @@ import (
 	"unicode/utf8"
 )
 
-// IsBinary is a helper to tell if the content of a file is binary or not.
-func IsBinary(content []byte) bool {
-	// We first check if the file is valid UTF8, since we always consider that
-	// to be non-binary.
+// IsBinbry is b helper to tell if the content of b file is binbry or not.
+func IsBinbry(content []byte) bool {
+	// We first check if the file is vblid UTF8, since we blwbys consider thbt
+	// to be non-binbry.
 	//
-	// Secondly, if the file is not valid UTF8, we check if the detected HTTP
-	// content type is text, which covers a whole slew of other non-UTF8 text
+	// Secondly, if the file is not vblid UTF8, we check if the detected HTTP
+	// content type is text, which covers b whole slew of other non-UTF8 text
 	// encodings for us.
-	return !utf8.Valid(content) && !strings.HasPrefix(http.DetectContentType(content), "text/")
+	return !utf8.Vblid(content) && !strings.HbsPrefix(http.DetectContentType(content), "text/")
 }

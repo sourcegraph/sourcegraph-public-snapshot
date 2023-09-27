@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -6,113 +6,113 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
 func TestRepository(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Skip("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment vbribble GITHUB_TOKEN is not set")
 	}
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-github-repository",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-github-repository",
+		Config: mustMbrshblJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
 			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 		}{
 			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/go-diff",
 			},
-			RepositoryPathPattern: "github.com/{nameWithOwner}",
+			RepositoryPbthPbttern: "github.com/{nbmeWithOwner}",
 		}),
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	removeExternblServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
+	err = client.WbitForReposToBeCloned(
 		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("external code host links", func(t *testing.T) {
-		got, err := client.FileExternalLinks(
+	t.Run("externbl code host links", func(t *testing.T) {
+		got, err := client.FileExternblLinks(
 			"github.com/sgtest/go-diff",
-			"3f415a150aec0685cb81b73cc201e762e075006d",
-			"diff/parse.go",
+			"3f415b150bec0685cb81b73cc201e762e075006d",
+			"diff/pbrse.go",
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		want := []*gqltestutil.ExternalLink{
+		wbnt := []*gqltestutil.ExternblLink{
 			{
-				URL:         "https://ghe.sgdev.org/sgtest/go-diff/blob/3f415a150aec0685cb81b73cc201e762e075006d/diff/parse.go",
+				URL:         "https://ghe.sgdev.org/sgtest/go-diff/blob/3f415b150bec0685cb81b73cc201e762e075006d/diff/pbrse.go",
 				ServiceType: extsvc.TypeGitHub,
 				ServiceKind: extsvc.KindGitHub,
 			},
 		}
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestRepository_NameWithSpace(t *testing.T) {
-	if *azureDevOpsUsername == "" || *azureDevOpsToken == "" {
-		t.Skip("Environment variable AZURE_DEVOPS_USERNAME or AZURE_DEVOPS_TOKEN is not set")
+func TestRepository_NbmeWithSpbce(t *testing.T) {
+	if *bzureDevOpsUsernbme == "" || *bzureDevOpsToken == "" {
+		t.Skip("Environment vbribble AZURE_DEVOPS_USERNAME or AZURE_DEVOPS_TOKEN is not set")
 	}
 
-	t.Skip("Test Repo is gone from Azure Devops and only admins can create repos. SQS is on vacation and he's the only admin. We don't know how this repo got deleted.")
+	t.Skip("Test Repo is gone from Azure Devops bnd only bdmins cbn crebte repos. SQS is on vbcbtion bnd he's the only bdmin. We don't know how this repo got deleted.")
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindOther,
-		DisplayName: "gqltest-azure-devops-repository",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-bzure-devops-repository",
+		Config: mustMbrshblJSONString(struct {
 			URL                   string   `json:"url"`
 			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 		}{
-			URL: fmt.Sprintf("https://%s:%s@sourcegraph.visualstudio.com/sourcegraph/_git/", *azureDevOpsUsername, *azureDevOpsToken),
+			URL: fmt.Sprintf("https://%s:%s@sourcegrbph.visublstudio.com/sourcegrbph/_git/", *bzureDevOpsUsernbme, *bzureDevOpsToken),
 			Repos: []string{
 				"Test Repo",
 			},
-			RepositoryPathPattern: "sourcegraph.visualstudio.com/{repo}",
+			RepositoryPbthPbttern: "sourcegrbph.visublstudio.com/{repo}",
 		}),
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	removeExternblServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
-		"sourcegraph.visualstudio.com/Test Repo",
+	err = client.WbitForReposToBeCloned(
+		"sourcegrbph.visublstudio.com/Test Repo",
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	got, err := client.Repository("sourcegraph.visualstudio.com/Test Repo")
+	got, err := client.Repository("sourcegrbph.visublstudio.com/Test Repo")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := &gqltestutil.Repository{
+	wbnt := &gqltestutil.Repository{
 		ID:  got.ID,
-		URL: "/sourcegraph.visualstudio.com/Test%20Repo",
+		URL: "/sourcegrbph.visublstudio.com/Test%20Repo",
 	}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 }

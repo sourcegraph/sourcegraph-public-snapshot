@@ -1,4 +1,4 @@
-package completions
+pbckbge completions
 
 import (
 	"bytes"
@@ -7,136 +7,136 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/fireworks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const fireworksAPIURL = "https://api.fireworks.ai/inference/v1/completions"
+const fireworksAPIURL = "https://bpi.fireworks.bi/inference/v1/completions"
 
-func NewFireworksHandler(
-	baseLogger log.Logger,
+func NewFireworksHbndler(
+	bbseLogger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
-	rateLimitNotifier notify.RateLimitNotifier,
+	rbteLimitNotifier notify.RbteLimitNotifier,
 	httpClient httpcli.Doer,
-	accessToken string,
-	allowedModels []string,
-) http.Handler {
-	return makeUpstreamHandler(
-		baseLogger,
+	bccessToken string,
+	bllowedModels []string,
+) http.Hbndler {
+	return mbkeUpstrebmHbndler(
+		bbseLogger,
 		eventLogger,
 		rs,
-		rateLimitNotifier,
+		rbteLimitNotifier,
 		httpClient,
-		string(conftypes.CompletionsProviderNameFireworks),
+		string(conftypes.CompletionsProviderNbmeFireworks),
 		fireworksAPIURL,
-		allowedModels,
-		upstreamHandlerMethods[fireworksRequest]{
-			validateRequest: func(_ context.Context, _ log.Logger, feature codygateway.Feature, fr fireworksRequest) (int, bool, error) {
-				if feature != codygateway.FeatureCodeCompletions {
-					return http.StatusNotImplemented, false,
-						errors.Newf("feature %q is currently not supported for Fireworks",
-							feature)
+		bllowedModels,
+		upstrebmHbndlerMethods[fireworksRequest]{
+			vblidbteRequest: func(_ context.Context, _ log.Logger, febture codygbtewby.Febture, fr fireworksRequest) (int, bool, error) {
+				if febture != codygbtewby.FebtureCodeCompletions {
+					return http.StbtusNotImplemented, fblse,
+						errors.Newf("febture %q is currently not supported for Fireworks",
+							febture)
 				}
-				return 0, false, nil
+				return 0, fblse, nil
 			},
-			transformBody: func(body *fireworksRequest, act *actor.Actor) {
-				// We don't want to let users generate multiple responses, as this would
-				// mess with rate limit counting.
+			trbnsformBody: func(body *fireworksRequest, bct *bctor.Actor) {
+				// We don't wbnt to let users generbte multiple responses, bs this would
+				// mess with rbte limit counting.
 				if body.N > 1 {
 					body.N = 1
 				}
 			},
-			getRequestMetadata: func(body fireworksRequest) (model string, additionalMetadata map[string]any) {
-				return body.Model, map[string]any{"stream": body.Stream}
+			getRequestMetbdbtb: func(body fireworksRequest) (model string, bdditionblMetbdbtb mbp[string]bny) {
+				return body.Model, mbp[string]bny{"strebm": body.Strebm}
 			},
-			transformRequest: func(r *http.Request) {
-				r.Header.Set("Content-Type", "application/json")
-				r.Header.Set("Authorization", "Bearer "+accessToken)
+			trbnsformRequest: func(r *http.Request) {
+				r.Hebder.Set("Content-Type", "bpplicbtion/json")
+				r.Hebder.Set("Authorizbtion", "Bebrer "+bccessToken)
 			},
-			parseResponseAndUsage: func(logger log.Logger, reqBody fireworksRequest, r io.Reader) (promptUsage, completionUsage usageStats) {
-				// First, extract prompt usage details from the request.
-				promptUsage.characters = len(reqBody.Prompt)
+			pbrseResponseAndUsbge: func(logger log.Logger, reqBody fireworksRequest, r io.Rebder) (promptUsbge, completionUsbge usbgeStbts) {
+				// First, extrbct prompt usbge detbils from the request.
+				promptUsbge.chbrbcters = len(reqBody.Prompt)
 
-				// Try to parse the request we saw, if it was non-streaming, we can simply parse
-				// it as JSON.
-				if !reqBody.Stream {
-					var res fireworksResponse
+				// Try to pbrse the request we sbw, if it wbs non-strebming, we cbn simply pbrse
+				// it bs JSON.
+				if !reqBody.Strebm {
+					vbr res fireworksResponse
 					if err := json.NewDecoder(r).Decode(&res); err != nil {
-						logger.Error("failed to parse fireworks response as JSON", log.Error(err))
-						return promptUsage, completionUsage
+						logger.Error("fbiled to pbrse fireworks response bs JSON", log.Error(err))
+						return promptUsbge, completionUsbge
 					}
 
-					promptUsage.tokens = res.Usage.PromptTokens
-					completionUsage.tokens = res.Usage.CompletionTokens
+					promptUsbge.tokens = res.Usbge.PromptTokens
+					completionUsbge.tokens = res.Usbge.CompletionTokens
 					if len(res.Choices) > 0 {
-						// TODO: Later, we should look at the usage field.
-						completionUsage.characters = len(res.Choices[0].Text)
+						// TODO: Lbter, we should look bt the usbge field.
+						completionUsbge.chbrbcters = len(res.Choices[0].Text)
 					}
-					return promptUsage, completionUsage
+					return promptUsbge, completionUsbge
 				}
 
-				// Otherwise, we have to parse the event stream.
+				// Otherwise, we hbve to pbrse the event strebm.
 				//
-				// TODO: Does fireworks streaming include usage data?
-				// Unclear in the API currently: https://readme.fireworks.ai/reference/createcompletion
-				// For now, just count character usage, and set token counts to
-				// -1 as sentinel values.
-				promptUsage.tokens = -1
-				completionUsage.tokens = -1
+				// TODO: Does fireworks strebming include usbge dbtb?
+				// Unclebr in the API currently: https://rebdme.fireworks.bi/reference/crebtecompletion
+				// For now, just count chbrbcter usbge, bnd set token counts to
+				// -1 bs sentinel vblues.
+				promptUsbge.tokens = -1
+				completionUsbge.tokens = -1
 
 				dec := fireworks.NewDecoder(r)
-				// Consume all the messages, but we only care about the last completion data.
-				for dec.Scan() {
-					data := dec.Data()
+				// Consume bll the messbges, but we only cbre bbout the lbst completion dbtb.
+				for dec.Scbn() {
+					dbtb := dec.Dbtb()
 
-					// Gracefully skip over any data that isn't JSON-like.
-					if !bytes.HasPrefix(data, []byte("{")) {
+					// Grbcefully skip over bny dbtb thbt isn't JSON-like.
+					if !bytes.HbsPrefix(dbtb, []byte("{")) {
 						continue
 					}
 
-					var event fireworksResponse
-					if err := json.Unmarshal(data, &event); err != nil {
-						logger.Error("failed to decode event payload", log.Error(err), log.String("body", string(data)))
+					vbr event fireworksResponse
+					if err := json.Unmbrshbl(dbtb, &event); err != nil {
+						logger.Error("fbiled to decode event pbylobd", log.Error(err), log.String("body", string(dbtb)))
 						continue
 					}
 
 					if len(event.Choices) > 0 {
-						completionUsage.characters += len(event.Choices[0].Text)
+						completionUsbge.chbrbcters += len(event.Choices[0].Text)
 					}
 				}
 				if err := dec.Err(); err != nil {
-					logger.Error("failed to decode Fireworks streaming response", log.Error(err))
+					logger.Error("fbiled to decode Fireworks strebming response", log.Error(err))
 				}
 
-				return promptUsage, completionUsage
+				return promptUsbge, completionUsbge
 			},
 		},
 
-		// Setting to a valuer higher than SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
-		// do any retries
+		// Setting to b vbluer higher thbn SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION to not
+		// do bny retries
 		30, // seconds
 	)
 }
 
-// fireworksRequest captures all known fields from https://fireworksai.readme.io/reference/createcompletion.
+// fireworksRequest cbptures bll known fields from https://fireworksbi.rebdme.io/reference/crebtecompletion.
 type fireworksRequest struct {
 	Prompt      string   `json:"prompt"`
 	Model       string   `json:"model"`
-	MaxTokens   int32    `json:"max_tokens,omitempty"`
-	Temperature float32  `json:"temperature,omitempty"`
+	MbxTokens   int32    `json:"mbx_tokens,omitempty"`
+	Temperbture flobt32  `json:"temperbture,omitempty"`
 	TopP        int32    `json:"top_p,omitempty"`
 	N           int32    `json:"n,omitempty"`
-	Stream      bool     `json:"stream,omitempty"`
+	Strebm      bool     `json:"strebm,omitempty"`
 	Echo        bool     `json:"echo,omitempty"`
 	Stop        []string `json:"stop,omitempty"`
 }
@@ -145,11 +145,11 @@ type fireworksResponse struct {
 	Choices []struct {
 		Text         string `json:"text"`
 		Index        int    `json:"index"`
-		FinishReason string `json:"finish_reason"`
+		FinishRebson string `json:"finish_rebson"`
 	} `json:"choices"`
-	Usage struct {
+	Usbge struct {
 		PromptTokens     int `json:"prompt_tokens"`
-		TotalTokens      int `json:"total_tokens"`
+		TotblTokens      int `json:"totbl_tokens"`
 		CompletionTokens int `json:"completion_tokens"`
-	} `json:"usage"`
+	} `json:"usbge"`
 }

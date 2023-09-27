@@ -1,4 +1,4 @@
-package middleware
+pbckbge middlewbre
 
 import (
 	"log"
@@ -6,22 +6,22 @@ import (
 	"net/http/httputil"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var httpTrace, _ = strconv.ParseBool(env.Get("HTTP_TRACE", "false", "dump HTTP requests (including body) to stderr"))
+vbr httpTrbce, _ = strconv.PbrseBool(env.Get("HTTP_TRACE", "fblse", "dump HTTP requests (including body) to stderr"))
 
-// Trace is an HTTP middleware that dumps the HTTP request body (to stderr) if the env var
+// Trbce is bn HTTP middlewbre thbt dumps the HTTP request body (to stderr) if the env vbr
 // `HTTP_TRACE=1`.
-func Trace(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if httpTrace {
-			data, err := httputil.DumpRequest(r, true)
+func Trbce(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if httpTrbce {
+			dbtb, err := httputil.DumpRequest(r, true)
 			if err != nil {
-				log.Println("HTTP_TRACE: unable to print request:", err)
+				log.Println("HTTP_TRACE: unbble to print request:", err)
 			}
 			log.Println("====================================================================== HTTP_TRACE: HTTP request")
-			log.Println(string(data))
+			log.Println(string(dbtb))
 			log.Println("===============================================================================================")
 		}
 		next.ServeHTTP(w, r)

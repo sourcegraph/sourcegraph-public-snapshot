@@ -1,37 +1,37 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func CodeIntelAutoIndexing() *monitoring.Dashboard {
+func CodeIntelAutoIndexing() *monitoring.Dbshbobrd {
 	groups := []monitoring.Group{
-		shared.CodeIntelligence.NewAutoindexingSummaryGroup("${source:regex}"),
-		shared.CodeIntelligence.NewAutoindexingServiceGroup("${source:regex}"),
-		shared.CodeIntelligence.NewAutoindexingGraphQLTransportGroup("${source:regex}"),
-		shared.CodeIntelligence.NewAutoindexingStoreGroup("${source:regex}"),
-		shared.CodeIntelligence.NewAutoindexingBackgroundJobGroup("${source:regex}"),
-		shared.CodeIntelligence.NewAutoindexingInferenceServiceGroup("${source:regex}"),
-		shared.CodeIntelligence.NewLuasandboxServiceGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewAutoindexingSummbryGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewAutoindexingServiceGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewAutoindexingGrbphQLTrbnsportGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewAutoindexingStoreGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewAutoindexingBbckgroundJobGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewAutoindexingInferenceServiceGroup("${source:regex}"),
+		shbred.CodeIntelligence.NewLubsbndboxServiceGroup("${source:regex}"),
 	}
-	groups = append(groups, shared.CodeIntelligence.NewAutoindexingJanitorTaskGroups("${source:regex}")...)
+	groups = bppend(groups, shbred.CodeIntelligence.NewAutoindexingJbnitorTbskGroups("${source:regex}")...)
 
-	return &monitoring.Dashboard{
-		Name:        "codeintel-autoindexing",
+	return &monitoring.Dbshbobrd{
+		Nbme:        "codeintel-butoindexing",
 		Title:       "Code Intelligence > Autoindexing",
-		Description: "The service at `internal/codeintel/autoindexing`.",
-		Variables: []monitoring.ContainerVariable{
+		Description: "The service bt `internbl/codeintel/butoindexing`.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Source",
-				Name:  "source",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "src_codeintel_autoindexing_total{}",
-					LabelName:     "app",
-					ExampleOption: "frontend",
+				Lbbel: "Source",
+				Nbme:  "source",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "src_codeintel_butoindexing_totbl{}",
+					LbbelNbme:     "bpp",
+					ExbmpleOption: "frontend",
 				},
-				WildcardAllValue: true,
-				Multi:            false,
+				WildcbrdAllVblue: true,
+				Multi:            fblse,
 			},
 		},
 		Groups: groups,

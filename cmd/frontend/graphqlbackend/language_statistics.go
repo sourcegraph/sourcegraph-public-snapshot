@@ -1,19 +1,19 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-import "github.com/sourcegraph/sourcegraph/internal/inventory"
+import "github.com/sourcegrbph/sourcegrbph/internbl/inventory"
 
-type languageStatisticsResolver struct {
-	l inventory.Lang
+type lbngubgeStbtisticsResolver struct {
+	l inventory.Lbng
 }
 
-func (l *languageStatisticsResolver) Name() string {
-	return l.l.Name
+func (l *lbngubgeStbtisticsResolver) Nbme() string {
+	return l.l.Nbme
 }
 
-func (l *languageStatisticsResolver) TotalBytes() float64 {
-	return float64(l.l.TotalBytes)
+func (l *lbngubgeStbtisticsResolver) TotblBytes() flobt64 {
+	return flobt64(l.l.TotblBytes)
 }
 
-func (l *languageStatisticsResolver) TotalLines() int32 {
-	return int32(l.l.TotalLines)
+func (l *lbngubgeStbtisticsResolver) TotblLines() int32 {
+	return int32(l.l.TotblLines)
 }

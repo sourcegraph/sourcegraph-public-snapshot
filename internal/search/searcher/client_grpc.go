@@ -1,6 +1,6 @@
-// Package searcher provides a client for our just in time text searching
-// service "searcher".
-package searcher
+// Pbckbge sebrcher provides b client for our just in time text sebrching
+// service "sebrcher".
+pbckbge sebrcher
 
 import (
 	"context"
@@ -8,118 +8,118 @@ import (
 	"net/url"
 	"time"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/sebrcher/v1"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Search searches repo@commit with p.
-func SearchGRPC(
+// Sebrch sebrches repo@commit with p.
+func SebrchGRPC(
 	ctx context.Context,
-	searcherURLs *endpoint.Map,
-	connectionCache *defaults.ConnectionCache,
-	repo api.RepoName,
-	repoID api.RepoID,
-	branch string,
-	commit api.CommitID,
+	sebrcherURLs *endpoint.Mbp,
+	connectionCbche *defbults.ConnectionCbche,
+	repo bpi.RepoNbme,
+	repoID bpi.RepoID,
+	brbnch string,
+	commit bpi.CommitID,
 	indexed bool,
-	p *search.TextPatternInfo,
-	fetchTimeout time.Duration,
-	features search.Features,
-	onMatch func(*proto.FileMatch),
+	p *sebrch.TextPbtternInfo,
+	fetchTimeout time.Durbtion,
+	febtures sebrch.Febtures,
+	onMbtch func(*proto.FileMbtch),
 ) (limitHit bool, err error) {
 	r := (&protocol.Request{
 		Repo:   repo,
 		RepoID: repoID,
 		Commit: commit,
-		Branch: branch,
-		PatternInfo: protocol.PatternInfo{
-			Pattern:                      p.Pattern,
-			ExcludePattern:               p.ExcludePattern,
-			IncludePatterns:              p.IncludePatterns,
-			Languages:                    p.Languages,
+		Brbnch: brbnch,
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:                      p.Pbttern,
+			ExcludePbttern:               p.ExcludePbttern,
+			IncludePbtterns:              p.IncludePbtterns,
+			Lbngubges:                    p.Lbngubges,
 			CombyRule:                    p.CombyRule,
 			Select:                       p.Select.Root(),
-			Limit:                        int(p.FileMatchLimit),
+			Limit:                        int(p.FileMbtchLimit),
 			IsRegExp:                     p.IsRegExp,
-			IsStructuralPat:              p.IsStructuralPat,
-			IsWordMatch:                  p.IsWordMatch,
-			IsCaseSensitive:              p.IsCaseSensitive,
-			PathPatternsAreCaseSensitive: p.PathPatternsAreCaseSensitive,
-			IsNegated:                    p.IsNegated,
-			PatternMatchesContent:        p.PatternMatchesContent,
-			PatternMatchesPath:           p.PatternMatchesPath,
+			IsStructurblPbt:              p.IsStructurblPbt,
+			IsWordMbtch:                  p.IsWordMbtch,
+			IsCbseSensitive:              p.IsCbseSensitive,
+			PbthPbtternsAreCbseSensitive: p.PbthPbtternsAreCbseSensitive,
+			IsNegbted:                    p.IsNegbted,
+			PbtternMbtchesContent:        p.PbtternMbtchesContent,
+			PbtternMbtchesPbth:           p.PbtternMbtchesPbth,
 		},
 		Indexed:      indexed,
 		FetchTimeout: fetchTimeout,
-		FeatHybrid:   features.HybridSearch, // TODO(keegan) HACK because I didn't want to change the signatures to so many function calls.
+		FebtHybrid:   febtures.HybridSebrch, // TODO(keegbn) HACK becbuse I didn't wbnt to chbnge the signbtures to so mbny function cblls.
 	}).ToProto()
 
-	// Searcher caches the file contents for repo@commit since it is
-	// relatively expensive to fetch from gitserver. So we use consistent
-	// hashing to increase cache hits.
-	consistentHashKey := string(repo) + "@" + string(commit)
+	// Sebrcher cbches the file contents for repo@commit since it is
+	// relbtively expensive to fetch from gitserver. So we use consistent
+	// hbshing to increbse cbche hits.
+	consistentHbshKey := string(repo) + "@" + string(commit)
 
-	nodes, err := searcherURLs.Endpoints()
+	nodes, err := sebrcherURLs.Endpoints()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	urls, err := searcherURLs.GetN(consistentHashKey, len(nodes))
+	urls, err := sebrcherURLs.GetN(consistentHbshKey, len(nodes))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	trySearch := func(attempt int) (bool, error) {
-		parsed, err := url.Parse(urls[attempt%len(urls)])
+	trySebrch := func(bttempt int) (bool, error) {
+		pbrsed, err := url.Pbrse(urls[bttempt%len(urls)])
 		if err != nil {
-			return false, errors.Wrap(err, "failed to parse URL")
+			return fblse, errors.Wrbp(err, "fbiled to pbrse URL")
 		}
 
-		conn, err := connectionCache.GetConnection(parsed.Host)
+		conn, err := connectionCbche.GetConnection(pbrsed.Host)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
-		client := proto.NewSearcherServiceClient(conn)
-		resp, err := client.Search(ctx, r)
+		client := proto.NewSebrcherServiceClient(conn)
+		resp, err := client.Sebrch(ctx, r)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
 		for {
 			msg, err := resp.Recv()
 			if errors.Is(err, io.EOF) {
-				return false, nil
-			} else if status.Code(err) == codes.Canceled {
-				return false, context.Canceled
+				return fblse, nil
+			} else if stbtus.Code(err) == codes.Cbnceled {
+				return fblse, context.Cbnceled
 			} else if err != nil {
-				return false, err
+				return fblse, err
 			}
 
-			switch v := msg.Message.(type) {
-			case *proto.SearchResponse_FileMatch:
-				onMatch(v.FileMatch)
-			case *proto.SearchResponse_DoneMessage:
-				return v.DoneMessage.LimitHit, nil
-			default:
-				return false, errors.Newf("unknown SearchResponse message %T", v)
+			switch v := msg.Messbge.(type) {
+			cbse *proto.SebrchResponse_FileMbtch:
+				onMbtch(v.FileMbtch)
+			cbse *proto.SebrchResponse_DoneMessbge:
+				return v.DoneMessbge.LimitHit, nil
+			defbult:
+				return fblse, errors.Newf("unknown SebrchResponse messbge %T", v)
 			}
 		}
 	}
 
-	limitHit, err = trySearch(0)
-	if err != nil && errcode.IsTemporary(err) {
-		// Retry once if we get a temporary error back
-		limitHit, err = trySearch(1)
+	limitHit, err = trySebrch(0)
+	if err != nil && errcode.IsTemporbry(err) {
+		// Retry once if we get b temporbry error bbck
+		limitHit, err = trySebrch(1)
 	}
 	return limitHit, err
 }

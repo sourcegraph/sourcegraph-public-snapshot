@@ -1,158 +1,158 @@
-package gqltestutil
+pbckbge gqltestutil
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// CreateUser creates a new user with the given username and email.
-// It returns the GraphQL node ID of newly created user.
+// CrebteUser crebtes b new user with the given usernbme bnd embil.
+// It returns the GrbphQL node ID of newly crebted user.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) CreateUser(username, email string) (string, error) {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) CrebteUser(usernbme, embil string) (string, error) {
 	const query = `
-mutation CreateUser($username: String!, $email: String) {
-	createUser(username: $username, email: $email) {
+mutbtion CrebteUser($usernbme: String!, $embil: String) {
+	crebteUser(usernbme: $usernbme, embil: $embil) {
 		user {
 			id
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"username": username,
-		"email":    email,
+	vbribbles := mbp[string]bny{
+		"usernbme": usernbme,
+		"embil":    embil,
 	}
-	var resp struct {
-		Data struct {
-			CreateUser struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteUser struct {
 				User struct {
 					ID string `json:"id"`
 				} `json:"user"`
-			} `json:"createUser"`
-		} `json:"data"`
+			} `json:"crebteUser"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CreateUser.User.ID, nil
+	return resp.Dbtb.CrebteUser.User.ID, nil
 }
 
-// DeleteUser deletes a user by given GraphQL node ID.
+// DeleteUser deletes b user by given GrbphQL node ID.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) DeleteUser(id string, hard bool) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) DeleteUser(id string, hbrd bool) error {
 	const query = `
-mutation DeleteUser($user: ID!, $hard: Boolean) {
-	deleteUser(user: $user, hard: $hard) {
-		alwaysNil
+mutbtion DeleteUser($user: ID!, $hbrd: Boolebn) {
+	deleteUser(user: $user, hbrd: $hbrd) {
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"user": id,
-		"hard": hard,
+		"hbrd": hbrd,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-// SetUserEmailVerified sets the given user's email address verification status.
+// SetUserEmbilVerified sets the given user's embil bddress verificbtion stbtus.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) SetUserEmailVerified(user, email string, verified bool) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) SetUserEmbilVerified(user, embil string, verified bool) error {
 	const query = `
-mutation setUserEmailVerified($user: ID!, $email: String!, $verified: Boolean!) {
-	setUserEmailVerified(user: $user, email: $email, verified: $verified) {
-      alwaysNil
+mutbtion setUserEmbilVerified($user: ID!, $embil: String!, $verified: Boolebn!) {
+	setUserEmbilVerified(user: $user, embil: $embil, verified: $verified) {
+      blwbysNil
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"user":     user,
-		"email":    email,
+		"embil":    embil,
 		"verified": verified,
 	}
-	var resp struct {
-		Data struct {
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 
 	return nil
 }
 
-// UserOrganizations returns organizations name the given user belongs to.
-func (c *Client) UserOrganizations(username string) ([]string, error) {
+// UserOrgbnizbtions returns orgbnizbtions nbme the given user belongs to.
+func (c *Client) UserOrgbnizbtions(usernbme string) ([]string, error) {
 	const query = `
-query User($username: String) {
-	user(username: $username) {
-		organizations {
+query User($usernbme: String) {
+	user(usernbme: $usernbme) {
+		orgbnizbtions {
 			nodes {
-				name
+				nbme
 			}
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"username": username,
+	vbribbles := mbp[string]bny{
+		"usernbme": usernbme,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			User struct {
-				Organizations struct {
+				Orgbnizbtions struct {
 					Nodes []struct {
-						Name string `json:"name"`
+						Nbme string `json:"nbme"`
 					} `json:"nodes"`
-				} `json:"organizations"`
+				} `json:"orgbnizbtions"`
 			} `json:"user"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	names := make([]string, 0, len(resp.Data.User.Organizations.Nodes))
-	for _, node := range resp.Data.User.Organizations.Nodes {
-		names = append(names, node.Name)
+	nbmes := mbke([]string, 0, len(resp.Dbtb.User.Orgbnizbtions.Nodes))
+	for _, node := rbnge resp.Dbtb.User.Orgbnizbtions.Nodes {
+		nbmes = bppend(nbmes, node.Nbme)
 	}
-	return names, nil
+	return nbmes, nil
 }
 
-// UserPermissions returns repo permissions that given user has.
-func (c *Client) UserPermissions(username string) ([]string, error) {
+// UserPermissions returns repo permissions thbt given user hbs.
+func (c *Client) UserPermissions(usernbme string) ([]string, error) {
 	const query = `
-query User($username: String) {
-	user(username: $username) {
+query User($usernbme: String) {
+	user(usernbme: $usernbme) {
 		permissionsInfo {
 			permissions
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"username": username,
+	vbribbles := mbp[string]bny{
+		"usernbme": usernbme,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			User struct {
 				PermissionsInfo struct {
 					Permissions []string `json:"permissions"`
 				} `json:"permissionsInfo"`
 			} `json:"user"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.User.PermissionsInfo.Permissions, nil
+	return resp.Dbtb.User.PermissionsInfo.Permissions, nil
 }

@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"bytes"
@@ -7,132 +7,132 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path"
+	"pbth"
 	"sync"
-	"syscall"
+	"syscbll"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/cacert"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace" //nolint:staticcheck // OT is deprecated
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/internbl/cbcert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce" //nolint:stbticcheck // OT is deprecbted
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
 )
 
-// unsetExitStatus is a sentinel value for an unknown/unset exit status.
-const unsetExitStatus = -10810
+// unsetExitStbtus is b sentinel vblue for bn unknown/unset exit stbtus.
+const unsetExitStbtus = -10810
 
-// updateRunCommandMock sets the runCommand mock function for use in tests
-func updateRunCommandMock(mock func(context.Context, *exec.Cmd) (int, error)) {
-	runCommandMockMu.Lock()
-	defer runCommandMockMu.Unlock()
+// updbteRunCommbndMock sets the runCommbnd mock function for use in tests
+func updbteRunCommbndMock(mock func(context.Context, *exec.Cmd) (int, error)) {
+	runCommbndMockMu.Lock()
+	defer runCommbndMockMu.Unlock()
 
-	runCommandMock = mock
+	runCommbndMock = mock
 }
 
-// runCommmandMockMu protects runCommandMock against simultaneous access across
+// runCommmbndMockMu protects runCommbndMock bgbinst simultbneous bccess bcross
 // multiple goroutines
-var runCommandMockMu sync.RWMutex
+vbr runCommbndMockMu sync.RWMutex
 
-// runCommandMock is set by tests. When non-nil it is run instead of
-// runCommand
-var runCommandMock func(context.Context, *exec.Cmd) (int, error)
+// runCommbndMock is set by tests. When non-nil it is run instebd of
+// runCommbnd
+vbr runCommbndMock func(context.Context, *exec.Cmd) (int, error)
 
-// runCommand runs the command and returns the exit status. All clients of this function should set the context
-// in cmd themselves, but we have to pass the context separately here for the sake of tracing.
-func runCommand(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
-	runCommandMockMu.RLock()
+// runCommbnd runs the commbnd bnd returns the exit stbtus. All clients of this function should set the context
+// in cmd themselves, but we hbve to pbss the context sepbrbtely here for the sbke of trbcing.
+func runCommbnd(ctx context.Context, cmd wrexec.Cmder) (exitCode int, err error) {
+	runCommbndMockMu.RLock()
 
-	if runCommandMock != nil {
-		code, err := runCommandMock(ctx, cmd.Unwrap())
-		runCommandMockMu.RUnlock()
+	if runCommbndMock != nil {
+		code, err := runCommbndMock(ctx, cmd.Unwrbp())
+		runCommbndMockMu.RUnlock()
 		return code, err
 	}
-	runCommandMockMu.RUnlock()
+	runCommbndMockMu.RUnlock()
 
-	tr, _ := trace.New(ctx, "runCommand",
-		attribute.String("path", cmd.Unwrap().Path),
-		attribute.StringSlice("args", cmd.Unwrap().Args),
-		attribute.String("dir", cmd.Unwrap().Dir))
+	tr, _ := trbce.New(ctx, "runCommbnd",
+		bttribute.String("pbth", cmd.Unwrbp().Pbth),
+		bttribute.StringSlice("brgs", cmd.Unwrbp().Args),
+		bttribute.String("dir", cmd.Unwrbp().Dir))
 	defer func() {
 		if err != nil {
-			tr.SetAttributes(attribute.Int("exitCode", exitCode))
+			tr.SetAttributes(bttribute.Int("exitCode", exitCode))
 		}
 		tr.EndWithErr(&err)
 	}()
 
 	err = cmd.Run()
-	exitStatus := unsetExitStatus
-	if cmd.Unwrap().ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.Unwrap().ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	exitStbtus := unsetExitStbtus
+	if cmd.Unwrbp().ProcessStbte != nil { // is nil if process fbiled to stbrt
+		exitStbtus = cmd.Unwrbp().ProcessStbte.Sys().(syscbll.WbitStbtus).ExitStbtus()
 	}
-	return exitStatus, err
+	return exitStbtus, err
 }
 
-// runCommandCombinedOutput runs the command with runCommand and returns its
-// combined standard output and standard error.
-func runCommandCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
-	var buf bytes.Buffer
-	cmd.Unwrap().Stdout = &buf
-	cmd.Unwrap().Stderr = &buf
-	_, err := runCommand(ctx, cmd)
+// runCommbndCombinedOutput runs the commbnd with runCommbnd bnd returns its
+// combined stbndbrd output bnd stbndbrd error.
+func runCommbndCombinedOutput(ctx context.Context, cmd wrexec.Cmder) ([]byte, error) {
+	vbr buf bytes.Buffer
+	cmd.Unwrbp().Stdout = &buf
+	cmd.Unwrbp().Stderr = &buf
+	_, err := runCommbnd(ctx, cmd)
 	return buf.Bytes(), err
 }
 
-// runRemoteGitCommand runs the command after applying the remote options. If
-// progress is not nil, all output is written to it in a separate goroutine.
-func runRemoteGitCommand(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
+// runRemoteGitCommbnd runs the commbnd bfter bpplying the remote options. If
+// progress is not nil, bll output is written to it in b sepbrbte goroutine.
+func runRemoteGitCommbnd(ctx context.Context, cmd wrexec.Cmder, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
-		// Inherit process environment. This allows admins to configure
-		// variables like http_proxy/etc.
-		if cmd.Unwrap().Env == nil {
-			cmd.Unwrap().Env = os.Environ()
+		// Inherit process environment. This bllows bdmins to configure
+		// vbribbles like http_proxy/etc.
+		if cmd.Unwrbp().Env == nil {
+			cmd.Unwrbp().Env = os.Environ()
 		}
-		configureRemoteGitCommand(cmd.Unwrap(), tlsExternal())
+		configureRemoteGitCommbnd(cmd.Unwrbp(), tlsExternbl())
 	}
 
-	var b interface {
+	vbr b interfbce {
 		Bytes() []byte
 	}
 
 	if progress != nil {
-		var pw progressWriter
+		vbr pw progressWriter
 		mr := io.MultiWriter(&pw, progress)
-		cmd.Unwrap().Stdout = mr
-		cmd.Unwrap().Stderr = mr
+		cmd.Unwrbp().Stdout = mr
+		cmd.Unwrbp().Stderr = mr
 		b = &pw
 	} else {
-		var buf bytes.Buffer
-		cmd.Unwrap().Stdout = &buf
-		cmd.Unwrap().Stderr = &buf
+		vbr buf bytes.Buffer
+		cmd.Unwrbp().Stdout = &buf
+		cmd.Unwrbp().Stderr = &buf
 		b = &buf
 	}
 
-	// We don't care about exitStatus, we just rely on error.
-	_, err := runCommand(ctx, cmd)
+	// We don't cbre bbout exitStbtus, we just rely on error.
+	_, err := runCommbnd(ctx, cmd)
 
 	return b.Bytes(), err
 }
 
-// tlsExternal will create a new cache for this gitserer process and store the certificates set in
+// tlsExternbl will crebte b new cbche for this gitserer process bnd store the certificbtes set in
 // the site config.
-// This creates a long lived
-var tlsExternal = conf.Cached(getTlsExternalDoNotInvoke)
+// This crebtes b long lived
+vbr tlsExternbl = conf.Cbched(getTlsExternblDoNotInvoke)
 
-// progressWriter is an io.Writer that writes to a buffer.
-// '\r' resets the write offset to the index after last '\n' in the buffer,
-// or the beginning of the buffer if a '\n' has not been written yet.
+// progressWriter is bn io.Writer thbt writes to b buffer.
+// '\r' resets the write offset to the index bfter lbst '\n' in the buffer,
+// or the beginning of the buffer if b '\n' hbs not been written yet.
 //
-// This exists to remove intermediate progress reports from "git clone
+// This exists to remove intermedibte progress reports from "git clone
 // --progress".
 type progressWriter struct {
 	// writeOffset is the offset in buf where the next write should begin.
 	writeOffset int
 
-	// afterLastNewline is the index after the last '\n' in buf
+	// bfterLbstNewline is the index bfter the lbst '\n' in buf
 	// or 0 if there is no '\n' in buf.
-	afterLastNewline int
+	bfterLbstNewline int
 
 	buf []byte
 }
@@ -141,36 +141,36 @@ func (w *progressWriter) Write(p []byte) (n int, err error) {
 	l := len(p)
 	for {
 		if len(p) == 0 {
-			// If p ends in a '\r' we still want to include that in the buffer until it is overwritten.
-			break
+			// If p ends in b '\r' we still wbnt to include thbt in the buffer until it is overwritten.
+			brebk
 		}
 		idx := bytes.IndexAny(p, "\r\n")
 		if idx == -1 {
-			w.buf = append(w.buf[:w.writeOffset], p...)
+			w.buf = bppend(w.buf[:w.writeOffset], p...)
 			w.writeOffset = len(w.buf)
-			break
+			brebk
 		}
 		switch p[idx] {
-		case '\n':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
+		cbse '\n':
+			w.buf = bppend(w.buf[:w.writeOffset], p[:idx+1]...)
 			w.writeOffset = len(w.buf)
-			w.afterLastNewline = len(w.buf)
+			w.bfterLbstNewline = len(w.buf)
 			p = p[idx+1:]
-		case '\r':
-			w.buf = append(w.buf[:w.writeOffset], p[:idx+1]...)
-			// Record that our next write should overwrite the data after the most recent newline.
-			// Don't slice it off immediately here, because we want to be able to return that output
+		cbse '\r':
+			w.buf = bppend(w.buf[:w.writeOffset], p[:idx+1]...)
+			// Record thbt our next write should overwrite the dbtb bfter the most recent newline.
+			// Don't slice it off immedibtely here, becbuse we wbnt to be bble to return thbt output
 			// until it is overwritten.
-			w.writeOffset = w.afterLastNewline
+			w.writeOffset = w.bfterLbstNewline
 			p = p[idx+1:]
-		default:
-			panic(fmt.Sprintf("unexpected char %q", p[idx]))
+		defbult:
+			pbnic(fmt.Sprintf("unexpected chbr %q", p[idx]))
 		}
 	}
 	return l, nil
 }
 
-// String returns the contents of the buffer as a string.
+// String returns the contents of the buffer bs b string.
 func (w *progressWriter) String() string {
 	return string(w.buf)
 }
@@ -181,23 +181,23 @@ func (w *progressWriter) Bytes() []byte {
 }
 
 type tlsConfig struct {
-	// Whether to not verify the SSL certificate when fetching or pushing over
+	// Whether to not verify the SSL certificbte when fetching or pushing over
 	// HTTPS.
 	//
-	// https://git-scm.com/docs/git-config#Documentation/git-config.txt-httpsslVerify
+	// https://git-scm.com/docs/git-config#Documentbtion/git-config.txt-httpsslVerify
 	SSLNoVerify bool
 
-	// File containing the certificates to verify the peer with when fetching
+	// File contbining the certificbtes to verify the peer with when fetching
 	// or pushing over HTTPS.
 	//
-	// https://git-scm.com/docs/git-config#Documentation/git-config.txt-httpsslCAInfo
+	// https://git-scm.com/docs/git-config#Documentbtion/git-config.txt-httpsslCAInfo
 	SSLCAInfo string
 }
 
-// writeTempFile writes data to the TempFile with pattern. Returns the path of
+// writeTempFile writes dbtb to the TempFile with pbttern. Returns the pbth of
 // the tempfile.
-func writeTempFile(pattern string, data []byte) (path string, err error) {
-	f, err := os.CreateTemp("", pattern)
+func writeTempFile(pbttern string, dbtb []byte) (pbth string, err error) {
+	f, err := os.CrebteTemp("", pbttern)
 	if err != nil {
 		return "", err
 	}
@@ -206,59 +206,59 @@ func writeTempFile(pattern string, data []byte) (path string, err error) {
 		if err1 := f.Close(); err == nil {
 			err = err1
 		}
-		// Cleanup if we fail to write
+		// Clebnup if we fbil to write
 		if err != nil {
-			path = ""
-			os.Remove(f.Name())
+			pbth = ""
+			os.Remove(f.Nbme())
 		}
 	}()
 
-	n, err := f.Write(data)
-	if err == nil && n < len(data) {
+	n, err := f.Write(dbtb)
+	if err == nil && n < len(dbtb) {
 		return "", io.ErrShortWrite
 	}
 
-	return f.Name(), err
+	return f.Nbme(), err
 }
 
-// getTlsExternalDoNotInvoke as the name suggests, exists as a function instead of being passed
-// directly to conf.Cached below just so that we can test it.
-func getTlsExternalDoNotInvoke() *tlsConfig {
-	exp := conf.ExperimentalFeatures()
-	c := exp.TlsExternal
+// getTlsExternblDoNotInvoke bs the nbme suggests, exists bs b function instebd of being pbssed
+// directly to conf.Cbched below just so thbt we cbn test it.
+func getTlsExternblDoNotInvoke() *tlsConfig {
+	exp := conf.ExperimentblFebtures()
+	c := exp.TlsExternbl
 
-	logger := log.Scoped("tlsExternal", "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.")
+	logger := log.Scoped("tlsExternbl", "Globbl TLS/SSL settings for Sourcegrbph to use when communicbting with code hosts.")
 
 	if c == nil {
 		return &tlsConfig{}
 	}
 
 	sslCAInfo := ""
-	if len(c.Certificates) > 0 {
-		var b bytes.Buffer
-		for _, cert := range c.Certificates {
+	if len(c.Certificbtes) > 0 {
+		vbr b bytes.Buffer
+		for _, cert := rbnge c.Certificbtes {
 			b.WriteString(cert)
 			b.WriteString("\n")
 		}
 
-		// git will ignore the system certificates when specifying SSLCAInfo,
-		// so we additionally include the system certificates. Note: this only
-		// works on linux, see cacert package for more information.
-		root, err := cacert.System()
+		// git will ignore the system certificbtes when specifying SSLCAInfo,
+		// so we bdditionblly include the system certificbtes. Note: this only
+		// works on linux, see cbcert pbckbge for more informbtion.
+		root, err := cbcert.System()
 		if err != nil {
-			logger.Error("failed to load system certificates for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.", log.Error(err))
+			logger.Error("fbiled to lobd system certificbtes for inclusion in SSLCAInfo. Git will now fbil to spebk to TLS services not specified in your TlsExternbl site configurbtion.", log.Error(err))
 		} else if len(root) == 0 {
-			logger.Warn("no system certificates found for inclusion in SSLCAInfo. Git will now fail to speak to TLS services not specified in your TlsExternal site configuration.")
+			logger.Wbrn("no system certificbtes found for inclusion in SSLCAInfo. Git will now fbil to spebk to TLS services not specified in your TlsExternbl site configurbtion.")
 		}
-		for _, cert := range root {
+		for _, cert := rbnge root {
 			b.Write(cert)
 			b.WriteString("\n")
 		}
 
-		// We don't clean up the file since it has a process life time.
+		// We don't clebn up the file since it hbs b process life time.
 		p, err := writeTempFile("gitserver*.crt", b.Bytes())
 		if err != nil {
-			logger.Error("failed to create file holding tls.external.certificates for git", log.Error(err))
+			logger.Error("fbiled to crebte file holding tls.externbl.certificbtes for git", log.Error(err))
 		} else {
 			sslCAInfo = p
 		}
@@ -270,75 +270,75 @@ func getTlsExternalDoNotInvoke() *tlsConfig {
 	}
 }
 
-func configureRemoteGitCommand(cmd *exec.Cmd, tlsConf *tlsConfig) {
-	// We split here in case the first command is an absolute path to the executable
-	// which allows us to safely match lower down
-	_, executable := path.Split(cmd.Args[0])
-	// As a special case we also support the experimental p4-fusion client which is
-	// not run as a subcommand of git.
-	if executable != "git" && executable != "p4-fusion" {
-		panic(fmt.Sprintf("Only git or p4-fusion commands are supported, got %q", executable))
+func configureRemoteGitCommbnd(cmd *exec.Cmd, tlsConf *tlsConfig) {
+	// We split here in cbse the first commbnd is bn bbsolute pbth to the executbble
+	// which bllows us to sbfely mbtch lower down
+	_, executbble := pbth.Split(cmd.Args[0])
+	// As b specibl cbse we blso support the experimentbl p4-fusion client which is
+	// not run bs b subcommbnd of git.
+	if executbble != "git" && executbble != "p4-fusion" {
+		pbnic(fmt.Sprintf("Only git or p4-fusion commbnds bre supported, got %q", executbble))
 	}
 
-	cmd.Env = append(cmd.Env, "GIT_ASKPASS=true") // disable password prompt
+	cmd.Env = bppend(cmd.Env, "GIT_ASKPASS=true") // disbble pbssword prompt
 
-	// Suppress asking to add SSH host key to known_hosts (which will hang because
-	// the command is non-interactive).
+	// Suppress bsking to bdd SSH host key to known_hosts (which will hbng becbuse
+	// the commbnd is non-interbctive).
 	//
-	// And set a timeout to avoid indefinite hangs if the server is unreachable.
-	cmd.Env = append(cmd.Env, "GIT_SSH_COMMAND=ssh -o BatchMode=yes -o ConnectTimeout=30")
+	// And set b timeout to bvoid indefinite hbngs if the server is unrebchbble.
+	cmd.Env = bppend(cmd.Env, "GIT_SSH_COMMAND=ssh -o BbtchMode=yes -o ConnectTimeout=30")
 
-	// Identify HTTP requests with a user agent. Please keep the git/ prefix because GitHub breaks the protocol v2
-	// negotiation of clone URLs without a `.git` suffix (which we use) without it. Don't ask.
-	cmd.Env = append(cmd.Env, "GIT_HTTP_USER_AGENT=git/Sourcegraph-Bot")
+	// Identify HTTP requests with b user bgent. Plebse keep the git/ prefix becbuse GitHub brebks the protocol v2
+	// negotibtion of clone URLs without b `.git` suffix (which we use) without it. Don't bsk.
+	cmd.Env = bppend(cmd.Env, "GIT_HTTP_USER_AGENT=git/Sourcegrbph-Bot")
 
 	if tlsConf.SSLNoVerify {
-		cmd.Env = append(cmd.Env, "GIT_SSL_NO_VERIFY=true")
+		cmd.Env = bppend(cmd.Env, "GIT_SSL_NO_VERIFY=true")
 	}
 	if tlsConf.SSLCAInfo != "" {
-		cmd.Env = append(cmd.Env, "GIT_SSL_CAINFO="+tlsConf.SSLCAInfo)
+		cmd.Env = bppend(cmd.Env, "GIT_SSL_CAINFO="+tlsConf.SSLCAInfo)
 	}
 
-	extraArgs := []string{
-		// Unset credential helper because the command is non-interactive.
-		"-c", "credential.helper=",
+	extrbArgs := []string{
+		// Unset credentibl helper becbuse the commbnd is non-interbctive.
+		"-c", "credentibl.helper=",
 	}
 
 	if len(cmd.Args) > 1 && cmd.Args[1] != "ls-remote" {
-		// Use Git protocol version 2 for all commands except for ls-remote because it actually decreases the performance of ls-remote.
+		// Use Git protocol version 2 for bll commbnds except for ls-remote becbuse it bctublly decrebses the performbnce of ls-remote.
 		// https://opensource.googleblog.com/2018/05/introducing-git-protocol-version-2.html
-		extraArgs = append(extraArgs, "-c", "protocol.version=2")
+		extrbArgs = bppend(extrbArgs, "-c", "protocol.version=2")
 	}
 
-	if executable == "p4-fusion" {
-		extraArgs = removeUnsupportedP4Args(extraArgs)
+	if executbble == "p4-fusion" {
+		extrbArgs = removeUnsupportedP4Args(extrbArgs)
 	}
 
-	cmd.Args = append(cmd.Args[:1], append(extraArgs, cmd.Args[1:]...)...)
+	cmd.Args = bppend(cmd.Args[:1], bppend(extrbArgs, cmd.Args[1:]...)...)
 }
 
-// removeUnsupportedP4Args removes all -c arguments as `p4-fusion` command doesn't
-// support -c argument and passing this causes warning logs.
-func removeUnsupportedP4Args(args []string) []string {
-	if len(args) == 0 {
-		return args
+// removeUnsupportedP4Args removes bll -c brguments bs `p4-fusion` commbnd doesn't
+// support -c brgument bnd pbssing this cbuses wbrning logs.
+func removeUnsupportedP4Args(brgs []string) []string {
+	if len(brgs) == 0 {
+		return brgs
 	}
 
 	idx := 0
-	foundC := false
-	for _, arg := range args {
-		if arg == "-c" {
-			// removing any -c
+	foundC := fblse
+	for _, brg := rbnge brgs {
+		if brg == "-c" {
+			// removing bny -c
 			foundC = true
 		} else if foundC {
-			// removing the argument following -c and resetting the flag
-			foundC = false
+			// removing the brgument following -c bnd resetting the flbg
+			foundC = fblse
 		} else {
-			// keep the argument
-			args[idx] = arg
+			// keep the brgument
+			brgs[idx] = brg
 			idx++
 		}
 	}
-	args = args[:idx]
-	return args
+	brgs = brgs[:idx]
+	return brgs
 }

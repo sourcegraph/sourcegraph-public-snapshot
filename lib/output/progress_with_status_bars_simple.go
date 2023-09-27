@@ -1,67 +1,67 @@
-package output
+pbckbge output
 
 import (
 	"time"
 )
 
-type progressWithStatusBarsSimple struct {
+type progressWithStbtusBbrsSimple struct {
 	*progressSimple
 
-	statusBars []*StatusBar
+	stbtusBbrs []*StbtusBbr
 }
 
-func (p *progressWithStatusBarsSimple) Complete() {
+func (p *progressWithStbtusBbrsSimple) Complete() {
 	p.stop()
-	writeBars(p.Output, p.bars)
-	writeStatusBars(p.Output, p.statusBars)
+	writeBbrs(p.Output, p.bbrs)
+	writeStbtusBbrs(p.Output, p.stbtusBbrs)
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarUpdatef(i int, format string, args ...any) {
-	if p.statusBars[i] != nil {
-		p.statusBars[i].Updatef(format, args...)
+func (p *progressWithStbtusBbrsSimple) StbtusBbrUpdbtef(i int, formbt string, brgs ...bny) {
+	if p.stbtusBbrs[i] != nil {
+		p.stbtusBbrs[i].Updbtef(formbt, brgs...)
 	}
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarCompletef(i int, format string, args ...any) {
-	if p.statusBars[i] != nil {
-		wasComplete := p.statusBars[i].completed
-		p.statusBars[i].Completef(format, args...)
-		if !wasComplete {
-			writeStatusBar(p.Output, p.statusBars[i])
+func (p *progressWithStbtusBbrsSimple) StbtusBbrCompletef(i int, formbt string, brgs ...bny) {
+	if p.stbtusBbrs[i] != nil {
+		wbsComplete := p.stbtusBbrs[i].completed
+		p.stbtusBbrs[i].Completef(formbt, brgs...)
+		if !wbsComplete {
+			writeStbtusBbr(p.Output, p.stbtusBbrs[i])
 		}
 	}
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarFailf(i int, format string, args ...any) {
-	if p.statusBars[i] != nil {
-		wasCompleted := p.statusBars[i].completed
-		p.statusBars[i].Failf(format, args...)
-		if !wasCompleted {
-			writeStatusBar(p.Output, p.statusBars[i])
+func (p *progressWithStbtusBbrsSimple) StbtusBbrFbilf(i int, formbt string, brgs ...bny) {
+	if p.stbtusBbrs[i] != nil {
+		wbsCompleted := p.stbtusBbrs[i].completed
+		p.stbtusBbrs[i].Fbilf(formbt, brgs...)
+		if !wbsCompleted {
+			writeStbtusBbr(p.Output, p.stbtusBbrs[i])
 		}
 	}
 }
 
-func (p *progressWithStatusBarsSimple) StatusBarResetf(i int, label, format string, args ...any) {
-	if p.statusBars[i] != nil {
-		p.statusBars[i].Resetf(label, format, args...)
+func (p *progressWithStbtusBbrsSimple) StbtusBbrResetf(i int, lbbel, formbt string, brgs ...bny) {
+	if p.stbtusBbrs[i] != nil {
+		p.stbtusBbrs[i].Resetf(lbbel, formbt, brgs...)
 	}
 }
 
-func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBar, o *Output, opts *ProgressOpts) *progressWithStatusBarsSimple {
-	p := &progressWithStatusBarsSimple{
+func newProgressWithStbtusBbrsSimple(bbrs []*ProgressBbr, stbtusBbrs []*StbtusBbr, o *Output, opts *ProgressOpts) *progressWithStbtusBbrsSimple {
+	p := &progressWithStbtusBbrsSimple{
 		progressSimple: &progressSimple{
 			Output: o,
-			bars:   bars,
-			done:   make(chan chan struct{}),
+			bbrs:   bbrs,
+			done:   mbke(chbn chbn struct{}),
 		},
-		statusBars: statusBars,
+		stbtusBbrs: stbtusBbrs,
 	}
 
 	if opts != nil && opts.NoSpinner {
 		if p.Output.verbose {
-			writeBars(p.Output, p.bars)
-			writeStatusBars(p.Output, p.statusBars)
+			writeBbrs(p.Output, p.bbrs)
+			writeStbtusBbrs(p.Output, p.stbtusBbrs)
 		}
 		return p
 	}
@@ -72,13 +72,13 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 
 		for {
 			select {
-			case <-ticker.C:
+			cbse <-ticker.C:
 				if p.Output.verbose {
-					writeBars(p.Output, p.bars)
-					writeStatusBars(p.Output, p.statusBars)
+					writeBbrs(p.Output, p.bbrs)
+					writeStbtusBbrs(p.Output, p.stbtusBbrs)
 				}
 
-			case c := <-p.done:
+			cbse c := <-p.done:
 				c <- struct{}{}
 				return
 			}
@@ -88,19 +88,19 @@ func newProgressWithStatusBarsSimple(bars []*ProgressBar, statusBars []*StatusBa
 	return p
 }
 
-func writeStatusBar(w Writer, bar *StatusBar) {
-	w.Writef("%s: "+bar.format, append([]any{bar.label}, bar.args...)...)
+func writeStbtusBbr(w Writer, bbr *StbtusBbr) {
+	w.Writef("%s: "+bbr.formbt, bppend([]bny{bbr.lbbel}, bbr.brgs...)...)
 }
 
-func writeStatusBars(o *Output, bars []*StatusBar) {
-	if len(bars) > 1 {
-		block := o.Block(Line("", StyleReset, "Status:"))
+func writeStbtusBbrs(o *Output, bbrs []*StbtusBbr) {
+	if len(bbrs) > 1 {
+		block := o.Block(Line("", StyleReset, "Stbtus:"))
 		defer block.Close()
 
-		for _, bar := range bars {
-			writeStatusBar(block, bar)
+		for _, bbr := rbnge bbrs {
+			writeStbtusBbr(block, bbr)
 		}
-	} else if len(bars) == 1 {
-		writeStatusBar(o, bars[0])
+	} else if len(bbrs) == 1 {
+		writeStbtusBbr(o, bbrs[0])
 	}
 }

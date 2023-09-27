@@ -1,326 +1,326 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewFakeSourcer returns a new faked Sourcer to be used for testing Batch Changes.
-func NewFakeSourcer(err error, source sources.ChangesetSource) sources.Sourcer {
-	return &fakeSourcer{
+// NewFbkeSourcer returns b new fbked Sourcer to be used for testing Bbtch Chbnges.
+func NewFbkeSourcer(err error, source sources.ChbngesetSource) sources.Sourcer {
+	return &fbkeSourcer{
 		err,
 		source,
 	}
 }
 
-type fakeSourcer struct {
+type fbkeSourcer struct {
 	err    error
-	source sources.ChangesetSource
+	source sources.ChbngesetSource
 }
 
-func (s *fakeSourcer) ForChangeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Changeset, as sources.AuthenticationStrategy) (sources.ChangesetSource, error) {
+func (s *fbkeSourcer) ForChbngeset(ctx context.Context, tx sources.SourcerStore, ch *btypes.Chbngeset, bs sources.AuthenticbtionStrbtegy) (sources.ChbngesetSource, error) {
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForUser(ctx context.Context, tx sources.SourcerStore, uid int32, repo *types.Repo) (sources.ChangesetSource, error) {
+func (s *fbkeSourcer) ForUser(ctx context.Context, tx sources.SourcerStore, uid int32, repo *types.Repo) (sources.ChbngesetSource, error) {
 	return s.source, s.err
 }
 
-func (s *fakeSourcer) ForExternalService(ctx context.Context, tx sources.SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (sources.ChangesetSource, error) {
+func (s *fbkeSourcer) ForExternblService(ctx context.Context, tx sources.SourcerStore, bu buth.Authenticbtor, opts store.GetExternblServiceIDsOpts) (sources.ChbngesetSource, error) {
 	return s.source, s.err
 }
 
-// FakeChangesetSource is a fake implementation of the ChangesetSource
-// interface to be used in tests.
-type FakeChangesetSource struct {
-	Svc *types.ExternalService
+// FbkeChbngesetSource is b fbke implementbtion of the ChbngesetSource
+// interfbce to be used in tests.
+type FbkeChbngesetSource struct {
+	Svc *types.ExternblService
 
-	CurrentAuthenticator auth.Authenticator
+	CurrentAuthenticbtor buth.Authenticbtor
 
-	CreateDraftChangesetCalled  bool
-	UndraftedChangesetsCalled   bool
-	CreateChangesetCalled       bool
-	UpdateChangesetCalled       bool
-	ListReposCalled             bool
-	ExternalServicesCalled      bool
-	LoadChangesetCalled         bool
-	CloseChangesetCalled        bool
-	ReopenChangesetCalled       bool
-	CreateCommentCalled         bool
-	AuthenticatedUsernameCalled bool
-	ValidateAuthenticatorCalled bool
-	MergeChangesetCalled        bool
-	IsArchivedPushErrorCalled   bool
-	BuildCommitOptsCalled       bool
+	CrebteDrbftChbngesetCblled  bool
+	UndrbftedChbngesetsCblled   bool
+	CrebteChbngesetCblled       bool
+	UpdbteChbngesetCblled       bool
+	ListReposCblled             bool
+	ExternblServicesCblled      bool
+	LobdChbngesetCblled         bool
+	CloseChbngesetCblled        bool
+	ReopenChbngesetCblled       bool
+	CrebteCommentCblled         bool
+	AuthenticbtedUsernbmeCblled bool
+	VblidbteAuthenticbtorCblled bool
+	MergeChbngesetCblled        bool
+	IsArchivedPushErrorCblled   bool
+	BuildCommitOptsCblled       bool
 
-	// The Changeset.HeadRef to be expected in CreateChangeset/UpdateChangeset calls.
-	WantHeadRef string
-	// The Changeset.BaseRef to be expected in CreateChangeset/UpdateChangeset calls.
-	WantBaseRef string
+	// The Chbngeset.HebdRef to be expected in CrebteChbngeset/UpdbteChbngeset cblls.
+	WbntHebdRef string
+	// The Chbngeset.BbseRef to be expected in CrebteChbngeset/UpdbteChbngeset cblls.
+	WbntBbseRef string
 
-	// The metadata the FakeChangesetSource should set on the created/updated
-	// Changeset with changeset.SetMetadata.
-	FakeMetadata any
+	// The metbdbtb the FbkeChbngesetSource should set on the crebted/updbted
+	// Chbngeset with chbngeset.SetMetbdbtb.
+	FbkeMetbdbtb bny
 
-	// Whether or not the changeset already ChangesetExists on the code host at the time
-	// when CreateChangeset is called.
-	ChangesetExists bool
+	// Whether or not the chbngeset blrebdy ChbngesetExists on the code host bt the time
+	// when CrebteChbngeset is cblled.
+	ChbngesetExists bool
 
-	// When true, ValidateAuthenticator will return no error.
-	AuthenticatorIsValid bool
+	// When true, VblidbteAuthenticbtor will return no error.
+	AuthenticbtorIsVblid bool
 
 	// error to be returned from every method
 	Err error
 
-	// ClosedChangesets contains the changesets that were passed to CloseChangeset
-	ClosedChangesets []*sources.Changeset
+	// ClosedChbngesets contbins the chbngesets thbt were pbssed to CloseChbngeset
+	ClosedChbngesets []*sources.Chbngeset
 
-	// CreatedChangesets contains the changesets that were passed to
-	// CreateChangeset
-	CreatedChangesets []*sources.Changeset
+	// CrebtedChbngesets contbins the chbngesets thbt were pbssed to
+	// CrebteChbngeset
+	CrebtedChbngesets []*sources.Chbngeset
 
-	// LoadedChangesets contains the changesets that were passed to LoadChangeset
-	LoadedChangesets []*sources.Changeset
+	// LobdedChbngesets contbins the chbngesets thbt were pbssed to LobdChbngeset
+	LobdedChbngesets []*sources.Chbngeset
 
-	// UpdateChangesets contains the changesets that were passed to
-	// UpdateChangeset
-	UpdatedChangesets []*sources.Changeset
+	// UpdbteChbngesets contbins the chbngesets thbt were pbssed to
+	// UpdbteChbngeset
+	UpdbtedChbngesets []*sources.Chbngeset
 
-	// ReopenedChangesets contains the changesets that were passed to ReopenedChangeset
-	ReopenedChangesets []*sources.Changeset
+	// ReopenedChbngesets contbins the chbngesets thbt were pbssed to ReopenedChbngeset
+	ReopenedChbngesets []*sources.Chbngeset
 
-	// UndraftedChangesets contains the changesets that were passed to UndraftChangeset
-	UndraftedChangesets []*sources.Changeset
+	// UndrbftedChbngesets contbins the chbngesets thbt were pbssed to UndrbftChbngeset
+	UndrbftedChbngesets []*sources.Chbngeset
 
-	// Username is the username returned by AuthenticatedUsername
-	Username string
+	// Usernbme is the usernbme returned by AuthenticbtedUsernbme
+	Usernbme string
 
 	// IsArchivedPushErrorTrue is returned when IsArchivedPushError is invoked.
 	IsArchivedPushErrorTrue bool
 }
 
-var (
-	_ sources.ChangesetSource           = &FakeChangesetSource{}
-	_ sources.ArchivableChangesetSource = &FakeChangesetSource{}
-	_ sources.DraftChangesetSource      = &FakeChangesetSource{}
+vbr (
+	_ sources.ChbngesetSource           = &FbkeChbngesetSource{}
+	_ sources.ArchivbbleChbngesetSource = &FbkeChbngesetSource{}
+	_ sources.DrbftChbngesetSource      = &FbkeChbngesetSource{}
 )
 
-func (s *FakeChangesetSource) CreateDraftChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
-	s.CreateDraftChangesetCalled = true
+func (s *FbkeChbngesetSource) CrebteDrbftChbngeset(ctx context.Context, c *sources.Chbngeset) (bool, error) {
+	s.CrebteDrbftChbngesetCblled = true
 
 	if s.Err != nil {
-		return s.ChangesetExists, s.Err
+		return s.ChbngesetExists, s.Err
 	}
 
-	if c.TargetRepo == nil {
-		return false, noReposErr{name: "target"}
-	}
-	if c.RemoteRepo == nil {
-		return false, noReposErr{name: "remote"}
-	}
-
-	if c.HeadRef != s.WantHeadRef {
-		return s.ChangesetExists, errors.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
-	}
-
-	if c.BaseRef != s.WantBaseRef {
-		return s.ChangesetExists, errors.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
-	}
-
-	if err := c.SetMetadata(s.FakeMetadata); err != nil {
-		return s.ChangesetExists, err
-	}
-
-	s.CreatedChangesets = append(s.CreatedChangesets, c)
-	return s.ChangesetExists, s.Err
-}
-
-func (s *FakeChangesetSource) UndraftChangeset(ctx context.Context, c *sources.Changeset) error {
-	s.UndraftedChangesetsCalled = true
-
-	if s.Err != nil {
-		return s.Err
-	}
-
-	if c.TargetRepo == nil {
-		return noReposErr{name: "target"}
+	if c.TbrgetRepo == nil {
+		return fblse, noReposErr{nbme: "tbrget"}
 	}
 	if c.RemoteRepo == nil {
-		return noReposErr{name: "remote"}
+		return fblse, noReposErr{nbme: "remote"}
 	}
 
-	s.UndraftedChangesets = append(s.UndraftedChangesets, c)
+	if c.HebdRef != s.WbntHebdRef {
+		return s.ChbngesetExists, errors.Errorf("wrong HebdRef. wbnt=%s, hbve=%s", s.WbntHebdRef, c.HebdRef)
+	}
 
-	return c.SetMetadata(s.FakeMetadata)
+	if c.BbseRef != s.WbntBbseRef {
+		return s.ChbngesetExists, errors.Errorf("wrong BbseRef. wbnt=%s, hbve=%s", s.WbntBbseRef, c.BbseRef)
+	}
+
+	if err := c.SetMetbdbtb(s.FbkeMetbdbtb); err != nil {
+		return s.ChbngesetExists, err
+	}
+
+	s.CrebtedChbngesets = bppend(s.CrebtedChbngesets, c)
+	return s.ChbngesetExists, s.Err
 }
 
-func (s *FakeChangesetSource) CreateChangeset(ctx context.Context, c *sources.Changeset) (bool, error) {
-	s.CreateChangesetCalled = true
-
-	if s.Err != nil {
-		return s.ChangesetExists, s.Err
-	}
-
-	if c.TargetRepo == nil {
-		return false, noReposErr{name: "target"}
-	}
-	if c.RemoteRepo == nil {
-		return false, noReposErr{name: "remote"}
-	}
-
-	if c.HeadRef != s.WantHeadRef {
-		return s.ChangesetExists, errors.Errorf("wrong HeadRef. want=%s, have=%s", s.WantHeadRef, c.HeadRef)
-	}
-
-	if c.BaseRef != s.WantBaseRef {
-		return s.ChangesetExists, errors.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
-	}
-
-	if err := c.SetMetadata(s.FakeMetadata); err != nil {
-		return s.ChangesetExists, err
-	}
-
-	s.CreatedChangesets = append(s.CreatedChangesets, c)
-	return s.ChangesetExists, s.Err
-}
-
-func (s *FakeChangesetSource) UpdateChangeset(ctx context.Context, c *sources.Changeset) error {
-	s.UpdateChangesetCalled = true
-
-	if s.Err != nil {
-		return s.Err
-	}
-	if c.TargetRepo == nil {
-		return noReposErr{name: "target"}
-	}
-	if c.RemoteRepo == nil {
-		return noReposErr{name: "remote"}
-	}
-
-	if c.BaseRef != s.WantBaseRef {
-		return errors.Errorf("wrong BaseRef. want=%s, have=%s", s.WantBaseRef, c.BaseRef)
-	}
-
-	s.UpdatedChangesets = append(s.UpdatedChangesets, c)
-	return c.SetMetadata(s.FakeMetadata)
-}
-
-func (s *FakeChangesetSource) ExternalServices() types.ExternalServices {
-	s.ExternalServicesCalled = true
-
-	return types.ExternalServices{s.Svc}
-}
-func (s *FakeChangesetSource) LoadChangeset(ctx context.Context, c *sources.Changeset) error {
-	s.LoadChangesetCalled = true
+func (s *FbkeChbngesetSource) UndrbftChbngeset(ctx context.Context, c *sources.Chbngeset) error {
+	s.UndrbftedChbngesetsCblled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 
-	if c.TargetRepo == nil {
-		return noReposErr{name: "target"}
+	if c.TbrgetRepo == nil {
+		return noReposErr{nbme: "tbrget"}
 	}
 	if c.RemoteRepo == nil {
-		return noReposErr{name: "remote"}
+		return noReposErr{nbme: "remote"}
 	}
 
-	if err := c.SetMetadata(s.FakeMetadata); err != nil {
+	s.UndrbftedChbngesets = bppend(s.UndrbftedChbngesets, c)
+
+	return c.SetMetbdbtb(s.FbkeMetbdbtb)
+}
+
+func (s *FbkeChbngesetSource) CrebteChbngeset(ctx context.Context, c *sources.Chbngeset) (bool, error) {
+	s.CrebteChbngesetCblled = true
+
+	if s.Err != nil {
+		return s.ChbngesetExists, s.Err
+	}
+
+	if c.TbrgetRepo == nil {
+		return fblse, noReposErr{nbme: "tbrget"}
+	}
+	if c.RemoteRepo == nil {
+		return fblse, noReposErr{nbme: "remote"}
+	}
+
+	if c.HebdRef != s.WbntHebdRef {
+		return s.ChbngesetExists, errors.Errorf("wrong HebdRef. wbnt=%s, hbve=%s", s.WbntHebdRef, c.HebdRef)
+	}
+
+	if c.BbseRef != s.WbntBbseRef {
+		return s.ChbngesetExists, errors.Errorf("wrong BbseRef. wbnt=%s, hbve=%s", s.WbntBbseRef, c.BbseRef)
+	}
+
+	if err := c.SetMetbdbtb(s.FbkeMetbdbtb); err != nil {
+		return s.ChbngesetExists, err
+	}
+
+	s.CrebtedChbngesets = bppend(s.CrebtedChbngesets, c)
+	return s.ChbngesetExists, s.Err
+}
+
+func (s *FbkeChbngesetSource) UpdbteChbngeset(ctx context.Context, c *sources.Chbngeset) error {
+	s.UpdbteChbngesetCblled = true
+
+	if s.Err != nil {
+		return s.Err
+	}
+	if c.TbrgetRepo == nil {
+		return noReposErr{nbme: "tbrget"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{nbme: "remote"}
+	}
+
+	if c.BbseRef != s.WbntBbseRef {
+		return errors.Errorf("wrong BbseRef. wbnt=%s, hbve=%s", s.WbntBbseRef, c.BbseRef)
+	}
+
+	s.UpdbtedChbngesets = bppend(s.UpdbtedChbngesets, c)
+	return c.SetMetbdbtb(s.FbkeMetbdbtb)
+}
+
+func (s *FbkeChbngesetSource) ExternblServices() types.ExternblServices {
+	s.ExternblServicesCblled = true
+
+	return types.ExternblServices{s.Svc}
+}
+func (s *FbkeChbngesetSource) LobdChbngeset(ctx context.Context, c *sources.Chbngeset) error {
+	s.LobdChbngesetCblled = true
+
+	if s.Err != nil {
+		return s.Err
+	}
+
+	if c.TbrgetRepo == nil {
+		return noReposErr{nbme: "tbrget"}
+	}
+	if c.RemoteRepo == nil {
+		return noReposErr{nbme: "remote"}
+	}
+
+	if err := c.SetMetbdbtb(s.FbkeMetbdbtb); err != nil {
 		return err
 	}
 
-	s.LoadedChangesets = append(s.LoadedChangesets, c)
+	s.LobdedChbngesets = bppend(s.LobdedChbngesets, c)
 	return nil
 }
 
-type noReposErr struct{ name string }
+type noReposErr struct{ nbme string }
 
 func (e noReposErr) Error() string {
-	return "no " + e.name + " repository set on Changeset"
+	return "no " + e.nbme + " repository set on Chbngeset"
 }
 
-func (s *FakeChangesetSource) CloseChangeset(ctx context.Context, c *sources.Changeset) error {
-	s.CloseChangesetCalled = true
+func (s *FbkeChbngesetSource) CloseChbngeset(ctx context.Context, c *sources.Chbngeset) error {
+	s.CloseChbngesetCblled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 
-	if c.TargetRepo == nil {
-		return noReposErr{name: "target"}
+	if c.TbrgetRepo == nil {
+		return noReposErr{nbme: "tbrget"}
 	}
 	if c.RemoteRepo == nil {
-		return noReposErr{name: "remote"}
+		return noReposErr{nbme: "remote"}
 	}
 
-	s.ClosedChangesets = append(s.ClosedChangesets, c)
+	s.ClosedChbngesets = bppend(s.ClosedChbngesets, c)
 
-	return c.SetMetadata(s.FakeMetadata)
+	return c.SetMetbdbtb(s.FbkeMetbdbtb)
 }
 
-func (s *FakeChangesetSource) ReopenChangeset(ctx context.Context, c *sources.Changeset) error {
-	s.ReopenChangesetCalled = true
+func (s *FbkeChbngesetSource) ReopenChbngeset(ctx context.Context, c *sources.Chbngeset) error {
+	s.ReopenChbngesetCblled = true
 
 	if s.Err != nil {
 		return s.Err
 	}
 
-	if c.TargetRepo == nil {
-		return noReposErr{name: "target"}
+	if c.TbrgetRepo == nil {
+		return noReposErr{nbme: "tbrget"}
 	}
 	if c.RemoteRepo == nil {
-		return noReposErr{name: "remote"}
+		return noReposErr{nbme: "remote"}
 	}
 
-	s.ReopenedChangesets = append(s.ReopenedChangesets, c)
+	s.ReopenedChbngesets = bppend(s.ReopenedChbngesets, c)
 
-	return c.SetMetadata(s.FakeMetadata)
+	return c.SetMetbdbtb(s.FbkeMetbdbtb)
 }
 
-func (s *FakeChangesetSource) CreateComment(ctx context.Context, c *sources.Changeset, body string) error {
-	s.CreateCommentCalled = true
+func (s *FbkeChbngesetSource) CrebteComment(ctx context.Context, c *sources.Chbngeset, body string) error {
+	s.CrebteCommentCblled = true
 	return s.Err
 }
 
-func (s *FakeChangesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return sources.GitserverPushConfig(repo, s.CurrentAuthenticator)
+func (s *FbkeChbngesetSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return sources.GitserverPushConfig(repo, s.CurrentAuthenticbtor)
 }
 
-func (s *FakeChangesetSource) WithAuthenticator(a auth.Authenticator) (sources.ChangesetSource, error) {
-	s.CurrentAuthenticator = a
+func (s *FbkeChbngesetSource) WithAuthenticbtor(b buth.Authenticbtor) (sources.ChbngesetSource, error) {
+	s.CurrentAuthenticbtor = b
 	return s, nil
 }
 
-func (s *FakeChangesetSource) ValidateAuthenticator(context.Context) error {
-	s.ValidateAuthenticatorCalled = true
-	if s.AuthenticatorIsValid {
+func (s *FbkeChbngesetSource) VblidbteAuthenticbtor(context.Context) error {
+	s.VblidbteAuthenticbtorCblled = true
+	if s.AuthenticbtorIsVblid {
 		return nil
 	}
-	return errors.New("invalid authenticator in fake source")
+	return errors.New("invblid buthenticbtor in fbke source")
 }
 
-func (s *FakeChangesetSource) AuthenticatedUsername(ctx context.Context) (string, error) {
-	s.AuthenticatedUsernameCalled = true
-	return s.Username, nil
+func (s *FbkeChbngesetSource) AuthenticbtedUsernbme(ctx context.Context) (string, error) {
+	s.AuthenticbtedUsernbmeCblled = true
+	return s.Usernbme, nil
 }
 
-func (s *FakeChangesetSource) MergeChangeset(ctx context.Context, c *sources.Changeset, squash bool) error {
-	s.MergeChangesetCalled = true
+func (s *FbkeChbngesetSource) MergeChbngeset(ctx context.Context, c *sources.Chbngeset, squbsh bool) error {
+	s.MergeChbngesetCblled = true
 	return s.Err
 }
 
-func (s *FakeChangesetSource) IsArchivedPushError(output string) bool {
-	s.IsArchivedPushErrorCalled = true
+func (s *FbkeChbngesetSource) IsArchivedPushError(output string) bool {
+	s.IsArchivedPushErrorCblled = true
 	return s.IsArchivedPushErrorTrue
 }
 
-func (s *FakeChangesetSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, cfg *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
-	s.BuildCommitOptsCalled = true
+func (s *FbkeChbngesetSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Chbngeset, spec *btypes.ChbngesetSpec, cfg *protocol.PushConfig) protocol.CrebteCommitFromPbtchRequest {
+	s.BuildCommitOptsCblled = true
 	return sources.BuildCommitOptsCommon(repo, spec, cfg)
 }

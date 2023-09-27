@@ -1,104 +1,104 @@
-package mapper
+pbckbge mbpper
 
 import (
 	"context"
 
-	rankingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	rbnkingshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewMapper(
-	observationCtx *observation.Context,
+func NewMbpper(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.file-reference-count-mapper"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.file-reference-count-mbpper"
 
-	return background.NewPipelineJob(context.Background(), background.PipelineOptions{
-		Name:        name,
-		Description: "Joins ranking definition and references together to create document path count records.",
-		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name),
-		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
-			numReferencesScanned, nuPathCountInputsInserted, err := mapRankingGraph(ctx, store, config.BatchSize)
+	return bbckground.NewPipelineJob(context.Bbckground(), bbckground.PipelineOptions{
+		Nbme:        nbme,
+		Description: "Joins rbnking definition bnd references together to crebte document pbth count records.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewPipelineMetrics(observbtionCtx, nbme),
+		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered bbckground.TbggedCounts, err error) {
+			numReferencesScbnned, nuPbthCountInputsInserted, err := mbpRbnkingGrbph(ctx, store, config.BbtchSize)
 			if err != nil {
 				return 0, nil, err
 			}
 
-			return numReferencesScanned, background.NewSingleCount(nuPathCountInputsInserted), err
+			return numReferencesScbnned, bbckground.NewSingleCount(nuPbthCountInputsInserted), err
 		},
 	})
 }
 
-func NewSeedMapper(
-	observationCtx *observation.Context,
+func NewSeedMbpper(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.ranking.file-reference-count-seed-mapper"
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.rbnking.file-reference-count-seed-mbpper"
 
-	return background.NewPipelineJob(context.Background(), background.PipelineOptions{
-		Name:        name,
-		Description: "Adds initial zero counts to files that may not contain any known references.",
-		Interval:    config.Interval,
-		Metrics:     background.NewPipelineMetrics(observationCtx, name),
-		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered background.TaggedCounts, err error) {
-			numInitialPathsScanned, nuPathCountInputsInserted, err := mapInitializerRankingGraph(ctx, store, config.BatchSize)
+	return bbckground.NewPipelineJob(context.Bbckground(), bbckground.PipelineOptions{
+		Nbme:        nbme,
+		Description: "Adds initibl zero counts to files thbt mby not contbin bny known references.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewPipelineMetrics(observbtionCtx, nbme),
+		ProcessFunc: func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered bbckground.TbggedCounts, err error) {
+			numInitiblPbthsScbnned, nuPbthCountInputsInserted, err := mbpInitiblizerRbnkingGrbph(ctx, store, config.BbtchSize)
 			if err != nil {
 				return 0, nil, err
 			}
 
-			return numInitialPathsScanned, background.NewSingleCount(nuPathCountInputsInserted), err
+			return numInitiblPbthsScbnned, bbckground.NewSingleCount(nuPbthCountInputsInserted), err
 		},
 	})
 }
 
-func mapInitializerRankingGraph(
+func mbpInitiblizerRbnkingGrbph(
 	ctx context.Context,
 	s store.Store,
-	batchSize int,
+	bbtchSize int,
 ) (
-	numInitialPathsProcessed int,
-	numInitialPathRanksInserted int,
+	numInitiblPbthsProcessed int,
+	numInitiblPbthRbnksInserted int,
 	err error,
 ) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return s.InsertInitialPathCounts(
+	return s.InsertInitiblPbthCounts(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
-		batchSize,
+		rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix),
+		bbtchSize,
 	)
 }
 
-func mapRankingGraph(
+func mbpRbnkingGrbph(
 	ctx context.Context,
 	s store.Store,
-	batchSize int,
+	bbtchSize int,
 ) (numReferenceRecordsProcessed int, numInputsInserted int, err error) {
-	if enabled := conf.CodeIntelRankingDocumentReferenceCountsEnabled(); !enabled {
+	if enbbled := conf.CodeIntelRbnkingDocumentReferenceCountsEnbbled(); !enbbled {
 		return 0, 0, nil
 	}
 
-	derivativeGraphKeyPrefix, _, err := store.DerivativeGraphKey(ctx, s)
+	derivbtiveGrbphKeyPrefix, _, err := store.DerivbtiveGrbphKey(ctx, s)
 	if err != nil {
 		return 0, 0, err
 	}
 
-	return s.InsertPathCountInputs(
+	return s.InsertPbthCountInputs(
 		ctx,
-		rankingshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix),
-		batchSize,
+		rbnkingshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix),
+		bbtchSize,
 	)
 }

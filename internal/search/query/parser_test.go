@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"encoding/json"
@@ -6,767 +6,767 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func collectLabels(nodes []Node) (result labels) {
-	for _, node := range nodes {
+func collectLbbels(nodes []Node) (result lbbels) {
+	for _, node := rbnge nodes {
 		switch v := node.(type) {
-		case Operator:
-			result |= v.Annotation.Labels
-			result |= collectLabels(v.Operands)
-		case Pattern:
-			result |= v.Annotation.Labels
-		case Parameter:
-			result |= v.Annotation.Labels
+		cbse Operbtor:
+			result |= v.Annotbtion.Lbbels
+			result |= collectLbbels(v.Operbnds)
+		cbse Pbttern:
+			result |= v.Annotbtion.Lbbels
+		cbse Pbrbmeter:
+			result |= v.Annotbtion.Lbbels
 		}
 	}
 	return result
 }
 
-func labelsToString(nodes []Node) string {
-	labels := collectLabels(nodes)
-	return strings.Join(labels.String(), ",")
+func lbbelsToString(nodes []Node) string {
+	lbbels := collectLbbels(nodes)
+	return strings.Join(lbbels.String(), ",")
 }
 
-func TestParseParameterList(t *testing.T) {
-	type value struct {
+func TestPbrsePbrbmeterList(t *testing.T) {
+	type vblue struct {
 		Result       string
-		ResultLabels string
-		ResultRange  string
+		ResultLbbels string
+		ResultRbnge  string
 	}
 
-	test := func(input string) value {
-		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
-		result, err := parser.parseLeaves(Regexp)
+	test := func(input string) vblue {
+		pbrser := &pbrser{buf: []byte(input), heuristics: pbrensAsPbtterns | bllowDbnglingPbrens}
+		result, err := pbrser.pbrseLebves(Regexp)
 		if err != nil {
-			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+			t.Fbtbl(fmt.Sprintf("Unexpected error: %s", err))
 		}
 		resultNode := result[0]
-		got, _ := json.Marshal(resultNode)
+		got, _ := json.Mbrshbl(resultNode)
 
-		var gotRange string
+		vbr gotRbnge string
 		switch n := resultNode.(type) {
-		case Pattern:
-			gotRange = n.Annotation.Range.String()
-		case Parameter:
-			gotRange = n.Annotation.Range.String()
+		cbse Pbttern:
+			gotRbnge = n.Annotbtion.Rbnge.String()
+		cbse Pbrbmeter:
+			gotRbnge = n.Annotbtion.Rbnge.String()
 		}
 
-		var gotLabels string
-		if _, ok := resultNode.(Pattern); ok {
-			gotLabels = labelsToString([]Node{resultNode})
+		vbr gotLbbels string
+		if _, ok := resultNode.(Pbttern); ok {
+			gotLbbels = lbbelsToString([]Node{resultNode})
 		}
 
-		return value{
+		return vblue{
 			Result:       string(got),
-			ResultLabels: gotLabels,
-			ResultRange:  gotRange,
+			ResultLbbels: gotLbbels,
+			ResultRbnge:  gotRbnge,
 		}
 	}
 
-	autogold.Expect(value{
-		Result:      `{"field":"file","value":"README.md","negated":false}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-	}).Equal(t, test(`file:README.md`))
+	butogold.Expect(vblue{
+		Result:      `{"field":"file","vblue":"README.md","negbted":fblse}`,
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equbl(t, test(`file:README.md`))
 
-	autogold.Expect(value{
-		Result:      `{"field":"file","value":"README.md","negated":false}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-	}).Equal(t, test(`file:README.md    `))
+	butogold.Expect(vblue{
+		Result:      `{"field":"file","vblue":"README.md","negbted":fblse}`,
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equbl(t, test(`file:README.md    `))
 
-	autogold.Expect(value{
-		Result: `{"value":":foo","negated":false}`, ResultLabels: "Regexp",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
-	}).Equal(t, test(`:foo`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":":foo","negbted":fblse}`, ResultLbbels: "Regexp",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+	}).Equbl(t, test(`:foo`))
 
-	autogold.Expect(value{
-		Result: `{"value":"foo:","negated":false}`, ResultLabels: "Regexp",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
-	}).Equal(t, test(`foo:`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"foo:","negbted":fblse}`, ResultLbbels: "Regexp",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+	}).Equbl(t, test(`foo:`))
 
-	autogold.Expect(value{
-		Result:      `{"field":"file","value":"bar:baz","negated":false}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":12}}`,
-	}).Equal(t, test(`file:bar:baz`))
+	butogold.Expect(vblue{
+		Result:      `{"field":"file","vblue":"bbr:bbz","negbted":fblse}`,
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":12}}`,
+	}).Equbl(t, test(`file:bbr:bbz`))
 
-	autogold.Expect(value{
-		Result: `{"value":"-:foo","negated":false}`, ResultLabels: "Regexp",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
-	}).Equal(t, test(`-:foo`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"-:foo","negbted":fblse}`, ResultLbbels: "Regexp",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":5}}`,
+	}).Equbl(t, test(`-:foo`))
 
-	autogold.Expect(value{
-		Result:      `{"field":"file","value":"README.md","negated":true}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
-	}).Equal(t, test(`-file:README.md`))
+	butogold.Expect(vblue{
+		Result:      `{"field":"file","vblue":"README.md","negbted":true}`,
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+	}).Equbl(t, test(`-file:README.md`))
 
-	autogold.Expect(value{
-		Result:      `{"field":"file","value":"README.md","negated":true}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
-	}).Equal(t, test(`NOT file:README.md`))
+	butogold.Expect(vblue{
+		Result:      `{"field":"file","vblue":"README.md","negbted":true}`,
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":18}}`,
+	}).Equbl(t, test(`NOT file:README.md`))
 
-	autogold.Expect(value{
-		Result: `{"value":"foo:bar","negated":true}`, ResultLabels: "Regexp",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
-	}).Equal(t, test(`NOT foo:bar`))
-	autogold.Expect(value{
-		Result:      `{"field":"content","value":"bar","negated":true}`,
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
-	}).Equal(t, test(`NOT content:bar`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"foo:bbr","negbted":true}`, ResultLbbels: "Regexp",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":11}}`,
+	}).Equbl(t, test(`NOT foo:bbr`))
+	butogold.Expect(vblue{
+		Result:      `{"field":"content","vblue":"bbr","negbted":true}`,
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":15}}`,
+	}).Equbl(t, test(`NOT content:bbr`))
 
-	autogold.Expect(value{
-		Result: `{"value":"NOT","negated":true}`, ResultLabels: "Regexp",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
-	}).Equal(t, test(`NOT NOT`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"NOT","negbted":true}`, ResultLbbels: "Regexp",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":7}}`,
+	}).Equbl(t, test(`NOT NOT`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"--foo:bar","negated":false}`,
-		ResultLabels: "Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
-	}).Equal(t, test(`--foo:bar`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"--foo:bbr","negbted":fblse}`,
+		ResultLbbels: "Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+	}).Equbl(t, test(`--foo:bbr`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"fie-ld:bar","negated":false}`,
-		ResultLabels: "Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
-	}).Equal(t, test(`fie-ld:bar`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"fie-ld:bbr","negbted":fblse}`,
+		ResultLbbels: "Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equbl(t, test(`fie-ld:bbr`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"a\\ pattern","negated":false}`,
-		ResultLabels: "Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
-	}).Equal(t, test(`a\ pattern`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"b\\ pbttern","negbted":fblse}`,
+		ResultLbbels: "Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equbl(t, test(`b\ pbttern`))
 
-	autogold.Expect(value{
-		Result: `{"value":"quoted","negated":false}`, ResultLabels: "Literal,Quoted",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
-	}).Equal(t, test(`"quoted"`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"quoted","negbted":fblse}`, ResultLbbels: "Literbl,Quoted",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":8}}`,
+	}).Equbl(t, test(`"quoted"`))
 
-	autogold.Expect(value{
-		Result: `{"value":"'","negated":false}`, ResultLabels: "Literal,Quoted",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
-	}).Equal(t, test(`'\''`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"'","negbted":fblse}`, ResultLbbels: "Literbl,Quoted",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":4}}`,
+	}).Equbl(t, test(`'\''`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"foo.*bar(","negated":false}`,
-		ResultLabels: "HeuristicDanglingParens,Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
-	}).Equal(t, test(`foo.*bar(`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"foo.*bbr(","negbted":fblse}`,
+		ResultLbbels: "HeuristicDbnglingPbrens,Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":9}}`,
+	}).Equbl(t, test(`foo.*bbr(`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"a regex pattern","negated":false}`,
-		ResultLabels: "Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
-	}).Equal(t, test(`/a regex pattern/`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"b regex pbttern","negbted":fblse}`,
+		ResultLbbels: "Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":17}}`,
+	}).Equbl(t, test(`/b regex pbttern/`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"Search()\\(","negated":false}`,
-		ResultLabels: "Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
-	}).Equal(t, test(`Search()\(`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"Sebrch()\\(","negbted":fblse}`,
+		ResultLbbels: "Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":10}}`,
+	}).Equbl(t, test(`Sebrch()\(`))
 
-	autogold.Expect(value{
-		Result:       `{"value":"Search(xxx)\\\\(","negated":false}`,
-		ResultLabels: "HeuristicDanglingParens,Regexp",
-		ResultRange:  `{"start":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
-	}).Equal(t, test(`Search(xxx)\\(`))
+	butogold.Expect(vblue{
+		Result:       `{"vblue":"Sebrch(xxx)\\\\(","negbted":fblse}`,
+		ResultLbbels: "HeuristicDbnglingPbrens,Regexp",
+		ResultRbnge:  `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":14}}`,
+	}).Equbl(t, test(`Sebrch(xxx)\\(`))
 
-	autogold.Expect(value{
-		Result: `{"value":"book","negated":false}`, ResultLabels: "Regexp",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
-	}).Equal(t, test(`/book/`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"book","negbted":fblse}`, ResultLbbels: "Regexp",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":6}}`,
+	}).Equbl(t, test(`/book/`))
 
-	autogold.Expect(value{
-		Result: `{"value":"//","negated":false}`, ResultLabels: "Literal",
-		ResultRange: `{"start":{"line":0,"column":0},"end":{"line":0,"column":2}}`,
-	}).Equal(t, test(`//`))
+	butogold.Expect(vblue{
+		Result: `{"vblue":"//","negbted":fblse}`, ResultLbbels: "Literbl",
+		ResultRbnge: `{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":2}}`,
+	}).Equbl(t, test(`//`))
 }
 
-func TestScanPredicate(t *testing.T) {
-	type value struct {
+func TestScbnPredicbte(t *testing.T) {
+	type vblue struct {
 		Result       string
-		ResultLabels string
+		ResultLbbels string
 	}
 
-	test := func(input string) value {
-		parser := &parser{buf: []byte(input), heuristics: parensAsPatterns | allowDanglingParens}
-		result, err := parser.parseLeaves(Regexp)
+	test := func(input string) vblue {
+		pbrser := &pbrser{buf: []byte(input), heuristics: pbrensAsPbtterns | bllowDbnglingPbrens}
+		result, err := pbrser.pbrseLebves(Regexp)
 		if err != nil {
-			t.Fatal(fmt.Sprintf("Unexpected error: %s", err))
+			t.Fbtbl(fmt.Sprintf("Unexpected error: %s", err))
 		}
 		resultNode := result[0]
-		got, _ := json.Marshal(resultNode)
-		gotLabels := labelsToString([]Node{resultNode})
+		got, _ := json.Mbrshbl(resultNode)
+		gotLbbels := lbbelsToString([]Node{resultNode})
 
-		return value{
+		return vblue{
 			Result:       string(got),
-			ResultLabels: gotLabels,
+			ResultLbbels: gotLbbels,
 		}
 	}
 
-	autogold.Expect(value{
-		Result:       `{"field":"repo","value":"contains.file(path:test)","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`repo:contains.file(path:test)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"repo","vblue":"contbins.file(pbth:test)","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`repo:contbins.file(pbth:test)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"repo","value":"contains.path(test)","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`repo:contains.path(test)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"repo","vblue":"contbins.pbth(test)","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`repo:contbins.pbth(test)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"repo","value":"contains.commit.after(last thursday)","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`repo:contains.commit.after(last thursday)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"repo","vblue":"contbins.commit.bfter(lbst thursdby)","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`repo:contbins.commit.bfter(lbst thursdby)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"repo","value":"contains.commit.before(yesterday)","negated":false}`,
-		ResultLabels: "None",
-	}).Equal(t, test(`repo:contains.commit.before(yesterday)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"repo","vblue":"contbins.commit.before(yesterdby)","negbted":fblse}`,
+		ResultLbbels: "None",
+	}).Equbl(t, test(`repo:contbins.commit.before(yesterdby)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"repo","value":"contains.file(content:\\()","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`repo:contains.file(content:\()`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"repo","vblue":"contbins.file(content:\\()","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`repo:contbins.file(content:\()`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"repo","value":"contains.file","negated":false}`,
-		ResultLabels: "None",
-	}).Equal(t, test(`repo:contains.file`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"repo","vblue":"contbins.file","negbted":fblse}`,
+		ResultLbbels: "None",
+	}).Equbl(t, test(`repo:contbins.file`))
 
-	autogold.Expect(value{
-		Result:       `{"Kind":1,"Operands":[{"field":"repo","value":"nopredicate","negated":false},{"value":"(file:foo","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
-		ResultLabels: "HeuristicDanglingParens,Regexp",
-	}).Equal(t, test(`repo:nopredicate(file:foo or file:bar)`))
+	butogold.Expect(vblue{
+		Result:       `{"Kind":1,"Operbnds":[{"field":"repo","vblue":"nopredicbte","negbted":fblse},{"vblue":"(file:foo","negbted":fblse}],"Annotbtion":{"lbbels":0,"rbnge":{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+		ResultLbbels: "HeuristicDbnglingPbrens,Regexp",
+	}).Equbl(t, test(`repo:nopredicbte(file:foo or file:bbr)`))
 
-	autogold.Expect(value{
-		Result:       `{"Kind":2,"Operands":[{"value":"abc","negated":false},{"value":"contains(file:test)","negated":false}],"Annotation":{"labels":0,"range":{"start":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
-		ResultLabels: "HeuristicDanglingParens,Regexp",
-	}).Equal(t, test(`abc contains(file:test)`))
+	butogold.Expect(vblue{
+		Result:       `{"Kind":2,"Operbnds":[{"vblue":"bbc","negbted":fblse},{"vblue":"contbins(file:test)","negbted":fblse}],"Annotbtion":{"lbbels":0,"rbnge":{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":0}}}}`,
+		ResultLbbels: "HeuristicDbnglingPbrens,Regexp",
+	}).Equbl(t, test(`bbc contbins(file:test)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"r","value":"contains.file(sup)","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`r:contains.file(sup)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"r","vblue":"contbins.file(sup)","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`r:contbins.file(sup)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"r","value":"has(key:value)","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`r:has(key:value)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"r","vblue":"hbs(key:vblue)","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`r:hbs(key:vblue)`))
 
-	autogold.Expect(value{
-		Result:       `{"field":"r","value":"has.tag(tag)","negated":false}`,
-		ResultLabels: "IsPredicate",
-	}).Equal(t, test(`r:has.tag(tag)`))
+	butogold.Expect(vblue{
+		Result:       `{"field":"r","vblue":"hbs.tbg(tbg)","negbted":fblse}`,
+		ResultLbbels: "IsPredicbte",
+	}).Equbl(t, test(`r:hbs.tbg(tbg)`))
 }
 
-func TestScanField(t *testing.T) {
-	type value struct {
+func TestScbnField(t *testing.T) {
+	type vblue struct {
 		Field   string
-		Negated bool
-		Advance int
+		Negbted bool
+		Advbnce int
 	}
 
 	test := func(input string) string {
-		gotField, gotNegated, gotAdvance := ScanField([]byte(input))
-		v, _ := json.Marshal(value{gotField, gotNegated, gotAdvance})
+		gotField, gotNegbted, gotAdvbnce := ScbnField([]byte(input))
+		v, _ := json.Mbrshbl(vblue{gotField, gotNegbted, gotAdvbnce})
 		return string(v)
 	}
 
-	autogold.Expect(`{"Field":"repo","Negated":false,"Advance":5}`).Equal(t, test("repo:foo"))
-	autogold.Expect(`{"Field":"RepO","Negated":false,"Advance":5}`).Equal(t, test("RepO:foo"))
-	autogold.Expect(`{"Field":"after","Negated":false,"Advance":6}`).Equal(t, test("after:"))
-	autogold.Expect(`{"Field":"repo","Negated":true,"Advance":6}`).Equal(t, test("-repo:"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test(""))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("-"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("-:"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test(":"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("??:foo"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("repo"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("-repo"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test("--repo:"))
-	autogold.Expect(`{"Field":"","Negated":false,"Advance":0}`).Equal(t, test(":foo"))
+	butogold.Expect(`{"Field":"repo","Negbted":fblse,"Advbnce":5}`).Equbl(t, test("repo:foo"))
+	butogold.Expect(`{"Field":"RepO","Negbted":fblse,"Advbnce":5}`).Equbl(t, test("RepO:foo"))
+	butogold.Expect(`{"Field":"bfter","Negbted":fblse,"Advbnce":6}`).Equbl(t, test("bfter:"))
+	butogold.Expect(`{"Field":"repo","Negbted":true,"Advbnce":6}`).Equbl(t, test("-repo:"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test(""))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test("-"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test("-:"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test(":"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test("??:foo"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test("repo"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test("-repo"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test("--repo:"))
+	butogold.Expect(`{"Field":"","Negbted":fblse,"Advbnce":0}`).Equbl(t, test(":foo"))
 }
 
-func parseAndOrGrammar(in string) ([]Node, error) {
-	if strings.TrimSpace(in) == "" {
+func pbrseAndOrGrbmmbr(in string) ([]Node, error) {
+	if strings.TrimSpbce(in) == "" {
 		return nil, nil
 	}
-	parser := &parser{
+	pbrser := &pbrser{
 		buf:        []byte(in),
-		leafParser: SearchTypeRegex,
+		lebfPbrser: SebrchTypeRegex,
 	}
-	nodes, err := parser.parseOr()
+	nodes, err := pbrser.pbrseOr()
 	if err != nil {
 		return nil, err
 	}
-	if parser.balanced != 0 {
-		return nil, errors.New("unbalanced expression: unmatched closing parenthesis )")
+	if pbrser.bblbnced != 0 {
+		return nil, errors.New("unbblbnced expression: unmbtched closing pbrenthesis )")
 	}
-	return NewOperator(nodes, And), nil
+	return NewOperbtor(nodes, And), nil
 }
 
-func TestParse(t *testing.T) {
-	type value struct {
-		Grammar   string
+func TestPbrse(t *testing.T) {
+	type vblue struct {
+		Grbmmbr   string
 		Heuristic string
 	}
 
-	test := func(input string) value {
-		var queryGrammar, queryHeuristic []Node
-		var err error
-		var resultGrammar, resultHeuristic string
-		queryGrammar, err = parseAndOrGrammar(input) // Parse without heuristic.
+	test := func(input string) vblue {
+		vbr queryGrbmmbr, queryHeuristic []Node
+		vbr err error
+		vbr resultGrbmmbr, resultHeuristic string
+		queryGrbmmbr, err = pbrseAndOrGrbmmbr(input) // Pbrse without heuristic.
 		if err != nil {
-			resultGrammar = err.Error()
+			resultGrbmmbr = err.Error()
 		} else {
-			resultGrammar = toString(queryGrammar)
+			resultGrbmmbr = toString(queryGrbmmbr)
 		}
 
-		queryHeuristic, err = Parse(input, SearchTypeRegex)
+		queryHeuristic, err = Pbrse(input, SebrchTypeRegex)
 		if err != nil {
 			resultHeuristic = err.Error()
 		} else {
 			resultHeuristic = toString(queryHeuristic)
 		}
 
-		if resultHeuristic == resultGrammar {
-			resultHeuristic = "Same"
+		if resultHeuristic == resultGrbmmbr {
+			resultHeuristic = "Sbme"
 		}
 
-		return value{
-			Grammar:   resultGrammar,
+		return vblue{
+			Grbmmbr:   resultGrbmmbr,
 			Heuristic: resultHeuristic,
 		}
 	}
 
-	autogold.Expect(value{Grammar: "", Heuristic: "Same"}).Equal(t, test(""))
-	autogold.Expect(value{Grammar: "", Heuristic: "Same"}).Equal(t, test("             "))
-	autogold.Expect(value{Grammar: `"a"`, Heuristic: "Same"}).Equal(t, test("a"))
-	autogold.Expect(value{Grammar: `(concat "a" "b")`, Heuristic: "Same"}).Equal(t, test("a b"))
-	autogold.Expect(value{Grammar: `(and "a" "b" "c")`, Heuristic: "Same"}).Equal(t, test("a and b and c"))
+	butogold.Expect(vblue{Grbmmbr: "", Heuristic: "Sbme"}).Equbl(t, test(""))
+	butogold.Expect(vblue{Grbmmbr: "", Heuristic: "Sbme"}).Equbl(t, test("             "))
+	butogold.Expect(vblue{Grbmmbr: `"b"`, Heuristic: "Sbme"}).Equbl(t, test("b"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b")`, Heuristic: "Sbme"}).Equbl(t, test("b b"))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "b" "b" "c")`, Heuristic: "Sbme"}).Equbl(t, test("b bnd b bnd c"))
 
-	autogold.Expect(value{
-		Grammar:   `(concat "f" "x" "oo" "a|b" "bar")`,
-		Heuristic: `"(f(x)oo((a|b))bar)"`,
-	}).Equal(t, test("(f(x)oo((a|b))bar)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(concbt "f" "x" "oo" "b|b" "bbr")`,
+		Heuristic: `"(f(x)oo((b|b))bbr)"`,
+	}).Equbl(t, test("(f(x)oo((b|b))bbr)"))
 
-	autogold.Expect(value{Grammar: `"aorb"`, Heuristic: "Same"}).Equal(t, test("aorb"))
-	autogold.Expect(value{Grammar: `"aANDb"`, Heuristic: "Same"}).Equal(t, test("aANDb"))
-	autogold.Expect(value{Grammar: `(concat "a" "oror" "b")`, Heuristic: "Same"}).Equal(t, test("a oror b"))
+	butogold.Expect(vblue{Grbmmbr: `"borb"`, Heuristic: "Sbme"}).Equbl(t, test("borb"))
+	butogold.Expect(vblue{Grbmmbr: `"bANDb"`, Heuristic: "Sbme"}).Equbl(t, test("bANDb"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "oror" "b")`, Heuristic: "Sbme"}).Equbl(t, test("b oror b"))
 
-	autogold.Expect(value{
-		Grammar:   `(or (and "a" "b" "c") (and "d" (concat (or "e" "f") "g" "h" "i")) "j")`,
-		Heuristic: "Same",
-	}).Equal(t, test("a and b AND c or d and (e OR f) g h i or j"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(or (bnd "b" "b" "c") (bnd "d" (concbt (or "e" "f") "g" "h" "i")) "j")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b bnd b AND c or d bnd (e OR f) g h i or j"))
 
-	autogold.Expect(value{
-		Grammar:   `(or (and "a" "b") (and "c" "d") "e")`,
-		Heuristic: "Same",
-	}).Equal(t, test("a and b or c and d or e"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(or (bnd "b" "b") (bnd "c" "d") "e")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b bnd b or c bnd d or e"))
 
-	autogold.Expect(value{
-		Grammar:   `(or (and "a" "b") (and "c" "d") "e")`,
-		Heuristic: "Same",
-	}).Equal(t, test("(a and b or c and d) or e"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(or (bnd "b" "b") (bnd "c" "d") "e")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("(b bnd b or c bnd d) or e"))
 
-	autogold.Expect(value{Grammar: `(or (and "a" "b") "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a and b or c) or d"))
+	butogold.Expect(vblue{Grbmmbr: `(or (bnd "b" "b") "c" "d")`, Heuristic: "Sbme"}).Equbl(t, test("(b bnd b or c) or d"))
 
-	autogold.Expect(value{
-		Grammar:   `(or (and "a" "b") (and "c" "d") "f" "e")`,
-		Heuristic: "Same",
-	}).Equal(t, test("(a and b or (c and d or f)) or e"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(or (bnd "b" "b") (bnd "c" "d") "f" "e")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("(b bnd b or (c bnd d or f)) or e"))
 
-	autogold.Expect(value{
-		Grammar:   `(or (and "a" (or "b" "c") "d") "e")`,
-		Heuristic: "Same",
-	}).Equal(t, test("(a and (b or c) and d) or e"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(or (bnd "b" (or "b" "c") "d") "e")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("(b bnd (b or c) bnd d) or e"))
 
-	autogold.Expect(value{Grammar: `(and (concat "a" "b" "c") "d")`, Heuristic: `(and "(((a b c)))" "d")`}).Equal(t, test("(((a b c))) and d"))
+	butogold.Expect(vblue{Grbmmbr: `(bnd (concbt "b" "b" "c") "d")`, Heuristic: `(bnd "(((b b c)))" "d")`}).Equbl(t, test("(((b b c))) bnd d"))
 
-	// Partition parameters and concatenated patterns.
-	autogold.Expect(value{Grammar: `(concat "a" (and "b" "c") "d")`, Heuristic: "Same"}).Equal(t, test("a (b and c) d"))
+	// Pbrtition pbrbmeters bnd concbtenbted pbtterns.
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" (bnd "b" "c") "d")`, Heuristic: "Sbme"}).Equbl(t, test("b (b bnd c) d"))
 
-	autogold.Expect(value{
-		Grammar:   `(and (concat "a" "b" "c") (concat "d" "e" "f") (concat "g" "h" "i"))`,
-		Heuristic: `(and "(a b c)" "(d e f)" "(g h i)")`,
-	}).Equal(t, test("(a b c) and (d e f) and (g h i)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd (concbt "b" "b" "c") (concbt "d" "e" "f") (concbt "g" "h" "i"))`,
+		Heuristic: `(bnd "(b b c)" "(d e f)" "(g h i)")`,
+	}).Equbl(t, test("(b b c) bnd (d e f) bnd (g h i)"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:foo" (concat "a" "b"))`,
-		Heuristic: `(and "repo:foo" (concat "(a)" "(b)"))`,
-	}).Equal(t, test("(a) repo:foo (b)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:foo" (concbt "b" "b"))`,
+		Heuristic: `(bnd "repo:foo" (concbt "(b)" "(b)"))`,
+	}).Equbl(t, test("(b) repo:foo (b)"))
 
-	autogold.Expect(value{Grammar: "expected operand at 15", Heuristic: `(and "repo:foo" (or "func(" "func(.*)"))`}).Equal(t, test("repo:foo func( or func(.*)"))
+	butogold.Expect(vblue{Grbmmbr: "expected operbnd bt 15", Heuristic: `(bnd "repo:foo" (or "func(" "func(.*)"))`}).Equbl(t, test("repo:foo func( or func(.*)"))
 
-	autogold.Expect(value{
-		Grammar:   `(and (and "repo:foo" (concat "main" "{")) (concat "bar" "{"))`,
-		Heuristic: `(and "repo:foo" (concat "main" "{") (concat "bar" "{"))`,
-	}).Equal(t, test("repo:foo main { and bar {"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd (bnd "repo:foo" (concbt "mbin" "{")) (concbt "bbr" "{"))`,
+		Heuristic: `(bnd "repo:foo" (concbt "mbin" "{") (concbt "bbr" "{"))`,
+	}).Equbl(t, test("repo:foo mbin { bnd bbr {"))
 
-	autogold.Expect(value{
-		Grammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
-		Heuristic: "Same",
-	}).Equal(t, test("a b (repo:foo c d)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(concbt "b" "b" (bnd "repo:foo" (concbt "c" "d")))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b b (repo:foo c d)"))
 
-	autogold.Expect(value{
-		Grammar:   `(concat "a" "b" (and "repo:foo" (concat "c" "d")))`,
-		Heuristic: "Same",
-	}).Equal(t, test("a b (c d repo:foo)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(concbt "b" "b" (bnd "repo:foo" (concbt "c" "d")))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b b (c d repo:foo)"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" "d")))`,
-		Heuristic: "Same",
-	}).Equal(t, test("a repo:b repo:c (d repo:e repo:f)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:b" "repo:c" (concbt "b" (bnd "repo:e" "repo:f" "d")))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b repo:b repo:c (d repo:e repo:f)"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" "a")`,
-		Heuristic: "Same",
-	}).Equal(t, test("a repo:b repo:c (repo:e repo:f (repo:g repo:h))"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" "b")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b repo:b repo:c (repo:e repo:f (repo:g repo:h))"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" (concat "a" "b"))`,
-		Heuristic: "Same",
-	}).Equal(t, test("a repo:b repo:c (repo:e repo:f (repo:g repo:h)) b"))
-	autogold.Expect(value{
-		Grammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" "repo:g" "repo:h" "b")))`,
-		Heuristic: "Same",
-	}).Equal(t, test("a repo:b repo:c (repo:e repo:f (repo:g repo:h b)) "))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:b" "repo:c" "repo:e" "repo:f" "repo:g" "repo:h" (concbt "b" "b"))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b repo:b repo:c (repo:e repo:f (repo:g repo:h)) b"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:b" "repo:c" (concbt "b" (bnd "repo:e" "repo:f" "repo:g" "repo:h" "b")))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b repo:b repo:c (repo:e repo:f (repo:g repo:h b)) "))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:foo" (concat "a" (and "repo:bar" (concat "b" (and "repo:qux" "c")))))`,
-		Heuristic: "Same",
-	}).Equal(t, test("(repo:foo a (repo:bar b (repo:qux c)))"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:foo" (concbt "b" (bnd "repo:bbr" (concbt "b" (bnd "repo:qux" "c")))))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("(repo:foo b (repo:bbr b (repo:qux c)))"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:b" "repo:c" (concat "a" (and "repo:e" "repo:f" (concat "d" "e"))))`,
-		Heuristic: "Same",
-	}).Equal(t, test("a repo:b repo:c (d repo:e repo:f e)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:b" "repo:c" (concbt "b" (bnd "repo:e" "repo:f" (concbt "d" "e"))))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("b repo:b repo:c (d repo:e repo:f e)"))
 
 	// Errors.
-	autogold.Expect(value{
-		Grammar:   "unbalanced expression: unmatched closing parenthesis )",
-		Heuristic: `(concat "(foo)" "(bar")`,
-	}).Equal(t, test("(foo) (bar"))
-	autogold.Expect(value{Grammar: "expected operand at 5", Heuristic: "Same"}).Equal(t, test("a or or b"))
-	autogold.Expect(value{Grammar: `(and "a" "OR")`, Heuristic: "Same"}).Equal(t, test("a and OR"))
-	autogold.Expect(value{Grammar: `(and "a" "b" "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a and b) and (c and d)"))
-	autogold.Expect(value{Grammar: `(or "a" "b" "c" "d")`, Heuristic: "Same"}).Equal(t, test("(a or b) or (c or d)"))
-	autogold.Expect(value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(((a b c)))" "d")`}).Equal(t, test("(((a b c))) d"))
-	autogold.Expect(value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(a b)" "c" "d")`}).Equal(t, test("(a b) c d"))
-	autogold.Expect(value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "a" "b" "(c d)")`}).Equal(t, test("a b (c d)"))
-	autogold.Expect(value{Grammar: `(concat "a" "b" "c" "d")`, Heuristic: `(concat "(a b)" "(c d)")`}).Equal(t, test("(a b) (c d)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   "unbblbnced expression: unmbtched closing pbrenthesis )",
+		Heuristic: `(concbt "(foo)" "(bbr")`,
+	}).Equbl(t, test("(foo) (bbr"))
+	butogold.Expect(vblue{Grbmmbr: "expected operbnd bt 5", Heuristic: "Sbme"}).Equbl(t, test("b or or b"))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "b" "OR")`, Heuristic: "Sbme"}).Equbl(t, test("b bnd OR"))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "b" "b" "c" "d")`, Heuristic: "Sbme"}).Equbl(t, test("(b bnd b) bnd (c bnd d)"))
+	butogold.Expect(vblue{Grbmmbr: `(or "b" "b" "c" "d")`, Heuristic: "Sbme"}).Equbl(t, test("(b or b) or (c or d)"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b" "c" "d")`, Heuristic: `(concbt "(((b b c)))" "d")`}).Equbl(t, test("(((b b c))) d"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b" "c" "d")`, Heuristic: `(concbt "(b b)" "c" "d")`}).Equbl(t, test("(b b) c d"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b" "c" "d")`, Heuristic: `(concbt "b" "b" "(c d)")`}).Equbl(t, test("b b (c d)"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b" "c" "d")`, Heuristic: `(concbt "(b b)" "(c d)")`}).Equbl(t, test("(b b) (c d)"))
 
-	// Escaping.
-	autogold.Expect(value{Grammar: `(concat "a" "b" "c" "d" "e" "f")`, Heuristic: `(concat "(a b)" "(c d)" "(e f)")`}).Equal(t, test("(a b) (c d) (e f)"))
+	// Escbping.
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b" "c" "d" "e" "f")`, Heuristic: `(concbt "(b b)" "(c d)" "(e f)")`}).Equbl(t, test("(b b) (c d) (e f)"))
 
-	autogold.Expect(value{Grammar: `(concat "a" "b" "c" "d" "e" "f")`, Heuristic: `(concat "(a b)" "c" "d" "(e f)")`}).Equal(t, test("(a b) c d (e f)"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "b" "b" "c" "d" "e" "f")`, Heuristic: `(concbt "(b b)" "c" "d" "(e f)")`}).Equbl(t, test("(b b) c d (e f)"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "a" "b" (or "z" "q") "c" "d" "e" "f")`,
-		Heuristic: "Same",
-	}).Equal(t, test("(a and b and (z or q)) and (c and d) and (e and f)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "b" "b" (or "z" "q") "c" "d" "e" "f")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("(b bnd b bnd (z or q)) bnd (c bnd d) bnd (e bnd f)"))
 
-	autogold.Expect(value{Grammar: `""`, Heuristic: `"()"`}).Equal(t, test("()"))
-	autogold.Expect(value{Grammar: `(concat "foo" "bar")`, Heuristic: `"foo()bar"`}).Equal(t, test("foo()bar"))
-	autogold.Expect(value{
-		Grammar:   `(and "x" (concat "regex" "s" "?"))`,
-		Heuristic: `(and "x" "regex(s)?")`,
-	}).Equal(t, test("(x and regex(s)?)"))
+	butogold.Expect(vblue{Grbmmbr: `""`, Heuristic: `"()"`}).Equbl(t, test("()"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "foo" "bbr")`, Heuristic: `"foo()bbr"`}).Equbl(t, test("foo()bbr"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "x" (concbt "regex" "s" "?"))`,
+		Heuristic: `(bnd "x" "regex(s)?")`,
+	}).Equbl(t, test("(x bnd regex(s)?)"))
 
-	autogold.Expect(value{Grammar: `(concat "foo" "bar")`, Heuristic: `"foo(   )bar"`}).Equal(t, test("foo(   )bar"))
-	autogold.Expect(value{Grammar: `"x"`, Heuristic: `"(x())"`}).Equal(t, test("(x())"))
-	autogold.Expect(value{Grammar: `"x"`, Heuristic: `"(()x(  )(())())"`}).Equal(t, test("(()x(  )(())())"))
-	autogold.Expect(value{Grammar: `""`, Heuristic: `(or "()" "()")`}).Equal(t, test("() or ()"))
-	autogold.Expect(value{Grammar: `"x"`, Heuristic: `(or "()" "(x)")`}).Equal(t, test("() or (x)"))
-	autogold.Expect(value{Grammar: `(concat "x" (or "y" "f"))`, Heuristic: `(concat "()" "x" "()" (or "y" "()" "(f)") "()")`}).Equal(t, test("(()x(  )(y or () or (f))())"))
-	autogold.Expect(value{Grammar: `""`, Heuristic: `(or "()" "()")`}).Equal(t, test("(() or ())"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "foo" "bbr")`, Heuristic: `"foo(   )bbr"`}).Equbl(t, test("foo(   )bbr"))
+	butogold.Expect(vblue{Grbmmbr: `"x"`, Heuristic: `"(x())"`}).Equbl(t, test("(x())"))
+	butogold.Expect(vblue{Grbmmbr: `"x"`, Heuristic: `"(()x(  )(())())"`}).Equbl(t, test("(()x(  )(())())"))
+	butogold.Expect(vblue{Grbmmbr: `""`, Heuristic: `(or "()" "()")`}).Equbl(t, test("() or ()"))
+	butogold.Expect(vblue{Grbmmbr: `"x"`, Heuristic: `(or "()" "(x)")`}).Equbl(t, test("() or (x)"))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "x" (or "y" "f"))`, Heuristic: `(concbt "()" "x" "()" (or "y" "()" "(f)") "()")`}).Equbl(t, test("(()x(  )(y or () or (f))())"))
+	butogold.Expect(vblue{Grbmmbr: `""`, Heuristic: `(or "()" "()")`}).Equbl(t, test("(() or ())"))
 
-	autogold.Expect(value{
-		Grammar:   `(and "r:foo" (concat "a/foo" (not ".svg")))`,
-		Heuristic: "Same",
-	}).Equal(t, test("r:foo (a/foo not .svg)"))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "r:foo" (concbt "b/foo" (not ".svg")))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test("r:foo (b/foo not .svg)"))
 
-	autogold.Expect(value{Grammar: `(and "r:foo" (not ".svg"))`, Heuristic: "Same"}).Equal(t, test("r:foo (not .svg)"))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "r:foo" (not ".svg"))`, Heuristic: "Sbme"}).Equbl(t, test("r:foo (not .svg)"))
 
-	// Escaping
-	autogold.Expect(value{Grammar: `"\\(\\)"`, Heuristic: "Same"}).Equal(t, test(`\(\)`))
-	autogold.Expect(value{Grammar: `(concat "\\(" "\\)")`, Heuristic: `(concat "\\(" "\\)" "()")`}).Equal(t, test(`\( \) ()`))
-	autogold.Expect(value{Grammar: `"\\ "`, Heuristic: "Same"}).Equal(t, test(`\ `))
-	autogold.Expect(value{Grammar: `(concat "\\ " "\\ ")`, Heuristic: "Same"}).Equal(t, test(`\  \ `))
+	// Escbping
+	butogold.Expect(vblue{Grbmmbr: `"\\(\\)"`, Heuristic: "Sbme"}).Equbl(t, test(`\(\)`))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "\\(" "\\)")`, Heuristic: `(concbt "\\(" "\\)" "()")`}).Equbl(t, test(`\( \) ()`))
+	butogold.Expect(vblue{Grbmmbr: `"\\ "`, Heuristic: "Sbme"}).Equbl(t, test(`\ `))
+	butogold.Expect(vblue{Grbmmbr: `(concbt "\\ " "\\ ")`, Heuristic: "Sbme"}).Equbl(t, test(`\  \ `))
 
-	// Dangling parentheses heuristic.
-	autogold.Expect(value{Grammar: "expected operand at 1", Heuristic: `"("`}).Equal(t, test(`(`))
-	autogold.Expect(value{
-		Grammar:   "unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
-		Heuristic: "Same",
-	}).Equal(t, test(`)(())(`))
-	autogold.Expect(value{Grammar: "expected operand at 5", Heuristic: `(and "foo(" "bar(")`}).Equal(t, test(`foo( and bar(`))
-	autogold.Expect(value{Grammar: "expected operand at 14", Heuristic: `(and "repo:foo" (or "foo(" "bar("))`}).Equal(t, test(`repo:foo foo( or bar(`))
-	autogold.Expect(value{
-		Grammar:   "unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
-		Heuristic: "Same",
-	}).Equal(t, test(`(a or (b and )) or d)`))
+	// Dbngling pbrentheses heuristic.
+	butogold.Expect(vblue{Grbmmbr: "expected operbnd bt 1", Heuristic: `"("`}).Equbl(t, test(`(`))
+	butogold.Expect(vblue{
+		Grbmmbr:   "unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses",
+		Heuristic: "Sbme",
+	}).Equbl(t, test(`)(())(`))
+	butogold.Expect(vblue{Grbmmbr: "expected operbnd bt 5", Heuristic: `(bnd "foo(" "bbr(")`}).Equbl(t, test(`foo( bnd bbr(`))
+	butogold.Expect(vblue{Grbmmbr: "expected operbnd bt 14", Heuristic: `(bnd "repo:foo" (or "foo(" "bbr("))`}).Equbl(t, test(`repo:foo foo( or bbr(`))
+	butogold.Expect(vblue{
+		Grbmmbr:   "unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses",
+		Heuristic: "Sbme",
+	}).Equbl(t, test(`(b or (b bnd )) or d)`))
 
-	// Quotes and escape sequences.
-	autogold.Expect(value{Grammar: `"\""`, Heuristic: "Same"}).Equal(t, test(`"`))
-	autogold.Expect(value{Grammar: `(and "repo:foo'" "bar'")`, Heuristic: "Same"}).Equal(t, test(`repo:foo' bar'`))
-	autogold.Expect(value{Grammar: `(and "repo:foo" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:'foo' 'bar'`))
-	autogold.Expect(value{Grammar: `(and "repo:foo" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:"foo" "bar"`))
-	autogold.Expect(value{Grammar: `(and "repo:foo bar" "foo bar")`, Heuristic: "Same"}).Equal(t, test(`repo:"foo bar" "foo bar"`))
-	autogold.Expect(value{Grammar: `(and "repo:fo\"o" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:"fo\"o" "bar"`))
-	autogold.Expect(value{Grammar: `(and "repo:foo" "b/ar")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /b\/ar/`))
-	autogold.Expect(value{Grammar: `(and "repo:foo" "/a/file/path")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /a/file/path`))
-	autogold.Expect(value{Grammar: `(and "repo:foo" "/a/file/path/")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /a/file/path/`))
+	// Quotes bnd escbpe sequences.
+	butogold.Expect(vblue{Grbmmbr: `"\""`, Heuristic: "Sbme"}).Equbl(t, test(`"`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo'" "bbr'")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo' bbr'`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "bbr")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:'foo' 'bbr'`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "bbr")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:"foo" "bbr"`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo bbr" "foo bbr")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:"foo bbr" "foo bbr"`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:fo\"o" "bbr")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:"fo\"o" "bbr"`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "b/br")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo /b\/br/`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "/b/file/pbth")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo /b/file/pbth`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "/b/file/pbth/")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo /b/file/pbth/`))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repo:foo" (concat "a" "/another/path/"))`,
-		Heuristic: "Same",
-	}).Equal(t, test(`repo:foo /a/ /another/path/`))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repo:foo" (concbt "b" "/bnother/pbth/"))`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test(`repo:foo /b/ /bnother/pbth/`))
 
-	autogold.Expect(value{Grammar: `(and "repo:foo" "\\s+b\\d+ar")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /\s+b\d+ar/ `))
-	autogold.Expect(value{Grammar: `(and "repo:foo" "bar")`, Heuristic: "Same"}).Equal(t, test(`repo:foo /bar/ `))
-	autogold.Expect(value{Grammar: `"\\t\\r\\n"`, Heuristic: "Same"}).Equal(t, test(`\t\r\n`))
-	autogold.Expect(value{Grammar: `(and "repo:foo\\ bar" "\\:\\\\")`, Heuristic: "Same"}).Equal(t, test(`repo:foo\ bar \:\\`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "\\s+b\\d+br")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo /\s+b\d+br/ `))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo" "bbr")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo /bbr/ `))
+	butogold.Expect(vblue{Grbmmbr: `"\\t\\r\\n"`, Heuristic: "Sbme"}).Equbl(t, test(`\t\r\n`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "repo:foo\\ bbr" "\\:\\\\")`, Heuristic: "Sbme"}).Equbl(t, test(`repo:foo\ bbr \:\\`))
 
-	autogold.Expect(value{
-		Grammar:   `(and "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "a")`,
-		Heuristic: "Same",
-	}).Equal(t, test(`a file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "file:\\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)" "b")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test(`b file:\.(ts(?:(?:)|x)|js(?:(?:)|x))(?m:$)`))
 
-	autogold.Expect(value{Grammar: `(and "file:(a)" "file:(b)")`, Heuristic: "Same"}).Equal(t, test(`(file:(a) file:(b))`))
-	autogold.Expect(value{Grammar: `"repohascommitafter:7 days"`, Heuristic: "Same"}).Equal(t, test(`(repohascommitafter:"7 days")`))
+	butogold.Expect(vblue{Grbmmbr: `(bnd "file:(b)" "file:(b)")`, Heuristic: "Sbme"}).Equbl(t, test(`(file:(b) file:(b))`))
+	butogold.Expect(vblue{Grbmmbr: `"repohbscommitbfter:7 dbys"`, Heuristic: "Sbme"}).Equbl(t, test(`(repohbscommitbfter:"7 dbys")`))
 
-	autogold.Expect(value{
-		Grammar:   `(and "repohascommitafter:7 days" "foo")`,
-		Heuristic: "Same",
-	}).Equal(t, test(`(foo repohascommitafter:"7 days")`))
+	butogold.Expect(vblue{
+		Grbmmbr:   `(bnd "repohbscommitbfter:7 dbys" "foo")`,
+		Heuristic: "Sbme",
+	}).Equbl(t, test(`(foo repohbscommitbfter:"7 dbys")`))
 
-	// Fringe tests cases at the boundary of heuristics and invalid syntax.
-	autogold.Expect(value{
-		Grammar:   "unbalanced expression: unmatched closing parenthesis )",
+	// Fringe tests cbses bt the boundbry of heuristics bnd invblid syntbx.
+	butogold.Expect(vblue{
+		Grbmmbr:   "unbblbnced expression: unmbtched closing pbrenthesis )",
 		Heuristic: `"(0(F)(:())(:())(<0)0()"`,
-	}).Equal(t, test(`(0(F)(:())(:())(<0)0()`))
+	}).Equbl(t, test(`(0(F)(:())(:())(<0)0()`))
 
-	// The space-looking character below is U+00A0.
-	autogold.Expect(value{Grammar: `(concat "00" "000")`, Heuristic: `(concat "00" "(000)")`}).Equal(t, test(`00 (000)`))
+	// The spbce-looking chbrbcter below is U+00A0.
+	butogold.Expect(vblue{Grbmmbr: `(concbt "00" "000")`, Heuristic: `(concbt "00" "(000)")`}).Equbl(t, test(`00 (000)`))
 
 }
 
-func TestScanDelimited(t *testing.T) {
-	type value struct {
+func TestScbnDelimited(t *testing.T) {
+	type vblue struct {
 		Result string
 		Count  int
 		ErrMsg string
 	}
 
 	test := func(input string, delimiter rune) string {
-		result, count, err := ScanDelimited([]byte(input), true, delimiter)
-		var errMsg string
+		result, count, err := ScbnDelimited([]byte(input), true, delimiter)
+		vbr errMsg string
 		if err != nil {
 			errMsg = err.Error()
 		}
-		v, _ := json.Marshal(value{result, count, errMsg})
+		v, _ := json.Mbrshbl(vblue{result, count, errMsg})
 		return string(v)
 	}
 
-	autogold.Expect(`{"Result":"","Count":2,"ErrMsg":""}`).Equal(t, test(`""`, '"'))
-	autogold.Expect(`{"Result":"a","Count":3,"ErrMsg":""}`).Equal(t, test(`"a"`, '"'))
-	autogold.Expect(`{"Result":"\"","Count":4,"ErrMsg":""}`).Equal(t, test(`"\""`, '"'))
-	autogold.Expect(`{"Result":"\\","Count":4,"ErrMsg":""}`).Equal(t, test(`"\\""`, '"'))
-	autogold.Expect(`{"Result":"","Count":5,"ErrMsg":"unterminated literal: expected \""}`).Equal(t, test(`"\\\"`, '"'))
-	autogold.Expect(`{"Result":"\\\"","Count":6,"ErrMsg":""}`).Equal(t, test(`"\\\""`, '"'))
-	autogold.Expect(`{"Result":"","Count":2,"ErrMsg":"unterminated literal: expected \""}`).Equal(t, test(`"a`, '"'))
-	autogold.Expect(`{"Result":"","Count":3,"ErrMsg":"unrecognized escape sequence"}`).Equal(t, test(`"\?"`, '"'))
-	autogold.Expect(`{"Result":"/","Count":4,"ErrMsg":""}`).Equal(t, test(`/\//`, '/'))
+	butogold.Expect(`{"Result":"","Count":2,"ErrMsg":""}`).Equbl(t, test(`""`, '"'))
+	butogold.Expect(`{"Result":"b","Count":3,"ErrMsg":""}`).Equbl(t, test(`"b"`, '"'))
+	butogold.Expect(`{"Result":"\"","Count":4,"ErrMsg":""}`).Equbl(t, test(`"\""`, '"'))
+	butogold.Expect(`{"Result":"\\","Count":4,"ErrMsg":""}`).Equbl(t, test(`"\\""`, '"'))
+	butogold.Expect(`{"Result":"","Count":5,"ErrMsg":"unterminbted literbl: expected \""}`).Equbl(t, test(`"\\\"`, '"'))
+	butogold.Expect(`{"Result":"\\\"","Count":6,"ErrMsg":""}`).Equbl(t, test(`"\\\""`, '"'))
+	butogold.Expect(`{"Result":"","Count":2,"ErrMsg":"unterminbted literbl: expected \""}`).Equbl(t, test(`"b`, '"'))
+	butogold.Expect(`{"Result":"","Count":3,"ErrMsg":"unrecognized escbpe sequence"}`).Equbl(t, test(`"\?"`, '"'))
+	butogold.Expect(`{"Result":"/","Count":4,"ErrMsg":""}`).Equbl(t, test(`/\//`, '/'))
 
-	// The next invocation of test needs to panic.
+	// The next invocbtion of test needs to pbnic.
 	defer func() {
 		if r := recover(); r == nil {
-			t.Errorf("expected panic for ScanDelimited")
+			t.Errorf("expected pbnic for ScbnDelimited")
 		}
 	}()
-	_ = test(`a"`, '"')
+	_ = test(`b"`, '"')
 }
 
-func TestMergePatterns(t *testing.T) {
+func TestMergePbtterns(t *testing.T) {
 	test := func(input string) string {
-		p := &parser{buf: []byte(input), heuristics: parensAsPatterns}
-		nodes, err := p.parseLeaves(Regexp)
-		got := nodes[0].(Pattern).Annotation.Range.String()
+		p := &pbrser{buf: []byte(input), heuristics: pbrensAsPbtterns}
+		nodes, err := p.pbrseLebves(Regexp)
+		got := nodes[0].(Pbttern).Annotbtion.Rbnge.String()
 		if err != nil {
 			t.Error(err)
 		}
 		return got
 	}
 
-	autogold.Expect(`{"start":{"line":0,"column":0},"end":{"line":0,"column":8}}`).Equal(t, test("foo()bar"))
-	autogold.Expect(`{"start":{"line":0,"column":0},"end":{"line":0,"column":5}}`).Equal(t, test("()bar"))
+	butogold.Expect(`{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":8}}`).Equbl(t, test("foo()bbr"))
+	butogold.Expect(`{"stbrt":{"line":0,"column":0},"end":{"line":0,"column":5}}`).Equbl(t, test("()bbr"))
 }
 
-func TestMatchUnaryKeyword(t *testing.T) {
+func TestMbtchUnbryKeyword(t *testing.T) {
 	test := func(input string, pos int) string {
-		p := &parser{buf: []byte(input), pos: pos}
-		return fmt.Sprintf("%t", p.matchUnaryKeyword("NOT"))
+		p := &pbrser{buf: []byte(input), pos: pos}
+		return fmt.Sprintf("%t", p.mbtchUnbryKeyword("NOT"))
 	}
 
-	autogold.Expect("true").Equal(t, test("NOT bar", 0))
-	autogold.Expect("true").Equal(t, test("foo NOT bar", 4))
-	autogold.Expect("false").Equal(t, test("foo NOT", 4))
-	autogold.Expect("false").Equal(t, test("fooNOT bar", 3))
-	autogold.Expect("false").Equal(t, test("NOTbar", 0))
-	autogold.Expect("true").Equal(t, test("(not bar)", 1))
+	butogold.Expect("true").Equbl(t, test("NOT bbr", 0))
+	butogold.Expect("true").Equbl(t, test("foo NOT bbr", 4))
+	butogold.Expect("fblse").Equbl(t, test("foo NOT", 4))
+	butogold.Expect("fblse").Equbl(t, test("fooNOT bbr", 3))
+	butogold.Expect("fblse").Equbl(t, test("NOTbbr", 0))
+	butogold.Expect("true").Equbl(t, test("(not bbr)", 1))
 }
 
-func TestParseAndOrLiteral(t *testing.T) {
+func TestPbrseAndOrLiterbl(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeLiteral)
+		result, err := Pbrse(input, SebrchTypeLiterbl)
 		if err != nil {
 			return fmt.Sprintf("ERROR: %s", err.Error())
 		}
-		wantLabels := labelsToString(result)
-		var resultStr []string
-		for _, node := range result {
-			resultStr = append(resultStr, node.String())
+		wbntLbbels := lbbelsToString(result)
+		vbr resultStr []string
+		for _, node := rbnge result {
+			resultStr = bppend(resultStr, node.String())
 		}
-		want := strings.Join(resultStr, " ")
-		if wantLabels != "" {
-			return fmt.Sprintf("%s (%s)", want, wantLabels)
+		wbnt := strings.Join(resultStr, " ")
+		if wbntLbbels != "" {
+			return fmt.Sprintf("%s (%s)", wbnt, wbntLbbels)
 		}
-		return want
+		return wbnt
 	}
 
-	autogold.Expect(`"()" (HeuristicParensAsPatterns,Literal)`).Equal(t, test("()"))
-	autogold.Expect(`"\"" (Literal)`).Equal(t, test(`"`))
-	autogold.Expect(`"\"\"" (Literal)`).Equal(t, test(`""`))
-	autogold.Expect(`"(" (HeuristicDanglingParens,Literal)`).Equal(t, test("("))
-	autogold.Expect(`(and "repo:foo" (or "foo(" "bar(")) (HeuristicHoisted,Literal)`).Equal(t, test("repo:foo foo( or bar("))
-	autogold.Expect(`(concat "x" "or") (Literal)`).Equal(t, test("x or"))
-	autogold.Expect(`(and "repo:foo" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("repo:foo (x"))
-	autogold.Expect(`(or "x" "bar()") (Literal)`).Equal(t, test("(x or bar() )"))
-	autogold.Expect(`"(x" (HeuristicDanglingParens,Literal)`).Equal(t, test("(x"))
-	autogold.Expect(`(or "x" "(x") (HeuristicDanglingParens,Literal)`).Equal(t, test("x or (x"))
-	autogold.Expect(`(or "(y" "(z") (HeuristicDanglingParens,Literal)`).Equal(t, test("(y or (z"))
-	autogold.Expect(`(and "repo:foo" "(lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp)"))
-	autogold.Expect(`(and "repo:foo" "(lisp lisp())") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp lisp())"))
-	autogold.Expect(`(and "repo:foo" (or "lisp" "lisp")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp)"))
-	autogold.Expect(`(and "repo:foo" (or "lisp" "lisp()")) (Literal)`).Equal(t, test("repo:foo (lisp or lisp())"))
-	autogold.Expect(`(and "repo:foo" (or "(lisp" "lisp()")) (HeuristicDanglingParens,HeuristicHoisted,Literal)`).Equal(t, test("repo:foo (lisp or lisp()"))
-	autogold.Expect(`(or "y" "bar()") (Literal)`).Equal(t, test("(y or bar())"))
-	autogold.Expect(`(or "((x" "bar(") (HeuristicDanglingParens,Literal)`).Equal(t, test("((x or bar("))
-	autogold.Expect(" (None)").Equal(t, test(""))
-	autogold.Expect(" (None)").Equal(t, test(" "))
-	autogold.Expect(" (None)").Equal(t, test("  "))
-	autogold.Expect(`"a" (Literal)`).Equal(t, test("a"))
-	autogold.Expect(`"a" (Literal)`).Equal(t, test(" a"))
-	autogold.Expect(`"a" (Literal)`).Equal(t, test(`a `))
-	autogold.Expect(`(concat "a" "b") (Literal)`).Equal(t, test(` a b`))
-	autogold.Expect(`(concat "a" "b") (Literal)`).Equal(t, test(`a  b`))
-	autogold.Expect(`":" (Literal)`).Equal(t, test(`:`))
-	autogold.Expect(`":=" (Literal)`).Equal(t, test(`:=`))
-	autogold.Expect(`(concat ":=" "range") (Literal)`).Equal(t, test(`:= range`))
-	autogold.Expect("\"`\" (Literal)").Equal(t, test("`"))
-	autogold.Expect(`"'" (Literal)`).Equal(t, test(`'`))
-	autogold.Expect(`"file:a" (None)`).Equal(t, test("file:a"))
-	autogold.Expect(`"\"file:a\"" (Literal)`).Equal(t, test(`"file:a"`))
-	autogold.Expect(`(concat "\"x" "foo:bar") (Literal)`).Equal(t, test(`"x foo:bar`))
+	butogold.Expect(`"()" (HeuristicPbrensAsPbtterns,Literbl)`).Equbl(t, test("()"))
+	butogold.Expect(`"\"" (Literbl)`).Equbl(t, test(`"`))
+	butogold.Expect(`"\"\"" (Literbl)`).Equbl(t, test(`""`))
+	butogold.Expect(`"(" (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test("("))
+	butogold.Expect(`(bnd "repo:foo" (or "foo(" "bbr(")) (HeuristicHoisted,Literbl)`).Equbl(t, test("repo:foo foo( or bbr("))
+	butogold.Expect(`(concbt "x" "or") (Literbl)`).Equbl(t, test("x or"))
+	butogold.Expect(`(bnd "repo:foo" "(x") (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test("repo:foo (x"))
+	butogold.Expect(`(or "x" "bbr()") (Literbl)`).Equbl(t, test("(x or bbr() )"))
+	butogold.Expect(`"(x" (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test("(x"))
+	butogold.Expect(`(or "x" "(x") (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test("x or (x"))
+	butogold.Expect(`(or "(y" "(z") (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test("(y or (z"))
+	butogold.Expect(`(bnd "repo:foo" "(lisp)") (HeuristicPbrensAsPbtterns,Literbl)`).Equbl(t, test("repo:foo (lisp)"))
+	butogold.Expect(`(bnd "repo:foo" "(lisp lisp())") (HeuristicPbrensAsPbtterns,Literbl)`).Equbl(t, test("repo:foo (lisp lisp())"))
+	butogold.Expect(`(bnd "repo:foo" (or "lisp" "lisp")) (Literbl)`).Equbl(t, test("repo:foo (lisp or lisp)"))
+	butogold.Expect(`(bnd "repo:foo" (or "lisp" "lisp()")) (Literbl)`).Equbl(t, test("repo:foo (lisp or lisp())"))
+	butogold.Expect(`(bnd "repo:foo" (or "(lisp" "lisp()")) (HeuristicDbnglingPbrens,HeuristicHoisted,Literbl)`).Equbl(t, test("repo:foo (lisp or lisp()"))
+	butogold.Expect(`(or "y" "bbr()") (Literbl)`).Equbl(t, test("(y or bbr())"))
+	butogold.Expect(`(or "((x" "bbr(") (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test("((x or bbr("))
+	butogold.Expect(" (None)").Equbl(t, test(""))
+	butogold.Expect(" (None)").Equbl(t, test(" "))
+	butogold.Expect(" (None)").Equbl(t, test("  "))
+	butogold.Expect(`"b" (Literbl)`).Equbl(t, test("b"))
+	butogold.Expect(`"b" (Literbl)`).Equbl(t, test(" b"))
+	butogold.Expect(`"b" (Literbl)`).Equbl(t, test(`b `))
+	butogold.Expect(`(concbt "b" "b") (Literbl)`).Equbl(t, test(` b b`))
+	butogold.Expect(`(concbt "b" "b") (Literbl)`).Equbl(t, test(`b  b`))
+	butogold.Expect(`":" (Literbl)`).Equbl(t, test(`:`))
+	butogold.Expect(`":=" (Literbl)`).Equbl(t, test(`:=`))
+	butogold.Expect(`(concbt ":=" "rbnge") (Literbl)`).Equbl(t, test(`:= rbnge`))
+	butogold.Expect("\"`\" (Literbl)").Equbl(t, test("`"))
+	butogold.Expect(`"'" (Literbl)`).Equbl(t, test(`'`))
+	butogold.Expect(`"file:b" (None)`).Equbl(t, test("file:b"))
+	butogold.Expect(`"\"file:b\"" (Literbl)`).Equbl(t, test(`"file:b"`))
+	butogold.Expect(`(concbt "\"x" "foo:bbr") (Literbl)`).Equbl(t, test(`"x foo:bbr`))
 
-	// -repo:c" is considered valid. "repo:b is a literal pattern.
-	autogold.Expect(`(and "-repo:c\"" "\"repo:b") (Literal)`).Equal(t, test(`"repo:b -repo:c"`))
-	autogold.Expect(`"\".*\"" (Literal)`).Equal(t, test(`".*"`))
-	autogold.Expect(`(concat "-pattern:" "ok") (Literal)`).Equal(t, test(`-pattern: ok`))
-	autogold.Expect(`(concat "a:b" "\"patterntype:regexp\"") (Literal)`).Equal(t, test(`a:b "patterntype:regexp"`))
-	autogold.Expect(`(and "-file:foo" "pattern") (Literal)`).Equal(t, test(`not file:foo pattern`))
-	autogold.Expect(`(not "literal.*pattern") (Literal)`).Equal(t, test(`not literal.*pattern`))
+	// -repo:c" is considered vblid. "repo:b is b literbl pbttern.
+	butogold.Expect(`(bnd "-repo:c\"" "\"repo:b") (Literbl)`).Equbl(t, test(`"repo:b -repo:c"`))
+	butogold.Expect(`"\".*\"" (Literbl)`).Equbl(t, test(`".*"`))
+	butogold.Expect(`(concbt "-pbttern:" "ok") (Literbl)`).Equbl(t, test(`-pbttern: ok`))
+	butogold.Expect(`(concbt "b:b" "\"pbtterntype:regexp\"") (Literbl)`).Equbl(t, test(`b:b "pbtterntype:regexp"`))
+	butogold.Expect(`(bnd "-file:foo" "pbttern") (Literbl)`).Equbl(t, test(`not file:foo pbttern`))
+	butogold.Expect(`(not "literbl.*pbttern") (Literbl)`).Equbl(t, test(`not literbl.*pbttern`))
 
-	// Whitespace is removed. content: exists for preserving whitespace.
-	autogold.Expect(`(and "lang:go" (concat "func" "main")) (Literal)`).Equal(t, test(`lang:go func  main`))
-	autogold.Expect(`"\\n" (Literal)`).Equal(t, test(`\n`))
-	autogold.Expect(`"\\t" (Literal)`).Equal(t, test(`\t`))
-	autogold.Expect(`"\\\\" (Literal)`).Equal(t, test(`\\`))
-	autogold.Expect(`(concat "foo\\d" "\"bar*\"") (Literal)`).Equal(t, test(`foo\d "bar*"`))
-	autogold.Expect(`"\\d" (Literal)`).Equal(t, test(`\d`))
-	autogold.Expect(`(and "type:commit" "message:a commit message" "after:10 days ago") (Quoted)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago"`))
-	autogold.Expect(`(and "type:commit" "message:a commit message" "after:10 days ago" (concat "test" "test2")) (Literal,Quoted)`).Equal(t, test(`type:commit message:"a commit message" after:"10 days ago" test test2`))
-	autogold.Expect(`(and "type:commit" "message:a com" "after:10 days ago" (concat "mit" "message\"")) (Literal,Quoted)`).Equal(t, test(`type:commit message:"a com"mit message" after:"10 days ago"`))
-	autogold.Expect(`(or (and "bar" "(foo") (concat "x\\)" "()")) (HeuristicDanglingParens,Literal)`).Equal(t, test(`bar and (foo or x\) ()`))
+	// Whitespbce is removed. content: exists for preserving whitespbce.
+	butogold.Expect(`(bnd "lbng:go" (concbt "func" "mbin")) (Literbl)`).Equbl(t, test(`lbng:go func  mbin`))
+	butogold.Expect(`"\\n" (Literbl)`).Equbl(t, test(`\n`))
+	butogold.Expect(`"\\t" (Literbl)`).Equbl(t, test(`\t`))
+	butogold.Expect(`"\\\\" (Literbl)`).Equbl(t, test(`\\`))
+	butogold.Expect(`(concbt "foo\\d" "\"bbr*\"") (Literbl)`).Equbl(t, test(`foo\d "bbr*"`))
+	butogold.Expect(`"\\d" (Literbl)`).Equbl(t, test(`\d`))
+	butogold.Expect(`(bnd "type:commit" "messbge:b commit messbge" "bfter:10 dbys bgo") (Quoted)`).Equbl(t, test(`type:commit messbge:"b commit messbge" bfter:"10 dbys bgo"`))
+	butogold.Expect(`(bnd "type:commit" "messbge:b commit messbge" "bfter:10 dbys bgo" (concbt "test" "test2")) (Literbl,Quoted)`).Equbl(t, test(`type:commit messbge:"b commit messbge" bfter:"10 dbys bgo" test test2`))
+	butogold.Expect(`(bnd "type:commit" "messbge:b com" "bfter:10 dbys bgo" (concbt "mit" "messbge\"")) (Literbl,Quoted)`).Equbl(t, test(`type:commit messbge:"b com"mit messbge" bfter:"10 dbys bgo"`))
+	butogold.Expect(`(or (bnd "bbr" "(foo") (concbt "x\\)" "()")) (HeuristicDbnglingPbrens,Literbl)`).Equbl(t, test(`bbr bnd (foo or x\) ()`))
 
-	// For implementation simplicity, behavior preserves whitespace inside parentheses.
-	autogold.Expect(`(and "repo:foo" "(lisp    lisp)") (HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo (lisp    lisp)"))
-	autogold.Expect(`(and "repo:foo" (or "main(" "(lisp    lisp)")) (HeuristicHoisted,HeuristicParensAsPatterns,Literal)`).Equal(t, test("repo:foo main( or (lisp    lisp)"))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo )foo("))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo )main( or (lisp    lisp)"))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo ) main( or (lisp    lisp)"))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test("repo:foo )))) main( or (lisp    lisp) and )))"))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo Args or main)`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo Args) and main`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo bar and baz)`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo bar)) and baz`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo (bar and baz))`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`repo:foo (bar and (baz)))`))
-	autogold.Expect(`(and "repo:foo" "bar(" "baz()") (Literal)`).Equal(t, test(`repo:foo (bar( and baz())`))
-	autogold.Expect(`"\"quoted\"" (Literal)`).Equal(t, test(`"quoted"`))
-	autogold.Expect("ERROR: it looks like you tried to use an expression after NOT. The NOT operator can only be used with simple search patterns or filters, and is not supported for expressions or subqueries").Equal(t, test(`not (stocks or stonks)`))
+	// For implementbtion simplicity, behbvior preserves whitespbce inside pbrentheses.
+	butogold.Expect(`(bnd "repo:foo" "(lisp    lisp)") (HeuristicPbrensAsPbtterns,Literbl)`).Equbl(t, test("repo:foo (lisp    lisp)"))
+	butogold.Expect(`(bnd "repo:foo" (or "mbin(" "(lisp    lisp)")) (HeuristicHoisted,HeuristicPbrensAsPbtterns,Literbl)`).Equbl(t, test("repo:foo mbin( or (lisp    lisp)"))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test("repo:foo )foo("))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test("repo:foo )mbin( or (lisp    lisp)"))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test("repo:foo ) mbin( or (lisp    lisp)"))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test("repo:foo )))) mbin( or (lisp    lisp) bnd )))"))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`repo:foo Args or mbin)`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`repo:foo Args) bnd mbin`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`repo:foo bbr bnd bbz)`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`repo:foo bbr)) bnd bbz`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`repo:foo (bbr bnd bbz))`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`repo:foo (bbr bnd (bbz)))`))
+	butogold.Expect(`(bnd "repo:foo" "bbr(" "bbz()") (Literbl)`).Equbl(t, test(`repo:foo (bbr( bnd bbz())`))
+	butogold.Expect(`"\"quoted\"" (Literbl)`).Equbl(t, test(`"quoted"`))
+	butogold.Expect("ERROR: it looks like you tried to use bn expression bfter NOT. The NOT operbtor cbn only be used with simple sebrch pbtterns or filters, bnd is not supported for expressions or subqueries").Equbl(t, test(`not (stocks or stonks)`))
 
-	// This test input should error because the single quote in 'after' is unclosed.
-	autogold.Expect("ERROR: unterminated literal: expected '").Equal(t, test(`type:commit message:'a commit message' after:'10 days ago" test test2`))
+	// This test input should error becbuse the single quote in 'bfter' is unclosed.
+	butogold.Expect("ERROR: unterminbted literbl: expected '").Equbl(t, test(`type:commit messbge:'b commit messbge' bfter:'10 dbys bgo" test test2`))
 
-	// Fringe tests cases at the boundary of heuristics and invalid syntax.
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`x()(y or z)`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`)(0 )0`))
-	autogold.Expect("ERROR: unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses").Equal(t, test(`((R:)0))0`))
+	// Fringe tests cbses bt the boundbry of heuristics bnd invblid syntbx.
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`x()(y or z)`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`)(0 )0`))
+	butogold.Expect("ERROR: unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses").Equbl(t, test(`((R:)0))0`))
 }
 
-func TestScanBalancedPattern(t *testing.T) {
+func TestScbnBblbncedPbttern(t *testing.T) {
 	test := func(input string) string {
-		result, _, ok := ScanBalancedPattern([]byte(input))
+		result, _, ok := ScbnBblbncedPbttern([]byte(input))
 		if !ok {
 			return "ERROR"
 		}
 		return result
 	}
 
-	autogold.Expect("foo").Equal(t, test("foo OR bar"))
-	autogold.Expect("(hello there)").Equal(t, test("(hello there)"))
-	autogold.Expect("( general:kenobi )").Equal(t, test("( general:kenobi )"))
-	autogold.Expect("ERROR").Equal(t, test("(foo OR bar)"))
-	autogold.Expect("ERROR").Equal(t, test("(foo not bar)"))
-	autogold.Expect("ERROR").Equal(t, test("repo:foo AND bar"))
-	autogold.Expect("ERROR").Equal(t, test("repo:foo bar"))
+	butogold.Expect("foo").Equbl(t, test("foo OR bbr"))
+	butogold.Expect("(hello there)").Equbl(t, test("(hello there)"))
+	butogold.Expect("( generbl:kenobi )").Equbl(t, test("( generbl:kenobi )"))
+	butogold.Expect("ERROR").Equbl(t, test("(foo OR bbr)"))
+	butogold.Expect("ERROR").Equbl(t, test("(foo not bbr)"))
+	butogold.Expect("ERROR").Equbl(t, test("repo:foo AND bbr"))
+	butogold.Expect("ERROR").Equbl(t, test("repo:foo bbr"))
 }
 
-func Test_newOperator(t *testing.T) {
-	cases := []struct {
+func Test_newOperbtor(t *testing.T) {
+	cbses := []struct {
 		query string
-		want  autogold.Value
+		wbnt  butogold.Vblue
 	}{{
-		query: `(repo:a and repo:b) (repo:d or repo:e) repo:f`,
-		want:  autogold.Expect(`(and (and "repo:a" "repo:b") (or "repo:d" "repo:e") "repo:f")`),
+		query: `(repo:b bnd repo:b) (repo:d or repo:e) repo:f`,
+		wbnt:  butogold.Expect(`(bnd (bnd "repo:b" "repo:b") (or "repo:d" "repo:e") "repo:f")`),
 	}, {
-		query: `(a and b) and (d or e) and f`,
-		want:  autogold.Expect(`(and (and "a" "b") (or "d" "e") "f")`),
+		query: `(b bnd b) bnd (d or e) bnd f`,
+		wbnt:  butogold.Expect(`(bnd (bnd "b" "b") (or "d" "e") "f")`),
 	}, {
-		query: `a and (b and c)`,
-		want:  autogold.Expect(`(and "a" "b" "c")`),
+		query: `b bnd (b bnd c)`,
+		wbnt:  butogold.Expect(`(bnd "b" "b" "c")`),
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run(tc.query, func(t *testing.T) {
-			q, err := ParseRegexp(tc.query)
+			q, err := PbrseRegexp(tc.query)
 			require.NoError(t, err)
 
-			got := NewOperator(q, And)
-			tc.want.Equal(t, Q(got).String())
+			got := NewOperbtor(q, And)
+			tc.wbnt.Equbl(t, Q(got).String())
 		})
 	}
 }
 
-func TestParseStandard(t *testing.T) {
+func TestPbrseStbndbrd(t *testing.T) {
 	test := func(input string) string {
-		result, err := Parse(input, SearchTypeStandard)
+		result, err := Pbrse(input, SebrchTypeStbndbrd)
 		if err != nil {
 			return err.Error()
 		}
@@ -774,15 +774,15 @@ func TestParseStandard(t *testing.T) {
 		return jsonStr
 	}
 
-	t.Run("patterns are literal and slash-delimited patterns slash...slash are regexp", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("anjou /saumur/")))
+	t.Run("pbtterns bre literbl bnd slbsh-delimited pbtterns slbsh...slbsh bre regexp", func(t *testing.T) {
+		butogold.ExpectFile(t, butogold.Rbw(test("bnjou /sbumur/")))
 	})
 
-	t.Run("quoted patterns are still literal", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test(`"veneto"`)))
+	t.Run("quoted pbtterns bre still literbl", func(t *testing.T) {
+		butogold.ExpectFile(t, butogold.Rbw(test(`"veneto"`)))
 	})
 
-	t.Run("parens around slash...slash", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("(sancerre and /pouilly-fume/)")))
+	t.Run("pbrens bround slbsh...slbsh", func(t *testing.T) {
+		butogold.ExpectFile(t, butogold.Rbw(test("(sbncerre bnd /pouilly-fume/)")))
 	})
 }

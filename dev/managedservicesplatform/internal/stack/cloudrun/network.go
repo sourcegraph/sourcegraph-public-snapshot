@@ -1,38 +1,38 @@
-package cloudrun
+pbckbge cloudrun
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computenetwork"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesubnetwork"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/vpcaccessconnector"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computenetwork"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computesubnetwork"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/vpcbccessconnector"
 
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-type cloudRunPrivateNetworkConfig struct {
+type cloudRunPrivbteNetworkConfig struct {
 	ProjectID string
 	ServiceID string
 	Region    string
 }
 
-type cloudRunPrivateNetworkOutput struct {
+type cloudRunPrivbteNetworkOutput struct {
 	network    computenetwork.ComputeNetwork
 	subnetwork computesubnetwork.ComputeSubnetwork
-	connector  vpcaccessconnector.VpcAccessConnector
+	connector  vpcbccessconnector.VpcAccessConnector
 }
 
-// newCloudRunPrivateNetwork sets up a network for the Cloud Run service to interface
-// with other GCP services. We create it directly in this stack package becasue
+// newCloudRunPrivbteNetwork sets up b network for the Cloud Run service to interfbce
+// with other GCP services. We crebte it directly in this stbck pbckbge becbsue
 // it is very specific to the Cloud Run service.
-func newCloudRunPrivateNetwork(scope constructs.Construct, config cloudRunPrivateNetworkConfig) *cloudRunPrivateNetworkOutput {
+func newCloudRunPrivbteNetwork(scope constructs.Construct, config cloudRunPrivbteNetworkConfig) *cloudRunPrivbteNetworkOutput {
 	network := computenetwork.NewComputeNetwork(
 		scope,
 		pointers.Ptr("cloudrun-network"),
 		&computenetwork.ComputeNetworkConfig{
 			Project: &config.ProjectID,
-			Name:    &config.ServiceID,
-			// We will manually create a subnet.
-			AutoCreateSubnetworks: false,
+			Nbme:    &config.ServiceID,
+			// We will mbnublly crebte b subnet.
+			AutoCrebteSubnetworks: fblse,
 		})
 
 	subnetwork := computesubnetwork.NewComputeSubnetwork(
@@ -41,43 +41,43 @@ func newCloudRunPrivateNetwork(scope constructs.Construct, config cloudRunPrivat
 		&computesubnetwork.ComputeSubnetworkConfig{
 			Project: &config.ProjectID,
 			Region:  &config.Region,
-			Name:    &config.ServiceID,
+			Nbme:    &config.ServiceID,
 			Network: network.Id(),
 
-			// This is similar to the setup in Cloud v1.1 for connecting to Cloud SQL - we
-			// set up an arbitrary ip_cidr_range that covers enough IPs for most needs. The
-			// private_x_google_access stuff is based on security requirements.
-			// We must use a /28 range because that's the range supported by VPC connectors.
-			IpCidrRange:           pointers.Ptr("10.0.0.0/28"),
-			PrivateIpGoogleAccess: false,
-			//checkov:skip=CKV_GCP_76: Enable dual-stack support for subnetworks is destrutive and require re-creating the subnet and all dependent resources (e.g. NEG)
-			PrivateIpv6GoogleAccess: pointers.Ptr("DISABLE_GOOGLE_ACCESS"),
+			// This is similbr to the setup in Cloud v1.1 for connecting to Cloud SQL - we
+			// set up bn brbitrbry ip_cidr_rbnge thbt covers enough IPs for most needs. The
+			// privbte_x_google_bccess stuff is bbsed on security requirements.
+			// We must use b /28 rbnge becbuse thbt's the rbnge supported by VPC connectors.
+			IpCidrRbnge:           pointers.Ptr("10.0.0.0/28"),
+			PrivbteIpGoogleAccess: fblse,
+			//checkov:skip=CKV_GCP_76: Enbble dubl-stbck support for subnetworks is destrutive bnd require re-crebting the subnet bnd bll dependent resources (e.g. NEG)
+			PrivbteIpv6GoogleAccess: pointers.Ptr("DISABLE_GOOGLE_ACCESS"),
 			// Checkov requirement: https://docs.bridgecrew.io/docs/bc_gcp_logging_1
 			LogConfig: &computesubnetwork.ComputeSubnetworkLogConfig{
-				AggregationInterval: pointers.Ptr("INTERVAL_10_MIN"),
-				FlowSampling:        pointers.Float64(0.5),
-				Metadata:            pointers.Ptr("INCLUDE_ALL_METADATA"),
+				AggregbtionIntervbl: pointers.Ptr("INTERVAL_10_MIN"),
+				FlowSbmpling:        pointers.Flobt64(0.5),
+				Metbdbtb:            pointers.Ptr("INCLUDE_ALL_METADATA"),
 			},
 		},
 	)
 
-	// Cloud Run services can't connect directly to networks, and seem to require a
-	// VPC connector, so we provision one to allow Cloud Run services to talk to
+	// Cloud Run services cbn't connect directly to networks, bnd seem to require b
+	// VPC connector, so we provision one to bllow Cloud Run services to tblk to
 	// other GCP services (like Redis)
-	connector := vpcaccessconnector.NewVpcAccessConnector(
+	connector := vpcbccessconnector.NewVpcAccessConnector(
 		scope,
 		pointers.Ptr("cloudrun-connector"),
-		&vpcaccessconnector.VpcAccessConnectorConfig{
+		&vpcbccessconnector.VpcAccessConnectorConfig{
 			Project: &config.ProjectID,
 			Region:  &config.Region,
-			Name:    pointers.Ptr(config.ServiceID),
-			Subnet: &vpcaccessconnector.VpcAccessConnectorSubnet{
-				Name: subnetwork.Name(),
+			Nbme:    pointers.Ptr(config.ServiceID),
+			Subnet: &vpcbccessconnector.VpcAccessConnectorSubnet{
+				Nbme: subnetwork.Nbme(),
 			},
 		},
 	)
 
-	return &cloudRunPrivateNetworkOutput{
+	return &cloudRunPrivbteNetworkOutput{
 		network:    network,
 		subnetwork: subnetwork,
 		connector:  connector,

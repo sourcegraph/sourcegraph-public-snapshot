@@ -1,26 +1,26 @@
-package server
+pbckbge server
 
 import (
 	"context"
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
 )
 
-// HACK(keegancsmith) workaround to experiment with cloning less in a large
-// monorepo. https://github.com/sourcegraph/customer/issues/19
-var refspecOverrides = strings.Fields(env.Get("SRC_GITSERVER_REFSPECS", "", "EXPERIMENTAL: override refspec we fetch. Space separated."))
+// HACK(keegbncsmith) workbround to experiment with cloning less in b lbrge
+// monorepo. https://github.com/sourcegrbph/customer/issues/19
+vbr refspecOverrides = strings.Fields(env.Get("SRC_GITSERVER_REFSPECS", "", "EXPERIMENTAL: override refspec we fetch. Spbce sepbrbted."))
 
-// HACK(keegancsmith) workaround to experiment with cloning less in a large
-// monorepo. https://github.com/sourcegraph/customer/issues/19
+// HACK(keegbncsmith) workbround to experiment with cloning less in b lbrge
+// monorepo. https://github.com/sourcegrbph/customer/issues/19
 func useRefspecOverrides() bool {
 	return len(refspecOverrides) > 0
 }
 
-// HACK(keegancsmith) workaround to experiment with cloning less in a large
-// monorepo. https://github.com/sourcegraph/customer/issues/19
+// HACK(keegbncsmith) workbround to experiment with cloning less in b lbrge
+// monorepo. https://github.com/sourcegrbph/customer/issues/19
 func refspecOverridesFetchCmd(ctx context.Context, remoteURL *vcs.URL) *exec.Cmd {
-	return exec.CommandContext(ctx, "git", append([]string{"fetch", "--progress", "--prune", remoteURL.String()}, refspecOverrides...)...)
+	return exec.CommbndContext(ctx, "git", bppend([]string{"fetch", "--progress", "--prune", remoteURL.String()}, refspecOverrides...)...)
 }

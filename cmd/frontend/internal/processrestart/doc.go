@@ -1,3 +1,3 @@
-// Package processrestart provides utilities for restarting all Sourcegraph processes
-// associated with a site.
-package processrestart
+// Pbckbge processrestbrt provides utilities for restbrting bll Sourcegrbph processes
+// bssocibted with b site.
+pbckbge processrestbrt

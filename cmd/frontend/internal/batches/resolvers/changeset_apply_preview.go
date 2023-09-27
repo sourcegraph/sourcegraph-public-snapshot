@@ -1,391 +1,391 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches/reconciler"
-	"github.com/sourcegraph/sourcegraph/internal/batches/rewirer"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/reconciler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/rewirer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type changesetApplyPreviewResolver struct {
+type chbngesetApplyPreviewResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	mapping              *btypes.RewirerMapping
-	preloadedNextSync    time.Time
-	preloadedBatchChange *btypes.BatchChange
-	batchSpecID          int64
-	publicationStates    publicationStateMap
+	mbpping              *btypes.RewirerMbpping
+	prelobdedNextSync    time.Time
+	prelobdedBbtchChbnge *btypes.BbtchChbnge
+	bbtchSpecID          int64
+	publicbtionStbtes    publicbtionStbteMbp
 }
 
-var _ graphqlbackend.ChangesetApplyPreviewResolver = &changesetApplyPreviewResolver{}
+vbr _ grbphqlbbckend.ChbngesetApplyPreviewResolver = &chbngesetApplyPreviewResolver{}
 
-func (r *changesetApplyPreviewResolver) repoAccessible() bool {
-	// The repo is accessible when it was returned by the database when the mapping was hydrated.
-	return r.mapping.Repo != nil
+func (r *chbngesetApplyPreviewResolver) repoAccessible() bool {
+	// The repo is bccessible when it wbs returned by the dbtbbbse when the mbpping wbs hydrbted.
+	return r.mbpping.Repo != nil
 }
 
-func (r *changesetApplyPreviewResolver) ToVisibleChangesetApplyPreview() (graphqlbackend.VisibleChangesetApplyPreviewResolver, bool) {
+func (r *chbngesetApplyPreviewResolver) ToVisibleChbngesetApplyPreview() (grbphqlbbckend.VisibleChbngesetApplyPreviewResolver, bool) {
 	if r.repoAccessible() {
-		return &visibleChangesetApplyPreviewResolver{
+		return &visibleChbngesetApplyPreviewResolver{
 			store:                r.store,
 			gitserverClient:      r.gitserverClient,
 			logger:               r.logger,
-			mapping:              r.mapping,
-			preloadedNextSync:    r.preloadedNextSync,
-			preloadedBatchChange: r.preloadedBatchChange,
-			batchSpecID:          r.batchSpecID,
-			publicationStates:    r.publicationStates,
+			mbpping:              r.mbpping,
+			prelobdedNextSync:    r.prelobdedNextSync,
+			prelobdedBbtchChbnge: r.prelobdedBbtchChbnge,
+			bbtchSpecID:          r.bbtchSpecID,
+			publicbtionStbtes:    r.publicbtionStbtes,
 		}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *changesetApplyPreviewResolver) ToHiddenChangesetApplyPreview() (graphqlbackend.HiddenChangesetApplyPreviewResolver, bool) {
+func (r *chbngesetApplyPreviewResolver) ToHiddenChbngesetApplyPreview() (grbphqlbbckend.HiddenChbngesetApplyPreviewResolver, bool) {
 	if !r.repoAccessible() {
-		return &hiddenChangesetApplyPreviewResolver{
+		return &hiddenChbngesetApplyPreviewResolver{
 			store:             r.store,
 			gitserverClient:   r.gitserverClient,
-			mapping:           r.mapping,
-			preloadedNextSync: r.preloadedNextSync,
+			mbpping:           r.mbpping,
+			prelobdedNextSync: r.prelobdedNextSync,
 		}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-type hiddenChangesetApplyPreviewResolver struct {
+type hiddenChbngesetApplyPreviewResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 
-	mapping           *btypes.RewirerMapping
-	preloadedNextSync time.Time
+	mbpping           *btypes.RewirerMbpping
+	prelobdedNextSync time.Time
 }
 
-var _ graphqlbackend.HiddenChangesetApplyPreviewResolver = &hiddenChangesetApplyPreviewResolver{}
+vbr _ grbphqlbbckend.HiddenChbngesetApplyPreviewResolver = &hiddenChbngesetApplyPreviewResolver{}
 
-func (r *hiddenChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]string, error) {
-	// If the repo is inaccessible, no operations would be taken, since the changeset is not created/updated.
+func (r *hiddenChbngesetApplyPreviewResolver) Operbtions(ctx context.Context) ([]string, error) {
+	// If the repo is inbccessible, no operbtions would be tbken, since the chbngeset is not crebted/updbted.
 	return []string{}, nil
 }
 
-func (r *hiddenChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	// If the repo is inaccessible, no comparison is made, since the changeset is not created/updated.
-	return &changesetSpecDeltaResolver{}, nil
+func (r *hiddenChbngesetApplyPreviewResolver) Deltb(ctx context.Context) (grbphqlbbckend.ChbngesetSpecDeltbResolver, error) {
+	// If the repo is inbccessible, no compbrison is mbde, since the chbngeset is not crebted/updbted.
+	return &chbngesetSpecDeltbResolver{}, nil
 }
 
-func (r *hiddenChangesetApplyPreviewResolver) Targets() graphqlbackend.HiddenApplyPreviewTargetsResolver {
-	return &hiddenApplyPreviewTargetsResolver{
+func (r *hiddenChbngesetApplyPreviewResolver) Tbrgets() grbphqlbbckend.HiddenApplyPreviewTbrgetsResolver {
+	return &hiddenApplyPreviewTbrgetsResolver{
 		store:             r.store,
 		gitserverClient:   r.gitserverClient,
-		mapping:           r.mapping,
-		preloadedNextSync: r.preloadedNextSync,
+		mbpping:           r.mbpping,
+		prelobdedNextSync: r.prelobdedNextSync,
 	}
 }
 
-type hiddenApplyPreviewTargetsResolver struct {
+type hiddenApplyPreviewTbrgetsResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	mapping           *btypes.RewirerMapping
-	preloadedNextSync time.Time
+	mbpping           *btypes.RewirerMbpping
+	prelobdedNextSync time.Time
 }
 
-var _ graphqlbackend.HiddenApplyPreviewTargetsResolver = &hiddenApplyPreviewTargetsResolver{}
-var _ graphqlbackend.HiddenApplyPreviewTargetsAttachResolver = &hiddenApplyPreviewTargetsResolver{}
-var _ graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver = &hiddenApplyPreviewTargetsResolver{}
-var _ graphqlbackend.HiddenApplyPreviewTargetsDetachResolver = &hiddenApplyPreviewTargetsResolver{}
+vbr _ grbphqlbbckend.HiddenApplyPreviewTbrgetsResolver = &hiddenApplyPreviewTbrgetsResolver{}
+vbr _ grbphqlbbckend.HiddenApplyPreviewTbrgetsAttbchResolver = &hiddenApplyPreviewTbrgetsResolver{}
+vbr _ grbphqlbbckend.HiddenApplyPreviewTbrgetsUpdbteResolver = &hiddenApplyPreviewTbrgetsResolver{}
+vbr _ grbphqlbbckend.HiddenApplyPreviewTbrgetsDetbchResolver = &hiddenApplyPreviewTbrgetsResolver{}
 
-func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsAttach() (graphqlbackend.HiddenApplyPreviewTargetsAttachResolver, bool) {
-	if r.mapping.Changeset == nil {
+func (r *hiddenApplyPreviewTbrgetsResolver) ToHiddenApplyPreviewTbrgetsAttbch() (grbphqlbbckend.HiddenApplyPreviewTbrgetsAttbchResolver, bool) {
+	if r.mbpping.Chbngeset == nil {
 		return r, true
 	}
-	return nil, false
+	return nil, fblse
 }
-func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsUpdate() (graphqlbackend.HiddenApplyPreviewTargetsUpdateResolver, bool) {
-	if r.mapping.Changeset != nil && r.mapping.ChangesetSpec != nil {
+func (r *hiddenApplyPreviewTbrgetsResolver) ToHiddenApplyPreviewTbrgetsUpdbte() (grbphqlbbckend.HiddenApplyPreviewTbrgetsUpdbteResolver, bool) {
+	if r.mbpping.Chbngeset != nil && r.mbpping.ChbngesetSpec != nil {
 		return r, true
 	}
-	return nil, false
+	return nil, fblse
 }
-func (r *hiddenApplyPreviewTargetsResolver) ToHiddenApplyPreviewTargetsDetach() (graphqlbackend.HiddenApplyPreviewTargetsDetachResolver, bool) {
-	if r.mapping.ChangesetSpec == nil {
+func (r *hiddenApplyPreviewTbrgetsResolver) ToHiddenApplyPreviewTbrgetsDetbch() (grbphqlbbckend.HiddenApplyPreviewTbrgetsDetbchResolver, bool) {
+	if r.mbpping.ChbngesetSpec == nil {
 		return r, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *hiddenApplyPreviewTargetsResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.HiddenChangesetSpecResolver, error) {
-	if r.mapping.ChangesetSpec == nil {
+func (r *hiddenApplyPreviewTbrgetsResolver) ChbngesetSpec(ctx context.Context) (grbphqlbbckend.HiddenChbngesetSpecResolver, error) {
+	if r.mbpping.ChbngesetSpec == nil {
 		return nil, nil
 	}
-	return NewChangesetSpecResolverWithRepo(r.store, nil, r.mapping.ChangesetSpec), nil
+	return NewChbngesetSpecResolverWithRepo(r.store, nil, r.mbpping.ChbngesetSpec), nil
 }
 
-func (r *hiddenApplyPreviewTargetsResolver) Changeset(ctx context.Context) (graphqlbackend.HiddenExternalChangesetResolver, error) {
-	if r.mapping.Changeset == nil {
+func (r *hiddenApplyPreviewTbrgetsResolver) Chbngeset(ctx context.Context) (grbphqlbbckend.HiddenExternblChbngesetResolver, error) {
+	if r.mbpping.Chbngeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, r.mapping.Changeset, nil, r.preloadedNextSync), nil
+	return NewChbngesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, r.mbpping.Chbngeset, nil, r.prelobdedNextSync), nil
 }
 
-type visibleChangesetApplyPreviewResolver struct {
+type visibleChbngesetApplyPreviewResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	mapping              *btypes.RewirerMapping
-	preloadedNextSync    time.Time
-	preloadedBatchChange *btypes.BatchChange
-	batchSpecID          int64
-	publicationStates    map[string]batches.PublishedValue
+	mbpping              *btypes.RewirerMbpping
+	prelobdedNextSync    time.Time
+	prelobdedBbtchChbnge *btypes.BbtchChbnge
+	bbtchSpecID          int64
+	publicbtionStbtes    mbp[string]bbtches.PublishedVblue
 
-	planOnce sync.Once
-	plan     *reconciler.Plan
-	planErr  error
+	plbnOnce sync.Once
+	plbn     *reconciler.Plbn
+	plbnErr  error
 
-	batchChangeOnce sync.Once
-	batchChange     *btypes.BatchChange
-	batchChangeErr  error
+	bbtchChbngeOnce sync.Once
+	bbtchChbnge     *btypes.BbtchChbnge
+	bbtchChbngeErr  error
 }
 
-var _ graphqlbackend.VisibleChangesetApplyPreviewResolver = &visibleChangesetApplyPreviewResolver{}
+vbr _ grbphqlbbckend.VisibleChbngesetApplyPreviewResolver = &visibleChbngesetApplyPreviewResolver{}
 
-func (r *visibleChangesetApplyPreviewResolver) Operations(ctx context.Context) ([]string, error) {
-	plan, err := r.computePlan(ctx)
+func (r *visibleChbngesetApplyPreviewResolver) Operbtions(ctx context.Context) ([]string, error) {
+	plbn, err := r.computePlbn(ctx)
 	if err != nil {
 		return nil, err
 	}
-	ops := plan.Ops.ExecutionOrder()
-	strOps := make([]string, 0, len(ops))
-	for _, op := range ops {
-		strOps = append(strOps, string(op))
+	ops := plbn.Ops.ExecutionOrder()
+	strOps := mbke([]string, 0, len(ops))
+	for _, op := rbnge ops {
+		strOps = bppend(strOps, string(op))
 	}
 	return strOps, nil
 }
 
-func (r *visibleChangesetApplyPreviewResolver) Delta(ctx context.Context) (graphqlbackend.ChangesetSpecDeltaResolver, error) {
-	plan, err := r.computePlan(ctx)
+func (r *visibleChbngesetApplyPreviewResolver) Deltb(ctx context.Context) (grbphqlbbckend.ChbngesetSpecDeltbResolver, error) {
+	plbn, err := r.computePlbn(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if plan.Delta == nil {
-		return &changesetSpecDeltaResolver{}, nil
+	if plbn.Deltb == nil {
+		return &chbngesetSpecDeltbResolver{}, nil
 	}
-	return &changesetSpecDeltaResolver{delta: *plan.Delta}, nil
+	return &chbngesetSpecDeltbResolver{deltb: *plbn.Deltb}, nil
 }
 
-func (r *visibleChangesetApplyPreviewResolver) Targets() graphqlbackend.VisibleApplyPreviewTargetsResolver {
-	return &visibleApplyPreviewTargetsResolver{
+func (r *visibleChbngesetApplyPreviewResolver) Tbrgets() grbphqlbbckend.VisibleApplyPreviewTbrgetsResolver {
+	return &visibleApplyPreviewTbrgetsResolver{
 		store:             r.store,
 		gitserverClient:   r.gitserverClient,
 		logger:            r.logger,
-		mapping:           r.mapping,
-		preloadedNextSync: r.preloadedNextSync,
+		mbpping:           r.mbpping,
+		prelobdedNextSync: r.prelobdedNextSync,
 	}
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) (*reconciler.Plan, error) {
-	r.planOnce.Do(func() {
-		batchChange, err := r.computeBatchChange(ctx)
+func (r *visibleChbngesetApplyPreviewResolver) computePlbn(ctx context.Context) (*reconciler.Plbn, error) {
+	r.plbnOnce.Do(func() {
+		bbtchChbnge, err := r.computeBbtchChbnge(ctx)
 		if err != nil {
-			r.planErr = err
+			r.plbnErr = err
 			return
 		}
 
-		// Clone all entities to ensure they're not modified when used
-		// by the changeset and changeset spec resolvers. Otherwise, the
-		// changeset always appears as "processing".
-		var (
-			mappingChangeset     *btypes.Changeset
-			mappingChangesetSpec *btypes.ChangesetSpec
-			mappingRepo          *types.Repo
+		// Clone bll entities to ensure they're not modified when used
+		// by the chbngeset bnd chbngeset spec resolvers. Otherwise, the
+		// chbngeset blwbys bppebrs bs "processing".
+		vbr (
+			mbppingChbngeset     *btypes.Chbngeset
+			mbppingChbngesetSpec *btypes.ChbngesetSpec
+			mbppingRepo          *types.Repo
 		)
-		if r.mapping.Changeset != nil {
-			mappingChangeset = r.mapping.Changeset.Clone()
+		if r.mbpping.Chbngeset != nil {
+			mbppingChbngeset = r.mbpping.Chbngeset.Clone()
 		}
-		if r.mapping.ChangesetSpec != nil {
-			mappingChangesetSpec = r.mapping.ChangesetSpec.Clone()
+		if r.mbpping.ChbngesetSpec != nil {
+			mbppingChbngesetSpec = r.mbpping.ChbngesetSpec.Clone()
 		}
-		if r.mapping.Repo != nil {
-			mappingRepo = r.mapping.Repo.Clone()
+		if r.mbpping.Repo != nil {
+			mbppingRepo = r.mbpping.Repo.Clone()
 		}
 
-		// Then, dry-run the rewirer to simulate how the changeset would look like _after_ an apply operation.
-		changesetRewirer := rewirer.New(btypes.RewirerMappings{{
-			ChangesetSpecID: r.mapping.ChangesetSpecID,
-			ChangesetID:     r.mapping.ChangesetID,
-			RepoID:          r.mapping.RepoID,
+		// Then, dry-run the rewirer to simulbte how the chbngeset would look like _bfter_ bn bpply operbtion.
+		chbngesetRewirer := rewirer.New(btypes.RewirerMbppings{{
+			ChbngesetSpecID: r.mbpping.ChbngesetSpecID,
+			ChbngesetID:     r.mbpping.ChbngesetID,
+			RepoID:          r.mbpping.RepoID,
 
-			ChangesetSpec: mappingChangesetSpec,
-			Changeset:     mappingChangeset,
-			Repo:          mappingRepo,
-		}}, batchChange.ID)
-		newChangesets, updatedChangesets, err := changesetRewirer.Rewire()
+			ChbngesetSpec: mbppingChbngesetSpec,
+			Chbngeset:     mbppingChbngeset,
+			Repo:          mbppingRepo,
+		}}, bbtchChbnge.ID)
+		newChbngesets, updbtedChbngesets, err := chbngesetRewirer.Rewire()
 		if err != nil {
-			r.planErr = err
+			r.plbnErr = err
 			return
 		}
 
-		// For a preview, we do not care if the changesets are new or being updated. When applying the changes, we do
-		// want to differentiate to make life easier.
-		wantedChangesets := append(newChangesets, updatedChangesets...)
+		// For b preview, we do not cbre if the chbngesets bre new or being updbted. When bpplying the chbnges, we do
+		// wbnt to differentibte to mbke life ebsier.
+		wbntedChbngesets := bppend(newChbngesets, updbtedChbngesets...)
 
-		if len(wantedChangesets) != 1 {
-			r.planErr = errors.New("rewirer did not return changeset")
+		if len(wbntedChbngesets) != 1 {
+			r.plbnErr = errors.New("rewirer did not return chbngeset")
 			return
 		}
-		wantedChangeset := wantedChangesets[0]
+		wbntedChbngeset := wbntedChbngesets[0]
 
-		// Set the changeset UI publication state if necessary.
-		if r.publicationStates != nil && mappingChangesetSpec != nil {
-			if state, ok := r.publicationStates[mappingChangesetSpec.RandID]; ok {
-				if !mappingChangesetSpec.Published.Nil() {
-					r.planErr = errors.Newf("changeset spec %q has the published field set in its spec", mappingChangesetSpec.RandID)
+		// Set the chbngeset UI publicbtion stbte if necessbry.
+		if r.publicbtionStbtes != nil && mbppingChbngesetSpec != nil {
+			if stbte, ok := r.publicbtionStbtes[mbppingChbngesetSpec.RbndID]; ok {
+				if !mbppingChbngesetSpec.Published.Nil() {
+					r.plbnErr = errors.Newf("chbngeset spec %q hbs the published field set in its spec", mbppingChbngesetSpec.RbndID)
 					return
 				}
-				wantedChangeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
+				wbntedChbngeset.UiPublicbtionStbte = btypes.ChbngesetUiPublicbtionStbteFromPublishedVblue(stbte)
 			}
 		}
 
-		// Detached changesets would still appear here, but since they'll never match one of the new specs, they don't actually appear here.
-		// Once we have a way to have changeset specs for detached changesets, this would be the place to do a "will be detached" check.
-		// TBD: How we represent that in the API.
+		// Detbched chbngesets would still bppebr here, but since they'll never mbtch one of the new specs, they don't bctublly bppebr here.
+		// Once we hbve b wby to hbve chbngeset specs for detbched chbngesets, this would be the plbce to do b "will be detbched" check.
+		// TBD: How we represent thbt in the API.
 
-		// The rewirer takes previous and current spec into account to determine actions to take,
-		// so we need to find out which specs we need to pass to the planner.
+		// The rewirer tbkes previous bnd current spec into bccount to determine bctions to tbke,
+		// so we need to find out which specs we need to pbss to the plbnner.
 
-		// This means that we currently won't show "attach to tracking changeset" and "detach changeset" in this preview API. Close and import non-existing work, though.
-		var previousSpec, currentSpec *btypes.ChangesetSpec
-		if wantedChangeset.PreviousSpecID != 0 {
-			previousSpec, err = r.store.GetChangesetSpecByID(ctx, wantedChangeset.PreviousSpecID)
+		// This mebns thbt we currently won't show "bttbch to trbcking chbngeset" bnd "detbch chbngeset" in this preview API. Close bnd import non-existing work, though.
+		vbr previousSpec, currentSpec *btypes.ChbngesetSpec
+		if wbntedChbngeset.PreviousSpecID != 0 {
+			previousSpec, err = r.store.GetChbngesetSpecByID(ctx, wbntedChbngeset.PreviousSpecID)
 			if err != nil {
-				r.planErr = err
+				r.plbnErr = err
 				return
 			}
 		}
-		if wantedChangeset.CurrentSpecID != 0 {
-			if r.mapping.ChangesetSpec != nil {
-				// If the current spec was not unset by the rewirer, it will be this resolvers spec.
-				currentSpec = r.mapping.ChangesetSpec
+		if wbntedChbngeset.CurrentSpecID != 0 {
+			if r.mbpping.ChbngesetSpec != nil {
+				// If the current spec wbs not unset by the rewirer, it will be this resolvers spec.
+				currentSpec = r.mbpping.ChbngesetSpec
 			} else {
-				currentSpec, err = r.store.GetChangesetSpecByID(ctx, wantedChangeset.CurrentSpecID)
+				currentSpec, err = r.store.GetChbngesetSpecByID(ctx, wbntedChbngeset.CurrentSpecID)
 				if err != nil {
-					r.planErr = err
+					r.plbnErr = err
 					return
 				}
 			}
 		}
-		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, r.mapping.Changeset, wantedChangeset)
+		r.plbn, r.plbnErr = reconciler.DeterminePlbn(previousSpec, currentSpec, r.mbpping.Chbngeset, wbntedChbngeset)
 	})
-	return r.plan, r.planErr
+	return r.plbn, r.plbnErr
 }
 
-func (r *visibleChangesetApplyPreviewResolver) computeBatchChange(ctx context.Context) (*btypes.BatchChange, error) {
-	r.batchChangeOnce.Do(func() {
-		if r.preloadedBatchChange != nil {
-			r.batchChange = r.preloadedBatchChange
+func (r *visibleChbngesetApplyPreviewResolver) computeBbtchChbnge(ctx context.Context) (*btypes.BbtchChbnge, error) {
+	r.bbtchChbngeOnce.Do(func() {
+		if r.prelobdedBbtchChbnge != nil {
+			r.bbtchChbnge = r.prelobdedBbtchChbnge
 			return
 		}
 		svc := service.New(r.store)
-		batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.batchSpecID})
+		bbtchSpec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: r.bbtchSpecID})
 		if err != nil {
-			r.planErr = err
+			r.plbnErr = err
 			return
 		}
-		// Dry-run reconcile the batch  with the new batch spec.
-		r.batchChange, _, r.batchChangeErr = svc.ReconcileBatchChange(ctx, batchSpec)
+		// Dry-run reconcile the bbtch  with the new bbtch spec.
+		r.bbtchChbnge, _, r.bbtchChbngeErr = svc.ReconcileBbtchChbnge(ctx, bbtchSpec)
 	})
-	return r.batchChange, r.batchChangeErr
+	return r.bbtchChbnge, r.bbtchChbngeErr
 }
 
-type visibleApplyPreviewTargetsResolver struct {
+type visibleApplyPreviewTbrgetsResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	mapping           *btypes.RewirerMapping
-	preloadedNextSync time.Time
+	mbpping           *btypes.RewirerMbpping
+	prelobdedNextSync time.Time
 }
 
-var _ graphqlbackend.VisibleApplyPreviewTargetsResolver = &visibleApplyPreviewTargetsResolver{}
-var _ graphqlbackend.VisibleApplyPreviewTargetsAttachResolver = &visibleApplyPreviewTargetsResolver{}
-var _ graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver = &visibleApplyPreviewTargetsResolver{}
-var _ graphqlbackend.VisibleApplyPreviewTargetsDetachResolver = &visibleApplyPreviewTargetsResolver{}
+vbr _ grbphqlbbckend.VisibleApplyPreviewTbrgetsResolver = &visibleApplyPreviewTbrgetsResolver{}
+vbr _ grbphqlbbckend.VisibleApplyPreviewTbrgetsAttbchResolver = &visibleApplyPreviewTbrgetsResolver{}
+vbr _ grbphqlbbckend.VisibleApplyPreviewTbrgetsUpdbteResolver = &visibleApplyPreviewTbrgetsResolver{}
+vbr _ grbphqlbbckend.VisibleApplyPreviewTbrgetsDetbchResolver = &visibleApplyPreviewTbrgetsResolver{}
 
-func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsAttach() (graphqlbackend.VisibleApplyPreviewTargetsAttachResolver, bool) {
-	if r.mapping.Changeset == nil {
+func (r *visibleApplyPreviewTbrgetsResolver) ToVisibleApplyPreviewTbrgetsAttbch() (grbphqlbbckend.VisibleApplyPreviewTbrgetsAttbchResolver, bool) {
+	if r.mbpping.Chbngeset == nil {
 		return r, true
 	}
-	return nil, false
+	return nil, fblse
 }
-func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsUpdate() (graphqlbackend.VisibleApplyPreviewTargetsUpdateResolver, bool) {
-	if r.mapping.Changeset != nil && r.mapping.ChangesetSpec != nil {
+func (r *visibleApplyPreviewTbrgetsResolver) ToVisibleApplyPreviewTbrgetsUpdbte() (grbphqlbbckend.VisibleApplyPreviewTbrgetsUpdbteResolver, bool) {
+	if r.mbpping.Chbngeset != nil && r.mbpping.ChbngesetSpec != nil {
 		return r, true
 	}
-	return nil, false
+	return nil, fblse
 }
-func (r *visibleApplyPreviewTargetsResolver) ToVisibleApplyPreviewTargetsDetach() (graphqlbackend.VisibleApplyPreviewTargetsDetachResolver, bool) {
-	if r.mapping.ChangesetSpec == nil {
+func (r *visibleApplyPreviewTbrgetsResolver) ToVisibleApplyPreviewTbrgetsDetbch() (grbphqlbbckend.VisibleApplyPreviewTbrgetsDetbchResolver, bool) {
+	if r.mbpping.ChbngesetSpec == nil {
 		return r, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *visibleApplyPreviewTargetsResolver) ChangesetSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
-	if r.mapping.ChangesetSpec == nil {
+func (r *visibleApplyPreviewTbrgetsResolver) ChbngesetSpec(ctx context.Context) (grbphqlbbckend.VisibleChbngesetSpecResolver, error) {
+	if r.mbpping.ChbngesetSpec == nil {
 		return nil, nil
 	}
-	return NewChangesetSpecResolverWithRepo(r.store, r.mapping.Repo, r.mapping.ChangesetSpec), nil
+	return NewChbngesetSpecResolverWithRepo(r.store, r.mbpping.Repo, r.mbpping.ChbngesetSpec), nil
 }
 
-func (r *visibleApplyPreviewTargetsResolver) Changeset(ctx context.Context) (graphqlbackend.ExternalChangesetResolver, error) {
-	if r.mapping.Changeset == nil {
+func (r *visibleApplyPreviewTbrgetsResolver) Chbngeset(ctx context.Context) (grbphqlbbckend.ExternblChbngesetResolver, error) {
+	if r.mbpping.Chbngeset == nil {
 		return nil, nil
 	}
-	return NewChangesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, r.mapping.Changeset, r.mapping.Repo, r.preloadedNextSync), nil
+	return NewChbngesetResolverWithNextSync(r.store, r.gitserverClient, r.logger, r.mbpping.Chbngeset, r.mbpping.Repo, r.prelobdedNextSync), nil
 }
 
-type changesetSpecDeltaResolver struct {
-	delta reconciler.ChangesetSpecDelta
+type chbngesetSpecDeltbResolver struct {
+	deltb reconciler.ChbngesetSpecDeltb
 }
 
-var _ graphqlbackend.ChangesetSpecDeltaResolver = &changesetSpecDeltaResolver{}
+vbr _ grbphqlbbckend.ChbngesetSpecDeltbResolver = &chbngesetSpecDeltbResolver{}
 
-func (c *changesetSpecDeltaResolver) TitleChanged() bool {
-	return c.delta.TitleChanged
+func (c *chbngesetSpecDeltbResolver) TitleChbnged() bool {
+	return c.deltb.TitleChbnged
 }
-func (c *changesetSpecDeltaResolver) BodyChanged() bool {
-	return c.delta.BodyChanged
+func (c *chbngesetSpecDeltbResolver) BodyChbnged() bool {
+	return c.deltb.BodyChbnged
 }
-func (c *changesetSpecDeltaResolver) Undraft() bool {
-	return c.delta.Undraft
+func (c *chbngesetSpecDeltbResolver) Undrbft() bool {
+	return c.deltb.Undrbft
 }
-func (c *changesetSpecDeltaResolver) BaseRefChanged() bool {
-	return c.delta.BaseRefChanged
+func (c *chbngesetSpecDeltbResolver) BbseRefChbnged() bool {
+	return c.deltb.BbseRefChbnged
 }
-func (c *changesetSpecDeltaResolver) DiffChanged() bool {
-	return c.delta.DiffChanged
+func (c *chbngesetSpecDeltbResolver) DiffChbnged() bool {
+	return c.deltb.DiffChbnged
 }
-func (c *changesetSpecDeltaResolver) CommitMessageChanged() bool {
-	return c.delta.CommitMessageChanged
+func (c *chbngesetSpecDeltbResolver) CommitMessbgeChbnged() bool {
+	return c.deltb.CommitMessbgeChbnged
 }
-func (c *changesetSpecDeltaResolver) AuthorNameChanged() bool {
-	return c.delta.AuthorNameChanged
+func (c *chbngesetSpecDeltbResolver) AuthorNbmeChbnged() bool {
+	return c.deltb.AuthorNbmeChbnged
 }
-func (c *changesetSpecDeltaResolver) AuthorEmailChanged() bool {
-	return c.delta.AuthorEmailChanged
+func (c *chbngesetSpecDeltbResolver) AuthorEmbilChbnged() bool {
+	return c.deltb.AuthorEmbilChbnged
 }

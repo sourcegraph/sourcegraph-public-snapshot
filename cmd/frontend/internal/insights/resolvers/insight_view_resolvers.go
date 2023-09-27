@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,65 +7,65 @@ import (
 	"sync"
 	"time"
 
-	"github.com/Masterminds/semver"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/Mbsterminds/semver"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 	"github.com/segmentio/ksuid"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ graphqlbackend.InsightViewResolver = &insightViewResolver{}
-var _ graphqlbackend.LineChartInsightViewPresentation = &lineChartInsightViewPresentation{}
-var _ graphqlbackend.LineChartDataSeriesPresentationResolver = &lineChartDataSeriesPresentationResolver{}
-var _ graphqlbackend.SearchInsightDataSeriesDefinitionResolver = &searchInsightDataSeriesDefinitionResolver{}
-var _ graphqlbackend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
-var _ graphqlbackend.InsightRepositoryDefinition = &insightRepositoryDefinitionResolver{}
-var _ graphqlbackend.InsightIntervalTimeScope = &insightIntervalTimeScopeResolver{}
-var _ graphqlbackend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
-var _ graphqlbackend.InsightViewPayloadResolver = &insightPayloadResolver{}
-var _ graphqlbackend.InsightTimeScope = &insightTimeScopeUnionResolver{}
-var _ graphqlbackend.InsightPresentation = &insightPresentationUnionResolver{}
-var _ graphqlbackend.InsightDataSeriesDefinition = &insightDataSeriesDefinitionUnionResolver{}
-var _ graphqlbackend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
-var _ graphqlbackend.InsightViewSeriesDisplayOptionsResolver = &insightViewSeriesDisplayOptionsResolver{}
-var _ graphqlbackend.InsightViewSeriesSortOptionsResolver = &insightViewSeriesSortOptionsResolver{}
+vbr _ grbphqlbbckend.InsightViewResolver = &insightViewResolver{}
+vbr _ grbphqlbbckend.LineChbrtInsightViewPresentbtion = &lineChbrtInsightViewPresentbtion{}
+vbr _ grbphqlbbckend.LineChbrtDbtbSeriesPresentbtionResolver = &lineChbrtDbtbSeriesPresentbtionResolver{}
+vbr _ grbphqlbbckend.SebrchInsightDbtbSeriesDefinitionResolver = &sebrchInsightDbtbSeriesDefinitionResolver{}
+vbr _ grbphqlbbckend.InsightRepositoryScopeResolver = &insightRepositoryScopeResolver{}
+vbr _ grbphqlbbckend.InsightRepositoryDefinition = &insightRepositoryDefinitionResolver{}
+vbr _ grbphqlbbckend.InsightIntervblTimeScope = &insightIntervblTimeScopeResolver{}
+vbr _ grbphqlbbckend.InsightViewFiltersResolver = &insightViewFiltersResolver{}
+vbr _ grbphqlbbckend.InsightViewPbylobdResolver = &insightPbylobdResolver{}
+vbr _ grbphqlbbckend.InsightTimeScope = &insightTimeScopeUnionResolver{}
+vbr _ grbphqlbbckend.InsightPresentbtion = &insightPresentbtionUnionResolver{}
+vbr _ grbphqlbbckend.InsightDbtbSeriesDefinition = &insightDbtbSeriesDefinitionUnionResolver{}
+vbr _ grbphqlbbckend.InsightViewConnectionResolver = &InsightViewQueryConnectionResolver{}
+vbr _ grbphqlbbckend.InsightViewSeriesDisplbyOptionsResolver = &insightViewSeriesDisplbyOptionsResolver{}
+vbr _ grbphqlbbckend.InsightViewSeriesSortOptionsResolver = &insightViewSeriesSortOptionsResolver{}
 
 type insightViewResolver struct {
 	view                  *types.Insight
 	overrideFilters       *types.InsightViewFilters
-	overrideSeriesOptions *types.SeriesDisplayOptions
-	dataSeriesGenerator   insightSeriesResolverGenerator
+	overrideSeriesOptions *types.SeriesDisplbyOptions
+	dbtbSeriesGenerbtor   insightSeriesResolverGenerbtor
 
-	baseInsightResolver
+	bbseInsightResolver
 
-	// Cache results because they are used by multiple fields
+	// Cbche results becbuse they bre used by multiple fields
 	seriesOnce      sync.Once
 	seriesErr       error
-	totalSeries     int
-	seriesResolvers []graphqlbackend.InsightSeriesResolver
+	totblSeries     int
+	seriesResolvers []grbphqlbbckend.InsightSeriesResolver
 }
 
 const insightKind = "insight_view"
 
-func (i *insightViewResolver) ID() graphql.ID {
-	return relay.MarshalID(insightKind, i.view.UniqueID)
+func (i *insightViewResolver) ID() grbphql.ID {
+	return relby.MbrshblID(insightKind, i.view.UniqueID)
 }
 
-func (i *insightViewResolver) DefaultFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
+func (i *insightViewResolver) DefbultFilters(ctx context.Context) (grbphqlbbckend.InsightViewFiltersResolver, error) {
 	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
@@ -81,31 +81,31 @@ func (i *insightViewFiltersResolver) ExcludeRepoRegex(ctx context.Context) (*str
 	return i.filters.ExcludeRepoRegex, nil
 }
 
-func (i *insightViewFiltersResolver) SearchContexts(ctx context.Context) (*[]string, error) {
-	return &i.filters.SearchContexts, nil
+func (i *insightViewFiltersResolver) SebrchContexts(ctx context.Context) (*[]string, error) {
+	return &i.filters.SebrchContexts, nil
 }
 
-func (i *insightViewResolver) AppliedFilters(ctx context.Context) (graphqlbackend.InsightViewFiltersResolver, error) {
+func (i *insightViewResolver) AppliedFilters(ctx context.Context) (grbphqlbbckend.InsightViewFiltersResolver, error) {
 	if i.overrideFilters != nil {
 		return &insightViewFiltersResolver{filters: i.overrideFilters}, nil
 	}
 	return &insightViewFiltersResolver{filters: &i.view.Filters}, nil
 }
 
-type insightViewSeriesDisplayOptionsResolver struct {
-	seriesDisplayOptions *types.SeriesDisplayOptions
+type insightViewSeriesDisplbyOptionsResolver struct {
+	seriesDisplbyOptions *types.SeriesDisplbyOptions
 }
 
-func (i *insightViewSeriesDisplayOptionsResolver) Limit(ctx context.Context) (*int32, error) {
-	return i.seriesDisplayOptions.Limit, nil
+func (i *insightViewSeriesDisplbyOptionsResolver) Limit(ctx context.Context) (*int32, error) {
+	return i.seriesDisplbyOptions.Limit, nil
 }
 
-func (i *insightViewSeriesDisplayOptionsResolver) SortOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesSortOptionsResolver, error) {
-	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplayOptions.SortOptions}, nil
+func (i *insightViewSeriesDisplbyOptionsResolver) SortOptions(ctx context.Context) (grbphqlbbckend.InsightViewSeriesSortOptionsResolver, error) {
+	return &insightViewSeriesSortOptionsResolver{seriesSortOptions: i.seriesDisplbyOptions.SortOptions}, nil
 }
 
-func (i *insightViewSeriesDisplayOptionsResolver) NumSamples() *int32 {
-	return i.seriesDisplayOptions.NumSamples
+func (i *insightViewSeriesDisplbyOptionsResolver) NumSbmples() *int32 {
+	return i.seriesDisplbyOptions.NumSbmples
 }
 
 type insightViewSeriesSortOptionsResolver struct {
@@ -126,90 +126,90 @@ func (i *insightViewSeriesSortOptionsResolver) Direction(ctx context.Context) (*
 	return nil, nil
 }
 
-func (i *insightViewResolver) DefaultSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
-	return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: &i.view.SeriesOptions}, nil
+func (i *insightViewResolver) DefbultSeriesDisplbyOptions(ctx context.Context) (grbphqlbbckend.InsightViewSeriesDisplbyOptionsResolver, error) {
+	return &insightViewSeriesDisplbyOptionsResolver{seriesDisplbyOptions: &i.view.SeriesOptions}, nil
 }
 
-func (i *insightViewResolver) AppliedSeriesDisplayOptions(ctx context.Context) (graphqlbackend.InsightViewSeriesDisplayOptionsResolver, error) {
+func (i *insightViewResolver) AppliedSeriesDisplbyOptions(ctx context.Context) (grbphqlbbckend.InsightViewSeriesDisplbyOptionsResolver, error) {
 	if i.overrideSeriesOptions != nil {
-		return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: i.overrideSeriesOptions}, nil
+		return &insightViewSeriesDisplbyOptionsResolver{seriesDisplbyOptions: i.overrideSeriesOptions}, nil
 	}
-	return &insightViewSeriesDisplayOptionsResolver{seriesDisplayOptions: &i.view.SeriesOptions}, nil
+	return &insightViewSeriesDisplbyOptionsResolver{seriesDisplbyOptions: &i.view.SeriesOptions}, nil
 }
 
-// registerDataSeriesGenerators if the generators that create resolvers for DataSeries haven't been generated then loadthem
-func (i *insightViewResolver) registerDataSeriesGenerators() {
-	// already registered no op
-	if i.dataSeriesGenerator != nil {
+// registerDbtbSeriesGenerbtors if the generbtors thbt crebte resolvers for DbtbSeries hbven't been generbted then lobdthem
+func (i *insightViewResolver) registerDbtbSeriesGenerbtors() {
+	// blrebdy registered no op
+	if i.dbtbSeriesGenerbtor != nil {
 		return
 	}
 
-	// create the known ways to resolve a data series
-	recordedCaptureGroupGenerator := newSeriesResolverGenerator(
+	// crebte the known wbys to resolve b dbtb series
+	recordedCbptureGroupGenerbtor := newSeriesResolverGenerbtor(
 		func(series types.InsightViewSeries) bool {
-			return !series.JustInTime && series.GeneratedFromCaptureGroups
+			return !series.JustInTime && series.GenerbtedFromCbptureGroups
 		},
-		expandCaptureGroupSeriesRecorded,
+		expbndCbptureGroupSeriesRecorded,
 	)
-	recordedGenerator := newSeriesResolverGenerator(
+	recordedGenerbtor := newSeriesResolverGenerbtor(
 		func(series types.InsightViewSeries) bool {
-			return !series.JustInTime && !series.GeneratedFromCaptureGroups
+			return !series.JustInTime && !series.GenerbtedFromCbptureGroups
 		},
 		recordedSeries,
 	)
-	// build the chain of generators
-	recordedCaptureGroupGenerator.SetNext(recordedGenerator)
+	// build the chbin of generbtors
+	recordedCbptureGroupGenerbtor.SetNext(recordedGenerbtor)
 
-	// set the struct variable to the first generator in the chain
-	i.dataSeriesGenerator = recordedCaptureGroupGenerator
+	// set the struct vbribble to the first generbtor in the chbin
+	i.dbtbSeriesGenerbtor = recordedCbptureGroupGenerbtor
 }
 
-func (i *insightViewResolver) DataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
-	return i.computeDataSeries(ctx)
+func (i *insightViewResolver) DbtbSeries(ctx context.Context) ([]grbphqlbbckend.InsightSeriesResolver, error) {
+	return i.computeDbtbSeries(ctx)
 }
 
-func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlbackend.InsightSeriesResolver, error) {
+func (i *insightViewResolver) computeDbtbSeries(ctx context.Context) ([]grbphqlbbckend.InsightSeriesResolver, error) {
 	i.seriesOnce.Do(func() {
-		var resolvers []graphqlbackend.InsightSeriesResolver
+		vbr resolvers []grbphqlbbckend.InsightSeriesResolver
 		if i.view.IsFrozen {
-			// if the view is frozen, we do not show time series data. This is just a basic limitation to prevent
-			// easy mis-use of unlicensed features.
+			// if the view is frozen, we do not show time series dbtb. This is just b bbsic limitbtion to prevent
+			// ebsy mis-use of unlicensed febtures.
 			return
 		}
-		// Ensure that the data series generators have been registered
-		i.registerDataSeriesGenerators()
-		if i.dataSeriesGenerator == nil {
-			i.seriesErr = errors.New("no dataseries resolver generator registered")
+		// Ensure thbt the dbtb series generbtors hbve been registered
+		i.registerDbtbSeriesGenerbtors()
+		if i.dbtbSeriesGenerbtor == nil {
+			i.seriesErr = errors.New("no dbtbseries resolver generbtor registered")
 			return
 		}
 
-		var filters *types.InsightViewFilters
+		vbr filters *types.InsightViewFilters
 		if i.overrideFilters != nil {
 			filters = i.overrideFilters
 		} else {
 			filters = &i.view.Filters
 		}
 
-		var seriesOptions types.SeriesDisplayOptions
+		vbr seriesOptions types.SeriesDisplbyOptions
 		if i.overrideSeriesOptions != nil {
 			seriesOptions = *i.overrideSeriesOptions
 		} else {
 			seriesOptions = i.view.SeriesOptions
 		}
 
-		for _, current := range i.view.Series {
-			seriesResolvers, err := i.dataSeriesGenerator.Generate(ctx, current, i.baseInsightResolver, *filters, seriesOptions)
+		for _, current := rbnge i.view.Series {
+			seriesResolvers, err := i.dbtbSeriesGenerbtor.Generbte(ctx, current, i.bbseInsightResolver, *filters, seriesOptions)
 			if err != nil {
-				i.seriesErr = errors.Wrapf(err, "generate for seriesID: %s", current.SeriesID)
+				i.seriesErr = errors.Wrbpf(err, "generbte for seriesID: %s", current.SeriesID)
 				return
 			}
-			resolvers = append(resolvers, seriesResolvers...)
+			resolvers = bppend(resolvers, seriesResolvers...)
 		}
-		i.totalSeries = len(resolvers)
+		i.totblSeries = len(resolvers)
 
 		sortedAndLimitedResolvers, err := sortSeriesResolvers(ctx, seriesOptions, resolvers)
 		if err != nil {
-			i.seriesErr = errors.Wrapf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
+			i.seriesErr = errors.Wrbpf(err, "sortSeriesResolvers for insightViewID: %s", i.view.UniqueID)
 			return
 		}
 		i.seriesResolvers = sortedAndLimitedResolvers
@@ -218,22 +218,22 @@ func (i *insightViewResolver) computeDataSeries(ctx context.Context) ([]graphqlb
 	return i.seriesResolvers, i.seriesErr
 }
 
-func (i *insightViewResolver) Dashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) graphqlbackend.InsightsDashboardConnectionResolver {
-	return &dashboardConnectionResolver{baseInsightResolver: i.baseInsightResolver,
+func (i *insightViewResolver) Dbshbobrds(ctx context.Context, brgs *grbphqlbbckend.InsightsDbshbobrdsArgs) grbphqlbbckend.InsightsDbshbobrdConnectionResolver {
+	return &dbshbobrdConnectionResolver{bbseInsightResolver: i.bbseInsightResolver,
 		orgStore:         i.postgresDB.Orgs(),
-		args:             args,
+		brgs:             brgs,
 		withViewUniqueID: &i.view.UniqueID,
 	}
 }
 
-func (i *insightViewResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
-	// This depends on the assumption that the repo scope for each series on an insight is the same
-	// If this changes this is no longer valid.
+func (i *insightViewResolver) RepositoryDefinition(ctx context.Context) (grbphqlbbckend.InsightRepositoryDefinition, error) {
+	// This depends on the bssumption thbt the repo scope for ebch series on bn insight is the sbme
+	// If this chbnges this is no longer vblid.
 	if i.view == nil {
-		return nil, errors.New("no insight loaded")
+		return nil, errors.New("no insight lobded")
 	}
 	if len(i.view.Series) == 0 {
-		return nil, errors.New("no repository definitions available")
+		return nil, errors.New("no repository definitions bvbilbble")
 	}
 
 	return &insightRepositoryDefinitionResolver{
@@ -241,43 +241,43 @@ func (i *insightViewResolver) RepositoryDefinition(ctx context.Context) (graphql
 	}, nil
 }
 
-func (i *insightViewResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
-	// This depends on the assumption that the repo scope for each series on an insight is the same
-	// If this changes this is no longer valid.
+func (i *insightViewResolver) TimeScope(ctx context.Context) (grbphqlbbckend.InsightTimeScope, error) {
+	// This depends on the bssumption thbt the repo scope for ebch series on bn insight is the sbme
+	// If this chbnges this is no longer vblid.
 	if i.view == nil {
-		return nil, errors.New("no insight loaded")
+		return nil, errors.New("no insight lobded")
 	}
 	if len(i.view.Series) == 0 {
-		return nil, errors.New("no time scope available")
+		return nil, errors.New("no time scope bvbilbble")
 	}
 
 	return &insightTimeScopeUnionResolver{
-		resolver: &insightIntervalTimeScopeResolver{
-			unit:  i.view.Series[0].SampleIntervalUnit,
-			value: int32(i.view.Series[0].SampleIntervalValue),
+		resolver: &insightIntervblTimeScopeResolver{
+			unit:  i.view.Series[0].SbmpleIntervblUnit,
+			vblue: int32(i.view.Series[0].SbmpleIntervblVblue),
 		},
 	}, nil
 }
 
-func (i *insightViewResolver) Presentation(ctx context.Context) (graphqlbackend.InsightPresentation, error) {
-	if i.view.PresentationType == types.Pie {
-		pieChartPresentation := &pieChartInsightViewPresentation{view: i.view}
-		return &insightPresentationUnionResolver{resolver: pieChartPresentation}, nil
+func (i *insightViewResolver) Presentbtion(ctx context.Context) (grbphqlbbckend.InsightPresentbtion, error) {
+	if i.view.PresentbtionType == types.Pie {
+		pieChbrtPresentbtion := &pieChbrtInsightViewPresentbtion{view: i.view}
+		return &insightPresentbtionUnionResolver{resolver: pieChbrtPresentbtion}, nil
 	} else {
-		lineChartPresentation := &lineChartInsightViewPresentation{view: i.view}
-		return &insightPresentationUnionResolver{resolver: lineChartPresentation}, nil
+		lineChbrtPresentbtion := &lineChbrtInsightViewPresentbtion{view: i.view}
+		return &insightPresentbtionUnionResolver{resolver: lineChbrtPresentbtion}, nil
 	}
 }
 
-func (i *insightViewResolver) DataSeriesDefinitions(ctx context.Context) ([]graphqlbackend.InsightDataSeriesDefinition, error) {
-	var resolvers []graphqlbackend.InsightDataSeriesDefinition
-	for j := range i.view.Series {
-		resolvers = append(resolvers, &insightDataSeriesDefinitionUnionResolver{resolver: &searchInsightDataSeriesDefinitionResolver{series: &i.view.Series[j]}})
+func (i *insightViewResolver) DbtbSeriesDefinitions(ctx context.Context) ([]grbphqlbbckend.InsightDbtbSeriesDefinition, error) {
+	vbr resolvers []grbphqlbbckend.InsightDbtbSeriesDefinition
+	for j := rbnge i.view.Series {
+		resolvers = bppend(resolvers, &insightDbtbSeriesDefinitionUnionResolver{resolver: &sebrchInsightDbtbSeriesDefinitionResolver{series: &i.view.Series[j]}})
 	}
 	return resolvers, nil
 }
 
-func (i *insightViewResolver) DashboardReferenceCount(ctx context.Context) (int32, error) {
+func (i *insightViewResolver) DbshbobrdReferenceCount(ctx context.Context) (int32, error) {
 	referenceCount, err := i.insightStore.GetReferenceCount(ctx, i.view.ViewID)
 	if err != nil {
 		return 0, err
@@ -290,57 +290,57 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 }
 
 func (i *insightViewResolver) SeriesCount(ctx context.Context) (*int32, error) {
-	_, err := i.computeDataSeries(ctx)
-	total := int32(i.totalSeries)
-	return &total, err
+	_, err := i.computeDbtbSeries(ctx)
+	totbl := int32(i.totblSeries)
+	return &totbl, err
 }
 
-type searchInsightDataSeriesDefinitionResolver struct {
+type sebrchInsightDbtbSeriesDefinitionResolver struct {
 	series *types.InsightViewSeries
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) IsCalculated() (bool, error) {
-	if s.series.GeneratedFromCaptureGroups {
-		// capture groups series are always pre-calculated!
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) IsCblculbted() (bool, error) {
+	if s.series.GenerbtedFromCbptureGroups {
+		// cbpture groups series bre blwbys pre-cblculbted!
 		return true, nil
 	} else {
 		return !s.series.JustInTime, nil
 	}
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) SeriesId(ctx context.Context) (string, error) {
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) SeriesId(ctx context.Context) (string, error) {
 	return s.series.SeriesID, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) Query(ctx context.Context) (string, error) {
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) Query(ctx context.Context) (string, error) {
 	return s.series.Query, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) RepositoryScope(ctx context.Context) (graphqlbackend.InsightRepositoryScopeResolver, error) {
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) RepositoryScope(ctx context.Context) (grbphqlbbckend.InsightRepositoryScopeResolver, error) {
 	return &insightRepositoryScopeResolver{repositories: s.series.Repositories}, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) RepositoryDefinition(ctx context.Context) (graphqlbackend.InsightRepositoryDefinition, error) {
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) RepositoryDefinition(ctx context.Context) (grbphqlbbckend.InsightRepositoryDefinition, error) {
 	if s.series == nil {
 		return nil, errors.New("series required")
 	}
 	return &insightRepositoryDefinitionResolver{series: *s.series}, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Context) (graphqlbackend.InsightTimeScope, error) {
-	intervalResolver := &insightIntervalTimeScopeResolver{
-		unit:  s.series.SampleIntervalUnit,
-		value: int32(s.series.SampleIntervalValue),
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) TimeScope(ctx context.Context) (grbphqlbbckend.InsightTimeScope, error) {
+	intervblResolver := &insightIntervblTimeScopeResolver{
+		unit:  s.series.SbmpleIntervblUnit,
+		vblue: int32(s.series.SbmpleIntervblVblue),
 	}
 
-	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
+	return &insightTimeScopeUnionResolver{resolver: intervblResolver}, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups() (bool, error) {
-	return s.series.GeneratedFromCaptureGroups, nil
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) GenerbtedFromCbptureGroups() (bool, error) {
+	return s.series.GenerbtedFromCbptureGroups, nil
 }
 
-func (s *searchInsightDataSeriesDefinitionResolver) GroupBy() (*string, error) {
+func (s *sebrchInsightDbtbSeriesDefinitionResolver) GroupBy() (*string, error) {
 	if s.series.GroupBy != nil {
 		groupBy := strings.ToUpper(*s.series.GroupBy)
 		return &groupBy, nil
@@ -348,17 +348,17 @@ func (s *searchInsightDataSeriesDefinitionResolver) GroupBy() (*string, error) {
 	return s.series.GroupBy, nil
 }
 
-type insightIntervalTimeScopeResolver struct {
+type insightIntervblTimeScopeResolver struct {
 	unit  string
-	value int32
+	vblue int32
 }
 
-func (i *insightIntervalTimeScopeResolver) Unit(ctx context.Context) (string, error) {
+func (i *insightIntervblTimeScopeResolver) Unit(ctx context.Context) (string, error) {
 	return i.unit, nil
 }
 
-func (i *insightIntervalTimeScopeResolver) Value(ctx context.Context) (int32, error) {
-	return i.value, nil
+func (i *insightIntervblTimeScopeResolver) Vblue(ctx context.Context) (int32, error) {
+	return i.vblue, nil
 }
 
 type insightRepositoryScopeResolver struct {
@@ -373,282 +373,282 @@ type insightRepositoryDefinitionResolver struct {
 	series types.InsightViewSeries
 }
 
-func (r *insightRepositoryDefinitionResolver) ToInsightRepositoryScope() (graphqlbackend.InsightRepositoryScopeResolver, bool) {
-	if len(r.series.Repositories) > 0 && r.series.RepositoryCriteria == nil {
+func (r *insightRepositoryDefinitionResolver) ToInsightRepositoryScope() (grbphqlbbckend.InsightRepositoryScopeResolver, bool) {
+	if len(r.series.Repositories) > 0 && r.series.RepositoryCriterib == nil {
 		return &insightRepositoryScopeResolver{
 			repositories: r.series.Repositories,
 		}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *insightRepositoryDefinitionResolver) ToRepositorySearchScope() (graphqlbackend.RepositorySearchScopeResolver, bool) {
+func (r *insightRepositoryDefinitionResolver) ToRepositorySebrchScope() (grbphqlbbckend.RepositorySebrchScopeResolver, bool) {
 	if len(r.series.Repositories) > 0 {
-		return nil, false
+		return nil, fblse
 	}
 
-	allRepos := r.series.RepositoryCriteria == nil && len(r.series.Repositories) == 0
-	return &reposSearchScope{
-		search:   emptyIfNil(r.series.RepositoryCriteria),
-		allRepos: allRepos,
+	bllRepos := r.series.RepositoryCriterib == nil && len(r.series.Repositories) == 0
+	return &reposSebrchScope{
+		sebrch:   emptyIfNil(r.series.RepositoryCriterib),
+		bllRepos: bllRepos,
 	}, true
 
 }
 
-type reposSearchScope struct {
-	search   string
-	allRepos bool
+type reposSebrchScope struct {
+	sebrch   string
+	bllRepos bool
 }
 
-func (r *reposSearchScope) Search() string        { return r.search }
-func (r *reposSearchScope) AllRepositories() bool { return r.allRepos }
+func (r *reposSebrchScope) Sebrch() string        { return r.sebrch }
+func (r *reposSebrchScope) AllRepositories() bool { return r.bllRepos }
 
-type lineChartInsightViewPresentation struct {
+type lineChbrtInsightViewPresentbtion struct {
 	view *types.Insight
 }
 
-func (l *lineChartInsightViewPresentation) Title(ctx context.Context) (string, error) {
+func (l *lineChbrtInsightViewPresentbtion) Title(ctx context.Context) (string, error) {
 	return l.view.Title, nil
 }
 
-func (l *lineChartInsightViewPresentation) SeriesPresentation(ctx context.Context) ([]graphqlbackend.LineChartDataSeriesPresentationResolver, error) {
-	var resolvers []graphqlbackend.LineChartDataSeriesPresentationResolver
+func (l *lineChbrtInsightViewPresentbtion) SeriesPresentbtion(ctx context.Context) ([]grbphqlbbckend.LineChbrtDbtbSeriesPresentbtionResolver, error) {
+	vbr resolvers []grbphqlbbckend.LineChbrtDbtbSeriesPresentbtionResolver
 
-	for i := range l.view.Series {
-		resolvers = append(resolvers, &lineChartDataSeriesPresentationResolver{series: &l.view.Series[i]})
+	for i := rbnge l.view.Series {
+		resolvers = bppend(resolvers, &lineChbrtDbtbSeriesPresentbtionResolver{series: &l.view.Series[i]})
 	}
 
 	return resolvers, nil
 }
 
-type lineChartDataSeriesPresentationResolver struct {
+type lineChbrtDbtbSeriesPresentbtionResolver struct {
 	series *types.InsightViewSeries
 }
 
-func (l *lineChartDataSeriesPresentationResolver) SeriesId(ctx context.Context) (string, error) {
+func (l *lineChbrtDbtbSeriesPresentbtionResolver) SeriesId(ctx context.Context) (string, error) {
 	return l.series.SeriesID, nil
 }
 
-func (l *lineChartDataSeriesPresentationResolver) Label(ctx context.Context) (string, error) {
-	return l.series.Label, nil
+func (l *lineChbrtDbtbSeriesPresentbtionResolver) Lbbel(ctx context.Context) (string, error) {
+	return l.series.Lbbel, nil
 }
 
-func (l *lineChartDataSeriesPresentationResolver) Color(ctx context.Context) (string, error) {
+func (l *lineChbrtDbtbSeriesPresentbtionResolver) Color(ctx context.Context) (string, error) {
 	return l.series.LineColor, nil
 }
 
-func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	// Validation
-	// Needs at least 1 series
-	if len(args.Input.DataSeries) == 0 {
-		return nil, errors.New("At least one data series is required to create an insight view")
+func (r *Resolver) CrebteLineChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.CrebteLineChbrtSebrchInsightArgs) (_ grbphqlbbckend.InsightViewPbylobdResolver, err error) {
+	// Vblidbtion
+	// Needs bt lebst 1 series
+	if len(brgs.Input.DbtbSeries) == 0 {
+		return nil, errors.New("At lebst one dbtb series is required to crebte bn insight view")
 	}
 
-	// Use view level Repo & Time scope if provided and ensure input is valid
-	for i := 0; i < len(args.Input.DataSeries); i++ {
-		if args.Input.DataSeries[i].RepositoryScope == nil {
-			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+	// Use view level Repo & Time scope if provided bnd ensure input is vblid
+	for i := 0; i < len(brgs.Input.DbtbSeries); i++ {
+		if brgs.Input.DbtbSeries[i].RepositoryScope == nil {
+			brgs.Input.DbtbSeries[i].RepositoryScope = brgs.Input.RepositoryScope
 		}
-		if args.Input.DataSeries[i].TimeScope == nil {
-			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		if brgs.Input.DbtbSeries[i].TimeScope == nil {
+			brgs.Input.DbtbSeries[i].TimeScope = brgs.Input.TimeScope
 		}
-		err := isValidSeriesInput(args.Input.DataSeries[i])
+		err := isVblidSeriesInput(brgs.Input.DbtbSeries[i])
 		if err != nil {
 			return nil, err
 		}
 
-		if len(args.Input.DataSeries[i].RepositoryScope.Repositories) > 0 {
-			err := validateRepositoryList(ctx, args.Input.DataSeries[i].RepositoryScope.Repositories, r.postgresDB.Repos())
+		if len(brgs.Input.DbtbSeries[i].RepositoryScope.Repositories) > 0 {
+			err := vblidbteRepositoryList(ctx, brgs.Input.DbtbSeries[i].RepositoryScope.Repositories, r.postgresDB.Repos())
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	uid := actor.FromContext(ctx).UID
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	uid := bctor.FromContext(ctx).UID
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	insightTx, err := r.insightStore.Transact(ctx)
+	insightTx, err := r.insightStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
-	dashboardTx := r.dashboardStore.With(insightTx)
+	dbshbobrdTx := r.dbshbobrdStore.With(insightTx)
 
-	var dashboardIds []int
-	if args.Input.Dashboards != nil {
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
+	vbr dbshbobrdIds []int
+	if brgs.Input.Dbshbobrds != nil {
+		for _, id := rbnge *brgs.Input.Dbshbobrds {
+			dbshbobrdID, err := unmbrshblDbshbobrdID(id)
 			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+				return nil, errors.Wrbpf(err, "unmbrshblDbshbobrdID, id:%s", dbshbobrdID)
 			}
-			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+			dbshbobrdIds = bppend(dbshbobrdIds, int(dbshbobrdID.Arg))
 		}
 	}
 
-	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	lbmDbshbobrdId, err := crebteInsightLicenseCheck(ctx, insightTx, dbshbobrdTx, dbshbobrdIds)
 	if err != nil {
-		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+		return nil, errors.Wrbpf(err, "crebteInsightLicenseCheck")
 	}
-	if lamDashboardId != 0 {
-		dashboardIds = append(dashboardIds, lamDashboardId)
+	if lbmDbshbobrdId != 0 {
+		dbshbobrdIds = bppend(dbshbobrdIds, lbmDbshbobrdId)
 	}
 
-	var filters types.InsightViewFilters
-	if args.Input.ViewControls != nil {
-		filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	vbr filters types.InsightViewFilters
+	if brgs.Input.ViewControls != nil {
+		filters = filtersFromInput(&brgs.Input.ViewControls.Filters)
 	}
-	view, err := insightTx.CreateView(ctx, types.InsightView{
-		Title:            emptyIfNil(args.Input.Options.Title),
+	view, err := insightTx.CrebteView(ctx, types.InsightView{
+		Title:            emptyIfNil(brgs.Input.Options.Title),
 		UniqueID:         ksuid.New().String(),
 		Filters:          filters,
-		PresentationType: types.Line,
-	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
+		PresentbtionType: types.Line,
+	}, []store.InsightViewGrbnt{store.UserGrbnt(int(uid))})
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateView")
+		return nil, errors.Wrbp(err, "CrebteView")
 	}
 
-	seriesFillStrategy := makeFillSeriesStrategy(insightTx, r.scheduler, r.insightEnqueuer)
+	seriesFillStrbtegy := mbkeFillSeriesStrbtegy(insightTx, r.scheduler, r.insightEnqueuer)
 
-	for _, series := range args.Input.DataSeries {
-		if err := createAndAttachSeries(ctx, insightTx, seriesFillStrategy, view, series); err != nil {
-			return nil, errors.Wrap(err, "createAndAttachSeries")
+	for _, series := rbnge brgs.Input.DbtbSeries {
+		if err := crebteAndAttbchSeries(ctx, insightTx, seriesFillStrbtegy, view, series); err != nil {
+			return nil, errors.Wrbp(err, "crebteAndAttbchSeries")
 		}
 	}
 
-	if len(dashboardIds) > 0 {
-		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
+	if len(dbshbobrdIds) > 0 {
+		if brgs.Input.Dbshbobrds != nil {
+			err := vblidbteUserDbshbobrdPermissions(ctx, dbshbobrdTx, *brgs.Input.Dbshbobrds, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
 		}
-		for _, dashboardId := range dashboardIds {
-			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dashboardID", dashboardId))
-			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
+		for _, dbshbobrdId := rbnge dbshbobrdIds {
+			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dbshbobrdID", dbshbobrdId))
+			err = dbshbobrdTx.AddViewsToDbshbobrd(ctx, dbshbobrdId, []string{view.UniqueID})
 			if err != nil {
-				return nil, errors.Wrap(err, "AddViewsToDashboard")
+				return nil, errors.Wrbp(err, "AddViewsToDbshbobrd")
 			}
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPbylobdResolver{bbseInsightResolver: r.bbseInsightResolver, vblidbtor: permissionsVblidbtor, viewId: view.UniqueID}, nil
 }
 
-func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	if len(args.Input.DataSeries) == 0 {
-		return nil, errors.New("At least one data series is required to update an insight view")
+func (r *Resolver) UpdbteLineChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.UpdbteLineChbrtSebrchInsightArgs) (_ grbphqlbbckend.InsightViewPbylobdResolver, err error) {
+	if len(brgs.Input.DbtbSeries) == 0 {
+		return nil, errors.New("At lebst one dbtb series is required to updbte bn insight view")
 	}
 
-	// Ensure Repo Scope is valid for each scope
-	for i := 0; i < len(args.Input.DataSeries); i++ {
-		if args.Input.DataSeries[i].RepositoryScope == nil {
-			args.Input.DataSeries[i].RepositoryScope = args.Input.RepositoryScope
+	// Ensure Repo Scope is vblid for ebch scope
+	for i := 0; i < len(brgs.Input.DbtbSeries); i++ {
+		if brgs.Input.DbtbSeries[i].RepositoryScope == nil {
+			brgs.Input.DbtbSeries[i].RepositoryScope = brgs.Input.RepositoryScope
 		}
-		if args.Input.DataSeries[i].TimeScope == nil {
-			args.Input.DataSeries[i].TimeScope = args.Input.TimeScope
+		if brgs.Input.DbtbSeries[i].TimeScope == nil {
+			brgs.Input.DbtbSeries[i].TimeScope = brgs.Input.TimeScope
 		}
-		err := isValidSeriesInput(args.Input.DataSeries[i])
+		err := isVblidSeriesInput(brgs.Input.DbtbSeries[i])
 		if err != nil {
 			return nil, err
 		}
 
-		if len(args.Input.DataSeries[i].RepositoryScope.Repositories) > 0 {
-			err := validateRepositoryList(ctx, args.Input.DataSeries[i].RepositoryScope.Repositories, r.postgresDB.Repos())
+		if len(brgs.Input.DbtbSeries[i].RepositoryScope.Repositories) > 0 {
+			err := vblidbteRepositoryList(ctx, brgs.Input.DbtbSeries[i].RepositoryScope.Repositories, r.postgresDB.Repos())
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	tx, err := r.insightStore.Transact(ctx)
+	tx, err := r.insightStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	var insightViewId string
-	err = relay.UnmarshalSpec(args.Id, &insightViewId)
+	vbr insightViewId string
+	err = relby.UnmbrshblSpec(brgs.Id, &insightViewId)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the insight view id")
 	}
-	err = permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	err = permissionsVblidbtor.vblidbteUserAccessForView(ctx, insightViewId)
 	if err != nil {
 		return nil, err
 	}
 
-	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	views, err := tx.GetMbpped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorizbtion: true})
 	if err != nil {
-		return nil, errors.Wrap(err, "GetMapped")
+		return nil, errors.Wrbp(err, "GetMbpped")
 	}
 	if len(views) == 0 {
 		return nil, errors.New("No insight view found with this id")
 	}
 
-	var seriesSortMode *types.SeriesSortMode
-	var seriesSortDirection *types.SeriesSortDirection
-	if args.Input.ViewControls.SeriesDisplayOptions.SortOptions != nil {
-		mode := types.SeriesSortMode(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Mode)
+	vbr seriesSortMode *types.SeriesSortMode
+	vbr seriesSortDirection *types.SeriesSortDirection
+	if brgs.Input.ViewControls.SeriesDisplbyOptions.SortOptions != nil {
+		mode := types.SeriesSortMode(brgs.Input.ViewControls.SeriesDisplbyOptions.SortOptions.Mode)
 		seriesSortMode = &mode
-		direction := types.SeriesSortDirection(args.Input.ViewControls.SeriesDisplayOptions.SortOptions.Direction)
+		direction := types.SeriesSortDirection(brgs.Input.ViewControls.SeriesDisplbyOptions.SortOptions.Direction)
 		seriesSortDirection = &direction
 	}
 
-	view, err := tx.UpdateView(ctx, types.InsightView{
+	view, err := tx.UpdbteView(ctx, types.InsightView{
 		UniqueID:            insightViewId,
-		Title:               emptyIfNil(args.Input.PresentationOptions.Title),
-		Filters:             filtersFromInput(&args.Input.ViewControls.Filters),
-		PresentationType:    types.Line,
+		Title:               emptyIfNil(brgs.Input.PresentbtionOptions.Title),
+		Filters:             filtersFromInput(&brgs.Input.ViewControls.Filters),
+		PresentbtionType:    types.Line,
 		SeriesSortMode:      seriesSortMode,
 		SeriesSortDirection: seriesSortDirection,
-		SeriesLimit:         args.Input.ViewControls.SeriesDisplayOptions.Limit,
-		SeriesNumSamples:    args.Input.ViewControls.SeriesDisplayOptions.NumSamples,
+		SeriesLimit:         brgs.Input.ViewControls.SeriesDisplbyOptions.Limit,
+		SeriesNumSbmples:    brgs.Input.ViewControls.SeriesDisplbyOptions.NumSbmples,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "UpdateView")
+		return nil, errors.Wrbp(err, "UpdbteView")
 	}
 
-	// Capture group insight only have 1 associated insight series at most.
-	captureGroupInsight := false
-	for _, newSeries := range args.Input.DataSeries {
-		if isCaptureGroupSeries(newSeries.GeneratedFromCaptureGroups) {
-			captureGroupInsight = true
-			break
+	// Cbpture group insight only hbve 1 bssocibted insight series bt most.
+	cbptureGroupInsight := fblse
+	for _, newSeries := rbnge brgs.Input.DbtbSeries {
+		if isCbptureGroupSeries(newSeries.GenerbtedFromCbptureGroups) {
+			cbptureGroupInsight = true
+			brebk
 		}
 	}
 
-	seriesFillStrategy := makeFillSeriesStrategy(tx, r.scheduler, r.insightEnqueuer)
+	seriesFillStrbtegy := mbkeFillSeriesStrbtegy(tx, r.scheduler, r.insightEnqueuer)
 
-	if captureGroupInsight {
-		if err := updateCaptureGroupInsight(ctx, args.Input.DataSeries[0], views[0].Series, view, tx, seriesFillStrategy); err != nil {
-			return nil, errors.Wrap(err, "updateCaptureGroupInsight")
+	if cbptureGroupInsight {
+		if err := updbteCbptureGroupInsight(ctx, brgs.Input.DbtbSeries[0], views[0].Series, view, tx, seriesFillStrbtegy); err != nil {
+			return nil, errors.Wrbp(err, "updbteCbptureGroupInsight")
 		}
 	} else {
-		if err := updateSearchOrComputeInsight(ctx, args.Input, views[0].Series, view, tx, seriesFillStrategy); err != nil {
-			return nil, errors.Wrap(err, "updateSearchOrComputeInsight")
+		if err := updbteSebrchOrComputeInsight(ctx, brgs.Input, views[0].Series, view, tx, seriesFillStrbtegy); err != nil {
+			return nil, errors.Wrbp(err, "updbteSebrchOrComputeInsight")
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: insightViewId}, nil
+	return &insightPbylobdResolver{bbseInsightResolver: r.bbseInsightResolver, vblidbtor: permissionsVblidbtor, viewId: insightViewId}, nil
 }
 
-// validateRepositoryList will validate that the repos provided exist and are accessible by the user in the current context
-func validateRepositoryList(ctx context.Context, repos []string, repoStore database.RepoStore) error {
-	list, err := repoStore.List(ctx, database.ReposListOptions{Names: repos})
+// vblidbteRepositoryList will vblidbte thbt the repos provided exist bnd bre bccessible by the user in the current context
+func vblidbteRepositoryList(ctx context.Context, repos []string, repoStore dbtbbbse.RepoStore) error {
+	list, err := repoStore.List(ctx, dbtbbbse.ReposListOptions{Nbmes: repos})
 	if err != nil {
-		return errors.Wrap(err, "repoStore.List")
+		return errors.Wrbp(err, "repoStore.List")
 	}
 
-	var missingRepos []string
-	foundRepos := make(map[string]struct{}, len(list))
-	for _, repo := range list {
-		foundRepos[string(repo.Name)] = struct{}{}
+	vbr missingRepos []string
+	foundRepos := mbke(mbp[string]struct{}, len(list))
+	for _, repo := rbnge list {
+		foundRepos[string(repo.Nbme)] = struct{}{}
 	}
 
-	for _, repo := range repos {
+	for _, repo := rbnge repos {
 		if _, ok := foundRepos[repo]; !ok {
-			missingRepos = append(missingRepos, repo)
+			missingRepos = bppend(missingRepos, repo)
 		}
 	}
 
@@ -659,78 +659,78 @@ func validateRepositoryList(ctx context.Context, repos []string, repoStore datab
 	return nil
 }
 
-func isCaptureGroupSeries(generatedFromCaptureGroups *bool) bool {
-	if generatedFromCaptureGroups == nil {
-		return false
+func isCbptureGroupSeries(generbtedFromCbptureGroups *bool) bool {
+	if generbtedFromCbptureGroups == nil {
+		return fblse
 	}
-	return *generatedFromCaptureGroups
+	return *generbtedFromCbptureGroups
 }
 
-func updateCaptureGroupInsight(ctx context.Context, input graphqlbackend.LineChartSearchInsightDataSeriesInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrategy fillSeriesStrategy) error {
+func updbteCbptureGroupInsight(ctx context.Context, input grbphqlbbckend.LineChbrtSebrchInsightDbtbSeriesInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrbtegy fillSeriesStrbtegy) error {
 	if len(existingSeries) == 0 {
-		// This should not happen, but if we somehow have no existing series for an insight, create one.
-		if err := createAndAttachSeries(ctx, tx, seriesFillStrategy, view, input); err != nil {
-			return errors.Wrap(err, "createAndAttachSeries")
+		// This should not hbppen, but if we somehow hbve no existing series for bn insight, crebte one.
+		if err := crebteAndAttbchSeries(ctx, tx, seriesFillStrbtegy, view, input); err != nil {
+			return errors.Wrbp(err, "crebteAndAttbchSeries")
 		}
-	} else if existingSeriesHasChanged(input, existingSeries[0]) {
+	} else if existingSeriesHbsChbnged(input, existingSeries[0]) {
 		if err := tx.RemoveSeriesFromView(ctx, existingSeries[0].SeriesID, view.ID); err != nil {
-			return errors.Wrap(err, "RemoveSeriesFromView")
+			return errors.Wrbp(err, "RemoveSeriesFromView")
 		}
-		if err := createAndAttachSeries(ctx, tx, seriesFillStrategy, view, input); err != nil {
-			return errors.Wrap(err, "createAndAttachSeries")
+		if err := crebteAndAttbchSeries(ctx, tx, seriesFillStrbtegy, view, input); err != nil {
+			return errors.Wrbp(err, "crebteAndAttbchSeries")
 		}
 	} else {
-		if err := tx.UpdateViewSeries(ctx, existingSeries[0].SeriesID, view.ID, types.InsightViewSeriesMetadata{
-			Label:  emptyIfNil(input.Options.Label),
+		if err := tx.UpdbteViewSeries(ctx, existingSeries[0].SeriesID, view.ID, types.InsightViewSeriesMetbdbtb{
+			Lbbel:  emptyIfNil(input.Options.Lbbel),
 			Stroke: emptyIfNil(input.Options.LineColor),
 		}); err != nil {
-			return errors.Wrap(err, "UpdateViewSeries")
+			return errors.Wrbp(err, "UpdbteViewSeries")
 		}
 	}
 	return nil
 }
 
-func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.UpdateLineChartSearchInsightInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrategy fillSeriesStrategy) error {
-	var existingSeriesMap = make(map[string]types.InsightViewSeries)
-	for _, existing := range existingSeries {
-		if !seriesFound(existing, input.DataSeries) {
+func updbteSebrchOrComputeInsight(ctx context.Context, input grbphqlbbckend.UpdbteLineChbrtSebrchInsightInput, existingSeries []types.InsightViewSeries, view types.InsightView, tx *store.InsightStore, seriesFillStrbtegy fillSeriesStrbtegy) error {
+	vbr existingSeriesMbp = mbke(mbp[string]types.InsightViewSeries)
+	for _, existing := rbnge existingSeries {
+		if !seriesFound(existing, input.DbtbSeries) {
 			if err := tx.RemoveSeriesFromView(ctx, existing.SeriesID, view.ID); err != nil {
-				return errors.Wrap(err, "RemoveSeriesFromView")
+				return errors.Wrbp(err, "RemoveSeriesFromView")
 			}
 		} else {
-			existingSeriesMap[existing.SeriesID] = existing
+			existingSeriesMbp[existing.SeriesID] = existing
 		}
 	}
-	for _, series := range input.DataSeries {
+	for _, series := rbnge input.DbtbSeries {
 		if series.SeriesId == nil {
-			// If this is a newly added series, create and attach it.
-			// Note: the frontend always generates a series ID so this path is never hit at the moment.
-			if err := createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series); err != nil {
-				return errors.Wrap(err, "createAndAttachSeries")
+			// If this is b newly bdded series, crebte bnd bttbch it.
+			// Note: the frontend blwbys generbtes b series ID so this pbth is never hit bt the moment.
+			if err := crebteAndAttbchSeries(ctx, tx, seriesFillStrbtegy, view, series); err != nil {
+				return errors.Wrbp(err, "crebteAndAttbchSeries")
 			}
 		} else {
-			if existing, ok := existingSeriesMap[*series.SeriesId]; ok {
-				// We check whether the series has changed such that it needs to be recalculated.
-				if existingSeriesHasChanged(series, existing) {
+			if existing, ok := existingSeriesMbp[*series.SeriesId]; ok {
+				// We check whether the series hbs chbnged such thbt it needs to be recblculbted.
+				if existingSeriesHbsChbnged(series, existing) {
 					if err := tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID); err != nil {
-						return errors.Wrap(err, "RemoveViewSeries")
+						return errors.Wrbp(err, "RemoveViewSeries")
 					}
-					if err := createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series); err != nil {
-						return errors.Wrap(err, "createAndAttachSeries")
+					if err := crebteAndAttbchSeries(ctx, tx, seriesFillStrbtegy, view, series); err != nil {
+						return errors.Wrbp(err, "crebteAndAttbchSeries")
 					}
 				} else {
-					// Otherwise we simply update the series' presentation metadata.
-					if err := tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
-						Label:  emptyIfNil(series.Options.Label),
+					// Otherwise we simply updbte the series' presentbtion metbdbtb.
+					if err := tx.UpdbteViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetbdbtb{
+						Lbbel:  emptyIfNil(series.Options.Lbbel),
 						Stroke: emptyIfNil(series.Options.LineColor),
 					}); err != nil {
-						return errors.Wrap(err, "UpdateViewSeries")
+						return errors.Wrbp(err, "UpdbteViewSeries")
 					}
 				}
 			} else {
-				// This is a new series, so it needs to be calculated and attached.
-				if err := createAndAttachSeries(ctx, tx, seriesFillStrategy, view, series); err != nil {
-					return errors.Wrap(err, "createAndAttachSeries")
+				// This is b new series, so it needs to be cblculbted bnd bttbched.
+				if err := crebteAndAttbchSeries(ctx, tx, seriesFillStrbtegy, view, series); err != nil {
+					return errors.Wrbp(err, "crebteAndAttbchSeries")
 				}
 			}
 		}
@@ -738,16 +738,16 @@ func updateSearchOrComputeInsight(ctx context.Context, input graphqlbackend.Upda
 	return nil
 }
 
-// existingSeriesHasChanged returns a bool indicating if the series was changed in a way that would invalid the existing data.
-// This function assumes that the input has already been validated
-func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSeriesInput, existing types.InsightViewSeries) bool {
+// existingSeriesHbsChbnged returns b bool indicbting if the series wbs chbnged in b wby thbt would invblid the existing dbtb.
+// This function bssumes thbt the input hbs blrebdy been vblidbted
+func existingSeriesHbsChbnged(new grbphqlbbckend.LineChbrtSebrchInsightDbtbSeriesInput, existing types.InsightViewSeries) bool {
 	if new.Query != existing.Query {
 		return true
 	}
-	if new.TimeScope.StepInterval.Unit != existing.SampleIntervalUnit {
+	if new.TimeScope.StepIntervbl.Unit != existing.SbmpleIntervblUnit {
 		return true
 	}
-	if new.TimeScope.StepInterval.Value != int32(existing.SampleIntervalValue) {
+	if new.TimeScope.StepIntervbl.Vblue != int32(existing.SbmpleIntervblVblue) {
 		return true
 	}
 	if len(new.RepositoryScope.Repositories) != len(existing.Repositories) {
@@ -764,278 +764,278 @@ func existingSeriesHasChanged(new graphqlbackend.LineChartSearchInsightDataSerie
 			return true
 		}
 	}
-	if isNilString(new.RepositoryScope.RepositoryCriteria) != isNilString(existing.RepositoryCriteria) {
+	if isNilString(new.RepositoryScope.RepositoryCriterib) != isNilString(existing.RepositoryCriterib) {
 		return true
 	}
 
-	if !isNilString(new.RepositoryScope.RepositoryCriteria) && !isNilString(existing.RepositoryCriteria) {
-		if *new.RepositoryScope.RepositoryCriteria != *existing.RepositoryCriteria {
+	if !isNilString(new.RepositoryScope.RepositoryCriterib) && !isNilString(existing.RepositoryCriterib) {
+		if *new.RepositoryScope.RepositoryCriterib != *existing.RepositoryCriterib {
 			return true
 		}
 	}
 	return emptyIfNil(new.GroupBy) != emptyIfNil(existing.GroupBy)
 }
 
-func (r *Resolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	uid := actor.FromContext(ctx).UID
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+func (r *Resolver) SbveInsightAsNewView(ctx context.Context, brgs grbphqlbbckend.SbveInsightAsNewViewArgs) (_ grbphqlbbckend.InsightViewPbylobdResolver, err error) {
+	uid := bctor.FromContext(ctx).UID
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	insightTx, err := r.insightStore.Transact(ctx)
+	insightTx, err := r.insightStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
-	dashboardTx := r.dashboardStore.With(insightTx)
+	dbshbobrdTx := r.dbshbobrdStore.With(insightTx)
 
-	var insightViewId string
-	if err := relay.UnmarshalSpec(args.Input.InsightViewID, &insightViewId); err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+	vbr insightViewId string
+	if err := relby.UnmbrshblSpec(brgs.Input.InsightViewID, &insightViewId); err != nil {
+		return nil, errors.Wrbp(err, "error unmbrshblling the insight view id")
 	}
-	if err := permissionsValidator.validateUserAccessForView(ctx, insightViewId); err != nil {
+	if err := permissionsVblidbtor.vblidbteUserAccessForView(ctx, insightViewId); err != nil {
 		return nil, err
 	}
 
-	var dashboardIds []int
-	if args.Input.Dashboard != nil {
-		dashboardID, err := unmarshalDashboardID(*args.Input.Dashboard)
+	vbr dbshbobrdIds []int
+	if brgs.Input.Dbshbobrd != nil {
+		dbshbobrdID, err := unmbrshblDbshbobrdID(*brgs.Input.Dbshbobrd)
 		if err != nil {
-			return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			return nil, errors.Wrbpf(err, "unmbrshblDbshbobrdID, id:%s", dbshbobrdID)
 		}
-		dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+		dbshbobrdIds = bppend(dbshbobrdIds, int(dbshbobrdID.Arg))
 	}
 
-	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	lbmDbshbobrdId, err := crebteInsightLicenseCheck(ctx, insightTx, dbshbobrdTx, dbshbobrdIds)
 	if err != nil {
-		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+		return nil, errors.Wrbpf(err, "crebteInsightLicenseCheck")
 	}
-	if lamDashboardId != 0 {
-		dashboardIds = append(dashboardIds, lamDashboardId)
+	if lbmDbshbobrdId != 0 {
+		dbshbobrdIds = bppend(dbshbobrdIds, lbmDbshbobrdId)
 	}
 
-	views, err := insightTx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	views, err := insightTx.GetMbpped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorizbtion: true})
 	if err != nil {
-		return nil, errors.Wrap(err, "GetMapped")
+		return nil, errors.Wrbp(err, "GetMbpped")
 	}
 	if len(views) == 0 {
 		return nil, errors.New("No insight view found with this id")
 	}
 	viewSeries := views[0].Series
 
-	var filters types.InsightViewFilters
-	if args.Input.ViewControls != nil {
-		filters = filtersFromInput(&args.Input.ViewControls.Filters)
+	vbr filters types.InsightViewFilters
+	if brgs.Input.ViewControls != nil {
+		filters = filtersFromInput(&brgs.Input.ViewControls.Filters)
 	}
-	view, err := insightTx.CreateView(ctx, types.InsightView{
-		Title:            emptyIfNil(args.Input.Options.Title),
+	view, err := insightTx.CrebteView(ctx, types.InsightView{
+		Title:            emptyIfNil(brgs.Input.Options.Title),
 		UniqueID:         ksuid.New().String(),
 		Filters:          filters,
-		PresentationType: types.Line,
-	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
+		PresentbtionType: types.Line,
+	}, []store.InsightViewGrbnt{store.UserGrbnt(int(uid))})
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateView")
+		return nil, errors.Wrbp(err, "CrebteView")
 	}
 
-	for _, series := range viewSeries {
+	for _, series := rbnge viewSeries {
 		seriesObject := types.InsightSeries{
 			SeriesID: series.SeriesID,
 			ID:       series.InsightSeriesID,
 		}
-		if err := insightTx.AttachSeriesToView(ctx, seriesObject, view, types.InsightViewSeriesMetadata{
-			Label:  series.Label,
+		if err := insightTx.AttbchSeriesToView(ctx, seriesObject, view, types.InsightViewSeriesMetbdbtb{
+			Lbbel:  series.Lbbel,
 			Stroke: series.LineColor,
 		}); err != nil {
-			return nil, errors.Wrap(err, "AttachSeriesToView")
+			return nil, errors.Wrbp(err, "AttbchSeriesToView")
 		}
 	}
 
-	if len(dashboardIds) > 0 {
-		if args.Input.Dashboard != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, []graphql.ID{*args.Input.Dashboard}, r.postgresDB.Orgs())
+	if len(dbshbobrdIds) > 0 {
+		if brgs.Input.Dbshbobrd != nil {
+			err := vblidbteUserDbshbobrdPermissions(ctx, dbshbobrdTx, []grbphql.ID{*brgs.Input.Dbshbobrd}, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
 		}
-		for _, dashboardId := range dashboardIds {
-			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dashboardID", dashboardId))
-			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
+		for _, dbshbobrdId := rbnge dbshbobrdIds {
+			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dbshbobrdID", dbshbobrdId))
+			err = dbshbobrdTx.AddViewsToDbshbobrd(ctx, dbshbobrdId, []string{view.UniqueID})
 			if err != nil {
-				return nil, errors.Wrap(err, "AddViewsToDashboard")
+				return nil, errors.Wrbp(err, "AddViewsToDbshbobrd")
 			}
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPbylobdResolver{bbseInsightResolver: r.bbseInsightResolver, vblidbtor: permissionsVblidbtor, viewId: view.UniqueID}, nil
 }
 
-func (r *Resolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	insightTx, err := r.insightStore.Transact(ctx)
+func (r *Resolver) CrebtePieChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.CrebtePieChbrtSebrchInsightArgs) (_ grbphqlbbckend.InsightViewPbylobdResolver, err error) {
+	insightTx, err := r.insightStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = insightTx.Done(err) }()
-	dashboardTx := r.dashboardStore.With(insightTx)
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	dbshbobrdTx := r.dbshbobrdStore.With(insightTx)
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	var dashboardIds []int
-	if args.Input.Dashboards != nil {
-		for _, id := range *args.Input.Dashboards {
-			dashboardID, err := unmarshalDashboardID(id)
+	vbr dbshbobrdIds []int
+	if brgs.Input.Dbshbobrds != nil {
+		for _, id := rbnge *brgs.Input.Dbshbobrds {
+			dbshbobrdID, err := unmbrshblDbshbobrdID(id)
 			if err != nil {
-				return nil, errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+				return nil, errors.Wrbpf(err, "unmbrshblDbshbobrdID, id:%s", dbshbobrdID)
 			}
-			dashboardIds = append(dashboardIds, int(dashboardID.Arg))
+			dbshbobrdIds = bppend(dbshbobrdIds, int(dbshbobrdID.Arg))
 		}
 	}
 
-	lamDashboardId, err := createInsightLicenseCheck(ctx, insightTx, dashboardTx, dashboardIds)
+	lbmDbshbobrdId, err := crebteInsightLicenseCheck(ctx, insightTx, dbshbobrdTx, dbshbobrdIds)
 	if err != nil {
-		return nil, errors.Wrapf(err, "createInsightLicenseCheck")
+		return nil, errors.Wrbpf(err, "crebteInsightLicenseCheck")
 	}
-	if lamDashboardId != 0 {
-		dashboardIds = append(dashboardIds, lamDashboardId)
+	if lbmDbshbobrdId != 0 {
+		dbshbobrdIds = bppend(dbshbobrdIds, lbmDbshbobrdId)
 	}
 
-	uid := actor.FromContext(ctx).UID
-	view, err := insightTx.CreateView(ctx, types.InsightView{
-		Title:            args.Input.PresentationOptions.Title,
+	uid := bctor.FromContext(ctx).UID
+	view, err := insightTx.CrebteView(ctx, types.InsightView{
+		Title:            brgs.Input.PresentbtionOptions.Title,
 		UniqueID:         ksuid.New().String(),
-		OtherThreshold:   &args.Input.PresentationOptions.OtherThreshold,
-		PresentationType: types.Pie,
-	}, []store.InsightViewGrant{store.UserGrant(int(uid))})
+		OtherThreshold:   &brgs.Input.PresentbtionOptions.OtherThreshold,
+		PresentbtionType: types.Pie,
+	}, []store.InsightViewGrbnt{store.UserGrbnt(int(uid))})
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateView")
+		return nil, errors.Wrbp(err, "CrebteView")
 	}
-	repos := args.Input.RepositoryScope.Repositories
-	seriesToAdd, err := insightTx.CreateSeries(ctx, types.InsightSeries{
+	repos := brgs.Input.RepositoryScope.Repositories
+	seriesToAdd, err := insightTx.CrebteSeries(ctx, types.InsightSeries{
 		SeriesID:           ksuid.New().String(),
-		Query:              args.Input.Query,
-		CreatedAt:          time.Now(),
+		Query:              brgs.Input.Query,
+		CrebtedAt:          time.Now(),
 		Repositories:       repos,
-		SampleIntervalUnit: string(types.Month),
+		SbmpleIntervblUnit: string(types.Month),
 		JustInTime:         len(repos) > 0,
-		// one might ask themselves why is the generation method a language stats method if this mutation is search insight? The answer is that search is ultimately the
-		// driver behind language stats, but global language stats behave differently than standard search. Long term the vision is that
-		// search will power this, and we can iterate over repos just like any other search insight. But for now, this is just something weird that we will have to live with.
-		// As a note, this does mean that this mutation doesn't even technically do what it is named - it does not create a 'search' insight, and with that in mind
-		// if we decide to support pie charts for other insights than language stats (which we likely will, say on arbitrary aggregations or capture groups) we will need to
+		// one might bsk themselves why is the generbtion method b lbngubge stbts method if this mutbtion is sebrch insight? The bnswer is thbt sebrch is ultimbtely the
+		// driver behind lbngubge stbts, but globbl lbngubge stbts behbve differently thbn stbndbrd sebrch. Long term the vision is thbt
+		// sebrch will power this, bnd we cbn iterbte over repos just like bny other sebrch insight. But for now, this is just something weird thbt we will hbve to live with.
+		// As b note, this does mebn thbt this mutbtion doesn't even technicblly do whbt it is nbmed - it does not crebte b 'sebrch' insight, bnd with thbt in mind
+		// if we decide to support pie chbrts for other insights thbn lbngubge stbts (which we likely will, sby on brbitrbry bggregbtions or cbpture groups) we will need to
 		// revisit this.
-		GenerationMethod: types.LanguageStats,
+		GenerbtionMethod: types.LbngubgeStbts,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "CreateSeries")
+		return nil, errors.Wrbp(err, "CrebteSeries")
 	}
-	err = insightTx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{})
+	err = insightTx.AttbchSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetbdbtb{})
 	if err != nil {
-		return nil, errors.Wrap(err, "AttachSeriesToView")
+		return nil, errors.Wrbp(err, "AttbchSeriesToView")
 	}
 
-	if len(dashboardIds) > 0 {
-		if args.Input.Dashboards != nil {
-			err := validateUserDashboardPermissions(ctx, dashboardTx, *args.Input.Dashboards, r.postgresDB.Orgs())
+	if len(dbshbobrdIds) > 0 {
+		if brgs.Input.Dbshbobrds != nil {
+			err := vblidbteUserDbshbobrdPermissions(ctx, dbshbobrdTx, *brgs.Input.Dbshbobrds, r.postgresDB.Orgs())
 			if err != nil {
 				return nil, err
 			}
 		}
-		for _, dashboardId := range dashboardIds {
-			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dashboardID", dashboardId))
-			err = dashboardTx.AddViewsToDashboard(ctx, dashboardId, []string{view.UniqueID})
+		for _, dbshbobrdId := rbnge dbshbobrdIds {
+			r.logger.Debug("AddView", log.String("insightID", view.UniqueID), log.Int("dbshbobrdID", dbshbobrdId))
+			err = dbshbobrdTx.AddViewsToDbshbobrd(ctx, dbshbobrdId, []string{view.UniqueID})
 			if err != nil {
-				return nil, errors.Wrap(err, "AddViewsToDashboard")
+				return nil, errors.Wrbp(err, "AddViewsToDbshbobrd")
 			}
 		}
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPbylobdResolver{bbseInsightResolver: r.bbseInsightResolver, vblidbtor: permissionsVblidbtor, viewId: view.UniqueID}, nil
 }
 
-func (r *Resolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (_ graphqlbackend.InsightViewPayloadResolver, err error) {
-	tx, err := r.insightStore.Transact(ctx)
+func (r *Resolver) UpdbtePieChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.UpdbtePieChbrtSebrchInsightArgs) (_ grbphqlbbckend.InsightViewPbylobdResolver, err error) {
+	tx, err := r.insightStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	var insightViewId string
-	err = relay.UnmarshalSpec(args.Id, &insightViewId)
+	vbr insightViewId string
+	err = relby.UnmbrshblSpec(brgs.Id, &insightViewId)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the insight view id")
 	}
-	err = permissionsValidator.validateUserAccessForView(ctx, insightViewId)
+	err = permissionsVblidbtor.vblidbteUserAccessForView(ctx, insightViewId)
 	if err != nil {
 		return nil, err
 	}
-	views, err := tx.GetMapped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorization: true})
+	views, err := tx.GetMbpped(ctx, store.InsightQueryArgs{UniqueID: insightViewId, WithoutAuthorizbtion: true})
 	if err != nil {
-		return nil, errors.Wrap(err, "GetMapped")
+		return nil, errors.Wrbp(err, "GetMbpped")
 	}
 	if len(views) == 0 {
 		return nil, errors.New("No insight view found with this id")
 	}
 	if len(views[0].Series) == 0 {
-		return nil, errors.New("No matching series found for this view. The view data may be corrupted.")
+		return nil, errors.New("No mbtching series found for this view. The view dbtb mby be corrupted.")
 	}
 
-	view, err := tx.UpdateView(ctx, types.InsightView{
+	view, err := tx.UpdbteView(ctx, types.InsightView{
 		UniqueID:         insightViewId,
-		Title:            args.Input.PresentationOptions.Title,
-		OtherThreshold:   &args.Input.PresentationOptions.OtherThreshold,
-		PresentationType: types.Pie,
+		Title:            brgs.Input.PresentbtionOptions.Title,
+		OtherThreshold:   &brgs.Input.PresentbtionOptions.OtherThreshold,
+		PresentbtionType: types.Pie,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "UpdateView")
+		return nil, errors.Wrbp(err, "UpdbteView")
 	}
-	err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
+	err = tx.UpdbteFrontendSeries(ctx, store.UpdbteFrontendSeriesArgs{
 		SeriesID:         views[0].Series[0].SeriesID,
-		Query:            args.Input.Query,
-		Repositories:     args.Input.RepositoryScope.Repositories,
-		StepIntervalUnit: string(types.Month),
+		Query:            brgs.Input.Query,
+		Repositories:     brgs.Input.RepositoryScope.Repositories,
+		StepIntervblUnit: string(types.Month),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "UpdateSeries")
+		return nil, errors.Wrbp(err, "UpdbteSeries")
 	}
 
-	return &insightPayloadResolver{baseInsightResolver: r.baseInsightResolver, validator: permissionsValidator, viewId: view.UniqueID}, nil
+	return &insightPbylobdResolver{bbseInsightResolver: r.bbseInsightResolver, vblidbtor: permissionsVblidbtor, viewId: view.UniqueID}, nil
 }
 
-type pieChartInsightViewPresentation struct {
+type pieChbrtInsightViewPresentbtion struct {
 	view *types.Insight
 }
 
-func (p *pieChartInsightViewPresentation) Title(ctx context.Context) (string, error) {
+func (p *pieChbrtInsightViewPresentbtion) Title(ctx context.Context) (string, error) {
 	return p.view.Title, nil
 }
 
-func (p *pieChartInsightViewPresentation) OtherThreshold(ctx context.Context) (float64, error) {
+func (p *pieChbrtInsightViewPresentbtion) OtherThreshold(ctx context.Context) (flobt64, error) {
 	if p.view.OtherThreshold == nil {
-		// Returning a pie chart with no threshold set. This should never happen.
+		// Returning b pie chbrt with no threshold set. This should never hbppen.
 		return 0, nil
 	}
 	return *p.view.OtherThreshold, nil
 }
 
-type insightPayloadResolver struct {
+type insightPbylobdResolver struct {
 	viewId    string
-	validator *InsightPermissionsValidator
-	baseInsightResolver
+	vblidbtor *InsightPermissionsVblidbtor
+	bbseInsightResolver
 }
 
-func (c *insightPayloadResolver) View(ctx context.Context) (graphqlbackend.InsightViewResolver, error) {
-	if !c.validator.loaded {
-		err := c.validator.loadUserContext(ctx)
+func (c *insightPbylobdResolver) View(ctx context.Context) (grbphqlbbckend.InsightViewResolver, error) {
+	if !c.vblidbtor.lobded {
+		err := c.vblidbtor.lobdUserContext(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "InsightPayloadResolver.LoadUserContext")
+			return nil, errors.Wrbp(err, "InsightPbylobdResolver.LobdUserContext")
 		}
 	}
 
-	mapped, err := c.insightStore.GetAllMapped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserIDs: c.validator.userIds, OrgIDs: c.validator.orgIds})
+	mbpped, err := c.insightStore.GetAllMbpped(ctx, store.InsightQueryArgs{UniqueID: c.viewId, UserIDs: c.vblidbtor.userIds, OrgIDs: c.vblidbtor.orgIds})
 	if err != nil {
 		return nil, err
 	}
-	if len(mapped) < 1 {
+	if len(mbpped) < 1 {
 		return nil, errors.New("insight not found")
 	}
-	return &insightViewResolver{view: &mapped[0], baseInsightResolver: c.baseInsightResolver}, nil
+	return &insightViewResolver{view: &mbpped[0], bbseInsightResolver: c.bbseInsightResolver}, nil
 }
 
 func emptyIfNil(in *string) string {
@@ -1049,130 +1049,130 @@ func isNilString(in *string) bool {
 	return in == nil
 }
 
-// A dummy type to represent the GraphQL union InsightTimeScope
+// A dummy type to represent the GrbphQL union InsightTimeScope
 type insightTimeScopeUnionResolver struct {
-	resolver any
+	resolver bny
 }
 
-// ToInsightIntervalTimeScope is used by the GraphQL library to resolve type fragments for unions
-func (r *insightTimeScopeUnionResolver) ToInsightIntervalTimeScope() (graphqlbackend.InsightIntervalTimeScope, bool) {
-	res, ok := r.resolver.(*insightIntervalTimeScopeResolver)
+// ToInsightIntervblTimeScope is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *insightTimeScopeUnionResolver) ToInsightIntervblTimeScope() (grbphqlbbckend.InsightIntervblTimeScope, bool) {
+	res, ok := r.resolver.(*insightIntervblTimeScopeResolver)
 	return res, ok
 }
 
-// A dummy type to represent the GraphQL union InsightPresentation
-type insightPresentationUnionResolver struct {
-	resolver any
+// A dummy type to represent the GrbphQL union InsightPresentbtion
+type insightPresentbtionUnionResolver struct {
+	resolver bny
 }
 
-// ToLineChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
-func (r *insightPresentationUnionResolver) ToLineChartInsightViewPresentation() (graphqlbackend.LineChartInsightViewPresentation, bool) {
-	res, ok := r.resolver.(*lineChartInsightViewPresentation)
+// ToLineChbrtInsightViewPresentbtion is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *insightPresentbtionUnionResolver) ToLineChbrtInsightViewPresentbtion() (grbphqlbbckend.LineChbrtInsightViewPresentbtion, bool) {
+	res, ok := r.resolver.(*lineChbrtInsightViewPresentbtion)
 	return res, ok
 }
 
-// ToPieChartInsightViewPresentation is used by the GraphQL library to resolve type fragments for unions
-func (r *insightPresentationUnionResolver) ToPieChartInsightViewPresentation() (graphqlbackend.PieChartInsightViewPresentation, bool) {
-	res, ok := r.resolver.(*pieChartInsightViewPresentation)
+// ToPieChbrtInsightViewPresentbtion is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *insightPresentbtionUnionResolver) ToPieChbrtInsightViewPresentbtion() (grbphqlbbckend.PieChbrtInsightViewPresentbtion, bool) {
+	res, ok := r.resolver.(*pieChbrtInsightViewPresentbtion)
 	return res, ok
 }
 
-// A dummy type to represent the GraphQL union InsightDataSeriesDefinition
-type insightDataSeriesDefinitionUnionResolver struct {
-	resolver any
+// A dummy type to represent the GrbphQL union InsightDbtbSeriesDefinition
+type insightDbtbSeriesDefinitionUnionResolver struct {
+	resolver bny
 }
 
-// ToSearchInsightDataSeriesDefinition is used by the GraphQL library to resolve type fragments for unions
-func (r *insightDataSeriesDefinitionUnionResolver) ToSearchInsightDataSeriesDefinition() (graphqlbackend.SearchInsightDataSeriesDefinitionResolver, bool) {
-	res, ok := r.resolver.(*searchInsightDataSeriesDefinitionResolver)
+// ToSebrchInsightDbtbSeriesDefinition is used by the GrbphQL librbry to resolve type frbgments for unions
+func (r *insightDbtbSeriesDefinitionUnionResolver) ToSebrchInsightDbtbSeriesDefinition() (grbphqlbbckend.SebrchInsightDbtbSeriesDefinitionResolver, bool) {
+	res, ok := r.resolver.(*sebrchInsightDbtbSeriesDefinitionResolver)
 	return res, ok
 }
 
-func (r *Resolver) InsightViews(ctx context.Context, args *graphqlbackend.InsightViewQueryArgs) (graphqlbackend.InsightViewConnectionResolver, error) {
+func (r *Resolver) InsightViews(ctx context.Context, brgs *grbphqlbbckend.InsightViewQueryArgs) (grbphqlbbckend.InsightViewConnectionResolver, error) {
 	return &InsightViewQueryConnectionResolver{
-		baseInsightResolver: r.baseInsightResolver,
-		args:                args,
+		bbseInsightResolver: r.bbseInsightResolver,
+		brgs:                brgs,
 	}, nil
 }
 
 type InsightViewQueryConnectionResolver struct {
-	baseInsightResolver
+	bbseInsightResolver
 
-	args *graphqlbackend.InsightViewQueryArgs
+	brgs *grbphqlbbckend.InsightViewQueryArgs
 
-	// Cache results because they are used by multiple fields
+	// Cbche results becbuse they bre used by multiple fields
 	once  sync.Once
 	views []types.Insight
 	next  string
 	err   error
 }
 
-func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
-	resolvers := make([]graphqlbackend.InsightViewResolver, 0)
-	var scs []string
+func (d *InsightViewQueryConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.InsightViewResolver, error) {
+	resolvers := mbke([]grbphqlbbckend.InsightViewResolver, 0)
+	vbr scs []string
 
 	views, _, err := d.computeViews(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i := range views {
-		resolver := &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver}
-		if d.args.Filters != nil {
-			if d.args.Filters.SearchContexts != nil {
-				scs = *d.args.Filters.SearchContexts
+	for i := rbnge views {
+		resolver := &insightViewResolver{view: &views[i], bbseInsightResolver: d.bbseInsightResolver}
+		if d.brgs.Filters != nil {
+			if d.brgs.Filters.SebrchContexts != nil {
+				scs = *d.brgs.Filters.SebrchContexts
 			}
 			resolver.overrideFilters = &types.InsightViewFilters{
-				IncludeRepoRegex: d.args.Filters.IncludeRepoRegex,
-				ExcludeRepoRegex: d.args.Filters.ExcludeRepoRegex,
-				SearchContexts:   scs,
+				IncludeRepoRegex: d.brgs.Filters.IncludeRepoRegex,
+				ExcludeRepoRegex: d.brgs.Filters.ExcludeRepoRegex,
+				SebrchContexts:   scs,
 			}
 		}
-		if d.args.SeriesDisplayOptions != nil {
-			var sortOptions *types.SeriesSortOptions
-			if d.args.SeriesDisplayOptions != nil && d.args.SeriesDisplayOptions.SortOptions != nil {
+		if d.brgs.SeriesDisplbyOptions != nil {
+			vbr sortOptions *types.SeriesSortOptions
+			if d.brgs.SeriesDisplbyOptions != nil && d.brgs.SeriesDisplbyOptions.SortOptions != nil {
 				sortOptions = &types.SeriesSortOptions{
-					Mode:      types.SeriesSortMode(d.args.SeriesDisplayOptions.SortOptions.Mode),
-					Direction: types.SeriesSortDirection(d.args.SeriesDisplayOptions.SortOptions.Direction),
+					Mode:      types.SeriesSortMode(d.brgs.SeriesDisplbyOptions.SortOptions.Mode),
+					Direction: types.SeriesSortDirection(d.brgs.SeriesDisplbyOptions.SortOptions.Direction),
 				}
 			}
-			numSamples := d.args.SeriesDisplayOptions.NumSamples
-			if numSamples != nil && *numSamples > 90 {
-				var maxNumSamples int32 = 90
-				numSamples = &maxNumSamples
+			numSbmples := d.brgs.SeriesDisplbyOptions.NumSbmples
+			if numSbmples != nil && *numSbmples > 90 {
+				vbr mbxNumSbmples int32 = 90
+				numSbmples = &mbxNumSbmples
 			}
-			resolver.overrideSeriesOptions = &types.SeriesDisplayOptions{
+			resolver.overrideSeriesOptions = &types.SeriesDisplbyOptions{
 				SortOptions: sortOptions,
-				Limit:       d.args.SeriesDisplayOptions.Limit,
-				NumSamples:  numSamples,
+				Limit:       d.brgs.SeriesDisplbyOptions.Limit,
+				NumSbmples:  numSbmples,
 			}
 		}
-		resolvers = append(resolvers, resolver)
+		resolvers = bppend(resolvers, resolver)
 	}
 	return resolvers, nil
 }
 
-func (d *InsightViewQueryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (d *InsightViewQueryConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := d.computeViews(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if next != "" {
-		return graphqlutil.NextPageCursor(string(relay.MarshalID(insightKind, d.next))), nil
+		return grbphqlutil.NextPbgeCursor(string(relby.MbrshblID(insightKind, d.next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *InsightViewQueryConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
+func (r *InsightViewQueryConnectionResolver) TotblCount(ctx context.Context) (*int32, error) {
 	orgStore := r.postgresDB.Orgs()
-	args := store.InsightQueryArgs{}
+	brgs := store.InsightQueryArgs{}
 
-	var err error
-	args.UserIDs, args.OrgIDs, err = getUserPermissions(ctx, orgStore)
+	vbr err error
+	brgs.UserIDs, brgs.OrgIDs, err = getUserPermissions(ctx, orgStore)
 	if err != nil {
-		return nil, errors.Wrap(err, "getUserPermissions")
+		return nil, errors.Wrbp(err, "getUserPermissions")
 	}
-	insights, err := r.insightStore.GetAllMapped(ctx, args)
+	insights, err := r.insightStore.GetAllMbpped(ctx, brgs)
 	count := int32(len(insights))
 	return &count, err
 }
@@ -1181,100 +1181,100 @@ func (r *InsightViewQueryConnectionResolver) computeViews(ctx context.Context) (
 	r.once.Do(func() {
 		orgStore := r.postgresDB.Orgs()
 
-		args := store.InsightQueryArgs{}
-		if r.args.After != nil {
-			var afterID string
-			err := relay.UnmarshalSpec(graphql.ID(*r.args.After), &afterID)
+		brgs := store.InsightQueryArgs{}
+		if r.brgs.After != nil {
+			vbr bfterID string
+			err := relby.UnmbrshblSpec(grbphql.ID(*r.brgs.After), &bfterID)
 			if err != nil {
-				r.err = errors.Wrap(err, "unmarshalID")
+				r.err = errors.Wrbp(err, "unmbrshblID")
 				return
 			}
-			args.After = afterID
+			brgs.After = bfterID
 		}
-		if r.args.First != nil {
-			// Ask for one more result than needed in order to determine if there is a next page.
-			args.Limit = int(*r.args.First) + 1
+		if r.brgs.First != nil {
+			// Ask for one more result thbn needed in order to determine if there is b next pbge.
+			brgs.Limit = int(*r.brgs.First) + 1
 		}
-		if r.args.IsFrozen != nil {
-			// Filter insight views by their frozen state. We use a pointer for the argument because
-			// we might want to not filter on this attribute at all, and `bool` defaults to false.
-			args.IsFrozen = r.args.IsFrozen
+		if r.brgs.IsFrozen != nil {
+			// Filter insight views by their frozen stbte. We use b pointer for the brgument becbuse
+			// we might wbnt to not filter on this bttribute bt bll, bnd `bool` defbults to fblse.
+			brgs.IsFrozen = r.brgs.IsFrozen
 		}
-		if r.args.Find != nil {
-			args.Find = *r.args.Find
+		if r.brgs.Find != nil {
+			brgs.Find = *r.brgs.Find
 		}
 
-		var err error
-		args.UserIDs, args.OrgIDs, err = getUserPermissions(ctx, orgStore)
+		vbr err error
+		brgs.UserIDs, brgs.OrgIDs, err = getUserPermissions(ctx, orgStore)
 		if err != nil {
-			r.err = errors.Wrap(err, "getUserPermissions")
+			r.err = errors.Wrbp(err, "getUserPermissions")
 			return
 		}
 
-		if r.args.Id != nil {
-			var unique string
-			r.err = relay.UnmarshalSpec(*r.args.Id, &unique)
+		if r.brgs.Id != nil {
+			vbr unique string
+			r.err = relby.UnmbrshblSpec(*r.brgs.Id, &unique)
 			if r.err != nil {
 				return
 			}
-			args.UniqueID = unique
+			brgs.UniqueID = unique
 		}
 
-		if r.args.ExcludeIds != nil {
-			var insightIDs []string
-			for _, id := range *r.args.ExcludeIds {
-				var unique string
-				r.err = relay.UnmarshalSpec(id, &unique)
+		if r.brgs.ExcludeIds != nil {
+			vbr insightIDs []string
+			for _, id := rbnge *r.brgs.ExcludeIds {
+				vbr unique string
+				r.err = relby.UnmbrshblSpec(id, &unique)
 				if r.err != nil {
 					return
 				}
-				insightIDs = append(insightIDs, unique)
+				insightIDs = bppend(insightIDs, unique)
 			}
-			args.ExcludeIDs = insightIDs
+			brgs.ExcludeIDs = insightIDs
 		}
 
-		insights, err := r.insightStore.GetAllMapped(ctx, args)
+		insights, err := r.insightStore.GetAllMbpped(ctx, brgs)
 		if err != nil {
 			r.err = err
 			return
 		}
 		r.views = insights
 
-		if r.args.First != nil && len(r.views) == args.Limit {
+		if r.brgs.First != nil && len(r.views) == brgs.Limit {
 			r.next = r.views[len(r.views)-2].UniqueID
-			r.views = r.views[:args.Limit-1]
+			r.views = r.views[:brgs.Limit-1]
 		}
 	})
 	return r.views, r.next, r.err
 }
 
-func validateUserDashboardPermissions(ctx context.Context, store store.DashboardStore, externalIds []graphql.ID, orgStore database.OrgStore) error {
+func vblidbteUserDbshbobrdPermissions(ctx context.Context, store store.DbshbobrdStore, externblIds []grbphql.ID, orgStore dbtbbbse.OrgStore) error {
 	userIds, orgIds, err := getUserPermissions(ctx, orgStore)
 	if err != nil {
-		return errors.Wrap(err, "getUserPermissions")
+		return errors.Wrbp(err, "getUserPermissions")
 	}
 
-	unmarshaled := make([]int, 0, len(externalIds))
-	for _, id := range externalIds {
-		dashboardID, err := unmarshalDashboardID(id)
+	unmbrshbled := mbke([]int, 0, len(externblIds))
+	for _, id := rbnge externblIds {
+		dbshbobrdID, err := unmbrshblDbshbobrdID(id)
 		if err != nil {
-			return errors.Wrapf(err, "unmarshalDashboardID, id:%s", dashboardID)
+			return errors.Wrbpf(err, "unmbrshblDbshbobrdID, id:%s", dbshbobrdID)
 		}
-		unmarshaled = append(unmarshaled, int(dashboardID.Arg))
+		unmbrshbled = bppend(unmbrshbled, int(dbshbobrdID.Arg))
 	}
 
-	hasPermission, err := store.HasDashboardPermission(ctx, unmarshaled, userIds, orgIds)
+	hbsPermission, err := store.HbsDbshbobrdPermission(ctx, unmbrshbled, userIds, orgIds)
 	if err != nil {
-		return errors.Wrapf(err, "HasDashboardPermission")
-	} else if !hasPermission {
-		return errors.Newf("missing dashboard permission")
+		return errors.Wrbpf(err, "HbsDbshbobrdPermission")
+	} else if !hbsPermission {
+		return errors.Newf("missing dbshbobrd permission")
 	}
 	return nil
 }
 
-type fillSeriesStrategy func(context.Context, types.InsightSeries) error
+type fillSeriesStrbtegy func(context.Context, types.InsightSeries) error
 
-func makeFillSeriesStrategy(tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *background.InsightEnqueuer) fillSeriesStrategy {
+func mbkeFillSeriesStrbtegy(tx *store.InsightStore, scheduler *scheduler.Scheduler, insightEnqueuer *bbckground.InsightEnqueuer) fillSeriesStrbtegy {
 	return func(ctx context.Context, series types.InsightSeries) error {
 		if series.GroupBy != nil {
 			return groupBySeriesFill(ctx, series, tx, insightEnqueuer)
@@ -1283,133 +1283,133 @@ func makeFillSeriesStrategy(tx *store.InsightStore, scheduler *scheduler.Schedul
 	}
 }
 
-func groupBySeriesFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, insightEnqueuer *background.InsightEnqueuer) error {
-	if err := insightEnqueuer.EnqueueSingle(ctx, series, store.SnapshotMode, tx.StampSnapshot); err != nil {
-		return errors.Wrap(err, "GroupBy.EnqueueSingle")
+func groupBySeriesFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, insightEnqueuer *bbckground.InsightEnqueuer) error {
+	if err := insightEnqueuer.EnqueueSingle(ctx, series, store.SnbpshotMode, tx.StbmpSnbpshot); err != nil {
+		return errors.Wrbp(err, "GroupBy.EnqueueSingle")
 	}
-	// We stamp backfill even without queueing up a backfill because we only want a single
+	// We stbmp bbckfill even without queueing up b bbckfill becbuse we only wbnt b single
 	// point in time.
-	_, err := tx.StampBackfill(ctx, series)
+	_, err := tx.StbmpBbckfill(ctx, series)
 	if err != nil {
-		return errors.Wrap(err, "GroupBy.StampBackfill")
+		return errors.Wrbp(err, "GroupBy.StbmpBbckfill")
 	}
 	return nil
 }
 
-func historicFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, backfillScheduler *scheduler.Scheduler) error {
-	backfillScheduler = backfillScheduler.With(tx)
-	_, err := backfillScheduler.InitialBackfill(ctx, series)
+func historicFill(ctx context.Context, series types.InsightSeries, tx *store.InsightStore, bbckfillScheduler *scheduler.Scheduler) error {
+	bbckfillScheduler = bbckfillScheduler.With(tx)
+	_, err := bbckfillScheduler.InitiblBbckfill(ctx, series)
 	if err != nil {
-		return errors.Wrap(err, "scheduler.InitialBackfill")
+		return errors.Wrbp(err, "scheduler.InitiblBbckfill")
 	}
-	_, err = tx.StampBackfill(ctx, series)
+	_, err = tx.StbmpBbckfill(ctx, series)
 	if err != nil {
-		return errors.Wrap(err, "StampBackfill")
+		return errors.Wrbp(err, "StbmpBbckfill")
 	}
 
 	return nil
 }
 
-func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, startSeriesFill fillSeriesStrategy, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
-	var seriesToAdd, matchingSeries types.InsightSeries
-	var foundSeries bool
-	var err error
-	var dynamic bool
-	// Validate the query before creating anything; we don't want faulty insights running pointlessly.
-	if series.GroupBy != nil || series.GeneratedFromCaptureGroups != nil {
-		if _, err := querybuilder.ParseComputeQuery(series.Query, gitserver.NewClient()); err != nil {
-			return errors.Wrap(err, "query validation")
+func crebteAndAttbchSeries(ctx context.Context, tx *store.InsightStore, stbrtSeriesFill fillSeriesStrbtegy, view types.InsightView, series grbphqlbbckend.LineChbrtSebrchInsightDbtbSeriesInput) error {
+	vbr seriesToAdd, mbtchingSeries types.InsightSeries
+	vbr foundSeries bool
+	vbr err error
+	vbr dynbmic bool
+	// Vblidbte the query before crebting bnything; we don't wbnt fbulty insights running pointlessly.
+	if series.GroupBy != nil || series.GenerbtedFromCbptureGroups != nil {
+		if _, err := querybuilder.PbrseComputeQuery(series.Query, gitserver.NewClient()); err != nil {
+			return errors.Wrbp(err, "query vblidbtion")
 		}
 	} else {
-		if _, err := querybuilder.ParseQuery(series.Query, "literal"); err != nil {
-			return errors.Wrap(err, "query validation")
+		if _, err := querybuilder.PbrseQuery(series.Query, "literbl"); err != nil {
+			return errors.Wrbp(err, "query vblidbtion")
 		}
 	}
 
-	if series.GeneratedFromCaptureGroups != nil {
-		dynamic = *series.GeneratedFromCaptureGroups
+	if series.GenerbtedFromCbptureGroups != nil {
+		dynbmic = *series.GenerbtedFromCbptureGroups
 	}
 
-	groupBy := lowercaseGroupBy(series.GroupBy)
-	var nextRecordingAfter time.Time
-	var oldestHistoricalAt time.Time
+	groupBy := lowercbseGroupBy(series.GroupBy)
+	vbr nextRecordingAfter time.Time
+	vbr oldestHistoricblAt time.Time
 	if series.GroupBy != nil {
-		// We want to disable interval recording for compute types.
-		// December 31, 9999 is the maximum possible date in postgres.
-		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
-		oldestHistoricalAt = time.Now()
+		// We wbnt to disbble intervbl recording for compute types.
+		// December 31, 9999 is the mbximum possible dbte in postgres.
+		nextRecordingAfter = time.Dbte(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+		oldestHistoricblAt = time.Now()
 	}
 
-	// Don't try to match on non-global series, since they are always replaced
-	// Also don't try to match on series that use repo criteria
-	// TODO: Reconsider matching on criteria based series. If so the edit case would need work to ensure other insights remain the same.
-	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriteria == nil {
-		matchingSeries, foundSeries, err = tx.FindMatchingSeries(ctx, store.MatchSeriesArgs{
+	// Don't try to mbtch on non-globbl series, since they bre blwbys replbced
+	// Also don't try to mbtch on series thbt use repo criterib
+	// TODO: Reconsider mbtching on criterib bbsed series. If so the edit cbse would need work to ensure other insights rembin the sbme.
+	if len(series.RepositoryScope.Repositories) == 0 && series.RepositoryScope.RepositoryCriterib == nil {
+		mbtchingSeries, foundSeries, err = tx.FindMbtchingSeries(ctx, store.MbtchSeriesArgs{
 			Query:                     series.Query,
-			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
-			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
-			GenerateFromCaptureGroups: dynamic,
+			StepIntervblUnit:          series.TimeScope.StepIntervbl.Unit,
+			StepIntervblVblue:         int(series.TimeScope.StepIntervbl.Vblue),
+			GenerbteFromCbptureGroups: dynbmic,
 			GroupBy:                   groupBy,
 		})
 		if err != nil {
-			return errors.Wrap(err, "FindMatchingSeries")
+			return errors.Wrbp(err, "FindMbtchingSeries")
 		}
 	}
 
 	if !foundSeries {
 		repos := series.RepositoryScope.Repositories
-		seriesToAdd, err = tx.CreateSeries(ctx, types.InsightSeries{
+		seriesToAdd, err = tx.CrebteSeries(ctx, types.InsightSeries{
 			SeriesID:                   ksuid.New().String(),
 			Query:                      series.Query,
-			CreatedAt:                  time.Now(),
+			CrebtedAt:                  time.Now(),
 			Repositories:               repos,
-			SampleIntervalUnit:         series.TimeScope.StepInterval.Unit,
-			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
-			GeneratedFromCaptureGroups: dynamic,
-			JustInTime:                 false,
-			GenerationMethod:           searchGenerationMethod(series),
+			SbmpleIntervblUnit:         series.TimeScope.StepIntervbl.Unit,
+			SbmpleIntervblVblue:        int(series.TimeScope.StepIntervbl.Vblue),
+			GenerbtedFromCbptureGroups: dynbmic,
+			JustInTime:                 fblse,
+			GenerbtionMethod:           sebrchGenerbtionMethod(series),
 			GroupBy:                    groupBy,
 			NextRecordingAfter:         nextRecordingAfter,
-			OldestHistoricalAt:         oldestHistoricalAt,
-			RepositoryCriteria:         series.RepositoryScope.RepositoryCriteria,
+			OldestHistoricblAt:         oldestHistoricblAt,
+			RepositoryCriterib:         series.RepositoryScope.RepositoryCriterib,
 		})
 		if err != nil {
-			return errors.Wrap(err, "CreateSeries")
+			return errors.Wrbp(err, "CrebteSeries")
 		}
-		err := startSeriesFill(ctx, seriesToAdd)
+		err := stbrtSeriesFill(ctx, seriesToAdd)
 		if err != nil {
-			return errors.Wrap(err, "startSeriesFill")
+			return errors.Wrbp(err, "stbrtSeriesFill")
 		}
 	} else {
-		seriesToAdd = matchingSeries
+		seriesToAdd = mbtchingSeries
 	}
 
-	// BUG: If the user tries to attach the same series (the same query and timescope) to an insight view multiple times,
-	// this will fail because it violates the unique key constraint. This will be solved by: #26905
-	// Alternately we could detect this and return an error?
-	err = tx.AttachSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetadata{
-		Label:  emptyIfNil(series.Options.Label),
+	// BUG: If the user tries to bttbch the sbme series (the sbme query bnd timescope) to bn insight view multiple times,
+	// this will fbil becbuse it violbtes the unique key constrbint. This will be solved by: #26905
+	// Alternbtely we could detect this bnd return bn error?
+	err = tx.AttbchSeriesToView(ctx, seriesToAdd, view, types.InsightViewSeriesMetbdbtb{
+		Lbbel:  emptyIfNil(series.Options.Lbbel),
 		Stroke: emptyIfNil(series.Options.LineColor),
 	})
 	if err != nil {
-		return errors.Wrap(err, "AttachSeriesToView")
+		return errors.Wrbp(err, "AttbchSeriesToView")
 	}
 
 	return nil
 }
 
-func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
-	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+func sebrchGenerbtionMethod(series grbphqlbbckend.LineChbrtSebrchInsightDbtbSeriesInput) types.GenerbtionMethod {
+	if series.GenerbtedFromCbptureGroups != nil && *series.GenerbtedFromCbptureGroups {
 		if series.GroupBy != nil {
-			return types.MappingCompute
+			return types.MbppingCompute
 		}
-		return types.SearchCompute
+		return types.SebrchCompute
 	}
-	return types.Search
+	return types.Sebrch
 }
 
-func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlbackend.LineChartSearchInsightDataSeriesInput) bool {
-	for i := range inputSeries {
+func seriesFound(existingSeries types.InsightViewSeries, inputSeries []grbphqlbbckend.LineChbrtSebrchInsightDbtbSeriesInput) bool {
+	for i := rbnge inputSeries {
 		if inputSeries[i].SeriesId == nil {
 			continue
 		}
@@ -1417,92 +1417,92 @@ func seriesFound(existingSeries types.InsightViewSeries, inputSeries []graphqlba
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (r *Resolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
-	var viewId string
-	err := relay.UnmarshalSpec(args.Id, &viewId)
+func (r *Resolver) DeleteInsightView(ctx context.Context, brgs *grbphqlbbckend.DeleteInsightViewArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	vbr viewId string
+	err := relby.UnmbrshblSpec(brgs.Id, &viewId)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the insight view id")
 	}
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	err = permissionsValidator.validateUserAccessForView(ctx, viewId)
+	err = permissionsVblidbtor.vblidbteUserAccessForView(ctx, viewId)
 	if err != nil {
 		return nil, err
 	}
 
-	insights, err := r.insightStore.GetMapped(ctx, store.InsightQueryArgs{WithoutAuthorization: true, UniqueID: viewId})
+	insights, err := r.insightStore.GetMbpped(ctx, store.InsightQueryArgs{WithoutAuthorizbtion: true, UniqueID: viewId})
 	if err != nil {
-		return nil, errors.Wrap(err, "GetMapped")
+		return nil, errors.Wrbp(err, "GetMbpped")
 	}
 	if len(insights) != 1 {
 		return nil, errors.New("Insight not found.")
 	}
 
-	for _, series := range insights[0].Series {
+	for _, series := rbnge insights[0].Series {
 		err = r.insightStore.RemoveSeriesFromView(ctx, series.SeriesID, insights[0].ViewID)
 		if err != nil {
-			return nil, errors.Wrap(err, "RemoveSeriesFromView")
+			return nil, errors.Wrbp(err, "RemoveSeriesFromView")
 		}
 	}
 
 	err = r.insightStore.DeleteViewByUniqueID(ctx, viewId)
 	if err != nil {
-		return nil, errors.Wrap(err, "DeleteView")
+		return nil, errors.Wrbp(err, "DeleteView")
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func createInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dashboardTx *store.DBDashboardStore, dashboardIds []int) (int, error) {
-	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
-		globalUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
+func crebteInsightLicenseCheck(ctx context.Context, insightTx *store.InsightStore, dbshbobrdTx *store.DBDbshbobrdStore, dbshbobrdIds []int) (int, error) {
+	if licenseError := licensing.Check(licensing.FebtureCodeInsights); licenseError != nil {
+		globblUnfrozenInsightCount, _, err := insightTx.GetUnfrozenInsightCount(ctx)
 		if err != nil {
-			return 0, errors.Wrap(err, "GetUnfrozenInsightCount")
+			return 0, errors.Wrbp(err, "GetUnfrozenInsightCount")
 		}
-		if globalUnfrozenInsightCount >= 2 {
-			return 0, errors.New("Cannot create more than 2 global insights in Limited Access Mode.")
+		if globblUnfrozenInsightCount >= 2 {
+			return 0, errors.New("Cbnnot crebte more thbn 2 globbl insights in Limited Access Mode.")
 		}
-		if len(dashboardIds) > 0 {
-			dashboards, err := dashboardTx.GetDashboards(ctx, store.DashboardQueryArgs{IDs: dashboardIds, WithoutAuthorization: true})
+		if len(dbshbobrdIds) > 0 {
+			dbshbobrds, err := dbshbobrdTx.GetDbshbobrds(ctx, store.DbshbobrdQueryArgs{IDs: dbshbobrdIds, WithoutAuthorizbtion: true})
 			if err != nil {
-				return 0, errors.Wrap(err, "GetDashboards")
+				return 0, errors.Wrbp(err, "GetDbshbobrds")
 			}
-			for _, dashboard := range dashboards {
-				if !dashboard.GlobalGrant {
-					return 0, errors.New("Cannot create an insight on a non-global dashboard in Limited Access Mode.")
+			for _, dbshbobrd := rbnge dbshbobrds {
+				if !dbshbobrd.GlobblGrbnt {
+					return 0, errors.New("Cbnnot crebte bn insight on b non-globbl dbshbobrd in Limited Access Mode.")
 				}
 			}
 		}
 
-		lamDashboardId, err := dashboardTx.EnsureLimitedAccessModeDashboard(ctx)
+		lbmDbshbobrdId, err := dbshbobrdTx.EnsureLimitedAccessModeDbshbobrd(ctx)
 		if err != nil {
-			return 0, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+			return 0, errors.Wrbp(err, "EnsureLimitedAccessModeDbshbobrd")
 		}
-		return lamDashboardId, nil
+		return lbmDbshbobrdId, nil
 	}
 
 	return 0, nil
 }
 
-func filtersFromInput(input *graphqlbackend.InsightViewFiltersInput) types.InsightViewFilters {
+func filtersFromInput(input *grbphqlbbckend.InsightViewFiltersInput) types.InsightViewFilters {
 	filters := types.InsightViewFilters{}
 	if input != nil {
 		filters.IncludeRepoRegex = input.IncludeRepoRegex
 		filters.ExcludeRepoRegex = input.ExcludeRepoRegex
-		if input.SearchContexts != nil {
-			filters.SearchContexts = *input.SearchContexts
+		if input.SebrchContexts != nil {
+			filters.SebrchContexts = *input.SebrchContexts
 		}
 	}
 	return filters
 }
 
-func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayOptions, resolvers []graphqlbackend.InsightSeriesResolver) ([]graphqlbackend.InsightSeriesResolver, error) {
+func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplbyOptions, resolvers []grbphqlbbckend.InsightSeriesResolver) ([]grbphqlbbckend.InsightSeriesResolver, error) {
 	sortMode := types.ResultCount
 	sortDirection := types.Desc
-	var limit int32 = 20
+	vbr limit int32 = 20
 
 	if seriesOptions.SortOptions != nil {
 		sortMode = seriesOptions.SortOptions.Mode
@@ -1512,10 +1512,10 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		limit = *seriesOptions.Limit
 	}
 
-	// All the points are already loaded from their source at this point db or by executing queries
-	// Make a map for faster lookup and to deal with possible errors once
-	resolverPoints := make(map[string][]graphqlbackend.InsightsDataPointResolver, len(resolvers))
-	for _, resolver := range resolvers {
+	// All the points bre blrebdy lobded from their source bt this point db or by executing queries
+	// Mbke b mbp for fbster lookup bnd to debl with possible errors once
+	resolverPoints := mbke(mbp[string][]grbphqlbbckend.InsightsDbtbPointResolver, len(resolvers))
+	for _, resolver := rbnge resolvers {
 		points, err := resolver.Points(ctx, nil)
 		if err != nil {
 			return nil, err
@@ -1523,73 +1523,73 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 		resolverPoints[resolver.SeriesId()] = points
 	}
 
-	getMostRecentValue := func(points []graphqlbackend.InsightsDataPointResolver) float64 {
+	getMostRecentVblue := func(points []grbphqlbbckend.InsightsDbtbPointResolver) flobt64 {
 		if len(points) == 0 {
 			return 0
 		}
-		return points[len(points)-1].Value()
+		return points[len(points)-1].Vblue()
 	}
 
-	ascLexSort := func(s1 string, s2 string) (hasSemVar bool, result bool) {
+	bscLexSort := func(s1 string, s2 string) (hbsSemVbr bool, result bool) {
 		version1, err1 := semver.NewVersion(s1)
 		version2, err2 := semver.NewVersion(s2)
 		if err1 == nil && err2 == nil {
-			return true, version1.Compare(version2) < 0
+			return true, version1.Compbre(version2) < 0
 		}
 		if err1 != nil && err2 == nil {
-			return true, false
+			return true, fblse
 		}
 		if err1 == nil && err2 != nil {
 			return true, true
 		}
-		return false, false
+		return fblse, fblse
 	}
 
-	// First sort lexicographically (ascending) to make sure the ordering is consistent even if some result counts are equal.
-	sort.SliceStable(resolvers, func(i, j int) bool {
-		hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-		if hasSemVar {
+	// First sort lexicogrbphicblly (bscending) to mbke sure the ordering is consistent even if some result counts bre equbl.
+	sort.SliceStbble(resolvers, func(i, j int) bool {
+		hbsSemVbr, result := bscLexSort(resolvers[i].Lbbel(), resolvers[j].Lbbel())
+		if hbsSemVbr {
 			return result
 		}
-		return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) < 0
+		return strings.Compbre(resolvers[i].Lbbel(), resolvers[j].Lbbel()) < 0
 	})
 
 	switch sortMode {
-	case types.ResultCount:
+	cbse types.ResultCount:
 
 		if sortDirection == types.Asc {
-			sort.SliceStable(resolvers, func(i, j int) bool {
-				return getMostRecentValue(resolverPoints[resolvers[i].SeriesId()]) < getMostRecentValue(resolverPoints[resolvers[j].SeriesId()])
+			sort.SliceStbble(resolvers, func(i, j int) bool {
+				return getMostRecentVblue(resolverPoints[resolvers[i].SeriesId()]) < getMostRecentVblue(resolverPoints[resolvers[j].SeriesId()])
 			})
 		} else {
-			sort.SliceStable(resolvers, func(i, j int) bool {
-				return getMostRecentValue(resolverPoints[resolvers[i].SeriesId()]) > getMostRecentValue(resolverPoints[resolvers[j].SeriesId()])
+			sort.SliceStbble(resolvers, func(i, j int) bool {
+				return getMostRecentVblue(resolverPoints[resolvers[i].SeriesId()]) > getMostRecentVblue(resolverPoints[resolvers[j].SeriesId()])
 			})
 		}
-	case types.Lexicographical:
+	cbse types.Lexicogrbphicbl:
 		if sortDirection == types.Asc {
-			// Already pre-sorted by default
+			// Alrebdy pre-sorted by defbult
 		} else {
-			sort.SliceStable(resolvers, func(i, j int) bool {
-				hasSemVar, result := ascLexSort(resolvers[i].Label(), resolvers[j].Label())
-				if hasSemVar {
+			sort.SliceStbble(resolvers, func(i, j int) bool {
+				hbsSemVbr, result := bscLexSort(resolvers[i].Lbbel(), resolvers[j].Lbbel())
+				if hbsSemVbr {
 					return !result
 				}
-				return strings.Compare(resolvers[i].Label(), resolvers[j].Label()) > 0
+				return strings.Compbre(resolvers[i].Lbbel(), resolvers[j].Lbbel()) > 0
 			})
 		}
-	case types.DateAdded:
+	cbse types.DbteAdded:
 		if sortDirection == types.Asc {
-			sort.SliceStable(resolvers, func(i, j int) bool {
+			sort.SliceStbble(resolvers, func(i, j int) bool {
 				iPoints := resolverPoints[resolvers[i].SeriesId()]
 				jPoints := resolverPoints[resolvers[j].SeriesId()]
-				return iPoints[0].DateTime().Time.Before(jPoints[0].DateTime().Time)
+				return iPoints[0].DbteTime().Time.Before(jPoints[0].DbteTime().Time)
 			})
 		} else {
-			sort.SliceStable(resolvers, func(i, j int) bool {
+			sort.SliceStbble(resolvers, func(i, j int) bool {
 				iPoints := resolverPoints[resolvers[i].SeriesId()]
 				jPoints := resolverPoints[resolvers[j].SeriesId()]
-				return iPoints[0].DateTime().Time.After(jPoints[0].DateTime().Time)
+				return iPoints[0].DbteTime().Time.After(jPoints[0].DbteTime().Time)
 			})
 		}
 	}
@@ -1597,14 +1597,14 @@ func sortSeriesResolvers(ctx context.Context, seriesOptions types.SeriesDisplayO
 	return resolvers[:minInt(int32(len(resolvers)), limit)], nil
 }
 
-func minInt(a, b int32) int32 {
-	if a < b {
-		return a
+func minInt(b, b int32) int32 {
+	if b < b {
+		return b
 	}
 	return b
 }
 
-func lowercaseGroupBy(groupBy *string) *string {
+func lowercbseGroupBy(groupBy *string) *string {
 	if groupBy != nil {
 		temp := strings.ToLower(*groupBy)
 		return &temp
@@ -1612,29 +1612,29 @@ func lowercaseGroupBy(groupBy *string) *string {
 	return groupBy
 }
 
-func isValidSeriesInput(seriesInput graphqlbackend.LineChartSearchInsightDataSeriesInput) error {
+func isVblidSeriesInput(seriesInput grbphqlbbckend.LineChbrtSebrchInsightDbtbSeriesInput) error {
 	if seriesInput.RepositoryScope == nil {
-		return errors.New("a repository scope is required")
+		return errors.New("b repository scope is required")
 	}
 	if seriesInput.TimeScope == nil {
-		return errors.New("a time scope is required")
+		return errors.New("b time scope is required")
 	}
-	repoCriteriaSpecified := seriesInput.RepositoryScope.RepositoryCriteria != nil
+	repoCriteribSpecified := seriesInput.RepositoryScope.RepositoryCriterib != nil
 	repoListSpecified := len(seriesInput.RepositoryScope.Repositories) > 0
-	if repoListSpecified && repoCriteriaSpecified {
-		return errors.New("series can not specify both a repository list and repository critieria")
+	if repoListSpecified && repoCriteribSpecified {
+		return errors.New("series cbn not specify both b repository list bnd repository critierib")
 	}
 	if !repoListSpecified && seriesInput.GroupBy != nil {
-		return errors.New("group by series require a list of repositories to be specified.")
+		return errors.New("group by series require b list of repositories to be specified.")
 	}
 
-	if repoCriteriaSpecified {
-		plan, err := querybuilder.ParseQuery(*seriesInput.RepositoryScope.RepositoryCriteria, "literal")
+	if repoCriteribSpecified {
+		plbn, err := querybuilder.PbrseQuery(*seriesInput.RepositoryScope.RepositoryCriterib, "literbl")
 		if err != nil {
-			return errors.Wrap(err, "ParseQuery")
+			return errors.Wrbp(err, "PbrseQuery")
 		}
-		msg, valid := querybuilder.IsValidScopeQuery(plan)
-		if !valid {
+		msg, vblid := querybuilder.IsVblidScopeQuery(plbn)
+		if !vblid {
 			return errors.New(msg)
 		}
 	}

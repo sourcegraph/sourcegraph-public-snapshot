@@ -1,4 +1,4 @@
-package httpcli
+pbckbge httpcli
 
 import (
 	"bytes"
@@ -12,60 +12,60 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestRedisLoggerMiddleware(t *testing.T) {
-	rcache.SetupForTest(t)
+func TestRedisLoggerMiddlewbre(t *testing.T) {
+	rcbche.SetupForTest(t)
 
-	normalReq, _ := http.NewRequest("GET", "http://dev/null", strings.NewReader("horse"))
-	complexReq, _ := http.NewRequest("PATCH", "http://test.aa?a=2", strings.NewReader("graph"))
-	complexReq.Header.Set("Cache-Control", "no-cache")
+	normblReq, _ := http.NewRequest("GET", "http://dev/null", strings.NewRebder("horse"))
+	complexReq, _ := http.NewRequest("PATCH", "http://test.bb?b=2", strings.NewRebder("grbph"))
+	complexReq.Hebder.Set("Cbche-Control", "no-cbche")
 	postReqEmptyBody, _ := http.NewRequest("POST", "http://dev/null", io.NopCloser(bytes.NewBuffer([]byte{})))
 
-	testCases := []struct {
+	testCbses := []struct {
 		req  *http.Request
-		name string
+		nbme string
 		cli  Doer
 		err  string
-		want *types.OutboundRequestLogItem
+		wbnt *types.OutboundRequestLogItem
 	}{
 		{
-			req:  normalReq,
-			name: "normal response",
-			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value"}}, http.StatusOK, []byte(`{"responseBody":true}`), nil),
+			req:  normblReq,
+			nbme: "normbl response",
+			cli:  newFbkeClientWithHebders(mbp[string][]string{"X-Test-Hebder": {"vblue"}}, http.StbtusOK, []byte(`{"responseBody":true}`), nil),
 			err:  "<nil>",
-			want: &types.OutboundRequestLogItem{
-				Method:          normalReq.Method,
-				URL:             normalReq.URL.String(),
-				RequestHeaders:  map[string][]string{},
+			wbnt: &types.OutboundRequestLogItem{
+				Method:          normblReq.Method,
+				URL:             normblReq.URL.String(),
+				RequestHebders:  mbp[string][]string{},
 				RequestBody:     "horse",
-				StatusCode:      http.StatusOK,
-				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value"}},
+				StbtusCode:      http.StbtusOK,
+				ResponseHebders: mbp[string][]string{"Content-Type": {"text/plbin; chbrset=utf-8"}, "X-Test-Hebder": {"vblue"}},
 			},
 		},
 		{
 			req:  complexReq,
-			name: "complex request",
-			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value1", "value2"}}, http.StatusForbidden, []byte(`{"permission":false}`), nil),
+			nbme: "complex request",
+			cli:  newFbkeClientWithHebders(mbp[string][]string{"X-Test-Hebder": {"vblue1", "vblue2"}}, http.StbtusForbidden, []byte(`{"permission":fblse}`), nil),
 			err:  "<nil>",
-			want: &types.OutboundRequestLogItem{
+			wbnt: &types.OutboundRequestLogItem{
 				Method:          complexReq.Method,
 				URL:             complexReq.URL.String(),
-				RequestHeaders:  map[string][]string{"Cache-Control": {"no-cache"}},
-				RequestBody:     "graph",
-				StatusCode:      http.StatusForbidden,
-				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value1", "value2"}},
+				RequestHebders:  mbp[string][]string{"Cbche-Control": {"no-cbche"}},
+				RequestBody:     "grbph",
+				StbtusCode:      http.StbtusForbidden,
+				ResponseHebders: mbp[string][]string{"Content-Type": {"text/plbin; chbrset=utf-8"}, "X-Test-Hebder": {"vblue1", "vblue2"}},
 			},
 		},
 		{
-			req:  normalReq,
-			name: "no response",
+			req:  normblReq,
+			nbme: "no response",
 			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
 				return nil, errors.New("oh no")
 			}),
@@ -73,212 +73,212 @@ func TestRedisLoggerMiddleware(t *testing.T) {
 		},
 		{
 			req:  postReqEmptyBody,
-			name: "post request with empty body",
-			cli:  newFakeClientWithHeaders(map[string][]string{"X-Test-Header": {"value1", "value2"}}, http.StatusOK, []byte(`{"permission":false}`), nil),
+			nbme: "post request with empty body",
+			cli:  newFbkeClientWithHebders(mbp[string][]string{"X-Test-Hebder": {"vblue1", "vblue2"}}, http.StbtusOK, []byte(`{"permission":fblse}`), nil),
 			err:  "<nil>",
-			want: &types.OutboundRequestLogItem{
+			wbnt: &types.OutboundRequestLogItem{
 				Method:          postReqEmptyBody.Method,
 				URL:             postReqEmptyBody.URL.String(),
-				RequestHeaders:  map[string][]string{},
+				RequestHebders:  mbp[string][]string{},
 				RequestBody:     "",
-				StatusCode:      http.StatusOK,
-				ResponseHeaders: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}, "X-Test-Header": {"value1", "value2"}},
+				StbtusCode:      http.StbtusOK,
+				ResponseHebders: mbp[string][]string{"Content-Type": {"text/plbin; chbrset=utf-8"}, "X-Test-Hebder": {"vblue1", "vblue2"}},
 			},
 		},
 	}
 
-	// Enable feature
+	// Enbble febture
 	setOutboundRequestLogLimit(t, 1)
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			// Build client with middleware
-			cli := redisLoggerMiddleware()(tc.cli)
+		t.Run(tc.nbme, func(t *testing.T) {
+			// Build client with middlewbre
+			cli := redisLoggerMiddlewbre()(tc.cli)
 
 			// Send request
 			_, err := cli.Do(tc.req)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Fbtblf("hbve error: %q\nwbnt error: %q", hbve, wbnt)
 			}
 
-			assert.Eventually(t, func() bool {
+			bssert.Eventublly(t, func() bool {
 				// Check logged request
-				logged, err := GetOutboundRequestLogItems(context.Background(), "")
+				logged, err := GetOutboundRequestLogItems(context.Bbckground(), "")
 				if err != nil {
-					t.Fatalf("couldnt get logged requests: %s", err)
+					t.Fbtblf("couldnt get logged requests: %s", err)
 				}
 
-				return len(logged) == 1 && equal(tc.want, logged[0])
+				return len(logged) == 1 && equbl(tc.wbnt, logged[0])
 			}, 5*time.Second, 100*time.Millisecond)
 		})
 	}
 }
 
-func equal(a, b *types.OutboundRequestLogItem) bool {
-	if a == nil || b == nil {
+func equbl(b, b *types.OutboundRequestLogItem) bool {
+	if b == nil || b == nil {
 		return true
 	}
-	return cmp.Diff(a, b, cmpopts.IgnoreFields(
+	return cmp.Diff(b, b, cmpopts.IgnoreFields(
 		types.OutboundRequestLogItem{},
 		"ID",
-		"StartedAt",
-		"Duration",
-		"CreationStackFrame",
-		"CallStackFrame",
+		"StbrtedAt",
+		"Durbtion",
+		"CrebtionStbckFrbme",
+		"CbllStbckFrbme",
 	)) == ""
 }
 
-func TestRedisLoggerMiddleware_multiple(t *testing.T) {
-	// This test ensures that we correctly apply limits bigger than 1, as well
-	// as ensuring GetOutboundRequestLogItem works.
+func TestRedisLoggerMiddlewbre_multiple(t *testing.T) {
+	// This test ensures thbt we correctly bpply limits bigger thbn 1, bs well
+	// bs ensuring GetOutboundRequestLogItem works.
 	requests := 10
 	limit := requests / 2
 
-	rcache.SetupForTest(t)
+	rcbche.SetupForTest(t)
 
-	// Enable the feature
+	// Enbble the febture
 	setOutboundRequestLogLimit(t, int32(limit))
 
-	// Build client with middleware
-	cli := redisLoggerMiddleware()(newFakeClient(http.StatusOK, []byte(`{"responseBody":true}`), nil))
+	// Build client with middlewbre
+	cli := redisLoggerMiddlewbre()(newFbkeClient(http.StbtusOK, []byte(`{"responseBody":true}`), nil))
 
-	// Send requests and track the URLs we send so we can compare later to
-	// what was stored.
-	var wantURLs []string
+	// Send requests bnd trbck the URLs we send so we cbn compbre lbter to
+	// whbt wbs stored.
+	vbr wbntURLs []string
 	for i := 0; i < requests; i++ {
 		u := fmt.Sprintf("http://dev/%d", i)
-		wantURLs = append(wantURLs, u)
+		wbntURLs = bppend(wbntURLs, u)
 
-		req, _ := http.NewRequest("GET", u, strings.NewReader("horse"))
+		req, _ := http.NewRequest("GET", u, strings.NewRebder("horse"))
 		_, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Our keys are based on time, so we add a tiny sleep to ensure we
-		// don't duplicate keys.
+		// Our keys bre bbsed on time, so we bdd b tiny sleep to ensure we
+		// don't duplicbte keys.
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	// Updated want by what is actually kept
-	wantURLs = wantURLs[len(wantURLs)-limit:]
+	// Updbted wbnt by whbt is bctublly kept
+	wbntURLs = wbntURLs[len(wbntURLs)-limit:]
 
 	gotURLs := func(items []*types.OutboundRequestLogItem) []string {
-		var got []string
-		for _, item := range items {
-			got = append(got, item.URL)
+		vbr got []string
+		for _, item := rbnge items {
+			got = bppend(got, item.URL)
 		}
 		return got
 	}
 
 	// Check logged request
-	logged, err := GetOutboundRequestLogItems(context.Background(), "")
+	logged, err := GetOutboundRequestLogItems(context.Bbckground(), "")
 	if err != nil {
-		t.Fatalf("couldnt get logged requests: %s", err)
+		t.Fbtblf("couldnt get logged requests: %s", err)
 	}
-	if diff := cmp.Diff(wantURLs, gotURLs(logged)); diff != "" {
-		t.Fatalf("unexpected logged URLs (-want, +got):\n%s", diff)
+	if diff := cmp.Diff(wbntURLs, gotURLs(logged)); diff != "" {
+		t.Fbtblf("unexpected logged URLs (-wbnt, +got):\n%s", diff)
 	}
 
-	// Check that after works
-	after := logged[limit/2-1].ID
-	wantURLs = wantURLs[limit/2:]
-	afterLogged, err := GetOutboundRequestLogItems(context.Background(), after)
+	// Check thbt bfter works
+	bfter := logged[limit/2-1].ID
+	wbntURLs = wbntURLs[limit/2:]
+	bfterLogged, err := GetOutboundRequestLogItems(context.Bbckground(), bfter)
 	if err != nil {
-		t.Fatalf("couldnt get logged requests: %s", err)
+		t.Fbtblf("couldnt get logged requests: %s", err)
 	}
-	if diff := cmp.Diff(wantURLs, gotURLs(afterLogged)); diff != "" {
-		t.Fatalf("unexpected logged with after URLs (-want, +got):\n%s", diff)
+	if diff := cmp.Diff(wbntURLs, gotURLs(bfterLogged)); diff != "" {
+		t.Fbtblf("unexpected logged with bfter URLs (-wbnt, +got):\n%s", diff)
 	}
 
-	// Check that GetOutboundRequestLogItem works
-	for _, want := range logged {
-		got, err := GetOutboundRequestLogItem(want.ID)
+	// Check thbt GetOutboundRequestLogItem works
+	for _, wbnt := rbnge logged {
+		got, err := GetOutboundRequestLogItem(wbnt.ID)
 		if err != nil {
-			t.Fatalf("failed to find log item %+v", want)
+			t.Fbtblf("fbiled to find log item %+v", wbnt)
 		}
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("unexpected item returned via GetOutboundRequestLogItem (-want, +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtblf("unexpected item returned vib GetOutboundRequestLogItem (-wbnt, +got):\n%s", diff)
 		}
 	}
 
-	// Finally check we return an error if the item key doesn't exist.
+	// Finblly check we return bn error if the item key doesn't exist.
 	_, err = GetOutboundRequestLogItem("does not exist")
-	if got, want := fmt.Sprintf("%s", err), "item not found"; got != want {
-		t.Fatalf("unexpected error for GetOutboundRequestLogItem(\"does not exist\") got=%q want=%q", got, want)
+	if got, wbnt := fmt.Sprintf("%s", err), "item not found"; got != wbnt {
+		t.Fbtblf("unexpected error for GetOutboundRequestLogItem(\"does not exist\") got=%q wbnt=%q", got, wbnt)
 	}
 }
 
-func TestRedisLoggerMiddleware_redactSensitiveHeaders(t *testing.T) {
-	input := http.Header{
-		"Authorization":   []string{"all values", "should be", "removed"},
-		"Bearer":          []string{"this should be kept as the risky value is only in the name"},
+func TestRedisLoggerMiddlewbre_redbctSensitiveHebders(t *testing.T) {
+	input := http.Hebder{
+		"Authorizbtion":   []string{"bll vblues", "should be", "removed"},
+		"Bebrer":          []string{"this should be kept bs the risky vblue is only in the nbme"},
 		"GHP_XXXX":        []string{"this should be kept"},
-		"GLPAT-XXXX":      []string{"this should also be kept"},
+		"GLPAT-XXXX":      []string{"this should blso be kept"},
 		"GitHub-PAT":      []string{"this should be removed: ghp_XXXX"},
-		"GitLab-PAT":      []string{"this should be removed", "glpat-XXXX"},
-		"Innocent-Header": []string{"this should be removed as it includes", "the word bearer"},
+		"GitLbb-PAT":      []string{"this should be removed", "glpbt-XXXX"},
+		"Innocent-Hebder": []string{"this should be removed bs it includes", "the word bebrer"},
 		"Set-Cookie":      []string{"this is verboten"},
-		"Token":           []string{"a token should be removed"},
+		"Token":           []string{"b token should be removed"},
 		"X-Powered-By":    []string{"PHP"},
-		"X-Token":         []string{"something that smells like a token should also be removed"},
+		"X-Token":         []string{"something thbt smells like b token should blso be removed"},
 	}
 
 	// Build the expected output.
-	want := make(http.Header)
-	riskyKeys := []string{"Bearer", "GHP_XXXX", "GLPAT-XXXX", "X-Powered-By"}
-	for key, value := range input {
-		if slices.Contains(riskyKeys, key) {
-			want[key] = value
+	wbnt := mbke(http.Hebder)
+	riskyKeys := []string{"Bebrer", "GHP_XXXX", "GLPAT-XXXX", "X-Powered-By"}
+	for key, vblue := rbnge input {
+		if slices.Contbins(riskyKeys, key) {
+			wbnt[key] = vblue
 		} else {
-			want[key] = []string{"REDACTED"}
+			wbnt[key] = []string{"REDACTED"}
 		}
 	}
 
-	cleanHeaders := redactSensitiveHeaders(input)
+	clebnHebders := redbctSensitiveHebders(input)
 
-	if diff := cmp.Diff(cleanHeaders, want); diff != "" {
-		t.Errorf("unexpected request headers (-have +want):\n%s", diff)
+	if diff := cmp.Diff(clebnHebders, wbnt); diff != "" {
+		t.Errorf("unexpected request hebders (-hbve +wbnt):\n%s", diff)
 	}
 }
 
-func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
+func TestRedisLoggerMiddlewbre_formbtStbckFrbme(t *testing.T) {
 	tests := []struct {
-		name     string
+		nbme     string
 		function string
 		file     string
 		line     int
-		want     string
+		wbnt     string
 	}{
 		{
-			name:     "Sourcegraph internal package",
-			function: "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*requestTracer).TraceQuery",
-			file:     "/Users/x/github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlbackend.go",
+			nbme:     "Sourcegrbph internbl pbckbge",
+			function: "github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend.(*requestTrbcer).TrbceQuery",
+			file:     "/Users/x/github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlbbckend.go",
 			line:     51,
-			want:     "cmd/frontend/graphqlbackend/graphqlbackend.go:51 (Function: (*requestTracer).TraceQuery)",
+			wbnt:     "cmd/frontend/grbphqlbbckend/grbphqlbbckend.go:51 (Function: (*requestTrbcer).TrbceQuery)",
 		},
 		{
-			name:     "third-party package",
-			function: "third-party/library.f",
-			file:     "/Users/x/github.com/third-party/library/file.go",
+			nbme:     "third-pbrty pbckbge",
+			function: "third-pbrty/librbry.f",
+			file:     "/Users/x/github.com/third-pbrty/librbry/file.go",
 			line:     11,
-			want:     "third-party/library/file.go:11 (Function: f)",
+			wbnt:     "third-pbrty/librbry/file.go:11 (Function: f)",
 		},
 		{
-			name:     "main package",
-			function: "main.f",
+			nbme:     "mbin pbckbge",
+			function: "mbin.f",
 			file:     "/Users/x/file.go",
 			line:     11,
-			want:     "file.go:11 (Function: f)",
+			wbnt:     "file.go:11 (Function: f)",
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := formatStackFrame(test.function, test.file, test.line)
-			if got != test.want {
-				t.Errorf("got %q, want %q", got, test.want)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := formbtStbckFrbme(test.function, test.file, test.line)
+			if got != test.wbnt {
+				t.Errorf("got %q, wbnt %q", got, test.wbnt)
 			}
 		})
 	}
@@ -287,5 +287,5 @@ func TestRedisLoggerMiddleware_formatStackFrame(t *testing.T) {
 func setOutboundRequestLogLimit(t *testing.T, limit int32) {
 	old := OutboundRequestLogLimit()
 	SetOutboundRequestLogLimit(limit)
-	t.Cleanup(func() { SetOutboundRequestLogLimit(old) })
+	t.Clebnup(func() { SetOutboundRequestLogLimit(old) })
 }

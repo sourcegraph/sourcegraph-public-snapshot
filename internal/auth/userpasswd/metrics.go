@@ -1,17 +1,17 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 )
 
-var (
-	metricsAccountFailedSignInAttempts = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_frontend_account_failed_sign_in_attempts_total",
-		Help: "Total number of failed sign-in attempts",
+vbr (
+	metricsAccountFbiledSignInAttempts = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_frontend_bccount_fbiled_sign_in_bttempts_totbl",
+		Help: "Totbl number of fbiled sign-in bttempts",
 	})
-	metricsAccountLockouts = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_frontend_account_lockouts_total",
-		Help: "Total number of account lockout",
+	metricsAccountLockouts = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_frontend_bccount_lockouts_totbl",
+		Help: "Totbl number of bccount lockout",
 	})
 )

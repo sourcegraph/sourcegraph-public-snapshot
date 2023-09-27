@@ -1,31 +1,31 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-var (
-	metricLabels    = []string{"mutation", "route", "success"}
-	requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_graphql_request_duration_seconds",
-		Help:    "GraphQL request latencies in seconds.",
-		Buckets: trace.UserLatencyBuckets,
-	}, metricLabels)
+vbr (
+	metricLbbels    = []string{"mutbtion", "route", "success"}
+	requestDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_grbphql_request_durbtion_seconds",
+		Help:    "GrbphQL request lbtencies in seconds.",
+		Buckets: trbce.UserLbtencyBuckets,
+	}, metricLbbels)
 )
 
-func instrumentGraphQL(data traceData) {
-	duration := time.Since(data.execStart)
-	labels := prometheus.Labels{
-		"route":    data.requestName,
-		"success":  strconv.FormatBool(len(data.queryErrors) == 0),
-		"mutation": strconv.FormatBool(strings.Contains(data.queryParams.Query, "mutation")),
+func instrumentGrbphQL(dbtb trbceDbtb) {
+	durbtion := time.Since(dbtb.execStbrt)
+	lbbels := prometheus.Lbbels{
+		"route":    dbtb.requestNbme,
+		"success":  strconv.FormbtBool(len(dbtb.queryErrors) == 0),
+		"mutbtion": strconv.FormbtBool(strings.Contbins(dbtb.queryPbrbms.Query, "mutbtion")),
 	}
-	requestDuration.With(labels).Observe(duration.Seconds())
+	requestDurbtion.With(lbbels).Observe(durbtion.Seconds())
 }

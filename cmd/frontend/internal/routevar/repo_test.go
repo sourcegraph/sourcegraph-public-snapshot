@@ -1,4 +1,4 @@
-package routevar
+pbckbge routevbr
 
 import (
 	"net/http"
@@ -6,122 +6,122 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/grafana/regexp"
+	"github.com/gorillb/mux"
+	"github.com/grbfbnb/regexp"
 )
 
-func TestRepoPattern(t *testing.T) {
-	pat := regexp.MustCompile("^" + RepoPattern + "$")
+func TestRepoPbttern(t *testing.T) {
+	pbt := regexp.MustCompile("^" + RepoPbttern + "$")
 
 	tests := []struct {
 		input     string
-		wantMatch bool
+		wbntMbtch bool
 	}{
 		{"foo", true},
-		{"foo/bar", true},
-		{"foo.com/bar", true},
-		{"foo.com/-bar", true},
-		{"foo.com/-bar-", true},
-		{"foo.com/bar-", true},
-		{"foo.com/.bar", true},
-		{"foo.com/bar.baz", true},
-		{"fo_o.com/bar", true},
+		{"foo/bbr", true},
+		{"foo.com/bbr", true},
+		{"foo.com/-bbr", true},
+		{"foo.com/-bbr-", true},
+		{"foo.com/bbr-", true},
+		{"foo.com/.bbr", true},
+		{"foo.com/bbr.bbz", true},
+		{"fo_o.com/bbr", true},
 		{".foo", true},
 		{"./foo", true},
 
-		{"", false},
-		{"/foo", false},
-		{"foo/", false},
-		{"/foo/", false},
-		{"foo.com/-", false},
-		{"foo.com/-/bar", false},
-		{"-/bar", false},
-		{"/-/bar", false},
-		{"bar@a", false},
-		{"bar@a/b", false},
+		{"", fblse},
+		{"/foo", fblse},
+		{"foo/", fblse},
+		{"/foo/", fblse},
+		{"foo.com/-", fblse},
+		{"foo.com/-/bbr", fblse},
+		{"-/bbr", fblse},
+		{"/-/bbr", fblse},
+		{"bbr@b", fblse},
+		{"bbr@b/b", fblse},
 	}
-	for _, test := range tests {
-		match := pat.MatchString(test.input)
-		if match != test.wantMatch {
-			t.Errorf("%q: got match == %v, want %v", test.input, match, test.wantMatch)
+	for _, test := rbnge tests {
+		mbtch := pbt.MbtchString(test.input)
+		if mbtch != test.wbntMbtch {
+			t.Errorf("%q: got mbtch == %v, wbnt %v", test.input, mbtch, test.wbntMbtch)
 		}
 
-		repo, err := ParseRepo(test.input)
-		if gotErr, wantErr := err != nil, !test.wantMatch; gotErr != wantErr {
-			t.Errorf("%q: got err == %v, want error? == %v", test.input, err, wantErr)
+		repo, err := PbrseRepo(test.input)
+		if gotErr, wbntErr := err != nil, !test.wbntMbtch; gotErr != wbntErr {
+			t.Errorf("%q: got err == %v, wbnt error? == %v", test.input, err, wbntErr)
 		}
 		if err == nil {
 			if string(repo) != test.input {
-				t.Errorf("%q: got repo == %q, want %q", test.input, repo, test.input)
+				t.Errorf("%q: got repo == %q, wbnt %q", test.input, repo, test.input)
 			}
 		}
 	}
 }
 
-func TestRevPattern(t *testing.T) {
-	pat := regexp.MustCompile("^" + RevPattern + "$")
+func TestRevPbttern(t *testing.T) {
+	pbt := regexp.MustCompile("^" + RevPbttern + "$")
 
 	tests := []struct {
 		input     string
-		wantMatch bool
+		wbntMbtch bool
 	}{
 		{"v", true},
 		{"v/v", true},
-		{"my/branch/name", true},
-		{"bar~10", true},
-		{"bar^10", true},
+		{"my/brbnch/nbme", true},
+		{"bbr~10", true},
+		{"bbr^10", true},
 
-		{"-", false},
-		{"v/-", false},
-		{"v/-/v", false},
-		{"-/v", false},
+		{"-", fblse},
+		{"v/-", fblse},
+		{"v/-/v", fblse},
+		{"-/v", fblse},
 	}
-	for _, test := range tests {
-		match := pat.MatchString(test.input)
-		if match != test.wantMatch {
-			t.Errorf("%q: got match == %v, want %v", test.input, match, test.wantMatch)
+	for _, test := rbnge tests {
+		mbtch := pbt.MbtchString(test.input)
+		if mbtch != test.wbntMbtch {
+			t.Errorf("%q: got mbtch == %v, wbnt %v", test.input, mbtch, test.wbntMbtch)
 		}
 	}
 }
 
 func TestRepo(t *testing.T) {
 	r := mux.NewRouter()
-	r.Path("/" + Repo)
+	r.Pbth("/" + Repo)
 
 	tests := []struct {
-		path        string
-		wantNoMatch bool
-		wantVars    map[string]string
+		pbth        string
+		wbntNoMbtch bool
+		wbntVbrs    mbp[string]string
 	}{
-		{path: "/foo", wantVars: map[string]string{"Repo": "foo"}},
-		{path: "/foo.com/bar", wantVars: map[string]string{"Repo": "foo.com/bar"}},
+		{pbth: "/foo", wbntVbrs: mbp[string]string{"Repo": "foo"}},
+		{pbth: "/foo.com/bbr", wbntVbrs: mbp[string]string{"Repo": "foo.com/bbr"}},
 
-		{path: "/foo.com/bar/-/abc/def", wantNoMatch: true},
-		{path: "/foo.com/bar@a", wantNoMatch: true},
-		{path: "/foo.com/bar@a/b", wantNoMatch: true},
-		{path: "/foo.com/bar/@a", wantNoMatch: true},
-		{path: "/-/foo.com/bar", wantNoMatch: true},
-		{path: "/", wantNoMatch: true},
-		{path: "/-/", wantNoMatch: true},
+		{pbth: "/foo.com/bbr/-/bbc/def", wbntNoMbtch: true},
+		{pbth: "/foo.com/bbr@b", wbntNoMbtch: true},
+		{pbth: "/foo.com/bbr@b/b", wbntNoMbtch: true},
+		{pbth: "/foo.com/bbr/@b", wbntNoMbtch: true},
+		{pbth: "/-/foo.com/bbr", wbntNoMbtch: true},
+		{pbth: "/", wbntNoMbtch: true},
+		{pbth: "/-/", wbntNoMbtch: true},
 	}
-	for _, test := range tests {
-		var m mux.RouteMatch
-		ok := r.Match(&http.Request{Method: "GET", URL: &url.URL{Path: test.path}}, &m)
-		if ok == test.wantNoMatch {
-			t.Errorf("%q: got match == %v, want %v", test.path, ok, !test.wantNoMatch)
+	for _, test := rbnge tests {
+		vbr m mux.RouteMbtch
+		ok := r.Mbtch(&http.Request{Method: "GET", URL: &url.URL{Pbth: test.pbth}}, &m)
+		if ok == test.wbntNoMbtch {
+			t.Errorf("%q: got mbtch == %v, wbnt %v", test.pbth, ok, !test.wbntNoMbtch)
 		}
 		if ok {
-			if !reflect.DeepEqual(m.Vars, test.wantVars) {
-				t.Errorf("%q: got vars == %v, want %v", test.path, m.Vars, test.wantVars)
+			if !reflect.DeepEqubl(m.Vbrs, test.wbntVbrs) {
+				t.Errorf("%q: got vbrs == %v, wbnt %v", test.pbth, m.Vbrs, test.wbntVbrs)
 			}
 
-			urlPath, err := m.Route.URLPath(pairs(m.Vars)...)
+			urlPbth, err := m.Route.URLPbth(pbirs(m.Vbrs)...)
 			if err != nil {
-				t.Errorf("%q: URLPath: %s", test.path, err)
+				t.Errorf("%q: URLPbth: %s", test.pbth, err)
 				continue
 			}
-			if urlPath.Path != test.path {
-				t.Errorf("%q: got path == %q, want %q", test.path, urlPath.Path, test.path)
+			if urlPbth.Pbth != test.pbth {
+				t.Errorf("%q: got pbth == %q, wbnt %q", test.pbth, urlPbth.Pbth, test.pbth)
 			}
 		}
 	}
@@ -129,37 +129,37 @@ func TestRepo(t *testing.T) {
 
 func TestRev(t *testing.T) {
 	r := mux.NewRouter()
-	r.Path("/" + Rev)
+	r.Pbth("/" + Rev)
 
 	tests := []struct {
-		path        string
-		wantNoMatch bool
-		wantVars    map[string]string
+		pbth        string
+		wbntNoMbtch bool
+		wbntVbrs    mbp[string]string
 	}{
-		{path: "/v", wantVars: map[string]string{"Rev": "v"}},
-		{path: "/v/v/v", wantVars: map[string]string{"Rev": "v/v/v"}},
+		{pbth: "/v", wbntVbrs: mbp[string]string{"Rev": "v"}},
+		{pbth: "/v/v/v", wbntVbrs: mbp[string]string{"Rev": "v/v/v"}},
 
-		{path: "", wantNoMatch: true},
-		{path: "/", wantNoMatch: true},
+		{pbth: "", wbntNoMbtch: true},
+		{pbth: "/", wbntNoMbtch: true},
 	}
-	for _, test := range tests {
-		var m mux.RouteMatch
-		ok := r.Match(&http.Request{Method: "GET", URL: &url.URL{Path: test.path}}, &m)
-		if ok == test.wantNoMatch {
-			t.Errorf("%q: got match == %v, want %v", test.path, ok, !test.wantNoMatch)
+	for _, test := rbnge tests {
+		vbr m mux.RouteMbtch
+		ok := r.Mbtch(&http.Request{Method: "GET", URL: &url.URL{Pbth: test.pbth}}, &m)
+		if ok == test.wbntNoMbtch {
+			t.Errorf("%q: got mbtch == %v, wbnt %v", test.pbth, ok, !test.wbntNoMbtch)
 		}
 		if ok {
-			if !reflect.DeepEqual(m.Vars, test.wantVars) {
-				t.Errorf("%q: got vars == %v, want %v", test.path, m.Vars, test.wantVars)
+			if !reflect.DeepEqubl(m.Vbrs, test.wbntVbrs) {
+				t.Errorf("%q: got vbrs == %v, wbnt %v", test.pbth, m.Vbrs, test.wbntVbrs)
 			}
 
-			urlPath, err := m.Route.URLPath(pairs(m.Vars)...)
+			urlPbth, err := m.Route.URLPbth(pbirs(m.Vbrs)...)
 			if err != nil {
-				t.Errorf("%q: URLPath: %s", test.path, err)
+				t.Errorf("%q: URLPbth: %s", test.pbth, err)
 				continue
 			}
-			if urlPath.Path != test.path {
-				t.Errorf("%q: got path == %q, want %q", test.path, urlPath.Path, test.path)
+			if urlPbth.Pbth != test.pbth {
+				t.Errorf("%q: got pbth == %q, wbnt %q", test.pbth, urlPbth.Pbth, test.pbth)
 			}
 		}
 	}
@@ -168,20 +168,20 @@ func TestRev(t *testing.T) {
 func TestRepoRevSpec(t *testing.T) {
 	tests := []struct {
 		spec      RepoRev
-		routeVars map[string]string
+		routeVbrs mbp[string]string
 	}{
-		{RepoRev{Repo: "a.com/x", Rev: "r"}, map[string]string{"Repo": "a.com/x", "Rev": "@r"}},
-		{RepoRev{Repo: "x", Rev: "r"}, map[string]string{"Repo": "x", "Rev": "@r"}},
+		{RepoRev{Repo: "b.com/x", Rev: "r"}, mbp[string]string{"Repo": "b.com/x", "Rev": "@r"}},
+		{RepoRev{Repo: "x", Rev: "r"}, mbp[string]string{"Repo": "x", "Rev": "@r"}},
 	}
 
-	for _, test := range tests {
-		routeVars := RepoRevRouteVars(test.spec)
-		if !reflect.DeepEqual(routeVars, test.routeVars) {
-			t.Errorf("got route vars %+v, want %+v", routeVars, test.routeVars)
+	for _, test := rbnge tests {
+		routeVbrs := RepoRevRouteVbrs(test.spec)
+		if !reflect.DeepEqubl(routeVbrs, test.routeVbrs) {
+			t.Errorf("got route vbrs %+v, wbnt %+v", routeVbrs, test.routeVbrs)
 		}
-		spec := ToRepoRev(routeVars)
+		spec := ToRepoRev(routeVbrs)
 		if spec != test.spec {
-			t.Errorf("got spec %+v from route vars %+v, want %+v", spec, routeVars, test.spec)
+			t.Errorf("got spec %+v from route vbrs %+v, wbnt %+v", spec, routeVbrs, test.spec)
 		}
 	}
 }

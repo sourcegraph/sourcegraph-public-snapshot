@@ -1,4 +1,4 @@
-package authz
+pbckbge buthz
 
 import (
 	"fmt"
@@ -12,13 +12,13 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
 )
 
-func TestParseAuthorizationHeader(t *testing.T) {
-	tests := map[string]struct {
+func TestPbrseAuthorizbtionHebder(t *testing.T) {
+	tests := mbp[string]struct {
 		token    string
 		sudoUser string
 		err      bool
@@ -27,131 +27,131 @@ func TestParseAuthorizationHeader(t *testing.T) {
 		"token tok==":                            {token: "tok=="},
 		`token token=tok`:                        {token: "tok"},
 		`token token="tok=="`:                    {token: "tok=="},
-		`token-sudo token="tok==", user="alice"`: {token: "tok==", sudoUser: "alice"},
-		`token-sudo token=tok, user="alice"`:     {token: "tok", sudoUser: "alice"},
-		`token-sudo token="tok==", user=alice`:   {token: "tok==", sudoUser: "alice"},
+		`token-sudo token="tok==", user="blice"`: {token: "tok==", sudoUser: "blice"},
+		`token-sudo token=tok, user="blice"`:     {token: "tok", sudoUser: "blice"},
+		`token-sudo token="tok==", user=blice`:   {token: "tok==", sudoUser: "blice"},
 		"xyz tok":                                {err: true},
-		`token-sudo user="alice"`:                {err: true},
-		`token-sudo token="",user="alice"`:       {err: true},
+		`token-sudo user="blice"`:                {err: true},
+		`token-sudo token="",user="blice"`:       {err: true},
 		`token k=v, k=v`:                         {err: true},
 	}
-	for input, test := range tests {
+	for input, test := rbnge tests {
 		t.Run(input, func(t *testing.T) {
-			token, sudoUser, err := ParseAuthorizationHeader(logtest.Scoped(t), nil, input)
+			token, sudoUser, err := PbrseAuthorizbtionHebder(logtest.Scoped(t), nil, input)
 			if (err != nil) != test.err {
-				t.Errorf("got error %v, want error? %v", err, test.err)
+				t.Errorf("got error %v, wbnt error? %v", err, test.err)
 			}
 			if err != nil {
 				return
 			}
 			if token != test.token {
-				t.Errorf("got token %q, want %q", token, test.token)
+				t.Errorf("got token %q, wbnt %q", token, test.token)
 			}
 			if sudoUser != test.sudoUser {
-				t.Errorf("got sudoUser %+v, want %+v", sudoUser, test.sudoUser)
+				t.Errorf("got sudoUser %+v, wbnt %+v", sudoUser, test.sudoUser)
 			}
 		})
 	}
 
-	t.Run("disable sudo token for dotcom", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+	t.Run("disbble sudo token for dotcom", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 		r := &http.Request{
-			URL:  &url.URL{Path: ".api/graphql"},
-			Body: io.NopCloser(strings.NewReader("the body")),
+			URL:  &url.URL{Pbth: ".bpi/grbphql"},
+			Body: io.NopCloser(strings.NewRebder("the body")),
 		}
-		logger, captured := logtest.Captured(t)
-		_, _, err := ParseAuthorizationHeader(logger, r, `token-sudo token="tok==", user="alice"`)
+		logger, cbptured := logtest.Cbptured(t)
+		_, _, err := PbrseAuthorizbtionHebder(logger, r, `token-sudo token="tok==", user="blice"`)
 		got := fmt.Sprintf("%v", err)
-		want := "use of access tokens with sudo scope is disabled"
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		wbnt := "use of bccess tokens with sudo scope is disbbled"
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
-		logs := captured()
-		require.Equal(t, []string{"saw request with sudo mode"}, logs.Messages())
-		require.Equal(t, map[string]any{
+		logs := cbptured()
+		require.Equbl(t, []string{"sbw request with sudo mode"}, logs.Messbges())
+		require.Equbl(t, mbp[string]bny{
 			"body":  "the body",
 			"error": "<nil>",
-			"path":  ".api/graphql",
+			"pbth":  ".bpi/grbphql",
 		}, logs[0].Fields)
 	})
 
-	t.Run("empty token does not raise sudo error on dotcom", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+	t.Run("empty token does not rbise sudo error on dotcom", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 		r := &http.Request{
-			URL:  &url.URL{Path: ".api/graphql"},
-			Body: io.NopCloser(strings.NewReader("the body")),
+			URL:  &url.URL{Pbth: ".bpi/grbphql"},
+			Body: io.NopCloser(strings.NewRebder("the body")),
 		}
-		_, _, err := ParseAuthorizationHeader(logtest.Scoped(t), r, `token`)
+		_, _, err := PbrseAuthorizbtionHebder(logtest.Scoped(t), r, `token`)
 		got := fmt.Sprintf("%v", err)
-		want := "no token value in the HTTP Authorization request header"
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		wbnt := "no token vblue in the HTTP Authorizbtion request hebder"
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestParseHTTPCredentials(t *testing.T) {
-	tests := map[string]struct {
+func TestPbrseHTTPCredentibls(t *testing.T) {
+	tests := mbp[string]struct {
 		scheme  string
 		token68 string
-		params  map[string]string
+		pbrbms  mbp[string]string
 		err     bool
 	}{
 		"scheme v1":                 {scheme: "scheme", token68: "v1"},
 		"scheme v1==":               {scheme: "scheme", token68: "v1=="},
-		`scheme k1="v1"`:            {scheme: "scheme", params: map[string]string{"k1": "v1"}},
-		`scheme-2 k1="v1", k2="v2"`: {scheme: "scheme-2", params: map[string]string{"k1": "v1", "k2": "v2"}},
-		`scheme-2 k1=v1, k2="v2"`:   {scheme: "scheme-2", params: map[string]string{"k1": "v1", "k2": "v2"}},
+		`scheme k1="v1"`:            {scheme: "scheme", pbrbms: mbp[string]string{"k1": "v1"}},
+		`scheme-2 k1="v1", k2="v2"`: {scheme: "scheme-2", pbrbms: mbp[string]string{"k1": "v1", "k2": "v2"}},
+		`scheme-2 k1=v1, k2="v2"`:   {scheme: "scheme-2", pbrbms: mbp[string]string{"k1": "v1", "k2": "v2"}},
 		`scheme k=v, k=v`:           {err: true},
 	}
-	for input, test := range tests {
+	for input, test := rbnge tests {
 		t.Run(input, func(t *testing.T) {
-			scheme, token68, params, err := parseHTTPCredentials(input)
+			scheme, token68, pbrbms, err := pbrseHTTPCredentibls(input)
 			if (err != nil) != test.err {
-				t.Errorf("got error %v, want error? %v", err, test.err)
+				t.Errorf("got error %v, wbnt error? %v", err, test.err)
 			}
 			if err != nil {
 				return
 			}
 			if scheme != test.scheme {
-				t.Errorf("got scheme %q, want %q", scheme, test.scheme)
+				t.Errorf("got scheme %q, wbnt %q", scheme, test.scheme)
 			}
 			if token68 != test.token68 {
-				t.Errorf("got token68 %q, want %q", token68, test.token68)
+				t.Errorf("got token68 %q, wbnt %q", token68, test.token68)
 			}
-			if !reflect.DeepEqual(params, test.params) {
-				t.Errorf("got params %+v, want %+v", params, test.params)
+			if !reflect.DeepEqubl(pbrbms, test.pbrbms) {
+				t.Errorf("got pbrbms %+v, wbnt %+v", pbrbms, test.pbrbms)
 			}
 		})
 	}
 }
 
-func TestParseBearerHeader(t *testing.T) {
-	tests := map[string]struct {
+func TestPbrseBebrerHebder(t *testing.T) {
+	tests := mbp[string]struct {
 		token string
 		err   bool
 	}{
-		"Bearer tok":     {token: "tok", err: false},
-		"bearer tok":     {token: "tok", err: false},
-		"BeARER token":   {token: "token", err: false},
-		"Bearer tok tok": {token: "tok tok", err: false},
-		"Bearer ":        {token: "", err: false},
-		"Bearer":         {token: "", err: true},
+		"Bebrer tok":     {token: "tok", err: fblse},
+		"bebrer tok":     {token: "tok", err: fblse},
+		"BeARER token":   {token: "token", err: fblse},
+		"Bebrer tok tok": {token: "tok tok", err: fblse},
+		"Bebrer ":        {token: "", err: fblse},
+		"Bebrer":         {token: "", err: true},
 		"tok":            {token: "", err: true},
 	}
-	for input, test := range tests {
+	for input, test := rbnge tests {
 		t.Run(input, func(t *testing.T) {
-			token, err := ParseBearerHeader(input)
+			token, err := PbrseBebrerHebder(input)
 			if test.err {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, test.token, token)
+			require.Equbl(t, test.token, token)
 		})
 	}
 }

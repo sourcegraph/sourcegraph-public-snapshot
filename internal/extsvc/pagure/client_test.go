@@ -1,54 +1,54 @@
-package pagure
+pbckbge pbgure
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 )
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
 func TestClient_ListProjects(t *testing.T) {
-	cli, save := NewTestClient(t, "ListRepos", *update)
-	defer save()
+	cli, sbve := NewTestClient(t, "ListRepos", *updbte)
+	defer sbve()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	limit := 5
 
-	args := ListProjectsArgs{
-		Cursor:  &Pagination{PerPage: limit, Page: 1},
+	brgs := ListProjectsArgs{
+		Cursor:  &Pbginbtion{PerPbge: limit, Pbge: 1},
 		Fork:    true,
-		Pattern: "tmux",
+		Pbttern: "tmux",
 	}
 
-	it := cli.ListProjects(ctx, args)
+	it := cli.ListProjects(ctx, brgs)
 
-	var projects []*Project
+	vbr projects []*Project
 	for i := 0; i < limit && it.Next(); i++ {
-		projects = append(projects, it.Current())
+		projects = bppend(projects, it.Current())
 	}
 
 	if err := it.Err(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// TODO We wrap the golden to make the diff where we only return projects
-	// cleaner to review. Can be removed in future.
-	resp := map[string]any{
+	// TODO We wrbp the golden to mbke the diff where we only return projects
+	// clebner to review. Cbn be removed in future.
+	resp := mbp[string]bny{
 		"projects": projects,
 	}
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/ListProjects.json", *updbte, resp)
 }
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.LvlFilterHandler(log15.LvlError, log15.Root().GetHandler()))
+		log15.Root().SetHbndler(log15.LvlFilterHbndler(log15.LvlError, log15.Root().GetHbndler()))
 	}
 	os.Exit(m.Run())
 }

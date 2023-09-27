@@ -1,17 +1,17 @@
-package coordinator
+pbckbge coordinbtor
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	Interval time.Duration
+	Intervbl time.Durbtion
 }
 
-func (c *Config) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_COORDINATOR_INTERVAL", "1s", "How frequently to run the ranking coordinator.")
+func (c *Config) Lobd() {
+	c.Intervbl = c.GetIntervbl("CODEINTEL_RANKING_COORDINATOR_INTERVAL", "1s", "How frequently to run the rbnking coordinbtor.")
 }

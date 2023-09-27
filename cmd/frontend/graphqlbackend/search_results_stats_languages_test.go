@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"bytes"
@@ -10,116 +10,116 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/inventory"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestSearchResultsStatsLanguages(t *testing.T) {
+func TestSebrchResultsStbtsLbngubges(t *testing.T) {
 	logger := logtest.Scoped(t)
-	wantCommitID := api.CommitID(strings.Repeat("a", 40))
-	rcache.SetupForTest(t)
+	wbntCommitID := bpi.CommitID(strings.Repebt("b", 40))
+	rcbche.SetupForTest(t)
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
-		if commit != wantCommitID {
-			t.Errorf("got commit %q, want %q", commit, wantCommitID)
+	gsClient.NewFileRebderFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, commit bpi.CommitID, nbme string) (io.RebdCloser, error) {
+		if commit != wbntCommitID {
+			t.Errorf("got commit %q, wbnt %q", commit, wbntCommitID)
 		}
-		var data []byte
-		switch name {
-		case "two.go":
-			data = []byte("a\nb\n")
-		case "three.go":
-			data = []byte("a\nb\nc\n")
-		default:
-			panic("unhandled mock NewFileReader " + name)
+		vbr dbtb []byte
+		switch nbme {
+		cbse "two.go":
+			dbtb = []byte("b\nb\n")
+		cbse "three.go":
+			dbtb = []byte("b\nb\nc\n")
+		defbult:
+			pbnic("unhbndled mock NewFileRebder " + nbme)
 		}
-		return io.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewRebder(dbtb)), nil
 	})
-	const wantDefaultBranchRef = "refs/heads/foo"
-	gsClient.GetDefaultBranchFunc.SetDefaultHook(func(context.Context, api.RepoName, bool) (string, api.CommitID, error) {
-		// Mock default branch lookup in (*RepositoryResolver).DefaultBranch.
-		return wantDefaultBranchRef, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", nil
+	const wbntDefbultBrbnchRef = "refs/hebds/foo"
+	gsClient.GetDefbultBrbnchFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, bool) (string, bpi.CommitID, error) {
+		// Mock defbult brbnch lookup in (*RepositoryResolver).DefbultBrbnch.
+		return wbntDefbultBrbnchRef, "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", nil
 	})
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if want := "HEAD"; spec != want {
-			t.Errorf("got spec %q, want %q", spec, want)
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if wbnt := "HEAD"; spec != wbnt {
+			t.Errorf("got spec %q, wbnt %q", spec, wbnt)
 		}
-		return wantCommitID, nil
-	})
-
-	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, path string) (fs.FileInfo, error) {
-		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
+		return wbntCommitID, nil
 	})
 
-	mkResult := func(path string, lineNumbers ...int) *result.FileMatch {
-		rn := types.MinimalRepo{
-			Name: "r",
+	gsClient.StbtFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, _ bpi.CommitID, pbth string) (fs.FileInfo, error) {
+		return &fileutil.FileInfo{Nbme_: pbth, Mode_: os.ModeDir}, nil
+	})
+
+	mkResult := func(pbth string, lineNumbers ...int) *result.FileMbtch {
+		rn := types.MinimblRepo{
+			Nbme: "r",
 		}
-		fm := mkFileMatch(rn, path, lineNumbers...)
-		fm.CommitID = wantCommitID
+		fm := mkFileMbtch(rn, pbth, lineNumbers...)
+		fm.CommitID = wbntCommitID
 		return fm
 	}
 
-	tests := map[string]struct {
-		results  []result.Match
+	tests := mbp[string]struct {
+		results  []result.Mbtch
 		getFiles []fs.FileInfo
-		want     []inventory.Lang // TotalBytes values are incorrect (known issue doc'd in GraphQL schema)
+		wbnt     []inventory.Lbng // TotblBytes vblues bre incorrect (known issue doc'd in GrbphQL schemb)
 	}{
 		"empty": {
 			results: nil,
-			want:    []inventory.Lang{},
+			wbnt:    []inventory.Lbng{},
 		},
 		"1 entire file": {
-			results: []result.Match{
+			results: []result.Mbtch{
 				mkResult("three.go"),
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 6, TotalLines: 3}},
+			wbnt: []inventory.Lbng{{Nbme: "Go", TotblBytes: 6, TotblLines: 3}},
 		},
-		"line matches in 1 file": {
-			results: []result.Match{
+		"line mbtches in 1 file": {
+			results: []result.Mbtch{
 				mkResult("three.go", 1),
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 6, TotalLines: 1}},
+			wbnt: []inventory.Lbng{{Nbme: "Go", TotblBytes: 6, TotblLines: 1}},
 		},
-		"line matches in 2 files": {
-			results: []result.Match{
+		"line mbtches in 2 files": {
+			results: []result.Mbtch{
 				mkResult("two.go", 1, 2),
 				mkResult("three.go", 1),
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 10, TotalLines: 3}},
+			wbnt: []inventory.Lbng{{Nbme: "Go", TotblBytes: 10, TotblLines: 3}},
 		},
 		"1 entire repo": {
-			results: []result.Match{
-				&result.RepoMatch{Name: "r"},
+			results: []result.Mbtch{
+				&result.RepoMbtch{Nbme: "r"},
 			},
 			getFiles: []fs.FileInfo{
-				fileInfo{path: "two.go"},
-				fileInfo{path: "three.go"},
+				fileInfo{pbth: "two.go"},
+				fileInfo{pbth: "three.go"},
 			},
-			want: []inventory.Lang{{Name: "Go", TotalBytes: 10, TotalLines: 5}},
+			wbnt: []inventory.Lbng{{Nbme: "Go", TotblBytes: 10, TotblLines: 5}},
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			gsClient.RebdDirFunc.SetDefbultHook(func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, bpi.CommitID, string, bool) ([]fs.FileInfo, error) {
 				return test.getFiles, nil
 			})
 
-			langs, err := searchResultsStatsLanguages(context.Background(), logger, dbmocks.NewMockDB(), gsClient, test.results)
+			lbngs, err := sebrchResultsStbtsLbngubges(context.Bbckground(), logger, dbmocks.NewMockDB(), gsClient, test.results)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if !reflect.DeepEqual(langs, test.want) {
-				t.Errorf("got %+v, want %+v", langs, test.want)
+			if !reflect.DeepEqubl(lbngs, test.wbnt) {
+				t.Errorf("got %+v, wbnt %+v", lbngs, test.wbnt)
 			}
 		})
 	}

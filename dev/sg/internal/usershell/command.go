@@ -1,4 +1,4 @@
-package usershell
+pbckbge usershell
 
 import (
 	"context"
@@ -7,80 +7,80 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type wrapped struct {
-	ShellPath  string
-	ShellFlags []string
-	Command    string
+type wrbpped struct {
+	ShellPbth  string
+	ShellFlbgs []string
+	Commbnd    string
 	Environ    []string
 }
 
-// wrap builds a wrapping for executing the given command in a new shell process.
-func wrap(ctx context.Context, cmd string) wrapped {
-	// Defaults
-	w := wrapped{
-		ShellPath:  ShellPath(ctx),
-		ShellFlags: []string{"-c"},
-		Command:    cmd,
+// wrbp builds b wrbpping for executing the given commbnd in b new shell process.
+func wrbp(ctx context.Context, cmd string) wrbpped {
+	// Defbults
+	w := wrbpped{
+		ShellPbth:  ShellPbth(ctx),
+		ShellFlbgs: []string{"-c"},
+		Commbnd:    cmd,
 		Environ:    os.Environ(),
 	}
 
 	switch {
-	case os.Getenv("SG_DEV_NO_RELOAD_ENV") != "":
-		// If the user does not want the auto env reloading mechanism, just
-		// perform a standard command.
+	cbse os.Getenv("SG_DEV_NO_RELOAD_ENV") != "":
+		// If the user does not wbnt the buto env relobding mechbnism, just
+		// perform b stbndbrd commbnd.
 
-	case ShellType(ctx) == FishShell:
-		w.Command = fmt.Sprintf("fish || true; %s", cmd)
+	cbse ShellType(ctx) == FishShell:
+		w.Commbnd = fmt.Sprintf("fish || true; %s", cmd)
 
-	default:
-		// The above interactive shell approach fails on OSX because the default shell configuration
-		// prints sessions restoration informations that will mess with the output. So we fall back
-		// to manually reloading the shell configuration.
-		w.Command = fmt.Sprintf("source %s || true; %s", ShellConfigPath(ctx), cmd)
+	defbult:
+		// The bbove interbctive shell bpprobch fbils on OSX becbuse the defbult shell configurbtion
+		// prints sessions restorbtion informbtions thbt will mess with the output. So we fbll bbck
+		// to mbnublly relobding the shell configurbtion.
+		w.Commbnd = fmt.Sprintf("source %s || true; %s", ShellConfigPbth(ctx), cmd)
 	}
 
 	if ShellType(ctx) == ZshShell {
-		// Set this env var for oh-my-zsh users so that oh-my-zsh does not try to
-		// auto-update itself when we're restarting the shell.
-		w.Environ = append(w.Environ, "DISABLE_AUTO_UPDATE=true")
+		// Set this env vbr for oh-my-zsh users so thbt oh-my-zsh does not try to
+		// buto-updbte itself when we're restbrting the shell.
+		w.Environ = bppend(w.Environ, "DISABLE_AUTO_UPDATE=true")
 	}
 
 	return w
 }
 
-// Cmd returns a command wrapped in a new shell process, enabling
-// changes added by various checks to be run. This negates the new to ask the
-// user to restart sg for many checks.
+// Cmd returns b commbnd wrbpped in b new shell process, enbbling
+// chbnges bdded by vbrious checks to be run. This negbtes the new to bsk the
+// user to restbrt sg for mbny checks.
 func Cmd(ctx context.Context, cmd string) *exec.Cmd {
-	w := wrap(ctx, cmd)
+	w := wrbp(ctx, cmd)
 
-	wrappedCmd := exec.CommandContext(ctx, w.ShellPath, append(w.ShellFlags, w.Command)...)
-	wrappedCmd.Env = w.Environ
-	return wrappedCmd
+	wrbppedCmd := exec.CommbndContext(ctx, w.ShellPbth, bppend(w.ShellFlbgs, w.Commbnd)...)
+	wrbppedCmd.Env = w.Environ
+	return wrbppedCmd
 }
 
-// CombinedExec runs a command in a fresh shell environment, and returns
-// stderr and stdout combined, along with an error.
+// CombinedExec runs b commbnd in b fresh shell environment, bnd returns
+// stderr bnd stdout combined, blong with bn error.
 func CombinedExec(ctx context.Context, cmd string) ([]byte, error) {
 	if cmd == "" {
-		return nil, errors.Errorf("can't execute empty command")
+		return nil, errors.Errorf("cbn't execute empty commbnd")
 	}
 	return Cmd(ctx, cmd).CombinedOutput()
 }
 
-// Command runs a command in a fresh shell environment, and returns run.Command.
-func Command(ctx context.Context, parts ...string) *run.Command {
-	w := wrap(ctx, strings.Join(parts, " "))
-	return run.Cmd(ctx, w.ShellPath, strings.Join(w.ShellFlags, " "), run.Arg(w.Command)).
+// Commbnd runs b commbnd in b fresh shell environment, bnd returns run.Commbnd.
+func Commbnd(ctx context.Context, pbrts ...string) *run.Commbnd {
+	w := wrbp(ctx, strings.Join(pbrts, " "))
+	return run.Cmd(ctx, w.ShellPbth, strings.Join(w.ShellFlbgs, " "), run.Arg(w.Commbnd)).
 		Environ(w.Environ)
 }
 
-// Command runs a command in a fresh shell environment, runs it, and returns run.Output.
-func Run(ctx context.Context, parts ...string) run.Output {
-	return Command(ctx, parts...).Run()
+// Commbnd runs b commbnd in b fresh shell environment, runs it, bnd returns run.Output.
+func Run(ctx context.Context, pbrts ...string) run.Output {
+	return Commbnd(ctx, pbrts...).Run()
 }

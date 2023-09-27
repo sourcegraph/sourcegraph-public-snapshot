@@ -1,213 +1,213 @@
-package gitresolvers
+pbckbge gitresolvers
 
 import (
 	"context"
 	"fmt"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
 	numRoutines     = 5
 	numRepositories = 10
 	numCommits      = 10 // per repo
-	numPaths        = 10 // per commit
+	numPbths        = 10 // per commit
 )
 
-func TestCachedLocationResolver(t *testing.T) {
+func TestCbchedLocbtionResolver(t *testing.T) {
 	repos := dbmocks.NewStrictMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(v0 context.Context, id api.RepoID) (*types.Repo, error) {
-		return &types.Repo{ID: id, CreatedAt: time.Now()}, nil
+	repos.GetFunc.SetDefbultHook(func(v0 context.Context, id bpi.RepoID) (*types.Repo, error) {
+		return &types.Repo{ID: id, CrebtedAt: time.Now()}, nil
 	})
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(spec), nil
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID(spec), nil
 	})
 
-	var commitCalls uint32
-	factory := NewCachedLocationResolverFactory(repos, gsClient)
-	locationResolver := factory.Create()
+	vbr commitCblls uint32
+	fbctory := NewCbchedLocbtionResolverFbctory(repos, gsClient)
+	locbtionResolver := fbctory.Crebte()
 
-	var repositoryIDs []api.RepoID
+	vbr repositoryIDs []bpi.RepoID
 	for i := 1; i <= numRepositories; i++ {
-		repositoryIDs = append(repositoryIDs, api.RepoID(i))
+		repositoryIDs = bppend(repositoryIDs, bpi.RepoID(i))
 	}
 
-	var commits []string
+	vbr commits []string
 	for i := 1; i <= numCommits; i++ {
-		commits = append(commits, fmt.Sprintf("%040d", i))
+		commits = bppend(commits, fmt.Sprintf("%040d", i))
 	}
 
-	var paths []string
-	for i := 1; i <= numPaths; i++ {
-		paths = append(paths, fmt.Sprintf("/foo/%d/bar/baz.go", i))
+	vbr pbths []string
+	for i := 1; i <= numPbths; i++ {
+		pbths = bppend(pbths, fmt.Sprintf("/foo/%d/bbr/bbz.go", i))
 	}
 
-	type resolverPair struct {
+	type resolverPbir struct {
 		key      string
 		resolver resolverstubs.GitTreeEntryResolver
 	}
-	resolvers := make(chan resolverPair, numRoutines*len(repositoryIDs)*len(commits)*len(paths))
+	resolvers := mbke(chbn resolverPbir, numRoutines*len(repositoryIDs)*len(commits)*len(pbths))
 
-	var wg sync.WaitGroup
-	errs := make(chan error, numRoutines)
+	vbr wg sync.WbitGroup
+	errs := mbke(chbn error, numRoutines)
 	for i := 0; i < numRoutines; i++ {
 		wg.Add(1)
 
 		go func() {
 			defer wg.Done()
 
-			for _, repositoryID := range repositoryIDs {
-				repositoryResolver, err := locationResolver.Repository(context.Background(), repositoryID)
+			for _, repositoryID := rbnge repositoryIDs {
+				repositoryResolver, err := locbtionResolver.Repository(context.Bbckground(), repositoryID)
 				if err != nil {
 					errs <- err
 					return
 				}
-				repoID, err := resolverstubs.UnmarshalID[api.RepoID](repositoryResolver.ID())
+				repoID, err := resolverstubs.UnmbrshblID[bpi.RepoID](repositoryResolver.ID())
 				if err != nil {
 					errs <- err
 					return
 				}
 				if repoID != repositoryID {
-					errs <- errors.Errorf("unexpected repository id. want=%d have=%d", repositoryID, repoID)
+					errs <- errors.Errorf("unexpected repository id. wbnt=%d hbve=%d", repositoryID, repoID)
 					return
 				}
 			}
 
-			for _, repositoryID := range repositoryIDs {
-				for _, commit := range commits {
-					commitResolver, err := locationResolver.Commit(context.Background(), repositoryID, commit)
+			for _, repositoryID := rbnge repositoryIDs {
+				for _, commit := rbnge commits {
+					commitResolver, err := locbtionResolver.Commit(context.Bbckground(), repositoryID, commit)
 					if err != nil {
 						errs <- err
 						return
 					}
 					if commitResolver.OID() != resolverstubs.GitObjectID(commit) {
-						errs <- errors.Errorf("unexpected commit. want=%s have=%s", commit, commitResolver.OID())
+						errs <- errors.Errorf("unexpected commit. wbnt=%s hbve=%s", commit, commitResolver.OID())
 						return
 					}
 				}
 			}
 
-			for _, repositoryID := range repositoryIDs {
-				for _, commit := range commits {
-					for _, path := range paths {
-						treeResolver, err := locationResolver.Path(context.Background(), repositoryID, commit, path, false)
+			for _, repositoryID := rbnge repositoryIDs {
+				for _, commit := rbnge commits {
+					for _, pbth := rbnge pbths {
+						treeResolver, err := locbtionResolver.Pbth(context.Bbckground(), repositoryID, commit, pbth, fblse)
 						if err != nil {
 							errs <- err
 							return
 						}
-						if treeResolver.Path() != path {
-							errs <- errors.Errorf("unexpected path. want=%s have=%s", path, treeResolver.Path())
+						if treeResolver.Pbth() != pbth {
+							errs <- errors.Errorf("unexpected pbth. wbnt=%s hbve=%s", pbth, treeResolver.Pbth())
 							return
 						}
 
-						resolvers <- resolverPair{key: fmt.Sprintf("%d:%s:%s", repositoryID, commit, path), resolver: treeResolver}
+						resolvers <- resolverPbir{key: fmt.Sprintf("%d:%s:%s", repositoryID, commit, pbth), resolver: treeResolver}
 					}
 				}
 			}
 		}()
 	}
-	wg.Wait()
+	wg.Wbit()
 
 	close(errs)
-	for err := range errs {
+	for err := rbnge errs {
 		t.Error(err)
 	}
 
-	mockrequire.CalledN(t, repos.GetFunc, len(repositoryIDs))
+	mockrequire.CblledN(t, repos.GetFunc, len(repositoryIDs))
 
-	// We don't need to load commits from git-server unless we ask for fields like author or committer.
-	// Since we already know this commit exists, and we only need it's already known commit ID, we assert
-	// that zero calls to git.GetCommit where done. Check the gitCommitResolver lazy loading logic.
-	if val := atomic.LoadUint32(&commitCalls); val != 0 {
-		t.Errorf("unexpected number of commit calls. want=%d have=%d", 0, val)
+	// We don't need to lobd commits from git-server unless we bsk for fields like buthor or committer.
+	// Since we blrebdy know this commit exists, bnd we only need it's blrebdy known commit ID, we bssert
+	// thbt zero cblls to git.GetCommit where done. Check the gitCommitResolver lbzy lobding logic.
+	if vbl := btomic.LobdUint32(&commitCblls); vbl != 0 {
+		t.Errorf("unexpected number of commit cblls. wbnt=%d hbve=%d", 0, vbl)
 	}
 
 	close(resolvers)
-	resolversByKey := map[string][]resolverstubs.GitTreeEntryResolver{}
-	for pair := range resolvers {
-		resolversByKey[pair.key] = append(resolversByKey[pair.key], pair.resolver)
+	resolversByKey := mbp[string][]resolverstubs.GitTreeEntryResolver{}
+	for pbir := rbnge resolvers {
+		resolversByKey[pbir.key] = bppend(resolversByKey[pbir.key], pbir.resolver)
 	}
 
-	for _, vs := range resolversByKey {
-		for _, v := range vs {
+	for _, vs := rbnge resolversByKey {
+		for _, v := rbnge vs {
 			if v != vs[0] {
-				t.Errorf("resolvers for same key unexpectedly have differing addresses: %p and %p", v, vs[0])
+				t.Errorf("resolvers for sbme key unexpectedly hbve differing bddresses: %p bnd %p", v, vs[0])
 			}
 		}
 	}
 }
 
-func TestCachedLocationResolverUnknownRepository(t *testing.T) {
+func TestCbchedLocbtionResolverUnknownRepository(t *testing.T) {
 	repos := dbmocks.NewStrictMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
-		return nil, &database.RepoNotFoundErr{ID: id}
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*types.Repo, error) {
+		return nil, &dbtbbbse.RepoNotFoundErr{ID: id}
 	})
 
 	gsClient := gitserver.NewMockClient()
 
-	factory := NewCachedLocationResolverFactory(repos, gsClient)
-	locationResolver := factory.Create()
+	fbctory := NewCbchedLocbtionResolverFbctory(repos, gsClient)
+	locbtionResolver := fbctory.Crebte()
 
-	repositoryResolver, err := locationResolver.Repository(context.Background(), 50)
+	repositoryResolver, err := locbtionResolver.Repository(context.Bbckground(), 50)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if repositoryResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go", false)
+	pbthResolver, err := locbtionResolver.Pbth(context.Bbckground(), 50, "debdbeef", "mbin.go", fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
-	if pathResolver != nil {
+	if pbthResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
-	mockrequire.Called(t, repos.GetFunc)
+	mockrequire.Cblled(t, repos.GetFunc)
 }
 
-func TestCachedLocationResolverUnknownCommit(t *testing.T) {
+func TestCbchedLocbtionResolverUnknownCommit(t *testing.T) {
 	repos := dbmocks.NewStrictMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*types.Repo, error) {
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id}, nil
 	})
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultReturn("", &gitdomain.RevisionNotFoundError{})
+	gsClient.ResolveRevisionFunc.SetDefbultReturn("", &gitdombin.RevisionNotFoundError{})
 
-	factory := NewCachedLocationResolverFactory(repos, gsClient)
-	locationResolver := factory.Create()
+	fbctory := NewCbchedLocbtionResolverFbctory(repos, gsClient)
+	locbtionResolver := fbctory.Crebte()
 
-	commitResolver, err := locationResolver.Commit(context.Background(), 50, "deadbeef")
+	commitResolver, err := locbtionResolver.Commit(context.Bbckground(), 50, "debdbeef")
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if commitResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
 
 	// Ensure no dereference in child resolvers either
-	pathResolver, err := locationResolver.Path(context.Background(), 50, "deadbeef", "main.go", false)
+	pbthResolver, err := locbtionResolver.Pbth(context.Bbckground(), 50, "debdbeef", "mbin.go", fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
-	if pathResolver != nil {
+	if pbthResolver != nil {
 		t.Errorf("unexpected non-nil resolver")
 	}
-	mockrequire.Called(t, repos.GetFunc)
+	mockrequire.Cblled(t, repos.GetFunc)
 }

@@ -1,10 +1,10 @@
-package scopes_of_go
+pbckbge scopes_of_go
 
 func Something() int {
 	return 1
 }
 
 type SomethingElse struct {
-	a int
+	b int
 	b string
 }

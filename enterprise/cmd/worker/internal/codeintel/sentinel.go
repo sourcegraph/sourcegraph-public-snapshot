@@ -1,38 +1,38 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type sentinelCVEScannerJob struct{}
+type sentinelCVEScbnnerJob struct{}
 
-func NewSentinelCVEScannerJob() job.Job {
-	return &sentinelCVEScannerJob{}
+func NewSentinelCVEScbnnerJob() job.Job {
+	return &sentinelCVEScbnnerJob{}
 }
 
-func (j *sentinelCVEScannerJob) Description() string {
-	return "code-intel sentinel vulnerability scanner"
+func (j *sentinelCVEScbnnerJob) Description() string {
+	return "code-intel sentinel vulnerbbility scbnner"
 }
 
-func (j *sentinelCVEScannerJob) Config() []env.Config {
+func (j *sentinelCVEScbnnerJob) Config() []env.Config {
 	return []env.Config{
-		sentinel.DownloaderConfigInst,
-		sentinel.MatcherConfigInst,
+		sentinel.DownlobderConfigInst,
+		sentinel.MbtcherConfigInst,
 	}
 }
 
-func (j *sentinelCVEScannerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *sentinelCVEScbnnerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return sentinel.CVEScannerJob(observationCtx, services.SentinelService), nil
+	return sentinel.CVEScbnnerJob(observbtionCtx, services.SentinelService), nil
 }

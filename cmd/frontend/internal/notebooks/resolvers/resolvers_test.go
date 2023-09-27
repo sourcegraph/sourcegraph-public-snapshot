@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,76 +7,76 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	notebooksapitest "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	notebooksbpitest "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/notebooks/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/notebooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const notebookFields = `
 	id
 	title
-	creator {
-		username
+	crebtor {
+		usernbme
 	}
-	updater {
-		username
+	updbter {
+		usernbme
 	}
-	createdAt
-	updatedAt
+	crebtedAt
+	updbtedAt
 	public
-	viewerCanManage
-	viewerHasStarred
+	viewerCbnMbnbge
+	viewerHbsStbrred
 	blocks {
-		... on MarkdownBlock {
-			__typename
+		... on MbrkdownBlock {
+			__typenbme
 			id
-			markdownInput
+			mbrkdownInput
 		}
 		... on QueryBlock {
-			__typename
+			__typenbme
 			id
 			queryInput
 		}
 		... on FileBlock {
-			__typename
+			__typenbme
 			id
 			fileInput {
-				repositoryName
-				filePath
+				repositoryNbme
+				filePbth
 				revision
-				lineRange {
-					startLine
+				lineRbnge {
+					stbrtLine
 					endLine
 				}
 			}
 		}
 		... on SymbolBlock {
-			__typename
+			__typenbme
 			id
 			symbolInput {
-				repositoryName
-				filePath
+				repositoryNbme
+				filePbth
 				revision
 				lineContext
-				symbolName
-				symbolContainerName
+				symbolNbme
+				symbolContbinerNbme
 				symbolKind
 			}
 		}
 	}
 `
 
-var queryNotebook = fmt.Sprintf(`
+vbr queryNotebook = fmt.Sprintf(`
 query Notebook($id: ID!) {
 	node(id: $id) {
 		... on Notebook {
@@ -86,617 +86,617 @@ query Notebook($id: ID!) {
 }
 `, notebookFields)
 
-var listNotebooksQuery = fmt.Sprintf(`
-query Notebooks($first: Int!, $after: String, $orderBy: NotebooksOrderBy, $descending: Boolean, $starredByUserID: ID, $creatorUserID: ID, $namespace: ID, $query: String) {
-	notebooks(first: $first, after: $after, orderBy: $orderBy, descending: $descending, starredByUserID: $starredByUserID, creatorUserID: $creatorUserID, namespace: $namespace, query: $query) {
+vbr listNotebooksQuery = fmt.Sprintf(`
+query Notebooks($first: Int!, $bfter: String, $orderBy: NotebooksOrderBy, $descending: Boolebn, $stbrredByUserID: ID, $crebtorUserID: ID, $nbmespbce: ID, $query: String) {
+	notebooks(first: $first, bfter: $bfter, orderBy: $orderBy, descending: $descending, stbrredByUserID: $stbrredByUserID, crebtorUserID: $crebtorUserID, nbmespbce: $nbmespbce, query: $query) {
 		nodes {
 			%s
 	  	}
-	  	totalCount
-		pageInfo {
+	  	totblCount
+		pbgeInfo {
 			endCursor
-			hasNextPage
+			hbsNextPbge
 	  	}
 	}
 }
 `, notebookFields)
 
-var createNotebookMutation = fmt.Sprintf(`
-mutation CreateNotebook($notebook: NotebookInput!) {
-	createNotebook(notebook: $notebook) {
+vbr crebteNotebookMutbtion = fmt.Sprintf(`
+mutbtion CrebteNotebook($notebook: NotebookInput!) {
+	crebteNotebook(notebook: $notebook) {
 		%s
 	}
 }
 `, notebookFields)
 
-var updateNotebookMutation = fmt.Sprintf(`
-mutation UpdateNotebook($id: ID!, $notebook: NotebookInput!) {
-	updateNotebook(id: $id, notebook: $notebook) {
+vbr updbteNotebookMutbtion = fmt.Sprintf(`
+mutbtion UpdbteNotebook($id: ID!, $notebook: NotebookInput!) {
+	updbteNotebook(id: $id, notebook: $notebook) {
 		%s
 	}
 }
 `, notebookFields)
 
-const deleteNotebookMutation = `
-mutation DeleteNotebook($id: ID!) {
+const deleteNotebookMutbtion = `
+mutbtion DeleteNotebook($id: ID!) {
 	deleteNotebook(id: $id) {
-		alwaysNil
+		blwbysNil
 	}
 }
 `
 
-func notebookFixture(creatorID int32, namespaceUserID int32, namespaceOrgID int32, public bool) *notebooks.Notebook {
-	revision := "deadbeef"
+func notebookFixture(crebtorID int32, nbmespbceUserID int32, nbmespbceOrgID int32, public bool) *notebooks.Notebook {
+	revision := "debdbeef"
 	blocks := notebooks.NotebookBlocks{
-		{ID: "1", Type: notebooks.NotebookQueryBlockType, QueryInput: &notebooks.NotebookQueryBlockInput{Text: "repo:a b"}},
-		{ID: "2", Type: notebooks.NotebookMarkdownBlockType, MarkdownInput: &notebooks.NotebookMarkdownBlockInput{Text: "# Title"}},
+		{ID: "1", Type: notebooks.NotebookQueryBlockType, QueryInput: &notebooks.NotebookQueryBlockInput{Text: "repo:b b"}},
+		{ID: "2", Type: notebooks.NotebookMbrkdownBlockType, MbrkdownInput: &notebooks.NotebookMbrkdownBlockInput{Text: "# Title"}},
 		{ID: "3", Type: notebooks.NotebookFileBlockType, FileInput: &notebooks.NotebookFileBlockInput{
-			RepositoryName: "github.com/sourcegraph/sourcegraph",
-			FilePath:       "client/web/file.tsx",
+			RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
+			FilePbth:       "client/web/file.tsx",
 			Revision:       &revision,
-			LineRange:      &notebooks.LineRange{StartLine: 10, EndLine: 12},
+			LineRbnge:      &notebooks.LineRbnge{StbrtLine: 10, EndLine: 12},
 		}},
 		{ID: "4", Type: notebooks.NotebookSymbolBlockType, SymbolInput: &notebooks.NotebookSymbolBlockInput{
-			RepositoryName:      "github.com/sourcegraph/sourcegraph",
-			FilePath:            "client/web/file.tsx",
+			RepositoryNbme:      "github.com/sourcegrbph/sourcegrbph",
+			FilePbth:            "client/web/file.tsx",
 			Revision:            &revision,
 			LineContext:         1,
-			SymbolName:          "function",
-			SymbolContainerName: "container",
+			SymbolNbme:          "function",
+			SymbolContbinerNbme: "contbiner",
 			SymbolKind:          "FUNCTION",
 		}},
 	}
-	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CreatorUserID: creatorID, UpdaterUserID: creatorID, NamespaceUserID: namespaceUserID, NamespaceOrgID: namespaceOrgID}
+	return &notebooks.Notebook{Title: "Notebook Title", Blocks: blocks, Public: public, CrebtorUserID: crebtorID, UpdbterUserID: crebtorID, NbmespbceUserID: nbmespbceUserID, NbmespbceOrgID: nbmespbceOrgID}
 }
 
 func userNotebookFixture(userID int32, public bool) *notebooks.Notebook {
 	return notebookFixture(userID, userID, 0, public)
 }
 
-func orgNotebookFixture(creatorID int32, orgID int32, public bool) *notebooks.Notebook {
-	return notebookFixture(creatorID, 0, orgID, public)
+func orgNotebookFixture(crebtorID int32, orgID int32, public bool) *notebooks.Notebook {
+	return notebookFixture(crebtorID, 0, orgID, public)
 }
 
-func compareNotebookAPIResponses(t *testing.T, wantNotebookResponse notebooksapitest.Notebook, gotNotebookResponse notebooksapitest.Notebook, ignoreIDAndTimestamps bool) {
+func compbreNotebookAPIResponses(t *testing.T, wbntNotebookResponse notebooksbpitest.Notebook, gotNotebookResponse notebooksbpitest.Notebook, ignoreIDAndTimestbmps bool) {
 	t.Helper()
-	if ignoreIDAndTimestamps {
-		// Ignore ID and timestamps for easier comparison
-		wantNotebookResponse.ID = gotNotebookResponse.ID
-		wantNotebookResponse.CreatedAt = gotNotebookResponse.CreatedAt
-		wantNotebookResponse.UpdatedAt = gotNotebookResponse.UpdatedAt
+	if ignoreIDAndTimestbmps {
+		// Ignore ID bnd timestbmps for ebsier compbrison
+		wbntNotebookResponse.ID = gotNotebookResponse.ID
+		wbntNotebookResponse.CrebtedAt = gotNotebookResponse.CrebtedAt
+		wbntNotebookResponse.UpdbtedAt = gotNotebookResponse.UpdbtedAt
 	}
 
-	if diff := cmp.Diff(wantNotebookResponse, gotNotebookResponse); diff != "" {
-		t.Fatalf("wrong notebook response (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntNotebookResponse, gotNotebookResponse); diff != "" {
+		t.Fbtblf("wrong notebook response (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestSingleNotebookCRUD(t *testing.T) {
 	logger := logtest.Scoped(t)
-	internalCtx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	user1, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u1", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	user2, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u2", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	displayName := "My Org"
-	org, err := o.Create(internalCtx, "myorg", &displayName)
+	displbyNbme := "My Org"
+	org, err := o.Crebte(internblCtx, "myorg", &displbyNbme)
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
-	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	_, err = om.Crebte(internblCtx, org.ID, user1.ID)
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
-	if err != nil {
-		t.Fatal(err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	testGetNotebook(t, db, schema, user1)
-	testCreateNotebook(t, schema, user1, user2, org)
-	testUpdateNotebook(t, db, schema, user1, user2, org)
-	testDeleteNotebook(t, db, schema, user1, user2, org)
+	schemb, err := grbphqlbbckend.NewSchembWithNotebooksResolver(db, NewResolver(db))
+	if err != nil {
+		t.Fbtbl(err)
+	}
+
+	testGetNotebook(t, db, schemb, user1)
+	testCrebteNotebook(t, schemb, user1, user2, org)
+	testUpdbteNotebook(t, db, schemb, user1, user2, org)
+	testDeleteNotebook(t, db, schemb, user1, user2, org)
 }
 
-func testGetNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user *types.User) {
-	ctx := actor.WithInternalActor(context.Background())
+func testGetNotebook(t *testing.T, db dbtbbbse.DB, schemb *grbphql.Schemb, user *types.User) {
+	ctx := bctor.WithInternblActor(context.Bbckground())
 	n := notebooks.Notebooks(db)
 
-	createdNotebook, err := n.CreateNotebook(ctx, userNotebookFixture(user.ID, true))
+	crebtedNotebook, err := n.CrebteNotebook(ctx, userNotebookFixture(user.ID, true))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	notebookGQLID := marshalNotebookID(createdNotebook.ID)
-	input := map[string]any{"id": notebookGQLID}
-	var response struct{ Node notebooksapitest.Notebook }
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user.ID)), t, schema, input, &response, queryNotebook)
+	notebookGQLID := mbrshblNotebookID(crebtedNotebook.ID)
+	input := mbp[string]bny{"id": notebookGQLID}
+	vbr response struct{ Node notebooksbpitest.Notebook }
+	bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user.ID)), t, schemb, input, &response, queryNotebook)
 
-	wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(createdNotebook, notebookGQLID, user.Username, user.Username, true)
-	compareNotebookAPIResponses(t, wantNotebookResponse, response.Node, false)
+	wbntNotebookResponse := notebooksbpitest.NotebookToAPIResponse(crebtedNotebook, notebookGQLID, user.Usernbme, user.Usernbme, true)
+	compbreNotebookAPIResponses(t, wbntNotebookResponse, response.Node, fblse)
 }
 
-func testCreateNotebook(t *testing.T, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
+func testCrebteNotebook(t *testing.T, schemb *grbphql.Schemb, user1 *types.User, user2 *types.User, org *types.Org) {
 	tests := []struct {
-		name            string
-		namespaceUserID int32
-		namespaceOrgID  int32
-		creator         *types.User
-		wantErr         string
+		nbme            string
+		nbmespbceUserID int32
+		nbmespbceOrgID  int32
+		crebtor         *types.User
+		wbntErr         string
 	}{
 		{
-			name:            "user can create a notebook in their namespace",
-			namespaceUserID: user1.ID,
-			creator:         user1,
+			nbme:            "user cbn crebte b notebook in their nbmespbce",
+			nbmespbceUserID: user1.ID,
+			crebtor:         user1,
 		},
 		{
-			name:           "user can create a notebook in org namespace",
-			namespaceOrgID: org.ID,
-			creator:        user1,
+			nbme:           "user cbn crebte b notebook in org nbmespbce",
+			nbmespbceOrgID: org.ID,
+			crebtor:        user1,
 		},
 		{
-			name:            "user2 cannot create a notebook in user1 namespace",
-			namespaceUserID: user1.ID,
-			creator:         user2,
-			wantErr:         "user does not match the notebook user namespace",
+			nbme:            "user2 cbnnot crebte b notebook in user1 nbmespbce",
+			nbmespbceUserID: user1.ID,
+			crebtor:         user2,
+			wbntErr:         "user does not mbtch the notebook user nbmespbce",
 		},
 		{
-			name:           "user2 cannot create a notebook in org namespace",
-			namespaceOrgID: org.ID,
-			creator:        user2,
-			wantErr:        "user is not a member of the notebook organization namespace",
+			nbme:           "user2 cbnnot crebte b notebook in org nbmespbce",
+			nbmespbceOrgID: org.ID,
+			crebtor:        user2,
+			wbntErr:        "user is not b member of the notebook orgbnizbtion nbmespbce",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			notebook := notebookFixture(tt.creator.ID, tt.namespaceUserID, tt.namespaceOrgID, true)
-			input := map[string]any{"notebook": notebooksapitest.NotebookToAPIInput(notebook)}
-			var response struct{ CreateNotebook notebooksapitest.Notebook }
-			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.creator.ID)), t, schema, input, &response, createNotebookMutation)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			notebook := notebookFixture(tt.crebtor.ID, tt.nbmespbceUserID, tt.nbmespbceOrgID, true)
+			input := mbp[string]bny{"notebook": notebooksbpitest.NotebookToAPIInput(notebook)}
+			vbr response struct{ CrebteNotebook notebooksbpitest.Notebook }
+			gotErrors := bpitest.Exec(bctor.WithActor(context.Bbckground(), bctor.FromUser(tt.crebtor.ID)), t, schemb, input, &response, crebteNotebookMutbtion)
 
-			if tt.wantErr != "" && len(gotErrors) == 0 {
-				t.Fatal("expected error, got none")
+			if tt.wbntErr != "" && len(gotErrors) == 0 {
+				t.Fbtbl("expected error, got none")
 			}
 
-			if tt.wantErr != "" && !strings.Contains(gotErrors[0].Message, tt.wantErr) {
-				t.Fatalf("expected error containing '%s', got '%s'", tt.wantErr, gotErrors[0].Message)
+			if tt.wbntErr != "" && !strings.Contbins(gotErrors[0].Messbge, tt.wbntErr) {
+				t.Fbtblf("expected error contbining '%s', got '%s'", tt.wbntErr, gotErrors[0].Messbge)
 			}
 
-			if tt.wantErr == "" {
-				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(notebook, marshalNotebookID(notebook.ID), tt.creator.Username, tt.creator.Username, true)
-				compareNotebookAPIResponses(t, wantNotebookResponse, response.CreateNotebook, true)
+			if tt.wbntErr == "" {
+				wbntNotebookResponse := notebooksbpitest.NotebookToAPIResponse(notebook, mbrshblNotebookID(notebook.ID), tt.crebtor.Usernbme, tt.crebtor.Usernbme, true)
+				compbreNotebookAPIResponses(t, wbntNotebookResponse, response.CrebteNotebook, true)
 			}
 		})
 	}
 }
 
-func testUpdateNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
-	internalCtx := actor.WithInternalActor(context.Background())
+func testUpdbteNotebook(t *testing.T, db dbtbbbse.DB, schemb *grbphql.Schemb, user1 *types.User, user2 *types.User, org *types.Org) {
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
 	n := notebooks.Notebooks(db)
 
 	tests := []struct {
-		name                   string
+		nbme                   string
 		publicNotebook         bool
-		creator                *types.User
-		updater                *types.User
-		namespaceUserID        int32
-		namespaceOrgID         int32
-		updatedNamespaceUserID int32
-		updatedNamespaceOrgID  int32
-		wantErr                string
+		crebtor                *types.User
+		updbter                *types.User
+		nbmespbceUserID        int32
+		nbmespbceOrgID         int32
+		updbtedNbmespbceUserID int32
+		updbtedNbmespbceOrgID  int32
+		wbntErr                string
 	}{
 		{
-			name:            "user can update their own public notebook",
+			nbme:            "user cbn updbte their own public notebook",
 			publicNotebook:  true,
-			creator:         user1,
-			updater:         user1,
-			namespaceUserID: user1.ID,
+			crebtor:         user1,
+			updbter:         user1,
+			nbmespbceUserID: user1.ID,
 		},
 		{
-			name:            "user can update their own private notebook",
-			publicNotebook:  false,
-			creator:         user1,
-			updater:         user1,
-			namespaceUserID: user1.ID,
+			nbme:            "user cbn updbte their own privbte notebook",
+			publicNotebook:  fblse,
+			crebtor:         user1,
+			updbter:         user1,
+			nbmespbceUserID: user1.ID,
 		},
 		{
-			name:           "user1 can update org public notebook",
+			nbme:           "user1 cbn updbte org public notebook",
 			publicNotebook: true,
-			creator:        user1,
-			updater:        user1,
-			namespaceOrgID: org.ID,
+			crebtor:        user1,
+			updbter:        user1,
+			nbmespbceOrgID: org.ID,
 		},
 		{
-			name:           "user1 can update org private notebook",
-			publicNotebook: false,
-			creator:        user1,
-			updater:        user1,
-			namespaceOrgID: org.ID,
+			nbme:           "user1 cbn updbte org privbte notebook",
+			publicNotebook: fblse,
+			crebtor:        user1,
+			updbter:        user1,
+			nbmespbceOrgID: org.ID,
 		},
 		{
-			name:            "user cannot update other users public notebooks",
+			nbme:            "user cbnnot updbte other users public notebooks",
 			publicNotebook:  true,
-			creator:         user1,
-			updater:         user2,
-			namespaceUserID: user1.ID,
-			wantErr:         "user does not match the notebook user namespace",
+			crebtor:         user1,
+			updbter:         user2,
+			nbmespbceUserID: user1.ID,
+			wbntErr:         "user does not mbtch the notebook user nbmespbce",
 		},
 		{
-			name:            "user cannot update other users private notebooks",
-			publicNotebook:  false,
-			creator:         user1,
-			updater:         user2,
-			namespaceUserID: user1.ID,
-			wantErr:         "notebook not found",
+			nbme:            "user cbnnot updbte other users privbte notebooks",
+			publicNotebook:  fblse,
+			crebtor:         user1,
+			updbter:         user2,
+			nbmespbceUserID: user1.ID,
+			wbntErr:         "notebook not found",
 		},
 		{
-			name:           "user2 cannot update org public notebook",
+			nbme:           "user2 cbnnot updbte org public notebook",
 			publicNotebook: true,
-			creator:        user1,
-			updater:        user2,
-			namespaceOrgID: org.ID,
-			wantErr:        "user is not a member of the notebook organization namespace",
+			crebtor:        user1,
+			updbter:        user2,
+			nbmespbceOrgID: org.ID,
+			wbntErr:        "user is not b member of the notebook orgbnizbtion nbmespbce",
 		},
 		{
-			name:           "user2 cannot update org private notebook",
-			publicNotebook: false,
-			creator:        user1,
-			updater:        user2,
-			namespaceOrgID: org.ID,
-			wantErr:        "notebook not found",
+			nbme:           "user2 cbnnot updbte org privbte notebook",
+			publicNotebook: fblse,
+			crebtor:        user1,
+			updbter:        user2,
+			nbmespbceOrgID: org.ID,
+			wbntErr:        "notebook not found",
 		},
 		{
-			name:                  "change notebook user namespace to org namespace",
+			nbme:                  "chbnge notebook user nbmespbce to org nbmespbce",
 			publicNotebook:        true,
-			creator:               user1,
-			updater:               user1,
-			namespaceUserID:       user1.ID,
-			updatedNamespaceOrgID: org.ID,
+			crebtor:               user1,
+			updbter:               user1,
+			nbmespbceUserID:       user1.ID,
+			updbtedNbmespbceOrgID: org.ID,
 		},
 		{
-			name:                   "change notebook org namespace to user namespace",
+			nbme:                   "chbnge notebook org nbmespbce to user nbmespbce",
 			publicNotebook:         true,
-			creator:                user1,
-			updater:                user1,
-			namespaceOrgID:         org.ID,
-			updatedNamespaceUserID: user1.ID,
+			crebtor:                user1,
+			updbter:                user1,
+			nbmespbceOrgID:         org.ID,
+			updbtedNbmespbceUserID: user1.ID,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creator.ID, tt.namespaceUserID, tt.namespaceOrgID, tt.publicNotebook))
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			crebtedNotebook, err := n.CrebteNotebook(internblCtx, notebookFixture(tt.crebtor.ID, tt.nbmespbceUserID, tt.nbmespbceOrgID, tt.publicNotebook))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			updatedNotebook := createdNotebook
-			updatedNotebook.Title = "Updated Title"
-			updatedNotebook.Public = !createdNotebook.Public
-			updatedNotebook.Blocks = createdNotebook.Blocks[:1]
-			if tt.updatedNamespaceUserID != 0 || tt.updatedNamespaceOrgID != 0 {
-				updatedNotebook.NamespaceUserID = tt.updatedNamespaceUserID
-				updatedNotebook.NamespaceOrgID = tt.updatedNamespaceOrgID
+			updbtedNotebook := crebtedNotebook
+			updbtedNotebook.Title = "Updbted Title"
+			updbtedNotebook.Public = !crebtedNotebook.Public
+			updbtedNotebook.Blocks = crebtedNotebook.Blocks[:1]
+			if tt.updbtedNbmespbceUserID != 0 || tt.updbtedNbmespbceOrgID != 0 {
+				updbtedNotebook.NbmespbceUserID = tt.updbtedNbmespbceUserID
+				updbtedNotebook.NbmespbceOrgID = tt.updbtedNbmespbceOrgID
 			}
 
-			input := map[string]any{"id": marshalNotebookID(createdNotebook.ID), "notebook": notebooksapitest.NotebookToAPIInput(updatedNotebook)}
-			var response struct{ UpdateNotebook notebooksapitest.Notebook }
-			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.updater.ID)), t, schema, input, &response, updateNotebookMutation)
+			input := mbp[string]bny{"id": mbrshblNotebookID(crebtedNotebook.ID), "notebook": notebooksbpitest.NotebookToAPIInput(updbtedNotebook)}
+			vbr response struct{ UpdbteNotebook notebooksbpitest.Notebook }
+			gotErrors := bpitest.Exec(bctor.WithActor(context.Bbckground(), bctor.FromUser(tt.updbter.ID)), t, schemb, input, &response, updbteNotebookMutbtion)
 
-			if tt.wantErr != "" && len(gotErrors) == 0 {
-				t.Fatal("expected error, got none")
+			if tt.wbntErr != "" && len(gotErrors) == 0 {
+				t.Fbtbl("expected error, got none")
 			}
 
-			if tt.wantErr != "" && !strings.Contains(gotErrors[0].Message, tt.wantErr) {
-				t.Fatalf("expected error containing '%s', got '%s'", tt.wantErr, gotErrors[0].Message)
+			if tt.wbntErr != "" && !strings.Contbins(gotErrors[0].Messbge, tt.wbntErr) {
+				t.Fbtblf("expected error contbining '%s', got '%s'", tt.wbntErr, gotErrors[0].Messbge)
 			}
 
-			if tt.wantErr == "" {
-				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(updatedNotebook, marshalNotebookID(updatedNotebook.ID), tt.creator.Username, tt.updater.Username, tt.creator.ID == tt.updater.ID)
-				compareNotebookAPIResponses(t, wantNotebookResponse, response.UpdateNotebook, true)
+			if tt.wbntErr == "" {
+				wbntNotebookResponse := notebooksbpitest.NotebookToAPIResponse(updbtedNotebook, mbrshblNotebookID(updbtedNotebook.ID), tt.crebtor.Usernbme, tt.updbter.Usernbme, tt.crebtor.ID == tt.updbter.ID)
+				compbreNotebookAPIResponses(t, wbntNotebookResponse, response.UpdbteNotebook, true)
 			}
 		})
 	}
 }
 
-func testDeleteNotebook(t *testing.T, db database.DB, schema *graphql.Schema, user1 *types.User, user2 *types.User, org *types.Org) {
-	internalCtx := actor.WithInternalActor(context.Background())
+func testDeleteNotebook(t *testing.T, db dbtbbbse.DB, schemb *grbphql.Schemb, user1 *types.User, user2 *types.User, org *types.Org) {
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
 	n := notebooks.Notebooks(db)
 
 	tests := []struct {
-		name            string
+		nbme            string
 		publicNotebook  bool
-		creatorID       int32
-		namespaceUserID int32
-		namespaceOrgID  int32
+		crebtorID       int32
+		nbmespbceUserID int32
+		nbmespbceOrgID  int32
 		deleterID       int32
-		wantErr         string
+		wbntErr         string
 	}{
 		{
-			name:            "user can delete their own public notebook",
+			nbme:            "user cbn delete their own public notebook",
 			publicNotebook:  true,
-			creatorID:       user1.ID,
-			namespaceUserID: user1.ID,
+			crebtorID:       user1.ID,
+			nbmespbceUserID: user1.ID,
 			deleterID:       user1.ID,
 		},
 		{
-			name:            "user can delete their own private notebook",
-			publicNotebook:  false,
-			creatorID:       user1.ID,
-			namespaceUserID: user1.ID,
+			nbme:            "user cbn delete their own privbte notebook",
+			publicNotebook:  fblse,
+			crebtorID:       user1.ID,
+			nbmespbceUserID: user1.ID,
 			deleterID:       user1.ID,
 		},
 		{
-			name:           "user1 can delete org public notebook",
+			nbme:           "user1 cbn delete org public notebook",
 			publicNotebook: true,
-			creatorID:      user1.ID,
-			namespaceOrgID: org.ID,
+			crebtorID:      user1.ID,
+			nbmespbceOrgID: org.ID,
 			deleterID:      user1.ID,
 		},
 		{
-			name:           "user1 can delete org private notebook",
-			publicNotebook: false,
-			creatorID:      user1.ID,
-			namespaceOrgID: org.ID,
+			nbme:           "user1 cbn delete org privbte notebook",
+			publicNotebook: fblse,
+			crebtorID:      user1.ID,
+			nbmespbceOrgID: org.ID,
 			deleterID:      user1.ID,
 		},
 		{
-			name:            "user2 cannot delete other user1 public notebook",
+			nbme:            "user2 cbnnot delete other user1 public notebook",
 			publicNotebook:  true,
-			creatorID:       user1.ID,
-			namespaceUserID: user1.ID,
+			crebtorID:       user1.ID,
+			nbmespbceUserID: user1.ID,
 			deleterID:       user2.ID,
-			wantErr:         "user does not match the notebook user namespace",
+			wbntErr:         "user does not mbtch the notebook user nbmespbce",
 		},
 		{
-			name:            "user2 cannot delete other user1 private notebook",
-			publicNotebook:  false,
-			creatorID:       user1.ID,
-			namespaceUserID: user1.ID,
+			nbme:            "user2 cbnnot delete other user1 privbte notebook",
+			publicNotebook:  fblse,
+			crebtorID:       user1.ID,
+			nbmespbceUserID: user1.ID,
 			deleterID:       user2.ID,
-			wantErr:         "notebook not found",
+			wbntErr:         "notebook not found",
 		},
 		{
-			name:           "user2 cannot delete org public notebook",
+			nbme:           "user2 cbnnot delete org public notebook",
 			publicNotebook: true,
-			creatorID:      user1.ID,
-			namespaceOrgID: org.ID,
+			crebtorID:      user1.ID,
+			nbmespbceOrgID: org.ID,
 			deleterID:      user2.ID,
-			wantErr:        "user is not a member of the notebook organization namespace",
+			wbntErr:        "user is not b member of the notebook orgbnizbtion nbmespbce",
 		},
 		{
-			name:           "user2 cannot delete org private notebook",
-			publicNotebook: false,
-			creatorID:      user1.ID,
-			namespaceOrgID: org.ID,
+			nbme:           "user2 cbnnot delete org privbte notebook",
+			publicNotebook: fblse,
+			crebtorID:      user1.ID,
+			nbmespbceOrgID: org.ID,
 			deleterID:      user2.ID,
-			wantErr:        "notebook not found",
+			wbntErr:        "notebook not found",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			createdNotebook, err := n.CreateNotebook(internalCtx, notebookFixture(tt.creatorID, tt.namespaceUserID, tt.namespaceOrgID, tt.publicNotebook))
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			crebtedNotebook, err := n.CrebteNotebook(internblCtx, notebookFixture(tt.crebtorID, tt.nbmespbceUserID, tt.nbmespbceOrgID, tt.publicNotebook))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			input := map[string]any{"id": marshalNotebookID(createdNotebook.ID)}
-			var response struct{}
-			gotErrors := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(tt.deleterID)), t, schema, input, &response, deleteNotebookMutation)
+			input := mbp[string]bny{"id": mbrshblNotebookID(crebtedNotebook.ID)}
+			vbr response struct{}
+			gotErrors := bpitest.Exec(bctor.WithActor(context.Bbckground(), bctor.FromUser(tt.deleterID)), t, schemb, input, &response, deleteNotebookMutbtion)
 
-			if tt.wantErr != "" && len(gotErrors) == 0 {
-				t.Fatal("expected error, got none")
+			if tt.wbntErr != "" && len(gotErrors) == 0 {
+				t.Fbtbl("expected error, got none")
 			}
 
-			if tt.wantErr != "" && !strings.Contains(gotErrors[0].Message, tt.wantErr) {
-				t.Fatalf("expected error containing '%s', got '%s'", tt.wantErr, gotErrors[0].Message)
+			if tt.wbntErr != "" && !strings.Contbins(gotErrors[0].Messbge, tt.wbntErr) {
+				t.Fbtblf("expected error contbining '%s', got '%s'", tt.wbntErr, gotErrors[0].Messbge)
 			}
 
-			_, err = n.GetNotebook(actor.WithActor(context.Background(), actor.FromUser(tt.creatorID)), createdNotebook.ID)
-			if tt.wantErr == "" && !errors.Is(err, notebooks.ErrNotebookNotFound) {
-				t.Fatal("expected to not find a deleted notebook")
+			_, err = n.GetNotebook(bctor.WithActor(context.Bbckground(), bctor.FromUser(tt.crebtorID)), crebtedNotebook.ID)
+			if tt.wbntErr == "" && !errors.Is(err, notebooks.ErrNotebookNotFound) {
+				t.Fbtbl("expected to not find b deleted notebook")
 			}
 		})
 	}
 }
 
-func createNotebooks(t *testing.T, db database.DB, notebooksToCreate []*notebooks.Notebook) []*notebooks.Notebook {
+func crebteNotebooks(t *testing.T, db dbtbbbse.DB, notebooksToCrebte []*notebooks.Notebook) []*notebooks.Notebook {
 	t.Helper()
 	n := notebooks.Notebooks(db)
-	internalCtx := actor.WithInternalActor(context.Background())
-	createdNotebooks := make([]*notebooks.Notebook, 0, len(notebooksToCreate))
-	for _, notebook := range notebooksToCreate {
-		createdNotebook, err := n.CreateNotebook(internalCtx, notebook)
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
+	crebtedNotebooks := mbke([]*notebooks.Notebook, 0, len(notebooksToCrebte))
+	for _, notebook := rbnge notebooksToCrebte {
+		crebtedNotebook, err := n.CrebteNotebook(internblCtx, notebook)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		createdNotebooks = append(createdNotebooks, createdNotebook)
+		crebtedNotebooks = bppend(crebtedNotebooks, crebtedNotebook)
 	}
-	return createdNotebooks
+	return crebtedNotebooks
 }
 
-func createNotebookStars(t *testing.T, db database.DB, notebookID int64, userIDs ...int32) {
+func crebteNotebookStbrs(t *testing.T, db dbtbbbse.DB, notebookID int64, userIDs ...int32) {
 	t.Helper()
 	n := notebooks.Notebooks(db)
-	internalCtx := actor.WithInternalActor(context.Background())
-	for _, userID := range userIDs {
-		_, err := n.CreateNotebookStar(internalCtx, notebookID, userID)
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
+	for _, userID := rbnge userIDs {
+		_, err := n.CrebteNotebookStbr(internblCtx, notebookID, userID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 }
 
 func TestListNotebooks(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
 	u := db.Users()
 	o := db.Orgs()
 	om := db.OrgMembers()
 
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	user1, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u1", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	user2, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u2", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	displayName := "My Org"
-	org, err := o.Create(internalCtx, "myorg", &displayName)
+	displbyNbme := "My Org"
+	org, err := o.Crebte(internblCtx, "myorg", &displbyNbme)
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
-	_, err = om.Create(internalCtx, org.ID, user1.ID)
+	_, err = om.Crebte(internblCtx, org.ID, user1.ID)
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	idToUsername := map[int32]string{user1.ID: user1.Username, user2.ID: user2.Username}
+	idToUsernbme := mbp[int32]string{user1.ID: user1.Usernbme, user2.ID: user2.Usernbme}
 
 	n1 := userNotebookFixture(user1.ID, true)
-	n1.Blocks = notebooks.NotebookBlocks{{ID: "1", Type: notebooks.NotebookMarkdownBlockType, MarkdownInput: &notebooks.NotebookMarkdownBlockInput{Text: "# A special title"}}}
+	n1.Blocks = notebooks.NotebookBlocks{{ID: "1", Type: notebooks.NotebookMbrkdownBlockType, MbrkdownInput: &notebooks.NotebookMbrkdownBlockInput{Text: "# A specibl title"}}}
 
-	createdNotebooks := createNotebooks(t, db, []*notebooks.Notebook{
+	crebtedNotebooks := crebteNotebooks(t, db, []*notebooks.Notebook{
 		n1,
-		userNotebookFixture(user1.ID, false),
+		userNotebookFixture(user1.ID, fblse),
 		userNotebookFixture(user2.ID, true),
-		orgNotebookFixture(user1.ID, org.ID, false),
+		orgNotebookFixture(user1.ID, org.ID, fblse),
 		orgNotebookFixture(user1.ID, org.ID, true),
 	})
-	createNotebookStars(t, db, createdNotebooks[0].ID, user1.ID)
-	createNotebookStars(t, db, createdNotebooks[2].ID, user1.ID, user2.ID)
+	crebteNotebookStbrs(t, db, crebtedNotebooks[0].ID, user1.ID)
+	crebteNotebookStbrs(t, db, crebtedNotebooks[2].ID, user1.ID, user2.ID)
 
 	getNotebooks := func(indices ...int) []*notebooks.Notebook {
-		ids := make([]*notebooks.Notebook, 0, len(indices))
-		for _, idx := range indices {
-			ids = append(ids, createdNotebooks[idx])
+		ids := mbke([]*notebooks.Notebook, 0, len(indices))
+		for _, idx := rbnge indices {
+			ids = bppend(ids, crebtedNotebooks[idx])
 		}
 		return ids
 	}
 
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
+	schemb, err := grbphqlbbckend.NewSchembWithNotebooksResolver(db, NewResolver(db))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name          string
+		nbme          string
 		viewerID      int32
-		args          map[string]any
-		wantCount     int32
-		wantNotebooks []*notebooks.Notebook
+		brgs          mbp[string]bny
+		wbntCount     int32
+		wbntNotebooks []*notebooks.Notebook
 	}{
 		{
-			name:          "list all available notebooks",
+			nbme:          "list bll bvbilbble notebooks",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 3, "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(0, 1, 2),
-			wantCount:     5,
+			brgs:          mbp[string]bny{"first": 3, "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(0, 1, 2),
+			wbntCount:     5,
 		},
 		{
-			name:          "list second page of available notebooks",
+			nbme:          "list second pbge of bvbilbble notebooks",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 2, "after": marshalNotebookCursor(1), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(1, 2),
-			wantCount:     5,
+			brgs:          mbp[string]bny{"first": 2, "bfter": mbrshblNotebookCursor(1), "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(1, 2),
+			wbntCount:     5,
 		},
 		{
-			name:          "query by block contents",
+			nbme:          "query by block contents",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 3, "query": "special", "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(0),
-			wantCount:     1,
+			brgs:          mbp[string]bny{"first": 3, "query": "specibl", "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(0),
+			wbntCount:     1,
 		},
 		{
-			name:          "filter by creator",
+			nbme:          "filter by crebtor",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 3, "creatorUserID": graphqlbackend.MarshalUserID(user2.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(2),
-			wantCount:     1,
+			brgs:          mbp[string]bny{"first": 3, "crebtorUserID": grbphqlbbckend.MbrshblUserID(user2.ID), "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(2),
+			wbntCount:     1,
 		},
 		{
-			name:          "filter by user namespace",
+			nbme:          "filter by user nbmespbce",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(0, 1),
-			wantCount:     2,
+			brgs:          mbp[string]bny{"first": 3, "nbmespbce": grbphqlbbckend.MbrshblUserID(user1.ID), "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(0, 1),
+			wbntCount:     2,
 		},
 		{
-			name:          "filter by org namespace",
+			nbme:          "filter by org nbmespbce",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(3, 4),
-			wantCount:     2,
+			brgs:          mbp[string]bny{"first": 3, "nbmespbce": grbphqlbbckend.MbrshblOrgID(org.ID), "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(3, 4),
+			wbntCount:     2,
 		},
 		{
-			name:          "user2 cannot view user1 private notebooks",
+			nbme:          "user2 cbnnot view user1 privbte notebooks",
 			viewerID:      user2.ID,
-			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(0),
-			wantCount:     1,
+			brgs:          mbp[string]bny{"first": 3, "nbmespbce": grbphqlbbckend.MbrshblUserID(user1.ID), "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(0),
+			wbntCount:     1,
 		},
 		{
-			name:          "user2 cannot view org private notebooks",
+			nbme:          "user2 cbnnot view org privbte notebooks",
 			viewerID:      user2.ID,
-			args:          map[string]any{"first": 3, "namespace": graphqlbackend.MarshalOrgID(org.ID), "orderBy": graphqlbackend.NotebookOrderByCreatedAt, "descending": false},
-			wantNotebooks: getNotebooks(4),
-			wantCount:     1,
+			brgs:          mbp[string]bny{"first": 3, "nbmespbce": grbphqlbbckend.MbrshblOrgID(org.ID), "orderBy": grbphqlbbckend.NotebookOrderByCrebtedAt, "descending": fblse},
+			wbntNotebooks: getNotebooks(4),
+			wbntCount:     1,
 		},
 		{
-			name:          "user1 starred notebooks ordered by count",
+			nbme:          "user1 stbrred notebooks ordered by count",
 			viewerID:      user1.ID,
-			args:          map[string]any{"first": 3, "starredByUserID": graphqlbackend.MarshalUserID(user1.ID), "orderBy": graphqlbackend.NotebookOrderByStarCount, "descending": true},
-			wantNotebooks: []*notebooks.Notebook{createdNotebooks[2], createdNotebooks[0]},
-			wantCount:     2,
+			brgs:          mbp[string]bny{"first": 3, "stbrredByUserID": grbphqlbbckend.MbrshblUserID(user1.ID), "orderBy": grbphqlbbckend.NotebookOrderByStbrCount, "descending": true},
+			wbntNotebooks: []*notebooks.Notebook{crebtedNotebooks[2], crebtedNotebooks[0]},
+			wbntCount:     2,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var response struct {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			vbr response struct {
 				Notebooks struct {
-					Nodes      []notebooksapitest.Notebook
-					TotalCount int32
-					PageInfo   apitest.PageInfo
+					Nodes      []notebooksbpitest.Notebook
+					TotblCount int32
+					PbgeInfo   bpitest.PbgeInfo
 				}
 			}
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(tt.viewerID)), t, schema, tt.args, &response, listNotebooksQuery)
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(tt.viewerID)), t, schemb, tt.brgs, &response, listNotebooksQuery)
 
-			if len(tt.wantNotebooks) != len(response.Notebooks.Nodes) {
-				t.Fatalf("wanted %d notebook nodes, got %d", len(tt.wantNotebooks), len(response.Notebooks.Nodes))
+			if len(tt.wbntNotebooks) != len(response.Notebooks.Nodes) {
+				t.Fbtblf("wbnted %d notebook nodes, got %d", len(tt.wbntNotebooks), len(response.Notebooks.Nodes))
 			}
 
-			if tt.wantCount != response.Notebooks.TotalCount {
-				t.Fatalf("wanted %d notebook total count, got %d", tt.wantCount, response.Notebooks.TotalCount)
+			if tt.wbntCount != response.Notebooks.TotblCount {
+				t.Fbtblf("wbnted %d notebook totbl count, got %d", tt.wbntCount, response.Notebooks.TotblCount)
 			}
 
-			for idx, createdNotebook := range tt.wantNotebooks {
-				wantNotebookResponse := notebooksapitest.NotebookToAPIResponse(
-					createdNotebook,
-					marshalNotebookID(createdNotebook.ID),
-					idToUsername[createdNotebook.CreatorUserID],
-					idToUsername[createdNotebook.UpdaterUserID],
-					createdNotebook.CreatorUserID == tt.viewerID,
+			for idx, crebtedNotebook := rbnge tt.wbntNotebooks {
+				wbntNotebookResponse := notebooksbpitest.NotebookToAPIResponse(
+					crebtedNotebook,
+					mbrshblNotebookID(crebtedNotebook.ID),
+					idToUsernbme[crebtedNotebook.CrebtorUserID],
+					idToUsernbme[crebtedNotebook.UpdbterUserID],
+					crebtedNotebook.CrebtorUserID == tt.viewerID,
 				)
-				compareNotebookAPIResponses(t, wantNotebookResponse, response.Notebooks.Nodes[idx], true)
+				compbreNotebookAPIResponses(t, wbntNotebookResponse, response.Notebooks.Nodes[idx], true)
 			}
 		})
 	}
@@ -704,37 +704,37 @@ func TestListNotebooks(t *testing.T) {
 
 func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
 	u := db.Users()
 	n := notebooks.Notebooks(db)
 
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	user1, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u1", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	user2, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u2", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	createdNotebook, err := n.CreateNotebook(internalCtx, userNotebookFixture(user2.ID, true))
+	crebtedNotebook, err := n.CrebteNotebook(internblCtx, userNotebookFixture(user2.ID, true))
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	err = u.Delete(internalCtx, user2.ID)
+	err = u.Delete(internblCtx, user2.ID)
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
+	schemb, err := grbphqlbbckend.NewSchembWithNotebooksResolver(db, NewResolver(db))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	input := map[string]any{"id": marshalNotebookID(createdNotebook.ID)}
-	var response struct{ Node notebooksapitest.Notebook }
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &response, queryNotebook)
+	input := mbp[string]bny{"id": mbrshblNotebookID(crebtedNotebook.ID)}
+	vbr response struct{ Node notebooksbpitest.Notebook }
+	bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user1.ID)), t, schemb, input, &response, queryNotebook)
 }

@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
@@ -9,648 +9,648 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
-	"github.com/stretchr/testify/assert"
+	"github.com/inconshrevebble/log15"
+	"github.com/stretchr/testify/bssert"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/versions"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var mockVersion = semver.MustParse("12.0.0-pre")
-var mockVersion2 = semver.MustParse("14.10.0-pre")
+vbr mockVersion = semver.MustPbrse("12.0.0-pre")
+vbr mockVersion2 = semver.MustPbrse("14.10.0-pre")
 
-func TestGitLabSource(t *testing.T) {
+func TestGitLbbSource(t *testing.T) {
 	t.Run("determineVersion", func(t *testing.T) {
-		t.Run("external service is cached in redis", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
+		t.Run("externbl service is cbched in redis", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
 
 			p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
 			v, err := p.source.determineVersion(p.ctx)
 
-			assert.NoError(t, err)
-			assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
-			assert.False(t, p.isGetVersionCalled, "Client.GetVersion should not be called")
+			bssert.NoError(t, err)
+			bssert.True(t, mockVersion.Equbl(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			bssert.Fblse(t, p.isGetVersionCblled, "Client.GetVersion should not be cblled")
 		})
 
-		t.Run("external service (matching the key) does not exist in redis", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
+		t.Run("externbl service (mbtching the key) does not exist in redis", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
 
-			p.mockGetVersions("", "random-urn-key-that-doesnt exist")
+			p.mockGetVersions("", "rbndom-urn-key-thbt-doesnt exist")
 			p.mockGetVersion(mockVersion.String())
 			v, err := p.source.determineVersion(p.ctx)
 
-			assert.NoError(t, err)
-			assert.True(t, mockVersion.Equal(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
-			assert.True(t, p.isGetVersionCalled, "Client.GetVersion should be called")
+			bssert.NoError(t, err)
+			bssert.True(t, mockVersion.Equbl(v), fmt.Sprintf("expected: %s, got: %s", v.String(), mockVersion.String()))
+			bssert.True(t, p.isGetVersionCblled, "Client.GetVersion should be cblled")
 		})
 	})
 
-	t.Run("CreateDraftChangeset", func(t *testing.T) {
-		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
+	t.Run("CrebteDrbftChbngeset", func(t *testing.T) {
+		t.Run("GitLbb version is grebter thbn 14.0.0", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
 
 			p.mockGetVersions(mockVersion2.String(), p.source.client.Urn())
-			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
-				SourceBranch: p.mr.SourceBranch,
-				TargetBranch: p.mr.TargetBranch,
+			p.mockCrebteMergeRequest(gitlbb.CrebteMergeRequestOpts{
+				SourceBrbnch: p.mr.SourceBrbnch,
+				TbrgetBrbnch: p.mr.TbrgetBrbnch,
 			}, p.mr, nil)
 			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(p.mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 
-			exists, err := p.source.CreateDraftChangeset(p.ctx, p.changeset)
-			assert.NoError(t, err)
-			assert.True(t, strings.HasPrefix(p.changeset.Title, "Draft:"))
-			assert.False(t, exists)
+			exists, err := p.source.CrebteDrbftChbngeset(p.ctx, p.chbngeset)
+			bssert.NoError(t, err)
+			bssert.True(t, strings.HbsPrefix(p.chbngeset.Title, "Drbft:"))
+			bssert.Fblse(t, exists)
 		})
 
-		t.Run("GitLab Version is less than 14.0.0", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
+		t.Run("GitLbb Version is less thbn 14.0.0", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
 
 			p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
-			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
-				SourceBranch: p.mr.SourceBranch,
-				TargetBranch: p.mr.TargetBranch,
+			p.mockCrebteMergeRequest(gitlbb.CrebteMergeRequestOpts{
+				SourceBrbnch: p.mr.SourceBrbnch,
+				TbrgetBrbnch: p.mr.TbrgetBrbnch,
 			}, p.mr, nil)
 			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(p.mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 
-			exists, err := p.source.CreateDraftChangeset(p.ctx, p.changeset)
-			assert.NoError(t, err)
-			assert.True(t, strings.HasPrefix(p.changeset.Title, "WIP:"))
-			assert.False(t, exists)
+			exists, err := p.source.CrebteDrbftChbngeset(p.ctx, p.chbngeset)
+			bssert.NoError(t, err)
+			bssert.True(t, strings.HbsPrefix(p.chbngeset.Title, "WIP:"))
+			bssert.Fblse(t, exists)
 		})
 	})
 }
 
-// TestGitLabSource_ChangesetSource tests the various Changeset functions that
-// implement the ChangesetSource interface.
-func TestGitLabSource_ChangesetSource(t *testing.T) {
-	t.Run("CreateChangeset", func(t *testing.T) {
-		t.Run("invalid metadata", func(t *testing.T) {
+// TestGitLbbSource_ChbngesetSource tests the vbrious Chbngeset functions thbt
+// implement the ChbngesetSource interfbce.
+func TestGitLbbSource_ChbngesetSource(t *testing.T) {
+	t.Run("CrebteChbngeset", func(t *testing.T) {
+		t.Run("invblid metbdbtb", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			repo := &types.Repo{Metadata: struct{}{}}
-			_, _ = p.source.CreateChangeset(p.ctx, &Changeset{
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			repo := &types.Repo{Metbdbtb: struct{}{}}
+			_, _ = p.source.CrebteChbngeset(p.ctx, &Chbngeset{
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			})
-			t.Error("invalid metadata did not panic")
+			t.Error("invblid metbdbtb did not pbnic")
 		})
 
-		t.Run("error from CreateMergeRequest", func(t *testing.T) {
+		t.Run("error from CrebteMergeRequest", func(t *testing.T) {
 			inner := errors.New("foo")
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
-				SourceBranch: p.mr.SourceBranch,
-				TargetBranch: p.mr.TargetBranch,
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.mockCrebteMergeRequest(gitlbb.CrebteMergeRequestOpts{
+				SourceBrbnch: p.mr.SourceBrbnch,
+				TbrgetBrbnch: p.mr.TbrgetBrbnch,
 			}, nil, inner)
 
-			exists, have := p.source.CreateChangeset(p.ctx, p.changeset)
+			exists, hbve := p.source.CrebteChbngeset(p.ctx, p.chbngeset)
 			if exists {
-				t.Errorf("unexpected exists value: %v", exists)
+				t.Errorf("unexpected exists vblue: %v", exists)
 			}
-			if !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			if !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
 		})
 
 		t.Run("error from GetOpenMergeRequestByRefs", func(t *testing.T) {
 			inner := errors.New("foo")
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
-				SourceBranch: p.mr.SourceBranch,
-				TargetBranch: p.mr.TargetBranch,
-			}, nil, gitlab.ErrMergeRequestAlreadyExists)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.mockCrebteMergeRequest(gitlbb.CrebteMergeRequestOpts{
+				SourceBrbnch: p.mr.SourceBrbnch,
+				TbrgetBrbnch: p.mr.TbrgetBrbnch,
+			}, nil, gitlbb.ErrMergeRequestAlrebdyExists)
 			p.mockGetOpenMergeRequestByRefs(nil, inner)
 
-			exists, have := p.source.CreateChangeset(p.ctx, p.changeset)
+			exists, hbve := p.source.CrebteChbngeset(p.ctx, p.chbngeset)
 			if !exists {
-				t.Errorf("unexpected exists value: %v", exists)
+				t.Errorf("unexpected exists vblue: %v", exists)
 			}
-			if !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			if !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
 		})
 
-		t.Run("merge request already exists", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
-				SourceBranch: p.mr.SourceBranch,
-				TargetBranch: p.mr.TargetBranch,
-			}, nil, gitlab.ErrMergeRequestAlreadyExists)
+		t.Run("merge request blrebdy exists", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.mockCrebteMergeRequest(gitlbb.CrebteMergeRequestOpts{
+				SourceBrbnch: p.mr.SourceBrbnch,
+				TbrgetBrbnch: p.mr.TbrgetBrbnch,
+			}, nil, gitlbb.ErrMergeRequestAlrebdyExists)
 			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(p.mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 			p.mockGetOpenMergeRequestByRefs(p.mr, nil)
 
-			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
+			exists, err := p.source.CrebteChbngeset(p.ctx, p.chbngeset)
 			if !exists {
-				t.Errorf("unexpected exists value: %v", exists)
+				t.Errorf("unexpected exists vblue: %v", exists)
 			}
 			if err != nil {
 				t.Errorf("unexpected non-nil err: %+v", err)
 			}
 
-			if p.changeset.Changeset.Metadata != p.mr {
-				t.Errorf("unexpected metadata: have %+v; want %+v", p.changeset.Changeset.Metadata, p.mr)
+			if p.chbngeset.Chbngeset.Metbdbtb != p.mr {
+				t.Errorf("unexpected metbdbtb: hbve %+v; wbnt %+v", p.chbngeset.Chbngeset.Metbdbtb, p.mr)
 			}
 		})
 
 		t.Run("merge request is new", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.mockCreateMergeRequest(gitlab.CreateMergeRequestOpts{
-				SourceBranch: p.mr.SourceBranch,
-				TargetBranch: p.mr.TargetBranch,
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.mockCrebteMergeRequest(gitlbb.CrebteMergeRequestOpts{
+				SourceBrbnch: p.mr.SourceBrbnch,
+				TbrgetBrbnch: p.mr.TbrgetBrbnch,
 			}, p.mr, nil)
 			p.mockGetMergeRequestNotes(p.mr.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(p.mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(p.mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(p.mr.IID, nil, 20, nil)
 
-			exists, err := p.source.CreateChangeset(p.ctx, p.changeset)
+			exists, err := p.source.CrebteChbngeset(p.ctx, p.chbngeset)
 			if exists {
-				t.Errorf("unexpected exists value: %v", exists)
+				t.Errorf("unexpected exists vblue: %v", exists)
 			}
 			if err != nil {
 				t.Errorf("unexpected non-nil err: %+v", err)
 			}
 
-			if p.changeset.Changeset.Metadata != p.mr {
-				t.Errorf("unexpected metadata: have %+v; want %+v", p.changeset.Changeset.Metadata, p.mr)
+			if p.chbngeset.Chbngeset.Metbdbtb != p.mr {
+				t.Errorf("unexpected metbdbtb: hbve %+v; wbnt %+v", p.chbngeset.Chbngeset.Metbdbtb, p.mr)
 			}
 		})
 
-		t.Run("integration", func(t *testing.T) {
-			// Repository used: https://gitlab.com/batch-changes-testing/batch-changes-test-repo
-			// This repository does not have any project setting to delete source branches
-			// automatically on PR merge.
+		t.Run("integrbtion", func(t *testing.T) {
+			// Repository used: https://gitlbb.com/bbtch-chbnges-testing/bbtch-chbnges-test-repo
+			// This repository does not hbve bny project setting to delete source brbnches
+			// butombticblly on PR merge.
 			//
-			// The requests here cannot be easily rerun with `-update` since you can only open a
-			// pull request once. To update, push a new branch with at least one commit to
-			// batch-changes-test-repo, then update the branch names in the test cases below.
+			// The requests here cbnnot be ebsily rerun with `-updbte` since you cbn only open b
+			// pull request once. To updbte, push b new brbnch with bt lebst one commit to
+			// bbtch-chbnges-test-repo, then updbte the brbnch nbmes in the test cbses below.
 			//
-			// You can update just this test with `-update GitLabSource_CreateChangeset`.
+			// You cbn updbte just this test with `-updbte GitLbbSource_CrebteChbngeset`.
 			repo := &types.Repo{
-				Metadata: &gitlab.Project{
-					// https://gitlab.com/batch-changes-testing/batch-changes-test-repo
-					ProjectCommon: gitlab.ProjectCommon{ID: 40370047},
+				Metbdbtb: &gitlbb.Project{
+					// https://gitlbb.com/bbtch-chbnges-testing/bbtch-chbnges-test-repo
+					ProjectCommon: gitlbb.ProjectCommon{ID: 40370047},
 				},
 			}
 
-			testCases := []struct {
-				name               string
-				cs                 *Changeset
-				removeSourceBranch bool
+			testCbses := []struct {
+				nbme               string
+				cs                 *Chbngeset
+				removeSourceBrbnch bool
 			}{
 				{
-					name: "no-remove-source-branch",
-					cs: &Changeset{
-						Title:      "This is a test PR",
+					nbme: "no-remove-source-brbnch",
+					cs: &Chbngeset{
+						Title:      "This is b test PR",
 						Body:       "This is the description of the test PR",
-						HeadRef:    "refs/heads/test-pr-3",
-						BaseRef:    "refs/heads/main",
+						HebdRef:    "refs/hebds/test-pr-3",
+						BbseRef:    "refs/hebds/mbin",
 						RemoteRepo: repo,
-						TargetRepo: repo,
-						Changeset:  &btypes.Changeset{},
+						TbrgetRepo: repo,
+						Chbngeset:  &btypes.Chbngeset{},
 					},
-					removeSourceBranch: false,
+					removeSourceBrbnch: fblse,
 				},
 				{
-					name: "yes-remove-source-branch",
-					cs: &Changeset{
-						Title:      "This is a test PR",
+					nbme: "yes-remove-source-brbnch",
+					cs: &Chbngeset{
+						Title:      "This is b test PR",
 						Body:       "This is the description of the test PR",
-						HeadRef:    "refs/heads/test-pr-4",
-						BaseRef:    "refs/heads/main",
+						HebdRef:    "refs/hebds/test-pr-4",
+						BbseRef:    "refs/hebds/mbin",
 						RemoteRepo: repo,
-						TargetRepo: repo,
-						Changeset:  &btypes.Changeset{},
+						TbrgetRepo: repo,
+						Chbngeset:  &btypes.Chbngeset{},
 					},
-					removeSourceBranch: true,
+					removeSourceBrbnch: true,
 				},
 			}
 
-			for _, tc := range testCases {
+			for _, tc := rbnge testCbses {
 				tc := tc
-				tc.name = "GitLabSource_CreateChangeset_" + tc.name
+				tc.nbme = "GitLbbSource_CrebteChbngeset_" + tc.nbme
 
-				t.Run(tc.name, func(t *testing.T) {
-					cf, save := newClientFactory(t, tc.name)
-					defer save(t)
+				t.Run(tc.nbme, func(t *testing.T) {
+					cf, sbve := newClientFbctory(t, tc.nbme)
+					defer sbve(t)
 
-					if tc.removeSourceBranch {
+					if tc.removeSourceBrbnch {
 						conf.Mock(&conf.Unified{
-							SiteConfiguration: schema.SiteConfiguration{
-								BatchChangesAutoDeleteBranch: true,
+							SiteConfigurbtion: schemb.SiteConfigurbtion{
+								BbtchChbngesAutoDeleteBrbnch: true,
 							},
 						})
 						defer conf.Mock(nil)
 					}
 
 					lg := log15.New()
-					lg.SetHandler(log15.DiscardHandler())
+					lg.SetHbndler(log15.DiscbrdHbndler())
 
-					svc := &types.ExternalService{
-						Kind: extsvc.KindGitLab,
-						Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
-							Url:   "https://gitlab.com",
+					svc := &types.ExternblService{
+						Kind: extsvc.KindGitLbb,
+						Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitLbbConnection{
+							Url:   "https://gitlbb.com",
 							Token: os.Getenv("GITLAB_TOKEN"),
 						})),
 					}
 
-					ctx := context.Background()
-					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+					ctx := context.Bbckground()
+					gitlbbSource, err := NewGitLbbSource(ctx, svc, cf)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					_, err = gitlabSource.CreateChangeset(ctx, tc.cs)
+					_, err = gitlbbSource.CrebteChbngeset(ctx, tc.cs)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					meta := tc.cs.Changeset.Metadata.(*gitlab.MergeRequest)
-					testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
-					if meta.ForceRemoveSourceBranch != tc.removeSourceBranch {
-						t.Fatalf("unexpected ForceRemoveSourceBranch value: have %v, want %v", meta.ForceRemoveSourceBranch, tc.removeSourceBranch)
+					metb := tc.cs.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
+					testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), metb)
+					if metb.ForceRemoveSourceBrbnch != tc.removeSourceBrbnch {
+						t.Fbtblf("unexpected ForceRemoveSourceBrbnch vblue: hbve %v, wbnt %v", metb.ForceRemoveSourceBrbnch, tc.removeSourceBrbnch)
 					}
 				})
 			}
 		})
 	})
 
-	t.Run("CloseChangeset", func(t *testing.T) {
-		t.Run("invalid metadata", func(t *testing.T) {
+	t.Run("CloseChbngeset", func(t *testing.T) {
+		t.Run("invblid metbdbtb", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			repo := &types.Repo{Metadata: struct{}{}}
-			_ = p.source.CloseChangeset(p.ctx, &Changeset{
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			repo := &types.Repo{Metbdbtb: struct{}{}}
+			_ = p.source.CloseChbngeset(p.ctx, &Chbngeset{
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			})
-			t.Error("invalid metadata did not panic")
+			t.Error("invblid metbdbtb did not pbnic")
 		})
 
-		t.Run("error from UpdateMergeRequest", func(t *testing.T) {
+		t.Run("error from UpdbteMergeRequest", func(t *testing.T) {
 			inner := errors.New("foo")
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, gitlab.UpdateMergeRequestStateEventClose, inner)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockUpdbteMergeRequest(mr, nil, gitlbb.UpdbteMergeRequestStbteEventClose, inner)
 
-			have := p.source.CloseChangeset(p.ctx, p.changeset)
-			if !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			hbve := p.source.CloseChbngeset(p.ctx, p.chbngeset)
+			if !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			want := &gitlab.MergeRequest{}
-			mr := &gitlab.MergeRequest{IID: 2}
+			wbnt := &gitlbb.MergeRequest{}
+			mr := &gitlbb.MergeRequest{IID: 2}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventClose, nil)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockUpdbteMergeRequest(mr, wbnt, gitlbb.UpdbteMergeRequestStbteEventClose, nil)
 			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(mr.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
-			if err := p.source.CloseChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.CloseChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 		})
 	})
 
-	t.Run("ReopenChangeset", func(t *testing.T) {
-		t.Run("invalid metadata", func(t *testing.T) {
+	t.Run("ReopenChbngeset", func(t *testing.T) {
+		t.Run("invblid metbdbtb", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			repo := &types.Repo{Metadata: struct{}{}}
-			_ = p.source.ReopenChangeset(p.ctx, &Changeset{
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			repo := &types.Repo{Metbdbtb: struct{}{}}
+			_ = p.source.ReopenChbngeset(p.ctx, &Chbngeset{
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			})
-			t.Error("invalid metadata did not panic")
+			t.Error("invblid metbdbtb did not pbnic")
 		})
 
-		t.Run("error from UpdateMergeRequest", func(t *testing.T) {
+		t.Run("error from UpdbteMergeRequest", func(t *testing.T) {
 			inner := errors.New("foo")
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, gitlab.UpdateMergeRequestStateEventReopen, inner)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockUpdbteMergeRequest(mr, nil, gitlbb.UpdbteMergeRequestStbteEventReopen, inner)
 
-			have := p.source.ReopenChangeset(p.ctx, p.changeset)
-			if !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			hbve := p.source.ReopenChbngeset(p.ctx, p.chbngeset)
+			if !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			want := &gitlab.MergeRequest{}
-			mr := &gitlab.MergeRequest{IID: 2}
+			wbnt := &gitlbb.MergeRequest{}
+			mr := &gitlbb.MergeRequest{IID: 2}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, want, gitlab.UpdateMergeRequestStateEventReopen, nil)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockUpdbteMergeRequest(mr, wbnt, gitlbb.UpdbteMergeRequestStbteEventReopen, nil)
 			p.mockGetMergeRequestNotes(mr.IID, nil, 20, nil)
-			// TODO: add event
-			p.mockGetMergeRequestResourceStateEvents(mr.IID, nil, 20, nil)
+			// TODO: bdd event
+			p.mockGetMergeRequestResourceStbteEvents(mr.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(mr.IID, nil, 20, nil)
 
-			if err := p.source.ReopenChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.ReopenChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 		})
 	})
 
-	t.Run("LoadChangeset", func(t *testing.T) {
-		t.Run("invalid metadata", func(t *testing.T) {
+	t.Run("LobdChbngeset", func(t *testing.T) {
+		t.Run("invblid metbdbtb", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
-			p := newGitLabChangesetSourceTestProvider(t)
+			p := newGitLbbChbngesetSourceTestProvider(t)
 
-			repo := &types.Repo{Metadata: struct{}{}}
-			_ = p.source.LoadChangeset(p.ctx, &Changeset{
+			repo := &types.Repo{Metbdbtb: struct{}{}}
+			_ = p.source.LobdChbngeset(p.ctx, &Chbngeset{
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			})
-			t.Error("invalid metadata did not panic")
+			t.Error("invblid metbdbtb did not pbnic")
 		})
 
-		t.Run("error from ParseInt", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
-			repo := &types.Repo{Metadata: &gitlab.Project{}}
-			if err := p.source.LoadChangeset(p.ctx, &Changeset{
-				Changeset: &btypes.Changeset{
-					ExternalID: "foo",
-					Metadata:   &gitlab.MergeRequest{},
+		t.Run("error from PbrseInt", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			repo := &types.Repo{Metbdbtb: &gitlbb.Project{}}
+			if err := p.source.LobdChbngeset(p.ctx, &Chbngeset{
+				Chbngeset: &btypes.Chbngeset{
+					ExternblID: "foo",
+					Metbdbtb:   &gitlbb.MergeRequest{},
 				},
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			}); err == nil {
-				t.Error("invalid ExternalID did not result in an error")
+				t.Error("invblid ExternblID did not result in bn error")
 			}
 		})
 
 		t.Run("error from GetMergeRequest", func(t *testing.T) {
 			inner := errors.New("foo")
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, nil, inner)
 			p.mockGetMergeRequestNotes(42, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(42, nil, 20, nil)
 
-			if have := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			if hbve := p.source.LobdChbngeset(p.ctx, p.chbngeset); !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
 		})
 
 		t.Run("error from GetMergeRequestNotes", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
 			inner := errors.New("foo")
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, inner)
-			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if p.changeset.Changeset.Metadata != p.mr {
-				t.Errorf("metadata unexpectedly changed to %+v", p.changeset.Changeset.Metadata)
+			if p.chbngeset.Chbngeset.Metbdbtb != p.mr {
+				t.Errorf("metbdbtb unexpectedly chbnged to %+v", p.chbngeset.Chbngeset.Metbdbtb)
 			}
 		})
 
-		t.Run("error from GetMergeRequestResourceStateEvents", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
+		t.Run("error from GetMergeRequestResourceStbteEvents", func(t *testing.T) {
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
 			inner := errors.New("foo")
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, inner)
+			p.mockGetMergeRequestResourceStbteEvents(43, nil, 20, inner)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if p.changeset.Changeset.Metadata != p.mr {
-				t.Errorf("metadata unexpectedly changed to %+v", p.changeset.Changeset.Metadata)
+			if p.chbngeset.Chbngeset.Metbdbtb != p.mr {
+				t.Errorf("metbdbtb unexpectedly chbnged to %+v", p.chbngeset.Chbngeset.Metbdbtb)
 			}
 		})
 
 		t.Run("error from GetMergeRequestPipelines", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
 			inner := errors.New("foo")
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, inner)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); !errors.Is(err, inner) {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); !errors.Is(err, inner) {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if p.changeset.Changeset.Metadata != p.mr {
-				t.Errorf("metadata unexpectedly changed to %+v", p.changeset.Changeset.Metadata)
+			if p.chbngeset.Chbngeset.Metbdbtb != p.mr {
+				t.Errorf("metbdbtb unexpectedly chbnged to %+v", p.chbngeset.Chbngeset.Metbdbtb)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if have := p.changeset.Changeset.Metadata.(*gitlab.MergeRequest); have != mr {
-				t.Errorf("merge request metadata not updated: have %p; want %p", have, mr)
+			if hbve := p.chbngeset.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest); hbve != mr {
+				t.Errorf("merge request metbdbtb not updbted: hbve %p; wbnt %p", hbve, mr)
 			}
 		})
 
 		t.Run("not found", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "43"
-			p.changeset.Changeset.Metadata = p.mr
-			p.mockGetMergeRequest(43, nil, gitlab.ErrMergeRequestNotFound)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "43"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
+			p.mockGetMergeRequest(43, nil, gitlbb.ErrMergeRequestNotFound)
 
-			expected := ChangesetNotFoundError{
-				Changeset: &Changeset{
-					Changeset: &btypes.Changeset{ExternalID: "43"},
+			expected := ChbngesetNotFoundError{
+				Chbngeset: &Chbngeset{
+					Chbngeset: &btypes.Chbngeset{ExternblID: "43"},
 				},
 			}
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err == nil {
-				t.Fatal("unexpectedly no error for not found changeset")
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err == nil {
+				t.Fbtbl("unexpectedly no error for not found chbngeset")
 			} else if !errors.Is(err, expected) {
-				t.Fatalf("unexpected error: %+v", err)
+				t.Fbtblf("unexpected error: %+v", err)
 			}
 		})
 
-		t.Run("integration", func(t *testing.T) {
+		t.Run("integrbtion", func(t *testing.T) {
 			repo := &types.Repo{
-				Metadata: &gitlab.Project{
-					// sourcegraph/sourcegraph
-					ProjectCommon: gitlab.ProjectCommon{ID: 16606088},
+				Metbdbtb: &gitlbb.Project{
+					// sourcegrbph/sourcegrbph
+					ProjectCommon: gitlbb.ProjectCommon{ID: 16606088},
 				},
 			}
-			testCases := []struct {
-				name string
-				cs   *Changeset
+			testCbses := []struct {
+				nbme string
+				cs   *Chbngeset
 				err  string
 			}{
 				{
-					name: "found",
-					cs: &Changeset{
+					nbme: "found",
+					cs: &Chbngeset{
 						RemoteRepo: repo,
-						TargetRepo: repo,
-						Changeset:  &btypes.Changeset{ExternalID: "2"},
+						TbrgetRepo: repo,
+						Chbngeset:  &btypes.Chbngeset{ExternblID: "2"},
 					},
 				},
 				{
-					name: "not-found",
-					cs: &Changeset{
+					nbme: "not-found",
+					cs: &Chbngeset{
 						RemoteRepo: repo,
-						TargetRepo: repo,
-						Changeset:  &btypes.Changeset{ExternalID: "100000"},
+						TbrgetRepo: repo,
+						Chbngeset:  &btypes.Chbngeset{ExternblID: "100000"},
 					},
-					err: "Changeset with external ID 100000 not found",
+					err: "Chbngeset with externbl ID 100000 not found",
 				},
 				{
-					name: "project-not-found",
-					cs: &Changeset{
+					nbme: "project-not-found",
+					cs: &Chbngeset{
 						RemoteRepo: repo,
-						TargetRepo: &types.Repo{Metadata: &gitlab.Project{
-							ProjectCommon: gitlab.ProjectCommon{ID: 999999999999},
+						TbrgetRepo: &types.Repo{Metbdbtb: &gitlbb.Project{
+							ProjectCommon: gitlbb.ProjectCommon{ID: 999999999999},
 						}},
-						Changeset: &btypes.Changeset{ExternalID: "100000"},
+						Chbngeset: &btypes.Chbngeset{ExternblID: "100000"},
 					},
-					// Not a changeset not found error. This is important so we don't set
-					// a changeset as deleted, when the token scope cannot view the project
+					// Not b chbngeset not found error. This is importbnt so we don't set
+					// b chbngeset bs deleted, when the token scope cbnnot view the project
 					// the MR lives in.
-					err: "retrieving merge request 100000: sending request to get a merge request: GitLab project not found",
+					err: "retrieving merge request 100000: sending request to get b merge request: GitLbb project not found",
 				},
 			}
 
-			for _, tc := range testCases {
+			for _, tc := rbnge testCbses {
 				tc := tc
-				tc.name = "GitlabSource_LoadChangeset_" + tc.name
+				tc.nbme = "GitlbbSource_LobdChbngeset_" + tc.nbme
 
-				t.Run(tc.name, func(t *testing.T) {
-					cf, save := newClientFactory(t, tc.name)
-					defer save(t)
+				t.Run(tc.nbme, func(t *testing.T) {
+					cf, sbve := newClientFbctory(t, tc.nbme)
+					defer sbve(t)
 
 					lg := log15.New()
-					lg.SetHandler(log15.DiscardHandler())
+					lg.SetHbndler(log15.DiscbrdHbndler())
 
-					svc := &types.ExternalService{
-						Kind: extsvc.KindGitLab,
-						Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
-							Url:   "https://gitlab.com",
+					svc := &types.ExternblService{
+						Kind: extsvc.KindGitLbb,
+						Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitLbbConnection{
+							Url:   "https://gitlbb.com",
 							Token: os.Getenv("GITLAB_TOKEN"),
 						})),
 					}
 
-					ctx := context.Background()
-					gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+					ctx := context.Bbckground()
+					gitlbbSource, err := NewGitLbbSource(ctx, svc, cf)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
 					if tc.err == "" {
 						tc.err = "<nil>"
 					}
 
-					err = gitlabSource.LoadChangeset(ctx, tc.cs)
-					if have, want := fmt.Sprint(err), tc.err; have != want {
-						t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+					err = gitlbbSource.LobdChbngeset(ctx, tc.cs)
+					if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+						t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 					}
 
 					if err != nil {
 						return
 					}
 
-					meta := tc.cs.Changeset.Metadata.(*gitlab.MergeRequest)
-					testutil.AssertGolden(t, "testdata/golden/"+tc.name, update(tc.name), meta)
+					metb := tc.cs.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
+					testutil.AssertGolden(t, "testdbtb/golden/"+tc.nbme, updbte(tc.nbme), metb)
 				})
 			}
 		})
 
-		// The guts of the note and pipeline scenarios are tested in separate
-		// unit tests below for read{Notes,Pipelines}UntilSeen, but we'll do a
-		// couple of quick tests here just to ensure that
-		// decorateMergeRequestData does the right thing.
+		// The guts of the note bnd pipeline scenbrios bre tested in sepbrbte
+		// unit tests below for rebd{Notes,Pipelines}UntilSeen, but we'll do b
+		// couple of quick tests here just to ensure thbt
+		// decorbteMergeRequestDbtb does the right thing.
 		t.Run("notes", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
-			notes := []*gitlab.Note{
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
+			notes := []*gitlbb.Note{
 				{ID: 1, System: true},
 				{ID: 2, System: true},
-				{ID: 3, System: false},
+				{ID: 3, System: fblse},
 			}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, notes, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Notes, notes[0:2]); diff != "" {
 				t.Errorf("unexpected notes: %s", diff)
 			}
 
-			// A subsequent load should result in the same notes. Since we
-			// changed the IID in the merge request, we do need to change the
+			// A subsequent lobd should result in the sbme notes. Since we
+			// chbnged the IID in the merge request, we do need to chbnge the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Notes, notes[0:2]); diff != "" {
@@ -658,80 +658,80 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 			}
 		})
 
-		t.Run("resource state events", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
-			events := []*gitlab.ResourceStateEvent{
+		t.Run("resource stbte events", func(t *testing.T) {
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
+			events := []*gitlbb.ResourceStbteEvent{
 				{
 					ID:    1,
-					State: gitlab.ResourceStateEventStateClosed,
+					Stbte: gitlbb.ResourceStbteEventStbteClosed,
 				},
 				{
 					ID:    2,
-					State: gitlab.ResourceStateEventStateMerged,
+					Stbte: gitlbb.ResourceStbteEventStbteMerged,
 				},
 				{
 					ID:    3,
-					State: gitlab.ResourceStateEventStateReopened,
+					Stbte: gitlbb.ResourceStbteEventStbteReopened,
 				},
 			}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(43, events, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(43, events, 20, nil)
 			p.mockGetMergeRequestPipelines(43, nil, 20, nil)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if diff := cmp.Diff(mr.ResourceStateEvents, events); diff != "" {
+			if diff := cmp.Diff(mr.ResourceStbteEvents, events); diff != "" {
 				t.Errorf("unexpected events: %s", diff)
 			}
 
-			// A subsequent load should result in the same events. Since we
-			// changed the IID in the merge request, we do need to change the
+			// A subsequent lobd should result in the sbme events. Since we
+			// chbnged the IID in the merge request, we do need to chbnge the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
-			if diff := cmp.Diff(mr.ResourceStateEvents, events); diff != "" {
+			if diff := cmp.Diff(mr.ResourceStbteEvents, events); diff != "" {
 				t.Errorf("unexpected events: %s", diff)
 			}
 		})
 
 		t.Run("pipelines", func(t *testing.T) {
-			// A new merge request with a new IID.
-			mr := &gitlab.MergeRequest{IID: 43}
-			pipelines := []*gitlab.Pipeline{
+			// A new merge request with b new IID.
+			mr := &gitlbb.MergeRequest{IID: 43}
+			pipelines := []*gitlbb.Pipeline{
 				{ID: 1},
 				{ID: 2},
 				{ID: 3},
 			}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.ExternalID = "42"
-			p.changeset.Changeset.Metadata = p.mr
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.ExternblID = "42"
+			p.chbngeset.Chbngeset.Metbdbtb = p.mr
 			p.mockGetMergeRequest(42, mr, nil)
 			p.mockGetMergeRequestNotes(43, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(43, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(43, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(43, pipelines, 20, nil)
 
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Pipelines, pipelines); diff != "" {
 				t.Errorf("unexpected pipelines: %s", diff)
 			}
 
-			// A subsequent load should result in the same pipelines. Since we
-			// changed the IID in the merge request, we do need to change the
+			// A subsequent lobd should result in the sbme pipelines. Since we
+			// chbnged the IID in the merge request, we do need to chbnge the
 			// getMergeRequest mock.
 			p.mockGetMergeRequest(43, mr, nil)
-			if err := p.source.LoadChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.LobdChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 			if diff := cmp.Diff(mr.Pipelines, pipelines); diff != "" {
@@ -740,239 +740,239 @@ func TestGitLabSource_ChangesetSource(t *testing.T) {
 		})
 	})
 
-	t.Run("UpdateChangeset", func(t *testing.T) {
-		t.Run("invalid metadata", func(t *testing.T) {
-			p := newGitLabChangesetSourceTestProvider(t)
+	t.Run("UpdbteChbngeset", func(t *testing.T) {
+		t.Run("invblid metbdbtb", func(t *testing.T) {
+			p := newGitLbbChbngesetSourceTestProvider(t)
 
-			err := p.source.UpdateChangeset(p.ctx, &Changeset{
-				Changeset: &btypes.Changeset{Metadata: struct{}{}},
+			err := p.source.UpdbteChbngeset(p.ctx, &Chbngeset{
+				Chbngeset: &btypes.Chbngeset{Metbdbtb: struct{}{}},
 			})
 			if err == nil {
 				t.Error("unexpected nil error")
 			}
 		})
 
-		t.Run("error from UpdateMergeRequest", func(t *testing.T) {
+		t.Run("error from UpdbteMergeRequest", func(t *testing.T) {
 			inner := errors.New("foo")
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockUpdateMergeRequest(mr, nil, "", inner)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockUpdbteMergeRequest(mr, nil, "", inner)
 
-			have := p.source.UpdateChangeset(p.ctx, p.changeset)
-			if !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			hbve := p.source.UpdbteChbngeset(p.ctx, p.chbngeset)
+			if !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
-			if p.changeset.Changeset.Metadata != mr {
-				t.Errorf("metadata unexpectedly updated: from %+v; to %+v", mr, p.changeset.Changeset.Metadata)
+			if p.chbngeset.Chbngeset.Metbdbtb != mr {
+				t.Errorf("metbdbtb unexpectedly updbted: from %+v; to %+v", mr, p.chbngeset.Chbngeset.Metbdbtb)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			in := &gitlab.MergeRequest{IID: 2}
-			out := &gitlab.MergeRequest{}
+			in := &gitlbb.MergeRequest{IID: 2}
+			out := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = in
-			p.mockUpdateMergeRequest(in, out, "", nil)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = in
+			p.mockUpdbteMergeRequest(in, out, "", nil)
 			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(in.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
-			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.UpdbteChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)
 			}
-			if p.changeset.Changeset.Metadata != out {
-				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			if p.chbngeset.Chbngeset.Metbdbtb != out {
+				t.Errorf("metbdbtb not correctly updbted: hbve %+v; wbnt %+v", p.chbngeset.Chbngeset.Metbdbtb, out)
 			}
 		})
 	})
 
-	t.Run("UpdateChangeset draft", func(t *testing.T) {
-		t.Run("GitLab version is greater than 14.0.0", func(t *testing.T) {
-			// We won't test the full set of UpdateChangeset scenarios; instead
-			// we'll just make sure the title is appropriately munged.
-			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
-			out := &gitlab.MergeRequest{}
+	t.Run("UpdbteChbngeset drbft", func(t *testing.T) {
+		t.Run("GitLbb version is grebter thbn 14.0.0", func(t *testing.T) {
+			// We won't test the full set of UpdbteChbngeset scenbrios; instebd
+			// we'll just mbke sure the title is bppropribtely munged.
+			in := &gitlbb.MergeRequest{IID: 2, WorkInProgress: true}
+			out := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
+			p := newGitLbbChbngesetSourceTestProvider(t)
 			p.mockGetVersions(mockVersion2.String(), p.source.client.Urn())
-			p.changeset.Changeset.Metadata = in
+			p.chbngeset.Chbngeset.Metbdbtb = in
 
-			oldMock := gitlab.MockUpdateMergeRequest
-			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
-			gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-				if have, want := opts.Title, "Draft: title"; have != want {
-					t.Errorf("unexpected title: have=%q want=%q", have, want)
+			oldMock := gitlbb.MockUpdbteMergeRequest
+			t.Clebnup(func() { gitlbb.MockUpdbteMergeRequest = oldMock })
+			gitlbb.MockUpdbteMergeRequest = func(c *gitlbb.Client, ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest, opts gitlbb.UpdbteMergeRequestOpts) (*gitlbb.MergeRequest, error) {
+				if hbve, wbnt := opts.Title, "Drbft: title"; hbve != wbnt {
+					t.Errorf("unexpected title: hbve=%q wbnt=%q", hbve, wbnt)
 				}
 				return out, nil
 			}
 
 			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(in.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
-			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.UpdbteChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)
 			}
-			if p.changeset.Changeset.Metadata != out {
-				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			if p.chbngeset.Chbngeset.Metbdbtb != out {
+				t.Errorf("metbdbtb not correctly updbted: hbve %+v; wbnt %+v", p.chbngeset.Chbngeset.Metbdbtb, out)
 			}
 		})
 
-		t.Run("GitLab version is less than 14.0.0", func(t *testing.T) {
-			// We won't test the full set of UpdateChangeset scenarios; instead
-			// we'll just make sure the title is appropriately munged.
-			in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
-			out := &gitlab.MergeRequest{}
+		t.Run("GitLbb version is less thbn 14.0.0", func(t *testing.T) {
+			// We won't test the full set of UpdbteChbngeset scenbrios; instebd
+			// we'll just mbke sure the title is bppropribtely munged.
+			in := &gitlbb.MergeRequest{IID: 2, WorkInProgress: true}
+			out := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
+			p := newGitLbbChbngesetSourceTestProvider(t)
 			p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
-			p.changeset.Changeset.Metadata = in
+			p.chbngeset.Chbngeset.Metbdbtb = in
 
-			oldMock := gitlab.MockUpdateMergeRequest
-			t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
-			gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-				if have, want := opts.Title, "WIP: title"; have != want {
-					t.Errorf("unexpected title: have=%q want=%q", have, want)
+			oldMock := gitlbb.MockUpdbteMergeRequest
+			t.Clebnup(func() { gitlbb.MockUpdbteMergeRequest = oldMock })
+			gitlbb.MockUpdbteMergeRequest = func(c *gitlbb.Client, ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest, opts gitlbb.UpdbteMergeRequestOpts) (*gitlbb.MergeRequest, error) {
+				if hbve, wbnt := opts.Title, "WIP: title"; hbve != wbnt {
+					t.Errorf("unexpected title: hbve=%q wbnt=%q", hbve, wbnt)
 				}
 				return out, nil
 			}
 
 			p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
-			p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+			p.mockGetMergeRequestResourceStbteEvents(in.IID, nil, 20, nil)
 			p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
-			if err := p.source.UpdateChangeset(p.ctx, p.changeset); err != nil {
+			if err := p.source.UpdbteChbngeset(p.ctx, p.chbngeset); err != nil {
 				t.Errorf("unexpected non-nil error: %+v", err)
 			}
-			if p.changeset.Changeset.Metadata != out {
-				t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+			if p.chbngeset.Chbngeset.Metbdbtb != out {
+				t.Errorf("metbdbtb not correctly updbted: hbve %+v; wbnt %+v", p.chbngeset.Chbngeset.Metbdbtb, out)
 			}
 		})
 	})
 
-	t.Run("UndraftChangeset", func(t *testing.T) {
-		in := &gitlab.MergeRequest{IID: 2, WorkInProgress: true}
-		out := &gitlab.MergeRequest{}
+	t.Run("UndrbftChbngeset", func(t *testing.T) {
+		in := &gitlbb.MergeRequest{IID: 2, WorkInProgress: true}
+		out := &gitlbb.MergeRequest{}
 
-		p := newGitLabChangesetSourceTestProvider(t)
-		p.changeset.Changeset.Metadata = in
+		p := newGitLbbChbngesetSourceTestProvider(t)
+		p.chbngeset.Chbngeset.Metbdbtb = in
 
-		oldMock := gitlab.MockUpdateMergeRequest
-		t.Cleanup(func() { gitlab.MockUpdateMergeRequest = oldMock })
-		gitlab.MockUpdateMergeRequest = func(c *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-			if have, want := opts.Title, "title"; have != want {
-				t.Errorf("unexpected title: have=%q want=%q", have, want)
+		oldMock := gitlbb.MockUpdbteMergeRequest
+		t.Clebnup(func() { gitlbb.MockUpdbteMergeRequest = oldMock })
+		gitlbb.MockUpdbteMergeRequest = func(c *gitlbb.Client, ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest, opts gitlbb.UpdbteMergeRequestOpts) (*gitlbb.MergeRequest, error) {
+			if hbve, wbnt := opts.Title, "title"; hbve != wbnt {
+				t.Errorf("unexpected title: hbve=%q wbnt=%q", hbve, wbnt)
 			}
 			return out, nil
 		}
 
 		p.mockGetVersions(mockVersion.String(), p.source.client.Urn())
 		p.mockGetMergeRequestNotes(in.IID, nil, 20, nil)
-		p.mockGetMergeRequestResourceStateEvents(in.IID, nil, 20, nil)
+		p.mockGetMergeRequestResourceStbteEvents(in.IID, nil, 20, nil)
 		p.mockGetMergeRequestPipelines(in.IID, nil, 20, nil)
 
-		if err := p.source.UndraftChangeset(p.ctx, p.changeset); err != nil {
+		if err := p.source.UndrbftChbngeset(p.ctx, p.chbngeset); err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
-		if p.changeset.Changeset.Metadata != out {
-			t.Errorf("metadata not correctly updated: have %+v; want %+v", p.changeset.Changeset.Metadata, out)
+		if p.chbngeset.Chbngeset.Metbdbtb != out {
+			t.Errorf("metbdbtb not correctly updbted: hbve %+v; wbnt %+v", p.chbngeset.Chbngeset.Metbdbtb, out)
 		}
 	})
 
-	t.Run("CreateComment", func(t *testing.T) {
+	t.Run("CrebteComment", func(t *testing.T) {
 		commentBody := "test-comment"
-		t.Run("invalid metadata", func(t *testing.T) {
+		t.Run("invblid metbdbtb", func(t *testing.T) {
 			defer func() { _ = recover() }()
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			repo := &types.Repo{Metadata: struct{}{}}
-			_ = p.source.CreateComment(p.ctx, &Changeset{
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			repo := &types.Repo{Metbdbtb: struct{}{}}
+			_ = p.source.CrebteComment(p.ctx, &Chbngeset{
 				RemoteRepo: repo,
-				TargetRepo: repo,
+				TbrgetRepo: repo,
 			}, commentBody)
-			t.Error("invalid metadata did not panic")
+			t.Error("invblid metbdbtb did not pbnic")
 		})
 
-		t.Run("error from CreateComment", func(t *testing.T) {
+		t.Run("error from CrebteComment", func(t *testing.T) {
 			inner := errors.New("foo")
-			mr := &gitlab.MergeRequest{}
+			mr := &gitlbb.MergeRequest{}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockCreateComment(commentBody, inner)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockCrebteComment(commentBody, inner)
 
-			have := p.source.CreateComment(p.ctx, p.changeset, commentBody)
-			if !errors.Is(have, inner) {
-				t.Errorf("error does not include inner error: have %+v; want %+v", have, inner)
+			hbve := p.source.CrebteComment(p.ctx, p.chbngeset, commentBody)
+			if !errors.Is(hbve, inner) {
+				t.Errorf("error does not include inner error: hbve %+v; wbnt %+v", hbve, inner)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			mr := &gitlab.MergeRequest{IID: 2}
+			mr := &gitlbb.MergeRequest{IID: 2}
 
-			p := newGitLabChangesetSourceTestProvider(t)
-			p.changeset.Changeset.Metadata = mr
-			p.mockCreateComment(commentBody, nil)
+			p := newGitLbbChbngesetSourceTestProvider(t)
+			p.chbngeset.Chbngeset.Metbdbtb = mr
+			p.mockCrebteComment(commentBody, nil)
 
-			if err := p.source.CreateComment(p.ctx, p.changeset, commentBody); err != nil {
+			if err := p.source.CrebteComment(p.ctx, p.chbngeset, commentBody); err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 		})
 
-		t.Run("integration", func(t *testing.T) {
-			name := "GitlabSource_CreateComment_success"
+		t.Run("integrbtion", func(t *testing.T) {
+			nbme := "GitlbbSource_CrebteComment_success"
 
-			t.Run(name, func(t *testing.T) {
-				cf, save := newClientFactory(t, name)
-				defer save(t)
+			t.Run(nbme, func(t *testing.T) {
+				cf, sbve := newClientFbctory(t, nbme)
+				defer sbve(t)
 
 				lg := log15.New()
-				lg.SetHandler(log15.DiscardHandler())
+				lg.SetHbndler(log15.DiscbrdHbndler())
 
-				svc := &types.ExternalService{
-					Kind: extsvc.KindGitLab,
-					Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitLabConnection{
-						Url:   "https://gitlab.com",
+				svc := &types.ExternblService{
+					Kind: extsvc.KindGitLbb,
+					Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitLbbConnection{
+						Url:   "https://gitlbb.com",
 						Token: os.Getenv("GITLAB_TOKEN"),
 					})),
 				}
 
-				ctx := context.Background()
-				gitlabSource, err := NewGitLabSource(ctx, svc, cf)
+				ctx := context.Bbckground()
+				gitlbbSource, err := NewGitLbbSource(ctx, svc, cf)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				repo := &types.Repo{Metadata: newGitLabProject(16606088)}
-				cs := &Changeset{
+				repo := &types.Repo{Metbdbtb: newGitLbbProject(16606088)}
+				cs := &Chbngeset{
 					RemoteRepo: repo,
-					TargetRepo: repo,
-					Changeset: &btypes.Changeset{Metadata: &gitlab.MergeRequest{
-						IID: gitlab.ID(2),
+					TbrgetRepo: repo,
+					Chbngeset: &btypes.Chbngeset{Metbdbtb: &gitlbb.MergeRequest{
+						IID: gitlbb.ID(2),
 					}},
 				}
 
-				if err := gitlabSource.CreateComment(ctx, cs, "test-comment"); err != nil {
-					t.Fatal(err)
+				if err := gitlbbSource.CrebteComment(ctx, cs, "test-comment"); err != nil {
+					t.Fbtbl(err)
 				}
 			})
 		})
 	})
 }
 
-func TestReadNotesUntilSeen(t *testing.T) {
-	commonNotes := []*gitlab.Note{
+func TestRebdNotesUntilSeen(t *testing.T) {
+	commonNotes := []*gitlbb.Note{
 		{ID: 1, System: true},
 		{ID: 2, System: true},
 		{ID: 3, System: true},
 		{ID: 4, System: true},
 	}
 
-	t.Run("reads all notes", func(t *testing.T) {
-		notes, err := readSystemNotes(paginatedNoteIterator(commonNotes, 2))
+	t.Run("rebds bll notes", func(t *testing.T) {
+		notes, err := rebdSystemNotes(pbginbtedNoteIterbtor(commonNotes, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
@@ -981,25 +981,25 @@ func TestReadNotesUntilSeen(t *testing.T) {
 		}
 	})
 
-	t.Run("error from iterator", func(t *testing.T) {
-		want := errors.New("foo")
-		notes, err := readSystemNotes(func() ([]*gitlab.Note, error) {
-			return nil, want
+	t.Run("error from iterbtor", func(t *testing.T) {
+		wbnt := errors.New("foo")
+		notes, err := rebdSystemNotes(func() ([]*gitlbb.Note, error) {
+			return nil, wbnt
 		})
 		if notes != nil {
 			t.Errorf("unexpected non-nil notes: %+v", notes)
 		}
-		if !errors.Is(err, want) {
-			t.Errorf("expected error not found in chain: have %+v; want %+v", err, want)
+		if !errors.Is(err, wbnt) {
+			t.Errorf("expected error not found in chbin: hbve %+v; wbnt %+v", err, wbnt)
 		}
 	})
 
 	t.Run("no system notes", func(t *testing.T) {
-		notes, err := readSystemNotes(paginatedNoteIterator([]*gitlab.Note{
-			{ID: 1, System: false},
-			{ID: 2, System: false},
-			{ID: 3, System: false},
-			{ID: 4, System: false},
+		notes, err := rebdSystemNotes(pbginbtedNoteIterbtor([]*gitlbb.Note{
+			{ID: 1, System: fblse},
+			{ID: 2, System: fblse},
+			{ID: 3, System: fblse},
+			{ID: 4, System: fblse},
 		}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
@@ -1009,8 +1009,8 @@ func TestReadNotesUntilSeen(t *testing.T) {
 		}
 	})
 
-	t.Run("no pages", func(t *testing.T) {
-		notes, err := readSystemNotes(paginatedNoteIterator([]*gitlab.Note{}, 2))
+	t.Run("no pbges", func(t *testing.T) {
+		notes, err := rebdSystemNotes(pbginbtedNoteIterbtor([]*gitlbb.Note{}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
@@ -1020,16 +1020,16 @@ func TestReadNotesUntilSeen(t *testing.T) {
 	})
 }
 
-func TestReadPipelinesUntilSeen(t *testing.T) {
-	commonPipelines := []*gitlab.Pipeline{
+func TestRebdPipelinesUntilSeen(t *testing.T) {
+	commonPipelines := []*gitlbb.Pipeline{
 		{ID: 1},
 		{ID: 2},
 		{ID: 3},
 		{ID: 4},
 	}
 
-	t.Run("reads all pipelines", func(t *testing.T) {
-		notes, err := readPipelines(paginatedPipelineIterator(commonPipelines, 2))
+	t.Run("rebds bll pipelines", func(t *testing.T) {
+		notes, err := rebdPipelines(pbginbtedPipelineIterbtor(commonPipelines, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
@@ -1038,21 +1038,21 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 		}
 	})
 
-	t.Run("error from iterator", func(t *testing.T) {
-		want := errors.New("foo")
-		pipelines, err := readPipelines(func() ([]*gitlab.Pipeline, error) {
-			return nil, want
+	t.Run("error from iterbtor", func(t *testing.T) {
+		wbnt := errors.New("foo")
+		pipelines, err := rebdPipelines(func() ([]*gitlbb.Pipeline, error) {
+			return nil, wbnt
 		})
 		if pipelines != nil {
 			t.Errorf("unexpected non-nil pipelines: %+v", pipelines)
 		}
-		if !errors.Is(err, want) {
-			t.Errorf("expected error not found in chain: have %+v; want %+v", err, want)
+		if !errors.Is(err, wbnt) {
+			t.Errorf("expected error not found in chbin: hbve %+v; wbnt %+v", err, wbnt)
 		}
 	})
 
-	t.Run("no pages", func(t *testing.T) {
-		pipelines, err := readPipelines(paginatedPipelineIterator([]*gitlab.Pipeline{}, 2))
+	t.Run("no pbges", func(t *testing.T) {
+		pipelines, err := rebdPipelines(pbginbtedPipelineIterbtor([]*gitlbb.Pipeline{}, 2))
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
@@ -1062,236 +1062,236 @@ func TestReadPipelinesUntilSeen(t *testing.T) {
 	})
 }
 
-type gitLabChangesetSourceTestProvider struct {
-	changeset *Changeset
+type gitLbbChbngesetSourceTestProvider struct {
+	chbngeset *Chbngeset
 	ctx       context.Context
-	mr        *gitlab.MergeRequest
-	source    *GitLabSource
+	mr        *gitlbb.MergeRequest
+	source    *GitLbbSource
 	t         *testing.T
 
-	isGetVersionCalled bool
+	isGetVersionCblled bool
 }
 
-// newGitLabChangesetSourceTestProvider provides a set of useful pre-canned
-// objects, along with a handful of methods to mock underlying
-// internal/extsvc/gitlab functions.
-func newGitLabChangesetSourceTestProvider(t *testing.T) *gitLabChangesetSourceTestProvider {
-	prov := gitlab.NewClientProvider("Test", &url.URL{}, &panicDoer{})
-	repo := &types.Repo{Metadata: &gitlab.Project{}}
-	p := &gitLabChangesetSourceTestProvider{
-		changeset: &Changeset{
-			Changeset:  &btypes.Changeset{},
+// newGitLbbChbngesetSourceTestProvider provides b set of useful pre-cbnned
+// objects, blong with b hbndful of methods to mock underlying
+// internbl/extsvc/gitlbb functions.
+func newGitLbbChbngesetSourceTestProvider(t *testing.T) *gitLbbChbngesetSourceTestProvider {
+	prov := gitlbb.NewClientProvider("Test", &url.URL{}, &pbnicDoer{})
+	repo := &types.Repo{Metbdbtb: &gitlbb.Project{}}
+	p := &gitLbbChbngesetSourceTestProvider{
+		chbngeset: &Chbngeset{
+			Chbngeset:  &btypes.Chbngeset{},
 			RemoteRepo: repo,
-			TargetRepo: repo,
-			HeadRef:    "refs/heads/head",
-			BaseRef:    "refs/heads/base",
+			TbrgetRepo: repo,
+			HebdRef:    "refs/hebds/hebd",
+			BbseRef:    "refs/hebds/bbse",
 			Title:      "title",
 			Body:       "description",
 		},
-		ctx: context.Background(),
-		mr: &gitlab.MergeRequest{
+		ctx: context.Bbckground(),
+		mr: &gitlbb.MergeRequest{
 			ID:              1,
 			IID:             2,
 			ProjectID:       3,
 			SourceProjectID: 3,
 			Title:           "title",
 			Description:     "description",
-			SourceBranch:    "head",
-			TargetBranch:    "base",
+			SourceBrbnch:    "hebd",
+			TbrgetBrbnch:    "bbse",
 		},
-		source: &GitLabSource{
+		source: &GitLbbSource{
 			client: prov.GetClient(),
 		},
 		t: t,
 	}
 
-	// Rather than requiring the caller to defer a call to unmock, we can do it
-	// here and be sure we'll have it done when the test is complete.
-	t.Cleanup(func() { p.unmock() })
+	// Rbther thbn requiring the cbller to defer b cbll to unmock, we cbn do it
+	// here bnd be sure we'll hbve it done when the test is complete.
+	t.Clebnup(func() { p.unmock() })
 
 	return p
 }
 
-func (p *gitLabChangesetSourceTestProvider) testCommonParams(ctx context.Context, client *gitlab.Client, project *gitlab.Project) {
+func (p *gitLbbChbngesetSourceTestProvider) testCommonPbrbms(ctx context.Context, client *gitlbb.Client, project *gitlbb.Project) {
 	if client != p.source.client {
-		p.t.Errorf("unexpected GitLabSource client: have %+v; want %+v", client, p.source.client)
+		p.t.Errorf("unexpected GitLbbSource client: hbve %+v; wbnt %+v", client, p.source.client)
 	}
 	if ctx != p.ctx {
-		p.t.Errorf("unexpected context: have %+v; want %+v", ctx, p.ctx)
+		p.t.Errorf("unexpected context: hbve %+v; wbnt %+v", ctx, p.ctx)
 	}
-	if project != p.changeset.TargetRepo.Metadata.(*gitlab.Project) {
-		p.t.Errorf("unexpected Project: have %+v; want %+v", project, p.changeset.TargetRepo.Metadata)
+	if project != p.chbngeset.TbrgetRepo.Metbdbtb.(*gitlbb.Project) {
+		p.t.Errorf("unexpected Project: hbve %+v; wbnt %+v", project, p.chbngeset.TbrgetRepo.Metbdbtb)
 	}
 }
 
-// mockCreateMergeRequest mocks a gitlab.CreateMergeRequest call. Note that only
-// the SourceBranch and TargetBranch fields of the expected options are checked.
-func (p *gitLabChangesetSourceTestProvider) mockCreateMergeRequest(expected gitlab.CreateMergeRequestOpts, mr *gitlab.MergeRequest, err error) {
-	gitlab.MockCreateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, opts gitlab.CreateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-		p.testCommonParams(ctx, client, project)
+// mockCrebteMergeRequest mocks b gitlbb.CrebteMergeRequest cbll. Note thbt only
+// the SourceBrbnch bnd TbrgetBrbnch fields of the expected options bre checked.
+func (p *gitLbbChbngesetSourceTestProvider) mockCrebteMergeRequest(expected gitlbb.CrebteMergeRequestOpts, mr *gitlbb.MergeRequest, err error) {
+	gitlbb.MockCrebteMergeRequest = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, opts gitlbb.CrebteMergeRequestOpts) (*gitlbb.MergeRequest, error) {
+		p.testCommonPbrbms(ctx, client, project)
 
-		if want := expected.SourceBranch; opts.SourceBranch != want {
-			p.t.Errorf("unexpected SourceBranch: have %s; want %s", opts.SourceBranch, want)
+		if wbnt := expected.SourceBrbnch; opts.SourceBrbnch != wbnt {
+			p.t.Errorf("unexpected SourceBrbnch: hbve %s; wbnt %s", opts.SourceBrbnch, wbnt)
 		}
-		if want := expected.TargetBranch; opts.TargetBranch != want {
-			p.t.Errorf("unexpected TargetBranch: have %s; want %s", opts.TargetBranch, want)
+		if wbnt := expected.TbrgetBrbnch; opts.TbrgetBrbnch != wbnt {
+			p.t.Errorf("unexpected TbrgetBrbnch: hbve %s; wbnt %s", opts.TbrgetBrbnch, wbnt)
 		}
 
 		return mr, err
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequest(expected gitlab.ID, mr *gitlab.MergeRequest, err error) {
-	gitlab.MockGetMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) (*gitlab.MergeRequest, error) {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockGetMergeRequest(expected gitlbb.ID, mr *gitlbb.MergeRequest, err error) {
+	gitlbb.MockGetMergeRequest = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, iid gitlbb.ID) (*gitlbb.MergeRequest, error) {
+		p.testCommonPbrbms(ctx, client, project)
 		if expected != iid {
-			p.t.Errorf("invalid IID: have %d; want %d", iid, expected)
+			p.t.Errorf("invblid IID: hbve %d; wbnt %d", iid, expected)
 		}
 		return mr, err
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID gitlab.ID, notes []*gitlab.Note, pageSize int, err error) {
-	gitlab.MockGetMergeRequestNotes = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Note, error) {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockGetMergeRequestNotes(expectedIID gitlbb.ID, notes []*gitlbb.Note, pbgeSize int, err error) {
+	gitlbb.MockGetMergeRequestNotes = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, iid gitlbb.ID) func() ([]*gitlbb.Note, error) {
+		p.testCommonPbrbms(ctx, client, project)
 		if expectedIID != iid {
-			p.t.Errorf("unexpected IID: have %d; want %d", iid, expectedIID)
+			p.t.Errorf("unexpected IID: hbve %d; wbnt %d", iid, expectedIID)
 		}
 
 		if err != nil {
-			return func() ([]*gitlab.Note, error) { return nil, err }
+			return func() ([]*gitlbb.Note, error) { return nil, err }
 		}
-		return paginatedNoteIterator(notes, pageSize)
+		return pbginbtedNoteIterbtor(notes, pbgeSize)
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestResourceStateEvents(expectedIID gitlab.ID, events []*gitlab.ResourceStateEvent, pageSize int, err error) {
-	gitlab.MockGetMergeRequestResourceStateEvents = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.ResourceStateEvent, error) {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockGetMergeRequestResourceStbteEvents(expectedIID gitlbb.ID, events []*gitlbb.ResourceStbteEvent, pbgeSize int, err error) {
+	gitlbb.MockGetMergeRequestResourceStbteEvents = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, iid gitlbb.ID) func() ([]*gitlbb.ResourceStbteEvent, error) {
+		p.testCommonPbrbms(ctx, client, project)
 		if expectedIID != iid {
-			p.t.Errorf("unexpected IID: have %d; want %d", iid, expectedIID)
+			p.t.Errorf("unexpected IID: hbve %d; wbnt %d", iid, expectedIID)
 		}
 
 		if err != nil {
-			return func() ([]*gitlab.ResourceStateEvent, error) { return nil, err }
+			return func() ([]*gitlbb.ResourceStbteEvent, error) { return nil, err }
 		}
-		return paginatedResourceStateEventIterator(events, pageSize)
+		return pbginbtedResourceStbteEventIterbtor(events, pbgeSize)
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlab.ID, pipelines []*gitlab.Pipeline, pageSize int, err error) {
-	gitlab.MockGetMergeRequestPipelines = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, iid gitlab.ID) func() ([]*gitlab.Pipeline, error) {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockGetMergeRequestPipelines(expectedIID gitlbb.ID, pipelines []*gitlbb.Pipeline, pbgeSize int, err error) {
+	gitlbb.MockGetMergeRequestPipelines = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, iid gitlbb.ID) func() ([]*gitlbb.Pipeline, error) {
+		p.testCommonPbrbms(ctx, client, project)
 		if expectedIID != iid {
-			p.t.Errorf("unexpected IID: have %d; want %d", iid, expectedIID)
+			p.t.Errorf("unexpected IID: hbve %d; wbnt %d", iid, expectedIID)
 		}
 
 		if err != nil {
-			return func() ([]*gitlab.Pipeline, error) { return nil, err }
+			return func() ([]*gitlbb.Pipeline, error) { return nil, err }
 		}
-		return paginatedPipelineIterator(pipelines, pageSize)
+		return pbginbtedPipelineIterbtor(pipelines, pbgeSize)
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetOpenMergeRequestByRefs(mr *gitlab.MergeRequest, err error) {
-	gitlab.MockGetOpenMergeRequestByRefs = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, source, target string) (*gitlab.MergeRequest, error) {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockGetOpenMergeRequestByRefs(mr *gitlbb.MergeRequest, err error) {
+	gitlbb.MockGetOpenMergeRequestByRefs = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, source, tbrget string) (*gitlbb.MergeRequest, error) {
+		p.testCommonPbrbms(ctx, client, project)
 		return mr, err
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockUpdateMergeRequest(expectedMR, updated *gitlab.MergeRequest, expectedStateEvent gitlab.UpdateMergeRequestStateEvent, err error) {
-	gitlab.MockUpdateMergeRequest = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mrIn *gitlab.MergeRequest, opts gitlab.UpdateMergeRequestOpts) (*gitlab.MergeRequest, error) {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockUpdbteMergeRequest(expectedMR, updbted *gitlbb.MergeRequest, expectedStbteEvent gitlbb.UpdbteMergeRequestStbteEvent, err error) {
+	gitlbb.MockUpdbteMergeRequest = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, mrIn *gitlbb.MergeRequest, opts gitlbb.UpdbteMergeRequestOpts) (*gitlbb.MergeRequest, error) {
+		p.testCommonPbrbms(ctx, client, project)
 		if expectedMR != mrIn {
-			p.t.Errorf("unexpected MergeRequest: have %+v; want %+v", mrIn, expectedMR)
+			p.t.Errorf("unexpected MergeRequest: hbve %+v; wbnt %+v", mrIn, expectedMR)
 		}
-		if len(expectedStateEvent) != 0 && opts.StateEvent != expectedStateEvent {
-			p.t.Errorf("unexpected StateEvent: have %+v; want %+v", opts.StateEvent, expectedStateEvent)
+		if len(expectedStbteEvent) != 0 && opts.StbteEvent != expectedStbteEvent {
+			p.t.Errorf("unexpected StbteEvent: hbve %+v; wbnt %+v", opts.StbteEvent, expectedStbteEvent)
 		}
 
-		return updated, err
+		return updbted, err
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockCreateComment(expected string, err error) {
-	gitlab.MockCreateMergeRequestNote = func(client *gitlab.Client, ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest, body string) error {
-		p.testCommonParams(ctx, client, project)
+func (p *gitLbbChbngesetSourceTestProvider) mockCrebteComment(expected string, err error) {
+	gitlbb.MockCrebteMergeRequestNote = func(client *gitlbb.Client, ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest, body string) error {
+		p.testCommonPbrbms(ctx, client, project)
 		if expected != body {
-			p.t.Errorf("invalid body passed: have %q; want %q", body, expected)
+			p.t.Errorf("invblid body pbssed: hbve %q; wbnt %q", body, expected)
 		}
 		return err
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetVersions(expected, key string) {
+func (p *gitLbbChbngesetSourceTestProvider) mockGetVersions(expected, key string) {
 	versions.MockGetVersions = func() ([]*versions.Version, error) {
 		return []*versions.Version{
 			{
-				ExternalServiceKind: extsvc.KindGitLab,
+				ExternblServiceKind: extsvc.KindGitLbb,
 				Version:             expected,
 				Key:                 key,
 			},
 			{
-				ExternalServiceKind: extsvc.KindGitHub,
+				ExternblServiceKind: extsvc.KindGitHub,
 				Version:             "2.38.0",
-				Key:                 "random-key-<1>",
+				Key:                 "rbndom-key-<1>",
 			},
 			{
-				ExternalServiceKind: extsvc.KindGitLab,
+				ExternblServiceKind: extsvc.KindGitLbb,
 				Version:             "1.3.5",
-				Key:                 "random-key-<2>",
+				Key:                 "rbndom-key-<2>",
 			},
 			{
-				ExternalServiceKind: extsvc.KindBitbucketCloud,
+				ExternblServiceKind: extsvc.KindBitbucketCloud,
 				Version:             "1.2.5",
-				Key:                 "random-key-<3>",
+				Key:                 "rbndom-key-<3>",
 			},
 		}, nil
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) mockGetVersion(expected string) {
-	gitlab.MockGetVersion = func(ctx context.Context) (string, error) {
-		p.isGetVersionCalled = true
+func (p *gitLbbChbngesetSourceTestProvider) mockGetVersion(expected string) {
+	gitlbb.MockGetVersion = func(ctx context.Context) (string, error) {
+		p.isGetVersionCblled = true
 		return expected, nil
 	}
 }
 
-func (p *gitLabChangesetSourceTestProvider) unmock() {
-	gitlab.MockCreateMergeRequest = nil
-	gitlab.MockGetMergeRequest = nil
-	gitlab.MockGetMergeRequestNotes = nil
-	gitlab.MockGetMergeRequestResourceStateEvents = nil
-	gitlab.MockGetMergeRequestPipelines = nil
-	gitlab.MockGetOpenMergeRequestByRefs = nil
-	gitlab.MockUpdateMergeRequest = nil
-	gitlab.MockCreateMergeRequestNote = nil
+func (p *gitLbbChbngesetSourceTestProvider) unmock() {
+	gitlbb.MockCrebteMergeRequest = nil
+	gitlbb.MockGetMergeRequest = nil
+	gitlbb.MockGetMergeRequestNotes = nil
+	gitlbb.MockGetMergeRequestResourceStbteEvents = nil
+	gitlbb.MockGetMergeRequestPipelines = nil
+	gitlbb.MockGetOpenMergeRequestByRefs = nil
+	gitlbb.MockUpdbteMergeRequest = nil
+	gitlbb.MockCrebteMergeRequestNote = nil
 
 	versions.MockGetVersions = nil
 }
 
-// panicDoer provides a httpcli.Doer implementation that panics if any attempt
-// is made to issue a HTTP request; thereby ensuring that our unit tests don't
-// actually try to talk to GitLab.
-type panicDoer struct{}
+// pbnicDoer provides b httpcli.Doer implementbtion thbt pbnics if bny bttempt
+// is mbde to issue b HTTP request; thereby ensuring thbt our unit tests don't
+// bctublly try to tblk to GitLbb.
+type pbnicDoer struct{}
 
-func (d *panicDoer) Do(r *http.Request) (*http.Response, error) {
-	panic("this function should not be called; a mock must be missing")
+func (d *pbnicDoer) Do(r *http.Request) (*http.Response, error) {
+	pbnic("this function should not be cblled; b mock must be missing")
 }
 
-// paginatedNoteIterator essentially fakes the pagination behaviour implemented
-// by gitlab.GetMergeRequestNotes with a canned notes list.
-func paginatedNoteIterator(notes []*gitlab.Note, pageSize int) func() ([]*gitlab.Note, error) {
-	page := 0
+// pbginbtedNoteIterbtor essentiblly fbkes the pbginbtion behbviour implemented
+// by gitlbb.GetMergeRequestNotes with b cbnned notes list.
+func pbginbtedNoteIterbtor(notes []*gitlbb.Note, pbgeSize int) func() ([]*gitlbb.Note, error) {
+	pbge := 0
 
-	return func() ([]*gitlab.Note, error) {
-		low := pageSize * page
-		high := pageSize * (page + 1)
-		page++
+	return func() ([]*gitlbb.Note, error) {
+		low := pbgeSize * pbge
+		high := pbgeSize * (pbge + 1)
+		pbge++
 
 		if low >= len(notes) {
-			return []*gitlab.Note{}, nil
+			return []*gitlbb.Note{}, nil
 		}
 		if high > len(notes) {
 			return notes[low:], nil
@@ -1300,18 +1300,18 @@ func paginatedNoteIterator(notes []*gitlab.Note, pageSize int) func() ([]*gitlab
 	}
 }
 
-// paginatedResourceStateEventIterator essentially fakes the pagination behaviour implemented
-// by gitlab.GetMergeRequestResourceStateEvents with a canned resource state events list.
-func paginatedResourceStateEventIterator(events []*gitlab.ResourceStateEvent, pageSize int) func() ([]*gitlab.ResourceStateEvent, error) {
-	page := 0
+// pbginbtedResourceStbteEventIterbtor essentiblly fbkes the pbginbtion behbviour implemented
+// by gitlbb.GetMergeRequestResourceStbteEvents with b cbnned resource stbte events list.
+func pbginbtedResourceStbteEventIterbtor(events []*gitlbb.ResourceStbteEvent, pbgeSize int) func() ([]*gitlbb.ResourceStbteEvent, error) {
+	pbge := 0
 
-	return func() ([]*gitlab.ResourceStateEvent, error) {
-		low := pageSize * page
-		high := pageSize * (page + 1)
-		page++
+	return func() ([]*gitlbb.ResourceStbteEvent, error) {
+		low := pbgeSize * pbge
+		high := pbgeSize * (pbge + 1)
+		pbge++
 
 		if low >= len(events) {
-			return []*gitlab.ResourceStateEvent{}, nil
+			return []*gitlbb.ResourceStbteEvent{}, nil
 		}
 		if high > len(events) {
 			return events[low:], nil
@@ -1320,18 +1320,18 @@ func paginatedResourceStateEventIterator(events []*gitlab.ResourceStateEvent, pa
 	}
 }
 
-// paginatedPipelineIterator essentially fakes the pagination behaviour
-// implemented by gitlab.GetMergeRequestPipelines with a canned pipelines list.
-func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func() ([]*gitlab.Pipeline, error) {
-	page := 0
+// pbginbtedPipelineIterbtor essentiblly fbkes the pbginbtion behbviour
+// implemented by gitlbb.GetMergeRequestPipelines with b cbnned pipelines list.
+func pbginbtedPipelineIterbtor(pipelines []*gitlbb.Pipeline, pbgeSize int) func() ([]*gitlbb.Pipeline, error) {
+	pbge := 0
 
-	return func() ([]*gitlab.Pipeline, error) {
-		low := pageSize * page
-		high := pageSize * (page + 1)
-		page++
+	return func() ([]*gitlbb.Pipeline, error) {
+		low := pbgeSize * pbge
+		high := pbgeSize * (pbge + 1)
+		pbge++
 
 		if low >= len(pipelines) {
-			return []*gitlab.Pipeline{}, nil
+			return []*gitlbb.Pipeline{}, nil
 		}
 		if high > len(pipelines) {
 			return pipelines[low:], nil
@@ -1340,41 +1340,41 @@ func paginatedPipelineIterator(pipelines []*gitlab.Pipeline, pageSize int) func(
 	}
 }
 
-func TestGitLabSource_WithAuthenticator(t *testing.T) {
+func TestGitLbbSource_WithAuthenticbtor(t *testing.T) {
 	t.Run("supported", func(t *testing.T) {
-		var src ChangesetSource
-		src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
+		vbr src ChbngesetSource
+		src, err := newGitLbbSource("Test", &schemb.GitLbbConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		src, err = src.WithAuthenticator(&auth.OAuthBearerToken{})
+		src, err = src.WithAuthenticbtor(&buth.OAuthBebrerToken{})
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if gs, ok := src.(*GitLabSource); !ok {
-			t.Error("cannot coerce Source into GitLabSource")
+		if gs, ok := src.(*GitLbbSource); !ok {
+			t.Error("cbnnot coerce Source into GitLbbSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
 		}
 	})
 
 	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
+		for nbme, tc := rbnge mbp[string]buth.Authenticbtor{
 			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
+			"BbsicAuth":   &buth.BbsicAuth{},
+			"OAuthClient": &buth.OAuthClient{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var src ChangesetSource
-				src, err := newGitLabSource("Test", &schema.GitLabConnection{}, nil)
+			t.Run(nbme, func(t *testing.T) {
+				vbr src ChbngesetSource
+				src, err := newGitLbbSource("Test", &schemb.GitLbbConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
-				src, err = src.WithAuthenticator(tc)
+				src, err = src.WithAuthenticbtor(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
+				} else if !errors.HbsType(err, UnsupportedAuthenticbtorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {
@@ -1385,39 +1385,39 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestGitlabSource_GetFork(t *testing.T) {
-	ctx := context.Background()
+func TestGitlbbSource_GetFork(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("failures", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			targetRepo *types.Repo
-			client     gitlabClientFork
+	t.Run("fbilures", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]struct {
+			tbrgetRepo *types.Repo
+			client     gitlbbClientFork
 		}{
-			"invalid PathWithNamespace": {
-				targetRepo: &types.Repo{
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
-							PathWithNamespace: "foo",
+			"invblid PbthWithNbmespbce": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &gitlbb.Project{
+						ProjectCommon: gitlbb.ProjectCommon{
+							PbthWithNbmespbce: "foo",
 						},
 					},
 				},
 				client: nil,
 			},
 			"client error": {
-				targetRepo: &types.Repo{
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
-							PathWithNamespace: "foo/bar",
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &gitlbb.Project{
+						ProjectCommon: gitlbb.ProjectCommon{
+							PbthWithNbmespbce: "foo/bbr",
 						},
 					},
 				},
-				client: &mockGitlabClientFork{err: errors.New("hello!")},
+				client: &mockGitlbbClientFork{err: errors.New("hello!")},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				fork, err := getGitLabForkInternal(ctx, tc.targetRepo, tc.client, nil, nil)
-				assert.Nil(t, fork)
-				assert.NotNil(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				fork, err := getGitLbbForkInternbl(ctx, tc.tbrgetRepo, tc.client, nil, nil)
+				bssert.Nil(t, fork)
+				bssert.NotNil(t, err)
 			})
 		}
 	})
@@ -1425,176 +1425,176 @@ func TestGitlabSource_GetFork(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		org := "org"
 		user := "user"
-		urn := extsvc.URN(extsvc.KindGitLab, 1)
+		urn := extsvc.URN(extsvc.KindGitLbb, 1)
 
-		for name, tc := range map[string]struct {
-			targetRepo    *types.Repo
-			forkRepo      *gitlab.Project
-			namespace     *string
-			wantNamespace string
-			name          *string
-			wantName      string
-			client        gitlabClientFork
+		for nbme, tc := rbnge mbp[string]struct {
+			tbrgetRepo    *types.Repo
+			forkRepo      *gitlbb.Project
+			nbmespbce     *string
+			wbntNbmespbce string
+			nbme          *string
+			wbntNbme      string
+			client        gitlbbClientFork
 		}{
-			"no namespace": {
-				targetRepo: &types.Repo{
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
+			"no nbmespbce": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &gitlbb.Project{
+						ProjectCommon: gitlbb.ProjectCommon{
 							ID:                1,
-							PathWithNamespace: "foo/bar",
+							PbthWithNbmespbce: "foo/bbr",
 						},
 					},
-					Sources: map[string]*types.SourceInfo{
+					Sources: mbp[string]*types.SourceInfo{
 						urn: {
 							ID:       urn,
-							CloneURL: "https://gitlab.com/foo/bar",
+							CloneURL: "https://gitlbb.com/foo/bbr",
 						},
 					},
 				},
-				forkRepo: &gitlab.Project{
-					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}},
-				namespace:     nil,
-				wantNamespace: user,
-				wantName:      user + "-bar",
-				client: &mockGitlabClientFork{fork: &gitlab.Project{ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon: gitlab.ProjectCommon{ID: 2, PathWithNamespace: user + "/user-bar"}}},
+				forkRepo: &gitlbb.Project{
+					ForkedFromProject: &gitlbb.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlbb.ProjectCommon{ID: 2, PbthWithNbmespbce: user + "/user-bbr"}},
+				nbmespbce:     nil,
+				wbntNbmespbce: user,
+				wbntNbme:      user + "-bbr",
+				client: &mockGitlbbClientFork{fork: &gitlbb.Project{ForkedFromProject: &gitlbb.ProjectCommon{ID: 1},
+					ProjectCommon: gitlbb.ProjectCommon{ID: 2, PbthWithNbmespbce: user + "/user-bbr"}}},
 			},
-			"with namespace": {
-				targetRepo: &types.Repo{
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
+			"with nbmespbce": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &gitlbb.Project{
+						ProjectCommon: gitlbb.ProjectCommon{
 							ID:                1,
-							PathWithNamespace: "foo/bar",
+							PbthWithNbmespbce: "foo/bbr",
 						},
 					},
-					Sources: map[string]*types.SourceInfo{
+					Sources: mbp[string]*types.SourceInfo{
 						urn: {
 							ID:       urn,
-							CloneURL: "https://gitlab.com/foo/bar",
+							CloneURL: "https://gitlbb.com/foo/bbr",
 						},
 					},
 				},
-				forkRepo: &gitlab.Project{
-					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
-				namespace:     &org,
-				wantNamespace: org,
-				wantName:      org + "-bar",
-				client: &mockGitlabClientFork{
-					fork: &gitlab.Project{
-						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/" + org + "-bar"}},
-					wantOrg: &org,
+				forkRepo: &gitlbb.Project{
+					ForkedFromProject: &gitlbb.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlbb.ProjectCommon{ID: 2, PbthWithNbmespbce: org + "/" + org + "-bbr"}},
+				nbmespbce:     &org,
+				wbntNbmespbce: org,
+				wbntNbme:      org + "-bbr",
+				client: &mockGitlbbClientFork{
+					fork: &gitlbb.Project{
+						ForkedFromProject: &gitlbb.ProjectCommon{ID: 1},
+						ProjectCommon:     gitlbb.ProjectCommon{ID: 2, PbthWithNbmespbce: org + "/" + org + "-bbr"}},
+					wbntOrg: &org,
 				},
 			},
-			"with namespace and name": {
-				targetRepo: &types.Repo{
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
+			"with nbmespbce bnd nbme": {
+				tbrgetRepo: &types.Repo{
+					Metbdbtb: &gitlbb.Project{
+						ProjectCommon: gitlbb.ProjectCommon{
 							ID:                1,
-							PathWithNamespace: "foo/bar",
+							PbthWithNbmespbce: "foo/bbr",
 						},
 					},
-					Sources: map[string]*types.SourceInfo{
+					Sources: mbp[string]*types.SourceInfo{
 						urn: {
 							ID:       urn,
-							CloneURL: "https://gitlab.com/foo/bar",
+							CloneURL: "https://gitlbb.com/foo/bbr",
 						},
 					},
 				},
-				forkRepo: &gitlab.Project{
-					ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-					ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
-				namespace:     &org,
-				wantNamespace: org,
-				name:          pointers.Ptr("custom-bar"),
-				wantName:      "custom-bar",
-				client: &mockGitlabClientFork{
-					fork: &gitlab.Project{
-						ForkedFromProject: &gitlab.ProjectCommon{ID: 1},
-						ProjectCommon:     gitlab.ProjectCommon{ID: 2, PathWithNamespace: org + "/custom-bar"}},
-					wantOrg: &org,
+				forkRepo: &gitlbb.Project{
+					ForkedFromProject: &gitlbb.ProjectCommon{ID: 1},
+					ProjectCommon:     gitlbb.ProjectCommon{ID: 2, PbthWithNbmespbce: org + "/custom-bbr"}},
+				nbmespbce:     &org,
+				wbntNbmespbce: org,
+				nbme:          pointers.Ptr("custom-bbr"),
+				wbntNbme:      "custom-bbr",
+				client: &mockGitlbbClientFork{
+					fork: &gitlbb.Project{
+						ForkedFromProject: &gitlbb.ProjectCommon{ID: 1},
+						ProjectCommon:     gitlbb.ProjectCommon{ID: 2, PbthWithNbmespbce: org + "/custom-bbr"}},
+					wbntOrg: &org,
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				fork, err := getGitLabForkInternal(ctx, tc.targetRepo, tc.client, tc.namespace, tc.name)
-				assert.Nil(t, err)
-				assert.NotNil(t, fork)
-				assert.NotEqual(t, fork, tc.targetRepo)
-				assert.Equal(t, tc.forkRepo, fork.Metadata)
-				assert.Equal(t, fork.Sources[urn].CloneURL, "https://gitlab.com/"+tc.wantNamespace+"/"+tc.wantName)
+			t.Run(nbme, func(t *testing.T) {
+				fork, err := getGitLbbForkInternbl(ctx, tc.tbrgetRepo, tc.client, tc.nbmespbce, tc.nbme)
+				bssert.Nil(t, err)
+				bssert.NotNil(t, fork)
+				bssert.NotEqubl(t, fork, tc.tbrgetRepo)
+				bssert.Equbl(t, tc.forkRepo, fork.Metbdbtb)
+				bssert.Equbl(t, fork.Sources[urn].CloneURL, "https://gitlbb.com/"+tc.wbntNbmespbce+"/"+tc.wbntNbme)
 			})
 		}
 	})
 }
 
-type mockGitlabClientFork struct {
-	wantOrg *string
-	fork    *gitlab.Project
+type mockGitlbbClientFork struct {
+	wbntOrg *string
+	fork    *gitlbb.Project
 	err     error
 }
 
-var _ gitlabClientFork = &mockGitlabClientFork{}
+vbr _ gitlbbClientFork = &mockGitlbbClientFork{}
 
-func (mock *mockGitlabClientFork) ForkProject(ctx context.Context, project *gitlab.Project, namespace *string, name string) (*gitlab.Project, error) {
-	if (mock.wantOrg == nil && namespace != nil) || (mock.wantOrg != nil && namespace == nil) || (mock.wantOrg != nil && namespace != nil && *mock.wantOrg != *namespace) {
-		return nil, errors.Newf("unexpected organisation: have=%v want=%v", namespace, mock.wantOrg)
+func (mock *mockGitlbbClientFork) ForkProject(ctx context.Context, project *gitlbb.Project, nbmespbce *string, nbme string) (*gitlbb.Project, error) {
+	if (mock.wbntOrg == nil && nbmespbce != nil) || (mock.wbntOrg != nil && nbmespbce == nil) || (mock.wbntOrg != nil && nbmespbce != nil && *mock.wbntOrg != *nbmespbce) {
+		return nil, errors.Newf("unexpected orgbnisbtion: hbve=%v wbnt=%v", nbmespbce, mock.wbntOrg)
 	}
 
 	return mock.fork, mock.err
 }
 
-func TestDecorateMergeRequestData(t *testing.T) {
-	ctx := context.Background()
+func TestDecorbteMergeRequestDbtb(t *testing.T) {
+	ctx := context.Bbckground()
 
-	// The test fixtures use publicly available merge requests, and should be
-	// able to be updated at any time without any action required.
-	createSource := func(t *testing.T) *GitLabSource {
-		cf, save := newClientFactory(t, t.Name())
-		t.Cleanup(func() { save(t) })
+	// The test fixtures use publicly bvbilbble merge requests, bnd should be
+	// bble to be updbted bt bny time without bny bction required.
+	crebteSource := func(t *testing.T) *GitLbbSource {
+		cf, sbve := newClientFbctory(t, t.Nbme())
+		t.Clebnup(func() { sbve(t) })
 
-		src, err := newGitLabSource(
+		src, err := newGitLbbSource(
 			"Test",
-			&schema.GitLabConnection{
-				Url:   "https://gitlab.com",
+			&schemb.GitLbbConnection{
+				Url:   "https://gitlbb.com",
 				Token: os.Getenv("GITLAB_TOKEN"),
 			},
 			cf,
 		)
 
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 		return src
 	}
 
-	src := createSource(t)
+	src := crebteSource(t)
 
-	// https://gitlab.com/sourcegraph/src-cli/-/merge_requests/6
-	forked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606399), 6)
-	assert.Nil(t, err)
+	// https://gitlbb.com/sourcegrbph/src-cli/-/merge_requests/6
+	forked, err := src.client.GetMergeRequest(ctx, newGitLbbProject(16606399), 6)
+	bssert.Nil(t, err)
 
-	// https://gitlab.com/sourcegraph/sourcegraph/-/merge_requests/1
-	unforked, err := src.client.GetMergeRequest(ctx, newGitLabProject(16606088), 1)
-	assert.Nil(t, err)
+	// https://gitlbb.com/sourcegrbph/sourcegrbph/-/merge_requests/1
+	unforked, err := src.client.GetMergeRequest(ctx, newGitLbbProject(16606088), 1)
+	bssert.Nil(t, err)
 
 	t.Run("fork", func(t *testing.T) {
-		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(forked.ProjectID)), forked)
-		assert.Nil(t, err)
-		assert.Equal(t, "courier-new", forked.SourceProjectNamespace)
-		assert.Equal(t, "src-cli-forked", forked.SourceProjectName)
+		err := crebteSource(t).decorbteMergeRequestDbtb(ctx, newGitLbbProject(int(forked.ProjectID)), forked)
+		bssert.Nil(t, err)
+		bssert.Equbl(t, "courier-new", forked.SourceProjectNbmespbce)
+		bssert.Equbl(t, "src-cli-forked", forked.SourceProjectNbme)
 	})
 
-	t.Run("not a fork", func(t *testing.T) {
-		err := createSource(t).decorateMergeRequestData(ctx, newGitLabProject(int(unforked.ProjectID)), unforked)
-		assert.Nil(t, err)
-		assert.Equal(t, "", unforked.SourceProjectNamespace)
-		assert.Equal(t, "", unforked.SourceProjectName)
+	t.Run("not b fork", func(t *testing.T) {
+		err := crebteSource(t).decorbteMergeRequestDbtb(ctx, newGitLbbProject(int(unforked.ProjectID)), unforked)
+		bssert.Nil(t, err)
+		bssert.Equbl(t, "", unforked.SourceProjectNbmespbce)
+		bssert.Equbl(t, "", unforked.SourceProjectNbme)
 	})
 }
 
-func newGitLabProject(id int) *gitlab.Project {
-	return &gitlab.Project{
-		ProjectCommon: gitlab.ProjectCommon{ID: id},
+func newGitLbbProject(id int) *gitlbb.Project {
+	return &gitlbb.Project{
+		ProjectCommon: gitlbb.ProjectCommon{ID: id},
 	}
 }

@@ -1,10 +1,10 @@
-package changed
+pbckbge chbnged
 
 import (
 	"strings"
 )
 
-var diffsWithLinters = []Diff{
+vbr diffsWithLinters = []Diff{
 	Go,
 	Dockerfiles,
 	Docs,
@@ -14,11 +14,11 @@ var diffsWithLinters = []Diff{
 	Protobuf,
 }
 
-// GetTargets evaluates the lint targets to run over the given CI diff.
-func GetLinterTargets(diff Diff) (targets []string) {
-	for _, d := range diffsWithLinters {
-		if diff.Has(d) {
-			targets = append(targets, strings.ToLower(d.String()))
+// GetTbrgets evblubtes the lint tbrgets to run over the given CI diff.
+func GetLinterTbrgets(diff Diff) (tbrgets []string) {
+	for _, d := rbnge diffsWithLinters {
+		if diff.Hbs(d) {
+			tbrgets = bppend(tbrgets, strings.ToLower(d.String()))
 		}
 	}
 	return

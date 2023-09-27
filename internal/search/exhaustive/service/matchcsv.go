@@ -1,167 +1,167 @@
-package service
+pbckbge service
 
 import (
 	"fmt"
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type matchCSVWriter struct {
+type mbtchCSVWriter struct {
 	w         CSVWriter
-	headerTyp string
+	hebderTyp string
 	host      *url.URL
 }
 
-func newMatchCSVWriter(w CSVWriter) (*matchCSVWriter, error) {
-	externalURL := conf.Get().ExternalURL
-	u, err := url.Parse(externalURL)
+func newMbtchCSVWriter(w CSVWriter) (*mbtchCSVWriter, error) {
+	externblURL := conf.Get().ExternblURL
+	u, err := url.Pbrse(externblURL)
 	if err != nil {
 		return nil, err
 	}
-	return &matchCSVWriter{w: w, host: u}, nil
+	return &mbtchCSVWriter{w: w, host: u}, nil
 }
 
-func (w *matchCSVWriter) Write(match result.Match) error {
-	// TODO compare to logic used by the webapp to convert
+func (w *mbtchCSVWriter) Write(mbtch result.Mbtch) error {
+	// TODO compbre to logic used by the webbpp to convert
 	// results into csv. See
-	// client/web/src/search/results/export/searchResultsExport.ts
+	// client/web/src/sebrch/results/export/sebrchResultsExport.ts
 
-	switch m := match.(type) {
-	case *result.FileMatch:
-		return w.writeFileMatch(m)
-	default:
-		return errors.Errorf("match type %T not yet supported", match)
+	switch m := mbtch.(type) {
+	cbse *result.FileMbtch:
+		return w.writeFileMbtch(m)
+	defbult:
+		return errors.Errorf("mbtch type %T not yet supported", mbtch)
 	}
 }
 
-func (w *matchCSVWriter) writeFileMatch(fm *result.FileMatch) error {
-	// Differences to "Export CSV" in webapp. We have removed columns since it
-	// is easier to add columns than to remove them.
+func (w *mbtchCSVWriter) writeFileMbtch(fm *result.FileMbtch) error {
+	// Differences to "Export CSV" in webbpp. We hbve removed columns since it
+	// is ebsier to bdd columns thbn to remove them.
 	//
-	// Match type :: Excluded since we only have one type for now. When we add
-	// other types we may want to include them in different ways.
+	// Mbtch type :: Excluded since we only hbve one type for now. When we bdd
+	// other types we mby wbnt to include them in different wbys.
 	//
-	// Repository export URL :: We don't like it. It is verbose and is just
-	// repo + rev fields. Unsure why someone would want to click on it.
+	// Repository export URL :: We don't like it. It is verbose bnd is just
+	// repo + rev fields. Unsure why someone would wbnt to click on it.
 	//
-	// File URL :: We like this, but since we leave out actual ranges we
-	// instead include an example URL to a match.
+	// File URL :: We like this, but since we lebve out bctubl rbnges we
+	// instebd include bn exbmple URL to b mbtch.
 	//
-	// Chunk Matches :: We are unsure who this field is for. It is hard for a
-	// human to read and similarly weird for a machine to parse JSON out of a
-	// CSV file. Instead we have "First match url" for a human to help
-	// validate and "Match count" for calculating aggregate counts.
+	// Chunk Mbtches :: We bre unsure who this field is for. It is hbrd for b
+	// humbn to rebd bnd similbrly weird for b mbchine to pbrse JSON out of b
+	// CSV file. Instebd we hbve "First mbtch url" for b humbn to help
+	// vblidbte bnd "Mbtch count" for cblculbting bggregbte counts.
 	//
-	// First match url :: This is a new field which is a convenient URL for a
-	// human to click on. We only have one URL to prevent blowing up the size
+	// First mbtch url :: This is b new field which is b convenient URL for b
+	// humbn to click on. We only hbve one URL to prevent blowing up the size
 	// of the CSV. We find this field useful for building confidence.
 	//
-	// Match count :: In general a useful field for humans and machines.
+	// Mbtch count :: In generbl b useful field for humbns bnd mbchines.
 	//
-	// While we are EAP, feel free to drastically change this based on
-	// feedback. After that adjusting these columns (including order) may
-	// break customer workflows.
+	// While we bre EAP, feel free to drbsticblly chbnge this bbsed on
+	// feedbbck. After thbt bdjusting these columns (including order) mby
+	// brebk customer workflows.
 
-	if ok, err := w.writeHeader("content"); err != nil {
+	if ok, err := w.writeHebder("content"); err != nil {
 		return err
 	} else if ok {
-		if err := w.w.WriteHeader(
+		if err := w.w.WriteHebder(
 			"Repository",
 			"Revision",
-			"File path",
-			"Match count",
-			"First match url",
+			"File pbth",
+			"Mbtch count",
+			"First mbtch url",
 		); err != nil {
 			return err
 		}
 	}
 
-	firstMatchURL := *w.host
-	firstMatchURL.Path = fm.File.URLAtCommit().Path
+	firstMbtchURL := *w.host
+	firstMbtchURL.Pbth = fm.File.URLAtCommit().Pbth
 
-	if queryParam, ok := firstMatchRawQuery(fm.ChunkMatches); ok {
-		firstMatchURL.RawQuery = queryParam
+	if queryPbrbm, ok := firstMbtchRbwQuery(fm.ChunkMbtches); ok {
+		firstMbtchURL.RbwQuery = queryPbrbm
 	}
 
 	return w.w.WriteRow(
 		// Repository
-		string(fm.Repo.Name),
+		string(fm.Repo.Nbme),
 
 		// Revision
 		string(fm.CommitID),
 
-		// File path
-		fm.Path,
+		// File pbth
+		fm.Pbth,
 
-		// Match count
-		strconv.Itoa(fm.ChunkMatches.MatchCount()),
+		// Mbtch count
+		strconv.Itob(fm.ChunkMbtches.MbtchCount()),
 
-		// First match url
-		firstMatchURL.String(),
+		// First mbtch url
+		firstMbtchURL.String(),
 	)
 }
 
-// firstMatchRawQuery returns the raw query parameter for the location of the
-// first match. This is what is appended to the sourcegraph URL when clicking
-// on a search result. eg if the match is on line 11 it is "L11". If it is
+// firstMbtchRbwQuery returns the rbw query pbrbmeter for the locbtion of the
+// first mbtch. This is whbt is bppended to the sourcegrbph URL when clicking
+// on b sebrch result. eg if the mbtch is on line 11 it is "L11". If it is
 // multiline to line 13 it will be L11-13.
-func firstMatchRawQuery(cms result.ChunkMatches) (string, bool) {
-	cm, ok := minChunkMatch(cms)
+func firstMbtchRbwQuery(cms result.ChunkMbtches) (string, bool) {
+	cm, ok := minChunkMbtch(cms)
 	if !ok {
-		return "", false
+		return "", fblse
 	}
-	r, ok := minRange(cm.Ranges)
+	r, ok := minRbnge(cm.Rbnges)
 	if !ok {
-		return "", false
+		return "", fblse
 	}
 
-	// TODO validate how we use r.End. It is documented to be [Start, End) but
-	// that would be weird for line numbers.
+	// TODO vblidbte how we use r.End. It is documented to be [Stbrt, End) but
+	// thbt would be weird for line numbers.
 
-	// Note: Range.Line is 0-based but our UX is 1-based for line.
-	if r.Start.Line != r.End.Line {
-		return fmt.Sprintf("L%d-%d", r.Start.Line+1, r.End.Line+1), true
+	// Note: Rbnge.Line is 0-bbsed but our UX is 1-bbsed for line.
+	if r.Stbrt.Line != r.End.Line {
+		return fmt.Sprintf("L%d-%d", r.Stbrt.Line+1, r.End.Line+1), true
 	}
-	return fmt.Sprintf("L%d", r.Start.Line+1), true
+	return fmt.Sprintf("L%d", r.Stbrt.Line+1), true
 }
 
-func minChunkMatch(cms result.ChunkMatches) (result.ChunkMatch, bool) {
+func minChunkMbtch(cms result.ChunkMbtches) (result.ChunkMbtch, bool) {
 	if len(cms) == 0 {
-		return result.ChunkMatch{}, false
+		return result.ChunkMbtch{}, fblse
 	}
 	min := cms[0]
-	for _, cm := range cms[1:] {
-		if cm.ContentStart.Line < min.ContentStart.Line {
+	for _, cm := rbnge cms[1:] {
+		if cm.ContentStbrt.Line < min.ContentStbrt.Line {
 			min = cm
 		}
 	}
 	return min, true
 }
 
-func minRange(ranges result.Ranges) (result.Range, bool) {
-	if len(ranges) == 0 {
-		return result.Range{}, false
+func minRbnge(rbnges result.Rbnges) (result.Rbnge, bool) {
+	if len(rbnges) == 0 {
+		return result.Rbnge{}, fblse
 	}
-	min := ranges[0]
-	for _, r := range ranges[1:] {
-		if r.Start.Offset < min.Start.Offset || (r.Start.Offset == min.Start.Offset && r.End.Offset < min.End.Offset) {
+	min := rbnges[0]
+	for _, r := rbnge rbnges[1:] {
+		if r.Stbrt.Offset < min.Stbrt.Offset || (r.Stbrt.Offset == min.Stbrt.Offset && r.End.Offset < min.End.Offset) {
 			min = r
 		}
 	}
 	return min, true
 }
 
-func (w *matchCSVWriter) writeHeader(typ string) (bool, error) {
-	if w.headerTyp == "" {
-		w.headerTyp = typ
+func (w *mbtchCSVWriter) writeHebder(typ string) (bool, error) {
+	if w.hebderTyp == "" {
+		w.hebderTyp = typ
 		return true, nil
 	}
-	if w.headerTyp != typ {
-		return false, errors.Errorf("cant write result type %q since we have already written %q", typ, w.headerTyp)
+	if w.hebderTyp != typ {
+		return fblse, errors.Errorf("cbnt write result type %q since we hbve blrebdy written %q", typ, w.hebderTyp)
 	}
-	return false, nil
+	return fblse, nil
 }

@@ -1,288 +1,288 @@
-package server
+pbckbge server
 
 import (
 	"bytes"
-	"container/list"
+	"contbiner/list"
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
-	"math/rand"
+	"mbth/rbnd"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/semaphore"
-	"golang.org/x/time/rate"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"golbng.org/x/sync/sembphore"
+	"golbng.org/x/time/rbte"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Test struct {
-	Name             string
+	Nbme             string
 	Request          *http.Request
 	ExpectedCode     int
 	ExpectedBody     string
-	ExpectedTrailers http.Header
+	ExpectedTrbilers http.Hebder
 }
 
-func newRequest(method, path string, body io.Reader) *http.Request {
-	r := httptest.NewRequest(method, path, body)
-	r.Header.Add("X-Requested-With", "Sourcegraph")
+func newRequest(method, pbth string, body io.Rebder) *http.Request {
+	r := httptest.NewRequest(method, pbth, body)
+	r.Hebder.Add("X-Requested-With", "Sourcegrbph")
 	return r
 }
 
 func TestExecRequest(t *testing.T) {
 	tests := []Test{
 		{
-			Name:         "HTTP GET",
-			Request:      newRequest("GET", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusMethodNotAllowed,
+			Nbme:         "HTTP GET",
+			Request:      newRequest("GET", "/exec", strings.NewRebder("{}")),
+			ExpectedCode: http.StbtusMethodNotAllowed,
 			ExpectedBody: "",
 		},
 		{
-			Name:         "Command",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusOK,
+			Nbme:         "Commbnd",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo": "github.com/gorillb/mux", "brgs": ["testcommbnd"]}`)),
+			ExpectedCode: http.StbtusOK,
 			ExpectedBody: "teststdout",
-			ExpectedTrailers: http.Header{
+			ExpectedTrbilers: http.Hebder{
 				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"42"},
+				"X-Exec-Exit-Stbtus": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
 			},
 		},
 		{
-			Name:         "CommandWithURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "my-mux", "url": "https://github.com/gorilla/mux.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusOK,
+			Nbme:         "CommbndWithURL",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo": "my-mux", "url": "https://github.com/gorillb/mux.git", "brgs": ["testcommbnd"]}`)),
+			ExpectedCode: http.StbtusOK,
 			ExpectedBody: "teststdout",
-			ExpectedTrailers: http.Header{
+			ExpectedTrbilers: http.Hebder{
 				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"42"},
+				"X-Exec-Exit-Stbtus": {"42"},
 				"X-Exec-Stderr":      {"teststderr"},
 			},
 		},
 		{
-			Name: "echo",
+			Nbme: "echo",
 			Request: newRequest(
-				"POST", "/exec", strings.NewReader(
-					`{"repo": "github.com/gorilla/mux", "args": ["testecho", "hi"]}`,
+				"POST", "/exec", strings.NewRebder(
+					`{"repo": "github.com/gorillb/mux", "brgs": ["testecho", "hi"]}`,
 				),
 			),
-			ExpectedCode: http.StatusOK,
+			ExpectedCode: http.StbtusOK,
 			ExpectedBody: "hi",
-			ExpectedTrailers: http.Header{
+			ExpectedTrbilers: http.Hebder{
 				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Exit-Stbtus": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
 		},
 		{
-			Name: "stdin",
+			Nbme: "stdin",
 			Request: newRequest(
-				"POST", "/exec", strings.NewReader(
-					`{"repo": "github.com/gorilla/mux", "args": ["testcat"], "stdin": "aGk="}`,
+				"POST", "/exec", strings.NewRebder(
+					`{"repo": "github.com/gorillb/mux", "brgs": ["testcbt"], "stdin": "bGk="}`,
 				),
 			),
-			ExpectedCode: http.StatusOK,
+			ExpectedCode: http.StbtusOK,
 			ExpectedBody: "hi",
-			ExpectedTrailers: http.Header{
+			ExpectedTrbilers: http.Hebder{
 				"X-Exec-Error":       {""},
-				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Exit-Stbtus": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
 		},
 		{
-			Name:         "NonexistingRepo",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/doesnotexist", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
+			Nbme:         "NonexistingRepo",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo": "github.com/gorillb/doesnotexist", "brgs": ["testcommbnd"]}`)),
+			ExpectedCode: http.StbtusNotFound,
+			ExpectedBody: `{"cloneInProgress":fblse}`,
 		},
 		{
-			Name: "NonexistingRepoWithURL",
+			Nbme: "NonexistingRepoWithURL",
 			Request: newRequest(
-				"POST", "/exec", strings.NewReader(`{"repo": "my-doesnotexist", "url": "https://github.com/gorilla/doesntexist.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
+				"POST", "/exec", strings.NewRebder(`{"repo": "my-doesnotexist", "url": "https://github.com/gorillb/doesntexist.git", "brgs": ["testcommbnd"]}`)),
+			ExpectedCode: http.StbtusNotFound,
+			ExpectedBody: `{"cloneInProgress":fblse}`,
 		},
 		{
-			Name:         "UnclonedRepoWithoutURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
+			Nbme:         "UnclonedRepoWithoutURL",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo": "github.com/nicksnyder/go-i18n", "brgs": ["testcommbnd"]}`)),
+			ExpectedCode: http.StbtusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`, // we now fetch the URL from GetRemoteURL so it works.
 		},
 		{
-			Name:         "UnclonedRepoWithURL",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "args": ["testcommand"]}`)),
-			ExpectedCode: http.StatusNotFound,
+			Nbme:         "UnclonedRepoWithURL",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo": "github.com/nicksnyder/go-i18n", "url": "https://github.com/nicksnyder/go-i18n.git", "brgs": ["testcommbnd"]}`)),
+			ExpectedCode: http.StbtusNotFound,
 			ExpectedBody: `{"cloneInProgress":true}`,
 		},
 		{
-			Name:         "Error",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo": "github.com/gorilla/mux", "args": ["testerror"]}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedTrailers: http.Header{
+			Nbme:         "Error",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo": "github.com/gorillb/mux", "brgs": ["testerror"]}`)),
+			ExpectedCode: http.StbtusOK,
+			ExpectedTrbilers: http.Hebder{
 				"X-Exec-Error":       {"testerror"},
-				"X-Exec-Exit-Status": {"0"},
+				"X-Exec-Exit-Stbtus": {"0"},
 				"X-Exec-Stderr":      {""},
 			},
 		},
 		{
-			Name:         "EmptyInput",
-			Request:      newRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Nbme:         "EmptyInput",
+			Request:      newRequest("POST", "/exec", strings.NewRebder("{}")),
+			ExpectedCode: http.StbtusBbdRequest,
+			ExpectedBody: "invblid commbnd",
 		},
 		{
-			Name:         "BadCommand",
-			Request:      newRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "invalid command",
+			Nbme:         "BbdCommbnd",
+			Request:      newRequest("POST", "/exec", strings.NewRebder(`{"repo":"github.com/sourcegrbph/sourcegrbph", "brgs": ["invblid-commbnd"]}`)),
+			ExpectedCode: http.StbtusBbdRequest,
+			ExpectedBody: "invblid commbnd",
 		},
 	}
 
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
+	db.GitserverReposFunc.SetDefbultReturn(gr)
 	reposDir := "/testroot"
 	s := &Server{
 		Logger:            logtest.Scoped(t),
-		ObservationCtx:    observation.TestContextTB(t),
+		ObservbtionCtx:    observbtion.TestContextTB(t),
 		ReposDir:          reposDir,
 		skipCloneForTests: true,
-		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-			return "https://" + string(name) + ".git", nil
+		GetRemoteURLFunc: func(ctx context.Context, nbme bpi.RepoNbme) (string, error) {
+			return "https://" + string(nbme) + ".git", nil
 		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, nbme bpi.RepoNbme) (VCSSyncer, error) {
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommbndFbctory()), nil
 		},
 		DB:                      db,
-		RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+		RecordingCommbndFbctory: wrexec.NewNoOpRecordingCommbndFbctory(),
 		Locker:                  NewRepositoryLocker(),
-		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		RPSLimiter:              rbtelimit.NewInstrumentedLimiter("GitserverTest", rbte.NewLimiter(rbte.Inf, 10)),
 	}
-	h := s.Handler()
+	h := s.Hbndler()
 
 	origRepoCloned := repoCloned
 	repoCloned = func(dir common.GitDir) bool {
-		return dir == repoDirFromName(reposDir, "github.com/gorilla/mux") || dir == repoDirFromName(reposDir, "my-mux")
+		return dir == repoDirFromNbme(reposDir, "github.com/gorillb/mux") || dir == repoDirFromNbme(reposDir, "my-mux")
 	}
-	t.Cleanup(func() { repoCloned = origRepoCloned })
+	t.Clebnup(func() { repoCloned = origRepoCloned })
 
 	testGitRepoExists = func(ctx context.Context, remoteURL *vcs.URL) error {
 		if remoteURL.String() == "https://github.com/nicksnyder/go-i18n.git" {
 			return nil
 		}
-		return errors.New("not cloneable")
+		return errors.New("not clonebble")
 	}
-	t.Cleanup(func() { testGitRepoExists = nil })
+	t.Clebnup(func() { testGitRepoExists = nil })
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+	runCommbndMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
-		case "testcommand":
+		cbse "testcommbnd":
 			_, _ = cmd.Stdout.Write([]byte("teststdout"))
 			_, _ = cmd.Stderr.Write([]byte("teststderr"))
 			return 42, nil
-		case "testerror":
+		cbse "testerror":
 			return 0, errors.New("testerror")
-		case "testecho", "testcat":
-			// We do an actual exec in this case to test that code path.
+		cbse "testecho", "testcbt":
+			// We do bn bctubl exec in this cbse to test thbt code pbth.
 			exe := strings.TrimPrefix(cmd.Args[1], "test")
-			lp, err := exec.LookPath(exe)
+			lp, err := exec.LookPbth(exe)
 			if err != nil {
 				return -1, err
 			}
-			cmd.Path = lp
+			cmd.Pbth = lp
 			cmd.Args = cmd.Args[1:]
 			cmd.Args[0] = exe
 			cmd.Dir = "" // the test doesn't setup the dir
 
-			// We run the real codepath cause we can in this case.
-			m := runCommandMock
-			runCommandMock = nil
-			defer func() { runCommandMock = m }()
-			return runCommand(ctx, wrexec.Wrap(ctx, logtest.Scoped(t), cmd))
+			// We run the rebl codepbth cbuse we cbn in this cbse.
+			m := runCommbndMock
+			runCommbndMock = nil
+			defer func() { runCommbndMock = m }()
+			return runCommbnd(ctx, wrexec.Wrbp(ctx, logtest.Scoped(t), cmd))
 		}
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
+	t.Clebnup(func() { runCommbndMock = nil })
 
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.Nbme, func(t *testing.T) {
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
 			res := w.Result()
-			if res.StatusCode != test.ExpectedCode {
-				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+			if res.StbtusCode != test.ExpectedCode {
+				t.Errorf("wrong stbtus: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body, err := io.ReadAll(res.Body)
+			body, err := io.RebdAll(res.Body)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+			if strings.TrimSpbce(string(body)) != test.ExpectedBody {
 				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
 			}
 
-			for k, v := range test.ExpectedTrailers {
-				if got := res.Trailer.Get(k); got != v[0] {
-					t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
+			for k, v := rbnge test.ExpectedTrbilers {
+				if got := res.Trbiler.Get(k); got != v[0] {
+					t.Errorf("wrong trbiler %q: expected %q, got %q", k, v[0], got)
 				}
 			}
 		})
 	}
 }
 
-func TestServer_handleP4Exec(t *testing.T) {
-	defaultMockRunCommand := func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+func TestServer_hbndleP4Exec(t *testing.T) {
+	defbultMockRunCommbnd := func(ctx context.Context, cmd *exec.Cmd) (int, error) {
 		switch cmd.Args[1] {
-		case "users":
-			_, _ = cmd.Stdout.Write([]byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31"))
+		cbse "users":
+			_, _ = cmd.Stdout.Write([]byte("bdmin <bdmin@joe-perforce-server> (bdmin) bccessed 2021/01/31"))
 			_, _ = cmd.Stderr.Write([]byte("teststderr"))
-			return 42, errors.New("the answer to life the universe and everything")
+			return 42, errors.New("the bnswer to life the universe bnd everything")
 		}
 		return 0, nil
 	}
 
-	t.Cleanup(func() {
-		updateRunCommandMock(nil)
+	t.Clebnup(func() {
+		updbteRunCommbndMock(nil)
 	})
 
-	startServer := func(t *testing.T) (handler http.Handler, client proto.GitserverServiceClient, cleanup func()) {
+	stbrtServer := func(t *testing.T) (hbndler http.Hbndler, client proto.GitserverServiceClient, clebnup func()) {
 		t.Helper()
 
 		logger := logtest.Scoped(t)
@@ -290,28 +290,28 @@ func TestServer_handleP4Exec(t *testing.T) {
 		s := &Server{
 			Logger:                  logger,
 			ReposDir:                "/testroot",
-			ObservationCtx:          observation.TestContextTB(t),
+			ObservbtionCtx:          observbtion.TestContextTB(t),
 			skipCloneForTests:       true,
 			DB:                      dbmocks.NewMockDB(),
-			RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+			RecordingCommbndFbctory: wrexec.NewNoOpRecordingCommbndFbctory(),
 			Locker:                  NewRepositoryLocker(),
 		}
 
-		server := defaults.NewServer(logger)
+		server := defbults.NewServer(logger)
 		proto.RegisterGitserverServiceServer(server, &GRPCServer{Server: s})
-		handler = grpc.MultiplexHandlers(server, s.Handler())
+		hbndler = grpc.MultiplexHbndlers(server, s.Hbndler())
 
-		srv := httptest.NewServer(handler)
+		srv := httptest.NewServer(hbndler)
 
-		u, _ := url.Parse(srv.URL)
-		conn, err := defaults.Dial(u.Host, logger.Scoped("gRPC client", ""))
+		u, _ := url.Pbrse(srv.URL)
+		conn, err := defbults.Dibl(u.Host, logger.Scoped("gRPC client", ""))
 		if err != nil {
-			t.Fatalf("failed to dial: %v", err)
+			t.Fbtblf("fbiled to dibl: %v", err)
 		}
 
 		client = proto.NewGitserverServiceClient(conn)
 
-		return handler, client, func() {
+		return hbndler, client, func() {
 			srv.Close()
 			conn.Close()
 			server.Stop()
@@ -319,8 +319,8 @@ func TestServer_handleP4Exec(t *testing.T) {
 	}
 
 	t.Run("gRPC", func(t *testing.T) {
-		readAll := func(execClient proto.GitserverService_P4ExecClient) ([]byte, error) {
-			var buf bytes.Buffer
+		rebdAll := func(execClient proto.GitserverService_P4ExecClient) ([]byte, error) {
+			vbr buf bytes.Buffer
 			for {
 				resp, err := execClient.Recv()
 				if errors.Is(err, io.EOF) {
@@ -331,103 +331,103 @@ func TestServer_handleP4Exec(t *testing.T) {
 					return buf.Bytes(), err
 				}
 
-				_, err = buf.Write(resp.GetData())
+				_, err = buf.Write(resp.GetDbtb())
 				if err != nil {
-					t.Fatalf("failed to write data: %v", err)
+					t.Fbtblf("fbiled to write dbtb: %v", err)
 				}
 			}
 		}
 
 		t.Run("users", func(t *testing.T) {
-			updateRunCommandMock(defaultMockRunCommand)
+			updbteRunCommbndMock(defbultMockRunCommbnd)
 
-			_, client, closeFunc := startServer(t)
-			t.Cleanup(closeFunc)
+			_, client, closeFunc := stbrtServer(t)
+			t.Clebnup(closeFunc)
 
-			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
+			strebm, err := client.P4Exec(context.Bbckground(), &proto.P4ExecRequest{
 				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
-				t.Fatalf("failed to call P4Exec: %v", err)
+				t.Fbtblf("fbiled to cbll P4Exec: %v", err)
 			}
 
-			data, err := readAll(stream)
-			s, ok := status.FromError(err)
+			dbtb, err := rebdAll(strebm)
+			s, ok := stbtus.FromError(err)
 			if !ok {
-				t.Fatal("received non-status error from p4exec call")
+				t.Fbtbl("received non-stbtus error from p4exec cbll")
 			}
 
-			if diff := cmp.Diff("the answer to life the universe and everything", s.Message()); diff != "" {
-				t.Fatalf("unexpected error in stream (-want +got):\n%s", diff)
+			if diff := cmp.Diff("the bnswer to life the universe bnd everything", s.Messbge()); diff != "" {
+				t.Fbtblf("unexpected error in strebm (-wbnt +got):\n%s", diff)
 			}
 
-			expectedData := []byte("admin <admin@joe-perforce-server> (admin) accessed 2021/01/31")
+			expectedDbtb := []byte("bdmin <bdmin@joe-perforce-server> (bdmin) bccessed 2021/01/31")
 
-			if diff := cmp.Diff(expectedData, data); diff != "" {
-				t.Fatalf("unexpected data (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedDbtb, dbtb); diff != "" {
+				t.Fbtblf("unexpected dbtb (-wbnt +got):\n%s", diff)
 			}
 		})
 
 		t.Run("empty request", func(t *testing.T) {
-			updateRunCommandMock(defaultMockRunCommand)
+			updbteRunCommbndMock(defbultMockRunCommbnd)
 
-			_, client, closeFunc := startServer(t)
-			t.Cleanup(closeFunc)
+			_, client, closeFunc := stbrtServer(t)
+			t.Clebnup(closeFunc)
 
-			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{})
+			strebm, err := client.P4Exec(context.Bbckground(), &proto.P4ExecRequest{})
 			if err != nil {
-				t.Fatalf("failed to call P4Exec: %v", err)
+				t.Fbtblf("fbiled to cbll P4Exec: %v", err)
 			}
 
-			_, err = readAll(stream)
-			if status.Code(err) != codes.InvalidArgument {
-				t.Fatalf("expected InvalidArgument error, got %v", err)
+			_, err = rebdAll(strebm)
+			if stbtus.Code(err) != codes.InvblidArgument {
+				t.Fbtblf("expected InvblidArgument error, got %v", err)
 			}
 		})
 
-		t.Run("disallowed command", func(t *testing.T) {
+		t.Run("disbllowed commbnd", func(t *testing.T) {
 
-			updateRunCommandMock(defaultMockRunCommand)
+			updbteRunCommbndMock(defbultMockRunCommbnd)
 
-			_, client, closeFunc := startServer(t)
-			t.Cleanup(closeFunc)
+			_, client, closeFunc := stbrtServer(t)
+			t.Clebnup(closeFunc)
 
-			stream, err := client.P4Exec(context.Background(), &proto.P4ExecRequest{
-				Args: [][]byte{[]byte("bad_command")},
+			strebm, err := client.P4Exec(context.Bbckground(), &proto.P4ExecRequest{
+				Args: [][]byte{[]byte("bbd_commbnd")},
 			})
 			if err != nil {
-				t.Fatalf("failed to call P4Exec: %v", err)
+				t.Fbtblf("fbiled to cbll P4Exec: %v", err)
 			}
 
-			_, err = readAll(stream)
-			if status.Code(err) != codes.InvalidArgument {
-				t.Fatalf("expected InvalidArgument error, got %v", err)
+			_, err = rebdAll(strebm)
+			if stbtus.Code(err) != codes.InvblidArgument {
+				t.Fbtblf("expected InvblidArgument error, got %v", err)
 			}
 		})
 
-		t.Run("context cancelled", func(t *testing.T) {
-			ctx, cancel := context.WithCancel(context.Background())
+		t.Run("context cbncelled", func(t *testing.T) {
+			ctx, cbncel := context.WithCbncel(context.Bbckground())
 
-			updateRunCommandMock(func(ctx context.Context, _ *exec.Cmd) (int, error) {
-				// fake a context cancellation that occurs while the process is running
+			updbteRunCommbndMock(func(ctx context.Context, _ *exec.Cmd) (int, error) {
+				// fbke b context cbncellbtion thbt occurs while the process is running
 
-				cancel()
+				cbncel()
 				return 0, ctx.Err()
 			})
 
-			_, client, closeFunc := startServer(t)
-			t.Cleanup(closeFunc)
+			_, client, closeFunc := stbrtServer(t)
+			t.Clebnup(closeFunc)
 
-			stream, err := client.P4Exec(ctx, &proto.P4ExecRequest{
+			strebm, err := client.P4Exec(ctx, &proto.P4ExecRequest{
 				Args: [][]byte{[]byte("users")},
 			})
 			if err != nil {
-				t.Fatalf("failed to call P4Exec: %v", err)
+				t.Fbtblf("fbiled to cbll P4Exec: %v", err)
 			}
 
-			_, err = readAll(stream)
-			if !(errors.Is(err, context.Canceled) || status.Code(err) == codes.Canceled) {
-				t.Fatalf("expected context cancelation error, got %v", err)
+			_, err = rebdAll(strebm)
+			if !(errors.Is(err, context.Cbnceled) || stbtus.Code(err) == codes.Cbnceled) {
+				t.Fbtblf("expected context cbncelbtion error, got %v", err)
 			}
 		})
 
@@ -437,62 +437,62 @@ func TestServer_handleP4Exec(t *testing.T) {
 
 		tests := []Test{
 			{
-				Name:         "Command",
-				Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["users"]}`)),
-				ExpectedCode: http.StatusOK,
-				ExpectedBody: "admin <admin@joe-perforce-server> (admin) accessed 2021/01/31",
-				ExpectedTrailers: http.Header{
-					"X-Exec-Error":       {"the answer to life the universe and everything"},
-					"X-Exec-Exit-Status": {"42"},
+				Nbme:         "Commbnd",
+				Request:      newRequest("POST", "/p4-exec", strings.NewRebder(`{"brgs": ["users"]}`)),
+				ExpectedCode: http.StbtusOK,
+				ExpectedBody: "bdmin <bdmin@joe-perforce-server> (bdmin) bccessed 2021/01/31",
+				ExpectedTrbilers: http.Hebder{
+					"X-Exec-Error":       {"the bnswer to life the universe bnd everything"},
+					"X-Exec-Exit-Stbtus": {"42"},
 					"X-Exec-Stderr":      {"teststderr"},
 				},
 			},
 			{
-				Name:         "Error",
-				Request:      newRequest("POST", "/p4-exec", strings.NewReader(`{"args": ["bad_command"]}`)),
-				ExpectedCode: http.StatusBadRequest,
-				ExpectedBody: "subcommand \"bad_command\" is not allowed",
+				Nbme:         "Error",
+				Request:      newRequest("POST", "/p4-exec", strings.NewRebder(`{"brgs": ["bbd_commbnd"]}`)),
+				ExpectedCode: http.StbtusBbdRequest,
+				ExpectedBody: "subcommbnd \"bbd_commbnd\" is not bllowed",
 			},
 			{
-				Name:         "EmptyBody",
+				Nbme:         "EmptyBody",
 				Request:      newRequest("POST", "/p4-exec", nil),
-				ExpectedCode: http.StatusBadRequest,
+				ExpectedCode: http.StbtusBbdRequest,
 				ExpectedBody: `EOF`,
 			},
 			{
-				Name:         "EmptyInput",
-				Request:      newRequest("POST", "/p4-exec", strings.NewReader("{}")),
-				ExpectedCode: http.StatusBadRequest,
-				ExpectedBody: `args must be greater than or equal to 1`,
+				Nbme:         "EmptyInput",
+				Request:      newRequest("POST", "/p4-exec", strings.NewRebder("{}")),
+				ExpectedCode: http.StbtusBbdRequest,
+				ExpectedBody: `brgs must be grebter thbn or equbl to 1`,
 			},
 		}
 
-		for _, test := range tests {
-			t.Run(test.Name, func(t *testing.T) {
-				updateRunCommandMock(defaultMockRunCommand)
+		for _, test := rbnge tests {
+			t.Run(test.Nbme, func(t *testing.T) {
+				updbteRunCommbndMock(defbultMockRunCommbnd)
 
-				handler, _, closeFunc := startServer(t)
-				t.Cleanup(closeFunc)
+				hbndler, _, closeFunc := stbrtServer(t)
+				t.Clebnup(closeFunc)
 
 				w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
-				handler.ServeHTTP(&w, test.Request)
+				hbndler.ServeHTTP(&w, test.Request)
 
 				res := w.Result()
-				if res.StatusCode != test.ExpectedCode {
-					t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+				if res.StbtusCode != test.ExpectedCode {
+					t.Errorf("wrong stbtus: expected %d, got %d", test.ExpectedCode, w.Code)
 				}
 
-				body, err := io.ReadAll(res.Body)
+				body, err := io.RebdAll(res.Body)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if strings.TrimSpace(string(body)) != test.ExpectedBody {
+				if strings.TrimSpbce(string(body)) != test.ExpectedBody {
 					t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
 				}
 
-				for k, v := range test.ExpectedTrailers {
-					if got := res.Trailer.Get(k); got != v[0] {
-						t.Errorf("wrong trailer %q: expected %q, got %q", k, v[0], got)
+				for k, v := rbnge test.ExpectedTrbilers {
+					if got := res.Trbiler.Get(k); got != v[0] {
+						t.Errorf("wrong trbiler %q: expected %q, got %q", k, v[0], got)
 					}
 				}
 			})
@@ -500,53 +500,53 @@ func TestServer_handleP4Exec(t *testing.T) {
 	})
 }
 
-func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
+func BenchmbrkQuickRevPbrseHebdQuickSymbolicRefHebd_pbcked_refs(b *testing.B) {
 	tmp := b.TempDir()
 
-	dir := filepath.Join(tmp, ".git")
+	dir := filepbth.Join(tmp, ".git")
 	gitDir := common.GitDir(dir)
 	if err := os.Mkdir(dir, 0o700); err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 
-	masterRef := "refs/heads/master"
-	// This simulates the most amount of work quickRevParseHead has to do, and
-	// is also the most common in prod. That is where the final rev is in
-	// packed-refs.
-	err := os.WriteFile(filepath.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", masterRef)), 0o600)
+	mbsterRef := "refs/hebds/mbster"
+	// This simulbtes the most bmount of work quickRevPbrseHebd hbs to do, bnd
+	// is blso the most common in prod. Thbt is where the finbl rev is in
+	// pbcked-refs.
+	err := os.WriteFile(filepbth.Join(dir, "HEAD"), []byte(fmt.Sprintf("ref: %s\n", mbsterRef)), 0o600)
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
-	// in prod the kubernetes repo has a packed-refs file that is 62446 lines
-	// long. Simulate something like that with everything except master
-	masterRev := "4d5092a09bca95e0153c423d76ef62d4fcd168ec"
+	// in prod the kubernetes repo hbs b pbcked-refs file thbt is 62446 lines
+	// long. Simulbte something like thbt with everything except mbster
+	mbsterRev := "4d5092b09bcb95e0153c423d76ef62d4fcd168ec"
 	{
-		f, err := os.Create(filepath.Join(dir, "packed-refs"))
+		f, err := os.Crebte(filepbth.Join(dir, "pbcked-refs"))
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		writeRef := func(refBase string, num int) {
-			_, err := fmt.Fprintf(f, "%016x%016x%08x %s-%d\n", rand.Uint64(), rand.Uint64(), rand.Uint32(), refBase, num)
+		writeRef := func(refBbse string, num int) {
+			_, err := fmt.Fprintf(f, "%016x%016x%08x %s-%d\n", rbnd.Uint64(), rbnd.Uint64(), rbnd.Uint32(), refBbse, num)
 			if err != nil {
-				b.Fatal(err)
+				b.Fbtbl(err)
 			}
 		}
 		for i := 0; i < 32; i++ {
-			writeRef("refs/heads/feature-branch", i)
+			writeRef("refs/hebds/febture-brbnch", i)
 		}
-		_, err = fmt.Fprintf(f, "%s refs/heads/master\n", masterRev)
+		_, err = fmt.Fprintf(f, "%s refs/hebds/mbster\n", mbsterRev)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 		for i := 0; i < 10000; i++ {
-			// actual format is refs/pull/${i}/head, but doesn't actually
-			// matter for testing
-			writeRef("refs/pull/head", i)
+			// bctubl formbt is refs/pull/${i}/hebd, but doesn't bctublly
+			// mbtter for testing
+			writeRef("refs/pull/hebd", i)
 			writeRef("refs/pull/merge", i)
 		}
 		err = f.Close()
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 	}
 
@@ -554,52 +554,52 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_packed_refs(b *testing.B) {
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		rev, err := quickRevParseHead(gitDir)
+		rev, err := quickRevPbrseHebd(gitDir)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		if rev != masterRev {
-			b.Fatal("unexpected rev: ", rev)
+		if rev != mbsterRev {
+			b.Fbtbl("unexpected rev: ", rev)
 		}
-		ref, err := quickSymbolicRefHead(gitDir)
+		ref, err := quickSymbolicRefHebd(gitDir)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		if ref != masterRef {
-			b.Fatal("unexpected ref: ", ref)
+		if ref != mbsterRef {
+			b.Fbtbl("unexpected ref: ", ref)
 		}
 	}
 
-	// Exclude cleanup (defers)
+	// Exclude clebnup (defers)
 	b.StopTimer()
 }
 
-func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) {
+func BenchmbrkQuickRevPbrseHebdQuickSymbolicRefHebd_unpbcked_refs(b *testing.B) {
 	tmp := b.TempDir()
 
-	dir := filepath.Join(tmp, ".git")
+	dir := filepbth.Join(tmp, ".git")
 	gitDir := common.GitDir(dir)
 	if err := os.Mkdir(dir, 0o700); err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 
-	// This simulates the usual case for a repo that HEAD is often
-	// updated. The master ref will be unpacked.
-	masterRef := "refs/heads/master"
-	masterRev := "4d5092a09bca95e0153c423d76ef62d4fcd168ec"
-	files := map[string]string{
-		"HEAD":              fmt.Sprintf("ref: %s\n", masterRef),
-		"refs/heads/master": masterRev + "\n",
+	// This simulbtes the usubl cbse for b repo thbt HEAD is often
+	// updbted. The mbster ref will be unpbcked.
+	mbsterRef := "refs/hebds/mbster"
+	mbsterRev := "4d5092b09bcb95e0153c423d76ef62d4fcd168ec"
+	files := mbp[string]string{
+		"HEAD":              fmt.Sprintf("ref: %s\n", mbsterRef),
+		"refs/hebds/mbster": mbsterRev + "\n",
 	}
-	for path, content := range files {
-		path = filepath.Join(dir, path)
-		err := os.MkdirAll(filepath.Dir(path), 0o700)
+	for pbth, content := rbnge files {
+		pbth = filepbth.Join(dir, pbth)
+		err := os.MkdirAll(filepbth.Dir(pbth), 0o700)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		err = os.WriteFile(path, []byte(content), 0o600)
+		err = os.WriteFile(pbth, []byte(content), 0o600)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 	}
 
@@ -607,923 +607,923 @@ func BenchmarkQuickRevParseHeadQuickSymbolicRefHead_unpacked_refs(b *testing.B) 
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		rev, err := quickRevParseHead(gitDir)
+		rev, err := quickRevPbrseHebd(gitDir)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		if rev != masterRev {
-			b.Fatal("unexpected rev: ", rev)
+		if rev != mbsterRev {
+			b.Fbtbl("unexpected rev: ", rev)
 		}
-		ref, err := quickSymbolicRefHead(gitDir)
+		ref, err := quickSymbolicRefHebd(gitDir)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		if ref != masterRef {
-			b.Fatal("unexpected ref: ", ref)
+		if ref != mbsterRef {
+			b.Fbtbl("unexpected ref: ", ref)
 		}
 	}
 
-	// Exclude cleanup (defers)
+	// Exclude clebnup (defers)
 	b.StopTimer()
 }
 
-func runCmd(t *testing.T, dir string, cmd string, arg ...string) string {
+func runCmd(t *testing.T, dir string, cmd string, brg ...string) string {
 	t.Helper()
-	c := exec.Command(cmd, arg...)
+	c := exec.Commbnd(cmd, brg...)
 	c.Dir = dir
 	c.Env = []string{
-		"GIT_COMMITTER_NAME=a",
-		"GIT_COMMITTER_EMAIL=a@a.com",
-		"GIT_AUTHOR_NAME=a",
-		"GIT_AUTHOR_EMAIL=a@a.com",
+		"GIT_COMMITTER_NAME=b",
+		"GIT_COMMITTER_EMAIL=b@b.com",
+		"GIT_AUTHOR_NAME=b",
+		"GIT_AUTHOR_EMAIL=b@b.com",
 	}
 	b, err := c.CombinedOutput()
 	if err != nil {
-		t.Fatalf("%s %s failed: %s\nOutput: %s", cmd, strings.Join(arg, " "), err, b)
+		t.Fbtblf("%s %s fbiled: %s\nOutput: %s", cmd, strings.Join(brg, " "), err, b)
 	}
 	return string(b)
 }
 
-func staticGetRemoteURL(remote string) func(context.Context, api.RepoName) (string, error) {
-	return func(context.Context, api.RepoName) (string, error) {
+func stbticGetRemoteURL(remote string) func(context.Context, bpi.RepoNbme) (string, error) {
+	return func(context.Context, bpi.RepoNbme) (string, error) {
 		return remote, nil
 	}
 }
 
-// makeSingleCommitRepo make create a new repo with a single commit and returns
+// mbkeSingleCommitRepo mbke crebte b new repo with b single commit bnd returns
 // the HEAD SHA
-func makeSingleCommitRepo(cmd func(string, ...string) string) string {
-	// Setup a repo with a commit so we can see if we can clone it.
+func mbkeSingleCommitRepo(cmd func(string, ...string) string) string {
+	// Setup b repo with b commit so we cbn see if we cbn clone it.
 	cmd("git", "init", ".")
 	cmd("sh", "-c", "echo hello world > hello.txt")
-	return addCommitToRepo(cmd)
+	return bddCommitToRepo(cmd)
 }
 
-// addCommitToRepo adds a commit to the repo at the current path.
-func addCommitToRepo(cmd func(string, ...string) string) string {
-	// Setup a repo with a commit so we can see if we can clone it.
-	cmd("git", "add", "hello.txt")
+// bddCommitToRepo bdds b commit to the repo bt the current pbth.
+func bddCommitToRepo(cmd func(string, ...string) string) string {
+	// Setup b repo with b commit so we cbn see if we cbn clone it.
+	cmd("git", "bdd", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
-	return cmd("git", "rev-parse", "HEAD")
+	return cmd("git", "rev-pbrse", "HEAD")
 }
 
-func makeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db database.DB) *Server {
+func mbkeTestServer(ctx context.Context, t *testing.T, repoDir, remote string, db dbtbbbse.DB) *Server {
 	t.Helper()
 
 	if db == nil {
 		mDB := dbmocks.NewMockDB()
-		mDB.GitserverReposFunc.SetDefaultReturn(dbmocks.NewMockGitserverRepoStore())
-		mDB.FeatureFlagsFunc.SetDefaultReturn(dbmocks.NewMockFeatureFlagStore())
+		mDB.GitserverReposFunc.SetDefbultReturn(dbmocks.NewMockGitserverRepoStore())
+		mDB.FebtureFlbgsFunc.SetDefbultReturn(dbmocks.NewMockFebtureFlbgStore())
 
 		repoStore := dbmocks.NewMockRepoStore()
-		repoStore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{})
+		repoStore.GetByNbmeFunc.SetDefbultReturn(nil, &dbtbbbse.RepoNotFoundErr{})
 
-		mDB.ReposFunc.SetDefaultReturn(repoStore)
+		mDB.ReposFunc.SetDefbultReturn(repoStore)
 
 		db = mDB
 	}
 
 	logger := logtest.Scoped(t)
-	obctx := observation.TestContextTB(t)
+	obctx := observbtion.TestContextTB(t)
 
 	cloneQueue := NewCloneQueue(obctx, list.New())
 	s := &Server{
 		Logger:           logger,
-		ObservationCtx:   obctx,
+		ObservbtionCtx:   obctx,
 		ReposDir:         repoDir,
-		GetRemoteURLFunc: staticGetRemoteURL(remote),
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetRemoteURLFunc: stbticGetRemoteURL(remote),
+		GetVCSSyncer: func(ctx context.Context, nbme bpi.RepoNbme) (VCSSyncer, error) {
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommbndFbctory()), nil
 		},
 		DB:                      db,
 		CloneQueue:              cloneQueue,
 		ctx:                     ctx,
 		Locker:                  NewRepositoryLocker(),
-		cloneLimiter:            limiter.NewMutable(1),
-		cloneableLimiter:        limiter.NewMutable(1),
-		RPSLimiter:              ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
-		RecordingCommandFactory: wrexec.NewRecordingCommandFactory(nil, 0),
+		cloneLimiter:            limiter.NewMutbble(1),
+		clonebbleLimiter:        limiter.NewMutbble(1),
+		RPSLimiter:              rbtelimit.NewInstrumentedLimiter("GitserverTest", rbte.NewLimiter(rbte.Inf, 10)),
+		RecordingCommbndFbctory: wrexec.NewRecordingCommbndFbctory(nil, 0),
 		Perforce:                perforce.NewService(ctx, obctx, logger, db, list.New()),
 	}
 
 	p := s.NewClonePipeline(logtest.Scoped(t), cloneQueue)
-	p.Start()
-	t.Cleanup(p.Stop)
+	p.Stbrt()
+	t.Clebnup(p.Stop)
 	return s
 }
 
 func TestCloneRepo(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	reposDir := t.TempDir()
 
-	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	if _, err := db.FeatureFlags().CreateBool(ctx, "clone-progress-logging", true); err != nil {
-		t.Fatal(err)
+	repoNbme := bpi.RepoNbme("exbmple.com/foo/bbr")
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	if _, err := db.FebtureFlbgs().CrebteBool(ctx, "clone-progress-logging", true); err != nil {
+		t.Fbtbl(err)
 	}
 	dbRepo := &types.Repo{
-		Name:        repoName,
+		Nbme:        repoNbme,
 		Description: "Test",
 	}
-	// Insert the repo into our database
-	if err := db.Repos().Create(ctx, dbRepo); err != nil {
-		t.Fatal(err)
+	// Insert the repo into our dbtbbbse
+	if err := db.Repos().Crebte(ctx, dbRepo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+	bssertRepoStbte := func(stbtus types.CloneStbtus, size int64, wbntErr error) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.Equal(t, status, fromDB.CloneStatus)
-		assert.Equal(t, size, fromDB.RepoSizeBytes)
-		var errString string
-		if wantErr != nil {
-			errString = wantErr.Error()
+		bssert.Equbl(t, stbtus, fromDB.CloneStbtus)
+		bssert.Equbl(t, size, fromDB.RepoSizeBytes)
+		vbr errString string
+		if wbntErr != nil {
+			errString = wbntErr.Error()
 		}
-		assert.Equal(t, errString, fromDB.LastError)
+		bssert.Equbl(t, errString, fromDB.LbstError)
 	}
 
 	// Verify the gitserver repo entry exists.
-	assertRepoState(types.CloneStatusNotCloned, 0, nil)
+	bssertRepoStbte(types.CloneStbtusNotCloned, 0, nil)
 
-	repoDir := repoDirFromName(reposDir, repoName)
-	remoteDir := filepath.Join(reposDir, "remote")
+	repoDir := repoDirFromNbme(reposDir, repoNbme)
+	remoteDir := filepbth.Join(reposDir, "remote")
 	if err := os.Mkdir(remoteDir, os.ModePerm); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	cmdExecDir := remoteDir
-	cmd := func(name string, arg ...string) string {
+	cmd := func(nbme string, brg ...string) string {
 		t.Helper()
-		return runCmd(t, cmdExecDir, name, arg...)
+		return runCmd(t, cmdExecDir, nbme, brg...)
 	}
-	wantCommit := makeSingleCommitRepo(cmd)
-	// Add a bad tag
-	cmd("git", "tag", "HEAD")
+	wbntCommit := mbkeSingleCommitRepo(cmd)
+	// Add b bbd tbg
+	cmd("git", "tbg", "HEAD")
 
-	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
+	s := mbkeTestServer(ctx, t, reposDir, remoteDir, db)
 
 	// Enqueue repo clone.
-	_, err := s.CloneRepo(ctx, repoName, CloneOptions{})
+	_, err := s.CloneRepo(ctx, repoNbme, CloneOptions{})
 	require.NoError(t, err)
 
-	// Wait until the clone is done. Please do not use this code snippet
-	// outside of a test. We only know this works since our test only starts
-	// one clone and will have nothing else attempt to lock.
+	// Wbit until the clone is done. Plebse do not use this code snippet
+	// outside of b test. We only know this works since our test only stbrts
+	// one clone bnd will hbve nothing else bttempt to lock.
 	for i := 0; i < 1000; i++ {
-		_, cloning := s.Locker.Status(repoDir)
+		_, cloning := s.Locker.Stbtus(repoDir)
 		if !cloning {
-			break
+			brebk
 		}
 		time.Sleep(10 * time.Millisecond)
 	}
-	wantRepoSize := dirSize(repoDir.Path("."))
-	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
+	wbntRepoSize := dirSize(repoDir.Pbth("."))
+	bssertRepoStbte(types.CloneStbtusCloned, wbntRepoSize, err)
 
-	cmdExecDir = repoDir.Path(".")
-	gotCommit := cmd("git", "rev-parse", "HEAD")
-	if wantCommit != gotCommit {
-		t.Fatal("failed to clone:", gotCommit)
+	cmdExecDir = repoDir.Pbth(".")
+	gotCommit := cmd("git", "rev-pbrse", "HEAD")
+	if wbntCommit != gotCommit {
+		t.Fbtbl("fbiled to clone:", gotCommit)
 	}
 
-	// Test blocking with a failure (already exists since we didn't specify overwrite)
-	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true})
+	// Test blocking with b fbilure (blrebdy exists since we didn't specify overwrite)
+	_, err = s.CloneRepo(context.Bbckground(), repoNbme, CloneOptions{Block: true})
 	if !errors.Is(err, os.ErrExist) {
-		t.Fatalf("expected clone repo to fail with already exists: %s", err)
+		t.Fbtblf("expected clone repo to fbil with blrebdy exists: %s", err)
 	}
-	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
+	bssertRepoStbte(types.CloneStbtusCloned, wbntRepoSize, err)
 
-	// Test blocking with overwrite. First add random file to GIT_DIR. If the
-	// file is missing after cloning we know the directory was replaced
-	mkFiles(t, repoDir.Path("."), "HELLO")
-	_, err = s.CloneRepo(context.Background(), repoName, CloneOptions{Block: true, Overwrite: true})
+	// Test blocking with overwrite. First bdd rbndom file to GIT_DIR. If the
+	// file is missing bfter cloning we know the directory wbs replbced
+	mkFiles(t, repoDir.Pbth("."), "HELLO")
+	_, err = s.CloneRepo(context.Bbckground(), repoNbme, CloneOptions{Block: true, Overwrite: true})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertRepoState(types.CloneStatusCloned, wantRepoSize, err)
+	bssertRepoStbte(types.CloneStbtusCloned, wbntRepoSize, err)
 
-	if _, err := os.Stat(repoDir.Path("HELLO")); !os.IsNotExist(err) {
-		t.Fatalf("expected clone to be overwritten: %s", err)
+	if _, err := os.Stbt(repoDir.Pbth("HELLO")); !os.IsNotExist(err) {
+		t.Fbtblf("expected clone to be overwritten: %s", err)
 	}
 
-	gotCommit = cmd("git", "rev-parse", "HEAD")
-	if wantCommit != gotCommit {
-		t.Fatal("failed to clone:", gotCommit)
+	gotCommit = cmd("git", "rev-pbrse", "HEAD")
+	if wbntCommit != gotCommit {
+		t.Fbtbl("fbiled to clone:", gotCommit)
 	}
-	gitserverRepo, err := db.GitserverRepos().GetByName(ctx, repoName)
+	gitserverRepo, err := db.GitserverRepos().GetByNbme(ctx, repoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if gitserverRepo.CloningProgress == "" {
-		t.Error("want non-empty CloningProgress")
+		t.Error("wbnt non-empty CloningProgress")
 	}
 }
 
-func TestCloneRepoRecordsFailures(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func TestCloneRepoRecordsFbilures(t *testing.T) {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	logger := logtest.Scoped(t)
 	remote := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoNbme := bpi.RepoNbme("exbmple.com/foo/bbr")
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
-		Name:        repoName,
+		Nbme:        repoNbme,
 		Description: "Test",
 	}
-	// Insert the repo into our database
-	if err := db.Repos().Create(ctx, dbRepo); err != nil {
-		t.Fatal(err)
+	// Insert the repo into our dbtbbbse
+	if err := db.Repos().Crebte(ctx, dbRepo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	assertRepoState := func(status types.CloneStatus, size int64, wantErr error) {
+	bssertRepoStbte := func(stbtus types.CloneStbtus, size int64, wbntErr error) {
 		t.Helper()
 		fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.Equal(t, status, fromDB.CloneStatus)
-		assert.Equal(t, size, fromDB.RepoSizeBytes)
-		var errString string
-		if wantErr != nil {
-			errString = wantErr.Error()
+		bssert.Equbl(t, stbtus, fromDB.CloneStbtus)
+		bssert.Equbl(t, size, fromDB.RepoSizeBytes)
+		vbr errString string
+		if wbntErr != nil {
+			errString = wbntErr.Error()
 		}
-		assert.Equal(t, errString, fromDB.LastError)
+		bssert.Equbl(t, errString, fromDB.LbstError)
 	}
 
 	// Verify the gitserver repo entry exists.
-	assertRepoState(types.CloneStatusNotCloned, 0, nil)
+	bssertRepoStbte(types.CloneStbtusNotCloned, 0, nil)
 
 	reposDir := t.TempDir()
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := mbkeTestServer(ctx, t, reposDir, remote, db)
 
-	for _, tc := range []struct {
-		name         string
-		getVCSSyncer func(ctx context.Context, name api.RepoName) (VCSSyncer, error)
-		wantErr      error
+	for _, tc := rbnge []struct {
+		nbme         string
+		getVCSSyncer func(ctx context.Context, nbme bpi.RepoNbme) (VCSSyncer, error)
+		wbntErr      error
 	}{
 		{
-			name: "Not cloneable",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			nbme: "Not clonebble",
+			getVCSSyncer: func(ctx context.Context, nbme bpi.RepoNbme) (VCSSyncer, error) {
 				m := NewMockVCSSyncer()
-				m.IsCloneableFunc.SetDefaultHook(func(context.Context, api.RepoName, *vcs.URL) error {
-					return errors.New("not_cloneable")
+				m.IsClonebbleFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, *vcs.URL) error {
+					return errors.New("not_clonebble")
 				})
 				return m, nil
 			},
-			wantErr: errors.New("error cloning repo: repo example.com/foo/bar not cloneable: not_cloneable"),
+			wbntErr: errors.New("error cloning repo: repo exbmple.com/foo/bbr not clonebble: not_clonebble"),
 		},
 		{
-			name: "Failing clone",
-			getVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
+			nbme: "Fbiling clone",
+			getVCSSyncer: func(ctx context.Context, nbme bpi.RepoNbme) (VCSSyncer, error) {
 				m := NewMockVCSSyncer()
-				m.CloneCommandFunc.SetDefaultHook(func(ctx context.Context, url *vcs.URL, s string) (*exec.Cmd, error) {
-					return exec.Command("git", "clone", "/dev/null"), nil
+				m.CloneCommbndFunc.SetDefbultHook(func(ctx context.Context, url *vcs.URL, s string) (*exec.Cmd, error) {
+					return exec.Commbnd("git", "clone", "/dev/null"), nil
 				})
 				return m, nil
 			},
-			wantErr: errors.New("failed to clone example.com/foo/bar: clone failed. Output: fatal: repository '/dev/null' does not exist: exit status 128"),
+			wbntErr: errors.New("fbiled to clone exbmple.com/foo/bbr: clone fbiled. Output: fbtbl: repository '/dev/null' does not exist: exit stbtus 128"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			s.GetVCSSyncer = tc.getVCSSyncer
-			_, _ = s.CloneRepo(ctx, repoName, CloneOptions{
+			_, _ = s.CloneRepo(ctx, repoNbme, CloneOptions{
 				Block: true,
 			})
-			assertRepoState(types.CloneStatusNotCloned, 0, tc.wantErr)
+			bssertRepoStbte(types.CloneStbtusNotCloned, 0, tc.wbntErr)
 		})
 	}
 }
 
-var ignoreVolatileGitserverRepoFields = cmpopts.IgnoreFields(
+vbr ignoreVolbtileGitserverRepoFields = cmpopts.IgnoreFields(
 	types.GitserverRepo{},
-	"LastFetched",
-	"LastChanged",
+	"LbstFetched",
+	"LbstChbnged",
 	"RepoSizeBytes",
-	"UpdatedAt",
+	"UpdbtedAt",
 	"CorruptionLogs",
 	"CloningProgress",
 )
 
-func TestHandleRepoDelete(t *testing.T) {
-	testHandleRepoDelete(t, false)
+func TestHbndleRepoDelete(t *testing.T) {
+	testHbndleRepoDelete(t, fblse)
 }
 
-func TestHandleRepoDeleteWhenDeleteInDB(t *testing.T) {
-	// We also want to ensure that we can delete repo data on disk for a repo that
-	// has already been deleted in the DB.
-	testHandleRepoDelete(t, true)
+func TestHbndleRepoDeleteWhenDeleteInDB(t *testing.T) {
+	// We blso wbnt to ensure thbt we cbn delete repo dbtb on disk for b repo thbt
+	// hbs blrebdy been deleted in the DB.
+	testHbndleRepoDelete(t, true)
 }
 
-func testHandleRepoDelete(t *testing.T, deletedInDB bool) {
+func testHbndleRepoDelete(t *testing.T, deletedInDB bool) {
 	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	remote := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoNbme := bpi.RepoNbme("exbmple.com/foo/bbr")
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
-		Name:        repoName,
+		Nbme:        repoNbme,
 		Description: "Test",
 	}
 
-	// Insert the repo into our database
-	if err := db.Repos().Create(ctx, dbRepo); err != nil {
-		t.Fatal(err)
+	// Insert the repo into our dbtbbbse
+	if err := db.Repos().Crebte(ctx, dbRepo); err != nil {
+		t.Fbtbl(err)
 	}
 
 	repo := remote
-	cmd := func(name string, arg ...string) string {
+	cmd := func(nbme string, brg ...string) string {
 		t.Helper()
-		return runCmd(t, repo, name, arg...)
+		return runCmd(t, repo, nbme, brg...)
 	}
-	_ = makeSingleCommitRepo(cmd)
-	// Add a bad tag
-	cmd("git", "tag", "HEAD")
+	_ = mbkeSingleCommitRepo(cmd)
+	// Add b bbd tbg
+	cmd("git", "tbg", "HEAD")
 
 	reposDir := t.TempDir()
 
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := mbkeTestServer(ctx, t, reposDir, remote, db)
 
 	// We need some of the side effects here
-	_ = s.Handler()
+	_ = s.Hbndler()
 
 	rr := httptest.NewRecorder()
 
-	updateReq := protocol.RepoUpdateRequest{
-		Repo: repoName,
+	updbteReq := protocol.RepoUpdbteRequest{
+		Repo: repoNbme,
 	}
-	body, err := json.Marshal(updateReq)
+	body, err := json.Mbrshbl(updbteReq)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// This will perform an initial clone
-	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	// This will perform bn initibl clone
+	req := newRequest("GET", "/repo-updbte", bytes.NewRebder(body))
+	s.hbndleRepoUpdbte(rr, req)
 
-	size := dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
-	want := &types.GitserverRepo{
+	size := dirSize(repoDirFromNbme(s.ReposDir, repoNbme).Pbth("."))
+	wbnt := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
+		ShbrdID:       "",
+		CloneStbtus:   types.CloneStbtusCloned,
 		RepoSizeBytes: size,
 	}
 	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
+	// We don't expect bn error
+	if diff := cmp.Diff(wbnt, fromDB, ignoreVolbtileGitserverRepoFields); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	if deletedInDB {
 		if err := db.Repos().Delete(ctx, dbRepo.ID); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		repos, err := db.Repos().List(ctx, database.ReposListOptions{IncludeDeleted: true, IDs: []api.RepoID{dbRepo.ID}})
+		repos, err := db.Repos().List(ctx, dbtbbbse.ReposListOptions{IncludeDeleted: true, IDs: []bpi.RepoID{dbRepo.ID}})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(repos) != 1 {
-			t.Fatalf("Expected 1 repo, got %d", len(repos))
+			t.Fbtblf("Expected 1 repo, got %d", len(repos))
 		}
 		dbRepo = repos[0]
 	}
 
-	// Now we can delete it
+	// Now we cbn delete it
 	deleteReq := protocol.RepoDeleteRequest{
-		Repo: dbRepo.Name,
+		Repo: dbRepo.Nbme,
 	}
-	body, err = json.Marshal(deleteReq)
+	body, err = json.Mbrshbl(deleteReq)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	req = newRequest("GET", "/delete", bytes.NewReader(body))
-	s.handleRepoDelete(rr, req)
+	req = newRequest("GET", "/delete", bytes.NewRebder(body))
+	s.hbndleRepoDelete(rr, req)
 
-	size = dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
+	size = dirSize(repoDirFromNbme(s.ReposDir, repoNbme).Pbth("."))
 	if size != 0 {
-		t.Fatalf("Size should be 0, got %d", size)
+		t.Fbtblf("Size should be 0, got %d", size)
 	}
 
-	// Check status in gitserver_repos
-	want = &types.GitserverRepo{
+	// Check stbtus in gitserver_repos
+	wbnt = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusNotCloned,
+		ShbrdID:       "",
+		CloneStbtus:   types.CloneStbtusNotCloned,
 		RepoSizeBytes: size,
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
+	// We don't expect bn error
+	if diff := cmp.Diff(wbnt, fromDB, ignoreVolbtileGitserverRepoFields); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestHandleRepoUpdate(t *testing.T) {
+func TestHbndleRepoUpdbte(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	remote := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	repoNbme := bpi.RepoNbme("exbmple.com/foo/bbr")
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	dbRepo := &types.Repo{
-		Name:        repoName,
+		Nbme:        repoNbme,
 		Description: "Test",
 	}
-	// Insert the repo into our database
-	if err := db.Repos().Create(ctx, dbRepo); err != nil {
-		t.Fatal(err)
+	// Insert the repo into our dbtbbbse
+	if err := db.Repos().Crebte(ctx, dbRepo); err != nil {
+		t.Fbtbl(err)
 	}
 
 	repo := remote
-	cmd := func(name string, arg ...string) string {
+	cmd := func(nbme string, brg ...string) string {
 		t.Helper()
-		return runCmd(t, repo, name, arg...)
+		return runCmd(t, repo, nbme, brg...)
 	}
-	_ = makeSingleCommitRepo(cmd)
-	// Add a bad tag
-	cmd("git", "tag", "HEAD")
+	_ = mbkeSingleCommitRepo(cmd)
+	// Add b bbd tbg
+	cmd("git", "tbg", "HEAD")
 
 	reposDir := t.TempDir()
 
-	s := makeTestServer(ctx, t, reposDir, remote, db)
+	s := mbkeTestServer(ctx, t, reposDir, remote, db)
 
 	// We need the side effects here
-	_ = s.Handler()
+	_ = s.Hbndler()
 
 	rr := httptest.NewRecorder()
 
-	updateReq := protocol.RepoUpdateRequest{
-		Repo: repoName,
+	updbteReq := protocol.RepoUpdbteRequest{
+		Repo: repoNbme,
 	}
-	body, err := json.Marshal(updateReq)
+	body, err := json.Mbrshbl(updbteReq)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Confirm that failing to clone the repo stores the error
+	// Confirm thbt fbiling to clone the repo stores the error
 	oldRemoveURLFunc := s.GetRemoteURLFunc
-	s.GetRemoteURLFunc = func(ctx context.Context, name api.RepoName) (string, error) {
-		return "https://invalid.example.com/", nil
+	s.GetRemoteURLFunc = func(ctx context.Context, nbme bpi.RepoNbme) (string, error) {
+		return "https://invblid.exbmple.com/", nil
 	}
-	req := newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	req := newRequest("GET", "/repo-updbte", bytes.NewRebder(body))
+	s.hbndleRepoUpdbte(rr, req)
 
-	size := dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
-	want := &types.GitserverRepo{
+	size := dirSize(repoDirFromNbme(s.ReposDir, repoNbme).Pbth("."))
+	wbnt := &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusNotCloned,
+		ShbrdID:       "",
+		CloneStbtus:   types.CloneStbtusNotCloned,
 		RepoSizeBytes: size,
-		LastError:     "",
+		LbstError:     "",
 	}
 	fromDB, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We don't care exactly what the error is here
-	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "RepoSizeBytes", "UpdatedAt", "LastError", "CorruptionLogs")
-	// But we do care that it exists
-	if fromDB.LastError == "" {
-		t.Errorf("Expected an error when trying to clone from an invalid URL")
+	// We don't cbre exbctly whbt the error is here
+	cmpIgnored := cmpopts.IgnoreFields(types.GitserverRepo{}, "LbstFetched", "LbstChbnged", "RepoSizeBytes", "UpdbtedAt", "LbstError", "CorruptionLogs")
+	// But we do cbre thbt it exists
+	if fromDB.LbstError == "" {
+		t.Errorf("Expected bn error when trying to clone from bn invblid URL")
 	}
 
-	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, cmpIgnored); diff != "" {
-		t.Fatal(diff)
+	// We don't expect bn error
+	if diff := cmp.Diff(wbnt, fromDB, cmpIgnored); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// This will perform an initial clone
+	// This will perform bn initibl clone
 	s.GetRemoteURLFunc = oldRemoveURLFunc
-	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	req = newRequest("GET", "/repo-updbte", bytes.NewRebder(body))
+	s.hbndleRepoUpdbte(rr, req)
 
-	size = dirSize(repoDirFromName(s.ReposDir, repoName).Path("."))
-	want = &types.GitserverRepo{
+	size = dirSize(repoDirFromNbme(s.ReposDir, repoNbme).Pbth("."))
+	wbnt = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
+		ShbrdID:       "",
+		CloneStbtus:   types.CloneStbtusCloned,
 		RepoSizeBytes: size,
-		LastError:     "",
+		LbstError:     "",
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We don't expect an error
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
+	// We don't expect bn error
+	if diff := cmp.Diff(wbnt, fromDB, ignoreVolbtileGitserverRepoFields); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Now we'll call again and with an update that fails
-	doBackgroundRepoUpdateMock = func(name api.RepoName) error {
-		return errors.New("fail")
+	// Now we'll cbll bgbin bnd with bn updbte thbt fbils
+	doBbckgroundRepoUpdbteMock = func(nbme bpi.RepoNbme) error {
+		return errors.New("fbil")
 	}
-	t.Cleanup(func() { doBackgroundRepoUpdateMock = nil })
+	t.Clebnup(func() { doBbckgroundRepoUpdbteMock = nil })
 
-	// This will trigger an update since the repo is already cloned
-	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	// This will trigger bn updbte since the repo is blrebdy cloned
+	req = newRequest("GET", "/repo-updbte", bytes.NewRebder(body))
+	s.hbndleRepoUpdbte(rr, req)
 
-	want = &types.GitserverRepo{
+	wbnt = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
-		LastError:     "fail",
+		ShbrdID:       "",
+		CloneStbtus:   types.CloneStbtusCloned,
+		LbstError:     "fbil",
 		RepoSizeBytes: size,
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We expect an error
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
+	// We expect bn error
+	if diff := cmp.Diff(wbnt, fromDB, ignoreVolbtileGitserverRepoFields); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Now we'll call again and with an update that succeeds
-	doBackgroundRepoUpdateMock = nil
+	// Now we'll cbll bgbin bnd with bn updbte thbt succeeds
+	doBbckgroundRepoUpdbteMock = nil
 
-	// This will trigger an update since the repo is already cloned
-	req = newRequest("GET", "/repo-update", bytes.NewReader(body))
-	s.handleRepoUpdate(rr, req)
+	// This will trigger bn updbte since the repo is blrebdy cloned
+	req = newRequest("GET", "/repo-updbte", bytes.NewRebder(body))
+	s.hbndleRepoUpdbte(rr, req)
 
-	want = &types.GitserverRepo{
+	wbnt = &types.GitserverRepo{
 		RepoID:        dbRepo.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusCloned,
-		RepoSizeBytes: dirSize(repoDirFromName(s.ReposDir, repoName).Path(".")), // we compute the new size
+		ShbrdID:       "",
+		CloneStbtus:   types.CloneStbtusCloned,
+		RepoSizeBytes: dirSize(repoDirFromNbme(s.ReposDir, repoNbme).Pbth(".")), // we compute the new size
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We expect an update
-	if diff := cmp.Diff(want, fromDB, ignoreVolatileGitserverRepoFields); diff != "" {
-		t.Fatal(diff)
+	// We expect bn updbte
+	if diff := cmp.Diff(wbnt, fromDB, ignoreVolbtileGitserverRepoFields); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestRemoveBadRefs(t *testing.T) {
+func TestRemoveBbdRefs(t *testing.T) {
 	dir := t.TempDir()
-	gitDir := common.GitDir(filepath.Join(dir, ".git"))
+	gitDir := common.GitDir(filepbth.Join(dir, ".git"))
 
-	cmd := func(name string, arg ...string) string {
+	cmd := func(nbme string, brg ...string) string {
 		t.Helper()
-		return runCmd(t, dir, name, arg...)
+		return runCmd(t, dir, nbme, brg...)
 	}
-	wantCommit := makeSingleCommitRepo(cmd)
+	wbntCommit := mbkeSingleCommitRepo(cmd)
 
-	for _, name := range []string{"HEAD", "head", "Head", "HeAd"} {
-		// Tag
-		cmd("git", "tag", name)
+	for _, nbme := rbnge []string{"HEAD", "hebd", "Hebd", "HeAd"} {
+		// Tbg
+		cmd("git", "tbg", nbme)
 
-		if dontWant := cmd("git", "rev-parse", "HEAD"); dontWant == wantCommit {
-			t.Logf("WARNING: git tag %s failed to produce ambiguous output: %s", name, dontWant)
+		if dontWbnt := cmd("git", "rev-pbrse", "HEAD"); dontWbnt == wbntCommit {
+			t.Logf("WARNING: git tbg %s fbiled to produce bmbiguous output: %s", nbme, dontWbnt)
 		}
 
-		if err := removeBadRefs(context.Background(), gitDir); err != nil {
-			t.Fatal(err)
+		if err := removeBbdRefs(context.Bbckground(), gitDir); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if got := cmd("git", "rev-parse", "HEAD"); got != wantCommit {
-			t.Fatalf("git tag %s failed to be removed: %s", name, got)
+		if got := cmd("git", "rev-pbrse", "HEAD"); got != wbntCommit {
+			t.Fbtblf("git tbg %s fbiled to be removed: %s", nbme, got)
 		}
 
 		// Ref
-		if err := os.WriteFile(filepath.Join(dir, ".git", "refs", "heads", name), []byte(wantCommit), 0o600); err != nil {
-			t.Fatal(err)
+		if err := os.WriteFile(filepbth.Join(dir, ".git", "refs", "hebds", nbme), []byte(wbntCommit), 0o600); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if dontWant := cmd("git", "rev-parse", "HEAD"); dontWant == wantCommit {
-			t.Logf("WARNING: git ref %s failed to produce ambiguous output: %s", name, dontWant)
+		if dontWbnt := cmd("git", "rev-pbrse", "HEAD"); dontWbnt == wbntCommit {
+			t.Logf("WARNING: git ref %s fbiled to produce bmbiguous output: %s", nbme, dontWbnt)
 		}
 
-		if err := removeBadRefs(context.Background(), gitDir); err != nil {
-			t.Fatal(err)
+		if err := removeBbdRefs(context.Bbckground(), gitDir); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if got := cmd("git", "rev-parse", "HEAD"); got != wantCommit {
-			t.Fatalf("git ref %s failed to be removed: %s", name, got)
+		if got := cmd("git", "rev-pbrse", "HEAD"); got != wbntCommit {
+			t.Fbtblf("git ref %s fbiled to be removed: %s", nbme, got)
 		}
 	}
 }
 
-func TestCloneRepo_EnsureValidity(t *testing.T) {
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+func TestCloneRepo_EnsureVblidity(t *testing.T) {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	t.Run("with no remote HEAD file", func(t *testing.T) {
-		var (
+		vbr (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) {
+			cmd      = func(nbme string, brg ...string) {
 				t.Helper()
-				runCmd(t, remote, name, arg...)
+				runCmd(t, remote, nbme, brg...)
 			}
 		)
 
 		cmd("git", "init", ".")
 		cmd("rm", ".git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
-			t.Fatal("expected an error, got none")
+		s := mbkeTestServer(ctx, t, reposDir, remote, nil)
+		if _, err := s.CloneRepo(ctx, "exbmple.com/foo/bbr", CloneOptions{}); err == nil {
+			t.Fbtbl("expected bn error, got none")
 		}
 	})
-	t.Run("with an empty remote HEAD file", func(t *testing.T) {
-		var (
+	t.Run("with bn empty remote HEAD file", func(t *testing.T) {
+		vbr (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) {
+			cmd      = func(nbme string, brg ...string) {
 				t.Helper()
-				runCmd(t, remote, name, arg...)
+				runCmd(t, remote, nbme, brg...)
 			}
 		)
 
 		cmd("git", "init", ".")
 		cmd("sh", "-c", ": > .git/HEAD")
 
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err == nil {
-			t.Fatal("expected an error, got none")
+		s := mbkeTestServer(ctx, t, reposDir, remote, nil)
+		if _, err := s.CloneRepo(ctx, "exbmple.com/foo/bbr", CloneOptions{}); err == nil {
+			t.Fbtbl("expected bn error, got none")
 		}
 	})
-	t.Run("with no local HEAD file", func(t *testing.T) {
-		var (
+	t.Run("with no locbl HEAD file", func(t *testing.T) {
+		vbr (
 			reposDir = t.TempDir()
-			remote   = filepath.Join(reposDir, "remote")
-			cmd      = func(name string, arg ...string) string {
+			remote   = filepbth.Join(reposDir, "remote")
+			cmd      = func(nbme string, brg ...string) string {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				return runCmd(t, remote, nbme, brg...)
 			}
-			repoName = api.RepoName("example.com/foo/bar")
+			repoNbme = bpi.RepoNbme("exbmple.com/foo/bbr")
 		)
 
 		if err := os.Mkdir(remote, os.ModePerm); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		_ = mbkeSingleCommitRepo(cmd)
+		s := mbkeTestServer(ctx, t, reposDir, remote, nil)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
-			if err := os.Remove(tmpDir.Path("HEAD")); err != nil {
-				t.Fatal(err)
+			if err := os.Remove(tmpDir.Pbth("HEAD")); err != nil {
+				t.Fbtbl(err)
 			}
 		}
-		t.Cleanup(func() { testRepoCorrupter = nil })
-		// Use block so we get clone errors right here and don't have to rely on the
-		// clone queue. There's no other reason for blocking here, just convenience/simplicity.
-		if _, err := s.CloneRepo(ctx, repoName, CloneOptions{Block: true}); err != nil {
-			t.Fatalf("expected no error, got %v", err)
+		t.Clebnup(func() { testRepoCorrupter = nil })
+		// Use block so we get clone errors right here bnd don't hbve to rely on the
+		// clone queue. There's no other rebson for blocking here, just convenience/simplicity.
+		if _, err := s.CloneRepo(ctx, repoNbme, CloneOptions{Block: true}); err != nil {
+			t.Fbtblf("expected no error, got %v", err)
 		}
 
-		dst := repoDirFromName(s.ReposDir, repoName)
+		dst := repoDirFromNbme(s.ReposDir, repoNbme)
 		for i := 0; i < 1000; i++ {
-			_, cloning := s.Locker.Status(dst)
+			_, cloning := s.Locker.Stbtus(dst)
 			if !cloning {
-				break
+				brebk
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
+		hebd, err := os.RebdFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
-			t.Fatal("expected a reconstituted HEAD, but no file exists")
+			t.Fbtbl("expected b reconstituted HEAD, but no file exists")
 		}
-		if head == nil {
-			t.Fatal("expected a reconstituted HEAD, but the file is empty")
+		if hebd == nil {
+			t.Fbtbl("expected b reconstituted HEAD, but the file is empty")
 		}
 	})
-	t.Run("with an empty local HEAD file", func(t *testing.T) {
-		var (
+	t.Run("with bn empty locbl HEAD file", func(t *testing.T) {
+		vbr (
 			remote   = t.TempDir()
 			reposDir = t.TempDir()
-			cmd      = func(name string, arg ...string) string {
+			cmd      = func(nbme string, brg ...string) string {
 				t.Helper()
-				return runCmd(t, remote, name, arg...)
+				return runCmd(t, remote, nbme, brg...)
 			}
 		)
 
-		_ = makeSingleCommitRepo(cmd)
-		s := makeTestServer(ctx, t, reposDir, remote, nil)
+		_ = mbkeSingleCommitRepo(cmd)
+		s := mbkeTestServer(ctx, t, reposDir, remote, nil)
 
 		testRepoCorrupter = func(_ context.Context, tmpDir common.GitDir) {
 			cmd("sh", "-c", fmt.Sprintf(": > %s/HEAD", tmpDir))
 		}
-		t.Cleanup(func() { testRepoCorrupter = nil })
-		if _, err := s.CloneRepo(ctx, "example.com/foo/bar", CloneOptions{}); err != nil {
-			t.Fatalf("expected no error, got %v", err)
+		t.Clebnup(func() { testRepoCorrupter = nil })
+		if _, err := s.CloneRepo(ctx, "exbmple.com/foo/bbr", CloneOptions{}); err != nil {
+			t.Fbtblf("expected no error, got %v", err)
 		}
 
-		// wait for repo to be cloned
-		dst := repoDirFromName(s.ReposDir, "example.com/foo/bar")
+		// wbit for repo to be cloned
+		dst := repoDirFromNbme(s.ReposDir, "exbmple.com/foo/bbr")
 		for i := 0; i < 1000; i++ {
-			_, cloning := s.Locker.Status(dst)
+			_, cloning := s.Locker.Stbtus(dst)
 			if !cloning {
-				break
+				brebk
 			}
 			time.Sleep(10 * time.Millisecond)
 		}
 
-		head, err := os.ReadFile(fmt.Sprintf("%s/HEAD", dst))
+		hebd, err := os.RebdFile(fmt.Sprintf("%s/HEAD", dst))
 		if os.IsNotExist(err) {
-			t.Fatal("expected a reconstituted HEAD, but no file exists")
+			t.Fbtbl("expected b reconstituted HEAD, but no file exists")
 		}
-		if head == nil {
-			t.Fatal("expected a reconstituted HEAD, but the file is empty")
+		if hebd == nil {
+			t.Fbtbl("expected b reconstituted HEAD, but the file is empty")
 		}
 	})
 }
 
-func TestHostnameMatch(t *testing.T) {
-	testCases := []struct {
-		hostname    string
-		addr        string
-		shouldMatch bool
+func TestHostnbmeMbtch(t *testing.T) {
+	testCbses := []struct {
+		hostnbme    string
+		bddr        string
+		shouldMbtch bool
 	}{
 		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-1",
-			shouldMatch: true,
+			hostnbme:    "gitserver-1",
+			bddr:        "gitserver-1",
+			shouldMbtch: true,
 		},
 		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-1.gitserver:3178",
-			shouldMatch: true,
+			hostnbme:    "gitserver-1",
+			bddr:        "gitserver-1.gitserver:3178",
+			shouldMbtch: true,
 		},
 		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-10.gitserver:3178",
-			shouldMatch: false,
+			hostnbme:    "gitserver-1",
+			bddr:        "gitserver-10.gitserver:3178",
+			shouldMbtch: fblse,
 		},
 		{
-			hostname:    "gitserver-1",
-			addr:        "gitserver-10",
-			shouldMatch: false,
+			hostnbme:    "gitserver-1",
+			bddr:        "gitserver-10",
+			shouldMbtch: fblse,
 		},
 		{
-			hostname:    "gitserver-10",
-			addr:        "",
-			shouldMatch: false,
+			hostnbme:    "gitserver-10",
+			bddr:        "",
+			shouldMbtch: fblse,
 		},
 		{
-			hostname:    "gitserver-10",
-			addr:        "gitserver-10:3178",
-			shouldMatch: true,
+			hostnbme:    "gitserver-10",
+			bddr:        "gitserver-10:3178",
+			shouldMbtch: true,
 		},
 		{
-			hostname:    "gitserver-10",
-			addr:        "gitserver-10:3178",
-			shouldMatch: true,
+			hostnbme:    "gitserver-10",
+			bddr:        "gitserver-10:3178",
+			shouldMbtch: true,
 		},
 		{
-			hostname:    "gitserver-0.prod",
-			addr:        "gitserver-0.prod.default.namespace",
-			shouldMatch: true,
+			hostnbme:    "gitserver-0.prod",
+			bddr:        "gitserver-0.prod.defbult.nbmespbce",
+			shouldMbtch: true,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		t.Run("", func(t *testing.T) {
-			have := hostnameMatch(tc.hostname, tc.addr)
-			if have != tc.shouldMatch {
-				t.Fatalf("Want %v, got %v", tc.shouldMatch, have)
+			hbve := hostnbmeMbtch(tc.hostnbme, tc.bddr)
+			if hbve != tc.shouldMbtch {
+				t.Fbtblf("Wbnt %v, got %v", tc.shouldMbtch, hbve)
 			}
 		})
 	}
 }
 
-func TestSyncRepoState(t *testing.T) {
+func TestSyncRepoStbte(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	remoteDir := t.TempDir()
 
-	cmd := func(name string, arg ...string) {
+	cmd := func(nbme string, brg ...string) {
 		t.Helper()
-		runCmd(t, remoteDir, name, arg...)
+		runCmd(t, remoteDir, nbme, brg...)
 	}
 
-	// Setup a repo with a commit so we can see if we can clone it.
+	// Setup b repo with b commit so we cbn see if we cbn clone it.
 	cmd("git", "init", ".")
 	cmd("sh", "-c", "echo hello world > hello.txt")
-	cmd("git", "add", "hello.txt")
+	cmd("git", "bdd", "hello.txt")
 	cmd("git", "commit", "-m", "hello")
 
 	reposDir := t.TempDir()
-	repoName := api.RepoName("example.com/foo/bar")
-	hostname := "test"
+	repoNbme := bpi.RepoNbme("exbmple.com/foo/bbr")
+	hostnbme := "test"
 
-	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
-	s.Hostname = hostname
+	s := mbkeTestServer(ctx, t, reposDir, remoteDir, db)
+	s.Hostnbme = hostnbme
 
 	dbRepo := &types.Repo{
-		Name:        repoName,
-		URI:         string(repoName),
+		Nbme:        repoNbme,
+		URI:         string(repoNbme),
 		Description: "Test",
 	}
 
-	// Insert the repo into our database
-	err := db.Repos().Create(ctx, dbRepo)
+	// Insert the repo into our dbtbbbse
+	err := db.Repos().Crebte(ctx, dbRepo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = s.CloneRepo(ctx, repoName, CloneOptions{Block: true})
+	_, err = s.CloneRepo(ctx, repoNbme, CloneOptions{Block: true})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	_, err = db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		// GitserverRepo should exist after updating the lastFetched time
-		t.Fatal(err)
+		// GitserverRepo should exist bfter updbting the lbstFetched time
+		t.Fbtbl(err)
 	}
 
-	err = syncRepoState(ctx, logger, db, s.Locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+	err = syncRepoStbte(ctx, logger, db, s.Locker, hostnbme, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostnbme}}, 10, 10, true)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	gr, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if gr.CloneStatus != types.CloneStatusCloned {
-		t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
+	if gr.CloneStbtus != types.CloneStbtusCloned {
+		t.Fbtblf("Wbnt %v, got %v", types.CloneStbtusCloned, gr.CloneStbtus)
 	}
 
 	t.Run("sync deleted repo", func(t *testing.T) {
-		// Fake setting an incorrect status
-		if err := db.GitserverRepos().SetCloneStatus(ctx, dbRepo.Name, types.CloneStatusUnknown, hostname); err != nil {
-			t.Fatal(err)
+		// Fbke setting bn incorrect stbtus
+		if err := db.GitserverRepos().SetCloneStbtus(ctx, dbRepo.Nbme, types.CloneStbtusUnknown, hostnbme); err != nil {
+			t.Fbtbl(err)
 		}
 
 		// We should continue to sync deleted repos
 		if err := db.Repos().Delete(ctx, dbRepo.ID); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		err = syncRepoState(ctx, logger, db, s.Locker, hostname, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostname}}, 10, 10, true)
+		err = syncRepoStbte(ctx, logger, db, s.Locker, hostnbme, reposDir, gitserver.GitserverAddresses{Addresses: []string{hostnbme}}, 10, 10, true)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		gr, err := db.GitserverRepos().GetByID(ctx, dbRepo.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if gr.CloneStatus != types.CloneStatusCloned {
-			t.Fatalf("Want %v, got %v", types.CloneStatusCloned, gr.CloneStatus)
+		if gr.CloneStbtus != types.CloneStbtusCloned {
+			t.Fbtblf("Wbnt %v, got %v", types.CloneStbtusCloned, gr.CloneStbtus)
 		}
 	})
 }
 
-type BatchLogTest struct {
-	Name           string
+type BbtchLogTest struct {
+	Nbme           string
 	Request        *http.Request
 	ExpectedCode   int
 	ExpectedBody   string
-	RunCommandMock func(ctx context.Context, cmd *exec.Cmd) (int, error)
+	RunCommbndMock func(ctx context.Context, cmd *exec.Cmd) (int, error)
 }
 
-func TestHandleBatchLog(t *testing.T) {
-	originalRepoCloned := repoCloned
+func TestHbndleBbtchLog(t *testing.T) {
+	originblRepoCloned := repoCloned
 	repoCloned = func(dir common.GitDir) bool {
-		return dir == "github.com/foo/bar/.git" || dir == "github.com/foo/baz/.git" || dir == "github.com/foo/bonk/.git"
+		return dir == "github.com/foo/bbr/.git" || dir == "github.com/foo/bbz/.git" || dir == "github.com/foo/bonk/.git"
 	}
-	t.Cleanup(func() { repoCloned = originalRepoCloned })
+	t.Clebnup(func() { repoCloned = originblRepoCloned })
 
-	runCommandMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
-		for _, v := range cmd.Args {
-			if strings.HasPrefix(v, "dumbmilk") {
+	runCommbndMock = func(ctx context.Context, cmd *exec.Cmd) (int, error) {
+		for _, v := rbnge cmd.Args {
+			if strings.HbsPrefix(v, "dumbmilk") {
 				return 128, errors.New("test error")
 			}
 		}
@@ -1531,142 +1531,142 @@ func TestHandleBatchLog(t *testing.T) {
 		cmd.Stdout.Write([]byte(fmt.Sprintf("stdout<%s:%s>", cmd.Dir, strings.Join(cmd.Args, " "))))
 		return 0, nil
 	}
-	t.Cleanup(func() { runCommandMock = nil })
+	t.Clebnup(func() { runCommbndMock = nil })
 
-	tests := []BatchLogTest{
+	tests := []BbtchLogTest{
 		{
-			Name:         "bad request",
-			Request:      newRequest("POST", "/batch-log", strings.NewReader(``)),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: "EOF", // the particular error when parsing empty payload
+			Nbme:         "bbd request",
+			Request:      newRequest("POST", "/bbtch-log", strings.NewRebder(``)),
+			ExpectedCode: http.StbtusBbdRequest,
+			ExpectedBody: "EOF", // the pbrticulbr error when pbrsing empty pbylobd
 		},
 		{
-			Name:         "empty",
-			Request:      newRequest("POST", "/batch-log", strings.NewReader(`{}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{},
+			Nbme:         "empty",
+			Request:      newRequest("POST", "/bbtch-log", strings.NewRebder(`{}`)),
+			ExpectedCode: http.StbtusOK,
+			ExpectedBody: mustEncodeJSONResponse(protocol.BbtchLogResponse{
+				Results: []protocol.BbtchLogResult{},
 			}),
 		},
 		{
-			Name: "all resolved",
-			Request: newRequest("POST", "/batch-log", strings.NewReader(`{
+			Nbme: "bll resolved",
+			Request: newRequest("POST", "/bbtch-log", strings.NewRebder(`{
 				"repoCommits": [
-					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
-					{"repo": "github.com/foo/baz", "commitId": "deadbeef2"},
-					{"repo": "github.com/foo/bonk", "commitId": "deadbeef3"}
+					{"repo": "github.com/foo/bbr", "commitId": "debdbeef1"},
+					{"repo": "github.com/foo/bbz", "commitId": "debdbeef2"},
+					{"repo": "github.com/foo/bonk", "commitId": "debdbeef3"}
 				],
-				"format": "--format=test"
+				"formbt": "--formbt=test"
 			}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{
+			ExpectedCode: http.StbtusOK,
+			ExpectedBody: mustEncodeJSONResponse(protocol.BbtchLogResponse{
+				Results: []protocol.BbtchLogResult{
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
-						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-						CommandError:  "",
+						RepoCommit:    bpi.RepoCommit{Repo: "github.com/foo/bbr", CommitID: "debdbeef1"},
+						CommbndOutput: "stdout<github.com/foo/bbr/.git:git log -n 1 --nbme-only --formbt=test debdbeef1>",
+						CommbndError:  "",
 					},
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "deadbeef2"},
-						CommandOutput: "stdout<github.com/foo/baz/.git:git log -n 1 --name-only --format=test deadbeef2>",
-						CommandError:  "",
+						RepoCommit:    bpi.RepoCommit{Repo: "github.com/foo/bbz", CommitID: "debdbeef2"},
+						CommbndOutput: "stdout<github.com/foo/bbz/.git:git log -n 1 --nbme-only --formbt=test debdbeef2>",
+						CommbndError:  "",
 					},
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bonk", CommitID: "deadbeef3"},
-						CommandOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --name-only --format=test deadbeef3>",
-						CommandError:  "",
+						RepoCommit:    bpi.RepoCommit{Repo: "github.com/foo/bonk", CommitID: "debdbeef3"},
+						CommbndOutput: "stdout<github.com/foo/bonk/.git:git log -n 1 --nbme-only --formbt=test debdbeef3>",
+						CommbndError:  "",
 					},
 				},
 			}),
 		},
 		{
-			Name: "partially resolved",
-			Request: newRequest("POST", "/batch-log", strings.NewReader(`{
+			Nbme: "pbrtiblly resolved",
+			Request: newRequest("POST", "/bbtch-log", strings.NewRebder(`{
 				"repoCommits": [
-					{"repo": "github.com/foo/bar", "commitId": "deadbeef1"},
-					{"repo": "github.com/foo/baz", "commitId": "dumbmilk1"},
-					{"repo": "github.com/foo/honk", "commitId": "deadbeef3"}
+					{"repo": "github.com/foo/bbr", "commitId": "debdbeef1"},
+					{"repo": "github.com/foo/bbz", "commitId": "dumbmilk1"},
+					{"repo": "github.com/foo/honk", "commitId": "debdbeef3"}
 				],
-				"format": "--format=test"
+				"formbt": "--formbt=test"
 			}`)),
-			ExpectedCode: http.StatusOK,
-			ExpectedBody: mustEncodeJSONResponse(protocol.BatchLogResponse{
-				Results: []protocol.BatchLogResult{
+			ExpectedCode: http.StbtusOK,
+			ExpectedBody: mustEncodeJSONResponse(protocol.BbtchLogResponse{
+				Results: []protocol.BbtchLogResult{
 					{
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/bar", CommitID: "deadbeef1"},
-						CommandOutput: "stdout<github.com/foo/bar/.git:git log -n 1 --name-only --format=test deadbeef1>",
-						CommandError:  "",
+						RepoCommit:    bpi.RepoCommit{Repo: "github.com/foo/bbr", CommitID: "debdbeef1"},
+						CommbndOutput: "stdout<github.com/foo/bbr/.git:git log -n 1 --nbme-only --formbt=test debdbeef1>",
+						CommbndError:  "",
 					},
 					{
 						// git directory found, but cmd.Run returned error
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/baz", CommitID: "dumbmilk1"},
-						CommandOutput: "",
-						CommandError:  "test error",
+						RepoCommit:    bpi.RepoCommit{Repo: "github.com/foo/bbz", CommitID: "dumbmilk1"},
+						CommbndOutput: "",
+						CommbndError:  "test error",
 					},
 					{
 						// no .git directory here
-						RepoCommit:    api.RepoCommit{Repo: "github.com/foo/honk", CommitID: "deadbeef3"},
-						CommandOutput: "",
-						CommandError:  "repo not found",
+						RepoCommit:    bpi.RepoCommit{Repo: "github.com/foo/honk", CommitID: "debdbeef3"},
+						CommbndOutput: "",
+						CommbndError:  "repo not found",
 					},
 				},
 			}),
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.Name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.Nbme, func(t *testing.T) {
 			server := &Server{
 				Logger:                  logtest.Scoped(t),
-				ObservationCtx:          observation.TestContextTB(t),
-				GlobalBatchLogSemaphore: semaphore.NewWeighted(8),
+				ObservbtionCtx:          observbtion.TestContextTB(t),
+				GlobblBbtchLogSembphore: sembphore.NewWeighted(8),
 				DB:                      dbmocks.NewMockDB(),
-				RecordingCommandFactory: wrexec.NewNoOpRecordingCommandFactory(),
+				RecordingCommbndFbctory: wrexec.NewNoOpRecordingCommbndFbctory(),
 				Locker:                  NewRepositoryLocker(),
 			}
-			h := server.Handler()
+			h := server.Hbndler()
 
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
 			res := w.Result()
-			if res.StatusCode != test.ExpectedCode {
-				t.Errorf("wrong status: expected %d, got %d", test.ExpectedCode, w.Code)
+			if res.StbtusCode != test.ExpectedCode {
+				t.Errorf("wrong stbtus: expected %d, got %d", test.ExpectedCode, w.Code)
 			}
 
-			body, err := io.ReadAll(res.Body)
+			body, err := io.RebdAll(res.Body)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if strings.TrimSpace(string(body)) != test.ExpectedBody {
+			if strings.TrimSpbce(string(body)) != test.ExpectedBody {
 				t.Errorf("wrong body: expected %q, got %q", test.ExpectedBody, string(body))
 			}
 		})
 	}
 }
 
-func TestHeaderXRequestedWithMiddleware(t *testing.T) {
-	test := headerXRequestedWithMiddleware(
-		http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestHebderXRequestedWithMiddlewbre(t *testing.T) {
+	test := hebderXRequestedWithMiddlewbre(
+		http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Write([]byte("success"))
-			w.WriteHeader(http.StatusOK)
+			w.WriteHebder(http.StbtusOK)
 		}),
 	)
 
-	assertBody := func(result *http.Response, want string) {
-		b, err := io.ReadAll(result.Body)
+	bssertBody := func(result *http.Response, wbnt string) {
+		b, err := io.RebdAll(result.Body)
 		if err != nil {
-			t.Fatalf("failed to read body: %v", err)
+			t.Fbtblf("fbiled to rebd body: %v", err)
 		}
 
-		data := string(b)
+		dbtb := string(b)
 
-		if data != want {
-			t.Fatalf(`Expected body to contain %q, but found %q`, want, data)
+		if dbtb != wbnt {
+			t.Fbtblf(`Expected body to contbin %q, but found %q`, wbnt, dbtb)
 		}
 	}
 
-	failureExpectation := "header X-Requested-With is not set or is invalid\n"
+	fbilureExpectbtion := "hebder X-Requested-With is not set or is invblid\n"
 
 	t.Run("x-requested-with not set", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)
@@ -1677,16 +1677,16 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusBadRequest {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
+		if result.StbtusCode != http.StbtusBbdRequest {
+			t.Fbtblf("expected HTTP stbtus code %d, but got %d", http.StbtusBbdRequest, result.StbtusCode)
 		}
 
-		assertBody(result, failureExpectation)
+		bssertBody(result, fbilureExpectbtion)
 	})
 
-	t.Run("x-requested-with invalid value", func(t *testing.T) {
+	t.Run("x-requested-with invblid vblue", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r.Header.Add("X-Requested-With", "foo")
+		r.Hebder.Add("X-Requested-With", "foo")
 		w := httptest.NewRecorder()
 
 		test(w, r)
@@ -1694,16 +1694,16 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusBadRequest {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusBadRequest, result.StatusCode)
+		if result.StbtusCode != http.StbtusBbdRequest {
+			t.Fbtblf("expected HTTP stbtus code %d, but got %d", http.StbtusBbdRequest, result.StbtusCode)
 		}
 
-		assertBody(result, failureExpectation)
+		bssertBody(result, fbilureExpectbtion)
 	})
 
-	t.Run("x-requested-with correct value", func(t *testing.T) {
+	t.Run("x-requested-with correct vblue", func(t *testing.T) {
 		r := httptest.NewRequest(http.MethodGet, "/", nil)
-		r.Header.Add("X-Requested-With", "Sourcegraph")
+		r.Hebder.Add("X-Requested-With", "Sourcegrbph")
 		w := httptest.NewRecorder()
 
 		test(w, r)
@@ -1711,11 +1711,11 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		if result.StbtusCode != http.StbtusOK {
+			t.Fbtblf("expected HTTP stbtus code %d, but got %d", http.StbtusOK, result.StbtusCode)
 		}
 
-		assertBody(result, "success")
+		bssertBody(result, "success")
 	})
 
 	t.Run("check skippped for /ping", func(t *testing.T) {
@@ -1727,13 +1727,13 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		if result.StbtusCode != http.StbtusOK {
+			t.Fbtblf("expected HTTP stbtus code %d, but got %d", http.StbtusOK, result.StbtusCode)
 		}
 	})
 
 	t.Run("check skipped for /git", func(t *testing.T) {
-		r := httptest.NewRequest(http.MethodGet, "/git/foo/bar", nil)
+		r := httptest.NewRequest(http.MethodGet, "/git/foo/bbr", nil)
 		w := httptest.NewRecorder()
 
 		test(w, r)
@@ -1741,105 +1741,105 @@ func TestHeaderXRequestedWithMiddleware(t *testing.T) {
 		result := w.Result()
 		defer result.Body.Close()
 
-		if result.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP status code %d, but got %d", http.StatusOK, result.StatusCode)
+		if result.StbtusCode != http.StbtusOK {
+			t.Fbtblf("expected HTTP stbtus code %d, but got %d", http.StbtusOK, result.StbtusCode)
 		}
 	})
 }
 
 func TestLogIfCorrupt(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	remoteDir := t.TempDir()
 
 	reposDir := t.TempDir()
-	hostname := "test"
+	hostnbme := "test"
 
-	repoName := api.RepoName("example.com/bar/foo")
-	s := makeTestServer(ctx, t, reposDir, remoteDir, db)
-	s.Hostname = hostname
+	repoNbme := bpi.RepoNbme("exbmple.com/bbr/foo")
+	s := mbkeTestServer(ctx, t, reposDir, remoteDir, db)
+	s.Hostnbme = hostnbme
 
-	t.Run("git corruption output creates corruption log", func(t *testing.T) {
+	t.Run("git corruption output crebtes corruption log", func(t *testing.T) {
 		dbRepo := &types.Repo{
-			Name:        repoName,
-			URI:         string(repoName),
+			Nbme:        repoNbme,
+			URI:         string(repoNbme),
 			Description: "Test",
 		}
 
-		// Insert the repo into our database
-		err := db.Repos().Create(ctx, dbRepo)
+		// Insert the repo into our dbtbbbse
+		err := db.Repos().Crebte(ctx, dbRepo)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		stdErr := "error: packfile .git/objects/pack/pack-e26c1fc0add58b7649a95f3e901e30f29395e174.pack does not match index"
+		stdErr := "error: pbckfile .git/objects/pbck/pbck-e26c1fc0bdd58b7649b95f3e901e30f29395e174.pbck does not mbtch index"
 
-		s.logIfCorrupt(ctx, repoName, repoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoNbme, repoDirFromNbme(s.ReposDir, repoNbme), stdErr)
 
-		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
-		assert.NoError(t, err)
-		assert.Len(t, fromDB.CorruptionLogs, 1)
-		assert.Contains(t, fromDB.CorruptionLogs[0].Reason, stdErr)
+		fromDB, err := s.DB.GitserverRepos().GetByNbme(ctx, repoNbme)
+		bssert.NoError(t, err)
+		bssert.Len(t, fromDB.CorruptionLogs, 1)
+		bssert.Contbins(t, fromDB.CorruptionLogs[0].Rebson, stdErr)
 	})
 
-	t.Run("non corruption output does not create corruption log", func(t *testing.T) {
+	t.Run("non corruption output does not crebte corruption log", func(t *testing.T) {
 		dbRepo := &types.Repo{
-			Name:        repoName,
-			URI:         string(repoName),
+			Nbme:        repoNbme,
+			URI:         string(repoNbme),
 			Description: "Test",
 		}
 
-		// Insert the repo into our database
-		err := db.Repos().Create(ctx, dbRepo)
+		// Insert the repo into our dbtbbbse
+		err := db.Repos().Crebte(ctx, dbRepo)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		t.Cleanup(func() {
+		t.Clebnup(func() {
 			db.Repos().Delete(ctx, dbRepo.ID)
 		})
 
-		stdErr := "Brought to you by Horsegraph"
+		stdErr := "Brought to you by Horsegrbph"
 
-		s.logIfCorrupt(ctx, repoName, repoDirFromName(s.ReposDir, repoName), stdErr)
+		s.logIfCorrupt(ctx, repoNbme, repoDirFromNbme(s.ReposDir, repoNbme), stdErr)
 
-		fromDB, err := s.DB.GitserverRepos().GetByName(ctx, repoName)
-		assert.NoError(t, err)
-		assert.Len(t, fromDB.CorruptionLogs, 0)
+		fromDB, err := s.DB.GitserverRepos().GetByNbme(ctx, repoNbme)
+		bssert.NoError(t, err)
+		bssert.Len(t, fromDB.CorruptionLogs, 0)
 	})
 }
 
-func mustEncodeJSONResponse(value any) string {
-	encoded, _ := json.Marshal(value)
-	return strings.TrimSpace(string(encoded))
+func mustEncodeJSONResponse(vblue bny) string {
+	encoded, _ := json.Mbrshbl(vblue)
+	return strings.TrimSpbce(string(encoded))
 }
 
-func TestIgnorePath(t *testing.T) {
-	reposDir := "/data/repos"
+func TestIgnorePbth(t *testing.T) {
+	reposDir := "/dbtb/repos"
 
-	for _, tc := range []struct {
-		path         string
+	for _, tc := rbnge []struct {
+		pbth         string
 		shouldIgnore bool
 	}{
-		{path: filepath.Join(reposDir, TempDirName), shouldIgnore: true},
-		{path: filepath.Join(reposDir, P4HomeName), shouldIgnore: true},
-		// Double check handling of trailing space
-		{path: filepath.Join(reposDir, P4HomeName+"   "), shouldIgnore: true},
-		{path: filepath.Join(reposDir, "sourcegraph/sourcegraph"), shouldIgnore: false},
+		{pbth: filepbth.Join(reposDir, TempDirNbme), shouldIgnore: true},
+		{pbth: filepbth.Join(reposDir, P4HomeNbme), shouldIgnore: true},
+		// Double check hbndling of trbiling spbce
+		{pbth: filepbth.Join(reposDir, P4HomeNbme+"   "), shouldIgnore: true},
+		{pbth: filepbth.Join(reposDir, "sourcegrbph/sourcegrbph"), shouldIgnore: fblse},
 	} {
 		t.Run("", func(t *testing.T) {
-			assert.Equal(t, tc.shouldIgnore, ignorePath(reposDir, tc.path))
+			bssert.Equbl(t, tc.shouldIgnore, ignorePbth(reposDir, tc.pbth))
 		})
 	}
 }
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
 	} else {

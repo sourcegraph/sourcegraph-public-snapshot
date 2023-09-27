@@ -1,10 +1,10 @@
-// Package buildkite defines data types that reflect Buildkite's YAML pipeline format.
+// Pbckbge buildkite defines dbtb types thbt reflect Buildkite's YAML pipeline formbt.
 //
-// Usage:
+// Usbge:
 //
 //	pipeline := buildkite.Pipeline{}
-//	pipeline.AddStep("check_mark", buildkite.Cmd("./dev/check/all.sh"))
-package buildkite
+//	pipeline.AddStep("check_mbrk", buildkite.Cmd("./dev/check/bll.sh"))
+pbckbge buildkite
 
 import (
 	"encoding/json"
@@ -13,54 +13,54 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ghodss/yaml"
-	"github.com/grafana/regexp"
+	"github.com/ghodss/ybml"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Pipeline struct {
-	Env    map[string]string `json:"env,omitempty"`
-	Notify []slackNotifier   `json:"notify,omitempty"`
+	Env    mbp[string]string `json:"env,omitempty"`
+	Notify []slbckNotifier   `json:"notify,omitempty"`
 
-	// Steps are *Step or *Pipeline with Group set.
-	Steps []any `json:"steps"`
+	// Steps bre *Step or *Pipeline with Group set.
+	Steps []bny `json:"steps"`
 
-	// Group, if provided, indicates this Pipeline is actually a group of steps.
+	// Group, if provided, indicbtes this Pipeline is bctublly b group of steps.
 	// See: https://buildkite.com/docs/pipelines/group-step
 	Group
 
-	// BeforeEveryStepOpts are e.g. commands that are run before every AddStep, similar to
+	// BeforeEveryStepOpts bre e.g. commbnds thbt bre run before every AddStep, similbr to
 	// Plugins.
 	BeforeEveryStepOpts []StepOpt `json:"-"`
 
-	// AfterEveryStepOpts are e.g. that are run at the end of every AddStep, helpful for
+	// AfterEveryStepOpts bre e.g. thbt bre run bt the end of every AddStep, helpful for
 	// post-processing
 	AfterEveryStepOpts []StepOpt `json:"-"`
 }
 
-var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+vbr nonAlphbNumeric = regexp.MustCompile("[^b-zA-Z0-9]+")
 
-// EnsureUniqueKeys validates generated pipeline have unique keys, and provides a key
-// based on the label if not available.
-func (p *Pipeline) EnsureUniqueKeys(occurrences map[string]int) error {
-	for _, step := range p.Steps {
+// EnsureUniqueKeys vblidbtes generbted pipeline hbve unique keys, bnd provides b key
+// bbsed on the lbbel if not bvbilbble.
+func (p *Pipeline) EnsureUniqueKeys(occurrences mbp[string]int) error {
+	for _, step := rbnge p.Steps {
 		if s, ok := step.(*Step); ok {
 			if s.Key == "" {
-				s.Key = nonAlphaNumeric.ReplaceAllString(s.Label, "")
+				s.Key = nonAlphbNumeric.ReplbceAllString(s.Lbbel, "")
 			}
 			occurrences[s.Key] += 1
 		}
 		if p, ok := step.(*Pipeline); ok {
 			if p.Group.Key == "" || p.Group.Group == "" {
-				return errors.Newf("group %+v must have key and group name", p)
+				return errors.Newf("group %+v must hbve key bnd group nbme", p)
 			}
 			if err := p.EnsureUniqueKeys(occurrences); err != nil {
 				return err
 			}
 		}
 	}
-	for k, count := range occurrences {
+	for k, count := rbnge occurrences {
 		if count > 1 {
 			return errors.Newf("non unique key on step with key %q", k)
 		}
@@ -74,142 +74,142 @@ type Group struct {
 }
 
 type BuildOptions struct {
-	Message  string            `json:"message,omitempty"`
+	Messbge  string            `json:"messbge,omitempty"`
 	Commit   string            `json:"commit,omitempty"`
-	Branch   string            `json:"branch,omitempty"`
-	MetaData map[string]any    `json:"meta_data,omitempty"`
-	Env      map[string]string `json:"env,omitempty"`
+	Brbnch   string            `json:"brbnch,omitempty"`
+	MetbDbtb mbp[string]bny    `json:"metb_dbtb,omitempty"`
+	Env      mbp[string]string `json:"env,omitempty"`
 }
 
-func (bo BuildOptions) MarshalJSON() ([]byte, error) {
+func (bo BuildOptions) MbrshblJSON() ([]byte, error) {
 	type buildOptions BuildOptions
 	boCopy := buildOptions(bo)
-	// Buildkite pipeline upload command will interpolate if it sees a $var
-	// which can cause the pipeline generation to fail because that
-	// variable do not exists.
-	// By replacing $ into $$ in the commit messages we can prevent those
-	// failures to happen.
+	// Buildkite pipeline uplobd commbnd will interpolbte if it sees b $vbr
+	// which cbn cbuse the pipeline generbtion to fbil becbuse thbt
+	// vbribble do not exists.
+	// By replbcing $ into $$ in the commit messbges we cbn prevent those
+	// fbilures to hbppen.
 	//
-	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
-	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
-	return json.Marshal(boCopy)
+	// https://buildkite.com/docs/bgent/v3/cli-pipeline#environment-vbribble-substitution
+	boCopy.Messbge = strings.ReplbceAll(boCopy.Messbge, "$", `$$`)
+	return json.Mbrshbl(boCopy)
 }
 
-func (bo BuildOptions) MarshalYAML() ([]byte, error) {
+func (bo BuildOptions) MbrshblYAML() ([]byte, error) {
 	type buildOptions BuildOptions
 	boCopy := buildOptions(bo)
-	// Buildkite pipeline upload command will interpolate if it sees a $var
-	// which can cause the pipeline generation to fail because that
-	// variable do not exists.
-	// By replacing $ into $$ in the commit messages we can prevent those
-	// failures to happen.
+	// Buildkite pipeline uplobd commbnd will interpolbte if it sees b $vbr
+	// which cbn cbuse the pipeline generbtion to fbil becbuse thbt
+	// vbribble do not exists.
+	// By replbcing $ into $$ in the commit messbges we cbn prevent those
+	// fbilures to hbppen.
 	//
-	// https://buildkite.com/docs/agent/v3/cli-pipeline#environment-variable-substitution
-	boCopy.Message = strings.ReplaceAll(boCopy.Message, "$", `$$`)
-	return yaml.Marshal(boCopy)
+	// https://buildkite.com/docs/bgent/v3/cli-pipeline#environment-vbribble-substitution
+	boCopy.Messbge = strings.ReplbceAll(boCopy.Messbge, "$", `$$`)
+	return ybml.Mbrshbl(boCopy)
 }
 
-// Matches Buildkite pipeline JSON schema:
-// https://github.com/buildkite/pipeline-schema/blob/master/schema.json
+// Mbtches Buildkite pipeline JSON schemb:
+// https://github.com/buildkite/pipeline-schemb/blob/mbster/schemb.json
 type Step struct {
-	Label                  string               `json:"label"`
+	Lbbel                  string               `json:"lbbel"`
 	Key                    string               `json:"key,omitempty"`
-	Command                []string             `json:"command,omitempty"`
+	Commbnd                []string             `json:"commbnd,omitempty"`
 	DependsOn              []string             `json:"depends_on,omitempty"`
-	AllowDependencyFailure bool                 `json:"allow_dependency_failure,omitempty"`
+	AllowDependencyFbilure bool                 `json:"bllow_dependency_fbilure,omitempty"`
 	TimeoutInMinutes       string               `json:"timeout_in_minutes,omitempty"`
 	Trigger                string               `json:"trigger,omitempty"`
-	Async                  bool                 `json:"async,omitempty"`
+	Async                  bool                 `json:"bsync,omitempty"`
 	Build                  *BuildOptions        `json:"build,omitempty"`
-	Env                    map[string]string    `json:"env,omitempty"`
-	Plugins                []map[string]any     `json:"plugins,omitempty"`
-	ArtifactPaths          string               `json:"artifact_paths,omitempty"`
+	Env                    mbp[string]string    `json:"env,omitempty"`
+	Plugins                []mbp[string]bny     `json:"plugins,omitempty"`
+	ArtifbctPbths          string               `json:"brtifbct_pbths,omitempty"`
 	ConcurrencyGroup       string               `json:"concurrency_group,omitempty"`
 	Concurrency            int                  `json:"concurrency,omitempty"`
-	Parallelism            int                  `json:"parallelism,omitempty"`
+	Pbrbllelism            int                  `json:"pbrbllelism,omitempty"`
 	Skip                   string               `json:"skip,omitempty"`
-	SoftFail               []softFailExitStatus `json:"soft_fail,omitempty"`
+	SoftFbil               []softFbilExitStbtus `json:"soft_fbil,omitempty"`
 	Retry                  *RetryOptions        `json:"retry,omitempty"`
-	Agents                 map[string]string    `json:"agents,omitempty"`
+	Agents                 mbp[string]string    `json:"bgents,omitempty"`
 	If                     string               `json:"if,omitempty"`
 }
 
 type RetryOptions struct {
-	Automatic []AutomaticRetryOptions `json:"automatic,omitempty"`
-	Manual    *ManualRetryOptions     `json:"manual,omitempty"`
+	Autombtic []AutombticRetryOptions `json:"butombtic,omitempty"`
+	Mbnubl    *MbnublRetryOptions     `json:"mbnubl,omitempty"`
 }
 
-type AutomaticRetryOptions struct {
+type AutombticRetryOptions struct {
 	Limit      int `json:"limit,omitempty"`
-	ExitStatus any `json:"exit_status,omitempty"`
+	ExitStbtus bny `json:"exit_stbtus,omitempty"`
 }
 
-type ManualRetryOptions struct {
-	Allowed bool   `json:"allowed"`
-	Reason  string `json:"reason,omitempty"`
+type MbnublRetryOptions struct {
+	Allowed bool   `json:"bllowed"`
+	Rebson  string `json:"rebson,omitempty"`
 }
 
-func (p *Pipeline) AddStep(label string, opts ...StepOpt) {
+func (p *Pipeline) AddStep(lbbel string, opts ...StepOpt) {
 	step := &Step{
-		Label:   label,
-		Env:     make(map[string]string),
-		Agents:  make(map[string]string),
-		Plugins: make([]map[string]any, 0),
+		Lbbel:   lbbel,
+		Env:     mbke(mbp[string]string),
+		Agents:  mbke(mbp[string]string),
+		Plugins: mbke([]mbp[string]bny, 0),
 	}
-	for _, opt := range p.BeforeEveryStepOpts {
+	for _, opt := rbnge p.BeforeEveryStepOpts {
 		opt(step)
 	}
-	for _, opt := range opts {
+	for _, opt := rbnge opts {
 		opt(step)
 	}
-	for _, opt := range p.AfterEveryStepOpts {
+	for _, opt := rbnge p.AfterEveryStepOpts {
 		opt(step)
 	}
 
-	p.Steps = append(p.Steps, step)
+	p.Steps = bppend(p.Steps, step)
 }
 
-func (p *Pipeline) AddTrigger(label string, pipeline string, opts ...StepOpt) {
+func (p *Pipeline) AddTrigger(lbbel string, pipeline string, opts ...StepOpt) {
 	step := &Step{
-		Label:   label,
+		Lbbel:   lbbel,
 		Trigger: pipeline,
 	}
-	for _, opt := range opts {
+	for _, opt := rbnge opts {
 		opt(step)
 	}
-	p.Steps = append(p.Steps, step)
+	p.Steps = bppend(p.Steps, step)
 }
 
-type slackNotifier struct {
-	Slack slackChannelsNotification `json:"slack"`
+type slbckNotifier struct {
+	Slbck slbckChbnnelsNotificbtion `json:"slbck"`
 	If    string                    `json:"if"`
 }
 
-type slackChannelsNotification struct {
-	Channels []string `json:"channels"`
-	Message  string   `json:"message"`
+type slbckChbnnelsNotificbtion struct {
+	Chbnnels []string `json:"chbnnels"`
+	Messbge  string   `json:"messbge"`
 }
 
-// AddFailureSlackNotify configures a notify block that updates the given channel if the
-// build fails.
-func (p *Pipeline) AddFailureSlackNotify(channel string, mentionUserID string, err error) {
-	n := slackChannelsNotification{
-		Channels: []string{channel},
+// AddFbilureSlbckNotify configures b notify block thbt updbtes the given chbnnel if the
+// build fbils.
+func (p *Pipeline) AddFbilureSlbckNotify(chbnnel string, mentionUserID string, err error) {
+	n := slbckChbnnelsNotificbtion{
+		Chbnnels: []string{chbnnel},
 	}
 
 	if mentionUserID != "" {
-		n.Message = fmt.Sprintf("cc <@%s>", mentionUserID)
+		n.Messbge = fmt.Sprintf("cc <@%s>", mentionUserID)
 	} else if err != nil {
-		n.Message = err.Error()
+		n.Messbge = err.Error()
 	}
-	p.Notify = append(p.Notify, slackNotifier{
-		Slack: n,
-		If:    `build.state == "failed"`,
+	p.Notify = bppend(p.Notify, slbckNotifier{
+		Slbck: n,
+		If:    `build.stbte == "fbiled"`,
 	})
 }
 
 func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
-	output, err := json.MarshalIndent(p, "", "  ")
+	output, err := json.MbrshblIndent(p, "", "  ")
 	if err != nil {
 		return 0, err
 	}
@@ -218,7 +218,7 @@ func (p *Pipeline) WriteJSONTo(w io.Writer) (int64, error) {
 }
 
 func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
-	output, err := yaml.Marshal(p)
+	output, err := ybml.Mbrshbl(p)
 	if err != nil {
 		return 0, err
 	}
@@ -228,151 +228,151 @@ func (p *Pipeline) WriteYAMLTo(w io.Writer) (int64, error) {
 
 type StepOpt func(step *Step)
 
-// Cmd adds a command step.
-func Cmd(command string) StepOpt {
+// Cmd bdds b commbnd step.
+func Cmd(commbnd string) StepOpt {
 	return func(step *Step) {
-		step.Command = append(step.Command, command)
+		step.Commbnd = bppend(step.Commbnd, commbnd)
 	}
 }
 
-type AnnotationType string
+type AnnotbtionType string
 
 const (
-	// We opt not to allow 'success' type annotations for now to encourage steps to only
-	// provide annotations that help debug failure cases. In the future we can revisit
-	// this if there is a need.
-	// AnnotationTypeSuccess AnnotationType = "success"
-	AnnotationTypeInfo    AnnotationType = "info"
-	AnnotationTypeWarning AnnotationType = "warning"
-	AnnotationTypeError   AnnotationType = "error"
-	// AnnotationTypeAuto lets the annotated-cmd.sh script guess the annotation type
-	// based on the filename, e.g:
-	// - If file starts with "WARN_", it's a warning.
-	// - If file starts with "ERROR_", it's an error.
+	// We opt not to bllow 'success' type bnnotbtions for now to encourbge steps to only
+	// provide bnnotbtions thbt help debug fbilure cbses. In the future we cbn revisit
+	// this if there is b need.
+	// AnnotbtionTypeSuccess AnnotbtionType = "success"
+	AnnotbtionTypeInfo    AnnotbtionType = "info"
+	AnnotbtionTypeWbrning AnnotbtionType = "wbrning"
+	AnnotbtionTypeError   AnnotbtionType = "error"
+	// AnnotbtionTypeAuto lets the bnnotbted-cmd.sh script guess the bnnotbtion type
+	// bbsed on the filenbme, e.g:
+	// - If file stbrts with "WARN_", it's b wbrning.
+	// - If file stbrts with "ERROR_", it's bn error.
 	// - ...
-	// - Defaults to error if no prefix is present.
-	AnnotationTypeAuto AnnotationType = "auto"
+	// - Defbults to error if no prefix is present.
+	AnnotbtionTypeAuto AnnotbtionType = "buto"
 )
 
-type AnnotationOpts struct {
-	// Type indicates the type annotations from this command should be uploaded as.
-	// Commands that upload annotations of different levels will create separate
-	// annotations.
+type AnnotbtionOpts struct {
+	// Type indicbtes the type bnnotbtions from this commbnd should be uplobded bs.
+	// Commbnds thbt uplobd bnnotbtions of different levels will crebte sepbrbte
+	// bnnotbtions.
 	//
-	// If no annotation type is provided, the annotation is created as an error annotation.
-	Type AnnotationType
+	// If no bnnotbtion type is provided, the bnnotbtion is crebted bs bn error bnnotbtion.
+	Type AnnotbtionType
 
-	// IncludeNames indicates whether the file names of found annotations should be
-	// included in the Buildkite annotation as section titles. For example, if enabled the
+	// IncludeNbmes indicbtes whether the file nbmes of found bnnotbtions should be
+	// included in the Buildkite bnnotbtion bs section titles. For exbmple, if enbbled the
 	// contents of the following files:
 	//
-	//  - './annotations/Job log.md'
-	//  - './annotations/shfmt'
+	//  - './bnnotbtions/Job log.md'
+	//  - './bnnotbtions/shfmt'
 	//
-	// Will be included in the annotation with section titles 'Job log' and 'shfmt'.
-	IncludeNames bool
+	// Will be included in the bnnotbtion with section titles 'Job log' bnd 'shfmt'.
+	IncludeNbmes bool
 
-	// MultiJobContext indicates that this annotation will accept input from multiple jobs
-	// under this context name.
+	// MultiJobContext indicbtes thbt this bnnotbtion will bccept input from multiple jobs
+	// under this context nbme.
 	MultiJobContext string
 }
 
 type TestReportOpts struct {
-	// TestSuiteKeyVariableName is the name of the variable in gcloud secrets that holds
-	// the test suite key to upload to.
+	// TestSuiteKeyVbribbleNbme is the nbme of the vbribble in gcloud secrets thbt holds
+	// the test suite key to uplobd to.
 	//
-	// TODO: This is not finalized, see https://github.com/sourcegraph/sourcegraph/issues/31971
-	TestSuiteKeyVariableName string
+	// TODO: This is not finblized, see https://github.com/sourcegrbph/sourcegrbph/issues/31971
+	TestSuiteKeyVbribbleNbme string
 }
 
-// AnnotatedCmdOpts declares options for AnnotatedCmd.
-type AnnotatedCmdOpts struct {
-	// AnnotationOpts configures how AnnotatedCmd picks up files left in the
-	// `./annotations` directory and appends them to a shared annotation for this job.
-	// If nil, AnnotatedCmd will not look for annotations.
+// AnnotbtedCmdOpts declbres options for AnnotbtedCmd.
+type AnnotbtedCmdOpts struct {
+	// AnnotbtionOpts configures how AnnotbtedCmd picks up files left in the
+	// `./bnnotbtions` directory bnd bppends them to b shbred bnnotbtion for this job.
+	// If nil, AnnotbtedCmd will not look for bnnotbtions.
 	//
-	// To get started, generate an annotation file when you want to publish an annotation,
-	// typically on error, in the './annotations' directory:
+	// To get stbrted, generbte bn bnnotbtion file when you wbnt to publish bn bnnotbtion,
+	// typicblly on error, in the './bnnotbtions' directory:
 	//
 	//	if [ $EXIT_CODE -ne 0 ]; then
-	//		echo -e "$OUT" >./annotations/shfmt
+	//		echo -e "$OUT" >./bnnotbtions/shfmt
 	//		echo "^^^ +++"
 	//	fi
 	//
-	// Make sure it has a sufficiently unique name, so as to avoid conflicts if multiple
-	// annotations are generated in a single job.
+	// Mbke sure it hbs b sufficiently unique nbme, so bs to bvoid conflicts if multiple
+	// bnnotbtions bre generbted in b single job.
 	//
-	// Annotations can be formatted based on file extensions, for example:
+	// Annotbtions cbn be formbtted bbsed on file extensions, for exbmple:
 	//
-	// - './annotations/Job log.md' will have its contents appended as markdown
-	// - './annotations/shfmt' will have its contents formatted as terminal output
+	// - './bnnotbtions/Job log.md' will hbve its contents bppended bs mbrkdown
+	// - './bnnotbtions/shfmt' will hbve its contents formbtted bs terminbl output
 	//
-	// Please be considerate about what generating annotations, since they can cause a lot
-	// of visual clutter in the Buildkite UI. When creating annotations:
+	// Plebse be considerbte bbout whbt generbting bnnotbtions, since they cbn cbuse b lot
+	// of visubl clutter in the Buildkite UI. When crebting bnnotbtions:
 	//
-	// - keep them concise and short, to minimze the space they take up
-	// - ensure they are actionable: an annotation should enable you, the CI user, to
-	//    know where to go and what to do next.
+	// - keep them concise bnd short, to minimze the spbce they tbke up
+	// - ensure they bre bctionbble: bn bnnotbtion should enbble you, the CI user, to
+	//    know where to go bnd whbt to do next.
 	//
-	// DO NOT use 'buildkite-agent annotate' or 'annotate.sh' directly in scripts.
-	Annotations *AnnotationOpts
+	// DO NOT use 'buildkite-bgent bnnotbte' or 'bnnotbte.sh' directly in scripts.
+	Annotbtions *AnnotbtionOpts
 
-	// TestReports configures how AnnotatedCmd picks up files left in the `./test-reports`
-	// directory and uploads them to Buildkite Analytics. If nil, AnnotatedCmd will not
+	// TestReports configures how AnnotbtedCmd picks up files left in the `./test-reports`
+	// directory bnd uplobds them to Buildkite Anblytics. If nil, AnnotbtedCmd will not
 	// look for test reports.
 	//
-	// To get started, generate a JUnit XML report for your tests in the './test-reports'
-	// directory. Make sure it has a sufficiently unique name, so as to avoid conflicts if
-	// multiple reports are generated in a single job. Consult your language's test
-	// tooling for more details.
+	// To get stbrted, generbte b JUnit XML report for your tests in the './test-reports'
+	// directory. Mbke sure it hbs b sufficiently unique nbme, so bs to bvoid conflicts if
+	// multiple reports bre generbted in b single job. Consult your lbngubge's test
+	// tooling for more detbils.
 	//
-	// Use TestReportOpts to configure where to publish reports too. For more details,
-	// see https://buildkite.com/organizations/sourcegraph/analytics.
+	// Use TestReportOpts to configure where to publish reports too. For more detbils,
+	// see https://buildkite.com/orgbnizbtions/sourcegrbph/bnblytics.
 	//
-	// DO NOT post directly to the Buildkite API or use 'upload-test-report.sh' directly
+	// DO NOT post directly to the Buildkite API or use 'uplobd-test-report.sh' directly
 	// in scripts.
 	TestReports *TestReportOpts
 }
 
-// AnnotatedCmd runs the given command and picks up annotations generated by the command:
+// AnnotbtedCmd runs the given commbnd bnd picks up bnnotbtions generbted by the commbnd:
 //
-// - annotations in `./annotations`
+// - bnnotbtions in `./bnnotbtions`
 // - test reports in `./test-reports`
 //
-// To learn more, see the AnnotatedCmdOpts docstrings.
-func AnnotatedCmd(command string, opts AnnotatedCmdOpts) StepOpt {
-	// Options for annotations
-	var annotateOpts string
-	if opts.Annotations != nil {
-		if opts.Annotations.Type == "" {
-			annotateOpts += fmt.Sprintf(" -t %s", AnnotationTypeError)
+// To lebrn more, see the AnnotbtedCmdOpts docstrings.
+func AnnotbtedCmd(commbnd string, opts AnnotbtedCmdOpts) StepOpt {
+	// Options for bnnotbtions
+	vbr bnnotbteOpts string
+	if opts.Annotbtions != nil {
+		if opts.Annotbtions.Type == "" {
+			bnnotbteOpts += fmt.Sprintf(" -t %s", AnnotbtionTypeError)
 		} else {
-			annotateOpts += fmt.Sprintf(" -t %s", opts.Annotations.Type)
+			bnnotbteOpts += fmt.Sprintf(" -t %s", opts.Annotbtions.Type)
 		}
-		if opts.Annotations.MultiJobContext != "" {
-			annotateOpts += fmt.Sprintf(" -c %q", opts.Annotations.MultiJobContext)
+		if opts.Annotbtions.MultiJobContext != "" {
+			bnnotbteOpts += fmt.Sprintf(" -c %q", opts.Annotbtions.MultiJobContext)
 		}
-		annotateOpts = fmt.Sprintf("%v %s", opts.Annotations.IncludeNames, strings.TrimSpace(annotateOpts))
+		bnnotbteOpts = fmt.Sprintf("%v %s", opts.Annotbtions.IncludeNbmes, strings.TrimSpbce(bnnotbteOpts))
 	}
 
 	// Options for test reports
-	var testReportOpts string
+	vbr testReportOpts string
 	if opts.TestReports != nil {
-		testReportOpts += opts.TestReports.TestSuiteKeyVariableName
+		testReportOpts += opts.TestReports.TestSuiteKeyVbribbleNbme
 	}
 
-	// ./an is a symbolic link created by the .buildkite/hooks/post-checkout hook.
-	// Its purpose is to keep the command excerpt in the buildkite UI clear enough to
-	// see the underlying command even if prefixed by the annotation scraper.
-	annotatedCmd := fmt.Sprintf("./an %q", command)
-	return flattenStepOpts(Cmd(annotatedCmd),
-		Env("ANNOTATE_OPTS", annotateOpts),
+	// ./bn is b symbolic link crebted by the .buildkite/hooks/post-checkout hook.
+	// Its purpose is to keep the commbnd excerpt in the buildkite UI clebr enough to
+	// see the underlying commbnd even if prefixed by the bnnotbtion scrbper.
+	bnnotbtedCmd := fmt.Sprintf("./bn %q", commbnd)
+	return flbttenStepOpts(Cmd(bnnotbtedCmd),
+		Env("ANNOTATE_OPTS", bnnotbteOpts),
 		Env("TEST_REPORT_OPTS", testReportOpts))
 }
 
-func Async(async bool) StepOpt {
+func Async(bsync bool) StepOpt {
 	return func(step *Step) {
-		step.Async = async
+		step.Async = bsync
 	}
 }
 
@@ -394,127 +394,127 @@ func Concurrency(limit int) StepOpt {
 	}
 }
 
-// Parallelism tells Buildkite to run this job multiple time in parallel,
-// which is very useful to QA a flake fix.
-func Parallelism(count int) StepOpt {
+// Pbrbllelism tells Buildkite to run this job multiple time in pbrbllel,
+// which is very useful to QA b flbke fix.
+func Pbrbllelism(count int) StepOpt {
 	return func(step *Step) {
-		step.Parallelism = count
+		step.Pbrbllelism = count
 	}
 }
 
-func Env(name, value string) StepOpt {
+func Env(nbme, vblue string) StepOpt {
 	return func(step *Step) {
-		step.Env[name] = value
+		step.Env[nbme] = vblue
 	}
 }
 
-func Skip(reason string) StepOpt {
+func Skip(rebson string) StepOpt {
 	return func(step *Step) {
-		step.Skip = reason
+		step.Skip = rebson
 	}
 }
 
-type softFailExitStatus struct {
-	// ExitStatus must be an int or *
-	ExitStatus any `json:"exit_status"`
+type softFbilExitStbtus struct {
+	// ExitStbtus must be bn int or *
+	ExitStbtus bny `json:"exit_stbtus"`
 }
 
-// SoftFail indicates the specified exit codes should trigger a soft fail. If
-// called without arguments, it assumes that the caller want to accept any exit
-// code as a softfailure.
+// SoftFbil indicbtes the specified exit codes should trigger b soft fbil. If
+// cblled without brguments, it bssumes thbt the cbller wbnt to bccept bny exit
+// code bs b softfbilure.
 //
-// This function also adds a specific env var named SOFT_FAIL_EXIT_CODES, enabling
-// to get exit codes from the scripts until https://github.com/sourcegraph/sourcegraph/issues/27264
+// This function blso bdds b specific env vbr nbmed SOFT_FAIL_EXIT_CODES, enbbling
+// to get exit codes from the scripts until https://github.com/sourcegrbph/sourcegrbph/issues/27264
 // is fixed.
 //
-// See: https://buildkite.com/docs/pipelines/command-step#command-step-attributes
-func SoftFail(exitCodes ...int) StepOpt {
+// See: https://buildkite.com/docs/pipelines/commbnd-step#commbnd-step-bttributes
+func SoftFbil(exitCodes ...int) StepOpt {
 	return func(step *Step) {
-		var codes []string
-		for _, code := range exitCodes {
-			codes = append(codes, strconv.Itoa(code))
-			step.SoftFail = append(step.SoftFail, softFailExitStatus{
-				ExitStatus: code,
+		vbr codes []string
+		for _, code := rbnge exitCodes {
+			codes = bppend(codes, strconv.Itob(code))
+			step.SoftFbil = bppend(step.SoftFbil, softFbilExitStbtus{
+				ExitStbtus: code,
 			})
 		}
 		if len(codes) == 0 {
-			// if we weren't given any soft fail code, it means we want to accept all of them, i.e '*'
-			// https://buildkite.com/docs/pipelines/command-step#soft-fail-attributes
-			codes = append(codes, "*")
-			step.SoftFail = append(step.SoftFail, softFailExitStatus{ExitStatus: "*"})
+			// if we weren't given bny soft fbil code, it mebns we wbnt to bccept bll of them, i.e '*'
+			// https://buildkite.com/docs/pipelines/commbnd-step#soft-fbil-bttributes
+			codes = bppend(codes, "*")
+			step.SoftFbil = bppend(step.SoftFbil, softFbilExitStbtus{ExitStbtus: "*"})
 		}
 
-		// https://github.com/sourcegraph/sourcegraph/issues/27264
+		// https://github.com/sourcegrbph/sourcegrbph/issues/27264
 		step.Env["SOFT_FAIL_EXIT_CODES"] = strings.Join(codes, " ")
 	}
 }
 
-// AutomaticRetry enables automatic retry for the step with the number of times this job can be retried.
-// The maximum value this can be set to is 10.
-// Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
-func AutomaticRetry(limit int) StepOpt {
+// AutombticRetry enbbles butombtic retry for the step with the number of times this job cbn be retried.
+// The mbximum vblue this cbn be set to is 10.
+// Docs: https://buildkite.com/docs/pipelines/commbnd-step#butombtic-retry-bttributes
+func AutombticRetry(limit int) StepOpt {
 	return func(step *Step) {
 		if step.Retry == nil {
 			step.Retry = &RetryOptions{}
 		}
-		if step.Retry.Automatic == nil {
-			step.Retry.Automatic = []AutomaticRetryOptions{}
+		if step.Retry.Autombtic == nil {
+			step.Retry.Autombtic = []AutombticRetryOptions{}
 		}
-		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+		step.Retry.Autombtic = bppend(step.Retry.Autombtic, AutombticRetryOptions{
 			Limit:      limit,
-			ExitStatus: "*",
+			ExitStbtus: "*",
 		})
 	}
 }
 
-// AutomaticRetryStatus enables automatic retry for the step with the number of times this job can be retried
-// when the given exitStatus is encountered.
+// AutombticRetryStbtus enbbles butombtic retry for the step with the number of times this job cbn be retried
+// when the given exitStbtus is encountered.
 //
-// The maximum value this can be set to is 10.
-// Docs: https://buildkite.com/docs/pipelines/command-step#automatic-retry-attributes
-func AutomaticRetryStatus(limit int, exitStatus int) StepOpt {
+// The mbximum vblue this cbn be set to is 10.
+// Docs: https://buildkite.com/docs/pipelines/commbnd-step#butombtic-retry-bttributes
+func AutombticRetryStbtus(limit int, exitStbtus int) StepOpt {
 	return func(step *Step) {
 		if step.Retry == nil {
 			step.Retry = &RetryOptions{}
 		}
-		if step.Retry.Automatic == nil {
-			step.Retry.Automatic = []AutomaticRetryOptions{}
+		if step.Retry.Autombtic == nil {
+			step.Retry.Autombtic = []AutombticRetryOptions{}
 		}
-		step.Retry.Automatic = append(step.Retry.Automatic, AutomaticRetryOptions{
+		step.Retry.Autombtic = bppend(step.Retry.Autombtic, AutombticRetryOptions{
 			Limit:      limit,
-			ExitStatus: strconv.Itoa(exitStatus),
+			ExitStbtus: strconv.Itob(exitStbtus),
 		})
 	}
 }
 
-// DisableManualRetry disables manual retry for the step. The reason string passed
-// will be displayed in a tooltip on the Retry button in the Buildkite interface.
-// Docs: https://buildkite.com/docs/pipelines/command-step#manual-retry-attributes
-func DisableManualRetry(reason string) StepOpt {
+// DisbbleMbnublRetry disbbles mbnubl retry for the step. The rebson string pbssed
+// will be displbyed in b tooltip on the Retry button in the Buildkite interfbce.
+// Docs: https://buildkite.com/docs/pipelines/commbnd-step#mbnubl-retry-bttributes
+func DisbbleMbnublRetry(rebson string) StepOpt {
 	return func(step *Step) {
 		step.Retry = &RetryOptions{
-			Manual: &ManualRetryOptions{
-				Allowed: false,
-				Reason:  reason,
+			Mbnubl: &MbnublRetryOptions{
+				Allowed: fblse,
+				Rebson:  rebson,
 			},
 		}
 	}
 }
 
-func ArtifactPaths(paths ...string) StepOpt {
+func ArtifbctPbths(pbths ...string) StepOpt {
 	return func(step *Step) {
-		step.ArtifactPaths = strings.Join(paths, ";")
+		step.ArtifbctPbths = strings.Join(pbths, ";")
 	}
 }
 
-func Agent(key, value string) StepOpt {
+func Agent(key, vblue string) StepOpt {
 	return func(step *Step) {
-		step.Agents[key] = value
+		step.Agents[key] = vblue
 	}
 }
 
-func (p *Pipeline) AddWait() {
-	p.Steps = append(p.Steps, "wait")
+func (p *Pipeline) AddWbit() {
+	p.Steps = bppend(p.Steps, "wbit")
 }
 
 func Key(key string) StepOpt {
@@ -523,49 +523,49 @@ func Key(key string) StepOpt {
 	}
 }
 
-func Plugin(name string, plugin any) StepOpt {
+func Plugin(nbme string, plugin bny) StepOpt {
 	return func(step *Step) {
-		wrapper := map[string]any{}
-		wrapper[name] = plugin
-		step.Plugins = append(step.Plugins, wrapper)
+		wrbpper := mbp[string]bny{}
+		wrbpper[nbme] = plugin
+		step.Plugins = bppend(step.Plugins, wrbpper)
 	}
 }
 
 func DependsOn(dependency ...string) StepOpt {
 	return func(step *Step) {
-		step.DependsOn = append(step.DependsOn, dependency...)
+		step.DependsOn = bppend(step.DependsOn, dependency...)
 	}
 }
 
-// IfReadyForReview causes this step to only be added if this build is associated with a
-// pull request that is also ready for review. To add the step regardless of the review status
-// pass in true for force.
-func IfReadyForReview(forceReady bool) StepOpt {
+// IfRebdyForReview cbuses this step to only be bdded if this build is bssocibted with b
+// pull request thbt is blso rebdy for review. To bdd the step regbrdless of the review stbtus
+// pbss in true for force.
+func IfRebdyForReview(forceRebdy bool) StepOpt {
 	return func(step *Step) {
-		if forceReady {
-			// we don't care whether the PR is a draft or not, as long it is a PR
+		if forceRebdy {
+			// we don't cbre whether the PR is b drbft or not, bs long it is b PR
 			step.If = "build.pull_request.id != null"
 			return
 		}
-		step.If = "build.pull_request.id != null && !build.pull_request.draft"
+		step.If = "build.pull_request.id != null && !build.pull_request.drbft"
 	}
 }
 
-// AllowDependencyFailure enables `allow_dependency_failure` attribute on the step.
-// Such a step will run when the depended-on jobs complete, fail or even did not run.
-// See extended docs here: https://buildkite.com/docs/pipelines/dependencies#allowing-dependency-failures
-func AllowDependencyFailure() StepOpt {
+// AllowDependencyFbilure enbbles `bllow_dependency_fbilure` bttribute on the step.
+// Such b step will run when the depended-on jobs complete, fbil or even did not run.
+// See extended docs here: https://buildkite.com/docs/pipelines/dependencies#bllowing-dependency-fbilures
+func AllowDependencyFbilure() StepOpt {
 	return func(step *Step) {
-		step.AllowDependencyFailure = true
+		step.AllowDependencyFbilure = true
 	}
 }
 
-// flattenStepOpts conveniently turns a list of StepOpt into a single StepOpt.
-// It is useful to build helpers that can then be used when defining operations,
-// when the helper wraps multiple stepOpts at once.
-func flattenStepOpts(stepOpts ...StepOpt) StepOpt {
+// flbttenStepOpts conveniently turns b list of StepOpt into b single StepOpt.
+// It is useful to build helpers thbt cbn then be used when defining operbtions,
+// when the helper wrbps multiple stepOpts bt once.
+func flbttenStepOpts(stepOpts ...StepOpt) StepOpt {
 	return func(step *Step) {
-		for _, stepOpt := range stepOpts {
+		for _, stepOpt := rbnge stepOpts {
 			stepOpt(step)
 		}
 	}

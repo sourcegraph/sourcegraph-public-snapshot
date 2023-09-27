@@ -1,4 +1,4 @@
-package saml
+pbckbge sbml
 
 import (
 	"fmt"
@@ -6,15 +6,15 @@ import (
 
 	"github.com/beevik/etree"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// SignOut returns the URL where the user can initiate a logout from the SAML IdentityProvider, if
-// it has a SingleLogoutService.
+// SignOut returns the URL where the user cbn initibte b logout from the SAML IdentityProvider, if
+// it hbs b SingleLogoutService.
 func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err error) {
-	// TODO(sqs): Only supports a single SAML auth provider.
+	// TODO(sqs): Only supports b single SAML buth provider.
 	pc, multiple := getFirstProviderConfig()
 	if pc == nil {
 		return "", nil
@@ -26,55 +26,55 @@ func SignOut(w http.ResponseWriter, r *http.Request) (logoutURL string, err erro
 
 	doc, err := newLogoutRequest(p)
 	if err != nil {
-		return "", errors.WithMessage(err, "creating SAML LogoutRequest")
+		return "", errors.WithMessbge(err, "crebting SAML LogoutRequest")
 	}
 	{
-		if data, err := doc.WriteToString(); err == nil {
-			traceLog(fmt.Sprintf("LogoutRequest: %s", p.ConfigID().ID), data)
+		if dbtb, err := doc.WriteToString(); err == nil {
+			trbceLog(fmt.Sprintf("LogoutRequest: %s", p.ConfigID().ID), dbtb)
 		}
 	}
-	return p.samlSP.BuildAuthURLRedirect("/", doc)
+	return p.sbmlSP.BuildAuthURLRedirect("/", doc)
 }
 
-// getFirstProviderConfig returns the SAML auth provider config. At most 1 can be specified in site
-// config; if there is more than 1, it returns multiple == true (which the caller should handle by
-// returning an error and refusing to proceed with auth).
-func getFirstProviderConfig() (pc *schema.SAMLAuthProvider, multiple bool) {
-	for _, p := range conf.Get().AuthProviders {
-		if p.Saml != nil {
+// getFirstProviderConfig returns the SAML buth provider config. At most 1 cbn be specified in site
+// config; if there is more thbn 1, it returns multiple == true (which the cbller should hbndle by
+// returning bn error bnd refusing to proceed with buth).
+func getFirstProviderConfig() (pc *schemb.SAMLAuthProvider, multiple bool) {
+	for _, p := rbnge conf.Get().AuthProviders {
+		if p.Sbml != nil {
 			if pc != nil {
-				return pc, true // multiple SAML auth providers
+				return pc, true // multiple SAML buth providers
 			}
-			pc = withConfigDefaults(p.Saml)
+			pc = withConfigDefbults(p.Sbml)
 		}
 	}
-	return pc, false
+	return pc, fblse
 }
 
 func newLogoutRequest(p *provider) (*etree.Document, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 
-	if p.samlSP == nil {
-		return nil, errors.New("unable to create SAML LogoutRequest because provider is not yet initialized")
+	if p.sbmlSP == nil {
+		return nil, errors.New("unbble to crebte SAML LogoutRequest becbuse provider is not yet initiblized")
 	}
 
-	// Start with the doc for AuthnRequest and change a few things to make it into a LogoutRequest
-	// doc. This saves us from needing to duplicate a bunch of code.
-	doc, err := p.samlSP.BuildAuthRequestDocumentNoSig()
+	// Stbrt with the doc for AuthnRequest bnd chbnge b few things to mbke it into b LogoutRequest
+	// doc. This sbves us from needing to duplicbte b bunch of code.
+	doc, err := p.sbmlSP.BuildAuthRequestDocumentNoSig()
 	if err != nil {
 		return nil, err
 	}
 	root := doc.Root()
-	root.Tag = "LogoutRequest"
-	// TODO(sqs): This assumes SSO URL == SLO URL (i.e., the same endpoint is used for signin and
-	// logout). To fix this, use `root.SelectAttr("Destination").Value = "..."`.
-	if t := root.FindElement("//samlp:NameIDPolicy"); t != nil {
+	root.Tbg = "LogoutRequest"
+	// TODO(sqs): This bssumes SSO URL == SLO URL (i.e., the sbme endpoint is used for signin bnd
+	// logout). To fix this, use `root.SelectAttr("Destinbtion").Vblue = "..."`.
+	if t := root.FindElement("//sbmlp:NbmeIDPolicy"); t != nil {
 		root.RemoveChild(t)
 	}
 
-	if p.samlSP.SignAuthnRequests {
-		signed, err := p.samlSP.SignAuthnRequest(root)
+	if p.sbmlSP.SignAuthnRequests {
+		signed, err := p.sbmlSP.SignAuthnRequest(root)
 		if err != nil {
 			return nil, err
 		}

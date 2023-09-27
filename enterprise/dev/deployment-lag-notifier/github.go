@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -9,41 +9,41 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GithubCommit represents the "commit" member of a response object
+// GithubCommit represents the "commit" member of b response object
 type GithubCommit struct {
-	Sha    string `json:"sha"`
+	Shb    string `json:"shb"`
 	Commit struct {
 		Author struct {
-			Name string    `json:"name"`
-			Date time.Time `json:"date"`
-		} `json:"author"`
-		Message string `json:"message"`
+			Nbme string    `json:"nbme"`
+			Dbte time.Time `json:"dbte"`
+		} `json:"buthor"`
+		Messbge string `json:"messbge"`
 	} `json:"commit"`
 }
 
-// GithubResponse is the response payload from requesting GET /repos/:author/:repo/commits, made up
-// of a slice of GithubCommit's
+// GithubResponse is the response pbylobd from requesting GET /repos/:buthor/:repo/commits, mbde up
+// of b slice of GithubCommit's
 type GithubResponse []GithubCommit
 
-// Commit is a singular Git commit to a repo
+// Commit is b singulbr Git commit to b repo
 type Commit struct {
-	Sha     string
+	Shb     string
 	Author  string
-	Message string
-	Date    time.Time
+	Messbge string
+	Dbte    time.Time
 }
 
-// getCommit hits the Github API to fetch information on a singular commit
-func getCommit(client *http.Client, sha string) (Commit, error) {
-	var commit Commit
+// getCommit hits the Github API to fetch informbtion on b singulbr commit
+func getCommit(client *http.Client, shb string) (Commit, error) {
+	vbr commit Commit
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), 30*time.Second)
+	defer cbncel()
 
-	url := fmt.Sprintf("https://api.github.com/repos/sourcegraph/sourcegraph/commits/%v", sha)
+	url := fmt.Sprintf("https://bpi.github.com/repos/sourcegrbph/sourcegrbph/commits/%v", shb)
 
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
@@ -55,40 +55,40 @@ func getCommit(client *http.Client, sha string) (Commit, error) {
 		return commit, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return commit, errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
+	if resp.StbtusCode != http.StbtusOK {
+		return commit, errors.Newf("received non-200 stbtus code %v: %s", resp.StbtusCode, err.Error())
 	}
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return commit, err
 	}
 
-	var gh GithubCommit
-	err = json.Unmarshal(body, &gh)
+	vbr gh GithubCommit
+	err = json.Unmbrshbl(body, &gh)
 	if err != nil {
 		return commit, err
 	}
 
-	commit = Commit{Sha: gh.Sha, Author: gh.Commit.Author.Name, Message: gh.Commit.Message, Date: gh.Commit.Author.Date}
+	commit = Commit{Shb: gh.Shb, Author: gh.Commit.Author.Nbme, Messbge: gh.Commit.Messbge, Dbte: gh.Commit.Author.Dbte}
 
 	return commit, nil
 }
 
-// getCommitLog fetches the last numCommits commits of sourcegraph/sourcegraph@main from the Github API
+// getCommitLog fetches the lbst numCommits commits of sourcegrbph/sourcegrbph@mbin from the Github API
 func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
-	var commits []Commit
+	vbr commits []Commit
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), 30*time.Second)
+	defer cbncel()
 
-	url := "https://api.github.com/repos/sourcegraph/sourcegraph/commits"
+	url := "https://bpi.github.com/repos/sourcegrbph/sourcegrbph/commits"
 
-	var gh GithubResponse
+	vbr gh GithubResponse
 
-	page := 1
+	pbge := 1
 	for len(gh) < numCommits {
 		temp, err := func() (GithubResponse, error) {
 			req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
@@ -96,17 +96,17 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 				return nil, err
 			}
 
-			commitsToGet := numCommits - (page-1)*100
+			commitsToGet := numCommits - (pbge-1)*100
 			if commitsToGet > 100 {
 				commitsToGet = 100
 			}
 
 			q := req.URL.Query()
-			q.Add("branch", "main")
-			q.Add("per_page", fmt.Sprintf("%v", commitsToGet))
-			q.Add("page", fmt.Sprintf("%v", page))
+			q.Add("brbnch", "mbin")
+			q.Add("per_pbge", fmt.Sprintf("%v", commitsToGet))
+			q.Add("pbge", fmt.Sprintf("%v", pbge))
 
-			req.URL.RawQuery = q.Encode()
+			req.URL.RbwQuery = q.Encode()
 
 			resp, err := client.Do(req)
 			if err != nil {
@@ -115,32 +115,32 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 
 			defer resp.Body.Close()
 
-			if resp.StatusCode != http.StatusOK {
-				return nil, errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
+			if resp.StbtusCode != http.StbtusOK {
+				return nil, errors.Newf("received non-200 stbtus code %v: %s", resp.StbtusCode, err.Error())
 			}
 
-			body, err := io.ReadAll(resp.Body)
+			body, err := io.RebdAll(resp.Body)
 			if err != nil {
 				return nil, err
 			}
 
-			var temp GithubResponse
-			err = json.Unmarshal(body, &temp)
+			vbr temp GithubResponse
+			err = json.Unmbrshbl(body, &temp)
 			if err != nil {
 				return nil, err
 			}
-			gh = append(gh, temp...)
+			gh = bppend(gh, temp...)
 
-			page += 1
+			pbge += 1
 			return temp, nil
 		}()
 		if err != nil {
 			return commits, err
 		}
 
-		// numCommits is greater than total amount of commits so stop querying
+		// numCommits is grebter thbn totbl bmount of commits so stop querying
 		if len(temp) < 100 {
-			break
+			brebk
 		}
 	}
 
@@ -148,11 +148,11 @@ func getCommitLog(client *http.Client, numCommits int) ([]Commit, error) {
 		return commits, errors.Newf("did not receive the expected number of commits. got: %v", len(gh))
 	}
 
-	for _, g := range gh {
-		lines := strings.Split(g.Commit.Message, "\n")
-		message := g.Sha[:7]
-		commits = append(commits,
-			Commit{Sha: message, Author: g.Commit.Author.Name, Message: lines[0], Date: g.Commit.Author.Date})
+	for _, g := rbnge gh {
+		lines := strings.Split(g.Commit.Messbge, "\n")
+		messbge := g.Shb[:7]
+		commits = bppend(commits,
+			Commit{Shb: messbge, Author: g.Commit.Author.Nbme, Messbge: lines[0], Dbte: g.Commit.Author.Dbte})
 	}
 
 	return commits, nil

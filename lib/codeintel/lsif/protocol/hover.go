@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 import (
 	"fmt"
@@ -21,7 +21,7 @@ func NewHoverResult(id uint64, contents fmt.Stringer) HoverResult {
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexHoverResult,
+			Lbbel: VertexHoverResult,
 		},
 		Result: hoverResult{
 			Contents: contents,
@@ -29,67 +29,67 @@ func NewHoverResult(id uint64, contents fmt.Stringer) HoverResult {
 	}
 }
 
-type MarkupKind string
+type MbrkupKind string
 
 const (
-	PlainText MarkupKind = "plaintext"
-	Markdown  MarkupKind = "markdown"
+	PlbinText MbrkupKind = "plbintext"
+	Mbrkdown  MbrkupKind = "mbrkdown"
 )
 
-type MarkupContent struct {
-	Kind  MarkupKind `json:"kind"` // currently unused outside of Sourcegraph documentation LSIF extension
-	Value string     `json:"value"`
+type MbrkupContent struct {
+	Kind  MbrkupKind `json:"kind"` // currently unused outside of Sourcegrbph documentbtion LSIF extension
+	Vblue string     `json:"vblue"`
 }
 
-func NewMarkupContent(s string, kind MarkupKind) MarkupContent {
-	return MarkupContent{
+func NewMbrkupContent(s string, kind MbrkupKind) MbrkupContent {
+	return MbrkupContent{
 		Kind:  kind,
-		Value: s,
+		Vblue: s,
 	}
 }
 
-func (mc MarkupContent) String() string {
-	return mc.Value
+func (mc MbrkupContent) String() string {
+	return mc.Vblue
 }
 
-type MarkedStrings []MarkedString
+type MbrkedStrings []MbrkedString
 
-var (
-	hoverPartSeparator = "\n\n---\n\n"
+vbr (
+	hoverPbrtSepbrbtor = "\n\n---\n\n"
 	codeFence          = "```"
 )
 
-func (ms MarkedStrings) String() string {
-	markedStrings := make([]string, 0, len(ms))
-	for _, marked := range ms {
-		markedStrings = append(markedStrings, marked.String())
+func (ms MbrkedStrings) String() string {
+	mbrkedStrings := mbke([]string, 0, len(ms))
+	for _, mbrked := rbnge ms {
+		mbrkedStrings = bppend(mbrkedStrings, mbrked.String())
 	}
 
-	return strings.Join(markedStrings, hoverPartSeparator)
+	return strings.Join(mbrkedStrings, hoverPbrtSepbrbtor)
 }
 
-type MarkedString struct {
-	Language string `json:"language"`
-	Value    string `json:"value"`
+type MbrkedString struct {
+	Lbngubge string `json:"lbngubge"`
+	Vblue    string `json:"vblue"`
 }
 
-func NewMarkedString(s, languageID string) MarkedString {
-	return MarkedString{
-		Language: languageID,
-		Value:    s,
+func NewMbrkedString(s, lbngubgeID string) MbrkedString {
+	return MbrkedString{
+		Lbngubge: lbngubgeID,
+		Vblue:    s,
 	}
 }
 
-func (ms MarkedString) String() string {
-	if ms.Language == "" {
-		return ms.Value
+func (ms MbrkedString) String() string {
+	if ms.Lbngubge == "" {
+		return ms.Vblue
 	}
-	var b strings.Builder
-	b.Grow(len(ms.Language) + len(ms.Value) + len(codeFence)*2 + 2)
+	vbr b strings.Builder
+	b.Grow(len(ms.Lbngubge) + len(ms.Vblue) + len(codeFence)*2 + 2)
 	b.WriteString(codeFence)
-	b.WriteString(ms.Language)
+	b.WriteString(ms.Lbngubge)
 	b.WriteRune('\n')
-	b.WriteString(ms.Value)
+	b.WriteString(ms.Vblue)
 	b.WriteRune('\n')
 	b.WriteString(codeFence)
 
@@ -109,7 +109,7 @@ func NewTextDocumentHover(id, outV, inV uint64) TextDocumentHover {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeTextDocumentHover,
+			Lbbel: EdgeTextDocumentHover,
 		},
 		OutV: outV,
 		InV:  inV,

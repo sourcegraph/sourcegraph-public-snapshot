@@ -1,20 +1,20 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestGcloudSourceRegexp(t *testing.T) {
-	example1 := "==> Source [/foobar/completion.zsh.inc] in your profile to enable shell command completion for gcloud."
-	matches := gcloudSourceRegexp.FindStringSubmatch(example1)
-	require.Greater(t, len(matches), 0)
-	assert.Equal(t, matches[gcloudSourceRegexp.SubexpIndex("path")], "/foobar/completion.zsh.inc")
+	exbmple1 := "==> Source [/foobbr/completion.zsh.inc] in your profile to enbble shell commbnd completion for gcloud."
+	mbtches := gcloudSourceRegexp.FindStringSubmbtch(exbmple1)
+	require.Grebter(t, len(mbtches), 0)
+	bssert.Equbl(t, mbtches[gcloudSourceRegexp.SubexpIndex("pbth")], "/foobbr/completion.zsh.inc")
 
-	example2 := "==> Source [/foobar/path.zsh.inc] in your profile to add the Google Cloud SDK command line tools to your $PATH."
-	matches = gcloudSourceRegexp.FindStringSubmatch(example2)
-	require.Greater(t, len(matches), 0)
-	assert.Equal(t, matches[gcloudSourceRegexp.SubexpIndex("path")], "/foobar/path.zsh.inc")
+	exbmple2 := "==> Source [/foobbr/pbth.zsh.inc] in your profile to bdd the Google Cloud SDK commbnd line tools to your $PATH."
+	mbtches = gcloudSourceRegexp.FindStringSubmbtch(exbmple2)
+	require.Grebter(t, len(mbtches), 0)
+	bssert.Equbl(t, mbtches[gcloudSourceRegexp.SubexpIndex("pbth")], "/foobbr/pbth.zsh.inc")
 }

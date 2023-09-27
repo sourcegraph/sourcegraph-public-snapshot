@@ -1,33 +1,33 @@
-package definitions
+pbckbge definitions
 
 import (
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func CodeIntelCodeNav() *monitoring.Dashboard {
-	return &monitoring.Dashboard{
-		Name:        "codeintel-codenav",
-		Title:       "Code Intelligence > Code Nav",
-		Description: "The service at internal/codeintel/codenav`.",
-		Variables: []monitoring.ContainerVariable{
+func CodeIntelCodeNbv() *monitoring.Dbshbobrd {
+	return &monitoring.Dbshbobrd{
+		Nbme:        "codeintel-codenbv",
+		Title:       "Code Intelligence > Code Nbv",
+		Description: "The service bt internbl/codeintel/codenbv`.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Source",
-				Name:  "source",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "src_codeintel_codenav_total{}",
-					LabelName:     "app",
-					ExampleOption: "frontend",
+				Lbbel: "Source",
+				Nbme:  "source",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "src_codeintel_codenbv_totbl{}",
+					LbbelNbme:     "bpp",
+					ExbmpleOption: "frontend",
 				},
-				WildcardAllValue: true,
-				Multi:            false,
+				WildcbrdAllVblue: true,
+				Multi:            fblse,
 			},
 		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewCodeNavServiceGroup("${source:regex}"),
-			shared.CodeIntelligence.NewCodeNavLsifStoreGroup("${source:regex}"),
-			shared.CodeIntelligence.NewCodeNavGraphQLTransportGroup("${source:regex}"),
-			shared.CodeIntelligence.NewCodeNavStoreGroup("${source:regex}"),
+			shbred.CodeIntelligence.NewCodeNbvServiceGroup("${source:regex}"),
+			shbred.CodeIntelligence.NewCodeNbvLsifStoreGroup("${source:regex}"),
+			shbred.CodeIntelligence.NewCodeNbvGrbphQLTrbnsportGroup("${source:regex}"),
+			shbred.CodeIntelligence.NewCodeNbvStoreGroup("${source:regex}"),
 		},
 	}
 }

@@ -1,163 +1,163 @@
-package reposource
+pbckbge reposource
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type MavenModule struct {
+type MbvenModule struct {
 	GroupID    string
-	ArtifactID string
+	ArtifbctID string
 }
 
-func (m *MavenModule) Equal(other *MavenModule) bool {
+func (m *MbvenModule) Equbl(other *MbvenModule) bool {
 	return m == other || (m != nil && other != nil && *m == *other)
 }
 
-func (m *MavenModule) IsJDK() bool {
-	return m.Equal(jdkModule())
+func (m *MbvenModule) IsJDK() bool {
+	return m.Equbl(jdkModule())
 }
 
-func (m *MavenModule) MatchesDependencyString(dependency string) bool {
-	return strings.HasPrefix(dependency, fmt.Sprintf("%s:%s:", m.GroupID, m.ArtifactID))
+func (m *MbvenModule) MbtchesDependencyString(dependency string) bool {
+	return strings.HbsPrefix(dependency, fmt.Sprintf("%s:%s:", m.GroupID, m.ArtifbctID))
 }
 
-func (m *MavenModule) CoursierSyntax() string {
-	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
+func (m *MbvenModule) CoursierSyntbx() string {
+	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifbctID)
 }
 
-func (m *MavenModule) PackageSyntax() PackageName {
-	return PackageName(m.CoursierSyntax())
+func (m *MbvenModule) PbckbgeSyntbx() PbckbgeNbme {
+	return PbckbgeNbme(m.CoursierSyntbx())
 }
 
-func (m *MavenModule) SortText() string {
-	return m.CoursierSyntax()
+func (m *MbvenModule) SortText() string {
+	return m.CoursierSyntbx()
 }
 
-func (m *MavenModule) LsifJavaKind() string {
+func (m *MbvenModule) LsifJbvbKind() string {
 	if m.IsJDK() {
 		return "jdk"
 	}
-	return "maven"
+	return "mbven"
 }
 
-func (m *MavenModule) Description() string { return "" }
+func (m *MbvenModule) Description() string { return "" }
 
-type MavenMetadata struct {
-	Module *MavenModule
+type MbvenMetbdbtb struct {
+	Module *MbvenModule
 }
 
-func (m *MavenModule) RepoName() api.RepoName {
+func (m *MbvenModule) RepoNbme() bpi.RepoNbme {
 	if m.IsJDK() {
 		return "jdk"
 	}
-	return api.RepoName(fmt.Sprintf("maven/%s/%s", m.GroupID, m.ArtifactID))
+	return bpi.RepoNbme(fmt.Sprintf("mbven/%s/%s", m.GroupID, m.ArtifbctID))
 }
 
-func (m *MavenModule) CloneURL() string {
-	cloneURL := url.URL{Path: string(m.RepoName())}
+func (m *MbvenModule) CloneURL() string {
+	cloneURL := url.URL{Pbth: string(m.RepoNbme())}
 	return cloneURL.String()
 }
 
 // See [NOTE: Dependency-terminology]
-type MavenVersionedPackage struct {
-	*MavenModule
+type MbvenVersionedPbckbge struct {
+	*MbvenModule
 	Version string
 }
 
-func (d *MavenVersionedPackage) Equal(o *MavenVersionedPackage) bool {
+func (d *MbvenVersionedPbckbge) Equbl(o *MbvenVersionedPbckbge) bool {
 	return d == o || (d != nil && o != nil &&
-		d.MavenModule.Equal(o.MavenModule) &&
+		d.MbvenModule.Equbl(o.MbvenModule) &&
 		d.Version == o.Version)
 }
 
-func (d *MavenVersionedPackage) Less(other VersionedPackage) bool {
-	o := other.(*MavenVersionedPackage)
+func (d *MbvenVersionedPbckbge) Less(other VersionedPbckbge) bool {
+	o := other.(*MbvenVersionedPbckbge)
 
-	if d.MavenModule.Equal(o.MavenModule) {
-		return versionGreaterThan(d.Version, o.Version)
+	if d.MbvenModule.Equbl(o.MbvenModule) {
+		return versionGrebterThbn(d.Version, o.Version)
 	}
 
-	// TODO: This SortText method is quite inefficient and allocates.
+	// TODO: This SortText method is quite inefficient bnd bllocbtes.
 	return d.SortText() > o.SortText()
 }
 
-func (d *MavenVersionedPackage) VersionedPackageSyntax() string {
-	return fmt.Sprintf("%s:%s", d.PackageSyntax(), d.Version)
+func (d *MbvenVersionedPbckbge) VersionedPbckbgeSyntbx() string {
+	return fmt.Sprintf("%s:%s", d.PbckbgeSyntbx(), d.Version)
 }
 
-func (d *MavenVersionedPackage) String() string {
-	return d.VersionedPackageSyntax()
+func (d *MbvenVersionedPbckbge) String() string {
+	return d.VersionedPbckbgeSyntbx()
 }
 
-func (d *MavenVersionedPackage) PackageVersion() string {
+func (d *MbvenVersionedPbckbge) PbckbgeVersion() string {
 	return d.Version
 }
 
-func (d *MavenVersionedPackage) Scheme() string {
-	return "semanticdb"
+func (d *MbvenVersionedPbckbge) Scheme() string {
+	return "sembnticdb"
 }
 
-func (d *MavenVersionedPackage) GitTagFromVersion() string {
+func (d *MbvenVersionedPbckbge) GitTbgFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *MavenVersionedPackage) LsifJavaDependencies() []string {
+func (d *MbvenVersionedPbckbge) LsifJbvbDependencies() []string {
 	if d.IsJDK() {
 		return []string{}
 	}
-	return []string{d.VersionedPackageSyntax()}
+	return []string{d.VersionedPbckbgeSyntbx()}
 }
 
-// ParseMavenVersionedPackage parses a dependency string in the Coursier format
-// (colon seperated group ID, artifact ID and an optional version) into a MavenVersionedPackage.
-func ParseMavenVersionedPackage(dependency string) (*MavenVersionedPackage, error) {
-	dep := &MavenVersionedPackage{MavenModule: &MavenModule{}}
+// PbrseMbvenVersionedPbckbge pbrses b dependency string in the Coursier formbt
+// (colon seperbted group ID, brtifbct ID bnd bn optionbl version) into b MbvenVersionedPbckbge.
+func PbrseMbvenVersionedPbckbge(dependency string) (*MbvenVersionedPbckbge, error) {
+	dep := &MbvenVersionedPbckbge{MbvenModule: &MbvenModule{}}
 
 	switch ps := strings.Split(dependency, ":"); len(ps) {
-	case 3:
+	cbse 3:
 		dep.Version = ps[2]
-		fallthrough
-	case 2:
-		dep.MavenModule.GroupID = ps[0]
-		dep.MavenModule.ArtifactID = ps[1]
-	default:
-		return nil, errors.Newf("dependency %q must contain at least one colon ':' character", dependency)
+		fbllthrough
+	cbse 2:
+		dep.MbvenModule.GroupID = ps[0]
+		dep.MbvenModule.ArtifbctID = ps[1]
+	defbult:
+		return nil, errors.Newf("dependency %q must contbin bt lebst one colon ':' chbrbcter", dependency)
 	}
 
 	return dep, nil
 }
 
-func ParseMavenPackageFromRepoName(name api.RepoName) (*MavenVersionedPackage, error) {
-	return ParseMavenPackageFromName(PackageName(strings.ReplaceAll(strings.TrimPrefix(string(name), "maven/"), "/", ":")))
+func PbrseMbvenPbckbgeFromRepoNbme(nbme bpi.RepoNbme) (*MbvenVersionedPbckbge, error) {
+	return PbrseMbvenPbckbgeFromNbme(PbckbgeNbme(strings.ReplbceAll(strings.TrimPrefix(string(nbme), "mbven/"), "/", ":")))
 }
 
-// ParseMavenPackageFromRepoName is a convenience function to parse a repo name in a
-// 'maven/<name>' format into a MavenVersionedPackage.
-func ParseMavenPackageFromName(name PackageName) (*MavenVersionedPackage, error) {
-	if name == "jdk" {
-		return &MavenVersionedPackage{MavenModule: jdkModule()}, nil
+// PbrseMbvenPbckbgeFromRepoNbme is b convenience function to pbrse b repo nbme in b
+// 'mbven/<nbme>' formbt into b MbvenVersionedPbckbge.
+func PbrseMbvenPbckbgeFromNbme(nbme PbckbgeNbme) (*MbvenVersionedPbckbge, error) {
+	if nbme == "jdk" {
+		return &MbvenVersionedPbckbge{MbvenModule: jdkModule()}, nil
 	}
 
-	return ParseMavenVersionedPackage(string(name))
+	return PbrseMbvenVersionedPbckbge(string(nbme))
 }
 
-// jdkModule returns the module for the Java standard library (JDK). This module
-// is technically not a "maven module" because the JDK is not published as a
-// Maven library. The only difference that's relevant for Sourcegraph is that we
-// use a different coursier command to download JDK sources compared to normal
-// maven modules:
-// - JDK sources: `coursier java-home --jvm VERSION`
-// - Maven sources: `coursier fetch MAVEN_MODULE:VERSION --classifier=sources`
-// Since the difference is so small, the code is easier to read/maintain if we
-// model the JDK as a Maven module.
-func jdkModule() *MavenModule {
-	return &MavenModule{
+// jdkModule returns the module for the Jbvb stbndbrd librbry (JDK). This module
+// is technicblly not b "mbven module" becbuse the JDK is not published bs b
+// Mbven librbry. The only difference thbt's relevbnt for Sourcegrbph is thbt we
+// use b different coursier commbnd to downlobd JDK sources compbred to normbl
+// mbven modules:
+// - JDK sources: `coursier jbvb-home --jvm VERSION`
+// - Mbven sources: `coursier fetch MAVEN_MODULE:VERSION --clbssifier=sources`
+// Since the difference is so smbll, the code is ebsier to rebd/mbintbin if we
+// model the JDK bs b Mbven module.
+func jdkModule() *MbvenModule {
+	return &MbvenModule{
 		GroupID:    "jdk",
-		ArtifactID: "jdk",
+		ArtifbctID: "jdk",
 	}
 }

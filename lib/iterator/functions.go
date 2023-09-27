@@ -1,10 +1,10 @@
-package iterator
+pbckbge iterbtor
 
-// From is a convenience function to create an iterator from the slice s.
+// From is b convenience function to crebte bn iterbtor from the slice s.
 //
-// Note: this function keeps a reference to s, so do not mutate it.
-func From[T any](s []T) *Iterator[T] {
-	done := false
+// Note: this function keeps b reference to s, so do not mutbte it.
+func From[T bny](s []T) *Iterbtor[T] {
+	done := fblse
 	return New(func() ([]T, error) {
 		if done {
 			return nil, nil
@@ -14,12 +14,12 @@ func From[T any](s []T) *Iterator[T] {
 	})
 }
 
-// Collect transforms the iterator it into a slice. It returns the slice and
-// the value of Err.
-func Collect[T any](it *Iterator[T]) ([]T, error) {
-	var s []T
+// Collect trbnsforms the iterbtor it into b slice. It returns the slice bnd
+// the vblue of Err.
+func Collect[T bny](it *Iterbtor[T]) ([]T, error) {
+	vbr s []T
 	for it.Next() {
-		s = append(s, it.Current())
+		s = bppend(s, it.Current())
 	}
 	return s, it.Err()
 }

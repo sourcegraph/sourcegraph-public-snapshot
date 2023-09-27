@@ -1,4 +1,4 @@
-package files_test
+pbckbge files_test
 
 import (
 	"bytes"
@@ -7,234 +7,234 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestGetWorkspaceFiles(t *testing.T) {
+func TestGetWorkspbceFiles(t *testing.T) {
 	modifiedAt := time.Now()
 
 	tests := []struct {
-		name                   string
+		nbme                   string
 		job                    types.Job
 		mockFunc               func(store *files.MockStore)
-		assertFunc             func(t *testing.T, store *files.MockStore)
-		expectedWorkspaceFiles []files.WorkspaceFile
+		bssertFunc             func(t *testing.T, store *files.MockStore)
+		expectedWorkspbceFiles []files.WorkspbceFile
 		expectedErr            error
 	}{
 		{
-			name: "No files or steps",
+			nbme: "No files or steps",
 			job:  types.Job{},
-			assertFunc: func(t *testing.T, store *files.MockStore) {
+			bssertFunc: func(t *testing.T, store *files.MockStore) {
 				require.Len(t, store.GetFunc.History(), 0)
 			},
-			expectedWorkspaceFiles: nil,
+			expectedWorkspbceFiles: nil,
 			expectedErr:            nil,
 		},
 		{
-			name: "Docker Steps",
+			nbme: "Docker Steps",
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
 				DockerSteps: []types.DockerStep{
 					{
-						Commands: []string{"echo hello"},
+						Commbnds: []string{"echo hello"},
 					},
 					{
-						Commands: []string{"echo world"},
+						Commbnds: []string{"echo world"},
 					},
 				},
 			},
-			assertFunc: func(t *testing.T, store *files.MockStore) {
+			bssertFunc: func(t *testing.T, store *files.MockStore) {
 				require.Len(t, store.GetFunc.History(), 0)
 			},
-			expectedWorkspaceFiles: []files.WorkspaceFile{
+			expectedWorkspbceFiles: []files.WorkspbceFile{
 				{
-					Path:         "/working/directory/.sourcegraph-executor/42.0_github.com_sourcegraph_sourcegraph@.sh",
-					Content:      []byte(files.ScriptPreamble + "\n\necho hello\n"),
+					Pbth:         "/working/directory/.sourcegrbph-executor/42.0_github.com_sourcegrbph_sourcegrbph@.sh",
+					Content:      []byte(files.ScriptPrebmble + "\n\necho hello\n"),
 					IsStepScript: true,
 				},
 				{
-					Path:         "/working/directory/.sourcegraph-executor/42.1_github.com_sourcegraph_sourcegraph@.sh",
-					Content:      []byte(files.ScriptPreamble + "\n\necho world\n"),
+					Pbth:         "/working/directory/.sourcegrbph-executor/42.1_github.com_sourcegrbph_sourcegrbph@.sh",
+					Content:      []byte(files.ScriptPrebmble + "\n\necho world\n"),
 					IsStepScript: true,
 				},
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "Virtual machine files",
+			nbme: "Virtubl mbchine files",
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
-				VirtualMachineFiles: map[string]types.VirtualMachineFile{
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
+				VirtublMbchineFiles: mbp[string]types.VirtublMbchineFile{
 					"foo.sh": {
 						Content: []byte("echo hello"),
 					},
-					"bar.sh": {
+					"bbr.sh": {
 						Content: []byte("echo world"),
 					},
 				},
 			},
-			assertFunc: func(t *testing.T, store *files.MockStore) {
+			bssertFunc: func(t *testing.T, store *files.MockStore) {
 				require.Len(t, store.GetFunc.History(), 0)
 			},
-			expectedWorkspaceFiles: []files.WorkspaceFile{
+			expectedWorkspbceFiles: []files.WorkspbceFile{
 				{
-					Path:         "/working/directory/foo.sh",
+					Pbth:         "/working/directory/foo.sh",
 					Content:      []byte("echo hello"),
-					IsStepScript: false,
+					IsStepScript: fblse,
 				},
 				{
-					Path:         "/working/directory/bar.sh",
+					Pbth:         "/working/directory/bbr.sh",
 					Content:      []byte("echo world"),
-					IsStepScript: false,
+					IsStepScript: fblse,
 				},
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "Workspace files",
+			nbme: "Workspbce files",
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
-				VirtualMachineFiles: map[string]types.VirtualMachineFile{
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
+				VirtublMbchineFiles: mbp[string]types.VirtublMbchineFile{
 					"foo.sh": {
 						Bucket:     "my-bucket",
 						Key:        "foo.sh",
 						ModifiedAt: modifiedAt,
 					},
-					"bar.sh": {
+					"bbr.sh": {
 						Bucket:     "my-bucket",
-						Key:        "bar.sh",
+						Key:        "bbr.sh",
 						ModifiedAt: modifiedAt,
 					},
 				},
 			},
 			mockFunc: func(store *files.MockStore) {
-				store.GetFunc.SetDefaultHook(func(ctx context.Context, job types.Job, bucket string, key string) (io.ReadCloser, error) {
+				store.GetFunc.SetDefbultHook(func(ctx context.Context, job types.Job, bucket string, key string) (io.RebdCloser, error) {
 					if key == "foo.sh" {
 						return io.NopCloser(bytes.NewBufferString("echo hello")), nil
 					}
-					if key == "bar.sh" {
+					if key == "bbr.sh" {
 						return io.NopCloser(bytes.NewBufferString("echo world")), nil
 					}
 					return nil, errors.New("unexpected key")
 				})
 			},
-			assertFunc: func(t *testing.T, store *files.MockStore) {
+			bssertFunc: func(t *testing.T, store *files.MockStore) {
 				require.Len(t, store.GetFunc.History(), 2)
-				assert.Equal(t, "my-bucket", store.GetFunc.History()[0].Arg2)
-				assert.Contains(t, []string{"foo.sh", "bar.sh"}, store.GetFunc.History()[0].Arg3)
-				assert.Contains(t, []string{"foo.sh", "bar.sh"}, store.GetFunc.History()[1].Arg3)
+				bssert.Equbl(t, "my-bucket", store.GetFunc.History()[0].Arg2)
+				bssert.Contbins(t, []string{"foo.sh", "bbr.sh"}, store.GetFunc.History()[0].Arg3)
+				bssert.Contbins(t, []string{"foo.sh", "bbr.sh"}, store.GetFunc.History()[1].Arg3)
 			},
-			expectedWorkspaceFiles: []files.WorkspaceFile{
+			expectedWorkspbceFiles: []files.WorkspbceFile{
 				{
-					Path:         "/working/directory/foo.sh",
+					Pbth:         "/working/directory/foo.sh",
 					Content:      []byte("echo hello"),
-					IsStepScript: false,
+					IsStepScript: fblse,
 					ModifiedAt:   modifiedAt,
 				},
 				{
-					Path:         "/working/directory/bar.sh",
+					Pbth:         "/working/directory/bbr.sh",
 					Content:      []byte("echo world"),
-					IsStepScript: false,
+					IsStepScript: fblse,
 					ModifiedAt:   modifiedAt,
 				},
 			},
 			expectedErr: nil,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			store := files.NewMockStore()
 			if test.mockFunc != nil {
 				test.mockFunc(store)
 			}
 
-			workspaceFiles, err := files.GetWorkspaceFiles(context.Background(), store, test.job, "/working/directory")
+			workspbceFiles, err := files.GetWorkspbceFiles(context.Bbckground(), store, test.job, "/working/directory")
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
-				assert.Nil(t, workspaceFiles)
+				bssert.EqublError(t, err, test.expectedErr.Error())
+				bssert.Nil(t, workspbceFiles)
 			} else {
 				require.NoError(t, err)
-				// To make comparisons easier, in case of failures, we will iterate over the expected and try and find a
-				// match in the actual.
-				// By doing this, we do not care about order and can more surgically test the expected values.
-				for _, expected := range test.expectedWorkspaceFiles {
-					found := false
-					for _, actual := range workspaceFiles {
-						if expected.Path == actual.Path {
-							assert.Equal(t, string(expected.Content), string(actual.Content))
-							assert.Equal(t, expected.IsStepScript, actual.IsStepScript)
-							assert.Equal(t, expected.ModifiedAt, actual.ModifiedAt)
+				// To mbke compbrisons ebsier, in cbse of fbilures, we will iterbte over the expected bnd try bnd find b
+				// mbtch in the bctubl.
+				// By doing this, we do not cbre bbout order bnd cbn more surgicblly test the expected vblues.
+				for _, expected := rbnge test.expectedWorkspbceFiles {
+					found := fblse
+					for _, bctubl := rbnge workspbceFiles {
+						if expected.Pbth == bctubl.Pbth {
+							bssert.Equbl(t, string(expected.Content), string(bctubl.Content))
+							bssert.Equbl(t, expected.IsStepScript, bctubl.IsStepScript)
+							bssert.Equbl(t, expected.ModifiedAt, bctubl.ModifiedAt)
 							found = true
-							break
+							brebk
 						}
 					}
 					if !found {
-						// Get actual file paths
-						var actualPaths []string
-						for _, actual := range workspaceFiles {
-							actualPaths = append(actualPaths, actual.Path)
+						// Get bctubl file pbths
+						vbr bctublPbths []string
+						for _, bctubl := rbnge workspbceFiles {
+							bctublPbths = bppend(bctublPbths, bctubl.Pbth)
 						}
-						assert.Fail(t, "Expected file not found", expected.Path, actualPaths)
+						bssert.Fbil(t, "Expected file not found", expected.Pbth, bctublPbths)
 					}
 				}
 			}
 
-			if test.assertFunc != nil {
-				test.assertFunc(t, store)
+			if test.bssertFunc != nil {
+				test.bssertFunc(t, store)
 			}
 		})
 	}
 }
 
-func TestScriptNameFromJobStep(t *testing.T) {
+func TestScriptNbmeFromJobStep(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		job          types.Job
 		index        int
-		expectedName string
+		expectedNbme string
 	}{
 		{
-			name: "Simple",
+			nbme: "Simple",
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
 			},
 			index:        0,
-			expectedName: "42.0_github.com_sourcegraph_sourcegraph@.sh",
+			expectedNbme: "42.0_github.com_sourcegrbph_sourcegrbph@.sh",
 		},
 		{
-			name: "Step one",
+			nbme: "Step one",
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
 			},
 			index:        1,
-			expectedName: "42.1_github.com_sourcegraph_sourcegraph@.sh",
+			expectedNbme: "42.1_github.com_sourcegrbph_sourcegrbph@.sh",
 		},
 		{
-			name: "With commit",
+			nbme: "With commit",
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
-				Commit:         "deadbeef",
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
+				Commit:         "debdbeef",
 			},
 			index:        1,
-			expectedName: "42.1_github.com_sourcegraph_sourcegraph@deadbeef.sh",
+			expectedNbme: "42.1_github.com_sourcegrbph_sourcegrbph@debdbeef.sh",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			scriptName := files.ScriptNameFromJobStep(test.job, test.index)
-			assert.Equal(t, test.expectedName, scriptName)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			scriptNbme := files.ScriptNbmeFromJobStep(test.job, test.index)
+			bssert.Equbl(t, test.expectedNbme, scriptNbme)
 		})
 	}
 }

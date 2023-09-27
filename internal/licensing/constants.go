@@ -1,9 +1,9 @@
-package licensing
+pbckbge licensing
 
 import "time"
 
 const (
-	LicenseCheckInterval    = 12 * time.Hour
-	LicenseValidityStoreKey = "licensing:is_license_valid"
-	LicenseInvalidReason    = "licensing:license_invalid_reason"
+	LicenseCheckIntervbl    = 12 * time.Hour
+	LicenseVblidityStoreKey = "licensing:is_license_vblid"
+	LicenseInvblidRebson    = "licensing:license_invblid_rebson"
 )

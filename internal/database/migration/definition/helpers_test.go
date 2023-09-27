@@ -1,18 +1,18 @@
-package definition
+pbckbge definition
 
 import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 )
 
-var queryComparer = cmp.Comparer(func(a, b *sqlf.Query) bool {
-	if a == nil {
+vbr queryCompbrer = cmp.Compbrer(func(b, b *sqlf.Query) bool {
+	if b == nil {
 		return b == nil
 	}
 	if b == nil {
-		return false
+		return fblse
 	}
-	return strings.TrimSpace(a.Query(sqlf.PostgresBindVar)) == strings.TrimSpace(b.Query(sqlf.PostgresBindVar))
+	return strings.TrimSpbce(b.Query(sqlf.PostgresBindVbr)) == strings.TrimSpbce(b.Query(sqlf.PostgresBindVbr))
 })

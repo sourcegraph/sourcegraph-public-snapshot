@@ -1,46 +1,46 @@
-package insights
+pbckbge insights
 
-type langStatsInsight struct {
+type lbngStbtsInsight struct {
 	ID             string
 	Title          string
 	Repository     string
-	OtherThreshold float64
+	OtherThreshold flobt64
 	OrgID          *int32
 	UserID         *int32
 }
 
-type searchInsight struct {
+type sebrchInsight struct {
 	ID           string
 	Title        string
 	Description  string
 	Repositories []string
 	Series       []timeSeries
-	Step         interval
+	Step         intervbl
 	OrgID        *int32
 	UserID       *int32
-	Filters      *defaultFilters
+	Filters      *defbultFilters
 }
 
 type timeSeries struct {
-	Name   string
+	Nbme   string
 	Stroke string
 	Query  string
 }
 
-type interval struct {
-	Years  *int
+type intervbl struct {
+	Yebrs  *int
 	Months *int
 	Weeks  *int
-	Days   *int
+	Dbys   *int
 	Hours  *int
 }
 
-type defaultFilters struct {
+type defbultFilters struct {
 	IncludeRepoRegexp *string
 	ExcludeRepoRegexp *string
 }
 
-type settingDashboard struct {
+type settingDbshbobrd struct {
 	ID         string   `json:"id"`
 	Title      string   `json:"title"`
 	InsightIDs []string `json:"insightIds"`

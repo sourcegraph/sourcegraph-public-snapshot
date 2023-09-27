@@ -1,71 +1,71 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func pruneAssets(logger log.Logger, filelist []string, grafanaDir, promDir string) error {
-	// Prune Grafana assets
-	if grafanaDir != "" {
-		logger.Info("Pruning Grafana assets", log.String("dir", grafanaDir))
-		err := filepath.Walk(grafanaDir, func(path string, info fs.FileInfo, err error) error {
-			plog := logger.With(log.String("path", path))
+func pruneAssets(logger log.Logger, filelist []string, grbfbnbDir, promDir string) error {
+	// Prune Grbfbnb bssets
+	if grbfbnbDir != "" {
+		logger.Info("Pruning Grbfbnb bssets", log.String("dir", grbfbnbDir))
+		err := filepbth.Wblk(grbfbnbDir, func(pbth string, info fs.FileInfo, err error) error {
+			plog := logger.With(log.String("pbth", pbth))
 			if err != nil {
-				plog.Debug("Unable to access file, ignoring")
+				plog.Debug("Unbble to bccess file, ignoring")
 				return nil
 			}
-			if filepath.Ext(path) != ".json" || info.IsDir() {
+			if filepbth.Ext(pbth) != ".json" || info.IsDir() {
 				return nil
 			}
-			for _, f := range filelist {
-				if filepath.Ext(f) != ".json" || filepath.Ext(path) != ".json" || info.IsDir() {
+			for _, f := rbnge filelist {
+				if filepbth.Ext(f) != ".json" || filepbth.Ext(pbth) != ".json" || info.IsDir() {
 					continue
 				}
-				if filepath.Base(path) == f {
+				if filepbth.Bbse(pbth) == f {
 					return nil
 				}
 			}
-			logger.Info("Removing dangling Grafana asset", log.String("path", path))
-			return os.Remove(path)
+			logger.Info("Removing dbngling Grbfbnb bsset", log.String("pbth", pbth))
+			return os.Remove(pbth)
 		})
 		if err != nil {
-			return errors.Errorf("error pruning Grafana assets: %w", err)
+			return errors.Errorf("error pruning Grbfbnb bssets: %w", err)
 		}
 	}
 
-	// Prune Prometheus assets
+	// Prune Prometheus bssets
 	if promDir != "" {
-		logger.Info("Pruning Prometheus assets", log.String("dir", promDir))
-		err := filepath.Walk(promDir, func(path string, info fs.FileInfo, err error) error {
-			plog := logger.With(log.String("path", path))
+		logger.Info("Pruning Prometheus bssets", log.String("dir", promDir))
+		err := filepbth.Wblk(promDir, func(pbth string, info fs.FileInfo, err error) error {
+			plog := logger.With(log.String("pbth", pbth))
 			if err != nil {
-				plog.Debug("Unable to access file, ignoring")
+				plog.Debug("Unbble to bccess file, ignoring")
 				return nil
 			}
-			if !strings.Contains(filepath.Base(path), alertRulesFileSuffix) || info.IsDir() {
+			if !strings.Contbins(filepbth.Bbse(pbth), blertRulesFileSuffix) || info.IsDir() {
 				return nil
 			}
 
-			for _, f := range filelist {
-				if filepath.Ext(f) != ".yml" {
+			for _, f := rbnge filelist {
+				if filepbth.Ext(f) != ".yml" {
 					continue
 				}
-				if filepath.Base(path) == f {
+				if filepbth.Bbse(pbth) == f {
 					return nil
 				}
 			}
-			logger.Info("Removing dangling Prometheus asset", log.String("path", path))
-			return os.Remove(path)
+			logger.Info("Removing dbngling Prometheus bsset", log.String("pbth", pbth))
+			return os.Remove(pbth)
 		})
 		if err != nil {
-			return errors.Errorf("error pruning Prometheus assets: %w", err)
+			return errors.Errorf("error pruning Prometheus bssets: %w", err)
 		}
 	}
 

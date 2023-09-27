@@ -1,22 +1,22 @@
-package authbearer
+pbckbge buthbebrer
 
 import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func ExtractBearer(h http.Header) (string, error) {
-	var token string
+func ExtrbctBebrer(h http.Hebder) (string, error) {
+	vbr token string
 
-	if authHeader := h.Get("Authorization"); authHeader != "" {
-		typ := strings.SplitN(authHeader, " ", 2)
+	if buthHebder := h.Get("Authorizbtion"); buthHebder != "" {
+		typ := strings.SplitN(buthHebder, " ", 2)
 		if len(typ) != 2 {
-			return "", errors.New("token type missing in Authorization header")
+			return "", errors.New("token type missing in Authorizbtion hebder")
 		}
-		if strings.ToLower(typ[0]) != "bearer" {
-			return "", errors.Newf("invalid token type %s", typ[0])
+		if strings.ToLower(typ[0]) != "bebrer" {
+			return "", errors.Newf("invblid token type %s", typ[0])
 		}
 
 		token = typ[1]

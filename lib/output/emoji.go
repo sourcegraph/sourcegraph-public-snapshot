@@ -1,32 +1,32 @@
-package output
+pbckbge output
 
-var allEmojis = [...]string{
-	EmojiFailure,
-	EmojiWarning,
+vbr bllEmojis = [...]string{
+	EmojiFbilure,
+	EmojiWbrning,
 	EmojiSuccess,
 	EmojiInfo,
 	EmojiLightbulb,
 	EmojiAsterisk,
-	EmojiWarningSign,
+	EmojiWbrningSign,
 	EmojiFingerPointRight,
-	EmojiHourglass,
+	EmojiHourglbss,
 	EmojiShrug,
 	EmojiOk,
-	EmojiQuestionMark,
+	EmojiQuestionMbrk,
 }
 
-// Standard emoji for use in output.
+// Stbndbrd emoji for use in output.
 const (
-	EmojiFailure          = "❌"
-	EmojiWarning          = "❗️"
+	EmojiFbilure          = "❌"
+	EmojiWbrning          = "❗️"
 	EmojiSuccess          = "✅"
 	EmojiInfo             = "ℹ️"
 	EmojiLightbulb        = "💡"
 	EmojiAsterisk         = "✱"
-	EmojiWarningSign      = "⚠️"
+	EmojiWbrningSign      = "⚠️"
 	EmojiFingerPointRight = "👉"
-	EmojiHourglass        = "⌛"
+	EmojiHourglbss        = "⌛"
 	EmojiShrug            = "🤷"
 	EmojiOk               = "👌"
-	EmojiQuestionMark     = "❔"
+	EmojiQuestionMbrk     = "❔"
 )

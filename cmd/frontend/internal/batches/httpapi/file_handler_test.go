@@ -1,505 +1,505 @@
-package httpapi_test
+pbckbge httpbpi_test
 
 import (
 	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"mime/multipart"
+	"mime/multipbrt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/httpapi"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/httpbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestFileHandler_ServeHTTP(t *testing.T) {
-	batchSpecRandID := "123"
-	batchSpecWorkspaceFileRandID := "987"
+func TestFileHbndler_ServeHTTP(t *testing.T) {
+	bbtchSpecRbndID := "123"
+	bbtchSpecWorkspbceFileRbndID := "987"
 
 	modifiedTimeString := "2022-08-15 19:30:25.410972423 +0000 UTC"
-	modifiedTime, err := time.Parse("2006-01-02 15:04:05.999999999 -0700 MST", modifiedTimeString)
+	modifiedTime, err := time.Pbrse("2006-01-02 15:04:05.999999999 -0700 MST", modifiedTimeString)
 	require.NoError(t, err)
 
-	operations := httpapi.NewOperations(&observation.TestContext)
+	operbtions := httpbpi.NewOperbtions(&observbtion.TestContext)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	creatorID := bt.CreateTestUser(t, db, false).ID
-	adminID := bt.CreateTestUser(t, db, true).ID
+	crebtorID := bt.CrebteTestUser(t, db, fblse).ID
+	bdminID := bt.CrebteTestUser(t, db, true).ID
 
 	tests := []struct {
-		name string
+		nbme string
 
 		method      string
-		path        string
-		requestBody func() (io.Reader, string)
+		pbth        string
+		requestBody func() (io.Rebder, string)
 
-		mockInvokes func(mockStore *mockBatchesStore)
+		mockInvokes func(mockStore *mockBbtchesStore)
 
 		userID int32
 
-		expectedStatusCode   int
+		expectedStbtusCode   int
 		expectedResponseBody string
 	}{
 		{
-			name:               "Method not allowed",
-			method:             http.MethodPatch,
-			path:               fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			expectedStatusCode: http.StatusMethodNotAllowed,
+			nbme:               "Method not bllowed",
+			method:             http.MethodPbtch,
+			pbth:               fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			expectedStbtusCode: http.StbtusMethodNotAllowed,
 		},
 		{
-			name:   "Get file",
+			nbme:   "Get file",
 			method: http.MethodGet,
-			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func(mockStore *mockBatchesStore) {
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			mockInvokes: func(mockStore *mockBbtchesStore) {
 				mockStore.
-					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
-					Return(&btypes.BatchSpecWorkspaceFile{Path: "foo/bar", FileName: "hello.txt", Content: []byte("Hello world!")}, nil).
+					On("GetBbtchSpecWorkspbceFile", mock.Anything, store.GetBbtchSpecWorkspbceFileOpts{RbndID: bbtchSpecWorkspbceFileRbndID}).
+					Return(&btypes.BbtchSpecWorkspbceFile{Pbth: "foo/bbr", FileNbme: "hello.txt", Content: []byte("Hello world!")}, nil).
 					Once()
 			},
-			expectedStatusCode:   http.StatusOK,
+			expectedStbtusCode:   http.StbtusOK,
 			expectedResponseBody: "Hello world!",
 		},
 		{
-			name:   "Workspace file does not exist for retrieval",
+			nbme:   "Workspbce file does not exist for retrievbl",
 			method: http.MethodGet,
-			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func(mockStore *mockBatchesStore) {
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			mockInvokes: func(mockStore *mockBbtchesStore) {
 				mockStore.
-					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
+					On("GetBbtchSpecWorkspbceFile", mock.Anything, store.GetBbtchSpecWorkspbceFileOpts{RbndID: bbtchSpecWorkspbceFileRbndID}).
 					Return(nil, store.ErrNoResults).
 					Once()
 			},
-			expectedStatusCode:   http.StatusNotFound,
-			expectedResponseBody: "workspace file does not exist\n",
+			expectedStbtusCode:   http.StbtusNotFound,
+			expectedResponseBody: "workspbce file does not exist\n",
 		},
 		{
-			name:               "Get file missing file id",
+			nbme:               "Get file missing file id",
 			method:             http.MethodGet,
-			path:               fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			expectedStatusCode: http.StatusMethodNotAllowed,
+			pbth:               fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			expectedStbtusCode: http.StbtusMethodNotAllowed,
 		},
 		{
-			name:   "Failed to find file",
+			nbme:   "Fbiled to find file",
 			method: http.MethodGet,
-			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func(mockStore *mockBatchesStore) {
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			mockInvokes: func(mockStore *mockBbtchesStore) {
 				mockStore.
-					On("GetBatchSpecWorkspaceFile", mock.Anything, store.GetBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
-					Return(nil, errors.New("failed to find file")).
+					On("GetBbtchSpecWorkspbceFile", mock.Anything, store.GetBbtchSpecWorkspbceFileOpts{RbndID: bbtchSpecWorkspbceFileRbndID}).
+					Return(nil, errors.New("fbiled to find file")).
 					Once()
 			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "retrieving file: failed to find file\n",
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "retrieving file: fbiled to find file\n",
 		},
 		{
-			name:   "Upload file",
+			nbme:   "Uplobd file",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
-					Run(func(args mock.Arguments) {
-						workspaceFile := args.Get(1).(*btypes.BatchSpecWorkspaceFile)
-						workspaceFile.RandID = "abc"
+					On("UpsertBbtchSpecWorkspbceFile", mock.Anything, &btypes.BbtchSpecWorkspbceFile{BbtchSpecID: 1, FileNbme: "hello.txt", Pbth: "foo/bbr", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Run(func(brgs mock.Arguments) {
+						workspbceFile := brgs.Get(1).(*btypes.BbtchSpecWorkspbceFile)
+						workspbceFile.RbndID = "bbc"
 					}).
 					Return(nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: "{\"id\":\"abc\"}\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: "{\"id\":\"bbc\"}\n",
 		},
 		{
-			name:   "File path contains double-dots",
+			nbme:   "File pbth contbins double-dots",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "../../../foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "../../../foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "uploading file: file path cannot contain double-dots '..' or backslashes '\\'\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "uplobding file: file pbth cbnnot contbin double-dots '..' or bbckslbshes '\\'\n",
 		},
 		{
-			name:   "File path contains backslashes",
+			nbme:   "File pbth contbins bbckslbshes",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo\\bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo\\bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "uploading file: file path cannot contain double-dots '..' or backslashes '\\'\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "uplobding file: file pbth cbnnot contbin double-dots '..' or bbckslbshes '\\'\n",
 		},
 		{
-			name:   "Upload with marshalled spec ID",
+			nbme:   "Uplobd with mbrshblled spec ID",
 			method: http.MethodPost,
-			path:   "/files/batch-changes/QmF0Y2hTcGVjOiJ6WW80TVFRdnhFIg==",
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   "/files/bbtch-chbnges/QmF0Y2hTcGVjOiJ6WW80TVFRdnhFIg==",
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: "zYo4MQQvxE"}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: "zYo4MQQvxE"}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
-					Run(func(args mock.Arguments) {
-						workspaceFile := args.Get(1).(*btypes.BatchSpecWorkspaceFile)
-						workspaceFile.RandID = "abc"
+					On("UpsertBbtchSpecWorkspbceFile", mock.Anything, &btypes.BbtchSpecWorkspbceFile{BbtchSpecID: 1, FileNbme: "hello.txt", Pbth: "foo/bbr", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Run(func(brgs mock.Arguments) {
+						workspbceFile := brgs.Get(1).(*btypes.BbtchSpecWorkspbceFile)
+						workspbceFile.RbndID = "bbc"
 					}).
 					Return(nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: "{\"id\":\"abc\"}\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: "{\"id\":\"bbc\"}\n",
 		},
 		{
-			name:   "Upload file as site admin",
+			nbme:   "Uplobd file bs site bdmin",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
-					Run(func(args mock.Arguments) {
-						workspaceFile := args.Get(1).(*btypes.BatchSpecWorkspaceFile)
-						workspaceFile.RandID = "abc"
+					On("UpsertBbtchSpecWorkspbceFile", mock.Anything, &btypes.BbtchSpecWorkspbceFile{BbtchSpecID: 1, FileNbme: "hello.txt", Pbth: "foo/bbr", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Run(func(brgs mock.Arguments) {
+						workspbceFile := brgs.Get(1).(*btypes.BbtchSpecWorkspbceFile)
+						workspbceFile.RbndID = "bbc"
 					}).
 					Return(nil).
 					Once()
 			},
-			userID:               adminID,
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: "{\"id\":\"abc\"}\n",
+			userID:               bdminID,
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: "{\"id\":\"bbc\"}\n",
 		},
 		{
-			name:   "Unauthorized upload",
+			nbme:   "Unbuthorized uplobd",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: adminID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: bdminID}, nil).
 					Once()
 			},
-			userID:             creatorID,
-			expectedStatusCode: http.StatusUnauthorized,
+			userID:             crebtorID,
+			expectedStbtusCode: http.StbtusUnbuthorized,
 		},
 		{
-			name:   "Batch spec does not exist for upload",
+			nbme:   "Bbtch spec does not exist for uplobd",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
 					Return(nil, store.ErrNoResults).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusNotFound,
-			expectedResponseBody: "batch spec does not exist\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusNotFound,
+			expectedResponseBody: "bbtch spec does not exist\n",
 		},
 		{
-			name:   "Upload has invalid content type",
+			nbme:   "Uplobd hbs invblid content type",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return nil, "application/json"
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return nil, "bpplicbtion/json"
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "parsing request: request Content-Type isn't multipart/form-data\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "pbrsing request: request Content-Type isn't multipbrt/form-dbtb\n",
 		},
 		{
-			name:   "Upload failed to lookup batch spec",
+			nbme:   "Uplobd fbiled to lookup bbtch spec",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(nil, errors.New("failed to find batch spec")).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(nil, errors.New("fbiled to find bbtch spec")).
 					Once()
 			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "looking up batch spec: failed to find batch spec\n",
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "looking up bbtch spec: fbiled to find bbtch spec\n",
 		},
 		{
-			name:   "Upload missing filemod",
+			nbme:   "Uplobd missing filemod",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
 				body := &bytes.Buffer{}
-				w := multipart.NewWriter(body)
+				w := multipbrt.NewWriter(body)
 				w.Close()
-				return body, w.FormDataContentType()
+				return body, w.FormDbtbContentType()
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "uploading file: missing file modification time\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "uplobding file: missing file modificbtion time\n",
 		},
 		{
-			name:   "Upload missing file",
+			nbme:   "Uplobd missing file",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
 				body := &bytes.Buffer{}
-				w := multipart.NewWriter(body)
+				w := multipbrt.NewWriter(body)
 				w.WriteField("filemod", modifiedTimeString)
 				w.Close()
-				return body, w.FormDataContentType()
+				return body, w.FormDbtbContentType()
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "uploading file: http: no such file\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "uplobding file: http: no such file\n",
 		},
 		{
-			name:   "Failed to create batch spec workspace file",
+			nbme:   "Fbiled to crebte bbtch spec workspbce file",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
-				return multipartRequestBody(file{name: "hello.txt", path: "foo/bar", content: "Hello world!", modified: modifiedTimeString})
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
+				return multipbrtRequestBody(file{nbme: "hello.txt", pbth: "foo/bbr", content: "Hello world!", modified: modifiedTimeString})
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 				mockStore.
-					On("UpsertBatchSpecWorkspaceFile", mock.Anything, &btypes.BatchSpecWorkspaceFile{BatchSpecID: 1, FileName: "hello.txt", Path: "foo/bar", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
-					Return(errors.New("failed to insert batch spec file")).
+					On("UpsertBbtchSpecWorkspbceFile", mock.Anything, &btypes.BbtchSpecWorkspbceFile{BbtchSpecID: 1, FileNbme: "hello.txt", Pbth: "foo/bbr", Size: 12, Content: []byte("Hello world!"), ModifiedAt: modifiedTime}).
+					Return(errors.New("fbiled to insert bbtch spec file")).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "uploading file: failed to insert batch spec file\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "uplobding file: fbiled to insert bbtch spec file\n",
 		},
 		{
-			name:   "File Exists",
-			method: http.MethodHead,
-			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func(mockStore *mockBatchesStore) {
+			nbme:   "File Exists",
+			method: http.MethodHebd,
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			mockInvokes: func(mockStore *mockBbtchesStore) {
 				mockStore.
-					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
+					On("CountBbtchSpecWorkspbceFiles", mock.Anything, store.ListBbtchSpecWorkspbceFileOpts{RbndID: bbtchSpecWorkspbceFileRbndID}).
 					Return(1, nil).
 					Once()
 			},
-			expectedStatusCode: http.StatusOK,
+			expectedStbtusCode: http.StbtusOK,
 		},
 		{
-			name:   "File Does Not Exists",
-			method: http.MethodHead,
-			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func(mockStore *mockBatchesStore) {
+			nbme:   "File Does Not Exists",
+			method: http.MethodHebd,
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			mockInvokes: func(mockStore *mockBbtchesStore) {
 				mockStore.
-					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
+					On("CountBbtchSpecWorkspbceFiles", mock.Anything, store.ListBbtchSpecWorkspbceFileOpts{RbndID: bbtchSpecWorkspbceFileRbndID}).
 					Return(0, nil).
 					Once()
 			},
-			expectedStatusCode: http.StatusNotFound,
+			expectedStbtusCode: http.StbtusNotFound,
 		},
 		{
-			name:   "File Exists Error",
-			method: http.MethodHead,
-			path:   fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, batchSpecWorkspaceFileRandID),
-			mockInvokes: func(mockStore *mockBatchesStore) {
+			nbme:   "File Exists Error",
+			method: http.MethodHebd,
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, bbtchSpecWorkspbceFileRbndID),
+			mockInvokes: func(mockStore *mockBbtchesStore) {
 				mockStore.
-					On("CountBatchSpecWorkspaceFiles", mock.Anything, store.ListBatchSpecWorkspaceFileOpts{RandID: batchSpecWorkspaceFileRandID}).
-					Return(0, errors.New("failed to count")).
+					On("CountBbtchSpecWorkspbceFiles", mock.Anything, store.ListBbtchSpecWorkspbceFileOpts{RbndID: bbtchSpecWorkspbceFileRbndID}).
+					Return(0, errors.New("fbiled to count")).
 					Once()
 			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: "checking file existence: failed to count\n",
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: "checking file existence: fbiled to count\n",
 		},
 		{
-			name:               "Missing file id",
-			method:             http.MethodHead,
-			path:               fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			expectedStatusCode: http.StatusMethodNotAllowed,
+			nbme:               "Missing file id",
+			method:             http.MethodHebd,
+			pbth:               fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			expectedStbtusCode: http.StbtusMethodNotAllowed,
 		},
 		{
-			name:   "File exceeds max limit",
+			nbme:   "File exceeds mbx limit",
 			method: http.MethodPost,
-			path:   fmt.Sprintf("/files/batch-changes/%s", batchSpecRandID),
-			requestBody: func() (io.Reader, string) {
+			pbth:   fmt.Sprintf("/files/bbtch-chbnges/%s", bbtchSpecRbndID),
+			requestBody: func() (io.Rebder, string) {
 				body := &bytes.Buffer{}
-				w := multipart.NewWriter(body)
+				w := multipbrt.NewWriter(body)
 				w.WriteField("filemod", modifiedTimeString)
-				w.WriteField("filepath", "foo/bar")
-				part, _ := w.CreateFormFile("file", "hello.txt")
-				io.Copy(part, io.LimitReader(neverEnding('a'), 11<<20))
+				w.WriteField("filepbth", "foo/bbr")
+				pbrt, _ := w.CrebteFormFile("file", "hello.txt")
+				io.Copy(pbrt, io.LimitRebder(neverEnding('b'), 11<<20))
 				w.Close()
-				return body, w.FormDataContentType()
+				return body, w.FormDbtbContentType()
 			},
-			mockInvokes: func(mockStore *mockBatchesStore) {
-				mockStore.On("GetBatchSpec", mock.Anything, store.GetBatchSpecOpts{RandID: batchSpecRandID}).
-					Return(&btypes.BatchSpec{ID: 1, RandID: batchSpecRandID, UserID: creatorID}, nil).
+			mockInvokes: func(mockStore *mockBbtchesStore) {
+				mockStore.On("GetBbtchSpec", mock.Anything, store.GetBbtchSpecOpts{RbndID: bbtchSpecRbndID}).
+					Return(&btypes.BbtchSpec{ID: 1, RbndID: bbtchSpecRbndID, UserID: crebtorID}, nil).
 					Once()
 			},
-			userID:               creatorID,
-			expectedStatusCode:   http.StatusBadRequest,
-			expectedResponseBody: "request payload exceeds 10MB limit\n",
+			userID:               crebtorID,
+			expectedStbtusCode:   http.StbtusBbdRequest,
+			expectedResponseBody: "request pbylobd exceeds 10MB limit\n",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			mockStore := new(mockBatchesStore)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			mockStore := new(mockBbtchesStore)
 
 			if test.mockInvokes != nil {
 				test.mockInvokes(mockStore)
 			}
 
-			handler := httpapi.NewFileHandler(db, mockStore, operations)
+			hbndler := httpbpi.NewFileHbndler(db, mockStore, operbtions)
 
-			var body io.Reader
-			var contentType string
+			vbr body io.Rebder
+			vbr contentType string
 			if test.requestBody != nil {
 				body, contentType = test.requestBody()
 			}
-			r := httptest.NewRequest(test.method, test.path, body)
-			r.Header.Add("Content-Type", contentType)
+			r := httptest.NewRequest(test.method, test.pbth, body)
+			r.Hebder.Add("Content-Type", contentType)
 			w := httptest.NewRecorder()
 
 			// Setup user
-			r = r.WithContext(actor.WithActor(r.Context(), actor.FromUser(test.userID)))
+			r = r.WithContext(bctor.WithActor(r.Context(), bctor.FromUser(test.userID)))
 
-			// In order to get the mux variables from the path, setup mux routes
+			// In order to get the mux vbribbles from the pbth, setup mux routes
 			router := mux.NewRouter()
-			router.Methods(http.MethodGet).Path("/files/batch-changes/{spec}/{file}").Handler(handler.Get())
-			router.Methods(http.MethodHead).Path("/files/batch-changes/{spec}/{file}").Handler(handler.Exists())
-			router.Methods(http.MethodPost).Path("/files/batch-changes/{spec}").Handler(handler.Upload())
+			router.Methods(http.MethodGet).Pbth("/files/bbtch-chbnges/{spec}/{file}").Hbndler(hbndler.Get())
+			router.Methods(http.MethodHebd).Pbth("/files/bbtch-chbnges/{spec}/{file}").Hbndler(hbndler.Exists())
+			router.Methods(http.MethodPost).Pbth("/files/bbtch-chbnges/{spec}").Hbndler(hbndler.Uplobd())
 			router.ServeHTTP(w, r)
 
 			res := w.Result()
 			defer res.Body.Close()
-			assert.Equal(t, test.expectedStatusCode, res.StatusCode)
+			bssert.Equbl(t, test.expectedStbtusCode, res.StbtusCode)
 
-			responseBody, err := io.ReadAll(res.Body)
-			// There should never be an error when reading the body
-			assert.NoError(t, err)
-			assert.Equal(t, test.expectedResponseBody, string(responseBody))
+			responseBody, err := io.RebdAll(res.Body)
+			// There should never be bn error when rebding the body
+			bssert.NoError(t, err)
+			bssert.Equbl(t, test.expectedResponseBody, string(responseBody))
 
-			// Ensure the mocked store functions get called correctly
-			mockStore.AssertExpectations(t)
+			// Ensure the mocked store functions get cblled correctly
+			mockStore.AssertExpectbtions(t)
 		})
 	}
 }
 
-func multipartRequestBody(f file) (io.Reader, string) {
+func multipbrtRequestBody(f file) (io.Rebder, string) {
 	body := &bytes.Buffer{}
-	w := multipart.NewWriter(body)
+	w := multipbrt.NewWriter(body)
 
 	w.WriteField("filemod", f.modified)
-	w.WriteField("filepath", f.path)
-	part, _ := w.CreateFormFile("file", f.name)
-	io.WriteString(part, f.content)
+	w.WriteField("filepbth", f.pbth)
+	pbrt, _ := w.CrebteFormFile("file", f.nbme)
+	io.WriteString(pbrt, f.content)
 	w.Close()
-	return body, w.FormDataContentType()
+	return body, w.FormDbtbContentType()
 }
 
 type file struct {
-	name     string
-	path     string
+	nbme     string
+	pbth     string
 	content  string
 	modified string
 }
 
-type mockBatchesStore struct {
+type mockBbtchesStore struct {
 	mock.Mock
 }
 
-func (m *mockBatchesStore) CountBatchSpecWorkspaceFiles(ctx context.Context, opts store.ListBatchSpecWorkspaceFileOpts) (int, error) {
-	args := m.Called(ctx, opts)
-	return args.Int(0), args.Error(1)
+func (m *mockBbtchesStore) CountBbtchSpecWorkspbceFiles(ctx context.Context, opts store.ListBbtchSpecWorkspbceFileOpts) (int, error) {
+	brgs := m.Cblled(ctx, opts)
+	return brgs.Int(0), brgs.Error(1)
 }
 
-func (m *mockBatchesStore) GetBatchSpec(ctx context.Context, opts store.GetBatchSpecOpts) (*btypes.BatchSpec, error) {
-	args := m.Called(ctx, opts)
-	var obj *btypes.BatchSpec
-	if args.Get(0) != nil {
-		obj = args.Get(0).(*btypes.BatchSpec)
+func (m *mockBbtchesStore) GetBbtchSpec(ctx context.Context, opts store.GetBbtchSpecOpts) (*btypes.BbtchSpec, error) {
+	brgs := m.Cblled(ctx, opts)
+	vbr obj *btypes.BbtchSpec
+	if brgs.Get(0) != nil {
+		obj = brgs.Get(0).(*btypes.BbtchSpec)
 	}
-	return obj, args.Error(1)
+	return obj, brgs.Error(1)
 }
 
-func (m *mockBatchesStore) GetBatchSpecWorkspaceFile(ctx context.Context, opts store.GetBatchSpecWorkspaceFileOpts) (*btypes.BatchSpecWorkspaceFile, error) {
-	args := m.Called(ctx, opts)
-	var obj *btypes.BatchSpecWorkspaceFile
-	if args.Get(0) != nil {
-		obj = args.Get(0).(*btypes.BatchSpecWorkspaceFile)
+func (m *mockBbtchesStore) GetBbtchSpecWorkspbceFile(ctx context.Context, opts store.GetBbtchSpecWorkspbceFileOpts) (*btypes.BbtchSpecWorkspbceFile, error) {
+	brgs := m.Cblled(ctx, opts)
+	vbr obj *btypes.BbtchSpecWorkspbceFile
+	if brgs.Get(0) != nil {
+		obj = brgs.Get(0).(*btypes.BbtchSpecWorkspbceFile)
 	}
-	return obj, args.Error(1)
+	return obj, brgs.Error(1)
 }
 
-func (m *mockBatchesStore) UpsertBatchSpecWorkspaceFile(ctx context.Context, file *btypes.BatchSpecWorkspaceFile) error {
-	args := m.Called(ctx, file)
-	return args.Error(0)
+func (m *mockBbtchesStore) UpsertBbtchSpecWorkspbceFile(ctx context.Context, file *btypes.BbtchSpecWorkspbceFile) error {
+	brgs := m.Cblled(ctx, file)
+	return brgs.Error(0)
 }
 
 type neverEnding byte
 
-func (b neverEnding) Read(p []byte) (n int, err error) {
-	for i := range p {
+func (b neverEnding) Rebd(p []byte) (n int, err error) {
+	for i := rbnge p {
 		p[i] = byte(b)
 	}
 	return len(p), nil

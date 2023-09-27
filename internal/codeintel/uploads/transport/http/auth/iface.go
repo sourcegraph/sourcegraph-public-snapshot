@@ -1,17 +1,17 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type GitHubClient interface {
-	GetRepository(ctx context.Context, owner string, name string) (*github.Repository, error)
-	ListInstallationRepositories(ctx context.Context, page int) ([]*github.Repository, bool, int, error)
+type GitHubClient interfbce {
+	GetRepository(ctx context.Context, owner string, nbme string) (*github.Repository, error)
+	ListInstbllbtionRepositories(ctx context.Context, pbge int) ([]*github.Repository, bool, int, error)
 }
 
-type UserStore interface {
+type UserStore interfbce {
 	GetByCurrentAuthUser(context.Context) (*types.User, error)
 }

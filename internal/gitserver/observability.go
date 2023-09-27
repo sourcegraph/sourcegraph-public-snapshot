@@ -1,133 +1,133 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	archiveReader    *observation.Operation
-	batchLog         *observation.Operation
-	batchLogSingle   *observation.Operation
-	blameFile        *observation.Operation
-	commits          *observation.Operation
-	contributorCount *observation.Operation
-	do               *observation.Operation
-	exec             *observation.Operation
-	firstEverCommit  *observation.Operation
-	getBehindAhead   *observation.Operation
-	getCommit        *observation.Operation
-	getCommits       *observation.Operation
-	hasCommitAfter   *observation.Operation
-	listBranches     *observation.Operation
-	listRefs         *observation.Operation
-	listTags         *observation.Operation
-	lstat            *observation.Operation
-	mergeBase        *observation.Operation
-	newFileReader    *observation.Operation
-	p4Exec           *observation.Operation
-	readDir          *observation.Operation
-	readFile         *observation.Operation
-	resolveRevision  *observation.Operation
-	revList          *observation.Operation
-	search           *observation.Operation
-	stat             *observation.Operation
-	streamBlameFile  *observation.Operation
+type operbtions struct {
+	brchiveRebder    *observbtion.Operbtion
+	bbtchLog         *observbtion.Operbtion
+	bbtchLogSingle   *observbtion.Operbtion
+	blbmeFile        *observbtion.Operbtion
+	commits          *observbtion.Operbtion
+	contributorCount *observbtion.Operbtion
+	do               *observbtion.Operbtion
+	exec             *observbtion.Operbtion
+	firstEverCommit  *observbtion.Operbtion
+	getBehindAhebd   *observbtion.Operbtion
+	getCommit        *observbtion.Operbtion
+	getCommits       *observbtion.Operbtion
+	hbsCommitAfter   *observbtion.Operbtion
+	listBrbnches     *observbtion.Operbtion
+	listRefs         *observbtion.Operbtion
+	listTbgs         *observbtion.Operbtion
+	lstbt            *observbtion.Operbtion
+	mergeBbse        *observbtion.Operbtion
+	newFileRebder    *observbtion.Operbtion
+	p4Exec           *observbtion.Operbtion
+	rebdDir          *observbtion.Operbtion
+	rebdFile         *observbtion.Operbtion
+	resolveRevision  *observbtion.Operbtion
+	revList          *observbtion.Operbtion
+	sebrch           *observbtion.Operbtion
+	stbt             *observbtion.Operbtion
+	strebmBlbmeFile  *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
+		observbtionCtx.Registerer,
 		"gitserver_client",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("gitserver.client.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("gitserver.client.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForAllExceptLogs
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				return observbtion.EmitForAllExceptLogs
 			},
 		})
 	}
 
-	// suboperations do not have their own metrics but do have their own spans.
-	// This allows us to more granularly track the latency for parts of a
+	// suboperbtions do not hbve their own metrics but do hbve their own spbns.
+	// This bllows us to more grbnulbrly trbck the lbtency for pbrts of b
 	// request without noising up Prometheus.
-	subOp := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name: fmt.Sprintf("gitserver.client.%s", name),
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForAllExceptLogs
+	subOp := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme: fmt.Sprintf("gitserver.client.%s", nbme),
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				return observbtion.EmitForAllExceptLogs
 			},
 		})
 	}
 
-	// We don't want to send errors to sentry for `gitdomain.RevisionNotFoundError`
-	// errors, as they should be actionable on the call site.
-	resolveRevisionOperation := observationCtx.Operation(observation.Op{
-		Name:              fmt.Sprintf("gitserver.client.%s", "ResolveRevision"),
-		MetricLabelValues: []string{"ResolveRevision"},
+	// We don't wbnt to send errors to sentry for `gitdombin.RevisionNotFoundError`
+	// errors, bs they should be bctionbble on the cbll site.
+	resolveRevisionOperbtion := observbtionCtx.Operbtion(observbtion.Op{
+		Nbme:              fmt.Sprintf("gitserver.client.%s", "ResolveRevision"),
+		MetricLbbelVblues: []string{"ResolveRevision"},
 		Metrics:           redMetrics,
-		ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-				return observation.EmitForMetrics
+		ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+			if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+				return observbtion.EmitForMetrics
 			}
-			return observation.EmitForSentry
+			return observbtion.EmitForSentry
 		},
 	})
 
-	return &operations{
-		archiveReader:    op("ArchiveReader"),
-		batchLog:         op("BatchLog"),
-		batchLogSingle:   subOp("batchLogSingle"),
-		blameFile:        op("BlameFile"),
+	return &operbtions{
+		brchiveRebder:    op("ArchiveRebder"),
+		bbtchLog:         op("BbtchLog"),
+		bbtchLogSingle:   subOp("bbtchLogSingle"),
+		blbmeFile:        op("BlbmeFile"),
 		commits:          op("Commits"),
 		contributorCount: op("ContributorCount"),
 		do:               subOp("do"),
 		exec:             op("Exec"),
 		firstEverCommit:  op("FirstEverCommit"),
-		getBehindAhead:   op("GetBehindAhead"),
+		getBehindAhebd:   op("GetBehindAhebd"),
 		getCommit:        op("GetCommit"),
 		getCommits:       op("GetCommits"),
-		hasCommitAfter:   op("HasCommitAfter"),
-		listBranches:     op("ListBranches"),
+		hbsCommitAfter:   op("HbsCommitAfter"),
+		listBrbnches:     op("ListBrbnches"),
 		listRefs:         op("ListRefs"),
-		listTags:         op("ListTags"),
-		lstat:            subOp("lStat"),
-		mergeBase:        op("MergeBase"),
-		newFileReader:    op("NewFileReader"),
+		listTbgs:         op("ListTbgs"),
+		lstbt:            subOp("lStbt"),
+		mergeBbse:        op("MergeBbse"),
+		newFileRebder:    op("NewFileRebder"),
 		p4Exec:           op("P4Exec"),
-		readDir:          op("ReadDir"),
-		readFile:         op("ReadFile"),
-		resolveRevision:  resolveRevisionOperation,
+		rebdDir:          op("RebdDir"),
+		rebdFile:         op("RebdFile"),
+		resolveRevision:  resolveRevisionOperbtion,
 		revList:          op("RevList"),
-		search:           op("Search"),
-		stat:             op("Stat"),
-		streamBlameFile:  op("StreamBlameFile"),
+		sebrch:           op("Sebrch"),
+		stbt:             op("Stbt"),
+		strebmBlbmeFile:  op("StrebmBlbmeFile"),
 	}
 }
 
-var (
-	operationsInst     *operations
-	operationsInstOnce sync.Once
+vbr (
+	operbtionsInst     *operbtions
+	operbtionsInstOnce sync.Once
 )
 
-func getOperations() *operations {
-	operationsInstOnce.Do(func() {
-		observationCtx := observation.NewContext(log.Scoped("gitserver.client", "gitserver client"))
-		operationsInst = newOperations(observationCtx)
+func getOperbtions() *operbtions {
+	operbtionsInstOnce.Do(func() {
+		observbtionCtx := observbtion.NewContext(log.Scoped("gitserver.client", "gitserver client"))
+		operbtionsInst = newOperbtions(observbtionCtx)
 	})
 
-	return operationsInst
+	return operbtionsInst
 }

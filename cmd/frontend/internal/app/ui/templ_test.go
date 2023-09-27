@@ -1,14 +1,14 @@
-package ui
+pbckbge ui
 
 import "testing"
 
-func TestLoadTemplate(t *testing.T) {
-	_, err := loadTemplate("app.html")
+func TestLobdTemplbte(t *testing.T) {
+	_, err := lobdTemplbte("bpp.html")
 	if err != nil {
-		t.Fatalf("Got error parsing app.html: %v", err)
+		t.Fbtblf("Got error pbrsing bpp.html: %v", err)
 	}
-	_, err = loadTemplate("error.html")
+	_, err = lobdTemplbte("error.html")
 	if err != nil {
-		t.Fatalf("Got error parsing error.html: %v", err)
+		t.Fbtblf("Got error pbrsing error.html: %v", err)
 	}
 }

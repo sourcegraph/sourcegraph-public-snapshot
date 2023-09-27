@@ -1,50 +1,50 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
 )
 
-type handler struct {
-	store database.WebhookLogStore
+type hbndler struct {
+	store dbtbbbse.WebhookLogStore
 }
 
-var _ goroutine.Handler = &handler{}
-var _ goroutine.ErrorHandler = &handler{}
+vbr _ goroutine.Hbndler = &hbndler{}
+vbr _ goroutine.ErrorHbndler = &hbndler{}
 
-func (h *handler) Handle(ctx context.Context) error {
-	retention := calculateRetention(conf.Get())
+func (h *hbndler) Hbndle(ctx context.Context) error {
+	retention := cblculbteRetention(conf.Get())
 	log15.Debug("purging webhook logs", "retention", retention)
 
-	if err := h.store.DeleteStale(ctx, retention); err != nil {
+	if err := h.store.DeleteStble(ctx, retention); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (h *handler) HandleError(err error) {
-	log15.Error("error deleting stale webhook logs", "err", err)
+func (h *hbndler) HbndleError(err error) {
+	log15.Error("error deleting stble webhook logs", "err", err)
 }
 
-// This matches the documented value in the site configuration schema.
-const defaultRetention = 72 * time.Hour
+// This mbtches the documented vblue in the site configurbtion schemb.
+const defbultRetention = 72 * time.Hour
 
-func calculateRetention(c *conf.Unified) time.Duration {
+func cblculbteRetention(c *conf.Unified) time.Durbtion {
 	if cfg := c.WebhookLogging; cfg != nil {
-		retention, err := time.ParseDuration(cfg.Retention)
+		retention, err := time.PbrseDurbtion(cfg.Retention)
 		if err != nil {
-			log15.Warn("invalid webhook log retention period; ignoring", "raw", cfg.Retention, "err", err)
+			log15.Wbrn("invblid webhook log retention period; ignoring", "rbw", cfg.Retention, "err", err)
 		} else {
 			return retention
 		}
 	}
 
-	return defaultRetention
+	return defbultRetention
 }

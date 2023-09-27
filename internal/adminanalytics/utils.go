@@ -1,72 +1,72 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	LastThreeMonths = "LAST_THREE_MONTHS"
-	LastMonth       = "LAST_MONTH"
-	LastWeek        = "LAST_WEEK"
-	Daily           = "DAILY"
+vbr (
+	LbstThreeMonths = "LAST_THREE_MONTHS"
+	LbstMonth       = "LAST_MONTH"
+	LbstWeek        = "LAST_WEEK"
+	Dbily           = "DAILY"
 	Weekly          = "WEEKLY"
 	timeNow         = time.Now
 )
 
-func makeDateParameters(dateRange string, grouping string, dateColumnName string) (*sqlf.Query, *sqlf.Query, error) {
+func mbkeDbtePbrbmeters(dbteRbnge string, grouping string, dbteColumnNbme string) (*sqlf.Query, *sqlf.Query, error) {
 	now := time.Now()
-	from, err := getFromDate(dateRange, now)
+	from, err := getFromDbte(dbteRbnge, now)
 	if err != nil {
 		return nil, nil, err
 	}
-	var groupBy string
+	vbr groupBy string
 
 	if grouping == Weekly {
 		groupBy = "week"
-	} else if grouping == Daily {
-		groupBy = "day"
+	} else if grouping == Dbily {
+		groupBy = "dby"
 	} else {
-		return nil, nil, errors.New("Invalid groupBy")
+		return nil, nil, errors.New("Invblid groupBy")
 	}
 
-	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s::date))`, groupBy, dateColumnName)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Format(time.RFC3339), now.Format(time.RFC3339)), nil
+	return sqlf.Sprintf(fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s::dbte))`, groupBy, dbteColumnNbme)), sqlf.Sprintf(`BETWEEN %s AND %s`, from.Formbt(time.RFC3339), now.Formbt(time.RFC3339)), nil
 }
 
-func getFromDate(dateRange string, now time.Time) (time.Time, error) {
-	if dateRange == LastThreeMonths {
-		return now.AddDate(0, -3, 0), nil
-	} else if dateRange == LastMonth {
-		return now.AddDate(0, -1, 0), nil
-	} else if dateRange == LastWeek {
-		return now.AddDate(0, 0, -7), nil
+func getFromDbte(dbteRbnge string, now time.Time) (time.Time, error) {
+	if dbteRbnge == LbstThreeMonths {
+		return now.AddDbte(0, -3, 0), nil
+	} else if dbteRbnge == LbstMonth {
+		return now.AddDbte(0, -1, 0), nil
+	} else if dbteRbnge == LbstWeek {
+		return now.AddDbte(0, 0, -7), nil
 	}
 
-	return now, errors.New("Invalid date range")
+	return now, errors.New("Invblid dbte rbnge")
 }
 
 const eventLogsNodesQuery = `
 SELECT
-	%s AS date,
-	COUNT(*) AS total_count,
-	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
+	%s AS dbte,
+	COUNT(*) AS totbl_count,
+	COUNT(DISTINCT CASE WHEN user_id = 0 THEN bnonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
 LEFT OUTER JOIN users ON users.id = event_logs.user_id
 %s
-GROUP BY date
+GROUP BY dbte
 `
 
-const eventLogsSummaryQuery = `
+const eventLogsSummbryQuery = `
 SELECT
-	COUNT(*) AS total_count,
-	COUNT(DISTINCT CASE WHEN user_id = 0 THEN anonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
+	COUNT(*) AS totbl_count,
+	COUNT(DISTINCT CASE WHEN user_id = 0 THEN bnonymous_user_id ELSE CAST(user_id AS TEXT) END) AS unique_users,
 	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
 	event_logs
@@ -74,49 +74,49 @@ LEFT OUTER JOIN users ON users.id = event_logs.user_id
 %s
 `
 
-func getDefaultConds() []*sqlf.Query {
-	commonConds := database.BuildCommonUsageConds(&database.CommonUsageOptions{
+func getDefbultConds() []*sqlf.Query {
+	commonConds := dbtbbbse.BuildCommonUsbgeConds(&dbtbbbse.CommonUsbgeOptions{
 		ExcludeSystemUsers:          true,
 		ExcludeNonActiveUsers:       true,
-		ExcludeSourcegraphAdmins:    true,
-		ExcludeSourcegraphOperators: true,
+		ExcludeSourcegrbphAdmins:    true,
+		ExcludeSourcegrbphOperbtors: true,
 	}, []*sqlf.Query{})
 
-	return append(commonConds, sqlf.Sprintf("anonymous_user_id != 'backend'"))
+	return bppend(commonConds, sqlf.Sprintf("bnonymous_user_id != 'bbckend'"))
 }
 
-func makeEventLogsQueries(dateRange string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, grouping, "timestamp")
+func mbkeEventLogsQueries(dbteRbnge string, grouping string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
+	dbteTruncExp, dbteBetweenCond, err := mbkeDbtePbrbmeters(dbteRbnge, grouping, "timestbmp")
 	if err != nil {
 		return nil, nil, err
 	}
 
-	conds := append(getDefaultConds(), sqlf.Sprintf("timestamp %s", dateBetweenCond))
+	conds := bppend(getDefbultConds(), sqlf.Sprintf("timestbmp %s", dbteBetweenCond))
 
 	if len(conditions) > 0 {
-		conds = append(conds, conditions...)
+		conds = bppend(conds, conditions...)
 	}
 
 	if len(events) > 0 {
-		var eventNames []*sqlf.Query
-		for _, name := range events {
-			eventNames = append(eventNames, sqlf.Sprintf("%s", name))
+		vbr eventNbmes []*sqlf.Query
+		for _, nbme := rbnge events {
+			eventNbmes = bppend(eventNbmes, sqlf.Sprintf("%s", nbme))
 		}
-		conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(eventNames, ",")))
+		conds = bppend(conds, sqlf.Sprintf("nbme IN (%s)", sqlf.Join(eventNbmes, ",")))
 	}
 
-	nodesQuery := sqlf.Sprintf(eventLogsNodesQuery, dateTruncExp, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
-	summaryQuery := sqlf.Sprintf(eventLogsSummaryQuery, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
+	nodesQuery := sqlf.Sprintf(eventLogsNodesQuery, dbteTruncExp, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
+	summbryQuery := sqlf.Sprintf(eventLogsSummbryQuery, sqlf.Sprintf("WHERE (%s)", sqlf.Join(conds, ") AND (")))
 
-	return nodesQuery, summaryQuery, nil
+	return nodesQuery, summbryQuery, nil
 }
 
-// getTimestamps returns the start and end timestamps for the given number of months.
-func getTimestamps(months int) (string, string) {
+// getTimestbmps returns the stbrt bnd end timestbmps for the given number of months.
+func getTimestbmps(months int) (string, string) {
 	now := timeNow().UTC()
-	to := now.Format(time.RFC3339)
-	prevMonth := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -months, 0)
-	from := prevMonth.Format(time.RFC3339)
+	to := now.Formbt(time.RFC3339)
+	prevMonth := time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDbte(0, -months, 0)
+	from := prevMonth.Formbt(time.RFC3339)
 
 	return from, to
 }

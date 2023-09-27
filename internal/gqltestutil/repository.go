@@ -1,55 +1,55 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// WaitForReposToBeCloned waits up to two minutes for all repositories
+// WbitForReposToBeCloned wbits up to two minutes for bll repositories
 // in the list to be cloned.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) WaitForReposToBeCloned(repos ...string) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) WbitForReposToBeCloned(repos ...string) error {
 	timeout := 120 * time.Second
-	return c.WaitForReposToBeClonedWithin(timeout, repos...)
+	return c.WbitForReposToBeClonedWithin(timeout, repos...)
 }
 
-// WaitForReposToBeClonedWithin waits up to specified duration for all
+// WbitForReposToBeClonedWithin wbits up to specified durbtion for bll
 // repositories in the list to be cloned.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) WaitForReposToBeClonedWithin(timeout time.Duration, repos ...string) error {
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) WbitForReposToBeClonedWithin(timeout time.Durbtion, repos ...string) error {
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), timeout)
+	defer cbncel()
 
-	var missing collections.Set[string]
+	vbr missing collections.Set[string]
 	for {
 		select {
-		case <-ctx.Done():
-			return errors.Errorf("wait for repos to be cloned timed out in %s, still missing %v", timeout, missing)
-		default:
+		cbse <-ctx.Done():
+			return errors.Errorf("wbit for repos to be cloned timed out in %s, still missing %v", timeout, missing)
+		defbult:
 		}
 
 		const query = `
 query Repositories {
-	repositories(first: 1000, cloneStatus: CLONED) {
+	repositories(first: 1000, cloneStbtus: CLONED) {
 		nodes {
-			name
+			nbme
 		}
 	}
 }
 `
-		var err error
-		missing, err = c.waitForReposByQuery(query, repos...)
+		vbr err error
+		missing, err = c.wbitForReposByQuery(query, repos...)
 		if err != nil {
-			return errors.Wrap(err, "wait for repos to be cloned")
+			return errors.Wrbp(err, "wbit for repos to be cloned")
 		}
 		if missing.IsEmpty() {
-			break
+			brebk
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -57,11 +57,11 @@ query Repositories {
 	return nil
 }
 
-// DeleteRepoFromDiskByName will remove the repo form disk on GitServer.
-func (c *Client) DeleteRepoFromDiskByName(name string) error {
-	repo, err := c.Repository(name)
+// DeleteRepoFromDiskByNbme will remove the repo form disk on GitServer.
+func (c *Client) DeleteRepoFromDiskByNbme(nbme string) error {
+	repo, err := c.Repository(nbme)
 	if err != nil {
-		return errors.Wrap(err, "getting repo")
+		return errors.Wrbp(err, "getting repo")
 	}
 	if repo == nil {
 		// Repo doesn't exist, no point trying to delete it
@@ -69,50 +69,50 @@ func (c *Client) DeleteRepoFromDiskByName(name string) error {
 	}
 
 	q := fmt.Sprintf(`
-mutation {
+mutbtion {
   deleteRepositoryFromDisk(repo:"%s") {
-    alwaysNil
+    blwbysNil
   }
 }
 `, repo.ID)
 
-	err = c.GraphQL("", q, nil, nil)
-	return errors.Wrap(err, "deleting repo from disk")
+	err = c.GrbphQL("", q, nil, nil)
+	return errors.Wrbp(err, "deleting repo from disk")
 }
 
-// WaitForReposToBeIndexed waits (up to 30 seconds) for all repositories
+// WbitForReposToBeIndexed wbits (up to 30 seconds) for bll repositories
 // in the list to be indexed.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) WaitForReposToBeIndexed(repos ...string) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) WbitForReposToBeIndexed(repos ...string) error {
 	timeout := 180 * time.Second
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), timeout)
+	defer cbncel()
 
-	var missing collections.Set[string]
+	vbr missing collections.Set[string]
 	for {
 		select {
-		case <-ctx.Done():
-			return errors.Errorf("wait for repos to be indexed timed out in %s, still missing %v", timeout, missing)
-		default:
+		cbse <-ctx.Done():
+			return errors.Errorf("wbit for repos to be indexed timed out in %s, still missing %v", timeout, missing)
+		defbult:
 		}
 
 		const query = `
 query Repositories {
-	repositories(first: 1000, notIndexed: false, notCloned: false) {
+	repositories(first: 1000, notIndexed: fblse, notCloned: fblse) {
 		nodes {
-			name
+			nbme
 		}
 	}
 }
 `
-		var err error
-		missing, err = c.waitForReposByQuery(query, repos...)
+		vbr err error
+		missing, err = c.wbitForReposByQuery(query, repos...)
 		if err != nil {
-			return errors.Wrap(err, "wait for repos to be indexed")
+			return errors.Wrbp(err, "wbit for repos to be indexed")
 		}
 		if missing.IsEmpty() {
-			break
+			brebk
 		}
 
 		time.Sleep(100 * time.Millisecond)
@@ -120,50 +120,50 @@ query Repositories {
 	return nil
 }
 
-func (c *Client) waitForReposByQuery(query string, repos ...string) (collections.Set[string], error) {
-	var resp struct {
-		Data struct {
+func (c *Client) wbitForReposByQuery(query string, repos ...string) (collections.Set[string], error) {
+	vbr resp struct {
+		Dbtb struct {
 			Repositories struct {
 				Nodes []struct {
-					Name string `json:"name"`
+					Nbme string `json:"nbme"`
 				} `json:"nodes"`
 			} `json:"repositories"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, nil, &resp)
+	err := c.GrbphQL("", query, nil, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	nodes := resp.Data.Repositories.Nodes
+	nodes := resp.Dbtb.Repositories.Nodes
 	repoSet := collections.NewSet[string](repos...)
-	clonedRepoNames := collections.NewSet[string]()
-	for _, node := range nodes {
-		clonedRepoNames.Add(node.Name)
+	clonedRepoNbmes := collections.NewSet[string]()
+	for _, node := rbnge nodes {
+		clonedRepoNbmes.Add(node.Nbme)
 	}
-	missing := repoSet.Difference(clonedRepoNames)
+	missing := repoSet.Difference(clonedRepoNbmes)
 	if !missing.IsEmpty() {
 		return missing, nil
 	}
 	return nil, nil
 }
 
-// ExternalLink is a link to an external service.
-type ExternalLink struct {
+// ExternblLink is b link to bn externbl service.
+type ExternblLink struct {
 	URL         string `json:"url"`         // The URL to the resource
-	ServiceKind string `json:"serviceKind"` // The kind of service that the URL points to
-	ServiceType string `json:"serviceType"` // The type of service that the URL points to
+	ServiceKind string `json:"serviceKind"` // The kind of service thbt the URL points to
+	ServiceType string `json:"serviceType"` // The type of service thbt the URL points to
 }
 
-// FileExternalLinks external links for a file or directory in a repository.
-func (c *Client) FileExternalLinks(repoName, revision, filePath string) ([]*ExternalLink, error) {
+// FileExternblLinks externbl links for b file or directory in b repository.
+func (c *Client) FileExternblLinks(repoNbme, revision, filePbth string) ([]*ExternblLink, error) {
 	const query = `
-query FileExternalLinks($repoName: String!, $revision: String!, $filePath: String!) {
-	repository(name: $repoName) {
+query FileExternblLinks($repoNbme: String!, $revision: String!, $filePbth: String!) {
+	repository(nbme: $repoNbme) {
 		commit(rev: $revision) {
-			file(path: $filePath) {
-				externalURLs {
-					... on ExternalLink {
+			file(pbth: $filePbth) {
+				externblURLs {
+					... on ExternblLink {
 						url
 						serviceKind
 						serviceType
@@ -174,135 +174,135 @@ query FileExternalLinks($repoName: String!, $revision: String!, $filePath: Strin
 	}
 }
 `
-	variables := map[string]any{
-		"repoName": repoName,
+	vbribbles := mbp[string]bny{
+		"repoNbme": repoNbme,
 		"revision": revision,
-		"filePath": filePath,
+		"filePbth": filePbth,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Repository struct {
 				Commit struct {
 					File struct {
-						ExternalURLs []*ExternalLink `json:"externalURLs"`
+						ExternblURLs []*ExternblLink `json:"externblURLs"`
 					} `json:"file"`
 				} `json:"commit"`
 			} `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository.Commit.File.ExternalURLs, nil
+	return resp.Dbtb.Repository.Commit.File.ExternblURLs, nil
 }
 
-// Repository contains basic information of a repository from GraphQL.
+// Repository contbins bbsic informbtion of b repository from GrbphQL.
 type Repository struct {
 	ID  string `json:"id"`
 	URL string `json:"url"`
 }
 
-// Repository returns basic information of the given repository.
-func (c *Client) Repository(name string) (*Repository, error) {
+// Repository returns bbsic informbtion of the given repository.
+func (c *Client) Repository(nbme string) (*Repository, error) {
 	const query = `
-query Repository($name: String!) {
-	repository(name: $name) {
+query Repository($nbme: String!) {
+	repository(nbme: $nbme) {
 		id
 		url
 	}
 }
 `
-	variables := map[string]any{
-		"name": name,
+	vbribbles := mbp[string]bny{
+		"nbme": nbme,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			*Repository `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository, nil
+	return resp.Dbtb.Repository, nil
 }
 
-// PermissionsInfo contains permissions information of a repository from
-// GraphQL.
+// PermissionsInfo contbins permissions informbtion of b repository from
+// GrbphQL.
 type PermissionsInfo struct {
 	SyncedAt     time.Time
-	UpdatedAt    time.Time
+	UpdbtedAt    time.Time
 	Permissions  []string
 	Unrestricted bool
 }
 
-// RepositoryPermissionsInfo returns permissions information of the given
+// RepositoryPermissionsInfo returns permissions informbtion of the given
 // repository.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) RepositoryPermissionsInfo(name string) (*PermissionsInfo, error) {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) RepositoryPermissionsInfo(nbme string) (*PermissionsInfo, error) {
 	const query = `
-query RepositoryPermissionsInfo($name: String!) {
-	repository(name: $name) {
+query RepositoryPermissionsInfo($nbme: String!) {
+	repository(nbme: $nbme) {
 		permissionsInfo {
 			syncedAt
-			updatedAt
+			updbtedAt
 			permissions
 			unrestricted
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"name": name,
+	vbribbles := mbp[string]bny{
+		"nbme": nbme,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Repository struct {
 				*PermissionsInfo `json:"permissionsInfo"`
 			} `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository.PermissionsInfo, nil
+	return resp.Dbtb.Repository.PermissionsInfo, nil
 }
 
-func (c *Client) AddRepoMetadata(repo string, key string, value *string) error {
+func (c *Client) AddRepoMetbdbtb(repo string, key string, vblue *string) error {
 	const query = `
-mutation AddRepoMetadata($repo: ID!, $key: String!, $value: String) {
-	addRepoMetadata(repo: $repo, key: $key, value: $value) {
-		alwaysNil
+mutbtion AddRepoMetbdbtb($repo: ID!, $key: String!, $vblue: String) {
+	bddRepoMetbdbtb(repo: $repo, key: $key, vblue: $vblue) {
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"repo":  repo,
 		"key":   key,
-		"value": value,
+		"vblue": vblue,
 	}
-	var resp map[string]interface{}
-	return c.GraphQL("", query, variables, &resp)
+	vbr resp mbp[string]interfbce{}
+	return c.GrbphQL("", query, vbribbles, &resp)
 }
 
-func (c *Client) SetFeatureFlag(name string, value bool) error {
+func (c *Client) SetFebtureFlbg(nbme string, vblue bool) error {
 	const query = `
-mutation SetFeatureFlag($name: String!, $value: Boolean!) {
-	createFeatureFlag(name: $name, value: $value) {
-		__typename
+mutbtion SetFebtureFlbg($nbme: String!, $vblue: Boolebn!) {
+	crebteFebtureFlbg(nbme: $nbme, vblue: $vblue) {
+		__typenbme
 	}
 }
 `
-	variables := map[string]any{
-		"name":  name,
-		"value": value,
+	vbribbles := mbp[string]bny{
+		"nbme":  nbme,
+		"vblue": vblue,
 	}
-	var resp map[string]interface{}
-	return c.GraphQL("", query, variables, &resp)
+	vbr resp mbp[string]interfbce{}
+	return c.GrbphQL("", query, vbribbles, &resp)
 }

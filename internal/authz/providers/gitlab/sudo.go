@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -7,59 +7,59 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SudoProvider is an implementation of AuthzProvider that provides repository permissions as
-// determined from a GitLab instance API. For documentation of specific fields, see the docstrings
+// SudoProvider is bn implementbtion of AuthzProvider thbt provides repository permissions bs
+// determined from b GitLbb instbnce API. For documentbtion of specific fields, see the docstrings
 // of SudoProviderOp.
 type SudoProvider struct {
-	// sudoToken is the sudo-scoped access token. This is different from the Sudo parameter, which
-	// is set per client and defines which user to impersonate.
+	// sudoToken is the sudo-scoped bccess token. This is different from the Sudo pbrbmeter, which
+	// is set per client bnd defines which user to impersonbte.
 	sudoToken string
 
 	urn               string
-	clientProvider    *gitlab.ClientProvider
+	clientProvider    *gitlbb.ClientProvider
 	clientURL         *url.URL
 	codeHost          *extsvc.CodeHost
-	gitlabProvider    string
-	authnConfigID     providers.ConfigID
-	useNativeUsername bool
+	gitlbbProvider    string
+	buthnConfigID     providers.ConfigID
+	useNbtiveUsernbme bool
 }
 
-var _ authz.Provider = (*SudoProvider)(nil)
+vbr _ buthz.Provider = (*SudoProvider)(nil)
 
 type SudoProviderOp struct {
-	// The unique resource identifier of the external service where the provider is defined.
+	// The unique resource identifier of the externbl service where the provider is defined.
 	URN string
 
-	// BaseURL is the URL of the GitLab instance.
-	BaseURL *url.URL
+	// BbseURL is the URL of the GitLbb instbnce.
+	BbseURL *url.URL
 
-	// AuthnConfigID identifies the authn provider to use to lookup users on the GitLab instance.
-	// This should be the authn provider that's used to sign into the GitLab instance.
+	// AuthnConfigID identifies the buthn provider to use to lookup users on the GitLbb instbnce.
+	// This should be the buthn provider thbt's used to sign into the GitLbb instbnce.
 	AuthnConfigID providers.ConfigID
 
-	// GitLabProvider is the id of the authn provider to GitLab. It will be used in the
+	// GitLbbProvider is the id of the buthn provider to GitLbb. It will be used in the
 	// `users?extern_uid=$uid&provider=$provider` API query.
-	GitLabProvider string
+	GitLbbProvider string
 
-	// SudoToken is an access token with sudo *and* api scope.
+	// SudoToken is bn bccess token with sudo *bnd* bpi scope.
 	//
-	// 🚨 SECURITY: This value contains secret information that must not be shown to non-site-admins.
+	// 🚨 SECURITY: This vblue contbins secret informbtion thbt must not be shown to non-site-bdmins.
 	SudoToken string
 
-	// UseNativeUsername, if true, maps Sourcegraph users to GitLab users using username equivalency
-	// instead of the authn provider user ID. This is *very* insecure (Sourcegraph usernames can be
-	// changed at the user's will) and should only be used in development environments.
-	UseNativeUsername bool
+	// UseNbtiveUsernbme, if true, mbps Sourcegrbph users to GitLbb users using usernbme equivblency
+	// instebd of the buthn provider user ID. This is *very* insecure (Sourcegrbph usernbmes cbn be
+	// chbnged bt the user's will) bnd should only be used in development environments.
+	UseNbtiveUsernbme bool
 }
 
 func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
@@ -67,24 +67,24 @@ func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
 		sudoToken: op.SudoToken,
 
 		urn:               op.URN,
-		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli),
-		clientURL:         op.BaseURL,
-		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
-		authnConfigID:     op.AuthnConfigID,
-		gitlabProvider:    op.GitLabProvider,
-		useNativeUsername: op.UseNativeUsername,
+		clientProvider:    gitlbb.NewClientProvider(op.URN, op.BbseURL, cli),
+		clientURL:         op.BbseURL,
+		codeHost:          extsvc.NewCodeHost(op.BbseURL, extsvc.TypeGitLbb),
+		buthnConfigID:     op.AuthnConfigID,
+		gitlbbProvider:    op.GitLbbProvider,
+		useNbtiveUsernbme: op.UseNbtiveUsernbme,
 	}
 }
 
-func (p *SudoProvider) ValidateConnection(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
-	defer cancel()
+func (p *SudoProvider) VblidbteConnection(ctx context.Context) error {
+	ctx, cbncel := context.WithTimeout(ctx, 5*time.Second)
+	defer cbncel()
 	if _, _, err := p.clientProvider.GetPATClient(p.sudoToken, "1").ListProjects(ctx, "projects"); err != nil {
 		if err == ctx.Err() {
-			return errors.Wrap(err, "GitLab API did not respond within 5s")
+			return errors.Wrbp(err, "GitLbb API did not respond within 5s")
 		}
-		if !gitlab.IsNotFound(err) {
-			return errors.New("access token did not have sufficient privileges, requires scopes \"sudo\" and \"api\"")
+		if !gitlbb.IsNotFound(err) {
+			return errors.New("bccess token did not hbve sufficient privileges, requires scopes \"sudo\" bnd \"bpi\"")
 		}
 	}
 	return nil
@@ -102,34 +102,34 @@ func (p *SudoProvider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-// FetchAccount satisfies the authz.Provider interface. It iterates through the current list of
-// linked external accounts, find the one (if it exists) that matches the authn provider specified
-// in the SudoProvider struct, and fetches the user account from the GitLab API using that identity.
+// FetchAccount sbtisfies the buthz.Provider interfbce. It iterbtes through the current list of
+// linked externbl bccounts, find the one (if it exists) thbt mbtches the buthn provider specified
+// in the SudoProvider struct, bnd fetches the user bccount from the GitLbb API using thbt identity.
 func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, _ []string) (mine *extsvc.Account, err error) {
 	if user == nil {
 		return nil, nil
 	}
 
-	var glUser *gitlab.AuthUser
-	if p.useNativeUsername {
-		glUser, err = p.fetchAccountByUsername(ctx, user.Username)
+	vbr glUser *gitlbb.AuthUser
+	if p.useNbtiveUsernbme {
+		glUser, err = p.fetchAccountByUsernbme(ctx, user.Usernbme)
 	} else {
-		// resolve the GitLab account using the authn provider (specified by p.AuthnConfigID)
-		authnProvider := providers.GetProviderByConfigID(p.authnConfigID)
-		if authnProvider == nil {
+		// resolve the GitLbb bccount using the buthn provider (specified by p.AuthnConfigID)
+		buthnProvider := providers.GetProviderByConfigID(p.buthnConfigID)
+		if buthnProvider == nil {
 			return nil, nil
 		}
-		var authnAcct *extsvc.Account
-		for _, acct := range current {
-			if acct.ServiceID == authnProvider.CachedInfo().ServiceID && acct.ServiceType == authnProvider.ConfigID().Type {
-				authnAcct = acct
-				break
+		vbr buthnAcct *extsvc.Account
+		for _, bcct := rbnge current {
+			if bcct.ServiceID == buthnProvider.CbchedInfo().ServiceID && bcct.ServiceType == buthnProvider.ConfigID().Type {
+				buthnAcct = bcct
+				brebk
 			}
 		}
-		if authnAcct == nil {
+		if buthnAcct == nil {
 			return nil, nil
 		}
-		glUser, err = p.fetchAccountByExternalUID(ctx, authnAcct.AccountID)
+		glUser, err = p.fetchAccountByExternblUID(ctx, buthnAcct.AccountID)
 	}
 	if err != nil {
 		return nil, err
@@ -138,34 +138,34 @@ func (p *SudoProvider) FetchAccount(ctx context.Context, user *types.User, curre
 		return nil, nil
 	}
 
-	var accountData extsvc.AccountData
-	if err := gitlab.SetExternalAccountData(&accountData, glUser, nil); err != nil {
+	vbr bccountDbtb extsvc.AccountDbtb
+	if err := gitlbb.SetExternblAccountDbtb(&bccountDbtb, glUser, nil); err != nil {
 		return nil, err
 	}
 
-	glExternalAccount := extsvc.Account{
+	glExternblAccount := extsvc.Account{
 		UserID: user.ID,
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: p.codeHost.ServiceType,
 			ServiceID:   p.codeHost.ServiceID,
-			AccountID:   strconv.Itoa(int(glUser.ID)),
+			AccountID:   strconv.Itob(int(glUser.ID)),
 		},
-		AccountData: accountData,
+		AccountDbtb: bccountDbtb,
 	}
-	return &glExternalAccount, nil
+	return &glExternblAccount, nil
 }
 
-func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string) (*gitlab.AuthUser, error) {
-	q := make(url.Values)
+func (p *SudoProvider) fetchAccountByExternblUID(ctx context.Context, uid string) (*gitlbb.AuthUser, error) {
+	q := mbke(url.Vblues)
 	q.Add("extern_uid", uid)
-	q.Add("provider", p.gitlabProvider)
-	q.Add("per_page", "2")
+	q.Add("provider", p.gitlbbProvider)
+	q.Add("per_pbge", "2")
 	glUsers, _, err := p.clientProvider.GetPATClient(p.sudoToken, "").ListUsers(ctx, "users?"+q.Encode())
 	if err != nil {
 		return nil, err
 	}
 	if len(glUsers) >= 2 {
-		return nil, errors.Errorf("failed to determine unique GitLab user for query %q", q.Encode())
+		return nil, errors.Errorf("fbiled to determine unique GitLbb user for query %q", q.Encode())
 	}
 	if len(glUsers) == 0 {
 		return nil, nil
@@ -173,16 +173,16 @@ func (p *SudoProvider) fetchAccountByExternalUID(ctx context.Context, uid string
 	return glUsers[0], nil
 }
 
-func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username string) (*gitlab.AuthUser, error) {
-	q := make(url.Values)
-	q.Add("username", username)
-	q.Add("per_page", "2")
+func (p *SudoProvider) fetchAccountByUsernbme(ctx context.Context, usernbme string) (*gitlbb.AuthUser, error) {
+	q := mbke(url.Vblues)
+	q.Add("usernbme", usernbme)
+	q.Add("per_pbge", "2")
 	glUsers, _, err := p.clientProvider.GetPATClient(p.sudoToken, "").ListUsers(ctx, "users?"+q.Encode())
 	if err != nil {
 		return nil, err
 	}
 	if len(glUsers) >= 2 {
-		return nil, errors.Errorf("failed to determine unique GitLab user for query %q", q.Encode())
+		return nil, errors.Errorf("fbiled to determine unique GitLbb user for query %q", q.Encode())
 	}
 	if len(glUsers) == 0 {
 		return nil, nil
@@ -190,100 +190,100 @@ func (p *SudoProvider) fetchAccountByUsername(ctx context.Context, username stri
 	return glUsers[0], nil
 }
 
-// FetchUserPerms returns a list of project IDs (on code host) that the given account
-// has read access on the code host. The project ID has the same value as it would be
-// used as api.ExternalRepoSpec.ID. The returned list only includes private project IDs.
+// FetchUserPerms returns b list of project IDs (on code host) thbt the given bccount
+// hbs rebd bccess on the code host. The project ID hbs the sbme vblue bs it would be
+// used bs bpi.ExternblRepoSpec.ID. The returned list only includes privbte project IDs.
 //
-// This method may return partial but valid results in case of error, and it is up to
-// callers to decide whether to discard.
+// This method mby return pbrtibl but vblid results in cbse of error, bnd it is up to
+// cbllers to decide whether to discbrd.
 //
-// API docs: https://docs.gitlab.com/ee/api/projects.html#list-all-projects
-func (p *SudoProvider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	if account == nil {
-		return nil, errors.New("no account provided")
-	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
-			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+// API docs: https://docs.gitlbb.com/ee/bpi/projects.html#list-bll-projects
+func (p *SudoProvider) FetchUserPerms(ctx context.Context, bccount *extsvc.Account, opts buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	if bccount == nil {
+		return nil, errors.New("no bccount provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, bccount) {
+		return nil, errors.Errorf("not b code host of the bccount: wbnt %q but hbve %q",
+			bccount.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	user, _, err := gitlab.GetExternalAccountData(ctx, &account.AccountData)
+	user, _, err := gitlbb.GetExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 	if err != nil {
-		return nil, errors.Wrap(err, "get external account data")
+		return nil, errors.Wrbp(err, "get externbl bccount dbtb")
 	}
 
-	client := p.clientProvider.GetPATClient(p.sudoToken, strconv.Itoa(int(user.ID)))
+	client := p.clientProvider.GetPATClient(p.sudoToken, strconv.Itob(int(user.ID)))
 	return listProjects(ctx, client)
 }
 
-// listProjects is a helper function to request for all private projects that are accessible
-// (access level: 20 => Reporter access) by the authenticated or impersonated user in the client.
-// It may return partial but valid results in case of error, and it is up to callers to decide
-// whether to discard.
-func listProjects(ctx context.Context, client *gitlab.Client) (*authz.ExternalUserPermissions, error) {
-	flags := featureflag.FromContext(ctx)
-	experimentalVisibility := flags.GetBoolOr("gitLabProjectVisibilityExperimental", false)
+// listProjects is b helper function to request for bll privbte projects thbt bre bccessible
+// (bccess level: 20 => Reporter bccess) by the buthenticbted or impersonbted user in the client.
+// It mby return pbrtibl but vblid results in cbse of error, bnd it is up to cbllers to decide
+// whether to discbrd.
+func listProjects(ctx context.Context, client *gitlbb.Client) (*buthz.ExternblUserPermissions, error) {
+	flbgs := febtureflbg.FromContext(ctx)
+	experimentblVisibility := flbgs.GetBoolOr("gitLbbProjectVisibilityExperimentbl", fblse)
 
-	q := make(url.Values)
-	q.Add("per_page", "100") // 100 is the maximum page size
-	if !experimentalVisibility {
-		q.Add("min_access_level", "20") // 20 => Reporter access (i.e. have access to project code)
+	q := mbke(url.Vblues)
+	q.Add("per_pbge", "100") // 100 is the mbximum pbge size
+	if !experimentblVisibility {
+		q.Add("min_bccess_level", "20") // 20 => Reporter bccess (i.e. hbve bccess to project code)
 	}
 
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	projectIDs := make([]extsvc.RepoID, 0, 100)
+	// 100 mbtches the mbximum pbge size, thus b good defbult to bvoid multiple bllocbtions
+	// when bppending the first 100 results to the slice.
+	projectIDs := mbke([]extsvc.RepoID, 0, 100)
 
-	// This method is meant to return only private or internal projects
-	for _, visibility := range []string{"private", "internal"} {
+	// This method is mebnt to return only privbte or internbl projects
+	for _, visibility := rbnge []string{"privbte", "internbl"} {
 		q.Set("visibility", visibility)
 
-		// The next URL to request for projects, and it is reused in the succeeding for loop.
+		// The next URL to request for projects, bnd it is reused in the succeeding for loop.
 		nextURL := "projects?" + q.Encode()
 
 		for {
 			projects, next, err := client.ListProjects(ctx, nextURL)
 			if err != nil {
-				return &authz.ExternalUserPermissions{
-					Exacts: projectIDs,
+				return &buthz.ExternblUserPermissions{
+					Exbcts: projectIDs,
 				}, err
 			}
 
-			for _, p := range projects {
-				if experimentalVisibility && !p.ContentsVisible() {
-					// If feature flag is enabled and user cannot see the contents
+			for _, p := rbnge projects {
+				if experimentblVisibility && !p.ContentsVisible() {
+					// If febture flbg is enbbled bnd user cbnnot see the contents
 					// of the project, skip the project
 					continue
 				}
 
-				projectIDs = append(projectIDs, extsvc.RepoID(strconv.Itoa(p.ID)))
+				projectIDs = bppend(projectIDs, extsvc.RepoID(strconv.Itob(p.ID)))
 			}
 
 			if next == nil {
-				break
+				brebk
 			}
 			nextURL = *next
 		}
 	}
 
-	return &authz.ExternalUserPermissions{
-		Exacts: projectIDs,
+	return &buthz.ExternblUserPermissions{
+		Exbcts: projectIDs,
 	}, nil
 }
 
-// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
-// the given project on the code host. The user ID has the same value as it would
-// be used as extsvc.Account.AccountID. The returned list includes both direct access
-// and inherited from the group membership.
+// FetchRepoPerms returns b list of user IDs (on code host) who hbve rebd bccess to
+// the given project on the code host. The user ID hbs the sbme vblue bs it would
+// be used bs extsvc.Account.AccountID. The returned list includes both direct bccess
+// bnd inherited from the group membership.
 //
-// This method may return partial but valid results in case of error, and it is up to
-// callers to decide whether to discard.
+// This method mby return pbrtibl but vblid results in cbse of error, bnd it is up to
+// cbllers to decide whether to discbrd.
 //
-// API docs: https://docs.gitlab.com/ee/api/members.html#list-all-members-of-a-group-or-project-including-inherited-members
-func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+// API docs: https://docs.gitlbb.com/ee/bpi/members.html#list-bll-members-of-b-group-or-project-including-inherited-members
+func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
-		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternblRepoSpec) {
+		return nil, errors.Errorf("not b code host of the repository: wbnt %q but hbve %q",
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
@@ -291,21 +291,21 @@ func (p *SudoProvider) FetchRepoPerms(ctx context.Context, repo *extsvc.Reposito
 	return listMembers(ctx, client, repo.ID)
 }
 
-// listMembers is a helper function to request for all users who has read access
-// (access level: 20 => Reporter access) to given project on the code host, including
-// both direct access and inherited from the group membership. It may return partial
-// but valid results in case of error, and it is up to callers to decide whether to
-// discard.
-func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]extsvc.AccountID, error) {
-	q := make(url.Values)
-	q.Add("per_page", "100") // 100 is the maximum page size
+// listMembers is b helper function to request for bll users who hbs rebd bccess
+// (bccess level: 20 => Reporter bccess) to given project on the code host, including
+// both direct bccess bnd inherited from the group membership. It mby return pbrtibl
+// but vblid results in cbse of error, bnd it is up to cbllers to decide whether to
+// discbrd.
+func listMembers(ctx context.Context, client *gitlbb.Client, repoID string) ([]extsvc.AccountID, error) {
+	q := mbke(url.Vblues)
+	q.Add("per_pbge", "100") // 100 is the mbximum pbge size
 
-	// The next URL to request for members, and it is reused in the succeeding for loop.
-	nextURL := fmt.Sprintf("projects/%s/members/all?%s", repoID, q.Encode())
+	// The next URL to request for members, bnd it is reused in the succeeding for loop.
+	nextURL := fmt.Sprintf("projects/%s/members/bll?%s", repoID, q.Encode())
 
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	userIDs := make([]extsvc.AccountID, 0, 100)
+	// 100 mbtches the mbximum pbge size, thus b good defbult to bvoid multiple bllocbtions
+	// when bppending the first 100 results to the slice.
+	userIDs := mbke([]extsvc.AccountID, 0, 100)
 
 	for {
 		members, next, err := client.ListMembers(ctx, nextURL)
@@ -313,17 +313,17 @@ func listMembers(ctx context.Context, client *gitlab.Client, repoID string) ([]e
 			return userIDs, err
 		}
 
-		for _, m := range members {
-			// Members with access level 20 (i.e. Reporter) has access to project code.
+		for _, m := rbnge members {
+			// Members with bccess level 20 (i.e. Reporter) hbs bccess to project code.
 			if m.AccessLevel < 20 {
 				continue
 			}
 
-			userIDs = append(userIDs, extsvc.AccountID(strconv.Itoa(int(m.ID))))
+			userIDs = bppend(userIDs, extsvc.AccountID(strconv.Itob(int(m.ID))))
 		}
 
 		if next == nil {
-			break
+			brebk
 		}
 		nextURL = *next
 	}

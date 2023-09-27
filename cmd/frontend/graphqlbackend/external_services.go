@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -9,109 +9,109 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func externalServicesWritable() error {
-	if envvar.ExtsvcConfigFile() != "" && !envvar.ExtsvcConfigAllowEdits() {
-		return errors.New("adding external service not allowed when using EXTSVC_CONFIG_FILE")
+func externblServicesWritbble() error {
+	if envvbr.ExtsvcConfigFile() != "" && !envvbr.ExtsvcConfigAllowEdits() {
+		return errors.New("bdding externbl service not bllowed when using EXTSVC_CONFIG_FILE")
 	}
 	return nil
 }
 
-const syncExternalServiceTimeout = 15 * time.Second
+const syncExternblServiceTimeout = 15 * time.Second
 
-type addExternalServiceArgs struct {
-	Input addExternalServiceInput
+type bddExternblServiceArgs struct {
+	Input bddExternblServiceInput
 }
 
-type addExternalServiceInput struct {
+type bddExternblServiceInput struct {
 	Kind        string
-	DisplayName string
+	DisplbyNbme string
 	Config      string
-	Namespace   *graphql.ID
+	Nbmespbce   *grbphql.ID
 }
 
-func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExternalServiceArgs) (*externalServiceResolver, error) {
-	start := time.Now()
-	// 🚨 SECURITY: Only site admins may add external services. User's external services are not supported anymore.
-	var err error
-	defer reportExternalServiceDuration(start, Add, &err)
+func (r *schembResolver) AddExternblService(ctx context.Context, brgs *bddExternblServiceArgs) (*externblServiceResolver, error) {
+	stbrt := time.Now()
+	// 🚨 SECURITY: Only site bdmins mby bdd externbl services. User's externbl services bre not supported bnymore.
+	vbr err error
+	defer reportExternblServiceDurbtion(stbrt, Add, &err)
 
-	if err := externalServicesWritable(); err != nil {
+	if err := externblServicesWritbble(); err != nil {
 		return nil, err
 	}
 
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		err = auth.ErrMustBeSiteAdmin
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		err = buth.ErrMustBeSiteAdmin
 		return nil, err
 	}
 
-	externalService := &types.ExternalService{
-		Kind:        args.Input.Kind,
-		DisplayName: args.Input.DisplayName,
-		Config:      extsvc.NewUnencryptedConfig(args.Input.Config),
+	externblService := &types.ExternblService{
+		Kind:        brgs.Input.Kind,
+		DisplbyNbme: brgs.Input.DisplbyNbme,
+		Config:      extsvc.NewUnencryptedConfig(brgs.Input.Config),
 	}
 
-	if err = r.db.ExternalServices().Create(ctx, conf.Get, externalService); err != nil {
+	if err = r.db.ExternblServices().Crebte(ctx, conf.Get, externblService); err != nil {
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, externalService, syncExternalServiceTimeout); err != nil {
-		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
+	res := &externblServiceResolver{logger: r.logger.Scoped("externblServiceResolver", ""), db: r.db, externblService: externblService}
+	if err = bbckend.NewExternblServices(r.logger, r.db, r.repoupdbterClient).SyncExternblService(ctx, externblService, syncExternblServiceTimeout); err != nil {
+		res.wbrning = fmt.Sprintf("Externbl service crebted, but we encountered b problem while vblidbting the externbl service: %s", err)
 	}
 
 	return res, nil
 }
 
-type updateExternalServiceArgs struct {
-	Input updateExternalServiceInput
+type updbteExternblServiceArgs struct {
+	Input updbteExternblServiceInput
 }
 
-type updateExternalServiceInput struct {
-	ID          graphql.ID
-	DisplayName *string
+type updbteExternblServiceInput struct {
+	ID          grbphql.ID
+	DisplbyNbme *string
 	Config      *string
 }
 
-func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *updateExternalServiceArgs) (*externalServiceResolver, error) {
-	start := time.Now()
-	var err error
-	defer reportExternalServiceDuration(start, Update, &err)
+func (r *schembResolver) UpdbteExternblService(ctx context.Context, brgs *updbteExternblServiceArgs) (*externblServiceResolver, error) {
+	stbrt := time.Now()
+	vbr err error
+	defer reportExternblServiceDurbtion(stbrt, Updbte, &err)
 
-	if err := externalServicesWritable(); err != nil {
+	if err := externblServicesWritbble(); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	id, err := UnmarshalExternalServiceID(args.Input.ID)
+	id, err := UnmbrshblExternblServiceID(brgs.Input.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	es, err := r.db.ExternblServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -121,22 +121,22 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	if args.Input.Config != nil && strings.TrimSpace(*args.Input.Config) == "" {
-		err = errors.New("blank external service configuration is invalid (must be valid JSONC)")
+	if brgs.Input.Config != nil && strings.TrimSpbce(*brgs.Input.Config) == "" {
+		err = errors.New("blbnk externbl service configurbtion is invblid (must be vblid JSONC)")
 		return nil, err
 	}
 
 	ps := conf.Get().AuthProviders
-	update := &database.ExternalServiceUpdate{
-		DisplayName: args.Input.DisplayName,
-		Config:      args.Input.Config,
+	updbte := &dbtbbbse.ExternblServiceUpdbte{
+		DisplbyNbme: brgs.Input.DisplbyNbme,
+		Config:      brgs.Input.Config,
 	}
-	if err = r.db.ExternalServices().Update(ctx, ps, id, update); err != nil {
+	if err = r.db.ExternblServices().Updbte(ctx, ps, id, updbte); err != nil {
 		return nil, err
 	}
 
-	// Fetch from database again to get all fields with updated values.
-	es, err = r.db.ExternalServices().GetByID(ctx, id)
+	// Fetch from dbtbbbse bgbin to get bll fields with updbted vblues.
+	es, err = r.db.ExternblServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -145,88 +145,88 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
+	res := &externblServiceResolver{logger: r.logger.Scoped("externblServiceResolver", ""), db: r.db, externblService: es}
 
 	if oldConfig != newConfig {
-		if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).SyncExternalService(ctx, es, syncExternalServiceTimeout); err != nil {
-			res.warning = fmt.Sprintf("External service updated, but we encountered a problem while validating the external service: %s", err)
+		if err = bbckend.NewExternblServices(r.logger, r.db, r.repoupdbterClient).SyncExternblService(ctx, es, syncExternblServiceTimeout); err != nil {
+			res.wbrning = fmt.Sprintf("Externbl service updbted, but we encountered b problem while vblidbting the externbl service: %s", err)
 		}
 	}
 
 	return res, nil
 }
 
-type excludeRepoFromExternalServiceArgs struct {
-	ExternalServices []graphql.ID
-	Repo             graphql.ID
+type excludeRepoFromExternblServiceArgs struct {
+	ExternblServices []grbphql.ID
+	Repo             grbphql.ID
 }
 
-// ExcludeRepoFromExternalServices excludes the given repo from the given external service configs.
-func (r *schemaResolver) ExcludeRepoFromExternalServices(ctx context.Context, args *excludeRepoFromExternalServiceArgs) (*EmptyResponse, error) {
-	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+// ExcludeRepoFromExternblServices excludes the given repo from the given externbl service configs.
+func (r *schembResolver) ExcludeRepoFromExternblServices(ctx context.Context, brgs *excludeRepoFromExternblServiceArgs) (*EmptyResponse, error) {
+	// 🚨 SECURITY: check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	extSvcIDs := make([]int64, 0, len(args.ExternalServices))
-	for _, externalServiceID := range args.ExternalServices {
-		extSvcID, err := UnmarshalExternalServiceID(externalServiceID)
+	extSvcIDs := mbke([]int64, 0, len(brgs.ExternblServices))
+	for _, externblServiceID := rbnge brgs.ExternblServices {
+		extSvcID, err := UnmbrshblExternblServiceID(externblServiceID)
 		if err != nil {
 			return nil, err
 		}
-		extSvcIDs = append(extSvcIDs, extSvcID)
+		extSvcIDs = bppend(extSvcIDs, extSvcID)
 	}
 
-	repositoryID, err := UnmarshalRepositoryID(args.Repo)
+	repositoryID, err := UnmbrshblRepositoryID(brgs.Repo)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = backend.NewExternalServices(r.logger, r.db, r.repoupdaterClient).ExcludeRepoFromExternalServices(ctx, extSvcIDs, repositoryID); err != nil {
+	if err = bbckend.NewExternblServices(r.logger, r.db, r.repoupdbterClient).ExcludeRepoFromExternblServices(ctx, extSvcIDs, repositoryID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
 }
 
-type deleteExternalServiceArgs struct {
-	ExternalService graphql.ID
+type deleteExternblServiceArgs struct {
+	ExternblService grbphql.ID
 	Async           bool
 }
 
-func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *deleteExternalServiceArgs) (*EmptyResponse, error) {
-	start := time.Now()
-	var err error
-	defer reportExternalServiceDuration(start, Delete, &err)
+func (r *schembResolver) DeleteExternblService(ctx context.Context, brgs *deleteExternblServiceArgs) (*EmptyResponse, error) {
+	stbrt := time.Now()
+	vbr err error
+	defer reportExternblServiceDurbtion(stbrt, Delete, &err)
 
-	if err := externalServicesWritable(); err != nil {
+	if err := externblServicesWritbble(); err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	id, err := UnmarshalExternalServiceID(args.ExternalService)
+	id, err := UnmbrshblExternblServiceID(brgs.ExternblService)
 	if err != nil {
 		return nil, err
 	}
 
-	// Load external service to make sure it exists
-	_, err = r.db.ExternalServices().GetByID(ctx, id)
+	// Lobd externbl service to mbke sure it exists
+	_, err = r.db.ExternblServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	if args.Async {
-		// run deletion in the background and return right away
+	if brgs.Async {
+		// run deletion in the bbckground bnd return right bwby
 		go func() {
-			if err := r.db.ExternalServices().Delete(context.Background(), id); err != nil {
-				r.logger.Error("Background external service deletion failed", log.Error(err))
+			if err := r.db.ExternblServices().Delete(context.Bbckground(), id); err != nil {
+				r.logger.Error("Bbckground externbl service deletion fbiled", log.Error(err))
 			}
 		}()
 	} else {
-		if err := r.db.ExternalServices().Delete(ctx, id); err != nil {
+		if err := r.db.ExternblServices().Delete(ctx, id); err != nil {
 			return nil, err
 		}
 	}
@@ -234,199 +234,199 @@ func (r *schemaResolver) DeleteExternalService(ctx context.Context, args *delete
 	return &EmptyResponse{}, nil
 }
 
-type ExternalServicesArgs struct {
-	graphqlutil.ConnectionArgs
+type ExternblServicesArgs struct {
+	grbphqlutil.ConnectionArgs
 	After     *string
-	Namespace *graphql.ID
-	Repo      *graphql.ID
+	Nbmespbce *grbphql.ID
+	Repo      *grbphql.ID
 }
 
-func (r *schemaResolver) ExternalServices(ctx context.Context, args *ExternalServicesArgs) (*externalServiceConnectionResolver, error) {
-	// 🚨 SECURITY: Check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) ExternblServices(ctx context.Context, brgs *ExternblServicesArgs) (*externblServiceConnectionResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	var afterID int64
-	if args.After != nil {
-		var err error
-		afterID, err = UnmarshalExternalServiceID(graphql.ID(*args.After))
+	vbr bfterID int64
+	if brgs.After != nil {
+		vbr err error
+		bfterID, err = UnmbrshblExternblServiceID(grbphql.ID(*brgs.After))
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	opt := database.ExternalServicesListOptions{
-		AfterID: afterID,
+	opt := dbtbbbse.ExternblServicesListOptions{
+		AfterID: bfterID,
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	brgs.ConnectionArgs.Set(&opt.LimitOffset)
 
-	if args.Repo != nil {
-		repoID, err := UnmarshalRepositoryID(*args.Repo)
+	if brgs.Repo != nil {
+		repoID, err := UnmbrshblRepositoryID(*brgs.Repo)
 		if err != nil {
 			return nil, err
 		}
 		opt.RepoID = repoID
 	}
-	return &externalServiceConnectionResolver{db: r.db, opt: opt}, nil
+	return &externblServiceConnectionResolver{db: r.db, opt: opt}, nil
 }
 
-type externalServiceConnectionResolver struct {
-	opt database.ExternalServicesListOptions
+type externblServiceConnectionResolver struct {
+	opt dbtbbbse.ExternblServicesListOptions
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once             sync.Once
-	externalServices []*types.ExternalService
+	externblServices []*types.ExternblService
 	err              error
-	db               database.DB
+	db               dbtbbbse.DB
 }
 
-func (r *externalServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalService, error) {
+func (r *externblServiceConnectionResolver) compute(ctx context.Context) ([]*types.ExternblService, error) {
 	r.once.Do(func() {
-		r.externalServices, r.err = r.db.ExternalServices().List(ctx, r.opt)
+		r.externblServices, r.err = r.db.ExternblServices().List(ctx, r.opt)
 	})
-	return r.externalServices, r.err
+	return r.externblServices, r.err
 }
 
-func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceResolver, error) {
-	externalServices, err := r.compute(ctx)
+func (r *externblServiceConnectionResolver) Nodes(ctx context.Context) ([]*externblServiceResolver, error) {
+	externblServices, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
-	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService})
+	resolvers := mbke([]*externblServiceResolver, 0, len(externblServices))
+	for _, externblService := rbnge externblServices {
+		resolvers = bppend(resolvers, &externblServiceResolver{logger: log.Scoped("externblServiceResolver", ""), db: r.db, externblService: externblService})
 	}
 	return resolvers, nil
 }
 
-func (r *externalServiceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// Reset pagination cursor to get correct total count
+func (r *externblServiceConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	// Reset pbginbtion cursor to get correct totbl count
 	opt := r.opt
 	opt.AfterID = 0
-	count, err := r.db.ExternalServices().Count(ctx, opt)
+	count, err := r.db.ExternblServices().Count(ctx, opt)
 	return int32(count), err
 }
 
-func (r *externalServiceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	externalServices, err := r.compute(ctx)
+func (r *externblServiceConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	externblServices, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// We would have had all results when no limit set
+	// We would hbve hbd bll results when no limit set
 	if r.opt.LimitOffset == nil {
-		return graphqlutil.HasNextPage(false), nil
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
-	// We got less results than limit, means we've had all results
-	if len(externalServices) < r.opt.Limit {
-		return graphqlutil.HasNextPage(false), nil
+	// We got less results thbn limit, mebns we've hbd bll results
+	if len(externblServices) < r.opt.Limit {
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
-	// In case the number of results happens to be the same as the limit,
-	// we need another query to get accurate total count with same cursor
-	// to determine if there are more results than the limit we set.
-	count, err := r.db.ExternalServices().Count(ctx, r.opt)
+	// In cbse the number of results hbppens to be the sbme bs the limit,
+	// we need bnother query to get bccurbte totbl count with sbme cursor
+	// to determine if there bre more results thbn the limit we set.
+	count, err := r.db.ExternblServices().Count(ctx, r.opt)
 	if err != nil {
 		return nil, err
 	}
 
-	if count > len(externalServices) {
-		endCursorID := externalServices[len(externalServices)-1].ID
-		return graphqlutil.NextPageCursor(string(MarshalExternalServiceID(endCursorID))), nil
+	if count > len(externblServices) {
+		endCursorID := externblServices[len(externblServices)-1].ID
+		return grbphqlutil.NextPbgeCursor(string(MbrshblExternblServiceID(endCursorID))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-type ComputedExternalServiceConnectionResolver struct {
-	args             graphqlutil.ConnectionArgs
-	externalServices []*types.ExternalService
-	db               database.DB
+type ComputedExternblServiceConnectionResolver struct {
+	brgs             grbphqlutil.ConnectionArgs
+	externblServices []*types.ExternblService
+	db               dbtbbbse.DB
 }
 
-func NewComputedExternalServiceConnectionResolver(db database.DB, externalServices []*types.ExternalService, args graphqlutil.ConnectionArgs) *ComputedExternalServiceConnectionResolver {
-	return &ComputedExternalServiceConnectionResolver{
+func NewComputedExternblServiceConnectionResolver(db dbtbbbse.DB, externblServices []*types.ExternblService, brgs grbphqlutil.ConnectionArgs) *ComputedExternblServiceConnectionResolver {
+	return &ComputedExternblServiceConnectionResolver{
 		db:               db,
-		externalServices: externalServices,
-		args:             args,
+		externblServices: externblServices,
+		brgs:             brgs,
 	}
 }
 
-func (r *ComputedExternalServiceConnectionResolver) Nodes(_ context.Context) []*externalServiceResolver {
-	svcs := r.externalServices
-	if r.args.First != nil && int(*r.args.First) < len(svcs) {
-		svcs = svcs[:*r.args.First]
+func (r *ComputedExternblServiceConnectionResolver) Nodes(_ context.Context) []*externblServiceResolver {
+	svcs := r.externblServices
+	if r.brgs.First != nil && int(*r.brgs.First) < len(svcs) {
+		svcs = svcs[:*r.brgs.First]
 	}
-	resolvers := make([]*externalServiceResolver, 0, len(svcs))
-	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: svc})
+	resolvers := mbke([]*externblServiceResolver, 0, len(svcs))
+	for _, svc := rbnge svcs {
+		resolvers = bppend(resolvers, &externblServiceResolver{logger: log.Scoped("externblServiceResolver", ""), db: r.db, externblService: svc})
 	}
 	return resolvers
 }
 
-func (r *ComputedExternalServiceConnectionResolver) TotalCount(_ context.Context) int32 {
-	return int32(len(r.externalServices))
+func (r *ComputedExternblServiceConnectionResolver) TotblCount(_ context.Context) int32 {
+	return int32(len(r.externblServices))
 }
 
-func (r *ComputedExternalServiceConnectionResolver) PageInfo(_ context.Context) *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.args.First != nil && len(r.externalServices) >= int(*r.args.First))
+func (r *ComputedExternblServiceConnectionResolver) PbgeInfo(_ context.Context) *grbphqlutil.PbgeInfo {
+	return grbphqlutil.HbsNextPbge(r.brgs.First != nil && len(r.externblServices) >= int(*r.brgs.First))
 }
 
-type ExternalServiceMutationType int
+type ExternblServiceMutbtionType int
 
 const (
-	Add ExternalServiceMutationType = iota
-	Update
+	Add ExternblServiceMutbtionType = iotb
+	Updbte
 	Delete
 )
 
-func (d ExternalServiceMutationType) String() string {
-	return []string{"add", "update", "delete", "set-repos"}[d]
+func (d ExternblServiceMutbtionType) String() string {
+	return []string{"bdd", "updbte", "delete", "set-repos"}[d]
 }
 
-var mutationDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_extsvc_mutation_duration_seconds",
-	Help:    "ExternalService mutation latencies in seconds.",
-	Buckets: trace.UserLatencyBuckets,
-}, []string{"success", "mutation", "namespace"})
+vbr mutbtionDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_extsvc_mutbtion_durbtion_seconds",
+	Help:    "ExternblService mutbtion lbtencies in seconds.",
+	Buckets: trbce.UserLbtencyBuckets,
+}, []string{"success", "mutbtion", "nbmespbce"})
 
-func reportExternalServiceDuration(startTime time.Time, mutation ExternalServiceMutationType, err *error) {
-	duration := time.Since(startTime)
-	ns := "global"
-	labels := prometheus.Labels{
-		"mutation":  mutation.String(),
-		"success":   strconv.FormatBool(*err == nil),
-		"namespace": ns,
+func reportExternblServiceDurbtion(stbrtTime time.Time, mutbtion ExternblServiceMutbtionType, err *error) {
+	durbtion := time.Since(stbrtTime)
+	ns := "globbl"
+	lbbels := prometheus.Lbbels{
+		"mutbtion":  mutbtion.String(),
+		"success":   strconv.FormbtBool(*err == nil),
+		"nbmespbce": ns,
 	}
-	mutationDuration.With(labels).Observe(duration.Seconds())
+	mutbtionDurbtion.With(lbbels).Observe(durbtion.Seconds())
 }
 
-type syncExternalServiceArgs struct {
-	ID graphql.ID
+type syncExternblServiceArgs struct {
+	ID grbphql.ID
 }
 
-func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExternalServiceArgs) (*EmptyResponse, error) {
-	start := time.Now()
-	var err error
-	defer reportExternalServiceDuration(start, Update, &err)
+func (r *schembResolver) SyncExternblService(ctx context.Context, brgs *syncExternblServiceArgs) (*EmptyResponse, error) {
+	stbrt := time.Now()
+	vbr err error
+	defer reportExternblServiceDurbtion(stbrt, Updbte, &err)
 
-	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	id, err := UnmarshalExternalServiceID(args.ID)
+	id, err := UnmbrshblExternblServiceID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := r.db.ExternalServices().GetByID(ctx, id)
+	es, err := r.db.ExternblServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Enqueue a sync job for the external service, if none exists yet.
+	// Enqueue b sync job for the externbl service, if none exists yet.
 	rstore := repos.NewStore(r.logger, r.db)
 	if err := rstore.EnqueueSingleSyncJob(ctx, es.ID); err != nil {
 		return nil, err
@@ -435,62 +435,62 @@ func (r *schemaResolver) SyncExternalService(ctx context.Context, args *syncExte
 	return &EmptyResponse{}, nil
 }
 
-type cancelExternalServiceSyncArgs struct {
-	ID graphql.ID
+type cbncelExternblServiceSyncArgs struct {
+	ID grbphql.ID
 }
 
-func (r *schemaResolver) CancelExternalServiceSync(ctx context.Context, args *cancelExternalServiceSyncArgs) (*EmptyResponse, error) {
-	start := time.Now()
-	var err error
-	defer reportExternalServiceDuration(start, Update, &err)
+func (r *schembResolver) CbncelExternblServiceSync(ctx context.Context, brgs *cbncelExternblServiceSyncArgs) (*EmptyResponse, error) {
+	stbrt := time.Now()
+	vbr err error
+	defer reportExternblServiceDurbtion(stbrt, Updbte, &err)
 
-	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalExternalServiceSyncJobID(args.ID)
+	id, err := unmbrshblExternblServiceSyncJobID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := r.db.ExternalServices().CancelSyncJob(ctx, database.ExternalServicesCancelSyncJobOptions{ID: id}); err != nil {
+	if err := r.db.ExternblServices().CbncelSyncJob(ctx, dbtbbbse.ExternblServicesCbncelSyncJobOptions{ID: id}); err != nil {
 		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
 }
 
-type externalServiceNamespacesArgs struct {
-	ID    *graphql.ID
+type externblServiceNbmespbcesArgs struct {
+	ID    *grbphql.ID
 	Kind  string
 	Token string
 	Url   string
 }
 
-func (r *schemaResolver) ExternalServiceNamespaces(ctx context.Context, args *externalServiceNamespacesArgs) (*externalServiceNamespaceConnectionResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
+func (r *schembResolver) ExternblServiceNbmespbces(ctx context.Context, brgs *externblServiceNbmespbcesArgs) (*externblServiceNbmespbceConnectionResolver, error) {
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, buth.ErrMustBeSiteAdmin
 	}
 
-	return &externalServiceNamespaceConnectionResolver{
-		args:              args,
-		repoupdaterClient: r.repoupdaterClient,
+	return &externblServiceNbmespbceConnectionResolver{
+		brgs:              brgs,
+		repoupdbterClient: r.repoupdbterClient,
 	}, nil
 }
 
-type externalServiceNamespaceConnectionResolver struct {
-	args              *externalServiceNamespacesArgs
-	repoupdaterClient *repoupdater.Client
+type externblServiceNbmespbceConnectionResolver struct {
+	brgs              *externblServiceNbmespbcesArgs
+	repoupdbterClient *repoupdbter.Client
 
 	once       sync.Once
-	nodes      []*types.ExternalServiceNamespace
-	totalCount int32
+	nodes      []*types.ExternblServiceNbmespbce
+	totblCount int32
 	err        error
 }
 
-type externalServiceRepositoriesArgs struct {
-	ID           *graphql.ID
+type externblServiceRepositoriesArgs struct {
+	ID           *grbphql.ID
 	Kind         string
 	Token        string
 	Url          string
@@ -499,41 +499,41 @@ type externalServiceRepositoriesArgs struct {
 	First        *int32
 }
 
-func (r *schemaResolver) ExternalServiceRepositories(ctx context.Context, args *externalServiceRepositoriesArgs) (*externalServiceRepositoryConnectionResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
+func (r *schembResolver) ExternblServiceRepositories(ctx context.Context, brgs *externblServiceRepositoriesArgs) (*externblServiceRepositoryConnectionResolver, error) {
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, buth.ErrMustBeSiteAdmin
 	}
 
-	return &externalServiceRepositoryConnectionResolver{
+	return &externblServiceRepositoryConnectionResolver{
 		db:                r.db,
-		args:              args,
-		repoupdaterClient: r.repoupdaterClient,
+		brgs:              brgs,
+		repoupdbterClient: r.repoupdbterClient,
 	}, nil
 }
 
-type externalServiceRepositoryConnectionResolver struct {
-	args              *externalServiceRepositoriesArgs
-	db                database.DB
-	repoupdaterClient *repoupdater.Client
+type externblServiceRepositoryConnectionResolver struct {
+	brgs              *externblServiceRepositoriesArgs
+	db                dbtbbbse.DB
+	repoupdbterClient *repoupdbter.Client
 
 	once  sync.Once
-	nodes []*types.ExternalServiceRepository
+	nodes []*types.ExternblServiceRepository
 	err   error
 }
 
-// NewSourceConfiguration returns a configuration string for defining a Source for discovery.
-// Only external service kinds that implement source discovery functions are returned.
-func NewSourceConfiguration(kind, url, token string) (string, error) {
+// NewSourceConfigurbtion returns b configurbtion string for defining b Source for discovery.
+// Only externbl service kinds thbt implement source discovery functions bre returned.
+func NewSourceConfigurbtion(kind, url, token string) (string, error) {
 	switch kind {
-	case extsvc.KindGitHub:
-		cnxn := schema.GitHubConnection{
+	cbse extsvc.KindGitHub:
+		cnxn := schemb.GitHubConnection{
 			Url:   url,
 			Token: token,
 		}
 
-		marshalled, err := json.Marshal(cnxn)
-		return string(marshalled), err
-	default:
+		mbrshblled, err := json.Mbrshbl(cnxn)
+		return string(mbrshblled), err
+	defbult:
 		return "", errors.New(repos.UnimplementedDiscoverySource)
 	}
 }

@@ -1,17 +1,17 @@
-package downloader
+pbckbge downlobder
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	DownloaderInterval time.Duration
+	DownlobderIntervbl time.Durbtion
 }
 
-func (c *Config) Load() {
-	c.DownloaderInterval = c.GetInterval("CODEINTEL_SENTINEL_DOWNLOADER_INTERVAL", "1h", "How frequently to sync the vulnerability database.")
+func (c *Config) Lobd() {
+	c.DownlobderIntervbl = c.GetIntervbl("CODEINTEL_SENTINEL_DOWNLOADER_INTERVAL", "1h", "How frequently to sync the vulnerbbility dbtbbbse.")
 }

@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,197 +6,197 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
-func testStoreSiteCredentials(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	credentials := make([]*btypes.SiteCredential, 0, 3)
-	// Make sure these are sorted alphabetically.
-	externalServiceTypes := []string{
+func testStoreSiteCredentibls(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	credentibls := mbke([]*btypes.SiteCredentibl, 0, 3)
+	// Mbke sure these bre sorted blphbbeticblly.
+	externblServiceTypes := []string{
 		extsvc.TypeBitbucketServer,
 		extsvc.TypeGitHub,
-		extsvc.TypeGitLab,
+		extsvc.TypeGitLbb,
 	}
 
-	t.Run("Create", func(t *testing.T) {
-		for i := 0; i < cap(credentials); i++ {
-			cred := &btypes.SiteCredential{
-				ExternalServiceType: externalServiceTypes[i],
-				ExternalServiceID:   "https://someurl.test",
+	t.Run("Crebte", func(t *testing.T) {
+		for i := 0; i < cbp(credentibls); i++ {
+			cred := &btypes.SiteCredentibl{
+				ExternblServiceType: externblServiceTypes[i],
+				ExternblServiceID:   "https://someurl.test",
 			}
-			token := &auth.OAuthBearerToken{Token: "123"}
+			token := &buth.OAuthBebrerToken{Token: "123"}
 
-			if err := s.CreateSiteCredential(ctx, cred, token); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteSiteCredentibl(ctx, cred, token); err != nil {
+				t.Fbtbl(err)
 			}
 			if cred.ID == 0 {
-				t.Fatal("id should not be zero")
+				t.Fbtbl("id should not be zero")
 			}
-			if cred.CreatedAt.IsZero() {
-				t.Fatal("CreatedAt should be set")
+			if cred.CrebtedAt.IsZero() {
+				t.Fbtbl("CrebtedAt should be set")
 			}
-			if cred.UpdatedAt.IsZero() {
-				t.Fatal("UpdatedAt should be set")
+			if cred.UpdbtedAt.IsZero() {
+				t.Fbtbl("UpdbtedAt should be set")
 			}
-			credentials = append(credentials, cred)
+			credentibls = bppend(credentibls, cred)
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			want := credentials[0]
-			opts := GetSiteCredentialOpts{ID: want.ID}
+			wbnt := credentibls[0]
+			opts := GetSiteCredentiblOpts{ID: wbnt.ID}
 
-			have, err := s.GetSiteCredential(ctx, opts)
+			hbve, err := s.GetSiteCredentibl(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt, et.CompbreEncryptbble); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("ByKind-URL", func(t *testing.T) {
-			want := credentials[0]
-			opts := GetSiteCredentialOpts{
-				ExternalServiceType: want.ExternalServiceType,
-				ExternalServiceID:   want.ExternalServiceID,
+			wbnt := credentibls[0]
+			opts := GetSiteCredentiblOpts{
+				ExternblServiceType: wbnt.ExternblServiceType,
+				ExternblServiceID:   wbnt.ExternblServiceID,
 			}
 
-			have, err := s.GetSiteCredential(ctx, opts)
+			hbve, err := s.GetSiteCredentibl(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt, et.CompbreEncryptbble); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetSiteCredentialOpts{ID: 0xdeadbeef}
+			opts := GetSiteCredentiblOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetSiteCredential(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetSiteCredentibl(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("All", func(t *testing.T) {
-			cs, next, err := s.ListSiteCredentials(ctx, ListSiteCredentialsOpts{})
+			cs, next, err := s.ListSiteCredentibls(ctx, ListSiteCredentiblsOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := next, int64(0); have != want {
-				t.Fatalf("have next %d, want %d", have, want)
-			}
-
-			have, want := cs, credentials
-			if len(have) != len(want) {
-				t.Fatalf("listed %d site credentials, want: %d", len(have), len(want))
+			if hbve, wbnt := next, int64(0); hbve != wbnt {
+				t.Fbtblf("hbve next %d, wbnt %d", hbve, wbnt)
 			}
 
-			if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
-				t.Fatal(diff)
+			hbve, wbnt := cs, credentibls
+			if len(hbve) != len(wbnt) {
+				t.Fbtblf("listed %d site credentibls, wbnt: %d", len(hbve), len(wbnt))
+			}
+
+			if diff := cmp.Diff(hbve, wbnt, et.CompbreEncryptbble); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("WithLimit", func(t *testing.T) {
-			for i := 1; i <= len(credentials); i++ {
-				cs, next, err := s.ListSiteCredentials(ctx, ListSiteCredentialsOpts{LimitOpts: LimitOpts{Limit: i}})
+			for i := 1; i <= len(credentibls); i++ {
+				cs, next, err := s.ListSiteCredentibls(ctx, ListSiteCredentiblsOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				{
-					have, want := next, int64(0)
-					if i < len(credentials) {
-						want = credentials[i].ID
+					hbve, wbnt := next, int64(0)
+					if i < len(credentibls) {
+						wbnt = credentibls[i].ID
 					}
 
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					if hbve != wbnt {
+						t.Fbtblf("limit: %v: hbve next %v, wbnt %v", i, hbve, wbnt)
 					}
 				}
 
 				{
-					have, want := cs, credentials[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d site credentials, want: %d", len(have), len(want))
+					hbve, wbnt := cs, credentibls[:i]
+					if len(hbve) != len(wbnt) {
+						t.Fbtblf("listed %d site credentibls, wbnt: %d", len(hbve), len(wbnt))
 					}
 
-					if diff := cmp.Diff(have, want, et.CompareEncryptable); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, wbnt, et.CompbreEncryptbble); diff != "" {
+						t.Fbtbl(diff)
 					}
 				}
 			}
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("Updbte", func(t *testing.T) {
 		t.Run("Found", func(t *testing.T) {
-			for _, cred := range credentials {
-				if err := cred.SetAuthenticator(ctx, &auth.BasicAuthWithSSH{
-					BasicAuth: auth.BasicAuth{
-						Username: "foo",
-						Password: "bar",
+			for _, cred := rbnge credentibls {
+				if err := cred.SetAuthenticbtor(ctx, &buth.BbsicAuthWithSSH{
+					BbsicAuth: buth.BbsicAuth{
+						Usernbme: "foo",
+						Pbssword: "bbr",
 					},
-					PrivateKey: "so private",
+					PrivbteKey: "so privbte",
 					PublicKey:  "so public",
-					Passphrase: "probably written on a post-it",
+					Pbssphrbse: "probbbly written on b post-it",
 				}); err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if err := s.UpdateSiteCredential(ctx, cred); err != nil {
+				if err := s.UpdbteSiteCredentibl(ctx, cred); err != nil {
 					t.Errorf("unexpected error: %+v", err)
 				}
 
-				if have, err := s.GetSiteCredential(ctx, GetSiteCredentialOpts{
+				if hbve, err := s.GetSiteCredentibl(ctx, GetSiteCredentiblOpts{
 					ID: cred.ID,
 				}); err != nil {
-					t.Errorf("error retrieving credential: %+v", err)
-				} else if diff := cmp.Diff(have, cred, et.CompareEncryptable); diff != "" {
-					t.Errorf("unexpected difference in credentials (-have +want):\n%s", diff)
+					t.Errorf("error retrieving credentibl: %+v", err)
+				} else if diff := cmp.Diff(hbve, cred, et.CompbreEncryptbble); diff != "" {
+					t.Errorf("unexpected difference in credentibls (-hbve +wbnt):\n%s", diff)
 				}
 			}
 		})
 		t.Run("NotFound", func(t *testing.T) {
-			cred := &btypes.SiteCredential{
-				ID:         0xdeadbeef,
-				Credential: database.NewEmptyCredential(),
+			cred := &btypes.SiteCredentibl{
+				ID:         0xdebdbeef,
+				Credentibl: dbtbbbse.NewEmptyCredentibl(),
 			}
-			if err := s.UpdateSiteCredential(ctx, cred); err == nil {
+			if err := s.UpdbteSiteCredentibl(ctx, cred); err == nil {
 				t.Errorf("unexpected nil error")
 			} else if err != ErrNoResults {
-				t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
+				t.Errorf("unexpected error: hbve=%v wbnt=%v", err, ErrNoResults)
 			}
 		})
 	})
 
 	t.Run("Delete", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			for _, cred := range credentials {
-				if err := s.DeleteSiteCredential(ctx, cred.ID); err != nil {
-					t.Fatal(err)
+			for _, cred := rbnge credentibls {
+				if err := s.DeleteSiteCredentibl(ctx, cred.ID); err != nil {
+					t.Fbtbl(err)
 				}
 			}
 		})
 		t.Run("NotFound", func(t *testing.T) {
-			if err := s.DeleteSiteCredential(ctx, 0xdeadbeef); err == nil {
-				t.Fatal("expected err but got nil")
+			if err := s.DeleteSiteCredentibl(ctx, 0xdebdbeef); err == nil {
+				t.Fbtbl("expected err but got nil")
 			} else if err != ErrNoResults {
-				t.Fatalf("invalid error %+v", err)
+				t.Fbtblf("invblid error %+v", err)
 			}
 		})
 	})

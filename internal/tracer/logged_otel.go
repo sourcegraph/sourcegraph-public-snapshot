@@ -1,47 +1,47 @@
-package tracer
+pbckbge trbcer
 
 import (
 	"fmt"
-	"sync/atomic"
+	"sync/btomic"
 
-	oteltrace "go.opentelemetry.io/otel/trace"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-// switchableTracer wraps otel.TracerProvider.
-type loggedOtelTracerProvider struct {
+// switchbbleTrbcer wrbps otel.TrbcerProvider.
+type loggedOtelTrbcerProvider struct {
 	logger   log.Logger
-	provider oteltrace.TracerProvider
-	debug    *atomic.Bool
+	provider oteltrbce.TrbcerProvider
+	debug    *btomic.Bool
 }
 
-var _ oteltrace.TracerProvider = &loggedOtelTracerProvider{}
+vbr _ oteltrbce.TrbcerProvider = &loggedOtelTrbcerProvider{}
 
-func newLoggedOtelTracerProvider(logger log.Logger, provider oteltrace.TracerProvider, debug *atomic.Bool) *loggedOtelTracerProvider {
-	return &loggedOtelTracerProvider{logger: logger, provider: provider, debug: debug}
+func newLoggedOtelTrbcerProvider(logger log.Logger, provider oteltrbce.TrbcerProvider, debug *btomic.Bool) *loggedOtelTrbcerProvider {
+	return &loggedOtelTrbcerProvider{logger: logger, provider: provider, debug: debug}
 }
 
-// Tracer implements the OpenTelemetry TracerProvider interface. It must do nothing except
-// return s.concreteTracer.
-func (s *loggedOtelTracerProvider) Tracer(instrumentationName string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
-	return s.concreteTracer(instrumentationName, opts...)
+// Trbcer implements the OpenTelemetry TrbcerProvider interfbce. It must do nothing except
+// return s.concreteTrbcer.
+func (s *loggedOtelTrbcerProvider) Trbcer(instrumentbtionNbme string, opts ...oteltrbce.TrbcerOption) oteltrbce.Trbcer {
+	return s.concreteTrbcer(instrumentbtionNbme, opts...)
 }
 
-// concreteTracer generates a concrete shouldTraceTracer OpenTelemetry Tracer implementation, and is used by
-// Tracer to implement TracerProvider, and is used by tests to assert against concreteTracer types.
-func (s *loggedOtelTracerProvider) concreteTracer(instrumentationName string, opts ...oteltrace.TracerOption) *shouldTraceTracer {
+// concreteTrbcer generbtes b concrete shouldTrbceTrbcer OpenTelemetry Trbcer implementbtion, bnd is used by
+// Trbcer to implement TrbcerProvider, bnd is used by tests to bssert bgbinst concreteTrbcer types.
+func (s *loggedOtelTrbcerProvider) concreteTrbcer(instrumentbtionNbme string, opts ...oteltrbce.TrbcerOption) *shouldTrbceTrbcer {
 	logger := s.logger
-	if s.debug.Load() {
-		// Only assign fields to logger in debug mode
+	if s.debug.Lobd() {
+		// Only bssign fields to logger in debug mode
 		logger = s.logger.With(
-			log.String("tracerName", instrumentationName),
+			log.String("trbcerNbme", instrumentbtionNbme),
 			log.String("provider", fmt.Sprintf("%T", s.provider)))
-		logger.Info("Tracer")
+		logger.Info("Trbcer")
 	}
-	return &shouldTraceTracer{
+	return &shouldTrbceTrbcer{
 		logger: logger,
 		debug:  s.debug,
-		tracer: s.provider.Tracer(instrumentationName, opts...),
+		trbcer: s.provider.Trbcer(instrumentbtionNbme, opts...),
 	}
 }

@@ -1,12 +1,12 @@
-package store
+pbckbge store
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// ErrDequeueTransaction occurs when Dequeue is called from inside a transaction.
-var ErrDequeueTransaction = errors.New("unexpected transaction")
+// ErrDequeueTrbnsbction occurs when Dequeue is cblled from inside b trbnsbction.
+vbr ErrDequeueTrbnsbction = errors.New("unexpected trbnsbction")
 
-// ErrDequeueRace occurs when a record selected for dequeue has been locked by another worker.
-var ErrDequeueRace = errors.New("dequeue race")
+// ErrDequeueRbce occurs when b record selected for dequeue hbs been locked by bnother worker.
+vbr ErrDequeueRbce = errors.New("dequeue rbce")
 
-// ErrNoRecord occurs when a record cannot be selected after it has been locked.
-var ErrNoRecord = errors.New("locked record not found")
+// ErrNoRecord occurs when b record cbnnot be selected bfter it hbs been locked.
+vbr ErrNoRecord = errors.New("locked record not found")

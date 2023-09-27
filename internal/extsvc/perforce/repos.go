@@ -1,6 +1,6 @@
-package perforce
+pbckbge perforce
 
-// Depot contains information of a Perforce depot.
+// Depot contbins informbtion of b Perforce depot.
 type Depot struct {
-	Depot string `json:"depot"` // Depot is the path of the Perforce depot.
+	Depot string `json:"depot"` // Depot is the pbth of the Perforce depot.
 }

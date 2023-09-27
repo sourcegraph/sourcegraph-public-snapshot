@@ -1,546 +1,546 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrchcontexts"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewResolver(db database.DB) graphqlbackend.SearchContextsResolver {
+func NewResolver(db dbtbbbse.DB) grbphqlbbckend.SebrchContextsResolver {
 	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	db database.DB
+	db dbtbbbse.DB
 }
 
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		"SearchContext": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
-			return r.SearchContextByID(ctx, id)
+func (r *Resolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		"SebrchContext": func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
+			return r.SebrchContextByID(ctx, id)
 		},
 	}
 }
 
-func marshalSearchContextID(searchContextSpec string) graphql.ID {
-	return relay.MarshalID("SearchContext", searchContextSpec)
+func mbrshblSebrchContextID(sebrchContextSpec string) grbphql.ID {
+	return relby.MbrshblID("SebrchContext", sebrchContextSpec)
 }
 
-func unmarshalSearchContextID(id graphql.ID) (spec string, err error) {
-	err = relay.UnmarshalSpec(id, &spec)
+func unmbrshblSebrchContextID(id grbphql.ID) (spec string, err error) {
+	err = relby.UnmbrshblSpec(id, &spec)
 	return
 }
 
-func marshalSearchContextCursor(cursor int32) string {
-	return string(relay.MarshalID(graphqlbackend.SearchContextCursorKind, cursor))
+func mbrshblSebrchContextCursor(cursor int32) string {
+	return string(relby.MbrshblID(grbphqlbbckend.SebrchContextCursorKind, cursor))
 }
 
-func (r *Resolver) SearchContextsToResolvers(searchContexts []*types.SearchContext) []graphqlbackend.SearchContextResolver {
-	searchContextResolvers := make([]graphqlbackend.SearchContextResolver, len(searchContexts))
-	for idx, searchContext := range searchContexts {
-		searchContextResolvers[idx] = &searchContextResolver{searchContext, r.db}
+func (r *Resolver) SebrchContextsToResolvers(sebrchContexts []*types.SebrchContext) []grbphqlbbckend.SebrchContextResolver {
+	sebrchContextResolvers := mbke([]grbphqlbbckend.SebrchContextResolver, len(sebrchContexts))
+	for idx, sebrchContext := rbnge sebrchContexts {
+		sebrchContextResolvers[idx] = &sebrchContextResolver{sebrchContext, r.db}
 	}
-	return searchContextResolvers
+	return sebrchContextResolvers
 }
 
-func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.SearchContextBySpecArgs) (graphqlbackend.SearchContextResolver, error) {
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
+func (r *Resolver) SebrchContextBySpec(ctx context.Context, brgs grbphqlbbckend.SebrchContextBySpecArgs) (grbphqlbbckend.SebrchContextResolver, error) {
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, brgs.Spec)
 	if err != nil {
 		return nil, err
 	}
-	return &searchContextResolver{searchContext, r.db}, nil
+	return &sebrchContextResolver{sebrchContext, r.db}, nil
 }
 
-func (r *Resolver) CreateSearchContext(ctx context.Context, args graphqlbackend.CreateSearchContextArgs) (_ graphqlbackend.SearchContextResolver, err error) {
-	var namespaceUserID, namespaceOrgID int32
-	if args.SearchContext.Namespace != nil {
-		err := graphqlbackend.UnmarshalNamespaceID(*args.SearchContext.Namespace, &namespaceUserID, &namespaceOrgID)
+func (r *Resolver) CrebteSebrchContext(ctx context.Context, brgs grbphqlbbckend.CrebteSebrchContextArgs) (_ grbphqlbbckend.SebrchContextResolver, err error) {
+	vbr nbmespbceUserID, nbmespbceOrgID int32
+	if brgs.SebrchContext.Nbmespbce != nil {
+		err := grbphqlbbckend.UnmbrshblNbmespbceID(*brgs.SebrchContext.Nbmespbce, &nbmespbceUserID, &nbmespbceOrgID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	var repositoryRevisions []*types.SearchContextRepositoryRevisions
-	if len(args.Repositories) > 0 {
-		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+	vbr repositoryRevisions []*types.SebrchContextRepositoryRevisions
+	if len(brgs.Repositories) > 0 {
+		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, brgs.Repositories)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	searchContext, err := searchcontexts.CreateSearchContextWithRepositoryRevisions(
+	sebrchContext, err := sebrchcontexts.CrebteSebrchContextWithRepositoryRevisions(
 		ctx,
 		r.db,
-		&types.SearchContext{
-			Name:            args.SearchContext.Name,
-			Description:     args.SearchContext.Description,
-			Public:          args.SearchContext.Public,
-			NamespaceUserID: namespaceUserID,
-			NamespaceOrgID:  namespaceOrgID,
-			Query:           args.SearchContext.Query,
+		&types.SebrchContext{
+			Nbme:            brgs.SebrchContext.Nbme,
+			Description:     brgs.SebrchContext.Description,
+			Public:          brgs.SebrchContext.Public,
+			NbmespbceUserID: nbmespbceUserID,
+			NbmespbceOrgID:  nbmespbceOrgID,
+			Query:           brgs.SebrchContext.Query,
 		},
 		repositoryRevisions,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &searchContextResolver{searchContext, r.db}, nil
+	return &sebrchContextResolver{sebrchContext, r.db}, nil
 }
 
-func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.UpdateSearchContextArgs) (graphqlbackend.SearchContextResolver, error) {
-	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+func (r *Resolver) UpdbteSebrchContext(ctx context.Context, brgs grbphqlbbckend.UpdbteSebrchContextArgs) (grbphqlbbckend.SebrchContextResolver, error) {
+	sebrchContextSpec, err := unmbrshblSebrchContextID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	var repositoryRevisions []*types.SearchContextRepositoryRevisions
-	if len(args.Repositories) > 0 {
-		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, args.Repositories)
+	vbr repositoryRevisions []*types.SebrchContextRepositoryRevisions
+	if len(brgs.Repositories) > 0 {
+		repositoryRevisions, err = r.repositoryRevisionsFromInputArgs(ctx, brgs.Repositories)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	original, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	originbl, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, sebrchContextSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	updated := original // inherits the ID
-	updated.Name = args.SearchContext.Name
-	updated.Description = args.SearchContext.Description
-	updated.Public = args.SearchContext.Public
-	updated.Query = args.SearchContext.Query
+	updbted := originbl // inherits the ID
+	updbted.Nbme = brgs.SebrchContext.Nbme
+	updbted.Description = brgs.SebrchContext.Description
+	updbted.Public = brgs.SebrchContext.Public
+	updbted.Query = brgs.SebrchContext.Query
 
-	searchContext, err := searchcontexts.UpdateSearchContextWithRepositoryRevisions(
+	sebrchContext, err := sebrchcontexts.UpdbteSebrchContextWithRepositoryRevisions(
 		ctx,
 		r.db,
-		updated,
+		updbted,
 		repositoryRevisions,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return &searchContextResolver{searchContext, r.db}, nil
+	return &sebrchContextResolver{sebrchContext, r.db}, nil
 }
 
-func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, args []graphqlbackend.SearchContextRepositoryRevisionsInputArgs) ([]*types.SearchContextRepositoryRevisions, error) {
-	repoIDs := make([]api.RepoID, 0, len(args))
-	for _, repository := range args {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
+func (r *Resolver) repositoryRevisionsFromInputArgs(ctx context.Context, brgs []grbphqlbbckend.SebrchContextRepositoryRevisionsInputArgs) ([]*types.SebrchContextRepositoryRevisions, error) {
+	repoIDs := mbke([]bpi.RepoID, 0, len(brgs))
+	for _, repository := rbnge brgs {
+		repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
-		repoIDs = append(repoIDs, repoID)
+		repoIDs = bppend(repoIDs, repoID)
 	}
 	idToRepo, err := r.db.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
 
-	repositoryRevisions := make([]*types.SearchContextRepositoryRevisions, 0, len(args))
-	for _, repository := range args {
-		repoID, err := graphqlbackend.UnmarshalRepositoryID(repository.RepositoryID)
+	repositoryRevisions := mbke([]*types.SebrchContextRepositoryRevisions, 0, len(brgs))
+	for _, repository := rbnge brgs {
+		repoID, err := grbphqlbbckend.UnmbrshblRepositoryID(repository.RepositoryID)
 		if err != nil {
 			return nil, err
 		}
 		repo, ok := idToRepo[repoID]
 		if !ok {
-			return nil, errors.Errorf("cannot find repo with id: %q", repository.RepositoryID)
+			return nil, errors.Errorf("cbnnot find repo with id: %q", repository.RepositoryID)
 		}
-		repositoryRevisions = append(repositoryRevisions, &types.SearchContextRepositoryRevisions{
-			Repo:      types.MinimalRepo{ID: repo.ID, Name: repo.Name},
+		repositoryRevisions = bppend(repositoryRevisions, &types.SebrchContextRepositoryRevisions{
+			Repo:      types.MinimblRepo{ID: repo.ID, Nbme: repo.Nbme},
 			Revisions: repository.Revisions,
 		})
 	}
 	return repositoryRevisions, nil
 }
 
-func (r *Resolver) DeleteSearchContext(ctx context.Context, args graphqlbackend.DeleteSearchContextArgs) (*graphqlbackend.EmptyResponse, error) {
-	searchContextSpec, err := unmarshalSearchContextID(args.ID)
+func (r *Resolver) DeleteSebrchContext(ctx context.Context, brgs grbphqlbbckend.DeleteSebrchContextArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	sebrchContextSpec, err := unmbrshblSebrchContextID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, sebrchContextSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	err = searchcontexts.DeleteSearchContext(ctx, r.db, searchContext)
+	err = sebrchcontexts.DeleteSebrchContext(ctx, r.db, sebrchContext)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CreateSearchContextStar(ctx context.Context, args graphqlbackend.CreateSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Make sure the current user has permission to star the search context.
-	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+func (r *Resolver) CrebteSebrchContextStbr(ctx context.Context, brgs grbphqlbbckend.CrebteSebrchContextStbrArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Mbke sure the current user hbs permission to stbr the sebrch context.
+	userID, err := grbphqlbbckend.UnmbrshblUserID(brgs.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
-	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
+	sebrchContextSpec, err := unmbrshblSebrchContextID(brgs.SebrchContextID)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, sebrchContextSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	err = searchcontexts.CreateSearchContextStarForUser(ctx, r.db, searchContext, userID)
+	err = sebrchcontexts.CrebteSebrchContextStbrForUser(ctx, r.db, sebrchContext, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) DeleteSearchContextStar(ctx context.Context, args graphqlbackend.DeleteSearchContextStarArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Make sure the current user has permission to star the search context.
-	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+func (r *Resolver) DeleteSebrchContextStbr(ctx context.Context, brgs grbphqlbbckend.DeleteSebrchContextStbrArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Mbke sure the current user hbs permission to stbr the sebrch context.
+	userID, err := grbphqlbbckend.UnmbrshblUserID(brgs.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
-	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
+	sebrchContextSpec, err := unmbrshblSebrchContextID(brgs.SebrchContextID)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, sebrchContextSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	err = searchcontexts.DeleteSearchContextStarForUser(ctx, r.db, searchContext, userID)
+	err = sebrchcontexts.DeleteSebrchContextStbrForUser(ctx, r.db, sebrchContext, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) SetDefaultSearchContext(ctx context.Context, args graphqlbackend.SetDefaultSearchContextArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Make sure the current user has permission to set the search context as default.
-	userID, err := graphqlbackend.UnmarshalUserID(args.UserID)
+func (r *Resolver) SetDefbultSebrchContext(ctx context.Context, brgs grbphqlbbckend.SetDefbultSebrchContextArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Mbke sure the current user hbs permission to set the sebrch context bs defbult.
+	userID, err := grbphqlbbckend.UnmbrshblUserID(brgs.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, userID); err != nil {
 		return nil, err
 	}
 
-	searchContextSpec, err := unmarshalSearchContextID(args.SearchContextID)
+	sebrchContextSpec, err := unmbrshblSebrchContextID(brgs.SebrchContextID)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, sebrchContextSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	err = searchcontexts.SetDefaultSearchContextForUser(ctx, r.db, searchContext, userID)
+	err = sebrchcontexts.SetDefbultSebrchContextForUser(ctx, r.db, sebrchContext, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *Resolver) DefaultSearchContext(ctx context.Context) (graphqlbackend.SearchContextResolver, error) {
-	searchContext, err := r.db.SearchContexts().GetDefaultSearchContextForCurrentUser(ctx)
+func (r *Resolver) DefbultSebrchContext(ctx context.Context) (grbphqlbbckend.SebrchContextResolver, error) {
+	sebrchContext, err := r.db.SebrchContexts().GetDefbultSebrchContextForCurrentUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &searchContextResolver{searchContext, r.db}, nil
+	return &sebrchContextResolver{sebrchContext, r.db}, nil
 }
 
-func unmarshalSearchContextCursor(cursor *string) (int32, error) {
-	var after int32
+func unmbrshblSebrchContextCursor(cursor *string) (int32, error) {
+	vbr bfter int32
 	if cursor == nil {
-		after = 0
+		bfter = 0
 	} else {
-		err := relay.UnmarshalSpec(graphql.ID(*cursor), &after)
+		err := relby.UnmbrshblSpec(grbphql.ID(*cursor), &bfter)
 		if err != nil {
 			return -1, err
 		}
 	}
-	return after, nil
+	return bfter, nil
 }
 
-func (r *Resolver) SearchContexts(ctx context.Context, args *graphqlbackend.ListSearchContextsArgs) (graphqlbackend.SearchContextConnectionResolver, error) {
-	orderBy := database.SearchContextsOrderBySpec
-	if args.OrderBy == graphqlbackend.SearchContextsOrderByUpdatedAt {
-		orderBy = database.SearchContextsOrderByUpdatedAt
+func (r *Resolver) SebrchContexts(ctx context.Context, brgs *grbphqlbbckend.ListSebrchContextsArgs) (grbphqlbbckend.SebrchContextConnectionResolver, error) {
+	orderBy := dbtbbbse.SebrchContextsOrderBySpec
+	if brgs.OrderBy == grbphqlbbckend.SebrchContextsOrderByUpdbtedAt {
+		orderBy = dbtbbbse.SebrchContextsOrderByUpdbtedAt
 	}
 
-	// Request one extra to determine if there are more pages
-	newArgs := *args
+	// Request one extrb to determine if there bre more pbges
+	newArgs := *brgs
 	newArgs.First += 1
 
-	var namespaceName string
-	var searchContextName string
+	vbr nbmespbceNbme string
+	vbr sebrchContextNbme string
 	if newArgs.Query != nil {
-		parsedSearchContextSpec := searchcontexts.ParseSearchContextSpec(*newArgs.Query)
-		searchContextName = parsedSearchContextSpec.SearchContextName
-		namespaceName = parsedSearchContextSpec.NamespaceName
+		pbrsedSebrchContextSpec := sebrchcontexts.PbrseSebrchContextSpec(*newArgs.Query)
+		sebrchContextNbme = pbrsedSebrchContextSpec.SebrchContextNbme
+		nbmespbceNbme = pbrsedSebrchContextSpec.NbmespbceNbme
 	}
 
-	afterCursor, err := unmarshalSearchContextCursor(newArgs.After)
+	bfterCursor, err := unmbrshblSebrchContextCursor(newArgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	namespaceUserIDs := []int32{}
-	namespaceOrgIDs := []int32{}
-	noNamespace := false
-	for _, namespace := range args.Namespaces {
-		if namespace == nil {
-			noNamespace = true
+	nbmespbceUserIDs := []int32{}
+	nbmespbceOrgIDs := []int32{}
+	noNbmespbce := fblse
+	for _, nbmespbce := rbnge brgs.Nbmespbces {
+		if nbmespbce == nil {
+			noNbmespbce = true
 		} else {
-			var namespaceUserID, namespaceOrgID int32
-			err := graphqlbackend.UnmarshalNamespaceID(*namespace, &namespaceUserID, &namespaceOrgID)
+			vbr nbmespbceUserID, nbmespbceOrgID int32
+			err := grbphqlbbckend.UnmbrshblNbmespbceID(*nbmespbce, &nbmespbceUserID, &nbmespbceOrgID)
 			if err != nil {
 				return nil, err
 			}
-			if namespaceUserID != 0 {
-				namespaceUserIDs = append(namespaceUserIDs, namespaceUserID)
+			if nbmespbceUserID != 0 {
+				nbmespbceUserIDs = bppend(nbmespbceUserIDs, nbmespbceUserID)
 			}
-			if namespaceOrgID != 0 {
-				namespaceOrgIDs = append(namespaceOrgIDs, namespaceOrgID)
+			if nbmespbceOrgID != 0 {
+				nbmespbceOrgIDs = bppend(nbmespbceOrgIDs, nbmespbceOrgID)
 			}
 		}
 	}
 
-	opts := database.ListSearchContextsOptions{
-		NamespaceName:     namespaceName,
-		Name:              searchContextName,
-		NamespaceUserIDs:  namespaceUserIDs,
-		NamespaceOrgIDs:   namespaceOrgIDs,
-		NoNamespace:       noNamespace,
+	opts := dbtbbbse.ListSebrchContextsOptions{
+		NbmespbceNbme:     nbmespbceNbme,
+		Nbme:              sebrchContextNbme,
+		NbmespbceUserIDs:  nbmespbceUserIDs,
+		NbmespbceOrgIDs:   nbmespbceOrgIDs,
+		NoNbmespbce:       noNbmespbce,
 		OrderBy:           orderBy,
-		OrderByDescending: args.Descending,
+		OrderByDescending: brgs.Descending,
 	}
 
-	searchContextsStore := r.db.SearchContexts()
-	pageOpts := database.ListSearchContextsPageOptions{First: newArgs.First, After: afterCursor}
-	searchContexts, err := searchContextsStore.ListSearchContexts(ctx, pageOpts, opts)
+	sebrchContextsStore := r.db.SebrchContexts()
+	pbgeOpts := dbtbbbse.ListSebrchContextsPbgeOptions{First: newArgs.First, After: bfterCursor}
+	sebrchContexts, err := sebrchContextsStore.ListSebrchContexts(ctx, pbgeOpts, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	count, err := searchContextsStore.CountSearchContexts(ctx, opts)
+	count, err := sebrchContextsStore.CountSebrchContexts(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	hasNextPage := false
-	if len(searchContexts) == int(args.First)+1 {
-		hasNextPage = true
-		searchContexts = searchContexts[:len(searchContexts)-1]
+	hbsNextPbge := fblse
+	if len(sebrchContexts) == int(brgs.First)+1 {
+		hbsNextPbge = true
+		sebrchContexts = sebrchContexts[:len(sebrchContexts)-1]
 	}
 
-	return &searchContextConnectionResolver{
-		afterCursor:    afterCursor,
-		searchContexts: r.SearchContextsToResolvers(searchContexts),
-		totalCount:     count,
-		hasNextPage:    hasNextPage,
+	return &sebrchContextConnectionResolver{
+		bfterCursor:    bfterCursor,
+		sebrchContexts: r.SebrchContextsToResolvers(sebrchContexts),
+		totblCount:     count,
+		hbsNextPbge:    hbsNextPbge,
 	}, nil
 }
 
-func (r *Resolver) IsSearchContextAvailable(ctx context.Context, args graphqlbackend.IsSearchContextAvailableArgs) (bool, error) {
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
+func (r *Resolver) IsSebrchContextAvbilbble(ctx context.Context, brgs grbphqlbbckend.IsSebrchContextAvbilbbleArgs) (bool, error) {
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, brgs.Spec)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	if searchcontexts.IsInstanceLevelSearchContext(searchContext) {
-		// Instance-level search contexts are available to everyone
+	if sebrchcontexts.IsInstbnceLevelSebrchContext(sebrchContext) {
+		// Instbnce-level sebrch contexts bre bvbilbble to everyone
 		return true, nil
 	}
 
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return false, nil
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return fblse, nil
 	}
 
-	if searchContext.NamespaceUserID != 0 {
-		// Is search context created by the current user
-		return a.UID == searchContext.NamespaceUserID, nil
+	if sebrchContext.NbmespbceUserID != 0 {
+		// Is sebrch context crebted by the current user
+		return b.UID == sebrchContext.NbmespbceUserID, nil
 	} else {
-		// Is search context created by one of the users' organizations
-		orgs, err := r.db.Orgs().GetByUserID(ctx, a.UID)
+		// Is sebrch context crebted by one of the users' orgbnizbtions
+		orgs, err := r.db.Orgs().GetByUserID(ctx, b.UID)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		for _, org := range orgs {
-			if org.ID == searchContext.NamespaceOrgID {
+		for _, org := rbnge orgs {
+			if org.ID == sebrchContext.NbmespbceOrgID {
 				return true, nil
 			}
 		}
-		return false, nil
+		return fblse, nil
 	}
 }
 
-func (r *Resolver) SearchContextByID(ctx context.Context, id graphql.ID) (graphqlbackend.SearchContextResolver, error) {
-	searchContextSpec, err := unmarshalSearchContextID(id)
+func (r *Resolver) SebrchContextByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.SebrchContextResolver, error) {
+	sebrchContextSpec, err := unmbrshblSebrchContextID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
+	sebrchContext, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, r.db, sebrchContextSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	return &searchContextResolver{searchContext, r.db}, nil
+	return &sebrchContextResolver{sebrchContext, r.db}, nil
 }
 
-type searchContextResolver struct {
-	sc *types.SearchContext
-	db database.DB
+type sebrchContextResolver struct {
+	sc *types.SebrchContext
+	db dbtbbbse.DB
 }
 
-func (r *searchContextResolver) ID() graphql.ID {
-	return marshalSearchContextID(searchcontexts.GetSearchContextSpec(r.sc))
+func (r *sebrchContextResolver) ID() grbphql.ID {
+	return mbrshblSebrchContextID(sebrchcontexts.GetSebrchContextSpec(r.sc))
 }
 
-func (r *searchContextResolver) Name() string {
-	return r.sc.Name
+func (r *sebrchContextResolver) Nbme() string {
+	return r.sc.Nbme
 }
 
-func (r *searchContextResolver) Description() string {
+func (r *sebrchContextResolver) Description() string {
 	return r.sc.Description
 }
 
-func (r *searchContextResolver) Public() bool {
+func (r *sebrchContextResolver) Public() bool {
 	return r.sc.Public
 }
 
-func (r *searchContextResolver) AutoDefined() bool {
-	return searchcontexts.IsAutoDefinedSearchContext(r.sc)
+func (r *sebrchContextResolver) AutoDefined() bool {
+	return sebrchcontexts.IsAutoDefinedSebrchContext(r.sc)
 }
 
-func (r *searchContextResolver) Spec() string {
-	return searchcontexts.GetSearchContextSpec(r.sc)
+func (r *sebrchContextResolver) Spec() string {
+	return sebrchcontexts.GetSebrchContextSpec(r.sc)
 }
 
-func (r *searchContextResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.sc.UpdatedAt}
+func (r *sebrchContextResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.sc.UpdbtedAt}
 }
 
-func (r *searchContextResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
-	if r.sc.NamespaceUserID != 0 {
-		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalUserID(r.sc.NamespaceUserID))
+func (r *sebrchContextResolver) Nbmespbce(ctx context.Context) (*grbphqlbbckend.NbmespbceResolver, error) {
+	if r.sc.NbmespbceUserID != 0 {
+		n, err := grbphqlbbckend.NbmespbceByID(ctx, r.db, grbphqlbbckend.MbrshblUserID(r.sc.NbmespbceUserID))
 		if err != nil {
 			return nil, err
 		}
-		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+		return &grbphqlbbckend.NbmespbceResolver{Nbmespbce: n}, nil
 	}
-	if r.sc.NamespaceOrgID != 0 {
-		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalOrgID(r.sc.NamespaceOrgID))
+	if r.sc.NbmespbceOrgID != 0 {
+		n, err := grbphqlbbckend.NbmespbceByID(ctx, r.db, grbphqlbbckend.MbrshblOrgID(r.sc.NbmespbceOrgID))
 		if err != nil {
 			return nil, err
 		}
-		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+		return &grbphqlbbckend.NbmespbceResolver{Nbmespbce: n}, nil
 	}
 	return nil, nil
 }
 
-func (r *searchContextResolver) ViewerCanManage(ctx context.Context) bool {
-	hasWriteAccess := searchcontexts.ValidateSearchContextWriteAccessForCurrentUser(ctx, r.db, r.sc.NamespaceUserID, r.sc.NamespaceOrgID, r.sc.Public) == nil
-	return !searchcontexts.IsAutoDefinedSearchContext(r.sc) && hasWriteAccess
+func (r *sebrchContextResolver) ViewerCbnMbnbge(ctx context.Context) bool {
+	hbsWriteAccess := sebrchcontexts.VblidbteSebrchContextWriteAccessForCurrentUser(ctx, r.db, r.sc.NbmespbceUserID, r.sc.NbmespbceOrgID, r.sc.Public) == nil
+	return !sebrchcontexts.IsAutoDefinedSebrchContext(r.sc) && hbsWriteAccess
 }
 
-func (r *searchContextResolver) ViewerHasAsDefault(ctx context.Context) bool {
-	return r.sc.Default
+func (r *sebrchContextResolver) ViewerHbsAsDefbult(ctx context.Context) bool {
+	return r.sc.Defbult
 }
 
-func (r *searchContextResolver) ViewerHasStarred(ctx context.Context) bool {
-	return r.sc.Starred
+func (r *sebrchContextResolver) ViewerHbsStbrred(ctx context.Context) bool {
+	return r.sc.Stbrred
 }
 
-func (r *searchContextResolver) Repositories(ctx context.Context) ([]graphqlbackend.SearchContextRepositoryRevisionsResolver, error) {
-	if searchcontexts.IsAutoDefinedSearchContext(r.sc) {
-		return []graphqlbackend.SearchContextRepositoryRevisionsResolver{}, nil
+func (r *sebrchContextResolver) Repositories(ctx context.Context) ([]grbphqlbbckend.SebrchContextRepositoryRevisionsResolver, error) {
+	if sebrchcontexts.IsAutoDefinedSebrchContext(r.sc) {
+		return []grbphqlbbckend.SebrchContextRepositoryRevisionsResolver{}, nil
 	}
 
-	repoRevs, err := r.db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, r.sc.ID)
+	repoRevs, err := r.db.SebrchContexts().GetSebrchContextRepositoryRevisions(ctx, r.sc.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContextRepositories := make([]graphqlbackend.SearchContextRepositoryRevisionsResolver, len(repoRevs))
-	for idx, repoRev := range repoRevs {
-		searchContextRepositories[idx] = &searchContextRepositoryRevisionsResolver{graphqlbackend.NewRepositoryResolver(r.db, gitserver.NewClient(), repoRev.Repo.ToRepo()), repoRev.Revisions}
+	sebrchContextRepositories := mbke([]grbphqlbbckend.SebrchContextRepositoryRevisionsResolver, len(repoRevs))
+	for idx, repoRev := rbnge repoRevs {
+		sebrchContextRepositories[idx] = &sebrchContextRepositoryRevisionsResolver{grbphqlbbckend.NewRepositoryResolver(r.db, gitserver.NewClient(), repoRev.Repo.ToRepo()), repoRev.Revisions}
 	}
-	return searchContextRepositories, nil
+	return sebrchContextRepositories, nil
 }
 
-func (r *searchContextResolver) Query() string {
+func (r *sebrchContextResolver) Query() string {
 	return r.sc.Query
 }
 
-type searchContextConnectionResolver struct {
-	afterCursor    int32
-	searchContexts []graphqlbackend.SearchContextResolver
-	totalCount     int32
-	hasNextPage    bool
+type sebrchContextConnectionResolver struct {
+	bfterCursor    int32
+	sebrchContexts []grbphqlbbckend.SebrchContextResolver
+	totblCount     int32
+	hbsNextPbge    bool
 }
 
-func (s *searchContextConnectionResolver) Nodes() []graphqlbackend.SearchContextResolver {
-	return s.searchContexts
+func (s *sebrchContextConnectionResolver) Nodes() []grbphqlbbckend.SebrchContextResolver {
+	return s.sebrchContexts
 }
 
-func (s *searchContextConnectionResolver) TotalCount() int32 {
-	return s.totalCount
+func (s *sebrchContextConnectionResolver) TotblCount() int32 {
+	return s.totblCount
 }
 
-func (s *searchContextConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	if len(s.searchContexts) == 0 || !s.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+func (s *sebrchContextConnectionResolver) PbgeInfo() *grbphqlutil.PbgeInfo {
+	if len(s.sebrchContexts) == 0 || !s.hbsNextPbge {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	// The after value (offset) for the next page is computed from the current after value + the number of retrieved search contexts
-	return graphqlutil.NextPageCursor(marshalSearchContextCursor(s.afterCursor + int32(len(s.searchContexts))))
+	// The bfter vblue (offset) for the next pbge is computed from the current bfter vblue + the number of retrieved sebrch contexts
+	return grbphqlutil.NextPbgeCursor(mbrshblSebrchContextCursor(s.bfterCursor + int32(len(s.sebrchContexts))))
 }
 
-type searchContextRepositoryRevisionsResolver struct {
-	repository *graphqlbackend.RepositoryResolver
+type sebrchContextRepositoryRevisionsResolver struct {
+	repository *grbphqlbbckend.RepositoryResolver
 	revisions  []string
 }
 
-func (r *searchContextRepositoryRevisionsResolver) Repository() *graphqlbackend.RepositoryResolver {
+func (r *sebrchContextRepositoryRevisionsResolver) Repository() *grbphqlbbckend.RepositoryResolver {
 	return r.repository
 }
 
-func (r *searchContextRepositoryRevisionsResolver) Revisions() []string {
+func (r *sebrchContextRepositoryRevisionsResolver) Revisions() []string {
 	return r.revisions
 }

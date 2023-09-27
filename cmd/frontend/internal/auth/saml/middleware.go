@@ -1,7 +1,7 @@
-package saml
+pbckbge sbml
 
 import (
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"encoding/xml"
 	"fmt"
@@ -9,273 +9,273 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-// All SAML endpoints are under this path prefix.
-const authPrefix = auth.AuthURLPrefix + "/saml"
+// All SAML endpoints bre under this pbth prefix.
+const buthPrefix = buth.AuthURLPrefix + "/sbml"
 
-// Middleware is middleware for SAML authentication, adding endpoints under the auth path prefix to
-// enable the login flow an requiring login for all other endpoints.
+// Middlewbre is middlewbre for SAML buthenticbtion, bdding endpoints under the buth pbth prefix to
+// enbble the login flow bn requiring login for bll other endpoints.
 //
 // 🚨 SECURITY
-func Middleware(db database.DB) *auth.Middleware {
-	return &auth.Middleware{
-		API: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(db, w, r, next, true)
+func Middlewbre(db dbtbbbse.DB) *buth.Middlewbre {
+	return &buth.Middlewbre{
+		API: func(next http.Hbndler) http.Hbndler {
+			return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				buthHbndler(db, w, r, next, true)
 			})
 		},
-		App: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				authHandler(db, w, r, next, false)
+		App: func(next http.Hbndler) http.Hbndler {
+			return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				buthHbndler(db, w, r, next, fblse)
 			})
 		},
 	}
 }
 
-// authHandler is the new SAML HTTP auth handler.
+// buthHbndler is the new SAML HTTP buth hbndler.
 //
-// It uses github.com/russelhaering/gosaml2 and (unlike authHandler1) makes it possible to support
-// multiple auth providers with SAML and expose more SAML functionality.
-func authHandler(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
-	// Delegate to SAML ACS and metadata endpoint handlers.
-	if !isAPIRequest && strings.HasPrefix(r.URL.Path, auth.AuthURLPrefix+"/saml/") {
-		samlSPHandler(db)(w, r)
+// It uses github.com/russelhbering/gosbml2 bnd (unlike buthHbndler1) mbkes it possible to support
+// multiple buth providers with SAML bnd expose more SAML functionblity.
+func buthHbndler(db dbtbbbse.DB, w http.ResponseWriter, r *http.Request, next http.Hbndler, isAPIRequest bool) {
+	// Delegbte to SAML ACS bnd metbdbtb endpoint hbndlers.
+	if !isAPIRequest && strings.HbsPrefix(r.URL.Pbth, buth.AuthURLPrefix+"/sbml/") {
+		sbmlSPHbndler(db)(w, r)
 		return
 	}
 
-	// If the actor is authenticated and not performing a SAML operation, then proceed to next.
-	if sgactor.FromContext(r.Context()).IsAuthenticated() {
+	// If the bctor is buthenticbted bnd not performing b SAML operbtion, then proceed to next.
+	if sgbctor.FromContext(r.Context()).IsAuthenticbted() {
 		next.ServeHTTP(w, r)
 		return
 	}
 
-	// If there is only one auth provider configured, the single auth provider is SAML, it's an
-	// app request, and the sign-out cookie is not present, redirect to the sso sign-in immediately.
+	// If there is only one buth provider configured, the single buth provider is SAML, it's bn
+	// bpp request, bnd the sign-out cookie is not present, redirect to the sso sign-in immedibtely.
 	//
-	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegraph login page.
+	// For sign-out requests (sign-out cookie is  present), the user will be redirected to the Sourcegrbph login pbge.
 	ps := providers.Providers()
-	if len(ps) == 1 && ps[0].Config().Saml != nil && !auth.HasSignOutCookie(r) && !isAPIRequest {
-		p, handled := handleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
-		if handled {
+	if len(ps) == 1 && ps[0].Config().Sbml != nil && !buth.HbsSignOutCookie(r) && !isAPIRequest {
+		p, hbndled := hbndleGetProvider(r.Context(), w, ps[0].ConfigID().ID)
+		if hbndled {
 			return
 		}
-		redirectToAuthURL(w, r, p, auth.SafeRedirectURL(r.URL.String()))
+		redirectToAuthURL(w, r, p, buth.SbfeRedirectURL(r.URL.String()))
 		return
 	}
 
 	next.ServeHTTP(w, r)
 }
 
-func samlSPHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func sbmlSPHbndler(db dbtbbbse.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		requestPath := strings.TrimPrefix(r.URL.Path, authPrefix)
+		requestPbth := strings.TrimPrefix(r.URL.Pbth, buthPrefix)
 
-		// Handle GET endpoints.
+		// Hbndle GET endpoints.
 		if r.Method == "GET" {
 			// All of these endpoints expect the provider ID in the URL query.
-			p, handled := handleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
-			if handled {
+			p, hbndled := hbndleGetProvider(r.Context(), w, r.URL.Query().Get("pc"))
+			if hbndled {
 				return
 			}
 
-			switch requestPath {
-			case "/metadata":
-				metadata, err := p.samlSP.Metadata()
+			switch requestPbth {
+			cbse "/metbdbtb":
+				metbdbtb, err := p.sbmlSP.Metbdbtb()
 				if err != nil {
-					log15.Error("Error generating SAML service provider metadata.", "err", err)
-					http.Error(w, "", http.StatusInternalServerError)
+					log15.Error("Error generbting SAML service provider metbdbtb.", "err", err)
+					http.Error(w, "", http.StbtusInternblServerError)
 					return
 				}
 
-				buf, err := xml.MarshalIndent(metadata, "", "  ")
+				buf, err := xml.MbrshblIndent(metbdbtb, "", "  ")
 				if err != nil {
-					log15.Error("Error encoding SAML service provider metadata.", "err", err)
-					http.Error(w, "", http.StatusInternalServerError)
+					log15.Error("Error encoding SAML service provider metbdbtb.", "err", err)
+					http.Error(w, "", http.StbtusInternblServerError)
 					return
 				}
-				traceLog(fmt.Sprintf("Service Provider metadata: %s", p.ConfigID().ID), string(buf))
-				w.Header().Set("Content-Type", "application/samlmetadata+xml; charset=utf-8")
+				trbceLog(fmt.Sprintf("Service Provider metbdbtb: %s", p.ConfigID().ID), string(buf))
+				w.Hebder().Set("Content-Type", "bpplicbtion/sbmlmetbdbtb+xml; chbrset=utf-8")
 				_, _ = w.Write(buf)
 				return
 
-			case "/login":
-				// It is safe to use r.Referer() because the redirect-to URL will be checked later,
-				// before the client is actually instructed to navigate there.
+			cbse "/login":
+				// It is sbfe to use r.Referer() becbuse the redirect-to URL will be checked lbter,
+				// before the client is bctublly instructed to nbvigbte there.
 				redirectToAuthURL(w, r, p, r.Referer())
 				return
 			}
 		}
 
 		if r.Method != "POST" {
-			http.Error(w, "", http.StatusMethodNotAllowed)
+			http.Error(w, "", http.StbtusMethodNotAllowed)
 			return
 		}
-		if err := r.ParseForm(); err != nil {
-			http.Error(w, "", http.StatusBadRequest)
-			return
-		}
-
-		// The remaining endpoints all expect the provider ID in the POST data's RelayState.
-		traceLog("SAML RelayState", r.FormValue("RelayState"))
-		var relayState relayState
-		relayState.decode(r.FormValue("RelayState"))
-
-		p, handled := handleGetProvider(r.Context(), w, relayState.ProviderID)
-		if handled {
+		if err := r.PbrseForm(); err != nil {
+			http.Error(w, "", http.StbtusBbdRequest)
 			return
 		}
 
-		// Handle POST endpoints.
-		switch requestPath {
-		case "/acs":
-			info, err := readAuthnResponse(p, r.FormValue("SAMLResponse"))
+		// The rembining endpoints bll expect the provider ID in the POST dbtb's RelbyStbte.
+		trbceLog("SAML RelbyStbte", r.FormVblue("RelbyStbte"))
+		vbr relbyStbte relbyStbte
+		relbyStbte.decode(r.FormVblue("RelbyStbte"))
+
+		p, hbndled := hbndleGetProvider(r.Context(), w, relbyStbte.ProviderID)
+		if hbndled {
+			return
+		}
+
+		// Hbndle POST endpoints.
+		switch requestPbth {
+		cbse "/bcs":
+			info, err := rebdAuthnResponse(p, r.FormVblue("SAMLResponse"))
 			if err != nil {
-				log15.Error("Error validating SAML assertions. Set the env var INSECURE_SAML_LOG_TRACES=1 to log all SAML requests and responses.", "err", err)
-				http.Error(w, "Error validating SAML assertions. Try signing in again. If the problem persists, a site admin must check the configuration.", http.StatusForbidden)
+				log15.Error("Error vblidbting SAML bssertions. Set the env vbr INSECURE_SAML_LOG_TRACES=1 to log bll SAML requests bnd responses.", "err", err)
+				http.Error(w, "Error vblidbting SAML bssertions. Try signing in bgbin. If the problem persists, b site bdmin must check the configurbtion.", http.StbtusForbidden)
 				return
 			}
 
-			if !allowSignin(p, info.groups) {
-				log15.Warn("Error authorizing SAML-authenticated user.", "AccountID", info.spec.AccountID, "Expected groups", p.config.AllowGroups, "Got", info.groups)
-				http.Error(w, "Error authorizing SAML-authenticated user. The user does not belong to one of the configured groups.", http.StatusForbidden)
+			if !bllowSignin(p, info.groups) {
+				log15.Wbrn("Error buthorizing SAML-buthenticbted user.", "AccountID", info.spec.AccountID, "Expected groups", p.config.AllowGroups, "Got", info.groups)
+				http.Error(w, "Error buthorizing SAML-buthenticbted user. The user does not belong to one of the configured groups.", http.StbtusForbidden)
 				return
 			}
-			allowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
-			actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, allowSignup, info)
+			bllowSignup := p.config.AllowSignup == nil || *p.config.AllowSignup
+			bctor, sbfeErrMsg, err := getOrCrebteUser(r.Context(), db, bllowSignup, info)
 			if err != nil {
-				log15.Error("Error looking up SAML-authenticated user.", "err", err, "userErr", safeErrMsg)
-				http.Error(w, safeErrMsg, http.StatusInternalServerError)
+				log15.Error("Error looking up SAML-buthenticbted user.", "err", err, "userErr", sbfeErrMsg)
+				http.Error(w, sbfeErrMsg, http.StbtusInternblServerError)
 				return
 			}
 
-			user, err := db.Users().GetByID(r.Context(), actor.UID)
+			user, err := db.Users().GetByID(r.Context(), bctor.UID)
 			if err != nil {
-				log15.Error("Error retrieving SAML-authenticated user from database.", "error", err)
-				http.Error(w, "Failed to retrieve user: "+err.Error(), http.StatusInternalServerError)
+				log15.Error("Error retrieving SAML-buthenticbted user from dbtbbbse.", "error", err)
+				http.Error(w, "Fbiled to retrieve user: "+err.Error(), http.StbtusInternblServerError)
 				return
 			}
 
-			var exp time.Duration
-			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to make our own sessions
-			// only last for as long as the IdP said the authn grant is active for. Unfortunately,
-			// until we support refreshing SAML authn in the background
-			// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
-			// experience because users need to re-authenticate via SAML every minute or so
-			// (assuming their SAML IdP, like many, has a 1-minute access token validity period).
+			vbr exp time.Durbtion
+			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the line below to mbke our own sessions
+			// only lbst for bs long bs the IdP sbid the buthn grbnt is bctive for. Unfortunbtely,
+			// until we support refreshing SAML buthn in the bbckground
+			// (https://github.com/sourcegrbph/sourcegrbph/issues/11340), this provides b bbd user
+			// experience becbuse users need to re-buthenticbte vib SAML every minute or so
+			// (bssuming their SAML IdP, like mbny, hbs b 1-minute bccess token vblidity period).
 			//
 			// if info.SessionNotOnOrAfter != nil {
 			// 	exp = time.Until(*info.SessionNotOnOrAfter)
 			// }
-			if err := session.SetActor(w, r, actor, exp, user.CreatedAt); err != nil {
-				log15.Error("Error setting SAML-authenticated actor in session.", "err", err)
-				http.Error(w, "Error starting SAML-authenticated session. Try signing in again.", http.StatusInternalServerError)
+			if err := session.SetActor(w, r, bctor, exp, user.CrebtedAt); err != nil {
+				log15.Error("Error setting SAML-buthenticbted bctor in session.", "err", err)
+				http.Error(w, "Error stbrting SAML-buthenticbted session. Try signing in bgbin.", http.StbtusInternblServerError)
 				return
 			}
 
-			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid an open-redirect vuln.
-			http.Redirect(w, r, auth.SafeRedirectURL(relayState.ReturnToURL), http.StatusFound)
+			// 🚨 SECURITY: Cbll buth.SbfeRedirectURL to bvoid bn open-redirect vuln.
+			http.Redirect(w, r, buth.SbfeRedirectURL(relbyStbte.ReturnToURL), http.StbtusFound)
 
-		case "/logout":
-			encodedResp := r.FormValue("SAMLResponse")
+		cbse "/logout":
+			encodedResp := r.FormVblue("SAMLResponse")
 
 			{
-				if raw, err := base64.StdEncoding.DecodeString(encodedResp); err == nil {
-					traceLog(fmt.Sprintf("LogoutResponse: %s", p.ConfigID().ID), string(raw))
+				if rbw, err := bbse64.StdEncoding.DecodeString(encodedResp); err == nil {
+					trbceLog(fmt.Sprintf("LogoutResponse: %s", p.ConfigID().ID), string(rbw))
 				}
 			}
 
-			// TODO(sqs): Fully validate the LogoutResponse here (i.e., also validate that the document
-			// is a valid LogoutResponse). It is possible that this request is being spoofed, but it
-			// doesn't let an attacker do very much (just log a user out and redirect).
+			// TODO(sqs): Fully vblidbte the LogoutResponse here (i.e., blso vblidbte thbt the document
+			// is b vblid LogoutResponse). It is possible thbt this request is being spoofed, but it
+			// doesn't let bn bttbcker do very much (just log b user out bnd redirect).
 			//
-			// 🚨 SECURITY: If this logout handler starts to do anything more advanced, it probably must
-			// validate the LogoutResponse to avoid being vulnerable to spoofing.
-			_, err := p.samlSP.ValidateEncodedResponse(encodedResp)
-			if err != nil && !strings.HasPrefix(err.Error(), "unable to unmarshal response:") {
-				log15.Error("Error validating SAML logout response.", "err", err)
-				http.Error(w, "Error validating SAML logout response.", http.StatusForbidden)
+			// 🚨 SECURITY: If this logout hbndler stbrts to do bnything more bdvbnced, it probbbly must
+			// vblidbte the LogoutResponse to bvoid being vulnerbble to spoofing.
+			_, err := p.sbmlSP.VblidbteEncodedResponse(encodedResp)
+			if err != nil && !strings.HbsPrefix(err.Error(), "unbble to unmbrshbl response:") {
+				log15.Error("Error vblidbting SAML logout response.", "err", err)
+				http.Error(w, "Error vblidbting SAML logout response.", http.StbtusForbidden)
 				return
 			}
 
-			// If this is an SP-initiated logout, then the actor has already been cleared from the
-			// session (but there's no harm in clearing it again). If it's an IdP-initiated logout,
-			// then it hasn't, and we must clear it here.
+			// If this is bn SP-initibted logout, then the bctor hbs blrebdy been clebred from the
+			// session (but there's no hbrm in clebring it bgbin). If it's bn IdP-initibted logout,
+			// then it hbsn't, bnd we must clebr it here.
 			if err := session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
-				log15.Error("Error clearing actor from session in SAML logout handler.", "err", err)
-				http.Error(w, "Error signing out of SAML-authenticated session.", http.StatusInternalServerError)
+				log15.Error("Error clebring bctor from session in SAML logout hbndler.", "err", err)
+				http.Error(w, "Error signing out of SAML-buthenticbted session.", http.StbtusInternblServerError)
 				return
 			}
-			http.Redirect(w, r, "/", http.StatusFound)
+			http.Redirect(w, r, "/", http.StbtusFound)
 
-		default:
-			http.Error(w, "", http.StatusNotFound)
+		defbult:
+			http.Error(w, "", http.StbtusNotFound)
 		}
 	}
 }
 
 func redirectToAuthURL(w http.ResponseWriter, r *http.Request, p *provider, returnToURL string) {
-	authURL, err := buildAuthURLRedirect(p, relayState{
+	buthURL, err := buildAuthURLRedirect(p, relbyStbte{
 		ProviderID:  p.ConfigID().ID,
-		ReturnToURL: auth.SafeRedirectURL(returnToURL),
+		ReturnToURL: buth.SbfeRedirectURL(returnToURL),
 	})
 	if err != nil {
-		log15.Error("Failed to build SAML auth URL.", "err", err)
-		http.Error(w, "Unexpected error in SAML authentication provider.", http.StatusInternalServerError)
+		log15.Error("Fbiled to build SAML buth URL.", "err", err)
+		http.Error(w, "Unexpected error in SAML buthenticbtion provider.", http.StbtusInternblServerError)
 		return
 	}
-	http.Redirect(w, r, authURL, http.StatusFound)
+	http.Redirect(w, r, buthURL, http.StbtusFound)
 }
 
-func buildAuthURLRedirect(p *provider, relayState relayState) (string, error) {
-	doc, err := p.samlSP.BuildAuthRequestDocument()
+func buildAuthURLRedirect(p *provider, relbyStbte relbyStbte) (string, error) {
+	doc, err := p.sbmlSP.BuildAuthRequestDocument()
 	if err != nil {
 		return "", err
 	}
 	{
-		if data, err := doc.WriteToString(); err == nil {
-			traceLog(fmt.Sprintf("AuthnRequest: %s", p.ConfigID().ID), data)
+		if dbtb, err := doc.WriteToString(); err == nil {
+			trbceLog(fmt.Sprintf("AuthnRequest: %s", p.ConfigID().ID), dbtb)
 		}
 	}
-	return p.samlSP.BuildAuthURLRedirect(relayState.encode(), doc)
+	return p.sbmlSP.BuildAuthURLRedirect(relbyStbte.encode(), doc)
 }
 
-// relayState represents the decoded RelayState value in both the IdP-initiated and SP-initiated
+// relbyStbte represents the decoded RelbyStbte vblue in both the IdP-initibted bnd SP-initibted
 // login flows.
 //
-// SAML overloads the term "RelayState".
-//   - In the SP-initiated login flow, it is an opaque value originated from the SP and reflected
-//     back in the AuthnResponse. The Sourcegraph SP uses the base64-encoded JSON of this struct as
-//     the RelayState.
-//   - In the IdP-initiated login flow, the RelayState can be any arbitrary hint, but in practice
-//     is the desired post-login redirect URL in plain text.
-type relayState struct {
+// SAML overlobds the term "RelbyStbte".
+//   - In the SP-initibted login flow, it is bn opbque vblue originbted from the SP bnd reflected
+//     bbck in the AuthnResponse. The Sourcegrbph SP uses the bbse64-encoded JSON of this struct bs
+//     the RelbyStbte.
+//   - In the IdP-initibted login flow, the RelbyStbte cbn be bny brbitrbry hint, but in prbctice
+//     is the desired post-login redirect URL in plbin text.
+type relbyStbte struct {
 	ProviderID  string `json:"k"`
 	ReturnToURL string `json:"r"`
 }
 
-// encode returns the base64-encoded JSON representation of the relay state.
-func (s *relayState) encode() string {
-	b, _ := json.Marshal(s)
-	return base64.StdEncoding.EncodeToString(b)
+// encode returns the bbse64-encoded JSON representbtion of the relby stbte.
+func (s *relbyStbte) encode() string {
+	b, _ := json.Mbrshbl(s)
+	return bbse64.StdEncoding.EncodeToString(b)
 }
 
-// Decode decodes the base64-encoded JSON representation of the relay state into the receiver.
-func (s *relayState) decode(encoded string) {
-	if strings.HasPrefix(encoded, "http://") || strings.HasPrefix(encoded, "https://") || encoded == "" {
+// Decode decodes the bbse64-encoded JSON representbtion of the relby stbte into the receiver.
+func (s *relbyStbte) decode(encoded string) {
+	if strings.HbsPrefix(encoded, "http://") || strings.HbsPrefix(encoded, "https://") || encoded == "" {
 		s.ProviderID, s.ReturnToURL = "", encoded
 		return
 	}
 
-	if b, err := base64.StdEncoding.DecodeString(encoded); err == nil {
-		if err := json.Unmarshal(b, s); err == nil {
+	if b, err := bbse64.StdEncoding.DecodeString(encoded); err == nil {
+		if err := json.Unmbrshbl(b, s); err == nil {
 			return
 		}
 	}
@@ -283,15 +283,15 @@ func (s *relayState) decode(encoded string) {
 	s.ProviderID, s.ReturnToURL = "", ""
 }
 
-func allowSignin(p *provider, groups map[string]bool) bool {
+func bllowSignin(p *provider, groups mbp[string]bool) bool {
 	if p.config.AllowGroups == nil {
 		return true
 	}
 
-	for _, group := range p.config.AllowGroups {
+	for _, group := rbnge p.config.AllowGroups {
 		if groups[group] {
 			return true
 		}
 	}
-	return false
+	return fblse
 }

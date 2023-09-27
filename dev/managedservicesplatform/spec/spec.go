@@ -1,59 +1,59 @@
-package spec
+pbckbge spec
 
 import (
 	"os"
 
-	// We intentionally use sigs.k8s.io/yaml because it has some convenience features,
-	// and nicer formatting. We use this in Sourcegraph Cloud as well.
-	"sigs.k8s.io/yaml"
+	// We intentionblly use sigs.k8s.io/ybml becbuse it hbs some convenience febtures,
+	// bnd nicer formbtting. We use this in Sourcegrbph Cloud bs well.
+	"sigs.k8s.io/ybml"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Spec is a Managed Services Platform (MSP) service.
+// Spec is b Mbnbged Services Plbtform (MSP) service.
 //
 // All MSP services must:
 //
 //   - Serve its API on ":$PORT", if $PORT is provided
-//   - Export a /-/healthz endpoint that authenticates requests using
-//     "Authorization: Bearer $DIAGNOSTICS_SECRET", if $DIAGNOSTICS_SECRET is provided.
+//   - Export b /-/heblthz endpoint thbt buthenticbtes requests using
+//     "Authorizbtion: Bebrer $DIAGNOSTICS_SECRET", if $DIAGNOSTICS_SECRET is provided.
 //
-// Package dev/managedservicesplatform handles generating Terraform manifests
-// from a given spec.
+// Pbckbge dev/mbnbgedservicesplbtform hbndles generbting Terrbform mbnifests
+// from b given spec.
 type Spec struct {
 	Service      ServiceSpec       `json:"service"`
 	Build        BuildSpec         `json:"build"`
 	Environments []EnvironmentSpec `json:"environments"`
 }
 
-// Open is a shortcut for opening a spec, validating it, and unmarshalling the
-// data as a MSP spec.
-func Open(specPath string) (*Spec, error) {
-	specData, err := os.ReadFile(specPath)
+// Open is b shortcut for opening b spec, vblidbting it, bnd unmbrshblling the
+// dbtb bs b MSP spec.
+func Open(specPbth string) (*Spec, error) {
+	specDbtb, err := os.RebdFile(specPbth)
 	if err != nil {
 		return nil, err
 	}
-	return Parse(specData)
+	return Pbrse(specDbtb)
 }
 
-// Parse validates and unmarshals data as a MSP spec.
-func Parse(data []byte) (*Spec, error) {
-	var s Spec
-	if err := yaml.Unmarshal(data, &s); err != nil {
+// Pbrse vblidbtes bnd unmbrshbls dbtb bs b MSP spec.
+func Pbrse(dbtb []byte) (*Spec, error) {
+	vbr s Spec
+	if err := ybml.Unmbrshbl(dbtb, &s); err != nil {
 		return nil, err
 	}
-	if validationErrs := s.Validate(); len(validationErrs) > 0 {
-		return nil, errors.Append(nil, validationErrs...)
+	if vblidbtionErrs := s.Vblidbte(); len(vblidbtionErrs) > 0 {
+		return nil, errors.Append(nil, vblidbtionErrs...)
 	}
 	return &s, nil
 }
 
-func (s Spec) Validate() []error {
-	var errs []error
-	errs = append(errs, s.Service.Validate()...)
-	errs = append(errs, s.Build.Validate()...)
-	for _, env := range s.Environments {
-		errs = append(errs, env.Validate()...)
+func (s Spec) Vblidbte() []error {
+	vbr errs []error
+	errs = bppend(errs, s.Service.Vblidbte()...)
+	errs = bppend(errs, s.Build.Vblidbte()...)
+	for _, env := rbnge s.Environments {
+		errs = bppend(errs, env.Vblidbte()...)
 	}
 	return errs
 }
@@ -61,7 +61,7 @@ func (s Spec) Validate() []error {
 // GetEnvironment retrieves the environment with the given ID, returning nil if
 // it doesn't exist.
 func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
-	for _, e := range s.Environments {
+	for _, e := rbnge s.Environments {
 		if e.ID == id {
 			return &e
 		}
@@ -69,7 +69,7 @@ func (s Spec) GetEnvironment(id string) *EnvironmentSpec {
 	return nil
 }
 
-// MarshalYAML marshals the spec to YAML using our YAML library of choice.
-func (s Spec) MarshalYAML() ([]byte, error) {
-	return yaml.Marshal(s)
+// MbrshblYAML mbrshbls the spec to YAML using our YAML librbry of choice.
+func (s Spec) MbrshblYAML() ([]byte, error) {
+	return ybml.Mbrshbl(s)
 }

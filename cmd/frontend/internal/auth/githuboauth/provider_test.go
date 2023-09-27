@@ -1,4 +1,4 @@
-package githuboauth
+pbckbge githubobuth
 
 import (
 	"sort"
@@ -6,61 +6,61 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestRequestedScopes(t *testing.T) {
-	defer envvar.MockSourcegraphDotComMode(false)
+	defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 	tests := []struct {
 		dotComMode bool
-		schema     *schema.GitHubAuthProvider
+		schemb     *schemb.GitHubAuthProvider
 		expScopes  []string
 	}{
 		{
-			dotComMode: false,
-			schema: &schema.GitHubAuthProvider{
+			dotComMode: fblse,
+			schemb: &schemb.GitHubAuthProvider{
 				AllowOrgs: nil,
 			},
-			expScopes: []string{"repo", "user:email"},
+			expScopes: []string{"repo", "user:embil"},
 		},
 		{
-			dotComMode: false,
-			schema: &schema.GitHubAuthProvider{
+			dotComMode: fblse,
+			schemb: &schemb.GitHubAuthProvider{
 				AllowOrgs: []string{"myorg"},
 			},
-			expScopes: []string{"read:org", "repo", "user:email"},
+			expScopes: []string{"rebd:org", "repo", "user:embil"},
 		},
 		{
 			dotComMode: true,
-			schema: &schema.GitHubAuthProvider{
+			schemb: &schemb.GitHubAuthProvider{
 				AllowOrgs: nil,
 			},
-			expScopes: []string{"user:email"},
+			expScopes: []string{"user:embil"},
 		},
 		{
 			dotComMode: true,
-			schema: &schema.GitHubAuthProvider{
+			schemb: &schemb.GitHubAuthProvider{
 				AllowOrgs: []string{"myorg"},
 			},
-			expScopes: []string{"read:org", "user:email"},
+			expScopes: []string{"rebd:org", "user:embil"},
 		},
 		{
 			dotComMode: true,
-			schema: &schema.GitHubAuthProvider{
+			schemb: &schemb.GitHubAuthProvider{
 				AllowOrgs: []string{"myorg"},
 			},
-			expScopes: []string{"read:org", "user:email"},
+			expScopes: []string{"rebd:org", "user:embil"},
 		},
 	}
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run("", func(t *testing.T) {
-			envvar.MockSourcegraphDotComMode(test.dotComMode)
-			scopes := requestedScopes(test.schema)
+			envvbr.MockSourcegrbphDotComMode(test.dotComMode)
+			scopes := requestedScopes(test.schemb)
 			sort.Strings(scopes)
 			if diff := cmp.Diff(test.expScopes, scopes); diff != "" {
-				t.Fatalf("scopes: %s", diff)
+				t.Fbtblf("scopes: %s", diff)
 			}
 		})
 	}

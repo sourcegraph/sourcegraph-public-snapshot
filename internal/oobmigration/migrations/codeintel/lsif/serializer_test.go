@@ -1,4 +1,4 @@
-package lsif
+pbckbge lsif
 
 import (
 	"testing"
@@ -6,180 +6,180 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestDocumentData(t *testing.T) {
-	expected := DocumentData{
-		Ranges: map[ID]RangeData{
+func TestDocumentDbtb(t *testing.T) {
+	expected := DocumentDbtb{
+		Rbnges: mbp[ID]RbngeDbtb{
 			ID("7864"): {
-				StartLine:          541,
-				StartCharacter:     10,
+				StbrtLine:          541,
+				StbrtChbrbcter:     10,
 				EndLine:            541,
-				EndCharacter:       12,
+				EndChbrbcter:       12,
 				DefinitionResultID: ID("1266"),
 				ReferenceResultID:  ID("15871"),
 				HoverResultID:      ID("1269"),
 				MonikerIDs:         nil,
 			},
 			ID("8265"): {
-				StartLine:          266,
-				StartCharacter:     10,
+				StbrtLine:          266,
+				StbrtChbrbcter:     10,
 				EndLine:            266,
-				EndCharacter:       16,
+				EndChbrbcter:       16,
 				DefinitionResultID: ID("311"),
 				ReferenceResultID:  ID("15500"),
 				HoverResultID:      ID("317"),
 				MonikerIDs:         []ID{ID("314")},
 			},
 		},
-		HoverResults: map[ID]string{
-			ID("1269"): "```go\nvar id string\n```",
-			ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contains information of a vertex in the graph.\n\n---\n\n```go\nstruct {\n    Element\n    Label VertexLabel \"json:\\\"label\\\"\"\n}\n```",
+		HoverResults: mbp[ID]string{
+			ID("1269"): "```go\nvbr id string\n```",
+			ID("317"):  "```go\ntype Vertex struct\n```\n\n---\n\nVertex contbins informbtion of b vertex in the grbph.\n\n---\n\n```go\nstruct {\n    Element\n    Lbbel VertexLbbel \"json:\\\"lbbel\\\"\"\n}\n```",
 		},
-		Monikers: map[ID]MonikerData{
+		Monikers: mbp[ID]MonikerDbtb{
 			ID("314"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
-				Identifier:           "github.com/sourcegraph/lsif-go/protocol:Vertex",
-				PackageInformationID: ID("213"),
+				Identifier:           "github.com/sourcegrbph/lsif-go/protocol:Vertex",
+				PbckbgeInformbtionID: ID("213"),
 			},
 			ID("2494"): {
 				Kind:                 "export",
 				Scheme:               "gomod",
-				Identifier:           "github.com/sourcegraph/lsif-go/protocol:VertexLabel",
-				PackageInformationID: ID("213"),
+				Identifier:           "github.com/sourcegrbph/lsif-go/protocol:VertexLbbel",
+				PbckbgeInformbtionID: ID("213"),
 			},
 		},
-		PackageInformation: map[ID]PackageInformationData{
+		PbckbgeInformbtion: mbp[ID]PbckbgeInformbtionDbtb{
 			ID("213"): {
-				Name:    "github.com/sourcegraph/lsif-go",
-				Version: "v0.0.0-ad3507cbeb18",
+				Nbme:    "github.com/sourcegrbph/lsif-go",
+				Version: "v0.0.0-bd3507cbeb18",
 			},
 		},
 	}
 
 	t.Run("current", func(t *testing.T) {
-		serializer := newSerializer()
+		seriblizer := newSeriblizer()
 
-		recompressed, err := serializer.MarshalDocumentData(expected)
+		recompressed, err := seriblizer.MbrshblDocumentDbtb(expected)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling document data: %s", err)
+			t.Fbtblf("unexpected error mbrshblling document dbtb: %s", err)
 		}
 
-		roundtripActual, err := serializer.UnmarshalDocumentData(recompressed)
+		roundtripActubl, err := seriblizer.UnmbrshblDocumentDbtb(recompressed)
 		if err != nil {
-			t.Fatalf("unexpected error unmarshalling document data: %s", err)
+			t.Fbtblf("unexpected error unmbrshblling document dbtb: %s", err)
 		}
 
-		if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-			t.Errorf("unexpected document data (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expected, roundtripActubl); diff != "" {
+			t.Errorf("unexpected document dbtb (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("legacy", func(t *testing.T) {
-		serializer := newSerializer()
+	t.Run("legbcy", func(t *testing.T) {
+		seriblizer := newSeriblizer()
 
-		recompressed, err := serializer.MarshalLegacyDocumentData(expected)
+		recompressed, err := seriblizer.MbrshblLegbcyDocumentDbtb(expected)
 		if err != nil {
-			t.Fatalf("unexpected error marshalling document data: %s", err)
+			t.Fbtblf("unexpected error mbrshblling document dbtb: %s", err)
 		}
 
-		roundtripActual, err := serializer.UnmarshalLegacyDocumentData(recompressed)
+		roundtripActubl, err := seriblizer.UnmbrshblLegbcyDocumentDbtb(recompressed)
 		if err != nil {
-			t.Fatalf("unexpected error unmarshalling document data: %s", err)
+			t.Fbtblf("unexpected error unmbrshblling document dbtb: %s", err)
 		}
 
-		if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-			t.Errorf("unexpected document data (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expected, roundtripActubl); diff != "" {
+			t.Errorf("unexpected document dbtb (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestLocations(t *testing.T) {
-	expected := []LocationData{
+func TestLocbtions(t *testing.T) {
+	expected := []LocbtionDbtb{
 		{
-			URI:            "internal/index/indexer.go",
-			StartLine:      36,
-			StartCharacter: 26,
+			URI:            "internbl/index/indexer.go",
+			StbrtLine:      36,
+			StbrtChbrbcter: 26,
 			EndLine:        36,
-			EndCharacter:   32,
+			EndChbrbcter:   32,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      100,
-			StartCharacter: 9,
+			StbrtLine:      100,
+			StbrtChbrbcter: 9,
 			EndLine:        100,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      115,
-			StartCharacter: 9,
+			StbrtLine:      115,
+			StbrtChbrbcter: 9,
 			EndLine:        115,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      95,
-			StartCharacter: 9,
+			StbrtLine:      95,
+			StbrtChbrbcter: 9,
 			EndLine:        95,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      130,
-			StartCharacter: 9,
+			StbrtLine:      130,
+			StbrtChbrbcter: 9,
 			EndLine:        130,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      155,
-			StartCharacter: 9,
+			StbrtLine:      155,
+			StbrtChbrbcter: 9,
 			EndLine:        155,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      80,
-			StartCharacter: 9,
+			StbrtLine:      80,
+			StbrtChbrbcter: 9,
 			EndLine:        80,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      36,
-			StartCharacter: 9,
+			StbrtLine:      36,
+			StbrtChbrbcter: 9,
 			EndLine:        36,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      135,
-			StartCharacter: 9,
+			StbrtLine:      135,
+			StbrtChbrbcter: 9,
 			EndLine:        135,
-			EndCharacter:   15,
+			EndChbrbcter:   15,
 		},
 		{
 			URI:            "protocol/writer.go",
-			StartLine:      12,
-			StartCharacter: 5,
+			StbrtLine:      12,
+			StbrtChbrbcter: 5,
 			EndLine:        12,
-			EndCharacter:   11,
+			EndChbrbcter:   11,
 		},
 	}
 
-	serializer := newSerializer()
+	seriblizer := newSeriblizer()
 
-	recompressed, err := serializer.MarshalLocations(expected)
+	recompressed, err := seriblizer.MbrshblLocbtions(expected)
 	if err != nil {
-		t.Fatalf("unexpected error marshalling locations: %s", err)
+		t.Fbtblf("unexpected error mbrshblling locbtions: %s", err)
 	}
 
-	roundtripActual, err := serializer.UnmarshalLocations(recompressed)
+	roundtripActubl, err := seriblizer.UnmbrshblLocbtions(recompressed)
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling locations: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling locbtions: %s", err)
 	}
 
-	if diff := cmp.Diff(expected, roundtripActual); diff != "" {
-		t.Errorf("unexpected locations (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, roundtripActubl); diff != "" {
+		t.Errorf("unexpected locbtions (-wbnt +got):\n%s", diff)
 	}
 }

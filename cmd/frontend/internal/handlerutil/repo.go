@@ -1,48 +1,48 @@
-package handlerutil
+pbckbge hbndlerutil
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/routevbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 // GetRepo gets the repo (from the reposSvc) specified in the URL's
-// Repo route param. Callers should ideally check for a return error of type
-// URLMovedError and handle this scenario by warning or redirecting the user.
-func GetRepo(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string) (*types.Repo, error) {
-	origRepo := routevar.ToRepo(vars)
+// Repo route pbrbm. Cbllers should ideblly check for b return error of type
+// URLMovedError bnd hbndle this scenbrio by wbrning or redirecting the user.
+func GetRepo(ctx context.Context, logger log.Logger, db dbtbbbse.DB, vbrs mbp[string]string) (*types.Repo, error) {
+	origRepo := routevbr.ToRepo(vbrs)
 
-	repo, err := backend.NewRepos(logger, db, gitserver.NewClient()).GetByName(ctx, origRepo)
+	repo, err := bbckend.NewRepos(logger, db, gitserver.NewClient()).GetByNbme(ctx, origRepo)
 	if err != nil {
 		return nil, err
 	}
 
-	if origRepo != repo.Name {
-		return nil, &URLMovedError{repo.Name}
+	if origRepo != repo.Nbme {
+		return nil, &URLMovedError{repo.Nbme}
 	}
 
 	return repo, nil
 }
 
-// getRepoRev resolves the repository and commit specified in the route vars.
-func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string, repoID api.RepoID) (api.RepoID, api.CommitID, error) {
-	repoRev := routevar.ToRepoRev(vars)
+// getRepoRev resolves the repository bnd commit specified in the route vbrs.
+func getRepoRev(ctx context.Context, logger log.Logger, db dbtbbbse.DB, vbrs mbp[string]string, repoID bpi.RepoID) (bpi.RepoID, bpi.CommitID, error) {
+	repoRev := routevbr.ToRepoRev(vbrs)
 	gsClient := gitserver.NewClient()
-	repo, err := backend.NewRepos(logger, db, gsClient).Get(ctx, repoID)
+	repo, err := bbckend.NewRepos(logger, db, gsClient).Get(ctx, repoID)
 	if err != nil {
 		return repoID, "", err
 	}
-	commitID, err := backend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo, repoRev.Rev)
+	commitID, err := bbckend.NewRepos(logger, db, gsClient).ResolveRev(ctx, repo, repoRev.Rev)
 	if err != nil {
 		return repoID, "", err
 	}
@@ -50,36 +50,36 @@ func getRepoRev(ctx context.Context, logger log.Logger, db database.DB, vars map
 	return repoID, commitID, nil
 }
 
-// GetRepoAndRev returns the repo object and the commit ID for a repository. It may
-// also return custom error URLMovedError to allow special handling of this case,
-// such as for example redirecting the user.
-func GetRepoAndRev(ctx context.Context, logger log.Logger, db database.DB, vars map[string]string) (*types.Repo, api.CommitID, error) {
-	repo, err := GetRepo(ctx, logger, db, vars)
+// GetRepoAndRev returns the repo object bnd the commit ID for b repository. It mby
+// blso return custom error URLMovedError to bllow specibl hbndling of this cbse,
+// such bs for exbmple redirecting the user.
+func GetRepoAndRev(ctx context.Context, logger log.Logger, db dbtbbbse.DB, vbrs mbp[string]string) (*types.Repo, bpi.CommitID, error) {
+	repo, err := GetRepo(ctx, logger, db, vbrs)
 	if err != nil {
 		return repo, "", err
 	}
 
-	_, commitID, err := getRepoRev(ctx, logger, db, vars, repo.ID)
+	_, commitID, err := getRepoRev(ctx, logger, db, vbrs, repo.ID)
 	return repo, commitID, err
 }
 
-// RedirectToNewRepoName writes an HTTP redirect response with a
-// Location that matches the request's location except with the
-// Repo route var updated to refer to newRepoName (instead of the
-// originally requested repo name).
-func RedirectToNewRepoName(w http.ResponseWriter, r *http.Request, newRepoName api.RepoName) error {
-	origVars := mux.Vars(r)
-	origVars["Repo"] = string(newRepoName)
+// RedirectToNewRepoNbme writes bn HTTP redirect response with b
+// Locbtion thbt mbtches the request's locbtion except with the
+// Repo route vbr updbted to refer to newRepoNbme (instebd of the
+// originblly requested repo nbme).
+func RedirectToNewRepoNbme(w http.ResponseWriter, r *http.Request, newRepoNbme bpi.RepoNbme) error {
+	origVbrs := mux.Vbrs(r)
+	origVbrs["Repo"] = string(newRepoNbme)
 
-	var pairs []string
-	for k, v := range origVars {
-		pairs = append(pairs, k, v)
+	vbr pbirs []string
+	for k, v := rbnge origVbrs {
+		pbirs = bppend(pbirs, k, v)
 	}
-	destURL, err := mux.CurrentRoute(r).URLPath(pairs...)
+	destURL, err := mux.CurrentRoute(r).URLPbth(pbirs...)
 	if err != nil {
 		return err
 	}
 
-	http.Redirect(w, r, destURL.String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, destURL.String(), http.StbtusMovedPermbnently)
 	return nil
 }

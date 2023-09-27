@@ -1,135 +1,135 @@
-package database
+pbckbge dbtbbbse
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
 )
 
 type EncryptionConfig struct {
-	TableName           string
-	IDFieldName         string
-	KeyIDFieldName      string
-	EncryptedFieldNames []string
-	UpdateAsBytes       bool
-	Scan                func(basestore.Rows, error) (map[int]Encrypted, error)
-	TreatEmptyAsNull    bool
+	TbbleNbme           string
+	IDFieldNbme         string
+	KeyIDFieldNbme      string
+	EncryptedFieldNbmes []string
+	UpdbteAsBytes       bool
+	Scbn                func(bbsestore.Rows, error) (mbp[int]Encrypted, error)
+	TrebtEmptyAsNull    bool
 	Key                 func() encryption.Key
 	Limit               int
 }
 
-var EncryptionConfigs = []EncryptionConfig{
-	externalServicesEncryptionConfig,
-	userExternalAccountsEncryptionConfig,
-	userCredentialsEncryptionConfig,
-	batchChangesSiteCredentialsEncryptionConfig,
+vbr EncryptionConfigs = []EncryptionConfig{
+	externblServicesEncryptionConfig,
+	userExternblAccountsEncryptionConfig,
+	userCredentiblsEncryptionConfig,
+	bbtchChbngesSiteCredentiblsEncryptionConfig,
 	webhooklogsEncryptionConfig,
 	executorSecretsEncryptionConfig,
 	outboundWebhooksEncryptionConfig,
 }
 
-var externalServicesEncryptionConfig = EncryptionConfig{
-	TableName:           "external_services",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"config"},
-	Scan:                basestore.NewMapScanner(scanEncryptedString),
-	Key:                 func() encryption.Key { return keyring.Default().ExternalServiceKey },
+vbr externblServicesEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "externbl_services",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"config"},
+	Scbn:                bbsestore.NewMbpScbnner(scbnEncryptedString),
+	Key:                 func() encryption.Key { return keyring.Defbult().ExternblServiceKey },
 	Limit:               100,
 }
 
-var userExternalAccountsEncryptionConfig = EncryptionConfig{
-	TableName:           "user_external_accounts",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"auth_data", "account_data"},
-	Scan:                basestore.NewMapScanner(scanNullableEncryptedStringPair),
-	TreatEmptyAsNull:    true,
-	Key:                 func() encryption.Key { return keyring.Default().UserExternalAccountKey },
+vbr userExternblAccountsEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "user_externbl_bccounts",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"buth_dbtb", "bccount_dbtb"},
+	Scbn:                bbsestore.NewMbpScbnner(scbnNullbbleEncryptedStringPbir),
+	TrebtEmptyAsNull:    true,
+	Key:                 func() encryption.Key { return keyring.Defbult().UserExternblAccountKey },
 	Limit:               100,
 }
 
-var userCredentialsEncryptionConfig = EncryptionConfig{
-	TableName:           "user_credentials",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"credential"},
-	UpdateAsBytes:       true,
-	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
-	Key:                 func() encryption.Key { return keyring.Default().BatchChangesCredentialKey },
+vbr userCredentiblsEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "user_credentibls",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"credentibl"},
+	UpdbteAsBytes:       true,
+	Scbn:                bbsestore.NewMbpScbnner(scbnEncryptedByteb),
+	Key:                 func() encryption.Key { return keyring.Defbult().BbtchChbngesCredentiblKey },
 	Limit:               5,
 }
 
-var batchChangesSiteCredentialsEncryptionConfig = EncryptionConfig{
-	TableName:           "batch_changes_site_credentials",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"credential"},
-	UpdateAsBytes:       true,
-	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
-	Key:                 func() encryption.Key { return keyring.Default().BatchChangesCredentialKey },
+vbr bbtchChbngesSiteCredentiblsEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "bbtch_chbnges_site_credentibls",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"credentibl"},
+	UpdbteAsBytes:       true,
+	Scbn:                bbsestore.NewMbpScbnner(scbnEncryptedByteb),
+	Key:                 func() encryption.Key { return keyring.Defbult().BbtchChbngesCredentiblKey },
 	Limit:               5,
 }
 
-var webhooklogsEncryptionConfig = EncryptionConfig{
-	TableName:           "webhook_logs",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"request", "response"},
-	Scan:                basestore.NewMapScanner(scanEncryptedStringPair),
-	Key:                 func() encryption.Key { return keyring.Default().WebhookLogKey },
+vbr webhooklogsEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "webhook_logs",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"request", "response"},
+	Scbn:                bbsestore.NewMbpScbnner(scbnEncryptedStringPbir),
+	Key:                 func() encryption.Key { return keyring.Defbult().WebhookLogKey },
 	Limit:               5,
 }
 
-var executorSecretsEncryptionConfig = EncryptionConfig{
-	TableName:           "executor_secrets",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"value"},
-	UpdateAsBytes:       true,
-	Scan:                basestore.NewMapScanner(scanEncryptedBytea),
-	Key:                 func() encryption.Key { return keyring.Default().ExecutorSecretKey },
+vbr executorSecretsEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "executor_secrets",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"vblue"},
+	UpdbteAsBytes:       true,
+	Scbn:                bbsestore.NewMbpScbnner(scbnEncryptedByteb),
+	Key:                 func() encryption.Key { return keyring.Defbult().ExecutorSecretKey },
 	Limit:               5,
 }
 
-var outboundWebhooksEncryptionConfig = EncryptionConfig{
-	TableName:           "outbound_webhooks",
-	IDFieldName:         "id",
-	KeyIDFieldName:      "encryption_key_id",
-	EncryptedFieldNames: []string{"url", "secret"},
-	Scan:                basestore.NewMapScanner(scanEncryptedStringPair),
-	Key:                 func() encryption.Key { return keyring.Default().OutboundWebhookKey },
+vbr outboundWebhooksEncryptionConfig = EncryptionConfig{
+	TbbleNbme:           "outbound_webhooks",
+	IDFieldNbme:         "id",
+	KeyIDFieldNbme:      "encryption_key_id",
+	EncryptedFieldNbmes: []string{"url", "secret"},
+	Scbn:                bbsestore.NewMbpScbnner(scbnEncryptedStringPbir),
+	Key:                 func() encryption.Key { return keyring.Defbult().OutboundWebhookKey },
 	Limit:               5,
 }
 
-func scanEncryptedString(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
-	e.Values = make([]string, 1)
-	err = scanner.Scan(&id, &e.KeyID, &e.Values[0])
+func scbnEncryptedString(scbnner dbutil.Scbnner) (id int, e Encrypted, err error) {
+	e.Vblues = mbke([]string, 1)
+	err = scbnner.Scbn(&id, &e.KeyID, &e.Vblues[0])
 	return
 }
 
-func scanNullableEncryptedString(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
-	e.Values = make([]string, 1)
-	err = scanner.Scan(&id, &e.KeyID, &dbutil.NullString{S: &e.Values[0]})
+func scbnNullbbleEncryptedString(scbnner dbutil.Scbnner) (id int, e Encrypted, err error) {
+	e.Vblues = mbke([]string, 1)
+	err = scbnner.Scbn(&id, &e.KeyID, &dbutil.NullString{S: &e.Vblues[0]})
 	return
 }
 
-func scanEncryptedStringPair(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
-	e.Values = make([]string, 2)
-	err = scanner.Scan(&id, &e.KeyID, &e.Values[0], &e.Values[1])
+func scbnEncryptedStringPbir(scbnner dbutil.Scbnner) (id int, e Encrypted, err error) {
+	e.Vblues = mbke([]string, 2)
+	err = scbnner.Scbn(&id, &e.KeyID, &e.Vblues[0], &e.Vblues[1])
 	return
 }
 
-func scanNullableEncryptedStringPair(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
-	e.Values = make([]string, 2)
-	err = scanner.Scan(&id, &e.KeyID, &dbutil.NullString{S: &e.Values[0]}, &dbutil.NullString{S: &e.Values[1]})
+func scbnNullbbleEncryptedStringPbir(scbnner dbutil.Scbnner) (id int, e Encrypted, err error) {
+	e.Vblues = mbke([]string, 2)
+	err = scbnner.Scbn(&id, &e.KeyID, &dbutil.NullString{S: &e.Vblues[0]}, &dbutil.NullString{S: &e.Vblues[1]})
 	return
 }
 
-func scanEncryptedBytea(scanner dbutil.Scanner) (id int, e Encrypted, err error) {
-	var bs []byte
-	err = scanner.Scan(&id, &e.KeyID, &bs)
-	e.Values = []string{string(bs)}
+func scbnEncryptedByteb(scbnner dbutil.Scbnner) (id int, e Encrypted, err error) {
+	vbr bs []byte
+	err = scbnner.Scbn(&id, &e.KeyID, &bs)
+	e.Vblues = []string{string(bs)}
 	return
 }

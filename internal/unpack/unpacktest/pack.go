@@ -1,58 +1,58 @@
-package unpacktest
+pbckbge unpbcktest
 
 import (
-	"archive/tar"
-	"archive/zip"
+	"brchive/tbr"
+	"brchive/zip"
 	"bytes"
 	"io"
 	"strings"
 	"testing"
 )
 
-func CreateZipArchive(t testing.TB, files map[string]string) io.ReadCloser {
-	var b bytes.Buffer
+func CrebteZipArchive(t testing.TB, files mbp[string]string) io.RebdCloser {
+	vbr b bytes.Buffer
 	zw := zip.NewWriter(&b)
 	defer func() {
 		if err := zw.Close(); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
-	for name, contents := range files {
-		w, err := zw.Create(name)
+	for nbme, contents := rbnge files {
+		w, err := zw.Crebte(nbme)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if _, err := io.Copy(w, strings.NewReader(contents)); err != nil {
-			t.Fatal(err)
+		if _, err := io.Copy(w, strings.NewRebder(contents)); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
 	return io.NopCloser(&b)
 }
 
-func CreateTarArchive(t testing.TB, files map[string]string) io.ReadCloser {
-	var b bytes.Buffer
-	tw := tar.NewWriter(&b)
+func CrebteTbrArchive(t testing.TB, files mbp[string]string) io.RebdCloser {
+	vbr b bytes.Buffer
+	tw := tbr.NewWriter(&b)
 	defer func() {
 		if err := tw.Close(); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
-	for name, contents := range files {
-		header := tar.Header{
-			Typeflag: tar.TypeReg,
-			Name:     name,
+	for nbme, contents := rbnge files {
+		hebder := tbr.Hebder{
+			Typeflbg: tbr.TypeReg,
+			Nbme:     nbme,
 			Size:     int64(len(contents)),
 		}
-		if err := tw.WriteHeader(&header); err != nil {
-			t.Fatal(err)
+		if err := tw.WriteHebder(&hebder); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if _, err := io.Copy(tw, strings.NewReader(contents)); err != nil {
-			t.Fatal(err)
+		if _, err := io.Copy(tw, strings.NewRebder(contents)); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 

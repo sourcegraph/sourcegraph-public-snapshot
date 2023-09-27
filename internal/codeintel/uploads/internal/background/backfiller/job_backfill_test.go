@@ -1,4 +1,4 @@
-package backfiller
+pbckbge bbckfiller
 
 import (
 	"context"
@@ -8,47 +8,47 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	shbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-func TestBackfillCommittedAtBatch(t *testing.T) {
-	ctx := context.Background()
+func TestBbckfillCommittedAtBbtch(t *testing.T) {
+	ctx := context.Bbckground()
 	store := NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
-	svc := &backfiller{
+	svc := &bbckfiller{
 		store:           store,
 		gitserverClient: gitserverClient,
 	}
 
 	// Return self for txn
-	store.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s shared.Store) error) error { return f(store) })
+	store.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(s shbred.Store) error) error { return f(store) })
 
 	n := 50
 	t0 := time.Unix(1587396557, 0).UTC()
-	expectedCommitDates := make(map[string]time.Time, n)
+	expectedCommitDbtes := mbke(mbp[string]time.Time, n)
 	for i := 0; i < n; i++ {
-		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
+		expectedCommitDbtes[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Durbtion(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[string(commit)]
-		return string(commit), date, ok, nil
+	gitserverClient.CommitDbteFunc.SetDefbultHook(func(ctx context.Context, _ buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID) (string, time.Time, bool, error) {
+		dbte, ok := expectedCommitDbtes[string(commit)]
+		return string(commit), dbte, ok, nil
 	})
 
-	pageSize := 50
-	for i := 0; i < n; i += pageSize {
-		commitsByRepo := map[int][]string{}
-		for j := 0; j < pageSize; j++ {
+	pbgeSize := 50
+	for i := 0; i < n; i += pbgeSize {
+		commitsByRepo := mbp[int][]string{}
+		for j := 0; j < pbgeSize; j++ {
 			repositoryID := 42 + (i+j)/(n/2) // 50% id=42, 50% id=43
-			commitsByRepo[repositoryID] = append(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
+			commitsByRepo[repositoryID] = bppend(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
 		}
 
-		sourcedCommits := []shared.SourcedCommits{}
-		for repositoryID, commits := range commitsByRepo {
-			sourcedCommits = append(sourcedCommits, shared.SourcedCommits{
+		sourcedCommits := []shbred.SourcedCommits{}
+		for repositoryID, commits := rbnge commitsByRepo {
+			sourcedCommits = bppend(sourcedCommits, shbred.SourcedCommits{
 				RepositoryID: repositoryID,
 				Commits:      commits,
 			})
@@ -57,77 +57,77 @@ func TestBackfillCommittedAtBatch(t *testing.T) {
 		store.SourcedCommitsWithoutCommittedAtFunc.PushReturn(sourcedCommits, nil)
 	}
 
-	for i := 0; i < n/pageSize; i++ {
-		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+	for i := 0; i < n/pbgeSize; i++ {
+		if err := svc.BbckfillCommittedAtBbtch(ctx, pbgeSize); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 	}
 
-	committedAtByCommit := map[string]time.Time{}
-	history := store.UpdateCommittedAtFunc.history
+	committedAtByCommit := mbp[string]time.Time{}
+	history := store.UpdbteCommittedAtFunc.history
 
 	for i := 0; i < n; i++ {
 		if len(history) <= i {
-			t.Fatalf("not enough calls to UpdateCommittedAtFunc")
+			t.Fbtblf("not enough cblls to UpdbteCommittedAtFunc")
 		}
 
-		call := history[i]
-		commit := call.Arg2
-		rawCommittedAt := call.Arg3
+		cbll := history[i]
+		commit := cbll.Arg2
+		rbwCommittedAt := cbll.Arg3
 
-		committedAt, err := time.Parse(time.RFC3339, rawCommittedAt)
+		committedAt, err := time.Pbrse(time.RFC3339, rbwCommittedAt)
 		if err != nil {
-			t.Fatalf("unexpected non-time %q: %s", rawCommittedAt, err)
+			t.Fbtblf("unexpected non-time %q: %s", rbwCommittedAt, err)
 		}
 
 		committedAtByCommit[commit] = committedAt
 	}
 
-	if diff := cmp.Diff(committedAtByCommit, expectedCommitDates); diff != "" {
-		t.Errorf("unexpected commit dates (-want +got):\n%s", diff)
+	if diff := cmp.Diff(committedAtByCommit, expectedCommitDbtes); diff != "" {
+		t.Errorf("unexpected commit dbtes (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
-	ctx := context.Background()
+func TestBbckfillCommittedAtBbtchUnknownCommits(t *testing.T) {
+	ctx := context.Bbckground()
 	store := NewMockStore()
 	gitserverClient := gitserver.NewMockClient()
-	svc := &backfiller{
+	svc := &bbckfiller{
 		store:           store,
 		gitserverClient: gitserverClient,
 	}
 
 	// Return self for txn
-	store.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(s shared.Store) error) error { return f(store) })
+	store.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(s shbred.Store) error) error { return f(store) })
 
 	n := 50
 	t0 := time.Unix(1587396557, 0).UTC()
-	expectedCommitDates := make(map[string]time.Time, n)
+	expectedCommitDbtes := mbke(mbp[string]time.Time, n)
 	for i := 0; i < n; i++ {
 		if i%3 == 0 {
 			// Unknown commits
 			continue
 		}
 
-		expectedCommitDates[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Duration(i))
+		expectedCommitDbtes[fmt.Sprintf("%040d", i)] = t0.Add(time.Second * time.Durbtion(i))
 	}
 
-	gitserverClient.CommitDateFunc.SetDefaultHook(func(ctx context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (string, time.Time, bool, error) {
-		date, ok := expectedCommitDates[string(commit)]
-		return string(commit), date, ok, nil
+	gitserverClient.CommitDbteFunc.SetDefbultHook(func(ctx context.Context, _ buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID) (string, time.Time, bool, error) {
+		dbte, ok := expectedCommitDbtes[string(commit)]
+		return string(commit), dbte, ok, nil
 	})
 
-	pageSize := 50
-	for i := 0; i < n; i += pageSize {
-		commitsByRepo := map[int][]string{}
-		for j := 0; j < pageSize; j++ {
+	pbgeSize := 50
+	for i := 0; i < n; i += pbgeSize {
+		commitsByRepo := mbp[int][]string{}
+		for j := 0; j < pbgeSize; j++ {
 			repositoryID := 42 + (i+j)/(n/2) // 50% id=42, 50% id=43
-			commitsByRepo[repositoryID] = append(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
+			commitsByRepo[repositoryID] = bppend(commitsByRepo[repositoryID], fmt.Sprintf("%040d", i+j))
 		}
 
-		sourcedCommits := []shared.SourcedCommits{}
-		for repositoryID, commits := range commitsByRepo {
-			sourcedCommits = append(sourcedCommits, shared.SourcedCommits{
+		sourcedCommits := []shbred.SourcedCommits{}
+		for repositoryID, commits := rbnge commitsByRepo {
+			sourcedCommits = bppend(sourcedCommits, shbred.SourcedCommits{
 				RepositoryID: repositoryID,
 				Commits:      commits,
 			})
@@ -136,38 +136,38 @@ func TestBackfillCommittedAtBatchUnknownCommits(t *testing.T) {
 		store.SourcedCommitsWithoutCommittedAtFunc.PushReturn(sourcedCommits, nil)
 	}
 
-	for i := 0; i < n/pageSize; i++ {
-		if err := svc.BackfillCommittedAtBatch(ctx, pageSize); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+	for i := 0; i < n/pbgeSize; i++ {
+		if err := svc.BbckfillCommittedAtBbtch(ctx, pbgeSize); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 	}
 
-	committedAtByCommit := map[string]time.Time{}
-	history := store.UpdateCommittedAtFunc.history
+	committedAtByCommit := mbp[string]time.Time{}
+	history := store.UpdbteCommittedAtFunc.history
 
 	for i := 0; i < n; i++ {
 		if len(history) <= i {
-			t.Fatalf("not enough calls to UpdateCommittedAtFunc")
+			t.Fbtblf("not enough cblls to UpdbteCommittedAtFunc")
 		}
 
-		call := history[i]
-		commit := call.Arg2
-		rawCommittedAt := call.Arg3
+		cbll := history[i]
+		commit := cbll.Arg2
+		rbwCommittedAt := cbll.Arg3
 
-		if rawCommittedAt == "-infinity" {
+		if rbwCommittedAt == "-infinity" {
 			// Unknown commits
 			continue
 		}
 
-		committedAt, err := time.Parse(time.RFC3339, rawCommittedAt)
+		committedAt, err := time.Pbrse(time.RFC3339, rbwCommittedAt)
 		if err != nil {
-			t.Fatalf("unexpected non-time %q: %s", rawCommittedAt, err)
+			t.Fbtblf("unexpected non-time %q: %s", rbwCommittedAt, err)
 		}
 
 		committedAtByCommit[commit] = committedAt
 	}
 
-	if diff := cmp.Diff(committedAtByCommit, expectedCommitDates); diff != "" {
-		t.Errorf("unexpected commit dates (-want +got):\n%s", diff)
+	if diff := cmp.Diff(committedAtByCommit, expectedCommitDbtes); diff != "" {
+		t.Errorf("unexpected commit dbtes (-wbnt +got):\n%s", diff)
 	}
 }

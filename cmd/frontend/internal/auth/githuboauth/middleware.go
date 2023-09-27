@@ -1,30 +1,30 @@
-package githuboauth
+pbckbge githubobuth
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-const authPrefix = auth.AuthURLPrefix + "/github"
+const buthPrefix = buth.AuthURLPrefix + "/github"
 
 func init() {
-	oauth.AddIsOAuth(func(p schema.AuthProviders) bool {
+	obuth.AddIsOAuth(func(p schemb.AuthProviders) bool {
 		return p.Github != nil
 	})
 }
 
-func Middleware(db database.DB) *auth.Middleware {
-	return &auth.Middleware{
-		API: func(next http.Handler) http.Handler {
-			return oauth.NewMiddleware(db, extsvc.TypeGitHub, authPrefix, true, next)
+func Middlewbre(db dbtbbbse.DB) *buth.Middlewbre {
+	return &buth.Middlewbre{
+		API: func(next http.Hbndler) http.Hbndler {
+			return obuth.NewMiddlewbre(db, extsvc.TypeGitHub, buthPrefix, true, next)
 		},
-		App: func(next http.Handler) http.Handler {
-			return oauth.NewMiddleware(db, extsvc.TypeGitHub, authPrefix, false, next)
+		App: func(next http.Hbndler) http.Hbndler {
+			return obuth.NewMiddlewbre(db, extsvc.TypeGitHub, buthPrefix, fblse, next)
 		},
 	}
 }

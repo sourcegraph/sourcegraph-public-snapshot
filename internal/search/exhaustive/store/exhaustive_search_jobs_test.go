@@ -1,4 +1,4 @@
-package store_test
+pbckbge store_test
 
 import (
 	"context"
@@ -6,457 +6,457 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestStore_CreateExhaustiveSearchJob(t *testing.T) {
+func TestStore_CrebteExhbustiveSebrchJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bs := basestore.NewWithHandle(db.Handle())
+	bs := bbsestore.NewWithHbndle(db.Hbndle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := crebteUser(bs, "blice")
 	require.NoError(t, err)
-	malloryID, err := createUser(bs, "mallory")
+	mblloryID, err := crebteUser(bs, "mbllory")
 	require.NoError(t, err)
-	adminID, err := createUser(bs, "admin")
+	bdminID, err := crebteUser(bs, "bdmin")
 	require.NoError(t, err)
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, &observbtion.TestContext)
 
 	tests := []struct {
-		name        string
+		nbme        string
 		setup       func(context.Context, *store.Store) error
-		job         types.ExhaustiveSearchJob
-		actor       *actor.Actor // defaults to "alice"
+		job         types.ExhbustiveSebrchJob
+		bctor       *bctor.Actor // defbults to "blice"
 		expectedErr error
 	}{
 		{
-			name: "New job",
-			job: types.ExhaustiveSearchJob{
-				InitiatorID: userID,
-				Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob",
+			nbme: "New job",
+			job: types.ExhbustiveSebrchJob{
+				InitibtorID: userID,
+				Query:       "repo:^github\\.com/hbshicorp/errwrbp$ CrebteExhbustiveSebrchJob",
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "Missing user ID",
-			job: types.ExhaustiveSearchJob{
-				Query: "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob",
+			nbme: "Missing user ID",
+			job: types.ExhbustiveSebrchJob{
+				Query: "repo:^github\\.com/hbshicorp/errwrbp$ CrebteExhbustiveSebrchJob",
 			},
-			expectedErr: errors.New("missing initiator ID"),
+			expectedErr: errors.New("missing initibtor ID"),
 		},
 		{
-			name: "Missing query",
-			job: types.ExhaustiveSearchJob{
-				InitiatorID: userID,
+			nbme: "Missing query",
+			job: types.ExhbustiveSebrchJob{
+				InitibtorID: userID,
 			},
 			expectedErr: errors.New("missing query"),
 		},
 
 		{
-			name: "Search already exists",
+			nbme: "Sebrch blrebdy exists",
 			setup: func(ctx context.Context, s *store.Store) error {
-				_, err := s.CreateExhaustiveSearchJob(ctx, types.ExhaustiveSearchJob{
-					InitiatorID: userID,
-					Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob_exists",
+				_, err := s.CrebteExhbustiveSebrchJob(ctx, types.ExhbustiveSebrchJob{
+					InitibtorID: userID,
+					Query:       "repo:^github\\.com/hbshicorp/errwrbp$ CrebteExhbustiveSebrchJob_exists",
 				})
 				return err
 			},
-			job: types.ExhaustiveSearchJob{
-				InitiatorID: userID,
-				Query:       "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchJob_exists",
+			job: types.ExhbustiveSebrchJob{
+				InitibtorID: userID,
+				Query:       "repo:^github\\.com/hbshicorp/errwrbp$ CrebteExhbustiveSebrchJob_exists",
 			},
 		},
 
 		// Security tests
 		{
-			name: "admin can spoof",
-			job: types.ExhaustiveSearchJob{
-				InitiatorID: userID,
-				Query:       "fear me",
+			nbme: "bdmin cbn spoof",
+			job: types.ExhbustiveSebrchJob{
+				InitibtorID: userID,
+				Query:       "febr me",
 			},
-			actor:       &actor.Actor{UID: adminID},
+			bctor:       &bctor.Actor{UID: bdminID},
 			expectedErr: nil,
 		},
 		{
-			name: "malicious user cant spoof",
-			job: types.ExhaustiveSearchJob{
-				InitiatorID: userID,
-				Query:       "the cake is a lie",
+			nbme: "mblicious user cbnt spoof",
+			job: types.ExhbustiveSebrchJob{
+				InitibtorID: userID,
+				Query:       "the cbke is b lie",
 			},
-			actor:       &actor.Actor{UID: malloryID},
-			expectedErr: auth.ErrMustBeSiteAdminOrSameUser,
+			bctor:       &bctor.Actor{UID: mblloryID},
+			expectedErr: buth.ErrMustBeSiteAdminOrSbmeUser,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			act := test.actor
-			if act == nil {
-				act = &actor.Actor{UID: userID}
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			bct := test.bctor
+			if bct == nil {
+				bct = &bctor.Actor{UID: userID}
 			}
-			ctx := actor.WithActor(context.Background(), act)
+			ctx := bctor.WithActor(context.Bbckground(), bct)
 
 			if test.setup != nil {
 				require.NoError(t, test.setup(ctx, s))
 			}
 
-			jobID, err := s.CreateExhaustiveSearchJob(ctx, test.job)
+			jobID, err := s.CrebteExhbustiveSebrchJob(ctx, test.job)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				assert.NotZero(t, jobID)
+				bssert.NotZero(t, jobID)
 			}
 		})
 	}
 }
 
-func TestStore_GetAndListSearchJobs(t *testing.T) {
+func TestStore_GetAndListSebrchJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bs := basestore.NewWithHandle(db.Handle())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bs := bbsestore.NewWithHbndle(db.Hbndle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := crebteUser(bs, "blice")
 	require.NoError(t, err)
 
-	adminID, err := createUser(bs, "admin")
+	bdminID, err := crebteUser(bs, "bdmin")
 	require.NoError(t, err)
 
-	ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
-	adminCtx := actor.WithActor(context.Background(), actor.FromUser(adminID))
+	ctx := bctor.WithActor(context.Bbckground(), bctor.FromUser(userID))
+	bdminCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(bdminID))
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, &observbtion.TestContext)
 
-	jobs := []types.ExhaustiveSearchJob{
-		{InitiatorID: userID, Query: "repo:job1"},
-		{InitiatorID: userID, Query: "repo:job2"},
-		{InitiatorID: userID, Query: "repo:job3"},
+	jobs := []types.ExhbustiveSebrchJob{
+		{InitibtorID: userID, Query: "repo:job1"},
+		{InitibtorID: userID, Query: "repo:job2"},
+		{InitibtorID: userID, Query: "repo:job3"},
 	}
 
-	// Create jobs
-	for i, job := range jobs {
-		jobID, err := s.CreateExhaustiveSearchJob(ctx, job)
+	// Crebte jobs
+	for i, job := rbnge jobs {
+		jobID, err := s.CrebteExhbustiveSebrchJob(ctx, job)
 		require.NoError(t, err)
-		assert.NotZero(t, jobID)
+		bssert.NotZero(t, jobID)
 
 		jobs[i].ID = jobID
 	}
 
 	// Now get them one-by-one
-	for _, job := range jobs {
-		haveJob, err := s.GetExhaustiveSearchJob(ctx, job.ID)
+	for _, job := rbnge jobs {
+		hbveJob, err := s.GetExhbustiveSebrchJob(ctx, job.ID)
 		require.NoError(t, err)
 
-		// Ensure we got the right job and that the fields are scanned correctly
-		assert.Equal(t, haveJob.ID, job.ID)
-		assert.Equal(t, haveJob.Query, job.Query)
-		assert.Equal(t, haveJob.State, types.JobStateQueued)
-		assert.NotZero(t, haveJob.CreatedAt)
-		assert.NotZero(t, haveJob.UpdatedAt)
+		// Ensure we got the right job bnd thbt the fields bre scbnned correctly
+		bssert.Equbl(t, hbveJob.ID, job.ID)
+		bssert.Equbl(t, hbveJob.Query, job.Query)
+		bssert.Equbl(t, hbveJob.Stbte, types.JobStbteQueued)
+		bssert.NotZero(t, hbveJob.CrebtedAt)
+		bssert.NotZero(t, hbveJob.UpdbtedAt)
 	}
 
-	// Now list them all
+	// Now list them bll
 
 	tc := []struct {
-		name    string
+		nbme    string
 		ctx     context.Context
-		args    store.ListArgs
-		wantIDs []int64
-		wantErr bool
+		brgs    store.ListArgs
+		wbntIDs []int64
+		wbntErr bool
 	}{
 		{
-			name: "query: 1 job",
+			nbme: "query: 1 job",
 			ctx:  ctx,
-			args: store.ListArgs{
+			brgs: store.ListArgs{
 				Query: "job1",
 			},
-			wantIDs: []int64{jobs[0].ID},
+			wbntIDs: []int64{jobs[0].ID},
 		},
 		{
-			name: "query: all jobs",
+			nbme: "query: bll jobs",
 			ctx:  ctx,
-			args: store.ListArgs{
+			brgs: store.ListArgs{
 				Query: "repo",
 			},
-			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+			wbntIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
 		},
 		{
-			name: "states: queued jobs",
+			nbme: "stbtes: queued jobs",
 			ctx:  ctx,
-			args: store.ListArgs{
-				States: []string{string(types.JobStateQueued)},
+			brgs: store.ListArgs{
+				Stbtes: []string{string(types.JobStbteQueued)},
 			},
-			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+			wbntIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
 		},
 		{
-			name: "query: all jobs but ask for 1 job only",
+			nbme: "query: bll jobs but bsk for 1 job only",
 			ctx:  ctx,
-			args: store.ListArgs{
-				PaginationArgs: &database.PaginationArgs{First: intptr(1), Ascending: true},
+			brgs: store.ListArgs{
+				PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: intptr(1), Ascending: true},
 				Query:          "repo",
 			},
-			wantIDs: []int64{jobs[0].ID},
+			wbntIDs: []int64{jobs[0].ID},
 		},
-		// negative test
+		// negbtive test
 		{
-			name: "query: no result",
+			nbme: "query: no result",
 			ctx:  ctx,
-			args: store.ListArgs{
+			brgs: store.ListArgs{
 				Query: "foo",
 			},
-			wantIDs: []int64{},
+			wbntIDs: []int64{},
 		},
 		{
-			name: "states: no result",
+			nbme: "stbtes: no result",
 			ctx:  ctx,
-			args: store.ListArgs{
-				States: []string{string(types.JobStateCompleted)},
+			brgs: store.ListArgs{
+				Stbtes: []string{string(types.JobStbteCompleted)},
 			},
-			wantIDs: []int64{},
+			wbntIDs: []int64{},
 		},
 		// Security tests
 		{
-			name: "userIDs: Admins can ask for userIDs",
-			ctx:  adminCtx,
-			args: store.ListArgs{
+			nbme: "userIDs: Admins cbn bsk for userIDs",
+			ctx:  bdminCtx,
+			brgs: store.ListArgs{
 				UserIDs: []int32{userID},
 			},
-			wantIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
+			wbntIDs: []int64{jobs[0].ID, jobs[1].ID, jobs[2].ID},
 		},
 		{
-			name: "userIDs: Non-admins CANNOT ask for userIDs",
+			nbme: "userIDs: Non-bdmins CANNOT bsk for userIDs",
 			ctx:  ctx,
-			args: store.ListArgs{
+			brgs: store.ListArgs{
 				UserIDs: []int32{userID + 1},
 			},
-			wantIDs: []int64{},
-			wantErr: true,
+			wbntIDs: []int64{},
+			wbntErr: true,
 		},
 	}
 
-	for _, c := range tc {
-		t.Run(c.name, func(t *testing.T) {
-			haveJobs, err := s.ListExhaustiveSearchJobs(c.ctx, c.args)
-			if c.wantErr {
+	for _, c := rbnge tc {
+		t.Run(c.nbme, func(t *testing.T) {
+			hbveJobs, err := s.ListExhbustiveSebrchJobs(c.ctx, c.brgs)
+			if c.wbntErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, len(haveJobs), len(c.wantIDs))
+			require.Equbl(t, len(hbveJobs), len(c.wbntIDs))
 
-			haveIDs := make([]int64, len(haveJobs))
-			for i, job := range haveJobs {
-				haveIDs[i] = job.ID
+			hbveIDs := mbke([]int64, len(hbveJobs))
+			for i, job := rbnge hbveJobs {
+				hbveIDs[i] = job.ID
 			}
 
-			if diff := cmp.Diff(haveIDs, c.wantIDs); diff != "" {
-				t.Fatalf("List returned wrong jobs: %s", diff)
+			if diff := cmp.Diff(hbveIDs, c.wbntIDs); diff != "" {
+				t.Fbtblf("List returned wrong jobs: %s", diff)
 			}
 		})
 	}
 }
 
-// TestStore_GetAggregateStatus tests that ListExhaustiveSearchJobs returns the
-// proper aggregated state.
-func TestStore_AggregateStatus(t *testing.T) {
+// TestStore_GetAggregbteStbtus tests thbt ListExhbustiveSebrchJobs returns the
+// proper bggregbted stbte.
+func TestStore_AggregbteStbtus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bs := basestore.NewWithHandle(db.Handle())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bs := bbsestore.NewWithHbndle(db.Hbndle())
 
-	_, err := createRepo(db, "repo1")
+	_, err := crebteRepo(db, "repo1")
 	require.NoError(t, err)
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, &observbtion.TestContext)
 
 	tc := []struct {
-		name string
-		c    stateCascade
-		want types.JobState
+		nbme string
+		c    stbteCbscbde
+		wbnt types.JobStbte
 	}{
 		{
-			name: "only repo rev jobs running",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateProcessing},
+			nbme: "only repo rev jobs running",
+			c: stbteCbscbde{
+				sebrchJob:   types.JobStbteCompleted,
+				repoJobs:    []types.JobStbte{types.JobStbteCompleted},
+				repoRevJobs: []types.JobStbte{types.JobStbteProcessing},
 			},
-			want: types.JobStateProcessing,
+			wbnt: types.JobStbteProcessing,
 		},
 		{
-			name: "processing, because at least 1 job is running",
-			c: stateCascade{
-				searchJob: types.JobStateProcessing,
-				repoJobs:  []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{
-					types.JobStateProcessing,
-					types.JobStateQueued,
-					types.JobStateCompleted,
+			nbme: "processing, becbuse bt lebst 1 job is running",
+			c: stbteCbscbde{
+				sebrchJob: types.JobStbteProcessing,
+				repoJobs:  []types.JobStbte{types.JobStbteCompleted},
+				repoRevJobs: []types.JobStbte{
+					types.JobStbteProcessing,
+					types.JobStbteQueued,
+					types.JobStbteCompleted,
 				},
 			},
-			want: types.JobStateProcessing,
+			wbnt: types.JobStbteProcessing,
 		},
 		{
-			name: "processing, although some jobs failed",
-			c: stateCascade{
-				searchJob: types.JobStateCompleted,
-				repoJobs:  []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{
-					types.JobStateProcessing,
-					types.JobStateFailed,
+			nbme: "processing, blthough some jobs fbiled",
+			c: stbteCbscbde{
+				sebrchJob: types.JobStbteCompleted,
+				repoJobs:  []types.JobStbte{types.JobStbteCompleted},
+				repoRevJobs: []types.JobStbte{
+					types.JobStbteProcessing,
+					types.JobStbteFbiled,
 				},
 			},
-			want: types.JobStateProcessing,
+			wbnt: types.JobStbteProcessing,
 		},
 		{
-			name: "all jobs finished, at least 1 failed",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateFailed},
+			nbme: "bll jobs finished, bt lebst 1 fbiled",
+			c: stbteCbscbde{
+				sebrchJob:   types.JobStbteCompleted,
+				repoJobs:    []types.JobStbte{types.JobStbteCompleted},
+				repoRevJobs: []types.JobStbte{types.JobStbteCompleted, types.JobStbteFbiled},
 			},
-			want: types.JobStateFailed,
+			wbnt: types.JobStbteFbiled,
 		},
 		{
-			name: "all jobs finished successfully",
-			c: stateCascade{
-				searchJob:   types.JobStateCompleted,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateCompleted, types.JobStateCompleted},
+			nbme: "bll jobs finished successfully",
+			c: stbteCbscbde{
+				sebrchJob:   types.JobStbteCompleted,
+				repoJobs:    []types.JobStbte{types.JobStbteCompleted},
+				repoRevJobs: []types.JobStbte{types.JobStbteCompleted, types.JobStbteCompleted},
 			},
-			want: types.JobStateCompleted,
+			wbnt: types.JobStbteCompleted,
 		},
 		{
-			name: "search job was canceled, but some jobs haven't stopped yet",
-			c: stateCascade{
-				searchJob:   types.JobStateCanceled,
-				repoJobs:    []types.JobState{types.JobStateCompleted},
-				repoRevJobs: []types.JobState{types.JobStateProcessing, types.JobStateFailed},
+			nbme: "sebrch job wbs cbnceled, but some jobs hbven't stopped yet",
+			c: stbteCbscbde{
+				sebrchJob:   types.JobStbteCbnceled,
+				repoJobs:    []types.JobStbte{types.JobStbteCompleted},
+				repoRevJobs: []types.JobStbte{types.JobStbteProcessing, types.JobStbteFbiled},
 			},
-			want: types.JobStateCanceled,
+			wbnt: types.JobStbteCbnceled,
 		},
 		{
-			name: "top-level search job finished, but the other jobs haven't started yet",
-			c: stateCascade{
-				searchJob: types.JobStateCompleted,
-				repoJobs:  []types.JobState{types.JobStateQueued},
+			nbme: "top-level sebrch job finished, but the other jobs hbven't stbrted yet",
+			c: stbteCbscbde{
+				sebrchJob: types.JobStbteCompleted,
+				repoJobs:  []types.JobStbte{types.JobStbteQueued},
 			},
-			want: types.JobStateQueued,
+			wbnt: types.JobStbteQueued,
 		},
 		{
-			name: "search job is queued, but no other job has been created yet",
-			c: stateCascade{
-				searchJob: types.JobStateQueued,
+			nbme: "sebrch job is queued, but no other job hbs been crebted yet",
+			c: stbteCbscbde{
+				sebrchJob: types.JobStbteQueued,
 			},
-			want: types.JobStateQueued,
+			wbnt: types.JobStbteQueued,
 		},
 	}
 
-	for i, tt := range tc {
+	for i, tt := rbnge tc {
 		t.Run("", func(t *testing.T) {
-			userID, err := createUser(bs, fmt.Sprintf("user_%d", i))
+			userID, err := crebteUser(bs, fmt.Sprintf("user_%d", i))
 			require.NoError(t, err)
 
-			ctx := actor.WithActor(context.Background(), actor.FromUser(userID))
-			jobID := createJobCascade(t, ctx, s, tt.c)
+			ctx := bctor.WithActor(context.Bbckground(), bctor.FromUser(userID))
+			jobID := crebteJobCbscbde(t, ctx, s, tt.c)
 
-			jobs, err := s.ListExhaustiveSearchJobs(ctx, store.ListArgs{})
+			jobs, err := s.ListExhbustiveSebrchJobs(ctx, store.ListArgs{})
 			require.NoError(t, err)
-			require.Equal(t, 1, len(jobs))
-			require.Equal(t, jobID, jobs[0].ID)
-			assert.Equal(t, tt.want, jobs[0].AggState)
+			require.Equbl(t, 1, len(jobs))
+			require.Equbl(t, jobID, jobs[0].ID)
+			bssert.Equbl(t, tt.wbnt, jobs[0].AggStbte)
 		})
 	}
 }
 
-// createJobCascade creates a cascade of jobs (1 search job -> n repo jobs -> m
-// repo rev jobs) with states as defined in stateCascade.
+// crebteJobCbscbde crebtes b cbscbde of jobs (1 sebrch job -> n repo jobs -> m
+// repo rev jobs) with stbtes bs defined in stbteCbscbde.
 //
-// This is a fairly large test helper, because don't want to start the worker
-// routines, but instead we want to create a snapshot of the state of the jobs
-// at a given point in time.
-func createJobCascade(
+// This is b fbirly lbrge test helper, becbuse don't wbnt to stbrt the worker
+// routines, but instebd we wbnt to crebte b snbpshot of the stbte of the jobs
+// bt b given point in time.
+func crebteJobCbscbde(
 	t *testing.T,
 	ctx context.Context,
 	stor *store.Store,
-	casc stateCascade,
-) (searchJobID int64) {
+	cbsc stbteCbscbde,
+) (sebrchJobID int64) {
 	t.Helper()
 
-	searchJob := types.ExhaustiveSearchJob{
-		InitiatorID: actor.FromContext(ctx).UID,
+	sebrchJob := types.ExhbustiveSebrchJob{
+		InitibtorID: bctor.FromContext(ctx).UID,
 		Query:       "repo:job1",
-		WorkerJob:   types.WorkerJob{State: casc.searchJob},
+		WorkerJob:   types.WorkerJob{Stbte: cbsc.sebrchJob},
 	}
 
-	repoJobs := make([]types.ExhaustiveSearchRepoJob, len(casc.repoJobs))
-	for i, r := range casc.repoJobs {
-		repoJobs[i] = types.ExhaustiveSearchRepoJob{
-			WorkerJob: types.WorkerJob{State: r},
-			RepoID:    1, // same repo for all tests
+	repoJobs := mbke([]types.ExhbustiveSebrchRepoJob, len(cbsc.repoJobs))
+	for i, r := rbnge cbsc.repoJobs {
+		repoJobs[i] = types.ExhbustiveSebrchRepoJob{
+			WorkerJob: types.WorkerJob{Stbte: r},
+			RepoID:    1, // sbme repo for bll tests
 			RefSpec:   "HEAD",
 		}
 	}
 
-	repoRevJobs := make([]types.ExhaustiveSearchRepoRevisionJob, len(casc.repoRevJobs))
-	for i, rr := range casc.repoRevJobs {
-		repoRevJobs[i] = types.ExhaustiveSearchRepoRevisionJob{
-			WorkerJob: types.WorkerJob{State: rr},
+	repoRevJobs := mbke([]types.ExhbustiveSebrchRepoRevisionJob, len(cbsc.repoRevJobs))
+	for i, rr := rbnge cbsc.repoRevJobs {
+		repoRevJobs[i] = types.ExhbustiveSebrchRepoRevisionJob{
+			WorkerJob: types.WorkerJob{Stbte: rr},
 			Revision:  "HEAD",
 		}
 	}
 
-	jobID, err := stor.CreateExhaustiveSearchJob(ctx, searchJob)
+	jobID, err := stor.CrebteExhbustiveSebrchJob(ctx, sebrchJob)
 	require.NoError(t, err)
-	assert.NotZero(t, jobID)
+	bssert.NotZero(t, jobID)
 
-	err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_jobs SET state = %s WHERE id = %s", casc.searchJob, jobID))
+	err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhbustive_sebrch_jobs SET stbte = %s WHERE id = %s", cbsc.sebrchJob, jobID))
 	require.NoError(t, err)
 
-	for i, r := range repoJobs {
-		r.SearchJobID = jobID
-		repoJobID, err := stor.CreateExhaustiveSearchRepoJob(ctx, r)
+	for i, r := rbnge repoJobs {
+		r.SebrchJobID = jobID
+		repoJobID, err := stor.CrebteExhbustiveSebrchRepoJob(ctx, r)
 		require.NoError(t, err)
-		assert.NotZero(t, repoJobID)
+		bssert.NotZero(t, repoJobID)
 
-		err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_jobs SET state = %s WHERE id = %s", casc.repoJobs[i], repoJobID))
+		err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhbustive_sebrch_repo_jobs SET stbte = %s WHERE id = %s", cbsc.repoJobs[i], repoJobID))
 		require.NoError(t, err)
 
-		for j, rr := range repoRevJobs {
-			rr.SearchRepoJobID = repoJobID
-			repoRevJobID, err := stor.CreateExhaustiveSearchRepoRevisionJob(ctx, rr)
+		for j, rr := rbnge repoRevJobs {
+			rr.SebrchRepoJobID = repoJobID
+			repoRevJobID, err := stor.CrebteExhbustiveSebrchRepoRevisionJob(ctx, rr)
 			require.NoError(t, err)
-			assert.NotZero(t, repoRevJobID)
+			bssert.NotZero(t, repoRevJobID)
 			require.NoError(t, err)
 
-			err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhaustive_search_repo_revision_jobs SET state = %s WHERE id = %s", casc.repoRevJobs[j], repoRevJobID))
+			err = stor.Exec(ctx, sqlf.Sprintf("UPDATE exhbustive_sebrch_repo_revision_jobs SET stbte = %s WHERE id = %s", cbsc.repoRevJobs[j], repoRevJobID))
 			require.NoError(t, err)
 		}
 	}
@@ -464,10 +464,10 @@ func createJobCascade(
 	return jobID
 }
 
-type stateCascade struct {
-	searchJob   types.JobState
-	repoJobs    []types.JobState
-	repoRevJobs []types.JobState
+type stbteCbscbde struct {
+	sebrchJob   types.JobStbte
+	repoJobs    []types.JobStbte
+	repoRevJobs []types.JobStbte
 }
 
 func intptr(s int) *int { return &s }

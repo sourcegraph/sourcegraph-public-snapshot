@@ -1,20 +1,20 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-// Watch for configuration changes related to the builtin auth provider.
+// Wbtch for configurbtion chbnges relbted to the builtin buth provider.
 func Init() {
 	go func() {
-		conf.Watch(func() {
+		conf.Wbtch(func() {
 			newPC, _ := GetProviderConfig()
 			if newPC == nil {
-				providers.Update("builtin", nil)
+				providers.Updbte("builtin", nil)
 				return
 			}
-			providers.Update("builtin", []providers.Provider{&provider{c: newPC}})
+			providers.Updbte("builtin", []providers.Provider{&provider{c: newPC}})
 		})
 	}()
 }

@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"context"
@@ -6,39 +6,39 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	types2 "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	sebrchbbckend "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	types2 "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-func TestBackendFake(t *testing.T) {
-	testNewSearcher(t, context.Background(), NewSearcherFake(), newSearcherTestCase{
+func TestBbckendFbke(t *testing.T) {
+	testNewSebrcher(t, context.Bbckground(), NewSebrcherFbke(), newSebrcherTestCbse{
 		Query:        "1@rev1 1@rev2 2@rev3",
-		WantRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
-		WantRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
-		WantCSV: autogold.Expect(`repo,revspec,revision
+		WbntRefSpecs: "RepositoryRevSpec{1@spec} RepositoryRevSpec{2@spec}",
+		WbntRepoRevs: "RepositoryRevision{1@rev1} RepositoryRevision{1@rev2} RepositoryRevision{2@rev3}",
+		WbntCSV: butogold.Expect(`repo,revspec,revision
 1,spec,rev1
 1,spec,rev2
 2,spec,rev3
@@ -46,107 +46,107 @@ func TestBackendFake(t *testing.T) {
 	})
 }
 
-type newSearcherTestCase struct {
+type newSebrcherTestCbse struct {
 	Query        string
-	WantRefSpecs string
-	WantRepoRevs string
-	WantCSV      autogold.Value
+	WbntRefSpecs string
+	WbntRepoRevs string
+	WbntCSV      butogold.Vblue
 }
 
-func TestFromSearchClient(t *testing.T) {
+func TestFromSebrchClient(t *testing.T) {
 	repoMocks := []repoMock{{
 		ID:   1,
-		Name: "foo1",
-		Branches: map[string]string{
+		Nbme: "foo1",
+		Brbnches: mbp[string]string{
 			"HEAD": "commitfoo0",
 			"dev1": "commitfoo1",
 			"dev2": "commitfoo2",
 		},
 	}, {
 		ID:   2,
-		Name: "bar2",
-		Branches: map[string]string{
-			"HEAD": "commitbar0",
-			"dev1": "commitbar1",
+		Nbme: "bbr2",
+		Brbnches: mbp[string]string{
+			"HEAD": "commitbbr0",
+			"dev1": "commitbbr1",
 		},
 	}}
 
-	ctx := featureflag.WithFlags(context.Background(), featureflag.NewMemoryStore(nil, nil, nil))
-	mock := mockSearchClient(t, repoMocks)
-	newSearcher := FromSearchClient(mock)
+	ctx := febtureflbg.WithFlbgs(context.Bbckground(), febtureflbg.NewMemoryStore(nil, nil, nil))
+	mock := mockSebrchClient(t, repoMocks)
+	newSebrcher := FromSebrchClient(mock)
 
-	do := func(name string, tc newSearcherTestCase) {
-		t.Run(name, func(t *testing.T) {
-			testNewSearcher(t, ctx, newSearcher, tc)
+	do := func(nbme string, tc newSebrcherTestCbse) {
+		t.Run(nbme, func(t *testing.T) {
+			testNewSebrcher(t, ctx, newSebrcher, tc)
 		})
 	}
 
-	// NOTE: our search stack calls gitserver twice per non-HEAD revision we
-	// search. Converting a RefSpec into a RepoRev we validate the refspec
-	// exists (or expand a glob). Then at actual search time we resolve it
-	// again to find the actual commit to search.
+	// NOTE: our sebrch stbck cblls gitserver twice per non-HEAD revision we
+	// sebrch. Converting b RefSpec into b RepoRev we vblidbte the refspec
+	// exists (or expbnd b glob). Then bt bctubl sebrch time we resolve it
+	// bgbin to find the bctubl commit to sebrch.
 
-	do("global", newSearcherTestCase{
+	do("globbl", newSebrcherTestCbse{
 		Query:        "content",
-		WantRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
-		WantRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WbntRefSpecs: "RepositoryRevSpec{1@HEAD} RepositoryRevSpec{2@HEAD}",
+		WbntRepoRevs: "RepositoryRevision{1@HEAD} RepositoryRevision{2@HEAD}",
+		WbntCSV: butogold.Expect(`Repository,Revision,File pbth,Mbtch count,First mbtch url
 foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
-bar2,commitbar0,,1,/bar2@commitbar0/-/blob/?L2
+bbr2,commitbbr0,,1,/bbr2@commitbbr0/-/blob/?L2
 `),
 	})
 
-	do("repo", newSearcherTestCase{
+	do("repo", newSebrcherTestCbse{
 		Query:        "repo:foo content",
-		WantRefSpecs: "RepositoryRevSpec{1@HEAD}",
-		WantRepoRevs: "RepositoryRevision{1@HEAD}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WbntRefSpecs: "RepositoryRevSpec{1@HEAD}",
+		WbntRepoRevs: "RepositoryRevision{1@HEAD}",
+		WbntCSV: butogold.Expect(`Repository,Revision,File pbth,Mbtch count,First mbtch url
 foo1,commitfoo0,,1,/foo1@commitfoo0/-/blob/?L2
 `),
 	})
 
-	do("rev", newSearcherTestCase{
+	do("rev", newSebrcherTestCbse{
 		Query:        "repo:foo rev:dev1 content",
-		WantRefSpecs: "RepositoryRevSpec{1@dev1}",
-		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WbntRefSpecs: "RepositoryRevSpec{1@dev1}",
+		WbntRepoRevs: "RepositoryRevision{1@dev1}",
+		WbntCSV: butogold.Expect(`Repository,Revision,File pbth,Mbtch count,First mbtch url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 `),
 	})
 
-	do("glob", newSearcherTestCase{
-		Query:        "repo:foo rev:*refs/heads/dev* content",
-		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*}",
-		WantRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+	do("glob", newSebrcherTestCbse{
+		Query:        "repo:foo rev:*refs/hebds/dev* content",
+		WbntRefSpecs: "RepositoryRevSpec{1@*refs/hebds/dev*}",
+		WbntRepoRevs: "RepositoryRevision{1@dev1} RepositoryRevision{1@dev2}",
+		WbntCSV: butogold.Expect(`Repository,Revision,File pbth,Mbtch count,First mbtch url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 `),
 	})
 
-	do("notglob", newSearcherTestCase{
-		Query:        "repo:foo rev:*refs/heads/dev*:*!refs/heads/dev1 content",
-		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/dev*:*!refs/heads/dev1}",
-		WantRepoRevs: "RepositoryRevision{1@dev2}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+	do("notglob", newSebrcherTestCbse{
+		Query:        "repo:foo rev:*refs/hebds/dev*:*!refs/hebds/dev1 content",
+		WbntRefSpecs: "RepositoryRevSpec{1@*refs/hebds/dev*:*!refs/hebds/dev1}",
+		WbntRepoRevs: "RepositoryRevision{1@dev2}",
+		WbntCSV: butogold.Expect(`Repository,Revision,File pbth,Mbtch count,First mbtch url
 foo1,commitfoo2,,1,/foo1@commitfoo2/-/blob/?L2
 `),
 	})
 
-	do("nomatchglob", newSearcherTestCase{
-		Query:        "repo:foo rev:*refs/heads/doesnotmatch* content",
-		WantRefSpecs: "RepositoryRevSpec{1@*refs/heads/doesnotmatch*}",
+	do("nombtchglob", newSebrcherTestCbse{
+		Query:        "repo:foo rev:*refs/hebds/doesnotmbtch* content",
+		WbntRefSpecs: "RepositoryRevSpec{1@*refs/hebds/doesnotmbtch*}",
 	})
 
-	do("norepos", newSearcherTestCase{
-		Query: "repo:doesnotmatch content",
+	do("norepos", newSebrcherTestCbse{
+		Query: "repo:doesnotmbtch content",
 	})
 
-	do("missingrev", newSearcherTestCase{
+	do("missingrev", newSebrcherTestCbse{
 		Query:        "repo:foo rev:dev1:missing content",
-		WantRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
-		WantRepoRevs: "RepositoryRevision{1@dev1}",
-		WantCSV: autogold.Expect(`Repository,Revision,File path,Match count,First match url
+		WbntRefSpecs: "RepositoryRevSpec{1@dev1:missing}",
+		WbntRepoRevs: "RepositoryRevision{1@dev1}",
+		WbntCSV: butogold.Expect(`Repository,Revision,File pbth,Mbtch count,First mbtch url
 foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 `),
 	})
@@ -154,73 +154,73 @@ foo1,commitfoo1,,1,/foo1@commitfoo1/-/blob/?L2
 
 type repoMock struct {
 	ID       int
-	Name     string
-	Branches map[string]string
+	Nbme     string
+	Brbnches mbp[string]string
 }
 
-// mockSearchClient returns a client which will return matches. This exercises
-// more of the search code path to give a bit more confidence we are correctly
-// calling Plan and Execute vs a dumb SearchClient mock.
+// mockSebrchClient returns b client which will return mbtches. This exercises
+// more of the sebrch code pbth to give b bit more confidence we bre correctly
+// cblling Plbn bnd Execute vs b dumb SebrchClient mock.
 //
 // Note: for now we only support nicely mocking zoekt. This isn't good enough
-// to gain confidence in how this all works, so will follow up with making it
-// possible to mock searcher.
-func mockSearchClient(t *testing.T, repoMocks []repoMock) client.SearchClient {
+// to gbin confidence in how this bll works, so will follow up with mbking it
+// possible to mock sebrcher.
+func mockSebrchClient(t *testing.T, repoMocks []repoMock) client.SebrchClient {
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(mockRepoStore(repoMocks))
+	db.ReposFunc.SetDefbultReturn(mockRepoStore(repoMocks))
 
 	return client.Mocked(job.RuntimeClients{
 		Logger:       logtest.Scoped(t),
 		DB:           db,
 		Zoekt:        mockZoekt(repoMocks),
 		Gitserver:    mockGitserver(repoMocks),
-		SearcherURLs: mockSearcher(t, repoMocks),
+		SebrcherURLs: mockSebrcher(t, repoMocks),
 	})
 }
 
 func mockGitserver(repoMocks []repoMock) *gitserver.MockClient {
-	get := func(name api.RepoName) (repoMock, error) {
-		for _, repo := range repoMocks {
-			if name == api.RepoName(repo.Name) {
+	get := func(nbme bpi.RepoNbme) (repoMock, error) {
+		for _, repo := rbnge repoMocks {
+			if nbme == bpi.RepoNbme(repo.Nbme) {
 				return repo, nil
 			}
 		}
-		return repoMock{}, &gitdomain.RepoNotExistError{Repo: name}
+		return repoMock{}, &gitdombin.RepoNotExistError{Repo: nbme}
 	}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, name api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		repo, err := get(name)
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, nbme bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		repo, err := get(nbme)
 		if err != nil {
 			return "", err
 		}
 		if spec == "" {
-			// Normally in search we treat the empty string has HEAD. In our
-			// case we want to ensure we are explicit so will fail if this
-			// happens.
-			return "", errors.New("empty spec used instead of HEAD")
+			// Normblly in sebrch we trebt the empty string hbs HEAD. In our
+			// cbse we wbnt to ensure we bre explicit so will fbil if this
+			// hbppens.
+			return "", errors.New("empty spec used instebd of HEAD")
 		}
-		for branch, commit := range repo.Branches {
-			if spec == branch || spec == commit {
-				return api.CommitID(commit), nil
+		for brbnch, commit := rbnge repo.Brbnches {
+			if spec == brbnch || spec == commit {
+				return bpi.CommitID(commit), nil
 			}
 		}
-		return "", &gitdomain.RevisionNotFoundError{}
+		return "", &gitdombin.RevisionNotFoundError{}
 	})
-	gsClient.ListRefsFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) ([]gitdomain.Ref, error) {
-		repo, err := get(name)
+	gsClient.ListRefsFunc.SetDefbultHook(func(_ context.Context, nbme bpi.RepoNbme) ([]gitdombin.Ref, error) {
+		repo, err := get(nbme)
 		if err != nil {
 			return nil, err
 		}
-		var refs []gitdomain.Ref
-		for branch, commit := range repo.Branches {
-			refs = append(refs, gitdomain.Ref{
-				Name:     "refs/heads/" + branch,
-				CommitID: api.CommitID(commit),
+		vbr refs []gitdombin.Ref
+		for brbnch, commit := rbnge repo.Brbnches {
+			refs = bppend(refs, gitdombin.Ref{
+				Nbme:     "refs/hebds/" + brbnch,
+				CommitID: bpi.CommitID(commit),
 			})
 		}
-		slices.SortFunc(refs, func(a, b gitdomain.Ref) bool {
-			return a.Name < b.Name
+		slices.SortFunc(refs, func(b, b gitdombin.Ref) bool {
+			return b.Nbme < b.Nbme
 		})
 		return refs, nil
 	})
@@ -229,22 +229,22 @@ func mockGitserver(repoMocks []repoMock) *gitserver.MockClient {
 
 func mockRepoStore(repoMocks []repoMock) *dbmocks.MockRepoStore {
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListMinimalReposFunc.SetDefaultHook(func(_ context.Context, opts database.ReposListOptions) (resp []types.MinimalRepo, _ error) {
-		for _, repo := range repoMocks {
+	repos.ListMinimblReposFunc.SetDefbultHook(func(_ context.Context, opts dbtbbbse.ReposListOptions) (resp []types.MinimblRepo, _ error) {
+		for _, repo := rbnge repoMocks {
 			keep := true
-			for _, pat := range opts.IncludePatterns {
-				keep = keep && strings.Contains(repo.Name, pat)
+			for _, pbt := rbnge opts.IncludePbtterns {
+				keep = keep && strings.Contbins(repo.Nbme, pbt)
 			}
 			if !keep {
 				continue
 			}
-			if len(opts.IDs) > 0 && !slices.Contains(opts.IDs, api.RepoID(repo.ID)) {
+			if len(opts.IDs) > 0 && !slices.Contbins(opts.IDs, bpi.RepoID(repo.ID)) {
 				continue
 			}
 
-			resp = append(resp, types.MinimalRepo{
-				ID:   api.RepoID(repo.ID),
-				Name: api.RepoName(repo.Name),
+			resp = bppend(resp, types.MinimblRepo{
+				ID:   bpi.RepoID(repo.ID),
+				Nbme: bpi.RepoNbme(repo.Nbme),
 			})
 		}
 		return
@@ -252,89 +252,89 @@ func mockRepoStore(repoMocks []repoMock) *dbmocks.MockRepoStore {
 	return repos
 }
 
-func mockZoekt(repoMocks []repoMock) *searchbackend.FakeStreamer {
-	var matches []zoekt.FileMatch
-	for _, repo := range repoMocks {
-		matches = append(matches, zoekt.FileMatch{
+func mockZoekt(repoMocks []repoMock) *sebrchbbckend.FbkeStrebmer {
+	vbr mbtches []zoekt.FileMbtch
+	for _, repo := rbnge repoMocks {
+		mbtches = bppend(mbtches, zoekt.FileMbtch{
 			RepositoryID: uint32(repo.ID),
-			Repository:   repo.Name,
+			Repository:   repo.Nbme,
 		})
 	}
-	return &searchbackend.FakeStreamer{
+	return &sebrchbbckend.FbkeStrebmer{
 		Repos: []*zoekt.RepoListEntry{},
-		Results: []*zoekt.SearchResult{{
-			Files: matches,
+		Results: []*zoekt.SebrchResult{{
+			Files: mbtches,
 		}},
 	}
 }
 
-func mockSearcher(t *testing.T, repoMocks []repoMock) *endpoint.Map {
-	searcher.MockSearchFilesInRepo = func(
+func mockSebrcher(t *testing.T, repoMocks []repoMock) *endpoint.Mbp {
+	sebrcher.MockSebrchFilesInRepo = func(
 		ctx context.Context,
-		repo types.MinimalRepo,
-		gitserverRepo api.RepoName,
+		repo types.MinimblRepo,
+		gitserverRepo bpi.RepoNbme,
 		rev string,
-		info *search.TextPatternInfo,
-		fetchTimeout time.Duration,
-		stream streaming.Sender,
+		info *sebrch.TextPbtternInfo,
+		fetchTimeout time.Durbtion,
+		strebm strebming.Sender,
 	) (limitHit bool, err error) {
-		for _, r := range repoMocks {
-			if api.RepoID(r.ID) == repo.ID {
-				stream.Send(streaming.SearchEvent{
-					Results: result.Matches{&result.FileMatch{
+		for _, r := rbnge repoMocks {
+			if bpi.RepoID(r.ID) == repo.ID {
+				strebm.Send(strebming.SebrchEvent{
+					Results: result.Mbtches{&result.FileMbtch{
 						File: result.File{
 							Repo:     repo,
-							CommitID: api.CommitID(r.Branches[rev]),
+							CommitID: bpi.CommitID(r.Brbnches[rev]),
 						},
-						ChunkMatches: result.ChunkMatches{{
+						ChunkMbtches: result.ChunkMbtches{{
 							Content:      "line1",
-							ContentStart: result.Location{Line: 1},
-							Ranges: result.Ranges{{
-								Start: result.Location{1, 1, 1},
-								End:   result.Location{3, 1, 3},
+							ContentStbrt: result.Locbtion{Line: 1},
+							Rbnges: result.Rbnges{{
+								Stbrt: result.Locbtion{1, 1, 1},
+								End:   result.Locbtion{3, 1, 3},
 							}},
 						}},
 					}}})
 			}
 		}
-		return false, nil
+		return fblse, nil
 	}
-	t.Cleanup(func() {
-		searcher.MockSearchFilesInRepo = nil
+	t.Clebnup(func() {
+		sebrcher.MockSebrchFilesInRepo = nil
 	})
-	return endpoint.Static("test")
+	return endpoint.Stbtic("test")
 }
 
-func testNewSearcher(t *testing.T, ctx context.Context, newSearcher NewSearcher, tc newSearcherTestCase) {
-	assert := require.New(t)
+func testNewSebrcher(t *testing.T, ctx context.Context, newSebrcher NewSebrcher, tc newSebrcherTestCbse) {
+	bssert := require.New(t)
 
 	userID := int32(1)
-	ctx = actor.WithActor(ctx, actor.FromMockUser(userID))
+	ctx = bctor.WithActor(ctx, bctor.FromMockUser(userID))
 
-	searcher, err := newSearcher.NewSearch(ctx, userID, tc.Query)
-	assert.NoError(err)
+	sebrcher, err := newSebrcher.NewSebrch(ctx, userID, tc.Query)
+	bssert.NoError(err)
 
 	// Test RepositoryRevSpecs
-	refSpecs, err := iterator.Collect(searcher.RepositoryRevSpecs(ctx))
-	assert.NoError(err)
-	assert.Equal(tc.WantRefSpecs, joinStringer(refSpecs))
+	refSpecs, err := iterbtor.Collect(sebrcher.RepositoryRevSpecs(ctx))
+	bssert.NoError(err)
+	bssert.Equbl(tc.WbntRefSpecs, joinStringer(refSpecs))
 
 	// Test ResolveRepositoryRevSpec
-	var repoRevs []types2.RepositoryRevision
-	for _, refSpec := range refSpecs {
-		repoRevsPart, err := searcher.ResolveRepositoryRevSpec(ctx, refSpec)
-		assert.NoError(err)
-		repoRevs = append(repoRevs, repoRevsPart...)
+	vbr repoRevs []types2.RepositoryRevision
+	for _, refSpec := rbnge refSpecs {
+		repoRevsPbrt, err := sebrcher.ResolveRepositoryRevSpec(ctx, refSpec)
+		bssert.NoError(err)
+		repoRevs = bppend(repoRevs, repoRevsPbrt...)
 	}
-	assert.Equal(tc.WantRepoRevs, joinStringer(repoRevs))
+	bssert.Equbl(tc.WbntRepoRevs, joinStringer(repoRevs))
 
-	// Test Search
-	var csv csvBuffer
-	for _, repoRev := range repoRevs {
-		err := searcher.Search(ctx, repoRev, &csv)
-		assert.NoError(err)
+	// Test Sebrch
+	vbr csv csvBuffer
+	for _, repoRev := rbnge repoRevs {
+		err := sebrcher.Sebrch(ctx, repoRev, &csv)
+		bssert.NoError(err)
 	}
-	if tc.WantCSV != nil {
-		tc.WantCSV.Equal(t, csv.buf.String())
+	if tc.WbntCSV != nil {
+		tc.WbntCSV.Equbl(t, csv.buf.String())
 	}
 }

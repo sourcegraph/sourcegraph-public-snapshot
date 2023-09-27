@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,50 +7,50 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestCheckMirrorRepositoryConnection(t *testing.T) {
-	const repoName = api.RepoName("my/repo")
+	const repoNbme = bpi.RepoNbme("my/repo")
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 	repos := dbmocks.NewMockRepoStore()
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	t.Run("repository arg", func(t *testing.T) {
-		backend.Mocks.Repos.Get = func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
-			return &types.Repo{Name: repoName}, nil
+	t.Run("repository brg", func(t *testing.T) {
+		bbckend.Mocks.Repos.Get = func(ctx context.Context, repoID bpi.RepoID) (*types.Repo, error) {
+			return &types.Repo{Nbme: repoNbme}, nil
 		}
 
-		calledIsRepoCloneable := false
-		gitserver.MockIsRepoCloneable = func(repo api.RepoName) error {
-			calledIsRepoCloneable = true
-			if want := repoName; !reflect.DeepEqual(repo, want) {
-				t.Errorf("got %+v, want %+v", repo, want)
+		cblledIsRepoClonebble := fblse
+		gitserver.MockIsRepoClonebble = func(repo bpi.RepoNbme) error {
+			cblledIsRepoClonebble = true
+			if wbnt := repoNbme; !reflect.DeepEqubl(repo, wbnt) {
+				t.Errorf("got %+v, wbnt %+v", repo, wbnt)
 			}
 			return nil
 		}
-		t.Cleanup(func() {
-			backend.Mocks = backend.MockServices{}
-			gitserver.MockIsRepoCloneable = nil
+		t.Clebnup(func() {
+			bbckend.Mocks = bbckend.MockServices{}
+			gitserver.MockIsRepoClonebble = nil
 		})
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-				mutation {
+				mutbtion {
 					checkMirrorRepositoryConnection(repository: "UmVwb3NpdG9yeToxMjM=") {
 					    error
 					}
@@ -66,134 +66,134 @@ func TestCheckMirrorRepositoryConnection(t *testing.T) {
 			},
 		})
 
-		if !calledIsRepoCloneable {
-			t.Error("!calledIsRepoCloneable")
+		if !cblledIsRepoClonebble {
+			t.Error("!cblledIsRepoClonebble")
 		}
 	})
 }
 
 func TestCheckMirrorRepositoryRemoteURL(t *testing.T) {
-	const repoName = "my/repo"
+	const repoNbme = "my/repo"
 
-	cases := []struct {
+	cbses := []struct {
 		repoURL string
-		want    string
+		wbnt    string
 	}{
 		{
-			repoURL: "git@github.com:gorilla/mux.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"github.com:gorilla/mux.git"}}}`,
+			repoURL: "git@github.com:gorillb/mux.git",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"github.com:gorillb/mux.git"}}}`,
 		},
 		{
-			repoURL: "git+https://github.com/gorilla/mux.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"git+https://github.com/gorilla/mux.git"}}}`,
+			repoURL: "git+https://github.com/gorillb/mux.git",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"git+https://github.com/gorillb/mux.git"}}}`,
 		},
 		{
-			repoURL: "https://github.com/gorilla/mux.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://github.com/gorilla/mux.git"}}}`,
+			repoURL: "https://github.com/gorillb/mux.git",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"https://github.com/gorillb/mux.git"}}}`,
 		},
 		{
-			repoURL: "https://github.com/gorilla/mux",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"https://github.com/gorilla/mux"}}}`,
+			repoURL: "https://github.com/gorillb/mux",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"https://github.com/gorillb/mux"}}}`,
 		},
 		{
-			repoURL: "ssh://git@github.com/gorilla/mux",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com/gorilla/mux"}}}`,
+			repoURL: "ssh://git@github.com/gorillb/mux",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com/gorillb/mux"}}}`,
 		},
 		{
-			repoURL: "ssh://github.com/gorilla/mux.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com/gorilla/mux.git"}}}`,
+			repoURL: "ssh://github.com/gorillb/mux.git",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com/gorillb/mux.git"}}}`,
 		},
 		{
 			repoURL: "ssh://git@github.com:/my/repo.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com:/my/repo.git"}}}`,
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://github.com:/my/repo.git"}}}`,
 		},
 		{
 			repoURL: "git://git@github.com:/my/repo.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"git://github.com:/my/repo.git"}}}`,
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"git://github.com:/my/repo.git"}}}`,
 		},
 		{
-			repoURL: "user@host.xz:/path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:/path/to/repo.git/"}}}`,
+			repoURL: "user@host.xz:/pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:/pbth/to/repo.git/"}}}`,
 		},
 		{
-			repoURL: "host.xz:/path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:/path/to/repo.git/"}}}`,
+			repoURL: "host.xz:/pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:/pbth/to/repo.git/"}}}`,
 		},
 		{
-			repoURL: "ssh://user@host.xz:1234/path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://host.xz:1234/path/to/repo.git/"}}}`,
+			repoURL: "ssh://user@host.xz:1234/pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://host.xz:1234/pbth/to/repo.git/"}}}`,
 		},
 		{
-			repoURL: "host.xz:~user/path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:~user/path/to/repo.git/"}}}`,
+			repoURL: "host.xz:~user/pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"host.xz:~user/pbth/to/repo.git/"}}}`,
 		},
 		{
-			repoURL: "ssh://host.xz/~/path/to/repo.git",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://host.xz/~/path/to/repo.git"}}}`,
+			repoURL: "ssh://host.xz/~/pbth/to/repo.git",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"ssh://host.xz/~/pbth/to/repo.git"}}}`,
 		},
 		{
-			repoURL: "git://host.xz/~user/path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"git://host.xz/~user/path/to/repo.git/"}}}`,
+			repoURL: "git://host.xz/~user/pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"git://host.xz/~user/pbth/to/repo.git/"}}}`,
 		},
 		{
-			repoURL: "file:///path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"file:///path/to/repo.git/"}}}`,
+			repoURL: "file:///pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"file:///pbth/to/repo.git/"}}}`,
 		},
 		{
-			repoURL: "file://~/path/to/repo.git/",
-			want:    `{"repository":{"mirrorInfo":{"remoteURL":"file://~/path/to/repo.git/"}}}`,
+			repoURL: "file://~/pbth/to/repo.git/",
+			wbnt:    `{"repository":{"mirrorInfo":{"remoteURL":"file://~/pbth/to/repo.git/"}}}`,
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run(tc.repoURL, func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
-			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+			bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
 				return &types.Repo{
-					Name:      repoName,
-					CreatedAt: time.Now(),
-					Sources:   map[string]*types.SourceInfo{"1": {CloneURL: tc.repoURL}},
+					Nbme:      repoNbme,
+					CrebtedAt: time.Now(),
+					Sources:   mbp[string]*types.SourceInfo{"1": {CloneURL: tc.repoURL}},
 				}, nil
 			}
-			t.Cleanup(func() {
-				backend.Mocks = backend.MockServices{}
+			t.Clebnup(func() {
+				bbckend.Mocks = bbckend.MockServices{}
 			})
 
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
 					{
-						repository(name: "my/repo") {
+						repository(nbme: "my/repo") {
 							mirrorInfo {
 								remoteURL
 							}
 						}
 					}
 				`,
-					ExpectedResult: tc.want,
+					ExpectedResult: tc.wbnt,
 				},
 			})
 		})
 	}
 }
 
-type fakeGitserverClient struct {
+type fbkeGitserverClient struct {
 	gitserver.Client
 }
 
-func (f *fakeGitserverClient) RepoCloneProgress(_ context.Context, repoName ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	results := map[api.RepoName]*protocol.RepoCloneProgress{}
-	for _, n := range repoName {
+func (f *fbkeGitserverClient) RepoCloneProgress(_ context.Context, repoNbme ...bpi.RepoNbme) (*protocol.RepoCloneProgressResponse, error) {
+	results := mbp[bpi.RepoNbme]*protocol.RepoCloneProgress{}
+	for _, n := rbnge repoNbme {
 		results[n] = &protocol.RepoCloneProgress{
 			CloneInProgress: true,
-			CloneProgress:   fmt.Sprintf("cloning fake %s...", n),
-			Cloned:          false,
+			CloneProgress:   fmt.Sprintf("cloning fbke %s...", n),
+			Cloned:          fblse,
 		}
 	}
 	return &protocol.RepoCloneProgressResponse{
@@ -201,29 +201,29 @@ func (f *fakeGitserverClient) RepoCloneProgress(_ context.Context, repoName ...a
 	}, nil
 }
 
-func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
+func TestRepositoryMirrorInfoCloneProgressCbllsGitserver(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
 		return &types.Repo{
-			Name:      "repo-name",
-			CreatedAt: time.Now(),
-			Sources:   map[string]*types.SourceInfo{"1": {}},
+			Nbme:      "repo-nbme",
+			CrebtedAt: time.Now(),
+			Sources:   mbp[string]*types.SourceInfo{"1": {}},
 		}, nil
 	}
-	t.Cleanup(func() {
-		backend.Mocks = backend.MockServices{}
+	t.Clebnup(func() {
+		bbckend.Mocks = bbckend.MockServices{}
 	})
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchemaWithClient(t, db, &fakeGitserverClient{}),
+		Schemb: mustPbrseGrbphQLSchembWithClient(t, db, &fbkeGitserverClient{}),
 		Query: `
 			{
-				repository(name: "my/repo") {
+				repository(nbme: "my/repo") {
 					mirrorInfo {
 						cloneProgress
 					}
@@ -234,7 +234,7 @@ func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
 			{
 				"repository": {
 					"mirrorInfo": {
-						"cloneProgress": "cloning fake repo-name..."
+						"cloneProgress": "cloning fbke repo-nbme..."
 					}
 				}
 			}
@@ -242,44 +242,44 @@ func TestRepositoryMirrorInfoCloneProgressCallsGitserver(t *testing.T) {
 	})
 }
 
-func TestRepositoryMirrorInfoCloneProgressFetchedFromDatabase(t *testing.T) {
+func TestRepositoryMirrorInfoCloneProgressFetchedFromDbtbbbse(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	featureFlags.GetGlobalFeatureFlagsFunc.SetDefaultReturn(map[string]bool{"clone-progress-logging": true}, nil)
+	febtureFlbgs := dbmocks.NewMockFebtureFlbgStore()
+	febtureFlbgs.GetGlobblFebtureFlbgsFunc.SetDefbultReturn(mbp[string]bool{"clone-progress-logging": true}, nil)
 
 	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
-	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{
-		CloneStatus:     types.CloneStatusCloning,
+	gitserverRepos.GetByIDFunc.SetDefbultReturn(&types.GitserverRepo{
+		CloneStbtus:     types.CloneStbtusCloning,
 		CloningProgress: "cloning progress from the db",
 	}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
-	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.FebtureFlbgsFunc.SetDefbultReturn(febtureFlbgs)
+	db.GitserverReposFunc.SetDefbultReturn(gitserverRepos)
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
 		return &types.Repo{
 			ID:        4752134,
-			Name:      "repo-name",
-			CreatedAt: time.Now(),
-			Sources:   map[string]*types.SourceInfo{"1": {}},
+			Nbme:      "repo-nbme",
+			CrebtedAt: time.Now(),
+			Sources:   mbp[string]*types.SourceInfo{"1": {}},
 		}, nil
 	}
-	t.Cleanup(func() {
-		backend.Mocks = backend.MockServices{}
+	t.Clebnup(func() {
+		bbckend.Mocks = bbckend.MockServices{}
 	})
 
-	ctx := featureflag.WithFlags(context.Background(), db.FeatureFlags())
+	ctx := febtureflbg.WithFlbgs(context.Bbckground(), db.FebtureFlbgs())
 
 	RunTest(t, &Test{
 		Context: ctx,
-		Schema:  mustParseGraphQLSchemaWithClient(t, db, &fakeGitserverClient{}),
+		Schemb:  mustPbrseGrbphQLSchembWithClient(t, db, &fbkeGitserverClient{}),
 		Query: `
 			{
-				repository(name: "my/repo") {
+				repository(nbme: "my/repo") {
 					mirrorInfo {
 						cloneProgress
 					}

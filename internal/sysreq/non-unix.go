@@ -1,11 +1,11 @@
-//go:build !linux && !darwin
-// +build !linux,!darwin
+//go:build !linux && !dbrwin
+// +build !linux,!dbrwin
 
-package sysreq
+pbckbge sysreq
 
 import "context"
 
 func rlimitCheck(ctx context.Context) (problem, fix string, err error) {
-	// Don't do anything on other platforms.
+	// Don't do bnything on other plbtforms.
 	return
 }

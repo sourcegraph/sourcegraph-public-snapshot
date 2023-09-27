@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
@@ -7,67 +7,67 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RateLimit struct {
-	// AllowedModels is a set of models in Cody Gateway's model configuration
-	// format, "$PROVIDER/$MODEL_NAME".
-	AllowedModels []string `json:"allowedModels"`
+type RbteLimit struct {
+	// AllowedModels is b set of models in Cody Gbtewby's model configurbtion
+	// formbt, "$PROVIDER/$MODEL_NAME".
+	AllowedModels []string `json:"bllowedModels"`
 
 	Limit    int64         `json:"limit"`
-	Interval time.Duration `json:"interval"`
+	Intervbl time.Durbtion `json:"intervbl"`
 
-	// ConcurrentRequests, ConcurrentRequestsInterval are generally applied
-	// with NewRateLimitWithPercentageConcurrency.
+	// ConcurrentRequests, ConcurrentRequestsIntervbl bre generblly bpplied
+	// with NewRbteLimitWithPercentbgeConcurrency.
 	ConcurrentRequests         int           `json:"concurrentRequests"`
-	ConcurrentRequestsInterval time.Duration `json:"concurrentRequestsInterval"`
+	ConcurrentRequestsIntervbl time.Durbtion `json:"concurrentRequestsIntervbl"`
 }
 
-func NewRateLimitWithPercentageConcurrency(limit int64, interval time.Duration, allowedModels []string, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) RateLimit {
-	// The actual type of time.Duration is int64, so we can use it to compute the
-	// ratio of the rate limit interval to a day (24 hours).
-	ratioToDay := float32(interval) / float32(24*time.Hour)
-	// Then use the ratio to compute the rate limit for a day.
-	dailyLimit := float32(limit) / ratioToDay
-	// Finally, compute the concurrency limit with the given percentage of the daily limit.
-	concurrencyLimit := int(dailyLimit * concurrencyConfig.Percentage)
-	// Just in case a poor choice of percentage results in a concurrency limit less than 1.
+func NewRbteLimitWithPercentbgeConcurrency(limit int64, intervbl time.Durbtion, bllowedModels []string, concurrencyConfig codygbtewby.ActorConcurrencyLimitConfig) RbteLimit {
+	// The bctubl type of time.Durbtion is int64, so we cbn use it to compute the
+	// rbtio of the rbte limit intervbl to b dby (24 hours).
+	rbtioToDby := flobt32(intervbl) / flobt32(24*time.Hour)
+	// Then use the rbtio to compute the rbte limit for b dby.
+	dbilyLimit := flobt32(limit) / rbtioToDby
+	// Finblly, compute the concurrency limit with the given percentbge of the dbily limit.
+	concurrencyLimit := int(dbilyLimit * concurrencyConfig.Percentbge)
+	// Just in cbse b poor choice of percentbge results in b concurrency limit less thbn 1.
 	if concurrencyLimit < 1 {
 		concurrencyLimit = 1
 	}
 
-	return RateLimit{
-		AllowedModels: allowedModels,
+	return RbteLimit{
+		AllowedModels: bllowedModels,
 		Limit:         limit,
-		Interval:      interval,
+		Intervbl:      intervbl,
 
 		ConcurrentRequests:         concurrencyLimit,
-		ConcurrentRequestsInterval: concurrencyConfig.Interval,
+		ConcurrentRequestsIntervbl: concurrencyConfig.Intervbl,
 	}
 }
 
-func (r *RateLimit) IsValid() bool {
-	return r != nil && r.Interval > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
+func (r *RbteLimit) IsVblid() bool {
+	return r != nil && r.Intervbl > 0 && r.Limit > 0 && len(r.AllowedModels) > 0
 }
 
 type concurrencyLimiter struct {
 	logger  log.Logger
-	actor   *Actor
-	feature codygateway.Feature
+	bctor   *Actor
+	febture codygbtewby.Febture
 
-	// redis must be a prefixed store
+	// redis must be b prefixed store
 	redis limiter.RedisStore
 
 	concurrentRequests int
-	concurrentInterval time.Duration
+	concurrentIntervbl time.Durbtion
 
 	nextLimiter limiter.Limiter
 
@@ -75,84 +75,84 @@ type concurrencyLimiter struct {
 }
 
 func (l *concurrencyLimiter) TryAcquire(ctx context.Context) (func(context.Context, int) error, error) {
-	commit, err := (limiter.StaticLimiter{
-		LimiterName:        "actor.concurrencyLimiter",
-		Identifier:         l.actor.ID,
+	commit, err := (limiter.StbticLimiter{
+		LimiterNbme:        "bctor.concurrencyLimiter",
+		Identifier:         l.bctor.ID,
 		Redis:              l.redis,
 		Limit:              int64(l.concurrentRequests),
-		Interval:           l.concurrentInterval,
-		UpdateRateLimitTTL: true, // always adjust
+		Intervbl:           l.concurrentIntervbl,
+		UpdbteRbteLimitTTL: true, // blwbys bdjust
 		NowFunc:            l.nowFunc,
 	}).TryAcquire(ctx)
 	if err != nil {
-		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
-			retryAfter, err := limiter.RetryAfterWithTTL(l.redis, l.nowFunc, l.actor.ID)
+		if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RbteLimitExceededError{}) {
+			retryAfter, err := limiter.RetryAfterWithTTL(l.redis, l.nowFunc, l.bctor.ID)
 			if err != nil {
-				return nil, errors.Wrap(err, "failed to get TTL for rate limit counter")
+				return nil, errors.Wrbp(err, "fbiled to get TTL for rbte limit counter")
 			}
 			return nil, ErrConcurrencyLimitExceeded{
-				feature:    l.feature,
+				febture:    l.febture,
 				limit:      l.concurrentRequests,
 				retryAfter: retryAfter,
 			}
 		}
-		return nil, errors.Wrap(err, "check concurrent limit")
+		return nil, errors.Wrbp(err, "check concurrent limit")
 	}
 	if err = commit(ctx, 1); err != nil {
-		trace.Logger(ctx, l.logger).Error("failed to commit concurrency limit consumption", log.Error(err))
+		trbce.Logger(ctx, l.logger).Error("fbiled to commit concurrency limit consumption", log.Error(err))
 	}
 
 	return l.nextLimiter.TryAcquire(ctx)
 }
 
-func (l *concurrencyLimiter) Usage(ctx context.Context) (int, time.Time, error) {
-	return l.nextLimiter.Usage(ctx)
+func (l *concurrencyLimiter) Usbge(ctx context.Context) (int, time.Time, error) {
+	return l.nextLimiter.Usbge(ctx)
 }
 
 type ErrConcurrencyLimitExceeded struct {
-	feature    codygateway.Feature
+	febture    codygbtewby.Febture
 	limit      int
 	retryAfter time.Time
 }
 
-// Error generates a simple string that is fairly static for use in logging.
-// This helps with categorizing errors. For more detailed output use Summary().
+// Error generbtes b simple string thbt is fbirly stbtic for use in logging.
+// This helps with cbtegorizing errors. For more detbiled output use Summbry().
 func (e ErrConcurrencyLimitExceeded) Error() string {
-	return fmt.Sprintf("%q: concurrency limit exceeded", e.feature)
+	return fmt.Sprintf("%q: concurrency limit exceeded", e.febture)
 }
 
-func (e ErrConcurrencyLimitExceeded) Summary() string {
-	return fmt.Sprintf("you have exceeded the concurrency limit of %d requests for %q. Retry after %s",
-		e.limit, e.feature, e.retryAfter.Truncate(time.Second))
+func (e ErrConcurrencyLimitExceeded) Summbry() string {
+	return fmt.Sprintf("you hbve exceeded the concurrency limit of %d requests for %q. Retry bfter %s",
+		e.limit, e.febture, e.retryAfter.Truncbte(time.Second))
 }
 
 func (e ErrConcurrencyLimitExceeded) WriteResponse(w http.ResponseWriter) {
-	// Rate limit exceeded, write well known headers and return correct status code.
-	w.Header().Set("x-ratelimit-limit", strconv.Itoa(e.limit))
-	w.Header().Set("x-ratelimit-remaining", "0")
-	w.Header().Set("retry-after", e.retryAfter.Format(time.RFC1123))
-	// Use Summary instead of Error for more informative text
-	http.Error(w, e.Summary(), http.StatusTooManyRequests)
+	// Rbte limit exceeded, write well known hebders bnd return correct stbtus code.
+	w.Hebder().Set("x-rbtelimit-limit", strconv.Itob(e.limit))
+	w.Hebder().Set("x-rbtelimit-rembining", "0")
+	w.Hebder().Set("retry-bfter", e.retryAfter.Formbt(time.RFC1123))
+	// Use Summbry instebd of Error for more informbtive text
+	http.Error(w, e.Summbry(), http.StbtusTooMbnyRequests)
 }
 
-// updateOnErrorLimiter calls Actor.Update if nextLimiter responds with certain
-// access errors.
-type updateOnErrorLimiter struct {
-	actor *Actor
+// updbteOnErrorLimiter cblls Actor.Updbte if nextLimiter responds with certbin
+// bccess errors.
+type updbteOnErrorLimiter struct {
+	bctor *Actor
 
 	nextLimiter limiter.Limiter
 }
 
-func (u updateOnErrorLimiter) TryAcquire(ctx context.Context) (func(context.Context, int) error, error) {
+func (u updbteOnErrorLimiter) TryAcquire(ctx context.Context) (func(context.Context, int) error, error) {
 	commit, err := u.nextLimiter.TryAcquire(ctx)
-	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RateLimitExceededError{}) {
-		oteltrace.SpanFromContext(ctx).
-			SetAttributes(attribute.Bool("update-on-error", true))
-		u.actor.Update(ctx) // TODO: run this in goroutine+background context maybe?
+	if errors.As(err, &limiter.NoAccessError{}) || errors.As(err, &limiter.RbteLimitExceededError{}) {
+		oteltrbce.SpbnFromContext(ctx).
+			SetAttributes(bttribute.Bool("updbte-on-error", true))
+		u.bctor.Updbte(ctx) // TODO: run this in goroutine+bbckground context mbybe?
 	}
 	return commit, err
 }
 
-func (u updateOnErrorLimiter) Usage(ctx context.Context) (int, time.Time, error) {
-	return u.nextLimiter.Usage(ctx)
+func (u updbteOnErrorLimiter) Usbge(ctx context.Context) (int, time.Time, error) {
+	return u.nextLimiter.Usbge(ctx)
 }

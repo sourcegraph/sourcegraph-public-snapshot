@@ -1,20 +1,20 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
-		log15.Root().SetHandler(log15.DiscardHandler())
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
 	} else {
 		logtest.Init(m)
 	}

@@ -1,66 +1,66 @@
-package lsif
+pbckbge lsif
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type diagnosticsCountMigrator struct {
-	serializer *serializer
+type dibgnosticsCountMigrbtor struct {
+	seriblizer *seriblizer
 }
 
-// NewDiagnosticsCountMigrator creates a new Migrator instance that reads records from
-// the lsif_data_documents table with a schema version of 1 and populates that record's
-// (new) num_diagnostics column. Updated records will have a schema version of 2.
-func NewDiagnosticsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
-	driver := &diagnosticsCountMigrator{
-		serializer: newSerializer(),
+// NewDibgnosticsCountMigrbtor crebtes b new Migrbtor instbnce thbt rebds records from
+// the lsif_dbtb_documents tbble with b schemb version of 1 bnd populbtes thbt record's
+// (new) num_dibgnostics column. Updbted records will hbve b schemb version of 2.
+func NewDibgnosticsCountMigrbtor(store *bbsestore.Store, bbtchSize, numRoutines int) *migrbtor {
+	driver := &dibgnosticsCountMigrbtor{
+		seriblizer: newSeriblizer(),
 	}
 
-	return newMigrator(store, driver, migratorOptions{
-		tableName:     "lsif_data_documents",
-		targetVersion: 2,
-		batchSize:     batchSize,
+	return newMigrbtor(store, driver, migrbtorOptions{
+		tbbleNbme:     "lsif_dbtb_documents",
+		tbrgetVersion: 2,
+		bbtchSize:     bbtchSize,
 		numRoutines:   numRoutines,
 		fields: []fieldSpec{
-			{name: "path", postgresType: "text not null", primaryKey: true},
-			{name: "data", postgresType: "bytea", readOnly: true},
-			{name: "num_diagnostics", postgresType: "integer not null", updateOnly: true},
+			{nbme: "pbth", postgresType: "text not null", primbryKey: true},
+			{nbme: "dbtb", postgresType: "byteb", rebdOnly: true},
+			{nbme: "num_dibgnostics", postgresType: "integer not null", updbteOnly: true},
 		},
 	})
 }
 
-func (m *diagnosticsCountMigrator) ID() int                 { return 1 }
-func (m *diagnosticsCountMigrator) Interval() time.Duration { return time.Second }
+func (m *dibgnosticsCountMigrbtor) ID() int                 { return 1 }
+func (m *dibgnosticsCountMigrbtor) Intervbl() time.Durbtion { return time.Second }
 
-// MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
-// modify the record to conform to the new schema.
-func (m *diagnosticsCountMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
-	var path string
-	var rawData []byte
+// MigrbteRowUp rebds the pbylobd of the given row bnd returns bn updbteSpec on how to
+// modify the record to conform to the new schemb.
+func (m *dibgnosticsCountMigrbtor) MigrbteRowUp(scbnner dbutil.Scbnner) ([]bny, error) {
+	vbr pbth string
+	vbr rbwDbtb []byte
 
-	if err := scanner.Scan(&path, &rawData); err != nil {
+	if err := scbnner.Scbn(&pbth, &rbwDbtb); err != nil {
 		return nil, err
 	}
 
-	data, err := m.serializer.UnmarshalLegacyDocumentData(rawData)
+	dbtb, err := m.seriblizer.UnmbrshblLegbcyDocumentDbtb(rbwDbtb)
 	if err != nil {
 		return nil, err
 	}
 
-	return []any{path, len(data.Diagnostics)}, nil
+	return []bny{pbth, len(dbtb.Dibgnostics)}, nil
 }
 
-// MigrateRowDown sets num_diagnostics back to zero to undo the migration up direction.
-func (m *diagnosticsCountMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
-	var path string
-	var rawData []byte
+// MigrbteRowDown sets num_dibgnostics bbck to zero to undo the migrbtion up direction.
+func (m *dibgnosticsCountMigrbtor) MigrbteRowDown(scbnner dbutil.Scbnner) ([]bny, error) {
+	vbr pbth string
+	vbr rbwDbtb []byte
 
-	if err := scanner.Scan(&path, &rawData); err != nil {
+	if err := scbnner.Scbn(&pbth, &rbwDbtb); err != nil {
 		return nil, err
 	}
 
-	return []any{path, 0}, nil
+	return []bny{pbth, 0}, nil
 }

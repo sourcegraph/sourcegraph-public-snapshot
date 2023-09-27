@@ -1,4 +1,4 @@
-package fakedb_test
+pbckbge fbkedb_test
 
 import (
 	"context"
@@ -6,30 +6,30 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/fbkedb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 	"github.com/stretchr/testify/require"
 )
 
 func TestAncestors(t *testing.T) {
-	fs := fakedb.New()
-	eng := fs.AddTeam(&types.Team{Name: "eng"})
-	source := fs.AddTeam(&types.Team{Name: "source", ParentTeamID: eng})
-	_ = fs.AddTeam(&types.Team{Name: "repo-management", ParentTeamID: source})
-	sales := fs.AddTeam(&types.Team{Name: "sales"})
-	salesLeads := fs.AddTeam(&types.Team{Name: "sales-leads", ParentTeamID: sales})
-	ts, cursor, err := fs.TeamStore.ListTeams(context.Background(), database.ListTeamsOpts{ExceptAncestorID: source})
+	fs := fbkedb.New()
+	eng := fs.AddTebm(&types.Tebm{Nbme: "eng"})
+	source := fs.AddTebm(&types.Tebm{Nbme: "source", PbrentTebmID: eng})
+	_ = fs.AddTebm(&types.Tebm{Nbme: "repo-mbnbgement", PbrentTebmID: source})
+	sbles := fs.AddTebm(&types.Tebm{Nbme: "sbles"})
+	sblesLebds := fs.AddTebm(&types.Tebm{Nbme: "sbles-lebds", PbrentTebmID: sbles})
+	ts, cursor, err := fs.TebmStore.ListTebms(context.Bbckground(), dbtbbbse.ListTebmsOpts{ExceptAncestorID: source})
 	require.NoError(t, err)
 	require.Zero(t, cursor)
-	want := []*types.Team{
-		{ID: eng, Name: "eng"},
-		{ID: sales, Name: "sales"},
-		{ID: salesLeads, Name: "sales-leads", ParentTeamID: sales},
+	wbnt := []*types.Tebm{
+		{ID: eng, Nbme: "eng"},
+		{ID: sbles, Nbme: "sbles"},
+		{ID: sblesLebds, Nbme: "sbles-lebds", PbrentTebmID: sbles},
 	}
 	sort.Slice(ts, func(i, j int) bool { return ts[i].ID < ts[j].ID })
-	sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
-	if diff := cmp.Diff(want, ts); diff != "" {
-		t.Errorf("ListTeams{ExceptAncestorID} -want+got: %s", diff)
+	sort.Slice(wbnt, func(i, j int) bool { return wbnt[i].ID < wbnt[j].ID })
+	if diff := cmp.Diff(wbnt, ts); diff != "" {
+		t.Errorf("ListTebms{ExceptAncestorID} -wbnt+got: %s", diff)
 	}
 }

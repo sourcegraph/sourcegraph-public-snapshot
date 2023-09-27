@@ -1,39 +1,39 @@
-package auth
+pbckbge buth
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-type Backoff int
+type Bbckoff int
 
 const (
-	// so the zero value means "from conf"
-	ConfBackoff Backoff = 0
-	ZeroBackoff Backoff = 1
+	// so the zero vblue mebns "from conf"
+	ConfBbckoff Bbckoff = 0
+	ZeroBbckoff Bbckoff = 1
 )
 
-func (b Backoff) SyncUserBackoff() time.Duration {
-	if b == ZeroBackoff {
-		return time.Duration(0)
+func (b Bbckoff) SyncUserBbckoff() time.Durbtion {
+	if b == ZeroBbckoff {
+		return time.Durbtion(0)
 	}
 
-	seconds := conf.Get().PermissionsSyncUsersBackoffSeconds
+	seconds := conf.Get().PermissionsSyncUsersBbckoffSeconds
 	if seconds <= 0 {
 		return 60 * time.Second
 	}
-	return time.Duration(seconds) * time.Second
+	return time.Durbtion(seconds) * time.Second
 }
 
-func (b Backoff) SyncRepoBackoff() time.Duration {
-	if b == ZeroBackoff {
-		return time.Duration(0)
+func (b Bbckoff) SyncRepoBbckoff() time.Durbtion {
+	if b == ZeroBbckoff {
+		return time.Durbtion(0)
 	}
 
-	seconds := conf.Get().PermissionsSyncReposBackoffSeconds
+	seconds := conf.Get().PermissionsSyncReposBbckoffSeconds
 	if seconds <= 0 {
 		return 60 * time.Second
 	}
-	return time.Duration(seconds) * time.Second
+	return time.Durbtion(seconds) * time.Second
 }

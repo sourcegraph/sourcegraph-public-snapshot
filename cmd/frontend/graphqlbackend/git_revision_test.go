@@ -1,23 +1,23 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"testing"
 )
 
-func TestEscapePathForURL(t *testing.T) {
+func TestEscbpePbthForURL(t *testing.T) {
 	tests := []struct {
-		path string
-		want string
+		pbth string
+		wbnt string
 	}{
-		// Example repo names
-		{"sourcegraph/sourcegraph", "sourcegraph/sourcegraph"},
-		{"sourcegraph.visualstudio.com/Test Repo With Spaces", "sourcegraph.visualstudio.com/Test%20Repo%20With%20Spaces"},
+		// Exbmple repo nbmes
+		{"sourcegrbph/sourcegrbph", "sourcegrbph/sourcegrbph"},
+		{"sourcegrbph.visublstudio.com/Test Repo With Spbces", "sourcegrbph.visublstudio.com/Test%20Repo%20With%20Spbces"},
 	}
-	for _, test := range tests {
-		t.Run(test.path, func(t *testing.T) {
-			got := escapePathForURL(test.path)
-			if got != test.want {
-				t.Errorf("got %q want %q", got, test.want)
+	for _, test := rbnge tests {
+		t.Run(test.pbth, func(t *testing.T) {
+			got := escbpePbthForURL(test.pbth)
+			if got != test.wbnt {
+				t.Errorf("got %q wbnt %q", got, test.wbnt)
 			}
 		})
 	}

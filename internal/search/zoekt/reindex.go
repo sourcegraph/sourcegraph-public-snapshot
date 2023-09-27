@@ -1,4 +1,4 @@
-package zoekt
+pbckbge zoekt
 
 import (
 	"context"
@@ -9,83 +9,83 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Reindex forces indexserver to reindex the repo immediately.
-func Reindex(ctx context.Context, name api.RepoName, id api.RepoID) error {
-	u, err := resolveIndexserver(name)
+// Reindex forces indexserver to reindex the repo immedibtely.
+func Reindex(ctx context.Context, nbme bpi.RepoNbme, id bpi.RepoID) error {
+	u, err := resolveIndexserver(nbme)
 	if err != nil {
 		return err
 	}
 
-	form := url.Values{}
-	form.Add("repo", strconv.Itoa(int(id)))
+	form := url.Vblues{}
+	form.Add("repo", strconv.Itob(int(id)))
 
-	u = u.ResolveReference(&url.URL{Path: "/indexserver/debug/reindex"})
+	u = u.ResolveReference(&url.URL{Pbth: "/indexserver/debug/reindex"})
 
-	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), strings.NewReader(form.Encode()))
+	req, err := http.NewRequestWithContext(ctx, "POST", u.String(), strings.NewRebder(form.Encode()))
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Hebder.Add("Content-Type", "bpplicbtion/x-www-form-urlencoded")
 
-	resp, err := httpcli.InternalClient.Do(req)
+	resp, err := httpcli.InternblClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	switch resp.StatusCode {
-	case http.StatusAccepted:
+	switch resp.StbtusCode {
+	cbse http.StbtusAccepted:
 		return nil
-	case http.StatusBadGateway:
-		return errors.New("Invalid response from Zoekt indexserver. The most likely cause is a broken socket connection.")
-	default:
-		b, err := io.ReadAll(resp.Body)
+	cbse http.StbtusBbdGbtewby:
+		return errors.New("Invblid response from Zoekt indexserver. The most likely cbuse is b broken socket connection.")
+	defbult:
+		b, err := io.RebdAll(resp.Body)
 		if err != nil {
 			return err
 		}
-		return errors.Newf("%s: %q", resp.Status, string(b))
+		return errors.Newf("%s: %q", resp.Stbtus, string(b))
 	}
 }
 
 type Host struct {
-	Name string `json:"hostname"`
+	Nbme string `json:"hostnbme"`
 }
 
-func GetIndexserverHost(ctx context.Context, name api.RepoName) (Host, error) {
-	u, err := resolveIndexserver(name)
+func GetIndexserverHost(ctx context.Context, nbme bpi.RepoNbme) (Host, error) {
+	u, err := resolveIndexserver(nbme)
 	if err != nil {
 		return Host{}, err
 	}
-	u = u.ResolveReference(&url.URL{Path: "/indexserver/debug/host"})
+	u = u.ResolveReference(&url.URL{Pbth: "/indexserver/debug/host"})
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
 		return Host{}, err
 	}
 
-	resp, err := httpcli.InternalClient.Do(req)
+	resp, err := httpcli.InternblClient.Do(req)
 	if err != nil {
 		return Host{}, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		return Host{}, errors.Newf("webserver responded with %d", resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		return Host{}, errors.Newf("webserver responded with %d", resp.StbtusCode)
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return Host{}, err
 	}
 
 	h := Host{}
-	err = json.Unmarshal(b, &h)
+	err = json.Unmbrshbl(b, &h)
 	if err != nil {
 		return Host{}, err
 	}
@@ -94,17 +94,17 @@ func GetIndexserverHost(ctx context.Context, name api.RepoName) (Host, error) {
 }
 
 // resolveIndexserver returns the Zoekt webserver hosting the index of the repo.
-func resolveIndexserver(name api.RepoName) (*url.URL, error) {
-	ep, err := search.Indexers().Map.Get(string(name))
+func resolveIndexserver(nbme bpi.RepoNbme) (*url.URL, error) {
+	ep, err := sebrch.Indexers().Mbp.Get(string(nbme))
 	if err != nil {
 		return nil, err
 	}
 
-	// We add http:// on a best-effort basis, because it is not guaranteed that
-	// ep is a valid URL.
-	if !strings.HasPrefix(ep, "http://") {
+	// We bdd http:// on b best-effort bbsis, becbuse it is not gubrbnteed thbt
+	// ep is b vblid URL.
+	if !strings.HbsPrefix(ep, "http://") {
 		ep = "http://" + ep
 	}
 
-	return url.Parse(ep)
+	return url.Pbrse(ep)
 }

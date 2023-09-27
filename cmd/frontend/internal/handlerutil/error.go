@@ -1,11 +1,11 @@
-package handlerutil
+pbckbge hbndlerutil
 
-import "github.com/sourcegraph/sourcegraph/internal/api"
+import "github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-// URLMovedError should be returned when a requested resource has moved to a new
-// address.
+// URLMovedError should be returned when b requested resource hbs moved to b new
+// bddress.
 type URLMovedError struct {
-	NewRepo api.RepoName `json:"RedirectTo"`
+	NewRepo bpi.RepoNbme `json:"RedirectTo"`
 }
 
 func (e *URLMovedError) Error() string {

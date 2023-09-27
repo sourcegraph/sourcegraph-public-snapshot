@@ -1,4 +1,4 @@
-package resolvers_test
+pbckbge resolvers_test
 
 import (
 	"context"
@@ -11,211 +11,211 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
-	owntypes "github.com/sourcegraph/sourcegraph/internal/own/types"
-	rbactypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/own/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/fbkedb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
+	owntypes "github.com/sourcegrbph/sourcegrbph/internbl/own/types"
+	rbbctypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	santaEmail = "santa@northpole.com"
-	santaName  = "santa claus"
+	sbntbEmbil = "sbntb@northpole.com"
+	sbntbNbme  = "sbntb clbus"
 )
 
-// userCtx returns a context where give user ID identifies logged in user.
+// userCtx returns b context where give user ID identifies logged in user.
 func userCtx(userID int32) context.Context {
-	ctx := context.Background()
-	a := actor.FromUser(userID)
-	return actor.WithActor(ctx, a)
+	ctx := context.Bbckground()
+	b := bctor.FromUser(userID)
+	return bctor.WithActor(ctx, b)
 }
 
-// fakeOwnService returns given owners file and resolves owners to UnknownOwner.
-type fakeOwnService struct {
+// fbkeOwnService returns given owners file bnd resolves owners to UnknownOwner.
+type fbkeOwnService struct {
 	Ruleset        *codeowners.Ruleset
 	AssignedOwners own.AssignedOwners
-	Teams          own.AssignedTeams
+	Tebms          own.AssignedTebms
 }
 
-func (s fakeOwnService) RulesetForRepo(context.Context, api.RepoName, api.RepoID, api.CommitID) (*codeowners.Ruleset, error) {
+func (s fbkeOwnService) RulesetForRepo(context.Context, bpi.RepoNbme, bpi.RepoID, bpi.CommitID) (*codeowners.Ruleset, error) {
 	return s.Ruleset, nil
 }
 
-// ResolverOwnersWithType here behaves in line with production
-// OwnService implementation in case handle/email cannot be associated
-// with anything - defaults to a Person with a nil person entity.
-func (s fakeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
-	var resolved []codeowners.ResolvedOwner
-	for _, o := range owners {
-		resolved = append(resolved, &codeowners.Person{
-			Handle: o.Handle,
-			Email:  o.Email,
+// ResolverOwnersWithType here behbves in line with production
+// OwnService implementbtion in cbse hbndle/embil cbnnot be bssocibted
+// with bnything - defbults to b Person with b nil person entity.
+func (s fbkeOwnService) ResolveOwnersWithType(_ context.Context, owners []*codeownerspb.Owner) ([]codeowners.ResolvedOwner, error) {
+	vbr resolved []codeowners.ResolvedOwner
+	for _, o := rbnge owners {
+		resolved = bppend(resolved, &codeowners.Person{
+			Hbndle: o.Hbndle,
+			Embil:  o.Embil,
 		})
 	}
 	return resolved, nil
 }
 
-func (s fakeOwnService) AssignedOwnership(context.Context, api.RepoID, api.CommitID) (own.AssignedOwners, error) {
+func (s fbkeOwnService) AssignedOwnership(context.Context, bpi.RepoID, bpi.CommitID) (own.AssignedOwners, error) {
 	return s.AssignedOwners, nil
 }
 
-func (s fakeOwnService) AssignedTeams(context.Context, api.RepoID, api.CommitID) (own.AssignedTeams, error) {
-	return s.Teams, nil
+func (s fbkeOwnService) AssignedTebms(context.Context, bpi.RepoID, bpi.CommitID) (own.AssignedTebms, error) {
+	return s.Tebms, nil
 }
 
-// fakeGitServer is a limited gitserver.Client that returns a file for every Stat call.
-type fakeGitserver struct {
+// fbkeGitServer is b limited gitserver.Client thbt returns b file for every Stbt cbll.
+type fbkeGitserver struct {
 	gitserver.Client
 	files repoFiles
 }
 
-type repoPath struct {
-	Repo     api.RepoName
-	CommitID api.CommitID
-	Path     string
+type repoPbth struct {
+	Repo     bpi.RepoNbme
+	CommitID bpi.CommitID
+	Pbth     string
 }
 
-func fakeOwnDb() *dbmocks.MockDB {
+func fbkeOwnDb() *dbmocks.MockDB {
 	db := dbmocks.NewMockDB()
-	db.RecentContributionSignalsFunc.SetDefaultReturn(dbmocks.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(dbmocks.NewMockRecentViewSignalStore())
-	db.AssignedOwnersFunc.SetDefaultReturn(dbmocks.NewMockAssignedOwnersStore())
+	db.RecentContributionSignblsFunc.SetDefbultReturn(dbmocks.NewMockRecentContributionSignblStore())
+	db.RecentViewSignblFunc.SetDefbultReturn(dbmocks.NewMockRecentViewSignblStore())
+	db.AssignedOwnersFunc.SetDefbultReturn(dbmocks.NewMockAssignedOwnersStore())
 
-	configStore := dbmocks.NewMockSignalConfigurationStore()
-	configStore.IsEnabledFunc.SetDefaultReturn(true, nil)
-	db.OwnSignalConfigurationsFunc.SetDefaultReturn(configStore)
+	configStore := dbmocks.NewMockSignblConfigurbtionStore()
+	configStore.IsEnbbledFunc.SetDefbultReturn(true, nil)
+	db.OwnSignblConfigurbtionsFunc.SetDefbultReturn(configStore)
 
 	return db
 }
 
-type repoFiles map[repoPath]string
+type repoFiles mbp[repoPbth]string
 
-func (g fakeGitserver) ReadFile(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, file string) ([]byte, error) {
+func (g fbkeGitserver) RebdFile(_ context.Context, _ buthz.SubRepoPermissionChecker, repoNbme bpi.RepoNbme, commitID bpi.CommitID, file string) ([]byte, error) {
 	if g.files == nil {
 		return nil, os.ErrNotExist
 	}
-	content, ok := g.files[repoPath{Repo: repoName, CommitID: commitID, Path: file}]
+	content, ok := g.files[repoPbth{Repo: repoNbme, CommitID: commitID, Pbth: file}]
 	if !ok {
 		return nil, os.ErrNotExist
 	}
 	return []byte(content), nil
 }
 
-// Stat is a fake implementation that returns a FileInfo
-// indicating a regular file for every path it is given,
-// except the ones that are actual ancestor paths of some file
-// in fakeGitServer.files.
-func (g fakeGitserver) Stat(_ context.Context, _ authz.SubRepoPermissionChecker, repoName api.RepoName, commitID api.CommitID, path string) (fs.FileInfo, error) {
-	isDir := false
-	p := repoPath{
-		Repo:     repoName,
+// Stbt is b fbke implementbtion thbt returns b FileInfo
+// indicbting b regulbr file for every pbth it is given,
+// except the ones thbt bre bctubl bncestor pbths of some file
+// in fbkeGitServer.files.
+func (g fbkeGitserver) Stbt(_ context.Context, _ buthz.SubRepoPermissionChecker, repoNbme bpi.RepoNbme, commitID bpi.CommitID, pbth string) (fs.FileInfo, error) {
+	isDir := fblse
+	p := repoPbth{
+		Repo:     repoNbme,
 		CommitID: commitID,
-		Path:     path,
+		Pbth:     pbth,
 	}
-	if p.Path == "" {
+	if p.Pbth == "" {
 		isDir = true
 	} else {
-		for q := range g.files {
-			if p.Repo == q.Repo && p.CommitID == q.CommitID && strings.HasPrefix(q.Path, p.Path+"/") && q.Path != p.Path {
+		for q := rbnge g.files {
+			if p.Repo == q.Repo && p.CommitID == q.CommitID && strings.HbsPrefix(q.Pbth, p.Pbth+"/") && q.Pbth != p.Pbth {
 				isDir = true
 			}
 		}
 	}
-	return graphqlbackend.CreateFileInfo(path, isDir), nil
+	return grbphqlbbckend.CrebteFileInfo(pbth, isDir), nil
 }
 
-// TestBlobOwnershipPanelQueryPersonUnresolved mimics the blob ownership panel graphQL
-// query, where the owner is unresolved. In that case if we have a handle, we only return
-// it as `displayName`.
-func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
+// TestBlobOwnershipPbnelQueryPersonUnresolved mimics the blob ownership pbnel grbphQL
+// query, where the owner is unresolved. In thbt cbse if we hbve b hbndle, we only return
+// it bs `displbyNbme`.
+func TestBlobOwnershipPbnelQueryPersonUnresolved(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
-	fakeDB.Wire(db)
-	repoID := api.RepoID(1)
-	own := fakeOwnService{
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
+	fbkeDB.Wire(db)
+	repoID := bpi.RepoID(1)
+	own := fbkeOwnService{
 		Ruleset: codeowners.NewRuleset(
-			codeowners.GitRulesetSource{Repo: repoID, Commit: "deadbeef", Path: "CODEOWNERS"},
+			codeowners.GitRulesetSource{Repo: repoID, Commit: "debdbeef", Pbth: "CODEOWNERS"},
 			&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{
-						Pattern: "*.js",
+						Pbttern: "*.js",
 						Owner: []*codeownerspb.Owner{
-							{Handle: "js-owner"},
+							{Hbndle: "js-owner"},
 						},
 						LineNumber: 1,
 					},
 				},
 			}),
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "deadbeef", nil
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/own"}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return "debdbeef", nil
 	}
-	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	git := fbkeGitserver{}
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			fragment OwnerFields on Person {
-				email
-				avatarURL
-				displayName
+			frbgment OwnerFields on Person {
+				embil
+				bvbtbrURL
+				displbyNbme
 				user {
-					username
-					displayName
+					usernbme
+					displbyNbme
 					url
 				}
 			}
 
-			fragment CodeownersFileEntryFields on CodeownersFileEntry {
+			frbgment CodeownersFileEntryFields on CodeownersFileEntry {
 				title
 				description
 				codeownersFile {
-					__typename
+					__typenbme
 					url
 				}
-				ruleLineMatch
+				ruleLineMbtch
 			}
 
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
 									nodes {
 										owner {
 											...OwnerFields
 										}
-										reasons {
+										rebsons {
 											...CodeownersFileEntryFields
 										}
 									}
@@ -233,20 +233,20 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"email": "",
-										"avatarURL": null,
-										"displayName": "js-owner",
+										"embil": "",
+										"bvbtbrURL": null,
+										"displbyNbme": "js-owner",
 										"user": null
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "codeowners",
-											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"description": "Owner is bssocibted with b rule in b CODEOWNERS file.",
 											"codeownersFile": {
-												"__typename": "GitBlob",
-												"url": "/github.com/sourcegraph/own@deadbeef/-/blob/CODEOWNERS"
+												"__typenbme": "GitBlob",
+												"url": "/github.com/sourcegrbph/own@debdbeef/-/blob/CODEOWNERS"
 											},
-											"ruleLineMatch": 1
+											"ruleLineMbtch": 1
 										}
 									]
 								}
@@ -256,69 +256,69 @@ func TestBlobOwnershipPanelQueryPersonUnresolved(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(42)),
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(42)),
 			"revision":    "revision",
-			"currentPath": "foo/bar.js",
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 }
 
-func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
+func TestBlobOwnershipPbnelQueryIngested(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
-	fakeDB.Wire(db)
-	repoID := api.RepoID(1)
-	own := fakeOwnService{
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
+	fbkeDB.Wire(db)
+	repoID := bpi.RepoID(1)
+	own := fbkeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{ID: int32(repoID)},
 			&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{
-						Pattern: "*.js",
+						Pbttern: "*.js",
 						Owner: []*codeownerspb.Owner{
-							{Handle: "js-owner"},
+							{Hbndle: "js-owner"},
 						},
 						LineNumber: 1,
 					},
 				},
 			}),
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "deadbeef", nil
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/own"}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return "debdbeef", nil
 	}
-	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	git := fbkeGitserver{}
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			fragment CodeownersFileEntryFields on CodeownersFileEntry {
+			frbgment CodeownersFileEntryFields on CodeownersFileEntry {
 				title
 				description
 				codeownersFile {
-					__typename
+					__typenbme
 					url
 				}
-				ruleLineMatch
+				ruleLineMbtch
 			}
 
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
 									nodes {
-										reasons {
+										rebsons {
 											...CodeownersFileEntryFields
 										}
 									}
@@ -335,15 +335,15 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 						"ownership": {
 							"nodes": [
 								{
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "codeowners",
-											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"description": "Owner is bssocibted with b rule in b CODEOWNERS file.",
 											"codeownersFile": {
-												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own/edit"
+												"__typenbme": "VirtublFile",
+												"url": "/github.com/sourcegrbph/own/-/own/edit"
 											},
-											"ruleLineMatch": 1
+											"ruleLineMbtch": 1
 										}
 									]
 								}
@@ -353,67 +353,67 @@ func TestBlobOwnershipPanelQueryIngested(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repoID)),
 			"revision":    "revision",
-			"currentPath": "foo/bar.js",
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 }
 
-func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
+func TestBlobOwnershipPbnelQueryTebmResolved(t *testing.T) {
 	logger := logtest.Scoped(t)
-	repo := &types.Repo{Name: "repo-name", ID: 42}
-	team := &types.Team{Name: "fake-team", DisplayName: "The Fake Team"}
-	parameterRevision := "revision-parameter"
-	var resolvedRevision api.CommitID = "revision-resolved"
-	git := fakeGitserver{
+	repo := &types.Repo{Nbme: "repo-nbme", ID: 42}
+	tebm := &types.Tebm{Nbme: "fbke-tebm", DisplbyNbme: "The Fbke Tebm"}
+	pbrbmeterRevision := "revision-pbrbmeter"
+	vbr resolvedRevision bpi.CommitID = "revision-resolved"
+	git := fbkeGitserver{
 		files: repoFiles{
-			{repo.Name, resolvedRevision, "CODEOWNERS"}: "*.js @fake-team",
+			{repo.Nbme, resolvedRevision, "CODEOWNERS"}: "*.js @fbke-tebm",
 		},
 	}
-	fakeDB := fakedb.New()
+	fbkeDB := fbkedb.New()
 	db := dbmocks.NewMockDB()
-	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
-	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
-	db.CodeownersFunc.SetDefaultReturn(dbmocks.NewMockCodeownersStore())
-	db.RecentContributionSignalsFunc.SetDefaultReturn(dbmocks.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(dbmocks.NewMockRecentViewSignalStore())
-	db.AssignedOwnersFunc.SetDefaultReturn(dbmocks.NewMockAssignedOwnersStore())
-	db.AssignedTeamsFunc.SetDefaultReturn(dbmocks.NewMockAssignedTeamsStore())
-	db.OwnSignalConfigurationsFunc.SetDefaultReturn(dbmocks.NewMockSignalConfigurationStore())
+	db.TebmsFunc.SetDefbultReturn(fbkeDB.TebmStore)
+	db.UsersFunc.SetDefbultReturn(fbkeDB.UserStore)
+	db.CodeownersFunc.SetDefbultReturn(dbmocks.NewMockCodeownersStore())
+	db.RecentContributionSignblsFunc.SetDefbultReturn(dbmocks.NewMockRecentContributionSignblStore())
+	db.RecentViewSignblFunc.SetDefbultReturn(dbmocks.NewMockRecentViewSignblStore())
+	db.AssignedOwnersFunc.SetDefbultReturn(dbmocks.NewMockAssignedOwnersStore())
+	db.AssignedTebmsFunc.SetDefbultReturn(dbmocks.NewMockAssignedTebmsStore())
+	db.OwnSignblConfigurbtionsFunc.SetDefbultReturn(dbmocks.NewMockSignblConfigurbtionStore())
 	own := own.NewService(git, db)
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(repo, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if rev != parameterRevision {
-			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(repo, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		if rev != pbrbmeterRevision {
+			return "", errors.Newf("ResolveRev, got %q wbnt %q", rev, pbrbmeterRevision)
 		}
 		return resolvedRevision, nil
 	}
-	if _, err := fakeDB.TeamStore.CreateTeam(ctx, team); err != nil {
-		t.Fatalf("failed to create fake team: %s", err)
+	if _, err := fbkeDB.TebmStore.CrebteTebm(ctx, tebm); err != nil {
+		t.Fbtblf("fbiled to crebte fbke tebm: %s", err)
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
 									nodes {
 										owner {
-											... on Team {
-												displayName
+											... on Tebm {
+												displbyNbme
 											}
 										}
 									}
@@ -431,7 +431,7 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "The Fake Team"
+										"displbyNbme": "The Fbke Tebm"
 									}
 								}
 							]
@@ -440,77 +440,77 @@ func TestBlobOwnershipPanelQueryTeamResolved(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"revision":    parameterRevision,
-			"currentPath": "foo/bar.js",
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"revision":    pbrbmeterRevision,
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 }
 
-func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
+func TestBlobOwnershipPbnelQueryExternblTebmResolved(t *testing.T) {
 	logger := logtest.Scoped(t)
-	repo := &types.Repo{Name: "repo-name", ExternalRepo: api.ExternalRepoSpec{ServiceType: "github"}, ID: 42}
-	const ghTeamName = "sourcegraph/own"
-	parameterRevision := "revision-parameter"
-	var resolvedRevision api.CommitID = "revision-resolved"
-	git := fakeGitserver{
+	repo := &types.Repo{Nbme: "repo-nbme", ExternblRepo: bpi.ExternblRepoSpec{ServiceType: "github"}, ID: 42}
+	const ghTebmNbme = "sourcegrbph/own"
+	pbrbmeterRevision := "revision-pbrbmeter"
+	vbr resolvedRevision bpi.CommitID = "revision-resolved"
+	git := fbkeGitserver{
 		files: repoFiles{
-			{repo.Name, resolvedRevision, "CODEOWNERS"}: fmt.Sprintf("*.js @%s", ghTeamName),
+			{repo.Nbme, resolvedRevision, "CODEOWNERS"}: fmt.Sprintf("*.js @%s", ghTebmNbme),
 		},
 	}
-	fakeDB := fakedb.New()
+	fbkeDB := fbkedb.New()
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(fakeDB.UserStore)
-	db.TeamsFunc.SetDefaultReturn(fakeDB.TeamStore)
-	db.CodeownersFunc.SetDefaultReturn(dbmocks.NewMockCodeownersStore())
-	db.RecentContributionSignalsFunc.SetDefaultReturn(dbmocks.NewMockRecentContributionSignalStore())
-	db.RecentViewSignalFunc.SetDefaultReturn(dbmocks.NewMockRecentViewSignalStore())
-	db.AssignedOwnersFunc.SetDefaultReturn(dbmocks.NewMockAssignedOwnersStore())
-	db.AssignedTeamsFunc.SetDefaultReturn(dbmocks.NewMockAssignedTeamsStore())
-	db.OwnSignalConfigurationsFunc.SetDefaultReturn(dbmocks.NewMockSignalConfigurationStore())
+	db.UsersFunc.SetDefbultReturn(fbkeDB.UserStore)
+	db.TebmsFunc.SetDefbultReturn(fbkeDB.TebmStore)
+	db.CodeownersFunc.SetDefbultReturn(dbmocks.NewMockCodeownersStore())
+	db.RecentContributionSignblsFunc.SetDefbultReturn(dbmocks.NewMockRecentContributionSignblStore())
+	db.RecentViewSignblFunc.SetDefbultReturn(dbmocks.NewMockRecentViewSignblStore())
+	db.AssignedOwnersFunc.SetDefbultReturn(dbmocks.NewMockAssignedOwnersStore())
+	db.AssignedTebmsFunc.SetDefbultReturn(dbmocks.NewMockAssignedTebmsStore())
+	db.OwnSignblConfigurbtionsFunc.SetDefbultReturn(dbmocks.NewMockSignblConfigurbtionStore())
 	own := own.NewService(git, db)
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(repo, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if rev != parameterRevision {
-			return "", errors.Newf("ResolveRev, got %q want %q", rev, parameterRevision)
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(repo, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		if rev != pbrbmeterRevision {
+			return "", errors.Newf("ResolveRev, got %q wbnt %q", rev, pbrbmeterRevision)
 		}
 		return resolvedRevision, nil
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
 									nodes {
 										owner {
-											... on Team {
+											... on Tebm {
 												id
-												name
-												displayName
+												nbme
+												displbyNbme
 												url
-												avatarURL
-												readonly
-												parentTeam {
+												bvbtbrURL
+												rebdonly
+												pbrentTebm {
 													id
 												}
-												viewerCanAdminister
-												creator {
+												viewerCbnAdminister
+												crebtor {
 													id
 												}
-												external
+												externbl
 											}
 										}
 									}
@@ -529,15 +529,15 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 								{
 									"owner": {
 										"id": "VGVhbTow",
-										"name": "sourcegraph/own",
-										"displayName": "sourcegraph/own",
+										"nbme": "sourcegrbph/own",
+										"displbyNbme": "sourcegrbph/own",
 										"url": "",
-										"avatarURL": null,
-										"readonly": true,
-										"parentTeam": null,
-										"viewerCanAdminister": false,
-										"creator": null,
-										"external": true
+										"bvbtbrURL": null,
+										"rebdonly": true,
+										"pbrentTebm": null,
+										"viewerCbnAdminister": fblse,
+										"crebtor": null,
+										"externbl": true
 									}
 								}
 							]
@@ -546,32 +546,32 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"revision":    parameterRevision,
-			"currentPath": "foo/bar.js",
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"revision":    pbrbmeterRevision,
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
 									nodes {
 										owner {
-											... on Team {
-												displayName
+											... on Tebm {
+												displbyNbme
 												members(first: 10) {
-													totalCount
+													totblCount
 												}
-												childTeams(first: 10) {
-													totalCount
+												childTebms(first: 10) {
+													totblCount
 												}
 											}
 										}
@@ -584,33 +584,33 @@ func TestBlobOwnershipPanelQueryExternalTeamResolved(t *testing.T) {
 			}`,
 		ExpectedResult: `{"node":{"commit":{"blob":null}}}`,
 		ExpectedErrors: []*gqlerrors.QueryError{
-			{Message: "cannot get child teams of external team", Path: []any{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "childTeams"}},
-			{Message: "cannot get members of external team", Path: []any{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "members"}},
+			{Messbge: "cbnnot get child tebms of externbl tebm", Pbth: []bny{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "childTebms"}},
+			{Messbge: "cbnnot get members of externbl tebm", Pbth: []bny{"node", "commit", "blob", "ownership", "nodes", 0, "owner", "members"}},
 		},
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"revision":    parameterRevision,
-			"currentPath": "foo/bar.js",
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"revision":    pbrbmeterRevision,
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 }
 
-var paginationQuery = `
-query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $after: String!) {
+vbr pbginbtionQuery = `
+query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!, $bfter: String!) {
 	node(id: $repo) {
 		... on Repository {
 			commit(rev: $revision) {
-				blob(path: $currentPath) {
-					ownership(first: 2, after: $after) {
-						totalCount
-						pageInfo {
+				blob(pbth: $currentPbth) {
+					ownership(first: 2, bfter: $bfter) {
+						totblCount
+						pbgeInfo {
 							endCursor
-							hasNextPage
+							hbsNextPbge
 						}
 						nodes {
 							owner {
 								...on Person {
-									displayName
+									displbyNbme
 								}
 							}
 						}
@@ -621,19 +621,19 @@ query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!, $aft
 	}
 }`
 
-type paginationResponse struct {
+type pbginbtionResponse struct {
 	Node struct {
 		Commit struct {
 			Blob struct {
 				Ownership struct {
-					TotalCount int
-					PageInfo   struct {
+					TotblCount int
+					PbgeInfo   struct {
 						EndCursor   *string
-						HasNextPage bool
+						HbsNextPbge bool
 					}
 					Nodes []struct {
 						Owner struct {
-							DisplayName string
+							DisplbyNbme string
 						}
 					}
 				}
@@ -642,113 +642,113 @@ type paginationResponse struct {
 	}
 }
 
-func (r paginationResponse) hasNextPage() bool {
-	return r.Node.Commit.Blob.Ownership.PageInfo.HasNextPage
+func (r pbginbtionResponse) hbsNextPbge() bool {
+	return r.Node.Commit.Blob.Ownership.PbgeInfo.HbsNextPbge
 }
 
-func (r paginationResponse) consistentPageInfo() error {
+func (r pbginbtionResponse) consistentPbgeInfo() error {
 	ownership := r.Node.Commit.Blob.Ownership
-	if nextPage, hasCursor := ownership.PageInfo.HasNextPage, ownership.PageInfo.EndCursor != nil; nextPage != hasCursor {
+	if nextPbge, hbsCursor := ownership.PbgeInfo.HbsNextPbge, ownership.PbgeInfo.EndCursor != nil; nextPbge != hbsCursor {
 		cursor := "<nil>"
-		if ownership.PageInfo.EndCursor != nil {
-			cursor = fmt.Sprintf("&%q", *ownership.PageInfo.EndCursor)
+		if ownership.PbgeInfo.EndCursor != nil {
+			cursor = fmt.Sprintf("&%q", *ownership.PbgeInfo.EndCursor)
 		}
-		return errors.Newf("PageInfo.HasNextPage %v but PageInfo.EndCursor %s", nextPage, cursor)
+		return errors.Newf("PbgeInfo.HbsNextPbge %v but PbgeInfo.EndCursor %s", nextPbge, cursor)
 	}
 	return nil
 }
 
-func (r paginationResponse) ownerNames() []string {
-	var owners []string
-	for _, n := range r.Node.Commit.Blob.Ownership.Nodes {
-		owners = append(owners, n.Owner.DisplayName)
+func (r pbginbtionResponse) ownerNbmes() []string {
+	vbr owners []string
+	for _, n := rbnge r.Node.Commit.Blob.Ownership.Nodes {
+		owners = bppend(owners, n.Owner.DisplbyNbme)
 	}
 	return owners
 }
 
-// TestOwnershipPagination issues a number of queries using ownership(first) parameter
-// to limit number of responses. It expects to see correct pagination behavior, that is:
-// *  all results are eventually returned, in the expected order;
-// *  each request returns correct pageInfo and totalCount;
-func TestOwnershipPagination(t *testing.T) {
+// TestOwnershipPbginbtion issues b number of queries using ownership(first) pbrbmeter
+// to limit number of responses. It expects to see correct pbginbtion behbvior, thbt is:
+// *  bll results bre eventublly returned, in the expected order;
+// *  ebch request returns correct pbgeInfo bnd totblCount;
+func TestOwnershipPbginbtion(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
-	fakeDB.Wire(db)
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
+	fbkeDB.Wire(db)
 	rule := &codeownerspb.Rule{
-		Pattern: "*.js",
+		Pbttern: "*.js",
 		Owner: []*codeownerspb.Owner{
-			{Handle: "js-owner-1"},
-			{Handle: "js-owner-2"},
-			{Handle: "js-owner-3"},
-			{Handle: "js-owner-4"},
-			{Handle: "js-owner-5"},
+			{Hbndle: "js-owner-1"},
+			{Hbndle: "js-owner-2"},
+			{Hbndle: "js-owner-3"},
+			{Hbndle: "js-owner-4"},
+			{Hbndle: "js-owner-5"},
 		},
 	}
 
-	own := fakeOwnService{
+	own := fbkeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{},
 			&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{rule},
 			}),
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
 		return "42", nil
 	}
-	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	git := fbkeGitserver{}
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var after string
-	var paginatedOwners [][]string
-	var lastResponseData *paginationResponse
-	// Limit iterations to number of owners total, so that the test
-	// has a stop condition in case something malfunctions.
+	vbr bfter string
+	vbr pbginbtedOwners [][]string
+	vbr lbstResponseDbtb *pbginbtionResponse
+	// Limit iterbtions to number of owners totbl, so thbt the test
+	// hbs b stop condition in cbse something mblfunctions.
 	for i := 0; i < len(rule.Owner); i++ {
-		var responseData paginationResponse
-		variables := map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(42)),
+		vbr responseDbtb pbginbtionResponse
+		vbribbles := mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(42)),
 			"revision":    "revision",
-			"currentPath": "foo/bar.js",
-			"after":       after,
+			"currentPbth": "foo/bbr.js",
+			"bfter":       bfter,
 		}
-		response := schema.Exec(ctx, paginationQuery, "", variables)
-		for _, err := range response.Errors {
-			t.Errorf("GraphQL Exec, errors: %s", err)
+		response := schemb.Exec(ctx, pbginbtionQuery, "", vbribbles)
+		for _, err := rbnge response.Errors {
+			t.Errorf("GrbphQL Exec, errors: %s", err)
 		}
-		if response.Data == nil {
-			t.Fatal("GraphQL response has no data.")
+		if response.Dbtb == nil {
+			t.Fbtbl("GrbphQL response hbs no dbtb.")
 		}
-		if err := json.Unmarshal(response.Data, &responseData); err != nil {
-			t.Fatalf("Cannot unmarshal GrapgQL JSON response: %s", err)
+		if err := json.Unmbrshbl(response.Dbtb, &responseDbtb); err != nil {
+			t.Fbtblf("Cbnnot unmbrshbl GrbpgQL JSON response: %s", err)
 		}
-		ownership := responseData.Node.Commit.Blob.Ownership
-		if got, want := ownership.TotalCount, len(rule.Owner); got != want {
-			t.Errorf("TotalCount, got %d want %d", got, want)
+		ownership := responseDbtb.Node.Commit.Blob.Ownership
+		if got, wbnt := ownership.TotblCount, len(rule.Owner); got != wbnt {
+			t.Errorf("TotblCount, got %d wbnt %d", got, wbnt)
 		}
-		paginatedOwners = append(paginatedOwners, responseData.ownerNames())
-		if err := responseData.consistentPageInfo(); err != nil {
+		pbginbtedOwners = bppend(pbginbtedOwners, responseDbtb.ownerNbmes())
+		if err := responseDbtb.consistentPbgeInfo(); err != nil {
 			t.Error(err)
 		}
-		lastResponseData = &responseData
-		if ownership.PageInfo.HasNextPage {
-			after = *ownership.PageInfo.EndCursor
+		lbstResponseDbtb = &responseDbtb
+		if ownership.PbgeInfo.HbsNextPbge {
+			bfter = *ownership.PbgeInfo.EndCursor
 		} else {
-			break
+			brebk
 		}
 	}
-	if lastResponseData == nil {
+	if lbstResponseDbtb == nil {
 		t.Error("No response received.")
-	} else if lastResponseData.hasNextPage() {
-		t.Error("Last response has next page information - result is not exhaustive.")
+	} else if lbstResponseDbtb.hbsNextPbge() {
+		t.Error("Lbst response hbs next pbge informbtion - result is not exhbustive.")
 	}
-	wantPaginatedOwners := [][]string{
+	wbntPbginbtedOwners := [][]string{
 		{
 			"js-owner-1",
 			"js-owner-2",
@@ -761,104 +761,104 @@ func TestOwnershipPagination(t *testing.T) {
 			"js-owner-5",
 		},
 	}
-	if diff := cmp.Diff(wantPaginatedOwners, paginatedOwners); diff != "" {
-		t.Errorf("returned owners -want+got: %s", diff)
+	if diff := cmp.Diff(wbntPbginbtedOwners, pbginbtedOwners); diff != "" {
+		t.Errorf("returned owners -wbnt+got: %s", diff)
 	}
 }
 
-func TestOwnership_WithSignals(t *testing.T) {
+func TestOwnership_WithSignbls(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
 
-	recentContribStore := dbmocks.NewMockRecentContributionSignalStore()
-	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
-		AuthorName:        santaName,
-		AuthorEmail:       santaEmail,
+	recentContribStore := dbmocks.NewMockRecentContributionSignblStore()
+	recentContribStore.FindRecentAuthorsFunc.SetDefbultReturn([]dbtbbbse.RecentContributorSummbry{{
+		AuthorNbme:        sbntbNbme,
+		AuthorEmbil:       sbntbEmbil,
 		ContributionCount: 5,
 	}}, nil)
-	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+	db.RecentContributionSignblsFunc.SetDefbultReturn(recentContribStore)
 
-	recentViewStore := dbmocks.NewMockRecentViewSignalStore()
-	recentViewStore.ListFunc.SetDefaultReturn([]database.RecentViewSummary{{
+	recentViewStore := dbmocks.NewMockRecentViewSignblStore()
+	recentViewStore.ListFunc.SetDefbultReturn([]dbtbbbse.RecentViewSummbry{{
 		UserID:     1,
-		FilePathID: 1,
+		FilePbthID: 1,
 		ViewsCount: 10,
 	}}, nil)
-	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
+	db.RecentViewSignblFunc.SetDefbultReturn(recentViewStore)
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn(santaEmail, true, nil)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn(sbntbEmbil, true, nil)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
+	db.UserExternblAccountsFunc.SetDefbultReturn(dbmocks.NewMockUserExternblAccountsStore())
 
-	fakeDB.Wire(db)
-	repoID := api.RepoID(1)
-	own := fakeOwnService{
+	fbkeDB.Wire(db)
+	repoID := bpi.RepoID(1)
+	own := fbkeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{ID: int32(repoID)},
 			&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{
-						Pattern: "*.js",
+						Pbttern: "*.js",
 						Owner: []*codeownerspb.Owner{
-							{Handle: "js-owner"},
+							{Hbndle: "js-owner"},
 						},
 						LineNumber: 1,
 					},
 				},
 			}),
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{Usernbme: sbntbNbme, DisplbyNbme: sbntbNbme, SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "deadbeef", nil
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/own"}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return "debdbeef", nil
 	}
-	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	git := fbkeGitserver{}
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			fragment CodeownersFileEntryFields on CodeownersFileEntry {
+			frbgment CodeownersFileEntryFields on CodeownersFileEntry {
 				title
 				description
 				codeownersFile {
-					__typename
+					__typenbme
 					url
 				}
-				ruleLineMatch
+				ruleLineMbtch
 			}
 
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
-									totalOwners
-									totalCount
+									totblOwners
+									totblCount
 									nodes {
 										owner {
 											...on Person {
-												displayName
-												email
+												displbyNbme
+												embil
 											}
 										}
-										reasons {
+										rebsons {
 											...CodeownersFileEntryFields
-											...on RecentContributorOwnershipSignal {
+											...on RecentContributorOwnershipSignbl {
 											  title
 											  description
 											}
-											... on RecentViewOwnershipSignal {
+											... on RecentViewOwnershipSignbl {
 											  title
 											  description
 											}
@@ -875,47 +875,47 @@ func TestOwnership_WithSignals(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 1,
-							"totalCount": 3,
+							"totblOwners": 1,
+							"totblCount": 3,
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "js-owner",
-										"email": ""
+										"displbyNbme": "js-owner",
+										"embil": ""
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "codeowners",
-											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"description": "Owner is bssocibted with b rule in b CODEOWNERS file.",
 											"codeownersFile": {
-												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own/edit"
+												"__typenbme": "VirtublFile",
+												"url": "/github.com/sourcegrbph/own/-/own/edit"
 											},
-											"ruleLineMatch": 1
+											"ruleLineMbtch": 1
 										}
 									]
 								},
 								{
 									"owner": {
-										"displayName": "santa@northpole.com",
-										"email": "santa@northpole.com"
+										"displbyNbme": "sbntb@northpole.com",
+										"embil": "sbntb@northpole.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "recent contributor",
-											"description": "Associated because they have contributed to this file in the last 90 days."
+											"description": "Associbted becbuse they hbve contributed to this file in the lbst 90 dbys."
 										}
 									]
 								},
 								{
 									"owner": {
-										"displayName": "santa claus",
-										"email": ""
+										"displbyNbme": "sbntb clbus",
+										"embil": ""
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "recent view",
-											"description": "Associated because they have viewed this file in the last 90 days."
+											"description": "Associbted becbuse they hbve viewed this file in the lbst 90 dbys."
 										}
 									]
 								}
@@ -925,109 +925,109 @@ func TestOwnership_WithSignals(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repoID)),
 			"revision":    "revision",
-			"currentPath": "foo/bar.js",
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 }
 
-func TestTreeOwnershipSignals(t *testing.T) {
+func TestTreeOwnershipSignbls(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
 
-	recentContribStore := dbmocks.NewMockRecentContributionSignalStore()
-	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
-		AuthorName:        santaName,
-		AuthorEmail:       santaEmail,
+	recentContribStore := dbmocks.NewMockRecentContributionSignblStore()
+	recentContribStore.FindRecentAuthorsFunc.SetDefbultReturn([]dbtbbbse.RecentContributorSummbry{{
+		AuthorNbme:        sbntbNbme,
+		AuthorEmbil:       sbntbEmbil,
 		ContributionCount: 5,
 	}}, nil)
-	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+	db.RecentContributionSignblsFunc.SetDefbultReturn(recentContribStore)
 
-	recentViewStore := dbmocks.NewMockRecentViewSignalStore()
-	recentViewStore.ListFunc.SetDefaultReturn([]database.RecentViewSummary{{
+	recentViewStore := dbmocks.NewMockRecentViewSignblStore()
+	recentViewStore.ListFunc.SetDefbultReturn([]dbtbbbse.RecentViewSummbry{{
 		UserID:     1,
-		FilePathID: 1,
+		FilePbthID: 1,
 		ViewsCount: 10,
 	}}, nil)
-	db.RecentViewSignalFunc.SetDefaultReturn(recentViewStore)
+	db.RecentViewSignblFunc.SetDefbultReturn(recentViewStore)
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.ListByUserFunc.SetDefaultReturn([]*database.UserEmail{
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.ListByUserFunc.SetDefbultReturn([]*dbtbbbse.UserEmbil{
 		{
 			UserID:  1,
-			Email:   santaEmail,
-			Primary: true,
+			Embil:   sbntbEmbil,
+			Primbry: true,
 		},
 	}, nil)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
+	db.UserExternblAccountsFunc.SetDefbultReturn(dbmocks.NewMockUserExternblAccountsStore())
 
-	fakeDB.Wire(db)
-	repoID := api.RepoID(1)
-	own := fakeOwnService{
+	fbkeDB.Wire(db)
+	repoID := bpi.RepoID(1)
+	own := fbkeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{ID: int32(repoID)},
 			&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{
-						Pattern: "*.js",
+						Pbttern: "*.js",
 						Owner: []*codeownerspb.Owner{
-							{Handle: "js-owner"},
+							{Hbndle: "js-owner"},
 						},
 						LineNumber: 1,
 					},
 				},
 			}),
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{Usernbme: sbntbNbme, DisplbyNbme: sbntbNbme, SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "deadbeef", nil
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/own"}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return "debdbeef", nil
 	}
-	git := fakeGitserver{
+	git := fbkeGitserver{
 		files: repoFiles{
-			repoPath{
-				Repo:     "github.com/sourcegraph/own",
-				CommitID: "deadbeef",
-				Path:     "foo/bar.js",
+			repoPbth{
+				Repo:     "github.com/sourcegrbph/own",
+				CommitID: "debdbeef",
+				Pbth:     "foo/bbr.js",
 			}: "some JS code",
 		},
 	}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	test := &graphqlbackend.Test{
-		Schema:  schema,
+	test := &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					...on Repository {
 						commit(rev: $revision) {
-							path(path: $currentPath) {
+							pbth(pbth: $currentPbth) {
 								...on GitTree {
 									ownership {
 										nodes {
 											owner {
 												...on Person {
-													displayName
-													email
+													displbyNbme
+													embil
 												}
 											}
-											reasons {
-												...on RecentContributorOwnershipSignal {
+											rebsons {
+												...on RecentContributorOwnershipSignbl {
 													title
 													description
 												}
-												...on RecentViewOwnershipSignal {
+												...on RecentViewOwnershipSignbl {
 													title
 													description
 												}
@@ -1043,30 +1043,30 @@ func TestTreeOwnershipSignals(t *testing.T) {
 		ExpectedResult: `{
 			"node": {
 				"commit": {
-					"path": {
+					"pbth": {
 						"ownership": {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa@northpole.com",
-										"email": "santa@northpole.com"
+										"displbyNbme": "sbntb@northpole.com",
+										"embil": "sbntb@northpole.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "recent contributor",
-											"description": "Associated because they have contributed to this file in the last 90 days."
+											"description": "Associbted becbuse they hbve contributed to this file in the lbst 90 dbys."
 										}
 									]
 								},
 								{
 									"owner": {
-										"displayName": "santa claus",
-										"email": "santa@northpole.com"
+										"displbyNbme": "sbntb clbus",
+										"embil": "sbntb@northpole.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "recent view",
-											"description": "Associated because they have viewed this file in the last 90 days."
+											"description": "Associbted becbuse they hbve viewed this file in the lbst 90 dbys."
 										}
 									]
 								}
@@ -1076,21 +1076,21 @@ func TestTreeOwnershipSignals(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repoID)),
 			"revision":    "revision",
-			"currentPath": "foo",
+			"currentPbth": "foo",
 		},
 	}
-	graphqlbackend.RunTest(t, test)
+	grbphqlbbckend.RunTest(t, test)
 
-	t.Run("disabled recent-contributor signal should not resolve", func(t *testing.T) {
-		mockStore := dbmocks.NewMockSignalConfigurationStore()
-		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
-		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
+	t.Run("disbbled recent-contributor signbl should not resolve", func(t *testing.T) {
+		mockStore := dbmocks.NewMockSignblConfigurbtionStore()
+		db.OwnSignblConfigurbtionsFunc.SetDefbultReturn(mockStore)
+		mockStore.IsEnbbledFunc.SetDefbultHook(func(ctx context.Context, s string) (bool, error) {
 			t.Log(s)
-			if s == owntypes.SignalRecentContributors {
-				return false, nil
+			if s == owntypes.SignblRecentContributors {
+				return fblse, nil
 			}
 			return true, nil
 		})
@@ -1098,18 +1098,18 @@ func TestTreeOwnershipSignals(t *testing.T) {
 		test.ExpectedResult = `{
 			"node": {
 				"commit": {
-					"path": {
+					"pbth": {
 						"ownership": {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa claus",
-										"email": "santa@northpole.com"
+										"displbyNbme": "sbntb clbus",
+										"embil": "sbntb@northpole.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "recent view",
-											"description": "Associated because they have viewed this file in the last 90 days."
+											"description": "Associbted becbuse they hbve viewed this file in the lbst 90 dbys."
 										}
 									]
 								}
@@ -1120,15 +1120,15 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			}
 		}
 `
-		graphqlbackend.RunTest(t, test)
+		grbphqlbbckend.RunTest(t, test)
 	})
 
-	t.Run("disabled recent-views signal should not resolve", func(t *testing.T) {
-		mockStore := dbmocks.NewMockSignalConfigurationStore()
-		db.OwnSignalConfigurationsFunc.SetDefaultReturn(mockStore)
-		mockStore.IsEnabledFunc.SetDefaultHook(func(ctx context.Context, s string) (bool, error) {
-			if s == owntypes.SignalRecentViews {
-				return false, nil
+	t.Run("disbbled recent-views signbl should not resolve", func(t *testing.T) {
+		mockStore := dbmocks.NewMockSignblConfigurbtionStore()
+		db.OwnSignblConfigurbtionsFunc.SetDefbultReturn(mockStore)
+		mockStore.IsEnbbledFunc.SetDefbultHook(func(ctx context.Context, s string) (bool, error) {
+			if s == owntypes.SignblRecentViews {
+				return fblse, nil
 			}
 			return true, nil
 		})
@@ -1136,18 +1136,18 @@ func TestTreeOwnershipSignals(t *testing.T) {
 		test.ExpectedResult = `{
 			"node": {
 				"commit": {
-					"path": {
+					"pbth": {
 						"ownership": {
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "santa@northpole.com",
-										"email": "santa@northpole.com"
+										"displbyNbme": "sbntb@northpole.com",
+										"embil": "sbntb@northpole.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "recent contributor",
-											"description": "Associated because they have contributed to this file in the last 90 days."
+											"description": "Associbted becbuse they hbve contributed to this file in the lbst 90 dbys."
 										}
 									]
 								}
@@ -1158,41 +1158,41 @@ func TestTreeOwnershipSignals(t *testing.T) {
 			}
 		}
 `
-		graphqlbackend.RunTest(t, test)
+		grbphqlbbckend.RunTest(t, test)
 	})
 }
 
-func TestCommitOwnershipSignals(t *testing.T) {
+func TestCommitOwnershipSignbls(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
 
-	recentContribStore := dbmocks.NewMockRecentContributionSignalStore()
-	recentContribStore.FindRecentAuthorsFunc.SetDefaultReturn([]database.RecentContributorSummary{{
-		AuthorName:        "santa claus",
-		AuthorEmail:       "santa@northpole.com",
+	recentContribStore := dbmocks.NewMockRecentContributionSignblStore()
+	recentContribStore.FindRecentAuthorsFunc.SetDefbultReturn([]dbtbbbse.RecentContributorSummbry{{
+		AuthorNbme:        "sbntb clbus",
+		AuthorEmbil:       "sbntb@northpole.com",
 		ContributionCount: 5,
 	}}, nil)
-	db.RecentContributionSignalsFunc.SetDefaultReturn(recentContribStore)
+	db.RecentContributionSignblsFunc.SetDefbultReturn(recentContribStore)
 
-	fakeDB.Wire(db)
-	repoID := api.RepoID(1)
+	fbkeDB.Wire(db)
+	repoID := bpi.RepoID(1)
 
-	ctx := userCtx(fakeDB.AddUser(types.User{SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "deadbeef", nil
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/own"}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return "debdbeef", nil
 	}
-	git := fakeGitserver{}
-	own := fakeOwnService{}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	git := fbkeGitserver{}
+	own := fbkeOwnService{}
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
 			query FetchOwnership($repo: ID!) {
@@ -1203,12 +1203,12 @@ func TestCommitOwnershipSignals(t *testing.T) {
 								nodes {
 									owner {
 										...on Person {
-											displayName
-											email
+											displbyNbme
+											embil
 										}
 									}
-									reasons {
-										...on RecentContributorOwnershipSignal {
+									rebsons {
+										...on RecentContributorOwnershipSignbl {
 											title
 											description
 										}
@@ -1226,13 +1226,13 @@ func TestCommitOwnershipSignals(t *testing.T) {
 						"nodes": [
 							{
 								"owner": {
-									"displayName": "santa@northpole.com",
-									"email": "santa@northpole.com"
+									"displbyNbme": "sbntb@northpole.com",
+									"embil": "sbntb@northpole.com"
 								},
-								"reasons": [
+								"rebsons": [
 									{
 										"title": "recent contributor",
-										"description": "Associated because they have contributed to this file in the last 90 days."
+										"description": "Associbted becbuse they hbve contributed to this file in the lbst 90 dbys."
 									}
 								]
 							}
@@ -1241,207 +1241,207 @@ func TestCommitOwnershipSignals(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo": string(graphqlbackend.MarshalRepositoryID(repoID)),
+		Vbribbles: mbp[string]bny{
+			"repo": string(grbphqlbbckend.MbrshblRepositoryID(repoID)),
 		},
 	})
 }
 
-func Test_SignalConfigurations(t *testing.T) {
+func Test_SignblConfigurbtions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	git := fakeGitserver{}
-	own := fakeOwnService{}
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	git := fbkeGitserver{}
+	own := fbkeOwnService{}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	admin, err := db.Users().Create(ctx, database.NewUser{Username: "admin"})
+	bdmin, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "bdmin"})
 	require.NoError(t, err)
 
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "non-admin"})
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "non-bdmin"})
 	require.NoError(t, err)
 
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	adminActor := actor.FromUser(admin.ID)
-	adminCtx := actor.WithActor(ctx, adminActor)
+	bdminActor := bctor.FromUser(bdmin.ID)
+	bdminCtx := bctor.WithActor(ctx, bdminActor)
 
-	baseReadTest := &graphqlbackend.Test{
-		Context: adminCtx,
-		Schema:  schema,
+	bbseRebdTest := &grbphqlbbckend.Test{
+		Context: bdminCtx,
+		Schemb:  schemb,
 		Query: `
-			query asdf {
-			  ownSignalConfigurations {
-				name
+			query bsdf {
+			  ownSignblConfigurbtions {
+				nbme
 				description
-				isEnabled
-				excludedRepoPatterns
+				isEnbbled
+				excludedRepoPbtterns
 			  }
 			}`,
 		ExpectedResult: `{
-		  "ownSignalConfigurations": [
+		  "ownSignblConfigurbtions": [
 			{
-			  "name": "recent-contributors",
-			  "description": "Indexes contributors in each file using repository history.",
-			  "isEnabled": false,
-			  "excludedRepoPatterns": []
+			  "nbme": "recent-contributors",
+			  "description": "Indexes contributors in ebch file using repository history.",
+			  "isEnbbled": fblse,
+			  "excludedRepoPbtterns": []
 			},
 			{
-			  "name": "recent-views",
-			  "description": "Indexes users that recently viewed files in Sourcegraph.",
-			  "isEnabled": false,
-			  "excludedRepoPatterns": []
+			  "nbme": "recent-views",
+			  "description": "Indexes users thbt recently viewed files in Sourcegrbph.",
+			  "isEnbbled": fblse,
+			  "excludedRepoPbtterns": []
 			},
 			{
-			  "name": "analytics",
-			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
-			  "isEnabled": false,
-			  "excludedRepoPatterns": []
+			  "nbme": "bnblytics",
+			  "description": "Indexes ownership dbtb to present in bggregbted views like Admin > Anblytics > Own bnd Repo > Ownership",
+			  "isEnbbled": fblse,
+			  "excludedRepoPbtterns": []
 			}
 		  ]
 		}`,
 	}
 
-	mutationTest := &graphqlbackend.Test{
+	mutbtionTest := &grbphqlbbckend.Test{
 		Context: ctx,
-		Schema:  schema,
+		Schemb:  schemb,
 		Query: `
-				mutation asdf($input:UpdateSignalConfigurationsInput!) {
-				  updateOwnSignalConfigurations(input:$input) {
-					isEnabled
-					name
+				mutbtion bsdf($input:UpdbteSignblConfigurbtionsInput!) {
+				  updbteOwnSignblConfigurbtions(input:$input) {
+					isEnbbled
+					nbme
 					description
-					excludedRepoPatterns
+					excludedRepoPbtterns
 				  }
 				}`,
-		Variables: map[string]any{"input": map[string]any{
-			"configs": []any{map[string]any{
-				"name": owntypes.SignalRecentContributors, "enabled": true, "excludedRepoPatterns": []any{"github.com/*"},
+		Vbribbles: mbp[string]bny{"input": mbp[string]bny{
+			"configs": []bny{mbp[string]bny{
+				"nbme": owntypes.SignblRecentContributors, "enbbled": true, "excludedRepoPbtterns": []bny{"github.com/*"},
 			}},
 		}},
 	}
 
-	t.Run("admin access can read", func(t *testing.T) {
-		graphqlbackend.RunTest(t, baseReadTest)
+	t.Run("bdmin bccess cbn rebd", func(t *testing.T) {
+		grbphqlbbckend.RunTest(t, bbseRebdTest)
 	})
 
-	t.Run("user without admin access", func(t *testing.T) {
-		userActor := actor.FromUser(user.ID)
-		userCtx := actor.WithActor(ctx, userActor)
+	t.Run("user without bdmin bccess", func(t *testing.T) {
+		userActor := bctor.FromUser(user.ID)
+		userCtx := bctor.WithActor(ctx, userActor)
 
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "must be site admin",
-			Path:    []any{"updateOwnSignalConfigurations"},
+			Messbge: "must be site bdmin",
+			Pbth:    []bny{"updbteOwnSignblConfigurbtions"},
 		}}
 
-		mutationTest.Context = userCtx
-		mutationTest.ExpectedErrors = expectedErrs
-		mutationTest.ExpectedResult = `null`
+		mutbtionTest.Context = userCtx
+		mutbtionTest.ExpectedErrors = expectedErrs
+		mutbtionTest.ExpectedResult = `null`
 
-		graphqlbackend.RunTest(t, mutationTest)
+		grbphqlbbckend.RunTest(t, mutbtionTest)
 
-		// ensure the configs didn't change despite the error
-		configsFromDb, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, database.LoadSignalConfigurationArgs{})
+		// ensure the configs didn't chbnge despite the error
+		configsFromDb, err := db.OwnSignblConfigurbtions().LobdConfigurbtions(ctx, dbtbbbse.LobdSignblConfigurbtionArgs{})
 		require.NoError(t, err)
-		autogold.Expect([]database.SignalConfiguration{
+		butogold.Expect([]dbtbbbse.SignblConfigurbtion{
 			{
 				ID:          1,
-				Name:        owntypes.SignalRecentContributors,
-				Description: "Indexes contributors in each file using repository history.",
+				Nbme:        owntypes.SignblRecentContributors,
+				Description: "Indexes contributors in ebch file using repository history.",
 			},
 			{
 				ID:          2,
-				Name:        owntypes.SignalRecentViews,
-				Description: "Indexes users that recently viewed files in Sourcegraph.",
+				Nbme:        owntypes.SignblRecentViews,
+				Description: "Indexes users thbt recently viewed files in Sourcegrbph.",
 			},
 			{
 				ID:          3,
-				Name:        "analytics",
-				Description: "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
+				Nbme:        "bnblytics",
+				Description: "Indexes ownership dbtb to present in bggregbted views like Admin > Anblytics > Own bnd Repo > Ownership",
 			},
-		}).Equal(t, configsFromDb)
+		}).Equbl(t, configsFromDb)
 
-		readTest := baseReadTest
+		rebdTest := bbseRebdTest
 
-		// ensure they can't read configs
-		readTest.ExpectedErrors = expectedErrs
-		readTest.ExpectedResult = "null"
-		readTest.Context = userCtx
+		// ensure they cbn't rebd configs
+		rebdTest.ExpectedErrors = expectedErrs
+		rebdTest.ExpectedResult = "null"
+		rebdTest.Context = userCtx
 	})
 
-	t.Run("user with admin access", func(t *testing.T) {
-		mutationTest.Context = adminCtx
-		mutationTest.ExpectedErrors = nil
-		mutationTest.ExpectedResult = `{
-		  "updateOwnSignalConfigurations": [
+	t.Run("user with bdmin bccess", func(t *testing.T) {
+		mutbtionTest.Context = bdminCtx
+		mutbtionTest.ExpectedErrors = nil
+		mutbtionTest.ExpectedResult = `{
+		  "updbteOwnSignblConfigurbtions": [
 			{
-			  "name": "recent-contributors",
-			  "description": "Indexes contributors in each file using repository history.",
-			  "isEnabled": true,
-			  "excludedRepoPatterns": ["github.com/*"]
+			  "nbme": "recent-contributors",
+			  "description": "Indexes contributors in ebch file using repository history.",
+			  "isEnbbled": true,
+			  "excludedRepoPbtterns": ["github.com/*"]
 			},
 			{
-			  "name": "recent-views",
-			  "description": "Indexes users that recently viewed files in Sourcegraph.",
-			  "isEnabled": false,
-			  "excludedRepoPatterns": []
+			  "nbme": "recent-views",
+			  "description": "Indexes users thbt recently viewed files in Sourcegrbph.",
+			  "isEnbbled": fblse,
+			  "excludedRepoPbtterns": []
 			},
 			{
-			  "name": "analytics",
-			  "description": "Indexes ownership data to present in aggregated views like Admin > Analytics > Own and Repo > Ownership",
-			  "isEnabled": false,
-			  "excludedRepoPatterns": []
+			  "nbme": "bnblytics",
+			  "description": "Indexes ownership dbtb to present in bggregbted views like Admin > Anblytics > Own bnd Repo > Ownership",
+			  "isEnbbled": fblse,
+			  "excludedRepoPbtterns": []
 			}
 		  ]
 		}`
 
-		graphqlbackend.RunTest(t, mutationTest)
+		grbphqlbbckend.RunTest(t, mutbtionTest)
 	})
 }
 
-func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
+func TestOwnership_WithAssignedOwnersAndTebms(t *testing.T) {
 	logger := logtest.Scoped(t)
-	fakeDB := fakedb.New()
-	db := fakeOwnDb()
+	fbkeDB := fbkedb.New()
+	db := fbkeOwnDb()
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.ListByUserFunc.SetDefaultHook(func(ctx context.Context, opts database.UserEmailsListOptions) ([]*database.UserEmail, error) {
-		var email string
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.ListByUserFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.UserEmbilsListOptions) ([]*dbtbbbse.UserEmbil, error) {
+		vbr embil string
 		switch opts.UserID {
-		case 1:
-			email = "assigned@owner1.com"
-		case 2:
-			email = "assigned@owner2.com"
-		default:
-			email = santaEmail
+		cbse 1:
+			embil = "bssigned@owner1.com"
+		cbse 2:
+			embil = "bssigned@owner2.com"
+		defbult:
+			embil = sbntbEmbil
 		}
-		return []*database.UserEmail{
+		return []*dbtbbbse.UserEmbil{
 			{
 				UserID: opts.UserID,
-				Email:  email,
+				Embil:  embil,
 			},
 		}, nil
 	})
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-	fakeDB.Wire(db)
-	repoID := api.RepoID(1)
-	assignedOwnerID1 := fakeDB.AddUser(types.User{Username: "assigned owner 1", DisplayName: "I am an assigned owner #1"})
-	assignedOwnerID2 := fakeDB.AddUser(types.User{Username: "assigned owner 2", DisplayName: "I am an assigned owner #2"})
-	assignedTeamID1 := fakeDB.AddTeam(&types.Team{Name: "assigned team 1"})
-	assignedTeamID2 := fakeDB.AddTeam(&types.Team{Name: "assigned team 2"})
-	own := fakeOwnService{
+	fbkeDB.Wire(db)
+	repoID := bpi.RepoID(1)
+	bssignedOwnerID1 := fbkeDB.AddUser(types.User{Usernbme: "bssigned owner 1", DisplbyNbme: "I bm bn bssigned owner #1"})
+	bssignedOwnerID2 := fbkeDB.AddUser(types.User{Usernbme: "bssigned owner 2", DisplbyNbme: "I bm bn bssigned owner #2"})
+	bssignedTebmID1 := fbkeDB.AddTebm(&types.Tebm{Nbme: "bssigned tebm 1"})
+	bssignedTebmID2 := fbkeDB.AddTebm(&types.Tebm{Nbme: "bssigned tebm 2"})
+	own := fbkeOwnService{
 		Ruleset: codeowners.NewRuleset(
 			codeowners.IngestedRulesetSource{ID: int32(repoID)},
 			&codeownerspb.File{
 				Rule: []*codeownerspb.Rule{
 					{
-						Pattern: "*.js",
+						Pbttern: "*.js",
 						Owner: []*codeownerspb.Owner{
-							{Handle: "js-owner"},
+							{Hbndle: "js-owner"},
 						},
 						LineNumber: 1,
 					},
@@ -1449,67 +1449,67 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 			},
 		),
 		AssignedOwners: own.AssignedOwners{
-			"foo/bar.js": []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID1, FilePath: "foo/bar.js", RepoID: repoID}},
-			"foo":        []database.AssignedOwnerSummary{{OwnerUserID: assignedOwnerID2, FilePath: "foo", RepoID: repoID}},
+			"foo/bbr.js": []dbtbbbse.AssignedOwnerSummbry{{OwnerUserID: bssignedOwnerID1, FilePbth: "foo/bbr.js", RepoID: repoID}},
+			"foo":        []dbtbbbse.AssignedOwnerSummbry{{OwnerUserID: bssignedOwnerID2, FilePbth: "foo", RepoID: repoID}},
 		},
-		Teams: own.AssignedTeams{
-			"foo/bar.js": []database.AssignedTeamSummary{{OwnerTeamID: assignedTeamID1, FilePath: "foo/bar.js", RepoID: repoID}},
-			"foo":        []database.AssignedTeamSummary{{OwnerTeamID: assignedTeamID2, FilePath: "foo", RepoID: repoID}},
+		Tebms: own.AssignedTebms{
+			"foo/bbr.js": []dbtbbbse.AssignedTebmSummbry{{OwnerTebmID: bssignedTebmID1, FilePbth: "foo/bbr.js", RepoID: repoID}},
+			"foo":        []dbtbbbse.AssignedTebmSummbry{{OwnerTebmID: bssignedTebmID2, FilePbth: "foo", RepoID: repoID}},
 		},
 	}
-	ctx := userCtx(fakeDB.AddUser(types.User{Username: santaName, DisplayName: santaName, SiteAdmin: true}))
+	ctx := userCtx(fbkeDB.AddUser(types.User{Usernbme: sbntbNbme, DisplbyNbme: sbntbNbme, SiteAdmin: true}))
 	repos := dbmocks.NewMockRepoStore()
-	db.ReposFunc.SetDefaultReturn(repos)
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: repoID, Name: "github.com/sourcegraph/own"}, nil)
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return "deadbeef", nil
+	db.ReposFunc.SetDefbultReturn(repos)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: repoID, Nbme: "github.com/sourcegrbph/own"}, nil)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return "debdbeef", nil
 	}
-	db.UserExternalAccountsFunc.SetDefaultReturn(dbmocks.NewMockUserExternalAccountsStore())
-	git := fakeGitserver{}
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	db.UserExternblAccountsFunc.SetDefbultReturn(dbmocks.NewMockUserExternblAccountsStore())
+	git := fbkeGitserver{}
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			fragment CodeownersFileEntryFields on CodeownersFileEntry {
+			frbgment CodeownersFileEntryFields on CodeownersFileEntry {
 				title
 				description
 				codeownersFile {
-					__typename
+					__typenbme
 					url
 				}
-				ruleLineMatch
+				ruleLineMbtch
 			}
 
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
-									totalOwners
-									totalCount
+									totblOwners
+									totblCount
 									nodes {
 										owner {
 											...on Person {
-												displayName
-												email
+												displbyNbme
+												embil
 											}
-											...on Team {
-												name
+											...on Tebm {
+												nbme
 											}
 										}
-										reasons {
+										rebsons {
 											...CodeownersFileEntryFields
-											...on RecentContributorOwnershipSignal {
+											...on RecentContributorOwnershipSignbl {
 											  title
 											  description
 											}
-											... on RecentViewOwnershipSignal {
+											... on RecentViewOwnershipSignbl {
 											  title
 											  description
 											}
@@ -1530,69 +1530,69 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 5,
-							"totalCount": 5,
+							"totblOwners": 5,
+							"totblCount": 5,
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "I am an assigned owner #1",
-										"email": "assigned@owner1.com"
+										"displbyNbme": "I bm bn bssigned owner #1",
+										"embil": "bssigned@owner1.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
+											"title": "bssigned owner",
+											"description": "Owner is mbnublly bssigned."
 										}
 									]
 								},
 								{
 									"owner": {
-										"displayName": "I am an assigned owner #2",
-										"email": "assigned@owner2.com"
+										"displbyNbme": "I bm bn bssigned owner #2",
+										"embil": "bssigned@owner2.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
+											"title": "bssigned owner",
+											"description": "Owner is mbnublly bssigned."
 										}
 									]
 								},
 								{
 									"owner": {
-										"name": "assigned team 1"
+										"nbme": "bssigned tebm 1"
 									},
-									"reasons": [
+									"rebsons": [
 										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
+											"title": "bssigned owner",
+											"description": "Owner is mbnublly bssigned."
 										}
 									]
 								},
 								{
 									"owner": {
-										"name": "assigned team 2"
+										"nbme": "bssigned tebm 2"
 									},
-									"reasons": [
+									"rebsons": [
 										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
+											"title": "bssigned owner",
+											"description": "Owner is mbnublly bssigned."
 										}
 									]
 								},
 								{
 									"owner": {
-										"displayName": "js-owner",
-										"email": ""
+										"displbyNbme": "js-owner",
+										"embil": ""
 									},
-									"reasons": [
+									"rebsons": [
 										{
 											"title": "codeowners",
-											"description": "Owner is associated with a rule in a CODEOWNERS file.",
+											"description": "Owner is bssocibted with b rule in b CODEOWNERS file.",
 											"codeownersFile": {
-												"__typename": "VirtualFile",
-												"url": "/github.com/sourcegraph/own/-/own/edit"
+												"__typenbme": "VirtublFile",
+												"url": "/github.com/sourcegrbph/own/-/own/edit"
 											},
-											"ruleLineMatch": 1
+											"ruleLineMbtch": 1
 										}
 									]
 								}
@@ -1602,41 +1602,41 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repoID)),
 			"revision":    "revision",
-			"currentPath": "foo/bar.js",
+			"currentPbth": "foo/bbr.js",
 		},
 	})
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			query FetchOwnership($repo: ID!, $revision: String!, $currentPath: String!) {
+			query FetchOwnership($repo: ID!, $revision: String!, $currentPbth: String!) {
 				node(id: $repo) {
 					... on Repository {
 						commit(rev: $revision) {
-							blob(path: $currentPath) {
+							blob(pbth: $currentPbth) {
 								ownership {
-									totalOwners
-									totalCount
+									totblOwners
+									totblCount
 									nodes {
 										owner {
 											...on Person {
-												displayName
-												email
+												displbyNbme
+												embil
 											}
-											...on Team {
-												name
+											...on Tebm {
+												nbme
 											}
 										}
-										reasons {
-											...on RecentContributorOwnershipSignal {
+										rebsons {
+											...on RecentContributorOwnershipSignbl {
 											  title
 											  description
 											}
-											... on RecentViewOwnershipSignal {
+											... on RecentViewOwnershipSignbl {
 											  title
 											  description
 											}
@@ -1657,29 +1657,29 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 				"commit": {
 					"blob": {
 						"ownership": {
-							"totalOwners": 2,
-							"totalCount": 2,
+							"totblOwners": 2,
+							"totblCount": 2,
 							"nodes": [
 								{
 									"owner": {
-										"displayName": "I am an assigned owner #2",
-										"email": "assigned@owner2.com"
+										"displbyNbme": "I bm bn bssigned owner #2",
+										"embil": "bssigned@owner2.com"
 									},
-									"reasons": [
+									"rebsons": [
 										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
+											"title": "bssigned owner",
+											"description": "Owner is mbnublly bssigned."
 										}
 									]
 								},
 								{
 									"owner": {
-										"name": "assigned team 2"
+										"nbme": "bssigned tebm 2"
 									},
-									"reasons": [
+									"rebsons": [
 										{
-											"title": "assigned owner",
-											"description": "Owner is manually assigned."
+											"title": "bssigned owner",
+											"description": "Owner is mbnublly bssigned."
 										}
 									]
 								}
@@ -1689,10 +1689,10 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 				}
 			}
 		}`,
-		Variables: map[string]any{
-			"repo":        string(graphqlbackend.MarshalRepositoryID(repoID)),
+		Vbribbles: mbp[string]bny{
+			"repo":        string(grbphqlbbckend.MbrshblRepositoryID(repoID)),
 			"revision":    "revision",
-			"currentPath": "foo",
+			"currentPbth": "foo",
 		},
 	})
 }
@@ -1700,582 +1700,582 @@ func TestOwnership_WithAssignedOwnersAndTeams(t *testing.T) {
 func TestAssignOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
 	testDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDB)
-	git := fakeGitserver{}
-	own := fakeOwnService{}
-	ctx := context.Background()
-	repo := types.Repo{Name: "test-repo-1", ID: 101}
-	err := db.Repos().Create(ctx, &repo)
+	db := dbtbbbse.NewDB(logger, testDB)
+	git := fbkeGitserver{}
+	own := fbkeOwnService{}
+	ctx := context.Bbckground()
+	repo := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := db.Repos().Crebte(ctx, &repo)
 	require.NoError(t, err)
-	// Creating 2 users, only "hasPermission" user has rights to assign owners.
-	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
+	// Crebting 2 users, only "hbsPermission" user hbs rights to bssign owners.
+	hbsPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "hbs-permission"})
 	require.NoError(t, err)
-	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "no-permission"})
+	noPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "no-permission"})
 	require.NoError(t, err)
 	// RBAC stuff below.
-	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rbactypes.OwnershipNamespace,
-		Action:    rbactypes.OwnershipAssignAction,
+	permission, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rbbctypes.OwnershipNbmespbce,
+		Action:    rbbctypes.OwnershipAssignAction,
 	})
 	require.NoError(t, err)
-	role, err := db.Roles().Create(ctx, "Can assign owners", false)
+	role, err := db.Roles().Crebte(ctx, "Cbn bssign owners", fblse)
 	require.NoError(t, err)
-	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, dbtbbbse.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: permission.ID,
 	})
 	require.NoError(t, err)
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-		UserID: hasPermission.ID,
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
+		UserID: hbsPermission.ID,
 		RoleID: role.ID,
 	})
 	require.NoError(t, err)
-	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	// RBAC stuff finished. Crebting b GrbphQL schemb.
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(hbsPermission.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(noPermission.ID))
 
-	getBaseTest := func() *graphqlbackend.Test {
-		return &graphqlbackend.Test{
+	getBbseTest := func() *grbphqlbbckend.Test {
+		return &grbphqlbbckend.Test{
 			Context: userCtx,
-			Schema:  schema,
+			Schemb:  schemb,
 			Query: `
-				mutation assignOwner($input:AssignOwnerOrTeamInput!) {
-				  assignOwner(input:$input) {
-					alwaysNil
+				mutbtion bssignOwner($input:AssignOwnerOrTebmInput!) {
+				  bssignOwner(input:$input) {
+					blwbysNil
 				  }
 				}`,
-			Variables: map[string]any{"input": map[string]any{
-				"assignedOwnerID": string(graphqlbackend.MarshalUserID(noPermission.ID)),
-				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-				"absolutePath":    "",
+			Vbribbles: mbp[string]bny{"input": mbp[string]bny{
+				"bssignedOwnerID": string(grbphqlbbckend.MbrshblUserID(noPermission.ID)),
+				"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+				"bbsolutePbth":    "",
 			}},
 		}
 	}
 
 	removeOwners := func() {
 		t.Helper()
-		_, err := testDB.ExecContext(ctx, "DELETE FROM assigned_owners")
+		_, err := testDB.ExecContext(ctx, "DELETE FROM bssigned_owners")
 		require.NoError(t, err)
 	}
 
-	assertAssignedOwner := func(t *testing.T, ownerID, whoAssigned int32, repoID api.RepoID, path string) {
+	bssertAssignedOwner := func(t *testing.T, ownerID, whoAssigned int32, repoID bpi.RepoID, pbth string) {
 		t.Helper()
 		owners, err := db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repoID)
 		require.NoError(t, err)
 		require.Len(t, owners, 1)
 		owner := owners[0]
-		assert.Equal(t, ownerID, owner.OwnerUserID)
-		assert.Equal(t, whoAssigned, owner.WhoAssignedUserID)
-		assert.Equal(t, path, owner.FilePath)
+		bssert.Equbl(t, ownerID, owner.OwnerUserID)
+		bssert.Equbl(t, whoAssigned, owner.WhoAssignedUserID)
+		bssert.Equbl(t, pbth, owner.FilePbth)
 	}
 
-	assertNoAssignedOwners := func(t *testing.T, repoID api.RepoID) {
+	bssertNoAssignedOwners := func(t *testing.T, repoID bpi.RepoID) {
 		t.Helper()
 		owners, err := db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repoID)
 		require.NoError(t, err)
 		require.Empty(t, owners)
 	}
 
-	t.Run("non-admin cannot assign owner", func(t *testing.T) {
-		t.Cleanup(removeOwners)
-		baseTest := getBaseTest()
+	t.Run("non-bdmin cbnnot bssign owner", func(t *testing.T) {
+		t.Clebnup(removeOwners)
+		bbseTest := getBbseTest()
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "user is missing permission OWNERSHIP#ASSIGN",
-			Path:    []any{"assignOwner"},
+			Messbge: "user is missing permission OWNERSHIP#ASSIGN",
+			Pbth:    []bny{"bssignOwner"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"assignOwner":null}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertNoAssignedOwners(t, repo.ID)
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"bssignOwner":null}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertNoAssignedOwners(t, repo.ID)
 	})
 
-	t.Run("bad request", func(t *testing.T) {
-		t.Cleanup(removeOwners)
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
+	t.Run("bbd request", func(t *testing.T) {
+		t.Clebnup(removeOwners)
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "assigned user ID should not be 0",
-			Path:    []any{"assignOwner"},
+			Messbge: "bssigned user ID should not be 0",
+			Pbth:    []bny{"bssignOwner"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"assignOwner":null}`
-		baseTest.Variables = map[string]any{"input": map[string]any{
-			"assignedOwnerID":   string(graphqlbackend.MarshalUserID(0)),
-			"repoID":            string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":      "",
-			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(hasPermission.ID)),
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"bssignOwner":null}`
+		bbseTest.Vbribbles = mbp[string]bny{"input": mbp[string]bny{
+			"bssignedOwnerID":   string(grbphqlbbckend.MbrshblUserID(0)),
+			"repoID":            string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"bbsolutePbth":      "",
+			"whoAssignedUserID": string(grbphqlbbckend.MbrshblUserID(hbsPermission.ID)),
 		}}
-		graphqlbackend.RunTest(t, baseTest)
-		assertNoAssignedOwners(t, repo.ID)
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertNoAssignedOwners(t, repo.ID)
 	})
 
-	t.Run("successfully assigned an owner", func(t *testing.T) {
-		t.Cleanup(removeOwners)
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
-		baseTest.ExpectedResult = `{"assignOwner":{"alwaysNil": null}}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertAssignedOwner(t, noPermission.ID, hasPermission.ID, repo.ID, "")
+	t.Run("successfully bssigned bn owner", func(t *testing.T) {
+		t.Clebnup(removeOwners)
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
+		bbseTest.ExpectedResult = `{"bssignOwner":{"blwbysNil": null}}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertAssignedOwner(t, noPermission.ID, hbsPermission.ID, repo.ID, "")
 	})
 }
 
 func TestDeleteAssignedOwner(t *testing.T) {
 	logger := logtest.Scoped(t)
 	testDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDB)
-	git := fakeGitserver{}
-	own := fakeOwnService{}
-	ctx := context.Background()
-	repo := types.Repo{Name: "test-repo-1", ID: 101}
-	err := db.Repos().Create(ctx, &repo)
+	db := dbtbbbse.NewDB(logger, testDB)
+	git := fbkeGitserver{}
+	own := fbkeOwnService{}
+	ctx := context.Bbckground()
+	repo := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := db.Repos().Crebte(ctx, &repo)
 	require.NoError(t, err)
-	// Creating 2 users, only "hasPermission" user has rights to assign owners.
-	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
+	// Crebting 2 users, only "hbsPermission" user hbs rights to bssign owners.
+	hbsPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "hbs-permission"})
 	require.NoError(t, err)
-	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "non-permission"})
+	noPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "non-permission"})
 	require.NoError(t, err)
-	// Creating an existing assigned owner.
-	require.NoError(t, db.AssignedOwners().Insert(ctx, noPermission.ID, repo.ID, "", hasPermission.ID))
+	// Crebting bn existing bssigned owner.
+	require.NoError(t, db.AssignedOwners().Insert(ctx, noPermission.ID, repo.ID, "", hbsPermission.ID))
 	// RBAC stuff below.
-	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rbactypes.OwnershipNamespace,
-		Action:    rbactypes.OwnershipAssignAction,
+	permission, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rbbctypes.OwnershipNbmespbce,
+		Action:    rbbctypes.OwnershipAssignAction,
 	})
 	require.NoError(t, err)
-	role, err := db.Roles().Create(ctx, "Can assign owners", false)
+	role, err := db.Roles().Crebte(ctx, "Cbn bssign owners", fblse)
 	require.NoError(t, err)
-	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, dbtbbbse.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: permission.ID,
 	})
 	require.NoError(t, err)
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-		UserID: hasPermission.ID,
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
+		UserID: hbsPermission.ID,
 		RoleID: role.ID,
 	})
 	require.NoError(t, err)
-	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	// RBAC stuff finished. Crebting b GrbphQL schemb.
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(hbsPermission.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(noPermission.ID))
 
-	getBaseTest := func() *graphqlbackend.Test {
-		return &graphqlbackend.Test{
+	getBbseTest := func() *grbphqlbbckend.Test {
+		return &grbphqlbbckend.Test{
 			Context: userCtx,
-			Schema:  schema,
+			Schemb:  schemb,
 			Query: `
-				mutation removeAssignedOwner($input:AssignOwnerOrTeamInput!) {
+				mutbtion removeAssignedOwner($input:AssignOwnerOrTebmInput!) {
 				  removeAssignedOwner(input:$input) {
-					alwaysNil
+					blwbysNil
 				  }
 				}`,
-			Variables: map[string]any{"input": map[string]any{
-				"assignedOwnerID": string(graphqlbackend.MarshalUserID(noPermission.ID)),
-				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-				"absolutePath":    "",
+			Vbribbles: mbp[string]bny{"input": mbp[string]bny{
+				"bssignedOwnerID": string(grbphqlbbckend.MbrshblUserID(noPermission.ID)),
+				"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+				"bbsolutePbth":    "",
 			}},
 		}
 	}
 
-	assertOwnerExists := func(t *testing.T) {
+	bssertOwnerExists := func(t *testing.T) {
 		t.Helper()
 		owners, err := db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repo.ID)
 		require.NoError(t, err)
 		require.Len(t, owners, 1)
 		owner := owners[0]
-		assert.Equal(t, noPermission.ID, owner.OwnerUserID)
-		assert.Equal(t, hasPermission.ID, owner.WhoAssignedUserID)
-		assert.Equal(t, "", owner.FilePath)
+		bssert.Equbl(t, noPermission.ID, owner.OwnerUserID)
+		bssert.Equbl(t, hbsPermission.ID, owner.WhoAssignedUserID)
+		bssert.Equbl(t, "", owner.FilePbth)
 	}
 
-	assertNoAssignedOwners := func(t *testing.T) {
+	bssertNoAssignedOwners := func(t *testing.T) {
 		t.Helper()
 		owners, err := db.AssignedOwners().ListAssignedOwnersForRepo(ctx, repo.ID)
 		require.NoError(t, err)
 		require.Empty(t, owners)
 	}
 
-	t.Run("cannot delete assigned owner without permission", func(t *testing.T) {
-		baseTest := getBaseTest()
+	t.Run("cbnnot delete bssigned owner without permission", func(t *testing.T) {
+		bbseTest := getBbseTest()
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "user is missing permission OWNERSHIP#ASSIGN",
-			Path:    []any{"removeAssignedOwner"},
+			Messbge: "user is missing permission OWNERSHIP#ASSIGN",
+			Pbth:    []bny{"removeAssignedOwner"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"removeAssignedOwner":null}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertOwnerExists(t)
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"removeAssignedOwner":null}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertOwnerExists(t)
 	})
 
-	t.Run("bad request", func(t *testing.T) {
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
+	t.Run("bbd request", func(t *testing.T) {
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "assigned user ID should not be 0",
-			Path:    []any{"removeAssignedOwner"},
+			Messbge: "bssigned user ID should not be 0",
+			Pbth:    []bny{"removeAssignedOwner"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"removeAssignedOwner":null}`
-		baseTest.Variables = map[string]any{"input": map[string]any{
-			"assignedOwnerID": string(graphqlbackend.MarshalUserID(0)),
-			"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":    "",
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"removeAssignedOwner":null}`
+		bbseTest.Vbribbles = mbp[string]bny{"input": mbp[string]bny{
+			"bssignedOwnerID": string(grbphqlbbckend.MbrshblUserID(0)),
+			"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"bbsolutePbth":    "",
 		}}
-		graphqlbackend.RunTest(t, baseTest)
-		assertOwnerExists(t)
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertOwnerExists(t)
 	})
 
-	t.Run("assigned owner not found", func(t *testing.T) {
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
+	t.Run("bssigned owner not found", func(t *testing.T) {
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: `deleting assigned owner: cannot delete assigned owner with ID=1337 for "" path for repo with ID=1`,
-			Path:    []any{"removeAssignedOwner"},
+			Messbge: `deleting bssigned owner: cbnnot delete bssigned owner with ID=1337 for "" pbth for repo with ID=1`,
+			Pbth:    []bny{"removeAssignedOwner"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"removeAssignedOwner":null}`
-		baseTest.Variables = map[string]any{"input": map[string]any{
-			"assignedOwnerID": string(graphqlbackend.MarshalUserID(1337)),
-			"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":    "",
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"removeAssignedOwner":null}`
+		bbseTest.Vbribbles = mbp[string]bny{"input": mbp[string]bny{
+			"bssignedOwnerID": string(grbphqlbbckend.MbrshblUserID(1337)),
+			"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"bbsolutePbth":    "",
 		}}
-		graphqlbackend.RunTest(t, baseTest)
-		assertOwnerExists(t)
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertOwnerExists(t)
 	})
 
-	t.Run("assigned owner successfully deleted", func(t *testing.T) {
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
-		baseTest.ExpectedResult = `{"removeAssignedOwner":{"alwaysNil": null}}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertNoAssignedOwners(t)
+	t.Run("bssigned owner successfully deleted", func(t *testing.T) {
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
+		bbseTest.ExpectedResult = `{"removeAssignedOwner":{"blwbysNil": null}}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertNoAssignedOwners(t)
 	})
 }
 
-func TestAssignTeam(t *testing.T) {
+func TestAssignTebm(t *testing.T) {
 	logger := logtest.Scoped(t)
 	testDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDB)
-	git := fakeGitserver{}
-	own := fakeOwnService{}
-	ctx := context.Background()
-	repo := types.Repo{Name: "test-repo-1", ID: 101}
-	err := db.Repos().Create(ctx, &repo)
+	db := dbtbbbse.NewDB(logger, testDB)
+	git := fbkeGitserver{}
+	own := fbkeOwnService{}
+	ctx := context.Bbckground()
+	repo := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := db.Repos().Crebte(ctx, &repo)
 	require.NoError(t, err)
-	// Creating 2 users, only "hasPermission" user has rights to assign owners.
-	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
+	// Crebting 2 users, only "hbsPermission" user hbs rights to bssign owners.
+	hbsPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "hbs-permission"})
 	require.NoError(t, err)
-	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "no-permission"})
+	noPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "no-permission"})
 	require.NoError(t, err)
-	// Creating a team.
-	team := createTeam(t, ctx, db, "team-A")
+	// Crebting b tebm.
+	tebm := crebteTebm(t, ctx, db, "tebm-A")
 	// RBAC stuff below.
-	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rbactypes.OwnershipNamespace,
-		Action:    rbactypes.OwnershipAssignAction,
+	permission, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rbbctypes.OwnershipNbmespbce,
+		Action:    rbbctypes.OwnershipAssignAction,
 	})
 	require.NoError(t, err)
-	role, err := db.Roles().Create(ctx, "Can assign owners", false)
+	role, err := db.Roles().Crebte(ctx, "Cbn bssign owners", fblse)
 	require.NoError(t, err)
-	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, dbtbbbse.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: permission.ID,
 	})
 	require.NoError(t, err)
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-		UserID: hasPermission.ID,
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
+		UserID: hbsPermission.ID,
 		RoleID: role.ID,
 	})
 	require.NoError(t, err)
-	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	// RBAC stuff finished. Crebting b GrbphQL schemb.
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(hbsPermission.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(noPermission.ID))
 
-	getBaseTest := func() *graphqlbackend.Test {
-		return &graphqlbackend.Test{
+	getBbseTest := func() *grbphqlbbckend.Test {
+		return &grbphqlbbckend.Test{
 			Context: userCtx,
-			Schema:  schema,
+			Schemb:  schemb,
 			Query: `
-				mutation assignTeam($input:AssignOwnerOrTeamInput!) {
-				  assignTeam(input:$input) {
-					alwaysNil
+				mutbtion bssignTebm($input:AssignOwnerOrTebmInput!) {
+				  bssignTebm(input:$input) {
+					blwbysNil
 				  }
 				}`,
-			Variables: map[string]any{"input": map[string]any{
-				"assignedOwnerID": string(graphqlbackend.MarshalTeamID(team.ID)),
-				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-				"absolutePath":    "",
+			Vbribbles: mbp[string]bny{"input": mbp[string]bny{
+				"bssignedOwnerID": string(grbphqlbbckend.MbrshblTebmID(tebm.ID)),
+				"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+				"bbsolutePbth":    "",
 			}},
 		}
 	}
 
-	removeTeams := func() {
+	removeTebms := func() {
 		t.Helper()
-		_, err := testDB.ExecContext(ctx, "DELETE FROM assigned_teams")
+		_, err := testDB.ExecContext(ctx, "DELETE FROM bssigned_tebms")
 		require.NoError(t, err)
 	}
 
-	assertAssignedTeam := func(t *testing.T, ownerID, whoAssigned int32, repoID api.RepoID, path string) {
+	bssertAssignedTebm := func(t *testing.T, ownerID, whoAssigned int32, repoID bpi.RepoID, pbth string) {
 		t.Helper()
-		owners, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repoID)
+		owners, err := db.AssignedTebms().ListAssignedTebmsForRepo(ctx, repoID)
 		require.NoError(t, err)
 		require.Len(t, owners, 1)
 		owner := owners[0]
-		assert.Equal(t, ownerID, owner.OwnerTeamID)
-		assert.Equal(t, whoAssigned, owner.WhoAssignedUserID)
-		assert.Equal(t, path, owner.FilePath)
+		bssert.Equbl(t, ownerID, owner.OwnerTebmID)
+		bssert.Equbl(t, whoAssigned, owner.WhoAssignedUserID)
+		bssert.Equbl(t, pbth, owner.FilePbth)
 	}
 
-	assertNoAssignedOwners := func(t *testing.T, repoID api.RepoID) {
+	bssertNoAssignedOwners := func(t *testing.T, repoID bpi.RepoID) {
 		t.Helper()
-		owners, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repoID)
+		owners, err := db.AssignedTebms().ListAssignedTebmsForRepo(ctx, repoID)
 		require.NoError(t, err)
 		require.Empty(t, owners)
 	}
 
-	t.Run("non-admin cannot assign a team", func(t *testing.T) {
-		t.Cleanup(removeTeams)
-		baseTest := getBaseTest()
+	t.Run("non-bdmin cbnnot bssign b tebm", func(t *testing.T) {
+		t.Clebnup(removeTebms)
+		bbseTest := getBbseTest()
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "user is missing permission OWNERSHIP#ASSIGN",
-			Path:    []any{"assignTeam"},
+			Messbge: "user is missing permission OWNERSHIP#ASSIGN",
+			Pbth:    []bny{"bssignTebm"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"assignTeam":null}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertNoAssignedOwners(t, repo.ID)
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"bssignTebm":null}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertNoAssignedOwners(t, repo.ID)
 	})
 
-	t.Run("bad request", func(t *testing.T) {
-		t.Cleanup(removeTeams)
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
+	t.Run("bbd request", func(t *testing.T) {
+		t.Clebnup(removeTebms)
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "assigned team ID should not be 0",
-			Path:    []any{"assignTeam"},
+			Messbge: "bssigned tebm ID should not be 0",
+			Pbth:    []bny{"bssignTebm"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"assignTeam":null}`
-		baseTest.Variables = map[string]any{"input": map[string]any{
-			"assignedOwnerID":   string(graphqlbackend.MarshalTeamID(0)),
-			"repoID":            string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":      "",
-			"whoAssignedUserID": string(graphqlbackend.MarshalUserID(hasPermission.ID)),
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"bssignTebm":null}`
+		bbseTest.Vbribbles = mbp[string]bny{"input": mbp[string]bny{
+			"bssignedOwnerID":   string(grbphqlbbckend.MbrshblTebmID(0)),
+			"repoID":            string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"bbsolutePbth":      "",
+			"whoAssignedUserID": string(grbphqlbbckend.MbrshblUserID(hbsPermission.ID)),
 		}}
-		graphqlbackend.RunTest(t, baseTest)
-		assertNoAssignedOwners(t, repo.ID)
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertNoAssignedOwners(t, repo.ID)
 	})
 
-	t.Run("successfully assigned a team", func(t *testing.T) {
-		t.Cleanup(removeTeams)
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
-		baseTest.ExpectedResult = `{"assignTeam":{"alwaysNil": null}}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertAssignedTeam(t, team.ID, hasPermission.ID, repo.ID, "")
+	t.Run("successfully bssigned b tebm", func(t *testing.T) {
+		t.Clebnup(removeTebms)
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
+		bbseTest.ExpectedResult = `{"bssignTebm":{"blwbysNil": null}}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertAssignedTebm(t, tebm.ID, hbsPermission.ID, repo.ID, "")
 	})
 }
 
-func TestDeleteAssignedTeam(t *testing.T) {
+func TestDeleteAssignedTebm(t *testing.T) {
 	logger := logtest.Scoped(t)
 	testDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, testDB)
-	git := fakeGitserver{}
-	own := fakeOwnService{}
-	ctx := context.Background()
-	repo := types.Repo{Name: "test-repo-1", ID: 101}
-	err := db.Repos().Create(ctx, &repo)
+	db := dbtbbbse.NewDB(logger, testDB)
+	git := fbkeGitserver{}
+	own := fbkeOwnService{}
+	ctx := context.Bbckground()
+	repo := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := db.Repos().Crebte(ctx, &repo)
 	require.NoError(t, err)
-	// Creating 2 users, only "hasPermission" user has rights to assign owners.
-	hasPermission, err := db.Users().Create(ctx, database.NewUser{Username: "has-permission"})
+	// Crebting 2 users, only "hbsPermission" user hbs rights to bssign owners.
+	hbsPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "hbs-permission"})
 	require.NoError(t, err)
-	noPermission, err := db.Users().Create(ctx, database.NewUser{Username: "non-permission"})
+	noPermission, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "non-permission"})
 	require.NoError(t, err)
-	// Creating a team.
-	team := createTeam(t, ctx, db, "team-A")
-	// Creating an existing assigned team.
-	require.NoError(t, db.AssignedTeams().Insert(ctx, team.ID, repo.ID, "", hasPermission.ID))
+	// Crebting b tebm.
+	tebm := crebteTebm(t, ctx, db, "tebm-A")
+	// Crebting bn existing bssigned tebm.
+	require.NoError(t, db.AssignedTebms().Insert(ctx, tebm.ID, repo.ID, "", hbsPermission.ID))
 	// RBAC stuff below.
-	permission, err := db.Permissions().Create(ctx, database.CreatePermissionOpts{
-		Namespace: rbactypes.OwnershipNamespace,
-		Action:    rbactypes.OwnershipAssignAction,
+	permission, err := db.Permissions().Crebte(ctx, dbtbbbse.CrebtePermissionOpts{
+		Nbmespbce: rbbctypes.OwnershipNbmespbce,
+		Action:    rbbctypes.OwnershipAssignAction,
 	})
 	require.NoError(t, err)
-	role, err := db.Roles().Create(ctx, "Can assign owners", false)
+	role, err := db.Roles().Crebte(ctx, "Cbn bssign owners", fblse)
 	require.NoError(t, err)
-	err = db.RolePermissions().Assign(ctx, database.AssignRolePermissionOpts{
+	err = db.RolePermissions().Assign(ctx, dbtbbbse.AssignRolePermissionOpts{
 		RoleID:       role.ID,
 		PermissionID: permission.ID,
 	})
 	require.NoError(t, err)
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
-		UserID: hasPermission.ID,
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
+		UserID: hbsPermission.ID,
 		RoleID: role.ID,
 	})
 	require.NoError(t, err)
-	// RBAC stuff finished. Creating a GraphQL schema.
-	schema, err := graphqlbackend.NewSchema(db, git, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
+	// RBAC stuff finished. Crebting b GrbphQL schemb.
+	schemb, err := grbphqlbbckend.NewSchemb(db, git, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, git, own, logger)}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	adminCtx := actor.WithActor(ctx, actor.FromUser(hasPermission.ID))
-	userCtx := actor.WithActor(ctx, actor.FromUser(noPermission.ID))
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(hbsPermission.ID))
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(noPermission.ID))
 
-	getBaseTest := func() *graphqlbackend.Test {
-		return &graphqlbackend.Test{
+	getBbseTest := func() *grbphqlbbckend.Test {
+		return &grbphqlbbckend.Test{
 			Context: userCtx,
-			Schema:  schema,
+			Schemb:  schemb,
 			Query: `
-				mutation removeAssignedTeam($input:AssignOwnerOrTeamInput!) {
-				  removeAssignedTeam(input:$input) {
-					alwaysNil
+				mutbtion removeAssignedTebm($input:AssignOwnerOrTebmInput!) {
+				  removeAssignedTebm(input:$input) {
+					blwbysNil
 				  }
 				}`,
-			Variables: map[string]any{"input": map[string]any{
-				"assignedOwnerID": string(graphqlbackend.MarshalTeamID(team.ID)),
-				"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-				"absolutePath":    "",
+			Vbribbles: mbp[string]bny{"input": mbp[string]bny{
+				"bssignedOwnerID": string(grbphqlbbckend.MbrshblTebmID(tebm.ID)),
+				"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+				"bbsolutePbth":    "",
 			}},
 		}
 	}
 
-	assertTeamExists := func(t *testing.T) {
+	bssertTebmExists := func(t *testing.T) {
 		t.Helper()
-		teams, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repo.ID)
+		tebms, err := db.AssignedTebms().ListAssignedTebmsForRepo(ctx, repo.ID)
 		require.NoError(t, err)
-		require.Len(t, teams, 1)
-		owner := teams[0]
-		assert.Equal(t, team.ID, owner.OwnerTeamID)
-		assert.Equal(t, hasPermission.ID, owner.WhoAssignedUserID)
-		assert.Equal(t, "", owner.FilePath)
+		require.Len(t, tebms, 1)
+		owner := tebms[0]
+		bssert.Equbl(t, tebm.ID, owner.OwnerTebmID)
+		bssert.Equbl(t, hbsPermission.ID, owner.WhoAssignedUserID)
+		bssert.Equbl(t, "", owner.FilePbth)
 	}
 
-	assertNoAssignedTeams := func(t *testing.T) {
+	bssertNoAssignedTebms := func(t *testing.T) {
 		t.Helper()
-		owners, err := db.AssignedTeams().ListAssignedTeamsForRepo(ctx, repo.ID)
+		owners, err := db.AssignedTebms().ListAssignedTebmsForRepo(ctx, repo.ID)
 		require.NoError(t, err)
 		require.Empty(t, owners)
 	}
 
-	t.Run("cannot delete assigned owner without permission", func(t *testing.T) {
-		baseTest := getBaseTest()
+	t.Run("cbnnot delete bssigned owner without permission", func(t *testing.T) {
+		bbseTest := getBbseTest()
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "user is missing permission OWNERSHIP#ASSIGN",
-			Path:    []any{"removeAssignedTeam"},
+			Messbge: "user is missing permission OWNERSHIP#ASSIGN",
+			Pbth:    []bny{"removeAssignedTebm"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"removeAssignedTeam":null}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertTeamExists(t)
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"removeAssignedTebm":null}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertTebmExists(t)
 	})
 
-	t.Run("bad request", func(t *testing.T) {
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
+	t.Run("bbd request", func(t *testing.T) {
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: "assigned team ID should not be 0",
-			Path:    []any{"removeAssignedTeam"},
+			Messbge: "bssigned tebm ID should not be 0",
+			Pbth:    []bny{"removeAssignedTebm"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"removeAssignedTeam":null}`
-		baseTest.Variables = map[string]any{"input": map[string]any{
-			"assignedOwnerID": string(graphqlbackend.MarshalUserID(0)),
-			"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":    "",
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"removeAssignedTebm":null}`
+		bbseTest.Vbribbles = mbp[string]bny{"input": mbp[string]bny{
+			"bssignedOwnerID": string(grbphqlbbckend.MbrshblUserID(0)),
+			"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"bbsolutePbth":    "",
 		}}
-		graphqlbackend.RunTest(t, baseTest)
-		assertTeamExists(t)
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertTebmExists(t)
 	})
 
-	t.Run("assigned owner not found", func(t *testing.T) {
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
+	t.Run("bssigned owner not found", func(t *testing.T) {
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
 		expectedErrs := []*gqlerrors.QueryError{{
-			Message: `deleting assigned team: cannot delete assigned owner team with ID=1337 for "" path for repo with ID=1`,
-			Path:    []any{"removeAssignedTeam"},
+			Messbge: `deleting bssigned tebm: cbnnot delete bssigned owner tebm with ID=1337 for "" pbth for repo with ID=1`,
+			Pbth:    []bny{"removeAssignedTebm"},
 		}}
-		baseTest.ExpectedErrors = expectedErrs
-		baseTest.ExpectedResult = `{"removeAssignedTeam":null}`
-		baseTest.Variables = map[string]any{"input": map[string]any{
-			"assignedOwnerID": string(graphqlbackend.MarshalUserID(1337)),
-			"repoID":          string(graphqlbackend.MarshalRepositoryID(repo.ID)),
-			"absolutePath":    "",
+		bbseTest.ExpectedErrors = expectedErrs
+		bbseTest.ExpectedResult = `{"removeAssignedTebm":null}`
+		bbseTest.Vbribbles = mbp[string]bny{"input": mbp[string]bny{
+			"bssignedOwnerID": string(grbphqlbbckend.MbrshblUserID(1337)),
+			"repoID":          string(grbphqlbbckend.MbrshblRepositoryID(repo.ID)),
+			"bbsolutePbth":    "",
 		}}
-		graphqlbackend.RunTest(t, baseTest)
-		assertTeamExists(t)
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertTebmExists(t)
 	})
 
-	t.Run("assigned owner successfully deleted", func(t *testing.T) {
-		baseTest := getBaseTest()
-		baseTest.Context = adminCtx
-		baseTest.ExpectedResult = `{"removeAssignedTeam":{"alwaysNil": null}}`
-		graphqlbackend.RunTest(t, baseTest)
-		assertNoAssignedTeams(t)
+	t.Run("bssigned owner successfully deleted", func(t *testing.T) {
+		bbseTest := getBbseTest()
+		bbseTest.Context = bdminCtx
+		bbseTest.ExpectedResult = `{"removeAssignedTebm":{"blwbysNil": null}}`
+		grbphqlbbckend.RunTest(t, bbseTest)
+		bssertNoAssignedTebms(t)
 	})
 }
 
-func TestDisplayOwnershipStats(t *testing.T) {
+func TestDisplbyOwnershipStbts(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	fakeRepoPaths := dbmocks.NewMockRepoPathStore()
-	fakeRepoPaths.AggregateFileCountFunc.SetDefaultReturn(350000, nil)
-	db.RepoPathsFunc.SetDefaultReturn(fakeRepoPaths)
-	fakeOwnershipStats := dbmocks.NewMockOwnershipStatsStore()
-	updateTime := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
-	fakeOwnershipStats.QueryAggregateCountsFunc.SetDefaultReturn(
-		database.PathAggregateCounts{
+	fbkeRepoPbths := dbmocks.NewMockRepoPbthStore()
+	fbkeRepoPbths.AggregbteFileCountFunc.SetDefbultReturn(350000, nil)
+	db.RepoPbthsFunc.SetDefbultReturn(fbkeRepoPbths)
+	fbkeOwnershipStbts := dbmocks.NewMockOwnershipStbtsStore()
+	updbteTime := time.Dbte(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+	fbkeOwnershipStbts.QueryAggregbteCountsFunc.SetDefbultReturn(
+		dbtbbbse.PbthAggregbteCounts{
 			CodeownedFileCount:         150000,
 			AssignedOwnershipFileCount: 20000,
-			TotalOwnedFileCount:        165000,
-			UpdatedAt:                  updateTime,
+			TotblOwnedFileCount:        165000,
+			UpdbtedAt:                  updbteTime,
 		}, nil)
-	db.OwnershipStatsFunc.SetDefaultReturn(fakeOwnershipStats)
-	ctx := context.Background()
-	schema, err := graphqlbackend.NewSchema(db, nil, []graphqlbackend.OptionalResolver{{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))}})
+	db.OwnershipStbtsFunc.SetDefbultReturn(fbkeOwnershipStbts)
+	ctx := context.Bbckground()
+	schemb, err := grbphqlbbckend.NewSchemb(db, nil, []grbphqlbbckend.OptionblResolver{{OwnResolver: resolvers.NewWithService(db, nil, nil, logtest.NoOp(t))}})
 	require.NoError(t, err)
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Schema:  schema,
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Schemb:  schemb,
 		Context: ctx,
 		Query: `
-			query GetInstanceOwnStats {
-				instanceOwnershipStats {
-					totalFiles
-					totalCodeownedFiles
-					totalOwnedFiles
-					totalAssignedOwnershipFiles
-					updatedAt
+			query GetInstbnceOwnStbts {
+				instbnceOwnershipStbts {
+					totblFiles
+					totblCodeownedFiles
+					totblOwnedFiles
+					totblAssignedOwnershipFiles
+					updbtedAt
 				}
 			}`,
 		ExpectedResult: `
 			{
-				"instanceOwnershipStats": {
-					"totalFiles": 350000,
-					"totalCodeownedFiles": 150000,
-					"totalOwnedFiles": 165000,
-					"totalAssignedOwnershipFiles": 20000,
-					"updatedAt": "2023-01-01T00:00:00Z"
+				"instbnceOwnershipStbts": {
+					"totblFiles": 350000,
+					"totblCodeownedFiles": 150000,
+					"totblOwnedFiles": 165000,
+					"totblAssignedOwnershipFiles": 20000,
+					"updbtedAt": "2023-01-01T00:00:00Z"
 				}
 			}`,
 	})
 }
 
-func createTeam(t *testing.T, ctx context.Context, db database.DB, teamName string) *types.Team {
+func crebteTebm(t *testing.T, ctx context.Context, db dbtbbbse.DB, tebmNbme string) *types.Tebm {
 	t.Helper()
-	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
+	tebm, err := db.Tebms().CrebteTebm(ctx, &types.Tebm{Nbme: tebmNbme})
 	require.NoError(t, err)
-	return team
+	return tebm
 }

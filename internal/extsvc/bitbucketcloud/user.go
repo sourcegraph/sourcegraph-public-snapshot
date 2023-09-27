@@ -1,27 +1,27 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"context"
 	"encoding/json"
 
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-// GetExternalAccountData returns the deserialized user and token from the external account data
-// JSON blob in a typesafe way.
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr *Account, tok *oauth2.Token, err error) {
-	if data.Data != nil {
-		usr, err = encryption.DecryptJSON[Account](ctx, data.Data)
+// GetExternblAccountDbtb returns the deseriblized user bnd token from the externbl bccount dbtb
+// JSON blob in b typesbfe wby.
+func GetExternblAccountDbtb(ctx context.Context, dbtb *extsvc.AccountDbtb) (usr *Account, tok *obuth2.Token, err error) {
+	if dbtb.Dbtb != nil {
+		usr, err = encryption.DecryptJSON[Account](ctx, dbtb.Dbtb)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	if data.AuthData != nil {
-		tok, err = encryption.DecryptJSON[oauth2.Token](ctx, data.AuthData)
+	if dbtb.AuthDbtb != nil {
+		tok, err = encryption.DecryptJSON[obuth2.Token](ctx, dbtb.AuthDbtb)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -30,36 +30,36 @@ func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (usr 
 	return usr, tok, nil
 }
 
-func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
-	data, _, err := GetExternalAccountData(ctx, accountData)
+func GetPublicExternblAccountDbtb(ctx context.Context, bccountDbtb *extsvc.AccountDbtb) (*extsvc.PublicAccountDbtb, error) {
+	dbtb, _, err := GetExternblAccountDbtb(ctx, bccountDbtb)
 	if err != nil {
 		return nil, err
 	}
-	var url string
-	link, ok := data.Links["self"]
+	vbr url string
+	link, ok := dbtb.Links["self"]
 	if ok {
 		url = link.Href
 	}
 
-	return &extsvc.PublicAccountData{
-		DisplayName: data.DisplayName,
-		Login:       data.Username,
+	return &extsvc.PublicAccountDbtb{
+		DisplbyNbme: dbtb.DisplbyNbme,
+		Login:       dbtb.Usernbme,
 		URL:         url,
 	}, nil
 }
 
-// SetExternalAccountData sets the user and token into the external account data blob.
-func SetExternalAccountData(data *extsvc.AccountData, user *Account, token *oauth2.Token) error {
-	serializedUser, err := json.Marshal(user)
+// SetExternblAccountDbtb sets the user bnd token into the externbl bccount dbtb blob.
+func SetExternblAccountDbtb(dbtb *extsvc.AccountDbtb, user *Account, token *obuth2.Token) error {
+	seriblizedUser, err := json.Mbrshbl(user)
 	if err != nil {
 		return err
 	}
-	serializedToken, err := json.Marshal(token)
+	seriblizedToken, err := json.Mbrshbl(token)
 	if err != nil {
 		return err
 	}
 
-	data.Data = extsvc.NewUnencryptedData(serializedUser)
-	data.AuthData = extsvc.NewUnencryptedData(serializedToken)
+	dbtb.Dbtb = extsvc.NewUnencryptedDbtb(seriblizedUser)
+	dbtb.AuthDbtb = extsvc.NewUnencryptedDbtb(seriblizedToken)
 	return nil
 }

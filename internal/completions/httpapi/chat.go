@@ -1,32 +1,32 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-// NewChatCompletionsStreamHandler is an http handler which streams back completions results.
-func NewChatCompletionsStreamHandler(logger log.Logger, db database.DB) http.Handler {
-	logger = logger.Scoped("chat", "chat completions handler")
-	rl := NewRateLimiter(db, redispool.Store, types.CompletionsFeatureChat)
+// NewChbtCompletionsStrebmHbndler is bn http hbndler which strebms bbck completions results.
+func NewChbtCompletionsStrebmHbndler(logger log.Logger, db dbtbbbse.DB) http.Hbndler {
+	logger = logger.Scoped("chbt", "chbt completions hbndler")
+	rl := NewRbteLimiter(db, redispool.Store, types.CompletionsFebtureChbt)
 
-	return newCompletionsHandler(
+	return newCompletionsHbndler(
 		logger,
-		types.CompletionsFeatureChat,
+		types.CompletionsFebtureChbt,
 		rl,
-		"chat",
-		func(requestParams types.CodyCompletionRequestParameters, c *conftypes.CompletionsConfig) (string, error) {
+		"chbt",
+		func(requestPbrbms types.CodyCompletionRequestPbrbmeters, c *conftypes.CompletionsConfig) (string, error) {
 			// No user defined models for now.
-			if requestParams.Fast {
-				return c.FastChatModel, nil
+			if requestPbrbms.Fbst {
+				return c.FbstChbtModel, nil
 			}
-			return c.ChatModel, nil
+			return c.ChbtModel, nil
 		},
 	)
 }

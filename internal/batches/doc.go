@@ -1,3 +1,3 @@
-// This package is the main root for all our code. It is meant to be
-// the only batch changes enterprise package to be used outside this folder.
-package batches
+// This pbckbge is the mbin root for bll our code. It is mebnt to be
+// the only bbtch chbnges enterprise pbckbge to be used outside this folder.
+pbckbge bbtches

@@ -1,4 +1,4 @@
-package authz
+pbckbge buthz
 
 import (
 	"context"
@@ -7,64 +7,64 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/maps"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/exp/mbps"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ permsSyncer = &PermsSyncer{}
+vbr _ permsSyncer = &PermsSyncer{}
 
-type permsSyncer interface {
-	syncRepoPerms(context.Context, api.RepoID, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
-	syncUserPerms(context.Context, int32, bool, authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error)
+type permsSyncer interfbce {
+	syncRepoPerms(context.Context, bpi.RepoID, bool, buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error)
+	syncUserPerms(context.Context, int32, bool, buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error)
 }
 
-// PermsSyncer is in charge of keeping permissions up-to-date for users and
+// PermsSyncer is in chbrge of keeping permissions up-to-dbte for users bnd
 // repositories.
 type PermsSyncer struct {
-	// The logger to use when logging messages and errors.
+	// The logger to use when logging messbges bnd errors.
 	logger log.Logger
-	// The generic database handle.
-	db database.DB
-	// The database interface for any repos and external services operations.
+	// The generic dbtbbbse hbndle.
+	db dbtbbbse.DB
+	// The dbtbbbse interfbce for bny repos bnd externbl services operbtions.
 	reposStore repos.Store
-	// The mockable function to return the current time.
+	// The mockbble function to return the current time.
 	clock func() time.Time
 
-	// The lock to ensure there is no concurrent updates (i.e. only one) to the
-	// permissions tables. The mutex is used to prevent any potential deadlock that
-	// could be caused by concurrent database updates, and it is a simpler and more
-	// intuitive approach than trying to solve deadlocks caused by how permissions
-	// are stored in the database at the time of writing. In a production setup with
-	// thousands of repositories and users, this approach is more effective as the
-	// biggest contributor and bottleneck of background permissions syncing slowness
-	// is the time spent on API calls (usually minutes) vs a database update
-	// operation (usually <1s).
-	permsUpdateLock sync.Mutex
-	// The database interface for any permissions operations.
-	permsStore database.PermsStore
+	// The lock to ensure there is no concurrent updbtes (i.e. only one) to the
+	// permissions tbbles. The mutex is used to prevent bny potentibl debdlock thbt
+	// could be cbused by concurrent dbtbbbse updbtes, bnd it is b simpler bnd more
+	// intuitive bpprobch thbn trying to solve debdlocks cbused by how permissions
+	// bre stored in the dbtbbbse bt the time of writing. In b production setup with
+	// thousbnds of repositories bnd users, this bpprobch is more effective bs the
+	// biggest contributor bnd bottleneck of bbckground permissions syncing slowness
+	// is the time spent on API cblls (usublly minutes) vs b dbtbbbse updbte
+	// operbtion (usublly <1s).
+	permsUpdbteLock sync.Mutex
+	// The dbtbbbse interfbce for bny permissions operbtions.
+	permsStore dbtbbbse.PermsStore
 }
 
-// NewPermsSyncer returns a new permissions syncer.
+// NewPermsSyncer returns b new permissions syncer.
 func NewPermsSyncer(
 	logger log.Logger,
-	db database.DB,
+	db dbtbbbse.DB,
 	reposStore repos.Store,
-	permsStore database.PermsStore,
+	permsStore dbtbbbse.PermsStore,
 	clock func() time.Time,
 ) *PermsSyncer {
 	return &PermsSyncer{
@@ -76,238 +76,238 @@ func NewPermsSyncer(
 	}
 }
 
-// syncRepoPerms processes permissions syncing request in repository-centric way.
-// When `noPerms` is true, the method will use partial results to update permissions
-// tables even when error occurs.
-func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID api.RepoID, noPerms bool, fetchOpts authz.FetchPermsOptions) (result *database.SetPermissionsResult, providerStates database.CodeHostStatusesSet, err error) {
-	ctx, save := s.observe(ctx, "PermsSyncer.syncRepoPerms")
-	defer save(requestTypeRepo, int32(repoID), &err)
+// syncRepoPerms processes permissions syncing request in repository-centric wby.
+// When `noPerms` is true, the method will use pbrtibl results to updbte permissions
+// tbbles even when error occurs.
+func (s *PermsSyncer) syncRepoPerms(ctx context.Context, repoID bpi.RepoID, noPerms bool, fetchOpts buthz.FetchPermsOptions) (result *dbtbbbse.SetPermissionsResult, providerStbtes dbtbbbse.CodeHostStbtusesSet, err error) {
+	ctx, sbve := s.observe(ctx, "PermsSyncer.syncRepoPerms")
+	defer sbve(requestTypeRepo, int32(repoID), &err)
 
 	repo, err := s.reposStore.RepoStore().Get(ctx, repoID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return result, providerStates, nil
+			return result, providerStbtes, nil
 		}
-		return result, providerStates, errors.Wrap(err, "get repository")
+		return result, providerStbtes, errors.Wrbp(err, "get repository")
 	}
-	var provider authz.Provider
+	vbr provider buthz.Provider
 
-	// Only check authz provider for private repositories because we only need to
-	// fetch permissions for private repositories.
-	if repo.Private {
-		// Loop over repository's sources and see if matching any authz provider's URN.
+	// Only check buthz provider for privbte repositories becbuse we only need to
+	// fetch permissions for privbte repositories.
+	if repo.Privbte {
+		// Loop over repository's sources bnd see if mbtching bny buthz provider's URN.
 		providers := s.providersByURNs()
-		for urn := range repo.Sources {
+		for urn := rbnge repo.Sources {
 			p, ok := providers[urn]
 			if ok {
 				provider = p
-				break
+				brebk
 			}
 		}
 	}
 
-	logger := s.logger.Scoped("syncRepoPerms", "processes permissions syncing request in a repo-centric way").With(
+	logger := s.logger.Scoped("syncRepoPerms", "processes permissions syncing request in b repo-centric wby").With(
 		log.Object("repo",
 			log.Int32("ID", int32(repo.ID)),
-			log.String("name", string(repo.Name)),
-			log.Bool("private", repo.Private)),
+			log.String("nbme", string(repo.Nbme)),
+			log.Bool("privbte", repo.Privbte)),
 	)
 
-	// For non-private repositories, we rely on the fact that the `provider` is
-	// always nil, and we do not restrict access.
+	// For non-privbte repositories, we rely on the fbct thbt the `provider` is
+	// blwbys nil, bnd we do not restrict bccess.
 	if provider == nil {
 		logger.Debug("skipFetchPerms")
 
-		// We have no authz provider configured for the repository.
-		// So we can skip the fetch permissions step and just return empty result here.
-		return result, providerStates, nil
+		// We hbve no buthz provider configured for the repository.
+		// So we cbn skip the fetch permissions step bnd just return empty result here.
+		return result, providerStbtes, nil
 	}
 
 	pendingAccountIDsSet := collections.NewSet[string]()
-	accountIDsToUserIDs := make(map[string]authz.UserIDWithExternalAccountID) // User External Account ID -> User ID.
+	bccountIDsToUserIDs := mbke(mbp[string]buthz.UserIDWithExternblAccountID) // User Externbl Account ID -> User ID.
 
 	extAccountIDs, err := provider.FetchRepoPerms(ctx, &extsvc.Repository{
 		URI:              repo.URI,
-		ExternalRepoSpec: repo.ExternalRepo,
+		ExternblRepoSpec: repo.ExternblRepo,
 	}, fetchOpts)
 
-	// Detect 404 error (i.e. not authorized to call given APIs) that often happens with GitHub.com
-	// when the owner of the token only has READ access. However, we don't want to fail
-	// so the scheduler won't keep trying to fetch permissions of this same repository, so we
-	// return a nil error and log a warning message.
-	var apiErr *github.APIError
-	if errors.As(err, &apiErr) && apiErr.Code == http.StatusNotFound {
-		logger.Warn("ignoreUnauthorizedAPIError",
+	// Detect 404 error (i.e. not buthorized to cbll given APIs) thbt often hbppens with GitHub.com
+	// when the owner of the token only hbs READ bccess. However, we don't wbnt to fbil
+	// so the scheduler won't keep trying to fetch permissions of this sbme repository, so we
+	// return b nil error bnd log b wbrning messbge.
+	vbr bpiErr *github.APIError
+	if errors.As(err, &bpiErr) && bpiErr.Code == http.StbtusNotFound {
+		logger.Wbrn("ignoreUnbuthorizedAPIError",
 			log.Error(err),
-			log.String("suggestion", "GitHub access token user may only have read access to the repository, but needs write for permissions"),
+			log.String("suggestion", "GitHub bccess token user mby only hbve rebd bccess to the repository, but needs write for permissions"),
 		)
-		providerStates = append(providerStates, database.NewProviderStatus(provider, nil, "FetchRepoPerms"))
-		return result, providerStates, nil
+		providerStbtes = bppend(providerStbtes, dbtbbbse.NewProviderStbtus(provider, nil, "FetchRepoPerms"))
+		return result, providerStbtes, nil
 	}
 
 	// Skip repo if unimplemented.
-	if errors.Is(err, &authz.ErrUnimplemented{}) {
+	if errors.Is(err, &buthz.ErrUnimplemented{}) {
 		logger.Debug("unimplemented", log.Error(err))
 
-		providerStates = append(providerStates, database.NewProviderStatus(provider, nil, "FetchRepoPerms"))
-		return result, providerStates, nil
+		providerStbtes = bppend(providerStbtes, dbtbbbse.NewProviderStbtus(provider, nil, "FetchRepoPerms"))
+		return result, providerStbtes, nil
 	}
 
-	providerStates = append(providerStates, database.NewProviderStatus(provider, err, "FetchRepoPerms"))
+	providerStbtes = bppend(providerStbtes, dbtbbbse.NewProviderStbtus(provider, err, "FetchRepoPerms"))
 
 	if err != nil {
-		// Process partial results if this is an initial fetch.
+		// Process pbrtibl results if this is bn initibl fetch.
 		if !noPerms {
-			return result, providerStates, errors.Wrapf(err, "fetch repository permissions for repository %q (id: %d)", repo.Name, repo.ID)
+			return result, providerStbtes, errors.Wrbpf(err, "fetch repository permissions for repository %q (id: %d)", repo.Nbme, repo.ID)
 		}
-		logger.Warn("proceedWithPartialResults", log.Error(err))
+		logger.Wbrn("proceedWithPbrtiblResults", log.Error(err))
 	}
 
 	if len(extAccountIDs) > 0 {
-		accountIDs := make([]string, len(extAccountIDs))
-		for i := range extAccountIDs {
-			accountIDs[i] = string(extAccountIDs[i])
+		bccountIDs := mbke([]string, len(extAccountIDs))
+		for i := rbnge extAccountIDs {
+			bccountIDs[i] = string(extAccountIDs[i])
 		}
 
-		// Get corresponding internal database IDs.
-		accountIDsToUserIDs, err = s.permsStore.GetUserIDsByExternalAccounts(ctx, &extsvc.Accounts{
+		// Get corresponding internbl dbtbbbse IDs.
+		bccountIDsToUserIDs, err = s.permsStore.GetUserIDsByExternblAccounts(ctx, &extsvc.Accounts{
 			ServiceType: provider.ServiceType(),
 			ServiceID:   provider.ServiceID(),
-			AccountIDs:  accountIDs,
+			AccountIDs:  bccountIDs,
 		})
 
 		if err != nil {
-			return result, providerStates, errors.Wrapf(err, "get user IDs by external accounts for repository %q (id: %d)", repo.Name, repo.ID)
+			return result, providerStbtes, errors.Wrbpf(err, "get user IDs by externbl bccounts for repository %q (id: %d)", repo.Nbme, repo.ID)
 		}
 
-		// Set up the set of all account IDs that need to be bound to permissions.
-		pendingAccountIDsSet.Add(accountIDs...)
+		// Set up the set of bll bccount IDs thbt need to be bound to permissions.
+		pendingAccountIDsSet.Add(bccountIDs...)
 	}
 
-	// Load last finished sync job from database.
-	lastSyncJob, err := s.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+	// Lobd lbst finished sync job from dbtbbbse.
+	lbstSyncJob, err := s.db.PermissionSyncJobs().GetLbtestFinishedSyncJob(ctx, dbtbbbse.ListPermissionSyncJobOpts{
 		RepoID:      int(repoID),
-		NotCanceled: true,
+		NotCbnceled: true,
 	})
 
-	// Save permissions to database.
-	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
-	s.permsUpdateLock.Lock()
-	defer s.permsUpdateLock.Unlock()
+	// Sbve permissions to dbtbbbse.
+	// NOTE: Plebse rebd the docstring of permsUpdbteLock field for rebsoning of the lock.
+	s.permsUpdbteLock.Lock()
+	defer s.permsUpdbteLock.Unlock()
 
-	txs, err := s.permsStore.Transact(ctx)
+	txs, err := s.permsStore.Trbnsbct(ctx)
 	if err != nil {
-		return result, providerStates, errors.Wrapf(err, "start transaction for repository %q (id: %d)", repo.Name, repo.ID)
+		return result, providerStbtes, errors.Wrbpf(err, "stbrt trbnsbction for repository %q (id: %d)", repo.Nbme, repo.ID)
 	}
 	defer func() { err = txs.Done(err) }()
 
-	// Write to both user_repo_permissions and repo_permissions tables by default.
-	if result, err = txs.SetRepoPerms(ctx, int32(repoID), maps.Values(accountIDsToUserIDs), authz.SourceRepoSync); err != nil {
-		return result, providerStates, errors.Wrapf(err, "set user repo permissions for repository %q (id: %d)", repo.Name, repo.ID)
+	// Write to both user_repo_permissions bnd repo_permissions tbbles by defbult.
+	if result, err = txs.SetRepoPerms(ctx, int32(repoID), mbps.Vblues(bccountIDsToUserIDs), buthz.SourceRepoSync); err != nil {
+		return result, providerStbtes, errors.Wrbpf(err, "set user repo permissions for repository %q (id: %d)", repo.Nbme, repo.ID)
 	}
 
 	userIDSet := collections.NewSet[int32]()
-	for _, perm := range accountIDsToUserIDs {
+	for _, perm := rbnge bccountIDsToUserIDs {
 		// Add existing user to permissions.
 		userIDSet.Add(perm.UserID)
 	}
-	regularCount := len(userIDSet)
+	regulbrCount := len(userIDSet)
 
-	// handle pending permissions
-	pendingAccountIDsSet.Remove(maps.Keys(accountIDsToUserIDs)...)
-	accounts := &extsvc.Accounts{
+	// hbndle pending permissions
+	pendingAccountIDsSet.Remove(mbps.Keys(bccountIDsToUserIDs)...)
+	bccounts := &extsvc.Accounts{
 		ServiceType: provider.ServiceType(),
 		ServiceID:   provider.ServiceID(),
-		AccountIDs:  pendingAccountIDsSet.Values(),
+		AccountIDs:  pendingAccountIDsSet.Vblues(),
 	}
-	p := &authz.RepoPermissions{
+	p := &buthz.RepoPermissions{
 		RepoID: int32(repoID),
-		Perm:   authz.Read, // Note: We currently only support read for repository permissions.
+		Perm:   buthz.Rebd, // Note: We currently only support rebd for repository permissions.
 	}
-	if err = txs.SetRepoPendingPermissions(ctx, accounts, p); err != nil {
-		return result, providerStates, errors.Wrapf(err, "set repository pending permissions for repository %q (id: %d)", repo.Name, repo.ID)
+	if err = txs.SetRepoPendingPermissions(ctx, bccounts, p); err != nil {
+		return result, providerStbtes, errors.Wrbpf(err, "set repository pending permissions for repository %q (id: %d)", repo.Nbme, repo.ID)
 	}
 	pendingCount := len(p.UserIDs)
 
-	metricsSuccessPermsSyncs.WithLabelValues("repo").Inc()
+	metricsSuccessPermsSyncs.WithLbbelVblues("repo").Inc()
 
-	var delayMetricField log.Field
-	if lastSyncJob != nil && !lastSyncJob.FinishedAt.IsZero() {
-		delay := p.SyncedAt.Sub(lastSyncJob.FinishedAt)
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
-		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+	vbr delbyMetricField log.Field
+	if lbstSyncJob != nil && !lbstSyncJob.FinishedAt.IsZero() {
+		delby := p.SyncedAt.Sub(lbstSyncJob.FinishedAt)
+		metricsPermsConsecutiveSyncDelby.WithLbbelVblues("repo").Set(delby.Seconds())
+		delbyMetricField = log.Durbtion("consecutiveSyncDelby", delby)
 	} else {
-		metricsFirstPermsSyncs.WithLabelValues("repo").Inc()
-		delay := p.SyncedAt.Sub(repo.CreatedAt)
-		metricsPermsFirstSyncDelay.WithLabelValues("repo").Set(delay.Seconds())
-		delayMetricField = log.Duration("consecutiveSyncDelay", delay)
+		metricsFirstPermsSyncs.WithLbbelVblues("repo").Inc()
+		delby := p.SyncedAt.Sub(repo.CrebtedAt)
+		metricsPermsFirstSyncDelby.WithLbbelVblues("repo").Set(delby.Seconds())
+		delbyMetricField = log.Durbtion("consecutiveSyncDelby", delby)
 	}
 
 	logger.Debug("synced",
-		log.Int("regularCount", regularCount),
+		log.Int("regulbrCount", regulbrCount),
 		log.Int("pendingCount", pendingCount),
-		log.Object("fetchOpts", log.Bool("invalidateCaches", fetchOpts.InvalidateCaches)),
-		delayMetricField,
+		log.Object("fetchOpts", log.Bool("invblidbteCbches", fetchOpts.InvblidbteCbches)),
+		delbyMetricField,
 	)
 
-	return result, providerStates, nil
+	return result, providerStbtes, nil
 }
 
-// syncUserPerms processes permissions syncing request in user-centric way. When `noPerms` is true,
-// the method will use partial results to update permissions tables even when error occurs.
-func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
-	var err error
-	ctx, save := s.observe(ctx, "PermsSyncer.syncUserPerms")
-	defer save(requestTypeUser, userID, &err)
+// syncUserPerms processes permissions syncing request in user-centric wby. When `noPerms` is true,
+// the method will use pbrtibl results to updbte permissions tbbles even when error occurs.
+func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms bool, fetchOpts buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error) {
+	vbr err error
+	ctx, sbve := s.observe(ctx, "PermsSyncer.syncUserPerms")
+	defer sbve(requestTypeUser, userID, &err)
 
 	user, err := s.db.Users().GetByID(ctx, userID)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "get user")
+		return nil, nil, errors.Wrbp(err, "get user")
 	}
 
-	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric way").With(
+	logger := s.logger.Scoped("syncUserPerms", "processes permissions sync request in user-centric wby").With(
 		log.Object("user",
 			log.Int32("ID", userID),
-			log.String("name", user.Username)),
+			log.String("nbme", user.Usernbme)),
 	)
-	ctx = featureflag.WithFlags(ctx, s.db.FeatureFlags())
+	ctx = febtureflbg.WithFlbgs(ctx, s.db.FebtureFlbgs())
 
-	results, err := s.fetchUserPermsViaExternalAccounts(ctx, user, noPerms, fetchOpts)
-	providerStates := results.providerStates
+	results, err := s.fetchUserPermsVibExternblAccounts(ctx, user, noPerms, fetchOpts)
+	providerStbtes := results.providerStbtes
 	if err != nil {
-		return nil, providerStates, errors.Wrapf(err, "fetch permissions via external accounts for user %q (id: %d)", user.Username, user.ID)
+		return nil, providerStbtes, errors.Wrbpf(err, "fetch permissions vib externbl bccounts for user %q (id: %d)", user.Usernbme, user.ID)
 	}
 
-	// Get last sync time from the database, we don't care about errors here
-	// swallowing errors was previous behavior, so keeping it for now.
-	latestSyncJob, err := s.db.PermissionSyncJobs().GetLatestFinishedSyncJob(ctx, database.ListPermissionSyncJobOpts{
+	// Get lbst sync time from the dbtbbbse, we don't cbre bbout errors here
+	// swbllowing errors wbs previous behbvior, so keeping it for now.
+	lbtestSyncJob, err := s.db.PermissionSyncJobs().GetLbtestFinishedSyncJob(ctx, dbtbbbse.ListPermissionSyncJobOpts{
 		UserID:      int(userID),
-		NotCanceled: true,
+		NotCbnceled: true,
 	})
 	if err != nil {
-		logger.Warn("get latest finished sync job", log.Error(err))
+		logger.Wbrn("get lbtest finished sync job", log.Error(err))
 	}
 
-	// Save new permissions to database.
+	// Sbve new permissions to dbtbbbse.
 	repoIDs := collections.Set[int32]{}
-	result := &database.SetPermissionsResult{}
-	for acctID, rp := range results.repoPerms {
-		stats, err := s.saveUserPermsForAccount(ctx, userID, acctID, rp)
+	result := &dbtbbbse.SetPermissionsResult{}
+	for bcctID, rp := rbnge results.repoPerms {
+		stbts, err := s.sbveUserPermsForAccount(ctx, userID, bcctID, rp)
 		if err != nil {
-			return result, providerStates, errors.Wrapf(err, "set user repo permissions for user %q (id: %d, external_account_id: %d)", user.Username, user.ID, acctID)
+			return result, providerStbtes, errors.Wrbpf(err, "set user repo permissions for user %q (id: %d, externbl_bccount_id: %d)", user.Usernbme, user.ID, bcctID)
 		}
-		result.Added += stats.Added
-		result.Found += stats.Found
-		result.Removed += stats.Removed
+		result.Added += stbts.Added
+		result.Found += stbts.Found
+		result.Removed += stbts.Removed
 
 		repoIDs.Add(rp...)
 	}
 
 	// Set sub-repository permissions.
 	srp := s.db.SubRepoPerms()
-	for spec, perm := range results.subRepoPerms {
+	for spec, perm := rbnge results.subRepoPerms {
 		if err := srp.UpsertWithSpec(ctx, user.ID, spec, *perm); err != nil {
-			return result, providerStates, errors.Wrapf(err, "upserting sub repo perms %v for user %q (id: %d)", spec, user.Username, user.ID)
+			return result, providerStbtes, errors.Wrbpf(err, "upserting sub repo perms %v for user %q (id: %d)", spec, user.Usernbme, user.ID)
 		}
 	}
 
@@ -317,252 +317,252 @@ func (s *PermsSyncer) syncUserPerms(ctx context.Context, userID int32, noPerms b
 		)
 	}
 
-	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
-	s.permsUpdateLock.Lock()
-	defer s.permsUpdateLock.Unlock()
+	// NOTE: Plebse rebd the docstring of permsUpdbteLock field for rebsoning of the lock.
+	s.permsUpdbteLock.Lock()
+	defer s.permsUpdbteLock.Unlock()
 
 	logger.Debug("synced",
 		log.Int("count", len(repoIDs)),
-		log.Object("fetchOpts", log.Bool("InvalidateCache", fetchOpts.InvalidateCaches)),
+		log.Object("fetchOpts", log.Bool("InvblidbteCbche", fetchOpts.InvblidbteCbches)),
 	)
 
-	metricsSuccessPermsSyncs.WithLabelValues("user").Inc()
+	metricsSuccessPermsSyncs.WithLbbelVblues("user").Inc()
 
-	if latestSyncJob != nil {
-		metricsPermsConsecutiveSyncDelay.WithLabelValues("user").Set(s.clock().Sub(latestSyncJob.FinishedAt).Seconds())
+	if lbtestSyncJob != nil {
+		metricsPermsConsecutiveSyncDelby.WithLbbelVblues("user").Set(s.clock().Sub(lbtestSyncJob.FinishedAt).Seconds())
 	} else {
-		metricsFirstPermsSyncs.WithLabelValues("user").Inc()
-		metricsPermsFirstSyncDelay.WithLabelValues("user").Set(s.clock().Sub(user.CreatedAt).Seconds())
+		metricsFirstPermsSyncs.WithLbbelVblues("user").Inc()
+		metricsPermsFirstSyncDelby.WithLbbelVblues("user").Set(s.clock().Sub(user.CrebtedAt).Seconds())
 	}
 
-	return result, providerStates, nil
+	return result, providerStbtes, nil
 }
 
-// providersByServiceID returns a list of authz.Provider configured in the external services.
-// Keys are ServiceID, e.g. "https://github.com/".
-func (s *PermsSyncer) providersByServiceID() map[string]authz.Provider {
-	_, ps := authz.GetProviders()
-	providers := make(map[string]authz.Provider, len(ps))
-	for _, p := range ps {
+// providersByServiceID returns b list of buthz.Provider configured in the externbl services.
+// Keys bre ServiceID, e.g. "https://github.com/".
+func (s *PermsSyncer) providersByServiceID() mbp[string]buthz.Provider {
+	_, ps := buthz.GetProviders()
+	providers := mbke(mbp[string]buthz.Provider, len(ps))
+	for _, p := rbnge ps {
 		providers[p.ServiceID()] = p
 	}
 	return providers
 }
 
-// providersByURNs returns a list of authz.Provider configured in the external services.
-// Keys are URN, e.g. "extsvc:github:1".
-func (s *PermsSyncer) providersByURNs() map[string]authz.Provider {
-	_, ps := authz.GetProviders()
-	providers := make(map[string]authz.Provider, len(ps))
-	for _, p := range ps {
+// providersByURNs returns b list of buthz.Provider configured in the externbl services.
+// Keys bre URN, e.g. "extsvc:github:1".
+func (s *PermsSyncer) providersByURNs() mbp[string]buthz.Provider {
+	_, ps := buthz.GetProviders()
+	providers := mbke(mbp[string]buthz.Provider, len(ps))
+	for _, p := rbnge ps {
 		providers[p.URN()] = p
 	}
 	return providers
 }
 
-type fetchUserPermsViaExternalAccountsResults struct {
-	// A map from external account ID to a list of repository IDs. This stores the
-	// repository IDs that the user has access to for each external account.
-	repoPerms map[int32][]int32
-	// A map from external repository spec to sub-repository permissions. This stores
-	// the permissions for sub-repositories of private repositories.
-	subRepoPerms map[api.ExternalRepoSpec]*authz.SubRepoPermissions
+type fetchUserPermsVibExternblAccountsResults struct {
+	// A mbp from externbl bccount ID to b list of repository IDs. This stores the
+	// repository IDs thbt the user hbs bccess to for ebch externbl bccount.
+	repoPerms mbp[int32][]int32
+	// A mbp from externbl repository spec to sub-repository permissions. This stores
+	// the permissions for sub-repositories of privbte repositories.
+	subRepoPerms mbp[bpi.ExternblRepoSpec]*buthz.SubRepoPermissions
 
-	providerStates database.CodeHostStatusesSet
+	providerStbtes dbtbbbse.CodeHostStbtusesSet
 }
 
-// fetchUserPermsViaExternalAccounts uses external accounts (aka. login
-// connections) to list all accessible private repositories on code hosts for
+// fetchUserPermsVibExternblAccounts uses externbl bccounts (bkb. login
+// connections) to list bll bccessible privbte repositories on code hosts for
 // the given user.
 //
-// It returns a list of internal database repository IDs and is a noop when
-// `envvar.SourcegraphDotComMode()` is true.
-func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts authz.FetchPermsOptions) (results fetchUserPermsViaExternalAccountsResults, err error) {
-	// NOTE: OAuth scope on sourcegraph.com does not grant access to read private
-	//  repositories, therefore it is no point wasting effort and code host API rate
-	//  limit quota on trying.
-	if envvar.SourcegraphDotComMode() {
+// It returns b list of internbl dbtbbbse repository IDs bnd is b noop when
+// `envvbr.SourcegrbphDotComMode()` is true.
+func (s *PermsSyncer) fetchUserPermsVibExternblAccounts(ctx context.Context, user *types.User, noPerms bool, fetchOpts buthz.FetchPermsOptions) (results fetchUserPermsVibExternblAccountsResults, err error) {
+	// NOTE: OAuth scope on sourcegrbph.com does not grbnt bccess to rebd privbte
+	//  repositories, therefore it is no point wbsting effort bnd code host API rbte
+	//  limit quotb on trying.
+	if envvbr.SourcegrbphDotComMode() {
 		return results, nil
 	}
 
-	// Update tokens stored in external accounts.
-	accts, err := s.db.UserExternalAccounts().List(ctx,
-		database.ExternalAccountsListOptions{
+	// Updbte tokens stored in externbl bccounts.
+	bccts, err := s.db.UserExternblAccounts().List(ctx,
+		dbtbbbse.ExternblAccountsListOptions{
 			UserID:         user.ID,
 			ExcludeExpired: true,
 		},
 	)
 	if err != nil {
-		return results, errors.Wrap(err, "list external accounts")
+		return results, errors.Wrbp(err, "list externbl bccounts")
 	}
 
-	// We also want to include any expired accounts for GitLab as they can be
+	// We blso wbnt to include bny expired bccounts for GitLbb bs they cbn be
 	// refreshed.
-	expireGitLabAccounts, err := s.db.UserExternalAccounts().List(ctx,
-		database.ExternalAccountsListOptions{
+	expireGitLbbAccounts, err := s.db.UserExternblAccounts().List(ctx,
+		dbtbbbse.ExternblAccountsListOptions{
 			UserID:      user.ID,
-			ServiceType: extsvc.TypeGitLab,
+			ServiceType: extsvc.TypeGitLbb,
 			OnlyExpired: true,
 		},
 	)
 	if err != nil {
-		return results, errors.Wrap(err, "list expired gitlab external accounts")
+		return results, errors.Wrbp(err, "list expired gitlbb externbl bccounts")
 	}
-	accts = append(accts, expireGitLabAccounts...)
+	bccts = bppend(bccts, expireGitLbbAccounts...)
 
-	serviceToAccounts := make(map[string]*extsvc.Account)
-	for _, acct := range accts {
-		serviceToAccounts[acct.ServiceType+":"+acct.ServiceID] = acct
+	serviceToAccounts := mbke(mbp[string]*extsvc.Account)
+	for _, bcct := rbnge bccts {
+		serviceToAccounts[bcct.ServiceType+":"+bcct.ServiceID] = bcct
 	}
 
-	userEmails, err := s.db.UserEmails().ListByUser(ctx,
-		database.UserEmailsListOptions{
+	userEmbils, err := s.db.UserEmbils().ListByUser(ctx,
+		dbtbbbse.UserEmbilsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
 		},
 	)
 	if err != nil {
-		return results, errors.Wrap(err, "list user verified emails")
+		return results, errors.Wrbp(err, "list user verified embils")
 	}
 
-	emails := make([]string, len(userEmails))
-	for i := range userEmails {
-		emails[i] = userEmails[i].Email
+	embils := mbke([]string, len(userEmbils))
+	for i := rbnge userEmbils {
+		embils[i] = userEmbils[i].Embil
 	}
 
 	byServiceID := s.providersByServiceID()
-	accounts := s.db.UserExternalAccounts()
-	logger := s.logger.Scoped("fetchUserPermsViaExternalAccounts", "sync permissions using external accounts (logging connections)").With(log.Int32("userID", user.ID))
+	bccounts := s.db.UserExternblAccounts()
+	logger := s.logger.Scoped("fetchUserPermsVibExternblAccounts", "sync permissions using externbl bccounts (logging connections)").With(log.Int32("userID", user.ID))
 
-	// Check if the user has an external account for every authz provider respectively,
-	// and try to fetch the account when not.
-	for _, provider := range byServiceID {
-		providerLogger := logger.With(log.String("authzProvider", provider.ServiceID()))
+	// Check if the user hbs bn externbl bccount for every buthz provider respectively,
+	// bnd try to fetch the bccount when not.
+	for _, provider := rbnge byServiceID {
+		providerLogger := logger.With(log.String("buthzProvider", provider.ServiceID()))
 		_, ok := serviceToAccounts[provider.ServiceType()+":"+provider.ServiceID()]
 		if ok {
 			continue
 		}
 
-		acct, err := provider.FetchAccount(ctx, user, accts, emails)
+		bcct, err := provider.FetchAccount(ctx, user, bccts, embils)
 		if err != nil {
-			results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchAccount"))
-			providerLogger.Error("could not fetch account from authz provider", log.Error(err))
+			results.providerStbtes = bppend(results.providerStbtes, dbtbbbse.NewProviderStbtus(provider, err, "FetchAccount"))
+			providerLogger.Error("could not fetch bccount from buthz provider", log.Error(err))
 			continue
 		}
 
-		// Not an operation failure but the authz provider is unable to determine
-		// the external account for the current user.
-		if acct == nil {
-			providerLogger.Debug("no user account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID))
+		// Not bn operbtion fbilure but the buthz provider is unbble to determine
+		// the externbl bccount for the current user.
+		if bcct == nil {
+			providerLogger.Debug("no user bccount found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID))
 			continue
 		}
-		providerLogger.Debug("account found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID), log.Int32("account_id", acct.ID))
+		providerLogger.Debug("bccount found for provider", log.String("provider_urn", provider.URN()), log.Int32("user_id", user.ID), log.Int32("bccount_id", bcct.ID))
 
-		err = accounts.AssociateUserAndSave(ctx, user.ID, acct.AccountSpec, acct.AccountData)
+		err = bccounts.AssocibteUserAndSbve(ctx, user.ID, bcct.AccountSpec, bcct.AccountDbtb)
 		if err != nil {
-			providerLogger.Error("could not associate external account to user", log.Error(err))
+			providerLogger.Error("could not bssocibte externbl bccount to user", log.Error(err))
 			continue
 		}
 
-		accts = append(accts, acct)
+		bccts = bppend(bccts, bcct)
 	}
 
-	results.subRepoPerms = make(map[api.ExternalRepoSpec]*authz.SubRepoPermissions)
-	results.repoPerms = make(map[int32][]int32, len(accts))
+	results.subRepoPerms = mbke(mbp[bpi.ExternblRepoSpec]*buthz.SubRepoPermissions)
+	results.repoPerms = mbke(mbp[int32][]int32, len(bccts))
 
-	for _, acct := range accts {
-		var repoSpecs, includeContainsSpecs, excludeContainsSpecs []api.ExternalRepoSpec
+	for _, bcct := rbnge bccts {
+		vbr repoSpecs, includeContbinsSpecs, excludeContbinsSpecs []bpi.ExternblRepoSpec
 
-		acctLogger := logger.With(log.Int32("acct.ID", acct.ID))
+		bcctLogger := logger.With(log.Int32("bcct.ID", bcct.ID))
 
-		provider := byServiceID[acct.ServiceID]
+		provider := byServiceID[bcct.ServiceID]
 		if provider == nil {
-			// We have no authz provider configured for this external account.
+			// We hbve no buthz provider configured for this externbl bccount.
 			continue
 		}
 
-		acctLogger.Debug("update GitHub App installation access", log.Int32("accountID", acct.ID))
+		bcctLogger.Debug("updbte GitHub App instbllbtion bccess", log.Int32("bccountID", bcct.ID))
 
-		// FetchUserPerms makes API requests using a client that will deal with the token
-		// expiration and try to refresh it when necessary. If the client fails to update
-		// the token, or if the token is revoked, the "401 Unauthorized" error will be
-		// handled here.
-		extPerms, err := provider.FetchUserPerms(ctx, acct, fetchOpts)
-		results.providerStates = append(results.providerStates, database.NewProviderStatus(provider, err, "FetchUserPerms"))
+		// FetchUserPerms mbkes API requests using b client thbt will debl with the token
+		// expirbtion bnd try to refresh it when necessbry. If the client fbils to updbte
+		// the token, or if the token is revoked, the "401 Unbuthorized" error will be
+		// hbndled here.
+		extPerms, err := provider.FetchUserPerms(ctx, bcct, fetchOpts)
+		results.providerStbtes = bppend(results.providerStbtes, dbtbbbse.NewProviderStbtus(provider, err, "FetchUserPerms"))
 		if err != nil {
-			acctLogger.Debug("error fetching user permissions", log.Error(err))
+			bcctLogger.Debug("error fetching user permissions", log.Error(err))
 
-			unauthorized := errcode.IsUnauthorized(err)
+			unbuthorized := errcode.IsUnbuthorized(err)
 			forbidden := errcode.IsForbidden(err)
-			// Detect GitHub account suspension error.
-			accountSuspended := errcode.IsAccountSuspended(err)
-			if unauthorized || accountSuspended || forbidden {
-				// These are fatal errors that mean we should continue as if the account no
-				// longer has any access.
-				if err = accounts.TouchExpired(ctx, acct.ID); err != nil {
-					return results, errors.Wrapf(err, "set expired for external account ID %v", acct.ID)
+			// Detect GitHub bccount suspension error.
+			bccountSuspended := errcode.IsAccountSuspended(err)
+			if unbuthorized || bccountSuspended || forbidden {
+				// These bre fbtbl errors thbt mebn we should continue bs if the bccount no
+				// longer hbs bny bccess.
+				if err = bccounts.TouchExpired(ctx, bcct.ID); err != nil {
+					return results, errors.Wrbpf(err, "set expired for externbl bccount ID %v", bcct.ID)
 				}
 
-				if unauthorized {
-					acctLogger.Warn("setExternalAccountExpired, token is revoked",
-						log.Bool("unauthorized", unauthorized),
+				if unbuthorized {
+					bcctLogger.Wbrn("setExternblAccountExpired, token is revoked",
+						log.Bool("unbuthorized", unbuthorized),
 					)
 					continue
 				}
-				acctLogger.Debug("setExternalAccountExpired",
-					log.Bool("unauthorized", unauthorized),
-					log.Bool("accountSuspended", accountSuspended),
+				bcctLogger.Debug("setExternblAccountExpired",
+					log.Bool("unbuthorized", unbuthorized),
+					log.Bool("bccountSuspended", bccountSuspended),
 					log.Bool("forbidden", forbidden),
 				)
 
-				// We still want to continue processing other external accounts.
+				// We still wbnt to continue processing other externbl bccounts.
 				continue
 			}
 
-			// Skip this external account if unimplemented.
-			if errors.Is(err, &authz.ErrUnimplemented{}) {
+			// Skip this externbl bccount if unimplemented.
+			if errors.Is(err, &buthz.ErrUnimplemented{}) {
 				continue
 			}
 
-			if errcode.IsTemporary(err) {
-				// If we have a temporary issue, we should instead return any permissions we
-				// already know about to ensure that we don't temporarily remove access for the
-				// user because of intermittent errors.
-				acctLogger.Warn("temporary error, returning previously synced permissions", log.Error(err))
+			if errcode.IsTemporbry(err) {
+				// If we hbve b temporbry issue, we should instebd return bny permissions we
+				// blrebdy know bbout to ensure thbt we don't temporbrily remove bccess for the
+				// user becbuse of intermittent errors.
+				bcctLogger.Wbrn("temporbry error, returning previously synced permissions", log.Error(err))
 
-				extPerms = new(authz.ExternalUserPermissions)
+				extPerms = new(buthz.ExternblUserPermissions)
 
-				// Load last synced sub-repo perms for this user and provider.
+				// Lobd lbst synced sub-repo perms for this user bnd provider.
 				currentSubRepoPerms, err := s.db.SubRepoPerms().GetByUserAndService(ctx, user.ID, provider.ServiceType(), provider.ServiceID())
 				if err != nil {
-					return results, errors.Wrap(err, "fetching existing sub-repo permissions")
+					return results, errors.Wrbp(err, "fetching existing sub-repo permissions")
 				}
-				extPerms.SubRepoPermissions = make(map[extsvc.RepoID]*authz.SubRepoPermissions, len(currentSubRepoPerms))
-				for k := range currentSubRepoPerms {
+				extPerms.SubRepoPermissions = mbke(mbp[extsvc.RepoID]*buthz.SubRepoPermissions, len(currentSubRepoPerms))
+				for k := rbnge currentSubRepoPerms {
 					v := currentSubRepoPerms[k]
 					extPerms.SubRepoPermissions[extsvc.RepoID(k.ID)] = &v
 				}
 
-				// Load last synced repos for this user and account from user_repo_permissions table.
-				currentRepos, err := s.permsStore.FetchReposByExternalAccount(ctx, acct.ID)
+				// Lobd lbst synced repos for this user bnd bccount from user_repo_permissions tbble.
+				currentRepos, err := s.permsStore.FetchReposByExternblAccount(ctx, bcct.ID)
 				if err != nil {
-					return results, errors.Wrap(err, "fetching existing repo permissions")
+					return results, errors.Wrbp(err, "fetching existing repo permissions")
 				}
-				// Put all the repo IDs into the results.
-				for _, repoID := range currentRepos {
-					results.repoPerms[acct.ID] = append(results.repoPerms[acct.ID], int32(repoID))
+				// Put bll the repo IDs into the results.
+				for _, repoID := rbnge currentRepos {
+					results.repoPerms[bcct.ID] = bppend(results.repoPerms[bcct.ID], int32(repoID))
 				}
 			}
 
-			// Process partial results if this is an initial fetch.
+			// Process pbrtibl results if this is bn initibl fetch.
 			if !noPerms {
-				return results, errors.Wrapf(err, "fetch user permissions for external account %d", acct.ID)
+				return results, errors.Wrbpf(err, "fetch user permissions for externbl bccount %d", bcct.ID)
 			}
-			acctLogger.Warn("proceedWithPartialResults", log.Error(err))
+			bcctLogger.Wbrn("proceedWithPbrtiblResults", log.Error(err))
 		} else {
-			err = accounts.TouchLastValid(ctx, acct.ID)
+			err = bccounts.TouchLbstVblid(ctx, bcct.ID)
 			if err != nil {
-				return results, errors.Wrapf(err, "set last valid for external account %d", acct.ID)
+				return results, errors.Wrbpf(err, "set lbst vblid for externbl bccount %d", bcct.ID)
 			}
 		}
 
@@ -570,26 +570,26 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			continue
 		}
 
-		for _, exact := range extPerms.Exacts {
-			repoSpecs = append(repoSpecs,
-				api.ExternalRepoSpec{
-					ID:          string(exact),
+		for _, exbct := rbnge extPerms.Exbcts {
+			repoSpecs = bppend(repoSpecs,
+				bpi.ExternblRepoSpec{
+					ID:          string(exbct),
 					ServiceType: provider.ServiceType(),
 					ServiceID:   provider.ServiceID(),
 				},
 			)
 		}
 
-		// Get corresponding internal database IDs.
-		repoNames, err := s.listPrivateRepoNamesBySpecs(ctx, repoSpecs)
+		// Get corresponding internbl dbtbbbse IDs.
+		repoNbmes, err := s.listPrivbteRepoNbmesBySpecs(ctx, repoSpecs)
 		if err != nil {
-			return results, errors.Wrap(err, "list private repositories by exact matching")
+			return results, errors.Wrbp(err, "list privbte repositories by exbct mbtching")
 		}
 
-		// Record any sub-repository permissions.
-		for repoID := range extPerms.SubRepoPermissions {
-			spec := api.ExternalRepoSpec{
-				// This is safe since repoID is an extsvc.RepoID which represents the external id
+		// Record bny sub-repository permissions.
+		for repoID := rbnge extPerms.SubRepoPermissions {
+			spec := bpi.ExternblRepoSpec{
+				// This is sbfe since repoID is bn extsvc.RepoID which represents the externbl id
 				// of the repo.
 				ID:          string(repoID),
 				ServiceType: provider.ServiceType(),
@@ -598,9 +598,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			results.subRepoPerms[spec] = extPerms.SubRepoPermissions[repoID]
 		}
 
-		for _, includePrefix := range extPerms.IncludeContains {
-			includeContainsSpecs = append(includeContainsSpecs,
-				api.ExternalRepoSpec{
+		for _, includePrefix := rbnge extPerms.IncludeContbins {
+			includeContbinsSpecs = bppend(includeContbinsSpecs,
+				bpi.ExternblRepoSpec{
 					ID:          string(includePrefix),
 					ServiceType: provider.ServiceType(),
 					ServiceID:   provider.ServiceID(),
@@ -608,9 +608,9 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			)
 		}
 
-		for _, excludePrefix := range extPerms.ExcludeContains {
-			excludeContainsSpecs = append(excludeContainsSpecs,
-				api.ExternalRepoSpec{
+		for _, excludePrefix := rbnge extPerms.ExcludeContbins {
+			excludeContbinsSpecs = bppend(excludeContbinsSpecs,
+				bpi.ExternblRepoSpec{
 					ID:          string(excludePrefix),
 					ServiceType: provider.ServiceType(),
 					ServiceID:   provider.ServiceID(),
@@ -618,122 +618,122 @@ func (s *PermsSyncer) fetchUserPermsViaExternalAccounts(ctx context.Context, use
 			)
 		}
 
-		// Exclusions are relative to inclusions, so if there is no inclusion, exclusion
-		// are meaningless and no need to trigger a DB query.
-		if len(includeContainsSpecs) > 0 {
-			rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
-				database.ReposListOptions{
-					ExternalRepoIncludeContains: includeContainsSpecs,
-					ExternalRepoExcludeContains: excludeContainsSpecs,
-					OnlyPrivate:                 true,
+		// Exclusions bre relbtive to inclusions, so if there is no inclusion, exclusion
+		// bre mebningless bnd no need to trigger b DB query.
+		if len(includeContbinsSpecs) > 0 {
+			rs, err := s.reposStore.RepoStore().ListMinimblRepos(ctx,
+				dbtbbbse.ReposListOptions{
+					ExternblRepoIncludeContbins: includeContbinsSpecs,
+					ExternblRepoExcludeContbins: excludeContbinsSpecs,
+					OnlyPrivbte:                 true,
 				},
 			)
 			if err != nil {
-				return results, errors.Wrap(err, "list external repositories by contains matching")
+				return results, errors.Wrbp(err, "list externbl repositories by contbins mbtching")
 			}
-			repoNames = append(repoNames, rs...)
+			repoNbmes = bppend(repoNbmes, rs...)
 		}
 
-		// repoIDs represents repos the user is allowed to read.
-		if len(results.repoPerms[acct.ID]) == 0 {
-			// We may already have some repos if we hit a temporary error above in which case
-			// we don't want to clear it out.
-			results.repoPerms[acct.ID] = make([]int32, 0, len(repoNames))
+		// repoIDs represents repos the user is bllowed to rebd.
+		if len(results.repoPerms[bcct.ID]) == 0 {
+			// We mby blrebdy hbve some repos if we hit b temporbry error bbove in which cbse
+			// we don't wbnt to clebr it out.
+			results.repoPerms[bcct.ID] = mbke([]int32, 0, len(repoNbmes))
 		}
-		for _, r := range repoNames {
-			results.repoPerms[acct.ID] = append(results.repoPerms[acct.ID], int32(r.ID))
+		for _, r := rbnge repoNbmes {
+			results.repoPerms[bcct.ID] = bppend(results.repoPerms[bcct.ID], int32(r.ID))
 		}
 	}
 
 	return results, nil
 }
 
-// listPrivateRepoNamesBySpecs slices over the `repoSpecs` at pace of 10000
-// elements at a time to workaround Postgres' limit of 65535 bind parameters
-// using exact name matching. This method only includes private repository names
-// and does not do deduplication on the returned list.
-func (s *PermsSyncer) listPrivateRepoNamesBySpecs(ctx context.Context, repoSpecs []api.ExternalRepoSpec) ([]types.MinimalRepo, error) {
+// listPrivbteRepoNbmesBySpecs slices over the `repoSpecs` bt pbce of 10000
+// elements bt b time to workbround Postgres' limit of 65535 bind pbrbmeters
+// using exbct nbme mbtching. This method only includes privbte repository nbmes
+// bnd does not do deduplicbtion on the returned list.
+func (s *PermsSyncer) listPrivbteRepoNbmesBySpecs(ctx context.Context, repoSpecs []bpi.ExternblRepoSpec) ([]types.MinimblRepo, error) {
 	if len(repoSpecs) == 0 {
-		return []types.MinimalRepo{}, nil
+		return []types.MinimblRepo{}, nil
 	}
 
-	remaining := repoSpecs
+	rembining := repoSpecs
 	nextCut := 10000
-	if len(remaining) < nextCut {
-		nextCut = len(remaining)
+	if len(rembining) < nextCut {
+		nextCut = len(rembining)
 	}
 
-	repoNames := make([]types.MinimalRepo, 0, len(repoSpecs))
+	repoNbmes := mbke([]types.MinimblRepo, 0, len(repoSpecs))
 	for nextCut > 0 {
-		rs, err := s.reposStore.RepoStore().ListMinimalRepos(ctx,
-			database.ReposListOptions{
-				ExternalRepos: remaining[:nextCut],
-				OnlyPrivate:   true,
+		rs, err := s.reposStore.RepoStore().ListMinimblRepos(ctx,
+			dbtbbbse.ReposListOptions{
+				ExternblRepos: rembining[:nextCut],
+				OnlyPrivbte:   true,
 			},
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		repoNames = append(repoNames, rs...)
+		repoNbmes = bppend(repoNbmes, rs...)
 
-		remaining = remaining[nextCut:]
-		if len(remaining) < nextCut {
-			nextCut = len(remaining)
+		rembining = rembining[nextCut:]
+		if len(rembining) < nextCut {
+			nextCut = len(rembining)
 		}
 	}
-	return repoNames, nil
+	return repoNbmes, nil
 }
 
-func (s *PermsSyncer) saveUserPermsForAccount(ctx context.Context, userID int32, acctID int32, repoIDs []int32) (*database.SetPermissionsResult, error) {
-	logger := s.logger.Scoped("saveUserPermsForAccount", "saves permissions per external account").With(
+func (s *PermsSyncer) sbveUserPermsForAccount(ctx context.Context, userID int32, bcctID int32, repoIDs []int32) (*dbtbbbse.SetPermissionsResult, error) {
+	logger := s.logger.Scoped("sbveUserPermsForAccount", "sbves permissions per externbl bccount").With(
 		log.Object("user",
 			log.Int32("ID", userID),
-			log.Int32("ExternalAccountID", acctID)),
+			log.Int32("ExternblAccountID", bcctID)),
 	)
 
-	// NOTE: Please read the docstring of permsUpdateLock field for reasoning of the lock.
-	s.permsUpdateLock.Lock()
-	// Save new permissions to database.
-	defer s.permsUpdateLock.Unlock()
+	// NOTE: Plebse rebd the docstring of permsUpdbteLock field for rebsoning of the lock.
+	s.permsUpdbteLock.Lock()
+	// Sbve new permissions to dbtbbbse.
+	defer s.permsUpdbteLock.Unlock()
 
-	stats, err := s.permsStore.SetUserExternalAccountPerms(ctx, authz.UserIDWithExternalAccountID{
+	stbts, err := s.permsStore.SetUserExternblAccountPerms(ctx, buthz.UserIDWithExternblAccountID{
 		UserID:            userID,
-		ExternalAccountID: acctID,
-	}, repoIDs, authz.SourceUserSync)
+		ExternblAccountID: bcctID,
+	}, repoIDs, buthz.SourceUserSync)
 	if err != nil {
-		logger.Warn("saving perms to DB", log.Error(err))
+		logger.Wbrn("sbving perms to DB", log.Error(err))
 		return nil, err
 	}
 
-	return stats, nil
+	return stbts, nil
 }
 
-func (s *PermsSyncer) observe(ctx context.Context, name string) (context.Context, func(requestType, int32, *error)) {
-	began := s.clock()
-	tr, ctx := trace.New(ctx, name)
+func (s *PermsSyncer) observe(ctx context.Context, nbme string) (context.Context, func(requestType, int32, *error)) {
+	begbn := s.clock()
+	tr, ctx := trbce.New(ctx, nbme)
 
 	return ctx, func(typ requestType, id int32, err *error) {
 		defer tr.End()
-		tr.SetAttributes(attribute.Int64("id", int64(id)))
+		tr.SetAttributes(bttribute.Int64("id", int64(id)))
 
-		var typLabel string
+		vbr typLbbel string
 		switch typ {
-		case requestTypeRepo:
-			typLabel = "repo"
-		case requestTypeUser:
-			typLabel = "user"
-		default:
+		cbse requestTypeRepo:
+			typLbbel = "repo"
+		cbse requestTypeUser:
+			typLbbel = "user"
+		defbult:
 			tr.SetError(errors.Errorf("unexpected request type: %v", typ))
 			return
 		}
 
 		success := err == nil || *err == nil
-		metricsSyncDuration.WithLabelValues(typLabel, strconv.FormatBool(success)).Observe(time.Since(began).Seconds())
+		metricsSyncDurbtion.WithLbbelVblues(typLbbel, strconv.FormbtBool(success)).Observe(time.Since(begbn).Seconds())
 
 		if !success {
 			tr.SetError(*err)
-			metricsSyncErrors.WithLabelValues(typLabel).Inc()
+			metricsSyncErrors.WithLbbelVblues(typLbbel).Inc()
 		}
 	}
 }
@@ -742,20 +742,20 @@ func (s *PermsSyncer) observe(ctx context.Context, name string) (context.Context
 // permissions syncing is either repository-centric or user-centric.
 type requestType int
 
-// A list of request types, the larger the value, the higher the priority.
-// requestTypeUser had the highest because it is often triggered by a user action
+// A list of request types, the lbrger the vblue, the higher the priority.
+// requestTypeUser hbd the highest becbuse it is often triggered by b user bction
 // (e.g. sign up, log in).
 const (
-	requestTypeRepo requestType = iota + 1
+	requestTypeRepo requestType = iotb + 1
 	requestTypeUser
 )
 
 func (t requestType) String() string {
 	switch t {
-	case requestTypeRepo:
+	cbse requestTypeRepo:
 		return "repo"
-	case requestTypeUser:
+	cbse requestTypeUser:
 		return "user"
 	}
-	return strconv.Itoa(int(t))
+	return strconv.Itob(int(t))
 }

@@ -1,31 +1,31 @@
 // Copyright 2016 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-//go:build appengine || (!linux && !darwin && !freebsd && !openbsd && !netbsd)
-// +build appengine !linux,!darwin,!freebsd,!openbsd,!netbsd
+//go:build bppengine || (!linux && !dbrwin && !freebsd && !openbsd && !netbsd)
+// +build bppengine !linux,!dbrwin,!freebsd,!openbsd,!netbsd
 
-package fastwalk
+pbckbge fbstwblk
 
 import (
 	"os"
 )
 
-// readDir calls fn for each directory entry in dirName.
+// rebdDir cblls fn for ebch directory entry in dirNbme.
 // It does not descend into directories or follow symlinks.
-// If fn returns a non-nil error, readDir returns with that error
-// immediately.
-func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) error) error {
-	fis, err := os.ReadDir(dirName)
+// If fn returns b non-nil error, rebdDir returns with thbt error
+// immedibtely.
+func rebdDir(dirNbme string, fn func(dirNbme, entNbme string, typ os.FileMode) error) error {
+	fis, err := os.RebdDir(dirNbme)
 	if err != nil {
 		return err
 	}
-	skipFiles := false
-	for _, fi := range fis {
-		if fi.Type().IsRegular() && skipFiles {
+	skipFiles := fblse
+	for _, fi := rbnge fis {
+		if fi.Type().IsRegulbr() && skipFiles {
 			continue
 		}
-		if err := fn(dirName, fi.Name(), fi.Type()&os.ModeType); err != nil {
+		if err := fn(dirNbme, fi.Nbme(), fi.Type()&os.ModeType); err != nil {
 			if err == ErrSkipFiles {
 				skipFiles = true
 				continue

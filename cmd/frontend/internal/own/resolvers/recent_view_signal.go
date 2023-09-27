@@ -1,33 +1,33 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func computeRecentViewSignals(ctx context.Context, db database.DB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
-	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, types.SignalRecentViews)
+func computeRecentViewSignbls(ctx context.Context, db dbtbbbse.DB, pbth string, repoID bpi.RepoID) ([]rebsonAndReference, error) {
+	enbbled, err := db.OwnSignblConfigurbtions().IsEnbbled(ctx, types.SignblRecentViews)
 	if err != nil {
-		return nil, errors.Wrap(err, "IsEnabled")
+		return nil, errors.Wrbp(err, "IsEnbbled")
 	}
-	if !enabled {
+	if !enbbled {
 		return nil, nil
 	}
 
-	summaries, err := db.RecentViewSignal().List(ctx, database.ListRecentViewSignalOpts{Path: path, RepoID: repoID})
+	summbries, err := db.RecentViewSignbl().List(ctx, dbtbbbse.ListRecentViewSignblOpts{Pbth: pbth, RepoID: repoID})
 	if err != nil {
-		return nil, errors.Wrap(err, "list recent view signals")
+		return nil, errors.Wrbp(err, "list recent view signbls")
 	}
 
-	var rrs []reasonAndReference
-	for _, s := range summaries {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{recentViewsCount: s.ViewsCount},
+	vbr rrs []rebsonAndReference
+	for _, s := rbnge summbries {
+		rrs = bppend(rrs, rebsonAndReference{
+			rebson: ownershipRebson{recentViewsCount: s.ViewsCount},
 			reference: own.Reference{
 				UserID: s.UserID,
 			},
@@ -36,14 +36,14 @@ func computeRecentViewSignals(ctx context.Context, db database.DB, path string, 
 	return rrs, nil
 }
 
-type recentViewOwnershipSignal struct {
-	total int32
+type recentViewOwnershipSignbl struct {
+	totbl int32
 }
 
-func (v *recentViewOwnershipSignal) Title() (string, error) {
+func (v *recentViewOwnershipSignbl) Title() (string, error) {
 	return "recent view", nil
 }
 
-func (v *recentViewOwnershipSignal) Description() (string, error) {
-	return "Associated because they have viewed this file in the last 90 days.", nil
+func (v *recentViewOwnershipSignbl) Description() (string, error) {
+	return "Associbted becbuse they hbve viewed this file in the lbst 90 dbys.", nil
 }

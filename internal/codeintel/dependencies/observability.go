@@ -1,61 +1,61 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	listPackageRepos                 *observation.Operation
-	insertPackageRepoRefs            *observation.Operation
-	deletePackageRepoRefVersionsByID *observation.Operation
-	deletePackageRepoRefsByID        *observation.Operation
+type operbtions struct {
+	listPbckbgeRepos                 *observbtion.Operbtion
+	insertPbckbgeRepoRefs            *observbtion.Operbtion
+	deletePbckbgeRepoRefVersionsByID *observbtion.Operbtion
+	deletePbckbgeRepoRefsByID        *observbtion.Operbtion
 
-	listPackageRepoFilters  *observation.Operation
-	createPackageRepoFilter *observation.Operation
-	updatePackageRepoFilter *observation.Operation
-	deletePackageRepoFilter *observation.Operation
+	listPbckbgeRepoFilters  *observbtion.Operbtion
+	crebtePbckbgeRepoFilter *observbtion.Operbtion
+	updbtePbckbgeRepoFilter *observbtion.Operbtion
+	deletePbckbgeRepoFilter *observbtion.Operbtion
 
-	isPackageRepoVersionAllowed  *observation.Operation
-	isPackageRepoAllowed         *observation.Operation
-	pkgsOrVersionsMatchingFilter *observation.Operation
+	isPbckbgeRepoVersionAllowed  *observbtion.Operbtion
+	isPbckbgeRepoAllowed         *observbtion.Operbtion
+	pkgsOrVersionsMbtchingFilter *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
+			observbtionCtx.Registerer,
 			"codeintel_dependencies",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.dependencies.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.dependencies.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		listPackageRepos:                 op("ListPackageRepoRefs"),
-		insertPackageRepoRefs:            op("InsertPackageRepoRefs"),
-		deletePackageRepoRefVersionsByID: op("DeletePackageRepoRefVersionsByID"),
-		deletePackageRepoRefsByID:        op("DeletePackageRepoRefsByID"),
+	return &operbtions{
+		listPbckbgeRepos:                 op("ListPbckbgeRepoRefs"),
+		insertPbckbgeRepoRefs:            op("InsertPbckbgeRepoRefs"),
+		deletePbckbgeRepoRefVersionsByID: op("DeletePbckbgeRepoRefVersionsByID"),
+		deletePbckbgeRepoRefsByID:        op("DeletePbckbgeRepoRefsByID"),
 
-		listPackageRepoFilters:  op("ListPackageRepoFilters"),
-		createPackageRepoFilter: op("CreatePackageRepoFilter"),
-		updatePackageRepoFilter: op("UpdatePackageRepoFilter"),
-		deletePackageRepoFilter: op("DeletePackageRepoFilter"),
+		listPbckbgeRepoFilters:  op("ListPbckbgeRepoFilters"),
+		crebtePbckbgeRepoFilter: op("CrebtePbckbgeRepoFilter"),
+		updbtePbckbgeRepoFilter: op("UpdbtePbckbgeRepoFilter"),
+		deletePbckbgeRepoFilter: op("DeletePbckbgeRepoFilter"),
 
-		isPackageRepoVersionAllowed:  op("IsPackageRepoVersionAllowed"),
-		isPackageRepoAllowed:         op("IsPackageRepoAllowed"),
-		pkgsOrVersionsMatchingFilter: op("PkgsOrVersionsMatchingFilter"),
+		isPbckbgeRepoVersionAllowed:  op("IsPbckbgeRepoVersionAllowed"),
+		isPbckbgeRepoAllowed:         op("IsPbckbgeRepoAllowed"),
+		pkgsOrVersionsMbtchingFilter: op("PkgsOrVersionsMbtchingFilter"),
 	}
 }

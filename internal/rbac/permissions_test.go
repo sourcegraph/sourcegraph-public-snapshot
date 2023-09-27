@@ -1,4 +1,4 @@
-package rbac
+pbckbge rbbc
 
 import (
 	"testing"
@@ -7,101 +7,101 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestComparePermissions(t *testing.T) {
+func TestCompbrePermissions(t *testing.T) {
 	dbPerms := []*types.Permission{
-		{ID: 1, Namespace: "TEST-NAMESPACE", Action: "READ"},
-		{ID: 2, Namespace: "TEST-NAMESPACE", Action: "WRITE"},
-		{ID: 3, Namespace: "TEST-NAMESPACE-2", Action: "READ"},
-		{ID: 4, Namespace: "TEST-NAMESPACE-2", Action: "WRITE"},
-		{ID: 5, Namespace: "TEST-NAMESPACE-3", Action: "READ"},
+		{ID: 1, Nbmespbce: "TEST-NAMESPACE", Action: "READ"},
+		{ID: 2, Nbmespbce: "TEST-NAMESPACE", Action: "WRITE"},
+		{ID: 3, Nbmespbce: "TEST-NAMESPACE-2", Action: "READ"},
+		{ID: 4, Nbmespbce: "TEST-NAMESPACE-2", Action: "WRITE"},
+		{ID: 5, Nbmespbce: "TEST-NAMESPACE-3", Action: "READ"},
 	}
 
-	t.Run("no changes to permissions", func(t *testing.T) {
-		schemaPerms := Schema{
-			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"READ"}},
+	t.Run("no chbnges to permissions", func(t *testing.T) {
+		schembPerms := Schemb{
+			Nbmespbces: []Nbmespbce{
+				{Nbme: "TEST-NAMESPACE", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
+				{Nbme: "TEST-NAMESPACE-2", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
+				{Nbme: "TEST-NAMESPACE-3", Actions: []rtypes.NbmespbceAction{"READ"}},
 			},
 		}
 
-		added, deleted := ComparePermissions(dbPerms, schemaPerms)
+		bdded, deleted := CompbrePermissions(dbPerms, schembPerms)
 
-		require.Len(t, added, 0)
+		require.Len(t, bdded, 0)
 		require.Len(t, deleted, 0)
 	})
 
 	t.Run("permissions deleted", func(t *testing.T) {
-		schemaPerms := Schema{
-			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ"}},
+		schembPerms := Schemb{
+			Nbmespbces: []Nbmespbce{
+				{Nbme: "TEST-NAMESPACE", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
+				{Nbme: "TEST-NAMESPACE-2", Actions: []rtypes.NbmespbceAction{"READ"}},
 			},
 		}
 
-		want := []database.DeletePermissionOpts{
+		wbnt := []dbtbbbse.DeletePermissionOpts{
 			{ID: int32(4)},
 			{ID: int32(5)},
 		}
 
-		added, deleted := ComparePermissions(dbPerms, schemaPerms)
+		bdded, deleted := CompbrePermissions(dbPerms, schembPerms)
 
-		require.Len(t, added, 0)
+		require.Len(t, bdded, 0)
 		require.Len(t, deleted, 2)
-		if diff := cmp.Diff(want, deleted, cmpopts.SortSlices(sortDeletePermissionOptSlice)); diff != "" {
+		if diff := cmp.Diff(wbnt, deleted, cmpopts.SortSlices(sortDeletePermissionOptSlice)); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("permissions added", func(t *testing.T) {
-		schemaPerms := Schema{
-			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE", "EXECUTE"}},
-				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
-				{Name: "TEST-NAMESPACE-4", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+	t.Run("permissions bdded", func(t *testing.T) {
+		schembPerms := Schemb{
+			Nbmespbces: []Nbmespbce{
+				{Nbme: "TEST-NAMESPACE", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
+				{Nbme: "TEST-NAMESPACE-2", Actions: []rtypes.NbmespbceAction{"READ", "WRITE", "EXECUTE"}},
+				{Nbme: "TEST-NAMESPACE-3", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
+				{Nbme: "TEST-NAMESPACE-4", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
 			},
 		}
 
-		want := []database.CreatePermissionOpts{
-			{Namespace: "TEST-NAMESPACE-2", Action: "EXECUTE"},
-			{Namespace: "TEST-NAMESPACE-3", Action: "WRITE"},
-			{Namespace: "TEST-NAMESPACE-4", Action: "READ"},
-			{Namespace: "TEST-NAMESPACE-4", Action: "WRITE"},
+		wbnt := []dbtbbbse.CrebtePermissionOpts{
+			{Nbmespbce: "TEST-NAMESPACE-2", Action: "EXECUTE"},
+			{Nbmespbce: "TEST-NAMESPACE-3", Action: "WRITE"},
+			{Nbmespbce: "TEST-NAMESPACE-4", Action: "READ"},
+			{Nbmespbce: "TEST-NAMESPACE-4", Action: "WRITE"},
 		}
 
-		added, deleted := ComparePermissions(dbPerms, schemaPerms)
+		bdded, deleted := CompbrePermissions(dbPerms, schembPerms)
 
-		require.Len(t, added, 4)
+		require.Len(t, bdded, 4)
 		require.Len(t, deleted, 0)
-		if diff := cmp.Diff(want, added); diff != "" {
+		if diff := cmp.Diff(wbnt, bdded); diff != "" {
 			t.Error(diff)
 		}
 	})
 
-	t.Run("permissions deleted and added", func(t *testing.T) {
-		schemaPerms := Schema{
-			Namespaces: []Namespace{
-				{Name: "TEST-NAMESPACE", Actions: []rtypes.NamespaceAction{"READ"}},
-				{Name: "TEST-NAMESPACE-2", Actions: []rtypes.NamespaceAction{"READ", "WRITE", "EXECUTE"}},
-				{Name: "TEST-NAMESPACE-3", Actions: []rtypes.NamespaceAction{"WRITE"}},
-				{Name: "TEST-NAMESPACE-4", Actions: []rtypes.NamespaceAction{"READ", "WRITE"}},
+	t.Run("permissions deleted bnd bdded", func(t *testing.T) {
+		schembPerms := Schemb{
+			Nbmespbces: []Nbmespbce{
+				{Nbme: "TEST-NAMESPACE", Actions: []rtypes.NbmespbceAction{"READ"}},
+				{Nbme: "TEST-NAMESPACE-2", Actions: []rtypes.NbmespbceAction{"READ", "WRITE", "EXECUTE"}},
+				{Nbme: "TEST-NAMESPACE-3", Actions: []rtypes.NbmespbceAction{"WRITE"}},
+				{Nbme: "TEST-NAMESPACE-4", Actions: []rtypes.NbmespbceAction{"READ", "WRITE"}},
 			},
 		}
 
-		wantAdded := []database.CreatePermissionOpts{
-			{Namespace: "TEST-NAMESPACE-2", Action: "EXECUTE"},
-			{Namespace: "TEST-NAMESPACE-3", Action: "WRITE"},
-			{Namespace: "TEST-NAMESPACE-4", Action: "READ"},
-			{Namespace: "TEST-NAMESPACE-4", Action: "WRITE"},
+		wbntAdded := []dbtbbbse.CrebtePermissionOpts{
+			{Nbmespbce: "TEST-NAMESPACE-2", Action: "EXECUTE"},
+			{Nbmespbce: "TEST-NAMESPACE-3", Action: "WRITE"},
+			{Nbmespbce: "TEST-NAMESPACE-4", Action: "READ"},
+			{Nbmespbce: "TEST-NAMESPACE-4", Action: "WRITE"},
 		}
 
-		wantDeleted := []database.DeletePermissionOpts{
+		wbntDeleted := []dbtbbbse.DeletePermissionOpts{
 			// Represents TEST-NAMESPACE-3#READ
 			{ID: 5},
 			// Represents TEST-NAMESPACE#WRITE
@@ -109,19 +109,19 @@ func TestComparePermissions(t *testing.T) {
 		}
 
 		// do stuff
-		added, deleted := ComparePermissions(dbPerms, schemaPerms)
+		bdded, deleted := CompbrePermissions(dbPerms, schembPerms)
 
-		require.Len(t, added, 4)
-		if diff := cmp.Diff(wantAdded, added); diff != "" {
+		require.Len(t, bdded, 4)
+		if diff := cmp.Diff(wbntAdded, bdded); diff != "" {
 			t.Error(diff)
 		}
 
 		require.Len(t, deleted, 2)
-		less := func(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
-		if diff := cmp.Diff(wantDeleted, deleted, cmpopts.SortSlices(less)); diff != "" {
+		less := func(b, b dbtbbbse.DeletePermissionOpts) bool { return b.ID < b.ID }
+		if diff := cmp.Diff(wbntDeleted, deleted, cmpopts.SortSlices(less)); diff != "" {
 			t.Error(diff)
 		}
 	})
 }
 
-func sortDeletePermissionOptSlice(a, b database.DeletePermissionOpts) bool { return a.ID < b.ID }
+func sortDeletePermissionOptSlice(b, b dbtbbbse.DeletePermissionOpts) bool { return b.ID < b.ID }

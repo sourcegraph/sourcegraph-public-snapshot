@@ -1,61 +1,61 @@
-package npm
+pbckbge npm
 
 import (
 	"fmt"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	fetchSources *observation.Operation
-	exists       *observation.Operation
-	runCommand   *observation.Operation
+type operbtions struct {
+	fetchSources *observbtion.Operbtion
+	exists       *observbtion.Operbtion
+	runCommbnd   *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
+		observbtionCtx.Registerer,
 		"codeintel_npm",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.npm.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.npm.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				if err != nil && strings.Contains(err.Error(), "not found") {
-					return observation.EmitForMetrics | observation.EmitForTraces
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				if err != nil && strings.Contbins(err.Error(), "not found") {
+					return observbtion.EmitForMetrics | observbtion.EmitForTrbces
 				}
-				return observation.EmitForDefault
+				return observbtion.EmitForDefbult
 			},
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		fetchSources: op("FetchSources"),
 		exists:       op("Exists"),
-		runCommand:   op("RunCommand"),
+		runCommbnd:   op("RunCommbnd"),
 	}
 }
 
-var (
-	ops     *operations
+vbr (
+	ops     *operbtions
 	opsOnce sync.Once
 )
 
-func getOperations() *operations {
+func getOperbtions() *operbtions {
 	opsOnce.Do(func() {
-		observationCtx := observation.NewContext(log.Scoped("npm", ""))
+		observbtionCtx := observbtion.NewContext(log.Scoped("npm", ""))
 
-		ops = newOperations(observationCtx)
+		ops = newOperbtions(observbtionCtx)
 	})
 
 	return ops

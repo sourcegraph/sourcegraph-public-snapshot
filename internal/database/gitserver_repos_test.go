@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -9,401 +9,401 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
 )
 
-const shardID = "test"
+const shbrdID = "test"
 
-func TestIterateRepoGitserverStatus(t *testing.T) {
+func TestIterbteRepoGitserverStbtus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	repos := types.Repos{
-		&types.Repo{Name: "github.com/sourcegraph/repo1"},
-		&types.Repo{Name: "github.com/sourcegraph/repo2"},
-		&types.Repo{Name: "github.com/sourcegraph/repo3"},
+		&types.Repo{Nbme: "github.com/sourcegrbph/repo1"},
+		&types.Repo{Nbme: "github.com/sourcegrbph/repo2"},
+		&types.Repo{Nbme: "github.com/sourcegrbph/repo3"},
 	}
-	createTestRepos(ctx, t, db, repos)
+	crebteTestRepos(ctx, t, db, repos)
 
 	// Soft delete one of the repos
 	if err := db.Repos().Delete(ctx, repos[2].ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
+	if err := db.GitserverRepos().Updbte(ctx, &types.GitserverRepo{
 		RepoID:      repos[0].ID,
-		ShardID:     "shard-0",
-		CloneStatus: types.CloneStatusCloned,
+		ShbrdID:     "shbrd-0",
+		CloneStbtus: types.CloneStbtusCloned,
 	}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	assert := func(t *testing.T, wantRepoCount, wantStatusCount int, options IterateRepoGitserverStatusOptions) {
-		var statusCount int
-		var seen []api.RepoName
-		var iterationCount int
-		// Test iteration path with 1 per page.
-		options.BatchSize = 1
+	bssert := func(t *testing.T, wbntRepoCount, wbntStbtusCount int, options IterbteRepoGitserverStbtusOptions) {
+		vbr stbtusCount int
+		vbr seen []bpi.RepoNbme
+		vbr iterbtionCount int
+		// Test iterbtion pbth with 1 per pbge.
+		options.BbtchSize = 1
 		for {
 
-			repos, nextCursor, err := db.GitserverRepos().IterateRepoGitserverStatus(ctx, options)
+			repos, nextCursor, err := db.GitserverRepos().IterbteRepoGitserverStbtus(ctx, options)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			for _, repo := range repos {
-				seen = append(seen, repo.Name)
-				statusCount++
+			for _, repo := rbnge repos {
+				seen = bppend(seen, repo.Nbme)
+				stbtusCount++
 				if repo.GitserverRepo.RepoID == 0 {
-					t.Fatal("GitServerRepo has zero id")
+					t.Fbtbl("GitServerRepo hbs zero id")
 				}
 			}
 			if nextCursor == 0 {
-				break
+				brebk
 			}
 			options.NextCursor = nextCursor
 
-			iterationCount++
-			if iterationCount > 50 {
-				t.Fatal("infinite iteration loop")
+			iterbtionCount++
+			if iterbtionCount > 50 {
+				t.Fbtbl("infinite iterbtion loop")
 			}
 		}
 
 		t.Logf("Seen: %v", seen)
-		if len(seen) != wantRepoCount {
-			t.Fatalf("Expected %d repos, got %d", wantRepoCount, len(seen))
+		if len(seen) != wbntRepoCount {
+			t.Fbtblf("Expected %d repos, got %d", wbntRepoCount, len(seen))
 		}
 
-		if statusCount != wantStatusCount {
-			t.Fatalf("Expected %d statuses, got %d", wantStatusCount, statusCount)
+		if stbtusCount != wbntStbtusCount {
+			t.Fbtblf("Expected %d stbtuses, got %d", wbntStbtusCount, stbtusCount)
 		}
 	}
 
-	t.Run("iterate with default options", func(t *testing.T) {
-		assert(t, 2, 2, IterateRepoGitserverStatusOptions{})
+	t.Run("iterbte with defbult options", func(t *testing.T) {
+		bssert(t, 2, 2, IterbteRepoGitserverStbtusOptions{})
 	})
-	t.Run("iterate only repos without shard", func(t *testing.T) {
-		assert(t, 1, 1, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true})
+	t.Run("iterbte only repos without shbrd", func(t *testing.T) {
+		bssert(t, 1, 1, IterbteRepoGitserverStbtusOptions{OnlyWithoutShbrd: true})
 	})
 	t.Run("include deleted", func(t *testing.T) {
-		assert(t, 3, 3, IterateRepoGitserverStatusOptions{IncludeDeleted: true})
+		bssert(t, 3, 3, IterbteRepoGitserverStbtusOptions{IncludeDeleted: true})
 	})
-	t.Run("include deleted, but still only without shard", func(t *testing.T) {
-		assert(t, 2, 2, IterateRepoGitserverStatusOptions{OnlyWithoutShard: true, IncludeDeleted: true})
+	t.Run("include deleted, but still only without shbrd", func(t *testing.T) {
+		bssert(t, 2, 2, IterbteRepoGitserverStbtusOptions{OnlyWithoutShbrd: true, IncludeDeleted: true})
 	})
 }
 
-func TestIteratePurgeableRepos(t *testing.T) {
-	ctx := context.Background()
+func TestIterbtePurgebbleRepos(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := basestore.NewWithHandle(db.Handle())
+	store := bbsestore.NewWithHbndle(db.Hbndle())
 
-	normalRepo := &types.Repo{Name: "normal"}
-	blockedRepo := &types.Repo{Name: "blocked"}
-	deletedRepo := &types.Repo{Name: "deleted"}
-	notCloned := &types.Repo{Name: "notCloned"}
+	normblRepo := &types.Repo{Nbme: "normbl"}
+	blockedRepo := &types.Repo{Nbme: "blocked"}
+	deletedRepo := &types.Repo{Nbme: "deleted"}
+	notCloned := &types.Repo{Nbme: "notCloned"}
 
-	createTestRepos(ctx, t, db, types.Repos{
-		normalRepo,
+	crebteTestRepos(ctx, t, db, types.Repos{
+		normblRepo,
 		blockedRepo,
 		deletedRepo,
 		notCloned,
 	})
-	for _, repo := range []*types.Repo{normalRepo, blockedRepo, deletedRepo} {
-		updateTestGitserverRepos(ctx, t, db, false, types.CloneStatusCloned, repo.ID)
+	for _, repo := rbnge []*types.Repo{normblRepo, blockedRepo, deletedRepo} {
+		updbteTestGitserverRepos(ctx, t, db, fblse, types.CloneStbtusCloned, repo.ID)
 	}
-	// Delete & load soft-deleted name of repo
+	// Delete & lobd soft-deleted nbme of repo
 	if err := db.Repos().Delete(ctx, deletedRepo.ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	deletedRepoNameStr, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf("SELECT name FROM repo WHERE id = %s", deletedRepo.ID)))
+	deletedRepoNbmeStr, _, err := bbsestore.ScbnFirstString(store.Query(ctx, sqlf.Sprintf("SELECT nbme FROM repo WHERE id = %s", deletedRepo.ID)))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	deletedRepoName := api.RepoName(deletedRepoNameStr)
+	deletedRepoNbme := bpi.RepoNbme(deletedRepoNbmeStr)
 
-	// Blocking a repo is currently done manually
+	// Blocking b repo is currently done mbnublly
 	if _, err := db.ExecContext(ctx, `UPDATE repo set blocked = '{}' WHERE id = $1`, blockedRepo.ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, tt := range []struct {
-		name      string
-		options   IteratePurgableReposOptions
-		wantRepos []api.RepoName
+	for _, tt := rbnge []struct {
+		nbme      string
+		options   IterbtePurgbbleReposOptions
+		wbntRepos []bpi.RepoNbme
 	}{
 		{
-			name: "zero deletedBefore",
-			options: IteratePurgableReposOptions{
+			nbme: "zero deletedBefore",
+			options: IterbtePurgbbleReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         0,
 			},
-			wantRepos: []api.RepoName{deletedRepoName, blockedRepo.Name},
+			wbntRepos: []bpi.RepoNbme{deletedRepoNbme, blockedRepo.Nbme},
 		},
 		{
-			name: "deletedBefore now",
-			options: IteratePurgableReposOptions{
+			nbme: "deletedBefore now",
+			options: IterbtePurgbbleReposOptions{
 				DeletedBefore: time.Now(),
 				Limit:         0,
 			},
 
-			wantRepos: []api.RepoName{deletedRepoName, blockedRepo.Name},
+			wbntRepos: []bpi.RepoNbme{deletedRepoNbme, blockedRepo.Nbme},
 		},
 		{
-			name: "deletedBefore 5 minutes ago",
-			options: IteratePurgableReposOptions{
+			nbme: "deletedBefore 5 minutes bgo",
+			options: IterbtePurgbbleReposOptions{
 				DeletedBefore: time.Now().Add(-5 * time.Minute),
 				Limit:         0,
 			},
-			wantRepos: []api.RepoName{blockedRepo.Name},
+			wbntRepos: []bpi.RepoNbme{blockedRepo.Nbme},
 		},
 		{
-			name: "test limit",
-			options: IteratePurgableReposOptions{
+			nbme: "test limit",
+			options: IterbtePurgbbleReposOptions{
 				DeletedBefore: time.Time{},
 				Limit:         1,
 			},
-			wantRepos: []api.RepoName{deletedRepoName},
+			wbntRepos: []bpi.RepoNbme{deletedRepoNbme},
 		},
 	} {
-		t.Run(tt.name, func(t *testing.T) {
-			var have []api.RepoName
-			if err := db.GitserverRepos().IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
-				have = append(have, repo)
+		t.Run(tt.nbme, func(t *testing.T) {
+			vbr hbve []bpi.RepoNbme
+			if err := db.GitserverRepos().IterbtePurgebbleRepos(ctx, tt.options, func(repo bpi.RepoNbme) error {
+				hbve = bppend(hbve, repo)
 				return nil
 			}); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
+			sort.Slice(hbve, func(i, j int) bool { return hbve[i] < hbve[j] })
 
-			if diff := cmp.Diff(have, tt.wantRepos); diff != "" {
-				t.Fatalf("wrong iterated: %s", diff)
+			if diff := cmp.Diff(hbve, tt.wbntRepos); diff != "" {
+				t.Fbtblf("wrong iterbted: %s", diff)
 			}
 		})
 	}
 }
 
-func TestListReposWithLastError(t *testing.T) {
+func TestListReposWithLbstError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	type testRepo struct {
-		name         string
-		cloudDefault bool
-		hasLastError bool
+		nbme         string
+		cloudDefbult bool
+		hbsLbstError bool
 	}
-	type testCase struct {
-		name               string
+	type testCbse struct {
+		nbme               string
 		testRepos          []testRepo
-		expectedReposFound []api.RepoName
+		expectedReposFound []bpi.RepoNbme
 	}
-	testCases := []testCase{
+	testCbses := []testCbse{
 		{
-			name: "get repos with last error",
+			nbme: "get repos with lbst error",
 			testRepos: []testRepo{
 				{
-					name:         "github.com/sourcegraph/repo1",
-					cloudDefault: true,
-					hasLastError: true,
+					nbme:         "github.com/sourcegrbph/repo1",
+					cloudDefbult: true,
+					hbsLbstError: true,
 				},
 				{
-					name:         "github.com/sourcegraph/repo2",
-					cloudDefault: true,
+					nbme:         "github.com/sourcegrbph/repo2",
+					cloudDefbult: true,
 				},
 			},
-			expectedReposFound: []api.RepoName{"github.com/sourcegraph/repo1"},
+			expectedReposFound: []bpi.RepoNbme{"github.com/sourcegrbph/repo1"},
 		},
 		{
-			name: "filter out non cloud_default repos",
+			nbme: "filter out non cloud_defbult repos",
 			testRepos: []testRepo{
 				{
-					name:         "github.com/sourcegraph/repo1",
-					cloudDefault: false,
-					hasLastError: true,
+					nbme:         "github.com/sourcegrbph/repo1",
+					cloudDefbult: fblse,
+					hbsLbstError: true,
 				},
 				{
-					name:         "github.com/sourcegraph/repo2",
-					cloudDefault: true,
-					hasLastError: true,
+					nbme:         "github.com/sourcegrbph/repo2",
+					cloudDefbult: true,
+					hbsLbstError: true,
 				},
 			},
-			expectedReposFound: []api.RepoName{"github.com/sourcegraph/repo2"},
+			expectedReposFound: []bpi.RepoNbme{"github.com/sourcegrbph/repo2"},
 		},
 		{
-			name: "no cloud_default repos with non-empty last errors",
+			nbme: "no cloud_defbult repos with non-empty lbst errors",
 			testRepos: []testRepo{
 				{
-					name:         "github.com/sourcegraph/repo1",
-					cloudDefault: false,
-					hasLastError: true,
+					nbme:         "github.com/sourcegrbph/repo1",
+					cloudDefbult: fblse,
+					hbsLbstError: true,
 				},
 				{
-					name:         "github.com/sourcegraph/repo2",
-					cloudDefault: true,
-					hasLastError: false,
+					nbme:         "github.com/sourcegrbph/repo2",
+					cloudDefbult: true,
+					hbsLbstError: fblse,
 				},
 			},
 			expectedReposFound: nil,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
 			logger := logtest.Scoped(t)
 			db := NewDB(logger, dbtest.NewDB(logger, t))
 			now := time.Now()
 
-			cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
-			nonCloudDefaultService := createTestExternalService(ctx, t, now, db, false)
-			for i, tr := range tc.testRepos {
+			cloudDefbultService := crebteTestExternblService(ctx, t, now, db, true)
+			nonCloudDefbultService := crebteTestExternblService(ctx, t, now, db, fblse)
+			for i, tr := rbnge tc.testRepos {
 				testRepo := &types.Repo{
-					Name:        api.RepoName(tr.name),
-					URI:         tr.name,
+					Nbme:        bpi.RepoNbme(tr.nbme),
+					URI:         tr.nbme,
 					Description: "",
-					ExternalRepo: api.ExternalRepoSpec{
-						ID:          fmt.Sprintf("repo%d-external", i),
+					ExternblRepo: bpi.ExternblRepoSpec{
+						ID:          fmt.Sprintf("repo%d-externbl", i),
 						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 					},
 				}
-				if tr.cloudDefault {
+				if tr.cloudDefbult {
 					testRepo = testRepo.With(
-						typestest.Opt.RepoSources(cloudDefaultService.URN()),
+						typestest.Opt.RepoSources(cloudDefbultService.URN()),
 					)
 				} else {
 					testRepo = testRepo.With(
-						typestest.Opt.RepoSources(nonCloudDefaultService.URN()),
+						typestest.Opt.RepoSources(nonCloudDefbultService.URN()),
 					)
 				}
-				createTestRepos(ctx, t, db, types.Repos{testRepo})
+				crebteTestRepos(ctx, t, db, types.Repos{testRepo})
 
-				if tr.hasLastError {
-					if err := db.GitserverRepos().SetLastError(ctx, testRepo.Name, "an error", "test"); err != nil {
-						t.Fatal(err)
+				if tr.hbsLbstError {
+					if err := db.GitserverRepos().SetLbstError(ctx, testRepo.Nbme, "bn error", "test"); err != nil {
+						t.Fbtbl(err)
 					}
 				}
 			}
 
-			// Iterate and collect repos
-			foundRepos, err := db.GitserverRepos().ListReposWithLastError(ctx)
+			// Iterbte bnd collect repos
+			foundRepos, err := db.GitserverRepos().ListReposWithLbstError(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if diff := cmp.Diff(tc.expectedReposFound, foundRepos); diff != "" {
-				t.Fatalf("mismatch in expected repos with last_error, (-want, +got)\n%s", diff)
+				t.Fbtblf("mismbtch in expected repos with lbst_error, (-wbnt, +got)\n%s", diff)
 			}
 
-			total, err := db.GitserverRepos().TotalErroredCloudDefaultRepos(ctx)
+			totbl, err := db.GitserverRepos().TotblErroredCloudDefbultRepos(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if total != len(tc.expectedReposFound) {
-				t.Fatalf("expected %d total errored repos, got %d instead", len(tc.expectedReposFound), total)
+			if totbl != len(tc.expectedReposFound) {
+				t.Fbtblf("expected %d totbl errored repos, got %d instebd", len(tc.expectedReposFound), totbl)
 			}
 		})
 	}
 }
 
-func TestReposWithLastOutput(t *testing.T) {
+func TestReposWithLbstOutput(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	type testRepo struct {
 		title      string
-		name       string
-		lastOutput string
+		nbme       string
+		lbstOutput string
 	}
 	testRepos := []testRepo{
 		{
-			title:      "1kb-last-output",
-			name:       "github.com/sourcegraph/repo1",
-			lastOutput: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.\nNulla tincidunt at turpis ut rhoncus.\nQuisque sollicitudin bibendum libero a interdum.\nMauris efficitur, nunc ac consectetur dapibus, tortor velit sollicitudin justo, varius faucibus purus tellus eu ex.\nProin bibendum feugiat ornare..\nDonec placerat vestibulum hendrerit.\nInteger quis mattis justo.\nFusce eu arcu mollis magna rutrum porttitor.\nUt quis tristique enim..\nDonec suscipit nisl sit amet nulla cursus, ac vulputate justo ornare.\nNam non nisl aliquam, porta ligula vitae, sodales sapien.\nVestibulum et dictum tortor.\nAenean nec risus ac justo luctus posuere et in massa.\nVivamus nec ultricies est, a pulvinar ante.\nSed semper rutrum lorem.\nNulla ut metus ornare, dapibus justo et, sagittis lacus.\nIn massa felis, pellentesque pretium mauris id, pretium pellentesque augue.\nNulla feugiat est sit amet ex rhoncus, ut dapibus massa viverra.\nSuspendisse ullamcorper orci nec mauris vulputate vestibulum.\nInteger luctus tincidunt augue, ut congue neque dapibus sit amet.\nEtiam eu justo in dui ornare ultricies.\nNam fermentum ultricies sagittis.\nMorbi ultricies maximus tortor ut aliquet.\nNullam eget venenatis nunc.\nNam ultricies neque ac blandit eleifend.\nPhasellus pharetra, augue ac semper feugiat, lorem nulla consectetur purus, nec malesuada nisi sem id erat.\nFusce mollis, est vel maximus convallis, eros magna convallis turpis, ac fermentum ipsum nulla in mi.",
+			title:      "1kb-lbst-output",
+			nbme:       "github.com/sourcegrbph/repo1",
+			lbstOutput: "Lorem ipsum dolor sit bmet, consectetur bdipiscing elit.\nNullb tincidunt bt turpis ut rhoncus.\nQuisque sollicitudin bibendum libero b interdum.\nMburis efficitur, nunc bc consectetur dbpibus, tortor velit sollicitudin justo, vbrius fbucibus purus tellus eu ex.\nProin bibendum feugibt ornbre..\nDonec plbcerbt vestibulum hendrerit.\nInteger quis mbttis justo.\nFusce eu brcu mollis mbgnb rutrum porttitor.\nUt quis tristique enim..\nDonec suscipit nisl sit bmet nullb cursus, bc vulputbte justo ornbre.\nNbm non nisl bliqubm, portb ligulb vitbe, sodbles sbpien.\nVestibulum et dictum tortor.\nAenebn nec risus bc justo luctus posuere et in mbssb.\nVivbmus nec ultricies est, b pulvinbr bnte.\nSed semper rutrum lorem.\nNullb ut metus ornbre, dbpibus justo et, sbgittis lbcus.\nIn mbssb felis, pellentesque pretium mburis id, pretium pellentesque bugue.\nNullb feugibt est sit bmet ex rhoncus, ut dbpibus mbssb viverrb.\nSuspendisse ullbmcorper orci nec mburis vulputbte vestibulum.\nInteger luctus tincidunt bugue, ut congue neque dbpibus sit bmet.\nEtibm eu justo in dui ornbre ultricies.\nNbm fermentum ultricies sbgittis.\nMorbi ultricies mbximus tortor ut bliquet.\nNullbm eget venenbtis nunc.\nNbm ultricies neque bc blbndit eleifend.\nPhbsellus phbretrb, bugue bc semper feugibt, lorem nullb consectetur purus, nec mblesubdb nisi sem id erbt.\nFusce mollis, est vel mbximus convbllis, eros mbgnb convbllis turpis, bc fermentum ipsum nullb in mi.",
 		},
 		{
-			title:      "56b-last-output",
-			name:       "github.com/sourcegraph/repo2",
-			lastOutput: "Lorem ipsum dolor sit amet, consectetur adipiscing elit.",
+			title:      "56b-lbst-output",
+			nbme:       "github.com/sourcegrbph/repo2",
+			lbstOutput: "Lorem ipsum dolor sit bmet, consectetur bdipiscing elit.",
 		},
 		{
-			title:      "empty-last-output",
-			name:       "github.com/sourcegraph/repo3",
-			lastOutput: "",
+			title:      "empty-lbst-output",
+			nbme:       "github.com/sourcegrbph/repo3",
+			lbstOutput: "",
 		},
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	now := time.Now()
-	cloudDefaultService := createTestExternalService(ctx, t, now, db, true)
-	for i, tr := range testRepos {
+	cloudDefbultService := crebteTestExternblService(ctx, t, now, db, true)
+	for i, tr := rbnge testRepos {
 		t.Run(tr.title, func(t *testing.T) {
 			testRepo := &types.Repo{
-				Name:        api.RepoName(tr.name),
-				URI:         tr.name,
+				Nbme:        bpi.RepoNbme(tr.nbme),
+				URI:         tr.nbme,
 				Description: "",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          fmt.Sprintf("repo%d-external", i),
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          fmt.Sprintf("repo%d-externbl", i),
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com",
 				},
 			}
 			testRepo = testRepo.With(
-				typestest.Opt.RepoSources(cloudDefaultService.URN()),
+				typestest.Opt.RepoSources(cloudDefbultService.URN()),
 			)
-			createTestRepos(ctx, t, db, types.Repos{testRepo})
-			if err := db.GitserverRepos().SetLastOutput(ctx, testRepo.Name, tr.lastOutput); err != nil {
-				t.Fatal(err)
+			crebteTestRepos(ctx, t, db, types.Repos{testRepo})
+			if err := db.GitserverRepos().SetLbstOutput(ctx, testRepo.Nbme, tr.lbstOutput); err != nil {
+				t.Fbtbl(err)
 			}
-			haveOut, ok, err := db.GitserverRepos().GetLastSyncOutput(ctx, testRepo.Name)
+			hbveOut, ok, err := db.GitserverRepos().GetLbstSyncOutput(ctx, testRepo.Nbme)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if tr.lastOutput == "" && ok {
-				t.Fatalf("last output is not empty")
+			if tr.lbstOutput == "" && ok {
+				t.Fbtblf("lbst output is not empty")
 			}
-			if have, want := haveOut, tr.lastOutput; have != want {
-				t.Fatalf("wrong last output returned, have=%s want=%s", have, want)
+			if hbve, wbnt := hbveOut, tr.lbstOutput; hbve != wbnt {
+				t.Fbtblf("wrong lbst output returned, hbve=%s wbnt=%s", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func createTestExternalService(ctx context.Context, t *testing.T, now time.Time, db DB, cloudDefault bool) types.ExternalService {
-	service := types.ExternalService{
+func crebteTestExternblService(ctx context.Context, t *testing.T, now time.Time, db DB, cloudDefbult bool) types.ExternblService {
+	service := types.ExternblService{
 		Kind:         extsvc.KindGitHub,
-		DisplayName:  "Github - Test",
-		Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
-		CreatedAt:    now,
-		UpdatedAt:    now,
-		CloudDefault: cloudDefault,
+		DisplbyNbme:  "Github - Test",
+		Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
+		CrebtedAt:    now,
+		UpdbtedAt:    now,
+		CloudDefbult: cloudDefbult,
 	}
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
 
-	err := db.ExternalServices().Create(ctx, confGet, &service)
+	err := db.ExternblServices().Crebte(ctx, confGet, &service)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	return service
 }
@@ -415,157 +415,157 @@ func TestGitserverReposGetByID(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create one test repo
-	_, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
+	// Crebte one test repo
+	_, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo",
 		RepoSizeBytes: 100,
 	})
 
 	// GetByID should now work
 	fromDB, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestGitserverReposGetByName(t *testing.T) {
+func TestGitserverReposGetByNbme(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
+	// Crebte one test repo
+	repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo",
 		RepoSizeBytes: 100,
 	})
 
-	// GetByName should now work
-	fromDB, err := db.GitserverRepos().GetByName(ctx, repo.Name)
+	// GetByNbme should now work
+	fromDB, err := db.GitserverRepos().GetByNbme(ctx, repo.Nbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestGitserverReposGetByNames(t *testing.T) {
+func TestGitserverReposGetByNbmes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
+	gitserverRepoStore := &gitserverRepoStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	// Creating a few repos
-	repoNames := make([]api.RepoName, 5)
-	gitserverRepos := make([]*types.GitserverRepo, 5)
-	for i := 0; i < len(repoNames); i++ {
-		repoName := fmt.Sprintf("github.com/sourcegraph/repo%d", i)
-		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name: api.RepoName(repoName),
+	// Crebting b few repos
+	repoNbmes := mbke([]bpi.RepoNbme, 5)
+	gitserverRepos := mbke([]*types.GitserverRepo, 5)
+	for i := 0; i < len(repoNbmes); i++ {
+		repoNbme := fmt.Sprintf("github.com/sourcegrbph/repo%d", i)
+		repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme: bpi.RepoNbme(repoNbme),
 		})
-		repoNames[i] = repo.Name
+		repoNbmes[i] = repo.Nbme
 		gitserverRepos[i] = gitserverRepo
 	}
 
-	for i := 0; i < len(repoNames); i++ {
-		have, err := gitserverRepoStore.GetByNames(ctx, repoNames[:i+1]...)
+	for i := 0; i < len(repoNbmes); i++ {
+		hbve, err := gitserverRepoStore.GetByNbmes(ctx, repoNbmes[:i+1]...)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		haveRepos := make([]*types.GitserverRepo, 0, len(have))
-		for _, r := range have {
-			haveRepos = append(haveRepos, r)
+		hbveRepos := mbke([]*types.GitserverRepo, 0, len(hbve))
+		for _, r := rbnge hbve {
+			hbveRepos = bppend(hbveRepos, r)
 		}
-		sort.Slice(haveRepos, func(i, j int) bool {
-			return haveRepos[i].RepoID < haveRepos[j].RepoID
+		sort.Slice(hbveRepos, func(i, j int) bool {
+			return hbveRepos[i].RepoID < hbveRepos[j].RepoID
 		})
-		if diff := cmp.Diff(gitserverRepos[:i+1], haveRepos, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(gitserverRepos[:i+1], hbveRepos, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+			t.Fbtbl(diff)
 		}
 	}
 }
 
-func TestSetCloneStatus(t *testing.T) {
+func TestSetCloneStbtus(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
+	// Crebte one test repo
+	repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo",
 		RepoSizeBytes: 100,
-		CloneStatus:   types.CloneStatusNotCloned,
+		CloneStbtus:   types.CloneStbtusNotCloned,
 	})
 
 	// Set cloned
-	setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
+	setGitserverRepoCloneStbtus(t, db, repo.Nbme, types.CloneStbtusCloned)
 
 	fromDB, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	gitserverRepo.CloneStatus = types.CloneStatusCloned
-	gitserverRepo.ShardID = shardID
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	gitserverRepo.CloneStbtus = types.CloneStbtusCloned
+	gitserverRepo.ShbrdID = shbrdID
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Setting clone status should work even if no row exists in gitserver table
+	// Setting clone stbtus should work even if no row exists in gitserver tbble
 	repo2 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo2",
-		URI:          "github.com/sourcegraph/repo2",
-		ExternalRepo: api.ExternalRepoSpec{},
+		Nbme:         "github.com/sourcegrbph/repo2",
+		URI:          "github.com/sourcegrbph/repo2",
+		ExternblRepo: bpi.ExternblRepoSpec{},
 	}
 
-	// Create one test repo
-	err = db.Repos().Create(ctx, repo2)
+	// Crebte one test repo
+	err = db.Repos().Crebte(ctx, repo2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	setGitserverRepoCloneStatus(t, db, repo2.Name, types.CloneStatusCloned)
+	setGitserverRepoCloneStbtus(t, db, repo2.Nbme, types.CloneStbtusCloned)
 	fromDB, err = db.GitserverRepos().GetByID(ctx, repo2.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	gitserverRepo2 := &types.GitserverRepo{
 		RepoID:      repo2.ID,
-		ShardID:     shardID,
-		CloneStatus: types.CloneStatusCloned,
+		ShbrdID:     shbrdID,
+		CloneStbtus: types.CloneStbtusCloned,
 	}
-	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "LbstFetched", "LbstChbnged", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Setting the same status again should not touch the row
-	setGitserverRepoCloneStatus(t, db, repo2.Name, types.CloneStatusCloned)
-	after, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
+	// Setting the sbme stbtus bgbin should not touch the row
+	setGitserverRepoCloneStbtus(t, db, repo2.Nbme, types.CloneStbtusCloned)
+	bfter, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(fromDB, after); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(fromDB, bfter); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -576,40 +576,40 @@ func TestCloningProgress(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("Default", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/defaultcloningprogress",
+	t.Run("Defbult", func(t *testing.T) {
+		repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/defbultcloningprogress",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
-		gotRepo, err := db.GitserverRepos().GetByName(ctx, repo.Name)
+		gotRepo, err := db.GitserverRepos().GetByNbme(ctx, repo.Nbme)
 		if err != nil {
-			t.Fatalf("GetByName: %s", err)
+			t.Fbtblf("GetByNbme: %s", err)
 		}
 		if got := gotRepo.CloningProgress; got != "" {
-			t.Errorf("GetByName.CloningProgress, got %q, want empty string", got)
+			t.Errorf("GetByNbme.CloningProgress, got %q, wbnt empty string", got)
 		}
 	})
 
 	t.Run("Set", func(t *testing.T) {
-		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/updatedcloningprogress",
+		repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/updbtedcloningprogress",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
 
 		gitserverRepo.CloningProgress = "Receiving objects: 97% (97/100)"
-		if err := db.GitserverRepos().SetCloningProgress(ctx, repo.Name, gitserverRepo.CloningProgress); err != nil {
-			t.Fatalf("SetCloningProgress: %s", err)
+		if err := db.GitserverRepos().SetCloningProgress(ctx, repo.Nbme, gitserverRepo.CloningProgress); err != nil {
+			t.Fbtblf("SetCloningProgress: %s", err)
 		}
-		gotRepo, err := db.GitserverRepos().GetByName(ctx, repo.Name)
+		gotRepo, err := db.GitserverRepos().GetByNbme(ctx, repo.Nbme)
 		if err != nil {
-			t.Fatalf("GetByName: %s", err)
+			t.Fbtblf("GetByNbme: %s", err)
 		}
-		if diff := cmp.Diff(gitserverRepo, gotRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-			t.Errorf("SetCloningProgress->GetByName -want+got: %s", diff)
+		if diff := cmp.Diff(gitserverRepo, gotRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt")); diff != "" {
+			t.Errorf("SetCloningProgress->GetByNbme -wbnt+got: %s", diff)
 		}
 	})
 }
@@ -621,229 +621,229 @@ func TestLogCorruption(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("log repo corruption sets corrupted_at time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo1",
+	t.Run("log repo corruption sets corrupted_bt time", func(t *testing.T) {
+		repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/repo1",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
-		logRepoCorruption(t, db, repo.Name, "test")
+		logRepoCorruption(t, db, repo.Nbme, "test")
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
-			t.Fatalf("failed to get repo by id: %s", err)
+			t.Fbtblf("fbiled to get repo by id: %s", err)
 		}
 
 		if fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Expected corruptedAt time to be set. Got zero value for time %q", fromDB.CorruptedAt)
+			t.Errorf("Expected corruptedAt time to be set. Got zero vblue for time %q", fromDB.CorruptedAt)
 		}
-		// We should have one corruption log entry
+		// We should hbve one corruption log entry
 		if len(fromDB.CorruptionLogs) != 1 {
-			t.Errorf("Wanted 1 Corruption log entries,  got %d entries", len(fromDB.CorruptionLogs))
+			t.Errorf("Wbnted 1 Corruption log entries,  got %d entries", len(fromDB.CorruptionLogs))
 		}
-		if fromDB.CorruptionLogs[0].Timestamp.IsZero() {
-			t.Errorf("Corruption Log entry expected to have non zero timestamp. Got %q", fromDB.CorruptionLogs[0])
+		if fromDB.CorruptionLogs[0].Timestbmp.IsZero() {
+			t.Errorf("Corruption Log entry expected to hbve non zero timestbmp. Got %q", fromDB.CorruptionLogs[0])
 		}
-		if fromDB.CorruptionLogs[0].Reason != "test" {
-			t.Errorf("Wanted Corruption Log reason %q got %q", "test", fromDB.CorruptionLogs[0].Reason)
+		if fromDB.CorruptionLogs[0].Rebson != "test" {
+			t.Errorf("Wbnted Corruption Log rebson %q got %q", "test", fromDB.CorruptionLogs[0].Rebson)
 		}
 	})
-	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo2",
+	t.Run("setting clone stbtus clebrs corruptedAt time", func(t *testing.T) {
+		repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/repo2",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
-		logRepoCorruption(t, db, repo.Name, "test 2")
+		logRepoCorruption(t, db, repo.Nbme, "test 2")
 
-		setGitserverRepoCloneStatus(t, db, repo.Name, types.CloneStatusCloned)
+		setGitserverRepoCloneStbtus(t, db, repo.Nbme, types.CloneStbtusCloned)
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
-			t.Fatalf("failed to get repo by id: %s", err)
+			t.Fbtblf("fbiled to get repo by id: %s", err)
 		}
 		if !fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Setting clone status should set corrupt_at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
+			t.Errorf("Setting clone stbtus should set corrupt_bt vblue to zero time vblue. Got non zero vblue for time %q", fromDB.CorruptedAt)
 		}
 	})
-	t.Run("setting last error does not clear corruptedAt time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo3",
+	t.Run("setting lbst error does not clebr corruptedAt time", func(t *testing.T) {
+		repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/repo3",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
-		logRepoCorruption(t, db, repo.Name, "test 3")
+		logRepoCorruption(t, db, repo.Nbme, "test 3")
 
-		setGitserverRepoLastChanged(t, db, repo.Name, time.Now())
+		setGitserverRepoLbstChbnged(t, db, repo.Nbme, time.Now())
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
-			t.Fatalf("failed to get repo by id: %s", err)
+			t.Fbtblf("fbiled to get repo by id: %s", err)
 		}
 		if !fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Setting Last Changed should set corrupted at value to zero time value. Got non zero value for time %q", fromDB.CorruptedAt)
+			t.Errorf("Setting Lbst Chbnged should set corrupted bt vblue to zero time vblue. Got non zero vblue for time %q", fromDB.CorruptedAt)
 		}
 	})
-	t.Run("setting clone status clears corruptedAt time", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo4",
+	t.Run("setting clone stbtus clebrs corruptedAt time", func(t *testing.T) {
+		repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/repo4",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
-		logRepoCorruption(t, db, repo.Name, "test 3")
+		logRepoCorruption(t, db, repo.Nbme, "test 3")
 
-		setGitserverRepoLastError(t, db, repo.Name, "This is a TEST ERAWR")
+		setGitserverRepoLbstError(t, db, repo.Nbme, "This is b TEST ERAWR")
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
-			t.Fatalf("failed to get repo by id: %s", err)
+			t.Fbtblf("fbiled to get repo by id: %s", err)
 		}
 		if fromDB.CorruptedAt.IsZero() {
-			t.Errorf("Setting Last Error should not clear the corruptedAt value")
+			t.Errorf("Setting Lbst Error should not clebr the corruptedAt vblue")
 		}
 	})
-	t.Run("consecutive corruption logs appends", func(t *testing.T) {
-		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo5",
+	t.Run("consecutive corruption logs bppends", func(t *testing.T) {
+		repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/repo5",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
 		for i := 0; i < 12; i++ {
-			logRepoCorruption(t, db, repo.Name, fmt.Sprintf("test %d", i))
-			// We set the Clone status so that the 'corrupted_at' time gets cleared
-			// otherwise we cannot log corruption for a repo that is already corrupt
-			gitserverRepo.CloneStatus = types.CloneStatusCloned
+			logRepoCorruption(t, db, repo.Nbme, fmt.Sprintf("test %d", i))
+			// We set the Clone stbtus so thbt the 'corrupted_bt' time gets clebred
+			// otherwise we cbnnot log corruption for b repo thbt is blrebdy corrupt
+			gitserverRepo.CloneStbtus = types.CloneStbtusCloned
 			gitserverRepo.CorruptedAt = time.Time{}
-			if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-				t.Fatal(err)
+			if err := db.GitserverRepos().Updbte(ctx, gitserverRepo); err != nil {
+				t.Fbtbl(err)
 			}
 
 		}
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
-			t.Fatalf("failed to retrieve repo from db: %s", err)
+			t.Fbtblf("fbiled to retrieve repo from db: %s", err)
 		}
 
-		// We added 12 entries but we only keep 10
+		// We bdded 12 entries but we only keep 10
 		if len(fromDB.CorruptionLogs) != 10 {
 			t.Errorf("expected 10 corruption log entries but got %d", len(fromDB.CorruptionLogs))
 		}
 
-		// A log entry gets prepended to the json array, so:
+		// A log entry gets prepended to the json brrby, so:
 		// first entry = most recent log entry
-		// last entry = oldest log entry
-		// Our most recent log entry (idx 0!) should have "test 11" as the reason ie. the last element the loop
-		// that we added
-		wanted := "test 11"
-		if fromDB.CorruptionLogs[0].Reason != wanted {
-			t.Errorf("Wanted %q for last corruption log entry but got %q", wanted, fromDB.CorruptionLogs[9].Reason)
+		// lbst entry = oldest log entry
+		// Our most recent log entry (idx 0!) should hbve "test 11" bs the rebson ie. the lbst element the loop
+		// thbt we bdded
+		wbnted := "test 11"
+		if fromDB.CorruptionLogs[0].Rebson != wbnted {
+			t.Errorf("Wbnted %q for lbst corruption log entry but got %q", wbnted, fromDB.CorruptionLogs[9].Rebson)
 		}
 
 	})
-	t.Run("large reason gets truncated", func(t *testing.T) {
-		repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:          "github.com/sourcegraph/repo6",
+	t.Run("lbrge rebson gets truncbted", func(t *testing.T) {
+		repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+			Nbme:          "github.com/sourcegrbph/repo6",
 			RepoSizeBytes: 100,
-			CloneStatus:   types.CloneStatusNotCloned,
+			CloneStbtus:   types.CloneStbtusNotCloned,
 		})
 
-		largeReason := make([]byte, MaxReasonSizeInMB*2)
-		for i := 0; i < len(largeReason); i++ {
-			largeReason[i] = 'a'
+		lbrgeRebson := mbke([]byte, MbxRebsonSizeInMB*2)
+		for i := 0; i < len(lbrgeRebson); i++ {
+			lbrgeRebson[i] = 'b'
 		}
 
-		logRepoCorruption(t, db, repo.Name, string(largeReason))
+		logRepoCorruption(t, db, repo.Nbme, string(lbrgeRebson))
 
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 		if err != nil {
-			t.Fatalf("failed to retrieve repo from db: %s", err)
+			t.Fbtblf("fbiled to retrieve repo from db: %s", err)
 		}
 
-		if len(fromDB.CorruptionLogs[0].Reason) == len(largeReason) {
-			t.Errorf("expected reason to be truncated - got length=%d, wanted=%d", len(fromDB.CorruptionLogs[0].Reason), MaxReasonSizeInMB)
+		if len(fromDB.CorruptionLogs[0].Rebson) == len(lbrgeRebson) {
+			t.Errorf("expected rebson to be truncbted - got length=%d, wbnted=%d", len(fromDB.CorruptionLogs[0].Rebson), MbxRebsonSizeInMB)
 		}
 	})
 }
 
-func TestSetLastError(t *testing.T) {
+func TestSetLbstError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		CloneStatus:   types.CloneStatusNotCloned,
+	// Crebte one test repo
+	repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo",
+		CloneStbtus:   types.CloneStbtusNotCloned,
 		RepoSizeBytes: 100,
 	})
 
 	// Set error.
 	//
-	// We are using a null terminated string for the last_error column. See
-	// https://stackoverflow.com/a/38008565/1773961 on how to set null terminated strings in Go.
-	err := db.GitserverRepos().SetLastError(ctx, repo.Name, "oops\x00", "")
+	// We bre using b null terminbted string for the lbst_error column. See
+	// https://stbckoverflow.com/b/38008565/1773961 on how to set null terminbted strings in Go.
+	err := db.GitserverRepos().SetLbstError(ctx, repo.Nbme, "oops\x00", "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	fromDB, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	gitserverRepo.LastError = "oops"
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	gitserverRepo.LbstError = "oops"
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// Remove error
 	const emptyErr = ""
-	err = db.GitserverRepos().SetLastError(ctx, repo.Name, emptyErr, "")
+	err = db.GitserverRepos().SetLbstError(ctx, repo.Nbme, emptyErr, "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	fromDB, err = db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	gitserverRepo.LastError = emptyErr
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	gitserverRepo.LbstError = emptyErr
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Set again to same value, updated_at should not change
-	err = db.GitserverRepos().SetLastError(ctx, repo.Name, emptyErr, shardID)
+	// Set bgbin to sbme vblue, updbted_bt should not chbnge
+	err = db.GitserverRepos().SetLbstError(ctx, repo.Nbme, emptyErr, shbrdID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	after, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
+	bfter, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	gitserverRepo.LastError = emptyErr
-	if diff := cmp.Diff(fromDB, after); diff != "" {
-		t.Fatal(diff)
+	gitserverRepo.LbstError = emptyErr
+	if diff := cmp.Diff(fromDB, bfter); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// Setting to empty error should set the column to null
-	count, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM gitserver_repos WHERE last_error IS NULL"))
+	count, _, err := bbsestore.ScbnFirstInt(db.QueryContext(ctx, "SELECT COUNT(*) FROM gitserver_repos WHERE lbst_error IS NULL"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != 1 {
-		t.Fatalf("Want %d, got %d", 1, count)
+		t.Fbtblf("Wbnt %d, got %d", 1, count)
 	}
 }
 
@@ -854,372 +854,372 @@ func TestSetRepoSize(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
+	// Crebte one test repo
+	repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo",
 		RepoSizeBytes: 100,
 	})
 
 	// Set repo size
-	err := db.GitserverRepos().SetRepoSize(ctx, repo.Name, 200, "")
+	err := db.GitserverRepos().SetRepoSize(ctx, repo.Nbme, 200, "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	fromDB, err := db.GitserverRepos().GetByID(ctx, gitserverRepo.RepoID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	gitserverRepo.RepoSizeBytes = 200
-	// If we have size, we can assume it's cloned
-	gitserverRepo.CloneStatus = types.CloneStatusCloned
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	// If we hbve size, we cbn bssume it's cloned
+	gitserverRepo.CloneStbtus = types.CloneStbtusCloned
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// Setting repo size should work even if no row exists
 	repo2 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo2",
-		URI:          "github.com/sourcegraph/repo2",
-		ExternalRepo: api.ExternalRepoSpec{},
+		Nbme:         "github.com/sourcegrbph/repo2",
+		URI:          "github.com/sourcegrbph/repo2",
+		ExternblRepo: bpi.ExternblRepoSpec{},
 	}
 
-	// Create one test repo
-	err = db.Repos().Create(ctx, repo2)
+	// Crebte one test repo
+	err = db.Repos().Crebte(ctx, repo2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := db.GitserverRepos().SetRepoSize(ctx, repo2.Name, 300, ""); err != nil {
-		t.Fatal(err)
+	if err := db.GitserverRepos().SetRepoSize(ctx, repo2.Nbme, 300, ""); err != nil {
+		t.Fbtbl(err)
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, repo2.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	gitserverRepo2 := &types.GitserverRepo{
 		RepoID:        repo2.ID,
-		ShardID:       "",
+		ShbrdID:       "",
 		RepoSizeBytes: 300,
-		// If we have size, we can assume it's cloned
-		CloneStatus: types.CloneStatusCloned,
+		// If we hbve size, we cbn bssume it's cloned
+		CloneStbtus: types.CloneStbtusCloned,
 	}
-	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "LastFetched", "LastChanged", "CloneStatus", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "LbstFetched", "LbstChbnged", "CloneStbtus", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Setting the same size should not touch the row
-	if err := db.GitserverRepos().SetRepoSize(ctx, repo2.Name, 300, ""); err != nil {
-		t.Fatal(err)
+	// Setting the sbme size should not touch the row
+	if err := db.GitserverRepos().SetRepoSize(ctx, repo2.Nbme, 300, ""); err != nil {
+		t.Fbtbl(err)
 	}
-	after, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
+	bfter, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(fromDB, after); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(fromDB, bfter); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestGitserverRepo_Update(t *testing.T) {
+func TestGitserverRepo_Updbte(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create one test repo
-	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo",
-		CloneStatus:   types.CloneStatusNotCloned,
+	// Crebte one test repo
+	repo, gitserverRepo := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo",
+		CloneStbtus:   types.CloneStbtusNotCloned,
 		RepoSizeBytes: 100,
 	})
 
-	// Change clone status
-	gitserverRepo.CloneStatus = types.CloneStatusCloned
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
+	// Chbnge clone stbtus
+	gitserverRepo.CloneStbtus = types.CloneStbtusCloned
+	if err := db.GitserverRepos().Updbte(ctx, gitserverRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	fromDB, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Change error
+	// Chbnge error
 
-	// We want to test if update can handle the writing a null character to the last_error
-	// column. See https://stackoverflow.com/a/38008565/1773961 on how to set null terminated
+	// We wbnt to test if updbte cbn hbndle the writing b null chbrbcter to the lbst_error
+	// column. See https://stbckoverflow.com/b/38008565/1773961 on how to set null terminbted
 	// strings in Go.
-	gitserverRepo.LastError = "Oops\x00"
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
+	gitserverRepo.LbstError = "Oops\x00"
+	if err := db.GitserverRepos().Updbte(ctx, gitserverRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, repo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Set LastError to the expected error string but without the null character, because we expect
-	// our code to work and strip it before writing to the DB.
-	gitserverRepo.LastError = "Oops"
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	// Set LbstError to the expected error string but without the null chbrbcter, becbuse we expect
+	// our code to work bnd strip it before writing to the DB.
+	gitserverRepo.LbstError = "Oops"
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// Remove error
-	gitserverRepo.LastError = ""
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
+	gitserverRepo.LbstError = ""
+	if err := db.GitserverRepos().Updbte(ctx, gitserverRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	fromDB, err = db.GitserverRepos().GetByID(ctx, repo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(gitserverRepo, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestGitserverRepoUpdateMany(t *testing.T) {
+func TestGitserverRepoUpdbteMbny(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create two test repos
-	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo1",
-		CloneStatus:   types.CloneStatusNotCloned,
+	// Crebte two test repos
+	repo1, gitserverRepo1 := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo1",
+		CloneStbtus:   types.CloneStbtusNotCloned,
 		RepoSizeBytes: 100,
 	})
-	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo2",
-		CloneStatus:   types.CloneStatusNotCloned,
+	repo2, gitserverRepo2 := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme:          "github.com/sourcegrbph/repo2",
+		CloneStbtus:   types.CloneStbtusNotCloned,
 		RepoSizeBytes: 100,
 	})
 
-	// Change their clone statuses
-	gitserverRepo1.CloneStatus = types.CloneStatusCloned
-	gitserverRepo2.CloneStatus = types.CloneStatusCloning
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo1, gitserverRepo2); err != nil {
-		t.Fatal(err)
+	// Chbnge their clone stbtuses
+	gitserverRepo1.CloneStbtus = types.CloneStbtusCloned
+	gitserverRepo2.CloneStbtus = types.CloneStbtusCloning
+	if err := db.GitserverRepos().Updbte(ctx, gitserverRepo1, gitserverRepo2); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Confirm
 	t.Run("repo1", func(t *testing.T) {
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo1.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(gitserverRepo1, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(gitserverRepo1, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 	t.Run("repo2", func(t *testing.T) {
 		fromDB, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(gitserverRepo2, fromDB, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 }
 
-func TestSanitizeToUTF8(t *testing.T) {
-	testSet := map[string]string{
+func TestSbnitizeToUTF8(t *testing.T) {
+	testSet := mbp[string]string{
 		"test\x00":     "test",
 		"test\x00test": "testtest",
 		"\x00test":     "test",
 	}
 
-	for input, expected := range testSet {
-		got := sanitizeToUTF8(input)
+	for input, expected := rbnge testSet {
+		got := sbnitizeToUTF8(input)
 		if got != expected {
-			t.Fatalf("Failed to sanitize to UTF-8, got %q but wanted %q", got, expected)
+			t.Fbtblf("Fbiled to sbnitize to UTF-8, got %q but wbnted %q", got, expected)
 		}
 	}
 }
 
-func TestGitserverUpdateRepoSizes(t *testing.T) {
+func TestGitserverUpdbteRepoSizes(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo1",
+	repo1, gitserverRepo1 := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme: "github.com/sourcegrbph/repo1",
 	})
 
-	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo2",
+	repo2, gitserverRepo2 := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme: "github.com/sourcegrbph/repo2",
 	})
 
-	repo3, gitserverRepo3 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo3",
+	repo3, gitserverRepo3 := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme: "github.com/sourcegrbph/repo3",
 	})
 
 	// Setting repo sizes in DB
-	sizes := map[api.RepoName]int64{
-		repo1.Name: 100,
-		repo2.Name: 500,
-		repo3.Name: 800,
+	sizes := mbp[bpi.RepoNbme]int64{
+		repo1.Nbme: 100,
+		repo2.Nbme: 500,
+		repo3.Nbme: 800,
 	}
-	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	numUpdbted, err := db.GitserverRepos().UpdbteRepoSizes(ctx, shbrdID, sizes)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if have, want := numUpdated, len(sizes); have != want {
-		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+	if hbve, wbnt := numUpdbted, len(sizes); hbve != wbnt {
+		t.Fbtblf("wrong number of repos updbted. hbve=%d, wbnt=%d", hbve, wbnt)
 	}
 
-	// Updating sizes in test data for further diff comparison
-	gitserverRepo1.RepoSizeBytes = sizes[repo1.Name]
-	gitserverRepo2.RepoSizeBytes = sizes[repo2.Name]
-	gitserverRepo3.RepoSizeBytes = sizes[repo3.Name]
+	// Updbting sizes in test dbtb for further diff compbrison
+	gitserverRepo1.RepoSizeBytes = sizes[repo1.Nbme]
+	gitserverRepo2.RepoSizeBytes = sizes[repo2.Nbme]
+	gitserverRepo3.RepoSizeBytes = sizes[repo3.Nbme]
 
-	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
-	// has changed
-	for _, repo := range []*types.GitserverRepo{
+	// Checking repo diffs, excluding UpdbtedAt. This is to verify thbt nothing except repo_size_bytes
+	// hbs chbnged
+	for _, repo := rbnge []*types.GitserverRepo{
 		gitserverRepo1,
 		gitserverRepo2,
 		gitserverRepo3,
 	} {
-		reloaded, err := db.GitserverRepos().GetByID(ctx, repo.RepoID)
+		relobded, err := db.GitserverRepos().GetByID(ctx, repo.RepoID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(repo, reloaded, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt", "CorruptionLogs")); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(repo, relobded, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdbtedAt", "CorruptionLogs")); diff != "" {
+			t.Fbtbl(diff)
 		}
-		// Separately make sure UpdatedAt has changed, though
-		if repo.UpdatedAt.Equal(reloaded.UpdatedAt) {
-			t.Fatalf("UpdatedAt of GitserverRepo should be updated but was not. before=%s, after=%s", repo.UpdatedAt, reloaded.UpdatedAt)
+		// Sepbrbtely mbke sure UpdbtedAt hbs chbnged, though
+		if repo.UpdbtedAt.Equbl(relobded.UpdbtedAt) {
+			t.Fbtblf("UpdbtedAt of GitserverRepo should be updbted but wbs not. before=%s, bfter=%s", repo.UpdbtedAt, relobded.UpdbtedAt)
 		}
 	}
 
-	// update again to make sure they're not updated again
-	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	// updbte bgbin to mbke sure they're not updbted bgbin
+	numUpdbted, err = db.GitserverRepos().UpdbteRepoSizes(ctx, shbrdID, sizes)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if have, want := numUpdated, 0; have != want {
-		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+	if hbve, wbnt := numUpdbted, 0; hbve != wbnt {
+		t.Fbtblf("wrong number of repos updbted. hbve=%d, wbnt=%d", hbve, wbnt)
 	}
 
-	// update subset
-	sizes = map[api.RepoName]int64{
-		repo3.Name: 900,
+	// updbte subset
+	sizes = mbp[bpi.RepoNbme]int64{
+		repo3.Nbme: 900,
 	}
-	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	numUpdbted, err = db.GitserverRepos().UpdbteRepoSizes(ctx, shbrdID, sizes)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if have, want := numUpdated, 1; have != want {
-		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+	if hbve, wbnt := numUpdbted, 1; hbve != wbnt {
+		t.Fbtblf("wrong number of repos updbted. hbve=%d, wbnt=%d", hbve, wbnt)
 	}
 
-	// update with different batch sizes
-	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
-	for _, batchSize := range []int64{1, 2, 3, 6} {
-		sizes = map[api.RepoName]int64{
-			repo1.Name: 123 + batchSize,
-			repo2.Name: 456 + batchSize,
-			repo3.Name: 789 + batchSize,
+	// updbte with different bbtch sizes
+	gitserverRepoStore := &gitserverRepoStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	for _, bbtchSize := rbnge []int64{1, 2, 3, 6} {
+		sizes = mbp[bpi.RepoNbme]int64{
+			repo1.Nbme: 123 + bbtchSize,
+			repo2.Nbme: 456 + bbtchSize,
+			repo3.Nbme: 789 + bbtchSize,
 		}
 
-		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, sizes, int(batchSize))
+		numUpdbted, err = gitserverRepoStore.updbteRepoSizesWithBbtchSize(ctx, sizes, int(bbtchSize))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if have, want := numUpdated, 3; have != want {
-			t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+		if hbve, wbnt := numUpdbted, 3; hbve != wbnt {
+			t.Fbtblf("wrong number of repos updbted. hbve=%d, wbnt=%d", hbve, wbnt)
 		}
 	}
 }
 
-func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
+func crebteTestRepo(ctx context.Context, t *testing.T, db DB, pbylobd *crebteTestRepoPbylobd) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{Name: payload.Name, URI: payload.URI, Fork: payload.Fork}
+	repo := &types.Repo{Nbme: pbylobd.Nbme, URI: pbylobd.URI, Fork: pbylobd.Fork}
 
-	// Create Repo
-	err := db.Repos().Create(ctx, repo)
+	// Crebte Repo
+	err := db.Repos().Crebte(ctx, repo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// Get the gitserver repo
 	gitserverRepo, err := db.GitserverRepos().GetByID(ctx, repo.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := &types.GitserverRepo{
+	wbnt := &types.GitserverRepo{
 		RepoID:         repo.ID,
-		CloneStatus:    types.CloneStatusNotCloned,
+		CloneStbtus:    types.CloneStbtusNotCloned,
 		CorruptionLogs: []types.RepoCorruptionLog{},
 	}
-	if diff := cmp.Diff(want, gitserverRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "LastFetched", "LastChanged", "UpdatedAt", "CorruptionLogs")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, gitserverRepo, cmpopts.IgnoreFields(types.GitserverRepo{}, "LbstFetched", "LbstChbnged", "UpdbtedAt", "CorruptionLogs")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	return repo, gitserverRepo
 }
 
-type createTestRepoPayload struct {
-	// Repo related properties
+type crebteTestRepoPbylobd struct {
+	// Repo relbted properties
 
-	// Name is the name for this repository (e.g., "github.com/user/repo"). It
-	// is the same as URI, unless the user configures a non-default
-	// repositoryPathPattern.
+	// Nbme is the nbme for this repository (e.g., "github.com/user/repo"). It
+	// is the sbme bs URI, unless the user configures b non-defbult
+	// repositoryPbthPbttern.
 	//
-	// Previously, this was called RepoURI.
-	Name api.RepoName
+	// Previously, this wbs cblled RepoURI.
+	Nbme bpi.RepoNbme
 	URI  string
 	Fork bool
 
-	// Gitserver related properties
+	// Gitserver relbted properties
 
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	CloneStatus   types.CloneStatus
+	CloneStbtus   types.CloneStbtus
 }
 
-func createTestRepos(ctx context.Context, t *testing.T, db DB, repos types.Repos) {
+func crebteTestRepos(ctx context.Context, t *testing.T, db DB, repos types.Repos) {
 	t.Helper()
-	err := db.Repos().Create(ctx, repos...)
+	err := db.Repos().Crebte(ctx, repos...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func updateTestGitserverRepos(ctx context.Context, t *testing.T, db DB, hasLastError bool, cloneStatus types.CloneStatus, repoID api.RepoID) {
+func updbteTestGitserverRepos(ctx context.Context, t *testing.T, db DB, hbsLbstError bool, cloneStbtus types.CloneStbtus, repoID bpi.RepoID) {
 	t.Helper()
 	gitserverRepo := &types.GitserverRepo{
 		RepoID:      repoID,
-		ShardID:     fmt.Sprintf("gitserver%d", repoID),
-		CloneStatus: cloneStatus,
+		ShbrdID:     fmt.Sprintf("gitserver%d", repoID),
+		CloneStbtus: cloneStbtus,
 	}
-	if hasLastError {
-		gitserverRepo.LastError = "an error occurred"
+	if hbsLbstError {
+		gitserverRepo.LbstError = "bn error occurred"
 	}
-	if err := db.GitserverRepos().Update(ctx, gitserverRepo); err != nil {
-		t.Fatal(err)
+	if err := db.GitserverRepos().Updbte(ctx, gitserverRepo); err != nil {
+		t.Fbtbl(err)
 	}
 }
 
@@ -1230,47 +1230,47 @@ func TestGitserverRepos_GetGitserverGitDirSize(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	assertSize := func(want int64) {
+	bssertSize := func(wbnt int64) {
 		t.Helper()
 
-		have, err := db.GitserverRepos().GetGitserverGitDirSize(ctx)
+		hbve, err := db.GitserverRepos().GetGitserverGitDirSize(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		require.Equal(t, want, have)
+		require.Equbl(t, wbnt, hbve)
 	}
 
-	// Expect exactly 0 bytes used when no repos exist yet.
-	assertSize(0)
+	// Expect exbctly 0 bytes used when no repos exist yet.
+	bssertSize(0)
 
-	// Create one test repo.
-	repo, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo",
+	// Crebte one test repo.
+	repo, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme: "github.com/sourcegrbph/repo",
 	})
 
-	// Now, we should see an uncloned test repo that takes no space.
-	assertSize(0)
+	// Now, we should see bn uncloned test repo thbt tbkes no spbce.
+	bssertSize(0)
 
-	// Set repo size and mark repo as cloned.
-	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo.Name, 200, "test-gitserver"))
+	// Set repo size bnd mbrk repo bs cloned.
+	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo.Nbme, 200, "test-gitserver"))
 
-	// Now the total should be 200 bytes.
-	assertSize(200)
+	// Now the totbl should be 200 bytes.
+	bssertSize(200)
 
-	// Now add a second repo to make sure it aggregates properly.
-	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name: "github.com/sourcegraph/repo2",
+	// Now bdd b second repo to mbke sure it bggregbtes properly.
+	repo2, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{
+		Nbme: "github.com/sourcegrbph/repo2",
 	})
-	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo2.Name, 500, "test-gitserver"))
+	require.NoError(t, db.GitserverRepos().SetRepoSize(ctx, repo2.Nbme, 500, "test-gitserver"))
 
-	// 200 from the first repo and another 500 from the newly created repo.
-	assertSize(700)
+	// 200 from the first repo bnd bnother 500 from the newly crebted repo.
+	bssertSize(700)
 
-	// Now mark the repo as uncloned, that should exclude it from statistics.
-	require.NoError(t, db.GitserverRepos().SetCloneStatus(ctx, repo.Name, types.CloneStatusNotCloned, "test-gitserver"))
+	// Now mbrk the repo bs uncloned, thbt should exclude it from stbtistics.
+	require.NoError(t, db.GitserverRepos().SetCloneStbtus(ctx, repo.Nbme, types.CloneStbtusNotCloned, "test-gitserver"))
 
 	// only repo2 which is 500 bytes should cont now.
-	assertSize(500)
+	bssertSize(500)
 }

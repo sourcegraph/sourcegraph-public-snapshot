@@ -1,15 +1,15 @@
-package adr
+pbckbge bdr
 
 import (
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
 	"strings"
 )
 
-var nonAlphaNumericOrDash = regexp.MustCompile("[^a-z0-9-]+")
+vbr nonAlphbNumericOrDbsh = regexp.MustCompile("[^b-z0-9-]+")
 
-func sanitizeADRName(name string) string {
-	return nonAlphaNumericOrDash.ReplaceAllString(
-		strings.ReplaceAll(strings.ToLower(name), " ", "-"), "",
+func sbnitizeADRNbme(nbme string) string {
+	return nonAlphbNumericOrDbsh.ReplbceAllString(
+		strings.ReplbceAll(strings.ToLower(nbme), " ", "-"), "",
 	)
 }

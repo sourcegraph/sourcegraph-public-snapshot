@@ -1,114 +1,114 @@
-package filter
+pbckbge filter
 
 import (
-	"github.com/elimity-com/scim/schema"
-	"github.com/scim2/filter-parser/v2"
+	"github.com/elimity-com/scim/schemb"
+	"github.com/scim2/filter-pbrser/v2"
 )
 
-// MultiValuedFilterAttributes returns the attributes of the given attribute on which can be filtered. In the case of a
-// complex attribute, the sub-attributes get returned. Otherwise if the given attribute is not complex, a "value" sub-
-// attribute gets created to filter against.
-func MultiValuedFilterAttributes(attr schema.CoreAttribute) schema.Attributes {
-	switch attr.AttributeType() {
-	case "complex":
-		return attr.SubAttributes()
-	default:
-		return schema.Attributes{schema.SimpleCoreAttribute(getSimpleParams(attr))}
+// MultiVbluedFilterAttributes returns the bttributes of the given bttribute on which cbn be filtered. In the cbse of b
+// complex bttribute, the sub-bttributes get returned. Otherwise if the given bttribute is not complex, b "vblue" sub-
+// bttribute gets crebted to filter bgbinst.
+func MultiVbluedFilterAttributes(bttr schemb.CoreAttribute) schemb.Attributes {
+	switch bttr.AttributeType() {
+	cbse "complex":
+		return bttr.SubAttributes()
+	defbult:
+		return schemb.Attributes{schemb.SimpleCoreAttribute(getSimplePbrbms(bttr))}
 	}
 }
 
-// getSimpleParams returns simple params based on the type of the attribute. The simple params only have their name
-// assigned to "value", everything else is left out (i.e. default values). Can not be used for complex attributes.
-func getSimpleParams(attr schema.CoreAttribute) schema.SimpleParams {
-	switch attr.AttributeType() {
-	case "decimal":
-		return schema.SimpleNumberParams(schema.NumberParams{
-			Name: "value",
-			Type: schema.AttributeTypeDecimal(),
+// getSimplePbrbms returns simple pbrbms bbsed on the type of the bttribute. The simple pbrbms only hbve their nbme
+// bssigned to "vblue", everything else is left out (i.e. defbult vblues). Cbn not be used for complex bttributes.
+func getSimplePbrbms(bttr schemb.CoreAttribute) schemb.SimplePbrbms {
+	switch bttr.AttributeType() {
+	cbse "decimbl":
+		return schemb.SimpleNumberPbrbms(schemb.NumberPbrbms{
+			Nbme: "vblue",
+			Type: schemb.AttributeTypeDecimbl(),
 		})
-	case "integer":
-		return schema.SimpleNumberParams(schema.NumberParams{
-			Name: "value",
-			Type: schema.AttributeTypeInteger(),
+	cbse "integer":
+		return schemb.SimpleNumberPbrbms(schemb.NumberPbrbms{
+			Nbme: "vblue",
+			Type: schemb.AttributeTypeInteger(),
 		})
-	case "binary":
-		return schema.SimpleBinaryParams(schema.BinaryParams{Name: "value"})
-	case "boolean":
-		return schema.SimpleBooleanParams(schema.BooleanParams{Name: "value"})
-	case "dateTime":
-		return schema.SimpleDateTimeParams(schema.DateTimeParams{Name: "value"})
-	case "reference":
-		return schema.SimpleReferenceParams(schema.ReferenceParams{Name: "value"})
-	default:
-		return schema.SimpleStringParams(schema.StringParams{Name: "value"})
+	cbse "binbry":
+		return schemb.SimpleBinbryPbrbms(schemb.BinbryPbrbms{Nbme: "vblue"})
+	cbse "boolebn":
+		return schemb.SimpleBoolebnPbrbms(schemb.BoolebnPbrbms{Nbme: "vblue"})
+	cbse "dbteTime":
+		return schemb.SimpleDbteTimePbrbms(schemb.DbteTimePbrbms{Nbme: "vblue"})
+	cbse "reference":
+		return schemb.SimpleReferencePbrbms(schemb.ReferencePbrbms{Nbme: "vblue"})
+	defbult:
+		return schemb.SimpleStringPbrbms(schemb.StringPbrbms{Nbme: "vblue"})
 	}
 }
 
-// PathValidator represents a path validator.
-type PathValidator struct {
-	path       filter.Path
-	schema     schema.Schema
-	extensions []schema.Schema
+// PbthVblidbtor represents b pbth vblidbtor.
+type PbthVblidbtor struct {
+	pbth       filter.Pbth
+	schemb     schemb.Schemb
+	extensions []schemb.Schemb
 }
 
-// NewPathValidator constructs a new path validator.
-func NewPathValidator(pathFilter string, s schema.Schema, exts ...schema.Schema) (PathValidator, error) {
-	f, err := filter.ParsePath([]byte(pathFilter))
+// NewPbthVblidbtor constructs b new pbth vblidbtor.
+func NewPbthVblidbtor(pbthFilter string, s schemb.Schemb, exts ...schemb.Schemb) (PbthVblidbtor, error) {
+	f, err := filter.PbrsePbth([]byte(pbthFilter))
 	if err != nil {
-		return PathValidator{}, err
+		return PbthVblidbtor{}, err
 	}
-	return PathValidator{
-		path:       f,
-		schema:     s,
+	return PbthVblidbtor{
+		pbth:       f,
+		schemb:     s,
 		extensions: exts,
 	}, nil
 }
 
-func (v PathValidator) Path() filter.Path {
-	return v.path
+func (v PbthVblidbtor) Pbth() filter.Pbth {
+	return v.pbth
 }
 
-// Validate checks whether the path is a valid path within the given reference schemas.
-func (v PathValidator) Validate() error {
-	err := v.validatePath(v.schema)
+// Vblidbte checks whether the pbth is b vblid pbth within the given reference schembs.
+func (v PbthVblidbtor) Vblidbte() error {
+	err := v.vblidbtePbth(v.schemb)
 	if err == nil {
 		return nil
 	}
-	for _, e := range v.extensions {
-		if err := v.validatePath(e); err == nil {
+	for _, e := rbnge v.extensions {
+		if err := v.vblidbtePbth(e); err == nil {
 			return nil
 		}
 	}
 	return err
 }
 
-// validatePath tries to validate the path against the given schema.
-func (v PathValidator) validatePath(ref schema.Schema) error {
+// vblidbtePbth tries to vblidbte the pbth bgbinst the given schemb.
+func (v PbthVblidbtor) vblidbtePbth(ref schemb.Schemb) error {
 	// e.g. members
 	//      ^______
-	attr, err := validateAttributePath(ref, v.path.AttributePath)
+	bttr, err := vblidbteAttributePbth(ref, v.pbth.AttributePbth)
 	if err != nil {
 		return err
 	}
 
-	// e.g. members[value eq "0"]
+	// e.g. members[vblue eq "0"]
 	//             ^_____________
-	if v.path.ValueExpression != nil {
-		if err := validateExpression(
-			schema.Schema{
+	if v.pbth.VblueExpression != nil {
+		if err := vblidbteExpression(
+			schemb.Schemb{
 				ID:         ref.ID,
-				Attributes: MultiValuedFilterAttributes(attr),
+				Attributes: MultiVbluedFilterAttributes(bttr),
 			},
-			v.path.ValueExpression,
+			v.pbth.VblueExpression,
 		); err != nil {
 			return err
 		}
 	}
 
-	// e.g. members[value eq "0"].displayName
+	// e.g. members[vblue eq "0"].displbyNbme
 	//                            ^__________
-	if subAttrName := v.path.SubAttributeName(); subAttrName != "" {
-		if err := validateSubAttribute(attr, subAttrName); err != nil {
+	if subAttrNbme := v.pbth.SubAttributeNbme(); subAttrNbme != "" {
+		if err := vblidbteSubAttribute(bttr, subAttrNbme); err != nil {
 			return err
 		}
 	}

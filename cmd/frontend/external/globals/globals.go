@@ -1,13 +1,13 @@
-// Package globals exports symbols from frontend/globals. See the parent
-// package godoc for more information.
-package globals
+// Pbckbge globbls exports symbols from frontend/globbls. See the pbrent
+// pbckbge godoc for more informbtion.
+pbckbge globbls
 
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
 )
 
-func ExternalURL() *url.URL {
-	return globals.ExternalURL()
+func ExternblURL() *url.URL {
+	return globbls.ExternblURL()
 }

@@ -1,23 +1,23 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	ResetterInterval                       time.Duration
-	DependencySyncSchedulerPollInterval    time.Duration
-	DependencyIndexerSchedulerPollInterval time.Duration
+	ResetterIntervbl                       time.Durbtion
+	DependencySyncSchedulerPollIntervbl    time.Durbtion
+	DependencyIndexerSchedulerPollIntervbl time.Durbtion
 	DependencyIndexerSchedulerConcurrency  int
 }
 
-func (c *Config) Load() {
-	c.ResetterInterval = c.GetInterval("PRECISE_CODE_INTEL_DEPENDENCY_RESETTER_INTERVAL", "30s", "Interval between dependency sync and index resets.")
-	c.DependencySyncSchedulerPollInterval = c.GetInterval("PRECISE_CODE_INTEL_DEPENDENCY_SYNC_SCHEDULER_POLL_INTERVAL", "1s", "Interval between queries to the dependency syncing job queue.")
-	c.DependencyIndexerSchedulerPollInterval = c.GetInterval("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_POLL_INTERVAL", "1s", "Interval between queries to the dependency indexing job queue.")
-	c.DependencyIndexerSchedulerConcurrency = c.GetInt("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY", "1", "The maximum number of dependency graphs that can be processed concurrently.")
+func (c *Config) Lobd() {
+	c.ResetterIntervbl = c.GetIntervbl("PRECISE_CODE_INTEL_DEPENDENCY_RESETTER_INTERVAL", "30s", "Intervbl between dependency sync bnd index resets.")
+	c.DependencySyncSchedulerPollIntervbl = c.GetIntervbl("PRECISE_CODE_INTEL_DEPENDENCY_SYNC_SCHEDULER_POLL_INTERVAL", "1s", "Intervbl between queries to the dependency syncing job queue.")
+	c.DependencyIndexerSchedulerPollIntervbl = c.GetIntervbl("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_POLL_INTERVAL", "1s", "Intervbl between queries to the dependency indexing job queue.")
+	c.DependencyIndexerSchedulerConcurrency = c.GetInt("PRECISE_CODE_INTEL_DEPENDENCY_INDEXER_SCHEDULER_CONCURRENCY", "1", "The mbximum number of dependency grbphs thbt cbn be processed concurrently.")
 }

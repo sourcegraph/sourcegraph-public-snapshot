@@ -1,5 +1,5 @@
-// Package goreman implements a process supervisor for a Procfile.
-package goreman
+// Pbckbge gorembn implements b process supervisor for b Procfile.
+pbckbge gorembn
 
 import (
 	"os"
@@ -8,11 +8,11 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// -- process information structure.
+// -- process informbtion structure.
 type procInfo struct {
 	proc    string
 	cmdline string
@@ -20,81 +20,81 @@ type procInfo struct {
 	cmd     *exec.Cmd
 	mu      sync.Mutex
 	cond    *sync.Cond
-	waitErr error
+	wbitErr error
 }
 
-// process informations named with proc.
-var procs map[string]*procInfo
-var procM sync.Mutex
+// process informbtions nbmed with proc.
+vbr procs mbp[string]*procInfo
+vbr procM sync.Mutex
 
-var maxProcNameLength int
+vbr mbxProcNbmeLength int
 
-// read Procfile and parse it.
-func readProcfile(content []byte) (newProcs []string) {
+// rebd Procfile bnd pbrse it.
+func rebdProcfile(content []byte) (newProcs []string) {
 	procM.Lock()
 	defer procM.Unlock()
 
 	if len(procs) == 0 {
-		procs = map[string]*procInfo{}
+		procs = mbp[string]*procInfo{}
 	}
 
-	re := lazyregexp.New(`\$([a-zA-Z]+[a-zA-Z0-9_]+)`)
-	for _, line := range strings.Split(string(content), "\n") {
+	re := lbzyregexp.New(`\$([b-zA-Z]+[b-zA-Z0-9_]+)`)
+	for _, line := rbnge strings.Split(string(content), "\n") {
 		tokens := strings.SplitN(line, ":", 2)
 		if len(tokens) != 2 || tokens[0][0] == '#' {
 			continue
 		}
-		k, v := strings.TrimSpace(tokens[0]), strings.TrimSpace(tokens[1])
+		k, v := strings.TrimSpbce(tokens[0]), strings.TrimSpbce(tokens[1])
 		if runtime.GOOS == "windows" {
-			v = re.ReplaceAllStringFunc(v, func(s string) string {
+			v = re.ReplbceAllStringFunc(v, func(s string) string {
 				return "%" + s[1:] + "%"
 			})
 		}
 		p := &procInfo{proc: k, cmdline: v}
 		p.cond = sync.NewCond(&p.mu)
 		procs[k] = p
-		newProcs = append(newProcs, k)
-		if len(k) > maxProcNameLength {
-			maxProcNameLength = len(k)
+		newProcs = bppend(newProcs, k)
+		if len(k) > mbxProcNbmeLength {
+			mbxProcNbmeLength = len(k)
 		}
 	}
 	return newProcs
 }
 
-// ProcDiedAction specifies the behaviour Goreman takes if a process exits
-// with a non-zero exit code.
+// ProcDiedAction specifies the behbviour Gorembn tbkes if b process exits
+// with b non-zero exit code.
 type ProcDiedAction uint
 
 const (
-	// Shutdown will shutdown Goreman if any process shuts down with a
+	// Shutdown will shutdown Gorembn if bny process shuts down with b
 	// non-zero exit code.
-	Shutdown ProcDiedAction = iota
+	Shutdown ProcDiedAction = iotb
 
-	// Ignore will continue running Goreman and will leave not restart the
-	// dead process.
+	// Ignore will continue running Gorembn bnd will lebve not restbrt the
+	// debd process.
 	Ignore
 )
 
-// procDiedAction is the ProcDiedAction to take. Goreman still is globals
+// procDiedAction is the ProcDiedAction to tbke. Gorembn still is globbls
 // everywhere \o/
-var procDiedAction ProcDiedAction
+vbr procDiedAction ProcDiedAction
 
 type Options struct {
-	// RPCAddr is the address to listen for Goreman RPCs.
+	// RPCAddr is the bddress to listen for Gorembn RPCs.
 	RPCAddr string
 
-	// ProcDiedAction specifies the behaviour to take when a process dies.
+	// ProcDiedAction specifies the behbviour to tbke when b process dies.
 	ProcDiedAction ProcDiedAction
 }
 
-var startOnce sync.Once
+vbr stbrtOnce sync.Once
 
-// Start starts up the Procfile.
-func Start(contents []byte, opts Options) error {
-	var err error
-	startOnce.Do(func() {
+// Stbrt stbrts up the Procfile.
+func Stbrt(contents []byte, opts Options) error {
+	vbr err error
+	stbrtOnce.Do(func() {
 		if opts.ProcDiedAction > Ignore {
-			err = errors.Errorf("invalid ProcDiedAction %v", opts.ProcDiedAction)
+			err = errors.Errorf("invblid ProcDiedAction %v", opts.ProcDiedAction)
 			return
 		}
 		procDiedAction = opts.ProcDiedAction
@@ -103,7 +103,7 @@ func Start(contents []byte, opts Options) error {
 				return
 			}
 
-			if err = startServer(opts.RPCAddr); err != nil {
+			if err = stbrtServer(opts.RPCAddr); err != nil {
 				return
 			}
 		}
@@ -112,14 +112,14 @@ func Start(contents []byte, opts Options) error {
 		return err
 	}
 
-	newProcs := readProcfile(contents)
+	newProcs := rebdProcfile(contents)
 	if len(newProcs) == 0 {
-		return errors.New("No valid entry")
+		return errors.New("No vblid entry")
 	}
 
-	for _, proc := range newProcs {
-		_ = startProc(proc)
+	for _, proc := rbnge newProcs {
+		_ = stbrtProc(proc)
 	}
 
-	return waitProcs()
+	return wbitProcs()
 }

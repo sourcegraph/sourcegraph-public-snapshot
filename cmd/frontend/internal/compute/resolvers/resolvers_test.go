@@ -1,57 +1,57 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
 func TestToResultResolverList(t *testing.T) {
-	test := func(input string, matches []result.Match) string {
-		computeQuery, _ := compute.Parse(input)
+	test := func(input string, mbtches []result.Mbtch) string {
+		computeQuery, _ := compute.Pbrse(input)
 		resolvers, _ := toResultResolverList(
-			context.Background(),
-			computeQuery.Command,
-			matches,
+			context.Bbckground(),
+			computeQuery.Commbnd,
+			mbtches,
 			dbmocks.NewMockDB(),
 		)
-		results := make([]string, 0, len(resolvers))
-		for _, r := range resolvers {
-			if rr, ok := r.ToComputeMatchContext(); ok {
-				matches := rr.Matches()
-				for _, m := range matches {
-					results = append(results, m.Value())
+		results := mbke([]string, 0, len(resolvers))
+		for _, r := rbnge resolvers {
+			if rr, ok := r.ToComputeMbtchContext(); ok {
+				mbtches := rr.Mbtches()
+				for _, m := rbnge mbtches {
+					results = bppend(results, m.Vblue())
 				}
 			}
 		}
-		v, _ := json.Marshal(results)
+		v, _ := json.Mbrshbl(results)
 		return string(v)
 	}
 
-	nonNilMatches := []result.Match{
-		&result.FileMatch{
-			ChunkMatches: result.ChunkMatches{{
-				Content: "a",
-				Ranges: result.Ranges{{
-					Start: result.Location{Offset: 0, Line: 1, Column: 0},
-					End:   result.Location{Offset: 1, Line: 1, Column: 1},
+	nonNilMbtches := []result.Mbtch{
+		&result.FileMbtch{
+			ChunkMbtches: result.ChunkMbtches{{
+				Content: "b",
+				Rbnges: result.Rbnges{{
+					Stbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+					End:   result.Locbtion{Offset: 1, Line: 1, Column: 1},
 				}},
 			}, {
 				Content: "b",
-				Ranges: result.Ranges{{
-					Start: result.Location{Offset: 0, Line: 2, Column: 0},
-					End:   result.Location{Offset: 1, Line: 2, Column: 1},
+				Rbnges: result.Rbnges{{
+					Stbrt: result.Locbtion{Offset: 0, Line: 2, Column: 0},
+					End:   result.Locbtion{Offset: 1, Line: 2, Column: 1},
 				}},
 			}},
 		},
 	}
-	autogold.Expect(`["a","b"]`).Equal(t, test("a|b", nonNilMatches))
+	butogold.Expect(`["b","b"]`).Equbl(t, test("b|b", nonNilMbtches))
 
-	producesNilResult := []result.Match{&result.CommitMatch{}}
-	autogold.Expect("[]").Equal(t, test("a|b", producesNilResult))
+	producesNilResult := []result.Mbtch{&result.CommitMbtch{}}
+	butogold.Expect("[]").Equbl(t, test("b|b", producesNilResult))
 }

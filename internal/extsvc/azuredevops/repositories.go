@@ -1,4 +1,4 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"bytes"
@@ -8,18 +8,18 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (c *client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s", args.Org, args.Project, args.RepoNameOrID)}
+func (c *client) GetRepo(ctx context.Context, brgs OrgProjectRepoArgs) (Repository, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s", brgs.Org, brgs.Project, brgs.RepoNbmeOrID)}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return Repository{}, err
 	}
 
-	var repo Repository
+	vbr repo Repository
 	if _, err = c.do(ctx, req, "", &repo); err != nil {
 		return Repository{}, err
 	}
@@ -27,36 +27,36 @@ func (c *client) GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Reposito
 	return repo, nil
 }
 
-func (c *client) ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", args.ProjectOrOrgName)}
+func (c *client) ListRepositoriesByProjectOrOrg(ctx context.Context, brgs ListRepositoriesByProjectOrOrgArgs) ([]Repository, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/_bpis/git/repositories", brgs.ProjectOrOrgNbme)}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var repos ListRepositoriesResponse
+	vbr repos ListRepositoriesResponse
 	if _, err = c.do(ctx, req, "", &repos); err != nil {
 		return nil, err
 	}
 
-	return repos.Value, nil
+	return repos.Vblue, nil
 }
 
 func (c *client) ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error) {
-	data, err := json.Marshal(&input)
+	dbtb, err := json.Mbrshbl(&input)
 	if err != nil {
-		return Repository{}, errors.Wrap(err, "marshalling request")
+		return Repository{}, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	reqURL := url.URL{Path: fmt.Sprintf("%s/_apis/git/repositories", org)}
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/_bpis/git/repositories", org)}
 
-	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(dbtb))
 	if err != nil {
 		return Repository{}, err
 	}
 
-	var repo Repository
+	vbr repo Repository
 	if _, err = c.do(ctx, req, "", &repo); err != nil {
 		return Repository{}, err
 	}
@@ -64,40 +64,40 @@ func (c *client) ForkRepository(ctx context.Context, org string, input ForkRepos
 	return repo, nil
 }
 
-func (c *client) GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error) {
-	var allRefs []Ref
-	continuationToken := ""
-	queryParams := make(url.Values)
-	// The filter here by branch name is only a substring match, so we aren't guaranteed to only get one result.
-	queryParams.Set("filter", fmt.Sprintf("heads/%s", branchName))
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/refs", args.Org, args.Project, args.RepoNameOrID)}
+func (c *client) GetRepositoryBrbnch(ctx context.Context, brgs OrgProjectRepoArgs, brbnchNbme string) (Ref, error) {
+	vbr bllRefs []Ref
+	continubtionToken := ""
+	queryPbrbms := mbke(url.Vblues)
+	// The filter here by brbnch nbme is only b substring mbtch, so we bren't gubrbnteed to only get one result.
+	queryPbrbms.Set("filter", fmt.Sprintf("hebds/%s", brbnchNbme))
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/refs", brgs.Org, brgs.Project, brgs.RepoNbmeOrID)}
 	for {
-		if continuationToken != "" {
-			queryParams.Set("continuationToken", continuationToken)
+		if continubtionToken != "" {
+			queryPbrbms.Set("continubtionToken", continubtionToken)
 		}
-		reqURL.RawQuery = queryParams.Encode()
+		reqURL.RbwQuery = queryPbrbms.Encode()
 		req, err := http.NewRequest("GET", reqURL.String(), nil)
 		if err != nil {
 			return Ref{}, err
 		}
 
-		var refs ListRefsResponse
-		continuationToken, err = c.do(ctx, req, "", &refs)
+		vbr refs ListRefsResponse
+		continubtionToken, err = c.do(ctx, req, "", &refs)
 		if err != nil {
 			return Ref{}, err
 		}
-		allRefs = append(allRefs, refs.Value...)
+		bllRefs = bppend(bllRefs, refs.Vblue...)
 
-		if continuationToken == "" {
-			break
+		if continubtionToken == "" {
+			brebk
 		}
 	}
 
-	for _, ref := range allRefs {
-		if ref.Name == fmt.Sprintf("refs/heads/%s", branchName) {
+	for _, ref := rbnge bllRefs {
+		if ref.Nbme == fmt.Sprintf("refs/hebds/%s", brbnchNbme) {
 			return ref, nil
 		}
 	}
 
-	return Ref{}, errors.Newf("branch %q not found", branchName)
+	return Ref{}, errors.Newf("brbnch %q not found", brbnchNbme)
 }

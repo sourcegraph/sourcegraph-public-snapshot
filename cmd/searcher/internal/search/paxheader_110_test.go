@@ -1,15 +1,15 @@
 //go:build go1.10
 // +build go1.10
 
-package search_test
+pbckbge sebrch_test
 
-import "archive/tar"
+import "brchive/tbr"
 
-func addpaxheader(w *tar.Writer, body string) error {
-	hdr := &tar.Header{
-		Name:       "pax_global_header",
-		Typeflag:   tar.TypeXGlobalHeader,
-		PAXRecords: map[string]string{"somekey": body},
+func bddpbxhebder(w *tbr.Writer, body string) error {
+	hdr := &tbr.Hebder{
+		Nbme:       "pbx_globbl_hebder",
+		Typeflbg:   tbr.TypeXGlobblHebder,
+		PAXRecords: mbp[string]string{"somekey": body},
 	}
-	return w.WriteHeader(hdr)
+	return w.WriteHebder(hdr)
 }

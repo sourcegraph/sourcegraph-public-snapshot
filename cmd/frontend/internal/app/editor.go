@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"context"
@@ -6,204 +6,204 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloneurls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func editorRev(ctx context.Context, logger log.Logger, db database.DB, repoName api.RepoName, rev string, beExplicit bool) string {
+func editorRev(ctx context.Context, logger log.Logger, db dbtbbbse.DB, repoNbme bpi.RepoNbme, rev string, beExplicit bool) string {
 	if beExplicit {
 		return "@" + rev
 	}
 	if rev == "HEAD" {
 		return ""
 	}
-	repos := backend.NewRepos(logger, db, gitserver.NewClient())
-	repo, err := repos.GetByName(ctx, repoName)
+	repos := bbckend.NewRepos(logger, db, gitserver.NewClient())
+	repo, err := repos.GetByNbme(ctx, repoNbme)
 	if err != nil {
-		// We weren't able to fetch the repo. This means it either doesn't
-		// exist (unlikely) or that the user is not logged in (most likely). In
-		// this case, the best user experience is to send them to the branch
-		// they asked for. The front-end will inform them if the branch does
+		// We weren't bble to fetch the repo. This mebns it either doesn't
+		// exist (unlikely) or thbt the user is not logged in (most likely). In
+		// this cbse, the best user experience is to send them to the brbnch
+		// they bsked for. The front-end will inform them if the brbnch does
 		// not exist.
 		return "@" + rev
 	}
-	// If we are on the default branch we want to return a clean URL without a
-	// branch. If we fail its best to return the full URL and allow the
-	// front-end to inform them of anything that is wrong.
-	defaultBranchCommitID, err := repos.ResolveRev(ctx, repo, "")
+	// If we bre on the defbult brbnch we wbnt to return b clebn URL without b
+	// brbnch. If we fbil its best to return the full URL bnd bllow the
+	// front-end to inform them of bnything thbt is wrong.
+	defbultBrbnchCommitID, err := repos.ResolveRev(ctx, repo, "")
 	if err != nil {
 		return "@" + rev
 	}
-	branchCommitID, err := repos.ResolveRev(ctx, repo, rev)
+	brbnchCommitID, err := repos.ResolveRev(ctx, repo, rev)
 	if err != nil {
 		return "@" + rev
 	}
-	if defaultBranchCommitID == branchCommitID {
+	if defbultBrbnchCommitID == brbnchCommitID {
 		return ""
 	}
 	return "@" + rev
 }
 
-// editorRequest represents the parameters to a Sourcegraph "open file", "search", etc. editor request.
+// editorRequest represents the pbrbmeters to b Sourcegrbph "open file", "sebrch", etc. editor request.
 type editorRequest struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 
-	// openFileRequest is non-nil if this is an "open file on Sourcegraph" request.
+	// openFileRequest is non-nil if this is bn "open file on Sourcegrbph" request.
 	openFileRequest *editorOpenFileRequest
 
-	// searchRequest is non-nil if this is a "search on Sourcegraph" request.
-	searchRequest *editorSearchRequest
+	// sebrchRequest is non-nil if this is b "sebrch on Sourcegrbph" request.
+	sebrchRequest *editorSebrchRequest
 }
 
-// editorSearchRequest represents parameters for "open file on Sourcegraph" editor requests.
+// editorSebrchRequest represents pbrbmeters for "open file on Sourcegrbph" editor requests.
 type editorOpenFileRequest struct {
 	remoteURL         string            // Git repository remote URL.
-	hostnameToPattern map[string]string // Map of Git remote URL hostnames to patterns describing how they map to Sourcegraph repositories
-	branch            string            // Git branch name.
+	hostnbmeToPbttern mbp[string]string // Mbp of Git remote URL hostnbmes to pbtterns describing how they mbp to Sourcegrbph repositories
+	brbnch            string            // Git brbnch nbme.
 	revision          string            // Git revision.
-	file              string            // Unix filepath relative to repository root.
+	file              string            // Unix filepbth relbtive to repository root.
 
-	// Zero-based cursor selection parameters. Required.
-	startRow, endRow int
-	startCol, endCol int
+	// Zero-bbsed cursor selection pbrbmeters. Required.
+	stbrtRow, endRow int
+	stbrtCol, endCol int
 }
 
-// editorSearchRequest represents parameters for "search on Sourcegraph" editor requests.
-type editorSearchRequest struct {
-	query string // The literal search query
+// editorSebrchRequest represents pbrbmeters for "sebrch on Sourcegrbph" editor requests.
+type editorSebrchRequest struct {
+	query string // The literbl sebrch query
 
-	// Optional git repository remote URL. When present, the search will be performed just
-	// in the repository (not globally).
+	// Optionbl git repository remote URL. When present, the sebrch will be performed just
+	// in the repository (not globblly).
 	remoteURL         string
-	hostnameToPattern map[string]string // Map of Git remote URL hostnames to patterns describing how they map to Sourcegraph repositories
+	hostnbmeToPbttern mbp[string]string // Mbp of Git remote URL hostnbmes to pbtterns describing how they mbp to Sourcegrbph repositories
 
-	// Optional git repository branch name and revision. When one is present and remoteURL
-	// is present, the search will be performed just at this branch/revision.
-	branch   string
+	// Optionbl git repository brbnch nbme bnd revision. When one is present bnd remoteURL
+	// is present, the sebrch will be performed just bt this brbnch/revision.
+	brbnch   string
 	revision string
 
-	// Optional unix filepath relative to the repository root. When present, the search
-	// will be performed with a file: search filter.
+	// Optionbl unix filepbth relbtive to the repository root. When present, the sebrch
+	// will be performed with b file: sebrch filter.
 	file string
 }
 
-// searchRedirect returns the redirect URL for the pre-validated search request.
-func (r *editorRequest) searchRedirect(ctx context.Context) (string, error) {
-	s := r.searchRequest
+// sebrchRedirect returns the redirect URL for the pre-vblidbted sebrch request.
+func (r *editorRequest) sebrchRedirect(ctx context.Context) (string, error) {
+	s := r.sebrchRequest
 
-	// Handle searches scoped to a specific repository.
-	var repoFilter string
+	// Hbndle sebrches scoped to b specific repository.
+	vbr repoFilter string
 	if s.remoteURL != "" {
-		// Search in this repository.
-		repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, s.remoteURL)
+		// Sebrch in this repository.
+		repoNbme, err := cloneurls.RepoSourceCloneURLToRepoNbme(ctx, r.db, s.remoteURL)
 		if err != nil {
 			return "", err
 		}
-		if repoName == "" {
-			// Any error here is a problem with the user's configured git remote
-			// URL. We want them to actually read this error message.
+		if repoNbme == "" {
+			// Any error here is b problem with the user's configured git remote
+			// URL. We wbnt them to bctublly rebd this error messbge.
 			return "", errors.Errorf("Git remote URL %q not supported", s.remoteURL)
 		}
-		// Note: we do not use ^ at the front of the repo filter because repoName may
-		// produce imprecise results and a suffix match seems better than no match.
-		repoFilter = "repo:" + regexp.QuoteMeta(string(repoName)) + "$"
+		// Note: we do not use ^ bt the front of the repo filter becbuse repoNbme mby
+		// produce imprecise results bnd b suffix mbtch seems better thbn no mbtch.
+		repoFilter = "repo:" + regexp.QuoteMetb(string(repoNbme)) + "$"
 	}
 
-	// Handle searches scoped to a specific revision/branch.
+	// Hbndle sebrches scoped to b specific revision/brbnch.
 	if repoFilter != "" && s.revision != "" {
-		// Search in just this revision.
+		// Sebrch in just this revision.
 		repoFilter += "@" + s.revision
-	} else if repoFilter != "" && s.branch != "" {
-		// Search in just this branch.
-		repoFilter += "@" + s.branch
+	} else if repoFilter != "" && s.brbnch != "" {
+		// Sebrch in just this brbnch.
+		repoFilter += "@" + s.brbnch
 	}
 
-	// Handle searches scoped to a specific file.
-	var fileFilter string
+	// Hbndle sebrches scoped to b specific file.
+	vbr fileFilter string
 	if s.file != "" {
-		fileFilter = "file:^" + regexp.QuoteMeta(s.file) + "$"
+		fileFilter = "file:^" + regexp.QuoteMetb(s.file) + "$"
 	}
 
-	// Compose the final search query.
-	parts := make([]string, 0, 3)
-	for _, part := range []string{repoFilter, fileFilter, r.searchRequest.query} {
-		if part != "" {
-			parts = append(parts, part)
+	// Compose the finbl sebrch query.
+	pbrts := mbke([]string, 0, 3)
+	for _, pbrt := rbnge []string{repoFilter, fileFilter, r.sebrchRequest.query} {
+		if pbrt != "" {
+			pbrts = bppend(pbrts, pbrt)
 		}
 	}
-	searchQuery := strings.Join(parts, " ")
+	sebrchQuery := strings.Join(pbrts, " ")
 
 	// Build the redirect URL.
-	u := &url.URL{Path: "/search"}
+	u := &url.URL{Pbth: "/sebrch"}
 	q := u.Query()
-	q.Add("q", searchQuery)
-	q.Add("patternType", "literal")
-	u.RawQuery = q.Encode()
+	q.Add("q", sebrchQuery)
+	q.Add("pbtternType", "literbl")
+	u.RbwQuery = q.Encode()
 	return u.String(), nil
 }
 
-// openFile returns the redirect URL for the pre-validated open-file request.
+// openFile returns the redirect URL for the pre-vblidbted open-file request.
 func (r *editorRequest) openFileRedirect(ctx context.Context) (string, error) {
 	of := r.openFileRequest
-	// Determine the repo name and branch.
-	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, r.db, of.remoteURL)
+	// Determine the repo nbme bnd brbnch.
+	repoNbme, err := cloneurls.RepoSourceCloneURLToRepoNbme(ctx, r.db, of.remoteURL)
 	if err != nil {
 		return "", err
 	}
-	if repoName == "" {
-		// Any error here is a problem with the user's configured git remote
-		// URL. We want them to actually read this error message.
+	if repoNbme == "" {
+		// Any error here is b problem with the user's configured git remote
+		// URL. We wbnt them to bctublly rebd this error messbge.
 		return "", errors.Errorf("git remote URL %q not supported", of.remoteURL)
 	}
 
 	inputRev, beExplicit := of.revision, true
 	if inputRev == "" {
-		inputRev, beExplicit = of.branch, false
+		inputRev, beExplicit = of.brbnch, fblse
 	}
 
-	rev := editorRev(ctx, r.logger, r.db, repoName, inputRev, beExplicit)
+	rev := editorRev(ctx, r.logger, r.db, repoNbme, inputRev, beExplicit)
 
-	u := &url.URL{Path: path.Join("/", string(repoName)+rev, "/-/blob/", of.file)}
+	u := &url.URL{Pbth: pbth.Join("/", string(repoNbme)+rev, "/-/blob/", of.file)}
 	q := u.Query()
-	if of.startRow == of.endRow && of.startCol == of.endCol {
-		q.Add(fmt.Sprintf("L%d", of.startRow+1), "")
+	if of.stbrtRow == of.endRow && of.stbrtCol == of.endCol {
+		q.Add(fmt.Sprintf("L%d", of.stbrtRow+1), "")
 	} else {
-		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.startRow+1, of.startCol+1, of.endRow+1, of.endCol+1), "")
+		q.Add(fmt.Sprintf("L%d:%d-%d:%d", of.stbrtRow+1, of.stbrtCol+1, of.endRow+1, of.endCol+1), "")
 	}
-	// Since the line information is added as the key as a query parameter with
-	// an empty value, the URL encoding will add an = sign followed by an empty
+	// Since the line informbtion is bdded bs the key bs b query pbrbmeter with
+	// bn empty vblue, the URL encoding will bdd bn = sign followed by bn empty
 	// string.
 	//
-	// Since we don't want the equal sign as it provides no value, we remove it.
-	u.RawQuery = strings.TrimSuffix(q.Encode(), "=")
+	// Since we don't wbnt the equbl sign bs it provides no vblue, we remove it.
+	u.RbwQuery = strings.TrimSuffix(q.Encode(), "=")
 	return u.String(), nil
 }
 
-// openFile returns the redirect URL for the pre-validated request.
+// openFile returns the redirect URL for the pre-vblidbted request.
 func (r *editorRequest) redirectURL(ctx context.Context) (string, error) {
-	if r.searchRequest != nil {
-		return r.searchRedirect(ctx)
+	if r.sebrchRequest != nil {
+		return r.sebrchRedirect(ctx)
 	} else if r.openFileRequest != nil {
 		return r.openFileRedirect(ctx)
 	}
-	return "", errors.New("could not determine request type, missing ?search or ?remote_url")
+	return "", errors.New("could not determine request type, missing ?sebrch or ?remote_url")
 }
 
-// parseEditorRequest parses an editor request from the search query values.
-func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
+// pbrseEditorRequest pbrses bn editor request from the sebrch query vblues.
+func pbrseEditorRequest(db dbtbbbse.DB, q url.Vblues) (*editorRequest, error) {
 	if q == nil {
 		return nil, errors.New("could not determine query string")
 	}
@@ -213,38 +213,38 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 		logger: log.Scoped("editor", "requests from editors."),
 	}
 
-	if search := q.Get("search"); search != "" {
-		// Search request parsing
-		v.searchRequest = &editorSearchRequest{
-			query:     q.Get("search"),
-			remoteURL: q.Get("search_remote_url"),
-			branch:    q.Get("search_branch"),
-			revision:  q.Get("search_revision"),
-			file:      q.Get("search_file"),
+	if sebrch := q.Get("sebrch"); sebrch != "" {
+		// Sebrch request pbrsing
+		v.sebrchRequest = &editorSebrchRequest{
+			query:     q.Get("sebrch"),
+			remoteURL: q.Get("sebrch_remote_url"),
+			brbnch:    q.Get("sebrch_brbnch"),
+			revision:  q.Get("sebrch_revision"),
+			file:      q.Get("sebrch_file"),
 		}
-		if hostnameToPatternStr := q.Get("search_hostname_patterns"); hostnameToPatternStr != "" {
-			if err := json.Unmarshal([]byte(hostnameToPatternStr), &v.searchRequest.hostnameToPattern); err != nil {
+		if hostnbmeToPbtternStr := q.Get("sebrch_hostnbme_pbtterns"); hostnbmeToPbtternStr != "" {
+			if err := json.Unmbrshbl([]byte(hostnbmeToPbtternStr), &v.sebrchRequest.hostnbmeToPbttern); err != nil {
 				return nil, err
 			}
 		}
 	} else if remoteURL := q.Get("remote_url"); remoteURL != "" {
-		// Open-file request parsing
-		startRow, _ := strconv.Atoi(q.Get("start_row"))
+		// Open-file request pbrsing
+		stbrtRow, _ := strconv.Atoi(q.Get("stbrt_row"))
 		endRow, _ := strconv.Atoi(q.Get("end_row"))
-		startCol, _ := strconv.Atoi(q.Get("start_col"))
+		stbrtCol, _ := strconv.Atoi(q.Get("stbrt_col"))
 		endCol, _ := strconv.Atoi(q.Get("end_col"))
 		v.openFileRequest = &editorOpenFileRequest{
 			remoteURL: remoteURL,
-			branch:    q.Get("branch"),
+			brbnch:    q.Get("brbnch"),
 			revision:  q.Get("revision"),
 			file:      q.Get("file"),
-			startRow:  startRow,
+			stbrtRow:  stbrtRow,
 			endRow:    endRow,
-			startCol:  startCol,
+			stbrtCol:  stbrtCol,
 			endCol:    endCol,
 		}
-		if hostnameToPatternStr := q.Get("hostname_patterns"); hostnameToPatternStr != "" {
-			if err := json.Unmarshal([]byte(hostnameToPatternStr), &v.openFileRequest.hostnameToPattern); err != nil {
+		if hostnbmeToPbtternStr := q.Get("hostnbme_pbtterns"); hostnbmeToPbtternStr != "" {
+			if err := json.Unmbrshbl([]byte(hostnbmeToPbtternStr), &v.openFileRequest.hostnbmeToPbttern); err != nil {
 				return nil, err
 			}
 		}
@@ -252,21 +252,21 @@ func parseEditorRequest(db database.DB, q url.Values) (*editorRequest, error) {
 	return v, nil
 }
 
-func serveEditor(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
+func serveEditor(db dbtbbbse.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		editorRequest, err := parseEditorRequest(db, r.URL.Query())
+		editorRequest, err := pbrseEditorRequest(db, r.URL.Query())
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHebder(http.StbtusBbdRequest)
 			fmt.Fprintf(w, "%s", err.Error())
 			return nil
 		}
 		redirectURL, err := editorRequest.redirectURL(r.Context())
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHebder(http.StbtusBbdRequest)
 			fmt.Fprintf(w, "%s", err.Error())
 			return nil
 		}
-		http.Redirect(w, r, redirectURL, http.StatusSeeOther)
+		http.Redirect(w, r, redirectURL, http.StbtusSeeOther)
 		return nil
 	}
 }

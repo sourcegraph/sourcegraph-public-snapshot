@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type ReferenceResult struct {
 	Vertex
@@ -11,7 +11,7 @@ func NewReferenceResult(id uint64) ResultSet {
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexReferenceResult,
+			Lbbel: VertexReferenceResult,
 		},
 	}
 }
@@ -29,7 +29,7 @@ func NewTextDocumentReferences(id, outV, inV uint64) TextDocumentReferences {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeTextDocumentReferences,
+			Lbbel: EdgeTextDocumentReferences,
 		},
 		OutV: outV,
 		InV:  inV,

@@ -1,130 +1,130 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestServiceAccountOrOwnerOrSiteAdmin(t *testing.T) {
-	var actorID, anotherID int32 = 1, 2
-	for _, tc := range []struct {
-		name           string
-		featureFlags   map[string]bool
-		actorSiteAdmin bool
+	vbr bctorID, bnotherID int32 = 1, 2
+	for _, tc := rbnge []struct {
+		nbme           string
+		febtureFlbgs   mbp[string]bool
+		bctorSiteAdmin bool
 
 		ownerUserID            *int32
-		serviceAccountCanWrite bool
+		serviceAccountCbnWrite bool
 
-		wantGrantReason string
-		wantErr         autogold.Value
+		wbntGrbntRebson string
+		wbntErr         butogold.Vblue
 	}{
 		{
-			name: "reader service account",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsReaderServiceAccount: true,
+			nbme: "rebder service bccount",
+			febtureFlbgs: mbp[string]bool{
+				febtureFlbgProductSubscriptionsRebderServiceAccount: true,
 			},
-			wantErr:         nil,
-			wantGrantReason: "reader_service_account",
+			wbntErr:         nil,
+			wbntGrbntRebson: "rebder_service_bccount",
 		},
 		{
-			name: "service account",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsServiceAccount: true,
+			nbme: "service bccount",
+			febtureFlbgs: mbp[string]bool{
+				febtureFlbgProductSubscriptionsServiceAccount: true,
 			},
-			wantErr:         nil,
-			wantGrantReason: "writer_service_account",
+			wbntErr:         nil,
+			wbntGrbntRebson: "writer_service_bccount",
 		},
 		{
-			name:            "same user",
-			ownerUserID:     &actorID,
-			wantErr:         nil,
-			wantGrantReason: "same_user_or_site_admin",
+			nbme:            "sbme user",
+			ownerUserID:     &bctorID,
+			wbntErr:         nil,
+			wbntGrbntRebson: "sbme_user_or_site_bdmin",
 		},
 		{
-			name:        "different user",
-			ownerUserID: &anotherID,
-			wantErr:     autogold.Expect("must be authenticated as the authorized user or site admin"),
+			nbme:        "different user",
+			ownerUserID: &bnotherID,
+			wbntErr:     butogold.Expect("must be buthenticbted bs the buthorized user or site bdmin"),
 		},
 		{
-			name:            "site admin",
-			actorSiteAdmin:  true,
-			wantErr:         nil,
-			wantGrantReason: "site_admin",
+			nbme:            "site bdmin",
+			bctorSiteAdmin:  true,
+			wbntErr:         nil,
+			wbntGrbntRebson: "site_bdmin",
 		},
 		{
-			name:            "site admin can access another user",
-			actorSiteAdmin:  true,
-			ownerUserID:     &anotherID,
-			wantErr:         nil,
-			wantGrantReason: "same_user_or_site_admin",
+			nbme:            "site bdmin cbn bccess bnother user",
+			bctorSiteAdmin:  true,
+			ownerUserID:     &bnotherID,
+			wbntErr:         nil,
+			wbntGrbntRebson: "sbme_user_or_site_bdmin",
 		},
 		{
-			name:    "not a site admin, not accessing a user-specific resource",
-			wantErr: autogold.Expect("must be site admin"),
+			nbme:    "not b site bdmin, not bccessing b user-specific resource",
+			wbntErr: butogold.Expect("must be site bdmin"),
 		},
 		{
-			name: "service account needs writer flag",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsReaderServiceAccount: true,
+			nbme: "service bccount needs writer flbg",
+			febtureFlbgs: mbp[string]bool{
+				febtureFlbgProductSubscriptionsRebderServiceAccount: true,
 			},
-			serviceAccountCanWrite: true,
-			wantErr:                autogold.Expect("must be site admin"),
+			serviceAccountCbnWrite: true,
+			wbntErr:                butogold.Expect("must be site bdmin"),
 		},
 		{
-			name: "service account fulfills writer flag",
-			featureFlags: map[string]bool{
-				featureFlagProductSubscriptionsServiceAccount: true,
+			nbme: "service bccount fulfills writer flbg",
+			febtureFlbgs: mbp[string]bool{
+				febtureFlbgProductSubscriptionsServiceAccount: true,
 			},
-			serviceAccountCanWrite: true,
-			wantErr:                nil,
-			wantGrantReason:        "writer_service_account",
+			serviceAccountCbnWrite: true,
+			wbntErr:                nil,
+			wbntGrbntRebson:        "writer_service_bccount",
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			tc := tc
-			t.Parallel()
+			t.Pbrbllel()
 
 			db := dbmocks.NewMockDB()
 			mockUsers := dbmocks.NewMockUserStore()
 
-			user := &types.User{ID: actorID, SiteAdmin: tc.actorSiteAdmin}
-			mockUsers.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
-			mockUsers.GetByIDFunc.SetDefaultReturn(user, nil)
+			user := &types.User{ID: bctorID, SiteAdmin: tc.bctorSiteAdmin}
+			mockUsers.GetByCurrentAuthUserFunc.SetDefbultReturn(user, nil)
+			mockUsers.GetByIDFunc.SetDefbultReturn(user, nil)
 
-			db.UsersFunc.SetDefaultReturn(mockUsers)
+			db.UsersFunc.SetDefbultReturn(mockUsers)
 
-			ffStore := dbmocks.NewMockFeatureFlagStore()
-			ffStore.GetUserFlagsFunc.SetDefaultReturn(tc.featureFlags, nil)
-			db.FeatureFlagsFunc.SetDefaultReturn(ffStore)
+			ffStore := dbmocks.NewMockFebtureFlbgStore()
+			ffStore.GetUserFlbgsFunc.SetDefbultReturn(tc.febtureFlbgs, nil)
+			db.FebtureFlbgsFunc.SetDefbultReturn(ffStore)
 
-			// Test that a feature flag store with potential overrides on the context
-			// is NOT used. We don't want to allow ovverriding service account checks.
-			ctx := featureflag.WithFlags(context.Background(),
-				featureflag.NewMemoryStore(map[string]bool{
-					featureFlagProductSubscriptionsReaderServiceAccount: true,
-					featureFlagProductSubscriptionsServiceAccount:       true,
+			// Test thbt b febture flbg store with potentibl overrides on the context
+			// is NOT used. We don't wbnt to bllow ovverriding service bccount checks.
+			ctx := febtureflbg.WithFlbgs(context.Bbckground(),
+				febtureflbg.NewMemoryStore(mbp[string]bool{
+					febtureFlbgProductSubscriptionsRebderServiceAccount: true,
+					febtureFlbgProductSubscriptionsServiceAccount:       true,
 				}, nil, nil))
 
-			grantReason, err := serviceAccountOrOwnerOrSiteAdmin(
-				actor.WithActor(ctx, &actor.Actor{UID: actorID}),
+			grbntRebson, err := serviceAccountOrOwnerOrSiteAdmin(
+				bctor.WithActor(ctx, &bctor.Actor{UID: bctorID}),
 				db,
 				tc.ownerUserID,
-				tc.serviceAccountCanWrite,
+				tc.serviceAccountCbnWrite,
 			)
-			if tc.wantErr != nil {
+			if tc.wbntErr != nil {
 				require.Error(t, err)
-				tc.wantErr.Equal(t, err.Error())
+				tc.wbntErr.Equbl(t, err.Error())
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, tc.wantGrantReason, grantReason)
+				require.Equbl(t, tc.wbntGrbntRebson, grbntRebson)
 			}
 		})
 	}

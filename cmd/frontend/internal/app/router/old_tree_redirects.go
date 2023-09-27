@@ -1,28 +1,28 @@
-package router
+pbckbge router
 
 import (
 	"net/http"
-	"path"
+	"pbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/routevbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 )
 
-// same as spec.unresolvedRevPattern but also not allowing path
-// components starting with ".".
+// sbme bs spec.unresolvedRevPbttern but blso not bllowing pbth
+// components stbrting with ".".
 const revSuffixNoDots = `{Rev:(?:@(?:(?:[^@=/.-]|(?:[^=/@.]{2,}))/)*(?:[^@=/.-]|(?:[^=/@.]{2,})))?}`
 
-func addOldTreeRedirectRoute(matchRouter *mux.Router) {
-	matchRouter.Path("/" + routevar.Repo + revSuffixNoDots + `/.tree{Path:.*}`).Methods("GET").Name(OldTreeRedirect).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		v := mux.Vars(r)
-		cleanedPath := path.Clean(v["Path"])
-		if !strings.HasPrefix(cleanedPath, "/") && cleanedPath != "" {
-			cleanedPath = "/" + cleanedPath
+func bddOldTreeRedirectRoute(mbtchRouter *mux.Router) {
+	mbtchRouter.Pbth("/" + routevbr.Repo + revSuffixNoDots + `/.tree{Pbth:.*}`).Methods("GET").Nbme(OldTreeRedirect).HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		v := mux.Vbrs(r)
+		clebnedPbth := pbth.Clebn(v["Pbth"])
+		if !strings.HbsPrefix(clebnedPbth, "/") && clebnedPbth != "" {
+			clebnedPbth = "/" + clebnedPbth
 		}
 
-		http.Redirect(w, r, URLToRepoTreeEntry(api.RepoName(v["Repo"]), v["Rev"], cleanedPath).String(), http.StatusMovedPermanently)
+		http.Redirect(w, r, URLToRepoTreeEntry(bpi.RepoNbme(v["Repo"]), v["Rev"], clebnedPbth).String(), http.StbtusMovedPermbnently)
 	})
 }

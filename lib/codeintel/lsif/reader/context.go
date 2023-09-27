@@ -1,9 +1,9 @@
-package reader
+pbckbge rebder
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
 
-// LineContext holds a line index and the element parsed from that line.
+// LineContext holds b line index bnd the element pbrsed from thbt line.
 type LineContext struct {
 	Index   int
-	Element reader.Element
+	Element rebder.Element
 }

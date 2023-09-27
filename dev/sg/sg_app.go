@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -8,116 +8,116 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
 	"time"
 
-	"cloud.google.com/go/storage"
+	"cloud.google.com/go/storbge"
 	"github.com/google/go-github/v41/github"
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/bk"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-type resetFlag struct {
+type resetFlbg struct {
 	dryRun bool
 }
 
-var resetFlags resetFlag
+vbr resetFlbgs resetFlbg
 
-type updateManifestFlag struct {
+type updbteMbnifestFlbg struct {
 	bucket           string
 	build            int
-	tag              string
-	updateSignatures bool
-	noUpload         bool
+	tbg              string
+	updbteSignbtures bool
+	noUplobd         bool
 }
 
-var manifestFlags updateManifestFlag
-var appCommand = &cli.Command{
-	Name:  "app",
-	Usage: "Manage releases and update manifests used to let Cody App clients know that a new update is available",
-	UsageText: `
-# Update the updater manifest
-sg app update-manifest
+vbr mbnifestFlbgs updbteMbnifestFlbg
+vbr bppCommbnd = &cli.Commbnd{
+	Nbme:  "bpp",
+	Usbge: "Mbnbge relebses bnd updbte mbnifests used to let Cody App clients know thbt b new updbte is bvbilbble",
+	UsbgeText: `
+# Updbte the updbter mbnifest
+sg bpp updbte-mbnifest
 
-# Update the updater manifest based on a particular github release
-sg app update-manifest --release-tag app-v2023.07.07
+# Updbte the updbter mbnifest bbsed on b pbrticulbr github relebse
+sg bpp updbte-mbnifest --relebse-tbg bpp-v2023.07.07
 
-# Do everything except upload the updated manifest
-sg app update-manifest --no-upload
+# Do everything except uplobd the updbted mbnifest
+sg bpp updbte-mbnifest --no-uplobd
 
-# Update the manifest but don't update the signatures from the release - useful if the release comes from the same build
-sg app update-manifest --update-signatures
+# Updbte the mbnifest but don't updbte the signbtures from the relebse - useful if the relebse comes from the sbme build
+sg bpp updbte-mbnifest --updbte-signbtures
 
-# Resets the dev app's db and web cache
-sg app reset
+# Resets the dev bpp's db bnd web cbche
+sg bpp reset
 
-# Prints the locations to be removed without deleting
-sg app reset --dry-run
+# Prints the locbtions to be removed without deleting
+sg bpp reset --dry-run
 `,
 	Description: `
-Various commands to handle management of releases, and processes around Cody App.
+Vbrious commbnds to hbndle mbnbgement of relebses, bnd processes bround Cody App.
 
 `,
-	ArgsUsage: "",
-	Category:  category.Dev,
-	Subcommands: []*cli.Command{
+	ArgsUsbge: "",
+	Cbtegory:  cbtegory.Dev,
+	Subcommbnds: []*cli.Commbnd{
 		{
-			Name:  "update-manifest",
-			Usage: "update the manifest used by the updater endpoint on dotCom",
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:        "bucket",
-					HasBeenSet:  true,
-					Value:       "sourcegraph-app",
-					Destination: &manifestFlags.bucket,
-					Usage:       "Bucket where the updated manifest should be uploaded to once updated.",
+			Nbme:  "updbte-mbnifest",
+			Usbge: "updbte the mbnifest used by the updbter endpoint on dotCom",
+			Flbgs: []cli.Flbg{
+				&cli.StringFlbg{
+					Nbme:        "bucket",
+					HbsBeenSet:  true,
+					Vblue:       "sourcegrbph-bpp",
+					Destinbtion: &mbnifestFlbgs.bucket,
+					Usbge:       "Bucket where the updbted mbnifest should be uplobded to once updbted.",
 				},
-				&cli.IntFlag{
-					Name:        "build",
-					Value:       -1,
-					Destination: &manifestFlags.build,
-					Usage:       "Build number to retrieve the update-manifest from. If no build number is given, the latest build will be used",
-					DefaultText: "latest",
+				&cli.IntFlbg{
+					Nbme:        "build",
+					Vblue:       -1,
+					Destinbtion: &mbnifestFlbgs.build,
+					Usbge:       "Build number to retrieve the updbte-mbnifest from. If no build number is given, the lbtest build will be used",
+					DefbultText: "lbtest",
 				},
-				&cli.StringFlag{
-					Name:        "release-tag",
-					Value:       "latest",
-					Destination: &manifestFlags.tag,
-					Usage:       "GitHub release tag which should be used to update the manifest with. If no tag is given the latest GitHub release is used",
-					DefaultText: "latest",
+				&cli.StringFlbg{
+					Nbme:        "relebse-tbg",
+					Vblue:       "lbtest",
+					Destinbtion: &mbnifestFlbgs.tbg,
+					Usbge:       "GitHub relebse tbg which should be used to updbte the mbnifest with. If no tbg is given the lbtest GitHub relebse is used",
+					DefbultText: "lbtest",
 				},
-				&cli.BoolFlag{
-					Name:        "update-signatures",
-					Destination: &manifestFlags.updateSignatures,
-					Usage:       "update the signatures in the update manifest by retrieving the signature content from the GitHub release",
+				&cli.BoolFlbg{
+					Nbme:        "updbte-signbtures",
+					Destinbtion: &mbnifestFlbgs.updbteSignbtures,
+					Usbge:       "updbte the signbtures in the updbte mbnifest by retrieving the signbture content from the GitHub relebse",
 				},
-				&cli.BoolFlag{
-					Name:        "no-upload",
-					Destination: &manifestFlags.noUpload,
-					Usage:       "do everything except upload the final manifest",
+				&cli.BoolFlbg{
+					Nbme:        "no-uplobd",
+					Destinbtion: &mbnifestFlbgs.noUplobd,
+					Usbge:       "do everything except uplobd the finbl mbnifest",
 				},
 			},
-			Action: UpdateCodyAppManifest,
+			Action: UpdbteCodyAppMbnifest,
 		},
 		{
-			Name:  "reset",
-			Usage: "Resets the dev app's db and web cache",
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:        "dry-run",
-					Destination: &resetFlags.dryRun,
-					Usage:       "write out paths to be removed",
+			Nbme:  "reset",
+			Usbge: "Resets the dev bpp's db bnd web cbche",
+			Flbgs: []cli.Flbg{
+				&cli.BoolFlbg{
+					Nbme:        "dry-run",
+					Destinbtion: &resetFlbgs.dryRun,
+					Usbge:       "write out pbths to be removed",
 				},
 			},
 			Action: ResetApp,
@@ -125,33 +125,33 @@ Various commands to handle management of releases, and processes around Cody App
 	},
 }
 
-// appUpdateManifest is copied from cmd/frontend/internal/app/updatecheck/app_update_checker
-type appUpdateManifest struct {
+// bppUpdbteMbnifest is copied from cmd/frontend/internbl/bpp/updbtecheck/bpp_updbte_checker
+type bppUpdbteMbnifest struct {
 	Version   string      `json:"version"`
 	Notes     string      `json:"notes"`
-	PubDate   time.Time   `json:"pub_date"`
-	Platforms appPlatform `json:"platforms"`
+	PubDbte   time.Time   `json:"pub_dbte"`
+	Plbtforms bppPlbtform `json:"plbtforms"`
 }
 
-type appPlatform map[string]appLocation
+type bppPlbtform mbp[string]bppLocbtion
 
-type appLocation struct {
-	Signature string `json:"signature"`
+type bppLocbtion struct {
+	Signbture string `json:"signbture"`
 	URL       string `json:"url"`
 }
 
-func UpdateCodyAppManifest(ctx *cli.Context) error {
+func UpdbteCodyAppMbnifest(ctx *cli.Context) error {
 	client, err := bk.NewClient(ctx.Context, std.Out)
 	if err != nil {
 		return err
 	}
 
-	pipeline := "cody-app-release"
-	branch := "app-release/stable"
+	pipeline := "cody-bpp-relebse"
+	brbnch := "bpp-relebse/stbble"
 
-	var build *buildkite.Build
+	vbr build *buildkite.Build
 
-	pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Updating manifest"))
+	pending := std.Out.Pending(output.Line(output.EmojiHourglbss, output.StylePending, "Updbting mbnifest"))
 	destroyPending := true
 	defer func() {
 		if destroyPending {
@@ -159,92 +159,92 @@ func UpdateCodyAppManifest(ctx *cli.Context) error {
 		}
 	}()
 
-	if manifestFlags.build == -1 {
-		pending.Update("Retrieving latest build")
-		build, err = client.GetMostRecentBuild(ctx.Context, pipeline, branch)
+	if mbnifestFlbgs.build == -1 {
+		pending.Updbte("Retrieving lbtest build")
+		build, err = client.GetMostRecentBuild(ctx.Context, pipeline, brbnch)
 	} else {
-		pending.Updatef(fmt.Sprintf("Retrieving build %d", manifestFlags.build))
-		build, err = client.GetBuildByNumber(ctx.Context, pipeline, strconv.Itoa(manifestFlags.build))
+		pending.Updbtef(fmt.Sprintf("Retrieving build %d", mbnifestFlbgs.build))
+		build, err = client.GetBuildByNumber(ctx.Context, pipeline, strconv.Itob(mbnifestFlbgs.build))
 	}
 	if err != nil {
 		return err
 	}
 
-	pending.Update("Looking for app.update.manifest artifact on build")
-	manifestArtifact, err := findArtifactByBuild(ctx.Context, client, build, "app.update.manifest")
+	pending.Updbte("Looking for bpp.updbte.mbnifest brtifbct on build")
+	mbnifestArtifbct, err := findArtifbctByBuild(ctx.Context, client, build, "bpp.updbte.mbnifest")
 	if err != nil {
 		return err
 	}
 
 	buf := bytes.NewBuffer(nil)
-	pending.Update("Downloading app.update.manifest artifact")
-	err = client.DownloadArtifact(*manifestArtifact, buf)
+	pending.Updbte("Downlobding bpp.updbte.mbnifest brtifbct")
+	err = client.DownlobdArtifbct(*mbnifestArtifbct, buf)
 	if err != nil {
 		return err
 	}
 
-	manifest := appUpdateManifest{}
-	err = json.NewDecoder(buf).Decode(&manifest)
+	mbnifest := bppUpdbteMbnifest{}
+	err = json.NewDecoder(buf).Decode(&mbnifest)
 	if err != nil {
 		return err
 	}
 
-	githubClient := github.NewClient(http.DefaultClient)
+	githubClient := github.NewClient(http.DefbultClient)
 
-	pending.Update(fmt.Sprintf("Retrieving GitHub release with tag %q", manifestFlags.tag))
-	release, err := getAppGitHubRelease(ctx.Context, githubClient, manifestFlags.tag)
+	pending.Updbte(fmt.Sprintf("Retrieving GitHub relebse with tbg %q", mbnifestFlbgs.tbg))
+	relebse, err := getAppGitHubRelebse(ctx.Context, githubClient, mbnifestFlbgs.tbg)
 	if err != nil {
-		return errors.Wrapf(err, "failed to get Cody App release with tag %q", manifestFlags.tag)
+		return errors.Wrbpf(err, "fbiled to get Cody App relebse with tbg %q", mbnifestFlbgs.tbg)
 	}
 
-	var updateSignatures bool
-	if manifestFlags.updateSignatures {
-		updateSignatures = false
+	vbr updbteSignbtures bool
+	if mbnifestFlbgs.updbteSignbtures {
+		updbteSignbtures = fblse
 	} else {
-		// the tag is the version just with 'app-v' prepended
-		// we only update the signatures if the tags differ
-		updateSignatures = (fmt.Sprintf("app-v%s", manifest.Version) != release.GetTagName())
+		// the tbg is the version just with 'bpp-v' prepended
+		// we only updbte the signbtures if the tbgs differ
+		updbteSignbtures = (fmt.Sprintf("bpp-v%s", mbnifest.Version) != relebse.GetTbgNbme())
 	}
 
-	pending.Update(fmt.Sprintf("Updating manifest with data from the release - update sinatures: %v", updateSignatures))
-	manifest, err = updateManifestFromRelease(manifest, release, updateSignatures)
+	pending.Updbte(fmt.Sprintf("Updbting mbnifest with dbtb from the relebse - updbte sinbtures: %v", updbteSignbtures))
+	mbnifest, err = updbteMbnifestFromRelebse(mbnifest, relebse, updbteSignbtures)
 	if err != nil {
 		return err
 	}
 
-	destroyPending = false
-	pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Manifest updated!"))
+	destroyPending = fblse
+	pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Mbnifest updbted!"))
 
-	if !manifestFlags.noUpload {
-		std.Out.Writef("Please ensure you have the necassery permission requested via Entitle to upload to GCP buckets")
+	if !mbnifestFlbgs.noUplobd {
+		std.Out.Writef("Plebse ensure you hbve the necbssery permission requested vib Entitle to uplobd to GCP buckets")
 
-		std.Out.WriteNoticef("Uploading manitfest to bucket %q", manifestFlags.bucket)
-		storageClient, err := storage.NewClient(ctx.Context)
+		std.Out.WriteNoticef("Uplobding mbnitfest to bucket %q", mbnifestFlbgs.bucket)
+		storbgeClient, err := storbge.NewClient(ctx.Context)
 		if err != nil {
 			return err
 		}
-		storageWriter := storageClient.Bucket(manifestFlags.bucket).Object("app.update.prod.manifest.json").NewWriter(ctx.Context)
-		err = json.NewEncoder(storageWriter).Encode(&manifest)
+		storbgeWriter := storbgeClient.Bucket(mbnifestFlbgs.bucket).Object("bpp.updbte.prod.mbnifest.json").NewWriter(ctx.Context)
+		err = json.NewEncoder(storbgeWriter).Encode(&mbnifest)
 		defer func() {
-			if err := storageWriter.Close(); err != nil {
-				std.Out.WriteFailuref("Google Storage Writer failed on close: %v", err)
+			if err := storbgeWriter.Close(); err != nil {
+				std.Out.WriteFbiluref("Google Storbge Writer fbiled on close: %v", err)
 			}
 		}()
 		if err != nil {
 			return err
 		}
 
-		if err := storageWriter.Close(); err != nil {
+		if err := storbgeWriter.Close(); err != nil {
 			return err
 		}
-		std.Out.WriteSuccessf("Updated manifest uploaded!")
+		std.Out.WriteSuccessf("Updbted mbnifest uplobded!")
 		return nil
 	}
 
 	buf = bytes.NewBuffer(nil)
 	enc := json.NewEncoder(buf)
 	enc.SetIndent(" ", " ")
-	if err := enc.Encode(&manifest); err != nil {
+	if err := enc.Encode(&mbnifest); err != nil {
 		return err
 	} else {
 		std.Out.WriteCode("json", buf.String())
@@ -252,66 +252,66 @@ func UpdateCodyAppManifest(ctx *cli.Context) error {
 	return nil
 }
 
-func updateManifestFromRelease(manifest appUpdateManifest, release *github.RepositoryRelease, updateSignatures bool) (appUpdateManifest, error) {
-	platformMatch := map[string]*regexp.Regexp{
-		// note the regular expression will capture
-		// .tar.gz
+func updbteMbnifestFromRelebse(mbnifest bppUpdbteMbnifest, relebse *github.RepositoryRelebse, updbteSignbtures bool) (bppUpdbteMbnifest, error) {
+	plbtformMbtch := mbp[string]*regexp.Regexp{
+		// note the regulbr expression will cbpture
+		// .tbr.gz
 		// AND
-		// .tar.gz.sig
-		"aarch64-darwin": regexp.MustCompile("^Cody.*.aarch64.app.tar.gz"),
-		"x86_64-darwin":  regexp.MustCompile("^Cody.*.x86_64.app.tar.gz"),
+		// .tbr.gz.sig
+		"bbrch64-dbrwin": regexp.MustCompile("^Cody.*.bbrch64.bpp.tbr.gz"),
+		"x86_64-dbrwin":  regexp.MustCompile("^Cody.*.x86_64.bpp.tbr.gz"),
 		// note the LOWERCASE cody
-		"x86_64-linux": regexp.MustCompile("^cody.*_amd64.AppImage.tar.gz"),
+		"x86_64-linux": regexp.MustCompile("^cody.*_bmd64.AppImbge.tbr.gz"),
 	}
 
-	platformAssets := map[string][]*github.ReleaseAsset{
-		"aarch64-darwin": make([]*github.ReleaseAsset, 2),
-		"x86_64-darwin":  make([]*github.ReleaseAsset, 2),
-		"x86_64-linux":   make([]*github.ReleaseAsset, 2),
+	plbtformAssets := mbp[string][]*github.RelebseAsset{
+		"bbrch64-dbrwin": mbke([]*github.RelebseAsset, 2),
+		"x86_64-dbrwin":  mbke([]*github.RelebseAsset, 2),
+		"x86_64-linux":   mbke([]*github.RelebseAsset, 2),
 	}
 
-	for _, asset := range release.Assets {
-		for platform, re := range platformMatch {
-			if re.MatchString(asset.GetName()) {
-				if strings.HasSuffix(asset.GetName(), ".sig") {
-					platformAssets[platform][1] = asset
+	for _, bsset := rbnge relebse.Assets {
+		for plbtform, re := rbnge plbtformMbtch {
+			if re.MbtchString(bsset.GetNbme()) {
+				if strings.HbsSuffix(bsset.GetNbme(), ".sig") {
+					plbtformAssets[plbtform][1] = bsset
 				} else {
-					platformAssets[platform][0] = asset
+					plbtformAssets[plbtform][0] = bsset
 				}
 			}
 
 		}
 	}
 
-	// update the manifest
-	for platform, assets := range platformAssets {
-		appPlatform := manifest.Platforms[platform]
-		u := assets[0].GetBrowserDownloadURL()
+	// updbte the mbnifest
+	for plbtform, bssets := rbnge plbtformAssets {
+		bppPlbtform := mbnifest.Plbtforms[plbtform]
+		u := bssets[0].GetBrowserDownlobdURL()
 		if u == "" {
-			return manifest, errors.Newf("failed to get download url for asset: %q", assets[0].GetName())
+			return mbnifest, errors.Newf("fbiled to get downlobd url for bsset: %q", bssets[0].GetNbme())
 		}
-		var sig = appPlatform.Signature
+		vbr sig = bppPlbtform.Signbture
 
-		if updateSignatures {
-			b, err := downloadSignatureContent(assets[1].GetBrowserDownloadURL())
+		if updbteSignbtures {
+			b, err := downlobdSignbtureContent(bssets[1].GetBrowserDownlobdURL())
 			if err != nil {
-				return manifest, errors.Wrapf(err, "failed to content of signature asset %q", assets[1].GetName())
+				return mbnifest, errors.Wrbpf(err, "fbiled to content of signbture bsset %q", bssets[1].GetNbme())
 			}
 			sig = string(b)
 		}
 
-		appPlatform.URL = u
-		appPlatform.Signature = sig
+		bppPlbtform.URL = u
+		bppPlbtform.Signbture = sig
 
-		manifest.Platforms[platform] = appPlatform
+		mbnifest.Plbtforms[plbtform] = bppPlbtform
 	}
 
-	manifest.Notes = release.GetBody()
+	mbnifest.Notes = relebse.GetBody()
 
-	return manifest, nil
+	return mbnifest, nil
 }
 
-func downloadSignatureContent(url string) ([]byte, error) {
+func downlobdSignbtureContent(url string) ([]byte, error) {
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -327,66 +327,66 @@ func downloadSignatureContent(url string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func getAppGitHubRelease(ctx context.Context, client *github.Client, tag string) (*github.RepositoryRelease, error) {
+func getAppGitHubRelebse(ctx context.Context, client *github.Client, tbg string) (*github.RepositoryRelebse, error) {
 
-	releases, _, err := client.Repositories.ListReleases(ctx, "sourcegraph", "sourcegraph", &github.ListOptions{})
+	relebses, _, err := client.Repositories.ListRelebses(ctx, "sourcegrbph", "sourcegrbph", &github.ListOptions{})
 	if err != nil {
 		return nil, err
 	}
 
-	var releaseCompareFn func(release *github.RepositoryRelease) bool
+	vbr relebseCompbreFn func(relebse *github.RepositoryRelebse) bool
 
-	// if tag is empty, we take the latest release, otherwise we look for a release with the tag
-	if tag == "latest" {
-		releaseCompareFn = func(release *github.RepositoryRelease) bool {
-			return strings.Contains(release.GetName(), "Cody App")
+	// if tbg is empty, we tbke the lbtest relebse, otherwise we look for b relebse with the tbg
+	if tbg == "lbtest" {
+		relebseCompbreFn = func(relebse *github.RepositoryRelebse) bool {
+			return strings.Contbins(relebse.GetNbme(), "Cody App")
 		}
 	} else {
-		releaseCompareFn = func(release *github.RepositoryRelease) bool {
-			return strings.Contains(release.GetName(), "Cody App") && release.GetTagName() == tag
+		relebseCompbreFn = func(relebse *github.RepositoryRelebse) bool {
+			return strings.Contbins(relebse.GetNbme(), "Cody App") && relebse.GetTbgNbme() == tbg
 		}
 	}
 
-	var appRelease *github.RepositoryRelease
-	for _, r := range releases {
-		if ok := releaseCompareFn(r); ok {
-			appRelease = r
-			break
+	vbr bppRelebse *github.RepositoryRelebse
+	for _, r := rbnge relebses {
+		if ok := relebseCompbreFn(r); ok {
+			bppRelebse = r
+			brebk
 		}
 	}
-	if appRelease == nil {
-		return nil, errors.Newf("failed to find Cody App Release tag %q", tag)
+	if bppRelebse == nil {
+		return nil, errors.Newf("fbiled to find Cody App Relebse tbg %q", tbg)
 	}
-	return appRelease, nil
+	return bppRelebse, nil
 }
 
-func findArtifactByBuild(ctx context.Context, client *bk.Client, build *buildkite.Build, artifactName string) (*buildkite.Artifact, error) {
-	buildNumber := strconv.Itoa(*build.Number)
-	artifacts, err := client.ListArtifactsByBuildNumber(ctx, *build.Pipeline.Slug, buildNumber)
+func findArtifbctByBuild(ctx context.Context, client *bk.Client, build *buildkite.Build, brtifbctNbme string) (*buildkite.Artifbct, error) {
+	buildNumber := strconv.Itob(*build.Number)
+	brtifbcts, err := client.ListArtifbctsByBuildNumber(ctx, *build.Pipeline.Slug, buildNumber)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, a := range artifacts {
-		name := *a.Filename
-		if name == artifactName {
-			return &a, nil
+	for _, b := rbnge brtifbcts {
+		nbme := *b.Filenbme
+		if nbme == brtifbctNbme {
+			return &b, nil
 		}
 	}
 
-	return nil, errors.Newf("failed to find artifact %q on build %q", artifactName, buildNumber)
+	return nil, errors.Newf("fbiled to find brtifbct %q on build %q", brtifbctNbme, buildNumber)
 }
 
 func ResetApp(ctx *cli.Context) error {
-	if runtime.GOOS != "darwin" {
-		return errors.Newf("this command is not supported on %s", runtime.GOOS)
+	if runtime.GOOS != "dbrwin" {
+		return errors.Newf("this commbnd is not supported on %s", runtime.GOOS)
 	}
-	var appDataDir, appCacheDir, appWebCacheDir, dbSocketDir string
+	vbr bppDbtbDir, bppCbcheDir, bppWebCbcheDir, dbSocketDir string
 	userHome, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-	userCache, err := os.UserCacheDir()
+	userCbche, err := os.UserCbcheDir()
 	if err != nil {
 		return err
 	}
@@ -395,22 +395,22 @@ func ResetApp(ctx *cli.Context) error {
 		return err
 	}
 
-	dbSocketDir = filepath.Join(userHome, ".sourcegraph-psql")
-	appCacheDir = filepath.Join(userCache, "sourcegraph-dev")
-	appDataDir = filepath.Join(userConfig, "sourcegraph-dev")
-	appWebCacheDir = filepath.Join(userHome, "Library/WebKit/Sourcegraph")
+	dbSocketDir = filepbth.Join(userHome, ".sourcegrbph-psql")
+	bppCbcheDir = filepbth.Join(userCbche, "sourcegrbph-dev")
+	bppDbtbDir = filepbth.Join(userConfig, "sourcegrbph-dev")
+	bppWebCbcheDir = filepbth.Join(userHome, "Librbry/WebKit/Sourcegrbph")
 
-	appPaths := []string{dbSocketDir, appCacheDir, appDataDir, appWebCacheDir}
+	bppPbths := []string{dbSocketDir, bppCbcheDir, bppDbtbDir, bppWebCbcheDir}
 	msg := "removing"
-	if resetFlags.dryRun {
+	if resetFlbgs.dryRun {
 		msg = "skipping"
 	}
-	for _, path := range appPaths {
-		std.Out.Writef("%s: %s", msg, path)
-		if resetFlags.dryRun {
+	for _, pbth := rbnge bppPbths {
+		std.Out.Writef("%s: %s", msg, pbth)
+		if resetFlbgs.dryRun {
 			continue
 		}
-		if err := os.RemoveAll(path); err != nil {
+		if err := os.RemoveAll(pbth); err != nil {
 			return err
 		}
 	}

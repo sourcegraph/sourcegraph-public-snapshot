@@ -1,73 +1,73 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *UserResolver) OrganizationMemberships(ctx context.Context) (*organizationMembershipConnectionResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// organisation memberships.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+func (r *UserResolver) OrgbnizbtionMemberships(ctx context.Context) (*orgbnizbtionMembershipConnectionResolver, error) {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to bccess the user's
+	// orgbnisbtion memberships.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 	memberships, err := r.db.OrgMembers().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
-	c := organizationMembershipConnectionResolver{nodes: make([]*organizationMembershipResolver, len(memberships))}
-	for i, member := range memberships {
-		c.nodes[i] = &organizationMembershipResolver{r.db, member}
+	c := orgbnizbtionMembershipConnectionResolver{nodes: mbke([]*orgbnizbtionMembershipResolver, len(memberships))}
+	for i, member := rbnge memberships {
+		c.nodes[i] = &orgbnizbtionMembershipResolver{r.db, member}
 	}
 	return &c, nil
 }
 
-func (r *schemaResolver) AutocompleteMembersSearch(ctx context.Context, args *struct {
-	Organization graphql.ID
+func (r *schembResolver) AutocompleteMembersSebrch(ctx context.Context, brgs *struct {
+	Orgbnizbtion grbphql.ID
 	Query        string
-}) ([]*OrgMemberAutocompleteSearchItemResolver, error) {
-	actor := sgactor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+}) ([]*OrgMemberAutocompleteSebrchItemResolver, error) {
+	bctor := sgbctor.FromContext(ctx)
+	if !bctor.IsAuthenticbted() {
 		return nil, errors.New("no current user")
 	}
 
-	orgID, err := UnmarshalOrgID(args.Organization)
+	orgID, err := UnmbrshblOrgID(brgs.Orgbnizbtion)
 	if err != nil {
 		return nil, err
 	}
 
-	usersMatching, err := r.db.OrgMembers().AutocompleteMembersSearch(ctx, orgID, args.Query)
+	usersMbtching, err := r.db.OrgMembers().AutocompleteMembersSebrch(ctx, orgID, brgs.Query)
 
 	if err != nil {
 		return nil, err
 	}
 
-	var users []*OrgMemberAutocompleteSearchItemResolver
-	for _, user := range usersMatching {
-		users = append(users, NewOrgMemberAutocompleteSearchItemResolver(r.db, user))
+	vbr users []*OrgMemberAutocompleteSebrchItemResolver
+	for _, user := rbnge usersMbtching {
+		users = bppend(users, NewOrgMemberAutocompleteSebrchItemResolver(r.db, user))
 	}
 
 	return users, nil
 }
 
-func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
-	Organization graphql.ID
-}) (*OrgMembersSummaryResolver, error) {
-	actor := sgactor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
+func (r *schembResolver) OrgMembersSummbry(ctx context.Context, brgs *struct {
+	Orgbnizbtion grbphql.ID
+}) (*OrgMembersSummbryResolver, error) {
+	bctor := sgbctor.FromContext(ctx)
+	if !bctor.IsAuthenticbted() {
 		return nil, errors.New("no current user")
 	}
 
-	orgID, err := UnmarshalOrgID(args.Organization)
+	orgID, err := UnmbrshblOrgID(brgs.Orgbnizbtion)
 	if err != nil {
 		return nil, err
 	}
@@ -78,109 +78,109 @@ func (r *schemaResolver) OrgMembersSummary(ctx context.Context, args *struct {
 		return nil, err
 	}
 
-	pendingInvites, err := r.db.OrgInvitations().Count(ctx, database.OrgInvitationsListOptions{OrgID: orgID})
+	pendingInvites, err := r.db.OrgInvitbtions().Count(ctx, dbtbbbse.OrgInvitbtionsListOptions{OrgID: orgID})
 
 	if err != nil {
 		return nil, err
 	}
 
-	var summary = NewOrgMembersSummaryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
+	vbr summbry = NewOrgMembersSummbryResolver(r.db, orgID, int32(usersCount), int32(pendingInvites))
 
-	return summary, nil
+	return summbry, nil
 }
 
-type organizationMembershipConnectionResolver struct {
-	nodes []*organizationMembershipResolver
+type orgbnizbtionMembershipConnectionResolver struct {
+	nodes []*orgbnizbtionMembershipResolver
 }
 
-func (r *organizationMembershipConnectionResolver) Nodes() []*organizationMembershipResolver {
+func (r *orgbnizbtionMembershipConnectionResolver) Nodes() []*orgbnizbtionMembershipResolver {
 	return r.nodes
 }
-func (r *organizationMembershipConnectionResolver) TotalCount() int32 { return int32(len(r.nodes)) }
-func (r *organizationMembershipConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(false)
+func (r *orgbnizbtionMembershipConnectionResolver) TotblCount() int32 { return int32(len(r.nodes)) }
+func (r *orgbnizbtionMembershipConnectionResolver) PbgeInfo() *grbphqlutil.PbgeInfo {
+	return grbphqlutil.HbsNextPbge(fblse)
 }
 
-type organizationMembershipResolver struct {
-	db         database.DB
+type orgbnizbtionMembershipResolver struct {
+	db         dbtbbbse.DB
 	membership *types.OrgMembership
 }
 
-func (r *organizationMembershipResolver) Organization(ctx context.Context) (*OrgResolver, error) {
+func (r *orgbnizbtionMembershipResolver) Orgbnizbtion(ctx context.Context) (*OrgResolver, error) {
 	return OrgByIDInt32(ctx, r.db, r.membership.OrgID)
 }
 
-func (r *organizationMembershipResolver) User(ctx context.Context) (*UserResolver, error) {
+func (r *orgbnizbtionMembershipResolver) User(ctx context.Context) (*UserResolver, error) {
 	return UserByIDInt32(ctx, r.db, r.membership.UserID)
 }
 
-func (r *organizationMembershipResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.membership.CreatedAt}
+func (r *orgbnizbtionMembershipResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.membership.CrebtedAt}
 }
 
-func (r *organizationMembershipResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.membership.UpdatedAt}
+func (r *orgbnizbtionMembershipResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.membership.UpdbtedAt}
 }
 
-type OrgMemberAutocompleteSearchItemResolver struct {
-	db   database.DB
-	user *types.OrgMemberAutocompleteSearchItem
+type OrgMemberAutocompleteSebrchItemResolver struct {
+	db   dbtbbbse.DB
+	user *types.OrgMemberAutocompleteSebrchItem
 }
 
-func (r *OrgMemberAutocompleteSearchItemResolver) ID() graphql.ID {
-	return MarshalUserID(r.user.ID)
+func (r *OrgMemberAutocompleteSebrchItemResolver) ID() grbphql.ID {
+	return MbrshblUserID(r.user.ID)
 }
 
-func (r *OrgMemberAutocompleteSearchItemResolver) Username() string {
-	return r.user.Username
+func (r *OrgMemberAutocompleteSebrchItemResolver) Usernbme() string {
+	return r.user.Usernbme
 }
 
-func (r *OrgMemberAutocompleteSearchItemResolver) DisplayName() *string {
-	if r.user.DisplayName == "" {
+func (r *OrgMemberAutocompleteSebrchItemResolver) DisplbyNbme() *string {
+	if r.user.DisplbyNbme == "" {
 		return nil
 	}
-	return &r.user.DisplayName
+	return &r.user.DisplbyNbme
 }
 
-func (r *OrgMemberAutocompleteSearchItemResolver) AvatarURL() *string {
-	if r.user.AvatarURL == "" {
+func (r *OrgMemberAutocompleteSebrchItemResolver) AvbtbrURL() *string {
+	if r.user.AvbtbrURL == "" {
 		return nil
 	}
-	return &r.user.AvatarURL
+	return &r.user.AvbtbrURL
 }
 
-func (r *OrgMemberAutocompleteSearchItemResolver) InOrg() *bool {
+func (r *OrgMemberAutocompleteSebrchItemResolver) InOrg() *bool {
 	inOrg := r.user.InOrg > 0
 	return &inOrg
 }
 
-func NewOrgMemberAutocompleteSearchItemResolver(db database.DB, user *types.OrgMemberAutocompleteSearchItem) *OrgMemberAutocompleteSearchItemResolver {
-	return &OrgMemberAutocompleteSearchItemResolver{db: db, user: user}
+func NewOrgMemberAutocompleteSebrchItemResolver(db dbtbbbse.DB, user *types.OrgMemberAutocompleteSebrchItem) *OrgMemberAutocompleteSebrchItemResolver {
+	return &OrgMemberAutocompleteSebrchItemResolver{db: db, user: user}
 }
 
-type OrgMembersSummaryResolver struct {
-	db           database.DB
+type OrgMembersSummbryResolver struct {
+	db           dbtbbbse.DB
 	id           int32
 	membersCount int32
 	invitesCount int32
 }
 
-func NewOrgMembersSummaryResolver(db database.DB, orgId int32, membersCount int32, invitesCount int32) *OrgMembersSummaryResolver {
-	return &OrgMembersSummaryResolver{
+func NewOrgMembersSummbryResolver(db dbtbbbse.DB, orgId int32, membersCount int32, invitesCount int32) *OrgMembersSummbryResolver {
+	return &OrgMembersSummbryResolver{
 		db:           db,
 		id:           orgId,
 		membersCount: membersCount,
 		invitesCount: invitesCount,
 	}
 }
-func (r *OrgMembersSummaryResolver) ID() graphql.ID {
-	return MarshalUserID(r.id)
+func (r *OrgMembersSummbryResolver) ID() grbphql.ID {
+	return MbrshblUserID(r.id)
 }
 
-func (r *OrgMembersSummaryResolver) MembersCount() int32 {
+func (r *OrgMembersSummbryResolver) MembersCount() int32 {
 	return r.membersCount
 }
 
-func (r *OrgMembersSummaryResolver) InvitesCount() int32 {
+func (r *OrgMembersSummbryResolver) InvitesCount() int32 {
 	return r.invitesCount
 }

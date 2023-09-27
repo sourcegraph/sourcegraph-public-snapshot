@@ -1,27 +1,27 @@
-package client
+pbckbge client
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
 )
 
-// DetermineStatusForLogs determines the final status of a search for logging
+// DetermineStbtusForLogs determines the finbl stbtus of b sebrch for logging
 // purposes.
-func DetermineStatusForLogs(alert *search.Alert, stats streaming.Stats, err error) string {
+func DetermineStbtusForLogs(blert *sebrch.Alert, stbts strebming.Stbts, err error) string {
 	switch {
-	case err == context.DeadlineExceeded:
+	cbse err == context.DebdlineExceeded:
 		return "timeout"
-	case err != nil:
+	cbse err != nil:
 		return "error"
-	case stats.Status.All(search.RepoStatusTimedout) && stats.Status.Len() == len(stats.Repos):
+	cbse stbts.Stbtus.All(sebrch.RepoStbtusTimedout) && stbts.Stbtus.Len() == len(stbts.Repos):
 		return "timeout"
-	case stats.Status.Any(search.RepoStatusTimedout):
-		return "partial_timeout"
-	case alert != nil:
-		return "alert"
-	default:
+	cbse stbts.Stbtus.Any(sebrch.RepoStbtusTimedout):
+		return "pbrtibl_timeout"
+	cbse blert != nil:
+		return "blert"
+	defbult:
 		return "success"
 	}
 }

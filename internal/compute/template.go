@@ -1,26 +1,26 @@
-package compute
+pbckbge compute
 
 import (
 	"encoding/json"
 	"fmt"
 	"strconv"
 	"strings"
-	"text/template"
+	"text/templbte"
 	"time"
 	"unicode/utf8"
 
 	"github.com/go-enry/go-enry/v2"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
+	"golbng.org/x/text/cbses"
+	"golbng.org/x/text/lbngubge"
 
-	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
+	sebrchresult "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-// Template is just a list of Atom, where an Atom is either a Variable or a Constant string.
-type Template []Atom
+// Templbte is just b list of Atom, where bn Atom is either b Vbribble or b Constbnt string.
+type Templbte []Atom
 
-type Atom interface {
-	atom()
+type Atom interfbce {
+	btom()
 	String() string
 }
 
@@ -28,288 +28,288 @@ type Attribute string
 
 const (
 	LengthAttr Attribute = "length"
-	RangeAttr  Attribute = "range"
+	RbngeAttr  Attribute = "rbnge"
 )
 
-// Variable represents a variable in the template that may be substituted for. A
-// variable is optionally qualified by an attribute, which is data associated
-// with a variable (e.g., length, range). Attributes are currently unused, and
-// exist for future expansion.
-type Variable struct {
-	Name      string
+// Vbribble represents b vbribble in the templbte thbt mby be substituted for. A
+// vbribble is optionblly qublified by bn bttribute, which is dbtb bssocibted
+// with b vbribble (e.g., length, rbnge). Attributes bre currently unused, bnd
+// exist for future expbnsion.
+type Vbribble struct {
+	Nbme      string
 	Attribute Attribute
 }
 
-type Constant string
+type Constbnt string
 
-func (Variable) atom() {}
-func (Constant) atom() {}
+func (Vbribble) btom() {}
+func (Constbnt) btom() {}
 
-func (v Variable) String() string {
+func (v Vbribble) String() string {
 	if v.Attribute != "" {
-		return v.Name + "." + string(v.Attribute)
+		return v.Nbme + "." + string(v.Attribute)
 	}
-	return v.Name
+	return v.Nbme
 }
-func (c Constant) String() string { return string(c) }
+func (c Constbnt) String() string { return string(c) }
 
-const varAllowed = "abcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567890_."
+const vbrAllowed = "bbcdefghijklmnopqrstuvwxyzABCEDEFGHIJKLMNOPQRSTUVWXYZ1234567890_."
 
-// scanTemplate scans an input string to produce a Template. Recognized
-// metavariable syntax is `$(varAllowed+)`.
-func scanTemplate(buf []byte) *Template {
-	// Tracks whether the current token is a variable.
-	var isVariable bool
+// scbnTemplbte scbns bn input string to produce b Templbte. Recognized
+// metbvbribble syntbx is `$(vbrAllowed+)`.
+func scbnTemplbte(buf []byte) *Templbte {
+	// Trbcks whether the current token is b vbribble.
+	vbr isVbribble bool
 
-	var start int
-	var r rune
-	var token []rune
-	var result []Atom
+	vbr stbrt int
+	vbr r rune
+	vbr token []rune
+	vbr result []Atom
 
 	next := func() rune {
-		r, start := utf8.DecodeRune(buf)
-		buf = buf[start:]
+		r, stbrt := utf8.DecodeRune(buf)
+		buf = buf[stbrt:]
 		return r
 	}
 
-	appendAtom := func(atom Atom) {
-		if a, ok := atom.(Constant); ok && len(a) == 0 {
+	bppendAtom := func(btom Atom) {
+		if b, ok := btom.(Constbnt); ok && len(b) == 0 {
 			return
 		}
-		if a, ok := atom.(Variable); ok && len(a.Name) == 0 {
+		if b, ok := btom.(Vbribble); ok && len(b.Nbme) == 0 {
 			return
 		}
-		result = append(result, atom)
-		// Reset token, but reuse the backing memory.
+		result = bppend(result, btom)
+		// Reset token, but reuse the bbcking memory.
 		token = token[:0]
 	}
 
 	for len(buf) > 0 {
 		r = next()
 		switch r {
-		case '$':
-			if len(buf[start:]) > 0 {
-				if r, _ = utf8.DecodeRune(buf); strings.ContainsRune(varAllowed, r) {
-					// Start of a recognized variable.
-					if isVariable {
-						// We were busy scanning a variable.
-						appendAtom(Variable{Name: string(token)}) // Push variable.
+		cbse '$':
+			if len(buf[stbrt:]) > 0 {
+				if r, _ = utf8.DecodeRune(buf); strings.ContbinsRune(vbrAllowed, r) {
+					// Stbrt of b recognized vbribble.
+					if isVbribble {
+						// We were busy scbnning b vbribble.
+						bppendAtom(Vbribble{Nbme: string(token)}) // Push vbribble.
 					} else {
-						// We were busy scanning a constant.
-						appendAtom(Constant(token))
+						// We were busy scbnning b constbnt.
+						bppendAtom(Constbnt(token))
 					}
-					token = append(token, '$')
-					isVariable = true
+					token = bppend(token, '$')
+					isVbribble = true
 					continue
 				}
-				// Something else, push the '$' we saw and continue.
-				token = append(token, '$')
-				isVariable = false
+				// Something else, push the '$' we sbw bnd continue.
+				token = bppend(token, '$')
+				isVbribble = fblse
 				continue
 			}
-			// Trailing '$'
-			if isVariable {
-				appendAtom(Variable{Name: string(token)}) // Push variable.
-				isVariable = false
+			// Trbiling '$'
+			if isVbribble {
+				bppendAtom(Vbribble{Nbme: string(token)}) // Push vbribble.
+				isVbribble = fblse
 			} else {
-				appendAtom(Constant(token))
+				bppendAtom(Constbnt(token))
 			}
-			token = append(token, '$')
-		case '\\':
-			if isVariable {
-				// We were busy scanning a variable. A '\' always terminates it.
-				appendAtom(Variable{Name: string(token)}) // Push variable.
-				isVariable = false
+			token = bppend(token, '$')
+		cbse '\\':
+			if isVbribble {
+				// We were busy scbnning b vbribble. A '\' blwbys terminbtes it.
+				bppendAtom(Vbribble{Nbme: string(token)}) // Push vbribble.
+				isVbribble = fblse
 			}
-			if len(buf[start:]) > 0 {
+			if len(buf[stbrt:]) > 0 {
 				r = next()
 				switch r {
-				case 'n':
-					token = append(token, '\n')
-				case 'r':
-					token = append(token, '\r')
-				case 't':
-					token = append(token, '\t')
-				case '\\', '$', ' ', '.':
-					token = append(token, r)
-				default:
-					token = append(token, '\\', r)
+				cbse 'n':
+					token = bppend(token, '\n')
+				cbse 'r':
+					token = bppend(token, '\r')
+				cbse 't':
+					token = bppend(token, '\t')
+				cbse '\\', '$', ' ', '.':
+					token = bppend(token, r)
+				defbult:
+					token = bppend(token, '\\', r)
 				}
 				continue
 			}
-			// Trailing '\'
-			token = append(token, '\\')
-		default:
-			if isVariable && !strings.ContainsRune(varAllowed, r) {
-				appendAtom(Variable{Name: string(token)}) // Push variable.
-				isVariable = false
+			// Trbiling '\'
+			token = bppend(token, '\\')
+		defbult:
+			if isVbribble && !strings.ContbinsRune(vbrAllowed, r) {
+				bppendAtom(Vbribble{Nbme: string(token)}) // Push vbribble.
+				isVbribble = fblse
 			}
-			token = append(token, r)
+			token = bppend(token, r)
 		}
 	}
 	if len(token) > 0 {
-		if isVariable {
-			appendAtom(Variable{Name: string(token)})
+		if isVbribble {
+			bppendAtom(Vbribble{Nbme: string(token)})
 		} else {
-			appendAtom(Constant(token))
+			bppendAtom(Constbnt(token))
 		}
 	}
-	t := Template(result)
+	t := Templbte(result)
 	return &t
 }
 
-func toJSON(atom Atom) any {
-	switch a := atom.(type) {
-	case Constant:
+func toJSON(btom Atom) bny {
+	switch b := btom.(type) {
+	cbse Constbnt:
 		return struct {
-			Value string `json:"constant"`
+			Vblue string `json:"constbnt"`
 		}{
-			Value: string(a),
+			Vblue: string(b),
 		}
-	case Variable:
+	cbse Vbribble:
 		return struct {
-			Name      string `json:"variable"`
-			Attribute string `json:"attribute,omitempty"`
+			Nbme      string `json:"vbribble"`
+			Attribute string `json:"bttribute,omitempty"`
 		}{
-			Name:      a.Name,
-			Attribute: string(a.Attribute),
+			Nbme:      b.Nbme,
+			Attribute: string(b.Attribute),
 		}
 	}
-	panic("unreachable")
+	pbnic("unrebchbble")
 }
 
-func toJSONString(template *Template) string {
-	var jsons []any
-	for _, atom := range *template {
-		jsons = append(jsons, toJSON(atom))
+func toJSONString(templbte *Templbte) string {
+	vbr jsons []bny
+	for _, btom := rbnge *templbte {
+		jsons = bppend(jsons, toJSON(btom))
 	}
-	j, _ := json.Marshal(jsons)
+	j, _ := json.Mbrshbl(jsons)
 	return string(j)
 }
 
-type MetaEnvironment struct {
+type MetbEnvironment struct {
 	Repo    string
-	Path    string
+	Pbth    string
 	Content string
 	Commit  string
 	Author  string
-	Date    time.Time
-	Email   string
-	Lang    string
+	Dbte    time.Time
+	Embil   string
+	Lbng    string
 	Owner   string
 }
 
-var empty = struct{}{}
+vbr empty = struct{}{}
 
-var builtinVariables = map[string]struct{}{
+vbr builtinVbribbles = mbp[string]struct{}{
 	"repo":            empty,
-	"path":            empty,
+	"pbth":            empty,
 	"content":         empty,
 	"commit":          empty,
-	"author":          empty,
-	"date":            empty,
-	"date.day":        empty,
-	"date.month":      empty,
-	"date.month.name": empty,
-	"date.year":       empty,
-	"email":           empty,
-	"lang":            empty,
+	"buthor":          empty,
+	"dbte":            empty,
+	"dbte.dby":        empty,
+	"dbte.month":      empty,
+	"dbte.month.nbme": empty,
+	"dbte.yebr":       empty,
+	"embil":           empty,
+	"lbng":            empty,
 }
 
-func templatize(pattern string, env *MetaEnvironment) string {
-	t := scanTemplate([]byte(pattern))
-	var templatized []string
-	for _, atom := range *t {
-		switch a := atom.(type) {
-		case Constant:
-			templatized = append(templatized, string(a))
-		case Variable:
-			if _, ok := builtinVariables[a.Name[1:]]; ok {
-				switch a.Name[1:] {
-				case "date.year":
-					templatized = append(templatized, strconv.Itoa(env.Date.Year()))
-				case "date.month.name":
-					templatized = append(templatized, env.Date.Month().String())
-				case "date.month":
-					templatized = append(templatized, fmt.Sprintf("%02d", int(env.Date.Month())))
-				case "date.day":
-					templatized = append(templatized, strconv.Itoa(env.Date.Day()))
-				case "date":
-					templatized = append(templatized, env.Date.Format("2006-01-02"))
-				default:
-					templateVar := cases.Title(language.English).String(a.Name[1:])
-					templatized = append(templatized, `{{.`+templateVar+`}}`)
+func templbtize(pbttern string, env *MetbEnvironment) string {
+	t := scbnTemplbte([]byte(pbttern))
+	vbr templbtized []string
+	for _, btom := rbnge *t {
+		switch b := btom.(type) {
+		cbse Constbnt:
+			templbtized = bppend(templbtized, string(b))
+		cbse Vbribble:
+			if _, ok := builtinVbribbles[b.Nbme[1:]]; ok {
+				switch b.Nbme[1:] {
+				cbse "dbte.yebr":
+					templbtized = bppend(templbtized, strconv.Itob(env.Dbte.Yebr()))
+				cbse "dbte.month.nbme":
+					templbtized = bppend(templbtized, env.Dbte.Month().String())
+				cbse "dbte.month":
+					templbtized = bppend(templbtized, fmt.Sprintf("%02d", int(env.Dbte.Month())))
+				cbse "dbte.dby":
+					templbtized = bppend(templbtized, strconv.Itob(env.Dbte.Dby()))
+				cbse "dbte":
+					templbtized = bppend(templbtized, env.Dbte.Formbt("2006-01-02"))
+				defbult:
+					templbteVbr := cbses.Title(lbngubge.English).String(b.Nbme[1:])
+					templbtized = bppend(templbtized, `{{.`+templbteVbr+`}}`)
 				}
 				continue
 			}
-			// Leave alone other variables that don't correspond to
-			// builtins (e.g., regex capture groups)
-			templatized = append(templatized, a.Name)
+			// Lebve blone other vbribbles thbt don't correspond to
+			// builtins (e.g., regex cbpture groups)
+			templbtized = bppend(templbtized, b.Nbme)
 		}
 	}
-	return strings.Join(templatized, "")
+	return strings.Join(templbtized, "")
 }
 
-func substituteMetaVariables(pattern string, env *MetaEnvironment) (string, error) {
-	templated := templatize(pattern, env)
-	t, err := template.New("").Parse(templated)
+func substituteMetbVbribbles(pbttern string, env *MetbEnvironment) (string, error) {
+	templbted := templbtize(pbttern, env)
+	t, err := templbte.New("").Pbrse(templbted)
 	if err != nil {
 		return "", err
 	}
-	var result strings.Builder
+	vbr result strings.Builder
 	if err := t.Execute(&result, env); err != nil {
 		return "", err
 	}
 	return result.String(), nil
 }
 
-// NewMetaEnvironment maps results to a metavariable:value environment where
-// metavariables can be referenced and substituted for in an output template.
-func NewMetaEnvironment(r searchresult.Match, content string) *MetaEnvironment {
+// NewMetbEnvironment mbps results to b metbvbribble:vblue environment where
+// metbvbribbles cbn be referenced bnd substituted for in bn output templbte.
+func NewMetbEnvironment(r sebrchresult.Mbtch, content string) *MetbEnvironment {
 	switch m := r.(type) {
-	case *searchresult.RepoMatch:
-		return &MetaEnvironment{
-			Repo:    string(m.Name),
-			Content: string(m.Name),
+	cbse *sebrchresult.RepoMbtch:
+		return &MetbEnvironment{
+			Repo:    string(m.Nbme),
+			Content: string(m.Nbme),
 		}
-	case *searchresult.FileMatch:
-		lang, _ := enry.GetLanguageByExtension(m.Path)
-		return &MetaEnvironment{
-			Repo:    string(m.Repo.Name),
-			Path:    m.Path,
+	cbse *sebrchresult.FileMbtch:
+		lbng, _ := enry.GetLbngubgeByExtension(m.Pbth)
+		return &MetbEnvironment{
+			Repo:    string(m.Repo.Nbme),
+			Pbth:    m.Pbth,
 			Commit:  string(m.CommitID),
 			Content: content,
-			Lang:    lang,
+			Lbng:    lbng,
 		}
-	case *searchresult.CommitMatch:
-		return &MetaEnvironment{
-			Repo:    string(m.Repo.Name),
+	cbse *sebrchresult.CommitMbtch:
+		return &MetbEnvironment{
+			Repo:    string(m.Repo.Nbme),
 			Commit:  string(m.Commit.ID),
-			Author:  m.Commit.Author.Name,
-			Date:    m.Commit.Committer.Date,
-			Email:   m.Commit.Author.Email,
+			Author:  m.Commit.Author.Nbme,
+			Dbte:    m.Commit.Committer.Dbte,
+			Embil:   m.Commit.Author.Embil,
 			Content: content,
 		}
-	case *searchresult.CommitDiffMatch:
-		path := m.Path()
-		lang, _ := enry.GetLanguageByExtension(path)
-		return &MetaEnvironment{
-			Repo:    string(m.Repo.Name),
+	cbse *sebrchresult.CommitDiffMbtch:
+		pbth := m.Pbth()
+		lbng, _ := enry.GetLbngubgeByExtension(pbth)
+		return &MetbEnvironment{
+			Repo:    string(m.Repo.Nbme),
 			Commit:  string(m.Commit.ID),
-			Author:  m.Commit.Author.Name,
-			Date:    m.Commit.Committer.Date,
-			Email:   m.Commit.Author.Email,
-			Path:    path,
-			Lang:    lang,
+			Author:  m.Commit.Author.Nbme,
+			Dbte:    m.Commit.Committer.Dbte,
+			Embil:   m.Commit.Author.Embil,
+			Pbth:    pbth,
+			Lbng:    lbng,
 			Content: content,
 		}
-	case *searchresult.OwnerMatch:
-		return &MetaEnvironment{
-			Repo:    string(m.Repo.Name),
+	cbse *sebrchresult.OwnerMbtch:
+		return &MetbEnvironment{
+			Repo:    string(m.Repo.Nbme),
 			Commit:  string(m.CommitID),
 			Owner:   m.ResolvedOwner.Identifier(),
 			Content: content,
 		}
 	}
-	return &MetaEnvironment{}
+	return &MetbEnvironment{}
 }

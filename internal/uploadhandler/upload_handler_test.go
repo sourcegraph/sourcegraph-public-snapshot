@@ -1,10 +1,10 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"flag"
+	"flbg"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -14,452 +14,452 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	uploadstoremocks "github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	uplobdstoremocks "github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore/mocks"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
 
-const testCommit = "deadbeef01deadbeef02deadbeef03deadbeef04"
+const testCommit = "debdbeef01debdbeef02debdbeef03debdbeef04"
 
-func TestHandleEnqueueSinglePayload(t *testing.T) {
+func TestHbndleEnqueueSinglePbylobd(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockDBStore := NewMockDBStore[testUplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
-	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(tx DBStore[testUplobdMetbdbtb]) error) error { return f(mockDBStore) })
+	mockDBStore.InsertUplobdFunc.SetDefbultReturn(42, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
+	testURL.RbwQuery = (url.Vblues{
 		"commit":      []string{testCommit},
 		"root":        []string{"proj/"},
 		"repository":  []string{"github.com/test/test"},
-		"indexerName": []string{"lsif-go"},
+		"indexerNbme": []string{"lsif-go"},
 	}).Encode()
 
-	var expectedContents []byte
+	vbr expectedContents []byte
 	for i := 0; i < 20000; i++ {
-		expectedContents = append(expectedContents, byte(i))
+		expectedContents = bppend(expectedContents, byte(i))
 	}
 
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest("POST", testURL.String(), bytes.NewReader(expectedContents))
+	r, err := http.NewRequest("POST", testURL.String(), bytes.NewRebder(expectedContents))
 	if err != nil {
-		t.Fatalf("unexpected error constructing request: %s", err)
+		t.Fbtblf("unexpected error constructing request: %s", err)
 	}
-	r.Header.Set("X-Uncompressed-Size", "21")
+	r.Hebder.Set("X-Uncompressed-Size", "21")
 
-	newTestUploadHandler(t, mockDBStore, mockUploadStore).ServeHTTP(w, r)
+	newTestUplobdHbndler(t, mockDBStore, mockUplobdStore).ServeHTTP(w, r)
 
-	if w.Code != http.StatusAccepted {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
+	if w.Code != http.StbtusAccepted {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusAccepted, w.Code)
 	}
 	if diff := cmp.Diff([]byte(`{"id":"42"}`), w.Body.Bytes()); diff != "" {
-		t.Errorf("unexpected response payload (-want +got):\n%s", diff)
+		t.Errorf("unexpected response pbylobd (-wbnt +got):\n%s", diff)
 	}
 
-	if len(mockDBStore.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
+	if len(mockDBStore.InsertUplobdFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertUplobd cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.InsertUplobdFunc.History()))
 	} else {
-		call := mockDBStore.InsertUploadFunc.History()[0]
-		if call.Arg1.Metadata.Commit != testCommit {
-			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.Commit)
+		cbll := mockDBStore.InsertUplobdFunc.History()[0]
+		if cbll.Arg1.Metbdbtb.Commit != testCommit {
+			t.Errorf("unexpected commit. wbnt=%q hbve=%q", testCommit, cbll.Arg1.Metbdbtb.Commit)
 		}
-		if call.Arg1.Metadata.Root != "proj/" {
-			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.Root)
+		if cbll.Arg1.Metbdbtb.Root != "proj/" {
+			t.Errorf("unexpected root. wbnt=%q hbve=%q", "proj/", cbll.Arg1.Metbdbtb.Root)
 		}
-		if call.Arg1.Metadata.RepositoryID != 50 {
-			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.RepositoryID)
+		if cbll.Arg1.Metbdbtb.RepositoryID != 50 {
+			t.Errorf("unexpected repository id. wbnt=%d hbve=%d", 50, cbll.Arg1.Metbdbtb.RepositoryID)
 		}
-		if call.Arg1.Metadata.Indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.Indexer)
+		if cbll.Arg1.Metbdbtb.Indexer != "lsif-go" {
+			t.Errorf("unexpected indexer nbme. wbnt=%q hbve=%q", "lsif-go", cbll.Arg1.Metbdbtb.Indexer)
 		}
-		if *call.Arg1.UncompressedSize != 21 {
-			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
+		if *cbll.Arg1.UncompressedSize != 21 {
+			t.Errorf("unexpected uncompressed size. wbnt=%d hbve%d", 21, *cbll.Arg1.UncompressedSize)
 		}
 	}
 
-	if len(mockUploadStore.UploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of SendUpload calls. want=%d have=%d", 1, len(mockUploadStore.UploadFunc.History()))
+	if len(mockUplobdStore.UplobdFunc.History()) != 1 {
+		t.Errorf("unexpected number of SendUplobd cblls. wbnt=%d hbve=%d", 1, len(mockUplobdStore.UplobdFunc.History()))
 	} else {
-		call := mockUploadStore.UploadFunc.History()[0]
-		if call.Arg1 != "upload-42.lsif.gz" {
-			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
+		cbll := mockUplobdStore.UplobdFunc.History()[0]
+		if cbll.Arg1 != "uplobd-42.lsif.gz" {
+			t.Errorf("unexpected bundle id. wbnt=%s hbve=%s", "uplobd-42.lsif.gz", cbll.Arg1)
 		}
 
-		contents, err := io.ReadAll(call.Arg2)
+		contents, err := io.RebdAll(cbll.Arg2)
 		if err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
+			t.Fbtblf("unexpected error rebding pbylobd: %s", err)
 		}
 
 		if diff := cmp.Diff(expectedContents, contents); diff != "" {
-			t.Errorf("unexpected file contents (-want +got):\n%s", diff)
+			t.Errorf("unexpected file contents (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestHandleEnqueueSinglePayloadNoIndexerName(t *testing.T) {
+func TestHbndleEnqueueSinglePbylobdNoIndexerNbme(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockDBStore := NewMockDBStore[testUplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
-	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(tx DBStore[testUplobdMetbdbtb]) error) error { return f(mockDBStore) })
+	mockDBStore.InsertUplobdFunc.SetDefbultReturn(42, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
+	testURL.RbwQuery = (url.Vblues{
 		"commit":     []string{testCommit},
 		"root":       []string{"proj/"},
 		"repository": []string{"github.com/test/test"},
 	}).Encode()
 
-	var lines []string
-	lines = append(lines, `{"label": "metaData", "toolInfo": {"name": "lsif-go"}}`)
+	vbr lines []string
+	lines = bppend(lines, `{"lbbel": "metbDbtb", "toolInfo": {"nbme": "lsif-go"}}`)
 	for i := 0; i < 20000; i++ {
-		lines = append(lines, `{"id": "a", "type": "edge", "label": "textDocument/references", "outV": "b", "inV": "c"}`)
+		lines = bppend(lines, `{"id": "b", "type": "edge", "lbbel": "textDocument/references", "outV": "b", "inV": "c"}`)
 	}
 
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	gzipWriter := gzip.NewWriter(&buf)
-	_, _ = io.Copy(gzipWriter, bytes.NewReader([]byte(strings.Join(lines, "\n"))))
+	_, _ = io.Copy(gzipWriter, bytes.NewRebder([]byte(strings.Join(lines, "\n"))))
 	gzipWriter.Close()
 	expectedContents := buf.Bytes()
 
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest("POST", testURL.String(), bytes.NewReader(expectedContents))
+	r, err := http.NewRequest("POST", testURL.String(), bytes.NewRebder(expectedContents))
 	if err != nil {
-		t.Fatalf("unexpected error constructing request: %s", err)
+		t.Fbtblf("unexpected error constructing request: %s", err)
 	}
 
-	newTestUploadHandler(t, mockDBStore, mockUploadStore).ServeHTTP(w, r)
+	newTestUplobdHbndler(t, mockDBStore, mockUplobdStore).ServeHTTP(w, r)
 
-	if w.Code != http.StatusAccepted {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
+	if w.Code != http.StbtusAccepted {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusAccepted, w.Code)
 	}
 
-	if len(mockUploadStore.UploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of Upload calls. want=%d have=%d", 1, len(mockUploadStore.UploadFunc.History()))
+	if len(mockUplobdStore.UplobdFunc.History()) != 1 {
+		t.Errorf("unexpected number of Uplobd cblls. wbnt=%d hbve=%d", 1, len(mockUplobdStore.UplobdFunc.History()))
 	} else {
-		call := mockUploadStore.UploadFunc.History()[0]
-		if call.Arg1 != "upload-42.lsif.gz" {
-			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
+		cbll := mockUplobdStore.UplobdFunc.History()[0]
+		if cbll.Arg1 != "uplobd-42.lsif.gz" {
+			t.Errorf("unexpected bundle id. wbnt=%s hbve=%s", "uplobd-42.lsif.gz", cbll.Arg1)
 		}
 
-		contents, err := io.ReadAll(call.Arg2)
+		contents, err := io.RebdAll(cbll.Arg2)
 		if err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
+			t.Fbtblf("unexpected error rebding pbylobd: %s", err)
 		}
 
 		if diff := cmp.Diff(expectedContents, contents); diff != "" {
-			t.Errorf("unexpected file contents (-want +got):\n%s", diff)
+			t.Errorf("unexpected file contents (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestHandleEnqueueMultipartSetup(t *testing.T) {
+func TestHbndleEnqueueMultipbrtSetup(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockDBStore := NewMockDBStore[testUplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
-	mockDBStore.InsertUploadFunc.SetDefaultReturn(42, nil)
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(tx DBStore[testUplobdMetbdbtb]) error) error { return f(mockDBStore) })
+	mockDBStore.InsertUplobdFunc.SetDefbultReturn(42, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
+	testURL.RbwQuery = (url.Vblues{
 		"commit":      []string{testCommit},
 		"root":        []string{"proj/"},
 		"repository":  []string{"github.com/test/test"},
-		"indexerName": []string{"lsif-go"},
-		"multiPart":   []string{"true"},
-		"numParts":    []string{"3"},
+		"indexerNbme": []string{"lsif-go"},
+		"multiPbrt":   []string{"true"},
+		"numPbrts":    []string{"3"},
 	}).Encode()
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("POST", testURL.String(), nil)
 	if err != nil {
-		t.Fatalf("unexpected error constructing request: %s", err)
+		t.Fbtblf("unexpected error constructing request: %s", err)
 	}
-	r.Header.Set("X-Uncompressed-Size", "50")
+	r.Hebder.Set("X-Uncompressed-Size", "50")
 
-	newTestUploadHandler(t, mockDBStore, mockUploadStore).ServeHTTP(w, r)
+	newTestUplobdHbndler(t, mockDBStore, mockUplobdStore).ServeHTTP(w, r)
 
-	if w.Code != http.StatusAccepted {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusAccepted, w.Code)
+	if w.Code != http.StbtusAccepted {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusAccepted, w.Code)
 	}
 	if diff := cmp.Diff([]byte(`{"id":"42"}`), w.Body.Bytes()); diff != "" {
-		t.Errorf("unexpected response payload (-want +got):\n%s", diff)
+		t.Errorf("unexpected response pbylobd (-wbnt +got):\n%s", diff)
 	}
 
-	if len(mockDBStore.InsertUploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of InsertUpload calls. want=%d have=%d", 1, len(mockDBStore.InsertUploadFunc.History()))
+	if len(mockDBStore.InsertUplobdFunc.History()) != 1 {
+		t.Errorf("unexpected number of InsertUplobd cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.InsertUplobdFunc.History()))
 	} else {
-		call := mockDBStore.InsertUploadFunc.History()[0]
-		if call.Arg1.Metadata.Commit != testCommit {
-			t.Errorf("unexpected commit. want=%q have=%q", testCommit, call.Arg1.Metadata.Commit)
+		cbll := mockDBStore.InsertUplobdFunc.History()[0]
+		if cbll.Arg1.Metbdbtb.Commit != testCommit {
+			t.Errorf("unexpected commit. wbnt=%q hbve=%q", testCommit, cbll.Arg1.Metbdbtb.Commit)
 		}
-		if call.Arg1.Metadata.Root != "proj/" {
-			t.Errorf("unexpected root. want=%q have=%q", "proj/", call.Arg1.Metadata.Root)
+		if cbll.Arg1.Metbdbtb.Root != "proj/" {
+			t.Errorf("unexpected root. wbnt=%q hbve=%q", "proj/", cbll.Arg1.Metbdbtb.Root)
 		}
-		if call.Arg1.Metadata.RepositoryID != 50 {
-			t.Errorf("unexpected repository id. want=%d have=%d", 50, call.Arg1.Metadata.RepositoryID)
+		if cbll.Arg1.Metbdbtb.RepositoryID != 50 {
+			t.Errorf("unexpected repository id. wbnt=%d hbve=%d", 50, cbll.Arg1.Metbdbtb.RepositoryID)
 		}
-		if call.Arg1.Metadata.Indexer != "lsif-go" {
-			t.Errorf("unexpected indexer name. want=%q have=%q", "lsif-go", call.Arg1.Metadata.Indexer)
+		if cbll.Arg1.Metbdbtb.Indexer != "lsif-go" {
+			t.Errorf("unexpected indexer nbme. wbnt=%q hbve=%q", "lsif-go", cbll.Arg1.Metbdbtb.Indexer)
 		}
-		if *call.Arg1.UncompressedSize != 50 {
-			t.Errorf("unexpected uncompressed size. want=%d have%d", 21, *call.Arg1.UncompressedSize)
+		if *cbll.Arg1.UncompressedSize != 50 {
+			t.Errorf("unexpected uncompressed size. wbnt=%d hbve%d", 21, *cbll.Arg1.UncompressedSize)
 		}
 	}
 }
 
-func TestHandleEnqueueMultipartUpload(t *testing.T) {
+func TestHbndleEnqueueMultipbrtUplobd(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockDBStore := NewMockDBStore[testUplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
-	upload := Upload[testUploadMetadata]{
+	uplobd := Uplobd[testUplobdMetbdbtb]{
 		ID:            42,
-		NumParts:      5,
-		UploadedParts: []int{0, 1, 2, 3, 4},
+		NumPbrts:      5,
+		UplobdedPbrts: []int{0, 1, 2, 3, 4},
 	}
 
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(tx DBStore[testUplobdMetbdbtb]) error) error { return f(mockDBStore) })
+	mockDBStore.GetUplobdByIDFunc.SetDefbultReturn(uplobd, true, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
-		"uploadId": []string{"42"},
+	testURL.RbwQuery = (url.Vblues{
+		"uplobdId": []string{"42"},
 		"index":    []string{"3"},
 	}).Encode()
 
-	var expectedContents []byte
+	vbr expectedContents []byte
 	for i := 0; i < 20000; i++ {
-		expectedContents = append(expectedContents, byte(i))
+		expectedContents = bppend(expectedContents, byte(i))
 	}
 
 	w := httptest.NewRecorder()
-	r, err := http.NewRequest("POST", testURL.String(), bytes.NewReader(expectedContents))
+	r, err := http.NewRequest("POST", testURL.String(), bytes.NewRebder(expectedContents))
 	if err != nil {
-		t.Fatalf("unexpected error constructing request: %s", err)
+		t.Fbtblf("unexpected error constructing request: %s", err)
 	}
 
-	newTestUploadHandler(t, mockDBStore, mockUploadStore).ServeHTTP(w, r)
+	newTestUplobdHbndler(t, mockDBStore, mockUplobdStore).ServeHTTP(w, r)
 
-	if w.Code != http.StatusNoContent {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
+	if w.Code != http.StbtusNoContent {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusNoContent, w.Code)
 	}
 
-	if len(mockDBStore.AddUploadPartFunc.History()) != 1 {
-		t.Errorf("unexpected number of AddUploadPart calls. want=%d have=%d", 1, len(mockDBStore.AddUploadPartFunc.History()))
+	if len(mockDBStore.AddUplobdPbrtFunc.History()) != 1 {
+		t.Errorf("unexpected number of AddUplobdPbrt cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.AddUplobdPbrtFunc.History()))
 	} else {
-		call := mockDBStore.AddUploadPartFunc.History()[0]
-		if call.Arg1 != 42 {
-			t.Errorf("unexpected commit. want=%q have=%q", 42, call.Arg1)
+		cbll := mockDBStore.AddUplobdPbrtFunc.History()[0]
+		if cbll.Arg1 != 42 {
+			t.Errorf("unexpected commit. wbnt=%q hbve=%q", 42, cbll.Arg1)
 		}
-		if call.Arg2 != 3 {
-			t.Errorf("unexpected root. want=%q have=%q", 3, call.Arg2)
+		if cbll.Arg2 != 3 {
+			t.Errorf("unexpected root. wbnt=%q hbve=%q", 3, cbll.Arg2)
 		}
 	}
 
-	if len(mockUploadStore.UploadFunc.History()) != 1 {
-		t.Errorf("unexpected number of Upload calls. want=%d have=%d", 1, len(mockUploadStore.UploadFunc.History()))
+	if len(mockUplobdStore.UplobdFunc.History()) != 1 {
+		t.Errorf("unexpected number of Uplobd cblls. wbnt=%d hbve=%d", 1, len(mockUplobdStore.UplobdFunc.History()))
 	} else {
-		call := mockUploadStore.UploadFunc.History()[0]
-		if call.Arg1 != "upload-42.3.lsif.gz" {
-			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.3.lsif.gz", call.Arg1)
+		cbll := mockUplobdStore.UplobdFunc.History()[0]
+		if cbll.Arg1 != "uplobd-42.3.lsif.gz" {
+			t.Errorf("unexpected bundle id. wbnt=%s hbve=%s", "uplobd-42.3.lsif.gz", cbll.Arg1)
 		}
 
-		contents, err := io.ReadAll(call.Arg2)
+		contents, err := io.RebdAll(cbll.Arg2)
 		if err != nil {
-			t.Fatalf("unexpected error reading payload: %s", err)
+			t.Fbtblf("unexpected error rebding pbylobd: %s", err)
 		}
 
 		if diff := cmp.Diff(expectedContents, contents); diff != "" {
-			t.Errorf("unexpected file contents (-want +got):\n%s", diff)
+			t.Errorf("unexpected file contents (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestHandleEnqueueMultipartFinalize(t *testing.T) {
+func TestHbndleEnqueueMultipbrtFinblize(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockDBStore := NewMockDBStore[testUplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
-	upload := Upload[testUploadMetadata]{
+	uplobd := Uplobd[testUplobdMetbdbtb]{
 		ID:            42,
-		NumParts:      5,
-		UploadedParts: []int{0, 1, 2, 3, 4},
+		NumPbrts:      5,
+		UplobdedPbrts: []int{0, 1, 2, 3, 4},
 	}
-	mockDBStore.WithTransactionFunc.SetDefaultHook(func(ctx context.Context, f func(tx DBStore[testUploadMetadata]) error) error { return f(mockDBStore) })
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockDBStore.WithTrbnsbctionFunc.SetDefbultHook(func(ctx context.Context, f func(tx DBStore[testUplobdMetbdbtb]) error) error { return f(mockDBStore) })
+	mockDBStore.GetUplobdByIDFunc.SetDefbultReturn(uplobd, true, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
-		"uploadId": []string{"42"},
+	testURL.RbwQuery = (url.Vblues{
+		"uplobdId": []string{"42"},
 		"done":     []string{"true"},
 	}).Encode()
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("POST", testURL.String(), nil)
 	if err != nil {
-		t.Fatalf("unexpected error constructing request: %s", err)
+		t.Fbtblf("unexpected error constructing request: %s", err)
 	}
 
-	newTestUploadHandler(t, mockDBStore, mockUploadStore).ServeHTTP(w, r)
+	newTestUplobdHbndler(t, mockDBStore, mockUplobdStore).ServeHTTP(w, r)
 
-	if w.Code != http.StatusNoContent {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusNoContent, w.Code)
+	if w.Code != http.StbtusNoContent {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusNoContent, w.Code)
 	}
 
-	if len(mockDBStore.MarkQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of MarkQueued calls. want=%d have=%d", 1, len(mockDBStore.MarkQueuedFunc.History()))
-	} else if call := mockDBStore.MarkQueuedFunc.History()[0]; call.Arg1 != 42 {
-		t.Errorf("unexpected upload id. want=%d have=%d", 42, call.Arg1)
+	if len(mockDBStore.MbrkQueuedFunc.History()) != 1 {
+		t.Errorf("unexpected number of MbrkQueued cblls. wbnt=%d hbve=%d", 1, len(mockDBStore.MbrkQueuedFunc.History()))
+	} else if cbll := mockDBStore.MbrkQueuedFunc.History()[0]; cbll.Arg1 != 42 {
+		t.Errorf("unexpected uplobd id. wbnt=%d hbve=%d", 42, cbll.Arg1)
 	}
 
-	if len(mockUploadStore.ComposeFunc.History()) != 1 {
-		t.Errorf("unexpected number of Compose calls. want=%d have=%d", 1, len(mockUploadStore.ComposeFunc.History()))
+	if len(mockUplobdStore.ComposeFunc.History()) != 1 {
+		t.Errorf("unexpected number of Compose cblls. wbnt=%d hbve=%d", 1, len(mockUplobdStore.ComposeFunc.History()))
 	} else {
-		call := mockUploadStore.ComposeFunc.History()[0]
+		cbll := mockUplobdStore.ComposeFunc.History()[0]
 
-		if call.Arg1 != "upload-42.lsif.gz" {
-			t.Errorf("unexpected bundle id. want=%s have=%s", "upload-42.lsif.gz", call.Arg1)
+		if cbll.Arg1 != "uplobd-42.lsif.gz" {
+			t.Errorf("unexpected bundle id. wbnt=%s hbve=%s", "uplobd-42.lsif.gz", cbll.Arg1)
 		}
 
-		expectedFilenames := []string{
-			"upload-42.0.lsif.gz",
-			"upload-42.1.lsif.gz",
-			"upload-42.2.lsif.gz",
-			"upload-42.3.lsif.gz",
-			"upload-42.4.lsif.gz",
+		expectedFilenbmes := []string{
+			"uplobd-42.0.lsif.gz",
+			"uplobd-42.1.lsif.gz",
+			"uplobd-42.2.lsif.gz",
+			"uplobd-42.3.lsif.gz",
+			"uplobd-42.4.lsif.gz",
 		}
-		if diff := cmp.Diff(expectedFilenames, call.Arg2); diff != "" {
-			t.Errorf("unexpected source filenames (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedFilenbmes, cbll.Arg2); diff != "" {
+			t.Errorf("unexpected source filenbmes (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
+func TestHbndleEnqueueMultipbrtFinblizeIncompleteUplobd(t *testing.T) {
 	setupRepoMocks(t)
 
-	mockDBStore := NewMockDBStore[testUploadMetadata]()
-	mockUploadStore := uploadstoremocks.NewMockStore()
+	mockDBStore := NewMockDBStore[testUplobdMetbdbtb]()
+	mockUplobdStore := uplobdstoremocks.NewMockStore()
 
-	upload := Upload[testUploadMetadata]{
+	uplobd := Uplobd[testUplobdMetbdbtb]{
 		ID:            42,
-		NumParts:      5,
-		UploadedParts: []int{0, 1, 3, 4},
+		NumPbrts:      5,
+		UplobdedPbrts: []int{0, 1, 3, 4},
 	}
-	mockDBStore.GetUploadByIDFunc.SetDefaultReturn(upload, true, nil)
+	mockDBStore.GetUplobdByIDFunc.SetDefbultReturn(uplobd, true, nil)
 
-	testURL, err := url.Parse("http://test.com/upload")
+	testURL, err := url.Pbrse("http://test.com/uplobd")
 	if err != nil {
-		t.Fatalf("unexpected error constructing url: %s", err)
+		t.Fbtblf("unexpected error constructing url: %s", err)
 	}
-	testURL.RawQuery = (url.Values{
-		"uploadId": []string{"42"},
+	testURL.RbwQuery = (url.Vblues{
+		"uplobdId": []string{"42"},
 		"done":     []string{"true"},
 	}).Encode()
 
 	w := httptest.NewRecorder()
 	r, err := http.NewRequest("POST", testURL.String(), nil)
 	if err != nil {
-		t.Fatalf("unexpected error constructing request: %s", err)
+		t.Fbtblf("unexpected error constructing request: %s", err)
 	}
 
-	h := &UploadHandler[testUploadMetadata]{
+	h := &UplobdHbndler[testUplobdMetbdbtb]{
 		dbStore:     mockDBStore,
-		uploadStore: mockUploadStore,
-		operations:  NewOperations(&observation.TestContext, "test"),
+		uplobdStore: mockUplobdStore,
+		operbtions:  NewOperbtions(&observbtion.TestContext, "test"),
 		logger:      logtest.Scoped(t),
 	}
-	h.handleEnqueue(w, r)
+	h.hbndleEnqueue(w, r)
 
-	if w.Code != http.StatusBadRequest {
-		t.Errorf("unexpected status code. want=%d have=%d", http.StatusBadRequest, w.Code)
+	if w.Code != http.StbtusBbdRequest {
+		t.Errorf("unexpected stbtus code. wbnt=%d hbve=%d", http.StbtusBbdRequest, w.Code)
 	}
 }
 
-type testUploadMetadata struct {
+type testUplobdMetbdbtb struct {
 	RepositoryID      int
 	Commit            string
 	Root              string
 	Indexer           string
 	IndexerVersion    string
-	AssociatedIndexID int
+	AssocibtedIndexID int
 }
 
-func newTestUploadHandler(t *testing.T, dbStore DBStore[testUploadMetadata], uploadStore uploadstore.Store) http.Handler {
-	metadataFromRequest := func(ctx context.Context, r *http.Request) (testUploadMetadata, int, error) {
-		return testUploadMetadata{
+func newTestUplobdHbndler(t *testing.T, dbStore DBStore[testUplobdMetbdbtb], uplobdStore uplobdstore.Store) http.Hbndler {
+	metbdbtbFromRequest := func(ctx context.Context, r *http.Request) (testUplobdMetbdbtb, int, error) {
+		return testUplobdMetbdbtb{
 			RepositoryID:      50,
 			Commit:            getQuery(r, "commit"),
 			Root:              getQuery(r, "root"),
-			Indexer:           getQuery(r, "indexerName"),
+			Indexer:           getQuery(r, "indexerNbme"),
 			IndexerVersion:    getQuery(r, "indexerVersion"),
-			AssociatedIndexID: getQueryInt(r, "associatedIndexId"),
+			AssocibtedIndexID: getQueryInt(r, "bssocibtedIndexId"),
 		}, 0, nil
 	}
 
-	return NewUploadHandler(
+	return NewUplobdHbndler(
 		logtest.Scoped(t),
 		dbStore,
-		uploadStore,
-		NewOperations(&observation.TestContext, "test"),
-		metadataFromRequest,
+		uplobdStore,
+		NewOperbtions(&observbtion.TestContext, "test"),
+		metbdbtbFromRequest,
 	)
 }
 
 func setupRepoMocks(t testing.TB) {
-	t.Cleanup(func() {
-		backend.Mocks.Repos.GetByName = nil
-		backend.Mocks.Repos.ResolveRev = nil
+	t.Clebnup(func() {
+		bbckend.Mocks.Repos.GetByNbme = nil
+		bbckend.Mocks.Repos.ResolveRev = nil
 	})
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		if name != "github.com/test/test" {
-			t.Errorf("unexpected repository name. want=%s have=%s", "github.com/test/test", name)
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+		if nbme != "github.com/test/test" {
+			t.Errorf("unexpected repository nbme. wbnt=%s hbve=%s", "github.com/test/test", nbme)
 		}
 		return &types.Repo{ID: 50}, nil
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
 		if rev != testCommit {
-			t.Errorf("unexpected commit. want=%s have=%s", testCommit, rev)
+			t.Errorf("unexpected commit. wbnt=%s hbve=%s", testCommit, rev)
 		}
 		return "", nil
 	}

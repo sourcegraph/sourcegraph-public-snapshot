@@ -1,16 +1,16 @@
-package state
+pbckbge stbte
 
 import (
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-// ChangesetEvents is a collection of changeset events
-type ChangesetEvents []*btypes.ChangesetEvent
+// ChbngesetEvents is b collection of chbngeset events
+type ChbngesetEvents []*btypes.ChbngesetEvent
 
-func (ce ChangesetEvents) Len() int      { return len(ce) }
-func (ce ChangesetEvents) Swap(i, j int) { ce[i], ce[j] = ce[j], ce[i] }
+func (ce ChbngesetEvents) Len() int      { return len(ce) }
+func (ce ChbngesetEvents) Swbp(i, j int) { ce[i], ce[j] = ce[j], ce[i] }
 
-// Less sorts changeset events by their Timestamps
-func (ce ChangesetEvents) Less(i, j int) bool {
-	return ce[i].Timestamp().Before(ce[j].Timestamp())
+// Less sorts chbngeset events by their Timestbmps
+func (ce ChbngesetEvents) Less(i, j int) bool {
+	return ce[i].Timestbmp().Before(ce[j].Timestbmp())
 }

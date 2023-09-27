@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"testing"
@@ -11,8 +11,8 @@ func TestListRecipients(t *testing.T) {
 	_, _, userCTX := newTestUser(ctx, t, db)
 	fixtures := s.insertTestMonitor(userCTX, t)
 
-	rs, err := s.ListRecipients(ctx, ListRecipientsOpts{EmailID: &fixtures.emails[0].ID})
+	rs, err := s.ListRecipients(ctx, ListRecipientsOpts{EmbilID: &fixtures.embils[0].ID})
 	require.NoError(t, err)
 
-	require.Equal(t, []*Recipient{fixtures.recipients[0]}, rs)
+	require.Equbl(t, []*Recipient{fixtures.recipients[0]}, rs)
 }

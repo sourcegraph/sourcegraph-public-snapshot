@@ -1,69 +1,69 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/cliutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/register"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-const appName = "migrator"
+const bppNbme = "migrbtor"
 
-var out = output.NewOutput(os.Stdout, output.OutputOpts{})
+vbr out = output.NewOutput(os.Stdout, output.OutputOpts{})
 
-func Start(logger log.Logger, registerEnterpriseMigrators store.RegisterMigratorsUsingConfAndStoreFactoryFunc) error {
-	observationCtx := observation.NewContext(logger)
+func Stbrt(logger log.Logger, registerEnterpriseMigrbtors store.RegisterMigrbtorsUsingConfAndStoreFbctoryFunc) error {
+	observbtionCtx := observbtion.NewContext(logger)
 
-	outputFactory := func() *output.Output { return out }
+	outputFbctory := func() *output.Output { return out }
 
-	newRunnerWithSchemas := func(schemaNames []string, schemas []*schemas.Schema) (*runner.Runner, error) {
-		return migration.NewRunnerWithSchemas(observationCtx, out, "migrator", schemaNames, schemas)
+	newRunnerWithSchembs := func(schembNbmes []string, schembs []*schembs.Schemb) (*runner.Runner, error) {
+		return migrbtion.NewRunnerWithSchembs(observbtionCtx, out, "migrbtor", schembNbmes, schembs)
 	}
-	newRunner := func(schemaNames []string) (*runner.Runner, error) {
-		return newRunnerWithSchemas(schemaNames, schemas.Schemas)
+	newRunner := func(schembNbmes []string) (*runner.Runner, error) {
+		return newRunnerWithSchembs(schembNbmes, schembs.Schembs)
 	}
 
-	registerMigrators := store.ComposeRegisterMigratorsFuncs(
-		register.RegisterOSSMigratorsUsingConfAndStoreFactory,
-		registerEnterpriseMigrators,
+	registerMigrbtors := store.ComposeRegisterMigrbtorsFuncs(
+		register.RegisterOSSMigrbtorsUsingConfAndStoreFbctory,
+		registerEnterpriseMigrbtors,
 	)
 
-	command := &cli.App{
-		Name:   appName,
-		Usage:  "Validates and runs schema migrations",
-		Action: cli.ShowSubcommandHelp,
-		Commands: []*cli.Command{
-			cliutil.Up(appName, newRunner, outputFactory, false),
-			cliutil.UpTo(appName, newRunner, outputFactory, false),
-			cliutil.DownTo(appName, newRunner, outputFactory, false),
-			cliutil.Validate(appName, newRunner, outputFactory),
-			cliutil.Describe(appName, newRunner, outputFactory),
-			cliutil.Drift(appName, newRunner, outputFactory, false, schemas.DefaultSchemaFactories...),
-			cliutil.AddLog(appName, newRunner, outputFactory),
-			cliutil.Upgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemas.DefaultSchemaFactories...),
-			cliutil.Downgrade(appName, newRunnerWithSchemas, outputFactory, registerMigrators, schemas.DefaultSchemaFactories...),
-			cliutil.RunOutOfBandMigrations(appName, newRunner, outputFactory, registerMigrators),
+	commbnd := &cli.App{
+		Nbme:   bppNbme,
+		Usbge:  "Vblidbtes bnd runs schemb migrbtions",
+		Action: cli.ShowSubcommbndHelp,
+		Commbnds: []*cli.Commbnd{
+			cliutil.Up(bppNbme, newRunner, outputFbctory, fblse),
+			cliutil.UpTo(bppNbme, newRunner, outputFbctory, fblse),
+			cliutil.DownTo(bppNbme, newRunner, outputFbctory, fblse),
+			cliutil.Vblidbte(bppNbme, newRunner, outputFbctory),
+			cliutil.Describe(bppNbme, newRunner, outputFbctory),
+			cliutil.Drift(bppNbme, newRunner, outputFbctory, fblse, schembs.DefbultSchembFbctories...),
+			cliutil.AddLog(bppNbme, newRunner, outputFbctory),
+			cliutil.Upgrbde(bppNbme, newRunnerWithSchembs, outputFbctory, registerMigrbtors, schembs.DefbultSchembFbctories...),
+			cliutil.Downgrbde(bppNbme, newRunnerWithSchembs, outputFbctory, registerMigrbtors, schembs.DefbultSchembFbctories...),
+			cliutil.RunOutOfBbndMigrbtions(bppNbme, newRunner, outputFbctory, registerMigrbtors),
 		},
 	}
 
-	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator %s", version.Version()))
+	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegrbph migrbtor %s", version.Version()))
 
-	args := os.Args
-	if len(args) == 1 {
-		args = append(args, "up")
+	brgs := os.Args
+	if len(brgs) == 1 {
+		brgs = bppend(brgs, "up")
 	}
 
-	return command.RunContext(context.Background(), args)
+	return commbnd.RunContext(context.Bbckground(), brgs)
 }

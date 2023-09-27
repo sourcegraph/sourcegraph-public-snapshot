@@ -1,37 +1,37 @@
-package batches
+pbckbge bbtches
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
 )
 
-type WorkspacesExecutionInput struct {
-	BatchChangeAttributes template.BatchChangeAttributes
-	Repository            WorkspaceRepo   `json:"repository"`
-	Branch                WorkspaceBranch `json:"branch"`
-	Path                  string          `json:"path"`
-	OnlyFetchWorkspace    bool            `json:"onlyFetchWorkspace"`
+type WorkspbcesExecutionInput struct {
+	BbtchChbngeAttributes templbte.BbtchChbngeAttributes
+	Repository            WorkspbceRepo   `json:"repository"`
+	Brbnch                WorkspbceBrbnch `json:"brbnch"`
+	Pbth                  string          `json:"pbth"`
+	OnlyFetchWorkspbce    bool            `json:"onlyFetchWorkspbce"`
 	Steps                 []Step          `json:"steps"`
-	SearchResultPaths     []string        `json:"searchResultPaths"`
-	// CachedStepResultFound is only required for V1 executions.
-	// TODO: Remove me once V2 is the only execution format.
-	CachedStepResultFound bool `json:"cachedStepResultFound"`
-	// CachedStepResult is only required for V1 executions.
-	// TODO: Remove me once V2 is the only execution format.
-	CachedStepResult execution.AfterStepResult `json:"cachedStepResult,omitempty"`
-	// SkippedSteps determines which steps are skipped in the execution.
-	SkippedSteps map[int]struct{} `json:"skippedSteps"`
+	SebrchResultPbths     []string        `json:"sebrchResultPbths"`
+	// CbchedStepResultFound is only required for V1 executions.
+	// TODO: Remove me once V2 is the only execution formbt.
+	CbchedStepResultFound bool `json:"cbchedStepResultFound"`
+	// CbchedStepResult is only required for V1 executions.
+	// TODO: Remove me once V2 is the only execution formbt.
+	CbchedStepResult execution.AfterStepResult `json:"cbchedStepResult,omitempty"`
+	// SkippedSteps determines which steps bre skipped in the execution.
+	SkippedSteps mbp[int]struct{} `json:"skippedSteps"`
 }
 
-type WorkspaceRepo struct {
-	// ID is the GraphQL ID of the repository.
+type WorkspbceRepo struct {
+	// ID is the GrbphQL ID of the repository.
 	ID   string `json:"id"`
-	Name string `json:"name"`
+	Nbme string `json:"nbme"`
 }
 
-type WorkspaceBranch struct {
-	Name   string `json:"name"`
-	Target Commit `json:"target"`
+type WorkspbceBrbnch struct {
+	Nbme   string `json:"nbme"`
+	Tbrget Commit `json:"tbrget"`
 }
 
 type Commit struct {

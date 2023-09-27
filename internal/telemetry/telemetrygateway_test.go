@@ -1,4 +1,4 @@
-package telemetry
+pbckbge telemetry
 
 import (
 	"context"
@@ -6,123 +6,123 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 )
 
-func TestMakeRawEvent(t *testing.T) {
-	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+func TestMbkeRbwEvent(t *testing.T) {
+	stbticTime, err := time.Pbrse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
-	for _, tc := range []struct {
-		name   string
+	for _, tc := rbnge []struct {
+		nbme   string
 		ctx    context.Context
 		event  Event
-		expect autogold.Value
+		expect butogold.Vblue
 	}{
 		{
-			name: "basic",
-			ctx:  context.Background(),
+			nbme: "bbsic",
+			ctx:  context.Bbckground(),
 			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
+				Febture: FebtureExbmple,
+				Action:  ActionExbmple,
 			},
-			expect: autogold.Expect(`{
-  "action": "exampleAction",
-  "feature": "exampleFeature",
-  "id": "basic",
-  "parameters": {},
+			expect: butogold.Expect(`{
+  "bction": "exbmpleAction",
+  "febture": "exbmpleFebture",
+  "id": "bbsic",
+  "pbrbmeters": {},
   "source": {
     "server": {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z"
+  "timestbmp": "2023-02-24T14:48:30Z"
 }`),
 		},
 		{
-			name: "with anonymous user",
-			ctx:  actor.WithActor(context.Background(), actor.FromAnonymousUser("1234")),
+			nbme: "with bnonymous user",
+			ctx:  bctor.WithActor(context.Bbckground(), bctor.FromAnonymousUser("1234")),
 			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
+				Febture: FebtureExbmple,
+				Action:  ActionExbmple,
 			},
-			expect: autogold.Expect(`{
-  "action": "exampleAction",
-  "feature": "exampleFeature",
-  "id": "with anonymous user",
-  "parameters": {},
+			expect: butogold.Expect(`{
+  "bction": "exbmpleAction",
+  "febture": "exbmpleFebture",
+  "id": "with bnonymous user",
+  "pbrbmeters": {},
   "source": {
     "server": {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z",
+  "timestbmp": "2023-02-24T14:48:30Z",
   "user": {
-    "anonymousUserId": "1234"
+    "bnonymousUserId": "1234"
   }
 }`),
 		},
 		{
-			name: "with authenticated user",
-			ctx:  actor.WithActor(context.Background(), actor.FromMockUser(1234)),
+			nbme: "with buthenticbted user",
+			ctx:  bctor.WithActor(context.Bbckground(), bctor.FromMockUser(1234)),
 			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
+				Febture: FebtureExbmple,
+				Action:  ActionExbmple,
 			},
-			expect: autogold.Expect(`{
-  "action": "exampleAction",
-  "feature": "exampleFeature",
-  "id": "with authenticated user",
-  "parameters": {},
+			expect: butogold.Expect(`{
+  "bction": "exbmpleAction",
+  "febture": "exbmpleFebture",
+  "id": "with buthenticbted user",
+  "pbrbmeters": {},
   "source": {
     "server": {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z",
+  "timestbmp": "2023-02-24T14:48:30Z",
   "user": {
     "userId": "1234"
   }
 }`),
 		},
 		{
-			name: "with parameters",
-			ctx:  context.Background(),
+			nbme: "with pbrbmeters",
+			ctx:  context.Bbckground(),
 			event: Event{
-				Feature: FeatureExample,
-				Action:  ActionExample,
-				Parameters: EventParameters{
+				Febture: FebtureExbmple,
+				Action:  ActionExbmple,
+				Pbrbmeters: EventPbrbmeters{
 					Version: 0,
-					Metadata: EventMetadata{
-						"foobar": 3,
+					Metbdbtb: EventMetbdbtb{
+						"foobbr": 3,
 					},
-					PrivateMetadata: map[string]any{
-						"barbaz": "hello world!",
+					PrivbteMetbdbtb: mbp[string]bny{
+						"bbrbbz": "hello world!",
 					},
-					BillingMetadata: &EventBillingMetadata{
-						Product:  BillingProductExample,
-						Category: BillingCategoryExample,
+					BillingMetbdbtb: &EventBillingMetbdbtb{
+						Product:  BillingProductExbmple,
+						Cbtegory: BillingCbtegoryExbmple,
 					},
 				},
 			},
-			expect: autogold.Expect(`{
-  "action": "exampleAction",
-  "feature": "exampleFeature",
-  "id": "with parameters",
-  "parameters": {
-    "billingMetadata": {
-      "category": "EXAMPLE",
+			expect: butogold.Expect(`{
+  "bction": "exbmpleAction",
+  "febture": "exbmpleFebture",
+  "id": "with pbrbmeters",
+  "pbrbmeters": {
+    "billingMetbdbtb": {
+      "cbtegory": "EXAMPLE",
       "product": "EXAMPLE"
     },
-    "metadata": {
-      "foobar": "3"
+    "metbdbtb": {
+      "foobbr": "3"
     },
-    "privateMetadata": {
-      "barbaz": "hello world!"
+    "privbteMetbdbtb": {
+      "bbrbbz": "hello world!"
     }
   },
   "source": {
@@ -130,29 +130,29 @@ func TestMakeRawEvent(t *testing.T) {
       "version": "0.0.0+dev"
     }
   },
-  "timestamp": "2023-02-24T14:48:30Z"
+  "timestbmp": "2023-02-24T14:48:30Z"
 }`),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := newTelemetryGatewayEvent(tc.ctx,
-				staticTime,
-				func() string { return tc.name },
-				tc.event.Feature,
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := newTelemetryGbtewbyEvent(tc.ctx,
+				stbticTime,
+				func() string { return tc.nbme },
+				tc.event.Febture,
 				tc.event.Action,
-				&tc.event.Parameters)
+				&tc.event.Pbrbmeters)
 
-			protodata, err := protojson.Marshal(got)
+			protodbtb, err := protojson.Mbrshbl(got)
 			require.NoError(t, err)
 
-			// Protojson output isn't stable by injecting randomized whitespace,
-			// so we re-marshal it to stabilize the output for golden tests.
-			// https://github.com/golang/protobuf/issues/1082
-			var gotJSON map[string]any
-			require.NoError(t, json.Unmarshal(protodata, &gotJSON))
-			jsondata, err := json.MarshalIndent(gotJSON, "", "  ")
+			// Protojson output isn't stbble by injecting rbndomized whitespbce,
+			// so we re-mbrshbl it to stbbilize the output for golden tests.
+			// https://github.com/golbng/protobuf/issues/1082
+			vbr gotJSON mbp[string]bny
+			require.NoError(t, json.Unmbrshbl(protodbtb, &gotJSON))
+			jsondbtb, err := json.MbrshblIndent(gotJSON, "", "  ")
 			require.NoError(t, err)
-			tc.expect.Equal(t, string(jsondata))
+			tc.expect.Equbl(t, string(jsondbtb))
 		})
 	}
 }

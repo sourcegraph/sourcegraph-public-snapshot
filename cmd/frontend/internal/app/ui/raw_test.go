@@ -1,4 +1,4 @@
-package ui
+pbckbge ui
 
 import (
 	"context"
@@ -13,65 +13,65 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// initHTTPTestGitServer instantiates an httptest.Server to make it return an HTTP response as set
-// by httpStatusCode and a body as set by resp. It also ensures that the server is closed during
-// test cleanup, thus ensuring that the caller does not have to remember to close the server.
+// initHTTPTestGitServer instbntibtes bn httptest.Server to mbke it return bn HTTP response bs set
+// by httpStbtusCode bnd b body bs set by resp. It blso ensures thbt the server is closed during
+// test clebnup, thus ensuring thbt the cbller does not hbve to remember to close the server.
 //
-// Finally, initHTTPTestGitServer patches the gitserver.Client.Addrs to the URL of the test
-// HTTP server, so that API calls to the gitserver are received by the test HTTP server.
+// Finblly, initHTTPTestGitServer pbtches the gitserver.Client.Addrs to the URL of the test
+// HTTP server, so thbt API cblls to the gitserver bre received by the test HTTP server.
 //
-// TL;DR: This function helps us to mock the gitserver without having to define mock functions for
-// each of the gitserver client methods.
-func initHTTPTestGitServer(t *testing.T, httpStatusCode int, resp string) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Trailer", "X-Exec-Error")
-		w.Header().Add("Trailer", "X-Exec-Exit-Status")
-		w.Header().Add("Trailer", "X-Exec-Stderr")
-		w.Header().Set("X-Exec-Error", "")
-		w.Header().Set("X-Exec-Exit-Status", "0")
-		w.Header().Set("X-Exec-Stderr", "")
-		w.WriteHeader(httpStatusCode)
+// TL;DR: This function helps us to mock the gitserver without hbving to define mock functions for
+// ebch of the gitserver client methods.
+func initHTTPTestGitServer(t *testing.T, httpStbtusCode int, resp string) {
+	s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Hebder().Set("Trbiler", "X-Exec-Error")
+		w.Hebder().Add("Trbiler", "X-Exec-Exit-Stbtus")
+		w.Hebder().Add("Trbiler", "X-Exec-Stderr")
+		w.Hebder().Set("X-Exec-Error", "")
+		w.Hebder().Set("X-Exec-Exit-Stbtus", "0")
+		w.Hebder().Set("X-Exec-Stderr", "")
+		w.WriteHebder(httpStbtusCode)
 		_, err := w.Write([]byte(resp))
 		if err != nil {
-			t.Fatalf("Failed to write to httptest server: %v", err)
+			t.Fbtblf("Fbiled to write to httptest server: %v", err)
 		}
 	}))
 
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		s.Close()
 		gitserver.ResetClientMocks()
 	})
 
-	gitserver.ClientMocks.Archive = func(ctx context.Context, repo api.RepoName, opt gitserver.ArchiveOptions) (reader io.ReadCloser, err error) {
-		if httpStatusCode != http.StatusOK {
+	gitserver.ClientMocks.Archive = func(ctx context.Context, repo bpi.RepoNbme, opt gitserver.ArchiveOptions) (rebder io.RebdCloser, err error) {
+		if httpStbtusCode != http.StbtusOK {
 			err = errors.New("error")
 		} else {
-			stringReader := strings.NewReader(resp)
-			reader = io.NopCloser(stringReader)
+			stringRebder := strings.NewRebder(resp)
+			rebder = io.NopCloser(stringRebder)
 		}
-		return reader, err
+		return rebder, err
 	}
 }
 
-func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
-	// mockNewCommon ensures that we do not need the repo-updater running for this unit test.
-	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+func Test_serveRbwWithHTTPRequestMethodHEAD(t *testing.T) {
+	// mockNewCommon ensures thbt we do not need the repo-updbter running for this unit test.
+	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHbndler) (*Common, error) {
 		return &Common{
 			Repo: &types.Repo{
-				Name: "test",
+				Nbme: "test",
 			},
-			CommitID: api.CommitID("12345"),
+			CommitID: bpi.CommitID("12345"),
 		}, nil
 	}
 	defer func() {
@@ -79,331 +79,331 @@ func Test_serveRawWithHTTPRequestMethodHEAD(t *testing.T) {
 	}()
 
 	t.Run("success response for HEAD request", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return
-		// an error.
-		initHTTPTestGitServer(t, http.StatusOK, "{}")
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return
+		// bn error.
+		initHTTPTestGitServer(t, http.StbtusOK, "{}")
 
-		req := httptest.NewRequest("HEAD", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+		req := httptest.NewRequest("HEAD", "/github.com/sourcegrbph/sourcegrbph/-/rbw", nil)
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
 		rstore := dbmocks.NewMockRepoStore()
-		db.ReposFunc.SetDefaultReturn(rstore)
-		rstore.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 123}, nil)
+		db.ReposFunc.SetDefbultReturn(rstore)
+		rstore.GetByNbmeFunc.SetDefbultReturn(&types.Repo{ID: 123}, nil)
 
-		err := serveRaw(db, gitserver.NewClient())(w, req)
+		err := serveRbw(db, gitserver.NewClient())(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusOK {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 	})
 
-	t.Run("failure response for HEAD request", func(t *testing.T) {
-		// httptest server will return a 404 Not Found, so gitserver.Client.RepoInfo will
-		// return an error.
-		initHTTPTestGitServer(t, http.StatusNotFound, "{}")
+	t.Run("fbilure response for HEAD request", func(t *testing.T) {
+		// httptest server will return b 404 Not Found, so gitserver.Client.RepoInfo will
+		// return bn error.
+		initHTTPTestGitServer(t, http.StbtusNotFound, "{}")
 
-		req := httptest.NewRequest("HEAD", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+		req := httptest.NewRequest("HEAD", "/github.com/sourcegrbph/sourcegrbph/-/rbw", nil)
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
 		rstore := dbmocks.NewMockRepoStore()
-		db.ReposFunc.SetDefaultReturn(rstore)
-		rstore.GetByNameFunc.SetDefaultReturn(nil, &database.RepoNotFoundErr{ID: 123})
+		db.ReposFunc.SetDefbultReturn(rstore)
+		rstore.GetByNbmeFunc.SetDefbultReturn(nil, &dbtbbbse.RepoNotFoundErr{ID: 123})
 
-		err := serveRaw(db, gitserver.NewClient())(w, req)
+		err := serveRbw(db, gitserver.NewClient())(w, req)
 		if err == nil {
-			t.Fatal("Want error but got nil")
+			t.Fbtbl("Wbnt error but got nil")
 		}
 
-		if w.Code != http.StatusNotFound {
-			t.Fatalf("Want %d but got %d", http.StatusNotFound, w.Code)
+		if w.Code != http.StbtusNotFound {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusNotFound, w.Code)
 		}
 	})
 }
 
-func Test_serveRawWithContentArchive(t *testing.T) {
-	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+func Test_serveRbwWithContentArchive(t *testing.T) {
+	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHbndler) (*Common, error) {
 		return &Common{
 			Repo: &types.Repo{
-				Name: "test",
+				Nbme: "test",
 			},
-			CommitID: api.CommitID("12345"),
+			CommitID: bpi.CommitID("12345"),
 		}, nil
 	}
 	defer func() {
 		mockNewCommon = nil
 	}()
 
-	mockGitServerResponse := "this is a gitserver archive response"
+	mockGitServerResponse := "this is b gitserver brchive response"
 
-	t.Run("success response for format=zip", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
+	t.Run("success response for formbt=zip", func(t *testing.T) {
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return bn error.
 
-		initHTTPTestGitServer(t, http.StatusOK, mockGitServerResponse)
+		initHTTPTestGitServer(t, http.StbtusOK, mockGitServerResponse)
 
-		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=zip", nil)
+		req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw?formbt=zip", nil)
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(db, gitserver.NewClient())(w, req)
+		err := serveRbw(db, gitserver.NewClient())(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusOK {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 
-		expectedHeaders := map[string]string{
+		expectedHebders := mbp[string]string{
 			"X-Content-Type-Options": "nosniff",
-			"Content-Type":           "application/zip",
-			"Content-Disposition":    mime.FormatMediaType("Attachment", map[string]string{"filename": "test.zip"}),
+			"Content-Type":           "bpplicbtion/zip",
+			"Content-Disposition":    mime.FormbtMedibType("Attbchment", mbp[string]string{"filenbme": "test.zip"}),
 		}
 
-		if len(w.Header()) != len(expectedHeaders) {
-			t.Errorf("Want %d headers but got %d headers", len(w.Header()), len(expectedHeaders))
+		if len(w.Hebder()) != len(expectedHebders) {
+			t.Errorf("Wbnt %d hebders but got %d hebders", len(w.Hebder()), len(expectedHebders))
 		}
 
-		for k, v := range expectedHeaders {
-			if h := w.Header().Get(k); h != v {
-				t.Errorf("Expected header %q to have value %q but got %q", k, v, h)
+		for k, v := rbnge expectedHebders {
+			if h := w.Hebder().Get(k); h != v {
+				t.Errorf("Expected hebder %q to hbve vblue %q but got %q", k, v, h)
 			}
 		}
 
 		body := string(w.Body.Bytes())
 		if body != mockGitServerResponse {
-			t.Errorf("Want %q in body, but got %q", mockGitServerResponse, body)
+			t.Errorf("Wbnt %q in body, but got %q", mockGitServerResponse, body)
 		}
 	})
 
-	t.Run("success response for format=tar", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
+	t.Run("success response for formbt=tbr", func(t *testing.T) {
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return bn error.
 
-		initHTTPTestGitServer(t, http.StatusOK, mockGitServerResponse)
+		initHTTPTestGitServer(t, http.StbtusOK, mockGitServerResponse)
 
-		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=tar", nil)
+		req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw?formbt=tbr", nil)
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(db, gitserver.NewClient())(w, req)
+		err := serveRbw(db, gitserver.NewClient())(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusOK {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 
-		expectedHeaders := map[string]string{
+		expectedHebders := mbp[string]string{
 			"X-Content-Type-Options": "nosniff",
-			"Content-Type":           "application/x-tar",
-			"Content-Disposition":    mime.FormatMediaType("Attachment", map[string]string{"filename": "test.tar"}),
+			"Content-Type":           "bpplicbtion/x-tbr",
+			"Content-Disposition":    mime.FormbtMedibType("Attbchment", mbp[string]string{"filenbme": "test.tbr"}),
 		}
 
-		if len(w.Header()) != len(expectedHeaders) {
-			t.Errorf("Want %d headers but got %d headers", len(w.Header()), len(expectedHeaders))
+		if len(w.Hebder()) != len(expectedHebders) {
+			t.Errorf("Wbnt %d hebders but got %d hebders", len(w.Hebder()), len(expectedHebders))
 		}
 
-		for k, v := range expectedHeaders {
-			if h := w.Header().Get(k); h != v {
-				t.Errorf("Expected header %q to have value %q but got %q", k, v, h)
+		for k, v := rbnge expectedHebders {
+			if h := w.Hebder().Get(k); h != v {
+				t.Errorf("Expected hebder %q to hbve vblue %q but got %q", k, v, h)
 			}
 		}
 
 		body := string(w.Body.Bytes())
 		if body != mockGitServerResponse {
-			t.Errorf("Want %q in body, but got %q", mockGitServerResponse, body)
+			t.Errorf("Wbnt %q in body, but got %q", mockGitServerResponse, body)
 		}
 	})
 
 }
 
-func Test_serveRawWithContentTypePlain(t *testing.T) {
-	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+func Test_serveRbwWithContentTypePlbin(t *testing.T) {
+	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHbndler) (*Common, error) {
 		return &Common{
 			Repo: &types.Repo{
-				Name: "test",
+				Nbme: "test",
 			},
-			CommitID: api.CommitID("12345"),
+			CommitID: bpi.CommitID("12345"),
 		}, nil
 	}
 	defer func() {
 		mockNewCommon = nil
 	}()
 
-	assertHeaders := func(w http.ResponseWriter) {
+	bssertHebders := func(w http.ResponseWriter) {
 		t.Helper()
 
-		expectedHeaders := map[string]string{
+		expectedHebders := mbp[string]string{
 			"X-Content-Type-Options": "nosniff",
-			"Content-Type":           "text/plain; charset=utf-8",
+			"Content-Type":           "text/plbin; chbrset=utf-8",
 		}
 
-		if len(w.Header()) != len(expectedHeaders) {
-			t.Errorf("Want %d headers but got %d headers", len(w.Header()), len(expectedHeaders))
+		if len(w.Hebder()) != len(expectedHebders) {
+			t.Errorf("Wbnt %d hebders but got %d hebders", len(w.Hebder()), len(expectedHebders))
 		}
 
-		for k, v := range expectedHeaders {
-			if h := w.Header().Get(k); h != v {
-				t.Errorf("Want header %q to have value %q but got %q", k, v, h)
+		for k, v := rbnge expectedHebders {
+			if h := w.Hebder().Get(k); h != v {
+				t.Errorf("Wbnt hebder %q to hbve vblue %q but got %q", k, v, h)
 			}
 		}
 	}
 
 	t.Run("404 Not Found for non existent directory", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
-		initHTTPTestGitServer(t, http.StatusOK, "{}")
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return bn error.
+		initHTTPTestGitServer(t, http.StbtusOK, "{}")
 
 		gsClient := gitserver.NewMockClient()
-		gsClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{}, os.ErrNotExist)
+		gsClient.StbtFunc.SetDefbultReturn(&fileutil.FileInfo{}, os.ErrNotExist)
 
-		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+		req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw", nil)
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(db, gsClient)(w, req)
+		err := serveRbw(db, gsClient)(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusNotFound {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusNotFound {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 
-		assertHeaders(w)
+		bssertHebders(w)
 	})
 
 	t.Run("success response for existing directory", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
-		initHTTPTestGitServer(t, http.StatusOK, "{}")
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return bn error.
+		initHTTPTestGitServer(t, http.StbtusOK, "{}")
 
 		gsClient := gitserver.NewMockClient()
-		gsClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
-		gsClient.ReadDirFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string, bool) ([]fs.FileInfo, error) {
+		gsClient.StbtFunc.SetDefbultReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
+		gsClient.RebdDirFunc.SetDefbultHook(func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, bpi.CommitID, string, bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
-				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
-				&fileutil.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
-				&fileutil.FileInfo{Name_: "c.go", Mode_: 0},
+				&fileutil.FileInfo{Nbme_: "test/b", Mode_: os.ModeDir},
+				&fileutil.FileInfo{Nbme_: "test/b", Mode_: os.ModeDir},
+				&fileutil.FileInfo{Nbme_: "c.go", Mode_: 0},
 			}, nil
 		})
 
-		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+		req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw", nil)
 		w := httptest.NewRecorder()
 
 		db := dbmocks.NewMockDB()
-		err := serveRaw(db, gsClient)(w, req)
+		err := serveRbw(db, gsClient)(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusOK {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 
-		assertHeaders(w)
+		bssertHebders(w)
 
-		want := `a/
+		wbnt := `b/
 b/
 c.go`
 		body := string(w.Body.Bytes())
-		if body != want {
-			t.Errorf("Want %q in body, but got %q", want, body)
+		if body != wbnt {
+			t.Errorf("Wbnt %q in body, but got %q", wbnt, body)
 		}
 	})
 
 	t.Run("success response for existing file", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
-		initHTTPTestGitServer(t, http.StatusOK, "{}")
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return bn error.
+		initHTTPTestGitServer(t, http.StbtusOK, "{}")
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader("this is a test file")), nil
+		gitserverClient.StbtFunc.SetDefbultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+		gitserverClient.NewFileRebderFunc.SetDefbultHook(func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, bpi.CommitID, string) (io.RebdCloser, error) {
+			return io.NopCloser(strings.NewRebder("this is b test file")), nil
 		})
 
-		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+		req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmocks.NewMockDB(), gitserverClient)(w, req)
+		err := serveRbw(dbmocks.NewMockDB(), gitserverClient)(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusOK {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 
-		assertHeaders(w)
+		bssertHebders(w)
 
-		want := "this is a test file"
+		wbnt := "this is b test file"
 
 		body := string(w.Body.Bytes())
-		if body != want {
-			t.Errorf("Want %q in body, but got %q", want, body)
+		if body != wbnt {
+			t.Errorf("Wbnt %q in body, but got %q", wbnt, body)
 		}
 	})
 
-	// Ensure that anything apart from tar/zip/text is still handled with a text/plain content type.
-	t.Run("success response for existing file with format=exe", func(t *testing.T) {
-		// httptest server will return a 200 OK, so gitserver.Client.RepoInfo will not return an error.
-		initHTTPTestGitServer(t, http.StatusOK, "{}")
+	// Ensure thbt bnything bpbrt from tbr/zip/text is still hbndled with b text/plbin content type.
+	t.Run("success response for existing file with formbt=exe", func(t *testing.T) {
+		// httptest server will return b 200 OK, so gitserver.Client.RepoInfo will not return bn error.
+		initHTTPTestGitServer(t, http.StbtusOK, "{}")
 
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.StatFunc.SetDefaultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-		gitserverClient.NewFileReaderFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, string) (io.ReadCloser, error) {
-			return io.NopCloser(strings.NewReader("this is a test file")), nil
+		gitserverClient.StbtFunc.SetDefbultReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+		gitserverClient.NewFileRebderFunc.SetDefbultHook(func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, bpi.CommitID, string) (io.RebdCloser, error) {
+			return io.NopCloser(strings.NewRebder("this is b test file")), nil
 		})
 
-		req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw?format=exe", nil)
+		req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw?formbt=exe", nil)
 		w := httptest.NewRecorder()
 
-		err := serveRaw(dbmocks.NewMockDB(), gitserverClient)(w, req)
+		err := serveRbw(dbmocks.NewMockDB(), gitserverClient)(w, req)
 		if err != nil {
-			t.Fatalf("Failed to invoke serveRaw: %v", err)
+			t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 		}
 
-		if w.Code != http.StatusOK {
-			t.Fatalf("Want %d but got %d", http.StatusOK, w.Code)
+		if w.Code != http.StbtusOK {
+			t.Fbtblf("Wbnt %d but got %d", http.StbtusOK, w.Code)
 		}
 
-		assertHeaders(w)
+		bssertHebders(w)
 
-		want := "this is a test file"
+		wbnt := "this is b test file"
 
 		body := string(w.Body.Bytes())
-		if body != want {
-			t.Errorf("Want %q in body, but got %q", want, body)
+		if body != wbnt {
+			t.Errorf("Wbnt %q in body, but got %q", wbnt, body)
 		}
 	})
 }
 
-func Test_serveRawRepoCloning(t *testing.T) {
-	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error) {
+func Test_serveRbwRepoCloning(t *testing.T) {
+	mockNewCommon = func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHbndler) (*Common, error) {
 		return &Common{
 			Repo: nil,
 		}, nil
 	}
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		mockNewCommon = nil
 	})
-	// Fail git server calls, as they should not be invoked for a cloning repo.
-	initHTTPTestGitServer(t, http.StatusInternalServerError, "{should not be invoked}")
+	// Fbil git server cblls, bs they should not be invoked for b cloning repo.
+	initHTTPTestGitServer(t, http.StbtusInternblServerError, "{should not be invoked}")
 	gsClient := gitserver.NewMockClient()
-	gsClient.StatFunc.SetDefaultReturn(nil, fmt.Errorf("should not be invoked"))
+	gsClient.StbtFunc.SetDefbultReturn(nil, fmt.Errorf("should not be invoked"))
 
-	req := httptest.NewRequest("GET", "/github.com/sourcegraph/sourcegraph/-/raw", nil)
+	req := httptest.NewRequest("GET", "/github.com/sourcegrbph/sourcegrbph/-/rbw", nil)
 	w := httptest.NewRecorder()
 	db := dbmocks.NewMockDB()
-	// Former implementation would sleep awaiting repository to be available.
-	// Await request to be served with a timeout by racing done channel with time.After.
-	err := serveRaw(db, gsClient)(w, req)
+	// Former implementbtion would sleep bwbiting repository to be bvbilbble.
+	// Awbit request to be served with b timeout by rbcing done chbnnel with time.After.
+	err := serveRbw(db, gsClient)(w, req)
 	if err != nil {
-		t.Fatalf("Failed to invoke serveRaw: %v", err)
+		t.Fbtblf("Fbiled to invoke serveRbw: %v", err)
 	}
-	assert.Equal(t, http.StatusNotFound, w.Code, "http response status")
-	assert.Equal(t, "Repository unavailable while cloning.", string(w.Body.Bytes()), "http response body")
+	bssert.Equbl(t, http.StbtusNotFound, w.Code, "http response stbtus")
+	bssert.Equbl(t, "Repository unbvbilbble while cloning.", string(w.Body.Bytes()), "http response body")
 }

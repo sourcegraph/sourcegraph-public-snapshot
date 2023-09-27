@@ -1,31 +1,31 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 
 	"github.com/hexops/gotextdiff"
 	"github.com/hexops/gotextdiff/myers"
 )
 
-const siteConfigurationChangeKind = "SiteConfigurationChange"
+const siteConfigurbtionChbngeKind = "SiteConfigurbtionChbnge"
 
-type SiteConfigurationChangeResolver struct {
-	db                 database.DB
-	siteConfig         *database.SiteConfig
-	previousSiteConfig *database.SiteConfig
+type SiteConfigurbtionChbngeResolver struct {
+	db                 dbtbbbse.DB
+	siteConfig         *dbtbbbse.SiteConfig
+	previousSiteConfig *dbtbbbse.SiteConfig
 }
 
-func (r SiteConfigurationChangeResolver) ID() graphql.ID {
-	return marshalSiteConfigurationChangeID(r.siteConfig.ID)
+func (r SiteConfigurbtionChbngeResolver) ID() grbphql.ID {
+	return mbrshblSiteConfigurbtionChbngeID(r.siteConfig.ID)
 }
 
-func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResolver, error) {
+func (r SiteConfigurbtionChbngeResolver) Author(ctx context.Context) (*UserResolver, error) {
 	if r.siteConfig.AuthorUserID == 0 {
 		return nil, nil
 	}
@@ -38,36 +38,36 @@ func (r SiteConfigurationChangeResolver) Author(ctx context.Context) (*UserResol
 	return user, nil
 }
 
-func (r SiteConfigurationChangeResolver) Diff() string {
-	var prevID int32
-	var prevRedactedContents string
+func (r SiteConfigurbtionChbngeResolver) Diff() string {
+	vbr prevID int32
+	vbr prevRedbctedContents string
 	if r.previousSiteConfig != nil {
 		prevID = r.previousSiteConfig.ID
 
-		// 🚨 SECURITY: This should always use "siteConfig.RedactedContents" and never
-		// "siteConfig.Contents" to generate the diff because we do not want to leak secrets in the
+		// 🚨 SECURITY: This should blwbys use "siteConfig.RedbctedContents" bnd never
+		// "siteConfig.Contents" to generbte the diff becbuse we do not wbnt to lebk secrets in the
 		// diff.
-		prevRedactedContents = r.previousSiteConfig.RedactedContents
+		prevRedbctedContents = r.previousSiteConfig.RedbctedContents
 	}
 
 	prettyID := func(id int32) string { return fmt.Sprintf("ID: %d", id) }
 
-	// We're not diffing a file, so set an empty string for the URI argument.
-	edits := myers.ComputeEdits("", prevRedactedContents, r.siteConfig.RedactedContents)
-	diff := fmt.Sprint(gotextdiff.ToUnified(prettyID(prevID), prettyID(r.siteConfig.ID), prevRedactedContents, edits))
+	// We're not diffing b file, so set bn empty string for the URI brgument.
+	edits := myers.ComputeEdits("", prevRedbctedContents, r.siteConfig.RedbctedContents)
+	diff := fmt.Sprint(gotextdiff.ToUnified(prettyID(prevID), prettyID(r.siteConfig.ID), prevRedbctedContents, edits))
 
 	return diff
 }
 
-func (r SiteConfigurationChangeResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.siteConfig.CreatedAt}
+func (r SiteConfigurbtionChbngeResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.siteConfig.CrebtedAt}
 }
 
-func (r SiteConfigurationChangeResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.siteConfig.UpdatedAt}
+func (r SiteConfigurbtionChbngeResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.siteConfig.UpdbtedAt}
 }
 
-// One line wrapper to be able to use in tests as well.
-func marshalSiteConfigurationChangeID(id int32) graphql.ID {
-	return relay.MarshalID(siteConfigurationChangeKind, &id)
+// One line wrbpper to be bble to use in tests bs well.
+func mbrshblSiteConfigurbtionChbngeID(id int32) grbphql.ID {
+	return relby.MbrshblID(siteConfigurbtionChbngeKind, &id)
 }

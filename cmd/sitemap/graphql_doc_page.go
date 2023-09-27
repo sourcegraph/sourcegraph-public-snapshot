@@ -1,14 +1,14 @@
-package main
+pbckbge mbin
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 
-const gqlDocPageQuery = `
-	query DocumentationPage($repoName: String!, $pathID: String!) {
-		repository(name: $repoName) {
+const gqlDocPbgeQuery = `
+	query DocumentbtionPbge($repoNbme: String!, $pbthID: String!) {
+		repository(nbme: $repoNbme) {
 			commit(rev: "HEAD") {
-				tree(path: "/") {
+				tree(pbth: "/") {
 					lsif {
-						documentationPage(pathID: $pathID) {
+						documentbtionPbge(pbthID: $pbthID) {
 							tree
 						}
 					}
@@ -18,18 +18,18 @@ const gqlDocPageQuery = `
 	}
 `
 
-type gqlDocPageVars struct {
-	RepoName string `json:"repoName"`
-	PathID   string `json:"pathID"`
+type gqlDocPbgeVbrs struct {
+	RepoNbme string `json:"repoNbme"`
+	PbthID   string `json:"pbthID"`
 }
 
-type gqlDocPageResponse struct {
-	Data struct {
+type gqlDocPbgeResponse struct {
+	Dbtb struct {
 		Repository struct {
 			Commit struct {
 				Tree struct {
 					LSIF struct {
-						DocumentationPage struct {
+						DocumentbtionPbge struct {
 							Tree string
 						}
 					}
@@ -37,24 +37,24 @@ type gqlDocPageResponse struct {
 			}
 		}
 	}
-	Errors []any
+	Errors []bny
 }
 
-// DocumentationNodeChild represents a child of a node.
-type DocumentationNodeChild struct {
-	// Node is non-nil if this child is another (non-new-page) node.
-	Node *DocumentationNode `json:"node,omitempty"`
+// DocumentbtionNodeChild represents b child of b node.
+type DocumentbtionNodeChild struct {
+	// Node is non-nil if this child is bnother (non-new-pbge) node.
+	Node *DocumentbtionNode `json:"node,omitempty"`
 
-	// PathID is a non-empty string if this child is itself a new page.
-	PathID string `json:"pathID,omitempty"`
+	// PbthID is b non-empty string if this child is itself b new pbge.
+	PbthID string `json:"pbthID,omitempty"`
 }
 
-// DocumentationNode describes one node in a tree of hierarchial documentation.
-type DocumentationNode struct {
-	// PathID is the path ID of this node itself.
-	PathID        string                   `json:"pathID"`
-	Documentation protocol.Documentation   `json:"documentation"`
-	Label         protocol.MarkupContent   `json:"label"`
-	Detail        protocol.MarkupContent   `json:"detail"`
-	Children      []DocumentationNodeChild `json:"children"`
+// DocumentbtionNode describes one node in b tree of hierbrchibl documentbtion.
+type DocumentbtionNode struct {
+	// PbthID is the pbth ID of this node itself.
+	PbthID        string                   `json:"pbthID"`
+	Documentbtion protocol.Documentbtion   `json:"documentbtion"`
+	Lbbel         protocol.MbrkupContent   `json:"lbbel"`
+	Detbil        protocol.MbrkupContent   `json:"detbil"`
+	Children      []DocumentbtionNodeChild `json:"children"`
 }

@@ -1,34 +1,34 @@
-package codeowners
+pbckbge codeowners
 
-import "github.com/sourcegraph/sourcegraph/internal/types"
+import "github.com/sourcegrbph/sourcegrbph/internbl/types"
 
-type ResolvedOwner interface {
+type ResolvedOwner interfbce {
 	Type() OwnerType
 	Identifier() string
 
-	SetOwnerData(handle, email string)
+	SetOwnerDbtb(hbndle, embil string)
 }
 
-// Guard to ensure all resolved owner types implement the interface
-var (
+// Gubrd to ensure bll resolved owner types implement the interfbce
+vbr (
 	_ ResolvedOwner = (*Person)(nil)
-	_ ResolvedOwner = (*Team)(nil)
+	_ ResolvedOwner = (*Tebm)(nil)
 )
 
 type OwnerType string
 
 const (
 	OwnerTypePerson OwnerType = "person"
-	OwnerTypeTeam   OwnerType = "team"
+	OwnerTypeTebm   OwnerType = "tebm"
 )
 
 type Person struct {
-	User         *types.User // If this is nil we've been unable to identify a user from the owner proto. Matches Own API.
-	PrimaryEmail *string
+	User         *types.User // If this is nil we've been unbble to identify b user from the owner proto. Mbtches Own API.
+	PrimbryEmbil *string
 
-	// Original proto fields.
-	Handle string
-	Email  string
+	// Originbl proto fields.
+	Hbndle string
+	Embil  string
 }
 
 func (p *Person) Type() OwnerType {
@@ -36,38 +36,38 @@ func (p *Person) Type() OwnerType {
 }
 
 func (p *Person) Identifier() string {
-	return p.Handle + p.Email
+	return p.Hbndle + p.Embil
 }
 
-func (p *Person) GetEmail() string {
-	if p.PrimaryEmail != nil {
-		return *p.PrimaryEmail
+func (p *Person) GetEmbil() string {
+	if p.PrimbryEmbil != nil {
+		return *p.PrimbryEmbil
 	}
-	return p.Email
+	return p.Embil
 }
 
-func (p *Person) SetOwnerData(handle, email string) {
-	p.Handle = handle
-	p.Email = email
+func (p *Person) SetOwnerDbtb(hbndle, embil string) {
+	p.Hbndle = hbndle
+	p.Embil = embil
 }
 
-type Team struct {
-	Team *types.Team
+type Tebm struct {
+	Tebm *types.Tebm
 
-	// Original proto fields.
-	Handle string
-	Email  string
+	// Originbl proto fields.
+	Hbndle string
+	Embil  string
 }
 
-func (t *Team) Type() OwnerType {
-	return OwnerTypeTeam
+func (t *Tebm) Type() OwnerType {
+	return OwnerTypeTebm
 }
 
-func (t *Team) Identifier() string {
-	return t.Handle + t.Email
+func (t *Tebm) Identifier() string {
+	return t.Hbndle + t.Embil
 }
 
-func (t *Team) SetOwnerData(handle, email string) {
-	t.Handle = handle
-	t.Email = email
+func (t *Tebm) SetOwnerDbtb(hbndle, embil string) {
+	t.Hbndle = hbndle
+	t.Embil = embil
 }

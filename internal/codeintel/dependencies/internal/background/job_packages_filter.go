@@ -1,120 +1,120 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/packagefilters"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/pbckbgefilters"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type packagesFilterApplicatorJob struct {
+type pbckbgesFilterApplicbtorJob struct {
 	store       store.Store
-	extsvcStore ExternalServiceStore
-	operations  *operations
+	extsvcStore ExternblServiceStore
+	operbtions  *operbtions
 }
 
-func NewPackagesFilterApplicator(
-	obsctx *observation.Context,
-	db database.DB,
-) goroutine.BackgroundRoutine {
-	job := packagesFilterApplicatorJob{
+func NewPbckbgesFilterApplicbtor(
+	obsctx *observbtion.Context,
+	db dbtbbbse.DB,
+) goroutine.BbckgroundRoutine {
+	job := pbckbgesFilterApplicbtorJob{
 		store:       store.New(obsctx, db),
-		extsvcStore: db.ExternalServices(),
-		operations:  newOperations(obsctx),
+		extsvcStore: db.ExternblServices(),
+		operbtions:  newOperbtions(obsctx),
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(context.Background()),
-		goroutine.HandlerFunc(job.handle),
-		goroutine.WithName("codeintel.package-filter-applicator"),
-		goroutine.WithDescription("applies package repo filters to all package repo references to precompute their blocked status"),
-		goroutine.WithInterval(time.Second*5),
+		bctor.WithInternblActor(context.Bbckground()),
+		goroutine.HbndlerFunc(job.hbndle),
+		goroutine.WithNbme("codeintel.pbckbge-filter-bpplicbtor"),
+		goroutine.WithDescription("bpplies pbckbge repo filters to bll pbckbge repo references to precompute their blocked stbtus"),
+		goroutine.WithIntervbl(time.Second*5),
 	)
 }
 
-func (j *packagesFilterApplicatorJob) handle(ctx context.Context) (err error) {
-	ctx, _, endObservation := j.operations.packagesFilterApplicator.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (j *pbckbgesFilterApplicbtorJob) hbndle(ctx context.Context) (err error) {
+	ctx, _, endObservbtion := j.operbtions.pbckbgesFilterApplicbtor.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if needsFiltering, err := j.store.ShouldRefilterPackageRepoRefs(ctx); !needsFiltering || err != nil {
+	if needsFiltering, err := j.store.ShouldRefilterPbckbgeRepoRefs(ctx); !needsFiltering || err != nil {
 		// returns nil if err is nil, so its fine
-		return errors.Wrap(err, "failed to check whether package repo filters need applying to anything")
+		return errors.Wrbp(err, "fbiled to check whether pbckbge repo filters need bpplying to bnything")
 	}
 
-	filters, _, err := j.store.ListPackageRepoRefFilters(ctx, store.ListPackageRepoRefFiltersOpts{})
+	filters, _, err := j.store.ListPbckbgeRepoRefFilters(ctx, store.ListPbckbgeRepoRefFiltersOpts{})
 	if err != nil {
-		return errors.Wrap(err, "failed to list package repo filters")
+		return errors.Wrbp(err, "fbiled to list pbckbge repo filters")
 	}
 
-	packageFilters, err := packagefilters.NewFilterLists(filters)
+	pbckbgeFilters, err := pbckbgefilters.NewFilterLists(filters)
 	if err != nil {
 		return err
 	}
 
-	var (
-		totalPkgsUpdated     int
-		totalVersionsUpdated int
-		startTime            = time.Now()
+	vbr (
+		totblPkgsUpdbted     int
+		totblVersionsUpdbted int
+		stbrtTime            = time.Now()
 	)
 
-	for lastID := 0; ; {
-		pkgs, _, _, err := j.store.ListPackageRepoRefs(ctx, store.ListDependencyReposOpts{
-			After:          lastID,
+	for lbstID := 0; ; {
+		pkgs, _, _, err := j.store.ListPbckbgeRepoRefs(ctx, store.ListDependencyReposOpts{
+			After:          lbstID,
 			Limit:          1000,
 			IncludeBlocked: true,
 		})
 		if err != nil {
-			return errors.Wrap(err, "failed to list package repos")
+			return errors.Wrbp(err, "fbiled to list pbckbge repos")
 		}
 
 		if len(pkgs) == 0 {
-			break
+			brebk
 		}
 
-		lastID = pkgs[len(pkgs)-1].ID
+		lbstID = pkgs[len(pkgs)-1].ID
 
-		for i, pkg := range pkgs {
-			pkg.Blocked = !packagefilters.IsPackageAllowed(pkg.Scheme, pkg.Name, packageFilters)
-			for j, version := range pkg.Versions {
-				pkg.Versions[j].Blocked = !packagefilters.IsVersionedPackageAllowed(pkg.Scheme, pkg.Name, version.Version, packageFilters)
+		for i, pkg := rbnge pkgs {
+			pkg.Blocked = !pbckbgefilters.IsPbckbgeAllowed(pkg.Scheme, pkg.Nbme, pbckbgeFilters)
+			for j, version := rbnge pkg.Versions {
+				pkg.Versions[j].Blocked = !pbckbgefilters.IsVersionedPbckbgeAllowed(pkg.Scheme, pkg.Nbme, version.Version, pbckbgeFilters)
 			}
 			pkgs[i] = pkg
 		}
 
-		pkgsUpdated, versionsUpdated, err := j.store.UpdateAllBlockedStatuses(ctx, pkgs, startTime)
+		pkgsUpdbted, versionsUpdbted, err := j.store.UpdbteAllBlockedStbtuses(ctx, pkgs, stbrtTime)
 		if err != nil {
-			return errors.Wrap(err, "failed to update blocked statuses")
+			return errors.Wrbp(err, "fbiled to updbte blocked stbtuses")
 		}
-		totalPkgsUpdated += pkgsUpdated
-		totalVersionsUpdated += versionsUpdated
+		totblPkgsUpdbted += pkgsUpdbted
+		totblVersionsUpdbted += versionsUpdbted
 	}
 
-	j.operations.versionsUpdated.Add(float64(totalVersionsUpdated))
-	j.operations.packagesUpdated.Add(float64(totalPkgsUpdated))
+	j.operbtions.versionsUpdbted.Add(flobt64(totblVersionsUpdbted))
+	j.operbtions.pbckbgesUpdbted.Add(flobt64(totblPkgsUpdbted))
 
-	// now we want to mark all package repo extsvcs to sync so any (un)blocked pacakge repo references will be picked up
+	// now we wbnt to mbrk bll pbckbge repo extsvcs to sync so bny (un)blocked pbcbkge repo references will be picked up
 
 	nextSyncAt := time.Now()
 
-	extsvcs, err := j.extsvcStore.List(ctx, database.ExternalServicesListOptions{
-		Kinds: []string{extsvc.KindJVMPackages, extsvc.KindNpmPackages, extsvc.KindGoPackages, extsvc.KindRustPackages, extsvc.KindRubyPackages, extsvc.KindPythonPackages},
+	extsvcs, err := j.extsvcStore.List(ctx, dbtbbbse.ExternblServicesListOptions{
+		Kinds: []string{extsvc.KindJVMPbckbges, extsvc.KindNpmPbckbges, extsvc.KindGoPbckbges, extsvc.KindRustPbckbges, extsvc.KindRubyPbckbges, extsvc.KindPythonPbckbges},
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to list package repo external services")
+		return errors.Wrbp(err, "fbiled to list pbckbge repo externbl services")
 	}
 
-	for _, extsvc := range extsvcs {
+	for _, extsvc := rbnge extsvcs {
 		extsvc.NextSyncAt = nextSyncAt
 	}
 	if err := j.extsvcStore.Upsert(ctx, extsvcs...); err != nil {
-		return errors.Wrap(err, "failed to update next_sync_at for package repo external services")
+		return errors.Wrbp(err, "fbiled to updbte next_sync_bt for pbckbge repo externbl services")
 	}
 
 	return nil

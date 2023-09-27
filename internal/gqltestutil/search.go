@@ -1,4 +1,4 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
 	"encoding/json"
@@ -7,48 +7,48 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type SearchRepositoryResult struct {
-	Name string `json:"name"`
+type SebrchRepositoryResult struct {
+	Nbme string `json:"nbme"`
 	URL  string `json:"url"`
 }
 
-type SearchRepositoryResults []*SearchRepositoryResult
+type SebrchRepositoryResults []*SebrchRepositoryResult
 
-// Exists returns the list of missing repositories from given names that do not exist
-// in search results. If all given names are found, it returns empty list.
-func (rs SearchRepositoryResults) Exists(names ...string) []string {
-	set := collections.NewSet[string](names...)
-	return set.Difference(collections.NewSet[string](rs.Names()...)).Values()
+// Exists returns the list of missing repositories from given nbmes thbt do not exist
+// in sebrch results. If bll given nbmes bre found, it returns empty list.
+func (rs SebrchRepositoryResults) Exists(nbmes ...string) []string {
+	set := collections.NewSet[string](nbmes...)
+	return set.Difference(collections.NewSet[string](rs.Nbmes()...)).Vblues()
 }
 
-func (rs SearchRepositoryResults) Names() []string {
-	var names []string
-	for _, r := range rs {
-		names = append(names, r.Name)
+func (rs SebrchRepositoryResults) Nbmes() []string {
+	vbr nbmes []string
+	for _, r := rbnge rs {
+		nbmes = bppend(nbmes, r.Nbme)
 	}
-	sort.Strings(names)
-	return names
+	sort.Strings(nbmes)
+	return nbmes
 }
 
-func (rs SearchRepositoryResults) String() string {
-	return fmt.Sprintf("%q", rs.Names())
+func (rs SebrchRepositoryResults) String() string {
+	return fmt.Sprintf("%q", rs.Nbmes())
 }
 
-// SearchRepositories search repositories with given query.
-func (c *Client) SearchRepositories(query string) (SearchRepositoryResults, error) {
+// SebrchRepositories sebrch repositories with given query.
+func (c *Client) SebrchRepositories(query string) (SebrchRepositoryResults, error) {
 	const gqlQuery = `
-query Search($query: String!) {
-	search(query: $query, version: V2) {
+query Sebrch($query: String!) {
+	sebrch(query: $query, version: V2) {
 		results {
 			results {
 				... on Repository {
-					name
+					nbme
 					url
 				}
 			}
@@ -56,38 +56,38 @@ query Search($query: String!) {
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query": query,
 	}
-	var resp struct {
-		Data struct {
-			Search struct {
+	vbr resp struct {
+		Dbtb struct {
+			Sebrch struct {
 				Results struct {
-					Results []*SearchRepositoryResult `json:"results"`
+					Results []*SebrchRepositoryResult `json:"results"`
 				} `json:"results"`
-			} `json:"search"`
-		} `json:"data"`
+			} `json:"sebrch"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Search.Results.Results, nil
+	return resp.Dbtb.Sebrch.Results.Results, nil
 }
 
-type SearchFileResults struct {
-	MatchCount int64               `json:"matchCount"`
-	Alert      *SearchAlert        `json:"alert"`
-	Results    []*SearchFileResult `json:"results"`
+type SebrchFileResults struct {
+	MbtchCount int64               `json:"mbtchCount"`
+	Alert      *SebrchAlert        `json:"blert"`
+	Results    []*SebrchFileResult `json:"results"`
 }
 
-type SearchFileResult struct {
+type SebrchFileResult struct {
 	File struct {
-		Name string `json:"name"`
+		Nbme string `json:"nbme"`
 	} `json:"file"`
 	Repository struct {
-		Name string `json:"name"`
+		Nbme string `json:"nbme"`
 	} `json:"repository"`
 	RevSpec struct {
 		Expr string `json:"expr"`
@@ -97,30 +97,30 @@ type SearchFileResult struct {
 type QueryDescription struct {
 	Description string       `json:"description"`
 	Query       string       `json:"query"`
-	Annotations []Annotation `json:"annotations"`
+	Annotbtions []Annotbtion `json:"bnnotbtions"`
 }
 
-type Annotation struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+type Annotbtion struct {
+	Nbme  string `json:"nbme"`
+	Vblue string `json:"vblue"`
 }
 
-// SearchAlert is an alert specific to searches (i.e. not site alert).
-type SearchAlert struct {
+// SebrchAlert is bn blert specific to sebrches (i.e. not site blert).
+type SebrchAlert struct {
 	Title           string             `json:"title"`
 	Description     string             `json:"description"`
 	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
-// SearchFiles searches files with given query. It returns the match count and
-// corresponding file matches. Search alert is also included if any.
-func (c *Client) SearchFiles(query string) (*SearchFileResults, error) {
+// SebrchFiles sebrches files with given query. It returns the mbtch count bnd
+// corresponding file mbtches. Sebrch blert is blso included if bny.
+func (c *Client) SebrchFiles(query string) (*SebrchFileResults, error) {
 	const gqlQuery = `
-query Search($query: String!) {
-	search(query: $query, version: V2) {
+query Sebrch($query: String!) {
+	sebrch(query: $query, version: V2) {
 		results {
-			matchCount
-			alert {
+			mbtchCount
+			blert {
 				title
 				description
 				proposedQueries {
@@ -129,19 +129,19 @@ query Search($query: String!) {
 				}
 			}
 			results {
-				... on FileMatch {
+				... on FileMbtch {
 					file {
-						name
+						nbme
 					}
 					symbols {
-						name
-						containerName
+						nbme
+						contbinerNbme
 						kind
-						language
+						lbngubge
 						url
 					}
 					repository {
-						name
+						nbme
 					}
 					revSpec {
 						... on GitRevSpecExpr {
@@ -154,43 +154,43 @@ query Search($query: String!) {
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query": query,
 	}
-	var resp struct {
-		Data struct {
-			Search struct {
+	vbr resp struct {
+		Dbtb struct {
+			Sebrch struct {
 				Results struct {
-					*SearchFileResults
+					*SebrchFileResults
 				} `json:"results"`
-			} `json:"search"`
-		} `json:"data"`
+			} `json:"sebrch"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Search.Results.SearchFileResults, nil
+	return resp.Dbtb.Sebrch.Results.SebrchFileResults, nil
 }
 
-type SearchCommitResults struct {
-	MatchCount int64 `json:"matchCount"`
+type SebrchCommitResults struct {
+	MbtchCount int64 `json:"mbtchCount"`
 	Results    []*struct {
 		URL string `json:"url"`
 	} `json:"results"`
 }
 
-// SearchCommits searches commits with given query. It returns the match count and
-// corresponding file matches.
-func (c *Client) SearchCommits(query string) (*SearchCommitResults, error) {
+// SebrchCommits sebrches commits with given query. It returns the mbtch count bnd
+// corresponding file mbtches.
+func (c *Client) SebrchCommits(query string) (*SebrchCommitResults, error) {
 	const gqlQuery = `
-query Search($query: String!) {
-	search(query: $query, version: V2) {
+query Sebrch($query: String!) {
+	sebrch(query: $query, version: V2) {
 		results {
-			matchCount
+			mbtchCount
 			results {
-				... on CommitSearchResult {
+				... on CommitSebrchResult {
 					url
 				}
 			}
@@ -198,73 +198,73 @@ query Search($query: String!) {
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query": query,
 	}
-	var resp struct {
-		Data struct {
-			Search struct {
+	vbr resp struct {
+		Dbtb struct {
+			Sebrch struct {
 				Results struct {
-					*SearchCommitResults
+					*SebrchCommitResults
 				} `json:"results"`
-			} `json:"search"`
-		} `json:"data"`
+			} `json:"sebrch"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Search.Results.SearchCommitResults, nil
+	return resp.Dbtb.Sebrch.Results.SebrchCommitResults, nil
 }
 
 type AnyResult struct {
-	Inner any
+	Inner bny
 }
 
-func (r *AnyResult) UnmarshalJSON(b []byte) error {
-	var typeUnmarshaller struct {
-		TypeName string `json:"__typename"`
+func (r *AnyResult) UnmbrshblJSON(b []byte) error {
+	vbr typeUnmbrshbller struct {
+		TypeNbme string `json:"__typenbme"`
 	}
 
-	if err := json.Unmarshal(b, &typeUnmarshaller); err != nil {
+	if err := json.Unmbrshbl(b, &typeUnmbrshbller); err != nil {
 		return err
 	}
 
-	switch typeUnmarshaller.TypeName {
-	case "FileMatch":
-		var f FileResult
-		if err := json.Unmarshal(b, &f); err != nil {
+	switch typeUnmbrshbller.TypeNbme {
+	cbse "FileMbtch":
+		vbr f FileResult
+		if err := json.Unmbrshbl(b, &f); err != nil {
 			return err
 		}
 		r.Inner = f
-	case "CommitSearchResult":
-		var c CommitResult
-		if err := json.Unmarshal(b, &c); err != nil {
+	cbse "CommitSebrchResult":
+		vbr c CommitResult
+		if err := json.Unmbrshbl(b, &c); err != nil {
 			return err
 		}
 		r.Inner = c
-	case "Repository":
-		var rr RepositoryResult
-		if err := json.Unmarshal(b, &rr); err != nil {
+	cbse "Repository":
+		vbr rr RepositoryResult
+		if err := json.Unmbrshbl(b, &rr); err != nil {
 			return err
 		}
 		r.Inner = rr
-	default:
-		return errors.Errorf("Unknown type %s", typeUnmarshaller.TypeName)
+	defbult:
+		return errors.Errorf("Unknown type %s", typeUnmbrshbller.TypeNbme)
 	}
 	return nil
 }
 
 type FileResult struct {
 	File struct {
-		Path string
+		Pbth string
 	} `json:"file"`
 	Repository  RepositoryResult
-	LineMatches []struct {
+	LineMbtches []struct {
 		OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
-	} `json:"lineMatches"`
-	Symbols []any `json:"symbols"`
+	} `json:"lineMbtches"`
+	Symbols []bny `json:"symbols"`
 }
 
 type CommitResult struct {
@@ -272,248 +272,248 @@ type CommitResult struct {
 }
 
 type RepositoryResult struct {
-	Name string
+	Nbme string
 }
 
-// SearchAll searches for all matches with a given query
-// corresponding file matches.
-func (c *Client) SearchAll(query string) ([]*AnyResult, error) {
+// SebrchAll sebrches for bll mbtches with b given query
+// corresponding file mbtches.
+func (c *Client) SebrchAll(query string) ([]*AnyResult, error) {
 	const gqlQuery = `
-query Search($query: String!) {
-	search(query: $query, version: V2) {
+query Sebrch($query: String!) {
+	sebrch(query: $query, version: V2) {
 		results {
 			results {
-				__typename
-				... on CommitSearchResult {
+				__typenbme
+				... on CommitSebrchResult {
 					url
 				}
-				... on FileMatch {
+				... on FileMbtch {
 					file {
-						path
+						pbth
 					}
 					repository {
-						name
+						nbme
 					}
-					lineMatches {
+					lineMbtches {
 						offsetAndLengths
 					}
 					symbols {
-						name
+						nbme
 					}
 				}
 				... on Repository {
-					name
+					nbme
 				}
 			}
 		}
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query": query,
 	}
-	var resp struct {
-		Data struct {
-			Search struct {
+	vbr resp struct {
+		Dbtb struct {
+			Sebrch struct {
 				Results struct {
 					Results []*AnyResult `json:"results"`
 				} `json:"results"`
-			} `json:"search"`
-		} `json:"data"`
+			} `json:"sebrch"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Search.Results.Results, nil
+	return resp.Dbtb.Sebrch.Results.Results, nil
 }
 
-type SearchStatsResult struct {
-	Languages []struct {
-		Name       string `json:"name"`
-		TotalLines int    `json:"totalLines"`
-	} `json:"languages"`
+type SebrchStbtsResult struct {
+	Lbngubges []struct {
+		Nbme       string `json:"nbme"`
+		TotblLines int    `json:"totblLines"`
+	} `json:"lbngubges"`
 }
 
-// SearchStats returns statistics of given query.
-func (c *Client) SearchStats(query string) (*SearchStatsResult, error) {
+// SebrchStbts returns stbtistics of given query.
+func (c *Client) SebrchStbts(query string) (*SebrchStbtsResult, error) {
 	const gqlQuery = `
-query SearchResultsStats($query: String!) {
-	search(query: $query, version: V2) {
-		stats {
-			languages {
-				name
-				totalLines
+query SebrchResultsStbts($query: String!) {
+	sebrch(query: $query, version: V2) {
+		stbts {
+			lbngubges {
+				nbme
+				totblLines
 			}
 		}
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query": query,
 	}
-	var resp struct {
-		Data struct {
-			Search struct {
-				Stats *SearchStatsResult `json:"stats"`
-			} `json:"search"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			Sebrch struct {
+				Stbts *SebrchStbtsResult `json:"stbts"`
+			} `json:"sebrch"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Search.Stats, nil
+	return resp.Dbtb.Sebrch.Stbts, nil
 }
 
-type SearchSuggestionsResult struct {
-	inner any
+type SebrchSuggestionsResult struct {
+	inner bny
 }
 
-func (srr *SearchSuggestionsResult) UnmarshalJSON(data []byte) error {
-	var typeDecoder struct {
-		TypeName string `json:"__typename"`
+func (srr *SebrchSuggestionsResult) UnmbrshblJSON(dbtb []byte) error {
+	vbr typeDecoder struct {
+		TypeNbme string `json:"__typenbme"`
 	}
-	if err := json.Unmarshal(data, &typeDecoder); err != nil {
+	if err := json.Unmbrshbl(dbtb, &typeDecoder); err != nil {
 		return err
 	}
 
-	switch typeDecoder.TypeName {
-	case "File":
-		var v FileSuggestionResult
-		err := json.Unmarshal(data, &v)
+	switch typeDecoder.TypeNbme {
+	cbse "File":
+		vbr v FileSuggestionResult
+		err := json.Unmbrshbl(dbtb, &v)
 		if err != nil {
 			return err
 		}
 		srr.inner = v
-	case "Repository":
-		var v RepositorySuggestionResult
-		err := json.Unmarshal(data, &v)
+	cbse "Repository":
+		vbr v RepositorySuggestionResult
+		err := json.Unmbrshbl(dbtb, &v)
 		if err != nil {
 			return err
 		}
 		srr.inner = v
-	case "Symbol":
-		var v SymbolSuggestionResult
-		err := json.Unmarshal(data, &v)
+	cbse "Symbol":
+		vbr v SymbolSuggestionResult
+		err := json.Unmbrshbl(dbtb, &v)
 		if err != nil {
 			return err
 		}
 		srr.inner = v
-	case "Language":
-		var v LanguageSuggestionResult
-		err := json.Unmarshal(data, &v)
+	cbse "Lbngubge":
+		vbr v LbngubgeSuggestionResult
+		err := json.Unmbrshbl(dbtb, &v)
 		if err != nil {
 			return err
 		}
 		srr.inner = v
-	case "SearchContext":
-		var v SearchContextSuggestionResult
-		err := json.Unmarshal(data, &v)
+	cbse "SebrchContext":
+		vbr v SebrchContextSuggestionResult
+		err := json.Unmbrshbl(dbtb, &v)
 		if err != nil {
 			return err
 		}
 		srr.inner = v
-	default:
-		return errors.Errorf("unknown typename %s", typeDecoder.TypeName)
+	defbult:
+		return errors.Errorf("unknown typenbme %s", typeDecoder.TypeNbme)
 	}
 
 	return nil
 }
 
-func (srr *SearchSuggestionsResult) String() string {
+func (srr *SebrchSuggestionsResult) String() string {
 	switch v := srr.inner.(type) {
-	case FileSuggestionResult:
-		return "file:" + v.Path
-	case RepositorySuggestionResult:
-		return "repo:" + v.Name
-	case SymbolSuggestionResult:
-		return "sym:" + v.Name
-	case LanguageSuggestionResult:
-		return "lang:" + v.Name
-	case SearchContextSuggestionResult:
+	cbse FileSuggestionResult:
+		return "file:" + v.Pbth
+	cbse RepositorySuggestionResult:
+		return "repo:" + v.Nbme
+	cbse SymbolSuggestionResult:
+		return "sym:" + v.Nbme
+	cbse LbngubgeSuggestionResult:
+		return "lbng:" + v.Nbme
+	cbse SebrchContextSuggestionResult:
 		return "context:" + v.Spec
-	default:
+	defbult:
 		return fmt.Sprintf("UNKNOWN(%T)", srr.inner)
 	}
 }
 
 type RepositorySuggestionResult struct {
-	Name string
+	Nbme string
 }
 
 type FileSuggestionResult struct {
-	Path        string
-	Name        string
+	Pbth        string
+	Nbme        string
 	IsDirectory bool   `json:"isDirectory"`
 	URL         string `json:"url"`
 	Repository  struct {
-		Name string
+		Nbme string
 	}
 }
 
 type SymbolSuggestionResult struct {
-	Name          string
-	ContainerName string `json:"containerName"`
+	Nbme          string
+	ContbinerNbme string `json:"contbinerNbme"`
 	URL           string `json:"url"`
 	Kind          string
-	Location      struct {
+	Locbtion      struct {
 		Resource struct {
-			Path       string
+			Pbth       string
 			Repository struct {
-				Name string
+				Nbme string
 			}
 		}
 	}
 }
 
-type LanguageSuggestionResult struct {
-	Name string
+type LbngubgeSuggestionResult struct {
+	Nbme string
 }
 
-type SearchContextSuggestionResult struct {
+type SebrchContextSuggestionResult struct {
 	Spec        string `json:"spec"`
 	Description string `json:"description"`
 }
 
-func (c *Client) SearchSuggestions(query string) ([]SearchSuggestionsResult, error) {
+func (c *Client) SebrchSuggestions(query string) ([]SebrchSuggestionsResult, error) {
 	const gqlQuery = `
-query SearchSuggestions($query: String!) {
-	search(query: $query, version: V2) {
+query SebrchSuggestions($query: String!) {
+	sebrch(query: $query, version: V2) {
 		suggestions {
-			__typename
+			__typenbme
 			... on Repository {
-				name
+				nbme
 			}
 			... on File {
-				path
-				name
+				pbth
+				nbme
 				isDirectory
 				url
 				repository {
-					name
+					nbme
 				}
 			}
 			... on Symbol {
-				name
-				containerName
+				nbme
+				contbinerNbme
 				url
 				kind
-				location {
+				locbtion {
 					resource {
-						path
+						pbth
 						repository {
-							name
+							nbme
 						}
 					}
 				}
 			}
-			... on Language {
-				name
+			... on Lbngubge {
+				nbme
 			}
-			... on SearchContext {
+			... on SebrchContext {
 				spec
 				description
 			}
@@ -521,165 +521,165 @@ query SearchSuggestions($query: String!) {
 	}
 }`
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"query": query,
 	}
 
-	var resp struct {
-		Data struct {
-			Search struct {
-				Suggestions []SearchSuggestionsResult
-			} `json:"search"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			Sebrch struct {
+				Suggestions []SebrchSuggestionsResult
+			} `json:"sebrch"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Search.Suggestions, nil
+	return resp.Dbtb.Sebrch.Suggestions, nil
 }
 
-type SearchStreamClient struct {
+type SebrchStrebmClient struct {
 	*Client
 }
 
-func (s *SearchStreamClient) SearchRepositories(query string) (SearchRepositoryResults, error) {
-	var results SearchRepositoryResults
-	err := s.search(query, streamhttp.FrontendStreamDecoder{
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			for _, m := range matches {
-				r, ok := m.(*streamhttp.EventRepoMatch)
+func (s *SebrchStrebmClient) SebrchRepositories(query string) (SebrchRepositoryResults, error) {
+	vbr results SebrchRepositoryResults
+	err := s.sebrch(query, strebmhttp.FrontendStrebmDecoder{
+		OnMbtches: func(mbtches []strebmhttp.EventMbtch) {
+			for _, m := rbnge mbtches {
+				r, ok := m.(*strebmhttp.EventRepoMbtch)
 				if !ok {
 					continue
 				}
 
-				result := &SearchRepositoryResult{Name: r.Repository}
+				result := &SebrchRepositoryResult{Nbme: r.Repository}
 
-				if len(r.Branches) > 0 {
-					result.URL = "/" + r.Repository + "@" + r.Branches[0]
+				if len(r.Brbnches) > 0 {
+					result.URL = "/" + r.Repository + "@" + r.Brbnches[0]
 				}
 
-				results = append(results, result)
+				results = bppend(results, result)
 			}
 		},
-		OnError: func(e *streamhttp.EventError) {
-			panic(e.Message)
+		OnError: func(e *strebmhttp.EventError) {
+			pbnic(e.Messbge)
 		},
 	})
 	return results, err
 }
 
-func (s *SearchStreamClient) SearchFiles(query string) (*SearchFileResults, error) {
-	var results SearchFileResults
-	err := s.search(query, streamhttp.FrontendStreamDecoder{
-		OnProgress: func(p *api.Progress) {
-			results.MatchCount = int64(p.MatchCount)
+func (s *SebrchStrebmClient) SebrchFiles(query string) (*SebrchFileResults, error) {
+	vbr results SebrchFileResults
+	err := s.sebrch(query, strebmhttp.FrontendStrebmDecoder{
+		OnProgress: func(p *bpi.Progress) {
+			results.MbtchCount = int64(p.MbtchCount)
 		},
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			for _, m := range matches {
+		OnMbtches: func(mbtches []strebmhttp.EventMbtch) {
+			for _, m := rbnge mbtches {
 				switch v := m.(type) {
-				case *streamhttp.EventRepoMatch:
-					results.Results = append(results.Results, &SearchFileResult{})
+				cbse *strebmhttp.EventRepoMbtch:
+					results.Results = bppend(results.Results, &SebrchFileResult{})
 
-				case *streamhttp.EventContentMatch:
-					var r SearchFileResult
-					r.File.Name = v.Path
-					r.Repository.Name = v.Repository
-					if len(v.Branches) > 0 {
-						r.RevSpec.Expr = v.Branches[0]
+				cbse *strebmhttp.EventContentMbtch:
+					vbr r SebrchFileResult
+					r.File.Nbme = v.Pbth
+					r.Repository.Nbme = v.Repository
+					if len(v.Brbnches) > 0 {
+						r.RevSpec.Expr = v.Brbnches[0]
 					}
-					results.Results = append(results.Results, &r)
+					results.Results = bppend(results.Results, &r)
 
-				case *streamhttp.EventPathMatch:
-					var r SearchFileResult
-					r.File.Name = v.Path
-					r.Repository.Name = v.Repository
-					if len(v.Branches) > 0 {
-						r.RevSpec.Expr = v.Branches[0]
+				cbse *strebmhttp.EventPbthMbtch:
+					vbr r SebrchFileResult
+					r.File.Nbme = v.Pbth
+					r.Repository.Nbme = v.Repository
+					if len(v.Brbnches) > 0 {
+						r.RevSpec.Expr = v.Brbnches[0]
 					}
-					results.Results = append(results.Results, &r)
+					results.Results = bppend(results.Results, &r)
 
-				case *streamhttp.EventSymbolMatch:
-					var r SearchFileResult
-					r.File.Name = v.Path
-					r.Repository.Name = v.Repository
-					if len(v.Branches) > 0 {
-						r.RevSpec.Expr = v.Branches[0]
+				cbse *strebmhttp.EventSymbolMbtch:
+					vbr r SebrchFileResult
+					r.File.Nbme = v.Pbth
+					r.Repository.Nbme = v.Repository
+					if len(v.Brbnches) > 0 {
+						r.RevSpec.Expr = v.Brbnches[0]
 					}
-					results.Results = append(results.Results, &r)
+					results.Results = bppend(results.Results, &r)
 
-				case *streamhttp.EventCommitMatch:
-					// The tests don't actually look at the value. We need to
-					// update this client to be more generic, but this will do
+				cbse *strebmhttp.EventCommitMbtch:
+					// The tests don't bctublly look bt the vblue. We need to
+					// updbte this client to be more generic, but this will do
 					// for now.
-					results.Results = append(results.Results, &SearchFileResult{})
+					results.Results = bppend(results.Results, &SebrchFileResult{})
 				}
 			}
 		},
-		OnAlert: func(alert *streamhttp.EventAlert) {
-			results.Alert = &SearchAlert{
-				Title:       alert.Title,
-				Description: alert.Description,
+		OnAlert: func(blert *strebmhttp.EventAlert) {
+			results.Alert = &SebrchAlert{
+				Title:       blert.Title,
+				Description: blert.Description,
 			}
-			for _, pq := range alert.ProposedQueries {
-				annotations := make([]Annotation, 0, len(pq.Annotations))
-				for _, a := range pq.Annotations {
-					annotations = append(annotations, Annotation{Name: a.Name, Value: a.Value})
+			for _, pq := rbnge blert.ProposedQueries {
+				bnnotbtions := mbke([]Annotbtion, 0, len(pq.Annotbtions))
+				for _, b := rbnge pq.Annotbtions {
+					bnnotbtions = bppend(bnnotbtions, Annotbtion{Nbme: b.Nbme, Vblue: b.Vblue})
 				}
 
-				results.Alert.ProposedQueries = append(results.Alert.ProposedQueries, QueryDescription{
+				results.Alert.ProposedQueries = bppend(results.Alert.ProposedQueries, QueryDescription{
 					Description: pq.Description,
 					Query:       pq.Query,
-					Annotations: annotations,
+					Annotbtions: bnnotbtions,
 				})
 			}
 		},
 	})
 	return &results, err
 }
-func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
-	var results []any
-	err := s.search(query, streamhttp.FrontendStreamDecoder{
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			for _, m := range matches {
+func (s *SebrchStrebmClient) SebrchAll(query string) ([]*AnyResult, error) {
+	vbr results []bny
+	err := s.sebrch(query, strebmhttp.FrontendStrebmDecoder{
+		OnMbtches: func(mbtches []strebmhttp.EventMbtch) {
+			for _, m := rbnge mbtches {
 				switch v := m.(type) {
-				case *streamhttp.EventRepoMatch:
-					results = append(results, RepositoryResult{
-						Name: v.Repository,
+				cbse *strebmhttp.EventRepoMbtch:
+					results = bppend(results, RepositoryResult{
+						Nbme: v.Repository,
 					})
 
-				case *streamhttp.EventContentMatch:
-					lms := make([]struct {
+				cbse *strebmhttp.EventContentMbtch:
+					lms := mbke([]struct {
 						OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
-					}, len(v.LineMatches))
-					for i := range v.LineMatches {
-						lms[i].OffsetAndLengths = v.LineMatches[i].OffsetAndLengths
+					}, len(v.LineMbtches))
+					for i := rbnge v.LineMbtches {
+						lms[i].OffsetAndLengths = v.LineMbtches[i].OffsetAndLengths
 					}
-					results = append(results, FileResult{
-						File:        struct{ Path string }{Path: v.Path},
-						Repository:  RepositoryResult{Name: v.Repository},
-						LineMatches: lms,
+					results = bppend(results, FileResult{
+						File:        struct{ Pbth string }{Pbth: v.Pbth},
+						Repository:  RepositoryResult{Nbme: v.Repository},
+						LineMbtches: lms,
 					})
 
-				case *streamhttp.EventPathMatch:
-					results = append(results, FileResult{
-						File:       struct{ Path string }{Path: v.Path},
-						Repository: RepositoryResult{Name: v.Repository},
+				cbse *strebmhttp.EventPbthMbtch:
+					results = bppend(results, FileResult{
+						File:       struct{ Pbth string }{Pbth: v.Pbth},
+						Repository: RepositoryResult{Nbme: v.Repository},
 					})
 
-				case *streamhttp.EventSymbolMatch:
-					var r FileResult
-					r.File.Path = v.Path
-					r.Repository.Name = v.Repository
-					r.Symbols = make([]any, len(v.Symbols))
-					results = append(results, &r)
+				cbse *strebmhttp.EventSymbolMbtch:
+					vbr r FileResult
+					r.File.Pbth = v.Pbth
+					r.Repository.Nbme = v.Repository
+					r.Symbols = mbke([]bny, len(v.Symbols))
+					results = bppend(results, &r)
 
-				case *streamhttp.EventCommitMatch:
-					// The tests don't actually look at the value. We need to
-					// update this client to be more generic, but this will do
+				cbse *strebmhttp.EventCommitMbtch:
+					// The tests don't bctublly look bt the vblue. We need to
+					// updbte this client to be more generic, but this will do
 					// for now.
-					results = append(results, CommitResult{URL: v.URL})
+					results = bppend(results, CommitResult{URL: v.URL})
 				}
 			}
 		},
@@ -688,28 +688,28 @@ func (s *SearchStreamClient) SearchAll(query string) ([]*AnyResult, error) {
 		return nil, err
 	}
 
-	var ar []*AnyResult
-	for _, r := range results {
-		ar = append(ar, &AnyResult{Inner: r})
+	vbr br []*AnyResult
+	for _, r := rbnge results {
+		br = bppend(br, &AnyResult{Inner: r})
 	}
-	return ar, nil
+	return br, nil
 }
 
-func (s *SearchStreamClient) search(query string, dec streamhttp.FrontendStreamDecoder) error {
-	req, err := streamhttp.NewRequest(strings.TrimRight(s.Client.baseURL, "/")+"/.api", query)
+func (s *SebrchStrebmClient) sebrch(query string, dec strebmhttp.FrontendStrebmDecoder) error {
+	req, err := strebmhttp.NewRequest(strings.TrimRight(s.Client.bbseURL, "/")+"/.bpi", query)
 	if err != nil {
 		return err
 	}
-	// Note: Sending this header enables us to use session cookie auth without sending a trusted Origin header.
-	// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
-	req.Header.Set("X-Requested-With", "Sourcegraph")
-	s.Client.addCookies(req)
+	// Note: Sending this hebder enbbles us to use session cookie buth without sending b trusted Origin hebder.
+	// https://docs.sourcegrbph.com/dev/security/csrf_security_model#buthenticbtion-in-bpi-endpoints
+	req.Hebder.Set("X-Requested-With", "Sourcegrbph")
+	s.Client.bddCookies(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
-	return dec.ReadAll(resp.Body)
+	return dec.RebdAll(resp.Body)
 }

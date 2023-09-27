@@ -1,76 +1,76 @@
-package backend
+pbckbge bbckend
 
 import (
 	"sync"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	proto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
-	"github.com/sourcegraph/zoekt/rpc"
-	zoektstream "github.com/sourcegraph/zoekt/stream"
-	"google.golang.org/grpc"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
+	proto "github.com/sourcegrbph/zoekt/grpc/protos/zoekt/webserver/v1"
+	"github.com/sourcegrbph/zoekt/rpc"
+	zoektstrebm "github.com/sourcegrbph/zoekt/strebm"
+	"google.golbng.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-// We don't use the normal factory for internal requests because we disable
-// retries. Currently our retry framework copies the full body on every
-// request, this is prohibitive when zoekt generates a large query.
+// We don't use the normbl fbctory for internbl requests becbuse we disbble
+// retries. Currently our retry frbmework copies the full body on every
+// request, this is prohibitive when zoekt generbtes b lbrge query.
 //
-// Once our retry framework supports the use of Request.GetBody we can switch
-// back to the normal internal request factory.
-var zoektHTTPClient, _ = httpcli.NewFactory(
-	httpcli.NewMiddleware(
-		httpcli.ContextErrorMiddleware,
+// Once our retry frbmework supports the use of Request.GetBody we cbn switch
+// bbck to the normbl internbl request fbctory.
+vbr zoektHTTPClient, _ = httpcli.NewFbctory(
+	httpcli.NewMiddlewbre(
+		httpcli.ContextErrorMiddlewbre,
 	),
-	httpcli.NewMaxIdleConnsPerHostOpt(500),
-	// This will also generate a metric named "src_zoekt_webserver_requests_total".
-	httpcli.MeteredTransportOpt("zoekt_webserver"),
-	httpcli.TracedTransportOpt,
+	httpcli.NewMbxIdleConnsPerHostOpt(500),
+	// This will blso generbte b metric nbmed "src_zoekt_webserver_requests_totbl".
+	httpcli.MeteredTrbnsportOpt("zoekt_webserver"),
+	httpcli.TrbcedTrbnsportOpt,
 ).Client()
 
-// ZoektStreamFunc is a convenience function to create a stream receiver from a
+// ZoektStrebmFunc is b convenience function to crebte b strebm receiver from b
 // function.
-type ZoektStreamFunc func(*zoekt.SearchResult)
+type ZoektStrebmFunc func(*zoekt.SebrchResult)
 
-func (f ZoektStreamFunc) Send(event *zoekt.SearchResult) {
+func (f ZoektStrebmFunc) Send(event *zoekt.SebrchResult) {
 	f(event)
 }
 
-// ZoektDialer is a function that returns a zoekt.Streamer for the given endpoint.
-type ZoektDialer func(endpoint string) zoekt.Streamer
+// ZoektDibler is b function thbt returns b zoekt.Strebmer for the given endpoint.
+type ZoektDibler func(endpoint string) zoekt.Strebmer
 
-// NewCachedZoektDialer wraps a ZoektDialer with caching per endpoint.
-func NewCachedZoektDialer(dial ZoektDialer) ZoektDialer {
-	d := &cachedZoektDialer{
-		streamers: map[string]zoekt.Streamer{},
-		dial:      dial,
+// NewCbchedZoektDibler wrbps b ZoektDibler with cbching per endpoint.
+func NewCbchedZoektDibler(dibl ZoektDibler) ZoektDibler {
+	d := &cbchedZoektDibler{
+		strebmers: mbp[string]zoekt.Strebmer{},
+		dibl:      dibl,
 	}
-	return d.Dial
+	return d.Dibl
 }
 
-type cachedZoektDialer struct {
+type cbchedZoektDibler struct {
 	mu        sync.RWMutex
-	streamers map[string]zoekt.Streamer
-	dial      ZoektDialer
+	strebmers mbp[string]zoekt.Strebmer
+	dibl      ZoektDibler
 }
 
-func (c *cachedZoektDialer) Dial(endpoint string) zoekt.Streamer {
+func (c *cbchedZoektDibler) Dibl(endpoint string) zoekt.Strebmer {
 	c.mu.RLock()
-	s, ok := c.streamers[endpoint]
+	s, ok := c.strebmers[endpoint]
 	c.mu.RUnlock()
 
 	if !ok {
 		c.mu.Lock()
-		s, ok = c.streamers[endpoint]
+		s, ok = c.strebmers[endpoint]
 		if !ok {
-			s = &cachedStreamerCloser{
-				cachedZoektDialer: c,
+			s = &cbchedStrebmerCloser{
+				cbchedZoektDibler: c,
 				endpoint:          endpoint,
-				Streamer:          c.dial(endpoint),
+				Strebmer:          c.dibl(endpoint),
 			}
-			c.streamers[endpoint] = s
+			c.strebmers[endpoint] = s
 		}
 		c.mu.Unlock()
 	}
@@ -78,51 +78,51 @@ func (c *cachedZoektDialer) Dial(endpoint string) zoekt.Streamer {
 	return s
 }
 
-type cachedStreamerCloser struct {
-	*cachedZoektDialer
+type cbchedStrebmerCloser struct {
+	*cbchedZoektDibler
 	endpoint string
-	zoekt.Streamer
+	zoekt.Strebmer
 }
 
-func (c *cachedStreamerCloser) Close() {
+func (c *cbchedStrebmerCloser) Close() {
 	c.mu.Lock()
-	delete(c.streamers, c.endpoint)
+	delete(c.strebmers, c.endpoint)
 	c.mu.Unlock()
 
-	c.Streamer.Close()
+	c.Strebmer.Close()
 }
 
-// ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
-func ZoektDial(endpoint string) zoekt.Streamer {
-	return &switchableZoektGRPCClient{
-		httpClient: ZoektDialHTTP(endpoint),
-		grpcClient: ZoektDialGRPC(endpoint),
+// ZoektDibl connects to b Sebrcher HTTP RPC server bt bddress (host:port).
+func ZoektDibl(endpoint string) zoekt.Strebmer {
+	return &switchbbleZoektGRPCClient{
+		httpClient: ZoektDiblHTTP(endpoint),
+		grpcClient: ZoektDiblGRPC(endpoint),
 	}
 }
 
-// ZoektDialHTTP connects to a Searcher HTTP RPC server at address (host:port).
-func ZoektDialHTTP(endpoint string) zoekt.Streamer {
+// ZoektDiblHTTP connects to b Sebrcher HTTP RPC server bt bddress (host:port).
+func ZoektDiblHTTP(endpoint string) zoekt.Strebmer {
 	client := rpc.Client(endpoint)
-	streamClient := zoektstream.NewClient("http://"+endpoint, zoektHTTPClient).WithSearcher(client)
-	return NewMeteredSearcher(endpoint, streamClient)
+	strebmClient := zoektstrebm.NewClient("http://"+endpoint, zoektHTTPClient).WithSebrcher(client)
+	return NewMeteredSebrcher(endpoint, strebmClient)
 }
 
-// maxRecvMsgSize is the max message size we can receive from Zoekt without erroring.
-// By default, this caps at 4MB, but Zoekt can send payloads significantly larger
-// than that depending on the type of search being executed.
-// 128MiB is a best guess at reasonable size that will rarely fail.
-const maxRecvMsgSize = 128 * 1024 * 1024 // 128MiB
+// mbxRecvMsgSize is the mbx messbge size we cbn receive from Zoekt without erroring.
+// By defbult, this cbps bt 4MB, but Zoekt cbn send pbylobds significbntly lbrger
+// thbn thbt depending on the type of sebrch being executed.
+// 128MiB is b best guess bt rebsonbble size thbt will rbrely fbil.
+const mbxRecvMsgSize = 128 * 1024 * 1024 // 128MiB
 
-// ZoektDialGRPC connects to a Searcher gRPC server at address (host:port).
-func ZoektDialGRPC(endpoint string) zoekt.Streamer {
-	conn, err := defaults.Dial(
+// ZoektDiblGRPC connects to b Sebrcher gRPC server bt bddress (host:port).
+func ZoektDiblGRPC(endpoint string) zoekt.Strebmer {
+	conn, err := defbults.Dibl(
 		endpoint,
-		log.Scoped("zoekt", "Dial"),
-		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(maxRecvMsgSize)),
+		log.Scoped("zoekt", "Dibl"),
+		grpc.WithDefbultCbllOptions(grpc.MbxCbllRecvMsgSize(mbxRecvMsgSize)),
 	)
-	return NewMeteredSearcher(endpoint, &zoektGRPCClient{
+	return NewMeteredSebrcher(endpoint, &zoektGRPCClient{
 		endpoint: endpoint,
 		client:   proto.NewWebserverServiceClient(conn),
-		dialErr:  err,
+		diblErr:  err,
 	})
 }

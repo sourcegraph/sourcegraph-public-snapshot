@@ -1,14 +1,14 @@
-package ranges
+pbckbge rbnges
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 )
 
-func TestRangeEncoding(t *testing.T) {
-	ranges := []int32{
+func TestRbngeEncoding(t *testing.T) {
+	rbnges := []int32{
 		0, 8, 0, 18,
 		3, 2, 3, 9,
 		4, 2, 4, 5,
@@ -770,30 +770,30 @@ func TestRangeEncoding(t *testing.T) {
 		412, 45, 412, 51,
 	}
 
-	encoded, err := EncodeRanges(ranges)
+	encoded, err := EncodeRbnges(rbnges)
 	if err != nil {
-		t.Fatalf("unexpected error encoding ranges: %s", err)
+		t.Fbtblf("unexpected error encoding rbnges: %s", err)
 	}
 
-	// Internal decode
-	decodedFlattenedRanges, err := DecodeFlattenedRanges(encoded)
+	// Internbl decode
+	decodedFlbttenedRbnges, err := DecodeFlbttenedRbnges(encoded)
 	if err != nil {
-		t.Fatalf("unexpected error decoding ranges: %s", err)
+		t.Fbtblf("unexpected error decoding rbnges: %s", err)
 	}
-	if diff := cmp.Diff(ranges, decodedFlattenedRanges); diff != "" {
-		t.Fatalf("unexpected ranges (-want +got):\n%s", diff)
+	if diff := cmp.Diff(rbnges, decodedFlbttenedRbnges); diff != "" {
+		t.Fbtblf("unexpected rbnges (-wbnt +got):\n%s", diff)
 	}
 
-	// External decode
-	decodedSCIPRanges, err := DecodeRanges(encoded)
+	// Externbl decode
+	decodedSCIPRbnges, err := DecodeRbnges(encoded)
 	if err != nil {
-		t.Fatalf("unexpected error decoding ranges: %s", err)
+		t.Fbtblf("unexpected error decoding rbnges: %s", err)
 	}
-	expectedSCIPRanges := make([]*scip.Range, 0, len(ranges)/4)
-	for i := 0; i < len(ranges); i += 4 {
-		expectedSCIPRanges = append(expectedSCIPRanges, scip.NewRange(ranges[i:i+4]))
+	expectedSCIPRbnges := mbke([]*scip.Rbnge, 0, len(rbnges)/4)
+	for i := 0; i < len(rbnges); i += 4 {
+		expectedSCIPRbnges = bppend(expectedSCIPRbnges, scip.NewRbnge(rbnges[i:i+4]))
 	}
-	if diff := cmp.Diff(expectedSCIPRanges, decodedSCIPRanges); diff != "" {
-		t.Fatalf("unexpected ranges (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedSCIPRbnges, decodedSCIPRbnges); diff != "" {
+		t.Fbtblf("unexpected rbnges (-wbnt +got):\n%s", diff)
 	}
 }

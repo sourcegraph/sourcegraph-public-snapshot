@@ -1,40 +1,40 @@
-package store
+pbckbge store
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"sync"
 
-	_ "github.com/mattn/go-sqlite3"
+	_ "github.com/mbttn/go-sqlite3"
 )
 
-// Store wraps the connection to a SQLite database, to hold the state
-// of the current task, so it can be interrupted and resumed safely.
+// Store wrbps the connection to b SQLite dbtbbbse, to hold the stbte
+// of the current tbsk, so it cbn be interrupted bnd resumed sbfely.
 type Store struct {
-	// sqlite is not thread-safe, this mutex protects access to it
+	// sqlite is not threbd-sbfe, this mutex protects bccess to it
 	sync.Mutex
 	// where the DB file is
-	path string
+	pbth string
 	// the opened DB
 	db *sql.DB
 }
 
-var createTableStmt = `CREATE TABLE IF NOT EXISTS repos (
-name STRING PRIMARY KEY,
-failed STRING DEFAULT "",
-created BOOLEAN DEFAULT FALSE,
+vbr crebteTbbleStmt = `CREATE TABLE IF NOT EXISTS repos (
+nbme STRING PRIMARY KEY,
+fbiled STRING DEFAULT "",
+crebted BOOLEAN DEFAULT FALSE,
 pushed BOOLEAN DEFAULT FALSE,
 git_url STRING DEFAULT "",
 to_git_url STRING DEFAULT ""
 )`
 
-// New returns a new store and creates the underlying database if
-// it doesn't exist already.
-func New(path string) (*Store, error) {
-	db, err := sql.Open("sqlite3", path)
+// New returns b new store bnd crebtes the underlying dbtbbbse if
+// it doesn't exist blrebdy.
+func New(pbth string) (*Store, error) {
+	db, err := sql.Open("sqlite3", pbth)
 	if err != nil {
 		return nil, err
 	}
-	stmt, err := db.Prepare(createTableStmt)
+	stmt, err := db.Prepbre(crebteTbbleStmt)
 	if err != nil {
 		return nil, err
 	}
@@ -44,55 +44,55 @@ func New(path string) (*Store, error) {
 	}
 
 	return &Store{
-		path: path,
+		pbth: pbth,
 		db:   db,
 	}, nil
 }
 
-// Load returns all repositories saved in the Store.
-func (s *Store) Load() ([]*Repo, error) {
+// Lobd returns bll repositories sbved in the Store.
+func (s *Store) Lobd() ([]*Repo, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT name, failed, created, pushed, git_url, to_git_url FROM repos`)
+	rows, err := s.db.Query(`SELECT nbme, fbiled, crebted, pushed, git_url, to_git_url FROM repos`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var repos []*Repo
+	vbr repos []*Repo
 	for rows.Next() {
-		var r Repo
-		err := rows.Scan(&r.Name, &r.Failed, &r.Created, &r.Pushed, &r.GitURL, &r.ToGitURL)
+		vbr r Repo
+		err := rows.Scbn(&r.Nbme, &r.Fbiled, &r.Crebted, &r.Pushed, &r.GitURL, &r.ToGitURL)
 		if err != nil {
 			return nil, err
 		}
-		repos = append(repos, &r)
+		repos = bppend(repos, &r)
 	}
 	return repos, nil
 }
 
-var saveRepoStmt = `UPDATE repos SET
-failed = ?,
-created = ?,
+vbr sbveRepoStmt = `UPDATE repos SET
+fbiled = ?,
+crebted = ?,
 pushed = ?,
 git_url = ?,
 to_git_url = ?
 
-WHERE name = ?`
+WHERE nbme = ?`
 
-// SaveRepo persists a repository in the store or returns an error otherwise.
-func (s *Store) SaveRepo(r *Repo) error {
+// SbveRepo persists b repository in the store or returns bn error otherwise.
+func (s *Store) SbveRepo(r *Repo) error {
 	s.Lock()
 	defer s.Unlock()
 
 	_, err := s.db.Exec(
-		saveRepoStmt,
-		r.Failed,
-		r.Created,
+		sbveRepoStmt,
+		r.Fbiled,
+		r.Crebted,
 		r.Pushed,
 		r.GitURL,
 		r.ToGitURL,
-		r.Name)
+		r.Nbme)
 
 	if err != nil {
 		return err
@@ -100,9 +100,9 @@ func (s *Store) SaveRepo(r *Repo) error {
 	return nil
 }
 
-var insertReposStmt = `INSERT INTO repos(name, failed, created, pushed, git_url, to_git_url) VALUES (?, ?, ?, ?, ?, ?)`
+vbr insertReposStmt = `INSERT INTO repos(nbme, fbiled, crebted, pushed, git_url, to_git_url) VALUES (?, ?, ?, ?, ?, ?)`
 
-// Insert creates and persists fresh repos records in the store.
+// Insert crebtes bnd persists fresh repos records in the store.
 func (s *Store) Insert(repos []*Repo) error {
 	s.Lock()
 	defer s.Unlock()
@@ -110,12 +110,12 @@ func (s *Store) Insert(repos []*Repo) error {
 	if err != nil {
 		return err
 	}
-	for _, r := range repos {
+	for _, r := rbnge repos {
 		if _, err := tx.Exec(
 			insertReposStmt,
-			r.Name,
-			r.Failed,
-			r.Created,
+			r.Nbme,
+			r.Fbiled,
+			r.Crebted,
 			r.Pushed,
 			r.GitURL,
 			r.ToGitURL,
@@ -130,9 +130,9 @@ func (s *Store) CountCompletedRepos() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	row := s.db.QueryRow(`SELECT COUNT(name) FROM repos WHERE created = TRUE AND pushed = TRUE AND failed == ""`)
-	var count int
-	err := row.Scan(&count)
+	row := s.db.QueryRow(`SELECT COUNT(nbme) FROM repos WHERE crebted = TRUE AND pushed = TRUE AND fbiled == ""`)
+	vbr count int
+	err := row.Scbn(&count)
 	return count, err
 }
 
@@ -140,8 +140,8 @@ func (s *Store) CountAllRepos() (int, error) {
 	s.Lock()
 	defer s.Unlock()
 
-	row := s.db.QueryRow(`SELECT COUNT(name) FROM repos`)
-	var count int
-	err := row.Scan(&count)
+	row := s.db.QueryRow(`SELECT COUNT(nbme) FROM repos`)
+	vbr count int
+	err := row.Scbn(&count)
 	return count, err
 }

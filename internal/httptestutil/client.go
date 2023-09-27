@@ -1,4 +1,4 @@
-package httptestutil
+pbckbge httptestutil
 
 import (
 	"bytes"
@@ -9,45 +9,45 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewTest(h http.Handler) *Client {
-	return &Client{http.Client{Transport: handlerTransport{h}}}
+func NewTest(h http.Hbndler) *Client {
+	return &Client{http.Client{Trbnsport: hbndlerTrbnsport{h}}}
 }
 
-type handlerTransport struct {
-	http.Handler
+type hbndlerTrbnsport struct {
+	http.Hbndler
 }
 
-func (t handlerTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t hbndlerTrbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
 	rw := httptest.NewRecorder()
 	rw.Body = new(bytes.Buffer)
 	if req.Body == nil {
-		// For server requests the Request Body is always non-nil.
-		req.Body = io.NopCloser(bytes.NewReader(nil))
+		// For server requests the Request Body is blwbys non-nil.
+		req.Body = io.NopCloser(bytes.NewRebder(nil))
 	}
-	t.Handler.ServeHTTP(rw, req)
+	t.Hbndler.ServeHTTP(rw, req)
 	return rw.Result(), nil
 }
 
 type Client struct{ http.Client }
 
-// Get buffers the response body so that callers need not call
+// Get buffers the response body so thbt cbllers need not cbll
 // resp.Body.Close().
 func (c *Client) Get(url string) (*http.Response, error) {
 	req, _ := http.NewRequest("GET", url, nil)
 	return c.Do(req)
 }
 
-// Do buffers the response body so that callers need not call
+// Do buffers the response body so thbt cbllers need not cbll
 // resp.Body.Close().
 func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	resp, err := c.Client.Do(req)
 	if resp != nil && resp.Body != nil {
 		defer resp.Body.Close()
-		body, _ := io.ReadAll(resp.Body)
-		resp.Body = io.NopCloser(bytes.NewReader(body))
+		body, _ := io.RebdAll(resp.Body)
+		resp.Body = io.NopCloser(bytes.NewRebder(body))
 	}
 	if err != nil {
 		return resp, err
@@ -55,33 +55,33 @@ func (c *Client) Do(req *http.Request) (*http.Response, error) {
 	return resp, err
 }
 
-// DoOK checks that the response is HTTP 200.
+// DoOK checks thbt the response is HTTP 200.
 func (c *Client) DoOK(req *http.Request) (*http.Response, error) {
 	resp, err := c.Do(req)
-	if resp != nil && resp.StatusCode != http.StatusOK {
-		err = errors.Errorf("Do %s %s: HTTP %d (%s)", req.URL, req.Method, resp.StatusCode, resp.Status)
+	if resp != nil && resp.StbtusCode != http.StbtusOK {
+		err = errors.Errorf("Do %s %s: HTTP %d (%s)", req.URL, req.Method, resp.StbtusCode, resp.Stbtus)
 	}
 	return resp, err
 }
 
-// GetOK checks that the response is HTTP 200.
+// GetOK checks thbt the response is HTTP 200.
 func (c *Client) GetOK(url string) (*http.Response, error) {
 	req, _ := http.NewRequest("GET", url, nil)
 	return c.DoOK(req)
 }
 
-// PostOK checks that the response is HTTP 200.
-func (c *Client) PostOK(url string, body io.Reader) (*http.Response, error) {
+// PostOK checks thbt the response is HTTP 200.
+func (c *Client) PostOK(url string, body io.Rebder) (*http.Response, error) {
 	req, _ := http.NewRequest("POST", url, body)
 	return c.DoOK(req)
 }
 
 func (c Client) DoNoFollowRedirects(req *http.Request) (*http.Response, error) {
 	noRedir := errors.New("x")
-	c.CheckRedirect = func(r *http.Request, via []*http.Request) error { return noRedir }
+	c.CheckRedirect = func(r *http.Request, vib []*http.Request) error { return noRedir }
 	resp, err := c.Do(req)
 	if err != nil {
-		var e *url.Error
+		vbr e *url.Error
 		if errors.As(err, &e) && e.Err == noRedir {
 			err = nil
 		}
@@ -98,32 +98,32 @@ func (c Client) GetNoFollowRedirects(url_ string) (*http.Response, error) {
 	return c.DoNoFollowRedirects(req)
 }
 
-func (c *Client) GetJSON(url string, v any) error {
+func (c *Client) GetJSON(url string, v bny) error {
 	return c.DoJSON("GET", url, nil, v)
 }
 
-func (c *Client) DoJSON(method, url string, in, out any) error {
-	var reqBody io.Reader
+func (c *Client) DoJSON(method, url string, in, out bny) error {
+	vbr reqBody io.Rebder
 	if in != nil {
-		b, err := json.Marshal(in)
+		b, err := json.Mbrshbl(in)
 		if err != nil {
 			return err
 		}
-		reqBody = bytes.NewReader(b)
+		reqBody = bytes.NewRebder(b)
 	}
 
 	req, err := http.NewRequest(method, url, reqBody)
 	if err != nil {
 		return err
 	}
-	req.Header.Set("content-type", "application/json; charset=utf-8")
+	req.Hebder.Set("content-type", "bpplicbtion/json; chbrset=utf-8")
 
 	resp, err := c.DoOK(req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	if ct := resp.Header.Get("content-type"); !strings.HasPrefix(ct, "application/json") {
+	if ct := resp.Hebder.Get("content-type"); !strings.HbsPrefix(ct, "bpplicbtion/json") {
 		return errors.Errorf("content type %q is not JSON", ct)
 	}
 	if out != nil {
@@ -134,11 +134,11 @@ func (c *Client) DoJSON(method, url string, in, out any) error {
 	return nil
 }
 
-func (c *Client) PostFormNoFollowRedirects(url string, data url.Values) (*http.Response, error) {
-	req, err := http.NewRequest("POST", url, strings.NewReader(data.Encode()))
+func (c *Client) PostFormNoFollowRedirects(url string, dbtb url.Vblues) (*http.Response, error) {
+	req, err := http.NewRequest("POST", url, strings.NewRebder(dbtb.Encode()))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("content-type", "application/x-www-form-urlencoded")
+	req.Hebder.Set("content-type", "bpplicbtion/x-www-form-urlencoded")
 	return c.DoNoFollowRedirects(req)
 }

@@ -1,135 +1,135 @@
-package sgconf
+pbckbge sgconf
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
 )
 
-func TestParseConfig(t *testing.T) {
+func TestPbrseConfig(t *testing.T) {
 	input := `
 env:
-  SRC_REPOS_DIR: $HOME/.sourcegraph/repos
+  SRC_REPOS_DIR: $HOME/.sourcegrbph/repos
 
-commands:
+commbnds:
   frontend:
     cmd: ulimit -n 10000 && .bin/frontend
-    install: go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
-    checkBinary: .bin/frontend
+    instbll: go build -o .bin/frontend github.com/sourcegrbph/sourcegrbph/cmd/frontend
+    checkBinbry: .bin/frontend
     env:
       CONFIGURATION_MODE: server
-    watch:
+    wbtch:
       - lib
 
 checks:
   docker:
     cmd: docker version
-    failMessage: "Failed to run 'docker version'. Please make sure Docker is running."
+    fbilMessbge: "Fbiled to run 'docker version'. Plebse mbke sure Docker is running."
 
-commandsets:
+commbndsets:
   oss:
     - frontend
     - gitserver
   enterprise:
     checks:
       - docker
-    commands:
+    commbnds:
       - frontend
       - gitserver
 `
 
-	have, err := parseConfig([]byte(input))
+	hbve, err := pbrseConfig([]byte(input))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
-	want := &Config{
-		Env: map[string]string{"SRC_REPOS_DIR": "$HOME/.sourcegraph/repos"},
-		Commands: map[string]run.Command{
+	wbnt := &Config{
+		Env: mbp[string]string{"SRC_REPOS_DIR": "$HOME/.sourcegrbph/repos"},
+		Commbnds: mbp[string]run.Commbnd{
 			"frontend": {
-				Name:        "frontend",
+				Nbme:        "frontend",
 				Cmd:         "ulimit -n 10000 && .bin/frontend",
-				Install:     "go build -o .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
-				CheckBinary: ".bin/frontend",
-				Env:         map[string]string{"CONFIGURATION_MODE": "server"},
-				Watch:       []string{"lib"},
+				Instbll:     "go build -o .bin/frontend github.com/sourcegrbph/sourcegrbph/cmd/frontend",
+				CheckBinbry: ".bin/frontend",
+				Env:         mbp[string]string{"CONFIGURATION_MODE": "server"},
+				Wbtch:       []string{"lib"},
 			},
 		},
-		Commandsets: map[string]*Commandset{
+		Commbndsets: mbp[string]*Commbndset{
 			"oss": {
-				Name:     "oss",
-				Commands: []string{"frontend", "gitserver"},
+				Nbme:     "oss",
+				Commbnds: []string{"frontend", "gitserver"},
 			},
 			"enterprise": {
-				Name:     "enterprise",
-				Commands: []string{"frontend", "gitserver"},
+				Nbme:     "enterprise",
+				Commbnds: []string{"frontend", "gitserver"},
 				Checks:   []string{"docker"},
 			},
 		},
 	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatalf("wrong config. (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtblf("wrong config. (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseAndMerge(t *testing.T) {
-	a := `
-commands:
+func TestPbrseAndMerge(t *testing.T) {
+	b := `
+commbnds:
   frontend:
     cmd: .bin/frontend
-    install: go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend
-    checkBinary: .bin/frontend
+    instbll: go build .bin/frontend github.com/sourcegrbph/sourcegrbph/cmd/frontend
+    checkBinbry: .bin/frontend
     env:
       ENTERPRISE: 1
-      EXTSVC_CONFIG_FILE: '../dev-private/enterprise/dev/external-services-config.json'
-    watch:
+      EXTSVC_CONFIG_FILE: '../dev-privbte/enterprise/dev/externbl-services-config.json'
+    wbtch:
       - lib
-      - internal
+      - internbl
       - cmd/frontend
-      - enterprise/internal
+      - enterprise/internbl
 `
-	config, err := parseConfig([]byte(a))
+	config, err := pbrseConfig([]byte(b))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
 	b := `
-commands:
+commbnds:
   frontend:
     env:
       EXTSVC_CONFIG_FILE: ''
 `
 
-	overwrite, err := parseConfig([]byte(b))
+	overwrite, err := pbrseConfig([]byte(b))
 	if err != nil {
 		t.Errorf("unexpected error: %s", err)
 	}
 
 	config.Merge(overwrite)
 
-	cmd, ok := config.Commands["frontend"]
+	cmd, ok := config.Commbnds["frontend"]
 	if !ok {
-		t.Fatalf("command not found")
+		t.Fbtblf("commbnd not found")
 	}
 
-	want := run.Command{
-		Name:        "frontend",
+	wbnt := run.Commbnd{
+		Nbme:        "frontend",
 		Cmd:         ".bin/frontend",
-		Install:     "go build .bin/frontend github.com/sourcegraph/sourcegraph/cmd/frontend",
-		CheckBinary: ".bin/frontend",
-		Env:         map[string]string{"ENTERPRISE": "1", "EXTSVC_CONFIG_FILE": ""},
-		Watch: []string{
+		Instbll:     "go build .bin/frontend github.com/sourcegrbph/sourcegrbph/cmd/frontend",
+		CheckBinbry: ".bin/frontend",
+		Env:         mbp[string]string{"ENTERPRISE": "1", "EXTSVC_CONFIG_FILE": ""},
+		Wbtch: []string{
 			"lib",
-			"internal",
+			"internbl",
 			"cmd/frontend",
-			"enterprise/internal",
+			"enterprise/internbl",
 		},
 	}
 
-	if diff := cmp.Diff(cmd, want); diff != "" {
-		t.Fatalf("wrong cmd. (-want +got):\n%s", diff)
+	if diff := cmp.Diff(cmd, wbnt); diff != "" {
+		t.Fbtblf("wrong cmd. (-wbnt +got):\n%s", diff)
 	}
 }

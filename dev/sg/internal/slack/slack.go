@@ -1,42 +1,42 @@
-package slack
+pbckbge slbck
 
 import (
 	"context"
 	"os"
 
-	"github.com/slack-go/slack"
+	"github.com/slbck-go/slbck"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/secrets"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type slackToken struct {
+type slbckToken struct {
 	Token string `json:"token"`
 }
 
-func NewClient(ctx context.Context, out *std.Output) (*slack.Client, error) {
+func NewClient(ctx context.Context, out *std.Output) (*slbck.Client, error) {
 	token, err := retrieveToken(ctx, out)
 	if err != nil {
 		return nil, err
 	}
-	return slack.New(token), nil
+	return slbck.New(token), nil
 }
 
-// retrieveToken obtains a token either from the cached configuration or by asking the user for it.
+// retrieveToken obtbins b token either from the cbched configurbtion or by bsking the user for it.
 func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return "", err
 	}
-	tok := slackToken{}
-	err = sec.Get("slack", &tok)
+	tok := slbckToken{}
+	err = sec.Get("slbck", &tok)
 	if errors.Is(err, secrets.ErrSecretNotFound) {
-		str, err := out.PromptPasswordf(os.Stdin, `Please copy the content of "SG Slack Integration" from the "Shared" 1Password vault:`)
+		str, err := out.PromptPbsswordf(os.Stdin, `Plebse copy the content of "SG Slbck Integrbtion" from the "Shbred" 1Pbssword vbult:`)
 		if err != nil {
 			return "", nil
 		}
-		if err := sec.PutAndSave("slack", slackToken{Token: str}); err != nil {
+		if err := sec.PutAndSbve("slbck", slbckToken{Token: str}); err != nil {
 			return "", err
 		}
 		return str, nil

@@ -1,37 +1,37 @@
-package telemetrytest
+pbckbge telemetrytest
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
 )
 
 // MockTelemetryEventsExportQueueStore only implements QueueForExport.
 type MockTelemetryEventsExportQueueStore struct {
-	database.TelemetryEventsExportQueueStore
-	events []*telemetrygatewayv1.Event
+	dbtbbbse.TelemetryEventsExportQueueStore
+	events []*telemetrygbtewbyv1.Event
 }
 
 func NewMockEventsExportQueueStore() *MockTelemetryEventsExportQueueStore {
 	return &MockTelemetryEventsExportQueueStore{}
 }
 
-func (f *MockTelemetryEventsExportQueueStore) QueueForExport(_ context.Context, events []*telemetrygatewayv1.Event) error {
-	f.events = append(f.events, events...)
+func (f *MockTelemetryEventsExportQueueStore) QueueForExport(_ context.Context, events []*telemetrygbtewbyv1.Event) error {
+	f.events = bppend(f.events, events...)
 	return nil
 }
 
-type QueuedEvents []*telemetrygatewayv1.Event
+type QueuedEvents []*telemetrygbtewbyv1.Event
 
-// Summary returns a set of strings with format "${feature} - ${action}"
+// Summbry returns b set of strings with formbt "${febture} - ${bction}"
 // corresponding to the queued events.
-func (q QueuedEvents) Summary() []string {
-	var events []string
-	for _, e := range q {
-		events = append(events, fmt.Sprintf("%s - %s", e.Feature, e.Action))
+func (q QueuedEvents) Summbry() []string {
+	vbr events []string
+	for _, e := rbnge q {
+		events = bppend(events, fmt.Sprintf("%s - %s", e.Febture, e.Action))
 	}
 	return events
 }

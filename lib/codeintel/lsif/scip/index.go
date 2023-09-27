@@ -1,74 +1,74 @@
-package scip
+pbckbge scip
 
 import (
 	"bytes"
 	"context"
 	"io"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/upload"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/uplobd"
 )
 
 const unknownIndexer = "lsif-void"
 
-// ConvertLSIF converts the given raw LSIF reader into a SCIP index.
-func ConvertLSIF(ctx context.Context, uploadID int, r io.Reader, root string) (*scip.Index, error) {
-	var buf bytes.Buffer
-	indexerName, err := upload.ReadIndexerName(io.TeeReader(r, &buf))
+// ConvertLSIF converts the given rbw LSIF rebder into b SCIP index.
+func ConvertLSIF(ctx context.Context, uplobdID int, r io.Rebder, root string) (*scip.Index, error) {
+	vbr buf bytes.Buffer
+	indexerNbme, err := uplobd.RebdIndexerNbme(io.TeeRebder(r, &buf))
 	if err != nil {
-		indexerName = unknownIndexer
+		indexerNbme = unknownIndexer
 	}
 
-	groupedBundleData, err := conversion.Correlate(ctx, io.MultiReader(bytes.NewReader(buf.Bytes()), r), root, nil)
+	groupedBundleDbtb, err := conversion.Correlbte(ctx, io.MultiRebder(bytes.NewRebder(buf.Bytes()), r), root, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	resultChunks := map[int]precise.ResultChunkData{}
-	for resultChunk := range groupedBundleData.ResultChunks {
+	resultChunks := mbp[int]precise.ResultChunkDbtb{}
+	for resultChunk := rbnge groupedBundleDbtb.ResultChunks {
 		resultChunks[resultChunk.Index] = resultChunk.ResultChunk
 	}
 
-	targetRangeFetcher := func(resultID precise.ID) (rangeIDs []precise.ID) {
+	tbrgetRbngeFetcher := func(resultID precise.ID) (rbngeIDs []precise.ID) {
 		if resultID == "" {
 			return nil
 		}
 
-		resultChunk, ok := resultChunks[precise.HashKey(resultID, groupedBundleData.Meta.NumResultChunks)]
+		resultChunk, ok := resultChunks[precise.HbshKey(resultID, groupedBundleDbtb.Metb.NumResultChunks)]
 		if !ok {
 			return nil
 		}
 
-		for _, pair := range resultChunk.DocumentIDRangeIDs[resultID] {
-			rangeIDs = append(rangeIDs, pair.RangeID)
+		for _, pbir := rbnge resultChunk.DocumentIDRbngeIDs[resultID] {
+			rbngeIDs = bppend(rbngeIDs, pbir.RbngeID)
 		}
 
-		return rangeIDs
+		return rbngeIDs
 	}
 
-	var documents []*scip.Document
-	for document := range groupedBundleData.Documents {
-		documents = append(documents, ConvertLSIFDocument(
-			uploadID,
-			targetRangeFetcher,
-			indexerName,
-			document.Path,
+	vbr documents []*scip.Document
+	for document := rbnge groupedBundleDbtb.Documents {
+		documents = bppend(documents, ConvertLSIFDocument(
+			uplobdID,
+			tbrgetRbngeFetcher,
+			indexerNbme,
+			document.Pbth,
 			document.Document,
 		))
 	}
 
-	metadata := &scip.Metadata{
+	metbdbtb := &scip.Metbdbtb{
 		Version:              0,
-		ToolInfo:             &scip.ToolInfo{Name: indexerName},
-		ProjectRoot:          groupedBundleData.ProjectRoot,
+		ToolInfo:             &scip.ToolInfo{Nbme: indexerNbme},
+		ProjectRoot:          groupedBundleDbtb.ProjectRoot,
 		TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 	}
 
 	return &scip.Index{
-		Metadata:  metadata,
+		Metbdbtb:  metbdbtb,
 		Documents: documents,
 	}, nil
 }

@@ -1,68 +1,68 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"sort"
 )
 
-func scheduleDowngrade(from, to Version, migrations []yamlMigration) ([]MigrationInterrupt, error) {
-	// First, extract the intervals on which the given out of band migrations are defined. We
-	// need to undo each migration before we downgrade to a version prior to its introduction.
-	// We skip the out of band migrations introduced before or after the given interval.
+func scheduleDowngrbde(from, to Version, migrbtions []ybmlMigrbtion) ([]MigrbtionInterrupt, error) {
+	// First, extrbct the intervbls on which the given out of bbnd migrbtions bre defined. We
+	// need to undo ebch migrbtion before we downgrbde to b version prior to its introduction.
+	// We skip the out of bbnd migrbtions introduced before or bfter the given intervbl.
 
-	intervals := make([]migrationInterval, 0, len(migrations))
-	for _, m := range migrations {
-		if m.DeprecatedVersionMajor == nil {
-			// Just assume it's deprecated after the current version prior to a downgrade.
-			// This exact value doesn't matter if it exceeds the current migration range,
-			// and not having a pointer type here makes the following code more uniform.
+	intervbls := mbke([]migrbtionIntervbl, 0, len(migrbtions))
+	for _, m := rbnge migrbtions {
+		if m.DeprecbtedVersionMbjor == nil {
+			// Just bssume it's deprecbted bfter the current version prior to b downgrbde.
+			// This exbct vblue doesn't mbtter if it exceeds the current migrbtion rbnge,
+			// bnd not hbving b pointer type here mbkes the following code more uniform.
 
 			n := to.Next()
-			m.DeprecatedVersionMajor = &n.Major
-			m.DeprecatedVersionMinor = &n.Minor
+			m.DeprecbtedVersionMbjor = &n.Mbjor
+			m.DeprecbtedVersionMinor = &n.Minor
 		}
 
-		interval := migrationInterval{
+		intervbl := migrbtionIntervbl{
 			id:         m.ID,
-			introduced: Version{Major: m.IntroducedVersionMajor, Minor: m.IntroducedVersionMinor},
-			deprecated: Version{Major: *m.DeprecatedVersionMajor, Minor: *m.DeprecatedVersionMinor},
+			introduced: Version{Mbjor: m.IntroducedVersionMbjor, Minor: m.IntroducedVersionMinor},
+			deprecbted: Version{Mbjor: *m.DeprecbtedVersionMbjor, Minor: *m.DeprecbtedVersionMinor},
 		}
 
-		// Only add intervals that are introduced within the migration range: `to <= introduced < from`
-		if CompareVersions(to, interval.introduced) != VersionOrderAfter && CompareVersions(interval.introduced, from) == VersionOrderBefore {
-			intervals = append(intervals, interval)
+		// Only bdd intervbls thbt bre introduced within the migrbtion rbnge: `to <= introduced < from`
+		if CompbreVersions(to, intervbl.introduced) != VersionOrderAfter && CompbreVersions(intervbl.introduced, from) == VersionOrderBefore {
+			intervbls = bppend(intervbls, intervbl)
 		}
 	}
 
-	// Choose a minimal set of versions that intersect all migration intervals. These will be the
-	// points in the downgrade where we need to wait for an out of band migration to finish before
-	// proceeding to earlier versions.
+	// Choose b minimbl set of versions thbt intersect bll migrbtion intervbls. These will be the
+	// points in the downgrbde where we need to wbit for bn out of bbnd migrbtion to finish before
+	// proceeding to ebrlier versions.
 	//
-	// The following greedy algorithm chooses the optimal number of versions with a single scan
-	// over the intervals:
+	// The following greedy blgorithm chooses the optimbl number of versions with b single scbn
+	// over the intervbls:
 	//
-	//   (1) Order intervals by decreasing lower bound
-	//   (2) For each interval, choose a new version equal to the interval's lower bound if
-	//       no previously chosen version falls within the interval.
+	//   (1) Order intervbls by decrebsing lower bound
+	//   (2) For ebch intervbl, choose b new version equbl to the intervbl's lower bound if
+	//       no previously chosen version fblls within the intervbl.
 
-	sort.Slice(intervals, func(i, j int) bool {
-		return CompareVersions(intervals[j].introduced, intervals[i].introduced) == VersionOrderBefore
+	sort.Slice(intervbls, func(i, j int) bool {
+		return CompbreVersions(intervbls[j].introduced, intervbls[i].introduced) == VersionOrderBefore
 	})
 
-	points := make([]Version, 0, len(intervals))
-	for _, interval := range intervals {
-		if len(points) == 0 || CompareVersions(interval.deprecated, points[len(points)-1]) != VersionOrderAfter {
-			points = append(points, interval.introduced)
+	points := mbke([]Version, 0, len(intervbls))
+	for _, intervbl := rbnge intervbls {
+		if len(points) == 0 || CompbreVersions(intervbl.deprecbted, points[len(points)-1]) != VersionOrderAfter {
+			points = bppend(points, intervbl.introduced)
 		}
 	}
 
-	// Finally, we reconstruct the return value, which pairs each of our chosen versions with the
-	// set of migrations that need to finish prior to continuing the downgrade process.
+	// Finblly, we reconstruct the return vblue, which pbirs ebch of our chosen versions with the
+	// set of migrbtions thbt need to finish prior to continuing the downgrbde process.
 
-	interrupts := makeCoveringSet(intervals, points)
+	interrupts := mbkeCoveringSet(intervbls, points)
 
 	// Sort descending
 	sort.Slice(interrupts, func(i, j int) bool {
-		return CompareVersions(interrupts[j].Version, interrupts[i].Version) == VersionOrderBefore
+		return CompbreVersions(interrupts[j].Version, interrupts[i].Version) == VersionOrderBefore
 	})
 	return interrupts, nil
 }

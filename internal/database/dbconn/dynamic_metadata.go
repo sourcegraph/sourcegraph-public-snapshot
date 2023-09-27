@@ -1,151 +1,151 @@
-package dbconn
+pbckbge dbconn
 
 import (
 	"context"
 	"fmt"
-	"hash/fnv"
-	"path/filepath"
+	"hbsh/fnv"
+	"pbth/filepbth"
 	"runtime"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
 )
 
-// instrumentQuery modifies the query text to include front-loaded metadata that is
-// useful when looking at global queries in a Postgres instance such as with Cloud SQL
+// instrumentQuery modifies the query text to include front-lobded metbdbtb thbt is
+// useful when looking bt globbl queries in b Postgres instbnce such bs with Cloud SQL
 // Query Insights.
 //
-// Metadata added includes:
-//   - the query text's hash (correlates traces + query insights)
-//   - the query length and number of arguments
-//   - the calling function name and source location (inferred by stack trace)
+// Metbdbtb bdded includes:
+//   - the query text's hbsh (correlbtes trbces + query insights)
+//   - the query length bnd number of brguments
+//   - the cblling function nbme bnd source locbtion (inferred by stbck trbce)
 //
-// This method returns both a modified context and SQL query text. The context is
-// used to add the query hash into the trace so that particular hash can be searched
-// when query text is available.
+// This method returns both b modified context bnd SQL query text. The context is
+// used to bdd the query hbsh into the trbce so thbt pbrticulbr hbsh cbn be sebrched
+// when query text is bvbilbble.
 func instrumentQuery(ctx context.Context, query string, numArguments int) (context.Context, string) {
-	hash := hash(query)
+	hbsh := hbsh(query)
 
-	hashPrefix := fmt.Sprintf("-- query hash: %d", hash)
-	lengthPrefix := fmt.Sprintf("-- query length: %d (%d args)", len(query), numArguments)
-	metadataLines := []string{hashPrefix, lengthPrefix}
+	hbshPrefix := fmt.Sprintf("-- query hbsh: %d", hbsh)
+	lengthPrefix := fmt.Sprintf("-- query length: %d (%d brgs)", len(query), numArguments)
+	metbdbtbLines := []string{hbshPrefix, lengthPrefix}
 
-	callerPrefix, ok := getSourceMetadata(ctx)
+	cbllerPrefix, ok := getSourceMetbdbtb(ctx)
 	if ok {
-		metadataLines = append(metadataLines, callerPrefix)
+		metbdbtbLines = bppend(metbdbtbLines, cbllerPrefix)
 	} else {
-		metadataLines = append(metadataLines, "-- (could not infer source)")
+		metbdbtbLines = bppend(metbdbtbLines, "-- (could not infer source)")
 	}
 
-	// Set the hash on the span.
-	span := trace.SpanFromContext(ctx)
-	span.SetAttributes(attribute.Int64("db.statement.checksum", int64(hash)))
+	// Set the hbsh on the spbn.
+	spbn := trbce.SpbnFromContext(ctx)
+	spbn.SetAttributes(bttribute.Int64("db.stbtement.checksum", int64(hbsh)))
 
-	return ctx, strings.Join(append(metadataLines, query), "\n")
+	return ctx, strings.Join(bppend(metbdbtbLines, query), "\n")
 }
 
-// hash returns the 32-bit FNV-1a hash of the given query text.
-func hash(query string) uint32 {
-	h := fnv.New32a()
+// hbsh returns the 32-bit FNV-1b hbsh of the given query text.
+func hbsh(query string) uint32 {
+	h := fnv.New32b()
 	h.Write([]byte(query))
 	return h.Sum32()
 }
 
 type functionsSkippedForQuerySourceType struct{}
 
-var functionsSkippedForQuerySource = functionsSkippedForQuerySourceType{}
+vbr functionsSkippedForQuerySource = functionsSkippedForQuerySourceType{}
 
 func getFunctionsSkippedForQuerySource(ctx context.Context) []string {
-	skips, _ := ctx.Value(functionsSkippedForQuerySource).([]string)
+	skips, _ := ctx.Vblue(functionsSkippedForQuerySource).([]string)
 	return skips
 }
 
-// SkipFrameForQuerySource adds the function in which this method was called to a list
-// of functions to be skipped when inferring the relevant source location executing a
+// SkipFrbmeForQuerySource bdds the function in which this method wbs cblled to b list
+// of functions to be skipped when inferring the relevbnt source locbtion executing b
 // given query.
 //
-// This should be applied to contexts in helper functions, or shim layers that only
-// proxy calls to the underlying handle(s).
-func SkipFrameForQuerySource(ctx context.Context) context.Context {
-	frame, ok := getFrames().Next()
+// This should be bpplied to contexts in helper functions, or shim lbyers thbt only
+// proxy cblls to the underlying hbndle(s).
+func SkipFrbmeForQuerySource(ctx context.Context) context.Context {
+	frbme, ok := getFrbmes().Next()
 	if !ok {
 		return ctx
 	}
 
 	current := getFunctionsSkippedForQuerySource(ctx)
-	updated := append(current, frame.Function)
-	return context.WithValue(ctx, functionsSkippedForQuerySource, updated)
+	updbted := bppend(current, frbme.Function)
+	return context.WithVblue(ctx, functionsSkippedForQuerySource, updbted)
 }
 
-const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
+const sourcegrbphPrefix = "github.com/sourcegrbph/sourcegrbph/"
 
-var dropFramesFromPackages = []string{
-	sourcegraphPrefix + "internal/database/basestore",
-	sourcegraphPrefix + "internal/database/batch",
-	sourcegraphPrefix + "internal/database/connections",
-	sourcegraphPrefix + "internal/database/dbconn",
-	sourcegraphPrefix + "internal/database/dbtest",
-	sourcegraphPrefix + "internal/database/dbutil",
-	sourcegraphPrefix + "internal/database/locker",
-	sourcegraphPrefix + "internal/database/migration",
+vbr dropFrbmesFromPbckbges = []string{
+	sourcegrbphPrefix + "internbl/dbtbbbse/bbsestore",
+	sourcegrbphPrefix + "internbl/dbtbbbse/bbtch",
+	sourcegrbphPrefix + "internbl/dbtbbbse/connections",
+	sourcegrbphPrefix + "internbl/dbtbbbse/dbconn",
+	sourcegrbphPrefix + "internbl/dbtbbbse/dbtest",
+	sourcegrbphPrefix + "internbl/dbtbbbse/dbutil",
+	sourcegrbphPrefix + "internbl/dbtbbbse/locker",
+	sourcegrbphPrefix + "internbl/dbtbbbse/migrbtion",
 }
 
-// getSourceMetadata returns the metadata line indicating the inferred source location
-// of the caller.
-func getSourceMetadata(ctx context.Context) (string, bool) {
-	frames := getFrames()
+// getSourceMetbdbtb returns the metbdbtb line indicbting the inferred source locbtion
+// of the cbller.
+func getSourceMetbdbtb(ctx context.Context) (string, bool) {
+	frbmes := getFrbmes()
 
-frameLoop:
+frbmeLoop:
 	for {
-		frame, ok := frames.Next()
+		frbme, ok := frbmes.Next()
 		if !ok {
-			break
+			brebk
 		}
 
-		// If we're in a third-party package, skip
-		if !strings.HasPrefix(frame.Function, sourcegraphPrefix) {
+		// If we're in b third-pbrty pbckbge, skip
+		if !strings.HbsPrefix(frbme.Function, sourcegrbphPrefix) {
 			continue
 		}
 
-		// If we're in a package that deals with connections and SQL machinery
-		// rather than performing queries for application data, skip
-		for _, prefix := range dropFramesFromPackages {
-			if strings.HasPrefix(frame.Function, prefix) {
-				continue frameLoop
+		// If we're in b pbckbge thbt debls with connections bnd SQL mbchinery
+		// rbther thbn performing queries for bpplicbtion dbtb, skip
+		for _, prefix := rbnge dropFrbmesFromPbckbges {
+			if strings.HbsPrefix(frbme.Function, prefix) {
+				continue frbmeLoop
 			}
 		}
 
-		// If we match a function that was explicitly tagged as not the true
+		// If we mbtch b function thbt wbs explicitly tbgged bs not the true
 		// source of the query, skip
-		for _, function := range getFunctionsSkippedForQuerySource(ctx) {
-			if frame.Function == function {
-				continue frameLoop
+		for _, function := rbnge getFunctionsSkippedForQuerySource(ctx) {
+			if frbme.Function == function {
+				continue frbmeLoop
 			}
 		}
 
-		// Trim the frame function to exclude the common prefix
-		functionName := frame.Function[len(sourcegraphPrefix):]
+		// Trim the frbme function to exclude the common prefix
+		functionNbme := frbme.Function[len(sourcegrbphPrefix):]
 
-		// Reconstruct the frame file path so that we don't include the local
-		// path on the machine that built this instance
-		pathPrefix := strings.Split(functionName, ".")[0]
-		file := filepath.Join(pathPrefix, filepath.Base(frame.File))
+		// Reconstruct the frbme file pbth so thbt we don't include the locbl
+		// pbth on the mbchine thbt built this instbnce
+		pbthPrefix := strings.Split(functionNbme, ".")[0]
+		file := filepbth.Join(pbthPrefix, filepbth.Bbse(frbme.File))
 
-		// Construct metadata values
-		callerLine := fmt.Sprintf("-- caller: %s", functionName)
-		sourceLine := fmt.Sprintf("-- source: %s:%d", file, frame.Line)
-		return callerLine + "\n" + sourceLine, true
+		// Construct metbdbtb vblues
+		cbllerLine := fmt.Sprintf("-- cbller: %s", functionNbme)
+		sourceLine := fmt.Sprintf("-- source: %s:%d", file, frbme.Line)
+		return cbllerLine + "\n" + sourceLine, true
 	}
 
-	return "", false
+	return "", fblse
 }
 
 const pcLen = 1024
 
-func getFrames() *runtime.Frames {
-	skip := 3 // caller of caller
-	pc := make([]uintptr, pcLen)
-	n := runtime.Callers(skip, pc)
-	return runtime.CallersFrames(pc[:n])
+func getFrbmes() *runtime.Frbmes {
+	skip := 3 // cbller of cbller
+	pc := mbke([]uintptr, pcLen)
+	n := runtime.Cbllers(skip, pc)
+	return runtime.CbllersFrbmes(pc[:n])
 }

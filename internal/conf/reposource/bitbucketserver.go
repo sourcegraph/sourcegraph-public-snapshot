@@ -1,49 +1,49 @@
-package reposource
+pbckbge reposource
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type BitbucketServer struct {
-	*schema.BitbucketServerConnection
+	*schemb.BitbucketServerConnection
 }
 
-var _ RepoSource = BitbucketServer{}
+vbr _ RepoSource = BitbucketServer{}
 
-func (c BitbucketServer) CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error) {
-	parsedCloneURL, baseURL, match, err := parseURLs(cloneURL, c.Url)
+func (c BitbucketServer) CloneURLToRepoNbme(cloneURL string) (repoNbme bpi.RepoNbme, err error) {
+	pbrsedCloneURL, bbseURL, mbtch, err := pbrseURLs(cloneURL, c.Url)
 	if err != nil {
 		return "", err
 	}
-	if !match {
+	if !mbtch {
 		return "", nil
 	}
 
-	var projAndRepo string
-	if parsedCloneURL.Scheme == "ssh" {
-		projAndRepo = strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/")
-	} else if strings.HasPrefix(parsedCloneURL.Scheme, "http") {
-		projAndRepo = strings.TrimPrefix(strings.TrimSuffix(parsedCloneURL.Path, ".git"), "/scm/")
+	vbr projAndRepo string
+	if pbrsedCloneURL.Scheme == "ssh" {
+		projAndRepo = strings.TrimPrefix(strings.TrimSuffix(pbrsedCloneURL.Pbth, ".git"), "/")
+	} else if strings.HbsPrefix(pbrsedCloneURL.Scheme, "http") {
+		projAndRepo = strings.TrimPrefix(strings.TrimSuffix(pbrsedCloneURL.Pbth, ".git"), "/scm/")
 	}
 	idx := strings.Index(projAndRepo, "/")
-	if idx < 0 || len(projAndRepo)-1 == idx { // Not a Bitbucket Server clone URL
+	if idx < 0 || len(projAndRepo)-1 == idx { // Not b Bitbucket Server clone URL
 		return "", nil
 	}
 	proj, rp := projAndRepo[:idx], projAndRepo[idx+1:]
 
-	return BitbucketServerRepoName(c.RepositoryPathPattern, baseURL.Hostname(), proj, rp), nil
+	return BitbucketServerRepoNbme(c.RepositoryPbthPbttern, bbseURL.Hostnbme(), proj, rp), nil
 }
 
-func BitbucketServerRepoName(repositoryPathPattern, host, projectKey, repoSlug string) api.RepoName {
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = "{host}/{projectKey}/{repositorySlug}"
+func BitbucketServerRepoNbme(repositoryPbthPbttern, host, projectKey, repoSlug string) bpi.RepoNbme {
+	if repositoryPbthPbttern == "" {
+		repositoryPbthPbttern = "{host}/{projectKey}/{repositorySlug}"
 	}
-	return api.RepoName(strings.NewReplacer(
+	return bpi.RepoNbme(strings.NewReplbcer(
 		"{host}", host,
 		"{projectKey}", projectKey,
 		"{repositorySlug}", repoSlug,
-	).Replace(repositoryPathPattern))
+	).Replbce(repositoryPbthPbttern))
 }

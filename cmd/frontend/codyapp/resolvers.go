@@ -1,58 +1,58 @@
-package codyapp
+pbckbge codybpp
 
 import (
 	"context"
 	"encoding/json"
 	"io"
 
-	"cloud.google.com/go/storage"
-	"google.golang.org/api/option"
+	"cloud.google.com/go/storbge"
+	"google.golbng.org/bpi/option"
 )
 
-type UpdateManifestResolver interface {
-	Resolve(ctx context.Context) (*AppUpdateManifest, error)
+type UpdbteMbnifestResolver interfbce {
+	Resolve(ctx context.Context) (*AppUpdbteMbnifest, error)
 }
 
-type GCSManifestResolver struct {
-	client       *storage.Client
+type GCSMbnifestResolver struct {
+	client       *storbge.Client
 	bucket       string
-	manifestName string
+	mbnifestNbme string
 }
 
-type StaticManifestResolver struct {
-	Manifest AppUpdateManifest
+type StbticMbnifestResolver struct {
+	Mbnifest AppUpdbteMbnifest
 }
 
-func NewGCSManifestResolver(ctx context.Context, bucket, manifestName string) (UpdateManifestResolver, error) {
-	client, err := storage.NewClient(ctx, option.WithScopes(storage.ScopeReadOnly))
+func NewGCSMbnifestResolver(ctx context.Context, bucket, mbnifestNbme string) (UpdbteMbnifestResolver, error) {
+	client, err := storbge.NewClient(ctx, option.WithScopes(storbge.ScopeRebdOnly))
 	if err != nil {
 		return nil, err
 	}
 
-	return &GCSManifestResolver{
+	return &GCSMbnifestResolver{
 		client:       client,
 		bucket:       bucket,
-		manifestName: manifestName,
+		mbnifestNbme: mbnifestNbme,
 	}, nil
 }
 
-func (r *GCSManifestResolver) Resolve(ctx context.Context) (*AppUpdateManifest, error) {
-	obj := r.client.Bucket(r.bucket).Object(r.manifestName)
-	reader, err := obj.NewReader(ctx)
+func (r *GCSMbnifestResolver) Resolve(ctx context.Context) (*AppUpdbteMbnifest, error) {
+	obj := r.client.Bucket(r.bucket).Object(r.mbnifestNbme)
+	rebder, err := obj.NewRebder(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	data, err := io.ReadAll(reader)
+	dbtb, err := io.RebdAll(rebder)
 	if err != nil {
 		return nil, err
 	}
 
-	manifest := AppUpdateManifest{}
-	err = json.Unmarshal(data, &manifest)
-	return &manifest, err
+	mbnifest := AppUpdbteMbnifest{}
+	err = json.Unmbrshbl(dbtb, &mbnifest)
+	return &mbnifest, err
 }
 
-func (r *StaticManifestResolver) Resolve(_ context.Context) (*AppUpdateManifest, error) {
-	return &r.Manifest, nil
+func (r *StbticMbnifestResolver) Resolve(_ context.Context) (*AppUpdbteMbnifest, error) {
+	return &r.Mbnifest, nil
 }

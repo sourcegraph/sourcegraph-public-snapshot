@@ -1,40 +1,40 @@
-package writer
+pbckbge writer
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 
-// This file contains emitters for the Sourcegraph documentation LSIF extension.
+// This file contbins emitters for the Sourcegrbph documentbtion LSIF extension.
 
-// EmitDocumentationResultEdge emits a "documentationResult" edge, see protocol.DocumentationResultEdge for info.
-func (e *Emitter) EmitDocumentationResultEdge(inV, outV uint64) uint64 {
+// EmitDocumentbtionResultEdge emits b "documentbtionResult" edge, see protocol.DocumentbtionResultEdge for info.
+func (e *Emitter) EmitDocumentbtionResultEdge(inV, outV uint64) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationResultEdge(id, inV, outV))
+	e.writer.Write(protocol.NewDocumentbtionResultEdge(id, inV, outV))
 	return id
 }
 
-// EmitDocumentationChildrenEdge emits a "documentationChildren" edge, see protocol.DocumentationChildrenEdge for info.
-func (e *Emitter) EmitDocumentationChildrenEdge(inVs []uint64, outV uint64) uint64 {
+// EmitDocumentbtionChildrenEdge emits b "documentbtionChildren" edge, see protocol.DocumentbtionChildrenEdge for info.
+func (e *Emitter) EmitDocumentbtionChildrenEdge(inVs []uint64, outV uint64) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationChildrenEdge(id, inVs, outV))
+	e.writer.Write(protocol.NewDocumentbtionChildrenEdge(id, inVs, outV))
 	return id
 }
 
-// EmitDocumentationResult emits a "documentationResult" vertex, see protocol.DocumentationResult for info.
-func (e *Emitter) EmitDocumentationResult(result protocol.Documentation) uint64 {
+// EmitDocumentbtionResult emits b "documentbtionResult" vertex, see protocol.DocumentbtionResult for info.
+func (e *Emitter) EmitDocumentbtionResult(result protocol.Documentbtion) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationResult(id, result))
+	e.writer.Write(protocol.NewDocumentbtionResult(id, result))
 	return id
 }
 
-// EmitDocumentationStringEdge emits a "documentationString" edge, see protocol.DocumentationStringEdge for info.
-func (e *Emitter) EmitDocumentationStringEdge(inV, outV uint64, kind protocol.DocumentationStringKind) uint64 {
+// EmitDocumentbtionStringEdge emits b "documentbtionString" edge, see protocol.DocumentbtionStringEdge for info.
+func (e *Emitter) EmitDocumentbtionStringEdge(inV, outV uint64, kind protocol.DocumentbtionStringKind) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationStringEdge(id, inV, outV, kind))
+	e.writer.Write(protocol.NewDocumentbtionStringEdge(id, inV, outV, kind))
 	return id
 }
 
-// EmitDocumentationString emits a "documentationString" vertex, see protocol.DocumentationString for info.
-func (e *Emitter) EmitDocumentationString(result protocol.MarkupContent) uint64 {
+// EmitDocumentbtionString emits b "documentbtionString" vertex, see protocol.DocumentbtionString for info.
+func (e *Emitter) EmitDocumentbtionString(result protocol.MbrkupContent) uint64 {
 	id := e.nextID()
-	e.writer.Write(protocol.NewDocumentationString(id, result))
+	e.writer.Write(protocol.NewDocumentbtionString(id, result))
 	return id
 }

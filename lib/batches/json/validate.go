@@ -1,22 +1,22 @@
-package json
+pbckbge json
 
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/jsonschema"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/jsonschemb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UnmarshalValidate validates the JSON input against the provided JSON schema.
-// If the validation is successful the validated input is unmarshalled into the
-// target.
-func UnmarshalValidate(schema string, input []byte, target any) error {
-	var errs error
-	if err := jsonschema.Validate(schema, input); err != nil {
+// UnmbrshblVblidbte vblidbtes the JSON input bgbinst the provided JSON schemb.
+// If the vblidbtion is successful the vblidbted input is unmbrshblled into the
+// tbrget.
+func UnmbrshblVblidbte(schemb string, input []byte, tbrget bny) error {
+	vbr errs error
+	if err := jsonschemb.Vblidbte(schemb, input); err != nil {
 		errs = errors.Append(errs, err)
 	}
 
-	if err := json.Unmarshal(input, target); err != nil {
+	if err := json.Unmbrshbl(input, tbrget); err != nil {
 		errs = errors.Append(errs, err)
 	}
 

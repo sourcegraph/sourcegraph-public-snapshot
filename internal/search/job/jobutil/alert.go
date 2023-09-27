@@ -1,124 +1,124 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
-	"math"
+	"mbth"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	sebrchblert "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/blert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewAlertJob creates a job that translates errors from child jobs
-// into alerts when necessary.
-func NewAlertJob(inputs *search.Inputs, child job.Job) job.Job {
+// NewAlertJob crebtes b job thbt trbnslbtes errors from child jobs
+// into blerts when necessbry.
+func NewAlertJob(inputs *sebrch.Inputs, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
-	return &alertJob{
+	return &blertJob{
 		inputs: inputs,
 		child:  child,
 	}
 }
 
-type alertJob struct {
-	inputs *search.Inputs
+type blertJob struct {
+	inputs *sebrch.Inputs
 	child  job.Job
 }
 
-func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
-	defer func() { finish(alert, err) }()
+func (j *blertJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, j)
+	defer func() { finish(blert, err) }()
 
-	start := time.Now()
-	countingStream := streaming.NewResultCountingStream(stream)
-	statsObserver := streaming.NewStatsObservingStream(countingStream)
-	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
+	stbrt := time.Now()
+	countingStrebm := strebming.NewResultCountingStrebm(strebm)
+	stbtsObserver := strebming.NewStbtsObservingStrebm(countingStrebm)
+	jobAlert, err := j.child.Run(ctx, clients, stbtsObserver)
 
-	ao := searchalert.Observer{
+	bo := sebrchblert.Observer{
 		Logger:     clients.Logger,
 		Db:         clients.DB,
 		Zoekt:      clients.Zoekt,
-		Searcher:   clients.SearcherURLs,
+		Sebrcher:   clients.SebrcherURLs,
 		Inputs:     j.inputs,
-		HasResults: countingStream.Count() > 0,
+		HbsResults: countingStrebm.Count() > 0,
 	}
 	if err != nil {
-		ao.Error(ctx, err)
+		bo.Error(ctx, err)
 	}
-	observerAlert, err := ao.Done()
+	observerAlert, err := bo.Done()
 
-	// We have an alert for context timeouts and we have a progress
-	// notification for timeouts. We don't want to show both, so we only show
-	// it if no repos are marked as timedout. This somewhat couples us to how
-	// progress notifications work, but this is the third attempt at trying to
-	// fix this behaviour so we are accepting that.
-	if errors.Is(err, context.DeadlineExceeded) {
-		if !statsObserver.Status.Any(search.RepoStatusTimedout) {
-			usedTime := time.Since(start)
+	// We hbve bn blert for context timeouts bnd we hbve b progress
+	// notificbtion for timeouts. We don't wbnt to show both, so we only show
+	// it if no repos bre mbrked bs timedout. This somewhbt couples us to how
+	// progress notificbtions work, but this is the third bttempt bt trying to
+	// fix this behbviour so we bre bccepting thbt.
+	if errors.Is(err, context.DebdlineExceeded) {
+		if !stbtsObserver.Stbtus.Any(sebrch.RepoStbtusTimedout) {
+			usedTime := time.Since(stbrt)
 			suggestTime := longer(2, usedTime)
-			return search.AlertForTimeout(usedTime, suggestTime, j.inputs.OriginalQuery, j.inputs.PatternType), nil
+			return sebrch.AlertForTimeout(usedTime, suggestTime, j.inputs.OriginblQuery, j.inputs.PbtternType), nil
 		} else {
 			err = nil
 		}
 	}
 
-	return search.MaxPriorityAlert(jobAlert, observerAlert), err
+	return sebrch.MbxPriorityAlert(jobAlert, observerAlert), err
 }
 
-func (j *alertJob) Name() string {
+func (j *blertJob) Nbme() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *blertJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		res = append(res,
-			attribute.Stringer("features", j.inputs.Features),
-			attribute.Stringer("protocol", j.inputs.Protocol),
-			attribute.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+	cbse job.VerbosityMbx:
+		res = bppend(res,
+			bttribute.Stringer("febtures", j.inputs.Febtures),
+			bttribute.Stringer("protocol", j.inputs.Protocol),
+			bttribute.Bool("onSourcegrbphDotCom", j.inputs.OnSourcegrbphDotCom),
 		)
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Stringer("query", j.inputs.Query),
-			attribute.String("originalQuery", j.inputs.OriginalQuery),
-			attribute.Stringer("patternType", j.inputs.PatternType),
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Stringer("query", j.inputs.Query),
+			bttribute.String("originblQuery", j.inputs.OriginblQuery),
+			bttribute.Stringer("pbtternType", j.inputs.PbtternType),
 		)
 	}
 	return res
 }
 
-func (j *alertJob) Children() []job.Describer {
+func (j *blertJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *alertJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *blertJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *j
-	cp.child = job.Map(j.child, fn)
+	cp.child = job.Mbp(j.child, fn)
 	return &cp
 }
 
-// longer returns a suggested longer time to wait if the given duration wasn't long enough.
-func longer(n int, dt time.Duration) time.Duration {
-	dt2 := func() time.Duration {
-		Ndt := time.Duration(n) * dt
-		dceil := func(x float64) time.Duration {
-			return time.Duration(math.Ceil(x))
+// longer returns b suggested longer time to wbit if the given durbtion wbsn't long enough.
+func longer(n int, dt time.Durbtion) time.Durbtion {
+	dt2 := func() time.Durbtion {
+		Ndt := time.Durbtion(n) * dt
+		dceil := func(x flobt64) time.Durbtion {
+			return time.Durbtion(mbth.Ceil(x))
 		}
 		switch {
-		case math.Floor(Ndt.Hours()) > 0:
+		cbse mbth.Floor(Ndt.Hours()) > 0:
 			return dceil(Ndt.Hours()) * time.Hour
-		case math.Floor(Ndt.Minutes()) > 0:
+		cbse mbth.Floor(Ndt.Minutes()) > 0:
 			return dceil(Ndt.Minutes()) * time.Minute
-		case math.Floor(Ndt.Seconds()) > 0:
+		cbse mbth.Floor(Ndt.Seconds()) > 0:
 			return dceil(Ndt.Seconds()) * time.Second
-		default:
+		defbult:
 			return 0
 		}
 	}()

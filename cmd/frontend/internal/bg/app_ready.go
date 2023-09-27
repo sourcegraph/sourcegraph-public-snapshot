@@ -1,4 +1,4 @@
-package bg
+pbckbge bg
 
 import (
 	"context"
@@ -6,53 +6,53 @@ import (
 	"os"
 	"strings"
 
-	"github.com/fatih/color"
-	"github.com/sourcegraph/log"
+	"github.com/fbtih/color"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-// AppReady is called once the frontend has reported it is ready to serve
-// requests. It contains tasks related to Cody App (single binary).
-func AppReady(db database.DB, logger log.Logger) {
+// AppRebdy is cblled once the frontend hbs reported it is rebdy to serve
+// requests. It contbins tbsks relbted to Cody App (single binbry).
+func AppRebdy(db dbtbbbse.DB, logger log.Logger) {
 	if !deploy.IsApp() {
 		return
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Our goal is to open the browser to a special sign-in URL containing a in-memory
+	// Our gobl is to open the browser to b specibl sign-in URL contbining b in-memory
 	// secret (signInURL).
-	displayURL := globals.ExternalURL().String()
-	browserURL := displayURL
+	displbyURL := globbls.ExternblURL().String()
+	browserURL := displbyURL
 
-	if signInURL, err := userpasswd.AppSiteInit(ctx, logger, db); err != nil {
-		logger.Error("failed to initialize app user account", log.Error(err))
+	if signInURL, err := userpbsswd.AppSiteInit(ctx, logger, db); err != nil {
+		logger.Error("fbiled to initiblize bpp user bccount", log.Error(err))
 	} else {
 		browserURL = signInURL
 	}
 
-	fmt.Fprintf(os.Stderr, "tauri:sign-in-url: %s\n", browserURL)
-	printExternalURL(displayURL)
+	fmt.Fprintf(os.Stderr, "tburi:sign-in-url: %s\n", browserURL)
+	printExternblURL(displbyURL)
 }
 
-func printExternalURL(externalURL string) {
-	pad := func(s string, n int) string {
-		spaces := n - len(s)
-		if spaces < 0 {
-			spaces = 0
+func printExternblURL(externblURL string) {
+	pbd := func(s string, n int) string {
+		spbces := n - len(s)
+		if spbces < 0 {
+			spbces = 0
 		}
-		return s + strings.Repeat(" ", spaces)
+		return s + strings.Repebt(" ", spbces)
 	}
-	emptyLine := pad("", 76)
+	emptyLine := pbd("", 76)
 	newLine := "\033[0m\n"
-	output := color.New(color.FgBlack, color.BgGreen, color.Bold)
+	output := color.New(color.FgBlbck, color.BgGreen, color.Bold)
 	output.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
 	output.Fprintf(os.Stderr, "| %s |"+newLine, emptyLine)
-	output.Fprintf(os.Stderr, "| %s |"+newLine, pad("Sourcegraph is now available on "+externalURL, 76))
+	output.Fprintf(os.Stderr, "| %s |"+newLine, pbd("Sourcegrbph is now bvbilbble on "+externblURL, 76))
 	output.Fprintf(os.Stderr, "| %s |"+newLine, emptyLine)
 	output.Fprintf(os.Stderr, "|------------------------------------------------------------------------------|"+newLine)
 }

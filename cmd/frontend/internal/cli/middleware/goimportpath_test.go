@@ -1,4 +1,4 @@
-package middleware_test
+pbckbge middlewbre_test
 
 import (
 	"net/http"
@@ -6,65 +6,65 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/cli/middlewbre"
 )
 
-func TestGoImportPath(t *testing.T) {
+func TestGoImportPbth(t *testing.T) {
 	tests := []struct {
-		path       string
-		wantStatus int
-		wantBody   string
+		pbth       string
+		wbntStbtus int
+		wbntBody   string
 	}{
 		{
-			path:       "/sourcegraph/sourcegraph/usercontent",
-			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/sourcegraph git https://github.com/sourcegraph/sourcegraph">`,
+			pbth:       "/sourcegrbph/sourcegrbph/usercontent",
+			wbntStbtus: http.StbtusOK,
+			wbntBody:   `<metb nbme="go-import" content="exbmple.com/sourcegrbph/sourcegrbph git https://github.com/sourcegrbph/sourcegrbph">`,
 		},
 		{
-			path:       "/sourcegraph/srclib/ann",
-			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/srclib git https://github.com/sourcegraph/srclib">`,
+			pbth:       "/sourcegrbph/srclib/bnn",
+			wbntStbtus: http.StbtusOK,
+			wbntBody:   `<metb nbme="go-import" content="exbmple.com/sourcegrbph/srclib git https://github.com/sourcegrbph/srclib">`,
 		},
 		{
-			path:       "/sourcegraph/srclib-go",
-			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/srclib-go git https://github.com/sourcegraph/srclib-go">`,
+			pbth:       "/sourcegrbph/srclib-go",
+			wbntStbtus: http.StbtusOK,
+			wbntBody:   `<metb nbme="go-import" content="exbmple.com/sourcegrbph/srclib-go git https://github.com/sourcegrbph/srclib-go">`,
 		},
 		{
-			path:       "/sourcegraph/doesntexist/foobar",
-			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="example.com/sourcegraph/doesntexist git https://github.com/sourcegraph/doesntexist">`,
+			pbth:       "/sourcegrbph/doesntexist/foobbr",
+			wbntStbtus: http.StbtusOK,
+			wbntBody:   `<metb nbme="go-import" content="exbmple.com/sourcegrbph/doesntexist git https://github.com/sourcegrbph/doesntexist">`,
 		},
 		{
-			path:       "/sqs/pbtypes",
-			wantStatus: http.StatusOK,
-			wantBody:   `<meta name="go-import" content="example.com/sqs/pbtypes git https://github.com/sqs/pbtypes">`,
+			pbth:       "/sqs/pbtypes",
+			wbntStbtus: http.StbtusOK,
+			wbntBody:   `<metb nbme="go-import" content="exbmple.com/sqs/pbtypes git https://github.com/sqs/pbtypes">`,
 		},
 		{
-			path:       "/gorilla/mux",
-			wantStatus: http.StatusNotFound,
+			pbth:       "/gorillb/mux",
+			wbntStbtus: http.StbtusNotFound,
 		},
 		{
-			path:       "/github.com/gorilla/mux",
-			wantStatus: http.StatusNotFound,
+			pbth:       "/github.com/gorillb/mux",
+			wbntStbtus: http.StbtusNotFound,
 		},
 	}
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		rw := httptest.NewRecorder()
 
-		req, err := http.NewRequest("GET", test.path+"?go-get=1", nil)
+		req, err := http.NewRequest("GET", test.pbth+"?go-get=1", nil)
 		if err != nil {
-			panic(err)
+			pbnic(err)
 		}
 
-		middleware.SourcegraphComGoGetHandler(nil).ServeHTTP(rw, req)
+		middlewbre.SourcegrbphComGoGetHbndler(nil).ServeHTTP(rw, req)
 
-		if got, want := rw.Code, test.wantStatus; got != want {
-			t.Errorf("%s:\ngot  %#v\nwant %#v", test.path, got, want)
+		if got, wbnt := rw.Code, test.wbntStbtus; got != wbnt {
+			t.Errorf("%s:\ngot  %#v\nwbnt %#v", test.pbth, got, wbnt)
 		}
 
-		if test.wantBody != "" && !strings.Contains(rw.Body.String(), test.wantBody) {
-			t.Errorf("response body %q doesn't contain expected substring %q", rw.Body.String(), test.wantBody)
+		if test.wbntBody != "" && !strings.Contbins(rw.Body.String(), test.wbntBody) {
+			t.Errorf("response body %q doesn't contbin expected substring %q", rw.Body.String(), test.wbntBody)
 		}
 	}
 }

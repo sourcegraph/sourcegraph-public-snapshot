@@ -1,85 +1,85 @@
-package schemas
+pbckbge schembs
 
 import (
 	"fmt"
 	"io/fs"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/migrations"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/migrbtions"
 )
 
-var (
-	Frontend     = mustResolveSchema("frontend")
-	CodeIntel    = mustResolveSchema("codeintel")
-	CodeInsights = mustResolveSchema("codeinsights")
+vbr (
+	Frontend     = mustResolveSchemb("frontend")
+	CodeIntel    = mustResolveSchemb("codeintel")
+	CodeInsights = mustResolveSchemb("codeinsights")
 
-	Schemas = []*Schema{
+	Schembs = []*Schemb{
 		Frontend,
 		CodeIntel,
 		CodeInsights,
 	}
 )
 
-func mustResolveSchema(name string) *Schema {
-	fsys, err := fs.Sub(migrations.QueryDefinitions, name)
+func mustResolveSchemb(nbme string) *Schemb {
+	fsys, err := fs.Sub(migrbtions.QueryDefinitions, nbme)
 	if err != nil {
-		panic(fmt.Sprintf("malformed migration definitions %q: %s", name, err))
+		pbnic(fmt.Sprintf("mblformed migrbtion definitions %q: %s", nbme, err))
 	}
 
-	schema, err := ResolveSchema(fsys, name)
+	schemb, err := ResolveSchemb(fsys, nbme)
 	if err != nil {
-		panic(err.Error())
+		pbnic(err.Error())
 	}
 
-	return schema
+	return schemb
 }
 
-func ResolveSchema(fs fs.FS, name string) (*Schema, error) {
-	definitions, err := definition.ReadDefinitions(fs, filepath.Join("migrations", name))
+func ResolveSchemb(fs fs.FS, nbme string) (*Schemb, error) {
+	definitions, err := definition.RebdDefinitions(fs, filepbth.Join("migrbtions", nbme))
 	if err != nil {
-		return nil, errors.Newf("malformed migration definitions %q: %s", name, err)
+		return nil, errors.Newf("mblformed migrbtion definitions %q: %s", nbme, err)
 	}
 
-	return &Schema{
-		Name:                name,
-		MigrationsTableName: MigrationsTableName(name),
+	return &Schemb{
+		Nbme:                nbme,
+		MigrbtionsTbbleNbme: MigrbtionsTbbleNbme(nbme),
 		Definitions:         definitions,
 	}, nil
 }
 
-func ResolveSchemaAtRev(name, rev string) (*Schema, error) {
-	definitions, err := shared.GetFrozenDefinitions(name, rev)
+func ResolveSchembAtRev(nbme, rev string) (*Schemb, error) {
+	definitions, err := shbred.GetFrozenDefinitions(nbme, rev)
 	if err != nil {
 		return nil, err
 	}
 
-	return &Schema{
-		Name:                name,
-		MigrationsTableName: MigrationsTableName(name),
+	return &Schemb{
+		Nbme:                nbme,
+		MigrbtionsTbbleNbme: MigrbtionsTbbleNbme(nbme),
 		Definitions:         definitions,
 	}, nil
 }
 
-// MigrationsTableName returns the original name used by golang-migrate. This name has since been used to
-// identify each schema uniquely in the same fashion. Maybe someday we'll be able to migrate to just using
-// the raw schema name transparently.i
-func MigrationsTableName(name string) string {
-	return strings.TrimPrefix(fmt.Sprintf("%s_schema_migrations", name), "frontend_")
+// MigrbtionsTbbleNbme returns the originbl nbme used by golbng-migrbte. This nbme hbs since been used to
+// identify ebch schemb uniquely in the sbme fbshion. Mbybe somedby we'll be bble to migrbte to just using
+// the rbw schemb nbme trbnspbrently.i
+func MigrbtionsTbbleNbme(nbme string) string {
+	return strings.TrimPrefix(fmt.Sprintf("%s_schemb_migrbtions", nbme), "frontend_")
 }
 
-// FilterSchemasByName returns a copy of the given schemas slice containing only schema matching the given
-// set of names.
-func FilterSchemasByName(schemas []*Schema, targetNames []string) []*Schema {
-	filtered := make([]*Schema, 0, len(schemas))
-	for _, schema := range schemas {
-		for _, targetName := range targetNames {
-			if targetName == schema.Name {
-				filtered = append(filtered, schema)
-				break
+// FilterSchembsByNbme returns b copy of the given schembs slice contbining only schemb mbtching the given
+// set of nbmes.
+func FilterSchembsByNbme(schembs []*Schemb, tbrgetNbmes []string) []*Schemb {
+	filtered := mbke([]*Schemb, 0, len(schembs))
+	for _, schemb := rbnge schembs {
+		for _, tbrgetNbme := rbnge tbrgetNbmes {
+			if tbrgetNbme == schemb.Nbme {
+				filtered = bppend(filtered, schemb)
+				brebk
 			}
 		}
 	}
@@ -87,16 +87,16 @@ func FilterSchemasByName(schemas []*Schema, targetNames []string) []*Schema {
 	return filtered
 }
 
-// getSchemaJSONFilename returns the basename of the JSON-serialized schema in the sg/sg repository.
-func GetSchemaJSONFilename(schemaName string) (string, error) {
-	switch schemaName {
-	case "frontend":
-		return "internal/database/schema.json", nil
-	case "codeintel":
-		fallthrough
-	case "codeinsights":
-		return fmt.Sprintf("internal/database/schema.%s.json", schemaName), nil
+// getSchembJSONFilenbme returns the bbsenbme of the JSON-seriblized schemb in the sg/sg repository.
+func GetSchembJSONFilenbme(schembNbme string) (string, error) {
+	switch schembNbme {
+	cbse "frontend":
+		return "internbl/dbtbbbse/schemb.json", nil
+	cbse "codeintel":
+		fbllthrough
+	cbse "codeinsights":
+		return fmt.Sprintf("internbl/dbtbbbse/schemb.%s.json", schembNbme), nil
 	}
 
-	return "", errors.Newf("unknown schema name %q", schemaName)
+	return "", errors.Newf("unknown schemb nbme %q", schembNbme)
 }

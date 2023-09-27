@@ -1,4 +1,4 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"testing"
@@ -6,10 +6,10 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestFindOrphanedVMs(t *testing.T) {
-	orphans := findOrphanedVMs(
-		map[string]string{
-			"a": "100",
+func TestFindOrphbnedVMs(t *testing.T) {
+	orphbns := findOrphbnedVMs(
+		mbp[string]string{
+			"b": "100",
 			"b": "101",
 			"c": "102",
 			"d": "103",
@@ -21,7 +21,7 @@ func TestFindOrphanedVMs(t *testing.T) {
 			"x", "y", "z",
 		},
 	)
-	if diff := cmp.Diff([]string{"100", "101", "102"}, orphans); diff != "" {
-		t.Fatalf("unexpected orphans (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]string{"100", "101", "102"}, orphbns); diff != "" {
+		t.Fbtblf("unexpected orphbns (-wbnt +got):\n%s", diff)
 	}
 }

@@ -1,42 +1,42 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type autoindexingSummaryBuilder struct{}
+type butoindexingSummbryBuilder struct{}
 
-func NewAutoindexingSummaryBuilder() job.Job {
-	return &autoindexingSummaryBuilder{}
+func NewAutoindexingSummbryBuilder() job.Job {
+	return &butoindexingSummbryBuilder{}
 }
 
-func (j *autoindexingSummaryBuilder) Description() string {
+func (j *butoindexingSummbryBuilder) Description() string {
 	return ""
 }
 
-func (j *autoindexingSummaryBuilder) Config() []env.Config {
+func (j *butoindexingSummbryBuilder) Config() []env.Config {
 	return []env.Config{
-		autoindexing.SummaryConfigInst,
+		butoindexing.SummbryConfigInst,
 	}
 }
 
-func (j *autoindexingSummaryBuilder) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *butoindexingSummbryBuilder) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return autoindexing.NewSummaryBuilder(
-		observationCtx,
+	return butoindexing.NewSummbryBuilder(
+		observbtionCtx,
 		services.AutoIndexingService,
-		services.UploadsService,
+		services.UplobdsService,
 	), nil
 }

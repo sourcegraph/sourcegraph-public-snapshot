@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -8,205 +8,205 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestBulkOperationConnectionResolver(t *testing.T) {
+func TestBulkOperbtionConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CrebteTestUser(t, db, true).ID
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
-	batchChangeAPIID := bgql.MarshalBatchChangeID(batchChange.ID)
-	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
-	changeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test", userID, bbtchSpec.ID)
+	bbtchChbngeAPIID := bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)
+	repos, _ := bt.CrebteTestRepos(t, ctx, db, 3)
+	chbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repos[0].ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
-	jobs := []*btypes.ChangesetJob{
+	jobs := []*btypes.ChbngesetJob{
 		{
 			BulkGroup:     "group-1",
 			UserID:        userID,
-			BatchChangeID: batchChange.ID,
-			ChangesetID:   changeset.ID,
-			JobType:       btypes.ChangesetJobTypeComment,
-			Payload:       btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:         btypes.ChangesetJobStateQueued,
-			StartedAt:     now,
+			BbtchChbngeID: bbtchChbnge.ID,
+			ChbngesetID:   chbngeset.ID,
+			JobType:       btypes.ChbngesetJobTypeComment,
+			Pbylobd:       btypes.ChbngesetJobCommentPbylobd{Messbge: "test"},
+			Stbte:         btypes.ChbngesetJobStbteQueued,
+			StbrtedAt:     now,
 			FinishedAt:    now,
 		},
 		{
 			BulkGroup:     "group-2",
 			UserID:        userID,
-			BatchChangeID: batchChange.ID,
-			ChangesetID:   changeset.ID,
-			JobType:       btypes.ChangesetJobTypeComment,
-			Payload:       btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:         btypes.ChangesetJobStateQueued,
-			StartedAt:     now,
+			BbtchChbngeID: bbtchChbnge.ID,
+			ChbngesetID:   chbngeset.ID,
+			JobType:       btypes.ChbngesetJobTypeComment,
+			Pbylobd:       btypes.ChbngesetJobCommentPbylobd{Messbge: "test"},
+			Stbte:         btypes.ChbngesetJobStbteQueued,
+			StbrtedAt:     now,
 			FinishedAt:    now,
 		},
 		{
 			BulkGroup:     "group-3",
 			UserID:        userID,
-			BatchChangeID: batchChange.ID,
-			ChangesetID:   changeset.ID,
-			JobType:       btypes.ChangesetJobTypeComment,
-			Payload:       btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:         btypes.ChangesetJobStateQueued,
-			StartedAt:     now,
+			BbtchChbngeID: bbtchChbnge.ID,
+			ChbngesetID:   chbngeset.ID,
+			JobType:       btypes.ChbngesetJobTypeComment,
+			Pbylobd:       btypes.ChbngesetJobCommentPbylobd{Messbge: "test"},
+			Stbte:         btypes.ChbngesetJobStbteQueued,
+			StbrtedAt:     now,
 			FinishedAt:    now,
 		},
 	}
-	if err := bstore.CreateChangesetJob(ctx, jobs...); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteChbngesetJob(ctx, jobs...); err != nil {
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	nodes := []apitest.BulkOperation{
+	nodes := []bpitest.BulkOperbtion{
 		{
-			ID:        string(marshalBulkOperationID("group-3")),
+			ID:        string(mbrshblBulkOperbtionID("group-3")),
 			Type:      "COMMENT",
-			State:     string(btypes.BulkOperationStateProcessing),
-			Errors:    []*apitest.ChangesetJobError{},
-			CreatedAt: marshalDateTime(t, now),
+			Stbte:     string(btypes.BulkOperbtionStbteProcessing),
+			Errors:    []*bpitest.ChbngesetJobError{},
+			CrebtedAt: mbrshblDbteTime(t, now),
 		},
 		{
-			ID:        string(marshalBulkOperationID("group-2")),
+			ID:        string(mbrshblBulkOperbtionID("group-2")),
 			Type:      "COMMENT",
-			State:     string(btypes.BulkOperationStateProcessing),
-			Errors:    []*apitest.ChangesetJobError{},
-			CreatedAt: marshalDateTime(t, now),
+			Stbte:     string(btypes.BulkOperbtionStbteProcessing),
+			Errors:    []*bpitest.ChbngesetJobError{},
+			CrebtedAt: mbrshblDbteTime(t, now),
 		},
 		{
-			ID:        string(marshalBulkOperationID("group-1")),
+			ID:        string(mbrshblBulkOperbtionID("group-1")),
 			Type:      "COMMENT",
-			State:     string(btypes.BulkOperationStateProcessing),
-			Errors:    []*apitest.ChangesetJobError{},
-			CreatedAt: marshalDateTime(t, now),
+			Stbte:     string(btypes.BulkOperbtionStbteProcessing),
+			Errors:    []*bpitest.ChbngesetJobError{},
+			CrebtedAt: mbrshblDbteTime(t, now),
 		},
 	}
 
 	tests := []struct {
-		firstParam      int
-		wantHasNextPage bool
-		wantEndCursor   string
-		wantTotalCount  int
-		wantNodes       []apitest.BulkOperation
+		firstPbrbm      int
+		wbntHbsNextPbge bool
+		wbntEndCursor   string
+		wbntTotblCount  int
+		wbntNodes       []bpitest.BulkOperbtion
 	}{
-		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 3, wantNodes: nodes[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 3, wantNodes: nodes[:2]},
-		{firstParam: 3, wantHasNextPage: false, wantTotalCount: 3, wantNodes: nodes[:3]},
+		{firstPbrbm: 1, wbntHbsNextPbge: true, wbntEndCursor: "2", wbntTotblCount: 3, wbntNodes: nodes[:1]},
+		{firstPbrbm: 2, wbntHbsNextPbge: true, wbntEndCursor: "1", wbntTotblCount: 3, wbntNodes: nodes[:2]},
+		{firstPbrbm: 3, wbntHbsNextPbge: fblse, wbntTotblCount: 3, wbntNodes: nodes[:3]},
 	}
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-			input := map[string]any{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
-			var response struct {
-				Node apitest.BatchChange
+	for _, tc := rbnge tests {
+		t.Run(fmt.Sprintf("First %d", tc.firstPbrbm), func(t *testing.T) {
+			input := mbp[string]bny{"bbtchChbnge": bbtchChbngeAPIID, "first": int64(tc.firstPbrbm)}
+			vbr response struct {
+				Node bpitest.BbtchChbnge
 			}
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBulkOperationConnection)
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryBulkOperbtionConnection)
 
-			var wantEndCursor *string
-			if tc.wantEndCursor != "" {
-				wantEndCursor = &tc.wantEndCursor
+			vbr wbntEndCursor *string
+			if tc.wbntEndCursor != "" {
+				wbntEndCursor = &tc.wbntEndCursor
 			}
 
-			wantBulkOperations := apitest.BulkOperationConnection{
-				TotalCount: tc.wantTotalCount,
-				PageInfo: apitest.PageInfo{
-					EndCursor:   wantEndCursor,
-					HasNextPage: tc.wantHasNextPage,
+			wbntBulkOperbtions := bpitest.BulkOperbtionConnection{
+				TotblCount: tc.wbntTotblCount,
+				PbgeInfo: bpitest.PbgeInfo{
+					EndCursor:   wbntEndCursor,
+					HbsNextPbge: tc.wbntHbsNextPbge,
 				},
-				Nodes: tc.wantNodes,
+				Nodes: tc.wbntNodes,
 			}
 
-			if diff := cmp.Diff(wantBulkOperations, response.Node.BulkOperations); diff != "" {
-				t.Fatalf("wrong bulk operations response (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntBulkOperbtions, response.Node.BulkOperbtions); diff != "" {
+				t.Fbtblf("wrong bulk operbtions response (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 
-	var endCursor *string
-	for i := range nodes {
-		input := map[string]any{"batchChange": batchChangeAPIID, "first": 1}
+	vbr endCursor *string
+	for i := rbnge nodes {
+		input := mbp[string]bny{"bbtchChbnge": bbtchChbngeAPIID, "first": 1}
 		if endCursor != nil {
-			input["after"] = *endCursor
+			input["bfter"] = *endCursor
 		}
-		wantHasNextPage := i != len(nodes)-1
+		wbntHbsNextPbge := i != len(nodes)-1
 
-		var response struct {
-			Node apitest.BatchChange
+		vbr response struct {
+			Node bpitest.BbtchChbnge
 		}
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBulkOperationConnection)
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryBulkOperbtionConnection)
 
-		bulkOperations := response.Node.BulkOperations
-		if diff := cmp.Diff(1, len(bulkOperations.Nodes)); diff != "" {
-			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
-		}
-
-		if diff := cmp.Diff(len(nodes), bulkOperations.TotalCount); diff != "" {
-			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+		bulkOperbtions := response.Node.BulkOperbtions
+		if diff := cmp.Diff(1, len(bulkOperbtions.Nodes)); diff != "" {
+			t.Fbtblf("unexpected number of nodes (-wbnt +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff(wantHasNextPage, bulkOperations.PageInfo.HasNextPage); diff != "" {
-			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+		if diff := cmp.Diff(len(nodes), bulkOperbtions.TotblCount); diff != "" {
+			t.Fbtblf("unexpected totbl count (-wbnt +got):\n%s", diff)
 		}
 
-		endCursor = bulkOperations.PageInfo.EndCursor
-		if want, have := wantHasNextPage, endCursor != nil; have != want {
-			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+		if diff := cmp.Diff(wbntHbsNextPbge, bulkOperbtions.PbgeInfo.HbsNextPbge); diff != "" {
+			t.Fbtblf("unexpected hbsNextPbge (-wbnt +got):\n%s", diff)
+		}
+
+		endCursor = bulkOperbtions.PbgeInfo.EndCursor
+		if wbnt, hbve := wbntHbsNextPbge, endCursor != nil; hbve != wbnt {
+			t.Fbtblf("unexpected endCursor existence. wbnt=%t, hbve=%t", wbnt, hbve)
 		}
 	}
 }
 
-const queryBulkOperationConnection = `
-query($batchChange: ID!, $first: Int, $after: String){
-    node(id: $batchChange) {
-        ... on BatchChange {
-            bulkOperations(first: $first, after: $after) {
-                totalCount
-                pageInfo {
+const queryBulkOperbtionConnection = `
+query($bbtchChbnge: ID!, $first: Int, $bfter: String){
+    node(id: $bbtchChbnge) {
+        ... on BbtchChbnge {
+            bulkOperbtions(first: $first, bfter: $bfter) {
+                totblCount
+                pbgeInfo {
                     endCursor
-                    hasNextPage
+                    hbsNextPbge
                 }
                 nodes {
                     id
                     type
-                    state
+                    stbte
                     progress
                     errors {
-                        changeset {
+                        chbngeset {
                             id
                         }
                         error
                     }
-                    createdAt
+                    crebtedAt
                     finishedAt
                 }
             }

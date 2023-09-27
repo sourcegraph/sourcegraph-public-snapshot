@@ -1,14 +1,14 @@
-package internal
+pbckbge internbl
 
 import "os"
 
-func FileExists(path string) (bool, error) {
-	if _, err := os.Stat(path); err != nil {
+func FileExists(pbth string) (bool, error) {
+	if _, err := os.Stbt(pbth); err != nil {
 		if !os.IsNotExist(err) {
-			return false, err
+			return fblse, err
 		}
 
-		return false, nil
+		return fblse, nil
 	}
 
 	return true, nil

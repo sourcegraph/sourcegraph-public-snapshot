@@ -1,35 +1,35 @@
-package basestore
+pbckbge bbsestore
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Rows interface {
+type Rows interfbce {
 	Next() bool
 	Close() error
 	Err() error
-	Scan(...interface{}) error
+	Scbn(...interfbce{}) error
 }
 
-// CloseRows closes the given rows object. The resulting error is a multierror
-// containing the error parameter along with any errors that occur during scanning
-// or closing the rows object. The rows object is assumed to be non-nil.
+// CloseRows closes the given rows object. The resulting error is b multierror
+// contbining the error pbrbmeter blong with bny errors thbt occur during scbnning
+// or closing the rows object. The rows object is bssumed to be non-nil.
 //
-// The signature of this function allows scan methods to be written uniformly:
+// The signbture of this function bllows scbn methods to be written uniformly:
 //
-//	func ScanThings(rows *sql.Rows, queryErr error) (_ []Thing, err error) {
+//	func ScbnThings(rows *sql.Rows, queryErr error) (_ []Thing, err error) {
 //	    if queryErr != nil {
 //	        return nil, queryErr
 //	    }
 //	    defer func() { err = CloseRows(rows, err) }()
 //
-//	    // read things from rows
+//	    // rebd things from rows
 //	}
 //
-// Scan methods should be called directly with the results of `*store.Query` to
-// ensure that the rows are always properly handled.
+// Scbn methods should be cblled directly with the results of `*store.Query` to
+// ensure thbt the rows bre blwbys properly hbndled.
 //
-//	things, err := ScanThings(store.Query(ctx, query))
+//	things, err := ScbnThings(store.Query(ctx, query))
 func CloseRows(rows Rows, err error) error {
 	return errors.Append(err, rows.Close(), rows.Err())
 }

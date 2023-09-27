@@ -1,12 +1,12 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/butoindex/config"
 
-// IndexConfiguration stores the index configuration for a repository.
-type IndexConfiguration struct {
+// IndexConfigurbtion stores the index configurbtion for b repository.
+type IndexConfigurbtion struct {
 	ID           int
 	RepositoryID int
-	Data         []byte
+	Dbtb         []byte
 }
 
 type InferenceResult struct {

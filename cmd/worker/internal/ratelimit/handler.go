@@ -1,48 +1,48 @@
-package ratelimit
+pbckbge rbtelimit
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
 )
 
-var _ goroutine.Handler = &handler{}
+vbr _ goroutine.Hbndler = &hbndler{}
 
-type handler struct {
-	externalServiceStore database.ExternalServiceStore
+type hbndler struct {
+	externblServiceStore dbtbbbse.ExternblServiceStore
 	logger               log.Logger
-	newRateLimiterFunc   func(bucketName string) ratelimit.GlobalLimiter
+	newRbteLimiterFunc   func(bucketNbme string) rbtelimit.GlobblLimiter
 }
 
-func (h *handler) Handle(ctx context.Context) (err error) {
+func (h *hbndler) Hbndle(ctx context.Context) (err error) {
 	defer func() {
-		// Be very vocal about these issues.
+		// Be very vocbl bbout these issues.
 		if err != nil {
-			h.logger.Error("failed to sync rate limit configs to redis", log.Error(err))
+			h.logger.Error("fbiled to sync rbte limit configs to redis", log.Error(err))
 		}
 	}()
 
-	var defaultGitQuota int32 = -1 // rate.Inf
+	vbr defbultGitQuotb int32 = -1 // rbte.Inf
 	siteCfg := conf.Get()
-	if siteCfg.GitMaxCodehostRequestsPerSecond != nil {
-		defaultGitQuota = int32(*siteCfg.GitMaxCodehostRequestsPerSecond)
+	if siteCfg.GitMbxCodehostRequestsPerSecond != nil {
+		defbultGitQuotb = int32(*siteCfg.GitMbxCodehostRequestsPerSecond)
 	}
 
-	gitRL := h.newRateLimiterFunc(ratelimit.GitRPSLimiterBucketName)
-	if err := gitRL.SetTokenBucketConfig(ctx, defaultGitQuota, time.Second); err != nil {
+	gitRL := h.newRbteLimiterFunc(rbtelimit.GitRPSLimiterBucketNbme)
+	if err := gitRL.SetTokenBucketConfig(ctx, defbultGitQuotb, time.Second); err != nil {
 		return err
 	}
 
-	svcs, err := h.externalServiceStore.List(ctx, database.ExternalServicesListOptions{})
+	svcs, err := h.externblServiceStore.List(ctx, dbtbbbse.ExternblServicesListOptions{})
 	if err != nil {
 		return err
 	}
 
-	return syncServices(ctx, svcs, h.newRateLimiterFunc)
+	return syncServices(ctx, svcs, h.newRbteLimiterFunc)
 }

@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"bytes"
@@ -13,107 +13,107 @@ import (
 
 	"github.com/google/go-github/v41/github"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// V3Client is a caching GitHub API client for GitHub's REST API v3.
+// V3Client is b cbching GitHub API client for GitHub's REST API v3.
 //
-// All instances use a map of rcache.Cache instances for caching (see the `repoCache` field). These
-// separate instances have consistent naming prefixes so that different instances will share the
-// same Redis cache entries (provided they were computed with the same API URL and access
-// token). The cache keys are agnostic of the http.RoundTripper transport.
+// All instbnces use b mbp of rcbche.Cbche instbnces for cbching (see the `repoCbche` field). These
+// sepbrbte instbnces hbve consistent nbming prefixes so thbt different instbnces will shbre the
+// sbme Redis cbche entries (provided they were computed with the sbme API URL bnd bccess
+// token). The cbche keys bre bgnostic of the http.RoundTripper trbnsport.
 type V3Client struct {
 	log log.Logger
 
-	// The URN of the external service that the client is derived from.
+	// The URN of the externbl service thbt the client is derived from.
 	urn string
 
-	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
-	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
+	// bpiURL is the bbse URL of b GitHub API. It must point to the bbse URL of the GitHub API. This
+	// is https://bpi.github.com for GitHub.com bnd http[s]://[github-enterprise-hostnbme]/bpi for
 	// GitHub Enterprise.
-	apiURL *url.URL
+	bpiURL *url.URL
 
 	// githubDotCom is true if this client connects to github.com.
 	githubDotCom bool
 
-	// auth is used to authenticate requests. May be empty, in which case the
-	// default behavior is to make unauthenticated requests.
-	// 🚨 SECURITY: Should not be changed after client creation to prevent
-	// unauthorized access to the repository cache. Use `WithAuthenticator` to
-	// create a new client with a different authenticator instead.
-	auth auth.Authenticator
+	// buth is used to buthenticbte requests. Mby be empty, in which cbse the
+	// defbult behbvior is to mbke unbuthenticbted requests.
+	// 🚨 SECURITY: Should not be chbnged bfter client crebtion to prevent
+	// unbuthorized bccess to the repository cbche. Use `WithAuthenticbtor` to
+	// crebte b new client with b different buthenticbtor instebd.
+	buth buth.Authenticbtor
 
-	// httpClient is the HTTP client used to make requests to the GitHub API.
+	// httpClient is the HTTP client used to mbke requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// externalRateLimiter is the external API rate limit monitor.
-	externalRateLimiter *ratelimit.Monitor
+	// externblRbteLimiter is the externbl API rbte limit monitor.
+	externblRbteLimiter *rbtelimit.Monitor
 
-	// internalRateLimiter is our self-imposed rate limiter
-	internalRateLimiter *ratelimit.InstrumentedLimiter
+	// internblRbteLimiter is our self-imposed rbte limiter
+	internblRbteLimiter *rbtelimit.InstrumentedLimiter
 
-	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
-	waitForRateLimit bool
+	// wbitForRbteLimit determines whether or not the client will wbit bnd retry b request if externbl rbte limits bre encountered
+	wbitForRbteLimit bool
 
-	// maxRateLimitRetries determines how many times we retry requests due to rate limits
-	maxRateLimitRetries int
+	// mbxRbteLimitRetries determines how mbny times we retry requests due to rbte limits
+	mbxRbteLimitRetries int
 
 	// resource specifies which API this client is intended for.
-	// One of 'rest' or 'search'.
+	// One of 'rest' or 'sebrch'.
 	resource string
 }
 
-// NewV3Client creates a new GitHub API client with an optional default
-// authenticator.
+// NewV3Client crebtes b new GitHub API client with bn optionbl defbult
+// buthenticbtor.
 //
-// apiURL must point to the base URL of the GitHub API. See the docstring for
-// V3Client.apiURL.
-func NewV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(logger, urn, apiURL, a, "rest", cli)
+// bpiURL must point to the bbse URL of the GitHub API. See the docstring for
+// V3Client.bpiURL.
+func NewV3Client(logger log.Logger, urn string, bpiURL *url.URL, b buth.Authenticbtor, cli httpcli.Doer) *V3Client {
+	return newV3Client(logger, urn, bpiURL, b, "rest", cli)
 }
 
-// NewV3SearchClient creates a new GitHub API client intended for use with the
-// search API with an optional default authenticator.
+// NewV3SebrchClient crebtes b new GitHub API client intended for use with the
+// sebrch API with bn optionbl defbult buthenticbtor.
 //
-// apiURL must point to the base URL of the GitHub API. See the docstring for
-// V3Client.apiURL.
-func NewV3SearchClient(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V3Client {
-	return newV3Client(logger, urn, apiURL, a, "search", cli)
+// bpiURL must point to the bbse URL of the GitHub API. See the docstring for
+// V3Client.bpiURL.
+func NewV3SebrchClient(logger log.Logger, urn string, bpiURL *url.URL, b buth.Authenticbtor, cli httpcli.Doer) *V3Client {
+	return newV3Client(logger, urn, bpiURL, b, "sebrch", cli)
 }
 
-func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenticator, resource string, cli httpcli.Doer) *V3Client {
-	apiURL = canonicalizedURL(apiURL)
-	if gitHubDisable {
-		cli = disabledClient{}
+func newV3Client(logger log.Logger, urn string, bpiURL *url.URL, b buth.Authenticbtor, resource string, cli httpcli.Doer) *V3Client {
+	bpiURL = cbnonicblizedURL(bpiURL)
+	if gitHubDisbble {
+		cli = disbbledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternblDoer
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
-		// The first component of the Path mostly maps to the type of API
-		// request we are making. See `curl https://api.github.com` for the
-		// exact mapping
-		var category string
-		if parts := strings.SplitN(u.Path, "/", 3); len(parts) > 1 {
-			category = parts[1]
+		// The first component of the Pbth mostly mbps to the type of API
+		// request we bre mbking. See `curl https://bpi.github.com` for the
+		// exbct mbpping
+		vbr cbtegory string
+		if pbrts := strings.SplitN(u.Pbth, "/", 3); len(pbrts) > 1 {
+			cbtegory = pbrts[1]
 		}
-		return category
+		return cbtegory
 	})
 
-	var tokenHash string
-	if a != nil {
-		tokenHash = a.Hash()
+	vbr tokenHbsh string
+	if b != nil {
+		tokenHbsh = b.Hbsh()
 	}
 
-	rl := ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitHubClient", ""), urn))
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, resource, &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rl := rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("GitHubClient", ""), urn))
+	rlm := rbtelimit.DefbultMonitorRegistry.GetOrSet(bpiURL.String(), tokenHbsh, resource, &rbtelimit.Monitor{HebderPrefix: "X-"})
 
 	return &V3Client{
 		log: logger.Scoped("github.v3", "github v3 client").
@@ -122,37 +122,37 @@ func newV3Client(logger log.Logger, urn string, apiURL *url.URL, a auth.Authenti
 				log.String("resource", resource),
 			),
 		urn:                 urn,
-		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
-		auth:                a,
+		bpiURL:              bpiURL,
+		githubDotCom:        urlIsGitHubDotCom(bpiURL),
+		buth:                b,
 		httpClient:          cli,
-		internalRateLimiter: rl,
-		externalRateLimiter: rlm,
+		internblRbteLimiter: rl,
+		externblRbteLimiter: rlm,
 		resource:            resource,
-		waitForRateLimit:    true,
-		maxRateLimitRetries: 2,
+		wbitForRbteLimit:    true,
+		mbxRbteLimitRetries: 2,
 	}
 }
 
-// WithAuthenticator returns a new V3Client that uses the same configuration as
-// the current V3Client, except authenticated as the GitHub user with the given
-// authenticator instance (most likely a token).
-func (c *V3Client) WithAuthenticator(a auth.Authenticator) *V3Client {
-	return newV3Client(c.log, c.urn, c.apiURL, a, c.resource, c.httpClient)
+// WithAuthenticbtor returns b new V3Client thbt uses the sbme configurbtion bs
+// the current V3Client, except buthenticbted bs the GitHub user with the given
+// buthenticbtor instbnce (most likely b token).
+func (c *V3Client) WithAuthenticbtor(b buth.Authenticbtor) *V3Client {
+	return newV3Client(c.log, c.urn, c.bpiURL, b, c.resource, c.httpClient)
 }
 
-// SetWaitForRateLimit sets whether the client should respond to external rate
-// limits by waiting and retrying a request.
-func (c *V3Client) SetWaitForRateLimit(wait bool) {
-	c.waitForRateLimit = wait
+// SetWbitForRbteLimit sets whether the client should respond to externbl rbte
+// limits by wbiting bnd retrying b request.
+func (c *V3Client) SetWbitForRbteLimit(wbit bool) {
+	c.wbitForRbteLimit = wbit
 }
 
-// ExternalRateLimiter exposes the rate limit monitor.
-func (c *V3Client) ExternalRateLimiter() *ratelimit.Monitor {
-	return c.externalRateLimiter
+// ExternblRbteLimiter exposes the rbte limit monitor.
+func (c *V3Client) ExternblRbteLimiter() *rbtelimit.Monitor {
+	return c.externblRbteLimiter
 }
 
-func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*httpResponseState, error) {
+func (c *V3Client) get(ctx context.Context, requestURI string, result bny) (*httpResponseStbte, error) {
 	req, err := http.NewRequest("GET", requestURI, nil)
 	if err != nil {
 		return nil, err
@@ -161,91 +161,91 @@ func (c *V3Client) get(ctx context.Context, requestURI string, result any) (*htt
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) post(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
-	body, err := json.Marshal(payload)
+func (c *V3Client) post(ctx context.Context, requestURI string, pbylobd, result bny) (*httpResponseStbte, error) {
+	body, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling payload")
+		return nil, errors.Wrbp(err, "mbrshblling pbylobd")
 	}
 
-	req, err := http.NewRequest("POST", requestURI, bytes.NewReader(body))
+	req, err := http.NewRequest("POST", requestURI, bytes.NewRebder(body))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	req.Hebder.Add("Content-Type", "bpplicbtion/json")
 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) patch(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
-	body, err := json.Marshal(payload)
+func (c *V3Client) pbtch(ctx context.Context, requestURI string, pbylobd, result bny) (*httpResponseStbte, error) {
+	body, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling payload")
+		return nil, errors.Wrbp(err, "mbrshblling pbylobd")
 	}
 
-	req, err := http.NewRequest("PATCH", requestURI, bytes.NewReader(body))
+	req, err := http.NewRequest("PATCH", requestURI, bytes.NewRebder(body))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	req.Hebder.Add("Content-Type", "bpplicbtion/json")
 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
-	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(make([]byte, 0)))
+func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseStbte, error) {
+	req, err := http.NewRequest("DELETE", requestURI, bytes.NewRebder(mbke([]byte, 0)))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	req.Hebder.Add("Content-Type", "bpplicbtion/json")
 
 	return c.request(ctx, req, struct{}{})
 }
 
-func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
-	// Include node_id (GraphQL ID) in response. See
-	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
+func (c *V3Client) request(ctx context.Context, req *http.Request, result bny) (*httpResponseStbte, error) {
+	// Include node_id (GrbphQL ID) in response. See
+	// https://developer.github.com/chbnges/2017-12-19-grbphql-node-id/.
 	//
-	// Enable the repository topics API. See
-	// https://developer.github.com/v3/repos/#list-all-topics-for-a-repository
-	req.Header.Add("Accept", "application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json")
+	// Enbble the repository topics API. See
+	// https://developer.github.com/v3/repos/#list-bll-topics-for-b-repository
+	req.Hebder.Add("Accept", "bpplicbtion/vnd.github.jebn-grey-preview+json,bpplicbtion/vnd.github.mercy-preview+json")
 
-	// Enable the GitHub App API. See
-	// https://developer.github.com/v3/apps/installations/#list-repositories
-	req.Header.Add("Accept", "application/vnd.github.machine-man-preview+json")
+	// Enbble the GitHub App API. See
+	// https://developer.github.com/v3/bpps/instbllbtions/#list-repositories
+	req.Hebder.Add("Accept", "bpplicbtion/vnd.github.mbchine-mbn-preview+json")
 
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility {
-		// Include "visibility" in the REST API response for getting a repository. See
-		// https://docs.github.com/en/enterprise-server@2.22/rest/reference/repos#get-a-repository
-		req.Header.Add("Accept", "application/vnd.github.nebula-preview+json")
+	if conf.ExperimentblFebtures().EnbbleGithubInternblRepoVisibility {
+		// Include "visibility" in the REST API response for getting b repository. See
+		// https://docs.github.com/en/enterprise-server@2.22/rest/reference/repos#get-b-repository
+		req.Hebder.Add("Accept", "bpplicbtion/vnd.github.nebulb-preview+json")
 	}
 
-	err := c.internalRateLimiter.Wait(ctx)
+	err := c.internblRbteLimiter.Wbit(ctx)
 	if err != nil {
-		// We don't want to return a misleading rate limit exceeded error if the error is coming
+		// We don't wbnt to return b mislebding rbte limit exceeded error if the error is coming
 		// from the context.
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
 
-		c.log.Warn("internal rate limiter error", log.Error(err))
-		return nil, errInternalRateLimitExceeded
+		c.log.Wbrn("internbl rbte limiter error", log.Error(err))
+		return nil, errInternblRbteLimitExceeded
 	}
 
-	if c.waitForRateLimit {
-		c.externalRateLimiter.WaitForRateLimit(ctx, 1) // We don't care whether we waited or not, this is a preventative measure.
+	if c.wbitForRbteLimit {
+		c.externblRbteLimiter.WbitForRbteLimit(ctx, 1) // We don't cbre whether we wbited or not, this is b preventbtive mebsure.
 	}
 
-	// Store request Body and URL because we might call `doRequest` twice and
-	// can't guarantee that `doRequest` doesn't modify them. (In fact: it does
+	// Store request Body bnd URL becbuse we might cbll `doRequest` twice bnd
+	// cbn't gubrbntee thbt `doRequest` doesn't modify them. (In fbct: it does
 	// modify them!)
-	// So when we retry, we can reset to the original state.
-	var reqBody []byte
-	var reqURL *url.URL
+	// So when we retry, we cbn reset to the originbl stbte.
+	vbr reqBody []byte
+	vbr reqURL *url.URL
 	if req.Body != nil {
-		reqBody, err = io.ReadAll(req.Body)
+		reqBody, err = io.RebdAll(req.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -257,81 +257,81 @@ func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (
 
 	req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 
-	var resp *httpResponseState
-	resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+	vbr resp *httpResponseStbte
+	resp, err = doRequest(ctx, c.log, c.bpiURL, c.buth, c.externblRbteLimiter, c.httpClient, req, result)
 
-	apiError := &APIError{}
+	bpiError := &APIError{}
 	numRetries := 0
-	// We retry only if waitForRateLimit is set, and until:
+	// We retry only if wbitForRbteLimit is set, bnd until:
 	// 1. We've exceeded the number of retries
-	// 2. The error returned is not a rate limit error
+	// 2. The error returned is not b rbte limit error
 	// 3. We succeed
-	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
-		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
-		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
-		// say with absolute certainty that a rate limit was hit. It might have been an honest
-		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
-		// to calculate the amount of time we need to wait before retrying the request.
-		// If that calculated time is zero or in the past, we have to assume that the
-		// rate limiting information we have is old and no longer relevant.
+	for c.wbitForRbteLimit && err != nil && numRetries < c.mbxRbteLimitRetries &&
+		errors.As(err, &bpiError) && bpiError.Code == http.StbtusForbidden {
+		// Becbuse GitHub responds with http.StbtusForbidden when b rbte limit is hit, we cbnnot
+		// sby with bbsolute certbinty thbt b rbte limit wbs hit. It might hbve been bn honest
+		// http.StbtusForbidden. So we use the externblRbteLimiter's WbitForRbteLimit function
+		// to cblculbte the bmount of time we need to wbit before retrying the request.
+		// If thbt cblculbted time is zero or in the pbst, we hbve to bssume thbt the
+		// rbte limiting informbtion we hbve is old bnd no longer relevbnt.
 		//
-		// There is an extremely unlikely edge case where we will falsely not retry a request.
-		// If a request is rejected because we have no more rate limit tokens, but the token reset
-		// time is just around the corner (like 1 second from now), and for some reason the time
-		// between reading the headers and doing this "should we retry" check is greater than
-		// that time, the rate limit information we will have will look like old information and
+		// There is bn extremely unlikely edge cbse where we will fblsely not retry b request.
+		// If b request is rejected becbuse we hbve no more rbte limit tokens, but the token reset
+		// time is just bround the corner (like 1 second from now), bnd for some rebson the time
+		// between rebding the hebders bnd doing this "should we retry" check is grebter thbn
+		// thbt time, the rbte limit informbtion we will hbve will look like old informbtion bnd
 		// we won't retry the request.
-		if c.externalRateLimiter.WaitForRateLimit(ctx, 1) {
-			// Reset Body/URL to ignore changes that the first `doRequest`
-			// might have made.
+		if c.externblRbteLimiter.WbitForRbteLimit(ctx, 1) {
+			// Reset Body/URL to ignore chbnges thbt the first `doRequest`
+			// might hbve mbde.
 			req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-			// Create a copy of the URL, because this loop might execute
+			// Crebte b copy of the URL, becbuse this loop might execute
 			// multiple times.
 			reqURLCopy := *reqURL
 			req.URL = &reqURLCopy
 
-			resp, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, result)
+			resp, err = doRequest(ctx, c.log, c.bpiURL, c.buth, c.externblRbteLimiter, c.httpClient, req, result)
 			numRetries++
 		} else {
-			// We did not wait because of rate limiting, so we break the loop
-			break
+			// We did not wbit becbuse of rbte limiting, so we brebk the loop
+			brebk
 		}
 	}
 
 	return resp, err
 }
 
-// APIError is an error type returned by Client when the GitHub API responds with
-// an error.
+// APIError is bn error type returned by Client when the GitHub API responds with
+// bn error.
 type APIError struct {
 	URL              string
 	Code             int
-	Message          string
-	DocumentationURL string `json:"documentation_url"`
+	Messbge          string
+	DocumentbtionURL string `json:"documentbtion_url"`
 }
 
 func (e *APIError) Error() string {
-	return fmt.Sprintf("request to %s returned status %d: %s", e.URL, e.Code, e.Message)
+	return fmt.Sprintf("request to %s returned stbtus %d: %s", e.URL, e.Code, e.Messbge)
 }
 
-func (e *APIError) Unauthorized() bool {
-	return e.Code == http.StatusUnauthorized
+func (e *APIError) Unbuthorized() bool {
+	return e.Code == http.StbtusUnbuthorized
 }
 
 func (e *APIError) AccountSuspended() bool {
-	return e.Code == http.StatusForbidden && strings.Contains(e.Message, "account was suspended")
+	return e.Code == http.StbtusForbidden && strings.Contbins(e.Messbge, "bccount wbs suspended")
 }
 
-func (e *APIError) UnavailableForLegalReasons() bool {
-	return e.Code == http.StatusUnavailableForLegalReasons
+func (e *APIError) UnbvbilbbleForLegblRebsons() bool {
+	return e.Code == http.StbtusUnbvbilbbleForLegblRebsons
 }
 
-func (e *APIError) Temporary() bool { return IsRateLimitExceeded(e) }
+func (e *APIError) Temporbry() bool { return IsRbteLimitExceeded(e) }
 
-// HTTPErrorCode returns err's HTTP status code, if it is an HTTP error from
-// this package. Otherwise it returns 0.
+// HTTPErrorCode returns err's HTTP stbtus code, if it is bn HTTP error from
+// this pbckbge. Otherwise it returns 0.
 func HTTPErrorCode(err error) int {
-	var e *APIError
+	vbr e *APIError
 	if errors.As(err, &e) {
 		return e.Code
 	}
@@ -344,18 +344,18 @@ func (c *V3Client) GetVersion(ctx context.Context) (string, error) {
 		return "unknown", nil
 	}
 
-	var empty any
+	vbr empty bny
 
-	respState, err := c.get(ctx, "/", &empty)
+	respStbte, err := c.get(ctx, "/", &empty)
 	if err != nil {
 		return "", err
 	}
-	v := respState.headers.Get("X-GitHub-Enterprise-Version")
+	v := respStbte.hebders.Get("X-GitHub-Enterprise-Version")
 	return v, nil
 }
 
-func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
-	var u User
+func (c *V3Client) GetAuthenticbtedUser(ctx context.Context) (*User, error) {
+	vbr u User
 	_, err := c.get(ctx, "/user", &u)
 	if err != nil {
 		return nil, err
@@ -363,446 +363,446 @@ func (c *V3Client) GetAuthenticatedUser(ctx context.Context) (*User, error) {
 	return &u, nil
 }
 
-var MockGetAuthenticatedUserEmails func(ctx context.Context) ([]*UserEmail, error)
+vbr MockGetAuthenticbtedUserEmbils func(ctx context.Context) ([]*UserEmbil, error)
 
-// GetAuthenticatedUserEmails returns the first 100 emails associated with the currently
-// authenticated user.
-func (c *V3Client) GetAuthenticatedUserEmails(ctx context.Context) ([]*UserEmail, error) {
-	if MockGetAuthenticatedUserEmails != nil {
-		return MockGetAuthenticatedUserEmails(ctx)
+// GetAuthenticbtedUserEmbils returns the first 100 embils bssocibted with the currently
+// buthenticbted user.
+func (c *V3Client) GetAuthenticbtedUserEmbils(ctx context.Context) ([]*UserEmbil, error) {
+	if MockGetAuthenticbtedUserEmbils != nil {
+		return MockGetAuthenticbtedUserEmbils(ctx)
 	}
 
-	var emails []*UserEmail
-	_, err := c.get(ctx, "/user/emails?per_page=100", &emails)
+	vbr embils []*UserEmbil
+	_, err := c.get(ctx, "/user/embils?per_pbge=100", &embils)
 	if err != nil {
 		return nil, err
 	}
-	return emails, nil
+	return embils, nil
 }
 
-var MockGetAuthenticatedUserOrgs struct {
+vbr MockGetAuthenticbtedUserOrgs struct {
 	FnMock    func(ctx context.Context) ([]*Org, bool, int, error)
-	PagesMock map[int][]*Org
+	PbgesMock mbp[int][]*Org
 }
 
-// GetAuthenticatedUserOrgsForPage returns given page of 100 organizations associated with the currently
-// authenticated user.
-func (c *V3Client) GetAuthenticatedUserOrgsForPage(ctx context.Context, page int) (
+// GetAuthenticbtedUserOrgsForPbge returns given pbge of 100 orgbnizbtions bssocibted with the currently
+// buthenticbted user.
+func (c *V3Client) GetAuthenticbtedUserOrgsForPbge(ctx context.Context, pbge int) (
 	orgs []*Org,
-	hasNextPage bool,
-	rateLimitCost int,
+	hbsNextPbge bool,
+	rbteLimitCost int,
 	err error,
 ) {
 	// checking whether the function is mocked
-	if MockGetAuthenticatedUserOrgs.FnMock != nil || MockGetAuthenticatedUserOrgs.PagesMock != nil {
-		if MockGetAuthenticatedUserOrgs.FnMock != nil {
-			return MockGetAuthenticatedUserOrgs.FnMock(ctx)
+	if MockGetAuthenticbtedUserOrgs.FnMock != nil || MockGetAuthenticbtedUserOrgs.PbgesMock != nil {
+		if MockGetAuthenticbtedUserOrgs.FnMock != nil {
+			return MockGetAuthenticbtedUserOrgs.FnMock(ctx)
 		}
 
-		orgsPage, ok := MockGetAuthenticatedUserOrgs.PagesMock[page]
+		orgsPbge, ok := MockGetAuthenticbtedUserOrgs.PbgesMock[pbge]
 		if !ok {
-			err = errors.New("cannot find orgs page mock")
+			err = errors.New("cbnnot find orgs pbge mock")
 			return
 		}
-		return orgsPage, page < len(MockGetAuthenticatedUserOrgs.PagesMock), 1, err
+		return orgsPbge, pbge < len(MockGetAuthenticbtedUserOrgs.PbgesMock), 1, err
 	}
 
-	respState, err := c.get(ctx, fmt.Sprintf("/user/orgs?per_page=100&page=%d", page), &orgs)
+	respStbte, err := c.get(ctx, fmt.Sprintf("/user/orgs?per_pbge=100&pbge=%d", pbge), &orgs)
 	if err != nil {
 		return
 	}
-	return orgs, respState.hasNextPage(), 1, err
+	return orgs, respStbte.hbsNextPbge(), 1, err
 }
 
-// OrgDetailsAndMembership is a results container for the results from the API calls made
-// in GetAuthenticatedUserOrgsDetailsAndMembership
-type OrgDetailsAndMembership struct {
-	*OrgDetails
+// OrgDetbilsAndMembership is b results contbiner for the results from the API cblls mbde
+// in GetAuthenticbtedUserOrgsDetbilsAndMembership
+type OrgDetbilsAndMembership struct {
+	*OrgDetbils
 
 	*OrgMembership
 }
 
-// GetAuthenticatedUserOrgsDetailsAndMembership returns the organizations associated with the currently
-// authenticated user as well as additional information about each org by making API
-// requests for each org (see `OrgDetails` and `OrgMembership` docs for more details).
-func (c *V3Client) GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (
-	orgs []OrgDetailsAndMembership,
-	hasNextPage bool,
-	rateLimitCost int,
+// GetAuthenticbtedUserOrgsDetbilsAndMembership returns the orgbnizbtions bssocibted with the currently
+// buthenticbted user bs well bs bdditionbl informbtion bbout ebch org by mbking API
+// requests for ebch org (see `OrgDetbils` bnd `OrgMembership` docs for more detbils).
+func (c *V3Client) GetAuthenticbtedUserOrgsDetbilsAndMembership(ctx context.Context, pbge int) (
+	orgs []OrgDetbilsAndMembership,
+	hbsNextPbge bool,
+	rbteLimitCost int,
 	err error,
 ) {
-	orgNames, hasNextPage, cost, err := c.GetAuthenticatedUserOrgsForPage(ctx, page)
+	orgNbmes, hbsNextPbge, cost, err := c.GetAuthenticbtedUserOrgsForPbge(ctx, pbge)
 	if err != nil {
 		return
 	}
-	orgs = make([]OrgDetailsAndMembership, len(orgNames))
-	for i, org := range orgNames {
-		if _, err = c.get(ctx, "/orgs/"+org.Login, &orgs[i].OrgDetails); err != nil {
-			return nil, false, cost + 2*i, err
+	orgs = mbke([]OrgDetbilsAndMembership, len(orgNbmes))
+	for i, org := rbnge orgNbmes {
+		if _, err = c.get(ctx, "/orgs/"+org.Login, &orgs[i].OrgDetbils); err != nil {
+			return nil, fblse, cost + 2*i, err
 		}
 		if _, err = c.get(ctx, "/user/memberships/orgs/"+org.Login, &orgs[i].OrgMembership); err != nil {
-			return nil, false, cost + 2*i, err
+			return nil, fblse, cost + 2*i, err
 		}
 	}
 	return orgs,
-		hasNextPage,
+		hbsNextPbge,
 		cost + 2*len(orgs), // 2 requests per org
 		nil
 }
 
-type restTeam struct {
-	Name string `json:"name,omitempty"`
+type restTebm struct {
+	Nbme string `json:"nbme,omitempty"`
 	Slug string `json:"slug,omitempty"`
 	URL  string `json:"url,omitempty"`
 
 	ReposCount   int  `json:"repos_count,omitempty"`
-	Organization *Org `json:"organization,omitempty"`
+	Orgbnizbtion *Org `json:"orgbnizbtion,omitempty"`
 }
 
-func (t *restTeam) convert() *Team {
-	return &Team{
-		Name:         t.Name,
+func (t *restTebm) convert() *Tebm {
+	return &Tebm{
+		Nbme:         t.Nbme,
 		Slug:         t.Slug,
 		URL:          t.URL,
 		ReposCount:   t.ReposCount,
-		Organization: t.Organization,
+		Orgbnizbtion: t.Orgbnizbtion,
 	}
 }
 
-var MockGetAuthenticatedUserTeams func(ctx context.Context, page int) ([]*Team, bool, int, error)
+vbr MockGetAuthenticbtedUserTebms func(ctx context.Context, pbge int) ([]*Tebm, bool, int, error)
 
-// GetAuthenticatedUserTeams lists GitHub teams affiliated with the client token.
+// GetAuthenticbtedUserTebms lists GitHub tebms bffilibted with the client token.
 //
-// The page is the page of results to return, and is 1-indexed (so the first call should
-// be for page 1).
-func (c *V3Client) GetAuthenticatedUserTeams(ctx context.Context, page int) (
-	teams []*Team,
-	hasNextPage bool,
-	rateLimitCost int,
+// The pbge is the pbge of results to return, bnd is 1-indexed (so the first cbll should
+// be for pbge 1).
+func (c *V3Client) GetAuthenticbtedUserTebms(ctx context.Context, pbge int) (
+	tebms []*Tebm,
+	hbsNextPbge bool,
+	rbteLimitCost int,
 	err error,
 ) {
-	if MockGetAuthenticatedUserTeams != nil {
-		return MockGetAuthenticatedUserTeams(ctx, 1)
+	if MockGetAuthenticbtedUserTebms != nil {
+		return MockGetAuthenticbtedUserTebms(ctx, 1)
 	}
 
-	var restTeams []*restTeam
-	respState, err := c.get(ctx, fmt.Sprintf("/user/teams?per_page=100&page=%d", page), &restTeams)
+	vbr restTebms []*restTebm
+	respStbte, err := c.get(ctx, fmt.Sprintf("/user/tebms?per_pbge=100&pbge=%d", pbge), &restTebms)
 	if err != nil {
 		return
 	}
 
-	teams = make([]*Team, len(restTeams))
-	for i, t := range restTeams {
-		teams[i] = t.convert()
+	tebms = mbke([]*Tebm, len(restTebms))
+	for i, t := rbnge restTebms {
+		tebms[i] = t.convert()
 	}
 
-	return teams, respState.hasNextPage(), 1, err
+	return tebms, respStbte.hbsNextPbge(), 1, err
 }
 
-var MockGetAuthenticatedOAuthScopes func(ctx context.Context) ([]string, error)
+vbr MockGetAuthenticbtedOAuthScopes func(ctx context.Context) ([]string, error)
 
-// GetAuthenticatedOAuthScopes gets the list of OAuth scopes granted to the token in use.
-func (c *V3Client) GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error) {
-	if MockGetAuthenticatedOAuthScopes != nil {
-		return MockGetAuthenticatedOAuthScopes(ctx)
+// GetAuthenticbtedOAuthScopes gets the list of OAuth scopes grbnted to the token in use.
+func (c *V3Client) GetAuthenticbtedOAuthScopes(ctx context.Context) ([]string, error) {
+	if MockGetAuthenticbtedOAuthScopes != nil {
+		return MockGetAuthenticbtedOAuthScopes(ctx)
 	}
-	// We only care about headers
-	var dest struct{}
-	respState, err := c.get(ctx, "/", &dest)
+	// We only cbre bbout hebders
+	vbr dest struct{}
+	respStbte, err := c.get(ctx, "/", &dest)
 	if err != nil {
 		return nil, err
 	}
-	scope := respState.headers.Get("x-oauth-scopes")
+	scope := respStbte.hebders.Get("x-obuth-scopes")
 	if scope == "" {
 		return []string{}, nil
 	}
 	return strings.Split(scope, ", "), nil
 }
 
-// ListRepositoryCollaborators lists GitHub users that has access to the repository.
+// ListRepositoryCollbborbtors lists GitHub users thbt hbs bccess to the repository.
 //
-// The page is the page of results to return, and is 1-indexed (so the first call should
-// be for page 1). If no affiliations are provided, all users with access to the repository
-// are listed.
-func (c *V3Client) ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliation CollaboratorAffiliation) (users []*Collaborator, hasNextPage bool, _ error) {
-	path := fmt.Sprintf("/repos/%s/%s/collaborators?page=%d&per_page=100", owner, repo, page)
-	if len(affiliation) > 0 {
-		path = fmt.Sprintf("%s&affiliation=%s", path, affiliation)
+// The pbge is the pbge of results to return, bnd is 1-indexed (so the first cbll should
+// be for pbge 1). If no bffilibtions bre provided, bll users with bccess to the repository
+// bre listed.
+func (c *V3Client) ListRepositoryCollbborbtors(ctx context.Context, owner, repo string, pbge int, bffilibtion CollbborbtorAffilibtion) (users []*Collbborbtor, hbsNextPbge bool, _ error) {
+	pbth := fmt.Sprintf("/repos/%s/%s/collbborbtors?pbge=%d&per_pbge=100", owner, repo, pbge)
+	if len(bffilibtion) > 0 {
+		pbth = fmt.Sprintf("%s&bffilibtion=%s", pbth, bffilibtion)
 	}
-	respState, err := c.get(ctx, path, &users)
+	respStbte, err := c.get(ctx, pbth, &users)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
-	return users, respState.hasNextPage(), nil
+	return users, respStbte.hbsNextPbge(), nil
 }
 
-// ListRepositoryTeams lists GitHub teams that has access to the repository.
+// ListRepositoryTebms lists GitHub tebms thbt hbs bccess to the repository.
 //
-// The page is the page of results to return, and is 1-indexed (so the first call should
-// be for page 1).
-func (c *V3Client) ListRepositoryTeams(ctx context.Context, owner, repo string, page int) (teams []*Team, hasNextPage bool, _ error) {
-	path := fmt.Sprintf("/repos/%s/%s/teams?page=%d&per_page=100", owner, repo, page)
-	var restTeams []*restTeam
-	respState, err := c.get(ctx, path, &restTeams)
+// The pbge is the pbge of results to return, bnd is 1-indexed (so the first cbll should
+// be for pbge 1).
+func (c *V3Client) ListRepositoryTebms(ctx context.Context, owner, repo string, pbge int) (tebms []*Tebm, hbsNextPbge bool, _ error) {
+	pbth := fmt.Sprintf("/repos/%s/%s/tebms?pbge=%d&per_pbge=100", owner, repo, pbge)
+	vbr restTebms []*restTebm
+	respStbte, err := c.get(ctx, pbth, &restTebms)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
-	teams = make([]*Team, len(restTeams))
-	for i, t := range restTeams {
-		teams[i] = t.convert()
+	tebms = mbke([]*Tebm, len(restTebms))
+	for i, t := rbnge restTebms {
+		tebms[i] = t.convert()
 	}
-	return teams, respState.hasNextPage(), nil
+	return tebms, respStbte.hbsNextPbge(), nil
 }
 
-// GetRepository gets a repository from GitHub by owner and repository name.
-func (c *V3Client) GetRepository(ctx context.Context, owner, name string) (*Repository, error) {
-	return c.getRepositoryFromAPI(ctx, owner, name)
+// GetRepository gets b repository from GitHub by owner bnd repository nbme.
+func (c *V3Client) GetRepository(ctx context.Context, owner, nbme string) (*Repository, error) {
+	return c.getRepositoryFromAPI(ctx, owner, nbme)
 }
 
-// GetOrganization gets an org from GitHub by its login.
-func (c *V3Client) GetOrganization(ctx context.Context, login string) (org *OrgDetails, err error) {
+// GetOrgbnizbtion gets bn org from GitHub by its login.
+func (c *V3Client) GetOrgbnizbtion(ctx context.Context, login string) (org *OrgDetbils, err error) {
 	_, err = c.get(ctx, "/orgs/"+login, &org)
-	if err != nil && strings.Contains(err.Error(), "404") {
+	if err != nil && strings.Contbins(err.Error(), "404") {
 		err = &OrgNotFoundError{}
 	}
 	return
 }
 
-// ListOrganizations lists all orgs from GitHub. This is intended to be used for GitHub enterprise
-// server instances only. Callers should be careful not to use this for github.com or GitHub
+// ListOrgbnizbtions lists bll orgs from GitHub. This is intended to be used for GitHub enterprise
+// server instbnces only. Cbllers should be cbreful not to use this for github.com or GitHub
 // enterprise cloud.
 //
-// The argument "since" is the ID of the org and the API call will only return orgs with ID greater
-// than this value. To list all orgs in a GitHub instance, invoke this initially with:
+// The brgument "since" is the ID of the org bnd the API cbll will only return orgs with ID grebter
+// thbn this vblue. To list bll orgs in b GitHub instbnce, invoke this initiblly with:
 //
-// orgs, nextSince, err := ListOrganizations(ctx, 0)
+// orgs, nextSince, err := ListOrgbnizbtions(ctx, 0)
 //
-// And the next call with:
+// And the next cbll with:
 //
-// orgs, nextSince, err := ListOrganizations(ctx, nextSince)
+// orgs, nextSince, err := ListOrgbnizbtions(ctx, nextSince)
 //
-// Repeat this in a for-loop until nextSince is a non-positive integer.
+// Repebt this in b for-loop until nextSince is b non-positive integer.
 //
 // 🚀🚀🚀
 //
-// This API supports conditional requests and the underlying httpcache transport can leverage this
-// to use the cache to return responses.
-func (c *V3Client) ListOrganizations(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
-	path := fmt.Sprintf("/organizations?since=%d&per_page=100", since)
+// This API supports conditionbl requests bnd the underlying httpcbche trbnsport cbn leverbge this
+// to use the cbche to return responses.
+func (c *V3Client) ListOrgbnizbtions(ctx context.Context, since int) (orgs []*Org, nextSince int, err error) {
+	pbth := fmt.Sprintf("/orgbnizbtions?since=%d&per_pbge=100", since)
 
-	_, err = c.get(ctx, path, &orgs)
+	_, err = c.get(ctx, pbth, &orgs)
 	if err != nil {
 		return nil, -1, err
 	}
 
 	getNextSince := func() int {
-		total := len(orgs)
-		if total == 0 {
+		totbl := len(orgs)
+		if totbl == 0 {
 			return -1
 		}
 
-		return orgs[total-1].ID
+		return orgs[totbl-1].ID
 	}
 
 	return orgs, getNextSince(), nil
 }
 
-// ListOrganizationMembers retrieves collaborators in the given organization.
+// ListOrgbnizbtionMembers retrieves collbborbtors in the given orgbnizbtion.
 //
-// The page is the page of results to return, and is 1-indexed (so the first call should
-// be for page 1).
-func (c *V3Client) ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*Collaborator, hasNextPage bool, _ error) {
-	path := fmt.Sprintf("/orgs/%s/members?page=%d&per_page=100", owner, page)
-	if adminsOnly {
-		path += "&role=admin"
+// The pbge is the pbge of results to return, bnd is 1-indexed (so the first cbll should
+// be for pbge 1).
+func (c *V3Client) ListOrgbnizbtionMembers(ctx context.Context, owner string, pbge int, bdminsOnly bool) (users []*Collbborbtor, hbsNextPbge bool, _ error) {
+	pbth := fmt.Sprintf("/orgs/%s/members?pbge=%d&per_pbge=100", owner, pbge)
+	if bdminsOnly {
+		pbth += "&role=bdmin"
 	}
-	respState, err := c.get(ctx, path, &users)
+	respStbte, err := c.get(ctx, pbth, &users)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
-	return users, respState.hasNextPage(), nil
+	return users, respStbte.hbsNextPbge(), nil
 }
 
-// ListTeamMembers retrieves collaborators in the given team.
+// ListTebmMembers retrieves collbborbtors in the given tebm.
 //
-// The team should be the team slug, not team name.
-// The page is the page of results to return, and is 1-indexed (so the first call should
-// be for page 1).
-func (c *V3Client) ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*Collaborator, hasNextPage bool, _ error) {
-	path := fmt.Sprintf("/orgs/%s/teams/%s/members?page=%d&per_page=100", owner, team, page)
-	respState, err := c.get(ctx, path, &users)
+// The tebm should be the tebm slug, not tebm nbme.
+// The pbge is the pbge of results to return, bnd is 1-indexed (so the first cbll should
+// be for pbge 1).
+func (c *V3Client) ListTebmMembers(ctx context.Context, owner, tebm string, pbge int) (users []*Collbborbtor, hbsNextPbge bool, _ error) {
+	pbth := fmt.Sprintf("/orgs/%s/tebms/%s/members?pbge=%d&per_pbge=100", owner, tebm, pbge)
+	respStbte, err := c.get(ctx, pbth, &users)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
-	return users, respState.hasNextPage(), nil
+	return users, respStbte.hbsNextPbge(), nil
 }
 
-// getPublicRepositories returns a page of public repositories that were created
-// after the repository identified by sinceRepoID.
-// An empty sinceRepoID returns the first page of results.
-// This is only intended to be called for GitHub Enterprise, so no rate limit information is returned.
-// https://developer.github.com/v3/repos/#list-all-public-repositories
+// getPublicRepositories returns b pbge of public repositories thbt were crebted
+// bfter the repository identified by sinceRepoID.
+// An empty sinceRepoID returns the first pbge of results.
+// This is only intended to be cblled for GitHub Enterprise, so no rbte limit informbtion is returned.
+// https://developer.github.com/v3/repos/#list-bll-public-repositories
 func (c *V3Client) getPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, bool, error) {
-	path := "repositories"
+	pbth := "repositories"
 	if sinceRepoID > 0 {
-		path += "?per_page=100&since=" + strconv.FormatInt(sinceRepoID, 10)
+		pbth += "?per_pbge=100&since=" + strconv.FormbtInt(sinceRepoID, 10)
 	}
-	return c.listRepositories(ctx, path)
+	return c.listRepositories(ctx, pbth)
 }
 
 func (c *V3Client) ListPublicRepositories(ctx context.Context, sinceRepoID int64) ([]*Repository, bool, error) {
 	return c.getPublicRepositories(ctx, sinceRepoID)
 }
 
-// ListAffiliatedRepositories lists GitHub repositories affiliated with the client token.
+// ListAffilibtedRepositories lists GitHub repositories bffilibted with the client token.
 //
-// page is the page of results to return, and is 1-indexed (so the first call should be
-// for page 1).
-// visibility and affiliations are filters for which repositories should be returned.
-func (c *V3Client) ListAffiliatedRepositories(ctx context.Context, visibility Visibility, page int, perPage int, affiliations ...RepositoryAffiliation) (
+// pbge is the pbge of results to return, bnd is 1-indexed (so the first cbll should be
+// for pbge 1).
+// visibility bnd bffilibtions bre filters for which repositories should be returned.
+func (c *V3Client) ListAffilibtedRepositories(ctx context.Context, visibility Visibility, pbge int, perPbge int, bffilibtions ...RepositoryAffilibtion) (
 	repos []*Repository,
-	hasNextPage bool,
-	rateLimitCost int,
+	hbsNextPbge bool,
+	rbteLimitCost int,
 	err error,
 ) {
-	path := fmt.Sprintf("user/repos?sort=created&visibility=%s&page=%d&per_page=%d", visibility, page, perPage)
-	if len(affiliations) > 0 {
-		affilationsStrings := make([]string, 0, len(affiliations))
-		for _, affiliation := range affiliations {
-			affilationsStrings = append(affilationsStrings, string(affiliation))
+	pbth := fmt.Sprintf("user/repos?sort=crebted&visibility=%s&pbge=%d&per_pbge=%d", visibility, pbge, perPbge)
+	if len(bffilibtions) > 0 {
+		bffilbtionsStrings := mbke([]string, 0, len(bffilibtions))
+		for _, bffilibtion := rbnge bffilibtions {
+			bffilbtionsStrings = bppend(bffilbtionsStrings, string(bffilibtion))
 		}
-		path = fmt.Sprintf("%s&affiliation=%s", path, strings.Join(affilationsStrings, ","))
+		pbth = fmt.Sprintf("%s&bffilibtion=%s", pbth, strings.Join(bffilbtionsStrings, ","))
 	}
-	repos, hasNextPage, err = c.listRepositories(ctx, path)
+	repos, hbsNextPbge, err = c.listRepositories(ctx, pbth)
 
-	return repos, hasNextPage, 1, err
+	return repos, hbsNextPbge, 1, err
 }
 
-// ListOrgRepositories lists GitHub repositories from the specified organization.
-// org is the name of the organization. page is the page of results to return.
-// Pages are 1-indexed (so the first call should be for page 1).
-func (c *V3Client) ListOrgRepositories(ctx context.Context, org string, page int, repoType string) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("orgs/%s/repos?sort=created&page=%d&per_page=100&type=%s", org, page, repoType)
-	repos, hasNextPage, err = c.listRepositories(ctx, path)
-	return repos, hasNextPage, 1, err
+// ListOrgRepositories lists GitHub repositories from the specified orgbnizbtion.
+// org is the nbme of the orgbnizbtion. pbge is the pbge of results to return.
+// Pbges bre 1-indexed (so the first cbll should be for pbge 1).
+func (c *V3Client) ListOrgRepositories(ctx context.Context, org string, pbge int, repoType string) (repos []*Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+	pbth := fmt.Sprintf("orgs/%s/repos?sort=crebted&pbge=%d&per_pbge=100&type=%s", org, pbge, repoType)
+	repos, hbsNextPbge, err = c.listRepositories(ctx, pbth)
+	return repos, hbsNextPbge, 1, err
 }
 
-// ListTeamRepositories lists GitHub repositories from the specified team.
-// org is the name of the team's organization. team is the team slug (not name).
-// page is the page of results to return. Pages are 1-indexed (so the first call should be for page 1).
-func (c *V3Client) ListTeamRepositories(ctx context.Context, org, team string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("orgs/%s/teams/%s/repos?page=%d&per_page=100", org, team, page)
-	repos, hasNextPage, err = c.listRepositories(ctx, path)
-	return repos, hasNextPage, 1, err
+// ListTebmRepositories lists GitHub repositories from the specified tebm.
+// org is the nbme of the tebm's orgbnizbtion. tebm is the tebm slug (not nbme).
+// pbge is the pbge of results to return. Pbges bre 1-indexed (so the first cbll should be for pbge 1).
+func (c *V3Client) ListTebmRepositories(ctx context.Context, org, tebm string, pbge int) (repos []*Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+	pbth := fmt.Sprintf("orgs/%s/tebms/%s/repos?pbge=%d&per_pbge=100", org, tebm, pbge)
+	repos, hbsNextPbge, err = c.listRepositories(ctx, pbth)
+	return repos, hbsNextPbge, 1, err
 }
 
 // ListUserRepositories lists GitHub repositories from the specified user.
-// Pages are 1-indexed (so the first call should be for page 1)
-func (c *V3Client) ListUserRepositories(ctx context.Context, user string, page int) (repos []*Repository, hasNextPage bool, rateLimitCost int, err error) {
-	path := fmt.Sprintf("users/%s/repos?sort=created&type=owner&page=%d&per_page=100", user, page)
-	repos, hasNextPage, err = c.listRepositories(ctx, path)
-	return repos, hasNextPage, 1, err
+// Pbges bre 1-indexed (so the first cbll should be for pbge 1)
+func (c *V3Client) ListUserRepositories(ctx context.Context, user string, pbge int) (repos []*Repository, hbsNextPbge bool, rbteLimitCost int, err error) {
+	pbth := fmt.Sprintf("users/%s/repos?sort=crebted&type=owner&pbge=%d&per_pbge=100", user, pbge)
+	repos, hbsNextPbge, err = c.listRepositories(ctx, pbth)
+	return repos, hbsNextPbge, 1, err
 }
 
-func (c *V3Client) ListRepositoriesForSearch(ctx context.Context, searchString string, page int) (RepositoryListPage, error) {
-	urlValues := url.Values{
-		"q":        []string{searchString},
-		"page":     []string{strconv.Itoa(page)},
-		"per_page": []string{"100"},
+func (c *V3Client) ListRepositoriesForSebrch(ctx context.Context, sebrchString string, pbge int) (RepositoryListPbge, error) {
+	urlVblues := url.Vblues{
+		"q":        []string{sebrchString},
+		"pbge":     []string{strconv.Itob(pbge)},
+		"per_pbge": []string{"100"},
 	}
-	path := "search/repositories?" + urlValues.Encode()
-	var response restSearchResponse
-	if _, err := c.get(ctx, path, &response); err != nil {
-		return RepositoryListPage{}, err
+	pbth := "sebrch/repositories?" + urlVblues.Encode()
+	vbr response restSebrchResponse
+	if _, err := c.get(ctx, pbth, &response); err != nil {
+		return RepositoryListPbge{}, err
 	}
 	if response.IncompleteResults {
-		return RepositoryListPage{}, ErrIncompleteResults
+		return RepositoryListPbge{}, ErrIncompleteResults
 	}
-	repos := make([]*Repository, 0, len(response.Items))
-	for _, restRepo := range response.Items {
-		repos = append(repos, convertRestRepo(restRepo))
+	repos := mbke([]*Repository, 0, len(response.Items))
+	for _, restRepo := rbnge response.Items {
+		repos = bppend(repos, convertRestRepo(restRepo))
 	}
 
-	return RepositoryListPage{
-		TotalCount:  response.TotalCount,
+	return RepositoryListPbge{
+		TotblCount:  response.TotblCount,
 		Repos:       repos,
-		HasNextPage: page*100 < response.TotalCount,
+		HbsNextPbge: pbge*100 < response.TotblCount,
 	}, nil
 }
 
 // ListTopicsOnRepository lists topics on the given repository.
-func (c *V3Client) ListTopicsOnRepository(ctx context.Context, ownerAndName string) ([]string, error) {
-	owner, name, err := SplitRepositoryNameWithOwner(ownerAndName)
+func (c *V3Client) ListTopicsOnRepository(ctx context.Context, ownerAndNbme string) ([]string, error) {
+	owner, nbme, err := SplitRepositoryNbmeWithOwner(ownerAndNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	var result restTopicsResponse
-	if _, err := c.get(ctx, fmt.Sprintf("/repos/%s/%s/topics", owner, name), &result); err != nil {
-		if HTTPErrorCode(err) == http.StatusNotFound {
+	vbr result restTopicsResponse
+	if _, err := c.get(ctx, fmt.Sprintf("/repos/%s/%s/topics", owner, nbme), &result); err != nil {
+		if HTTPErrorCode(err) == http.StbtusNotFound {
 			return nil, ErrRepoNotFound
 		}
 		return nil, err
 	}
-	return result.Names, nil
+	return result.Nbmes, nil
 }
 
-// ListInstallationRepositories lists repositories on which the authenticated
-// GitHub App has been installed.
+// ListInstbllbtionRepositories lists repositories on which the buthenticbted
+// GitHub App hbs been instblled.
 //
-// API docs: https://docs.github.com/en/rest/reference/apps#list-repositories-accessible-to-the-app-installation
-func (c *V3Client) ListInstallationRepositories(ctx context.Context, page int) (
+// API docs: https://docs.github.com/en/rest/reference/bpps#list-repositories-bccessible-to-the-bpp-instbllbtion
+func (c *V3Client) ListInstbllbtionRepositories(ctx context.Context, pbge int) (
 	repos []*Repository,
-	hasNextPage bool,
-	rateLimitCost int,
+	hbsNextPbge bool,
+	rbteLimitCost int,
 	err error,
 ) {
 	type response struct {
 		Repositories []restRepository `json:"repositories"`
 	}
-	var resp response
-	path := fmt.Sprintf("installation/repositories?page=%d&per_page=100", page)
-	respState, err := c.get(ctx, path, &resp)
+	vbr resp response
+	pbth := fmt.Sprintf("instbllbtion/repositories?pbge=%d&per_pbge=100", pbge)
+	respStbte, err := c.get(ctx, pbth, &resp)
 	if err != nil {
-		return nil, false, 1, err
+		return nil, fblse, 1, err
 	}
-	repos = make([]*Repository, 0, len(resp.Repositories))
-	for _, restRepo := range resp.Repositories {
-		repos = append(repos, convertRestRepo(restRepo))
+	repos = mbke([]*Repository, 0, len(resp.Repositories))
+	for _, restRepo := rbnge resp.Repositories {
+		repos = bppend(repos, convertRestRepo(restRepo))
 	}
-	return repos, respState.hasNextPage(), 1, nil
+	return repos, respStbte.hbsNextPbge(), 1, nil
 }
 
-// listRepositories is a generic method that unmarshalls the given JSON HTTP
-// endpoint into a []restRepository. It will return an error if it fails.
+// listRepositories is b generic method thbt unmbrshblls the given JSON HTTP
+// endpoint into b []restRepository. It will return bn error if it fbils.
 //
-// This is used to extract repositories from the GitHub API endpoints:
+// This is used to extrbct repositories from the GitHub API endpoints:
 // - /users/:user/repos
 // - /orgs/:org/repos
 // - /user/repos
 func (c *V3Client) listRepositories(ctx context.Context, requestURI string) ([]*Repository, bool, error) {
-	var restRepos []restRepository
-	respState, err := c.get(ctx, requestURI, &restRepos)
+	vbr restRepos []restRepository
+	respStbte, err := c.get(ctx, requestURI, &restRepos)
 	if err != nil {
-		return nil, false, err
+		return nil, fblse, err
 	}
-	repos := make([]*Repository, 0, len(restRepos))
-	for _, restRepo := range restRepos {
-		// Sometimes GitHub API returns null JSON objects and JSON decoder unmarshalls
-		// them as a zero-valued `restRepository` objects.
+	repos := mbke([]*Repository, 0, len(restRepos))
+	for _, restRepo := rbnge restRepos {
+		// Sometimes GitHub API returns null JSON objects bnd JSON decoder unmbrshblls
+		// them bs b zero-vblued `restRepository` objects.
 		//
-		// See https://github.com/sourcegraph/customer/issues/1688 for details.
+		// See https://github.com/sourcegrbph/customer/issues/1688 for detbils.
 		if restRepo.ID == "" {
-			c.log.Warn("GitHub returned a repository without an ID", log.String("restRepository", fmt.Sprintf("%#v", restRepo)))
+			c.log.Wbrn("GitHub returned b repository without bn ID", log.String("restRepository", fmt.Sprintf("%#v", restRepo)))
 			continue
 		}
-		repos = append(repos, convertRestRepo(restRepo))
+		repos = bppend(repos, convertRestRepo(restRepo))
 	}
-	return repos, respState.hasNextPage(), nil
+	return repos, respStbte.hbsNextPbge(), nil
 }
 
 func (c *V3Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
-	var restRepo restRepository
+	vbr restRepo restRepository
 	if _, err := c.get(ctx, "repos/"+owner+"/"+repo, &restRepo); err != nil {
 		return nil, err
 	}
@@ -811,129 +811,129 @@ func (c *V3Client) GetRepo(ctx context.Context, owner, repo string) (*Repository
 }
 
 // Fork forks the given repository. If org is given, then the repository will
-// be forked into that organisation, otherwise the repository is forked into
-// the authenticated user's account.
-func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
-	// GitHub's fork endpoint will happily accept either a new or existing fork,
-	// and returns a valid repository either way. As such, we don't need to check
-	// if there's already an extant fork.
+// be forked into thbt orgbnisbtion, otherwise the repository is forked into
+// the buthenticbted user's bccount.
+func (c *V3Client) Fork(ctx context.Context, owner, repo string, org *string, forkNbme string) (*Repository, error) {
+	// GitHub's fork endpoint will hbppily bccept either b new or existing fork,
+	// bnd returns b vblid repository either wby. As such, we don't need to check
+	// if there's blrebdy bn extbnt fork.
 
-	payload := struct {
-		Org  *string `json:"organization,omitempty"`
-		Name string  `json:"name"`
-	}{Org: org, Name: forkName}
+	pbylobd := struct {
+		Org  *string `json:"orgbnizbtion,omitempty"`
+		Nbme string  `json:"nbme"`
+	}{Org: org, Nbme: forkNbme}
 
-	var restRepo restRepository
-	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/forks", payload, &restRepo); err != nil {
+	vbr restRepo restRepository
+	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/forks", pbylobd, &restRepo); err != nil {
 		return nil, err
 	}
 
 	return convertRestRepo(restRepo), nil
 }
 
-// DeleteBranch deletes the given branch from the given repository.
-func (c *V3Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
-	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/heads/"+branch); err != nil {
+// DeleteBrbnch deletes the given brbnch from the given repository.
+func (c *V3Client) DeleteBrbnch(ctx context.Context, owner, repo, brbnch string) error {
+	if _, err := c.delete(ctx, "repos/"+owner+"/"+repo+"/git/refs/hebds/"+brbnch); err != nil {
 		return err
 	}
 	return nil
 }
 
-// GetRef gets the contents of a single commit reference in a repository. The ref should
-// be supplied in a fully qualified format, such as `refs/heads/branch` or
-// `refs/tags/tag`.
+// GetRef gets the contents of b single commit reference in b repository. The ref should
+// be supplied in b fully qublified formbt, such bs `refs/hebds/brbnch` or
+// `refs/tbgs/tbg`.
 func (c *V3Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
-	var commit restCommitRef
+	vbr commit restCommitRef
 	if _, err := c.get(ctx, "repos/"+owner+"/"+repo+"/commits/"+ref, &commit); err != nil {
 		return nil, err
 	}
 	return &commit, nil
 }
 
-// CreateCommit creates a commit in the given repository based on a tree object.
-func (c *V3Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
-	payload := struct {
-		Message   string              `json:"message"`
+// CrebteCommit crebtes b commit in the given repository bbsed on b tree object.
+func (c *V3Client) CrebteCommit(ctx context.Context, owner, repo, messbge, tree string, pbrents []string, buthor, committer *restAuthorCommiter) (*RestCommit, error) {
+	pbylobd := struct {
+		Messbge   string              `json:"messbge"`
 		Tree      string              `json:"tree"`
-		Parents   []string            `json:"parents"`
-		Author    *restAuthorCommiter `json:"author,omitempty"`
+		Pbrents   []string            `json:"pbrents"`
+		Author    *restAuthorCommiter `json:"buthor,omitempty"`
 		Committer *restAuthorCommiter `json:"committer,omitempty"`
-	}{Message: message, Tree: tree, Parents: parents, Author: author, Committer: committer}
+	}{Messbge: messbge, Tree: tree, Pbrents: pbrents, Author: buthor, Committer: committer}
 
-	var commit RestCommit
-	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/git/commits", payload, &commit); err != nil {
+	vbr commit RestCommit
+	if _, err := c.post(ctx, "repos/"+owner+"/"+repo+"/git/commits", pbylobd, &commit); err != nil {
 		return nil, err
 	}
 	return &commit, nil
 }
 
-// UpdateRef updates the ref of a branch to point to the given commit. The ref should be
-// supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
-func (c *V3Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
-	var updatedRef restUpdatedRef
-	if _, err := c.patch(ctx, "repos/"+owner+"/"+repo+"/git/"+ref, struct {
-		SHA   string `json:"sha"`
+// UpdbteRef updbtes the ref of b brbnch to point to the given commit. The ref should be
+// supplied in b fully qublified formbt, such bs `refs/hebds/brbnch` or `refs/tbgs/tbg`.
+func (c *V3Client) UpdbteRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdbtedRef, error) {
+	vbr updbtedRef restUpdbtedRef
+	if _, err := c.pbtch(ctx, "repos/"+owner+"/"+repo+"/git/"+ref, struct {
+		SHA   string `json:"shb"`
 		Force bool   `json:"force"`
-	}{SHA: commit, Force: true}, &updatedRef); err != nil {
+	}{SHA: commit, Force: true}, &updbtedRef); err != nil {
 		return nil, err
 	}
-	return &updatedRef, nil
+	return &updbtedRef, nil
 }
 
-// GetAppInstallation gets information of a GitHub App installation.
+// GetAppInstbllbtion gets informbtion of b GitHub App instbllbtion.
 //
-// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
-func (c *V3Client) GetAppInstallation(ctx context.Context, installationID int64) (*github.Installation, error) {
-	var ins github.Installation
-	if _, err := c.get(ctx, fmt.Sprintf("app/installations/%d", installationID), &ins); err != nil {
+// API docs: https://docs.github.com/en/rest/reference/bpps#get-bn-instbllbtion-for-the-buthenticbted-bpp
+func (c *V3Client) GetAppInstbllbtion(ctx context.Context, instbllbtionID int64) (*github.Instbllbtion, error) {
+	vbr ins github.Instbllbtion
+	if _, err := c.get(ctx, fmt.Sprintf("bpp/instbllbtions/%d", instbllbtionID), &ins); err != nil {
 		return nil, err
 	}
 	return &ins, nil
 }
 
-// GetAppInstallations fetches a list of GitHub App instalaltions for the
-// authenticated GitHub App.
+// GetAppInstbllbtions fetches b list of GitHub App instblbltions for the
+// buthenticbted GitHub App.
 //
-// API docs: https://docs.github.com/en/rest/reference/apps#get-an-installation-for-the-authenticated-app
-func (c *V3Client) GetAppInstallations(ctx context.Context) ([]*github.Installation, error) {
-	var ins []*github.Installation
-	if _, err := c.get(ctx, "app/installations", &ins); err != nil {
+// API docs: https://docs.github.com/en/rest/reference/bpps#get-bn-instbllbtion-for-the-buthenticbted-bpp
+func (c *V3Client) GetAppInstbllbtions(ctx context.Context) ([]*github.Instbllbtion, error) {
+	vbr ins []*github.Instbllbtion
+	if _, err := c.get(ctx, "bpp/instbllbtions", &ins); err != nil {
 		return nil, err
 	}
 	return ins, nil
 }
 
-// CreateAppInstallationAccessToken creates an access token for the installation.
+// CrebteAppInstbllbtionAccessToken crebtes bn bccess token for the instbllbtion.
 //
-// API docs: https://docs.github.com/en/rest/reference/apps#create-an-installation-access-token-for-an-app
-func (c *V3Client) CreateAppInstallationAccessToken(ctx context.Context, installationID int64) (*github.InstallationToken, error) {
-	var token github.InstallationToken
-	if _, err := c.post(ctx, fmt.Sprintf("app/installations/%d/access_tokens", installationID), nil, &token); err != nil {
+// API docs: https://docs.github.com/en/rest/reference/bpps#crebte-bn-instbllbtion-bccess-token-for-bn-bpp
+func (c *V3Client) CrebteAppInstbllbtionAccessToken(ctx context.Context, instbllbtionID int64) (*github.InstbllbtionToken, error) {
+	vbr token github.InstbllbtionToken
+	if _, err := c.post(ctx, fmt.Sprintf("bpp/instbllbtions/%d/bccess_tokens", instbllbtionID), nil, &token); err != nil {
 		return nil, err
 	}
 	return &token, nil
 }
 
-// GetUserInstallations returns a list of GitHub App installations the user has access to
+// GetUserInstbllbtions returns b list of GitHub App instbllbtions the user hbs bccess to
 //
-// API docs: https://docs.github.com/en/rest/reference/apps#list-app-installations-accessible-to-the-user-access-token
-func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installation, error) {
-	var resultStruct struct {
-		Installations []github.Installation `json:"installations,omitempty"`
+// API docs: https://docs.github.com/en/rest/reference/bpps#list-bpp-instbllbtions-bccessible-to-the-user-bccess-token
+func (c *V3Client) GetUserInstbllbtions(ctx context.Context) ([]github.Instbllbtion, error) {
+	vbr resultStruct struct {
+		Instbllbtions []github.Instbllbtion `json:"instbllbtions,omitempty"`
 	}
-	if _, err := c.get(ctx, "user/installations", &resultStruct); err != nil {
+	if _, err := c.get(ctx, "user/instbllbtions", &resultStruct); err != nil {
 		return nil, err
 	}
 
-	return resultStruct.Installations, nil
+	return resultStruct.Instbllbtions, nil
 }
 
-type WebhookPayload struct {
-	Name   string   `json:"name"`
+type WebhookPbylobd struct {
+	Nbme   string   `json:"nbme"`
 	ID     int      `json:"id,omitempty"`
 	Config Config   `json:"config"`
 	Events []string `json:"events"`
-	Active bool     `json:"active"`
+	Active bool     `json:"bctive"`
 	URL    string   `json:"url"`
 }
 
@@ -946,22 +946,22 @@ type Config struct {
 	Digest      string `json:"digest,omitempty"`
 }
 
-// CreateSyncWebhook returns the id of the newly created webhook, or 0 if there
-// was an error
+// CrebteSyncWebhook returns the id of the newly crebted webhook, or 0 if there
+// wbs bn error
 //
-// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
-// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
-func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, secret string) (int, error) {
-	hooksUrl, err := webhookURLBuilder(repoName)
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@lbtest/rest/webhooks/repos#crebte-b-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#crebte-b-repository-webhook
+func (c *V3Client) CrebteSyncWebhook(ctx context.Context, repoNbme, tbrgetHost, secret string) (int, error) {
+	hooksUrl, err := webhookURLBuilder(repoNbme)
 	if err != nil {
 		return 0, err
 	}
 
-	payload := WebhookPayload{
-		Name:   "web",
+	pbylobd := WebhookPbylobd{
+		Nbme:   "web",
 		Active: true,
 		Config: Config{
-			URL:         fmt.Sprintf("https://%s/github-webhooks", targetHost),
+			URL:         fmt.Sprintf("https://%s/github-webhooks", tbrgetHost),
 			ContentType: "json",
 			Secret:      secret,
 			InsecureSSL: "0",
@@ -971,114 +971,114 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetHost, 
 		},
 	}
 
-	var result WebhookPayload
-	resp, err := c.post(ctx, hooksUrl, payload, &result)
+	vbr result WebhookPbylobd
+	resp, err := c.post(ctx, hooksUrl, pbylobd, &result)
 	if err != nil {
 		return 0, err
 	}
 
-	if resp.statusCode != http.StatusCreated {
-		return 0, errors.Newf("expected status code 201, got %d", resp.statusCode)
+	if resp.stbtusCode != http.StbtusCrebted {
+		return 0, errors.Newf("expected stbtus code 201, got %d", resp.stbtusCode)
 	}
 
 	return result.ID, nil
 }
 
-// ListSyncWebhooks returns an array of WebhookPayloads
+// ListSyncWebhooks returns bn brrby of WebhookPbylobds
 //
-// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@lbtest/rest/webhooks/repos#list-repository-webhooks
 // Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
-func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
-	hooksUrl, err := webhookURLBuilder(repoName)
+func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoNbme string) ([]WebhookPbylobd, error) {
+	hooksUrl, err := webhookURLBuilder(repoNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []WebhookPayload
+	vbr results []WebhookPbylobd
 	resp, err := c.get(ctx, hooksUrl, &results)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.statusCode != http.StatusOK {
-		return nil, errors.Newf("expected status code 200, got %d", resp.statusCode)
+	if resp.stbtusCode != http.StbtusOK {
+		return nil, errors.Newf("expected stbtus code 200, got %d", resp.stbtusCode)
 	}
 
 	return results, nil
 }
 
-// FindSyncWebhook looks for any webhook with the targetURL ending in
+// FindSyncWebhook looks for bny webhook with the tbrgetURL ending in
 // /github-webhooks
-func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (*WebhookPayload, error) {
-	payloads, err := c.ListSyncWebhooks(ctx, repoName)
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoNbme string) (*WebhookPbylobd, error) {
+	pbylobds, err := c.ListSyncWebhooks(ctx, repoNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, payload := range payloads {
-		if strings.Contains(payload.Config.URL, "github-webhooks") {
-			return &payload, nil
+	for _, pbylobd := rbnge pbylobds {
+		if strings.Contbins(pbylobd.Config.URL, "github-webhooks") {
+			return &pbylobd, nil
 		}
 	}
 
-	return nil, errors.New("unable to find webhook")
+	return nil, errors.New("unbble to find webhook")
 }
 
-// DeleteSyncWebhook returns a boolean answer as to whether the target repo was
+// DeleteSyncWebhook returns b boolebn bnswer bs to whether the tbrget repo wbs
 // deleted or not
 //
-// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
-// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
-func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	hookUrl, err := webhookURLBuilderWithID(repoName, hookID)
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@lbtest/rest/webhooks/repos#delete-b-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-b-repository-webhook
+func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoNbme string, hookID int) (bool, error) {
+	hookUrl, err := webhookURLBuilderWithID(repoNbme, hookID)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	resp, err := c.delete(ctx, hookUrl)
 	if err != nil && err != io.EOF {
-		return false, err
+		return fblse, err
 	}
 
-	if resp.statusCode != http.StatusNoContent {
-		return false, errors.Newf("expected status code 204, got %d", resp.statusCode)
+	if resp.stbtusCode != http.StbtusNoContent {
+		return fblse, errors.Newf("expected stbtus code 204, got %d", resp.stbtusCode)
 	}
 
 	return true, nil
 }
 
-// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API
-func webhookURLBuilder(repoName string) (string, error) {
-	repoName = fmt.Sprintf("//%s", repoName)
-	u, err := url.Parse(repoName)
+// webhookURLBuilder builds the URL to interfbce with the GitHub Webhooks API
+func webhookURLBuilder(repoNbme string) (string, error) {
+	repoNbme = fmt.Sprintf("//%s", repoNbme)
+	u, err := url.Pbrse(repoNbme)
 	if err != nil {
-		return "", errors.Newf("error parsing URL:", err)
+		return "", errors.Newf("error pbrsing URL:", err)
 	}
 
 	if u.Host == "github.com" {
-		return fmt.Sprintf("https://api.github.com/repos%s/hooks", u.Path), nil
+		return fmt.Sprintf("https://bpi.github.com/repos%s/hooks", u.Pbth), nil
 	}
-	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
+	return fmt.Sprintf("https://%s/bpi/v3/repos%s/hooks", u.Host, u.Pbth), nil
 }
 
-// webhookURLBuilderWithID builds the URL to interface with the GitHub Webhooks
-// API but with a hook ID
-func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
-	repoName = fmt.Sprintf("//%s", repoName)
-	u, err := url.Parse(repoName)
+// webhookURLBuilderWithID builds the URL to interfbce with the GitHub Webhooks
+// API but with b hook ID
+func webhookURLBuilderWithID(repoNbme string, hookID int) (string, error) {
+	repoNbme = fmt.Sprintf("//%s", repoNbme)
+	u, err := url.Pbrse(repoNbme)
 	if err != nil {
-		return "", errors.Newf("error parsing URL:", err)
+		return "", errors.Newf("error pbrsing URL:", err)
 	}
 
 	if u.Host == "github.com" {
-		return fmt.Sprintf("https://api.github.com/repos%s/hooks/%d", u.Path, hookID), nil
+		return fmt.Sprintf("https://bpi.github.com/repos%s/hooks/%d", u.Pbth, hookID), nil
 	}
-	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks/%d", u.Host, u.Path, hookID), nil
+	return fmt.Sprintf("https://%s/bpi/v3/repos%s/hooks/%d", u.Host, u.Pbth, hookID), nil
 }
 
-// responseHasNextPage checks if the Link header of the response contains a
-// URL tagged with rel="next".
-// If this header is not present, it also means there is only one page.
-func (r *httpResponseState) hasNextPage() bool {
-	return strings.Contains(r.headers.Get("Link"), "rel=\"next\"")
+// responseHbsNextPbge checks if the Link hebder of the response contbins b
+// URL tbgged with rel="next".
+// If this hebder is not present, it blso mebns there is only one pbge.
+func (r *httpResponseStbte) hbsNextPbge() bool {
+	return strings.Contbins(r.hebders.Get("Link"), "rel=\"next\"")
 }

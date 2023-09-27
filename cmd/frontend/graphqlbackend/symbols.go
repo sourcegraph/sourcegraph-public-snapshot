@@ -1,70 +1,70 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/symbol"
 )
 
 type symbolsArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	Query           *string
-	IncludePatterns *[]string
+	IncludePbtterns *[]string
 }
 
-func (r *GitTreeEntryResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := symbol.Compute(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.commit.inputRev, args.Query, args.First, args.IncludePatterns)
+func (r *GitTreeEntryResolver) Symbols(ctx context.Context, brgs *symbolsArgs) (*symbolConnectionResolver, error) {
+	symbols, err := symbol.Compute(ctx, buthz.DefbultSubRepoPermsChecker, r.commit.repoResolver.RepoMbtch.RepoNbme(), bpi.CommitID(r.commit.oid), r.commit.inputRev, brgs.Query, brgs.First, brgs.IncludePbtterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
 	return &symbolConnectionResolver{
 		symbols: symbolResultsToResolvers(r.db, r.commit, symbols),
-		first:   args.First,
+		first:   brgs.First,
 	}, nil
 }
 
-func (r *GitTreeEntryResolver) Symbol(ctx context.Context, args *struct {
+func (r *GitTreeEntryResolver) Symbol(ctx context.Context, brgs *struct {
 	Line      int32
-	Character int32
+	Chbrbcter int32
 }) (*symbolResolver, error) {
-	symbolMatch, err := symbol.GetMatchAtLineCharacter(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoMatch.RepoName(), api.CommitID(r.commit.oid), r.Path(), int(args.Line), int(args.Character))
-	if err != nil || symbolMatch == nil {
+	symbolMbtch, err := symbol.GetMbtchAtLineChbrbcter(ctx, buthz.DefbultSubRepoPermsChecker, r.commit.repoResolver.RepoMbtch.RepoNbme(), bpi.CommitID(r.commit.oid), r.Pbth(), int(brgs.Line), int(brgs.Chbrbcter))
+	if err != nil || symbolMbtch == nil {
 		return nil, err
 	}
-	return &symbolResolver{r.db, r.commit, symbolMatch}, nil
+	return &symbolResolver{r.db, r.commit, symbolMbtch}, nil
 }
 
-func (r *GitCommitResolver) Symbols(ctx context.Context, args *symbolsArgs) (*symbolConnectionResolver, error) {
-	symbols, err := symbol.Compute(ctx, authz.DefaultSubRepoPermsChecker, r.repoResolver.RepoMatch.RepoName(), api.CommitID(r.oid), r.inputRev, args.Query, args.First, args.IncludePatterns)
+func (r *GitCommitResolver) Symbols(ctx context.Context, brgs *symbolsArgs) (*symbolConnectionResolver, error) {
+	symbols, err := symbol.Compute(ctx, buthz.DefbultSubRepoPermsChecker, r.repoResolver.RepoMbtch.RepoNbme(), bpi.CommitID(r.oid), r.inputRev, brgs.Query, brgs.First, brgs.IncludePbtterns)
 	if err != nil && len(symbols) == 0 {
 		return nil, err
 	}
 	return &symbolConnectionResolver{
 		symbols: symbolResultsToResolvers(r.db, r, symbols),
-		first:   args.First,
+		first:   brgs.First,
 	}, nil
 }
 
-func symbolResultsToResolvers(db database.DB, commit *GitCommitResolver, symbolMatches []*result.SymbolMatch) []symbolResolver {
-	symbolResolvers := make([]symbolResolver, 0, len(symbolMatches))
-	for _, symbolMatch := range symbolMatches {
-		symbolResolvers = append(symbolResolvers, toSymbolResolver(db, commit, symbolMatch))
+func symbolResultsToResolvers(db dbtbbbse.DB, commit *GitCommitResolver, symbolMbtches []*result.SymbolMbtch) []symbolResolver {
+	symbolResolvers := mbke([]symbolResolver, 0, len(symbolMbtches))
+	for _, symbolMbtch := rbnge symbolMbtches {
+		symbolResolvers = bppend(symbolResolvers, toSymbolResolver(db, commit, symbolMbtch))
 	}
 	return symbolResolvers
 }
 
-func toSymbolResolver(db database.DB, commit *GitCommitResolver, sr *result.SymbolMatch) symbolResolver {
+func toSymbolResolver(db dbtbbbse.DB, commit *GitCommitResolver, sr *result.SymbolMbtch) symbolResolver {
 	return symbolResolver{
 		db:          db,
 		commit:      commit,
-		SymbolMatch: sr,
+		SymbolMbtch: sr,
 	}
 }
 
@@ -73,38 +73,38 @@ type symbolConnectionResolver struct {
 	symbols []symbolResolver
 }
 
-func limitOrDefault(first *int32) int {
+func limitOrDefbult(first *int32) int {
 	if first == nil {
-		return symbol.DefaultSymbolLimit
+		return symbol.DefbultSymbolLimit
 	}
 	return int(*first)
 }
 
 func (r *symbolConnectionResolver) Nodes(ctx context.Context) ([]symbolResolver, error) {
 	symbols := r.symbols
-	if len(r.symbols) > limitOrDefault(r.first) {
-		symbols = symbols[:limitOrDefault(r.first)]
+	if len(r.symbols) > limitOrDefbult(r.first) {
+		symbols = symbols[:limitOrDefbult(r.first)]
 	}
 	return symbols, nil
 }
 
-func (r *symbolConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(len(r.symbols) > limitOrDefault(r.first)), nil
+func (r *symbolConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	return grbphqlutil.HbsNextPbge(len(r.symbols) > limitOrDefbult(r.first)), nil
 }
 
 type symbolResolver struct {
-	db     database.DB
+	db     dbtbbbse.DB
 	commit *GitCommitResolver
-	*result.SymbolMatch
+	*result.SymbolMbtch
 }
 
-func (r symbolResolver) Name() string { return r.Symbol.Name }
+func (r symbolResolver) Nbme() string { return r.Symbol.Nbme }
 
-func (r symbolResolver) ContainerName() *string {
-	if r.Symbol.Parent == "" {
+func (r symbolResolver) ContbinerNbme() *string {
+	if r.Symbol.Pbrent == "" {
 		return nil
 	}
-	return &r.Symbol.Parent
+	return &r.Symbol.Pbrent
 }
 
 func (r symbolResolver) Kind() string /* enum SymbolKind */ {
@@ -115,23 +115,23 @@ func (r symbolResolver) Kind() string /* enum SymbolKind */ {
 	return strings.ToUpper(kind.String())
 }
 
-func (r symbolResolver) Language() string { return r.Symbol.Language }
+func (r symbolResolver) Lbngubge() string { return r.Symbol.Lbngubge }
 
-func (r symbolResolver) Location() *locationResolver {
-	stat := CreateFileInfo(r.Symbol.Path, false)
-	sr := r.Symbol.Range()
+func (r symbolResolver) Locbtion() *locbtionResolver {
+	stbt := CrebteFileInfo(r.Symbol.Pbth, fblse)
+	sr := r.Symbol.Rbnge()
 	opts := GitTreeEntryResolverOpts{
 		Commit: r.commit,
-		Stat:   stat,
+		Stbt:   stbt,
 	}
-	return &locationResolver{
+	return &locbtionResolver{
 		resource: NewGitTreeEntryResolver(r.db, gitserver.NewClient(), opts),
-		lspRange: &sr,
+		lspRbnge: &sr,
 	}
 }
 
-func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Location().URL(ctx) }
+func (r symbolResolver) URL(ctx context.Context) (string, error) { return r.Locbtion().URL(ctx) }
 
-func (r symbolResolver) CanonicalURL() string { return r.Location().CanonicalURL() }
+func (r symbolResolver) CbnonicblURL() string { return r.Locbtion().CbnonicblURL() }
 
-func (r symbolResolver) FileLocal() bool { return r.Symbol.FileLimited }
+func (r symbolResolver) FileLocbl() bool { return r.Symbol.FileLimited }

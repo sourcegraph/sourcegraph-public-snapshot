@@ -1,196 +1,196 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
 type NotebooksOrderBy string
 
 const (
-	NotebookOrderByUpdatedAt NotebooksOrderBy = "NOTEBOOK_UPDATED_AT"
-	NotebookOrderByCreatedAt NotebooksOrderBy = "NOTEBOOK_CREATED_AT"
-	NotebookOrderByStarCount NotebooksOrderBy = "NOTEBOOK_STAR_COUNT"
+	NotebookOrderByUpdbtedAt NotebooksOrderBy = "NOTEBOOK_UPDATED_AT"
+	NotebookOrderByCrebtedAt NotebooksOrderBy = "NOTEBOOK_CREATED_AT"
+	NotebookOrderByStbrCount NotebooksOrderBy = "NOTEBOOK_STAR_COUNT"
 )
 
-type NotebooksResolver interface {
-	NotebookByID(ctx context.Context, id graphql.ID) (NotebookResolver, error)
-	CreateNotebook(ctx context.Context, args CreateNotebookInputArgs) (NotebookResolver, error)
-	UpdateNotebook(ctx context.Context, args UpdateNotebookInputArgs) (NotebookResolver, error)
-	DeleteNotebook(ctx context.Context, args DeleteNotebookArgs) (*EmptyResponse, error)
-	Notebooks(ctx context.Context, args ListNotebooksArgs) (NotebookConnectionResolver, error)
+type NotebooksResolver interfbce {
+	NotebookByID(ctx context.Context, id grbphql.ID) (NotebookResolver, error)
+	CrebteNotebook(ctx context.Context, brgs CrebteNotebookInputArgs) (NotebookResolver, error)
+	UpdbteNotebook(ctx context.Context, brgs UpdbteNotebookInputArgs) (NotebookResolver, error)
+	DeleteNotebook(ctx context.Context, brgs DeleteNotebookArgs) (*EmptyResponse, error)
+	Notebooks(ctx context.Context, brgs ListNotebooksArgs) (NotebookConnectionResolver, error)
 
-	CreateNotebookStar(ctx context.Context, args CreateNotebookStarInputArgs) (NotebookStarResolver, error)
-	DeleteNotebookStar(ctx context.Context, args DeleteNotebookStarInputArgs) (*EmptyResponse, error)
+	CrebteNotebookStbr(ctx context.Context, brgs CrebteNotebookStbrInputArgs) (NotebookStbrResolver, error)
+	DeleteNotebookStbr(ctx context.Context, brgs DeleteNotebookStbrInputArgs) (*EmptyResponse, error)
 
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
-type NotebookConnectionResolver interface {
+type NotebookConnectionResolver interfbce {
 	Nodes(ctx context.Context) []NotebookResolver
-	TotalCount(ctx context.Context) int32
-	PageInfo(ctx context.Context) *graphqlutil.PageInfo
+	TotblCount(ctx context.Context) int32
+	PbgeInfo(ctx context.Context) *grbphqlutil.PbgeInfo
 }
 
-type NotebookStarResolver interface {
+type NotebookStbrResolver interfbce {
 	User(context.Context) (*UserResolver, error)
-	CreatedAt() gqlutil.DateTime
+	CrebtedAt() gqlutil.DbteTime
 }
 
-type NotebookStarConnectionResolver interface {
-	Nodes() []NotebookStarResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+type NotebookStbrConnectionResolver interfbce {
+	Nodes() []NotebookStbrResolver
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type NotebookResolver interface {
-	ID() graphql.ID
+type NotebookResolver interfbce {
+	ID() grbphql.ID
 	Title(ctx context.Context) string
 	Blocks(ctx context.Context) []NotebookBlockResolver
-	Creator(ctx context.Context) (*UserResolver, error)
-	Updater(ctx context.Context) (*UserResolver, error)
-	Namespace(ctx context.Context) (*NamespaceResolver, error)
+	Crebtor(ctx context.Context) (*UserResolver, error)
+	Updbter(ctx context.Context) (*UserResolver, error)
+	Nbmespbce(ctx context.Context) (*NbmespbceResolver, error)
 	Public(ctx context.Context) bool
-	UpdatedAt(ctx context.Context) gqlutil.DateTime
-	CreatedAt(ctx context.Context) gqlutil.DateTime
-	ViewerCanManage(ctx context.Context) (bool, error)
-	ViewerHasStarred(ctx context.Context) (bool, error)
-	Stars(ctx context.Context, args ListNotebookStarsArgs) (NotebookStarConnectionResolver, error)
+	UpdbtedAt(ctx context.Context) gqlutil.DbteTime
+	CrebtedAt(ctx context.Context) gqlutil.DbteTime
+	ViewerCbnMbnbge(ctx context.Context) (bool, error)
+	ViewerHbsStbrred(ctx context.Context) (bool, error)
+	Stbrs(ctx context.Context, brgs ListNotebookStbrsArgs) (NotebookStbrConnectionResolver, error)
 }
 
-type NotebookBlockResolver interface {
-	ToMarkdownBlock() (MarkdownBlockResolver, bool)
+type NotebookBlockResolver interfbce {
+	ToMbrkdownBlock() (MbrkdownBlockResolver, bool)
 	ToQueryBlock() (QueryBlockResolver, bool)
 	ToFileBlock() (FileBlockResolver, bool)
 	ToSymbolBlock() (SymbolBlockResolver, bool)
 }
 
-type MarkdownBlockResolver interface {
+type MbrkdownBlockResolver interfbce {
 	ID() string
-	MarkdownInput() string
+	MbrkdownInput() string
 }
 
-type QueryBlockResolver interface {
+type QueryBlockResolver interfbce {
 	ID() string
 	QueryInput() string
 }
 
-type FileBlockResolver interface {
+type FileBlockResolver interfbce {
 	ID() string
 	FileInput() FileBlockInputResolver
 }
 
-type FileBlockInputResolver interface {
-	RepositoryName() string
-	FilePath() string
+type FileBlockInputResolver interfbce {
+	RepositoryNbme() string
+	FilePbth() string
 	Revision() *string
-	LineRange() FileBlockLineRangeResolver
+	LineRbnge() FileBlockLineRbngeResolver
 }
 
-type SymbolBlockResolver interface {
+type SymbolBlockResolver interfbce {
 	ID() string
 	SymbolInput() SymbolBlockInputResolver
 }
 
-type SymbolBlockInputResolver interface {
-	RepositoryName() string
-	FilePath() string
+type SymbolBlockInputResolver interfbce {
+	RepositoryNbme() string
+	FilePbth() string
 	Revision() *string
 	LineContext() int32
-	SymbolName() string
-	SymbolContainerName() string
+	SymbolNbme() string
+	SymbolContbinerNbme() string
 	SymbolKind() string
 }
 
-type FileBlockLineRangeResolver interface {
-	StartLine() int32
+type FileBlockLineRbngeResolver interfbce {
+	StbrtLine() int32
 	EndLine() int32
 }
 
 type NotebookBlockType string
 
 const (
-	NotebookMarkdownBlockType NotebookBlockType = "MARKDOWN"
+	NotebookMbrkdownBlockType NotebookBlockType = "MARKDOWN"
 	NotebookQueryBlockType    NotebookBlockType = "QUERY"
 	NotebookFileBlockType     NotebookBlockType = "FILE"
 	NotebookSymbolBlockType   NotebookBlockType = "SYMBOL"
 )
 
-type CreateNotebookInputArgs struct {
+type CrebteNotebookInputArgs struct {
 	Notebook NotebookInputArgs `json:"notebook"`
 }
 
-type UpdateNotebookInputArgs struct {
-	ID       graphql.ID        `json:"id"`
+type UpdbteNotebookInputArgs struct {
+	ID       grbphql.ID        `json:"id"`
 	Notebook NotebookInputArgs `json:"notebook"`
 }
 
 type DeleteNotebookArgs struct {
-	ID graphql.ID `json:"id"`
+	ID grbphql.ID `json:"id"`
 }
 
 type NotebookInputArgs struct {
 	Title     string                         `json:"title"`
-	Blocks    []CreateNotebookBlockInputArgs `json:"blocks"`
+	Blocks    []CrebteNotebookBlockInputArgs `json:"blocks"`
 	Public    bool                           `json:"public"`
-	Namespace graphql.ID                     `json:"namespace"`
+	Nbmespbce grbphql.ID                     `json:"nbmespbce"`
 }
 
-type CreateNotebookBlockInputArgs struct {
+type CrebteNotebookBlockInputArgs struct {
 	ID            string                  `json:"id"`
 	Type          NotebookBlockType       `json:"type"`
-	MarkdownInput *string                 `json:"markdownInput"`
+	MbrkdownInput *string                 `json:"mbrkdownInput"`
 	QueryInput    *string                 `json:"queryInput"`
-	FileInput     *CreateFileBlockInput   `json:"fileInput"`
-	SymbolInput   *CreateSymbolBlockInput `json:"symbolInput"`
+	FileInput     *CrebteFileBlockInput   `json:"fileInput"`
+	SymbolInput   *CrebteSymbolBlockInput `json:"symbolInput"`
 }
 
-type CreateFileBlockInput struct {
-	RepositoryName string                         `json:"repositoryName"`
-	FilePath       string                         `json:"filePath"`
+type CrebteFileBlockInput struct {
+	RepositoryNbme string                         `json:"repositoryNbme"`
+	FilePbth       string                         `json:"filePbth"`
 	Revision       *string                        `json:"revision"`
-	LineRange      *CreateFileBlockLineRangeInput `json:"lineRange"`
+	LineRbnge      *CrebteFileBlockLineRbngeInput `json:"lineRbnge"`
 }
 
-type CreateSymbolBlockInput struct {
-	RepositoryName      string  `json:"repositoryName"`
-	FilePath            string  `json:"filePath"`
+type CrebteSymbolBlockInput struct {
+	RepositoryNbme      string  `json:"repositoryNbme"`
+	FilePbth            string  `json:"filePbth"`
 	Revision            *string `json:"revision"`
 	LineContext         int32   `json:"lineContext"`
-	SymbolName          string  `json:"symbolName"`
-	SymbolContainerName string  `json:"symbolContainerName"`
+	SymbolNbme          string  `json:"symbolNbme"`
+	SymbolContbinerNbme string  `json:"symbolContbinerNbme"`
 	SymbolKind          string  `json:"symbolKind"`
 }
 
-type CreateFileBlockLineRangeInput struct {
-	StartLine int32 `json:"startLine"`
+type CrebteFileBlockLineRbngeInput struct {
+	StbrtLine int32 `json:"stbrtLine"`
 	EndLine   int32 `json:"endLine"`
 }
 
 type ListNotebooksArgs struct {
 	First           int32            `json:"first"`
-	After           *string          `json:"after"`
+	After           *string          `json:"bfter"`
 	Query           *string          `json:"query"`
-	CreatorUserID   *graphql.ID      `json:"creatorUserID"`
-	StarredByUserID *graphql.ID      `json:"starredByUserID"`
-	Namespace       *graphql.ID      `json:"namespace"`
+	CrebtorUserID   *grbphql.ID      `json:"crebtorUserID"`
+	StbrredByUserID *grbphql.ID      `json:"stbrredByUserID"`
+	Nbmespbce       *grbphql.ID      `json:"nbmespbce"`
 	OrderBy         NotebooksOrderBy `json:"orderBy"`
 	Descending      bool             `json:"descending"`
 }
 
-type ListNotebookStarsArgs struct {
+type ListNotebookStbrsArgs struct {
 	First int32   `json:"first"`
-	After *string `json:"after"`
+	After *string `json:"bfter"`
 }
 
-type CreateNotebookStarInputArgs struct {
-	NotebookID graphql.ID
+type CrebteNotebookStbrInputArgs struct {
+	NotebookID grbphql.ID
 }
 
-type DeleteNotebookStarInputArgs struct {
-	NotebookID graphql.ID
+type DeleteNotebookStbrInputArgs struct {
+	NotebookID grbphql.ID
 }

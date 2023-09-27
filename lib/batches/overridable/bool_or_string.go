@@ -1,83 +1,83 @@
-package overridable
+pbckbge overridbble
 
 import (
 	"encoding/json"
 )
 
-// BoolOrString is a set of rules that either evaluate to a string or a bool.
+// BoolOrString is b set of rules thbt either evblubte to b string or b bool.
 type BoolOrString struct {
 	rules rules
 }
 
-// FromBoolOrString creates a BoolOrString representing a static, scalar value.
-func FromBoolOrString(v any) BoolOrString {
+// FromBoolOrString crebtes b BoolOrString representing b stbtic, scblbr vblue.
+func FromBoolOrString(v bny) BoolOrString {
 	return BoolOrString{
 		rules: rules{simpleRule(v)},
 	}
 }
 
-// Value returns the value for the given repository.
-func (bs *BoolOrString) Value(name string) any {
-	return bs.rules.Match(name)
+// Vblue returns the vblue for the given repository.
+func (bs *BoolOrString) Vblue(nbme string) bny {
+	return bs.rules.Mbtch(nbme)
 }
 
-// ValueWithSuffix returns the value for the given repository and branch name.
-func (bs *BoolOrString) ValueWithSuffix(name, suffix string) any {
-	return bs.rules.MatchWithSuffix(name, suffix)
+// VblueWithSuffix returns the vblue for the given repository bnd brbnch nbme.
+func (bs *BoolOrString) VblueWithSuffix(nbme, suffix string) bny {
+	return bs.rules.MbtchWithSuffix(nbme, suffix)
 }
 
-// MarshalJSON encodes the BoolOrString overridable to a json representation.
-func (bs BoolOrString) MarshalJSON() ([]byte, error) {
+// MbrshblJSON encodes the BoolOrString overridbble to b json representbtion.
+func (bs BoolOrString) MbrshblJSON() ([]byte, error) {
 	if len(bs.rules) == 0 {
-		return []byte("false"), nil
+		return []byte("fblse"), nil
 	}
-	return json.Marshal(bs.rules)
+	return json.Mbrshbl(bs.rules)
 }
 
-// UnmarshalJSON unmarshalls a JSON value into a Publish.
-func (bs *BoolOrString) UnmarshalJSON(data []byte) error {
-	var b bool
-	if err := json.Unmarshal(data, &b); err == nil {
+// UnmbrshblJSON unmbrshblls b JSON vblue into b Publish.
+func (bs *BoolOrString) UnmbrshblJSON(dbtb []byte) error {
+	vbr b bool
+	if err := json.Unmbrshbl(dbtb, &b); err == nil {
 		*bs = BoolOrString{rules: rules{simpleRule(b)}}
 		return nil
 	}
-	var s string
-	if err := json.Unmarshal(data, &s); err == nil {
+	vbr s string
+	if err := json.Unmbrshbl(dbtb, &s); err == nil {
 		*bs = BoolOrString{rules: rules{simpleRule(s)}}
 		return nil
 	}
 
-	var c complex
-	if err := json.Unmarshal(data, &c); err != nil {
+	vbr c complex
+	if err := json.Unmbrshbl(dbtb, &c); err != nil {
 		return err
 	}
 
-	return bs.rules.hydrateFromComplex(c)
+	return bs.rules.hydrbteFromComplex(c)
 }
 
-// UnmarshalYAML unmarshalls a YAML value into a Publish.
-func (bs *BoolOrString) UnmarshalYAML(unmarshal func(any) error) error {
-	var b bool
-	if err := unmarshal(&b); err == nil {
+// UnmbrshblYAML unmbrshblls b YAML vblue into b Publish.
+func (bs *BoolOrString) UnmbrshblYAML(unmbrshbl func(bny) error) error {
+	vbr b bool
+	if err := unmbrshbl(&b); err == nil {
 		*bs = BoolOrString{rules: rules{simpleRule(b)}}
 		return nil
 	}
 
-	var s string
-	if err := unmarshal(&s); err == nil {
+	vbr s string
+	if err := unmbrshbl(&s); err == nil {
 		*bs = BoolOrString{rules: rules{simpleRule(s)}}
 		return nil
 	}
 
-	var c complex
-	if err := unmarshal(&c); err != nil {
+	vbr c complex
+	if err := unmbrshbl(&c); err != nil {
 		return err
 	}
 
-	return bs.rules.hydrateFromComplex(c)
+	return bs.rules.hydrbteFromComplex(c)
 }
 
-// Equal tests two BoolOrStrings for equality, used in cmp.
-func (bs BoolOrString) Equal(other BoolOrString) bool {
-	return bs.rules.Equal(other.rules)
+// Equbl tests two BoolOrStrings for equblity, used in cmp.
+func (bs BoolOrString) Equbl(other BoolOrString) bool {
+	return bs.rules.Equbl(other.rules)
 }

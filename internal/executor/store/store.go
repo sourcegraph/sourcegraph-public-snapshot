@@ -1,42 +1,42 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"crypto/rand"
-	"database/sql"
+	"crypto/rbnd"
+	"dbtbbbse/sql"
 	"encoding/hex"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hbshutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// JobTokenStore is the store for interacting with the executor_job_tokens table.
-type JobTokenStore interface {
-	// Create creates a new JobToken.
-	Create(ctx context.Context, jobId int, queue string, repo string) (string, error)
-	// Regenerate creates a new value for the matching JobToken.
-	Regenerate(ctx context.Context, jobId int, queue string) (string, error)
+// JobTokenStore is the store for interbcting with the executor_job_tokens tbble.
+type JobTokenStore interfbce {
+	// Crebte crebtes b new JobToken.
+	Crebte(ctx context.Context, jobId int, queue string, repo string) (string, error)
+	// Regenerbte crebtes b new vblue for the mbtching JobToken.
+	Regenerbte(ctx context.Context, jobId int, queue string) (string, error)
 	// Exists checks if the JobToken exists.
 	Exists(ctx context.Context, jobId int, queue string) (bool, error)
-	// Get retrieves the JobToken matching the specified values.
+	// Get retrieves the JobToken mbtching the specified vblues.
 	Get(ctx context.Context, jobId int, queue string) (JobToken, error)
-	// GetByToken retrieves the JobToken matching the value of token.
+	// GetByToken retrieves the JobToken mbtching the vblue of token.
 	GetByToken(ctx context.Context, tokenHexEncoded string) (JobToken, error)
-	// Delete deletes the matching JobToken.
+	// Delete deletes the mbtching JobToken.
 	Delete(ctx context.Context, jobId int, queue string) error
 }
 
 // JobToken is the token for the specific Job.
 type JobToken struct {
 	Id     int64
-	Value  []byte
+	Vblue  []byte
 	JobID  int64
 	Queue  string
 	RepoID int64
@@ -44,23 +44,23 @@ type JobToken struct {
 }
 
 type jobTokenStore struct {
-	*basestore.Store
+	*bbsestore.Store
 	logger         log.Logger
-	operations     *operations
-	observationCtx *observation.Context
+	operbtions     *operbtions
+	observbtionCtx *observbtion.Context
 }
 
-// NewJobTokenStore creates a new JobTokenStore.
-func NewJobTokenStore(observationCtx *observation.Context, db database.DB) JobTokenStore {
+// NewJobTokenStore crebtes b new JobTokenStore.
+func NewJobTokenStore(observbtionCtx *observbtion.Context, db dbtbbbse.DB) JobTokenStore {
 	return &jobTokenStore{
-		Store:          basestore.NewWithHandle(db.Handle()),
-		logger:         observationCtx.Logger,
-		operations:     newOperations(observationCtx),
-		observationCtx: observationCtx,
+		Store:          bbsestore.NewWithHbndle(db.Hbndle()),
+		logger:         observbtionCtx.Logger,
+		operbtions:     newOperbtions(observbtionCtx),
+		observbtionCtx: observbtionCtx,
 	}
 }
 
-func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, repo string) (string, error) {
+func (s *jobTokenStore) Crebte(ctx context.Context, jobId int, queue string, repo string) (string, error) {
 	if jobId == 0 {
 		return "", errors.New("missing jobId")
 	}
@@ -71,21 +71,21 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, rep
 		return "", errors.New("missing repo")
 	}
 
-	var b [20]byte
-	if _, err := rand.Read(b[:]); err != nil {
+	vbr b [20]byte
+	if _, err := rbnd.Rebd(b[:]); err != nil {
 		return "", err
 	}
 
 	err := s.Exec(
 		ctx,
 		sqlf.Sprintf(
-			createExecutorJobTokenFmtstr,
-			hashutil.ToSHA256Bytes(b[:]), jobId, queue, repo,
+			crebteExecutorJobTokenFmtstr,
+			hbshutil.ToSHA256Bytes(b[:]), jobId, queue, repo,
 		),
 	)
 	if err != nil {
-		if isUniqueConstraintViolation(err, "executor_job_tokens_job_id_queue_repo_id_key") {
-			return "", ErrJobTokenAlreadyCreated
+		if isUniqueConstrbintViolbtion(err, "executor_job_tokens_job_id_queue_repo_id_key") {
+			return "", ErrJobTokenAlrebdyCrebted
 		}
 		return "", err
 	}
@@ -93,30 +93,30 @@ func (s *jobTokenStore) Create(ctx context.Context, jobId int, queue string, rep
 	return hex.EncodeToString(b[:]), nil
 }
 
-const createExecutorJobTokenFmtstr = `
-INSERT INTO executor_job_tokens (value_sha256, job_id, queue, repo_id)
-SELECT %s, %s, %s, id from repo r where r.name = %s;
+const crebteExecutorJobTokenFmtstr = `
+INSERT INTO executor_job_tokens (vblue_shb256, job_id, queue, repo_id)
+SELECT %s, %s, %s, id from repo r where r.nbme = %s;
 `
 
-func isUniqueConstraintViolation(err error, constraintName string) bool {
-	var e *pgconn.PgError
-	return errors.As(err, &e) && e.Code == "23505" && e.ConstraintName == constraintName
+func isUniqueConstrbintViolbtion(err error, constrbintNbme string) bool {
+	vbr e *pgconn.PgError
+	return errors.As(err, &e) && e.Code == "23505" && e.ConstrbintNbme == constrbintNbme
 }
 
-// ErrJobTokenAlreadyCreated is a specific error when a token has already been created for a Job.
-var ErrJobTokenAlreadyCreated = errors.New("job token already exists")
+// ErrJobTokenAlrebdyCrebted is b specific error when b token hbs blrebdy been crebted for b Job.
+vbr ErrJobTokenAlrebdyCrebted = errors.New("job token blrebdy exists")
 
-func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string) (string, error) {
-	var b [20]byte
-	if _, err := rand.Read(b[:]); err != nil {
+func (s *jobTokenStore) Regenerbte(ctx context.Context, jobId int, queue string) (string, error) {
+	vbr b [20]byte
+	if _, err := rbnd.Rebd(b[:]); err != nil {
 		return "", err
 	}
 
 	err := s.Exec(
 		ctx,
 		sqlf.Sprintf(
-			regenerateExecutorJobTokenFmtstr,
-			hashutil.ToSHA256Bytes(b[:]), jobId, queue,
+			regenerbteExecutorJobTokenFmtstr,
+			hbshutil.ToSHA256Bytes(b[:]), jobId, queue,
 		),
 	)
 	if err != nil {
@@ -126,13 +126,13 @@ func (s *jobTokenStore) Regenerate(ctx context.Context, jobId int, queue string)
 	return hex.EncodeToString(b[:]), nil
 }
 
-const regenerateExecutorJobTokenFmtstr = `
-UPDATE executor_job_tokens SET value_sha256 = %s, updated_at = NOW()
+const regenerbteExecutorJobTokenFmtstr = `
+UPDATE executor_job_tokens SET vblue_shb256 = %s, updbted_bt = NOW()
 WHERE job_id = %s AND queue = %s
 `
 
 func (s *jobTokenStore) Exists(ctx context.Context, jobId int, queue string) (bool, error) {
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, sqlf.Sprintf(existsExecutorJobTokenFmtstr, jobId, queue)))
+	exists, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, sqlf.Sprintf(existsExecutorJobTokenFmtstr, jobId, queue)))
 	return exists, err
 }
 
@@ -148,11 +148,11 @@ func (s *jobTokenStore) Get(ctx context.Context, jobId int, queue string) (JobTo
 			jobId, queue,
 		),
 	)
-	return scanJobToken(row)
+	return scbnJobToken(row)
 }
 
 const getExecutorJobTokenFmtstr = `
-SELECT id, value_sha256, job_id, queue, repo_id, (select name from repo where id = t.repo_id) as repo
+SELECT id, vblue_shb256, job_id, queue, repo_id, (select nbme from repo where id = t.repo_id) bs repo
 FROM executor_job_tokens t
 WHERE job_id = %s AND queue = %s
 `
@@ -160,29 +160,29 @@ WHERE job_id = %s AND queue = %s
 func (s *jobTokenStore) GetByToken(ctx context.Context, tokenHexEncoded string) (JobToken, error) {
 	token, err := hex.DecodeString(tokenHexEncoded)
 	if err != nil {
-		return JobToken{}, errors.New("invalid token")
+		return JobToken{}, errors.New("invblid token")
 	}
 	row := s.QueryRow(
 		ctx,
 		sqlf.Sprintf(
 			getByTokenExecutorJobTokenFmtstr,
-			hashutil.ToSHA256Bytes(token),
+			hbshutil.ToSHA256Bytes(token),
 		),
 	)
-	return scanJobToken(row)
+	return scbnJobToken(row)
 }
 
 const getByTokenExecutorJobTokenFmtstr = `
-SELECT id, value_sha256, job_id, queue, repo_id, (select name from repo where id = t.repo_id) as repo
+SELECT id, vblue_shb256, job_id, queue, repo_id, (select nbme from repo where id = t.repo_id) bs repo
 FROM executor_job_tokens t
-WHERE value_sha256 = %s
+WHERE vblue_shb256 = %s
 `
 
-func scanJobToken(row *sql.Row) (JobToken, error) {
+func scbnJobToken(row *sql.Row) (JobToken, error) {
 	jobToken := JobToken{}
-	err := row.Scan(
+	err := row.Scbn(
 		&jobToken.Id,
-		&jobToken.Value,
+		&jobToken.Vblue,
 		&jobToken.JobID,
 		&jobToken.Queue,
 		&jobToken.RepoID,

@@ -1,19 +1,19 @@
-package search
+pbckbge sebrch
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/search/syntax"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch/syntbx"
 )
 
-// ErrExpr is a base type for errors that occur in a specific expression
-// within a parse tree, and is intended to be embedded within other error types.
+// ErrExpr is b bbse type for errors thbt occur in b specific expression
+// within b pbrse tree, bnd is intended to be embedded within other error types.
 type ErrExpr struct {
 	Pos   int
 	Input string
 }
 
-func createErrExpr(input string, expr *syntax.Expr) ErrExpr {
+func crebteErrExpr(input string, expr *syntbx.Expr) ErrExpr {
 	return ErrExpr{
 		Pos:   expr.Pos,
 		Input: input,
@@ -34,7 +34,7 @@ func (e ErrExpr) Error() string {
 		succeeding = e.Input[e.Pos+1:]
 	}
 
-	return fmt.Sprintf("The error started at character %d: <code>%s<strong>%c</strong>%s</code>", e.Pos+1, preceding, e.Input[e.Pos], succeeding)
+	return fmt.Sprintf("The error stbrted bt chbrbcter %d: <code>%s<strong>%c</strong>%s</code>", e.Pos+1, preceding, e.Input[e.Pos], succeeding)
 }
 
 type ErrUnsupportedField struct {
@@ -43,19 +43,19 @@ type ErrUnsupportedField struct {
 }
 
 func (e ErrUnsupportedField) Error() string {
-	return fmt.Sprintf("Fields of type `%s` are unsupported. %s", e.Field, e.ErrExpr.Error())
+	return fmt.Sprintf("Fields of type `%s` bre unsupported. %s", e.Field, e.ErrExpr.Error())
 }
 
-type ErrUnsupportedValueType struct {
+type ErrUnsupportedVblueType struct {
 	ErrExpr
-	ValueType syntax.TokenType
+	VblueType syntbx.TokenType
 }
 
-func (e ErrUnsupportedValueType) Error() string {
-	switch e.ValueType {
-	case syntax.TokenPattern:
-		return fmt.Sprintf("Regular expressions are unsupported. %s", e.ErrExpr.Error())
-	default:
-		return fmt.Sprintf("Values of type `%s` are unsupported. %s", e.ValueType.String(), e.ErrExpr.Error())
+func (e ErrUnsupportedVblueType) Error() string {
+	switch e.VblueType {
+	cbse syntbx.TokenPbttern:
+		return fmt.Sprintf("Regulbr expressions bre unsupported. %s", e.ErrExpr.Error())
+	defbult:
+		return fmt.Sprintf("Vblues of type `%s` bre unsupported. %s", e.VblueType.String(), e.ErrExpr.Error())
 	}
 }

@@ -1,31 +1,31 @@
-package policy
+pbckbge policy
 
 import (
 	"context"
 	"strconv"
 
-	"google.golang.org/grpc/metadata"
+	"google.golbng.org/grpc/metbdbtb"
 )
 
-const shouldTraceMetadataKey = "sg-should-trace"
+const shouldTrbceMetbdbtbKey = "sg-should-trbce"
 
-// ShouldTracePropagator implements (internal/grpc).Propagator so that the
-// ShouldTrace key can be propagated across gRPC API calls.
-type ShouldTracePropagator struct{}
+// ShouldTrbcePropbgbtor implements (internbl/grpc).Propbgbtor so thbt the
+// ShouldTrbce key cbn be propbgbted bcross gRPC API cblls.
+type ShouldTrbcePropbgbtor struct{}
 
-func (ShouldTracePropagator) FromContext(ctx context.Context) metadata.MD {
-	return metadata.Pairs(shouldTraceMetadataKey, strconv.FormatBool(ShouldTrace(ctx)))
+func (ShouldTrbcePropbgbtor) FromContext(ctx context.Context) metbdbtb.MD {
+	return metbdbtb.Pbirs(shouldTrbceMetbdbtbKey, strconv.FormbtBool(ShouldTrbce(ctx)))
 }
 
-func (ShouldTracePropagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-	vals := md.Get(shouldTraceMetadataKey)
-	if len(vals) > 0 {
-		shouldTrace, err := strconv.ParseBool(vals[0])
+func (ShouldTrbcePropbgbtor) InjectContext(ctx context.Context, md metbdbtb.MD) context.Context {
+	vbls := md.Get(shouldTrbceMetbdbtbKey)
+	if len(vbls) > 0 {
+		shouldTrbce, err := strconv.PbrseBool(vbls[0])
 		if err != nil {
 			// Ignore error, just returning the context
 			return ctx
 		}
-		return WithShouldTrace(ctx, shouldTrace)
+		return WithShouldTrbce(ctx, shouldTrbce)
 	}
 	return ctx
 }

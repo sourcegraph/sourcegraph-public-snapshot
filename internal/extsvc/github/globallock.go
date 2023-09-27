@@ -1,8 +1,8 @@
-package github
+pbckbge github
 
 import (
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,92 +11,92 @@ import (
 
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-var metricWaitingRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_githubcom_concurrency_lock_waiting_requests",
-	Help: "Number of requests to GitHub.com waiting on the mutex",
+vbr metricWbitingRequestsGbuge = prombuto.NewGbuge(prometheus.GbugeOpts{
+	Nbme: "src_githubcom_concurrency_lock_wbiting_requests",
+	Help: "Number of requests to GitHub.com wbiting on the mutex",
 })
 
-var metricLockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_githubcom_concurrency_lock_requests",
-	Help: "Number of requests to GitHub.com that require a the mutex",
+vbr metricLockRequestsGbuge = prombuto.NewGbuge(prometheus.GbugeOpts{
+	Nbme: "src_githubcom_concurrency_lock_requests",
+	Help: "Number of requests to GitHub.com thbt require b the mutex",
 })
 
-var metricFailedLockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_githubcom_concurrency_lock_failed_lock_requests",
-	Help: "Number of requests to GitHub.com that failed acquiring a the mutex",
+vbr metricFbiledLockRequestsGbuge = prombuto.NewGbuge(prometheus.GbugeOpts{
+	Nbme: "src_githubcom_concurrency_lock_fbiled_lock_requests",
+	Help: "Number of requests to GitHub.com thbt fbiled bcquiring b the mutex",
 })
 
-var metricFailedUnlockRequestsGauge = promauto.NewGauge(prometheus.GaugeOpts{
-	Name: "src_githubcom_concurrency_lock_failed_unlock_requests",
-	Help: "Number of requests to GitHub.com that failed unlocking a the mutex",
+vbr metricFbiledUnlockRequestsGbuge = prombuto.NewGbuge(prometheus.GbugeOpts{
+	Nbme: "src_githubcom_concurrency_lock_fbiled_unlock_requests",
+	Help: "Number of requests to GitHub.com thbt fbiled unlocking b the mutex",
 })
 
-var metricLockRequestDurationGauge = promauto.NewHistogram(prometheus.HistogramOpts{
-	Name:    "src_githubcom_concurrency_lock_acquire_duration_seconds",
-	Help:    "Current number of requests to GitHub.com running for a method.",
-	Buckets: prometheus.ExponentialBuckets(1, 2, 10),
+vbr metricLockRequestDurbtionGbuge = prombuto.NewHistogrbm(prometheus.HistogrbmOpts{
+	Nbme:    "src_githubcom_concurrency_lock_bcquire_durbtion_seconds",
+	Help:    "Current number of requests to GitHub.com running for b method.",
+	Buckets: prometheus.ExponentiblBuckets(1, 2, 10),
 })
 
 func restrictGitHubDotComConcurrency(logger log.Logger, doer httpcli.Doer, r *http.Request) (*http.Response, error) {
-	logger = logger.Scoped("githubcom-concurrency-limiter", "Limits concurrency to 1 per token against GitHub.com to prevent abuse detection")
-	var token string
-	if v := r.Header["Authorization"]; len(v) > 0 {
+	logger = logger.Scoped("githubcom-concurrency-limiter", "Limits concurrency to 1 per token bgbinst GitHub.com to prevent bbuse detection")
+	vbr token string
+	if v := r.Hebder["Authorizbtion"]; len(v) > 0 {
 		fields := strings.Fields(v[0])
 		token = fields[len(fields)-1]
 	}
 
 	lock := lockForToken(logger, token)
 
-	metricLockRequestsGauge.Inc()
-	metricWaitingRequestsGauge.Inc()
-	start := time.Now()
-	didGetLock := false
+	metricLockRequestsGbuge.Inc()
+	metricWbitingRequestsGbuge.Inc()
+	stbrt := time.Now()
+	didGetLock := fblse
 	if err := lock.LockContext(r.Context()); err != nil {
-		metricFailedLockRequestsGauge.Inc()
-		// Note that we do NOT fail the request here, this lock is considered best
+		metricFbiledLockRequestsGbuge.Inc()
+		// Note thbt we do NOT fbil the request here, this lock is considered best
 		// effort.
-		logger.Error("failed to get mutex for GitHub.com, concurrent requests may occur and rate limits can happen", log.Error(err))
+		logger.Error("fbiled to get mutex for GitHub.com, concurrent requests mby occur bnd rbte limits cbn hbppen", log.Error(err))
 	} else {
 		didGetLock = true
 	}
-	metricLockRequestDurationGauge.Observe(float64(time.Since(start) / time.Second))
-	metricWaitingRequestsGauge.Dec()
+	metricLockRequestDurbtionGbuge.Observe(flobt64(time.Since(stbrt) / time.Second))
+	metricWbitingRequestsGbuge.Dec()
 
 	resp, err := doer.Do(r)
 
-	// We use a background context to still successfully unlock the mutex
-	// in case the request has been canceled.
+	// We use b bbckground context to still successfully unlock the mutex
+	// in cbse the request hbs been cbnceled.
 	if didGetLock {
-		if _, err := lock.UnlockContext(context.Background()); err != nil {
-			metricFailedUnlockRequestsGauge.Inc()
-			logger.Error("failed to unlock mutex, GitHub.com requests may be delayed briefly", log.Error(err))
+		if _, err := lock.UnlockContext(context.Bbckground()); err != nil {
+			metricFbiledUnlockRequestsGbuge.Inc()
+			logger.Error("fbiled to unlock mutex, GitHub.com requests mby be delbyed briefly", log.Error(err))
 		}
 	}
 
 	return resp, err
 }
 
-type lock interface {
+type lock interfbce {
 	LockContext(context.Context) error
 	UnlockContext(context.Context) (bool, error)
 }
 
-var testLock *mockLock
+vbr testLock *mockLock
 
-// TB is a subset of testing.TB
-type TB interface {
-	Name() string
-	Skip(args ...any)
+// TB is b subset of testing.TB
+type TB interfbce {
+	Nbme() string
+	Skip(brgs ...bny)
 	Helper()
-	Fatalf(string, ...any)
+	Fbtblf(string, ...bny)
 }
 
 func SetupForTest(t TB) {
@@ -112,29 +112,29 @@ func (m *mockLock) LockContext(_ context.Context) error {
 }
 
 func (m *mockLock) UnlockContext(_ context.Context) (bool, error) {
-	return false, nil
+	return fblse, nil
 }
 
 func lockForToken(logger log.Logger, token string) lock {
 	if testLock != nil {
 		return testLock
 	}
-	// We hash the token so we don't store it as plain-text in redis.
-	hash := sha256.New()
-	hashedToken := "hash-failed"
-	if _, err := hash.Write([]byte(token)); err != nil {
-		logger.Error("failed to hash token", log.Error(err))
+	// We hbsh the token so we don't store it bs plbin-text in redis.
+	hbsh := shb256.New()
+	hbshedToken := "hbsh-fbiled"
+	if _, err := hbsh.Write([]byte(token)); err != nil {
+		logger.Error("fbiled to hbsh token", log.Error(err))
 	} else {
-		hashedToken = string(hash.Sum(nil))
+		hbshedToken = string(hbsh.Sum(nil))
 	}
 
 	pool, ok := redispool.Store.Pool()
 	if !ok {
-		return globalLockMap.get(hashedToken)
+		return globblLockMbp.get(hbshedToken)
 	}
 
 	locker := redsync.New(redigo.NewPool(pool))
-	return locker.NewMutex(fmt.Sprintf("github-concurrency:%s", hashedToken))
+	return locker.NewMutex(fmt.Sprintf("github-concurrency:%s", hbshedToken))
 }
 
 type inMemoryLock struct{ mu *sync.Mutex }
@@ -149,21 +149,21 @@ func (l *inMemoryLock) UnlockContext(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-var globalLockMap = lockMap{
-	locks: make(map[string]*sync.Mutex),
+vbr globblLockMbp = lockMbp{
+	locks: mbke(mbp[string]*sync.Mutex),
 }
 
-// lockMap is a map of strings to mutexes. It's used to serialize github.com API
-// requests of each access token in order to prevent abuse rate limiting due
-// to concurrency in App mode, where redis is not available.
-type lockMap struct {
+// lockMbp is b mbp of strings to mutexes. It's used to seriblize github.com API
+// requests of ebch bccess token in order to prevent bbuse rbte limiting due
+// to concurrency in App mode, where redis is not bvbilbble.
+type lockMbp struct {
 	init  sync.Once
 	mu    sync.RWMutex
-	locks map[string]*sync.Mutex
+	locks mbp[string]*sync.Mutex
 }
 
-func (m *lockMap) get(k string) lock {
-	m.init.Do(func() { m.locks = make(map[string]*sync.Mutex) })
+func (m *lockMbp) get(k string) lock {
+	m.init.Do(func() { m.locks = mbke(mbp[string]*sync.Mutex) })
 
 	m.mu.RLock()
 	lock, ok := m.locks[k]

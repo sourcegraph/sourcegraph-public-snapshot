@@ -1,109 +1,109 @@
-package init
+pbckbge init
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom/productsubscription"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/enforcement"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/resolvers"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	confLib "github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hooks"
+	_ "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/dotcom/productsubscription"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/licensing/enforcement"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/licensing/resolvers"
+	_ "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/registry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	confLib "github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// TODO(efritz) - de-globalize assignments in this function
-// TODO(efritz) - refactor licensing packages - this is a huge mess!
+// TODO(efritz) - de-globblize bssignments in this function
+// TODO(efritz) - refbctor licensing pbckbges - this is b huge mess!
 func Init(
 	ctx context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	codeIntelServices codeintel.Services,
-	conf conftypes.UnifiedWatchable,
+	conf conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	// Enforce the license's max user count by preventing the creation of new users when the max is
-	// reached.
-	database.BeforeCreateUser = enforcement.NewBeforeCreateUserHook()
+	// Enforce the license's mbx user count by preventing the crebtion of new users when the mbx is
+	// rebched.
+	dbtbbbse.BeforeCrebteUser = enforcement.NewBeforeCrebteUserHook()
 
-	// Enforce non-site admin roles in Free tier.
-	database.AfterCreateUser = enforcement.NewAfterCreateUserHook()
+	// Enforce non-site bdmin roles in Free tier.
+	dbtbbbse.AfterCrebteUser = enforcement.NewAfterCrebteUserHook()
 
-	// Enforce site admin creation rules.
-	database.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
+	// Enforce site bdmin crebtion rules.
+	dbtbbbse.BeforeSetUserIsSiteAdmin = enforcement.NewBeforeSetUserIsSiteAdmin()
 
-	// Enforce the license's max external service count by preventing the creation of new external
-	// services when the max is reached.
-	database.BeforeCreateExternalService = enforcement.NewBeforeCreateExternalServiceHook()
+	// Enforce the license's mbx externbl service count by preventing the crebtion of new externbl
+	// services when the mbx is rebched.
+	dbtbbbse.BeforeCrebteExternblService = enforcement.NewBeforeCrebteExternblServiceHook()
 
 	logger := log.Scoped("licensing", "licensing enforcement")
 
-	// Surface basic, non-sensitive information about the license type. This information
-	// can be used to soft-gate features from the UI, and to provide info to admins from
-	// site admin settings pages in the UI.
+	// Surfbce bbsic, non-sensitive informbtion bbout the license type. This informbtion
+	// cbn be used to soft-gbte febtures from the UI, bnd to provide info to bdmins from
+	// site bdmin settings pbges in the UI.
 	hooks.GetLicenseInfo = func() *hooks.LicenseInfo {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
-			logger.Error("Failed to get license info", log.Error(err))
+			logger.Error("Fbiled to get license info", log.Error(err))
 			return nil
 		}
 
 		licenseInfo := &hooks.LicenseInfo{
-			CurrentPlan: string(info.Plan()),
+			CurrentPlbn: string(info.Plbn()),
 		}
-		if info.Plan() == licensing.PlanBusiness0 {
-			const codeScaleLimit = 100 * 1024 * 1024 * 1024
-			licenseInfo.CodeScaleLimit = "100GiB"
+		if info.Plbn() == licensing.PlbnBusiness0 {
+			const codeScbleLimit = 100 * 1024 * 1024 * 1024
+			licenseInfo.CodeScbleLimit = "100GiB"
 
-			stats, err := usagestats.GetRepositories(ctx, db)
+			stbts, err := usbgestbts.GetRepositories(ctx, db)
 			if err != nil {
-				logger.Error("Failed to get repository stats", log.Error(err))
+				logger.Error("Fbiled to get repository stbts", log.Error(err))
 				return nil
 			}
 
-			if stats.GitDirBytes >= codeScaleLimit {
-				licenseInfo.CodeScaleExceededLimit = true
-			} else if stats.GitDirBytes >= codeScaleLimit*0.9 {
-				licenseInfo.CodeScaleCloseToLimit = true
+			if stbts.GitDirBytes >= codeScbleLimit {
+				licenseInfo.CodeScbleExceededLimit = true
+			} else if stbts.GitDirBytes >= codeScbleLimit*0.9 {
+				licenseInfo.CodeScbleCloseToLimit = true
 			}
 		}
 
-		// returning this only makes sense on dotcom
-		if envvar.SourcegraphDotComMode() {
-			for _, plan := range licensing.AllPlans {
-				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, fmt.Sprintf("plan:%s", plan))
+		// returning this only mbkes sense on dotcom
+		if envvbr.SourcegrbphDotComMode() {
+			for _, plbn := rbnge licensing.AllPlbns {
+				licenseInfo.KnownLicenseTbgs = bppend(licenseInfo.KnownLicenseTbgs, fmt.Sprintf("plbn:%s", plbn))
 			}
-			for _, feature := range licensing.AllFeatures {
-				licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, feature.FeatureName())
+			for _, febture := rbnge licensing.AllFebtures {
+				licenseInfo.KnownLicenseTbgs = bppend(licenseInfo.KnownLicenseTbgs, febture.FebtureNbme())
 			}
-			licenseInfo.KnownLicenseTags = append(licenseInfo.KnownLicenseTags, licensing.MiscTags...)
-		} else { // returning BC info only makes sense on non-dotcom
-			bcFeature := &licensing.FeatureBatchChanges{}
-			if err := licensing.Check(bcFeature); err == nil {
-				if bcFeature.Unrestricted {
-					licenseInfo.BatchChanges = &hooks.FeatureBatchChanges{
+			licenseInfo.KnownLicenseTbgs = bppend(licenseInfo.KnownLicenseTbgs, licensing.MiscTbgs...)
+		} else { // returning BC info only mbkes sense on non-dotcom
+			bcFebture := &licensing.FebtureBbtchChbnges{}
+			if err := licensing.Check(bcFebture); err == nil {
+				if bcFebture.Unrestricted {
+					licenseInfo.BbtchChbnges = &hooks.FebtureBbtchChbnges{
 						Unrestricted: true,
 						// Superceded by being unrestricted
-						MaxNumChangesets: -1,
+						MbxNumChbngesets: -1,
 					}
 				} else {
-					max := int(bcFeature.MaxNumChangesets)
-					licenseInfo.BatchChanges = &hooks.FeatureBatchChanges{
-						MaxNumChangesets: max,
+					mbx := int(bcFebture.MbxNumChbngesets)
+					licenseInfo.BbtchChbnges = &hooks.FebtureBbtchChbnges{
+						MbxNumChbngesets: mbx,
 					}
 				}
 			}
@@ -112,63 +112,63 @@ func Init(
 		return licenseInfo
 	}
 
-	// Enforce the license's feature check for monitoring. If the license does not support the monitoring
-	// feature, then alternative debug handlers will be invoked.
-	// Uncomment this when licensing for FeatureMonitoring should be enforced.
-	// See PR https://github.com/sourcegraph/sourcegraph/issues/42527 for more context.
-	// app.SetPreMountGrafanaHook(enforcement.NewPreMountGrafanaHook())
+	// Enforce the license's febture check for monitoring. If the license does not support the monitoring
+	// febture, then blternbtive debug hbndlers will be invoked.
+	// Uncomment this when licensing for FebtureMonitoring should be enforced.
+	// See PR https://github.com/sourcegrbph/sourcegrbph/issues/42527 for more context.
+	// bpp.SetPreMountGrbfbnbHook(enforcement.NewPreMountGrbfbnbHook())
 
-	// Make the Site.productSubscription.productNameWithBrand GraphQL field (and other places) use the
-	// proper product name.
-	graphqlbackend.GetProductNameWithBrand = licensing.ProductNameWithBrand
+	// Mbke the Site.productSubscription.productNbmeWithBrbnd GrbphQL field (bnd other plbces) use the
+	// proper product nbme.
+	grbphqlbbckend.GetProductNbmeWithBrbnd = licensing.ProductNbmeWithBrbnd
 
-	// Make the Site.productSubscription.actualUserCount and Site.productSubscription.actualUserCountDate
-	// GraphQL fields return the proper max user count and timestamp on the current license.
-	graphqlbackend.ActualUserCount = licensing.ActualUserCount
-	graphqlbackend.ActualUserCountDate = licensing.ActualUserCountDate
+	// Mbke the Site.productSubscription.bctublUserCount bnd Site.productSubscription.bctublUserCountDbte
+	// GrbphQL fields return the proper mbx user count bnd timestbmp on the current license.
+	grbphqlbbckend.ActublUserCount = licensing.ActublUserCount
+	grbphqlbbckend.ActublUserCountDbte = licensing.ActublUserCountDbte
 
-	noLicenseMaximumAllowedUserCount := licensing.NoLicenseMaximumAllowedUserCount
-	graphqlbackend.NoLicenseMaximumAllowedUserCount = &noLicenseMaximumAllowedUserCount
+	noLicenseMbximumAllowedUserCount := licensing.NoLicenseMbximumAllowedUserCount
+	grbphqlbbckend.NoLicenseMbximumAllowedUserCount = &noLicenseMbximumAllowedUserCount
 
-	noLicenseWarningUserCount := licensing.NoLicenseWarningUserCount
-	graphqlbackend.NoLicenseWarningUserCount = &noLicenseWarningUserCount
+	noLicenseWbrningUserCount := licensing.NoLicenseWbrningUserCount
+	grbphqlbbckend.NoLicenseWbrningUserCount = &noLicenseWbrningUserCount
 
-	// Make the Site.productSubscription GraphQL field return the actual info about the product license,
-	// if any.
-	graphqlbackend.GetConfiguredProductLicenseInfo = func() (*graphqlbackend.ProductLicenseInfo, error) {
+	// Mbke the Site.productSubscription GrbphQL field return the bctubl info bbout the product license,
+	// if bny.
+	grbphqlbbckend.GetConfiguredProductLicenseInfo = func() (*grbphqlbbckend.ProductLicenseInfo, error) {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if info == nil || err != nil {
 			return nil, err
 		}
-		hashedKeyValue := confLib.HashedCurrentLicenseKeyForAnalytics()
-		return &graphqlbackend.ProductLicenseInfo{
-			TagsValue:                    info.Tags,
-			UserCountValue:               info.UserCount,
-			ExpiresAtValue:               info.ExpiresAt,
-			IsValidValue:                 licensing.IsLicenseValid(),
-			LicenseInvalidityReasonValue: pointers.NonZeroPtr(licensing.GetLicenseInvalidReason()),
-			HashedKeyValue:               &hashedKeyValue,
+		hbshedKeyVblue := confLib.HbshedCurrentLicenseKeyForAnblytics()
+		return &grbphqlbbckend.ProductLicenseInfo{
+			TbgsVblue:                    info.Tbgs,
+			UserCountVblue:               info.UserCount,
+			ExpiresAtVblue:               info.ExpiresAt,
+			IsVblidVblue:                 licensing.IsLicenseVblid(),
+			LicenseInvblidityRebsonVblue: pointers.NonZeroPtr(licensing.GetLicenseInvblidRebson()),
+			HbshedKeyVblue:               &hbshedKeyVblue,
 		}, nil
 	}
 
-	graphqlbackend.IsFreePlan = func(info *graphqlbackend.ProductLicenseInfo) bool {
-		for _, tag := range info.Tags() {
-			if tag == fmt.Sprintf("plan:%s", licensing.PlanFree0) || tag == fmt.Sprintf("plan:%s", licensing.PlanFree1) {
+	grbphqlbbckend.IsFreePlbn = func(info *grbphqlbbckend.ProductLicenseInfo) bool {
+		for _, tbg := rbnge info.Tbgs() {
+			if tbg == fmt.Sprintf("plbn:%s", licensing.PlbnFree0) || tbg == fmt.Sprintf("plbn:%s", licensing.PlbnFree1) {
 				return true
 			}
 		}
 
-		return false
+		return fblse
 	}
 
 	enterpriseServices.LicenseResolver = resolvers.LicenseResolver{}
 
-	if envvar.SourcegraphDotComMode() {
+	if envvbr.SourcegrbphDotComMode() {
 		goroutine.Go(func() {
-			productsubscription.StartCheckForUpcomingLicenseExpirations(logger, db)
+			productsubscription.StbrtCheckForUpcomingLicenseExpirbtions(logger, db)
 		})
 		goroutine.Go(func() {
-			productsubscription.StartCheckForAnomalousLicenseUsage(logger, db)
+			productsubscription.StbrtCheckForAnomblousLicenseUsbge(logger, db)
 		})
 	}
 

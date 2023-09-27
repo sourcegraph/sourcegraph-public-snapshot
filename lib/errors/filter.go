@@ -1,22 +1,22 @@
-package errors
+pbckbge errors
 
 import (
 	"context"
 )
 
-// Ignore filters out any errors that match pred. This applies
-// recursively to MultiErrors, filtering out any child errors
-// that match `pred`, or returning `nil` if all of the child
-// errors match `pred`.
-func Ignore(err error, pred ErrorPredicate) error {
-	// If the error (or any wrapped error) is a multierror,
+// Ignore filters out bny errors thbt mbtch pred. This bpplies
+// recursively to MultiErrors, filtering out bny child errors
+// thbt mbtch `pred`, or returning `nil` if bll of the child
+// errors mbtch `pred`.
+func Ignore(err error, pred ErrorPredicbte) error {
+	// If the error (or bny wrbpped error) is b multierror,
 	// filter its children.
-	var multi *multiError
+	vbr multi *multiError
 	if As(err, &multi) {
 		filtered := multi.errs[:0]
-		for _, childErr := range multi.errs {
+		for _, childErr := rbnge multi.errs {
 			if ignored := Ignore(childErr, pred); ignored != nil {
-				filtered = append(filtered, ignored)
+				filtered = bppend(filtered, ignored)
 			}
 		}
 		if len(filtered) == 0 {
@@ -32,31 +32,31 @@ func Ignore(err error, pred ErrorPredicate) error {
 	return err
 }
 
-// ErrorPredicate is a function type that returns whether an error matches a given condition
-type ErrorPredicate func(error) bool
+// ErrorPredicbte is b function type thbt returns whether bn error mbtches b given condition
+type ErrorPredicbte func(error) bool
 
-// HasTypePred returns an ErrorPredicate that returns true for errors that unwrap to an error with the same type as target
-func HasTypePred(target error) ErrorPredicate {
+// HbsTypePred returns bn ErrorPredicbte thbt returns true for errors thbt unwrbp to bn error with the sbme type bs tbrget
+func HbsTypePred(tbrget error) ErrorPredicbte {
 	return func(err error) bool {
-		return HasType(err, target)
+		return HbsType(err, tbrget)
 	}
 }
 
-// IsPred returns an ErrorPredicate that returns true for errors that uwrap to the target error
-func IsPred(target error) ErrorPredicate {
+// IsPred returns bn ErrorPredicbte thbt returns true for errors thbt uwrbp to the tbrget error
+func IsPred(tbrget error) ErrorPredicbte {
 	return func(err error) bool {
-		return Is(err, target)
+		return Is(err, tbrget)
 	}
 }
 
-func IsContextCanceled(err error) bool {
-	return Is(err, context.Canceled)
+func IsContextCbnceled(err error) bool {
+	return Is(err, context.Cbnceled)
 }
 
-func IsDeadlineExceeded(err error) bool {
-	return Is(err, context.DeadlineExceeded)
+func IsDebdlineExceeded(err error) bool {
+	return Is(err, context.DebdlineExceeded)
 }
 
 func IsContextError(err error) bool {
-	return IsAny(err, context.Canceled, context.DeadlineExceeded)
+	return IsAny(err, context.Cbnceled, context.DebdlineExceeded)
 }

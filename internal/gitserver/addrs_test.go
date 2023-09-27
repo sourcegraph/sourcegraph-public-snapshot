@@ -1,54 +1,54 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
 func TestAddrForRepo(t *testing.T) {
-	ga := GitserverAddresses{
+	gb := GitserverAddresses{
 		Addresses: []string{"gitserver-1", "gitserver-2", "gitserver-3"},
-		PinnedServers: map[string]string{
+		PinnedServers: mbp[string]string{
 			"repo2": "gitserver-1",
 		},
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("no deduplicated forks", func(t *testing.T) {
-		testCases := []struct {
-			name string
-			repo api.RepoName
-			want string
+	t.Run("no deduplicbted forks", func(t *testing.T) {
+		testCbses := []struct {
+			nbme string
+			repo bpi.RepoNbme
+			wbnt string
 		}{
 			{
-				name: "repo1",
-				repo: api.RepoName("repo1"),
-				want: "gitserver-3",
+				nbme: "repo1",
+				repo: bpi.RepoNbme("repo1"),
+				wbnt: "gitserver-3",
 			},
 			{
-				name: "check we normalise",
-				repo: api.RepoName("repo1.git"),
-				want: "gitserver-3",
+				nbme: "check we normblise",
+				repo: bpi.RepoNbme("repo1.git"),
+				wbnt: "gitserver-3",
 			},
 			{
-				name: "another repo",
-				repo: api.RepoName("github.com/sourcegraph/sourcegraph.git"),
-				want: "gitserver-2",
+				nbme: "bnother repo",
+				repo: bpi.RepoNbme("github.com/sourcegrbph/sourcegrbph.git"),
+				wbnt: "gitserver-2",
 			},
 			{
-				name: "pinned repo", // different server address that the hashing function would normally yield
-				repo: api.RepoName("repo2"),
-				want: "gitserver-1",
+				nbme: "pinned repo", // different server bddress thbt the hbshing function would normblly yield
+				repo: bpi.RepoNbme("repo2"),
+				wbnt: "gitserver-1",
 			},
 		}
 
-		for _, tc := range testCases {
-			t.Run(tc.name, func(t *testing.T) {
-				got := ga.AddrForRepo(ctx, "gitserver", tc.repo)
-				if got != tc.want {
-					t.Fatalf("Want %q, got %q", tc.want, got)
+		for _, tc := rbnge testCbses {
+			t.Run(tc.nbme, func(t *testing.T) {
+				got := gb.AddrForRepo(ctx, "gitserver", tc.repo)
+				if got != tc.wbnt {
+					t.Fbtblf("Wbnt %q, got %q", tc.wbnt, got)
 				}
 			})
 		}

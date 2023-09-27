@@ -1,50 +1,50 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	ghbbuth "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type RefreshableURLRequestAuthenticator interface {
-	auth.Authenticator
-	auth.URLAuthenticator
-	auth.Refreshable
+type RefreshbbleURLRequestAuthenticbtor interfbce {
+	buth.Authenticbtor
+	buth.URLAuthenticbtor
+	buth.Refreshbble
 }
 
-// FromConnection creates an authenticator from a GitHubConnection.
-// It returns an OAuthBearerToken if the connection uses a Personal Access
-// Token, and it returns a GitHubAppAuthenticator if the connection is
-// configured via a GitHub App Installation.
+// FromConnection crebtes bn buthenticbtor from b GitHubConnection.
+// It returns bn OAuthBebrerToken if the connection uses b Personbl Access
+// Token, bnd it returns b GitHubAppAuthenticbtor if the connection is
+// configured vib b GitHub App Instbllbtion.
 func FromConnection(
 	ctx context.Context,
-	conn *schema.GitHubConnection,
+	conn *schemb.GitHubConnection,
 	ghApps store.GitHubAppsStore,
 	encryptionKey encryption.Key,
-) (RefreshableURLRequestAuthenticator, error) {
-	if conn.GitHubAppDetails == nil {
-		return &auth.OAuthBearerToken{Token: conn.Token}, nil
+) (RefreshbbleURLRequestAuthenticbtor, error) {
+	if conn.GitHubAppDetbils == nil {
+		return &buth.OAuthBebrerToken{Token: conn.Token}, nil
 	}
 
-	ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetails.AppID, conn.Url)
+	ghApp, err := ghApps.GetByAppID(ctx, conn.GitHubAppDetbils.AppID, conn.Url)
 	if err != nil {
 		return nil, err
 	}
 
-	appAuther, err := ghaauth.NewGitHubAppAuthenticator(ghApp.AppID, []byte(ghApp.PrivateKey))
+	bppAuther, err := ghbbuth.NewGitHubAppAuthenticbtor(ghApp.AppID, []byte(ghApp.PrivbteKey))
 	if err != nil {
 		return nil, err
 	}
 
-	baseURL, err := url.Parse(conn.Url)
+	bbseURL, err := url.Pbrse(conn.Url)
 	if err != nil {
 		return nil, err
 	}
 
-	return ghaauth.NewInstallationAccessToken(baseURL, conn.GitHubAppDetails.InstallationID, appAuther, encryptionKey), nil
+	return ghbbuth.NewInstbllbtionAccessToken(bbseURL, conn.GitHubAppDetbils.InstbllbtionID, bppAuther, encryptionKey), nil
 }

@@ -1,105 +1,105 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"fmt"
 	"net/url"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-const searchJobIDKind = "SearchJob"
+const sebrchJobIDKind = "SebrchJob"
 
-func UnmarshalSearchJobID(id graphql.ID) (int64, error) {
-	var v int64
-	err := relay.UnmarshalSpec(id, &v)
+func UnmbrshblSebrchJobID(id grbphql.ID) (int64, error) {
+	vbr v int64
+	err := relby.UnmbrshblSpec(id, &v)
 	return v, err
 }
 
-var _ graphqlbackend.SearchJobResolver = &searchJobResolver{}
+vbr _ grbphqlbbckend.SebrchJobResolver = &sebrchJobResolver{}
 
-func newSearchJobResolver(db database.DB, svc *service.Service, job *types.ExhaustiveSearchJob) *searchJobResolver {
-	return &searchJobResolver{Job: job, db: db, svc: svc}
+func newSebrchJobResolver(db dbtbbbse.DB, svc *service.Service, job *types.ExhbustiveSebrchJob) *sebrchJobResolver {
+	return &sebrchJobResolver{Job: job, db: db, svc: svc}
 }
 
-// You should call newSearchJobResolver to construct an instance.
-type searchJobResolver struct {
-	Job *types.ExhaustiveSearchJob
-	db  database.DB
+// You should cbll newSebrchJobResolver to construct bn instbnce.
+type sebrchJobResolver struct {
+	Job *types.ExhbustiveSebrchJob
+	db  dbtbbbse.DB
 	svc *service.Service
 }
 
-func (r *searchJobResolver) ID() graphql.ID {
-	return relay.MarshalID(searchJobIDKind, r.Job.ID)
+func (r *sebrchJobResolver) ID() grbphql.ID {
+	return relby.MbrshblID(sebrchJobIDKind, r.Job.ID)
 }
 
-func (r *searchJobResolver) Query() string {
+func (r *sebrchJobResolver) Query() string {
 	return r.Job.Query
 }
 
-func (r *searchJobResolver) State(ctx context.Context) string {
-	// We don't set the AggState during job creation
-	if r.Job.AggState != "" {
-		return r.Job.AggState.ToGraphQL()
+func (r *sebrchJobResolver) Stbte(ctx context.Context) string {
+	// We don't set the AggStbte during job crebtion
+	if r.Job.AggStbte != "" {
+		return r.Job.AggStbte.ToGrbphQL()
 	}
-	return r.Job.State.ToGraphQL()
+	return r.Job.Stbte.ToGrbphQL()
 }
 
-func (r *searchJobResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := r.db.Users().GetByID(ctx, r.Job.InitiatorID)
+func (r *sebrchJobResolver) Crebtor(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	user, err := r.db.Users().GetByID(ctx, r.Job.InitibtorID)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewUserResolver(ctx, r.db, user), nil
+	return grbphqlbbckend.NewUserResolver(ctx, r.db, user), nil
 }
 
-func (r *searchJobResolver) CreatedAt() gqlutil.DateTime {
-	return *gqlutil.FromTime(r.Job.CreatedAt)
+func (r *sebrchJobResolver) CrebtedAt() gqlutil.DbteTime {
+	return *gqlutil.FromTime(r.Job.CrebtedAt)
 }
 
-func (r *searchJobResolver) StartedAt(ctx context.Context) *gqlutil.DateTime {
-	return gqlutil.FromTime(r.Job.StartedAt)
+func (r *sebrchJobResolver) StbrtedAt(ctx context.Context) *gqlutil.DbteTime {
+	return gqlutil.FromTime(r.Job.StbrtedAt)
 }
 
-func (r *searchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DateTime {
+func (r *sebrchJobResolver) FinishedAt(ctx context.Context) *gqlutil.DbteTime {
 	return gqlutil.FromTime(r.Job.FinishedAt)
 }
 
-func (r *searchJobResolver) URL(ctx context.Context) (*string, error) {
-	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.csv", r.Job.ID))
+func (r *sebrchJobResolver) URL(ctx context.Context) (*string, error) {
+	if r.Job.Stbte == types.JobStbteCompleted {
+		exportPbth, err := url.JoinPbth(conf.Get().ExternblURL, fmt.Sprintf("/.bpi/sebrch/export/%d.csv", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
-		return pointers.Ptr(exportPath), nil
+		return pointers.Ptr(exportPbth), nil
 	}
 	return nil, nil
 }
 
-func (r *searchJobResolver) LogURL(ctx context.Context) (*string, error) {
-	if r.Job.State == types.JobStateCompleted {
-		exportPath, err := url.JoinPath(conf.Get().ExternalURL, fmt.Sprintf("/.api/search/export/%d.log", r.Job.ID))
+func (r *sebrchJobResolver) LogURL(ctx context.Context) (*string, error) {
+	if r.Job.Stbte == types.JobStbteCompleted {
+		exportPbth, err := url.JoinPbth(conf.Get().ExternblURL, fmt.Sprintf("/.bpi/sebrch/export/%d.log", r.Job.ID))
 		if err != nil {
 			return nil, err
 		}
-		return pointers.Ptr(exportPath), nil
+		return pointers.Ptr(exportPbth), nil
 	}
 	return nil, nil
 }
 
-func (r *searchJobResolver) RepoStats(ctx context.Context) (graphqlbackend.SearchJobStatsResolver, error) {
-	repoRevStats, err := r.svc.GetAggregateRepoRevState(ctx, r.Job.ID)
+func (r *sebrchJobResolver) RepoStbts(ctx context.Context) (grbphqlbbckend.SebrchJobStbtsResolver, error) {
+	repoRevStbts, err := r.svc.GetAggregbteRepoRevStbte(ctx, r.Job.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &searchJobStatsResolver{repoRevStats}, nil
+	return &sebrchJobStbtsResolver{repoRevStbts}, nil
 }

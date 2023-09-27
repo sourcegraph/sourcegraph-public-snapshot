@@ -1,234 +1,234 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"errors"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-func TestCalculateExecutorCompatibility(t *testing.T) {
+func TestCblculbteExecutorCompbtibility(t *testing.T) {
 	tests := []struct {
-		name                  string
+		nbme                  string
 		executorVersion       string
-		sourcegraphVersion    string
+		sourcegrbphVersion    string
 		isActive              bool
-		expectedCompatibility ExecutorCompatibility
+		expectedCompbtibility ExecutorCompbtibility
 		expectedError         error
 	}{
 		{
-			name:                  "Dev mode",
+			nbme:                  "Dev mode",
 			executorVersion:       "0.0.0+dev",
-			sourcegraphVersion:    "0.0.0+dev",
+			sourcegrbphVersion:    "0.0.0+dev",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Executor is inactive",
+			nbme:                  "Executor is inbctive",
 			executorVersion:       "0.0.0+dev",
-			sourcegraphVersion:    "0.0.0+dev",
-			isActive:              false,
-			expectedCompatibility: "",
+			sourcegrbphVersion:    "0.0.0+dev",
+			isActive:              fblse,
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Executor is one minor version behind",
+			nbme:                  "Executor is one minor version behind",
 			executorVersion:       "3.43.0",
-			sourcegraphVersion:    "3.42.0",
+			sourcegrbphVersion:    "3.42.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor is one minor version behind",
+			nbme:                  "Executor is one minor version behind",
 			executorVersion:       "3.42.0",
-			sourcegraphVersion:    "3.43.0",
+			sourcegrbphVersion:    "3.43.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor is the same version as the Sourcegraph instance",
+			nbme:                  "Executor is the sbme version bs the Sourcegrbph instbnce",
 			executorVersion:       "3.43.0",
-			sourcegraphVersion:    "3.43.0",
+			sourcegrbphVersion:    "3.43.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor is the same version as the Sourcegraph instance (insiders)",
-			executorVersion:       "executor-patch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_patch",
-			sourcegraphVersion:    "169135_2022-08-25_4.4-a2b623dce148",
+			nbme:                  "Executor is the sbme version bs the Sourcegrbph instbnce (insiders)",
+			executorVersion:       "executor-pbtch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_pbtch",
+			sourcegrbphVersion:    "169135_2022-08-25_4.4-b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor is the same version as the Sourcegraph instance (insiders - old version)",
-			executorVersion:       "executor-patch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_patch",
-			sourcegraphVersion:    "169135_2022-08-25_a2b623dce148",
+			nbme:                  "Executor is the sbme version bs the Sourcegrbph instbnce (insiders - old version)",
+			executorVersion:       "executor-pbtch-notest-es-ignite-debug_168065_2022-08-25_e94e18c4ebcc_pbtch",
+			sourcegrbphVersion:    "169135_2022-08-25_b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor is multiple minor versions behind",
+			nbme:                  "Executor is multiple minor versions behind",
 			executorVersion:       "3.40.0",
-			sourcegraphVersion:    "3.43.0",
+			sourcegrbphVersion:    "3.43.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityOutdated,
+			expectedCompbtibility: ExecutorCompbtibilityOutdbted,
 		},
 		{
-			name:                  "Executor is major version behind",
+			nbme:                  "Executor is mbjor version behind",
 			executorVersion:       "3.43.0",
-			sourcegraphVersion:    "4.0.0",
+			sourcegrbphVersion:    "4.0.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityOutdated,
+			expectedCompbtibility: ExecutorCompbtibilityOutdbted,
 		},
 		{
-			name:                  "Executor is multiple patch versions behind",
+			nbme:                  "Executor is multiple pbtch versions behind",
 			executorVersion:       "3.43.0",
-			sourcegraphVersion:    "3.43.12",
+			sourcegrbphVersion:    "3.43.12",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor is multiple minor version ahead",
+			nbme:                  "Executor is multiple minor version bhebd",
 			executorVersion:       "3.43.0",
-			sourcegraphVersion:    "3.40.0",
+			sourcegrbphVersion:    "3.40.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityVersionAhead,
+			expectedCompbtibility: ExecutorCompbtibilityVersionAhebd,
 		},
 		{
 			executorVersion:       "4.0.0",
-			sourcegraphVersion:    "3.43.0",
+			sourcegrbphVersion:    "3.43.0",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityVersionAhead,
+			expectedCompbtibility: ExecutorCompbtibilityVersionAhebd,
 		},
 		{
-			name:                  "Executor is one release cycle behind (insiders)",
-			executorVersion:       "executor-patch-notest-es-ignite-debug_168065_2022-06-10_e94e18c4ebcc_patch",
-			sourcegraphVersion:    "169135_2022-07-25_a2b623dce148",
+			nbme:                  "Executor is one relebse cycle behind (insiders)",
+			executorVersion:       "executor-pbtch-notest-es-ignite-debug_168065_2022-06-10_e94e18c4ebcc_pbtch",
+			sourcegrbphVersion:    "169135_2022-07-25_b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityOutdated,
+			expectedCompbtibility: ExecutorCompbtibilityOutdbted,
 		},
 		{
-			name:                  "Executor is one release cycle ahead (insiders)",
-			executorVersion:       "executor-patch-notest-es-ignite-debug_168065_2022-10-30_e94e18c4ebcc_patch",
-			sourcegraphVersion:    "169135_2022-09-15_a2b623dce148",
+			nbme:                  "Executor is one relebse cycle bhebd (insiders)",
+			executorVersion:       "executor-pbtch-notest-es-ignite-debug_168065_2022-10-30_e94e18c4ebcc_pbtch",
+			sourcegrbphVersion:    "169135_2022-09-15_b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityVersionAhead,
+			expectedCompbtibility: ExecutorCompbtibilityVersionAhebd,
 		},
 		{
-			name:                  "Execcutor build date is greater than one release cycle + sourcegraph build date (insiders)",
-			executorVersion:       "executor-patch-notest-es-ignite-debug_168065_2022-08-20_e94e18c4ebcc_patch",
-			sourcegraphVersion:    "169135_2022-08-15_a2b623dce148",
+			nbme:                  "Execcutor build dbte is grebter thbn one relebse cycle + sourcegrbph build dbte (insiders)",
+			executorVersion:       "executor-pbtch-notest-es-ignite-debug_168065_2022-08-20_e94e18c4ebcc_pbtch",
+			sourcegrbphVersion:    "169135_2022-08-15_b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Sourcegrpah version mismatch",
+			nbme:                  "Sourcegrpbh version mismbtch",
 			executorVersion:       "3.36.2",
-			sourcegraphVersion:    "169135_2022-08-15_a2b623dce148",
+			sourcegrbphVersion:    "169135_2022-08-15_b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Executor version mismatch",
-			executorVersion:       "169135_2022-08-15_a2b623dce148",
-			sourcegraphVersion:    "3.39.2",
+			nbme:                  "Executor version mismbtch",
+			executorVersion:       "169135_2022-08-15_b2b623dce148",
+			sourcegrbphVersion:    "3.39.2",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Executor is in dev mode",
+			nbme:                  "Executor is in dev mode",
 			executorVersion:       "0.0.0+dev",
-			sourcegraphVersion:    "3.39.2",
+			sourcegrbphVersion:    "3.39.2",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Sourcegraph instance is in dev mode",
+			nbme:                  "Sourcegrbph instbnce is in dev mode",
 			executorVersion:       "3.39.2",
-			sourcegraphVersion:    "0.0.0+dev",
+			sourcegrbphVersion:    "0.0.0+dev",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Executor is in dev mode and Sourcegraph instance is on insiders version",
+			nbme:                  "Executor is in dev mode bnd Sourcegrbph instbnce is on insiders version",
 			executorVersion:       "0.0.0+dev",
-			sourcegraphVersion:    "169135_2022-08-15_a2b623dce148",
+			sourcegrbphVersion:    "169135_2022-08-15_b2b623dce148",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Sourcegraph instance is in dev mode and executor is on insiders version",
-			executorVersion:       "169135_2022-08-15_a2b623dce148",
-			sourcegraphVersion:    "0.0.0+dev",
+			nbme:                  "Sourcegrbph instbnce is in dev mode bnd executor is on insiders version",
+			executorVersion:       "169135_2022-08-15_b2b623dce148",
+			sourcegrbphVersion:    "0.0.0+dev",
 			isActive:              true,
-			expectedCompatibility: "",
+			expectedCompbtibility: "",
 		},
 		{
-			name:                  "Executor version is an invalid semver",
+			nbme:                  "Executor version is bn invblid semver",
 			executorVersion:       "\n1.2",
-			sourcegraphVersion:    "3.39.2",
+			sourcegrbphVersion:    "3.39.2",
 			isActive:              true,
-			expectedCompatibility: "",
-			expectedError:         errors.New("failed to parse executor version \"\\n1.2\": Invalid Semantic Version"),
+			expectedCompbtibility: "",
+			expectedError:         errors.New("fbiled to pbrse executor version \"\\n1.2\": Invblid Sembntic Version"),
 		},
 		{
-			name:                  "Sourcegraph version is an invalid semver",
+			nbme:                  "Sourcegrbph version is bn invblid semver",
 			executorVersion:       "4.0.1",
-			sourcegraphVersion:    "\n1.2",
+			sourcegrbphVersion:    "\n1.2",
 			isActive:              true,
-			expectedCompatibility: "",
-			expectedError:         errors.New("failed to parse sourcegraph version \"\\n1.2\": Invalid Semantic Version"),
+			expectedCompbtibility: "",
+			expectedError:         errors.New("fbiled to pbrse sourcegrbph version \"\\n1.2\": Invblid Sembntic Version"),
 		},
 		{
-			name:                  "Executor release branch build",
-			executorVersion:       "5.1_231128_2023-06-27_5.0-7ac9ba347103",
-			sourcegraphVersion:    "5.0.3",
+			nbme:                  "Executor relebse brbnch build",
+			executorVersion:       "5.1_231128_2023-06-27_5.0-7bc9bb347103",
+			sourcegrbphVersion:    "5.0.3",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Sourcegraph release branch build",
+			nbme:                  "Sourcegrbph relebse brbnch build",
 			executorVersion:       "5.0.3",
-			sourcegraphVersion:    "5.1_231128_2023-06-27_5.0-7ac9ba347103",
+			sourcegrbphVersion:    "5.1_231128_2023-06-27_5.0-7bc9bb347103",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor release candidate",
+			nbme:                  "Executor relebse cbndidbte",
 			executorVersion:       "5.1.3-rc.1",
-			sourcegraphVersion:    "5.1.3",
+			sourcegrbphVersion:    "5.1.3",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 		{
-			name:                  "Executor version missing patch",
+			nbme:                  "Executor version missing pbtch",
 			executorVersion:       "5.1",
-			sourcegraphVersion:    "5.1.3",
+			sourcegrbphVersion:    "5.1.3",
 			isActive:              true,
-			expectedCompatibility: ExecutorCompatibilityUpToDate,
+			expectedCompbtibility: ExecutorCompbtibilityUpToDbte,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			version.Mock(test.sourcegraphVersion)
-			actual, err := calculateExecutorCompatibility(test.executorVersion)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			version.Mock(test.sourcegrbphVersion)
+			bctubl, err := cblculbteExecutorCompbtibility(test.executorVersion)
 
 			if test.expectedError != nil {
 				require.Error(t, err)
-				assert.Equal(t, test.expectedError.Error(), err.Error())
-				assert.Nil(t, actual)
+				bssert.Equbl(t, test.expectedError.Error(), err.Error())
+				bssert.Nil(t, bctubl)
 			} else {
 				require.NoError(t, err)
-				// Once https://github.com/stretchr/testify/pull/1287 is merged, we can remove this and just use Equal.
-				// When they are not equal we are just given the addresses which doesn't mean much to us, and tell us
+				// Once https://github.com/stretchr/testify/pull/1287 is merged, we cbn remove this bnd just use Equbl.
+				// When they bre not equbl we bre just given the bddresses which doesn't mebn much to us, bnd tell us
 				// how to fix the test.
-				if test.expectedCompatibility != "" {
-					require.NotNil(t, actual)
-					assert.Equal(t, test.expectedCompatibility, ExecutorCompatibility(*actual))
+				if test.expectedCompbtibility != "" {
+					require.NotNil(t, bctubl)
+					bssert.Equbl(t, test.expectedCompbtibility, ExecutorCompbtibility(*bctubl))
 				} else {
-					assert.Nil(t, actual)
+					bssert.Nil(t, bctubl)
 				}
 			}
 		})

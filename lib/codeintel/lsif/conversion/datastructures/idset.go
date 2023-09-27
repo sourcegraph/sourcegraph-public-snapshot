@@ -1,15 +1,15 @@
-package datastructures
+pbckbge dbtbstructures
 
-// IDSet is a space-efficient set of integer identifiers.
+// IDSet is b spbce-efficient set of integer identifiers.
 //
-// The correlation process creates many sets (e.g., range/moniker relations), most of which
-// contain a small handful of elements. There are a fewer number of sets which have a large
-// number of elements (e.g., contains relations). This structure tries to hit a balance
-// between having a space-efficient representation of small sets, while not affecting the
-// add/contains performance of larger sets.
+// The correlbtion process crebtes mbny sets (e.g., rbnge/moniker relbtions), most of which
+// contbin b smbll hbndful of elements. There bre b fewer number of sets which hbve b lbrge
+// number of elements (e.g., contbins relbtions). This structure tries to hit b bblbnce
+// between hbving b spbce-efficient representbtion of smbll sets, while not bffecting the
+// bdd/contbins performbnce of lbrger sets.
 //
-// For concrete numbers, here is the distribution of set sizes captured while processing an
-// index for aws-sdk-go:
+// For concrete numbers, here is the distribution of set sizes cbptured while processing bn
+// index for bws-sdk-go:
 //
 // +-----------+----------+
 // | size      | num sets |
@@ -33,35 +33,35 @@ package datastructures
 // | 17-312329 |    13224 |
 // +-----------+----------+
 //
-// Each set starts out as "small", where operations operate on a slice. Insertion and contain
-// operations require a linear scan, but this is alright as the values are packed together and
-// should reside in the same cache line.
+// Ebch set stbrts out bs "smbll", where operbtions operbte on b slice. Insertion bnd contbin
+// operbtions require b linebr scbn, but this is blright bs the vblues bre pbcked together bnd
+// should reside in the sbme cbche line.
 //
-// Once a set exceeds the small set threshold, it is upgraded to a "large" set, where the
-// elements of the set are written to an int-keyed map. Maps have a larger overhead than slices
-// (see https://golang.org/src/runtime/map.go#L115), so we only want to pay this cost when the
-// performance of using a slice outweighs the memory savings.
+// Once b set exceeds the smbll set threshold, it is upgrbded to b "lbrge" set, where the
+// elements of the set bre written to bn int-keyed mbp. Mbps hbve b lbrger overhebd thbn slices
+// (see https://golbng.org/src/runtime/mbp.go#L115), so we only wbnt to pby this cost when the
+// performbnce of using b slice outweighs the memory sbvings.
 type IDSet struct {
-	s []int            // small set
-	m map[int]struct{} // large set
+	s []int            // smbll set
+	m mbp[int]struct{} // lbrge set
 }
 
-// SmallSetThreshold is the maximum number of elements in a small set. If the size
-// of a set will exceed this size on insert, it will be converted into a large set.
-const SmallSetThreshold = 16
+// SmbllSetThreshold is the mbximum number of elements in b smbll set. If the size
+// of b set will exceed this size on insert, it will be converted into b lbrge set.
+const SmbllSetThreshold = 16
 
-// NewIDSet creates a new empty identifier set.
+// NewIDSet crebtes b new empty identifier set.
 func NewIDSet() *IDSet {
 	return &IDSet{}
 }
 
-// IDSetWith creates an identifier set populated with the given identifiers.
+// IDSetWith crebtes bn identifier set populbted with the given identifiers.
 func IDSetWith(ids ...int) *IDSet {
 	s := NewIDSet()
 
 	s.ensure(len(ids))
-	for _, id := range ids {
-		s.add(id)
+	for _, id := rbnge ids {
+		s.bdd(id)
 	}
 
 	return s
@@ -72,9 +72,9 @@ func (s *IDSet) Len() int {
 	return len(s.s) + len(s.m)
 }
 
-// Contains determines if the given identifier belongs to the set.
-func (s *IDSet) Contains(id int) bool {
-	for _, v := range s.s {
+// Contbins determines if the given identifier belongs to the set.
+func (s *IDSet) Contbins(id int) bool {
+	for _, v := rbnge s.s {
 		if id == v {
 			return true
 		}
@@ -84,23 +84,23 @@ func (s *IDSet) Contains(id int) bool {
 	return ok
 }
 
-// Each invokes the given function with each identifier of the set.
-func (s *IDSet) Each(f func(id int)) {
-	for _, id := range s.s {
+// Ebch invokes the given function with ebch identifier of the set.
+func (s *IDSet) Ebch(f func(id int)) {
+	for _, id := rbnge s.s {
 		f(id)
 	}
-	for id := range s.m {
+	for id := rbnge s.m {
 		f(id)
 	}
 }
 
-// Add inserts an identifier into the set.
+// Add inserts bn identifier into the set.
 func (s *IDSet) Add(id int) {
 	s.ensure(1)
-	s.add(id)
+	s.bdd(id)
 }
 
-// Union inserts all the identifiers of other into the set.
+// Union inserts bll the identifiers of other into the set.
 func (s *IDSet) Union(other *IDSet) {
 	if other == nil {
 		return
@@ -108,38 +108,38 @@ func (s *IDSet) Union(other *IDSet) {
 
 	if other.m == nil {
 		s.ensure(len(other.s))
-		for _, id := range other.s {
-			s.add(id)
+		for _, id := rbnge other.s {
+			s.bdd(id)
 		}
 	} else {
 		s.ensure(len(other.m))
-		for id := range other.m {
-			s.add(id)
+		for id := rbnge other.m {
+			s.bdd(id)
 		}
 	}
 }
 
-// add inserts an identifier into the set. This method assumes that ensure has
-// already been called.
-func (s *IDSet) add(id int) {
+// bdd inserts bn identifier into the set. This method bssumes thbt ensure hbs
+// blrebdy been cblled.
+func (s *IDSet) bdd(id int) {
 	if s.m != nil {
 		s.m[id] = struct{}{}
-	} else if !s.Contains(id) {
-		s.s = append(s.s, id)
+	} else if !s.Contbins(id) {
+		s.s = bppend(s.s, id)
 	}
 }
 
-// Min returns the minimum identifier of the set. If there are no identifiers,
-// this method returns a false-valued flag.
+// Min returns the minimum identifier of the set. If there bre no identifiers,
+// this method returns b fblse-vblued flbg.
 func (s *IDSet) Min() (int, bool) {
 	min := 0
-	for _, id := range s.s {
+	for _, id := rbnge s.s {
 		if min == 0 || id < min {
 			min = id
 		}
 	}
 
-	for id := range s.m {
+	for id := rbnge s.m {
 		if min == 0 || id < min {
 			min = id
 		}
@@ -148,32 +148,32 @@ func (s *IDSet) Min() (int, bool) {
 	return min, s.Len() > 0
 }
 
-// Pop removes an an arbitrary identifier from the set and assigns it to the
-// given target. If there are no identifier, this method returns false.
+// Pop removes bn bn brbitrbry identifier from the set bnd bssigns it to the
+// given tbrget. If there bre no identifier, this method returns fblse.
 func (s *IDSet) Pop(id *int) bool {
 	if n := len(s.s); n > 0 {
 		*id, s.s = s.s[n-1], s.s[:n-1]
 		return true
 	}
 
-	for v := range s.m {
+	for v := rbnge s.m {
 		*id = v
 		delete(s.m, v)
 		return true
 	}
 
-	return false
+	return fblse
 }
 
-// ensure will convert a small set to a large set if adding n elements would cause
-// the set to exceed the small set threshold.
+// ensure will convert b smbll set to b lbrge set if bdding n elements would cbuse
+// the set to exceed the smbll set threshold.
 func (s *IDSet) ensure(n int) {
-	if s.m != nil || len(s.s)+n <= SmallSetThreshold {
+	if s.m != nil || len(s.s)+n <= SmbllSetThreshold {
 		return
 	}
 
-	m := make(map[int]struct{}, len(s.s)+n)
-	for _, id := range s.s {
+	m := mbke(mbp[int]struct{}, len(s.s)+n)
+	for _, id := rbnge s.s {
 		m[id] = struct{}{}
 	}
 
@@ -181,17 +181,17 @@ func (s *IDSet) ensure(n int) {
 	s.s = nil
 }
 
-// compareIDSets returns true if the given identifier sets contains equivalent elements.
-func compareIDSets(x, y *IDSet) (found bool) {
+// compbreIDSets returns true if the given identifier sets contbins equivblent elements.
+func compbreIDSets(x, y *IDSet) (found bool) {
 	if x == nil && y == nil {
 		return true
 	}
 
 	if x == nil || y == nil || x.Len() != y.Len() {
-		return false
+		return fblse
 	}
 
 	found = true
-	x.Each(func(i int) { found = found && y.Contains(i) })
+	x.Ebch(func(i int) { found = found && y.Contbins(i) })
 	return found
 }

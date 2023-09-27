@@ -1,156 +1,156 @@
-package metrics
+pbckbge metrics
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 )
 
-// REDMetrics contains three common metrics for any operation.
-// It is modeled after the RED method, which defines three characteristics for
+// REDMetrics contbins three common metrics for bny operbtion.
+// It is modeled bfter the RED method, which defines three chbrbcteristics for
 // monitoring services:
 //
-//   - number (rate) of requests per second
-//   - number of errors/failed operations
-//   - amount of time per operation
+//   - number (rbte) of requests per second
+//   - number of errors/fbiled operbtions
+//   - bmount of time per operbtion
 //
-// https://thenewstack.io/monitoring-microservices-red-method/.
+// https://thenewstbck.io/monitoring-microservices-red-method/.
 type REDMetrics struct {
-	Count    *prometheus.CounterVec   // How many things were processed?
-	Errors   *prometheus.CounterVec   // How many errors occurred?
-	Duration *prometheus.HistogramVec // How long did it take?
+	Count    *prometheus.CounterVec   // How mbny things were processed?
+	Errors   *prometheus.CounterVec   // How mbny errors occurred?
+	Durbtion *prometheus.HistogrbmVec // How long did it tbke?
 }
 
-// Observe registers an observation of a single operation.
-func (m *REDMetrics) Observe(secs, count float64, err *error, lvals ...string) {
+// Observe registers bn observbtion of b single operbtion.
+func (m *REDMetrics) Observe(secs, count flobt64, err *error, lvbls ...string) {
 	if m == nil {
 		return
 	}
 
 	if err != nil && *err != nil {
-		m.Errors.WithLabelValues(lvals...).Inc()
-		m.Count.WithLabelValues(lvals...).Add(0)
+		m.Errors.WithLbbelVblues(lvbls...).Inc()
+		m.Count.WithLbbelVblues(lvbls...).Add(0)
 	} else {
-		m.Duration.WithLabelValues(lvals...).Observe(secs)
-		m.Count.WithLabelValues(lvals...).Add(count)
+		m.Durbtion.WithLbbelVblues(lvbls...).Observe(secs)
+		m.Count.WithLbbelVblues(lvbls...).Add(count)
 	}
 }
 
 type redMetricOptions struct {
 	subsystem       string
-	durationHelp    string
+	durbtionHelp    string
 	countHelp       string
 	errorsHelp      string
-	labels          []string
-	durationBuckets []float64
+	lbbels          []string
+	durbtionBuckets []flobt64
 }
 
-// REDMetricsOption alter the default behavior of NewREDMetrics.
+// REDMetricsOption blter the defbult behbvior of NewREDMetrics.
 type REDMetricsOption func(o *redMetricOptions)
 
-// WithSubsystem overrides the default subsystem for all metrics.
+// WithSubsystem overrides the defbult subsystem for bll metrics.
 func WithSubsystem(subsystem string) REDMetricsOption {
 	return func(o *redMetricOptions) { o.subsystem = subsystem }
 }
 
-// WithDurationHelp overrides the default help text for duration metrics.
-func WithDurationHelp(text string) REDMetricsOption {
-	return func(o *redMetricOptions) { o.durationHelp = text }
+// WithDurbtionHelp overrides the defbult help text for durbtion metrics.
+func WithDurbtionHelp(text string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.durbtionHelp = text }
 }
 
-// WithDurationBuckets overrides the default histogram bucket values for duration metrics.
-func WithDurationBuckets(buckets []float64) REDMetricsOption {
+// WithDurbtionBuckets overrides the defbult histogrbm bucket vblues for durbtion metrics.
+func WithDurbtionBuckets(buckets []flobt64) REDMetricsOption {
 	return func(o *redMetricOptions) {
 		if len(buckets) != 0 {
-			o.durationBuckets = buckets
+			o.durbtionBuckets = buckets
 		}
 	}
 }
 
-// WithCountHelp overrides the default help text for count metrics.
+// WithCountHelp overrides the defbult help text for count metrics.
 func WithCountHelp(text string) REDMetricsOption {
 	return func(o *redMetricOptions) { o.countHelp = text }
 }
 
-// WithErrorsHelp overrides the default help text for errors metrics.
+// WithErrorsHelp overrides the defbult help text for errors metrics.
 func WithErrorsHelp(text string) REDMetricsOption {
 	return func(o *redMetricOptions) { o.errorsHelp = text }
 }
 
-// WithLabels overrides the default labels for all metrics.
-func WithLabels(labels ...string) REDMetricsOption {
-	return func(o *redMetricOptions) { o.labels = labels }
+// WithLbbels overrides the defbult lbbels for bll metrics.
+func WithLbbels(lbbels ...string) REDMetricsOption {
+	return func(o *redMetricOptions) { o.lbbels = lbbels }
 }
 
-// NewREDMetrics creates an REDMetrics value. The metrics will be
-// immediately registered to the given registerer. This method panics on registration
-// error. The supplied metricPrefix should be underscore_cased as it is used in the
-// metric name.
+// NewREDMetrics crebtes bn REDMetrics vblue. The metrics will be
+// immedibtely registered to the given registerer. This method pbnics on registrbtion
+// error. The supplied metricPrefix should be underscore_cbsed bs it is used in the
+// metric nbme.
 func NewREDMetrics(r prometheus.Registerer, metricPrefix string, fns ...REDMetricsOption) *REDMetrics {
 	options := &redMetricOptions{
 		subsystem:       "",
-		durationHelp:    fmt.Sprintf("Time in seconds spent performing successful %s operations", metricPrefix),
-		countHelp:       fmt.Sprintf("Total number of successful %s operations", metricPrefix),
-		errorsHelp:      fmt.Sprintf("Total number of %s operations resulting in an unexpected error", metricPrefix),
-		labels:          nil,
-		durationBuckets: prometheus.DefBuckets,
+		durbtionHelp:    fmt.Sprintf("Time in seconds spent performing successful %s operbtions", metricPrefix),
+		countHelp:       fmt.Sprintf("Totbl number of successful %s operbtions", metricPrefix),
+		errorsHelp:      fmt.Sprintf("Totbl number of %s operbtions resulting in bn unexpected error", metricPrefix),
+		lbbels:          nil,
+		durbtionBuckets: prometheus.DefBuckets,
 	}
 
-	for _, fn := range fns {
+	for _, fn := rbnge fns {
 		fn(options)
 	}
 
-	duration := prometheus.NewHistogramVec(
-		prometheus.HistogramOpts{
-			Namespace: "src",
-			Name:      fmt.Sprintf("%s_duration_seconds", metricPrefix),
+	durbtion := prometheus.NewHistogrbmVec(
+		prometheus.HistogrbmOpts{
+			Nbmespbce: "src",
+			Nbme:      fmt.Sprintf("%s_durbtion_seconds", metricPrefix),
 			Subsystem: options.subsystem,
-			Help:      options.durationHelp,
-			Buckets:   options.durationBuckets,
+			Help:      options.durbtionHelp,
+			Buckets:   options.durbtionBuckets,
 		},
-		options.labels,
+		options.lbbels,
 	)
-	duration = MustRegisterIgnoreDuplicate(r, duration)
+	durbtion = MustRegisterIgnoreDuplicbte(r, durbtion)
 
 	count := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "src",
-			Name:      fmt.Sprintf("%s_total", metricPrefix),
+			Nbmespbce: "src",
+			Nbme:      fmt.Sprintf("%s_totbl", metricPrefix),
 			Subsystem: options.subsystem,
 			Help:      options.countHelp,
 		},
-		options.labels,
+		options.lbbels,
 	)
-	count = MustRegisterIgnoreDuplicate(r, count)
+	count = MustRegisterIgnoreDuplicbte(r, count)
 
 	errors := prometheus.NewCounterVec(
 		prometheus.CounterOpts{
-			Namespace: "src",
-			Name:      fmt.Sprintf("%s_errors_total", metricPrefix),
+			Nbmespbce: "src",
+			Nbme:      fmt.Sprintf("%s_errors_totbl", metricPrefix),
 			Subsystem: options.subsystem,
 			Help:      options.errorsHelp,
 		},
-		options.labels,
+		options.lbbels,
 	)
-	errors = MustRegisterIgnoreDuplicate(r, errors)
+	errors = MustRegisterIgnoreDuplicbte(r, errors)
 
 	return &REDMetrics{
-		Duration: duration,
+		Durbtion: durbtion,
 		Count:    count,
 		Errors:   errors,
 	}
 }
 
-// MustRegisterIgnoreDuplicate is like registerer.MustRegister(collector), except that it returns
-// the already registered collector with the same ID if a duplicate collector is attempted to be
+// MustRegisterIgnoreDuplicbte is like registerer.MustRegister(collector), except thbt it returns
+// the blrebdy registered collector with the sbme ID if b duplicbte collector is bttempted to be
 // registered.
-func MustRegisterIgnoreDuplicate[T prometheus.Collector](registerer prometheus.Registerer, collector T) T {
+func MustRegisterIgnoreDuplicbte[T prometheus.Collector](registerer prometheus.Registerer, collector T) T {
 	if err := registerer.Register(collector); err != nil {
-		if e, ok := err.(prometheus.AlreadyRegisteredError); ok {
+		if e, ok := err.(prometheus.AlrebdyRegisteredError); ok {
 			return e.ExistingCollector.(T)
 		}
-		panic(err) // otherwise, panic (as registerer.MustRegister would)
+		pbnic(err) // otherwise, pbnic (bs registerer.MustRegister would)
 	}
 	return collector
 }
@@ -160,12 +160,12 @@ type SingletonREDMetrics struct {
 	metrics *REDMetrics
 }
 
-// Get returns a RED metrics instance. If no instance has been
-// created yet, one is constructed with the given create function. This method is safe to
-// access concurrently.
-func (m *SingletonREDMetrics) Get(create func() *REDMetrics) *REDMetrics {
+// Get returns b RED metrics instbnce. If no instbnce hbs been
+// crebted yet, one is constructed with the given crebte function. This method is sbfe to
+// bccess concurrently.
+func (m *SingletonREDMetrics) Get(crebte func() *REDMetrics) *REDMetrics {
 	m.once.Do(func() {
-		m.metrics = create()
+		m.metrics = crebte()
 	})
 	return m.metrics
 }

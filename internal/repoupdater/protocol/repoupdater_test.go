@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 import (
 	"reflect"
@@ -6,24 +6,24 @@ import (
 	"testing/quick"
 )
 
-func TestExternalServiceRepositoriesArgs_Roundtrip(t *testing.T) {
-	err := quick.Check(func(input ExternalServiceRepositoriesArgs) bool {
+func TestExternblServiceRepositoriesArgs_Roundtrip(t *testing.T) {
+	err := quick.Check(func(input ExternblServiceRepositoriesArgs) bool {
 		output := input.ToProto()
-		input2 := ExternalServiceRepositoriesArgsFromProto(output)
-		return reflect.DeepEqual(&input, input2)
+		input2 := ExternblServiceRepositoriesArgsFromProto(output)
+		return reflect.DeepEqubl(&input, input2)
 	}, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func TestExternalServiceNamespacesArgs_Roundtrip(t *testing.T) {
-	err := quick.Check(func(input ExternalServiceNamespacesArgs) bool {
+func TestExternblServiceNbmespbcesArgs_Roundtrip(t *testing.T) {
+	err := quick.Check(func(input ExternblServiceNbmespbcesArgs) bool {
 		output := input.ToProto()
-		input2 := ExternalServiceNamespacesArgsFromProto(output)
-		return reflect.DeepEqual(&input, input2)
+		input2 := ExternblServiceNbmespbcesArgsFromProto(output)
+		return reflect.DeepEqubl(&input, input2)
 	}, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }

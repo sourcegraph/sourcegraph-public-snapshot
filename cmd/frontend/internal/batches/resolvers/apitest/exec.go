@@ -1,4 +1,4 @@
-package apitest
+pbckbge bpitest
 
 import (
 	"context"
@@ -7,80 +7,80 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
 )
 
-// MustExec uses Exec to execute the given query and calls t.Fatalf if Exec failed.
+// MustExec uses Exec to execute the given query bnd cblls t.Fbtblf if Exec fbiled.
 func MustExec(
 	ctx context.Context,
 	t testing.TB,
-	s *graphql.Schema,
-	in map[string]any,
-	out any,
+	s *grbphql.Schemb,
+	in mbp[string]bny,
+	out bny,
 	query string,
 ) {
 	t.Helper()
 	if errs := Exec(ctx, t, s, in, out, query); len(errs) > 0 {
-		t.Fatalf("unexpected graphql query errors: %v", errs)
+		t.Fbtblf("unexpected grbphql query errors: %v", errs)
 	}
 }
 
 // Exec executes the given query with the given input in the given
-// graphql.Schema. The response will be rendered into out.
+// grbphql.Schemb. The response will be rendered into out.
 func Exec(
 	ctx context.Context,
 	t testing.TB,
-	s *graphql.Schema,
-	in map[string]any,
-	out any,
+	s *grbphql.Schemb,
+	in mbp[string]bny,
+	out bny,
 	query string,
 ) []*gqlerrors.QueryError {
 	t.Helper()
 
-	query = strings.ReplaceAll(query, "\t", "  ")
+	query = strings.ReplbceAll(query, "\t", "  ")
 
-	b, err := json.Marshal(in)
+	b, err := json.Mbrshbl(in)
 	if err != nil {
-		t.Fatalf("failed to marshal input: %s", err)
+		t.Fbtblf("fbiled to mbrshbl input: %s", err)
 	}
 
-	var anonInput map[string]any
-	err = json.Unmarshal(b, &anonInput)
+	vbr bnonInput mbp[string]bny
+	err = json.Unmbrshbl(b, &bnonInput)
 	if err != nil {
-		t.Fatalf("failed to unmarshal input back: %s", err)
+		t.Fbtblf("fbiled to unmbrshbl input bbck: %s", err)
 	}
 
-	r := s.Exec(ctx, query, "", anonInput)
+	r := s.Exec(ctx, query, "", bnonInput)
 	if len(r.Errors) != 0 {
 		return r.Errors
 	}
 
-	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+	_, disbbleLog := os.LookupEnv("NO_GRAPHQL_LOG")
 
-	if testing.Verbose() && !disableLog {
-		t.Logf("\n---- GraphQL Query ----\n%s\n\nVars: %s\n---- GraphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Data)
+	if testing.Verbose() && !disbbleLog {
+		t.Logf("\n---- GrbphQL Query ----\n%s\n\nVbrs: %s\n---- GrbphQL Result ----\n%s\n -----------", query, toJSON(t, in), r.Dbtb)
 	}
 
-	if err := json.Unmarshal(r.Data, out); err != nil {
-		t.Fatalf("failed to unmarshal graphql data: %v", err)
+	if err := json.Unmbrshbl(r.Dbtb, out); err != nil {
+		t.Fbtblf("fbiled to unmbrshbl grbphql dbtb: %v", err)
 	}
 
 	return nil
 }
 
-func toJSON(t testing.TB, v any) string {
-	data, err := json.Marshal(v)
+func toJSON(t testing.TB, v bny) string {
+	dbtb, err := json.Mbrshbl(v)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	formatted, err := jsonc.Format(string(data), nil)
+	formbtted, err := jsonc.Formbt(string(dbtb), nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	return formatted
+	return formbtted
 }

@@ -1,4 +1,4 @@
-package handler
+pbckbge hbndler
 
 import (
 	"bytes"
@@ -9,165 +9,165 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
-	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	internblexecutor "github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	executorstore "github.com/sourcegrbph/sourcegrbph/internbl/executor/store"
+	executortypes "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	metricsstore "github.com/sourcegrbph/sourcegrbph/internbl/metrics/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ExecutorHandler handles the HTTP requests of an executor for a single queue. See MultiHandler for multi-queue implementation.
-type ExecutorHandler interface {
-	// Name is the name of the queue the handler processes.
-	Name() string
-	// HandleDequeue retrieves the next executor.Job to be processed in the queue.
-	HandleDequeue(w http.ResponseWriter, r *http.Request)
-	// HandleAddExecutionLogEntry adds the log entry for the executor.Job.
-	HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request)
-	// HandleUpdateExecutionLogEntry updates the log entry for the executor.Job.
-	HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request)
-	// HandleMarkComplete updates the executor.Job to have a completed status.
-	HandleMarkComplete(w http.ResponseWriter, r *http.Request)
-	// HandleMarkErrored updates the executor.Job to have an errored status.
-	HandleMarkErrored(w http.ResponseWriter, r *http.Request)
-	// HandleMarkFailed updates the executor.Job to have a failed status.
-	HandleMarkFailed(w http.ResponseWriter, r *http.Request)
-	// HandleHeartbeat handles the heartbeat of an executor.
-	HandleHeartbeat(w http.ResponseWriter, r *http.Request)
+// ExecutorHbndler hbndles the HTTP requests of bn executor for b single queue. See MultiHbndler for multi-queue implementbtion.
+type ExecutorHbndler interfbce {
+	// Nbme is the nbme of the queue the hbndler processes.
+	Nbme() string
+	// HbndleDequeue retrieves the next executor.Job to be processed in the queue.
+	HbndleDequeue(w http.ResponseWriter, r *http.Request)
+	// HbndleAddExecutionLogEntry bdds the log entry for the executor.Job.
+	HbndleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request)
+	// HbndleUpdbteExecutionLogEntry updbtes the log entry for the executor.Job.
+	HbndleUpdbteExecutionLogEntry(w http.ResponseWriter, r *http.Request)
+	// HbndleMbrkComplete updbtes the executor.Job to hbve b completed stbtus.
+	HbndleMbrkComplete(w http.ResponseWriter, r *http.Request)
+	// HbndleMbrkErrored updbtes the executor.Job to hbve bn errored stbtus.
+	HbndleMbrkErrored(w http.ResponseWriter, r *http.Request)
+	// HbndleMbrkFbiled updbtes the executor.Job to hbve b fbiled stbtus.
+	HbndleMbrkFbiled(w http.ResponseWriter, r *http.Request)
+	// HbndleHebrtbebt hbndles the hebrtbebt of bn executor.
+	HbndleHebrtbebt(w http.ResponseWriter, r *http.Request)
 }
 
-var _ ExecutorHandler = &handler[workerutil.Record]{}
+vbr _ ExecutorHbndler = &hbndler[workerutil.Record]{}
 
-type handler[T workerutil.Record] struct {
-	queueHandler  QueueHandler[T]
-	executorStore database.ExecutorStore
+type hbndler[T workerutil.Record] struct {
+	queueHbndler  QueueHbndler[T]
+	executorStore dbtbbbse.ExecutorStore
 	jobTokenStore executorstore.JobTokenStore
 	metricsStore  metricsstore.DistributedStore
 	logger        log.Logger
 }
 
-// QueueHandler the specific logic for handling a queue.
-type QueueHandler[T workerutil.Record] struct {
-	// Name signifies the type of work the queue serves to executors.
-	Name string
-	// Store is a required dbworker store.
+// QueueHbndler the specific logic for hbndling b queue.
+type QueueHbndler[T workerutil.Record] struct {
+	// Nbme signifies the type of work the queue serves to executors.
+	Nbme string
+	// Store is b required dbworker store.
 	Store store.Store[T]
-	// RecordTransformer is a required hook for each registered queue that transforms a generic
-	// record from that queue into the job to be given to an executor.
-	RecordTransformer TransformerFunc[T]
+	// RecordTrbnsformer is b required hook for ebch registered queue thbt trbnsforms b generic
+	// record from thbt queue into the job to be given to bn executor.
+	RecordTrbnsformer TrbnsformerFunc[T]
 }
 
-// TransformerFunc is the function to transform a workerutil.Record into an executor.Job.
-type TransformerFunc[T workerutil.Record] func(ctx context.Context, version string, record T, resourceMetadata ResourceMetadata) (executortypes.Job, error)
+// TrbnsformerFunc is the function to trbnsform b workerutil.Record into bn executor.Job.
+type TrbnsformerFunc[T workerutil.Record] func(ctx context.Context, version string, record T, resourceMetbdbtb ResourceMetbdbtb) (executortypes.Job, error)
 
-// NewHandler creates a new ExecutorHandler.
-func NewHandler[T workerutil.Record](
-	executorStore database.ExecutorStore,
+// NewHbndler crebtes b new ExecutorHbndler.
+func NewHbndler[T workerutil.Record](
+	executorStore dbtbbbse.ExecutorStore,
 	jobTokenStore executorstore.JobTokenStore,
 	metricsStore metricsstore.DistributedStore,
-	queueHandler QueueHandler[T],
-) ExecutorHandler {
-	return &handler[T]{
+	queueHbndler QueueHbndler[T],
+) ExecutorHbndler {
+	return &hbndler[T]{
 		executorStore: executorStore,
 		jobTokenStore: jobTokenStore,
 		metricsStore:  metricsStore,
 		logger: log.Scoped(
-			fmt.Sprintf("executor-queue-handler-%s", queueHandler.Name),
-			fmt.Sprintf("The route handler for all executor %s dbworker API tunnel endpoints", queueHandler.Name),
+			fmt.Sprintf("executor-queue-hbndler-%s", queueHbndler.Nbme),
+			fmt.Sprintf("The route hbndler for bll executor %s dbworker API tunnel endpoints", queueHbndler.Nbme),
 		),
-		queueHandler: queueHandler,
+		queueHbndler: queueHbndler,
 	}
 }
 
-func (h *handler[T]) Name() string {
-	return h.queueHandler.Name
+func (h *hbndler[T]) Nbme() string {
+	return h.queueHbndler.Nbme
 }
 
-func (h *handler[T]) HandleDequeue(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.DequeueRequest
+func (h *hbndler[T]) HbndleDequeue(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.DequeueRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		job, dequeued, err := h.dequeue(r.Context(), mux.Vars(r)["queueName"], executorMetadata{
-			name:    payload.ExecutorName,
-			version: payload.Version,
-			resources: ResourceMetadata{
-				NumCPUs:   payload.NumCPUs,
-				Memory:    payload.Memory,
-				DiskSpace: payload.DiskSpace,
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
+		job, dequeued, err := h.dequeue(r.Context(), mux.Vbrs(r)["queueNbme"], executorMetbdbtb{
+			nbme:    pbylobd.ExecutorNbme,
+			version: pbylobd.Version,
+			resources: ResourceMetbdbtb{
+				NumCPUs:   pbylobd.NumCPUs,
+				Memory:    pbylobd.Memory,
+				DiskSpbce: pbylobd.DiskSpbce,
 			},
 		})
 		if !dequeued {
-			return http.StatusNoContent, nil, err
+			return http.StbtusNoContent, nil, err
 		}
 
-		return http.StatusOK, job, err
+		return http.StbtusOK, job, err
 	})
 }
 
-// dequeue selects a job record from the database and stashes metadata including
-// the job record and the locking transaction. If no job is available for processing,
-// a false-valued flag is returned.
-func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata executorMetadata) (executortypes.Job, bool, error) {
-	if err := validateWorkerHostname(metadata.name); err != nil {
-		return executortypes.Job{}, false, err
+// dequeue selects b job record from the dbtbbbse bnd stbshes metbdbtb including
+// the job record bnd the locking trbnsbction. If no job is bvbilbble for processing,
+// b fblse-vblued flbg is returned.
+func (h *hbndler[T]) dequeue(ctx context.Context, queueNbme string, metbdbtb executorMetbdbtb) (executortypes.Job, bool, error) {
+	if err := vblidbteWorkerHostnbme(metbdbtb.nbme); err != nil {
+		return executortypes.Job{}, fblse, err
 	}
 
-	version2Supported := false
-	if metadata.version != "" {
-		var err error
-		version2Supported, err = api.CheckSourcegraphVersion(metadata.version, "4.3.0-0", "2022-11-24")
+	version2Supported := fblse
+	if metbdbtb.version != "" {
+		vbr err error
+		version2Supported, err = bpi.CheckSourcegrbphVersion(metbdbtb.version, "4.3.0-0", "2022-11-24")
 		if err != nil {
-			return executortypes.Job{}, false, errors.Wrapf(err, "failed to check version %q", metadata.version)
+			return executortypes.Job{}, fblse, errors.Wrbpf(err, "fbiled to check version %q", metbdbtb.version)
 		}
 	}
 
-	// executorName is supposed to be unique.
-	record, dequeued, err := h.queueHandler.Store.Dequeue(ctx, metadata.name, nil)
+	// executorNbme is supposed to be unique.
+	record, dequeued, err := h.queueHbndler.Store.Dequeue(ctx, metbdbtb.nbme, nil)
 	if err != nil {
-		return executortypes.Job{}, false, errors.Wrap(err, "dbworkerstore.Dequeue")
+		return executortypes.Job{}, fblse, errors.Wrbp(err, "dbworkerstore.Dequeue")
 	}
 	if !dequeued {
-		return executortypes.Job{}, false, nil
+		return executortypes.Job{}, fblse, nil
 	}
 
-	logger := log.Scoped("dequeue", "Select a job record from the database.")
-	job, err := h.queueHandler.RecordTransformer(ctx, metadata.version, record, metadata.resources)
+	logger := log.Scoped("dequeue", "Select b job record from the dbtbbbse.")
+	job, err := h.queueHbndler.RecordTrbnsformer(ctx, metbdbtb.version, record, metbdbtb.resources)
 	if err != nil {
-		if _, err := h.queueHandler.Store.MarkFailed(ctx, record.RecordID(), fmt.Sprintf("failed to transform record: %s", err), store.MarkFinalOptions{}); err != nil {
-			logger.Error("Failed to mark record as failed",
+		if _, err := h.queueHbndler.Store.MbrkFbiled(ctx, record.RecordID(), fmt.Sprintf("fbiled to trbnsform record: %s", err), store.MbrkFinblOptions{}); err != nil {
+			logger.Error("Fbiled to mbrk record bs fbiled",
 				log.Int("recordID", record.RecordID()),
 				log.Error(err))
 		}
 
-		return executortypes.Job{}, false, errors.Wrap(err, "RecordTransformer")
+		return executortypes.Job{}, fblse, errors.Wrbp(err, "RecordTrbnsformer")
 	}
 
-	// If this executor supports v2, return a v2 payload. Based on this field,
-	// marshalling will be switched between old and new payload.
+	// If this executor supports v2, return b v2 pbylobd. Bbsed on this field,
+	// mbrshblling will be switched between old bnd new pbylobd.
 	if version2Supported {
 		job.Version = 2
 	}
 
-	token, err := h.jobTokenStore.Create(ctx, job.ID, queueName, job.RepositoryName)
+	token, err := h.jobTokenStore.Crebte(ctx, job.ID, queueNbme, job.RepositoryNbme)
 	if err != nil {
-		if errors.Is(err, executorstore.ErrJobTokenAlreadyCreated) {
-			// Token has already been created, regen it.
-			token, err = h.jobTokenStore.Regenerate(ctx, job.ID, queueName)
+		if errors.Is(err, executorstore.ErrJobTokenAlrebdyCrebted) {
+			// Token hbs blrebdy been crebted, regen it.
+			token, err = h.jobTokenStore.Regenerbte(ctx, job.ID, queueNbme)
 			if err != nil {
-				return executortypes.Job{}, false, errors.Wrap(err, "RegenerateToken")
+				return executortypes.Job{}, fblse, errors.Wrbp(err, "RegenerbteToken")
 			}
 		} else {
-			return executortypes.Job{}, false, errors.Wrap(err, "CreateToken")
+			return executortypes.Job{}, fblse, errors.Wrbp(err, "CrebteToken")
 		}
 	}
 	job.Token = token
@@ -175,325 +175,325 @@ func (h *handler[T]) dequeue(ctx context.Context, queueName string, metadata exe
 	return job, true, nil
 }
 
-type executorMetadata struct {
-	name      string
+type executorMetbdbtb struct {
+	nbme      string
 	version   string
-	resources ResourceMetadata
+	resources ResourceMetbdbtb
 }
 
-// ResourceMetadata is the specific resource data for an executor instance.
-type ResourceMetadata struct {
+// ResourceMetbdbtb is the specific resource dbtb for bn executor instbnce.
+type ResourceMetbdbtb struct {
 	NumCPUs   int
 	Memory    string
-	DiskSpace string
+	DiskSpbce string
 }
 
-func (h *handler[T]) HandleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.AddExecutionLogEntryRequest
+func (h *hbndler[T]) HbndleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.AddExecutionLogEntryRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		id, err := h.addExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
-		return http.StatusOK, id, err
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
+		id, err := h.bddExecutionLogEntry(r.Context(), pbylobd.ExecutorNbme, pbylobd.JobID, pbylobd.ExecutionLogEntry)
+		return http.StbtusOK, id, err
 	})
 }
 
-func (h *handler[T]) addExecutionLogEntry(ctx context.Context, executorName string, jobID int, entry internalexecutor.ExecutionLogEntry) (int, error) {
-	entryID, err := h.queueHandler.Store.AddExecutionLogEntry(ctx, jobID, entry, store.ExecutionLogEntryOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
-		// We pass state to enforce adding log entries is only possible while the record is still dequeued.
-		State: "processing",
+func (h *hbndler[T]) bddExecutionLogEntry(ctx context.Context, executorNbme string, jobID int, entry internblexecutor.ExecutionLogEntry) (int, error) {
+	entryID, err := h.queueHbndler.Store.AddExecutionLogEntry(ctx, jobID, entry, store.ExecutionLogEntryOptions{
+		// We pbss the WorkerHostnbme, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report hebrtbebts bnymore, but is still blive bnd reporting logs,
+		// both executors thbt ever got the job would be writing to the sbme record. This prevents it.
+		WorkerHostnbme: executorNbme,
+		// We pbss stbte to enforce bdding log entries is only possible while the record is still dequeued.
+		Stbte: "processing",
 	})
-	if err == store.ErrExecutionLogEntryNotUpdated {
+	if err == store.ErrExecutionLogEntryNotUpdbted {
 		return 0, ErrUnknownJob
 	}
-	return entryID, errors.Wrap(err, "dbworkerstore.AddExecutionLogEntry")
+	return entryID, errors.Wrbp(err, "dbworkerstore.AddExecutionLogEntry")
 }
 
-func (h *handler[T]) HandleUpdateExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.UpdateExecutionLogEntryRequest
+func (h *hbndler[T]) HbndleUpdbteExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.UpdbteExecutionLogEntryRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		err := h.updateExecutionLogEntry(r.Context(), payload.ExecutorName, payload.JobID, payload.EntryID, payload.ExecutionLogEntry)
-		return http.StatusNoContent, nil, err
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
+		err := h.updbteExecutionLogEntry(r.Context(), pbylobd.ExecutorNbme, pbylobd.JobID, pbylobd.EntryID, pbylobd.ExecutionLogEntry)
+		return http.StbtusNoContent, nil, err
 	})
 }
 
-func (h *handler[T]) updateExecutionLogEntry(ctx context.Context, executorName string, jobID int, entryID int, entry internalexecutor.ExecutionLogEntry) error {
-	err := h.queueHandler.Store.UpdateExecutionLogEntry(ctx, jobID, entryID, entry, store.ExecutionLogEntryOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting logs,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
-		// We pass state to enforce adding log entries is only possible while the record is still dequeued.
-		State: "processing",
+func (h *hbndler[T]) updbteExecutionLogEntry(ctx context.Context, executorNbme string, jobID int, entryID int, entry internblexecutor.ExecutionLogEntry) error {
+	err := h.queueHbndler.Store.UpdbteExecutionLogEntry(ctx, jobID, entryID, entry, store.ExecutionLogEntryOptions{
+		// We pbss the WorkerHostnbme, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report hebrtbebts bnymore, but is still blive bnd reporting logs,
+		// both executors thbt ever got the job would be writing to the sbme record. This prevents it.
+		WorkerHostnbme: executorNbme,
+		// We pbss stbte to enforce bdding log entries is only possible while the record is still dequeued.
+		Stbte: "processing",
 	})
-	if err == store.ErrExecutionLogEntryNotUpdated {
+	if err == store.ErrExecutionLogEntryNotUpdbted {
 		return ErrUnknownJob
 	}
-	return errors.Wrap(err, "dbworkerstore.UpdateExecutionLogEntry")
+	return errors.Wrbp(err, "dbworkerstore.UpdbteExecutionLogEntry")
 }
 
-func (h *handler[T]) HandleMarkComplete(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.MarkCompleteRequest
+func (h *hbndler[T]) HbndleMbrkComplete(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.MbrkCompleteRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		err := h.markComplete(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID)
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
+		err := h.mbrkComplete(r.Context(), mux.Vbrs(r)["queueNbme"], pbylobd.ExecutorNbme, pbylobd.JobID)
 		if err == ErrUnknownJob {
-			return http.StatusNotFound, nil, nil
+			return http.StbtusNotFound, nil, nil
 		}
 
-		return http.StatusNoContent, nil, err
+		return http.StbtusNoContent, nil, err
 	})
 }
 
-func (h *handler[T]) markComplete(ctx context.Context, queueName string, executorName string, jobID int) error {
-	ok, err := h.queueHandler.Store.MarkComplete(ctx, jobID, store.MarkFinalOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
+func (h *hbndler[T]) mbrkComplete(ctx context.Context, queueNbme string, executorNbme string, jobID int) error {
+	ok, err := h.queueHbndler.Store.MbrkComplete(ctx, jobID, store.MbrkFinblOptions{
+		// We pbss the WorkerHostnbme, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report hebrtbebts bnymore, but is still blive bnd reporting stbte,
+		// both executors thbt ever got the job would be writing to the sbme record. This prevents it.
+		WorkerHostnbme: executorNbme,
 	})
 	if err != nil {
-		return errors.Wrap(err, "dbworkerstore.MarkComplete")
+		return errors.Wrbp(err, "dbworkerstore.MbrkComplete")
 	}
 	if !ok {
 		return ErrUnknownJob
 	}
 
-	if err = h.jobTokenStore.Delete(ctx, jobID, queueName); err != nil {
-		return errors.Wrap(err, "jobTokenStore.Delete")
+	if err = h.jobTokenStore.Delete(ctx, jobID, queueNbme); err != nil {
+		return errors.Wrbp(err, "jobTokenStore.Delete")
 	}
 
 	return nil
 }
 
-func (h *handler[T]) HandleMarkErrored(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.MarkErroredRequest
+func (h *hbndler[T]) HbndleMbrkErrored(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.MbrkErroredRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		err := h.markErrored(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
+		err := h.mbrkErrored(r.Context(), mux.Vbrs(r)["queueNbme"], pbylobd.ExecutorNbme, pbylobd.JobID, pbylobd.ErrorMessbge)
 		if err == ErrUnknownJob {
-			return http.StatusNotFound, nil, nil
+			return http.StbtusNotFound, nil, nil
 		}
 
-		return http.StatusNoContent, nil, err
+		return http.StbtusNoContent, nil, err
 	})
 }
 
-func (h *handler[T]) markErrored(ctx context.Context, queueName string, executorName string, jobID int, errorMessage string) error {
-	ok, err := h.queueHandler.Store.MarkErrored(ctx, jobID, errorMessage, store.MarkFinalOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
+func (h *hbndler[T]) mbrkErrored(ctx context.Context, queueNbme string, executorNbme string, jobID int, errorMessbge string) error {
+	ok, err := h.queueHbndler.Store.MbrkErrored(ctx, jobID, errorMessbge, store.MbrkFinblOptions{
+		// We pbss the WorkerHostnbme, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report hebrtbebts bnymore, but is still blive bnd reporting stbte,
+		// both executors thbt ever got the job would be writing to the sbme record. This prevents it.
+		WorkerHostnbme: executorNbme,
 	})
 	if err != nil {
-		return errors.Wrap(err, "dbworkerstore.MarkErrored")
+		return errors.Wrbp(err, "dbworkerstore.MbrkErrored")
 	}
 	if !ok {
 		return ErrUnknownJob
 	}
 
-	if err = h.jobTokenStore.Delete(ctx, jobID, queueName); err != nil {
-		return errors.Wrap(err, "jobTokenStore.Delete")
+	if err = h.jobTokenStore.Delete(ctx, jobID, queueNbme); err != nil {
+		return errors.Wrbp(err, "jobTokenStore.Delete")
 	}
 
 	return nil
 }
 
-func (h *handler[T]) HandleMarkFailed(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.MarkErroredRequest
+func (h *hbndler[T]) HbndleMbrkFbiled(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.MbrkErroredRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
-		err := h.markFailed(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ErrorMessage)
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
+		err := h.mbrkFbiled(r.Context(), mux.Vbrs(r)["queueNbme"], pbylobd.ExecutorNbme, pbylobd.JobID, pbylobd.ErrorMessbge)
 		if err == ErrUnknownJob {
-			return http.StatusNotFound, nil, nil
+			return http.StbtusNotFound, nil, nil
 		}
 
-		return http.StatusNoContent, nil, err
+		return http.StbtusNoContent, nil, err
 	})
 }
 
 // ErrUnknownJob error when the job does not exist.
-var ErrUnknownJob = errors.New("unknown job")
+vbr ErrUnknownJob = errors.New("unknown job")
 
-func (h *handler[T]) markFailed(ctx context.Context, queueName string, executorName string, jobID int, errorMessage string) error {
-	ok, err := h.queueHandler.Store.MarkFailed(ctx, jobID, errorMessage, store.MarkFinalOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executorName,
+func (h *hbndler[T]) mbrkFbiled(ctx context.Context, queueNbme string, executorNbme string, jobID int, errorMessbge string) error {
+	ok, err := h.queueHbndler.Store.MbrkFbiled(ctx, jobID, errorMessbge, store.MbrkFinblOptions{
+		// We pbss the WorkerHostnbme, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report hebrtbebts bnymore, but is still blive bnd reporting stbte,
+		// both executors thbt ever got the job would be writing to the sbme record. This prevents it.
+		WorkerHostnbme: executorNbme,
 	})
 	if err != nil {
-		return errors.Wrap(err, "dbworkerstore.MarkFailed")
+		return errors.Wrbp(err, "dbworkerstore.MbrkFbiled")
 	}
 	if !ok {
 		return ErrUnknownJob
 	}
 
-	if err = h.jobTokenStore.Delete(ctx, jobID, queueName); err != nil {
-		return errors.Wrap(err, "jobTokenStore.Delete")
+	if err = h.jobTokenStore.Delete(ctx, jobID, queueNbme); err != nil {
+		return errors.Wrbp(err, "jobTokenStore.Delete")
 	}
 
 	return nil
 }
 
-func (h *handler[T]) HandleHeartbeat(w http.ResponseWriter, r *http.Request) {
-	var payload executortypes.HeartbeatRequest
+func (h *hbndler[T]) HbndleHebrtbebt(w http.ResponseWriter, r *http.Request) {
+	vbr pbylobd executortypes.HebrtbebtRequest
 
-	wrapHandler(w, r, &payload, h.logger, func() (int, any, error) {
+	wrbpHbndler(w, r, &pbylobd, h.logger, func() (int, bny, error) {
 		e := types.Executor{
-			Hostname:        payload.ExecutorName,
-			QueueName:       mux.Vars(r)["queueName"],
-			OS:              payload.OS,
-			Architecture:    payload.Architecture,
-			DockerVersion:   payload.DockerVersion,
-			ExecutorVersion: payload.ExecutorVersion,
-			GitVersion:      payload.GitVersion,
-			IgniteVersion:   payload.IgniteVersion,
-			SrcCliVersion:   payload.SrcCliVersion,
+			Hostnbme:        pbylobd.ExecutorNbme,
+			QueueNbme:       mux.Vbrs(r)["queueNbme"],
+			OS:              pbylobd.OS,
+			Architecture:    pbylobd.Architecture,
+			DockerVersion:   pbylobd.DockerVersion,
+			ExecutorVersion: pbylobd.ExecutorVersion,
+			GitVersion:      pbylobd.GitVersion,
+			IgniteVersion:   pbylobd.IgniteVersion,
+			SrcCliVersion:   pbylobd.SrcCliVersion,
 		}
 
-		// Handle metrics in the background, this should not delay the heartbeat response being
-		// delivered. It is critical for keeping jobs alive.
+		// Hbndle metrics in the bbckground, this should not delby the hebrtbebt response being
+		// delivered. It is criticbl for keeping jobs blive.
 		go func() {
-			metrics, err := decodeAndLabelMetrics(payload.PrometheusMetrics, payload.ExecutorName)
+			metrics, err := decodeAndLbbelMetrics(pbylobd.PrometheusMetrics, pbylobd.ExecutorNbme)
 			if err != nil {
-				// Just log the error but don't panic. The heartbeat is more important.
-				h.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
+				// Just log the error but don't pbnic. The hebrtbebt is more importbnt.
+				h.logger.Error("fbiled to decode metrics bnd bpply lbbels for executor hebrtbebt", log.Error(err))
 				return
 			}
 
-			if err = h.metricsStore.Ingest(payload.ExecutorName, metrics); err != nil {
-				// Just log the error but don't panic. The heartbeat is more important.
-				h.logger.Error("failed to ingest metrics for executor heartbeat", log.Error(err))
+			if err = h.metricsStore.Ingest(pbylobd.ExecutorNbme, metrics); err != nil {
+				// Just log the error but don't pbnic. The hebrtbebt is more importbnt.
+				h.logger.Error("fbiled to ingest metrics for executor hebrtbebt", log.Error(err))
 			}
 		}()
 
-		knownIDs, cancelIDs, err := h.heartbeat(r.Context(), e, payload.JobIDs)
+		knownIDs, cbncelIDs, err := h.hebrtbebt(r.Context(), e, pbylobd.JobIDs)
 
-		return http.StatusOK, executortypes.HeartbeatResponse{KnownIDs: knownIDs, CancelIDs: cancelIDs}, err
+		return http.StbtusOK, executortypes.HebrtbebtResponse{KnownIDs: knownIDs, CbncelIDs: cbncelIDs}, err
 	})
 }
 
-func (h *handler[T]) heartbeat(ctx context.Context, executor types.Executor, ids []string) ([]string, []string, error) {
-	if err := validateWorkerHostname(executor.Hostname); err != nil {
+func (h *hbndler[T]) hebrtbebt(ctx context.Context, executor types.Executor, ids []string) ([]string, []string, error) {
+	if err := vblidbteWorkerHostnbme(executor.Hostnbme); err != nil {
 		return nil, nil, err
 	}
 
-	logger := log.Scoped("heartbeat", "Write this heartbeat to the database")
+	logger := log.Scoped("hebrtbebt", "Write this hebrtbebt to the dbtbbbse")
 
-	// Write this heartbeat to the database so that we can populate the UI with recent executor activity.
-	if err := h.executorStore.UpsertHeartbeat(ctx, executor); err != nil {
-		logger.Error("Failed to upsert executor heartbeat", log.Error(err))
+	// Write this hebrtbebt to the dbtbbbse so thbt we cbn populbte the UI with recent executor bctivity.
+	if err := h.executorStore.UpsertHebrtbebt(ctx, executor); err != nil {
+		logger.Error("Fbiled to upsert executor hebrtbebt", log.Error(err))
 	}
 
-	knownIDs, cancelIDs, err := h.queueHandler.Store.Heartbeat(ctx, ids, store.HeartbeatOptions{
-		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor. When
-		// the previous executor didn't report heartbeats anymore, but is still alive and reporting state,
-		// both executors that ever got the job would be writing to the same record. This prevents it.
-		WorkerHostname: executor.Hostname,
+	knownIDs, cbncelIDs, err := h.queueHbndler.Store.Hebrtbebt(ctx, ids, store.HebrtbebtOptions{
+		// We pbss the WorkerHostnbme, so the store enforces the record to be owned by this executor. When
+		// the previous executor didn't report hebrtbebts bnymore, but is still blive bnd reporting stbte,
+		// both executors thbt ever got the job would be writing to the sbme record. This prevents it.
+		WorkerHostnbme: executor.Hostnbme,
 	})
-	return knownIDs, cancelIDs, errors.Wrap(err, "dbworkerstore.UpsertHeartbeat")
+	return knownIDs, cbncelIDs, errors.Wrbp(err, "dbworkerstore.UpsertHebrtbebt")
 }
 
-// wrapHandler decodes the request body into the given payload pointer, then calls the given
-// handler function. If the body cannot be decoded, a 400 BadRequest is returned and the handler
-// function is not called. If the handler function returns an error, a 500 Internal Server Error
-// is returned. Otherwise, the response status will match the status code value returned from the
-// handler, and the payload value returned from the handler is encoded and written to the
+// wrbpHbndler decodes the request body into the given pbylobd pointer, then cblls the given
+// hbndler function. If the body cbnnot be decoded, b 400 BbdRequest is returned bnd the hbndler
+// function is not cblled. If the hbndler function returns bn error, b 500 Internbl Server Error
+// is returned. Otherwise, the response stbtus will mbtch the stbtus code vblue returned from the
+// hbndler, bnd the pbylobd vblue returned from the hbndler is encoded bnd written to the
 // response body.
-func wrapHandler(w http.ResponseWriter, r *http.Request, payload any, logger log.Logger, handler func() (int, any, error)) {
-	if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		logger.Error("Failed to unmarshal payload", log.Error(err))
-		http.Error(w, fmt.Sprintf("Failed to unmarshal payload: %s", err.Error()), http.StatusBadRequest)
+func wrbpHbndler(w http.ResponseWriter, r *http.Request, pbylobd bny, logger log.Logger, hbndler func() (int, bny, error)) {
+	if err := json.NewDecoder(r.Body).Decode(&pbylobd); err != nil {
+		logger.Error("Fbiled to unmbrshbl pbylobd", log.Error(err))
+		http.Error(w, fmt.Sprintf("Fbiled to unmbrshbl pbylobd: %s", err.Error()), http.StbtusBbdRequest)
 		return
 	}
 
-	status, payload, err := handler()
+	stbtus, pbylobd, err := hbndler()
 	if err != nil {
-		logger.Error("Handler returned an error", log.Error(err))
+		logger.Error("Hbndler returned bn error", log.Error(err))
 
-		status = http.StatusInternalServerError
-		payload = errorResponse{Error: err.Error()}
+		stbtus = http.StbtusInternblServerError
+		pbylobd = errorResponse{Error: err.Error()}
 	}
 
-	data, err := json.Marshal(payload)
+	dbtb, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		logger.Error("Failed to serialize payload", log.Error(err))
-		http.Error(w, fmt.Sprintf("Failed to serialize payload: %s", err), http.StatusInternalServerError)
+		logger.Error("Fbiled to seriblize pbylobd", log.Error(err))
+		http.Error(w, fmt.Sprintf("Fbiled to seriblize pbylobd: %s", err), http.StbtusInternblServerError)
 		return
 	}
 
-	w.WriteHeader(status)
+	w.WriteHebder(stbtus)
 
-	if status != http.StatusNoContent {
-		_, _ = io.Copy(w, bytes.NewReader(data))
+	if stbtus != http.StbtusNoContent {
+		_, _ = io.Copy(w, bytes.NewRebder(dbtb))
 	}
 }
 
-// decodeAndLabelMetrics decodes the text serialized prometheus metrics dump and then
-// applies common labels.
-func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFamily, error) {
-	var data []*dto.MetricFamily
+// decodeAndLbbelMetrics decodes the text seriblized prometheus metrics dump bnd then
+// bpplies common lbbels.
+func decodeAndLbbelMetrics(encodedMetrics, instbnceNbme string) ([]*dto.MetricFbmily, error) {
+	vbr dbtb []*dto.MetricFbmily
 
-	dec := expfmt.NewDecoder(strings.NewReader(encodedMetrics), expfmt.FmtText)
+	dec := expfmt.NewDecoder(strings.NewRebder(encodedMetrics), expfmt.FmtText)
 	for {
-		var mf dto.MetricFamily
+		vbr mf dto.MetricFbmily
 		if err := dec.Decode(&mf); err != nil {
 			if err == io.EOF {
-				break
+				brebk
 			}
 
-			return nil, errors.Wrap(err, "decoding metric family")
+			return nil, errors.Wrbp(err, "decoding metric fbmily")
 		}
 
-		// Attach the extra labels.
-		metricLabelInstance := "sg_instance"
-		metricLabelJob := "sg_job"
-		executorJob := "sourcegraph-executors"
-		registryJob := "sourcegraph-executors-registry"
-		for _, m := range mf.Metric {
-			var metricLabelInstanceValue string
-			for _, l := range m.Label {
-				if *l.Name == metricLabelInstance {
-					metricLabelInstanceValue = l.GetValue()
-					break
+		// Attbch the extrb lbbels.
+		metricLbbelInstbnce := "sg_instbnce"
+		metricLbbelJob := "sg_job"
+		executorJob := "sourcegrbph-executors"
+		registryJob := "sourcegrbph-executors-registry"
+		for _, m := rbnge mf.Metric {
+			vbr metricLbbelInstbnceVblue string
+			for _, l := rbnge m.Lbbel {
+				if *l.Nbme == metricLbbelInstbnce {
+					metricLbbelInstbnceVblue = l.GetVblue()
+					brebk
 				}
 			}
-			// if sg_instance not set, set it as the executor name sent in the heartbeat.
-			// this is done for the executor's own and it's node_exporter metrics, executors
-			// set sg_instance for metrics scraped from the registry+registry's node_exporter
-			if metricLabelInstanceValue == "" {
-				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+			// if sg_instbnce not set, set it bs the executor nbme sent in the hebrtbebt.
+			// this is done for the executor's own bnd it's node_exporter metrics, executors
+			// set sg_instbnce for metrics scrbped from the registry+registry's node_exporter
+			if metricLbbelInstbnceVblue == "" {
+				m.Lbbel = bppend(m.Lbbel, &dto.LbbelPbir{Nbme: &metricLbbelInstbnce, Vblue: &instbnceNbme})
 			}
 
-			if metricLabelInstanceValue == "docker-registry" {
-				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &registryJob})
+			if metricLbbelInstbnceVblue == "docker-registry" {
+				m.Lbbel = bppend(m.Lbbel, &dto.LbbelPbir{Nbme: &metricLbbelJob, Vblue: &registryJob})
 			} else {
-				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &executorJob})
+				m.Lbbel = bppend(m.Lbbel, &dto.LbbelPbir{Nbme: &metricLbbelJob, Vblue: &executorJob})
 			}
 		}
 
-		data = append(data, &mf)
+		dbtb = bppend(dbtb, &mf)
 	}
 
-	return data, nil
+	return dbtb, nil
 }
 
 type errorResponse struct {
 	Error string `json:"error"`
 }
 
-// validateWorkerHostname validates the WorkerHostname field sent for all the endpoints.
-// We don't allow empty hostnames, as it would bypass the hostname verification, which
-// could lead to stray workers updating records they no longer own.
-func validateWorkerHostname(hostname string) error {
-	if hostname == "" {
-		return errors.New("worker hostname cannot be empty")
+// vblidbteWorkerHostnbme vblidbtes the WorkerHostnbme field sent for bll the endpoints.
+// We don't bllow empty hostnbmes, bs it would bypbss the hostnbme verificbtion, which
+// could lebd to strby workers updbting records they no longer own.
+func vblidbteWorkerHostnbme(hostnbme string) error {
+	if hostnbme == "" {
+		return errors.New("worker hostnbme cbnnot be empty")
 	}
 	return nil
 }

@@ -1,44 +1,44 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestRepoRefresh(t *testing.T) {
 	c := newTest(t)
 
-	enqueueRepoUpdateCount := map[api.RepoName]int{}
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
-		enqueueRepoUpdateCount[repo]++
+	enqueueRepoUpdbteCount := mbp[bpi.RepoNbme]int{}
+	repoupdbter.MockEnqueueRepoUpdbte = func(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error) {
+		enqueueRepoUpdbteCount[repo]++
 		return nil, nil
 	}
 
-	backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-		switch name {
-		case "github.com/gorilla/mux":
-			return &types.Repo{ID: 2, Name: name}, nil
-		default:
-			panic("wrong path")
+	bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+		switch nbme {
+		cbse "github.com/gorillb/mux":
+			return &types.Repo{ID: 2, Nbme: nbme}, nil
+		defbult:
+			pbnic("wrong pbth")
 		}
 	}
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		if repo.ID != 2 || rev != "master" {
-			t.Error("wrong arguments to ResolveRev")
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		if repo.ID != 2 || rev != "mbster" {
+			t.Error("wrong brguments to ResolveRev")
 		}
-		return "aed", nil
+		return "bed", nil
 	}
 
-	if _, err := c.PostOK("/repos/github.com/gorilla/mux/-/refresh", nil); err != nil {
-		t.Fatal(err)
+	if _, err := c.PostOK("/repos/github.com/gorillb/mux/-/refresh", nil); err != nil {
+		t.Fbtbl(err)
 	}
-	if ct := enqueueRepoUpdateCount["github.com/gorilla/mux"]; ct != 1 {
-		t.Errorf("expected EnqueueRepoUpdate to be called once, but was called %d times", ct)
+	if ct := enqueueRepoUpdbteCount["github.com/gorillb/mux"]; ct != 1 {
+		t.Errorf("expected EnqueueRepoUpdbte to be cblled once, but wbs cblled %d times", ct)
 	}
 }

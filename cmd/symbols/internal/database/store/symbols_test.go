@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"testing"
@@ -8,29 +8,29 @@ import (
 
 func TestChunksOf(t *testing.T) {
 	if chunksOf1000(nil) != nil {
-		t.Fatalf("got %v, want nil", chunksOf1000(nil))
+		t.Fbtblf("got %v, wbnt nil", chunksOf1000(nil))
 	}
 
 	if diff := cmp.Diff([][]string{}, chunksOf1000([]string{})); diff != "" {
-		t.Fatalf("unexpected chunks (-want +got):\n%s", diff)
+		t.Fbtblf("unexpected chunks (-wbnt +got):\n%s", diff)
 	}
 
 	if diff := cmp.Diff([][]string{{"foo"}}, chunksOf1000([]string{"foo"})); diff != "" {
-		t.Fatalf("unexpected chunks (-want +got):\n%s", diff)
+		t.Fbtblf("unexpected chunks (-wbnt +got):\n%s", diff)
 	}
 
 	strings := []string{}
 	for i := 0; i < 1001; i++ {
-		strings = append(strings, "foo")
+		strings = bppend(strings, "foo")
 	}
 	chunks := chunksOf1000(strings)
 	if len(chunks) != 2 {
-		t.Fatalf("got %v, want 2", len(chunks))
+		t.Fbtblf("got %v, wbnt 2", len(chunks))
 	}
 	if len(chunks[0]) != 1000 {
-		t.Fatalf("got %v, want 1000", len(chunks[0]))
+		t.Fbtblf("got %v, wbnt 1000", len(chunks[0]))
 	}
 	if len(chunks[1]) != 1 {
-		t.Fatalf("got %v, want 1", len(chunks[1]))
+		t.Fbtblf("got %v, wbnt 1", len(chunks[1]))
 	}
 }

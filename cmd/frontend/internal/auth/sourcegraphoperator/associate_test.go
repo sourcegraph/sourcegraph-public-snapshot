@@ -1,143 +1,143 @@
-package sourcegraphoperator
+pbckbge sourcegrbphoperbtor
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/shbred/sourcegrbphoperbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestAddSourcegraphOperatorExternalAccountBinding(t *testing.T) {
-	// Enable SOAP
-	cloud.MockSiteConfig(t, &cloud.SchemaSiteConfig{
-		AuthProviders: &cloud.SchemaAuthProviders{
-			SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{
-				ClientID: "foobar",
+func TestAddSourcegrbphOperbtorExternblAccountBinding(t *testing.T) {
+	// Enbble SOAP
+	cloud.MockSiteConfig(t, &cloud.SchembSiteConfig{
+		AuthProviders: &cloud.SchembAuthProviders{
+			SourcegrbphOperbtor: &cloud.SchembAuthProviderSourcegrbphOperbtor{
+				ClientID: "foobbr",
 			},
 		},
 	})
 	defer cloud.MockSiteConfig(t, nil)
-	// Initialize package
+	// Initiblize pbckbge
 	Init()
-	t.Cleanup(func() { providers.Update(auth.SourcegraphOperatorProviderType, nil) })
-	// Assert handler is registered - we check this by making sure we get a site admin
-	// error instead of an "unimplemented" error.
+	t.Clebnup(func() { providers.Updbte(buth.SourcegrbphOperbtorProviderType, nil) })
+	// Assert hbndler is registered - we check this by mbking sure we get b site bdmin
+	// error instebd of bn "unimplemented" error.
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	err := sourcegraphoperator.AddSourcegraphOperatorExternalAccount(context.Background(), db, 1, "foo", "")
-	assert.ErrorIs(t, err, auth.ErrMustBeSiteAdmin)
+	db.UsersFunc.SetDefbultReturn(users)
+	err := sourcegrbphoperbtor.AddSourcegrbphOperbtorExternblAccount(context.Bbckground(), db, 1, "foo", "")
+	bssert.ErrorIs(t, err, buth.ErrMustBeSiteAdmin)
 }
 
-func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
-	ctx := context.Background()
-	soap := NewProvider(cloud.SchemaAuthProviderSourcegraphOperator{
-		ClientID: "soap_client",
+func TestAddSourcegrbphOperbtorExternblAccount(t *testing.T) {
+	ctx := context.Bbckground()
+	sobp := NewProvider(cloud.SchembAuthProviderSourcegrbphOperbtor{
+		ClientID: "sobp_client",
 	})
-	serviceID := soap.ConfigID().ID
+	serviceID := sobp.ConfigID().ID
 
-	mockDB := func(siteAdmin bool) database.DB {
+	mockDB := func(siteAdmin bool) dbtbbbse.DB {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{
 			SiteAdmin: siteAdmin,
 		}, nil)
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 		return db
 	}
 
-	for _, tc := range []struct {
-		name string
-		// db, user, and other setup
-		setup func(t *testing.T) (userID int32, db database.DB)
-		// accountDetails parameter
-		accountDetails *accountDetailsBody
-		// validate result of AddSourcegraphOperatorExternalAccount
-		expectErr autogold.Value
-		// assert state of the DB (optional)
-		assert func(t *testing.T, uid int32, db database.DB)
+	for _, tc := rbnge []struct {
+		nbme string
+		// db, user, bnd other setup
+		setup func(t *testing.T) (userID int32, db dbtbbbse.DB)
+		// bccountDetbils pbrbmeter
+		bccountDetbils *bccountDetbilsBody
+		// vblidbte result of AddSourcegrbphOperbtorExternblAccount
+		expectErr butogold.Vblue
+		// bssert stbte of the DB (optionbl)
+		bssert func(t *testing.T, uid int32, db dbtbbbse.DB)
 	}{
 		{
-			name: "user is not a site admin",
-			setup: func(t *testing.T) (int32, database.DB) {
-				providers.MockProviders = []providers.Provider{soap}
-				t.Cleanup(func() { providers.MockProviders = nil })
+			nbme: "user is not b site bdmin",
+			setup: func(t *testing.T) (int32, dbtbbbse.DB) {
+				providers.MockProviders = []providers.Provider{sobp}
+				t.Clebnup(func() { providers.MockProviders = nil })
 
-				return 42, mockDB(false)
+				return 42, mockDB(fblse)
 			},
-			accountDetails: &accountDetailsBody{
-				ClientID:  "foobar",
+			bccountDetbils: &bccountDetbilsBody{
+				ClientID:  "foobbr",
 				AccountID: "bob",
-				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
+				ExternblAccountDbtb: sourcegrbphoperbtor.ExternblAccountDbtb{
 					ServiceAccount: true,
 				},
 			},
-			expectErr: autogold.Expect(`must be site admin`),
+			expectErr: butogold.Expect(`must be site bdmin`),
 		},
 		{
-			name: "provider does not exist",
-			setup: func(t *testing.T) (int32, database.DB) {
+			nbme: "provider does not exist",
+			setup: func(t *testing.T) (int32, dbtbbbse.DB) {
 				providers.MockProviders = nil
 				return 42, mockDB(true)
 			},
-			expectErr: autogold.Expect("provider does not exist"),
+			expectErr: butogold.Expect("provider does not exist"),
 		},
 		{
-			name: "incorrect details for SOAP provider",
-			setup: func(t *testing.T) (int32, database.DB) {
-				providers.MockProviders = []providers.Provider{soap}
-				t.Cleanup(func() { providers.MockProviders = nil })
+			nbme: "incorrect detbils for SOAP provider",
+			setup: func(t *testing.T) (int32, dbtbbbse.DB) {
+				providers.MockProviders = []providers.Provider{sobp}
+				t.Clebnup(func() { providers.MockProviders = nil })
 
 				return 42, mockDB(true)
 			},
-			accountDetails: &accountDetailsBody{
-				ClientID:  "foobar",
+			bccountDetbils: &bccountDetbilsBody{
+				ClientID:  "foobbr",
 				AccountID: "bob",
-				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
+				ExternblAccountDbtb: sourcegrbphoperbtor.ExternblAccountDbtb{
 					ServiceAccount: true,
 				},
 			},
-			expectErr: autogold.Expect(`unknown client ID "foobar"`),
+			expectErr: butogold.Expect(`unknown client ID "foobbr"`),
 		},
 		{
-			name: "new user associate",
-			setup: func(t *testing.T) (int32, database.DB) {
+			nbme: "new user bssocibte",
+			setup: func(t *testing.T) (int32, dbtbbbse.DB) {
 				if testing.Short() {
 					t.Skip()
 				}
 
-				providers.MockProviders = []providers.Provider{soap}
-				t.Cleanup(func() { providers.MockProviders = nil })
+				providers.MockProviders = []providers.Provider{sobp}
+				t.Clebnup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
-				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+				db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-				// We ensure the GlobalState is initialized so that the first user isn't
-				// a site administrator.
-				_, err := db.GlobalState().EnsureInitialized(ctx)
+				// We ensure the GlobblStbte is initiblized so thbt the first user isn't
+				// b site bdministrbtor.
+				_, err := db.GlobblStbte().EnsureInitiblized(ctx)
 				require.NoError(t, err)
 
-				u, err := db.Users().Create(
+				u, err := db.Users().Crebte(
 					ctx,
-					database.NewUser{
-						Username: "logan",
+					dbtbbbse.NewUser{
+						Usernbme: "logbn",
 					},
 				)
 				require.NoError(t, err)
@@ -147,105 +147,105 @@ func TestAddSourcegraphOperatorExternalAccount(t *testing.T) {
 
 				return u.ID, db
 			},
-			accountDetails: &accountDetailsBody{
-				ClientID:  "soap_client",
+			bccountDetbils: &bccountDetbilsBody{
+				ClientID:  "sobp_client",
 				AccountID: "bob",
-				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
+				ExternblAccountDbtb: sourcegrbphoperbtor.ExternblAccountDbtb{
 					ServiceAccount: true,
 				},
 			},
-			expectErr: autogold.Expect(nil),
-			assert: func(t *testing.T, uid int32, db database.DB) {
-				accts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			expectErr: butogold.Expect(nil),
+			bssert: func(t *testing.T, uid int32, db dbtbbbse.DB) {
+				bccts, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
 					UserID: uid,
 				})
 				require.NoError(t, err)
-				require.Len(t, accts, 1)
-				assert.Equal(t, auth.SourcegraphOperatorProviderType, accts[0].ServiceType)
-				assert.Equal(t, "bob", accts[0].AccountID)
-				assert.Equal(t, "soap_client", accts[0].ClientID)
-				assert.Equal(t, serviceID, accts[0].ServiceID)
+				require.Len(t, bccts, 1)
+				bssert.Equbl(t, buth.SourcegrbphOperbtorProviderType, bccts[0].ServiceType)
+				bssert.Equbl(t, "bob", bccts[0].AccountID)
+				bssert.Equbl(t, "sobp_client", bccts[0].ClientID)
+				bssert.Equbl(t, serviceID, bccts[0].ServiceID)
 
-				data, err := sourcegraphoperator.GetAccountData(ctx, accts[0].AccountData)
+				dbtb, err := sourcegrbphoperbtor.GetAccountDbtb(ctx, bccts[0].AccountDbtb)
 				require.NoError(t, err)
-				assert.True(t, data.ServiceAccount)
+				bssert.True(t, dbtb.ServiceAccount)
 			},
 		},
 		{
-			name: "double associate is not allowed (prevents escalation)",
-			setup: func(t *testing.T) (int32, database.DB) {
+			nbme: "double bssocibte is not bllowed (prevents escblbtion)",
+			setup: func(t *testing.T) (int32, dbtbbbse.DB) {
 				if testing.Short() {
 					t.Skip()
 				}
 
-				providers.MockProviders = []providers.Provider{soap}
-				t.Cleanup(func() { providers.MockProviders = nil })
+				providers.MockProviders = []providers.Provider{sobp}
+				t.Clebnup(func() { providers.MockProviders = nil })
 
 				logger := logtest.NoOp(t)
-				db := database.NewDB(logger, dbtest.NewDB(logger, t))
+				db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-				// We ensure the GlobalState is initialized so that the first user isn't
-				// a site administrator.
-				_, err := db.GlobalState().EnsureInitialized(ctx)
+				// We ensure the GlobblStbte is initiblized so thbt the first user isn't
+				// b site bdministrbtor.
+				_, err := db.GlobblStbte().EnsureInitiblized(ctx)
 				require.NoError(t, err)
 
-				u, err := db.Users().Create(
+				u, err := db.Users().Crebte(
 					ctx,
-					database.NewUser{
-						Username: "bib",
+					dbtbbbse.NewUser{
+						Usernbme: "bib",
 					},
 				)
 				require.NoError(t, err)
 				err = db.Users().SetIsSiteAdmin(ctx, u.ID, true)
 				require.NoError(t, err)
-				err = db.UserExternalAccounts().AssociateUserAndSave(ctx, u.ID, extsvc.AccountSpec{
-					ServiceType: auth.SourcegraphOperatorProviderType,
+				err = db.UserExternblAccounts().AssocibteUserAndSbve(ctx, u.ID, extsvc.AccountSpec{
+					ServiceType: buth.SourcegrbphOperbtorProviderType,
 					ServiceID:   serviceID,
-					ClientID:    "soap_client",
+					ClientID:    "sobp_client",
 					AccountID:   "bib",
-				}, extsvc.AccountData{}) // not a service account initially
+				}, extsvc.AccountDbtb{}) // not b service bccount initiblly
 				require.NoError(t, err)
 				return u.ID, db
 			},
-			accountDetails: &accountDetailsBody{
-				ClientID:  "soap_client",
-				AccountID: "bob", // trying to change account ID
-				ExternalAccountData: sourcegraphoperator.ExternalAccountData{
-					ServiceAccount: true, // trying to promote themselves to service account
+			bccountDetbils: &bccountDetbilsBody{
+				ClientID:  "sobp_client",
+				AccountID: "bob", // trying to chbnge bccount ID
+				ExternblAccountDbtb: sourcegrbphoperbtor.ExternblAccountDbtb{
+					ServiceAccount: true, // trying to promote themselves to service bccount
 				},
 			},
-			expectErr: autogold.Expect("user already has an associated Sourcegraph Operator account"),
-			assert: func(t *testing.T, uid int32, db database.DB) {
-				accts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			expectErr: butogold.Expect("user blrebdy hbs bn bssocibted Sourcegrbph Operbtor bccount"),
+			bssert: func(t *testing.T, uid int32, db dbtbbbse.DB) {
+				bccts, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
 					UserID: uid,
 				})
 				require.NoError(t, err)
-				require.Len(t, accts, 1)
-				assert.Equal(t, auth.SourcegraphOperatorProviderType, accts[0].ServiceType)
-				assert.Equal(t, "bib", accts[0].AccountID) // the original account
-				assert.Equal(t, "soap_client", accts[0].ClientID)
-				assert.Equal(t, serviceID, accts[0].ServiceID)
+				require.Len(t, bccts, 1)
+				bssert.Equbl(t, buth.SourcegrbphOperbtorProviderType, bccts[0].ServiceType)
+				bssert.Equbl(t, "bib", bccts[0].AccountID) // the originbl bccount
+				bssert.Equbl(t, "sobp_client", bccts[0].ClientID)
+				bssert.Equbl(t, serviceID, bccts[0].ServiceID)
 
-				data, err := sourcegraphoperator.GetAccountData(ctx, accts[0].AccountData)
+				dbtb, err := sourcegrbphoperbtor.GetAccountDbtb(ctx, bccts[0].AccountDbtb)
 				require.NoError(t, err)
-				assert.False(t, data.ServiceAccount) // still not a service account
+				bssert.Fblse(t, dbtb.ServiceAccount) // still not b service bccount
 			},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			uid, db := tc.setup(t)
-			details, err := json.Marshal(tc.accountDetails)
+			detbils, err := json.Mbrshbl(tc.bccountDetbils)
 			require.NoError(t, err)
 
-			ctx := actor.WithActor(context.Background(), actor.FromMockUser(uid))
-			err = addSourcegraphOperatorExternalAccount(ctx, db, uid, serviceID, string(details))
+			ctx := bctor.WithActor(context.Bbckground(), bctor.FromMockUser(uid))
+			err = bddSourcegrbphOperbtorExternblAccount(ctx, db, uid, serviceID, string(detbils))
 			if err != nil {
-				tc.expectErr.Equal(t, err.Error())
+				tc.expectErr.Equbl(t, err.Error())
 			} else {
-				tc.expectErr.Equal(t, nil)
+				tc.expectErr.Equbl(t, nil)
 			}
-			if tc.assert != nil {
-				tc.assert(t, uid, db)
+			if tc.bssert != nil {
+				tc.bssert(t, uid, db)
 			}
 		})
 	}

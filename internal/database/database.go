@@ -1,26 +1,26 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	gha "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	ghb "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
 )
 
-// DB is an interface that embeds dbutil.DB, adding methods to
-// return specialized stores on top of that interface. In time,
-// the expectation is to replace uses of dbutil.DB with database.DB,
-// and remove dbutil.DB altogether.
-type DB interface {
+// DB is bn interfbce thbt embeds dbutil.DB, bdding methods to
+// return speciblized stores on top of thbt interfbce. In time,
+// the expectbtion is to replbce uses of dbutil.DB with dbtbbbse.DB,
+// bnd remove dbutil.DB bltogether.
+type DB interfbce {
 	dbutil.DB
-	basestore.ShareableStore
+	bbsestore.ShbrebbleStore
 
 	AccessRequests() AccessRequestStore
 	AccessTokens() AccessTokenStore
@@ -32,100 +32,100 @@ type DB interface {
 	Conf() ConfStore
 	EventLogs() EventLogStore
 	SecurityEventLogs() SecurityEventLogsStore
-	ExternalServices() ExternalServiceStore
-	FeatureFlags() FeatureFlagStore
-	GitHubApps() gha.GitHubAppsStore
+	ExternblServices() ExternblServiceStore
+	FebtureFlbgs() FebtureFlbgStore
+	GitHubApps() ghb.GitHubAppsStore
 	GitserverRepos() GitserverRepoStore
-	GitserverLocalClone() GitserverLocalCloneStore
-	GlobalState() GlobalStateStore
-	NamespacePermissions() NamespacePermissionStore
-	Namespaces() NamespaceStore
-	OrgInvitations() OrgInvitationStore
+	GitserverLocblClone() GitserverLocblCloneStore
+	GlobblStbte() GlobblStbteStore
+	NbmespbcePermissions() NbmespbcePermissionStore
+	Nbmespbces() NbmespbceStore
+	OrgInvitbtions() OrgInvitbtionStore
 	OrgMembers() OrgMemberStore
 	Orgs() OrgStore
 	OutboundWebhooks(encryption.Key) OutboundWebhookStore
 	OutboundWebhookJobs(encryption.Key) OutboundWebhookJobStore
 	OutboundWebhookLogs(encryption.Key) OutboundWebhookLogStore
-	OwnershipStats() OwnershipStatsStore
-	RecentContributionSignals() RecentContributionSignalStore
+	OwnershipStbts() OwnershipStbtsStore
+	RecentContributionSignbls() RecentContributionSignblStore
 	Perms() PermsStore
 	Permissions() PermissionStore
 	PermissionSyncJobs() PermissionSyncJobStore
-	Phabricator() PhabricatorStore
-	RedisKeyValue() RedisKeyValueStore
+	Phbbricbtor() PhbbricbtorStore
+	RedisKeyVblue() RedisKeyVblueStore
 	Repos() RepoStore
-	RepoCommitsChangelists() RepoCommitsChangelistsStore
+	RepoCommitsChbngelists() RepoCommitsChbngelistsStore
 	RepoKVPs() RepoKVPStore
-	RepoPaths() RepoPathStore
+	RepoPbths() RepoPbthStore
 	RolePermissions() RolePermissionStore
 	Roles() RoleStore
-	SavedSearches() SavedSearchStore
-	SearchContexts() SearchContextsStore
+	SbvedSebrches() SbvedSebrchStore
+	SebrchContexts() SebrchContextsStore
 	Settings() SettingsStore
 	SubRepoPerms() SubRepoPermsStore
-	TemporarySettings() TemporarySettingsStore
+	TemporbrySettings() TemporbrySettingsStore
 	TelemetryEventsExportQueue() TelemetryEventsExportQueueStore
-	UserCredentials(encryption.Key) UserCredentialsStore
-	UserEmails() UserEmailsStore
-	UserExternalAccounts() UserExternalAccountsStore
+	UserCredentibls(encryption.Key) UserCredentiblsStore
+	UserEmbils() UserEmbilsStore
+	UserExternblAccounts() UserExternblAccountsStore
 	UserRoles() UserRoleStore
 	Users() UserStore
 	WebhookLogs(encryption.Key) WebhookLogStore
 	Webhooks(encryption.Key) WebhookStore
-	RepoStatistics() RepoStatisticsStore
+	RepoStbtistics() RepoStbtisticsStore
 	Executors() ExecutorStore
 	ExecutorSecrets(encryption.Key) ExecutorSecretStore
 	ExecutorSecretAccessLogs() ExecutorSecretAccessLogStore
 	ZoektRepos() ZoektReposStore
-	Teams() TeamStore
-	EventLogsScrapeState() EventLogsScrapeStateStore
-	RecentViewSignal() RecentViewSignalStore
+	Tebms() TebmStore
+	EventLogsScrbpeStbte() EventLogsScrbpeStbteStore
+	RecentViewSignbl() RecentViewSignblStore
 	AssignedOwners() AssignedOwnersStore
-	AssignedTeams() AssignedTeamsStore
-	OwnSignalConfigurations() SignalConfigurationStore
+	AssignedTebms() AssignedTebmsStore
+	OwnSignblConfigurbtions() SignblConfigurbtionStore
 
-	WithTransact(context.Context, func(tx DB) error) error
+	WithTrbnsbct(context.Context, func(tx DB) error) error
 }
 
-var _ DB = (*db)(nil)
+vbr _ DB = (*db)(nil)
 
-// NewDB creates a new DB from a dbutil.DB, providing a thin wrapper
-// that has constructor methods for the more specialized stores.
+// NewDB crebtes b new DB from b dbutil.DB, providing b thin wrbpper
+// thbt hbs constructor methods for the more speciblized stores.
 func NewDB(logger log.Logger, inner *sql.DB) DB {
-	return &db{logger: logger, Store: basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
+	return &db{logger: logger, Store: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
-func NewDBWith(logger log.Logger, other basestore.ShareableStore) DB {
-	return &db{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
+func NewDBWith(logger log.Logger, other bbsestore.ShbrebbleStore) DB {
+	return &db{logger: logger, Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
 type db struct {
-	*basestore.Store
+	*bbsestore.Store
 	logger log.Logger
 }
 
-func (d *db) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return d.Handle().QueryContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+func (d *db) QueryContext(ctx context.Context, q string, brgs ...bny) (*sql.Rows, error) {
+	return d.Hbndle().QueryContext(dbconn.SkipFrbmeForQuerySource(ctx), q, brgs...)
 }
 
-func (d *db) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return d.Handle().ExecContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+func (d *db) ExecContext(ctx context.Context, q string, brgs ...bny) (sql.Result, error) {
+	return d.Hbndle().ExecContext(dbconn.SkipFrbmeForQuerySource(ctx), q, brgs...)
 }
 
-func (d *db) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return d.Handle().QueryRowContext(dbconn.SkipFrameForQuerySource(ctx), q, args...)
+func (d *db) QueryRowContext(ctx context.Context, q string, brgs ...bny) *sql.Row {
+	return d.Hbndle().QueryRowContext(dbconn.SkipFrbmeForQuerySource(ctx), q, brgs...)
 }
 
-func (d *db) Transact(ctx context.Context) (DB, error) {
-	tx, err := d.Store.Transact(ctx)
+func (d *db) Trbnsbct(ctx context.Context) (DB, error) {
+	tx, err := d.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &db{logger: d.logger, Store: tx}, nil
 }
 
-func (d *db) WithTransact(ctx context.Context, f func(tx DB) error) error {
-	return d.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (d *db) WithTrbnsbct(ctx context.Context, f func(tx DB) error) error {
+	return d.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&db{logger: d.logger, Store: tx})
 	})
 }
@@ -159,7 +159,7 @@ func (d *db) CodeHosts() CodeHostStore {
 }
 
 func (d *db) Codeowners() CodeownersStore {
-	return CodeownersWith(basestore.NewWithHandle(d.Handle()))
+	return CodeownersWith(bbsestore.NewWithHbndle(d.Hbndle()))
 }
 
 func (d *db) Conf() ConfStore {
@@ -174,40 +174,40 @@ func (d *db) SecurityEventLogs() SecurityEventLogsStore {
 	return SecurityEventLogsWith(d.logger, d.Store)
 }
 
-func (d *db) ExternalServices() ExternalServiceStore {
-	return ExternalServicesWith(d.logger, d.Store)
+func (d *db) ExternblServices() ExternblServiceStore {
+	return ExternblServicesWith(d.logger, d.Store)
 }
 
-func (d *db) FeatureFlags() FeatureFlagStore {
-	return FeatureFlagsWith(d.Store)
+func (d *db) FebtureFlbgs() FebtureFlbgStore {
+	return FebtureFlbgsWith(d.Store)
 }
 
-func (d *db) GitHubApps() gha.GitHubAppsStore {
-	return gha.GitHubAppsWith(d.Store)
+func (d *db) GitHubApps() ghb.GitHubAppsStore {
+	return ghb.GitHubAppsWith(d.Store)
 }
 
 func (d *db) GitserverRepos() GitserverRepoStore {
 	return GitserverReposWith(d.Store)
 }
 
-func (d *db) GitserverLocalClone() GitserverLocalCloneStore {
-	return GitserverLocalCloneStoreWith(d.Store)
+func (d *db) GitserverLocblClone() GitserverLocblCloneStore {
+	return GitserverLocblCloneStoreWith(d.Store)
 }
 
-func (d *db) GlobalState() GlobalStateStore {
-	return GlobalStateWith(d.Store)
+func (d *db) GlobblStbte() GlobblStbteStore {
+	return GlobblStbteWith(d.Store)
 }
 
-func (d *db) NamespacePermissions() NamespacePermissionStore {
-	return NamespacePermissionsWith(d.Store)
+func (d *db) NbmespbcePermissions() NbmespbcePermissionStore {
+	return NbmespbcePermissionsWith(d.Store)
 }
 
-func (d *db) Namespaces() NamespaceStore {
-	return NamespacesWith(d.Store)
+func (d *db) Nbmespbces() NbmespbceStore {
+	return NbmespbcesWith(d.Store)
 }
 
-func (d *db) OrgInvitations() OrgInvitationStore {
-	return OrgInvitationsWith(d.Store)
+func (d *db) OrgInvitbtions() OrgInvitbtionStore {
+	return OrgInvitbtionsWith(d.Store)
 }
 
 func (d *db) OrgMembers() OrgMemberStore {
@@ -230,12 +230,12 @@ func (d *db) OutboundWebhookLogs(key encryption.Key) OutboundWebhookLogStore {
 	return OutboundWebhookLogsWith(d.Store, key)
 }
 
-func (d *db) OwnershipStats() OwnershipStatsStore {
-	return &ownershipStats{d.Store}
+func (d *db) OwnershipStbts() OwnershipStbtsStore {
+	return &ownershipStbts{d.Store}
 }
 
-func (d *db) RecentContributionSignals() RecentContributionSignalStore {
-	return RecentContributionSignalStoreWith(d.Store)
+func (d *db) RecentContributionSignbls() RecentContributionSignblStore {
+	return RecentContributionSignblStoreWith(d.Store)
 }
 
 func (d *db) Permissions() PermissionStore {
@@ -250,28 +250,28 @@ func (d *db) PermissionSyncJobs() PermissionSyncJobStore {
 	return PermissionSyncJobsWith(d.logger, d.Store)
 }
 
-func (d *db) Phabricator() PhabricatorStore {
-	return PhabricatorWith(d.Store)
+func (d *db) Phbbricbtor() PhbbricbtorStore {
+	return PhbbricbtorWith(d.Store)
 }
 
-func (d *db) RedisKeyValue() RedisKeyValueStore {
-	return &redisKeyValueStore{d.Store}
+func (d *db) RedisKeyVblue() RedisKeyVblueStore {
+	return &redisKeyVblueStore{d.Store}
 }
 
 func (d *db) Repos() RepoStore {
 	return ReposWith(d.logger, d.Store)
 }
 
-func (d *db) RepoCommitsChangelists() RepoCommitsChangelistsStore {
-	return RepoCommitsChangelistsWith(d.logger, d.Store)
+func (d *db) RepoCommitsChbngelists() RepoCommitsChbngelistsStore {
+	return RepoCommitsChbngelistsWith(d.logger, d.Store)
 }
 
 func (d *db) RepoKVPs() RepoKVPStore {
 	return &repoKVPStore{d.Store}
 }
 
-func (d *db) RepoPaths() RepoPathStore {
-	return &repoPathStore{d.Store}
+func (d *db) RepoPbths() RepoPbthStore {
+	return &repoPbthStore{d.Store}
 }
 
 func (d *db) RolePermissions() RolePermissionStore {
@@ -282,12 +282,12 @@ func (d *db) Roles() RoleStore {
 	return RolesWith(d.Store)
 }
 
-func (d *db) SavedSearches() SavedSearchStore {
-	return SavedSearchesWith(d.Store)
+func (d *db) SbvedSebrches() SbvedSebrchStore {
+	return SbvedSebrchesWith(d.Store)
 }
 
-func (d *db) SearchContexts() SearchContextsStore {
-	return SearchContextsWith(d.logger, d.Store)
+func (d *db) SebrchContexts() SebrchContextsStore {
+	return SebrchContextsWith(d.logger, d.Store)
 }
 
 func (d *db) Settings() SettingsStore {
@@ -295,11 +295,11 @@ func (d *db) Settings() SettingsStore {
 }
 
 func (d *db) SubRepoPerms() SubRepoPermsStore {
-	return SubRepoPermsWith(basestore.NewWithHandle(d.Handle()))
+	return SubRepoPermsWith(bbsestore.NewWithHbndle(d.Hbndle()))
 }
 
-func (d *db) TemporarySettings() TemporarySettingsStore {
-	return TemporarySettingsWith(d.Store)
+func (d *db) TemporbrySettings() TemporbrySettingsStore {
+	return TemporbrySettingsWith(d.Store)
 }
 
 func (d *db) TelemetryEventsExportQueue() TelemetryEventsExportQueueStore {
@@ -309,16 +309,16 @@ func (d *db) TelemetryEventsExportQueue() TelemetryEventsExportQueueStore {
 	)
 }
 
-func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {
-	return UserCredentialsWith(d.logger, d.Store, key)
+func (d *db) UserCredentibls(key encryption.Key) UserCredentiblsStore {
+	return UserCredentiblsWith(d.logger, d.Store, key)
 }
 
-func (d *db) UserEmails() UserEmailsStore {
-	return UserEmailsWith(d.Store)
+func (d *db) UserEmbils() UserEmbilsStore {
+	return UserEmbilsWith(d.Store)
 }
 
-func (d *db) UserExternalAccounts() UserExternalAccountsStore {
-	return ExternalAccountsWith(d.logger, d.Store)
+func (d *db) UserExternblAccounts() UserExternblAccountsStore {
+	return ExternblAccountsWith(d.logger, d.Store)
 }
 
 func (d *db) UserRoles() UserRoleStore {
@@ -337,8 +337,8 @@ func (d *db) Webhooks(key encryption.Key) WebhookStore {
 	return WebhooksWith(d.Store, key)
 }
 
-func (d *db) RepoStatistics() RepoStatisticsStore {
-	return RepoStatisticsWith(d.Store)
+func (d *db) RepoStbtistics() RepoStbtisticsStore {
+	return RepoStbtisticsWith(d.Store)
 }
 
 func (d *db) Executors() ExecutorStore {
@@ -357,26 +357,26 @@ func (d *db) ZoektRepos() ZoektReposStore {
 	return ZoektReposWith(d.Store)
 }
 
-func (d *db) Teams() TeamStore {
-	return TeamsWith(d.Store)
+func (d *db) Tebms() TebmStore {
+	return TebmsWith(d.Store)
 }
 
-func (d *db) EventLogsScrapeState() EventLogsScrapeStateStore {
-	return EventLogsScrapeStateStoreWith(d.Store)
+func (d *db) EventLogsScrbpeStbte() EventLogsScrbpeStbteStore {
+	return EventLogsScrbpeStbteStoreWith(d.Store)
 }
 
-func (d *db) RecentViewSignal() RecentViewSignalStore {
-	return RecentViewSignalStoreWith(d.Store, d.logger)
+func (d *db) RecentViewSignbl() RecentViewSignblStore {
+	return RecentViewSignblStoreWith(d.Store, d.logger)
 }
 
 func (d *db) AssignedOwners() AssignedOwnersStore {
 	return AssignedOwnersStoreWith(d.Store, d.logger)
 }
 
-func (d *db) AssignedTeams() AssignedTeamsStore {
-	return AssignedTeamsStoreWith(d.Store, d.logger)
+func (d *db) AssignedTebms() AssignedTebmsStore {
+	return AssignedTebmsStoreWith(d.Store, d.logger)
 }
 
-func (d *db) OwnSignalConfigurations() SignalConfigurationStore {
-	return SignalConfigurationStoreWith(d.Store)
+func (d *db) OwnSignblConfigurbtions() SignblConfigurbtionStore {
+	return SignblConfigurbtionStoreWith(d.Store)
 }

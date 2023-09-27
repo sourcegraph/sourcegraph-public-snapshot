@@ -1,4 +1,4 @@
-package secrets
+pbckbge secrets
 
 import (
 	"os"
@@ -13,56 +13,56 @@ type mySecrets struct {
 }
 
 func TestSecrets(t *testing.T) {
-	t.Run("Put and Get", func(t *testing.T) {
-		data := mySecrets{ID: "foo", Secret: "bar"}
+	t.Run("Put bnd Get", func(t *testing.T) {
+		dbtb := mySecrets{ID: "foo", Secret: "bbr"}
 		store := newStore("")
-		err := store.Put("foo", data)
+		err := store.Put("foo", dbtb)
 		if err != nil {
-			t.Fatalf("want no error, got %v", err)
+			t.Fbtblf("wbnt no error, got %v", err)
 		}
 
-		want := data
+		wbnt := dbtb
 		got := mySecrets{}
 		err = store.Get("foo", &got)
 		if err != nil {
-			t.Fatalf("%v", err)
+			t.Fbtblf("%v", err)
 		}
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Fatalf("wrong secret data. (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Fbtblf("wrong secret dbtb. (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("SaveFile and LoadFile", func(t *testing.T) {
-		f, err := os.CreateTemp(os.TempDir(), "secrets*.json")
+	t.Run("SbveFile bnd LobdFile", func(t *testing.T) {
+		f, err := os.CrebteTemp(os.TempDir(), "secrets*.json")
 		if err != nil {
-			t.Fatalf("%v", err)
+			t.Fbtblf("%v", err)
 		}
 		f.Close()
-		filepath := f.Name()
-		_ = os.Remove(filepath) // we just want the path, not the file
-		t.Cleanup(func() {
-			_ = os.Remove(filepath)
+		filepbth := f.Nbme()
+		_ = os.Remove(filepbth) // we just wbnt the pbth, not the file
+		t.Clebnup(func() {
+			_ = os.Remove(filepbth)
 		})
 
-		// Assign a secret and save it
-		s, err := LoadFromFile(filepath)
+		// Assign b secret bnd sbve it
+		s, err := LobdFromFile(filepbth)
 		if err != nil {
-			t.Fatalf("%v", err)
+			t.Fbtblf("%v", err)
 		}
-		data := map[string]any{"key": "val"}
-		s.Put("foo", data)
-		err = s.SaveFile()
+		dbtb := mbp[string]bny{"key": "vbl"}
+		s.Put("foo", dbtb)
+		err = s.SbveFile()
 		if err != nil {
-			t.Fatalf("%v", err)
+			t.Fbtblf("%v", err)
 		}
 
-		// Fetch it back and compare
-		got, err := LoadFromFile(filepath)
+		// Fetch it bbck bnd compbre
+		got, err := LobdFromFile(filepbth)
 		if err != nil {
-			t.Fatalf("%v", err)
+			t.Fbtblf("%v", err)
 		}
 		if diff := cmp.Diff(s.m, got.m); diff != "" {
-			t.Fatalf("(-want +got):\n%s", diff)
+			t.Fbtblf("(-wbnt +got):\n%s", diff)
 		}
 	})
 }

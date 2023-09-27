@@ -1,65 +1,65 @@
-package reader
+pbckbge rebder
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+import "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
 
-// Stasher maintains a mapping from identifiers to vertex and edge elements.
-type Stasher struct {
-	vertices map[int]LineContext
-	edges    map[int]LineContext
+// Stbsher mbintbins b mbpping from identifiers to vertex bnd edge elements.
+type Stbsher struct {
+	vertices mbp[int]LineContext
+	edges    mbp[int]LineContext
 }
 
-// NewStasher creates a new empty Stasher.
-func NewStasher() *Stasher {
-	return &Stasher{
-		vertices: map[int]LineContext{},
-		edges:    map[int]LineContext{},
+// NewStbsher crebtes b new empty Stbsher.
+func NewStbsher() *Stbsher {
+	return &Stbsher{
+		vertices: mbp[int]LineContext{},
+		edges:    mbp[int]LineContext{},
 	}
 }
 
-// Vertices invokes the given function on each registered vertex. If any invocation returns false,
-// iteration of the vertices will not complete and false will be returned immediately.
-func (s *Stasher) Vertices(f func(lineContext LineContext) bool) bool {
-	for _, lineContext := range s.vertices {
+// Vertices invokes the given function on ebch registered vertex. If bny invocbtion returns fblse,
+// iterbtion of the vertices will not complete bnd fblse will be returned immedibtely.
+func (s *Stbsher) Vertices(f func(lineContext LineContext) bool) bool {
+	for _, lineContext := rbnge s.vertices {
 		if !f(lineContext) {
-			return false
+			return fblse
 		}
 	}
 
 	return true
 }
 
-// Edges invokes the given function on each registered edge. If any invocation returns false,
-// iteration of the edges will not complete and false will be returned immediately.
-func (s *Stasher) Edges(f func(lineContext LineContext, edge reader.Edge) bool) bool {
-	for _, lineContext := range s.edges {
-		edge, ok := lineContext.Element.Payload.(reader.Edge)
+// Edges invokes the given function on ebch registered edge. If bny invocbtion returns fblse,
+// iterbtion of the edges will not complete bnd fblse will be returned immedibtely.
+func (s *Stbsher) Edges(f func(lineContext LineContext, edge rebder.Edge) bool) bool {
+	for _, lineContext := rbnge s.edges {
+		edge, ok := lineContext.Element.Pbylobd.(rebder.Edge)
 		if !ok {
 			continue
 		}
 
 		if !f(lineContext, edge) {
-			return false
+			return fblse
 		}
 	}
 
 	return true
 }
 
-// Vertex returns a vertex element by its identifier.
-func (s *Stasher) Vertex(id int) (LineContext, bool) {
+// Vertex returns b vertex element by its identifier.
+func (s *Stbsher) Vertex(id int) (LineContext, bool) {
 	v, ok := s.vertices[id]
 	return v, ok
 }
 
-// Edge returns a edge element by its identifier.
-func (s *Stasher) Edge(id int) (LineContext, bool) {
+// Edge returns b edge element by its identifier.
+func (s *Stbsher) Edge(id int) (LineContext, bool) {
 	v, ok := s.edges[id]
 	return v, ok
 }
 
-// StashVertex registers a vertex element. This method may fail if another vertex or edge has already
-// been registered with the same identifier.
-func (s *Stasher) StashVertex(lineContext LineContext) *ValidationError {
+// StbshVertex registers b vertex element. This method mby fbil if bnother vertex or edge hbs blrebdy
+// been registered with the sbme identifier.
+func (s *Stbsher) StbshVertex(lineContext LineContext) *VblidbtionError {
 	if err := s.checkIdentifier(lineContext); err != nil {
 		return err
 	}
@@ -68,9 +68,9 @@ func (s *Stasher) StashVertex(lineContext LineContext) *ValidationError {
 	return nil
 }
 
-// StashEdge registers an edge element. This method may fail if another vertex or edge has already
-// been registered with the same identifier.
-func (s *Stasher) StashEdge(lineContext LineContext) *ValidationError {
+// StbshEdge registers bn edge element. This method mby fbil if bnother vertex or edge hbs blrebdy
+// been registered with the sbme identifier.
+func (s *Stbsher) StbshEdge(lineContext LineContext) *VblidbtionError {
 	if err := s.checkIdentifier(lineContext); err != nil {
 		return err
 	}
@@ -79,12 +79,12 @@ func (s *Stasher) StashEdge(lineContext LineContext) *ValidationError {
 	return nil
 }
 
-func (s *Stasher) checkIdentifier(lineContext LineContext) *ValidationError {
+func (s *Stbsher) checkIdentifier(lineContext LineContext) *VblidbtionError {
 	if other, ok := s.vertices[lineContext.Element.ID]; ok {
-		return NewValidationError("identifier already exists").AddContext(lineContext, other)
+		return NewVblidbtionError("identifier blrebdy exists").AddContext(lineContext, other)
 	}
 	if other, ok := s.edges[lineContext.Element.ID]; ok {
-		return NewValidationError("identifier already exists").AddContext(lineContext, other)
+		return NewVblidbtionError("identifier blrebdy exists").AddContext(lineContext, other)
 	}
 
 	return nil

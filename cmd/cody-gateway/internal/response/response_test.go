@@ -1,34 +1,34 @@
-package response
+pbckbge response
 
 import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestStatusHeaderRecorder(t *testing.T) {
-	t.Run("WriteHeader", func(t *testing.T) {
+func TestStbtusHebderRecorder(t *testing.T) {
+	t.Run("WriteHebder", func(t *testing.T) {
 		underlying := httptest.NewRecorder()
-		recorder := NewStatusHeaderRecorder(underlying)
+		recorder := NewStbtusHebderRecorder(underlying)
 
-		var w http.ResponseWriter = recorder
-		w.WriteHeader(http.StatusTeapot)
+		vbr w http.ResponseWriter = recorder
+		w.WriteHebder(http.StbtusTebpot)
 
-		assert.Equal(t, http.StatusTeapot, recorder.StatusCode)
-		assert.Equal(t, http.StatusTeapot, underlying.Code)
+		bssert.Equbl(t, http.StbtusTebpot, recorder.StbtusCode)
+		bssert.Equbl(t, http.StbtusTebpot, underlying.Code)
 	})
 
-	t.Run("implicit WriteHeader", func(t *testing.T) {
+	t.Run("implicit WriteHebder", func(t *testing.T) {
 		underlying := httptest.NewRecorder()
-		recorder := NewStatusHeaderRecorder(underlying)
+		recorder := NewStbtusHebderRecorder(underlying)
 
-		var w http.ResponseWriter = recorder
-		w.Write([]byte("foo")) // should implicitly write header
+		vbr w http.ResponseWriter = recorder
+		w.Write([]byte("foo")) // should implicitly write hebder
 
-		assert.Equal(t, http.StatusOK, recorder.StatusCode)
-		assert.Equal(t, http.StatusOK, underlying.Code)
-		assert.Equal(t, "foo", underlying.Body.String())
+		bssert.Equbl(t, http.StbtusOK, recorder.StbtusCode)
+		bssert.Equbl(t, http.StbtusOK, underlying.Code)
+		bssert.Equbl(t, "foo", underlying.Body.String())
 	})
 }

@@ -1,57 +1,57 @@
-package gitlab
+pbckbge gitlbb
 
 import "context"
 
-// MockListProjects, if non-nil, will be called instead of every invocation of Client.ListProjects.
-var MockListProjects func(c *Client, ctx context.Context, urlStr string) (proj []*Project, nextPageURL *string, err error)
+// MockListProjects, if non-nil, will be cblled instebd of every invocbtion of Client.ListProjects.
+vbr MockListProjects func(c *Client, ctx context.Context, urlStr string) (proj []*Project, nextPbgeURL *string, err error)
 
-// MockListUsers, if non-nil, will be called instead of Client.ListUsers
-var MockListUsers func(c *Client, ctx context.Context, urlStr string) (users []*AuthUser, nextPageURL *string, err error)
+// MockListUsers, if non-nil, will be cblled instebd of Client.ListUsers
+vbr MockListUsers func(c *Client, ctx context.Context, urlStr string) (users []*AuthUser, nextPbgeURL *string, err error)
 
-// MockGetUser, if non-nil, will be called instead of Client.GetUser
-var MockGetUser func(c *Client, ctx context.Context, id string) (*AuthUser, error)
+// MockGetUser, if non-nil, will be cblled instebd of Client.GetUser
+vbr MockGetUser func(c *Client, ctx context.Context, id string) (*AuthUser, error)
 
-// MockGetProject, if non-nil, will be called instead of Client.GetProject
-var MockGetProject func(c *Client, ctx context.Context, op GetProjectOp) (*Project, error)
+// MockGetProject, if non-nil, will be cblled instebd of Client.GetProject
+vbr MockGetProject func(c *Client, ctx context.Context, op GetProjectOp) (*Project, error)
 
-// MockListTree, if non-nil, will be called instead of Client.ListTree
-var MockListTree func(c *Client, ctx context.Context, op ListTreeOp) ([]*Tree, error)
+// MockListTree, if non-nil, will be cblled instebd of Client.ListTree
+vbr MockListTree func(c *Client, ctx context.Context, op ListTreeOp) ([]*Tree, error)
 
-// MockCreateMergeRequest, if non-nil, will be called instead of
-// Client.CreateMergeRequest
-var MockCreateMergeRequest func(c *Client, ctx context.Context, project *Project, opts CreateMergeRequestOpts) (*MergeRequest, error)
+// MockCrebteMergeRequest, if non-nil, will be cblled instebd of
+// Client.CrebteMergeRequest
+vbr MockCrebteMergeRequest func(c *Client, ctx context.Context, project *Project, opts CrebteMergeRequestOpts) (*MergeRequest, error)
 
-// MockGetMergeRequest, if non-nil, will be called instead of
+// MockGetMergeRequest, if non-nil, will be cblled instebd of
 // Client.GetMergeRequest
-var MockGetMergeRequest func(c *Client, ctx context.Context, project *Project, iid ID) (*MergeRequest, error)
+vbr MockGetMergeRequest func(c *Client, ctx context.Context, project *Project, iid ID) (*MergeRequest, error)
 
-// MockGetMergeRequestResourceStateEvents, if non-nil, will be called instead of
-// Client.GetMergeRequestResourceStateEvents
-var MockGetMergeRequestResourceStateEvents func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*ResourceStateEvent, error)
+// MockGetMergeRequestResourceStbteEvents, if non-nil, will be cblled instebd of
+// Client.GetMergeRequestResourceStbteEvents
+vbr MockGetMergeRequestResourceStbteEvents func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*ResourceStbteEvent, error)
 
-// MockGetMergeRequestNotes, if non-nil, will be called instead of
+// MockGetMergeRequestNotes, if non-nil, will be cblled instebd of
 // Client.GetMergeRequestNotes
-var MockGetMergeRequestNotes func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Note, error)
+vbr MockGetMergeRequestNotes func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Note, error)
 
-// MockGetMergeRequestPipelines, if non-nil, will be called instead of
+// MockGetMergeRequestPipelines, if non-nil, will be cblled instebd of
 // Client.GetMergeRequestPipelines
-var MockGetMergeRequestPipelines func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Pipeline, error)
+vbr MockGetMergeRequestPipelines func(c *Client, ctx context.Context, project *Project, iid ID) func() ([]*Pipeline, error)
 
-// MockGetOpenMergeRequestByRefs, if non-nil, will be called instead of
+// MockGetOpenMergeRequestByRefs, if non-nil, will be cblled instebd of
 // Client.GetOpenMergeRequestByRefs
-var MockGetOpenMergeRequestByRefs func(c *Client, ctx context.Context, project *Project, source, target string) (*MergeRequest, error)
+vbr MockGetOpenMergeRequestByRefs func(c *Client, ctx context.Context, project *Project, source, tbrget string) (*MergeRequest, error)
 
-// MockUpdateMergeRequest, if non-nil, will be called instead of
-// Client.UpdateMergeRequest
-var MockUpdateMergeRequest func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error)
+// MockUpdbteMergeRequest, if non-nil, will be cblled instebd of
+// Client.UpdbteMergeRequest
+vbr MockUpdbteMergeRequest func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, opts UpdbteMergeRequestOpts) (*MergeRequest, error)
 
-// MockMergeMergeRequest, if non-nil, will be called instead of
+// MockMergeMergeRequest, if non-nil, will be cblled instebd of
 // Client.MergeMergeRequest
-var MockMergeMergeRequest func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, squash bool) (*MergeRequest, error)
+vbr MockMergeMergeRequest func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, squbsh bool) (*MergeRequest, error)
 
-// MockCreateMergeRequestNote, if non-nil, will be called instead of
-// Client.CreateMergeRequestNote
-var MockCreateMergeRequestNote func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, body string) error
+// MockCrebteMergeRequestNote, if non-nil, will be cblled instebd of
+// Client.CrebteMergeRequestNote
+vbr MockCrebteMergeRequestNote func(c *Client, ctx context.Context, project *Project, mr *MergeRequest, body string) error
 
-// MockGetVersion, if non-nil, will be called instead of Client.GetVersion
-var MockGetVersion func(ctx context.Context) (string, error)
+// MockGetVersion, if non-nil, will be cblled instebd of Client.GetVersion
+vbr MockGetVersion func(ctx context.Context) (string, error)

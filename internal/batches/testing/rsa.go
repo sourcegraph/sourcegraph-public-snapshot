@@ -1,20 +1,20 @@
-package testing
+pbckbge testing
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
 func MockRSAKeygen(t *testing.T) {
-	encryption.MockGenerateRSAKey = func() (key *encryption.RSAKey, err error) {
+	encryption.MockGenerbteRSAKey = func() (key *encryption.RSAKey, err error) {
 		return &encryption.RSAKey{
-			PrivateKey: "private",
-			Passphrase: "pass",
+			PrivbteKey: "privbte",
+			Pbssphrbse: "pbss",
 			PublicKey:  "public",
 		}, nil
 	}
-	t.Cleanup(func() {
-		encryption.MockGenerateRSAKey = nil
+	t.Clebnup(func() {
+		encryption.MockGenerbteRSAKey = nil
 	})
 }

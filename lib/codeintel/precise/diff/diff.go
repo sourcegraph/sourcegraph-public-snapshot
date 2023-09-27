@@ -1,76 +1,76 @@
-package diff
+pbckbge diff
 
 import (
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/fatih/color"
+	"github.com/fbtih/color"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-func Diff(old, new *precise.GroupedBundleDataMaps) string {
+func Diff(old, new *precise.GroupedBundleDbtbMbps) string {
 	builder := strings.Builder{}
-	allPaths := make(map[string]struct{})
-	for path := range old.Documents {
-		if _, exists := new.Documents[path]; !exists {
-			removed(&builder, fmt.Sprintf("Document: %v", path))
+	bllPbths := mbke(mbp[string]struct{})
+	for pbth := rbnge old.Documents {
+		if _, exists := new.Documents[pbth]; !exists {
+			removed(&builder, fmt.Sprintf("Document: %v", pbth))
 		} else {
-			allPaths[path] = struct{}{}
+			bllPbths[pbth] = struct{}{}
 		}
 	}
-	for path := range new.Documents {
-		if _, exists := old.Documents[path]; !exists {
-			added(&builder, fmt.Sprintf("Document: %v", path))
+	for pbth := rbnge new.Documents {
+		if _, exists := old.Documents[pbth]; !exists {
+			bdded(&builder, fmt.Sprintf("Document: %v", pbth))
 		}
 	}
 
-	for path := range allPaths {
-		oldDocument := old.Documents[path]
-		newDocument := new.Documents[path]
-		locationSet := make(map[precise.LocationData]struct{})
-		oldResults := make(map[precise.LocationData]precise.QueryResult)
-		newResults := make(map[precise.LocationData]precise.QueryResult)
-		for _, rng := range oldDocument.Ranges {
-			loc := precise.LocationData{
-				URI:            path,
-				StartLine:      rng.StartLine,
-				StartCharacter: rng.StartCharacter,
+	for pbth := rbnge bllPbths {
+		oldDocument := old.Documents[pbth]
+		newDocument := new.Documents[pbth]
+		locbtionSet := mbke(mbp[precise.LocbtionDbtb]struct{})
+		oldResults := mbke(mbp[precise.LocbtionDbtb]precise.QueryResult)
+		newResults := mbke(mbp[precise.LocbtionDbtb]precise.QueryResult)
+		for _, rng := rbnge oldDocument.Rbnges {
+			loc := precise.LocbtionDbtb{
+				URI:            pbth,
+				StbrtLine:      rng.StbrtLine,
+				StbrtChbrbcter: rng.StbrtChbrbcter,
 				EndLine:        rng.EndLine,
-				EndCharacter:   rng.EndCharacter,
+				EndChbrbcter:   rng.EndChbrbcter,
 			}
-			locationSet[loc] = struct{}{}
+			locbtionSet[loc] = struct{}{}
 			oldResults[loc] = precise.Resolve(old, oldDocument, rng)
 		}
-		for _, rng := range newDocument.Ranges {
-			location := precise.LocationData{
-				URI:            path,
-				StartLine:      rng.StartLine,
-				StartCharacter: rng.StartCharacter,
+		for _, rng := rbnge newDocument.Rbnges {
+			locbtion := precise.LocbtionDbtb{
+				URI:            pbth,
+				StbrtLine:      rng.StbrtLine,
+				StbrtChbrbcter: rng.StbrtChbrbcter,
 				EndLine:        rng.EndLine,
-				EndCharacter:   rng.EndCharacter,
+				EndChbrbcter:   rng.EndChbrbcter,
 			}
-			locationSet[location] = struct{}{}
-			newResults[location] = precise.Resolve(new, newDocument, rng)
+			locbtionSet[locbtion] = struct{}{}
+			newResults[locbtion] = precise.Resolve(new, newDocument, rng)
 		}
-		var sortedLocations []precise.LocationData
-		for location := range locationSet {
-			sortedLocations = append(sortedLocations, location)
+		vbr sortedLocbtions []precise.LocbtionDbtb
+		for locbtion := rbnge locbtionSet {
+			sortedLocbtions = bppend(sortedLocbtions, locbtion)
 		}
-		sort.Slice(sortedLocations, func(i, j int) bool {
-			return precise.CompareLocations(sortedLocations[i], sortedLocations[j]) < 0
+		sort.Slice(sortedLocbtions, func(i, j int) bool {
+			return precise.CompbreLocbtions(sortedLocbtions[i], sortedLocbtions[j]) < 0
 		})
 
-		for _, location := range sortedLocations {
-			oldResult, oldExists := oldResults[location]
-			newResult, newExists := newResults[location]
+		for _, locbtion := rbnge sortedLocbtions {
+			oldResult, oldExists := oldResults[locbtion]
+			newResult, newExists := newResults[locbtion]
 			if oldExists && !newExists {
-				removed(&builder, fmt.Sprintf("Range: %v", locationString(location)))
+				removed(&builder, fmt.Sprintf("Rbnge: %v", locbtionString(locbtion)))
 				continue
 			}
 			if newExists && !oldExists {
-				added(&builder, fmt.Sprintf("Range: %v", locationString(location)))
+				bdded(&builder, fmt.Sprintf("Rbnge: %v", locbtionString(locbtion)))
 				continue
 			}
 
@@ -78,9 +78,9 @@ func Diff(old, new *precise.GroupedBundleDataMaps) string {
 				if oldResult.Hover != "" {
 					removed(
 						&builder,
-						fmt.Sprintf("Hover: %v", locationString(location)),
+						fmt.Sprintf("Hover: %v", locbtionString(locbtion)),
 					)
-					for _, line := range strings.Split(oldResult.Hover, "\n") {
+					for _, line := rbnge strings.Split(oldResult.Hover, "\n") {
 						builder.WriteString(
 							color.RedString(
 								fmt.Sprintf("    %v\n", line),
@@ -89,12 +89,12 @@ func Diff(old, new *precise.GroupedBundleDataMaps) string {
 					}
 				}
 				if newResult.Hover != "" {
-					added(
+					bdded(
 						&builder,
-						fmt.Sprintf("Hover: %v", locationString(location)),
+						fmt.Sprintf("Hover: %v", locbtionString(locbtion)),
 					)
 
-					for _, line := range strings.Split(newResult.Hover, "\n") {
+					for _, line := rbnge strings.Split(newResult.Hover, "\n") {
 						builder.WriteString(
 							color.GreenString(
 								fmt.Sprintf("    %v\n", line),
@@ -104,25 +104,25 @@ func Diff(old, new *precise.GroupedBundleDataMaps) string {
 				}
 			}
 
-			diffLocations(
+			diffLocbtions(
 				&builder,
 				oldResult.Definitions,
 				newResult.Definitions,
-				fmt.Sprintf("Definition: %v -> ", locationString(location)),
+				fmt.Sprintf("Definition: %v -> ", locbtionString(locbtion)),
 			)
 
-			diffLocations(
+			diffLocbtions(
 				&builder,
 				oldResult.References,
 				newResult.References,
-				fmt.Sprintf("Reference: %v -> ", locationString(location)),
+				fmt.Sprintf("Reference: %v -> ", locbtionString(locbtion)),
 			)
 
-			diffQualifiedMonikers(
+			diffQublifiedMonikers(
 				&builder,
 				oldResult.Monikers,
 				newResult.Monikers,
-				fmt.Sprintf("Moniker: %v -> ", locationString(location)),
+				fmt.Sprintf("Moniker: %v -> ", locbtionString(locbtion)),
 			)
 		}
 	}
@@ -133,56 +133,56 @@ func Diff(old, new *precise.GroupedBundleDataMaps) string {
 	return builder.String()
 }
 
-func diffQualifiedMonikers(builder *strings.Builder, old, new []precise.QualifiedMonikerData, prefix string) {
-	type noIDMonikerData struct {
+func diffQublifiedMonikers(builder *strings.Builder, old, new []precise.QublifiedMonikerDbtb, prefix string) {
+	type noIDMonikerDbtb struct {
 		Kind       string
 		Scheme     string
 		Identifier string
-		Name       string
+		Nbme       string
 		Version    string
 	}
-	oldSet := make(map[noIDMonikerData]struct{})
-	newSet := make(map[noIDMonikerData]struct{})
-	for _, moniker := range old {
-		oldSet[noIDMonikerData{
+	oldSet := mbke(mbp[noIDMonikerDbtb]struct{})
+	newSet := mbke(mbp[noIDMonikerDbtb]struct{})
+	for _, moniker := rbnge old {
+		oldSet[noIDMonikerDbtb{
 			Kind:       moniker.Kind,
 			Scheme:     moniker.Scheme,
 			Identifier: moniker.Identifier,
-			Name:       moniker.Name,
+			Nbme:       moniker.Nbme,
 			Version:    moniker.Version,
 		}] = struct{}{}
 	}
-	for _, moniker := range new {
-		newSet[noIDMonikerData{
+	for _, moniker := rbnge new {
+		newSet[noIDMonikerDbtb{
 			Kind:       moniker.Kind,
 			Scheme:     moniker.Scheme,
 			Identifier: moniker.Identifier,
-			Name:       moniker.Name,
+			Nbme:       moniker.Nbme,
 			Version:    moniker.Version,
 		}] = struct{}{}
 	}
 
-	for moniker := range oldSet {
+	for moniker := rbnge oldSet {
 		if _, exists := newSet[moniker]; !exists {
 			removed(builder, fmt.Sprintf(
 				"%v%v:%v:%v@%v:%v",
 				prefix,
 				moniker.Kind,
 				moniker.Scheme,
-				moniker.Name,
+				moniker.Nbme,
 				moniker.Version,
 				moniker.Identifier,
 			))
 		}
 	}
-	for moniker := range newSet {
+	for moniker := rbnge newSet {
 		if _, exists := oldSet[moniker]; !exists {
-			added(builder, fmt.Sprintf(
+			bdded(builder, fmt.Sprintf(
 				"%v%v:%v:%v@%v:%v",
 				prefix,
 				moniker.Kind,
 				moniker.Scheme,
-				moniker.Name,
+				moniker.Nbme,
 				moniker.Version,
 				moniker.Identifier,
 			))
@@ -190,37 +190,37 @@ func diffQualifiedMonikers(builder *strings.Builder, old, new []precise.Qualifie
 	}
 }
 
-func diffLocations(builder *strings.Builder, old, new []precise.LocationData, prefix string) {
-	oldSet := make(map[precise.LocationData]struct{})
-	var oldSlice []precise.LocationData
-	newSet := make(map[precise.LocationData]struct{})
-	var newSlice []precise.LocationData
-	for _, location := range old {
-		oldSet[location] = struct{}{}
-		oldSlice = append(oldSlice, location)
+func diffLocbtions(builder *strings.Builder, old, new []precise.LocbtionDbtb, prefix string) {
+	oldSet := mbke(mbp[precise.LocbtionDbtb]struct{})
+	vbr oldSlice []precise.LocbtionDbtb
+	newSet := mbke(mbp[precise.LocbtionDbtb]struct{})
+	vbr newSlice []precise.LocbtionDbtb
+	for _, locbtion := rbnge old {
+		oldSet[locbtion] = struct{}{}
+		oldSlice = bppend(oldSlice, locbtion)
 	}
-	for _, location := range new {
-		newSet[location] = struct{}{}
-		newSlice = append(newSlice, location)
+	for _, locbtion := rbnge new {
+		newSet[locbtion] = struct{}{}
+		newSlice = bppend(newSlice, locbtion)
 	}
-	sortLocations(oldSlice)
-	sortLocations(newSlice)
+	sortLocbtions(oldSlice)
+	sortLocbtions(newSlice)
 
-	for _, location := range oldSlice {
-		if _, exists := newSet[location]; !exists {
-			removed(builder, fmt.Sprintf("%v%v", prefix, locationString(location)))
+	for _, locbtion := rbnge oldSlice {
+		if _, exists := newSet[locbtion]; !exists {
+			removed(builder, fmt.Sprintf("%v%v", prefix, locbtionString(locbtion)))
 		}
 	}
-	for _, location := range newSlice {
-		if _, exists := oldSet[location]; !exists {
-			added(builder, fmt.Sprintf("%v%v", prefix, locationString(location)))
+	for _, locbtion := rbnge newSlice {
+		if _, exists := oldSet[locbtion]; !exists {
+			bdded(builder, fmt.Sprintf("%v%v", prefix, locbtionString(locbtion)))
 		}
 	}
 }
 
 func diffMonikers(
 	builder *strings.Builder,
-	old, new map[string]map[string]map[string][]precise.LocationData,
+	old, new mbp[string]mbp[string]mbp[string][]precise.LocbtionDbtb,
 	prefix string,
 ) {
 	type kindSchemeID struct {
@@ -228,44 +228,44 @@ func diffMonikers(
 		scheme string
 		id     string
 	}
-	kindSchemeIDSet := make(map[kindSchemeID]struct{})
-	for kind, schemeIds := range old {
-		for scheme, ids := range schemeIds {
-			for id := range ids {
+	kindSchemeIDSet := mbke(mbp[kindSchemeID]struct{})
+	for kind, schemeIds := rbnge old {
+		for scheme, ids := rbnge schemeIds {
+			for id := rbnge ids {
 				kindSchemeIDSet[kindSchemeID{kind: kind, scheme: scheme, id: id}] = struct{}{}
 			}
 		}
 	}
-	for kind, schemeIds := range new {
-		for scheme, ids := range schemeIds {
-			for id := range ids {
+	for kind, schemeIds := rbnge new {
+		for scheme, ids := rbnge schemeIds {
+			for id := rbnge ids {
 				kindSchemeIDSet[kindSchemeID{kind: kind, scheme: scheme, id: id}] = struct{}{}
 			}
 		}
 	}
 
-	var sortedKindSchemeIDs []kindSchemeID
-	for schemeID := range kindSchemeIDSet {
-		sortedKindSchemeIDs = append(sortedKindSchemeIDs, schemeID)
+	vbr sortedKindSchemeIDs []kindSchemeID
+	for schemeID := rbnge kindSchemeIDSet {
+		sortedKindSchemeIDs = bppend(sortedKindSchemeIDs, schemeID)
 	}
 	sort.Slice(sortedKindSchemeIDs, func(i, j int) bool {
 		if sortedKindSchemeIDs[i].kind < sortedKindSchemeIDs[j].kind {
 			return true
 		}
 		if sortedKindSchemeIDs[i].kind > sortedKindSchemeIDs[j].kind {
-			return false
+			return fblse
 		}
 		if sortedKindSchemeIDs[i].scheme < sortedKindSchemeIDs[j].scheme {
 			return true
 		}
 		if sortedKindSchemeIDs[i].scheme > sortedKindSchemeIDs[j].scheme {
-			return false
+			return fblse
 		}
 		return sortedKindSchemeIDs[i].id < sortedKindSchemeIDs[j].id
 	})
 
-	for _, kindSchemeID := range sortedKindSchemeIDs {
-		diffLocations(
+	for _, kindSchemeID := rbnge sortedKindSchemeIDs {
+		diffLocbtions(
 			builder,
 			old[kindSchemeID.kind][kindSchemeID.scheme][kindSchemeID.id],
 			new[kindSchemeID.kind][kindSchemeID.scheme][kindSchemeID.id],
@@ -274,27 +274,27 @@ func diffMonikers(
 	}
 }
 
-func locationString(location precise.LocationData) string {
+func locbtionString(locbtion precise.LocbtionDbtb) string {
 	return fmt.Sprintf(
 		"%v:(%v:%v)-(%v:%v)",
-		location.URI,
-		location.StartLine,
-		location.StartCharacter,
-		location.EndLine,
-		location.EndCharacter,
+		locbtion.URI,
+		locbtion.StbrtLine,
+		locbtion.StbrtChbrbcter,
+		locbtion.EndLine,
+		locbtion.EndChbrbcter,
 	)
 }
 
-func removed(builder *strings.Builder, value string) {
-	builder.WriteString(color.RedString(fmt.Sprintf("- %v\n", value)))
+func removed(builder *strings.Builder, vblue string) {
+	builder.WriteString(color.RedString(fmt.Sprintf("- %v\n", vblue)))
 }
 
-func added(builder *strings.Builder, value string) {
-	builder.WriteString(color.GreenString(fmt.Sprintf("+ %v\n", value)))
+func bdded(builder *strings.Builder, vblue string) {
+	builder.WriteString(color.GreenString(fmt.Sprintf("+ %v\n", vblue)))
 }
 
-func sortLocations(locations []precise.LocationData) {
-	sort.Slice(locations, func(i, j int) bool {
-		return precise.CompareLocations(locations[i], locations[j]) < 0
+func sortLocbtions(locbtions []precise.LocbtionDbtb) {
+	sort.Slice(locbtions, func(i, j int) bool {
+		return precise.CompbreLocbtions(locbtions[i], locbtions[j]) < 0
 	})
 }

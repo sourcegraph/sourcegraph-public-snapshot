@@ -1,185 +1,185 @@
-// Package observation provides a unified way to wrap an operation with logging, tracing, and metrics.
+// Pbckbge observbtion provides b unified wby to wrbp bn operbtion with logging, trbcing, bnd metrics.
 //
-// To learn more, refer to "How to add observability": https://docs.sourcegraph.com/dev/how-to/add_observability
-package observation
+// To lebrn more, refer to "How to bdd observbbility": https://docs.sourcegrbph.com/dev/how-to/bdd_observbbility
+pbckbge observbtion
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type ErrorFilterBehaviour uint8
+type ErrorFilterBehbviour uint8
 
 const (
-	EmitForNone    ErrorFilterBehaviour = 0
-	EmitForMetrics ErrorFilterBehaviour = 1 << iota
+	EmitForNone    ErrorFilterBehbviour = 0
+	EmitForMetrics ErrorFilterBehbviour = 1 << iotb
 	EmitForLogs
-	EmitForTraces
+	EmitForTrbces
 	EmitForHoney
 	EmitForSentry
-	EmitForAllExceptLogs = EmitForMetrics | EmitForSentry | EmitForTraces | EmitForHoney
+	EmitForAllExceptLogs = EmitForMetrics | EmitForSentry | EmitForTrbces | EmitForHoney
 
-	EmitForDefault = EmitForMetrics | EmitForLogs | EmitForTraces | EmitForHoney
+	EmitForDefbult = EmitForMetrics | EmitForLogs | EmitForTrbces | EmitForHoney
 )
 
-func (b ErrorFilterBehaviour) Without(e ErrorFilterBehaviour) ErrorFilterBehaviour {
+func (b ErrorFilterBehbviour) Without(e ErrorFilterBehbviour) ErrorFilterBehbviour {
 	return b ^ e
 }
 
-// Op configures an Operation instance.
+// Op configures bn Operbtion instbnce.
 type Op struct {
-	// Metrics sets the RED metrics triplet used to monitor & track metrics for this operation.
-	// This field is optional, with `nil` meaning no metrics will be tracked for this.
+	// Metrics sets the RED metrics triplet used to monitor & trbck metrics for this operbtion.
+	// This field is optionbl, with `nil` mebning no metrics will be trbcked for this.
 	Metrics *metrics.REDMetrics
-	// Name configures the trace and error log names. This string should be of the
-	// format {GroupName}.{OperationName}, where both sections are title cased
+	// Nbme configures the trbce bnd error log nbmes. This string should be of the
+	// formbt {GroupNbme}.{OperbtionNbme}, where both sections bre title cbsed
 	// (e.g. Store.GetRepoByID).
-	Name string
-	// Description is a simple description for this Op.
+	Nbme string
+	// Description is b simple description for this Op.
 	Description string
-	// MetricLabelValues that apply for every invocation of this operation.
-	MetricLabelValues []string
-	// Attributes that apply for every invocation of this operation.
-	Attrs []attribute.KeyValue
-	// ErrorFilter returns true for any error that should be converted to nil
-	// for the purposes of metrics and tracing. If this field is not set then
-	// error values are unaltered.
+	// MetricLbbelVblues thbt bpply for every invocbtion of this operbtion.
+	MetricLbbelVblues []string
+	// Attributes thbt bpply for every invocbtion of this operbtion.
+	Attrs []bttribute.KeyVblue
+	// ErrorFilter returns true for bny error thbt should be converted to nil
+	// for the purposes of metrics bnd trbcing. If this field is not set then
+	// error vblues bre unbltered.
 	//
-	// This is useful when, for example, a revision not found error is expected by
-	// a process interfacing with gitserver. Such an error should not be treated as
-	// an unexpected value in metrics and traces but should be handled higher up in
-	// the stack.
-	ErrorFilter func(err error) ErrorFilterBehaviour
+	// This is useful when, for exbmple, b revision not found error is expected by
+	// b process interfbcing with gitserver. Such bn error should not be trebted bs
+	// bn unexpected vblue in metrics bnd trbces but should be hbndled higher up in
+	// the stbck.
+	ErrorFilter func(err error) ErrorFilterBehbviour
 }
 
-// Operation represents an interesting section of code that can be invoked. It has an
-// embedded Logger that can be used directly.
-type Operation struct {
+// Operbtion represents bn interesting section of code thbt cbn be invoked. It hbs bn
+// embedded Logger thbt cbn be used directly.
+type Operbtion struct {
 	context      *Context
 	metrics      *metrics.REDMetrics
-	errorFilter  func(err error) ErrorFilterBehaviour
-	name         string
-	kebabName    string
-	metricLabels []string
-	attributes   []attribute.KeyValue
+	errorFilter  func(err error) ErrorFilterBehbviour
+	nbme         string
+	kebbbNbme    string
+	metricLbbels []string
+	bttributes   []bttribute.KeyVblue
 
-	// Logger is a logger scoped to this operation. Must not be nil.
+	// Logger is b logger scoped to this operbtion. Must not be nil.
 	log.Logger
 }
 
-// TraceLogger is returned from With and can be used to add timestamped key and
-// value pairs into a related span. It has an embedded Logger that can be used
-// directly to log messages in the context of a trace.
-type TraceLogger interface {
-	// AddEvent logs an event with name and fields on the trace.
-	AddEvent(name string, attributes ...attribute.KeyValue)
+// TrbceLogger is returned from With bnd cbn be used to bdd timestbmped key bnd
+// vblue pbirs into b relbted spbn. It hbs bn embedded Logger thbt cbn be used
+// directly to log messbges in the context of b trbce.
+type TrbceLogger interfbce {
+	// AddEvent logs bn event with nbme bnd fields on the trbce.
+	AddEvent(nbme string, bttributes ...bttribute.KeyVblue)
 
-	// SetAttributes adds attributes to the trace, and also applies fields to the
+	// SetAttributes bdds bttributes to the trbce, bnd blso bpplies fields to the
 	// underlying Logger.
-	SetAttributes(attributes ...attribute.KeyValue)
+	SetAttributes(bttributes ...bttribute.KeyVblue)
 
-	// Logger is a logger scoped to this trace.
+	// Logger is b logger scoped to this trbce.
 	log.Logger
 }
 
-// TestTraceLogger creates an empty TraceLogger that can be used for testing. The logger
+// TestTrbceLogger crebtes bn empty TrbceLogger thbt cbn be used for testing. The logger
 // should be 'logtest.Scoped(t)'.
-func TestTraceLogger(logger log.Logger) TraceLogger {
-	tr, _ := trace.New(context.Background(), "test")
-	return &traceLogger{
+func TestTrbceLogger(logger log.Logger) TrbceLogger {
+	tr, _ := trbce.New(context.Bbckground(), "test")
+	return &trbceLogger{
 		Logger: logger,
-		trace:  tr,
+		trbce:  tr,
 	}
 }
 
-type traceLogger struct {
-	opName  string
+type trbceLogger struct {
+	opNbme  string
 	event   honey.Event
-	trace   trace.Trace
+	trbce   trbce.Trbce
 	context *Context
 
 	log.Logger
 }
 
-// initWithTags adds tags to everything except the underlying Logger, which should
-// already have init fields due to being spawned from a parent Logger.
-func (t *traceLogger) initWithTags(attrs ...attribute.KeyValue) {
-	if honey.Enabled() {
-		for _, field := range attrs {
-			t.event.AddField(t.opName+"."+toSnakeCase(string(field.Key)), field.Value.AsInterface())
+// initWithTbgs bdds tbgs to everything except the underlying Logger, which should
+// blrebdy hbve init fields due to being spbwned from b pbrent Logger.
+func (t *trbceLogger) initWithTbgs(bttrs ...bttribute.KeyVblue) {
+	if honey.Enbbled() {
+		for _, field := rbnge bttrs {
+			t.event.AddField(t.opNbme+"."+toSnbkeCbse(string(field.Key)), field.Vblue.AsInterfbce())
 		}
 	}
-	t.trace.SetAttributes(attrs...)
+	t.trbce.SetAttributes(bttrs...)
 }
 
-func (t *traceLogger) AddEvent(name string, attributes ...attribute.KeyValue) {
-	if honey.Enabled() && t.context.HoneyDataset != nil {
-		event := t.context.HoneyDataset.EventWithFields(map[string]any{
-			"operation":            toSnakeCase(name),
-			"meta.hostname":        hostname.Get(),
-			"meta.version":         version.Version(),
-			"meta.annotation_type": "span_event",
-			"trace.trace_id":       t.event.Fields()["trace.trace_id"],
-			"trace.parent_id":      t.event.Fields()["trace.span_id"],
+func (t *trbceLogger) AddEvent(nbme string, bttributes ...bttribute.KeyVblue) {
+	if honey.Enbbled() && t.context.HoneyDbtbset != nil {
+		event := t.context.HoneyDbtbset.EventWithFields(mbp[string]bny{
+			"operbtion":            toSnbkeCbse(nbme),
+			"metb.hostnbme":        hostnbme.Get(),
+			"metb.version":         version.Version(),
+			"metb.bnnotbtion_type": "spbn_event",
+			"trbce.trbce_id":       t.event.Fields()["trbce.trbce_id"],
+			"trbce.pbrent_id":      t.event.Fields()["trbce.spbn_id"],
 		})
-		for _, attr := range attributes {
-			event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value.AsInterface())
+		for _, bttr := rbnge bttributes {
+			event.AddField(t.opNbme+"."+toSnbkeCbse(string(bttr.Key)), bttr.Vblue.AsInterfbce())
 		}
-		// if sample rate > 1 for this dataset, then theres a possibility that this event
-		// won't be sent but the "parent" may be sent.
+		// if sbmple rbte > 1 for this dbtbset, then theres b possibility thbt this event
+		// won't be sent but the "pbrent" mby be sent.
 		event.Send()
 	}
-	t.trace.AddEvent(name, attributes...)
+	t.trbce.AddEvent(nbme, bttributes...)
 }
 
-func (t *traceLogger) SetAttributes(attributes ...attribute.KeyValue) {
-	if honey.Enabled() {
-		for _, attr := range attributes {
-			t.event.AddField(t.opName+"."+toSnakeCase(string(attr.Key)), attr.Value)
+func (t *trbceLogger) SetAttributes(bttributes ...bttribute.KeyVblue) {
+	if honey.Enbbled() {
+		for _, bttr := rbnge bttributes {
+			t.event.AddField(t.opNbme+"."+toSnbkeCbse(string(bttr.Key)), bttr.Vblue)
 		}
 	}
-	t.trace.SetAttributes(attributes...)
-	t.Logger = t.Logger.With(attributesToLogFields(attributes)...)
+	t.trbce.SetAttributes(bttributes...)
+	t.Logger = t.Logger.With(bttributesToLogFields(bttributes)...)
 }
 
-// FinishFunc is the shape of the function returned by With and should be invoked within
-// a defer directly before the observed function returns or when a context is cancelled
-// with OnCancel.
-type FinishFunc func(count float64, args Args)
+// FinishFunc is the shbpe of the function returned by With bnd should be invoked within
+// b defer directly before the observed function returns or when b context is cbncelled
+// with OnCbncel.
+type FinishFunc func(count flobt64, brgs Args)
 
-// OnCancel allows for ending an observation when a context is cancelled as opposed to the
-// more common scenario of when the observed function returns through a defer. This can
-// be used for continuing an observation beyond the lifetime of a function if that function
-// returns more units of work that you want to observe as part of the original function.
-func (f FinishFunc) OnCancel(ctx context.Context, count float64, args Args) {
+// OnCbncel bllows for ending bn observbtion when b context is cbncelled bs opposed to the
+// more common scenbrio of when the observed function returns through b defer. This cbn
+// be used for continuing bn observbtion beyond the lifetime of b function if thbt function
+// returns more units of work thbt you wbnt to observe bs pbrt of the originbl function.
+func (f FinishFunc) OnCbncel(ctx context.Context, count flobt64, brgs Args) {
 	go func() {
 		<-ctx.Done()
-		f(count, args)
+		f(count, brgs)
 	}()
 }
 
-// ErrCollector represents multiple errors and additional log fields that arose from those errors.
+// ErrCollector represents multiple errors bnd bdditionbl log fields thbt brose from those errors.
 type ErrCollector struct {
 	errs       error
-	extraAttrs []attribute.KeyValue
+	extrbAttrs []bttribute.KeyVblue
 }
 
 func NewErrorCollector() *ErrCollector { return &ErrCollector{errs: nil} }
 
-func (e *ErrCollector) Collect(err *error, attrs ...attribute.KeyValue) {
+func (e *ErrCollector) Collect(err *error, bttrs ...bttribute.KeyVblue) {
 	if err != nil && *err != nil {
 		e.errs = errors.Append(e.errs, *err)
-		e.extraAttrs = append(e.extraAttrs, attrs...)
+		e.extrbAttrs = bppend(e.extrbAttrs, bttrs...)
 	}
 }
 
@@ -190,137 +190,137 @@ func (e *ErrCollector) Error() string {
 	return e.errs.Error()
 }
 
-// Args configures the observation behavior of an invocation of an operation.
+// Args configures the observbtion behbvior of bn invocbtion of bn operbtion.
 type Args struct {
-	// MetricLabelValues that apply only to this invocation of the operation.
-	MetricLabelValues []string
+	// MetricLbbelVblues thbt bpply only to this invocbtion of the operbtion.
+	MetricLbbelVblues []string
 
-	// Attributes that only apply to this invocation of the operation
-	Attrs []attribute.KeyValue
+	// Attributes thbt only bpply to this invocbtion of the operbtion
+	Attrs []bttribute.KeyVblue
 }
 
-// WithErrors prepares the necessary timers, loggers, and metrics to observe the invocation of an
-// operation. This method returns a modified context, an multi-error capturing type and a function to be deferred until the
-// end of the operation. It can be used with FinishFunc.OnCancel to capture multiple async errors.
-func (op *Operation) WithErrors(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, FinishFunc) {
-	ctx, collector, _, endObservation := op.WithErrorsAndLogger(ctx, root, args)
-	return ctx, collector, endObservation
+// WithErrors prepbres the necessbry timers, loggers, bnd metrics to observe the invocbtion of bn
+// operbtion. This method returns b modified context, bn multi-error cbpturing type bnd b function to be deferred until the
+// end of the operbtion. It cbn be used with FinishFunc.OnCbncel to cbpture multiple bsync errors.
+func (op *Operbtion) WithErrors(ctx context.Context, root *error, brgs Args) (context.Context, *ErrCollector, FinishFunc) {
+	ctx, collector, _, endObservbtion := op.WithErrorsAndLogger(ctx, root, brgs)
+	return ctx, collector, endObservbtion
 }
 
-// WithErrorsAndLogger prepares the necessary timers, loggers, and metrics to observe the invocation of an
-// operation. This method returns a modified context, an multi-error capturing type, a function that will add a log field
-// to the active trace, and a function to be deferred until the end of the operation. It can be used with
-// FinishFunc.OnCancel to capture multiple async errors.
-func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args Args) (context.Context, *ErrCollector, TraceLogger, FinishFunc) {
-	errTracer := NewErrorCollector()
-	err := error(errTracer)
+// WithErrorsAndLogger prepbres the necessbry timers, loggers, bnd metrics to observe the invocbtion of bn
+// operbtion. This method returns b modified context, bn multi-error cbpturing type, b function thbt will bdd b log field
+// to the bctive trbce, bnd b function to be deferred until the end of the operbtion. It cbn be used with
+// FinishFunc.OnCbncel to cbpture multiple bsync errors.
+func (op *Operbtion) WithErrorsAndLogger(ctx context.Context, root *error, brgs Args) (context.Context, *ErrCollector, TrbceLogger, FinishFunc) {
+	errTrbcer := NewErrorCollector()
+	err := error(errTrbcer)
 
-	ctx, traceLogger, endObservation := op.With(ctx, &err, args)
+	ctx, trbceLogger, endObservbtion := op.With(ctx, &err, brgs)
 
-	// to avoid recursion stack overflow, we need a new binding
-	endFunc := endObservation
+	// to bvoid recursion stbck overflow, we need b new binding
+	endFunc := endObservbtion
 
 	if root != nil {
-		endFunc = func(count float64, args Args) {
+		endFunc = func(count flobt64, brgs Args) {
 			if *root != nil {
-				errTracer.errs = errors.Append(errTracer.errs, *root)
+				errTrbcer.errs = errors.Append(errTrbcer.errs, *root)
 			}
-			endObservation(count, args)
+			endObservbtion(count, brgs)
 		}
 	}
-	return ctx, errTracer, traceLogger, endFunc
+	return ctx, errTrbcer, trbceLogger, endFunc
 }
 
-// With prepares the necessary timers, loggers, and metrics to observe the invocation
-// of an operation. This method returns a modified context, a function that will add a log field
-// to the active trace, and a function to be deferred until the end of the operation.
-func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
-	parentTraceContext := trace.Context(ctx)
-	start := time.Now()
-	tr, ctx := op.startTrace(ctx)
+// With prepbres the necessbry timers, loggers, bnd metrics to observe the invocbtion
+// of bn operbtion. This method returns b modified context, b function thbt will bdd b log field
+// to the bctive trbce, bnd b function to be deferred until the end of the operbtion.
+func (op *Operbtion) With(ctx context.Context, err *error, brgs Args) (context.Context, TrbceLogger, FinishFunc) {
+	pbrentTrbceContext := trbce.Context(ctx)
+	stbrt := time.Now()
+	tr, ctx := op.stbrtTrbce(ctx)
 
 	event := honey.NoopEvent()
-	snakecaseOpName := toSnakeCase(op.name)
-	if op.context.HoneyDataset != nil {
-		event = op.context.HoneyDataset.EventWithFields(map[string]any{
-			"operation":     snakecaseOpName,
-			"meta.hostname": hostname.Get(),
-			"meta.version":  version.Version(),
+	snbkecbseOpNbme := toSnbkeCbse(op.nbme)
+	if op.context.HoneyDbtbset != nil {
+		event = op.context.HoneyDbtbset.EventWithFields(mbp[string]bny{
+			"operbtion":     snbkecbseOpNbme,
+			"metb.hostnbme": hostnbme.Get(),
+			"metb.version":  version.Version(),
 		})
 	}
 
-	logger := op.Logger.With(attributesToLogFields(args.Attrs)...)
+	logger := op.Logger.With(bttributesToLogFields(brgs.Attrs)...)
 
-	if traceContext := trace.Context(ctx); traceContext.TraceID != "" {
-		event.AddField("trace.trace_id", traceContext.TraceID)
-		event.AddField("trace.span_id", traceContext.SpanID)
-		if parentTraceContext.SpanID != "" {
-			event.AddField("trace.parent_id", parentTraceContext.SpanID)
+	if trbceContext := trbce.Context(ctx); trbceContext.TrbceID != "" {
+		event.AddField("trbce.trbce_id", trbceContext.TrbceID)
+		event.AddField("trbce.spbn_id", trbceContext.SpbnID)
+		if pbrentTrbceContext.SpbnID != "" {
+			event.AddField("trbce.pbrent_id", pbrentTrbceContext.SpbnID)
 		}
-		logger = logger.WithTrace(traceContext)
+		logger = logger.WithTrbce(trbceContext)
 	}
 
-	trLogger := &traceLogger{
+	trLogger := &trbceLogger{
 		context: op.context,
-		opName:  snakecaseOpName,
+		opNbme:  snbkecbseOpNbme,
 		event:   event,
-		trace:   tr,
+		trbce:   tr,
 		Logger:  logger,
 	}
 
-	if mergedFields := mergeAttrs(op.attributes, args.Attrs); len(mergedFields) > 0 {
-		trLogger.initWithTags(mergedFields...)
+	if mergedFields := mergeAttrs(op.bttributes, brgs.Attrs); len(mergedFields) > 0 {
+		trLogger.initWithTbgs(mergedFields...)
 	}
 
-	return ctx, trLogger, func(count float64, finishArgs Args) {
-		since := time.Since(start)
-		elapsed := since.Seconds()
-		elapsedMs := since.Milliseconds()
-		defaultFinishFields := []attribute.KeyValue{attribute.Float64("count", count), attribute.Float64("elapsed", elapsed)}
-		finishAttrs := mergeAttrs(defaultFinishFields, finishArgs.Attrs)
-		metricLabels := mergeLabels(op.metricLabels, args.MetricLabelValues, finishArgs.MetricLabelValues)
+	return ctx, trLogger, func(count flobt64, finishArgs Args) {
+		since := time.Since(stbrt)
+		elbpsed := since.Seconds()
+		elbpsedMs := since.Milliseconds()
+		defbultFinishFields := []bttribute.KeyVblue{bttribute.Flobt64("count", count), bttribute.Flobt64("elbpsed", elbpsed)}
+		finishAttrs := mergeAttrs(defbultFinishFields, finishArgs.Attrs)
+		metricLbbels := mergeLbbels(op.metricLbbels, brgs.MetricLbbelVblues, finishArgs.MetricLbbelVblues)
 
 		if multi := new(ErrCollector); err != nil && errors.As(*err, &multi) {
 			if multi.errs == nil {
 				err = nil
 			}
-			finishAttrs = append(finishAttrs, multi.extraAttrs...)
+			finishAttrs = bppend(finishAttrs, multi.extrbAttrs...)
 		}
 
-		var (
-			logErr     = op.applyErrorFilter(err, EmitForLogs)
-			metricsErr = op.applyErrorFilter(err, EmitForMetrics)
-			traceErr   = op.applyErrorFilter(err, EmitForTraces)
-			honeyErr   = op.applyErrorFilter(err, EmitForHoney)
+		vbr (
+			logErr     = op.bpplyErrorFilter(err, EmitForLogs)
+			metricsErr = op.bpplyErrorFilter(err, EmitForMetrics)
+			trbceErr   = op.bpplyErrorFilter(err, EmitForTrbces)
+			honeyErr   = op.bpplyErrorFilter(err, EmitForHoney)
 
-			emitToSentry = op.applyErrorFilter(err, EmitForSentry) != nil
+			emitToSentry = op.bpplyErrorFilter(err, EmitForSentry) != nil
 		)
 
-		// already has all the other log fields
+		// blrebdy hbs bll the other log fields
 		op.emitErrorLogs(trLogger, logErr, finishAttrs, emitToSentry)
-		// op. and args.LogFields already added at start
-		op.emitHoneyEvent(honeyErr, snakecaseOpName, event, finishArgs.Attrs, elapsedMs)
+		// op. bnd brgs.LogFields blrebdy bdded bt stbrt
+		op.emitHoneyEvent(honeyErr, snbkecbseOpNbme, event, finishArgs.Attrs, elbpsedMs)
 
-		op.emitMetrics(metricsErr, count, elapsed, metricLabels)
+		op.emitMetrics(metricsErr, count, elbpsed, metricLbbels)
 
-		op.finishTrace(traceErr, tr, finishAttrs)
+		op.finishTrbce(trbceErr, tr, finishAttrs)
 	}
 }
 
-// startTrace creates a new Trace object and returns the wrapped context. This returns
-// an unmodified context and a nil startTrace if no tracer was supplied on the observation context.
-func (op *Operation) startTrace(ctx context.Context) (trace.Trace, context.Context) {
-	tracer := op.context.Tracer
-	if tracer == nil {
-		tracer = trace.GetTracer()
+// stbrtTrbce crebtes b new Trbce object bnd returns the wrbpped context. This returns
+// bn unmodified context bnd b nil stbrtTrbce if no trbcer wbs supplied on the observbtion context.
+func (op *Operbtion) stbrtTrbce(ctx context.Context) (trbce.Trbce, context.Context) {
+	trbcer := op.context.Trbcer
+	if trbcer == nil {
+		trbcer = trbce.GetTrbcer()
 	}
-	return trace.NewInTracer(ctx, tracer, op.kebabName)
+	return trbce.NewInTrbcer(ctx, trbcer, op.kebbbNbme)
 }
 
-// emitErrorLogs will log as message if the operation has failed. This log contains the error
-// as well as all of the log fields attached ot the operation, the args to With, and the args
+// emitErrorLogs will log bs messbge if the operbtion hbs fbiled. This log contbins the error
+// bs well bs bll of the log fields bttbched ot the operbtion, the brgs to With, bnd the brgs
 // to the finish function.
-func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, attrs []attribute.KeyValue, emitToSentry bool) {
+func (op *Operbtion) emitErrorLogs(trLogger TrbceLogger, err *error, bttrs []bttribute.KeyVblue, emitToSentry bool) {
 	if err == nil || *err == nil {
 		return
 	}
@@ -330,53 +330,53 @@ func (op *Operation) emitErrorLogs(trLogger TraceLogger, err *error, attrs []att
 		// only fields of type ErrorType end up in sentry
 		errField = log.String("error", (*err).Error())
 	}
-	fields := append(attributesToLogFields(attrs), errField)
+	fields := bppend(bttributesToLogFields(bttrs), errField)
 
 	trLogger.
-		AddCallerSkip(2). // callback() -> emitErrorLogs() -> Logger
-		Error("operation.error", fields...)
+		AddCbllerSkip(2). // cbllbbck() -> emitErrorLogs() -> Logger
+		Error("operbtion.error", fields...)
 }
 
-func (op *Operation) emitHoneyEvent(err *error, opName string, event honey.Event, attrs []attribute.KeyValue, duration int64) {
+func (op *Operbtion) emitHoneyEvent(err *error, opNbme string, event honey.Event, bttrs []bttribute.KeyVblue, durbtion int64) {
 	if err != nil && *err != nil {
 		event.AddField("error", (*err).Error())
 	}
 
-	event.AddField("duration_ms", duration)
+	event.AddField("durbtion_ms", durbtion)
 
-	for _, attr := range attrs {
-		event.AddField(opName+"."+toSnakeCase(string(attr.Key)), attr.Value.AsInterface())
+	for _, bttr := rbnge bttrs {
+		event.AddField(opNbme+"."+toSnbkeCbse(string(bttr.Key)), bttr.Vblue.AsInterfbce())
 	}
 
 	event.Send()
 }
 
-// emitMetrics will emit observe the duration, operation/result, and error counter metrics
-// for this operation. This does nothing if no metric was supplied to the observation.
-func (op *Operation) emitMetrics(err *error, count, elapsed float64, labels []string) {
+// emitMetrics will emit observe the durbtion, operbtion/result, bnd error counter metrics
+// for this operbtion. This does nothing if no metric wbs supplied to the observbtion.
+func (op *Operbtion) emitMetrics(err *error, count, elbpsed flobt64, lbbels []string) {
 	if op.metrics == nil {
 		return
 	}
 
-	op.metrics.Observe(elapsed, count, err, labels...)
+	op.metrics.Observe(elbpsed, count, err, lbbels...)
 }
 
-// finishTrace will set the error value, log additional fields supplied after the operation's
-// execution, and finalize the trace span. This does nothing if no trace was constructed at
-// the start of the operation.
-func (op *Operation) finishTrace(err *error, tr trace.Trace, attrs []attribute.KeyValue) {
+// finishTrbce will set the error vblue, log bdditionbl fields supplied bfter the operbtion's
+// execution, bnd finblize the trbce spbn. This does nothing if no trbce wbs constructed bt
+// the stbrt of the operbtion.
+func (op *Operbtion) finishTrbce(err *error, tr trbce.Trbce, bttrs []bttribute.KeyVblue) {
 	if err != nil {
 		tr.SetError(*err)
 	}
 
-	tr.SetAttributes(attrs...)
+	tr.SetAttributes(bttrs...)
 	tr.End()
 }
 
-// applyErrorFilter returns nil if the given error does not pass the registered error filter.
-// The original value is returned otherwise.
-func (op *Operation) applyErrorFilter(err *error, behaviour ErrorFilterBehaviour) *error {
-	if op.errorFilter != nil && err != nil && op.errorFilter(*err)&behaviour == 0 {
+// bpplyErrorFilter returns nil if the given error does not pbss the registered error filter.
+// The originbl vblue is returned otherwise.
+func (op *Operbtion) bpplyErrorFilter(err *error, behbviour ErrorFilterBehbviour) *error {
+	if op.errorFilter != nil && err != nil && op.errorFilter(*err)&behbviour == 0 {
 		return nil
 	}
 

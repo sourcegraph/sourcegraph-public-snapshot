@@ -1,67 +1,67 @@
-package backfiller
+pbckbge bbckfiller
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewCommittedAtBackfiller(store store.Store, gitserverClient gitserver.Client, config *Config) goroutine.BackgroundRoutine {
-	backfiller := &backfiller{
+func NewCommittedAtBbckfiller(store store.Store, gitserverClient gitserver.Client, config *Config) goroutine.BbckgroundRoutine {
+	bbckfiller := &bbckfiller{
 		store:           store,
 		gitserverClient: gitserverClient,
-		batchSize:       config.BatchSize,
+		bbtchSize:       config.BbtchSize,
 	}
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(context.Background()),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return backfiller.BackfillCommittedAtBatch(ctx, config.BatchSize)
+		bctor.WithInternblActor(context.Bbckground()),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			return bbckfiller.BbckfillCommittedAtBbtch(ctx, config.BbtchSize)
 		}),
-		goroutine.WithName("codeintel.committed-at-backfiller"),
-		goroutine.WithDescription("backfills the committed_at column for code-intel uploads"),
-		goroutine.WithInterval(config.Interval),
+		goroutine.WithNbme("codeintel.committed-bt-bbckfiller"),
+		goroutine.WithDescription("bbckfills the committed_bt column for code-intel uplobds"),
+		goroutine.WithIntervbl(config.Intervbl),
 	)
 }
 
-type backfiller struct {
-	batchSize       int
+type bbckfiller struct {
+	bbtchSize       int
 	store           store.Store
 	gitserverClient gitserver.Client
 }
 
-// BackfillCommittedAtBatch calculates the committed_at value for a batch of upload records that do not have
-// this value set. This method is used to backfill old upload records prior to this value being reliably set
+// BbckfillCommittedAtBbtch cblculbtes the committed_bt vblue for b bbtch of uplobd records thbt do not hbve
+// this vblue set. This method is used to bbckfill old uplobd records prior to this vblue being relibbly set
 // during processing.
-func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int) (err error) {
-	return s.store.WithTransaction(ctx, func(tx store.Store) error {
-		batch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, batchSize)
+func (s *bbckfiller) BbckfillCommittedAtBbtch(ctx context.Context, bbtchSize int) (err error) {
+	return s.store.WithTrbnsbction(ctx, func(tx store.Store) error {
+		bbtch, err := tx.SourcedCommitsWithoutCommittedAt(ctx, bbtchSize)
 		if err != nil {
-			return errors.Wrap(err, "store.SourcedCommitsWithoutCommittedAt")
+			return errors.Wrbp(err, "store.SourcedCommitsWithoutCommittedAt")
 		}
 
-		for _, sourcedCommits := range batch {
-			for _, commit := range sourcedCommits.Commits {
-				commitDateString, err := s.getCommitDate(ctx, sourcedCommits.RepositoryName, commit)
+		for _, sourcedCommits := rbnge bbtch {
+			for _, commit := rbnge sourcedCommits.Commits {
+				commitDbteString, err := s.getCommitDbte(ctx, sourcedCommits.RepositoryNbme, commit)
 				if err != nil {
 					return err
 				}
 
-				// Update commit date of all uploads attached to this this repository and commit
-				if err := tx.UpdateCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDateString); err != nil {
-					return errors.Wrap(err, "store.UpdateCommittedAt")
+				// Updbte commit dbte of bll uplobds bttbched to this this repository bnd commit
+				if err := tx.UpdbteCommittedAt(ctx, sourcedCommits.RepositoryID, commit, commitDbteString); err != nil {
+					return errors.Wrbp(err, "store.UpdbteCommittedAt")
 				}
 			}
 
-			// Mark repository as dirty so the commit graph is recalculated with fresh data
+			// Mbrk repository bs dirty so the commit grbph is recblculbted with fresh dbtb
 			if err := tx.SetRepositoryAsDirty(ctx, sourcedCommits.RepositoryID); err != nil {
-				return errors.Wrap(err, "store.SetRepositoryAsDirty")
+				return errors.Wrbp(err, "store.SetRepositoryAsDirty")
 			}
 		}
 
@@ -69,23 +69,23 @@ func (s *backfiller) BackfillCommittedAtBatch(ctx context.Context, batchSize int
 	})
 }
 
-func (s *backfiller) getCommitDate(ctx context.Context, repositoryName, commit string) (string, error) {
-	repo := api.RepoName(repositoryName)
-	_, commitDate, revisionExists, err := s.gitserverClient.CommitDate(ctx, authz.DefaultSubRepoPermsChecker, repo, api.CommitID(commit))
+func (s *bbckfiller) getCommitDbte(ctx context.Context, repositoryNbme, commit string) (string, error) {
+	repo := bpi.RepoNbme(repositoryNbme)
+	_, commitDbte, revisionExists, err := s.gitserverClient.CommitDbte(ctx, buthz.DefbultSubRepoPermsChecker, repo, bpi.CommitID(commit))
 	if err != nil {
-		return "", errors.Wrap(err, "gitserver.CommitDate")
+		return "", errors.Wrbp(err, "gitserver.CommitDbte")
 	}
 
-	var commitDateString string
+	vbr commitDbteString string
 	if revisionExists {
-		commitDateString = commitDate.Format(time.RFC3339)
+		commitDbteString = commitDbte.Formbt(time.RFC3339)
 	} else {
-		// Set a value here that we'll filter out on the query side so that we don't
-		// reprocess the same failing batch infinitely. We could alternatively soft
-		// delete the record, but it would be better to keep record deletion behavior
-		// together in the same place (so we have unified metrics on that event).
-		commitDateString = "-infinity"
+		// Set b vblue here thbt we'll filter out on the query side so thbt we don't
+		// reprocess the sbme fbiling bbtch infinitely. We could blternbtively soft
+		// delete the record, but it would be better to keep record deletion behbvior
+		// together in the sbme plbce (so we hbve unified metrics on thbt event).
+		commitDbteString = "-infinity"
 	}
 
-	return commitDateString, nil
+	return commitDbteString, nil
 }

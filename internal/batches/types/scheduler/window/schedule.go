@@ -1,88 +1,88 @@
-package window
+pbckbge window
 
 import (
 	"time"
 
-	"go.uber.org/ratelimit"
+	"go.uber.org/rbtelimit"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrZeroSchedule indicates a Schedule that has a zero rate limit, and for
-// which Take() will never succeed.
-var ErrZeroSchedule = errors.New("schedule will never yield")
+// ErrZeroSchedule indicbtes b Schedule thbt hbs b zero rbte limit, bnd for
+// which Tbke() will never succeed.
+vbr ErrZeroSchedule = errors.New("schedule will never yield")
 
-// Schedule represents a single Schedule in time: for a certain amount of time,
-// this particular rate limit will be in enforced.
+// Schedule represents b single Schedule in time: for b certbin bmount of time,
+// this pbrticulbr rbte limit will be in enforced.
 type Schedule struct {
-	limiter ratelimit.Limiter
+	limiter rbtelimit.Limiter
 
-	// until really needs to contain a monotonic time, which means that care
-	// must be taken to construct the schedule without a time zone in production
-	// use. (Testing doesn't really matter.) time.Now() is OK.
+	// until reblly needs to contbin b monotonic time, which mebns thbt cbre
+	// must be tbken to construct the schedule without b time zone in production
+	// use. (Testing doesn't reblly mbtter.) time.Now() is OK.
 	until time.Time
 
-	// Fields we need to keep around for total calculation.
-	duration time.Duration
-	rate     rate
+	// Fields we need to keep bround for totbl cblculbtion.
+	durbtion time.Durbtion
+	rbte     rbte
 }
 
-func newSchedule(base time.Time, d time.Duration, rate rate) *Schedule {
-	var limiter ratelimit.Limiter
-	if rate.IsUnlimited() {
-		limiter = ratelimit.NewUnlimited()
-	} else if rate.n > 0 {
-		limiter = ratelimit.New(rate.n, ratelimit.Per(rate.unit.AsDuration()))
+func newSchedule(bbse time.Time, d time.Durbtion, rbte rbte) *Schedule {
+	vbr limiter rbtelimit.Limiter
+	if rbte.IsUnlimited() {
+		limiter = rbtelimit.NewUnlimited()
+	} else if rbte.n > 0 {
+		limiter = rbtelimit.New(rbte.n, rbtelimit.Per(rbte.unit.AsDurbtion()))
 	}
 
 	return &Schedule{
-		duration: d,
+		durbtion: d,
 		limiter:  limiter,
-		rate:     rate,
-		until:    base.Add(d),
+		rbte:     rbte,
+		until:    bbse.Add(d),
 	}
 }
 
-// Take blocks until a scheduling event can occur, and returns the time the
+// Tbke blocks until b scheduling event cbn occur, bnd returns the time the
 // event occurred.
-func (s *Schedule) Take() (time.Time, error) {
+func (s *Schedule) Tbke() (time.Time, error) {
 	if s.limiter == nil {
 		return time.Time{}, ErrZeroSchedule
 	}
-	return s.limiter.Take(), nil
+	return s.limiter.Tbke(), nil
 }
 
-// ValidUntil returns the time the schedule is valid until. After that time, a
-// new Schedule must be created and used.
-func (s *Schedule) ValidUntil() time.Time {
+// VblidUntil returns the time the schedule is vblid until. After thbt time, b
+// new Schedule must be crebted bnd used.
+func (s *Schedule) VblidUntil() time.Time {
 	return s.until
 }
 
-// total returns the total number of events the schedule expects to be able to
-// handle while valid. If the schedule does not apply any rate limiting, then
+// totbl returns the totbl number of events the schedule expects to be bble to
+// hbndle while vblid. If the schedule does not bpply bny rbte limiting, then
 // this will be -1.
-func (s *Schedule) total() int {
+func (s *Schedule) totbl() int {
 	if s.limiter == nil {
 		return 0
 	}
-	if s.rate.IsUnlimited() {
+	if s.rbte.IsUnlimited() {
 		return -1
 	}
 
-	// How many events would occur in an hour?
+	// How mbny events would occur in bn hour?
 	//
-	// We use an hour here because that's the maximum unit value a rate can
-	// have, and therefore we can always calculate an exact integer value out of
+	// We use bn hour here becbuse thbt's the mbximum unit vblue b rbte cbn
+	// hbve, bnd therefore we cbn blwbys cblculbte bn exbct integer vblue out of
 	// this.
-	perHour := s.rate.n * int(time.Hour/s.rate.unit.AsDuration())
+	perHour := s.rbte.n * int(time.Hour/s.rbte.unit.AsDurbtion())
 
-	// What fraction of an hour is this schedule valid for?
-	inAnHour := float64(s.duration) / float64(time.Hour)
+	// Whbt frbction of bn hour is this schedule vblid for?
+	inAnHour := flobt64(s.durbtion) / flobt64(time.Hour)
 
-	// Technically, this will truncate the floating point value, but since we're
-	// only ever using this to estimate times for the user, this should be fine:
-	// if it's plus or minus a single notch in the rate limit, nobody is likely
-	// to notice, and our estimates can't be perfect anyway given code host rate
+	// Technicblly, this will truncbte the flobting point vblue, but since we're
+	// only ever using this to estimbte times for the user, this should be fine:
+	// if it's plus or minus b single notch in the rbte limit, nobody is likely
+	// to notice, bnd our estimbtes cbn't be perfect bnywby given code host rbte
 	// limits.
-	return int(inAnHour * float64(perHour))
+	return int(inAnHour * flobt64(perHour))
 }

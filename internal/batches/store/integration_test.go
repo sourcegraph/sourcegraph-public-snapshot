@@ -1,57 +1,57 @@
-package store
+pbckbge store
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestIntegrbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 
 	db := dbtest.NewDB(logger, t)
 
 	t.Run("Store", func(t *testing.T) {
-		t.Run("BatchChanges", storeTest(db, nil, testStoreBatchChanges))
-		t.Run("BatchChangesDeletedNamespace", storeTest(db, nil, testBatchChangesDeletedNamespace))
-		t.Run("Changesets", storeTest(db, nil, testStoreChangesets))
-		t.Run("ChangesetEvents", storeTest(db, nil, testStoreChangesetEvents))
-		t.Run("ChangesetScheduling", storeTest(db, nil, testStoreChangesetScheduling))
-		t.Run("ListChangesetSyncData", storeTest(db, nil, testStoreListChangesetSyncData))
-		t.Run("ListChangesetsTextSearch", storeTest(db, nil, testStoreListChangesetsTextSearch))
-		t.Run("BatchSpecs", storeTest(db, nil, testStoreBatchSpecs))
-		t.Run("BatchSpecWorkspaceFiles", storeTest(db, nil, testStoreBatchSpecWorkspaceFiles))
-		t.Run("ChangesetSpecs", storeTest(db, nil, testStoreChangesetSpecs))
-		t.Run("GetRewirerMappingWithArchivedChangesets", storeTest(db, nil, testStoreGetRewirerMappingWithArchivedChangesets))
-		t.Run("ChangesetSpecsCurrentState", storeTest(db, nil, testStoreChangesetSpecsCurrentState))
-		t.Run("ChangesetSpecsCurrentStateAndTextSearch", storeTest(db, nil, testStoreChangesetSpecsCurrentStateAndTextSearch))
-		t.Run("ChangesetSpecsTextSearch", storeTest(db, nil, testStoreChangesetSpecsTextSearch))
-		t.Run("ChangesetSpecsPublishedValues", storeTest(db, nil, testStoreChangesetSpecsPublishedValues))
+		t.Run("BbtchChbnges", storeTest(db, nil, testStoreBbtchChbnges))
+		t.Run("BbtchChbngesDeletedNbmespbce", storeTest(db, nil, testBbtchChbngesDeletedNbmespbce))
+		t.Run("Chbngesets", storeTest(db, nil, testStoreChbngesets))
+		t.Run("ChbngesetEvents", storeTest(db, nil, testStoreChbngesetEvents))
+		t.Run("ChbngesetScheduling", storeTest(db, nil, testStoreChbngesetScheduling))
+		t.Run("ListChbngesetSyncDbtb", storeTest(db, nil, testStoreListChbngesetSyncDbtb))
+		t.Run("ListChbngesetsTextSebrch", storeTest(db, nil, testStoreListChbngesetsTextSebrch))
+		t.Run("BbtchSpecs", storeTest(db, nil, testStoreBbtchSpecs))
+		t.Run("BbtchSpecWorkspbceFiles", storeTest(db, nil, testStoreBbtchSpecWorkspbceFiles))
+		t.Run("ChbngesetSpecs", storeTest(db, nil, testStoreChbngesetSpecs))
+		t.Run("GetRewirerMbppingWithArchivedChbngesets", storeTest(db, nil, testStoreGetRewirerMbppingWithArchivedChbngesets))
+		t.Run("ChbngesetSpecsCurrentStbte", storeTest(db, nil, testStoreChbngesetSpecsCurrentStbte))
+		t.Run("ChbngesetSpecsCurrentStbteAndTextSebrch", storeTest(db, nil, testStoreChbngesetSpecsCurrentStbteAndTextSebrch))
+		t.Run("ChbngesetSpecsTextSebrch", storeTest(db, nil, testStoreChbngesetSpecsTextSebrch))
+		t.Run("ChbngesetSpecsPublishedVblues", storeTest(db, nil, testStoreChbngesetSpecsPublishedVblues))
 		t.Run("CodeHosts", storeTest(db, nil, testStoreCodeHost))
-		t.Run("UserDeleteCascades", storeTest(db, nil, testUserDeleteCascades))
-		t.Run("ChangesetJobs", storeTest(db, nil, testStoreChangesetJobs))
-		t.Run("BulkOperations", storeTest(db, nil, testStoreBulkOperations))
-		t.Run("BatchSpecWorkspaces", storeTest(db, nil, testStoreBatchSpecWorkspaces))
-		t.Run("BatchSpecWorkspaceExecutionJobs", storeTest(db, nil, testStoreBatchSpecWorkspaceExecutionJobs))
-		t.Run("BatchSpecResolutionJobs", storeTest(db, nil, testStoreBatchSpecResolutionJobs))
-		t.Run("BatchSpecExecutionCacheEntries", storeTest(db, nil, testStoreBatchSpecExecutionCacheEntries))
+		t.Run("UserDeleteCbscbdes", storeTest(db, nil, testUserDeleteCbscbdes))
+		t.Run("ChbngesetJobs", storeTest(db, nil, testStoreChbngesetJobs))
+		t.Run("BulkOperbtions", storeTest(db, nil, testStoreBulkOperbtions))
+		t.Run("BbtchSpecWorkspbces", storeTest(db, nil, testStoreBbtchSpecWorkspbces))
+		t.Run("BbtchSpecWorkspbceExecutionJobs", storeTest(db, nil, testStoreBbtchSpecWorkspbceExecutionJobs))
+		t.Run("BbtchSpecResolutionJobs", storeTest(db, nil, testStoreBbtchSpecResolutionJobs))
+		t.Run("BbtchSpecExecutionCbcheEntries", storeTest(db, nil, testStoreBbtchSpecExecutionCbcheEntries))
 
-		for name, key := range map[string]encryption.Key{
+		for nbme, key := rbnge mbp[string]encryption.Key{
 			"no key":   nil,
 			"test key": &et.TestKey{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				t.Run("SiteCredentials", storeTest(db, key, testStoreSiteCredentials))
+			t.Run(nbme, func(t *testing.T) {
+				t.Run("SiteCredentibls", storeTest(db, key, testStoreSiteCredentibls))
 			})
 		}
 	})

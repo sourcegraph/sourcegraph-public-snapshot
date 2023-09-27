@@ -1,16 +1,16 @@
-package unpack
+pbckbge unpbck
 
 import (
-	"archive/tar"
-	"archive/zip"
+	"brchive/tbr"
+	"brchive/zip"
 	"bytes"
 	"compress/gzip"
 	"fmt"
 	"io"
 	"io/fs"
 	"os"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 	"time"
@@ -19,285 +19,285 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
-func TestTgzFallback(t *testing.T) {
-	tarBytes := makeTar(t, &fileInfo{path: "foo", contents: "bar", mode: 0655})
+func TestTgzFbllbbck(t *testing.T) {
+	tbrBytes := mbkeTbr(t, &fileInfo{pbth: "foo", contents: "bbr", mode: 0655})
 
-	t.Run("with-io-read-seeker", func(t *testing.T) {
-		err := Tgz(bytes.NewReader(tarBytes), t.TempDir(), Opts{})
+	t.Run("with-io-rebd-seeker", func(t *testing.T) {
+		err := Tgz(bytes.NewRebder(tbrBytes), t.TempDir(), Opts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	t.Run("without-io-read-seeker", func(t *testing.T) {
-		err := Tgz(bytes.NewBuffer(tarBytes), t.TempDir(), Opts{})
+	t.Run("without-io-rebd-seeker", func(t *testing.T) {
+		err := Tgz(bytes.NewBuffer(tbrBytes), t.TempDir(), Opts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 }
 
-// TestUnpack tests general properties of all unpack functions.
-func TestUnpack(t *testing.T) {
-	type packer struct {
-		name   string
-		unpack func(io.Reader, string, Opts) error
-		pack   func(testing.TB, ...*fileInfo) []byte
+// TestUnpbck tests generbl properties of bll unpbck functions.
+func TestUnpbck(t *testing.T) {
+	type pbcker struct {
+		nbme   string
+		unpbck func(io.Rebder, string, Opts) error
+		pbck   func(testing.TB, ...*fileInfo) []byte
 	}
 
-	type testCase struct {
-		packer
-		name        string
+	type testCbse struct {
+		pbcker
+		nbme        string
 		opts        Opts
 		in          []*fileInfo
 		out         []*fileInfo
 		err         string
-		errContains string
+		errContbins string
 	}
 
-	var testCases []testCase
-	for _, p := range []packer{
-		{"tar", Tar, makeTar},
-		{"tgz", Tgz, makeTgz},
-		{"zip", func(r io.Reader, dir string, opts Opts) error {
-			br := r.(*bytes.Reader)
+	vbr testCbses []testCbse
+	for _, p := rbnge []pbcker{
+		{"tbr", Tbr, mbkeTbr},
+		{"tgz", Tgz, mbkeTgz},
+		{"zip", func(r io.Rebder, dir string, opts Opts) error {
+			br := r.(*bytes.Rebder)
 			return Zip(br, int64(br.Len()), dir, opts)
-		}, makeZip},
+		}, mbkeZip},
 	} {
-		testCases = append(testCases, []testCase{
+		testCbses = bppend(testCbses, []testCbse{
 			{
-				packer: p,
-				name:   "filter",
+				pbcker: p,
+				nbme:   "filter",
 				opts: Opts{
-					Filter: func(path string, file fs.FileInfo) bool {
-						return file.Size() <= 3 && (path == "bar" || path == "foo/bar")
+					Filter: func(pbth string, file fs.FileInfo) bool {
+						return file.Size() <= 3 && (pbth == "bbr" || pbth == "foo/bbr")
 					},
 				},
 				in: []*fileInfo{
-					{path: "big", contents: "E_TOO_BIG", mode: 0655},
-					{path: "bar/baz", contents: "bar", mode: 0655},
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "foo/bar", contents: "bar", mode: 0655},
+					{pbth: "big", contents: "E_TOO_BIG", mode: 0655},
+					{pbth: "bbr/bbz", contents: "bbr", mode: 0655},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
+					{pbth: "foo/bbr", contents: "bbr", mode: 0655},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
-					{path: "foo", mode: fs.ModeDir | 0750},
-					{path: "foo/bar", contents: "bar", mode: 0655, size: 3},
+					{pbth: "bbr", contents: "bbr", mode: 0655, size: 3},
+					{pbth: "foo", mode: fs.ModeDir | 0750},
+					{pbth: "foo/bbr", contents: "bbr", mode: 0655, size: 3},
 				},
 			},
 			{
-				packer: p,
-				name:   "empty-dirs",
+				pbcker: p,
+				nbme:   "empty-dirs",
 				in: []*fileInfo{
-					{path: "foo", mode: fs.ModeDir | 0740},
+					{pbth: "foo", mode: fs.ModeDir | 0740},
 				},
 				out: []*fileInfo{
-					{path: "foo", mode: fs.ModeDir | 0740},
+					{pbth: "foo", mode: fs.ModeDir | 0740},
 				},
 			},
 			{
-				packer: p,
-				name:   "illegal-file-path",
+				pbcker: p,
+				nbme:   "illegbl-file-pbth",
 				in: []*fileInfo{
-					{path: "../../etc/passwd", contents: "foo", mode: 0655},
+					{pbth: "../../etc/pbsswd", contents: "foo", mode: 0655},
 				},
-				err: "../../etc/passwd: illegal file path",
+				err: "../../etc/pbsswd: illegbl file pbth",
 			},
 			{
-				packer: p,
-				name:   "illegal-absolute-link-path",
+				pbcker: p,
+				nbme:   "illegbl-bbsolute-link-pbth",
 				in: []*fileInfo{
-					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
+					{pbth: "pbsswd", contents: "/etc/pbsswd", mode: fs.ModeSymlink},
 				},
-				err: "/etc/passwd: illegal link path",
+				err: "/etc/pbsswd: illegbl link pbth",
 			},
 			{
-				packer: p,
-				name:   "illegal-relative-link-path",
+				pbcker: p,
+				nbme:   "illegbl-relbtive-link-pbth",
 				in: []*fileInfo{
-					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
+					{pbth: "pbsswd", contents: "../../etc/pbsswd", mode: fs.ModeSymlink},
 				},
-				err: "../../etc/passwd: illegal link path",
+				err: "../../etc/pbsswd: illegbl link pbth",
 			},
 			{
-				packer: p,
-				name:   "skip-invalid",
-				opts:   Opts{SkipInvalid: true},
+				pbcker: p,
+				nbme:   "skip-invblid",
+				opts:   Opts{SkipInvblid: true},
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "../../etc/passwd", contents: "foo", mode: 0655},
-					{path: "passwd", contents: "../../etc/passwd", mode: fs.ModeSymlink},
-					{path: "passwd", contents: "/etc/passwd", mode: fs.ModeSymlink},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
+					{pbth: "../../etc/pbsswd", contents: "foo", mode: 0655},
+					{pbth: "pbsswd", contents: "../../etc/pbsswd", mode: fs.ModeSymlink},
+					{pbth: "pbsswd", contents: "/etc/pbsswd", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{pbth: "bbr", contents: "bbr", mode: 0655, size: 3},
 				},
 			},
 			{
-				packer: p,
-				name:   "symbolic-link",
+				pbcker: p,
+				nbme:   "symbolic-link",
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "foo", contents: "bar", mode: fs.ModeSymlink},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
+					{pbth: "foo", contents: "bbr", mode: fs.ModeSymlink},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
-					{path: "foo", contents: "bar", mode: fs.ModeSymlink, size: 3},
+					{pbth: "bbr", contents: "bbr", mode: 0655, size: 3},
+					{pbth: "foo", contents: "bbr", mode: fs.ModeSymlink, size: 3},
 				},
 			},
 			{
-				packer: p,
-				name:   "dir-permissions",
+				pbcker: p,
+				nbme:   "dir-permissions",
 				in: []*fileInfo{
-					{path: "dir", mode: fs.ModeDir},
-					{path: "dir/file1", contents: "x", mode: 0000},
-					{path: "dir/file2", contents: "x", mode: 0200},
-					{path: "dir/file3", contents: "x", mode: 0400},
-					{path: "dir/file4", contents: "x", mode: 0600},
+					{pbth: "dir", mode: fs.ModeDir},
+					{pbth: "dir/file1", contents: "x", mode: 0000},
+					{pbth: "dir/file2", contents: "x", mode: 0200},
+					{pbth: "dir/file3", contents: "x", mode: 0400},
+					{pbth: "dir/file4", contents: "x", mode: 0600},
 				},
 				out: []*fileInfo{
-					{path: "dir", mode: fs.ModeDir | 0700},
-					{path: "dir/file1", contents: "x", mode: 0600, size: 1},
-					{path: "dir/file2", contents: "x", mode: 0600, size: 1},
-					{path: "dir/file3", contents: "x", mode: 0600, size: 1},
-					{path: "dir/file4", contents: "x", mode: 0600, size: 1},
+					{pbth: "dir", mode: fs.ModeDir | 0700},
+					{pbth: "dir/file1", contents: "x", mode: 0600, size: 1},
+					{pbth: "dir/file2", contents: "x", mode: 0600, size: 1},
+					{pbth: "dir/file3", contents: "x", mode: 0600, size: 1},
+					{pbth: "dir/file4", contents: "x", mode: 0600, size: 1},
 				},
 			},
 			{
-				packer: p,
-				name:   "duplicates",
+				pbcker: p,
+				nbme:   "duplicbtes",
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "bar", contents: "bar", mode: 0655},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
 				},
-				errContains: "/bar: file exists",
+				errContbins: "/bbr: file exists",
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{pbth: "bbr", contents: "bbr", mode: 0655, size: 3},
 				},
 			},
 			{
-				packer: p,
-				name:   "skip-duplicates",
-				opts:   Opts{SkipDuplicates: true},
+				pbcker: p,
+				nbme:   "skip-duplicbtes",
+				opts:   Opts{SkipDuplicbtes: true},
 				in: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655},
-					{path: "bar", contents: "bar", mode: 0655},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
+					{pbth: "bbr", contents: "bbr", mode: 0655},
 				},
 				out: []*fileInfo{
-					{path: "bar", contents: "bar", mode: 0655, size: 3},
+					{pbth: "bbr", contents: "bbr", mode: 0655, size: 3},
 				},
 			},
 		}...)
 	}
 
-	for _, tc := range testCases {
-		t.Run(path.Join(tc.packer.name, tc.name), func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(pbth.Join(tc.pbcker.nbme, tc.nbme), func(t *testing.T) {
 			dir := t.TempDir()
 
-			err := tc.unpack(
-				bytes.NewReader(tc.pack(t, tc.in...)),
+			err := tc.unpbck(
+				bytes.NewRebder(tc.pbck(t, tc.in...)),
 				dir,
 				tc.opts,
 			)
 
-			assertError(t, err, tc.err, tc.errContains)
-			assertUnpack(t, dir, tc.out)
+			bssertError(t, err, tc.err, tc.errContbins)
+			bssertUnpbck(t, dir, tc.out)
 		})
 	}
 }
 
-func makeZip(t testing.TB, files ...*fileInfo) []byte {
-	var buf bytes.Buffer
+func mbkeZip(t testing.TB, files ...*fileInfo) []byte {
+	vbr buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
-	for _, f := range files {
-		h, err := zip.FileInfoHeader(f)
+	for _, f := rbnge files {
+		h, err := zip.FileInfoHebder(f)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		h.Name = f.path
-		fw, err := zw.CreateHeader(h)
+		h.Nbme = f.pbth
+		fw, err := zw.CrebteHebder(h)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if len(f.contents) > 0 {
 			if _, err := fw.Write([]byte(f.contents)); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 	}
 
 	if err := zw.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return buf.Bytes()
 }
 
-func makeTgz(t testing.TB, files ...*fileInfo) []byte {
-	var buf bytes.Buffer
+func mbkeTgz(t testing.TB, files ...*fileInfo) []byte {
+	vbr buf bytes.Buffer
 
 	gzw := gzip.NewWriter(&buf)
-	_, err := gzw.Write(makeTar(t, files...))
+	_, err := gzw.Write(mbkeTbr(t, files...))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if err = gzw.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return buf.Bytes()
 }
 
-func makeTar(t testing.TB, files ...*fileInfo) []byte {
-	var buf bytes.Buffer
-	tw := tar.NewWriter(&buf)
+func mbkeTbr(t testing.TB, files ...*fileInfo) []byte {
+	vbr buf bytes.Buffer
+	tw := tbr.NewWriter(&buf)
 
-	for _, f := range makeTarFiles(t, files...) {
-		if err := tw.WriteHeader(f.Header); err != nil {
-			t.Fatal(err)
+	for _, f := rbnge mbkeTbrFiles(t, files...) {
+		if err := tw.WriteHebder(f.Hebder); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if len(f.contents) > 0 && f.mode.IsRegular() {
+		if len(f.contents) > 0 && f.mode.IsRegulbr() {
 			if _, err := tw.Write([]byte(f.contents)); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 	}
 
 	if err := tw.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return buf.Bytes()
 }
 
-func assertError(t testing.TB, have error, want string, wantContains string) {
-	if want == "" && wantContains != "" {
-		haveMessage := fmt.Sprint(have)
-		if !strings.Contains(haveMessage, wantContains) {
-			t.Fatalf("error should contain %q, but doesn't: %q", wantContains, haveMessage)
+func bssertError(t testing.TB, hbve error, wbnt string, wbntContbins string) {
+	if wbnt == "" && wbntContbins != "" {
+		hbveMessbge := fmt.Sprint(hbve)
+		if !strings.Contbins(hbveMessbge, wbntContbins) {
+			t.Fbtblf("error should contbin %q, but doesn't: %q", wbntContbins, hbveMessbge)
 		}
 		return
 	}
 
-	if want == "" {
-		want = "<nil>"
+	if wbnt == "" {
+		wbnt = "<nil>"
 	}
 
-	if diff := cmp.Diff(fmt.Sprint(have), want); diff != "" {
-		t.Fatalf("error mismatch: %s", diff)
+	if diff := cmp.Diff(fmt.Sprint(hbve), wbnt); diff != "" {
+		t.Fbtblf("error mismbtch: %s", diff)
 	}
 }
 
-func assertUnpack(t testing.TB, dir string, want []*fileInfo) {
-	var have []*fileInfo
-	_ = fs.WalkDir(os.DirFS(dir), ".", func(path string, d fs.DirEntry, err error) error {
-		if path != "." {
-			have = append(have, makeFileInfo(t, dir, path, d))
+func bssertUnpbck(t testing.TB, dir string, wbnt []*fileInfo) {
+	vbr hbve []*fileInfo
+	_ = fs.WblkDir(os.DirFS(dir), ".", func(pbth string, d fs.DirEntry, err error) error {
+		if pbth != "." {
+			hbve = bppend(hbve, mbkeFileInfo(t, dir, pbth, d))
 		}
 		return nil
 	})
@@ -307,71 +307,71 @@ func assertUnpack(t testing.TB, dir string, want []*fileInfo) {
 		cmpopts.IgnoreFields(fileInfo{}, "modtime"),
 	}
 
-	if diff := cmp.Diff(want, have, cmpOpts...); diff != "" {
-		t.Errorf("files mismatch: %s", diff)
+	if diff := cmp.Diff(wbnt, hbve, cmpOpts...); diff != "" {
+		t.Errorf("files mismbtch: %s", diff)
 	}
 }
 
-type tarFile struct {
-	*tar.Header
+type tbrFile struct {
+	*tbr.Hebder
 	*fileInfo
 }
 
-func makeTarFiles(t testing.TB, fs ...*fileInfo) []*tarFile {
-	tfs := make([]*tarFile, 0, len(fs))
-	for _, f := range fs {
+func mbkeTbrFiles(t testing.TB, fs ...*fileInfo) []*tbrFile {
+	tfs := mbke([]*tbrFile, 0, len(fs))
+	for _, f := rbnge fs {
 		link := ""
 		if f.mode&os.ModeSymlink != 0 {
 			link = f.contents
 		}
 
-		header, err := tar.FileInfoHeader(f, link)
+		hebder, err := tbr.FileInfoHebder(f, link)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		header.Name = f.path
-		tfs = append(tfs, &tarFile{Header: header, fileInfo: f})
+		hebder.Nbme = f.pbth
+		tfs = bppend(tfs, &tbrFile{Hebder: hebder, fileInfo: f})
 	}
 	return tfs
 }
 
 type fileInfo struct {
-	path     string
+	pbth     string
 	mode     fs.FileMode
 	modtime  time.Time
 	contents string
 	size     int64
 }
 
-func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
+func mbkeFileInfo(t testing.TB, dir, pbth string, d fs.DirEntry) *fileInfo {
 	info, err := d.Info()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var (
+	vbr (
 		contents []byte
 		mode     = info.Mode()
 	)
 
 	if !d.IsDir() {
-		name := filepath.Join(dir, path)
+		nbme := filepbth.Join(dir, pbth)
 		if mode&fs.ModeSymlink != 0 {
-			link, err := os.Readlink(name)
+			link, err := os.Rebdlink(nbme)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			// Different OSes set different permissions in a symlink so we ignore them.
+			// Different OSes set different permissions in b symlink so we ignore them.
 			mode = fs.ModeSymlink
 			contents = []byte(link)
-		} else if contents, err = os.ReadFile(name); err != nil {
-			t.Fatal(err)
+		} else if contents, err = os.RebdFile(nbme); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
 	return &fileInfo{
-		path:     path,
+		pbth:     pbth,
 		mode:     mode,
 		modtime:  info.ModTime(),
 		contents: string(contents),
@@ -379,9 +379,9 @@ func makeFileInfo(t testing.TB, dir, path string, d fs.DirEntry) *fileInfo {
 	}
 }
 
-var _ fs.FileInfo = &fileInfo{}
+vbr _ fs.FileInfo = &fileInfo{}
 
-func (f *fileInfo) Name() string { return path.Base(f.path) }
+func (f *fileInfo) Nbme() string { return pbth.Bbse(f.pbth) }
 func (f *fileInfo) Size() int64 {
 	if f.size != 0 {
 		return f.size
@@ -391,4 +391,4 @@ func (f *fileInfo) Size() int64 {
 func (f *fileInfo) Mode() fs.FileMode  { return f.mode }
 func (f *fileInfo) ModTime() time.Time { return f.modtime }
 func (f *fileInfo) IsDir() bool        { return f.mode.IsDir() }
-func (f *fileInfo) Sys() any           { return nil }
+func (f *fileInfo) Sys() bny           { return nil }

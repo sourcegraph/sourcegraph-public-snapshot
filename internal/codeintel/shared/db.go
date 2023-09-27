@@ -1,37 +1,37 @@
-package stores
+pbckbge stores
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type CodeIntelDB interface {
+type CodeIntelDB interfbce {
 	dbutil.DB
-	basestore.ShareableStore
+	bbsestore.ShbrebbleStore
 
-	Transact(context.Context) (CodeIntelDB, error)
+	Trbnsbct(context.Context) (CodeIntelDB, error)
 	Done(error) error
 }
 
 func NewCodeIntelDB(logger log.Logger, inner *sql.DB) CodeIntelDB {
-	return &codeIntelDB{basestore.NewWithHandle(basestore.NewHandleWithDB(logger, inner, sql.TxOptions{}))}
+	return &codeIntelDB{bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, inner, sql.TxOptions{}))}
 }
 
-func NewCodeIntelDBWith(other basestore.ShareableStore) CodeIntelDB {
-	return &codeIntelDB{basestore.NewWithHandle(other.Handle())}
+func NewCodeIntelDBWith(other bbsestore.ShbrebbleStore) CodeIntelDB {
+	return &codeIntelDB{bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
 type codeIntelDB struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-func (d *codeIntelDB) Transact(ctx context.Context) (CodeIntelDB, error) {
-	tx, err := d.Store.Transact(ctx)
+func (d *codeIntelDB) Trbnsbct(ctx context.Context) (CodeIntelDB, error) {
+	tx, err := d.Store.Trbnsbct(ctx)
 	return &codeIntelDB{tx}, err
 }
 
@@ -39,14 +39,14 @@ func (db *codeIntelDB) Done(err error) error {
 	return db.Store.Done(err)
 }
 
-func (db *codeIntelDB) QueryContext(ctx context.Context, q string, args ...any) (*sql.Rows, error) {
-	return db.Handle().QueryContext(ctx, q, args...)
+func (db *codeIntelDB) QueryContext(ctx context.Context, q string, brgs ...bny) (*sql.Rows, error) {
+	return db.Hbndle().QueryContext(ctx, q, brgs...)
 }
 
-func (db *codeIntelDB) ExecContext(ctx context.Context, q string, args ...any) (sql.Result, error) {
-	return db.Handle().ExecContext(ctx, q, args...)
+func (db *codeIntelDB) ExecContext(ctx context.Context, q string, brgs ...bny) (sql.Result, error) {
+	return db.Hbndle().ExecContext(ctx, q, brgs...)
 }
 
-func (db *codeIntelDB) QueryRowContext(ctx context.Context, q string, args ...any) *sql.Row {
-	return db.Handle().QueryRowContext(ctx, q, args...)
+func (db *codeIntelDB) QueryRowContext(ctx context.Context, q string, brgs ...bny) *sql.Row {
+	return db.Hbndle().QueryRowContext(ctx, q, brgs...)
 }

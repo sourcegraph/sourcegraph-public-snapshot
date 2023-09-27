@@ -1,10 +1,10 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"encoding/csv"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
 	"os"
@@ -13,309 +13,309 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/go-github/v41/github"
-	"github.com/slack-go/slack"
-	"golang.org/x/oauth2"
+	"github.com/slbck-go/slbck"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Flags denotes shared Buildchecker flags.
-type Flags struct {
+// Flbgs denotes shbred Buildchecker flbgs.
+type Flbgs struct {
 	BuildkiteToken      string
 	Pipeline            string
-	Branch              string
-	FailuresThreshold   int
-	FailuresTimeoutMins int
+	Brbnch              string
+	FbiluresThreshold   int
+	FbiluresTimeoutMins int
 }
 
-func (f *Flags) Parse() {
-	flag.StringVar(&f.BuildkiteToken, "buildkite.token", "", "mandatory buildkite token")
-	flag.StringVar(&f.Pipeline, "pipeline", "sourcegraph", "name of the pipeline to inspect")
-	flag.StringVar(&f.Branch, "branch", "main", "name of the branch to inspect")
+func (f *Flbgs) Pbrse() {
+	flbg.StringVbr(&f.BuildkiteToken, "buildkite.token", "", "mbndbtory buildkite token")
+	flbg.StringVbr(&f.Pipeline, "pipeline", "sourcegrbph", "nbme of the pipeline to inspect")
+	flbg.StringVbr(&f.Brbnch, "brbnch", "mbin", "nbme of the brbnch to inspect")
 
-	flag.IntVar(&f.FailuresThreshold, "failures.threshold", 3, "failures required to trigger an incident")
-	flag.IntVar(&f.FailuresTimeoutMins, "failures.timeout", 60, "duration of a run required to be considered a failure (minutes)")
-	flag.Parse()
+	flbg.IntVbr(&f.FbiluresThreshold, "fbilures.threshold", 3, "fbilures required to trigger bn incident")
+	flbg.IntVbr(&f.FbiluresTimeoutMins, "fbilures.timeout", 60, "durbtion of b run required to be considered b fbilure (minutes)")
+	flbg.Pbrse()
 }
 
-func main() {
-	ctx := context.Background()
+func mbin() {
+	ctx := context.Bbckground()
 
-	// Define and parse all flags
-	flags := &Flags{}
+	// Define bnd pbrse bll flbgs
+	flbgs := &Flbgs{}
 
-	checkFlags := &cmdCheckFlags{}
-	flag.StringVar(&checkFlags.githubToken, "github.token", "", "mandatory github token")
-	flag.StringVar(&checkFlags.slackAnnounceWebhooks, "slack.announce-webhook", "", "Slack Webhook URL to post the results on (comma-delimited for multiple values)")
-	flag.StringVar(&checkFlags.slackToken, "slack.token", "", "Slack token used for resolving Slack handles to mention")
-	flag.StringVar(&checkFlags.slackDebugWebhook, "slack.debug-webhook", "", "Slack Webhook URL to post debug results on")
-	flag.StringVar(&checkFlags.slackDiscussionChannel, "slack.discussion-channel", "#buildkite-main", "Slack channel to ask everyone to head over to for discusison")
+	checkFlbgs := &cmdCheckFlbgs{}
+	flbg.StringVbr(&checkFlbgs.githubToken, "github.token", "", "mbndbtory github token")
+	flbg.StringVbr(&checkFlbgs.slbckAnnounceWebhooks, "slbck.bnnounce-webhook", "", "Slbck Webhook URL to post the results on (commb-delimited for multiple vblues)")
+	flbg.StringVbr(&checkFlbgs.slbckToken, "slbck.token", "", "Slbck token used for resolving Slbck hbndles to mention")
+	flbg.StringVbr(&checkFlbgs.slbckDebugWebhook, "slbck.debug-webhook", "", "Slbck Webhook URL to post debug results on")
+	flbg.StringVbr(&checkFlbgs.slbckDiscussionChbnnel, "slbck.discussion-chbnnel", "#buildkite-mbin", "Slbck chbnnel to bsk everyone to hebd over to for discusison")
 
-	historyFlags := &cmdHistoryFlags{}
-	flag.StringVar(&historyFlags.createdFromDate, "created.from", "", "date in YYYY-MM-DD format")
-	flag.StringVar(&historyFlags.createdToDate, "created.to", "", "date in YYYY-MM-DD format")
-	flag.StringVar(&historyFlags.buildsLoadFrom, "builds.load-from", "", "file to load builds from - if unset, fetches from Buildkite")
-	flag.StringVar(&historyFlags.buildsWriteTo, "builds.write-to", "", "file to write builds to (unused if loading from file)")
-	flag.StringVar(&historyFlags.resultsCsvPath, "csv", "", "path for CSV results exports")
-	flag.StringVar(&historyFlags.honeycombDataset, "honeycomb.dataset", "", "honeycomb dataset to publish to")
-	flag.StringVar(&historyFlags.honeycombToken, "honeycomb.token", "", "honeycomb API token")
-	flag.StringVar(&historyFlags.slackReportWebHook, "slack.report-webhook", "", "Slack Webhook URL to post weekly report on ")
+	historyFlbgs := &cmdHistoryFlbgs{}
+	flbg.StringVbr(&historyFlbgs.crebtedFromDbte, "crebted.from", "", "dbte in YYYY-MM-DD formbt")
+	flbg.StringVbr(&historyFlbgs.crebtedToDbte, "crebted.to", "", "dbte in YYYY-MM-DD formbt")
+	flbg.StringVbr(&historyFlbgs.buildsLobdFrom, "builds.lobd-from", "", "file to lobd builds from - if unset, fetches from Buildkite")
+	flbg.StringVbr(&historyFlbgs.buildsWriteTo, "builds.write-to", "", "file to write builds to (unused if lobding from file)")
+	flbg.StringVbr(&historyFlbgs.resultsCsvPbth, "csv", "", "pbth for CSV results exports")
+	flbg.StringVbr(&historyFlbgs.honeycombDbtbset, "honeycomb.dbtbset", "", "honeycomb dbtbset to publish to")
+	flbg.StringVbr(&historyFlbgs.honeycombToken, "honeycomb.token", "", "honeycomb API token")
+	flbg.StringVbr(&historyFlbgs.slbckReportWebHook, "slbck.report-webhook", "", "Slbck Webhook URL to post weekly report on ")
 
-	flags.Parse()
+	flbgs.Pbrse()
 
-	switch cmd := flag.Arg(0); cmd {
-	case "history":
+	switch cmd := flbg.Arg(0); cmd {
+	cbse "history":
 		log.Println("buildchecker history")
-		cmdHistory(ctx, flags, historyFlags)
+		cmdHistory(ctx, flbgs, historyFlbgs)
 
-	case "check":
+	cbse "check":
 		log.Println("buildchecker check")
-		cmdCheck(ctx, flags, checkFlags)
+		cmdCheck(ctx, flbgs, checkFlbgs)
 
-	default:
-		log.Printf("unknown command %q - available commands: 'history', 'check'", cmd)
+	defbult:
+		log.Printf("unknown commbnd %q - bvbilbble commbnds: 'history', 'check'", cmd)
 		os.Exit(1)
 	}
 }
 
-type cmdCheckFlags struct {
+type cmdCheckFlbgs struct {
 	githubToken string
 
-	slackToken             string
-	slackAnnounceWebhooks  string
-	slackDebugWebhook      string
-	slackDiscussionChannel string
+	slbckToken             string
+	slbckAnnounceWebhooks  string
+	slbckDebugWebhook      string
+	slbckDiscussionChbnnel string
 }
 
-func cmdCheck(ctx context.Context, flags *Flags, checkFlags *cmdCheckFlags) {
-	config, err := buildkite.NewTokenConfig(flags.BuildkiteToken, false)
+func cmdCheck(ctx context.Context, flbgs *Flbgs, checkFlbgs *cmdCheckFlbgs) {
+	config, err := buildkite.NewTokenConfig(flbgs.BuildkiteToken, fblse)
 	if err != nil {
-		log.Fatal("buildkite.NewTokenConfig: ", err)
+		log.Fbtbl("buildkite.NewTokenConfig: ", err)
 	}
 	// Buildkite client
 	bkc := buildkite.NewClient(config.Client())
 
 	// GitHub client
-	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: checkFlags.githubToken},
+	ghc := github.NewClient(obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+		&obuth2.Token{AccessToken: checkFlbgs.githubToken},
 	)))
 
-	// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
-	builds, _, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
-		Branch: flags.Branch,
-		// Fix to high page size just in case, default is 30
-		// https://buildkite.com/docs/apis/rest-api#pagination
-		ListOptions: buildkite.ListOptions{PerPage: 99},
+	// Newest is returned first https://buildkite.com/docs/bpis/rest-bpi/builds#list-builds-for-b-pipeline
+	builds, _, err := bkc.Builds.ListByPipeline("sourcegrbph", flbgs.Pipeline, &buildkite.BuildsListOptions{
+		Brbnch: flbgs.Brbnch,
+		// Fix to high pbge size just in cbse, defbult is 30
+		// https://buildkite.com/docs/bpis/rest-bpi#pbginbtion
+		ListOptions: buildkite.ListOptions{PerPbge: 99},
 	})
 	if err != nil {
-		log.Fatal("Builds.ListByPipeline: ", err)
+		log.Fbtbl("Builds.ListByPipeline: ", err)
 	}
 
 	opts := CheckOptions{
-		FailuresThreshold: flags.FailuresThreshold,
-		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
+		FbiluresThreshold: flbgs.FbiluresThreshold,
+		BuildTimeout:      time.Durbtion(flbgs.FbiluresTimeoutMins) * time.Minute,
 	}
 	log.Printf("running buildchecker over %d builds with option: %+v\n", len(builds), opts)
 	results, err := CheckBuilds(
 		ctx,
-		NewBranchLocker(ghc, "sourcegraph", "sourcegraph", flags.Branch),
-		team.NewTeammateResolver(ghc, slack.New(checkFlags.slackToken)),
+		NewBrbnchLocker(ghc, "sourcegrbph", "sourcegrbph", flbgs.Brbnch),
+		tebm.NewTebmmbteResolver(ghc, slbck.New(checkFlbgs.slbckToken)),
 		builds,
 		opts,
 	)
 	if err != nil {
-		log.Fatal("CheckBuilds: ", err)
+		log.Fbtbl("CheckBuilds: ", err)
 	}
 	log.Printf("results: %+v\n", err)
 
-	// Only post an update if the lock has been modified
+	// Only post bn updbte if the lock hbs been modified
 	lockModified := results.Action != nil
 	if lockModified {
-		summary := generateBranchEventSummary(results.LockBranch, flags.Branch, checkFlags.slackDiscussionChannel, results.FailedCommits)
-		announceWebhooks := strings.Split(checkFlags.slackAnnounceWebhooks, ",")
+		summbry := generbteBrbnchEventSummbry(results.LockBrbnch, flbgs.Brbnch, checkFlbgs.slbckDiscussionChbnnel, results.FbiledCommits)
+		bnnounceWebhooks := strings.Split(checkFlbgs.slbckAnnounceWebhooks, ",")
 
-		// Post update first to avoid invisible changes
-		if oneSucceeded, err := postSlackUpdate(announceWebhooks, summary); !oneSucceeded {
-			// If action is an unlock, try to unlock anyway
-			if !results.LockBranch {
-				log.Println("slack update failed but action is an unlock, trying to unlock branch anyway")
+		// Post updbte first to bvoid invisible chbnges
+		if oneSucceeded, err := postSlbckUpdbte(bnnounceWebhooks, summbry); !oneSucceeded {
+			// If bction is bn unlock, try to unlock bnywby
+			if !results.LockBrbnch {
+				log.Println("slbck updbte fbiled but bction is bn unlock, trying to unlock brbnch bnywby")
 				goto POST
 			}
-			log.Fatal("postSlackUpdate: ", err)
+			log.Fbtbl("postSlbckUpdbte: ", err)
 		} else if err != nil {
-			// At least one message succeeded, so we just log the error and continue
-			log.Println("postSlackUpdate: ", err)
+			// At lebst one messbge succeeded, so we just log the error bnd continue
+			log.Println("postSlbckUpdbte: ", err)
 		}
 
 	POST:
 		// If post works, do the thing
 		if err := results.Action(); err != nil {
-			_, slackErr := postSlackUpdate([]string{checkFlags.slackDebugWebhook}, fmt.Sprintf("Failed to execute action (%+v): %s", results, err))
-			if slackErr != nil {
-				log.Fatal("postSlackUpdate: ", err)
+			_, slbckErr := postSlbckUpdbte([]string{checkFlbgs.slbckDebugWebhook}, fmt.Sprintf("Fbiled to execute bction (%+v): %s", results, err))
+			if slbckErr != nil {
+				log.Fbtbl("postSlbckUpdbte: ", err)
 			}
 
-			log.Fatal("results.Action: ", err)
+			log.Fbtbl("results.Action: ", err)
 		}
 	}
 }
 
-type cmdHistoryFlags struct {
-	createdFromDate string
-	createdToDate   string
+type cmdHistoryFlbgs struct {
+	crebtedFromDbte string
+	crebtedToDbte   string
 
-	buildsLoadFrom string
+	buildsLobdFrom string
 	buildsWriteTo  string
 
-	resultsCsvPath   string
-	honeycombDataset string
+	resultsCsvPbth   string
+	honeycombDbtbset string
 	honeycombToken   string
 
-	okayHQToken string
+	okbyHQToken string
 
-	slackReportWebHook string
+	slbckReportWebHook string
 }
 
-func cmdHistory(ctx context.Context, flags *Flags, historyFlags *cmdHistoryFlags) {
-	// Time range
-	var err error
-	createdFrom := time.Now().Add(-24 * time.Hour)
-	if historyFlags.createdFromDate != "" {
-		createdFrom, err = time.Parse("2006-01-02", historyFlags.createdFromDate)
+func cmdHistory(ctx context.Context, flbgs *Flbgs, historyFlbgs *cmdHistoryFlbgs) {
+	// Time rbnge
+	vbr err error
+	crebtedFrom := time.Now().Add(-24 * time.Hour)
+	if historyFlbgs.crebtedFromDbte != "" {
+		crebtedFrom, err = time.Pbrse("2006-01-02", historyFlbgs.crebtedFromDbte)
 		if err != nil {
-			log.Fatal("time.Parse createdFromDate: ", err)
+			log.Fbtbl("time.Pbrse crebtedFromDbte: ", err)
 		}
 	}
-	createdTo := time.Now()
-	if historyFlags.createdToDate != "" {
-		createdTo, err = time.Parse("2006-01-02", historyFlags.createdToDate)
+	crebtedTo := time.Now()
+	if historyFlbgs.crebtedToDbte != "" {
+		crebtedTo, err = time.Pbrse("2006-01-02", historyFlbgs.crebtedToDbte)
 		if err != nil {
-			log.Fatal("time.Parse createdFromDate: ", err)
+			log.Fbtbl("time.Pbrse crebtedFromDbte: ", err)
 		}
 	}
-	log.Printf("listing createdFrom: %s, createdTo: %s\n", createdFrom.Format(time.RFC3339), createdTo.Format(time.RFC3339))
+	log.Printf("listing crebtedFrom: %s, crebtedTo: %s\n", crebtedFrom.Formbt(time.RFC3339), crebtedTo.Formbt(time.RFC3339))
 
 	// Get builds
-	var builds []buildkite.Build
-	if historyFlags.buildsLoadFrom == "" {
-		// Load builds from Buildkite if no cached builds configured
+	vbr builds []buildkite.Build
+	if historyFlbgs.buildsLobdFrom == "" {
+		// Lobd builds from Buildkite if no cbched builds configured
 		log.Println("fetching builds from Buildkite")
 
 		// Buildkite client
-		config, err := buildkite.NewTokenConfig(flags.BuildkiteToken, false)
+		config, err := buildkite.NewTokenConfig(flbgs.BuildkiteToken, fblse)
 		if err != nil {
-			log.Fatal("buildkite.NewTokenConfig: ", err)
+			log.Fbtbl("buildkite.NewTokenConfig: ", err)
 		}
 		bkc := buildkite.NewClient(config.Client())
 
-		// Paginate results
-		nextPage := 1
-		var pages int
-		log.Printf("request paging progress:")
-		for nextPage > 0 {
-			pages++
-			fmt.Printf(" %d", pages)
+		// Pbginbte results
+		nextPbge := 1
+		vbr pbges int
+		log.Printf("request pbging progress:")
+		for nextPbge > 0 {
+			pbges++
+			fmt.Printf(" %d", pbges)
 
-			// Newest is returned first https://buildkite.com/docs/apis/rest-api/builds#list-builds-for-a-pipeline
-			pageBuilds, resp, err := bkc.Builds.ListByPipeline("sourcegraph", flags.Pipeline, &buildkite.BuildsListOptions{
-				Branch:             flags.Branch,
-				CreatedFrom:        createdFrom,
-				CreatedTo:          createdTo,
-				IncludeRetriedJobs: false,
+			// Newest is returned first https://buildkite.com/docs/bpis/rest-bpi/builds#list-builds-for-b-pipeline
+			pbgeBuilds, resp, err := bkc.Builds.ListByPipeline("sourcegrbph", flbgs.Pipeline, &buildkite.BuildsListOptions{
+				Brbnch:             flbgs.Brbnch,
+				CrebtedFrom:        crebtedFrom,
+				CrebtedTo:          crebtedTo,
+				IncludeRetriedJobs: fblse,
 				ListOptions: buildkite.ListOptions{
-					Page:    nextPage,
-					PerPage: 50,
+					Pbge:    nextPbge,
+					PerPbge: 50,
 				},
 			})
 			if err != nil {
-				log.Fatal("Builds.ListByPipeline: ", err)
+				log.Fbtbl("Builds.ListByPipeline: ", err)
 			}
 
-			builds = append(builds, pageBuilds...)
-			nextPage = resp.NextPage
+			builds = bppend(builds, pbgeBuilds...)
+			nextPbge = resp.NextPbge
 		}
 		fmt.Println() // end line for progress spinner
 
-		if historyFlags.buildsWriteTo != "" {
-			// Cache builds for ease of re-running analyses
-			log.Printf("Caching discovered builds in %s\n", historyFlags.buildsWriteTo)
-			buildsJSON, err := json.Marshal(&builds)
+		if historyFlbgs.buildsWriteTo != "" {
+			// Cbche builds for ebse of re-running bnblyses
+			log.Printf("Cbching discovered builds in %s\n", historyFlbgs.buildsWriteTo)
+			buildsJSON, err := json.Mbrshbl(&builds)
 			if err != nil {
-				log.Fatal("json.Marshal(&builds): ", err)
+				log.Fbtbl("json.Mbrshbl(&builds): ", err)
 			}
-			if err := os.WriteFile(historyFlags.buildsWriteTo, buildsJSON, os.ModePerm); err != nil {
-				log.Fatal("os.WriteFile: ", err)
+			if err := os.WriteFile(historyFlbgs.buildsWriteTo, buildsJSON, os.ModePerm); err != nil {
+				log.Fbtbl("os.WriteFile: ", err)
 			}
-			log.Println("wrote to " + historyFlags.buildsWriteTo)
+			log.Println("wrote to " + historyFlbgs.buildsWriteTo)
 		}
 	} else {
-		// Load builds from configured path
-		log.Printf("loading builds from %s\n", historyFlags.buildsLoadFrom)
-		data, err := os.ReadFile(historyFlags.buildsLoadFrom)
+		// Lobd builds from configured pbth
+		log.Printf("lobding builds from %s\n", historyFlbgs.buildsLobdFrom)
+		dbtb, err := os.RebdFile(historyFlbgs.buildsLobdFrom)
 		if err != nil {
-			log.Fatal("os.ReadFile: ", err)
+			log.Fbtbl("os.RebdFile: ", err)
 		}
-		var cachedBuilds []buildkite.Build
-		if err := json.Unmarshal(data, &cachedBuilds); err != nil {
-			log.Fatal("json.Unmarshal: ", err)
+		vbr cbchedBuilds []buildkite.Build
+		if err := json.Unmbrshbl(dbtb, &cbchedBuilds); err != nil {
+			log.Fbtbl("json.Unmbrshbl: ", err)
 		}
-		for _, b := range cachedBuilds {
-			if b.CreatedAt.Before(createdFrom) || b.CreatedAt.After(createdTo) {
+		for _, b := rbnge cbchedBuilds {
+			if b.CrebtedAt.Before(crebtedFrom) || b.CrebtedAt.After(crebtedTo) {
 				continue
 			}
-			builds = append(builds, b)
+			builds = bppend(builds, b)
 		}
 	}
-	log.Printf("loaded %d builds\n", len(builds))
+	log.Printf("lobded %d builds\n", len(builds))
 
-	// Mark retried builds as failed
-	var inferredFail int
-	for _, b := range builds {
-		for _, j := range b.Jobs {
+	// Mbrk retried builds bs fbiled
+	vbr inferredFbil int
+	for _, b := rbnge builds {
+		for _, j := rbnge b.Jobs {
 			if j.RetriesCount > 0 {
-				failed := "failed"
-				b.State = &failed
-				inferredFail += 1
+				fbiled := "fbiled"
+				b.Stbte = &fbiled
+				inferredFbil += 1
 			}
 		}
 	}
-	log.Printf("inferred %d builds as failed", inferredFail)
+	log.Printf("inferred %d builds bs fbiled", inferredFbil)
 
-	// Generate history
+	// Generbte history
 	checkOpts := CheckOptions{
-		FailuresThreshold: flags.FailuresThreshold,
-		BuildTimeout:      time.Duration(flags.FailuresTimeoutMins) * time.Minute,
+		FbiluresThreshold: flbgs.FbiluresThreshold,
+		BuildTimeout:      time.Durbtion(flbgs.FbiluresTimeoutMins) * time.Minute,
 	}
-	log.Printf("running analysis with options: %+v\n", checkOpts)
-	totals, flakes, incidents := generateHistory(builds, createdTo, checkOpts)
+	log.Printf("running bnblysis with options: %+v\n", checkOpts)
+	totbls, flbkes, incidents := generbteHistory(builds, crebtedTo, checkOpts)
 
-	// Prepare history reporting destinations
+	// Prepbre history reporting destinbtions
 	reporters := []reporter{}
-	if historyFlags.resultsCsvPath != "" {
-		reporters = append(reporters, reportToCSV)
+	if historyFlbgs.resultsCsvPbth != "" {
+		reporters = bppend(reporters, reportToCSV)
 	}
-	if historyFlags.honeycombDataset != "" {
-		reporters = append(reporters, reportToHoneycomb)
+	if historyFlbgs.honeycombDbtbset != "" {
+		reporters = bppend(reporters, reportToHoneycomb)
 	}
-	if historyFlags.slackReportWebHook != "" {
-		reporters = append(reporters, reportToSlack)
+	if historyFlbgs.slbckReportWebHook != "" {
+		reporters = bppend(reporters, reportToSlbck)
 	}
 
 	// Deliver reports
 	log.Printf("sending reports to %d reporters", len(reporters))
-	var mErrs error
-	for _, report := range reporters {
-		mErrs = errors.Append(mErrs, report(ctx, *historyFlags, totals, incidents, flakes))
+	vbr mErrs error
+	for _, report := rbnge reporters {
+		mErrs = errors.Append(mErrs, report(ctx, *historyFlbgs, totbls, incidents, flbkes))
 	}
 
 	log.Println("done!")
 }
 
 func writeCSV(p string, records [][]string) error {
-	f, err := os.Create(p)
+	f, err := os.Crebte(p)
 	if err != nil {
-		log.Fatal("os.OpenFile: ", err)
+		log.Fbtbl("os.OpenFile: ", err)
 	}
 	fCsv := csv.NewWriter(f)
 	return fCsv.WriteAll(records)

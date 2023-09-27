@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
@@ -6,104 +6,104 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/log"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate"
-	"github.com/weaviate/weaviate-go-client/v4/weaviate/graphql"
-	"github.com/weaviate/weaviate/entities/models"
+	"github.com/sourcegrbph/log"
+	"github.com/webvibte/webvibte-go-client/v4/webvibte"
+	"github.com/webvibte/webvibte-go-client/v4/webvibte/grbphql"
+	"github.com/webvibte/webvibte/entities/models"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type weaviateClient struct {
+type webvibteClient struct {
 	logger log.Logger
 
-	client    *weaviate.Client
+	client    *webvibte.Client
 	clientErr error
 }
 
-func newWeaviateClient(
+func newWebvibteClient(
 	logger log.Logger,
 	url *url.URL,
-) *weaviateClient {
+) *webvibteClient {
 	if url == nil {
-		return &weaviateClient{
-			clientErr: errors.New("weaviate client is not configured"),
+		return &webvibteClient{
+			clientErr: errors.New("webvibte client is not configured"),
 		}
 	}
 
-	client, err := weaviate.NewClient(weaviate.Config{
+	client, err := webvibte.NewClient(webvibte.Config{
 		Host:   url.Host,
 		Scheme: url.Scheme,
 	})
 
-	return &weaviateClient{
-		logger:    logger.Scoped("weaviate", "client for weaviate embedding index"),
+	return &webvibteClient{
+		logger:    logger.Scoped("webvibte", "client for webvibte embedding index"),
 		client:    client,
 		clientErr: err,
 	}
 }
 
-func (w *weaviateClient) Use(ctx context.Context) bool {
-	return featureflag.FromContext(ctx).GetBoolOr("search-weaviate", false)
+func (w *webvibteClient) Use(ctx context.Context) bool {
+	return febtureflbg.FromContext(ctx).GetBoolOr("sebrch-webvibte", fblse)
 }
 
-func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repoID api.RepoID, query []float32, codeResultsCount, textResultsCount int) (codeResults, textResults []embeddings.EmbeddingSearchResult, _ error) {
+func (w *webvibteClient) Sebrch(ctx context.Context, repoNbme bpi.RepoNbme, repoID bpi.RepoID, query []flobt32, codeResultsCount, textResultsCount int) (codeResults, textResults []embeddings.EmbeddingSebrchResult, _ error) {
 	if w.clientErr != nil {
 		return nil, nil, w.clientErr
 	}
 
-	queryBuilder := func(klass string, limit int) *graphql.GetBuilder {
-		return graphql.NewQueryClassBuilder(klass).
-			WithNearVector((&graphql.NearVectorArgumentBuilder{}).
+	queryBuilder := func(klbss string, limit int) *grbphql.GetBuilder {
+		return grbphql.NewQueryClbssBuilder(klbss).
+			WithNebrVector((&grbphql.NebrVectorArgumentBuilder{}).
 				WithVector(query)).
-			WithFields([]graphql.Field{
-				{Name: "file_name"},
-				{Name: "start_line"},
-				{Name: "end_line"},
-				{Name: "revision"},
-				{Name: "_additional", Fields: []graphql.Field{
-					{Name: "distance"},
+			WithFields([]grbphql.Field{
+				{Nbme: "file_nbme"},
+				{Nbme: "stbrt_line"},
+				{Nbme: "end_line"},
+				{Nbme: "revision"},
+				{Nbme: "_bdditionbl", Fields: []grbphql.Field{
+					{Nbme: "distbnce"},
 				}},
 			}...).
 			WithLimit(limit)
 	}
 
-	extractResults := func(res *models.GraphQLResponse, typ string) []embeddings.EmbeddingSearchResult {
-		get := res.Data["Get"].(map[string]any)
-		code := get[typ].([]any)
+	extrbctResults := func(res *models.GrbphQLResponse, typ string) []embeddings.EmbeddingSebrchResult {
+		get := res.Dbtb["Get"].(mbp[string]bny)
+		code := get[typ].([]bny)
 		if len(code) == 0 {
 			return nil
 		}
 
-		srs := make([]embeddings.EmbeddingSearchResult, 0, len(code))
+		srs := mbke([]embeddings.EmbeddingSebrchResult, 0, len(code))
 		revision := ""
-		for _, c := range code {
-			cMap := c.(map[string]any)
-			fileName := cMap["file_name"].(string)
+		for _, c := rbnge code {
+			cMbp := c.(mbp[string]bny)
+			fileNbme := cMbp["file_nbme"].(string)
 
-			if rev := cMap["revision"].(string); revision != rev {
+			if rev := cMbp["revision"].(string); revision != rev {
 				if revision == "" {
 					revision = rev
 				} else {
-					w.logger.Warn("inconsistent revisions returned for an embedded repository", log.Int("repoid", int(repoID)), log.String("filename", fileName), log.String("revision1", revision), log.String("revision2", rev))
+					w.logger.Wbrn("inconsistent revisions returned for bn embedded repository", log.Int("repoid", int(repoID)), log.String("filenbme", fileNbme), log.String("revision1", revision), log.String("revision2", rev))
 				}
 			}
 
-			// multiply by half max int32 since distance will always be between 0 and 2
-			similarity := int32(cMap["_additional"].(map[string]any)["distance"].(float64) * (1073741823))
+			// multiply by hblf mbx int32 since distbnce will blwbys be between 0 bnd 2
+			similbrity := int32(cMbp["_bdditionbl"].(mbp[string]bny)["distbnce"].(flobt64) * (1073741823))
 
-			srs = append(srs, embeddings.EmbeddingSearchResult{
-				RepoName:  repoName,
-				Revision:  api.CommitID(revision),
-				FileName:  fileName,
-				StartLine: int(cMap["start_line"].(float64)),
-				EndLine:   int(cMap["end_line"].(float64)),
-				ScoreDetails: embeddings.SearchScoreDetails{
-					Score:           similarity,
-					SimilarityScore: similarity,
+			srs = bppend(srs, embeddings.EmbeddingSebrchResult{
+				RepoNbme:  repoNbme,
+				Revision:  bpi.CommitID(revision),
+				FileNbme:  fileNbme,
+				StbrtLine: int(cMbp["stbrt_line"].(flobt64)),
+				EndLine:   int(cMbp["end_line"].(flobt64)),
+				ScoreDetbils: embeddings.SebrchScoreDetbils{
+					Score:           similbrity,
+					SimilbrityScore: similbrity,
 				},
 			})
 		}
@@ -111,34 +111,34 @@ func (w *weaviateClient) Search(ctx context.Context, repoName api.RepoName, repo
 		return srs
 	}
 
-	// We partition the indexes by type and repository. Each class in
-	// weaviate is its own index, so we achieve partitioning by a class
-	// per repo and type.
-	codeClass := fmt.Sprintf("Code_%d", repoID)
-	textClass := fmt.Sprintf("Text_%d", repoID)
+	// We pbrtition the indexes by type bnd repository. Ebch clbss in
+	// webvibte is its own index, so we bchieve pbrtitioning by b clbss
+	// per repo bnd type.
+	codeClbss := fmt.Sprintf("Code_%d", repoID)
+	textClbss := fmt.Sprintf("Text_%d", repoID)
 
-	res, err := w.client.GraphQL().MultiClassGet().
-		AddQueryClass(queryBuilder(codeClass, codeResultsCount)).
-		AddQueryClass(queryBuilder(textClass, textResultsCount)).
+	res, err := w.client.GrbphQL().MultiClbssGet().
+		AddQueryClbss(queryBuilder(codeClbss, codeResultsCount)).
+		AddQueryClbss(queryBuilder(textClbss, textResultsCount)).
 		Do(ctx)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "doing weaviate request")
+		return nil, nil, errors.Wrbp(err, "doing webvibte request")
 	}
 
 	if len(res.Errors) > 0 {
-		return nil, nil, weaviateGraphQLError(res.Errors)
+		return nil, nil, webvibteGrbphQLError(res.Errors)
 	}
 
-	return extractResults(res, codeClass), extractResults(res, textClass), nil
+	return extrbctResults(res, codeClbss), extrbctResults(res, textClbss), nil
 }
 
-type weaviateGraphQLError []*models.GraphQLError
+type webvibteGrbphQLError []*models.GrbphQLError
 
-func (errs weaviateGraphQLError) Error() string {
-	var b strings.Builder
-	b.WriteString("failed to query Weaviate:\n")
-	for _, err := range errs {
-		_, _ = fmt.Fprintf(&b, "- %s %s\n", strings.Join(err.Path, "."), err.Message)
+func (errs webvibteGrbphQLError) Error() string {
+	vbr b strings.Builder
+	b.WriteString("fbiled to query Webvibte:\n")
+	for _, err := rbnge errs {
+		_, _ = fmt.Fprintf(&b, "- %s %s\n", strings.Join(err.Pbth, "."), err.Messbge)
 	}
 	return b.String()
 }

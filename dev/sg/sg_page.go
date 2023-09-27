@@ -1,130 +1,130 @@
-package main
+pbckbge mbin
 
 import (
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	opsgeniealert "github.com/opsgenie/opsgenie-go-sdk-v2/alert"
+	opsgenieblert "github.com/opsgenie/opsgenie-go-sdk-v2/blert"
 	"github.com/opsgenie/opsgenie-go-sdk-v2/client"
 )
 
-var pageCommand = &cli.Command{
-	Name:      "page",
-	UsageText: "sg page --opsgenie.token [TOKEN] --message \"something is broken\" [my-schedule-on-ops-genie]",
-	ArgsUsage: "[opsgenie-schedule]",
-	Usage:     "Page engineers at Sourcegraph - mostly used within scripts to automate paging alerts",
-	Category:  category.Company,
-	Action:    pageExec,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			// TODO allow setting from secrets store
-			Name:     "opsgenie.token",
-			Usage:    "OpsGenie token",
+vbr pbgeCommbnd = &cli.Commbnd{
+	Nbme:      "pbge",
+	UsbgeText: "sg pbge --opsgenie.token [TOKEN] --messbge \"something is broken\" [my-schedule-on-ops-genie]",
+	ArgsUsbge: "[opsgenie-schedule]",
+	Usbge:     "Pbge engineers bt Sourcegrbph - mostly used within scripts to butombte pbging blerts",
+	Cbtegory:  cbtegory.Compbny,
+	Action:    pbgeExec,
+	Flbgs: []cli.Flbg{
+		&cli.StringFlbg{
+			// TODO bllow setting from secrets store
+			Nbme:     "opsgenie.token",
+			Usbge:    "OpsGenie token",
 			Required: true,
-			EnvVars:  []string{"SG_OPSGENIE_TOKEN"},
+			EnvVbrs:  []string{"SG_OPSGENIE_TOKEN"},
 		},
-		&cli.StringFlag{
-			Name:     "message",
-			Aliases:  []string{"m"},
-			Usage:    "Message for the paging alert",
+		&cli.StringFlbg{
+			Nbme:     "messbge",
+			Alibses:  []string{"m"},
+			Usbge:    "Messbge for the pbging blert",
 			Required: true,
 		},
-		&cli.StringFlag{
-			Name:    "description",
-			Aliases: []string{"d"},
-			Usage:   "Description for the paging alert (optional)",
+		&cli.StringFlbg{
+			Nbme:    "description",
+			Alibses: []string{"d"},
+			Usbge:   "Description for the pbging blert (optionbl)",
 		},
-		&cli.StringFlag{
-			Name:    "priority",
-			Aliases: []string{"p"},
-			Usage:   "Alert priority, importance decreases from P1 (critical) to P5 (lowest), defaults to P5",
-			Value:   "P5",
+		&cli.StringFlbg{
+			Nbme:    "priority",
+			Alibses: []string{"p"},
+			Usbge:   "Alert priority, importbnce decrebses from P1 (criticbl) to P5 (lowest), defbults to P5",
+			Vblue:   "P5",
 		},
-		&cli.StringFlag{
-			Name:  "url",
-			Usage: "URL field for alert details (optional)",
+		&cli.StringFlbg{
+			Nbme:  "url",
+			Usbge: "URL field for blert detbils (optionbl)",
 		},
-		&cli.StringSliceFlag{
-			Name:  "escalation",
-			Usage: "Escalation team(s) to alert (if provided, target schedules can be omitted)",
+		&cli.StringSliceFlbg{
+			Nbme:  "escblbtion",
+			Usbge: "Escblbtion tebm(s) to blert (if provided, tbrget schedules cbn be omitted)",
 		},
 	},
 }
 
-func pageExec(cmd *cli.Context) error {
-	logger := log.Scoped("pager", "paging client for SG")
+func pbgeExec(cmd *cli.Context) error {
+	logger := log.Scoped("pbger", "pbging client for SG")
 
-	priority, err := parseOpsGeniePriority(cmd.String("priority"))
+	priority, err := pbrseOpsGeniePriority(cmd.String("priority"))
 	if err != nil {
-		return errors.Wrap(err, "cannot parse ops priority")
+		return errors.Wrbp(err, "cbnnot pbrse ops priority")
 	}
 
-	var (
+	vbr (
 		responders  = cmd.Args().Slice()
-		escalations = cmd.StringSlice("escalation")
+		escblbtions = cmd.StringSlice("escblbtion")
 	)
 
-	if len(responders) == 0 && len(escalations) == 0 {
-		// At least one responder must be given.
-		return errors.New("Target responder schedules or esclation schedules are required")
+	if len(responders) == 0 && len(escblbtions) == 0 {
+		// At lebst one responder must be given.
+		return errors.New("Tbrget responder schedules or esclbtion schedules bre required")
 	}
 
-	logger.Info("paging schedules",
+	logger.Info("pbging schedules",
 		log.String("priority", string(priority)),
 		log.Strings("responders", responders),
-		log.Strings("escalations", escalations))
+		log.Strings("escblbtions", escblbtions))
 
-	alertClient, err := opsgeniealert.NewClient(&client.Config{
+	blertClient, err := opsgenieblert.NewClient(&client.Config{
 		ApiKey: cmd.String("opsgenie.token"),
 	})
 	if err != nil {
-		return errors.Wrap(err, "cannot create opsgenie client")
+		return errors.Wrbp(err, "cbnnot crebte opsgenie client")
 	}
 
-	req := &opsgeniealert.CreateAlertRequest{
+	req := &opsgenieblert.CrebteAlertRequest{
 		Priority:    priority,
-		Message:     cmd.String("message"),
+		Messbge:     cmd.String("messbge"),
 		Description: cmd.String("description"),
 	}
-	if pageURL := cmd.String("url"); pageURL != "" {
-		req.Details = map[string]string{
-			"url": pageURL,
+	if pbgeURL := cmd.String("url"); pbgeURL != "" {
+		req.Detbils = mbp[string]string{
+			"url": pbgeURL,
 		}
 	}
-	for _, schedule := range responders {
-		req.Responders = append(req.Responders, opsgeniealert.Responder{Type: opsgeniealert.ScheduleResponder, Name: schedule})
+	for _, schedule := rbnge responders {
+		req.Responders = bppend(req.Responders, opsgenieblert.Responder{Type: opsgenieblert.ScheduleResponder, Nbme: schedule})
 	}
-	for _, schedule := range escalations {
-		req.Responders = append(req.Responders, opsgeniealert.Responder{Type: opsgeniealert.EscalationResponder, Name: schedule})
+	for _, schedule := rbnge escblbtions {
+		req.Responders = bppend(req.Responders, opsgenieblert.Responder{Type: opsgenieblert.EscblbtionResponder, Nbme: schedule})
 	}
 
-	createResult, err := alertClient.Create(cmd.Context, req)
+	crebteResult, err := blertClient.Crebte(cmd.Context, req)
 	if err != nil {
-		if createResult != nil {
-			logger.Error("got error result from posting alert to opsgenie", log.Error(err), log.String("result", createResult.Result))
+		if crebteResult != nil {
+			logger.Error("got error result from posting blert to opsgenie", log.Error(err), log.String("result", crebteResult.Result))
 		}
-		return errors.Wrap(err, "failed to post the alert on ops genie")
+		return errors.Wrbp(err, "fbiled to post the blert on ops genie")
 	}
 	return nil
 }
 
-func parseOpsGeniePriority(p string) (opsgeniealert.Priority, error) {
+func pbrseOpsGeniePriority(p string) (opsgenieblert.Priority, error) {
 	switch p {
-	case "P1":
-		return opsgeniealert.P1, nil
-	case "P2":
-		return opsgeniealert.P2, nil
-	case "P3":
-		return opsgeniealert.P3, nil
-	case "P4":
-		return opsgeniealert.P4, nil
-	case "P5":
-		return opsgeniealert.P5, nil
-	default:
-		return "", errors.Errorf("invalid priority %q", p)
+	cbse "P1":
+		return opsgenieblert.P1, nil
+	cbse "P2":
+		return opsgenieblert.P2, nil
+	cbse "P3":
+		return opsgenieblert.P3, nil
+	cbse "P4":
+		return opsgenieblert.P4, nil
+	cbse "P5":
+		return opsgenieblert.P5, nil
+	defbult:
+		return "", errors.Errorf("invblid priority %q", p)
 	}
 }

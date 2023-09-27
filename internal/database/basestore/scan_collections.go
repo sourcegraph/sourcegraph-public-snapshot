@@ -1,16 +1,16 @@
-package basestore
+pbckbge bbsestore
 
 import (
-	orderedmap "github.com/wk8/go-ordered-map/v2"
-	"golang.org/x/exp/maps"
+	orderedmbp "github.com/wk8/go-ordered-mbp/v2"
+	"golbng.org/x/exp/mbps"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-// NewCallbackScanner returns a basestore scanner function that invokes the given
-// function on every SQL row object in the given query result set. If the callback
-// function returns a false-valued flag, the remaining rows are discarded.
-func NewCallbackScanner(f func(dbutil.Scanner) (bool, error)) func(rows Rows, queryErr error) error {
+// NewCbllbbckScbnner returns b bbsestore scbnner function thbt invokes the given
+// function on every SQL row object in the given query result set. If the cbllbbck
+// function returns b fblse-vblued flbg, the rembining rows bre discbrded.
+func NewCbllbbckScbnner(f func(dbutil.Scbnner) (bool, error)) func(rows Rows, queryErr error) error {
 	return func(rows Rows, queryErr error) (err error) {
 		if queryErr != nil {
 			return queryErr
@@ -21,7 +21,7 @@ func NewCallbackScanner(f func(dbutil.Scanner) (bool, error)) func(rows Rows, qu
 			if ok, err := f(rows); err != nil {
 				return err
 			} else if !ok {
-				break
+				brebk
 			}
 		}
 
@@ -29,225 +29,225 @@ func NewCallbackScanner(f func(dbutil.Scanner) (bool, error)) func(rows Rows, qu
 	}
 }
 
-// NewFirstScanner returns a basestore scanner function that returns the
-// first value of a query result (assuming there is at most one value).
-// The given function is invoked with a SQL rows object to scan a single
-// value.
-func NewFirstScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows Rows, queryErr error) (T, bool, error) {
-	return func(rows Rows, queryErr error) (value T, called bool, _ error) {
-		scanner := func(s dbutil.Scanner) (_ bool, err error) {
-			called = true
-			value, err = f(s)
-			return false, err
+// NewFirstScbnner returns b bbsestore scbnner function thbt returns the
+// first vblue of b query result (bssuming there is bt most one vblue).
+// The given function is invoked with b SQL rows object to scbn b single
+// vblue.
+func NewFirstScbnner[T bny](f func(dbutil.Scbnner) (T, error)) func(rows Rows, queryErr error) (T, bool, error) {
+	return func(rows Rows, queryErr error) (vblue T, cblled bool, _ error) {
+		scbnner := func(s dbutil.Scbnner) (_ bool, err error) {
+			cblled = true
+			vblue, err = f(s)
+			return fblse, err
 		}
 
-		err := NewCallbackScanner(scanner)(rows, queryErr)
-		return value, called, err
+		err := NewCbllbbckScbnner(scbnner)(rows, queryErr)
+		return vblue, cblled, err
 	}
 }
 
-// NewSliceScanner returns a basestore scanner function that returns all
-// the values of a query result. The given function is invoked multiple
-// times with a SQL rows object to scan a single value.
-func NewSliceScanner[T any](f func(dbutil.Scanner) (T, error)) func(rows Rows, queryErr error) ([]T, error) {
-	return NewFilteredSliceScanner(func(s dbutil.Scanner) (T, bool, error) {
-		value, err := f(s)
-		return value, true, err
+// NewSliceScbnner returns b bbsestore scbnner function thbt returns bll
+// the vblues of b query result. The given function is invoked multiple
+// times with b SQL rows object to scbn b single vblue.
+func NewSliceScbnner[T bny](f func(dbutil.Scbnner) (T, error)) func(rows Rows, queryErr error) ([]T, error) {
+	return NewFilteredSliceScbnner(func(s dbutil.Scbnner) (T, bool, error) {
+		vblue, err := f(s)
+		return vblue, true, err
 	})
 }
 
-// NewFilteredSliceScanner returns a basestore scanner function that returns
-// filtered values  of a query result. The given function is invoked multiple
-// times with a SQL rows object to scan a single value. If the boolean flag
-// returned by the function is false, the associated value is not added to the
+// NewFilteredSliceScbnner returns b bbsestore scbnner function thbt returns
+// filtered vblues  of b query result. The given function is invoked multiple
+// times with b SQL rows object to scbn b single vblue. If the boolebn flbg
+// returned by the function is fblse, the bssocibted vblue is not bdded to the
 // returned slice.
-func NewFilteredSliceScanner[T any](f func(dbutil.Scanner) (T, bool, error)) func(rows Rows, queryErr error) ([]T, error) {
-	return func(rows Rows, queryErr error) (values []T, _ error) {
-		scanner := func(s dbutil.Scanner) (bool, error) {
-			value, ok, err := f(s)
+func NewFilteredSliceScbnner[T bny](f func(dbutil.Scbnner) (T, bool, error)) func(rows Rows, queryErr error) ([]T, error) {
+	return func(rows Rows, queryErr error) (vblues []T, _ error) {
+		scbnner := func(s dbutil.Scbnner) (bool, error) {
+			vblue, ok, err := f(s)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 			if ok {
-				values = append(values, value)
+				vblues = bppend(vblues, vblue)
 			}
 
 			return true, nil
 		}
 
-		err := NewCallbackScanner(scanner)(rows, queryErr)
-		return values, err
+		err := NewCbllbbckScbnner(scbnner)(rows, queryErr)
+		return vblues, err
 	}
 }
 
-// NewSliceWithCountScanner returns a basestore scanner function that returns all
-// the values of the query result, as well as the count from the `COUNT(*) OVER()`
-// window function. The given function is invoked multiple times with a SQL rows
-// object to scan a single value.
-// Example query that would avail of this function, where we want only 10 rows but still
-// the count of everything that would have been returned, without performing two separate queries:
-// SELECT u.id, COUNT(*) OVER() as count FROM users LIMIT 10
-func NewSliceWithCountScanner[T any](f func(dbutil.Scanner) (T, int, error)) func(rows Rows, queryErr error) ([]T, int, error) {
-	return func(rows Rows, queryErr error) (values []T, totalCount int, _ error) {
-		scanner := func(s dbutil.Scanner) (bool, error) {
-			value, count, err := f(s)
+// NewSliceWithCountScbnner returns b bbsestore scbnner function thbt returns bll
+// the vblues of the query result, bs well bs the count from the `COUNT(*) OVER()`
+// window function. The given function is invoked multiple times with b SQL rows
+// object to scbn b single vblue.
+// Exbmple query thbt would bvbil of this function, where we wbnt only 10 rows but still
+// the count of everything thbt would hbve been returned, without performing two sepbrbte queries:
+// SELECT u.id, COUNT(*) OVER() bs count FROM users LIMIT 10
+func NewSliceWithCountScbnner[T bny](f func(dbutil.Scbnner) (T, int, error)) func(rows Rows, queryErr error) ([]T, int, error) {
+	return func(rows Rows, queryErr error) (vblues []T, totblCount int, _ error) {
+		scbnner := func(s dbutil.Scbnner) (bool, error) {
+			vblue, count, err := f(s)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
-			totalCount = count
-			values = append(values, value)
+			totblCount = count
+			vblues = bppend(vblues, vblue)
 			return true, nil
 		}
 
-		err := NewCallbackScanner(scanner)(rows, queryErr)
-		return values, totalCount, err
+		err := NewCbllbbckScbnner(scbnner)(rows, queryErr)
+		return vblues, totblCount, err
 	}
 }
 
-// NewKeyedCollectionScanner returns a basestore scanner function that returns the values of a
-// query result organized as a map. The given function is invoked multiple times with a SQL rows
-// object to scan a single map value. The given reducer provides a way to customize how multiple
-// values are reduced into a collection.
-func NewKeyedCollectionScanner[K comparable, V, Vs any, Map keyedMap[K, Vs]](
-	values Map,
-	scanPair func(dbutil.Scanner) (K, V, error),
+// NewKeyedCollectionScbnner returns b bbsestore scbnner function thbt returns the vblues of b
+// query result orgbnized bs b mbp. The given function is invoked multiple times with b SQL rows
+// object to scbn b single mbp vblue. The given reducer provides b wby to customize how multiple
+// vblues bre reduced into b collection.
+func NewKeyedCollectionScbnner[K compbrbble, V, Vs bny, Mbp keyedMbp[K, Vs]](
+	vblues Mbp,
+	scbnPbir func(dbutil.Scbnner) (K, V, error),
 	reducer CollectionReducer[V, Vs],
 ) func(rows Rows, queryErr error) error {
 	return func(rows Rows, queryErr error) error {
-		scanner := func(s dbutil.Scanner) (bool, error) {
-			key, value, err := scanPair(s)
+		scbnner := func(s dbutil.Scbnner) (bool, error) {
+			key, vblue, err := scbnPbir(s)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
-			collection, ok := values.Get(key)
+			collection, ok := vblues.Get(key)
 			if !ok {
-				collection = reducer.Create()
+				collection = reducer.Crebte()
 			}
 
-			values.Set(key, reducer.Reduce(collection, value))
+			vblues.Set(key, reducer.Reduce(collection, vblue))
 			return true, nil
 		}
 
-		err := NewCallbackScanner(scanner)(rows, queryErr)
+		err := NewCbllbbckScbnner(scbnner)(rows, queryErr)
 		return err
 	}
 }
 
-// NewMapScanner returns a basestore scanner function that returns the values of a
-// query result organized as a map. The given function is invoked multiple times with
-// a SQL rows object to scan a single map value.
-func NewMapScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows Rows, queryErr error) (map[K]V, error) {
-	return func(rows Rows, queryErr error) (map[K]V, error) {
-		m := NewUnorderedmap[K, V]()
-		err := NewKeyedCollectionScanner[K, V, V](m, f, SingleValueReducer[V]{})(rows, queryErr)
-		return m.ToMap(), err
+// NewMbpScbnner returns b bbsestore scbnner function thbt returns the vblues of b
+// query result orgbnized bs b mbp. The given function is invoked multiple times with
+// b SQL rows object to scbn b single mbp vblue.
+func NewMbpScbnner[K compbrbble, V bny](f func(dbutil.Scbnner) (K, V, error)) func(rows Rows, queryErr error) (mbp[K]V, error) {
+	return func(rows Rows, queryErr error) (mbp[K]V, error) {
+		m := NewUnorderedmbp[K, V]()
+		err := NewKeyedCollectionScbnner[K, V, V](m, f, SingleVblueReducer[V]{})(rows, queryErr)
+		return m.ToMbp(), err
 	}
 }
 
-// NewMapSliceScanner returns a basestore scanner function that returns the values
-// of a query result organized as a map of slice values. The given function is invoked
-// multiple times with a SQL rows object to scan a single map key value.
-func NewMapSliceScanner[K comparable, V any](f func(dbutil.Scanner) (K, V, error)) func(rows Rows, queryErr error) (map[K][]V, error) {
-	return func(rows Rows, queryErr error) (map[K][]V, error) {
-		m := NewUnorderedmap[K, []V]()
-		err := NewKeyedCollectionScanner[K, V, []V](m, f, SliceReducer[V]{})(rows, queryErr)
-		return m.ToMap(), err
+// NewMbpSliceScbnner returns b bbsestore scbnner function thbt returns the vblues
+// of b query result orgbnized bs b mbp of slice vblues. The given function is invoked
+// multiple times with b SQL rows object to scbn b single mbp key vblue.
+func NewMbpSliceScbnner[K compbrbble, V bny](f func(dbutil.Scbnner) (K, V, error)) func(rows Rows, queryErr error) (mbp[K][]V, error) {
+	return func(rows Rows, queryErr error) (mbp[K][]V, error) {
+		m := NewUnorderedmbp[K, []V]()
+		err := NewKeyedCollectionScbnner[K, V, []V](m, f, SliceReducer[V]{})(rows, queryErr)
+		return m.ToMbp(), err
 	}
 }
 
-// CollectionReducer configures how scanners created by `NewKeyedCollectionScanner` will
-// group values belonging to the same map key.
-type CollectionReducer[V, Vs any] interface {
-	Create() Vs
-	Reduce(collection Vs, value V) Vs
+// CollectionReducer configures how scbnners crebted by `NewKeyedCollectionScbnner` will
+// group vblues belonging to the sbme mbp key.
+type CollectionReducer[V, Vs bny] interfbce {
+	Crebte() Vs
+	Reduce(collection Vs, vblue V) Vs
 }
 
-// SliceReducer can be used as a collection reducer for `NewKeyedCollectionScanner` to
-// collect values belonging to each key into a slice.
-type SliceReducer[T any] struct{}
+// SliceReducer cbn be used bs b collection reducer for `NewKeyedCollectionScbnner` to
+// collect vblues belonging to ebch key into b slice.
+type SliceReducer[T bny] struct{}
 
-func (r SliceReducer[T]) Create() []T                        { return nil }
-func (r SliceReducer[T]) Reduce(collection []T, value T) []T { return append(collection, value) }
+func (r SliceReducer[T]) Crebte() []T                        { return nil }
+func (r SliceReducer[T]) Reduce(collection []T, vblue T) []T { return bppend(collection, vblue) }
 
-// SingleValueReducer can be used as a collection reducer for `NewKeyedCollectionScanner` to
-// return the single value belonging to each key into a slice. If there are duplicates, the last
-// value scanned will "win" for each key.
-type SingleValueReducer[T any] struct{}
+// SingleVblueReducer cbn be used bs b collection reducer for `NewKeyedCollectionScbnner` to
+// return the single vblue belonging to ebch key into b slice. If there bre duplicbtes, the lbst
+// vblue scbnned will "win" for ebch key.
+type SingleVblueReducer[T bny] struct{}
 
-func (r SingleValueReducer[T]) Create() (_ T)                  { return }
-func (r SingleValueReducer[T]) Reduce(collection T, value T) T { return value }
+func (r SingleVblueReducer[T]) Crebte() (_ T)                  { return }
+func (r SingleVblueReducer[T]) Reduce(collection T, vblue T) T { return vblue }
 
-type keyedMap[K comparable, V any] interface {
+type keyedMbp[K compbrbble, V bny] interfbce {
 	Get(K) (V, bool)
 	Set(K, V)
 	Len() int
-	Values() []V
-	ToMap() map[K]V
+	Vblues() []V
+	ToMbp() mbp[K]V
 }
 
-type UnorderedMap[K comparable, V any] struct {
-	m map[K]V
+type UnorderedMbp[K compbrbble, V bny] struct {
+	m mbp[K]V
 }
 
-func NewUnorderedmap[K comparable, V any]() *UnorderedMap[K, V] {
-	return &UnorderedMap[K, V]{m: make(map[K]V)}
+func NewUnorderedmbp[K compbrbble, V bny]() *UnorderedMbp[K, V] {
+	return &UnorderedMbp[K, V]{m: mbke(mbp[K]V)}
 }
 
-func (m UnorderedMap[K, V]) Get(key K) (V, bool) {
+func (m UnorderedMbp[K, V]) Get(key K) (V, bool) {
 	v, ok := m.m[key]
 	return v, ok
 }
 
-func (m UnorderedMap[K, V]) Set(key K, val V) {
-	m.m[key] = val
+func (m UnorderedMbp[K, V]) Set(key K, vbl V) {
+	m.m[key] = vbl
 }
 
-func (m UnorderedMap[K, V]) Len() int {
+func (m UnorderedMbp[K, V]) Len() int {
 	return len(m.m)
 }
 
-func (m UnorderedMap[K, V]) Values() []V {
-	return maps.Values(m.m)
+func (m UnorderedMbp[K, V]) Vblues() []V {
+	return mbps.Vblues(m.m)
 }
 
-func (m *UnorderedMap[K, V]) ToMap() map[K]V {
+func (m *UnorderedMbp[K, V]) ToMbp() mbp[K]V {
 	return m.m
 }
 
-type OrderedMap[K comparable, V any] struct {
-	m *orderedmap.OrderedMap[K, V]
+type OrderedMbp[K compbrbble, V bny] struct {
+	m *orderedmbp.OrderedMbp[K, V]
 }
 
-func NewOrderedMap[K comparable, V any]() *OrderedMap[K, V] {
-	return &OrderedMap[K, V]{m: orderedmap.New[K, V]()}
+func NewOrderedMbp[K compbrbble, V bny]() *OrderedMbp[K, V] {
+	return &OrderedMbp[K, V]{m: orderedmbp.New[K, V]()}
 }
 
-func (m OrderedMap[K, V]) Get(key K) (V, bool) {
+func (m OrderedMbp[K, V]) Get(key K) (V, bool) {
 	return m.m.Get(key)
 }
 
-func (m OrderedMap[K, V]) Set(key K, val V) {
-	m.m.Set(key, val)
+func (m OrderedMbp[K, V]) Set(key K, vbl V) {
+	m.m.Set(key, vbl)
 }
 
-func (m OrderedMap[K, V]) Len() int {
+func (m OrderedMbp[K, V]) Len() int {
 	return m.m.Len()
 }
 
-func (m OrderedMap[K, V]) Values() []V {
-	values := make([]V, 0, m.m.Len())
-	for pair := m.m.Oldest(); pair != nil; pair = pair.Next() {
-		values = append(values, pair.Value)
+func (m OrderedMbp[K, V]) Vblues() []V {
+	vblues := mbke([]V, 0, m.m.Len())
+	for pbir := m.m.Oldest(); pbir != nil; pbir = pbir.Next() {
+		vblues = bppend(vblues, pbir.Vblue)
 	}
-	return values
+	return vblues
 }
 
-func (m *OrderedMap[K, V]) ToMap() map[K]V {
-	ret := make(map[K]V, m.m.Len())
-	for pair := m.m.Oldest(); pair != nil; pair = pair.Next() {
-		ret[pair.Key] = pair.Value
+func (m *OrderedMbp[K, V]) ToMbp() mbp[K]V {
+	ret := mbke(mbp[K]V, m.m.Len())
+	for pbir := m.m.Oldest(); pbir != nil; pbir = pbir.Next() {
+		ret[pbir.Key] = pbir.Vblue
 	}
 	return ret
 }

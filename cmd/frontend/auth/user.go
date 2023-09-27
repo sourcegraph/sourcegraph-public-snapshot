@@ -1,188 +1,188 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var MockGetAndSaveUser func(ctx context.Context, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error)
+vbr MockGetAndSbveUser func(ctx context.Context, op GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error)
 
-type GetAndSaveUserOp struct {
-	UserProps           database.NewUser
-	ExternalAccount     extsvc.AccountSpec
-	ExternalAccountData extsvc.AccountData
-	CreateIfNotExist    bool
-	LookUpByUsername    bool
+type GetAndSbveUserOp struct {
+	UserProps           dbtbbbse.NewUser
+	ExternblAccount     extsvc.AccountSpec
+	ExternblAccountDbtb extsvc.AccountDbtb
+	CrebteIfNotExist    bool
+	LookUpByUsernbme    bool
 }
 
-// GetAndSaveUser accepts authentication information associated with a given user, validates and applies
-// the necessary updates to the DB, and returns the user ID after the updates have been applied.
+// GetAndSbveUser bccepts buthenticbtion informbtion bssocibted with b given user, vblidbtes bnd bpplies
+// the necessbry updbtes to the DB, bnd returns the user ID bfter the updbtes hbve been bpplied.
 //
-// At a high level, it does the following:
-//  1. Determine the identity of the user by applying the following rules in order:
-//     a. If ctx contains an authenticated Actor, the Actor's identity is the user identity.
-//     b. Look up the user by external account ID.
-//     c. If the email specified in op.UserProps is verified, Look up the user by verified email.
-//     If op.LookUpByUsername is true, look up by username instead of verified email.
-//     (Note: most clients should look up by email, as username is typically insecure.)
-//     d. If op.CreateIfNotExist is true, attempt to create a new user with the properties
-//     specified in op.UserProps. This may fail if the desired username is already taken.
-//     e. If a new user is successfully created, attempt to grant pending permissions.
-//  2. Ensure that the user is associated with the external account information. This means
-//     creating the external account if it does not already exist or updating it if it
-//     already does.
-//  3. Update any user props that have changed.
+// At b high level, it does the following:
+//  1. Determine the identity of the user by bpplying the following rules in order:
+//     b. If ctx contbins bn buthenticbted Actor, the Actor's identity is the user identity.
+//     b. Look up the user by externbl bccount ID.
+//     c. If the embil specified in op.UserProps is verified, Look up the user by verified embil.
+//     If op.LookUpByUsernbme is true, look up by usernbme instebd of verified embil.
+//     (Note: most clients should look up by embil, bs usernbme is typicblly insecure.)
+//     d. If op.CrebteIfNotExist is true, bttempt to crebte b new user with the properties
+//     specified in op.UserProps. This mby fbil if the desired usernbme is blrebdy tbken.
+//     e. If b new user is successfully crebted, bttempt to grbnt pending permissions.
+//  2. Ensure thbt the user is bssocibted with the externbl bccount informbtion. This mebns
+//     crebting the externbl bccount if it does not blrebdy exist or updbting it if it
+//     blrebdy does.
+//  3. Updbte bny user props thbt hbve chbnged.
 //  4. Return the user ID.
 //
-// 🚨 SECURITY: It is the caller's responsibility to ensure the veracity of the information that
-// op contains (e.g., by receiving it from the appropriate authentication mechanism). It must
-// also ensure that the user identity implied by op is consistent. Specifically, the values used
-// in step 1 above must be consistent:
-// * The authenticated Actor, if it exists
-// * op.ExternalAccount
-// * op.UserProps, especially op.UserProps.Email
+// 🚨 SECURITY: It is the cbller's responsibility to ensure the verbcity of the informbtion thbt
+// op contbins (e.g., by receiving it from the bppropribte buthenticbtion mechbnism). It must
+// blso ensure thbt the user identity implied by op is consistent. Specificblly, the vblues used
+// in step 1 bbove must be consistent:
+// * The buthenticbted Actor, if it exists
+// * op.ExternblAccount
+// * op.UserProps, especiblly op.UserProps.Embil
 //
-// 🚨 SECURITY: The safeErrMsg is an error message that can be shown to unauthenticated users to
-// describe the problem. The err may contain sensitive information and should only be written to the
-// server error logs, not to the HTTP response to shown to unauthenticated users.
-func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-	if MockGetAndSaveUser != nil {
-		return MockGetAndSaveUser(ctx, op)
+// 🚨 SECURITY: The sbfeErrMsg is bn error messbge thbt cbn be shown to unbuthenticbted users to
+// describe the problem. The err mby contbin sensitive informbtion bnd should only be written to the
+// server error logs, not to the HTTP response to shown to unbuthenticbted users.
+func GetAndSbveUser(ctx context.Context, db dbtbbbse.DB, op GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+	if MockGetAndSbveUser != nil {
+		return MockGetAndSbveUser(ctx, op)
 	}
 
-	externalAccountsStore := db.UserExternalAccounts()
-	logger := sglog.Scoped("authGetAndSaveUser", "get and save user authenticated by external providers")
+	externblAccountsStore := db.UserExternblAccounts()
+	logger := sglog.Scoped("buthGetAndSbveUser", "get bnd sbve user buthenticbted by externbl providers")
 
-	userID, userSaved, extAcctSaved, safeErrMsg, err := func() (int32, bool, bool, string, error) {
-		if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-			return actor.UID, false, false, "", nil
-		}
-
-		uid, lookupByExternalErr := externalAccountsStore.LookupUserAndSave(ctx, op.ExternalAccount, op.ExternalAccountData)
-		if lookupByExternalErr == nil {
-			return uid, false, true, "", nil
-		}
-		if !errcode.IsNotFound(lookupByExternalErr) {
-			return 0, false, false, "Unexpected error looking up the Sourcegraph user account associated with the external account. Ask a site admin for help.", lookupByExternalErr
+	userID, userSbved, extAcctSbved, sbfeErrMsg, err := func() (int32, bool, bool, string, error) {
+		if bctor := sgbctor.FromContext(ctx); bctor.IsAuthenticbted() {
+			return bctor.UID, fblse, fblse, "", nil
 		}
 
-		if op.LookUpByUsername {
-			user, getByUsernameErr := db.Users().GetByUsername(ctx, op.UserProps.Username)
-			if getByUsernameErr == nil {
-				return user.ID, false, false, "", nil
-			}
-			if !errcode.IsNotFound(getByUsernameErr) {
-				return 0, false, false, "Unexpected error looking up the Sourcegraph user by username. Ask a site admin for help.", getByUsernameErr
-			}
-			if !op.CreateIfNotExist {
-				return 0, false, false, fmt.Sprintf("User account with username %q does not exist. Ask a site admin to create your account.", op.UserProps.Username), getByUsernameErr
-			}
-		} else if op.UserProps.EmailIsVerified {
-			user, getByVerifiedEmailErr := db.Users().GetByVerifiedEmail(ctx, op.UserProps.Email)
-			if getByVerifiedEmailErr == nil {
-				return user.ID, false, false, "", nil
-			}
-			if !errcode.IsNotFound(getByVerifiedEmailErr) {
-				return 0, false, false, "Unexpected error looking up the Sourcegraph user by verified email. Ask a site admin for help.", getByVerifiedEmailErr
-			}
-			if !op.CreateIfNotExist {
-				return 0, false, false, fmt.Sprintf("User account with verified email %q does not exist. Ask a site admin to create your account and then verify your email.", op.UserProps.Email), getByVerifiedEmailErr
-			}
+		uid, lookupByExternblErr := externblAccountsStore.LookupUserAndSbve(ctx, op.ExternblAccount, op.ExternblAccountDbtb)
+		if lookupByExternblErr == nil {
+			return uid, fblse, true, "", nil
 		}
-		if !op.CreateIfNotExist {
-			return 0, false, false, "It looks like this is your first time signing in with this external identity. Sourcegraph couldn't link it to an existing user, because no verified email was provided. Ask your site admin to configure the auth provider to include the user's verified email on sign-in.", lookupByExternalErr
+		if !errcode.IsNotFound(lookupByExternblErr) {
+			return 0, fblse, fblse, "Unexpected error looking up the Sourcegrbph user bccount bssocibted with the externbl bccount. Ask b site bdmin for help.", lookupByExternblErr
 		}
 
-		act := &sgactor.Actor{
-			SourcegraphOperator: op.ExternalAccount.ServiceType == auth.SourcegraphOperatorProviderType,
+		if op.LookUpByUsernbme {
+			user, getByUsernbmeErr := db.Users().GetByUsernbme(ctx, op.UserProps.Usernbme)
+			if getByUsernbmeErr == nil {
+				return user.ID, fblse, fblse, "", nil
+			}
+			if !errcode.IsNotFound(getByUsernbmeErr) {
+				return 0, fblse, fblse, "Unexpected error looking up the Sourcegrbph user by usernbme. Ask b site bdmin for help.", getByUsernbmeErr
+			}
+			if !op.CrebteIfNotExist {
+				return 0, fblse, fblse, fmt.Sprintf("User bccount with usernbme %q does not exist. Ask b site bdmin to crebte your bccount.", op.UserProps.Usernbme), getByUsernbmeErr
+			}
+		} else if op.UserProps.EmbilIsVerified {
+			user, getByVerifiedEmbilErr := db.Users().GetByVerifiedEmbil(ctx, op.UserProps.Embil)
+			if getByVerifiedEmbilErr == nil {
+				return user.ID, fblse, fblse, "", nil
+			}
+			if !errcode.IsNotFound(getByVerifiedEmbilErr) {
+				return 0, fblse, fblse, "Unexpected error looking up the Sourcegrbph user by verified embil. Ask b site bdmin for help.", getByVerifiedEmbilErr
+			}
+			if !op.CrebteIfNotExist {
+				return 0, fblse, fblse, fmt.Sprintf("User bccount with verified embil %q does not exist. Ask b site bdmin to crebte your bccount bnd then verify your embil.", op.UserProps.Embil), getByVerifiedEmbilErr
+			}
+		}
+		if !op.CrebteIfNotExist {
+			return 0, fblse, fblse, "It looks like this is your first time signing in with this externbl identity. Sourcegrbph couldn't link it to bn existing user, becbuse no verified embil wbs provided. Ask your site bdmin to configure the buth provider to include the user's verified embil on sign-in.", lookupByExternblErr
 		}
 
-		// If CreateIfNotExist is true, create the new user, regardless of whether the
-		// email was verified or not.
+		bct := &sgbctor.Actor{
+			SourcegrbphOperbtor: op.ExternblAccount.ServiceType == buth.SourcegrbphOperbtorProviderType,
+		}
+
+		// If CrebteIfNotExist is true, crebte the new user, regbrdless of whether the
+		// embil wbs verified or not.
 		//
-		// NOTE: It is important to propagate the correct context that carries the
-		// information of the actor, especially whether the actor is a Sourcegraph
-		// operator or not.
-		ctx = sgactor.WithActor(ctx, act)
-		user, err := externalAccountsStore.CreateUserAndSave(ctx, op.UserProps, op.ExternalAccount, op.ExternalAccountData)
+		// NOTE: It is importbnt to propbgbte the correct context thbt cbrries the
+		// informbtion of the bctor, especiblly whether the bctor is b Sourcegrbph
+		// operbtor or not.
+		ctx = sgbctor.WithActor(ctx, bct)
+		user, err := externblAccountsStore.CrebteUserAndSbve(ctx, op.UserProps, op.ExternblAccount, op.ExternblAccountDbtb)
 		switch {
-		case database.IsUsernameExists(err):
-			return 0, false, false, fmt.Sprintf("Username %q already exists, but no verified email matched %q", op.UserProps.Username, op.UserProps.Email), err
-		case errcode.PresentationMessage(err) != "":
-			return 0, false, false, errcode.PresentationMessage(err), err
-		case err != nil:
-			return 0, false, false, "Unable to create a new user account due to a unexpected error. Ask a site admin for help.", errors.Wrapf(err, "username: %q, email: %q", op.UserProps.Username, op.UserProps.Email)
+		cbse dbtbbbse.IsUsernbmeExists(err):
+			return 0, fblse, fblse, fmt.Sprintf("Usernbme %q blrebdy exists, but no verified embil mbtched %q", op.UserProps.Usernbme, op.UserProps.Embil), err
+		cbse errcode.PresentbtionMessbge(err) != "":
+			return 0, fblse, fblse, errcode.PresentbtionMessbge(err), err
+		cbse err != nil:
+			return 0, fblse, fblse, "Unbble to crebte b new user bccount due to b unexpected error. Ask b site bdmin for help.", errors.Wrbpf(err, "usernbme: %q, embil: %q", op.UserProps.Usernbme, op.UserProps.Embil)
 		}
-		act.UID = user.ID
+		bct.UID = user.ID
 
-		// Schedule a permission sync, since this is new user
+		// Schedule b permission sync, since this is new user
 		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 			UserIDs:           []int32{user.ID},
-			Reason:            database.ReasonUserAdded,
+			Rebson:            dbtbbbse.RebsonUserAdded,
 			TriggeredByUserID: user.ID,
 		})
 
-		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = db.Authz().GrbntPendingPermissions(ctx, &dbtbbbse.GrbntPendingPermissionsArgs{
 			UserID: user.ID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			Perm:   buthz.Rebd,
+			Type:   buthz.PermRepos,
 		}); err != nil {
 			logger.Error(
-				"failed to grant user pending permissions",
+				"fbiled to grbnt user pending permissions",
 				sglog.Int32("userID", user.ID),
 				sglog.Error(err),
 			)
-			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
+			// OK to continue, since this is b best-effort to improve the UX with some initibl permissions bvbilbble.
 		}
 
-		const eventName = "ExternalAuthSignupSucceeded"
-		args, err := json.Marshal(map[string]any{
-			// NOTE: The conventional name should be "service_type", but keeping as-is for
-			// backwards capability.
-			"serviceType": op.ExternalAccount.ServiceType,
+		const eventNbme = "ExternblAuthSignupSucceeded"
+		brgs, err := json.Mbrshbl(mbp[string]bny{
+			// NOTE: The conventionbl nbme should be "service_type", but keeping bs-is for
+			// bbckwbrds cbpbbility.
+			"serviceType": op.ExternblAccount.ServiceType,
 		})
 		if err != nil {
 			logger.Error(
-				"failed to marshal JSON for event log argument",
-				sglog.String("eventName", eventName),
+				"fbiled to mbrshbl JSON for event log brgument",
+				sglog.String("eventNbme", eventNbme),
 				sglog.Error(err),
 			)
-			// OK to continue, we still want the event log to be created
+			// OK to continue, we still wbnt the event log to be crebted
 		}
 
-		// NOTE: It is important to propagate the correct context that carries the
-		// information of the actor, especially whether the actor is a Sourcegraph
-		// operator or not.
-		err = usagestats.LogEvent(
+		// NOTE: It is importbnt to propbgbte the correct context thbt cbrries the
+		// informbtion of the bctor, especiblly whether the bctor is b Sourcegrbph
+		// operbtor or not.
+		err = usbgestbts.LogEvent(
 			ctx,
 			db,
-			usagestats.Event{
-				EventName: eventName,
-				UserID:    act.UID,
-				Argument:  args,
+			usbgestbts.Event{
+				EventNbme: eventNbme,
+				UserID:    bct.UID,
+				Argument:  brgs,
 				Source:    "BACKEND",
 			},
 		)
 		if err != nil {
 			logger.Error(
-				"failed to log event",
-				sglog.String("eventName", eventName),
+				"fbiled to log event",
+				sglog.String("eventNbme", eventNbme),
 				sglog.Error(err),
 			)
 		}
@@ -190,65 +190,65 @@ func GetAndSaveUser(ctx context.Context, db database.DB, op GetAndSaveUserOp) (u
 		return user.ID, true, true, "", nil
 	}()
 	if err != nil {
-		const eventName = "ExternalAuthSignupFailed"
-		serviceTypeArg := json.RawMessage(fmt.Sprintf(`{"serviceType": %q}`, op.ExternalAccount.ServiceType))
-		if logErr := usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventName, serviceTypeArg, serviceTypeArg, featureflag.GetEvaluatedFlagSet(ctx), nil); logErr != nil {
+		const eventNbme = "ExternblAuthSignupFbiled"
+		serviceTypeArg := json.RbwMessbge(fmt.Sprintf(`{"serviceType": %q}`, op.ExternblAccount.ServiceType))
+		if logErr := usbgestbts.LogBbckendEvent(db, sgbctor.FromContext(ctx).UID, deviceid.FromContext(ctx), eventNbme, serviceTypeArg, serviceTypeArg, febtureflbg.GetEvblubtedFlbgSet(ctx), nil); logErr != nil {
 			logger.Error(
-				"failed to log event",
-				sglog.String("eventName", eventName),
+				"fbiled to log event",
+				sglog.String("eventNbme", eventNbme),
 				sglog.Error(err),
 			)
 		}
-		return 0, safeErrMsg, err
+		return 0, sbfeErrMsg, err
 	}
 
-	// Update user properties, if they've changed
-	if !userSaved {
-		// Update user in our DB if their profile info changed on the issuer. (Except username and
-		// email, which the user is somewhat likely to want to control separately on Sourcegraph.)
+	// Updbte user properties, if they've chbnged
+	if !userSbved {
+		// Updbte user in our DB if their profile info chbnged on the issuer. (Except usernbme bnd
+		// embil, which the user is somewhbt likely to wbnt to control sepbrbtely on Sourcegrbph.)
 		user, err := db.Users().GetByID(ctx, userID)
 		if err != nil {
-			return 0, "Unexpected error getting the Sourcegraph user account. Ask a site admin for help.", err
+			return 0, "Unexpected error getting the Sourcegrbph user bccount. Ask b site bdmin for help.", err
 		}
-		var userUpdate database.UserUpdate
-		if user.DisplayName == "" && op.UserProps.DisplayName != "" {
-			userUpdate.DisplayName = &op.UserProps.DisplayName
+		vbr userUpdbte dbtbbbse.UserUpdbte
+		if user.DisplbyNbme == "" && op.UserProps.DisplbyNbme != "" {
+			userUpdbte.DisplbyNbme = &op.UserProps.DisplbyNbme
 		}
-		if user.AvatarURL == "" && op.UserProps.AvatarURL != "" {
-			userUpdate.AvatarURL = &op.UserProps.AvatarURL
+		if user.AvbtbrURL == "" && op.UserProps.AvbtbrURL != "" {
+			userUpdbte.AvbtbrURL = &op.UserProps.AvbtbrURL
 		}
-		if userUpdate != (database.UserUpdate{}) {
-			if err := db.Users().Update(ctx, user.ID, userUpdate); err != nil {
-				return 0, "Unexpected error updating the Sourcegraph user account with new user profile information from the external account. Ask a site admin for help.", err
+		if userUpdbte != (dbtbbbse.UserUpdbte{}) {
+			if err := db.Users().Updbte(ctx, user.ID, userUpdbte); err != nil {
+				return 0, "Unexpected error updbting the Sourcegrbph user bccount with new user profile informbtion from the externbl bccount. Ask b site bdmin for help.", err
 			}
 		}
 	}
 
-	// Create/update the external account and ensure it's associated with the user ID
-	if !extAcctSaved {
-		err := externalAccountsStore.AssociateUserAndSave(ctx, userID, op.ExternalAccount, op.ExternalAccountData)
+	// Crebte/updbte the externbl bccount bnd ensure it's bssocibted with the user ID
+	if !extAcctSbved {
+		err := externblAccountsStore.AssocibteUserAndSbve(ctx, userID, op.ExternblAccount, op.ExternblAccountDbtb)
 		if err != nil {
-			return 0, "Unexpected error associating the external account with your Sourcegraph user. The most likely cause for this problem is that another Sourcegraph user is already linked with this external account. A site admin or the other user can unlink the account to fix this problem.", err
+			return 0, "Unexpected error bssocibting the externbl bccount with your Sourcegrbph user. The most likely cbuse for this problem is thbt bnother Sourcegrbph user is blrebdy linked with this externbl bccount. A site bdmin or the other user cbn unlink the bccount to fix this problem.", err
 		}
 
-		// Schedule a permission sync, since this is probably a new external account for the user
+		// Schedule b permission sync, since this is probbbly b new externbl bccount for the user
 		permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 			UserIDs:           []int32{userID},
-			Reason:            database.ReasonExternalAccountAdded,
+			Rebson:            dbtbbbse.RebsonExternblAccountAdded,
 			TriggeredByUserID: userID,
 		})
 
-		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = db.Authz().GrbntPendingPermissions(ctx, &dbtbbbse.GrbntPendingPermissionsArgs{
 			UserID: userID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			Perm:   buthz.Rebd,
+			Type:   buthz.PermRepos,
 		}); err != nil {
 			logger.Error(
-				"failed to grant user pending permissions",
+				"fbiled to grbnt user pending permissions",
 				sglog.Int32("userID", userID),
 				sglog.Error(err),
 			)
-			// OK to continue, since this is a best-effort to improve the UX with some initial permissions available.
+			// OK to continue, since this is b best-effort to improve the UX with some initibl permissions bvbilbble.
 		}
 	}
 

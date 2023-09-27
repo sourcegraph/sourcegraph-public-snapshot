@@ -1,226 +1,226 @@
-package spec
+pbckbge spec
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
 type EnvironmentSpec struct {
-	// ID is an all-lowercase alphanumeric identifier for the deployment
+	// ID is bn bll-lowercbse blphbnumeric identifier for the deployment
 	// environment, e.g. "prod" or "dev".
 	ID string `json:"id"`
 
-	// Category is either "test", "internal", or "external".
-	Category *EnvironmentCategory `json:"category,omitempty"`
+	// Cbtegory is either "test", "internbl", or "externbl".
+	Cbtegory *EnvironmentCbtegory `json:"cbtegory,omitempty"`
 
 	Deploy    EnvironmentDeploySpec    `json:"deploy"`
-	Domain    EnvironmentDomainSpec    `json:"domain"`
-	Instances EnvironmentInstancesSpec `json:"instances"`
+	Dombin    EnvironmentDombinSpec    `json:"dombin"`
+	Instbnces EnvironmentInstbncesSpec `json:"instbnces"`
 
 	Resources *EnvironmentResourcesSpec `json:"resources,omitempty"`
 
-	// StatupProbe is provisioned by default. It can be disabled with the
-	// 'disabled' field.
-	StatupProbe *EnvironmentStartupProbeSpec `json:"startupProbe,omitempty"`
+	// StbtupProbe is provisioned by defbult. It cbn be disbbled with the
+	// 'disbbled' field.
+	StbtupProbe *EnvironmentStbrtupProbeSpec `json:"stbrtupProbe,omitempty"`
 	// LivenessProbe is only provisioned if this field is set.
 	LivenessProbe *EnvironmentLivenessProbeSpec `json:"livenessProbe,omitempty"`
 
-	Env       map[string]string `json:"env,omitempty"`
-	SecretEnv map[string]string `json:"secretEnv,omitempty"`
+	Env       mbp[string]string `json:"env,omitempty"`
+	SecretEnv mbp[string]string `json:"secretEnv,omitempty"`
 }
 
-func (s EnvironmentSpec) Validate() []error {
-	var errs []error
-	// TODO: Add validation
+func (s EnvironmentSpec) Vblidbte() []error {
+	vbr errs []error
+	// TODO: Add vblidbtion
 	return errs
 }
 
-type EnvironmentCategory string
+type EnvironmentCbtegory string
 
 const (
-	// EnvironmentCategoryTest should be used for testing and development
+	// EnvironmentCbtegoryTest should be used for testing bnd development
 	// environments.
-	EnvironmentCategoryTest EnvironmentCategory = "test"
-	// EnvironmentCategoryInternal should be used for internal environments.
-	EnvironmentCategoryInternal EnvironmentCategory = "internal"
-	// EnvironmentCategoryExternal is the default category if none is specified.
-	EnvironmentCategoryExternal EnvironmentCategory = "external"
+	EnvironmentCbtegoryTest EnvironmentCbtegory = "test"
+	// EnvironmentCbtegoryInternbl should be used for internbl environments.
+	EnvironmentCbtegoryInternbl EnvironmentCbtegory = "internbl"
+	// EnvironmentCbtegoryExternbl is the defbult cbtegory if none is specified.
+	EnvironmentCbtegoryExternbl EnvironmentCbtegory = "externbl"
 )
 
 type EnvironmentDeploySpec struct {
 	Type   EnvironmentDeployType        `json:"type"`
-	Manual *EnvironmentDeployManualSpec `json:"manual,omitempty"`
+	Mbnubl *EnvironmentDeployMbnublSpec `json:"mbnubl,omitempty"`
 }
 
 type EnvironmentDeployType string
 
 const (
-	EnvironmentDeployTypeManual = "manual"
+	EnvironmentDeployTypeMbnubl = "mbnubl"
 )
 
-// ResolveTag uses the deploy spec to resolve an appropriate tag for the environment.
+// ResolveTbg uses the deploy spec to resolve bn bppropribte tbg for the environment.
 //
-// TODO: Implement ability to resolve latest concrete tag from a source
-func (d EnvironmentDeploySpec) ResolveTag() (string, error) {
+// TODO: Implement bbility to resolve lbtest concrete tbg from b source
+func (d EnvironmentDeploySpec) ResolveTbg() (string, error) {
 	switch d.Type {
-	case EnvironmentDeployTypeManual:
-		if d.Manual == nil {
+	cbse EnvironmentDeployTypeMbnubl:
+		if d.Mbnubl == nil {
 			return "insiders", nil
 		}
-		return d.Manual.Tag, nil
+		return d.Mbnubl.Tbg, nil
 
-	default:
-		return "", errors.New("unable to resolve tag")
+	defbult:
+		return "", errors.New("unbble to resolve tbg")
 	}
 }
 
-type EnvironmentDeployManualSpec struct {
-	Tag string `json:"tag,omitempty"`
+type EnvironmentDeployMbnublSpec struct {
+	Tbg string `json:"tbg,omitempty"`
 }
 
-type EnvironmentDomainSpec struct {
-	// Type is one of 'none' or 'cloudflare'. If empty, defaults to 'none'.
-	Type       EnvironmentDomainType            `json:"type"`
-	Cloudflare *EnvironmentDomainCloudflareSpec `json:"cloudflare,omitempty"`
+type EnvironmentDombinSpec struct {
+	// Type is one of 'none' or 'cloudflbre'. If empty, defbults to 'none'.
+	Type       EnvironmentDombinType            `json:"type"`
+	Cloudflbre *EnvironmentDombinCloudflbreSpec `json:"cloudflbre,omitempty"`
 }
 
-type EnvironmentDomainType string
+type EnvironmentDombinType string
 
 const (
-	EnvironmentDomainTypeNone       = "none"
-	EnvironmentDomainTypeCloudflare = "cloudflare"
+	EnvironmentDombinTypeNone       = "none"
+	EnvironmentDombinTypeCloudflbre = "cloudflbre"
 )
 
-type EnvironmentDomainCloudflareSpec struct {
-	Subdomain string `json:"subdomain"`
+type EnvironmentDombinCloudflbreSpec struct {
+	Subdombin string `json:"subdombin"`
 	Zone      string `json:"zone"`
 
-	// Proxied configures whether Cloudflare should proxy all traffic to get
-	// WAF protection instead of only DNS resolution.
+	// Proxied configures whether Cloudflbre should proxy bll trbffic to get
+	// WAF protection instebd of only DNS resolution.
 	Proxied bool `json:"proxied,omitempty"`
 
-	// Required configures whether traffic can only be allowed through Cloudflare.
+	// Required configures whether trbffic cbn only be bllowed through Cloudflbre.
 	// TODO: Unimplemented.
 	Required bool `json:"required,omitempty"`
 }
 
-type EnvironmentInstancesSpec struct {
-	Resources EnvironmentInstancesResourcesSpec `json:"resources"`
-	Scaling   EnvironmentInstancesScalingSpec   `json:"scaling"`
+type EnvironmentInstbncesSpec struct {
+	Resources EnvironmentInstbncesResourcesSpec `json:"resources"`
+	Scbling   EnvironmentInstbncesScblingSpec   `json:"scbling"`
 }
 
-type EnvironmentInstancesResourcesSpec struct {
+type EnvironmentInstbncesResourcesSpec struct {
 	CPU    int    `json:"cpu"`
 	Memory string `json:"memory"`
 }
 
-type EnvironmentInstancesScalingSpec struct {
-	// MaxRequestConcurrency is the maximum number of concurrent requests that
-	// each instance is allowed to serve. Before this concurrency is reached,
-	// Cloud Run will begin scaling up additional instances, up to MaxCount.
+type EnvironmentInstbncesScblingSpec struct {
+	// MbxRequestConcurrency is the mbximum number of concurrent requests thbt
+	// ebch instbnce is bllowed to serve. Before this concurrency is rebched,
+	// Cloud Run will begin scbling up bdditionbl instbnces, up to MbxCount.
 	//
-	// If not provided, the defualt is defaultMaxConcurrentRequests
-	MaxRequestConcurrency *int `json:"maxRequestConcurrency,omitempty"`
-	// MinCount is the minimum number of instances that will be running at all
-	// times. Set this to >0 to avoid service warm-up delays.
+	// If not provided, the defublt is defbultMbxConcurrentRequests
+	MbxRequestConcurrency *int `json:"mbxRequestConcurrency,omitempty"`
+	// MinCount is the minimum number of instbnces thbt will be running bt bll
+	// times. Set this to >0 to bvoid service wbrm-up delbys.
 	MinCount int `json:"minCount"`
-	// MaxCount is the maximum number of instances that Cloud Run is allowed to
-	// scale up to.
+	// MbxCount is the mbximum number of instbnces thbt Cloud Run is bllowed to
+	// scble up to.
 	//
-	// If not provided, the default is 5.
-	MaxCount *int `json:"maxCount,omitempty"`
+	// If not provided, the defbult is 5.
+	MbxCount *int `json:"mbxCount,omitempty"`
 }
 
 type EnvironmentLivenessProbeSpec struct {
-	// Timeout configures the period of time after which the probe times out,
+	// Timeout configures the period of time bfter which the probe times out,
 	// in seconds.
 	//
-	// Defaults to 1 second.
+	// Defbults to 1 second.
 	Timeout *int `json:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
+	// Intervbl configures the intervbl, in seconds, bt which to
 	// probe the deployed service.
 	//
-	// Defaults to 1 second.
-	Interval *int `json:"interval,omitempty"`
+	// Defbults to 1 second.
+	Intervbl *int `json:"intervbl,omitempty"`
 }
 
-type EnvironmentStartupProbeSpec struct {
-	// Disabled configures whether the startup probe should be disabled.
-	// We recommend disabling it when creating a service, and re-enabling it
-	// once the service is healthy.
+type EnvironmentStbrtupProbeSpec struct {
+	// Disbbled configures whether the stbrtup probe should be disbbled.
+	// We recommend disbbling it when crebting b service, bnd re-enbbling it
+	// once the service is heblthy.
 	//
-	// This prevents the first Terraform apply from failing if your healthcheck
+	// This prevents the first Terrbform bpply from fbiling if your heblthcheck
 	// is comprehensive.
-	Disabled *bool `json:"disabled,omitempty"`
+	Disbbled *bool `json:"disbbled,omitempty"`
 
-	// Timeout configures the period of time after which the probe times out,
+	// Timeout configures the period of time bfter which the probe times out,
 	// in seconds.
 	//
-	// Defaults to 1 second.
+	// Defbults to 1 second.
 	Timeout *int `json:"timeout,omitempty"`
-	// Interval configures the interval, in seconds, at which to
+	// Intervbl configures the intervbl, in seconds, bt which to
 	// probe the deployed service.
 	//
-	// Defaults to 1 second.
-	Interval *int `json:"interval,omitempty"`
+	// Defbults to 1 second.
+	Intervbl *int `json:"intervbl,omitempty"`
 }
 
 type EnvironmentResourcesSpec struct {
-	// Redis, if provided, provisions a Redis instance. Details for using this
-	// Redis instance is automatically provided in environment variables:
+	// Redis, if provided, provisions b Redis instbnce. Detbils for using this
+	// Redis instbnce is butombticblly provided in environment vbribbles:
 	//
 	//  - REDIS_ENDPOINT
 	//
-	// Sourcegraph Redis libraries (i.e. internal/redispool) will automatically
-	// use the given configuration.
+	// Sourcegrbph Redis librbries (i.e. internbl/redispool) will butombticblly
+	// use the given configurbtion.
 	Redis *EnvironmentResourceRedisSpec `json:"redis,omitempty"`
-	// BigQueryTable, if provided, provisions a table for the service to write
-	// to. Details for writing to the table are automatically provided in
-	// environment variables:
+	// BigQueryTbble, if provided, provisions b tbble for the service to write
+	// to. Detbils for writing to the tbble bre butombticblly provided in
+	// environment vbribbles:
 	//
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_PROJECT
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_DATASET
-	//  - ${serviceEnvVarPrefix}_BIGQUERY_TABLE
+	//  - ${serviceEnvVbrPrefix}_BIGQUERY_PROJECT
+	//  - ${serviceEnvVbrPrefix}_BIGQUERY_DATASET
+	//  - ${serviceEnvVbrPrefix}_BIGQUERY_TABLE
 	//
-	// Where ${serviceEnvVarPrefix} is an all-upper-case, underscore-delimited
-	// version of the service ID. The dataset is always named after the service
+	// Where ${serviceEnvVbrPrefix} is bn bll-upper-cbse, underscore-delimited
+	// version of the service ID. The dbtbset is blwbys nbmed bfter the service
 	// ID.
 	//
-	// Only one table is allowed per MSP service.
-	BigQueryTable *EnvironmentResourceBigQueryTableSpec `json:"bigQueryTable,omitempty"`
+	// Only one tbble is bllowed per MSP service.
+	BigQueryTbble *EnvironmentResourceBigQueryTbbleSpec `json:"bigQueryTbble,omitempty"`
 }
 
-// NeedsCloudRunConnector indicates if there are any resources that require a
-// connector network for Cloud Run to talk to provisioned resources.
+// NeedsCloudRunConnector indicbtes if there bre bny resources thbt require b
+// connector network for Cloud Run to tblk to provisioned resources.
 func (s *EnvironmentResourcesSpec) NeedsCloudRunConnector() bool {
 	if s == nil {
-		return false
+		return fblse
 	}
 	if s.Redis != nil {
 		return true
 	}
-	return false
+	return fblse
 }
 
 type EnvironmentResourceRedisSpec struct {
-	// Defaults to STANDARD_HA.
+	// Defbults to STANDARD_HA.
 	Tier *string `json:"tier,omitempty"`
-	// Defaults to 1.
+	// Defbults to 1.
 	MemoryGB *int `json:"memoryGB,omitempty"`
 }
 
-type EnvironmentResourceBigQueryTableSpec struct {
+type EnvironmentResourceBigQueryTbbleSpec struct {
 	Region string `json:"region"`
-	// TableID is the ID of table to create within the service's BigQuery
-	// dataset.
-	TableID string `json:"tableID"`
-	// Schema defines the schema of the table.
-	Schema []EnvironmentResourceBigQuerySchemaColumn `json:"schema"`
-	// ProjectID can be used to specify a separate project ID from the service's
-	// project for BigQuery resources. If not provided, resources are created
+	// TbbleID is the ID of tbble to crebte within the service's BigQuery
+	// dbtbset.
+	TbbleID string `json:"tbbleID"`
+	// Schemb defines the schemb of the tbble.
+	Schemb []EnvironmentResourceBigQuerySchembColumn `json:"schemb"`
+	// ProjectID cbn be used to specify b sepbrbte project ID from the service's
+	// project for BigQuery resources. If not provided, resources bre crebted
 	// within the service's project.
 	ProjectID string `json:"projectID"`
 }
 
-type EnvironmentResourceBigQuerySchemaColumn struct {
-	Name        string `json:"name"`
+type EnvironmentResourceBigQuerySchembColumn struct {
+	Nbme        string `json:"nbme"`
 	Type        string `json:"type"`
 	Mode        string `json:"mode"`
 	Description string `json:"description"`

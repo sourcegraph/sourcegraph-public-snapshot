@@ -1,163 +1,163 @@
-package releasecache
+pbckbge relebsecbche
 
 import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestParseSiteConfig(t *testing.T) {
-	t.Run("disabled", func(t *testing.T) {
-		for name, tc := range map[string]schema.SiteConfiguration{
+func TestPbrseSiteConfig(t *testing.T) {
+	t.Run("disbbled", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]schemb.SiteConfigurbtion{
 			"no dotcom":             {},
-			"no SrcCliVersionCache": {Dotcom: &schema.Dotcom{}},
-			"explicitly disabled": {
-				Dotcom: &schema.Dotcom{
-					SrcCliVersionCache: &schema.SrcCliVersionCache{Enabled: false},
+			"no SrcCliVersionCbche": {Dotcom: &schemb.Dotcom{}},
+			"explicitly disbbled": {
+				Dotcom: &schemb.Dotcom{
+					SrcCliVersionCbche: &schemb.SrcCliVersionCbche{Enbbled: fblse},
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				config, err := parseSiteConfig(&conf.Unified{SiteConfiguration: tc})
-				assert.False(t, config.enabled)
-				assert.NoError(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				config, err := pbrseSiteConfig(&conf.Unified{SiteConfigurbtion: tc})
+				bssert.Fblse(t, config.enbbled)
+				bssert.NoError(t, err)
 			})
 		}
 	})
 
-	t.Run("erroneous configurations", func(t *testing.T) {
-		for name, tc := range map[string]schema.SiteConfiguration{
+	t.Run("erroneous configurbtions", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]schemb.SiteConfigurbtion{
 			"no GitHub": {
-				Dotcom: &schema.Dotcom{
-					SrcCliVersionCache: &schema.SrcCliVersionCache{
-						Enabled: true,
+				Dotcom: &schemb.Dotcom{
+					SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+						Enbbled: true,
 					},
 				},
 			},
 			"no token": {
-				Dotcom: &schema.Dotcom{
-					SrcCliVersionCache: &schema.SrcCliVersionCache{
-						Enabled: true,
-						Github: schema.Github{
-							WebhookSecret: "a fake secret",
+				Dotcom: &schemb.Dotcom{
+					SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+						Enbbled: true,
+						Github: schemb.Github{
+							WebhookSecret: "b fbke secret",
 						},
 					},
 				},
 			},
 			"no webhook secret": {
-				Dotcom: &schema.Dotcom{
-					SrcCliVersionCache: &schema.SrcCliVersionCache{
-						Enabled: true,
-						Github: schema.Github{
-							Token: "a fake token",
+				Dotcom: &schemb.Dotcom{
+					SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+						Enbbled: true,
+						Github: schemb.Github{
+							Token: "b fbke token",
 						},
 					},
 				},
 			},
-			"invalid interval": {
-				Dotcom: &schema.Dotcom{
-					SrcCliVersionCache: &schema.SrcCliVersionCache{
-						Enabled:  true,
-						Interval: "not a duration",
-						Github: schema.Github{
-							Token:         "a fake token",
-							WebhookSecret: "a fake secret",
+			"invblid intervbl": {
+				Dotcom: &schemb.Dotcom{
+					SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+						Enbbled:  true,
+						Intervbl: "not b durbtion",
+						Github: schemb.Github{
+							Token:         "b fbke token",
+							WebhookSecret: "b fbke secret",
 						},
 					},
 				},
 			},
-			"invalid uri": {
-				Dotcom: &schema.Dotcom{
-					SrcCliVersionCache: &schema.SrcCliVersionCache{
-						Enabled: true,
-						Github: schema.Github{
-							Token:         "a fake token",
-							WebhookSecret: "a fake secret",
+			"invblid uri": {
+				Dotcom: &schemb.Dotcom{
+					SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+						Enbbled: true,
+						Github: schemb.Github{
+							Token:         "b fbke token",
+							WebhookSecret: "b fbke secret",
 							Uri:           " http://foo.com",
 						},
 					},
 				},
 			}} {
-			t.Run(name, func(t *testing.T) {
-				config, err := parseSiteConfig(&conf.Unified{SiteConfiguration: tc})
-				assert.Nil(t, config)
-				assert.Error(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				config, err := pbrseSiteConfig(&conf.Unified{SiteConfigurbtion: tc})
+				bssert.Nil(t, config)
+				bssert.Error(t, err)
 			})
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			conf schema.SiteConfiguration
-			want config
+		for nbme, tc := rbnge mbp[string]struct {
+			conf schemb.SiteConfigurbtion
+			wbnt config
 		}{
-			"default values": {
-				conf: schema.SiteConfiguration{
-					Dotcom: &schema.Dotcom{
-						SrcCliVersionCache: &schema.SrcCliVersionCache{
-							Enabled: true,
-							Github: schema.Github{
-								Token:         "a fake token",
-								WebhookSecret: "a fake secret",
+			"defbult vblues": {
+				conf: schemb.SiteConfigurbtion{
+					Dotcom: &schemb.Dotcom{
+						SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+							Enbbled: true,
+							Github: schemb.Github{
+								Token:         "b fbke token",
+								WebhookSecret: "b fbke secret",
 							},
 						},
 					},
 				},
-				want: config{
-					enabled:       true,
-					interval:      1 * time.Hour,
-					api:           mustParseUrl(t, "https://api.github.com/"),
-					owner:         "sourcegraph",
-					name:          "src-cli",
+				wbnt: config{
+					enbbled:       true,
+					intervbl:      1 * time.Hour,
+					bpi:           mustPbrseUrl(t, "https://bpi.github.com/"),
+					owner:         "sourcegrbph",
+					nbme:          "src-cli",
 					urn:           "https://github.com",
-					token:         "a fake token",
-					webhookSecret: "a fake secret",
+					token:         "b fbke token",
+					webhookSecret: "b fbke secret",
 				},
 			},
-			"overridden values": {
-				conf: schema.SiteConfiguration{
-					Dotcom: &schema.Dotcom{
-						SrcCliVersionCache: &schema.SrcCliVersionCache{
-							Enabled:  true,
-							Interval: "30m",
-							Github: schema.Github{
+			"overridden vblues": {
+				conf: schemb.SiteConfigurbtion{
+					Dotcom: &schemb.Dotcom{
+						SrcCliVersionCbche: &schemb.SrcCliVersionCbche{
+							Enbbled:  true,
+							Intervbl: "30m",
+							Github: schemb.Github{
 								Uri: "https://ghe.sgdev.org",
-								Repository: &schema.Repository{
+								Repository: &schemb.Repository{
 									Owner: "foo",
-									Name:  "bar",
+									Nbme:  "bbr",
 								},
-								Token:         "a fake token",
-								WebhookSecret: "a fake secret",
+								Token:         "b fbke token",
+								WebhookSecret: "b fbke secret",
 							},
 						},
 					},
 				},
-				want: config{
-					enabled:       true,
-					interval:      30 * time.Minute,
-					api:           mustParseUrl(t, "https://ghe.sgdev.org/api/v3"),
+				wbnt: config{
+					enbbled:       true,
+					intervbl:      30 * time.Minute,
+					bpi:           mustPbrseUrl(t, "https://ghe.sgdev.org/bpi/v3"),
 					owner:         "foo",
-					name:          "bar",
+					nbme:          "bbr",
 					urn:           "https://ghe.sgdev.org",
-					token:         "a fake token",
-					webhookSecret: "a fake secret",
+					token:         "b fbke token",
+					webhookSecret: "b fbke secret",
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				config, err := parseSiteConfig(&conf.Unified{SiteConfiguration: tc.conf})
-				assert.True(t, config.enabled)
-				assert.Equal(t, tc.want.api, config.api)
-				assert.Equal(t, tc.want.owner, config.owner)
-				assert.Equal(t, tc.want.name, config.name)
-				assert.Equal(t, tc.want.interval, config.interval)
-				assert.Equal(t, tc.want.token, config.token)
-				assert.Equal(t, tc.want.webhookSecret, config.webhookSecret)
-				assert.NoError(t, err)
+			t.Run(nbme, func(t *testing.T) {
+				config, err := pbrseSiteConfig(&conf.Unified{SiteConfigurbtion: tc.conf})
+				bssert.True(t, config.enbbled)
+				bssert.Equbl(t, tc.wbnt.bpi, config.bpi)
+				bssert.Equbl(t, tc.wbnt.owner, config.owner)
+				bssert.Equbl(t, tc.wbnt.nbme, config.nbme)
+				bssert.Equbl(t, tc.wbnt.intervbl, config.intervbl)
+				bssert.Equbl(t, tc.wbnt.token, config.token)
+				bssert.Equbl(t, tc.wbnt.webhookSecret, config.webhookSecret)
+				bssert.NoError(t, err)
 			})
 		}
 	})

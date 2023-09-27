@@ -1,228 +1,228 @@
-package service
+pbckbge service
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/rewirer"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/rewirer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/locker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrApplyClosedBatchChange is returned by ApplyBatchChange when the batch change
-// matched by the batch spec is already closed.
-var ErrApplyClosedBatchChange = errors.New("existing batch change matched by batch spec is closed")
+// ErrApplyClosedBbtchChbnge is returned by ApplyBbtchChbnge when the bbtch chbnge
+// mbtched by the bbtch spec is blrebdy closed.
+vbr ErrApplyClosedBbtchChbnge = errors.New("existing bbtch chbnge mbtched by bbtch spec is closed")
 
-// ErrMatchingBatchChangeExists is returned by ApplyBatchChange if a batch change matching the
-// batch spec already exists and FailIfExists was set.
-var ErrMatchingBatchChangeExists = errors.New("a batch change matching the given batch spec already exists")
+// ErrMbtchingBbtchChbngeExists is returned by ApplyBbtchChbnge if b bbtch chbnge mbtching the
+// bbtch spec blrebdy exists bnd FbilIfExists wbs set.
+vbr ErrMbtchingBbtchChbngeExists = errors.New("b bbtch chbnge mbtching the given bbtch spec blrebdy exists")
 
-// ErrEnsureBatchChangeFailed is returned by AppplyBatchChange when a
-// ensureBatchChangeID is provided but a batch change with the name specified the
-// batchSpec exists in the given namespace but has a different ID.
-var ErrEnsureBatchChangeFailed = errors.New("a batch change in the given namespace and with the given name exists but does not match the given ID")
+// ErrEnsureBbtchChbngeFbiled is returned by AppplyBbtchChbnge when b
+// ensureBbtchChbngeID is provided but b bbtch chbnge with the nbme specified the
+// bbtchSpec exists in the given nbmespbce but hbs b different ID.
+vbr ErrEnsureBbtchChbngeFbiled = errors.New("b bbtch chbnge in the given nbmespbce bnd with the given nbme exists but does not mbtch the given ID")
 
-type ApplyBatchChangeOpts struct {
-	BatchSpecRandID     string
-	EnsureBatchChangeID int64
+type ApplyBbtchChbngeOpts struct {
+	BbtchSpecRbndID     string
+	EnsureBbtchChbngeID int64
 
-	// When FailIfBatchChangeExists is true, ApplyBatchChange will fail if a batch change
-	// matching the given batch spec already exists.
-	FailIfBatchChangeExists bool
+	// When FbilIfBbtchChbngeExists is true, ApplyBbtchChbnge will fbil if b bbtch chbnge
+	// mbtching the given bbtch spec blrebdy exists.
+	FbilIfBbtchChbngeExists bool
 
-	PublicationStates UiPublicationStates
+	PublicbtionStbtes UiPublicbtionStbtes
 }
 
-func (o ApplyBatchChangeOpts) String() string {
+func (o ApplyBbtchChbngeOpts) String() string {
 	return fmt.Sprintf(
-		"BatchSpec %s, EnsureBatchChangeID %d",
-		o.BatchSpecRandID,
-		o.EnsureBatchChangeID,
+		"BbtchSpec %s, EnsureBbtchChbngeID %d",
+		o.BbtchSpecRbndID,
+		o.EnsureBbtchChbngeID,
 	)
 }
 
-// ApplyBatchChange creates the BatchChange.
-func (s *Service) ApplyBatchChange(
+// ApplyBbtchChbnge crebtes the BbtchChbnge.
+func (s *Service) ApplyBbtchChbnge(
 	ctx context.Context,
-	opts ApplyBatchChangeOpts,
-) (batchChange *btypes.BatchChange, err error) {
-	ctx, _, endObservation := s.operations.applyBatchChange.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	opts ApplyBbtchChbngeOpts,
+) (bbtchChbnge *btypes.BbtchChbnge, err error) {
+	ctx, _, endObservbtion := s.operbtions.bpplyBbtchChbnge.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	// TODO move license check logic from resolver to here
 
-	batchSpec, err := s.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-		RandID: opts.BatchSpecRandID,
+	bbtchSpec, err := s.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{
+		RbndID: opts.BbtchSpecRbndID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only site-admins or the creator of batchSpec can apply it.
-	// If the batch change belongs to an org namespace, org members will be able to access it if
-	// the `orgs.allMembersBatchChangesAdmin` setting is true.
-	if err := s.checkViewerCanAdminister(ctx, batchSpec.NamespaceOrgID, batchSpec.UserID, false); err != nil {
+	// 🚨 SECURITY: Only site-bdmins or the crebtor of bbtchSpec cbn bpply it.
+	// If the bbtch chbnge belongs to bn org nbmespbce, org members will be bble to bccess it if
+	// the `orgs.bllMembersBbtchChbngesAdmin` setting is true.
+	if err := s.checkViewerCbnAdminister(ctx, bbtchSpec.NbmespbceOrgID, bbtchSpec.UserID, fblse); err != nil {
 		return nil, err
 	}
 
-	// Validate ChangesetSpecs and return error if they're invalid and the
-	// BatchSpec can't be applied safely.
-	if err := s.ValidateChangesetSpecs(ctx, batchSpec.ID); err != nil {
+	// Vblidbte ChbngesetSpecs bnd return error if they're invblid bnd the
+	// BbtchSpec cbn't be bpplied sbfely.
+	if err := s.VblidbteChbngesetSpecs(ctx, bbtchSpec.ID); err != nil {
 		return nil, err
 	}
 
-	batchChange, previousSpecID, err := s.ReconcileBatchChange(ctx, batchSpec)
+	bbtchChbnge, previousSpecID, err := s.ReconcileBbtchChbnge(ctx, bbtchSpec)
 	if err != nil {
 		return nil, err
 	}
 
-	if batchChange.ID != 0 && opts.FailIfBatchChangeExists {
-		return nil, ErrMatchingBatchChangeExists
+	if bbtchChbnge.ID != 0 && opts.FbilIfBbtchChbngeExists {
+		return nil, ErrMbtchingBbtchChbngeExists
 	}
 
-	if opts.EnsureBatchChangeID != 0 && batchChange.ID != opts.EnsureBatchChangeID {
-		return nil, ErrEnsureBatchChangeFailed
+	if opts.EnsureBbtchChbngeID != 0 && bbtchChbnge.ID != opts.EnsureBbtchChbngeID {
+		return nil, ErrEnsureBbtchChbngeFbiled
 	}
 
-	if batchChange.Closed() {
-		return nil, ErrApplyClosedBatchChange
+	if bbtchChbnge.Closed() {
+		return nil, ErrApplyClosedBbtchChbnge
 	}
 
-	if previousSpecID == batchSpec.ID {
-		return batchChange, nil
+	if previousSpecID == bbtchSpec.ID {
+		return bbtchChbnge, nil
 	}
 
-	// Before we write to the database in a transaction, we cancel all
-	// currently enqueued/errored-and-retryable changesets the batch change might
-	// have.
-	// We do this so we don't continue to possibly create changesets on the
-	// codehost while we're applying a new batch spec.
-	// This is blocking, because the changeset rows currently being processed by the
-	// reconciler are locked.
-	tx, err := s.store.Transact(ctx)
+	// Before we write to the dbtbbbse in b trbnsbction, we cbncel bll
+	// currently enqueued/errored-bnd-retrybble chbngesets the bbtch chbnge might
+	// hbve.
+	// We do this so we don't continue to possibly crebte chbngesets on the
+	// codehost while we're bpplying b new bbtch spec.
+	// This is blocking, becbuse the chbngeset rows currently being processed by the
+	// reconciler bre locked.
+	tx, err := s.store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() {
 		err = tx.Done(err)
-		// We only enqueue the webhook after the transaction succeeds. If it fails and all
-		// the DB changes are rolled back, the batch change will still be in whatever
-		// state it was before ApplyBatchChange was called. This ensures we only send a
-		// webhook when the batch change is *actually* applied, and ensures the batch
-		// change payload in the webhook is up-to-date as well.
-		if err == nil && batchChange.ID != 0 {
-			s.enqueueBatchChangeWebhook(ctx, webhooks.BatchChangeApply, bgql.MarshalBatchChangeID(batchChange.ID))
+		// We only enqueue the webhook bfter the trbnsbction succeeds. If it fbils bnd bll
+		// the DB chbnges bre rolled bbck, the bbtch chbnge will still be in whbtever
+		// stbte it wbs before ApplyBbtchChbnge wbs cblled. This ensures we only send b
+		// webhook when the bbtch chbnge is *bctublly* bpplied, bnd ensures the bbtch
+		// chbnge pbylobd in the webhook is up-to-dbte bs well.
+		if err == nil && bbtchChbnge.ID != 0 {
+			s.enqueueBbtchChbngeWebhook(ctx, webhooks.BbtchChbngeApply, bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))
 		}
 	}()
 
-	l := locker.NewWith(tx, "batches_apply")
-	locked, err := l.LockInTransaction(ctx, int32(batchChange.ID), false)
+	l := locker.NewWith(tx, "bbtches_bpply")
+	locked, err := l.LockInTrbnsbction(ctx, int32(bbtchChbnge.ID), fblse)
 	if err != nil {
 		return nil, err
 	}
 	if !locked {
-		return nil, errors.New("batch change locked by other user applying batch spec")
+		return nil, errors.New("bbtch chbnge locked by other user bpplying bbtch spec")
 	}
 
-	if err := tx.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
-		return batchChange, nil
+	if err := tx.CbncelQueuedBbtchChbngeChbngesets(ctx, bbtchChbnge.ID); err != nil {
+		return bbtchChbnge, nil
 	}
 
-	if batchChange.ID == 0 {
-		if err := tx.CreateBatchChange(ctx, batchChange); err != nil {
+	if bbtchChbnge.ID == 0 {
+		if err := tx.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
 			return nil, err
 		}
 	} else {
-		if err := tx.UpdateBatchChange(ctx, batchChange); err != nil {
+		if err := tx.UpdbteBbtchChbnge(ctx, bbtchChbnge); err != nil {
 			return nil, err
 		}
 	}
 
-	// Now we need to wire up the ChangesetSpecs of the new BatchSpec
-	// correctly with the Changesets so that the reconciler can create/update
+	// Now we need to wire up the ChbngesetSpecs of the new BbtchSpec
+	// correctly with the Chbngesets so thbt the reconciler cbn crebte/updbte
 	// them.
 
-	// Load the mapping between ChangesetSpecs and existing Changesets in the target batch spec.
-	mappings, err := tx.GetRewirerMappings(ctx, store.GetRewirerMappingsOpts{
-		BatchSpecID:   batchChange.BatchSpecID,
-		BatchChangeID: batchChange.ID,
+	// Lobd the mbpping between ChbngesetSpecs bnd existing Chbngesets in the tbrget bbtch spec.
+	mbppings, err := tx.GetRewirerMbppings(ctx, store.GetRewirerMbppingsOpts{
+		BbtchSpecID:   bbtchChbnge.BbtchSpecID,
+		BbtchChbngeID: bbtchChbnge.ID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// And execute the mapping.
-	newChangesets, updatedChangesets, err := rewirer.New(mappings, batchChange.ID).Rewire()
+	// And execute the mbpping.
+	newChbngesets, updbtedChbngesets, err := rewirer.New(mbppings, bbtchChbnge.ID).Rewire()
 	if err != nil {
 		return nil, err
 	}
 
-	// Prepare the UI publication states. We need to do this within the
-	// transaction to avoid conflicting writes to the changeset specs.
-	if err := opts.PublicationStates.prepareAndValidate(mappings); err != nil {
+	// Prepbre the UI publicbtion stbtes. We need to do this within the
+	// trbnsbction to bvoid conflicting writes to the chbngeset specs.
+	if err := opts.PublicbtionStbtes.prepbreAndVblidbte(mbppings); err != nil {
 		return nil, err
 	}
 
-	for _, changeset := range newChangesets {
-		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
-			changeset.UiPublicationState = state
+	for _, chbngeset := rbnge newChbngesets {
+		if stbte := opts.PublicbtionStbtes.get(chbngeset.CurrentSpecID); stbte != nil {
+			chbngeset.UiPublicbtionStbte = stbte
 		}
 	}
 
-	for _, changeset := range updatedChangesets {
-		if state := opts.PublicationStates.get(changeset.CurrentSpecID); state != nil {
-			changeset.UiPublicationState = state
+	for _, chbngeset := rbnge updbtedChbngesets {
+		if stbte := opts.PublicbtionStbtes.get(chbngeset.CurrentSpecID); stbte != nil {
+			chbngeset.UiPublicbtionStbte = stbte
 		}
 	}
 
-	if len(newChangesets) > 0 {
-		if err = tx.CreateChangeset(ctx, newChangesets...); err != nil {
+	if len(newChbngesets) > 0 {
+		if err = tx.CrebteChbngeset(ctx, newChbngesets...); err != nil {
 			return nil, err
 		}
 	}
 
-	if len(updatedChangesets) > 0 {
-		if err = tx.UpdateChangesetsForApply(ctx, updatedChangesets); err != nil {
+	if len(updbtedChbngesets) > 0 {
+		if err = tx.UpdbteChbngesetsForApply(ctx, updbtedChbngesets); err != nil {
 			return nil, err
 		}
 	}
 
-	return batchChange, nil
+	return bbtchChbnge, nil
 }
 
-func (s *Service) ReconcileBatchChange(
+func (s *Service) ReconcileBbtchChbnge(
 	ctx context.Context,
-	batchSpec *btypes.BatchSpec,
-) (batchChange *btypes.BatchChange, previousSpecID int64, err error) {
-	ctx, _, endObservation := s.operations.reconcileBatchChange.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	bbtchSpec *btypes.BbtchSpec,
+) (bbtchChbnge *btypes.BbtchChbnge, previousSpecID int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.reconcileBbtchChbnge.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	batchChange, err = s.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+	bbtchChbnge, err = s.GetBbtchChbngeMbtchingBbtchSpec(ctx, bbtchSpec)
 	if err != nil {
 		return nil, 0, err
 	}
-	if batchChange == nil {
-		batchChange = &btypes.BatchChange{}
+	if bbtchChbnge == nil {
+		bbtchChbnge = &btypes.BbtchChbnge{}
 	} else {
-		previousSpecID = batchChange.BatchSpecID
+		previousSpecID = bbtchChbnge.BbtchSpecID
 	}
-	// Populate the batch change with the values from the batch spec.
-	batchChange.BatchSpecID = batchSpec.ID
-	batchChange.NamespaceOrgID = batchSpec.NamespaceOrgID
-	batchChange.NamespaceUserID = batchSpec.NamespaceUserID
-	batchChange.Name = batchSpec.Spec.Name
-	a := actor.FromContext(ctx)
-	if batchChange.CreatorID == 0 {
-		batchChange.CreatorID = a.UID
+	// Populbte the bbtch chbnge with the vblues from the bbtch spec.
+	bbtchChbnge.BbtchSpecID = bbtchSpec.ID
+	bbtchChbnge.NbmespbceOrgID = bbtchSpec.NbmespbceOrgID
+	bbtchChbnge.NbmespbceUserID = bbtchSpec.NbmespbceUserID
+	bbtchChbnge.Nbme = bbtchSpec.Spec.Nbme
+	b := bctor.FromContext(ctx)
+	if bbtchChbnge.CrebtorID == 0 {
+		bbtchChbnge.CrebtorID = b.UID
 	}
-	batchChange.LastApplierID = a.UID
-	batchChange.LastAppliedAt = s.clock()
-	batchChange.Description = batchSpec.Spec.Description
-	return batchChange, previousSpecID, nil
+	bbtchChbnge.LbstApplierID = b.UID
+	bbtchChbnge.LbstAppliedAt = s.clock()
+	bbtchChbnge.Description = bbtchSpec.Spec.Description
+	return bbtchChbnge, previousSpecID, nil
 }

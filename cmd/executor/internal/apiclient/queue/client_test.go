@@ -1,4 +1,4 @@
-package queue_test
+pbckbge queue_test
 
 import (
 	"context"
@@ -11,372 +11,372 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 	dto "github.com/prometheus/client_model/go"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
-	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/queue"
+	internblexecutor "github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestClient_Dequeue(t *testing.T) {
 	tests := []struct {
-		name        string
+		nbme        string
 		spec        routeSpec
 		expectedJob types.Job
 		expectedErr error
 		isDequeued  bool
 	}{
 		{
-			name: "Success",
+			nbme: "Success",
 			spec: routeSpec{
 				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/dequeue",
-				expectedUsername: "test",
+				expectedPbth:     "/.executors/queue/test_queue/dequeue",
+				expectedUsernbme: "test",
 				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
-				responseStatus:   http.StatusOK,
-				responsePayload:  `{"id": 42}`,
+				expectedPbylobd:  `{"executorNbme": "debdbeef", "version": "0.0.0+dev"}`,
+				responseStbtus:   http.StbtusOK,
+				responsePbylobd:  `{"id": 42}`,
 			},
-			expectedJob: types.Job{ID: 42, VirtualMachineFiles: map[string]types.VirtualMachineFile{}},
+			expectedJob: types.Job{ID: 42, VirtublMbchineFiles: mbp[string]types.VirtublMbchineFile{}},
 			isDequeued:  true,
 		},
 		{
-			name: "No record",
+			nbme: "No record",
 			spec: routeSpec{
 				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/dequeue",
-				expectedUsername: "test",
+				expectedPbth:     "/.executors/queue/test_queue/dequeue",
+				expectedUsernbme: "test",
 				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
-				responseStatus:   http.StatusNoContent,
-				responsePayload:  ``,
+				expectedPbylobd:  `{"executorNbme": "debdbeef", "version": "0.0.0+dev"}`,
+				responseStbtus:   http.StbtusNoContent,
+				responsePbylobd:  ``,
 			},
 		},
 		{
-			name: "Bad Response",
+			nbme: "Bbd Response",
 			spec: routeSpec{
 				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/test_queue/dequeue",
-				expectedUsername: "test",
+				expectedPbth:     "/.executors/queue/test_queue/dequeue",
+				expectedUsernbme: "test",
 				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev"}`,
-				responseStatus:   http.StatusInternalServerError,
-				responsePayload:  ``,
+				expectedPbylobd:  `{"executorNbme": "debdbeef", "version": "0.0.0+dev"}`,
+				responseStbtus:   http.StbtusInternblServerError,
+				responsePbylobd:  ``,
 			},
-			expectedErr: errors.New("unexpected status code 500"),
+			expectedErr: errors.New("unexpected stbtus code 500"),
 		},
 		{
-			name: "Multi-queue success",
+			nbme: "Multi-queue success",
 			spec: routeSpec{
 				expectedMethod:   "POST",
-				expectedPath:     "/.executors/queue/dequeue",
-				expectedUsername: "test",
+				expectedPbth:     "/.executors/queue/dequeue",
+				expectedUsernbme: "test",
 				expectedToken:    "hunter2",
-				expectedPayload:  `{"executorName": "deadbeef", "version": "0.0.0+dev", "queues": ["test_queue_one", "test_queue_two"]}`,
-				responseStatus:   http.StatusOK,
-				responsePayload:  `{"id": 42, "queue": "test_queue_one"}`,
+				expectedPbylobd:  `{"executorNbme": "debdbeef", "version": "0.0.0+dev", "queues": ["test_queue_one", "test_queue_two"]}`,
+				responseStbtus:   http.StbtusOK,
+				responsePbylobd:  `{"id": 42, "queue": "test_queue_one"}`,
 				multiQueue:       true,
 			},
-			expectedJob: types.Job{ID: 42, Queue: "test_queue_one", VirtualMachineFiles: map[string]types.VirtualMachineFile{}},
+			expectedJob: types.Job{ID: 42, Queue: "test_queue_one", VirtublMbchineFiles: mbp[string]types.VirtublMbchineFile{}},
 			isDequeued:  true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			testRoute(t, test.spec, func(client *queue.Client) {
-				job, dequeued, err := client.Dequeue(context.Background(), "worker", "foo")
+				job, dequeued, err := client.Dequeue(context.Bbckground(), "worker", "foo")
 				if test.expectedErr != nil {
 					require.Error(t, err)
-					assert.Equal(t, test.expectedErr.Error(), err.Error())
-					assert.Zero(t, job.ID)
-					assert.False(t, dequeued)
+					bssert.Equbl(t, test.expectedErr.Error(), err.Error())
+					bssert.Zero(t, job.ID)
+					bssert.Fblse(t, dequeued)
 				} else {
 					require.NoError(t, err)
-					assert.Equal(t, test.expectedJob, job)
-					assert.Equal(t, test.isDequeued, dequeued)
+					bssert.Equbl(t, test.expectedJob, job)
+					bssert.Equbl(t, test.isDequeued, dequeued)
 				}
 			})
 		})
 	}
 }
 
-func TestClient_MarkComplete(t *testing.T) {
+func TestClient_MbrkComplete(t *testing.T) {
 	tests := []struct {
-		name        string
+		nbme        string
 		spec        routeSpec
 		job         types.Job
 		expectedErr error
 	}{
 		{
-			name: "Success",
+			nbme: "Success",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markComplete",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkComplete",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 			},
 			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
-			name: "Success general access token",
+			nbme: "Success generbl bccess token",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markComplete",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkComplete",
+				expectedUsernbme:     "test",
 				expectedToken:        "hunter2",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 			},
 			job: types.Job{ID: 42},
 		},
 		{
-			name: "Bad Response",
+			nbme: "Bbd Response",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markComplete",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkComplete",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:       http.StatusInternalServerError,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42}`,
+				responseStbtus:       http.StbtusInternblServerError,
+				responsePbylobd:      ``,
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
-			expectedErr: errors.New("unexpected status code 500"),
+			expectedErr: errors.New("unexpected stbtus code 500"),
 		},
 		{
-			name: "Multi-queue Success",
+			nbme: "Multi-queue Success",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markComplete",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkComplete",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 				multiQueue:           true,
 			},
 			job: types.Job{ID: 42, Token: "job-token", Queue: "test_queue"},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			testRoute(t, test.spec, func(client *queue.Client) {
-				marked, err := client.MarkComplete(context.Background(), test.job)
+				mbrked, err := client.MbrkComplete(context.Bbckground(), test.job)
 				if test.expectedErr != nil {
 					require.Error(t, err)
-					assert.Equal(t, test.expectedErr.Error(), err.Error())
-					assert.False(t, marked)
+					bssert.Equbl(t, test.expectedErr.Error(), err.Error())
+					bssert.Fblse(t, mbrked)
 				} else {
-					assert.True(t, marked)
+					bssert.True(t, mbrked)
 				}
 			})
 		})
 	}
 }
 
-func TestClient_MarkErrored(t *testing.T) {
+func TestClient_MbrkErrored(t *testing.T) {
 	tests := []struct {
-		name        string
+		nbme        string
 		spec        routeSpec
 		job         types.Job
 		expectedErr error
 	}{
 		{
-			name: "Success",
+			nbme: "Success",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markErrored",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkErrored",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 			},
 			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
-			name: "Success general access token",
+			nbme: "Success generbl bccess token",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markErrored",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkErrored",
+				expectedUsernbme:     "test",
 				expectedToken:        "hunter2",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 			},
 			job: types.Job{ID: 42},
 		},
 		{
-			name: "Bad Response",
+			nbme: "Bbd Response",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markErrored",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkErrored",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusInternalServerError,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusInternblServerError,
+				responsePbylobd:      ``,
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
-			expectedErr: errors.New("unexpected status code 500"),
+			expectedErr: errors.New("unexpected stbtus code 500"),
 		},
 		{
-			name: "Multi-queue Success",
+			nbme: "Multi-queue Success",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markErrored",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkErrored",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 				multiQueue:           true,
 			},
 			job: types.Job{ID: 42, Token: "job-token", Queue: "test_queue"},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			testRoute(t, test.spec, func(client *queue.Client) {
-				marked, err := client.MarkErrored(context.Background(), test.job, "OH NO")
+				mbrked, err := client.MbrkErrored(context.Bbckground(), test.job, "OH NO")
 				if test.expectedErr != nil {
 					require.Error(t, err)
-					assert.Equal(t, test.expectedErr.Error(), err.Error())
-					assert.False(t, marked)
+					bssert.Equbl(t, test.expectedErr.Error(), err.Error())
+					bssert.Fblse(t, mbrked)
 				} else {
-					assert.True(t, marked)
+					bssert.True(t, mbrked)
 				}
 			})
 		})
 	}
 }
 
-func TestClient_MarkFailed(t *testing.T) {
+func TestClient_MbrkFbiled(t *testing.T) {
 	tests := []struct {
-		name        string
+		nbme        string
 		spec        routeSpec
 		job         types.Job
 		expectedErr error
 	}{
 		{
-			name: "Success",
+			nbme: "Success",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markFailed",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkFbiled",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 			},
 			job: types.Job{ID: 42, Token: "job-token"},
 		},
 		{
-			name: "Success general access token",
+			nbme: "Success generbl bccess token",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markFailed",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkFbiled",
+				expectedUsernbme:     "test",
 				expectedToken:        "hunter2",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 			},
 			job: types.Job{ID: 42},
 		},
 		{
-			name: "Bad Response",
+			nbme: "Bbd Response",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markFailed",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkFbiled",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusInternalServerError,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusInternblServerError,
+				responsePbylobd:      ``,
 			},
 			job:         types.Job{ID: 42, Token: "job-token"},
-			expectedErr: errors.New("unexpected status code 500"),
+			expectedErr: errors.New("unexpected stbtus code 500"),
 		},
 		{
-			name: "Success",
+			nbme: "Success",
 			spec: routeSpec{
 				expectedMethod:       "POST",
-				expectedPath:         "/.executors/queue/test_queue/markFailed",
-				expectedUsername:     "test",
+				expectedPbth:         "/.executors/queue/test_queue/mbrkFbiled",
+				expectedUsernbme:     "test",
 				expectedToken:        "job-token",
 				expectedJobID:        "42",
-				expectedExecutorName: "deadbeef",
-				expectedPayload:      `{"executorName": "deadbeef", "jobId": 42, "errorMessage": "OH NO"}`,
-				responseStatus:       http.StatusNoContent,
-				responsePayload:      ``,
+				expectedExecutorNbme: "debdbeef",
+				expectedPbylobd:      `{"executorNbme": "debdbeef", "jobId": 42, "errorMessbge": "OH NO"}`,
+				responseStbtus:       http.StbtusNoContent,
+				responsePbylobd:      ``,
 				multiQueue:           true,
 			},
 			job: types.Job{ID: 42, Token: "job-token", Queue: "test_queue"},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			testRoute(t, test.spec, func(client *queue.Client) {
-				marked, err := client.MarkFailed(context.Background(), test.job, "OH NO")
+				mbrked, err := client.MbrkFbiled(context.Bbckground(), test.job, "OH NO")
 				if test.expectedErr != nil {
 					require.Error(t, err)
-					assert.Equal(t, test.expectedErr.Error(), err.Error())
-					assert.False(t, marked)
+					bssert.Equbl(t, test.expectedErr.Error(), err.Error())
+					bssert.Fblse(t, mbrked)
 				} else {
-					assert.True(t, marked)
+					bssert.True(t, mbrked)
 				}
 			})
 		})
 	}
 }
 
-func TestHeartbeat(t *testing.T) {
+func TestHebrtbebt(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/heartbeat",
-		expectedUsername: "test",
+		expectedPbth:     "/.executors/queue/test_queue/hebrtbebt",
+		expectedUsernbme: "test",
 		expectedToken:    "hunter2",
-		expectedPayload: `{
+		expectedPbylobd: `{
 			"version":"V2",
-			"executorName": "deadbeef",
+			"executorNbme": "debdbeef",
 			"jobIds": [1,2,3],
 
 			"os": "test-os",
-			"architecture": "test-architecture",
+			"brchitecture": "test-brchitecture",
 			"dockerVersion": "test-docker-version",
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
@@ -385,39 +385,39 @@ func TestHeartbeat(t *testing.T) {
 
 			"prometheusMetrics": ""
 		}`,
-		responseStatus:  http.StatusOK,
-		responsePayload: `{"knownIDs": ["1"], "cancelIDs": ["1"]}`,
+		responseStbtus:  http.StbtusOK,
+		responsePbylobd: `{"knownIDs": ["1"], "cbncelIDs": ["1"]}`,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		knownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"})
+		knownIDs, cbncelIDs, err := client.Hebrtbebt(context.Bbckground(), []string{"1", "2", "3"})
 		if err != nil {
-			t.Fatalf("unexpected error performing heartbeat: %s", err)
+			t.Fbtblf("unexpected error performing hebrtbebt: %s", err)
 		}
 
 		if diff := cmp.Diff([]string{"1"}, knownIDs); diff != "" {
-			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+			t.Errorf("unexpected unknown ids (-wbnt +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff([]string{"1"}, cancelIDs); diff != "" {
-			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
+		if diff := cmp.Diff([]string{"1"}, cbncelIDs); diff != "" {
+			t.Errorf("unexpected unknown cbncel ids (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestHeartbeatBadResponse(t *testing.T) {
+func TestHebrtbebtBbdResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/heartbeat",
-		expectedUsername: "test",
+		expectedPbth:     "/.executors/queue/test_queue/hebrtbebt",
+		expectedUsernbme: "test",
 		expectedToken:    "hunter2",
-		expectedPayload: `{
+		expectedPbylobd: `{
 			"version":"V2",
-			"executorName": "deadbeef",
+			"executorNbme": "debdbeef",
 			"jobIds": [1,2,3],
 
 			"os": "test-os",
-			"architecture": "test-architecture",
+			"brchitecture": "test-brchitecture",
 			"dockerVersion": "test-docker-version",
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
@@ -426,38 +426,38 @@ func TestHeartbeatBadResponse(t *testing.T) {
 
 			"prometheusMetrics": ""
 		}`,
-		responseStatus:  http.StatusInternalServerError,
-		responsePayload: ``,
+		responseStbtus:  http.StbtusInternblServerError,
+		responsePbylobd: ``,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if _, _, err := client.Heartbeat(context.Background(), []string{"1", "2", "3"}); err == nil {
-			t.Fatalf("expected an error")
+		if _, _, err := client.Hebrtbebt(context.Bbckground(), []string{"1", "2", "3"}); err == nil {
+			t.Fbtblf("expected bn error")
 		}
 	})
 }
 
-func TestMultiQueueHeartbeat(t *testing.T) {
+func TestMultiQueueHebrtbebt(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/heartbeat",
-		expectedUsername: "test",
+		expectedPbth:     "/.executors/queue/hebrtbebt",
+		expectedUsernbme: "test",
 		expectedToken:    "hunter2",
-		expectedPayload: `{
-			"executorName": "deadbeef",
+		expectedPbylobd: `{
+			"executorNbme": "debdbeef",
 			"jobIdsByQueue": [
 				{
-					"queueName": "test_queue_one",
+					"queueNbme": "test_queue_one",
 					"jobIds": ["1", "3"]
 				},
 				{
-					"queueName": "test_queue_two",
+					"queueNbme": "test_queue_two",
 					"jobIds": ["2"]
 				}
 			],
-			"queueNames": ["test_queue_one", "test_queue_two"],
+			"queueNbmes": ["test_queue_one", "test_queue_two"],
 			"os": "test-os",
-			"architecture": "test-architecture",
+			"brchitecture": "test-brchitecture",
 			"dockerVersion": "test-docker-version",
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
@@ -467,48 +467,48 @@ func TestMultiQueueHeartbeat(t *testing.T) {
 			"prometheusMetrics": "",
 			"version": ""
 		}`,
-		responseStatus:  http.StatusOK,
-		responsePayload: `{"knownIDs": ["1-test_queue_one"], "cancelIDs": ["2-test_queue_two"]}`,
+		responseStbtus:  http.StbtusOK,
+		responsePbylobd: `{"knownIDs": ["1-test_queue_one"], "cbncelIDs": ["2-test_queue_two"]}`,
 		multiQueue:      true,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		knownIDs, cancelIDs, err := client.Heartbeat(context.Background(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"})
+		knownIDs, cbncelIDs, err := client.Hebrtbebt(context.Bbckground(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"})
 		if err != nil {
-			t.Fatalf("unexpected error performing heartbeat: %s", err)
+			t.Fbtblf("unexpected error performing hebrtbebt: %s", err)
 		}
 
 		if diff := cmp.Diff([]string{"1-test_queue_one"}, knownIDs); diff != "" {
-			t.Errorf("unexpected unknown ids (-want +got):\n%s", diff)
+			t.Errorf("unexpected unknown ids (-wbnt +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff([]string{"2-test_queue_two"}, cancelIDs); diff != "" {
-			t.Errorf("unexpected unknown cancel ids (-want +got):\n%s", diff)
+		if diff := cmp.Diff([]string{"2-test_queue_two"}, cbncelIDs); diff != "" {
+			t.Errorf("unexpected unknown cbncel ids (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
+func TestMultiQueueHebrtbebtBbdResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/heartbeat",
-		expectedUsername: "test",
+		expectedPbth:     "/.executors/queue/hebrtbebt",
+		expectedUsernbme: "test",
 		expectedToken:    "hunter2",
-		expectedPayload: `{
-			"executorName": "deadbeef",
+		expectedPbylobd: `{
+			"executorNbme": "debdbeef",
 			"jobIdsByQueue": [
 				{
-					"queueName": "test_queue_one",
+					"queueNbme": "test_queue_one",
 					"jobIds": ["1", "3"]
 				},
 				{
-					"queueName": "test_queue_two",
+					"queueNbme": "test_queue_two",
 					"jobIds": ["2"]
 				}
 			],
-			"queueNames": ["test_queue_one", "test_queue_two"],
+			"queueNbmes": ["test_queue_one", "test_queue_two"],
 			"os": "test-os",
-			"architecture": "test-architecture",
+			"brchitecture": "test-brchitecture",
 			"dockerVersion": "test-docker-version",
 			"executorVersion": "test-executor-version",
 			"gitVersion": "test-git-version",
@@ -518,225 +518,225 @@ func TestMultiQueueHeartbeatBadResponse(t *testing.T) {
 			"prometheusMetrics": "",
 			"version": ""
 		}`,
-		responseStatus:  http.StatusInternalServerError,
-		responsePayload: ``,
+		responseStbtus:  http.StbtusInternblServerError,
+		responsePbylobd: ``,
 		multiQueue:      true,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if _, _, err := client.Heartbeat(context.Background(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"}); err == nil {
-			t.Fatalf("expected an error")
+		if _, _, err := client.Hebrtbebt(context.Bbckground(), []string{"1-test_queue_one", "2-test_queue_two", "3-test_queue_one"}); err == nil {
+			t.Fbtblf("expected bn error")
 		}
 	})
 }
 
-func Test_parseJobIDs(t *testing.T) {
+func Test_pbrseJobIDs(t *testing.T) {
 	tests := []struct {
-		name               string
+		nbme               string
 		jobIDs             []string
 		expected           []types.QueueJobIDs
-		expectedErrMessage string
+		expectedErrMessbge string
 	}{
 		{
-			name:   "Successful parse",
-			jobIDs: []string{"1-foo", "2-foo", "3-bar", "44-foo"},
+			nbme:   "Successful pbrse",
+			jobIDs: []string{"1-foo", "2-foo", "3-bbr", "44-foo"},
 			expected: []types.QueueJobIDs{
 				{
-					QueueName: "bar",
+					QueueNbme: "bbr",
 					JobIDs:    []string{"3"},
 				},
 				{
-					QueueName: "foo",
+					QueueNbme: "foo",
 					JobIDs:    []string{"1", "2", "44"},
 				},
 			},
 		},
 		{
-			name:               "Invalid ID format",
-			jobIDs:             []string{"1+foo", "2--bar", "3baz"},
+			nbme:               "Invblid ID formbt",
+			jobIDs:             []string{"1+foo", "2--bbr", "3bbz"},
 			expected:           nil,
-			expectedErrMessage: "failed to parse one or more unexpected job ID formats: 1+foo, 3baz",
+			expectedErrMessbge: "fbiled to pbrse one or more unexpected job ID formbts: 1+foo, 3bbz",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := queue.ParseJobIDs(tt.jobIDs)
-			if tt.expectedErrMessage != "" && tt.expectedErrMessage != err.Error() {
-				t.Fatalf("expected error message %s, got %s", tt.expectedErrMessage, err.Error())
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got, err := queue.PbrseJobIDs(tt.jobIDs)
+			if tt.expectedErrMessbge != "" && tt.expectedErrMessbge != err.Error() {
+				t.Fbtblf("expected error messbge %s, got %s", tt.expectedErrMessbge, err.Error())
 			}
-			assert.Equalf(t, tt.expected, got, "parseJobIDs(%v)", tt.jobIDs)
+			bssert.Equblf(t, tt.expected, got, "pbrseJobIDs(%v)", tt.jobIDs)
 		})
 	}
 }
 
 func TestAddExecutionLogEntry(t *testing.T) {
-	entry := internalexecutor.ExecutionLogEntry{
+	entry := internblexecutor.ExecutionLogEntry{
 		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
+		Commbnd:    []string{"ls", "-b"},
+		StbrtTime:  time.Unix(1587396557, 0).UTC(),
 		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
+		Out:        "<log pbylobd>",
+		DurbtionMs: intptr(23123),
 	}
 
 	spec := routeSpec{
 		expectedMethod:       "POST",
-		expectedPath:         "/.executors/queue/test_queue/addExecutionLogEntry",
-		expectedUsername:     "test",
+		expectedPbth:         "/.executors/queue/test_queue/bddExecutionLogEntry",
+		expectedUsernbme:     "test",
 		expectedToken:        "job-token",
 		expectedJobID:        "42",
-		expectedExecutorName: "deadbeef",
-		expectedPayload: `{
-			"executorName": "deadbeef",
+		expectedExecutorNbme: "debdbeef",
+		expectedPbylobd: `{
+			"executorNbme": "debdbeef",
 			"jobId": 42,
 			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
+			"commbnd": ["ls", "-b"],
+			"stbrtTime": "2020-04-20T15:29:17Z",
 			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
+			"out": "<log pbylobd>",
+			"durbtionMs": 23123
 		}`,
-		responseStatus:  http.StatusOK,
-		responsePayload: `99`,
+		responseStbtus:  http.StbtusOK,
+		responsePbylobd: `99`,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		entryID, err := client.AddExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, entry)
+		entryID, err := client.AddExecutionLogEntry(context.Bbckground(), types.Job{ID: 42, Token: "job-token"}, entry)
 		if err != nil {
-			t.Fatalf("unexpected error updating log contents: %s", err)
+			t.Fbtblf("unexpected error updbting log contents: %s", err)
 		}
 		if entryID != 99 {
-			t.Fatalf("unexpected entryID returned. want=%d, have=%d", 99, entryID)
+			t.Fbtblf("unexpected entryID returned. wbnt=%d, hbve=%d", 99, entryID)
 		}
 	})
 }
 
-func TestAddExecutionLogEntryBadResponse(t *testing.T) {
-	entry := internalexecutor.ExecutionLogEntry{
+func TestAddExecutionLogEntryBbdResponse(t *testing.T) {
+	entry := internblexecutor.ExecutionLogEntry{
 		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
+		Commbnd:    []string{"ls", "-b"},
+		StbrtTime:  time.Unix(1587396557, 0).UTC(),
 		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
+		Out:        "<log pbylobd>",
+		DurbtionMs: intptr(23123),
 	}
 
 	spec := routeSpec{
 		expectedMethod:       "POST",
-		expectedPath:         "/.executors/queue/test_queue/addExecutionLogEntry",
-		expectedUsername:     "test",
+		expectedPbth:         "/.executors/queue/test_queue/bddExecutionLogEntry",
+		expectedUsernbme:     "test",
 		expectedToken:        "job-token",
 		expectedJobID:        "42",
-		expectedExecutorName: "deadbeef",
-		expectedPayload: `{
-			"executorName": "deadbeef",
+		expectedExecutorNbme: "debdbeef",
+		expectedPbylobd: `{
+			"executorNbme": "debdbeef",
 			"jobId": 42,
 			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
+			"commbnd": ["ls", "-b"],
+			"stbrtTime": "2020-04-20T15:29:17Z",
 			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
+			"out": "<log pbylobd>",
+			"durbtionMs": 23123
 		}`,
-		responseStatus:  http.StatusInternalServerError,
-		responsePayload: ``,
+		responseStbtus:  http.StbtusInternblServerError,
+		responsePbylobd: ``,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if _, err := client.AddExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, entry); err == nil {
-			t.Fatalf("expected an error")
+		if _, err := client.AddExecutionLogEntry(context.Bbckground(), types.Job{ID: 42, Token: "job-token"}, entry); err == nil {
+			t.Fbtblf("expected bn error")
 		}
 	})
 }
 
-func TestUpdateExecutionLogEntry(t *testing.T) {
-	entry := internalexecutor.ExecutionLogEntry{
+func TestUpdbteExecutionLogEntry(t *testing.T) {
+	entry := internblexecutor.ExecutionLogEntry{
 		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
+		Commbnd:    []string{"ls", "-b"},
+		StbrtTime:  time.Unix(1587396557, 0).UTC(),
 		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
+		Out:        "<log pbylobd>",
+		DurbtionMs: intptr(23123),
 	}
 
 	spec := routeSpec{
 		expectedMethod:       "POST",
-		expectedPath:         "/.executors/queue/test_queue/updateExecutionLogEntry",
-		expectedUsername:     "test",
+		expectedPbth:         "/.executors/queue/test_queue/updbteExecutionLogEntry",
+		expectedUsernbme:     "test",
 		expectedToken:        "job-token",
 		expectedJobID:        "42",
-		expectedExecutorName: "deadbeef",
-		expectedPayload: `{
-			"executorName": "deadbeef",
-			"jobId": 42,
-			"entryId": 99,
-			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
-			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
-		}`,
-		responseStatus:  http.StatusNoContent,
-		responsePayload: ``,
-	}
-
-	testRoute(t, spec, func(client *queue.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
-			t.Fatalf("unexpected error updating log contents: %s", err)
-		}
-	})
-}
-
-func TestUpdateExecutionLogEntryBadResponse(t *testing.T) {
-	entry := internalexecutor.ExecutionLogEntry{
-		Key:        "foo",
-		Command:    []string{"ls", "-a"},
-		StartTime:  time.Unix(1587396557, 0).UTC(),
-		ExitCode:   intptr(123),
-		Out:        "<log payload>",
-		DurationMs: intptr(23123),
-	}
-
-	spec := routeSpec{
-		expectedMethod:       "POST",
-		expectedPath:         "/.executors/queue/test_queue/updateExecutionLogEntry",
-		expectedUsername:     "test",
-		expectedToken:        "job-token",
-		expectedJobID:        "42",
-		expectedExecutorName: "deadbeef",
-		expectedPayload: `{
-			"executorName": "deadbeef",
+		expectedExecutorNbme: "debdbeef",
+		expectedPbylobd: `{
+			"executorNbme": "debdbeef",
 			"jobId": 42,
 			"entryId": 99,
 			"key": "foo",
-			"command": ["ls", "-a"],
-			"startTime": "2020-04-20T15:29:17Z",
+			"commbnd": ["ls", "-b"],
+			"stbrtTime": "2020-04-20T15:29:17Z",
 			"exitCode": 123,
-			"out": "<log payload>",
-			"durationMs": 23123
+			"out": "<log pbylobd>",
+			"durbtionMs": 23123
 		}`,
-		responseStatus:  http.StatusInternalServerError,
-		responsePayload: ``,
+		responseStbtus:  http.StbtusNoContent,
+		responsePbylobd: ``,
 	}
 
 	testRoute(t, spec, func(client *queue.Client) {
-		if err := client.UpdateExecutionLogEntry(context.Background(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
-			t.Fatalf("expected an error")
+		if err := client.UpdbteExecutionLogEntry(context.Bbckground(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err != nil {
+			t.Fbtblf("unexpected error updbting log contents: %s", err)
+		}
+	})
+}
+
+func TestUpdbteExecutionLogEntryBbdResponse(t *testing.T) {
+	entry := internblexecutor.ExecutionLogEntry{
+		Key:        "foo",
+		Commbnd:    []string{"ls", "-b"},
+		StbrtTime:  time.Unix(1587396557, 0).UTC(),
+		ExitCode:   intptr(123),
+		Out:        "<log pbylobd>",
+		DurbtionMs: intptr(23123),
+	}
+
+	spec := routeSpec{
+		expectedMethod:       "POST",
+		expectedPbth:         "/.executors/queue/test_queue/updbteExecutionLogEntry",
+		expectedUsernbme:     "test",
+		expectedToken:        "job-token",
+		expectedJobID:        "42",
+		expectedExecutorNbme: "debdbeef",
+		expectedPbylobd: `{
+			"executorNbme": "debdbeef",
+			"jobId": 42,
+			"entryId": 99,
+			"key": "foo",
+			"commbnd": ["ls", "-b"],
+			"stbrtTime": "2020-04-20T15:29:17Z",
+			"exitCode": 123,
+			"out": "<log pbylobd>",
+			"durbtionMs": 23123
+		}`,
+		responseStbtus:  http.StbtusInternblServerError,
+		responsePbylobd: ``,
+	}
+
+	testRoute(t, spec, func(client *queue.Client) {
+		if err := client.UpdbteExecutionLogEntry(context.Bbckground(), types.Job{ID: 42, Token: "job-token"}, 99, entry); err == nil {
+			t.Fbtblf("expected bn error")
 		}
 	})
 }
 
 type routeSpec struct {
 	expectedMethod       string
-	expectedPath         string
-	expectedUsername     string
+	expectedPbth         string
+	expectedUsernbme     string
 	expectedToken        string
 	expectedJobID        string
-	expectedExecutorName string
-	expectedPayload      string
-	responseStatus       int
-	responsePayload      string
+	expectedExecutorNbme string
+	expectedPbylobd      string
+	responseStbtus       int
+	responsePbylobd      string
 	multiQueue           bool
 }
 
@@ -745,18 +745,18 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 	defer ts.Close()
 
 	options := queue.Options{
-		ExecutorName: "deadbeef",
-		BaseClientOptions: apiclient.BaseClientOptions{
-			ExecutorName: "deadbeef",
-			EndpointOptions: apiclient.EndpointOptions{
+		ExecutorNbme: "debdbeef",
+		BbseClientOptions: bpiclient.BbseClientOptions{
+			ExecutorNbme: "debdbeef",
+			EndpointOptions: bpiclient.EndpointOptions{
 				URL:        ts.URL,
-				PathPrefix: "/.executors/queue",
+				PbthPrefix: "/.executors/queue",
 				Token:      "hunter2",
 			},
 		},
 		TelemetryOptions: queue.TelemetryOptions{
 			OS:              "test-os",
-			Architecture:    "test-architecture",
+			Architecture:    "test-brchitecture",
 			DockerVersion:   "test-docker-version",
 			ExecutorVersion: "test-executor-version",
 			GitVersion:      "test-git-version",
@@ -766,9 +766,9 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 	}
 
 	if spec.multiQueue {
-		options.QueueNames = []string{"test_queue_one", "test_queue_two"}
+		options.QueueNbmes = []string{"test_queue_one", "test_queue_two"}
 	} else {
-		options.QueueName = "test_queue"
+		options.QueueNbme = "test_queue"
 	}
 
 	client, err := newQueueClient(options)
@@ -777,37 +777,37 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *queue.Client)) {
 }
 
 func testServer(t *testing.T, spec routeSpec) *httptest.Server {
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		assert.Equal(t, spec.expectedMethod, r.Method)
-		assert.Equal(t, spec.expectedPath, r.URL.Path)
+	hbndler := func(w http.ResponseWriter, r *http.Request) {
+		bssert.Equbl(t, spec.expectedMethod, r.Method)
+		bssert.Equbl(t, spec.expectedPbth, r.URL.Pbth)
 
-		parts := strings.Split(r.Header.Get("Authorization"), " ")
-		assert.Len(t, parts, 2)
-		assert.Equal(t, spec.expectedToken, parts[1])
+		pbrts := strings.Split(r.Hebder.Get("Authorizbtion"), " ")
+		bssert.Len(t, pbrts, 2)
+		bssert.Equbl(t, spec.expectedToken, pbrts[1])
 
-		assert.Equal(t, spec.expectedJobID, r.Header.Get("X-Sourcegraph-Job-ID"))
-		assert.Equal(t, spec.expectedExecutorName, r.Header.Get("X-Sourcegraph-Executor-Name"))
+		bssert.Equbl(t, spec.expectedJobID, r.Hebder.Get("X-Sourcegrbph-Job-ID"))
+		bssert.Equbl(t, spec.expectedExecutorNbme, r.Hebder.Get("X-Sourcegrbph-Executor-Nbme"))
 
-		content, err := io.ReadAll(r.Body)
+		content, err := io.RebdAll(r.Body)
 		require.NoError(t, err)
-		assert.JSONEq(t, normalizeJSON([]byte(spec.expectedPayload)), normalizeJSON(content))
+		bssert.JSONEq(t, normblizeJSON([]byte(spec.expectedPbylobd)), normblizeJSON(content))
 
-		w.WriteHeader(spec.responseStatus)
-		_, err = w.Write([]byte(spec.responsePayload))
+		w.WriteHebder(spec.responseStbtus)
+		_, err = w.Write([]byte(spec.responsePbylobd))
 		require.NoError(t, err)
 	}
 
-	return httptest.NewServer(http.HandlerFunc(handler))
+	return httptest.NewServer(http.HbndlerFunc(hbndler))
 }
 
 func newQueueClient(options queue.Options) (*queue.Client, error) {
-	return queue.New(&observation.TestContext, options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }))
+	return queue.New(&observbtion.TestContext, options, prometheus.GbthererFunc(func() ([]*dto.MetricFbmily, error) { return nil, nil }))
 }
 
-func normalizeJSON(v []byte) string {
-	temp := map[string]any{}
-	_ = json.Unmarshal(v, &temp)
-	v, _ = json.Marshal(temp)
+func normblizeJSON(v []byte) string {
+	temp := mbp[string]bny{}
+	_ = json.Unmbrshbl(v, &temp)
+	v, _ = json.Mbrshbl(temp)
 	return string(v)
 }
 

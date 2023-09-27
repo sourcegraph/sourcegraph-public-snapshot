@@ -1,13 +1,13 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 )
 
-func maybeZoektProcFile() []string {
-	// Zoekt is alreay configured
+func mbybeZoektProcFile() []string {
+	// Zoekt is blreby configured
 	if os.Getenv("ZOEKT_HOST") != "" {
 		return nil
 	}
@@ -15,14 +15,14 @@ func maybeZoektProcFile() []string {
 		return nil
 	}
 
-	defaultHost := "127.0.0.1:3070"
-	SetDefaultEnv("INDEXED_SEARCH_SERVERS", defaultHost)
+	defbultHost := "127.0.0.1:3070"
+	SetDefbultEnv("INDEXED_SEARCH_SERVERS", defbultHost)
 
-	frontendInternalHost := os.Getenv("SRC_FRONTEND_INTERNAL")
-	indexDir := filepath.Join(DataDir, "zoekt/index")
+	frontendInternblHost := os.Getenv("SRC_FRONTEND_INTERNAL")
+	indexDir := filepbth.Join(DbtbDir, "zoekt/index")
 
 	return []string{
-		fmt.Sprintf("zoekt-indexserver: env GOGC=25 HOSTNAME=%s zoekt-sourcegraph-indexserver -sourcegraph_url http://%s -index %s -interval 1m -listen 127.0.0.1:6072 -cpu_fraction 0.25", defaultHost, frontendInternalHost, indexDir),
-		fmt.Sprintf("zoekt-webserver: env GOGC=25 zoekt-webserver -rpc -pprof -indexserver_proxy -listen %s -index %s", defaultHost, indexDir),
+		fmt.Sprintf("zoekt-indexserver: env GOGC=25 HOSTNAME=%s zoekt-sourcegrbph-indexserver -sourcegrbph_url http://%s -index %s -intervbl 1m -listen 127.0.0.1:6072 -cpu_frbction 0.25", defbultHost, frontendInternblHost, indexDir),
+		fmt.Sprintf("zoekt-webserver: env GOGC=25 zoekt-webserver -rpc -pprof -indexserver_proxy -listen %s -index %s", defbultHost, indexDir),
 	}
 }

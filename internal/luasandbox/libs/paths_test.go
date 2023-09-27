@@ -1,4 +1,4 @@
-package libs
+pbckbge libs
 
 import (
 	"testing"
@@ -7,64 +7,64 @@ import (
 )
 
 func TestDirWithoutDot(t *testing.T) {
-	testCases := []struct {
+	testCbses := []struct {
 		input    string
 		expected string
 	}{
 		{"file.txt", ""},
 		{"simple/file.txt", "simple"},
-		{"longer/ancestor/paths/file.txt", "longer/ancestor/paths"},
-		{"longer/ancestor/paths/subdir", "longer/ancestor/paths"},
+		{"longer/bncestor/pbths/file.txt", "longer/bncestor/pbths"},
+		{"longer/bncestor/pbths/subdir", "longer/bncestor/pbths"},
 	}
 
-	t.Run("edge cases", func(t *testing.T) {
-		for _, input := range []string{"", "/", "."} {
-			if actual := dirWithoutDot(input); actual != "" {
-				t.Errorf("unexpected dirname: want=%s got=%s", "", actual)
+	t.Run("edge cbses", func(t *testing.T) {
+		for _, input := rbnge []string{"", "/", "."} {
+			if bctubl := dirWithoutDot(input); bctubl != "" {
+				t.Errorf("unexpected dirnbme: wbnt=%s got=%s", "", bctubl)
 			}
 		}
 	})
 
 	t.Run("un-rooted", func(t *testing.T) {
-		for _, testCase := range testCases {
-			if actual := dirWithoutDot(testCase.input); actual != testCase.expected {
-				t.Errorf("unexpected dirname: want=%s got=%s", testCase.expected, actual)
+		for _, testCbse := rbnge testCbses {
+			if bctubl := dirWithoutDot(testCbse.input); bctubl != testCbse.expected {
+				t.Errorf("unexpected dirnbme: wbnt=%s got=%s", testCbse.expected, bctubl)
 			}
 		}
 	})
 
 	t.Run("rooted", func(t *testing.T) {
-		for _, testCase := range testCases {
-			if actual := dirWithoutDot("/" + testCase.input); actual != testCase.expected {
-				t.Errorf("unexpected dirname: want=%s got=%s", testCase.expected, actual)
+		for _, testCbse := rbnge testCbses {
+			if bctubl := dirWithoutDot("/" + testCbse.input); bctubl != testCbse.expected {
+				t.Errorf("unexpected dirnbme: wbnt=%s got=%s", testCbse.expected, bctubl)
 			}
 		}
 	})
 }
 
 func TestAncestorDirs(t *testing.T) {
-	testCases := []struct {
+	testCbses := []struct {
 		input    string
 		expected []string
 	}{
 		{"", []string{""}},
 		{"file.txt", []string{""}},
 		{"simple/file.txt", []string{"simple", ""}},
-		{"longer/ancestor/paths/file.txt", []string{"longer/ancestor/paths", "longer/ancestor", "longer", ""}},
+		{"longer/bncestor/pbths/file.txt", []string{"longer/bncestor/pbths", "longer/bncestor", "longer", ""}},
 	}
 
 	t.Run("un-rooted", func(t *testing.T) {
-		for _, testCase := range testCases {
-			if diff := cmp.Diff(testCase.expected, ancestorDirs(testCase.input)); diff != "" {
-				t.Errorf("unexpected ancestor for %q dirs (-want +got):\n%s", testCase.input, diff)
+		for _, testCbse := rbnge testCbses {
+			if diff := cmp.Diff(testCbse.expected, bncestorDirs(testCbse.input)); diff != "" {
+				t.Errorf("unexpected bncestor for %q dirs (-wbnt +got):\n%s", testCbse.input, diff)
 			}
 		}
 	})
 
 	t.Run("rooted", func(t *testing.T) {
-		for _, testCase := range testCases {
-			if diff := cmp.Diff(testCase.expected, ancestorDirs("/"+testCase.input)); diff != "" {
-				t.Errorf("unexpected ancestor for %q dirs (-want +got):\n%s", testCase.input, diff)
+		for _, testCbse := rbnge testCbses {
+			if diff := cmp.Diff(testCbse.expected, bncestorDirs("/"+testCbse.input)); diff != "" {
+				t.Errorf("unexpected bncestor for %q dirs (-wbnt +got):\n%s", testCbse.input, diff)
 			}
 		}
 	})

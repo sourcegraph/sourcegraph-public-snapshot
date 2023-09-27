@@ -1,55 +1,55 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrIllegalBounds occurs when a negative or zero-width bound is supplied by the user.
-var ErrIllegalBounds = errors.New("illegal bounds")
+// ErrIllegblBounds occurs when b negbtive or zero-width bound is supplied by the user.
+vbr ErrIllegblBounds = errors.New("illegbl bounds")
 
-// Ranges returns code intelligence for the ranges that fall within the given range of lines. These
-// results are partial and do not include references outside the current file, or any location that
+// Rbnges returns code intelligence for the rbnges thbt fbll within the given rbnge of lines. These
+// results bre pbrtibl bnd do not include references outside the current file, or bny locbtion thbt
 // requires cross-linking of bundles (cross-repo or cross-root).
-func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstubs.LSIFRangesArgs) (_ resolverstubs.CodeIntelligenceRangeConnectionResolver, err error) {
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
+func (r *gitBlobLSIFDbtbResolver) Rbnges(ctx context.Context, brgs *resolverstubs.LSIFRbngesArgs) (_ resolverstubs.CodeIntelligenceRbngeConnectionResolver, err error) {
+	requestArgs := codenbv.PositionblRequestArgs{
+		RequestArgs: codenbv.RequestArgs{
+			RepositoryID: r.requestStbte.RepositoryID,
+			Commit:       r.requestStbte.Commit,
 		},
-		Path: r.requestState.Path,
+		Pbth: r.requestStbte.Pbth,
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.ranges, time.Second, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", requestArgs.RepositoryID),
-		attribute.String("commit", requestArgs.Commit),
-		attribute.String("path", requestArgs.Path),
-		attribute.Int("startLine", int(args.StartLine)),
-		attribute.Int("endLine", int(args.EndLine)),
+	ctx, _, endObservbtion := observeResolver(ctx, &err, r.operbtions.rbnges, time.Second, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", requestArgs.RepositoryID),
+		bttribute.String("commit", requestArgs.Commit),
+		bttribute.String("pbth", requestArgs.Pbth),
+		bttribute.Int("stbrtLine", int(brgs.StbrtLine)),
+		bttribute.Int("endLine", int(brgs.EndLine)),
 	}})
-	defer endObservation()
+	defer endObservbtion()
 
-	if args.StartLine < 0 || args.EndLine < args.StartLine {
-		return nil, ErrIllegalBounds
+	if brgs.StbrtLine < 0 || brgs.EndLine < brgs.StbrtLine {
+		return nil, ErrIllegblBounds
 	}
 
-	ranges, err := r.codeNavSvc.GetRanges(ctx, requestArgs, r.requestState, int(args.StartLine), int(args.EndLine))
+	rbnges, err := r.codeNbvSvc.GetRbnges(ctx, requestArgs, r.requestStbte, int(brgs.StbrtLine), int(brgs.EndLine))
 	if err != nil {
 		return nil, err
 	}
 
-	var resolvers []resolverstubs.CodeIntelligenceRangeResolver
-	for _, rn := range ranges {
-		resolvers = append(resolvers, &codeIntelligenceRangeResolver{
+	vbr resolvers []resolverstubs.CodeIntelligenceRbngeResolver
+	for _, rn := rbnge rbnges {
+		resolvers = bppend(resolvers, &codeIntelligenceRbngeResolver{
 			r:                rn,
-			locationResolver: r.locationResolver,
+			locbtionResolver: r.locbtionResolver,
 		})
 	}
 
@@ -59,27 +59,27 @@ func (r *gitBlobLSIFDataResolver) Ranges(ctx context.Context, args *resolverstub
 //
 //
 
-type codeIntelligenceRangeResolver struct {
-	r                codenav.AdjustedCodeIntelligenceRange
-	locationResolver *gitresolvers.CachedLocationResolver
+type codeIntelligenceRbngeResolver struct {
+	r                codenbv.AdjustedCodeIntelligenceRbnge
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver
 }
 
-func (r *codeIntelligenceRangeResolver) Range(ctx context.Context) (resolverstubs.RangeResolver, error) {
-	return newRangeResolver(convertRange(r.r.Range)), nil
+func (r *codeIntelligenceRbngeResolver) Rbnge(ctx context.Context) (resolverstubs.RbngeResolver, error) {
+	return newRbngeResolver(convertRbnge(r.r.Rbnge)), nil
 }
 
-func (r *codeIntelligenceRangeResolver) Definitions(ctx context.Context) (resolverstubs.LocationConnectionResolver, error) {
-	return newLocationConnectionResolver(r.r.Definitions, nil, r.locationResolver), nil
+func (r *codeIntelligenceRbngeResolver) Definitions(ctx context.Context) (resolverstubs.LocbtionConnectionResolver, error) {
+	return newLocbtionConnectionResolver(r.r.Definitions, nil, r.locbtionResolver), nil
 }
 
-func (r *codeIntelligenceRangeResolver) References(ctx context.Context) (resolverstubs.LocationConnectionResolver, error) {
-	return newLocationConnectionResolver(r.r.References, nil, r.locationResolver), nil
+func (r *codeIntelligenceRbngeResolver) References(ctx context.Context) (resolverstubs.LocbtionConnectionResolver, error) {
+	return newLocbtionConnectionResolver(r.r.References, nil, r.locbtionResolver), nil
 }
 
-func (r *codeIntelligenceRangeResolver) Implementations(ctx context.Context) (resolverstubs.LocationConnectionResolver, error) {
-	return newLocationConnectionResolver(r.r.Implementations, nil, r.locationResolver), nil
+func (r *codeIntelligenceRbngeResolver) Implementbtions(ctx context.Context) (resolverstubs.LocbtionConnectionResolver, error) {
+	return newLocbtionConnectionResolver(r.r.Implementbtions, nil, r.locbtionResolver), nil
 }
 
-func (r *codeIntelligenceRangeResolver) Hover(ctx context.Context) (resolverstubs.HoverResolver, error) {
-	return newHoverResolver(r.r.HoverText, convertRange(r.r.Range)), nil
+func (r *codeIntelligenceRbngeResolver) Hover(ctx context.Context) (resolverstubs.HoverResolver, error) {
+	return newHoverResolver(r.r.HoverText, convertRbnge(r.r.Rbnge)), nil
 }

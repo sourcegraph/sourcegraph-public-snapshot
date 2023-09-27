@@ -1,8 +1,8 @@
-package store
+pbckbge store
 
-import "github.com/keegancsmith/sqlf"
+import "github.com/keegbncsmith/sqlf"
 
-func optionalLimit(limit *int) *sqlf.Query {
+func optionblLimit(limit *int) *sqlf.Query {
 	if limit != nil {
 		return sqlf.Sprintf("LIMIT %d", *limit)
 	}

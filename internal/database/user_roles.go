@@ -1,27 +1,27 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var userRoleInsertColumns = []*sqlf.Query{
+vbr userRoleInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("user_id"),
 	sqlf.Sprintf("role_id"),
 }
 
-var userRoleColumns = []*sqlf.Query{
+vbr userRoleColumns = []*sqlf.Query{
 	sqlf.Sprintf("user_roles.user_id"),
 	sqlf.Sprintf("user_roles.role_id"),
-	sqlf.Sprintf("user_roles.created_at"),
+	sqlf.Sprintf("user_roles.crebted_bt"),
 }
 
 type UserRoleOpts struct {
@@ -50,67 +50,67 @@ type BulkAssignSystemRolesToUserOpts struct {
 	Roles  []types.SystemRole
 }
 
-type BulkUserRoleOperationOpts struct {
+type BulkUserRoleOperbtionOpts struct {
 	UserID int32
 	Roles  []int32
 }
 
 type (
-	BulkAssignRolesToUserOpts  BulkUserRoleOperationOpts
-	SetRolesForUserOpts        BulkUserRoleOperationOpts
-	BulkRevokeRolesForUserOpts BulkUserRoleOperationOpts
+	BulkAssignRolesToUserOpts  BulkUserRoleOperbtionOpts
+	SetRolesForUserOpts        BulkUserRoleOperbtionOpts
+	BulkRevokeRolesForUserOpts BulkUserRoleOperbtionOpts
 )
 
-type UserRoleStore interface {
-	basestore.ShareableStore
+type UserRoleStore interfbce {
+	bbsestore.ShbrebbleStore
 
-	// Assign is used to assign a role to a user.
+	// Assign is used to bssign b role to b user.
 	Assign(ctx context.Context, opts AssignUserRoleOpts) error
-	// AssignSystemRole assigns a system role to a user.
+	// AssignSystemRole bssigns b system role to b user.
 	AssignSystemRole(ctx context.Context, opts AssignSystemRoleOpts) error
-	// BulkAssignRolesToUser assigns multiple roles to a single user. This is useful
-	// when we want to assign a user more than one role.
+	// BulkAssignRolesToUser bssigns multiple roles to b single user. This is useful
+	// when we wbnt to bssign b user more thbn one role.
 	BulkAssignRolesToUser(ctx context.Context, opts BulkAssignRolesToUserOpts) error
-	// BulkAssignRolesToUser assigns multiple system roles to a single user. This is useful
-	// when we want to assign a user more than one system role.
+	// BulkAssignRolesToUser bssigns multiple system roles to b single user. This is useful
+	// when we wbnt to bssign b user more thbn one system role.
 	BulkAssignSystemRolesToUser(ctx context.Context, opts BulkAssignSystemRolesToUserOpts) error
-	// BulkRevokeRolesForUser revokes bulk roles assigned to a user.
+	// BulkRevokeRolesForUser revokes bulk roles bssigned to b user.
 	BulkRevokeRolesForUser(ctx context.Context, opts BulkRevokeRolesForUserOpts) error
-	// GetByRoleID returns all UserRole associated with the provided role ID
+	// GetByRoleID returns bll UserRole bssocibted with the provided role ID
 	GetByRoleID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
-	// GetByRoleIDAndUserID returns one UserRole associated with the provided role and user.
+	// GetByRoleIDAndUserID returns one UserRole bssocibted with the provided role bnd user.
 	GetByRoleIDAndUserID(ctx context.Context, opts GetUserRoleOpts) (*types.UserRole, error)
-	// GetByUserID returns all UserRole associated with the provided user ID
+	// GetByUserID returns bll UserRole bssocibted with the provided user ID
 	GetByUserID(ctx context.Context, opts GetUserRoleOpts) ([]*types.UserRole, error)
-	// Revoke deletes the user and role relationship from the database.
+	// Revoke deletes the user bnd role relbtionship from the dbtbbbse.
 	Revoke(ctx context.Context, opts RevokeUserRoleOpts) error
-	// RevokeSystemRole revokes a system role that has previously being assigned to a user.
+	// RevokeSystemRole revokes b system role thbt hbs previously being bssigned to b user.
 	RevokeSystemRole(ctx context.Context, opts RevokeSystemRoleOpts) error
-	// SetRolesForUser is used to sync the roles assigned to a role. It removes any role that isn't
-	// included in the `opts` and assigns roles that aren't yet assigned in the database but in `opts`.
+	// SetRolesForUser is used to sync the roles bssigned to b role. It removes bny role thbt isn't
+	// included in the `opts` bnd bssigns roles thbt bren't yet bssigned in the dbtbbbse but in `opts`.
 	SetRolesForUser(ctx context.Context, opts SetRolesForUserOpts) error
-	// Transact creates a transaction for the UserRoleStore.
-	WithTransact(context.Context, func(UserRoleStore) error) error
-	// With is used to merge the store with another to pull data via other stores.
-	With(basestore.ShareableStore) UserRoleStore
+	// Trbnsbct crebtes b trbnsbction for the UserRoleStore.
+	WithTrbnsbct(context.Context, func(UserRoleStore) error) error
+	// With is used to merge the store with bnother to pull dbtb vib other stores.
+	With(bbsestore.ShbrebbleStore) UserRoleStore
 }
 
 type userRoleStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-var _ UserRoleStore = &userRoleStore{}
+vbr _ UserRoleStore = &userRoleStore{}
 
-func UserRolesWith(other basestore.ShareableStore) UserRoleStore {
-	return &userRoleStore{Store: basestore.NewWithHandle(other.Handle())}
+func UserRolesWith(other bbsestore.ShbrebbleStore) UserRoleStore {
+	return &userRoleStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (r *userRoleStore) With(other basestore.ShareableStore) UserRoleStore {
+func (r *userRoleStore) With(other bbsestore.ShbrebbleStore) UserRoleStore {
 	return &userRoleStore{Store: r.Store.With(other)}
 }
 
-func (r *userRoleStore) WithTransact(ctx context.Context, f func(UserRoleStore) error) error {
-	return r.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (r *userRoleStore) WithTrbnsbct(ctx context.Context, f func(UserRoleStore) error) error {
+	return r.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&userRoleStore{Store: tx})
 	})
 }
@@ -139,14 +139,14 @@ func (r *userRoleStore) Assign(ctx context.Context, opts AssignUserRoleOpts) err
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	_, err := scanUserRole(r.QueryRow(ctx, q))
+	_, err := scbnUserRole(r.QueryRow(ctx, q))
 	if err != nil {
-		// If there are no rows returned, it means that the user has already being assigned the role.
-		// In that case, we don't need to return an error.
+		// If there bre no rows returned, it mebns thbt the user hbs blrebdy being bssigned the role.
+		// In thbt cbse, we don't need to return bn error.
 		if err == sql.ErrNoRows {
 			return nil
 		}
-		return errors.Wrap(err, "scanning user role")
+		return errors.Wrbp(err, "scbnning user role")
 	}
 	return nil
 }
@@ -160,7 +160,7 @@ func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemR
 		return errors.New("role is required")
 	}
 
-	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE nbme = %s", opts.Role)
 
 	q := sqlf.Sprintf(
 		userRoleAssignQueryFmtStr,
@@ -169,14 +169,14 @@ func (r *userRoleStore) AssignSystemRole(ctx context.Context, opts AssignSystemR
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	_, err := scanUserRole(r.QueryRow(ctx, q))
+	_, err := scbnUserRole(r.QueryRow(ctx, q))
 	if err != nil {
-		// If there are no rows returned, it means that the user has already being assigned the role.
-		// In that case, we don't need to return an error.
+		// If there bre no rows returned, it mebns thbt the user hbs blrebdy being bssigned the role.
+		// In thbt cbse, we don't need to return bn error.
 		if err == sql.ErrNoRows {
 			return nil
 		}
-		return errors.Wrap(err, "scanning user role")
+		return errors.Wrbp(err, "scbnning user role")
 	}
 	return nil
 }
@@ -190,10 +190,10 @@ func (r *userRoleStore) BulkAssignRolesToUser(ctx context.Context, opts BulkAssi
 		return errors.New("missing role ids")
 	}
 
-	var urs []*sqlf.Query
+	vbr urs []*sqlf.Query
 
-	for _, roleId := range opts.Roles {
-		urs = append(urs, sqlf.Sprintf("(%s, %s)", opts.UserID, roleId))
+	for _, roleId := rbnge opts.Roles {
+		urs = bppend(urs, sqlf.Sprintf("(%s, %s)", opts.UserID, roleId))
 	}
 
 	q := sqlf.Sprintf(
@@ -203,11 +203,11 @@ func (r *userRoleStore) BulkAssignRolesToUser(ctx context.Context, opts BulkAssi
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
-	_, err := scanUserRoles(r.Query(ctx, q))
+	vbr scbnUserRoles = bbsestore.NewSliceScbnner(scbnUserRole)
+	_, err := scbnUserRoles(r.Query(ctx, q))
 	if err != nil {
-		// If there are no rows returned, it means that the user has already being assigned the role.
-		// In that case, we don't need to return an error.
+		// If there bre no rows returned, it mebns thbt the user hbs blrebdy being bssigned the role.
+		// In thbt cbse, we don't need to return bn error.
 		if err == sql.ErrNoRows {
 			return nil
 		}
@@ -222,13 +222,13 @@ func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts Bu
 	}
 
 	if len(opts.Roles) == 0 {
-		return errors.New("roles are required")
+		return errors.New("roles bre required")
 	}
 
-	var urs []*sqlf.Query
-	for _, role := range opts.Roles {
-		roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", role)
-		urs = append(urs, sqlf.Sprintf("(%s, (%s))", opts.UserID, roleQuery))
+	vbr urs []*sqlf.Query
+	for _, role := rbnge opts.Roles {
+		roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE nbme = %s", role)
+		urs = bppend(urs, sqlf.Sprintf("(%s, (%s))", opts.UserID, roleQuery))
 	}
 
 	q := sqlf.Sprintf(
@@ -238,11 +238,11 @@ func (r *userRoleStore) BulkAssignSystemRolesToUser(ctx context.Context, opts Bu
 		sqlf.Join(userRoleColumns, ", "),
 	)
 
-	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
-	_, err := scanUserRoles(r.Query(ctx, q))
+	vbr scbnUserRoles = bbsestore.NewSliceScbnner(scbnUserRole)
+	_, err := scbnUserRoles(r.Query(ctx, q))
 	if err != nil {
-		// If there are no rows returned, it means that the user has already being assigned the role.
-		// In that case, we don't need to return an error.
+		// If there bre no rows returned, it mebns thbt the user hbs blrebdy being bssigned the role.
+		// In thbt cbse, we don't need to return bn error.
 		if err == sql.ErrNoRows {
 			return nil
 		}
@@ -258,7 +258,7 @@ type UserRoleNotFoundErr struct {
 }
 
 func (e *UserRoleNotFoundErr) Error() string {
-	return fmt.Sprintf("user role for user %d and role %d not found", e.UserID, e.RoleID)
+	return fmt.Sprintf("user role for user %d bnd role %d not found", e.UserID, e.RoleID)
 }
 
 func (e *UserRoleNotFoundErr) NotFound() bool {
@@ -286,19 +286,19 @@ func (r *userRoleStore) Revoke(ctx context.Context, opts RevokeUserRoleOpts) err
 
 	result, err := r.ExecResult(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "running delete query")
+		return errors.Wrbp(err, "running delete query")
 	}
 
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return errors.Wrap(err, "checking deleted rows")
+		return errors.Wrbp(err, "checking deleted rows")
 	}
 
 	if rowsAffected == 0 {
-		return errors.Wrap(&UserRoleNotFoundErr{
+		return errors.Wrbp(&UserRoleNotFoundErr{
 			UserID: opts.UserID,
 			RoleID: opts.RoleID,
-		}, "failed to revoke user role")
+		}, "fbiled to revoke user role")
 	}
 
 	return nil
@@ -313,7 +313,7 @@ func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemR
 		return errors.New("role is required")
 	}
 
-	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE name = %s", opts.Role)
+	roleQuery := sqlf.Sprintf("SELECT id FROM roles WHERE nbme = %s", opts.Role)
 
 	q := sqlf.Sprintf(
 		revokeUserRoleQueryFmtStr,
@@ -322,7 +322,7 @@ func (r *userRoleStore) RevokeSystemRole(ctx context.Context, opts RevokeSystemR
 
 	_, err := r.ExecResult(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "running delete query")
+		return errors.Wrbp(err, "running delete query")
 	}
 
 	return nil
@@ -337,15 +337,15 @@ func (r *userRoleStore) BulkRevokeRolesForUser(ctx context.Context, opts BulkRev
 		return errors.New("missing roles")
 	}
 
-	var preds []*sqlf.Query
-	var roleIDs []*sqlf.Query
+	vbr preds []*sqlf.Query
+	vbr roleIDs []*sqlf.Query
 
-	for _, role := range opts.Roles {
-		roleIDs = append(roleIDs, sqlf.Sprintf("%s", role))
+	for _, role := rbnge opts.Roles {
+		roleIDs = bppend(roleIDs, sqlf.Sprintf("%s", role))
 	}
 
-	preds = append(preds, sqlf.Sprintf("user_id = %s", opts.UserID))
-	preds = append(preds, sqlf.Sprintf("role_id IN ( %s )", sqlf.Join(roleIDs, ", ")))
+	preds = bppend(preds, sqlf.Sprintf("user_id = %s", opts.UserID))
+	preds = bppend(preds, sqlf.Sprintf("role_id IN ( %s )", sqlf.Join(roleIDs, ", ")))
 
 	q := sqlf.Sprintf(
 		revokeUserRoleQueryFmtStr,
@@ -382,26 +382,26 @@ func (r *userRoleStore) GetByRoleIDAndUserID(ctx context.Context, opts GetUserRo
 		getUserRoleQueryFmtStr,
 		sqlf.Join(userRoleColumns, ", "),
 		sqlf.Sprintf("INNER JOIN users ON user_roles.user_id = users.id"),
-		sqlf.Sprintf("users.deleted_at IS NULL AND user_roles.role_id = %s AND user_roles.user_id = %s", opts.RoleID, opts.UserID),
+		sqlf.Sprintf("users.deleted_bt IS NULL AND user_roles.role_id = %s AND user_roles.user_id = %s", opts.RoleID, opts.UserID),
 	)
 
-	ur, err := scanUserRole(r.QueryRow(ctx, q))
+	ur, err := scbnUserRole(r.QueryRow(ctx, q))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &UserRoleNotFoundErr{UserID: opts.UserID, RoleID: opts.RoleID}
 		}
-		return nil, errors.Wrap(err, "scanning user role")
+		return nil, errors.Wrbp(err, "scbnning user role")
 	}
 
 	return ur, nil
 }
 
-func scanUserRole(sc dbutil.Scanner) (*types.UserRole, error) {
-	var rm types.UserRole
-	if err := sc.Scan(
+func scbnUserRole(sc dbutil.Scbnner) (*types.UserRole, error) {
+	vbr rm types.UserRole
+	if err := sc.Scbn(
 		&rm.UserID,
 		&rm.RoleID,
-		&rm.CreatedAt,
+		&rm.CrebtedAt,
 	); err != nil {
 		return nil, err
 	}
@@ -419,7 +419,7 @@ WHERE %s
 `
 
 func (r *userRoleStore) get(ctx context.Context, cond *sqlf.Query) ([]*types.UserRole, error) {
-	conds := sqlf.Sprintf("%s AND users.deleted_at IS NULL", cond)
+	conds := sqlf.Sprintf("%s AND users.deleted_bt IS NULL", cond)
 	q := sqlf.Sprintf(
 		getUserRoleQueryFmtStr,
 		sqlf.Join(userRoleColumns, ", "),
@@ -427,8 +427,8 @@ func (r *userRoleStore) get(ctx context.Context, cond *sqlf.Query) ([]*types.Use
 		conds,
 	)
 
-	var scanUserRoles = basestore.NewSliceScanner(scanUserRole)
-	return scanUserRoles(r.Query(ctx, q))
+	vbr scbnUserRoles = bbsestore.NewSliceScbnner(scbnUserRole)
+	return scbnUserRoles(r.Query(ctx, q))
 }
 
 func (r *userRoleStore) SetRolesForUser(ctx context.Context, opts SetRolesForUserOpts) error {
@@ -436,53 +436,53 @@ func (r *userRoleStore) SetRolesForUser(ctx context.Context, opts SetRolesForUse
 		return errors.New("missing user id")
 	}
 
-	return r.WithTransact(ctx, func(tx UserRoleStore) error {
-		// look up the current roles assigned to the user. We use this to determine which roles to assign and revoke.
+	return r.WithTrbnsbct(ctx, func(tx UserRoleStore) error {
+		// look up the current roles bssigned to the user. We use this to determine which roles to bssign bnd revoke.
 		userRoles, err := tx.GetByUserID(ctx, GetUserRoleOpts{UserID: opts.UserID})
 		if err != nil {
 			return err
 		}
 
-		// We create a map of roles for easy lookup.
-		var userRolesMap = make(map[int32]int, len(userRoles))
-		for _, userRole := range userRoles {
-			userRolesMap[userRole.RoleID] = 1
+		// We crebte b mbp of roles for ebsy lookup.
+		vbr userRolesMbp = mbke(mbp[int32]int, len(userRoles))
+		for _, userRole := rbnge userRoles {
+			userRolesMbp[userRole.RoleID] = 1
 		}
 
-		var toBeDeleted []int32
-		var toBeAdded []int32
+		vbr toBeDeleted []int32
+		vbr toBeAdded []int32
 
-		// figure out rikes that need to be added. Roles that are received from `opts`
-		// and do not exist in the database are new and should be added. While those in the database that aren't
-		// part of `opts.Roles` should be revoked.
-		for _, role := range opts.Roles {
-			count, ok := userRolesMap[role]
+		// figure out rikes thbt need to be bdded. Roles thbt bre received from `opts`
+		// bnd do not exist in the dbtbbbse bre new bnd should be bdded. While those in the dbtbbbse thbt bren't
+		// pbrt of `opts.Roles` should be revoked.
+		for _, role := rbnge opts.Roles {
+			count, ok := userRolesMbp[role]
 			if ok {
-				// We increment the count of roles that are in the map, and also part of `opts.Roles`.
+				// We increment the count of roles thbt bre in the mbp, bnd blso pbrt of `opts.Roles`.
 				// These roles won't be modified.
-				userRolesMap[role] = count + 1
+				userRolesMbp[role] = count + 1
 			} else {
-				// Roles that aren't part of the map (do not exist in the database), should be inserted in the
-				// database.
-				userRolesMap[role] = 0
+				// Roles thbt bren't pbrt of the mbp (do not exist in the dbtbbbse), should be inserted in the
+				// dbtbbbse.
+				userRolesMbp[role] = 0
 			}
 		}
 
-		// We loop through the map to figure out roles that should be revoked or assigned.
-		for role, count := range userRolesMap {
+		// We loop through the mbp to figure out roles thbt should be revoked or bssigned.
+		for role, count := rbnge userRolesMbp {
 			switch count {
-			// Count is zero when the user <> role association doesn't exist in the database, but is
+			// Count is zero when the user <> role bssocibtion doesn't exist in the dbtbbbse, but is
 			// present in `opts.Roles`.
-			case 0:
-				toBeAdded = append(toBeAdded, role)
-			// Count is one when the user <> role association exists in the database, but not in
+			cbse 0:
+				toBeAdded = bppend(toBeAdded, role)
+			// Count is one when the user <> role bssocibtion exists in the dbtbbbse, but not in
 			// `opts.Roles`.
-			case 1:
-				toBeDeleted = append(toBeDeleted, role)
+			cbse 1:
+				toBeDeleted = bppend(toBeDeleted, role)
 			}
 		}
 
-		// If we have new permissions to be added, we insert into the database via the transaction created earlier.
+		// If we hbve new permissions to be bdded, we insert into the dbtbbbse vib the trbnsbction crebted ebrlier.
 		if len(toBeAdded) > 0 {
 			if err = tx.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
 				UserID: opts.UserID,
@@ -492,7 +492,7 @@ func (r *userRoleStore) SetRolesForUser(ctx context.Context, opts SetRolesForUse
 			}
 		}
 
-		// If we have new permissions to be removed, we remove from the database via the transaction created earlier.
+		// If we hbve new permissions to be removed, we remove from the dbtbbbse vib the trbnsbction crebted ebrlier.
 		if len(toBeDeleted) > 0 {
 			if err = tx.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{
 				UserID: opts.UserID,

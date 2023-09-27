@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"bytes"
@@ -7,29 +7,29 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/rubygems"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func NewRubyPackagesSyncer(
-	connection *schema.RubyPackagesConnection,
+func NewRubyPbckbgesSyncer(
+	connection *schemb.RubyPbckbgesConnection,
 	svc *dependencies.Service,
 	client *rubygems.Client,
 ) VCSSyncer {
-	return &vcsPackagesSyncer{
-		logger:      log.Scoped("RubyPackagesSyncer", "sync Ruby packages"),
-		typ:         "ruby_packages",
-		scheme:      dependencies.RubyPackagesScheme,
-		placeholder: reposource.NewRubyVersionedPackage("sourcegraph/placeholder", "0.0.0"),
+	return &vcsPbckbgesSyncer{
+		logger:      log.Scoped("RubyPbckbgesSyncer", "sync Ruby pbckbges"),
+		typ:         "ruby_pbckbges",
+		scheme:      dependencies.RubyPbckbgesScheme,
+		plbceholder: reposource.NewRubyVersionedPbckbge("sourcegrbph/plbceholder", "0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
 		source:      &rubyDependencySource{client: client},
@@ -40,98 +40,98 @@ type rubyDependencySource struct {
 	client *rubygems.Client
 }
 
-func (rubyDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(string(name) + "@" + version), nil
+func (rubyDependencySource) PbrseVersionedPbckbgeFromNbmeAndVersion(nbme reposource.PbckbgeNbme, version string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseRubyVersionedPbckbge(string(nbme) + "@" + version), nil
 }
 
-func (rubyDependencySource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRubyVersionedPackage(dep), nil
+func (rubyDependencySource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseRubyVersionedPbckbge(dep), nil
 }
 
-func (rubyDependencySource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromName(name), nil
+func (rubyDependencySource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseRubyPbckbgeFromNbme(nbme), nil
 }
 
-func (rubyDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParseRubyPackageFromRepoName(repoName)
+func (rubyDependencySource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseRubyPbckbgeFromRepoNbme(repoNbme)
 }
 
-func (s *rubyDependencySource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	pkgContents, err := s.client.GetPackageContents(ctx, dep)
+func (s *rubyDependencySource) Downlobd(ctx context.Context, dir string, dep reposource.VersionedPbckbge) error {
+	pkgContents, err := s.client.GetPbckbgeContents(ctx, dep)
 	if err != nil {
-		return errors.Wrapf(err, "error downloading RubyGem %q", dep.VersionedPackageSyntax())
+		return errors.Wrbpf(err, "error downlobding RubyGem %q", dep.VersionedPbckbgeSyntbx())
 	}
 	defer pkgContents.Close()
 
-	if err = unpackRubyPackage(pkgContents, dir); err != nil {
-		return errors.Wrapf(err, "failed to unzip ruby module %q", dep.VersionedPackageSyntax())
+	if err = unpbckRubyPbckbge(pkgContents, dir); err != nil {
+		return errors.Wrbpf(err, "fbiled to unzip ruby module %q", dep.VersionedPbckbgeSyntbx())
 	}
 
 	return nil
 }
 
-func unpackRubyPackage(pkg io.Reader, workDir string) error {
-	opts := unpack.Opts{
-		SkipInvalid:    true,
-		SkipDuplicates: true,
-		Filter: func(path string, file fs.FileInfo) bool {
-			return path == "data.tar.gz" || path == "metadata.gz"
+func unpbckRubyPbckbge(pkg io.Rebder, workDir string) error {
+	opts := unpbck.Opts{
+		SkipInvblid:    true,
+		SkipDuplicbtes: true,
+		Filter: func(pbth string, file fs.FileInfo) bool {
+			return pbth == "dbtb.tbr.gz" || pbth == "metbdbtb.gz"
 		},
 	}
 
 	tmpDir, err := os.MkdirTemp("", "rubygems")
 	if err != nil {
-		return errors.Wrap(err, "failed to create a temporary directory")
+		return errors.Wrbp(err, "fbiled to crebte b temporbry directory")
 	}
 	defer os.RemoveAll(tmpDir)
 
-	if err := unpack.Tar(pkg, tmpDir, opts); err != nil {
-		return errors.Wrap(err, "failed to unpack downloaded tar")
+	if err := unpbck.Tbr(pkg, tmpDir, opts); err != nil {
+		return errors.Wrbp(err, "fbiled to unpbck downlobded tbr")
 	}
 
-	err = unpackRubyDataTarGz(filepath.Join(tmpDir, "data.tar.gz"), workDir)
+	err = unpbckRubyDbtbTbrGz(filepbth.Join(tmpDir, "dbtb.tbr.gz"), workDir)
 	if err != nil {
 		return err
 	}
-	metadata, err := os.ReadFile(filepath.Join(tmpDir, "metadata.gz"))
+	metbdbtb, err := os.RebdFile(filepbth.Join(tmpDir, "metbdbtb.gz"))
 	if err != nil {
 		return err
 	}
-	metadataReader, err := gzip.NewReader(bytes.NewReader(metadata))
+	metbdbtbRebder, err := gzip.NewRebder(bytes.NewRebder(metbdbtb))
 	if err != nil {
 		return err
 	}
-	metadataBytes, err := io.ReadAll(metadataReader)
+	metbdbtbBytes, err := io.RebdAll(metbdbtbRebder)
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(workDir, "rubygems-metadata.yml"), metadataBytes, 0o644)
+	return os.WriteFile(filepbth.Join(workDir, "rubygems-metbdbtb.yml"), metbdbtbBytes, 0o644)
 }
 
-// unpackRubyDataTarGz unpacks the given `data.tar.gz` from a downloaded RubyGem.
-func unpackRubyDataTarGz(path string, workDir string) error {
-	r, err := os.Open(path)
+// unpbckRubyDbtbTbrGz unpbcks the given `dbtb.tbr.gz` from b downlobded RubyGem.
+func unpbckRubyDbtbTbrGz(pbth string, workDir string) error {
+	r, err := os.Open(pbth)
 	if err != nil {
-		return errors.Wrapf(err, "failed to read data archive file %q", path)
+		return errors.Wrbpf(err, "fbiled to rebd dbtb brchive file %q", pbth)
 	}
 	defer r.Close()
-	opts := unpack.Opts{
-		SkipInvalid:    true,
-		SkipDuplicates: true,
-		Filter: func(path string, file fs.FileInfo) bool {
+	opts := unpbck.Opts{
+		SkipInvblid:    true,
+		SkipDuplicbtes: true,
+		Filter: func(pbth string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
 			if size >= sizeLimit {
-				return false
+				return fblse
 			}
 
-			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
-			return !malicious
+			mblicious := isPotentibllyMbliciousFilepbthInArchive(pbth, workDir)
+			return !mblicious
 		},
 	}
 
-	if err := unpack.Tgz(r, workDir, opts); err != nil {
+	if err := unpbck.Tgz(r, workDir, opts); err != nil {
 		return err
 	}
 

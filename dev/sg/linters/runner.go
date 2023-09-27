@@ -1,36 +1,36 @@
-package linters
+pbckbge linters
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-type Runner = *check.Runner[*repo.State]
+type Runner = *check.Runner[*repo.Stbte]
 
-func NewRunner(out *std.Output, annotations bool, targets ...Target) Runner {
-	runner := check.NewRunner(nil, out, targets)
-	runner.GenerateAnnotations = annotations
-	runner.AnalyticsCategory = "lint"
-	runner.SuggestOnCheckFailure = func(category string, c *check.Check[*repo.State], err error) string {
+func NewRunner(out *std.Output, bnnotbtions bool, tbrgets ...Tbrget) Runner {
+	runner := check.NewRunner(nil, out, tbrgets)
+	runner.GenerbteAnnotbtions = bnnotbtions
+	runner.AnblyticsCbtegory = "lint"
+	runner.SuggestOnCheckFbilure = func(cbtegory string, c *check.Check[*repo.Stbte], err error) string {
 		if c.Fix == nil {
 			return ""
 		}
-		if annotations {
-			path := fmt.Sprintf("../../%s.md", category)
-			fd, err := os.Create(path)
+		if bnnotbtions {
+			pbth := fmt.Sprintf("../../%s.md", cbtegory)
+			fd, err := os.Crebte(pbth)
 			if err != nil {
 				os.Stderr.WriteString(err.Error() + "\n")
 			}
-			_, err = fd.WriteString(fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", category))
+			_, err = fd.WriteString(fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", cbtegory))
 			if err != nil {
 				os.Stderr.WriteString(err.Error() + "\n")
 			}
 		}
-		return fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", category)
+		return fmt.Sprintf("Try `sg lint --fix %s` to fix this issue!", cbtegory)
 	}
 	return runner
 }

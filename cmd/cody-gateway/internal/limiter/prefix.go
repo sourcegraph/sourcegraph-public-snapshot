@@ -1,4 +1,4 @@
-package limiter
+pbckbge limiter
 
 func NewPrefixRedisStore(prefix string, store RedisStore) RedisStore {
 	return &prefixRedisStore{
@@ -12,8 +12,8 @@ type prefixRedisStore struct {
 	store  RedisStore
 }
 
-func (s *prefixRedisStore) Incrby(key string, val int) (int, error) {
-	return s.store.Incrby(s.prefix+key, val)
+func (s *prefixRedisStore) Incrby(key string, vbl int) (int, error) {
+	return s.store.Incrby(s.prefix+key, vbl)
 }
 
 func (s *prefixRedisStore) GetInt(key string) (int, error) {

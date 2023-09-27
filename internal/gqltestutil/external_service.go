@@ -1,137 +1,137 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type AddExternalServiceInput struct {
+type AddExternblServiceInput struct {
 	Kind        string `json:"kind"`
-	DisplayName string `json:"displayName"`
+	DisplbyNbme string `json:"displbyNbme"`
 	Config      string `json:"config"`
 }
 
-// AddExternalService adds a new external service with given input.
-// It returns GraphQL node ID of newly created external service.
+// AddExternblService bdds b new externbl service with given input.
+// It returns GrbphQL node ID of newly crebted externbl service.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) AddExternalService(input AddExternalServiceInput) (string, error) {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) AddExternblService(input AddExternblServiceInput) (string, error) {
 	const query = `
-mutation AddExternalService($input: AddExternalServiceInput!) {
-	addExternalService(input: $input) {
+mutbtion AddExternblService($input: AddExternblServiceInput!) {
+	bddExternblService(input: $input) {
 		id
-		warning
+		wbrning
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"input": input,
 	}
-	var resp struct {
-		Data struct {
-			AddExternalService struct {
+	vbr resp struct {
+		Dbtb struct {
+			AddExternblService struct {
 				ID      string `json:"id"`
-				Warning string `json:"warning"`
-			} `json:"addExternalService"`
-		} `json:"data"`
+				Wbrning string `json:"wbrning"`
+			} `json:"bddExternblService"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	// Return the ID along with the warning so we can still clean up properly.
-	if resp.Data.AddExternalService.Warning != "" {
-		return resp.Data.AddExternalService.ID, errors.New(resp.Data.AddExternalService.Warning)
+	// Return the ID blong with the wbrning so we cbn still clebn up properly.
+	if resp.Dbtb.AddExternblService.Wbrning != "" {
+		return resp.Dbtb.AddExternblService.ID, errors.New(resp.Dbtb.AddExternblService.Wbrning)
 	}
-	return resp.Data.AddExternalService.ID, nil
+	return resp.Dbtb.AddExternblService.ID, nil
 }
 
-type UpdateExternalServiceInput struct {
+type UpdbteExternblServiceInput struct {
 	ID          string  `json:"id"`
-	DisplayName *string `json:"displayName"`
+	DisplbyNbme *string `json:"displbyNbme"`
 	Config      *string `json:"config"`
 }
 
-// UpdateExternalService updates existing external service with given input.
-// It returns GraphQL node ID of updated external service.
+// UpdbteExternblService updbtes existing externbl service with given input.
+// It returns GrbphQL node ID of updbted externbl service.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) UpdateExternalService(input UpdateExternalServiceInput) (string, error) {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) UpdbteExternblService(input UpdbteExternblServiceInput) (string, error) {
 	const query = `
-mutation UpdateExternalService($input: UpdateExternalServiceInput!) {
-	updateExternalService(input: $input) {
+mutbtion UpdbteExternblService($input: UpdbteExternblServiceInput!) {
+	updbteExternblService(input: $input) {
 		id
-		warning
+		wbrning
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"input": input,
 	}
-	var resp struct {
-		Data struct {
-			UpdateExternalService struct {
+	vbr resp struct {
+		Dbtb struct {
+			UpdbteExternblService struct {
 				ID      string `json:"id"`
-				Warning string `json:"warning"`
-			} `json:"updateExternalService"`
-		} `json:"data"`
+				Wbrning string `json:"wbrning"`
+			} `json:"updbteExternblService"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	// Return the ID along with the warning, so we can still clean up properly.
-	if resp.Data.UpdateExternalService.Warning != "" {
-		return resp.Data.UpdateExternalService.ID, errors.New(resp.Data.UpdateExternalService.Warning)
+	// Return the ID blong with the wbrning, so we cbn still clebn up properly.
+	if resp.Dbtb.UpdbteExternblService.Wbrning != "" {
+		return resp.Dbtb.UpdbteExternblService.ID, errors.New(resp.Dbtb.UpdbteExternblService.Wbrning)
 	}
-	return resp.Data.UpdateExternalService.ID, nil
+	return resp.Dbtb.UpdbteExternblService.ID, nil
 }
 
-// CheckExternalService checks whether the external service exists.
+// CheckExternblService checks whether the externbl service exists.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) CheckExternalService(id string) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) CheckExternblService(id string) error {
 	const query = `
-query CheckExternalService($id: ID!) {
+query CheckExternblService($id: ID!) {
 	node(id: $id) {
-		... on ExternalService {
+		... on ExternblService {
 			id
 		}
 	}
 }
 `
-	variables := map[string]any{"id": id}
-	var resp struct {
-		Data struct {
+	vbribbles := mbp[string]bny{"id": id}
+	vbr resp struct {
+		Dbtb struct {
 			Node struct {
 				ID string `json:"id"`
 			} `json:"node"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-// DeleteExternalService deletes the external service by given GraphQL node ID.
+// DeleteExternblService deletes the externbl service by given GrbphQL node ID.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) DeleteExternalService(id string, async bool) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) DeleteExternblService(id string, bsync bool) error {
 	const query = `
-mutation DeleteExternalService($externalService: ID!, $async: Boolean!) {
-	deleteExternalService(externalService: $externalService, async: $async) {
-		alwaysNil
+mutbtion DeleteExternblService($externblService: ID!, $bsync: Boolebn!) {
+	deleteExternblService(externblService: $externblService, bsync: $bsync) {
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{"externalService": id, "async": async}
+	vbribbles := mbp[string]bny{"externblService": id, "bsync": bsync}
 
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }

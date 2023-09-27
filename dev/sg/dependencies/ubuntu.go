@@ -1,4 +1,4 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"context"
@@ -6,262 +6,262 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func aptGetInstall(pkg string, preinstall ...string) check.FixAction[CheckArgs] {
-	commands := []string{
-		`sudo apt-get update`,
+func bptGetInstbll(pkg string, preinstbll ...string) check.FixAction[CheckArgs] {
+	commbnds := []string{
+		`sudo bpt-get updbte`,
 	}
-	commands = append(commands, preinstall...)
-	commands = append(commands, fmt.Sprintf("sudo apt-get install -y %s", pkg))
-	return cmdFixes(commands...)
+	commbnds = bppend(commbnds, preinstbll...)
+	commbnds = bppend(commbnds, fmt.Sprintf("sudo bpt-get instbll -y %s", pkg))
+	return cmdFixes(commbnds...)
 }
 
-// Ubuntu declares Ubuntu dependencies.
-var Ubuntu = []category{
+// Ubuntu declbres Ubuntu dependencies.
+vbr Ubuntu = []cbtegory{
 	{
-		Name: depsBaseUtilities,
+		Nbme: depsBbseUtilities,
 		Checks: []*dependency{
 			{
-				Name:  "gcc",
-				Check: checkAction(check.InPath("gcc")),
-				Fix:   aptGetInstall("build-essential"),
+				Nbme:  "gcc",
+				Check: checkAction(check.InPbth("gcc")),
+				Fix:   bptGetInstbll("build-essentibl"),
 			},
 			{
-				Name:  "git",
-				Check: checkAction(check.Combine(check.InPath("git"), checkGitVersion(">= 2.38.1"))),
-				Fix:   aptGetInstall("git", "sudo add-apt-repository -y ppa:git-core/ppa"),
+				Nbme:  "git",
+				Check: checkAction(check.Combine(check.InPbth("git"), checkGitVersion(">= 2.38.1"))),
+				Fix:   bptGetInstbll("git", "sudo bdd-bpt-repository -y ppb:git-core/ppb"),
 			}, {
-				Name:  "pcre",
-				Check: checkAction(check.HasUbuntuLibrary("libpcre3-dev")),
-				Fix:   aptGetInstall("libpcre3-dev"),
+				Nbme:  "pcre",
+				Check: checkAction(check.HbsUbuntuLibrbry("libpcre3-dev")),
+				Fix:   bptGetInstbll("libpcre3-dev"),
 			},
 			{
-				Name:  "sqlite",
-				Check: checkAction(check.HasUbuntuLibrary("libsqlite3-dev")),
-				Fix:   aptGetInstall("libsqlite3-dev"),
+				Nbme:  "sqlite",
+				Check: checkAction(check.HbsUbuntuLibrbry("libsqlite3-dev")),
+				Fix:   bptGetInstbll("libsqlite3-dev"),
 			},
 			{
-				Name:  "libev",
-				Check: checkAction(check.HasUbuntuLibrary("libev-dev")),
-				Fix:   aptGetInstall("libev-dev"),
+				Nbme:  "libev",
+				Check: checkAction(check.HbsUbuntuLibrbry("libev-dev")),
+				Fix:   bptGetInstbll("libev-dev"),
 			},
 			{
-				Name:  "pkg-config",
-				Check: checkAction(check.InPath("pkg-config")),
-				Fix:   aptGetInstall("pkg-config"),
+				Nbme:  "pkg-config",
+				Check: checkAction(check.InPbth("pkg-config")),
+				Fix:   bptGetInstbll("pkg-config"),
 			},
 			{
-				Name:  "jq",
-				Check: checkAction(check.InPath("jq")),
-				Fix:   aptGetInstall("jq"),
+				Nbme:  "jq",
+				Check: checkAction(check.InPbth("jq")),
+				Fix:   bptGetInstbll("jq"),
 			},
 			{
-				Name:  "curl",
-				Check: checkAction(check.InPath("curl")),
-				Fix:   aptGetInstall("curl"),
+				Nbme:  "curl",
+				Check: checkAction(check.InPbth("curl")),
+				Fix:   bptGetInstbll("curl"),
 			},
-			// Comby will fail systematically on linux/arm64 as there aren't binaries available for that platform.
+			// Comby will fbil systembticblly on linux/brm64 bs there bren't binbries bvbilbble for thbt plbtform.
 			{
-				Name:  "comby",
-				Check: checkAction(check.InPath("comby")),
-				Fix:   cmdFix(`bash <(curl -sL get-comby.netlify.app)`),
-			},
-			{
-				Name:  "bash",
-				Check: checkAction(check.CommandOutputContains("bash --version", "version 5")),
-				Fix:   aptGetInstall("bash"),
+				Nbme:  "comby",
+				Check: checkAction(check.InPbth("comby")),
+				Fix:   cmdFix(`bbsh <(curl -sL get-comby.netlify.bpp)`),
 			},
 			{
-				// Bazelisk is a wrapper for Bazel written in Go. It automatically picks a good version of Bazel given your current working directory
-				// Bazelisk replaces the bazel binary in your path
-				Name:  "bazelisk",
-				Check: checkAction(check.Combine(check.InPath("bazel"), check.CommandOutputContains("bazel version", "Bazelisk version"))),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := check.InPath("bazel")(ctx); err == nil {
-						cio.WriteAlertf("There already exists a bazel binary in your path and it is not managed by Bazlisk. Please remove it as Bazelisk replaces the bazel binary")
-						return errors.New("bazel binary already exists - please uninstall it with your package manager ex. `apt remove bazel`")
+				Nbme:  "bbsh",
+				Check: checkAction(check.CommbndOutputContbins("bbsh --version", "version 5")),
+				Fix:   bptGetInstbll("bbsh"),
+			},
+			{
+				// Bbzelisk is b wrbpper for Bbzel written in Go. It butombticblly picks b good version of Bbzel given your current working directory
+				// Bbzelisk replbces the bbzel binbry in your pbth
+				Nbme:  "bbzelisk",
+				Check: checkAction(check.Combine(check.InPbth("bbzel"), check.CommbndOutputContbins("bbzel version", "Bbzelisk version"))),
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := check.InPbth("bbzel")(ctx); err == nil {
+						cio.WriteAlertf("There blrebdy exists b bbzel binbry in your pbth bnd it is not mbnbged by Bbzlisk. Plebse remove it bs Bbzelisk replbces the bbzel binbry")
+						return errors.New("bbzel binbry blrebdy exists - plebse uninstbll it with your pbckbge mbnbger ex. `bpt remove bbzel`")
 					}
-					return cmdFix(`sudo curl -L https://github.com/bazelbuild/bazelisk/releases/download/v1.16.0/bazelisk-linux-amd64 -o /usr//bin/bazel && sudo chmod +x /usr/bin/bazel`)(ctx, cio, args)
+					return cmdFix(`sudo curl -L https://github.com/bbzelbuild/bbzelisk/relebses/downlobd/v1.16.0/bbzelisk-linux-bmd64 -o /usr//bin/bbzel && sudo chmod +x /usr/bin/bbzel`)(ctx, cio, brgs)
 				},
 			},
 			{
-				Name:  "ibazel",
-				Check: checkAction(check.InPath("ibazel")),
-				Fix:   cmdFix(`sudo curl -L  https://github.com/bazelbuild/bazel-watcher/releases/download/v0.21.4/ibazel_linux_amd64 -o /usr/bin/ibazel && sudo chmod +x /usr/bin/ibazel`),
+				Nbme:  "ibbzel",
+				Check: checkAction(check.InPbth("ibbzel")),
+				Fix:   cmdFix(`sudo curl -L  https://github.com/bbzelbuild/bbzel-wbtcher/relebses/downlobd/v0.21.4/ibbzel_linux_bmd64 -o /usr/bin/ibbzel && sudo chmod +x /usr/bin/ibbzel`),
 			},
 			{
-				Name: "asdf",
-				// TODO add the if Keegan check
-				Check: checkAction(check.CommandOutputContains("asdf", "version")),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Run(ctx, "git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.9.0").StreamLines(cio.Verbose); err != nil {
+				Nbme: "bsdf",
+				// TODO bdd the if Keegbn check
+				Check: checkAction(check.CommbndOutputContbins("bsdf", "version")),
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := usershell.Run(ctx, "git clone https://github.com/bsdf-vm/bsdf.git ~/.bsdf --brbnch v0.9.0").StrebmLines(cio.Verbose); err != nil {
 						return err
 					}
 					return usershell.Run(ctx,
-						`echo ". $HOME/.asdf/asdf.sh" >>`, usershell.ShellConfigPath(ctx),
-					).Wait()
+						`echo ". $HOME/.bsdf/bsdf.sh" >>`, usershell.ShellConfigPbth(ctx),
+					).Wbit()
 				},
 			},
 		},
 	},
 	{
-		Name:    depsDocker,
-		Enabled: disableInCI(), // Very wonky in CI
+		Nbme:    depsDocker,
+		Enbbled: disbbleInCI(), // Very wonky in CI
 		Checks: []*dependency{
 			{
-				Name:  "Docker",
-				Check: checkAction(check.InPath("docker")),
-				Fix: aptGetInstall(
+				Nbme:  "Docker",
+				Check: checkAction(check.InPbth("docker")),
+				Fix: bptGetInstbll(
 					"docker-ce docker-ce-cli",
-					"curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -",
-					fmt.Sprintf(`sudo add-apt-repository "deb [arch=%s] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable`, runtime.GOARCH)),
+					"curl -fsSL https://downlobd.docker.com/linux/ubuntu/gpg | sudo bpt-key bdd -",
+					fmt.Sprintf(`sudo bdd-bpt-repository "deb [brch=%s] https://downlobd.docker.com/linux/ubuntu $(lsb_relebse -cs) stbble`, runtime.GOARCH)),
 			},
 			{
-				Name: "Docker without sudo",
+				Nbme: "Docker without sudo",
 				Check: checkAction(check.Combine(
-					check.InPath("docker"),
-					// It's possible that the user that installed Docker this way needs sudo to run it, which is not
-					// convenient. The following check diagnose that case.
-					check.CommandOutputContains("docker ps", "CONTAINER")),
+					check.InPbth("docker"),
+					// It's possible thbt the user thbt instblled Docker this wby needs sudo to run it, which is not
+					// convenient. The following check dibgnose thbt cbse.
+					check.CommbndOutputContbins("docker ps", "CONTAINER")),
 				),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Command(ctx, "sudo groupadd docker || true").Run().StreamLines(cio.Verbose); err != nil {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := usershell.Commbnd(ctx, "sudo groupbdd docker || true").Run().StrebmLines(cio.Verbose); err != nil {
 						return err
 					}
-					if err := usershell.Command(ctx, "sudo usermod -aG docker $USER").Run().StreamLines(cio.Verbose); err != nil {
+					if err := usershell.Commbnd(ctx, "sudo usermod -bG docker $USER").Run().StrebmLines(cio.Verbose); err != nil {
 						return err
 					}
-					err := check.CommandOutputContains("docker ps", "CONTAINER")(ctx)
+					err := check.CommbndOutputContbins("docker ps", "CONTAINER")(ctx)
 					if err != nil {
-						cio.WriteAlertf(`You may need to restart your terminal for the permissions needed for Docker to take effect or you can run "newgrp docker" and restart the processe in this terminal.`)
+						cio.WriteAlertf(`You mby need to restbrt your terminbl for the permissions needed for Docker to tbke effect or you cbn run "newgrp docker" bnd restbrt the processe in this terminbl.`)
 					}
 					return err
 				},
 			},
 		},
 	},
-	categoryCloneRepositories(),
-	categoryProgrammingLanguagesAndTools(
-		// src-cli is installed differently on Ubuntu and Mac
+	cbtegoryCloneRepositories(),
+	cbtegoryProgrbmmingLbngubgesAndTools(
+		// src-cli is instblled differently on Ubuntu bnd Mbc
 		&dependency{
-			Name:  "src",
-			Check: checkAction(check.Combine(check.InPath("src"), checkSrcCliVersion(">= 4.0.2"))),
-			Fix:   cmdFix(`sudo curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src && sudo chmod +x /usr/local/bin/src`),
+			Nbme:  "src",
+			Check: checkAction(check.Combine(check.InPbth("src"), checkSrcCliVersion(">= 4.0.2"))),
+			Fix:   cmdFix(`sudo curl -L https://sourcegrbph.com/.bpi/src-cli/src_linux_bmd64 -o /usr/locbl/bin/src && sudo chmod +x /usr/locbl/bin/src`),
 		},
 	),
 	{
-		Name:      "Postgres database",
-		DependsOn: []string{depsBaseUtilities},
+		Nbme:      "Postgres dbtbbbse",
+		DependsOn: []string{depsBbseUtilities},
 		Checks: []*dependency{
 			{
-				Name:  "Install Postgres",
-				Check: checkAction(check.Combine(check.InPath("psql"))),
-				Fix:   aptGetInstall("postgresql postgresql-contrib"),
+				Nbme:  "Instbll Postgres",
+				Check: checkAction(check.Combine(check.InPbth("psql"))),
+				Fix:   bptGetInstbll("postgresql postgresql-contrib"),
 			},
 			{
-				Name: "Start Postgres",
-				// In the eventuality of the user using a non standard configuration and having
-				// set it up appropriately in its configuration, we can bypass the standard postgres
-				// check and directly check for the sourcegraph database.
+				Nbme: "Stbrt Postgres",
+				// In the eventublity of the user using b non stbndbrd configurbtion bnd hbving
+				// set it up bppropribtely in its configurbtion, we cbn bypbss the stbndbrd postgres
+				// check bnd directly check for the sourcegrbph dbtbbbse.
 				//
-				// Because only the latest error is returned, it's better to finish with the real check
-				// for error message clarity.
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					if err := checkSourcegraphDatabase(ctx, out, args); err == nil {
+				// Becbuse only the lbtest error is returned, it's better to finish with the rebl check
+				// for error messbge clbrity.
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+					if err := checkSourcegrbphDbtbbbse(ctx, out, brgs); err == nil {
 						return nil
 					}
 					return checkPostgresConnection(ctx)
 				},
-				Description: `Sourcegraph requires the PostgreSQL database to be running.
+				Description: `Sourcegrbph requires the PostgreSQL dbtbbbse to be running.
 
-We recommend installing it with your OS package manager  and starting it as a system service.
-If you know what you're doing, you can also install PostgreSQL another way.
-For example: you can use https://postgresapp.com/
+We recommend instblling it with your OS pbckbge mbnbger  bnd stbrting it bs b system service.
+If you know whbt you're doing, you cbn blso instbll PostgreSQL bnother wby.
+For exbmple: you cbn use https://postgresbpp.com/
 
-If you're not sure: use the recommended commands to install PostgreSQL.`,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := usershell.Command(ctx, "sudo systemctl enable --now postgresql").Run().StreamLines(cio.Verbose); err != nil {
+If you're not sure: use the recommended commbnds to instbll PostgreSQL.`,
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := usershell.Commbnd(ctx, "sudo systemctl enbble --now postgresql").Run().StrebmLines(cio.Verbose); err != nil {
 						return err
 					}
-					if err := usershell.Command(ctx, "sudo -u postgres createuser --superuser $USER").Run().StreamLines(cio.Verbose); err != nil {
+					if err := usershell.Commbnd(ctx, "sudo -u postgres crebteuser --superuser $USER").Run().StrebmLines(cio.Verbose); err != nil {
 						return err
 					}
 
-					// Wait for startup
+					// Wbit for stbrtup
 					time.Sleep(5 * time.Second)
 
-					// Doesn't matter if this succeeds
-					_ = usershell.Cmd(ctx, "createdb").Run()
+					// Doesn't mbtter if this succeeds
+					_ = usershell.Cmd(ctx, "crebtedb").Run()
 					return nil
 				},
 			},
 			{
-				Name:        "Connection to 'sourcegraph' database",
-				Check:       checkSourcegraphDatabase,
-				Description: `Once PostgreSQL is installed and running, we need to set up Sourcegraph database itself and a specific user.`,
+				Nbme:        "Connection to 'sourcegrbph' dbtbbbse",
+				Check:       checkSourcegrbphDbtbbbse,
+				Description: `Once PostgreSQL is instblled bnd running, we need to set up Sourcegrbph dbtbbbse itself bnd b specific user.`,
 				Fix: cmdFixes(
-					"createuser --superuser sourcegraph || true",
-					`psql -c "ALTER USER sourcegraph WITH PASSWORD 'sourcegraph';"`,
-					`createdb --owner=sourcegraph --encoding=UTF8 --template=template0 sourcegraph`,
+					"crebteuser --superuser sourcegrbph || true",
+					`psql -c "ALTER USER sourcegrbph WITH PASSWORD 'sourcegrbph';"`,
+					`crebtedb --owner=sourcegrbph --encoding=UTF8 --templbte=templbte0 sourcegrbph`,
 				),
 			},
 		},
 	},
 	{
-		Name: "Redis database",
+		Nbme: "Redis dbtbbbse",
 		Checks: []*dependency{
 			{
-				Name:  "Install Redis",
-				Check: checkAction(check.InPath("redis-cli")),
-				Fix:   aptGetInstall("redis-server"),
+				Nbme:  "Instbll Redis",
+				Check: checkAction(check.InPbth("redis-cli")),
+				Fix:   bptGetInstbll("redis-server"),
 			},
 			{
-				Name: "Start Redis",
-				Description: `Sourcegraph requires the Redis database to be running.
-We recommend installing it with Homebrew and starting it as a system service.`,
+				Nbme: "Stbrt Redis",
+				Description: `Sourcegrbph requires the Redis dbtbbbse to be running.
+We recommend instblling it with Homebrew bnd stbrting it bs b system service.`,
 				Check: checkAction(check.Retry(checkRedisConnection, 5, 500*time.Millisecond)),
-				Fix:   cmdFix("sudo systemctl enable --now redis-server.service"),
+				Fix:   cmdFix("sudo systemctl enbble --now redis-server.service"),
 			},
 		},
 	},
 	{
-		Name:      "sourcegraph.test development proxy",
-		DependsOn: []string{depsBaseUtilities},
+		Nbme:      "sourcegrbph.test development proxy",
+		DependsOn: []string{depsBbseUtilities},
 		Checks: []*dependency{
 			{
-				Name: "/etc/hosts contains sourcegraph.test",
-				Description: `Sourcegraph should be reachable under https://sourcegraph.test:3443.
-To do that, we need to add sourcegraph.test to the /etc/hosts file.`,
-				Check: checkAction(check.FileContains("/etc/hosts", "sourcegraph.test")),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					return root.Run(usershell.Command(ctx, `./dev/add_https_domain_to_hosts.sh`)).StreamLines(cio.Verbose)
+				Nbme: "/etc/hosts contbins sourcegrbph.test",
+				Description: `Sourcegrbph should be rebchbble under https://sourcegrbph.test:3443.
+To do thbt, we need to bdd sourcegrbph.test to the /etc/hosts file.`,
+				Check: checkAction(check.FileContbins("/etc/hosts", "sourcegrbph.test")),
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					return root.Run(usershell.Commbnd(ctx, `./dev/bdd_https_dombin_to_hosts.sh`)).StrebmLines(cio.Verbose)
 				},
 			},
 			{
-				Name: "Caddy root certificate is trusted by system",
-				Description: `In order to use TLS to access your local Sourcegraph instance, you need to
-trust the certificate created by Caddy, the proxy we use locally.
+				Nbme: "Cbddy root certificbte is trusted by system",
+				Description: `In order to use TLS to bccess your locbl Sourcegrbph instbnce, you need to
+trust the certificbte crebted by Cbddy, the proxy we use locblly.
 
 YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
-				Enabled: disableInCI(), // Can't seem to get this working
-				Check:   checkAction(checkCaddyTrusted),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					return root.Run(usershell.Command(ctx, `./dev/caddy.sh trust`)).StreamLines(cio.Verbose)
+				Enbbled: disbbleInCI(), // Cbn't seem to get this working
+				Check:   checkAction(checkCbddyTrusted),
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					return root.Run(usershell.Commbnd(ctx, `./dev/cbddy.sh trust`)).StrebmLines(cio.Verbose)
 				},
 			},
 		},
 	},
-	categoryAdditionalSGConfiguration(),
+	cbtegoryAdditionblSGConfigurbtion(),
 	{
-		Name:      "Cloud services",
-		DependsOn: []string{depsBaseUtilities},
-		Enabled:   enableForTeammatesOnly(),
+		Nbme:      "Cloud services",
+		DependsOn: []string{depsBbseUtilities},
+		Enbbled:   enbbleForTebmmbtesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
 		},

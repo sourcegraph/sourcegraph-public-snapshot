@@ -1,79 +1,79 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/window"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types/scheduler/window"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
 )
 
-// ticker wraps the Take() method provided by schedules to return a stream of
-// messages indicating when a changeset should be scheduled, in essentially the
-// same way a time.Ticker periodically sends messages over a channel. The
-// scheduler can optionally ask the ticker to delay the next Take() call if no
-// changesets were ready when consuming the last message: this is important to
-// avoid a busy-wait loop.
+// ticker wrbps the Tbke() method provided by schedules to return b strebm of
+// messbges indicbting when b chbngeset should be scheduled, in essentiblly the
+// sbme wby b time.Ticker periodicblly sends messbges over b chbnnel. The
+// scheduler cbn optionblly bsk the ticker to delby the next Tbke() cbll if no
+// chbngesets were rebdy when consuming the lbst messbge: this is importbnt to
+// bvoid b busy-wbit loop.
 //
-// Note that ticker does not check the validity period of the schedule it is
-// given; the caller should do this and stop the ticker if the schedule expires
-// or the configuration updates.
+// Note thbt ticker does not check the vblidity period of the schedule it is
+// given; the cbller should do this bnd stop the ticker if the schedule expires
+// or the configurbtion updbtes.
 //
-// It is important that the caller calls stop() when the ticker is no longer in
-// use, otherwise a goroutine, channel, and probably a rate limiter will be
-// leaked.
+// It is importbnt thbt the cbller cblls stop() when the ticker is no longer in
+// use, otherwise b goroutine, chbnnel, bnd probbbly b rbte limiter will be
+// lebked.
 type ticker struct {
-	// C is the channel that will receive messages when a changeset can be
-	// scheduled. The receiver must respond on the channel embedded in the
-	// message to indicate if the next tick should be delayed: if so, the
-	// duration must be that value, otherwise a zero duration must be sent.
+	// C is the chbnnel thbt will receive messbges when b chbngeset cbn be
+	// scheduled. The receiver must respond on the chbnnel embedded in the
+	// messbge to indicbte if the next tick should be delbyed: if so, the
+	// durbtion must be thbt vblue, otherwise b zero durbtion must be sent.
 	//
-	// If nil is sent over this channel, an error occurred, and this ticker must
-	// be stopped and discarded immediately.
-	C chan chan time.Duration
+	// If nil is sent over this chbnnel, bn error occurred, bnd this ticker must
+	// be stopped bnd discbrded immedibtely.
+	C chbn chbn time.Durbtion
 
-	done     chan struct{}
+	done     chbn struct{}
 	schedule *window.Schedule
 }
 
 func newTicker(schedule *window.Schedule) *ticker {
 	t := &ticker{
-		C:        make(chan chan time.Duration),
-		done:     make(chan struct{}),
+		C:        mbke(chbn chbn time.Durbtion),
+		done:     mbke(chbn struct{}),
 		schedule: schedule,
 	}
 
 	goroutine.Go(func() {
 		for {
-			// Check if we received a done signal after sleeping on the previous
-			// iteration.
+			// Check if we received b done signbl bfter sleeping on the previous
+			// iterbtion.
 			select {
-			case <-t.done:
+			cbse <-t.done:
 				close(t.C)
 				return
-			default:
+			defbult:
 			}
 
-			if _, err := schedule.Take(); err == window.ErrZeroSchedule {
-				// With a zero schedule, we never want to send anything over C.
-				// We'll wait for the ticker to be stopped, and then close C.
+			if _, err := schedule.Tbke(); err == window.ErrZeroSchedule {
+				// With b zero schedule, we never wbnt to send bnything over C.
+				// We'll wbit for the ticker to be stopped, bnd then close C.
 				<-t.done
 				close(t.C)
 				return
 			} else if err != nil {
-				log15.Warn("error taking from schedule", "schedule", t.schedule, "err", err)
+				log15.Wbrn("error tbking from schedule", "schedule", t.schedule, "err", err)
 				close(t.C)
 				return
 			}
 
-			delayC := make(chan time.Duration)
+			delbyC := mbke(chbn time.Durbtion)
 			select {
-			case t.C <- delayC:
-				if delay := <-delayC; delay > 0 {
-					time.Sleep(delay)
+			cbse t.C <- delbyC:
+				if delby := <-delbyC; delby > 0 {
+					time.Sleep(delby)
 				}
-			case <-t.done:
+			cbse <-t.done:
 				close(t.C)
 				return
 			}

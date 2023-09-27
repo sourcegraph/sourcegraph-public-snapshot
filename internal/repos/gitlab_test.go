@@ -1,64 +1,64 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestProjectQueryToURL(t *testing.T) {
 	tests := []struct {
 		projectQuery string
-		perPage      int
+		perPbge      int
 		expURL       string
 		expErr       error
 	}{{
 		projectQuery: "?membership=true",
-		perPage:      100,
-		expURL:       "projects?membership=true&per_page=100",
+		perPbge:      100,
+		expURL:       "projects?membership=true&per_pbge=100",
 	}, {
 		projectQuery: "projects?membership=true",
-		perPage:      100,
-		expURL:       "projects?membership=true&per_page=100",
+		perPbge:      100,
+		expURL:       "projects?membership=true&per_pbge=100",
 	}, {
 		projectQuery: "groups/groupID/projects",
-		perPage:      100,
-		expURL:       "groups/groupID/projects?per_page=100",
+		perPbge:      100,
+		expURL:       "groups/groupID/projects?per_pbge=100",
 	}, {
-		projectQuery: "groups/groupID/projects?foo=bar",
-		perPage:      100,
-		expURL:       "groups/groupID/projects?foo=bar&per_page=100",
+		projectQuery: "groups/groupID/projects?foo=bbr",
+		perPbge:      100,
+		expURL:       "groups/groupID/projects?foo=bbr&per_pbge=100",
 	}, {
 		projectQuery: "",
-		perPage:      100,
-		expURL:       "projects?per_page=100",
+		perPbge:      100,
+		expURL:       "projects?per_pbge=100",
 	}, {
-		projectQuery: "https://somethingelse.com/foo/bar",
-		perPage:      100,
+		projectQuery: "https://somethingelse.com/foo/bbr",
+		perPbge:      100,
 		expErr:       schemeOrHostNotEmptyErr,
 	}}
 
-	for _, test := range tests {
-		t.Logf("Test case %+v", test)
-		url, err := projectQueryToURL(test.projectQuery, test.perPage)
+	for _, test := rbnge tests {
+		t.Logf("Test cbse %+v", test)
+		url, err := projectQueryToURL(test.projectQuery, test.perPbge)
 		if url != test.expURL {
 			t.Errorf("expected %v, got %v", test.expURL, url)
 		}
@@ -68,206 +68,206 @@ func TestProjectQueryToURL(t *testing.T) {
 	}
 }
 
-func TestGitLabSource_GetRepo(t *testing.T) {
-	testCases := []struct {
-		name                 string
-		projectWithNamespace string
-		assert               func(*testing.T, *types.Repo)
+func TestGitLbbSource_GetRepo(t *testing.T) {
+	testCbses := []struct {
+		nbme                 string
+		projectWithNbmespbce string
+		bssert               func(*testing.T, *types.Repo)
 		err                  string
 	}{
 		{
-			name:                 "not found",
-			projectWithNamespace: "foobarfoobarfoobar/please-let-this-not-exist",
-			err:                  "GitLab project \"foobarfoobarfoobar/please-let-this-not-exist\" not found",
+			nbme:                 "not found",
+			projectWithNbmespbce: "foobbrfoobbrfoobbr/plebse-let-this-not-exist",
+			err:                  "GitLbb project \"foobbrfoobbrfoobbr/plebse-let-this-not-exist\" not found",
 		},
 		{
-			name:                 "found",
-			projectWithNamespace: "gitlab-org/gitaly",
-			assert: func(t *testing.T, have *types.Repo) {
+			nbme:                 "found",
+			projectWithNbmespbce: "gitlbb-org/gitbly",
+			bssert: func(t *testing.T, hbve *types.Repo) {
 				t.Helper()
 
-				want := &types.Repo{
-					Name:        "gitlab.com/gitlab-org/gitaly",
-					Description: "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-					URI:         "gitlab.com/gitlab-org/gitaly",
-					Stars:       168,
-					ExternalRepo: api.ExternalRepoSpec{
+				wbnt := &types.Repo{
+					Nbme:        "gitlbb.com/gitlbb-org/gitbly",
+					Description: "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+					URI:         "gitlbb.com/gitlbb-org/gitbly",
+					Stbrs:       168,
+					ExternblRepo: bpi.ExternblRepoSpec{
 						ID:          "2009901",
-						ServiceType: "gitlab",
-						ServiceID:   "https://gitlab.com/",
+						ServiceType: "gitlbb",
+						ServiceID:   "https://gitlbb.com/",
 					},
-					Sources: map[string]*types.SourceInfo{
-						"extsvc:gitlab:0": {
-							ID:       "extsvc:gitlab:0",
-							CloneURL: "https://gitlab.com/gitlab-org/gitaly.git",
+					Sources: mbp[string]*types.SourceInfo{
+						"extsvc:gitlbb:0": {
+							ID:       "extsvc:gitlbb:0",
+							CloneURL: "https://gitlbb.com/gitlbb-org/gitbly.git",
 						},
 					},
-					Metadata: &gitlab.Project{
-						ProjectCommon: gitlab.ProjectCommon{
+					Metbdbtb: &gitlbb.Project{
+						ProjectCommon: gitlbb.ProjectCommon{
 							ID:                2009901,
-							PathWithNamespace: "gitlab-org/gitaly",
-							Description:       "Gitaly is a Git RPC service for handling all the git calls made by GitLab",
-							WebURL:            "https://gitlab.com/gitlab-org/gitaly",
-							HTTPURLToRepo:     "https://gitlab.com/gitlab-org/gitaly.git",
-							SSHURLToRepo:      "git@gitlab.com:gitlab-org/gitaly.git",
+							PbthWithNbmespbce: "gitlbb-org/gitbly",
+							Description:       "Gitbly is b Git RPC service for hbndling bll the git cblls mbde by GitLbb",
+							WebURL:            "https://gitlbb.com/gitlbb-org/gitbly",
+							HTTPURLToRepo:     "https://gitlbb.com/gitlbb-org/gitbly.git",
+							SSHURLToRepo:      "git@gitlbb.com:gitlbb-org/gitbly.git",
 						},
 						Visibility:    "",
-						Archived:      false,
-						StarCount:     168,
+						Archived:      fblse,
+						StbrCount:     168,
 						ForksCount:    76,
-						DefaultBranch: "master",
+						DefbultBrbnch: "mbster",
 					},
 				}
 
-				if !reflect.DeepEqual(have, want) {
-					t.Errorf("response: %s", cmp.Diff(have, want))
+				if !reflect.DeepEqubl(hbve, wbnt) {
+					t.Errorf("response: %s", cmp.Diff(hbve, wbnt))
 				}
 			},
 			err: "<nil>",
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "GITLAB-DOT-COM/" + tc.name
+		tc.nbme = "GITLAB-DOT-COM/" + tc.nbme
 
-		t.Run(tc.name, func(t *testing.T) {
-			// The GitLabSource uses the gitlab.Client under the hood, which
-			// uses rcache, a caching layer that uses Redis.
-			// We need to clear the cache before we run the tests
-			rcache.SetupForTest(t)
+		t.Run(tc.nbme, func(t *testing.T) {
+			// The GitLbbSource uses the gitlbb.Client under the hood, which
+			// uses rcbche, b cbching lbyer thbt uses Redis.
+			// We need to clebr the cbche before we run the tests
+			rcbche.SetupForTest(t)
 
-			cf, save := NewClientFactory(t, tc.name)
-			defer save(t)
+			cf, sbve := NewClientFbctory(t, tc.nbme)
+			defer sbve(t)
 
-			svc := &types.ExternalService{
-				Kind: extsvc.KindGitLab,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.GitLabConnection{
-					Url: "https://gitlab.com",
+			svc := &types.ExternblService{
+				Kind: extsvc.KindGitLbb,
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.GitLbbConnection{
+					Url: "https://gitlbb.com",
 				})),
 			}
 
-			ctx := context.Background()
-			gitlabSrc, err := NewGitLabSource(ctx, logtest.Scoped(t), svc, cf)
+			ctx := context.Bbckground()
+			gitlbbSrc, err := NewGitLbbSource(ctx, logtest.Scoped(t), svc, cf)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			repo, err := gitlabSrc.GetRepo(context.Background(), tc.projectWithNamespace)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			repo, err := gitlbbSrc.GetRepo(context.Bbckground(), tc.projectWithNbmespbce)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
-			if tc.assert != nil {
-				tc.assert(t, repo)
+			if tc.bssert != nil {
+				tc.bssert(t, repo)
 			}
 		})
 	}
 }
 
-func TestGitLabSource_makeRepo(t *testing.T) {
-	// The GitLabSource uses the gitlab.Client under the hood, which
-	// uses rcache, a caching layer that uses Redis.
-	// We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
-	b, err := os.ReadFile(filepath.Join("testdata", "gitlab-repos.json"))
+func TestGitLbbSource_mbkeRepo(t *testing.T) {
+	// The GitLbbSource uses the gitlbb.Client under the hood, which
+	// uses rcbche, b cbching lbyer thbt uses Redis.
+	// We need to clebr the cbche before we run the tests
+	rcbche.SetupForTest(t)
+	b, err := os.RebdFile(filepbth.Join("testdbtb", "gitlbb-repos.json"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var repos []*gitlab.Project
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
+	vbr repos []*gitlbb.Project
+	if err := json.Unmbrshbl(b, &repos); err != nil {
+		t.Fbtbl(err)
 	}
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		ID:     1,
-		Kind:   extsvc.KindGitLab,
+		Kind:   extsvc.KindGitLbb,
 		Config: extsvc.NewEmptyConfig(),
 	}
 
 	tests := []struct {
-		name   string
-		schema *schema.GitLabConnection
+		nbme   string
+		schemb *schemb.GitLbbConnection
 	}{
 		{
-			name: "simple",
-			schema: &schema.GitLabConnection{
-				Url: "https://gitlab.com",
+			nbme: "simple",
+			schemb: &schemb.GitLbbConnection{
+				Url: "https://gitlbb.com",
 			},
 		}, {
-			name: "ssh",
-			schema: &schema.GitLabConnection{
-				Url:        "https://gitlab.com",
+			nbme: "ssh",
+			schemb: &schemb.GitLbbConnection{
+				Url:        "https://gitlbb.com",
 				GitURLType: "ssh",
 			},
 		}, {
-			name: "path-pattern",
-			schema: &schema.GitLabConnection{
-				Url:                   "https://gitlab.com",
-				RepositoryPathPattern: "gl/{pathWithNamespace}",
+			nbme: "pbth-pbttern",
+			schemb: &schemb.GitLbbConnection{
+				Url:                   "https://gitlbb.com",
+				RepositoryPbthPbttern: "gl/{pbthWithNbmespbce}",
 			},
 		},
 	}
-	for _, test := range tests {
-		test.name = "GitLabSource_makeRepo_" + test.name
-		t.Run(test.name, func(t *testing.T) {
-			s, err := newGitLabSource(logtest.Scoped(t), &svc, test.schema, nil)
+	for _, test := rbnge tests {
+		test.nbme = "GitLbbSource_mbkeRepo_" + test.nbme
+		t.Run(test.nbme, func(t *testing.T) {
+			s, err := newGitLbbSource(logtest.Scoped(t), &svc, test.schemb, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			var got []*types.Repo
-			for _, r := range repos {
-				got = append(got, s.makeRepo(r))
+			vbr got []*types.Repo
+			for _, r := rbnge repos {
+				got = bppend(got, s.mbkeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
+			testutil.AssertGolden(t, "testdbtb/golden/"+test.nbme, Updbte(test.nbme), got)
 		})
 	}
 }
 
-func TestGitLabSource_WithAuthenticator(t *testing.T) {
-	// The GitLabSource uses the gitlab.Client under the hood, which
-	// uses rcache, a caching layer that uses Redis.
-	// We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
+func TestGitLbbSource_WithAuthenticbtor(t *testing.T) {
+	// The GitLbbSource uses the gitlbb.Client under the hood, which
+	// uses rcbche, b cbching lbyer thbt uses Redis.
+	// We need to clebr the cbche before we run the tests
+	rcbche.SetupForTest(t)
 	logger := logtest.Scoped(t)
 	t.Run("supported", func(t *testing.T) {
-		var src Source
+		vbr src Source
 
-		src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
+		src, err := newGitLbbSource(logger, &types.ExternblService{}, &schemb.GitLbbConnection{}, nil)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		src, err = src.(UserSource).WithAuthenticator(&auth.OAuthBearerToken{})
+		src, err = src.(UserSource).WithAuthenticbtor(&buth.OAuthBebrerToken{})
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if gs, ok := src.(*GitLabSource); !ok {
-			t.Error("cannot coerce Source into GitLabSource")
+		if gs, ok := src.(*GitLbbSource); !ok {
+			t.Error("cbnnot coerce Source into GitLbbSource")
 		} else if gs == nil {
 			t.Error("unexpected nil Source")
 		}
 	})
 
 	t.Run("unsupported", func(t *testing.T) {
-		for name, tc := range map[string]auth.Authenticator{
+		for nbme, tc := rbnge mbp[string]buth.Authenticbtor{
 			"nil":         nil,
-			"BasicAuth":   &auth.BasicAuth{},
-			"OAuthClient": &auth.OAuthClient{},
+			"BbsicAuth":   &buth.BbsicAuth{},
+			"OAuthClient": &buth.OAuthClient{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var src Source
+			t.Run(nbme, func(t *testing.T) {
+				vbr src Source
 
-				src, err := newGitLabSource(logger, &types.ExternalService{}, &schema.GitLabConnection{}, nil)
+				src, err := newGitLbbSource(logger, &types.ExternblService{}, &schemb.GitLbbConnection{}, nil)
 				if err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
-				src, err = src.(UserSource).WithAuthenticator(tc)
+				src, err = src.(UserSource).WithAuthenticbtor(tc)
 				if err == nil {
 					t.Error("unexpected nil error")
-				} else if !errors.HasType(err, UnsupportedAuthenticatorError{}) {
+				} else if !errors.HbsType(err, UnsupportedAuthenticbtorError{}) {
 					t.Errorf("unexpected error of type %T: %v", err, err)
 				}
 				if src != nil {
@@ -278,41 +278,41 @@ func TestGitLabSource_WithAuthenticator(t *testing.T) {
 	})
 }
 
-func TestGitlabSource_ListRepos(t *testing.T) {
-	// The GitLabSource uses the gitlab.Client under the hood, which
-	// uses rcache, a caching layer that uses Redis.
-	// We need to clear the cache before we run the tests
-	rcache.SetupForTest(t)
-	conf := &schema.GitLabConnection{
-		Url:   "https://gitlab.sgdev.org",
+func TestGitlbbSource_ListRepos(t *testing.T) {
+	// The GitLbbSource uses the gitlbb.Client under the hood, which
+	// uses rcbche, b cbching lbyer thbt uses Redis.
+	// We need to clebr the cbche before we run the tests
+	rcbche.SetupForTest(t)
+	conf := &schemb.GitLbbConnection{
+		Url:   "https://gitlbb.sgdev.org",
 		Token: os.Getenv("GITLAB_TOKEN"),
 		ProjectQuery: []string{
-			"groups/small-test-group/projects",
+			"groups/smbll-test-group/projects",
 		},
-		Exclude: []*schema.ExcludedGitLabProject{
+		Exclude: []*schemb.ExcludedGitLbbProject{
 			{
 				EmptyRepos: true,
 			},
 		},
 	}
-	cf, save := NewClientFactory(t, t.Name())
-	defer save(t)
+	cf, sbve := NewClientFbctory(t, t.Nbme())
+	defer sbve(t)
 
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindGitLab,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
+	svc := &types.ExternblService{
+		Kind:   extsvc.KindGitLbb,
+		Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, conf)),
 	}
 
-	ctx := context.Background()
-	src, err := NewGitLabSource(ctx, nil, svc, cf)
+	ctx := context.Bbckground()
+	src, err := NewGitLbbSource(ctx, nil, svc, cf)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	repos, err := ListAll(context.Background(), src)
+	repos, err := ListAll(context.Bbckground(), src)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/GITLAB/"+t.Name(), Update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdbtb/sources/GITLAB/"+t.Nbme(), Updbte(t.Nbme()), repos)
 }

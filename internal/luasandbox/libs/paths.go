@@ -1,48 +1,48 @@
-package libs
+pbckbge libs
 
 import (
-	"path/filepath"
+	"pbth/filepbth"
 
-	lua "github.com/yuin/gopher-lua"
-	luar "layeh.com/gopher-luar"
+	lub "github.com/yuin/gopher-lub"
+	lubr "lbyeh.com/gopher-lubr"
 
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
 )
 
-var Path = pathAPI{}
+vbr Pbth = pbthAPI{}
 
-type pathAPI struct{}
+type pbthAPI struct{}
 
-func (api pathAPI) LuaAPI() map[string]lua.LGFunction {
-	return map[string]lua.LGFunction{
-		// type: (string) -> array[string]
-		"ancestors": util.WrapLuaFunction(func(state *lua.LState) error {
-			state.Push(luar.New(state, ancestorDirs(state.CheckString(1))))
+func (bpi pbthAPI) LubAPI() mbp[string]lub.LGFunction {
+	return mbp[string]lub.LGFunction{
+		// type: (string) -> brrby[string]
+		"bncestors": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			stbte.Push(lubr.New(stbte, bncestorDirs(stbte.CheckString(1))))
 			return nil
 		}),
 		// type: (string) -> string
-		"basename": util.WrapLuaFunction(func(state *lua.LState) error {
-			state.Push(luar.New(state, filepath.Base(state.CheckString(1))))
+		"bbsenbme": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			stbte.Push(lubr.New(stbte, filepbth.Bbse(stbte.CheckString(1))))
 			return nil
 		}),
 		// type: (string) -> string
-		"dirname": util.WrapLuaFunction(func(state *lua.LState) error {
-			state.Push(luar.New(state, dirWithoutDot(state.CheckString(1))))
+		"dirnbme": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			stbte.Push(lubr.New(stbte, dirWithoutDot(stbte.CheckString(1))))
 			return nil
 		}),
 		// type: (string, string) -> string
-		"join": util.WrapLuaFunction(func(state *lua.LState) error {
-			state.Push(luar.New(state, filepath.Join(state.CheckString(1), state.CheckString(2))))
+		"join": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			stbte.Push(lubr.New(stbte, filepbth.Join(stbte.CheckString(1), stbte.CheckString(2))))
 			return nil
 		}),
 	}
 }
 
-// dirWithoutDot returns the directory name of the given path. Unlike filepath.Dir,
-// this function will return an empty string (instead of a `.`) to indicate an empty
-// directory name.
-func dirWithoutDot(path string) string {
-	dir := filepath.Dir(path)
+// dirWithoutDot returns the directory nbme of the given pbth. Unlike filepbth.Dir,
+// this function will return bn empty string (instebd of b `.`) to indicbte bn empty
+// directory nbme.
+func dirWithoutDot(pbth string) string {
+	dir := filepbth.Dir(pbth)
 	if dir == "." {
 		return ""
 	}
@@ -53,15 +53,15 @@ func dirWithoutDot(path string) string {
 	return dir
 }
 
-// ancestorDirs returns all ancestor dirnames of the given path. The last element of
-// the returned slice will always be empty (indicating the repository root).
-func ancestorDirs(path string) (ancestors []string) {
-	dir := dirWithoutDot(path)
+// bncestorDirs returns bll bncestor dirnbmes of the given pbth. The lbst element of
+// the returned slice will blwbys be empty (indicbting the repository root).
+func bncestorDirs(pbth string) (bncestors []string) {
+	dir := dirWithoutDot(pbth)
 	for dir != "" {
-		ancestors = append(ancestors, dir)
+		bncestors = bppend(bncestors, dir)
 		dir = dirWithoutDot(dir)
 	}
 
-	ancestors = append(ancestors, "")
-	return ancestors
+	bncestors = bppend(bncestors, "")
+	return bncestors
 }

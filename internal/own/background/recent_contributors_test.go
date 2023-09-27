@@ -1,238 +1,238 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/shb1"
 	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func Test_RecentContributorIndexFromGitserver(t *testing.T) {
-	rcache.SetupForTest(t)
+	rcbche.SetupForTest(t)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	err := db.Repos().Create(ctx, &types.Repo{
+	err := db.Repos().Crebte(ctx, &types.Repo{
 		ID:   1,
-		Name: "own/repo1",
+		Nbme: "own/repo1",
 	})
 	require.NoError(t, err)
 
-	commits := []fakeCommit{
+	commits := []fbkeCommit{
 		{
-			name:         "alice",
-			email:        "alice@example.com",
-			changedFiles: []string{"file1.txt", "dir/file2.txt"},
+			nbme:         "blice",
+			embil:        "blice@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir/file2.txt"},
 		},
 		{
-			name:         "alice",
-			email:        "alice@example.com",
-			changedFiles: []string{"file1.txt", "dir/file3.txt"},
+			nbme:         "blice",
+			embil:        "blice@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir/file3.txt"},
 		},
 		{
-			name:         "alice",
-			email:        "alice@example.com",
-			changedFiles: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
+			nbme:         "blice",
+			embil:        "blice@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
 		},
 		{
-			name:         "bob",
-			email:        "bob@example.com",
-			changedFiles: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
+			nbme:         "bob",
+			embil:        "bob@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
 		},
 	}
 
 	client := gitserver.NewMockClient()
-	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultReturn(true)
-	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
-	err = indexer.indexRepo(ctx, api.RepoID(1), checker)
+	client.CommitLogFunc.SetDefbultReturn(fbkeCommitsToLog(commits), nil)
+	indexer := newRecentContributorsIndexer(client, db, logger, rcbche.New("testing_own_signbls"))
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultReturn(true)
+	checker.EnbbledForRepoIDFunc.SetDefbultReturn(fblse, nil)
+	err = indexer.indexRepo(ctx, bpi.RepoID(1), checker)
 	require.NoError(t, err)
 
-	for p, w := range map[string][]database.RecentContributorSummary{
+	for p, w := rbnge mbp[string][]dbtbbbse.RecentContributorSummbry{
 		"dir": {
 			{
-				AuthorName:        "alice",
-				AuthorEmail:       "alice@example.com",
+				AuthorNbme:        "blice",
+				AuthorEmbil:       "blice@exbmple.com",
 				ContributionCount: 4,
 			},
 		},
 		"file1.txt": {
 			{
-				AuthorName:        "alice",
-				AuthorEmail:       "alice@example.com",
+				AuthorNbme:        "blice",
+				AuthorEmbil:       "blice@exbmple.com",
 				ContributionCount: 3,
 			},
 			{
-				AuthorName:        "bob",
-				AuthorEmail:       "bob@example.com",
+				AuthorNbme:        "bob",
+				AuthorEmbil:       "bob@exbmple.com",
 				ContributionCount: 1,
 			},
 		},
 		"": {
 			{
-				AuthorName:        "alice",
-				AuthorEmail:       "alice@example.com",
+				AuthorNbme:        "blice",
+				AuthorEmbil:       "blice@exbmple.com",
 				ContributionCount: 7,
 			},
 			{
-				AuthorName:        "bob",
-				AuthorEmail:       "bob@example.com",
+				AuthorNbme:        "bob",
+				AuthorEmbil:       "bob@exbmple.com",
 				ContributionCount: 3,
 			},
 		},
 	} {
-		path := p
-		want := w
-		t.Run(path, func(t *testing.T) {
-			got, err := db.RecentContributionSignals().FindRecentAuthors(ctx, 1, path)
+		pbth := p
+		wbnt := w
+		t.Run(pbth, func(t *testing.T) {
+			got, err := db.RecentContributionSignbls().FindRecentAuthors(ctx, 1, pbth)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, want, got)
+			bssert.Equbl(t, wbnt, got)
 		})
 	}
 }
 
-func Test_RecentContributorIndex_CanSeePrivateRepos(t *testing.T) {
-	rcache.SetupForTest(t)
+func Test_RecentContributorIndex_CbnSeePrivbteRepos(t *testing.T) {
+	rcbche.SetupForTest(t)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	err := db.Repos().Create(ctx, &types.Repo{
+	err := db.Repos().Crebte(ctx, &types.Repo{
 		ID:      1,
-		Name:    "own/repo1",
-		Private: true,
+		Nbme:    "own/repo1",
+		Privbte: true,
 	})
 	require.NoError(t, err)
 
-	userWithAccess, err := db.Users().Create(ctx, database.NewUser{Username: "user1234"})
+	userWithAccess, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1234"})
 	require.NoError(t, err)
 
-	userNoAccess, err := db.Users().Create(ctx, database.NewUser{Username: "user-no-access"})
+	userNoAccess, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user-no-bccess"})
 	require.NoError(t, err)
 
-	globals.PermissionsUserMapping().Enabled = true // this is required otherwise setting the permissions won't do anything
-	_, err = db.Perms().SetRepoPerms(ctx, 1, []authz.UserIDWithExternalAccountID{{UserID: userWithAccess.ID}}, authz.SourceAPI)
+	globbls.PermissionsUserMbpping().Enbbled = true // this is required otherwise setting the permissions won't do bnything
+	_, err = db.Perms().SetRepoPerms(ctx, 1, []buthz.UserIDWithExternblAccountID{{UserID: userWithAccess.ID}}, buthz.SourceAPI)
 	require.NoError(t, err)
 
 	client := gitserver.NewMockClient()
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
+	indexer := newRecentContributorsIndexer(client, db, logger, rcbche.New("testing_own_signbls"))
 
-	t.Run("non-internal user", func(t *testing.T) {
-		// this is kind of an unrelated test just to provide a baseline that there is actually a difference when
-		// we use the internal context. Otherwise, we could accidentally break this and not know it.
-		newCtx := actor.WithActor(ctx, actor.FromUser(userNoAccess.ID)) // just to make sure this is a different user
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultReturn(true)
-		checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
-		err := indexer.indexRepo(newCtx, api.RepoID(1), checker)
-		assert.ErrorContains(t, err, "repo not found: id=1")
+	t.Run("non-internbl user", func(t *testing.T) {
+		// this is kind of bn unrelbted test just to provide b bbseline thbt there is bctublly b difference when
+		// we use the internbl context. Otherwise, we could bccidentblly brebk this bnd not know it.
+		newCtx := bctor.WithActor(ctx, bctor.FromUser(userNoAccess.ID)) // just to mbke sure this is b different user
+		checker := buthz.NewMockSubRepoPermissionChecker()
+		checker.EnbbledFunc.SetDefbultReturn(true)
+		checker.EnbbledForRepoIDFunc.SetDefbultReturn(fblse, nil)
+		err := indexer.indexRepo(newCtx, bpi.RepoID(1), checker)
+		bssert.ErrorContbins(t, err, "repo not found: id=1")
 	})
 
-	t.Run("internal user", func(t *testing.T) {
-		newCtx := actor.WithInternalActor(ctx)
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultReturn(true)
-		checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
-		err := indexer.indexRepo(newCtx, api.RepoID(1), checker)
-		assert.NoError(t, err)
+	t.Run("internbl user", func(t *testing.T) {
+		newCtx := bctor.WithInternblActor(ctx)
+		checker := buthz.NewMockSubRepoPermissionChecker()
+		checker.EnbbledFunc.SetDefbultReturn(true)
+		checker.EnbbledForRepoIDFunc.SetDefbultReturn(fblse, nil)
+		err := indexer.indexRepo(newCtx, bpi.RepoID(1), checker)
+		bssert.NoError(t, err)
 	})
 }
 
 func Test_RecentContributorIndexSkipsSubrepoPermsRepos(t *testing.T) {
-	rcache.SetupForTest(t)
+	rcbche.SetupForTest(t)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	err := db.Repos().Create(ctx, &types.Repo{
+	err := db.Repos().Crebte(ctx, &types.Repo{
 		ID:   1,
-		Name: "own/repo1",
+		Nbme: "own/repo1",
 	})
 	require.NoError(t, err)
 
-	commits := []fakeCommit{
+	commits := []fbkeCommit{
 		{
-			name:         "alice",
-			email:        "alice@example.com",
-			changedFiles: []string{"file1.txt", "dir/file2.txt"},
+			nbme:         "blice",
+			embil:        "blice@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir/file2.txt"},
 		},
 		{
-			name:         "alice",
-			email:        "alice@example.com",
-			changedFiles: []string{"file1.txt", "dir/file3.txt"},
+			nbme:         "blice",
+			embil:        "blice@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir/file3.txt"},
 		},
 		{
-			name:         "alice",
-			email:        "alice@example.com",
-			changedFiles: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
+			nbme:         "blice",
+			embil:        "blice@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
 		},
 		{
-			name:         "bob",
-			email:        "bob@example.com",
-			changedFiles: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
+			nbme:         "bob",
+			embil:        "bob@exbmple.com",
+			chbngedFiles: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
 		},
 	}
 
 	client := gitserver.NewMockClient()
-	client.CommitLogFunc.SetDefaultReturn(fakeCommitsToLog(commits), nil)
-	indexer := newRecentContributorsIndexer(client, db, logger, rcache.New("testing_own_signals"))
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultReturn(true)
-	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
-	err = indexer.indexRepo(ctx, api.RepoID(1), checker)
+	client.CommitLogFunc.SetDefbultReturn(fbkeCommitsToLog(commits), nil)
+	indexer := newRecentContributorsIndexer(client, db, logger, rcbche.New("testing_own_signbls"))
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultReturn(true)
+	checker.EnbbledForRepoIDFunc.SetDefbultReturn(true, nil)
+	err = indexer.indexRepo(ctx, bpi.RepoID(1), checker)
 	require.NoError(t, err)
-	got, err := db.RecentContributionSignals().FindRecentAuthors(ctx, 1, "")
+	got, err := db.RecentContributionSignbls().FindRecentAuthors(ctx, 1, "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	fmt.Printf("%+v\n", got)
-	assert.Equal(t, 0, len(got))
+	bssert.Equbl(t, 0, len(got))
 }
 
-func fakeCommitsToLog(commits []fakeCommit) (results []gitserver.CommitLog) {
-	for i, commit := range commits {
-		results = append(results, gitserver.CommitLog{
-			AuthorEmail:  commit.email,
-			AuthorName:   commit.name,
-			Timestamp:    time.Now(),
-			SHA:          gitSha(fmt.Sprintf("%d", i)),
-			ChangedFiles: commit.changedFiles,
+func fbkeCommitsToLog(commits []fbkeCommit) (results []gitserver.CommitLog) {
+	for i, commit := rbnge commits {
+		results = bppend(results, gitserver.CommitLog{
+			AuthorEmbil:  commit.embil,
+			AuthorNbme:   commit.nbme,
+			Timestbmp:    time.Now(),
+			SHA:          gitShb(fmt.Sprintf("%d", i)),
+			ChbngedFiles: commit.chbngedFiles,
 		})
 	}
 	return results
 }
 
-type fakeCommit struct {
-	email        string
-	name         string
-	changedFiles []string
+type fbkeCommit struct {
+	embil        string
+	nbme         string
+	chbngedFiles []string
 }
 
-func gitSha(val string) string {
-	writer := sha1.New()
-	writer.Write([]byte(val))
+func gitShb(vbl string) string {
+	writer := shb1.New()
+	writer.Write([]byte(vbl))
 	return hex.EncodeToString(writer.Sum(nil))
 }

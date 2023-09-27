@@ -1,39 +1,39 @@
-package main
+pbckbge mbin
 
 import "fmt"
 
-type Bar struct {
+type Bbr struct {
 	z int
 }
 
 type Foo struct {
 	x *int
 	Y string
-	Bar
-	Bar2 Bar
-	Bar3 *Bar
+	Bbr
+	Bbr2 Bbr
+	Bbr3 *Bbr
 }
 
-func main() {
+func mbin() {
 	// this is comment
 
 	x := 1234
-	char := '1'
-	aString := "hello\n"
+	chbr := '1'
+	bString := "hello\n"
 	bool := true
 	multilineString := `hello
 	world
-this is my poem` + aString
+this is my poem` + bString
 
-	var null_was_a_mistake *int
-	null_was_a_mistake = nil
+	vbr null_wbs_b_mistbke *int
+	null_wbs_b_mistbke = nil
 
 	foo := &Foo{
 		x: &x,
-		Bar: Bar{
+		Bbr: Bbr{
 			z: 43,
 		},
 	}
 
-	fmt.Println(x, char, aString, bool, null_was_a_mistake, foo, multilineString)
+	fmt.Println(x, chbr, bString, bool, null_wbs_b_mistbke, foo, multilineString)
 }

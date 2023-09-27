@@ -1,53 +1,53 @@
-package client
+pbckbge client
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	strebmbpi "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// RepoNamer returns a best-effort function which translates repository IDs into names.
-func RepoNamer(ctx context.Context, db database.DB) streamapi.RepoNamer {
-	logger := log.Scoped("RepoNamer", "translate repository IDs into names")
-	cache := map[api.RepoID]api.RepoName{}
+// RepoNbmer returns b best-effort function which trbnslbtes repository IDs into nbmes.
+func RepoNbmer(ctx context.Context, db dbtbbbse.DB) strebmbpi.RepoNbmer {
+	logger := log.Scoped("RepoNbmer", "trbnslbte repository IDs into nbmes")
+	cbche := mbp[bpi.RepoID]bpi.RepoNbme{}
 
-	return func(ids []api.RepoID) []api.RepoName {
-		// Strategy is to populate from cache. So we first populate the cache
-		// with IDs not already in the cache.
-		var missing []api.RepoID
-		for _, id := range ids {
-			if _, ok := cache[id]; !ok {
-				missing = append(missing, id)
+	return func(ids []bpi.RepoID) []bpi.RepoNbme {
+		// Strbtegy is to populbte from cbche. So we first populbte the cbche
+		// with IDs not blrebdy in the cbche.
+		vbr missing []bpi.RepoID
+		for _, id := rbnge ids {
+			if _, ok := cbche[id]; !ok {
+				missing = bppend(missing, id)
 			}
 		}
 
 		if len(missing) > 0 {
-			err := db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
+			err := db.Repos().StrebmMinimblRepos(ctx, dbtbbbse.ReposListOptions{
 				IDs: missing,
-			}, func(repo *types.MinimalRepo) {
-				cache[repo.ID] = repo.Name
+			}, func(repo *types.MinimblRepo) {
+				cbche[repo.ID] = repo.Nbme
 			})
 			if err != nil {
-				// RepoNamer is best-effort, so we just log the error.
-				logger.Warn("streaming search RepoNamer failed to list names", log.Error(err))
+				// RepoNbmer is best-effort, so we just log the error.
+				logger.Wbrn("strebming sebrch RepoNbmer fbiled to list nbmes", log.Error(err))
 			}
 		}
 
-		names := make([]api.RepoName, 0, len(ids))
-		for _, id := range ids {
-			if name, ok := cache[id]; ok {
-				names = append(names, name)
+		nbmes := mbke([]bpi.RepoNbme, 0, len(ids))
+		for _, id := rbnge ids {
+			if nbme, ok := cbche[id]; ok {
+				nbmes = bppend(nbmes, nbme)
 			} else {
-				names = append(names, api.RepoName(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
+				nbmes = bppend(nbmes, bpi.RepoNbme(fmt.Sprintf("UNKNOWN{ID=%d}", id)))
 			}
 		}
 
-		return names
+		return nbmes
 	}
 }

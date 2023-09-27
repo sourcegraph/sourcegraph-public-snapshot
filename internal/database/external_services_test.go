@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -12,544 +12,544 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"github.com/tidwall/gjson"
+	"github.com/tidwbll/gjson"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
+func TestExternblServicesListOptions_sqlConditions(t *testing.T) {
 	tests := []struct {
-		name             string
+		nbme             string
 		kinds            []string
-		afterID          int64
-		updatedAfter     time.Time
-		wantQuery        string
-		onlyCloudDefault bool
+		bfterID          int64
+		updbtedAfter     time.Time
+		wbntQuery        string
+		onlyCloudDefbult bool
 		includeDeleted   bool
-		wantArgs         []any
-		repoID           api.RepoID
+		wbntArgs         []bny
+		repoID           bpi.RepoID
 	}{
 		{
-			name:      "no condition",
-			wantQuery: "deleted_at IS NULL",
+			nbme:      "no condition",
+			wbntQuery: "deleted_bt IS NULL",
 		},
 		{
-			name:      "only one kind: GitHub",
+			nbme:      "only one kind: GitHub",
 			kinds:     []string{extsvc.KindGitHub},
-			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
-			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub})},
+			wbntQuery: "deleted_bt IS NULL AND kind = ANY($1)",
+			wbntArgs:  []bny{pq.Arrby([]string{extsvc.KindGitHub})},
 		},
 		{
-			name:      "two kinds: GitHub and GitLab",
-			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
-			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
-			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub, extsvc.KindGitLab})},
+			nbme:      "two kinds: GitHub bnd GitLbb",
+			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLbb},
+			wbntQuery: "deleted_bt IS NULL AND kind = ANY($1)",
+			wbntArgs:  []bny{pq.Arrby([]string{extsvc.KindGitHub, extsvc.KindGitLbb})},
 		},
 		{
-			name:      "has after ID",
-			afterID:   10,
-			wantQuery: "deleted_at IS NULL AND id < $1",
-			wantArgs:  []any{int64(10)},
+			nbme:      "hbs bfter ID",
+			bfterID:   10,
+			wbntQuery: "deleted_bt IS NULL AND id < $1",
+			wbntArgs:  []bny{int64(10)},
 		},
 		{
-			name:         "has after updated_at",
-			updatedAfter: time.Date(2013, 0o4, 19, 0, 0, 0, 0, time.UTC),
-			wantQuery:    "deleted_at IS NULL AND updated_at > $1",
-			wantArgs:     []any{time.Date(2013, 0o4, 19, 0, 0, 0, 0, time.UTC)},
+			nbme:         "hbs bfter updbted_bt",
+			updbtedAfter: time.Dbte(2013, 0o4, 19, 0, 0, 0, 0, time.UTC),
+			wbntQuery:    "deleted_bt IS NULL AND updbted_bt > $1",
+			wbntArgs:     []bny{time.Dbte(2013, 0o4, 19, 0, 0, 0, 0, time.UTC)},
 		},
 		{
-			name:             "has OnlyCloudDefault",
-			onlyCloudDefault: true,
-			wantQuery:        "deleted_at IS NULL AND cloud_default = true",
+			nbme:             "hbs OnlyCloudDefbult",
+			onlyCloudDefbult: true,
+			wbntQuery:        "deleted_bt IS NULL AND cloud_defbult = true",
 		},
 		{
-			name:           "includeDeleted",
+			nbme:           "includeDeleted",
 			includeDeleted: true,
-			wantQuery:      "TRUE",
+			wbntQuery:      "TRUE",
 		},
 		{
-			name:      "has repoID",
+			nbme:      "hbs repoID",
 			repoID:    10,
-			wantQuery: "deleted_at IS NULL AND id IN (SELECT external_service_id FROM external_service_repos WHERE repo_id = $1)",
-			wantArgs:  []any{api.RepoID(10)},
+			wbntQuery: "deleted_bt IS NULL AND id IN (SELECT externbl_service_id FROM externbl_service_repos WHERE repo_id = $1)",
+			wbntArgs:  []bny{bpi.RepoID(10)},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			opts := ExternalServicesListOptions{
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			opts := ExternblServicesListOptions{
 				Kinds:            test.kinds,
-				AfterID:          test.afterID,
-				UpdatedAfter:     test.updatedAfter,
-				OnlyCloudDefault: test.onlyCloudDefault,
+				AfterID:          test.bfterID,
+				UpdbtedAfter:     test.updbtedAfter,
+				OnlyCloudDefbult: test.onlyCloudDefbult,
 				IncludeDeleted:   test.includeDeleted,
 				RepoID:           test.repoID,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
-			if diff := cmp.Diff(test.wantQuery, q.Query(sqlf.PostgresBindVar)); diff != "" {
-				t.Fatalf("query mismatch (-want +got):\n%s", diff)
-			} else if diff = cmp.Diff(test.wantArgs, q.Args()); diff != "" {
-				t.Fatalf("args mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntQuery, q.Query(sqlf.PostgresBindVbr)); diff != "" {
+				t.Fbtblf("query mismbtch (-wbnt +got):\n%s", diff)
+			} else if diff = cmp.Diff(test.wbntArgs, q.Args()); diff != "" {
+				t.Fbtblf("brgs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestExternalServicesStore_Create(t *testing.T) {
+func TestExternblServicesStore_Crebte(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 	confGet := func() *conf.Unified { return &conf.Unified{} }
 
 	tests := []struct {
-		name             string
-		externalService  *types.ExternalService
+		nbme             string
+		externblService  *types.ExternblService
 		codeHostURL      string
-		wantUnrestricted bool
-		wantHasWebhooks  bool
-		wantError        bool
+		wbntUnrestricted bool
+		wbntHbsWebhooks  bool
+		wbntError        bool
 	}{
 		{
-			name: "with webhooks",
-			externalService: &types.ExternalService{
+			nbme: "with webhooks",
+			externblService: &types.ExternblService{
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #1",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
+				DisplbyNbme: "GITHUB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
 			codeHostURL:      "https://github.com/",
-			wantUnrestricted: false,
-			wantHasWebhooks:  true,
+			wbntUnrestricted: fblse,
+			wbntHbsWebhooks:  true,
 		},
 		{
-			name: "without authorization",
-			externalService: &types.ExternalService{
+			nbme: "without buthorizbtion",
+			externblService: &types.ExternblService{
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #1",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+				DisplbyNbme: "GITHUB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 			},
 			codeHostURL:      "https://github.com/",
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
+			wbntUnrestricted: fblse,
+			wbntHbsWebhooks:  fblse,
 		},
 		{
-			name: "with authorization",
-			externalService: &types.ExternalService{
+			nbme: "with buthorizbtion",
+			externblService: &types.ExternblService{
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #2",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+				DisplbyNbme: "GITHUB #2",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "buthorizbtion": {}}`),
 			},
 			codeHostURL:      "https://github.com/",
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
+			wbntUnrestricted: fblse,
+			wbntHbsWebhooks:  fblse,
 		},
 		{
-			name: "with authorization in comments",
-			externalService: &types.ExternalService{
+			nbme: "with buthorizbtion in comments",
+			externblService: &types.ExternblService{
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #3",
+				DisplbyNbme: "GITHUB #3",
 				Config: extsvc.NewUnencryptedConfig(`
 {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
-	"token": "abc",
-	// "authorization": {}
+	"token": "bbc",
+	// "buthorizbtion": {}
 }`),
 			},
 			codeHostURL:      "https://github.com/",
-			wantUnrestricted: false,
+			wbntUnrestricted: fblse,
 		},
 		{
-			name: "dotcom: auto-add authorization to code host connections for GitHub",
-			externalService: &types.ExternalService{
+			nbme: "dotcom: buto-bdd buthorizbtion to code host connections for GitHub",
+			externblService: &types.ExternblService{
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GITHUB #4",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+				DisplbyNbme: "GITHUB #4",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 			},
 			codeHostURL:      "https://github.com/",
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
+			wbntUnrestricted: fblse,
+			wbntHbsWebhooks:  fblse,
 		},
 		{
-			name: "dotcom: auto-add authorization to code host connections for GitLab",
-			externalService: &types.ExternalService{
-				Kind:        extsvc.KindGitLab,
-				DisplayName: "GITLAB #1",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`),
+			nbme: "dotcom: buto-bdd buthorizbtion to code host connections for GitLbb",
+			externblService: &types.ExternblService{
+				Kind:        extsvc.KindGitLbb,
+				DisplbyNbme: "GITLAB #1",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://gitlbb.com", "projectQuery": ["none"], "token": "bbc"}`),
 			},
-			codeHostURL:      "https://gitlab.com/",
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
+			codeHostURL:      "https://gitlbb.com/",
+			wbntUnrestricted: fblse,
+			wbntHbsWebhooks:  fblse,
 		},
 		{
-			name: "Empty config not allowed",
-			externalService: &types.ExternalService{
-				Kind:        extsvc.KindGitLab,
-				DisplayName: "GITLAB #1",
+			nbme: "Empty config not bllowed",
+			externblService: &types.ExternblService{
+				Kind:        extsvc.KindGitLbb,
+				DisplbyNbme: "GITLAB #1",
 				Config:      extsvc.NewUnencryptedConfig(``),
 			},
-			wantUnrestricted: false,
-			wantHasWebhooks:  false,
-			wantError:        true,
+			wbntUnrestricted: fblse,
+			wbntHbsWebhooks:  fblse,
+			wbntError:        true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err := db.ExternalServices().Create(ctx, confGet, test.externalService)
-			if test.wantError {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			err := db.ExternblServices().Crebte(ctx, confGet, test.externblService)
+			if test.wbntError {
 				if err == nil {
-					t.Fatal("wanted an error")
+					t.Fbtbl("wbnted bn error")
 				}
-				// We can bail out early here
+				// We cbn bbil out ebrly here
 				return
 			}
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// Should get back the same one
-			got, err := db.ExternalServices().GetByID(ctx, test.externalService.ID)
+			// Should get bbck the sbme one
+			got, err := db.ExternblServices().GetByID(ctx, test.externblService.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.externalService, got, et.CompareEncryptable); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.externblService, got, et.CompbreEncryptbble); diff != "" {
+				t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 			}
 
-			if test.wantUnrestricted != got.Unrestricted {
-				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			if test.wbntUnrestricted != got.Unrestricted {
+				t.Fbtblf("Wbnt unrestricted = %v, but got %v", test.wbntUnrestricted, got.Unrestricted)
 			}
 
-			if got.HasWebhooks == nil {
-				t.Fatal("has_webhooks must not be null")
-			} else if *got.HasWebhooks != test.wantHasWebhooks {
-				t.Fatalf("Wanted has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			if got.HbsWebhooks == nil {
+				t.Fbtbl("hbs_webhooks must not be null")
+			} else if *got.HbsWebhooks != test.wbntHbsWebhooks {
+				t.Fbtblf("Wbnted hbs_webhooks = %v, but got %v", test.wbntHbsWebhooks, *got.HbsWebhooks)
 			}
 
 			ch, err := db.CodeHosts().GetByURL(ctx, test.codeHostURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if ch.ID != *got.CodeHostID {
-				t.Fatalf("expected code host ids to match:%+v\n, and: %+v\n", ch.ID, *got.CodeHostID)
+				t.Fbtblf("expected code host ids to mbtch:%+v\n, bnd: %+v\n", ch.ID, *got.CodeHostID)
 			}
 
-			err = db.ExternalServices().Delete(ctx, test.externalService.ID)
+			err = db.ExternblServices().Delete(ctx, test.externblService.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		})
 	}
 }
 
-func TestExternalServicesStore_CreateWithTierEnforcement(t *testing.T) {
+func TestExternblServicesStore_CrebteWithTierEnforcement(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	store := db.ExternalServices()
-	BeforeCreateExternalService = func(context.Context, ExternalServiceStore, *types.ExternalService) error {
-		return errcode.NewPresentationError("test plan limit exceeded")
+	store := db.ExternblServices()
+	BeforeCrebteExternblService = func(context.Context, ExternblServiceStore, *types.ExternblService) error {
+		return errcode.NewPresentbtionError("test plbn limit exceeded")
 	}
-	t.Cleanup(func() { BeforeCreateExternalService = nil })
-	if err := store.Create(ctx, confGet, es); err == nil {
-		t.Fatal("expected an error, got none")
+	t.Clebnup(func() { BeforeCrebteExternblService = nil })
+	if err := store.Crebte(ctx, confGet, es); err == nil {
+		t.Fbtbl("expected bn error, got none")
 	}
 }
 
-func TestExternalServicesStore_Update(t *testing.T) {
+func TestExternblServicesStore_Updbte(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	now := timeutil.Now()
 	codeHostURL := "https://github.com/"
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(fblse)
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "buthorizbtion": {}}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We want to test that Update creates the Code Host, so we have to delete it first because db.ExternalServices().Create also creates the code host.
+	// We wbnt to test thbt Updbte crebtes the Code Host, so we hbve to delete it first becbuse db.ExternblServices().Crebte blso crebtes the code host.
 	ch, err := db.CodeHosts().GetByURL(ctx, codeHostURL)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	err = db.CodeHosts().Delete(ctx, ch.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// NOTE: The order of tests matters
+	// NOTE: The order of tests mbtters
 	tests := []struct {
-		name               string
-		update             *ExternalServiceUpdate
-		wantUnrestricted   bool
-		wantCloudDefault   bool
-		wantHasWebhooks    bool
-		wantTokenExpiresAt bool
-		wantLastSyncAt     time.Time
-		wantNextSyncAt     time.Time
-		wantError          bool
+		nbme               string
+		updbte             *ExternblServiceUpdbte
+		wbntUnrestricted   bool
+		wbntCloudDefbult   bool
+		wbntHbsWebhooks    bool
+		wbntTokenExpiresAt bool
+		wbntLbstSyncAt     time.Time
+		wbntNextSyncAt     time.Time
+		wbntError          bool
 	}{
 		{
-			name: "update with authorization",
-			update: &ExternalServiceUpdate{
-				DisplayName: pointers.Ptr("GITHUB (updated) #1"),
-				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
+			nbme: "updbte with buthorizbtion",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme: pointers.Ptr("GITHUB (updbted) #1"),
+				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "buthorizbtion": {}, "webhooks": [{"org": "org", "secret": "secret"}]}`),
 			},
-			wantUnrestricted: false,
-			wantCloudDefault: false,
-			wantHasWebhooks:  true,
+			wbntUnrestricted: fblse,
+			wbntCloudDefbult: fblse,
+			wbntHbsWebhooks:  true,
 		},
 		{
-			name: "update without authorization",
-			update: &ExternalServiceUpdate{
-				DisplayName: pointers.Ptr("GITHUB (updated) #2"),
+			nbme: "updbte without buthorizbtion",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme: pointers.Ptr("GITHUB (updbted) #2"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 			},
-			wantUnrestricted: false,
-			wantCloudDefault: false,
-			wantHasWebhooks:  false,
+			wbntUnrestricted: fblse,
+			wbntCloudDefbult: fblse,
+			wbntHbsWebhooks:  fblse,
 		},
 		{
-			name: "update with authorization in comments",
-			update: &ExternalServiceUpdate{
-				DisplayName: pointers.Ptr("GITHUB (updated) #3"),
+			nbme: "updbte with buthorizbtion in comments",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme: pointers.Ptr("GITHUB (updbted) #3"),
 				Config: pointers.Ptr(`
 {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
 	"token": "def",
-	// "authorization": {}
+	// "buthorizbtion": {}
 }`),
 			},
-			wantUnrestricted: false,
-			wantCloudDefault: false,
-			wantHasWebhooks:  false,
+			wbntUnrestricted: fblse,
+			wbntCloudDefbult: fblse,
+			wbntHbsWebhooks:  fblse,
 		},
 		{
-			name: "set cloud_default true",
-			update: &ExternalServiceUpdate{
-				DisplayName:  pointers.Ptr("GITHUB (updated) #4"),
-				CloudDefault: pointers.Ptr(true),
+			nbme: "set cloud_defbult true",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme:  pointers.Ptr("GITHUB (updbted) #4"),
+				CloudDefbult: pointers.Ptr(true),
 				Config: pointers.Ptr(`
 {
 	"url": "https://github.com",
 	"repositoryQuery": ["none"],
 	"token": "def",
-	"authorization": {},
+	"buthorizbtion": {},
 	"webhooks": [{"org": "org", "secret": "secret"}]
 }`),
 			},
-			wantUnrestricted: false,
-			wantCloudDefault: true,
-			wantHasWebhooks:  true,
+			wbntUnrestricted: fblse,
+			wbntCloudDefbult: true,
+			wbntHbsWebhooks:  true,
 		},
 		{
-			name: "update token_expires_at",
-			update: &ExternalServiceUpdate{
-				DisplayName:    pointers.Ptr("GITHUB (updated) #5"),
+			nbme: "updbte token_expires_bt",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme:    pointers.Ptr("GITHUB (updbted) #5"),
 				Config:         pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 				TokenExpiresAt: pointers.Ptr(time.Now()),
 			},
-			wantCloudDefault:   true,
-			wantTokenExpiresAt: true,
+			wbntCloudDefbult:   true,
+			wbntTokenExpiresAt: true,
 		},
 		{
-			name: "update with empty config",
-			update: &ExternalServiceUpdate{
+			nbme: "updbte with empty config",
+			updbte: &ExternblServiceUpdbte{
 				Config: pointers.Ptr(``),
 			},
-			wantError: true,
+			wbntError: true,
 		},
 		{
-			name: "update with comment config",
-			update: &ExternalServiceUpdate{
+			nbme: "updbte with comment config",
+			updbte: &ExternblServiceUpdbte{
 				Config: pointers.Ptr(`// {}`),
 			},
-			wantError: true,
+			wbntError: true,
 		},
 		{
-			name: "update last_sync_at",
-			update: &ExternalServiceUpdate{
-				DisplayName: pointers.Ptr("GITHUB (updated) #6"),
+			nbme: "updbte lbst_sync_bt",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme: pointers.Ptr("GITHUB (updbted) #6"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				LastSyncAt:  pointers.Ptr(now),
+				LbstSyncAt:  pointers.Ptr(now),
 			},
-			wantCloudDefault:   true,
-			wantTokenExpiresAt: true,
-			wantLastSyncAt:     now,
+			wbntCloudDefbult:   true,
+			wbntTokenExpiresAt: true,
+			wbntLbstSyncAt:     now,
 		},
 		{
-			name: "update next_sync_at",
-			update: &ExternalServiceUpdate{
-				DisplayName: pointers.Ptr("GITHUB (updated) #7"),
+			nbme: "updbte next_sync_bt",
+			updbte: &ExternblServiceUpdbte{
+				DisplbyNbme: pointers.Ptr("GITHUB (updbted) #7"),
 				Config:      pointers.Ptr(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
-				LastSyncAt:  pointers.Ptr(now),
+				LbstSyncAt:  pointers.Ptr(now),
 				NextSyncAt:  pointers.Ptr(now),
 			},
-			wantCloudDefault:   true,
-			wantTokenExpiresAt: true,
-			wantNextSyncAt:     now,
+			wbntCloudDefbult:   true,
+			wbntTokenExpiresAt: true,
+			wbntNextSyncAt:     now,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			err = db.ExternalServices().Update(ctx, nil, es.ID, test.update)
-			if test.wantError {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			err = db.ExternblServices().Updbte(ctx, nil, es.ID, test.updbte)
+			if test.wbntError {
 				if err == nil {
-					t.Fatal("Wanted an error")
+					t.Fbtbl("Wbnted bn error")
 				}
 				return
 			}
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			// Get and verify update
-			got, err := db.ExternalServices().GetByID(ctx, es.ID)
+			// Get bnd verify updbte
+			got, err := db.ExternblServices().GetByID(ctx, es.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(*test.update.DisplayName, got.DisplayName); diff != "" {
-				t.Fatalf("DisplayName mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(*test.updbte.DisplbyNbme, got.DisplbyNbme); diff != "" {
+				t.Fbtblf("DisplbyNbme mismbtch (-wbnt +got):\n%s", diff)
 			} else {
-				cmpJSON := func(a, b string) string {
-					normalize := func(s string) string {
-						values := map[string]any{}
-						_ = json.Unmarshal([]byte(s), &values)
-						delete(values, "authorization")
-						serialized, _ := json.Marshal(values)
-						return string(serialized)
+				cmpJSON := func(b, b string) string {
+					normblize := func(s string) string {
+						vblues := mbp[string]bny{}
+						_ = json.Unmbrshbl([]byte(s), &vblues)
+						delete(vblues, "buthorizbtion")
+						seriblized, _ := json.Mbrshbl(vblues)
+						return string(seriblized)
 					}
 
-					return cmp.Diff(normalize(a), normalize(b))
+					return cmp.Diff(normblize(b), normblize(b))
 				}
 
 				cfg, err := got.Config.Decrypt(ctx)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff = cmpJSON(*test.update.Config, cfg); diff != "" {
-					t.Fatalf("Config mismatch (-want +got):\n%s", diff)
-				} else if got.UpdatedAt.Equal(es.UpdatedAt) {
-					t.Fatalf("UpdateAt: want to be updated but not")
+				if diff = cmpJSON(*test.updbte.Config, cfg); diff != "" {
+					t.Fbtblf("Config mismbtch (-wbnt +got):\n%s", diff)
+				} else if got.UpdbtedAt.Equbl(es.UpdbtedAt) {
+					t.Fbtblf("UpdbteAt: wbnt to be updbted but not")
 				}
 			}
 
-			if test.wantUnrestricted != got.Unrestricted {
-				t.Fatalf("Want unrestricted = %v, but got %v", test.wantUnrestricted, got.Unrestricted)
+			if test.wbntUnrestricted != got.Unrestricted {
+				t.Fbtblf("Wbnt unrestricted = %v, but got %v", test.wbntUnrestricted, got.Unrestricted)
 			}
 
-			if test.wantCloudDefault != got.CloudDefault {
-				t.Fatalf("Want cloud_default = %v, but got %v", test.wantCloudDefault, got.CloudDefault)
+			if test.wbntCloudDefbult != got.CloudDefbult {
+				t.Fbtblf("Wbnt cloud_defbult = %v, but got %v", test.wbntCloudDefbult, got.CloudDefbult)
 			}
 
-			if !test.wantLastSyncAt.IsZero() && !test.wantLastSyncAt.Equal(got.LastSyncAt) {
-				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantLastSyncAt, got.LastSyncAt)
+			if !test.wbntLbstSyncAt.IsZero() && !test.wbntLbstSyncAt.Equbl(got.LbstSyncAt) {
+				t.Fbtblf("Wbnt lbst_sync_bt = %v, but got %v", test.wbntLbstSyncAt, got.LbstSyncAt)
 			}
 
-			if !test.wantNextSyncAt.IsZero() && !test.wantNextSyncAt.Equal(got.NextSyncAt) {
-				t.Fatalf("Want last_sync_at = %v, but got %v", test.wantNextSyncAt, got.NextSyncAt)
+			if !test.wbntNextSyncAt.IsZero() && !test.wbntNextSyncAt.Equbl(got.NextSyncAt) {
+				t.Fbtblf("Wbnt lbst_sync_bt = %v, but got %v", test.wbntNextSyncAt, got.NextSyncAt)
 			}
 
-			if got.HasWebhooks == nil {
-				t.Fatal("has_webhooks is unexpectedly null")
-			} else if test.wantHasWebhooks != *got.HasWebhooks {
-				t.Fatalf("Want has_webhooks = %v, but got %v", test.wantHasWebhooks, *got.HasWebhooks)
+			if got.HbsWebhooks == nil {
+				t.Fbtbl("hbs_webhooks is unexpectedly null")
+			} else if test.wbntHbsWebhooks != *got.HbsWebhooks {
+				t.Fbtblf("Wbnt hbs_webhooks = %v, but got %v", test.wbntHbsWebhooks, *got.HbsWebhooks)
 			}
 
-			if (got.TokenExpiresAt != nil) != test.wantTokenExpiresAt {
-				t.Fatalf("Want token_expires_at = %v, but got %v", test.wantTokenExpiresAt, got.TokenExpiresAt)
+			if (got.TokenExpiresAt != nil) != test.wbntTokenExpiresAt {
+				t.Fbtblf("Wbnt token_expires_bt = %v, but got %v", test.wbntTokenExpiresAt, got.TokenExpiresAt)
 			}
 
 			ch, err := db.CodeHosts().GetByURL(ctx, codeHostURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if ch.ID != *got.CodeHostID {
-				t.Fatalf("expected code host ids to match:%+v\n, and: %+v\n", ch.ID, *got.CodeHostID)
+				t.Fbtblf("expected code host ids to mbtch:%+v\n, bnd: %+v\n", ch.ID, *got.CodeHostID)
 			}
 		})
 	}
 }
 
-func TestDisablePermsSyncingForExternalService(t *testing.T) {
+func TestDisbblePermsSyncingForExternblService(t *testing.T) {
 	tests := []struct {
-		name   string
+		nbme   string
 		config string
-		want   string
+		wbnt   string
 	}{
 		{
-			name: "github with authorization",
+			nbme: "github with buthorizbtion",
 			config: `
 {
   // Useful comments
   "url": "https://github.com",
   "repositoryQuery": ["none"],
   "token": "def",
-  "authorization": {}
+  "buthorizbtion": {}
 }`,
-			want: `
+			wbnt: `
 {
   // Useful comments
   "url": "https://github.com",
@@ -558,7 +558,7 @@ func TestDisablePermsSyncingForExternalService(t *testing.T) {
 }`,
 		},
 		{
-			name: "github without authorization",
+			nbme: "github without buthorizbtion",
 			config: `
 {
   // Useful comments
@@ -566,7 +566,7 @@ func TestDisablePermsSyncingForExternalService(t *testing.T) {
   "repositoryQuery": ["none"],
   "token": "def"
 }`,
-			want: `
+			wbnt: `
 {
   // Useful comments
   "url": "https://github.com",
@@ -575,400 +575,400 @@ func TestDisablePermsSyncingForExternalService(t *testing.T) {
 }`,
 		},
 		{
-			name: "azure devops with enforce permissions",
+			nbme: "bzure devops with enforce permissions",
 			config: `
 {
   // Useful comments
-  "url": "https://dev.azure.com",
-  "username": "horse",
-  "token": "abc",
+  "url": "https://dev.bzure.com",
+  "usernbme": "horse",
+  "token": "bbc",
   "enforcePermissions": true
 }`,
-			want: `
+			wbnt: `
 {
   // Useful comments
-  "url": "https://dev.azure.com",
-  "username": "horse",
-  "token": "abc"
+  "url": "https://dev.bzure.com",
+  "usernbme": "horse",
+  "token": "bbc"
 }`,
 		},
 		{
-			name: "azure devops without enforce permissions",
+			nbme: "bzure devops without enforce permissions",
 			config: `
 {
   // Useful comments
-  "url": "https://dev.azure.com",
-  "username": "horse",
-  "token": "abc"
+  "url": "https://dev.bzure.com",
+  "usernbme": "horse",
+  "token": "bbc"
 }`,
-			want: `
+			wbnt: `
 {
   // Useful comments
-  "url": "https://dev.azure.com",
-  "username": "horse",
-  "token": "abc"
+  "url": "https://dev.bzure.com",
+  "usernbme": "horse",
+  "token": "bbc"
 }`,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got, err := disablePermsSyncingForExternalService(test.config)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got, err := disbblePermsSyncingForExternblService(test.config)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.want, got); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbnt, got); diff != "" {
+				t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-// This test ensures under Sourcegraph.com mode, every call of `Create`,
-// `Upsert` and `Update` removes the "authorization" field in the external
-// service config automatically.
-func TestExternalServicesStore_DisablePermsSyncingForExternalService(t *testing.T) {
+// This test ensures under Sourcegrbph.com mode, every cbll of `Crebte`,
+// `Upsert` bnd `Updbte` removes the "buthorizbtion" field in the externbl
+// service config butombticblly.
+func TestExternblServicesStore_DisbblePermsSyncingForExternblService(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	externalServices := db.ExternalServices()
+	externblServices := db.ExternblServices()
 
-	// Test Create method
-	es := &types.ExternalService{
+	// Test Crebte method
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "buthorizbtion": {}}`),
 	}
-	err := externalServices.Create(ctx, confGet, es)
+	err := externblServices.Crebte(ctx, confGet, es)
 	require.NoError(t, err)
 
-	got, err := externalServices.GetByID(ctx, es.ID)
+	got, err := externblServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
 	cfg, err := got.Config.Decrypt(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	exists := gjson.Get(cfg, "authorization").Exists()
-	assert.False(t, exists, `"authorization" field exists, but should not`)
+	exists := gjson.Get(cfg, "buthorizbtion").Exists()
+	bssert.Fblse(t, exists, `"buthorizbtion" field exists, but should not`)
 
-	// Reset Config field and test Upsert method
-	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`)
-	err = externalServices.Upsert(ctx, es)
+	// Reset Config field bnd test Upsert method
+	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "buthorizbtion": {}}`)
+	err = externblServices.Upsert(ctx, es)
 	require.NoError(t, err)
 
-	got, err = externalServices.GetByID(ctx, es.ID)
+	got, err = externblServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
 	cfg, err = got.Config.Decrypt(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	exists = gjson.Get(cfg, "authorization").Exists()
-	assert.False(t, exists, `"authorization" field exists, but should not`)
+	exists = gjson.Get(cfg, "buthorizbtion").Exists()
+	bssert.Fblse(t, exists, `"buthorizbtion" field exists, but should not`)
 
-	// Reset Config field and test Update method
-	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`)
-	err = externalServices.Update(ctx,
+	// Reset Config field bnd test Updbte method
+	es.Config.Set(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "buthorizbtion": {}}`)
+	err = externblServices.Updbte(ctx,
 		conf.Get().AuthProviders,
 		es.ID,
-		&ExternalServiceUpdate{
+		&ExternblServiceUpdbte{
 			Config: &cfg,
 		},
 	)
 	require.NoError(t, err)
 
-	got, err = externalServices.GetByID(ctx, es.ID)
+	got, err = externblServices.GetByID(ctx, es.ID)
 	require.NoError(t, err)
 	cfg, err = got.Config.Decrypt(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	exists = gjson.Get(cfg, "authorization").Exists()
-	assert.False(t, exists, `"authorization" field exists, but should not`)
+	exists = gjson.Get(cfg, "buthorizbtion").Exists()
+	bssert.Fblse(t, exists, `"buthorizbtion" field exists, but should not`)
 }
 
 func TestCountRepoCount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es1 := &types.ExternalService{
+	es1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es1)
+	err := db.ExternblServices().Crebte(ctx, confGet, es1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	_, err = db.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, fork)
+INSERT INTO repo (id, nbme, description, fork)
 VALUES (1, 'github.com/user/repo', '', FALSE);
 `)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Insert rows to `external_service_repos` table to test the trigger.
+	// Insert rows to `externbl_service_repos` tbble to test the trigger.
 	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+INSERT INTO externbl_service_repos (externbl_service_id, repo_id, clone_url)
 VALUES (%d, 1, '')
 `, es1.ID)
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	count, err := db.ExternalServices().RepoCount(ctx, es1.ID)
+	count, err := db.ExternblServices().RepoCount(ctx, es1.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != 1 {
-		t.Fatalf("Expected 1, got %d", count)
+		t.Fbtblf("Expected 1, got %d", count)
 	}
 }
 
-func TestExternalServicesStore_Delete(t *testing.T) {
+func TestExternblServicesStore_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es1 := &types.ExternalService{
+	es1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es1)
+	err := db.ExternblServices().Crebte(ctx, confGet, es1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	es2 := &types.ExternalService{
+	es2 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #2",
+		DisplbyNbme: "GITHUB #2",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 	}
-	err = db.ExternalServices().Create(ctx, confGet, es2)
+	err = db.ExternblServices().Crebte(ctx, confGet, es2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Create two repositories to test trigger of soft-deleting external service:
-	//  - ID=1 is expected to be deleted along with deletion of the external service.
-	//  - ID=2 remains untouched because it is not associated with the external service.
+	// Crebte two repositories to test trigger of soft-deleting externbl service:
+	//  - ID=1 is expected to be deleted blong with deletion of the externbl service.
+	//  - ID=2 rembins untouched becbuse it is not bssocibted with the externbl service.
 	_, err = db.ExecContext(ctx, `
-INSERT INTO repo (id, name, description, fork)
+INSERT INTO repo (id, nbme, description, fork)
 VALUES (1, 'github.com/user/repo', '', FALSE);
-INSERT INTO repo (id, name, description, fork)
+INSERT INTO repo (id, nbme, description, fork)
 VALUES (2, 'github.com/user/repo2', '', FALSE);
 `)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Insert rows to `external_service_repos` table to test the trigger.
+	// Insert rows to `externbl_service_repos` tbble to test the trigger.
 	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+INSERT INTO externbl_service_repos (externbl_service_id, repo_id, clone_url)
 VALUES (%d, 1, ''), (%d, 2, '')
 `, es1.ID, es2.ID)
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Delete this external service
-	err = db.ExternalServices().Delete(ctx, es1.ID)
+	// Delete this externbl service
+	err = db.ExternblServices().Delete(ctx, es1.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Delete again should get externalServiceNotFoundError
-	err = db.ExternalServices().Delete(ctx, es1.ID)
+	// Delete bgbin should get externblServiceNotFoundError
+	err = db.ExternblServices().Delete(ctx, es1.ID)
 	gotErr := fmt.Sprintf("%v", err)
-	wantErr := fmt.Sprintf("external service not found: %v", es1.ID)
-	if gotErr != wantErr {
-		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	wbntErr := fmt.Sprintf("externbl service not found: %v", es1.ID)
+	if gotErr != wbntErr {
+		t.Errorf("error: wbnt %q but got %q", wbntErr, gotErr)
 	}
 
-	_, err = db.ExternalServices().GetByID(ctx, es1.ID)
+	_, err = db.ExternblServices().GetByID(ctx, es1.ID)
 	if err == nil {
-		t.Fatal("expected an error")
+		t.Fbtbl("expected bn error")
 	}
 
-	// Should only get back the repo with ID=2
+	// Should only get bbck the repo with ID=2
 	repos, err := db.Repos().GetByIDs(ctx, 1, 2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []*types.Repo{
-		{ID: 2, Name: "github.com/user/repo2"},
+	wbnt := []*types.Repo{
+		{ID: 2, Nbme: "github.com/user/repo2"},
 	}
 
 	repos = types.Repos(repos).With(func(r *types.Repo) {
-		r.CreatedAt = time.Time{}
+		r.CrebtedAt = time.Time{}
 		r.Sources = nil
 	})
-	if diff := cmp.Diff(want, repos); diff != "" {
-		t.Fatalf("Repos mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, repos); diff != "" {
+		t.Fbtblf("Repos mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestExternalServiceStore_Delete_WithSyncJobs(t *testing.T) {
+func TestExternblServiceStore_Delete_WithSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
-	ctx := context.Background()
+	store := &externblServiceStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	if err := store.Create(ctx, confGet, es); err != nil {
-		t.Fatal(err)
+	if err := store.Crebte(ctx, confGet, es); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Insert a sync job
-	syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+	// Insert b sync job
+	syncJobID, _, err := bbsestore.ScbnFirstInt64(db.Hbndle().QueryContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, stbte, stbrted_bt)
 VALUES ($1, $2, now())
 RETURNING id
 `, es.ID, "processing"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// When we now delete the external service it'll mark the sync job as
-	// 'cancel = true', so in a separate goroutine we need to wait until the
-	// job is marked as cancel true and then set it to canceled
+	// When we now delete the externbl service it'll mbrk the sync job bs
+	// 'cbncel = true', so in b sepbrbte goroutine we need to wbit until the
+	// job is mbrked bs cbncel true bnd then set it to cbnceled
 	go func() {
-		ctx, cancel := context.WithTimeout(ctx, 10*time.Second)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(ctx, 10*time.Second)
+		defer cbncel()
 
 		for {
-			jobCancel, _, err := basestore.ScanFirstBool(db.Handle().QueryContext(ctx, `SELECT cancel FROM external_service_sync_jobs WHERE id = $1`, syncJobID))
+			jobCbncel, _, err := bbsestore.ScbnFirstBool(db.Hbndle().QueryContext(ctx, `SELECT cbncel FROM externbl_service_sync_jobs WHERE id = $1`, syncJobID))
 			if err != nil {
-				logger.Error("querying 'cancel' failed", log.Error(err))
+				logger.Error("querying 'cbncel' fbiled", log.Error(err))
 				return
 			}
-			if jobCancel {
-				break
+			if jobCbncel {
+				brebk
 			}
 			time.Sleep(50 * time.Millisecond)
 		}
 
-		// Job has been marked as to-be-canceled, let's cancel it
-		_, err := db.Handle().ExecContext(ctx, `UPDATE external_service_sync_jobs SET state = 'canceled', finished_at = now() WHERE id = $1`, syncJobID)
+		// Job hbs been mbrked bs to-be-cbnceled, let's cbncel it
+		_, err := db.Hbndle().ExecContext(ctx, `UPDATE externbl_service_sync_jobs SET stbte = 'cbnceled', finished_bt = now() WHERE id = $1`, syncJobID)
 		if err != nil {
-			logger.Error("marking job as cancelled failed", log.Error(err))
+			logger.Error("mbrking job bs cbncelled fbiled", log.Error(err))
 			return
 		}
 	}()
 
-	deleted := make(chan error)
+	deleted := mbke(chbn error)
 	go func() {
-		// This will block until the goroutine above has finished
-		err = db.ExternalServices().Delete(ctx, es.ID)
+		// This will block until the goroutine bbove hbs finished
+		err = db.ExternblServices().Delete(ctx, es.ID)
 		deleted <- err
 	}()
 
 	select {
-	case <-time.After(10 * time.Second):
-		t.Fatal("timeout waiting for external service deletion")
-	case err := <-deleted:
+	cbse <-time.After(10 * time.Second):
+		t.Fbtbl("timeout wbiting for externbl service deletion")
+	cbse err := <-deleted:
 		if err != nil {
-			t.Fatalf("deleting external service failed: %s", err)
+			t.Fbtblf("deleting externbl service fbiled: %s", err)
 		}
 	}
 
-	_, err = db.ExternalServices().GetByID(ctx, es.ID)
+	_, err = db.ExternblServices().GetByID(ctx, es.ID)
 	if !errcode.IsNotFound(err) {
-		t.Fatal("expected an error")
+		t.Fbtbl("expected bn error")
 	}
 }
 
-// reposNumber is a number of repos created in one batch.
-// TestExternalServicesStore_DeleteExtServiceWithManyRepos does 5 such batches
+// reposNumber is b number of repos crebted in one bbtch.
+// TestExternblServicesStore_DeleteExtServiceWithMbnyRepos does 5 such bbtches
 const reposNumber = 1000
 
-// TestExternalServicesStore_DeleteExtServiceWithManyRepos can be used locally
-// with increased number of repos to see how fast/slow deletion of external
+// TestExternblServicesStore_DeleteExtServiceWithMbnyRepos cbn be used locblly
+// with increbsed number of repos to see how fbst/slow deletion of externbl
 // services works.
-func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
+func TestExternblServicesStore_DeleteExtServiceWithMbnyRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	extSvc := &types.ExternalService{
+	extSvc := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	servicesStore := db.ExternalServices()
-	err := servicesStore.Create(ctx, confGet, extSvc)
+	servicesStore := db.ExternblServices()
+	err := servicesStore.Crebte(ctx, confGet, extSvc)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	createRepo := func(offset int, c chan<- int) {
-		inserter := func(inserter *batch.Inserter) error {
+	crebteRepo := func(offset int, c chbn<- int) {
+		inserter := func(inserter *bbtch.Inserter) error {
 			for i := 0 + offset; i < reposNumber+offset; i++ {
-				if err := inserter.Insert(ctx, i, "repo"+strconv.Itoa(i)); err != nil {
+				if err := inserter.Insert(ctx, i, "repo"+strconv.Itob(i)); err != nil {
 					return err
 				}
 			}
 			return nil
 		}
 
-		if err := batch.WithInserter(
+		if err := bbtch.WithInserter(
 			ctx,
 			db,
 			"repo",
-			batch.MaxNumPostgresParameters,
-			[]string{"id", "name"},
+			bbtch.MbxNumPostgresPbrbmeters,
+			[]string{"id", "nbme"},
 			inserter,
 		); err != nil {
 			t.Error(err)
@@ -978,27 +978,27 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		c <- 0
 	}
 
-	ready := make(chan int, 5)
-	defer close(ready)
+	rebdy := mbke(chbn int, 5)
+	defer close(rebdy)
 	offsets := []int{0, reposNumber, reposNumber * 2, reposNumber * 3, reposNumber * 4}
 
-	for _, offset := range offsets {
-		go createRepo(offset, ready)
+	for _, offset := rbnge offsets {
+		go crebteRepo(offset, rebdy)
 	}
 
 	for i := 0; i < 5; i++ {
-		if status := <-ready; status != 0 {
-			t.Fatal("Error during repo creation")
+		if stbtus := <-rebdy; stbtus != 0 {
+			t.Fbtbl("Error during repo crebtion")
 		}
 	}
 
-	ready2 := make(chan int, 5)
-	defer close(ready2)
+	rebdy2 := mbke(chbn int, 5)
+	defer close(rebdy2)
 
 	extSvcId := extSvc.ID
 
-	createExtSvc := func(offset int, c chan<- int) {
-		inserter := func(inserter *batch.Inserter) error {
+	crebteExtSvc := func(offset int, c chbn<- int) {
+		inserter := func(inserter *bbtch.Inserter) error {
 			for i := 0 + offset; i < reposNumber+offset; i++ {
 				if err := inserter.Insert(ctx, extSvcId, i, ""); err != nil {
 					return err
@@ -1007,12 +1007,12 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 			return nil
 		}
 
-		if err := batch.WithInserter(
+		if err := bbtch.WithInserter(
 			ctx,
 			db,
-			"external_service_repos",
-			batch.MaxNumPostgresParameters,
-			[]string{"external_service_id", "repo_id", "clone_url"},
+			"externbl_service_repos",
+			bbtch.MbxNumPostgresPbrbmeters,
+			[]string{"externbl_service_id", "repo_id", "clone_url"},
 			inserter,
 		); err != nil {
 			t.Error(err)
@@ -1022,984 +1022,984 @@ func TestExternalServicesStore_DeleteExtServiceWithManyRepos(t *testing.T) {
 		c <- 0
 	}
 
-	for _, offset := range offsets {
-		go createExtSvc(offset, ready2)
+	for _, offset := rbnge offsets {
+		go crebteExtSvc(offset, rebdy2)
 	}
 
 	for i := 0; i < 5; i++ {
-		if status := <-ready2; status != 0 {
-			t.Fatal("Error during external service repo creation")
+		if stbtus := <-rebdy2; stbtus != 0 {
+			t.Fbtbl("Error during externbl service repo crebtion")
 		}
 	}
 
-	// Delete this external service
-	start := time.Now()
+	// Delete this externbl service
+	stbrt := time.Now()
 	err = servicesStore.Delete(ctx, extSvcId)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	t.Logf("Deleting of an external service with %d repos took %s", reposNumber*5, time.Since(start))
+	t.Logf("Deleting of bn externbl service with %d repos took %s", reposNumber*5, time.Since(stbrt))
 
 	count, err := servicesStore.RepoCount(ctx, extSvcId)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if count != 0 {
-		t.Fatal("External service repos are not deleted")
+		t.Fbtbl("Externbl service repos bre not deleted")
 	}
 
 	// Should throw not found error
 	_, err = servicesStore.GetByID(ctx, extSvcId)
 	if err == nil {
-		t.Fatal("External service is not deleted")
+		t.Fbtbl("Externbl service is not deleted")
 	}
 
-	rows, err := db.Handle().QueryContext(ctx, `select * from repo where deleted_at is null`)
+	rows, err := db.Hbndle().QueryContext(ctx, `select * from repo where deleted_bt is null`)
 	if err != nil {
-		t.Fatal("Error during fetching repos from the DB")
+		t.Fbtbl("Error during fetching repos from the DB")
 	}
 	if rows.Next() {
-		t.Fatal("Repos of external service are not deleted")
+		t.Fbtbl("Repos of externbl service bre not deleted")
 	}
 }
 
-func TestExternalServicesStore_GetByID(t *testing.T) {
+func TestExternblServicesStore_GetByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Should be able to get back by its ID
-	_, err = db.ExternalServices().GetByID(ctx, es.ID)
+	// Should be bble to get bbck by its ID
+	_, err = db.ExternblServices().GetByID(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Delete this external service
-	err = db.ExternalServices().Delete(ctx, es.ID)
+	// Delete this externbl service
+	err = db.ExternblServices().Delete(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Should now get externalServiceNotFoundError
-	_, err = db.ExternalServices().GetByID(ctx, es.ID)
+	// Should now get externblServiceNotFoundError
+	_, err = db.ExternblServices().GetByID(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
-	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
-	if gotErr != wantErr {
-		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	wbntErr := fmt.Sprintf("externbl service not found: %v", es.ID)
+	if gotErr != wbntErr {
+		t.Errorf("error: wbnt %q but got %q", wbntErr, gotErr)
 	}
 }
 
-func TestExternalServicesStore_GetByID_Encrypted(t *testing.T) {
+func TestExternblServicesStore_GetByID_Encrypted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
 
-	store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
+	store := db.ExternblServices().WithEncryptionKey(et.TestKey{})
 
-	err := store.Create(ctx, confGet, es)
+	err := store.Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// values encrypted should not be readable without the encrypting key
-	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
+	// vblues encrypted should not be rebdbble without the encrypting key
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FbilDecrypt: true})
 	svc, err := noopStore.GetByID(ctx, es.ID)
 	if err != nil {
-		t.Fatalf("unexpected error querying service: %s", err)
+		t.Fbtblf("unexpected error querying service: %s", err)
 	}
 	if _, err := svc.Config.Decrypt(ctx); err == nil {
-		t.Fatalf("expected error decrypting with a different key")
+		t.Fbtblf("expected error decrypting with b different key")
 	}
 
-	// Should be able to get back by its ID
+	// Should be bble to get bbck by its ID
 	_, err = store.GetByID(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Delete this external service
+	// Delete this externbl service
 	err = store.Delete(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Should now get externalServiceNotFoundError
+	// Should now get externblServiceNotFoundError
 	_, err = store.GetByID(ctx, es.ID)
 	gotErr := fmt.Sprintf("%v", err)
-	wantErr := fmt.Sprintf("external service not found: %v", es.ID)
-	if gotErr != wantErr {
-		t.Errorf("error: want %q but got %q", wantErr, gotErr)
+	wbntErr := fmt.Sprintf("externbl service not found: %v", es.ID)
+	if gotErr != wbntErr {
+		t.Errorf("error: wbnt %q but got %q", wbntErr, gotErr)
 	}
 }
 
-func TestGetLatestSyncErrors(t *testing.T) {
+func TestGetLbtestSyncErrors(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	createService := func(name string) *types.ExternalService {
+	crebteService := func(nbme string) *types.ExternblService {
 		confGet := func() *conf.Unified { return &conf.Unified{} }
 
-		svc := &types.ExternalService{
+		svc := &types.ExternblService{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: name,
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+			DisplbyNbme: nbme,
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 		}
 
-		if err := db.ExternalServices().Create(ctx, confGet, svc); err != nil {
-			t.Fatal(err)
+		if err := db.ExternblServices().Crebte(ctx, confGet, svc); err != nil {
+			t.Fbtbl(err)
 		}
 		return svc
 	}
 
-	addSyncError := func(t *testing.T, extSvcID int64, failure string) {
+	bddSyncError := func(t *testing.T, extSvcID int64, fbilure string) {
 		t.Helper()
-		_, err := db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at, failure_message)
+		_, err := db.Hbndle().ExecContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, stbte, finished_bt, fbilure_messbge)
 VALUES ($1,'errored', now(), $2)
-`, extSvcID, failure)
+`, extSvcID, fbilure)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	extSvc1 := createService("GITHUB #1")
-	extSvc2 := createService("GITHUB #2")
+	extSvc1 := crebteService("GITHUB #1")
+	extSvc2 := crebteService("GITHUB #2")
 
-	// Listing errors now should return an empty map as none have been added yet
-	results, err := db.ExternalServices().GetLatestSyncErrors(ctx)
+	// Listing errors now should return bn empty mbp bs none hbve been bdded yet
+	results, err := db.ExternblServices().GetLbtestSyncErrors(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []*SyncError{
-		{ServiceID: extSvc1.ID, Message: ""},
-		{ServiceID: extSvc2.ID, Message: ""},
+	wbnt := []*SyncError{
+		{ServiceID: extSvc1.ID, Messbge: ""},
+		{ServiceID: extSvc2.ID, Messbge: ""},
 	}
 
-	if diff := cmp.Diff(want, results); diff != "" {
-		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, results); diff != "" {
+		t.Fbtblf("wrong sync errors (-wbnt +got):\n%s", diff)
 	}
 
-	// Add two failures for the same service
-	failure1 := "oops"
-	failure2 := "oops again"
-	addSyncError(t, extSvc1.ID, failure1)
-	addSyncError(t, extSvc1.ID, failure2)
+	// Add two fbilures for the sbme service
+	fbilure1 := "oops"
+	fbilure2 := "oops bgbin"
+	bddSyncError(t, extSvc1.ID, fbilure1)
+	bddSyncError(t, extSvc1.ID, fbilure2)
 
-	// We should get the latest failure
-	results, err = db.ExternalServices().GetLatestSyncErrors(ctx)
+	// We should get the lbtest fbilure
+	results, err = db.ExternblServices().GetLbtestSyncErrors(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want = []*SyncError{
-		{ServiceID: extSvc1.ID, Message: failure2},
-		{ServiceID: extSvc2.ID, Message: ""},
+	wbnt = []*SyncError{
+		{ServiceID: extSvc1.ID, Messbge: fbilure2},
+		{ServiceID: extSvc2.ID, Messbge: ""},
 	}
-	if diff := cmp.Diff(want, results); diff != "" {
-		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, results); diff != "" {
+		t.Fbtblf("wrong sync errors (-wbnt +got):\n%s", diff)
 	}
 
-	// Add error for other external service
-	addSyncError(t, extSvc2.ID, "oops over here")
+	// Add error for other externbl service
+	bddSyncError(t, extSvc2.ID, "oops over here")
 
-	results, err = db.ExternalServices().GetLatestSyncErrors(ctx)
+	results, err = db.ExternblServices().GetLbtestSyncErrors(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want = []*SyncError{
-		{ServiceID: extSvc1.ID, Message: failure2},
-		{ServiceID: extSvc2.ID, Message: "oops over here"},
+	wbnt = []*SyncError{
+		{ServiceID: extSvc1.ID, Messbge: fbilure2},
+		{ServiceID: extSvc2.ID, Messbge: "oops over here"},
 	}
-	if diff := cmp.Diff(want, results); diff != "" {
-		t.Fatalf("wrong sync errors (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, results); diff != "" {
+		t.Fbtblf("wrong sync errors (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetLastSyncError(t *testing.T) {
+func TestGetLbstSyncError(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Should be able to get back by its ID
-	_, err = db.ExternalServices().GetByID(ctx, es.ID)
+	// Should be bble to get bbck by its ID
+	_, err = db.ExternblServices().GetByID(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	lastSyncError, err := db.ExternalServices().GetLastSyncError(ctx, es.ID)
+	lbstSyncError, err := db.ExternblServices().GetLbstSyncError(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if lastSyncError != "" {
-		t.Fatalf("Expected empty error, have %q", lastSyncError)
+	if lbstSyncError != "" {
+		t.Fbtblf("Expected empty error, hbve %q", lbstSyncError)
 	}
 
-	// Could have failure message
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, finished_at)
+	// Could hbve fbilure messbge
+	_, err = db.Hbndle().ExecContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, stbte, finished_bt)
 VALUES ($1,'errored', now())
 `, es.ID)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	lastSyncError, err = db.ExternalServices().GetLastSyncError(ctx, es.ID)
+	lbstSyncError, err = db.ExternblServices().GetLbstSyncError(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if lastSyncError != "" {
-		t.Fatalf("Expected empty error, have %q", lastSyncError)
+	if lbstSyncError != "" {
+		t.Fbtblf("Expected empty error, hbve %q", lbstSyncError)
 	}
 
 	// Add sync error
 	expectedError := "oops"
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, failure_message, state, finished_at)
+	_, err = db.Hbndle().ExecContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, fbilure_messbge, stbte, finished_bt)
 VALUES ($1,$2,'errored', now())
 `, es.ID, expectedError)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	lastSyncError, err = db.ExternalServices().GetLastSyncError(ctx, es.ID)
+	lbstSyncError, err = db.ExternblServices().GetLbstSyncError(ctx, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if lastSyncError != expectedError {
-		t.Fatalf("Expected %q, have %q", expectedError, lastSyncError)
+	if lbstSyncError != expectedError {
+		t.Fbtblf("Expected %q, hbve %q", expectedError, lbstSyncError)
 	}
 }
 
-func TestExternalServiceStore_HasRunningSyncJobs(t *testing.T) {
+func TestExternblServiceStore_HbsRunningSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := &externalServiceStore{Store: basestore.NewWithHandle(db.Handle())}
-	ctx := context.Background()
+	store := &externblServiceStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	if err := store.Create(ctx, confGet, es); err != nil {
-		t.Fatal(err)
+	if err := store.Crebte(ctx, confGet, es); err != nil {
+		t.Fbtbl(err)
 	}
 
-	ok, err := store.hasRunningSyncJobs(ctx, es.ID)
+	ok, err := store.hbsRunningSyncJobs(ctx, es.ID)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if ok {
-		t.Fatal("unexpected running sync jobs")
+		t.Fbtbl("unexpected running sync jobs")
 	}
 
-	_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+	_, err = db.Hbndle().ExecContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, stbte, stbrted_bt)
 VALUES ($1, 'processing', now())
 RETURNING id
 `, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	ok, err = store.hasRunningSyncJobs(ctx, es.ID)
+	ok, err = store.hbsRunningSyncJobs(ctx, es.ID)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if !ok {
-		t.Fatal("unexpected running sync jobs")
+		t.Fbtbl("unexpected running sync jobs")
 	}
 }
 
-func TestExternalServiceStore_CancelSyncJob(t *testing.T) {
+func TestExternblServiceStore_CbncelSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := db.ExternalServices()
-	ctx := context.Background()
+	store := db.ExternblServices()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := store.Create(ctx, confGet, es)
+	err := store.Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Make sure "not found" is handled
-	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: 9999})
-	if !errors.HasType(err, &errSyncJobNotFound{}) {
-		t.Fatalf("Expected not-found error, have %q", err)
+	// Mbke sure "not found" is hbndled
+	err = store.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ID: 9999})
+	if !errors.HbsType(err, &errSyncJobNotFound{}) {
+		t.Fbtblf("Expected not-found error, hbve %q", err)
 	}
-	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: 9999})
+	err = store.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ExternblServiceID: 9999})
 	if err != nil {
-		t.Fatalf("Expected no error, but have %q", err)
+		t.Fbtblf("Expected no error, but hbve %q", err)
 	}
 
-	assertCanceled := func(t *testing.T, syncJobID int64, wantState string, wantFinished bool) {
+	bssertCbnceled := func(t *testing.T, syncJobID int64, wbntStbte string, wbntFinished bool) {
 		t.Helper()
 
-		// Make sure it was canceled
+		// Mbke sure it wbs cbnceled
 		syncJob, err := store.GetSyncJobByID(ctx, syncJobID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !syncJob.Cancel {
-			t.Fatalf("syncjob not canceled")
+		if !syncJob.Cbncel {
+			t.Fbtblf("syncjob not cbnceled")
 		}
-		if syncJob.State != wantState {
-			t.Fatalf("syncjob state unexpectedly changed")
+		if syncJob.Stbte != wbntStbte {
+			t.Fbtblf("syncjob stbte unexpectedly chbnged")
 		}
-		if !wantFinished && !syncJob.FinishedAt.IsZero() {
-			t.Fatalf("syncjob finishedAt is set but should not be")
+		if !wbntFinished && !syncJob.FinishedAt.IsZero() {
+			t.Fbtblf("syncjob finishedAt is set but should not be")
 		}
-		if wantFinished && syncJob.FinishedAt.IsZero() {
-			t.Fatalf("syncjob finishedAt is not set but should be")
+		if wbntFinished && syncJob.FinishedAt.IsZero() {
+			t.Fbtblf("syncjob finishedAt is not set but should be")
 		}
 	}
 
-	insertSyncJob := func(t *testing.T, state string) int64 {
+	insertSyncJob := func(t *testing.T, stbte string) int64 {
 		t.Helper()
 
-		syncJobID, _, err := basestore.ScanFirstInt64(db.Handle().QueryContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state, started_at)
+		syncJobID, _, err := bbsestore.ScbnFirstInt64(db.Hbndle().QueryContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, stbte, stbrted_bt)
 VALUES ($1, $2, now())
 RETURNING id
-`, es.ID, state))
+`, es.ID, stbte))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		return syncJobID
 	}
 
-	// Insert 'processing' sync job that can be canceled and cancel by ID
+	// Insert 'processing' sync job thbt cbn be cbnceled bnd cbncel by ID
 	syncJobID := insertSyncJob(t, "processing")
-	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID})
+	err = store.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ID: syncJobID})
 	if err != nil {
-		t.Fatalf("Cancel failed: %s", err)
+		t.Fbtblf("Cbncel fbiled: %s", err)
 	}
-	assertCanceled(t, syncJobID, "processing", false)
+	bssertCbnceled(t, syncJobID, "processing", fblse)
 
-	// Insert another 'processing' sync job that can be canceled, but cancel by external_service_id
+	// Insert bnother 'processing' sync job thbt cbn be cbnceled, but cbncel by externbl_service_id
 	syncJobID2 := insertSyncJob(t, "processing")
-	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ExternalServiceID: es.ID})
+	err = store.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ExternblServiceID: es.ID})
 	if err != nil {
-		t.Fatalf("Cancel failed: %s", err)
+		t.Fbtblf("Cbncel fbiled: %s", err)
 	}
-	assertCanceled(t, syncJobID2, "processing", false)
+	bssertCbnceled(t, syncJobID2, "processing", fblse)
 
-	// Insert 'queued' sync job that can be canceled
+	// Insert 'queued' sync job thbt cbn be cbnceled
 	syncJobID3 := insertSyncJob(t, "queued")
-	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID3})
+	err = store.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ID: syncJobID3})
 	if err != nil {
-		t.Fatalf("Cancel failed: %s", err)
+		t.Fbtblf("Cbncel fbiled: %s", err)
 	}
-	assertCanceled(t, syncJobID3, "canceled", true)
+	bssertCbnceled(t, syncJobID3, "cbnceled", true)
 
-	// Insert sync job in state that is not cancelable
+	// Insert sync job in stbte thbt is not cbncelbble
 	syncJobID4 := insertSyncJob(t, "completed")
-	err = store.CancelSyncJob(ctx, ExternalServicesCancelSyncJobOptions{ID: syncJobID4})
-	if !errors.HasType(err, &errSyncJobNotFound{}) {
-		t.Fatalf("Expected not-found error, have %q", err)
+	err = store.CbncelSyncJob(ctx, ExternblServicesCbncelSyncJobOptions{ID: syncJobID4})
+	if !errors.HbsType(err, &errSyncJobNotFound{}) {
+		t.Fbtblf("Expected not-found error, hbve %q", err)
 	}
 }
 
-func TestExternalServicesStore_List(t *testing.T) {
+func TestExternblServicesStore_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create new external services
+	// Crebte new externbl services
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	ess := []*types.ExternalService{
+	ess := []*types.ExternblService{
 		{
 			Kind:         extsvc.KindGitHub,
-			DisplayName:  "GITHUB #1",
-			Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "authorization": {}}`),
-			CloudDefault: true,
+			DisplbyNbme:  "GITHUB #1",
+			Config:       extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "buthorizbtion": {}}`),
+			CloudDefbult: true,
 		},
 		{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #2",
+			DisplbyNbme: "GITHUB #2",
 			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 		},
 		{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #3",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "authorization": {}}`),
+			DisplbyNbme: "GITHUB #3",
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def", "buthorizbtion": {}}`),
 		},
 	}
 
-	for _, es := range ess {
-		err := db.ExternalServices().Create(ctx, confGet, es)
+	for _, es := rbnge ess {
+		err := db.ExternblServices().Crebte(ctx, confGet, es)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
-	createdAt := time.Now()
+	crebtedAt := time.Now()
 
-	deletedES := &types.ExternalService{
+	deletedES := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #4",
+		DisplbyNbme: "GITHUB #4",
 		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, deletedES)
+	err := db.ExternblServices().Crebte(ctx, confGet, deletedES)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if err := db.ExternalServices().Delete(ctx, deletedES.ID); err != nil {
-		t.Fatal(err)
+	if err := db.ExternblServices().Delete(ctx, deletedES.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Creating a repo which will be bound to GITHUB #1 and GITHUB #2 external
-	// services. We cannot use repos.Store because of import cycles, the simplest way
-	// is to run a raw query.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "repo1"})
+	// Crebting b repo which will be bound to GITHUB #1 bnd GITHUB #2 externbl
+	// services. We cbnnot use repos.Store becbuse of import cycles, the simplest wby
+	// is to run b rbw query.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "repo1"})
 	require.NoError(t, err)
 	q := sqlf.Sprintf(`
-INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+INSERT INTO externbl_service_repos (externbl_service_id, repo_id, clone_url)
 VALUES (1, 1, ''), (2, 1, '')
 `)
-	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err = db.ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	require.NoError(t, err)
 
-	t.Run("list all external services", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{})
+	t.Run("list bll externbl services", func(t *testing.T) {
+		got, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
 
-		if diff := cmp.Diff(ess, got, et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(ess, got, et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("list all external services in ascending order", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{OrderByDirection: "ASC"})
+	t.Run("list bll externbl services in bscending order", func(t *testing.T) {
+		got, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{OrderByDirection: "ASC"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
-		sort.Slice(want, func(i, j int) bool { return want[i].ID < want[j].ID })
+		wbnt := []*types.ExternblService(types.ExternblServices(ess).Clone())
+		sort.Slice(wbnt, func(i, j int) bool { return wbnt[i].ID < wbnt[j].ID })
 
-		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, got, et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("list all external services in descending order", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{})
+	t.Run("list bll externbl services in descending order", func(t *testing.T) {
+		got, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := []*types.ExternalService(types.ExternalServices(ess).Clone())
-		sort.Slice(want, func(i, j int) bool { return want[i].ID > want[j].ID })
+		wbnt := []*types.ExternblService(types.ExternblServices(ess).Clone())
+		sort.Slice(wbnt, func(i, j int) bool { return wbnt[i].ID > wbnt[j].ID })
 
-		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, got, et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("list external services with certain IDs", func(t *testing.T) {
-		got, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+	t.Run("list externbl services with certbin IDs", func(t *testing.T) {
+		got, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{
 			IDs: []int64{ess[1].ID},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		sort.Slice(got, func(i, j int) bool { return got[i].ID < got[j].ID })
 
-		if diff := cmp.Diff(ess[1:2], got, et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+		if diff := cmp.Diff(ess[1:2], got, et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("list services updated after a certain date, expect 0", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			UpdatedAfter: createdAt,
+	t.Run("list services updbted bfter b certbin dbte, expect 0", func(t *testing.T) {
+		ess, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{
+			UpdbtedAfter: crebtedAt,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// We expect zero services to have been updated after they were created
+		// We expect zero services to hbve been updbted bfter they were crebted
 		if len(ess) != 0 {
-			t.Fatalf("Want 0 external service but got %d", len(ess))
+			t.Fbtblf("Wbnt 0 externbl service but got %d", len(ess))
 		}
 	})
 
-	t.Run("list services updated after a certain date, expect 3", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			UpdatedAfter: createdAt.Add(-5 * time.Minute),
+	t.Run("list services updbted bfter b certbin dbte, expect 3", func(t *testing.T) {
+		ess, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{
+			UpdbtedAfter: crebtedAt.Add(-5 * time.Minute),
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// We should find all services were updated after a time in the past
+		// We should find bll services were updbted bfter b time in the pbst
 		if len(ess) != 3 {
-			t.Fatalf("Want 3 external services but got %d", len(ess))
+			t.Fbtblf("Wbnt 3 externbl services but got %d", len(ess))
 		}
 	})
 
-	t.Run("list cloud default services", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			OnlyCloudDefault: true,
+	t.Run("list cloud defbult services", func(t *testing.T) {
+		ess, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{
+			OnlyCloudDefbult: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// We should find all cloud default services
+		// We should find bll cloud defbult services
 		if len(ess) != 1 {
-			t.Fatalf("Want 0 external services but got %d", len(ess))
+			t.Fbtblf("Wbnt 0 externbl services but got %d", len(ess))
 		}
 	})
 
 	t.Run("list including deleted", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+		ess, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{
 			IncludeDeleted: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// We should find all services including deleted
+		// We should find bll services including deleted
 		if len(ess) != 4 {
-			t.Fatalf("Want 4 external services but got %d", len(ess))
+			t.Fbtblf("Wbnt 4 externbl services but got %d", len(ess))
 		}
 	})
 
 	t.Run("list for repoID", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
+		ess, err := db.ExternblServices().List(ctx, ExternblServicesListOptions{
 			RepoID: 1,
 		})
 		require.NoError(t, err)
-		// We should find all services which have repoID=1 (GITHUB #1, GITHUB #2).
-		assert.Len(t, ess, 2)
+		// We should find bll services which hbve repoID=1 (GITHUB #1, GITHUB #2).
+		bssert.Len(t, ess, 2)
 		sort.Slice(ess, func(i, j int) bool { return ess[i].ID < ess[j].ID })
-		for idx, es := range ess {
-			assert.Equal(t, fmt.Sprintf("GITHUB #%d", idx+1), es.DisplayName)
+		for idx, es := rbnge ess {
+			bssert.Equbl(t, fmt.Sprintf("GITHUB #%d", idx+1), es.DisplbyNbme)
 		}
 	})
 }
 
-func TestExternalServicesStore_DistinctKinds(t *testing.T) {
+func TestExternblServicesStore_DistinctKinds(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("no external service won't blow up", func(t *testing.T) {
-		kinds, err := db.ExternalServices().DistinctKinds(ctx)
+	t.Run("no externbl service won't blow up", func(t *testing.T) {
+		kinds, err := db.ExternblServices().DistinctKinds(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(kinds) != 0 {
-			t.Fatalf("Kinds: want 0 but got %d", len(kinds))
+			t.Fbtblf("Kinds: wbnt 0 but got %d", len(kinds))
 		}
 	})
 
-	// Create new external services in different kinds
+	// Crebte new externbl services in different kinds
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	ess := []*types.ExternalService{
+	ess := []*types.ExternblService{
 		{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+			DisplbyNbme: "GITHUB #1",
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 		},
 		{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #2",
+			DisplbyNbme: "GITHUB #2",
 			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "def"}`),
 		},
 		{
-			Kind:        extsvc.KindGitLab,
-			DisplayName: "GITLAB #1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`),
+			Kind:        extsvc.KindGitLbb,
+			DisplbyNbme: "GITLAB #1",
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "projectQuery": ["none"], "token": "bbc"}`),
 		},
 		{
 			Kind:        extsvc.KindOther,
-			DisplayName: "OTHER #1",
+			DisplbyNbme: "OTHER #1",
 			Config:      extsvc.NewUnencryptedConfig(`{"repos": []}`),
 		},
 	}
-	for _, es := range ess {
-		err := db.ExternalServices().Create(ctx, confGet, es)
+	for _, es := rbnge ess {
+		err := db.ExternblServices().Crebte(ctx, confGet, es)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	// Delete the last external service which should be excluded from the result
-	err := db.ExternalServices().Delete(ctx, ess[3].ID)
+	// Delete the lbst externbl service which should be excluded from the result
+	err := db.ExternblServices().Delete(ctx, ess[3].ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	kinds, err := db.ExternalServices().DistinctKinds(ctx)
+	kinds, err := db.ExternblServices().DistinctKinds(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	sort.Strings(kinds)
-	wantKinds := []string{extsvc.KindGitHub, extsvc.KindGitLab}
-	if diff := cmp.Diff(wantKinds, kinds); diff != "" {
-		t.Fatalf("Kinds mismatch (-want +got):\n%s", diff)
+	wbntKinds := []string{extsvc.KindGitHub, extsvc.KindGitLbb}
+	if diff := cmp.Diff(wbntKinds, kinds); diff != "" {
+		t.Fbtblf("Kinds mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestExternalServicesStore_Count(t *testing.T) {
+func TestExternblServicesStore_Count(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	count, err := db.ExternalServices().Count(ctx, ExternalServicesListOptions{})
+	count, err := db.ExternblServices().Count(ctx, ExternblServicesListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if count != 1 {
-		t.Fatalf("Want 1 external service but got %d", count)
+		t.Fbtblf("Wbnt 1 externbl service but got %d", count)
 	}
 }
 
-func TestExternalServicesStore_Upsert(t *testing.T) {
+func TestExternblServicesStore_Upsert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 
-	t.Run("no external services", func(t *testing.T) {
+	t.Run("no externbl services", func(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		if err := db.ExternalServices().Upsert(ctx); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+		if err := db.ExternblServices().Upsert(ctx); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
 	})
 
-	t.Run("validation", func(t *testing.T) {
+	t.Run("vblidbtion", func(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		store := db.ExternalServices()
+		store := db.ExternblServices()
 
-		t.Run("config can't be empty", func(t *testing.T) {
-			want := typestest.MakeGitLabExternalService()
+		t.Run("config cbn't be empty", func(t *testing.T) {
+			wbnt := typestest.MbkeGitLbbExternblService()
 
-			want.Config.Set("")
+			wbnt.Config.Set("")
 
-			if err := store.Upsert(ctx, want); err == nil {
-				t.Fatalf("Wanted an error")
+			if err := store.Upsert(ctx, wbnt); err == nil {
+				t.Fbtblf("Wbnted bn error")
 			}
 		})
 
-		t.Run("config can't be only comments", func(t *testing.T) {
-			want := typestest.MakeGitLabExternalService()
-			want.Config.Set(`// {}`)
+		t.Run("config cbn't be only comments", func(t *testing.T) {
+			wbnt := typestest.MbkeGitLbbExternblService()
+			wbnt.Config.Set(`// {}`)
 
-			if err := store.Upsert(ctx, want); err == nil {
-				t.Fatalf("Wanted an error")
+			if err := store.Upsert(ctx, wbnt); err == nil {
+				t.Fbtblf("Wbnted bn error")
 			}
 		})
 	})
 
-	t.Run("one external service", func(t *testing.T) {
+	t.Run("one externbl service", func(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		store := db.ExternalServices()
+		store := db.ExternblServices()
 
-		svc := typestest.MakeGitLabExternalService()
+		svc := typestest.MbkeGitLbbExternblService()
 		if err := store.Upsert(ctx, svc); err != nil {
-			t.Fatalf("upsert error: %v", err)
+			t.Fbtblf("upsert error: %v", err)
 		}
-		if *svc.HasWebhooks != false {
-			t.Fatalf("unexpected HasWebhooks: %v", svc.HasWebhooks)
+		if *svc.HbsWebhooks != fblse {
+			t.Fbtblf("unexpected HbsWebhooks: %v", svc.HbsWebhooks)
 		}
 
 		cfg, err := svc.Config.Decrypt(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Add webhooks to the config and upsert.
+		// Add webhooks to the config bnd upsert.
 		svc.Config.Set(`{"webhooks":[{"secret": "secret"}],` + cfg[1:])
 		if err := store.Upsert(ctx, svc); err != nil {
-			t.Fatalf("upsert error: %v", err)
+			t.Fbtblf("upsert error: %v", err)
 		}
-		if *svc.HasWebhooks != true {
-			t.Fatalf("unexpected HasWebhooks: %v", svc.HasWebhooks)
+		if *svc.HbsWebhooks != true {
+			t.Fbtblf("unexpected HbsWebhooks: %v", svc.HbsWebhooks)
 		}
 	})
 
-	t.Run("many external services", func(t *testing.T) {
+	t.Run("mbny externbl services", func(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		store := db.ExternalServices()
+		store := db.ExternblServices()
 
-		svcs := typestest.MakeExternalServices()
-		want := typestest.GenerateExternalServices(11, svcs...)
+		svcs := typestest.MbkeExternblServices()
+		wbnt := typestest.GenerbteExternblServices(11, svcs...)
 
-		if err := store.Upsert(ctx, want...); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+		if err := store.Upsert(ctx, wbnt...); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
 
-		for _, e := range want {
+		for _, e := rbnge wbnt {
 			if e.Kind != strings.ToUpper(e.Kind) {
-				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
-				break
+				t.Errorf("externbl service kind didn't get upper-cbsed: %q", e.Kind)
+				brebk
 			}
 		}
 
-		sort.Sort(want)
+		sort.Sort(wbnt)
 
-		have, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
+		hbve, err := store.List(ctx, ExternblServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
-			t.Fatalf("List error: %s", err)
+			t.Fbtblf("List error: %s", err)
 		}
 
-		sort.Sort(types.ExternalServices(have))
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
-			t.Fatalf("List:\n%s", diff)
+		sort.Sort(types.ExternblServices(hbve))
+		if diff := cmp.Diff(hbve, []*types.ExternblService(wbnt), cmpopts.EqubteEmpty(), et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("List:\n%s", diff)
 		}
 
-		// We'll update the external services.
+		// We'll updbte the externbl services.
 		now := clock.Now()
-		suffix := "-updated"
-		for _, r := range want {
-			r.DisplayName += suffix
-			r.UpdatedAt = now
-			r.CreatedAt = now
+		suffix := "-updbted"
+		for _, r := rbnge wbnt {
+			r.DisplbyNbme += suffix
+			r.UpdbtedAt = now
+			r.CrebtedAt = now
 		}
 
-		if err = store.Upsert(ctx, want...); err != nil {
+		if err = store.Upsert(ctx, wbnt...); err != nil {
 			t.Errorf("Upsert error: %s", err)
 		}
-		have, err = store.List(ctx, ExternalServicesListOptions{})
+		hbve, err = store.List(ctx, ExternblServicesListOptions{})
 		if err != nil {
-			t.Fatalf("List error: %s", err)
+			t.Fbtblf("List error: %s", err)
 		}
 
-		sort.Sort(types.ExternalServices(have))
+		sort.Sort(types.ExternblServices(hbve))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
+		if diff := cmp.Diff(hbve, []*types.ExternblService(wbnt), cmpopts.EqubteEmpty(), et.CompbreEncryptbble); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 
-		// Delete external services
-		for _, es := range want {
+		// Delete externbl services
+		for _, es := rbnge wbnt {
 			if err := store.Delete(ctx, es.ID); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
-		have, err = store.List(ctx, ExternalServicesListOptions{})
+		hbve, err = store.List(ctx, ExternblServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
 		}
 
-		sort.Sort(types.ExternalServices(have))
+		sort.Sort(types.ExternblServices(hbve))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
+		if diff := cmp.Diff(hbve, []*types.ExternblService(nil), cmpopts.EqubteEmpty(), et.CompbreEncryptbble); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 	})
 
 	t.Run("with encryption key", func(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		store := db.ExternalServices().WithEncryptionKey(et.TestKey{})
+		store := db.ExternblServices().WithEncryptionKey(et.TestKey{})
 
-		svcs := typestest.MakeExternalServices()
-		want := typestest.GenerateExternalServices(7, svcs...)
+		svcs := typestest.MbkeExternblServices()
+		wbnt := typestest.GenerbteExternblServices(7, svcs...)
 
-		if err := store.Upsert(ctx, want...); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+		if err := store.Upsert(ctx, wbnt...); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
-		for _, e := range want {
+		for _, e := rbnge wbnt {
 			if e.Kind != strings.ToUpper(e.Kind) {
-				t.Errorf("external service kind didn't get upper-cased: %q", e.Kind)
-				break
+				t.Errorf("externbl service kind didn't get upper-cbsed: %q", e.Kind)
+				brebk
 			}
 		}
 
-		// values encrypted should not be readable without the encrypting key
-		noopStore := ExternalServicesWith(logger, store).WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
+		// vblues encrypted should not be rebdbble without the encrypting key
+		noopStore := ExternblServicesWith(logger, store).WithEncryptionKey(&encryption.NoopKey{FbilDecrypt: true})
 
-		for _, e := range want {
+		for _, e := rbnge wbnt {
 			svc, err := noopStore.GetByID(ctx, e.ID)
 			if err != nil {
-				t.Fatalf("unexpected error querying service: %s", err)
+				t.Fbtblf("unexpected error querying service: %s", err)
 			}
 			if _, err := svc.Config.Decrypt(ctx); err == nil {
-				t.Fatalf("expected error decrypting with a different key")
+				t.Fbtblf("expected error decrypting with b different key")
 			}
 		}
 
-		have, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
+		hbve, err := store.List(ctx, ExternblServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
-			t.Fatalf("List error: %s", err)
+			t.Fbtblf("List error: %s", err)
 		}
 
-		sort.Sort(types.ExternalServices(have))
-		sort.Sort(want)
+		sort.Sort(types.ExternblServices(hbve))
+		sort.Sort(wbnt)
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
-			t.Fatalf("List:\n%s", diff)
+		if diff := cmp.Diff(hbve, []*types.ExternblService(wbnt), cmpopts.EqubteEmpty(), et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("List:\n%s", diff)
 		}
 
-		// We'll update the external services.
+		// We'll updbte the externbl services.
 		now := clock.Now()
-		suffix := "-updated"
-		for _, r := range want {
-			r.DisplayName += suffix
-			r.UpdatedAt = now
-			r.CreatedAt = now
+		suffix := "-updbted"
+		for _, r := rbnge wbnt {
+			r.DisplbyNbme += suffix
+			r.UpdbtedAt = now
+			r.CrebtedAt = now
 		}
 
-		if err = store.Upsert(ctx, want...); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+		if err = store.Upsert(ctx, wbnt...); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
-		have, err = store.List(ctx, ExternalServicesListOptions{})
+		hbve, err = store.List(ctx, ExternblServicesListOptions{})
 		if err != nil {
-			t.Fatalf("List error: %s", err)
+			t.Fbtblf("List error: %s", err)
 		}
 
-		sort.Sort(types.ExternalServices(have))
+		sort.Sort(types.ExternblServices(hbve))
 
-		if diff := cmp.Diff(have, []*types.ExternalService(want), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
+		if diff := cmp.Diff(hbve, []*types.ExternblService(wbnt), cmpopts.EqubteEmpty(), et.CompbreEncryptbble); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 
-		// Delete external services
-		for _, es := range want {
+		// Delete externbl services
+		for _, es := rbnge wbnt {
 			if err := store.Delete(ctx, es.ID); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
-		have, err = store.List(ctx, ExternalServicesListOptions{})
+		hbve, err = store.List(ctx, ExternblServicesListOptions{})
 		if err != nil {
 			t.Errorf("List error: %s", err)
 		}
 
-		sort.Sort(types.ExternalServices(have))
-		if diff := cmp.Diff(have, []*types.ExternalService(nil), cmpopts.EquateEmpty(), et.CompareEncryptable); diff != "" {
+		sort.Sort(types.ExternblServices(hbve))
+		if diff := cmp.Diff(hbve, []*types.ExternblService(nil), cmpopts.EqubteEmpty(), et.CompbreEncryptbble); diff != "" {
 			t.Errorf("List:\n%s", diff)
 		}
 	})
 
-	t.Run("check code hosts created with many external services", func(t *testing.T) {
+	t.Run("check code hosts crebted with mbny externbl services", func(t *testing.T) {
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		store := db.ExternalServices()
+		store := db.ExternblServices()
 
-		svcs := typestest.MakeExternalServices()
-		want := typestest.GenerateExternalServices(11, svcs...)
+		svcs := typestest.MbkeExternblServices()
+		wbnt := typestest.GenerbteExternblServices(11, svcs...)
 
-		if err := store.Upsert(ctx, want...); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+		if err := store.Upsert(ctx, wbnt...); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
 
-		haveES, err := store.List(ctx, ExternalServicesListOptions{Kinds: svcs.Kinds()})
+		hbveES, err := store.List(ctx, ExternblServicesListOptions{Kinds: svcs.Kinds()})
 		if err != nil {
-			t.Fatalf("List error: %s", err)
+			t.Fbtblf("List error: %s", err)
 		}
 		chs, _, err := db.CodeHosts().List(ctx, ListCodeHostsOpts{
 			LimitOffset: &LimitOffset{
@@ -2007,156 +2007,156 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 			},
 		})
 		if err != nil {
-			t.Fatalf("List error: %s", err)
+			t.Fbtblf("List error: %s", err)
 		}
 
-		// for this test all external services of the same kind have the same URL, so we can group them into one code host.
-		chMap := make(map[string]int32)
-		for _, es := range haveES {
-			chMap[es.Kind] = *es.CodeHostID
+		// for this test bll externbl services of the sbme kind hbve the sbme URL, so we cbn group them into one code host.
+		chMbp := mbke(mbp[string]int32)
+		for _, es := rbnge hbveES {
+			chMbp[es.Kind] = *es.CodeHostID
 		}
-		if len(chs) != len(chMap) {
-			t.Fatalf("expected equal number of external services: %+v and code hosts: %+v", len(chs), len(chMap))
+		if len(chs) != len(chMbp) {
+			t.Fbtblf("expected equbl number of externbl services: %+v bnd code hosts: %+v", len(chs), len(chMbp))
 		}
-		for _, ch := range chs {
-			if chID, ok := chMap[ch.Kind]; !ok {
-				t.Fatalf("could not find code host with id: %+v", ch.ID)
+		for _, ch := rbnge chs {
+			if chID, ok := chMbp[ch.Kind]; !ok {
+				t.Fbtblf("could not find code host with id: %+v", ch.ID)
 			} else {
 				if chID != ch.ID {
-					t.Fatalf("expected code host ids to match: %+v and %+v", ch.ID, chID)
+					t.Fbtblf("expected code host ids to mbtch: %+v bnd %+v", ch.ID, chID)
 				}
 			}
 		}
 	})
 }
 
-func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
+func TestExternblServiceStore_GetSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	_, err = db.Hbndle().ExecContext(ctx, "INSERT INTO externbl_service_sync_jobs (externbl_service_id) VALUES ($1)", es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	hbve, err := db.ExternblServices().GetSyncJobs(ctx, ExternblServicesGetSyncJobsOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(have) != 1 {
-		t.Fatalf("Expected 1 job, got %d", len(have))
+	if len(hbve) != 1 {
+		t.Fbtblf("Expected 1 job, got %d", len(hbve))
 	}
 
-	want := &types.ExternalServiceSyncJob{
+	wbnt := &types.ExternblServiceSyncJob{
 		ID:                1,
-		State:             "queued",
-		ExternalServiceID: es.ID,
+		Stbte:             "queued",
+		ExternblServiceID: es.ID,
 	}
-	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve[0], cmpopts.IgnoreFields(types.ExternblServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
+func TestExternblServiceStore_CountSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	_, err = db.Hbndle().ExecContext(ctx, "INSERT INTO externbl_service_sync_jobs (externbl_service_id) VALUES ($1)", es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	hbve, err := db.ExternblServices().CountSyncJobs(ctx, ExternblServicesGetSyncJobsOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	require.Exactly(t, int64(1), have, "total count is incorrect")
+	require.Exbctly(t, int64(1), hbve, "totbl count is incorrect")
 
-	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{ExternalServiceID: es.ID + 1})
+	hbve, err = db.ExternblServices().CountSyncJobs(ctx, ExternblServicesGetSyncJobsOptions{ExternblServiceID: es.ID + 1})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	require.Exactly(t, int64(0), have, "total count is incorrect")
+	require.Exbctly(t, int64(0), hbve, "totbl count is incorrect")
 }
 
-func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
+func TestExternblServiceStore_GetSyncJobByID(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx,
-		`INSERT INTO external_service_sync_jobs
-               (id, external_service_id, repos_synced, repo_sync_errors, repos_added, repos_modified, repos_unmodified, repos_deleted)
+	_, err = db.Hbndle().ExecContext(ctx,
+		`INSERT INTO externbl_service_sync_jobs
+               (id, externbl_service_id, repos_synced, repo_sync_errors, repos_bdded, repos_modified, repos_unmodified, repos_deleted)
                VALUES (1, $1, 1, 2, 3, 4, 5, 6)`, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := db.ExternalServices().GetSyncJobByID(ctx, 1)
+	hbve, err := db.ExternblServices().GetSyncJobByID(ctx, 1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := &types.ExternalServiceSyncJob{
+	wbnt := &types.ExternblServiceSyncJob{
 		ID:                1,
-		State:             "queued",
-		ExternalServiceID: es.ID,
+		Stbte:             "queued",
+		ExternblServiceID: es.ID,
 		ReposSynced:       1,
 		RepoSyncErrors:    2,
 		ReposAdded:        3,
@@ -2164,53 +2164,53 @@ func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
 		ReposUnmodified:   5,
 		ReposDeleted:      6,
 	}
-	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve, cmpopts.IgnoreFields(types.ExternblServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 	// Test not found:
-	_, err = db.ExternalServices().GetSyncJobByID(ctx, 2)
+	_, err = db.ExternblServices().GetSyncJobByID(ctx, 2)
 	if err == nil {
-		t.Fatal("no error for not found")
+		t.Fbtbl("no error for not found")
 	}
 	if !errcode.IsNotFound(err) {
-		t.Fatal("wrong err code for not found")
+		t.Fbtbl("wrong err code for not found")
 	}
 }
 
-func TestExternalServiceStore_UpdateSyncJobCounters(t *testing.T) {
+func TestExternblServiceStore_UpdbteSyncJobCounters(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx,
-		`INSERT INTO external_service_sync_jobs
-               (id, external_service_id)
+	_, err = db.Hbndle().ExecContext(ctx,
+		`INSERT INTO externbl_service_sync_jobs
+               (id, externbl_service_id)
                VALUES (1, $1)`, es.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Update counters
-	err = db.ExternalServices().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{
+	// Updbte counters
+	err = db.ExternblServices().UpdbteSyncJobCounters(ctx, &types.ExternblServiceSyncJob{
 		ID:              1,
 		ReposSynced:     1,
 		RepoSyncErrors:  2,
@@ -2220,13 +2220,13 @@ func TestExternalServiceStore_UpdateSyncJobCounters(t *testing.T) {
 		ReposDeleted:    6,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := &types.ExternalServiceSyncJob{
+	wbnt := &types.ExternblServiceSyncJob{
 		ID:                1,
-		State:             "queued",
-		ExternalServiceID: es.ID,
+		Stbte:             "queued",
+		ExternblServiceID: es.ID,
 		ReposSynced:       1,
 		RepoSyncErrors:    2,
 		ReposAdded:        3,
@@ -2235,308 +2235,308 @@ func TestExternalServiceStore_UpdateSyncJobCounters(t *testing.T) {
 		ReposDeleted:      6,
 	}
 
-	have, err := db.ExternalServices().GetSyncJobByID(ctx, 1)
+	hbve, err := db.ExternblServices().GetSyncJobByID(ctx, 1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve, cmpopts.IgnoreFields(types.ExternblServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fbtbl(diff)
 	}
 
-	// Test updating non-existent job
-	err = db.ExternalServices().UpdateSyncJobCounters(ctx, &types.ExternalServiceSyncJob{ID: 2})
+	// Test updbting non-existent job
+	err = db.ExternblServices().UpdbteSyncJobCounters(ctx, &types.ExternblServiceSyncJob{ID: 2})
 	if err == nil {
-		t.Fatal("no error for not found")
+		t.Fbtbl("no error for not found")
 	}
 	if !errcode.IsNotFound(err) {
-		t.Fatalf("wrong err code for not found, have %v", err)
+		t.Fbtblf("wrong err code for not found, hbve %v", err)
 	}
 }
 
-func TestExternalServicesStore_OneCloudDefaultPerKind(t *testing.T) {
+func TestExternblServicesStore_OneCloudDefbultPerKind(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	now := time.Now()
 
-	makeService := func(cloudDefault bool) *types.ExternalService {
-		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
-		svc := &types.ExternalService{
+	mbkeService := func(cloudDefbult bool) *types.ExternblService {
+		cfg := `{"url": "https://github.com", "token": "bbc", "repositoryQuery": ["none"]}`
+		svc := &types.ExternblService{
 			Kind:         extsvc.KindGitHub,
-			DisplayName:  "Github - Test",
+			DisplbyNbme:  "Github - Test",
 			Config:       extsvc.NewUnencryptedConfig(cfg),
-			CreatedAt:    now,
-			UpdatedAt:    now,
-			CloudDefault: cloudDefault,
+			CrebtedAt:    now,
+			UpdbtedAt:    now,
+			CloudDefbult: cloudDefbult,
 		}
 		return svc
 	}
 
-	t.Run("non default", func(t *testing.T) {
-		gh := makeService(false)
-		if err := db.ExternalServices().Upsert(ctx, gh); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+	t.Run("non defbult", func(t *testing.T) {
+		gh := mbkeService(fblse)
+		if err := db.ExternblServices().Upsert(ctx, gh); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
 	})
 
-	t.Run("first default", func(t *testing.T) {
-		gh := makeService(true)
-		if err := db.ExternalServices().Upsert(ctx, gh); err != nil {
-			t.Fatalf("Upsert error: %s", err)
+	t.Run("first defbult", func(t *testing.T) {
+		gh := mbkeService(true)
+		if err := db.ExternblServices().Upsert(ctx, gh); err != nil {
+			t.Fbtblf("Upsert error: %s", err)
 		}
 	})
 
-	t.Run("second default", func(t *testing.T) {
-		gh := makeService(true)
-		if err := db.ExternalServices().Upsert(ctx, gh); err == nil {
-			t.Fatal("Expected an error")
+	t.Run("second defbult", func(t *testing.T) {
+		gh := mbkeService(true)
+		if err := db.ExternblServices().Upsert(ctx, gh); err == nil {
+			t.Fbtbl("Expected bn error")
 		}
 	})
 }
 
-func TestExternalServiceStore_SyncDue(t *testing.T) {
+func TestExternblServiceStore_SyncDue(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	now := time.Now()
 
-	makeService := func() *types.ExternalService {
-		cfg := `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["none"]}`
-		svc := &types.ExternalService{
+	mbkeService := func() *types.ExternblService {
+		cfg := `{"url": "https://github.com", "token": "bbc", "repositoryQuery": ["none"]}`
+		svc := &types.ExternblService{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "Github - Test",
+			DisplbyNbme: "Github - Test",
 			Config:      extsvc.NewUnencryptedConfig(cfg),
-			CreatedAt:   now,
-			UpdatedAt:   now,
+			CrebtedAt:   now,
+			UpdbtedAt:   now,
 		}
 		return svc
 	}
-	svc1 := makeService()
-	svc2 := makeService()
-	err := db.ExternalServices().Upsert(ctx, svc1, svc2)
+	svc1 := mbkeService()
+	svc2 := mbkeService()
+	err := db.ExternblServices().Upsert(ctx, svc1, svc2)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	assertDue := func(d time.Duration, want bool) {
+	bssertDue := func(d time.Durbtion, wbnt bool) {
 		t.Helper()
 		ids := []int64{svc1.ID, svc2.ID}
-		due, err := db.ExternalServices().SyncDue(ctx, ids, d)
+		due, err := db.ExternblServices().SyncDue(ctx, ids, d)
 		if err != nil {
 			t.Error(err)
 		}
-		if due != want {
-			t.Errorf("Want %v, got %v", want, due)
+		if due != wbnt {
+			t.Errorf("Wbnt %v, got %v", wbnt, due)
 		}
 	}
 
-	makeSyncJob := func(svcID int64, state string) {
-		_, err = db.Handle().ExecContext(ctx, `
-INSERT INTO external_service_sync_jobs (external_service_id, state)
+	mbkeSyncJob := func(svcID int64, stbte string) {
+		_, err = db.Hbndle().ExecContext(ctx, `
+INSERT INTO externbl_service_sync_jobs (externbl_service_id, stbte)
 VALUES ($1,$2)
-`, svcID, state)
+`, svcID, stbte)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	// next_sync_at is null, so we expect a sync soon
-	assertDue(1*time.Second, true)
+	// next_sync_bt is null, so we expect b sync soon
+	bssertDue(1*time.Second, true)
 
-	// next_sync_at in the future
-	_, err = db.Handle().ExecContext(ctx, "UPDATE external_services SET next_sync_at = $1", now.Add(10*time.Minute))
+	// next_sync_bt in the future
+	_, err = db.Hbndle().ExecContext(ctx, "UPDATE externbl_services SET next_sync_bt = $1", now.Add(10*time.Minute))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertDue(1*time.Second, false)
-	assertDue(11*time.Minute, true)
+	bssertDue(1*time.Second, fblse)
+	bssertDue(11*time.Minute, true)
 
 	// With sync jobs
-	makeSyncJob(svc1.ID, "queued")
-	makeSyncJob(svc2.ID, "completed")
-	assertDue(1*time.Minute, true)
+	mbkeSyncJob(svc1.ID, "queued")
+	mbkeSyncJob(svc2.ID, "completed")
+	bssertDue(1*time.Minute, true)
 
 	// Sync jobs not running
-	_, err = db.Handle().ExecContext(ctx, "UPDATE external_service_sync_jobs SET state = 'completed'")
+	_, err = db.Hbndle().ExecContext(ctx, "UPDATE externbl_service_sync_jobs SET stbte = 'completed'")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assertDue(1*time.Minute, false)
+	bssertDue(1*time.Minute, fblse)
 }
 
-func TestConfigurationHasWebhooks(t *testing.T) {
+func TestConfigurbtionHbsWebhooks(t *testing.T) {
 	t.Run("supported kinds with webhooks", func(t *testing.T) {
-		for _, cfg := range []any{
-			&schema.GitHubConnection{
-				Webhooks: []*schema.GitHubWebhook{
+		for _, cfg := rbnge []bny{
+			&schemb.GitHubConnection{
+				Webhooks: []*schemb.GitHubWebhook{
 					{Org: "org", Secret: "super secret"},
 				},
 			},
-			&schema.GitLabConnection{
-				Webhooks: []*schema.GitLabWebhook{
+			&schemb.GitLbbConnection{
+				Webhooks: []*schemb.GitLbbWebhook{
 					{Secret: "super secret"},
 				},
 			},
-			&schema.BitbucketServerConnection{
-				Plugin: &schema.BitbucketServerPlugin{
-					Webhooks: &schema.BitbucketServerPluginWebhooks{
+			&schemb.BitbucketServerConnection{
+				Plugin: &schemb.BitbucketServerPlugin{
+					Webhooks: &schemb.BitbucketServerPluginWebhooks{
 						Secret: "super secret",
 					},
 				},
 			},
 		} {
 			t.Run(fmt.Sprintf("%T", cfg), func(t *testing.T) {
-				assert.True(t, configurationHasWebhooks(cfg))
+				bssert.True(t, configurbtionHbsWebhooks(cfg))
 			})
 		}
 	})
 
 	t.Run("supported kinds without webhooks", func(t *testing.T) {
-		for _, cfg := range []any{
-			&schema.GitHubConnection{},
-			&schema.GitLabConnection{},
-			&schema.BitbucketServerConnection{},
+		for _, cfg := rbnge []bny{
+			&schemb.GitHubConnection{},
+			&schemb.GitLbbConnection{},
+			&schemb.BitbucketServerConnection{},
 		} {
 			t.Run(fmt.Sprintf("%T", cfg), func(t *testing.T) {
-				assert.False(t, configurationHasWebhooks(cfg))
+				bssert.Fblse(t, configurbtionHbsWebhooks(cfg))
 			})
 		}
 	})
 
 	t.Run("unsupported kinds", func(t *testing.T) {
-		for _, cfg := range []any{
-			&schema.AWSCodeCommitConnection{},
-			&schema.BitbucketCloudConnection{},
-			&schema.GitoliteConnection{},
-			&schema.PerforceConnection{},
-			&schema.PhabricatorConnection{},
-			&schema.JVMPackagesConnection{},
-			&schema.OtherExternalServiceConnection{},
+		for _, cfg := rbnge []bny{
+			&schemb.AWSCodeCommitConnection{},
+			&schemb.BitbucketCloudConnection{},
+			&schemb.GitoliteConnection{},
+			&schemb.PerforceConnection{},
+			&schemb.PhbbricbtorConnection{},
+			&schemb.JVMPbckbgesConnection{},
+			&schemb.OtherExternblServiceConnection{},
 			nil,
 		} {
 			t.Run(fmt.Sprintf("%T", cfg), func(t *testing.T) {
-				assert.False(t, configurationHasWebhooks(cfg))
+				bssert.Fblse(t, configurbtionHbsWebhooks(cfg))
 			})
 		}
 	})
 }
 
-func TestExternalServiceStore_recalculateFields(t *testing.T) {
-	tests := map[string]struct {
-		explicitPermsEnabled bool
-		authorizationSet     bool
+func TestExternblServiceStore_recblculbteFields(t *testing.T) {
+	tests := mbp[string]struct {
+		explicitPermsEnbbled bool
+		buthorizbtionSet     bool
 		expectUnrestricted   bool
 	}{
-		"default state": {
+		"defbult stbte": {
 			expectUnrestricted: true,
 		},
 		"explicit perms set": {
-			explicitPermsEnabled: true,
-			expectUnrestricted:   false,
+			explicitPermsEnbbled: true,
+			expectUnrestricted:   fblse,
 		},
-		"authorization set": {
-			authorizationSet:   true,
-			expectUnrestricted: false,
+		"buthorizbtion set": {
+			buthorizbtionSet:   true,
+			expectUnrestricted: fblse,
 		},
-		"authorization and explicit perms set": {
-			explicitPermsEnabled: true,
-			authorizationSet:     true,
-			expectUnrestricted:   false,
+		"buthorizbtion bnd explicit perms set": {
+			explicitPermsEnbbled: true,
+			buthorizbtionSet:     true,
+			expectUnrestricted:   fblse,
 		},
 	}
 
-	e := &externalServiceStore{logger: logtest.NoOp(t)}
+	e := &externblServiceStore{logger: logtest.NoOp(t)}
 
-	for name, tc := range tests {
-		t.Run(name, func(t *testing.T) {
-			pmu := globals.PermissionsUserMapping()
-			t.Cleanup(func() {
-				globals.SetPermissionsUserMapping(pmu)
+	for nbme, tc := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			pmu := globbls.PermissionsUserMbpping()
+			t.Clebnup(func() {
+				globbls.SetPermissionsUserMbpping(pmu)
 			})
 
-			es := &types.ExternalService{}
+			es := &types.ExternblService{}
 
-			if tc.explicitPermsEnabled {
-				globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{
-					BindID:  "email",
-					Enabled: true,
+			if tc.explicitPermsEnbbled {
+				globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{
+					BindID:  "embil",
+					Enbbled: true,
 				})
 			}
-			rawConfig := "{}"
-			var err error
-			if tc.authorizationSet {
-				rawConfig, err = jsonc.Edit(rawConfig, struct{}{}, "authorization")
+			rbwConfig := "{}"
+			vbr err error
+			if tc.buthorizbtionSet {
+				rbwConfig, err = jsonc.Edit(rbwConfig, struct{}{}, "buthorizbtion")
 				require.NoError(t, err)
 			}
 
-			require.NoError(t, e.recalculateFields(es, rawConfig))
+			require.NoError(t, e.recblculbteFields(es, rbwConfig))
 
-			require.Equal(t, es.Unrestricted, tc.expectUnrestricted)
+			require.Equbl(t, es.Unrestricted, tc.expectUnrestricted)
 		})
 	}
 }
 
-func TestExternalServiceStore_ListRepos(t *testing.T) {
+func TestExternblServiceStore_ListRepos(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
-	es := &types.ExternalService{
+	es := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GITHUB #1",
-		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+		DisplbyNbme: "GITHUB #1",
+		Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 	}
-	err := db.ExternalServices().Create(ctx, confGet, es)
+	err := db.ExternblServices().Crebte(ctx, confGet, es)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// create new user
-	user, err := db.Users().Create(ctx,
+	// crebte new user
+	user, err := db.Users().Crebte(ctx,
 		NewUser{
-			Email:           "alice@example.com",
-			Username:        "alice",
-			Password:        "password",
-			EmailIsVerified: true,
+			Embil:           "blice@exbmple.com",
+			Usernbme:        "blice",
+			Pbssword:        "pbssword",
+			EmbilIsVerified: true,
 		},
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// create new org
-	displayName := "Acme org"
-	org, err := db.Orgs().Create(ctx, "acme", &displayName)
+	// crebte new org
+	displbyNbme := "Acme org"
+	org, err := db.Orgs().Crebte(ctx, "bcme", &displbyNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	const repoId = 1
-	err = db.Repos().Create(ctx, &types.Repo{ID: repoId, Name: "test1"})
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: repoId, Nbme: "test1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
+	_, err = db.Hbndle().ExecContext(ctx, "INSERT INTO externbl_service_repos (externbl_service_id, repo_id, clone_url, user_id, org_id) VALUES ($1, $2, $3, $4, $5)",
 		es.ID,
 		repoId,
 		"cloneUrl",
@@ -2544,61 +2544,61 @@ func TestExternalServiceStore_ListRepos(t *testing.T) {
 		org.ID,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// check that repos are found with empty ExternalServiceReposListOptions
-	haveRepos, err := db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{})
+	// check thbt repos bre found with empty ExternblServiceReposListOptions
+	hbveRepos, err := db.ExternblServices().ListRepos(ctx, ExternblServiceReposListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if len(haveRepos) != 1 {
-		t.Fatalf("Expected 1 external service repo, got %d", len(haveRepos))
+	if len(hbveRepos) != 1 {
+		t.Fbtblf("Expected 1 externbl service repo, got %d", len(hbveRepos))
 	}
 
-	have := haveRepos[0]
+	hbve := hbveRepos[0]
 
-	require.Exactly(t, es.ID, have.ExternalServiceID, "externalServiceID is incorrect")
-	require.Exactly(t, api.RepoID(repoId), have.RepoID, "repoID is incorrect")
-	require.Exactly(t, "cloneUrl", have.CloneURL, "cloneURL is incorrect")
-	require.Exactly(t, user.ID, have.UserID, "userID is incorrect")
-	require.Exactly(t, org.ID, have.OrgID, "orgID is incorrect")
+	require.Exbctly(t, es.ID, hbve.ExternblServiceID, "externblServiceID is incorrect")
+	require.Exbctly(t, bpi.RepoID(repoId), hbve.RepoID, "repoID is incorrect")
+	require.Exbctly(t, "cloneUrl", hbve.CloneURL, "cloneURL is incorrect")
+	require.Exbctly(t, user.ID, hbve.UserID, "userID is incorrect")
+	require.Exbctly(t, org.ID, hbve.OrgID, "orgID is incorrect")
 
-	// check that repos are found with given externalServiceID
-	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
+	// check thbt repos bre found with given externblServiceID
+	hbveRepos, err = db.ExternblServices().ListRepos(ctx, ExternblServiceReposListOptions{ExternblServiceID: 1, LimitOffset: &LimitOffset{Limit: 1}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if len(haveRepos) != 1 {
-		t.Fatalf("Expected 1 external service repo, got %d", len(haveRepos))
+	if len(hbveRepos) != 1 {
+		t.Fbtblf("Expected 1 externbl service repo, got %d", len(hbveRepos))
 	}
 
-	// check that repos are limited
-	haveRepos, err = db.ExternalServices().ListRepos(ctx, ExternalServiceReposListOptions{ExternalServiceID: 1, LimitOffset: &LimitOffset{Limit: 0}})
+	// check thbt repos bre limited
+	hbveRepos, err = db.ExternblServices().ListRepos(ctx, ExternblServiceReposListOptions{ExternblServiceID: 1, LimitOffset: &LimitOffset{Limit: 0}})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if len(haveRepos) != 0 {
-		t.Fatalf("Expected 0 external service repos, got %d", len(haveRepos))
+	if len(hbveRepos) != 0 {
+		t.Fbtblf("Expected 0 externbl service repos, got %d", len(hbveRepos))
 	}
 }
 
-func Test_validateOtherExternalServiceConnection(t *testing.T) {
-	conn := &schema.OtherExternalServiceConnection{
-		MakeReposPublicOnDotCom: true,
+func Test_vblidbteOtherExternblServiceConnection(t *testing.T) {
+	conn := &schemb.OtherExternblServiceConnection{
+		MbkeReposPublicOnDotCom: true,
 	}
-	// When not on DotCom, validation of a connection with "makeReposPublicOnDotCom" set to true should fail
-	err := validateOtherExternalServiceConnection(conn)
+	// When not on DotCom, vblidbtion of b connection with "mbkeReposPublicOnDotCom" set to true should fbil
+	err := vblidbteOtherExternblServiceConnection(conn)
 	require.Error(t, err)
 
 	// On DotCom, no error should be returned
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	orig := envvbr.SourcegrbphDotComMode()
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(orig)
 
-	err = validateOtherExternalServiceConnection(conn)
+	err = vblidbteOtherExternblServiceConnection(conn)
 	require.NoError(t, err)
 }

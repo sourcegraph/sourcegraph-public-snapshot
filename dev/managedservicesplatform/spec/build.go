@@ -1,13 +1,13 @@
-package spec
+pbckbge spec
 
 type BuildSpec struct {
-	Image  string          `json:"image"`
+	Imbge  string          `json:"imbge"`
 	Source BuildSourceSpec `json:"source"`
 }
 
-func (s BuildSpec) Validate() []error {
-	var errs []error
-	// TODO: Add validation
+func (s BuildSpec) Vblidbte() []error {
+	vbr errs []error
+	// TODO: Add vblidbtion
 	return errs
 }
 

@@ -1,4 +1,4 @@
-package command_test
+pbckbge commbnd_test
 
 import (
 	"context"
@@ -8,91 +8,91 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestCommand_Run(t *testing.T) {
-	internalLogger := logtest.Scoped(t)
-	operations := command.NewOperations(&observation.TestContext)
+func TestCommbnd_Run(t *testing.T) {
+	internblLogger := logtest.Scoped(t)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name         string
-		command      []string
+		nbme         string
+		commbnd      []string
 		mockExitCode int
 		mockStdout   string
-		mockFunc     func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger)
+		mockFunc     func(t *testing.T, cmdRunner *fbkeCmdRunner, logger *mockLogger)
 		expectedErr  error
 	}{
 		{
-			name:         "Success",
-			command:      []string{"git", "pull"},
+			nbme:         "Success",
+			commbnd:      []string{"git", "pull"},
 			mockExitCode: 0,
 			mockStdout:   "got the stuff",
-			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
+			mockFunc: func(t *testing.T, cmdRunner *fbkeCmdRunner, logger *mockLogger) {
 				logEntry := new(mockLogEntry)
 				logger.
 					On("LogEntry", "some-key", []string{"git", "pull"}).
 					Return(logEntry)
-				logEntry.On("Write", mock.Anything).Run(func(args mock.Arguments) {
-					// Use Run to see the actual output in the test output. Else we just get byte output.
-					actual := args.Get(0).([]byte)
-					assert.Equal(t, "stdout: got the stuff\n", string(actual))
+				logEntry.On("Write", mock.Anything).Run(func(brgs mock.Arguments) {
+					// Use Run to see the bctubl output in the test output. Else we just get byte output.
+					bctubl := brgs.Get(0).([]byte)
+					bssert.Equbl(t, "stdout: got the stuff\n", string(bctubl))
 				}).Return(0, nil)
-				logEntry.On("Finalize", 0).Return()
+				logEntry.On("Finblize", 0).Return()
 				logEntry.On("Close").Return(nil)
 			},
 		},
 		{
-			name:        "Invalid Command",
-			command:     []string{"echo", "hello"},
-			expectedErr: command.ErrIllegalCommand,
+			nbme:        "Invblid Commbnd",
+			commbnd:     []string{"echo", "hello"},
+			expectedErr: commbnd.ErrIllegblCommbnd,
 		},
 		{
-			name:         "Bad exit code",
-			command:      []string{"git", "pull"},
+			nbme:         "Bbd exit code",
+			commbnd:      []string{"git", "pull"},
 			mockExitCode: 1,
 			mockStdout:   "something went wrong",
-			mockFunc: func(t *testing.T, cmdRunner *fakeCmdRunner, logger *mockLogger) {
+			mockFunc: func(t *testing.T, cmdRunner *fbkeCmdRunner, logger *mockLogger) {
 				logEntry := new(mockLogEntry)
 				logger.
 					On("LogEntry", "some-key", []string{"git", "pull"}).
 					Return(logEntry)
-				logEntry.On("Write", mock.Anything).Run(func(args mock.Arguments) {
-					// Use Run to see the actual output in the test output. Else we just get byte output.
-					actual := args.Get(0).([]byte)
-					assert.Equal(t, "stdout: something went wrong\n", string(actual))
+				logEntry.On("Write", mock.Anything).Run(func(brgs mock.Arguments) {
+					// Use Run to see the bctubl output in the test output. Else we just get byte output.
+					bctubl := brgs.Get(0).([]byte)
+					bssert.Equbl(t, "stdout: something went wrong\n", string(bctubl))
 				}).Return(0, nil)
-				logEntry.On("Finalize", 1).Return()
+				logEntry.On("Finblize", 1).Return()
 				logEntry.On("Close").Return(nil)
 			},
-			expectedErr: errors.New("command failed with exit code 1"),
+			expectedErr: errors.New("commbnd fbiled with exit code 1"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			cmdRunner := new(fakeCmdRunner)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			cmdRunner := new(fbkeCmdRunner)
 			logger := new(mockLogger)
 
 			if test.mockFunc != nil {
 				test.mockFunc(t, cmdRunner, logger)
 			}
 
-			cmd := command.RealCommand{CmdRunner: cmdRunner, Logger: internalLogger}
+			cmd := commbnd.ReblCommbnd{CmdRunner: cmdRunner, Logger: internblLogger}
 
 			dir := t.TempDir()
-			spec := command.Spec{
+			spec := commbnd.Spec{
 				Key:     "some-key",
-				Command: test.command,
+				Commbnd: test.commbnd,
 				Dir:     dir,
 				Env: []string{
 					"FOO=BAR",
@@ -100,17 +100,17 @@ func TestCommand_Run(t *testing.T) {
 					fmt.Sprintf("EXIT_STATUS=%d", test.mockExitCode),
 					fmt.Sprintf("STDOUT=%s", test.mockStdout),
 				},
-				Operation: operations.Exec,
+				Operbtion: operbtions.Exec,
 			}
-			err := cmd.Run(context.Background(), logger, spec)
+			err := cmd.Run(context.Bbckground(), logger, spec)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
 
-			mock.AssertExpectationsForObjects(t, logger)
+			mock.AssertExpectbtionsForObjects(t, logger)
 		})
 	}
 }
@@ -120,13 +120,13 @@ type mockLogger struct {
 }
 
 func (m *mockLogger) Flush() error {
-	args := m.Called()
-	return args.Error(0)
+	brgs := m.Cblled()
+	return brgs.Error(0)
 }
 
 func (m *mockLogger) LogEntry(key string, cmd []string) cmdlogger.LogEntry {
-	args := m.Called(key, cmd)
-	return args.Get(0).(cmdlogger.LogEntry)
+	brgs := m.Cblled(key, cmd)
+	return brgs.Get(0).(cmdlogger.LogEntry)
 }
 
 type mockLogEntry struct {
@@ -134,52 +134,52 @@ type mockLogEntry struct {
 }
 
 func (m *mockLogEntry) Write(p []byte) (n int, err error) {
-	args := m.Called(p)
-	return args.Int(0), args.Error(1)
+	brgs := m.Cblled(p)
+	return brgs.Int(0), brgs.Error(1)
 }
 
 func (m *mockLogEntry) Close() error {
-	args := m.Called()
-	return args.Error(0)
+	brgs := m.Cblled()
+	return brgs.Error(0)
 }
 
-func (m *mockLogEntry) Finalize(exitCode int) {
-	m.Called(exitCode)
+func (m *mockLogEntry) Finblize(exitCode int) {
+	m.Cblled(exitCode)
 }
 
 func (m *mockLogEntry) CurrentLogEntry() executor.ExecutionLogEntry {
-	args := m.Called()
-	return args.Get(0).(executor.ExecutionLogEntry)
+	brgs := m.Cblled()
+	return brgs.Get(0).(executor.ExecutionLogEntry)
 }
 
-type fakeCmdRunner struct {
+type fbkeCmdRunner struct {
 	mock.Mock
 }
 
-var _ util.CmdRunner = &fakeCmdRunner{}
+vbr _ util.CmdRunner = &fbkeCmdRunner{}
 
-func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	cs := []string{"-test.run=TestExecCommandHelper", "--"}
-	cs = append(cs, args...)
-	return exec.Command(os.Args[0], cs...)
+func (f *fbkeCmdRunner) CommbndContext(ctx context.Context, nbme string, brgs ...string) *exec.Cmd {
+	cs := []string{"-test.run=TestExecCommbndHelper", "--"}
+	cs = bppend(cs, brgs...)
+	return exec.Commbnd(os.Args[0], cs...)
 }
 
-func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
-	panic("not needed")
+func (f *fbkeCmdRunner) CombinedOutput(ctx context.Context, nbme string, brgs ...string) ([]byte, error) {
+	pbnic("not needed")
 }
 
-func (f *fakeCmdRunner) LookPath(file string) (string, error) {
-	panic("not needed")
+func (f *fbkeCmdRunner) LookPbth(file string) (string, error) {
+	pbnic("not needed")
 }
 
-func (f *fakeCmdRunner) Stat(filename string) (os.FileInfo, error) {
-	panic("not needed")
+func (f *fbkeCmdRunner) Stbt(filenbme string) (os.FileInfo, error) {
+	pbnic("not needed")
 }
 
-// TestExecCommandHelper a fake test that fakeExecCommand will run instead of calling the actual exec.CommandContext.
-func TestExecCommandHelper(t *testing.T) {
-	// Since this function must be big T test. We don't want to actually test anything. So if GO_WANT_HELPER_PROCESS
-	// is not set, just exit right away.
+// TestExecCommbndHelper b fbke test thbt fbkeExecCommbnd will run instebd of cblling the bctubl exec.CommbndContext.
+func TestExecCommbndHelper(t *testing.T) {
+	// Since this function must be big T test. We don't wbnt to bctublly test bnything. So if GO_WANT_HELPER_PROCESS
+	// is not set, just exit right bwby.
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}

@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -7,25 +7,25 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"text/tabwriter"
-	"text/template"
+	"text/tbbwriter"
+	"text/templbte"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SlackClient is a client for interfacing with the Slack Webhook API
-type SlackClient struct {
+// SlbckClient is b client for interfbcing with the Slbck Webhook API
+type SlbckClient struct {
 	WebhookURL string
 
 	HttpClient *http.Client
 }
 
-// NewSlackClient configures a SlackClient for a given webhook URL
-func NewSlackClient(url string) *SlackClient {
+// NewSlbckClient configures b SlbckClient for b given webhook URL
+func NewSlbckClient(url string) *SlbckClient {
 	hc := http.Client{}
 
-	c := SlackClient{
+	c := SlbckClient{
 		WebhookURL: url,
 		HttpClient: &hc,
 	}
@@ -33,28 +33,28 @@ func NewSlackClient(url string) *SlackClient {
 	return &c
 }
 
-// PostMessage posts a bytes.Buffer to the given Slack webhook URL with markdown enabled
-func (s *SlackClient) PostMessage(b bytes.Buffer) error {
+// PostMessbge posts b bytes.Buffer to the given Slbck webhook URL with mbrkdown enbbled
+func (s *SlbckClient) PostMessbge(b bytes.Buffer) error {
 
-	type slackRequest struct {
+	type slbckRequest struct {
 		Text     string `json:"text"`
-		Markdown bool   `json:"mrkdwn"`
+		Mbrkdown bool   `json:"mrkdwn"`
 	}
 
-	payload, err := json.Marshal(slackRequest{Text: b.String(), Markdown: true})
+	pbylobd, err := json.Mbrshbl(slbckRequest{Text: b.String(), Mbrkdown: true})
 	if err != nil {
 		return err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), 30*time.Second)
+	defer cbncel()
 
-	req, err := http.NewRequestWithContext(ctx, "POST", s.WebhookURL, bytes.NewBuffer(payload))
+	req, err := http.NewRequestWithContext(ctx, "POST", s.WebhookURL, bytes.NewBuffer(pbylobd))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Add("Content-Type", "application/json")
+	req.Hebder.Add("Content-Type", "bpplicbtion/json")
 
 	resp, err := s.HttpClient.Do(req)
 	if err != nil {
@@ -63,21 +63,21 @@ func (s *SlackClient) PostMessage(b bytes.Buffer) error {
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StbtusCode != http.StbtusOK {
 		log.Println(string(body))
-		return errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
+		return errors.Newf("received non-200 stbtus code %v: %s", resp.StbtusCode, err.Error())
 	}
 
 	return nil
 }
 
-// TemplateData represents all the data required to correctly render the template
-type TemplateData struct {
+// TemplbteDbtb represents bll the dbtb required to correctly render the templbte
+type TemplbteDbtb struct {
 	VersionAge string
 
 	Version     string
@@ -91,32 +91,32 @@ type TemplateData struct {
 	NumCommits       int
 }
 
-// createMessage renders a template and returns teh result as a bytes.Buffer to either
-// be printed or posted to Slack
-func createMessage(td TemplateData) (bytes.Buffer, error) {
-	var msg bytes.Buffer
+// crebteMessbge renders b templbte bnd returns teh result bs b bytes.Buffer to either
+// be printed or posted to Slbck
+func crebteMessbge(td TemplbteDbtb) (bytes.Buffer, error) {
+	vbr msg bytes.Buffer
 
-	var slackTemplate = `:warning: *{{.Environment}}*'s version may be out of date.
-Current version: ` + "`{{ .Version }}`" + ` was committed *{{ .VersionAge }} hours ago*.
+	vbr slbckTemplbte = `:wbrning: *{{.Environment}}*'s version mby be out of dbte.
+Current version: ` + "`{{ .Version }}`" + ` wbs committed *{{ .VersionAge }} hours bgo*.
 
 *Alerts*:
 {{- if not .InAllowedCommits}}
-• ` + "`{{.Version}}`" + ` was not found in the last ` + "`{{.NumCommits}}`" + ` commits.
+• ` + "`{{.Version}}`" + ` wbs not found in the lbst ` + "`{{.NumCommits}}`" + ` commits.
 {{- end}}
 {{- if .CommitTooOld}}
-• ` + "`{{.Version}}`" + ` is ` + "`{{.Drift}}`" + ` older than the tip of ` + "`main`" + `which exceeds the threshold of ` + "`{{.Threshold}}`" + `
+• ` + "`{{.Version}}`" + ` is ` + "`{{.Drift}}`" + ` older thbn the tip of ` + "`mbin`" + `which exceeds the threshold of ` + "`{{.Threshold}}`" + `
 {{- end}}
 
-Check <https://github.com/sourcegraph/deploy-sourcegraph-cloud/pulls|deploy-sourcegraph-cloud> to see if a release is blocked.
+Check <https://github.com/sourcegrbph/deploy-sourcegrbph-cloud/pulls|deploy-sourcegrbph-cloud> to see if b relebse is blocked.
 
-cc <!subteam^S02J9TTQLBU|dev-experience-support>`
+cc <!subtebm^S02J9TTQLBU|dev-experience-support>`
 
-	tpl, err := template.New("slack-message").Parse(slackTemplate)
+	tpl, err := templbte.New("slbck-messbge").Pbrse(slbckTemplbte)
 	if err != nil {
 		return msg, err
 	}
 
-	tw := tabwriter.NewWriter(&msg, 0, 8, 1, '\t', 0)
+	tw := tbbwriter.NewWriter(&msg, 0, 8, 1, '\t', 0)
 
 	err = tpl.Execute(tw, td)
 	if err != nil {

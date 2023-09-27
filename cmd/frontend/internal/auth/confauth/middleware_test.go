@@ -1,4 +1,4 @@
-package confauth
+pbckbge confbuth
 
 import (
 	"bytes"
@@ -9,72 +9,72 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
 )
 
-func TestMiddleware(t *testing.T) {
-	cleanup := session.ResetMockSessionStore(t)
-	defer cleanup()
+func TestMiddlewbre(t *testing.T) {
+	clebnup := session.ResetMockSessionStore(t)
+	defer clebnup()
 
-	value := false
-	ok := false
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		value, ok = r.Context().Value(auth.AllowAnonymousRequestContextKey).(bool)
+	vblue := fblse
+	ok := fblse
+	h := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		vblue, ok = r.Context().Vblue(buth.AllowAnonymousRequestContextKey).(bool)
 	})
-	handler := http.NewServeMux()
-	handler.Handle("/.api/", Middleware().API(h))
-	handler.Handle("/", Middleware().API(h))
+	hbndler := http.NewServeMux()
+	hbndler.Hbndle("/.bpi/", Middlewbre().API(h))
+	hbndler.Hbndle("/", Middlewbre().API(h))
 
 	doRequest := func(method, urlStr, body string) *http.Response {
 		req := httptest.NewRequest(method, urlStr, bytes.NewBufferString(body))
 		respRecorder := httptest.NewRecorder()
-		handler.ServeHTTP(respRecorder, req)
+		hbndler.ServeHTTP(respRecorder, req)
 		return respRecorder.Result()
 	}
 
 	expiresAt := time.Now().Add(time.Hour)
 
 	tests := []struct {
-		name      string
+		nbme      string
 		license   *license.Info
-		wantOk    bool
-		wantValue bool
+		wbntOk    bool
+		wbntVblue bool
 	}{
 		{
-			name:      "no license",
+			nbme:      "no license",
 			license:   nil,
-			wantOk:    false,
-			wantValue: false,
+			wbntOk:    fblse,
+			wbntVblue: fblse,
 		},
 		{
-			name:      "with license, no special tag",
+			nbme:      "with license, no specibl tbg",
 			license:   &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			wantOk:    true,
-			wantValue: false,
+			wbntOk:    true,
+			wbntVblue: fblse,
 		},
 		{
-			name:      "with license, with special tag",
-			license:   &license.Info{Tags: []string{licensing.AllowAnonymousUsageTag}, UserCount: 10, ExpiresAt: expiresAt},
-			wantOk:    true,
-			wantValue: true,
+			nbme:      "with license, with specibl tbg",
+			license:   &license.Info{Tbgs: []string{licensing.AllowAnonymousUsbgeTbg}, UserCount: 10, ExpiresAt: expiresAt},
+			wbntOk:    true,
+			wbntVblue: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return test.license, "test-signature", nil
+				return test.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 			resp := doRequest("GET", "/", "")
-			if want := http.StatusOK; resp.StatusCode != want {
-				t.Errorf("got response code %v, want %v", resp.StatusCode, want)
+			if wbnt := http.StbtusOK; resp.StbtusCode != wbnt {
+				t.Errorf("got response code %v, wbnt %v", resp.StbtusCode, wbnt)
 			}
-			require.Equal(t, test.wantOk, ok)
-			require.Equal(t, test.wantValue, value)
+			require.Equbl(t, test.wbntOk, ok)
+			require.Equbl(t, test.wbntVblue, vblue)
 		})
 	}
 }

@@ -1,60 +1,60 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
 type repositoryContributorResolver struct {
-	db    database.DB
-	name  string
-	email string
+	db    dbtbbbse.DB
+	nbme  string
+	embil string
 	count int32
 
 	repo *RepositoryResolver
-	args repositoryContributorsArgs
+	brgs repositoryContributorsArgs
 
 	// For use with RepositoryResolver only
 	index int
 }
 
-// gitContributorGQLID is a type used for marshaling and unmarshaling a Git contributor's
-// GraphQL ID.
+// gitContributorGQLID is b type used for mbrshbling bnd unmbrshbling b Git contributor's
+// GrbphQL ID.
 type gitContributorGQLID struct {
-	Repository graphql.ID `json:"r"`
-	Email      string     `json:"e"`
-	Name       string     `json:"n"`
+	Repository grbphql.ID `json:"r"`
+	Embil      string     `json:"e"`
+	Nbme       string     `json:"n"`
 }
 
-func (r repositoryContributorResolver) ID() graphql.ID {
-	return relay.MarshalID("RepositoryContributor", gitContributorGQLID{Repository: r.repo.ID(), Email: r.email, Name: r.name})
+func (r repositoryContributorResolver) ID() grbphql.ID {
+	return relby.MbrshblID("RepositoryContributor", gitContributorGQLID{Repository: r.repo.ID(), Embil: r.embil, Nbme: r.nbme})
 }
 
 func (r *repositoryContributorResolver) Person() *PersonResolver {
-	return &PersonResolver{db: r.db, name: r.name, email: r.email, includeUserInfo: true}
+	return &PersonResolver{db: r.db, nbme: r.nbme, embil: r.embil, includeUserInfo: true}
 }
 
 func (r *repositoryContributorResolver) Count() int32 { return r.count }
 
 func (r *repositoryContributorResolver) Repository() *RepositoryResolver { return r.repo }
 
-func (r *repositoryContributorResolver) Commits(args *struct {
+func (r *repositoryContributorResolver) Commits(brgs *struct {
 	First *int32
 }) *gitCommitConnectionResolver {
-	var revisionRange string
-	if r.args.RevisionRange != nil {
-		revisionRange = *r.args.RevisionRange
+	vbr revisionRbnge string
+	if r.brgs.RevisionRbnge != nil {
+		revisionRbnge = *r.brgs.RevisionRbnge
 	}
 	return &gitCommitConnectionResolver{
 		db:              r.db,
 		gitserverClient: r.repo.gitserverClient,
-		revisionRange:   revisionRange,
-		path:            r.args.Path,
-		author:          &r.email, // TODO(sqs): support when contributor resolves to user, and user has multiple emails
-		after:           r.args.AfterDate,
-		first:           args.First,
+		revisionRbnge:   revisionRbnge,
+		pbth:            r.brgs.Pbth,
+		buthor:          &r.embil, // TODO(sqs): support when contributor resolves to user, bnd user hbs multiple embils
+		bfter:           r.brgs.AfterDbte,
+		first:           brgs.First,
 		repo:            r.repo,
 	}
 }

@@ -1,50 +1,50 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"net/mail"
+	"net/mbil"
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/security"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/security"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/teestore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/session"
-	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot/hubspotutil"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/suspiciousnbmes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type credentials struct {
-	Email           string `json:"email"`
-	Username        string `json:"username"`
-	Password        string `json:"password"`
-	AnonymousUserID string `json:"anonymousUserId"`
+type credentibls struct {
+	Embil           string `json:"embil"`
+	Usernbme        string `json:"usernbme"`
+	Pbssword        string `json:"pbssword"`
+	AnonymousUserID string `json:"bnonymousUserId"`
 	FirstSourceURL  string `json:"firstSourceUrl"`
-	LastSourceURL   string `json:"lastSourceUrl"`
+	LbstSourceURL   string `json:"lbstSourceUrl"`
 }
 
 type unlockAccountInfo struct {
@@ -52,419 +52,419 @@ type unlockAccountInfo struct {
 }
 
 type unlockUserAccountInfo struct {
-	Username string `json:"username"`
+	Usernbme string `json:"usernbme"`
 }
 
-// HandleSignUp handles submission of the user signup form.
-func HandleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder) http.HandlerFunc {
-	logger = logger.Scoped("HandleSignUp", "sign up request handler")
+// HbndleSignUp hbndles submission of the user signup form.
+func HbndleSignUp(logger log.Logger, db dbtbbbse.DB, eventRecorder *telemetry.EventRecorder) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleSignUp", "sign up request hbndler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(logger, w) {
+		if hbndleEnbbledCheck(logger, w) {
 			return
 		}
 		if pc, _ := GetProviderConfig(); !pc.AllowSignup {
-			http.Error(w, "Signup is not enabled (builtin auth provider allowSignup site configuration option)", http.StatusNotFound)
+			http.Error(w, "Signup is not enbbled (builtin buth provider bllowSignup site configurbtion option)", http.StbtusNotFound)
 			return
 		}
-		handleSignUp(logger, db, eventRecorder, w, r, false)
+		hbndleSignUp(logger, db, eventRecorder, w, r, fblse)
 	}
 }
 
-// HandleSiteInit handles submission of the site initialization form, where the initial site admin user is created.
-func HandleSiteInit(logger log.Logger, db database.DB, events *telemetry.EventRecorder) http.HandlerFunc {
-	logger = logger.Scoped("HandleSiteInit", "initial size initialization request handler")
+// HbndleSiteInit hbndles submission of the site initiblizbtion form, where the initibl site bdmin user is crebted.
+func HbndleSiteInit(logger log.Logger, db dbtbbbse.DB, events *telemetry.EventRecorder) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleSiteInit", "initibl size initiblizbtion request hbndler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		// This only succeeds if the site is not yet initialized and there are no users yet. It doesn't
-		// allow signups after those conditions become true, so we don't need to check the builtin auth
-		// provider's allowSignup in site config.
-		handleSignUp(logger, db, events, w, r, true)
+		// This only succeeds if the site is not yet initiblized bnd there bre no users yet. It doesn't
+		// bllow signups bfter those conditions become true, so we don't need to check the builtin buth
+		// provider's bllowSignup in site config.
+		hbndleSignUp(logger, db, events, w, r, true)
 	}
 }
 
-// checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
-// of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, db database.DB, addr string) (abused bool, reason string, err error) {
-	email, err := db.UserEmails().GetLatestVerificationSentEmail(ctx, addr)
+// checkEmbilAbuse performs bbuse prevention checks to prevent embil bbuse, i.e. users using embils
+// of other people whom they wbnt to bnnoy.
+func checkEmbilAbuse(ctx context.Context, db dbtbbbse.DB, bddr string) (bbused bool, rebson string, err error) {
+	embil, err := db.UserEmbils().GetLbtestVerificbtionSentEmbil(ctx, bddr)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return false, "", nil
+			return fblse, "", nil
 		}
-		return false, "", err
+		return fblse, "", err
 	}
 
-	// NOTE: We could check if email is already used here but that complicates the logic
-	// and the reused problem should be better handled in the user creation.
+	// NOTE: We could check if embil is blrebdy used here but thbt complicbtes the logic
+	// bnd the reused problem should be better hbndled in the user crebtion.
 
-	if email.NeedsVerificationCoolDown() {
-		return true, "too frequent attempt since last verification email sent", nil
+	if embil.NeedsVerificbtionCoolDown() {
+		return true, "too frequent bttempt since lbst verificbtion embil sent", nil
 	}
 
-	return false, "", nil
+	return fblse, "", nil
 }
 
-// handleSignUp is called to create a new user account. It is called for the normal user signup process (where a
-// non-admin user is created) and for the site initialization process (where the initial site admin user account is
-// created).
+// hbndleSignUp is cblled to crebte b new user bccount. It is cblled for the normbl user signup process (where b
+// non-bdmin user is crebted) bnd for the site initiblizbtion process (where the initibl site bdmin user bccount is
+// crebted).
 //
-// 🚨 SECURITY: Any change to this function could introduce security exploits
-// and/or break sign up / initial admin account creation. Be careful.
-func handleSignUp(logger log.Logger, db database.DB, eventRecorder *telemetry.EventRecorder,
-	w http.ResponseWriter, r *http.Request, failIfNewUserIsNotInitialSiteAdmin bool) {
+// 🚨 SECURITY: Any chbnge to this function could introduce security exploits
+// bnd/or brebk sign up / initibl bdmin bccount crebtion. Be cbreful.
+func hbndleSignUp(logger log.Logger, db dbtbbbse.DB, eventRecorder *telemetry.EventRecorder,
+	w http.ResponseWriter, r *http.Request, fbilIfNewUserIsNotInitiblSiteAdmin bool) {
 	if r.Method != "POST" {
-		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("unsupported method %s", r.Method), http.StbtusBbdRequest)
 		return
 	}
-	var creds credentials
+	vbr creds credentibls
 	if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-		http.Error(w, "could not decode request body", http.StatusBadRequest)
+		http.Error(w, "could not decode request body", http.StbtusBbdRequest)
 		return
 	}
-	err, statusCode, usr := unsafeSignUp(r.Context(), logger, db, creds, failIfNewUserIsNotInitialSiteAdmin)
+	err, stbtusCode, usr := unsbfeSignUp(r.Context(), logger, db, creds, fbilIfNewUserIsNotInitiblSiteAdmin)
 	if err != nil {
-		http.Error(w, err.Error(), statusCode)
+		http.Error(w, err.Error(), stbtusCode)
 		return
 	}
 
 	// Write the session cookie
-	a := &sgactor.Actor{UID: usr.ID}
-	if err := session.SetActor(w, r, a, 0, usr.CreatedAt); err != nil {
-		httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+	b := &sgbctor.Actor{UID: usr.ID}
+	if err := session.SetActor(w, r, b, 0, usr.CrebtedAt); err != nil {
+		httpLogError(logger.Error, w, "Could not crebte new user session", http.StbtusInternblServerError, log.Error(err))
 	}
 
-	// Track user data
-	if r.UserAgent() != "Sourcegraph e2etest-bot" || r.UserAgent() != "test" {
-		go hubspotutil.SyncUser(creds.Email, hubspotutil.SignupEventID, &hubspot.ContactProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LastSourceURL: creds.LastSourceURL, DatabaseID: usr.ID})
+	// Trbck user dbtb
+	if r.UserAgent() != "Sourcegrbph e2etest-bot" || r.UserAgent() != "test" {
+		go hubspotutil.SyncUser(creds.Embil, hubspotutil.SignupEventID, &hubspot.ContbctProperties{AnonymousUserID: creds.AnonymousUserID, FirstSourceURL: creds.FirstSourceURL, LbstSourceURL: creds.LbstSourceURL, DbtbbbseID: usr.ID})
 	}
 
-	// New event - we record legacy event manually for now, hence teestore.WithoutV1
+	// New event - we record legbcy event mbnublly for now, hence teestore.WithoutV1
 	// TODO: Remove in 5.3
 	events := telemetry.NewBestEffortEventRecorder(logger, eventRecorder)
-	events.Record(teestore.WithoutV1(r.Context()), telemetry.FeatureSignUp, telemetry.ActionSucceeded, &telemetry.EventParameters{
-		Metadata: telemetry.EventMetadata{
-			"failIfNewUserIsNotInitialSiteAdmin": telemetry.MetadataBool(failIfNewUserIsNotInitialSiteAdmin),
+	events.Record(teestore.WithoutV1(r.Context()), telemetry.FebtureSignUp, telemetry.ActionSucceeded, &telemetry.EventPbrbmeters{
+		Metbdbtb: telemetry.EventMetbdbtb{
+			"fbilIfNewUserIsNotInitiblSiteAdmin": telemetry.MetbdbtbBool(fbilIfNewUserIsNotInitiblSiteAdmin),
 		},
 	})
-	// Legacy event
-	if err = usagestats.LogBackendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil); err != nil {
-		logger.Warn("Failed to log event SignUpSucceeded", log.Error(err))
+	// Legbcy event
+	if err = usbgestbts.LogBbckendEvent(db, usr.ID, deviceid.FromContext(r.Context()), "SignUpSucceeded", nil, nil, febtureflbg.GetEvblubtedFlbgSet(r.Context()), nil); err != nil {
+		logger.Wbrn("Fbiled to log event SignUpSucceeded", log.Error(err))
 	}
 }
 
-// unsafeSignUp is called to create a new user account. It is called for the normal user signup process (where a
-// non-admin user is created) and for the site initialization process (where the initial site admin user account is
-// created).
+// unsbfeSignUp is cblled to crebte b new user bccount. It is cblled for the normbl user signup process (where b
+// non-bdmin user is crebted) bnd for the site initiblizbtion process (where the initibl site bdmin user bccount is
+// crebted).
 //
-// 🚨 SECURITY: Any change to this function could introduce security exploits
-// and/or break sign up / initial admin account creation. Be careful.
-func unsafeSignUp(
+// 🚨 SECURITY: Any chbnge to this function could introduce security exploits
+// bnd/or brebk sign up / initibl bdmin bccount crebtion. Be cbreful.
+func unsbfeSignUp(
 	ctx context.Context,
 	logger log.Logger,
-	db database.DB,
-	creds credentials,
-	failIfNewUserIsNotInitialSiteAdmin bool,
+	db dbtbbbse.DB,
+	creds credentibls,
+	fbilIfNewUserIsNotInitiblSiteAdmin bool,
 ) (error, int, *types.User) {
-	const defaultErrorMessage = "Signup failed unexpectedly."
+	const defbultErrorMessbge = "Signup fbiled unexpectedly."
 
-	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(creds.Username); err != nil {
-		return err, http.StatusBadRequest, nil
+	if err := suspiciousnbmes.CheckNbmeAllowedForUserOrOrgbnizbtion(creds.Usernbme); err != nil {
+		return err, http.StbtusBbdRequest, nil
 	}
-	if err := CheckEmailFormat(creds.Email); err != nil {
-		return err, http.StatusBadRequest, nil
+	if err := CheckEmbilFormbt(creds.Embil); err != nil {
+		return err, http.StbtusBbdRequest, nil
 	}
 
-	// Create the user.
+	// Crebte the user.
 	//
-	// We don't need to check the builtin auth provider's allowSignup because we assume the caller
-	// of handleSignUp checks it, or else that failIfNewUserIsNotInitialSiteAdmin == true (in which
-	// case the only signup allowed is that of the initial site admin).
-	newUserData := database.NewUser{
-		Email:                 creds.Email,
-		Username:              creds.Username,
-		Password:              creds.Password,
-		FailIfNotInitialUser:  failIfNewUserIsNotInitialSiteAdmin,
-		EnforcePasswordLength: true,
-		TosAccepted:           true, // Users created via the signup form are considered to have accepted the Terms of Service.
+	// We don't need to check the builtin buth provider's bllowSignup becbuse we bssume the cbller
+	// of hbndleSignUp checks it, or else thbt fbilIfNewUserIsNotInitiblSiteAdmin == true (in which
+	// cbse the only signup bllowed is thbt of the initibl site bdmin).
+	newUserDbtb := dbtbbbse.NewUser{
+		Embil:                 creds.Embil,
+		Usernbme:              creds.Usernbme,
+		Pbssword:              creds.Pbssword,
+		FbilIfNotInitiblUser:  fbilIfNewUserIsNotInitiblSiteAdmin,
+		EnforcePbsswordLength: true,
+		TosAccepted:           true, // Users crebted vib the signup form bre considered to hbve bccepted the Terms of Service.
 	}
-	if failIfNewUserIsNotInitialSiteAdmin {
-		// The email of the initial site admin is considered to be verified.
-		newUserData.EmailIsVerified = true
+	if fbilIfNewUserIsNotInitiblSiteAdmin {
+		// The embil of the initibl site bdmin is considered to be verified.
+		newUserDbtb.EmbilIsVerified = true
 	} else {
-		code, err := backend.MakeEmailVerificationCode()
+		code, err := bbckend.MbkeEmbilVerificbtionCode()
 		if err != nil {
-			logger.Error("Error generating email verification code for new user.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
+			logger.Error("Error generbting embil verificbtion code for new user.", log.String("embil", creds.Embil), log.String("usernbme", creds.Usernbme), log.Error(err))
+			return errors.New(defbultErrorMessbge), http.StbtusInternblServerError, nil
 		}
-		newUserData.EmailVerificationCode = code
+		newUserDbtb.EmbilVerificbtionCode = code
 	}
 
-	if banned, err := security.IsEmailBanned(creds.Email); err != nil {
-		logger.Error("failed to check if email domain is banned", log.Error(err))
-		return errors.New("could not determine if email domain is banned"), http.StatusInternalServerError, nil
-	} else if banned {
-		logger.Error("user tried to register with banned email domain", log.String("email", creds.Email))
-		return errors.New("this email address is not allowed to register"), http.StatusBadRequest, nil
+	if bbnned, err := security.IsEmbilBbnned(creds.Embil); err != nil {
+		logger.Error("fbiled to check if embil dombin is bbnned", log.Error(err))
+		return errors.New("could not determine if embil dombin is bbnned"), http.StbtusInternblServerError, nil
+	} else if bbnned {
+		logger.Error("user tried to register with bbnned embil dombin", log.String("embil", creds.Embil))
+		return errors.New("this embil bddress is not bllowed to register"), http.StbtusBbdRequest, nil
 	}
 
-	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
-	// following abuse prevention checks.
-	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		abused, reason, err := checkEmailAbuse(ctx, db, creds.Email)
+	// Prevent bbuse (users bdding embils of other people whom they wbnt to bnnoy) with the
+	// following bbuse prevention checks.
+	if conf.EmbilVerificbtionRequired() && !newUserDbtb.EmbilIsVerified {
+		bbused, rebson, err := checkEmbilAbuse(ctx, db, creds.Embil)
 		if err != nil {
-			logger.Error("Error checking email abuse", log.String("email", creds.Email), log.Error(err))
-			return errors.New(defaultErrorMessage), http.StatusInternalServerError, nil
-		} else if abused {
-			logger.Error("Possible email address abuse prevented", log.String("email", creds.Email), log.String("reason", reason))
-			msg := "Email address is possibly being abused, please try again later or use a different email address."
-			return errors.New(msg), http.StatusTooManyRequests, nil
+			logger.Error("Error checking embil bbuse", log.String("embil", creds.Embil), log.Error(err))
+			return errors.New(defbultErrorMessbge), http.StbtusInternblServerError, nil
+		} else if bbused {
+			logger.Error("Possible embil bddress bbuse prevented", log.String("embil", creds.Embil), log.String("rebson", rebson))
+			msg := "Embil bddress is possibly being bbused, plebse try bgbin lbter or use b different embil bddress."
+			return errors.New(msg), http.StbtusTooMbnyRequests, nil
 		}
 	}
 
-	usr, err := db.Users().Create(ctx, newUserData)
+	usr, err := db.Users().Crebte(ctx, newUserDbtb)
 	if err != nil {
-		var (
-			message    string
-			statusCode int
+		vbr (
+			messbge    string
+			stbtusCode int
 		)
 		switch {
-		case database.IsUsernameExists(err):
-			message = "Username is already in use. Try a different username."
-			statusCode = http.StatusConflict
-		case database.IsEmailExists(err):
-			message = "Email address is already in use. Try signing into that account instead, or use a different email address."
-			statusCode = http.StatusConflict
-		case errcode.PresentationMessage(err) != "":
-			message = errcode.PresentationMessage(err)
-			statusCode = http.StatusConflict
-		default:
-			// Do not show non-allowed error messages to user, in case they contain sensitive or confusing
-			// information.
-			message = defaultErrorMessage
-			statusCode = http.StatusInternalServerError
+		cbse dbtbbbse.IsUsernbmeExists(err):
+			messbge = "Usernbme is blrebdy in use. Try b different usernbme."
+			stbtusCode = http.StbtusConflict
+		cbse dbtbbbse.IsEmbilExists(err):
+			messbge = "Embil bddress is blrebdy in use. Try signing into thbt bccount instebd, or use b different embil bddress."
+			stbtusCode = http.StbtusConflict
+		cbse errcode.PresentbtionMessbge(err) != "":
+			messbge = errcode.PresentbtionMessbge(err)
+			stbtusCode = http.StbtusConflict
+		defbult:
+			// Do not show non-bllowed error messbges to user, in cbse they contbin sensitive or confusing
+			// informbtion.
+			messbge = defbultErrorMessbge
+			stbtusCode = http.StbtusInternblServerError
 		}
-		if deploy.IsApp() && strings.Contains(err.Error(), "site_already_initialized") {
-			return nil, http.StatusOK, nil
+		if deploy.IsApp() && strings.Contbins(err.Error(), "site_blrebdy_initiblized") {
+			return nil, http.StbtusOK, nil
 		}
-		logger.Error("Error in user signup.", log.String("email", creds.Email), log.String("username", creds.Username), log.Error(err))
-		if err = usagestats.LogBackendEvent(db, sgactor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFailed", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil); err != nil {
-			logger.Warn("Failed to log event SignUpFailed", log.Error(err))
+		logger.Error("Error in user signup.", log.String("embil", creds.Embil), log.String("usernbme", creds.Usernbme), log.Error(err))
+		if err = usbgestbts.LogBbckendEvent(db, sgbctor.FromContext(ctx).UID, deviceid.FromContext(ctx), "SignUpFbiled", nil, nil, febtureflbg.GetEvblubtedFlbgSet(ctx), nil); err != nil {
+			logger.Wbrn("Fbiled to log event SignUpFbiled", log.Error(err))
 		}
-		return errors.New(message), statusCode, nil
+		return errors.New(messbge), stbtusCode, nil
 	}
 
-	if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+	if err = db.Authz().GrbntPendingPermissions(ctx, &dbtbbbse.GrbntPendingPermissionsArgs{
 		UserID: usr.ID,
-		Perm:   authz.Read,
-		Type:   authz.PermRepos,
+		Perm:   buthz.Rebd,
+		Type:   buthz.PermRepos,
 	}); err != nil {
-		logger.Error("Failed to grant user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
+		logger.Error("Fbiled to grbnt user pending permissions", log.Int32("userID", usr.ID), log.Error(err))
 	}
 
-	if conf.EmailVerificationRequired() && !newUserData.EmailIsVerified {
-		if err := backend.SendUserEmailVerificationEmail(ctx, usr.Username, creds.Email, newUserData.EmailVerificationCode); err != nil {
-			logger.Error("failed to send email verification (continuing, user's email will be unverified)", log.String("email", creds.Email), log.Error(err))
-		} else if err = db.UserEmails().SetLastVerification(ctx, usr.ID, creds.Email, newUserData.EmailVerificationCode, time.Now()); err != nil {
-			logger.Error("failed to set email last verification sent at (user's email is verified)", log.String("email", creds.Email), log.Error(err))
+	if conf.EmbilVerificbtionRequired() && !newUserDbtb.EmbilIsVerified {
+		if err := bbckend.SendUserEmbilVerificbtionEmbil(ctx, usr.Usernbme, creds.Embil, newUserDbtb.EmbilVerificbtionCode); err != nil {
+			logger.Error("fbiled to send embil verificbtion (continuing, user's embil will be unverified)", log.String("embil", creds.Embil), log.Error(err))
+		} else if err = db.UserEmbils().SetLbstVerificbtion(ctx, usr.ID, creds.Embil, newUserDbtb.EmbilVerificbtionCode, time.Now()); err != nil {
+			logger.Error("fbiled to set embil lbst verificbtion sent bt (user's embil is verified)", log.String("embil", creds.Embil), log.Error(err))
 		}
 	}
-	return nil, http.StatusOK, usr
+	return nil, http.StbtusOK, usr
 }
 
-func CheckEmailFormat(email string) error {
-	// Max email length is 320 chars https://datatracker.ietf.org/doc/html/rfc3696#section-3
-	if len(email) > 320 {
-		return errors.Newf("maximum email length is 320, got %d", len(email))
+func CheckEmbilFormbt(embil string) error {
+	// Mbx embil length is 320 chbrs https://dbtbtrbcker.ietf.org/doc/html/rfc3696#section-3
+	if len(embil) > 320 {
+		return errors.Newf("mbximum embil length is 320, got %d", len(embil))
 	}
-	if _, err := mail.ParseAddress(email); err != nil {
+	if _, err := mbil.PbrseAddress(embil); err != nil {
 		return err
 	}
 	return nil
 }
 
-func getByEmailOrUsername(ctx context.Context, db database.DB, emailOrUsername string) (*types.User, error) {
-	if strings.Contains(emailOrUsername, "@") {
-		return db.Users().GetByVerifiedEmail(ctx, emailOrUsername)
+func getByEmbilOrUsernbme(ctx context.Context, db dbtbbbse.DB, embilOrUsernbme string) (*types.User, error) {
+	if strings.Contbins(embilOrUsernbme, "@") {
+		return db.Users().GetByVerifiedEmbil(ctx, embilOrUsernbme)
 	}
-	return db.Users().GetByUsername(ctx, emailOrUsername)
+	return db.Users().GetByUsernbme(ctx, embilOrUsernbme)
 }
 
-// HandleSignIn accepts a POST containing username-password credentials and
-// authenticates the current session if the credentials are valid.
+// HbndleSignIn bccepts b POST contbining usernbme-pbssword credentibls bnd
+// buthenticbtes the current session if the credentibls bre vblid.
 //
-// The account will be locked out after consecutive failed attempts in a certain
+// The bccount will be locked out bfter consecutive fbiled bttempts in b certbin
 // period of time.
-func HandleSignIn(logger log.Logger, db database.DB, store LockoutStore, recorder *telemetry.EventRecorder) http.HandlerFunc {
-	logger = logger.Scoped("HandleSignin", "sign in request handler")
+func HbndleSignIn(logger log.Logger, db dbtbbbse.DB, store LockoutStore, recorder *telemetry.EventRecorder) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleSignin", "sign in request hbndler")
 	events := telemetry.NewBestEffortEventRecorder(logger, recorder)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(logger, w) {
+		if hbndleEnbbledCheck(logger, w) {
 			return
 		}
 
-		// In this code, we still use legacy events (usagestats.LogBackendEvent),
-		// so do not tee events automatically.
+		// In this code, we still use legbcy events (usbgestbts.LogBbckendEvent),
+		// so do not tee events butombticblly.
 		// TODO: We should remove this in 5.3 entirely
 		ctx := teestore.WithoutV1(r.Context())
-		var user types.User
+		vbr user types.User
 
-		signInResult := database.SecurityEventNameSignInAttempted
+		signInResult := dbtbbbse.SecurityEventNbmeSignInAttempted
 		recordSignInSecurityEvent(r, db, &user, &signInResult)
 
-		// We have more failure scenarios and ONLY one successful scenario. By default,
-		// assume a SignInFailed state so that the deferred logSignInEvent function call
-		// will log the correct security event in case of a failure.
-		signInResult = database.SecurityEventNameSignInFailed
-		telemetrySignInResult := telemetry.ActionFailed
+		// We hbve more fbilure scenbrios bnd ONLY one successful scenbrio. By defbult,
+		// bssume b SignInFbiled stbte so thbt the deferred logSignInEvent function cbll
+		// will log the correct security event in cbse of b fbilure.
+		signInResult = dbtbbbse.SecurityEventNbmeSignInFbiled
+		telemetrySignInResult := telemetry.ActionFbiled
 		defer func() {
 			recordSignInSecurityEvent(r, db, &user, &signInResult)
-			events.Record(ctx, telemetry.FeatureSignIn, telemetrySignInResult, nil)
+			events.Record(ctx, telemetry.FebtureSignIn, telemetrySignInResult, nil)
 			checkAccountLockout(store, &user, &signInResult)
 		}()
 
 		if r.Method != http.MethodPost {
-			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StbtusBbdRequest)
 			return
 		}
-		var creds credentials
+		vbr creds credentibls
 		if err := json.NewDecoder(r.Body).Decode(&creds); err != nil {
-			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			http.Error(w, "Could not decode request body", http.StbtusBbdRequest)
 			return
 		}
 
-		// Validate user. Allow login by both email and username (for convenience).
-		u, err := getByEmailOrUsername(ctx, db, creds.Email)
+		// Vblidbte user. Allow login by both embil bnd usernbme (for convenience).
+		u, err := getByEmbilOrUsernbme(ctx, db, creds.Embil)
 		if err != nil {
-			httpLogError(logger.Warn, w, "Authentication failed", http.StatusUnauthorized, log.Error(err))
+			httpLogError(logger.Wbrn, w, "Authenticbtion fbiled", http.StbtusUnbuthorized, log.Error(err))
 			return
 		}
 		user = *u
 
-		if reason, locked := store.IsLockedOut(user.ID); locked {
+		if rebson, locked := store.IsLockedOut(user.ID); locked {
 			func() {
-				if !conf.CanSendEmail() || store.UnlockEmailSent(user.ID) {
+				if !conf.CbnSendEmbil() || store.UnlockEmbilSent(user.ID) {
 					return
 				}
 
-				recipient, _, err := db.UserEmails().GetPrimaryEmail(ctx, user.ID)
+				recipient, _, err := db.UserEmbils().GetPrimbryEmbil(ctx, user.ID)
 				if err != nil {
-					logger.Error("Error getting primary email address", log.Int32("userID", user.ID), log.Error(err))
+					logger.Error("Error getting primbry embil bddress", log.Int32("userID", user.ID), log.Error(err))
 					return
 				}
 
-				err = store.SendUnlockAccountEmail(ctx, user.ID, recipient)
+				err = store.SendUnlockAccountEmbil(ctx, user.ID, recipient)
 				if err != nil {
-					logger.Error("Error sending unlock account email", log.Int32("userID", user.ID), log.Error(err))
+					logger.Error("Error sending unlock bccount embil", log.Int32("userID", user.ID), log.Error(err))
 					return
 				}
 			}()
 
-			httpLogError(logger.Error, w, fmt.Sprintf("Account has been locked out due to %q", reason), http.StatusUnprocessableEntity)
+			httpLogError(logger.Error, w, fmt.Sprintf("Account hbs been locked out due to %q", rebson), http.StbtusUnprocessbbleEntity)
 			return
 		}
 
-		// 🚨 SECURITY: check password
-		correct, err := db.Users().IsPassword(ctx, user.ID, creds.Password)
+		// 🚨 SECURITY: check pbssword
+		correct, err := db.Users().IsPbssword(ctx, user.ID, creds.Pbssword)
 		if err != nil {
-			httpLogError(logger.Error, w, "Error checking password", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger.Error, w, "Error checking pbssword", http.StbtusInternblServerError, log.Error(err))
 			return
 		}
 		if !correct {
-			httpLogError(logger.Warn, w, "Authentication failed", http.StatusUnauthorized)
+			httpLogError(logger.Wbrn, w, "Authenticbtion fbiled", http.StbtusUnbuthorized)
 			return
 		}
 
-		// We are now an authenticated actor
-		act := sgactor.Actor{
+		// We bre now bn buthenticbted bctor
+		bct := sgbctor.Actor{
 			UID: user.ID,
 		}
 
-		// Make sure we're in the context of our newly signed in user
-		ctx = actor.WithActor(ctx, &act)
+		// Mbke sure we're in the context of our newly signed in user
+		ctx = bctor.WithActor(ctx, &bct)
 
 		// Write the session cookie
-		if err := session.SetActor(w, r, &act, 0, user.CreatedAt); err != nil {
-			httpLogError(logger.Error, w, "Could not create new user session", http.StatusInternalServerError, log.Error(err))
+		if err := session.SetActor(w, r, &bct, 0, user.CrebtedAt); err != nil {
+			httpLogError(logger.Error, w, "Could not crebte new user session", http.StbtusInternblServerError, log.Error(err))
 			return
 		}
 
-		// Update the events we record
-		signInResult = database.SecurityEventNameSignInSucceeded
+		// Updbte the events we record
+		signInResult = dbtbbbse.SecurityEventNbmeSignInSucceeded
 		telemetrySignInResult = telemetry.ActionSucceeded
 	}
 }
 
-func HandleUnlockAccount(logger log.Logger, _ database.DB, store LockoutStore) http.HandlerFunc {
-	logger = logger.Scoped("HandleUnlockAccount", "unlock account request handler")
+func HbndleUnlockAccount(logger log.Logger, _ dbtbbbse.DB, store LockoutStore) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleUnlockAccount", "unlock bccount request hbndler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(logger, w) {
+		if hbndleEnbbledCheck(logger, w) {
 			return
 		}
 
 		if r.Method != http.MethodPost {
-			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StbtusBbdRequest)
 			return
 		}
 
-		var unlockAccountInfo unlockAccountInfo
+		vbr unlockAccountInfo unlockAccountInfo
 		if err := json.NewDecoder(r.Body).Decode(&unlockAccountInfo); err != nil {
-			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			http.Error(w, "Could not decode request body", http.StbtusBbdRequest)
 			return
 		}
 
 		if unlockAccountInfo.Token == "" {
-			http.Error(w, "Bad request: missing token", http.StatusBadRequest)
+			http.Error(w, "Bbd request: missing token", http.StbtusBbdRequest)
 			return
 		}
 
-		valid, err := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
+		vblid, err := store.VerifyUnlockAccountTokenAndReset(unlockAccountInfo.Token)
 
-		if !valid || err != nil {
-			errStr := "invalid token provided"
+		if !vblid || err != nil {
+			errStr := "invblid token provided"
 			if err != nil {
 				errStr = err.Error()
 			}
-			httpLogError(logger.Warn, w, errStr, http.StatusUnauthorized)
+			httpLogError(logger.Wbrn, w, errStr, http.StbtusUnbuthorized)
 			return
 		}
 	}
 }
 
-func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) http.HandlerFunc {
+func HbndleUnlockUserAccount(_ log.Logger, db dbtbbbse.DB, store LockoutStore) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			http.Error(w, "Only site admins can unlock user accounts", http.StatusUnauthorized)
+		if err := buth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+			http.Error(w, "Only site bdmins cbn unlock user bccounts", http.StbtusUnbuthorized)
 			return
 		}
 
 		if r.Method != http.MethodPost {
-			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("Unsupported method %s", r.Method), http.StbtusBbdRequest)
 			return
 		}
 
-		var unlockUserAccountInfo unlockUserAccountInfo
+		vbr unlockUserAccountInfo unlockUserAccountInfo
 		if err := json.NewDecoder(r.Body).Decode(&unlockUserAccountInfo); err != nil {
-			http.Error(w, "Could not decode request body", http.StatusBadRequest)
+			http.Error(w, "Could not decode request body", http.StbtusBbdRequest)
 			return
 		}
 
-		if unlockUserAccountInfo.Username == "" {
-			http.Error(w, "Bad request: missing username", http.StatusBadRequest)
+		if unlockUserAccountInfo.Usernbme == "" {
+			http.Error(w, "Bbd request: missing usernbme", http.StbtusBbdRequest)
 			return
 		}
 
-		user, err := db.Users().GetByUsername(r.Context(), unlockUserAccountInfo.Username)
+		user, err := db.Users().GetByUsernbme(r.Context(), unlockUserAccountInfo.Usernbme)
 		if err != nil {
 			http.Error(w,
-				fmt.Sprintf("Not found: could not find user with username %q", unlockUserAccountInfo.Username),
-				http.StatusNotFound)
+				fmt.Sprintf("Not found: could not find user with usernbme %q", unlockUserAccountInfo.Usernbme),
+				http.StbtusNotFound)
 			return
 		}
 
 		_, isLocked := store.IsLockedOut(user.ID)
 		if !isLocked {
 			http.Error(w,
-				fmt.Sprintf("User with username %q is not locked", unlockUserAccountInfo.Username),
-				http.StatusBadRequest)
+				fmt.Sprintf("User with usernbme %q is not locked", unlockUserAccountInfo.Usernbme),
+				http.StbtusBbdRequest)
 			return
 		}
 
@@ -472,60 +472,60 @@ func HandleUnlockUserAccount(_ log.Logger, db database.DB, store LockoutStore) h
 	}
 }
 
-func recordSignInSecurityEvent(r *http.Request, db database.DB, user *types.User, name *database.SecurityEventName) {
-	var anonymousID string
-	event := &database.SecurityEvent{
-		Name:            *name,
-		URL:             r.URL.Path,
+func recordSignInSecurityEvent(r *http.Request, db dbtbbbse.DB, user *types.User, nbme *dbtbbbse.SecurityEventNbme) {
+	vbr bnonymousID string
+	event := &dbtbbbse.SecurityEvent{
+		Nbme:            *nbme,
+		URL:             r.URL.Pbth,
 		UserID:          uint32(user.ID),
-		AnonymousUserID: anonymousID,
+		AnonymousUserID: bnonymousID,
 		Source:          "BACKEND",
-		Timestamp:       time.Now(),
+		Timestbmp:       time.Now(),
 	}
 
-	// Safe to ignore this error
+	// Sbfe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 	db.SecurityEventLogs().LogEvent(r.Context(), event)
 
-	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
+	// Legbcy event - TODO: Remove in 5.3, blongside the teestore.WithoutV1
 	// context.
-	_ = usagestats.LogBackendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*name), nil, nil, featureflag.GetEvaluatedFlagSet(r.Context()), nil)
+	_ = usbgestbts.LogBbckendEvent(db, user.ID, deviceid.FromContext(r.Context()), string(*nbme), nil, nil, febtureflbg.GetEvblubtedFlbgSet(r.Context()), nil)
 }
 
-func checkAccountLockout(store LockoutStore, user *types.User, event *database.SecurityEventName) {
+func checkAccountLockout(store LockoutStore, user *types.User, event *dbtbbbse.SecurityEventNbme) {
 	if user.ID <= 0 {
 		return
 	}
 
-	if *event == database.SecurityEventNameSignInSucceeded {
+	if *event == dbtbbbse.SecurityEventNbmeSignInSucceeded {
 		store.Reset(user.ID)
-	} else if *event == database.SecurityEventNameSignInFailed {
-		store.IncreaseFailedAttempt(user.ID)
+	} else if *event == dbtbbbse.SecurityEventNbmeSignInFbiled {
+		store.IncrebseFbiledAttempt(user.ID)
 	}
 }
 
-// HandleCheckUsernameTaken checks availability of username for signup form
-func HandleCheckUsernameTaken(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleCheckUsernameTaken", "checks for username uniqueness")
+// HbndleCheckUsernbmeTbken checks bvbilbbility of usernbme for signup form
+func HbndleCheckUsernbmeTbken(logger log.Logger, db dbtbbbse.DB) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleCheckUsernbmeTbken", "checks for usernbme uniqueness")
 	return func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		username, err := NormalizeUsername(vars["username"])
+		vbrs := mux.Vbrs(r)
+		usernbme, err := NormblizeUsernbme(vbrs["usernbme"])
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHebder(http.StbtusBbdRequest)
 			return
 		}
 
-		_, err = db.Namespaces().GetByName(r.Context(), username)
-		if err == database.ErrNamespaceNotFound {
-			w.WriteHeader(http.StatusNotFound)
+		_, err = db.Nbmespbces().GetByNbme(r.Context(), usernbme)
+		if err == dbtbbbse.ErrNbmespbceNotFound {
+			w.WriteHebder(http.StbtusNotFound)
 			return
 		}
 		if err != nil {
-			httpLogError(logger.Error, w, "Error checking username uniqueness", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger.Error, w, "Error checking usernbme uniqueness", http.StbtusInternblServerError, log.Error(err))
 			return
 		}
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHebder(http.StbtusOK)
 	}
 }
 
@@ -534,50 +534,50 @@ func httpLogError(logFunc func(string, ...log.Field), w http.ResponseWriter, msg
 	http.Error(w, msg, code)
 }
 
-// NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
-// username formatting rules (based on, but not identical to
-// https://web.archive.org/web/20180215000330/https://help.github.com/enterprise/2.11/admin/guides/user-management/using-ldap):
+// NormblizeUsernbme normblizes b proposed usernbme into b formbt thbt meets Sourcegrbph's
+// usernbme formbtting rules (bbsed on, but not identicbl to
+// https://web.brchive.org/web/20180215000330/https://help.github.com/enterprise/2.11/bdmin/guides/user-mbnbgement/using-ldbp):
 //
-// - Any characters not in `[a-zA-Z0-9-._]` are replaced with `-`
-// - Usernames with exactly one `@` character are interpreted as an email address, so the username will be extracted by truncating at the `@` character.
-// - Usernames with two or more `@` characters are not considered an email address, so the `@` will be treated as a non-standard character and be replaced with `-`
-// - Usernames with consecutive `-` or `.` characters are not allowed, so they are replaced with a single `-` or `.`
-// - Usernames that start with `.` or `-` are not allowed, starting periods and dashes are removed
-// - Usernames that end with `.` are not allowed, ending periods are removed
+// - Any chbrbcters not in `[b-zA-Z0-9-._]` bre replbced with `-`
+// - Usernbmes with exbctly one `@` chbrbcter bre interpreted bs bn embil bddress, so the usernbme will be extrbcted by truncbting bt the `@` chbrbcter.
+// - Usernbmes with two or more `@` chbrbcters bre not considered bn embil bddress, so the `@` will be trebted bs b non-stbndbrd chbrbcter bnd be replbced with `-`
+// - Usernbmes with consecutive `-` or `.` chbrbcters bre not bllowed, so they bre replbced with b single `-` or `.`
+// - Usernbmes thbt stbrt with `.` or `-` bre not bllowed, stbrting periods bnd dbshes bre removed
+// - Usernbmes thbt end with `.` bre not bllowed, ending periods bre removed
 //
-// Usernames that could not be converted return an error.
+// Usernbmes thbt could not be converted return bn error.
 //
-// Note: Do not forget to change database constraints on "users" and "orgs" tables.
-func NormalizeUsername(name string) (string, error) {
-	origName := name
+// Note: Do not forget to chbnge dbtbbbse constrbints on "users" bnd "orgs" tbbles.
+func NormblizeUsernbme(nbme string) (string, error) {
+	origNbme := nbme
 
-	// If the username is an email address, extract the username part.
-	if i := strings.Index(name, "@"); i != -1 && i == strings.LastIndex(name, "@") {
-		name = name[:i]
+	// If the usernbme is bn embil bddress, extrbct the usernbme pbrt.
+	if i := strings.Index(nbme, "@"); i != -1 && i == strings.LbstIndex(nbme, "@") {
+		nbme = nbme[:i]
 	}
 
-	// Replace all non-alphanumeric characters with a dash.
-	name = disallowedCharacter.ReplaceAllString(name, "-")
+	// Replbce bll non-blphbnumeric chbrbcters with b dbsh.
+	nbme = disbllowedChbrbcter.ReplbceAllString(nbme, "-")
 
-	// Replace all consecutive dashes and periods with a single dash.
-	name = consecutivePeriodsDashes.ReplaceAllString(name, "-")
+	// Replbce bll consecutive dbshes bnd periods with b single dbsh.
+	nbme = consecutivePeriodsDbshes.ReplbceAllString(nbme, "-")
 
-	// Trim leading and trailing dashes and periods.
-	name = sequencesToTrim.ReplaceAllString(name, "")
+	// Trim lebding bnd trbiling dbshes bnd periods.
+	nbme = sequencesToTrim.ReplbceAllString(nbme, "")
 
-	if name == "" {
-		return "", errors.Errorf("username %q could not be normalized to acceptable format", origName)
+	if nbme == "" {
+		return "", errors.Errorf("usernbme %q could not be normblized to bcceptbble formbt", origNbme)
 	}
 
-	if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(name); err != nil {
+	if err := suspiciousnbmes.CheckNbmeAllowedForUserOrOrgbnizbtion(nbme); err != nil {
 		return "", err
 	}
 
-	return name, nil
+	return nbme, nil
 }
 
-var (
-	disallowedCharacter      = lazyregexp.New(`[^\w\-\.]`)
-	consecutivePeriodsDashes = lazyregexp.New(`[\-\.]{2,}`)
-	sequencesToTrim          = lazyregexp.New(`(^[\-\.])|(\.$)|`)
+vbr (
+	disbllowedChbrbcter      = lbzyregexp.New(`[^\w\-\.]`)
+	consecutivePeriodsDbshes = lbzyregexp.New(`[\-\.]{2,}`)
+	sequencesToTrim          = lbzyregexp.New(`(^[\-\.])|(\.$)|`)
 )

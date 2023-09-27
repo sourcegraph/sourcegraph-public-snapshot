@@ -1,60 +1,60 @@
-package conftypes
+pbckbge conftypes
 
 import "time"
 
 type CompletionsConfig struct {
-	ChatModel          string
-	ChatModelMaxTokens int
+	ChbtModel          string
+	ChbtModelMbxTokens int
 
-	FastChatModel          string
-	FastChatModelMaxTokens int
+	FbstChbtModel          string
+	FbstChbtModelMbxTokens int
 
 	CompletionModel          string
-	CompletionModelMaxTokens int
+	CompletionModelMbxTokens int
 
 	AccessToken                      string
-	Provider                         CompletionsProviderName
+	Provider                         CompletionsProviderNbme
 	Endpoint                         string
-	PerUserDailyLimit                int
-	PerUserCodeCompletionsDailyLimit int
+	PerUserDbilyLimit                int
+	PerUserCodeCompletionsDbilyLimit int
 }
 
-type CompletionsProviderName string
+type CompletionsProviderNbme string
 
 const (
-	CompletionsProviderNameAnthropic   CompletionsProviderName = "anthropic"
-	CompletionsProviderNameOpenAI      CompletionsProviderName = "openai"
-	CompletionsProviderNameAzureOpenAI CompletionsProviderName = "azure-openai"
-	CompletionsProviderNameSourcegraph CompletionsProviderName = "sourcegraph"
-	CompletionsProviderNameFireworks   CompletionsProviderName = "fireworks"
-	CompletionsProviderNameAWSBedrock  CompletionsProviderName = "aws-bedrock"
+	CompletionsProviderNbmeAnthropic   CompletionsProviderNbme = "bnthropic"
+	CompletionsProviderNbmeOpenAI      CompletionsProviderNbme = "openbi"
+	CompletionsProviderNbmeAzureOpenAI CompletionsProviderNbme = "bzure-openbi"
+	CompletionsProviderNbmeSourcegrbph CompletionsProviderNbme = "sourcegrbph"
+	CompletionsProviderNbmeFireworks   CompletionsProviderNbme = "fireworks"
+	CompletionsProviderNbmeAWSBedrock  CompletionsProviderNbme = "bws-bedrock"
 )
 
 type EmbeddingsConfig struct {
-	Provider                   EmbeddingsProviderName
+	Provider                   EmbeddingsProviderNbme
 	AccessToken                string
 	Model                      string
 	Endpoint                   string
 	Dimensions                 int
-	Incremental                bool
-	MinimumInterval            time.Duration
+	Incrementbl                bool
+	MinimumIntervbl            time.Durbtion
 	FileFilters                EmbeddingsFileFilters
-	MaxCodeEmbeddingsPerRepo   int
-	MaxTextEmbeddingsPerRepo   int
-	PolicyRepositoryMatchLimit *int
+	MbxCodeEmbeddingsPerRepo   int
+	MbxTextEmbeddingsPerRepo   int
+	PolicyRepositoryMbtchLimit *int
 	ExcludeChunkOnError        bool
 }
 
-type EmbeddingsProviderName string
+type EmbeddingsProviderNbme string
 
 const (
-	EmbeddingsProviderNameOpenAI      EmbeddingsProviderName = "openai"
-	EmbeddingsProviderNameAzureOpenAI EmbeddingsProviderName = "azure-openai"
-	EmbeddingsProviderNameSourcegraph EmbeddingsProviderName = "sourcegraph"
+	EmbeddingsProviderNbmeOpenAI      EmbeddingsProviderNbme = "openbi"
+	EmbeddingsProviderNbmeAzureOpenAI EmbeddingsProviderNbme = "bzure-openbi"
+	EmbeddingsProviderNbmeSourcegrbph EmbeddingsProviderNbme = "sourcegrbph"
 )
 
 type EmbeddingsFileFilters struct {
-	IncludedFilePathPatterns []string
-	ExcludedFilePathPatterns []string
-	MaxFileSizeBytes         int
+	IncludedFilePbthPbtterns []string
+	ExcludedFilePbthPbtterns []string
+	MbxFileSizeBytes         int
 }

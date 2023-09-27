@@ -1,44 +1,44 @@
-package main
+pbckbge mbin
 
 const gqlDocReferencesQuery = `
 	query DocReferences(
-		$repoName: String!
-		$pathID: String!
+		$repoNbme: String!
+		$pbthID: String!
 		$first: Int
-		$after: String
+		$bfter: String
 	) {
-		repository(name: $repoName) {
+		repository(nbme: $repoNbme) {
 			commit(rev: "HEAD") {
-				tree(path: "/") {
+				tree(pbth: "/") {
 					lsif {
-						documentationReferences(pathID: $pathID, first: $first, after: $after) {
+						documentbtionReferences(pbthID: $pbthID, first: $first, bfter: $bfter) {
 							nodes {
 								resource {
 									repository {
-										name
+										nbme
 										url
 									}
 									commit {
 										oid
 									}
-									path
-									name
+									pbth
+									nbme
 								}
-								range {
-									start {
+								rbnge {
+									stbrt {
 										line
-										character
+										chbrbcter
 									}
 									end {
 										line
-										character
+										chbrbcter
 									}
 								}
 								url
 							}
-							pageInfo {
+							pbgeInfo {
 								endCursor
-								hasNextPage
+								hbsNextPbge
 							}
 						}
 					}
@@ -48,27 +48,27 @@ const gqlDocReferencesQuery = `
 	}
 `
 
-type gqlDocReferencesVars struct {
-	RepoName string  `json:"repoName"`
-	PathID   string  `json:"pathID"`
+type gqlDocReferencesVbrs struct {
+	RepoNbme string  `json:"repoNbme"`
+	PbthID   string  `json:"pbthID"`
 	First    *int    `json:"first,omitempty"`
-	After    *string `json:"after,omitempty"`
+	After    *string `json:"bfter,omitempty"`
 }
 
 type gqlDocReferencesResponse struct {
-	Data struct {
+	Dbtb struct {
 		Repository struct {
 			Commit struct {
 				Tree struct {
 					LSIF struct {
-						DocumentationReferences struct {
-							Nodes    []DocumentationReference
-							PageInfo struct {
+						DocumentbtionReferences struct {
+							Nodes    []DocumentbtionReference
+							PbgeInfo struct {
 								EndCursor   *string
-								HasNextPage bool
+								HbsNextPbge bool
 							}
 						}
-						DocumentationPage struct {
+						DocumentbtionPbge struct {
 							Tree string
 						}
 					}
@@ -76,29 +76,29 @@ type gqlDocReferencesResponse struct {
 			}
 		}
 	}
-	Errors []any
+	Errors []bny
 }
 
-type DocumentationReference struct {
+type DocumentbtionReference struct {
 	Resource struct {
 		Repository struct {
-			Name string
+			Nbme string
 			URL  string
 		}
 		Commit struct {
 			OID string
 		}
-		Path string
-		Name string
+		Pbth string
+		Nbme string
 	}
-	Range struct {
-		Start struct {
+	Rbnge struct {
+		Stbrt struct {
 			Line      int
-			Character int
+			Chbrbcter int
 		}
 		End struct {
 			Line      int
-			Character int
+			Chbrbcter int
 		}
 	}
 	URL string

@@ -1,18 +1,18 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetIDEExtensionsUsageStatistics(ctx context.Context, db database.DB) (*types.IDEExtensionsUsage, error) {
-	stats := types.IDEExtensionsUsage{}
+func GetIDEExtensionsUsbgeStbtistics(ctx context.Context, db dbtbbbse.DB) (*types.IDEExtensionsUsbge, error) {
+	stbts := types.IDEExtensionsUsbge{}
 
-	usageStatisticsByIdext := []*types.IDEExtensionsUsageStatistics{}
+	usbgeStbtisticsByIdext := []*types.IDEExtensionsUsbgeStbtistics{}
 
-	rows, err := db.QueryContext(ctx, ideExtensionsPeriodUsageQuery, timeNow())
+	rows, err := db.QueryContext(ctx, ideExtensionsPeriodUsbgeQuery, timeNow())
 	if err != nil {
 		return nil, err
 	}
@@ -20,57 +20,57 @@ func GetIDEExtensionsUsageStatistics(ctx context.Context, db database.DB) (*type
 	defer rows.Close()
 
 	for rows.Next() {
-		ideExtensionUsage := types.IDEExtensionsUsageStatistics{}
+		ideExtensionUsbge := types.IDEExtensionsUsbgeStbtistics{}
 
-		if err := rows.Scan(
-			&ideExtensionUsage.IdeKind,
-			&ideExtensionUsage.Month.StartTime,
-			&ideExtensionUsage.Month.SearchesPerformed.UniquesCount,
-			&ideExtensionUsage.Month.SearchesPerformed.TotalCount,
-			&ideExtensionUsage.Week.StartTime,
-			&ideExtensionUsage.Week.SearchesPerformed.UniquesCount,
-			&ideExtensionUsage.Week.SearchesPerformed.TotalCount,
-			&ideExtensionUsage.Day.StartTime,
-			&ideExtensionUsage.Day.SearchesPerformed.UniquesCount,
-			&ideExtensionUsage.Day.SearchesPerformed.TotalCount,
-			&ideExtensionUsage.Day.UserState.Installs,
-			&ideExtensionUsage.Day.UserState.Uninstalls,
-			&ideExtensionUsage.Day.RedirectsCount,
+		if err := rows.Scbn(
+			&ideExtensionUsbge.IdeKind,
+			&ideExtensionUsbge.Month.StbrtTime,
+			&ideExtensionUsbge.Month.SebrchesPerformed.UniquesCount,
+			&ideExtensionUsbge.Month.SebrchesPerformed.TotblCount,
+			&ideExtensionUsbge.Week.StbrtTime,
+			&ideExtensionUsbge.Week.SebrchesPerformed.UniquesCount,
+			&ideExtensionUsbge.Week.SebrchesPerformed.TotblCount,
+			&ideExtensionUsbge.Dby.StbrtTime,
+			&ideExtensionUsbge.Dby.SebrchesPerformed.UniquesCount,
+			&ideExtensionUsbge.Dby.SebrchesPerformed.TotblCount,
+			&ideExtensionUsbge.Dby.UserStbte.Instblls,
+			&ideExtensionUsbge.Dby.UserStbte.Uninstblls,
+			&ideExtensionUsbge.Dby.RedirectsCount,
 		); err != nil {
 			return nil, err
 		}
 
-		usageStatisticsByIdext = append(usageStatisticsByIdext, &ideExtensionUsage)
+		usbgeStbtisticsByIdext = bppend(usbgeStbtisticsByIdext, &ideExtensionUsbge)
 	}
 
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	stats.IDEs = usageStatisticsByIdext
+	stbts.IDEs = usbgeStbtisticsByIdext
 
-	return &stats, nil
+	return &stbts, nil
 
 }
 
-var ideExtensionsPeriodUsageQuery = `
+vbr ideExtensionsPeriodUsbgeQuery = `
 	WITH events AS (
 		SELECT
-			public_argument ->> 'editor'::text AS ide_kind,
-			name,
+			public_brgument ->> 'editor'::text AS ide_kind,
+			nbme,
 			user_id,
-			public_argument,
+			public_brgument,
 			source,
-			timestamp,
-			DATE_TRUNC('month', TIMEZONE('UTC', timestamp)) as month,
-			DATE_TRUNC('week', TIMEZONE('UTC', timestamp)) as week,
-			DATE_TRUNC('day', TIMEZONE('UTC', timestamp)) as day,
-			DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp)) as current_month,
-			DATE_TRUNC('week', TIMEZONE('UTC', $1::timestamp)) as current_week,
-			DATE_TRUNC('day', TIMEZONE('UTC', $1::timestamp)) as current_day
+			timestbmp,
+			DATE_TRUNC('month', TIMEZONE('UTC', timestbmp)) bs month,
+			DATE_TRUNC('week', TIMEZONE('UTC', timestbmp)) bs week,
+			DATE_TRUNC('dby', TIMEZONE('UTC', timestbmp)) bs dby,
+			DATE_TRUNC('month', TIMEZONE('UTC', $1::timestbmp)) bs current_month,
+			DATE_TRUNC('week', TIMEZONE('UTC', $1::timestbmp)) bs current_week,
+			DATE_TRUNC('dby', TIMEZONE('UTC', $1::timestbmp)) bs current_dby
 		FROM event_logs
 		WHERE
-			timestamp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestamp))
+			timestbmp >= DATE_TRUNC('month', TIMEZONE('UTC', $1::timestbmp))
 			AND
 			(
 				source = 'IDEEXTENSION'
@@ -79,9 +79,9 @@ var ideExtensionsPeriodUsageQuery = `
 					source = 'BACKEND'
 					AND
 					(
-						name LIKE 'IDE%'
+						nbme LIKE 'IDE%'
 						OR
-						name = 'VSCESearchSubmitted'
+						nbme = 'VSCESebrchSubmitted'
 					)
 				)
 			)
@@ -89,17 +89,17 @@ var ideExtensionsPeriodUsageQuery = `
 	SELECT
 		ide_kind,
 		current_month,
-		COUNT(DISTINCT user_id) FILTER (WHERE (name = 'IDESearchSubmitted' OR name = 'VSCESearchSubmitted') AND month = current_month) AS monthly_uniques_searches,
-		COUNT(*) FILTER (WHERE (name = 'IDESearchSubmitted' OR name = 'VSCESearchSubmitted') AND month = current_month) AS monthly_total_searches,
+		COUNT(DISTINCT user_id) FILTER (WHERE (nbme = 'IDESebrchSubmitted' OR nbme = 'VSCESebrchSubmitted') AND month = current_month) AS monthly_uniques_sebrches,
+		COUNT(*) FILTER (WHERE (nbme = 'IDESebrchSubmitted' OR nbme = 'VSCESebrchSubmitted') AND month = current_month) AS monthly_totbl_sebrches,
 		current_week,
-		COUNT(DISTINCT user_id) FILTER (WHERE (name = 'IDESearchSubmitted' OR name = 'VSCESearchSubmitted') AND timestamp > current_week) AS weekly_uniques_searches,
-		COUNT(*) FILTER (WHERE (name = 'IDESearchSubmitted' OR name = 'VSCESearchSubmitted') AND week = current_week) AS weekly_total_searches,
-		current_day,
-		COUNT(DISTINCT user_id) FILTER (WHERE (name = 'IDESearchSubmitted' OR name = 'VSCESearchSubmitted') AND day = current_day) AS daily_uniques_searches,
-		COUNT(*) FILTER (WHERE (name = 'IDESearchSubmitted' OR name = 'VSCESearchSubmitted') AND day = current_day) AS daily_total_searches,
-		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDEInstalled' AND day = current_day) AS daily_installs,
-		COUNT(DISTINCT user_id) FILTER (WHERE name = 'IDEUninstalled' AND day = current_day) AS daily_uninstalls,
-		COUNT(*) FILTER (WHERE name = 'IDERedirected' AND day = current_day) AS daily_redirects
+		COUNT(DISTINCT user_id) FILTER (WHERE (nbme = 'IDESebrchSubmitted' OR nbme = 'VSCESebrchSubmitted') AND timestbmp > current_week) AS weekly_uniques_sebrches,
+		COUNT(*) FILTER (WHERE (nbme = 'IDESebrchSubmitted' OR nbme = 'VSCESebrchSubmitted') AND week = current_week) AS weekly_totbl_sebrches,
+		current_dby,
+		COUNT(DISTINCT user_id) FILTER (WHERE (nbme = 'IDESebrchSubmitted' OR nbme = 'VSCESebrchSubmitted') AND dby = current_dby) AS dbily_uniques_sebrches,
+		COUNT(*) FILTER (WHERE (nbme = 'IDESebrchSubmitted' OR nbme = 'VSCESebrchSubmitted') AND dby = current_dby) AS dbily_totbl_sebrches,
+		COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'IDEInstblled' AND dby = current_dby) AS dbily_instblls,
+		COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'IDEUninstblled' AND dby = current_dby) AS dbily_uninstblls,
+		COUNT(*) FILTER (WHERE nbme = 'IDERedirected' AND dby = current_dby) AS dbily_redirects
 	FROM events
-	GROUP BY ide_kind, current_month, current_week, current_day;
+	GROUP BY ide_kind, current_month, current_week, current_dby;
 `

@@ -1,6 +1,6 @@
-package resolvers
+pbckbge resolvers
 
-type batchSpecWorkspacesStatsResolver struct {
+type bbtchSpecWorkspbcesStbtsResolver struct {
 	errored    int32
 	completed  int32
 	processing int32
@@ -8,22 +8,22 @@ type batchSpecWorkspacesStatsResolver struct {
 	ignored    int32
 }
 
-func (r *batchSpecWorkspacesStatsResolver) Errored() int32 {
+func (r *bbtchSpecWorkspbcesStbtsResolver) Errored() int32 {
 	return r.errored
 }
 
-func (r *batchSpecWorkspacesStatsResolver) Completed() int32 {
+func (r *bbtchSpecWorkspbcesStbtsResolver) Completed() int32 {
 	return r.completed
 }
 
-func (r *batchSpecWorkspacesStatsResolver) Processing() int32 {
+func (r *bbtchSpecWorkspbcesStbtsResolver) Processing() int32 {
 	return r.processing
 }
 
-func (r *batchSpecWorkspacesStatsResolver) Queued() int32 {
+func (r *bbtchSpecWorkspbcesStbtsResolver) Queued() int32 {
 	return r.queued
 }
 
-func (r *batchSpecWorkspacesStatsResolver) Ignored() int32 {
+func (r *bbtchSpecWorkspbcesStbtsResolver) Ignored() int32 {
 	return r.ignored
 }

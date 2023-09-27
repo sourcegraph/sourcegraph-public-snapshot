@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -9,76 +9,76 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
 
 	"github.com/google/uuid"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	sgerrors "github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	sgerrors "github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestListWebhooks(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	// There is only a user with ID = 1. User with ID = 2 doesn't exist.
-	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+	// There is only b user with ID = 1. User with ID = 2 doesn't exist.
+	users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
 		if id == 1 {
-			return &types.User{Username: "alice"}, nil
+			return &types.User{Usernbme: "blice"}, nil
 		}
-		return nil, database.NewUserNotFoundError(id)
+		return nil, dbtbbbse.NewUserNotFoundError(id)
 	})
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 	webhookStore := dbmocks.NewMockWebhookStore()
 	webhooks := []*types.Webhook{
 		{
 			ID:              1,
 			CodeHostKind:    extsvc.KindGitHub,
-			CreatedByUserID: 1,
+			CrebtedByUserID: 1,
 		},
 		{
 			ID:              2,
-			CodeHostKind:    extsvc.KindGitLab,
-			CreatedByUserID: 1,
+			CodeHostKind:    extsvc.KindGitLbb,
+			CrebtedByUserID: 1,
 		},
 		{
 			ID:              3,
 			CodeHostKind:    extsvc.KindGitHub,
-			CreatedByUserID: 1,
-			UpdatedByUserID: 1,
+			CrebtedByUserID: 1,
+			UpdbtedByUserID: 1,
 		},
 		{
 			ID:              4,
 			CodeHostKind:    extsvc.KindGitHub,
-			CreatedByUserID: 1,
-			UpdatedByUserID: 2,
+			CrebtedByUserID: 1,
+			UpdbtedByUserID: 2,
 		},
 	}
-	webhookStore.ListFunc.SetDefaultHook(func(ctx2 context.Context, options database.WebhookListOptions) ([]*types.Webhook, error) {
+	webhookStore.ListFunc.SetDefbultHook(func(ctx2 context.Context, options dbtbbbse.WebhookListOptions) ([]*types.Webhook, error) {
 		if options.Kind == extsvc.KindGitHub {
-			return append([]*types.Webhook{webhooks[0]}, webhooks[2:4]...), nil
+			return bppend([]*types.Webhook{webhooks[0]}, webhooks[2:4]...), nil
 		}
-		if options.Cursor != nil && options.Cursor.Value != "" {
-			cursorVal, err := strconv.Atoi(options.Cursor.Value)
-			assert.NoError(t, err)
-			return webhooks[cursorVal-1:], nil
+		if options.Cursor != nil && options.Cursor.Vblue != "" {
+			cursorVbl, err := strconv.Atoi(options.Cursor.Vblue)
+			bssert.NoError(t, err)
+			return webhooks[cursorVbl-1:], nil
 		}
 		if options.LimitOffset != nil {
 			return webhooks[options.Offset:options.Limit], nil
 		}
 		return webhooks, nil
 	})
-	webhookStore.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.WebhookListOptions) (int, error) {
+	webhookStore.CountFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.WebhookListOptions) (int, error) {
 		whs, err := webhookStore.List(ctx, opts)
 		return len(whs), err
 	})
@@ -88,66 +88,66 @@ func TestListWebhooks(t *testing.T) {
 		{
 			ID:         1,
 			WebhookID:  &webhooks[0].ID,
-			StatusCode: 404,
+			StbtusCode: 404,
 		},
 		{
 			ID:         2,
 			WebhookID:  &webhooks[0].ID,
-			StatusCode: 200,
+			StbtusCode: 200,
 		},
 		{
 			ID:         3,
 			WebhookID:  &webhooks[1].ID,
-			StatusCode: 404,
+			StbtusCode: 404,
 		},
 	}
-	webhookLogsStore.ListFunc.SetDefaultHook(func(ctx2 context.Context, opts database.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
+	webhookLogsStore.ListFunc.SetDefbultHook(func(ctx2 context.Context, opts dbtbbbse.WebhookLogListOpts) ([]*types.WebhookLog, int64, error) {
 		if opts.WebhookID == nil {
 			return webhookLogs, 0, nil
 		}
 		filteredWebhooks := []*types.WebhookLog{}
-		for _, webhookLog := range webhookLogs {
+		for _, webhookLog := rbnge webhookLogs {
 			if *webhookLog.WebhookID == *opts.WebhookID {
 				if opts.OnlyErrors {
-					if webhookLog.StatusCode >= 400 {
-						filteredWebhooks = append(filteredWebhooks, webhookLog)
+					if webhookLog.StbtusCode >= 400 {
+						filteredWebhooks = bppend(filteredWebhooks, webhookLog)
 					}
 				} else {
-					filteredWebhooks = append(filteredWebhooks, webhookLog)
+					filteredWebhooks = bppend(filteredWebhooks, webhookLog)
 				}
 			}
 		}
 		return filteredWebhooks, 0, nil
 	})
-	webhookLogsStore.CountFunc.SetDefaultHook(func(ctx2 context.Context, opts database.WebhookLogListOpts) (int64, error) {
+	webhookLogsStore.CountFunc.SetDefbultHook(func(ctx2 context.Context, opts dbtbbbse.WebhookLogListOpts) (int64, error) {
 		whs, _, err := webhookLogsStore.List(ctx2, opts)
 		return int64(len(whs)), err
 	})
 
 	db := dbmocks.NewMockDB()
-	db.WebhooksFunc.SetDefaultReturn(webhookStore)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.WebhookLogsFunc.SetDefaultReturn(webhookLogsStore)
-	gqlSchema := createGqlSchema(t, db)
-	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
+	db.WebhooksFunc.SetDefbultReturn(webhookStore)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.WebhookLogsFunc.SetDefbultReturn(webhookLogsStore)
+	gqlSchemb := crebteGqlSchemb(t, db)
+	grbphqlbbckend.RunTests(t, []*grbphqlbbckend.Test{
 		{
-			Label:   "basic",
+			Lbbel:   "bbsic",
 			Context: ctx,
-			Schema:  gqlSchema,
+			Schemb:  gqlSchemb,
 			Query: `
 				{
 					webhooks {
 						nodes {
 							id
-							updatedBy {
-								username
+							updbtedBy {
+								usernbme
 							}
-							createdBy {
-								username
+							crebtedBy {
+								usernbme
 							}
 						}
-						totalCount
-						pageInfo { hasNextPage }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -155,228 +155,228 @@ func TestListWebhooks(t *testing.T) {
 				{
 					"nodes":[
 						{
-							"id":"V2ViaG9vazox",
-							"createdBy": {
-								"username": "alice"
+							"id":"V2VibG9vbzox",
+							"crebtedBy": {
+								"usernbme": "blice"
 							},
-							"updatedBy": null
+							"updbtedBy": null
 						},
 						{
-							"id":"V2ViaG9vazoy",
-							"createdBy": {
-								"username": "alice"
+							"id":"V2VibG9vbzoy",
+							"crebtedBy": {
+								"usernbme": "blice"
 							},
-							"updatedBy": null
+							"updbtedBy": null
 						},
 						{
-							"id":"V2ViaG9vazoz",
-							"createdBy": {
-								"username": "alice"
+							"id":"V2VibG9vbzoz",
+							"crebtedBy": {
+								"usernbme": "blice"
 							},
-							"updatedBy": {
-								"username": "alice"
+							"updbtedBy": {
+								"usernbme": "blice"
 							}
 						},
 						{
-							"id":"V2ViaG9vazo0",
-							"createdBy": {
-								"username": "alice"
+							"id":"V2VibG9vbzo0",
+							"crebtedBy": {
+								"usernbme": "blice"
 							},
-							"updatedBy": null
+							"updbtedBy": null
 						}
 					],
-					"totalCount":4,
-					"pageInfo":{"hasNextPage":false}
+					"totblCount":4,
+					"pbgeInfo":{"hbsNextPbge":fblse}
 				}}`,
 		},
 		{
-			Label:   "specify first",
+			Lbbel:   "specify first",
 			Context: ctx,
-			Schema:  gqlSchema,
+			Schemb:  gqlSchemb,
 			Query: `query Webhooks($first: Int!) {
 						webhooks(first: $first) {
 							nodes { id }
-							totalCount
-							pageInfo { hasNextPage endCursor }
+							totblCount
+							pbgeInfo { hbsNextPbge endCursor }
 						}
 					}
 			`,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"first": 2,
 			},
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{"id":"V2ViaG9vazox"},
-						{"id":"V2ViaG9vazoy"}
+						{"id":"V2VibG9vbzox"},
+						{"id":"V2VibG9vbzoy"}
 					],
-					"totalCount":2,
-					"pageInfo":{"hasNextPage":true, "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9"}
+					"totblCount":2,
+					"pbgeInfo":{"hbsNextPbge":true, "endCursor": "V2VibG9vb0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0bW9uIjoibmV4dCJ9"}
 				}}`,
 		},
 		{
-			Label:   "specify kind",
+			Lbbel:   "specify kind",
 			Context: ctx,
-			Schema:  gqlSchema,
-			Query: `query Webhooks($kind: ExternalServiceKind) {
+			Schemb:  gqlSchemb,
+			Query: `query Webhooks($kind: ExternblServiceKind) {
 						webhooks(kind: $kind) {
 							nodes { id }
-							totalCount
-							pageInfo { hasNextPage }
+							totblCount
+							pbgeInfo { hbsNextPbge }
 						}
 					}
 			`,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"kind": extsvc.KindGitHub,
 			},
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{"id":"V2ViaG9vazox"},
-						{"id":"V2ViaG9vazoz"},
-						{"id":"V2ViaG9vazo0"}
+						{"id":"V2VibG9vbzox"},
+						{"id":"V2VibG9vbzoz"},
+						{"id":"V2VibG9vbzo0"}
 					],
-					"totalCount":3,
-					"pageInfo":{"hasNextPage":false}
+					"totblCount":3,
+					"pbgeInfo":{"hbsNextPbge":fblse}
 				}}`,
 		},
 		{
-			Label:   "specify cursor",
+			Lbbel:   "specify cursor",
 			Context: ctx,
-			Schema:  gqlSchema,
-			Query: `query Webhooks($first: Int!, $after: String!) {
-						webhooks(first: $first, after: $after) {
+			Schemb:  gqlSchemb,
+			Query: `query Webhooks($first: Int!, $bfter: String!) {
+						webhooks(first: $first, bfter: $bfter) {
 							nodes { id }
-							totalCount
-							pageInfo { hasNextPage }
+							totblCount
+							pbgeInfo { hbsNextPbge }
 						}
 					}
 			`,
-			Variables: map[string]any{
+			Vbribbles: mbp[string]bny{
 				"first": 2,
-				"after": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0aW9uIjoibmV4dCJ9",
+				"bfter": "V2VibG9vb0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIzIiwiRGlyZWN0bW9uIjoibmV4dCJ9",
 			},
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{"id":"V2ViaG9vazoz"},
-						{"id":"V2ViaG9vazo0"}
+						{"id":"V2VibG9vbzoz"},
+						{"id":"V2VibG9vbzo0"}
 					],
-					"totalCount":2,
-					"pageInfo":{"hasNextPage":false}
+					"totblCount":2,
+					"pbgeInfo":{"hbsNextPbge":fblse}
 				}}`,
 		},
 		{
-			Label:   "with logs",
+			Lbbel:   "with logs",
 			Context: ctx,
-			Schema:  gqlSchema,
+			Schemb:  gqlSchemb,
 			Query: `
 				{
 					webhooks {
 						nodes {
 							id
 							webhookLogs {
-								totalCount
+								totblCount
  							}
 						}
-						totalCount
-						pageInfo { hasNextPage }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{ "id":"V2ViaG9vazox", "webhookLogs": { "totalCount": 2 } },
-						{ "id":"V2ViaG9vazoy", "webhookLogs": { "totalCount": 1 } },
-						{ "id":"V2ViaG9vazoz", "webhookLogs": { "totalCount": 0 } },
-						{ "id":"V2ViaG9vazo0", "webhookLogs": { "totalCount": 0 } }
+						{ "id":"V2VibG9vbzox", "webhookLogs": { "totblCount": 2 } },
+						{ "id":"V2VibG9vbzoy", "webhookLogs": { "totblCount": 1 } },
+						{ "id":"V2VibG9vbzoz", "webhookLogs": { "totblCount": 0 } },
+						{ "id":"V2VibG9vbzo0", "webhookLogs": { "totblCount": 0 } }
 					],
-					"totalCount":4,
-					"pageInfo":{"hasNextPage":false}
+					"totblCount":4,
+					"pbgeInfo":{"hbsNextPbge":fblse}
 				}}`,
 		},
 		{
-			Label:   "with logs only errors",
+			Lbbel:   "with logs only errors",
 			Context: ctx,
-			Schema:  gqlSchema,
+			Schemb:  gqlSchemb,
 			Query: `
 				{
 					webhooks {
 						nodes {
 							id
 							webhookLogs(onlyErrors: true) {
-								totalCount
+								totblCount
 							}
 						}
-						totalCount
-						pageInfo { hasNextPage }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
 			ExpectedResult: `{"webhooks":
 				{
 					"nodes":[
-						{ "id":"V2ViaG9vazox", "webhookLogs": { "totalCount": 1 } },
-						{ "id":"V2ViaG9vazoy", "webhookLogs": { "totalCount": 1 } },
-						{ "id":"V2ViaG9vazoz", "webhookLogs": { "totalCount": 0 } },
-						{ "id":"V2ViaG9vazo0", "webhookLogs": { "totalCount": 0 } }
+						{ "id":"V2VibG9vbzox", "webhookLogs": { "totblCount": 1 } },
+						{ "id":"V2VibG9vbzoy", "webhookLogs": { "totblCount": 1 } },
+						{ "id":"V2VibG9vbzoz", "webhookLogs": { "totblCount": 0 } },
+						{ "id":"V2VibG9vbzo0", "webhookLogs": { "totblCount": 0 } }
 					],
-					"totalCount":4,
-					"pageInfo":{"hasNextPage":false}
+					"totblCount":4,
+					"pbgeInfo":{"hbsNextPbge":fblse}
 				}}`,
 		},
 	})
 }
 
-func TestWebhooks_CursorPagination(t *testing.T) {
-	gitlabURN, err := extsvc.NewCodeHostBaseURL("gitlab.com")
+func TestWebhooks_CursorPbginbtion(t *testing.T) {
+	gitlbbURN, err := extsvc.NewCodeHostBbseURL("gitlbb.com")
 	require.NoError(t, err)
-	githubURN, err := extsvc.NewCodeHostBaseURL("github.com")
+	githubURN, err := extsvc.NewCodeHostBbseURL("github.com")
 	require.NoError(t, err)
-	bbURN, err := extsvc.NewCodeHostBaseURL("bb.com")
+	bbURN, err := extsvc.NewCodeHostBbseURL("bb.com")
 	require.NoError(t, err)
 
 	mockWebhooks := []*types.Webhook{
-		{ID: 0, CodeHostURN: gitlabURN},
+		{ID: 0, CodeHostURN: gitlbbURN},
 		{ID: 1, CodeHostURN: githubURN},
 		{ID: 2, CodeHostURN: bbURN},
 	}
 
 	store := dbmocks.NewMockWebhookStore()
 	db := dbmocks.NewMockDB()
-	db.WebhooksFunc.SetDefaultReturn(store)
+	db.WebhooksFunc.SetDefbultReturn(store)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	db.UsersFunc.SetDefaultReturn(users)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+	db.UsersFunc.SetDefbultReturn(users)
 
-	buildQuery := func(first int, after string) string {
-		var args []string
+	buildQuery := func(first int, bfter string) string {
+		vbr brgs []string
 		if first != 0 {
-			args = append(args, fmt.Sprintf("first: %d", first))
+			brgs = bppend(brgs, fmt.Sprintf("first: %d", first))
 		}
-		if after != "" {
-			args = append(args, fmt.Sprintf("after: %q", after))
+		if bfter != "" {
+			brgs = bppend(brgs, fmt.Sprintf("bfter: %q", bfter))
 		}
 
-		return fmt.Sprintf(`{ webhooks(%s) { nodes { id } pageInfo { endCursor } } }`, strings.Join(args, ", "))
+		return fmt.Sprintf(`{ webhooks(%s) { nodes { id } pbgeInfo { endCursor } } }`, strings.Join(brgs, ", "))
 	}
 
-	t.Run("Initial page without a cursor present", func(t *testing.T) {
-		store.ListFunc.SetDefaultReturn(mockWebhooks[0:2], nil)
-		graphqlbackend.RunTests(t, []*graphqlbackend.Test{
+	t.Run("Initibl pbge without b cursor present", func(t *testing.T) {
+		store.ListFunc.SetDefbultReturn(mockWebhooks[0:2], nil)
+		grbphqlbbckend.RunTests(t, []*grbphqlbbckend.Test{
 			{
-				Schema: createGqlSchema(t, db),
+				Schemb: crebteGqlSchemb(t, db),
 				Query:  buildQuery(1, ""),
 				ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [{
-							"id": "V2ViaG9vazow"
+							"id": "V2VibG9vbzow"
 						}],
-						"pageInfo": {
-						  "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						"pbgeInfo": {
+						  "endCursor": "V2VibG9vb0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0bW9uIjoibmV4dCJ9"
 						}
 					}
 				}
@@ -385,20 +385,20 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("Second page", func(t *testing.T) {
-		store.ListFunc.SetDefaultReturn(mockWebhooks[1:], nil)
+	t.Run("Second pbge", func(t *testing.T) {
+		store.ListFunc.SetDefbultReturn(mockWebhooks[1:], nil)
 
-		graphqlbackend.RunTest(t, &graphqlbackend.Test{
-			Schema: createGqlSchema(t, db),
-			Query:  buildQuery(1, "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0aW9uIjoibmV4dCJ9"),
+		grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+			Schemb: crebteGqlSchemb(t, db),
+			Query:  buildQuery(1, "V2VibG9vb0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIxIiwiRGlyZWN0bW9uIjoibmV4dCJ9"),
 			ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [{
-							"id": "V2ViaG9vazox"
+							"id": "V2VibG9vbzox"
 						}],
-						"pageInfo": {
-						  "endCursor": "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIyIiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+						"pbgeInfo": {
+						  "endCursor": "V2VibG9vb0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiIyIiwiRGlyZWN0bW9uIjoibmV4dCJ9"
 						}
 					}
 				}
@@ -406,23 +406,23 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
-		store.ListFunc.SetDefaultReturn(mockWebhooks, nil)
+	t.Run("Initibl pbge with no further rows to fetch", func(t *testing.T) {
+		store.ListFunc.SetDefbultReturn(mockWebhooks, nil)
 
-		graphqlbackend.RunTest(t, &graphqlbackend.Test{
-			Schema: createGqlSchema(t, db),
+		grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+			Schemb: crebteGqlSchemb(t, db),
 			Query:  buildQuery(3, ""),
 			ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [{
-							"id": "V2ViaG9vazow"
+							"id": "V2VibG9vbzow"
 						}, {
-							"id": "V2ViaG9vazox"
+							"id": "V2VibG9vbzox"
 						}, {
-							"id": "V2ViaG9vazoy"
+							"id": "V2VibG9vbzoy"
 						}],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": null
 						}
 					}
@@ -432,16 +432,16 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With no webhooks present", func(t *testing.T) {
-		store.ListFunc.SetDefaultReturn(nil, nil)
+		store.ListFunc.SetDefbultReturn(nil, nil)
 
-		graphqlbackend.RunTest(t, &graphqlbackend.Test{
-			Schema: createGqlSchema(t, db),
+		grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+			Schemb: crebteGqlSchemb(t, db),
 			Query:  buildQuery(1, ""),
 			ExpectedResult: `
 				{
 					"webhooks": {
 						"nodes": [],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": null
 						}
 					}
@@ -450,102 +450,102 @@ func TestWebhooks_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("With an invalid cursor provided", func(t *testing.T) {
-		store.ListFunc.SetDefaultReturn(nil, nil)
+	t.Run("With bn invblid cursor provided", func(t *testing.T) {
+		store.ListFunc.SetDefbultReturn(nil, nil)
 
-		graphqlbackend.RunTest(t, &graphqlbackend.Test{
-			Schema:         createGqlSchema(t, db),
-			Query:          buildQuery(1, "invalid-cursor-value"),
+		grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+			Schemb:         crebteGqlSchemb(t, db),
+			Query:          buildQuery(1, "invblid-cursor-vblue"),
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Path:          []any{"webhooks"},
-					Message:       `cannot unmarshal webhook cursor type: ""`,
-					ResolverError: errors.Errorf(`cannot unmarshal webhook cursor type: ""`),
+					Pbth:          []bny{"webhooks"},
+					Messbge:       `cbnnot unmbrshbl webhook cursor type: ""`,
+					ResolverError: errors.Errorf(`cbnnot unmbrshbl webhook cursor type: ""`),
 				},
 			},
 		})
 	})
 }
 
-func TestCreateWebhook(t *testing.T) {
+func TestCrebteWebhook(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 	webhookStore := dbmocks.NewMockWebhookStore()
 	whUUID, err := uuid.NewUUID()
-	assert.NoError(t, err)
+	bssert.NoError(t, err)
 	expectedWebhook := types.Webhook{
-		ID: 1, UUID: whUUID, Name: "webhookName",
+		ID: 1, UUID: whUUID, Nbme: "webhookNbme",
 	}
-	webhookStore.CreateFunc.SetDefaultReturn(&expectedWebhook, nil)
+	webhookStore.CrebteFunc.SetDefbultReturn(&expectedWebhook, nil)
 
 	db := dbmocks.NewMockDB()
-	db.WebhooksFunc.SetDefaultReturn(webhookStore)
-	db.UsersFunc.SetDefaultReturn(users)
-	queryStr := `mutation CreateWebhook($name: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
-				createWebhook(name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
-					name
+	db.WebhooksFunc.SetDefbultReturn(webhookStore)
+	db.UsersFunc.SetDefbultReturn(users)
+	queryStr := `mutbtion CrebteWebhook($nbme: String!, $codeHostKind: String!, $codeHostURN: String!, $secret: String) {
+				crebteWebhook(nbme: $nbme, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+					nbme
 					id
 					uuid
 				}
 			}`
-	gqlSchema := createGqlSchema(t, db)
+	gqlSchemb := crebteGqlSchemb(t, db)
 
-	graphqlbackend.RunTests(t, []*graphqlbackend.Test{
+	grbphqlbbckend.RunTests(t, []*grbphqlbbckend.Test{
 		{
-			Label:   "basic",
+			Lbbel:   "bbsic",
 			Context: ctx,
-			Schema:  gqlSchema,
+			Schemb:  gqlSchemb,
 			Query:   queryStr,
 			ExpectedResult: fmt.Sprintf(`
 				{
-					"createWebhook": {
-						"name": "webhookName",
-						"id": "V2ViaG9vazox",
+					"crebteWebhook": {
+						"nbme": "webhookNbme",
+						"id": "V2VibG9vbzox",
 						"uuid": "%s"
 					}
 				}
 			`, whUUID),
-			Variables: map[string]any{
-				"name":         "webhookName",
+			Vbribbles: mbp[string]bny{
+				"nbme":         "webhookNbme",
 				"codeHostKind": "GITHUB",
 				"codeHostURN":  "https://github.com",
 			},
 		},
 		{
-			Label:          "invalid code host",
+			Lbbel:          "invblid code host",
 			Context:        ctx,
-			Schema:         gqlSchema,
+			Schemb:         gqlSchemb,
 			Query:          queryStr,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "webhooks are not supported for code host kind InvalidKind",
-					Path:    []any{"createWebhook"},
+					Messbge: "webhooks bre not supported for code host kind InvblidKind",
+					Pbth:    []bny{"crebteWebhook"},
 				},
 			},
-			Variables: map[string]any{
-				"name":         "webhookName",
-				"codeHostKind": "InvalidKind",
+			Vbribbles: mbp[string]bny{
+				"nbme":         "webhookNbme",
+				"codeHostKind": "InvblidKind",
 				"codeHostURN":  "https://github.com",
 			},
 		},
 		{
-			Label:          "secrets not supported for code host",
+			Lbbel:          "secrets not supported for code host",
 			Context:        ctx,
-			Schema:         gqlSchema,
+			Schemb:         gqlSchemb,
 			Query:          queryStr,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "webhooks do not support secrets for code host kind BITBUCKETCLOUD",
-					Path:    []any{"createWebhook"},
+					Messbge: "webhooks do not support secrets for code host kind BITBUCKETCLOUD",
+					Pbth:    []bny{"crebteWebhook"},
 				},
 			},
-			Variables: map[string]any{
-				"name":         "webhookName",
+			Vbribbles: mbp[string]bny{
+				"nbme":         "webhookNbme",
 				"codeHostKind": "BITBUCKETCLOUD",
 				"codeHostURN":  "https://bitbucket.com",
 				"secret":       "mysupersecret",
@@ -553,22 +553,22 @@ func TestCreateWebhook(t *testing.T) {
 		},
 	})
 
-	// validate error if not site admin
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "only site admin can create webhook",
+	// vblidbte error if not site bdmin
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "only site bdmin cbn crebte webhook",
 		Context:        ctx,
-		Schema:         gqlSchema,
+		Schemb:         gqlSchemb,
 		Query:          queryStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "must be site admin",
-				Path:    []any{"createWebhook"},
+				Messbge: "must be site bdmin",
+				Pbth:    []bny{"crebteWebhook"},
 			},
 		},
-		Variables: map[string]any{
-			"name":         "webhookName",
+		Vbribbles: mbp[string]bny{
+			"nbme":         "webhookNbme",
 			"codeHostKind": "GITHUB",
 			"codeHostURN":  "https://github.com",
 			"secret":       "mysupersecret",
@@ -578,33 +578,33 @@ func TestCreateWebhook(t *testing.T) {
 
 func TestGetWebhookWithURL(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 	testURL := "https://testurl.com"
-	invalidURL := "https://invalid.com/%+o"
+	invblidURL := "https://invblid.com/%+o"
 	webhookID := int32(1)
-	webhookIDMarshaled := marshalWebhookID(webhookID)
+	webhookIDMbrshbled := mbrshblWebhookID(webhookID)
 
 	conf.Mock(
 		&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: testURL,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: testURL,
 			},
 		},
 	)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 	webhookStore := dbmocks.NewMockWebhookStore()
 	whUUID, err := uuid.NewUUID()
-	assert.NoError(t, err)
+	bssert.NoError(t, err)
 	expectedWebhook := types.Webhook{
 		ID: webhookID, UUID: whUUID,
 	}
-	webhookStore.GetByIDFunc.SetDefaultReturn(&expectedWebhook, nil)
+	webhookStore.GetByIDFunc.SetDefbultReturn(&expectedWebhook, nil)
 
 	db := dbmocks.NewMockDB()
-	db.WebhooksFunc.SetDefaultReturn(webhookStore)
-	db.UsersFunc.SetDefaultReturn(users)
+	db.WebhooksFunc.SetDefbultReturn(webhookStore)
+	db.UsersFunc.SetDefbultReturn(users)
 	queryStr := `query GetWebhook($id: ID!) {
                 node(id: $id) {
                     ... on Webhook {
@@ -614,335 +614,335 @@ func TestGetWebhookWithURL(t *testing.T) {
                     }
                 }
 			}`
-	gqlSchema := createGqlSchema(t, db)
+	gqlSchemb := crebteGqlSchemb(t, db)
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:   "basic",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:   "bbsic",
 		Context: ctx,
-		Schema:  gqlSchema,
+		Schemb:  gqlSchemb,
 		Query:   queryStr,
 		ExpectedResult: fmt.Sprintf(`
 				{
 					"node": {
 						"id": %q,
 						"uuid": %q,
-                        "url": "%s/.api/webhooks/%s"
+                        "url": "%s/.bpi/webhooks/%s"
 					}
 				}
-			`, webhookIDMarshaled, whUUID.String(), testURL, whUUID.String()),
-		Variables: map[string]any{
-			"id": "V2ViaG9vazox",
+			`, webhookIDMbrshbled, whUUID.String(), testURL, whUUID.String()),
+		Vbribbles: mbp[string]bny{
+			"id": "V2VibG9vbzox",
 		},
 	})
 
 	conf.Mock(
 		&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: invalidURL,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: invblidURL,
 			},
 		},
 	)
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "error if external URL invalid",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "error if externbl URL invblid",
 		Context:        ctx,
-		Schema:         gqlSchema,
+		Schemb:         gqlSchemb,
 		Query:          queryStr,
 		ExpectedResult: `{"node": null}`,
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: strings.Join([]string{
-					"could not parse site config external URL:",
-					` parse "https://invalid.com/%+o": invalid URL escape "%+o"`,
+				Messbge: strings.Join([]string{
+					"could not pbrse site config externbl URL:",
+					` pbrse "https://invblid.com/%+o": invblid URL escbpe "%+o"`,
 				}, ""),
-				Path: []any{"node", "url"},
+				Pbth: []bny{"node", "url"},
 			},
 		},
-		Variables: map[string]any{
-			"id": "V2ViaG9vazox",
+		Vbribbles: mbp[string]bny{
+			"id": "V2VibG9vbzox",
 		},
 	})
 }
 
 func TestWebhookCursor(t *testing.T) {
-	var (
-		webhookCursor       = types.Cursor{Column: "id", Value: "4", Direction: "next"}
-		opaqueWebhookCursor = "V2ViaG9va0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiI0IiwiRGlyZWN0aW9uIjoibmV4dCJ9"
+	vbr (
+		webhookCursor       = types.Cursor{Column: "id", Vblue: "4", Direction: "next"}
+		opbqueWebhookCursor = "V2VibG9vb0N1cnNvcjp7IkNvbHVtbiI6ImlkIiwiVmFsdWUiOiI0IiwiRGlyZWN0bW9uIjoibmV4dCJ9"
 	)
-	t.Run("Marshal", func(t *testing.T) {
-		if got, want := MarshalWebhookCursor(&webhookCursor), opaqueWebhookCursor; got != want {
-			t.Errorf("got opaque cursor %q, want %q", got, want)
+	t.Run("Mbrshbl", func(t *testing.T) {
+		if got, wbnt := MbrshblWebhookCursor(&webhookCursor), opbqueWebhookCursor; got != wbnt {
+			t.Errorf("got opbque cursor %q, wbnt %q", got, wbnt)
 		}
 	})
-	t.Run("Unmarshal", func(t *testing.T) {
-		cursor, err := UnmarshalWebhookCursor(&opaqueWebhookCursor)
+	t.Run("Unmbrshbl", func(t *testing.T) {
+		cursor, err := UnmbrshblWebhookCursor(&opbqueWebhookCursor)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if diff := cmp.Diff(cursor, &webhookCursor); diff != "" {
-			t.Fatal(diff)
+			t.Fbtbl(diff)
 		}
 	})
 }
 
 func TestDeleteWebhook(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 	webhookStore := dbmocks.NewMockWebhookStore()
-	webhookStore.DeleteFunc.SetDefaultReturn(sgerrors.New("oops"))
+	webhookStore.DeleteFunc.SetDefbultReturn(sgerrors.New("oops"))
 
 	db := dbmocks.NewMockDB()
-	db.WebhooksFunc.SetDefaultReturn(webhookStore)
-	db.UsersFunc.SetDefaultReturn(users)
-	id := marshalWebhookID(42)
-	queryStr := `mutation DeleteWebhook($id: ID!) {
+	db.WebhooksFunc.SetDefbultReturn(webhookStore)
+	db.UsersFunc.SetDefbultReturn(users)
+	id := mbrshblWebhookID(42)
+	queryStr := `mutbtion DeleteWebhook($id: ID!) {
 				deleteWebhook(id: $id) {
-					alwaysNil
+					blwbysNil
 				}
 			}`
-	gqlSchema := createGqlSchema(t, db)
+	gqlSchemb := crebteGqlSchemb(t, db)
 
-	// validate error if not site admin
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "only site admin can delete webhook",
+	// vblidbte error if not site bdmin
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "only site bdmin cbn delete webhook",
 		Context:        ctx,
-		Schema:         gqlSchema,
+		Schemb:         gqlSchemb,
 		Query:          queryStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "must be site admin",
-				Path:    []any{"deleteWebhook"},
+				Messbge: "must be site bdmin",
+				Pbth:    []bny{"deleteWebhook"},
 			},
 		},
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id": string(id),
 		},
 	})
 
-	// User is site admin
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	// User is site bdmin
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "database error",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "dbtbbbse error",
 		Context:        ctx,
-		Schema:         gqlSchema,
+		Schemb:         gqlSchemb,
 		Query:          queryStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "delete webhook: oops",
-				Path:    []any{"deleteWebhook"},
+				Messbge: "delete webhook: oops",
+				Pbth:    []bny{"deleteWebhook"},
 			},
 		},
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id": string(id),
 		},
 	})
 
-	// database layer behaves
-	webhookStore.DeleteFunc.SetDefaultReturn(nil)
+	// dbtbbbse lbyer behbves
+	webhookStore.DeleteFunc.SetDefbultReturn(nil)
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:   "webhook successfully deleted",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:   "webhook successfully deleted",
 		Context: ctx,
-		Schema:  gqlSchema,
+		Schemb:  gqlSchemb,
 		Query:   queryStr,
 		ExpectedResult: `
 				{
 					"deleteWebhook": {
-						"alwaysNil": null
+						"blwbysNil": null
 					}
 				}
 			`,
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id": string(id),
 		},
 	})
 }
 
-func TestUpdateWebhook(t *testing.T) {
+func TestUpdbteWebhook(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 	webhookStore := dbmocks.NewMockWebhookStore()
-	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
+	webhookStore.UpdbteFunc.SetDefbultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return nil, sgerrors.New("oops")
 	})
 	whUUID := uuid.New()
-	ghURN, err := extsvc.NewCodeHostBaseURL("https://github.com")
+	ghURN, err := extsvc.NewCodeHostBbseURL("https://github.com")
 	require.NoError(t, err)
-	webhookStore.GetByIDFunc.SetDefaultReturn(&types.Webhook{Name: "old name", ID: 1, UUID: whUUID, CodeHostURN: ghURN}, nil)
+	webhookStore.GetByIDFunc.SetDefbultReturn(&types.Webhook{Nbme: "old nbme", ID: 1, UUID: whUUID, CodeHostURN: ghURN}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.WebhooksFunc.SetDefaultReturn(webhookStore)
-	db.UsersFunc.SetDefaultReturn(users)
-	id := marshalWebhookID(42)
-	mutateStr := `mutation UpdateWebhook($id: ID!, $name: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
-                updateWebhook(id: $id, name: $name, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
-                    name
+	db.WebhooksFunc.SetDefbultReturn(webhookStore)
+	db.UsersFunc.SetDefbultReturn(users)
+	id := mbrshblWebhookID(42)
+	mutbteStr := `mutbtion UpdbteWebhook($id: ID!, $nbme: String, $codeHostKind: String, $codeHostURN: String, $secret: String) {
+                updbteWebhook(id: $id, nbme: $nbme, codeHostKind: $codeHostKind, codeHostURN: $codeHostURN, secret: $secret) {
+                    nbme
                     id
                     uuid
                     codeHostURN
 				}
 			}`
-	gqlSchema := createGqlSchema(t, db)
+	gqlSchemb := crebteGqlSchemb(t, db)
 
-	// validate error if not site admin
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "only site admin can update webhook",
+	// vblidbte error if not site bdmin
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "only site bdmin cbn updbte webhook",
 		Context:        ctx,
-		Schema:         gqlSchema,
-		Query:          mutateStr,
+		Schemb:         gqlSchemb,
+		Query:          mutbteStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "must be site admin",
-				Path:    []any{"updateWebhook"},
+				Messbge: "must be site bdmin",
+				Pbth:    []bny{"updbteWebhook"},
 			},
 		},
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id":           string(id),
-			"name":         "new name",
+			"nbme":         "new nbme",
 			"codeHostKind": nil,
 			"codeHostURN":  nil,
 			"secret":       nil,
 		},
 	})
 
-	// User is site admin
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	// User is site bdmin
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "database error",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "dbtbbbse error",
 		Context:        ctx,
-		Schema:         gqlSchema,
-		Query:          mutateStr,
+		Schemb:         gqlSchemb,
+		Query:          mutbteStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "update webhook: oops",
-				Path:    []any{"updateWebhook"},
+				Messbge: "updbte webhook: oops",
+				Pbth:    []bny{"updbteWebhook"},
 			},
 		},
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id":           string(id),
-			"name":         "new name",
+			"nbme":         "new nbme",
 			"codeHostKind": nil,
 			"codeHostURN":  nil,
 			"secret":       nil,
 		},
 	})
 
-	// database layer behaves
-	webhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
+	// dbtbbbse lbyer behbves
+	webhookStore.UpdbteFunc.SetDefbultHook(func(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
 		return webhook, nil
 	})
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:   "webhook successfully updated 1 field",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:   "webhook successfully updbted 1 field",
 		Context: ctx,
-		Schema:  gqlSchema,
-		Query:   mutateStr,
+		Schemb:  gqlSchemb,
+		Query:   mutbteStr,
 		ExpectedResult: fmt.Sprintf(`
 				{
-					"updateWebhook": {
-						"name": "new name",
-						"id": "V2ViaG9vazox",
+					"updbteWebhook": {
+						"nbme": "new nbme",
+						"id": "V2VibG9vbzox",
 						"uuid": "%s",
                         "codeHostURN": "https://github.com/"
 					}
 				}
 			`, whUUID),
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id":           string(id),
-			"name":         "new name",
+			"nbme":         "new nbme",
 			"codeHostKind": nil,
 			"codeHostURN":  nil,
 			"secret":       nil,
 		},
 	})
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:   "webhook successfully updated multiple fields",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:   "webhook successfully updbted multiple fields",
 		Context: ctx,
-		Schema:  gqlSchema,
-		Query:   mutateStr,
+		Schemb:  gqlSchemb,
+		Query:   mutbteStr,
 		ExpectedResult: fmt.Sprintf(`
 				{
-					"updateWebhook": {
-						"name": "new name",
-						"id": "V2ViaG9vazox",
+					"updbteWebhook": {
+						"nbme": "new nbme",
+						"id": "V2VibG9vbzox",
 						"uuid": "%s",
-                        "codeHostURN": "https://example.github.com/"
+                        "codeHostURN": "https://exbmple.github.com/"
 					}
 				}
 			`, whUUID),
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id":           string(id),
-			"name":         "new name",
+			"nbme":         "new nbme",
 			"codeHostKind": nil,
-			"codeHostURN":  "https://example.github.com",
+			"codeHostURN":  "https://exbmple.github.com",
 			"secret":       nil,
 		},
 	})
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:   "BitBucket Cloud webhook successfully updated without a secret",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:   "BitBucket Cloud webhook successfully updbted without b secret",
 		Context: ctx,
-		Schema:  gqlSchema,
-		Query:   mutateStr,
+		Schemb:  gqlSchemb,
+		Query:   mutbteStr,
 		ExpectedResult: fmt.Sprintf(`
 				{
-					"updateWebhook": {
-						"name": "new name",
-						"id": "V2ViaG9vazox",
+					"updbteWebhook": {
+						"nbme": "new nbme",
+						"id": "V2VibG9vbzox",
 						"uuid": "%s",
                         "codeHostURN": "https://sg.bitbucket.org/"
 					}
 				}
 			`, whUUID),
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id":           string(id),
-			"name":         "new name",
+			"nbme":         "new nbme",
 			"codeHostKind": extsvc.KindBitbucketCloud,
 			"codeHostURN":  "https://sg.bitbucket.org",
 			"secret":       nil,
 		},
 	})
 
-	webhookStore.GetByIDFunc.SetDefaultReturn(nil, &database.WebhookNotFoundError{ID: 2})
+	webhookStore.GetByIDFunc.SetDefbultReturn(nil, &dbtbbbse.WebhookNotFoundError{ID: 2})
 
-	graphqlbackend.RunTest(t, &graphqlbackend.Test{
-		Label:          "error for non-existent webhook",
+	grbphqlbbckend.RunTest(t, &grbphqlbbckend.Test{
+		Lbbel:          "error for non-existent webhook",
 		Context:        ctx,
-		Schema:         gqlSchema,
-		Query:          mutateStr,
+		Schemb:         gqlSchemb,
+		Query:          mutbteStr,
 		ExpectedResult: "null",
 		ExpectedErrors: []*errors.QueryError{
 			{
-				Message: "update webhook: webhook with ID 2 not found",
-				Path:    []any{"updateWebhook"},
+				Messbge: "updbte webhook: webhook with ID 2 not found",
+				Pbth:    []bny{"updbteWebhook"},
 			},
 		},
-		Variables: map[string]any{
+		Vbribbles: mbp[string]bny{
 			"id":           string(id),
-			"name":         "new name",
+			"nbme":         "new nbme",
 			"codeHostKind": nil,
-			"codeHostURN":  "https://example.github.com",
+			"codeHostURN":  "https://exbmple.github.com",
 			"secret":       nil,
 		},
 	})
 }
 
-func createGqlSchema(t *testing.T, db database.DB) *graphql.Schema {
+func crebteGqlSchemb(t *testing.T, db dbtbbbse.DB) *grbphql.Schemb {
 	t.Helper()
-	gqlSchema, err := graphqlbackend.NewSchemaWithWebhooksResolver(db, NewWebhooksResolver(db))
+	gqlSchemb, err := grbphqlbbckend.NewSchembWithWebhooksResolver(db, NewWebhooksResolver(db))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return gqlSchema
+	return gqlSchemb
 }

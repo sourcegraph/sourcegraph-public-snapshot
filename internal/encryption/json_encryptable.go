@@ -1,53 +1,53 @@
-package encryption
+pbckbge encryption
 
 import (
 	"context"
 	"encoding/json"
 )
 
-// JSONEncryptable wraps a value of type T and an encryption key and handles lazily encoding/encrypting
-// and decrypting/decoding that value. This struct should be used in all places where a JSON-serialized
-// value is encrypted at-rest to maintain a consistent handling of data with security concerns.
+// JSONEncryptbble wrbps b vblue of type T bnd bn encryption key bnd hbndles lbzily encoding/encrypting
+// bnd decrypting/decoding thbt vblue. This struct should be used in bll plbces where b JSON-seriblized
+// vblue is encrypted bt-rest to mbintbin b consistent hbndling of dbtb with security concerns.
 //
-// This struct should always be passed by reference.
-type JSONEncryptable[T any] struct {
-	*Encryptable
+// This struct should blwbys be pbssed by reference.
+type JSONEncryptbble[T bny] struct {
+	*Encryptbble
 }
 
-// NewUnencryptedJSON creates a new JSON encryptable from the given value.
-func NewUnencryptedJSON[T any](value T) (*JSONEncryptable[T], error) {
-	serialized, err := json.Marshal(value)
+// NewUnencryptedJSON crebtes b new JSON encryptbble from the given vblue.
+func NewUnencryptedJSON[T bny](vblue T) (*JSONEncryptbble[T], error) {
+	seriblized, err := json.Mbrshbl(vblue)
 	if err != nil {
 		return nil, err
 	}
 
-	return &JSONEncryptable[T]{Encryptable: NewUnencrypted(string(serialized))}, nil
+	return &JSONEncryptbble[T]{Encryptbble: NewUnencrypted(string(seriblized))}, nil
 }
 
-// NewEncryptedJSON creates a new JSON encryptable an encrypted value and a relevant encryption key.
-func NewEncryptedJSON[T any](cipher, keyID string, key Key) *JSONEncryptable[T] {
-	return &JSONEncryptable[T]{Encryptable: NewEncrypted(cipher, keyID, key)}
+// NewEncryptedJSON crebtes b new JSON encryptbble bn encrypted vblue bnd b relevbnt encryption key.
+func NewEncryptedJSON[T bny](cipher, keyID string, key Key) *JSONEncryptbble[T] {
+	return &JSONEncryptbble[T]{Encryptbble: NewEncrypted(cipher, keyID, key)}
 }
 
-// Decrypt decrypts and returns the underlying value as a T. This method may make an external API call
-// to decrypt the underlying encrypted value, but will memoize the result so that subsequent calls will
-// be cheap.
-func (e *JSONEncryptable[T]) Decrypt(ctx context.Context) (value T, _ error) {
-	serialized, err := e.Encryptable.Decrypt(ctx)
+// Decrypt decrypts bnd returns the underlying vblue bs b T. This method mby mbke bn externbl API cbll
+// to decrypt the underlying encrypted vblue, but will memoize the result so thbt subsequent cblls will
+// be chebp.
+func (e *JSONEncryptbble[T]) Decrypt(ctx context.Context) (vblue T, _ error) {
+	seriblized, err := e.Encryptbble.Decrypt(ctx)
 	if err != nil {
-		return value, err
+		return vblue, err
 	}
 
-	if err := json.Unmarshal([]byte(serialized), &value); err != nil {
-		return value, err
+	if err := json.Unmbrshbl([]byte(seriblized), &vblue); err != nil {
+		return vblue, err
 	}
 
-	return value, nil
+	return vblue, nil
 }
 
-// Set updates the underlying value.
-func (e *JSONEncryptable[T]) Set(value T) error {
-	serialized, err := json.Marshal(value)
+// Set updbtes the underlying vblue.
+func (e *JSONEncryptbble[T]) Set(vblue T) error {
+	seriblized, err := json.Mbrshbl(vblue)
 	if err != nil {
 		return err
 	}
@@ -55,25 +55,25 @@ func (e *JSONEncryptable[T]) Set(value T) error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	e.decrypted = &decryptedValue{string(serialized), nil}
+	e.decrypted = &decryptedVblue{string(seriblized), nil}
 	e.encrypted = nil
 	return nil
 }
 
-// DecryptJSON decrypts the encryptable value. This method may make an external
-// API call to decrypt the underlying encrypted value, but will memoize the result so that subsequent calls
-// will be cheap.
-func DecryptJSON[T any](ctx context.Context, e *JSONEncryptable[any]) (*T, error) {
-	var value T
+// DecryptJSON decrypts the encryptbble vblue. This method mby mbke bn externbl
+// API cbll to decrypt the underlying encrypted vblue, but will memoize the result so thbt subsequent cblls
+// will be chebp.
+func DecryptJSON[T bny](ctx context.Context, e *JSONEncryptbble[bny]) (*T, error) {
+	vbr vblue T
 
-	serialized, err := e.Encryptable.Decrypt(ctx)
+	seriblized, err := e.Encryptbble.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := json.Unmarshal([]byte(serialized), &value); err != nil {
+	if err := json.Unmbrshbl([]byte(seriblized), &vblue); err != nil {
 		return nil, err
 	}
 
-	return &value, nil
+	return &vblue, nil
 }

@@ -1,164 +1,164 @@
-package store
+pbckbge store
 
 import (
 	"bytes"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/commitgrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// SetRepositoryAsDirty marks the given repository's commit graph as out of date.
+// SetRepositoryAsDirty mbrks the given repository's commit grbph bs out of dbte.
 func (s *store) SetRepositoryAsDirty(ctx context.Context, repositoryID int) (err error) {
-	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
+	ctx, _, endObservbtion := s.operbtions.setRepositoryAsDirty.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	return s.db.Exec(ctx, sqlf.Sprintf(setRepositoryAsDirtyQuery, repositoryID))
 }
 
-// GetDirtyRepositories returns list of repositories whose commit graph is out of date. The dirty token should be
-// passed to CalculateVisibleUploads in order to unmark the repository.
-func (s *store) GetDirtyRepositories(ctx context.Context) (_ []shared.DirtyRepository, err error) {
-	ctx, trace, endObservation := s.operations.getDirtyRepositories.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// GetDirtyRepositories returns list of repositories whose commit grbph is out of dbte. The dirty token should be
+// pbssed to CblculbteVisibleUplobds in order to unmbrk the repository.
+func (s *store) GetDirtyRepositories(ctx context.Context) (_ []shbred.DirtyRepository, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getDirtyRepositories.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	repositories, err := scanDirtyRepositories(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
+	repositories, err := scbnDirtyRepositories(s.db.Query(ctx, sqlf.Sprintf(dirtyRepositoriesQuery)))
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numRepositories", len(repositories)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numRepositories", len(repositories)))
 
 	return repositories, nil
 }
 
 const dirtyRepositoriesQuery = `
-SELECT ldr.repository_id, repo.name, ldr.dirty_token
+SELECT ldr.repository_id, repo.nbme, ldr.dirty_token
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id
-  WHERE ldr.dirty_token > ldr.update_token
-    AND repo.deleted_at IS NULL
+  WHERE ldr.dirty_token > ldr.updbte_token
+    AND repo.deleted_bt IS NULL
 	AND repo.blocked IS NULL
 `
 
-var scanDirtyRepositories = basestore.NewSliceScanner(func(s dbutil.Scanner) (dr shared.DirtyRepository, _ error) {
-	err := s.Scan(&dr.RepositoryID, &dr.RepositoryName, &dr.DirtyToken)
+vbr scbnDirtyRepositories = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (dr shbred.DirtyRepository, _ error) {
+	err := s.Scbn(&dr.RepositoryID, &dr.RepositoryNbme, &dr.DirtyToken)
 	return dr, err
 })
 
-// UpdateUploadsVisibleToCommits uses the given commit graph and the tip of non-stale branches and tags to determine the
-// set of LSIF uploads that are visible for each commit, and the set of uploads which are visible at the tip of a
-// non-stale branch or tag. The decorated commit graph is serialized to Postgres for use by find closest dumps
+// UpdbteUplobdsVisibleToCommits uses the given commit grbph bnd the tip of non-stble brbnches bnd tbgs to determine the
+// set of LSIF uplobds thbt bre visible for ebch commit, bnd the set of uplobds which bre visible bt the tip of b
+// non-stble brbnch or tbg. The decorbted commit grbph is seriblized to Postgres for use by find closest dumps
 // queries.
 //
-// If dirtyToken is supplied, the repository will be unmarked when the supplied token does matches the most recent
-// token stored in the database, the flag will not be cleared as another request for update has come in since this
-// token has been read.
-func (s *store) UpdateUploadsVisibleToCommits(
+// If dirtyToken is supplied, the repository will be unmbrked when the supplied token does mbtches the most recent
+// token stored in the dbtbbbse, the flbg will not be clebred bs bnother request for updbte hbs come in since this
+// token hbs been rebd.
+func (s *store) UpdbteUplobdsVisibleToCommits(
 	ctx context.Context,
 	repositoryID int,
-	commitGraph *gitdomain.CommitGraph,
-	refDescriptions map[string][]gitdomain.RefDescription,
-	maxAgeForNonStaleBranches time.Duration,
-	maxAgeForNonStaleTags time.Duration,
+	commitGrbph *gitdombin.CommitGrbph,
+	refDescriptions mbp[string][]gitdombin.RefDescription,
+	mbxAgeForNonStbleBrbnches time.Durbtion,
+	mbxAgeForNonStbleTbgs time.Durbtion,
 	dirtyToken int,
 	now time.Time,
 ) (err error) {
-	ctx, trace, endObservation := s.operations.updateUploadsVisibleToCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.Int("numCommitGraphKeys", len(commitGraph.Order())),
-		attribute.Int("numRefDescriptions", len(refDescriptions)),
-		attribute.Int("dirtyToken", dirtyToken),
+	ctx, trbce, endObservbtion := s.operbtions.updbteUplobdsVisibleToCommits.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.Int("numCommitGrbphKeys", len(commitGrbph.Order())),
+		bttribute.Int("numRefDescriptions", len(refDescriptions)),
+		bttribute.Int("dirtyToken", dirtyToken),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.withTransaction(ctx, func(tx *store) error {
+	return s.withTrbnsbction(ctx, func(tx *store) error {
 		// Determine the retention policy for this repository
-		maxAgeForNonStaleBranches, maxAgeForNonStaleTags, err = refineRetentionConfiguration(ctx, tx.db, repositoryID, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+		mbxAgeForNonStbleBrbnches, mbxAgeForNonStbleTbgs, err = refineRetentionConfigurbtion(ctx, tx.db, repositoryID, mbxAgeForNonStbleBrbnches, mbxAgeForNonStbleTbgs)
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.String("maxAgeForNonStaleBranches", maxAgeForNonStaleBranches.String()),
-			attribute.String("maxAgeForNonStaleTags", maxAgeForNonStaleTags.String()))
+		trbce.AddEvent("TODO Dombin Owner",
+			bttribute.String("mbxAgeForNonStbleBrbnches", mbxAgeForNonStbleBrbnches.String()),
+			bttribute.String("mbxAgeForNonStbleTbgs", mbxAgeForNonStbleTbgs.String()))
 
-		// Pull all queryable upload metadata known to this repository so we can correlate
-		// it with the current  commit graph.
-		commitGraphView, err := scanCommitGraphView(tx.db.Query(ctx, sqlf.Sprintf(calculateVisibleUploadsCommitGraphQuery, repositoryID)))
+		// Pull bll querybble uplobd metbdbtb known to this repository so we cbn correlbte
+		// it with the current  commit grbph.
+		commitGrbphView, err := scbnCommitGrbphView(tx.db.Query(ctx, sqlf.Sprintf(cblculbteVisibleUplobdsCommitGrbphQuery, repositoryID)))
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
-			attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
+		trbce.AddEvent("TODO Dombin Owner",
+			bttribute.Int("numCommitGrbphViewMetbKeys", len(commitGrbphView.Metb)),
+			bttribute.Int("numCommitGrbphViewTokenKeys", len(commitGrbphView.Tokens)))
 
-		// Determine which uploads are visible to which commits for this repository
-		graph := commitgraph.NewGraph(commitGraph, commitGraphView)
+		// Determine which uplobds bre visible to which commits for this repository
+		grbph := commitgrbph.NewGrbph(commitGrbph, commitGrbphView)
 
-		pctx, cancel := context.WithCancel(ctx)
-		defer cancel()
+		pctx, cbncel := context.WithCbncel(ctx)
+		defer cbncel()
 
-		// Return a structure holding several channels that are populated by a background goroutine.
-		// When we write this data to temporary tables, we have three consumers pulling values from
-		// these channels in parallel. We need to make sure that once we return from this function that
-		// the producer routine shuts down. This prevents the producer from leaking if there is an
-		// error in one of the consumers before all values have been emitted.
-		sanitizedInput := sanitizeCommitInput(pctx, graph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags)
+		// Return b structure holding severbl chbnnels thbt bre populbted by b bbckground goroutine.
+		// When we write this dbtb to temporbry tbbles, we hbve three consumers pulling vblues from
+		// these chbnnels in pbrbllel. We need to mbke sure thbt once we return from this function thbt
+		// the producer routine shuts down. This prevents the producer from lebking if there is bn
+		// error in one of the consumers before bll vblues hbve been emitted.
+		sbnitizedInput := sbnitizeCommitInput(pctx, grbph, refDescriptions, mbxAgeForNonStbleBrbnches, mbxAgeForNonStbleTbgs)
 
-		// Write the graph into temporary tables in Postgres
-		if err := s.writeVisibleUploads(ctx, sanitizedInput, tx.db); err != nil {
+		// Write the grbph into temporbry tbbles in Postgres
+		if err := s.writeVisibleUplobds(ctx, sbnitizedInput, tx.db); err != nil {
 			return err
 		}
 
-		// Persist data to permanent table: t_lsif_nearest_uploads -> lsif_nearest_uploads
-		if err := s.persistNearestUploads(ctx, repositoryID, tx.db); err != nil {
+		// Persist dbtb to permbnent tbble: t_lsif_nebrest_uplobds -> lsif_nebrest_uplobds
+		if err := s.persistNebrestUplobds(ctx, repositoryID, tx.db); err != nil {
 			return err
 		}
 
-		// Persist data to permanent table: t_lsif_nearest_uploads_links -> lsif_nearest_uploads_links
-		if err := s.persistNearestUploadsLinks(ctx, repositoryID, tx.db); err != nil {
+		// Persist dbtb to permbnent tbble: t_lsif_nebrest_uplobds_links -> lsif_nebrest_uplobds_links
+		if err := s.persistNebrestUplobdsLinks(ctx, repositoryID, tx.db); err != nil {
 			return err
 		}
 
-		// Persist data to permanent table: t_lsif_uploads_visible_at_tip -> lsif_uploads_visible_at_tip
-		if err := s.persistUploadsVisibleAtTip(ctx, repositoryID, tx.db); err != nil {
+		// Persist dbtb to permbnent tbble: t_lsif_uplobds_visible_bt_tip -> lsif_uplobds_visible_bt_tip
+		if err := s.persistUplobdsVisibleAtTip(ctx, repositoryID, tx.db); err != nil {
 			return err
 		}
 
 		if dirtyToken != 0 {
-			// If the user requests us to clear a dirty token, set the updated_token value to
-			// the dirty token if it wouldn't decrease the value. Dirty repositories are determined
-			// by having a non-equal dirty and update token, and we want the most recent upload
+			// If the user requests us to clebr b dirty token, set the updbted_token vblue to
+			// the dirty token if it wouldn't decrebse the vblue. Dirty repositories bre determined
+			// by hbving b non-equbl dirty bnd updbte token, bnd we wbnt the most recent uplobd
 			// token to win this write.
-			nowTimestamp := sqlf.Sprintf("transaction_timestamp()")
+			nowTimestbmp := sqlf.Sprintf("trbnsbction_timestbmp()")
 			if !now.IsZero() {
-				nowTimestamp = sqlf.Sprintf("%s", now)
+				nowTimestbmp = sqlf.Sprintf("%s", now)
 			}
-			if err := tx.db.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDirtyRepositoryQuery, dirtyToken, nowTimestamp, repositoryID)); err != nil {
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(cblculbteVisibleUplobdsDirtyRepositoryQuery, dirtyToken, nowTimestbmp, repositoryID)); err != nil {
 				return err
 			}
 		}
 
-		// All completed uploads are now visible. Mark any uploads queued for deletion as deleted as
-		// they are no longer reachable from the commit graph and cannot be used to fulfill any API
+		// All completed uplobds bre now visible. Mbrk bny uplobds queued for deletion bs deleted bs
+		// they bre no longer rebchbble from the commit grbph bnd cbnnot be used to fulfill bny API
 		// requests.
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload not reachable within the commit graph")
+		unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "uplobd not rebchbble within the commit grbph")
 		defer unset(ctx)
-		if err := tx.db.Exec(ctx, sqlf.Sprintf(calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery, repositoryID)); err != nil {
+		if err := tx.db.Exec(ctx, sqlf.Sprintf(cblculbteVisibleUplobdsDeleteUplobdsQueuedForDeletionQuery, repositoryID)); err != nil {
 			return err
 		}
 
@@ -166,207 +166,207 @@ func (s *store) UpdateUploadsVisibleToCommits(
 	})
 }
 
-const calculateVisibleUploadsCommitGraphQuery = `
-SELECT id, commit, md5(root || ':' || indexer) as token, 0 as distance FROM lsif_uploads WHERE state = 'completed' AND repository_id = %s
+const cblculbteVisibleUplobdsCommitGrbphQuery = `
+SELECT id, commit, md5(root || ':' || indexer) bs token, 0 bs distbnce FROM lsif_uplobds WHERE stbte = 'completed' AND repository_id = %s
 `
 
-const calculateVisibleUploadsDirtyRepositoryQuery = `
-UPDATE lsif_dirty_repositories SET update_token = GREATEST(update_token, %s), updated_at = %s WHERE repository_id = %s
+const cblculbteVisibleUplobdsDirtyRepositoryQuery = `
+UPDATE lsif_dirty_repositories SET updbte_token = GREATEST(updbte_token, %s), updbted_bt = %s WHERE repository_id = %s
 `
 
-const calculateVisibleUploadsDeleteUploadsQueuedForDeletionQuery = `
+const cblculbteVisibleUplobdsDeleteUplobdsQueuedForDeletionQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.state = 'deleting' AND u.repository_id = %s
+	FROM lsif_uplobds u
+	WHERE u.stbte = 'deleting' AND u.repository_id = %s
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_uplobds tbble.
 	ORDER BY u.id FOR UPDATE
 )
-UPDATE lsif_uploads
-SET state = 'deleted'
-WHERE id IN (SELECT id FROM candidates)
+UPDATE lsif_uplobds
+SET stbte = 'deleted'
+WHERE id IN (SELECT id FROM cbndidbtes)
 `
 
-// refineRetentionConfiguration returns the maximum age for no-stale branches and tags, effectively, as configured
-// for the given repository. If there is no retention configuration for the given repository, the given default
-// values are returned unchanged.
-func refineRetentionConfiguration(ctx context.Context, store *basestore.Store, repositoryID int, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration) (_, _ time.Duration, err error) {
-	rows, err := store.Query(ctx, sqlf.Sprintf(retentionConfigurationQuery, repositoryID))
+// refineRetentionConfigurbtion returns the mbximum bge for no-stble brbnches bnd tbgs, effectively, bs configured
+// for the given repository. If there is no retention configurbtion for the given repository, the given defbult
+// vblues bre returned unchbnged.
+func refineRetentionConfigurbtion(ctx context.Context, store *bbsestore.Store, repositoryID int, mbxAgeForNonStbleBrbnches, mbxAgeForNonStbleTbgs time.Durbtion) (_, _ time.Durbtion, err error) {
+	rows, err := store.Query(ctx, sqlf.Sprintf(retentionConfigurbtionQuery, repositoryID))
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var v1, v2 int
-		if err := rows.Scan(&v1, &v2); err != nil {
+		vbr v1, v2 int
+		if err := rows.Scbn(&v1, &v2); err != nil {
 			return 0, 0, err
 		}
 
-		maxAgeForNonStaleBranches = time.Second * time.Duration(v1)
-		maxAgeForNonStaleTags = time.Second * time.Duration(v2)
+		mbxAgeForNonStbleBrbnches = time.Second * time.Durbtion(v1)
+		mbxAgeForNonStbleTbgs = time.Second * time.Durbtion(v2)
 	}
 
-	return maxAgeForNonStaleBranches, maxAgeForNonStaleTags, nil
+	return mbxAgeForNonStbleBrbnches, mbxAgeForNonStbleTbgs, nil
 }
 
-const retentionConfigurationQuery = `
-SELECT max_age_for_non_stale_branches_seconds, max_age_for_non_stale_tags_seconds
-FROM lsif_retention_configuration
+const retentionConfigurbtionQuery = `
+SELECT mbx_bge_for_non_stble_brbnches_seconds, mbx_bge_for_non_stble_tbgs_seconds
+FROM lsif_retention_configurbtion
 WHERE repository_id = %s
 `
 
-// GetCommitsVisibleToUpload returns the set of commits for which the given upload can answer code intelligence queries.
-// To paginate, supply the token returned from this method to the invocation for the next page.
-func (s *store) GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error) {
-	ctx, _, endObservation := s.operations.getCommitsVisibleToUpload.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("uploadID", uploadID),
-		attribute.Int("limit", limit),
+// GetCommitsVisibleToUplobd returns the set of commits for which the given uplobd cbn bnswer code intelligence queries.
+// To pbginbte, supply the token returned from this method to the invocbtion for the next pbge.
+func (s *store) GetCommitsVisibleToUplobd(ctx context.Context, uplobdID, limit int, token *string) (_ []string, nextToken *string, err error) {
+	ctx, _, endObservbtion := s.operbtions.getCommitsVisibleToUplobd.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobdID),
+		bttribute.Int("limit", limit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	after := ""
+	bfter := ""
 	if token != nil {
-		after = *token
+		bfter = *token
 	}
 
-	commits, err := basestore.ScanStrings(s.db.Query(ctx, sqlf.Sprintf(commitsVisibleToUploadQuery, strconv.Itoa(uploadID), after, limit)))
+	commits, err := bbsestore.ScbnStrings(s.db.Query(ctx, sqlf.Sprintf(commitsVisibleToUplobdQuery, strconv.Itob(uplobdID), bfter, limit)))
 	if err != nil {
 		return nil, nil, err
 	}
 
 	if len(commits) > 0 {
-		last := commits[len(commits)-1]
-		nextToken = &last
+		lbst := commits[len(commits)-1]
+		nextToken = &lbst
 	}
 
 	return commits, nextToken, nil
 }
 
-const commitsVisibleToUploadQuery = `
+const commitsVisibleToUplobdQuery = `
 WITH
 direct_commits AS (
-	SELECT nu.repository_id, nu.commit_bytea
-	FROM lsif_nearest_uploads nu
-	WHERE nu.uploads ? %s
+	SELECT nu.repository_id, nu.commit_byteb
+	FROM lsif_nebrest_uplobds nu
+	WHERE nu.uplobds ? %s
 ),
 linked_commits AS (
-	SELECT ul.commit_bytea
+	SELECT ul.commit_byteb
 	FROM direct_commits dc
-	JOIN lsif_nearest_uploads_links ul
+	JOIN lsif_nebrest_uplobds_links ul
 	ON
 		ul.repository_id = dc.repository_id AND
-		ul.ancestor_commit_bytea = dc.commit_bytea
+		ul.bncestor_commit_byteb = dc.commit_byteb
 ),
 combined_commits AS (
-	SELECT dc.commit_bytea FROM direct_commits dc
+	SELECT dc.commit_byteb FROM direct_commits dc
 	UNION ALL
-	SELECT lc.commit_bytea FROM linked_commits lc
+	SELECT lc.commit_byteb FROM linked_commits lc
 )
-SELECT encode(c.commit_bytea, 'hex') as commit
+SELECT encode(c.commit_byteb, 'hex') bs commit
 FROM combined_commits c
-WHERE decode(%s, 'hex') < c.commit_bytea
-ORDER BY c.commit_bytea
+WHERE decode(%s, 'hex') < c.commit_byteb
+ORDER BY c.commit_byteb
 LIMIT %s
 `
 
-// FindClosestDumps returns the set of dumps that can most accurately answer queries for the given repository, commit, path, and
-// optional indexer. If rootMustEnclosePath is true, then only dumps with a root which is a prefix of path are returned. Otherwise,
-// any dump with a root intersecting the given path is returned.
+// FindClosestDumps returns the set of dumps thbt cbn most bccurbtely bnswer queries for the given repository, commit, pbth, bnd
+// optionbl indexer. If rootMustEnclosePbth is true, then only dumps with b root which is b prefix of pbth bre returned. Otherwise,
+// bny dump with b root intersecting the given pbth is returned.
 //
-// This method should be used when the commit is known to exist in the lsif_nearest_uploads table. If it doesn't, then this method
-// will return no dumps (as the input commit is not reachable from anything with an upload). The nearest uploads table must be
-// refreshed before calling this method when the commit is unknown.
+// This method should be used when the commit is known to exist in the lsif_nebrest_uplobds tbble. If it doesn't, then this method
+// will return no dumps (bs the input commit is not rebchbble from bnything with bn uplobd). The nebrest uplobds tbble must be
+// refreshed before cblling this method when the commit is unknown.
 //
-// Because refreshing the commit graph can be very expensive, we also provide FindClosestDumpsFromGraphFragment. That method should
-// be used instead in low-latency paths. It should be supplied a small fragment of the commit graph that contains the input commit
-// as well as a commit that is likely to exist in the lsif_nearest_uploads table. This is enough to propagate the correct upload
-// visibility data down the graph fragment.
+// Becbuse refreshing the commit grbph cbn be very expensive, we blso provide FindClosestDumpsFromGrbphFrbgment. Thbt method should
+// be used instebd in low-lbtency pbths. It should be supplied b smbll frbgment of the commit grbph thbt contbins the input commit
+// bs well bs b commit thbt is likely to exist in the lsif_nebrest_uplobds tbble. This is enough to propbgbte the correct uplobd
+// visibility dbtb down the grbph frbgment.
 //
-// The graph supplied to FindClosestDumpsFromGraphFragment will also determine whether or not it is possible to produce a partial set
-// of visible uploads (ideally, we'd like to return the complete set of visible uploads, or fail). If the graph fragment is complete
-// by depth (e.g. if the graph contains an ancestor at depth d, then the graph also contains all other ancestors up to depth d), then
-// we get the ideal behavior. Only if we contain a partial row of ancestors will we return partial results.
+// The grbph supplied to FindClosestDumpsFromGrbphFrbgment will blso determine whether or not it is possible to produce b pbrtibl set
+// of visible uplobds (ideblly, we'd like to return the complete set of visible uplobds, or fbil). If the grbph frbgment is complete
+// by depth (e.g. if the grbph contbins bn bncestor bt depth d, then the grbph blso contbins bll other bncestors up to depth d), then
+// we get the idebl behbvior. Only if we contbin b pbrtibl row of bncestors will we return pbrtibl results.
 //
-// It is possible for some dumps to overlap theoretically, e.g. if someone uploads one dump covering the repository root and then later
-// splits the repository into multiple dumps. For this reason, the returned dumps are always sorted in most-recently-finished order to
-// prevent returning data from stale dumps.
-func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.findClosestDumps.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("rootMustEnclosePath", rootMustEnclosePath),
-		attribute.String("indexer", indexer),
+// It is possible for some dumps to overlbp theoreticblly, e.g. if someone uplobds one dump covering the repository root bnd then lbter
+// splits the repository into multiple dumps. For this rebson, the returned dumps bre blwbys sorted in most-recently-finished order to
+// prevent returning dbtb from stble dumps.
+func (s *store) FindClosestDumps(ctx context.Context, repositoryID int, commit, pbth string, rootMustEnclosePbth bool, indexer string) (_ []shbred.Dump, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.findClosestDumps.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("commit", commit),
+		bttribute.String("pbth", pbth),
+		bttribute.Bool("rootMustEnclosePbth", rootMustEnclosePbth),
+		bttribute.String("indexer", indexer),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
-	query := sqlf.Sprintf(findClosestDumpsQuery, makeVisibleUploadsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))
+	conds := mbkeFindClosestDumpConditions(pbth, rootMustEnclosePbth, indexer)
+	query := sqlf.Sprintf(findClosestDumpsQuery, mbkeVisibleUplobdsQuery(repositoryID, commit), sqlf.Join(conds, " AND "))
 
-	dumps, err := scanDumps(s.db.Query(ctx, query))
+	dumps, err := scbnDumps(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
 
 const findClosestDumpsQuery = `
 WITH
-visible_uploads AS (%s)
+visible_uplobds AS (%s)
 SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
-	u.uploaded_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_bt_tip,
+	u.uplobded_bt,
+	u.stbte,
+	u.fbilure_messbge,
+	u.stbrted_bt,
+	u.finished_bt,
+	u.process_bfter,
 	u.num_resets,
-	u.num_failures,
+	u.num_fbilures,
 	u.repository_id,
-	u.repository_name,
+	u.repository_nbme,
 	u.indexer,
 	u.indexer_version,
-	u.associated_index_id
-FROM visible_uploads vu
-JOIN lsif_dumps_with_repository_name u ON u.id = vu.upload_id
+	u.bssocibted_index_id
+FROM visible_uplobds vu
+JOIN lsif_dumps_with_repository_nbme u ON u.id = vu.uplobd_id
 WHERE %s
-ORDER BY u.finished_at DESC
+ORDER BY u.finished_bt DESC
 `
 
-// FindClosestDumpsFromGraphFragment returns the set of dumps that can most accurately answer queries for the given repository, commit,
-// path, and optional indexer by only considering the given fragment of the full git graph. See FindClosestDumps for additional details.
-func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error) {
-	ctx, trace, endObservation := s.operations.findClosestDumpsFromGraphFragment.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("path", path),
-		attribute.Bool("rootMustEnclosePath", rootMustEnclosePath),
-		attribute.String("indexer", indexer),
-		attribute.Int("numCommitGraphKeys", len(commitGraph.Order())),
+// FindClosestDumpsFromGrbphFrbgment returns the set of dumps thbt cbn most bccurbtely bnswer queries for the given repository, commit,
+// pbth, bnd optionbl indexer by only considering the given frbgment of the full git grbph. See FindClosestDumps for bdditionbl detbils.
+func (s *store) FindClosestDumpsFromGrbphFrbgment(ctx context.Context, repositoryID int, commit, pbth string, rootMustEnclosePbth bool, indexer string, commitGrbph *gitdombin.CommitGrbph) (_ []shbred.Dump, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.findClosestDumpsFromGrbphFrbgment.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("commit", commit),
+		bttribute.String("pbth", pbth),
+		bttribute.Bool("rootMustEnclosePbth", rootMustEnclosePbth),
+		bttribute.String("indexer", indexer),
+		bttribute.Int("numCommitGrbphKeys", len(commitGrbph.Order())),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(commitGraph.Order()) == 0 {
+	if len(commitGrbph.Order()) == 0 {
 		return nil, nil
 	}
 
-	commitQueries := make([]*sqlf.Query, 0, len(commitGraph.Graph()))
-	for commit := range commitGraph.Graph() {
-		commitQueries = append(commitQueries, sqlf.Sprintf("%s", dbutil.CommitBytea(commit)))
+	commitQueries := mbke([]*sqlf.Query, 0, len(commitGrbph.Grbph()))
+	for commit := rbnge commitGrbph.Grbph() {
+		commitQueries = bppend(commitQueries, sqlf.Sprintf("%s", dbutil.CommitByteb(commit)))
 	}
 
-	commitGraphView, err := scanCommitGraphView(s.db.Query(ctx, sqlf.Sprintf(
-		findClosestDumpsFromGraphFragmentCommitGraphQuery,
+	commitGrbphView, err := scbnCommitGrbphView(s.db.Query(ctx, sqlf.Sprintf(
+		findClosestDumpsFromGrbphFrbgmentCommitGrbphQuery,
 		repositoryID,
 		sqlf.Join(commitQueries, ", "),
 		repositoryID,
@@ -375,122 +375,122 @@ func (s *store) FindClosestDumpsFromGraphFragment(ctx context.Context, repositor
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numCommitGraphViewMetaKeys", len(commitGraphView.Meta)),
-		attribute.Int("numCommitGraphViewTokenKeys", len(commitGraphView.Tokens)))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("numCommitGrbphViewMetbKeys", len(commitGrbphView.Metb)),
+		bttribute.Int("numCommitGrbphViewTokenKeys", len(commitGrbphView.Tokens)))
 
-	var ids []*sqlf.Query
-	for _, uploadMeta := range commitgraph.NewGraph(commitGraph, commitGraphView).UploadsVisibleAtCommit(commit) {
-		ids = append(ids, sqlf.Sprintf("%d", uploadMeta.UploadID))
+	vbr ids []*sqlf.Query
+	for _, uplobdMetb := rbnge commitgrbph.NewGrbph(commitGrbph, commitGrbphView).UplobdsVisibleAtCommit(commit) {
+		ids = bppend(ids, sqlf.Sprintf("%d", uplobdMetb.UplobdID))
 	}
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	conds := makeFindClosestDumpConditions(path, rootMustEnclosePath, indexer)
-	query := sqlf.Sprintf(findClosestDumpsFromGraphFragmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))
+	conds := mbkeFindClosestDumpConditions(pbth, rootMustEnclosePbth, indexer)
+	query := sqlf.Sprintf(findClosestDumpsFromGrbphFrbgmentQuery, sqlf.Join(ids, ","), sqlf.Join(conds, " AND "))
 
-	dumps, err := scanDumps(s.db.Query(ctx, query))
+	dumps, err := scbnDumps(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numDumps", len(dumps)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numDumps", len(dumps)))
 
 	return dumps, nil
 }
 
-const findClosestDumpsFromGraphFragmentCommitGraphQuery = `
+const findClosestDumpsFromGrbphFrbgmentCommitGrbphQuery = `
 WITH
-visible_uploads AS (
-	-- Select the set of uploads visible from one of the given commits. This is done by
-	-- looking at each commit's row in the lsif_nearest_uploads table, and the (adjusted)
-	-- set of uploads from each commit's nearest ancestor according to the data compressed
-	-- in the links table.
+visible_uplobds AS (
+	-- Select the set of uplobds visible from one of the given commits. This is done by
+	-- looking bt ebch commit's row in the lsif_nebrest_uplobds tbble, bnd the (bdjusted)
+	-- set of uplobds from ebch commit's nebrest bncestor bccording to the dbtb compressed
+	-- in the links tbble.
 	--
-	-- NB: A commit should be present in at most one of these tables.
+	-- NB: A commit should be present in bt most one of these tbbles.
 	SELECT
 		nu.repository_id,
-		upload_id::integer,
-		nu.commit_bytea,
-		u_distance::text::integer as distance
-	FROM lsif_nearest_uploads nu
-	CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-	WHERE nu.repository_id = %s AND nu.commit_bytea IN (%s)
+		uplobd_id::integer,
+		nu.commit_byteb,
+		u_distbnce::text::integer bs distbnce
+	FROM lsif_nebrest_uplobds nu
+	CROSS JOIN jsonb_ebch(nu.uplobds) bs u(uplobd_id, u_distbnce)
+	WHERE nu.repository_id = %s AND nu.commit_byteb IN (%s)
 	UNION (
 		SELECT
 			nu.repository_id,
-			upload_id::integer,
-			ul.commit_bytea,
-			u_distance::text::integer + ul.distance as distance
-		FROM lsif_nearest_uploads_links ul
-		JOIN lsif_nearest_uploads nu ON nu.repository_id = ul.repository_id AND nu.commit_bytea = ul.ancestor_commit_bytea
-		CROSS JOIN jsonb_each(nu.uploads) as u(upload_id, u_distance)
-		WHERE nu.repository_id = %s AND ul.commit_bytea IN (%s)
+			uplobd_id::integer,
+			ul.commit_byteb,
+			u_distbnce::text::integer + ul.distbnce bs distbnce
+		FROM lsif_nebrest_uplobds_links ul
+		JOIN lsif_nebrest_uplobds nu ON nu.repository_id = ul.repository_id AND nu.commit_byteb = ul.bncestor_commit_byteb
+		CROSS JOIN jsonb_ebch(nu.uplobds) bs u(uplobd_id, u_distbnce)
+		WHERE nu.repository_id = %s AND ul.commit_byteb IN (%s)
 	)
 )
 SELECT
-	vu.upload_id,
-	encode(vu.commit_bytea, 'hex'),
-	md5(u.root || ':' || u.indexer) as token,
-	vu.distance
-FROM visible_uploads vu
-JOIN lsif_uploads u ON u.id = vu.upload_id
+	vu.uplobd_id,
+	encode(vu.commit_byteb, 'hex'),
+	md5(u.root || ':' || u.indexer) bs token,
+	vu.distbnce
+FROM visible_uplobds vu
+JOIN lsif_uplobds u ON u.id = vu.uplobd_id
 `
 
-const findClosestDumpsFromGraphFragmentQuery = `
+const findClosestDumpsFromGrbphFrbgmentQuery = `
 SELECT
 	u.id,
 	u.commit,
 	u.root,
-	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_at_tip,
-	u.uploaded_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
+	EXISTS (` + visibleAtTipSubselectQuery + `) AS visible_bt_tip,
+	u.uplobded_bt,
+	u.stbte,
+	u.fbilure_messbge,
+	u.stbrted_bt,
+	u.finished_bt,
+	u.process_bfter,
 	u.num_resets,
-	u.num_failures,
+	u.num_fbilures,
 	u.repository_id,
-	u.repository_name,
+	u.repository_nbme,
 	u.indexer,
 	u.indexer_version,
-	u.associated_index_id
-FROM lsif_dumps_with_repository_name u
+	u.bssocibted_index_id
+FROM lsif_dumps_with_repository_nbme u
 WHERE u.id IN (%s) AND %s
 `
 
-// scanCommitGraphView scans a commit graph view from the return value of `*Store.query`.
-func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitGraphView, err error) {
+// scbnCommitGrbphView scbns b commit grbph view from the return vblue of `*Store.query`.
+func scbnCommitGrbphView(rows *sql.Rows, queryErr error) (_ *commitgrbph.CommitGrbphView, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	commitGraphView := commitgraph.NewCommitGraphView()
+	commitGrbphView := commitgrbph.NewCommitGrbphView()
 
 	for rows.Next() {
-		var meta commitgraph.UploadMeta
-		var commit, token string
+		vbr metb commitgrbph.UplobdMetb
+		vbr commit, token string
 
-		if err := rows.Scan(&meta.UploadID, &commit, &token, &meta.Distance); err != nil {
+		if err := rows.Scbn(&metb.UplobdID, &commit, &token, &metb.Distbnce); err != nil {
 			return nil, err
 		}
 
-		commitGraphView.Add(meta, commit, token)
+		commitGrbphView.Add(metb, commit, token)
 	}
 
-	return commitGraphView, nil
+	return commitGrbphView, nil
 }
 
-// GetRepositoriesMaxStaleAge returns the longest duration that a repository has been (currently) stale for. This method considers
-// only repositories that would be returned by DirtyRepositories. This method returns a duration of zero if there
-// are no stale repositories.
-func (s *store) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {
-	ctx, _, endObservation := s.operations.getRepositoriesMaxStaleAge.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// GetRepositoriesMbxStbleAge returns the longest durbtion thbt b repository hbs been (currently) stble for. This method considers
+// only repositories thbt would be returned by DirtyRepositories. This method returns b durbtion of zero if there
+// bre no stble repositories.
+func (s *store) GetRepositoriesMbxStbleAge(ctx context.Context) (_ time.Durbtion, err error) {
+	ctx, _, endObservbtion := s.operbtions.getRepositoriesMbxStbleAge.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	ageSeconds, ok, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(maxStaleAgeQuery)))
+	bgeSeconds, ok, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(mbxStbleAgeQuery)))
 	if err != nil {
 		return 0, err
 	}
@@ -498,114 +498,114 @@ func (s *store) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration
 		return 0, nil
 	}
 
-	return time.Duration(ageSeconds) * time.Second, nil
+	return time.Durbtion(bgeSeconds) * time.Second, nil
 }
 
-const maxStaleAgeQuery = `
-SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_at)::integer AS age
+const mbxStbleAgeQuery = `
+SELECT EXTRACT(EPOCH FROM NOW() - ldr.set_dirty_bt)::integer AS bge
   FROM lsif_dirty_repositories ldr
     INNER JOIN repo ON repo.id = ldr.repository_id
-  WHERE ldr.dirty_token > ldr.update_token
-    AND repo.deleted_at IS NULL
+  WHERE ldr.dirty_token > ldr.updbte_token
+    AND repo.deleted_bt IS NULL
     AND repo.blocked IS NULL
-  ORDER BY age DESC
+  ORDER BY bge DESC
   LIMIT 1
 `
 
-// CommitGraphMetadata returns whether or not the commit graph for the given repository is stale, along with the date of
-// the most recent commit graph refresh for the given repository.
-func (s *store) GetCommitGraphMetadata(ctx context.Context, repositoryID int) (stale bool, updatedAt *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getCommitGraphMetadata.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
+// CommitGrbphMetbdbtb returns whether or not the commit grbph for the given repository is stble, blong with the dbte of
+// the most recent commit grbph refresh for the given repository.
+func (s *store) GetCommitGrbphMetbdbtb(ctx context.Context, repositoryID int) (stble bool, updbtedAt *time.Time, err error) {
+	ctx, _, endObservbtion := s.operbtions.getCommitGrbphMetbdbtb.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	updateToken, dirtyToken, updatedAt, exists, err := scanCommitGraphMetadata(s.db.Query(ctx, sqlf.Sprintf(commitGraphQuery, repositoryID)))
+	updbteToken, dirtyToken, updbtedAt, exists, err := scbnCommitGrbphMetbdbtb(s.db.Query(ctx, sqlf.Sprintf(commitGrbphQuery, repositoryID)))
 	if err != nil {
-		return false, nil, err
+		return fblse, nil, err
 	}
 	if !exists {
-		return false, nil, nil
+		return fblse, nil, nil
 	}
 
-	return updateToken != dirtyToken, updatedAt, err
+	return updbteToken != dirtyToken, updbtedAt, err
 }
 
-const commitGraphQuery = `
-SELECT update_token, dirty_token, updated_at FROM lsif_dirty_repositories WHERE repository_id = %s LIMIT 1
+const commitGrbphQuery = `
+SELECT updbte_token, dirty_token, updbted_bt FROM lsif_dirty_repositories WHERE repository_id = %s LIMIT 1
 `
 
-// scanCommitGraphMetadata scans a a commit graph metadata row from the return value of `*Store.query`.
-func scanCommitGraphMetadata(rows *sql.Rows, queryErr error) (updateToken, dirtyToken int, updatedAt *time.Time, _ bool, err error) {
+// scbnCommitGrbphMetbdbtb scbns b b commit grbph metbdbtb row from the return vblue of `*Store.query`.
+func scbnCommitGrbphMetbdbtb(rows *sql.Rows, queryErr error) (updbteToken, dirtyToken int, updbtedAt *time.Time, _ bool, err error) {
 	if queryErr != nil {
-		return 0, 0, nil, false, queryErr
+		return 0, 0, nil, fblse, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		if err := rows.Scan(&updateToken, &dirtyToken, &updatedAt); err != nil {
-			return 0, 0, nil, false, err
+		if err := rows.Scbn(&updbteToken, &dirtyToken, &updbtedAt); err != nil {
+			return 0, 0, nil, fblse, err
 		}
 
-		return updateToken, dirtyToken, updatedAt, true, nil
+		return updbteToken, dirtyToken, updbtedAt, true, nil
 	}
 
-	return 0, 0, nil, false, nil
+	return 0, 0, nil, fblse, nil
 }
 
 //
 //
 
-type sanitizedCommitInput struct {
-	nearestUploadsRowValues       <-chan []any
-	nearestUploadsLinksRowValues  <-chan []any
-	uploadsVisibleAtTipRowValues  <-chan []any
-	numNearestUploadsRecords      uint32 // populated once nearestUploadsRowValues is exhausted
-	numNearestUploadsLinksRecords uint32 // populated once nearestUploadsLinksRowValues is exhausted
-	numUploadsVisibleAtTipRecords uint32 // populated once uploadsVisibleAtTipRowValues is exhausted
+type sbnitizedCommitInput struct {
+	nebrestUplobdsRowVblues       <-chbn []bny
+	nebrestUplobdsLinksRowVblues  <-chbn []bny
+	uplobdsVisibleAtTipRowVblues  <-chbn []bny
+	numNebrestUplobdsRecords      uint32 // populbted once nebrestUplobdsRowVblues is exhbusted
+	numNebrestUplobdsLinksRecords uint32 // populbted once nebrestUplobdsLinksRowVblues is exhbusted
+	numUplobdsVisibleAtTipRecords uint32 // populbted once uplobdsVisibleAtTipRowVblues is exhbusted
 }
 
-// sanitizeCommitInput reads the data that needs to be persisted from the given graph and writes the
-// sanitized values (ensures values match the column types) into channels for insertion into a particular
-// table.
-func sanitizeCommitInput(
+// sbnitizeCommitInput rebds the dbtb thbt needs to be persisted from the given grbph bnd writes the
+// sbnitized vblues (ensures vblues mbtch the column types) into chbnnels for insertion into b pbrticulbr
+// tbble.
+func sbnitizeCommitInput(
 	ctx context.Context,
-	graph *commitgraph.Graph,
-	refDescriptions map[string][]gitdomain.RefDescription,
-	maxAgeForNonStaleBranches time.Duration,
-	maxAgeForNonStaleTags time.Duration,
-) *sanitizedCommitInput {
-	maxAges := map[gitdomain.RefType]time.Duration{
-		gitdomain.RefTypeBranch: maxAgeForNonStaleBranches,
-		gitdomain.RefTypeTag:    maxAgeForNonStaleTags,
+	grbph *commitgrbph.Grbph,
+	refDescriptions mbp[string][]gitdombin.RefDescription,
+	mbxAgeForNonStbleBrbnches time.Durbtion,
+	mbxAgeForNonStbleTbgs time.Durbtion,
+) *sbnitizedCommitInput {
+	mbxAges := mbp[gitdombin.RefType]time.Durbtion{
+		gitdombin.RefTypeBrbnch: mbxAgeForNonStbleBrbnches,
+		gitdombin.RefTypeTbg:    mbxAgeForNonStbleTbgs,
 	}
 
-	nearestUploadsRowValues := make(chan []any)
-	nearestUploadsLinksRowValues := make(chan []any)
-	uploadsVisibleAtTipRowValues := make(chan []any)
+	nebrestUplobdsRowVblues := mbke(chbn []bny)
+	nebrestUplobdsLinksRowVblues := mbke(chbn []bny)
+	uplobdsVisibleAtTipRowVblues := mbke(chbn []bny)
 
-	sanitized := &sanitizedCommitInput{
-		nearestUploadsRowValues:      nearestUploadsRowValues,
-		nearestUploadsLinksRowValues: nearestUploadsLinksRowValues,
-		uploadsVisibleAtTipRowValues: uploadsVisibleAtTipRowValues,
+	sbnitized := &sbnitizedCommitInput{
+		nebrestUplobdsRowVblues:      nebrestUplobdsRowVblues,
+		nebrestUplobdsLinksRowVblues: nebrestUplobdsLinksRowVblues,
+		uplobdsVisibleAtTipRowVblues: uplobdsVisibleAtTipRowVblues,
 	}
 
 	go func() {
-		defer close(nearestUploadsRowValues)
-		defer close(nearestUploadsLinksRowValues)
-		defer close(uploadsVisibleAtTipRowValues)
+		defer close(nebrestUplobdsRowVblues)
+		defer close(nebrestUplobdsLinksRowVblues)
+		defer close(uplobdsVisibleAtTipRowVblues)
 
-		listSerializer := newUploadMetaListSerializer()
+		listSeriblizer := newUplobdMetbListSeriblizer()
 
-		for envelope := range graph.Stream() {
-			if envelope.Uploads != nil {
+		for envelope := rbnge grbph.Strebm() {
+			if envelope.Uplobds != nil {
 				if !countingWrite(
 					ctx,
-					nearestUploadsRowValues,
-					&sanitized.numNearestUploadsRecords,
-					// row values
-					dbutil.CommitBytea(envelope.Uploads.Commit),
-					listSerializer.Serialize(envelope.Uploads.Uploads),
+					nebrestUplobdsRowVblues,
+					&sbnitized.numNebrestUplobdsRecords,
+					// row vblues
+					dbutil.CommitByteb(envelope.Uplobds.Commit),
+					listSeriblizer.Seriblize(envelope.Uplobds.Uplobds),
 				) {
 					return
 				}
@@ -614,49 +614,49 @@ func sanitizeCommitInput(
 			if envelope.Links != nil {
 				if !countingWrite(
 					ctx,
-					nearestUploadsLinksRowValues,
-					&sanitized.numNearestUploadsLinksRecords,
-					// row values
-					dbutil.CommitBytea(envelope.Links.Commit),
-					dbutil.CommitBytea(envelope.Links.AncestorCommit),
-					envelope.Links.Distance,
+					nebrestUplobdsLinksRowVblues,
+					&sbnitized.numNebrestUplobdsLinksRecords,
+					// row vblues
+					dbutil.CommitByteb(envelope.Links.Commit),
+					dbutil.CommitByteb(envelope.Links.AncestorCommit),
+					envelope.Links.Distbnce,
 				) {
 					return
 				}
 			}
 		}
 
-		for commit, refDescriptions := range refDescriptions {
-			isDefaultBranch := false
-			names := make([]string, 0, len(refDescriptions))
+		for commit, refDescriptions := rbnge refDescriptions {
+			isDefbultBrbnch := fblse
+			nbmes := mbke([]string, 0, len(refDescriptions))
 
-			for _, refDescription := range refDescriptions {
-				if refDescription.IsDefaultBranch {
-					isDefaultBranch = true
+			for _, refDescription := rbnge refDescriptions {
+				if refDescription.IsDefbultBrbnch {
+					isDefbultBrbnch = true
 				} else {
-					maxAge, ok := maxAges[refDescription.Type]
-					if !ok || refDescription.CreatedDate == nil || time.Since(*refDescription.CreatedDate) > maxAge {
+					mbxAge, ok := mbxAges[refDescription.Type]
+					if !ok || refDescription.CrebtedDbte == nil || time.Since(*refDescription.CrebtedDbte) > mbxAge {
 						continue
 					}
 				}
 
-				names = append(names, refDescription.Name)
+				nbmes = bppend(nbmes, refDescription.Nbme)
 			}
-			sort.Strings(names)
+			sort.Strings(nbmes)
 
-			if len(names) == 0 {
+			if len(nbmes) == 0 {
 				continue
 			}
 
-			for _, uploadMeta := range graph.UploadsVisibleAtCommit(commit) {
+			for _, uplobdMetb := rbnge grbph.UplobdsVisibleAtCommit(commit) {
 				if !countingWrite(
 					ctx,
-					uploadsVisibleAtTipRowValues,
-					&sanitized.numUploadsVisibleAtTipRecords,
-					// row values
-					uploadMeta.UploadID,
-					strings.Join(names, ","),
-					isDefaultBranch,
+					uplobdsVisibleAtTipRowVblues,
+					&sbnitized.numUplobdsVisibleAtTipRecords,
+					// row vblues
+					uplobdMetb.UplobdID,
+					strings.Join(nbmes, ","),
+					isDefbultBrbnch,
 				) {
 					return
 				}
@@ -664,112 +664,112 @@ func sanitizeCommitInput(
 		}
 	}()
 
-	return sanitized
+	return sbnitized
 }
 
-// writeVisibleUploads serializes the given input into a the following set of temporary tables in the database.
+// writeVisibleUplobds seriblizes the given input into b the following set of temporbry tbbles in the dbtbbbse.
 //
-//   - t_lsif_nearest_uploads        (mirroring lsif_nearest_uploads)
-//   - t_lsif_nearest_uploads_links  (mirroring lsif_nearest_uploads_links)
-//   - t_lsif_uploads_visible_at_tip (mirroring lsif_uploads_visible_at_tip)
+//   - t_lsif_nebrest_uplobds        (mirroring lsif_nebrest_uplobds)
+//   - t_lsif_nebrest_uplobds_links  (mirroring lsif_nebrest_uplobds_links)
+//   - t_lsif_uplobds_visible_bt_tip (mirroring lsif_uplobds_visible_bt_tip)
 //
-// The data in these temporary tables can then be moved into a persisted/permanent table. We previously would perform a
-// bulk delete of the records associated with a repository, then reinsert all of the data needed to be persisted. This
-// caused massive table bloat on some instances. Storing into a temporary table and then inserting/updating/deleting
-// records into the persisted table minimizes the number of tuples we need to touch and drastically reduces table bloat.
-func (s *store) writeVisibleUploads(ctx context.Context, sanitizedInput *sanitizedCommitInput, tx *basestore.Store) (err error) {
-	ctx, trace, endObservation := s.operations.writeVisibleUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// The dbtb in these temporbry tbbles cbn then be moved into b persisted/permbnent tbble. We previously would perform b
+// bulk delete of the records bssocibted with b repository, then reinsert bll of the dbtb needed to be persisted. This
+// cbused mbssive tbble blobt on some instbnces. Storing into b temporbry tbble bnd then inserting/updbting/deleting
+// records into the persisted tbble minimizes the number of tuples we need to touch bnd drbsticblly reduces tbble blobt.
+func (s *store) writeVisibleUplobds(ctx context.Context, sbnitizedInput *sbnitizedCommitInput, tx *bbsestore.Store) (err error) {
+	ctx, trbce, endObservbtion := s.operbtions.writeVisibleUplobds.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	defer func() {
-		trace.AddEvent(
-			"TODO Domain Owner",
-			// Only read these after the associated channels are exhausted
-			attribute.Int("numNearestUploadsRecords", int(sanitizedInput.numNearestUploadsRecords)),
-			attribute.Int("numNearestUploadsLinksRecords", int(sanitizedInput.numNearestUploadsLinksRecords)),
-			attribute.Int("numUploadsVisibleAtTipRecords", int(sanitizedInput.numUploadsVisibleAtTipRecords)),
+		trbce.AddEvent(
+			"TODO Dombin Owner",
+			// Only rebd these bfter the bssocibted chbnnels bre exhbusted
+			bttribute.Int("numNebrestUplobdsRecords", int(sbnitizedInput.numNebrestUplobdsRecords)),
+			bttribute.Int("numNebrestUplobdsLinksRecords", int(sbnitizedInput.numNebrestUplobdsLinksRecords)),
+			bttribute.Int("numUplobdsVisibleAtTipRecords", int(sbnitizedInput.numUplobdsVisibleAtTipRecords)),
 		)
 	}()
 
-	if err := s.createTemporaryNearestUploadsTables(ctx, tx); err != nil {
+	if err := s.crebteTemporbryNebrestUplobdsTbbles(ctx, tx); err != nil {
 		return err
 	}
 
-	return withTriplyNestedBatchInserters(
+	return withTriplyNestedBbtchInserters(
 		ctx,
-		tx.Handle(),
-		batch.MaxNumPostgresParameters,
-		"t_lsif_nearest_uploads", []string{"commit_bytea", "uploads"},
-		"t_lsif_nearest_uploads_links", []string{"commit_bytea", "ancestor_commit_bytea", "distance"},
-		"t_lsif_uploads_visible_at_tip", []string{"upload_id", "branch_or_tag_name", "is_default_branch"},
-		func(nearestUploadsInserter, nearestUploadsLinksInserter, uploadsVisibleAtTipInserter *batch.Inserter) error {
-			return populateInsertersFromChannels(
+		tx.Hbndle(),
+		bbtch.MbxNumPostgresPbrbmeters,
+		"t_lsif_nebrest_uplobds", []string{"commit_byteb", "uplobds"},
+		"t_lsif_nebrest_uplobds_links", []string{"commit_byteb", "bncestor_commit_byteb", "distbnce"},
+		"t_lsif_uplobds_visible_bt_tip", []string{"uplobd_id", "brbnch_or_tbg_nbme", "is_defbult_brbnch"},
+		func(nebrestUplobdsInserter, nebrestUplobdsLinksInserter, uplobdsVisibleAtTipInserter *bbtch.Inserter) error {
+			return populbteInsertersFromChbnnels(
 				ctx,
-				nearestUploadsInserter, sanitizedInput.nearestUploadsRowValues,
-				nearestUploadsLinksInserter, sanitizedInput.nearestUploadsLinksRowValues,
-				uploadsVisibleAtTipInserter, sanitizedInput.uploadsVisibleAtTipRowValues,
+				nebrestUplobdsInserter, sbnitizedInput.nebrestUplobdsRowVblues,
+				nebrestUplobdsLinksInserter, sbnitizedInput.nebrestUplobdsLinksRowVblues,
+				uplobdsVisibleAtTipInserter, sbnitizedInput.uplobdsVisibleAtTipRowVblues,
 			)
 		},
 	)
 }
 
-func withTriplyNestedBatchInserters(
+func withTriplyNestedBbtchInserters(
 	ctx context.Context,
 	db dbutil.DB,
-	maxNumParameters int,
-	tableName1 string, columnNames1 []string,
-	tableName2 string, columnNames2 []string,
-	tableName3 string, columnNames3 []string,
-	f func(inserter1, inserter2, inserter3 *batch.Inserter) error,
+	mbxNumPbrbmeters int,
+	tbbleNbme1 string, columnNbmes1 []string,
+	tbbleNbme2 string, columnNbmes2 []string,
+	tbbleNbme3 string, columnNbmes3 []string,
+	f func(inserter1, inserter2, inserter3 *bbtch.Inserter) error,
 ) error {
-	return batch.WithInserter(ctx, db, tableName1, maxNumParameters, columnNames1, func(inserter1 *batch.Inserter) error {
-		return batch.WithInserter(ctx, db, tableName2, maxNumParameters, columnNames2, func(inserter2 *batch.Inserter) error {
-			return batch.WithInserter(ctx, db, tableName3, maxNumParameters, columnNames3, func(inserter3 *batch.Inserter) error {
+	return bbtch.WithInserter(ctx, db, tbbleNbme1, mbxNumPbrbmeters, columnNbmes1, func(inserter1 *bbtch.Inserter) error {
+		return bbtch.WithInserter(ctx, db, tbbleNbme2, mbxNumPbrbmeters, columnNbmes2, func(inserter2 *bbtch.Inserter) error {
+			return bbtch.WithInserter(ctx, db, tbbleNbme3, mbxNumPbrbmeters, columnNbmes3, func(inserter3 *bbtch.Inserter) error {
 				return f(inserter1, inserter2, inserter3)
 			})
 		})
 	})
 }
 
-func populateInsertersFromChannels(
+func populbteInsertersFromChbnnels(
 	ctx context.Context,
-	inserter1 *batch.Inserter, values1 <-chan []any,
-	inserter2 *batch.Inserter, values2 <-chan []any,
-	inserter3 *batch.Inserter, values3 <-chan []any,
+	inserter1 *bbtch.Inserter, vblues1 <-chbn []bny,
+	inserter2 *bbtch.Inserter, vblues2 <-chbn []bny,
+	inserter3 *bbtch.Inserter, vblues3 <-chbn []bny,
 ) error {
-	for values1 != nil || values2 != nil || values3 != nil {
+	for vblues1 != nil || vblues2 != nil || vblues3 != nil {
 		select {
-		case rowValues, ok := <-values1:
+		cbse rowVblues, ok := <-vblues1:
 			if ok {
-				if err := inserter1.Insert(ctx, rowValues...); err != nil {
+				if err := inserter1.Insert(ctx, rowVblues...); err != nil {
 					return err
 				}
 			} else {
-				// The loop continues until all three channels are nil. Setting this channel to
-				// nil now marks it not ready for communication, effectively blocking on the next
-				// loop iteration.
-				values1 = nil
+				// The loop continues until bll three chbnnels bre nil. Setting this chbnnel to
+				// nil now mbrks it not rebdy for communicbtion, effectively blocking on the next
+				// loop iterbtion.
+				vblues1 = nil
 			}
 
-		case rowValues, ok := <-values2:
+		cbse rowVblues, ok := <-vblues2:
 			if ok {
-				if err := inserter2.Insert(ctx, rowValues...); err != nil {
+				if err := inserter2.Insert(ctx, rowVblues...); err != nil {
 					return err
 				}
 			} else {
-				values2 = nil
+				vblues2 = nil
 			}
 
-		case rowValues, ok := <-values3:
+		cbse rowVblues, ok := <-vblues3:
 			if ok {
-				if err := inserter3.Insert(ctx, rowValues...); err != nil {
+				if err := inserter3.Insert(ctx, rowVblues...); err != nil {
 					return err
 				}
 			} else {
-				values3 = nil
+				vblues3 = nil
 			}
 
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return ctx.Err()
 		}
 	}
@@ -777,157 +777,157 @@ func populateInsertersFromChannels(
 	return nil
 }
 
-// persistNearestUploads modifies the lsif_nearest_uploads table so that it has same data
-// as t_lsif_nearest_uploads for the given repository.
-func (s *store) persistNearestUploads(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
-	ctx, trace, endObservation := s.operations.persistNearestUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// persistNebrestUplobds modifies the lsif_nebrest_uplobds tbble so thbt it hbs sbme dbtb
+// bs t_lsif_nebrest_uplobds for the given repository.
+func (s *store) persistNebrestUplobds(ctx context.Context, repositoryID int, tx *bbsestore.Store) (err error) {
+	ctx, trbce, endObservbtion := s.operbtions.persistNebrestUplobds.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
+	rowsInserted, rowsUpdbted, rowsDeleted, err := s.bulkTrbnsfer(
 		ctx,
-		sqlf.Sprintf(nearestUploadsInsertQuery, repositoryID, repositoryID),
-		sqlf.Sprintf(nearestUploadsUpdateQuery, repositoryID),
-		sqlf.Sprintf(nearestUploadsDeleteQuery, repositoryID),
+		sqlf.Sprintf(nebrestUplobdsInsertQuery, repositoryID, repositoryID),
+		sqlf.Sprintf(nebrestUplobdsUpdbteQuery, repositoryID),
+		sqlf.Sprintf(nebrestUplobdsDeleteQuery, repositoryID),
 		tx,
 	)
 	if err != nil {
 		return err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("lsif_nearest_uploads.ins", rowsInserted),
-		attribute.Int("lsif_nearest_uploads.upd", rowsUpdated),
-		attribute.Int("lsif_nearest_uploads.del", rowsDeleted))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("lsif_nebrest_uplobds.ins", rowsInserted),
+		bttribute.Int("lsif_nebrest_uplobds.upd", rowsUpdbted),
+		bttribute.Int("lsif_nebrest_uplobds.del", rowsDeleted))
 
 	return nil
 }
 
-const nearestUploadsInsertQuery = `
-INSERT INTO lsif_nearest_uploads
-SELECT %s, source.commit_bytea, source.uploads
-FROM t_lsif_nearest_uploads source
-WHERE source.commit_bytea NOT IN (SELECT nu.commit_bytea FROM lsif_nearest_uploads nu WHERE nu.repository_id = %s)
+const nebrestUplobdsInsertQuery = `
+INSERT INTO lsif_nebrest_uplobds
+SELECT %s, source.commit_byteb, source.uplobds
+FROM t_lsif_nebrest_uplobds source
+WHERE source.commit_byteb NOT IN (SELECT nu.commit_byteb FROM lsif_nebrest_uplobds nu WHERE nu.repository_id = %s)
 `
 
-const nearestUploadsUpdateQuery = `
-UPDATE lsif_nearest_uploads nu
-SET uploads = source.uploads
-FROM t_lsif_nearest_uploads source
+const nebrestUplobdsUpdbteQuery = `
+UPDATE lsif_nebrest_uplobds nu
+SET uplobds = source.uplobds
+FROM t_lsif_nebrest_uplobds source
 WHERE
 	nu.repository_id = %s AND
-	nu.commit_bytea = source.commit_bytea AND
-	nu.uploads != source.uploads
+	nu.commit_byteb = source.commit_byteb AND
+	nu.uplobds != source.uplobds
 `
 
-const nearestUploadsDeleteQuery = `
-DELETE FROM lsif_nearest_uploads nu
+const nebrestUplobdsDeleteQuery = `
+DELETE FROM lsif_nebrest_uplobds nu
 WHERE
 	nu.repository_id = %s AND
-	nu.commit_bytea NOT IN (SELECT source.commit_bytea FROM t_lsif_nearest_uploads source)
+	nu.commit_byteb NOT IN (SELECT source.commit_byteb FROM t_lsif_nebrest_uplobds source)
 `
 
-// persistNearestUploadsLinks modifies the lsif_nearest_uploads_links table so that it has same
-// data as t_lsif_nearest_uploads_links for the given repository.
-func (s *store) persistNearestUploadsLinks(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
-	ctx, trace, endObservation := s.operations.persistNearestUploadsLinks.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// persistNebrestUplobdsLinks modifies the lsif_nebrest_uplobds_links tbble so thbt it hbs sbme
+// dbtb bs t_lsif_nebrest_uplobds_links for the given repository.
+func (s *store) persistNebrestUplobdsLinks(ctx context.Context, repositoryID int, tx *bbsestore.Store) (err error) {
+	ctx, trbce, endObservbtion := s.operbtions.persistNebrestUplobdsLinks.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(
+	rowsInserted, rowsUpdbted, rowsDeleted, err := s.bulkTrbnsfer(
 		ctx,
-		sqlf.Sprintf(nearestUploadsLinksInsertQuery, repositoryID, repositoryID),
-		sqlf.Sprintf(nearestUploadsLinksUpdateQuery, repositoryID),
-		sqlf.Sprintf(nearestUploadsLinksDeleteQuery, repositoryID),
+		sqlf.Sprintf(nebrestUplobdsLinksInsertQuery, repositoryID, repositoryID),
+		sqlf.Sprintf(nebrestUplobdsLinksUpdbteQuery, repositoryID),
+		sqlf.Sprintf(nebrestUplobdsLinksDeleteQuery, repositoryID),
 		tx,
 	)
 	if err != nil {
 		return err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("lsif_nearest_uploads_links.ins", rowsInserted),
-		attribute.Int("lsif_nearest_uploads_links.upd", rowsUpdated),
-		attribute.Int("lsif_nearest_uploads_links.del", rowsDeleted))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("lsif_nebrest_uplobds_links.ins", rowsInserted),
+		bttribute.Int("lsif_nebrest_uplobds_links.upd", rowsUpdbted),
+		bttribute.Int("lsif_nebrest_uplobds_links.del", rowsDeleted))
 
 	return nil
 }
 
-const nearestUploadsLinksInsertQuery = `
-INSERT INTO lsif_nearest_uploads_links
-SELECT %s, source.commit_bytea, source.ancestor_commit_bytea, source.distance
-FROM t_lsif_nearest_uploads_links source
-WHERE source.commit_bytea NOT IN (SELECT nul.commit_bytea FROM lsif_nearest_uploads_links nul WHERE nul.repository_id = %s)
+const nebrestUplobdsLinksInsertQuery = `
+INSERT INTO lsif_nebrest_uplobds_links
+SELECT %s, source.commit_byteb, source.bncestor_commit_byteb, source.distbnce
+FROM t_lsif_nebrest_uplobds_links source
+WHERE source.commit_byteb NOT IN (SELECT nul.commit_byteb FROM lsif_nebrest_uplobds_links nul WHERE nul.repository_id = %s)
 `
 
-const nearestUploadsLinksUpdateQuery = `
-UPDATE lsif_nearest_uploads_links nul
-SET ancestor_commit_bytea = source.ancestor_commit_bytea, distance = source.distance
-FROM t_lsif_nearest_uploads_links source
+const nebrestUplobdsLinksUpdbteQuery = `
+UPDATE lsif_nebrest_uplobds_links nul
+SET bncestor_commit_byteb = source.bncestor_commit_byteb, distbnce = source.distbnce
+FROM t_lsif_nebrest_uplobds_links source
 WHERE
 	nul.repository_id = %s AND
-	nul.commit_bytea = source.commit_bytea AND
-	nul.ancestor_commit_bytea != source.ancestor_commit_bytea AND
-	nul.distance != source.distance
+	nul.commit_byteb = source.commit_byteb AND
+	nul.bncestor_commit_byteb != source.bncestor_commit_byteb AND
+	nul.distbnce != source.distbnce
 `
 
-const nearestUploadsLinksDeleteQuery = `
-DELETE FROM lsif_nearest_uploads_links nul
+const nebrestUplobdsLinksDeleteQuery = `
+DELETE FROM lsif_nebrest_uplobds_links nul
 WHERE
 	nul.repository_id = %s AND
-	nul.commit_bytea NOT IN (SELECT source.commit_bytea FROM t_lsif_nearest_uploads_links source)
+	nul.commit_byteb NOT IN (SELECT source.commit_byteb FROM t_lsif_nebrest_uplobds_links source)
 `
 
-// persistUploadsVisibleAtTip modifies the lsif_uploads_visible_at_tip table so that it has same
-// data as t_lsif_uploads_visible_at_tip for the given repository.
-func (s *store) persistUploadsVisibleAtTip(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
-	ctx, trace, endObservation := s.operations.persistUploadsVisibleAtTip.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// persistUplobdsVisibleAtTip modifies the lsif_uplobds_visible_bt_tip tbble so thbt it hbs sbme
+// dbtb bs t_lsif_uplobds_visible_bt_tip for the given repository.
+func (s *store) persistUplobdsVisibleAtTip(ctx context.Context, repositoryID int, tx *bbsestore.Store) (err error) {
+	ctx, trbce, endObservbtion := s.operbtions.persistUplobdsVisibleAtTip.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	insertQuery := sqlf.Sprintf(uploadsVisibleAtTipInsertQuery, repositoryID, repositoryID)
-	deleteQuery := sqlf.Sprintf(uploadsVisibleAtTipDeleteQuery, repositoryID)
+	insertQuery := sqlf.Sprintf(uplobdsVisibleAtTipInsertQuery, repositoryID, repositoryID)
+	deleteQuery := sqlf.Sprintf(uplobdsVisibleAtTipDeleteQuery, repositoryID)
 
-	rowsInserted, rowsUpdated, rowsDeleted, err := s.bulkTransfer(ctx, insertQuery, nil, deleteQuery, tx)
+	rowsInserted, rowsUpdbted, rowsDeleted, err := s.bulkTrbnsfer(ctx, insertQuery, nil, deleteQuery, tx)
 	if err != nil {
 		return err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("lsif_uploads_visible_at_tip.ins", rowsInserted),
-		attribute.Int("lsif_uploads_visible_at_tip.upd", rowsUpdated),
-		attribute.Int("lsif_uploads_visible_at_tip.del", rowsDeleted))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("lsif_uplobds_visible_bt_tip.ins", rowsInserted),
+		bttribute.Int("lsif_uplobds_visible_bt_tip.upd", rowsUpdbted),
+		bttribute.Int("lsif_uplobds_visible_bt_tip.del", rowsDeleted))
 
 	return nil
 }
 
-const uploadsVisibleAtTipInsertQuery = `
-INSERT INTO lsif_uploads_visible_at_tip
-SELECT %s, source.upload_id, source.branch_or_tag_name, source.is_default_branch
-FROM t_lsif_uploads_visible_at_tip source
+const uplobdsVisibleAtTipInsertQuery = `
+INSERT INTO lsif_uplobds_visible_bt_tip
+SELECT %s, source.uplobd_id, source.brbnch_or_tbg_nbme, source.is_defbult_brbnch
+FROM t_lsif_uplobds_visible_bt_tip source
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM lsif_uploads_visible_at_tip vat
+	FROM lsif_uplobds_visible_bt_tip vbt
 	WHERE
-		vat.repository_id = %s AND
-		vat.upload_id = source.upload_id AND
-		vat.branch_or_tag_name = source.branch_or_tag_name AND
-		vat.is_default_branch = source.is_default_branch
+		vbt.repository_id = %s AND
+		vbt.uplobd_id = source.uplobd_id AND
+		vbt.brbnch_or_tbg_nbme = source.brbnch_or_tbg_nbme AND
+		vbt.is_defbult_brbnch = source.is_defbult_brbnch
 )
 `
 
-const uploadsVisibleAtTipDeleteQuery = `
-DELETE FROM lsif_uploads_visible_at_tip vat
+const uplobdsVisibleAtTipDeleteQuery = `
+DELETE FROM lsif_uplobds_visible_bt_tip vbt
 WHERE
-	vat.repository_id = %s AND
+	vbt.repository_id = %s AND
 	NOT EXISTS (
 		SELECT 1
-		FROM t_lsif_uploads_visible_at_tip source
+		FROM t_lsif_uplobds_visible_bt_tip source
 		WHERE
-			source.upload_id = vat.upload_id AND
-			source.branch_or_tag_name = vat.branch_or_tag_name AND
-			source.is_default_branch = vat.is_default_branch
+			source.uplobd_id = vbt.uplobd_id AND
+			source.brbnch_or_tbg_nbme = vbt.brbnch_or_tbg_nbme AND
+			source.is_defbult_brbnch = vbt.is_defbult_brbnch
 	)
 `
 
-// bulkTransfer performs the given insert, update, and delete queries and returns the number of records
-// touched by each. If any query is nil, the returned count will be zero.
-func (s *store) bulkTransfer(ctx context.Context, insertQuery, updateQuery, deleteQuery *sqlf.Query, tx *basestore.Store) (rowsInserted int, rowsUpdated int, rowsDeleted int, err error) {
-	prepareQuery := func(query *sqlf.Query) *sqlf.Query {
+// bulkTrbnsfer performs the given insert, updbte, bnd delete queries bnd returns the number of records
+// touched by ebch. If bny query is nil, the returned count will be zero.
+func (s *store) bulkTrbnsfer(ctx context.Context, insertQuery, updbteQuery, deleteQuery *sqlf.Query, tx *bbsestore.Store) (rowsInserted int, rowsUpdbted int, rowsDeleted int, err error) {
+	prepbreQuery := func(query *sqlf.Query) *sqlf.Query {
 		if query == nil {
 			return sqlf.Sprintf("SELECT 0")
 		}
@@ -935,24 +935,24 @@ func (s *store) bulkTransfer(ctx context.Context, insertQuery, updateQuery, dele
 		return sqlf.Sprintf("%s RETURNING 1", query)
 	}
 
-	rows, err := tx.Query(ctx, sqlf.Sprintf(bulkTransferQuery, prepareQuery(insertQuery), prepareQuery(updateQuery), prepareQuery(deleteQuery)))
+	rows, err := tx.Query(ctx, sqlf.Sprintf(bulkTrbnsferQuery, prepbreQuery(insertQuery), prepbreQuery(updbteQuery), prepbreQuery(deleteQuery)))
 	if err != nil {
 		return 0, 0, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		if err := rows.Scan(&rowsInserted, &rowsUpdated, &rowsDeleted); err != nil {
+		if err := rows.Scbn(&rowsInserted, &rowsUpdbted, &rowsDeleted); err != nil {
 			return 0, 0, 0, err
 		}
 
-		return rowsInserted, rowsUpdated, rowsDeleted, nil
+		return rowsInserted, rowsUpdbted, rowsDeleted, nil
 	}
 
 	return 0, 0, 0, nil
 }
 
-const bulkTransferQuery = `
+const bulkTrbnsferQuery = `
 WITH
 	ins AS (%s),
 	upd AS (%s),
@@ -963,15 +963,15 @@ SELECT
 	(SELECT COUNT(*) FROM del) AS num_del
 `
 
-func (s *store) createTemporaryNearestUploadsTables(ctx context.Context, tx *basestore.Store) error {
-	temporaryTableQueries := []string{
-		temporaryNearestUploadsTableQuery,
-		temporaryNearestUploadsLinksTableQuery,
-		temporaryUploadsVisibleAtTipTableQuery,
+func (s *store) crebteTemporbryNebrestUplobdsTbbles(ctx context.Context, tx *bbsestore.Store) error {
+	temporbryTbbleQueries := []string{
+		temporbryNebrestUplobdsTbbleQuery,
+		temporbryNebrestUplobdsLinksTbbleQuery,
+		temporbryUplobdsVisibleAtTipTbbleQuery,
 	}
 
-	for _, temporaryTableQuery := range temporaryTableQueries {
-		if err := tx.Exec(ctx, sqlf.Sprintf(temporaryTableQuery)); err != nil {
+	for _, temporbryTbbleQuery := rbnge temporbryTbbleQueries {
+		if err := tx.Exec(ctx, sqlf.Sprintf(temporbryTbbleQuery)); err != nil {
 			return err
 		}
 	}
@@ -979,102 +979,102 @@ func (s *store) createTemporaryNearestUploadsTables(ctx context.Context, tx *bas
 	return nil
 }
 
-const temporaryNearestUploadsTableQuery = `
-CREATE TEMPORARY TABLE t_lsif_nearest_uploads (
-	commit_bytea bytea NOT NULL,
-	uploads      jsonb NOT NULL
+const temporbryNebrestUplobdsTbbleQuery = `
+CREATE TEMPORARY TABLE t_lsif_nebrest_uplobds (
+	commit_byteb byteb NOT NULL,
+	uplobds      jsonb NOT NULL
 ) ON COMMIT DROP
 `
 
-const temporaryNearestUploadsLinksTableQuery = `
-CREATE TEMPORARY TABLE t_lsif_nearest_uploads_links (
-	commit_bytea          bytea NOT NULL,
-	ancestor_commit_bytea bytea NOT NULL,
-	distance              integer NOT NULL
+const temporbryNebrestUplobdsLinksTbbleQuery = `
+CREATE TEMPORARY TABLE t_lsif_nebrest_uplobds_links (
+	commit_byteb          byteb NOT NULL,
+	bncestor_commit_byteb byteb NOT NULL,
+	distbnce              integer NOT NULL
 ) ON COMMIT DROP
 `
 
-const temporaryUploadsVisibleAtTipTableQuery = `
-CREATE TEMPORARY TABLE t_lsif_uploads_visible_at_tip (
-	upload_id integer NOT NULL,
-	branch_or_tag_name text NOT NULL,
-	is_default_branch boolean NOT NULL
+const temporbryUplobdsVisibleAtTipTbbleQuery = `
+CREATE TEMPORARY TABLE t_lsif_uplobds_visible_bt_tip (
+	uplobd_id integer NOT NULL,
+	brbnch_or_tbg_nbme text NOT NULL,
+	is_defbult_brbnch boolebn NOT NULL
 ) ON COMMIT DROP
 `
 
-// countingWrite writes the given slice of interfaces to the given channel. This function returns true
-// if the write succeeded and false if the context was canceled. On success, the counter's underlying
-// value will be incremented (non-atomically).
-func countingWrite(ctx context.Context, ch chan<- []any, counter *uint32, values ...any) bool {
+// countingWrite writes the given slice of interfbces to the given chbnnel. This function returns true
+// if the write succeeded bnd fblse if the context wbs cbnceled. On success, the counter's underlying
+// vblue will be incremented (non-btomicblly).
+func countingWrite(ctx context.Context, ch chbn<- []bny, counter *uint32, vblues ...bny) bool {
 	select {
-	case ch <- values:
+	cbse ch <- vblues:
 		*counter++
 		return true
 
-	case <-ctx.Done():
-		return false
+	cbse <-ctx.Done():
+		return fblse
 	}
 }
 
 //
 //
 
-type uploadMetaListSerializer struct {
+type uplobdMetbListSeriblizer struct {
 	buf     bytes.Buffer
-	scratch []byte
+	scrbtch []byte
 }
 
-func newUploadMetaListSerializer() *uploadMetaListSerializer {
-	return &uploadMetaListSerializer{
-		scratch: make([]byte, 4),
+func newUplobdMetbListSeriblizer() *uplobdMetbListSeriblizer {
+	return &uplobdMetbListSeriblizer{
+		scrbtch: mbke([]byte, 4),
 	}
 }
 
-// Serialize returns a new byte slice with the given upload metadata values encoded
-// as a JSON object (keys being the upload_id and values being the distance field).
+// Seriblize returns b new byte slice with the given uplobd metbdbtb vblues encoded
+// bs b JSON object (keys being the uplobd_id bnd vblues being the distbnce field).
 //
-// Our original attempt just built a map[int]int and passed it to the JSON package
-// to be marshalled into a byte array. Unfortunately that puts reflection over the
-// map value in the hot path for commit graph processing. We also can't avoid the
-// reflection by passing a struct without changing the shape of the data persisted
-// in the database.
+// Our originbl bttempt just built b mbp[int]int bnd pbssed it to the JSON pbckbge
+// to be mbrshblled into b byte brrby. Unfortunbtely thbt puts reflection over the
+// mbp vblue in the hot pbth for commit grbph processing. We blso cbn't bvoid the
+// reflection by pbssing b struct without chbnging the shbpe of the dbtb persisted
+// in the dbtbbbse.
 //
-// By serializing this value ourselves we minimize allocations. This change resulted
-// in a 50% reduction of the memory required by BenchmarkCalculateVisibleUploads.
+// By seriblizing this vblue ourselves we minimize bllocbtions. This chbnge resulted
+// in b 50% reduction of the memory required by BenchmbrkCblculbteVisibleUplobds.
 //
-// This method is not safe for concurrent use.
-func (s *uploadMetaListSerializer) Serialize(uploadMetas []commitgraph.UploadMeta) []byte {
-	s.write(uploadMetas)
-	return s.take()
+// This method is not sbfe for concurrent use.
+func (s *uplobdMetbListSeriblizer) Seriblize(uplobdMetbs []commitgrbph.UplobdMetb) []byte {
+	s.write(uplobdMetbs)
+	return s.tbke()
 }
 
-func (s *uploadMetaListSerializer) write(uploadMetas []commitgraph.UploadMeta) {
+func (s *uplobdMetbListSeriblizer) write(uplobdMetbs []commitgrbph.UplobdMetb) {
 	s.buf.WriteByte('{')
-	for i, uploadMeta := range uploadMetas {
+	for i, uplobdMetb := rbnge uplobdMetbs {
 		if i > 0 {
 			s.buf.WriteByte(',')
 		}
 
-		s.writeUploadMeta(uploadMeta)
+		s.writeUplobdMetb(uplobdMetb)
 	}
 	s.buf.WriteByte('}')
 }
 
-func (s *uploadMetaListSerializer) writeUploadMeta(uploadMeta commitgraph.UploadMeta) {
+func (s *uplobdMetbListSeriblizer) writeUplobdMetb(uplobdMetb commitgrbph.UplobdMetb) {
 	s.buf.WriteByte('"')
-	s.writeInteger(uploadMeta.UploadID)
+	s.writeInteger(uplobdMetb.UplobdID)
 	s.buf.Write([]byte{'"', ':'})
-	s.writeInteger(int(uploadMeta.Distance))
+	s.writeInteger(int(uplobdMetb.Distbnce))
 }
 
-func (s *uploadMetaListSerializer) writeInteger(value int) {
-	s.scratch = s.scratch[:0]
-	s.scratch = strconv.AppendInt(s.scratch, int64(value), 10)
-	s.buf.Write(s.scratch)
+func (s *uplobdMetbListSeriblizer) writeInteger(vblue int) {
+	s.scrbtch = s.scrbtch[:0]
+	s.scrbtch = strconv.AppendInt(s.scrbtch, int64(vblue), 10)
+	s.buf.Write(s.scrbtch)
 }
 
-func (s *uploadMetaListSerializer) take() []byte {
-	dest := make([]byte, s.buf.Len())
+func (s *uplobdMetbListSeriblizer) tbke() []byte {
+	dest := mbke([]byte, s.buf.Len())
 	copy(dest, s.buf.Bytes())
 	s.buf.Reset()
 
@@ -1084,16 +1084,16 @@ func (s *uploadMetaListSerializer) take() []byte {
 //
 //
 
-func makeFindClosestDumpConditions(path string, rootMustEnclosePath bool, indexer string) (conds []*sqlf.Query) {
-	if rootMustEnclosePath {
-		// Ensure that the root is a prefix of the path
-		conds = append(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, path))
+func mbkeFindClosestDumpConditions(pbth string, rootMustEnclosePbth bool, indexer string) (conds []*sqlf.Query) {
+	if rootMustEnclosePbth {
+		// Ensure thbt the root is b prefix of the pbth
+		conds = bppend(conds, sqlf.Sprintf(`%s LIKE (u.root || '%%%%')`, pbth))
 	} else {
-		// Ensure that the root is a prefix of the path or vice versa
-		conds = append(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, path, path))
+		// Ensure thbt the root is b prefix of the pbth or vice versb
+		conds = bppend(conds, sqlf.Sprintf(`(%s LIKE (u.root || '%%%%') OR u.root LIKE (%s || '%%%%'))`, pbth, pbth))
 	}
 	if indexer != "" {
-		conds = append(conds, sqlf.Sprintf("indexer = %s", indexer))
+		conds = bppend(conds, sqlf.Sprintf("indexer = %s", indexer))
 	}
 
 	return conds

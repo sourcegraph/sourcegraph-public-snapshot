@@ -1,72 +1,72 @@
-package query
+pbckbge query
 
 import (
 	"testing"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-func TestLangToFileRegexp(t *testing.T) {
-	cases := []struct {
-		lang        string
-		matches     []string
-		doesntMatch []string
+func TestLbngToFileRegexp(t *testing.T) {
+	cbses := []struct {
+		lbng        string
+		mbtches     []string
+		doesntMbtch []string
 	}{
 		{
-			lang: "Starlark",
-			matches: []string{
-				// BUILD.bazel
-				"BUILD.bazel",
-				"/BUILD.bazel",
-				"/a/BUILD.bazel",
-				"/a/BUILD",
-				"/a/b/BUILD.bazel",
+			lbng: "Stbrlbrk",
+			mbtches: []string{
+				// BUILD.bbzel
+				"BUILD.bbzel",
+				"/BUILD.bbzel",
+				"/b/BUILD.bbzel",
+				"/b/BUILD",
+				"/b/b/BUILD.bbzel",
 				// *.bzl
-				"/a/b/foo.bzl",
+				"/b/b/foo.bzl",
 			},
-			doesntMatch: []string{
-				"aBUILD.bazel",
-				"aBUILD.bazelb",
-				"a/BUILD.bazel/b",
-				"BUILD.bazel/b",
-				"aBUILDb",
+			doesntMbtch: []string{
+				"bBUILD.bbzel",
+				"bBUILD.bbzelb",
+				"b/BUILD.bbzel/b",
+				"BUILD.bbzel/b",
+				"bBUILDb",
 				"BUILDb",
-				// lowercase
-				"build.bazel",
+				// lowercbse
+				"build.bbzel",
 				"build",
 			},
 		},
 		{
-			lang: "Dockerfile",
-			matches: []string{
+			lbng: "Dockerfile",
+			mbtches: []string{
 				"Dockerfile",
-				"a/Dockerfile",
-				"/a/b/Dockerfile",
+				"b/Dockerfile",
+				"/b/b/Dockerfile",
 			},
-			doesntMatch: []string{
-				"notaDockerfile",
-				"a/Dockerfile/b",
+			doesntMbtch: []string{
+				"notbDockerfile",
+				"b/Dockerfile/b",
 			},
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.lang, func(t *testing.T) {
-			pattern := LangToFileRegexp(c.lang)
-			re, err := regexp.Compile(pattern)
+	for _, c := rbnge cbses {
+		t.Run(c.lbng, func(t *testing.T) {
+			pbttern := LbngToFileRegexp(c.lbng)
+			re, err := regexp.Compile(pbttern)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			for _, m := range c.matches {
-				if !re.MatchString(m) {
-					t.Errorf("expected %q to match %q", pattern, m)
+			for _, m := rbnge c.mbtches {
+				if !re.MbtchString(m) {
+					t.Errorf("expected %q to mbtch %q", pbttern, m)
 				}
 			}
 
-			for _, m := range c.doesntMatch {
-				if re.MatchString(m) {
-					t.Errorf("expected %q to not match %q", pattern, m)
+			for _, m := rbnge c.doesntMbtch {
+				if re.MbtchString(m) {
+					t.Errorf("expected %q to not mbtch %q", pbttern, m)
 				}
 			}
 		})

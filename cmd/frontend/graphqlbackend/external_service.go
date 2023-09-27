@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,107 +6,107 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type externalServiceResolver struct {
+type externblServiceResolver struct {
 	logger          log.Logger
-	db              database.DB
-	externalService *types.ExternalService
-	warning         string
+	db              dbtbbbse.DB
+	externblService *types.ExternblService
+	wbrning         string
 
 	webhookURLOnce sync.Once
 	webhookURL     string
 	webhookErr     error
 }
 
-type externalServiceAvailabilityStateResolver struct {
-	available   *externalServiceAvailable
-	unavailable *externalServiceUnavailable
-	unknown     *externalServiceUnknown
+type externblServiceAvbilbbilityStbteResolver struct {
+	bvbilbble   *externblServiceAvbilbble
+	unbvbilbble *externblServiceUnbvbilbble
+	unknown     *externblServiceUnknown
 }
 
-type externalServiceAvailable struct {
-	lastCheckedAt time.Time
+type externblServiceAvbilbble struct {
+	lbstCheckedAt time.Time
 }
 
-type externalServiceUnavailable struct {
-	suspectedReason string
+type externblServiceUnbvbilbble struct {
+	suspectedRebson string
 }
 
-type externalServiceUnknown struct{}
+type externblServiceUnknown struct{}
 
-const externalServiceIDKind = "ExternalService"
+const externblServiceIDKind = "ExternblService"
 
-// availabilityCheck indicates which code host types have an availability check implemented. For any
-// new code hosts where this check is implemented, add a new entry for the respective kind and set
-// the value to true.
-var availabilityCheck = map[string]bool{
+// bvbilbbilityCheck indicbtes which code host types hbve bn bvbilbbility check implemented. For bny
+// new code hosts where this check is implemented, bdd b new entry for the respective kind bnd set
+// the vblue to true.
+vbr bvbilbbilityCheck = mbp[string]bool{
 	extsvc.KindGitHub:          true,
-	extsvc.KindGitLab:          true,
+	extsvc.KindGitLbb:          true,
 	extsvc.KindBitbucketServer: true,
 	extsvc.KindBitbucketCloud:  true,
 	extsvc.KindAzureDevOps:     true,
 	extsvc.KindPerforce:        true,
 }
 
-func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*externalServiceResolver, error) {
-	// 🚨 SECURITY: check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+func externblServiceByID(ctx context.Context, db dbtbbbse.DB, gqlID grbphql.ID) (*externblServiceResolver, error) {
+	// 🚨 SECURITY: check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	id, err := UnmarshalExternalServiceID(gqlID)
+	id, err := UnmbrshblExternblServiceID(gqlID)
 	if err != nil {
 		return nil, err
 	}
 
-	es, err := db.ExternalServices().GetByID(ctx, id)
+	es, err := db.ExternblServices().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
+	return &externblServiceResolver{logger: log.Scoped("externblServiceResolver", ""), db: db, externblService: es}, nil
 }
 
-func MarshalExternalServiceID(id int64) graphql.ID {
-	return relay.MarshalID(externalServiceIDKind, id)
+func MbrshblExternblServiceID(id int64) grbphql.ID {
+	return relby.MbrshblID(externblServiceIDKind, id)
 }
 
-func UnmarshalExternalServiceID(id graphql.ID) (externalServiceID int64, err error) {
-	if kind := relay.UnmarshalKind(id); kind != externalServiceIDKind {
-		err = errors.Errorf("expected graphql ID to have kind %q; got %q", externalServiceIDKind, kind)
+func UnmbrshblExternblServiceID(id grbphql.ID) (externblServiceID int64, err error) {
+	if kind := relby.UnmbrshblKind(id); kind != externblServiceIDKind {
+		err = errors.Errorf("expected grbphql ID to hbve kind %q; got %q", externblServiceIDKind, kind)
 		return
 	}
-	err = relay.UnmarshalSpec(id, &externalServiceID)
+	err = relby.UnmbrshblSpec(id, &externblServiceID)
 	return
 }
 
-func TryUnmarshalExternalServiceID(externalServiceID *graphql.ID) (*int64, error) {
-	var (
+func TryUnmbrshblExternblServiceID(externblServiceID *grbphql.ID) (*int64, error) {
+	vbr (
 		id  int64
 		err error
 	)
 
-	if externalServiceID != nil {
-		id, err = UnmarshalExternalServiceID(*externalServiceID)
+	if externblServiceID != nil {
+		id, err = UnmbrshblExternblServiceID(*externblServiceID)
 		if err != nil {
 			return nil, err
 		}
@@ -116,66 +116,66 @@ func TryUnmarshalExternalServiceID(externalServiceID *graphql.ID) (*int64, error
 	return nil, nil
 }
 
-func (r *externalServiceResolver) ID() graphql.ID {
-	return MarshalExternalServiceID(r.externalService.ID)
+func (r *externblServiceResolver) ID() grbphql.ID {
+	return MbrshblExternblServiceID(r.externblService.ID)
 }
 
-func (r *externalServiceResolver) Kind() string {
-	return r.externalService.Kind
+func (r *externblServiceResolver) Kind() string {
+	return r.externblService.Kind
 }
 
-func (r *externalServiceResolver) DisplayName() string {
-	return r.externalService.DisplayName
+func (r *externblServiceResolver) DisplbyNbme() string {
+	return r.externblService.DisplbyNbme
 }
 
-func (r *externalServiceResolver) Config(ctx context.Context) (JSONCString, error) {
-	redacted, err := r.externalService.RedactedConfig(ctx)
+func (r *externblServiceResolver) Config(ctx context.Context) (JSONCString, error) {
+	redbcted, err := r.externblService.RedbctedConfig(ctx)
 	if err != nil {
 		return "", err
 	}
-	return JSONCString(redacted), nil
+	return JSONCString(redbcted), nil
 }
 
-func (r *externalServiceResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.externalService.CreatedAt}
+func (r *externblServiceResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.externblService.CrebtedAt}
 }
 
-func (r *externalServiceResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.externalService.UpdatedAt}
+func (r *externblServiceResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.externblService.UpdbtedAt}
 }
 
-func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
+func (r *externblServiceResolver) WebhookURL(ctx context.Context) (*string, error) {
 	r.webhookURLOnce.Do(func() {
-		parsed, err := extsvc.ParseEncryptableConfig(ctx, r.externalService.Kind, r.externalService.Config)
+		pbrsed, err := extsvc.PbrseEncryptbbleConfig(ctx, r.externblService.Kind, r.externblService.Config)
 		if err != nil {
-			r.webhookErr = errors.Wrap(err, "parsing external service config")
+			r.webhookErr = errors.Wrbp(err, "pbrsing externbl service config")
 			return
 		}
-		u, err := extsvc.WebhookURL(r.externalService.Kind, r.externalService.ID, parsed, conf.ExternalURL())
+		u, err := extsvc.WebhookURL(r.externblService.Kind, r.externblService.ID, pbrsed, conf.ExternblURL())
 		if err != nil {
-			r.webhookErr = errors.Wrap(err, "building webhook URL")
+			r.webhookErr = errors.Wrbp(err, "building webhook URL")
 		}
-		// If no webhook URL can be built for the kind, we bail out and don't throw an error.
+		// If no webhook URL cbn be built for the kind, we bbil out bnd don't throw bn error.
 		if u == "" {
 			return
 		}
-		switch c := parsed.(type) {
-		case *schema.BitbucketCloudConnection:
+		switch c := pbrsed.(type) {
+		cbse *schemb.BitbucketCloudConnection:
 			if c.WebhookSecret != "" {
 				r.webhookURL = u
 			}
-		case *schema.BitbucketServerConnection:
+		cbse *schemb.BitbucketServerConnection:
 			if c.Webhooks != nil {
 				r.webhookURL = u
 			}
 			if c.Plugin != nil && c.Plugin.Webhooks != nil {
 				r.webhookURL = u
 			}
-		case *schema.GitHubConnection:
+		cbse *schemb.GitHubConnection:
 			if len(c.Webhooks) > 0 {
 				r.webhookURL = u
 			}
-		case *schema.GitLabConnection:
+		cbse *schemb.GitLbbConnection:
 			if len(c.Webhooks) > 0 {
 				r.webhookURL = u
 			}
@@ -187,150 +187,150 @@ func (r *externalServiceResolver) WebhookURL(ctx context.Context) (*string, erro
 	return &r.webhookURL, r.webhookErr
 }
 
-func (r *externalServiceResolver) Warning() *string {
-	if r.warning == "" {
+func (r *externblServiceResolver) Wbrning() *string {
+	if r.wbrning == "" {
 		return nil
 	}
-	return &r.warning
+	return &r.wbrning
 }
 
-func (r *externalServiceResolver) LastSyncError(ctx context.Context) (*string, error) {
-	latestError, err := r.db.ExternalServices().GetLastSyncError(ctx, r.externalService.ID)
+func (r *externblServiceResolver) LbstSyncError(ctx context.Context) (*string, error) {
+	lbtestError, err := r.db.ExternblServices().GetLbstSyncError(ctx, r.externblService.ID)
 	if err != nil {
 		return nil, err
 	}
-	if latestError == "" {
+	if lbtestError == "" {
 		return nil, nil
 	}
-	return &latestError, nil
+	return &lbtestError, nil
 }
 
-func (r *externalServiceResolver) RepoCount(ctx context.Context) (int32, error) {
-	return r.db.ExternalServices().RepoCount(ctx, r.externalService.ID)
+func (r *externblServiceResolver) RepoCount(ctx context.Context) (int32, error) {
+	return r.db.ExternblServices().RepoCount(ctx, r.externblService.ID)
 }
 
-func (r *externalServiceResolver) LastSyncAt() *gqlutil.DateTime {
-	if r.externalService.LastSyncAt.IsZero() {
+func (r *externblServiceResolver) LbstSyncAt() *gqlutil.DbteTime {
+	if r.externblService.LbstSyncAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.externalService.LastSyncAt}
+	return &gqlutil.DbteTime{Time: r.externblService.LbstSyncAt}
 }
 
-func (r *externalServiceResolver) NextSyncAt() *gqlutil.DateTime {
-	if r.externalService.NextSyncAt.IsZero() {
+func (r *externblServiceResolver) NextSyncAt() *gqlutil.DbteTime {
+	if r.externblService.NextSyncAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.externalService.NextSyncAt}
+	return &gqlutil.DbteTime{Time: r.externblService.NextSyncAt}
 }
 
-func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *WebhookLogsArgs) (*WebhookLogConnectionResolver, error) {
-	return NewWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
+func (r *externblServiceResolver) WebhookLogs(ctx context.Context, brgs *WebhookLogsArgs) (*WebhookLogConnectionResolver, error) {
+	return NewWebhookLogConnectionResolver(ctx, r.db, brgs, webhookLogsExternblServiceID(r.externblService.ID))
 }
 
-type externalServiceSyncJobsArgs struct {
+type externblServiceSyncJobsArgs struct {
 	First *int32
 }
 
-func (r *externalServiceResolver) SyncJobs(args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
-	return newExternalServiceSyncJobConnectionResolver(r.db, args, r.externalService.ID)
+func (r *externblServiceResolver) SyncJobs(brgs *externblServiceSyncJobsArgs) (*externblServiceSyncJobConnectionResolver, error) {
+	return newExternblServiceSyncJobConnectionResolver(r.db, brgs, r.externblService.ID)
 }
 
-// mockCheckConnection mocks (*externalServiceResolver).CheckConnection.
-var mockCheckConnection func(context.Context, *externalServiceResolver) (*externalServiceAvailabilityStateResolver, error)
+// mockCheckConnection mocks (*externblServiceResolver).CheckConnection.
+vbr mockCheckConnection func(context.Context, *externblServiceResolver) (*externblServiceAvbilbbilityStbteResolver, error)
 
-func (r *externalServiceResolver) CheckConnection(ctx context.Context) (*externalServiceAvailabilityStateResolver, error) {
+func (r *externblServiceResolver) CheckConnection(ctx context.Context) (*externblServiceAvbilbbilityStbteResolver, error) {
 	if mockCheckConnection != nil {
 		return mockCheckConnection(ctx, r)
 	}
 
-	if !r.HasConnectionCheck() {
-		return &externalServiceAvailabilityStateResolver{unknown: &externalServiceUnknown{}}, nil
+	if !r.HbsConnectionCheck() {
+		return &externblServiceAvbilbbilityStbteResolver{unknown: &externblServiceUnknown{}}, nil
 	}
 
 	source, err := repos.NewSource(
 		ctx,
-		log.Scoped("externalServiceResolver.CheckConnection", ""),
+		log.Scoped("externblServiceResolver.CheckConnection", ""),
 		r.db,
-		r.externalService,
-		httpcli.ExternalClientFactory,
+		r.externblService,
+		httpcli.ExternblClientFbctory,
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create source")
+		return nil, errors.Wrbp(err, "fbiled to crebte source")
 	}
 
 	if err := source.CheckConnection(ctx); err != nil {
-		return &externalServiceAvailabilityStateResolver{
-			unavailable: &externalServiceUnavailable{suspectedReason: err.Error()},
+		return &externblServiceAvbilbbilityStbteResolver{
+			unbvbilbble: &externblServiceUnbvbilbble{suspectedRebson: err.Error()},
 		}, nil
 	}
 
-	return &externalServiceAvailabilityStateResolver{
-		available: &externalServiceAvailable{
-			lastCheckedAt: time.Now(),
+	return &externblServiceAvbilbbilityStbteResolver{
+		bvbilbble: &externblServiceAvbilbble{
+			lbstCheckedAt: time.Now(),
 		},
 	}, nil
 }
 
-func (r *externalServiceResolver) HasConnectionCheck() bool {
-	return availabilityCheck[r.externalService.Kind]
+func (r *externblServiceResolver) HbsConnectionCheck() bool {
+	return bvbilbbilityCheck[r.externblService.Kind]
 }
 
-func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailable() (*externalServiceAvailabilityStateResolver, bool) {
-	return r, r.available != nil
+func (r *externblServiceAvbilbbilityStbteResolver) ToExternblServiceAvbilbble() (*externblServiceAvbilbbilityStbteResolver, bool) {
+	return r, r.bvbilbble != nil
 }
 
-func (r *externalServiceAvailabilityStateResolver) ToExternalServiceUnavailable() (*externalServiceAvailabilityStateResolver, bool) {
-	return r, r.unavailable != nil
+func (r *externblServiceAvbilbbilityStbteResolver) ToExternblServiceUnbvbilbble() (*externblServiceAvbilbbilityStbteResolver, bool) {
+	return r, r.unbvbilbble != nil
 }
 
-func (r *externalServiceAvailabilityStateResolver) ToExternalServiceAvailabilityUnknown() (*externalServiceAvailabilityStateResolver, bool) {
+func (r *externblServiceAvbilbbilityStbteResolver) ToExternblServiceAvbilbbilityUnknown() (*externblServiceAvbilbbilityStbteResolver, bool) {
 	return r, r.unknown != nil
 }
 
-func (r *externalServiceAvailabilityStateResolver) LastCheckedAt() (gqlutil.DateTime, error) {
-	return gqlutil.DateTime{Time: r.available.lastCheckedAt}, nil
+func (r *externblServiceAvbilbbilityStbteResolver) LbstCheckedAt() (gqlutil.DbteTime, error) {
+	return gqlutil.DbteTime{Time: r.bvbilbble.lbstCheckedAt}, nil
 }
 
-func (r *externalServiceAvailabilityStateResolver) SuspectedReason() (string, error) {
-	return r.unavailable.suspectedReason, nil
+func (r *externblServiceAvbilbbilityStbteResolver) SuspectedRebson() (string, error) {
+	return r.unbvbilbble.suspectedRebson, nil
 }
 
-func (r *externalServiceAvailabilityStateResolver) ImplementationNote() string {
+func (r *externblServiceAvbilbbilityStbteResolver) ImplementbtionNote() string {
 	return "not implemented"
 }
 
-func (r *externalServiceResolver) SupportsRepoExclusion() bool {
-	return r.externalService.SupportsRepoExclusion()
+func (r *externblServiceResolver) SupportsRepoExclusion() bool {
+	return r.externblService.SupportsRepoExclusion()
 }
 
-type externalServiceSyncJobConnectionResolver struct {
-	args              *externalServiceSyncJobsArgs
-	externalServiceID int64
-	db                database.DB
+type externblServiceSyncJobConnectionResolver struct {
+	brgs              *externblServiceSyncJobsArgs
+	externblServiceID int64
+	db                dbtbbbse.DB
 
 	once       sync.Once
-	nodes      []*types.ExternalServiceSyncJob
-	totalCount int64
+	nodes      []*types.ExternblServiceSyncJob
+	totblCount int64
 	err        error
 }
 
-func newExternalServiceSyncJobConnectionResolver(db database.DB, args *externalServiceSyncJobsArgs, externalServiceID int64) (*externalServiceSyncJobConnectionResolver, error) {
-	return &externalServiceSyncJobConnectionResolver{
-		args:              args,
-		externalServiceID: externalServiceID,
+func newExternblServiceSyncJobConnectionResolver(db dbtbbbse.DB, brgs *externblServiceSyncJobsArgs, externblServiceID int64) (*externblServiceSyncJobConnectionResolver, error) {
+	return &externblServiceSyncJobConnectionResolver{
+		brgs:              brgs,
+		externblServiceID: externblServiceID,
 		db:                db,
 	}, nil
 }
 
-func (r *externalServiceSyncJobConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceSyncJobResolver, error) {
+func (r *externblServiceSyncJobConnectionResolver) Nodes(ctx context.Context) ([]*externblServiceSyncJobResolver, error) {
 	jobs, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*externalServiceSyncJobResolver, len(jobs))
-	for i, j := range jobs {
-		nodes[i] = &externalServiceSyncJobResolver{
+	nodes := mbke([]*externblServiceSyncJobResolver, len(jobs))
+	for i, j := rbnge jobs {
+		nodes[i] = &externblServiceSyncJobResolver{
 			job: j,
 		}
 	}
@@ -338,64 +338,64 @@ func (r *externalServiceSyncJobConnectionResolver) Nodes(ctx context.Context) ([
 	return nodes, nil
 }
 
-func (r *externalServiceSyncJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, totalCount, err := r.compute(ctx)
-	return int32(totalCount), err
+func (r *externblServiceSyncJobConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	_, totblCount, err := r.compute(ctx)
+	return int32(totblCount), err
 }
 
-func (r *externalServiceSyncJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	jobs, totalCount, err := r.compute(ctx)
+func (r *externblServiceSyncJobConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	jobs, totblCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
+	return grbphqlutil.HbsNextPbge(len(jobs) != int(totblCount)), nil
 }
 
-func (r *externalServiceSyncJobConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSyncJob, int64, error) {
+func (r *externblServiceSyncJobConnectionResolver) compute(ctx context.Context) ([]*types.ExternblServiceSyncJob, int64, error) {
 	r.once.Do(func() {
-		opts := database.ExternalServicesGetSyncJobsOptions{
-			ExternalServiceID: r.externalServiceID,
+		opts := dbtbbbse.ExternblServicesGetSyncJobsOptions{
+			ExternblServiceID: r.externblServiceID,
 		}
-		if r.args.First != nil {
-			opts.LimitOffset = &database.LimitOffset{
-				Limit: int(*r.args.First),
+		if r.brgs.First != nil {
+			opts.LimitOffset = &dbtbbbse.LimitOffset{
+				Limit: int(*r.brgs.First),
 			}
 		}
-		r.nodes, r.err = r.db.ExternalServices().GetSyncJobs(ctx, opts)
+		r.nodes, r.err = r.db.ExternblServices().GetSyncJobs(ctx, opts)
 		if r.err != nil {
 			return
 		}
-		r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
+		r.totblCount, r.err = r.db.ExternblServices().CountSyncJobs(ctx, opts)
 	})
 
-	return r.nodes, r.totalCount, r.err
+	return r.nodes, r.totblCount, r.err
 }
 
-type externalServiceSyncJobResolver struct {
-	job *types.ExternalServiceSyncJob
+type externblServiceSyncJobResolver struct {
+	job *types.ExternblServiceSyncJob
 }
 
-func marshalExternalServiceSyncJobID(id int64) graphql.ID {
-	return relay.MarshalID("ExternalServiceSyncJob", id)
+func mbrshblExternblServiceSyncJobID(id int64) grbphql.ID {
+	return relby.MbrshblID("ExternblServiceSyncJob", id)
 }
 
-func unmarshalExternalServiceSyncJobID(id graphql.ID) (jobID int64, err error) {
-	err = relay.UnmarshalSpec(id, &jobID)
+func unmbrshblExternblServiceSyncJobID(id grbphql.ID) (jobID int64, err error) {
+	err = relby.UnmbrshblSpec(id, &jobID)
 	return
 }
 
-func externalServiceSyncJobByID(ctx context.Context, db database.DB, gqlID graphql.ID) (Node, error) {
-	// Site-admin only for now.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+func externblServiceSyncJobByID(ctx context.Context, db dbtbbbse.DB, gqlID grbphql.ID) (Node, error) {
+	// Site-bdmin only for now.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalExternalServiceSyncJobID(gqlID)
+	id, err := unmbrshblExternblServiceSyncJobID(gqlID)
 	if err != nil {
 		return nil, err
 	}
 
-	job, err := db.ExternalServices().GetSyncJobByID(ctx, id)
+	job, err := db.ExternblServices().GetSyncJobByID(ctx, id)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -403,159 +403,159 @@ func externalServiceSyncJobByID(ctx context.Context, db database.DB, gqlID graph
 		return nil, err
 	}
 
-	return &externalServiceSyncJobResolver{job: job}, nil
+	return &externblServiceSyncJobResolver{job: job}, nil
 }
 
-func (r *externalServiceSyncJobResolver) ID() graphql.ID {
-	return marshalExternalServiceSyncJobID(r.job.ID)
+func (r *externblServiceSyncJobResolver) ID() grbphql.ID {
+	return mbrshblExternblServiceSyncJobID(r.job.ID)
 }
 
-func (r *externalServiceSyncJobResolver) State() string {
-	if r.job.Cancel && r.job.State == "processing" {
+func (r *externblServiceSyncJobResolver) Stbte() string {
+	if r.job.Cbncel && r.job.Stbte == "processing" {
 		return "CANCELING"
 	}
-	return strings.ToUpper(r.job.State)
+	return strings.ToUpper(r.job.Stbte)
 }
 
-func (r *externalServiceSyncJobResolver) FailureMessage() *string {
-	if r.job.FailureMessage == "" || r.job.Cancel {
+func (r *externblServiceSyncJobResolver) FbilureMessbge() *string {
+	if r.job.FbilureMessbge == "" || r.job.Cbncel {
 		return nil
 	}
 
-	return &r.job.FailureMessage
+	return &r.job.FbilureMessbge
 }
 
-func (r *externalServiceSyncJobResolver) QueuedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.job.QueuedAt}
+func (r *externblServiceSyncJobResolver) QueuedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.job.QueuedAt}
 }
 
-func (r *externalServiceSyncJobResolver) StartedAt() *gqlutil.DateTime {
-	if r.job.StartedAt.IsZero() {
+func (r *externblServiceSyncJobResolver) StbrtedAt() *gqlutil.DbteTime {
+	if r.job.StbrtedAt.IsZero() {
 		return nil
 	}
 
-	return &gqlutil.DateTime{Time: r.job.StartedAt}
+	return &gqlutil.DbteTime{Time: r.job.StbrtedAt}
 }
 
-func (r *externalServiceSyncJobResolver) FinishedAt() *gqlutil.DateTime {
+func (r *externblServiceSyncJobResolver) FinishedAt() *gqlutil.DbteTime {
 	if r.job.FinishedAt.IsZero() {
 		return nil
 	}
 
-	return &gqlutil.DateTime{Time: r.job.FinishedAt}
+	return &gqlutil.DbteTime{Time: r.job.FinishedAt}
 }
 
-func (r *externalServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
+func (r *externblServiceSyncJobResolver) ReposSynced() int32 { return r.job.ReposSynced }
 
-func (r *externalServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
+func (r *externblServiceSyncJobResolver) RepoSyncErrors() int32 { return r.job.RepoSyncErrors }
 
-func (r *externalServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
+func (r *externblServiceSyncJobResolver) ReposAdded() int32 { return r.job.ReposAdded }
 
-func (r *externalServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
+func (r *externblServiceSyncJobResolver) ReposDeleted() int32 { return r.job.ReposDeleted }
 
-func (r *externalServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
+func (r *externblServiceSyncJobResolver) ReposModified() int32 { return r.job.ReposModified }
 
-func (r *externalServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
+func (r *externblServiceSyncJobResolver) ReposUnmodified() int32 { return r.job.ReposUnmodified }
 
-func (r *externalServiceNamespaceConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceNamespace, int32, error) {
+func (r *externblServiceNbmespbceConnectionResolver) compute(ctx context.Context) ([]*types.ExternblServiceNbmespbce, int32, error) {
 	r.once.Do(func() {
-		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
+		config, err := NewSourceConfigurbtion(r.brgs.Kind, r.brgs.Url, r.brgs.Token)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
+		externblServiceID, err := TryUnmbrshblExternblServiceID(r.brgs.ID)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		namespacesArgs := protocol.ExternalServiceNamespacesArgs{
-			ExternalServiceID: externalServiceID,
-			Kind:              r.args.Kind,
+		nbmespbcesArgs := protocol.ExternblServiceNbmespbcesArgs{
+			ExternblServiceID: externblServiceID,
+			Kind:              r.brgs.Kind,
 			Config:            config,
 		}
 
-		res, err := r.repoupdaterClient.ExternalServiceNamespaces(ctx, namespacesArgs)
+		res, err := r.repoupdbterClient.ExternblServiceNbmespbces(ctx, nbmespbcesArgs)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		r.nodes = append(r.nodes, res.Namespaces...)
-		r.totalCount = int32(len(r.nodes))
+		r.nodes = bppend(r.nodes, res.Nbmespbces...)
+		r.totblCount = int32(len(r.nodes))
 	})
 
-	return r.nodes, r.totalCount, r.err
+	return r.nodes, r.totblCount, r.err
 }
 
-func (r *externalServiceNamespaceConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceNamespaceResolver, error) {
-	namespaces, totalCount, err := r.compute(ctx)
+func (r *externblServiceNbmespbceConnectionResolver) Nodes(ctx context.Context) ([]*externblServiceNbmespbceResolver, error) {
+	nbmespbces, totblCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*externalServiceNamespaceResolver, totalCount)
-	for i, j := range namespaces {
-		nodes[i] = &externalServiceNamespaceResolver{
-			namespace: j,
+	nodes := mbke([]*externblServiceNbmespbceResolver, totblCount)
+	for i, j := rbnge nbmespbces {
+		nodes[i] = &externblServiceNbmespbceResolver{
+			nbmespbce: j,
 		}
 	}
 
 	return nodes, nil
 }
 
-func (r *externalServiceNamespaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	_, totalCount, err := r.compute(ctx)
-	return totalCount, err
+func (r *externblServiceNbmespbceConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	_, totblCount, err := r.compute(ctx)
+	return totblCount, err
 }
 
-type externalServiceNamespaceResolver struct {
-	namespace *types.ExternalServiceNamespace
+type externblServiceNbmespbceResolver struct {
+	nbmespbce *types.ExternblServiceNbmespbce
 }
 
-func (r *externalServiceNamespaceResolver) ID() graphql.ID {
-	return relay.MarshalID("ExternalServiceNamespace", r.namespace)
+func (r *externblServiceNbmespbceResolver) ID() grbphql.ID {
+	return relby.MbrshblID("ExternblServiceNbmespbce", r.nbmespbce)
 }
 
-func (r *externalServiceNamespaceResolver) Name() string {
-	return r.namespace.Name
+func (r *externblServiceNbmespbceResolver) Nbme() string {
+	return r.nbmespbce.Nbme
 }
 
-func (r *externalServiceNamespaceResolver) ExternalID() string {
-	return r.namespace.ExternalID
+func (r *externblServiceNbmespbceResolver) ExternblID() string {
+	return r.nbmespbce.ExternblID
 }
 
-func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceRepository, error) {
+func (r *externblServiceRepositoryConnectionResolver) compute(ctx context.Context) ([]*types.ExternblServiceRepository, error) {
 	r.once.Do(func() {
-		config, err := NewSourceConfiguration(r.args.Kind, r.args.Url, r.args.Token)
+		config, err := NewSourceConfigurbtion(r.brgs.Kind, r.brgs.Url, r.brgs.Token)
 		if err != nil {
 			r.err = err
 			return
 		}
 
 		first := int32(100)
-		if r.args.First != nil {
-			first = *r.args.First
+		if r.brgs.First != nil {
+			first = *r.brgs.First
 		}
 
-		externalServiceID, err := TryUnmarshalExternalServiceID(r.args.ID)
+		externblServiceID, err := TryUnmbrshblExternblServiceID(r.brgs.ID)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		reposArgs := protocol.ExternalServiceRepositoriesArgs{
-			ExternalServiceID: externalServiceID,
-			Kind:              r.args.Kind,
-			Query:             r.args.Query,
+		reposArgs := protocol.ExternblServiceRepositoriesArgs{
+			ExternblServiceID: externblServiceID,
+			Kind:              r.brgs.Kind,
+			Query:             r.brgs.Query,
 			Config:            config,
 			First:             first,
-			ExcludeRepos:      r.args.ExcludeRepos,
+			ExcludeRepos:      r.brgs.ExcludeRepos,
 		}
 
-		res, err := r.repoupdaterClient.ExternalServiceRepositories(ctx, reposArgs)
+		res, err := r.repoupdbterClient.ExternblServiceRepositories(ctx, reposArgs)
 		if err != nil {
 			r.err = err
 			return
@@ -567,15 +567,15 @@ func (r *externalServiceRepositoryConnectionResolver) compute(ctx context.Contex
 	return r.nodes, r.err
 }
 
-func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceRepositoryResolver, error) {
+func (r *externblServiceRepositoryConnectionResolver) Nodes(ctx context.Context) ([]*externblServiceRepositoryResolver, error) {
 	sourceRepos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	nodes := make([]*externalServiceRepositoryResolver, len(sourceRepos))
-	for i, j := range sourceRepos {
-		nodes[i] = &externalServiceRepositoryResolver{
+	nodes := mbke([]*externblServiceRepositoryResolver, len(sourceRepos))
+	for i, j := rbnge sourceRepos {
+		nodes[i] = &externblServiceRepositoryResolver{
 			repo: j,
 		}
 	}
@@ -583,18 +583,18 @@ func (r *externalServiceRepositoryConnectionResolver) Nodes(ctx context.Context)
 	return nodes, nil
 }
 
-type externalServiceRepositoryResolver struct {
-	repo *types.ExternalServiceRepository
+type externblServiceRepositoryResolver struct {
+	repo *types.ExternblServiceRepository
 }
 
-func (r *externalServiceRepositoryResolver) ID() graphql.ID {
-	return relay.MarshalID("ExternalServiceRepository", r.repo)
+func (r *externblServiceRepositoryResolver) ID() grbphql.ID {
+	return relby.MbrshblID("ExternblServiceRepository", r.repo)
 }
 
-func (r *externalServiceRepositoryResolver) Name() string {
-	return string(r.repo.Name)
+func (r *externblServiceRepositoryResolver) Nbme() string {
+	return string(r.repo.Nbme)
 }
 
-func (r *externalServiceRepositoryResolver) ExternalID() string {
-	return r.repo.ExternalID
+func (r *externblServiceRepositoryResolver) ExternblID() string {
+	return r.repo.ExternblID
 }

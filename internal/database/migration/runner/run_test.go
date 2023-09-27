@@ -1,228 +1,228 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
 	"strings"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestRun(t *testing.T) {
-	overrideSchemas(t)
-	ctx := context.Background()
+	overrideSchembs(t)
+	ctx := context.Bbckground()
 
-	t.Run("upgrade (empty)", func(t *testing.T) {
-		store := testStoreWithVersion(0, false)
+	t.Run("upgrbde (empty)", func(t *testing.T) {
+		store := testStoreWithVersion(0, fblse)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		mockassert.CalledN(t, store.UpFunc, 4)
-		mockassert.NotCalled(t, store.DownFunc)
+		mockbssert.CblledN(t, store.UpFunc, 4)
+		mockbssert.NotCblled(t, store.DownFunc)
 	})
 
-	t.Run("upgrade (partially applied)", func(t *testing.T) {
-		store := testStoreWithVersion(10002, false)
+	t.Run("upgrbde (pbrtiblly bpplied)", func(t *testing.T) {
+		store := testStoreWithVersion(10002, fblse)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		mockassert.CalledN(t, store.UpFunc, 2)
-		mockassert.NotCalled(t, store.DownFunc)
+		mockbssert.CblledN(t, store.UpFunc, 2)
+		mockbssert.NotCblled(t, store.DownFunc)
 	})
 
-	t.Run("upgrade (fully applied)", func(t *testing.T) {
-		store := testStoreWithVersion(10004, false)
+	t.Run("upgrbde (fully bpplied)", func(t *testing.T) {
+		store := testStoreWithVersion(10004, fblse)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		mockassert.NotCalled(t, store.UpFunc)
-		mockassert.NotCalled(t, store.DownFunc)
+		mockbssert.NotCblled(t, store.UpFunc)
+		mockbssert.NotCblled(t, store.DownFunc)
 	})
 
-	t.Run("upgrade (future schema applied)", func(t *testing.T) {
-		store := testStoreWithVersion(10008, false)
+	t.Run("upgrbde (future schemb bpplied)", func(t *testing.T) {
+		store := testStoreWithVersion(10008, fblse)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		mockassert.NotCalled(t, store.UpFunc)
-		mockassert.NotCalled(t, store.DownFunc)
+		mockbssert.NotCblled(t, store.UpFunc)
+		mockbssert.NotCblled(t, store.DownFunc)
 	})
 
 	t.Run("revert", func(t *testing.T) {
-		store := testStoreWithVersion(10003, false)
+		store := testStoreWithVersion(10003, fblse)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeRevert,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeRevert,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		mockassert.NotCalled(t, store.UpFunc)
-		mockassert.CalledN(t, store.DownFunc, 1)
+		mockbssert.NotCblled(t, store.UpFunc)
+		mockbssert.CblledN(t, store.DownFunc, 1)
 	})
 
-	t.Run("revert (ambiguous)", func(t *testing.T) {
-		store := testStoreWithVersion(10004, false)
-		expectedErrorMessage := "ambiguous revert"
+	t.Run("revert (bmbiguous)", func(t *testing.T) {
+		store := testStoreWithVersion(10004, fblse)
+		expectedErrorMessbge := "bmbiguous revert"
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeRevert,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeRevert,
 				},
 			},
-		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error: expected=%q have=%s", expectedErrorMessage, err)
+		}); err == nil || !strings.Contbins(err.Error(), expectedErrorMessbge) {
+			t.Fbtblf("unexpected error: expected=%q hbve=%s", expectedErrorMessbge, err)
 		}
 	})
 
-	t.Run("upgrade (dirty database)", func(t *testing.T) {
+	t.Run("upgrbde (dirty dbtbbbse)", func(t *testing.T) {
 		store := testStoreWithVersion(10003, true)
-		expectedErrorMessage := "dirty database"
+		expectedErrorMessbge := "dirty dbtbbbse"
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
-		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error: expected=%q have=%s", expectedErrorMessage, err)
+		}); err == nil || !strings.Contbins(err.Error(), expectedErrorMessbge) {
+			t.Fbtblf("unexpected error: expected=%q hbve=%s", expectedErrorMessbge, err)
 		}
 	})
 
-	t.Run("upgrade (dirty database, ignore single dirty log)", func(t *testing.T) {
+	t.Run("upgrbde (dirty dbtbbbse, ignore single dirty log)", func(t *testing.T) {
 		store := testStoreWithVersion(10003, true)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 			IgnoreSingleDirtyLog: true,
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 	})
 
-	t.Run("upgrade (dirty database, ignore single pending log)", func(t *testing.T) {
-		store := testStoreWithVersion(10003, false)
-		store.VersionsFunc.SetDefaultHook(func(ctx context.Context) ([]int, []int, []int, error) {
+	t.Run("upgrbde (dirty dbtbbbse, ignore single pending log)", func(t *testing.T) {
+		store := testStoreWithVersion(10003, fblse)
+		store.VersionsFunc.SetDefbultHook(func(ctx context.Context) ([]int, []int, []int, error) {
 			return nil, []int{10001}, nil, nil
 		})
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 			IgnoreSinglePendingLog: true,
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 	})
 
-	t.Run("upgrade (dirty database/dead migrations)", func(t *testing.T) {
+	t.Run("upgrbde (dirty dbtbbbse/debd migrbtions)", func(t *testing.T) {
 		store := testStoreWithVersion(10003, true)
-		store.VersionsFunc.SetDefaultReturn(nil, []int{10003}, nil, nil)
-		expectedErrorMessage := "dirty database"
+		store.VersionsFunc.SetDefbultReturn(nil, []int{10003}, nil, nil)
+		expectedErrorMessbge := "dirty dbtbbbse"
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "well-formed",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "well-formed",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
-		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error: expected=%q have=%s", expectedErrorMessage, err)
+		}); err == nil || !strings.Contbins(err.Error(), expectedErrorMessbge) {
+			t.Fbtblf("unexpected error: expected=%q hbve=%s", expectedErrorMessbge, err)
 		}
 	})
 
-	t.Run("upgrade (query error)", func(t *testing.T) {
-		store := testStoreWithVersion(10000, false)
-		expectedErrorMessage := "database connection error"
-		store.UpFunc.PushReturn(errors.Newf(expectedErrorMessage))
+	t.Run("upgrbde (query error)", func(t *testing.T) {
+		store := testStoreWithVersion(10000, fblse)
+		expectedErrorMessbge := "dbtbbbse connection error"
+		store.UpFunc.PushReturn(errors.Newf(expectedErrorMessbge))
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "query-error",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "query-error",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
-		}); err == nil || !strings.Contains(err.Error(), expectedErrorMessage) {
-			t.Fatalf("unexpected error running upgrade. want=%q have=%q", expectedErrorMessage, err)
+		}); err == nil || !strings.Contbins(err.Error(), expectedErrorMessbge) {
+			t.Fbtblf("unexpected error running upgrbde. wbnt=%q hbve=%q", expectedErrorMessbge, err)
 		}
 
-		mockassert.CalledN(t, store.UpFunc, 1)
-		mockassert.NotCalled(t, store.DownFunc)
+		mockbssert.CblledN(t, store.UpFunc, 1)
+		mockbssert.NotCblled(t, store.DownFunc)
 	})
 
-	t.Run("upgrade (create index concurrently)", func(t *testing.T) {
-		store := testStoreWithVersion(0, false)
+	t.Run("upgrbde (crebte index concurrently)", func(t *testing.T) {
+		store := testStoreWithVersion(0, fblse)
 
-		if err := makeTestRunner(t, store).Run(ctx, Options{
-			Operations: []MigrationOperation{
+		if err := mbkeTestRunner(t, store).Run(ctx, Options{
+			Operbtions: []MigrbtionOperbtion{
 				{
-					SchemaName: "concurrent-index",
-					Type:       MigrationOperationTypeUpgrade,
+					SchembNbme: "concurrent-index",
+					Type:       MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 		}); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		mockassert.CalledN(t, store.UpFunc, 2)
-		mockassert.NotCalled(t, store.DownFunc)
+		mockbssert.CblledN(t, store.UpFunc, 2)
+		mockbssert.NotCblled(t, store.DownFunc)
 	})
 }

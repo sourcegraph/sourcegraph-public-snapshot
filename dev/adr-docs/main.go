@@ -1,46 +1,46 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
-	"path/filepath"
-	"text/template"
+	"pbth/filepbth"
+	"text/templbte"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/adr"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/bdr"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
 )
 
-type templateData struct {
-	ADRs []adr.ArchitectureDecisionRecord
+type templbteDbtb struct {
+	ADRs []bdr.ArchitectureDecisionRecord
 }
 
-//go:generate sh -c "TZ=Etc/UTC go run ."
-func main() {
+//go:generbte sh -c "TZ=Etc/UTC go run ."
+func mbin() {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	tmpl, err := template.ParseFiles(filepath.Join(repoRoot, "dev", "adr-docs", "index.md.tmpl"))
+	tmpl, err := templbte.PbrseFiles(filepbth.Join(repoRoot, "dev", "bdr-docs", "index.md.tmpl"))
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	adrs, err := adr.List(filepath.Join(repoRoot, "doc", "dev", "adr"))
+	bdrs, err := bdr.List(filepbth.Join(repoRoot, "doc", "dev", "bdr"))
 	if err != nil {
 		return
 	}
 
-	presenter := templateData{
-		ADRs: adrs,
+	presenter := templbteDbtb{
+		ADRs: bdrs,
 	}
 
-	f, err := os.Create(filepath.Join(repoRoot, "doc", "dev", "adr", "index.md"))
+	f, err := os.Crebte(filepbth.Join(repoRoot, "doc", "dev", "bdr", "index.md"))
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	defer f.Close()
 	err = tmpl.Execute(f, &presenter)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 }

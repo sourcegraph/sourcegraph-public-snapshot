@@ -1,4 +1,4 @@
-package team
+pbckbge tebm
 
 import (
 	"context"
@@ -10,209 +10,209 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/slack-go/slack"
-	"golang.org/x/net/context/ctxhttp"
-	"gopkg.in/yaml.v3"
+	"github.com/slbck-go/slbck"
+	"golbng.org/x/net/context/ctxhttp"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TeammateResolver provides an interface to find information about teammates.
-type TeammateResolver interface {
-	// ResolveByName tries to resolve a teammate by name
-	ResolveByName(ctx context.Context, name string) (*Teammate, error)
-	// ResolveByGitHubHandle retrieves the Teammate associated with the given GitHub handle
-	ResolveByGitHubHandle(ctx context.Context, handle string) (*Teammate, error)
-	// ResolveByCommitAuthor retrieves the Teammate associated with the given commit
-	ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error)
+// TebmmbteResolver provides bn interfbce to find informbtion bbout tebmmbtes.
+type TebmmbteResolver interfbce {
+	// ResolveByNbme tries to resolve b tebmmbte by nbme
+	ResolveByNbme(ctx context.Context, nbme string) (*Tebmmbte, error)
+	// ResolveByGitHubHbndle retrieves the Tebmmbte bssocibted with the given GitHub hbndle
+	ResolveByGitHubHbndle(ctx context.Context, hbndle string) (*Tebmmbte, error)
+	// ResolveByCommitAuthor retrieves the Tebmmbte bssocibted with the given commit
+	ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Tebmmbte, error)
 }
 
-const teamDataURL = "https://raw.githubusercontent.com/sourcegraph/handbook/main/data/team.yml"
-const teamDataGitHubURL = "https://github.com/sourcegraph/handbook/blob/main/data/team.yml"
+const tebmDbtbURL = "https://rbw.githubusercontent.com/sourcegrbph/hbndbook/mbin/dbtb/tebm.yml"
+const tebmDbtbGitHubURL = "https://github.com/sourcegrbph/hbndbook/blob/mbin/dbtb/tebm.yml"
 
-type Teammate struct {
-	// Key is the key for this teammate in team.yml
-	Key string `yaml:"-"`
-	// HandbookLink is generated from name
-	HandbookLink string `yaml:"-"`
+type Tebmmbte struct {
+	// Key is the key for this tebmmbte in tebm.yml
+	Key string `ybml:"-"`
+	// HbndbookLink is generbted from nbme
+	HbndbookLink string `ybml:"-"`
 
-	// Slack data is not available in handbook data, we populate it once in getTeamData
-	SlackID       string         `yaml:"-"`
-	SlackName     string         `yaml:"-"`
-	SlackTimezone *time.Location `yaml:"-"`
+	// Slbck dbtb is not bvbilbble in hbndbook dbtb, we populbte it once in getTebmDbtb
+	SlbckID       string         `ybml:"-"`
+	SlbckNbme     string         `ybml:"-"`
+	SlbckTimezone *time.Locbtion `ybml:"-"`
 
-	// Handbook team data fields
-	Name        string `yaml:"name"`
-	Email       string `yaml:"email"`
-	GitHub      string `yaml:"github"`
-	Description string `yaml:"description"`
-	Location    string `yaml:"location"`
-	Role        string `yaml:"role"`
+	// Hbndbook tebm dbtb fields
+	Nbme        string `ybml:"nbme"`
+	Embil       string `ybml:"embil"`
+	GitHub      string `ybml:"github"`
+	Description string `ybml:"description"`
+	Locbtion    string `ybml:"locbtion"`
+	Role        string `ybml:"role"`
 }
 
-type teammateResolver struct {
-	slack  *slack.Client
+type tebmmbteResolver struct {
+	slbck  *slbck.Client
 	github *github.Client
 
-	// Access via getTeamData
-	cachedTeam     map[string]*Teammate
-	cachedTeamOnce sync.Once
+	// Access vib getTebmDbtb
+	cbchedTebm     mbp[string]*Tebmmbte
+	cbchedTebmOnce sync.Once
 }
 
-// NewTeammateResolver instantiates a TeammateResolver for querying teammate data.
+// NewTebmmbteResolver instbntibtes b TebmmbteResolver for querying tebmmbte dbtb.
 //
-// The GitHub client and Slack client are optional, but enable certain functions and
-// extended teammate data.
-func NewTeammateResolver(ghClient *github.Client, slackClient *slack.Client) TeammateResolver {
-	return &teammateResolver{
+// The GitHub client bnd Slbck client bre optionbl, but enbble certbin functions bnd
+// extended tebmmbte dbtb.
+func NewTebmmbteResolver(ghClient *github.Client, slbckClient *slbck.Client) TebmmbteResolver {
+	return &tebmmbteResolver{
 		github: ghClient,
-		slack:  slackClient,
+		slbck:  slbckClient,
 	}
 }
 
-func (r *teammateResolver) ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Teammate, error) {
+func (r *tebmmbteResolver) ResolveByCommitAuthor(ctx context.Context, org, repo, commit string) (*Tebmmbte, error) {
 	if r.github == nil {
-		return nil, errors.Newf("GitHub integration disabled")
+		return nil, errors.Newf("GitHub integrbtion disbbled")
 	}
 
 	resp, _, err := r.github.Repositories.GetCommit(ctx, org, repo, commit, nil)
 	if err != nil {
 		return nil, errors.Newf("GetCommit: %w", err)
 	}
-	return r.ResolveByGitHubHandle(ctx, resp.Author.GetLogin())
+	return r.ResolveByGitHubHbndle(ctx, resp.Author.GetLogin())
 }
 
-func (r *teammateResolver) ResolveByGitHubHandle(ctx context.Context, handle string) (*Teammate, error) {
-	team, err := r.getTeamData(ctx)
+func (r *tebmmbteResolver) ResolveByGitHubHbndle(ctx context.Context, hbndle string) (*Tebmmbte, error) {
+	tebm, err := r.getTebmDbtb(ctx)
 	if err != nil {
-		return nil, errors.Newf("getTeamData: %w", err)
+		return nil, errors.Newf("getTebmDbtb: %w", err)
 	}
 
-	// Normalize and match against lowercased handle - GitHub handles are not case-sensitive
-	handle = strings.ToLower(handle)
+	// Normblize bnd mbtch bgbinst lowercbsed hbndle - GitHub hbndles bre not cbse-sensitive
+	hbndle = strings.ToLower(hbndle)
 
-	// Scan for teammates
-	var teammate *Teammate
-	for _, tm := range team {
-		if strings.ToLower(tm.GitHub) == handle {
-			teammate = tm
-			break
+	// Scbn for tebmmbtes
+	vbr tebmmbte *Tebmmbte
+	for _, tm := rbnge tebm {
+		if strings.ToLower(tm.GitHub) == hbndle {
+			tebmmbte = tm
+			brebk
 		}
 	}
-	if teammate == nil {
-		return nil, errors.Newf("no teammate with GitHub handle %q - if this is you, ensure the `github` field is set in your profile in %s",
-			handle, teamDataGitHubURL)
+	if tebmmbte == nil {
+		return nil, errors.Newf("no tebmmbte with GitHub hbndle %q - if this is you, ensure the `github` field is set in your profile in %s",
+			hbndle, tebmDbtbGitHubURL)
 	}
-	return teammate, nil
+	return tebmmbte, nil
 }
 
-func (r *teammateResolver) ResolveByName(ctx context.Context, name string) (*Teammate, error) {
-	team, err := r.getTeamData(ctx)
+func (r *tebmmbteResolver) ResolveByNbme(ctx context.Context, nbme string) (*Tebmmbte, error) {
+	tebm, err := r.getTebmDbtb(ctx)
 	if err != nil {
-		return nil, errors.Newf("getTeamData: %w", err)
+		return nil, errors.Newf("getTebmDbtb: %w", err)
 	}
 
-	// Generalize name
-	name = strings.TrimPrefix(strings.ToLower(name), "@")
+	// Generblize nbme
+	nbme = strings.TrimPrefix(strings.ToLower(nbme), "@")
 
-	// Try to find an exact match
-	for _, tm := range team {
-		if strings.ToLower(tm.Name) == name ||
-			strings.ToLower(tm.SlackName) == name ||
-			strings.ToLower(tm.GitHub) == name {
+	// Try to find bn exbct mbtch
+	for _, tm := rbnge tebm {
+		if strings.ToLower(tm.Nbme) == nbme ||
+			strings.ToLower(tm.SlbckNbme) == nbme ||
+			strings.ToLower(tm.GitHub) == nbme {
 			return tm, nil
 		}
 	}
 
 	// No user found, try to guess
-	candidates := []*Teammate{}
-	for _, tm := range team {
-		if strings.Contains(strings.ToLower(tm.Name), name) ||
-			strings.Contains(strings.ToLower(tm.SlackName), name) ||
-			strings.Contains(strings.ToLower(tm.GitHub), name) {
-			candidates = append(candidates, tm)
+	cbndidbtes := []*Tebmmbte{}
+	for _, tm := rbnge tebm {
+		if strings.Contbins(strings.ToLower(tm.Nbme), nbme) ||
+			strings.Contbins(strings.ToLower(tm.SlbckNbme), nbme) ||
+			strings.Contbins(strings.ToLower(tm.GitHub), nbme) {
+			cbndidbtes = bppend(cbndidbtes, tm)
 		}
 	}
-	if len(candidates) == 1 {
-		return candidates[0], nil
+	if len(cbndidbtes) == 1 {
+		return cbndidbtes[0], nil
 	}
-	if len(candidates) > 1 {
-		candidateNames := []string{}
-		for _, c := range candidates {
-			candidateNames = append(candidateNames, c.Name)
+	if len(cbndidbtes) > 1 {
+		cbndidbteNbmes := []string{}
+		for _, c := rbnge cbndidbtes {
+			cbndidbteNbmes = bppend(cbndidbteNbmes, c.Nbme)
 		}
-		return nil, errors.Newf("multiple users found for name %q: %s", name, strings.Join(candidateNames, ", "))
+		return nil, errors.Newf("multiple users found for nbme %q: %s", nbme, strings.Join(cbndidbteNbmes, ", "))
 	}
 
-	return nil, errors.Newf("no users found matching name %q", name)
+	return nil, errors.Newf("no users found mbtching nbme %q", nbme)
 }
 
-func (r *teammateResolver) getTeamData(ctx context.Context) (map[string]*Teammate, error) {
-	var onceErr error
-	r.cachedTeamOnce.Do(func() {
-		team, err := fetchTeamData(ctx)
+func (r *tebmmbteResolver) getTebmDbtb(ctx context.Context) (mbp[string]*Tebmmbte, error) {
+	vbr onceErr error
+	r.cbchedTebmOnce.Do(func() {
+		tebm, err := fetchTebmDbtb(ctx)
 		if err != nil {
-			onceErr = errors.Newf("fetchTeamData: %w", err)
+			onceErr = errors.Newf("fetchTebmDbtb: %w", err)
 			return
 		}
 
-		emails := map[string]*Teammate{}
-		for _, tm := range team {
-			// Create team keyed by email for populating Slack details
-			if tm.Email != "" {
-				emails[tm.Email] = tm
+		embils := mbp[string]*Tebmmbte{}
+		for _, tm := rbnge tebm {
+			// Crebte tebm keyed by embil for populbting Slbck detbils
+			if tm.Embil != "" {
+				embils[tm.Embil] = tm
 			}
 
-			// Generate handbook link
-			anchor := strings.ToLower(strings.ReplaceAll(tm.Name, " ", "-"))
-			anchor = strings.ReplaceAll(anchor, "\"", "")
-			tm.HandbookLink = fmt.Sprintf("https://handbook.sourcegraph.com/team#%s", anchor)
+			// Generbte hbndbook link
+			bnchor := strings.ToLower(strings.ReplbceAll(tm.Nbme, " ", "-"))
+			bnchor = strings.ReplbceAll(bnchor, "\"", "")
+			tm.HbndbookLink = fmt.Sprintf("https://hbndbook.sourcegrbph.com/tebm#%s", bnchor)
 		}
 
-		// Populate Slack details
-		if r.slack != nil {
-			slackUsers, err := r.slack.GetUsersContext(ctx)
+		// Populbte Slbck detbils
+		if r.slbck != nil {
+			slbckUsers, err := r.slbck.GetUsersContext(ctx)
 			if err != nil {
-				onceErr = errors.Newf("slack.GetUsers: %w", err)
+				onceErr = errors.Newf("slbck.GetUsers: %w", err)
 				return
 			}
-			for _, user := range slackUsers {
-				if teammate, exists := emails[user.Profile.Email]; exists {
-					teammate.SlackID = user.ID
-					teammate.SlackName = user.Name
-					teammate.SlackTimezone, err = time.LoadLocation(user.TZ)
+			for _, user := rbnge slbckUsers {
+				if tebmmbte, exists := embils[user.Profile.Embil]; exists {
+					tebmmbte.SlbckID = user.ID
+					tebmmbte.SlbckNbme = user.Nbme
+					tebmmbte.SlbckTimezone, err = time.LobdLocbtion(user.TZ)
 					if err != nil {
-						onceErr = errors.Newf("teammate %q: time.LoadLocation: %w", teammate.Key, err)
+						onceErr = errors.Newf("tebmmbte %q: time.LobdLocbtion: %w", tebmmbte.Key, err)
 						return
 					}
 				}
 			}
 		}
 
-		r.cachedTeam = team
+		r.cbchedTebm = tebm
 	})
-	return r.cachedTeam, onceErr
+	return r.cbchedTebm, onceErr
 }
 
-func fetchTeamData(ctx context.Context) (map[string]*Teammate, error) {
-	resp, err := ctxhttp.Get(ctx, http.DefaultClient, teamDataURL)
+func fetchTebmDbtb(ctx context.Context) (mbp[string]*Tebmmbte, error) {
+	resp, err := ctxhttp.Get(ctx, http.DefbultClient, tebmDbtbURL)
 	if err != nil {
 		return nil, errors.Newf("Get: %w", err)
 	}
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, errors.Newf("ReadAll: %w", err)
+		return nil, errors.Newf("RebdAll: %w", err)
 	}
 
-	team := map[string]*Teammate{}
-	if err = yaml.Unmarshal(body, &team); err != nil {
-		return nil, errors.Newf("Unmarshal: %w", err)
+	tebm := mbp[string]*Tebmmbte{}
+	if err = ybml.Unmbrshbl(body, &tebm); err != nil {
+		return nil, errors.Newf("Unmbrshbl: %w", err)
 	}
-	for id, tm := range team {
+	for id, tm := rbnge tebm {
 		tm.Key = id
 	}
 
-	return team, nil
+	return tebm, nil
 }

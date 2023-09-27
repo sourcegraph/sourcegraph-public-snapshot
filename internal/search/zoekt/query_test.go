@@ -1,181 +1,181 @@
-package zoekt
+pbckbge zoekt
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"golang.org/x/exp/slices"
+	"github.com/hexops/butogold/v2"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 
-	zoekt "github.com/sourcegraph/zoekt/query"
+	zoekt "github.com/sourcegrbph/zoekt/query"
 )
 
 func TestQueryToZoektQuery(t *testing.T) {
-	cases := []struct {
-		Name     string
-		Type     search.IndexedRequestType
-		Pattern  string
-		Features search.Features
+	cbses := []struct {
+		Nbme     string
+		Type     sebrch.IndexedRequestType
+		Pbttern  string
+		Febtures sebrch.Febtures
 		Query    string
 	}{
 		{
-			Name:    "substr",
-			Type:    search.TextRequest,
-			Pattern: `foo patterntype:regexp`,
-			Query:   "foo case:no",
+			Nbme:    "substr",
+			Type:    sebrch.TextRequest,
+			Pbttern: `foo pbtterntype:regexp`,
+			Query:   "foo cbse:no",
 		},
 		{
-			Name:    "symbol substr",
-			Type:    search.SymbolRequest,
-			Pattern: `foo patterntype:regexp type:symbol`,
-			Query:   "sym:foo case:no",
+			Nbme:    "symbol substr",
+			Type:    sebrch.SymbolRequest,
+			Pbttern: `foo pbtterntype:regexp type:symbol`,
+			Query:   "sym:foo cbse:no",
 		},
 		{
-			Name:    "regex",
-			Type:    search.TextRequest,
-			Pattern: `(foo).*?(bar) patterntype:regexp`,
-			Query:   "(foo).*?(bar) case:no",
+			Nbme:    "regex",
+			Type:    sebrch.TextRequest,
+			Pbttern: `(foo).*?(bbr) pbtterntype:regexp`,
+			Query:   "(foo).*?(bbr) cbse:no",
 		},
 		{
-			Name:    "path",
-			Type:    search.TextRequest,
-			Pattern: `foo file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
-			Query:   `foo case:no f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Nbme:    "pbth",
+			Type:    sebrch.TextRequest,
+			Pbttern: `foo file:\.go$ file:\.ybml$ -file:\bvendor\b pbtterntype:regexp`,
+			Query:   `foo cbse:no f:\.go$ f:\.ybml$ -f:\bvendor\b`,
 		},
 		{
-			Name:    "case",
-			Type:    search.TextRequest,
-			Pattern: `foo case:yes patterntype:regexp file:\.go$ file:yaml`,
-			Query:   `foo case:yes f:\.go$ f:yaml`,
+			Nbme:    "cbse",
+			Type:    sebrch.TextRequest,
+			Pbttern: `foo cbse:yes pbtterntype:regexp file:\.go$ file:ybml`,
+			Query:   `foo cbse:yes f:\.go$ f:ybml`,
 		},
 		{
-			Name:    "casepath",
-			Type:    search.TextRequest,
-			Pattern: `foo case:yes file:\.go$ file:\.yaml$ -file:\bvendor\b patterntype:regexp`,
-			Query:   `foo case:yes f:\.go$ f:\.yaml$ -f:\bvendor\b`,
+			Nbme:    "cbsepbth",
+			Type:    sebrch.TextRequest,
+			Pbttern: `foo cbse:yes file:\.go$ file:\.ybml$ -file:\bvendor\b pbtterntype:regexp`,
+			Query:   `foo cbse:yes f:\.go$ f:\.ybml$ -f:\bvendor\b`,
 		},
 		{
-			Name:    "path matches only",
-			Type:    search.TextRequest,
-			Pattern: `test type:path`,
+			Nbme:    "pbth mbtches only",
+			Type:    sebrch.TextRequest,
+			Pbttern: `test type:pbth`,
 			Query:   `f:test`,
 		},
 		{
-			Name:    "content matches only",
-			Type:    search.TextRequest,
-			Pattern: `test type:file patterntype:literal`,
+			Nbme:    "content mbtches only",
+			Type:    sebrch.TextRequest,
+			Pbttern: `test type:file pbtterntype:literbl`,
 			Query:   `c:test`,
 		},
 		{
-			Name:    "content and path matches",
-			Type:    search.TextRequest,
-			Pattern: `test`,
+			Nbme:    "content bnd pbth mbtches",
+			Type:    sebrch.TextRequest,
+			Pbttern: `test`,
 			Query:   `test`,
 		},
 		{
-			Name:    "Just file",
-			Type:    search.TextRequest,
-			Pattern: `file:\.go$`,
+			Nbme:    "Just file",
+			Type:    sebrch.TextRequest,
+			Pbttern: `file:\.go$`,
 			Query:   `file:"\\.go(?m:$)"`,
 		},
 		{
-			Name:    "Languages is ignored",
-			Type:    search.TextRequest,
-			Pattern: `file:\.go$ lang:go`,
+			Nbme:    "Lbngubges is ignored",
+			Type:    sebrch.TextRequest,
+			Pbttern: `file:\.go$ lbng:go`,
 			Query:   `file:"\\.go(?m:$)" file:"\\.go(?m:$)"`,
 		},
 		{
-			Name:    "language gets passed as both file include and lang: predicate",
-			Type:    search.TextRequest,
-			Pattern: `file:\.go$ lang:go`,
-			Features: search.Features{
-				ContentBasedLangFilters: true,
+			Nbme:    "lbngubge gets pbssed bs both file include bnd lbng: predicbte",
+			Type:    sebrch.TextRequest,
+			Pbttern: `file:\.go$ lbng:go`,
+			Febtures: sebrch.Febtures{
+				ContentBbsedLbngFilters: true,
 			},
-			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lang:Go`,
+			Query: `file:"\\.go(?m:$)" file:"\\.go(?m:$)" lbng:Go`,
 		},
 	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			sourceQuery, _ := query.ParseRegexp(tt.Pattern)
-			b, _ := query.ToBasicQuery(sourceQuery)
+	for _, tt := rbnge cbses {
+		t.Run(tt.Nbme, func(t *testing.T) {
+			sourceQuery, _ := query.PbrseRegexp(tt.Pbttern)
+			b, _ := query.ToBbsicQuery(sourceQuery)
 
-			types, _ := b.ToParseTree().StringValues(query.FieldType)
-			resultTypes := computeResultTypes(types, b, query.SearchTypeRegex)
-			got, err := QueryToZoektQuery(b, resultTypes, &tt.Features, tt.Type)
+			types, _ := b.ToPbrseTree().StringVblues(query.FieldType)
+			resultTypes := computeResultTypes(types, b, query.SebrchTypeRegex)
+			got, err := QueryToZoektQuery(b, resultTypes, &tt.Febtures, tt.Type)
 			if err != nil {
-				t.Fatal("QueryToZoektQuery failed:", err)
+				t.Fbtbl("QueryToZoektQuery fbiled:", err)
 			}
 
-			zoektQuery, err := zoekt.Parse(tt.Query)
+			zoektQuery, err := zoekt.Pbrse(tt.Query)
 			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tt.Query, err)
+				t.Fbtblf("fbiled to pbrse %q: %v", tt.Query, err)
 			}
 
-			if !queryEqual(got, zoektQuery) {
-				t.Fatalf("mismatched queries\ngot  %s\nwant %s", got.String(), zoektQuery.String())
+			if !queryEqubl(got, zoektQuery) {
+				t.Fbtblf("mismbtched queries\ngot  %s\nwbnt %s", got.String(), zoektQuery.String())
 			}
 		})
 	}
 }
 
-func Test_toZoektPattern(t *testing.T) {
-	test := func(input string, searchType query.SearchType, typ search.IndexedRequestType) string {
-		p, err := query.Pipeline(query.Init(input, searchType))
+func Test_toZoektPbttern(t *testing.T) {
+	test := func(input string, sebrchType query.SebrchType, typ sebrch.IndexedRequestType) string {
+		p, err := query.Pipeline(query.Init(input, sebrchType))
 		if err != nil {
 			return err.Error()
 		}
-		zoektQuery, err := toZoektPattern(p[0].Pattern, false, false, false, typ)
+		zoektQuery, err := toZoektPbttern(p[0].Pbttern, fblse, fblse, fblse, typ)
 		if err != nil {
 			return err.Error()
 		}
 		return zoektQuery.String()
 	}
 
-	autogold.Expect(`substr:"a"`).
-		Equal(t, test(`a`, query.SearchTypeLiteral, search.TextRequest))
+	butogold.Expect(`substr:"b"`).
+		Equbl(t, test(`b`, query.SebrchTypeLiterbl, sebrch.TextRequest))
 
-	autogold.Expect(`(or (and substr:"a" substr:"b" (not substr:"c")) substr:"d")`).
-		Equal(t, test(`a and b and not c or d`, query.SearchTypeLiteral, search.TextRequest))
+	butogold.Expect(`(or (bnd substr:"b" substr:"b" (not substr:"c")) substr:"d")`).
+		Equbl(t, test(`b bnd b bnd not c or d`, query.SebrchTypeLiterbl, sebrch.TextRequest))
 
-	autogold.Expect(`substr:"\"func main() {\\n\""`).
-		Equal(t, test(`"func main() {\n"`, query.SearchTypeLiteral, search.TextRequest))
+	butogold.Expect(`substr:"\"func mbin() {\\n\""`).
+		Equbl(t, test(`"func mbin() {\n"`, query.SebrchTypeLiterbl, sebrch.TextRequest))
 
-	autogold.Expect(`substr:"func main() {\n"`).
-		Equal(t, test(`"func main() {\n"`, query.SearchTypeRegex, search.TextRequest))
+	butogold.Expect(`substr:"func mbin() {\n"`).
+		Equbl(t, test(`"func mbin() {\n"`, query.SebrchTypeRegex, sebrch.TextRequest))
 
-	autogold.Expect(`(and sym:substr:"foo" (not sym:substr:"bar"))`).
-		Equal(t, test(`type:symbol (foo and not bar)`, query.SearchTypeLiteral, search.SymbolRequest))
+	butogold.Expect(`(bnd sym:substr:"foo" (not sym:substr:"bbr"))`).
+		Equbl(t, test(`type:symbol (foo bnd not bbr)`, query.SebrchTypeLiterbl, sebrch.SymbolRequest))
 }
 
-func queryEqual(a, b zoekt.Q) bool {
+func queryEqubl(b, b zoekt.Q) bool {
 	sortChildren := func(q zoekt.Q) zoekt.Q {
 		switch s := q.(type) {
-		case *zoekt.And:
+		cbse *zoekt.And:
 			slices.SortFunc(s.Children, zoektQStringLess)
-		case *zoekt.Or:
+		cbse *zoekt.Or:
 			slices.SortFunc(s.Children, zoektQStringLess)
 		}
 		return q
 	}
-	return zoekt.Map(a, sortChildren).String() == zoekt.Map(b, sortChildren).String()
+	return zoekt.Mbp(b, sortChildren).String() == zoekt.Mbp(b, sortChildren).String()
 }
 
-func zoektQStringLess(a, b zoekt.Q) bool {
-	return a.String() < b.String()
+func zoektQStringLess(b, b zoekt.Q) bool {
+	return b.String() < b.String()
 }
 
-func computeResultTypes(types []string, b query.Basic, searchType query.SearchType) result.Types {
-	var rts result.Types
-	if searchType == query.SearchTypeStructural && !b.IsEmptyPattern() {
-		rts = result.TypeStructural
+func computeResultTypes(types []string, b query.Bbsic, sebrchType query.SebrchType) result.Types {
+	vbr rts result.Types
+	if sebrchType == query.SebrchTypeStructurbl && !b.IsEmptyPbttern() {
+		rts = result.TypeStructurbl
 	} else {
 		if len(types) == 0 {
-			rts = result.TypeFile | result.TypePath | result.TypeRepo
+			rts = result.TypeFile | result.TypePbth | result.TypeRepo
 		} else {
-			for _, t := range types {
+			for _, t := rbnge types {
 				rts = rts.With(result.TypeFromString[t])
 			}
 		}

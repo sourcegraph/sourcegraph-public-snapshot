@@ -1,4 +1,4 @@
-package featureflag
+pbckbge febtureflbg
 
 import (
 	"context"
@@ -8,183 +8,183 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestOverrides(t *testing.T) {
 	setupRedisTest(t)
 
 	mockStore := NewMockStore()
-	mockStore.GetUserFlagsFunc.SetDefaultHook(func(_ context.Context, uid int32) (map[string]bool, error) {
+	mockStore.GetUserFlbgsFunc.SetDefbultHook(func(_ context.Context, uid int32) (mbp[string]bool, error) {
 		if uid != 123 {
 			return nil, errors.New("BOOM")
 		}
-		return map[string]bool{
-			"feat-true":  true,
-			"feat-false": false,
+		return mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": fblse,
 			"user":       true,
 		}, nil
 	})
-	mockStore.GetAnonymousUserFlagsFunc.SetDefaultHook(func(_ context.Context, anonUID string) (map[string]bool, error) {
-		if anonUID != "123" {
+	mockStore.GetAnonymousUserFlbgsFunc.SetDefbultHook(func(_ context.Context, bnonUID string) (mbp[string]bool, error) {
+		if bnonUID != "123" {
 			return nil, errors.New("BOOM")
 		}
-		return map[string]bool{
-			"feat-true":  true,
-			"feat-false": false,
-			"anon":       true,
+		return mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": fblse,
+			"bnon":       true,
 		}, nil
 	})
-	mockStore.GetGlobalFeatureFlagsFunc.SetDefaultHook(func(_ context.Context) (map[string]bool, error) {
-		return map[string]bool{
-			"feat-true":  true,
-			"feat-false": false,
-			"global":     true,
+	mockStore.GetGlobblFebtureFlbgsFunc.SetDefbultHook(func(_ context.Context) (mbp[string]bool, error) {
+		return mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": fblse,
+			"globbl":     true,
 		}, nil
 	})
 
-	handler := Middleware(mockStore, http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(FromContext(r.Context()).flags)
+	hbndler := Middlewbre(mockStore, http.Hbndler(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(FromContext(r.Context()).flbgs)
 	})))
 
-	cases := []struct {
-		Name     string
-		Header   []string
-		RawQuery string
-		Want     map[string]bool
+	cbses := []struct {
+		Nbme     string
+		Hebder   []string
+		RbwQuery string
+		Wbnt     mbp[string]bool
 	}{{
-		Name: "unset",
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": false,
+		Nbme: "unset",
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": fblse,
 		},
 	}, {
-		Name:   "header-true",
-		Header: []string{"feat-false"},
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": true,
+		Nbme:   "hebder-true",
+		Hebder: []string{"febt-fblse"},
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": true,
 		},
 	}, {
-		Name:   "header-false",
-		Header: []string{"-feat-true"},
-		Want: map[string]bool{
-			"feat-true":  false,
-			"feat-false": false,
+		Nbme:   "hebder-fblse",
+		Hebder: []string{"-febt-true"},
+		Wbnt: mbp[string]bool{
+			"febt-true":  fblse,
+			"febt-fblse": fblse,
 		},
 	}, {
-		Name:   "header-multiple",
-		Header: []string{"feat-false", "-new-false", "new-true"},
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": true,
-			"new-false":  false,
+		Nbme:   "hebder-multiple",
+		Hebder: []string{"febt-fblse", "-new-fblse", "new-true"},
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": true,
+			"new-fblse":  fblse,
 			"new-true":   true,
 		},
 	}, {
-		Name:     "query-true",
-		RawQuery: "feat=feat-false",
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": true,
+		Nbme:     "query-true",
+		RbwQuery: "febt=febt-fblse",
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": true,
 		},
 	}, {
-		Name:     "query-false",
-		RawQuery: "feat=-feat-true",
-		Want: map[string]bool{
-			"feat-true":  false,
-			"feat-false": false,
+		Nbme:     "query-fblse",
+		RbwQuery: "febt=-febt-true",
+		Wbnt: mbp[string]bool{
+			"febt-true":  fblse,
+			"febt-fblse": fblse,
 		},
 	}, {
-		Name:     "query-multiple",
-		RawQuery: "feat=feat-false&feat=-new-false&feat=new-true",
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": true,
-			"new-false":  false,
+		Nbme:     "query-multiple",
+		RbwQuery: "febt=febt-fblse&febt=-new-fblse&febt=new-true",
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": true,
+			"new-fblse":  fblse,
 			"new-true":   true,
 		},
 	}, {
-		Name:     "prefer-header",
-		Header:   []string{"header"},
-		RawQuery: "feat=query",
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": false,
-			"header":     true,
+		Nbme:     "prefer-hebder",
+		Hebder:   []string{"hebder"},
+		RbwQuery: "febt=query",
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": fblse,
+			"hebder":     true,
 		},
 	}, {
-		Name:   "header-flat-map-values",
-		Header: []string{"  feat-false", "-new-false,new-true", " a b,c,  d "},
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": true,
-			"new-false":  false,
+		Nbme:   "hebder-flbt-mbp-vblues",
+		Hebder: []string{"  febt-fblse", "-new-fblse,new-true", " b b,c,  d "},
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": true,
+			"new-fblse":  fblse,
 			"new-true":   true,
-			"a":          true,
+			"b":          true,
 			"b":          true,
 			"c":          true,
 			"d":          true,
 		},
 	}, {
-		Name:     "empty-param",
-		RawQuery: "feat=",
-		Want: map[string]bool{
-			"feat-true":  true,
-			"feat-false": false,
+		Nbme:     "empty-pbrbm",
+		RbwQuery: "febt=",
+		Wbnt: mbp[string]bool{
+			"febt-true":  true,
+			"febt-fblse": fblse,
 		},
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
-			run := func(act *actor.Actor) map[string]bool {
+	for _, tc := rbnge cbses {
+		t.Run(tc.Nbme, func(t *testing.T) {
+			run := func(bct *bctor.Actor) mbp[string]bool {
 				t.Helper()
 
-				req, err := http.NewRequest(http.MethodGet, "/test?"+tc.RawQuery, nil)
+				req, err := http.NewRequest(http.MethodGet, "/test?"+tc.RbwQuery, nil)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				req = req.WithContext(actor.WithActor(context.Background(), act))
-				if tc.Header != nil {
-					req.Header["X-Sourcegraph-Override-Feature"] = tc.Header
+				req = req.WithContext(bctor.WithActor(context.Bbckground(), bct))
+				if tc.Hebder != nil {
+					req.Hebder["X-Sourcegrbph-Override-Febture"] = tc.Hebder
 				}
 
 				w := httptest.NewRecorder()
-				handler.ServeHTTP(w, req)
+				hbndler.ServeHTTP(w, req)
 
-				var flags map[string]bool
-				err = json.NewDecoder(w.Result().Body).Decode(&flags)
+				vbr flbgs mbp[string]bool
+				err = json.NewDecoder(w.Result().Body).Decode(&flbgs)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				return flags
+				return flbgs
 			}
 
-			got := run(actor.FromUser(123))
-			want := flagsWithKey(tc.Want, "user")
-			if d := cmp.Diff(want, got); d != "" {
-				t.Errorf("unexpected flags for user (-want, +got):\n%s", d)
+			got := run(bctor.FromUser(123))
+			wbnt := flbgsWithKey(tc.Wbnt, "user")
+			if d := cmp.Diff(wbnt, got); d != "" {
+				t.Errorf("unexpected flbgs for user (-wbnt, +got):\n%s", d)
 			}
 
-			got = run(actor.FromAnonymousUser("123"))
-			want = flagsWithKey(tc.Want, "anon")
-			if d := cmp.Diff(want, got); d != "" {
-				t.Errorf("unexpected flags for anonymous (-want, +got):\n%s", d)
+			got = run(bctor.FromAnonymousUser("123"))
+			wbnt = flbgsWithKey(tc.Wbnt, "bnon")
+			if d := cmp.Diff(wbnt, got); d != "" {
+				t.Errorf("unexpected flbgs for bnonymous (-wbnt, +got):\n%s", d)
 			}
 
-			got = run(&actor.Actor{})
-			want = flagsWithKey(tc.Want, "global")
-			if d := cmp.Diff(want, got); d != "" {
-				t.Errorf("unexpected flags for global (-want, +got):\n%s", d)
+			got = run(&bctor.Actor{})
+			wbnt = flbgsWithKey(tc.Wbnt, "globbl")
+			if d := cmp.Diff(wbnt, got); d != "" {
+				t.Errorf("unexpected flbgs for globbl (-wbnt, +got):\n%s", d)
 			}
 		})
 	}
 }
 
-func flagsWithKey(flags map[string]bool, key string) map[string]bool {
-	m := map[string]bool{key: true}
-	for k, v := range flags {
+func flbgsWithKey(flbgs mbp[string]bool, key string) mbp[string]bool {
+	m := mbp[string]bool{key: true}
+	for k, v := rbnge flbgs {
 		m[k] = v
 	}
 	return m

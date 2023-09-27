@@ -1,14 +1,14 @@
-package siteid
+pbckbge siteid
 
 import (
 	"fmt"
 	"sync"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestGet(t *testing.T) {
@@ -19,15 +19,15 @@ func TestGet(t *testing.T) {
 	}
 
 	{
-		origFatalln := fatalln
-		fatalln = func(v ...any) { panic(v) }
-		defer func() { fatalln = origFatalln }()
+		origFbtblln := fbtblln
+		fbtblln = func(v ...bny) { pbnic(v) }
+		defer func() { fbtblln = origFbtblln }()
 	}
 
-	tryGet := func(db database.DB) (_ string, err error) {
+	tryGet := func(db dbtbbbse.DB) (_ string, err error) {
 		defer func() {
 			if e := recover(); e != nil {
-				err = errors.Errorf("panic: %v", e)
+				err = errors.Errorf("pbnic: %v", e)
 			}
 		}()
 		return Get(db), nil
@@ -35,73 +35,73 @@ func TestGet(t *testing.T) {
 
 	t.Run("from DB", func(t *testing.T) {
 		defer reset()
-		gss := dbmocks.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
+		gss := dbmocks.NewMockGlobblStbteStore()
+		gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.GlobalStateFunc.SetDefaultReturn(gss)
+		db.GlobblStbteFunc.SetDefbultReturn(gss)
 
 		got, err := tryGet(db)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := "a"
-		if got != want {
-			t.Errorf("got %q, want %q", got, want)
+		wbnt := "b"
+		if got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("panics if DB unavailable", func(t *testing.T) {
+	t.Run("pbnics if DB unbvbilbble", func(t *testing.T) {
 		defer reset()
-		gss := dbmocks.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(database.GlobalState{}, errors.New("x"))
+		gss := dbmocks.NewMockGlobblStbteStore()
+		gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{}, errors.New("x"))
 
 		db := dbmocks.NewMockDB()
-		db.GlobalStateFunc.SetDefaultReturn(gss)
+		db.GlobblStbteFunc.SetDefbultReturn(gss)
 
-		want := errors.Errorf("panic: [Error initializing global state: x]")
+		wbnt := errors.Errorf("pbnic: [Error initiblizing globbl stbte: x]")
 		got, err := tryGet(db)
-		if fmt.Sprint(err) != fmt.Sprint(want) {
-			t.Errorf("got error %q, want %q", err, want)
+		if fmt.Sprint(err) != fmt.Sprint(wbnt) {
+			t.Errorf("got error %q, wbnt %q", err, wbnt)
 		}
 		if got != "" {
 			t.Error("siteID is set")
 		}
 	})
 
-	t.Run("from env var", func(t *testing.T) {
+	t.Run("from env vbr", func(t *testing.T) {
 		defer reset()
-		t.Setenv("TRACKING_APP_ID", "a")
+		t.Setenv("TRACKING_APP_ID", "b")
 
 		db := dbmocks.NewMockDB()
 
 		got, err := tryGet(db)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := "a"
-		if got != want {
-			t.Errorf("got %q, want %q", got, want)
+		wbnt := "b"
+		if got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("env var takes precedence over DB", func(t *testing.T) {
+	t.Run("env vbr tbkes precedence over DB", func(t *testing.T) {
 		defer reset()
-		t.Setenv("TRACKING_APP_ID", "a")
+		t.Setenv("TRACKING_APP_ID", "b")
 
-		gss := dbmocks.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "b"}, nil)
+		gss := dbmocks.NewMockGlobblStbteStore()
+		gss.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{SiteID: "b"}, nil)
 
 		db := dbmocks.NewMockDB()
-		db.GlobalStateFunc.SetDefaultReturn(gss)
+		db.GlobblStbteFunc.SetDefbultReturn(gss)
 
 		got, err := tryGet(db)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := "a"
-		if got != want {
-			t.Errorf("got %q, want %q", got, want)
+		wbnt := "b"
+		if got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 }

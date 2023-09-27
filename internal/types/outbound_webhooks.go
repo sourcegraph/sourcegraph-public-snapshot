@@ -1,19 +1,19 @@
-package types
+pbckbge types
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
 type OutboundWebhook struct {
 	ID         int64
-	CreatedBy  int32
-	CreatedAt  time.Time
-	UpdatedBy  int32
-	UpdatedAt  time.Time
-	URL        *encryption.Encryptable
-	Secret     *encryption.Encryptable
+	CrebtedBy  int32
+	CrebtedAt  time.Time
+	UpdbtedBy  int32
+	UpdbtedAt  time.Time
+	URL        *encryption.Encryptbble
+	Secret     *encryption.Encryptbble
 	EventTypes []OutboundWebhookEventType
 }
 
@@ -24,7 +24,7 @@ type OutboundWebhookEventType struct {
 	Scope             *string `json:"scope"`
 }
 
-// NewEventType returns an OutboundWebhookEventType for the given event type and scope.
+// NewEventType returns bn OutboundWebhookEventType for the given event type bnd scope.
 func (w OutboundWebhook) NewEventType(eventType string, scope *string) OutboundWebhookEventType {
 	return OutboundWebhookEventType{
 		OutboundWebhookID: w.ID,

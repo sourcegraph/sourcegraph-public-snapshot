@@ -1,256 +1,256 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Worker() *monitoring.Dashboard {
-	const containerName = "worker"
+func Worker() *monitoring.Dbshbobrd {
+	const contbinerNbme = "worker"
 
 	workerJobs := []struct {
-		Name  string
-		Owner monitoring.ObservableOwner
+		Nbme  string
+		Owner monitoring.ObservbbleOwner
 	}{
-		{Name: "codeintel-upload-janitor", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-commitgraph-updater", Owner: monitoring.ObservableOwnerCodeIntel},
-		{Name: "codeintel-autoindexing-scheduler", Owner: monitoring.ObservableOwnerCodeIntel},
+		{Nbme: "codeintel-uplobd-jbnitor", Owner: monitoring.ObservbbleOwnerCodeIntel},
+		{Nbme: "codeintel-commitgrbph-updbter", Owner: monitoring.ObservbbleOwnerCodeIntel},
+		{Nbme: "codeintel-butoindexing-scheduler", Owner: monitoring.ObservbbleOwnerCodeIntel},
 	}
 
-	var activeJobObservables []monitoring.Observable
-	for _, job := range workerJobs {
-		activeJobObservables = append(activeJobObservables, monitoring.Observable{
-			Name:          fmt.Sprintf("worker_job_%s_count", job.Name),
-			Description:   fmt.Sprintf("number of worker instances running the %s job", job.Name),
-			Query:         fmt.Sprintf(`sum (src_worker_jobs{job="worker", job_name="%s"})`, job.Name),
-			Panel:         monitoring.Panel().LegendFormat(fmt.Sprintf("instances running %s", job.Name)),
-			DataMustExist: true,
-			Warning:       monitoring.Alert().Less(1).For(1 * time.Minute),
-			Critical:      monitoring.Alert().Less(1).For(5 * time.Minute),
+	vbr bctiveJobObservbbles []monitoring.Observbble
+	for _, job := rbnge workerJobs {
+		bctiveJobObservbbles = bppend(bctiveJobObservbbles, monitoring.Observbble{
+			Nbme:          fmt.Sprintf("worker_job_%s_count", job.Nbme),
+			Description:   fmt.Sprintf("number of worker instbnces running the %s job", job.Nbme),
+			Query:         fmt.Sprintf(`sum (src_worker_jobs{job="worker", job_nbme="%s"})`, job.Nbme),
+			Pbnel:         monitoring.Pbnel().LegendFormbt(fmt.Sprintf("instbnces running %s", job.Nbme)),
+			DbtbMustExist: true,
+			Wbrning:       monitoring.Alert().Less(1).For(1 * time.Minute),
+			Criticbl:      monitoring.Alert().Less(1).For(5 * time.Minute),
 			Owner:         job.Owner,
 			NextSteps: fmt.Sprintf(`
-				- Ensure your instance defines a worker container such that:
-					- `+"`"+`WORKER_JOB_ALLOWLIST`+"`"+` contains "%[1]s" (or "all"), and
-					- `+"`"+`WORKER_JOB_BLOCKLIST`+"`"+` does not contain "%[1]s"
-				- Ensure that such a container is not failing to start or stay active
-			`, job.Name),
+				- Ensure your instbnce defines b worker contbiner such thbt:
+					- `+"`"+`WORKER_JOB_ALLOWLIST`+"`"+` contbins "%[1]s" (or "bll"), bnd
+					- `+"`"+`WORKER_JOB_BLOCKLIST`+"`"+` does not contbin "%[1]s"
+				- Ensure thbt such b contbiner is not fbiling to stbrt or stby bctive
+			`, job.Nbme),
 		})
 	}
 
-	panelsPerRow := 4
-	if rem := len(activeJobObservables) % panelsPerRow; rem == 1 || rem == 2 {
-		// If we'd leave one or two panels on the only/last row, then reduce
-		// the number of panels in previous rows so that we have less of a width
-		// difference at the end
-		panelsPerRow = 3
+	pbnelsPerRow := 4
+	if rem := len(bctiveJobObservbbles) % pbnelsPerRow; rem == 1 || rem == 2 {
+		// If we'd lebve one or two pbnels on the only/lbst row, then reduce
+		// the number of pbnels in previous rows so thbt we hbve less of b width
+		// difference bt the end
+		pbnelsPerRow = 3
 	}
 
-	var activeJobRows []monitoring.Row
-	for _, observable := range activeJobObservables {
-		if n := len(activeJobRows); n == 0 || len(activeJobRows[n-1]) >= panelsPerRow {
-			activeJobRows = append(activeJobRows, nil)
+	vbr bctiveJobRows []monitoring.Row
+	for _, observbble := rbnge bctiveJobObservbbles {
+		if n := len(bctiveJobRows); n == 0 || len(bctiveJobRows[n-1]) >= pbnelsPerRow {
+			bctiveJobRows = bppend(bctiveJobRows, nil)
 		}
 
-		n := len(activeJobRows)
-		activeJobRows[n-1] = append(activeJobRows[n-1], observable)
+		n := len(bctiveJobRows)
+		bctiveJobRows[n-1] = bppend(bctiveJobRows[n-1], observbble)
 	}
 
-	activeJobsGroup := monitoring.Group{
+	bctiveJobsGroup := monitoring.Group{
 		Title: "Active jobs",
-		Rows: append(
+		Rows: bppend(
 			[]monitoring.Row{
 				{
 					{
-						Name:        "worker_job_count",
-						Description: "number of worker instances running each job",
-						Query:       `sum by (job_name) (src_worker_jobs{job="worker"})`,
-						Panel:       monitoring.Panel().LegendFormat("instances running {{job_name}}"),
+						Nbme:        "worker_job_count",
+						Description: "number of worker instbnces running ebch job",
+						Query:       `sum by (job_nbme) (src_worker_jobs{job="worker"})`,
+						Pbnel:       monitoring.Pbnel().LegendFormbt("instbnces running {{job_nbme}}"),
 						NoAlert:     true,
-						Interpretation: `
-							The number of worker instances running each job type.
-							It is necessary for each job type to be managed by at least one worker instance.
+						Interpretbtion: `
+							The number of worker instbnces running ebch job type.
+							It is necessbry for ebch job type to be mbnbged by bt lebst one worker instbnce.
 						`,
 					},
 				},
 			},
-			activeJobRows...,
+			bctiveJobRows...,
 		),
 	}
 
 	recordEncrypterGroup := monitoring.Group{
-		Title:  "Database record encrypter",
+		Title:  "Dbtbbbse record encrypter",
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				func(owner monitoring.ObservableOwner) shared.Observable {
-					return shared.Observable{
-						Name:        "records_encrypted_at_rest_percentage",
-						Description: "percentage of database records encrypted at rest",
-						Query:       `(max(src_records_encrypted_at_rest_total) by (tableName)) / ((max(src_records_encrypted_at_rest_total) by (tableName)) + (max(src_records_unencrypted_at_rest_total) by (tableName))) * 100`,
-						Panel:       monitoring.Panel().LegendFormat("{{tableName}}").Unit(monitoring.Percentage).Min(0).Max(100),
+				func(owner monitoring.ObservbbleOwner) shbred.Observbble {
+					return shbred.Observbble{
+						Nbme:        "records_encrypted_bt_rest_percentbge",
+						Description: "percentbge of dbtbbbse records encrypted bt rest",
+						Query:       `(mbx(src_records_encrypted_bt_rest_totbl) by (tbbleNbme)) / ((mbx(src_records_encrypted_bt_rest_totbl) by (tbbleNbme)) + (mbx(src_records_unencrypted_bt_rest_totbl) by (tbbleNbme))) * 100`,
+						Pbnel:       monitoring.Pbnel().LegendFormbt("{{tbbleNbme}}").Unit(monitoring.Percentbge).Min(0).Mbx(100),
 						Owner:       owner,
 					}
-				}(monitoring.ObservableOwnerSource).WithNoAlerts(`
-					Percentage of encrypted database records
-				`).Observable(),
+				}(monitoring.ObservbbleOwnerSource).WithNoAlerts(`
+					Percentbge of encrypted dbtbbbse records
+				`).Observbble(),
 
-				shared.Standard.Count("records encrypted")(shared.ObservableConstructorOptions{
-					MetricNameRoot:        "records_encrypted",
-					MetricDescriptionRoot: "database",
-					By:                    []string{"tableName"},
-				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
-					Number of encrypted database records every 5m
-				`).Observable(),
+				shbred.Stbndbrd.Count("records encrypted")(shbred.ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "records_encrypted",
+					MetricDescriptionRoot: "dbtbbbse",
+					By:                    []string{"tbbleNbme"},
+				})(contbinerNbme, monitoring.ObservbbleOwnerSource).WithNoAlerts(`
+					Number of encrypted dbtbbbse records every 5m
+				`).Observbble(),
 
-				shared.Standard.Count("records decrypted")(shared.ObservableConstructorOptions{
-					MetricNameRoot:        "records_decrypted",
-					MetricDescriptionRoot: "database",
-					By:                    []string{"tableName"},
-				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
-					Number of encrypted database records every 5m
-				`).Observable(),
+				shbred.Stbndbrd.Count("records decrypted")(shbred.ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "records_decrypted",
+					MetricDescriptionRoot: "dbtbbbse",
+					By:                    []string{"tbbleNbme"},
+				})(contbinerNbme, monitoring.ObservbbleOwnerSource).WithNoAlerts(`
+					Number of encrypted dbtbbbse records every 5m
+				`).Observbble(),
 
-				shared.Observation.Errors(shared.ObservableConstructorOptions{
-					MetricNameRoot:        "record_encryption",
+				shbred.Observbtion.Errors(shbred.ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "record_encryption",
 					MetricDescriptionRoot: "encryption",
-				})(containerName, monitoring.ObservableOwnerSource).WithNoAlerts(`
-					Number of database record encryption/decryption errors every 5m
-				`).Observable(),
+				})(contbinerNbme, monitoring.ObservbbleOwnerSource).WithNoAlerts(`
+					Number of dbtbbbse record encryption/decryption errors every 5m
+				`).Observbble(),
 			},
 		},
 	}
 
-	return &monitoring.Dashboard{
-		Name:        "worker",
+	return &monitoring.Dbshbobrd{
+		Nbme:        "worker",
 		Title:       "Worker",
-		Description: "Manages background processes.",
+		Description: "Mbnbges bbckground processes.",
 		Groups: []monitoring.Group{
 			// src_worker_jobs
-			activeJobsGroup,
+			bctiveJobsGroup,
 
-			// src_records_encrypted_at_rest_total
-			// src_records_unencrypted_at_rest_total
-			// src_records_encrypted_total
-			// src_records_decrypted_total
-			// src_record_encryption_errors_total
+			// src_records_encrypted_bt_rest_totbl
+			// src_records_unencrypted_bt_rest_totbl
+			// src_records_encrypted_totbl
+			// src_records_decrypted_totbl
+			// src_record_encryption_errors_totbl
 			recordEncrypterGroup,
 
-			shared.CodeIntelligence.NewCommitGraphQueueGroup(containerName),
-			shared.CodeIntelligence.NewCommitGraphProcessorGroup(containerName),
-			shared.CodeIntelligence.NewDependencyIndexQueueGroup(containerName),
-			shared.CodeIntelligence.NewDependencyIndexProcessorGroup(containerName),
-			shared.CodeIntelligence.NewIndexSchedulerGroup(containerName),
-			shared.CodeIntelligence.NewDBStoreGroup(containerName),
-			shared.CodeIntelligence.NewLSIFStoreGroup(containerName),
-			shared.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(containerName),
-			shared.CodeIntelligence.NewGitserverClientGroup(containerName),
-			shared.CodeIntelligence.NewDependencyReposStoreGroup(containerName),
+			shbred.CodeIntelligence.NewCommitGrbphQueueGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewCommitGrbphProcessorGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyIndexQueueGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyIndexProcessorGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewIndexSchedulerGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDBStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewLSIFStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyIndexDBWorkerStoreGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewGitserverClientGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewDependencyReposStoreGroup(contbinerNbme),
 
-			shared.Batches.NewDBStoreGroup(containerName),
-			shared.Batches.NewServiceGroup(containerName),
-			shared.Batches.NewBatchSpecResolutionDBWorkerStoreGroup(containerName),
-			shared.Batches.NewBulkOperationDBWorkerStoreGroup(containerName),
-			shared.Batches.NewReconcilerDBWorkerStoreGroup(containerName),
+			shbred.Bbtches.NewDBStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewServiceGroup(contbinerNbme),
+			shbred.Bbtches.NewBbtchSpecResolutionDBWorkerStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewBulkOperbtionDBWorkerStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewReconcilerDBWorkerStoreGroup(contbinerNbme),
 			// This is for the resetter only here, the queue is running in the frontend
 			// through executorqueue.
-			shared.Batches.NewWorkspaceExecutionDBWorkerStoreGroup(containerName),
-			shared.Batches.NewExecutorQueueGroup(),
+			shbred.Bbtches.NewWorkspbceExecutionDBWorkerStoreGroup(contbinerNbme),
+			shbred.Bbtches.NewExecutorQueueGroup(),
 
-			// src_codeintel_background_upload_resets_total
-			// src_codeintel_background_upload_reset_failures_total
-			// src_codeintel_background_upload_reset_errors_total
-			shared.WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ResetterGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "codeintel",
-					DescriptionRoot: "lsif_upload record resetter",
+			// src_codeintel_bbckground_uplobd_resets_totbl
+			// src_codeintel_bbckground_uplobd_reset_fbilures_totbl
+			// src_codeintel_bbckground_uplobd_reset_errors_totbl
+			shbred.WorkerutilResetter.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, shbred.ResetterGroupOptions{
+				GroupConstructorOptions: shbred.GroupConstructorOptions{
+					Nbmespbce:       "codeintel",
+					DescriptionRoot: "lsif_uplobd record resetter",
 					Hidden:          true,
 
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "codeintel_background_upload",
-						MetricDescriptionRoot: "lsif upload",
+					ObservbbleConstructorOptions: shbred.ObservbbleConstructorOptions{
+						MetricNbmeRoot:        "codeintel_bbckground_uplobd",
+						MetricDescriptionRoot: "lsif uplobd",
 					},
 				},
 
-				RecordResets:        shared.NoAlertsOption("none"),
-				RecordResetFailures: shared.NoAlertsOption("none"),
-				Errors:              shared.NoAlertsOption("none"),
+				RecordResets:        shbred.NoAlertsOption("none"),
+				RecordResetFbilures: shbred.NoAlertsOption("none"),
+				Errors:              shbred.NoAlertsOption("none"),
 			}),
 
-			// src_codeintel_background_index_resets_total
-			// src_codeintel_background_index_reset_failures_total
-			// src_codeintel_background_index_reset_errors_total
-			shared.WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ResetterGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "codeintel",
+			// src_codeintel_bbckground_index_resets_totbl
+			// src_codeintel_bbckground_index_reset_fbilures_totbl
+			// src_codeintel_bbckground_index_reset_errors_totbl
+			shbred.WorkerutilResetter.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, shbred.ResetterGroupOptions{
+				GroupConstructorOptions: shbred.GroupConstructorOptions{
+					Nbmespbce:       "codeintel",
 					DescriptionRoot: "lsif_index record resetter",
 					Hidden:          true,
 
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "codeintel_background_index",
+					ObservbbleConstructorOptions: shbred.ObservbbleConstructorOptions{
+						MetricNbmeRoot:        "codeintel_bbckground_index",
 						MetricDescriptionRoot: "lsif index",
 					},
 				},
 
-				RecordResets:        shared.NoAlertsOption("none"),
-				RecordResetFailures: shared.NoAlertsOption("none"),
-				Errors:              shared.NoAlertsOption("none"),
+				RecordResets:        shbred.NoAlertsOption("none"),
+				RecordResetFbilures: shbred.NoAlertsOption("none"),
+				Errors:              shbred.NoAlertsOption("none"),
 			}),
 
-			// src_codeintel_background_dependency_index_resets_total
-			// src_codeintel_background_dependency_index_reset_failures_total
-			// src_codeintel_background_dependency_index_reset_errors_total
-			shared.WorkerutilResetter.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, shared.ResetterGroupOptions{
-				GroupConstructorOptions: shared.GroupConstructorOptions{
-					Namespace:       "codeintel",
+			// src_codeintel_bbckground_dependency_index_resets_totbl
+			// src_codeintel_bbckground_dependency_index_reset_fbilures_totbl
+			// src_codeintel_bbckground_dependency_index_reset_errors_totbl
+			shbred.WorkerutilResetter.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, shbred.ResetterGroupOptions{
+				GroupConstructorOptions: shbred.GroupConstructorOptions{
+					Nbmespbce:       "codeintel",
 					DescriptionRoot: "lsif_dependency_index record resetter",
 					Hidden:          true,
 
-					ObservableConstructorOptions: shared.ObservableConstructorOptions{
-						MetricNameRoot:        "codeintel_background_dependency_index",
+					ObservbbleConstructorOptions: shbred.ObservbbleConstructorOptions{
+						MetricNbmeRoot:        "codeintel_bbckground_dependency_index",
 						MetricDescriptionRoot: "lsif dependency index",
 					},
 				},
 
-				RecordResets:        shared.NoAlertsOption("none"),
-				RecordResetFailures: shared.NoAlertsOption("none"),
-				Errors:              shared.NoAlertsOption("none"),
+				RecordResets:        shbred.NoAlertsOption("none"),
+				RecordResetFbilures: shbred.NoAlertsOption("none"),
+				Errors:              shbred.NoAlertsOption("none"),
 			}),
-			shared.CodeInsights.NewInsightsQueryRunnerQueueGroup(containerName),
-			shared.CodeInsights.NewInsightsQueryRunnerWorkerGroup(containerName),
-			shared.CodeInsights.NewInsightsQueryRunnerResetterGroup(containerName),
-			shared.CodeInsights.NewInsightsQueryRunnerStoreGroup(containerName),
+			shbred.CodeInsights.NewInsightsQueryRunnerQueueGroup(contbinerNbme),
+			shbred.CodeInsights.NewInsightsQueryRunnerWorkerGroup(contbinerNbme),
+			shbred.CodeInsights.NewInsightsQueryRunnerResetterGroup(contbinerNbme),
+			shbred.CodeInsights.NewInsightsQueryRunnerStoreGroup(contbinerNbme),
 			{
-				Title:  "Code Insights queue utilization",
+				Title:  "Code Insights queue utilizbtion",
 				Hidden: true,
-				Rows: []monitoring.Row{{monitoring.Observable{
-					Name:           "insights_queue_unutilized_size",
-					Description:    "insights queue size that is not utilized (not processing)",
-					Owner:          monitoring.ObservableOwnerCodeInsights,
-					Query:          "max(src_query_runner_worker_total{job=~\"^worker.*\"}) > 0 and on(job) sum by (op)(increase(src_workerutil_dbworker_store_insights_query_runner_jobs_store_total{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
-					DataMustExist:  false,
-					Warning:        monitoring.Alert().Greater(0.0).For(time.Minute * 30),
-					NextSteps:      "Verify code insights worker job has successfully started. Restart worker service and monitoring startup logs, looking for worker panics.",
-					Interpretation: "Any value on this panel indicates code insights is not processing queries from its queue. This observable and alert only fire if there are records in the queue and there have been no dequeue attempts for 30 minutes.",
-					Panel:          monitoring.Panel().LegendFormat("count"),
+				Rows: []monitoring.Row{{monitoring.Observbble{
+					Nbme:           "insights_queue_unutilized_size",
+					Description:    "insights queue size thbt is not utilized (not processing)",
+					Owner:          monitoring.ObservbbleOwnerCodeInsights,
+					Query:          "mbx(src_query_runner_worker_totbl{job=~\"^worker.*\"}) > 0 bnd on(job) sum by (op)(increbse(src_workerutil_dbworker_store_insights_query_runner_jobs_store_totbl{job=~\"^worker.*\",op=\"Dequeue\"}[5m])) < 1",
+					DbtbMustExist:  fblse,
+					Wbrning:        monitoring.Alert().Grebter(0.0).For(time.Minute * 30),
+					NextSteps:      "Verify code insights worker job hbs successfully stbrted. Restbrt worker service bnd monitoring stbrtup logs, looking for worker pbnics.",
+					Interpretbtion: "Any vblue on this pbnel indicbtes code insights is not processing queries from its queue. This observbble bnd blert only fire if there bre records in the queue bnd there hbve been no dequeue bttempts for 30 minutes.",
+					Pbnel:          monitoring.Pbnel().LegendFormbt("count"),
 				}}},
 			},
 
 			// Resource monitoring
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shbred.NewFrontendInternblAPIErrorResponseMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
 
-			// Sourcegraph Own background jobs
-			shared.SourcegraphOwn.NewOwnRepoIndexerStoreGroup(containerName),
-			shared.SourcegraphOwn.NewOwnRepoIndexerWorkerGroup(containerName),
-			shared.SourcegraphOwn.NewOwnRepoIndexerResetterGroup(containerName),
-			shared.SourcegraphOwn.NewOwnRepoIndexerSchedulerGroup(containerName),
+			// Sourcegrbph Own bbckground jobs
+			shbred.SourcegrbphOwn.NewOwnRepoIndexerStoreGroup(contbinerNbme),
+			shbred.SourcegrbphOwn.NewOwnRepoIndexerWorkerGroup(contbinerNbme),
+			shbred.SourcegrbphOwn.NewOwnRepoIndexerResetterGroup(contbinerNbme),
+			shbred.SourcegrbphOwn.NewOwnRepoIndexerSchedulerGroup(contbinerNbme),
 		},
 	}
 }

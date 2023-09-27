@@ -1,49 +1,49 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var testMetricWarning = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "observability_test_metric_warning",
-	Help: "Value is 1 if warning test alert should be firing, 0 otherwise - triggered using triggerObservabilityTestAlert",
+vbr testMetricWbrning = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+	Nbme: "observbbility_test_metric_wbrning",
+	Help: "Vblue is 1 if wbrning test blert should be firing, 0 otherwise - triggered using triggerObservbbilityTestAlert",
 }, nil)
 
-var testMetricCritical = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "observability_test_metric_critical",
-	Help: "Value is 1 if critical test alert should be firing, 0 otherwise - triggered using triggerObservabilityTestAlert",
+vbr testMetricCriticbl = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+	Nbme: "observbbility_test_metric_criticbl",
+	Help: "Vblue is 1 if criticbl test blert should be firing, 0 otherwise - triggered using triggerObservbbilityTestAlert",
 }, nil)
 
-func (r *schemaResolver) TriggerObservabilityTestAlert(ctx context.Context, args *struct {
+func (r *schembResolver) TriggerObservbbilityTestAlert(ctx context.Context, brgs *struct {
 	Level string
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Do not allow arbitrary users to set off alerts.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Do not bllow brbitrbry users to set off blerts.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	var metric *prometheus.GaugeVec
-	switch args.Level {
-	case "warning":
-		metric = testMetricWarning
-	case "critical":
-		metric = testMetricCritical
-	default:
-		return nil, errors.Errorf("invalid alert level %q", args.Level)
+	vbr metric *prometheus.GbugeVec
+	switch brgs.Level {
+	cbse "wbrning":
+		metric = testMetricWbrning
+	cbse "criticbl":
+		metric = testMetricCriticbl
+	defbult:
+		return nil, errors.Errorf("invblid blert level %q", brgs.Level)
 	}
 
-	// set metric to firing state
+	// set metric to firing stbte
 	metric.With(nil).Set(1)
 
-	// reset the metric after some amount of time
-	go func(m *prometheus.GaugeVec) {
+	// reset the metric bfter some bmount of time
+	go func(m *prometheus.GbugeVec) {
 		time.Sleep(1 * time.Minute)
 		m.With(nil).Set(0)
 	}(metric)

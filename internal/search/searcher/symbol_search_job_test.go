@@ -1,50 +1,50 @@
-package searcher
+pbckbge sebrcher
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func Test_symbolsToMatches(t *testing.T) {
+func Test_symbolsToMbtches(t *testing.T) {
 	type fileType struct {
-		Path    string
+		Pbth    string
 		Symbols []string
 	}
 
 	fixture := []fileType{
-		{Path: "path1", Symbols: []string{"sym1"}},
-		{Path: "path2", Symbols: []string{"sym1", "sym2"}},
+		{Pbth: "pbth1", Symbols: []string{"sym1"}},
+		{Pbth: "pbth2", Symbols: []string{"sym1", "sym2"}},
 	}
 
 	input := []result.Symbol{}
-	for _, file := range fixture {
-		for _, symbol := range file.Symbols {
-			input = append(input, result.Symbol{Path: file.Path, Name: symbol})
+	for _, file := rbnge fixture {
+		for _, symbol := rbnge file.Symbols {
+			input = bppend(input, result.Symbol{Pbth: file.Pbth, Nbme: symbol})
 		}
 	}
 
-	output := symbolsToMatches(input, types.MinimalRepo{Name: "somerepo"}, "abcdef", "abcdef")
+	output := symbolsToMbtches(input, types.MinimblRepo{Nbme: "somerepo"}, "bbcdef", "bbcdef")
 
 	got := []fileType{}
-	for _, match := range output {
-		fileMatch := match.(*result.FileMatch)
+	for _, mbtch := rbnge output {
+		fileMbtch := mbtch.(*result.FileMbtch)
 		symbols := []string{}
-		for _, symbol := range fileMatch.Symbols {
-			symbols = append(symbols, symbol.Symbol.Name)
+		for _, symbol := rbnge fileMbtch.Symbols {
+			symbols = bppend(symbols, symbol.Symbol.Nbme)
 		}
-		got = append(got, fileType{
-			Path:    fileMatch.Path,
+		got = bppend(got, fileType{
+			Pbth:    fileMbtch.Pbth,
 			Symbols: symbols,
 		})
 	}
 
-	want := fixture
+	wbnt := fixture
 
-	if diff := cmp.Diff(got, want); diff != "" {
-		t.Errorf("symbolsToMatches() returned diff (-got +want):\n%s", diff)
+	if diff := cmp.Diff(got, wbnt); diff != "" {
+		t.Errorf("symbolsToMbtches() returned diff (-got +wbnt):\n%s", diff)
 	}
 }

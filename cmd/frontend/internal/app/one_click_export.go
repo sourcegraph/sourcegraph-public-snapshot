@@ -1,46 +1,46 @@
-package app
+pbckbge bpp
 
 import (
 	"encoding/json"
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	oce "github.com/sourcegraph/sourcegraph/cmd/frontend/oneclickexport"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	oce "github.com/sourcegrbph/sourcegrbph/cmd/frontend/oneclickexport"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func oneClickExportHandler(db database.DB, logger log.Logger) http.HandlerFunc {
+func oneClickExportHbndler(db dbtbbbse.DB, logger log.Logger) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 🚨SECURITY: Only site admins may get this archive.
+		// 🚨SECURITY: Only site bdmins mby get this brchive.
 		ctx := r.Context()
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+		if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+			w.WriteHebder(http.StbtusUnbuthorized)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/zip")
-		w.Header().Set("Content-Disposition", "attachment; filename=\"SourcegraphDataExport.zip\"")
+		w.Hebder().Set("Content-Type", "bpplicbtion/zip")
+		w.Hebder().Set("Content-Disposition", "bttbchment; filenbme=\"SourcegrbphDbtbExport.zip\"")
 
-		var request oce.ExportRequest
+		vbr request oce.ExportRequest
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 
-		archive, err := oce.GlobalExporter.Export(ctx, request)
+		brchive, err := oce.GlobblExporter.Export(ctx, request)
 		if err != nil {
 			logger.Error("OneClickExport", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
 
-		_, err = io.Copy(w, archive)
+		_, err = io.Copy(w, brchive)
 		if err != nil {
-			logger.Error("Writing archive to HTTP response", log.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			logger.Error("Writing brchive to HTTP response", log.Error(err))
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
 	}

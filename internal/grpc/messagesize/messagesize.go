@@ -1,118 +1,118 @@
-package messagesize
+pbckbge messbgesize
 
 import (
 	"fmt"
-	"math"
+	"mbth"
 
-	"google.golang.org/grpc"
+	"google.golbng.org/grpc"
 
-	"github.com/dustin/go-humanize"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/dustin/go-humbnize"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var (
-	smallestAllowedMaxMessageSize = uint64(4 * 1024 * 1024) // 4 MB: There isn't a scenario where we'd want to dip below the default of 4MB.
-	largestAllowedMaxMessageSize  = uint64(math.MaxInt)     // This is the largest allowed value for the type accepted by the grpc.MaxSize[...] options.
+vbr (
+	smbllestAllowedMbxMessbgeSize = uint64(4 * 1024 * 1024) // 4 MB: There isn't b scenbrio where we'd wbnt to dip below the defbult of 4MB.
+	lbrgestAllowedMbxMessbgeSize  = uint64(mbth.MbxInt)     // This is the lbrgest bllowed vblue for the type bccepted by the grpc.MbxSize[...] options.
 
-	envClientMessageSize = env.Get("SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE", messageSizeDisabled, fmt.Sprintf("set the maximum message size for gRPC clients (ex: %q)", "40MB"))
-	envServerMessageSize = env.Get("SRC_GRPC_SERVER_MAX_MESSAGE_SIZE", messageSizeDisabled, fmt.Sprintf("set the maximum message size for gRPC servers (ex: %q)", "40MB"))
+	envClientMessbgeSize = env.Get("SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE", messbgeSizeDisbbled, fmt.Sprintf("set the mbximum messbge size for gRPC clients (ex: %q)", "40MB"))
+	envServerMessbgeSize = env.Get("SRC_GRPC_SERVER_MAX_MESSAGE_SIZE", messbgeSizeDisbbled, fmt.Sprintf("set the mbximum messbge size for gRPC servers (ex: %q)", "40MB"))
 
-	messageSizeDisabled = "message_size_disabled" // sentinel value for when the message size env var isn't set
+	messbgeSizeDisbbled = "messbge_size_disbbled" // sentinel vblue for when the messbge size env vbr isn't set
 )
 
-// MustGetClientMessageSizeFromEnv returns a slice of grpc.DialOptions that set the maximum message size for gRPC clients if
-// the "SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE" environment variable is set to a valid size value (ex: "40 MB").
+// MustGetClientMessbgeSizeFromEnv returns b slice of grpc.DiblOptions thbt set the mbximum messbge size for gRPC clients if
+// the "SRC_GRPC_CLIENT_MAX_MESSAGE_SIZE" environment vbribble is set to b vblid size vblue (ex: "40 MB").
 //
-// If the environment variable isn't set, it returns nil.
-// If the size value in the environment variable is invalid (too small, not parsable, etc.), it panics.
-func MustGetClientMessageSizeFromEnv() []grpc.DialOption {
-	if envClientMessageSize == messageSizeDisabled {
+// If the environment vbribble isn't set, it returns nil.
+// If the size vblue in the environment vbribble is invblid (too smbll, not pbrsbble, etc.), it pbnics.
+func MustGetClientMessbgeSizeFromEnv() []grpc.DiblOption {
+	if envClientMessbgeSize == messbgeSizeDisbbled {
 		return nil
 	}
 
-	messageSize, err := getMessageSizeBytesFromString(envClientMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
+	messbgeSize, err := getMessbgeSizeBytesFromString(envClientMessbgeSize, smbllestAllowedMbxMessbgeSize, lbrgestAllowedMbxMessbgeSize)
 	if err != nil {
-		panic(fmt.Sprintf("failed to get gRPC client message size: %s", err))
+		pbnic(fmt.Sprintf("fbiled to get gRPC client messbge size: %s", err))
 	}
 
-	return []grpc.DialOption{
-		grpc.WithDefaultCallOptions(
-			grpc.MaxCallRecvMsgSize(messageSize),
-			grpc.MaxCallSendMsgSize(messageSize),
+	return []grpc.DiblOption{
+		grpc.WithDefbultCbllOptions(
+			grpc.MbxCbllRecvMsgSize(messbgeSize),
+			grpc.MbxCbllSendMsgSize(messbgeSize),
 		),
 	}
 }
 
-// MustGetServerMessageSizeFromEnv returns a slice of grpc.ServerOption that set the maximum message size for gRPC servers if
-// the "SRC_GRPC_SERVER_MAX_MESSAGE_SIZE" environment variable is set to a valid size value (ex: "40 MB").
+// MustGetServerMessbgeSizeFromEnv returns b slice of grpc.ServerOption thbt set the mbximum messbge size for gRPC servers if
+// the "SRC_GRPC_SERVER_MAX_MESSAGE_SIZE" environment vbribble is set to b vblid size vblue (ex: "40 MB").
 //
-// If the environment variable isn't set, it returns nil.
-// If the size value in the environment variable is invalid (too small, not parsable, etc.), it panics.
-func MustGetServerMessageSizeFromEnv() []grpc.ServerOption {
-	if envServerMessageSize == messageSizeDisabled {
+// If the environment vbribble isn't set, it returns nil.
+// If the size vblue in the environment vbribble is invblid (too smbll, not pbrsbble, etc.), it pbnics.
+func MustGetServerMessbgeSizeFromEnv() []grpc.ServerOption {
+	if envServerMessbgeSize == messbgeSizeDisbbled {
 		return nil
 	}
 
-	messageSize, err := getMessageSizeBytesFromString(envServerMessageSize, smallestAllowedMaxMessageSize, largestAllowedMaxMessageSize)
+	messbgeSize, err := getMessbgeSizeBytesFromString(envServerMessbgeSize, smbllestAllowedMbxMessbgeSize, lbrgestAllowedMbxMessbgeSize)
 	if err != nil {
-		panic(fmt.Sprintf("failed to get gRPC server message size: %s", err))
+		pbnic(fmt.Sprintf("fbiled to get gRPC server messbge size: %s", err))
 	}
 
 	return []grpc.ServerOption{
-		grpc.MaxRecvMsgSize(messageSize),
-		grpc.MaxSendMsgSize(messageSize),
+		grpc.MbxRecvMsgSize(messbgeSize),
+		grpc.MbxSendMsgSize(messbgeSize),
 	}
 }
 
-// getMessageSizeBytesFromEnv parses rawSize returns the message size in bytes within the range [minSize, maxSize].
+// getMessbgeSizeBytesFromEnv pbrses rbwSize returns the messbge size in bytes within the rbnge [minSize, mbxSize].
 //
-// If rawSize isn't a valid size is not set or the value is outside the allowed range, it returns an error.
-func getMessageSizeBytesFromString(rawSize string, minSize, maxSize uint64) (size int, err error) {
-	sizeBytes, err := humanize.ParseBytes(rawSize)
+// If rbwSize isn't b vblid size is not set or the vblue is outside the bllowed rbnge, it returns bn error.
+func getMessbgeSizeBytesFromString(rbwSize string, minSize, mbxSize uint64) (size int, err error) {
+	sizeBytes, err := humbnize.PbrseBytes(rbwSize)
 	if err != nil {
-		return 0, &parseError{
-			rawSize: rawSize,
+		return 0, &pbrseError{
+			rbwSize: rbwSize,
 			err:     err,
 		}
 	}
 
-	if sizeBytes < minSize || sizeBytes > maxSize {
-		return 0, &sizeOutOfRangeError{
-			size: humanize.IBytes(sizeBytes),
-			min:  humanize.IBytes(minSize),
-			max:  humanize.IBytes(maxSize),
+	if sizeBytes < minSize || sizeBytes > mbxSize {
+		return 0, &sizeOutOfRbngeError{
+			size: humbnize.IBytes(sizeBytes),
+			min:  humbnize.IBytes(minSize),
+			mbx:  humbnize.IBytes(mbxSize),
 		}
 	}
 
 	return int(sizeBytes), nil
 }
 
-// parseError occurs when the environment variable's value cannot be parsed as a byte size.
-type parseError struct {
-	// rawSize is the raw size string that was attempted to be parsed
-	rawSize string
-	// err is the error that occurred while parsing rawSize
+// pbrseError occurs when the environment vbribble's vblue cbnnot be pbrsed bs b byte size.
+type pbrseError struct {
+	// rbwSize is the rbw size string thbt wbs bttempted to be pbrsed
+	rbwSize string
+	// err is the error thbt occurred while pbrsing rbwSize
 	err error
 }
 
-func (e *parseError) Error() string {
-	return fmt.Sprintf("failed to parse %q as bytes: %s", e.rawSize, e.err)
+func (e *pbrseError) Error() string {
+	return fmt.Sprintf("fbiled to pbrse %q bs bytes: %s", e.rbwSize, e.err)
 }
 
-func (e *parseError) Unwrap() error {
+func (e *pbrseError) Unwrbp() error {
 	return e.err
 }
 
-// sizeOutOfRangeError occurs when the environment variable's value is outside of the allowed range.
-type sizeOutOfRangeError struct {
-	// size is the size that was out of range
+// sizeOutOfRbngeError occurs when the environment vbribble's vblue is outside of the bllowed rbnge.
+type sizeOutOfRbngeError struct {
+	// size is the size thbt wbs out of rbnge
 	size string
-	// min is the minimum allowed size
+	// min is the minimum bllowed size
 	min string
-	// max is the maximum allowed size
-	max string
+	// mbx is the mbximum bllowed size
+	mbx string
 }
 
-func (e *sizeOutOfRangeError) Error() string {
-	return fmt.Sprintf("size %s is outside of allowed range [%s, %s]", e.size, e.min, e.max)
+func (e *sizeOutOfRbngeError) Error() string {
+	return fmt.Sprintf("size %s is outside of bllowed rbnge [%s, %s]", e.size, e.min, e.mbx)
 }

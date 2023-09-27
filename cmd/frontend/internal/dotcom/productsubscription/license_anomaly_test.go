@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
@@ -12,72 +12,72 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/slack"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/slbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestMaybeCheckAnomalies(t *testing.T) {
+func TestMbybeCheckAnomblies(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := dbmocks.NewMockDB()
 
-	mockClient := &fakeSlackClient{}
+	mockClient := &fbkeSlbckClient{}
 
 	mockClock := glock.NewMockClock()
 
-	rs := redispool.NewMockKeyValue()
+	rs := redispool.NewMockKeyVblue()
 
-	testCases := []struct {
-		name      string
-		lastCheck time.Time
-		hasCalled bool
+	testCbses := []struct {
+		nbme      string
+		lbstCheck time.Time
+		hbsCblled bool
 	}{
 		{
-			name:      "no previous check time",
-			lastCheck: time.Time{},
-			hasCalled: true,
+			nbme:      "no previous check time",
+			lbstCheck: time.Time{},
+			hbsCblled: true,
 		},
 		{
-			name:      "previous check time within 24 hours",
-			lastCheck: mockClock.Now().UTC().Add(-23 * time.Hour),
-			hasCalled: false,
+			nbme:      "previous check time within 24 hours",
+			lbstCheck: mockClock.Now().UTC().Add(-23 * time.Hour),
+			hbsCblled: fblse,
 		},
 		{
-			name:      "previous check time over 24 hours",
-			lastCheck: mockClock.Now().UTC().Add(-25 * time.Hour),
-			hasCalled: true,
+			nbme:      "previous check time over 24 hours",
+			lbstCheck: mockClock.Now().UTC().Add(-25 * time.Hour),
+			hbsCblled: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			called := false
-			rs.SetFunc.SetDefaultHook(func(string, interface{}) error {
-				called = true
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			cblled := fblse
+			rs.SetFunc.SetDefbultHook(func(string, interfbce{}) error {
+				cblled = true
 				return nil
 			})
-			rs.GetFunc.SetDefaultHook(func(string) redispool.Value {
-				if tc.lastCheck.IsZero() {
-					return redispool.NewValue(nil, redis.ErrNil)
+			rs.GetFunc.SetDefbultHook(func(string) redispool.Vblue {
+				if tc.lbstCheck.IsZero() {
+					return redispool.NewVblue(nil, redis.ErrNil)
 				}
-				return redispool.NewValue(tc.lastCheck.Format(time.RFC3339), nil)
+				return redispool.NewVblue(tc.lbstCheck.Formbt(time.RFC3339), nil)
 			})
 
-			maybeCheckAnomalies(logger, db, mockClient, mockClock, rs)
+			mbybeCheckAnomblies(logger, db, mockClient, mockClock, rs)
 
-			require.Equal(t, tc.hasCalled, called)
+			require.Equbl(t, tc.hbsCblled, cblled)
 		})
 	}
 }
 
-func TestCheckAnomalies(t *testing.T) {
+func TestCheckAnomblies(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -85,20 +85,20 @@ func TestCheckAnomalies(t *testing.T) {
 	clock := glock.NewMockClock()
 	clock.SetCurrent(time.Unix(1686666666, 0)) // 2023-06-13T14:31:06Z
 
-	siteID := "02a5a9e6-b45e-4e1a-b2a0-f812620e6dff"
-	licenseID := "22e0cc8e-57ad-4dd9-be54-0f94d6e9964d"
+	siteID := "02b5b9e6-b45e-4e1b-b2b0-f812620e6dff"
+	licenseID := "22e0cc8e-57bd-4dd9-be54-0f94d6e9964d"
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			Dotcom: &schema.Dotcom{
-				SlackLicenseAnomallyWebhook: "https://slack.com/webhook",
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			Dotcom: &schemb.Dotcom{
+				SlbckLicenseAnombllyWebhook: "https://slbck.com/webhook",
 			},
-			ExternalURL: "https://sourcegraph.acme.com",
+			ExternblURL: "https://sourcegrbph.bcme.com",
 		},
 	})
 
-	sub1ID := "e9450fb2-87c7-47ae-a713-a376c4618faa"
-	sub2ID := "26136564-b319-4be4-98ff-7b8710abf4af"
+	sub1ID := "e9450fb2-87c7-47be-b713-b376c4618fbb"
+	sub2ID := "26136564-b319-4be4-98ff-7b8710bbf4bf"
 	mocks.subscriptions.List = func(ctx context.Context, opt dbSubscriptionsListOptions) ([]*dbSubscription, error) {
 		return []*dbSubscription{
 			{ID: sub1ID},
@@ -112,80 +112,80 @@ func TestCheckAnomalies(t *testing.T) {
 		return []*dbLicense{}, nil
 	}
 
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		conf.Mock(nil)
 		mocks.subscriptions = mockSubscriptions{}
 		mocks.licenses = mockLicenses{}
-		// licensing.MockParseProductLicenseKeyWithBuiltinOrGenerationKey = nil
+		// licensing.MockPbrseProductLicenseKeyWithBuiltinOrGenerbtionKey = nil
 	})
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	eventJSON, err := json.Marshal(struct {
+	eventJSON, err := json.Mbrshbl(struct {
 		SiteID string `json:"site_id,omitempty"`
 	}{
 		SiteID: siteID,
 	})
 	require.NoError(t, err)
 
-	cleanupDB := func(t *testing.T) {
+	clebnupDB := func(t *testing.T) {
 		t.Helper()
 
-		if t.Failed() {
+		if t.Fbiled() {
 			return
 		}
-		_, err := db.Handle().QueryContext(ctx, `TRUNCATE event_logs`)
+		_, err := db.Hbndle().QueryContext(ctx, `TRUNCATE event_logs`)
 		require.NoError(t, err)
 	}
 
-	createEvents := func(t *testing.T, times []time.Time) {
+	crebteEvents := func(t *testing.T, times []time.Time) {
 		t.Helper()
 
 		if len(times) == 0 {
 			return
 		}
 
-		events := make([]*database.Event, len(times))
-		for i, ts := range times {
-			events[i] = &database.Event{
-				Name:            EventNameSuccess,
+		events := mbke([]*dbtbbbse.Event, len(times))
+		for i, ts := rbnge times {
+			events[i] = &dbtbbbse.Event{
+				Nbme:            EventNbmeSuccess,
 				URL:             "",
-				AnonymousUserID: "backend",
+				AnonymousUserID: "bbckend",
 				Argument:        eventJSON,
 				Source:          "BACKEND",
-				Timestamp:       ts,
+				Timestbmp:       ts,
 			}
 		}
 		err = db.EventLogs().BulkInsert(ctx, events)
 		require.NoError(t, err)
 	}
 
-	slackMessage := fmt.Sprintf(slackMessageFmt, "https://sourcegraph.acme.com", url.QueryEscape(sub2ID), url.QueryEscape(licenseID), licenseID, siteID)
+	slbckMessbge := fmt.Sprintf(slbckMessbgeFmt, "https://sourcegrbph.bcme.com", url.QueryEscbpe(sub2ID), url.QueryEscbpe(licenseID), licenseID, siteID)
 
 	tests := []struct {
-		name      string
+		nbme      string
 		times     []time.Time
-		anomalous bool
+		bnomblous bool
 	}{
 		{
-			name:      "no events",
+			nbme:      "no events",
 			times:     []time.Time{},
-			anomalous: false,
+			bnomblous: fblse,
 		},
 		{
-			name: "ok time interval between events",
+			nbme: "ok time intervbl between events",
 			times: []time.Time{
 				clock.Now().Add(-40 * time.Hour),
 				clock.Now().Add(-28 * time.Hour),
-				clock.Now().Add(-24 * time.Hour), // mimics redis cleanup and instance restart
+				clock.Now().Add(-24 * time.Hour), // mimics redis clebnup bnd instbnce restbrt
 				clock.Now().Add(-12 * time.Hour),
 			},
-			anomalous: false,
+			bnomblous: fblse,
 		},
 		{
-			name: "Two instances sending events",
+			nbme: "Two instbnces sending events",
 			times: []time.Time{
 				clock.Now().Add(-40 * time.Hour),
 				clock.Now().Add(-29 * time.Hour),
@@ -195,27 +195,27 @@ func TestCheckAnomalies(t *testing.T) {
 				clock.Now().Add(-5 * time.Hour),
 				clock.Now().Add(-4 * time.Hour),
 			},
-			anomalous: true,
+			bnomblous: true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Cleanup(func() {
-				cleanupDB(t)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			t.Clebnup(func() {
+				clebnupDB(t)
 			})
 
-			createEvents(t, test.times)
+			crebteEvents(t, test.times)
 
-			wantPayloads := []*slack.Payload(nil)
-			if test.anomalous {
-				wantPayloads = []*slack.Payload{{Text: slackMessage}}
+			wbntPbylobds := []*slbck.Pbylobd(nil)
+			if test.bnomblous {
+				wbntPbylobds = []*slbck.Pbylobd{{Text: slbckMessbge}}
 			}
 
-			client := &fakeSlackClient{}
-			checkAnomalies(logtest.Scoped(t), db, clock, client)
+			client := &fbkeSlbckClient{}
+			checkAnomblies(logtest.Scoped(t), db, clock, client)
 
-			require.Equal(t, wantPayloads, client.payloads)
+			require.Equbl(t, wbntPbylobds, client.pbylobds)
 		})
 	}
 }

@@ -1,42 +1,42 @@
-package telemetrygateway
+pbckbge telemetrygbtewby
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func newIdentifier(ctx context.Context, c conftypes.SiteConfigQuerier, g database.GlobalStateStore) (*telemetrygatewayv1.Identifier, error) {
-	globalState, err := g.Get(ctx)
+func newIdentifier(ctx context.Context, c conftypes.SiteConfigQuerier, g dbtbbbse.GlobblStbteStore) (*telemetrygbtewbyv1.Identifier, error) {
+	globblStbte, err := g.Get(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "get instance ID")
+		return nil, errors.Wrbp(err, "get instbnce ID")
 	}
 
-	// licensed instance
+	// licensed instbnce
 	if lk := c.SiteConfig().LicenseKey; lk != "" {
-		return &telemetrygatewayv1.Identifier{
-			Identifier: &telemetrygatewayv1.Identifier_LicensedInstance{
-				LicensedInstance: &telemetrygatewayv1.Identifier_LicensedInstanceIdentifier{
+		return &telemetrygbtewbyv1.Identifier{
+			Identifier: &telemetrygbtewbyv1.Identifier_LicensedInstbnce{
+				LicensedInstbnce: &telemetrygbtewbyv1.Identifier_LicensedInstbnceIdentifier{
 					LicenseKey: lk,
-					InstanceId: globalState.SiteID,
+					InstbnceId: globblStbte.SiteID,
 				},
 			},
 		}, nil
 	}
 
-	// unlicensed instance - no license key, so instanceID must be valid
-	if globalState.SiteID != "" {
-		return &telemetrygatewayv1.Identifier{
-			Identifier: &telemetrygatewayv1.Identifier_UnlicensedInstance{
-				UnlicensedInstance: &telemetrygatewayv1.Identifier_UnlicensedInstanceIdenfitier{
-					InstanceId: globalState.SiteID,
+	// unlicensed instbnce - no license key, so instbnceID must be vblid
+	if globblStbte.SiteID != "" {
+		return &telemetrygbtewbyv1.Identifier{
+			Identifier: &telemetrygbtewbyv1.Identifier_UnlicensedInstbnce{
+				UnlicensedInstbnce: &telemetrygbtewbyv1.Identifier_UnlicensedInstbnceIdenfitier{
+					InstbnceId: globblStbte.SiteID,
 				},
 			},
 		}, nil
 	}
 
-	return nil, errors.New("cannot infer an identifer for this instance")
+	return nil, errors.New("cbnnot infer bn identifer for this instbnce")
 }

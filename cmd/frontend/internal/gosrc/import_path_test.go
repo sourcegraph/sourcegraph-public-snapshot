@@ -1,10 +1,10 @@
 // Copyright 2014 The Go Authors. All rights reserved.
 //
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file or at
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file or bt
 // https://developers.google.com/open-source/licenses/bsd.
 
-package gosrc
+pbckbge gosrc
 
 import (
 	"io"
@@ -15,211 +15,211 @@ import (
 	"testing"
 )
 
-type testTransport map[string]string
+type testTrbnsport mbp[string]string
 
-func (t testTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	statusCode := http.StatusOK
-	req.URL.RawQuery = ""
+func (t testTrbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
+	stbtusCode := http.StbtusOK
+	req.URL.RbwQuery = ""
 	body, ok := t[req.URL.String()]
 	if !ok {
-		statusCode = http.StatusNotFound
+		stbtusCode = http.StbtusNotFound
 	}
 	resp := &http.Response{
-		StatusCode: statusCode,
-		Body:       io.NopCloser(strings.NewReader(body)),
+		StbtusCode: stbtusCode,
+		Body:       io.NopCloser(strings.NewRebder(body)),
 	}
 	return resp, nil
 }
 
-func TestResolveImportPath(t *testing.T) {
+func TestResolveImportPbth(t *testing.T) {
 	tests := []struct {
-		importPath string
+		importPbth string
 		dir        *Directory
 	}{
-		// static
+		// stbtic
 		{"fmt", &Directory{
-			ImportPath:  "fmt",
+			ImportPbth:  "fmt",
 			ProjectRoot: "",
-			CloneURL:    "https://github.com/golang/go",
+			CloneURL:    "https://github.com/golbng/go",
 			RepoPrefix:  "src",
 			VCS:         "git",
 			Rev:         runtime.Version(),
 		}},
-		{"cmd/internal/obj/x86", &Directory{
-			ImportPath:  "cmd/internal/obj/x86",
+		{"cmd/internbl/obj/x86", &Directory{
+			ImportPbth:  "cmd/internbl/obj/x86",
 			ProjectRoot: "",
-			CloneURL:    "https://github.com/golang/go",
+			CloneURL:    "https://github.com/golbng/go",
 			RepoPrefix:  "src",
 			VCS:         "git",
 			Rev:         runtime.Version(),
 		}},
-		{"github.com/foo/bar", &Directory{
-			ImportPath:  "github.com/foo/bar",
-			ProjectRoot: "github.com/foo/bar",
-			CloneURL:    "https://github.com/foo/bar",
+		{"github.com/foo/bbr", &Directory{
+			ImportPbth:  "github.com/foo/bbr",
+			ProjectRoot: "github.com/foo/bbr",
+			CloneURL:    "https://github.com/foo/bbr",
 			VCS:         "git",
 		}},
-		{"github.com/foo/bar/baz", &Directory{
-			ImportPath:  "github.com/foo/bar/baz",
-			ProjectRoot: "github.com/foo/bar",
-			CloneURL:    "https://github.com/foo/bar",
+		{"github.com/foo/bbr/bbz", &Directory{
+			ImportPbth:  "github.com/foo/bbr/bbz",
+			ProjectRoot: "github.com/foo/bbr",
+			CloneURL:    "https://github.com/foo/bbr",
 			VCS:         "git",
 		}},
-		{"github.com/foo/bar/baz/bam", &Directory{
-			ImportPath:  "github.com/foo/bar/baz/bam",
-			ProjectRoot: "github.com/foo/bar",
-			CloneURL:    "https://github.com/foo/bar",
+		{"github.com/foo/bbr/bbz/bbm", &Directory{
+			ImportPbth:  "github.com/foo/bbr/bbz/bbm",
+			ProjectRoot: "github.com/foo/bbr",
+			CloneURL:    "https://github.com/foo/bbr",
 			VCS:         "git",
 		}},
-		{"golang.org/x/foo", &Directory{
-			ImportPath:  "golang.org/x/foo",
-			ProjectRoot: "golang.org/x/foo",
-			CloneURL:    "https://github.com/golang/foo",
+		{"golbng.org/x/foo", &Directory{
+			ImportPbth:  "golbng.org/x/foo",
+			ProjectRoot: "golbng.org/x/foo",
+			CloneURL:    "https://github.com/golbng/foo",
 			VCS:         "git",
 		}},
-		{"golang.org/x/foo/bar", &Directory{
-			ImportPath:  "golang.org/x/foo/bar",
-			ProjectRoot: "golang.org/x/foo",
-			CloneURL:    "https://github.com/golang/foo",
+		{"golbng.org/x/foo/bbr", &Directory{
+			ImportPbth:  "golbng.org/x/foo/bbr",
+			ProjectRoot: "golbng.org/x/foo",
+			CloneURL:    "https://github.com/golbng/foo",
 			VCS:         "git",
 		}},
 		{"github.com/foo", nil},
 
-		// dynamic (see client setup below)
-		{"alice.org/pkg", &Directory{
-			ImportPath:  "alice.org/pkg",
-			ProjectRoot: "alice.org/pkg",
-			CloneURL:    "https://github.com/alice/pkg",
+		// dynbmic (see client setup below)
+		{"blice.org/pkg", &Directory{
+			ImportPbth:  "blice.org/pkg",
+			ProjectRoot: "blice.org/pkg",
+			CloneURL:    "https://github.com/blice/pkg",
 			VCS:         "git",
 		}},
-		{"alice.org/pkg/sub", &Directory{
-			ImportPath:  "alice.org/pkg/sub",
-			ProjectRoot: "alice.org/pkg",
-			CloneURL:    "https://github.com/alice/pkg",
+		{"blice.org/pkg/sub", &Directory{
+			ImportPbth:  "blice.org/pkg/sub",
+			ProjectRoot: "blice.org/pkg",
+			CloneURL:    "https://github.com/blice/pkg",
 			VCS:         "git",
 		}},
-		{"alice.org/pkg/http", &Directory{
-			ImportPath:  "alice.org/pkg/http",
-			ProjectRoot: "alice.org/pkg",
-			CloneURL:    "https://github.com/alice/pkg",
+		{"blice.org/pkg/http", &Directory{
+			ImportPbth:  "blice.org/pkg/http",
+			ProjectRoot: "blice.org/pkg",
+			CloneURL:    "https://github.com/blice/pkg",
 			VCS:         "git",
 		}},
-		{"alice.org/pkg/ignore", &Directory{
-			ImportPath:  "alice.org/pkg/ignore",
-			ProjectRoot: "alice.org/pkg",
-			CloneURL:    "https://github.com/alice/pkg",
+		{"blice.org/pkg/ignore", &Directory{
+			ImportPbth:  "blice.org/pkg/ignore",
+			ProjectRoot: "blice.org/pkg",
+			CloneURL:    "https://github.com/blice/pkg",
 			VCS:         "git",
 		}},
-		{"alice.org/pkg/mismatch", nil},
-		{"alice.org/pkg/multiple", nil},
-		{"alice.org/pkg/notfound", nil},
+		{"blice.org/pkg/mismbtch", nil},
+		{"blice.org/pkg/multiple", nil},
+		{"blice.org/pkg/notfound", nil},
 
 		{"bob.com/pkg", &Directory{
-			ImportPath:  "bob.com/pkg",
+			ImportPbth:  "bob.com/pkg",
 			ProjectRoot: "bob.com/pkg",
 			CloneURL:    "https://vcs.net/bob/pkg.git",
 			VCS:         "git",
 		}},
 		{"bob.com/pkg/sub", &Directory{
-			ImportPath:  "bob.com/pkg/sub",
+			ImportPbth:  "bob.com/pkg/sub",
 			ProjectRoot: "bob.com/pkg",
 			CloneURL:    "https://vcs.net/bob/pkg.git",
 			VCS:         "git",
 		}},
 
-		{"gopkg.in/yaml.v2", &Directory{
-			ImportPath:  "gopkg.in/yaml.v2",
-			ProjectRoot: "gopkg.in/yaml.v2",
-			CloneURL:    "https://github.com/go-yaml/yaml",
+		{"gopkg.in/ybml.v2", &Directory{
+			ImportPbth:  "gopkg.in/ybml.v2",
+			ProjectRoot: "gopkg.in/ybml.v2",
+			CloneURL:    "https://github.com/go-ybml/ybml",
 			VCS:         "git",
 			Rev:         "v2",
 		}},
-		{"gopkg.in/stretchr/testify.v1/assert", &Directory{
-			ImportPath:  "gopkg.in/stretchr/testify.v1/assert",
+		{"gopkg.in/stretchr/testify.v1/bssert", &Directory{
+			ImportPbth:  "gopkg.in/stretchr/testify.v1/bssert",
 			ProjectRoot: "gopkg.in/stretchr/testify.v1",
 			CloneURL:    "https://github.com/stretchr/testify",
 			VCS:         "git",
 			Rev:         "v1.1.4",
 		}},
-		{"honnef.co/go/staticcheck/cmd/staticcheck", &Directory{
-			ImportPath:  "honnef.co/go/staticcheck/cmd/staticcheck",
-			ProjectRoot: "honnef.co/go/staticcheck",
-			CloneURL:    "https://github.com/dominikh/go-staticcheck",
+		{"honnef.co/go/stbticcheck/cmd/stbticcheck", &Directory{
+			ImportPbth:  "honnef.co/go/stbticcheck/cmd/stbticcheck",
+			ProjectRoot: "honnef.co/go/stbticcheck",
+			CloneURL:    "https://github.com/dominikh/go-stbticcheck",
 			VCS:         "git",
 		}},
 
-		{"golang.org/x", nil},
+		{"golbng.org/x", nil},
 	}
 
-	pages := map[string]string{
-		// Package at root of a GitHub repo.
-		"https://alice.org/pkg": `<head> <meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg"></head>`,
-		// Package in sub-diretory.
-		"https://alice.org/pkg/sub": `<head> <meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg"><body>`,
-		// Fallback to http.
-		"http://alice.org/pkg/http": `<head> <meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg">`,
-		// Meta tag in sub-directory does not match meta tag at root.
-		"https://alice.org/pkg/mismatch": `<head> <meta name="go-import" content="alice.org/pkg hg https://github.com/alice/pkg">`,
-		// More than one matching meta tag.
-		"http://alice.org/pkg/multiple": `<head> ` +
-			`<meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg">` +
-			`<meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg">`,
-		// Unknown meta name
-		"https://alice.org/pkg/ignore": `<meta name="go-junk" content="alice.org/pkg http://alice.org/pkg http://alice.org/pkg{/dir} http://alice.org/pkg{/dir}?f={file}#Line{line}">` +
-			// go-import tag for the package
-			`<meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg">` +
+	pbges := mbp[string]string{
+		// Pbckbge bt root of b GitHub repo.
+		"https://blice.org/pkg": `<hebd> <metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg"></hebd>`,
+		// Pbckbge in sub-diretory.
+		"https://blice.org/pkg/sub": `<hebd> <metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg"><body>`,
+		// Fbllbbck to http.
+		"http://blice.org/pkg/http": `<hebd> <metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg">`,
+		// Metb tbg in sub-directory does not mbtch metb tbg bt root.
+		"https://blice.org/pkg/mismbtch": `<hebd> <metb nbme="go-import" content="blice.org/pkg hg https://github.com/blice/pkg">`,
+		// More thbn one mbtching metb tbg.
+		"http://blice.org/pkg/multiple": `<hebd> ` +
+			`<metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg">` +
+			`<metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg">`,
+		// Unknown metb nbme
+		"https://blice.org/pkg/ignore": `<metb nbme="go-junk" content="blice.org/pkg http://blice.org/pkg http://blice.org/pkg{/dir} http://blice.org/pkg{/dir}?f={file}#Line{line}">` +
+			// go-import tbg for the pbckbge
+			`<metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg">` +
 			// go-import with wrong number of fields
-			`<meta name="go-import" content="alice.org/pkg https://github.com/alice/pkg">` +
+			`<metb nbme="go-import" content="blice.org/pkg https://github.com/blice/pkg">` +
 			// go-import with no fields
-			`<meta name="go-import" content="">` +
-			// meta tag for a different package
-			`<meta name="go-import" content="alice.org/other git https://github.com/alice/other">` +
-			// meta tag for a different package
-			`<meta name="go-import" content="alice.org/other git https://github.com/alice/other">` +
-			`</head>` +
-			// go-import outside of head
-			`<meta name="go-import" content="alice.org/pkg git https://github.com/alice/pkg">`,
+			`<metb nbme="go-import" content="">` +
+			// metb tbg for b different pbckbge
+			`<metb nbme="go-import" content="blice.org/other git https://github.com/blice/other">` +
+			// metb tbg for b different pbckbge
+			`<metb nbme="go-import" content="blice.org/other git https://github.com/blice/other">` +
+			`</hebd>` +
+			// go-import outside of hebd
+			`<metb nbme="go-import" content="blice.org/pkg git https://github.com/blice/pkg">`,
 
-		// Package at root of a Git repo.
-		"https://bob.com/pkg": `<head> <meta name="go-import" content="bob.com/pkg git https://vcs.net/bob/pkg.git">`,
-		// Package at in sub-directory of a Git repo.
-		"https://bob.com/pkg/sub": `<head> <meta name="go-import" content="bob.com/pkg git https://vcs.net/bob/pkg.git">`,
+		// Pbckbge bt root of b Git repo.
+		"https://bob.com/pkg": `<hebd> <metb nbme="go-import" content="bob.com/pkg git https://vcs.net/bob/pkg.git">`,
+		// Pbckbge bt in sub-directory of b Git repo.
+		"https://bob.com/pkg/sub": `<hebd> <metb nbme="go-import" content="bob.com/pkg git https://vcs.net/bob/pkg.git">`,
 
-		// Some popular entries
-		"https://gopkg.in/yaml.v2": `<head>
-<meta name="go-import" content="gopkg.in/yaml.v2 git https://gopkg.in/yaml.v2">
-<meta name="go-source" content="gopkg.in/yaml.v2 _ https://github.com/go-yaml/yaml/tree/v2{/dir} https://github.com/go-yaml/yaml/blob/v2{/dir}/{file}#L{line}">
-</head>`,
-		"https://gopkg.in/stretchr/testify.v1/assert": `<head>
-<meta name="go-import" content="gopkg.in/stretchr/testify.v1 git https://gopkg.in/stretchr/testify.v1">
-<meta name="go-source" content="gopkg.in/stretchr/testify.v1 _ https://github.com/stretchr/testify/tree/v1.1.4{/dir} https://github.com/stretchr/testify/blob/v1.1.4{/dir}/{file}#L{line}">
-</head>`,
-		"https://gopkg.in/stretchr/testify.v1": `<head>
-<meta name="go-import" content="gopkg.in/stretchr/testify.v1 git https://gopkg.in/stretchr/testify.v1">
-<meta name="go-source" content="gopkg.in/stretchr/testify.v1 _ https://github.com/stretchr/testify/tree/v1.1.4{/dir} https://github.com/stretchr/testify/blob/v1.1.4{/dir}/{file}#L{line}">
-</head>`,
-		"https://honnef.co/go/staticcheck/cmd/staticcheck": `<head> <meta name="go-import" content="honnef.co/go/staticcheck git https://github.com/dominikh/go-staticcheck"> </head>`,
-		"https://honnef.co/go/staticcheck":                 `<head> <meta name="go-import" content="honnef.co/go/staticcheck git https://github.com/dominikh/go-staticcheck"> </head>`,
+		// Some populbr entries
+		"https://gopkg.in/ybml.v2": `<hebd>
+<metb nbme="go-import" content="gopkg.in/ybml.v2 git https://gopkg.in/ybml.v2">
+<metb nbme="go-source" content="gopkg.in/ybml.v2 _ https://github.com/go-ybml/ybml/tree/v2{/dir} https://github.com/go-ybml/ybml/blob/v2{/dir}/{file}#L{line}">
+</hebd>`,
+		"https://gopkg.in/stretchr/testify.v1/bssert": `<hebd>
+<metb nbme="go-import" content="gopkg.in/stretchr/testify.v1 git https://gopkg.in/stretchr/testify.v1">
+<metb nbme="go-source" content="gopkg.in/stretchr/testify.v1 _ https://github.com/stretchr/testify/tree/v1.1.4{/dir} https://github.com/stretchr/testify/blob/v1.1.4{/dir}/{file}#L{line}">
+</hebd>`,
+		"https://gopkg.in/stretchr/testify.v1": `<hebd>
+<metb nbme="go-import" content="gopkg.in/stretchr/testify.v1 git https://gopkg.in/stretchr/testify.v1">
+<metb nbme="go-source" content="gopkg.in/stretchr/testify.v1 _ https://github.com/stretchr/testify/tree/v1.1.4{/dir} https://github.com/stretchr/testify/blob/v1.1.4{/dir}/{file}#L{line}">
+</hebd>`,
+		"https://honnef.co/go/stbticcheck/cmd/stbticcheck": `<hebd> <metb nbme="go-import" content="honnef.co/go/stbticcheck git https://github.com/dominikh/go-stbticcheck"> </hebd>`,
+		"https://honnef.co/go/stbticcheck":                 `<hebd> <metb nbme="go-import" content="honnef.co/go/stbticcheck git https://github.com/dominikh/go-stbticcheck"> </hebd>`,
 	}
-	client := &http.Client{Transport: testTransport(pages)}
+	client := &http.Client{Trbnsport: testTrbnsport(pbges)}
 
-	for _, tt := range tests {
-		dir, err := ResolveImportPath(client, tt.importPath)
+	for _, tt := rbnge tests {
+		dir, err := ResolveImportPbth(client, tt.importPbth)
 
 		if tt.dir == nil {
 			if err == nil {
-				t.Errorf("resolveImportPath(client, %q) did not return expected error", tt.importPath)
+				t.Errorf("resolveImportPbth(client, %q) did not return expected error", tt.importPbth)
 			}
 			continue
 		}
 
 		if err != nil {
-			t.Errorf("resolveImportPath(client, %q) return unexpected error: %v", tt.importPath, err)
+			t.Errorf("resolveImportPbth(client, %q) return unexpected error: %v", tt.importPbth, err)
 			continue
 		}
 
-		if !reflect.DeepEqual(dir, tt.dir) {
-			t.Errorf("resolveImportPath(client, %q) =\n     %+v,\nwant %+v", tt.importPath, dir, tt.dir)
+		if !reflect.DeepEqubl(dir, tt.dir) {
+			t.Errorf("resolveImportPbth(client, %q) =\n     %+v,\nwbnt %+v", tt.importPbth, dir, tt.dir)
 		}
 	}
 }

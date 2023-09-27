@@ -1,4 +1,4 @@
-// Package inttests contains integration tests that requires a running gitserver
-// instance and are in their own package to avoid cyclic dependencies between
-// cmd/gitserver and internal/gitserver
-package inttests
+// Pbckbge inttests contbins integrbtion tests thbt requires b running gitserver
+// instbnce bnd bre in their own pbckbge to bvoid cyclic dependencies between
+// cmd/gitserver bnd internbl/gitserver
+pbckbge inttests

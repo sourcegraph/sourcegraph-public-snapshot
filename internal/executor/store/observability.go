@@ -1,45 +1,45 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	dequeue                 *observation.Operation
-	markComplete            *observation.Operation
-	markErrored             *observation.Operation
-	markFailed              *observation.Operation
-	heartbeat               *observation.Operation
-	addExecutionLogEntry    *observation.Operation
-	updateExecutionLogEntry *observation.Operation
+type operbtions struct {
+	dequeue                 *observbtion.Operbtion
+	mbrkComplete            *observbtion.Operbtion
+	mbrkErrored             *observbtion.Operbtion
+	mbrkFbiled              *observbtion.Operbtion
+	hebrtbebt               *observbtion.Operbtion
+	bddExecutionLogEntry    *observbtion.Operbtion
+	updbteExecutionLogEntry *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"apiworker_apiclient_queue",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"bpiworker_bpiclient_queue",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("apiworker.apiclient.queue.worker.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("bpiworker.bpiclient.queue.worker.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		dequeue:                 op("Dequeue"),
-		markComplete:            op("MarkComplete"),
-		markErrored:             op("MarkErrored"),
-		markFailed:              op("MarkFailed"),
-		heartbeat:               op("Heartbeat"),
-		addExecutionLogEntry:    op("AddExecutionLogEntry"),
-		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
+		mbrkComplete:            op("MbrkComplete"),
+		mbrkErrored:             op("MbrkErrored"),
+		mbrkFbiled:              op("MbrkFbiled"),
+		hebrtbebt:               op("Hebrtbebt"),
+		bddExecutionLogEntry:    op("AddExecutionLogEntry"),
+		updbteExecutionLogEntry: op("UpdbteExecutionLogEntry"),
 	}
 }

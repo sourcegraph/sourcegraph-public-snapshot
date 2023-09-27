@@ -1,30 +1,30 @@
-package dbconn
+pbckbge dbconn
 
 import (
-	"github.com/jackc/pgx/v4"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn/rds"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/jbckc/pgx/v4"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn/rds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var (
-	pgConnectionUpdater = env.Get("PG_CONNECTION_UPDATER", "", "The postgres connection updater use for connecting to the database.")
+vbr (
+	pgConnectionUpdbter = env.Get("PG_CONNECTION_UPDATER", "", "The postgres connection updbter use for connecting to the dbtbbbse.")
 )
 
-// ConnectionUpdater is an interface to allow updating pgx connection config
-// before opening a new connection.
+// ConnectionUpdbter is bn interfbce to bllow updbting pgx connection config
+// before opening b new connection.
 //
-// Use cases:
-// - Implement RDS IAM auth that requires refreshing the auth token regularly.
-type ConnectionUpdater interface {
-	// Update applies update to the pgx connection config
+// Use cbses:
+// - Implement RDS IAM buth thbt requires refreshing the buth token regulbrly.
+type ConnectionUpdbter interfbce {
+	// Updbte bpplies updbte to the pgx connection config
 	//
-	// It is concurrency safe.
-	Update(*pgx.ConnConfig) (*pgx.ConnConfig, error)
+	// It is concurrency sbfe.
+	Updbte(*pgx.ConnConfig) (*pgx.ConnConfig, error)
 
-	// ShouldUpdate indicates whether the connection config should be updated
-	ShouldUpdate(*pgx.ConnConfig) bool
+	// ShouldUpdbte indicbtes whether the connection config should be updbted
+	ShouldUpdbte(*pgx.ConnConfig) bool
 }
 
-var connectionUpdaters = map[string]ConnectionUpdater{
-	"EC2_ROLE_CREDENTIALS": rds.NewUpdater(),
+vbr connectionUpdbters = mbp[string]ConnectionUpdbter{
+	"EC2_ROLE_CREDENTIALS": rds.NewUpdbter(),
 }

@@ -1,31 +1,31 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
-// SudoableOAuthClient extends the generic OAuthClient type to allow for an
-// optional username to be set, which will be attached to the request as a
-// user_id query param if set.
-type SudoableOAuthClient struct {
-	Client   auth.OAuthClient
-	Username string
+// SudobbleOAuthClient extends the generic OAuthClient type to bllow for bn
+// optionbl usernbme to be set, which will be bttbched to the request bs b
+// user_id query pbrbm if set.
+type SudobbleOAuthClient struct {
+	Client   buth.OAuthClient
+	Usernbme string
 }
 
-var _ auth.Authenticator = &SudoableOAuthClient{}
+vbr _ buth.Authenticbtor = &SudobbleOAuthClient{}
 
-func (c *SudoableOAuthClient) Authenticate(req *http.Request) error {
-	if c.Username != "" {
+func (c *SudobbleOAuthClient) Authenticbte(req *http.Request) error {
+	if c.Usernbme != "" {
 		qry := req.URL.Query()
-		qry.Set("user_id", c.Username)
-		req.URL.RawQuery = qry.Encode()
+		qry.Set("user_id", c.Usernbme)
+		req.URL.RbwQuery = qry.Encode()
 	}
 
-	return c.Client.Authenticate(req)
+	return c.Client.Authenticbte(req)
 }
 
-func (c *SudoableOAuthClient) Hash() string {
-	return c.Client.Hash()
+func (c *SudobbleOAuthClient) Hbsh() string {
+	return c.Client.Hbsh()
 }

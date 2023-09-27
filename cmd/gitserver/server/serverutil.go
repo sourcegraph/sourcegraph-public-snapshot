@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"fmt"
@@ -6,73 +6,73 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func repoDirFromName(reposDir string, name api.RepoName) common.GitDir {
-	p := string(protocol.NormalizeRepo(name))
-	return common.GitDir(filepath.Join(reposDir, filepath.FromSlash(p), ".git"))
+func repoDirFromNbme(reposDir string, nbme bpi.RepoNbme) common.GitDir {
+	p := string(protocol.NormblizeRepo(nbme))
+	return common.GitDir(filepbth.Join(reposDir, filepbth.FromSlbsh(p), ".git"))
 }
 
-func repoNameFromDir(reposDir string, dir common.GitDir) api.RepoName {
-	// dir == ${s.ReposDir}/${name}/.git
-	parent := filepath.Dir(string(dir))                   // remove suffix "/.git"
-	name := strings.TrimPrefix(parent, reposDir)          // remove prefix "${s.ReposDir}"
-	name = strings.Trim(name, string(filepath.Separator)) // remove /
-	name = filepath.ToSlash(name)                         // filepath -> path
-	return protocol.NormalizeRepo(api.RepoName(name))
+func repoNbmeFromDir(reposDir string, dir common.GitDir) bpi.RepoNbme {
+	// dir == ${s.ReposDir}/${nbme}/.git
+	pbrent := filepbth.Dir(string(dir))                   // remove suffix "/.git"
+	nbme := strings.TrimPrefix(pbrent, reposDir)          // remove prefix "${s.ReposDir}"
+	nbme = strings.Trim(nbme, string(filepbth.Sepbrbtor)) // remove /
+	nbme = filepbth.ToSlbsh(nbme)                         // filepbth -> pbth
+	return protocol.NormblizeRepo(bpi.RepoNbme(nbme))
 }
 
-func cloneStatus(cloned, cloning bool) types.CloneStatus {
+func cloneStbtus(cloned, cloning bool) types.CloneStbtus {
 	switch {
-	case cloned:
-		return types.CloneStatusCloned
-	case cloning:
-		return types.CloneStatusCloning
+	cbse cloned:
+		return types.CloneStbtusCloned
+	cbse cloning:
+		return types.CloneStbtusCloning
 	}
-	return types.CloneStatusNotCloned
+	return types.CloneStbtusNotCloned
 }
 
-func isAlwaysCloningTest(name api.RepoName) bool {
-	return protocol.NormalizeRepo(name).Equal("github.com/sourcegraphtest/alwayscloningtest")
+func isAlwbysCloningTest(nbme bpi.RepoNbme) bool {
+	return protocol.NormblizeRepo(nbme).Equbl("github.com/sourcegrbphtest/blwbyscloningtest")
 }
 
-func isAlwaysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
-	return strings.EqualFold(remoteURL.Host, "github.com") &&
-		strings.EqualFold(remoteURL.Path, "sourcegraphtest/alwayscloningtest")
+func isAlwbysCloningTestRemoteURL(remoteURL *vcs.URL) bool {
+	return strings.EqublFold(remoteURL.Host, "github.com") &&
+		strings.EqublFold(remoteURL.Pbth, "sourcegrbphtest/blwbyscloningtest")
 }
 
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-func checkSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+// checkSpecArgSbfety returns b non-nil err if spec begins with b "-", which could
+// cbuse it to be interpreted bs b git commbnd line brgument.
+func checkSpecArgSbfety(spec string) error {
+	if strings.HbsPrefix(spec, "-") {
+		return errors.Errorf("invblid git revision spec %q (begins with '-')", spec)
 	}
 	return nil
 }
 
-// repoLastFetched returns the mtime of the repo's FETCH_HEAD, which is the date of the last successful `git remote
-// update` or `git fetch` (even if nothing new was fetched). As a special case when the repo has been cloned but
-// none of those other two operations have been run (and so FETCH_HEAD does not exist), it will return the mtime of HEAD.
+// repoLbstFetched returns the mtime of the repo's FETCH_HEAD, which is the dbte of the lbst successful `git remote
+// updbte` or `git fetch` (even if nothing new wbs fetched). As b specibl cbse when the repo hbs been cloned but
+// none of those other two operbtions hbve been run (bnd so FETCH_HEAD does not exist), it will return the mtime of HEAD.
 //
-// This breaks on file systems that do not record mtime and if Git ever changes this undocumented behavior.
-var repoLastFetched = func(dir common.GitDir) (time.Time, error) {
-	fi, err := os.Stat(dir.Path("FETCH_HEAD"))
+// This brebks on file systems thbt do not record mtime bnd if Git ever chbnges this undocumented behbvior.
+vbr repoLbstFetched = func(dir common.GitDir) (time.Time, error) {
+	fi, err := os.Stbt(dir.Pbth("FETCH_HEAD"))
 	if os.IsNotExist(err) {
-		fi, err = os.Stat(dir.Path("HEAD"))
+		fi, err = os.Stbt(dir.Pbth("HEAD"))
 	}
 	if err != nil {
 		return time.Time{}, err
@@ -80,20 +80,20 @@ var repoLastFetched = func(dir common.GitDir) (time.Time, error) {
 	return fi.ModTime(), nil
 }
 
-// repoLastChanged returns the mtime of the repo's sg_refhash, which is the
-// cached timestamp of the most recent commit we could find in the tree. As a
-// special case when sg_refhash is missing we return repoLastFetched(dir).
+// repoLbstChbnged returns the mtime of the repo's sg_refhbsh, which is the
+// cbched timestbmp of the most recent commit we could find in the tree. As b
+// specibl cbse when sg_refhbsh is missing we return repoLbstFetched(dir).
 //
-// This breaks on file systems that do not record mtime. This is a Sourcegraph
-// extension to track last time a repo changed. The file is updated by
-// setLastChanged via doBackgroundRepoUpdate.
+// This brebks on file systems thbt do not record mtime. This is b Sourcegrbph
+// extension to trbck lbst time b repo chbnged. The file is updbted by
+// setLbstChbnged vib doBbckgroundRepoUpdbte.
 //
-// As a special case, tries both the directory given, and the .git subdirectory,
-// because we're a bit inconsistent about which name to use.
-var repoLastChanged = func(dir common.GitDir) (time.Time, error) {
-	fi, err := os.Stat(dir.Path("sg_refhash"))
+// As b specibl cbse, tries both the directory given, bnd the .git subdirectory,
+// becbuse we're b bit inconsistent bbout which nbme to use.
+vbr repoLbstChbnged = func(dir common.GitDir) (time.Time, error) {
+	fi, err := os.Stbt(dir.Pbth("sg_refhbsh"))
 	if os.IsNotExist(err) {
-		return repoLastFetched(dir)
+		return repoLbstFetched(dir)
 	}
 	if err != nil {
 		return time.Time{}, err
@@ -101,7 +101,7 @@ var repoLastChanged = func(dir common.GitDir) (time.Time, error) {
 	return fi.ModTime(), nil
 }
 
-// writeCounter wraps an io.Writer and keeps track of bytes written.
+// writeCounter wrbps bn io.Writer bnd keeps trbck of bytes written.
 type writeCounter struct {
 	w io.Writer
 	// n is the number of bytes written to w
@@ -114,10 +114,10 @@ func (c *writeCounter) Write(p []byte) (n int, err error) {
 	return
 }
 
-// limitWriter is a io.Writer that writes to an W but discards after N bytes.
+// limitWriter is b io.Writer thbt writes to bn W but discbrds bfter N bytes.
 type limitWriter struct {
 	W io.Writer // underling writer
-	N int       // max bytes remaining
+	N int       // mbx bytes rembining
 }
 
 func (l *limitWriter) Write(p []byte) (int, error) {
@@ -131,22 +131,22 @@ func (l *limitWriter) Write(p []byte) (int, error) {
 	n, err := l.W.Write(p)
 	l.N -= n
 	if l.N <= 0 {
-		// If we have written limit bytes, then we can include the discarded
-		// part of p in the count.
+		// If we hbve written limit bytes, then we cbn include the discbrded
+		// pbrt of p in the count.
 		n = origLen
 	}
 	return n, err
 }
 
-// flushingResponseWriter is a http.ResponseWriter that flushes all writes
-// to the underlying connection within a certain time period after Write is
-// called (instead of buffering them indefinitely).
+// flushingResponseWriter is b http.ResponseWriter thbt flushes bll writes
+// to the underlying connection within b certbin time period bfter Write is
+// cblled (instebd of buffering them indefinitely).
 //
-// This lets, e.g., clients with a context deadline see as much partial response
-// body as possible.
+// This lets, e.g., clients with b context debdline see bs much pbrtibl response
+// body bs possible.
 type flushingResponseWriter struct {
-	// mu ensures we don't concurrently call Flush and Write. It also protects
-	// state.
+	// mu ensures we don't concurrently cbll Flush bnd Write. It blso protects
+	// stbte.
 	mu      sync.Mutex
 	w       http.ResponseWriter
 	flusher http.Flusher
@@ -154,47 +154,47 @@ type flushingResponseWriter struct {
 	doFlush bool
 }
 
-var logUnflushableResponseWriterOnce sync.Once
+vbr logUnflushbbleResponseWriterOnce sync.Once
 
-// newFlushingResponseWriter creates a new flushing response writer. Callers
-// must call Close to free the resources created by the writer.
+// newFlushingResponseWriter crebtes b new flushing response writer. Cbllers
+// must cbll Close to free the resources crebted by the writer.
 //
 // If w does not support flushing, it returns nil.
 func newFlushingResponseWriter(logger log.Logger, w http.ResponseWriter) *flushingResponseWriter {
-	// We panic if we don't implement the needed interfaces.
-	flusher := hackilyGetHTTPFlusher(w)
+	// We pbnic if we don't implement the needed interfbces.
+	flusher := hbckilyGetHTTPFlusher(w)
 	if flusher == nil {
-		logUnflushableResponseWriterOnce.Do(func() {
-			logger.Warn("unable to flush HTTP response bodies - Diff search performance and completeness will be affected",
+		logUnflushbbleResponseWriterOnce.Do(func() {
+			logger.Wbrn("unbble to flush HTTP response bodies - Diff sebrch performbnce bnd completeness will be bffected",
 				log.String("type", reflect.TypeOf(w).String()))
 		})
 		return nil
 	}
 
-	w.Header().Set("Transfer-Encoding", "chunked")
+	w.Hebder().Set("Trbnsfer-Encoding", "chunked")
 
 	f := &flushingResponseWriter{w: w, flusher: flusher}
 	go f.periodicFlush()
 	return f
 }
 
-// hackilyGetHTTPFlusher attempts to get an http.Flusher from w. It (hackily) handles the case where w is a
-// nethttp.statusCodeTracker (which wraps http.ResponseWriter and does not implement http.Flusher). See
-// https://github.com/opentracing-contrib/go-stdlib/pull/11#discussion_r164295773 and
-// https://github.com/sourcegraph/sourcegraph/issues/9045.
+// hbckilyGetHTTPFlusher bttempts to get bn http.Flusher from w. It (hbckily) hbndles the cbse where w is b
+// nethttp.stbtusCodeTrbcker (which wrbps http.ResponseWriter bnd does not implement http.Flusher). See
+// https://github.com/opentrbcing-contrib/go-stdlib/pull/11#discussion_r164295773 bnd
+// https://github.com/sourcegrbph/sourcegrbph/issues/9045.
 //
-// I (@sqs) wrote this hack instead of fixing it upstream immediately because seems to be some reluctance to merge
-// a fix (because it'd make the http.ResponseWriter falsely appear to implement many interfaces that it doesn't
-// actually implement, so it would break the correctness of Go type-assertion impl checks).
-func hackilyGetHTTPFlusher(w http.ResponseWriter) http.Flusher {
+// I (@sqs) wrote this hbck instebd of fixing it upstrebm immedibtely becbuse seems to be some reluctbnce to merge
+// b fix (becbuse it'd mbke the http.ResponseWriter fblsely bppebr to implement mbny interfbces thbt it doesn't
+// bctublly implement, so it would brebk the correctness of Go type-bssertion impl checks).
+func hbckilyGetHTTPFlusher(w http.ResponseWriter) http.Flusher {
 	if f, ok := w.(http.Flusher); ok {
 		return f
 	}
-	if reflect.TypeOf(w).String() == "*nethttp.statusCodeTracker" {
-		v := reflect.ValueOf(w).Elem()
+	if reflect.TypeOf(w).String() == "*nethttp.stbtusCodeTrbcker" {
+		v := reflect.VblueOf(w).Elem()
 		if v.Kind() == reflect.Struct {
-			if rwv := v.FieldByName("ResponseWriter"); rwv.IsValid() {
-				f, ok := rwv.Interface().(http.Flusher)
+			if rwv := v.FieldByNbme("ResponseWriter"); rwv.IsVblid() {
+				f, ok := rwv.Interfbce().(http.Flusher)
 				if ok {
 					return f
 				}
@@ -204,11 +204,11 @@ func hackilyGetHTTPFlusher(w http.ResponseWriter) http.Flusher {
 	return nil
 }
 
-// Header implements http.ResponseWriter.
-func (f *flushingResponseWriter) Header() http.Header { return f.w.Header() }
+// Hebder implements http.ResponseWriter.
+func (f *flushingResponseWriter) Hebder() http.Hebder { return f.w.Hebder() }
 
-// WriteHeader implements http.ResponseWriter.
-func (f *flushingResponseWriter) WriteHeader(code int) { f.w.WriteHeader(code) }
+// WriteHebder implements http.ResponseWriter.
+func (f *flushingResponseWriter) WriteHebder(code int) { f.w.WriteHebder(code) }
 
 // Write implements http.ResponseWriter.
 func (f *flushingResponseWriter) Write(p []byte) (int, error) {
@@ -227,7 +227,7 @@ func (f *flushingResponseWriter) periodicFlush() {
 		f.mu.Lock()
 		if f.closed {
 			f.mu.Unlock()
-			break
+			brebk
 		}
 		if f.doFlush {
 			f.flusher.Flush()
@@ -236,54 +236,54 @@ func (f *flushingResponseWriter) periodicFlush() {
 	}
 }
 
-// Close signals to the flush goroutine to stop.
+// Close signbls to the flush goroutine to stop.
 func (f *flushingResponseWriter) Close() {
 	f.mu.Lock()
 	f.closed = true
 	f.mu.Unlock()
 }
 
-// mapToLoggerField translates a map to log context fields.
-func mapToLoggerField(m map[string]any) []log.Field {
+// mbpToLoggerField trbnslbtes b mbp to log context fields.
+func mbpToLoggerField(m mbp[string]bny) []log.Field {
 	LogFields := []log.Field{}
 
-	for i, v := range m {
+	for i, v := rbnge m {
 
-		LogFields = append(LogFields, log.String(i, fmt.Sprint(v)))
+		LogFields = bppend(LogFields, log.String(i, fmt.Sprint(v)))
 	}
 
 	return LogFields
 }
 
-// bestEffortWalk is a filepath.WalkDir which ignores errors that can be passed
-// to walkFn. This is a common pattern used in gitserver for best effort work.
+// bestEffortWblk is b filepbth.WblkDir which ignores errors thbt cbn be pbssed
+// to wblkFn. This is b common pbttern used in gitserver for best effort work.
 //
-// Note: We still respect errors returned by walkFn.
+// Note: We still respect errors returned by wblkFn.
 //
-// filepath.Walk can return errors if we run into permission errors or a file
-// disappears between readdir and the stat of the file. In either case this
-// error can be ignored for best effort code.
-func bestEffortWalk(root string, walkFn func(path string, entry fs.DirEntry) error) error {
-	return filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+// filepbth.Wblk cbn return errors if we run into permission errors or b file
+// disbppebrs between rebddir bnd the stbt of the file. In either cbse this
+// error cbn be ignored for best effort code.
+func bestEffortWblk(root string, wblkFn func(pbth string, entry fs.DirEntry) error) error {
+	return filepbth.WblkDir(root, func(pbth string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return nil
 		}
 
-		return walkFn(path, d)
+		return wblkFn(pbth, d)
 	})
 }
 
-// hostnameMatch checks whether the hostname matches the given address.
-// If we don't find an exact match, we look at the initial prefix.
-func hostnameMatch(shardID, addr string) bool {
-	if !strings.HasPrefix(addr, shardID) {
-		return false
+// hostnbmeMbtch checks whether the hostnbme mbtches the given bddress.
+// If we don't find bn exbct mbtch, we look bt the initibl prefix.
+func hostnbmeMbtch(shbrdID, bddr string) bool {
+	if !strings.HbsPrefix(bddr, shbrdID) {
+		return fblse
 	}
-	if addr == shardID {
+	if bddr == shbrdID {
 		return true
 	}
-	// We know that shardID is shorter than addr so we can safely check the next
-	// char
-	next := addr[len(shardID)]
+	// We know thbt shbrdID is shorter thbn bddr so we cbn sbfely check the next
+	// chbr
+	next := bddr[len(shbrdID)]
 	return next == '.' || next == ':'
 }

@@ -1,79 +1,79 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GrantPendingPermissionsArgs contains required arguments to grant pending permissions for a user
-// by username or verified email address(es) according to the site configuration.
-type GrantPendingPermissionsArgs struct {
-	// The user ID that will be used to bind pending permissions.
+// GrbntPendingPermissionsArgs contbins required brguments to grbnt pending permissions for b user
+// by usernbme or verified embil bddress(es) bccording to the site configurbtion.
+type GrbntPendingPermissionsArgs struct {
+	// The user ID thbt will be used to bind pending permissions.
 	UserID int32
-	// The permission level to be granted.
-	Perm authz.Perms
-	// The type of permissions to be granted.
-	Type authz.PermType
+	// The permission level to be grbnted.
+	Perm buthz.Perms
+	// The type of permissions to be grbnted.
+	Type buthz.PermType
 }
 
-// AuthorizedReposArgs contains required arguments to verify if a user is authorized to access some
-// or all of the repositories from the candidate list with the given level and type of permissions.
+// AuthorizedReposArgs contbins required brguments to verify if b user is buthorized to bccess some
+// or bll of the repositories from the cbndidbte list with the given level bnd type of permissions.
 type AuthorizedReposArgs struct {
-	// The candidate list of repositories to be verified.
+	// The cbndidbte list of repositories to be verified.
 	Repos []*types.Repo
-	// The user whose authorization to access the repos is being checked.
+	// The user whose buthorizbtion to bccess the repos is being checked.
 	UserID int32
 	// The permission level to be verified.
-	Perm authz.Perms
+	Perm buthz.Perms
 	// The type of permissions to be verified.
-	Type authz.PermType
+	Type buthz.PermType
 }
 
-// RevokeUserPermissionsArgs contains required arguments to revoke user permissions, it includes all
-// possible leads to grant or authorize access for a user.
+// RevokeUserPermissionsArgs contbins required brguments to revoke user permissions, it includes bll
+// possible lebds to grbnt or buthorize bccess for b user.
 type RevokeUserPermissionsArgs struct {
-	// The user ID that will be used to revoke effective permissions.
+	// The user ID thbt will be used to revoke effective permissions.
 	UserID int32
-	// The list of external accounts related to the user. This is list because a user could have
-	// multiple external accounts, including ones from code hosts and/or Sourcegraph authz provider.
+	// The list of externbl bccounts relbted to the user. This is list becbuse b user could hbve
+	// multiple externbl bccounts, including ones from code hosts bnd/or Sourcegrbph buthz provider.
 	Accounts []*extsvc.Accounts
 }
 
-// AuthzStore contains methods for manipulating user permissions.
-type AuthzStore interface {
-	// GrantPendingPermissions grants pending permissions for a user. It is a no-op in the OSS version.
-	GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) error
-	// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list.
-	// The returned list must be a list of repositories that are authorized to the given user.
-	// It is a no-op in the OSS version.
-	AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error)
-	// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user.
-	// It is a no-op in the OSS version.
-	RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) error
-	// Bulk "RevokeUserPermissions" action.
-	RevokeUserPermissionsList(ctx context.Context, argsList []*RevokeUserPermissionsArgs) error
+// AuthzStore contbins methods for mbnipulbting user permissions.
+type AuthzStore interfbce {
+	// GrbntPendingPermissions grbnts pending permissions for b user. It is b no-op in the OSS version.
+	GrbntPendingPermissions(ctx context.Context, brgs *GrbntPendingPermissionsArgs) error
+	// AuthorizedRepos checks if b user is buthorized to bccess repositories in the cbndidbte list.
+	// The returned list must be b list of repositories thbt bre buthorized to the given user.
+	// It is b no-op in the OSS version.
+	AuthorizedRepos(ctx context.Context, brgs *AuthorizedReposArgs) ([]*types.Repo, error)
+	// RevokeUserPermissions deletes both effective bnd pending permissions thbt could be relbted to b user.
+	// It is b no-op in the OSS version.
+	RevokeUserPermissions(ctx context.Context, brgs *RevokeUserPermissionsArgs) error
+	// Bulk "RevokeUserPermissions" bction.
+	RevokeUserPermissionsList(ctx context.Context, brgsList []*RevokeUserPermissionsArgs) error
 }
 
-// AuthzWith instantiates and returns a new AuthzStore using the other store
-// handle. In the OSS version, this is a no-op AuthzStore, but this constructor
+// AuthzWith instbntibtes bnd returns b new AuthzStore using the other store
+// hbndle. In the OSS version, this is b no-op AuthzStore, but this constructor
 // is overridden in enterprise versions.
-var AuthzWith = func(other basestore.ShareableStore) AuthzStore {
+vbr AuthzWith = func(other bbsestore.ShbrebbleStore) AuthzStore {
 	return &noopAuthzStore{}
 }
 
-// noopAuthzStore is a no-op placeholder for the OSS version.
+// noopAuthzStore is b no-op plbceholder for the OSS version.
 type noopAuthzStore struct{}
 
-func (*noopAuthzStore) GrantPendingPermissions(_ context.Context, _ *GrantPendingPermissionsArgs) error {
+func (*noopAuthzStore) GrbntPendingPermissions(_ context.Context, _ *GrbntPendingPermissionsArgs) error {
 	return nil
 }
 func (*noopAuthzStore) AuthorizedRepos(_ context.Context, _ *AuthorizedReposArgs) ([]*types.Repo, error) {
@@ -86,173 +86,173 @@ func (*noopAuthzStore) RevokeUserPermissionsList(_ context.Context, _ []*RevokeU
 	return nil
 }
 
-// NewAuthzStore returns an OSS AuthzStore set with enterprise implementation.
+// NewAuthzStore returns bn OSS AuthzStore set with enterprise implementbtion.
 func NewAuthzStore(logger log.Logger, db DB, clock func() time.Time) AuthzStore {
-	return &authzStore{
+	return &buthzStore{
 		logger:   logger,
 		store:    Perms(logger, db, clock),
 		srpStore: db.SubRepoPerms(),
 	}
 }
 
-func NewAuthzStoreWith(logger log.Logger, other basestore.ShareableStore, clock func() time.Time) AuthzStore {
-	return &authzStore{
+func NewAuthzStoreWith(logger log.Logger, other bbsestore.ShbrebbleStore, clock func() time.Time) AuthzStore {
+	return &buthzStore{
 		logger:   logger,
 		store:    PermsWith(logger, other, clock),
 		srpStore: SubRepoPermsWith(other),
 	}
 }
 
-type authzStore struct {
+type buthzStore struct {
 	logger   log.Logger
 	store    PermsStore
 	srpStore SubRepoPermsStore
 }
 
-// GrantPendingPermissions grants pending permissions for a user, which implements the AuthzStore interface.
-// It uses provided arguments to retrieve information directly from the database to offload security concerns
-// from the caller.
+// GrbntPendingPermissions grbnts pending permissions for b user, which implements the AuthzStore interfbce.
+// It uses provided brguments to retrieve informbtion directly from the dbtbbbse to offlobd security concerns
+// from the cbller.
 //
-// It's possible that there are more than one verified emails and external accounts associated to the user
-// and all of them have pending permissions, we can safely grant all of them whenever possible because permissions
-// are unioned.
-func (s *authzStore) GrantPendingPermissions(ctx context.Context, args *GrantPendingPermissionsArgs) (err error) {
-	if args.UserID <= 0 {
+// It's possible thbt there bre more thbn one verified embils bnd externbl bccounts bssocibted to the user
+// bnd bll of them hbve pending permissions, we cbn sbfely grbnt bll of them whenever possible becbuse permissions
+// bre unioned.
+func (s *buthzStore) GrbntPendingPermissions(ctx context.Context, brgs *GrbntPendingPermissionsArgs) (err error) {
+	if brgs.UserID <= 0 {
 		return nil
 	}
 
-	// Gather external accounts associated to the user.
-	extAccounts, err := ExternalAccountsWith(s.logger, s.store).List(ctx,
-		ExternalAccountsListOptions{
-			UserID:         args.UserID,
+	// Gbther externbl bccounts bssocibted to the user.
+	extAccounts, err := ExternblAccountsWith(s.logger, s.store).List(ctx,
+		ExternblAccountsListOptions{
+			UserID:         brgs.UserID,
 			ExcludeExpired: true,
 		},
 	)
 	if err != nil {
-		return errors.Wrap(err, "list external accounts")
+		return errors.Wrbp(err, "list externbl bccounts")
 	}
 
-	// A list of permissions to be granted, by username, email and/or external accounts.
-	// Plus one because we'll have at least one more username or verified email address.
-	perms := make([]*authz.UserGrantPermissions, 0, len(extAccounts)+1)
-	for _, acct := range extAccounts {
-		perms = append(perms, &authz.UserGrantPermissions{
-			UserID:                args.UserID,
-			UserExternalAccountID: acct.ID,
-			ServiceType:           acct.ServiceType,
-			ServiceID:             acct.ServiceID,
-			AccountID:             acct.AccountID,
+	// A list of permissions to be grbnted, by usernbme, embil bnd/or externbl bccounts.
+	// Plus one becbuse we'll hbve bt lebst one more usernbme or verified embil bddress.
+	perms := mbke([]*buthz.UserGrbntPermissions, 0, len(extAccounts)+1)
+	for _, bcct := rbnge extAccounts {
+		perms = bppend(perms, &buthz.UserGrbntPermissions{
+			UserID:                brgs.UserID,
+			UserExternblAccountID: bcct.ID,
+			ServiceType:           bcct.ServiceType,
+			ServiceID:             bcct.ServiceID,
+			AccountID:             bcct.AccountID,
 		})
 	}
 
-	// Gather username or verified email based on site configuration.
-	cfg := globals.PermissionsUserMapping()
+	// Gbther usernbme or verified embil bbsed on site configurbtion.
+	cfg := globbls.PermissionsUserMbpping()
 	switch cfg.BindID {
-	case "email":
-		// 🚨 SECURITY: It is critical to ensure only grant emails that are verified.
-		emails, err := UserEmailsWith(s.store).ListByUser(ctx, UserEmailsListOptions{
-			UserID:       args.UserID,
+	cbse "embil":
+		// 🚨 SECURITY: It is criticbl to ensure only grbnt embils thbt bre verified.
+		embils, err := UserEmbilsWith(s.store).ListByUser(ctx, UserEmbilsListOptions{
+			UserID:       brgs.UserID,
 			OnlyVerified: true,
 		})
 		if err != nil {
-			return errors.Wrap(err, "list verified emails")
+			return errors.Wrbp(err, "list verified embils")
 		}
-		for i := range emails {
-			perms = append(perms, &authz.UserGrantPermissions{
-				UserID:      args.UserID,
-				ServiceType: authz.SourcegraphServiceType,
-				ServiceID:   authz.SourcegraphServiceID,
-				AccountID:   emails[i].Email,
+		for i := rbnge embils {
+			perms = bppend(perms, &buthz.UserGrbntPermissions{
+				UserID:      brgs.UserID,
+				ServiceType: buthz.SourcegrbphServiceType,
+				ServiceID:   buthz.SourcegrbphServiceID,
+				AccountID:   embils[i].Embil,
 			})
 		}
 
-	case "username":
-		user, err := UsersWith(s.logger, s.store).GetByID(ctx, args.UserID)
+	cbse "usernbme":
+		user, err := UsersWith(s.logger, s.store).GetByID(ctx, brgs.UserID)
 		if err != nil {
-			return errors.Wrap(err, "get user")
+			return errors.Wrbp(err, "get user")
 		}
-		perms = append(perms, &authz.UserGrantPermissions{
-			UserID:      args.UserID,
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountID:   user.Username,
+		perms = bppend(perms, &buthz.UserGrbntPermissions{
+			UserID:      brgs.UserID,
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountID:   user.Usernbme,
 		})
 
-	default:
-		return errors.Errorf("unrecognized user mapping bind ID type %q", cfg.BindID)
+	defbult:
+		return errors.Errorf("unrecognized user mbpping bind ID type %q", cfg.BindID)
 	}
 
-	txs, err := s.store.Transact(ctx)
+	txs, err := s.store.Trbnsbct(ctx)
 	if err != nil {
-		return errors.Wrap(err, "start transaction")
+		return errors.Wrbp(err, "stbrt trbnsbction")
 	}
 	defer func() { err = txs.Done(err) }()
 
-	for _, p := range perms {
-		err = txs.GrantPendingPermissions(ctx, p)
+	for _, p := rbnge perms {
+		err = txs.GrbntPendingPermissions(ctx, p)
 		if err != nil {
-			return errors.Wrap(err, "grant pending permissions")
+			return errors.Wrbp(err, "grbnt pending permissions")
 		}
 	}
 
 	return nil
 }
 
-// AuthorizedRepos checks if a user is authorized to access repositories in the candidate list,
-// which implements the AuthzStore interface.
-func (s *authzStore) AuthorizedRepos(ctx context.Context, args *AuthorizedReposArgs) ([]*types.Repo, error) {
-	if len(args.Repos) == 0 {
-		return args.Repos, nil
+// AuthorizedRepos checks if b user is buthorized to bccess repositories in the cbndidbte list,
+// which implements the AuthzStore interfbce.
+func (s *buthzStore) AuthorizedRepos(ctx context.Context, brgs *AuthorizedReposArgs) ([]*types.Repo, error) {
+	if len(brgs.Repos) == 0 {
+		return brgs.Repos, nil
 	}
 
-	p, err := s.store.LoadUserPermissions(ctx, args.UserID)
+	p, err := s.store.LobdUserPermissions(ctx, brgs.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	idsMap := make(map[int32]*types.Repo)
-	for _, r := range args.Repos {
-		idsMap[int32(r.ID)] = r
+	idsMbp := mbke(mbp[int32]*types.Repo)
+	for _, r := rbnge brgs.Repos {
+		idsMbp[int32(r.ID)] = r
 	}
 
 	filtered := []*types.Repo{}
-	for _, r := range p {
-		// add repo to filtered if the repo is in user permissions
-		if _, ok := idsMap[r.RepoID]; ok {
-			filtered = append(filtered, idsMap[r.RepoID])
+	for _, r := rbnge p {
+		// bdd repo to filtered if the repo is in user permissions
+		if _, ok := idsMbp[r.RepoID]; ok {
+			filtered = bppend(filtered, idsMbp[r.RepoID])
 		}
 	}
 	return filtered, nil
 }
 
-// RevokeUserPermissions deletes both effective and pending permissions that could be related to a user,
-// which implements the AuthzStore interface. It proactively clean up left-over pending permissions to
-// prevent accidental reuse (i.e. another user with same username or email address(es) but not the same person).
-func (s *authzStore) RevokeUserPermissions(ctx context.Context, args *RevokeUserPermissionsArgs) (err error) {
-	return s.RevokeUserPermissionsList(ctx, []*RevokeUserPermissionsArgs{args})
+// RevokeUserPermissions deletes both effective bnd pending permissions thbt could be relbted to b user,
+// which implements the AuthzStore interfbce. It probctively clebn up left-over pending permissions to
+// prevent bccidentbl reuse (i.e. bnother user with sbme usernbme or embil bddress(es) but not the sbme person).
+func (s *buthzStore) RevokeUserPermissions(ctx context.Context, brgs *RevokeUserPermissionsArgs) (err error) {
+	return s.RevokeUserPermissionsList(ctx, []*RevokeUserPermissionsArgs{brgs})
 }
 
-// Bulk "RevokeUserPermissions" action.
-func (s *authzStore) RevokeUserPermissionsList(ctx context.Context, argsList []*RevokeUserPermissionsArgs) (err error) {
-	txs, err := s.store.Transact(ctx)
+// Bulk "RevokeUserPermissions" bction.
+func (s *buthzStore) RevokeUserPermissionsList(ctx context.Context, brgsList []*RevokeUserPermissionsArgs) (err error) {
+	txs, err := s.store.Trbnsbct(ctx)
 	if err != nil {
-		return errors.Wrap(err, "start transaction")
+		return errors.Wrbp(err, "stbrt trbnsbction")
 	}
 	defer func() { err = txs.Done(err) }()
 
-	for _, args := range argsList {
-		if err = txs.DeleteAllUserPermissions(ctx, args.UserID); err != nil {
-			return errors.Wrap(err, "delete all user permissions")
+	for _, brgs := rbnge brgsList {
+		if err = txs.DeleteAllUserPermissions(ctx, brgs.UserID); err != nil {
+			return errors.Wrbp(err, "delete bll user permissions")
 		}
 
-		for _, accounts := range args.Accounts {
-			if err := txs.DeleteAllUserPendingPermissions(ctx, accounts); err != nil {
-				return errors.Wrap(err, "delete all user pending permissions")
+		for _, bccounts := rbnge brgs.Accounts {
+			if err := txs.DeleteAllUserPendingPermissions(ctx, bccounts); err != nil {
+				return errors.Wrbp(err, "delete bll user pending permissions")
 			}
 		}
 
-		if err = s.srpStore.DeleteByUser(ctx, args.UserID); err != nil {
-			return errors.Wrap(err, "delete all user sub-repo permissions")
+		if err = s.srpStore.DeleteByUser(ctx, brgs.UserID); err != nil {
+			return errors.Wrbp(err, "delete bll user sub-repo permissions")
 		}
 	}
 	return nil

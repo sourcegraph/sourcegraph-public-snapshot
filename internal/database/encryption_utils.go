@@ -1,54 +1,54 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
 type Encrypted struct {
-	Values []string
+	Vblues []string
 	KeyID  string
 }
 
-func encryptValues(ctx context.Context, key encryption.Key, m map[int][]string) (map[int]Encrypted, error) {
-	encryptedMap := make(map[int]Encrypted, len(m))
-	for id, vs := range m {
-		var (
+func encryptVblues(ctx context.Context, key encryption.Key, m mbp[int][]string) (mbp[int]Encrypted, error) {
+	encryptedMbp := mbke(mbp[int]Encrypted, len(m))
+	for id, vs := rbnge m {
+		vbr (
 			keyID           string
-			encryptedValues = make([]string, 0, len(vs))
+			encryptedVblues = mbke([]string, 0, len(vs))
 		)
-		for _, v := range vs {
-			ev, id, err := encryption.MaybeEncrypt(ctx, key, v)
+		for _, v := rbnge vs {
+			ev, id, err := encryption.MbybeEncrypt(ctx, key, v)
 			if err != nil {
 				return nil, err
 			}
 
 			keyID = id
-			encryptedValues = append(encryptedValues, ev)
+			encryptedVblues = bppend(encryptedVblues, ev)
 		}
 
-		encryptedMap[id] = Encrypted{Values: encryptedValues, KeyID: keyID}
+		encryptedMbp[id] = Encrypted{Vblues: encryptedVblues, KeyID: keyID}
 	}
 
-	return encryptedMap, nil
+	return encryptedMbp, nil
 }
 
-func decryptValues(ctx context.Context, key encryption.Key, m map[int]Encrypted) (map[int][]string, error) {
-	decryptedMap := make(map[int][]string, len(m))
-	for id, ev := range m {
-		decryptedValues := make([]string, 0, len(ev.Values))
-		for _, v := range ev.Values {
-			dv, err := encryption.MaybeDecrypt(ctx, key, v, ev.KeyID)
+func decryptVblues(ctx context.Context, key encryption.Key, m mbp[int]Encrypted) (mbp[int][]string, error) {
+	decryptedMbp := mbke(mbp[int][]string, len(m))
+	for id, ev := rbnge m {
+		decryptedVblues := mbke([]string, 0, len(ev.Vblues))
+		for _, v := rbnge ev.Vblues {
+			dv, err := encryption.MbybeDecrypt(ctx, key, v, ev.KeyID)
 			if err != nil {
 				return nil, err
 			}
 
-			decryptedValues = append(decryptedValues, dv)
+			decryptedVblues = bppend(decryptedVblues, dv)
 		}
 
-		decryptedMap[id] = decryptedValues
+		decryptedMbp[id] = decryptedVblues
 	}
 
-	return decryptedMap, nil
+	return decryptedMbp, nil
 }

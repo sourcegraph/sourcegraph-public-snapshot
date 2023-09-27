@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type Item struct {
 	Edge
@@ -15,7 +15,7 @@ func NewItem(id, outV uint64, inVs []uint64, document uint64) Item {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeItem,
+			Lbbel: EdgeItem,
 		},
 		OutV:     outV,
 		InVs:     inVs,

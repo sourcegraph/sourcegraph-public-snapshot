@@ -1,16 +1,16 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-type RegisterMigratorsFunc func(ctx context.Context, db database.DB, runner *Runner) error
+type RegisterMigrbtorsFunc func(ctx context.Context, db dbtbbbse.DB, runner *Runner) error
 
-func ComposeRegisterMigratorsFuncs(fns ...RegisterMigratorsFunc) RegisterMigratorsFunc {
-	return func(ctx context.Context, db database.DB, runner *Runner) error {
-		for _, fn := range fns {
+func ComposeRegisterMigrbtorsFuncs(fns ...RegisterMigrbtorsFunc) RegisterMigrbtorsFunc {
+	return func(ctx context.Context, db dbtbbbse.DB, runner *Runner) error {
+		for _, fn := rbnge fns {
 			if fn == nil {
 				continue
 			}

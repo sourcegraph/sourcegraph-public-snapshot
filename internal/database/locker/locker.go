@@ -1,105 +1,105 @@
-package locker
+pbckbge locker
 
 import (
 	"context"
-	"math"
+	"mbth"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/segmentio/fasthash/fnv1"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/segmentio/fbsthbsh/fnv1"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// StringKey returns an int32 key based on s that can be used in Locker methods.
+// StringKey returns bn int32 key bbsed on s thbt cbn be used in Locker methods.
 func StringKey(s string) int32 {
-	return int32(fnv1.HashString32(s) % math.MaxInt32)
+	return int32(fnv1.HbshString32(s) % mbth.MbxInt32)
 }
 
-// Locker is a wrapper around a base store with methods that control advisory locks.
-// A locker should be used when work needs to be coordinated with other remote services.
+// Locker is b wrbpper bround b bbse store with methods thbt control bdvisory locks.
+// A locker should be used when work needs to be coordinbted with other remote services.
 //
-// For example, an advisory lock can be taken around an expensive calculation related to
-// a particular repository to ensure that no other service is performing the same task.
+// For exbmple, bn bdvisory lock cbn be tbken bround bn expensive cblculbtion relbted to
+// b pbrticulbr repository to ensure thbt no other service is performing the sbme tbsk.
 type Locker struct {
-	*basestore.Store
-	namespace int32
+	*bbsestore.Store
+	nbmespbce int32
 }
 
-// NewWith creates a new Locker with the given namespace and ShareableStore
-func NewWith(other basestore.ShareableStore, namespace string) *Locker {
+// NewWith crebtes b new Locker with the given nbmespbce bnd ShbrebbleStore
+func NewWith(other bbsestore.ShbrebbleStore, nbmespbce string) *Locker {
 	return &Locker{
-		Store:     basestore.NewWithHandle(other.Handle()),
-		namespace: StringKey(namespace),
+		Store:     bbsestore.NewWithHbndle(other.Hbndle()),
+		nbmespbce: StringKey(nbmespbce),
 	}
 }
 
-func (l *Locker) With(other basestore.ShareableStore) *Locker {
+func (l *Locker) With(other bbsestore.ShbrebbleStore) *Locker {
 	return &Locker{
 		Store:     l.Store.With(other),
-		namespace: l.namespace,
+		nbmespbce: l.nbmespbce,
 	}
 }
 
-func (l *Locker) Transact(ctx context.Context) (*Locker, error) {
-	txBase, err := l.Store.Transact(ctx)
+func (l *Locker) Trbnsbct(ctx context.Context) (*Locker, error) {
+	txBbse, err := l.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &Locker{
-		Store:     txBase,
-		namespace: l.namespace,
+		Store:     txBbse,
+		nbmespbce: l.nbmespbce,
 	}, nil
 }
 
-// UnlockFunc unlocks the advisory lock taken by a successful call to Lock. If an error
-// occurs during unlock, the error is added to the resulting error value.
+// UnlockFunc unlocks the bdvisory lock tbken by b successful cbll to Lock. If bn error
+// occurs during unlock, the error is bdded to the resulting error vblue.
 type UnlockFunc func(error) error
 
-// ErrTransaction occurs when Lock is called inside of a transaction.
-var ErrTransaction = errors.New("locker: in a transaction")
+// ErrTrbnsbction occurs when Lock is cblled inside of b trbnsbction.
+vbr ErrTrbnsbction = errors.New("locker: in b trbnsbction")
 
-// Lock creates a transactional store and calls its Lock method. This method expects that
-// the locker is outside of a transaction. The transaction's lifetime is linked to the lock,
-// so the internal locker will commit or rollback for the lock to be released.
+// Lock crebtes b trbnsbctionbl store bnd cblls its Lock method. This method expects thbt
+// the locker is outside of b trbnsbction. The trbnsbction's lifetime is linked to the lock,
+// so the internbl locker will commit or rollbbck for the lock to be relebsed.
 func (l *Locker) Lock(ctx context.Context, key int32, blocking bool) (locked bool, _ UnlockFunc, err error) {
-	if l.InTransaction() {
-		return false, nil, ErrTransaction
+	if l.InTrbnsbction() {
+		return fblse, nil, ErrTrbnsbction
 	}
 
-	tx, err := l.Transact(ctx)
+	tx, err := l.Trbnsbct(ctx)
 	if err != nil {
-		return false, nil, err
+		return fblse, nil, err
 	}
 	defer func() {
 		if !locked {
-			// Catch failure cases
+			// Cbtch fbilure cbses
 			err = tx.Done(err)
 		}
 	}()
 
-	locked, err = tx.LockInTransaction(ctx, key, blocking)
+	locked, err = tx.LockInTrbnsbction(ctx, key, blocking)
 	if err != nil || !locked {
-		return false, nil, err
+		return fblse, nil, err
 	}
 
 	return true, tx.Done, nil
 }
 
-// ErrNoTransaction occurs when LockInTransaction is called outside of a transaction.
-var ErrNoTransaction = errors.New("locker: not in a transaction")
+// ErrNoTrbnsbction occurs when LockInTrbnsbction is cblled outside of b trbnsbction.
+vbr ErrNoTrbnsbction = errors.New("locker: not in b trbnsbction")
 
-// LockInTransaction attempts to take an advisory lock on the given key. If successful, this method
-// will return a true-valued flag. This method assumes that the locker is currently in a transaction
-// and will return an error if not. The lock is released when the transaction is committed or rolled back.
-func (l *Locker) LockInTransaction(
+// LockInTrbnsbction bttempts to tbke bn bdvisory lock on the given key. If successful, this method
+// will return b true-vblued flbg. This method bssumes thbt the locker is currently in b trbnsbction
+// bnd will return bn error if not. The lock is relebsed when the trbnsbction is committed or rolled bbck.
+func (l *Locker) LockInTrbnsbction(
 	ctx context.Context,
 	key int32,
 	blocking bool,
 ) (locked bool, err error) {
-	if !l.InTransaction() {
-		return false, ErrNoTransaction
+	if !l.InTrbnsbction() {
+		return fblse, ErrNoTrbnsbction
 	}
 
 	if blocking {
@@ -109,38 +109,38 @@ func (l *Locker) LockInTransaction(
 	}
 
 	if err != nil || !locked {
-		return false, err
+		return fblse, err
 	}
 
 	return true, nil
 }
 
-// selectAdvisoryLock blocks until an advisory lock is taken on the given key.
+// selectAdvisoryLock blocks until bn bdvisory lock is tbken on the given key.
 func (l *Locker) selectAdvisoryLock(ctx context.Context, key int32) (bool, error) {
-	err := l.Store.Exec(ctx, sqlf.Sprintf(selectAdvisoryLockQuery, l.namespace, key))
+	err := l.Store.Exec(ctx, sqlf.Sprintf(selectAdvisoryLockQuery, l.nbmespbce, key))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
 const selectAdvisoryLockQuery = `
-SELECT pg_advisory_xact_lock(%s, %s)
+SELECT pg_bdvisory_xbct_lock(%s, %s)
 `
 
-// selectTryAdvisoryLock attempts to take an advisory lock on the given key. Returns true
-// on success and false on failure.
+// selectTryAdvisoryLock bttempts to tbke bn bdvisory lock on the given key. Returns true
+// on success bnd fblse on fbilure.
 func (l *Locker) selectTryAdvisoryLock(ctx context.Context, key int32) (bool, error) {
-	ok, _, err := basestore.ScanFirstBool(
-		l.Store.Query(ctx, sqlf.Sprintf(selectTryAdvisoryLockQuery, l.namespace, key)),
+	ok, _, err := bbsestore.ScbnFirstBool(
+		l.Store.Query(ctx, sqlf.Sprintf(selectTryAdvisoryLockQuery, l.nbmespbce, key)),
 	)
 	if err != nil || !ok {
-		return false, err
+		return fblse, err
 	}
 
 	return true, nil
 }
 
 const selectTryAdvisoryLockQuery = `
-SELECT pg_try_advisory_xact_lock(%s, %s)
+SELECT pg_try_bdvisory_xbct_lock(%s, %s)
 `

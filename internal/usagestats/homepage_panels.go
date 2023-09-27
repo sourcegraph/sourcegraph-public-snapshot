@@ -1,79 +1,79 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-const getHomepagePanelsQuery = `
+const getHomepbgePbnelsQuery = `
 SELECT
-  recentFilesPanelFileClicked / recentFilesPanelLoaded                         AS recentFilesClickedPercentage,
-  recentSearchesPanelSearchClicked / recentSearchesPanelLoaded                 AS recentSearchClickedPercentage,
-  repositoriesPanelRepoFilterClicked / repositoriesPanelLoaded                 AS recentRepositoriesClickedPercentage,
-  savedSearchesPanelSearchClicked / savedSearchesPanelLoaded                   AS savedSearchesClickedPercentage,
-  savedSearchesPanelCreateButtonClicked / savedSearchesPanelLoaded             AS newSavedSearchesClickedPercentage,
-  recentSearchesPanelLoaded                                                    AS totalPanelViews,
-  uniqueRecentFilesPanelFileClicked / uniqueRecentFilesPanelLoaded             AS usersFilesClickedPercentage,
-  uniqueRecentSearchesPanelSearchClicked / uniqueRecentSearchesPanelLoaded     AS usersSearchClickedPercentage,
-  uniqueRepositoriesPanelRepoFilterClicked / uniqueRepositoriesPanelLoaded     AS usersRepositoriesClickedPercentage,
-  uniqueSavedSearchesPanelSearchClicked / uniqueSavedSearchesPanelLoaded       AS usersSavedSearchesClickedPercentage,
-  uniqueSavedSearchesPanelCreateButtonClicked / uniqueSavedSearchesPanelLoaded AS usersNewSavedSearchesClickedPercentage,
-  uniqueRecentSearchesPanelLoaded                                              AS percentUsersShown
+  recentFilesPbnelFileClicked / recentFilesPbnelLobded                         AS recentFilesClickedPercentbge,
+  recentSebrchesPbnelSebrchClicked / recentSebrchesPbnelLobded                 AS recentSebrchClickedPercentbge,
+  repositoriesPbnelRepoFilterClicked / repositoriesPbnelLobded                 AS recentRepositoriesClickedPercentbge,
+  sbvedSebrchesPbnelSebrchClicked / sbvedSebrchesPbnelLobded                   AS sbvedSebrchesClickedPercentbge,
+  sbvedSebrchesPbnelCrebteButtonClicked / sbvedSebrchesPbnelLobded             AS newSbvedSebrchesClickedPercentbge,
+  recentSebrchesPbnelLobded                                                    AS totblPbnelViews,
+  uniqueRecentFilesPbnelFileClicked / uniqueRecentFilesPbnelLobded             AS usersFilesClickedPercentbge,
+  uniqueRecentSebrchesPbnelSebrchClicked / uniqueRecentSebrchesPbnelLobded     AS usersSebrchClickedPercentbge,
+  uniqueRepositoriesPbnelRepoFilterClicked / uniqueRepositoriesPbnelLobded     AS usersRepositoriesClickedPercentbge,
+  uniqueSbvedSebrchesPbnelSebrchClicked / uniqueSbvedSebrchesPbnelLobded       AS usersSbvedSebrchesClickedPercentbge,
+  uniqueSbvedSebrchesPbnelCrebteButtonClicked / uniqueSbvedSebrchesPbnelLobded AS usersNewSbvedSebrchesClickedPercentbge,
+  uniqueRecentSebrchesPbnelLobded                                              AS percentUsersShown
 FROM (
   SELECT
-    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelFileClicked'), 0)           :: FLOAT AS recentFilesPanelFileClicked,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentFilesPanelLoaded'), 0)                :: FLOAT AS recentFilesPanelLoaded,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked'), 0)      :: FLOAT AS recentSearchesPanelSearchClicked,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'RecentSearchesPanelLoaded'), 0)             :: FLOAT AS recentSearchesPanelLoaded,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked'), 0)    :: FLOAT AS repositoriesPanelRepoFilterClicked,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'RepositoriesPanelLoaded'), 0)               :: FLOAT AS repositoriesPanelLoaded,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked'), 0)       :: FLOAT AS savedSearchesPanelSearchClicked,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelLoaded'), 0)              :: FLOAT AS savedSearchesPanelLoaded,
-    NULLIF(COUNT(*) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS savedSearchesPanelCreateButtonClicked,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'RecentFilesPbnelFileClicked'), 0)           :: FLOAT AS recentFilesPbnelFileClicked,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'RecentFilesPbnelLobded'), 0)                :: FLOAT AS recentFilesPbnelLobded,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'RecentSebrchesPbnelSebrchClicked'), 0)      :: FLOAT AS recentSebrchesPbnelSebrchClicked,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'RecentSebrchesPbnelLobded'), 0)             :: FLOAT AS recentSebrchesPbnelLobded,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'RepositoriesPbnelRepoFilterClicked'), 0)    :: FLOAT AS repositoriesPbnelRepoFilterClicked,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'RepositoriesPbnelLobded'), 0)               :: FLOAT AS repositoriesPbnelLobded,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'SbvedSebrchesPbnelSebrchClicked'), 0)       :: FLOAT AS sbvedSebrchesPbnelSebrchClicked,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'SbvedSebrchesPbnelLobded'), 0)              :: FLOAT AS sbvedSebrchesPbnelLobded,
+    NULLIF(COUNT(*) FILTER (WHERE nbme = 'SbvedSebrchesPbnelCrebteButtonClicked'), 0) :: FLOAT AS sbvedSebrchesPbnelCrebteButtonClicked,
 
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name  = 'RecentFilesPanelFileClicked'), 0)          :: FLOAT AS uniqueRecentFilesPanelFileClicked,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentFilesPanelLoaded'), 0)                :: FLOAT AS uniqueRecentFilesPanelLoaded,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelSearchClicked'), 0)      :: FLOAT AS uniqueRecentSearchesPanelSearchClicked,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RecentSearchesPanelLoaded'), 0)             :: FLOAT AS uniqueRecentSearchesPanelLoaded,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelRepoFilterClicked'), 0)    :: FLOAT AS uniqueRepositoriesPanelRepoFilterClicked,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'RepositoriesPanelLoaded'), 0)               :: FLOAT AS uniqueRepositoriesPanelLoaded,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelSearchClicked'), 0)       :: FLOAT AS uniqueSavedSearchesPanelSearchClicked,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelLoaded'), 0)              :: FLOAT AS uniqueSavedSearchesPanelLoaded,
-    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE name = 'SavedSearchesPanelCreateButtonClicked'), 0) :: FLOAT AS uniqueSavedSearchesPanelCreateButtonClicked
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme  = 'RecentFilesPbnelFileClicked'), 0)          :: FLOAT AS uniqueRecentFilesPbnelFileClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'RecentFilesPbnelLobded'), 0)                :: FLOAT AS uniqueRecentFilesPbnelLobded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'RecentSebrchesPbnelSebrchClicked'), 0)      :: FLOAT AS uniqueRecentSebrchesPbnelSebrchClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'RecentSebrchesPbnelLobded'), 0)             :: FLOAT AS uniqueRecentSebrchesPbnelLobded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'RepositoriesPbnelRepoFilterClicked'), 0)    :: FLOAT AS uniqueRepositoriesPbnelRepoFilterClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'RepositoriesPbnelLobded'), 0)               :: FLOAT AS uniqueRepositoriesPbnelLobded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'SbvedSebrchesPbnelSebrchClicked'), 0)       :: FLOAT AS uniqueSbvedSebrchesPbnelSebrchClicked,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'SbvedSebrchesPbnelLobded'), 0)              :: FLOAT AS uniqueSbvedSebrchesPbnelLobded,
+    NULLIF(COUNT(DISTINCT user_id) FILTER (WHERE nbme = 'SbvedSebrchesPbnelCrebteButtonClicked'), 0) :: FLOAT AS uniqueSbvedSebrchesPbnelCrebteButtonClicked
   FROM
     event_logs
-  WHERE name IN (
-   'RecentFilesPanelFileClicked',
-   'RecentFilesPanelLoaded',
-   'RecentSearchesPanelSearchClicked',
-   'RecentSearchesPanelLoaded',
-   'RepositoriesPanelRepoFilterClicked',
-   'RepositoriesPanelLoaded',
-   'SavedSearchesPanelSearchClicked',
-   'SavedSearchesPanelLoaded',
-   'SavedSearchesPanelCreateButtonClicked',
-   'RecentFilesPanelFileClicked',
-   'RecentFilesPanelLoaded'
-  ) AND DATE(TIMEZONE('UTC', timestamp)) >= DATE_TRUNC('week', current_date)
+  WHERE nbme IN (
+   'RecentFilesPbnelFileClicked',
+   'RecentFilesPbnelLobded',
+   'RecentSebrchesPbnelSebrchClicked',
+   'RecentSebrchesPbnelLobded',
+   'RepositoriesPbnelRepoFilterClicked',
+   'RepositoriesPbnelLobded',
+   'SbvedSebrchesPbnelSebrchClicked',
+   'SbvedSebrchesPbnelLobded',
+   'SbvedSebrchesPbnelCrebteButtonClicked',
+   'RecentFilesPbnelFileClicked',
+   'RecentFilesPbnelLobded'
+  ) AND DATE(TIMEZONE('UTC', timestbmp)) >= DATE_TRUNC('week', current_dbte)
 ) sub
 `
 
-func GetHomepagePanels(ctx context.Context, db database.DB) (*types.HomepagePanels, error) {
-	var p types.HomepagePanels
-	return &p, db.QueryRowContext(ctx, getHomepagePanelsQuery).Scan(
-		&p.RecentFilesClickedPercentage,
-		&p.RecentSearchClickedPercentage,
-		&p.RecentRepositoriesClickedPercentage,
-		&p.SavedSearchesClickedPercentage,
-		&p.NewSavedSearchesClickedPercentage,
-		&p.TotalPanelViews,
-		&p.UsersFilesClickedPercentage,
-		&p.UsersSearchClickedPercentage,
-		&p.UsersRepositoriesClickedPercentage,
-		&p.UsersSavedSearchesClickedPercentage,
-		&p.UsersNewSavedSearchesClickedPercentage,
+func GetHomepbgePbnels(ctx context.Context, db dbtbbbse.DB) (*types.HomepbgePbnels, error) {
+	vbr p types.HomepbgePbnels
+	return &p, db.QueryRowContext(ctx, getHomepbgePbnelsQuery).Scbn(
+		&p.RecentFilesClickedPercentbge,
+		&p.RecentSebrchClickedPercentbge,
+		&p.RecentRepositoriesClickedPercentbge,
+		&p.SbvedSebrchesClickedPercentbge,
+		&p.NewSbvedSebrchesClickedPercentbge,
+		&p.TotblPbnelViews,
+		&p.UsersFilesClickedPercentbge,
+		&p.UsersSebrchClickedPercentbge,
+		&p.UsersRepositoriesClickedPercentbge,
+		&p.UsersSbvedSebrchesClickedPercentbge,
+		&p.UsersNewSbvedSebrchesClickedPercentbge,
 		&p.PercentUsersShown,
 	)
 }

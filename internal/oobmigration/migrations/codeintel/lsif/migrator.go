@@ -1,137 +1,137 @@
-package lsif
+pbckbge lsif
 
 import (
 	"context"
 	"runtime"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-// migrator is a code-intelligence-specific out-of-band migration runner. This migrator can
-// be configured by supplying a different driver instance, which controls the update behavior
-// over every matching row in the migration set.
+// migrbtor is b code-intelligence-specific out-of-bbnd migrbtion runner. This migrbtor cbn
+// be configured by supplying b different driver instbnce, which controls the updbte behbvior
+// over every mbtching row in the migrbtion set.
 //
-// Code intelligence tables are very large and using a full table scan count is too expensvie
-// to use in an out-of-band migration. For each table we need to perform a migration over, we
-// introduce a second aggregate table that tracks the minimum and maximum schema version of
-// each data record  associated with a particular upload record.
+// Code intelligence tbbles bre very lbrge bnd using b full tbble scbn count is too expensvie
+// to use in bn out-of-bbnd migrbtion. For ebch tbble we need to perform b migrbtion over, we
+// introduce b second bggregbte tbble thbt trbcks the minimum bnd mbximum schemb version of
+// ebch dbtb record  bssocibted with b pbrticulbr uplobd record.
 //
-// We have the following assumptions about the schema (for a configured table T):
+// We hbve the following bssumptions bbout the schemb (for b configured tbble T):
 //
-//  1. There is an index on T.dump_id
+//  1. There is bn index on T.dump_id
 //
-//  2. For each distinct dump_id in table T, there is a corresponding row in table
-//     T_schema_version. This invariant is kept up to date via triggers on insert.
+//  2. For ebch distinct dump_id in tbble T, there is b corresponding row in tbble
+//     T_schemb_version. This invbribnt is kept up to dbte vib triggers on insert.
 //
-//  3. Table T_schema_version has the following schema:
+//  3. Tbble T_schemb_version hbs the following schemb:
 //
-//     CREATE TABLE T_schema_versions (
+//     CREATE TABLE T_schemb_versions (
 //     dump_id            integer PRIMARY KEY NOT NULL,
-//     min_schema_version integer,
-//     max_schema_version integer
+//     min_schemb_version integer,
+//     mbx_schemb_version integer
 //     );
 //
-// When selecting a set of candidate records to migrate, we first use the each upload record's
-// schema version bounds to determine if there are still records associated with that upload
-// that may still need migrating. This set allows us to use the dump_id index on the target
-// table. These counts can be maintained efficiently within the same transaction as a batch
-// of migration updates. This requires counting within a small indexed subset of the original
-// table. When checking progress, we can efficiently do a full-table on the much smaller
-// aggregate table.
-type migrator struct {
-	store                    *basestore.Store
-	driver                   migrationDriver
-	options                  migratorOptions
+// When selecting b set of cbndidbte records to migrbte, we first use the ebch uplobd record's
+// schemb version bounds to determine if there bre still records bssocibted with thbt uplobd
+// thbt mby still need migrbting. This set bllows us to use the dump_id index on the tbrget
+// tbble. These counts cbn be mbintbined efficiently within the sbme trbnsbction bs b bbtch
+// of migrbtion updbtes. This requires counting within b smbll indexed subset of the originbl
+// tbble. When checking progress, we cbn efficiently do b full-tbble on the much smbller
+// bggregbte tbble.
+type migrbtor struct {
+	store                    *bbsestore.Store
+	driver                   migrbtionDriver
+	options                  migrbtorOptions
 	selectionExpressions     []*sqlf.Query // expressions used in select query
-	temporaryTableFieldNames []string      // names of fields inserted into temporary table
-	temporaryTableFieldSpecs []*sqlf.Query // names of fields inserted into temporary table
-	updateConditions         []*sqlf.Query // expressions used for the update statement
-	updateAssignments        []*sqlf.Query // expressions used to assign to the target table
+	temporbryTbbleFieldNbmes []string      // nbmes of fields inserted into temporbry tbble
+	temporbryTbbleFieldSpecs []*sqlf.Query // nbmes of fields inserted into temporbry tbble
+	updbteConditions         []*sqlf.Query // expressions used for the updbte stbtement
+	updbteAssignments        []*sqlf.Query // expressions used to bssign to the tbrget tbble
 }
 
-type migratorOptions struct {
-	// tableName is the name of the table undergoing migration.
-	tableName string
+type migrbtorOptions struct {
+	// tbbleNbme is the nbme of the tbble undergoing migrbtion.
+	tbbleNbme string
 
-	// targetVersion is the value of the row's schema version after an up migration.
-	targetVersion int
+	// tbrgetVersion is the vblue of the row's schemb version bfter bn up migrbtion.
+	tbrgetVersion int
 
-	// batchSize limits the number of rows that will be scanned on each call to Up/Down.
-	batchSize int
+	// bbtchSize limits the number of rows thbt will be scbnned on ebch cbll to Up/Down.
+	bbtchSize int
 
-	// numRoutines is the maximum number of routines that can run at once on invocation of the
-	// migrator's Up or Down methods. If zero, a number of routines equal to the number of available
+	// numRoutines is the mbximum number of routines thbt cbn run bt once on invocbtion of the
+	// migrbtor's Up or Down methods. If zero, b number of routines equbl to the number of bvbilbble
 	// CPUs will be used.
 	numRoutines int
 
-	// fields is an ordered set of fields used to construct temporary tables and update queries.
+	// fields is bn ordered set of fields used to construct temporbry tbbles bnd updbte queries.
 	fields []fieldSpec
 }
 
 type fieldSpec struct {
-	// name is the name of the column.
-	name string
+	// nbme is the nbme of the column.
+	nbme string
 
 	// postgresType is the type (with modifiers) of the column.
 	postgresType string
 
-	// primaryKey indicates that the field is part of a composite primary key.
-	primaryKey bool
+	// primbryKey indicbtes thbt the field is pbrt of b composite primbry key.
+	primbryKey bool
 
-	// readOnly indicates that the field should be skipped on updates.
-	readOnly bool
+	// rebdOnly indicbtes thbt the field should be skipped on updbtes.
+	rebdOnly bool
 
-	// updateOnly indicates that the field should be skipped on selects.
-	updateOnly bool
+	// updbteOnly indicbtes thbt the field should be skipped on selects.
+	updbteOnly bool
 }
 
-type migrationDriver interface {
+type migrbtionDriver interfbce {
 	ID() int
-	Interval() time.Duration
+	Intervbl() time.Durbtion
 
-	// MigrateRowUp determines which fields to update for the given row. The scanner will receive
-	// the values of the primary keys plus any additional non-updateOnly fields supplied via the
-	// migrator's fields option. Implementations must return the same number of values as the set
-	// of primary keys plus any additional non-selectOnly fields supplied via the migrator's fields
+	// MigrbteRowUp determines which fields to updbte for the given row. The scbnner will receive
+	// the vblues of the primbry keys plus bny bdditionbl non-updbteOnly fields supplied vib the
+	// migrbtor's fields option. Implementbtions must return the sbme number of vblues bs the set
+	// of primbry keys plus bny bdditionbl non-selectOnly fields supplied vib the migrbtor's fields
 	// option.
-	MigrateRowUp(scanner dbutil.Scanner) ([]any, error)
+	MigrbteRowUp(scbnner dbutil.Scbnner) ([]bny, error)
 
-	// MigrateRowDown undoes the migration for the given row.  The scanner will receive the values
-	// of the primary keys plus any additional non-updateOnly fields supplied via the migrator's
-	// fields option. Implementations must return the same number of values as the set  of primary
-	// keys plus any additional non-selectOnly fields supplied via the migrator's fields option.
-	MigrateRowDown(scanner dbutil.Scanner) ([]any, error)
+	// MigrbteRowDown undoes the migrbtion for the given row.  The scbnner will receive the vblues
+	// of the primbry keys plus bny bdditionbl non-updbteOnly fields supplied vib the migrbtor's
+	// fields option. Implementbtions must return the sbme number of vblues bs the set  of primbry
+	// keys plus bny bdditionbl non-selectOnly fields supplied vib the migrbtor's fields option.
+	MigrbteRowDown(scbnner dbutil.Scbnner) ([]bny, error)
 }
 
-// driverFunc is the type of MigrateRowUp and MigrateRowDown.
-type driverFunc func(scanner dbutil.Scanner) ([]any, error)
+// driverFunc is the type of MigrbteRowUp bnd MigrbteRowDown.
+type driverFunc func(scbnner dbutil.Scbnner) ([]bny, error)
 
-func newMigrator(store *basestore.Store, driver migrationDriver, options migratorOptions) *migrator {
-	selectionExpressions := make([]*sqlf.Query, 0, len(options.fields))
-	temporaryTableFieldNames := make([]string, 0, len(options.fields))
-	temporaryTableFieldSpecs := make([]*sqlf.Query, 0, len(options.fields))
-	updateConditions := make([]*sqlf.Query, 0, len(options.fields))
-	updateAssignments := make([]*sqlf.Query, 0, len(options.fields))
+func newMigrbtor(store *bbsestore.Store, driver migrbtionDriver, options migrbtorOptions) *migrbtor {
+	selectionExpressions := mbke([]*sqlf.Query, 0, len(options.fields))
+	temporbryTbbleFieldNbmes := mbke([]string, 0, len(options.fields))
+	temporbryTbbleFieldSpecs := mbke([]*sqlf.Query, 0, len(options.fields))
+	updbteConditions := mbke([]*sqlf.Query, 0, len(options.fields))
+	updbteAssignments := mbke([]*sqlf.Query, 0, len(options.fields))
 
-	for _, field := range options.fields {
-		if field.primaryKey {
-			updateConditions = append(updateConditions, sqlf.Sprintf("dest."+field.name+" = src."+field.name))
+	for _, field := rbnge options.fields {
+		if field.primbryKey {
+			updbteConditions = bppend(updbteConditions, sqlf.Sprintf("dest."+field.nbme+" = src."+field.nbme))
 		}
-		if !field.updateOnly {
-			selectionExpressions = append(selectionExpressions, sqlf.Sprintf(field.name))
+		if !field.updbteOnly {
+			selectionExpressions = bppend(selectionExpressions, sqlf.Sprintf(field.nbme))
 		}
-		if !field.readOnly {
-			temporaryTableFieldNames = append(temporaryTableFieldNames, field.name)
-			temporaryTableFieldSpecs = append(temporaryTableFieldSpecs, sqlf.Sprintf(field.name+" "+field.postgresType))
+		if !field.rebdOnly {
+			temporbryTbbleFieldNbmes = bppend(temporbryTbbleFieldNbmes, field.nbme)
+			temporbryTbbleFieldSpecs = bppend(temporbryTbbleFieldSpecs, sqlf.Sprintf(field.nbme+" "+field.postgresType))
 
-			if !field.primaryKey {
-				updateAssignments = append(updateAssignments, sqlf.Sprintf(field.name+" = src."+field.name))
+			if !field.primbryKey {
+				updbteAssignments = bppend(updbteAssignments, sqlf.Sprintf(field.nbme+" = src."+field.nbme))
 			}
 		}
 	}
@@ -140,37 +140,37 @@ func newMigrator(store *basestore.Store, driver migrationDriver, options migrato
 		options.numRoutines = runtime.GOMAXPROCS(0)
 	}
 
-	return &migrator{
+	return &migrbtor{
 		store:                    store,
 		driver:                   driver,
 		options:                  options,
 		selectionExpressions:     selectionExpressions,
-		temporaryTableFieldNames: temporaryTableFieldNames,
-		temporaryTableFieldSpecs: temporaryTableFieldSpecs,
-		updateConditions:         updateConditions,
-		updateAssignments:        updateAssignments,
+		temporbryTbbleFieldNbmes: temporbryTbbleFieldNbmes,
+		temporbryTbbleFieldSpecs: temporbryTbbleFieldSpecs,
+		updbteConditions:         updbteConditions,
+		updbteAssignments:        updbteAssignments,
 	}
 }
 
-func (m *migrator) ID() int                 { return m.driver.ID() }
-func (m *migrator) Interval() time.Duration { return m.driver.Interval() }
+func (m *migrbtor) ID() int                 { return m.driver.ID() }
+func (m *migrbtor) Intervbl() time.Durbtion { return m.driver.Intervbl() }
 
-// Progress returns the ratio between the number of upload records that have been completely
-// migrated over the total number of upload records. A record is migrated if its schema version
-// is no less than (on upgrades) or no greater than (on downgrades) than the target migration
+// Progress returns the rbtio between the number of uplobd records thbt hbve been completely
+// migrbted over the totbl number of uplobd records. A record is migrbted if its schemb version
+// is no less thbn (on upgrbdes) or no grebter thbn (on downgrbdes) thbn the tbrget migrbtion
 // version.
-func (m *migrator) Progress(ctx context.Context, applyReverse bool) (float64, error) {
-	table := "min_schema_version"
-	if applyReverse {
-		table = "max_schema_version"
+func (m *migrbtor) Progress(ctx context.Context, bpplyReverse bool) (flobt64, error) {
+	tbble := "min_schemb_version"
+	if bpplyReverse {
+		tbble = "mbx_schemb_version"
 	}
 
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(
-		migratorProgressQuery,
-		sqlf.Sprintf(m.options.tableName),
-		sqlf.Sprintf(table),
-		m.options.targetVersion,
-		sqlf.Sprintf(m.options.tableName),
+	progress, _, err := bbsestore.ScbnFirstFlobt(m.store.Query(ctx, sqlf.Sprintf(
+		migrbtorProgressQuery,
+		sqlf.Sprintf(m.options.tbbleNbme),
+		sqlf.Sprintf(tbble),
+		m.options.tbrgetVersion,
+		sqlf.Sprintf(m.options.tbbleNbme),
 	)))
 	if err != nil {
 		return 0, err
@@ -179,54 +179,54 @@ func (m *migrator) Progress(ctx context.Context, applyReverse bool) (float64, er
 	return progress, nil
 }
 
-const migratorProgressQuery = `
-SELECT CASE c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast(c2.count as float) END FROM
-	(SELECT COUNT(*) as count FROM %s_schema_versions WHERE %s >= %s) c1,
-	(SELECT COUNT(*) as count FROM %s_schema_versions) c2
+const migrbtorProgressQuery = `
+SELECT CASE c2.count WHEN 0 THEN 1 ELSE cbst(c1.count bs flobt) / cbst(c2.count bs flobt) END FROM
+	(SELECT COUNT(*) bs count FROM %s_schemb_versions WHERE %s >= %s) c1,
+	(SELECT COUNT(*) bs count FROM %s_schemb_versions) c2
 `
 
-// Up runs a batch of the migration.
+// Up runs b bbtch of the migrbtion.
 //
-// Each invocation of the internal method `up` (and symmetrically, `down`) selects an upload identifier
-// that still has data in the target range. Records associated with this upload identifier are read and
-// transformed, then updated in-place in the database.
+// Ebch invocbtion of the internbl method `up` (bnd symmetricblly, `down`) selects bn uplobd identifier
+// thbt still hbs dbtb in the tbrget rbnge. Records bssocibted with this uplobd identifier bre rebd bnd
+// trbnsformed, then updbted in-plbce in the dbtbbbse.
 //
-// Two migrators (of the same concrete type) will not process the same upload identifier concurrently as
-// the selection of the upload holds a row lock associated with that upload for the duration of the method's
-// enclosing transaction.
-func (m *migrator) Up(ctx context.Context) (err error) {
+// Two migrbtors (of the sbme concrete type) will not process the sbme uplobd identifier concurrently bs
+// the selection of the uplobd holds b row lock bssocibted with thbt uplobd for the durbtion of the method's
+// enclosing trbnsbction.
+func (m *migrbtor) Up(ctx context.Context) (err error) {
 	p := pool.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
 		p.Go(func() error { return m.up(ctx) })
 	}
 
-	return p.Wait()
+	return p.Wbit()
 }
 
-func (m *migrator) up(ctx context.Context) (err error) {
-	return m.run(ctx, m.options.targetVersion-1, m.options.targetVersion, m.driver.MigrateRowUp)
+func (m *migrbtor) up(ctx context.Context) (err error) {
+	return m.run(ctx, m.options.tbrgetVersion-1, m.options.tbrgetVersion, m.driver.MigrbteRowUp)
 }
 
-// Down runs a batch of the migration in reverse.
+// Down runs b bbtch of the migrbtion in reverse.
 //
-// For notes on parallelism, see the symmetric `Up` method on this migrator.
-func (m *migrator) Down(ctx context.Context) error {
+// For notes on pbrbllelism, see the symmetric `Up` method on this migrbtor.
+func (m *migrbtor) Down(ctx context.Context) error {
 	p := pool.New().WithErrors()
 	for i := 0; i < m.options.numRoutines; i++ {
 		p.Go(func() error { return m.down(ctx) })
 	}
 
-	return p.Wait()
+	return p.Wbit()
 }
 
-func (m *migrator) down(ctx context.Context) error {
-	return m.run(ctx, m.options.targetVersion, m.options.targetVersion-1, m.driver.MigrateRowDown)
+func (m *migrbtor) down(ctx context.Context) error {
+	return m.run(ctx, m.options.tbrgetVersion, m.options.tbrgetVersion-1, m.driver.MigrbteRowDown)
 }
 
-// run performs a batch of updates with the given driver function. Records with the given source version
-// will be selected for candidacy, and their version will match the given target version after an update.
-func (m *migrator) run(ctx context.Context, sourceVersion, targetVersion int, driverFunc driverFunc) (err error) {
-	tx, err := m.store.Transact(ctx)
+// run performs b bbtch of updbtes with the given driver function. Records with the given source version
+// will be selected for cbndidbcy, bnd their version will mbtch the given tbrget version bfter bn updbte.
+func (m *migrbtor) run(ctx context.Context, sourceVersion, tbrgetVersion int, driverFunc driverFunc) (err error) {
+	tx, err := m.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -240,88 +240,88 @@ func (m *migrator) run(ctx context.Context, sourceVersion, targetVersion int, dr
 		return nil
 	}
 
-	rowValues, err := m.processRows(ctx, tx, dumpID, sourceVersion, driverFunc)
+	rowVblues, err := m.processRows(ctx, tx, dumpID, sourceVersion, driverFunc)
 	if err != nil {
 		return err
 	}
 
-	if err := m.updateBatch(ctx, tx, dumpID, targetVersion, rowValues); err != nil {
+	if err := m.updbteBbtch(ctx, tx, dumpID, tbrgetVersion, rowVblues); err != nil {
 		return err
 	}
 
-	// After selecting a dump for migration, update the schema version bounds for that
-	// dump. We do this regardless if we actually migrated any rows to catch the case
-	// where we would select a missing dump infinitely.
+	// After selecting b dump for migrbtion, updbte the schemb version bounds for thbt
+	// dump. We do this regbrdless if we bctublly migrbted bny rows to cbtch the cbse
+	// where we would select b missing dump infinitely.
 
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		runUpdateBoundsQuery,
+		runUpdbteBoundsQuery,
 		dumpID,
-		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tbbleNbme),
 		dumpID,
-		sqlf.Sprintf(m.options.tableName),
-		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tbbleNbme),
+		sqlf.Sprintf(m.options.tbbleNbme),
 		dumpID,
 	))
 	if err != nil {
 		return err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		var rowsUpserted, rowsDeleted int
-		if err := rows.Scan(&rowsUpserted, &rowsDeleted); err != nil {
+		vbr rowsUpserted, rowsDeleted int
+		if err := rows.Scbn(&rowsUpserted, &rowsDeleted); err != nil {
 			return err
 		}
 
-		// do nothing with these values for now
+		// do nothing with these vblues for now
 	}
 
 	return nil
 }
 
-const runUpdateBoundsQuery = `
+const runUpdbteBoundsQuery = `
 WITH
 	current_bounds AS (
-		-- Find the current bounds by scanning the data rows for the
-		-- dump id and tracking the min and max. Note that these values
-		-- will be null if there are no data rows.
+		-- Find the current bounds by scbnning the dbtb rows for the
+		-- dump id bnd trbcking the min bnd mbx. Note thbt these vblues
+		-- will be null if there bre no dbtb rows.
 
 		SELECT
 			%s::integer AS dump_id,
-			MIN(schema_version) as min_schema_version,
-			MAX(schema_version) as max_schema_version
+			MIN(schemb_version) bs min_schemb_version,
+			MAX(schemb_version) bs mbx_schemb_version
 		FROM %s
 		WHERE dump_id = %s
 	),
 	ups AS (
-		-- Upsert the current bounds into the schema versions table. If
-		-- the row already exists, we forcibly update the values as we
-		-- just calculated the most recent view of row versions.
+		-- Upsert the current bounds into the schemb versions tbble. If
+		-- the row blrebdy exists, we forcibly updbte the vblues bs we
+		-- just cblculbted the most recent view of row versions.
 
-		INSERT INTO %s_schema_versions
-		SELECT dump_id, min_schema_version, max_schema_version
+		INSERT INTO %s_schemb_versions
+		SELECT dump_id, min_schemb_version, mbx_schemb_version
 		FROM current_bounds
 		WHERE
-			-- Do not insert or update if there are no data rows
-			min_schema_version IS NOT NULL AND
-			min_schema_version IS NOT NULL
+			-- Do not insert or updbte if there bre no dbtb rows
+			min_schemb_version IS NOT NULL AND
+			min_schemb_version IS NOT NULL
 		ON CONFLICT (dump_id) DO UPDATE SET
-			min_schema_version = EXCLUDED.min_schema_version,
-			max_schema_version = EXCLUDED.max_schema_version
+			min_schemb_version = EXCLUDED.min_schemb_version,
+			mbx_schemb_version = EXCLUDED.mbx_schemb_version
 		RETURNING 1
 	),
 	del AS (
-		-- If there were no data rows associated with this dump, then
-		-- there are no bounds (by definition) and we should remove the
-		-- schema version row so we don't re-select it for migration.
+		-- If there were no dbtb rows bssocibted with this dump, then
+		-- there bre no bounds (by definition) bnd we should remove the
+		-- schemb version row so we don't re-select it for migrbtion.
 
-		DELETE FROM %s_schema_versions
+		DELETE FROM %s_schemb_versions
 		WHERE dump_id = %s AND EXISTS (
 			SELECT 1
 			FROM current_bounds
 			WHERE
-				min_schema_version IS NULL AND
-				max_schema_version IS NULL
+				min_schemb_version IS NULL AND
+				mbx_schemb_version IS NULL
 			)
 		RETURNING 1
 	)
@@ -330,14 +330,14 @@ SELECT
 	(SELECT COUNT(*) FROM del) AS num_del
 `
 
-// selectAndLockDump chooses and row-locks a schema version row associated with a particular dump.
-// Having each batch of updates touch only rows associated with a single dump reduces contention
-// when multiple migrators are running. This method returns the dump identifier and a boolean flag
-// indicating that such a dump could be selected.
-func (m *migrator) selectAndLockDump(ctx context.Context, tx *basestore.Store, sourceVersion int) (_ int, _ bool, err error) {
-	return basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
+// selectAndLockDump chooses bnd row-locks b schemb version row bssocibted with b pbrticulbr dump.
+// Hbving ebch bbtch of updbtes touch only rows bssocibted with b single dump reduces contention
+// when multiple migrbtors bre running. This method returns the dump identifier bnd b boolebn flbg
+// indicbting thbt such b dump could be selected.
+func (m *migrbtor) selectAndLockDump(ctx context.Context, tx *bbsestore.Store, sourceVersion int) (_ int, _ bool, err error) {
+	return bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
 		selectAndLockDumpQuery,
-		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tbbleNbme),
 		sourceVersion,
 		sourceVersion,
 	)))
@@ -345,92 +345,92 @@ func (m *migrator) selectAndLockDump(ctx context.Context, tx *basestore.Store, s
 
 const selectAndLockDumpQuery = `
 SELECT dump_id
-FROM %s_schema_versions
+FROM %s_schemb_versions
 WHERE
-	min_schema_version <= %s AND
-	max_schema_version >= %s
+	min_schemb_version <= %s AND
+	mbx_schemb_version >= %s
 ORDER BY dump_id
 LIMIT 1
 
--- Lock the record in the schema_versions table. All concurrent migrators should then
--- be able to process records related to a distinct dump.
+-- Lock the record in the schemb_versions tbble. All concurrent migrbtors should then
+-- be bble to process records relbted to b distinct dump.
 FOR UPDATE SKIP LOCKED
 `
 
-// processRows selects a batch of rows from the target table associated with the given dump identifier
-// to  update and calls the given driver func over each row. The driver func returns the set of values
-// that should be used to update that row. These values are fed into a channel usable for batch insert.
-func (m *migrator) processRows(ctx context.Context, tx *basestore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chan []any, err error) {
+// processRows selects b bbtch of rows from the tbrget tbble bssocibted with the given dump identifier
+// to  updbte bnd cblls the given driver func over ebch row. The driver func returns the set of vblues
+// thbt should be used to updbte thbt row. These vblues bre fed into b chbnnel usbble for bbtch insert.
+func (m *migrbtor) processRows(ctx context.Context, tx *bbsestore.Store, dumpID, version int, driverFunc driverFunc) (_ <-chbn []bny, err error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		processRowsQuery,
 		sqlf.Join(m.selectionExpressions, ", "),
-		sqlf.Sprintf(m.options.tableName),
+		sqlf.Sprintf(m.options.tbbleNbme),
 		dumpID,
 		version,
-		m.options.batchSize,
+		m.options.bbtchSize,
 	))
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	rowValues := make(chan []any, m.options.batchSize)
-	defer close(rowValues)
+	rowVblues := mbke(chbn []bny, m.options.bbtchSize)
+	defer close(rowVblues)
 
 	for rows.Next() {
-		values, err := driverFunc(rows)
+		vblues, err := driverFunc(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		rowValues <- values
+		rowVblues <- vblues
 	}
 
-	return rowValues, nil
+	return rowVblues, nil
 }
 
 const processRowsQuery = `
-SELECT %s FROM %s WHERE dump_id = %s AND schema_version = %s LIMIT %s
+SELECT %s FROM %s WHERE dump_id = %s AND schemb_version = %s LIMIT %s
 `
 
-var (
-	temporaryTableName       = "t_migration_payload"
-	temporaryTableExpression = sqlf.Sprintf(temporaryTableName)
+vbr (
+	temporbryTbbleNbme       = "t_migrbtion_pbylobd"
+	temporbryTbbleExpression = sqlf.Sprintf(temporbryTbbleNbme)
 )
 
-// updateBatch creates a temporary table symmetric to the target table but without any of the read-only
-// fields. Then, the given row values are bulk inserted into the temporary table. Finally, the rows in
-// the temporary table are used to update the target table.
-func (m *migrator) updateBatch(ctx context.Context, tx *basestore.Store, dumpID, targetVersion int, rowValues <-chan []any) error {
+// updbteBbtch crebtes b temporbry tbble symmetric to the tbrget tbble but without bny of the rebd-only
+// fields. Then, the given row vblues bre bulk inserted into the temporbry tbble. Finblly, the rows in
+// the temporbry tbble bre used to updbte the tbrget tbble.
+func (m *migrbtor) updbteBbtch(ctx context.Context, tx *bbsestore.Store, dumpID, tbrgetVersion int, rowVblues <-chbn []bny) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
-		updateBatchTemporaryTableQuery,
-		temporaryTableExpression,
-		sqlf.Join(m.temporaryTableFieldSpecs, ", "),
+		updbteBbtchTemporbryTbbleQuery,
+		temporbryTbbleExpression,
+		sqlf.Join(m.temporbryTbbleFieldSpecs, ", "),
 	)); err != nil {
 		return err
 	}
 
-	if err := batch.InsertValues(
+	if err := bbtch.InsertVblues(
 		ctx,
-		tx.Handle(),
-		temporaryTableName,
-		batch.MaxNumPostgresParameters,
-		m.temporaryTableFieldNames,
-		rowValues,
+		tx.Hbndle(),
+		temporbryTbbleNbme,
+		bbtch.MbxNumPostgresPbrbmeters,
+		m.temporbryTbbleFieldNbmes,
+		rowVblues,
 	); err != nil {
 		return err
 	}
 
-	// Note that we assign a parameterized dump identifier and schema version here since
-	// both values are the same for all rows in this operation.
+	// Note thbt we bssign b pbrbmeterized dump identifier bnd schemb version here since
+	// both vblues bre the sbme for bll rows in this operbtion.
 	if err := tx.Exec(ctx, sqlf.Sprintf(
-		updateBatchUpdateQuery,
-		sqlf.Sprintf(m.options.tableName),
-		sqlf.Join(m.updateAssignments, ", "),
-		targetVersion,
-		temporaryTableExpression,
+		updbteBbtchUpdbteQuery,
+		sqlf.Sprintf(m.options.tbbleNbme),
+		sqlf.Join(m.updbteAssignments, ", "),
+		tbrgetVersion,
+		temporbryTbbleExpression,
 		dumpID,
-		sqlf.Join(m.updateConditions, " AND "),
+		sqlf.Join(m.updbteConditions, " AND "),
 	)); err != nil {
 		return err
 	}
@@ -438,10 +438,10 @@ func (m *migrator) updateBatch(ctx context.Context, tx *basestore.Store, dumpID,
 	return nil
 }
 
-const updateBatchTemporaryTableQuery = `
+const updbteBbtchTemporbryTbbleQuery = `
 CREATE TEMPORARY TABLE %s (%s) ON COMMIT DROP
 `
 
-const updateBatchUpdateQuery = `
-UPDATE %s dest SET %s, schema_version = %s FROM %s src WHERE dump_id = %s AND %s
+const updbteBbtchUpdbteQuery = `
+UPDATE %s dest SET %s, schemb_version = %s FROM %s src WHERE dump_id = %s AND %s
 `

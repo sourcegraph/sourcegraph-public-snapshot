@@ -1,241 +1,241 @@
-package smartsearch
+pbckbge smbrtsebrch
 
 import (
 	"context"
 	"fmt"
 
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"go.opentelemetry.io/otel/attribute"
+	sebrchrepos "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	blertobserver "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/blert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// autoQuery is an automatically generated query with associated data (e.g., description).
-type autoQuery struct {
+// butoQuery is bn butombticblly generbted query with bssocibted dbtb (e.g., description).
+type butoQuery struct {
 	description string
-	query       query.Basic
+	query       query.Bbsic
 }
 
-// newJob is a function that converts a query to a job, and one which lucky
-// search expects in order to function. This function corresponds to
-// `jobutil.NewBasicJob` normally (we can't call it directly for circular
-// dependencies), and otherwise abstracts job creation for tests.
-type newJob func(query.Basic) (job.Job, error)
+// newJob is b function thbt converts b query to b job, bnd one which lucky
+// sebrch expects in order to function. This function corresponds to
+// `jobutil.NewBbsicJob` normblly (we cbn't cbll it directly for circulbr
+// dependencies), bnd otherwise bbstrbcts job crebtion for tests.
+type newJob func(query.Bbsic) (job.Job, error)
 
-// NewSmartSearchJob creates generators for opportunistic search queries
-// that apply various rules, transforming the original input plan into various
-// queries that alter its interpretation (e.g., search literally for quotes or
-// not, attempt to search the pattern as a regexp, and so on). There is no
-// random choice when applying rules.
-func NewSmartSearchJob(initialJob job.Job, newJob newJob, plan query.Plan) *FeelingLuckySearchJob {
-	generators := make([]next, 0, len(plan))
-	for _, b := range plan {
-		generators = append(generators, NewGenerator(b, rulesNarrow, rulesWiden))
+// NewSmbrtSebrchJob crebtes generbtors for opportunistic sebrch queries
+// thbt bpply vbrious rules, trbnsforming the originbl input plbn into vbrious
+// queries thbt blter its interpretbtion (e.g., sebrch literblly for quotes or
+// not, bttempt to sebrch the pbttern bs b regexp, bnd so on). There is no
+// rbndom choice when bpplying rules.
+func NewSmbrtSebrchJob(initiblJob job.Job, newJob newJob, plbn query.Plbn) *FeelingLuckySebrchJob {
+	generbtors := mbke([]next, 0, len(plbn))
+	for _, b := rbnge plbn {
+		generbtors = bppend(generbtors, NewGenerbtor(b, rulesNbrrow, rulesWiden))
 	}
 
-	newGeneratedJob := func(autoQ *autoQuery) job.Job {
-		child, err := newJob(autoQ.query)
+	newGenerbtedJob := func(butoQ *butoQuery) job.Job {
+		child, err := newJob(butoQ.query)
 		if err != nil {
 			return nil
 		}
 
-		notifier := &notifier{autoQuery: autoQ}
+		notifier := &notifier{butoQuery: butoQ}
 
-		return &generatedSearchJob{
+		return &generbtedSebrchJob{
 			Child:           child,
-			NewNotification: notifier.New,
+			NewNotificbtion: notifier.New,
 		}
 	}
 
-	return &FeelingLuckySearchJob{
-		initialJob:      initialJob,
-		generators:      generators,
-		newGeneratedJob: newGeneratedJob,
+	return &FeelingLuckySebrchJob{
+		initiblJob:      initiblJob,
+		generbtors:      generbtors,
+		newGenerbtedJob: newGenerbtedJob,
 	}
 }
 
-// FeelingLuckySearchJob represents a lucky search. Note `newGeneratedJob`
-// returns a job given an autoQuery. It is a function so that generated queries
-// can be composed at runtime (with auto queries that dictate runtime control
-// flow) with static inputs (search inputs), while not exposing static inputs.
-type FeelingLuckySearchJob struct {
-	initialJob      job.Job
-	generators      []next
-	newGeneratedJob func(*autoQuery) job.Job
+// FeelingLuckySebrchJob represents b lucky sebrch. Note `newGenerbtedJob`
+// returns b job given bn butoQuery. It is b function so thbt generbted queries
+// cbn be composed bt runtime (with buto queries thbt dictbte runtime control
+// flow) with stbtic inputs (sebrch inputs), while not exposing stbtic inputs.
+type FeelingLuckySebrchJob struct {
+	initiblJob      job.Job
+	generbtors      []next
+	newGenerbtedJob func(*butoQuery) job.Job
 }
 
-// Do not run autogenerated queries if RESULT_THRESHOLD results exist on the original query.
-const RESULT_THRESHOLD = limits.DefaultMaxSearchResultsStreaming
+// Do not run butogenerbted queries if RESULT_THRESHOLD results exist on the originbl query.
+const RESULT_THRESHOLD = limits.DefbultMbxSebrchResultsStrebming
 
-func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, f)
-	defer func() { finish(alert, err) }()
+func (f *FeelingLuckySebrchJob) Run(ctx context.Context, clients job.RuntimeClients, pbrentStrebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, pbrentStrebm, finish := job.StbrtSpbn(ctx, pbrentStrebm, f)
+	defer func() { finish(blert, err) }()
 
-	// Count stream results to know whether to run generated queries
-	stream := streaming.NewResultCountingStream(parentStream)
+	// Count strebm results to know whether to run generbted queries
+	strebm := strebming.NewResultCountingStrebm(pbrentStrebm)
 
-	var maxAlerter search.MaxAlerter
-	var errs errors.MultiError
-	alert, err = f.initialJob.Run(ctx, clients, stream)
-	if errForReal := errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos)); errForReal != nil {
-		return alert, errForReal
+	vbr mbxAlerter sebrch.MbxAlerter
+	vbr errs errors.MultiError
+	blert, err = f.initiblJob.Run(ctx, clients, strebm)
+	if errForRebl := errors.Ignore(err, errors.IsPred(sebrchrepos.ErrNoResolvedRepos)); errForRebl != nil {
+		return blert, errForRebl
 	}
-	maxAlerter.Add(alert)
+	mbxAlerter.Add(blert)
 
-	originalResultSetSize := stream.Count()
-	if originalResultSetSize >= RESULT_THRESHOLD {
-		return alert, err
-	}
-
-	if originalResultSetSize > 0 {
-		// TODO(@rvantonder): Only run additional searches if the
-		// original query strictly returned NO results. This clamp will
-		// be removed to also add additional results pending
-		// optimizations: https://github.com/sourcegraph/sourcegraph/issues/43721.
-		return alert, err
+	originblResultSetSize := strebm.Count()
+	if originblResultSetSize >= RESULT_THRESHOLD {
+		return blert, err
 	}
 
-	var luckyAlertType alertobserver.LuckyAlertType
-	if originalResultSetSize == 0 {
-		luckyAlertType = alertobserver.LuckyAlertPure
+	if originblResultSetSize > 0 {
+		// TODO(@rvbntonder): Only run bdditionbl sebrches if the
+		// originbl query strictly returned NO results. This clbmp will
+		// be removed to blso bdd bdditionbl results pending
+		// optimizbtions: https://github.com/sourcegrbph/sourcegrbph/issues/43721.
+		return blert, err
+	}
+
+	vbr luckyAlertType blertobserver.LuckyAlertType
+	if originblResultSetSize == 0 {
+		luckyAlertType = blertobserver.LuckyAlertPure
 	} else {
-		luckyAlertType = alertobserver.LuckyAlertAdded
+		luckyAlertType = blertobserver.LuckyAlertAdded
 	}
-	generated := &alertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*search.QueryDescription{}}
-	var autoQ *autoQuery
-	for _, next := range f.generators {
+	generbted := &blertobserver.ErrLuckyQueries{Type: luckyAlertType, ProposedQueries: []*sebrch.QueryDescription{}}
+	vbr butoQ *butoQuery
+	for _, next := rbnge f.generbtors {
 		for next != nil {
-			autoQ, next = next()
-			j := f.newGeneratedJob(autoQ)
+			butoQ, next = next()
+			j := f.newGenerbtedJob(butoQ)
 			if j == nil {
-				// Generated an invalid job with this query, just continue.
+				// Generbted bn invblid job with this query, just continue.
 				continue
 			}
-			alert, err = j.Run(ctx, clients, stream)
-			if stream.Count()-originalResultSetSize >= RESULT_THRESHOLD {
-				// We've sent additional results up to the maximum bound. Let's stop here.
-				var lErr *alertobserver.ErrLuckyQueries
+			blert, err = j.Run(ctx, clients, strebm)
+			if strebm.Count()-originblResultSetSize >= RESULT_THRESHOLD {
+				// We've sent bdditionbl results up to the mbximum bound. Let's stop here.
+				vbr lErr *blertobserver.ErrLuckyQueries
 				if errors.As(err, &lErr) {
-					generated.ProposedQueries = append(generated.ProposedQueries, lErr.ProposedQueries...)
+					generbted.ProposedQueries = bppend(generbted.ProposedQueries, lErr.ProposedQueries...)
 				}
-				if len(generated.ProposedQueries) > 0 {
-					errs = errors.Append(errs, generated)
+				if len(generbted.ProposedQueries) > 0 {
+					errs = errors.Append(errs, generbted)
 				}
-				return maxAlerter.Alert, errs
+				return mbxAlerter.Alert, errs
 			}
 
-			var lErr *alertobserver.ErrLuckyQueries
+			vbr lErr *blertobserver.ErrLuckyQueries
 			if errors.As(err, &lErr) {
-				// collected generated queries, we'll add it after this loop is done running.
-				generated.ProposedQueries = append(generated.ProposedQueries, lErr.ProposedQueries...)
+				// collected generbted queries, we'll bdd it bfter this loop is done running.
+				generbted.ProposedQueries = bppend(generbted.ProposedQueries, lErr.ProposedQueries...)
 			} else {
 				errs = errors.Append(errs, err)
 			}
 
-			maxAlerter.Add(alert)
+			mbxAlerter.Add(blert)
 		}
 	}
 
-	if len(generated.ProposedQueries) > 0 {
-		errs = errors.Append(errs, generated)
+	if len(generbted.ProposedQueries) > 0 {
+		errs = errors.Append(errs, generbted)
 	}
-	return maxAlerter.Alert, errs
+	return mbxAlerter.Alert, errs
 }
 
-func (f *FeelingLuckySearchJob) Name() string {
-	return "FeelingLuckySearchJob"
+func (f *FeelingLuckySebrchJob) Nbme() string {
+	return "FeelingLuckySebrchJob"
 }
 
-func (f *FeelingLuckySearchJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (f *FeelingLuckySebrchJob) Attributes(job.Verbosity) []bttribute.KeyVblue { return nil }
 
-func (f *FeelingLuckySearchJob) Children() []job.Describer {
-	return []job.Describer{f.initialJob}
+func (f *FeelingLuckySebrchJob) Children() []job.Describer {
+	return []job.Describer{f.initiblJob}
 }
 
-func (f *FeelingLuckySearchJob) MapChildren(fn job.MapFunc) job.Job {
+func (f *FeelingLuckySebrchJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *f
-	cp.initialJob = job.Map(f.initialJob, fn)
+	cp.initiblJob = job.Mbp(f.initiblJob, fn)
 	return &cp
 }
 
-// generatedSearchJob represents a generated search at run time. Note
-// `NewNotification` returns the query notifications (encoded as error) given
-// the result count of the job. It is a function so that notifications can be
-// composed at runtime (with result counts) with static inputs (query string),
-// while not exposing static inputs.
-type generatedSearchJob struct {
+// generbtedSebrchJob represents b generbted sebrch bt run time. Note
+// `NewNotificbtion` returns the query notificbtions (encoded bs error) given
+// the result count of the job. It is b function so thbt notificbtions cbn be
+// composed bt runtime (with result counts) with stbtic inputs (query string),
+// while not exposing stbtic inputs.
+type generbtedSebrchJob struct {
 	Child           job.Job
-	NewNotification func(count int) error
+	NewNotificbtion func(count int) error
 }
 
-func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
-	stream := streaming.NewResultCountingStream(parentStream)
-	alert, err := g.Child.Run(ctx, clients, stream)
-	resultCount := stream.Count()
+func (g *generbtedSebrchJob) Run(ctx context.Context, clients job.RuntimeClients, pbrentStrebm strebming.Sender) (*sebrch.Alert, error) {
+	strebm := strebming.NewResultCountingStrebm(pbrentStrebm)
+	blert, err := g.Child.Run(ctx, clients, strebm)
+	resultCount := strebm.Count()
 	if resultCount == 0 {
 		return nil, nil
 	}
 
 	if ctx.Err() != nil {
-		notification := g.NewNotification(resultCount)
-		return alert, errors.Append(err, notification)
+		notificbtion := g.NewNotificbtion(resultCount)
+		return blert, errors.Append(err, notificbtion)
 	}
 
-	notification := g.NewNotification(resultCount)
+	notificbtion := g.NewNotificbtion(resultCount)
 	if err != nil {
-		return alert, errors.Append(err, notification)
+		return blert, errors.Append(err, notificbtion)
 	}
 
-	return alert, notification
+	return blert, notificbtion
 }
 
-func (g *generatedSearchJob) Name() string {
-	return "GeneratedSearchJob"
+func (g *generbtedSebrchJob) Nbme() string {
+	return "GenerbtedSebrchJob"
 }
 
-func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
+func (g *generbtedSebrchJob) Children() []job.Describer { return []job.Describer{g.Child} }
 
-func (g *generatedSearchJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (g *generbtedSebrchJob) Attributes(job.Verbosity) []bttribute.KeyVblue { return nil }
 
-func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
+func (g *generbtedSebrchJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *g
-	cp.Child = job.Map(g.Child, fn)
+	cp.Child = job.Mbp(g.Child, fn)
 	return &cp
 }
 
-// notifier stores static values that should not be exposed to runtime concerns.
-// notifier exposes a method `New` for constructing notifications that require
-// runtime information.
+// notifier stores stbtic vblues thbt should not be exposed to runtime concerns.
+// notifier exposes b method `New` for constructing notificbtions thbt require
+// runtime informbtion.
 type notifier struct {
-	*autoQuery
+	*butoQuery
 }
 
 func (n *notifier) New(count int) error {
-	var resultCountString string
-	if count == limits.DefaultMaxSearchResultsStreaming {
+	vbr resultCountString string
+	if count == limits.DefbultMbxSebrchResultsStrebming {
 		resultCountString = fmt.Sprintf("%d+ results", count)
 	} else if count == 1 {
 		resultCountString = "1 result"
 	} else {
-		resultCountString = fmt.Sprintf("%d additional results", count)
+		resultCountString = fmt.Sprintf("%d bdditionbl results", count)
 	}
-	annotations := make(map[search.AnnotationName]string)
-	annotations[search.ResultCount] = resultCountString
+	bnnotbtions := mbke(mbp[sebrch.AnnotbtionNbme]string)
+	bnnotbtions[sebrch.ResultCount] = resultCountString
 
-	return &alertobserver.ErrLuckyQueries{
-		ProposedQueries: []*search.QueryDescription{{
+	return &blertobserver.ErrLuckyQueries{
+		ProposedQueries: []*sebrch.QueryDescription{{
 			Description: n.description,
-			Annotations: map[search.AnnotationName]string{
-				search.ResultCount: resultCountString,
+			Annotbtions: mbp[sebrch.AnnotbtionNbme]string{
+				sebrch.ResultCount: resultCountString,
 			},
-			Query:       query.StringHuman(n.query.ToParseTree()),
-			PatternType: query.SearchTypeLucky,
+			Query:       query.StringHumbn(n.query.ToPbrseTree()),
+			PbtternType: query.SebrchTypeLucky,
 		}},
 	}
 }

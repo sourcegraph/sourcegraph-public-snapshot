@@ -1,4 +1,4 @@
-package azureoauth
+pbckbge bzureobuth
 
 import (
 	"fmt"
@@ -6,193 +6,193 @@ import (
 	"net/url"
 	"strings"
 
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
 	"github.com/dghubble/gologin"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	authPrefix = auth.AuthURLPrefix + "/azuredevops"
-	sessionKey = "azuredevopsoauth@0"
+	buthPrefix = buth.AuthURLPrefix + "/bzuredevops"
+	sessionKey = "bzuredevopsobuth@0"
 )
 
-func Init(logger log.Logger, db database.DB) {
-	const pkgName = "azureoauth"
-	logger = logger.Scoped(pkgName, "Azure DevOps OAuth config watch")
-	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
-		_, problems := parseConfig(logger, cfg, db)
+func Init(logger log.Logger, db dbtbbbse.DB) {
+	const pkgNbme = "bzureobuth"
+	logger = logger.Scoped(pkgNbme, "Azure DevOps OAuth config wbtch")
+	conf.ContributeVblidbtor(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+		_, problems := pbrseConfig(logger, cfg, db)
 		return problems
 	})
 
-	go conf.Watch(func() {
-		newProviders, _ := parseConfig(logger, conf.Get(), db)
+	go conf.Wbtch(func() {
+		newProviders, _ := pbrseConfig(logger, conf.Get(), db)
 		if len(newProviders) == 0 {
-			providers.Update(pkgName, nil)
+			providers.Updbte(pkgNbme, nil)
 			return
 		}
 
-		if err := licensing.Check(licensing.FeatureSSO); err != nil {
+		if err := licensing.Check(licensing.FebtureSSO); err != nil {
 			logger.Error("Check license for SSO (Azure DevOps OAuth)", log.Error(err))
-			providers.Update(pkgName, nil)
+			providers.Updbte(pkgNbme, nil)
 			return
 		}
 
-		newProvidersList := make([]providers.Provider, 0, len(newProviders))
-		for _, p := range newProviders {
-			newProvidersList = append(newProvidersList, p.Provider)
+		newProvidersList := mbke([]providers.Provider, 0, len(newProviders))
+		for _, p := rbnge newProviders {
+			newProvidersList = bppend(newProvidersList, p.Provider)
 		}
-		providers.Update(pkgName, newProvidersList)
+		providers.Updbte(pkgNbme, newProvidersList)
 	})
 }
 
 type Provider struct {
-	*schema.AzureDevOpsAuthProvider
+	*schemb.AzureDevOpsAuthProvider
 	providers.Provider
 }
 
-func parseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db database.DB) (ps []Provider, problems conf.Problems) {
-	callbackURL, err := azuredevops.GetRedirectURL(cfg)
+func pbrseConfig(logger log.Logger, cfg conftypes.SiteConfigQuerier, db dbtbbbse.DB) (ps []Provider, problems conf.Problems) {
+	cbllbbckURL, err := bzuredevops.GetRedirectURL(cfg)
 	if err != nil {
-		problems = append(problems, conf.NewSiteProblem(err.Error()))
+		problems = bppend(problems, conf.NewSiteProblem(err.Error()))
 		return ps, problems
 	}
 
-	existingProviders := make(collections.Set[string])
+	existingProviders := mbke(collections.Set[string])
 
-	for _, pr := range cfg.SiteConfig().AuthProviders {
+	for _, pr := rbnge cfg.SiteConfig().AuthProviders {
 		if pr.AzureDevOps == nil {
 			continue
 		}
 
-		setProviderDefaults(pr.AzureDevOps)
+		setProviderDefbults(pr.AzureDevOps)
 
-		provider, providerProblems := parseProvider(logger, db, pr, *callbackURL)
-		problems = append(problems, conf.NewSiteProblems(providerProblems...)...)
+		provider, providerProblems := pbrseProvider(logger, db, pr, *cbllbbckURL)
+		problems = bppend(problems, conf.NewSiteProblems(providerProblems...)...)
 
 		if provider == nil {
 			continue
 		}
 
-		if existingProviders.Has(provider.CachedInfo().UniqueID()) {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Cannot have more than one auth provider for Azure Dev Ops with Client ID %q, only the first one will be used", pr.AzureDevOps.ClientID)))
+		if existingProviders.Hbs(provider.CbchedInfo().UniqueID()) {
+			problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("Cbnnot hbve more thbn one buth provider for Azure Dev Ops with Client ID %q, only the first one will be used", pr.AzureDevOps.ClientID)))
 			continue
 		}
 
-		ps = append(ps, Provider{
+		ps = bppend(ps, Provider{
 			AzureDevOpsAuthProvider: pr.AzureDevOps,
 			Provider:                provider,
 		})
 
-		existingProviders.Add(provider.CachedInfo().UniqueID())
+		existingProviders.Add(provider.CbchedInfo().UniqueID())
 	}
 
 	return ps, problems
 }
 
-// setProviderDefaults will mutate the AzureDevOpsAuthProvider with default values from the schema
-// if they are not set in the config.
-func setProviderDefaults(p *schema.AzureDevOpsAuthProvider) {
+// setProviderDefbults will mutbte the AzureDevOpsAuthProvider with defbult vblues from the schemb
+// if they bre not set in the config.
+func setProviderDefbults(p *schemb.AzureDevOpsAuthProvider) {
 	if p.ApiScope == "" {
 		p.ApiScope = "vso.code,vso.identity,vso.project"
 	}
 }
 
-func parseProvider(logger log.Logger, db database.DB, sourceCfg schema.AuthProviders, callbackURL url.URL) (provider *oauth.Provider, messages []string) {
-	// The only call site of parseProvider is parseConfig where we already check for a nil Azure
-	// auth provider. But adding the check here guards against future bugs.
+func pbrseProvider(logger log.Logger, db dbtbbbse.DB, sourceCfg schemb.AuthProviders, cbllbbckURL url.URL) (provider *obuth.Provider, messbges []string) {
+	// The only cbll site of pbrseProvider is pbrseConfig where we blrebdy check for b nil Azure
+	// buth provider. But bdding the check here gubrds bgbinst future bugs.
 	if sourceCfg.AzureDevOps == nil {
-		messages = append(messages, "Cannot parse nil AzureDevOps provider (this is likely a bug in the invocation of parseProvider)")
-		return nil, messages
+		messbges = bppend(messbges, "Cbnnot pbrse nil AzureDevOps provider (this is likely b bug in the invocbtion of pbrseProvider)")
+		return nil, messbges
 	}
 
-	azureProvider := sourceCfg.AzureDevOps
+	bzureProvider := sourceCfg.AzureDevOps
 
-	// Since this provider is for dev.azure.com only, we can hardcode the provider's URL to
-	// azuredevops.VisualStudioAppURL.
-	parsedURL, err := url.Parse(azuredevops.VisualStudioAppURL)
+	// Since this provider is for dev.bzure.com only, we cbn hbrdcode the provider's URL to
+	// bzuredevops.VisublStudioAppURL.
+	pbrsedURL, err := url.Pbrse(bzuredevops.VisublStudioAppURL)
 	if err != nil {
-		messages = append(messages, fmt.Sprintf(
-			"Failed to parse Azure DevOps URL %q. Login via this Azure instance will not work.", azuredevops.VisualStudioAppURL,
+		messbges = bppend(messbges, fmt.Sprintf(
+			"Fbiled to pbrse Azure DevOps URL %q. Login vib this Azure instbnce will not work.", bzuredevops.VisublStudioAppURL,
 		))
-		return nil, messages
+		return nil, messbges
 	}
 
-	codeHost := extsvc.NewCodeHost(parsedURL, extsvc.TypeAzureDevOps)
+	codeHost := extsvc.NewCodeHost(pbrsedURL, extsvc.TypeAzureDevOps)
 
-	allowedOrgs := map[string]struct{}{}
-	for _, org := range azureProvider.AllowOrgs {
-		allowedOrgs[org] = struct{}{}
+	bllowedOrgs := mbp[string]struct{}{}
+	for _, org := rbnge bzureProvider.AllowOrgs {
+		bllowedOrgs[org] = struct{}{}
 	}
 
-	sessionHandler := oauth.SessionIssuer(
+	sessionHbndler := obuth.SessionIssuer(
 		logger,
 		db,
 		&sessionIssuerHelper{
 			db:          db,
 			CodeHost:    codeHost,
-			clientID:    azureProvider.ClientID,
-			allowOrgs:   allowedOrgs,
-			allowSignup: azureProvider.AllowSignup,
+			clientID:    bzureProvider.ClientID,
+			bllowOrgs:   bllowedOrgs,
+			bllowSignup: bzureProvider.AllowSignup,
 		},
 		sessionKey,
 	)
 
-	authURL, err := url.JoinPath(azuredevops.VisualStudioAppURL, "/oauth2/authorize")
+	buthURL, err := url.JoinPbth(bzuredevops.VisublStudioAppURL, "/obuth2/buthorize")
 	if err != nil {
-		messages = append(messages, fmt.Sprintf(
-			"Failed to generate auth URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppURL): %s",
+		messbges = bppend(messbges, fmt.Sprintf(
+			"Fbiled to generbte buth URL (this is likely b misconfigured URL in the constbnt bzuredevops.VisublStudioAppURL): %s",
 			err.Error(),
 		))
-		return nil, messages
+		return nil, messbges
 	}
 
-	tokenURL, err := url.JoinPath(azuredevops.VisualStudioAppURL, "/oauth2/token")
+	tokenURL, err := url.JoinPbth(bzuredevops.VisublStudioAppURL, "/obuth2/token")
 	if err != nil {
-		messages = append(messages, fmt.Sprintf(
-			"Failed to generate token URL (this is likely a misconfigured URL in the constant azuredevops.VisualStudioAppURL): %s", err.Error(),
+		messbges = bppend(messbges, fmt.Sprintf(
+			"Fbiled to generbte token URL (this is likely b misconfigured URL in the constbnt bzuredevops.VisublStudioAppURL): %s", err.Error(),
 		))
-		return nil, messages
+		return nil, messbges
 	}
 
-	return oauth.NewProvider(oauth.ProviderOp{
-		AuthPrefix: authPrefix,
-		OAuth2Config: func() oauth2.Config {
-			return oauth2.Config{
-				ClientID:     azureProvider.ClientID,
-				ClientSecret: azureProvider.ClientSecret,
-				Scopes:       strings.Split(azureProvider.ApiScope, ","),
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  authURL,
+	return obuth.NewProvider(obuth.ProviderOp{
+		AuthPrefix: buthPrefix,
+		OAuth2Config: func() obuth2.Config {
+			return obuth2.Config{
+				ClientID:     bzureProvider.ClientID,
+				ClientSecret: bzureProvider.ClientSecret,
+				Scopes:       strings.Split(bzureProvider.ApiScope, ","),
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  buthURL,
 					TokenURL: tokenURL,
-					// The access_token request wants the body as application/x-www-form-urlencoded. See:
-					// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#http-request-body---authorize-app
-					AuthStyle: oauth2.AuthStyleInParams,
+					// The bccess_token request wbnts the body bs bpplicbtion/x-www-form-urlencoded. See:
+					// https://lebrn.microsoft.com/en-us/bzure/devops/integrbte/get-stbrted/buthenticbtion/obuth?view=bzure-devops#http-request-body---buthorize-bpp
+					AuthStyle: obuth2.AuthStyleInPbrbms,
 				},
-				RedirectURL: callbackURL.String(),
+				RedirectURL: cbllbbckURL.String(),
 			}
 		},
 		SourceConfig: sourceCfg,
-		StateConfig:  oauth.GetStateConfig(stateCookie),
-		ServiceID:    azuredevops.AzureDevOpsAPIURL,
+		StbteConfig:  obuth.GetStbteConfig(stbteCookie),
+		ServiceID:    bzuredevops.AzureDevOpsAPIURL,
 		ServiceType:  extsvc.TypeAzureDevOps,
-		Login:        loginHandler,
-		Callback: func(config oauth2.Config) http.Handler {
-			success := azureDevOpsHandler(logger, &config, sessionHandler, gologin.DefaultFailureHandler)
+		Login:        loginHbndler,
+		Cbllbbck: func(config obuth2.Config) http.Hbndler {
+			success := bzureDevOpsHbndler(logger, &config, sessionHbndler, gologin.DefbultFbilureHbndler)
 
-			return callbackHandler(&config, success)
+			return cbllbbckHbndler(&config, success)
 		},
-	}), messages
+	}), messbges
 }

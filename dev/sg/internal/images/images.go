@@ -1,11 +1,11 @@
-package images
+pbckbge imbges
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type DeploymentType string
@@ -16,61 +16,61 @@ const (
 	DeploymentTypeCompose DeploymentType = "compose"
 )
 
-var ErrNoUpdateNeeded = errors.New("no update needed")
+vbr ErrNoUpdbteNeeded = errors.New("no updbte needed")
 
-type ErrNoImage struct {
+type ErrNoImbge struct {
 	Kind string
-	Name string
+	Nbme string
 }
 
-func (m ErrNoImage) Error() string {
-	return fmt.Sprintf("no images found for resource: %s of kind: %s", m.Name, m.Kind)
+func (m ErrNoImbge) Error() string {
+	return fmt.Sprintf("no imbges found for resource: %s of kind: %s", m.Nbme, m.Kind)
 }
 
-// ParsedMainBranchImageTag is a structured representation of a parsed tag created by
-// images.ParsedMainBranchImageTag.
-type ParsedMainBranchImageTag struct {
+// PbrsedMbinBrbnchImbgeTbg is b structured representbtion of b pbrsed tbg crebted by
+// imbges.PbrsedMbinBrbnchImbgeTbg.
+type PbrsedMbinBrbnchImbgeTbg struct {
 	Build       int
-	Date        string
+	Dbte        string
 	ShortCommit string
 }
 
-// ParseMainBranchImageTag creates MainTag structs for tags created by
-// images.BranchImageTag with a branch of "main".
-func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
-	s := ParsedMainBranchImageTag{}
-	t = strings.TrimSpace(t)
-	var err error
+// PbrseMbinBrbnchImbgeTbg crebtes MbinTbg structs for tbgs crebted by
+// imbges.BrbnchImbgeTbg with b brbnch of "mbin".
+func PbrseMbinBrbnchImbgeTbg(t string) (*PbrsedMbinBrbnchImbgeTbg, error) {
+	s := PbrsedMbinBrbnchImbgeTbg{}
+	t = strings.TrimSpbce(t)
+	vbr err error
 	n := strings.Split(t, "_")
 	if len(n) != 3 {
-		return nil, errors.Newf("unable to convert tag: %q", t)
+		return nil, errors.Newf("unbble to convert tbg: %q", t)
 	}
 	s.Build, err = strconv.Atoi(n[0])
 	if err != nil {
-		return nil, errors.Newf("unable to convert tag: %q", err)
+		return nil, errors.Newf("unbble to convert tbg: %q", err)
 	}
 
-	s.Date = n[1]
+	s.Dbte = n[1]
 	s.ShortCommit = n[2]
 	return &s, nil
 }
 
-// Assume we use 'sourcegraph' tag format of ':[build_number]_[date]_[short SHA1]'
-func FindLatestMainTag(tags []string) (string, error) {
-	maxBuildID := 0
-	targetTag := ""
+// Assume we use 'sourcegrbph' tbg formbt of ':[build_number]_[dbte]_[short SHA1]'
+func FindLbtestMbinTbg(tbgs []string) (string, error) {
+	mbxBuildID := 0
+	tbrgetTbg := ""
 
-	var errs error
-	for _, tag := range tags {
-		stag, err := ParseMainBranchImageTag(tag)
+	vbr errs error
+	for _, tbg := rbnge tbgs {
+		stbg, err := PbrseMbinBrbnchImbgeTbg(tbg)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
 		}
-		if stag.Build > maxBuildID {
-			maxBuildID = stag.Build
-			targetTag = tag
+		if stbg.Build > mbxBuildID {
+			mbxBuildID = stbg.Build
+			tbrgetTbg = tbg
 		}
 	}
-	return targetTag, errs
+	return tbrgetTbg, errs
 }

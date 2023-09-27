@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,144 +6,144 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func init() {
-	useFastPasswordMocks()
+	useFbstPbsswordMocks()
 }
 
-func TestDBTransactions(t *testing.T) {
-	ctx := context.Background()
+func TestDBTrbnsbctions(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	t.Run("no transaction works", func(t *testing.T) {
+	t.Run("no trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		err := db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+		err := db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 		require.NoError(t, err)
 
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("basic transaction works", func(t *testing.T) {
+	t.Run("bbsic trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
 		{
-			tx, err := db.Repos().Transact(ctx)
+			tx, err := db.Repos().Trbnsbct(ctx)
 			require.NoError(t, err)
 
-			err = tx.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+			err = tx.Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := tx.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
 			tx.Done(nil)
 		}
 
-		// After committing the transaction, the repo should be visible
-		// outisde the transaction
+		// After committing the trbnsbction, the repo should be visible
+		// outisde the trbnsbction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("rolled back transaction works", func(t *testing.T) {
+	t.Run("rolled bbck trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx
 		{
-			tx, err := db.Repos().Transact(ctx)
+			tx, err := db.Repos().Trbnsbct(ctx)
 			require.NoError(t, err)
 
-			err = tx.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+			err = tx.Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := tx.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
-			tx.Done(errors.New("force a rollback"))
+			tx.Done(errors.New("force b rollbbck"))
 		}
 
-		// After rolling back the transaction, the repo should not be visible
-		// outside the transaction
+		// After rolling bbck the trbnsbction, the repo should not be visible
+		// outside the trbnsbction
 		_, err := db.Repos().Get(ctx, 1)
 		require.Error(t, err)
 	})
 
-	t.Run("nested transaction works", func(t *testing.T) {
+	t.Run("nested trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
 		{
-			tx1, err := db.Repos().Transact(ctx)
+			tx1, err := db.Repos().Trbnsbct(ctx)
 			require.NoError(t, err)
 
-			err = tx1.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+			err = tx1.Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := tx1.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
 			// Lifetime of tx2
 			{
-				tx2, err := tx1.Transact(ctx)
+				tx2, err := tx1.Trbnsbct(ctx)
 				require.NoError(t, err)
 
-				err = tx2.Create(ctx, &types.Repo{ID: 2, Name: "test2"})
+				err = tx2.Crebte(ctx, &types.Repo{ID: 2, Nbme: "test2"})
 				require.NoError(t, err)
 
-				// Get inside the transaction should work
+				// Get inside the trbnsbction should work
 				r, err := tx2.Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
+				require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
 
-				// Before committing the transaction, repo 2 should not be visible
-				// outside the transaction
+				// Before committing the trbnsbction, repo 2 should not be visible
+				// outside the trbnsbction
 				_, err = db.Repos().Get(ctx, 2)
 				require.Error(t, err)
 
 				tx2.Done(nil)
 			}
 
-			// After committing the transaction, repo 2 should be visible
-			// outside of tx2, in tx1, but not outside of that
+			// After committing the trbnsbction, repo 2 should be visible
+			// outside of tx2, in tx1, but not outside of thbt
 			r, err = tx1.Get(ctx, 2)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test2"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
 
 			_, err = db.Repos().Get(ctx, 2)
 			require.Error(t, err)
@@ -151,63 +151,63 @@ func TestDBTransactions(t *testing.T) {
 			tx1.Done(nil)
 		}
 
-		// After committing the transaction, repo 1 should be visible
-		// outside of the transaction
+		// After committing the trbnsbction, repo 1 should be visible
+		// outside of the trbnsbction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("nested transaction rollback works", func(t *testing.T) {
+	t.Run("nested trbnsbction rollbbck works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
 		// Lifetime of tx1
 		{
-			tx1, err := db.Repos().Transact(ctx)
+			tx1, err := db.Repos().Trbnsbct(ctx)
 			require.NoError(t, err)
 
-			err = tx1.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+			err = tx1.Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := tx1.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
 			// Lifetime of tx2
 			{
-				tx2, err := tx1.Transact(ctx)
+				tx2, err := tx1.Trbnsbct(ctx)
 				require.NoError(t, err)
 
-				err = tx2.Create(ctx, &types.Repo{ID: 2, Name: "test2"})
+				err = tx2.Crebte(ctx, &types.Repo{ID: 2, Nbme: "test2"})
 				require.NoError(t, err)
 
-				// Get inside the transaction should work
+				// Get inside the trbnsbction should work
 				r, err := tx2.Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
+				require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
 
-				// Before committing the transaction, repo 2 should be visible inside tx1
-				// because nested transactions are savepoints and are not isolated from
-				// one another.
+				// Before committing the trbnsbction, repo 2 should be visible inside tx1
+				// becbuse nested trbnsbctions bre sbvepoints bnd bre not isolbted from
+				// one bnother.
 				r, err = tx1.Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
-				// but not outside the transaction
+				require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
+				// but not outside the trbnsbction
 				_, err = db.Repos().Get(ctx, 2)
 				require.Error(t, err)
 
-				tx2.Done(errors.New("force rollback"))
+				tx2.Done(errors.New("force rollbbck"))
 			}
 
-			// After rolling back the transaction, repo 2 should not be visible
-			// outside the transaction
+			// After rolling bbck the trbnsbction, repo 2 should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 2)
 			require.Error(t, err)
 			_, err = tx1.Get(ctx, 2)
@@ -216,45 +216,45 @@ func TestDBTransactions(t *testing.T) {
 			tx1.Done(nil)
 		}
 
-		// After committing the transaction, repo 1 should be visible
-		// outisde the transaction
+		// After committing the trbnsbction, repo 1 should be visible
+		// outisde the trbnsbction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 }
 
-func TestDBWithTransact(t *testing.T) {
-	ctx := context.Background()
+func TestDBWithTrbnsbct(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	t.Run("no transaction works", func(t *testing.T) {
+	t.Run("no trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		err := db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+		err := db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 		require.NoError(t, err)
 
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("basic transaction works", func(t *testing.T) {
+	t.Run("bbsic trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		err := db.WithTransact(ctx, func(tx DB) error {
+		err := db.WithTrbnsbct(ctx, func(tx DB) error {
 			repos := tx.Repos()
-			err := repos.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+			err := repos.Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := repos.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction. (THIS IS A BAD PATTERN. YOU SHOULD NOT
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction. (THIS IS A BAD PATTERN. YOU SHOULD NOT
 			// BE REFERRING TO THE OUTER DB INSIDE THE CLOSURE)
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
@@ -263,72 +263,72 @@ func TestDBWithTransact(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// After committing the transaction, the repo should be visible
-		// outisde the transaction
+		// After committing the trbnsbction, the repo should be visible
+		// outisde the trbnsbction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("rolled back transaction works", func(t *testing.T) {
+	t.Run("rolled bbck trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		err := db.WithTransact(ctx, func(tx DB) error {
+		err := db.WithTrbnsbct(ctx, func(tx DB) error {
 			repos := tx.Repos()
-			err := repos.Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+			err := repos.Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := repos.Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction. (THIS IS A BAD PATTERN. YOU SHOULD NOT
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction. (THIS IS A BAD PATTERN. YOU SHOULD NOT
 			// BE REFERRING TO THE OUTER DB INSIDE THE CLOSURE)
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
-			return errors.New("force a rollback")
+			return errors.New("force b rollbbck")
 		})
 		require.Error(t, err)
 
-		// After rolling back the transaction, the repo should not be visible
-		// outside the transaction
+		// After rolling bbck the trbnsbction, the repo should not be visible
+		// outside the trbnsbction
 		_, err = db.Repos().Get(ctx, 1)
 		require.Error(t, err)
 	})
 
-	t.Run("nested transaction works", func(t *testing.T) {
+	t.Run("nested trbnsbction works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		err := db.WithTransact(ctx, func(tx1 DB) error {
-			err := tx1.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+		err := db.WithTrbnsbct(ctx, func(tx1 DB) error {
+			err := tx1.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := tx1.Repos().Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
-			err = tx1.WithTransact(ctx, func(tx2 DB) error {
-				err := tx2.Repos().Create(ctx, &types.Repo{ID: 2, Name: "test2"})
+			err = tx1.WithTrbnsbct(ctx, func(tx2 DB) error {
+				err := tx2.Repos().Crebte(ctx, &types.Repo{ID: 2, Nbme: "test2"})
 				require.NoError(t, err)
 
-				// Get inside the transaction should work
+				// Get inside the trbnsbction should work
 				r, err := tx2.Repos().Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
+				require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
 
-				// Before committing the transaction, repo 2 should not be visible
-				// outside the transaction
+				// Before committing the trbnsbction, repo 2 should not be visible
+				// outside the trbnsbction
 				_, err = db.Repos().Get(ctx, 2)
 				require.Error(t, err)
 
@@ -336,11 +336,11 @@ func TestDBWithTransact(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			// After committing the transaction, repo 2 should be visible
+			// After committing the trbnsbction, repo 2 should be visible
 			// outside of tx2, in tx1, but not outside of tx2
 			r, err = tx1.Repos().Get(ctx, 2)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test2"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
 
 			_, err = db.Repos().Get(ctx, 2)
 			require.Error(t, err)
@@ -349,56 +349,56 @@ func TestDBWithTransact(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// After committing the transaction, repo 1 should be visible
-		// outside of the transaction
+		// After committing the trbnsbction, repo 1 should be visible
+		// outside of the trbnsbction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("nested transaction rollback works", func(t *testing.T) {
+	t.Run("nested trbnsbction rollbbck works", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		err := db.WithTransact(ctx, func(tx1 DB) error {
-			err := tx1.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+		err := db.WithTrbnsbct(ctx, func(tx1 DB) error {
+			err := tx1.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 			require.NoError(t, err)
 
-			// Get inside the transaction should work
+			// Get inside the trbnsbction should work
 			r, err := tx1.Repos().Get(ctx, 1)
 			require.NoError(t, err)
-			require.Equal(t, api.RepoName("test1"), r.Name)
+			require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 
-			// Before committing the transaction, the repo should not be visible
-			// outside the transaction
+			// Before committing the trbnsbction, the repo should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 1)
 			require.Error(t, err)
 
-			err = tx1.WithTransact(ctx, func(tx2 DB) error {
-				err = tx2.Repos().Create(ctx, &types.Repo{ID: 2, Name: "test2"})
+			err = tx1.WithTrbnsbct(ctx, func(tx2 DB) error {
+				err = tx2.Repos().Crebte(ctx, &types.Repo{ID: 2, Nbme: "test2"})
 				require.NoError(t, err)
 
-				// Get inside the transaction should work
+				// Get inside the trbnsbction should work
 				r, err := tx2.Repos().Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
+				require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
 
-				// Before committing the transaction, repo 2 should be visible inside tx1
-				// because nested transactions are savepoints and are not isolated from
-				// one another.
+				// Before committing the trbnsbction, repo 2 should be visible inside tx1
+				// becbuse nested trbnsbctions bre sbvepoints bnd bre not isolbted from
+				// one bnother.
 				r, err = tx1.Repos().Get(ctx, 2)
 				require.NoError(t, err)
-				require.Equal(t, api.RepoName("test2"), r.Name)
-				// but not outside the transaction
+				require.Equbl(t, bpi.RepoNbme("test2"), r.Nbme)
+				// but not outside the trbnsbction
 				_, err = db.Repos().Get(ctx, 2)
 				require.Error(t, err)
 
-				return errors.New("force rollback")
+				return errors.New("force rollbbck")
 			})
 			require.Error(t, err)
 
-			// After rolling back the transaction, repo 2 should not be visible
-			// outside the transaction
+			// After rolling bbck the trbnsbction, repo 2 should not be visible
+			// outside the trbnsbction
 			_, err = db.Repos().Get(ctx, 2)
 			require.Error(t, err)
 			_, err = tx1.Repos().Get(ctx, 2)
@@ -408,29 +408,29 @@ func TestDBWithTransact(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		// After committing the transaction, repo 1 should be visible
-		// outisde the transaction
+		// After committing the trbnsbction, repo 1 should be visible
+		// outisde the trbnsbction
 		r, err := db.Repos().Get(ctx, 1)
 		require.NoError(t, err)
-		require.Equal(t, api.RepoName("test1"), r.Name)
+		require.Equbl(t, bpi.RepoNbme("test1"), r.Nbme)
 	})
 
-	t.Run("panic during transaction rolls back", func(t *testing.T) {
+	t.Run("pbnic during trbnsbction rolls bbck", func(t *testing.T) {
 		sqlDB := dbtest.NewDB(logger, t)
 		db := NewDB(logger, sqlDB)
 
-		// Panic should be propagated
-		require.Panics(t, func() {
-			_ = db.WithTransact(ctx, func(tx1 DB) error {
-				err := tx1.Repos().Create(ctx, &types.Repo{ID: 1, Name: "test1"})
+		// Pbnic should be propbgbted
+		require.Pbnics(t, func() {
+			_ = db.WithTrbnsbct(ctx, func(tx1 DB) error {
+				err := tx1.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "test1"})
 				require.NoError(t, err)
 
-				panic("to infinity and beyond")
+				pbnic("to infinity bnd beyond")
 			})
 		})
 
-		// If we panic during the transaction, operations inside
-		// the transaction should be rolled back.
+		// If we pbnic during the trbnsbction, operbtions inside
+		// the trbnsbction should be rolled bbck.
 		_, err := db.Repos().Get(ctx, 1)
 		require.Error(t, err)
 	})

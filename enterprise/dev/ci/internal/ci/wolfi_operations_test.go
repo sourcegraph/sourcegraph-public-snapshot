@@ -1,115 +1,115 @@
-package ci
+pbckbge ci
 
 import (
 	"reflect"
 	"testing"
 )
 
-func Test_sanitizeStepKey(t *testing.T) {
-	type args struct {
+func Test_sbnitizeStepKey(t *testing.T) {
+	type brgs struct {
 		key string
 	}
 	tests := []struct {
-		name string
+		nbme string
 		key  string
-		want string
+		wbnt string
 	}{
 		{
 			"Test 1",
-			"foo!@£_bar$%^baz;'-bam",
-			"foo_barbaz-bam",
+			"foo!@£_bbr$%^bbz;'-bbm",
+			"foo_bbrbbz-bbm",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := sanitizeStepKey(tt.key); got != tt.want {
-				t.Errorf("sanitizeStepKey() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := sbnitizeStepKey(tt.key); got != tt.wbnt {
+				t.Errorf("sbnitizeStepKey() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestGetAllImageDependencies(t *testing.T) {
-	type args struct {
-		wolfiImageDir string
+func TestGetAllImbgeDependencies(t *testing.T) {
+	type brgs struct {
+		wolfiImbgeDir string
 	}
 	tests := []struct {
-		name                string
-		wolfiImageDir       string
-		wantPackagesByImage map[string][]string
-		wantErr             bool
+		nbme                string
+		wolfiImbgeDir       string
+		wbntPbckbgesByImbge mbp[string][]string
+		wbntErr             bool
 	}{
 		{
 			"Test 1",
-			"test/wolfi-images",
-			map[string][]string{
-				"wolfi-test-image-1": {
+			"test/wolfi-imbges",
+			mbp[string][]string{
+				"wolfi-test-imbge-1": {
 					"tini",
-					"mailcap",
+					"mbilcbp",
 					"git",
-					"wolfi-test-package@sourcegraph",
-					"wolfi-test-package-subpackage@sourcegraph",
-					"foobar-package",
+					"wolfi-test-pbckbge@sourcegrbph",
+					"wolfi-test-pbckbge-subpbckbge@sourcegrbph",
+					"foobbr-pbckbge",
 				},
-				"wolfi-test-image-2": {
+				"wolfi-test-imbge-2": {
 					"tini",
-					"mailcap",
+					"mbilcbp",
 					"git",
-					"foobar-package",
-					"wolfi-test-package-subpackage@sourcegraph",
-					"wolfi-test-package-2@sourcegraph",
+					"foobbr-pbckbge",
+					"wolfi-test-pbckbge-subpbckbge@sourcegrbph",
+					"wolfi-test-pbckbge-2@sourcegrbph",
 				},
 			},
-			false,
+			fblse,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wolfiImageDirPath := tt.wolfiImageDir
-			gotPackagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetAllImageDependencies() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			wolfiImbgeDirPbth := tt.wolfiImbgeDir
+			gotPbckbgesByImbge, err := GetAllImbgeDependencies(wolfiImbgeDirPbth)
+			if (err != nil) != tt.wbntErr {
+				t.Errorf("GetAllImbgeDependencies() error = %v, wbntErr %v", err, tt.wbntErr)
 				return
 			}
-			if !reflect.DeepEqual(gotPackagesByImage, tt.wantPackagesByImage) {
-				t.Errorf("GetAllImageDependencies() = %v, want %v", gotPackagesByImage, tt.wantPackagesByImage)
+			if !reflect.DeepEqubl(gotPbckbgesByImbge, tt.wbntPbckbgesByImbge) {
+				t.Errorf("GetAllImbgeDependencies() = %v, wbnt %v", gotPbckbgesByImbge, tt.wbntPbckbgesByImbge)
 			}
 		})
 	}
 }
 
-func TestGetDependenciesOfPackage(t *testing.T) {
-	type args struct {
-		packageName string
+func TestGetDependenciesOfPbckbge(t *testing.T) {
+	type brgs struct {
+		pbckbgeNbme string
 		repo        string
 	}
 	tests := []struct {
-		name       string
-		args       args
-		wantImages []string
+		nbme       string
+		brgs       brgs
+		wbntImbges []string
 	}{
 		{
-			"Test wolfi-test-package and subpackage",
-			args{packageName: "wolfi-test-package", repo: "sourcegraph"},
-			[]string{"wolfi-test-image-1", "wolfi-test-image-2"},
+			"Test wolfi-test-pbckbge bnd subpbckbge",
+			brgs{pbckbgeNbme: "wolfi-test-pbckbge", repo: "sourcegrbph"},
+			[]string{"wolfi-test-imbge-1", "wolfi-test-imbge-2"},
 		},
 		{
-			"Test wolfi-test-package-2",
-			args{packageName: "wolfi-test-package-2", repo: "sourcegraph"},
-			[]string{"wolfi-test-image-2"},
+			"Test wolfi-test-pbckbge-2",
+			brgs{pbckbgeNbme: "wolfi-test-pbckbge-2", repo: "sourcegrbph"},
+			[]string{"wolfi-test-imbge-2"},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			wolfiImageDirPath := "test/wolfi-images"
-			gotPackagesByImage, err := GetAllImageDependencies(wolfiImageDirPath)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			wolfiImbgeDirPbth := "test/wolfi-imbges"
+			gotPbckbgesByImbge, err := GetAllImbgeDependencies(wolfiImbgeDirPbth)
 			if err != nil {
-				t.Errorf("Error running GetAllImageDependencies() error = %v", err)
+				t.Errorf("Error running GetAllImbgeDependencies() error = %v", err)
 				return
 			}
 
-			if gotImages := GetDependenciesOfPackage(gotPackagesByImage, tt.args.packageName, tt.args.repo); !reflect.DeepEqual(gotImages, tt.wantImages) {
-				t.Errorf("GetDependenciesOfPackage() = %v, want %v", gotImages, tt.wantImages)
+			if gotImbges := GetDependenciesOfPbckbge(gotPbckbgesByImbge, tt.brgs.pbckbgeNbme, tt.brgs.repo); !reflect.DeepEqubl(gotImbges, tt.wbntImbges) {
+				t.Errorf("GetDependenciesOfPbckbge() = %v, wbnt %v", gotImbges, tt.wbntImbges)
 			}
 		})
 	}

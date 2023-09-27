@@ -1,9 +1,9 @@
-package notify
+pbckbge notify
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
 type dumpJobLine struct {
@@ -19,63 +19,63 @@ func (d *dumpJobLine) LogURL() string {
 	return d.url
 }
 
-func TestGenerateHeader(t *testing.T) {
-	jobLine := dumpJobLine{title: "this is a line", url: "www.example.com"}
-	for _, tc := range []struct {
-		name  string
-		build *BuildNotification
-		want  autogold.Value // use 'go test -update' to update
+func TestGenerbteHebder(t *testing.T) {
+	jobLine := dumpJobLine{title: "this is b line", url: "www.exbmple.com"}
+	for _, tc := rbnge []struct {
+		nbme  string
+		build *BuildNotificbtion
+		wbnt  butogold.Vblue // use 'go test -updbte' to updbte
 	}{
 		{
-			name: "first failure",
-			build: &BuildNotification{
+			nbme: "first fbilure",
+			build: &BuildNotificbtion{
 				BuildNumber:        100,
-				ConsecutiveFailure: 0,
-				Failed:             []JobLine{&jobLine},
+				ConsecutiveFbilure: 0,
+				Fbiled:             []JobLine{&jobLine},
 			},
-			want: autogold.Expect(":red_circle: Build 100 failed"),
+			wbnt: butogold.Expect(":red_circle: Build 100 fbiled"),
 		},
 		{
-			name: "second failure",
-			build: &BuildNotification{
+			nbme: "second fbilure",
+			build: &BuildNotificbtion{
 				BuildNumber:        100,
-				ConsecutiveFailure: 1,
-				Failed:             []JobLine{&jobLine},
+				ConsecutiveFbilure: 1,
+				Fbiled:             []JobLine{&jobLine},
 			},
-			want: autogold.Expect(":red_circle: Build 100 failed"),
+			wbnt: butogold.Expect(":red_circle: Build 100 fbiled"),
 		},
 		{
-			name: "fourth failure",
-			build: &BuildNotification{
+			nbme: "fourth fbilure",
+			build: &BuildNotificbtion{
 				BuildNumber:        100,
-				ConsecutiveFailure: 4,
-				Failed:             []JobLine{&jobLine},
+				ConsecutiveFbilure: 4,
+				Fbiled:             []JobLine{&jobLine},
 			},
-			want: autogold.Expect(":red_circle: Build 100 failed (:bangbang: 4th failure)"),
+			wbnt: butogold.Expect(":red_circle: Build 100 fbiled (:bbngbbng: 4th fbilure)"),
 		},
 		{
-			name: "fifth failure",
-			build: &BuildNotification{
+			nbme: "fifth fbilure",
+			build: &BuildNotificbtion{
 				BuildNumber:        100,
-				ConsecutiveFailure: 5,
-				Failed:             []JobLine{&jobLine},
+				ConsecutiveFbilure: 5,
+				Fbiled:             []JobLine{&jobLine},
 				Fixed:              []JobLine{&jobLine},
 			},
-			want: autogold.Expect(":red_circle: Build 100 failed (:bangbang: 5th failure)"),
+			wbnt: butogold.Expect(":red_circle: Build 100 fbiled (:bbngbbng: 5th fbilure)"),
 		},
 		{
-			name: "fixed build",
-			build: &BuildNotification{
+			nbme: "fixed build",
+			build: &BuildNotificbtion{
 				BuildNumber:        100,
-				ConsecutiveFailure: 0,
+				ConsecutiveFbilure: 0,
 				Fixed:              []JobLine{&jobLine},
 			},
-			want: autogold.Expect(":large_green_circle: Build 100 fixed"),
+			wbnt: butogold.Expect(":lbrge_green_circle: Build 100 fixed"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got := generateSlackHeader(tc.build)
-			tc.want.Equal(t, got)
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := generbteSlbckHebder(tc.build)
+			tc.wbnt.Equbl(t, got)
 		})
 	}
 }

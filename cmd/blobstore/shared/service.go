@@ -1,40 +1,40 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "blobstore" }
+func (svc) Nbme() string { return "blobstore" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	return LoadConfig(), nil
+	return LobdConfig(), nil
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return Start(ctx, observationCtx, config.(*Config), ready)
+func (svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config env.Config) error {
+	return Stbrt(ctx, observbtionCtx, config.(*Config), rebdy)
 }
 
-var Service service.Service = svc{}
+vbr Service service.Service = svc{}
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	DataDir string
+	DbtbDir string
 }
 
-func (c *Config) Load() {
-	c.DataDir = c.Get("BLOBSTORE_DATA_DIR", "/data", "directory to store blobstore buckets and objects")
+func (c *Config) Lobd() {
+	c.DbtbDir = c.Get("BLOBSTORE_DATA_DIR", "/dbtb", "directory to store blobstore buckets bnd objects")
 }
 
-func LoadConfig() *Config {
-	var config Config
-	config.Load()
+func LobdConfig() *Config {
+	vbr config Config
+	config.Lobd()
 	return &config
 }

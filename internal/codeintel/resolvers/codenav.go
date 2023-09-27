@@ -1,127 +1,127 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/markdown"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/mbrkdown"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type CodeNavServiceResolver interface {
-	GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (GitBlobLSIFDataResolver, error)
+type CodeNbvServiceResolver interfbce {
+	GitBlobLSIFDbtb(ctx context.Context, brgs *GitBlobLSIFDbtbArgs) (GitBlobLSIFDbtbResolver, error)
 }
 
-type GitBlobLSIFDataArgs struct {
+type GitBlobLSIFDbtbArgs struct {
 	Repo      *types.Repo
-	Commit    api.CommitID
-	Path      string
-	ExactPath bool
-	ToolName  string
+	Commit    bpi.CommitID
+	Pbth      string
+	ExbctPbth bool
+	ToolNbme  string
 }
 
-type GitBlobLSIFDataResolver interface {
-	GitTreeLSIFDataResolver
-	ToGitTreeLSIFData() (GitTreeLSIFDataResolver, bool)
-	ToGitBlobLSIFData() (GitBlobLSIFDataResolver, bool)
+type GitBlobLSIFDbtbResolver interfbce {
+	GitTreeLSIFDbtbResolver
+	ToGitTreeLSIFDbtb() (GitTreeLSIFDbtbResolver, bool)
+	ToGitBlobLSIFDbtb() (GitBlobLSIFDbtbResolver, bool)
 
-	Stencil(ctx context.Context) ([]RangeResolver, error)
-	Ranges(ctx context.Context, args *LSIFRangesArgs) (CodeIntelligenceRangeConnectionResolver, error)
-	Definitions(ctx context.Context, args *LSIFQueryPositionArgs) (LocationConnectionResolver, error)
-	References(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Implementations(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Prototypes(ctx context.Context, args *LSIFPagedQueryPositionArgs) (LocationConnectionResolver, error)
-	Hover(ctx context.Context, args *LSIFQueryPositionArgs) (HoverResolver, error)
+	Stencil(ctx context.Context) ([]RbngeResolver, error)
+	Rbnges(ctx context.Context, brgs *LSIFRbngesArgs) (CodeIntelligenceRbngeConnectionResolver, error)
+	Definitions(ctx context.Context, brgs *LSIFQueryPositionArgs) (LocbtionConnectionResolver, error)
+	References(ctx context.Context, brgs *LSIFPbgedQueryPositionArgs) (LocbtionConnectionResolver, error)
+	Implementbtions(ctx context.Context, brgs *LSIFPbgedQueryPositionArgs) (LocbtionConnectionResolver, error)
+	Prototypes(ctx context.Context, brgs *LSIFPbgedQueryPositionArgs) (LocbtionConnectionResolver, error)
+	Hover(ctx context.Context, brgs *LSIFQueryPositionArgs) (HoverResolver, error)
 	VisibleIndexes(ctx context.Context) (_ *[]PreciseIndexResolver, err error)
-	Snapshot(ctx context.Context, args *struct{ IndexID graphql.ID }) (_ *[]SnapshotDataResolver, err error)
+	Snbpshot(ctx context.Context, brgs *struct{ IndexID grbphql.ID }) (_ *[]SnbpshotDbtbResolver, err error)
 }
 
-type SnapshotDataResolver interface {
+type SnbpshotDbtbResolver interfbce {
 	Offset() int32
-	Data() string
-	Additional() *[]string
+	Dbtb() string
+	Additionbl() *[]string
 }
 
-type LSIFRangesArgs struct {
-	StartLine int32
+type LSIFRbngesArgs struct {
+	StbrtLine int32
 	EndLine   int32
 }
 
 type LSIFQueryPositionArgs struct {
 	Line      int32
-	Character int32
+	Chbrbcter int32
 	Filter    *string
 }
 
-type LSIFPagedQueryPositionArgs struct {
+type LSIFPbgedQueryPositionArgs struct {
 	LSIFQueryPositionArgs
-	PagedConnectionArgs
+	PbgedConnectionArgs
 	Filter *string
 }
 
 type (
-	CodeIntelligenceRangeConnectionResolver = ConnectionResolver[CodeIntelligenceRangeResolver]
+	CodeIntelligenceRbngeConnectionResolver = ConnectionResolver[CodeIntelligenceRbngeResolver]
 )
 
-type CodeIntelligenceRangeResolver interface {
-	Range(ctx context.Context) (RangeResolver, error)
-	Definitions(ctx context.Context) (LocationConnectionResolver, error)
-	References(ctx context.Context) (LocationConnectionResolver, error)
-	Implementations(ctx context.Context) (LocationConnectionResolver, error)
+type CodeIntelligenceRbngeResolver interfbce {
+	Rbnge(ctx context.Context) (RbngeResolver, error)
+	Definitions(ctx context.Context) (LocbtionConnectionResolver, error)
+	References(ctx context.Context) (LocbtionConnectionResolver, error)
+	Implementbtions(ctx context.Context) (LocbtionConnectionResolver, error)
 	Hover(ctx context.Context) (HoverResolver, error)
 }
 
-type RangeResolver interface {
-	Start() PositionResolver
+type RbngeResolver interfbce {
+	Stbrt() PositionResolver
 	End() PositionResolver
 }
 
-type PositionResolver interface {
+type PositionResolver interfbce {
 	Line() int32
-	Character() int32
+	Chbrbcter() int32
 }
 
 type (
-	LocationConnectionResolver = PagedConnectionResolver[LocationResolver]
+	LocbtionConnectionResolver = PbgedConnectionResolver[LocbtionResolver]
 )
 
-type LocationResolver interface {
+type LocbtionResolver interfbce {
 	Resource() GitTreeEntryResolver
-	Range() RangeResolver
+	Rbnge() RbngeResolver
 	URL(ctx context.Context) (string, error)
-	CanonicalURL() string
+	CbnonicblURL() string
 }
 
-type HoverResolver interface {
-	Markdown() Markdown
-	Range() RangeResolver
+type HoverResolver interfbce {
+	Mbrkdown() Mbrkdown
+	Rbnge() RbngeResolver
 }
 
-type Markdown string
+type Mbrkdown string
 
-func (m Markdown) Text() string {
+func (m Mbrkdown) Text() string {
 	return string(m)
 }
 
-func (m Markdown) HTML() (string, error) {
-	return markdown.Render(string(m))
+func (m Mbrkdown) HTML() (string, error) {
+	return mbrkdown.Render(string(m))
 }
 
-type GitTreeLSIFDataResolver interface {
-	Diagnostics(ctx context.Context, args *LSIFDiagnosticsArgs) (DiagnosticConnectionResolver, error)
+type GitTreeLSIFDbtbResolver interfbce {
+	Dibgnostics(ctx context.Context, brgs *LSIFDibgnosticsArgs) (DibgnosticConnectionResolver, error)
 }
 
 type (
-	LSIFDiagnosticsArgs          = ConnectionArgs
-	DiagnosticConnectionResolver = PagedConnectionWithTotalCountResolver[DiagnosticResolver]
+	LSIFDibgnosticsArgs          = ConnectionArgs
+	DibgnosticConnectionResolver = PbgedConnectionWithTotblCountResolver[DibgnosticResolver]
 )
 
-type DiagnosticResolver interface {
+type DibgnosticResolver interfbce {
 	Severity() (*string, error)
 	Code() (*string, error)
 	Source() (*string, error)
-	Message() (*string, error)
-	Location(ctx context.Context) (LocationResolver, error)
+	Messbge() (*string, error)
+	Locbtion(ctx context.Context) (LocbtionResolver, error)
 }

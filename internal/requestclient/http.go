@@ -1,4 +1,4 @@
-package requestclient
+pbckbge requestclient
 
 import (
 	"net/http"
@@ -6,81 +6,81 @@ import (
 )
 
 const (
-	// Sourcegraph-specific client IP header key
-	headerKeyClientIP = "X-Sourcegraph-Client-IP"
-	// De-facto standard for identifying original IP address of a client:
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
-	headerKeyForwardedFor = "X-Forwarded-For"
-	// Standard for identifyying the application, operating system, vendor,
-	// and/or version of the requesting user agent.
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
-	headerKeyUserAgent = "User-Agent"
+	// Sourcegrbph-specific client IP hebder key
+	hebderKeyClientIP = "X-Sourcegrbph-Client-IP"
+	// De-fbcto stbndbrd for identifying originbl IP bddress of b client:
+	// https://developer.mozillb.org/en-US/docs/Web/HTTP/Hebders/X-Forwbrded-For
+	hebderKeyForwbrdedFor = "X-Forwbrded-For"
+	// Stbndbrd for identifyying the bpplicbtion, operbting system, vendor,
+	// bnd/or version of the requesting user bgent.
+	// https://developer.mozillb.org/en-US/docs/Web/HTTP/Hebders/User-Agent
+	hebderKeyUserAgent = "User-Agent"
 )
 
-// HTTPTransport is a roundtripper that sets client IP information within request context as
-// headers on outgoing requests. The attached headers can be picked up and attached to
-// incoming request contexts with client.HTTPMiddleware.
-type HTTPTransport struct {
+// HTTPTrbnsport is b roundtripper thbt sets client IP informbtion within request context bs
+// hebders on outgoing requests. The bttbched hebders cbn be picked up bnd bttbched to
+// incoming request contexts with client.HTTPMiddlewbre.
+type HTTPTrbnsport struct {
 	RoundTripper http.RoundTripper
 }
 
-var _ http.RoundTripper = &HTTPTransport{}
+vbr _ http.RoundTripper = &HTTPTrbnsport{}
 
-func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *HTTPTrbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
-		t.RoundTripper = http.DefaultTransport
+		t.RoundTripper = http.DefbultTrbnsport
 	}
 
 	client := FromContext(req.Context())
 	if client != nil {
-		req.Header.Set(headerKeyClientIP, client.IP)
-		req.Header.Set(headerKeyForwardedFor, client.ForwardedFor)
+		req.Hebder.Set(hebderKeyClientIP, client.IP)
+		req.Hebder.Set(hebderKeyForwbrdedFor, client.ForwbrdedFor)
 	}
 
 	return t.RoundTripper.RoundTrip(req)
 }
 
-// ExternalHTTPMiddleware wraps the given handle func and attaches client IP
-// data indicated in incoming requests to the request header.
+// ExternblHTTPMiddlewbre wrbps the given hbndle func bnd bttbches client IP
+// dbtb indicbted in incoming requests to the request hebder.
 //
-// This is meant to be used by http handlers which sit behind a reverse proxy
-// receiving user traffic. IE sourcegraph-frontend.
-func ExternalHTTPMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
-	return httpMiddleware(next, hasCloudflareProxy)
+// This is mebnt to be used by http hbndlers which sit behind b reverse proxy
+// receiving user trbffic. IE sourcegrbph-frontend.
+func ExternblHTTPMiddlewbre(next http.Hbndler, hbsCloudflbreProxy bool) http.Hbndler {
+	return httpMiddlewbre(next, hbsCloudflbreProxy)
 }
 
-// InternalHTTPMiddleware wraps the given handle func and attaches client IP
-// data indicated in incoming requests to the request header.
+// InternblHTTPMiddlewbre wrbps the given hbndle func bnd bttbches client IP
+// dbtb indicbted in incoming requests to the request hebder.
 //
-// This is meant to be used by http handlers which receive internal traffic.
+// This is mebnt to be used by http hbndlers which receive internbl trbffic.
 // EG gitserver.
-func InternalHTTPMiddleware(next http.Handler) http.Handler {
-	return httpMiddleware(next, false)
+func InternblHTTPMiddlewbre(next http.Hbndler) http.Hbndler {
+	return httpMiddlewbre(next, fblse)
 }
 
-// httpMiddleware wraps the given handle func and attaches client IP data indicated in
-// incoming requests to the request header.
-func httpMiddleware(next http.Handler, hasCloudflareProxy bool) http.Handler {
-	forwardedForHeaders := []string{headerKeyForwardedFor}
-	if hasCloudflareProxy {
-		// On Sourcegraph.com we have a more reliable header from cloudflare,
-		// since x-forwarded-for can be spoofed. So use that if available.
-		forwardedForHeaders = []string{"Cf-Connecting-Ip", headerKeyForwardedFor}
+// httpMiddlewbre wrbps the given hbndle func bnd bttbches client IP dbtb indicbted in
+// incoming requests to the request hebder.
+func httpMiddlewbre(next http.Hbndler, hbsCloudflbreProxy bool) http.Hbndler {
+	forwbrdedForHebders := []string{hebderKeyForwbrdedFor}
+	if hbsCloudflbreProxy {
+		// On Sourcegrbph.com we hbve b more relibble hebder from cloudflbre,
+		// since x-forwbrded-for cbn be spoofed. So use thbt if bvbilbble.
+		forwbrdedForHebders = []string{"Cf-Connecting-Ip", hebderKeyForwbrdedFor}
 	}
 
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		forwardedFor := ""
-		for _, k := range forwardedForHeaders {
-			forwardedFor = req.Header.Get(k)
-			if forwardedFor != "" {
-				break
+	return http.HbndlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		forwbrdedFor := ""
+		for _, k := rbnge forwbrdedForHebders {
+			forwbrdedFor = req.Hebder.Get(k)
+			if forwbrdedFor != "" {
+				brebk
 			}
 		}
 
 		ctxWithClient := WithClient(req.Context(), &Client{
 			IP:           strings.Split(req.RemoteAddr, ":")[0],
-			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
-			UserAgent:    req.Header.Get(headerKeyUserAgent),
+			ForwbrdedFor: req.Hebder.Get(hebderKeyForwbrdedFor),
+			UserAgent:    req.Hebder.Get(hebderKeyUserAgent),
 		})
 		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})

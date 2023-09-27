@@ -1,95 +1,95 @@
-package streaming
+pbckbge strebming
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestSearchFiltersUpdate(t *testing.T) {
-	repo := types.MinimalRepo{
-		Name: "foo",
+func TestSebrchFiltersUpdbte(t *testing.T) {
+	repo := types.MinimblRepo{
+		Nbme: "foo",
 	}
 
-	cases := []struct {
-		name            string
-		events          []SearchEvent
-		wantFilterName  string
-		wantFilterCount int
-		wantFilterKind  string
+	cbses := []struct {
+		nbme            string
+		events          []SebrchEvent
+		wbntFilterNbme  string
+		wbntFilterCount int
+		wbntFilterKind  string
 	}{
 		{
-			name: "CommitMatch",
-			events: []SearchEvent{
+			nbme: "CommitMbtch",
+			events: []SebrchEvent{
 				{
-					Results: []result.Match{
-						&result.CommitMatch{
+					Results: []result.Mbtch{
+						&result.CommitMbtch{
 							Repo:           repo,
-							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 2)}},
-						&result.CommitMatch{
+							MessbgePreview: &result.MbtchedString{MbtchedRbnges: mbke([]result.Rbnge, 2)}},
+						&result.CommitMbtch{
 							Repo:           repo,
-							MessagePreview: &result.MatchedString{MatchedRanges: make([]result.Range, 1)}},
+							MessbgePreview: &result.MbtchedString{MbtchedRbnges: mbke([]result.Rbnge, 1)}},
 					},
 				}},
-			wantFilterName:  "repo:^foo$",
-			wantFilterKind:  "repo",
-			wantFilterCount: 3,
+			wbntFilterNbme:  "repo:^foo$",
+			wbntFilterKind:  "repo",
+			wbntFilterCount: 3,
 		},
 		{
-			name: "RepoMatch",
-			events: []SearchEvent{
+			nbme: "RepoMbtch",
+			events: []SebrchEvent{
 				{
-					Results: []result.Match{
-						&result.RepoMatch{
-							Name: "foo",
+					Results: []result.Mbtch{
+						&result.RepoMbtch{
+							Nbme: "foo",
 						},
 					},
 				},
 			},
-			wantFilterName:  "repo:^foo$",
-			wantFilterKind:  "repo",
-			wantFilterCount: 1,
+			wbntFilterNbme:  "repo:^foo$",
+			wbntFilterKind:  "repo",
+			wbntFilterCount: 1,
 		},
 		{
-			name: "FileMatch, repo: filter",
-			events: []SearchEvent{
+			nbme: "FileMbtch, repo: filter",
+			events: []SebrchEvent{
 				{
-					Results: []result.Match{
-						&result.FileMatch{
+					Results: []result.Mbtch{
+						&result.FileMbtch{
 							File: result.File{
 								Repo: repo,
 							},
-							ChunkMatches: result.ChunkMatches{{Ranges: make(result.Ranges, 2)}},
+							ChunkMbtches: result.ChunkMbtches{{Rbnges: mbke(result.Rbnges, 2)}},
 						},
 					},
 				},
 			},
-			wantFilterName:  "repo:^foo$",
-			wantFilterKind:  "repo",
-			wantFilterCount: 2,
+			wbntFilterNbme:  "repo:^foo$",
+			wbntFilterKind:  "repo",
+			wbntFilterCount: 2,
 		},
 	}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
+	for _, c := rbnge cbses {
+		t.Run(c.nbme, func(t *testing.T) {
 
-			s := &SearchFilters{}
-			for _, event := range c.events {
-				s.Update(event)
+			s := &SebrchFilters{}
+			for _, event := rbnge c.events {
+				s.Updbte(event)
 			}
 
-			f, ok := s.filters[c.wantFilterName]
+			f, ok := s.filters[c.wbntFilterNbme]
 			if !ok {
-				t.Fatalf("expected %s", c.wantFilterName)
+				t.Fbtblf("expected %s", c.wbntFilterNbme)
 			}
 
-			if f.Kind != c.wantFilterKind {
-				t.Fatalf("want %s, got %s", c.wantFilterKind, f.Kind)
+			if f.Kind != c.wbntFilterKind {
+				t.Fbtblf("wbnt %s, got %s", c.wbntFilterKind, f.Kind)
 			}
 
-			if f.Count != c.wantFilterCount {
-				t.Fatalf("want %d, got %d", c.wantFilterCount, f.Count)
+			if f.Count != c.wbntFilterCount {
+				t.Fbtblf("wbnt %d, got %d", c.wbntFilterCount, f.Count)
 			}
 		})
 	}

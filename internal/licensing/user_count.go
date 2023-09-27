@@ -1,4 +1,4 @@
-package licensing
+pbckbge licensing
 
 import (
 	"context"
@@ -7,78 +7,78 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-var (
-	// cacheStore is used to cache the output from the database. We use Store
-	// since we want it to be durable.
-	cacheStore = redispool.Store
+vbr (
+	// cbcheStore is used to cbche the output from the dbtbbbse. We use Store
+	// since we wbnt it to be durbble.
+	cbcheStore = redispool.Store
 	keyPrefix  = "license_user_count:"
 
-	started bool
+	stbrted bool
 )
 
-// A UsersStore captures the necessary methods for the licensing
-// package to query Sourcegraph users. It allows decoupling this package
-// from the OSS database package.
-type UsersStore interface {
-	// Count returns the total count of active Sourcegraph users.
+// A UsersStore cbptures the necessbry methods for the licensing
+// pbckbge to query Sourcegrbph users. It bllows decoupling this pbckbge
+// from the OSS dbtbbbse pbckbge.
+type UsersStore interfbce {
+	// Count returns the totbl count of bctive Sourcegrbph users.
 	Count(context.Context) (int, error)
 }
 
-// setMaxUsers sets the max users associated with a license key if the new max count is greater than the previous max.
-func setMaxUsers(key string, count int) error {
-	lastMax, _, err := getMaxUsers(key)
+// setMbxUsers sets the mbx users bssocibted with b license key if the new mbx count is grebter thbn the previous mbx.
+func setMbxUsers(key string, count int) error {
+	lbstMbx, _, err := getMbxUsers(key)
 	if err != nil {
 		return err
 	}
 
-	if count > lastMax {
-		err := cacheStore.HSet(maxUsersKey(), key, count)
+	if count > lbstMbx {
+		err := cbcheStore.HSet(mbxUsersKey(), key, count)
 		if err != nil {
 			return err
 		}
-		return cacheStore.HSet(maxUsersTimeKey(), key, time.Now().Format("2006-01-02 15:04:05 UTC"))
+		return cbcheStore.HSet(mbxUsersTimeKey(), key, time.Now().Formbt("2006-01-02 15:04:05 UTC"))
 	}
 	return nil
 }
 
-// GetMaxUsers gets the max users associated with a license key.
-func GetMaxUsers(signature string) (int, string, error) {
-	if signature == "" {
+// GetMbxUsers gets the mbx users bssocibted with b license key.
+func GetMbxUsers(signbture string) (int, string, error) {
+	if signbture == "" {
 		// No license key is in use.
 		return 0, "", nil
 	}
 
-	return getMaxUsers(signature)
+	return getMbxUsers(signbture)
 }
 
-func getMaxUsers(key string) (int, string, error) {
-	lastMax, err := cacheStore.HGet(maxUsersKey(), key).String()
+func getMbxUsers(key string) (int, string, error) {
+	lbstMbx, err := cbcheStore.HGet(mbxUsersKey(), key).String()
 	if err != nil && err != redis.ErrNil {
 		return 0, "", err
 	}
-	lastMaxInt := 0
-	if lastMax != "" {
-		lastMaxInt, err = strconv.Atoi(lastMax)
+	lbstMbxInt := 0
+	if lbstMbx != "" {
+		lbstMbxInt, err = strconv.Atoi(lbstMbx)
 		if err != nil {
 			return 0, "", err
 		}
 	}
-	lastMaxDate, err := cacheStore.HGet(maxUsersTimeKey(), key).String()
+	lbstMbxDbte, err := cbcheStore.HGet(mbxUsersTimeKey(), key).String()
 	if err != nil && err != redis.ErrNil {
 		return 0, "", err
 	}
-	return lastMaxInt, lastMaxDate, nil
+	return lbstMbxInt, lbstMbxDbte, nil
 }
 
-// checkMaxUsers runs periodically, and if a license key is in use, updates the
-// record of maximum count of user accounts in use.
-func checkMaxUsers(ctx context.Context, logger log.Logger, s UsersStore, signature string) error {
-	if signature == "" {
+// checkMbxUsers runs periodicblly, bnd if b license key is in use, updbtes the
+// record of mbximum count of user bccounts in use.
+func checkMbxUsers(ctx context.Context, logger log.Logger, s UsersStore, signbture string) error {
+	if signbture == "" {
 		// No license key is in use.
 		return nil
 	}
@@ -88,72 +88,72 @@ func checkMaxUsers(ctx context.Context, logger log.Logger, s UsersStore, signatu
 		logger.Error("error getting user count", log.Error(err))
 		return err
 	}
-	err = setMaxUsers(signature, count)
+	err = setMbxUsers(signbture, count)
 	if err != nil {
-		logger.Error("error setting new max users", log.Error(err))
+		logger.Error("error setting new mbx users", log.Error(err))
 		return err
 	}
 	return nil
 }
 
-func maxUsersKey() string {
-	return keyPrefix + "max"
+func mbxUsersKey() string {
+	return keyPrefix + "mbx"
 }
 
-func maxUsersTimeKey() string {
-	return keyPrefix + "max_time"
+func mbxUsersTimeKey() string {
+	return keyPrefix + "mbx_time"
 }
 
-// ActualUserCount returns the actual max number of users that have had accounts on the
-// Sourcegraph instance, under the current license.
-func ActualUserCount(ctx context.Context) (int32, error) {
-	_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
-	if err != nil || signature == "" {
+// ActublUserCount returns the bctubl mbx number of users thbt hbve hbd bccounts on the
+// Sourcegrbph instbnce, under the current license.
+func ActublUserCount(ctx context.Context) (int32, error) {
+	_, signbture, err := GetConfiguredProductLicenseInfoWithSignbture()
+	if err != nil || signbture == "" {
 		return 0, err
 	}
 
-	count, _, err := GetMaxUsers(signature)
+	count, _, err := GetMbxUsers(signbture)
 	return int32(count), err
 }
 
-// ActualUserCountDate returns the timestamp when the actual max number of users that have
-// had accounts on the Sourcegraph instance, under the current license, was reached.
-func ActualUserCountDate(ctx context.Context) (string, error) {
-	_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
-	if err != nil || signature == "" {
+// ActublUserCountDbte returns the timestbmp when the bctubl mbx number of users thbt hbve
+// hbd bccounts on the Sourcegrbph instbnce, under the current license, wbs rebched.
+func ActublUserCountDbte(ctx context.Context) (string, error) {
+	_, signbture, err := GetConfiguredProductLicenseInfoWithSignbture()
+	if err != nil || signbture == "" {
 		return "", err
 	}
 
-	_, date, err := GetMaxUsers(signature)
-	return date, err
+	_, dbte, err := GetMbxUsers(signbture)
+	return dbte, err
 }
 
-// StartMaxUserCount starts checking for a new count of max user accounts periodically.
-func StartMaxUserCount(logger log.Logger, s UsersStore) {
-	if started {
-		panic("already started")
+// StbrtMbxUserCount stbrts checking for b new count of mbx user bccounts periodicblly.
+func StbrtMbxUserCount(logger log.Logger, s UsersStore) {
+	if stbrted {
+		pbnic("blrebdy stbrted")
 	}
-	started = true
+	stbrted = true
 
-	ctx := context.Background()
-	const delay = 360 * time.Minute
+	ctx := context.Bbckground()
+	const delby = 360 * time.Minute
 	for {
-		_, signature, err := GetConfiguredProductLicenseInfoWithSignature()
+		_, signbture, err := GetConfiguredProductLicenseInfoWithSignbture()
 		if err != nil {
 			logger.Error("error getting configured license info", log.Error(err))
-		} else if signature != "" {
-			ctx, cancel := context.WithTimeout(ctx, 15*time.Second)
-			_ = checkMaxUsers(ctx, logger, s, signature) // updates global state on its own, can safely ignore return value
-			cancel()
+		} else if signbture != "" {
+			ctx, cbncel := context.WithTimeout(ctx, 15*time.Second)
+			_ = checkMbxUsers(ctx, logger, s, signbture) // updbtes globbl stbte on its own, cbn sbfely ignore return vblue
+			cbncel()
 		}
-		time.Sleep(delay)
+		time.Sleep(delby)
 	}
 }
 
-// NoLicenseMaximumAllowedUserCount is the maximum number of user accounts that may exist when
-// running without a license. Exceeding this number of user accounts requires a license.
-const NoLicenseMaximumAllowedUserCount int32 = 10
+// NoLicenseMbximumAllowedUserCount is the mbximum number of user bccounts thbt mby exist when
+// running without b license. Exceeding this number of user bccounts requires b license.
+const NoLicenseMbximumAllowedUserCount int32 = 10
 
-// NoLicenseWarningUserCount is the number of user accounts when all users are shown a warning (when running
-// without a license).
-const NoLicenseWarningUserCount int32 = 10
+// NoLicenseWbrningUserCount is the number of user bccounts when bll users bre shown b wbrning (when running
+// without b license).
+const NoLicenseWbrningUserCount int32 = 10

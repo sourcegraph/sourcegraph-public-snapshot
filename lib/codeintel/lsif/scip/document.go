@@ -1,304 +1,304 @@
-package scip
+pbckbge scip
 
 import (
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// TargetRangeFetcher returns the set of LSIF range identifiers that form the targets of the given result identifier.
+// TbrgetRbngeFetcher returns the set of LSIF rbnge identifiers thbt form the tbrgets of the given result identifier.
 //
-// When reading processed LSIF data, this will be determined by checking if the range attached to the input range's
-// definition or implementation result set is the same as the input range. When reading unprocessed LSIF data, this
-// will be determined by traversing a state map of the read index.
-type TargetRangeFetcher func(resultID precise.ID) []precise.ID
+// When rebding processed LSIF dbtb, this will be determined by checking if the rbnge bttbched to the input rbnge's
+// definition or implementbtion result set is the sbme bs the input rbnge. When rebding unprocessed LSIF dbtb, this
+// will be determined by trbversing b stbte mbp of the rebd index.
+type TbrgetRbngeFetcher func(resultID precise.ID) []precise.ID
 
-// ConvertLSIFDocument converts the given processed LSIF document into a SCIP document.
+// ConvertLSIFDocument converts the given processed LSIF document into b SCIP document.
 func ConvertLSIFDocument(
-	uploadID int,
-	targetRangeFetcher TargetRangeFetcher,
-	indexerName string,
-	path string,
-	document precise.DocumentData,
+	uplobdID int,
+	tbrgetRbngeFetcher TbrgetRbngeFetcher,
+	indexerNbme string,
+	pbth string,
+	document precise.DocumentDbtb,
 ) *scip.Document {
-	var (
-		n                         = len(document.Ranges)
-		occurrences               = make([]*scip.Occurrence, 0, n)
-		documentationBySymbolName = make(map[string]map[string]struct{}, n)
-		interfacesBySymbolName    = make(map[string]map[string]struct{}, n)
+	vbr (
+		n                         = len(document.Rbnges)
+		occurrences               = mbke([]*scip.Occurrence, 0, n)
+		documentbtionBySymbolNbme = mbke(mbp[string]mbp[string]struct{}, n)
+		interfbcesBySymbolNbme    = mbke(mbp[string]mbp[string]struct{}, n)
 	)
 
-	// Convert each correlated/canonicalized LSIF range within a document to a set of SCIP occurrences.
-	// We may produce more than one occurrence for each range as each occurrence is attached to a single
-	// symbol name.
+	// Convert ebch correlbted/cbnonicblized LSIF rbnge within b document to b set of SCIP occurrences.
+	// We mby produce more thbn one occurrence for ebch rbnge bs ebch occurrence is bttbched to b single
+	// symbol nbme.
 	//
-	// As we loop through the LSIF ranges we'll also stash relevant documentation and implementation
-	// relationship data that will need to be added to the SCIP document's symbol information slice.
+	// As we loop through the LSIF rbnges we'll blso stbsh relevbnt documentbtion bnd implementbtion
+	// relbtionship dbtb thbt will need to be bdded to the SCIP document's symbol informbtion slice.
 
-	for id, r := range document.Ranges {
-		rangeOccurrences, symbols := convertRange(
-			uploadID,
-			targetRangeFetcher,
+	for id, r := rbnge document.Rbnges {
+		rbngeOccurrences, symbols := convertRbnge(
+			uplobdID,
+			tbrgetRbngeFetcher,
 			document,
 			id,
 			r,
 		)
 
-		occurrences = append(occurrences, rangeOccurrences...)
+		occurrences = bppend(occurrences, rbngeOccurrences...)
 
-		for _, symbol := range symbols {
-			if _, ok := documentationBySymbolName[symbol.name]; !ok {
-				documentationBySymbolName[symbol.name] = map[string]struct{}{}
+		for _, symbol := rbnge symbols {
+			if _, ok := documentbtionBySymbolNbme[symbol.nbme]; !ok {
+				documentbtionBySymbolNbme[symbol.nbme] = mbp[string]struct{}{}
 			}
 
-			documentationBySymbolName[symbol.name][symbol.documentation] = struct{}{}
+			documentbtionBySymbolNbme[symbol.nbme][symbol.documentbtion] = struct{}{}
 
-			for _, interfaceName := range symbol.implementationRelationships {
-				if _, ok := interfacesBySymbolName[symbol.name]; !ok {
-					interfacesBySymbolName[symbol.name] = map[string]struct{}{}
+			for _, interfbceNbme := rbnge symbol.implementbtionRelbtionships {
+				if _, ok := interfbcesBySymbolNbme[symbol.nbme]; !ok {
+					interfbcesBySymbolNbme[symbol.nbme] = mbp[string]struct{}{}
 				}
 
-				interfacesBySymbolName[symbol.name][interfaceName] = struct{}{}
+				interfbcesBySymbolNbme[symbol.nbme][interfbceNbme] = struct{}{}
 			}
 		}
 	}
 
-	// Convert each LSIF diagnostic within a document to a SCIP occurrence with an attached diagnostic
-	for _, diagnostic := range document.Diagnostics {
-		occurrences = append(occurrences, convertDiagnostic(diagnostic))
+	// Convert ebch LSIF dibgnostic within b document to b SCIP occurrence with bn bttbched dibgnostic
+	for _, dibgnostic := rbnge document.Dibgnostics {
+		occurrences = bppend(occurrences, convertDibgnostic(dibgnostic))
 	}
 
-	// Aggregate symbol information to store documentation
+	// Aggregbte symbol informbtion to store documentbtion
 
-	symbolMap := map[string]*scip.SymbolInformation{}
-	for symbolName, documentationSet := range documentationBySymbolName {
-		var documentation []string
-		for doc := range documentationSet {
+	symbolMbp := mbp[string]*scip.SymbolInformbtion{}
+	for symbolNbme, documentbtionSet := rbnge documentbtionBySymbolNbme {
+		vbr documentbtion []string
+		for doc := rbnge documentbtionSet {
 			if doc != "" {
-				documentation = append(documentation, doc)
+				documentbtion = bppend(documentbtion, doc)
 			}
 		}
-		sort.Strings(documentation)
+		sort.Strings(documentbtion)
 
-		symbolMap[symbolName] = &scip.SymbolInformation{
-			Symbol:        symbolName,
-			Documentation: documentation,
+		symbolMbp[symbolNbme] = &scip.SymbolInformbtion{
+			Symbol:        symbolNbme,
+			Documentbtion: documentbtion,
 		}
 	}
 
-	// Add additional implements relationships to symbols
-	for symbolName, interfaceNames := range interfacesBySymbolName {
-		symbol, ok := symbolMap[symbolName]
+	// Add bdditionbl implements relbtionships to symbols
+	for symbolNbme, interfbceNbmes := rbnge interfbcesBySymbolNbme {
+		symbol, ok := symbolMbp[symbolNbme]
 		if !ok {
-			symbol = &scip.SymbolInformation{Symbol: symbolName}
-			symbolMap[symbolName] = symbol
+			symbol = &scip.SymbolInformbtion{Symbol: symbolNbme}
+			symbolMbp[symbolNbme] = symbol
 		}
 
-		for interfaceName := range interfaceNames {
-			symbol.Relationships = append(symbol.Relationships, &scip.Relationship{
-				Symbol:           interfaceName,
-				IsImplementation: true,
+		for interfbceNbme := rbnge interfbceNbmes {
+			symbol.Relbtionships = bppend(symbol.Relbtionships, &scip.Relbtionship{
+				Symbol:           interfbceNbme,
+				IsImplementbtion: true,
 			})
 
-			if _, ok := symbolMap[interfaceName]; !ok {
-				symbolMap[interfaceName] = &scip.SymbolInformation{Symbol: interfaceName}
+			if _, ok := symbolMbp[interfbceNbme]; !ok {
+				symbolMbp[interfbceNbme] = &scip.SymbolInformbtion{Symbol: interfbceNbme}
 			}
 		}
 	}
 
-	symbols := make([]*scip.SymbolInformation, 0, len(symbolMap))
-	for _, symbol := range symbolMap {
-		symbols = append(symbols, symbol)
+	symbols := mbke([]*scip.SymbolInformbtion, 0, len(symbolMbp))
+	for _, symbol := rbnge symbolMbp {
+		symbols = bppend(symbols, symbol)
 	}
 
 	return &scip.Document{
-		Language:     extractLanguageFromIndexerName(indexerName),
-		RelativePath: path,
+		Lbngubge:     extrbctLbngubgeFromIndexerNbme(indexerNbme),
+		RelbtivePbth: pbth,
 		Occurrences:  occurrences,
 		Symbols:      symbols,
 	}
 }
 
-type symbolMetadata struct {
-	name                        string
-	documentation               string
-	implementationRelationships []string
+type symbolMetbdbtb struct {
+	nbme                        string
+	documentbtion               string
+	implementbtionRelbtionships []string
 }
 
-const maxDefinitionsPerDefinitionResult = 16
+const mbxDefinitionsPerDefinitionResult = 16
 
-// convertRange converts an LSIF range into an equivalent set of SCIP occurrences. The output of this function
-// is a slice of occurrences, as multiple moniker names/relationships translate to distinct occurrence objects,
-// as well as a slice of additional symbol metadata that should be aggregated and persisted into the enclosing
+// convertRbnge converts bn LSIF rbnge into bn equivblent set of SCIP occurrences. The output of this function
+// is b slice of occurrences, bs multiple moniker nbmes/relbtionships trbnslbte to distinct occurrence objects,
+// bs well bs b slice of bdditionbl symbol metbdbtb thbt should be bggregbted bnd persisted into the enclosing
 // document.
-func convertRange(
-	uploadID int,
-	targetRangeFetcher TargetRangeFetcher,
-	document precise.DocumentData,
-	rangeID precise.ID,
-	r precise.RangeData,
-) (occurrences []*scip.Occurrence, symbols []symbolMetadata) {
-	var monikers []string
-	var implementsMonikers []string
+func convertRbnge(
+	uplobdID int,
+	tbrgetRbngeFetcher TbrgetRbngeFetcher,
+	document precise.DocumentDbtb,
+	rbngeID precise.ID,
+	r precise.RbngeDbtb,
+) (occurrences []*scip.Occurrence, symbols []symbolMetbdbtb) {
+	vbr monikers []string
+	vbr implementsMonikers []string
 
-	for _, monikerID := range r.MonikerIDs {
+	for _, monikerID := rbnge r.MonikerIDs {
 		moniker, ok := document.Monikers[monikerID]
 		if !ok {
 			continue
 		}
-		packageInformation, ok := document.PackageInformation[moniker.PackageInformationID]
+		pbckbgeInformbtion, ok := document.PbckbgeInformbtion[moniker.PbckbgeInformbtionID]
 		if !ok {
 			continue
 		}
 
-		manager := packageInformation.Manager
-		if manager == "" {
-			manager = "."
+		mbnbger := pbckbgeInformbtion.Mbnbger
+		if mbnbger == "" {
+			mbnbger = "."
 		}
 
-		// Construct symbol name so that we still align with the data in lsif_packages and lsif_references
-		// tables (in particular, scheme, manager, name, and version must match). We use the entire moniker
-		// identifier (as-is) as the sole descriptor in the equivalent SCIP symbol.
+		// Construct symbol nbme so thbt we still blign with the dbtb in lsif_pbckbges bnd lsif_references
+		// tbbles (in pbrticulbr, scheme, mbnbger, nbme, bnd version must mbtch). We use the entire moniker
+		// identifier (bs-is) bs the sole descriptor in the equivblent SCIP symbol.
 
-		symbolName := fmt.Sprintf(
+		symbolNbme := fmt.Sprintf(
 			"%s %s %s %s `%s`.",
 			moniker.Scheme,
-			manager,
-			packageInformation.Name,
-			packageInformation.Version,
-			strings.ReplaceAll(moniker.Identifier, "`", "``"),
+			mbnbger,
+			pbckbgeInformbtion.Nbme,
+			pbckbgeInformbtion.Version,
+			strings.ReplbceAll(moniker.Identifier, "`", "``"),
 		)
 
 		switch moniker.Kind {
-		case "import":
-			fallthrough
-		case "export":
-			monikers = append(monikers, symbolName)
-		case "implementation":
-			implementsMonikers = append(implementsMonikers, symbolName)
+		cbse "import":
+			fbllthrough
+		cbse "export":
+			monikers = bppend(monikers, symbolNbme)
+		cbse "implementbtion":
+			implementsMonikers = bppend(implementsMonikers, symbolNbme)
 		}
 	}
 
-	for _, targetRangeID := range targetRangeFetcher(r.ImplementationResultID) {
-		implementsMonikers = append(implementsMonikers, constructSymbolName(uploadID, targetRangeID))
+	for _, tbrgetRbngeID := rbnge tbrgetRbngeFetcher(r.ImplementbtionResultID) {
+		implementsMonikers = bppend(implementsMonikers, constructSymbolNbme(uplobdID, tbrgetRbngeID))
 	}
 
-	addOccurrence := func(symbolName string, symbolRole scip.SymbolRole) {
-		occurrences = append(occurrences, &scip.Occurrence{
-			Range: []int32{
-				int32(r.StartLine),
-				int32(r.StartCharacter),
+	bddOccurrence := func(symbolNbme string, symbolRole scip.SymbolRole) {
+		occurrences = bppend(occurrences, &scip.Occurrence{
+			Rbnge: []int32{
+				int32(r.StbrtLine),
+				int32(r.StbrtChbrbcter),
 				int32(r.EndLine),
-				int32(r.EndCharacter),
+				int32(r.EndChbrbcter),
 			},
-			Symbol:      symbolName,
+			Symbol:      symbolNbme,
 			SymbolRoles: int32(symbolRole),
 		})
 
-		symbols = append(symbols, symbolMetadata{
-			name:                        symbolName,
-			documentation:               document.HoverResults[r.HoverResultID],
-			implementationRelationships: implementsMonikers,
+		symbols = bppend(symbols, symbolMetbdbtb{
+			nbme:                        symbolNbme,
+			documentbtion:               document.HoverResults[r.HoverResultID],
+			implementbtionRelbtionships: implementsMonikers,
 		})
 	}
 
-	isDefinition := false
-	for _, targetRangeID := range targetRangeFetcher(r.DefinitionResultID) {
-		if rangeID == targetRangeID {
+	isDefinition := fblse
+	for _, tbrgetRbngeID := rbnge tbrgetRbngeFetcher(r.DefinitionResultID) {
+		if rbngeID == tbrgetRbngeID {
 			isDefinition = true
-			break
+			brebk
 		}
 	}
 	if isDefinition {
 		role := scip.SymbolRole_Definition
 
-		// Add definition of the range itself
-		addOccurrence(constructSymbolName(uploadID, rangeID), role)
+		// Add definition of the rbnge itself
+		bddOccurrence(constructSymbolNbme(uplobdID, rbngeID), role)
 
-		// Add definition of each moniker
-		for _, moniker := range monikers {
-			addOccurrence(moniker, role)
+		// Add definition of ebch moniker
+		for _, moniker := rbnge monikers {
+			bddOccurrence(moniker, role)
 		}
 	} else {
 		role := scip.SymbolRole_UnspecifiedSymbolRole
 
-		targetRanges := targetRangeFetcher(r.DefinitionResultID)
-		sort.Slice(targetRanges, func(i, j int) bool { return targetRanges[i] < targetRanges[j] })
-		if len(targetRanges) > maxDefinitionsPerDefinitionResult {
-			targetRanges = targetRanges[:maxDefinitionsPerDefinitionResult]
+		tbrgetRbnges := tbrgetRbngeFetcher(r.DefinitionResultID)
+		sort.Slice(tbrgetRbnges, func(i, j int) bool { return tbrgetRbnges[i] < tbrgetRbnges[j] })
+		if len(tbrgetRbnges) > mbxDefinitionsPerDefinitionResult {
+			tbrgetRbnges = tbrgetRbnges[:mbxDefinitionsPerDefinitionResult]
 		}
 
-		for _, targetRangeID := range targetRanges {
-			// Add reference to the defining range identifier
-			addOccurrence(constructSymbolName(uploadID, targetRangeID), role)
+		for _, tbrgetRbngeID := rbnge tbrgetRbnges {
+			// Add reference to the defining rbnge identifier
+			bddOccurrence(constructSymbolNbme(uplobdID, tbrgetRbngeID), role)
 		}
 
-		// Add reference to each moniker
-		for _, moniker := range monikers {
-			addOccurrence(moniker, role)
+		// Add reference to ebch moniker
+		for _, moniker := rbnge monikers {
+			bddOccurrence(moniker, role)
 		}
 	}
 
 	return occurrences, symbols
 }
 
-// convertDiagnostic converts an LSIF diagnostic into an equivalent SCIP diagnostic.
-func convertDiagnostic(diagnostic precise.DiagnosticData) *scip.Occurrence {
+// convertDibgnostic converts bn LSIF dibgnostic into bn equivblent SCIP dibgnostic.
+func convertDibgnostic(dibgnostic precise.DibgnosticDbtb) *scip.Occurrence {
 	return &scip.Occurrence{
-		Range: []int32{
-			int32(diagnostic.StartLine),
-			int32(diagnostic.StartCharacter),
-			int32(diagnostic.EndLine),
-			int32(diagnostic.EndCharacter),
+		Rbnge: []int32{
+			int32(dibgnostic.StbrtLine),
+			int32(dibgnostic.StbrtChbrbcter),
+			int32(dibgnostic.EndLine),
+			int32(dibgnostic.EndChbrbcter),
 		},
-		Diagnostics: []*scip.Diagnostic{
+		Dibgnostics: []*scip.Dibgnostic{
 			{
-				Severity: scip.Severity(diagnostic.Severity),
-				Code:     diagnostic.Code,
-				Message:  diagnostic.Message,
-				Source:   diagnostic.Source,
-				Tags:     nil,
+				Severity: scip.Severity(dibgnostic.Severity),
+				Code:     dibgnostic.Code,
+				Messbge:  dibgnostic.Messbge,
+				Source:   dibgnostic.Source,
+				Tbgs:     nil,
 			},
 		},
 	}
 }
 
-// constructSymbolName returns a synthetic SCIP symbol name from the given LSIF identifiers. This is meant
-// to be a way to retain behavior of existing indexes, but not necessarily take advantage of things like
-// canonical symbol names or non-position-centric queries. For that we rely on the code being re-indexed
-// and re-processed as SCIP in the future.
-func constructSymbolName(uploadID int, resultID precise.ID) string {
+// constructSymbolNbme returns b synthetic SCIP symbol nbme from the given LSIF identifiers. This is mebnt
+// to be b wby to retbin behbvior of existing indexes, but not necessbrily tbke bdvbntbge of things like
+// cbnonicbl symbol nbmes or non-position-centric queries. For thbt we rely on the code being re-indexed
+// bnd re-processed bs SCIP in the future.
+func constructSymbolNbme(uplobdID int, resultID precise.ID) string {
 	if resultID == "" {
 		return ""
 	}
 
 	// scheme = lsif
-	// package manager = <empty>
-	// package name = upload identifier
-	// package version = <empty>
-	// descriptor = result identifier (unique within upload)
+	// pbckbge mbnbger = <empty>
+	// pbckbge nbme = uplobd identifier
+	// pbckbge version = <empty>
+	// descriptor = result identifier (unique within uplobd)
 
-	return fmt.Sprintf("lsif . %d . `%s`.", uploadID, resultID)
+	return fmt.Sprintf("lsif . %d . `%s`.", uplobdID, resultID)
 }
 
-// extractLanguageFromIndexerName attempts to extract the SCIP language name from the name of the LSIF
-// indexer. If the language name is not recognized an empty string is returned. The returned language
-// name will be formatted as defined in the SCIP repository.
-func extractLanguageFromIndexerName(indexerName string) string {
-	for _, prefix := range []string{"scip-", "lsif-"} {
-		if !strings.HasPrefix(indexerName, prefix) {
+// extrbctLbngubgeFromIndexerNbme bttempts to extrbct the SCIP lbngubge nbme from the nbme of the LSIF
+// indexer. If the lbngubge nbme is not recognized bn empty string is returned. The returned lbngubge
+// nbme will be formbtted bs defined in the SCIP repository.
+func extrbctLbngubgeFromIndexerNbme(indexerNbme string) string {
+	for _, prefix := rbnge []string{"scip-", "lsif-"} {
+		if !strings.HbsPrefix(indexerNbme, prefix) {
 			continue
 		}
 
-		needle := strings.ToLower(strings.TrimPrefix(indexerName, prefix))
+		needle := strings.ToLower(strings.TrimPrefix(indexerNbme, prefix))
 
-		for candidate := range scip.Language_value {
-			if needle == strings.ToLower(candidate) {
-				return candidate
+		for cbndidbte := rbnge scip.Lbngubge_vblue {
+			if needle == strings.ToLower(cbndidbte) {
+				return cbndidbte
 			}
 		}
 	}

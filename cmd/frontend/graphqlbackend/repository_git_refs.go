@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,165 +6,165 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
 type refsArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	Query       *string
 	Type        *string
 	OrderBy     *string
-	Interactive bool
+	Interbctive bool
 }
 
-func (r *RepositoryResolver) Branches(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	t := gitRefTypeBranch
-	args.Type = &t
-	return r.GitRefs(ctx, args)
+func (r *RepositoryResolver) Brbnches(ctx context.Context, brgs *refsArgs) (*gitRefConnectionResolver, error) {
+	t := gitRefTypeBrbnch
+	brgs.Type = &t
+	return r.GitRefs(ctx, brgs)
 }
 
-func (r *RepositoryResolver) Tags(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	t := gitRefTypeTag
-	args.Type = &t
-	return r.GitRefs(ctx, args)
+func (r *RepositoryResolver) Tbgs(ctx context.Context, brgs *refsArgs) (*gitRefConnectionResolver, error) {
+	t := gitRefTypeTbg
+	brgs.Type = &t
+	return r.GitRefs(ctx, brgs)
 }
 
-func (r *RepositoryResolver) GitRefs(ctx context.Context, args *refsArgs) (*gitRefConnectionResolver, error) {
-	var branches []*gitdomain.Branch
-	if args.Type == nil || *args.Type == gitRefTypeBranch {
-		var err error
-		branches, err = gitserver.NewClient().ListBranches(ctx, r.RepoName(), gitserver.BranchesOptions{
-			// We intentionally do not ask for commits here since it requires
-			// a separate git call per branch. We only need the git commits to
-			// sort by author/commit date and there are few enough branches to
-			// warrant doing it interactively.
-			IncludeCommit: false,
+func (r *RepositoryResolver) GitRefs(ctx context.Context, brgs *refsArgs) (*gitRefConnectionResolver, error) {
+	vbr brbnches []*gitdombin.Brbnch
+	if brgs.Type == nil || *brgs.Type == gitRefTypeBrbnch {
+		vbr err error
+		brbnches, err = gitserver.NewClient().ListBrbnches(ctx, r.RepoNbme(), gitserver.BrbnchesOptions{
+			// We intentionblly do not bsk for commits here since it requires
+			// b sepbrbte git cbll per brbnch. We only need the git commits to
+			// sort by buthor/commit dbte bnd there bre few enough brbnches to
+			// wbrrbnt doing it interbctively.
+			IncludeCommit: fblse,
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		// Filter before calls to GetCommit. This hopefully reduces the
-		// working set enough that we can sort interactively.
-		if args.Query != nil {
-			query := strings.ToLower(*args.Query)
+		// Filter before cblls to GetCommit. This hopefully reduces the
+		// working set enough thbt we cbn sort interbctively.
+		if brgs.Query != nil {
+			query := strings.ToLower(*brgs.Query)
 
-			filtered := branches[:0]
-			for _, branch := range branches {
-				if strings.Contains(strings.ToLower(branch.Name), query) {
-					filtered = append(filtered, branch)
+			filtered := brbnches[:0]
+			for _, brbnch := rbnge brbnches {
+				if strings.Contbins(strings.ToLower(brbnch.Nbme), query) {
+					filtered = bppend(filtered, brbnch)
 				}
 			}
-			branches = filtered
+			brbnches = filtered
 		}
 
-		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
-			// Sort branches by most recently committed.
+		if brgs.OrderBy != nil && *brgs.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+			// Sort brbnches by most recently committed.
 
-			ok, err := hydrateBranchCommits(ctx, r.gitserverClient, r.RepoName(), args.Interactive, branches)
+			ok, err := hydrbteBrbnchCommits(ctx, r.gitserverClient, r.RepoNbme(), brgs.Interbctive, brbnches)
 			if err != nil {
 				return nil, err
 			}
 
 			if ok {
-				date := func(c *gitdomain.Commit) time.Time {
+				dbte := func(c *gitdombin.Commit) time.Time {
 					if c.Committer == nil {
-						return c.Author.Date
+						return c.Author.Dbte
 					}
-					if c.Committer.Date.After(c.Author.Date) {
-						return c.Committer.Date
+					if c.Committer.Dbte.After(c.Author.Dbte) {
+						return c.Committer.Dbte
 					}
-					return c.Author.Date
+					return c.Author.Dbte
 				}
-				sort.Slice(branches, func(i, j int) bool {
-					bi, bj := branches[i], branches[j]
+				sort.Slice(brbnches, func(i, j int) bool {
+					bi, bj := brbnches[i], brbnches[j]
 					if bi.Commit == nil {
-						return false
+						return fblse
 					}
 					if bj.Commit == nil {
 						return true
 					}
-					di, dj := date(bi.Commit), date(bj.Commit)
-					if di.Equal(dj) {
-						return bi.Name < bj.Name
+					di, dj := dbte(bi.Commit), dbte(bj.Commit)
+					if di.Equbl(dj) {
+						return bi.Nbme < bj.Nbme
 					}
 					if di.After(dj) {
 						return true
 					}
-					return false
+					return fblse
 				})
 			}
 		}
 	}
 
-	var tags []*gitdomain.Tag
-	if args.Type == nil || *args.Type == gitRefTypeTag {
-		var err error
-		tags, err = gitserver.NewClient().ListTags(ctx, r.RepoName())
+	vbr tbgs []*gitdombin.Tbg
+	if brgs.Type == nil || *brgs.Type == gitRefTypeTbg {
+		vbr err error
+		tbgs, err = gitserver.NewClient().ListTbgs(ctx, r.RepoNbme())
 		if err != nil {
 			return nil, err
 		}
-		if args.OrderBy != nil && *args.OrderBy == gitRefOrderAuthoredOrCommittedAt {
-			// Tags are already sorted by creatordate.
+		if brgs.OrderBy != nil && *brgs.OrderBy == gitRefOrderAuthoredOrCommittedAt {
+			// Tbgs bre blrebdy sorted by crebtordbte.
 		} else {
-			// Sort tags by reverse alpha.
-			sort.Slice(tags, func(i, j int) bool {
-				return tags[i].Name > tags[j].Name
+			// Sort tbgs by reverse blphb.
+			sort.Slice(tbgs, func(i, j int) bool {
+				return tbgs[i].Nbme > tbgs[j].Nbme
 			})
 		}
 	}
 
-	// Combine branches and tags.
-	refs := make([]*GitRefResolver, len(branches)+len(tags))
-	for i, b := range branches {
-		refs[i] = &GitRefResolver{name: "refs/heads/" + b.Name, repo: r, target: GitObjectID(b.Head)}
+	// Combine brbnches bnd tbgs.
+	refs := mbke([]*GitRefResolver, len(brbnches)+len(tbgs))
+	for i, b := rbnge brbnches {
+		refs[i] = &GitRefResolver{nbme: "refs/hebds/" + b.Nbme, repo: r, tbrget: GitObjectID(b.Hebd)}
 	}
-	for i, t := range tags {
-		refs[i+len(branches)] = &GitRefResolver{name: "refs/tags/" + t.Name, repo: r, target: GitObjectID(t.CommitID)}
+	for i, t := rbnge tbgs {
+		refs[i+len(brbnches)] = &GitRefResolver{nbme: "refs/tbgs/" + t.Nbme, repo: r, tbrget: GitObjectID(t.CommitID)}
 	}
 
-	if args.Query != nil {
-		query := strings.ToLower(*args.Query)
+	if brgs.Query != nil {
+		query := strings.ToLower(*brgs.Query)
 
 		// Filter using query.
 		filtered := refs[:0]
-		for _, ref := range refs {
-			if strings.Contains(strings.ToLower(strings.TrimPrefix(ref.name, gitRefPrefix(ref.name))), query) {
-				filtered = append(filtered, ref)
+		for _, ref := rbnge refs {
+			if strings.Contbins(strings.ToLower(strings.TrimPrefix(ref.nbme, gitRefPrefix(ref.nbme))), query) {
+				filtered = bppend(filtered, ref)
 			}
 		}
 		refs = filtered
 	}
 
 	return &gitRefConnectionResolver{
-		first: args.First,
+		first: brgs.First,
 		refs:  refs,
 	}, nil
 }
 
-func hydrateBranchCommits(ctx context.Context, gitserverClient gitserver.Client, repo api.RepoName, interactive bool, branches []*gitdomain.Branch) (ok bool, err error) {
-	parentCtx := ctx
-	if interactive {
-		if len(branches) > 1000 {
-			return false, nil
+func hydrbteBrbnchCommits(ctx context.Context, gitserverClient gitserver.Client, repo bpi.RepoNbme, interbctive bool, brbnches []*gitdombin.Brbnch) (ok bool, err error) {
+	pbrentCtx := ctx
+	if interbctive {
+		if len(brbnches) > 1000 {
+			return fblse, nil
 		}
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, 5*time.Second)
-		defer cancel()
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = context.WithTimeout(ctx, 5*time.Second)
+		defer cbncel()
 	}
 
-	for _, branch := range branches {
-		branch.Commit, err = gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, branch.Head, gitserver.ResolveRevisionOptions{})
+	for _, brbnch := rbnge brbnches {
+		brbnch.Commit, err = gitserverClient.GetCommit(ctx, buthz.DefbultSubRepoPermsChecker, repo, brbnch.Hebd, gitserver.ResolveRevisionOptions{})
 		if err != nil {
-			if parentCtx.Err() == nil && ctx.Err() != nil {
-				// reached interactive timeout
-				return false, nil
+			if pbrentCtx.Err() == nil && ctx.Err() != nil {
+				// rebched interbctive timeout
+				return fblse, nil
 			}
-			return false, err
+			return fblse, err
 		}
 	}
 
@@ -177,9 +177,9 @@ type gitRefConnectionResolver struct {
 }
 
 func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {
-	var nodes []*GitRefResolver
+	vbr nodes []*GitRefResolver
 
-	// Paginate.
+	// Pbginbte.
 	if r.first != nil && len(r.refs) > int(*r.first) {
 		nodes = r.refs[:int(*r.first)]
 	} else {
@@ -189,10 +189,10 @@ func (r *gitRefConnectionResolver) Nodes() []*GitRefResolver {
 	return nodes
 }
 
-func (r *gitRefConnectionResolver) TotalCount() int32 {
+func (r *gitRefConnectionResolver) TotblCount() int32 {
 	return int32(len(r.refs))
 }
 
-func (r *gitRefConnectionResolver) PageInfo() *graphqlutil.PageInfo {
-	return graphqlutil.HasNextPage(r.first != nil && int(*r.first) < len(r.refs))
+func (r *gitRefConnectionResolver) PbgeInfo() *grbphqlutil.PbgeInfo {
+	return grbphqlutil.HbsNextPbge(r.first != nil && int(*r.first) < len(r.refs))
 }

@@ -1,4 +1,4 @@
-package backend
+pbckbge bbckend
 
 import (
 	"fmt"
@@ -6,36 +6,36 @@ import (
 	"testing/quick"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/ctbgs_config"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestZoektIndexOptions_RoundTrip(t *testing.T) {
-	var diff string
-	f := func(original ZoektIndexOptions) bool {
+	vbr diff string
+	f := func(originbl ZoektIndexOptions) bool {
 
-		var converted ZoektIndexOptions
-		converted.FromProto(original.ToProto())
+		vbr converted ZoektIndexOptions
+		converted.FromProto(originbl.ToProto())
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("ZoektIndexOptions diff (-want +got):\n%s", diff)
+		t.Errorf("ZoektIndexOptions diff (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestGetIndexOptions(t *testing.T) {
 	const (
-		REPO = api.RepoID(iota + 1)
+		REPO = bpi.RepoID(iotb + 1)
 		FOO
 		NOT_IN_VERSION_CONTEXT
 		PRIORITY
@@ -45,398 +45,398 @@ func TestGetIndexOptions(t *testing.T) {
 		RANKED
 	)
 
-	name := func(repo api.RepoID) string {
+	nbme := func(repo bpi.RepoID) string {
 		return fmt.Sprintf("repo-%.2d", repo)
 	}
 
-	withBranches := func(c schema.SiteConfiguration, repo api.RepoID, branches ...string) schema.SiteConfiguration {
-		if c.ExperimentalFeatures == nil {
-			c.ExperimentalFeatures = &schema.ExperimentalFeatures{}
+	withBrbnches := func(c schemb.SiteConfigurbtion, repo bpi.RepoID, brbnches ...string) schemb.SiteConfigurbtion {
+		if c.ExperimentblFebtures == nil {
+			c.ExperimentblFebtures = &schemb.ExperimentblFebtures{}
 		}
-		if c.ExperimentalFeatures.SearchIndexBranches == nil {
-			c.ExperimentalFeatures.SearchIndexBranches = map[string][]string{}
+		if c.ExperimentblFebtures.SebrchIndexBrbnches == nil {
+			c.ExperimentblFebtures.SebrchIndexBrbnches = mbp[string][]string{}
 		}
-		b := c.ExperimentalFeatures.SearchIndexBranches
-		b[name(repo)] = append(b[name(repo)], branches...)
+		b := c.ExperimentblFebtures.SebrchIndexBrbnches
+		b[nbme(repo)] = bppend(b[nbme(repo)], brbnches...)
 		return c
 	}
 
-	type caseT struct {
-		name              string
-		conf              schema.SiteConfiguration
-		searchContextRevs []string
-		repo              api.RepoID
-		want              ZoektIndexOptions
+	type cbseT struct {
+		nbme              string
+		conf              schemb.SiteConfigurbtion
+		sebrchContextRevs []string
+		repo              bpi.RepoID
+		wbnt              ZoektIndexOptions
 	}
 
-	cases := []caseT{{
-		name: "default",
-		conf: schema.SiteConfiguration{},
+	cbses := []cbseT{{
+		nbme: "defbult",
+		conf: schemb.SiteConfigurbtion{},
 		repo: REPO,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  1,
-			Name:    "repo-01",
+			Nbme:    "repo-01",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "public",
-		conf: schema.SiteConfiguration{},
+		nbme: "public",
+		conf: schemb.SiteConfigurbtion{},
 		repo: PUBLIC,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  5,
-			Name:    "repo-05",
+			Nbme:    "repo-05",
 			Public:  true,
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "fork",
-		conf: schema.SiteConfiguration{},
+		nbme: "fork",
+		conf: schemb.SiteConfigurbtion{},
 		repo: FORK,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  6,
-			Name:    "repo-06",
+			Nbme:    "repo-06",
 			Fork:    true,
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "archived",
-		conf: schema.SiteConfiguration{},
+		nbme: "brchived",
+		conf: schemb.SiteConfigurbtion{},
 		repo: ARCHIVED,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:   7,
-			Name:     "repo-07",
+			Nbme:     "repo-07",
 			Archived: true,
 			Symbols:  true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "nosymbols",
-		conf: schema.SiteConfiguration{
-			SearchIndexSymbolsEnabled: pointers.Ptr(false),
+		nbme: "nosymbols",
+		conf: schemb.SiteConfigurbtion{
+			SebrchIndexSymbolsEnbbled: pointers.Ptr(fblse),
 		},
 		repo: REPO,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID: 1,
-			Name:   "repo-01",
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Nbme:   "repo-01",
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "largefiles",
-		conf: schema.SiteConfiguration{
-			SearchLargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
+		nbme: "lbrgefiles",
+		conf: schemb.SiteConfigurbtion{
+			SebrchLbrgeFiles: []string{"**/*.jbr", "*.bin", "!**/excluded.zip", "\\!included.zip"},
 		},
 		repo: REPO,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:     1,
-			Name:       "repo-01",
+			Nbme:       "repo-01",
 			Symbols:    true,
-			LargeFiles: []string{"**/*.jar", "*.bin", "!**/excluded.zip", "\\!included.zip"},
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			LbrgeFiles: []string{"**/*.jbr", "*.bin", "!**/excluded.zip", "\\!included.zip"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "conf index branches",
-		conf: withBranches(schema.SiteConfiguration{}, REPO, "a", "", "b"),
+		nbme: "conf index brbnches",
+		conf: withBrbnches(schemb.SiteConfigurbtion{}, REPO, "b", "", "b"),
 		repo: REPO,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  1,
-			Name:    "repo-01",
+			Nbme:    "repo-01",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-				{Name: "b", Version: "!b"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
+				{Nbme: "b", Version: "!b"},
+				{Nbme: "b", Version: "!b"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "conf index revisions",
-		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
-				{Name: "repo-.*", Revisions: []string{"a"}},
+		nbme: "conf index revisions",
+		conf: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			SebrchIndexRevisions: []*schemb.SebrchIndexRevisionsRule{
+				{Nbme: "repo-.*", Revisions: []string{"b"}},
 			},
 		}},
 		repo: REPO,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  1,
-			Name:    "repo-01",
+			Nbme:    "repo-01",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
+				{Nbme: "b", Version: "!b"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "conf index revisions and branches",
-		conf: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			SearchIndexBranches: map[string][]string{
-				"repo-01": {"a", "b"},
+		nbme: "conf index revisions bnd brbnches",
+		conf: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			SebrchIndexBrbnches: mbp[string][]string{
+				"repo-01": {"b", "b"},
 			},
-			SearchIndexRevisions: []*schema.SearchIndexRevisionsRule{
-				{Name: "repo-.*", Revisions: []string{"a", "c"}},
+			SebrchIndexRevisions: []*schemb.SebrchIndexRevisionsRule{
+				{Nbme: "repo-.*", Revisions: []string{"b", "c"}},
 			},
 		}},
 		repo: REPO,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  1,
-			Name:    "repo-01",
+			Nbme:    "repo-01",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-				{Name: "b", Version: "!b"},
-				{Name: "c", Version: "!c"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
+				{Nbme: "b", Version: "!b"},
+				{Nbme: "b", Version: "!b"},
+				{Nbme: "c", Version: "!c"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name:              "with search context revisions",
-		conf:              schema.SiteConfiguration{},
+		nbme:              "with sebrch context revisions",
+		conf:              schemb.SiteConfigurbtion{},
 		repo:              REPO,
-		searchContextRevs: []string{"rev1", "rev2"},
-		want: ZoektIndexOptions{
+		sebrchContextRevs: []string{"rev1", "rev2"},
+		wbnt: ZoektIndexOptions{
 			RepoID:  1,
-			Name:    "repo-01",
+			Nbme:    "repo-01",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "rev1", Version: "!rev1"},
-				{Name: "rev2", Version: "!rev2"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
+				{Nbme: "rev1", Version: "!rev1"},
+				{Nbme: "rev2", Version: "!rev2"},
 			},
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "with a priority value",
-		conf: schema.SiteConfiguration{},
+		nbme: "with b priority vblue",
+		conf: schemb.SiteConfigurbtion{},
 		repo: PRIORITY,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  4,
-			Name:    "repo-04",
+			Nbme:    "repo-04",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
 			Priority:    10,
-			LanguageMap: ctags_config.DefaultEngines,
+			LbngubgeMbp: ctbgs_config.DefbultEngines,
 		},
 	}, {
-		name: "with rank",
-		conf: schema.SiteConfiguration{},
+		nbme: "with rbnk",
+		conf: schemb.SiteConfigurbtion{},
 		repo: RANKED,
-		want: ZoektIndexOptions{
+		wbnt: ZoektIndexOptions{
 			RepoID:  8,
-			Name:    "repo-08",
+			Nbme:    "repo-08",
 			Symbols: true,
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
 			},
-			DocumentRanksVersion: "ranked",
-			LanguageMap:          ctags_config.DefaultEngines,
+			DocumentRbnksVersion: "rbnked",
+			LbngubgeMbp:          ctbgs_config.DefbultEngines,
 		},
 	}}
 
 	{
-		// Generate case for no more than than 64 branches
-		var branches []string
+		// Generbte cbse for no more thbn thbn 64 brbnches
+		vbr brbnches []string
 		for i := 0; i < 100; i++ {
-			branches = append(branches, fmt.Sprintf("%.2d", i))
+			brbnches = bppend(brbnches, fmt.Sprintf("%.2d", i))
 		}
-		want := []zoekt.RepositoryBranch{{Name: "HEAD", Version: "!HEAD"}}
+		wbnt := []zoekt.RepositoryBrbnch{{Nbme: "HEAD", Version: "!HEAD"}}
 		for i := 0; i < 63; i++ {
-			want = append(want, zoekt.RepositoryBranch{
-				Name:    fmt.Sprintf("%.2d", i),
+			wbnt = bppend(wbnt, zoekt.RepositoryBrbnch{
+				Nbme:    fmt.Sprintf("%.2d", i),
 				Version: fmt.Sprintf("!%.2d", i),
 			})
 		}
-		cases = append(cases, caseT{
-			name: "limit branches",
-			conf: withBranches(schema.SiteConfiguration{}, REPO, branches...),
+		cbses = bppend(cbses, cbseT{
+			nbme: "limit brbnches",
+			conf: withBrbnches(schemb.SiteConfigurbtion{}, REPO, brbnches...),
 			repo: REPO,
-			want: ZoektIndexOptions{
+			wbnt: ZoektIndexOptions{
 				RepoID:      1,
-				Name:        "repo-01",
+				Nbme:        "repo-01",
 				Symbols:     true,
-				Branches:    want,
-				LanguageMap: ctags_config.DefaultEngines,
+				Brbnches:    wbnt,
+				LbngubgeMbp: ctbgs_config.DefbultEngines,
 			},
 		})
 	}
 
-	var getRepoIndexOptions getRepoIndexOptsFn = func(repo api.RepoID) (*RepoIndexOptions, error) {
-		var priority float64
+	vbr getRepoIndexOptions getRepoIndexOptsFn = func(repo bpi.RepoID) (*RepoIndexOptions, error) {
+		vbr priority flobt64
 		if repo == PRIORITY {
 			priority = 10
 		}
-		var documentRanksVersion string
+		vbr documentRbnksVersion string
 		if repo == RANKED {
-			documentRanksVersion = "ranked"
+			documentRbnksVersion = "rbnked"
 		}
 		return &RepoIndexOptions{
 			RepoID:   repo,
-			Name:     name(repo),
+			Nbme:     nbme(repo),
 			Public:   repo == PUBLIC,
 			Fork:     repo == FORK,
 			Archived: repo == ARCHIVED,
 			Priority: priority,
-			GetVersion: func(branch string) (string, error) {
-				return "!" + branch, nil
+			GetVersion: func(brbnch string) (string, error) {
+				return "!" + brbnch, nil
 			},
 
-			DocumentRanksVersion: documentRanksVersion,
+			DocumentRbnksVersion: documentRbnksVersion,
 		}, nil
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			getSearchContextRevisions := func(api.RepoID) ([]string, error) { return tc.searchContextRevs, nil }
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			getSebrchContextRevisions := func(bpi.RepoID) ([]string, error) { return tc.sebrchContextRevs, nil }
 
-			got := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSearchContextRevisions, tc.repo)
+			got := GetIndexOptions(&tc.conf, getRepoIndexOptions, getSebrchContextRevisions, tc.repo)
 
-			want := []ZoektIndexOptions{tc.want}
-			if diff := cmp.Diff(want, got); diff != "" {
-				t.Fatal("mismatch (-want, +got):\n", diff)
+			wbnt := []ZoektIndexOptions{tc.wbnt}
+			if diff := cmp.Diff(wbnt, got); diff != "" {
+				t.Fbtbl("mismbtch (-wbnt, +got):\n", diff)
 			}
 		})
 	}
 }
 
 func TestGetIndexOptions_getVersion(t *testing.T) {
-	conf := schema.SiteConfiguration{}
-	getSearchContextRevs := func(api.RepoID) ([]string, error) { return []string{"b1", "b2"}, nil }
+	conf := schemb.SiteConfigurbtion{}
+	getSebrchContextRevs := func(bpi.RepoID) ([]string, error) { return []string{"b1", "b2"}, nil }
 
 	boom := errors.New("boom")
-	cases := []struct {
-		name    string
+	cbses := []struct {
+		nbme    string
 		f       func(string) (string, error)
-		want    []zoekt.RepositoryBranch
-		wantErr string
+		wbnt    []zoekt.RepositoryBrbnch
+		wbntErr string
 	}{{
-		name: "error",
+		nbme: "error",
 		f: func(_ string) (string, error) {
 			return "", boom
 		},
-		wantErr: "boom",
+		wbntErr: "boom",
 	}, {
-		// no HEAD means we don't index anything. This leads to zoekt having
-		// an empty index.
-		name: "no HEAD",
-		f: func(branch string) (string, error) {
-			if branch == "HEAD" {
+		// no HEAD mebns we don't index bnything. This lebds to zoekt hbving
+		// bn empty index.
+		nbme: "no HEAD",
+		f: func(brbnch string) (string, error) {
+			if brbnch == "HEAD" {
 				return "", nil
 			}
-			return "!" + branch, nil
+			return "!" + brbnch, nil
 		},
-		want: nil,
+		wbnt: nil,
 	}, {
-		name: "no branch",
-		f: func(branch string) (string, error) {
-			if branch == "b1" {
+		nbme: "no brbnch",
+		f: func(brbnch string) (string, error) {
+			if brbnch == "b1" {
 				return "", nil
 			}
-			return "!" + branch, nil
+			return "!" + brbnch, nil
 		},
-		want: []zoekt.RepositoryBranch{
-			{Name: "HEAD", Version: "!HEAD"},
-			{Name: "b2", Version: "!b2"},
+		wbnt: []zoekt.RepositoryBrbnch{
+			{Nbme: "HEAD", Version: "!HEAD"},
+			{Nbme: "b2", Version: "!b2"},
 		},
 	}, {
-		name: "all",
-		f: func(branch string) (string, error) {
-			return "!" + branch, nil
+		nbme: "bll",
+		f: func(brbnch string) (string, error) {
+			return "!" + brbnch, nil
 		},
-		want: []zoekt.RepositoryBranch{
-			{Name: "HEAD", Version: "!HEAD"},
-			{Name: "b1", Version: "!b1"},
-			{Name: "b2", Version: "!b2"},
+		wbnt: []zoekt.RepositoryBrbnch{
+			{Nbme: "HEAD", Version: "!HEAD"},
+			{Nbme: "b1", Version: "!b1"},
+			{Nbme: "b2", Version: "!b2"},
 		},
 	}}
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			getRepoIndexOptions := func(repo api.RepoID) (*RepoIndexOptions, error) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			getRepoIndexOptions := func(repo bpi.RepoID) (*RepoIndexOptions, error) {
 				return &RepoIndexOptions{
 					GetVersion: tc.f,
 				}, nil
 			}
 
-			resp := GetIndexOptions(&conf, getRepoIndexOptions, getSearchContextRevs, 1)
+			resp := GetIndexOptions(&conf, getRepoIndexOptions, getSebrchContextRevs, 1)
 			if len(resp) != 1 {
-				t.Fatalf("expected 1 index options returned, got %d", len(resp))
+				t.Fbtblf("expected 1 index options returned, got %d", len(resp))
 			}
 
 			got := resp[0]
-			if got.Error != tc.wantErr {
-				t.Fatalf("expected error %v, got index options %+v and error %v", tc.wantErr, got, got.Error)
+			if got.Error != tc.wbntErr {
+				t.Fbtblf("expected error %v, got index options %+v bnd error %v", tc.wbntErr, got, got.Error)
 			}
-			if tc.wantErr != "" {
+			if tc.wbntErr != "" {
 				return
 			}
 
-			if diff := cmp.Diff(tc.want, got.Branches); diff != "" {
-				t.Fatal("mismatch (-want, +got):\n", diff)
+			if diff := cmp.Diff(tc.wbnt, got.Brbnches); diff != "" {
+				t.Fbtbl("mismbtch (-wbnt, +got):\n", diff)
 			}
 		})
 	}
 }
 
-func TestGetIndexOptions_batch(t *testing.T) {
-	isError := func(repo api.RepoID) bool {
+func TestGetIndexOptions_bbtch(t *testing.T) {
+	isError := func(repo bpi.RepoID) bool {
 		return repo%20 == 0
 	}
-	var (
-		repos []api.RepoID
-		want  []ZoektIndexOptions
+	vbr (
+		repos []bpi.RepoID
+		wbnt  []ZoektIndexOptions
 	)
-	for repo := api.RepoID(1); repo < 100; repo++ {
-		repos = append(repos, repo)
+	for repo := bpi.RepoID(1); repo < 100; repo++ {
+		repos = bppend(repos, repo)
 		if isError(repo) {
-			want = append(want, ZoektIndexOptions{Error: "error"})
+			wbnt = bppend(wbnt, ZoektIndexOptions{Error: "error"})
 		} else {
-			want = append(want, ZoektIndexOptions{
+			wbnt = bppend(wbnt, ZoektIndexOptions{
 				Symbols: true,
-				Branches: []zoekt.RepositoryBranch{
-					{Name: "HEAD", Version: fmt.Sprintf("!HEAD-%d", repo)},
+				Brbnches: []zoekt.RepositoryBrbnch{
+					{Nbme: "HEAD", Version: fmt.Sprintf("!HEAD-%d", repo)},
 				},
-				LanguageMap: ctags_config.DefaultEngines,
+				LbngubgeMbp: ctbgs_config.DefbultEngines,
 			})
 		}
 	}
-	getRepoIndexOptions := func(repo api.RepoID) (*RepoIndexOptions, error) {
+	getRepoIndexOptions := func(repo bpi.RepoID) (*RepoIndexOptions, error) {
 		return &RepoIndexOptions{
-			GetVersion: func(branch string) (string, error) {
+			GetVersion: func(brbnch string) (string, error) {
 				if isError(repo) {
 					return "", errors.New("error")
 				}
-				return fmt.Sprintf("!%s-%d", branch, repo), nil
+				return fmt.Sprintf("!%s-%d", brbnch, repo), nil
 			},
 		}, nil
 	}
 
-	getSearchContextRevs := func(api.RepoID) ([]string, error) { return nil, nil }
+	getSebrchContextRevs := func(bpi.RepoID) ([]string, error) { return nil, nil }
 
-	got := GetIndexOptions(&schema.SiteConfiguration{}, getRepoIndexOptions, getSearchContextRevs, repos...)
+	got := GetIndexOptions(&schemb.SiteConfigurbtion{}, getRepoIndexOptions, getSebrchContextRevs, repos...)
 
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal("mismatch (-want, +got):\n", diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtbl("mismbtch (-wbnt, +got):\n", diff)
 	}
 }

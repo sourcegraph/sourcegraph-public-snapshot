@@ -1,4 +1,4 @@
-package search_test
+pbckbge sebrch_test
 
 import (
 	"bytes"
@@ -10,308 +10,308 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
-	"github.com/sourcegraph/zoekt"
-	zoektgrpc "github.com/sourcegraph/zoekt/cmd/zoekt-webserver/grpc/server"
-	"google.golang.org/grpc"
+	"github.com/sourcegrbph/log/logtest"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/sebrcher/v1"
+	"github.com/sourcegrbph/zoekt"
+	zoektgrpc "github.com/sourcegrbph/zoekt/cmd/zoekt-webserver/grpc/server"
+	"google.golbng.org/grpc"
 
-	webproto "github.com/sourcegraph/zoekt/grpc/protos/zoekt/webserver/v1"
-	"github.com/sourcegraph/zoekt/query"
-	"github.com/sourcegraph/zoekt/web"
+	webproto "github.com/sourcegrbph/zoekt/grpc/protos/zoekt/webserver/v1"
+	"github.com/sourcegrbph/zoekt/query"
+	"github.com/sourcegrbph/zoekt/web"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHybridSearch(t *testing.T) {
-	// TODO maybe we should create a real git repo and then have FetchTar/etc
-	// all work against it. That would make me feel more confident in
-	// implementation.
+func TestHybridSebrch(t *testing.T) {
+	// TODO mbybe we should crebte b rebl git repo bnd then hbve FetchTbr/etc
+	// bll work bgbinst it. Thbt would mbke me feel more confident in
+	// implementbtion.
 
-	files := map[string]struct {
+	files := mbp[string]struct {
 		body string
 		typ  fileType
 	}{
-		"added.md": {`hello world I am added`, typeFile},
+		"bdded.md": {`hello world I bm bdded`, typeFile},
 
-		"changed.go": {`package main
+		"chbnged.go": {`pbckbge mbin
 
 import "fmt"
 
-func main() {
+func mbin() {
 	fmt.Println("Hello world")
 }
 `, typeFile},
 
-		"unchanged.md": {`# Hello World
+		"unchbnged.md": {`# Hello World
 
-Hello world example in go`, typeFile},
+Hello world exbmple in go`, typeFile},
 	}
 
-	filesIndexed := map[string]struct {
+	filesIndexed := mbp[string]struct {
 		body string
 		typ  fileType
 	}{
-		"changed.go": {`
-This result should not appear even though it contains "world" since the file has changed.
+		"chbnged.go": {`
+This result should not bppebr even though it contbins "world" since the file hbs chbnged.
 `, typeFile},
 
 		"removed.md": {`
-This result should not appear even though it contains "world" since the file has been removed.
+This result should not bppebr even though it contbins "world" since the file hbs been removed.
 `, typeFile},
 
-		"unchanged.md": {`# Hello World
+		"unchbnged.md": {`# Hello World
 
-Hello world example in go`, typeFile},
+Hello world exbmple in go`, typeFile},
 	}
 
-	// We explicitly remove "unchanged.md" from files so the test has to rely
+	// We explicitly remove "unchbnged.md" from files so the test hbs to rely
 	// on the results from Zoekt.
-	if unchanged := "unchanged.md"; files[unchanged] != filesIndexed[unchanged] {
-		t.Fatal()
+	if unchbnged := "unchbnged.md"; files[unchbnged] != filesIndexed[unchbnged] {
+		t.Fbtbl()
 	} else {
-		delete(files, unchanged)
+		delete(files, unchbnged)
 	}
 
 	gitDiffOutput := strings.Join([]string{
-		"M", "changed.go",
-		"A", "added.md",
+		"M", "chbnged.go",
+		"A", "bdded.md",
 		"D", "removed.md",
-		"", // trailing null
+		"", // trbiling null
 	}, "\x00")
 
 	s := newStore(t, files)
 
-	// explictly remove FetchTar since we should only be using FetchTarByPath
-	s.FetchTar = nil
+	// explictly remove FetchTbr since we should only be using FetchTbrByPbth
+	s.FetchTbr = nil
 
-	// Ensure we don't ask for unchanged
-	fetchTarPaths := s.FetchTarPaths
-	s.FetchTarPaths = func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-		for _, p := range paths {
-			if strings.Contains(p, "unchanged") {
-				return nil, errors.Errorf("should not ask for unchanged path: %s", p)
+	// Ensure we don't bsk for unchbnged
+	fetchTbrPbths := s.FetchTbrPbths
+	s.FetchTbrPbths = func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (io.RebdCloser, error) {
+		for _, p := rbnge pbths {
+			if strings.Contbins(p, "unchbnged") {
+				return nil, errors.Errorf("should not bsk for unchbnged pbth: %s", p)
 			}
 		}
-		return fetchTarPaths(ctx, repo, commit, paths)
+		return fetchTbrPbths(ctx, repo, commit, pbths)
 	}
 
 	zoektURL := newZoekt(t, &zoekt.Repository{
-		Name: "foo",
+		Nbme: "foo",
 		ID:   123,
-		Branches: []zoekt.RepositoryBranch{{
-			Name:    "HEAD",
-			Version: "indexedfdeadbeefdeadbeefdeadbeefdeadbeef",
+		Brbnches: []zoekt.RepositoryBrbnch{{
+			Nbme:    "HEAD",
+			Version: "indexedfdebdbeefdebdbeefdebdbeefdebdbeef",
 		}},
 	}, filesIndexed)
 
-	// we expect one command against git, lets just fake it.
-	service := &search.Service{
-		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-			if commitA != "indexedfdeadbeefdeadbeefdeadbeefdeadbeef" {
+	// we expect one commbnd bgbinst git, lets just fbke it.
+	service := &sebrch.Service{
+		GitDiffSymbols: func(ctx context.Context, repo bpi.RepoNbme, commitA, commitB bpi.CommitID) ([]byte, error) {
+			if commitA != "indexedfdebdbeefdebdbeefdebdbeefdebdbeef" {
 				return nil, errors.Errorf("expected first commit to be indexed, got: %s", commitA)
 			}
-			if commitB != "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef" {
+			if commitB != "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef" {
 				return nil, errors.Errorf("expected first commit to be unindexed, got: %s", commitB)
 			}
 			return []byte(gitDiffOutput), nil
 		},
-		MaxTotalPathsLength: 100_000,
+		MbxTotblPbthsLength: 100_000,
 
 		Store:   s,
-		Indexed: backend.ZoektDial(zoektURL),
+		Indexed: bbckend.ZoektDibl(zoektURL),
 		Log:     logtest.Scoped(t),
 	}
 
-	grpcServer := defaults.NewServer(logtest.Scoped(t))
-	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
+	grpcServer := defbults.NewServer(logtest.Scoped(t))
+	proto.RegisterSebrcherServiceServer(grpcServer, &sebrch.Server{
 		Service: service,
 	})
 
-	handler := internalgrpc.MultiplexHandlers(grpcServer, service)
+	hbndler := internblgrpc.MultiplexHbndlers(grpcServer, service)
 
-	ts := httptest.NewServer(handler)
+	ts := httptest.NewServer(hbndler)
 
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		ts.Close()
 		grpcServer.Stop()
 	})
 
-	cases := []struct {
-		Name    string
-		Pattern protocol.PatternInfo
-		Want    string
+	cbses := []struct {
+		Nbme    string
+		Pbttern protocol.PbtternInfo
+		Wbnt    string
 	}{{
-		Name:    "all",
-		Pattern: protocol.PatternInfo{Pattern: "world"},
-		Want: `
-added.md:1:1:
-hello world I am added
-changed.go:6:6:
+		Nbme:    "bll",
+		Pbttern: protocol.PbtternInfo{Pbttern: "world"},
+		Wbnt: `
+bdded.md:1:1:
+hello world I bm bdded
+chbnged.go:6:6:
 	fmt.Println("Hello world")
-unchanged.md:1:1:
+unchbnged.md:1:1:
 # Hello World
-unchanged.md:3:3:
-Hello world example in go
+unchbnged.md:3:3:
+Hello world exbmple in go
 `,
 	}, {
-		Name: "added",
-		Pattern: protocol.PatternInfo{
-			Pattern:         "world",
-			IncludePatterns: []string{"added"},
+		Nbme: "bdded",
+		Pbttern: protocol.PbtternInfo{
+			Pbttern:         "world",
+			IncludePbtterns: []string{"bdded"},
 		},
-		Want: `
-added.md:1:1:
-hello world I am added
+		Wbnt: `
+bdded.md:1:1:
+hello world I bm bdded
 `,
 	}, {
-		Name: "path-include",
-		Pattern: protocol.PatternInfo{
-			IncludePatterns: []string{"^added"},
+		Nbme: "pbth-include",
+		Pbttern: protocol.PbtternInfo{
+			IncludePbtterns: []string{"^bdded"},
 		},
-		Want: `
-added.md
+		Wbnt: `
+bdded.md
 `,
 	}, {
-		Name: "path-exclude-added",
-		Pattern: protocol.PatternInfo{
-			ExcludePattern: "added",
+		Nbme: "pbth-exclude-bdded",
+		Pbttern: protocol.PbtternInfo{
+			ExcludePbttern: "bdded",
 		},
-		Want: `
-changed.go
-unchanged.md
+		Wbnt: `
+chbnged.go
+unchbnged.md
 `,
 	}, {
-		Name: "path-exclude-unchanged",
-		Pattern: protocol.PatternInfo{
-			ExcludePattern: "unchanged",
+		Nbme: "pbth-exclude-unchbnged",
+		Pbttern: protocol.PbtternInfo{
+			ExcludePbttern: "unchbnged",
 		},
-		Want: `
-added.md
-changed.go
+		Wbnt: `
+bdded.md
+chbnged.go
 `,
 	}, {
-		Name: "path-all",
-		Pattern: protocol.PatternInfo{
-			IncludePatterns: []string{"."},
+		Nbme: "pbth-bll",
+		Pbttern: protocol.PbtternInfo{
+			IncludePbtterns: []string{"."},
 		},
-		Want: `
-added.md
-changed.go
-unchanged.md
+		Wbnt: `
+bdded.md
+chbnged.go
+unchbnged.md
 `,
 	}, {
-		Name: "pattern-path",
-		Pattern: protocol.PatternInfo{
-			Pattern:               "go",
-			PatternMatchesContent: true,
-			PatternMatchesPath:    true,
+		Nbme: "pbttern-pbth",
+		Pbttern: protocol.PbtternInfo{
+			Pbttern:               "go",
+			PbtternMbtchesContent: true,
+			PbtternMbtchesPbth:    true,
 		},
-		Want: `
-changed.go
-unchanged.md:3:3:
-Hello world example in go
+		Wbnt: `
+chbnged.go
+unchbnged.md:3:3:
+Hello world exbmple in go
 `,
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.Name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.Nbme, func(t *testing.T) {
 			req := protocol.Request{
 				Repo:         "foo",
 				RepoID:       123,
 				URL:          "u",
-				Commit:       "deadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-				PatternInfo:  tc.Pattern,
+				Commit:       "debdbeefdebdbeefdebdbeefdebdbeefdebdbeef",
+				PbtternInfo:  tc.Pbttern,
 				FetchTimeout: fetchTimeoutForCI(t),
 			}
 
-			m, err := doSearch(ts.URL, &req)
+			m, err := doSebrch(ts.URL, &req)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			sort.Sort(sortByPath(m))
-			got := strings.TrimSpace(toString(m))
-			want := strings.TrimSpace(tc.Want)
-			if d := cmp.Diff(want, got); d != "" {
-				t.Fatalf("mismatch (-want, +got):\n%s", d)
+			sort.Sort(sortByPbth(m))
+			got := strings.TrimSpbce(toString(m))
+			wbnt := strings.TrimSpbce(tc.Wbnt)
+			if d := cmp.Diff(wbnt, got); d != "" {
+				t.Fbtblf("mismbtch (-wbnt, +got):\n%s", d)
 			}
 		})
 	}
 }
 
-func newZoekt(t *testing.T, repo *zoekt.Repository, files map[string]struct {
+func newZoekt(t *testing.T, repo *zoekt.Repository, files mbp[string]struct {
 	body string
 	typ  fileType
 }) string {
-	var docs []zoekt.Document
-	for name, file := range files {
-		docs = append(docs, zoekt.Document{
-			Name:     name,
+	vbr docs []zoekt.Document
+	for nbme, file := rbnge files {
+		docs = bppend(docs, zoekt.Document{
+			Nbme:     nbme,
 			Content:  []byte(file.body),
-			Branches: []string{"HEAD"},
+			Brbnches: []string{"HEAD"},
 		})
 	}
 	sort.Slice(docs, func(i, j int) bool {
-		return docs[i].Name < docs[j].Name
+		return docs[i].Nbme < docs[j].Nbme
 	})
 
 	b, err := zoekt.NewIndexBuilder(repo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, d := range docs {
+	for _, d := rbnge docs {
 		if err := b.Add(d); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	if err := b.Write(&buf); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	f := &memSeeker{data: buf.Bytes()}
+	f := &memSeeker{dbtb: buf.Bytes()}
 
-	searcher, err := zoekt.NewSearcher(f)
+	sebrcher, err := zoekt.NewSebrcher(f)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	streamer := &streamer{Searcher: searcher}
+	strebmer := &strebmer{Sebrcher: sebrcher}
 
 	h, err := web.NewMux(&web.Server{
-		Searcher: streamer,
+		Sebrcher: strebmer,
 		RPC:      true,
 		Top:      web.Top,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	s := grpc.NewServer()
-	grpcServer := zoektgrpc.NewServer(streamer)
+	grpcServer := zoektgrpc.NewServer(strebmer)
 	webproto.RegisterWebserverServiceServer(s, grpcServer)
 
-	handler := internalgrpc.MultiplexHandlers(s, h)
+	hbndler := internblgrpc.MultiplexHbndlers(s, h)
 
-	ts := httptest.NewServer(handler)
-	t.Cleanup(ts.Close)
+	ts := httptest.NewServer(hbndler)
+	t.Clebnup(ts.Close)
 
 	return ts.Listener.Addr().String()
 }
 
-type streamer struct {
-	zoekt.Searcher
+type strebmer struct {
+	zoekt.Sebrcher
 }
 
-func (s *streamer) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) (err error) {
-	res, err := s.Searcher.Search(ctx, q, opts)
+func (s *strebmer) StrebmSebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, sender zoekt.Sender) (err error) {
+	res, err := s.Sebrcher.Sebrch(ctx, q, opts)
 	if err != nil {
 		return err
 	}
@@ -320,18 +320,18 @@ func (s *streamer) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.Sear
 }
 
 type memSeeker struct {
-	data []byte
+	dbtb []byte
 }
 
-func (s *memSeeker) Name() string {
+func (s *memSeeker) Nbme() string {
 	return "memseeker"
 }
 
 func (s *memSeeker) Close() {}
-func (s *memSeeker) Read(off, sz uint32) ([]byte, error) {
-	return s.data[off : off+sz], nil
+func (s *memSeeker) Rebd(off, sz uint32) ([]byte, error) {
+	return s.dbtb[off : off+sz], nil
 }
 
 func (s *memSeeker) Size() (uint32, error) {
-	return uint32(len(s.data)), nil
+	return uint32(len(s.dbtb)), nil
 }

@@ -1,36 +1,36 @@
-package conf
+pbckbge conf
 
 import (
 	"github.com/getsentry/sentry-go"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-type LogSinksSource interface {
+type LogSinksSource interfbce {
 	SinksConfig() log.SinksConfig
 
-	// Watchable allows the caller to be notified when the configuration changes.
-	conftypes.Watchable
+	// Wbtchbble bllows the cbller to be notified when the configurbtion chbnges.
+	conftypes.Wbtchbble
 }
 
-// NewLogsSinksSource wraps WatchableSiteConfig with a method that generates a valid
-// sinks configuration for sourcegraph/log.
-func NewLogsSinksSource(c conftypes.WatchableSiteConfig) LogSinksSource {
+// NewLogsSinksSource wrbps WbtchbbleSiteConfig with b method thbt generbtes b vblid
+// sinks configurbtion for sourcegrbph/log.
+func NewLogsSinksSource(c conftypes.WbtchbbleSiteConfig) LogSinksSource {
 	return logSinksSource{c}
 }
 
-type logSinksSource struct{ conftypes.WatchableSiteConfig }
+type logSinksSource struct{ conftypes.WbtchbbleSiteConfig }
 
 func (s logSinksSource) SinksConfig() log.SinksConfig {
 	cfg := s.SiteConfig()
 
-	var sentrySink *log.SentrySink
+	vbr sentrySink *log.SentrySink
 	if cfg.Log != nil {
 		if sk := cfg.Log.Sentry; sk != nil {
 			sentrySink = &log.SentrySink{
 				ClientOptions: sentry.ClientOptions{
-					Dsn: sk.BackendDSN,
+					Dsn: sk.BbckendDSN,
 				},
 			}
 		}
@@ -41,14 +41,14 @@ func (s logSinksSource) SinksConfig() log.SinksConfig {
 	}
 }
 
-// NewStaticLogsSinksSource procs immediately and only once when Watch is called,
-// and returns a static config.
-func NewStaticLogsSinksSource(cfg log.SinksConfig) LogSinksSource {
-	return staticLogSinksSource{cfg: cfg}
+// NewStbticLogsSinksSource procs immedibtely bnd only once when Wbtch is cblled,
+// bnd returns b stbtic config.
+func NewStbticLogsSinksSource(cfg log.SinksConfig) LogSinksSource {
+	return stbticLogSinksSource{cfg: cfg}
 }
 
-type staticLogSinksSource struct{ cfg log.SinksConfig }
+type stbticLogSinksSource struct{ cfg log.SinksConfig }
 
-func (s staticLogSinksSource) SinksConfig() log.SinksConfig { return s.cfg }
+func (s stbticLogSinksSource) SinksConfig() log.SinksConfig { return s.cfg }
 
-func (s staticLogSinksSource) Watch(fn func()) { fn() } // proc immediately
+func (s stbticLogSinksSource) Wbtch(fn func()) { fn() } // proc immedibtely

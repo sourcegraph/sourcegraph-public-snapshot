@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"strings"
@@ -6,331 +6,331 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-func TestExternalService(t *testing.T) {
+func TestExternblService(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Skip("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment vbribble GITHUB_TOKEN is not set")
 	}
 
-	t.Run("repositoryPathPattern", func(t *testing.T) {
-		const repo = "sgtest/go-diff" // Tiny repo, fast to clone
+	t.Run("repositoryPbthPbttern", func(t *testing.T) {
+		const repo = "sgtest/go-diff" // Tiny repo, fbst to clone
 		const slug = "github.com/" + repo
-		// Set up external service
-		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		// Set up externbl service
+		esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "gqltest-github-repoPathPattern",
-			Config: mustMarshalJSONString(struct {
+			DisplbyNbme: "gqltest-github-repoPbthPbttern",
+			Config: mustMbrshblJSONString(struct {
 				URL                   string   `json:"url"`
 				Token                 string   `json:"token"`
 				Repos                 []string `json:"repos"`
-				RepositoryPathPattern string   `json:"repositoryPathPattern"`
+				RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 			}{
 				URL:                   "https://ghe.sgdev.org/",
 				Token:                 *githubToken,
 				Repos:                 []string{repo},
-				RepositoryPathPattern: "github.com/{nameWithOwner}",
+				RepositoryPbthPbttern: "github.com/{nbmeWithOwner}",
 			}),
 		})
-		// The repo-updater might not be up yet, but it will eventually catch up for the external
-		// service we just added, thus it is OK to ignore this transient error.
-		if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-			t.Fatal(err)
+		// The repo-updbter might not be up yet, but it will eventublly cbtch up for the externbl
+		// service we just bdded, thus it is OK to ignore this trbnsient error.
+		if err != nil && !strings.Contbins(err.Error(), "/sync-externbl-service") {
+			t.Fbtbl(err)
 		}
-		removeExternalServiceAfterTest(t, esID)
+		removeExternblServiceAfterTest(t, esID)
 
-		err = client.WaitForReposToBeCloned(slug)
+		err = client.WbitForReposToBeCloned(slug)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// The request URL should be redirected to the new path
-		origURL := *baseURL + "/" + slug
+		// The request URL should be redirected to the new pbth
+		origURL := *bbseURL + "/" + slug
 		resp, err := client.Get(origURL)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		wantURL := *baseURL + "/" + slug // <baseURL>/github.com/sgtest/go-diff
-		if diff := cmp.Diff(wantURL, resp.Request.URL.String()); diff != "" {
-			t.Fatalf("URL mismatch (-want +got):\n%s", diff)
+		wbntURL := *bbseURL + "/" + slug // <bbseURL>/github.com/sgtest/go-diff
+		if diff := cmp.Diff(wbntURL, resp.Request.URL.String()); diff != "" {
+			t.Fbtblf("URL mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-func TestExternalService_AWSCodeCommit(t *testing.T) {
-	if len(*awsAccessKeyID) == 0 || len(*awsSecretAccessKey) == 0 ||
-		len(*awsCodeCommitUsername) == 0 || len(*awsCodeCommitPassword) == 0 {
-		t.Skip("Environment variable AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
+func TestExternblService_AWSCodeCommit(t *testing.T) {
+	if len(*bwsAccessKeyID) == 0 || len(*bwsSecretAccessKey) == 0 ||
+		len(*bwsCodeCommitUsernbme) == 0 || len(*bwsCodeCommitPbssword) == 0 {
+		t.Skip("Environment vbribble AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_CODE_COMMIT_USERNAME or AWS_CODE_COMMIT_PASSWORD is not set")
 	}
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindAWSCodeCommit,
-		DisplayName: "gqltest-aws-code-commit",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-bws-code-commit",
+		Config: mustMbrshblJSONString(struct {
 			Region                string            `json:"region"`
-			AccessKeyID           string            `json:"accessKeyID"`
+			AccessKeyID           string            `json:"bccessKeyID"`
 			SecretAccessKey       string            `json:"secretAccessKey"`
-			RepositoryPathPattern string            `json:"repositoryPathPattern"`
-			GitCredentials        map[string]string `json:"gitCredentials"`
+			RepositoryPbthPbttern string            `json:"repositoryPbthPbttern"`
+			GitCredentibls        mbp[string]string `json:"gitCredentibls"`
 		}{
 			Region:                "us-west-1",
-			AccessKeyID:           *awsAccessKeyID,
-			SecretAccessKey:       *awsSecretAccessKey,
-			RepositoryPathPattern: "aws/{name}",
-			GitCredentials: map[string]string{
-				"username": *awsCodeCommitUsername,
-				"password": *awsCodeCommitPassword,
+			AccessKeyID:           *bwsAccessKeyID,
+			SecretAccessKey:       *bwsSecretAccessKey,
+			RepositoryPbthPbttern: "bws/{nbme}",
+			GitCredentibls: mbp[string]string{
+				"usernbme": *bwsCodeCommitUsernbme,
+				"pbssword": *bwsCodeCommitPbssword,
 			},
 		}),
 	})
-	// The repo-updater might not be up yet, but it will eventually catch up for the external
-	// service we just added, thus it is OK to ignore this transient error.
-	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-		t.Fatal(err)
+	// The repo-updbter might not be up yet, but it will eventublly cbtch up for the externbl
+	// service we just bdded, thus it is OK to ignore this trbnsient error.
+	if err != nil && !strings.Contbins(err.Error(), "/sync-externbl-service") {
+		t.Fbtbl(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	removeExternblServiceAfterTest(t, esID)
 
-	const repoName = "aws/test"
-	err = client.WaitForReposToBeCloned(repoName)
+	const repoNbme = "bws/test"
+	err = client.WbitForReposToBeCloned(repoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	blob, err := client.GitBlob(repoName, "master", "README")
+	blob, err := client.GitBlob(repoNbme, "mbster", "README")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantBlob := "README\n\nchange"
-	if diff := cmp.Diff(wantBlob, blob); diff != "" {
-		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+	wbntBlob := "README\n\nchbnge"
+	if diff := cmp.Diff(wbntBlob, blob); diff != "" {
+		t.Fbtblf("Blob mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestExternalService_BitbucketServer(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
-		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
+func TestExternblService_BitbucketServer(t *testing.T) {
+	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsernbme) == 0 {
+		t.Skip("Environment vbribble BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindBitbucketServer,
-		DisplayName: "gqltest-bitbucket-server",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-bitbucket-server",
+		Config: mustMbrshblJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
-			Username              string   `json:"username"`
+			Usernbme              string   `json:"usernbme"`
 			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 		}{
 			URL:                   *bbsURL,
 			Token:                 *bbsToken,
-			Username:              *bbsUsername,
+			Usernbme:              *bbsUsernbme,
 			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
-			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
+			RepositoryPbthPbttern: "bbs/{projectKey}/{repositorySlug}",
 		}),
 	})
-	// The repo-updater might not be up yet, but it will eventually catch up for the external
-	// service we just added, thus it is OK to ignore this transient error.
-	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-		t.Fatal(err)
+	// The repo-updbter might not be up yet, but it will eventublly cbtch up for the externbl
+	// service we just bdded, thus it is OK to ignore this trbnsient error.
+	if err != nil && !strings.Contbins(err.Error(), "/sync-externbl-service") {
+		t.Fbtbl(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	removeExternblServiceAfterTest(t, esID)
 
-	const repoName = "bbs/SOURCEGRAPH/jsonrpc2"
-	err = client.WaitForReposToBeCloned(repoName)
+	const repoNbme = "bbs/SOURCEGRAPH/jsonrpc2"
+	err = client.WbitForReposToBeCloned(repoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	blob, err := client.GitBlob(repoName, "master", ".travis.yml")
+	blob, err := client.GitBlob(repoNbme, "mbster", ".trbvis.yml")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantBlob := "language: go\ngo: \n - 1.x\n\nscript:\n - go test -race -v ./...\n"
-	if diff := cmp.Diff(wantBlob, blob); diff != "" {
-		t.Fatalf("Blob mismatch (-want +got):\n%s", diff)
+	wbntBlob := "lbngubge: go\ngo: \n - 1.x\n\nscript:\n - go test -rbce -v ./...\n"
+	if diff := cmp.Diff(wbntBlob, blob); diff != "" {
+		t.Fbtblf("Blob mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestExternalService_Perforce(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
+func TestExternblService_Perforce(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme      string
 		depot     string
 		useFusion bool
-		blobPath  string
-		wantBlob  string
+		blobPbth  string
+		wbntBlob  string
 	}{
 		{
-			name:      "git p4",
+			nbme:      "git p4",
 			depot:     "test-perms",
-			useFusion: false,
-			blobPath:  "README.md",
-			wantBlob: `This depot is used to test user and group permissions.
+			useFusion: fblse,
+			blobPbth:  "README.md",
+			wbntBlob: `This depot is used to test user bnd group permissions.
 `,
 		},
 		{
-			name:      "p4 fusion",
-			depot:     "integration-test-depot",
+			nbme:      "p4 fusion",
+			depot:     "integrbtion-test-depot",
 			useFusion: true,
-			blobPath:  "path.txt",
-			wantBlob: `./
+			blobPbth:  "pbth.txt",
+			wbntBlob: `./
 `,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			repoName := "perforce/" + tc.depot
+		t.Run(tc.nbme, func(t *testing.T) {
+			repoNbme := "perforce/" + tc.depot
 			checkPerforceEnvironment(t)
-			cleanup := createPerforceExternalService(t, tc.depot, tc.useFusion)
-			t.Cleanup(cleanup)
+			clebnup := crebtePerforceExternblService(t, tc.depot, tc.useFusion)
+			t.Clebnup(clebnup)
 
-			err := client.WaitForReposToBeCloned(repoName)
+			err := client.WbitForReposToBeCloned(repoNbme)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			blob, err := client.GitBlob(repoName, "master", tc.blobPath)
+			blob, err := client.GitBlob(repoNbme, "mbster", tc.blobPbth)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			assert.Equal(t, tc.wantBlob, blob)
+			bssert.Equbl(t, tc.wbntBlob, blob)
 		})
 	}
 }
 
 func checkPerforceEnvironment(t *testing.T) {
-	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
-		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
+	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePbssword) == 0 {
+		t.Skip("Environment vbribbles PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD bre not set")
 	}
 }
 
-// createPerforceExternalService creates an Perforce external service that
-// includes the supplied depot. It returns a function to cleanup after the test
-// which will delete the depot from disk and remove the external service.
-func createPerforceExternalService(t *testing.T, depot string, useP4Fusion bool) func() {
+// crebtePerforceExternblService crebtes bn Perforce externbl service thbt
+// includes the supplied depot. It returns b function to clebnup bfter the test
+// which will delete the depot from disk bnd remove the externbl service.
+func crebtePerforceExternblService(t *testing.T, depot string, useP4Fusion bool) func() {
 	t.Helper()
 
-	type Authorization = struct {
+	type Authorizbtion = struct {
 		SubRepoPermissions bool `json:"subRepoPermissions"`
 	}
 	type FusionClient = struct {
-		Enabled   bool `json:"enabled"`
-		LookAhead int  `json:"lookAhead,omitempty"`
+		Enbbled   bool `json:"enbbled"`
+		LookAhebd int  `json:"lookAhebd,omitempty"`
 	}
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindPerforce,
-		DisplayName: "gqltest-perforce-server",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-perforce-server",
+		Config: mustMbrshblJSONString(struct {
 			P4Port                string        `json:"p4.port"`
 			P4User                string        `json:"p4.user"`
-			P4Password            string        `json:"p4.passwd"`
+			P4Pbssword            string        `json:"p4.pbsswd"`
 			Depots                []string      `json:"depots"`
-			RepositoryPathPattern string        `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string        `json:"repositoryPbthPbttern"`
 			FusionClient          FusionClient  `json:"fusionClient"`
-			Authorization         Authorization `json:"authorization"`
+			Authorizbtion         Authorizbtion `json:"buthorizbtion"`
 		}{
 			P4Port:                *perforcePort,
 			P4User:                *perforceUser,
-			P4Password:            *perforcePassword,
+			P4Pbssword:            *perforcePbssword,
 			Depots:                []string{"//" + depot + "/"},
-			RepositoryPathPattern: "perforce/{depot}",
+			RepositoryPbthPbttern: "perforce/{depot}",
 			FusionClient: FusionClient{
-				Enabled:   useP4Fusion,
-				LookAhead: 2000,
+				Enbbled:   useP4Fusion,
+				LookAhebd: 2000,
 			},
-			Authorization: Authorization{
+			Authorizbtion: Authorizbtion{
 				SubRepoPermissions: true,
 			},
 		}),
 	})
 
-	// The repo-updater might not be up yet but it will eventually catch up for the
-	// external service we just added, thus it is OK to ignore this transient error.
-	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-		t.Fatal(err)
+	// The repo-updbter might not be up yet but it will eventublly cbtch up for the
+	// externbl service we just bdded, thus it is OK to ignore this trbnsient error.
+	if err != nil && !strings.Contbins(err.Error(), "/sync-externbl-service") {
+		t.Fbtbl(err)
 	}
 
 	return func() {
-		if err := client.DeleteRepoFromDiskByName("perforce/" + depot); err != nil {
-			t.Fatalf("removing depot from disk: %v", err)
+		if err := client.DeleteRepoFromDiskByNbme("perforce/" + depot); err != nil {
+			t.Fbtblf("removing depot from disk: %v", err)
 		}
 
-		if err := client.DeleteExternalService(esID, false); err != nil {
-			t.Fatalf("removing external service: %v", err)
+		if err := client.DeleteExternblService(esID, fblse); err != nil {
+			t.Fbtblf("removing externbl service: %v", err)
 		}
 	}
 }
 
-func TestExternalService_AsyncDeletion(t *testing.T) {
-	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
-		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
+func TestExternblService_AsyncDeletion(t *testing.T) {
+	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsernbme) == 0 {
+		t.Skip("Environment vbribble BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindBitbucketServer,
-		DisplayName: "gqltest-bitbucket-server",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-bitbucket-server",
+		Config: mustMbrshblJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
-			Username              string   `json:"username"`
+			Usernbme              string   `json:"usernbme"`
 			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 		}{
 			URL:                   *bbsURL,
 			Token:                 *bbsToken,
-			Username:              *bbsUsername,
+			Usernbme:              *bbsUsernbme,
 			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
-			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
+			RepositoryPbthPbttern: "bbs/{projectKey}/{repositorySlug}",
 		}),
 	})
-	// The repo-updater might not be up yet, but it will eventually catch up for the external
-	// service we just added, thus it is OK to ignore this transient error.
-	if err != nil && !strings.Contains(err.Error(), "/sync-external-service") {
-		t.Fatal(err)
+	// The repo-updbter might not be up yet, but it will eventublly cbtch up for the externbl
+	// service we just bdded, thus it is OK to ignore this trbnsient error.
+	if err != nil && !strings.Contbins(err.Error(), "/sync-externbl-service") {
+		t.Fbtbl(err)
 	}
 
-	err = client.DeleteExternalService(esID, true)
+	err = client.DeleteExternblService(esID, true)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// This call should return not found error.
-	// Retrying to wait for async deletion to finish. Deletion
-	// might be blocked on the first sync of the external service still
-	// running. It cancels that syncs and waits for it to finish.
+	// This cbll should return not found error.
+	// Retrying to wbit for bsync deletion to finish. Deletion
+	// might be blocked on the first sync of the externbl service still
+	// running. It cbncels thbt syncs bnd wbits for it to finish.
 	err = gqltestutil.Retry(30*time.Second, func() error {
-		err = client.CheckExternalService(esID)
+		err = client.CheckExternblService(esID)
 		if err == nil {
 			return gqltestutil.ErrContinueRetry
 		}
 		return err
 	})
 	if err == nil || err == gqltestutil.ErrContinueRetry {
-		t.Fatal("Deleted service should not be found")
+		t.Fbtbl("Deleted service should not be found")
 	}
-	if !strings.Contains(err.Error(), "external service not found") {
-		t.Fatalf("Not found error should be returned, got: %s", err.Error())
+	if !strings.Contbins(err.Error(), "externbl service not found") {
+		t.Fbtblf("Not found error should be returned, got: %s", err.Error())
 	}
 }
 
-func removeExternalServiceAfterTest(t *testing.T, esID string) {
+func removeExternblServiceAfterTest(t *testing.T, esID string) {
 	t.Helper()
-	t.Cleanup(func() {
-		err := client.DeleteExternalService(esID, false)
+	t.Clebnup(func() {
+		err := client.DeleteExternblService(esID, fblse)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 }

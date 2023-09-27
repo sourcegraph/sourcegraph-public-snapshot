@@ -1,49 +1,49 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	ghstore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	githubbpp "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/githubbppbuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	ghstore "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
+	ghtypes "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/types"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type batchChangesCodeHostResolver struct {
-	db         database.DB
+type bbtchChbngesCodeHostResolver struct {
+	db         dbtbbbse.DB
 	store      *store.Store
 	codeHost   *btypes.CodeHost
-	credential graphqlbackend.BatchChangesCredentialResolver
+	credentibl grbphqlbbckend.BbtchChbngesCredentiblResolver
 	logger     log.Logger
 }
 
-var _ graphqlbackend.BatchChangesCodeHostResolver = &batchChangesCodeHostResolver{}
+vbr _ grbphqlbbckend.BbtchChbngesCodeHostResolver = &bbtchChbngesCodeHostResolver{}
 
-func (c *batchChangesCodeHostResolver) ExternalServiceKind() string {
-	return extsvc.TypeToKind(c.codeHost.ExternalServiceType)
+func (c *bbtchChbngesCodeHostResolver) ExternblServiceKind() string {
+	return extsvc.TypeToKind(c.codeHost.ExternblServiceType)
 }
 
-func (c *batchChangesCodeHostResolver) ExternalServiceURL() string {
-	return c.codeHost.ExternalServiceID
+func (c *bbtchChbngesCodeHostResolver) ExternblServiceURL() string {
+	return c.codeHost.ExternblServiceID
 }
 
-func (c *batchChangesCodeHostResolver) Credential() graphqlbackend.BatchChangesCredentialResolver {
-	return c.credential
+func (c *bbtchChbngesCodeHostResolver) Credentibl() grbphqlbbckend.BbtchChbngesCredentiblResolver {
+	return c.credentibl
 }
 
-func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Context) (graphqlbackend.CommitSigningConfigResolver, error) {
-	switch c.codeHost.ExternalServiceType {
-	case extsvc.TypeGitHub:
+func (c *bbtchChbngesCodeHostResolver) CommitSigningConfigurbtion(ctx context.Context) (grbphqlbbckend.CommitSigningConfigResolver, error) {
+	switch c.codeHost.ExternblServiceType {
+	cbse extsvc.TypeGitHub:
 		gstore := ghstore.GitHubAppsWith(c.store.Store)
-		domain := itypes.BatchesGitHubAppDomain
-		ghapp, err := gstore.GetByDomain(ctx, domain, c.codeHost.ExternalServiceID)
+		dombin := itypes.BbtchesGitHubAppDombin
+		ghbpp, err := gstore.GetByDombin(ctx, dombin, c.codeHost.ExternblServiceID)
 		if err != nil {
 			if _, ok := err.(ghstore.ErrNoGitHubAppFound); ok {
 				return nil, nil
@@ -53,46 +53,46 @@ func (c *batchChangesCodeHostResolver) CommitSigningConfiguration(ctx context.Co
 		}
 		return &commitSigningConfigResolver{
 			db:        c.db,
-			githubApp: ghapp,
+			githubApp: ghbpp,
 			logger:    c.logger,
 		}, nil
 	}
 	return nil, nil
 }
 
-func (c *batchChangesCodeHostResolver) RequiresSSH() bool {
+func (c *bbtchChbngesCodeHostResolver) RequiresSSH() bool {
 	return c.codeHost.RequiresSSH
 }
 
-func (c *batchChangesCodeHostResolver) RequiresUsername() bool {
-	switch c.codeHost.ExternalServiceType {
-	case extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit, extsvc.TypePerforce:
+func (c *bbtchChbngesCodeHostResolver) RequiresUsernbme() bool {
+	switch c.codeHost.ExternblServiceType {
+	cbse extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit, extsvc.TypePerforce:
 		return true
 	}
 
-	return false
+	return fblse
 }
 
-func (c *batchChangesCodeHostResolver) SupportsCommitSigning() bool {
-	return c.codeHost.ExternalServiceType == extsvc.TypeGitHub
+func (c *bbtchChbngesCodeHostResolver) SupportsCommitSigning() bool {
+	return c.codeHost.ExternblServiceType == extsvc.TypeGitHub
 }
 
-func (c *batchChangesCodeHostResolver) HasWebhooks() bool {
-	return c.codeHost.HasWebhooks
+func (c *bbtchChbngesCodeHostResolver) HbsWebhooks() bool {
+	return c.codeHost.HbsWebhooks
 }
 
-var _ graphqlbackend.CommitSigningConfigResolver = &commitSigningConfigResolver{}
+vbr _ grbphqlbbckend.CommitSigningConfigResolver = &commitSigningConfigResolver{}
 
 type commitSigningConfigResolver struct {
 	logger    log.Logger
-	db        database.DB
+	db        dbtbbbse.DB
 	githubApp *ghtypes.GitHubApp
 }
 
-func (c *commitSigningConfigResolver) ToGitHubApp() (graphqlbackend.GitHubAppResolver, bool) {
+func (c *commitSigningConfigResolver) ToGitHubApp() (grbphqlbbckend.GitHubAppResolver, bool) {
 	if c.githubApp != nil {
-		return githubapp.NewGitHubAppResolver(c.db, c.githubApp, c.logger), true
+		return githubbpp.NewGitHubAppResolver(c.db, c.githubApp, c.logger), true
 	}
 
-	return nil, false
+	return nil, fblse
 }

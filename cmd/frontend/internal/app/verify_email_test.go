@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"context"
@@ -8,74 +8,74 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestServeVerifyEmail(t *testing.T) {
-	t.Run("primary email is already set", func(t *testing.T) {
+func TestServeVerifyEmbil(t *testing.T) {
+	t.Run("primbry embil is blrebdy set", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.GetFunc.SetDefaultReturn("alice@example.com", false, nil)
-		userEmails.VerifyFunc.SetDefaultReturn(true, nil)
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("alice@example.com", true, nil)
-		userEmails.SetPrimaryEmailFunc.SetDefaultReturn(nil)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.GetFunc.SetDefbultReturn("blice@exbmple.com", fblse, nil)
+		userEmbils.VerifyFunc.SetDefbultReturn(true, nil)
+		userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("blice@exbmple.com", true, nil)
+		userEmbils.SetPrimbryEmbilFunc.SetDefbultReturn(nil)
 
-		authz := dbmocks.NewMockAuthzStore()
-		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+		buthz := dbmocks.NewMockAuthzStore()
+		buthz.GrbntPendingPermissionsFunc.SetDefbultReturn(nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
-		db.AuthzFunc.SetDefaultReturn(authz)
-		db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
+		db.UsersFunc.SetDefbultReturn(users)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+		db.AuthzFunc.SetDefbultReturn(buthz)
+		db.SecurityEventLogsFunc.SetDefbultReturn(dbmocks.NewMockSecurityEventLogsStore())
 
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req = req.WithContext(ctx)
 		resp := httptest.NewRecorder()
 
-		handler := serveVerifyEmail(db)
-		handler(resp, req)
+		hbndler := serveVerifyEmbil(db)
+		hbndler(resp, req)
 
-		mockrequire.NotCalled(t, userEmails.SetPrimaryEmailFunc)
+		mockrequire.NotCblled(t, userEmbils.SetPrimbryEmbilFunc)
 	})
 
-	t.Run("primary email is not set", func(t *testing.T) {
+	t.Run("primbry embil is not set", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.GetFunc.SetDefaultReturn("alice@example.com", false, nil)
-		userEmails.VerifyFunc.SetDefaultReturn(true, nil)
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("", false, errors.New("primary email not found"))
-		userEmails.SetPrimaryEmailFunc.SetDefaultReturn(nil)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.GetFunc.SetDefbultReturn("blice@exbmple.com", fblse, nil)
+		userEmbils.VerifyFunc.SetDefbultReturn(true, nil)
+		userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("", fblse, errors.New("primbry embil not found"))
+		userEmbils.SetPrimbryEmbilFunc.SetDefbultReturn(nil)
 
-		authz := dbmocks.NewMockAuthzStore()
-		authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+		buthz := dbmocks.NewMockAuthzStore()
+		buthz.GrbntPendingPermissionsFunc.SetDefbultReturn(nil)
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
-		db.AuthzFunc.SetDefaultReturn(authz)
-		db.SecurityEventLogsFunc.SetDefaultReturn(dbmocks.NewMockSecurityEventLogsStore())
+		db.UsersFunc.SetDefbultReturn(users)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+		db.AuthzFunc.SetDefbultReturn(buthz)
+		db.SecurityEventLogsFunc.SetDefbultReturn(dbmocks.NewMockSecurityEventLogsStore())
 
-		ctx := context.Background()
-		ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+		ctx := context.Bbckground()
+		ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
 
 		req := httptest.NewRequest(http.MethodGet, "/", nil)
 		req = req.WithContext(ctx)
 		resp := httptest.NewRecorder()
 
-		handler := serveVerifyEmail(db)
-		handler(resp, req)
+		hbndler := serveVerifyEmbil(db)
+		hbndler(resp, req)
 
-		mockrequire.Called(t, userEmails.SetPrimaryEmailFunc)
+		mockrequire.Cblled(t, userEmbils.SetPrimbryEmbilFunc)
 	})
 }

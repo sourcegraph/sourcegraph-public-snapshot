@@ -1,31 +1,31 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// ExhaustiveSearchRepoJob is a job that runs the exhaustive search on a repository.
-// Maps to the `exhaustive_search_repo_jobs` database table.
-type ExhaustiveSearchRepoJob struct {
+// ExhbustiveSebrchRepoJob is b job thbt runs the exhbustive sebrch on b repository.
+// Mbps to the `exhbustive_sebrch_repo_jobs` dbtbbbse tbble.
+type ExhbustiveSebrchRepoJob struct {
 	WorkerJob
 
 	ID int64
 
-	RepoID      api.RepoID
+	RepoID      bpi.RepoID
 	RefSpec     string
-	SearchJobID int64
+	SebrchJobID int64
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-func (j *ExhaustiveSearchRepoJob) RecordID() int {
+func (j *ExhbustiveSebrchRepoJob) RecordID() int {
 	return int(j.ID)
 }
 
-func (j *ExhaustiveSearchRepoJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+func (j *ExhbustiveSebrchRepoJob) RecordUID() string {
+	return strconv.FormbtInt(j.ID, 10)
 }

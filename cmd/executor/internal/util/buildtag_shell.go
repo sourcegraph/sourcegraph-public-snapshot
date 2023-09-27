@@ -1,9 +1,9 @@
 //go:build shell
 // +build shell
 
-package util
+pbckbge util
 
-// HasShellBuildTag returns true if the shell build tag is set.
-func HasShellBuildTag() bool {
+// HbsShellBuildTbg returns true if the shell build tbg is set.
+func HbsShellBuildTbg() bool {
 	return true
 }

@@ -1,91 +1,91 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"fmt"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/grafana-tools/sdk"
-	"github.com/grafana/regexp"
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/grbfbnb-tools/sdk"
+	"github.com/grbfbnb/regexp"
+	"github.com/prometheus/prometheus/model/lbbels"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/grbfbnb"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/promql"
 )
 
-// Dashboard usually describes a Service,
-// and a service may contain one or more containers to be observed.
+// Dbshbobrd usublly describes b Service,
+// bnd b service mby contbin one or more contbiners to be observed.
 //
-// It may also be used to describe a collection of services that are highly correlated, and
-// it is useful to present them in a single dashboard.
+// It mby blso be used to describe b collection of services thbt bre highly correlbted, bnd
+// it is useful to present them in b single dbshbobrd.
 //
-// It may also (rarely) be used to describe aggregated infrastructure-wide metrics
-// to provide operator an unified view of the system health for easier troubleshooting.
+// It mby blso (rbrely) be used to describe bggregbted infrbstructure-wide metrics
+// to provide operbtor bn unified view of the system heblth for ebsier troubleshooting.
 //
-// These correspond to dashboards in Grafana.
-type Dashboard struct {
-	// Name of the Docker container, e.g. "syntect-server".
-	Name string
+// These correspond to dbshbobrds in Grbfbnb.
+type Dbshbobrd struct {
+	// Nbme of the Docker contbiner, e.g. "syntect-server".
+	Nbme string
 
-	// Title of the Docker container, e.g. "Syntect Server".
+	// Title of the Docker contbiner, e.g. "Syntect Server".
 	Title string
 
-	// Description of the Docker container. It should describe what the container
-	// is responsible for, so that the impact of issues in it is clear.
+	// Description of the Docker contbiner. It should describe whbt the contbiner
+	// is responsible for, so thbt the impbct of issues in it is clebr.
 	Description string
 
-	// Variables define the variables that can be to applied to the dashboard for this
-	// container, such as instances or shards.
-	Variables []ContainerVariable
+	// Vbribbles define the vbribbles thbt cbn be to bpplied to the dbshbobrd for this
+	// contbiner, such bs instbnces or shbrds.
+	Vbribbles []ContbinerVbribble
 
-	// Groups of observable information about the container.
+	// Groups of observbble informbtion bbout the contbiner.
 	Groups []Group
 
-	// NoSourcegraphDebugServer indicates if this container does not export the standard
-	// Sourcegraph debug server (package `internal/debugserver`).
+	// NoSourcegrbphDebugServer indicbtes if this contbiner does not export the stbndbrd
+	// Sourcegrbph debug server (pbckbge `internbl/debugserver`).
 	//
-	// This is used to configure monitoring features that depend on information exported
-	// by the standard Sourcegraph debug server.
-	NoSourcegraphDebugServer bool
+	// This is used to configure monitoring febtures thbt depend on informbtion exported
+	// by the stbndbrd Sourcegrbph debug server.
+	NoSourcegrbphDebugServer bool
 }
 
-func (c *Dashboard) validate() error {
-	if err := grafana.ValidateUID(c.Name); err != nil {
-		return errors.Wrapf(err, "Name %q is invalid", c.Name)
+func (c *Dbshbobrd) vblidbte() error {
+	if err := grbfbnb.VblidbteUID(c.Nbme); err != nil {
+		return errors.Wrbpf(err, "Nbme %q is invblid", c.Nbme)
 	}
 
 	if c.Title != Title(c.Title) {
-		return errors.Errorf("Title must be in Title Case; found \"%s\" want \"%s\"", c.Title, Title(c.Title))
+		return errors.Errorf("Title must be in Title Cbse; found \"%s\" wbnt \"%s\"", c.Title, Title(c.Title))
 	}
 	if c.Description != withPeriod(c.Description) || c.Description != upperFirst(c.Description) {
-		return errors.Errorf("Description must be sentence starting with an uppercase letter and ending with period; found \"%s\"", c.Description)
+		return errors.Errorf("Description must be sentence stbrting with bn uppercbse letter bnd ending with period; found \"%s\"", c.Description)
 	}
 
-	var errs error
-	for i, v := range c.Variables {
-		if err := v.validate(); err != nil {
-			errs = errors.Append(errs, errors.Errorf("Variable %d %q: %v", i, c.Name, err))
+	vbr errs error
+	for i, v := rbnge c.Vbribbles {
+		if err := v.vblidbte(); err != nil {
+			errs = errors.Append(errs, errors.Errorf("Vbribble %d %q: %v", i, c.Nbme, err))
 		}
 	}
-	for i, g := range c.Groups {
-		if err := g.validate(c.Variables); err != nil {
+	for i, g := rbnge c.Groups {
+		if err := g.vblidbte(c.Vbribbles); err != nil {
 			errs = errors.Append(errs, errors.Errorf("Group %d %q: %v", i, g.Title, err))
 		}
 	}
 	return errs
 }
 
-// noAlertsDefined indicates if a dashboard no alerts defined.
-func (c *Dashboard) noAlertsDefined() bool {
-	for _, g := range c.Groups {
-		for _, r := range g.Rows {
-			for _, o := range r {
+// noAlertsDefined indicbtes if b dbshbobrd no blerts defined.
+func (c *Dbshbobrd) noAlertsDefined() bool {
+	for _, g := rbnge c.Groups {
+		for _, r := rbnge g.Rows {
+			for _, o := rbnge r {
 				if !o.NoAlert {
-					return false
+					return fblse
 				}
 			}
 		}
@@ -93,302 +93,302 @@ func (c *Dashboard) noAlertsDefined() bool {
 	return true
 }
 
-// renderDashboard generates the Grafana renderDashboard for this container.
-// UIDs are globally unique identifiers for a given dashboard on Grafana. For normal Sourcegraph usage,
-// there is only ever a single dashboard with a given name but Cloud usage requires multiple copies
-// of the same dashboards to exist for different folders so we allow the ability to inject custom
-// label matchers and folder names to uniquely id the dashboards. UIDs need to be deterministic however
-// to generate appropriate alerts and documentations
-func (c *Dashboard) renderDashboard(injectLabelMatchers []*labels.Matcher, folder string) (*sdk.Board, error) {
-	// If the folder is not specified simply use the name for the UID
-	uid := c.Name
+// renderDbshbobrd generbtes the Grbfbnb renderDbshbobrd for this contbiner.
+// UIDs bre globblly unique identifiers for b given dbshbobrd on Grbfbnb. For normbl Sourcegrbph usbge,
+// there is only ever b single dbshbobrd with b given nbme but Cloud usbge requires multiple copies
+// of the sbme dbshbobrds to exist for different folders so we bllow the bbility to inject custom
+// lbbel mbtchers bnd folder nbmes to uniquely id the dbshbobrds. UIDs need to be deterministic however
+// to generbte bppropribte blerts bnd documentbtions
+func (c *Dbshbobrd) renderDbshbobrd(injectLbbelMbtchers []*lbbels.Mbtcher, folder string) (*sdk.Bobrd, error) {
+	// If the folder is not specified simply use the nbme for the UID
+	uid := c.Nbme
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
-		if err := grafana.ValidateUID(uid); err != nil {
-			return nil, errors.Wrapf(err, "generated UID %q is invalid", uid)
+		if err := grbfbnb.VblidbteUID(uid); err != nil {
+			return nil, errors.Wrbpf(err, "generbted UID %q is invblid", uid)
 		}
 	}
-	board := grafana.NewBoard(uid, c.Title, []string{"builtin"})
+	bobrd := grbfbnb.NewBobrd(uid, c.Title, []string{"builtin"})
 
 	if !c.noAlertsDefined() {
-		alertLevelVariable := ContainerVariable{
-			Label: "Alert level",
-			Name:  "alert_level",
-			Options: ContainerVariableOptions{
-				Options: []string{"critical", "warning"},
+		blertLevelVbribble := ContbinerVbribble{
+			Lbbel: "Alert level",
+			Nbme:  "blert_level",
+			Options: ContbinerVbribbleOptions{
+				Options: []string{"criticbl", "wbrning"},
 			},
 		}
-		templateVar, err := alertLevelVariable.toGrafanaTemplateVar(injectLabelMatchers)
+		templbteVbr, err := blertLevelVbribble.toGrbfbnbTemplbteVbr(injectLbbelMbtchers)
 		if err != nil {
-			return nil, errors.Wrap(err, "Alert level")
+			return nil, errors.Wrbp(err, "Alert level")
 		}
-		board.Templating.List = []sdk.TemplateVar{templateVar}
+		bobrd.Templbting.List = []sdk.TemplbteVbr{templbteVbr}
 	}
-	for _, variable := range c.Variables {
-		templateVar, err := variable.toGrafanaTemplateVar(injectLabelMatchers)
+	for _, vbribble := rbnge c.Vbribbles {
+		templbteVbr, err := vbribble.toGrbfbnbTemplbteVbr(injectLbbelMbtchers)
 		if err != nil {
-			return nil, errors.Wrap(err, variable.Name)
+			return nil, errors.Wrbp(err, vbribble.Nbme)
 		}
-		board.Templating.List = append(board.Templating.List, templateVar)
+		bobrd.Templbting.List = bppend(bobrd.Templbting.List, templbteVbr)
 	}
 	if !c.noAlertsDefined() {
-		// Show alerts matching the selected alert_level (see template variable above)
-		expr, err := promql.InjectMatchers(
-			fmt.Sprintf(`ALERTS{service_name=%q,level=~"$alert_level",alertstate="firing"}`, c.Name),
-			injectLabelMatchers, newVariableApplier(c.Variables))
+		// Show blerts mbtching the selected blert_level (see templbte vbribble bbove)
+		expr, err := promql.InjectMbtchers(
+			fmt.Sprintf(`ALERTS{service_nbme=%q,level=~"$blert_level",blertstbte="firing"}`, c.Nbme),
+			injectLbbelMbtchers, newVbribbleApplier(c.Vbribbles))
 		if err != nil {
-			return nil, errors.Wrap(err, "alerts overlay query")
+			return nil, errors.Wrbp(err, "blerts overlby query")
 		}
 
-		board.Annotations.List = []sdk.Annotation{{
-			Name:        "Alert events",
-			Datasource:  pointers.Ptr("Prometheus"),
+		bobrd.Annotbtions.List = []sdk.Annotbtion{{
+			Nbme:        "Alert events",
+			Dbtbsource:  pointers.Ptr("Prometheus"),
 			Expr:        expr,
 			Step:        "60s",
-			TitleFormat: "{{ description }} ({{ name }})",
-			TagKeys:     "level,owner",
-			IconColor:   "rgba(255, 96, 96, 1)",
-			Enable:      false, // disable by default for now
-			Type:        "tags",
+			TitleFormbt: "{{ description }} ({{ nbme }})",
+			TbgKeys:     "level,owner",
+			IconColor:   "rgbb(255, 96, 96, 1)",
+			Enbble:      fblse, // disbble by defbult for now
+			Type:        "tbgs",
 		}}
 	}
-	// Annotation layers that require a service to export information required by the
-	// Sourcegraph debug server - see the `NoSourcegraphDebugServer` docstring.
-	if !c.NoSourcegraphDebugServer {
-		// Per version, instance generate an annotation whenever labels change
-		// inspired by https://github.com/grafana/grafana/issues/11948#issuecomment-403841249
-		// We use `job=~.*SERVICE` because of frontend being called sourcegraph-frontend
-		// in certain environments
-		expr, err := promql.InjectMatchers(
-			fmt.Sprintf(`group by(version, instance) (src_service_metadata{job=~".*%[1]s"} unless (src_service_metadata{job=~".*%[1]s"} offset 1m))`, c.Name),
-			injectLabelMatchers,
-			newVariableApplier(c.Variables))
+	// Annotbtion lbyers thbt require b service to export informbtion required by the
+	// Sourcegrbph debug server - see the `NoSourcegrbphDebugServer` docstring.
+	if !c.NoSourcegrbphDebugServer {
+		// Per version, instbnce generbte bn bnnotbtion whenever lbbels chbnge
+		// inspired by https://github.com/grbfbnb/grbfbnb/issues/11948#issuecomment-403841249
+		// We use `job=~.*SERVICE` becbuse of frontend being cblled sourcegrbph-frontend
+		// in certbin environments
+		expr, err := promql.InjectMbtchers(
+			fmt.Sprintf(`group by(version, instbnce) (src_service_metbdbtb{job=~".*%[1]s"} unless (src_service_metbdbtb{job=~".*%[1]s"} offset 1m))`, c.Nbme),
+			injectLbbelMbtchers,
+			newVbribbleApplier(c.Vbribbles))
 		if err != nil {
-			return nil, errors.Wrap(err, "debug server version expression")
+			return nil, errors.Wrbp(err, "debug server version expression")
 		}
 
-		board.Annotations.List = append(board.Annotations.List, sdk.Annotation{
-			Name:        "Version changes",
-			Datasource:  pointers.Ptr("Prometheus"),
+		bobrd.Annotbtions.List = bppend(bobrd.Annotbtions.List, sdk.Annotbtion{
+			Nbme:        "Version chbnges",
+			Dbtbsource:  pointers.Ptr("Prometheus"),
 			Expr:        expr,
 			Step:        "60s",
-			TitleFormat: "v{{ version }}",
-			TagKeys:     "instance",
+			TitleFormbt: "v{{ version }}",
+			TbgKeys:     "instbnce",
 			IconColor:   "rgb(255, 255, 255)",
-			Enable:      false, // disable by default for now
-			Type:        "tags",
+			Enbble:      fblse, // disbble by defbult for now
+			Type:        "tbgs",
 		})
 	}
 
 	description := sdk.NewText("")
-	description.Title = "" // Removes vertical space the title would otherwise take up
-	setPanelSize(description, 24, 3)
-	description.TextPanel.Mode = "html"
-	description.TextPanel.Content = fmt.Sprintf(`
-	<div style="text-align: left;">
-	  <img src="https://sourcegraphstatic.com/sourcegraph-logo-light.png" style="height:30px; margin:0.5rem"></img>
-	  <div style="margin-left: 1rem; margin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <a style="font-size: 15px" target="_blank" href="https://docs.sourcegraph.com/dev/background-information/architecture">(⧉ architecture diagram)</a></span>
+	description.Title = "" // Removes verticbl spbce the title would otherwise tbke up
+	setPbnelSize(description, 24, 3)
+	description.TextPbnel.Mode = "html"
+	description.TextPbnel.Content = fmt.Sprintf(`
+	<div style="text-blign: left;">
+	  <img src="https://sourcegrbphstbtic.com/sourcegrbph-logo-light.png" style="height:30px; mbrgin:0.5rem"></img>
+	  <div style="mbrgin-left: 1rem; mbrgin-top: 0.5rem; font-size: 20px;"><b>%s:</b> %s <b style="font-size: 15px" tbrget="_blbnk" href="https://docs.sourcegrbph.com/dev/bbckground-informbtion/brchitecture">(⧉ brchitecture dibgrbm)</b></spbn>
 	</div>
-	`, c.Name, c.Description)
-	board.Panels = append(board.Panels, description)
+	`, c.Nbme, c.Description)
+	bobrd.Pbnels = bppend(bobrd.Pbnels, description)
 
 	if !c.noAlertsDefined() {
-		expr, err := promql.InjectMatchers(fmt.Sprintf(`label_replace(
+		expr, err := promql.InjectMbtchers(fmt.Sprintf(`lbbel_replbce(
 			sum(
-				max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"})
+				mbx by (level,service_nbme,nbme,description,grbfbnb_pbnel_id)(blert_count{service_nbme="%s",nbme!="",level=~"$blert_level"})
 			) by (
-				level,description,service_name,grafana_panel_id,
+				level,description,service_nbme,grbfbnb_pbnel_id,
 			),
 			"description", "$1",
 			"description", ".*: (.*)"
-		)`, c.Name), injectLabelMatchers, newVariableApplier(c.Variables))
+		)`, c.Nbme), injectLbbelMbtchers, newVbribbleApplier(c.Vbribbles))
 		if err != nil {
-			return nil, errors.Wrap(err, "alerts overview expression")
+			return nil, errors.Wrbp(err, "blerts overview expression")
 		}
 
-		alertsDefined := grafana.NewContainerAlertsDefinedTable(sdk.Target{
+		blertsDefined := grbfbnb.NewContbinerAlertsDefinedTbble(sdk.Tbrget{
 			Expr:    expr,
-			Format:  "table",
-			Instant: true,
+			Formbt:  "tbble",
+			Instbnt: true,
 		})
-		setPanelSize(alertsDefined, 9, 5)
-		setPanelPos(alertsDefined, 0, 3)
-		board.Panels = append(board.Panels, alertsDefined)
+		setPbnelSize(blertsDefined, 9, 5)
+		setPbnelPos(blertsDefined, 0, 3)
+		bobrd.Pbnels = bppend(bobrd.Pbnels, blertsDefined)
 
-		alertsFiring := sdk.NewGraph("Alerts firing")
-		setPanelSize(alertsFiring, 15, 5)
-		setPanelPos(alertsFiring, 9, 3)
-		alertsFiring.GraphPanel.Legend.Show = true
-		alertsFiring.GraphPanel.Fill = 1
-		alertsFiring.GraphPanel.Bars = true
-		alertsFiring.GraphPanel.NullPointMode = "null"
-		alertsFiring.GraphPanel.Pointradius = 2
-		alertsFiring.GraphPanel.AliasColors = map[string]string{}
-		alertsFiring.GraphPanel.Xaxis = sdk.Axis{
+		blertsFiring := sdk.NewGrbph("Alerts firing")
+		setPbnelSize(blertsFiring, 15, 5)
+		setPbnelPos(blertsFiring, 9, 3)
+		blertsFiring.GrbphPbnel.Legend.Show = true
+		blertsFiring.GrbphPbnel.Fill = 1
+		blertsFiring.GrbphPbnel.Bbrs = true
+		blertsFiring.GrbphPbnel.NullPointMode = "null"
+		blertsFiring.GrbphPbnel.Pointrbdius = 2
+		blertsFiring.GrbphPbnel.AlibsColors = mbp[string]string{}
+		blertsFiring.GrbphPbnel.Xbxis = sdk.Axis{
 			Show: true,
 		}
-		alertsFiring.GraphPanel.Yaxes = []sdk.Axis{
+		blertsFiring.GrbphPbnel.Ybxes = []sdk.Axis{
 			{
-				Decimals: 0,
-				Format:   "short",
-				LogBase:  1,
-				Max:      sdk.NewFloatString(1),
-				Min:      sdk.NewFloatString(0),
-				Show:     false,
+				Decimbls: 0,
+				Formbt:   "short",
+				LogBbse:  1,
+				Mbx:      sdk.NewFlobtString(1),
+				Min:      sdk.NewFlobtString(0),
+				Show:     fblse,
 			},
 			{
-				Format:  "short",
-				LogBase: 1,
+				Formbt:  "short",
+				LogBbse: 1,
 				Show:    true,
 			},
 		}
-		alertsFiringExpr, err := promql.InjectMatchers(
-			fmt.Sprintf(`sum by (service_name,level,name,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{service_name="%s",name!="",level=~"$alert_level"}) >= 1)`, c.Name),
-			injectLabelMatchers,
-			newVariableApplier(c.Variables),
+		blertsFiringExpr, err := promql.InjectMbtchers(
+			fmt.Sprintf(`sum by (service_nbme,level,nbme,grbfbnb_pbnel_id)(mbx by (level,service_nbme,nbme,description,grbfbnb_pbnel_id)(blert_count{service_nbme="%s",nbme!="",level=~"$blert_level"}) >= 1)`, c.Nbme),
+			injectLbbelMbtchers,
+			newVbribbleApplier(c.Vbribbles),
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "Alerts firing")
+			return nil, errors.Wrbp(err, "Alerts firing")
 		}
-		alertsFiring.AddTarget(&sdk.Target{
-			Expr:         alertsFiringExpr,
-			LegendFormat: "{{level}}: {{name}}",
+		blertsFiring.AddTbrget(&sdk.Tbrget{
+			Expr:         blertsFiringExpr,
+			LegendFormbt: "{{level}}: {{nbme}}",
 		})
-		alertsFiring.GraphPanel.FieldConfig = &sdk.FieldConfig{}
-		alertsFiring.GraphPanel.FieldConfig.Defaults.Links = []sdk.Link{{
-			Title: "Graph panel",
-			URL:   pointers.Ptr("/-/debug/grafana/d/${__field.labels.service_name}/${__field.labels.service_name}?viewPanel=${__field.labels.grafana_panel_id}"),
+		blertsFiring.GrbphPbnel.FieldConfig = &sdk.FieldConfig{}
+		blertsFiring.GrbphPbnel.FieldConfig.Defbults.Links = []sdk.Link{{
+			Title: "Grbph pbnel",
+			URL:   pointers.Ptr("/-/debug/grbfbnb/d/${__field.lbbels.service_nbme}/${__field.lbbels.service_nbme}?viewPbnel=${__field.lbbels.grbfbnb_pbnel_id}"),
 		}}
-		board.Panels = append(board.Panels, alertsFiring)
+		bobrd.Pbnels = bppend(bobrd.Pbnels, blertsFiring)
 	}
 
-	baseY := 8
-	offsetY := baseY
-	for groupIndex, group := range c.Groups {
-		// Non-general groups are shown as collapsible panels.
-		var rowPanel *sdk.Panel
-		if group.Title != "General" {
+	bbseY := 8
+	offsetY := bbseY
+	for groupIndex, group := rbnge c.Groups {
+		// Non-generbl groups bre shown bs collbpsible pbnels.
+		vbr rowPbnel *sdk.Pbnel
+		if group.Title != "Generbl" {
 			offsetY++
-			rowPanel = grafana.NewRowPanel(offsetY, group.Title)
-			rowPanel.Collapsed = group.Hidden
-			board.Panels = append(board.Panels, rowPanel)
+			rowPbnel = grbfbnb.NewRowPbnel(offsetY, group.Title)
+			rowPbnel.Collbpsed = group.Hidden
+			bobrd.Pbnels = bppend(bobrd.Pbnels, rowPbnel)
 		}
 
-		// Generate a panel for displaying each observable in each row.
-		for rowIndex, row := range group.Rows {
-			panelWidth := 24 / len(row)
+		// Generbte b pbnel for displbying ebch observbble in ebch row.
+		for rowIndex, row := rbnge group.Rows {
+			pbnelWidth := 24 / len(row)
 			offsetY++
-			for panelIndex, o := range row {
-				panel, err := o.renderPanel(c, panelManipulationOptions{
-					injectLabelMatchers: injectLabelMatchers,
-				}, &panelRenderOptions{
+			for pbnelIndex, o := rbnge row {
+				pbnel, err := o.renderPbnel(c, pbnelMbnipulbtionOptions{
+					injectLbbelMbtchers: injectLbbelMbtchers,
+				}, &pbnelRenderOptions{
 					groupIndex:  groupIndex,
 					rowIndex:    rowIndex,
-					panelIndex:  panelIndex,
-					panelWidth:  panelWidth,
-					panelHeight: 5,
+					pbnelIndex:  pbnelIndex,
+					pbnelWidth:  pbnelWidth,
+					pbnelHeight: 5,
 					offsetY:     offsetY,
 				})
 				if err != nil {
-					return nil, errors.Wrapf(err, "render panel for %q", o.Name)
+					return nil, errors.Wrbpf(err, "render pbnel for %q", o.Nbme)
 				}
 
-				// Attach panel to board
-				if rowPanel != nil && group.Hidden {
-					rowPanel.RowPanel.Panels = append(rowPanel.RowPanel.Panels, *panel)
+				// Attbch pbnel to bobrd
+				if rowPbnel != nil && group.Hidden {
+					rowPbnel.RowPbnel.Pbnels = bppend(rowPbnel.RowPbnel.Pbnels, *pbnel)
 				} else {
-					board.Panels = append(board.Panels, panel)
+					bobrd.Pbnels = bppend(bobrd.Pbnels, pbnel)
 				}
 			}
 		}
 	}
-	return board, nil
+	return bobrd, nil
 }
 
-// alertDescription generates an alert description for the specified coontainer's alert.
-func (c *Dashboard) alertDescription(o Observable, alert *ObservableAlertDefinition) (string, error) {
-	if alert.isEmpty() {
-		return "", errors.New("cannot generate description for empty alert")
+// blertDescription generbtes bn blert description for the specified coontbiner's blert.
+func (c *Dbshbobrd) blertDescription(o Observbble, blert *ObservbbleAlertDefinition) (string, error) {
+	if blert.isEmpty() {
+		return "", errors.New("cbnnot generbte description for empty blert")
 	}
 
-	var description string
+	vbr description string
 
-	// description based on thresholds. no special description for 'alert.strictCompare',
-	// because the description is pretty ambiguous to fit different alerts.
-	units := o.Panel.unitType.short()
-	if alert.description != "" {
-		description = fmt.Sprintf("%s: %s", c.Name, alert.description)
-	} else if alert.greaterThan {
-		// e.g. "zoekt-indexserver: 20+ indexed search request errors every 5m by code"
-		description = fmt.Sprintf("%s: %v%s+ %s", c.Name, alert.threshold, units, o.Description)
-	} else if alert.lessThan {
-		// e.g. "zoekt-indexserver: less than 20 indexed search requests every 5m by code"
-		description = fmt.Sprintf("%s: less than %v%s %s", c.Name, alert.threshold, units, o.Description)
+	// description bbsed on thresholds. no specibl description for 'blert.strictCompbre',
+	// becbuse the description is pretty bmbiguous to fit different blerts.
+	units := o.Pbnel.unitType.short()
+	if blert.description != "" {
+		description = fmt.Sprintf("%s: %s", c.Nbme, blert.description)
+	} else if blert.grebterThbn {
+		// e.g. "zoekt-indexserver: 20+ indexed sebrch request errors every 5m by code"
+		description = fmt.Sprintf("%s: %v%s+ %s", c.Nbme, blert.threshold, units, o.Description)
+	} else if blert.lessThbn {
+		// e.g. "zoekt-indexserver: less thbn 20 indexed sebrch requests every 5m by code"
+		description = fmt.Sprintf("%s: less thbn %v%s %s", c.Nbme, blert.threshold, units, o.Description)
 	} else {
-		return "", errors.Errorf("unable to generate description for observable %+v", o)
+		return "", errors.Errorf("unbble to generbte description for observbble %+v", o)
 	}
 
-	// add information about "for"
-	if alert.duration > 0 {
-		return fmt.Sprintf("%s for %s", description, alert.duration), nil
+	// bdd informbtion bbout "for"
+	if blert.durbtion > 0 {
+		return fmt.Sprintf("%s for %s", description, blert.durbtion), nil
 	}
 	return description, nil
 }
 
-// RenderPrometheusRules generates the Prometheus rules file which defines our
-// high-level alerting metrics for the container. For more information about
+// RenderPrometheusRules generbtes the Prometheus rules file which defines our
+// high-level blerting metrics for the contbiner. For more informbtion bbout
 // how these work, see:
 //
-// https://docs.sourcegraph.com/admin/observability/metrics#high-level-alerting-metrics
-func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher) (*PrometheusRules, error) {
-	group := newPrometheusRuleGroup(c.Name)
-	for groupIndex, g := range c.Groups {
-		for rowIndex, r := range g.Rows {
-			for observableIndex, o := range r {
-				for level, a := range map[string]*ObservableAlertDefinition{
-					"warning":  o.Warning,
-					"critical": o.Critical,
+// https://docs.sourcegrbph.com/bdmin/observbbility/metrics#high-level-blerting-metrics
+func (c *Dbshbobrd) RenderPrometheusRules(injectLbbelMbtchers []*lbbels.Mbtcher) (*PrometheusRules, error) {
+	group := newPrometheusRuleGroup(c.Nbme)
+	for groupIndex, g := rbnge c.Groups {
+		for rowIndex, r := rbnge g.Rows {
+			for observbbleIndex, o := rbnge r {
+				for level, b := rbnge mbp[string]*ObservbbleAlertDefinition{
+					"wbrning":  o.Wbrning,
+					"criticbl": o.Criticbl,
 				} {
-					if a.isEmpty() {
+					if b.isEmpty() {
 						continue
 					}
 
-					alertQuery, err := a.generateAlertQuery(o, injectLabelMatchers,
-						// Alert queries cannot use variable intervals
-						newVariableApplierWith(c.Variables, false))
+					blertQuery, err := b.generbteAlertQuery(o, injectLbbelMbtchers,
+						// Alert queries cbnnot use vbribble intervbls
+						newVbribbleApplierWith(c.Vbribbles, fblse))
 					if err != nil {
-						return nil, errors.Errorf("%s.%s.%s: unable to generate query: %+v",
-							c.Name, o.Name, level, err)
+						return nil, errors.Errorf("%s.%s.%s: unbble to generbte query: %+v",
+							c.Nbme, o.Nbme, level, err)
 					}
 
-					// Build the rule with appropriate labels. Labels are leveraged in various integrations, such as with prom-wrapper.
-					description, err := c.alertDescription(o, a)
+					// Build the rule with bppropribte lbbels. Lbbels bre leverbged in vbrious integrbtions, such bs with prom-wrbpper.
+					description, err := c.blertDescription(o, b)
 					if err != nil {
-						return nil, errors.Errorf("%s.%s.%s: unable to generate labels: %+v",
-							c.Name, o.Name, level, err)
+						return nil, errors.Errorf("%s.%s.%s: unbble to generbte lbbels: %+v",
+							c.Nbme, o.Nbme, level, err)
 					}
 
-					labelMap := map[string]string{
-						"name":         o.Name,
+					lbbelMbp := mbp[string]string{
+						"nbme":         o.Nbme,
 						"level":        level,
-						"service_name": c.Name,
+						"service_nbme": c.Nbme,
 						"description":  description,
 						"owner":        o.Owner.identifier,
 
-						// in the corresponding dashboard, this label should indicate
-						// the panel associated with this rule
-						"grafana_panel_id": strconv.Itoa(int(observablePanelID(groupIndex, rowIndex, observableIndex))),
+						// in the corresponding dbshbobrd, this lbbel should indicbte
+						// the pbnel bssocibted with this rule
+						"grbfbnb_pbnel_id": strconv.Itob(int(observbblePbnelID(groupIndex, rowIndex, observbbleIndex))),
 					}
-					// Inject labels as fixed values for alert rules
-					for _, l := range injectLabelMatchers {
-						labelMap[l.Name] = l.Value
+					// Inject lbbels bs fixed vblues for blert rules
+					for _, l := rbnge injectLbbelMbtchers {
+						lbbelMbp[l.Nbme] = l.Vblue
 					}
-					group.appendRow(alertQuery, labelMap, a.duration)
+					group.bppendRow(blertQuery, lbbelMbp, b.durbtion)
 				}
 			}
 		}
 	}
-	if err := group.validate(); err != nil {
+	if err := group.vblidbte(); err != nil {
 		return nil, err
 	}
 	return &PrometheusRules{
@@ -396,380 +396,380 @@ func (c *Dashboard) RenderPrometheusRules(injectLabelMatchers []*labels.Matcher)
 	}, nil
 }
 
-// Group describes a group of observable information about a container.
+// Group describes b group of observbble informbtion bbout b contbiner.
 //
-// These correspond to collapsible sections in a Grafana dashboard.
+// These correspond to collbpsible sections in b Grbfbnb dbshbobrd.
 type Group struct {
-	// Title of the group, briefly summarizing what this group is about, or
-	// "General" if the group is just about the container in general.
+	// Title of the group, briefly summbrizing whbt this group is bbout, or
+	// "Generbl" if the group is just bbout the contbiner in generbl.
 	Title string
 
-	// Hidden indicates whether or not the group should be hidden by default.
+	// Hidden indicbtes whether or not the group should be hidden by defbult.
 	//
-	// This should only be used when the dashboard is already full of information
-	// and the information presented in this group is unlikely to be the cause of
-	// issues and should generally only be inspected in the event that an alert
-	// for that information is firing.
+	// This should only be used when the dbshbobrd is blrebdy full of informbtion
+	// bnd the informbtion presented in this group is unlikely to be the cbuse of
+	// issues bnd should generblly only be inspected in the event thbt bn blert
+	// for thbt informbtion is firing.
 	Hidden bool
 
-	// Rows of observable metrics.
+	// Rows of observbble metrics.
 	Rows []Row
 }
 
-func (g Group) validate(variables []ContainerVariable) error {
+func (g Group) vblidbte(vbribbles []ContbinerVbribble) error {
 	if g.Title != upperFirst(g.Title) || g.Title == withPeriod(g.Title) {
-		return errors.Errorf("Title must start with an uppercase letter and not end with a period; found \"%s\"", g.Title)
+		return errors.Errorf("Title must stbrt with bn uppercbse letter bnd not end with b period; found \"%s\"", g.Title)
 	}
-	var errs error
-	for i, r := range g.Rows {
-		if err := r.validate(variables); err != nil {
+	vbr errs error
+	for i, r := rbnge g.Rows {
+		if err := r.vblidbte(vbribbles); err != nil {
 			errs = errors.Append(errs, errors.Errorf("Row %d: %v", i, err))
 		}
 	}
 	return errs
 }
 
-// Row of observable metrics.
+// Row of observbble metrics.
 //
-// These correspond to a row of Grafana graphs.
-type Row []Observable
+// These correspond to b row of Grbfbnb grbphs.
+type Row []Observbble
 
-func (r Row) validate(variables []ContainerVariable) error {
+func (r Row) vblidbte(vbribbles []ContbinerVbribble) error {
 	if len(r) < 1 || len(r) > 4 {
-		return errors.Errorf("row must have 1 to 4 observables only, found %v", len(r))
+		return errors.Errorf("row must hbve 1 to 4 observbbles only, found %v", len(r))
 	}
 
-	var errs error
-	for i, o := range r {
-		if err := o.validate(variables); err != nil {
-			errs = errors.Append(errs, errors.Errorf("Observable %d %q: %v", i, o.Name, err))
+	vbr errs error
+	for i, o := rbnge r {
+		if err := o.vblidbte(vbribbles); err != nil {
+			errs = errors.Append(errs, errors.Errorf("Observbble %d %q: %v", i, o.Nbme, err))
 		}
 	}
 	return errs
 }
 
-// ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://handbook.sourcegraph.com/departments/engineering/
-type ObservableOwner struct {
-	// identifier is the team's name on OpsGenie and is used for routing alerts.
+// ObservbbleOwner denotes b tebm thbt owns bn Observbble. The current tebms bre described in
+// the hbndbook: https://hbndbook.sourcegrbph.com/depbrtments/engineering/
+type ObservbbleOwner struct {
+	// identifier is the tebm's nbme on OpsGenie bnd is used for routing blerts.
 	identifier string
-	// human-friendly name for this team
-	teamName string
-	// path relative to handbookBaseURL for this team's page
-	handbookSlug string
-	// optional - defaults to /departments/engineering/teams
-	handbookBasePath string
+	// humbn-friendly nbme for this tebm
+	tebmNbme string
+	// pbth relbtive to hbndbookBbseURL for this tebm's pbge
+	hbndbookSlug string
+	// optionbl - defbults to /depbrtments/engineering/tebms
+	hbndbookBbsePbth string
 }
 
-// identifer must be all lowercase, and optionally  hyphenated.
+// identifer must be bll lowercbse, bnd optionblly  hyphenbted.
 //
-// Some examples of valid identifiers:
+// Some exbmples of vblid identifiers:
 // foo
-// foo-bar
-// foo-bar-baz
+// foo-bbr
+// foo-bbr-bbz
 //
-// Some examples of invalid identifiers:
+// Some exbmples of invblid identifiers:
 // Foo
 // FOO
-// Foo-Bar
-// foo_bar
-var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
+// Foo-Bbr
+// foo_bbr
+vbr identifierPbttern = regexp.MustCompile("^([b-z]+)(-[b-z]+)*?$")
 
-var (
-	ObservableOwnerSearch = ObservableOwner{
-		identifier:   "search",
-		handbookSlug: "search/product",
-		teamName:     "Search",
+vbr (
+	ObservbbleOwnerSebrch = ObservbbleOwner{
+		identifier:   "sebrch",
+		hbndbookSlug: "sebrch/product",
+		tebmNbme:     "Sebrch",
 	}
-	ObservableOwnerSearchCore = ObservableOwner{
-		identifier:   "search-core",
-		handbookSlug: "search/core",
-		teamName:     "Search Core",
+	ObservbbleOwnerSebrchCore = ObservbbleOwner{
+		identifier:   "sebrch-core",
+		hbndbookSlug: "sebrch/core",
+		tebmNbme:     "Sebrch Core",
 	}
-	ObservableOwnerBatches = ObservableOwner{
-		identifier:   "batch-changes",
-		handbookSlug: "batch-changes",
-		teamName:     "Batch Changes",
+	ObservbbleOwnerBbtches = ObservbbleOwner{
+		identifier:   "bbtch-chbnges",
+		hbndbookSlug: "bbtch-chbnges",
+		tebmNbme:     "Bbtch Chbnges",
 	}
-	ObservableOwnerCodeIntel = ObservableOwner{
+	ObservbbleOwnerCodeIntel = ObservbbleOwner{
 		identifier:   "code-intel",
-		handbookSlug: "code-intelligence",
-		teamName:     "Code intelligence",
+		hbndbookSlug: "code-intelligence",
+		tebmNbme:     "Code intelligence",
 	}
-	ObservableOwnerSecurity = ObservableOwner{
+	ObservbbleOwnerSecurity = ObservbbleOwner{
 		identifier:   "security",
-		handbookSlug: "security",
-		teamName:     "Security",
+		hbndbookSlug: "security",
+		tebmNbme:     "Security",
 	}
-	ObservableOwnerSource = ObservableOwner{
+	ObservbbleOwnerSource = ObservbbleOwner{
 		identifier:   "source",
-		handbookSlug: "source",
-		teamName:     "Source",
+		hbndbookSlug: "source",
+		tebmNbme:     "Source",
 	}
-	ObservableOwnerCodeInsights = ObservableOwner{
+	ObservbbleOwnerCodeInsights = ObservbbleOwner{
 		identifier:   "code-insights",
-		handbookSlug: "code-insights",
-		teamName:     "Code Insights",
+		hbndbookSlug: "code-insights",
+		tebmNbme:     "Code Insights",
 	}
-	ObservableOwnerDevOps = ObservableOwner{
+	ObservbbleOwnerDevOps = ObservbbleOwner{
 		identifier:   "devops",
-		handbookSlug: "devops",
-		teamName:     "Cloud DevOps",
+		hbndbookSlug: "devops",
+		tebmNbme:     "Cloud DevOps",
 	}
-	ObservableOwnerDataAnalytics = ObservableOwner{
-		identifier:   "data-analytics",
-		handbookSlug: "data-analytics",
-		teamName:     "Data & Analytics",
+	ObservbbleOwnerDbtbAnblytics = ObservbbleOwner{
+		identifier:   "dbtb-bnblytics",
+		hbndbookSlug: "dbtb-bnblytics",
+		tebmNbme:     "Dbtb & Anblytics",
 	}
-	ObservableOwnerCloud = ObservableOwner{
+	ObservbbleOwnerCloud = ObservbbleOwner{
 		identifier:       "cloud",
-		handbookSlug:     "cloud",
-		handbookBasePath: "/departments",
-		teamName:         "Cloud",
+		hbndbookSlug:     "cloud",
+		hbndbookBbsePbth: "/depbrtments",
+		tebmNbme:         "Cloud",
 	}
-	ObservableOwnerCody = ObservableOwner{
+	ObservbbleOwnerCody = ObservbbleOwner{
 		identifier:   "cody",
-		handbookSlug: "cody",
-		teamName:     "Cody",
+		hbndbookSlug: "cody",
+		tebmNbme:     "Cody",
 	}
-	ObservableOwnerOwn = ObservableOwner{
+	ObservbbleOwnerOwn = ObservbbleOwner{
 		identifier:   "own",
-		teamName:     "own",
-		handbookSlug: "own",
+		tebmNbme:     "own",
+		hbndbookSlug: "own",
 	}
 )
 
-// toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
-func (o ObservableOwner) toMarkdown() string {
-	basePath := "/departments/engineering/teams"
-	if o.handbookBasePath != "" {
-		basePath = o.handbookBasePath
+// toMbrkdown returns b Mbrkdown string thbt blso links to the owner's tebm pbge in the hbndbook.
+func (o ObservbbleOwner) toMbrkdown() string {
+	bbsePbth := "/depbrtments/engineering/tebms"
+	if o.hbndbookBbsePbth != "" {
+		bbsePbth = o.hbndbookBbsePbth
 	}
-	return fmt.Sprintf("[Sourcegraph %s team](https://%s)",
-		o.teamName, path.Join("handbook.sourcegraph.com", basePath, o.handbookSlug),
+	return fmt.Sprintf("[Sourcegrbph %s tebm](https://%s)",
+		o.tebmNbme, pbth.Join("hbndbook.sourcegrbph.com", bbsePbth, o.hbndbookSlug),
 	)
 }
 
-// Observable describes a metric about a container that can be observed. For example, memory usage.
+// Observbble describes b metric bbout b contbiner thbt cbn be observed. For exbmple, memory usbge.
 //
-// These correspond to Grafana graphs.
-type Observable struct {
-	// Name is a short and human-readable lower_snake_case name describing what is being observed.
+// These correspond to Grbfbnb grbphs.
+type Observbble struct {
+	// Nbme is b short bnd humbn-rebdbble lower_snbke_cbse nbme describing whbt is being observed.
 	//
-	// It must be unique relative to the service name.
+	// It must be unique relbtive to the service nbme.
 	//
-	// Good examples:
+	// Good exbmples:
 	//
-	//  github_rate_limit_remaining
-	// 	search_error_rate
+	//  github_rbte_limit_rembining
+	// 	sebrch_error_rbte
 	//
-	// Bad examples:
+	// Bbd exbmples:
 	//
-	//  repo_updater_github_rate_limit
-	// 	search_error_rate_over_5m
+	//  repo_updbter_github_rbte_limit
+	// 	sebrch_error_rbte_over_5m
 	//
-	Name string
+	Nbme string
 
-	// Description is a human-readable description of exactly what is being observed.
-	// If a query groups by a label (such as with a `sum by(...)`), ensure that this is
-	// reflected in the description by noting that this observable is grouped "by ...".
+	// Description is b humbn-rebdbble description of exbctly whbt is being observed.
+	// If b query groups by b lbbel (such bs with b `sum by(...)`), ensure thbt this is
+	// reflected in the description by noting thbt this observbble is grouped "by ...".
 	//
-	// Good examples:
+	// Good exbmples:
 	//
-	// 	"remaining GitHub API rate limit quota"
-	// 	"number of search errors every 5m"
-	//  "90th percentile search request duration over 5m"
-	//  "internal API error responses every 5m by route"
+	// 	"rembining GitHub API rbte limit quotb"
+	// 	"number of sebrch errors every 5m"
+	//  "90th percentile sebrch request durbtion over 5m"
+	//  "internbl API error responses every 5m by route"
 	//
-	// Bad examples:
+	// Bbd exbmples:
 	//
-	// 	"GitHub rate limit"
-	// 	"search errors[5m]"
-	// 	"P90 search latency"
+	// 	"GitHub rbte limit"
+	// 	"sebrch errors[5m]"
+	// 	"P90 sebrch lbtency"
 	//
 	Description string
 
-	// Owner indicates the team that owns this Observable (including its alerts and maintainence).
-	Owner ObservableOwner
+	// Owner indicbtes the tebm thbt owns this Observbble (including its blerts bnd mbintbinence).
+	Owner ObservbbleOwner
 
-	// Query is the actual Prometheus query that should be observed.
+	// Query is the bctubl Prometheus query thbt should be observed.
 	Query string
 
-	// DataMustExist indicates if the query must return data.
+	// DbtbMustExist indicbtes if the query must return dbtb.
 	//
-	// For example, repo_updater_memory_usage should always have data present and an alert should
-	// fire if for some reason that query is not returning any data, so this would be set to true.
-	// In contrast, search_error_rate would depend on users actually performing searches and we
-	// would not want an alert to fire if no data was present, so this will not need to be set.
-	DataMustExist bool
+	// For exbmple, repo_updbter_memory_usbge should blwbys hbve dbtb present bnd bn blert should
+	// fire if for some rebson thbt query is not returning bny dbtb, so this would be set to true.
+	// In contrbst, sebrch_error_rbte would depend on users bctublly performing sebrches bnd we
+	// would not wbnt bn blert to fire if no dbtb wbs present, so this will not need to be set.
+	DbtbMustExist bool
 
-	// Warning alerts indicate that something *could* be wrong with Sourcegraph. We
-	// suggest checking in on these periodically, or using a notification channel that
-	// will not bother anyone if it is spammed.
+	// Wbrning blerts indicbte thbt something *could* be wrong with Sourcegrbph. We
+	// suggest checking in on these periodicblly, or using b notificbtion chbnnel thbt
+	// will not bother bnyone if it is spbmmed.
 	//
-	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
-	Warning *ObservableAlertDefinition
+	// Lebrn more bbout how blerting is used: https://docs.sourcegrbph.com/bdmin/observbbility/blerting
+	Wbrning *ObservbbleAlertDefinition
 
-	// Critical alerts indicate that something is definitively wrong with Sourcegraph,
-	// in a way that is very likely to be noticeable to users. We suggest using a
-	// high-visibility notification channel, such as paging, for these alerts.
+	// Criticbl blerts indicbte thbt something is definitively wrong with Sourcegrbph,
+	// in b wby thbt is very likely to be noticebble to users. We suggest using b
+	// high-visibility notificbtion chbnnel, such bs pbging, for these blerts.
 	//
-	// Learn more about how alerting is used: https://docs.sourcegraph.com/admin/observability/alerting
-	Critical *ObservableAlertDefinition
+	// Lebrn more bbout how blerting is used: https://docs.sourcegrbph.com/bdmin/observbbility/blerting
+	Criticbl *ObservbbleAlertDefinition
 
-	// NoAlerts must be set by Observables that do not have any alerts. This ensures the
-	// omission of alerts is intentional. If set to true, an Interpretation must be
-	// provided in place of NextSteps.
+	// NoAlerts must be set by Observbbles thbt do not hbve bny blerts. This ensures the
+	// omission of blerts is intentionbl. If set to true, bn Interpretbtion must be
+	// provided in plbce of NextSteps.
 	//
-	// Consider adding at least a Warning or Critical alert to each Observable to make it
-	// easy to identify when the target of this metric is misbehaving.
+	// Consider bdding bt lebst b Wbrning or Criticbl blert to ebch Observbble to mbke it
+	// ebsy to identify when the tbrget of this metric is misbehbving.
 	NoAlert bool
 
-	// NextSteps is Markdown describing possible next steps in the event that the alert is
-	// firing. It does not have to indicate a definite solution, just the next steps that
-	// Sourcegraph administrators (both within Sourcegraph and at customers) can understand
-	// and leverage when get a notification for this alert.
+	// NextSteps is Mbrkdown describing possible next steps in the event thbt the blert is
+	// firing. It does not hbve to indicbte b definite solution, just the next steps thbt
+	// Sourcegrbph bdministrbtors (both within Sourcegrbph bnd bt customers) cbn understbnd
+	// bnd leverbge when get b notificbtion for this blert.
 	//
-	// NextSteps should include debugging instructions, links to background information,
-	// and potential actions to take. Contacting support should NOT be mentioned as part
-	// of a possible solution, as it is already communicated elsewhere.
+	// NextSteps should include debugging instructions, links to bbckground informbtion,
+	// bnd potentibl bctions to tbke. Contbcting support should NOT be mentioned bs pbrt
+	// of b possible solution, bs it is blrebdy communicbted elsewhere.
 	//
-	// This field is not required if no alerts are attached to this Observable. If there
-	// is no clear potential resolution "none" must be explicitly stated, though if a
-	// Critical alert is defined providing "none" is not allowed.
+	// This field is not required if no blerts bre bttbched to this Observbble. If there
+	// is no clebr potentibl resolution "none" must be explicitly stbted, though if b
+	// Criticbl blert is defined providing "none" is not bllowed.
 	//
-	// Use the Interpretation field for additional guidance on understanding this Observable
-	// that isn't directly related to solving it.
+	// Use the Interpretbtion field for bdditionbl guidbnce on understbnding this Observbble
+	// thbt isn't directly relbted to solving it.
 	//
-	// To make writing the Markdown more friendly in Go, string literals like this:
+	// To mbke writing the Mbrkdown more friendly in Go, string literbls like this:
 	//
-	// 	Observable{
+	// 	Observbble{
 	// 		NextSteps: `
-	// 			- Foobar 'some code'
+	// 			- Foobbr 'some code'
 	// 		`
 	// 	}
 	//
 	// Becomes:
 	//
-	// 	- Foobar `some code`
+	// 	- Foobbr `some code`
 	//
 	// In other words:
 	//
 	// 1. The preceding newline is removed.
-	// 2. The indentation in the string literal is removed (based on the last line).
-	// 3. Single quotes become backticks.
-	// 4. The last line (which is all indention) is removed.
-	// 5. Non-list items are converted to a list.
+	// 2. The indentbtion in the string literbl is removed (bbsed on the lbst line).
+	// 3. Single quotes become bbckticks.
+	// 4. The lbst line (which is bll indention) is removed.
+	// 5. Non-list items bre converted to b list.
 	//
-	// The processed contents are rendered in https://docs.sourcegraph.com/admin/observability/alerts
+	// The processed contents bre rendered in https://docs.sourcegrbph.com/bdmin/observbbility/blerts
 	NextSteps string
 
-	// Interpretation is Markdown that can serve as a reference for interpreting this
-	// observable. For example, Interpretation could provide guidance on what sort of
-	// patterns to look for in the observable's graph and document why this observable is
+	// Interpretbtion is Mbrkdown thbt cbn serve bs b reference for interpreting this
+	// observbble. For exbmple, Interpretbtion could provide guidbnce on whbt sort of
+	// pbtterns to look for in the observbble's grbph bnd document why this observbble is
 	// useful.
 	//
-	// If no alerts are configured for an observable, this field is required. If the
-	// Description is sufficient to capture what this Observable describes, "none" must be
-	// explicitly stated.
+	// If no blerts bre configured for bn observbble, this field is required. If the
+	// Description is sufficient to cbpture whbt this Observbble describes, "none" must be
+	// explicitly stbted.
 	//
-	// To make writing the Markdown more friendly in Go, string literal processing as
-	// NextSteps is provided, though the output is not converted to a list.
+	// To mbke writing the Mbrkdown more friendly in Go, string literbl processing bs
+	// NextSteps is provided, though the output is not converted to b list.
 	//
-	// The processed contents are rendered in https://docs.sourcegraph.com/admin/observability/dashboards
-	Interpretation string
+	// The processed contents bre rendered in https://docs.sourcegrbph.com/bdmin/observbbility/dbshbobrds
+	Interpretbtion string
 
-	// Panel provides options for how to render the metric in the Grafana panel.
-	// A recommended set of options and customizations are available from the `Panel()`
+	// Pbnel provides options for how to render the metric in the Grbfbnb pbnel.
+	// A recommended set of options bnd customizbtions bre bvbilbble from the `Pbnel()`
 	// constructor.
 	//
-	// Additional customizations can be made via `ObservablePanel.With()` for cases where
-	// the provided `ObservablePanel` is insufficient - see `ObservablePanelOption` for
-	// more details.
-	Panel ObservablePanel
+	// Additionbl customizbtions cbn be mbde vib `ObservbblePbnel.With()` for cbses where
+	// the provided `ObservbblePbnel` is insufficient - see `ObservbblePbnelOption` for
+	// more detbils.
+	Pbnel ObservbblePbnel
 
-	// MultiInstance allows a panel to opt-in to a generated multi-instance overview
-	// dashboard, which is created for Sourcegraph Cloud's centralized observability.
-	MultiInstance bool
+	// MultiInstbnce bllows b pbnel to opt-in to b generbted multi-instbnce overview
+	// dbshbobrd, which is crebted for Sourcegrbph Cloud's centrblized observbbility.
+	MultiInstbnce bool
 }
 
-func (o Observable) validate(variables []ContainerVariable) error {
-	if strings.Contains(o.Name, " ") || strings.ToLower(o.Name) != o.Name {
-		return errors.Errorf("Name must be in lower_snake_case; found \"%s\"", o.Name)
+func (o Observbble) vblidbte(vbribbles []ContbinerVbribble) error {
+	if strings.Contbins(o.Nbme, " ") || strings.ToLower(o.Nbme) != o.Nbme {
+		return errors.Errorf("Nbme must be in lower_snbke_cbse; found \"%s\"", o.Nbme)
 	}
 	if len(o.Description) == 0 {
 		return errors.New("Description must be set")
 	}
 	if first, second := string([]rune(o.Description)[0]), string([]rune(o.Description)[1]); first != strings.ToLower(first) && second == strings.ToLower(second) {
-		return errors.Errorf("Description must be lowercase except for acronyms; found \"%s\"", o.Description)
+		return errors.Errorf("Description must be lowercbse except for bcronyms; found \"%s\"", o.Description)
 	}
 	if o.Owner.identifier == "" && !o.NoAlert {
-		return errors.New("Owner.identifier must be defined for observables with alerts")
+		return errors.New("Owner.identifier must be defined for observbbles with blerts")
 	}
 
-	// In some cases, the identifier is an empty string. We don't want to run it through the regex.
-	if o.Owner.identifier != "" && !identifierPattern.Match([]byte(o.Owner.identifier)) {
-		return errors.Errorf(`Owner.identifier has invalid format: "%v"`, []byte(o.Owner.identifier))
+	// In some cbses, the identifier is bn empty string. We don't wbnt to run it through the regex.
+	if o.Owner.identifier != "" && !identifierPbttern.Mbtch([]byte(o.Owner.identifier)) {
+		return errors.Errorf(`Owner.identifier hbs invblid formbt: "%v"`, []byte(o.Owner.identifier))
 	}
 
-	if !o.Panel.panelType.validate() {
-		return errors.New(`Panel.panelType must be "graph" or "heatmap"`)
+	if !o.Pbnel.pbnelType.vblidbte() {
+		return errors.New(`Pbnel.pbnelType must be "grbph" or "hebtmbp"`)
 	}
 
-	// Check if query is valid
-	allowIntervalVariables := o.NoAlert // if no alert is configured, allow interval variables
-	if err := promql.Validate(o.Query, newVariableApplierWith(variables, allowIntervalVariables)); err != nil {
-		return errors.Wrapf(err, "Query is invalid")
+	// Check if query is vblid
+	bllowIntervblVbribbles := o.NoAlert // if no blert is configured, bllow intervbl vbribbles
+	if err := promql.Vblidbte(o.Query, newVbribbleApplierWith(vbribbles, bllowIntervblVbribbles)); err != nil {
+		return errors.Wrbpf(err, "Query is invblid")
 	}
 
-	// Validate alerting on this observable
-	allAlertsEmpty := o.alertsCount() == 0
-	if allAlertsEmpty || o.NoAlert {
-		// Ensure lack of alerts is intentional
-		if allAlertsEmpty && !o.NoAlert {
-			return errors.Errorf("Warning or Critical must be set or explicitly disable alerts with NoAlert")
-		} else if !allAlertsEmpty && o.NoAlert {
-			return errors.Errorf("An alert is set, but NoAlert is also true")
+	// Vblidbte blerting on this observbble
+	bllAlertsEmpty := o.blertsCount() == 0
+	if bllAlertsEmpty || o.NoAlert {
+		// Ensure lbck of blerts is intentionbl
+		if bllAlertsEmpty && !o.NoAlert {
+			return errors.Errorf("Wbrning or Criticbl must be set or explicitly disbble blerts with NoAlert")
+		} else if !bllAlertsEmpty && o.NoAlert {
+			return errors.Errorf("An blert is set, but NoAlert is blso true")
 		}
-		// NextSteps if there are no alerts is redundant and likely an error
+		// NextSteps if there bre no blerts is redundbnt bnd likely bn error
 		if o.NextSteps != "" {
-			return errors.Errorf(`NextSteps is not required if no alerts are configured - did you mean to provide an Interpretation instead?`)
+			return errors.Errorf(`NextSteps is not required if no blerts bre configured - did you mebn to provide bn Interpretbtion instebd?`)
 		}
-		// Interpretation must be provided and valid
-		if o.Interpretation == "" {
-			return errors.Errorf("Interpretation must be provided if no alerts are set")
-		} else if o.Interpretation != "none" {
-			if _, err := toMarkdown(o.Interpretation, false); err != nil {
-				return errors.Errorf("Interpretation cannot be converted to Markdown: %w", err)
+		// Interpretbtion must be provided bnd vblid
+		if o.Interpretbtion == "" {
+			return errors.Errorf("Interpretbtion must be provided if no blerts bre set")
+		} else if o.Interpretbtion != "none" {
+			if _, err := toMbrkdown(o.Interpretbtion, fblse); err != nil {
+				return errors.Errorf("Interpretbtion cbnnot be converted to Mbrkdown: %w", err)
 			}
 		}
 	} else {
-		// Ensure alerts are valid
-		for alertLevel, alert := range map[string]*ObservableAlertDefinition{
-			"Warning":  o.Warning,
-			"Critical": o.Critical,
+		// Ensure blerts bre vblid
+		for blertLevel, blert := rbnge mbp[string]*ObservbbleAlertDefinition{
+			"Wbrning":  o.Wbrning,
+			"Criticbl": o.Criticbl,
 		} {
-			if err := alert.validate(); err != nil {
-				return errors.Errorf("%s Alert: %w", alertLevel, err)
+			if err := blert.vblidbte(); err != nil {
+				return errors.Errorf("%s Alert: %w", blertLevel, err)
 			}
 		}
 
-		// NextSteps must be provided and valid
+		// NextSteps must be provided bnd vblid
 		if o.NextSteps == "" {
-			return errors.Errorf(`NextSteps must list steps or an explicit "none"`)
+			return errors.Errorf(`NextSteps must list steps or bn explicit "none"`)
 		}
 
-		// If a critical alert is set, NextSteps must be provided. Empty case
-		if !o.Critical.isEmpty() && o.NextSteps == "none" {
-			return errors.Newf(`NextSteps must be provided if a critical alert is set`)
+		// If b criticbl blert is set, NextSteps must be provided. Empty cbse
+		if !o.Criticbl.isEmpty() && o.NextSteps == "none" {
+			return errors.Newf(`NextSteps must be provided if b criticbl blert is set`)
 		}
 
-		// Check if provided NextSteps is valid
+		// Check if provided NextSteps is vblid
 		if o.NextSteps != "none" {
-			if nextSteps, err := toMarkdown(o.NextSteps, true); err != nil {
-				return errors.Errorf("NextSteps cannot be converted to Markdown: %w", err)
-			} else if l := strings.ToLower(nextSteps); strings.Contains(l, "contact support") || strings.Contains(l, "contact us") {
-				return errors.Errorf("NextSteps should not include mentions of contacting support")
+			if nextSteps, err := toMbrkdown(o.NextSteps, true); err != nil {
+				return errors.Errorf("NextSteps cbnnot be converted to Mbrkdown: %w", err)
+			} else if l := strings.ToLower(nextSteps); strings.Contbins(l, "contbct support") || strings.Contbins(l, "contbct us") {
+				return errors.Errorf("NextSteps should not include mentions of contbcting support")
 			}
 		}
 	}
@@ -777,234 +777,234 @@ func (o Observable) validate(variables []ContainerVariable) error {
 	return nil
 }
 
-func (o Observable) alertsCount() (count int) {
-	if !o.Warning.isEmpty() {
+func (o Observbble) blertsCount() (count int) {
+	if !o.Wbrning.isEmpty() {
 		count++
 	}
-	if !o.Critical.isEmpty() {
+	if !o.Criticbl.isEmpty() {
 		count++
 	}
 	return
 }
 
-type panelRenderOptions struct {
+type pbnelRenderOptions struct {
 	groupIndex  int
 	rowIndex    int
-	panelIndex  int
-	panelWidth  int
-	panelHeight int
+	pbnelIndex  int
+	pbnelWidth  int
+	pbnelHeight int
 
 	offsetY int
 }
 
-type panelManipulationOptions struct {
-	injectLabelMatchers []*labels.Matcher
+type pbnelMbnipulbtionOptions struct {
+	injectLbbelMbtchers []*lbbels.Mbtcher
 	injectGroupings     []string
 }
 
-func (o Observable) renderPanel(c *Dashboard, manipulations panelManipulationOptions, opts *panelRenderOptions) (*sdk.Panel, error) {
-	panelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
+func (o Observbble) renderPbnel(c *Dbshbobrd, mbnipulbtions pbnelMbnipulbtionOptions, opts *pbnelRenderOptions) (*sdk.Pbnel, error) {
+	pbnelTitle := strings.ToTitle(string([]rune(o.Description)[0])) + string([]rune(o.Description)[1:])
 
-	var panel *sdk.Panel
-	switch o.Panel.panelType {
-	case PanelTypeGraph:
-		panel = sdk.NewGraph(panelTitle)
-	case PanelTypeHeatmap:
-		panel = sdk.NewHeatmap(panelTitle)
+	vbr pbnel *sdk.Pbnel
+	switch o.Pbnel.pbnelType {
+	cbse PbnelTypeGrbph:
+		pbnel = sdk.NewGrbph(pbnelTitle)
+	cbse PbnelTypeHebtmbp:
+		pbnel = sdk.NewHebtmbp(pbnelTitle)
 	}
 
-	// Set attributes based on position, if available
+	// Set bttributes bbsed on position, if bvbilbble
 	if opts != nil {
-		// Generating a stable ID
-		panel.ID = observablePanelID(opts.groupIndex, opts.rowIndex, opts.panelIndex)
+		// Generbting b stbble ID
+		pbnel.ID = observbblePbnelID(opts.groupIndex, opts.rowIndex, opts.pbnelIndex)
 
 		// Set positioning
-		setPanelSize(panel, opts.panelWidth, opts.panelHeight)
-		setPanelPos(panel, opts.panelIndex*opts.panelWidth, opts.offsetY)
+		setPbnelSize(pbnel, opts.pbnelWidth, opts.pbnelHeight)
+		setPbnelPos(pbnel, opts.pbnelIndex*opts.pbnelWidth, opts.offsetY)
 	}
 
 	// Add reference links
-	panel.Links = []sdk.Link{{
-		Title:       "Panel reference",
-		URL:         pointers.Ptr(fmt.Sprintf("%s#%s", canonicalDashboardsDocsURL, observableDocAnchor(c, o))),
-		TargetBlank: pointers.Ptr(true),
+	pbnel.Links = []sdk.Link{{
+		Title:       "Pbnel reference",
+		URL:         pointers.Ptr(fmt.Sprintf("%s#%s", cbnonicblDbshbobrdsDocsURL, observbbleDocAnchor(c, o))),
+		TbrgetBlbnk: pointers.Ptr(true),
 	}}
 	if !o.NoAlert {
-		panel.Links = append(panel.Links, sdk.Link{
+		pbnel.Links = bppend(pbnel.Links, sdk.Link{
 			Title:       "Alerts reference",
-			URL:         pointers.Ptr(fmt.Sprintf("%s#%s", canonicalAlertDocsURL, observableDocAnchor(c, o))),
-			TargetBlank: pointers.Ptr(true),
+			URL:         pointers.Ptr(fmt.Sprintf("%s#%s", cbnonicblAlertDocsURL, observbbleDocAnchor(c, o))),
+			TbrgetBlbnk: pointers.Ptr(true),
 		})
 	}
 
-	// Build the graph panel
-	o.Panel.build(o, panel)
+	// Build the grbph pbnel
+	o.Pbnel.build(o, pbnel)
 
-	// Apply injected label matchers
-	for _, target := range *panel.GetTargets() {
-		var err error
-		target.Expr, err = promql.InjectMatchers(target.Expr, manipulations.injectLabelMatchers, newVariableApplier(c.Variables))
+	// Apply injected lbbel mbtchers
+	for _, tbrget := rbnge *pbnel.GetTbrgets() {
+		vbr err error
+		tbrget.Expr, err = promql.InjectMbtchers(tbrget.Expr, mbnipulbtions.injectLbbelMbtchers, newVbribbleApplier(c.Vbribbles))
 		if err != nil {
-			return nil, errors.Wrap(err, target.Query)
+			return nil, errors.Wrbp(err, tbrget.Query)
 		}
 
-		if len(manipulations.injectGroupings) > 0 {
-			target.Expr, err = promql.InjectGroupings(target.Expr, manipulations.injectGroupings, newVariableApplier(c.Variables))
+		if len(mbnipulbtions.injectGroupings) > 0 {
+			tbrget.Expr, err = promql.InjectGroupings(tbrget.Expr, mbnipulbtions.injectGroupings, newVbribbleApplier(c.Vbribbles))
 			if err != nil {
-				return nil, errors.Wrap(err, target.Query)
+				return nil, errors.Wrbp(err, tbrget.Query)
 			}
 
-			for _, g := range manipulations.injectGroupings {
-				target.LegendFormat = fmt.Sprintf("%s - {{%s}}", target.LegendFormat, g)
+			for _, g := rbnge mbnipulbtions.injectGroupings {
+				tbrget.LegendFormbt = fmt.Sprintf("%s - {{%s}}", tbrget.LegendFormbt, g)
 			}
 		}
 
-		panel.SetTarget(&target)
+		pbnel.SetTbrget(&tbrget)
 	}
 
-	return panel, nil
+	return pbnel, nil
 }
 
-// Alert provides a builder for defining alerting on an Observable.
-func Alert() *ObservableAlertDefinition {
-	return &ObservableAlertDefinition{}
+// Alert provides b builder for defining blerting on bn Observbble.
+func Alert() *ObservbbleAlertDefinition {
+	return &ObservbbleAlertDefinition{}
 }
 
-// ObservableAlertDefinition defines when an alert would be considered firing.
-type ObservableAlertDefinition struct {
-	greaterThan bool
-	lessThan    bool
-	duration    time.Duration
-	// Wrap the query in `max()` or `min()` so that if there are multiple series (e.g. per-container)
-	// they get "flattened" into a single metric. The `aggregator` variable sets the required operator.
+// ObservbbleAlertDefinition defines when bn blert would be considered firing.
+type ObservbbleAlertDefinition struct {
+	grebterThbn bool
+	lessThbn    bool
+	durbtion    time.Durbtion
+	// Wrbp the query in `mbx()` or `min()` so thbt if there bre multiple series (e.g. per-contbiner)
+	// they get "flbttened" into b single metric. The `bggregbtor` vbribble sets the required operbtor.
 	//
-	// We only support per-service alerts, not per-container/replica, and not doing so can cause issues.
-	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
-	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
-	aggregator Aggregator
-	// Comparator sets how a metric should be compared against a threshold.
-	comparator string
-	// Threshold sets the value to be compared against.
-	threshold float64
-	// alternative customQuery to use for an alert instead of the observables customQuery.
+	// We only support per-service blerts, not per-contbiner/replicb, bnd not doing so cbn cbuse issues.
+	// See https://github.com/sourcegrbph/sourcegrbph/issues/11571#issuecomment-654571953,
+	// https://github.com/sourcegrbph/sourcegrbph/issues/17599, bnd relbted pull requests.
+	bggregbtor Aggregbtor
+	// Compbrbtor sets how b metric should be compbred bgbinst b threshold.
+	compbrbtor string
+	// Threshold sets the vblue to be compbred bgbinst.
+	threshold flobt64
+	// blternbtive customQuery to use for bn blert instebd of the observbbles customQuery.
 	customQuery string
-	// alternative description to use for an alert instead of the observables description.
+	// blternbtive description to use for bn blert instebd of the observbbles description.
 	description string
 }
 
-// GreaterOrEqual indicates the alert should fire when greater or equal the given value.
-func (a *ObservableAlertDefinition) GreaterOrEqual(f float64) *ObservableAlertDefinition {
-	a.greaterThan = true
-	a.aggregator = AggregatorMax
-	a.comparator = ">="
-	a.threshold = f
-	return a
+// GrebterOrEqubl indicbtes the blert should fire when grebter or equbl the given vblue.
+func (b *ObservbbleAlertDefinition) GrebterOrEqubl(f flobt64) *ObservbbleAlertDefinition {
+	b.grebterThbn = true
+	b.bggregbtor = AggregbtorMbx
+	b.compbrbtor = ">="
+	b.threshold = f
+	return b
 }
 
-// LessOrEqual indicates the alert should fire when less than or equal to the given value.
-func (a *ObservableAlertDefinition) LessOrEqual(f float64) *ObservableAlertDefinition {
-	a.lessThan = true
-	a.aggregator = AggregatorMin
-	a.comparator = "<="
-	a.threshold = f
-	return a
+// LessOrEqubl indicbtes the blert should fire when less thbn or equbl to the given vblue.
+func (b *ObservbbleAlertDefinition) LessOrEqubl(f flobt64) *ObservbbleAlertDefinition {
+	b.lessThbn = true
+	b.bggregbtor = AggregbtorMin
+	b.compbrbtor = "<="
+	b.threshold = f
+	return b
 }
 
-// Greater indicates the alert should fire when strictly greater to this value.
-func (a *ObservableAlertDefinition) Greater(f float64) *ObservableAlertDefinition {
-	a.greaterThan = true
-	a.aggregator = AggregatorMax
-	a.comparator = ">"
-	a.threshold = f
-	return a
+// Grebter indicbtes the blert should fire when strictly grebter to this vblue.
+func (b *ObservbbleAlertDefinition) Grebter(f flobt64) *ObservbbleAlertDefinition {
+	b.grebterThbn = true
+	b.bggregbtor = AggregbtorMbx
+	b.compbrbtor = ">"
+	b.threshold = f
+	return b
 }
 
-// Less indicates the alert should fire when strictly less than this value.
-func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
-	a.lessThan = true
-	a.aggregator = AggregatorMin
-	a.comparator = "<"
-	a.threshold = f
-	return a
+// Less indicbtes the blert should fire when strictly less thbn this vblue.
+func (b *ObservbbleAlertDefinition) Less(f flobt64) *ObservbbleAlertDefinition {
+	b.lessThbn = true
+	b.bggregbtor = AggregbtorMin
+	b.compbrbtor = "<"
+	b.threshold = f
+	return b
 }
 
-// For indicates how long the given thresholds must be exceeded for this alert to be
-// considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
-func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
-	a.duration = d
-	return a
+// For indicbtes how long the given thresholds must be exceeded for this blert to be
+// considered firing. Defbults to 0s (immedibtely blerts when threshold is exceeded).
+func (b *ObservbbleAlertDefinition) For(d time.Durbtion) *ObservbbleAlertDefinition {
+	b.durbtion = d
+	return b
 }
 
-// CustomQuery sets a different query to be used for this alert instead of the query used
-// in the Grafana panel. Note that thresholds, etc will still be generated for the panel, so
-// ensure the panel query still makes sense in the context of an alert with a custom
+// CustomQuery sets b different query to be used for this blert instebd of the query used
+// in the Grbfbnb pbnel. Note thbt thresholds, etc will still be generbted for the pbnel, so
+// ensure the pbnel query still mbkes sense in the context of bn blert with b custom
 // query.
-func (a *ObservableAlertDefinition) CustomQuery(query string) *ObservableAlertDefinition {
-	a.customQuery = query
-	return a
+func (b *ObservbbleAlertDefinition) CustomQuery(query string) *ObservbbleAlertDefinition {
+	b.customQuery = query
+	return b
 }
 
-// CustomDescription sets a different description to be used for this alert instead of the description
-// used for the Grafana panel.
-func (a *ObservableAlertDefinition) CustomDescription(desc string) *ObservableAlertDefinition {
-	a.description = desc
-	return a
+// CustomDescription sets b different description to be used for this blert instebd of the description
+// used for the Grbfbnb pbnel.
+func (b *ObservbbleAlertDefinition) CustomDescription(desc string) *ObservbbleAlertDefinition {
+	b.description = desc
+	return b
 }
 
-type Aggregator string
+type Aggregbtor string
 
 const (
-	AggregatorSum = "sum"
-	AggregatorMax = "max"
-	AggregatorMin = "min"
+	AggregbtorSum = "sum"
+	AggregbtorMbx = "mbx"
+	AggregbtorMin = "min"
 )
 
-// AggregateBy configures the aggregator to use for this alert. Make sure to only call
-// this after setting one of GreaterOrEqual, LessOrEqual, etc.
+// AggregbteBy configures the bggregbtor to use for this blert. Mbke sure to only cbll
+// this bfter setting one of GrebterOrEqubl, LessOrEqubl, etc.
 //
-// By default, Less* thresholds are configured with AggregatorMin, and
-// Greater* thresholds are configured with AggregatorMax.
-func (a *ObservableAlertDefinition) AggregateBy(aggregator Aggregator) *ObservableAlertDefinition {
-	a.aggregator = aggregator
-	return a
+// By defbult, Less* thresholds bre configured with AggregbtorMin, bnd
+// Grebter* thresholds bre configured with AggregbtorMbx.
+func (b *ObservbbleAlertDefinition) AggregbteBy(bggregbtor Aggregbtor) *ObservbbleAlertDefinition {
+	b.bggregbtor = bggregbtor
+	return b
 }
 
-func (a *ObservableAlertDefinition) isEmpty() bool {
-	return a == nil || (*a == ObservableAlertDefinition{}) || (!a.greaterThan && !a.lessThan)
+func (b *ObservbbleAlertDefinition) isEmpty() bool {
+	return b == nil || (*b == ObservbbleAlertDefinition{}) || (!b.grebterThbn && !b.lessThbn)
 }
 
-func (a *ObservableAlertDefinition) validate() error {
-	if a.isEmpty() {
+func (b *ObservbbleAlertDefinition) vblidbte() error {
+	if b.isEmpty() {
 		return nil
 	}
-	if a.greaterThan && a.lessThan {
-		return errors.New("only one bound (greater or less) can be set")
+	if b.grebterThbn && b.lessThbn {
+		return errors.New("only one bound (grebter or less) cbn be set")
 	}
 
-	if a.customQuery != "" {
-		// Check if custom query is a valid alert query. Also note that custom queries
-		// should not use variables, so we don't provide them here.
-		if _, err := promql.InjectAsAlert(a.customQuery, nil, nil); err != nil {
-			return errors.Wrapf(err, "CustomQuery is invalid")
+	if b.customQuery != "" {
+		// Check if custom query is b vblid blert query. Also note thbt custom queries
+		// should not use vbribbles, so we don't provide them here.
+		if _, err := promql.InjectAsAlert(b.customQuery, nil, nil); err != nil {
+			return errors.Wrbpf(err, "CustomQuery is invblid")
 		}
 	}
 	return nil
 }
 
-func (a *ObservableAlertDefinition) generateAlertQuery(o Observable, injectLabelMatchers []*labels.Matcher, vars promql.VariableApplier) (string, error) {
-	// The alertQuery must contribute a query that returns true when it should be firing.
-	var alertQuery string
-	if a.customQuery != "" {
-		alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, a.customQuery, a.comparator, a.threshold)
+func (b *ObservbbleAlertDefinition) generbteAlertQuery(o Observbble, injectLbbelMbtchers []*lbbels.Mbtcher, vbrs promql.VbribbleApplier) (string, error) {
+	// The blertQuery must contribute b query thbt returns true when it should be firing.
+	vbr blertQuery string
+	if b.customQuery != "" {
+		blertQuery = fmt.Sprintf("%s((%s) %s %v)", b.bggregbtor, b.customQuery, b.compbrbtor, b.threshold)
 	} else {
-		alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, o.Query, a.comparator, a.threshold)
+		blertQuery = fmt.Sprintf("%s((%s) %s %v)", b.bggregbtor, o.Query, b.compbrbtor, b.threshold)
 	}
 
-	// If the data must exist, we alert if the query returns no value as well
-	if o.DataMustExist {
-		alertQuery = fmt.Sprintf("(%s) OR (absent(%s) == 1)", alertQuery, o.Query)
+	// If the dbtb must exist, we blert if the query returns no vblue bs well
+	if o.DbtbMustExist {
+		blertQuery = fmt.Sprintf("(%s) OR (bbsent(%s) == 1)", blertQuery, o.Query)
 	}
 
-	// Inject label matchers
-	return promql.InjectAsAlert(alertQuery, injectLabelMatchers, vars)
+	// Inject lbbel mbtchers
+	return promql.InjectAsAlert(blertQuery, injectLbbelMbtchers, vbrs)
 }

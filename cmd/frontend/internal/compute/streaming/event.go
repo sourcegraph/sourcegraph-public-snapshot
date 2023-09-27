@@ -1,11 +1,11 @@
-package streaming
+pbckbge strebming
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
 )
 
 type Event struct {
-	Results []compute.Result // TODO(rvantonder): hydrate repo information in this Event type.
-	Stats   streaming.Stats
+	Results []compute.Result // TODO(rvbntonder): hydrbte repo informbtion in this Event type.
+	Stbts   strebming.Stbts
 }

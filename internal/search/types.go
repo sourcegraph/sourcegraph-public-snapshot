@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
@@ -7,117 +7,117 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce/policy"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Inputs contains fields we set before kicking off search.
+// Inputs contbins fields we set before kicking off sebrch.
 type Inputs struct {
-	Plan                   query.Plan // the comprehensive query plan
-	Query                  query.Q    // the current basic query being evaluated, one part of query.Plan
-	OriginalQuery          string     // the raw string of the original search query
-	SearchMode             Mode
-	PatternType            query.SearchType
-	UserSettings           *schema.Settings
-	OnSourcegraphDotCom    bool
-	Features               *Features
+	Plbn                   query.Plbn // the comprehensive query plbn
+	Query                  query.Q    // the current bbsic query being evblubted, one pbrt of query.Plbn
+	OriginblQuery          string     // the rbw string of the originbl sebrch query
+	SebrchMode             Mode
+	PbtternType            query.SebrchType
+	UserSettings           *schemb.Settings
+	OnSourcegrbphDotCom    bool
+	Febtures               *Febtures
 	Protocol               Protocol
-	SanitizeSearchPatterns []*regexp.Regexp
+	SbnitizeSebrchPbtterns []*regexp.Regexp
 
-	// TODO(keegan) is this the best way to sneak this behaviour in?
-	Exhaustive bool // we adjust some behaviours if we are exhaustive search.
+	// TODO(keegbn) is this the best wby to snebk this behbviour in?
+	Exhbustive bool // we bdjust some behbviours if we bre exhbustive sebrch.
 }
 
-// MaxResults computes the limit for the query.
-func (inputs Inputs) MaxResults() int {
-	return inputs.Query.MaxResults(inputs.DefaultLimit())
+// MbxResults computes the limit for the query.
+func (inputs Inputs) MbxResults() int {
+	return inputs.Query.MbxResults(inputs.DefbultLimit())
 }
 
-// DefaultLimit is the default limit to use if not specified in query.
-func (inputs Inputs) DefaultLimit() int {
-	if inputs.Protocol == Batch {
-		return limits.DefaultMaxSearchResults
+// DefbultLimit is the defbult limit to use if not specified in query.
+func (inputs Inputs) DefbultLimit() int {
+	if inputs.Protocol == Bbtch {
+		return limits.DefbultMbxSebrchResults
 	}
-	return limits.DefaultMaxSearchResultsStreaming
+	return limits.DefbultMbxSebrchResultsStrebming
 }
 
 type Mode int
 
 const (
 	Precise     Mode = 0
-	SmartSearch      = 1 << (iota - 1)
+	SmbrtSebrch      = 1 << (iotb - 1)
 )
 
 type Protocol int
 
 const (
-	Streaming Protocol = iota
-	Batch
+	Strebming Protocol = iotb
+	Bbtch
 )
 
 func (p Protocol) String() string {
 	switch p {
-	case Streaming:
-		return "Streaming"
-	case Batch:
-		return "Batch"
-	default:
+	cbse Strebming:
+		return "Strebming"
+	cbse Bbtch:
+		return "Bbtch"
+	defbult:
 		return fmt.Sprintf("unknown{%d}", p)
 	}
 }
 
-type SymbolsParameters struct {
-	// Repo is the name of the repository to search in.
-	Repo api.RepoName `json:"repo"`
+type SymbolsPbrbmeters struct {
+	// Repo is the nbme of the repository to sebrch in.
+	Repo bpi.RepoNbme `json:"repo"`
 
-	// CommitID is the commit to search in.
-	CommitID api.CommitID `json:"commitID"`
+	// CommitID is the commit to sebrch in.
+	CommitID bpi.CommitID `json:"commitID"`
 
-	// Query is the search query.
+	// Query is the sebrch query.
 	Query string
 
-	// IsRegExp if true will treat the Pattern as a regular expression.
+	// IsRegExp if true will trebt the Pbttern bs b regulbr expression.
 	IsRegExp bool
 
-	// IsCaseSensitive if false will ignore the case of query and file pattern
-	// when finding matches.
-	IsCaseSensitive bool
+	// IsCbseSensitive if fblse will ignore the cbse of query bnd file pbttern
+	// when finding mbtches.
+	IsCbseSensitive bool
 
-	// IncludePatterns is a list of regexes that symbol's file paths
-	// need to match to get included in the result
+	// IncludePbtterns is b list of regexes thbt symbol's file pbths
+	// need to mbtch to get included in the result
 	//
-	// The patterns are ANDed together; a file's path must match all patterns
-	// for it to be kept. That is also why it is a list (unlike the singular
-	// ExcludePattern); it is not possible in general to construct a single
-	// glob or Go regexp that represents multiple such patterns ANDed together.
-	IncludePatterns []string
+	// The pbtterns bre ANDed together; b file's pbth must mbtch bll pbtterns
+	// for it to be kept. Thbt is blso why it is b list (unlike the singulbr
+	// ExcludePbttern); it is not possible in generbl to construct b single
+	// glob or Go regexp thbt represents multiple such pbtterns ANDed together.
+	IncludePbtterns []string
 
-	// ExcludePattern is an optional regex that symbol's file paths
-	// need to match to get included in the result
-	ExcludePattern string
+	// ExcludePbttern is bn optionbl regex thbt symbol's file pbths
+	// need to mbtch to get included in the result
+	ExcludePbttern string
 
-	// First indicates that only the first n symbols should be returned.
+	// First indicbtes thbt only the first n symbols should be returned.
 	First int
 
-	// Timeout is the maximum amount of time the symbols search should take.
+	// Timeout is the mbximum bmount of time the symbols sebrch should tbke.
 	//
-	// If Timeout isn't specified, a default timeout of 60 seconds is used.
-	Timeout time.Duration
+	// If Timeout isn't specified, b defbult timeout of 60 seconds is used.
+	Timeout time.Durbtion
 }
 
 type SymbolsResponse struct {
@@ -125,41 +125,41 @@ type SymbolsResponse struct {
 	Err     string         `json:"error,omitempty"`
 }
 
-// GlobalSearchMode designates code paths which optimize performance for global
-// searches, i.e., literal or regexp, indexed searches without repo: filter.
-type GlobalSearchMode int
+// GlobblSebrchMode designbtes code pbths which optimize performbnce for globbl
+// sebrches, i.e., literbl or regexp, indexed sebrches without repo: filter.
+type GlobblSebrchMode int
 
 const (
-	DefaultMode GlobalSearchMode = iota
+	DefbultMode GlobblSebrchMode = iotb
 
-	// ZoektGlobalSearch designates a performance optimised code path for indexed
-	// searches. For a global search we don't need to resolve repos before searching
-	// shards on Zoekt, instead we can resolve repos and call Zoekt concurrently.
+	// ZoektGlobblSebrch designbtes b performbnce optimised code pbth for indexed
+	// sebrches. For b globbl sebrch we don't need to resolve repos before sebrching
+	// shbrds on Zoekt, instebd we cbn resolve repos bnd cbll Zoekt concurrently.
 	//
-	// Note: Even for a global search we have to resolve repos to filter search results
+	// Note: Even for b globbl sebrch we hbve to resolve repos to filter sebrch results
 	// returned by Zoekt.
-	ZoektGlobalSearch
+	ZoektGlobblSebrch
 
-	// SearcherOnly designated a code path on which we skip indexed search, even if
-	// the user specified index:yes. SearcherOnly is used in conjunction with
-	// ZoektGlobalSearch and designates the non-indexed part of the performance
-	// optimised code path.
-	SearcherOnly
+	// SebrcherOnly designbted b code pbth on which we skip indexed sebrch, even if
+	// the user specified index:yes. SebrcherOnly is used in conjunction with
+	// ZoektGlobblSebrch bnd designbtes the non-indexed pbrt of the performbnce
+	// optimised code pbth.
+	SebrcherOnly
 
-	// SkipUnindexed disables content, path, and symbol search. Used:
-	// (1) in conjunction with ZoektGlobalSearch on Sourcegraph.com.
-	// (2) when a query does not specify any patterns, include patterns, or exclude pattern.
+	// SkipUnindexed disbbles content, pbth, bnd symbol sebrch. Used:
+	// (1) in conjunction with ZoektGlobblSebrch on Sourcegrbph.com.
+	// (2) when b query does not specify bny pbtterns, include pbtterns, or exclude pbttern.
 	SkipUnindexed
 )
 
-var globalSearchModeStrings = map[GlobalSearchMode]string{
-	ZoektGlobalSearch: "ZoektGlobalSearch",
-	SearcherOnly:      "SearcherOnly",
+vbr globblSebrchModeStrings = mbp[GlobblSebrchMode]string{
+	ZoektGlobblSebrch: "ZoektGlobblSebrch",
+	SebrcherOnly:      "SebrcherOnly",
 	SkipUnindexed:     "SkipUnindexed",
 }
 
-func (m GlobalSearchMode) String() string {
-	if s, ok := globalSearchModeStrings[m]; ok {
+func (m GlobblSebrchMode) String() string {
+	if s, ok := globblSebrchModeStrings[m]; ok {
 		return s
 	}
 	return "None"
@@ -172,405 +172,405 @@ const (
 	SymbolRequest IndexedRequestType = "symbol"
 )
 
-// ZoektParameters contains all the inputs to run a Zoekt indexed search.
-type ZoektParameters struct {
+// ZoektPbrbmeters contbins bll the inputs to run b Zoekt indexed sebrch.
+type ZoektPbrbmeters struct {
 	Query          zoektquery.Q
 	Typ            IndexedRequestType
-	FileMatchLimit int32
-	Select         filter.SelectPath
+	FileMbtchLimit int32
+	Select         filter.SelectPbth
 
-	// Features are feature flags that can affect behaviour of searcher.
-	Features Features
+	// Febtures bre febture flbgs thbt cbn bffect behbviour of sebrcher.
+	Febtures Febtures
 
-	// EXPERIMENTAL: If true, use keyword-style scoring instead of Zoekt's default scoring formula.
+	// EXPERIMENTAL: If true, use keyword-style scoring instebd of Zoekt's defbult scoring formulb.
 	KeywordScoring bool
 }
 
-// ToSearchOptions converts the parameters to options for the Zoekt search API.
-func (o *ZoektParameters) ToSearchOptions(ctx context.Context) *zoekt.SearchOptions {
-	defaultTimeout := 20 * time.Second
-	searchOpts := &zoekt.SearchOptions{
-		Trace:             policy.ShouldTrace(ctx),
-		MaxWallTime:       defaultTimeout,
-		ChunkMatches:      true,
+// ToSebrchOptions converts the pbrbmeters to options for the Zoekt sebrch API.
+func (o *ZoektPbrbmeters) ToSebrchOptions(ctx context.Context) *zoekt.SebrchOptions {
+	defbultTimeout := 20 * time.Second
+	sebrchOpts := &zoekt.SebrchOptions{
+		Trbce:             policy.ShouldTrbce(ctx),
+		MbxWbllTime:       defbultTimeout,
+		ChunkMbtches:      true,
 		UseKeywordScoring: o.KeywordScoring,
 	}
 
-	// These are reasonable default amounts of work to do per shard and
-	// replica respectively.
-	searchOpts.ShardMaxMatchCount = 10_000
-	searchOpts.TotalMaxMatchCount = 100_000
+	// These bre rebsonbble defbult bmounts of work to do per shbrd bnd
+	// replicb respectively.
+	sebrchOpts.ShbrdMbxMbtchCount = 10_000
+	sebrchOpts.TotblMbxMbtchCount = 100_000
 	if o.KeywordScoring {
-		// Keyword searches tends to match much more broadly than code searches, so we need to
-		// consider more candidates to ensure we don't miss highly-ranked documents
-		searchOpts.ShardMaxMatchCount *= 10
-		searchOpts.TotalMaxMatchCount *= 10
+		// Keyword sebrches tends to mbtch much more brobdly thbn code sebrches, so we need to
+		// consider more cbndidbtes to ensure we don't miss highly-rbnked documents
+		sebrchOpts.ShbrdMbxMbtchCount *= 10
+		sebrchOpts.TotblMbxMbtchCount *= 10
 	}
 
-	// Tell each zoekt replica to not send back more than limit results.
-	limit := int(o.FileMatchLimit)
-	searchOpts.MaxDocDisplayCount = limit
+	// Tell ebch zoekt replicb to not send bbck more thbn limit results.
+	limit := int(o.FileMbtchLimit)
+	sebrchOpts.MbxDocDisplbyCount = limit
 
-	// If we are searching for large limits, raise the amount of work we
-	// are willing to do per shard and zoekt replica respectively.
-	if limit > searchOpts.ShardMaxMatchCount {
-		searchOpts.ShardMaxMatchCount = limit
+	// If we bre sebrching for lbrge limits, rbise the bmount of work we
+	// bre willing to do per shbrd bnd zoekt replicb respectively.
+	if limit > sebrchOpts.ShbrdMbxMbtchCount {
+		sebrchOpts.ShbrdMbxMbtchCount = limit
 	}
-	if limit > searchOpts.TotalMaxMatchCount {
-		searchOpts.TotalMaxMatchCount = limit
+	if limit > sebrchOpts.TotblMbxMbtchCount {
+		sebrchOpts.TotblMbxMbtchCount = limit
 	}
 
-	// If we're searching repos, ignore the other options and only check one file per repo
+	// If we're sebrching repos, ignore the other options bnd only check one file per repo
 	if o.Select.Root() == filter.Repository {
-		searchOpts.ShardRepoMaxMatchCount = 1
-		return searchOpts
+		sebrchOpts.ShbrdRepoMbxMbtchCount = 1
+		return sebrchOpts
 	}
 
-	if o.Features.Debug {
-		searchOpts.DebugScore = true
+	if o.Febtures.Debug {
+		sebrchOpts.DebugScore = true
 	}
 
-	if o.Features.Ranking {
-		// This enables our stream based ranking, where we wait a certain amount
-		// of time to collect results before ranking.
-		searchOpts.FlushWallTime = conf.SearchFlushWallTime(o.KeywordScoring)
+	if o.Febtures.Rbnking {
+		// This enbbles our strebm bbsed rbnking, where we wbit b certbin bmount
+		// of time to collect results before rbnking.
+		sebrchOpts.FlushWbllTime = conf.SebrchFlushWbllTime(o.KeywordScoring)
 
-		// This enables the use of document ranks in scoring, if they are available.
-		searchOpts.UseDocumentRanks = true
-		searchOpts.DocumentRanksWeight = conf.SearchDocumentRanksWeight()
+		// This enbbles the use of document rbnks in scoring, if they bre bvbilbble.
+		sebrchOpts.UseDocumentRbnks = true
+		sebrchOpts.DocumentRbnksWeight = conf.SebrchDocumentRbnksWeight()
 	}
 
-	return searchOpts
+	return sebrchOpts
 }
 
-// SearcherParameters the inputs for a search fulfilled by the Searcher service
-// (cmd/searcher). Searcher fulfills (1) unindexed literal and regexp searches
-// and (2) structural search requests.
-type SearcherParameters struct {
-	PatternInfo *TextPatternInfo
+// SebrcherPbrbmeters the inputs for b sebrch fulfilled by the Sebrcher service
+// (cmd/sebrcher). Sebrcher fulfills (1) unindexed literbl bnd regexp sebrches
+// bnd (2) structurbl sebrch requests.
+type SebrcherPbrbmeters struct {
+	PbtternInfo *TextPbtternInfo
 
-	// UseFullDeadline indicates that the search should try do as much work as
-	// it can within context.Deadline. If false the search should try and be
-	// as fast as possible, even if a "slow" deadline is set.
+	// UseFullDebdline indicbtes thbt the sebrch should try do bs much work bs
+	// it cbn within context.Debdline. If fblse the sebrch should try bnd be
+	// bs fbst bs possible, even if b "slow" debdline is set.
 	//
-	// For example searcher will wait to full its archive cache for a
-	// repository if this field is true. Another example is we set this field
-	// to true if the user requests a specific timeout or maximum result size.
-	UseFullDeadline bool
+	// For exbmple sebrcher will wbit to full its brchive cbche for b
+	// repository if this field is true. Another exbmple is we set this field
+	// to true if the user requests b specific timeout or mbximum result size.
+	UseFullDebdline bool
 
-	// Features are feature flags that can affect behaviour of searcher.
-	Features Features
+	// Febtures bre febture flbgs thbt cbn bffect behbviour of sebrcher.
+	Febtures Febtures
 }
 
-// TextPatternInfo is the struct used by vscode pass on search queries. Keep it in
-// sync with pkg/searcher/protocol.PatternInfo.
-type TextPatternInfo struct {
-	Pattern         string
-	IsNegated       bool
+// TextPbtternInfo is the struct used by vscode pbss on sebrch queries. Keep it in
+// sync with pkg/sebrcher/protocol.PbtternInfo.
+type TextPbtternInfo struct {
+	Pbttern         string
+	IsNegbted       bool
 	IsRegExp        bool
-	IsStructuralPat bool
+	IsStructurblPbt bool
 	CombyRule       string
-	IsWordMatch     bool
-	IsCaseSensitive bool
-	FileMatchLimit  int32
+	IsWordMbtch     bool
+	IsCbseSensitive bool
+	FileMbtchLimit  int32
 	Index           query.YesNoOnly
-	Select          filter.SelectPath
+	Select          filter.SelectPbth
 
 	// We do not support IsMultiline
 	// IsMultiline     bool
-	IncludePatterns []string
-	ExcludePattern  string
+	IncludePbtterns []string
+	ExcludePbttern  string
 
-	PathPatternsAreCaseSensitive bool
+	PbthPbtternsAreCbseSensitive bool
 
-	PatternMatchesContent bool
-	PatternMatchesPath    bool
+	PbtternMbtchesContent bool
+	PbtternMbtchesPbth    bool
 
-	Languages []string
+	Lbngubges []string
 }
 
-func (p *TextPatternInfo) Fields() []attribute.KeyValue {
-	res := make([]attribute.KeyValue, 0, 4)
-	add := func(fs ...attribute.KeyValue) {
-		res = append(res, fs...)
+func (p *TextPbtternInfo) Fields() []bttribute.KeyVblue {
+	res := mbke([]bttribute.KeyVblue, 0, 4)
+	bdd := func(fs ...bttribute.KeyVblue) {
+		res = bppend(res, fs...)
 	}
 
-	add(attribute.String("pattern", p.Pattern))
+	bdd(bttribute.String("pbttern", p.Pbttern))
 
-	if p.IsNegated {
-		add(attribute.Bool("isNegated", p.IsNegated))
+	if p.IsNegbted {
+		bdd(bttribute.Bool("isNegbted", p.IsNegbted))
 	}
 	if p.IsRegExp {
-		add(attribute.Bool("isRegexp", p.IsRegExp))
+		bdd(bttribute.Bool("isRegexp", p.IsRegExp))
 	}
-	if p.IsStructuralPat {
-		add(attribute.Bool("isStructural", p.IsStructuralPat))
+	if p.IsStructurblPbt {
+		bdd(bttribute.Bool("isStructurbl", p.IsStructurblPbt))
 	}
 	if p.CombyRule != "" {
-		add(attribute.String("combyRule", p.CombyRule))
+		bdd(bttribute.String("combyRule", p.CombyRule))
 	}
-	if p.IsWordMatch {
-		add(attribute.Bool("isWordMatch", p.IsWordMatch))
+	if p.IsWordMbtch {
+		bdd(bttribute.Bool("isWordMbtch", p.IsWordMbtch))
 	}
-	if p.IsCaseSensitive {
-		add(attribute.Bool("isCaseSensitive", p.IsCaseSensitive))
+	if p.IsCbseSensitive {
+		bdd(bttribute.Bool("isCbseSensitive", p.IsCbseSensitive))
 	}
-	add(attribute.Int("fileMatchLimit", int(p.FileMatchLimit)))
+	bdd(bttribute.Int("fileMbtchLimit", int(p.FileMbtchLimit)))
 
 	if p.Index != query.Yes {
-		add(attribute.String("index", string(p.Index)))
+		bdd(bttribute.String("index", string(p.Index)))
 	}
 	if len(p.Select) > 0 {
-		add(attribute.StringSlice("select", p.Select))
+		bdd(bttribute.StringSlice("select", p.Select))
 	}
-	if len(p.IncludePatterns) > 0 {
-		add(attribute.StringSlice("includePatterns", p.IncludePatterns))
+	if len(p.IncludePbtterns) > 0 {
+		bdd(bttribute.StringSlice("includePbtterns", p.IncludePbtterns))
 	}
-	if p.ExcludePattern != "" {
-		add(attribute.String("excludePattern", p.ExcludePattern))
+	if p.ExcludePbttern != "" {
+		bdd(bttribute.String("excludePbttern", p.ExcludePbttern))
 	}
-	if p.PathPatternsAreCaseSensitive {
-		add(attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
+	if p.PbthPbtternsAreCbseSensitive {
+		bdd(bttribute.Bool("pbthPbtternsAreCbseSensitive", p.PbthPbtternsAreCbseSensitive))
 	}
-	if p.PatternMatchesPath {
-		add(attribute.Bool("patternMatchesPath", p.PatternMatchesPath))
+	if p.PbtternMbtchesPbth {
+		bdd(bttribute.Bool("pbtternMbtchesPbth", p.PbtternMbtchesPbth))
 	}
-	if len(p.Languages) > 0 {
-		add(attribute.StringSlice("languages", p.Languages))
+	if len(p.Lbngubges) > 0 {
+		bdd(bttribute.StringSlice("lbngubges", p.Lbngubges))
 	}
 	return res
 }
 
-func (p *TextPatternInfo) String() string {
-	args := []string{fmt.Sprintf("%q", p.Pattern)}
+func (p *TextPbtternInfo) String() string {
+	brgs := []string{fmt.Sprintf("%q", p.Pbttern)}
 	if p.IsRegExp {
-		args = append(args, "re")
+		brgs = bppend(brgs, "re")
 	}
-	if p.IsStructuralPat {
+	if p.IsStructurblPbt {
 		if p.CombyRule != "" {
-			args = append(args, fmt.Sprintf("comby:%s", p.CombyRule))
+			brgs = bppend(brgs, fmt.Sprintf("comby:%s", p.CombyRule))
 		} else {
-			args = append(args, "comby")
+			brgs = bppend(brgs, "comby")
 		}
 	}
-	if p.IsWordMatch {
-		args = append(args, "word")
+	if p.IsWordMbtch {
+		brgs = bppend(brgs, "word")
 	}
-	if p.IsCaseSensitive {
-		args = append(args, "case")
+	if p.IsCbseSensitive {
+		brgs = bppend(brgs, "cbse")
 	}
-	if !p.PatternMatchesContent {
-		args = append(args, "nocontent")
+	if !p.PbtternMbtchesContent {
+		brgs = bppend(brgs, "nocontent")
 	}
-	if !p.PatternMatchesPath {
-		args = append(args, "nopath")
+	if !p.PbtternMbtchesPbth {
+		brgs = bppend(brgs, "nopbth")
 	}
-	if p.FileMatchLimit > 0 {
-		args = append(args, fmt.Sprintf("filematchlimit:%d", p.FileMatchLimit))
+	if p.FileMbtchLimit > 0 {
+		brgs = bppend(brgs, fmt.Sprintf("filembtchlimit:%d", p.FileMbtchLimit))
 	}
-	for _, lang := range p.Languages {
-		args = append(args, fmt.Sprintf("lang:%s", lang))
-	}
-
-	path := "f"
-	if p.PathPatternsAreCaseSensitive {
-		path = "F"
-	}
-	if p.ExcludePattern != "" {
-		args = append(args, fmt.Sprintf("-%s:%q", path, p.ExcludePattern))
-	}
-	for _, inc := range p.IncludePatterns {
-		args = append(args, fmt.Sprintf("%s:%q", path, inc))
+	for _, lbng := rbnge p.Lbngubges {
+		brgs = bppend(brgs, fmt.Sprintf("lbng:%s", lbng))
 	}
 
-	return fmt.Sprintf("TextPatternInfo{%s}", strings.Join(args, ","))
+	pbth := "f"
+	if p.PbthPbtternsAreCbseSensitive {
+		pbth = "F"
+	}
+	if p.ExcludePbttern != "" {
+		brgs = bppend(brgs, fmt.Sprintf("-%s:%q", pbth, p.ExcludePbttern))
+	}
+	for _, inc := rbnge p.IncludePbtterns {
+		brgs = bppend(brgs, fmt.Sprintf("%s:%q", pbth, inc))
+	}
+
+	return fmt.Sprintf("TextPbtternInfo{%s}", strings.Join(brgs, ","))
 }
 
-// Features describe feature flags for a request. This is state that differs
-// across users and time. It is created based on user feature flags and
-// configuration.
+// Febtures describe febture flbgs for b request. This is stbte thbt differs
+// bcross users bnd time. It is crebted bbsed on user febture flbgs bnd
+// configurbtion.
 //
-// The Feature struct should be initialized once per search request early on.
+// The Febture struct should be initiblized once per sebrch request ebrly on.
 //
-// The default value for a Feature should be the go zero value, such that
-// creating an empty Feature struct represents the usual search
-// experience. This is to avoid needing to update a large number of tests when
-// a new feature flag is introduced, and instead changes are localized to this
-// struct and read sites of a flag.
-type Features struct {
-	// ContentBasedLangFilters when true will use the language detected from
-	// the content of the file, rather than just file name patterns. This is
+// The defbult vblue for b Febture should be the go zero vblue, such thbt
+// crebting bn empty Febture struct represents the usubl sebrch
+// experience. This is to bvoid needing to updbte b lbrge number of tests when
+// b new febture flbg is introduced, bnd instebd chbnges bre locblized to this
+// struct bnd rebd sites of b flbg.
+type Febtures struct {
+	// ContentBbsedLbngFilters when true will use the lbngubge detected from
+	// the content of the file, rbther thbn just file nbme pbtterns. This is
 	// currently just supported by Zoekt.
-	ContentBasedLangFilters bool `json:"search-content-based-lang-detection"`
+	ContentBbsedLbngFilters bool `json:"sebrch-content-bbsed-lbng-detection"`
 
-	// HybridSearch when true will consult the Zoekt index when running
-	// unindexed searches. Searcher (unindexed search) will the only search
-	// what has changed since the indexed commit.
-	HybridSearch bool `json:"search-hybrid"`
+	// HybridSebrch when true will consult the Zoekt index when running
+	// unindexed sebrches. Sebrcher (unindexed sebrch) will the only sebrch
+	// whbt hbs chbnged since the indexed commit.
+	HybridSebrch bool `json:"sebrch-hybrid"`
 
-	// Ranking when true will use a our new #ranking signals and code paths
-	// for ranking results from Zoekt.
-	Ranking bool `json:"ranking"`
+	// Rbnking when true will use b our new #rbnking signbls bnd code pbths
+	// for rbnking results from Zoekt.
+	Rbnking bool `json:"rbnking"`
 
-	// Debug when true will set the Debug field on FileMatches. This may grow
-	// from here. For now we treat this like a feature flag for convenience.
+	// Debug when true will set the Debug field on FileMbtches. This mby grow
+	// from here. For now we trebt this like b febture flbg for convenience.
 	Debug bool `json:"debug"`
 }
 
-func (f *Features) String() string {
-	jsonObject, err := json.Marshal(f)
+func (f *Febtures) String() string {
+	jsonObject, err := json.Mbrshbl(f)
 	if err != nil {
-		return "error encoding features as string"
+		return "error encoding febtures bs string"
 	}
-	flagMap := featureflag.EvaluatedFlagSet{}
-	if err := json.Unmarshal(jsonObject, &flagMap); err != nil {
-		return "error decoding features"
+	flbgMbp := febtureflbg.EvblubtedFlbgSet{}
+	if err := json.Unmbrshbl(jsonObject, &flbgMbp); err != nil {
+		return "error decoding febtures"
 	}
-	return flagMap.String()
+	return flbgMbp.String()
 }
 
-// RepoOptions is the source of truth for the options a user specified
-// in their search query that affect which repos should be searched.
-// When adding fields to this struct, be sure to update IsGlobal().
+// RepoOptions is the source of truth for the options b user specified
+// in their sebrch query thbt bffect which repos should be sebrched.
+// When bdding fields to this struct, be sure to updbte IsGlobbl().
 type RepoOptions struct {
-	RepoFilters         []query.ParsedRepoFilter
+	RepoFilters         []query.PbrsedRepoFilter
 	MinusRepoFilters    []string
-	DescriptionPatterns []string
+	DescriptionPbtterns []string
 
-	CaseSensitiveRepoFilters bool
-	SearchContextSpec        string
+	CbseSensitiveRepoFilters bool
+	SebrchContextSpec        string
 
-	CommitAfter *query.RepoHasCommitAfterArgs
+	CommitAfter *query.RepoHbsCommitAfterArgs
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
 
 	// Whether we should depend on Zoekt for resolving repositories
 	UseIndex       query.YesNoOnly
-	HasFileContent []query.RepoHasFileContentArgs
-	HasKVPs        []query.RepoKVPFilter
-	HasTopics      []query.RepoHasTopicPredicate
+	HbsFileContent []query.RepoHbsFileContentArgs
+	HbsKVPs        []query.RepoKVPFilter
+	HbsTopics      []query.RepoHbsTopicPredicbte
 
-	// ForkSet indicates whether `fork:` was set explicitly in the query,
-	// or whether the values were set from defaults.
+	// ForkSet indicbtes whether `fork:` wbs set explicitly in the query,
+	// or whether the vblues were set from defbults.
 	ForkSet   bool
 	NoForks   bool
 	OnlyForks bool
 
 	OnlyCloned bool
 
-	// ArchivedSet indicates whether `archived:` was set explicitly in the query,
-	// or whether the values were set from defaults.
+	// ArchivedSet indicbtes whether `brchived:` wbs set explicitly in the query,
+	// or whether the vblues were set from defbults.
 	ArchivedSet  bool
 	NoArchived   bool
 	OnlyArchived bool
 }
 
-func (op *RepoOptions) Attributes() []attribute.KeyValue {
-	res := make([]attribute.KeyValue, 0, 8)
-	add := func(f ...attribute.KeyValue) {
-		res = append(res, f...)
+func (op *RepoOptions) Attributes() []bttribute.KeyVblue {
+	res := mbke([]bttribute.KeyVblue, 0, 8)
+	bdd := func(f ...bttribute.KeyVblue) {
+		res = bppend(res, f...)
 	}
 
 	if len(op.RepoFilters) > 0 {
-		add(attribute.String("repoFilters", fmt.Sprintf("%v", op.RepoFilters)))
+		bdd(bttribute.String("repoFilters", fmt.Sprintf("%v", op.RepoFilters)))
 	}
 	if len(op.MinusRepoFilters) > 0 {
-		add(attribute.StringSlice("minusRepoFilters", op.MinusRepoFilters))
+		bdd(bttribute.StringSlice("minusRepoFilters", op.MinusRepoFilters))
 	}
-	if len(op.DescriptionPatterns) > 0 {
-		add(attribute.StringSlice("descriptionPatterns", op.DescriptionPatterns))
+	if len(op.DescriptionPbtterns) > 0 {
+		bdd(bttribute.StringSlice("descriptionPbtterns", op.DescriptionPbtterns))
 	}
-	if op.CaseSensitiveRepoFilters {
-		add(attribute.Bool("caseSensitiveRepoFilters", true))
+	if op.CbseSensitiveRepoFilters {
+		bdd(bttribute.Bool("cbseSensitiveRepoFilters", true))
 	}
-	if op.SearchContextSpec != "" {
-		add(attribute.String("searchContextSpec", op.SearchContextSpec))
+	if op.SebrchContextSpec != "" {
+		bdd(bttribute.String("sebrchContextSpec", op.SebrchContextSpec))
 	}
 	if op.CommitAfter != nil {
-		add(attribute.String("commitAfter.time", op.CommitAfter.TimeRef))
-		add(attribute.Bool("commitAfter.negated", op.CommitAfter.Negated))
+		bdd(bttribute.String("commitAfter.time", op.CommitAfter.TimeRef))
+		bdd(bttribute.Bool("commitAfter.negbted", op.CommitAfter.Negbted))
 	}
 	if op.Visibility != query.Any {
-		add(attribute.String("visibility", string(op.Visibility)))
+		bdd(bttribute.String("visibility", string(op.Visibility)))
 	}
 	if op.Limit > 0 {
-		add(attribute.Int("limit", op.Limit))
+		bdd(bttribute.Int("limit", op.Limit))
 	}
 	if len(op.Cursors) > 0 {
-		add(attribute.String("cursors", fmt.Sprintf("%+v", op.Cursors)))
+		bdd(bttribute.String("cursors", fmt.Sprintf("%+v", op.Cursors)))
 	}
 	if op.UseIndex != query.Yes {
-		add(attribute.String("useIndex", string(op.UseIndex)))
+		bdd(bttribute.String("useIndex", string(op.UseIndex)))
 	}
-	if len(op.HasFileContent) > 0 {
-		for i, arg := range op.HasFileContent {
-			nondefault := []attribute.KeyValue{}
-			if arg.Path != "" {
-				nondefault = append(nondefault, attribute.String("path", arg.Path))
+	if len(op.HbsFileContent) > 0 {
+		for i, brg := rbnge op.HbsFileContent {
+			nondefbult := []bttribute.KeyVblue{}
+			if brg.Pbth != "" {
+				nondefbult = bppend(nondefbult, bttribute.String("pbth", brg.Pbth))
 			}
-			if arg.Content != "" {
-				nondefault = append(nondefault, attribute.String("content", arg.Content))
+			if brg.Content != "" {
+				nondefbult = bppend(nondefbult, bttribute.String("content", brg.Content))
 			}
-			if arg.Negated {
-				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))
+			if brg.Negbted {
+				nondefbult = bppend(nondefbult, bttribute.Bool("negbted", brg.Negbted))
 			}
-			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...)...)
+			bdd(trbce.Scoped(fmt.Sprintf("hbsFileContent[%d]", i), nondefbult...)...)
 		}
 	}
-	if len(op.HasKVPs) > 0 {
-		for i, arg := range op.HasKVPs {
-			nondefault := []attribute.KeyValue{}
-			if arg.Key != "" {
-				nondefault = append(nondefault, attribute.String("key", arg.Key))
+	if len(op.HbsKVPs) > 0 {
+		for i, brg := rbnge op.HbsKVPs {
+			nondefbult := []bttribute.KeyVblue{}
+			if brg.Key != "" {
+				nondefbult = bppend(nondefbult, bttribute.String("key", brg.Key))
 			}
-			if arg.Value != nil {
-				nondefault = append(nondefault, attribute.String("value", *arg.Value))
+			if brg.Vblue != nil {
+				nondefbult = bppend(nondefbult, bttribute.String("vblue", *brg.Vblue))
 			}
-			if arg.Negated {
-				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))
+			if brg.Negbted {
+				nondefbult = bppend(nondefbult, bttribute.Bool("negbted", brg.Negbted))
 			}
-			add(trace.Scoped(fmt.Sprintf("hasKVPs[%d]", i), nondefault...)...)
+			bdd(trbce.Scoped(fmt.Sprintf("hbsKVPs[%d]", i), nondefbult...)...)
 		}
 	}
-	if len(op.HasTopics) > 0 {
-		for i, arg := range op.HasTopics {
-			nondefault := []attribute.KeyValue{}
-			if arg.Topic != "" {
-				nondefault = append(nondefault, attribute.String("topic", arg.Topic))
+	if len(op.HbsTopics) > 0 {
+		for i, brg := rbnge op.HbsTopics {
+			nondefbult := []bttribute.KeyVblue{}
+			if brg.Topic != "" {
+				nondefbult = bppend(nondefbult, bttribute.String("topic", brg.Topic))
 			}
-			if arg.Negated {
-				nondefault = append(nondefault, attribute.Bool("negated", arg.Negated))
+			if brg.Negbted {
+				nondefbult = bppend(nondefbult, bttribute.Bool("negbted", brg.Negbted))
 			}
-			add(trace.Scoped(fmt.Sprintf("hasTopics[%d]", i), nondefault...)...)
+			bdd(trbce.Scoped(fmt.Sprintf("hbsTopics[%d]", i), nondefbult...)...)
 		}
 	}
 	if op.ForkSet {
-		add(attribute.Bool("forkSet", op.ForkSet))
+		bdd(bttribute.Bool("forkSet", op.ForkSet))
 	}
-	if !op.NoForks { // default value is true
-		add(attribute.Bool("noForks", op.NoForks))
+	if !op.NoForks { // defbult vblue is true
+		bdd(bttribute.Bool("noForks", op.NoForks))
 	}
 	if op.OnlyForks {
-		add(attribute.Bool("onlyForks", op.OnlyForks))
+		bdd(bttribute.Bool("onlyForks", op.OnlyForks))
 	}
 	if op.OnlyCloned {
-		add(attribute.Bool("onlyCloned", op.OnlyCloned))
+		bdd(bttribute.Bool("onlyCloned", op.OnlyCloned))
 	}
 	if op.ArchivedSet {
-		add(attribute.Bool("archivedSet", op.ArchivedSet))
+		bdd(bttribute.Bool("brchivedSet", op.ArchivedSet))
 	}
-	if !op.NoArchived { // default value is true
-		add(attribute.Bool("noArchived", op.NoArchived))
+	if !op.NoArchived { // defbult vblue is true
+		bdd(bttribute.Bool("noArchived", op.NoArchived))
 	}
 	if op.OnlyArchived {
-		add(attribute.Bool("onlyArchived", op.OnlyArchived))
+		bdd(bttribute.Bool("onlyArchived", op.OnlyArchived))
 	}
 	return res
 }
 
 func (op *RepoOptions) String() string {
-	var b strings.Builder
+	vbr b strings.Builder
 
 	if len(op.RepoFilters) > 0 {
 		fmt.Fprintf(&b, "RepoFilters: %q\n", op.RepoFilters)
@@ -583,8 +583,8 @@ func (op *RepoOptions) String() string {
 		b.WriteString("MinusRepoFilters: []\n")
 	}
 
-	if len(op.DescriptionPatterns) > 0 {
-		fmt.Fprintf(&b, "DescriptionPatterns: %q\n", op.DescriptionPatterns)
+	if len(op.DescriptionPbtterns) > 0 {
+		fmt.Fprintf(&b, "DescriptionPbtterns: %q\n", op.DescriptionPbtterns)
 	}
 
 	if op.CommitAfter != nil {
@@ -595,45 +595,45 @@ func (op *RepoOptions) String() string {
 	if op.UseIndex != query.Yes {
 		fmt.Fprintf(&b, "UseIndex: %s\n", string(op.UseIndex))
 	}
-	if len(op.HasFileContent) > 0 {
-		for i, arg := range op.HasFileContent {
-			if arg.Path != "" {
-				fmt.Fprintf(&b, "HasFileContent[%d].path: %s\n", i, arg.Path)
+	if len(op.HbsFileContent) > 0 {
+		for i, brg := rbnge op.HbsFileContent {
+			if brg.Pbth != "" {
+				fmt.Fprintf(&b, "HbsFileContent[%d].pbth: %s\n", i, brg.Pbth)
 			}
-			if arg.Content != "" {
-				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
+			if brg.Content != "" {
+				fmt.Fprintf(&b, "HbsFileContent[%d].content: %s\n", i, brg.Content)
 			}
-			if arg.Negated {
-				fmt.Fprintf(&b, "HasFileContent[%d].negated: %t\n", i, arg.Negated)
-			}
-		}
-	}
-	if len(op.HasKVPs) > 0 {
-		for i, arg := range op.HasKVPs {
-			if arg.Key != "" {
-				fmt.Fprintf(&b, "HasKVPs[%d].key: %s\n", i, arg.Key)
-			}
-			if arg.Value != nil {
-				fmt.Fprintf(&b, "HasKVPs[%d].value: %s\n", i, *arg.Value)
-			}
-			if arg.Negated {
-				fmt.Fprintf(&b, "HasKVPs[%d].negated: %t\n", i, arg.Negated)
+			if brg.Negbted {
+				fmt.Fprintf(&b, "HbsFileContent[%d].negbted: %t\n", i, brg.Negbted)
 			}
 		}
 	}
-	if len(op.HasTopics) > 0 {
-		for i, arg := range op.HasTopics {
-			if arg.Topic != "" {
-				fmt.Fprintf(&b, "HasTopics[%d].topic: %s\n", i, arg.Topic)
+	if len(op.HbsKVPs) > 0 {
+		for i, brg := rbnge op.HbsKVPs {
+			if brg.Key != "" {
+				fmt.Fprintf(&b, "HbsKVPs[%d].key: %s\n", i, brg.Key)
 			}
-			if arg.Negated {
-				fmt.Fprintf(&b, "HasTopics[%d].negated: %t\n", i, arg.Negated)
+			if brg.Vblue != nil {
+				fmt.Fprintf(&b, "HbsKVPs[%d].vblue: %s\n", i, *brg.Vblue)
+			}
+			if brg.Negbted {
+				fmt.Fprintf(&b, "HbsKVPs[%d].negbted: %t\n", i, brg.Negbted)
+			}
+		}
+	}
+	if len(op.HbsTopics) > 0 {
+		for i, brg := rbnge op.HbsTopics {
+			if brg.Topic != "" {
+				fmt.Fprintf(&b, "HbsTopics[%d].topic: %s\n", i, brg.Topic)
+			}
+			if brg.Negbted {
+				fmt.Fprintf(&b, "HbsTopics[%d].negbted: %t\n", i, brg.Negbted)
 			}
 		}
 	}
 
-	if op.CaseSensitiveRepoFilters {
-		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)
+	if op.CbseSensitiveRepoFilters {
+		fmt.Fprintf(&b, "CbseSensitiveRepoFilters: %t\n", op.CbseSensitiveRepoFilters)
 	}
 	if op.ForkSet {
 		fmt.Fprintf(&b, "ForkSet: %t\n", op.ForkSet)

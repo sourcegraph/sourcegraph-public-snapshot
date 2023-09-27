@@ -1,9 +1,9 @@
-package backend
+pbckbge bbckend
 
 import (
 	"bytes"
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"io/fs"
@@ -14,130 +14,130 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/inventory"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestReposService_Get(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	wantRepo := &types.Repo{ID: 1, Name: "github.com/u/r"}
+	wbntRepo := &types.Repo{ID: 1, Nbme: "github.com/u/r"}
 
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.GetFunc.SetDefaultReturn(wantRepo, nil)
+	repoStore.GetFunc.SetDefbultReturn(wbntRepo, nil)
 	s := &repos{store: repoStore}
 
-	repo, err := s.Get(context.Background(), 1)
+	repo, err := s.Get(context.Bbckground(), 1)
 	require.NoError(t, err)
-	mockrequire.Called(t, repoStore.GetFunc)
-	require.Equal(t, wantRepo, repo)
+	mockrequire.Cblled(t, repoStore.GetFunc)
+	require.Equbl(t, wbntRepo, repo)
 }
 
 func TestReposService_List(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	wantRepos := []*types.Repo{
-		{Name: "r1"},
-		{Name: "r2"},
+	wbntRepos := []*types.Repo{
+		{Nbme: "r1"},
+		{Nbme: "r2"},
 	}
 
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.ListFunc.SetDefaultReturn(wantRepos, nil)
+	repoStore.ListFunc.SetDefbultReturn(wbntRepos, nil)
 	s := &repos{store: repoStore}
 
-	repos, err := s.List(context.Background(), database.ReposListOptions{})
+	repos, err := s.List(context.Bbckground(), dbtbbbse.ReposListOptions{})
 	require.NoError(t, err)
-	mockrequire.Called(t, repoStore.ListFunc)
-	require.Equal(t, wantRepos, repos)
+	mockrequire.Cblled(t, repoStore.ListFunc)
+	require.Equbl(t, wbntRepos, repos)
 }
 
 func TestRepos_Add(t *testing.T) {
-	var s repos
+	vbr s repos
 	ctx := testContext()
 
-	const repoName = "github.com/my/repo"
-	const newName = "github.com/my/repo2"
+	const repoNbme = "github.com/my/repo"
+	const newNbme = "github.com/my/repo2"
 
-	calledRepoLookup := false
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		calledRepoLookup = true
-		if args.Repo != repoName {
-			t.Errorf("got %q, want %q", args.Repo, repoName)
+	cblledRepoLookup := fblse
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		cblledRepoLookup = true
+		if brgs.Repo != repoNbme {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, repoNbme)
 		}
 		return &protocol.RepoLookupResult{
-			Repo: &protocol.RepoInfo{Name: newName, Description: "d"},
+			Repo: &protocol.RepoInfo{Nbme: newNbme, Description: "d"},
 		}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
+	defer func() { repoupdbter.MockRepoLookup = nil }()
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.IsRepoCloneableFunc.SetDefaultHook(func(_ context.Context, name api.RepoName) error {
-		if name != repoName {
-			t.Errorf("got %q, want %q", name, repoName)
+	gsClient.IsRepoClonebbleFunc.SetDefbultHook(func(_ context.Context, nbme bpi.RepoNbme) error {
+		if nbme != repoNbme {
+			t.Errorf("got %q, wbnt %q", nbme, repoNbme)
 		}
 		return nil
 	})
 
-	// The repoName could change if it has been renamed on the code host
+	// The repoNbme could chbnge if it hbs been renbmed on the code host
 	s = repos{
 		logger:          logtest.Scoped(t),
 		gitserverClient: gsClient,
 	}
-	addedName, err := s.add(ctx, repoName)
+	bddedNbme, err := s.bdd(ctx, repoNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if addedName != newName {
-		t.Fatalf("Want %q, got %q", newName, addedName)
+	if bddedNbme != newNbme {
+		t.Fbtblf("Wbnt %q, got %q", newNbme, bddedNbme)
 	}
-	if !calledRepoLookup {
-		t.Error("!calledRepoLookup")
+	if !cblledRepoLookup {
+		t.Error("!cblledRepoLookup")
 	}
 }
 
 func TestRepos_Add_NonPublicCodehosts(t *testing.T) {
-	var s repos
+	vbr s repos
 	ctx := testContext()
 
-	const repoName = "github.private.corp/my/repo"
+	const repoNbme = "github.privbte.corp/my/repo"
 
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		t.Fatal("unexpected call to repo-updater for non public code host")
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		t.Fbtbl("unexpected cbll to repo-updbter for non public code host")
 		return nil, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
+	defer func() { repoupdbter.MockRepoLookup = nil }()
 
-	gitserver.MockIsRepoCloneable = func(name api.RepoName) error {
-		t.Fatal("unexpected call to gitserver for non public code host")
+	gitserver.MockIsRepoClonebble = func(nbme bpi.RepoNbme) error {
+		t.Fbtbl("unexpected cbll to gitserver for non public code host")
 		return nil
 	}
-	defer func() { gitserver.MockIsRepoCloneable = nil }()
+	defer func() { gitserver.MockIsRepoClonebble = nil }()
 
-	// The repoName could change if it has been renamed on the code host
-	_, err := s.add(ctx, repoName)
+	// The repoNbme could chbnge if it hbs been renbmed on the code host
+	_, err := s.bdd(ctx, repoNbme)
 	if !errcode.IsNotFound(err) {
-		t.Fatalf("expected a not found error, got: %v", err)
+		t.Fbtblf("expected b not found error, got: %v", err)
 	}
 }
 
 type gitObjectInfo string
 
-func (oid gitObjectInfo) OID() gitdomain.OID {
-	var v gitdomain.OID
+func (oid gitObjectInfo) OID() gitdombin.OID {
+	vbr v gitdombin.OID
 	copy(v[:], oid)
 	return v
 }
@@ -146,54 +146,54 @@ func TestReposGetInventory(t *testing.T) {
 	ctx := testContext()
 
 	const (
-		wantRepo     = "a"
-		wantCommitID = "cccccccccccccccccccccccccccccccccccccccc"
-		wantRootOID  = "oid-root"
+		wbntRepo     = "b"
+		wbntCommitID = "cccccccccccccccccccccccccccccccccccccccc"
+		wbntRootOID  = "oid-root"
 	)
 	gitserverClient := gitserver.NewMockClient()
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
-		if args.Repo != wantRepo {
-			t.Errorf("got %q, want %q", args.Repo, wantRepo)
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+		if brgs.Repo != wbntRepo {
+			t.Errorf("got %q, wbnt %q", brgs.Repo, wbntRepo)
 		}
-		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Name: wantRepo}}, nil
+		return &protocol.RepoLookupResult{Repo: &protocol.RepoInfo{Nbme: wbntRepo}}, nil
 	}
-	defer func() { repoupdater.MockRepoLookup = nil }()
-	gitserverClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-		if commit != wantCommitID {
-			t.Errorf("got commit %q, want %q", commit, wantCommitID)
+	defer func() { repoupdbter.MockRepoLookup = nil }()
+	gitserverClient.StbtFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, commit bpi.CommitID, pbth string) (fs.FileInfo, error) {
+		if commit != wbntCommitID {
+			t.Errorf("got commit %q, wbnt %q", commit, wbntCommitID)
 		}
-		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir, Sys_: gitObjectInfo(wantRootOID)}, nil
+		return &fileutil.FileInfo{Nbme_: pbth, Mode_: os.ModeDir, Sys_: gitObjectInfo(wbntRootOID)}, nil
 	})
-	gitserverClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string, _ bool) ([]fs.FileInfo, error) {
-		if commit != wantCommitID {
-			t.Errorf("got commit %q, want %q", commit, wantCommitID)
+	gitserverClient.RebdDirFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, commit bpi.CommitID, nbme string, _ bool) ([]fs.FileInfo, error) {
+		if commit != wbntCommitID {
+			t.Errorf("got commit %q, wbnt %q", commit, wbntCommitID)
 		}
-		switch name {
-		case "":
+		switch nbme {
+		cbse "":
 			return []fs.FileInfo{
-				&fileutil.FileInfo{Name_: "a", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-a")},
-				&fileutil.FileInfo{Name_: "b.go", Size_: 12},
+				&fileutil.FileInfo{Nbme_: "b", Mode_: os.ModeDir, Sys_: gitObjectInfo("oid-b")},
+				&fileutil.FileInfo{Nbme_: "b.go", Size_: 12},
 			}, nil
-		case "a":
-			return []fs.FileInfo{&fileutil.FileInfo{Name_: "a/c.m", Size_: 24}}, nil
-		default:
-			panic("unhandled mock ReadDir " + name)
+		cbse "b":
+			return []fs.FileInfo{&fileutil.FileInfo{Nbme_: "b/c.m", Size_: 24}}, nil
+		defbult:
+			pbnic("unhbndled mock RebdDir " + nbme)
 		}
 	})
-	gitserverClient.NewFileReaderFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string) (io.ReadCloser, error) {
-		if commit != wantCommitID {
-			t.Errorf("got commit %q, want %q", commit, wantCommitID)
+	gitserverClient.NewFileRebderFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, commit bpi.CommitID, nbme string) (io.RebdCloser, error) {
+		if commit != wbntCommitID {
+			t.Errorf("got commit %q, wbnt %q", commit, wbntCommitID)
 		}
-		var data []byte
-		switch name {
-		case "b.go":
-			data = []byte("package main")
-		case "a/c.m":
-			data = []byte("@interface X:NSObject {}")
-		default:
-			panic("unhandled mock ReadFile " + name)
+		vbr dbtb []byte
+		switch nbme {
+		cbse "b.go":
+			dbtb = []byte("pbckbge mbin")
+		cbse "b/c.m":
+			dbtb = []byte("@interfbce X:NSObject {}")
+		defbult:
+			pbnic("unhbndled mock RebdFile " + nbme)
 		}
-		return io.NopCloser(bytes.NewReader(data)), nil
+		return io.NopCloser(bytes.NewRebder(dbtb)), nil
 	})
 	s := repos{
 		logger:          logtest.Scoped(t),
@@ -201,48 +201,48 @@ func TestReposGetInventory(t *testing.T) {
 	}
 
 	tests := []struct {
-		useEnhancedLanguageDetection bool
-		want                         *inventory.Inventory
+		useEnhbncedLbngubgeDetection bool
+		wbnt                         *inventory.Inventory
 	}{
 		{
-			useEnhancedLanguageDetection: false,
-			want: &inventory.Inventory{
-				Languages: []inventory.Lang{
-					{Name: "Limbo", TotalBytes: 24, TotalLines: 0}, // obviously incorrect, but this is how the pre-enhanced lang detection worked
-					{Name: "Go", TotalBytes: 12, TotalLines: 0},
+			useEnhbncedLbngubgeDetection: fblse,
+			wbnt: &inventory.Inventory{
+				Lbngubges: []inventory.Lbng{
+					{Nbme: "Limbo", TotblBytes: 24, TotblLines: 0}, // obviously incorrect, but this is how the pre-enhbnced lbng detection worked
+					{Nbme: "Go", TotblBytes: 12, TotblLines: 0},
 				},
 			},
 		},
 		{
-			useEnhancedLanguageDetection: true,
-			want: &inventory.Inventory{
-				Languages: []inventory.Lang{
-					{Name: "Objective-C", TotalBytes: 24, TotalLines: 1},
-					{Name: "Go", TotalBytes: 12, TotalLines: 1},
+			useEnhbncedLbngubgeDetection: true,
+			wbnt: &inventory.Inventory{
+				Lbngubges: []inventory.Lbng{
+					{Nbme: "Objective-C", TotblBytes: 24, TotblLines: 1},
+					{Nbme: "Go", TotblBytes: 12, TotblLines: 1},
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("useEnhancedLanguageDetection=%v", test.useEnhancedLanguageDetection), func(t *testing.T) {
-			rcache.SetupForTest(t)
-			orig := useEnhancedLanguageDetection
-			useEnhancedLanguageDetection = test.useEnhancedLanguageDetection
-			defer func() { useEnhancedLanguageDetection = orig }() // reset
+	for _, test := rbnge tests {
+		t.Run(fmt.Sprintf("useEnhbncedLbngubgeDetection=%v", test.useEnhbncedLbngubgeDetection), func(t *testing.T) {
+			rcbche.SetupForTest(t)
+			orig := useEnhbncedLbngubgeDetection
+			useEnhbncedLbngubgeDetection = test.useEnhbncedLbngubgeDetection
+			defer func() { useEnhbncedLbngubgeDetection = orig }() // reset
 
-			inv, err := s.GetInventory(ctx, &types.Repo{Name: wantRepo}, wantCommitID, false)
+			inv, err := s.GetInventory(ctx, &types.Repo{Nbme: wbntRepo}, wbntCommitID, fblse)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(test.want, inv); diff != "" {
+			if diff := cmp.Diff(test.wbnt, inv); diff != "" {
 				t.Error(diff)
 			}
 		})
 	}
 }
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
 	} else {

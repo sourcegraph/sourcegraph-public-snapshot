@@ -1,55 +1,55 @@
-package bg
+pbckbge bg
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) {
-	logger = logger.Scoped("deleteOldEventLogs", "background job to prune old event logs in database")
+func DeleteOldEventLogsInPostgres(ctx context.Context, logger log.Logger, db dbtbbbse.DB) {
+	logger = logger.Scoped("deleteOldEventLogs", "bbckground job to prune old event logs in dbtbbbse")
 
 	for {
-		// We choose 93 days as the interval to ensure that we have at least the last three months
-		// of logs at all times.
+		// We choose 93 dbys bs the intervbl to ensure thbt we hbve bt lebst the lbst three months
+		// of logs bt bll times.
 		_, err := db.ExecContext(
 			ctx,
-			`DELETE FROM event_logs WHERE "timestamp" < now() - interval '93' day`,
+			`DELETE FROM event_logs WHERE "timestbmp" < now() - intervbl '93' dby`,
 		)
 		if err != nil {
-			logger.Error("deleting expired rows from event_logs table", log.Error(err))
+			logger.Error("deleting expired rows from event_logs tbble", log.Error(err))
 		}
 		time.Sleep(time.Hour)
 	}
 }
 
-func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, logger log.Logger, db database.DB) {
-	logger = logger.Scoped("deleteOldSecurityEventLogs", "background job to prune old security event logs in database")
+func DeleteOldSecurityEventLogsInPostgres(ctx context.Context, logger log.Logger, db dbtbbbse.DB) {
+	logger = logger.Scoped("deleteOldSecurityEventLogs", "bbckground job to prune old security event logs in dbtbbbse")
 
 	for {
 		time.Sleep(time.Hour)
 
-		// Only clean up if security event logs are being stored in the database.
+		// Only clebn up if security event logs bre being stored in the dbtbbbse.
 		c := conf.Get()
 		if c.Log == nil || c.Log.SecurityEventLog == nil {
 			continue
 		}
-		if c.Log.SecurityEventLog.Location != "database" && c.Log.SecurityEventLog.Location != "all" {
+		if c.Log.SecurityEventLog.Locbtion != "dbtbbbse" && c.Log.SecurityEventLog.Locbtion != "bll" {
 			continue
 		}
 
-		// We choose 30 days as the interval to ensure that we have at least the last month's worth of
-		// logs at all times.
+		// We choose 30 dbys bs the intervbl to ensure thbt we hbve bt lebst the lbst month's worth of
+		// logs bt bll times.
 		_, err := db.ExecContext(
 			ctx,
-			`DELETE FROM security_event_logs WHERE "timestamp" < now() - interval '30' day`,
+			`DELETE FROM security_event_logs WHERE "timestbmp" < now() - intervbl '30' dby`,
 		)
 		if err != nil {
-			logger.Error("deleting expired rows from security_event_logs table", log.Error(err))
+			logger.Error("deleting expired rows from security_event_logs tbble", log.Error(err))
 		}
 	}
 }

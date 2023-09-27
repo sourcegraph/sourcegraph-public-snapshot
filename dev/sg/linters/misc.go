@@ -1,5 +1,5 @@
-package linters
+pbckbge linters
 
-var (
-	noLocalHost = runScript("Check for localhost usage", "dev/check/no-localhost-guard.sh") // CI:LOCALHOST_OK
+vbr (
+	noLocblHost = runScript("Check for locblhost usbge", "dev/check/no-locblhost-gubrd.sh") // CI:LOCALHOST_OK
 )

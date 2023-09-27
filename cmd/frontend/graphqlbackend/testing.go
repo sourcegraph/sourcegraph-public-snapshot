@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -11,50 +11,50 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-func mustParseGraphQLSchema(t *testing.T, db database.DB) *graphql.Schema {
-	return mustParseGraphQLSchemaWithClient(t, db, gitserver.NewClient())
+func mustPbrseGrbphQLSchemb(t *testing.T, db dbtbbbse.DB) *grbphql.Schemb {
+	return mustPbrseGrbphQLSchembWithClient(t, db, gitserver.NewClient())
 }
 
-func mustParseGraphQLSchemaWithClient(t *testing.T, db database.DB, gitserverClient gitserver.Client) *graphql.Schema {
+func mustPbrseGrbphQLSchembWithClient(t *testing.T, db dbtbbbse.DB, gitserverClient gitserver.Client) *grbphql.Schemb {
 	t.Helper()
 
-	parsedSchema, parseSchemaErr := NewSchema(
+	pbrsedSchemb, pbrseSchembErr := NewSchemb(
 		db,
 		gitserverClient,
-		[]OptionalResolver{},
-		graphql.PanicHandler(printStackTrace{&gqlerrors.DefaultPanicHandler{}}),
+		[]OptionblResolver{},
+		grbphql.PbnicHbndler(printStbckTrbce{&gqlerrors.DefbultPbnicHbndler{}}),
 	)
-	if parseSchemaErr != nil {
-		t.Fatal(parseSchemaErr)
+	if pbrseSchembErr != nil {
+		t.Fbtbl(pbrseSchembErr)
 	}
 
-	return parsedSchema
+	return pbrsedSchemb
 }
 
-// Code below copied from graph-gophers and has been modified to improve
-// error messages
+// Code below copied from grbph-gophers bnd hbs been modified to improve
+// error messbges
 
-// Test is a GraphQL test case to be used with RunTest(s).
+// Test is b GrbphQL test cbse to be used with RunTest(s).
 type Test struct {
 	Context        context.Context
-	Schema         *graphql.Schema
+	Schemb         *grbphql.Schemb
 	Query          string
-	OperationName  string
-	Variables      map[string]any
+	OperbtionNbme  string
+	Vbribbles      mbp[string]bny
 	ExpectedResult string
 	ExpectedErrors []*gqlerrors.QueryError
-	Label          string
+	Lbbel          string
 }
 
-// RunTests runs the given GraphQL test cases as subtests.
+// RunTests runs the given GrbphQL test cbses bs subtests.
 func RunTests(t *testing.T, tests []*Test) {
 	t.Helper()
 
@@ -63,72 +63,72 @@ func RunTests(t *testing.T, tests []*Test) {
 		return
 	}
 
-	for i, test := range tests {
-		testName := strconv.Itoa(i + 1)
-		if test.Label != "" {
-			testName = fmt.Sprintf("%s/%s", testName, test.Label)
+	for i, test := rbnge tests {
+		testNbme := strconv.Itob(i + 1)
+		if test.Lbbel != "" {
+			testNbme = fmt.Sprintf("%s/%s", testNbme, test.Lbbel)
 		}
-		t.Run(testName, func(t *testing.T) {
+		t.Run(testNbme, func(t *testing.T) {
 			t.Helper()
 			RunTest(t, test)
 		})
 	}
 }
 
-// RunTest runs a single GraphQL test case.
+// RunTest runs b single GrbphQL test cbse.
 func RunTest(t *testing.T, test *Test) {
 	t.Helper()
 
 	if test.Context == nil {
-		test.Context = context.Background()
+		test.Context = context.Bbckground()
 	}
-	result := test.Schema.Exec(test.Context, test.Query, test.OperationName, test.Variables)
+	result := test.Schemb.Exec(test.Context, test.Query, test.OperbtionNbme, test.Vbribbles)
 
 	checkErrors(t, test.ExpectedErrors, result.Errors)
 
 	if test.ExpectedResult == "" {
-		if result.Data != nil {
+		if result.Dbtb != nil {
 			t.Logf("%v", test)
-			t.Errorf("got: %s", result.Data)
-			t.Fatal("want: null")
+			t.Errorf("got: %s", result.Dbtb)
+			t.Fbtbl("wbnt: null")
 		}
 		return
 	}
 
-	// Verify JSON to avoid red herring errors.
-	got, err := formatJSON(result.Data)
+	// Verify JSON to bvoid red herring errors.
+	got, err := formbtJSON(result.Dbtb)
 	if err != nil {
-		t.Fatalf("got: invalid JSON: %s\n\n%v", err, result.Data)
+		t.Fbtblf("got: invblid JSON: %s\n\n%v", err, result.Dbtb)
 	}
-	want, err := formatJSON([]byte(test.ExpectedResult))
+	wbnt, err := formbtJSON([]byte(test.ExpectedResult))
 	if err != nil {
-		t.Fatalf("want: invalid JSON: %s\n\n%s", err, test.ExpectedResult)
+		t.Fbtblf("wbnt: invblid JSON: %s\n\n%s", err, test.ExpectedResult)
 	}
 
-	require.JSONEq(t, string(want), string(got))
+	require.JSONEq(t, string(wbnt), string(got))
 }
 
-func formatJSON(data []byte) ([]byte, error) {
-	var v any
-	if err := json.Unmarshal(data, &v); err != nil {
+func formbtJSON(dbtb []byte) ([]byte, error) {
+	vbr v bny
+	if err := json.Unmbrshbl(dbtb, &v); err != nil {
 		return nil, err
 	}
-	formatted, err := json.Marshal(v)
+	formbtted, err := json.Mbrshbl(v)
 	if err != nil {
 		return nil, err
 	}
-	return formatted, nil
+	return formbtted, nil
 }
 
-func checkErrors(t *testing.T, want, got []*gqlerrors.QueryError) {
+func checkErrors(t *testing.T, wbnt, got []*gqlerrors.QueryError) {
 	t.Helper()
 
-	sortErrors(want)
+	sortErrors(wbnt)
 	sortErrors(got)
 
-	// Compare without caring about the concrete type of the error returned
-	if diff := cmp.Diff(want, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError", "Err")); diff != "" {
-		t.Fatal(diff)
+	// Compbre without cbring bbout the concrete type of the error returned
+	if diff := cmp.Diff(wbnt, got, cmpopts.IgnoreFields(gqlerrors.QueryError{}, "ResolverError", "Err")); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
@@ -137,16 +137,16 @@ func sortErrors(errs []*gqlerrors.QueryError) {
 		return
 	}
 	sort.Slice(errs, func(i, j int) bool {
-		return fmt.Sprintf("%s", errs[i].Path) < fmt.Sprintf("%s", errs[j].Path)
+		return fmt.Sprintf("%s", errs[i].Pbth) < fmt.Sprintf("%s", errs[j].Pbth)
 	})
 }
 
-// printStackTrace wraps panic recovery from given Handler and prints the stack trace.
-type printStackTrace struct {
-	Handler gqlerrors.PanicHandler
+// printStbckTrbce wrbps pbnic recovery from given Hbndler bnd prints the stbck trbce.
+type printStbckTrbce struct {
+	Hbndler gqlerrors.PbnicHbndler
 }
 
-func (t printStackTrace) MakePanicError(ctx context.Context, value interface{}) *gqlerrors.QueryError {
-	debug.PrintStack()
-	return t.Handler.MakePanicError(ctx, value)
+func (t printStbckTrbce) MbkePbnicError(ctx context.Context, vblue interfbce{}) *gqlerrors.QueryError {
+	debug.PrintStbck()
+	return t.Hbndler.MbkePbnicError(ctx, vblue)
 }

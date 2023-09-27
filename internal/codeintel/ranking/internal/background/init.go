@@ -1,44 +1,44 @@
-package background
+pbckbge bbckground
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/coordinator"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/exporter"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/janitor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/mapper"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/reducer"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/coordinbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/exporter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/mbpper"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/reducer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewSymbolExporter(observationCtx *observation.Context, store store.Store, lsifstore lsifstore.Store, config *exporter.Config) goroutine.BackgroundRoutine {
-	return exporter.NewSymbolExporter(observationCtx, store, lsifstore, config)
+func NewSymbolExporter(observbtionCtx *observbtion.Context, store store.Store, lsifstore lsifstore.Store, config *exporter.Config) goroutine.BbckgroundRoutine {
+	return exporter.NewSymbolExporter(observbtionCtx, store, lsifstore, config)
 }
 
-func NewCoordinator(observationCtx *observation.Context, store store.Store, config *coordinator.Config) goroutine.BackgroundRoutine {
-	return coordinator.NewCoordinator(observationCtx, store, config)
+func NewCoordinbtor(observbtionCtx *observbtion.Context, store store.Store, config *coordinbtor.Config) goroutine.BbckgroundRoutine {
+	return coordinbtor.NewCoordinbtor(observbtionCtx, store, config)
 }
 
-func NewMapper(observationCtx *observation.Context, store store.Store, config *mapper.Config) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		mapper.NewMapper(observationCtx, store, config),
-		mapper.NewSeedMapper(observationCtx, store, config),
+func NewMbpper(observbtionCtx *observbtion.Context, store store.Store, config *mbpper.Config) []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
+		mbpper.NewMbpper(observbtionCtx, store, config),
+		mbpper.NewSeedMbpper(observbtionCtx, store, config),
 	}
 }
 
-func NewReducer(observationCtx *observation.Context, store store.Store, config *reducer.Config) goroutine.BackgroundRoutine {
-	return reducer.NewReducer(observationCtx, store, config)
+func NewReducer(observbtionCtx *observbtion.Context, store store.Store, config *reducer.Config) goroutine.BbckgroundRoutine {
+	return reducer.NewReducer(observbtionCtx, store, config)
 }
 
-func NewSymbolJanitor(observationCtx *observation.Context, store store.Store, config *janitor.Config) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		janitor.NewExportedUploadsJanitor(observationCtx, store, config),
-		janitor.NewDeletedUploadsJanitor(observationCtx, store, config),
-		janitor.NewAbandonedExportedUploadsJanitor(observationCtx, store, config),
-		janitor.NewProcessedReferencesJanitor(observationCtx, store, config),
-		janitor.NewProcessedPathsJanitor(observationCtx, store, config),
-		janitor.NewRankCountsJanitor(observationCtx, store, config),
-		janitor.NewRankJanitor(observationCtx, store, config),
+func NewSymbolJbnitor(observbtionCtx *observbtion.Context, store store.Store, config *jbnitor.Config) []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
+		jbnitor.NewExportedUplobdsJbnitor(observbtionCtx, store, config),
+		jbnitor.NewDeletedUplobdsJbnitor(observbtionCtx, store, config),
+		jbnitor.NewAbbndonedExportedUplobdsJbnitor(observbtionCtx, store, config),
+		jbnitor.NewProcessedReferencesJbnitor(observbtionCtx, store, config),
+		jbnitor.NewProcessedPbthsJbnitor(observbtionCtx, store, config),
+		jbnitor.NewRbnkCountsJbnitor(observbtionCtx, store, config),
+		jbnitor.NewRbnkJbnitor(observbtionCtx, store, config),
 	}
 }

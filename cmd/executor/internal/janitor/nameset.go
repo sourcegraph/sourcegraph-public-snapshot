@@ -1,40 +1,40 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"sort"
 	"sync"
 )
 
-type NameSet struct {
+type NbmeSet struct {
 	sync.RWMutex
-	names map[string]struct{}
+	nbmes mbp[string]struct{}
 }
 
-func NewNameSet() *NameSet {
-	return &NameSet{names: map[string]struct{}{}}
+func NewNbmeSet() *NbmeSet {
+	return &NbmeSet{nbmes: mbp[string]struct{}{}}
 }
 
-func (s *NameSet) Add(name string) {
+func (s *NbmeSet) Add(nbme string) {
 	s.Lock()
-	s.names[name] = struct{}{}
+	s.nbmes[nbme] = struct{}{}
 	s.Unlock()
 }
 
-func (s *NameSet) Remove(name string) {
+func (s *NbmeSet) Remove(nbme string) {
 	s.Lock()
-	delete(s.names, name)
+	delete(s.nbmes, nbme)
 	s.Unlock()
 }
 
-func (s *NameSet) Slice() []string {
+func (s *NbmeSet) Slice() []string {
 	s.RLock()
 	defer s.RUnlock()
 
-	names := make([]string, 0, len(s.names))
-	for name := range s.names {
-		names = append(names, name)
+	nbmes := mbke([]string, 0, len(s.nbmes))
+	for nbme := rbnge s.nbmes {
+		nbmes = bppend(nbmes, nbme)
 	}
-	sort.Strings(names)
+	sort.Strings(nbmes)
 
-	return names
+	return nbmes
 }

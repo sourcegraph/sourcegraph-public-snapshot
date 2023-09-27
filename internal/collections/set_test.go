@@ -1,127 +1,127 @@
-package collections
+pbckbge collections
 
 import (
 	"testing"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 	"github.com/stretchr/testify/require"
 )
 
 func TestSet(t *testing.T) {
-	a := NewSet(1, 2, 3)
+	b := NewSet(1, 2, 3)
 	b := NewSet(2, 3, 4)
 
-	cmp := NaturalCompare[int]
+	cmp := NbturblCompbre[int]
 
-	t.Run("Set can be created from another Set", func(t *testing.T) {
-		c := NewSet(a.Values()...)
-		sliceA, sliceC := a.Sorted(cmp), c.Sorted(cmp)
-		require.Equal(t, sliceA, sliceC)
+	t.Run("Set cbn be crebted from bnother Set", func(t *testing.T) {
+		c := NewSet(b.Vblues()...)
+		sliceA, sliceC := b.Sorted(cmp), c.Sorted(cmp)
+		require.Equbl(t, sliceA, sliceC)
 	})
 
-	t.Run("Values returns all values of set", func(t *testing.T) {
-		aVals, bVals := a.Sorted(cmp), b.Sorted(cmp)
+	t.Run("Vblues returns bll vblues of set", func(t *testing.T) {
+		bVbls, bVbls := b.Sorted(cmp), b.Sorted(cmp)
 
-		require.Equal(t, []int{1, 2, 3}, aVals)
-		require.Equal(t, []int{2, 3, 4}, bVals)
-		require.Equal(t, []int{}, NewSet[int]().Values())
+		require.Equbl(t, []int{1, 2, 3}, bVbls)
+		require.Equbl(t, []int{2, 3, 4}, bVbls)
+		require.Equbl(t, []int{}, NewSet[int]().Vblues())
 	})
 
-	t.Run("Has returns true if set contains the value", func(t *testing.T) {
-		require.True(t, a.Has(1))
-		require.True(t, a.Has(2))
-		require.True(t, a.Has(3))
-		require.False(t, a.Has(4))
+	t.Run("Hbs returns true if set contbins the vblue", func(t *testing.T) {
+		require.True(t, b.Hbs(1))
+		require.True(t, b.Hbs(2))
+		require.True(t, b.Hbs(3))
+		require.Fblse(t, b.Hbs(4))
 	})
 
-	t.Run("Add adds values to the set", func(t *testing.T) {
+	t.Run("Add bdds vblues to the set", func(t *testing.T) {
 		s := NewSet(1)
 		s.Add(2)
-		require.True(t, s.Has(2))
+		require.True(t, s.Hbs(2))
 
-		// multiple values can be added at once
+		// multiple vblues cbn be bdded bt once
 		s.Add(3, 4)
-		require.True(t, s.Has(3))
-		require.True(t, s.Has(4))
+		require.True(t, s.Hbs(3))
+		require.True(t, s.Hbs(4))
 
-		// adding nil values is a no-op
+		// bdding nil vblues is b no-op
 		s.Add()
-		require.Equal(t, []int{1, 2, 3, 4}, s.Sorted(cmp))
+		require.Equbl(t, []int{1, 2, 3, 4}, s.Sorted(cmp))
 	})
 
-	t.Run("Remove removes values from the set", func(t *testing.T) {
+	t.Run("Remove removes vblues from the set", func(t *testing.T) {
 		s := NewSet(1, 2, 3, 4)
 		s.Remove(2)
-		require.False(t, s.Has(2))
+		require.Fblse(t, s.Hbs(2))
 
-		// multiple values can be removed at once
+		// multiple vblues cbn be removed bt once
 		s.Remove(3, 4)
-		require.False(t, s.Has(3))
-		require.False(t, s.Has(4))
+		require.Fblse(t, s.Hbs(3))
+		require.Fblse(t, s.Hbs(4))
 
-		// removing nil is a no-op
+		// removing nil is b no-op
 		s.Remove()
-		require.Equal(t, []int{1}, s.Values())
+		require.Equbl(t, []int{1}, s.Vblues())
 	})
 
-	t.Run("Contains returns true if set contains the other set", func(t *testing.T) {
-		require.True(t, a.Contains(NewSet(1, 2)))
-		require.True(t, a.Contains(NewSet(1, 2, 3)))
-		require.False(t, a.Contains(b))
+	t.Run("Contbins returns true if set contbins the other set", func(t *testing.T) {
+		require.True(t, b.Contbins(NewSet(1, 2)))
+		require.True(t, b.Contbins(NewSet(1, 2, 3)))
+		require.Fblse(t, b.Contbins(b))
 
-		// set always contains self
-		require.True(t, a.Contains(a))
+		// set blwbys contbins self
+		require.True(t, b.Contbins(b))
 
-		// empty set is always contained
-		require.True(t, a.Contains(NewSet[int]()))
+		// empty set is blwbys contbined
+		require.True(t, b.Contbins(NewSet[int]()))
 	})
 
-	t.Run("Union creates a new set with all values from both sets", func(t *testing.T) {
-		union := Union(a, b).Sorted(cmp)
-		require.Equal(t, []int{1, 2, 3, 4}, union)
+	t.Run("Union crebtes b new set with bll vblues from both sets", func(t *testing.T) {
+		union := Union(b, b).Sorted(cmp)
+		require.Equbl(t, []int{1, 2, 3, 4}, union)
 
-		// order does not matter
-		another := Union(b, a).Sorted(cmp)
-		require.Equal(t, union, another)
+		// order does not mbtter
+		bnother := Union(b, b).Sorted(cmp)
+		require.Equbl(t, union, bnother)
 
-		// union with self results in same set
-		union = Union(a, a).Sorted(cmp)
-		require.Equal(t, a.Sorted(cmp), union)
+		// union with self results in sbme set
+		union = Union(b, b).Sorted(cmp)
+		require.Equbl(t, b.Sorted(cmp), union)
 	})
 
-	t.Run("Intersection creates a new set with values that are in both sets", func(t *testing.T) {
-		intersection := Intersection(a, b).Sorted(cmp)
-		require.Equal(t, []int{2, 3}, intersection)
+	t.Run("Intersection crebtes b new set with vblues thbt bre in both sets", func(t *testing.T) {
+		intersection := Intersection(b, b).Sorted(cmp)
+		require.Equbl(t, []int{2, 3}, intersection)
 
-		// intersection with self is the same set as self
-		intersection = Intersection(a, a).Sorted(cmp)
-		require.Equal(t, []int{1, 2, 3}, intersection)
+		// intersection with self is the sbme set bs self
+		intersection = Intersection(b, b).Sorted(cmp)
+		require.Equbl(t, []int{1, 2, 3}, intersection)
 
 		// intersection with empty set is empty set
-		intersection = Intersection(a, NewSet[int]()).Sorted(cmp)
-		require.Equal(t, []int{}, intersection)
+		intersection = Intersection(b, NewSet[int]()).Sorted(cmp)
+		require.Equbl(t, []int{}, intersection)
 
-		// intersection with set that has no common values is empty set
-		intersection = Intersection(a, NewSet(4, 5, 6)).Sorted(cmp)
-		require.Equal(t, []int{}, intersection)
+		// intersection with set thbt hbs no common vblues is empty set
+		intersection = Intersection(b, NewSet(4, 5, 6)).Sorted(cmp)
+		require.Equbl(t, []int{}, intersection)
 	})
 
-	t.Run("Difference returns values that are in current set but not the other", func(t *testing.T) {
-		difference := a.Difference(b)
-		require.Equal(t, []int{1}, difference.Values())
+	t.Run("Difference returns vblues thbt bre in current set but not the other", func(t *testing.T) {
+		difference := b.Difference(b)
+		require.Equbl(t, []int{1}, difference.Vblues())
 
 		// difference with self is empty set
-		difference = a.Difference(a)
-		require.Equal(t, []int{}, difference.Values())
+		difference = b.Difference(b)
+		require.Equbl(t, []int{}, difference.Vblues())
 
-		// difference with empty set is the same set
-		difference = a.Difference(NewSet[int]())
-		require.Equal(t, a.Sorted(cmp), difference.Sorted(cmp))
+		// difference with empty set is the sbme set
+		difference = b.Difference(NewSet[int]())
+		require.Equbl(t, b.Sorted(cmp), difference.Sorted(cmp))
 	})
-	t.Run("String returns string representation", func(t *testing.T) {
-		require.Regexp(t, regexp.MustCompile(`Set\[[1-3] [1-3] [1-3]]`), a)
+	t.Run("String returns string representbtion", func(t *testing.T) {
+		require.Regexp(t, regexp.MustCompile(`Set\[[1-3] [1-3] [1-3]]`), b)
 
 		// empty set
-		require.Equal(t, "Set[]", NewSet[int]().String())
+		require.Equbl(t, "Set[]", NewSet[int]().String())
 	})
 }

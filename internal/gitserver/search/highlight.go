@@ -1,29 +1,29 @@
-package search
+pbckbge sebrch
 
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-// MatchedCommit are the portions of a commit that match a query
-type MatchedCommit struct {
-	// Message is the set of ranges of the commit message that were matched
-	Message result.Ranges
+// MbtchedCommit bre the portions of b commit thbt mbtch b query
+type MbtchedCommit struct {
+	// Messbge is the set of rbnges of the commit messbge thbt were mbtched
+	Messbge result.Rbnges
 
-	// Diff is the set of files deltas that have matches in the parsed diff.
-	// The key of the map is the index of the delta in the diff.
-	Diff map[int]MatchedFileDiff
+	// Diff is the set of files deltbs thbt hbve mbtches in the pbrsed diff.
+	// The key of the mbp is the index of the deltb in the diff.
+	Diff mbp[int]MbtchedFileDiff
 }
 
-// Merge merges another CommitHighlights into this one, returning the result.
-func (c MatchedCommit) Merge(other MatchedCommit) MatchedCommit {
-	c.Message = c.Message.Merge(other.Message)
+// Merge merges bnother CommitHighlights into this one, returning the result.
+func (c MbtchedCommit) Merge(other MbtchedCommit) MbtchedCommit {
+	c.Messbge = c.Messbge.Merge(other.Messbge)
 
 	if c.Diff == nil {
 		c.Diff = other.Diff
 	} else {
-		for i, fdh := range other.Diff {
+		for i, fdh := rbnge other.Diff {
 			c.Diff[i] = c.Diff[i].Merge(fdh)
 		}
 	}
@@ -31,49 +31,49 @@ func (c MatchedCommit) Merge(other MatchedCommit) MatchedCommit {
 	return c
 }
 
-// ConstrainToMatched constrains a MatchedCommit by deleting any match ranges for file
-// diffs not included in the provided matchedFileDiffs.
-func (c *MatchedCommit) ConstrainToMatched(matchedFileDiffs map[int]struct{}) {
-	for i := range c.Diff {
-		if _, ok := matchedFileDiffs[i]; !ok {
+// ConstrbinToMbtched constrbins b MbtchedCommit by deleting bny mbtch rbnges for file
+// diffs not included in the provided mbtchedFileDiffs.
+func (c *MbtchedCommit) ConstrbinToMbtched(mbtchedFileDiffs mbp[int]struct{}) {
+	for i := rbnge c.Diff {
+		if _, ok := mbtchedFileDiffs[i]; !ok {
 			delete(c.Diff, i)
 		}
 	}
 }
 
-type MatchedFileDiff struct {
-	OldFile      result.Ranges
-	NewFile      result.Ranges
-	MatchedHunks map[int]MatchedHunk
+type MbtchedFileDiff struct {
+	OldFile      result.Rbnges
+	NewFile      result.Rbnges
+	MbtchedHunks mbp[int]MbtchedHunk
 }
 
-func (f MatchedFileDiff) Merge(other MatchedFileDiff) MatchedFileDiff {
-	f.OldFile = append(f.OldFile, other.OldFile...)
+func (f MbtchedFileDiff) Merge(other MbtchedFileDiff) MbtchedFileDiff {
+	f.OldFile = bppend(f.OldFile, other.OldFile...)
 	sort.Sort(f.OldFile)
 
-	f.NewFile = append(f.NewFile, other.NewFile...)
+	f.NewFile = bppend(f.NewFile, other.NewFile...)
 	sort.Sort(f.NewFile)
 
-	if f.MatchedHunks == nil {
-		f.MatchedHunks = other.MatchedHunks
+	if f.MbtchedHunks == nil {
+		f.MbtchedHunks = other.MbtchedHunks
 	} else {
-		for i, hh := range other.MatchedHunks {
-			f.MatchedHunks[i] = f.MatchedHunks[i].Merge(hh)
+		for i, hh := rbnge other.MbtchedHunks {
+			f.MbtchedHunks[i] = f.MbtchedHunks[i].Merge(hh)
 		}
 	}
 	return f
 }
 
-type MatchedHunk struct {
-	MatchedLines map[int]result.Ranges
+type MbtchedHunk struct {
+	MbtchedLines mbp[int]result.Rbnges
 }
 
-func (h MatchedHunk) Merge(other MatchedHunk) MatchedHunk {
-	if h.MatchedLines == nil {
-		h.MatchedLines = other.MatchedLines
+func (h MbtchedHunk) Merge(other MbtchedHunk) MbtchedHunk {
+	if h.MbtchedLines == nil {
+		h.MbtchedLines = other.MbtchedLines
 	} else {
-		for i, lh := range other.MatchedLines {
-			h.MatchedLines[i] = h.MatchedLines[i].Merge(lh)
+		for i, lh := rbnge other.MbtchedLines {
+			h.MbtchedLines[i] = h.MbtchedLines[i].Merge(lh)
 		}
 	}
 	return h

@@ -1,4 +1,4 @@
-package searchcontexts
+pbckbge sebrchcontexts
 
 import (
 	"context"
@@ -6,117 +6,117 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/inconshreveable/log15"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/sync/errgroup"
-	"golang.org/x/sync/semaphore"
+	"github.com/inconshrevebble/log15"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/sync/errgroup"
+	"golbng.org/x/sync/sembphore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	GlobalSearchContextName           = "global"
-	searchContextSpecPrefix           = "@"
-	maxSearchContextNameLength        = 32
-	maxSearchContextDescriptionLength = 1024
-	maxRevisionLength                 = 255
+	GlobblSebrchContextNbme           = "globbl"
+	sebrchContextSpecPrefix           = "@"
+	mbxSebrchContextNbmeLength        = 32
+	mbxSebrchContextDescriptionLength = 1024
+	mbxRevisionLength                 = 255
 )
 
-var (
-	validateSearchContextNameRegexp   = lazyregexp.New(`^[a-zA-Z0-9_\-\/\.]+$`)
-	namespacedSearchContextSpecRegexp = lazyregexp.New(searchContextSpecPrefix + `(.*?)\/(.*)`)
+vbr (
+	vblidbteSebrchContextNbmeRegexp   = lbzyregexp.New(`^[b-zA-Z0-9_\-\/\.]+$`)
+	nbmespbcedSebrchContextSpecRegexp = lbzyregexp.New(sebrchContextSpecPrefix + `(.*?)\/(.*)`)
 )
 
-type ParsedSearchContextSpec struct {
-	NamespaceName     string
-	SearchContextName string
+type PbrsedSebrchContextSpec struct {
+	NbmespbceNbme     string
+	SebrchContextNbme string
 }
 
-func ParseSearchContextSpec(searchContextSpec string) ParsedSearchContextSpec {
-	if submatches := namespacedSearchContextSpecRegexp.FindStringSubmatch(searchContextSpec); submatches != nil {
-		// We expect 3 submatches, because FindStringSubmatch returns entire string as first submatch, and 2 captured groups
-		// as additional submatches
-		namespaceName, searchContextName := submatches[1], submatches[2]
-		return ParsedSearchContextSpec{NamespaceName: namespaceName, SearchContextName: searchContextName}
-	} else if strings.HasPrefix(searchContextSpec, searchContextSpecPrefix) {
-		return ParsedSearchContextSpec{NamespaceName: searchContextSpec[1:]}
+func PbrseSebrchContextSpec(sebrchContextSpec string) PbrsedSebrchContextSpec {
+	if submbtches := nbmespbcedSebrchContextSpecRegexp.FindStringSubmbtch(sebrchContextSpec); submbtches != nil {
+		// We expect 3 submbtches, becbuse FindStringSubmbtch returns entire string bs first submbtch, bnd 2 cbptured groups
+		// bs bdditionbl submbtches
+		nbmespbceNbme, sebrchContextNbme := submbtches[1], submbtches[2]
+		return PbrsedSebrchContextSpec{NbmespbceNbme: nbmespbceNbme, SebrchContextNbme: sebrchContextNbme}
+	} else if strings.HbsPrefix(sebrchContextSpec, sebrchContextSpecPrefix) {
+		return PbrsedSebrchContextSpec{NbmespbceNbme: sebrchContextSpec[1:]}
 	}
-	return ParsedSearchContextSpec{SearchContextName: searchContextSpec}
+	return PbrsedSebrchContextSpec{SebrchContextNbme: sebrchContextSpec}
 }
 
-func ResolveSearchContextSpec(ctx context.Context, db database.DB, searchContextSpec string) (sc *types.SearchContext, err error) {
-	tr, ctx := trace.New(ctx, "ResolveSearchContextSpec", attribute.String("searchContextSpec", searchContextSpec))
+func ResolveSebrchContextSpec(ctx context.Context, db dbtbbbse.DB, sebrchContextSpec string) (sc *types.SebrchContext, err error) {
+	tr, ctx := trbce.New(ctx, "ResolveSebrchContextSpec", bttribute.String("sebrchContextSpec", sebrchContextSpec))
 	defer func() {
-		tr.AddEvent("resolved search context", attribute.String("searchContext", fmt.Sprintf("%+v", sc)))
+		tr.AddEvent("resolved sebrch context", bttribute.String("sebrchContext", fmt.Sprintf("%+v", sc)))
 		tr.SetErrorIfNotContext(err)
 		tr.End()
 	}()
 
-	parsedSearchContextSpec := ParseSearchContextSpec(searchContextSpec)
-	hasNamespaceName := parsedSearchContextSpec.NamespaceName != ""
-	hasSearchContextName := parsedSearchContextSpec.SearchContextName != ""
+	pbrsedSebrchContextSpec := PbrseSebrchContextSpec(sebrchContextSpec)
+	hbsNbmespbceNbme := pbrsedSebrchContextSpec.NbmespbceNbme != ""
+	hbsSebrchContextNbme := pbrsedSebrchContextSpec.SebrchContextNbme != ""
 
-	if IsGlobalSearchContextSpec(searchContextSpec) {
-		return GetGlobalSearchContext(), nil
+	if IsGlobblSebrchContextSpec(sebrchContextSpec) {
+		return GetGlobblSebrchContext(), nil
 	}
 
-	if hasNamespaceName {
-		namespace, err := db.Namespaces().GetByName(ctx, parsedSearchContextSpec.NamespaceName)
+	if hbsNbmespbceNbme {
+		nbmespbce, err := db.Nbmespbces().GetByNbme(ctx, pbrsedSebrchContextSpec.NbmespbceNbme)
 		if err != nil {
-			return nil, errors.Wrap(err, "get namespace by name")
+			return nil, errors.Wrbp(err, "get nbmespbce by nbme")
 		}
 
-		// Only member of the organization can use search contexts under the
-		// organization namespace on Sourcegraph Cloud.
-		if envvar.SourcegraphDotComMode() && namespace.Organization > 0 {
-			_, err = db.OrgMembers().GetByOrgIDAndUserID(ctx, namespace.Organization, actor.FromContext(ctx).UID)
+		// Only member of the orgbnizbtion cbn use sebrch contexts under the
+		// orgbnizbtion nbmespbce on Sourcegrbph Cloud.
+		if envvbr.SourcegrbphDotComMode() && nbmespbce.Orgbnizbtion > 0 {
+			_, err = db.OrgMembers().GetByOrgIDAndUserID(ctx, nbmespbce.Orgbnizbtion, bctor.FromContext(ctx).UID)
 			if err != nil {
 				if errcode.IsNotFound(err) {
-					return nil, database.ErrNamespaceNotFound
+					return nil, dbtbbbse.ErrNbmespbceNotFound
 				}
 
-				log15.Error("ResolveSearchContextSpec.OrgMembers.GetByOrgIDAndUserID", "error", err)
+				log15.Error("ResolveSebrchContextSpec.OrgMembers.GetByOrgIDAndUserID", "error", err)
 
-				// NOTE: We do want to return identical error as if the namespace not found in
-				// case of internal server error. Otherwise, we're leaking the information when
+				// NOTE: We do wbnt to return identicbl error bs if the nbmespbce not found in
+				// cbse of internbl server error. Otherwise, we're lebking the informbtion when
 				// error occurs.
-				return nil, database.ErrNamespaceNotFound
+				return nil, dbtbbbse.ErrNbmespbceNotFound
 			}
 		}
 
-		if hasSearchContextName {
-			return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
-				Name:            parsedSearchContextSpec.SearchContextName,
-				NamespaceUserID: namespace.User,
-				NamespaceOrgID:  namespace.Organization,
+		if hbsSebrchContextNbme {
+			return db.SebrchContexts().GetSebrchContext(ctx, dbtbbbse.GetSebrchContextOptions{
+				Nbme:            pbrsedSebrchContextSpec.SebrchContextNbme,
+				NbmespbceUserID: nbmespbce.User,
+				NbmespbceOrgID:  nbmespbce.Orgbnizbtion,
 			})
 		}
 
-		return nil, errors.Errorf("search context %q not found", searchContextSpec)
+		return nil, errors.Errorf("sebrch context %q not found", sebrchContextSpec)
 	}
 
-	// Check if instance-level context
-	return db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{Name: parsedSearchContextSpec.SearchContextName})
+	// Check if instbnce-level context
+	return db.SebrchContexts().GetSebrchContext(ctx, dbtbbbse.GetSebrchContextOptions{Nbme: pbrsedSebrchContextSpec.SebrchContextNbme})
 }
 
-func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db database.DB, namespaceUserID, namespaceOrgID int32, public bool) error {
-	if namespaceUserID != 0 && namespaceOrgID != 0 {
-		return errors.New("namespaceUserID and namespaceOrgID are mutually exclusive")
+func VblidbteSebrchContextWriteAccessForCurrentUser(ctx context.Context, db dbtbbbse.DB, nbmespbceUserID, nbmespbceOrgID int32, public bool) error {
+	if nbmespbceUserID != 0 && nbmespbceOrgID != 0 {
+		return errors.New("nbmespbceUserID bnd nbmespbceOrgID bre mutublly exclusive")
 	}
 
-	user, err := auth.CurrentUser(ctx, db)
+	user, err := buth.CurrentUser(ctx, db)
 	if err != nil {
 		return err
 	}
@@ -124,266 +124,266 @@ func ValidateSearchContextWriteAccessForCurrentUser(ctx context.Context, db data
 		return errors.New("current user not found")
 	}
 
-	// Site-admins have write access to all public search contexts
+	// Site-bdmins hbve write bccess to bll public sebrch contexts
 	if user.SiteAdmin && public {
 		return nil
 	}
 
-	if namespaceUserID == 0 && namespaceOrgID == 0 && !user.SiteAdmin {
-		// Only site-admins have write access to instance-level search contexts
-		return errors.New("current user must be site-admin")
-	} else if namespaceUserID != 0 && namespaceUserID != user.ID {
-		// Only the creator of the search context has write access to its search contexts
-		return errors.New("search context user does not match current user")
-	} else if namespaceOrgID != 0 {
-		// Only members of the org have write access to org search contexts
-		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, namespaceOrgID, user.ID)
+	if nbmespbceUserID == 0 && nbmespbceOrgID == 0 && !user.SiteAdmin {
+		// Only site-bdmins hbve write bccess to instbnce-level sebrch contexts
+		return errors.New("current user must be site-bdmin")
+	} else if nbmespbceUserID != 0 && nbmespbceUserID != user.ID {
+		// Only the crebtor of the sebrch context hbs write bccess to its sebrch contexts
+		return errors.New("sebrch context user does not mbtch current user")
+	} else if nbmespbceOrgID != 0 {
+		// Only members of the org hbve write bccess to org sebrch contexts
+		membership, err := db.OrgMembers().GetByOrgIDAndUserID(ctx, nbmespbceOrgID, user.ID)
 		if err != nil {
 			return err
 		}
 		if membership == nil {
-			return errors.New("current user is not an org member")
+			return errors.New("current user is not bn org member")
 		}
 	}
 
 	return nil
 }
 
-func validateSearchContextName(name string) error {
-	if len(name) > maxSearchContextNameLength {
-		return errors.Errorf("search context name %q exceeds maximum allowed length (%d)", name, maxSearchContextNameLength)
+func vblidbteSebrchContextNbme(nbme string) error {
+	if len(nbme) > mbxSebrchContextNbmeLength {
+		return errors.Errorf("sebrch context nbme %q exceeds mbximum bllowed length (%d)", nbme, mbxSebrchContextNbmeLength)
 	}
 
-	if !validateSearchContextNameRegexp.MatchString(name) {
-		return errors.Errorf("%q is not a valid search context name", name)
+	if !vblidbteSebrchContextNbmeRegexp.MbtchString(nbme) {
+		return errors.Errorf("%q is not b vblid sebrch context nbme", nbme)
 	}
 
 	return nil
 }
 
-func validateSearchContextDescription(description string) error {
-	if len(description) > maxSearchContextDescriptionLength {
-		return errors.Errorf("search context description exceeds maximum allowed length (%d)", maxSearchContextDescriptionLength)
+func vblidbteSebrchContextDescription(description string) error {
+	if len(description) > mbxSebrchContextDescriptionLength {
+		return errors.Errorf("sebrch context description exceeds mbximum bllowed length (%d)", mbxSebrchContextDescriptionLength)
 	}
 	return nil
 }
 
-func validateSearchContextRepositoryRevisions(repositoryRevisions []*types.SearchContextRepositoryRevisions) error {
-	for _, repository := range repositoryRevisions {
-		for _, revision := range repository.Revisions {
-			if len(revision) > maxRevisionLength {
-				return errors.Errorf("revision %q exceeds maximum allowed length (%d)", revision, maxRevisionLength)
+func vblidbteSebrchContextRepositoryRevisions(repositoryRevisions []*types.SebrchContextRepositoryRevisions) error {
+	for _, repository := rbnge repositoryRevisions {
+		for _, revision := rbnge repository.Revisions {
+			if len(revision) > mbxRevisionLength {
+				return errors.Errorf("revision %q exceeds mbximum bllowed length (%d)", revision, mbxRevisionLength)
 			}
 		}
 	}
 	return nil
 }
 
-// validateSearchContextQuery validates that the search context query complies to the
-// necessary restrictions. We need to limit what we accept so that the query can
-// be converted to an efficient database lookup when determing which revisions
-// to index in RepoRevs. We don't want to run a search to determine which revisions
-// we need to index. That would be brittle, recursive and possibly impossible.
-func validateSearchContextQuery(contextQuery string) error {
+// vblidbteSebrchContextQuery vblidbtes thbt the sebrch context query complies to the
+// necessbry restrictions. We need to limit whbt we bccept so thbt the query cbn
+// be converted to bn efficient dbtbbbse lookup when determing which revisions
+// to index in RepoRevs. We don't wbnt to run b sebrch to determine which revisions
+// we need to index. Thbt would be brittle, recursive bnd possibly impossible.
+func vblidbteSebrchContextQuery(contextQuery string) error {
 	if contextQuery == "" {
 		return nil
 	}
 
-	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
+	plbn, err := query.Pipeline(query.Init(contextQuery, query.SebrchTypeRegex))
 	if err != nil {
 		return err
 	}
 
-	q := plan.ToQ()
-	var errs error
+	q := plbn.ToQ()
+	vbr errs error
 
-	query.VisitParameter(q, func(field, value string, negated bool, a query.Annotation) {
+	query.VisitPbrbmeter(q, func(field, vblue string, negbted bool, b query.Annotbtion) {
 		switch field {
-		case query.FieldRepo:
-			if a.Labels.IsSet(query.IsPredicate) {
-				predName, _ := query.ParseAsPredicate(value)
-				switch predName {
-				case "has", "has.tag", "has.key", "has.meta", "has.topic", "has.description":
-				default:
+		cbse query.FieldRepo:
+			if b.Lbbels.IsSet(query.IsPredicbte) {
+				predNbme, _ := query.PbrseAsPredicbte(vblue)
+				switch predNbme {
+				cbse "hbs", "hbs.tbg", "hbs.key", "hbs.metb", "hbs.topic", "hbs.description":
+				defbult:
 					errs = errors.Append(errs,
-						errors.Errorf("unsupported repo field predicate in search context query: %q", value))
+						errors.Errorf("unsupported repo field predicbte in sebrch context query: %q", vblue))
 				}
 				return
 			}
 
-			repoRevs, err := query.ParseRepositoryRevisions(value)
+			repoRevs, err := query.PbrseRepositoryRevisions(vblue)
 			if err != nil {
 				errs = errors.Append(errs,
-					errors.Errorf("repo field regex %q is invalid: %v", value, err))
+					errors.Errorf("repo field regex %q is invblid: %v", vblue, err))
 				return
 			}
 
-			for _, rev := range repoRevs.Revs {
-				if rev.HasRefGlob() {
+			for _, rev := rbnge repoRevs.Revs {
+				if rev.HbsRefGlob() {
 					errs = errors.Append(errs,
-						errors.Errorf("unsupported rev glob in search context query: %q", value))
+						errors.Errorf("unsupported rev glob in sebrch context query: %q", vblue))
 					return
 				}
 			}
 
-		case query.FieldFork:
-		case query.FieldArchived:
-		case query.FieldVisibility:
-		case query.FieldCase:
-		case query.FieldFile:
-		case query.FieldLang:
+		cbse query.FieldFork:
+		cbse query.FieldArchived:
+		cbse query.FieldVisibility:
+		cbse query.FieldCbse:
+		cbse query.FieldFile:
+		cbse query.FieldLbng:
 
-		default:
+		defbult:
 			errs = errors.Append(errs,
-				errors.Errorf("unsupported field in search context query: %q", field))
+				errors.Errorf("unsupported field in sebrch context query: %q", field))
 		}
 	})
 
-	query.VisitPattern(q, func(value string, negated bool, a query.Annotation) {
-		if value != "" {
+	query.VisitPbttern(q, func(vblue string, negbted bool, b query.Annotbtion) {
+		if vblue != "" {
 			errs = errors.Append(errs,
-				errors.Errorf("unsupported pattern in search context query: %q", value))
+				errors.Errorf("unsupported pbttern in sebrch context query: %q", vblue))
 		}
 	})
 
 	return errs
 }
 
-func validateSearchContextDoesNotExist(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
-	_, err := db.SearchContexts().GetSearchContext(ctx, database.GetSearchContextOptions{
-		Name:            searchContext.Name,
-		NamespaceUserID: searchContext.NamespaceUserID,
-		NamespaceOrgID:  searchContext.NamespaceOrgID,
+func vblidbteSebrchContextDoesNotExist(ctx context.Context, db dbtbbbse.DB, sebrchContext *types.SebrchContext) error {
+	_, err := db.SebrchContexts().GetSebrchContext(ctx, dbtbbbse.GetSebrchContextOptions{
+		Nbme:            sebrchContext.Nbme,
+		NbmespbceUserID: sebrchContext.NbmespbceUserID,
+		NbmespbceOrgID:  sebrchContext.NbmespbceOrgID,
 	})
 	if err == nil {
-		return errors.New("search context already exists")
+		return errors.New("sebrch context blrebdy exists")
 	}
-	if err == database.ErrSearchContextNotFound {
+	if err == dbtbbbse.ErrSebrchContextNotFound {
 		return nil
 	}
 	// Unknown error
 	return err
 }
 
-func CreateSearchContextWithRepositoryRevisions(
+func CrebteSebrchContextWithRepositoryRevisions(
 	ctx context.Context,
-	db database.DB,
-	searchContext *types.SearchContext,
-	repositoryRevisions []*types.SearchContextRepositoryRevisions,
-) (*types.SearchContext, error) {
-	if IsGlobalSearchContext(searchContext) {
-		return nil, errors.New("cannot override global search context")
+	db dbtbbbse.DB,
+	sebrchContext *types.SebrchContext,
+	repositoryRevisions []*types.SebrchContextRepositoryRevisions,
+) (*types.SebrchContext, error) {
+	if IsGlobblSebrchContext(sebrchContext) {
+		return nil, errors.New("cbnnot override globbl sebrch context")
 	}
 
-	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := VblidbteSebrchContextWriteAccessForCurrentUser(ctx, db, sebrchContext.NbmespbceUserID, sebrchContext.NbmespbceOrgID, sebrchContext.Public)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextName(searchContext.Name)
+	err = vblidbteSebrchContextNbme(sebrchContext.Nbme)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextDescription(searchContext.Description)
+	err = vblidbteSebrchContextDescription(sebrchContext.Description)
 	if err != nil {
 		return nil, err
 	}
 
-	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
-		return nil, errors.New("search context query and repository revisions are mutually exclusive")
+	if sebrchContext.Query != "" && len(repositoryRevisions) > 0 {
+		return nil, errors.New("sebrch context query bnd repository revisions bre mutublly exclusive")
 	}
 
-	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
+	err = vblidbteSebrchContextRepositoryRevisions(repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextQuery(searchContext.Query)
+	err = vblidbteSebrchContextQuery(sebrchContext.Query)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextDoesNotExist(ctx, db, searchContext)
+	err = vblidbteSebrchContextDoesNotExist(ctx, db, sebrchContext)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err = db.SearchContexts().CreateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	sebrchContext, err = db.SebrchContexts().CrebteSebrchContextWithRepositoryRevisions(ctx, sebrchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
-	return searchContext, nil
+	return sebrchContext, nil
 }
 
-func UpdateSearchContextWithRepositoryRevisions(ctx context.Context, db database.DB, searchContext *types.SearchContext, repositoryRevisions []*types.SearchContextRepositoryRevisions) (*types.SearchContext, error) {
-	if IsGlobalSearchContext(searchContext) {
-		return nil, errors.New("cannot update global search context")
+func UpdbteSebrchContextWithRepositoryRevisions(ctx context.Context, db dbtbbbse.DB, sebrchContext *types.SebrchContext, repositoryRevisions []*types.SebrchContextRepositoryRevisions) (*types.SebrchContext, error) {
+	if IsGlobblSebrchContext(sebrchContext) {
+		return nil, errors.New("cbnnot updbte globbl sebrch context")
 	}
 
-	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := VblidbteSebrchContextWriteAccessForCurrentUser(ctx, db, sebrchContext.NbmespbceUserID, sebrchContext.NbmespbceOrgID, sebrchContext.Public)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextName(searchContext.Name)
+	err = vblidbteSebrchContextNbme(sebrchContext.Nbme)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextDescription(searchContext.Description)
+	err = vblidbteSebrchContextDescription(sebrchContext.Description)
 	if err != nil {
 		return nil, err
 	}
 
-	if searchContext.Query != "" && len(repositoryRevisions) > 0 {
-		return nil, errors.New("search context query and repository revisions are mutually exclusive")
+	if sebrchContext.Query != "" && len(repositoryRevisions) > 0 {
+		return nil, errors.New("sebrch context query bnd repository revisions bre mutublly exclusive")
 	}
 
-	err = validateSearchContextRepositoryRevisions(repositoryRevisions)
+	err = vblidbteSebrchContextRepositoryRevisions(repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
 
-	err = validateSearchContextQuery(searchContext.Query)
+	err = vblidbteSebrchContextQuery(sebrchContext.Query)
 	if err != nil {
 		return nil, err
 	}
 
-	searchContext, err = db.SearchContexts().UpdateSearchContextWithRepositoryRevisions(ctx, searchContext, repositoryRevisions)
+	sebrchContext, err = db.SebrchContexts().UpdbteSebrchContextWithRepositoryRevisions(ctx, sebrchContext, repositoryRevisions)
 	if err != nil {
 		return nil, err
 	}
-	return searchContext, nil
+	return sebrchContext, nil
 }
 
-func DeleteSearchContext(ctx context.Context, db database.DB, searchContext *types.SearchContext) error {
-	if IsAutoDefinedSearchContext(searchContext) {
-		return errors.New("cannot delete auto-defined search context")
+func DeleteSebrchContext(ctx context.Context, db dbtbbbse.DB, sebrchContext *types.SebrchContext) error {
+	if IsAutoDefinedSebrchContext(sebrchContext) {
+		return errors.New("cbnnot delete buto-defined sebrch context")
 	}
 
-	err := ValidateSearchContextWriteAccessForCurrentUser(ctx, db, searchContext.NamespaceUserID, searchContext.NamespaceOrgID, searchContext.Public)
+	err := VblidbteSebrchContextWriteAccessForCurrentUser(ctx, db, sebrchContext.NbmespbceUserID, sebrchContext.NbmespbceOrgID, sebrchContext.Public)
 	if err != nil {
 		return err
 	}
 
-	return db.SearchContexts().DeleteSearchContext(ctx, searchContext.ID)
+	return db.SebrchContexts().DeleteSebrchContext(ctx, sebrchContext.ID)
 }
 
-// RepoRevs returns all the revisions for the given repo IDs defined across all search contexts.
-func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
-	if a := actor.FromContext(ctx); !a.IsInternal() {
-		return nil, errors.New("searchcontexts.RepoRevs can only be accessed by an internal actor")
+// RepoRevs returns bll the revisions for the given repo IDs defined bcross bll sebrch contexts.
+func RepoRevs(ctx context.Context, db dbtbbbse.DB, repoIDs []bpi.RepoID) (mbp[bpi.RepoID][]string, error) {
+	if b := bctor.FromContext(ctx); !b.IsInternbl() {
+		return nil, errors.New("sebrchcontexts.RepoRevs cbn only be bccessed by bn internbl bctor")
 	}
 
-	sc := db.SearchContexts()
+	sc := db.SebrchContexts()
 
 	revs, err := sc.GetAllRevisionsForRepos(ctx, repoIDs)
 	if err != nil {
 		return nil, err
 	}
 
-	if !conf.ExperimentalFeatures().SearchIndexQueryContexts {
+	if !conf.ExperimentblFebtures().SebrchIndexQueryContexts {
 		return revs, nil
 	}
 
@@ -392,32 +392,32 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 		return nil, err
 	}
 
-	var opts []RepoOpts
-	for _, q := range contextQueries {
-		o, err := ParseRepoOpts(q)
+	vbr opts []RepoOpts
+	for _, q := rbnge contextQueries {
+		o, err := PbrseRepoOpts(q)
 		if err != nil {
 			return nil, err
 		}
-		opts = append(opts, o...)
+		opts = bppend(opts, o...)
 	}
 
 	repos := db.Repos()
-	sem := semaphore.NewWeighted(4)
+	sem := sembphore.NewWeighted(4)
 	g, ctx := errgroup.WithContext(ctx)
 	mu := sync.Mutex{}
 
-	for _, q := range opts {
+	for _, q := rbnge opts {
 		q := q
 		g.Go(func() error {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return err
 			}
-			defer sem.Release(1)
+			defer sem.Relebse(1)
 
 			o := q.ReposListOptions
 			o.IDs = repoIDs
 
-			rs, err := repos.ListMinimalRepos(ctx, o)
+			rs, err := repos.ListMinimblRepos(ctx, o)
 			if err != nil {
 				return err
 			}
@@ -425,15 +425,15 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 			mu.Lock()
 			defer mu.Unlock()
 
-			for _, r := range rs {
-				revs[r.ID] = append(revs[r.ID], q.RevSpecs...)
+			for _, r := rbnge rs {
+				revs[r.ID] = bppend(revs[r.ID], q.RevSpecs...)
 			}
 
 			return nil
 		})
 	}
 
-	err = g.Wait()
+	err = g.Wbit()
 	if err != nil {
 		return nil, err
 	}
@@ -441,24 +441,24 @@ func RepoRevs(ctx context.Context, db database.DB, repoIDs []api.RepoID) (map[ap
 	return revs, nil
 }
 
-// RepoOpts contains the database.ReposListOptions and RevSpecs parsed from
-// a search context query.
+// RepoOpts contbins the dbtbbbse.ReposListOptions bnd RevSpecs pbrsed from
+// b sebrch context query.
 type RepoOpts struct {
-	database.ReposListOptions
+	dbtbbbse.ReposListOptions
 	RevSpecs []string
 }
 
-// ParseRepoOpts parses the given search context query, returning an error
-// in case of failure.
-func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
-	plan, err := query.Pipeline(query.Init(contextQuery, query.SearchTypeRegex))
+// PbrseRepoOpts pbrses the given sebrch context query, returning bn error
+// in cbse of fbilure.
+func PbrseRepoOpts(contextQuery string) ([]RepoOpts, error) {
+	plbn, err := query.Pipeline(query.Init(contextQuery, query.SebrchTypeRegex))
 	if err != nil {
 		return nil, err
 	}
 
-	qs := make([]RepoOpts, 0, len(plan))
-	for _, p := range plan {
-		q := p.ToParseTree()
+	qs := mbke([]RepoOpts, 0, len(plbn))
+	for _, p := rbnge plbn {
+		q := p.ToPbrseTree()
 
 		repoFilters, minusRepoFilters := q.Repositories()
 
@@ -467,103 +467,103 @@ func ParseRepoOpts(contextQuery string) ([]RepoOpts, error) {
 			fork = *setFork
 		}
 
-		archived := query.No
+		brchived := query.No
 		if setArchived := q.Archived(); setArchived != nil {
-			archived = *setArchived
+			brchived = *setArchived
 		}
 
-		visibilityStr, _ := q.StringValue(query.FieldVisibility)
-		visibility := query.ParseVisibility(visibilityStr)
+		visibilityStr, _ := q.StringVblue(query.FieldVisibility)
+		visibility := query.PbrseVisibility(visibilityStr)
 
 		rq := RepoOpts{
-			ReposListOptions: database.ReposListOptions{
-				CaseSensitivePatterns: q.IsCaseSensitive(),
-				ExcludePattern:        query.UnionRegExps(minusRepoFilters),
+			ReposListOptions: dbtbbbse.ReposListOptions{
+				CbseSensitivePbtterns: q.IsCbseSensitive(),
+				ExcludePbttern:        query.UnionRegExps(minusRepoFilters),
 				OnlyForks:             fork == query.Only,
 				NoForks:               fork == query.No,
-				OnlyArchived:          archived == query.Only,
-				NoArchived:            archived == query.No,
-				NoPrivate:             visibility == query.Public,
-				OnlyPrivate:           visibility == query.Private,
+				OnlyArchived:          brchived == query.Only,
+				NoArchived:            brchived == query.No,
+				NoPrivbte:             visibility == query.Public,
+				OnlyPrivbte:           visibility == query.Privbte,
 			},
 		}
 
-		for _, r := range repoFilters {
-			for _, rev := range r.Revs {
-				if !rev.HasRefGlob() {
-					rq.RevSpecs = append(rq.RevSpecs, rev.RevSpec)
+		for _, r := rbnge repoFilters {
+			for _, rev := rbnge r.Revs {
+				if !rev.HbsRefGlob() {
+					rq.RevSpecs = bppend(rq.RevSpecs, rev.RevSpec)
 				}
 			}
-			rq.IncludePatterns = append(rq.IncludePatterns, r.Repo)
+			rq.IncludePbtterns = bppend(rq.IncludePbtterns, r.Repo)
 		}
 
-		qs = append(qs, rq)
+		qs = bppend(qs, rq)
 	}
 
 	return qs, nil
 }
 
-func GetRepositoryRevisions(ctx context.Context, db database.DB, searchContextID int64) ([]search.RepositoryRevisions, error) {
-	searchContextRepositoryRevisions, err := db.SearchContexts().GetSearchContextRepositoryRevisions(ctx, searchContextID)
+func GetRepositoryRevisions(ctx context.Context, db dbtbbbse.DB, sebrchContextID int64) ([]sebrch.RepositoryRevisions, error) {
+	sebrchContextRepositoryRevisions, err := db.SebrchContexts().GetSebrchContextRepositoryRevisions(ctx, sebrchContextID)
 	if err != nil {
 		return nil, err
 	}
 
-	repositoryRevisions := make([]search.RepositoryRevisions, 0, len(searchContextRepositoryRevisions))
-	for _, searchContextRepositoryRevision := range searchContextRepositoryRevisions {
-		repositoryRevisions = append(repositoryRevisions, search.RepositoryRevisions{
-			Repo: searchContextRepositoryRevision.Repo,
-			Revs: searchContextRepositoryRevision.Revisions,
+	repositoryRevisions := mbke([]sebrch.RepositoryRevisions, 0, len(sebrchContextRepositoryRevisions))
+	for _, sebrchContextRepositoryRevision := rbnge sebrchContextRepositoryRevisions {
+		repositoryRevisions = bppend(repositoryRevisions, sebrch.RepositoryRevisions{
+			Repo: sebrchContextRepositoryRevision.Repo,
+			Revs: sebrchContextRepositoryRevision.Revisions,
 		})
 	}
 	return repositoryRevisions, nil
 }
 
-func IsAutoDefinedSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext.AutoDefined
+func IsAutoDefinedSebrchContext(sebrchContext *types.SebrchContext) bool {
+	return sebrchContext.AutoDefined
 }
 
-func IsInstanceLevelSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext.NamespaceUserID == 0 && searchContext.NamespaceOrgID == 0
+func IsInstbnceLevelSebrchContext(sebrchContext *types.SebrchContext) bool {
+	return sebrchContext.NbmespbceUserID == 0 && sebrchContext.NbmespbceOrgID == 0
 }
 
-func IsGlobalSearchContextSpec(searchContextSpec string) bool {
-	// Empty search context spec resolves to global search context
-	return searchContextSpec == "" || searchContextSpec == GlobalSearchContextName
+func IsGlobblSebrchContextSpec(sebrchContextSpec string) bool {
+	// Empty sebrch context spec resolves to globbl sebrch context
+	return sebrchContextSpec == "" || sebrchContextSpec == GlobblSebrchContextNbme
 }
 
-func IsGlobalSearchContext(searchContext *types.SearchContext) bool {
-	return searchContext != nil && searchContext.Name == GlobalSearchContextName
+func IsGlobblSebrchContext(sebrchContext *types.SebrchContext) bool {
+	return sebrchContext != nil && sebrchContext.Nbme == GlobblSebrchContextNbme
 }
 
-func GetGlobalSearchContext() *types.SearchContext {
-	return &types.SearchContext{Name: GlobalSearchContextName, Public: true, Description: "All repositories on Sourcegraph", AutoDefined: true}
+func GetGlobblSebrchContext() *types.SebrchContext {
+	return &types.SebrchContext{Nbme: GlobblSebrchContextNbme, Public: true, Description: "All repositories on Sourcegrbph", AutoDefined: true}
 }
 
-func GetSearchContextSpec(searchContext *types.SearchContext) string {
-	if IsInstanceLevelSearchContext(searchContext) {
-		return searchContext.Name
-	} else if IsAutoDefinedSearchContext(searchContext) {
-		return searchContextSpecPrefix + searchContext.Name
+func GetSebrchContextSpec(sebrchContext *types.SebrchContext) string {
+	if IsInstbnceLevelSebrchContext(sebrchContext) {
+		return sebrchContext.Nbme
+	} else if IsAutoDefinedSebrchContext(sebrchContext) {
+		return sebrchContextSpecPrefix + sebrchContext.Nbme
 	} else {
-		var namespaceName string
-		if searchContext.NamespaceUserName != "" {
-			namespaceName = searchContext.NamespaceUserName
+		vbr nbmespbceNbme string
+		if sebrchContext.NbmespbceUserNbme != "" {
+			nbmespbceNbme = sebrchContext.NbmespbceUserNbme
 		} else {
-			namespaceName = searchContext.NamespaceOrgName
+			nbmespbceNbme = sebrchContext.NbmespbceOrgNbme
 		}
-		return searchContextSpecPrefix + namespaceName + "/" + searchContext.Name
+		return sebrchContextSpecPrefix + nbmespbceNbme + "/" + sebrchContext.Nbme
 	}
 }
 
-func CreateSearchContextStarForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
-	return db.SearchContexts().CreateSearchContextStarForUser(ctx, userID, searchContext.ID)
+func CrebteSebrchContextStbrForUser(ctx context.Context, db dbtbbbse.DB, sebrchContext *types.SebrchContext, userID int32) error {
+	return db.SebrchContexts().CrebteSebrchContextStbrForUser(ctx, userID, sebrchContext.ID)
 }
 
-func DeleteSearchContextStarForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
-	return db.SearchContexts().DeleteSearchContextStarForUser(ctx, userID, searchContext.ID)
+func DeleteSebrchContextStbrForUser(ctx context.Context, db dbtbbbse.DB, sebrchContext *types.SebrchContext, userID int32) error {
+	return db.SebrchContexts().DeleteSebrchContextStbrForUser(ctx, userID, sebrchContext.ID)
 }
 
-func SetDefaultSearchContextForUser(ctx context.Context, db database.DB, searchContext *types.SearchContext, userID int32) error {
-	return db.SearchContexts().SetUserDefaultSearchContextID(ctx, userID, searchContext.ID)
+func SetDefbultSebrchContextForUser(ctx context.Context, db dbtbbbse.DB, sebrchContext *types.SebrchContext, userID int32) error {
+	return db.SebrchContexts().SetUserDefbultSebrchContextID(ctx, userID, sebrchContext.ID)
 }

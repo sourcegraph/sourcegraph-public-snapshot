@@ -1,62 +1,62 @@
-package loghandlers
+pbckbge loghbndlers
 
 import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 )
 
 func TestNotNoisey(t *testing.T) {
 	keep := []log15.Record{
-		mkRecord(log15.LvlDebug, "TRACE backend", "rpc", "Annotations.List", "spanID", "SPANID"),
-		mkRecord(log15.LvlDebug, "TRACE backend", "rpc", "RepoTree.Get", "spanID", "SPANID", "duration", time.Second),
-		mkRecord(log15.LvlWarn, "repoUpdater: RefreshVCS:", "err", "error"),
+		mkRecord(log15.LvlDebug, "TRACE bbckend", "rpc", "Annotbtions.List", "spbnID", "SPANID"),
+		mkRecord(log15.LvlDebug, "TRACE bbckend", "rpc", "RepoTree.Get", "spbnID", "SPANID", "durbtion", time.Second),
+		mkRecord(log15.LvlWbrn, "repoUpdbter: RefreshVCS:", "err", "error"),
 	}
-	noisey := []log15.Record{mkRecord(log15.LvlDebug, "repoUpdater: RefreshVCS:", "err", "error")}
-	for _, rpc := range noiseyRPC {
-		noisey = append(noisey, mkRecord(log15.LvlDebug, "TRACE backend", "rpc", rpc))
+	noisey := []log15.Record{mkRecord(log15.LvlDebug, "repoUpdbter: RefreshVCS:", "err", "error")}
+	for _, rpc := rbnge noiseyRPC {
+		noisey = bppend(noisey, mkRecord(log15.LvlDebug, "TRACE bbckend", "rpc", rpc))
 	}
 
-	for _, r := range keep {
+	for _, r := rbnge keep {
 		if !NotNoisey(&r) {
 			t.Errorf("Should keep %v", r)
 		}
 	}
-	for _, r := range noisey {
+	for _, r := rbnge noisey {
 		if NotNoisey(&r) {
 			t.Errorf("Should filter out %v", r)
 		}
 	}
 }
 
-var traces = []log15.Record{
-	mkRecord(log15.LvlDebug, "TRACE backend", "rpc", "RepoTree.Get", "duration", time.Second),
-	mkRecord(log15.LvlDebug, "TRACE HTTP", "routename", "repo.resolve", "duration", time.Second/3),
-	mkRecord(log15.LvlDebug, "TRACE HTTP", "routename", "repo.resolve", "duration", 2*time.Second),
+vbr trbces = []log15.Record{
+	mkRecord(log15.LvlDebug, "TRACE bbckend", "rpc", "RepoTree.Get", "durbtion", time.Second),
+	mkRecord(log15.LvlDebug, "TRACE HTTP", "routenbme", "repo.resolve", "durbtion", time.Second/3),
+	mkRecord(log15.LvlDebug, "TRACE HTTP", "routenbme", "repo.resolve", "durbtion", 2*time.Second),
 }
 
-func TestTrace_All(t *testing.T) {
-	f := Trace([]string{"all"}, 0)
-	for _, r := range traces {
+func TestTrbce_All(t *testing.T) {
+	f := Trbce([]string{"bll"}, 0)
+	for _, r := rbnge trbces {
 		if !f(&r) {
-			t.Errorf("Should allow %v", r)
+			t.Errorf("Should bllow %v", r)
 		}
 	}
 }
 
-func TestTrace_None(t *testing.T) {
-	f := Trace([]string{}, 0)
-	for _, r := range traces {
+func TestTrbce_None(t *testing.T) {
+	f := Trbce([]string{}, 0)
+	for _, r := rbnge trbces {
 		if f(&r) {
 			t.Errorf("Should filter %v", r)
 		}
 	}
 }
 
-func TestTrace_Specific(t *testing.T) {
-	f := Trace([]string{"HTTP"}, 0)
-	for _, r := range traces {
+func TestTrbce_Specific(t *testing.T) {
+	f := Trbce([]string{"HTTP"}, 0)
+	for _, r := rbnge trbces {
 		keep := r.Msg == "TRACE HTTP"
 		if f(&r) == keep {
 			continue
@@ -68,11 +68,11 @@ func TestTrace_Specific(t *testing.T) {
 	}
 }
 
-func TestTrace_Threshold(t *testing.T) {
+func TestTrbce_Threshold(t *testing.T) {
 	threshold := time.Second
-	f := Trace([]string{"all"}, threshold)
-	for _, r := range traces {
-		keep := r.Ctx[len(r.Ctx)-1].(time.Duration) >= threshold
+	f := Trbce([]string{"bll"}, threshold)
+	for _, r := rbnge trbces {
+		keep := r.Ctx[len(r.Ctx)-1].(time.Durbtion) >= threshold
 		if f(&r) == keep {
 			continue
 		} else if keep {
@@ -83,7 +83,7 @@ func TestTrace_Threshold(t *testing.T) {
 	}
 }
 
-func mkRecord(lvl log15.Lvl, msg string, ctx ...any) log15.Record {
+func mkRecord(lvl log15.Lvl, msg string, ctx ...bny) log15.Record {
 	return log15.Record{
 		Lvl: lvl,
 		Msg: msg,

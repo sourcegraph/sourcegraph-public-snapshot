@@ -1,30 +1,30 @@
-package app
+pbckbge bpp
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// Init initializes the given enterpriseServices to include the required resolvers for insights.
+// Init initiblizes the given enterpriseServices to include the required resolvers for insights.
 func Init(
 	ctx context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
 	if deploy.IsApp() {
 		gitserverClient := gitserver.NewClient()
-		enterpriseServices.OptionalResolver.AppResolver = resolvers.NewAppResolver(observationCtx.Logger, db, gitserverClient)
+		enterpriseServices.OptionblResolver.AppResolver = resolvers.NewAppResolver(observbtionCtx.Logger, db, gitserverClient)
 	}
 	return nil
 }

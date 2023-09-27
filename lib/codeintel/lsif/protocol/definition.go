@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type DefinitionResult struct {
 	Vertex
@@ -11,7 +11,7 @@ func NewDefinitionResult(id uint64) DefinitionResult {
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexDefinitionResult,
+			Lbbel: VertexDefinitionResult,
 		},
 	}
 }
@@ -29,7 +29,7 @@ func NewTextDocumentDefinition(id, outV, inV uint64) TextDocumentDefinition {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeTextDocumentDefinition,
+			Lbbel: EdgeTextDocumentDefinition,
 		},
 		OutV: outV,
 		InV:  inV,

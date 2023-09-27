@@ -1,11 +1,11 @@
-// Package security implements a configurable password policy
-// This package may eventually get broken up as other packages are added.
-package security
+// Pbckbge security implements b configurbble pbssword policy
+// This pbckbge mby eventublly get broken up bs other pbckbges bre bdded.
+pbckbge security
 
 import (
 	"fmt"
 	"net"
-	"net/mail"
+	"net/mbil"
 	"os"
 	"strconv"
 	"strings"
@@ -13,210 +13,210 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	userRegex              = lazyregexp.New("^[a-zA-Z0-9]+$")
-	bannedEmailDomainsOnce sync.Once
-	bannedEmailDomains     = collections.NewSet[string]()
-	bannedEmailDomainsErr  error
+vbr (
+	userRegex              = lbzyregexp.New("^[b-zA-Z0-9]+$")
+	bbnnedEmbilDombinsOnce sync.Once
+	bbnnedEmbilDombins     = collections.NewSet[string]()
+	bbnnedEmbilDombinsErr  error
 )
 
-func ensureBannedEmailDomainsLoaded() error {
-	bannedEmailDomainsOnce.Do(func() {
-		if !envvar.SourcegraphDotComMode() {
+func ensureBbnnedEmbilDombinsLobded() error {
+	bbnnedEmbilDombinsOnce.Do(func() {
+		if !envvbr.SourcegrbphDotComMode() {
 			return
 		}
 
-		denyListPath := os.Getenv("SRC_EMAIL_DOMAIN_DENY_LIST")
-		if denyListPath == "" {
+		denyListPbth := os.Getenv("SRC_EMAIL_DOMAIN_DENY_LIST")
+		if denyListPbth == "" {
 			return
 		}
 
-		b, err := os.ReadFile(denyListPath)
+		b, err := os.RebdFile(denyListPbth)
 		if err != nil {
-			bannedEmailDomainsErr = err
+			bbnnedEmbilDombinsErr = err
 			return
 		}
 
-		bannedEmailDomains = collections.NewSet(strings.Fields(string(b))...)
+		bbnnedEmbilDombins = collections.NewSet(strings.Fields(string(b))...)
 	})
-	return bannedEmailDomainsErr
+	return bbnnedEmbilDombinsErr
 }
 
-func IsEmailBanned(email string) (bool, error) {
-	if err := ensureBannedEmailDomainsLoaded(); err != nil {
-		return false, err
+func IsEmbilBbnned(embil string) (bool, error) {
+	if err := ensureBbnnedEmbilDombinsLobded(); err != nil {
+		return fblse, err
 	}
-	if bannedEmailDomains.IsEmpty() {
-		return false, nil
+	if bbnnedEmbilDombins.IsEmpty() {
+		return fblse, nil
 	}
 
-	addr, err := mail.ParseAddress(email)
+	bddr, err := mbil.PbrseAddress(embil)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	if len(addr.Address) == 0 {
+	if len(bddr.Address) == 0 {
 		return true, nil
 	}
 
-	parts := strings.Split(addr.Address, "@")
+	pbrts := strings.Split(bddr.Address, "@")
 
-	if len(parts) < 2 {
+	if len(pbrts) < 2 {
 		return true, nil
 	}
 
-	_, banned := bannedEmailDomains[strings.ToLower(parts[len(parts)-1])]
+	_, bbnned := bbnnedEmbilDombins[strings.ToLower(pbrts[len(pbrts)-1])]
 
-	return banned, nil
+	return bbnned, nil
 }
 
-// ValidateRemoteAddr validates if the input is a valid IP or a valid hostname.
-// It validates the hostname by attempting to resolve it.
-func ValidateRemoteAddr(raddr string) bool {
-	host, port, err := net.SplitHostPort(raddr)
+// VblidbteRemoteAddr vblidbtes if the input is b vblid IP or b vblid hostnbme.
+// It vblidbtes the hostnbme by bttempting to resolve it.
+func VblidbteRemoteAddr(rbddr string) bool {
+	host, port, err := net.SplitHostPort(rbddr)
 
 	if err == nil {
-		raddr = host
+		rbddr = host
 		_, err := strconv.Atoi(port)
 
-		// return false if port is not an int
+		// return fblse if port is not bn int
 		if err != nil {
-			return false
+			return fblse
 		}
 	}
 
-	// Check if the string contains a username (e.g. git@example.com); if so validate username
-	fragments := strings.Split(raddr, "@")
-	// raddr contains more than one `@`
-	if len(fragments) > 2 {
-		return false
+	// Check if the string contbins b usernbme (e.g. git@exbmple.com); if so vblidbte usernbme
+	frbgments := strings.Split(rbddr, "@")
+	// rbddr contbins more thbn one `@`
+	if len(frbgments) > 2 {
+		return fblse
 	}
-	// raddr contains exactly one `@`
-	if len(fragments) == 2 {
-		user := fragments[0]
+	// rbddr contbins exbctly one `@`
+	if len(frbgments) == 2 {
+		user := frbgments[0]
 
-		if match := userRegex.MatchString(user); !match {
-			return false
+		if mbtch := userRegex.MbtchString(user); !mbtch {
+			return fblse
 		}
 
-		// Set raddr to host minus the user
-		raddr = fragments[1]
+		// Set rbddr to host minus the user
+		rbddr = frbgments[1]
 	}
 
-	validIP := net.ParseIP(raddr) != nil
-	validHost := true
+	vblidIP := net.PbrseIP(rbddr) != nil
+	vblidHost := true
 
-	_, err = net.LookupHost(raddr)
+	_, err = net.LookupHost(rbddr)
 
 	if err != nil {
-		// we cannot resolve the addr
-		validHost = false
+		// we cbnnot resolve the bddr
+		vblidHost = fblse
 	}
 
-	return validIP || validHost
+	return vblidIP || vblidHost
 }
 
-// maxPasswordRunes is the maximum number of UTF-8 runes that a password can contain.
-// This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
-const maxPasswordRunes = 256
+// mbxPbsswordRunes is the mbximum number of UTF-8 runes thbt b pbssword cbn contbin.
+// This sbfety limit is to protect us from b DDOS bttbck cbused by hbshing very lbrge pbsswords on Sourcegrbph.com.
+const mbxPbsswordRunes = 256
 
-// ValidatePassword: Validates that a password meets the required criteria
-func ValidatePassword(passwd string) error {
+// VblidbtePbssword: Vblidbtes thbt b pbssword meets the required criterib
+func VblidbtePbssword(pbsswd string) error {
 
-	if conf.PasswordPolicyEnabled() {
-		return validatePasswordUsingPolicy(passwd)
+	if conf.PbsswordPolicyEnbbled() {
+		return vblidbtePbsswordUsingPolicy(pbsswd)
 	}
 
-	return validatePasswordUsingDefaultMethod(passwd)
+	return vblidbtePbsswordUsingDefbultMethod(pbsswd)
 }
 
-// This is the default method using our current standard
-func validatePasswordUsingDefaultMethod(passwd string) error {
-	// Check for blank password
-	if passwd == "" {
-		return errcode.NewPresentationError("Your password may not be empty.")
+// This is the defbult method using our current stbndbrd
+func vblidbtePbsswordUsingDefbultMethod(pbsswd string) error {
+	// Check for blbnk pbssword
+	if pbsswd == "" {
+		return errcode.NewPresentbtionError("Your pbssword mby not be empty.")
 	}
 
-	// Check for minimum/maximum length only
-	pwLen := utf8.RuneCountInString(passwd)
-	minPasswordRunes := conf.AuthMinPasswordLength()
+	// Check for minimum/mbximum length only
+	pwLen := utf8.RuneCountInString(pbsswd)
+	minPbsswordRunes := conf.AuthMinPbsswordLength()
 
-	if pwLen < minPasswordRunes ||
-		pwLen > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
+	if pwLen < minPbsswordRunes ||
+		pwLen > mbxPbsswordRunes {
+		return errcode.NewPresentbtionError(fmt.Sprintf("Your pbssword mby not be less thbn %d or be more thbn %d chbrbcters.", minPbsswordRunes, mbxPbsswordRunes))
 	}
 
 	return nil
 }
 
-// This validates the password using the Password Policy configured
-func validatePasswordUsingPolicy(passwd string) error {
-	chars := 0
-	numbers := false
-	upperCase := false
-	special := 0
+// This vblidbtes the pbssword using the Pbssword Policy configured
+func vblidbtePbsswordUsingPolicy(pbsswd string) error {
+	chbrs := 0
+	numbers := fblse
+	upperCbse := fblse
+	specibl := 0
 
-	for _, c := range passwd {
+	for _, c := rbnge pbsswd {
 		switch {
-		case unicode.IsNumber(c):
+		cbse unicode.IsNumber(c):
 			numbers = true
-			chars++
-		case unicode.IsUpper(c):
-			upperCase = true
-			chars++
-		case unicode.IsPunct(c) || unicode.IsSymbol(c):
-			special++
-			chars++
-		case unicode.IsLetter(c) || c == ' ':
-			chars++
-		default:
+			chbrs++
+		cbse unicode.IsUpper(c):
+			upperCbse = true
+			chbrs++
+		cbse unicode.IsPunct(c) || unicode.IsSymbol(c):
+			specibl++
+			chbrs++
+		cbse unicode.IsLetter(c) || c == ' ':
+			chbrs++
+		defbult:
 			//ignore
 		}
 	}
-	// Check for blank password
-	if chars == 0 {
-		return errors.New("password empty")
+	// Check for blbnk pbssword
+	if chbrs == 0 {
+		return errors.New("pbssword empty")
 	}
 
-	// Get a reference to the password policy
-	policy := conf.AuthPasswordPolicy()
+	// Get b reference to the pbssword policy
+	policy := conf.AuthPbsswordPolicy()
 
 	// Minimum Length Check
-	if chars < policy.MinimumLength {
-		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d characters.", policy.MinimumLength))
+	if chbrs < policy.MinimumLength {
+		return errcode.NewPresentbtionError(fmt.Sprintf("Your pbssword mby not be less thbn %d chbrbcters.", policy.MinimumLength))
 	}
 
-	// Maximum Length Check
-	if chars > maxPasswordRunes {
-		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be more than %d characters.", maxPasswordRunes))
+	// Mbximum Length Check
+	if chbrs > mbxPbsswordRunes {
+		return errcode.NewPresentbtionError(fmt.Sprintf("Your pbssword mby not be more thbn %d chbrbcters.", mbxPbsswordRunes))
 	}
 
 	// Numeric Check
-	if policy.RequireAtLeastOneNumber {
+	if policy.RequireAtLebstOneNumber {
 		if !numbers {
-			return errcode.NewPresentationError("Your password must include one number.")
+			return errcode.NewPresentbtionError("Your pbssword must include one number.")
 		}
 	}
 
-	// Mixed case check
-	if policy.RequireUpperandLowerCase {
-		if !upperCase {
-			return errcode.NewPresentationError("Your password must include one uppercase letter.")
+	// Mixed cbse check
+	if policy.RequireUpperbndLowerCbse {
+		if !upperCbse {
+			return errcode.NewPresentbtionError("Your pbssword must include one uppercbse letter.")
 		}
 	}
 
-	// Special Character Check
-	if policy.NumberOfSpecialCharacters > 0 {
-		if special < policy.NumberOfSpecialCharacters {
-			return errcode.NewPresentationError(fmt.Sprintf("Your password must include at least %d special character(s).", policy.NumberOfSpecialCharacters))
+	// Specibl Chbrbcter Check
+	if policy.NumberOfSpeciblChbrbcters > 0 {
+		if specibl < policy.NumberOfSpeciblChbrbcters {
+			return errcode.NewPresentbtionError(fmt.Sprintf("Your pbssword must include bt lebst %d specibl chbrbcter(s).", policy.NumberOfSpeciblChbrbcters))
 		}
 	}
 

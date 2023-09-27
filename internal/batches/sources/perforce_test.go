@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
@@ -6,144 +6,144 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	testPerforceProjectName = "testdepot"
-	testPerforceChangeID    = "111"
-	testPerforceCredentials = gitserver.PerforceCredentials{Username: "user", Password: "pass", Host: "https://perforce.sgdev.org:1666"}
+vbr (
+	testPerforceProjectNbme = "testdepot"
+	testPerforceChbngeID    = "111"
+	testPerforceCredentibls = gitserver.PerforceCredentibls{Usernbme: "user", Pbssword: "pbss", Host: "https://perforce.sgdev.org:1666"}
 )
 
-func TestPerforceSource_ValidateAuthenticator(t *testing.T) {
-	ctx := context.Background()
+func TestPerforceSource_VblidbteAuthenticbtor(t *testing.T) {
+	ctx := context.Bbckground()
 
-	for name, want := range map[string]error{
+	for nbme, wbnt := rbnge mbp[string]error{
 		"nil":   nil,
 		"error": errors.New("error"),
 	} {
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			s, client := mockPerforceSource()
-			client.P4ExecFunc.SetDefaultReturn(fakeCloser{}, http.Header{}, want)
-			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
+			client.P4ExecFunc.SetDefbultReturn(fbkeCloser{}, http.Hebder{}, wbnt)
+			bssert.Equbl(t, wbnt, s.VblidbteAuthenticbtor(ctx))
 		})
 	}
 }
 
-func TestPerforceSource_LoadChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestPerforceSource_LobdChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("error getting changelist", func(t *testing.T) {
-		cs, _ := mockPerforceChangeset()
+	t.Run("error getting chbngelist", func(t *testing.T) {
+		cs, _ := mockPerforceChbngeset()
 		s, client := mockPerforceSource()
-		want := errors.New("error")
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
-			return new(protocol.PerforceChangelist), want
+		wbnt := errors.New("error")
+		client.P4GetChbngelistFunc.SetDefbultHook(func(ctx context.Context, chbngeID string, credentibls gitserver.PerforceCredentibls) (*protocol.PerforceChbngelist, error) {
+			bssert.Equbl(t, chbngeID, testPerforceChbngeID)
+			bssert.Equbl(t, testPerforceCredentibls, credentibls)
+			return new(protocol.PerforceChbngelist), wbnt
 		})
 
-		err := s.LoadChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		err := s.LobdChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockPerforceChangeset()
+		cs, _ := mockPerforceChbngeset()
 		s, client := mockPerforceSource()
 
-		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
-			return change, nil
+		chbnge := mockPerforceChbnge()
+		client.P4GetChbngelistFunc.SetDefbultHook(func(ctx context.Context, chbngeID string, credentibls gitserver.PerforceCredentibls) (*protocol.PerforceChbngelist, error) {
+			bssert.Equbl(t, chbngeID, testPerforceChbngeID)
+			bssert.Equbl(t, testPerforceCredentibls, credentibls)
+			return chbnge, nil
 		})
 
-		err := s.LoadChangeset(ctx, cs)
-		assert.Nil(t, err)
+		err := s.LobdChbngeset(ctx, cs)
+		bssert.Nil(t, err)
 	})
 }
 
-func TestPerforceSource_CreateChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestPerforceSource_CrebteChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("error getting pull request", func(t *testing.T) {
-		cs, _ := mockPerforceChangeset()
+		cs, _ := mockPerforceChbngeset()
 		s, client := mockPerforceSource()
-		want := errors.New("error")
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
-			return new(protocol.PerforceChangelist), want
+		wbnt := errors.New("error")
+		client.P4GetChbngelistFunc.SetDefbultHook(func(ctx context.Context, chbngeID string, credentibls gitserver.PerforceCredentibls) (*protocol.PerforceChbngelist, error) {
+			bssert.Equbl(t, chbngeID, testPerforceChbngeID)
+			bssert.Equbl(t, testPerforceCredentibls, credentibls)
+			return new(protocol.PerforceChbngelist), wbnt
 		})
 
-		b, err := s.CreateChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
-		assert.False(t, b)
+		b, err := s.CrebteChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
+		bssert.Fblse(t, b)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockPerforceChangeset()
+		cs, _ := mockPerforceChbngeset()
 		s, client := mockPerforceSource()
 
-		change := mockPerforceChange()
-		client.P4GetChangelistFunc.SetDefaultHook(func(ctx context.Context, changeID string, credentials gitserver.PerforceCredentials) (*protocol.PerforceChangelist, error) {
-			assert.Equal(t, changeID, testPerforceChangeID)
-			assert.Equal(t, testPerforceCredentials, credentials)
-			return change, nil
+		chbnge := mockPerforceChbnge()
+		client.P4GetChbngelistFunc.SetDefbultHook(func(ctx context.Context, chbngeID string, credentibls gitserver.PerforceCredentibls) (*protocol.PerforceChbngelist, error) {
+			bssert.Equbl(t, chbngeID, testPerforceChbngeID)
+			bssert.Equbl(t, testPerforceCredentibls, credentibls)
+			return chbnge, nil
 		})
 
-		b, err := s.CreateChangeset(ctx, cs)
-		assert.Nil(t, err)
-		assert.False(t, b)
+		b, err := s.CrebteChbngeset(ctx, cs)
+		bssert.Nil(t, err)
+		bssert.Fblse(t, b)
 	})
 }
 
-// mockPerforceChangeset creates a plausible non-forked changeset, repo,
-// and Perforce specific repo.
-func mockPerforceChangeset() (*Changeset, *types.Repo) {
-	repo := &types.Repo{Metadata: &testProject}
-	cs := &Changeset{
+// mockPerforceChbngeset crebtes b plbusible non-forked chbngeset, repo,
+// bnd Perforce specific repo.
+func mockPerforceChbngeset() (*Chbngeset, *types.Repo) {
+	repo := &types.Repo{Metbdbtb: &testProject}
+	cs := &Chbngeset{
 		Title:      "title",
 		Body:       "description",
-		Changeset:  &btypes.Changeset{},
+		Chbngeset:  &btypes.Chbngeset{},
 		RemoteRepo: repo,
-		TargetRepo: repo,
-		BaseRef:    "refs/heads/targetbranch",
+		TbrgetRepo: repo,
+		BbseRef:    "refs/hebds/tbrgetbrbnch",
 	}
 
-	cs.Changeset.ExternalID = testPerforceChangeID
+	cs.Chbngeset.ExternblID = testPerforceChbngeID
 
 	return cs, repo
 }
 
-// mockPerforceChange returns a plausible changelist that would be
+// mockPerforceChbnge returns b plbusible chbngelist thbt would be
 // returned from Perforce.
-func mockPerforceChange() *protocol.PerforceChangelist {
-	return &protocol.PerforceChangelist{
-		ID:     testPerforceChangeID,
+func mockPerforceChbnge() *protocol.PerforceChbngelist {
+	return &protocol.PerforceChbngelist{
+		ID:     testPerforceChbngeID,
 		Author: "Peter Guy",
-		State:  protocol.PerforceChangelistStatePending,
+		Stbte:  protocol.PerforceChbngelistStbtePending,
 	}
 }
 
 func mockPerforceSource() (*PerforceSource, *MockGitserverClient) {
 	client := NewStrictMockGitserverClient()
-	s := &PerforceSource{gitServerClient: client, perforceCreds: &testPerforceCredentials, server: schema.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
+	s := &PerforceSource{gitServerClient: client, perforceCreds: &testPerforceCredentibls, server: schemb.PerforceConnection{P4Port: "https://perforce.sgdev.org:1666"}}
 	return s, client
 }
 
-type fakeCloser struct {
-	io.Reader
+type fbkeCloser struct {
+	io.Rebder
 }
 
-func (fakeCloser) Close() error { return nil }
+func (fbkeCloser) Close() error { return nil }

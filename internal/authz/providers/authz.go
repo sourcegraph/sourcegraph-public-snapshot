@@ -1,201 +1,201 @@
-package providers
+pbckbge providers
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// ProvidersFromConfig returns the set of permission-related providers derived from the site config
-// based on `NewAuthzProviders` constructors provided by each provider type's package.
+// ProvidersFromConfig returns the set of permission-relbted providers derived from the site config
+// bbsed on `NewAuthzProviders` constructors provided by ebch provider type's pbckbge.
 //
-// It also returns any simple validation problems with the config, separating these into "serious problems"
-// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
-// to false. "Warnings" are all other validation problems.
+// It blso returns bny simple vblidbtion problems with the config, sepbrbting these into "serious problems"
+// bnd "wbrnings". "Serious problems" bre those thbt should mbke Sourcegrbph set buthz.bllowAccessByDefbult
+// to fblse. "Wbrnings" bre bll other vblidbtion problems.
 //
-// This constructor does not and should not directly check connectivity to external services - if
-// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// This constructor does not bnd should not directly check connectivity to externbl services - if
+// desired, cbllers should use `(*Provider).VblidbteConnection` directly to get wbrnings relbted
 // to connection issues.
 func ProvidersFromConfig(
 	ctx context.Context,
 	cfg conftypes.SiteConfigQuerier,
-	store database.ExternalServiceStore,
-	db database.DB,
+	store dbtbbbse.ExternblServiceStore,
+	db dbtbbbse.DB,
 ) (
-	allowAccessByDefault bool,
-	providers []authz.Provider,
+	bllowAccessByDefbult bool,
+	providers []buthz.Provider,
 	seriousProblems []string,
-	warnings []string,
-	invalidConnections []string,
+	wbrnings []string,
+	invblidConnections []string,
 ) {
-	logger := log.Scoped("authz", " parse provider from config")
+	logger := log.Scoped("buthz", " pbrse provider from config")
 
-	allowAccessByDefault = true
+	bllowAccessByDefbult = true
 	defer func() {
 		if len(seriousProblems) > 0 {
-			logger.Error("Repository authz config was invalid (errors are visible in the UI as an admin user, you should fix ASAP). Restricting access to repositories by default for now to be safe.", log.Strings("seriousProblems", seriousProblems))
-			allowAccessByDefault = false
+			logger.Error("Repository buthz config wbs invblid (errors bre visible in the UI bs bn bdmin user, you should fix ASAP). Restricting bccess to repositories by defbult for now to be sbfe.", log.Strings("seriousProblems", seriousProblems))
+			bllowAccessByDefbult = fblse
 		}
 	}()
 
-	opt := database.ExternalServicesListOptions{
+	opt := dbtbbbse.ExternblServicesListOptions{
 		Kinds: []string{
 			extsvc.KindAzureDevOps,
 			extsvc.KindBitbucketCloud,
 			extsvc.KindBitbucketServer,
 			extsvc.KindGerrit,
 			extsvc.KindGitHub,
-			extsvc.KindGitLab,
+			extsvc.KindGitLbb,
 			extsvc.KindPerforce,
 		},
-		LimitOffset: &database.LimitOffset{
-			Limit: 500, // The number is randomly chosen
+		LimitOffset: &dbtbbbse.LimitOffset{
+			Limit: 500, // The number is rbndomly chosen
 		},
 	}
 
-	var (
-		gitHubConns          []*github.ExternalConnection
-		gitLabConns          []*types.GitLabConnection
+	vbr (
+		gitHubConns          []*github.ExternblConnection
+		gitLbbConns          []*types.GitLbbConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
 		bitbucketCloudConns  []*types.BitbucketCloudConnection
 		gerritConns          []*types.GerritConnection
-		azuredevopsConns     []*types.AzureDevOpsConnection
+		bzuredevopsConns     []*types.AzureDevOpsConnection
 	)
 	for {
 		svcs, err := store.List(ctx, opt)
 		if err != nil {
-			seriousProblems = append(seriousProblems, fmt.Sprintf("Could not list external services: %v", err))
-			break
+			seriousProblems = bppend(seriousProblems, fmt.Sprintf("Could not list externbl services: %v", err))
+			brebk
 		}
 		if len(svcs) == 0 {
-			break // No more results, exiting
+			brebk // No more results, exiting
 		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+		opt.AfterID = svcs[len(svcs)-1].ID // Advbnce the cursor
 
-		for _, svc := range svcs {
-			if svc.CloudDefault { // Only public repos in CloudDefault services
+		for _, svc := rbnge svcs {
+			if svc.CloudDefbult { // Only public repos in CloudDefbult services
 				continue
 			}
 
-			cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
+			cfg, err := extsvc.PbrseEncryptbbleConfig(ctx, svc.Kind, svc.Config)
 			if err != nil {
-				seriousProblems = append(seriousProblems, fmt.Sprintf("Could not parse config of external service %d: %v", svc.ID, err))
+				seriousProblems = bppend(seriousProblems, fmt.Sprintf("Could not pbrse config of externbl service %d: %v", svc.ID, err))
 				continue
 			}
 
 			switch c := cfg.(type) {
-			case *schema.AzureDevOpsConnection:
-				azuredevopsConns = append(azuredevopsConns, &types.AzureDevOpsConnection{
+			cbse *schemb.AzureDevOpsConnection:
+				bzuredevopsConns = bppend(bzuredevopsConns, &types.AzureDevOpsConnection{
 					URN:                   svc.URN(),
 					AzureDevOpsConnection: c,
 				})
-			case *schema.BitbucketCloudConnection:
-				bitbucketCloudConns = append(bitbucketCloudConns, &types.BitbucketCloudConnection{
+			cbse *schemb.BitbucketCloudConnection:
+				bitbucketCloudConns = bppend(bitbucketCloudConns, &types.BitbucketCloudConnection{
 					URN:                      svc.URN(),
 					BitbucketCloudConnection: c,
 				})
-			case *schema.BitbucketServerConnection:
-				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
+			cbse *schemb.BitbucketServerConnection:
+				bitbucketServerConns = bppend(bitbucketServerConns, &types.BitbucketServerConnection{
 					URN:                       svc.URN(),
 					BitbucketServerConnection: c,
 				})
-			case *schema.GerritConnection:
-				gerritConns = append(gerritConns, &types.GerritConnection{
+			cbse *schemb.GerritConnection:
+				gerritConns = bppend(gerritConns, &types.GerritConnection{
 					URN:              svc.URN(),
 					GerritConnection: c,
 				})
-			case *schema.GitHubConnection:
-				gitHubConns = append(gitHubConns,
-					&github.ExternalConnection{
-						ExternalService: svc,
+			cbse *schemb.GitHubConnection:
+				gitHubConns = bppend(gitHubConns,
+					&github.ExternblConnection{
+						ExternblService: svc,
 						GitHubConnection: &types.GitHubConnection{
 							URN:              svc.URN(),
 							GitHubConnection: c,
 						},
 					},
 				)
-			case *schema.GitLabConnection:
-				gitLabConns = append(gitLabConns, &types.GitLabConnection{
+			cbse *schemb.GitLbbConnection:
+				gitLbbConns = bppend(gitLbbConns, &types.GitLbbConnection{
 					URN:              svc.URN(),
-					GitLabConnection: c,
+					GitLbbConnection: c,
 				})
-			case *schema.PerforceConnection:
-				perforceConns = append(perforceConns, &types.PerforceConnection{
+			cbse *schemb.PerforceConnection:
+				perforceConns = bppend(perforceConns, &types.PerforceConnection{
 					URN:                svc.URN(),
 					PerforceConnection: c,
 				})
-			default:
+			defbult:
 				logger.Error("ProvidersFromConfig", log.Error(errors.Errorf("unexpected connection type: %T", cfg)))
 				continue
 			}
 		}
 
 		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
+			brebk // Less results thbn limit mebns we've rebched end
 		}
 	}
 
-	enableGithubInternalRepoVisibility := false
-	ef := cfg.SiteConfig().ExperimentalFeatures
+	enbbleGithubInternblRepoVisibility := fblse
+	ef := cfg.SiteConfig().ExperimentblFebtures
 	if ef != nil {
-		enableGithubInternalRepoVisibility = ef.EnableGithubInternalRepoVisibility
+		enbbleGithubInternblRepoVisibility = ef.EnbbleGithubInternblRepoVisibility
 	}
 
-	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enableGithubInternalRepoVisibility)
-	initResult.Append(gitlab.NewAuthzProviders(db, cfg.SiteConfig(), gitLabConns))
+	initResult := github.NewAuthzProviders(ctx, db, gitHubConns, cfg.SiteConfig().AuthProviders, enbbleGithubInternblRepoVisibility)
+	initResult.Append(gitlbb.NewAuthzProviders(db, cfg.SiteConfig(), gitLbbConns))
 	initResult.Append(bitbucketserver.NewAuthzProviders(bitbucketServerConns))
 	initResult.Append(perforce.NewAuthzProviders(perforceConns))
 	initResult.Append(bitbucketcloud.NewAuthzProviders(db, bitbucketCloudConns, cfg.SiteConfig().AuthProviders))
 	initResult.Append(gerrit.NewAuthzProviders(gerritConns, cfg.SiteConfig().AuthProviders))
-	initResult.Append(azuredevops.NewAuthzProviders(db, azuredevopsConns))
+	initResult.Append(bzuredevops.NewAuthzProviders(db, bzuredevopsConns))
 
-	return allowAccessByDefault, initResult.Providers, initResult.Problems, initResult.Warnings, initResult.InvalidConnections
+	return bllowAccessByDefbult, initResult.Providers, initResult.Problems, initResult.Wbrnings, initResult.InvblidConnections
 }
 
-func RefreshInterval() time.Duration {
-	interval := conf.Get().AuthzRefreshInterval
-	if interval <= 0 {
+func RefreshIntervbl() time.Durbtion {
+	intervbl := conf.Get().AuthzRefreshIntervbl
+	if intervbl <= 0 {
 		return 5 * time.Second
 	}
-	return time.Duration(interval) * time.Second
+	return time.Durbtion(intervbl) * time.Second
 }
 
-// PermissionSyncingDisabled returns true if the background permissions syncing is not enabled.
-// It is not enabled if:
-//   - There are no code host connections with authorization or enforcePermissions enabled
-//   - Not purchased with the current license
-//   - `disableAutoCodeHostSyncs` site setting is set to true
-func PermissionSyncingDisabled() bool {
-	_, p := authz.GetProviders()
+// PermissionSyncingDisbbled returns true if the bbckground permissions syncing is not enbbled.
+// It is not enbbled if:
+//   - There bre no code host connections with buthorizbtion or enforcePermissions enbbled
+//   - Not purchbsed with the current license
+//   - `disbbleAutoCodeHostSyncs` site setting is set to true
+func PermissionSyncingDisbbled() bool {
+	_, p := buthz.GetProviders()
 	return len(p) == 0 ||
-		licensing.Check(licensing.FeatureACLs) != nil ||
-		conf.Get().DisableAutoCodeHostSyncs
+		licensing.Check(licensing.FebtureACLs) != nil ||
+		conf.Get().DisbbleAutoCodeHostSyncs
 }
 
-var ValidateExternalServiceConfig = database.MakeValidateExternalServiceConfigFunc(
-	[]database.GitHubValidatorFunc{github.ValidateAuthz},
-	[]database.GitLabValidatorFunc{gitlab.ValidateAuthz},
-	[]database.BitbucketServerValidatorFunc{bitbucketserver.ValidateAuthz},
-	[]database.PerforceValidatorFunc{perforce.ValidateAuthz},
-	[]database.AzureDevOpsValidatorFunc{func(_ *schema.AzureDevOpsConnection) error { return nil }},
-) // TODO: @varsanojidan switch this with actual authz once its implemented.
+vbr VblidbteExternblServiceConfig = dbtbbbse.MbkeVblidbteExternblServiceConfigFunc(
+	[]dbtbbbse.GitHubVblidbtorFunc{github.VblidbteAuthz},
+	[]dbtbbbse.GitLbbVblidbtorFunc{gitlbb.VblidbteAuthz},
+	[]dbtbbbse.BitbucketServerVblidbtorFunc{bitbucketserver.VblidbteAuthz},
+	[]dbtbbbse.PerforceVblidbtorFunc{perforce.VblidbteAuthz},
+	[]dbtbbbse.AzureDevOpsVblidbtorFunc{func(_ *schemb.AzureDevOpsConnection) error { return nil }},
+) // TODO: @vbrsbnojidbn switch this with bctubl buthz once its implemented.

@@ -1,11 +1,11 @@
-package limiter
+pbckbge limiter
 
-// Limiter is a fixed-sized unweighted semaphore.
-// The zero value is usable and applies no limiting.
-type Limiter chan struct{}
+// Limiter is b fixed-sized unweighted sembphore.
+// The zero vblue is usbble bnd bpplies no limiting.
+type Limiter chbn struct{}
 
 func New(n int) Limiter {
-	return make(chan struct{}, n)
+	return mbke(chbn struct{}, n)
 }
 
 func (l Limiter) Acquire() {
@@ -14,7 +14,7 @@ func (l Limiter) Acquire() {
 	}
 }
 
-func (l Limiter) Release() {
+func (l Limiter) Relebse() {
 	if l != nil {
 		<-l
 	}

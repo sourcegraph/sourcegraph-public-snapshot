@@ -1,34 +1,34 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewBackgroundJobs(observationCtx *observation.Context, db database.DB) []goroutine.BackgroundRoutine {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("BackgroundJobs", "code monitors background jobs"), observationCtx)
+func NewBbckgroundJobs(observbtionCtx *observbtion.Context, db dbtbbbse.DB) []goroutine.BbckgroundRoutine {
+	observbtionCtx = observbtion.ContextWithLogger(observbtionCtx.Logger.Scoped("BbckgroundJobs", "code monitors bbckground jobs"), observbtionCtx)
 
 	codeMonitorsStore := db.CodeMonitors()
 
-	triggerMetrics := newMetricsForTriggerQueries(observationCtx)
-	actionMetrics := newActionMetrics(observationCtx)
+	triggerMetrics := newMetricsForTriggerQueries(observbtionCtx)
+	bctionMetrics := newActionMetrics(observbtionCtx)
 
-	// Create a new context. Each background routine will wrap this with
-	// a cancellable context that is canceled when Stop() is called.
-	ctx := context.Background()
-	return []goroutine.BackgroundRoutine{
+	// Crebte b new context. Ebch bbckground routine will wrbp this with
+	// b cbncellbble context thbt is cbnceled when Stop() is cblled.
+	ctx := context.Bbckground()
+	return []goroutine.BbckgroundRoutine{
 		newTriggerQueryEnqueuer(ctx, codeMonitorsStore),
 		newTriggerJobsLogDeleter(ctx, codeMonitorsStore),
-		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observationCtx), db, triggerMetrics),
-		newTriggerQueryResetter(ctx, scopedContext("TriggerQueryResetter", observationCtx), codeMonitorsStore, triggerMetrics),
-		newActionRunner(ctx, scopedContext("ActionRunner", observationCtx), codeMonitorsStore, actionMetrics),
-		newActionJobResetter(ctx, scopedContext("ActionJobResetter", observationCtx), codeMonitorsStore, actionMetrics),
+		newTriggerQueryRunner(ctx, scopedContext("TriggerQueryRunner", observbtionCtx), db, triggerMetrics),
+		newTriggerQueryResetter(ctx, scopedContext("TriggerQueryResetter", observbtionCtx), codeMonitorsStore, triggerMetrics),
+		newActionRunner(ctx, scopedContext("ActionRunner", observbtionCtx), codeMonitorsStore, bctionMetrics),
+		newActionJobResetter(ctx, scopedContext("ActionJobResetter", observbtionCtx), codeMonitorsStore, bctionMetrics),
 	}
 }
 
-func scopedContext(operation string, parent *observation.Context) *observation.Context {
-	return observation.ContextWithLogger(parent.Logger.Scoped(operation, ""), parent)
+func scopedContext(operbtion string, pbrent *observbtion.Context) *observbtion.Context {
+	return observbtion.ContextWithLogger(pbrent.Logger.Scoped(operbtion, ""), pbrent)
 }

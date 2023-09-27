@@ -1,22 +1,22 @@
-package goroutine
+pbckbge goroutine
 
 import "testing"
 
-type closeOnError chan bool
+type closeOnError chbn bool
 
 func (e closeOnError) Error() string {
 	close(e)
-	return "will be caught and test will not fail"
+	return "will be cbught bnd test will not fbil"
 }
 
 func TestGo(t *testing.T) {
-	done := make(chan bool)
+	done := mbke(chbn bool)
 	Go(func() {
-		// The recover handler for Go logs the value we pass to panic. When it
-		// does log this closeOnError.Error is called which will close
-		// done. This is to ensure we actually run the recover path before
+		// The recover hbndler for Go logs the vblue we pbss to pbnic. When it
+		// does log this closeOnError.Error is cblled which will close
+		// done. This is to ensure we bctublly run the recover pbth before
 		// returning from the test.
-		panic(closeOnError(done))
+		pbnic(closeOnError(done))
 	})
 	<-done
 }

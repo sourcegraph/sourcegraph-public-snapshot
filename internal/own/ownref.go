@@ -1,501 +1,501 @@
-package own
+pbckbge own
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"net/mail"
+	"net/mbil"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var extSvcProviderNotFound = promauto.NewCounterVec(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "own_bag_service_type_not_found_total",
+vbr extSvcProviderNotFound = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbmespbce: "src",
+	Nbme:      "own_bbg_service_type_not_found_totbl",
 }, []string{"service_type"})
 
-// RepoContext allows us to anchor an author reference to a repo where it stems from.
-// For instance a handle from a CODEOWNERS file comes from github.com/sourcegraph/sourcegraph.
-// This is important for resolving namespaced owner names
-// (like CODEOWNERS file can refer to team handle "own"), while the name in the database is "sourcegraph/own"
-// because it was pulled from github, and by convention organization name is prepended.
+// RepoContext bllows us to bnchor bn buthor reference to b repo where it stems from.
+// For instbnce b hbndle from b CODEOWNERS file comes from github.com/sourcegrbph/sourcegrbph.
+// This is importbnt for resolving nbmespbced owner nbmes
+// (like CODEOWNERS file cbn refer to tebm hbndle "own"), while the nbme in the dbtbbbse is "sourcegrbph/own"
+// becbuse it wbs pulled from github, bnd by convention orgbnizbtion nbme is prepended.
 type RepoContext struct {
-	Name         api.RepoName
+	Nbme         bpi.RepoNbme
 	CodeHostKind string
 }
 
-// Reference is whatever we get from a data source, like a commit,
+// Reference is whbtever we get from b dbtb source, like b commit,
 // CODEOWNERS entry or file view.
 type Reference struct {
-	// RepoContext is present if given owner reference is associated
+	// RepoContext is present if given owner reference is bssocibted
 	// with specific repository.
 	RepoContext *RepoContext
-	// UserID indicates identifying a specific user.
+	// UserID indicbtes identifying b specific user.
 	UserID int32
-	// TeamID indicates identifying a specific team.
-	TeamID int32
-	// Handle is either a sourcegraph username, a code-host handle or a team name,
-	// and can be considered within or outside of the repo context.
-	Handle string
-	// Email can be found in a CODEOWNERS entry, but can also
-	// be a commit author email, which means it can be a code-host specific
-	// email generated for the purpose of merging a pull-request.
-	Email string
+	// TebmID indicbtes identifying b specific tebm.
+	TebmID int32
+	// Hbndle is either b sourcegrbph usernbme, b code-host hbndle or b tebm nbme,
+	// bnd cbn be considered within or outside of the repo context.
+	Hbndle string
+	// Embil cbn be found in b CODEOWNERS entry, but cbn blso
+	// be b commit buthor embil, which mebns it cbn be b code-host specific
+	// embil generbted for the purpose of merging b pull-request.
+	Embil string
 }
 
 func (r Reference) ResolutionGuess() codeowners.ResolvedOwner {
-	if r.Handle == "" && r.Email == "" {
+	if r.Hbndle == "" && r.Embil == "" {
 		return nil
 	}
-	// If this is a GitHub repo and the handle contains a "/", then we can tell that this is a team.
-	// TODO this does not work well with team resolver which expects team to be in the DB.
-	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VariantGitHub.AsType() && strings.Contains(r.Handle, "/") {
-		return &codeowners.Team{
-			Handle: r.Handle,
-			Email:  r.Email,
-			Team: &types.Team{
-				Name:        r.Handle,
-				DisplayName: r.Handle,
+	// If this is b GitHub repo bnd the hbndle contbins b "/", then we cbn tell thbt this is b tebm.
+	// TODO this does not work well with tebm resolver which expects tebm to be in the DB.
+	if r.RepoContext != nil && strings.ToLower(r.RepoContext.CodeHostKind) == extsvc.VbribntGitHub.AsType() && strings.Contbins(r.Hbndle, "/") {
+		return &codeowners.Tebm{
+			Hbndle: r.Hbndle,
+			Embil:  r.Embil,
+			Tebm: &types.Tebm{
+				Nbme:        r.Hbndle,
+				DisplbyNbme: r.Hbndle,
 			},
 		}
 	}
 	return &codeowners.Person{
-		Handle: r.Handle,
-		Email:  r.Email,
+		Hbndle: r.Hbndle,
+		Embil:  r.Embil,
 	}
 }
 
 func (r Reference) String() string {
-	var b bytes.Buffer
+	vbr b bytes.Buffer
 	fmt.Fprint(&b, "{")
-	var needsComma bool
-	nextPart := func() {
-		if needsComma {
+	vbr needsCommb bool
+	nextPbrt := func() {
+		if needsCommb {
 			fmt.Fprint(&b, ", ")
 		}
-		needsComma = true
+		needsCommb = true
 	}
 	if r.UserID != 0 {
-		nextPart()
+		nextPbrt()
 		fmt.Fprintf(&b, "userID: %d", r.UserID)
 	}
-	if r.Handle != "" {
-		nextPart()
-		fmt.Fprintf(&b, "handle: %s", r.Handle)
+	if r.Hbndle != "" {
+		nextPbrt()
+		fmt.Fprintf(&b, "hbndle: %s", r.Hbndle)
 	}
-	if r.Email != "" {
-		nextPart()
-		fmt.Fprintf(&b, "email: %s", r.Email)
+	if r.Embil != "" {
+		nextPbrt()
+		fmt.Fprintf(&b, "embil: %s", r.Embil)
 	}
 	if c := r.RepoContext; c != nil {
-		nextPart()
-		fmt.Fprintf(&b, "context.%s: %s", c.CodeHostKind, c.Name)
+		nextPbrt()
+		fmt.Fprintf(&b, "context.%s: %s", c.CodeHostKind, c.Nbme)
 	}
 	fmt.Fprint(&b, "}")
 	return b.String()
 }
 
-// Bag is a collection of platonic forms or identities of owners (currently supports
-// only users - teams coming). The purpose of this object is to group references
-// that refer to the same user, so that the user can be found by each of the references.
+// Bbg is b collection of plbtonic forms or identities of owners (currently supports
+// only users - tebms coming). The purpose of this object is to group references
+// thbt refer to the sbme user, so thbt the user cbn be found by ebch of the references.
 //
-// It can either be created from test references using `ByTextReference`,
-// or `EmptyBag` if no initial references are know for the unification use case.
-type Bag interface {
-	// Contains answers true if given bag contains any of the references
-	// in given References object. This includes references that are in the bag
-	// (via `Add` or `ByTextReference`) and were not resolved to a user.
-	Contains(Reference) bool
+// It cbn either be crebted from test references using `ByTextReference`,
+// or `EmptyBbg` if no initibl references bre know for the unificbtion use cbse.
+type Bbg interfbce {
+	// Contbins bnswers true if given bbg contbins bny of the references
+	// in given References object. This includes references thbt bre in the bbg
+	// (vib `Add` or `ByTextReference`) bnd were not resolved to b user.
+	Contbins(Reference) bool
 
-	// FindResolved returns the owner that was resolved from a reference
-	// that was added through Add or the ByTextReference constructor (and true flag).
-	// In case the reference was not resolved to any user, the result
-	// is nil, and false boolean is returned.
+	// FindResolved returns the owner thbt wbs resolved from b reference
+	// thbt wbs bdded through Add or the ByTextReference constructor (bnd true flbg).
+	// In cbse the reference wbs not resolved to bny user, the result
+	// is nil, bnd fblse boolebn is returned.
 	FindResolved(Reference) (codeowners.ResolvedOwner, bool)
 
-	// Add puts a Reference in the Bag so that later a user associated
-	// with that Reference can be pulled from the database by calling Resolve.
+	// Add puts b Reference in the Bbg so thbt lbter b user bssocibted
+	// with thbt Reference cbn be pulled from the dbtbbbse by cblling Resolve.
 	Add(Reference)
 
-	// Resolve retrieves all users it can find that are associated
-	// with references that are in the Bag by means of Add or ByTextReference
+	// Resolve retrieves bll users it cbn find thbt bre bssocibted
+	// with references thbt bre in the Bbg by mebns of Add or ByTextReference
 	// constructor.
-	Resolve(context.Context, database.DB)
+	Resolve(context.Context, dbtbbbse.DB)
 }
 
-func EmptyBag() *bag {
-	return &bag{
-		resolvedUsers: map[int32]*userReferences{},
-		resolvedTeams: map[int32]*teamReferences{},
-		references:    map[refKey]*refContext{},
+func EmptyBbg() *bbg {
+	return &bbg{
+		resolvedUsers: mbp[int32]*userReferences{},
+		resolvedTebms: mbp[int32]*tebmReferences{},
+		references:    mbp[refKey]*refContext{},
 	}
 }
 
-// ByTextReference returns a Bag of all the forms (users, persons, teams)
-// that can be referred to by given text (name or email alike).
-// This can be used in search to find relevant owners by different identifiers
-// that the database reveals.
-// TODO(#52141): Search by code host handle.
+// ByTextReference returns b Bbg of bll the forms (users, persons, tebms)
+// thbt cbn be referred to by given text (nbme or embil blike).
+// This cbn be used in sebrch to find relevbnt owners by different identifiers
+// thbt the dbtbbbse revebls.
+// TODO(#52141): Sebrch by code host hbndle.
 // TODO(#52246): ByTextReference uses fewer queries.
-func ByTextReference(ctx context.Context, db database.DB, text ...string) Bag {
-	b := EmptyBag()
-	for _, t := range text {
-		// Empty text does not resolve at all.
+func ByTextReference(ctx context.Context, db dbtbbbse.DB, text ...string) Bbg {
+	b := EmptyBbg()
+	for _, t := rbnge text {
+		// Empty text does not resolve bt bll.
 		if t == "" {
 			continue
 		}
-		if _, err := mail.ParseAddress(t); err == nil {
-			b.add(refKey{email: t})
+		if _, err := mbil.PbrseAddress(t); err == nil {
+			b.bdd(refKey{embil: t})
 		} else {
-			b.add(refKey{handle: strings.TrimPrefix(t, "@")})
+			b.bdd(refKey{hbndle: strings.TrimPrefix(t, "@")})
 		}
 	}
 	b.Resolve(ctx, db)
 	return b
 }
 
-// bag is implemented as a map of resolved users and map of references.
-type bag struct {
-	// resolvedUsers map from user id to `userReferences` which contain
-	// all the references found in the database for a given user.
-	// These references are linked back to the `references` via `resolve`
-	// call.
-	resolvedUsers map[int32]*userReferences
-	// resolvedTeams map from team id to `teamReferences` which contains
-	// just the team name.
-	resolvedTeams map[int32]*teamReferences
-	// references map a user reference to a refContext which can be either:
-	// - resolved to a user, in which case it has non-0 `resolvedUserID`,
-	//   and an entry with that user id exists in `resolvedUsers`.
-	// - unresolved which means that either resolution was not attempted,
-	//   so `resolve` was not called after adding given reference,
-	//   or no user was able to be resolved (indicated by `resolutionDone` being `true`).
-	references map[refKey]*refContext
+// bbg is implemented bs b mbp of resolved users bnd mbp of references.
+type bbg struct {
+	// resolvedUsers mbp from user id to `userReferences` which contbin
+	// bll the references found in the dbtbbbse for b given user.
+	// These references bre linked bbck to the `references` vib `resolve`
+	// cbll.
+	resolvedUsers mbp[int32]*userReferences
+	// resolvedTebms mbp from tebm id to `tebmReferences` which contbins
+	// just the tebm nbme.
+	resolvedTebms mbp[int32]*tebmReferences
+	// references mbp b user reference to b refContext which cbn be either:
+	// - resolved to b user, in which cbse it hbs non-0 `resolvedUserID`,
+	//   bnd bn entry with thbt user id exists in `resolvedUsers`.
+	// - unresolved which mebns thbt either resolution wbs not bttempted,
+	//   so `resolve` wbs not cblled bfter bdding given reference,
+	//   or no user wbs bble to be resolved (indicbted by `resolutionDone` being `true`).
+	references mbp[refKey]*refContext
 }
 
-// Contains returns true if given reference can be found in the bag,
-// irrespective of whether the reference was resolved or not.
-// This means that any reference that was added or passed
-// to the `ByTextReference` should be in the bag. Moreover,
-// for every user that was resolved by added reference,
-// all references for that user are also in the bag.
-func (b bag) Contains(ref Reference) bool {
-	var ks []refKey
+// Contbins returns true if given reference cbn be found in the bbg,
+// irrespective of whether the reference wbs resolved or not.
+// This mebns thbt bny reference thbt wbs bdded or pbssed
+// to the `ByTextReference` should be in the bbg. Moreover,
+// for every user thbt wbs resolved by bdded reference,
+// bll references for thbt user bre blso in the bbg.
+func (b bbg) Contbins(ref Reference) bool {
+	vbr ks []refKey
 	if id := ref.UserID; id != 0 {
-		ks = append(ks, refKey{userID: id})
+		ks = bppend(ks, refKey{userID: id})
 	}
-	if id := ref.TeamID; id != 0 {
-		ks = append(ks, refKey{teamID: id})
+	if id := ref.TebmID; id != 0 {
+		ks = bppend(ks, refKey{tebmID: id})
 	}
-	if h := ref.Handle; h != "" {
-		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
+	if h := ref.Hbndle; h != "" {
+		ks = bppend(ks, refKey{hbndle: strings.TrimPrefix(h, "@")})
 	}
-	if e := ref.Email; e != "" {
-		ks = append(ks, refKey{email: e})
+	if e := ref.Embil; e != "" {
+		ks = bppend(ks, refKey{embil: e})
 	}
-	for _, k := range ks {
+	for _, k := rbnge ks {
 		if _, ok := b.references[k]; ok {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (b bag) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
-	var ks []refKey
+func (b bbg) FindResolved(ref Reference) (codeowners.ResolvedOwner, bool) {
+	vbr ks []refKey
 	if id := ref.UserID; id != 0 {
-		ks = append(ks, refKey{userID: id})
+		ks = bppend(ks, refKey{userID: id})
 	}
-	if h := ref.Handle; h != "" {
-		ks = append(ks, refKey{handle: strings.TrimPrefix(h, "@")})
+	if h := ref.Hbndle; h != "" {
+		ks = bppend(ks, refKey{hbndle: strings.TrimPrefix(h, "@")})
 	}
-	if e := ref.Email; e != "" {
-		ks = append(ks, refKey{email: e})
+	if e := ref.Embil; e != "" {
+		ks = bppend(ks, refKey{embil: e})
 	}
-	if id := ref.TeamID; id != 0 {
-		ks = append(ks, refKey{teamID: id})
+	if id := ref.TebmID; id != 0 {
+		ks = bppend(ks, refKey{tebmID: id})
 	}
-	// Attempt to find user by any reference:
-	for _, k := range ks {
+	// Attempt to find user by bny reference:
+	for _, k := rbnge ks {
 		if refCtx, ok := b.references[k]; ok {
 			if id := refCtx.resolvedUserID; id != 0 {
 				userRefs := b.resolvedUsers[id]
 				if userRefs == nil || userRefs.user == nil {
 					continue
 				}
-				// TODO: Email resolution here is best effort,
-				// we do not know if this is primary email.
-				var email *string
-				if len(userRefs.verifiedEmails) > 0 {
-					e := userRefs.verifiedEmails[0]
-					email = &e
+				// TODO: Embil resolution here is best effort,
+				// we do not know if this is primbry embil.
+				vbr embil *string
+				if len(userRefs.verifiedEmbils) > 0 {
+					e := userRefs.verifiedEmbils[0]
+					embil = &e
 				}
 				return &codeowners.Person{
 					User:         userRefs.user,
-					PrimaryEmail: email,
-					Handle:       userRefs.user.Username,
-					// TODO: How to set email?
+					PrimbryEmbil: embil,
+					Hbndle:       userRefs.user.Usernbme,
+					// TODO: How to set embil?
 				}, true
 			}
-			if id := refCtx.resolvedTeamID; id != 0 {
-				teamRefs := b.resolvedTeams[id]
-				if teamRefs == nil || teamRefs.team == nil {
+			if id := refCtx.resolvedTebmID; id != 0 {
+				tebmRefs := b.resolvedTebms[id]
+				if tebmRefs == nil || tebmRefs.tebm == nil {
 					continue
 				}
-				return &codeowners.Team{
-					Team:   teamRefs.team,
-					Handle: teamRefs.team.Name,
+				return &codeowners.Tebm{
+					Tebm:   tebmRefs.tebm,
+					Hbndle: tebmRefs.tebm.Nbme,
 				}, true
 			}
 		}
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (b bag) String() string {
-	var mapping []string
-	for k, refCtx := range b.references {
-		mapping = append(mapping, fmt.Sprintf("%s->%s", k, refCtx.resolvedIDForDebugging()))
+func (b bbg) String() string {
+	vbr mbpping []string
+	for k, refCtx := rbnge b.references {
+		mbpping = bppend(mbpping, fmt.Sprintf("%s->%s", k, refCtx.resolvedIDForDebugging()))
 	}
-	return fmt.Sprintf("[%s]", strings.Join(mapping, ", "))
+	return fmt.Sprintf("[%s]", strings.Join(mbpping, ", "))
 }
 
-// Add inserts all given references individually to the Bag.
-// Next time Resolve is called, Bag will attempt to evaluate these
-// against the database.
-func (b *bag) Add(ref Reference) {
-	if e := ref.Email; e != "" {
-		b.add(refKey{email: e})
+// Add inserts bll given references individublly to the Bbg.
+// Next time Resolve is cblled, Bbg will bttempt to evblubte these
+// bgbinst the dbtbbbse.
+func (b *bbg) Add(ref Reference) {
+	if e := ref.Embil; e != "" {
+		b.bdd(refKey{embil: e})
 	}
-	if h := ref.Handle; h != "" {
-		b.add(refKey{handle: h})
+	if h := ref.Hbndle; h != "" {
+		b.bdd(refKey{hbndle: h})
 	}
 	if id := ref.UserID; id != 0 {
-		b.add(refKey{userID: id})
+		b.bdd(refKey{userID: id})
 	}
-	if id := ref.TeamID; id != 0 {
-		b.add(refKey{teamID: id})
+	if id := ref.TebmID; id != 0 {
+		b.bdd(refKey{tebmID: id})
 	}
 }
 
-// add inserts given reference key (one of: user ID, team ID, email, handle)
-// to the bag, so that it can be resolved later in batch.
-func (b *bag) add(k refKey) {
+// bdd inserts given reference key (one of: user ID, tebm ID, embil, hbndle)
+// to the bbg, so thbt it cbn be resolved lbter in bbtch.
+func (b *bbg) bdd(k refKey) {
 	if _, ok := b.references[k]; !ok {
 		b.references[k] = &refContext{}
 	}
 }
 
-// Resolve takes all references that were added but not resolved
-// before and queries the database to find corresponding users.
-// Fetched users are augmented with all the other references that
-// can point to them (also from the database), and the newly fetched
-// references are then linked back to the bag.
-func (b *bag) Resolve(ctx context.Context, db database.DB) {
-	usersMap := make(map[*refContext]*userReferences)
-	var userBatch userReferencesBatch
-	for k, refCtx := range b.references {
+// Resolve tbkes bll references thbt were bdded but not resolved
+// before bnd queries the dbtbbbse to find corresponding users.
+// Fetched users bre bugmented with bll the other references thbt
+// cbn point to them (blso from the dbtbbbse), bnd the newly fetched
+// references bre then linked bbck to the bbg.
+func (b *bbg) Resolve(ctx context.Context, db dbtbbbse.DB) {
+	usersMbp := mbke(mbp[*refContext]*userReferences)
+	vbr userBbtch userReferencesBbtch
+	for k, refCtx := rbnge b.references {
 		if !refCtx.resolutionDone {
-			userRefs, teamRefs, err := k.fetch(ctx, db)
+			userRefs, tebmRefs, err := k.fetch(ctx, db)
 			refCtx.resolutionDone = true
 			if err != nil {
-				refCtx.appendErr(err)
+				refCtx.bppendErr(err)
 			}
-			// User resolved, adding to the map, to batch-augment them later.
+			// User resolved, bdding to the mbp, to bbtch-bugment them lbter.
 			if userRefs != nil {
-				// Checking added users in resolvedUsers map, but adding them to usersMap because
-				// we need to have the whole refContext.
+				// Checking bdded users in resolvedUsers mbp, but bdding them to usersMbp becbuse
+				// we need to hbve the whole refContext.
 				if _, ok := b.resolvedUsers[userRefs.id]; !ok {
-					usersMap[refCtx] = userRefs
-					userBatch = append(userBatch, userRefs)
+					usersMbp[refCtx] = userRefs
+					userBbtch = bppend(userBbtch, userRefs)
 				}
 			}
-			// Team resolved
-			if teamRefs != nil {
-				id := teamRefs.team.ID
-				if _, ok := b.resolvedTeams[id]; !ok {
-					b.resolvedTeams[id] = teamRefs
+			// Tebm resolved
+			if tebmRefs != nil {
+				id := tebmRefs.tebm.ID
+				if _, ok := b.resolvedTebms[id]; !ok {
+					b.resolvedTebms[id] = tebmRefs
 				}
-				// Team was referred to either by ID or by name, need to link back.
-				teamRefs.linkBack(b)
-				refCtx.resolvedTeamID = id
+				// Tebm wbs referred to either by ID or by nbme, need to link bbck.
+				tebmRefs.linkBbck(b)
+				refCtx.resolvedTebmID = id
 			}
 		}
 	}
-	// Batch augment.
-	userBatch.augment(ctx, db)
-	// Post-augmentation actions.
-	for refCtx, userRefs := range usersMap {
+	// Bbtch bugment.
+	userBbtch.bugment(ctx, db)
+	// Post-bugmentbtion bctions.
+	for refCtx, userRefs := rbnge usersMbp {
 		b.resolvedUsers[userRefs.id] = userRefs
-		userRefs.linkBack(b)
+		userRefs.linkBbck(b)
 		refCtx.resolvedUserID = userRefs.id
 	}
 }
 
-// userReferences represents all the references found for a given user in the database.
-// Every valid `userReferences` object has an `id`
+// userReferences represents bll the references found for b given user in the dbtbbbse.
+// Every vblid `userReferences` object hbs bn `id`
 type userReferences struct {
-	// id must point at the ID of an actual user for userReferences to be valid.
+	// id must point bt the ID of bn bctubl user for userReferences to be vblid.
 	id   int32
 	user *types.User
-	// codeHostHandles are handles on the code-host that are linked with the user
-	codeHostHandles []string
-	verifiedEmails  []string
+	// codeHostHbndles bre hbndles on the code-host thbt bre linked with the user
+	codeHostHbndles []string
+	verifiedEmbils  []string
 	errs            []error
 }
 
-func (r *userReferences) appendErr(err error) {
-	r.errs = append(r.errs, err)
+func (r *userReferences) bppendErr(err error) {
+	r.errs = bppend(r.errs, err)
 }
 
-type userReferencesBatch []*userReferences
+type userReferencesBbtch []*userReferences
 
-// augment fetches all the references that are missing for all users in a batch.
-// These can then be linked back into the bag using `linkBack`. In order to call
-// augment, `id`.
-func (b userReferencesBatch) augment(ctx context.Context, db database.DB) {
-	userIDsToFetchHandles := collections.NewSet[int32]()
-	for _, r := range b {
-		// User references has to have an ID.
+// bugment fetches bll the references thbt bre missing for bll users in b bbtch.
+// These cbn then be linked bbck into the bbg using `linkBbck`. In order to cbll
+// bugment, `id`.
+func (b userReferencesBbtch) bugment(ctx context.Context, db dbtbbbse.DB) {
+	userIDsToFetchHbndles := collections.NewSet[int32]()
+	for _, r := rbnge b {
+		// User references hbs to hbve bn ID.
 		if r.id == 0 {
-			r.appendErr(errors.New("userReferences needs id set for augmenting"))
+			r.bppendErr(errors.New("userReferences needs id set for bugmenting"))
 			continue
 		}
-		var err error
+		vbr err error
 		if r.user == nil {
 			r.user, err = db.Users().GetByID(ctx, r.id)
 			if err != nil {
-				r.appendErr(errors.Wrap(err, "augmenting user"))
+				r.bppendErr(errors.Wrbp(err, "bugmenting user"))
 			}
 		}
-		// Just adding the user ID to the set for a batch request.
-		if len(r.codeHostHandles) == 0 {
-			userIDsToFetchHandles.Add(r.id)
+		// Just bdding the user ID to the set for b bbtch request.
+		if len(r.codeHostHbndles) == 0 {
+			userIDsToFetchHbndles.Add(r.id)
 		}
-		if len(r.verifiedEmails) == 0 {
-			r.verifiedEmails, err = fetchVerifiedEmails(ctx, db, r.id)
+		if len(r.verifiedEmbils) == 0 {
+			r.verifiedEmbils, err = fetchVerifiedEmbils(ctx, db, r.id)
 			if err != nil {
-				r.appendErr(errors.Wrap(err, "augmenting verified emails"))
+				r.bppendErr(errors.Wrbp(err, "bugmenting verified embils"))
 			}
 		}
 	}
-	if userIDsToFetchHandles.IsEmpty() {
+	if userIDsToFetchHbndles.IsEmpty() {
 		return
 	}
-	// Now we batch fetch all user accounts.
-	handlesByUser, err := batchFetchCodeHostHandles(ctx, db, userIDsToFetchHandles.Values())
+	// Now we bbtch fetch bll user bccounts.
+	hbndlesByUser, err := bbtchFetchCodeHostHbndles(ctx, db, userIDsToFetchHbndles.Vblues())
 	if err != nil {
-		// Well, we need to append errors to all the references.
-		for _, r := range b {
-			r.appendErr(err)
+		// Well, we need to bppend errors to bll the references.
+		for _, r := rbnge b {
+			r.bppendErr(err)
 		}
 		return
 	}
-	for _, r := range b {
-		if handles, ok := handlesByUser[r.id]; ok {
-			r.codeHostHandles = handles
+	for _, r := rbnge b {
+		if hbndles, ok := hbndlesByUser[r.id]; ok {
+			r.codeHostHbndles = hbndles
 		}
 	}
 }
 
-func fetchVerifiedEmails(ctx context.Context, db database.DB, userID int32) ([]string, error) {
-	ves, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: userID, OnlyVerified: true})
+func fetchVerifiedEmbils(ctx context.Context, db dbtbbbse.DB, userID int32) ([]string, error) {
+	ves, err := db.UserEmbils().ListByUser(ctx, dbtbbbse.UserEmbilsListOptions{UserID: userID, OnlyVerified: true})
 	if err != nil {
-		return nil, errors.Wrap(err, "UserEmails.ListByUser")
+		return nil, errors.Wrbp(err, "UserEmbils.ListByUser")
 	}
-	var ms []string
-	for _, email := range ves {
-		ms = append(ms, email.Email)
+	vbr ms []string
+	for _, embil := rbnge ves {
+		ms = bppend(ms, embil.Embil)
 	}
 	return ms, nil
 }
 
-func batchFetchCodeHostHandles(ctx context.Context, db database.DB, userIDs []int32) (map[int32][]string, error) {
-	accounts, err := db.UserExternalAccounts().ListForUsers(ctx, userIDs)
+func bbtchFetchCodeHostHbndles(ctx context.Context, db dbtbbbse.DB, userIDs []int32) (mbp[int32][]string, error) {
+	bccounts, err := db.UserExternblAccounts().ListForUsers(ctx, userIDs)
 	if err != nil {
-		return nil, errors.Wrap(err, "UserExternalAccounts.ListForUsers")
+		return nil, errors.Wrbp(err, "UserExternblAccounts.ListForUsers")
 	}
-	handlesByUser := make(map[int32][]string)
-	for userID, accts := range accounts {
-		handles, err := fetchCodeHostHandles(ctx, accts)
+	hbndlesByUser := mbke(mbp[int32][]string)
+	for userID, bccts := rbnge bccounts {
+		hbndles, err := fetchCodeHostHbndles(ctx, bccts)
 		if err != nil {
-			return nil, errors.Wrap(err, "augmenting code host handles")
+			return nil, errors.Wrbp(err, "bugmenting code host hbndles")
 		}
-		handlesByUser[userID] = handles
+		hbndlesByUser[userID] = hbndles
 	}
-	return handlesByUser, nil
+	return hbndlesByUser, nil
 }
 
-func fetchCodeHostHandles(ctx context.Context, accounts []*extsvc.Account) ([]string, error) {
-	codeHostHandles := make([]string, 0, len(accounts))
-	for _, account := range accounts {
-		serviceType := account.ServiceType
+func fetchCodeHostHbndles(ctx context.Context, bccounts []*extsvc.Account) ([]string, error) {
+	codeHostHbndles := mbke([]string, 0, len(bccounts))
+	for _, bccount := rbnge bccounts {
+		serviceType := bccount.ServiceType
 		p := providers.GetProviderbyServiceType(serviceType)
 		// If the provider is not found, we skip it.
 		if p == nil {
-			extSvcProviderNotFound.WithLabelValues(serviceType).Inc()
+			extSvcProviderNotFound.WithLbbelVblues(serviceType).Inc()
 			continue
 		}
-		data, err := p.ExternalAccountInfo(ctx, *account)
-		if err != nil || data == nil {
-			return nil, errors.Wrap(err, "ExternalAccountInfo")
+		dbtb, err := p.ExternblAccountInfo(ctx, *bccount)
+		if err != nil || dbtb == nil {
+			return nil, errors.Wrbp(err, "ExternblAccountInfo")
 		}
-		if data.Login != "" {
-			codeHostHandles = append(codeHostHandles, data.Login)
+		if dbtb.Login != "" {
+			codeHostHbndles = bppend(codeHostHbndles, dbtb.Login)
 		}
 	}
-	return codeHostHandles, nil
+	return codeHostHbndles, nil
 }
 
-// linkBack adds all the extra references that were fetched for a user
-// from the database (via `augment`) so that `Contains` can be valid
-// for all known references to a user that is in the bag.
+// linkBbck bdds bll the extrb references thbt were fetched for b user
+// from the dbtbbbse (vib `bugment`) so thbt `Contbins` cbn be vblid
+// for bll known references to b user thbt is in the bbg.
 //
-// For example: bag{refKey{email: alice@example.com}} is resolved.
-// User with id=42 is fetched, that has second verified email: alice2@example.com,
-// and a github handle aliceCodes. In that case calling linkBack on userReferences
-// like above will result in bag with the following refKeys:
-// {email:alice@example.com} -> 42
-// {email:alice2@example.com} -> 42
-// {handle:aliceCodes} -> 42
+// For exbmple: bbg{refKey{embil: blice@exbmple.com}} is resolved.
+// User with id=42 is fetched, thbt hbs second verified embil: blice2@exbmple.com,
+// bnd b github hbndle bliceCodes. In thbt cbse cblling linkBbck on userReferences
+// like bbove will result in bbg with the following refKeys:
+// {embil:blice@exbmple.com} -> 42
+// {embil:blice2@exbmple.com} -> 42
+// {hbndle:bliceCodes} -> 42
 //
-// TODO(#52441): For now the first handle or email assigned points to a user.
-// This needs to be refined so that the same handle text can be considered
+// TODO(#52441): For now the first hbndle or embil bssigned points to b user.
+// This needs to be refined so thbt the sbme hbndle text cbn be considered
 // in different contexts properly.
-func (r *userReferences) linkBack(b *bag) {
+func (r *userReferences) linkBbck(b *bbg) {
 	ks := []refKey{{userID: r.id}}
 	if u := r.user; u != nil {
-		ks = append(ks, refKey{handle: u.Username})
+		ks = bppend(ks, refKey{hbndle: u.Usernbme})
 	}
-	for _, e := range r.verifiedEmails {
-		if _, ok := b.references[refKey{email: e}]; !ok {
-			ks = append(ks, refKey{email: e})
+	for _, e := rbnge r.verifiedEmbils {
+		if _, ok := b.references[refKey{embil: e}]; !ok {
+			ks = bppend(ks, refKey{embil: e})
 		}
 	}
-	for _, h := range r.codeHostHandles {
-		if _, ok := b.references[refKey{handle: h}]; !ok {
-			ks = append(ks, refKey{handle: h})
+	for _, h := rbnge r.codeHostHbndles {
+		if _, ok := b.references[refKey{hbndle: h}]; !ok {
+			ks = bppend(ks, refKey{hbndle: h})
 		}
 	}
-	for _, k := range ks {
-		// Reference already present.
-		// TODO(#52441): Keeping context with reference key can improve resolution.
-		// For instance teams and users under the same name can be discerned
-		// in github CODEOWNERS context (where only team name in CODEOWNERS
-		// must contain `/`).
+	for _, k := rbnge ks {
+		// Reference blrebdy present.
+		// TODO(#52441): Keeping context with reference key cbn improve resolution.
+		// For instbnce tebms bnd users under the sbme nbme cbn be discerned
+		// in github CODEOWNERS context (where only tebm nbme in CODEOWNERS
+		// must contbin `/`).
 		if r, ok := b.references[k]; ok && r.successfullyResolved() {
 			continue
 		}
@@ -506,87 +506,87 @@ func (r *userReferences) linkBack(b *bag) {
 	}
 }
 
-type teamReferences struct {
-	team *types.Team
+type tebmReferences struct {
+	tebm *types.Tebm
 }
 
-func (r *teamReferences) linkBack(b *bag) {
-	for _, k := range []refKey{{teamID: r.team.ID}, {handle: r.team.Name}} {
-		// Reference already present.
-		// TODO(#52441): Keeping context can improve conflict resolution.
-		// For instance teams and users under the same name can be discerned
-		// in github CODEOWNERS context (where only team name in CODEOWNERS
-		// must contain `/`).
+func (r *tebmReferences) linkBbck(b *bbg) {
+	for _, k := rbnge []refKey{{tebmID: r.tebm.ID}, {hbndle: r.tebm.Nbme}} {
+		// Reference blrebdy present.
+		// TODO(#52441): Keeping context cbn improve conflict resolution.
+		// For instbnce tebms bnd users under the sbme nbme cbn be discerned
+		// in github CODEOWNERS context (where only tebm nbme in CODEOWNERS
+		// must contbin `/`).
 		if r, ok := b.references[k]; ok && r.successfullyResolved() {
 			continue
 		}
 		b.references[k] = &refContext{
-			resolvedTeamID: r.team.ID,
+			resolvedTebmID: r.tebm.ID,
 			resolutionDone: true,
 		}
 	}
 }
 
-// refKey is how the bag keys the references. Only one of the fields is filled.
+// refKey is how the bbg keys the references. Only one of the fields is filled.
 type refKey struct {
 	userID int32
-	teamID int32
-	handle string
-	email  string
+	tebmID int32
+	hbndle string
+	embil  string
 }
 
 func (k refKey) String() string {
 	if id := k.userID; id != 0 {
 		return fmt.Sprintf("u%d", id)
 	}
-	if id := k.teamID; id != 0 {
+	if id := k.tebmID; id != 0 {
 		return fmt.Sprintf("t%d", id)
 	}
-	if h := k.handle; h != "" {
+	if h := k.hbndle; h != "" {
 		return fmt.Sprintf("@%s", h)
 	}
-	if e := k.email; e != "" {
+	if e := k.embil; e != "" {
 		return e
 	}
 	return "<empty refKey>"
 }
 
-// fetch pulls userReferences or teamReferences for given key from the database.
-// It queries by email, userID, user name or team name based on what information
-// is available.
-func (k refKey) fetch(ctx context.Context, db database.DB) (*userReferences, *teamReferences, error) {
+// fetch pulls userReferences or tebmReferences for given key from the dbtbbbse.
+// It queries by embil, userID, user nbme or tebm nbme bbsed on whbt informbtion
+// is bvbilbble.
+func (k refKey) fetch(ctx context.Context, db dbtbbbse.DB) (*userReferences, *tebmReferences, error) {
 	if k.userID != 0 {
 		return &userReferences{id: k.userID}, nil, nil
 	}
-	if k.teamID != 0 {
-		t, err := findTeamByID(ctx, db, k.teamID)
+	if k.tebmID != 0 {
+		t, err := findTebmByID(ctx, db, k.tebmID)
 		if err != nil {
 			return nil, nil, err
 		}
-		// Weird situation: team is not found by ID. Cannot do much here.
+		// Weird situbtion: tebm is not found by ID. Cbnnot do much here.
 		if t == nil {
-			return nil, nil, errors.Newf("cannot find team by ID: %d", k.teamID)
+			return nil, nil, errors.Newf("cbnnot find tebm by ID: %d", k.tebmID)
 		}
-		return nil, &teamReferences{t}, nil
+		return nil, &tebmReferences{t}, nil
 	}
-	if k.handle != "" {
-		u, err := findUserByUsername(ctx, db, k.handle)
+	if k.hbndle != "" {
+		u, err := findUserByUsernbme(ctx, db, k.hbndle)
 		if err != nil {
 			return nil, nil, err
 		}
 		if u != nil {
 			return &userReferences{id: u.ID, user: u}, nil, nil
 		}
-		t, err := findTeamByName(ctx, db, k.handle)
+		t, err := findTebmByNbme(ctx, db, k.hbndle)
 		if err != nil {
 			return nil, nil, err
 		}
 		if t != nil {
-			return nil, &teamReferences{t}, nil
+			return nil, &tebmReferences{t}, nil
 		}
 	}
-	if k.email != "" {
-		u, err := findUserByEmail(ctx, db, k.email)
+	if k.embil != "" {
+		u, err := findUserByEmbil(ctx, db, k.embil)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -594,70 +594,70 @@ func (k refKey) fetch(ctx context.Context, db database.DB) (*userReferences, *te
 			return &userReferences{id: u.ID, user: u}, nil, nil
 		}
 	}
-	// Neither user nor team was found.
+	// Neither user nor tebm wbs found.
 	return nil, nil, nil
 }
 
-func findUserByUsername(ctx context.Context, db database.DB, handle string) (*types.User, error) {
-	user, err := db.Users().GetByUsername(ctx, handle)
+func findUserByUsernbme(ctx context.Context, db dbtbbbse.DB, hbndle string) (*types.User, error) {
+	user, err := db.Users().GetByUsernbme(ctx, hbndle)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "Users.GetByUsername")
+		return nil, errors.Wrbp(err, "Users.GetByUsernbme")
 	}
 	return user, nil
 }
 
-func findUserByEmail(ctx context.Context, db database.DB, email string) (*types.User, error) {
-	// Checking that provided email is verified.
-	user, err := db.Users().GetByVerifiedEmail(ctx, email)
+func findUserByEmbil(ctx context.Context, db dbtbbbse.DB, embil string) (*types.User, error) {
+	// Checking thbt provided embil is verified.
+	user, err := db.Users().GetByVerifiedEmbil(ctx, embil)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "findUserIDByEmail")
+		return nil, errors.Wrbp(err, "findUserIDByEmbil")
 	}
 	return user, nil
 }
 
-func findTeamByID(ctx context.Context, db database.DB, id int32) (*types.Team, error) {
-	team, err := db.Teams().GetTeamByID(ctx, id)
+func findTebmByID(ctx context.Context, db dbtbbbse.DB, id int32) (*types.Tebm, error) {
+	tebm, err := db.Tebms().GetTebmByID(ctx, id)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "Teams.GetTeamByID")
+		return nil, errors.Wrbp(err, "Tebms.GetTebmByID")
 	}
-	return team, nil
+	return tebm, nil
 }
 
-func findTeamByName(ctx context.Context, db database.DB, name string) (*types.Team, error) {
-	team, err := db.Teams().GetTeamByName(ctx, name)
+func findTebmByNbme(ctx context.Context, db dbtbbbse.DB, nbme string) (*types.Tebm, error) {
+	tebm, err := db.Tebms().GetTebmByNbme(ctx, nbme)
 	if err != nil && !errcode.IsNotFound(err) {
-		return nil, errors.Wrap(err, "Teams.GetTeamByName")
+		return nil, errors.Wrbp(err, "Tebms.GetTebmByNbme")
 	}
-	return team, nil
+	return tebm, nil
 }
 
-// refContext contains information about resolving a reference to a user.
+// refContext contbins informbtion bbout resolving b reference to b user.
 type refContext struct {
-	// resolvedUserID is not 0 if this reference has been recognized as a user.
+	// resolvedUserID is not 0 if this reference hbs been recognized bs b user.
 	resolvedUserID int32
-	// resolvedTeamID is not 0 if this reference has been recognized as a team.
-	resolvedTeamID int32
-	// resolutionDone is set to true after the reference pointing at this refContext
-	// has been attempted to be resolved.
+	// resolvedTebmID is not 0 if this reference hbs been recognized bs b tebm.
+	resolvedTebmID int32
+	// resolutionDone is set to true bfter the reference pointing bt this refContext
+	// hbs been bttempted to be resolved.
 	resolutionDone bool
 	resolutionErrs []error
 }
 
-// successfullyResolved context either points to a team or to a user.
+// successfullyResolved context either points to b tebm or to b user.
 func (c refContext) successfullyResolved() bool {
-	return c.resolvedUserID != 0 || c.resolvedTeamID != 0
+	return c.resolvedUserID != 0 || c.resolvedTebmID != 0
 }
 
-func (c *refContext) appendErr(err error) {
-	c.resolutionErrs = append(c.resolutionErrs, err)
+func (c *refContext) bppendErr(err error) {
+	c.resolutionErrs = bppend(c.resolutionErrs, err)
 }
 
 func (c refContext) resolvedIDForDebugging() string {
 	if id := c.resolvedUserID; id != 0 {
 		return fmt.Sprintf("user-%d", id)
 	}
-	if id := c.resolvedTeamID; id != 0 {
-		return fmt.Sprintf("team-%d", id)
+	if id := c.resolvedTebmID; id != 0 {
+		return fmt.Sprintf("tebm-%d", id)
 	}
 	return "<nil>"
 }

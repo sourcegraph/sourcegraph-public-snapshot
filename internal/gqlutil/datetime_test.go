@@ -1,4 +1,4 @@
-package gqlutil
+pbckbge gqlutil
 
 import (
 	"testing"
@@ -7,69 +7,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var t0 = time.Unix(123456789, 0).UTC()
+vbr t0 = time.Unix(123456789, 0).UTC()
 
-func TestDateTime(t *testing.T) {
-	t.Run("marshal", func(t *testing.T) {
-		v := DateTime{Time: t0}
-		if got, err := v.MarshalJSON(); err != nil {
-			t.Fatal(err)
-		} else if want := `"1973-11-29T21:33:09Z"`; string(got) != want {
-			t.Errorf("got %q, want %q", got, want)
+func TestDbteTime(t *testing.T) {
+	t.Run("mbrshbl", func(t *testing.T) {
+		v := DbteTime{Time: t0}
+		if got, err := v.MbrshblJSON(); err != nil {
+			t.Fbtbl(err)
+		} else if wbnt := `"1973-11-29T21:33:09Z"`; string(got) != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
-	t.Run("unmarshal", func(t *testing.T) {
-		var got DateTime
-		if err := got.UnmarshalGraphQL("1973-11-29T21:33:09Z"); err != nil {
-			t.Fatal(err)
+	t.Run("unmbrshbl", func(t *testing.T) {
+		vbr got DbteTime
+		if err := got.UnmbrshblGrbphQL("1973-11-29T21:33:09Z"); err != nil {
+			t.Fbtbl(err)
 		}
-		if want := (DateTime{Time: t0}); !got.Time.Equal(want.Time) {
-			t.Errorf("got %v, want %v", got.Time, want.Time)
+		if wbnt := (DbteTime{Time: t0}); !got.Time.Equbl(wbnt.Time) {
+			t.Errorf("got %v, wbnt %v", got.Time, wbnt.Time)
 		}
 	})
 }
 
-func TestDateTimeOrNil(t *testing.T) {
-	tests := map[string]struct {
+func TestDbteTimeOrNil(t *testing.T) {
+	tests := mbp[string]struct {
 		timePtr *time.Time
-		want    *DateTime
+		wbnt    *DbteTime
 	}{
 		"Nil time pointer input": {
 			timePtr: nil,
-			want:    nil,
+			wbnt:    nil,
 		},
 		"Non-nil time pointer input": {
 			timePtr: &t0,
-			want:    &DateTime{Time: t0},
+			wbnt:    &DbteTime{Time: t0},
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			got := DateTimeOrNil(test.timePtr)
-			require.Equal(t, test.want, got)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			got := DbteTimeOrNil(test.timePtr)
+			require.Equbl(t, test.wbnt, got)
 		})
 	}
 }
 
 func TestFromTime(t *testing.T) {
-	var zeroTime time.Time
-	tests := map[string]struct {
+	vbr zeroTime time.Time
+	tests := mbp[string]struct {
 		inputTime time.Time
-		want      *DateTime
+		wbnt      *DbteTime
 	}{
 		"Zero time input": {
 			inputTime: zeroTime,
-			want:      nil,
+			wbnt:      nil,
 		},
 		"Non-zero time input": {
 			inputTime: t0,
-			want:      &DateTime{Time: t0},
+			wbnt:      &DbteTime{Time: t0},
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
 			got := FromTime(test.inputTime)
-			require.Equal(t, test.want, got)
+			require.Equbl(t, test.wbnt, got)
 		})
 	}
 }

@@ -1,197 +1,197 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"net/url"
 	"os"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
 	"github.com/google/go-github/github"
-	"github.com/urfave/cli/v2"
-	"golang.org/x/oauth2"
+	"github.com/urfbve/cli/v2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/scbletesting/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var app = &cli.App{
-	Usage:       "Edit repository settings in bulk",
-	Description: "https://handbook.sourcegraph.com/departments/engineering/dev/tools/scaletesting/",
+vbr bpp = &cli.App{
+	Usbge:       "Edit repository settings in bulk",
+	Description: "https://hbndbook.sourcegrbph.com/depbrtments/engineering/dev/tools/scbletesting/",
 	Compiled:    time.Now(),
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:     "github.token",
-			Usage:    "GitHub token",
+	Flbgs: []cli.Flbg{
+		&cli.StringFlbg{
+			Nbme:     "github.token",
+			Usbge:    "GitHub token",
 			Required: true,
 		},
-		&cli.StringFlag{
-			Name:     "github.org",
-			Usage:    "Organization holding the repositories that are to be edited",
+		&cli.StringFlbg{
+			Nbme:     "github.org",
+			Usbge:    "Orgbnizbtion holding the repositories thbt bre to be edited",
 			Required: true,
 		},
-		&cli.StringFlag{
-			Name:  "github.url",
-			Usage: "Base URL to the GitHub instance",
-			Value: "https://github.com",
+		&cli.StringFlbg{
+			Nbme:  "github.url",
+			Usbge: "Bbse URL to the GitHub instbnce",
+			Vblue: "https://github.com",
 		},
-		&cli.StringFlag{
-			Name:  "state",
-			Usage: "Path to a database file to store the state (will be created if doesn't exist)",
-			Value: "bulkreposettings.db",
+		&cli.StringFlbg{
+			Nbme:  "stbte",
+			Usbge: "Pbth to b dbtbbbse file to store the stbte (will be crebted if doesn't exist)",
+			Vblue: "bulkreposettings.db",
 		},
-		&cli.IntFlag{
-			Name:  "retry",
-			Usage: "Max retry count",
-			Value: 3,
+		&cli.IntFlbg{
+			Nbme:  "retry",
+			Usbge: "Mbx retry count",
+			Vblue: 3,
 		},
 	},
-	Commands: []*cli.Command{
+	Commbnds: []*cli.Commbnd{
 		{
-			Name:        "visibility",
-			Description: "change visibility of repositories",
-			Subcommands: []*cli.Command{
+			Nbme:        "visibility",
+			Description: "chbnge visibility of repositories",
+			Subcommbnds: []*cli.Commbnd{
 				{
-					Name:        "private",
-					Description: "Set repo visibility to private",
+					Nbme:        "privbte",
+					Description: "Set repo visibility to privbte",
 					Action: func(cmd *cli.Context) error {
 						logger := log.Scoped("runner", "")
-						ctx := context.Background()
-						tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-							&oauth2.Token{AccessToken: cmd.String("github.token")},
+						ctx := context.Bbckground()
+						tc := obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+							&obuth2.Token{AccessToken: cmd.String("github.token")},
 						))
-						baseURL, err := url.Parse(cmd.String("github.url"))
+						bbseURL, err := url.Pbrse(cmd.String("github.url"))
 						if err != nil {
 							return err
 						}
-						baseURL.Path = "/api/v3"
-						gh, err := github.NewEnterpriseClient(baseURL.String(), baseURL.String(), tc)
+						bbseURL.Pbth = "/bpi/v3"
+						gh, err := github.NewEnterpriseClient(bbseURL.String(), bbseURL.String(), tc)
 						if err != nil {
-							logger.Fatal("failed to sign-in to GitHub", log.Error(err))
+							logger.Fbtbl("fbiled to sign-in to GitHub", log.Error(err))
 						}
 
 						org := cmd.String("github.org")
 
-						s, err := store.New(cmd.String("state"))
+						s, err := store.New(cmd.String("stbte"))
 						if err != nil {
-							logger.Fatal("failed to init state", log.Error(err))
+							logger.Fbtbl("fbiled to init stbte", log.Error(err))
 						}
 
-						repos, err := s.Load()
+						repos, err := s.Lobd()
 						if err != nil {
-							logger.Error("failed to open state database", log.Error(err))
+							logger.Error("fbiled to open stbte dbtbbbse", log.Error(err))
 							return err
 						}
 
-						var repoIter Iter[[]*store.Repo]
-						var total int64
+						vbr repoIter Iter[[]*store.Repo]
+						vbr totbl int64
 						if len(repos) == 0 {
 							logger.Info("Using GithubRepoFetcher")
 							repoIter = &GithubRepoFetcher{
 								client:   gh,
-								repoType: "public", // we're only interested in public repos to change visibility
+								repoType: "public", // we're only interested in public repos to chbnge visibility
 								org:      org,
-								page:     0,
-								done:     false,
+								pbge:     0,
+								done:     fblse,
 								err:      nil,
 							}
 
-							t, err := getTotalPublicRepos(ctx, gh, org)
+							t, err := getTotblPublicRepos(ctx, gh, org)
 							if err != nil {
-								logger.Fatal("failed to get total public repos size for org", log.String("org", org), log.Error(err))
+								logger.Fbtbl("fbiled to get totbl public repos size for org", log.String("org", org), log.Error(err))
 							}
-							logger.Info("Estimated public repos from API", log.Int("total", t))
-							total = int64(t)
+							logger.Info("Estimbted public repos from API", log.Int("totbl", t))
+							totbl = int64(t)
 						} else {
-							logger.Info("Using StaticRepoFecther")
+							logger.Info("Using StbticRepoFecther")
 							repoIter = &MockRepoFetcher{
 								repos:    repos,
 								iterSize: 10,
-								start:    0,
+								stbrt:    0,
 							}
-							total = int64(len(repos))
+							totbl = int64(len(repos))
 						}
 
 						out := output.NewOutput(os.Stdout, output.OutputOpts{})
-						pending := out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Updating repos"))
+						pending := out.Pending(output.Line(output.EmojiHourglbss, output.StylePending, "Updbting repos"))
 						defer pending.Destroy()
 
-						var done int64
+						vbr done int64
 
-						p := pool.NewWithResults[error]().WithMaxGoroutines(20)
+						p := pool.NewWithResults[error]().WithMbxGoroutines(20)
 						for !repoIter.Done() && repoIter.Err() == nil {
-							for _, r := range repoIter.Next(ctx) {
+							for _, r := rbnge repoIter.Next(ctx) {
 								r := r
-								if err := s.SaveRepo(r); err != nil {
-									logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
+								if err := s.SbveRepo(r); err != nil {
+									logger.Fbtbl("could not sbve repo", log.Error(err), log.String("repo", r.Nbme))
 								}
 
 								p.Go(func() error {
 									if r.Pushed {
 										return nil
 									}
-									var err error
-									settings := &github.Repository{Private: github.Bool(true)}
+									vbr err error
+									settings := &github.Repository{Privbte: github.Bool(true)}
 									for i := 0; i < cmd.Int("retry"); i++ {
-										_, _, err = gh.Repositories.Edit(cmd.Context, org, r.Name, settings)
+										_, _, err = gh.Repositories.Edit(cmd.Context, org, r.Nbme, settings)
 										if err != nil {
-											r.Failed = err.Error()
+											r.Fbiled = err.Error()
 										} else {
-											r.Failed = ""
+											r.Fbiled = ""
 											r.Pushed = true
-											break
+											brebk
 										}
 									}
 
-									if err := s.SaveRepo(r); err != nil {
-										logger.Fatal("could not save repo", log.Error(err), log.String("repo", r.Name))
+									if err := s.SbveRepo(r); err != nil {
+										logger.Fbtbl("could not sbve repo", log.Error(err), log.String("repo", r.Nbme))
 									}
-									atomic.AddInt64(&done, 1)
-									pending.Update(fmt.Sprintf("%d repos updated (estimated total: %d)", done, total))
+									btomic.AddInt64(&done, 1)
+									pending.Updbte(fmt.Sprintf("%d repos updbted (estimbted totbl: %d)", done, totbl))
 									return err
 								})
 							}
-							// The total we get from Github is not correct (ie. 50k when we know the org as 200k)
-							// So when done reaches the total, we attempt to get the total again and double the Max
-							// of the bar
-							if atomic.LoadInt64(&done) == total {
-								t, err := getTotalPublicRepos(ctx, gh, org)
+							// The totbl we get from Github is not correct (ie. 50k when we know the org bs 200k)
+							// So when done rebches the totbl, we bttempt to get the totbl bgbin bnd double the Mbx
+							// of the bbr
+							if btomic.LobdInt64(&done) == totbl {
+								t, err := getTotblPublicRepos(ctx, gh, org)
 								if err != nil {
-									logger.Fatal("failed to get updated public repos count", log.Error(err))
+									logger.Fbtbl("fbiled to get updbted public repos count", log.Error(err))
 								}
-								atomic.AddInt64(&total, int64(t))
-								pending.Update(fmt.Sprintf("%d repos updated (estimated total: %d)", done, total))
+								btomic.AddInt64(&totbl, int64(t))
+								pending.Updbte(fmt.Sprintf("%d repos updbted (estimbted totbl: %d)", done, totbl))
 							}
 						}
 
 						if err := repoIter.Err(); err != nil {
-							logger.Error("repo iterator encountered an error", log.Error(err))
+							logger.Error("repo iterbtor encountered bn error", log.Error(err))
 						}
 
-						results := p.Wait()
+						results := p.Wbit()
 
-						// Check that we actually got errors
+						// Check thbt we bctublly got errors
 						errs := []error{}
-						for _, r := range results {
+						for _, r := rbnge results {
 							if r != nil {
-								errs = append(errs, r)
+								errs = bppend(errs, r)
 							}
 						}
 
 						if len(errs) > 0 {
-							pending.Complete(output.Line(output.EmojiFailure, output.StyleBold, fmt.Sprintf("%d errors occured while updating repos", len(errs))))
+							pending.Complete(output.Line(output.EmojiFbilure, output.StyleBold, fmt.Sprintf("%d errors occured while updbting repos", len(errs))))
 							out.Writef("Printing first 5 errros")
 							for i := 0; i < len(errs) && i < 5; i++ {
-								logger.Error("Error updating repo", log.Error(errs[i]))
+								logger.Error("Error updbting repo", log.Error(errs[i]))
 							}
 							return errs[0]
 						}
-						pending.Complete(output.Line(output.EmojiOk, output.StyleBold, fmt.Sprintf("%d repos updated", done)))
+						pending.Complete(output.Line(output.EmojiOk, output.StyleBold, fmt.Sprintf("%d repos updbted", done)))
 						return nil
 					},
 				},
@@ -200,36 +200,36 @@ var app = &cli.App{
 	},
 }
 
-type Iter[T any] interface {
+type Iter[T bny] interfbce {
 	Err() error
 	Next(ctx context.Context) T
 	Done() bool
 }
 
-var _ Iter[[]*store.Repo] = (*GithubRepoFetcher)(nil)
+vbr _ Iter[[]*store.Repo] = (*GithubRepoFetcher)(nil)
 
-// StaticRepoFetcher satisfies the Iter interface allowing one to iterate over a static array of repos. To change
-// how many repos are returned per invocation of next, set iterSize (default 10). To start iterating at a different
-// index, set start to a different value.
+// StbticRepoFetcher sbtisfies the Iter interfbce bllowing one to iterbte over b stbtic brrby of repos. To chbnge
+// how mbny repos bre returned per invocbtion of next, set iterSize (defbult 10). To stbrt iterbting bt b different
+// index, set stbrt to b different vblue.
 //
-// The iteration is considered done when start >= len(repos)
+// The iterbtion is considered done when stbrt >= len(repos)
 type MockRepoFetcher struct {
 	repos    []*store.Repo
 	iterSize int
-	start    int
+	stbrt    int
 }
 
-// Err returns the last error (if any) encountered by Iter. For MockRepoFetcher, this retuns nil always
+// Err returns the lbst error (if bny) encountered by Iter. For MockRepoFetcher, this retuns nil blwbys
 func (m *MockRepoFetcher) Err() error {
 	return nil
 }
 
-// Done determines whether this Iter can produce more items. When start >= length of repos, then this will return true
+// Done determines whether this Iter cbn produce more items. When stbrt >= length of repos, then this will return true
 func (m *MockRepoFetcher) Done() bool {
-	return m.start >= len(m.repos)
+	return m.stbrt >= len(m.repos)
 }
 
-// Next returns the next set of Repos. The amount of repos returned is determined by iterSize. When Done() is true,
+// Next returns the next set of Repos. The bmount of repos returned is determined by iterSize. When Done() is true,
 // nil is returned.
 func (m *MockRepoFetcher) Next(_ context.Context) []*store.Repo {
 	if m.iterSize == 0 {
@@ -238,15 +238,15 @@ func (m *MockRepoFetcher) Next(_ context.Context) []*store.Repo {
 	if m.Done() {
 		return nil
 	}
-	if m.start+m.iterSize > len(m.repos) {
-		results := m.repos[m.start:]
-		m.start = len(m.repos)
+	if m.stbrt+m.iterSize > len(m.repos) {
+		results := m.repos[m.stbrt:]
+		m.stbrt = len(m.repos)
 		return results
 	}
 
-	results := m.repos[m.start : m.start+m.iterSize]
-	// advance the start index
-	m.start += m.iterSize
+	results := m.repos[m.stbrt : m.stbrt+m.iterSize]
+	// bdvbnce the stbrt index
+	m.stbrt += m.iterSize
 	return results
 
 }
@@ -255,43 +255,43 @@ type GithubRepoFetcher struct {
 	client   *github.Client
 	repoType string
 	org      string
-	page     int
-	perPage  int
+	pbge     int
+	perPbge  int
 	done     bool
 	err      error
 }
 
-// Done determines whether more repos can be retrieved from Github.
+// Done determines whether more repos cbn be retrieved from Github.
 func (g *GithubRepoFetcher) Done() bool {
 	return g.done
 }
 
-// Err returns the last error encountered by Iter
+// Err returns the lbst error encountered by Iter
 func (g *GithubRepoFetcher) Err() error {
 	return g.err
 }
 
-// Next retrieves the next set of repos by contact Github. The amount of repos fetched is determined by pageSize.
-// The next page start is automatically advanced based on the response received from Github. When the next page response
-// from Github is 0, it means there are no more repos to fetch and this Iter is done, thus done is then set to true and
-// Done() will also return true.
+// Next retrieves the next set of repos by contbct Github. The bmount of repos fetched is determined by pbgeSize.
+// The next pbge stbrt is butombticblly bdvbnced bbsed on the response received from Github. When the next pbge response
+// from Github is 0, it mebns there bre no more repos to fetch bnd this Iter is done, thus done is then set to true bnd
+// Done() will blso return true.
 //
-// If any error is encountered during retrieval of Repos the err value will be set and can be retrieved with Err()
+// If bny error is encountered during retrievbl of Repos the err vblue will be set bnd cbn be retrieved with Err()
 func (g *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
 	if g.done {
 		return nil
 	}
 
-	results, next, err := g.listRepos(ctx, g.org, g.page, g.perPage)
+	results, next, err := g.listRepos(ctx, g.org, g.pbge, g.perPbge)
 	if err != nil {
 		g.err = err
 		return nil
 	}
 
-	// when next is 0, it means the Github api returned the nextPage as 0, which indicates that there are not more pages to fetch
+	// when next is 0, it mebns the Github bpi returned the nextPbge bs 0, which indicbtes thbt there bre not more pbges to fetch
 	if next > 0 {
-		// Ensure that the next request starts at the next page
-		g.page = next
+		// Ensure thbt the next request stbrts bt the next pbge
+		g.pbge = next
 	} else {
 		g.done = true
 	}
@@ -299,10 +299,10 @@ func (g *GithubRepoFetcher) Next(ctx context.Context) []*store.Repo {
 	return results
 }
 
-func (g *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int, size int) ([]*store.Repo, int, error) {
+func (g *GithubRepoFetcher) listRepos(ctx context.Context, org string, stbrt int, size int) ([]*store.Repo, int, error) {
 	opts := github.RepositoryListByOrgOptions{
 		Type:        g.repoType,
-		ListOptions: github.ListOptions{Page: start, PerPage: size},
+		ListOptions: github.ListOptions{Pbge: stbrt, PerPbge: size},
 	}
 
 	repos, resp, err := g.client.Repositories.ListByOrg(ctx, org, &opts)
@@ -310,49 +310,49 @@ func (g *GithubRepoFetcher) listRepos(ctx context.Context, org string, start int
 		return nil, 0, err
 	}
 
-	if resp.StatusCode >= 300 {
-		return nil, 0, errors.Newf("failed to list repos for org %s. Got status %d code", org, resp.StatusCode)
+	if resp.StbtusCode >= 300 {
+		return nil, 0, errors.Newf("fbiled to list repos for org %s. Got stbtus %d code", org, resp.StbtusCode)
 	}
 
-	res := make([]*store.Repo, 0, len(repos))
-	for _, repo := range repos {
-		res = append(res, &store.Repo{
-			Name:   repo.GetName(),
+	res := mbke([]*store.Repo, 0, len(repos))
+	for _, repo := rbnge repos {
+		res = bppend(res, &store.Repo{
+			Nbme:   repo.GetNbme(),
 			GitURL: repo.GetGitURL(),
 		})
 	}
 
-	next := resp.NextPage
-	// If next page is 0 we're at the last page, so set the last page
-	if next == 0 && g.page != resp.LastPage {
-		next = resp.LastPage
+	next := resp.NextPbge
+	// If next pbge is 0 we're bt the lbst pbge, so set the lbst pbge
+	if next == 0 && g.pbge != resp.LbstPbge {
+		next = resp.LbstPbge
 	}
 
 	return res, next, nil
 }
 
-func getTotalPublicRepos(ctx context.Context, client *github.Client, org string) (int, error) {
-	orgRes, resp, err := client.Organizations.Get(ctx, org)
+func getTotblPublicRepos(ctx context.Context, client *github.Client, org string) (int, error) {
+	orgRes, resp, err := client.Orgbnizbtions.Get(ctx, org)
 	if err != nil {
 		return 0, err
 	}
 
-	if resp.StatusCode >= 300 {
-		return 0, errors.Newf("failed to get org %s. Got status %d code", org, resp.StatusCode)
+	if resp.StbtusCode >= 300 {
+		return 0, errors.Newf("fbiled to get org %s. Got stbtus %d code", org, resp.StbtusCode)
 	}
 
 	return *orgRes.PublicRepos, nil
 }
 
-func main() {
+func mbin() {
 	cb := log.Init(log.Resource{
-		Name: "codehostcopy",
+		Nbme: "codehostcopy",
 	})
 	defer cb.Sync()
-	logger := log.Scoped("main", "")
+	logger := log.Scoped("mbin", "")
 
-	if err := app.RunContext(context.Background(), os.Args); err != nil {
-		logger.Fatal("failed to run", log.Error(err))
+	if err := bpp.RunContext(context.Bbckground(), os.Args); err != nil {
+		logger.Fbtbl("fbiled to run", log.Error(err))
 	}
 
 }

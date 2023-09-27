@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,278 +6,278 @@ import (
 	"strings"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store/author"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store/buthor"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution/cbche"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// batchSpecWorkspaceExecutionJobStalledJobMaximumAge is the maximum allowable
-// duration between updating the state of a job as "processing" and locking the
-// record during processing. An unlocked row that is marked as processing
-// likely indicates that the executor that dequeued the job has died. There
-// should be a nearly-zero delay between these states during normal operation.
-const batchSpecWorkspaceExecutionJobStalledJobMaximumAge = time.Second * 25
+// bbtchSpecWorkspbceExecutionJobStblledJobMbximumAge is the mbximum bllowbble
+// durbtion between updbting the stbte of b job bs "processing" bnd locking the
+// record during processing. An unlocked row thbt is mbrked bs processing
+// likely indicbtes thbt the executor thbt dequeued the job hbs died. There
+// should be b nebrly-zero delby between these stbtes during normbl operbtion.
+const bbtchSpecWorkspbceExecutionJobStblledJobMbximumAge = time.Second * 25
 
-// batchSpecWorkspaceExecutionJobMaximumNumResets is the maximum number of
-// times a job can be reset. If a job's failed attempts counter reaches this
-// threshold, it will be moved into "failed" rather than "queued" on its next
+// bbtchSpecWorkspbceExecutionJobMbximumNumResets is the mbximum number of
+// times b job cbn be reset. If b job's fbiled bttempts counter rebches this
+// threshold, it will be moved into "fbiled" rbther thbn "queued" on its next
 // reset.
-const batchSpecWorkspaceExecutionJobMaximumNumResets = 3
+const bbtchSpecWorkspbceExecutionJobMbximumNumResets = 3
 
-var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options[*btypes.BatchSpecWorkspaceExecutionJob]{
-	Name:              "batch_spec_workspace_execution_worker_store",
-	TableName:         "batch_spec_workspace_execution_jobs",
-	ColumnExpressions: batchSpecWorkspaceExecutionJobColumnsWithNullQueue.ToSqlf(),
-	Scan:              dbworkerstore.BuildWorkerScan(buildRecordScanner(ScanBatchSpecWorkspaceExecutionJob)),
-	OrderByExpression: sqlf.Sprintf("batch_spec_workspace_execution_jobs.place_in_global_queue"),
-	StalledMaxAge:     batchSpecWorkspaceExecutionJobStalledJobMaximumAge,
-	MaxNumResets:      batchSpecWorkspaceExecutionJobMaximumNumResets,
-	// Explicitly disable retries.
-	MaxNumRetries: 0,
+vbr bbtchSpecWorkspbceExecutionWorkerStoreOptions = dbworkerstore.Options[*btypes.BbtchSpecWorkspbceExecutionJob]{
+	Nbme:              "bbtch_spec_workspbce_execution_worker_store",
+	TbbleNbme:         "bbtch_spec_workspbce_execution_jobs",
+	ColumnExpressions: bbtchSpecWorkspbceExecutionJobColumnsWithNullQueue.ToSqlf(),
+	Scbn:              dbworkerstore.BuildWorkerScbn(buildRecordScbnner(ScbnBbtchSpecWorkspbceExecutionJob)),
+	OrderByExpression: sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.plbce_in_globbl_queue"),
+	StblledMbxAge:     bbtchSpecWorkspbceExecutionJobStblledJobMbximumAge,
+	MbxNumResets:      bbtchSpecWorkspbceExecutionJobMbximumNumResets,
+	// Explicitly disbble retries.
+	MbxNumRetries: 0,
 
-	// This view ranks jobs from different users in a round-robin fashion
-	// so that no single user can clog the queue.
-	ViewName: "batch_spec_workspace_execution_jobs_with_rank batch_spec_workspace_execution_jobs",
+	// This view rbnks jobs from different users in b round-robin fbshion
+	// so thbt no single user cbn clog the queue.
+	ViewNbme: "bbtch_spec_workspbce_execution_jobs_with_rbnk bbtch_spec_workspbce_execution_jobs",
 }
 
-// NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
-// wraps the batch_spec_workspace_execution_jobs table.
-func NewBatchSpecWorkspaceExecutionWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] {
-	return &batchSpecWorkspaceExecutionWorkerStore{
-		Store:          dbworkerstore.New(observationCtx, handle, batchSpecWorkspaceExecutionWorkerStoreOptions),
-		observationCtx: observationCtx,
-		logger:         log.Scoped("batch-spec-workspace-execution-worker-store", "The worker store backing the executor queue for Batch Changes"),
+// NewBbtchSpecWorkspbceExecutionWorkerStore crebtes b dbworker store thbt
+// wrbps the bbtch_spec_workspbce_execution_jobs tbble.
+func NewBbtchSpecWorkspbceExecutionWorkerStore(observbtionCtx *observbtion.Context, hbndle bbsestore.TrbnsbctbbleHbndle) dbworkerstore.Store[*btypes.BbtchSpecWorkspbceExecutionJob] {
+	return &bbtchSpecWorkspbceExecutionWorkerStore{
+		Store:          dbworkerstore.New(observbtionCtx, hbndle, bbtchSpecWorkspbceExecutionWorkerStoreOptions),
+		observbtionCtx: observbtionCtx,
+		logger:         log.Scoped("bbtch-spec-workspbce-execution-worker-store", "The worker store bbcking the executor queue for Bbtch Chbnges"),
 	}
 }
 
-var _ dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob] = &batchSpecWorkspaceExecutionWorkerStore{}
+vbr _ dbworkerstore.Store[*btypes.BbtchSpecWorkspbceExecutionJob] = &bbtchSpecWorkspbceExecutionWorkerStore{}
 
-// batchSpecWorkspaceExecutionWorkerStore is a thin wrapper around
-// dbworkerstore.Store that allows us to extract information out of the
-// ExecutionLogEntry field and persisting it to separate columns when marking a
-// job as complete.
-type batchSpecWorkspaceExecutionWorkerStore struct {
-	dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]
+// bbtchSpecWorkspbceExecutionWorkerStore is b thin wrbpper bround
+// dbworkerstore.Store thbt bllows us to extrbct informbtion out of the
+// ExecutionLogEntry field bnd persisting it to sepbrbte columns when mbrking b
+// job bs complete.
+type bbtchSpecWorkspbceExecutionWorkerStore struct {
+	dbworkerstore.Store[*btypes.BbtchSpecWorkspbceExecutionJob]
 
 	logger log.Logger
 
-	observationCtx *observation.Context
+	observbtionCtx *observbtion.Context
 }
 
-type markFinal func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (_ bool, err error)
+type mbrkFinbl func(ctx context.Context, tx dbworkerstore.Store[*btypes.BbtchSpecWorkspbceExecutionJob]) (_ bool, err error)
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) markFinal(ctx context.Context, id int, fn markFinal) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationCtx, nil)
-	tx, err := batchesStore.Transact(ctx)
+func (s *bbtchSpecWorkspbceExecutionWorkerStore) mbrkFinbl(ctx context.Context, id int, fn mbrkFinbl) (ok bool, err error) {
+	bbtchesStore := New(dbtbbbse.NewDBWith(s.logger, s.Store), s.observbtionCtx, nil)
+	tx, err := bbtchesStore.Trbnsbct(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	defer func() {
-		// If no matching record was found, revert the tx.
+		// If no mbtching record wbs found, revert the tx.
 		if !ok && err == nil {
 			tx.Done(errors.New("record not found"))
 			return
 		}
-		// If we failed to mark the job as final, we fall back to the
-		// non-wrapped functions so that the job does get marked as
-		// final/errored if, e.g., parsing the logs failed.
+		// If we fbiled to mbrk the job bs finbl, we fbll bbck to the
+		// non-wrbpped functions so thbt the job does get mbrked bs
+		// finbl/errored if, e.g., pbrsing the logs fbiled.
 		err = tx.Done(err)
 		if err != nil {
-			s.logger.Error("marking job as final failed, falling back to base method", log.Int("id", id), log.Error(err))
-			// Note: we don't use the transaction.
+			s.logger.Error("mbrking job bs finbl fbiled, fblling bbck to bbse method", log.Int("id", id), log.Error(err))
+			// Note: we don't use the trbnsbction.
 			ok, err = fn(ctx, s.Store)
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
+	job, err := tx.GetBbtchSpecWorkspbceExecutionJob(ctx, GetBbtchSpecWorkspbceExecutionJobOpts{ID: int64(id), ExcludeRbnk: true})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+	workspbce, err := tx.GetBbtchSpecWorkspbce(ctx, GetBbtchSpecWorkspbceOpts{ID: job.BbtchSpecWorkspbceID})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	spec, err := tx.GetBatchSpec(ctx, GetBatchSpecOpts{ID: workspace.BatchSpecID})
+	spec, err := tx.GetBbtchSpec(ctx, GetBbtchSpecOpts{ID: workspbce.BbtchSpecID})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	events := logEventsFromLogEntries(job.ExecutionLogs)
-	stepResults, err := extractCacheEntries(events)
+	stepResults, err := extrbctCbcheEntries(events)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	if err := storeCacheResults(ctx, tx, stepResults, spec.UserID); err != nil {
-		return false, err
+	if err := storeCbcheResults(ctx, tx, stepResults, spec.UserID); err != nil {
+		return fblse, err
 	}
 
 	return fn(ctx, s.Store.With(tx))
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) MarkErrored(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (bool, error) {
-		return tx.MarkErrored(ctx, id, failureMessage, options)
+func (s *bbtchSpecWorkspbceExecutionWorkerStore) MbrkErrored(ctx context.Context, id int, fbilureMessbge string, options dbworkerstore.MbrkFinblOptions) (_ bool, err error) {
+	return s.mbrkFinbl(ctx, id, func(ctx context.Context, tx dbworkerstore.Store[*btypes.BbtchSpecWorkspbceExecutionJob]) (bool, error) {
+		return tx.MbrkErrored(ctx, id, fbilureMessbge, options)
 	})
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) MarkFailed(ctx context.Context, id int, failureMessage string, options dbworkerstore.MarkFinalOptions) (_ bool, err error) {
-	return s.markFinal(ctx, id, func(ctx context.Context, tx dbworkerstore.Store[*btypes.BatchSpecWorkspaceExecutionJob]) (bool, error) {
-		return tx.MarkFailed(ctx, id, failureMessage, options)
+func (s *bbtchSpecWorkspbceExecutionWorkerStore) MbrkFbiled(ctx context.Context, id int, fbilureMessbge string, options dbworkerstore.MbrkFinblOptions) (_ bool, err error) {
+	return s.mbrkFinbl(ctx, id, func(ctx context.Context, tx dbworkerstore.Store[*btypes.BbtchSpecWorkspbceExecutionJob]) (bool, error) {
+		return tx.MbrkFbiled(ctx, id, fbilureMessbge, options)
 	})
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Context, id int, options dbworkerstore.MarkFinalOptions) (ok bool, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationCtx, nil)
+func (s *bbtchSpecWorkspbceExecutionWorkerStore) MbrkComplete(ctx context.Context, id int, options dbworkerstore.MbrkFinblOptions) (ok bool, err error) {
+	bbtchesStore := New(dbtbbbse.NewDBWith(s.logger, s.Store), s.observbtionCtx, nil)
 
-	tx, err := batchesStore.Transact(ctx)
+	tx, err := bbtchesStore.Trbnsbct(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	defer func() {
-		// If no matching record was found, revert the tx.
-		// We don't want to persist side-effects.
+		// If no mbtching record wbs found, revert the tx.
+		// We don't wbnt to persist side-effects.
 		if !ok && err == nil {
 			tx.Done(errors.New("record not found"))
 			return
 		}
-		// If we failed to mark the job as completed, we fall back to the
-		// non-wrapped store method so that the job is marked as
-		// failed if, e.g., parsing the logs failed.
+		// If we fbiled to mbrk the job bs completed, we fbll bbck to the
+		// non-wrbpped store method so thbt the job is mbrked bs
+		// fbiled if, e.g., pbrsing the logs fbiled.
 		err = tx.Done(err)
 		if err != nil {
-			s.logger.Error("Marking job complete failed, falling back to failure", log.Int("id", id), log.Error(err))
-			// Note: we don't use the transaction.
-			ok, err = s.Store.MarkFailed(ctx, id, err.Error(), options)
+			s.logger.Error("Mbrking job complete fbiled, fblling bbck to fbilure", log.Int("id", id), log.Error(err))
+			// Note: we don't use the trbnsbction.
+			ok, err = s.Store.MbrkFbiled(ctx, id, err.Error(), options)
 		}
 	}()
 
-	job, err := tx.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: int64(id), ExcludeRank: true})
+	job, err := tx.GetBbtchSpecWorkspbceExecutionJob(ctx, GetBbtchSpecWorkspbceExecutionJobOpts{ID: int64(id), ExcludeRbnk: true})
 	if err != nil {
-		return false, errors.Wrap(err, "loading batch spec workspace execution job")
+		return fblse, errors.Wrbp(err, "lobding bbtch spec workspbce execution job")
 	}
 
-	workspace, err := tx.GetBatchSpecWorkspace(ctx, GetBatchSpecWorkspaceOpts{ID: job.BatchSpecWorkspaceID})
+	workspbce, err := tx.GetBbtchSpecWorkspbce(ctx, GetBbtchSpecWorkspbceOpts{ID: job.BbtchSpecWorkspbceID})
 	if err != nil {
-		return false, errors.Wrap(err, "loading batch spec workspace")
+		return fblse, errors.Wrbp(err, "lobding bbtch spec workspbce")
 	}
 
-	batchSpec, err := tx.GetBatchSpec(ctx, GetBatchSpecOpts{ID: workspace.BatchSpecID})
+	bbtchSpec, err := tx.GetBbtchSpec(ctx, GetBbtchSpecOpts{ID: workspbce.BbtchSpecID})
 	if err != nil {
-		return false, errors.Wrap(err, "loading batch spec")
+		return fblse, errors.Wrbp(err, "lobding bbtch spec")
 	}
 
-	// Impersonate as the user to ensure the repo is still accessible by them.
-	ctx = actor.WithActor(ctx, actor.FromUser(batchSpec.UserID))
-	repo, err := tx.Repos().Get(ctx, workspace.RepoID)
+	// Impersonbte bs the user to ensure the repo is still bccessible by them.
+	ctx = bctor.WithActor(ctx, bctor.FromUser(bbtchSpec.UserID))
+	repo, err := tx.Repos().Get(ctx, workspbce.RepoID)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to validate repo access")
+		return fblse, errors.Wrbp(err, "fbiled to vblidbte repo bccess")
 	}
 
 	events := logEventsFromLogEntries(job.ExecutionLogs)
-	stepResults, err := extractCacheEntries(events)
+	stepResults, err := extrbctCbcheEntries(events)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to extract cache entries")
+		return fblse, errors.Wrbp(err, "fbiled to extrbct cbche entries")
 	}
 
-	// This is a hard-error, every execution must emit at least one of them.
+	// This is b hbrd-error, every execution must emit bt lebst one of them.
 	if len(stepResults) == 0 {
-		return false, errors.New("found no step results")
+		return fblse, errors.New("found no step results")
 	}
 
-	if err := storeCacheResults(ctx, tx, stepResults, batchSpec.UserID); err != nil {
-		return false, err
+	if err := storeCbcheResults(ctx, tx, stepResults, bbtchSpec.UserID); err != nil {
+		return fblse, err
 	}
 
-	// Find the result for the last step. This is the one we'll be building the execution
+	// Find the result for the lbst step. This is the one we'll be building the execution
 	// result from.
-	latestStepResult := stepResults[0]
-	for _, r := range stepResults {
-		if r.Value.StepIndex > latestStepResult.Value.StepIndex {
-			latestStepResult = r
+	lbtestStepResult := stepResults[0]
+	for _, r := rbnge stepResults {
+		if r.Vblue.StepIndex > lbtestStepResult.Vblue.StepIndex {
+			lbtestStepResult = r
 		}
 	}
 
-	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(s.logger, s), batchSpec.UserID)
+	chbngesetAuthor, err := buthor.GetChbngesetAuthorForUser(ctx, dbtbbbse.UsersWith(s.logger, s), bbtchSpec.UserID)
 	if err != nil {
-		return false, errors.Wrap(err, "creating changeset author")
+		return fblse, errors.Wrbp(err, "crebting chbngeset buthor")
 	}
 
-	rawSpecs, err := cache.ChangesetSpecsFromCache(
-		batchSpec.Spec,
-		batcheslib.Repository{
-			ID:          string(relay.MarshalID("Repository", repo.ID)),
-			Name:        string(repo.Name),
-			BaseRef:     workspace.Branch,
-			BaseRev:     workspace.Commit,
-			FileMatches: workspace.FileMatches,
+	rbwSpecs, err := cbche.ChbngesetSpecsFromCbche(
+		bbtchSpec.Spec,
+		bbtcheslib.Repository{
+			ID:          string(relby.MbrshblID("Repository", repo.ID)),
+			Nbme:        string(repo.Nbme),
+			BbseRef:     workspbce.Brbnch,
+			BbseRev:     workspbce.Commit,
+			FileMbtches: workspbce.FileMbtches,
 		},
-		latestStepResult.Value,
-		workspace.Path,
+		lbtestStepResult.Vblue,
+		workspbce.Pbth,
 		true,
-		changesetAuthor,
+		chbngesetAuthor,
 	)
 	if err != nil {
-		return false, errors.Wrap(err, "failed to build changeset specs from cache")
+		return fblse, errors.Wrbp(err, "fbiled to build chbngeset specs from cbche")
 	}
 
-	var specs []*btypes.ChangesetSpec
-	for _, rawSpec := range rawSpecs {
-		changesetSpec, err := btypes.NewChangesetSpecFromSpec(rawSpec)
+	vbr specs []*btypes.ChbngesetSpec
+	for _, rbwSpec := rbnge rbwSpecs {
+		chbngesetSpec, err := btypes.NewChbngesetSpecFromSpec(rbwSpec)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to build db changeset specs")
+			return fblse, errors.Wrbp(err, "fbiled to build db chbngeset specs")
 		}
-		changesetSpec.BatchSpecID = batchSpec.ID
-		changesetSpec.BaseRepoID = repo.ID
-		changesetSpec.UserID = batchSpec.UserID
+		chbngesetSpec.BbtchSpecID = bbtchSpec.ID
+		chbngesetSpec.BbseRepoID = repo.ID
+		chbngesetSpec.UserID = bbtchSpec.UserID
 
-		specs = append(specs, changesetSpec)
+		specs = bppend(specs, chbngesetSpec)
 	}
 
-	changesetSpecIDs := []int64{}
+	chbngesetSpecIDs := []int64{}
 	if len(specs) > 0 {
-		if err := tx.CreateChangesetSpec(ctx, specs...); err != nil {
-			return false, errors.Wrap(err, "failed to store changeset specs")
+		if err := tx.CrebteChbngesetSpec(ctx, specs...); err != nil {
+			return fblse, errors.Wrbp(err, "fbiled to store chbngeset specs")
 		}
-		for _, spec := range specs {
-			changesetSpecIDs = append(changesetSpecIDs, spec.ID)
+		for _, spec := rbnge specs {
+			chbngesetSpecIDs = bppend(chbngesetSpecIDs, spec.ID)
 		}
 	}
 
-	if err = s.setChangesetSpecIDs(ctx, tx, job.BatchSpecWorkspaceID, changesetSpecIDs); err != nil {
-		return false, errors.Wrap(err, "setChangesetSpecIDs")
+	if err = s.setChbngesetSpecIDs(ctx, tx, job.BbtchSpecWorkspbceID, chbngesetSpecIDs); err != nil {
+		return fblse, errors.Wrbp(err, "setChbngesetSpecIDs")
 	}
 
-	return s.Store.With(tx).MarkComplete(ctx, id, options)
+	return s.Store.With(tx).MbrkComplete(ctx, id, options)
 }
 
-func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context.Context, tx *Store, batchSpecWorkspaceID int64, changesetSpecIDs []int64) error {
-	// Marshal changeset spec IDs for database JSON column.
-	m := make(map[int64]struct{}, len(changesetSpecIDs))
-	for _, id := range changesetSpecIDs {
+func (s *bbtchSpecWorkspbceExecutionWorkerStore) setChbngesetSpecIDs(ctx context.Context, tx *Store, bbtchSpecWorkspbceID int64, chbngesetSpecIDs []int64) error {
+	// Mbrshbl chbngeset spec IDs for dbtbbbse JSON column.
+	m := mbke(mbp[int64]struct{}, len(chbngesetSpecIDs))
+	for _, id := rbnge chbngesetSpecIDs {
 		m[id] = struct{}{}
 	}
-	marshaledIDs, err := json.Marshal(m)
+	mbrshbledIDs, err := json.Mbrshbl(m)
 	if err != nil {
 		return err
 	}
 
-	// Set changeset_spec_ids on the batch_spec_workspace.
-	res, err := tx.ExecResult(ctx, sqlf.Sprintf(setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr, marshaledIDs, batchSpecWorkspaceID))
+	// Set chbngeset_spec_ids on the bbtch_spec_workspbce.
+	res, err := tx.ExecResult(ctx, sqlf.Sprintf(setChbngesetSpecIDsOnBbtchSpecWorkspbceQueryFmtstr, mbrshbledIDs, bbtchSpecWorkspbceID))
 	if err != nil {
 		return err
 	}
@@ -288,69 +288,69 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) setChangesetSpecIDs(ctx context
 	}
 
 	if c != 1 {
-		return errors.New("incorrect number of batch_spec_workspaces updated")
+		return errors.New("incorrect number of bbtch_spec_workspbces updbted")
 	}
 
 	return nil
 }
 
-const setChangesetSpecIDsOnBatchSpecWorkspaceQueryFmtstr = `
+const setChbngesetSpecIDsOnBbtchSpecWorkspbceQueryFmtstr = `
 UPDATE
-	batch_spec_workspaces
+	bbtch_spec_workspbces
 SET
-	changeset_spec_ids = %s
+	chbngeset_spec_ids = %s
 WHERE id = %s
 `
 
-// storeCacheResults builds DB cache entries for all the results and store them using the given tx.
-func storeCacheResults(ctx context.Context, tx *Store, results []*batcheslib.CacheAfterStepResultMetadata, userID int32) error {
-	for _, result := range results {
-		value, err := json.Marshal(&result.Value)
+// storeCbcheResults builds DB cbche entries for bll the results bnd store them using the given tx.
+func storeCbcheResults(ctx context.Context, tx *Store, results []*bbtcheslib.CbcheAfterStepResultMetbdbtb, userID int32) error {
+	for _, result := rbnge results {
+		vblue, err := json.Mbrshbl(&result.Vblue)
 		if err != nil {
-			return errors.Wrap(err, "failed to marshal cache entry")
+			return errors.Wrbp(err, "fbiled to mbrshbl cbche entry")
 		}
-		entry := &btypes.BatchSpecExecutionCacheEntry{
+		entry := &btypes.BbtchSpecExecutionCbcheEntry{
 			Key:    result.Key,
-			Value:  string(value),
+			Vblue:  string(vblue),
 			UserID: userID,
 		}
 
-		if err := tx.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			return errors.Wrap(err, "failed to save cache entry")
+		if err := tx.CrebteBbtchSpecExecutionCbcheEntry(ctx, entry); err != nil {
+			return errors.Wrbp(err, "fbiled to sbve cbche entry")
 		}
 	}
 
 	return nil
 }
 
-func extractCacheEntries(events []*batcheslib.LogEvent) (cacheEntries []*batcheslib.CacheAfterStepResultMetadata, err error) {
-	for _, e := range events {
-		if e.Operation == batcheslib.LogEventOperationCacheAfterStepResult {
-			m, ok := e.Metadata.(*batcheslib.CacheAfterStepResultMetadata)
+func extrbctCbcheEntries(events []*bbtcheslib.LogEvent) (cbcheEntries []*bbtcheslib.CbcheAfterStepResultMetbdbtb, err error) {
+	for _, e := rbnge events {
+		if e.Operbtion == bbtcheslib.LogEventOperbtionCbcheAfterStepResult {
+			m, ok := e.Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb)
 			if !ok {
-				return nil, errors.Newf("invalid log data, expected *batcheslib.CacheAfterStepResultMetadata got %T", e.Metadata)
+				return nil, errors.Newf("invblid log dbtb, expected *bbtcheslib.CbcheAfterStepResultMetbdbtb got %T", e.Metbdbtb)
 			}
 
-			cacheEntries = append(cacheEntries, m)
+			cbcheEntries = bppend(cbcheEntries, m)
 		}
 	}
 
-	return cacheEntries, nil
+	return cbcheEntries, nil
 }
 
-func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*batcheslib.LogEvent {
+func logEventsFromLogEntries(logs []executor.ExecutionLogEntry) []*bbtcheslib.LogEvent {
 	if len(logs) < 1 {
 		return nil
 	}
 
-	var entries []*batcheslib.LogEvent
+	vbr entries []*bbtcheslib.LogEvent
 
-	for _, e := range logs {
-		// V1 executions used either `step.src.0` or `step.src.batch-exec` (after named keys were introduced).
-		// From V2 on, every step has a step in the scheme of `step.docker.step.%d.post` that emits the
-		// AfterStepResult. This will be revised when we are able to upload artifacts from executions.
-		if strings.HasSuffix(e.Key, ".post") || e.Key == "step.src.0" || e.Key == "step.src.batch-exec" {
-			entries = append(entries, btypes.ParseJSONLogsFromOutput(e.Out)...)
+	for _, e := rbnge logs {
+		// V1 executions used either `step.src.0` or `step.src.bbtch-exec` (bfter nbmed keys were introduced).
+		// From V2 on, every step hbs b step in the scheme of `step.docker.step.%d.post` thbt emits the
+		// AfterStepResult. This will be revised when we bre bble to uplobd brtifbcts from executions.
+		if strings.HbsSuffix(e.Key, ".post") || e.Key == "step.src.0" || e.Key == "step.src.bbtch-exec" {
+			entries = bppend(entries, btypes.PbrseJSONLogsFromOutput(e.Out)...)
 		}
 	}
 

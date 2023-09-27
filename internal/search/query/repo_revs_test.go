@@ -1,16 +1,16 @@
-package query
+pbckbge query
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp/syntax"
+	"github.com/grbfbnb/regexp/syntbx"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestParseRepositoryRevisions(t *testing.T) {
-	tests := map[string]struct {
+func TestPbrseRepositoryRevisions(t *testing.T) {
+	tests := mbp[string]struct {
 		repo string
 		revs []RevisionSpecifier
 		err  error
@@ -36,27 +36,27 @@ func TestParseRepositoryRevisions(t *testing.T) {
 			},
 		},
 		"@rev1":            {repo: "", revs: []RevisionSpecifier{{RevSpec: "rev1"}}},
-		"repo?*@rev1:rev2": {err: &syntax.Error{Code: "invalid nested repetition operator", Expr: "?*"}},
+		"repo?*@rev1:rev2": {err: &syntbx.Error{Code: "invblid nested repetition operbtor", Expr: "?*"}},
 	}
-	for input, want := range tests {
+	for input, wbnt := rbnge tests {
 		t.Run(input, func(t *testing.T) {
-			repoRevs, err := ParseRepositoryRevisions(input)
-			if diff := cmp.Diff(errors.UnwrapAll(want.err), err); diff != "" {
-				t.Fatalf("(-want +got):\n%s", diff)
+			repoRevs, err := PbrseRepositoryRevisions(input)
+			if diff := cmp.Diff(errors.UnwrbpAll(wbnt.err), err); diff != "" {
+				t.Fbtblf("(-wbnt +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(want.repo, repoRevs.Repo); diff != "" {
-				t.Fatalf("(-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbnt.repo, repoRevs.Repo); diff != "" {
+				t.Fbtblf("(-wbnt +got):\n%s", diff)
 			}
 
-			// Just check the repo regex is present -- there are other tests
-			// that exercise the compiled regex
+			// Just check the repo regex is present -- there bre other tests
+			// thbt exercise the compiled regex
 			if err == nil && repoRevs.RepoRegex == nil {
-				t.Fatalf("repo regex is unexpectedly empty")
+				t.Fbtblf("repo regex is unexpectedly empty")
 			}
 
-			if diff := cmp.Diff(want.revs, repoRevs.Revs); diff != "" {
-				t.Fatalf("(-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbnt.revs, repoRevs.Revs); diff != "" {
+				t.Fbtblf("(-wbnt +got):\n%s", diff)
 			}
 		})
 	}

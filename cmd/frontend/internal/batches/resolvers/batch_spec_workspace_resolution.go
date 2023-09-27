@@ -1,106 +1,106 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type batchSpecWorkspaceResolutionResolver struct {
+type bbtchSpecWorkspbceResolutionResolver struct {
 	store      *store.Store
 	logger     log.Logger
-	resolution *btypes.BatchSpecResolutionJob
+	resolution *btypes.BbtchSpecResolutionJob
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceResolutionResolver = &batchSpecWorkspaceResolutionResolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceResolutionResolver = &bbtchSpecWorkspbceResolutionResolver{}
 
-func (r *batchSpecWorkspaceResolutionResolver) State() string {
-	return r.resolution.State.ToGraphQL()
+func (r *bbtchSpecWorkspbceResolutionResolver) Stbte() string {
+	return r.resolution.Stbte.ToGrbphQL()
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) StartedAt() *gqlutil.DateTime {
-	if r.resolution.StartedAt.IsZero() {
+func (r *bbtchSpecWorkspbceResolutionResolver) StbrtedAt() *gqlutil.DbteTime {
+	if r.resolution.StbrtedAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.resolution.StartedAt}
+	return &gqlutil.DbteTime{Time: r.resolution.StbrtedAt}
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) FinishedAt() *gqlutil.DateTime {
+func (r *bbtchSpecWorkspbceResolutionResolver) FinishedAt() *gqlutil.DbteTime {
 	if r.resolution.FinishedAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.resolution.FinishedAt}
+	return &gqlutil.DbteTime{Time: r.resolution.FinishedAt}
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) FailureMessage() *string {
-	return r.resolution.FailureMessage
+func (r *bbtchSpecWorkspbceResolutionResolver) FbilureMessbge() *string {
+	return r.resolution.FbilureMessbge
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) Workspaces(ctx context.Context, args *graphqlbackend.ListWorkspacesArgs) (graphqlbackend.BatchSpecWorkspaceConnectionResolver, error) {
-	opts, err := workspacesListArgsToDBOpts(args)
+func (r *bbtchSpecWorkspbceResolutionResolver) Workspbces(ctx context.Context, brgs *grbphqlbbckend.ListWorkspbcesArgs) (grbphqlbbckend.BbtchSpecWorkspbceConnectionResolver, error) {
+	opts, err := workspbcesListArgsToDBOpts(brgs)
 	if err != nil {
 		return nil, err
 	}
-	opts.BatchSpecID = r.resolution.BatchSpecID
+	opts.BbtchSpecID = r.resolution.BbtchSpecID
 
-	return &batchSpecWorkspaceConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
+	return &bbtchSpecWorkspbceConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) RecentlyCompleted(ctx context.Context, args *graphqlbackend.ListRecentlyCompletedWorkspacesArgs) graphqlbackend.BatchSpecWorkspaceConnectionResolver {
+func (r *bbtchSpecWorkspbceResolutionResolver) RecentlyCompleted(ctx context.Context, brgs *grbphqlbbckend.ListRecentlyCompletedWorkspbcesArgs) grbphqlbbckend.BbtchSpecWorkspbceConnectionResolver {
 	// TODO(ssbc): not implemented
 	return nil
 }
 
-func (r *batchSpecWorkspaceResolutionResolver) RecentlyErrored(ctx context.Context, args *graphqlbackend.ListRecentlyErroredWorkspacesArgs) graphqlbackend.BatchSpecWorkspaceConnectionResolver {
+func (r *bbtchSpecWorkspbceResolutionResolver) RecentlyErrored(ctx context.Context, brgs *grbphqlbbckend.ListRecentlyErroredWorkspbcesArgs) grbphqlbbckend.BbtchSpecWorkspbceConnectionResolver {
 	// TODO(ssbc): not implemented
 	return nil
 }
 
-func workspacesListArgsToDBOpts(args *graphqlbackend.ListWorkspacesArgs) (opts store.ListBatchSpecWorkspacesOpts, err error) {
-	if err := validateFirstParamDefaults(args.First); err != nil {
+func workspbcesListArgsToDBOpts(brgs *grbphqlbbckend.ListWorkspbcesArgs) (opts store.ListBbtchSpecWorkspbcesOpts, err error) {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return opts, err
 	}
-	opts.Limit = int(args.First)
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	opts.Limit = int(brgs.First)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return opts, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	if args.Search != nil {
-		var err error
-		opts.TextSearch, err = search.ParseTextSearch(*args.Search)
+	if brgs.Sebrch != nil {
+		vbr err error
+		opts.TextSebrch, err = sebrch.PbrseTextSebrch(*brgs.Sebrch)
 		if err != nil {
-			return opts, errors.Wrap(err, "parsing search")
+			return opts, errors.Wrbp(err, "pbrsing sebrch")
 		}
 	}
 
-	if args.State != nil {
-		if *args.State == "COMPLETED" {
-			opts.OnlyCachedOrCompleted = true
-		} else if *args.State == "PENDING" {
-			opts.OnlyWithoutExecutionAndNotCached = true
-		} else if *args.State == "CANCELING" {
+	if brgs.Stbte != nil {
+		if *brgs.Stbte == "COMPLETED" {
+			opts.OnlyCbchedOrCompleted = true
+		} else if *brgs.Stbte == "PENDING" {
+			opts.OnlyWithoutExecutionAndNotCbched = true
+		} else if *brgs.Stbte == "CANCELING" {
 			t := true
-			opts.Cancel = &t
-			opts.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-		} else if *args.State == "SKIPPED" {
+			opts.Cbncel = &t
+			opts.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing
+		} else if *brgs.Stbte == "SKIPPED" {
 			t := true
 			opts.Skipped = &t
 		} else {
-			// Convert the GQL type into the DB type: we just need to lowercase it. Magic 🪄.
-			opts.State = btypes.BatchSpecWorkspaceExecutionJobState(strings.ToLower(*args.State))
+			// Convert the GQL type into the DB type: we just need to lowercbse it. Mbgic 🪄.
+			opts.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbte(strings.ToLower(*brgs.Stbte))
 		}
 	}
 

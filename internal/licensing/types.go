@@ -1,15 +1,15 @@
-package licensing
+pbckbge licensing
 
-type LicenseCheckRequestParams struct {
+type LicenseCheckRequestPbrbms struct {
 	ClientSiteID string `json:"siteID"`
 }
 
-type LicenseCheckResponseData struct {
-	IsValid bool   `json:"is_valid,omitempty"`
-	Reason  string `json:"reason,omitempty"`
+type LicenseCheckResponseDbtb struct {
+	IsVblid bool   `json:"is_vblid,omitempty"`
+	Rebson  string `json:"rebson,omitempty"`
 }
 
 type LicenseCheckResponse struct {
 	Error string                    `json:"error,omitempty"`
-	Data  *LicenseCheckResponseData `json:"data"`
+	Dbtb  *LicenseCheckResponseDbtb `json:"dbtb"`
 }

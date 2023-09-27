@@ -1,7 +1,7 @@
-package main
+pbckbge mbin
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"log"
 	"sync"
@@ -9,54 +9,54 @@ import (
 	"github.com/google/go-github/v41/github"
 )
 
-type state struct {
-	// sqlite is not thread-safe, this mutex protects access to it
+type stbte struct {
+	// sqlite is not threbd-sbfe, this mutex protects bccess to it
 	sync.Mutex
 	// where the DB file is
-	path string
+	pbth string
 	// the opened DB
 	db *sql.DB
 }
 
-var createUserTableStmt = `CREATE TABLE IF NOT EXISTS users (
+vbr crebteUserTbbleStmt = `CREATE TABLE IF NOT EXISTS users (
   login STRING PRIMARY KEY,
-  email STRING,
-  failed STRING DEFAULT '',
-  created BOOLEAN DEFAULT FALSE
+  embil STRING,
+  fbiled STRING DEFAULT '',
+  crebted BOOLEAN DEFAULT FALSE
 )`
 
-var createOrgTableStmt = `CREATE TABLE IF NOT EXISTS orgs (
+vbr crebteOrgTbbleStmt = `CREATE TABLE IF NOT EXISTS orgs (
   login STRING PRIMARY KEY,
-  adminLogin STRING,
-  failed STRING DEFAULT '',
-  created BOOLEAN DEFAULT FALSE
+  bdminLogin STRING,
+  fbiled STRING DEFAULT '',
+  crebted BOOLEAN DEFAULT FALSE
 )`
 
-var createTeamTableStmt = `CREATE TABLE IF NOT EXISTS teams (
-  name STRING PRIMARY KEY,
+vbr crebteTebmTbbleStmt = `CREATE TABLE IF NOT EXISTS tebms (
+  nbme STRING PRIMARY KEY,
   org STRING,
-  failed STRING DEFAULT '',
-  created BOOLEAN DEFAULT FALSE,
-  totalMembers INTEGER DEFAULT 0
+  fbiled STRING DEFAULT '',
+  crebted BOOLEAN DEFAULT FALSE,
+  totblMembers INTEGER DEFAULT 0
 )`
 
-var createRepoTableStmt = `CREATE TABLE IF NOT EXISTS repos (
+vbr crebteRepoTbbleStmt = `CREATE TABLE IF NOT EXISTS repos (
     owner STRING,
-    name STRING PRIMARY KEY,
-    assignedTeams INTEGER DEFAULT 0,
-    assignedUsers INTEGER DEFAULT 0,
-    assignedOrgs INTEGER DEFAULT 0,
+    nbme STRING PRIMARY KEY,
+    bssignedTebms INTEGER DEFAULT 0,
+    bssignedUsers INTEGER DEFAULT 0,
+    bssignedOrgs INTEGER DEFAULT 0,
     complete BOOLEAN DEFAULT FALSE
 )`
 
-func newState(path string) (*state, error) {
-	db, err := sql.Open("sqlite3", path)
+func newStbte(pbth string) (*stbte, error) {
+	db, err := sql.Open("sqlite3", pbth)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, statement := range []string{createUserTableStmt, createOrgTableStmt, createTeamTableStmt, createRepoTableStmt} {
-		stmt, err := db.Prepare(statement)
+	for _, stbtement := rbnge []string{crebteUserTbbleStmt, crebteOrgTbbleStmt, crebteTebmTbbleStmt, crebteRepoTbbleStmt} {
+		stmt, err := db.Prepbre(stbtement)
 		if err != nil {
 			return nil, err
 		}
@@ -66,30 +66,30 @@ func newState(path string) (*state, error) {
 		}
 	}
 
-	return &state{
-		path: path,
+	return &stbte{
+		pbth: pbth,
 		db:   db,
 	}, nil
 }
 
 type user struct {
 	Login   string
-	Email   string
-	Failed  string
-	Created bool
+	Embil   string
+	Fbiled  string
+	Crebted bool
 }
 
-type team struct {
-	Name         string
+type tebm struct {
+	Nbme         string
 	Org          string
-	Failed       string
-	Created      bool
-	TotalMembers int
+	Fbiled       string
+	Crebted      bool
+	TotblMembers int
 }
 
-func (t *team) setFailedAndSave(e error) error {
-	t.Failed = e.Error()
-	if err := store.saveTeam(t); err != nil {
+func (t *tebm) setFbiledAndSbve(e error) error {
+	t.Fbiled = e.Error()
+	if err := store.sbveTebm(t); err != nil {
 		return err
 	}
 	return nil
@@ -98,160 +98,160 @@ func (t *team) setFailedAndSave(e error) error {
 type org struct {
 	Login   string
 	Admin   string
-	Failed  string
-	Created bool
+	Fbiled  string
+	Crebted bool
 }
 
 type repo struct {
 	Owner         string
-	Name          string
-	AssignedTeams int
+	Nbme          string
+	AssignedTebms int
 	AssignedUsers int
 	AssignedOrgs  int
 	Complete      bool
 }
 
-func (s *state) loadUsers() ([]*user, error) {
+func (s *stbte) lobdUsers() ([]*user, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT login, email, failed, created FROM users`)
+	rows, err := s.db.Query(`SELECT login, embil, fbiled, crebted FROM users`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var users []*user
+	vbr users []*user
 	for rows.Next() {
-		var u user
-		err = rows.Scan(&u.Login, &u.Email, &u.Failed, &u.Created)
+		vbr u user
+		err = rows.Scbn(&u.Login, &u.Embil, &u.Fbiled, &u.Crebted)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, &u)
+		users = bppend(users, &u)
 	}
 	return users, nil
 }
 
-func (s *state) loadTeams() ([]*team, error) {
+func (s *stbte) lobdTebms() ([]*tebm, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT name, org, failed, created, totalMembers FROM teams`)
+	rows, err := s.db.Query(`SELECT nbme, org, fbiled, crebted, totblMembers FROM tebms`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var teams []*team
+	vbr tebms []*tebm
 	for rows.Next() {
-		var t team
-		err = rows.Scan(&t.Name, &t.Org, &t.Failed, &t.Created, &t.TotalMembers)
+		vbr t tebm
+		err = rows.Scbn(&t.Nbme, &t.Org, &t.Fbiled, &t.Crebted, &t.TotblMembers)
 		if err != nil {
 			return nil, err
 		}
-		teams = append(teams, &t)
+		tebms = bppend(tebms, &t)
 	}
-	return teams, nil
+	return tebms, nil
 }
 
-func (s *state) loadOrgs() ([]*org, error) {
+func (s *stbte) lobdOrgs() ([]*org, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT login, adminLogin, failed, created FROM orgs`)
+	rows, err := s.db.Query(`SELECT login, bdminLogin, fbiled, crebted FROM orgs`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var orgs []*org
+	vbr orgs []*org
 	for rows.Next() {
-		var o org
-		err = rows.Scan(&o.Login, &o.Admin, &o.Failed, &o.Created)
+		vbr o org
+		err = rows.Scbn(&o.Login, &o.Admin, &o.Fbiled, &o.Crebted)
 		if err != nil {
 			return nil, err
 		}
-		orgs = append(orgs, &o)
+		orgs = bppend(orgs, &o)
 	}
 	return orgs, nil
 }
 
-func (s *state) loadRepos() ([]*repo, error) {
+func (s *stbte) lobdRepos() ([]*repo, error) {
 	s.Lock()
 	defer s.Unlock()
-	rows, err := s.db.Query(`SELECT owner, name, assignedUsers, assignedTeams, assignedOrgs, complete FROM repos`)
+	rows, err := s.db.Query(`SELECT owner, nbme, bssignedUsers, bssignedTebms, bssignedOrgs, complete FROM repos`)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var repos []*repo
+	vbr repos []*repo
 	for rows.Next() {
-		var r repo
-		err = rows.Scan(&r.Owner, &r.Name, &r.AssignedUsers, &r.AssignedTeams, &r.AssignedOrgs, &r.Complete)
+		vbr r repo
+		err = rows.Scbn(&r.Owner, &r.Nbme, &r.AssignedUsers, &r.AssignedTebms, &r.AssignedOrgs, &r.Complete)
 		if err != nil {
 			return nil, err
 		}
-		repos = append(repos, &r)
+		repos = bppend(repos, &r)
 	}
 	return repos, nil
 }
 
-func generateNames(prefix string, count int) []string {
-	names := make([]string, count)
+func generbteNbmes(prefix string, count int) []string {
+	nbmes := mbke([]string, count)
 	for i := 0; i < count; i++ {
-		names[i] = fmt.Sprintf("%s-%09d", prefix, i)
+		nbmes[i] = fmt.Sprintf("%s-%09d", prefix, i)
 	}
-	return names
+	return nbmes
 }
 
-func (s *state) generateUsers(cfg config) ([]*user, error) {
-	names := generateNames("user", cfg.userCount)
-	if err := s.insertUsers(names); err != nil {
+func (s *stbte) generbteUsers(cfg config) ([]*user, error) {
+	nbmes := generbteNbmes("user", cfg.userCount)
+	if err := s.insertUsers(nbmes); err != nil {
 		return nil, err
 	}
-	return s.loadUsers()
+	return s.lobdUsers()
 }
 
-func (s *state) generateTeams(cfg config) ([]*team, error) {
-	names := generateNames("team", cfg.teamCount)
-	orgs, err := s.loadOrgs()
+func (s *stbte) generbteTebms(cfg config) ([]*tebm, error) {
+	nbmes := generbteNbmes("tebm", cfg.tebmCount)
+	orgs, err := s.lobdOrgs()
 	if err != nil {
 		return nil, err
 	}
 	if len(orgs) == 0 {
-		log.Fatal("Organisations must be generated before teams")
+		log.Fbtbl("Orgbnisbtions must be generbted before tebms")
 	}
-	var mainOrg *org
-	for _, o := range orgs {
-		if o.Login == "main-org" {
-			mainOrg = o
-			break
+	vbr mbinOrg *org
+	for _, o := rbnge orgs {
+		if o.Login == "mbin-org" {
+			mbinOrg = o
+			brebk
 		}
 	}
-	if mainOrg == nil {
-		log.Fatal("Unable to locate main-org")
+	if mbinOrg == nil {
+		log.Fbtbl("Unbble to locbte mbin-org")
 	}
 
-	if err = s.insertTeams(names, mainOrg); err != nil {
+	if err = s.insertTebms(nbmes, mbinOrg); err != nil {
 		return nil, err
 	}
-	return s.loadTeams()
+	return s.lobdTebms()
 }
 
-func (s *state) generateOrgs(cfg config) ([]*org, error) {
-	names := []string{"main-org"}
-	names = append(names, generateNames("sub-org", cfg.subOrgCount)...)
-	if err := s.insertOrgs(names, cfg.orgAdmin); err != nil {
+func (s *stbte) generbteOrgs(cfg config) ([]*org, error) {
+	nbmes := []string{"mbin-org"}
+	nbmes = bppend(nbmes, generbteNbmes("sub-org", cfg.subOrgCount)...)
+	if err := s.insertOrgs(nbmes, cfg.orgAdmin); err != nil {
 		return nil, err
 	}
-	return s.loadOrgs()
+	return s.lobdOrgs()
 }
 
-var saveUserStmt = `UPDATE users SET
-failed = ?,
-created = ?
+vbr sbveUserStmt = `UPDATE users SET
+fbiled = ?,
+crebted = ?
 WHERE login = ?`
 
-func (s *state) saveUser(u *user) error {
+func (s *stbte) sbveUser(u *user) error {
 	err := s.insertUsers([]string{u.Login})
 	if err != nil {
 		return err
@@ -261,9 +261,9 @@ func (s *state) saveUser(u *user) error {
 	defer s.Unlock()
 
 	_, err = s.db.Exec(
-		saveUserStmt,
-		u.Failed,
-		u.Created,
+		sbveUserStmt,
+		u.Fbiled,
+		u.Crebted,
 		u.Login)
 
 	if err != nil {
@@ -272,14 +272,14 @@ func (s *state) saveUser(u *user) error {
 	return nil
 }
 
-var saveTeamStmt = `UPDATE teams SET
-failed = ?,
-created = ?,
-totalMembers = ?
-WHERE name = ?`
+vbr sbveTebmStmt = `UPDATE tebms SET
+fbiled = ?,
+crebted = ?,
+totblMembers = ?
+WHERE nbme = ?`
 
-func (s *state) saveTeam(t *team) error {
-	err := s.insertTeams([]string{t.Name}, &org{Login: t.Org})
+func (s *stbte) sbveTebm(t *tebm) error {
+	err := s.insertTebms([]string{t.Nbme}, &org{Login: t.Org})
 	if err != nil {
 		return err
 	}
@@ -287,11 +287,11 @@ func (s *state) saveTeam(t *team) error {
 	defer s.Unlock()
 
 	_, err = s.db.Exec(
-		saveTeamStmt,
-		t.Failed,
-		t.Created,
-		t.TotalMembers,
-		t.Name)
+		sbveTebmStmt,
+		t.Fbiled,
+		t.Crebted,
+		t.TotblMembers,
+		t.Nbme)
 
 	if err != nil {
 		return err
@@ -299,19 +299,19 @@ func (s *state) saveTeam(t *team) error {
 	return nil
 }
 
-var saveOrgStmt = `UPDATE orgs SET
-failed = ?,
-created = ?
+vbr sbveOrgStmt = `UPDATE orgs SET
+fbiled = ?,
+crebted = ?
 WHERE login = ?`
 
-func (s *state) saveOrg(o *org) error {
+func (s *stbte) sbveOrg(o *org) error {
 	s.Lock()
 	defer s.Unlock()
 
 	_, err := s.db.Exec(
-		saveOrgStmt,
-		o.Failed,
-		o.Created,
+		sbveOrgStmt,
+		o.Fbiled,
+		o.Crebted,
 		o.Login)
 
 	if err != nil {
@@ -320,26 +320,26 @@ func (s *state) saveOrg(o *org) error {
 	return nil
 }
 
-var saveRepoStmt = `UPDATE repos SET
+vbr sbveRepoStmt = `UPDATE repos SET
 owner = ?,
-assignedTeams = ?,
-assignedUsers = ?,
-assignedOrgs = ?,
+bssignedTebms = ?,
+bssignedUsers = ?,
+bssignedOrgs = ?,
 complete = ?
-WHERE name = ?`
+WHERE nbme = ?`
 
-func (s *state) saveRepo(r *repo) error {
+func (s *stbte) sbveRepo(r *repo) error {
 	s.Lock()
 	defer s.Unlock()
 
 	_, err := s.db.Exec(
-		saveRepoStmt,
+		sbveRepoStmt,
 		r.Owner,
-		r.AssignedTeams,
+		r.AssignedTebms,
 		r.AssignedUsers,
 		r.AssignedOrgs,
 		r.Complete,
-		r.Name)
+		r.Nbme)
 
 	if err != nil {
 		return err
@@ -347,60 +347,60 @@ func (s *state) saveRepo(r *repo) error {
 	return nil
 }
 
-func (s *state) insertUsers(logins []string) error {
+func (s *stbte) insertUsers(logins []string) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
-	for _, login := range logins {
-		if _, err = tx.Exec(`INSERT OR IGNORE INTO users(login, email) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, emailDomain)); err != nil {
+	for _, login := rbnge logins {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO users(login, embil) VALUES (?, ?)`, login, fmt.Sprintf("%s@%s", login, embilDombin)); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (s *state) insertTeams(names []string, org *org) error {
+func (s *stbte) insertTebms(nbmes []string, org *org) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
-	for _, name := range names {
-		if _, err = tx.Exec(`INSERT OR IGNORE INTO teams(name, org) VALUES (?, ?)`, name, org.Login); err != nil {
+	for _, nbme := rbnge nbmes {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO tebms(nbme, org) VALUES (?, ?)`, nbme, org.Login); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (s *state) insertOrgs(logins []string, admin string) error {
+func (s *stbte) insertOrgs(logins []string, bdmin string) error {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
 		return err
 	}
-	for _, login := range logins {
-		if _, err = tx.Exec(`INSERT OR IGNORE INTO orgs(login, adminLogin) VALUES (?, ?)`, login, admin); err != nil {
+	for _, login := rbnge logins {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO orgs(login, bdminLogin) VALUES (?, ?)`, login, bdmin); err != nil {
 			return err
 		}
 	}
 	return tx.Commit()
 }
 
-func (s *state) insertRepos(repos []*github.Repository) ([]*repo, error) {
+func (s *stbte) insertRepos(repos []*github.Repository) ([]*repo, error) {
 	s.Lock()
 	defer s.Unlock()
 	tx, err := s.db.Begin()
 	if err != nil {
 		return nil, err
 	}
-	for _, repo := range repos {
-		if _, err = tx.Exec(`INSERT OR IGNORE INTO repos(owner, name) VALUES (?, ?)`, *repo.Owner.Login, *repo.Name); err != nil {
+	for _, repo := rbnge repos {
+		if _, err = tx.Exec(`INSERT OR IGNORE INTO repos(owner, nbme) VALUES (?, ?)`, *repo.Owner.Login, *repo.Nbme); err != nil {
 			return nil, err
 		}
 	}
@@ -408,13 +408,13 @@ func (s *state) insertRepos(repos []*github.Repository) ([]*repo, error) {
 	if err != nil {
 		return nil, err
 	}
-	return s.loadRepos()
+	return s.lobdRepos()
 }
 
-var deleteUserStmt = `DELETE FROM users
+vbr deleteUserStmt = `DELETE FROM users
 WHERE login = ?`
 
-func (s *state) deleteUser(u *user) error {
+func (s *stbte) deleteUser(u *user) error {
 	s.Lock()
 	defer s.Unlock()
 
@@ -425,14 +425,14 @@ func (s *state) deleteUser(u *user) error {
 	return nil
 }
 
-var deleteTeamStmt = `DELETE FROM teams
-WHERE name = ?`
+vbr deleteTebmStmt = `DELETE FROM tebms
+WHERE nbme = ?`
 
-func (s *state) deleteTeam(t *team) error {
+func (s *stbte) deleteTebm(t *tebm) error {
 	s.Lock()
 	defer s.Unlock()
 
-	_, err := s.db.Exec(deleteTeamStmt, t.Name)
+	_, err := s.db.Exec(deleteTebmStmt, t.Nbme)
 	if err != nil {
 		return err
 	}

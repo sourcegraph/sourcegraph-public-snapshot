@@ -1,4 +1,4 @@
-package codygateway
+pbckbge codygbtewby
 
 type ActorSource string
 
@@ -7,29 +7,29 @@ const (
 	ActorSourceDotcomUser          ActorSource = "dotcom-user"
 )
 
-const CompletionsEventFeatureMetadataField = "feature"
-const EmbeddingsTokenUsageMetadataField = "tokens_used"
+const CompletionsEventFebtureMetbdbtbField = "febture"
+const EmbeddingsTokenUsbgeMetbdbtbField = "tokens_used"
 
-const CompletionsEventFeatureEmbeddings = "embeddings"
+const CompletionsEventFebtureEmbeddings = "embeddings"
 
-type EventName string
+type EventNbme string
 
 const (
-	EventNameUnauthorized        EventName = "Unauthorized"
-	EventNameAccessDenied        EventName = "AccessDenied"
-	EventNameRateLimited         EventName = "RateLimited"
-	EventNameCompletionsFinished EventName = "CompletionsFinished"
-	EventNameEmbeddingsFinished  EventName = "EmbeddingsFinished"
+	EventNbmeUnbuthorized        EventNbme = "Unbuthorized"
+	EventNbmeAccessDenied        EventNbme = "AccessDenied"
+	EventNbmeRbteLimited         EventNbme = "RbteLimited"
+	EventNbmeCompletionsFinished EventNbme = "CompletionsFinished"
+	EventNbmeEmbeddingsFinished  EventNbme = "EmbeddingsFinished"
 )
 
-const FeatureHeaderName = "X-Sourcegraph-Feature"
+const FebtureHebderNbme = "X-Sourcegrbph-Febture"
 
-// GQLErrCodeDotcomUserNotFound is the GraphQL error code returned when
-// attempting to look up a dotcom user failed.
+// GQLErrCodeDotcomUserNotFound is the GrbphQL error code returned when
+// bttempting to look up b dotcom user fbiled.
 const GQLErrCodeDotcomUserNotFound = "ErrDotcomUserNotFound"
 
-// CodyGatewayUsageRedisKeyPrefix is used in a Sourcegraph instance for storing the
-// usage in percent for the different features in redis. Worker ingests this data
-// and frontend can read from it to render site alerts for admins when usage limits
-// are about to be hit.s
-const CodyGatewayUsageRedisKeyPrefix = "v1:cody_gateway_usage_percent"
+// CodyGbtewbyUsbgeRedisKeyPrefix is used in b Sourcegrbph instbnce for storing the
+// usbge in percent for the different febtures in redis. Worker ingests this dbtb
+// bnd frontend cbn rebd from it to render site blerts for bdmins when usbge limits
+// bre bbout to be hit.s
+const CodyGbtewbyUsbgeRedisKeyPrefix = "v1:cody_gbtewby_usbge_percent"

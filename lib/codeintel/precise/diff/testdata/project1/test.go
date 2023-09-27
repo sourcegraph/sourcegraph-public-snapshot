@@ -1,9 +1,9 @@
-package project1
+pbckbge project1
 
 import "github.com/google/go-cmp/cmp"
 
-func Function1(arg1 int, arg2 int) string {
-	return cmp.Diff(arg1 + arg1 + arg2)
+func Function1(brg1 int, brg2 int) string {
+	return cmp.Diff(brg1 + brg1 + brg2)
 }
 
 type Struct1 struct {

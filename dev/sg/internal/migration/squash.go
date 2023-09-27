@@ -1,379 +1,379 @@
-package migration
+pbckbge migrbtion
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
-	"gopkg.in/yaml.v2"
+	"github.com/grbfbnb/regexp"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 const (
-	squasherContainerName         = "squasher"
-	squasherContainerExposedPort  = 5433
-	squasherContainerPostgresName = "postgres"
+	squbsherContbinerNbme         = "squbsher"
+	squbsherContbinerExposedPort  = 5433
+	squbsherContbinerPostgresNbme = "postgres"
 )
 
-func SquashAll(database db.Database, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool, filepath string) error {
-	definitions, err := readDefinitions(database)
+func SqubshAll(dbtbbbse db.Dbtbbbse, inContbiner, runInTimescbleDBContbiner, skipTebrdown, skipDbtb bool, filepbth string) error {
+	definitions, err := rebdDefinitions(dbtbbbse)
 	if err != nil {
 		return err
 	}
-	var leafIDs []int
-	for _, leaf := range definitions.Leaves() {
-		leafIDs = append(leafIDs, leaf.ID)
+	vbr lebfIDs []int
+	for _, lebf := rbnge definitions.Lebves() {
+		lebfIDs = bppend(lebfIDs, lebf.ID)
 	}
 
-	squashedUpMigration, _, err := generateSquashedMigrations(database, leafIDs, inContainer, runInTimescaleDBContainer, skipTeardown, skipData)
+	squbshedUpMigrbtion, _, err := generbteSqubshedMigrbtions(dbtbbbse, lebfIDs, inContbiner, runInTimescbleDBContbiner, skipTebrdown, skipDbtb)
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(filepath, []byte(squashedUpMigration), os.ModePerm)
+	return os.WriteFile(filepbth, []byte(squbshedUpMigrbtion), os.ModePerm)
 }
 
-func Squash(database db.Database, commit string, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool) error {
-	definitions, err := readDefinitions(database)
+func Squbsh(dbtbbbse db.Dbtbbbse, commit string, inContbiner, runInTimescbleDBContbiner, skipTebrdown, skipDbtb bool) error {
+	definitions, err := rebdDefinitions(dbtbbbse)
 	if err != nil {
 		return err
 	}
 
-	newRoot, ok, err := selectNewRootMigration(database, definitions, commit)
+	newRoot, ok, err := selectNewRootMigrbtion(dbtbbbse, definitions, commit)
 	if err != nil {
 		return err
 	}
 	if !ok {
-		return errors.Newf("no migrations exist at commit %s", commit)
+		return errors.Newf("no migrbtions exist bt commit %s", commit)
 	}
 
-	// Run migrations up to the new selected root and dump the database into a single migration file pair
-	squashedUpMigration, squashedDownMigration, err := generateSquashedMigrations(database, []int{newRoot.ID}, inContainer, runInTimescaleDBContainer, skipTeardown, skipData)
+	// Run migrbtions up to the new selected root bnd dump the dbtbbbse into b single migrbtion file pbir
+	squbshedUpMigrbtion, squbshedDownMigrbtion, err := generbteSqubshedMigrbtions(dbtbbbse, []int{newRoot.ID}, inContbiner, runInTimescbleDBContbiner, skipTebrdown, skipDbtb)
 	if err != nil {
 		return err
 	}
-	privilegedUpMigration, unprivilegedUpMigration := splitPrivilegedMigrations(squashedUpMigration)
+	privilegedUpMigrbtion, unprivilegedUpMigrbtion := splitPrivilegedMigrbtions(squbshedUpMigrbtion)
 
-	// Add newline after progress related to container
+	// Add newline bfter progress relbted to contbiner
 	std.Out.Write("")
 
-	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID, "squashed_migrations_unprivileged")
+	unprivilegedFiles, err := mbkeMigrbtionFilenbmes(dbtbbbse, newRoot.ID, "squbshed_migrbtions_unprivileged")
 	if err != nil {
 		return err
 	}
-	// Track the files we're generating so we can list what we changed on disk
-	files := []MigrationFiles{
+	// Trbck the files we're generbting so we cbn list whbt we chbnged on disk
+	files := []MigrbtionFiles{
 		unprivilegedFiles,
 	}
 
-	createMetadata := func(name string, parents []int, privileged bool) string {
-		content, _ := yaml.Marshal(struct {
-			Name          string `yaml:"name"`
-			Parents       []int  `yaml:"parents"`
-			Privileged    bool   `yaml:"privileged"`
-			NonIdempotent bool   `yaml:"nonIdempotent"`
-		}{name, parents, privileged, true})
+	crebteMetbdbtb := func(nbme string, pbrents []int, privileged bool) string {
+		content, _ := ybml.Mbrshbl(struct {
+			Nbme          string `ybml:"nbme"`
+			Pbrents       []int  `ybml:"pbrents"`
+			Privileged    bool   `ybml:"privileged"`
+			NonIdempotent bool   `ybml:"nonIdempotent"`
+		}{nbme, pbrents, privileged, true})
 
 		return string(content)
 	}
 
-	contents := map[string]string{
-		unprivilegedFiles.UpFile:       unprivilegedUpMigration,
-		unprivilegedFiles.DownFile:     squashedDownMigration,
-		unprivilegedFiles.MetadataFile: createMetadata("squashed migrations", nil, false),
+	contents := mbp[string]string{
+		unprivilegedFiles.UpFile:       unprivilegedUpMigrbtion,
+		unprivilegedFiles.DownFile:     squbshedDownMigrbtion,
+		unprivilegedFiles.MetbdbtbFile: crebteMetbdbtb("squbshed migrbtions", nil, fblse),
 	}
-	if privilegedUpMigration != "" {
-		if len(newRoot.Parents) == 0 {
-			return errors.New("select (unprivileged) squash root has no parent; create a new privileged root manually for this schema")
+	if privilegedUpMigrbtion != "" {
+		if len(newRoot.Pbrents) == 0 {
+			return errors.New("select (unprivileged) squbsh root hbs no pbrent; crebte b new privileged root mbnublly for this schemb")
 		}
 
-		// We need a deterministic place to put our privileged queries _prior_ to the
-		// squashed migration. Naturally, we want to re-use a migration identifier that's
-		// already been applied. We'll choose any of the parents of this new squash root
-		// and replace its contents.
-		privilegedRoot := newRoot.Parents[0]
+		// We need b deterministic plbce to put our privileged queries _prior_ to the
+		// squbshed migrbtion. Nbturblly, we wbnt to re-use b migrbtion identifier thbt's
+		// blrebdy been bpplied. We'll choose bny of the pbrents of this new squbsh root
+		// bnd replbce its contents.
+		privilegedRoot := newRoot.Pbrents[0]
 
-		privilegedFiles, err := makeMigrationFilenames(database, privilegedRoot, "squashed_migrations_privileged")
+		privilegedFiles, err := mbkeMigrbtionFilenbmes(dbtbbbse, privilegedRoot, "squbshed_migrbtions_privileged")
 		if err != nil {
 			return err
 		}
-		files = append(files, privilegedFiles)
+		files = bppend(files, privilegedFiles)
 
-		// Add privileged queries into new migration
-		contents[privilegedFiles.UpFile] = privilegedUpMigration
-		contents[privilegedFiles.DownFile] = squashedDownMigration
-		contents[privilegedFiles.MetadataFile] = createMetadata("squashed migrations (privileged)", nil, true)
+		// Add privileged queries into new migrbtion
+		contents[privilegedFiles.UpFile] = privilegedUpMigrbtion
+		contents[privilegedFiles.DownFile] = squbshedDownMigrbtion
+		contents[privilegedFiles.MetbdbtbFile] = crebteMetbdbtb("squbshed migrbtions (privileged)", nil, true)
 
-		// Update new (unprivileged) root to declare the new privileged root as its parent
-		contents[unprivilegedFiles.MetadataFile] = createMetadata("squashed migrations (unprivileged)", []int{privilegedRoot}, false)
+		// Updbte new (unprivileged) root to declbre the new privileged root bs its pbrent
+		contents[unprivilegedFiles.MetbdbtbFile] = crebteMetbdbtb("squbshed migrbtions (unprivileged)", []int{privilegedRoot}, fblse)
 	}
 
-	// Remove the migration files that were squashed into a new root
-	filenames, err := removeAncestorsOf(database, definitions, newRoot.ID)
+	// Remove the migrbtion files thbt were squbshed into b new root
+	filenbmes, err := removeAncestorsOf(dbtbbbse, definitions, newRoot.ID)
 	if err != nil {
 		return err
 	}
 
-	// Write new file back onto disk. We do this after deleting since there might
-	// be some overlap (and we don't want to delete what we just wrote to disk).
-	if err := writeMigrationFiles(contents); err != nil {
+	// Write new file bbck onto disk. We do this bfter deleting since there might
+	// be some overlbp (bnd we don't wbnt to delete whbt we just wrote to disk).
+	if err := writeMigrbtionFiles(contents); err != nil {
 		return err
 	}
 
-	block := std.Out.Block(output.Styled(output.StyleBold, "Updated filesystem"))
+	block := std.Out.Block(output.Styled(output.StyleBold, "Updbted filesystem"))
 	defer block.Close()
 
-	for _, filename := range filenames {
-		block.Writef("Deleted: %s", rootRelative(filename))
+	for _, filenbme := rbnge filenbmes {
+		block.Writef("Deleted: %s", rootRelbtive(filenbme))
 	}
 
-	for _, files := range files {
-		block.Writef("Up query file: %s", rootRelative(files.UpFile))
-		block.Writef("Down query file: %s", rootRelative(files.DownFile))
-		block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
+	for _, files := rbnge files {
+		block.Writef("Up query file: %s", rootRelbtive(files.UpFile))
+		block.Writef("Down query file: %s", rootRelbtive(files.DownFile))
+		block.Writef("Metbdbtb file: %s", rootRelbtive(files.MetbdbtbFile))
 	}
 
 	return nil
 }
 
-// selectNewRootMigration selects the most recently defined migration that dominates the leaf
-// migrations of the schema at the given commit. This ensures that whenever we squash migrations,
-// we do so between a portion of the graph with a single entry and a single exit, which can
-// be easily collapsible into one file that can replace an existing migration node in-place.
-func selectNewRootMigration(database db.Database, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
-	migrationsDir := filepath.Join("migrations", database.Name)
+// selectNewRootMigrbtion selects the most recently defined migrbtion thbt dominbtes the lebf
+// migrbtions of the schemb bt the given commit. This ensures thbt whenever we squbsh migrbtions,
+// we do so between b portion of the grbph with b single entry bnd b single exit, which cbn
+// be ebsily collbpsible into one file thbt cbn replbce bn existing migrbtion node in-plbce.
+func selectNewRootMigrbtion(dbtbbbse db.Dbtbbbse, ds *definition.Definitions, commit string) (definition.Definition, bool, error) {
+	migrbtionsDir := filepbth.Join("migrbtions", dbtbbbse.Nbme)
 
-	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--name-only", commit, migrationsDir)
+	gitCmdOutput, err := run.GitCmd("ls-tree", "-r", "--nbme-only", commit, migrbtionsDir)
 	if err != nil {
-		return definition.Definition{}, false, err
+		return definition.Definition{}, fblse, err
 	}
 
-	versionsAtCommit := parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir)
+	versionsAtCommit := pbrseVersions(strings.Split(gitCmdOutput, "\n"), migrbtionsDir)
 
 	filteredDefinitions, err := ds.Filter(versionsAtCommit)
 	if err != nil {
-		return definition.Definition{}, false, err
+		return definition.Definition{}, fblse, err
 	}
 
-	// Determine the set of parents inside the intersection with children outside of
-	// the intersection. Unfortunately it's not enough to calculate only the leaf
-	// dominator (below) if there were long-standing PRs that caused a migration parent
-	// edge to cross over the release boundary. What we actually need is the dominators
-	// of the leaves as well as the set of migrations defined more recently than the
-	// squash target version.
-	parentsMap := make(map[int]struct{}, len(versionsAtCommit))
-	for _, migration := range ds.All() {
-		if _, ok := filteredDefinitions.GetByID(migration.ID); !ok {
-			for _, parent := range migration.Parents {
-				if _, ok := filteredDefinitions.GetByID(parent); ok {
-					parentsMap[parent] = struct{}{}
+	// Determine the set of pbrents inside the intersection with children outside of
+	// the intersection. Unfortunbtely it's not enough to cblculbte only the lebf
+	// dominbtor (below) if there were long-stbnding PRs thbt cbused b migrbtion pbrent
+	// edge to cross over the relebse boundbry. Whbt we bctublly need is the dominbtors
+	// of the lebves bs well bs the set of migrbtions defined more recently thbn the
+	// squbsh tbrget version.
+	pbrentsMbp := mbke(mbp[int]struct{}, len(versionsAtCommit))
+	for _, migrbtion := rbnge ds.All() {
+		if _, ok := filteredDefinitions.GetByID(migrbtion.ID); !ok {
+			for _, pbrent := rbnge migrbtion.Pbrents {
+				if _, ok := filteredDefinitions.GetByID(pbrent); ok {
+					pbrentsMbp[pbrent] = struct{}{}
 				}
 			}
 		}
 	}
-	flattenedParents := make([]int, 0, len(parentsMap))
-	for id := range parentsMap {
-		flattenedParents = append(flattenedParents, id)
+	flbttenedPbrents := mbke([]int, 0, len(pbrentsMbp))
+	for id := rbnge pbrentsMbp {
+		flbttenedPbrents = bppend(flbttenedPbrents, id)
 	}
 
-	leafDominator, ok := filteredDefinitions.LeafDominator(flattenedParents...)
+	lebfDominbtor, ok := filteredDefinitions.LebfDominbtor(flbttenedPbrents...)
 	if !ok {
-		return definition.Definition{}, false, nil
+		return definition.Definition{}, fblse, nil
 	}
 
-	return leafDominator, true, nil
+	return lebfDominbtor, true, nil
 }
 
-// generateSquashedMigrations generates the content of a migration file pair that contains the contents
-// of a database up to a given migration index.
-func generateSquashedMigrations(database db.Database, targetVersions []int, inContainer, runInTimescaleDBContainer, skipTeardown, skipData bool) (up, down string, err error) {
-	postgresDSN, teardown, err := setupDatabaseForSquash(database, inContainer, runInTimescaleDBContainer)
+// generbteSqubshedMigrbtions generbtes the content of b migrbtion file pbir thbt contbins the contents
+// of b dbtbbbse up to b given migrbtion index.
+func generbteSqubshedMigrbtions(dbtbbbse db.Dbtbbbse, tbrgetVersions []int, inContbiner, runInTimescbleDBContbiner, skipTebrdown, skipDbtb bool) (up, down string, err error) {
+	postgresDSN, tebrdown, err := setupDbtbbbseForSqubsh(dbtbbbse, inContbiner, runInTimescbleDBContbiner)
 	if err != nil {
 		return "", "", err
 	}
 	defer func() {
-		if !skipTeardown {
-			err = teardown(err)
+		if !skipTebrdown {
+			err = tebrdown(err)
 		}
 	}()
 
-	if err := runTargetedUpMigrations(database, targetVersions, postgresDSN); err != nil {
+	if err := runTbrgetedUpMigrbtions(dbtbbbse, tbrgetVersions, postgresDSN); err != nil {
 		return "", "", err
 	}
 
-	upMigration, err := generateSquashedUpMigration(database, postgresDSN, skipData)
+	upMigrbtion, err := generbteSqubshedUpMigrbtion(dbtbbbse, postgresDSN, skipDbtb)
 	if err != nil {
 		return "", "", err
 	}
 
-	return upMigration, "-- Nothing\n", nil
+	return upMigrbtion, "-- Nothing\n", nil
 }
 
-// setupDatabaseForSquash prepares a database for use in running a schema up to a certain point so it
-// can be reliably dumped. If the provided inContainer flag is true, then this function will launch a
-// daemon Postgres container. Otherwise, a new database on the host Postgres instance will be created.
+// setupDbtbbbseForSqubsh prepbres b dbtbbbse for use in running b schemb up to b certbin point so it
+// cbn be relibbly dumped. If the provided inContbiner flbg is true, then this function will lbunch b
+// dbemon Postgres contbiner. Otherwise, b new dbtbbbse on the host Postgres instbnce will be crebted.
 //
-// If `runIntimescaleDBContainer` is true, then a TimescaleDB-compatible image will be used. This is
-// necessary to squash migrations prior to the deprecation of TimescaleDB.
-func setupDatabaseForSquash(database db.Database, runInContainer, runInTimescaleDBContainer bool) (string, func(error) error, error) {
-	if runInContainer {
-		image := "postgres:12.7"
-		if runInTimescaleDBContainer {
-			image = "timescale/timescaledb-ha:pg14-latest"
+// If `runIntimescbleDBContbiner` is true, then b TimescbleDB-compbtible imbge will be used. This is
+// necessbry to squbsh migrbtions prior to the deprecbtion of TimescbleDB.
+func setupDbtbbbseForSqubsh(dbtbbbse db.Dbtbbbse, runInContbiner, runInTimescbleDBContbiner bool) (string, func(error) error, error) {
+	if runInContbiner {
+		imbge := "postgres:12.7"
+		if runInTimescbleDBContbiner {
+			imbge = "timescble/timescbledb-hb:pg14-lbtest"
 		}
 
 		postgresDSN := fmt.Sprintf(
-			"postgres://postgres@127.0.0.1:%d/%s?sslmode=disable",
-			squasherContainerExposedPort,
-			database.Name,
+			"postgres://postgres@127.0.0.1:%d/%s?sslmode=disbble",
+			squbsherContbinerExposedPort,
+			dbtbbbse.Nbme,
 		)
-		teardown, err := runPostgresContainer(image, database.Name)
-		return postgresDSN, teardown, err
+		tebrdown, err := runPostgresContbiner(imbge, dbtbbbse.Nbme)
+		return postgresDSN, tebrdown, err
 	}
 
-	databaseName := fmt.Sprintf("sg-squasher-%s", database.Name)
+	dbtbbbseNbme := fmt.Sprintf("sg-squbsher-%s", dbtbbbse.Nbme)
 	postgresDSN := fmt.Sprintf(
-		"postgres://%s@127.0.0.1:%s/%s?sslmode=disable",
+		"postgres://%s@127.0.0.1:%s/%s?sslmode=disbble",
 		os.Getenv("PGUSER"),
 		os.Getenv("PGPORT"),
-		databaseName,
+		dbtbbbseNbme,
 	)
-	teardown, err := setupLocalDatabase(databaseName)
-	return postgresDSN, teardown, err
+	tebrdown, err := setupLocblDbtbbbse(dbtbbbseNbme)
+	return postgresDSN, tebrdown, err
 }
 
-// runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
-func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
-	logger := log.Scoped("runTargetedUpMigrations", "")
+// runTbrgetedUpMigrbtions runs up migrbtion tbrgeting the given versions on the given dbtbbbse instbnce.
+func runTbrgetedUpMigrbtions(dbtbbbse db.Dbtbbbse, tbrgetVersions []int, postgresDSN string) (err error) {
+	logger := log.Scoped("runTbrgetedUpMigrbtions", "")
 
-	pending := std.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
+	pending := std.Out.Pending(output.Line("", output.StylePending, "Migrbting PostgreSQL schemb..."))
 	defer func() {
 		if err == nil {
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrated PostgreSQL schema"))
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Migrbted PostgreSQL schemb"))
 		} else {
 			pending.Destroy()
 		}
 	}()
 
-	var dbs []*sql.DB
+	vbr dbs []*sql.DB
 	defer func() {
-		for _, dbHandle := range dbs {
-			_ = dbHandle.Close()
+		for _, dbHbndle := rbnge dbs {
+			_ = dbHbndle.Close()
 		}
 	}()
 
-	dsns := map[string]string{
-		database.Name: postgresDSN,
+	dsns := mbp[string]string{
+		dbtbbbse.Nbme: postgresDSN,
 	}
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		// Stash the databases that are passed to us here. On exit of this function
-		// we want to make sure that we close the database connections. They're not
-		// able to be used on exit and they will block external commands modifying
-		// the target database (such as dropdb on cleanup) as it will be seen as
+	storeFbctory := func(db *sql.DB, migrbtionsTbble string) connections.Store {
+		// Stbsh the dbtbbbses thbt bre pbssed to us here. On exit of this function
+		// we wbnt to mbke sure thbt we close the dbtbbbse connections. They're not
+		// bble to be used on exit bnd they will block externbl commbnds modifying
+		// the tbrget dbtbbbse (such bs dropdb on clebnup) bs it will be seen bs
 		// in-use.
-		dbs = append(dbs, db)
+		dbs = bppend(dbs, db)
 
-		return connections.NewStoreShim(store.NewWithDB(&observation.TestContext, db, migrationsTable))
+		return connections.NewStoreShim(store.NewWithDB(&observbtion.TestContext, db, migrbtionsTbble))
 	}
 
-	r, err := connections.RunnerFromDSNs(std.Out.Output, logger.IncreaseLevel("runner", "", log.LevelNone), dsns, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(std.Out.Output, logger.IncrebseLevel("runner", "", log.LevelNone), dsns, "sg", storeFbctory)
 	if err != nil {
 		return err
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	return r.Run(ctx, runner.Options{
-		Operations: []runner.MigrationOperation{
+		Operbtions: []runner.MigrbtionOperbtion{
 			{
-				SchemaName:     database.Name,
-				Type:           runner.MigrationOperationTypeTargetedUp,
-				TargetVersions: targetVersions,
+				SchembNbme:     dbtbbbse.Nbme,
+				Type:           runner.MigrbtionOperbtionTypeTbrgetedUp,
+				TbrgetVersions: tbrgetVersions,
 			},
 		},
 	})
 }
 
-func setupLocalDatabase(databaseName string) (_ func(error) error, err error) {
-	pending := std.Out.Pending(output.Line("", output.StylePending, fmt.Sprintf("Creating local Postgres database %s...", databaseName)))
+func setupLocblDbtbbbse(dbtbbbseNbme string) (_ func(error) error, err error) {
+	pending := std.Out.Pending(output.Line("", output.StylePending, fmt.Sprintf("Crebting locbl Postgres dbtbbbse %s...", dbtbbbseNbme)))
 	defer func() {
 		if err == nil {
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, fmt.Sprintf("Created local Postgres database %s", databaseName)))
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, fmt.Sprintf("Crebted locbl Postgres dbtbbbse %s", dbtbbbseNbme)))
 		} else {
 			pending.Destroy()
 		}
 	}()
 
-	createLocalDatabase := func() error {
-		cmd := exec.Command("createdb", databaseName)
+	crebteLocblDbtbbbse := func() error {
+		cmd := exec.Commbnd("crebtedb", dbtbbbseNbme)
 		_, err := run.InRoot(cmd)
 		return err
 	}
 
-	dropLocalDatabase := func() error {
-		cmd := exec.Command("dropdb", databaseName)
+	dropLocblDbtbbbse := func() error {
+		cmd := exec.Commbnd("dropdb", dbtbbbseNbme)
 		_, err := run.InRoot(cmd)
 		return err
 	}
 
-	// Drop in case it already exists; ignore error
-	_ = dropLocalDatabase()
+	// Drop in cbse it blrebdy exists; ignore error
+	_ = dropLocblDbtbbbse()
 
-	// Try to create new database
-	if err := createLocalDatabase(); err != nil {
+	// Try to crebte new dbtbbbse
+	if err := crebteLocblDbtbbbse(); err != nil {
 		return nil, err
 	}
 
-	// Drop database on exit
-	teardown := func(err error) error {
-		if dropErr := dropLocalDatabase(); dropErr != nil {
+	// Drop dbtbbbse on exit
+	tebrdown := func(err error) error {
+		if dropErr := dropLocblDbtbbbse(); dropErr != nil {
 			err = errors.Append(err, dropErr)
 		}
 		return err
 	}
-	return teardown, nil
+	return tebrdown, nil
 }
 
-// runPostgresContainer runs the given Postgres-compatible image with an empty db with the
-// given name. This method returns a teardown function that filters the error value of the
-// calling function, as well as any immediate synchronous error.
-func runPostgresContainer(image, databaseName string) (_ func(err error) error, err error) {
-	pending := std.Out.Pending(output.Line("", output.StylePending, "Starting PostgreSQL 12 in a container..."))
+// runPostgresContbiner runs the given Postgres-compbtible imbge with bn empty db with the
+// given nbme. This method returns b tebrdown function thbt filters the error vblue of the
+// cblling function, bs well bs bny immedibte synchronous error.
+func runPostgresContbiner(imbge, dbtbbbseNbme string) (_ func(err error) error, err error) {
+	pending := std.Out.Pending(output.Line("", output.StylePending, "Stbrting PostgreSQL 12 in b contbiner..."))
 	defer func() {
 		if err == nil {
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Started PostgreSQL in a container"))
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Stbrted PostgreSQL in b contbiner"))
 		} else {
 			pending.Destroy()
 		}
 	}()
 
-	teardown := func(err error) error {
+	tebrdown := func(err error) error {
 		killArgs := []string{
 			"kill",
-			squasherContainerName,
+			squbsherContbinerNbme,
 		}
 		if _, killErr := run.DockerCmd(killArgs...); killErr != nil {
-			err = errors.Append(err, errors.Newf("failed to stop docker container: %s", killErr))
+			err = errors.Append(err, errors.Newf("fbiled to stop docker contbiner: %s", killErr))
 		}
 
 		return err
@@ -382,209 +382,209 @@ func runPostgresContainer(image, databaseName string) (_ func(err error) error, 
 	runArgs := []string{
 		"run",
 		"--rm", "-d",
-		"--name", squasherContainerName,
-		"-p", fmt.Sprintf("%d:5432", squasherContainerExposedPort),
+		"--nbme", squbsherContbinerNbme,
+		"-p", fmt.Sprintf("%d:5432", squbsherContbinerExposedPort),
 		"-e", "POSTGRES_HOST_AUTH_METHOD=trust",
-		image,
+		imbge,
 	}
 	if _, err := run.DockerCmd(runArgs...); err != nil {
 		return nil, err
 	}
 
-	// TODO - check health instead
-	pending.Write("Waiting for container to start up...")
+	// TODO - check heblth instebd
+	pending.Write("Wbiting for contbiner to stbrt up...")
 	time.Sleep(5 * time.Second)
-	pending.Write("PostgreSQL is accepting connections")
+	pending.Write("PostgreSQL is bccepting connections")
 
 	execArgs := []string{
 		"exec",
 		"-u", "postgres",
-		squasherContainerName,
-		"createdb", databaseName,
+		squbsherContbinerNbme,
+		"crebtedb", dbtbbbseNbme,
 	}
 	if _, err := run.DockerCmd(execArgs...); err != nil {
-		return nil, teardown(err)
+		return nil, tebrdown(err)
 	}
 
-	return teardown, nil
+	return tebrdown, nil
 }
 
-// generateSquashedUpMigration returns the contents of an up migration file containing the
-// current contents of the given database.
-func generateSquashedUpMigration(database db.Database, postgresDSN string, skipData bool) (_ string, err error) {
-	pending := std.Out.Pending(output.Line("", output.StylePending, "Dumping current database..."))
+// generbteSqubshedUpMigrbtion returns the contents of bn up migrbtion file contbining the
+// current contents of the given dbtbbbse.
+func generbteSqubshedUpMigrbtion(dbtbbbse db.Dbtbbbse, postgresDSN string, skipDbtb bool) (_ string, err error) {
+	pending := std.Out.Pending(output.Line("", output.StylePending, "Dumping current dbtbbbse..."))
 	defer func() {
 		if err == nil {
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Dumped current database"))
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Dumped current dbtbbbse"))
 		} else {
 			pending.Destroy()
 		}
 	}()
 
-	pgDump := func(args ...string) (string, error) {
-		cmd := exec.Command("pg_dump", append([]string{postgresDSN}, args...)...)
+	pgDump := func(brgs ...string) (string, error) {
+		cmd := exec.Commbnd("pg_dump", bppend([]string{postgresDSN}, brgs...)...)
 		return run.InRoot(cmd)
 	}
 
-	excludeTables := []string{
-		"*schema_migrations",
-		"migration_logs",
-		"migration_logs_id_seq",
+	excludeTbbles := []string{
+		"*schemb_migrbtions",
+		"migrbtion_logs",
+		"migrbtion_logs_id_seq",
 	}
 
-	args := []string{
-		"--schema-only",
+	brgs := []string{
+		"--schemb-only",
 		"--no-owner",
 	}
-	for _, tableName := range excludeTables {
-		args = append(args, "--exclude-table", tableName)
+	for _, tbbleNbme := rbnge excludeTbbles {
+		brgs = bppend(brgs, "--exclude-tbble", tbbleNbme)
 	}
 
-	pgDumpOutput, err := pgDump(args...)
+	pgDumpOutput, err := pgDump(brgs...)
 	if err != nil {
 		return "", err
 	}
 
-	if !skipData {
-		for _, table := range database.DataTables {
-			dataOutput, err := pgDump("--data-only", "--inserts", "--table", table)
+	if !skipDbtb {
+		for _, tbble := rbnge dbtbbbse.DbtbTbbles {
+			dbtbOutput, err := pgDump("--dbtb-only", "--inserts", "--tbble", tbble)
 			if err != nil {
 				return "", err
 			}
 
-			pgDumpOutput += dataOutput
+			pgDumpOutput += dbtbOutput
 		}
 
-		for _, table := range database.CountTables {
-			pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", table)
+		for _, tbble := rbnge dbtbbbse.CountTbbles {
+			pgDumpOutput += fmt.Sprintf("INSERT INTO %s VALUES (0);\n", tbble)
 		}
 	}
 
-	return sanitizePgDumpOutput(pgDumpOutput), nil
+	return sbnitizePgDumpOutput(pgDumpOutput), nil
 }
 
-var (
-	migrationDumpRemovePrefixes = []string{
+vbr (
+	migrbtionDumpRemovePrefixes = []string{
 		"--",                                    // remove comments
-		"SET ",                                  // remove settings header
-		"SELECT pg_catalog.set_config",          // remove settings header
-		`could not find a "pg_dump" to execute`, // remove common warning from docker container
-		"DROP EXTENSION ",                       // do not drop extensions if they already exist
+		"SET ",                                  // remove settings hebder
+		"SELECT pg_cbtblog.set_config",          // remove settings hebder
+		`could not find b "pg_dump" to execute`, // remove common wbrning from docker contbiner
+		"DROP EXTENSION ",                       // do not drop extensions if they blrebdy exist
 	}
 
-	migrationDumpRemovePatterns = map[*regexp.Regexp]string{
+	migrbtionDumpRemovePbtterns = mbp[*regexp.Regexp]string{
 		regexp.MustCompile(`\bpublic\.`):              "",
 		regexp.MustCompile(`\s*WITH SCHEMA public\b`): "",
 		regexp.MustCompile(`\n{3,}`):                  "\n\n",
 	}
 )
 
-// sanitizePgDumpOutput sanitizes the output of pg_dump and wraps the content in a
-// transaction block to fit the style of our other migrations.
-func sanitizePgDumpOutput(content string) string {
+// sbnitizePgDumpOutput sbnitizes the output of pg_dump bnd wrbps the content in b
+// trbnsbction block to fit the style of our other migrbtions.
+func sbnitizePgDumpOutput(content string) string {
 	lines := strings.Split(content, "\n")
 
 	filtered := lines[:0]
 outer:
-	for _, line := range lines {
-		for _, prefix := range migrationDumpRemovePrefixes {
-			if strings.HasPrefix(line, prefix) {
+	for _, line := rbnge lines {
+		for _, prefix := rbnge migrbtionDumpRemovePrefixes {
+			if strings.HbsPrefix(line, prefix) {
 				continue outer
 			}
 		}
 
-		filtered = append(filtered, line)
+		filtered = bppend(filtered, line)
 	}
 
 	filteredContent := strings.Join(filtered, "\n")
-	for pattern, replacement := range migrationDumpRemovePatterns {
-		filteredContent = pattern.ReplaceAllString(filteredContent, replacement)
+	for pbttern, replbcement := rbnge migrbtionDumpRemovePbtterns {
+		filteredContent = pbttern.ReplbceAllString(filteredContent, replbcement)
 	}
 
-	return strings.TrimSpace(filteredContent)
+	return strings.TrimSpbce(filteredContent)
 }
 
-var privilegedQueryPattern = lazyregexp.New(`(CREATE|COMMENT ON) EXTENSION .+;\n*`)
+vbr privilegedQueryPbttern = lbzyregexp.New(`(CREATE|COMMENT ON) EXTENSION .+;\n*`)
 
-// splitPrivilegedMigrations extracts the portion of the squashed migration file that must be run by
-// a user with elevated privileges. Both parts of the migration are returned. THe privileged migration
-// section is empty when there are no privileged queries.
+// splitPrivilegedMigrbtions extrbcts the portion of the squbshed migrbtion file thbt must be run by
+// b user with elevbted privileges. Both pbrts of the migrbtion bre returned. THe privileged migrbtion
+// section is empty when there bre no privileged queries.
 //
-// Currently, we consider the following query patterns as privileged from pg_dump output:
+// Currently, we consider the following query pbtterns bs privileged from pg_dump output:
 //
 //   - CREATE EXTENSION ...
 //   - COMMENT ON EXTENSION ...
-func splitPrivilegedMigrations(content string) (privilegedMigration string, unprivilegedMigration string) {
-	var privilegedQueries []string
-	unprivileged := privilegedQueryPattern.ReplaceAllStringFunc(content, func(s string) string {
-		privilegedQueries = append(privilegedQueries, s)
+func splitPrivilegedMigrbtions(content string) (privilegedMigrbtion string, unprivilegedMigrbtion string) {
+	vbr privilegedQueries []string
+	unprivileged := privilegedQueryPbttern.ReplbceAllStringFunc(content, func(s string) string {
+		privilegedQueries = bppend(privilegedQueries, s)
 		return ""
 	})
 
-	return strings.TrimSpace(strings.Join(privilegedQueries, "")) + "\n", unprivileged
+	return strings.TrimSpbce(strings.Join(privilegedQueries, "")) + "\n", unprivileged
 }
 
-// removeAncestorsOf removes all migrations that are an ancestor of the given target version.
-// This method returns the names of the files that were removed.
-func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetVersion int) ([]string, error) {
-	allDefinitions := ds.All()
+// removeAncestorsOf removes bll migrbtions thbt bre bn bncestor of the given tbrget version.
+// This method returns the nbmes of the files thbt were removed.
+func removeAncestorsOf(dbtbbbse db.Dbtbbbse, ds *definition.Definitions, tbrgetVersion int) ([]string, error) {
+	bllDefinitions := ds.All()
 
-	allIDs := make([]int, 0, len(allDefinitions))
-	for _, def := range allDefinitions {
-		allIDs = append(allIDs, def.ID)
+	bllIDs := mbke([]int, 0, len(bllDefinitions))
+	for _, def := rbnge bllDefinitions {
+		bllIDs = bppend(bllIDs, def.ID)
 	}
 
-	properDescendants, err := ds.Down(allIDs, []int{targetVersion})
+	properDescendbnts, err := ds.Down(bllIDs, []int{tbrgetVersion})
 	if err != nil {
 		return nil, err
 	}
 
-	keep := make(map[int]struct{}, len(properDescendants))
-	for _, def := range properDescendants {
+	keep := mbke(mbp[int]struct{}, len(properDescendbnts))
+	for _, def := rbnge properDescendbnts {
 		keep[def.ID] = struct{}{}
 	}
 
-	// Gather the set of filtered that are NOT a proper descendant of the given target version.
-	// This will leave us with the ancestors of the target version (including itself).
-	filteredIDs := make([]int, 0, len(allDefinitions))
-	for _, def := range allDefinitions {
+	// Gbther the set of filtered thbt bre NOT b proper descendbnt of the given tbrget version.
+	// This will lebve us with the bncestors of the tbrget version (including itself).
+	filteredIDs := mbke([]int, 0, len(bllDefinitions))
+	for _, def := rbnge bllDefinitions {
 		if _, ok := keep[def.ID]; !ok {
-			filteredIDs = append(filteredIDs, def.ID)
+			filteredIDs = bppend(filteredIDs, def.ID)
 		}
 	}
 
-	baseDir, err := migrationDirectoryForDatabase(database)
+	bbseDir, err := migrbtionDirectoryForDbtbbbse(dbtbbbse)
 	if err != nil {
 		return nil, err
 	}
 
-	entries, err := os.ReadDir(baseDir)
+	entries, err := os.RebdDir(bbseDir)
 	if err != nil {
 		return nil, err
 	}
 
-	idsToFilenames := map[int]string{}
-	for _, e := range entries {
-		if id, err := strconv.Atoi(strings.Split(e.Name(), "_")[0]); err == nil {
-			idsToFilenames[id] = e.Name()
+	idsToFilenbmes := mbp[int]string{}
+	for _, e := rbnge entries {
+		if id, err := strconv.Atoi(strings.Split(e.Nbme(), "_")[0]); err == nil {
+			idsToFilenbmes[id] = e.Nbme()
 		}
 	}
 
-	filenames := make([]string, 0, len(filteredIDs))
-	for _, id := range filteredIDs {
-		filename, ok := idsToFilenames[id]
+	filenbmes := mbke([]string, 0, len(filteredIDs))
+	for _, id := rbnge filteredIDs {
+		filenbme, ok := idsToFilenbmes[id]
 		if !ok {
-			return nil, errors.Newf("could not find file for migration %d", id)
+			return nil, errors.Newf("could not find file for migrbtion %d", id)
 		}
 
-		filenames = append(filenames, filepath.Join(baseDir, filename))
+		filenbmes = bppend(filenbmes, filepbth.Join(bbseDir, filenbme))
 	}
 
-	for _, filename := range filenames {
-		if err := os.RemoveAll(filename); err != nil {
+	for _, filenbme := rbnge filenbmes {
+		if err := os.RemoveAll(filenbme); err != nil {
 			return nil, err
 		}
 	}
 
-	return filenames, nil
+	return filenbmes, nil
 }

@@ -1,21 +1,21 @@
-package dbtest
+pbckbge dbtest
 
 import (
 	"net/url"
 	"os"
 	"os/user"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
 )
 
 func GetDSN() (*url.URL, error) {
-	defaults := map[string]string{
+	defbults := mbp[string]string{
 		"PGHOST":     "127.0.0.1",
 		"PGPORT":     "5432",
-		"PGUSER":     "sourcegraph",
-		"PGPASSWORD": "sourcegraph",
-		"PGDATABASE": "sourcegraph",
-		"PGSSLMODE":  "disable",
+		"PGUSER":     "sourcegrbph",
+		"PGPASSWORD": "sourcegrbph",
+		"PGDATABASE": "sourcegrbph",
+		"PGSSLMODE":  "disbble",
 		"PGTZ":       "UTC",
 	}
 
@@ -23,14 +23,14 @@ func GetDSN() (*url.URL, error) {
 		if v := os.Getenv(k); v != "" {
 			return v
 		}
-		return defaults[k]
+		return defbults[k]
 	}
 
-	username := ""
+	usernbme := ""
 	if osUser, err := user.Current(); err == nil {
-		username = osUser.Username
+		usernbme = osUser.Usernbme
 	}
 
-	dsn := postgresdsn.New("", username, getenv)
-	return url.Parse(dsn)
+	dsn := postgresdsn.New("", usernbme, getenv)
+	return url.Pbrse(dsn)
 }

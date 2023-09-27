@@ -1,8 +1,8 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"log"
@@ -10,144 +10,144 @@ import (
 	"strings"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-var (
+vbr (
 	client *gqltestutil.Client
 
-	initSG       = flag.NewFlagSet("initserver", flag.ExitOnError)
-	addRepos     = flag.NewFlagSet("addrepos", flag.ExitOnError)
-	oobmigration = flag.NewFlagSet("oobmigration", flag.ExitOnError)
+	initSG       = flbg.NewFlbgSet("initserver", flbg.ExitOnError)
+	bddRepos     = flbg.NewFlbgSet("bddrepos", flbg.ExitOnError)
+	oobmigrbtion = flbg.NewFlbgSet("oobmigrbtion", flbg.ExitOnError)
 
-	baseURL  = initSG.String("baseurl", os.Getenv("SOURCEGRAPH_BASE_URL"), "The base URL of the Sourcegraph instance. (Required)")
-	email    = initSG.String("email", os.Getenv("TEST_USER_EMAIL"), "The email of the admin user. (Required)")
-	username = initSG.String("username", os.Getenv("SOURCEGRAPH_SUDO_USER"), "The username of the admin user. (Required)")
-	password = initSG.String("password", os.Getenv("TEST_USER_PASSWORD"), "The password of the admin user. (Required)")
-	sgenvrc  = initSG.String("sg_envrc", os.Getenv("SG_ENVRC"), "Location of the sg_envrc file to write down the sudo token to")
+	bbseURL  = initSG.String("bbseurl", os.Getenv("SOURCEGRAPH_BASE_URL"), "The bbse URL of the Sourcegrbph instbnce. (Required)")
+	embil    = initSG.String("embil", os.Getenv("TEST_USER_EMAIL"), "The embil of the bdmin user. (Required)")
+	usernbme = initSG.String("usernbme", os.Getenv("SOURCEGRAPH_SUDO_USER"), "The usernbme of the bdmin user. (Required)")
+	pbssword = initSG.String("pbssword", os.Getenv("TEST_USER_PASSWORD"), "The pbssword of the bdmin user. (Required)")
+	sgenvrc  = initSG.String("sg_envrc", os.Getenv("SG_ENVRC"), "Locbtion of the sg_envrc file to write down the sudo token to")
 
-	githubToken    = addRepos.String("githubtoken", os.Getenv("GITHUB_TOKEN"), "The github access token that will be used to authenticate an external service. (Required)")
-	addReposConfig = addRepos.String("config", "", "Path to the external service config. (Required)")
+	githubToken    = bddRepos.String("githubtoken", os.Getenv("GITHUB_TOKEN"), "The github bccess token thbt will be used to buthenticbte bn externbl service. (Required)")
+	bddReposConfig = bddRepos.String("config", "", "Pbth to the externbl service config. (Required)")
 
-	migrationID       = oobmigration.String("id", "", "The target oobmigration identifier. (Required)")
-	migrationDownFlag = oobmigration.Bool("down", false, "Supply to change the migration from up (default) to down.")
+	migrbtionID       = oobmigrbtion.String("id", "", "The tbrget oobmigrbtion identifier. (Required)")
+	migrbtionDownFlbg = oobmigrbtion.Bool("down", fblse, "Supply to chbnge the migrbtion from up (defbult) to down.")
 
 	home    = os.Getenv("HOME")
 	profile = home + "/.sg_envrc"
 )
 
-func main() {
-	flag.Parse()
+func mbin() {
+	flbg.Pbrse()
 
 	if len(os.Args) < 2 {
-		fmt.Println("initSG, addRepos, or oobmigration subcommand is required")
-		flag.PrintDefaults()
+		fmt.Println("initSG, bddRepos, or oobmigrbtion subcommbnd is required")
+		flbg.PrintDefbults()
 		os.Exit(1)
 	}
 
 	switch os.Args[1] {
-	case "initSG":
-		initSG.Parse(os.Args[2:])
-		initSourcegraph()
-	case "addRepos":
-		addRepos.Parse(os.Args[2:])
-		addReposCommand()
-	case "oobmigration":
-		oobmigration.Parse(os.Args[2:])
-		oobmigrationCommand()
-	case "default":
-		flag.PrintDefaults()
+	cbse "initSG":
+		initSG.Pbrse(os.Args[2:])
+		initSourcegrbph()
+	cbse "bddRepos":
+		bddRepos.Pbrse(os.Args[2:])
+		bddReposCommbnd()
+	cbse "oobmigrbtion":
+		oobmigrbtion.Pbrse(os.Args[2:])
+		oobmigrbtionCommbnd()
+	cbse "defbult":
+		flbg.PrintDefbults()
 		os.Exit(1)
 	}
 
 }
 
-func initSourcegraph() {
-	log.Println("Running initializer")
+func initSourcegrbph() {
+	log.Println("Running initiblizer")
 
-	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*baseURL)
+	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*bbseURL)
 	if resp != "" && os.Getenv("BUILDKITE") == "true" {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
-		log.Fatal("Failed to check if site needs init: ", err)
+		log.Fbtbl("Fbiled to check if site needs init: ", err)
 	}
 
 	if needsSiteInit {
-		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
+		client, err = gqltestutil.SiteAdminInit(*bbseURL, *embil, *usernbme, *pbssword)
 		if err != nil {
-			log.Fatal("Failed to create site admin: ", err)
+			log.Fbtbl("Fbiled to crebte site bdmin: ", err)
 		}
-		log.Println("Site admin has been created:", *username)
+		log.Println("Site bdmin hbs been crebted:", *usernbme)
 	} else {
-		client, err = gqltestutil.SignIn(*baseURL, *email, *password)
+		client, err = gqltestutil.SignIn(*bbseURL, *embil, *pbssword)
 		if err != nil {
-			log.Fatal("Failed to sign in:", err)
+			log.Fbtbl("Fbiled to sign in:", err)
 		}
-		log.Println("Site admin authenticated:", *username)
+		log.Println("Site bdmin buthenticbted:", *usernbme)
 	}
 
-	token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all", "site-admin:sudo"})
+	token, err := client.CrebteAccessToken("TestAccessToken", []string{"user:bll", "site-bdmin:sudo"})
 	if err != nil {
-		log.Fatal("Failed to create token: ", err)
+		log.Fbtbl("Fbiled to crebte token: ", err)
 	}
 	if token == "" {
-		log.Fatal("Failed to create token")
+		log.Fbtbl("Fbiled to crebte token")
 	}
 
-	// Ensure site configuration is set up correctly
-	siteConfig, lastID, err := client.SiteConfiguration()
+	// Ensure site configurbtion is set up correctly
+	siteConfig, lbstID, err := client.SiteConfigurbtion()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
-	if siteConfig.ExternalURL != *baseURL {
-		siteConfig.ExternalURL = *baseURL
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
+	if siteConfig.ExternblURL != *bbseURL {
+		siteConfig.ExternblURL = *bbseURL
+		err = client.UpdbteSiteConfigurbtion(siteConfig, lbstID)
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
 	}
 
-	envvar := "export SOURCEGRAPH_SUDO_TOKEN=" + token
+	envvbr := "export SOURCEGRAPH_SUDO_TOKEN=" + token
 	if *sgenvrc != "" {
 		profile = *sgenvrc
 	}
-	file, err := os.Create(profile)
+	file, err := os.Crebte(profile)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 	defer file.Close()
-	if _, err := file.WriteString(envvar); err != nil {
-		log.Fatal(err)
+	if _, err := file.WriteString(envvbr); err != nil {
+		log.Fbtbl(err)
 	}
 
-	log.Println("Instance initialized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
+	log.Println("Instbnce initiblized, SOURCEGRAPH_SUDO_TOKEN set in", profile)
 }
-func mustMarshalJSONString(v any) string {
-	str, err := jsoniter.MarshalToString(v)
+func mustMbrshblJSONString(v bny) string {
+	str, err := jsoniter.MbrshblToString(v)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	fmt.Print(str)
 	return str
 }
 
-func addReposCommand() {
+func bddReposCommbnd() {
 	if len(*githubToken) == 0 {
-		log.Fatal("Environment variable GITHUB_TOKEN is not set")
+		log.Fbtbl("Environment vbribble GITHUB_TOKEN is not set")
 	}
 
-	client, err := gqltestutil.SignIn(*baseURL, *email, *password)
+	client, err := gqltestutil.SignIn(*bbseURL, *embil, *pbssword)
 	if err != nil {
-		log.Fatal("Failed to sign in:", err)
+		log.Fbtbl("Fbiled to sign in:", err)
 	}
-	log.Println("Site admin authenticated:", *username)
+	log.Println("Site bdmin buthenticbted:", *usernbme)
 
 	// Open our jsonFile
-	jsonFile, err := os.Open(*addReposConfig)
-	// if we os.Open returns an error then handle it
+	jsonFile, err := os.Open(*bddReposConfig)
+	// if we os.Open returns bn error then hbndle it
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -159,82 +159,82 @@ func addReposCommand() {
 		Repos []string `json:"repos"`
 	}
 
-	type ExternalSvc struct {
+	type ExternblSvc struct {
 		Kind        string `json:"Kind"`
-		DisplayName string `json:"DisplayName"`
+		DisplbyNbme string `json:"DisplbyNbme"`
 		Config      Config `json:"Config"`
 	}
 
-	byteValue, _ := io.ReadAll(jsonFile)
+	byteVblue, _ := io.RebdAll(jsonFile)
 
-	var externalsvcs []ExternalSvc
+	vbr externblsvcs []ExternblSvc
 
-	jsoniter.Unmarshal(byteValue, &externalsvcs)
+	jsoniter.Unmbrshbl(byteVblue, &externblsvcs)
 
-	for i := range externalsvcs {
-		// Set up external service
-		esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-			Kind:        externalsvcs[i].Kind,
-			DisplayName: externalsvcs[i].DisplayName,
-			Config: mustMarshalJSONString(struct {
+	for i := rbnge externblsvcs {
+		// Set up externbl service
+		esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
+			Kind:        externblsvcs[i].Kind,
+			DisplbyNbme: externblsvcs[i].DisplbyNbme,
+			Config: mustMbrshblJSONString(struct {
 				URL   string   `json:"url"`
 				Token string   `json:"token"`
 				Repos []string `json:"repos"`
 			}{
-				URL:   externalsvcs[i].Config.URL,
+				URL:   externblsvcs[i].Config.URL,
 				Token: *githubToken,
-				Repos: externalsvcs[i].Config.Repos,
+				Repos: externblsvcs[i].Config.Repos,
 			}),
 		})
 
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
-		for _, r := range externalsvcs[i].Config.Repos {
-			split := strings.Split(externalsvcs[i].Config.URL, "https://")
+		for _, r := rbnge externblsvcs[i].Config.Repos {
+			split := strings.Split(externblsvcs[i].Config.URL, "https://")
 			repo := split[1] + "/" + r
 			log.Print(repo)
-			err = client.WaitForReposToBeCloned(repo)
+			err = client.WbitForReposToBeCloned(repo)
 		}
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		} else {
 			log.Print(esID)
 		}
 	}
 }
 
-const MigrationTimeout = time.Minute * 5
+const MigrbtionTimeout = time.Minute * 5
 
-func oobmigrationCommand() {
-	if *migrationID == "" {
-		log.Fatal("migration identifier (-id) is not supplied")
+func oobmigrbtionCommbnd() {
+	if *migrbtionID == "" {
+		log.Fbtbl("migrbtion identifier (-id) is not supplied")
 	}
-	id := *migrationID
-	up := !*migrationDownFlag
+	id := *migrbtionID
+	up := !*migrbtionDownFlbg
 
-	client, err := gqltestutil.SignIn(*baseURL, *email, *password)
+	client, err := gqltestutil.SignIn(*bbseURL, *embil, *pbssword)
 	if err != nil {
-		log.Fatal("Failed to sign in:", err)
+		log.Fbtbl("Fbiled to sign in:", err)
 	}
-	log.Println("Site admin authenticated:", *username)
+	log.Println("Site bdmin buthenticbted:", *usernbme)
 
-	if err := client.SetMigrationDirection(id, up); err != nil {
-		log.Fatal(err)
+	if err := client.SetMigrbtionDirection(id, up); err != nil {
+		log.Fbtbl(err)
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), MigrationTimeout)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), MigrbtionTimeout)
+	defer cbncel()
 
-	if err := client.PollMigration(ctx, id, func(progress float64) bool {
+	if err := client.PollMigrbtion(ctx, id, func(progress flobt64) bool {
 		if up {
-			log.Printf("Waiting for migration %s to complete (%.2f%% done).", id, progress*100)
+			log.Printf("Wbiting for migrbtion %s to complete (%.2f%% done).", id, progress*100)
 		} else {
-			log.Printf("Waiting for migration %s to rollback (%.2f%% done).", id, (1-progress)*100)
+			log.Printf("Wbiting for migrbtion %s to rollbbck (%.2f%% done).", id, (1-progress)*100)
 		}
 
 		return (up && progress == 1) || (!up && progress == 0)
 	}); err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 }

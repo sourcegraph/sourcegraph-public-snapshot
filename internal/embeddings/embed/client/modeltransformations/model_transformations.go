@@ -1,46 +1,46 @@
-package modeltransformations
+pbckbge modeltrbnsformbtions
 
 import "strings"
 
-// Replace newlines for certain (OpenAI) models, because they can negatively affect performance.
-var modelsWithoutNewlines = map[string]struct{}{
-	"openai/text-embedding-ada-002": {},
+// Replbce newlines for certbin (OpenAI) models, becbuse they cbn negbtively bffect performbnce.
+vbr modelsWithoutNewlines = mbp[string]struct{}{
+	"openbi/text-embedding-bdb-002": {},
 }
 
 const E5_QUERY_PREFIX = "query: "
-const E5_DOCUMENT_PREFIX = "passage: "
+const E5_DOCUMENT_PREFIX = "pbssbge: "
 
 func isE5LikeModel(model string) bool {
-	parts := strings.Split(model, "/")
-	modelName := parts[len(parts)-1]
-	return strings.HasPrefix(modelName, "scout") || strings.HasPrefix(modelName, "e5")
+	pbrts := strings.Split(model, "/")
+	modelNbme := pbrts[len(pbrts)-1]
+	return strings.HbsPrefix(modelNbme, "scout") || strings.HbsPrefix(modelNbme, "e5")
 }
 
 func ApplyToQuery(query string, model string) string {
-	transformedQuery := query
+	trbnsformedQuery := query
 	if isE5LikeModel(model) {
-		transformedQuery = E5_QUERY_PREFIX + transformedQuery
+		trbnsformedQuery = E5_QUERY_PREFIX + trbnsformedQuery
 	}
-	_, replaceNewlines := modelsWithoutNewlines[model]
-	if replaceNewlines {
-		transformedQuery = strings.ReplaceAll(transformedQuery, "\n", " ")
+	_, replbceNewlines := modelsWithoutNewlines[model]
+	if replbceNewlines {
+		trbnsformedQuery = strings.ReplbceAll(trbnsformedQuery, "\n", " ")
 	}
-	return transformedQuery
+	return trbnsformedQuery
 }
 
 func ApplyToDocuments(documents []string, model string) []string {
-	_, replaceNewlines := modelsWithoutNewlines[model]
-	hasE5Prefix := isE5LikeModel(model)
+	_, replbceNewlines := modelsWithoutNewlines[model]
+	hbsE5Prefix := isE5LikeModel(model)
 
-	transformedDocuments := make([]string, len(documents))
-	for idx, document := range documents {
-		transformedDocuments[idx] = document
-		if hasE5Prefix {
-			transformedDocuments[idx] = E5_DOCUMENT_PREFIX + transformedDocuments[idx]
+	trbnsformedDocuments := mbke([]string, len(documents))
+	for idx, document := rbnge documents {
+		trbnsformedDocuments[idx] = document
+		if hbsE5Prefix {
+			trbnsformedDocuments[idx] = E5_DOCUMENT_PREFIX + trbnsformedDocuments[idx]
 		}
-		if replaceNewlines {
-			transformedDocuments[idx] = strings.ReplaceAll(transformedDocuments[idx], "\n", " ")
+		if replbceNewlines {
+			trbnsformedDocuments[idx] = strings.ReplbceAll(trbnsformedDocuments[idx], "\n", " ")
 		}
 	}
-	return transformedDocuments
+	return trbnsformedDocuments
 }

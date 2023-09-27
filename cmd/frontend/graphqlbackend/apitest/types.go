@@ -1,72 +1,72 @@
-package apitest
+pbckbge bpitest
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
 type Permission struct {
-	Typename    string `json:"__typename"`
+	Typenbme    string `json:"__typenbme"`
 	ID          string
-	Namespace   rtypes.PermissionNamespace
-	DisplayName string
-	Action      rtypes.NamespaceAction
-	CreatedAt   gqlutil.DateTime
+	Nbmespbce   rtypes.PermissionNbmespbce
+	DisplbyNbme string
+	Action      rtypes.NbmespbceAction
+	CrebtedAt   gqlutil.DbteTime
 }
 
-type PageInfo struct {
-	HasNextPage     bool
-	HasPreviousPage bool
+type PbgeInfo struct {
+	HbsNextPbge     bool
+	HbsPreviousPbge bool
 
 	EndCursor   *string
-	StartCursor *string
+	StbrtCursor *string
 }
 
 type PermissionConnection struct {
 	Nodes      []Permission
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type Role struct {
-	Typename    string `json:"__typename"`
+	Typenbme    string `json:"__typenbme"`
 	ID          string
-	Name        string
+	Nbme        string
 	System      bool
-	CreatedAt   gqlutil.DateTime
-	DeletedAt   *gqlutil.DateTime
+	CrebtedAt   gqlutil.DbteTime
+	DeletedAt   *gqlutil.DbteTime
 	Permissions PermissionConnection
 }
 
 type RoleConnection struct {
 	Nodes      []Role
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type User struct {
 	ID         string
-	DatabaseID int32
+	DbtbbbseID int32
 	SiteAdmin  bool
 
-	// All permissions associated with the roles that have been assigned to the user.
+	// All permissions bssocibted with the roles thbt hbve been bssigned to the user.
 	Permissions PermissionConnection
-	// All roles assigned to this user.
+	// All roles bssigned to this user.
 	Roles RoleConnection
 }
 
 type EmptyResponse struct {
-	AlwaysNil string
+	AlwbysNil string
 }
 
-type GitserverInstance struct {
+type GitserverInstbnce struct {
 	Address             string
-	FreeDiskSpaceBytes  string
-	TotalDiskSpaceBytes string
+	FreeDiskSpbceBytes  string
+	TotblDiskSpbceBytes string
 }
 
-type GitserverInstanceConnection struct {
-	Nodes      []GitserverInstance
-	TotalCount int
-	PageInfo   PageInfo
+type GitserverInstbnceConnection struct {
+	Nodes      []GitserverInstbnce
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }

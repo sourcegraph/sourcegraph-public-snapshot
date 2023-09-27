@@ -1,4 +1,4 @@
-package authz
+pbckbge buthz
 
 import (
 	"context"
@@ -7,70 +7,70 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 	"github.com/stretchr/testify/require"
 )
 
 const errorMsg = "Sorry, wrong number."
-const allProvidersFailedMsg = "All providers failed to sync permissions."
+const bllProvidersFbiledMsg = "All providers fbiled to sync permissions."
 
-func TestPermsSyncerWorker_Handle(t *testing.T) {
-	ctx := context.Background()
+func TestPermsSyncerWorker_Hbndle(t *testing.T) {
+	ctx := context.Bbckground()
 	dummySyncer := &dummyPermsSyncer{}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	syncJobsStore := db.PermissionSyncJobs()
 
 	t.Run("user sync request", func(t *testing.T) {
-		worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer, SyncTypeUser, syncJobsStore)
-		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
+		worker := MbkePermsSyncerWorker(&observbtion.TestContext, dummySyncer, SyncTypeUser, syncJobsStore)
+		_ = worker.Hbndle(ctx, logtest.Scoped(t), &dbtbbbse.PermissionSyncJob{
 			ID:               99,
 			UserID:           1234,
-			InvalidateCaches: true,
-			Priority:         database.HighPriorityPermissionsSync,
+			InvblidbteCbches: true,
+			Priority:         dbtbbbse.HighPriorityPermissionsSync,
 			NoPerms:          true,
 		})
 
-		wantRequest := combinedRequest{
+		wbntRequest := combinedRequest{
 			UserID:  1234,
 			NoPerms: true,
-			Options: authz.FetchPermsOptions{
-				InvalidateCaches: true,
+			Options: buthz.FetchPermsOptions{
+				InvblidbteCbches: true,
 			},
 		}
-		if diff := cmp.Diff(dummySyncer.request, wantRequest); diff != "" {
-			t.Fatalf("wrong sync request: %s", diff)
+		if diff := cmp.Diff(dummySyncer.request, wbntRequest); diff != "" {
+			t.Fbtblf("wrong sync request: %s", diff)
 		}
 	})
 
 	t.Run("repo sync request", func(t *testing.T) {
-		worker := MakePermsSyncerWorker(&observation.TestContext, dummySyncer, SyncTypeRepo, syncJobsStore)
-		_ = worker.Handle(ctx, logtest.Scoped(t), &database.PermissionSyncJob{
+		worker := MbkePermsSyncerWorker(&observbtion.TestContext, dummySyncer, SyncTypeRepo, syncJobsStore)
+		_ = worker.Hbndle(ctx, logtest.Scoped(t), &dbtbbbse.PermissionSyncJob{
 			ID:               777,
 			RepositoryID:     4567,
-			InvalidateCaches: false,
-			Priority:         database.LowPriorityPermissionsSync,
+			InvblidbteCbches: fblse,
+			Priority:         dbtbbbse.LowPriorityPermissionsSync,
 		})
 
-		wantRequest := combinedRequest{
+		wbntRequest := combinedRequest{
 			RepoID:  4567,
-			NoPerms: false,
-			Options: authz.FetchPermsOptions{
-				InvalidateCaches: false,
+			NoPerms: fblse,
+			Options: buthz.FetchPermsOptions{
+				InvblidbteCbches: fblse,
 			},
 		}
-		if diff := cmp.Diff(dummySyncer.request, wantRequest); diff != "" {
-			t.Fatalf("wrong sync request: %s", diff)
+		if diff := cmp.Diff(dummySyncer.request, wbntRequest); diff != "" {
+			t.Fbtblf("wrong sync request: %s", diff)
 		}
 	})
 }
@@ -81,134 +81,134 @@ func TestPermsSyncerWorker_RepoSyncJobs(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	// Creating users and repos.
+	// Crebting users bnd repos.
 	userStore := db.Users()
-	user1, err := userStore.Create(ctx, database.NewUser{Username: "user1"})
+	user1, err := userStore.Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	user2, err := userStore.Create(ctx, database.NewUser{Username: "user2"})
+	user2, err := userStore.Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 	repoStore := db.Repos()
-	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"}, &types.Repo{Name: "github.com/soucegraph/hello"})
+	err = repoStore.Crebte(ctx, &types.Repo{Nbme: "github.com/soucegrbph/sourcegrbph"}, &types.Repo{Nbme: "github.com/soucegrbph/bbout"}, &types.Repo{Nbme: "github.com/soucegrbph/hello"})
 	require.NoError(t, err)
 
-	// Creating a worker.
-	observationCtx := &observation.TestContext
+	// Crebting b worker.
+	observbtionCtx := &observbtion.TestContext
 	dummySyncer := &dummySyncerWithErrors{
-		repoIDErrors: map[api.RepoID]errorType{2: allProvidersFailed, 3: realError},
+		repoIDErrors: mbp[bpi.RepoID]errorType{2: bllProvidersFbiled, 3: reblError},
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
-	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeRepo)
-	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeRepo, syncJobsStore)
-	go worker.Start()
-	t.Cleanup(worker.Stop)
+	workerStore := MbkeStore(observbtionCtx, db.Hbndle(), SyncTypeRepo)
+	worker := MbkeTestWorker(ctx, observbtionCtx, workerStore, dummySyncer, SyncTypeRepo, syncJobsStore)
+	go worker.Stbrt()
+	t.Clebnup(worker.Stop)
 
 	// Adding repo perms sync jobs.
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteRepoSyncJob(ctx, bpi.RepoID(1), dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonMbnublRepoSync, Priority: dbtbbbse.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(2), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteRepoSyncJob(ctx, bpi.RepoID(2), dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonMbnublRepoSync, Priority: dbtbbbse.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(3), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteRepoSyncJob(ctx, bpi.RepoID(3), dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonMbnublRepoSync, Priority: dbtbbbse.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding user perms sync job, which should not be processed by current worker!
-	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteUserSyncJob(ctx, user2.ID,
+		dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonRepoNoPermissions, Priority: dbtbbbse.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	// Wait for all jobs to be processed.
+	// Wbit for bll jobs to be processed.
 	timeout := time.After(60 * time.Second)
-	remainingRounds := 3
+	rembiningRounds := 3
 loop:
 	for {
-		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+		jobs, err := syncJobsStore.List(ctx, dbtbbbse.ListPermissionSyncJobOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		for _, job := range jobs {
-			// We don't check job with ID=4 because it is a user sync job which is not
+		for _, job := rbnge jobs {
+			// We don't check job with ID=4 becbuse it is b user sync job which is not
 			// processed by current worker.
-			if job.ID != 4 && (job.State == database.PermissionsSyncJobStateQueued || job.State == database.PermissionsSyncJobStateProcessing) {
-				// wait and retry
+			if job.ID != 4 && (job.Stbte == dbtbbbse.PermissionsSyncJobStbteQueued || job.Stbte == dbtbbbse.PermissionsSyncJobStbteProcessing) {
+				// wbit bnd retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
 			}
 		}
 
-		// Adding additional 3 rounds of checks to make sure that we've waited enough
-		// time to get a chance for user sync job to be processed (by mistake).
-		for _, job := range jobs {
-			// We only check job with ID=3 because it is a user sync job which should not
+		// Adding bdditionbl 3 rounds of checks to mbke sure thbt we've wbited enough
+		// time to get b chbnce for user sync job to be processed (by mistbke).
+		for _, job := rbnge jobs {
+			// We only check job with ID=3 becbuse it is b user sync job which should not
 			// processed by current worker.
-			if job.ID == 4 && remainingRounds > 0 {
-				// wait and retry
+			if job.ID == 4 && rembiningRounds > 0 {
+				// wbit bnd retry
 				time.Sleep(500 * time.Millisecond)
-				remainingRounds = remainingRounds - 1
+				rembiningRounds = rembiningRounds - 1
 				continue loop
 			}
 		}
 
 		select {
-		case <-timeout:
-			t.Fatal("Perms sync jobs are not processing or processing takes too much time.")
-		default:
-			break loop
+		cbse <-timeout:
+			t.Fbtbl("Perms sync jobs bre not processing or processing tbkes too much time.")
+		defbult:
+			brebk loop
 		}
 	}
 
-	jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+	jobs, err := syncJobsStore.List(ctx, dbtbbbse.ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	for _, job := range jobs {
+	for _, job := rbnge jobs {
 		jobID := job.ID
 
-		// Check that repo IDs are correctly assigned.
+		// Check thbt repo IDs bre correctly bssigned.
 		if job.RepositoryID > 0 {
-			require.Equal(t, jobID, job.RepositoryID)
+			require.Equbl(t, jobID, job.RepositoryID)
 		}
 
-		// Check that repo sync job was completed and results were saved.
+		// Check thbt repo sync job wbs completed bnd results were sbved.
 		if jobID == 1 {
-			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
-			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 1, job.PermissionsAdded)
-			require.Equal(t, 2, job.PermissionsRemoved)
-			require.Equal(t, 5, job.PermissionsFound)
-			require.False(t, job.IsPartialSuccess)
+			require.Equbl(t, dbtbbbse.PermissionsSyncJobStbteCompleted, job.Stbte)
+			require.Nil(t, job.FbilureMessbge)
+			require.Equbl(t, 1, job.PermissionsAdded)
+			require.Equbl(t, 2, job.PermissionsRemoved)
+			require.Equbl(t, 5, job.PermissionsFound)
+			require.Fblse(t, job.IsPbrtiblSuccess)
 		}
 
-		// Check that repo sync job has the failure message.
+		// Check thbt repo sync job hbs the fbilure messbge.
 		if jobID == 2 {
-			require.NotNil(t, job.FailureMessage)
-			require.Equal(t, allProvidersFailedMsg, *job.FailureMessage)
-			require.Equal(t, 1, job.NumFailures)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
+			require.NotNil(t, job.FbilureMessbge)
+			require.Equbl(t, bllProvidersFbiledMsg, *job.FbilureMessbge)
+			require.Equbl(t, 1, job.NumFbilures)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
 		}
 
-		// Check that failed job has the failure message.
+		// Check thbt fbiled job hbs the fbilure messbge.
 		if jobID == 3 {
-			require.NotNil(t, job.FailureMessage)
-			require.Equal(t, errorMsg, *job.FailureMessage)
-			require.Equal(t, 1, job.NumFailures)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
+			require.NotNil(t, job.FbilureMessbge)
+			require.Equbl(t, errorMsg, *job.FbilureMessbge)
+			require.Equbl(t, 1, job.NumFbilures)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
 		}
 
-		// Check that user sync job wasn't picked up by repo sync worker.
+		// Check thbt user sync job wbsn't picked up by repo sync worker.
 		if jobID == 4 {
-			require.Equal(t, database.PermissionsSyncJobStateQueued, job.State)
-			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
+			require.Equbl(t, dbtbbbse.PermissionsSyncJobStbteQueued, job.Stbte)
+			require.Nil(t, job.FbilureMessbge)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
 		}
 	}
 }
@@ -219,159 +219,159 @@ func TestPermsSyncerWorker_UserSyncJobs(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	// Creating users and repos.
+	// Crebting users bnd repos.
 	userStore := db.Users()
-	user1, err := userStore.Create(ctx, database.NewUser{Username: "user1"})
+	user1, err := userStore.Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	user2, err := userStore.Create(ctx, database.NewUser{Username: "user2"})
+	user2, err := userStore.Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
-	user3, err := userStore.Create(ctx, database.NewUser{Username: "user3"})
+	user3, err := userStore.Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user3"})
 	require.NoError(t, err)
-	user4, err := userStore.Create(ctx, database.NewUser{Username: "user4"})
+	user4, err := userStore.Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user4"})
 	require.NoError(t, err)
 	repoStore := db.Repos()
-	err = repoStore.Create(ctx, &types.Repo{Name: "github.com/soucegraph/sourcegraph"}, &types.Repo{Name: "github.com/soucegraph/about"})
+	err = repoStore.Crebte(ctx, &types.Repo{Nbme: "github.com/soucegrbph/sourcegrbph"}, &types.Repo{Nbme: "github.com/soucegrbph/bbout"})
 	require.NoError(t, err)
 
-	// Creating a worker.
-	observationCtx := &observation.TestContext
+	// Crebting b worker.
+	observbtionCtx := &observbtion.TestContext
 	dummySyncer := &dummySyncerWithErrors{
-		userIDErrors:      map[int32]errorType{2: allProvidersFailed, 3: realError},
-		userIDNoProviders: map[int32]struct{}{4: {}},
+		userIDErrors:      mbp[int32]errorType{2: bllProvidersFbiled, 3: reblError},
+		userIDNoProviders: mbp[int32]struct{}{4: {}},
 	}
 
 	syncJobsStore := db.PermissionSyncJobs()
-	workerStore := MakeStore(observationCtx, db.Handle(), SyncTypeUser)
-	worker := MakeTestWorker(ctx, observationCtx, workerStore, dummySyncer, SyncTypeUser, syncJobsStore)
-	go worker.Start()
-	t.Cleanup(worker.Stop)
+	workerStore := MbkeStore(observbtionCtx, db.Hbndle(), SyncTypeUser)
+	worker := MbkeTestWorker(ctx, observbtionCtx, workerStore, dummySyncer, SyncTypeUser, syncJobsStore)
+	go worker.Stbrt()
+	t.Clebnup(worker.Stop)
 
 	// Adding user perms sync jobs.
-	err = syncJobsStore.CreateUserSyncJob(ctx, user1.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonUserOutdatedPermissions, Priority: database.LowPriorityPermissionsSync})
+	err = syncJobsStore.CrebteUserSyncJob(ctx, user1.ID,
+		dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonUserOutdbtedPermissions, Priority: dbtbbbse.LowPriorityPermissionsSync})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateUserSyncJob(ctx, user2.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteUserSyncJob(ctx, user2.ID,
+		dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonRepoNoPermissions, NoPerms: true, Priority: dbtbbbse.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	err = syncJobsStore.CreateUserSyncJob(ctx, user3.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteUserSyncJob(ctx, user3.ID,
+		dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonRepoNoPermissions, NoPerms: true, Priority: dbtbbbse.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding user perms sync job without perms providers synced.
-	err = syncJobsStore.CreateUserSyncJob(ctx, user4.ID,
-		database.PermissionSyncJobOpts{Reason: database.ReasonRepoNoPermissions, NoPerms: true, Priority: database.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteUserSyncJob(ctx, user4.ID,
+		dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonRepoNoPermissions, NoPerms: true, Priority: dbtbbbse.HighPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
 	// Adding repo perms sync job, which should not be processed by current worker!
-	err = syncJobsStore.CreateRepoSyncJob(ctx, api.RepoID(1), database.PermissionSyncJobOpts{Reason: database.ReasonManualRepoSync, Priority: database.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
+	err = syncJobsStore.CrebteRepoSyncJob(ctx, bpi.RepoID(1), dbtbbbse.PermissionSyncJobOpts{Rebson: dbtbbbse.RebsonMbnublRepoSync, Priority: dbtbbbse.MediumPriorityPermissionsSync, TriggeredByUserID: user1.ID})
 	require.NoError(t, err)
 
-	// Wait for all jobs to be processed.
+	// Wbit for bll jobs to be processed.
 	timeout := time.After(60 * time.Second)
-	remainingRounds := 3
+	rembiningRounds := 3
 loop:
 	for {
-		jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+		jobs, err := syncJobsStore.List(ctx, dbtbbbse.ListPermissionSyncJobOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		for _, job := range jobs {
-			// We don't check job with ID=5 because it is a repo sync job which is not
+		for _, job := rbnge jobs {
+			// We don't check job with ID=5 becbuse it is b repo sync job which is not
 			// processed by current worker.
-			if job.ID != 5 && (job.State == database.PermissionsSyncJobStateQueued || job.State == database.PermissionsSyncJobStateProcessing) {
-				// wait and retry
+			if job.ID != 5 && (job.Stbte == dbtbbbse.PermissionsSyncJobStbteQueued || job.Stbte == dbtbbbse.PermissionsSyncJobStbteProcessing) {
+				// wbit bnd retry
 				time.Sleep(500 * time.Millisecond)
 				continue loop
 			}
 		}
 
-		// Adding additional 3 rounds of checks to make sure that we've waited enough
-		// time to get a chance for repo sync job to be processed (by mistake).
-		for _, job := range jobs {
-			// We only check job with ID=5 because it is a repo sync job which should not
+		// Adding bdditionbl 3 rounds of checks to mbke sure thbt we've wbited enough
+		// time to get b chbnce for repo sync job to be processed (by mistbke).
+		for _, job := rbnge jobs {
+			// We only check job with ID=5 becbuse it is b repo sync job which should not
 			// processed by current worker.
-			if job.ID == 5 && remainingRounds > 0 {
-				// wait and retry
+			if job.ID == 5 && rembiningRounds > 0 {
+				// wbit bnd retry
 				time.Sleep(500 * time.Millisecond)
-				remainingRounds = remainingRounds - 1
+				rembiningRounds = rembiningRounds - 1
 				continue loop
 			}
 		}
 
 		select {
-		case <-timeout:
-			t.Fatal("Perms sync jobs are not processing or processing takes too much time.")
-		default:
-			break loop
+		cbse <-timeout:
+			t.Fbtbl("Perms sync jobs bre not processing or processing tbkes too much time.")
+		defbult:
+			brebk loop
 		}
 	}
 
-	jobs, err := syncJobsStore.List(ctx, database.ListPermissionSyncJobOpts{})
+	jobs, err := syncJobsStore.List(ctx, dbtbbbse.ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	for _, job := range jobs {
+	for _, job := rbnge jobs {
 		jobID := job.ID
 
-		// Check that user IDs are correctly assigned.
+		// Check thbt user IDs bre correctly bssigned.
 		if job.UserID > 0 {
-			require.Equal(t, jobID, job.UserID)
+			require.Equbl(t, jobID, job.UserID)
 		}
 
-		// Check that user sync job was completed and results were saved.
+		// Check thbt user sync job wbs completed bnd results were sbved.
 		if jobID == 1 {
-			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
-			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 1, job.PermissionsAdded)
-			require.Equal(t, 2, job.PermissionsRemoved)
-			require.Equal(t, 5, job.PermissionsFound)
-			require.True(t, job.IsPartialSuccess)
+			require.Equbl(t, dbtbbbse.PermissionsSyncJobStbteCompleted, job.Stbte)
+			require.Nil(t, job.FbilureMessbge)
+			require.Equbl(t, 1, job.PermissionsAdded)
+			require.Equbl(t, 2, job.PermissionsRemoved)
+			require.Equbl(t, 5, job.PermissionsFound)
+			require.True(t, job.IsPbrtiblSuccess)
 		}
 
-		// Check that failed job has the failure message.
+		// Check thbt fbiled job hbs the fbilure messbge.
 		if jobID == 2 {
-			require.NotNil(t, job.FailureMessage)
-			require.Equal(t, allProvidersFailedMsg, *job.FailureMessage)
-			require.Equal(t, 1, job.NumFailures)
+			require.NotNil(t, job.FbilureMessbge)
+			require.Equbl(t, bllProvidersFbiledMsg, *job.FbilureMessbge)
+			require.Equbl(t, 1, job.NumFbilures)
 			require.True(t, job.NoPerms)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
 		}
 
-		// Check that failed job has the failure message.
+		// Check thbt fbiled job hbs the fbilure messbge.
 		if jobID == 3 {
-			require.NotNil(t, job.FailureMessage)
-			require.Equal(t, errorMsg, *job.FailureMessage)
-			require.Equal(t, 1, job.NumFailures)
+			require.NotNil(t, job.FbilureMessbge)
+			require.Equbl(t, errorMsg, *job.FbilureMessbge)
+			require.Equbl(t, 1, job.NumFbilures)
 			require.True(t, job.NoPerms)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
 		}
 
-		// Check that user sync job was completed and results were saved even though
-		// there weren't any perms providers.
+		// Check thbt user sync job wbs completed bnd results were sbved even though
+		// there weren't bny perms providers.
 		if jobID == 4 {
-			require.Equal(t, database.PermissionsSyncJobStateCompleted, job.State)
-			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
-			require.False(t, job.IsPartialSuccess)
+			require.Equbl(t, dbtbbbse.PermissionsSyncJobStbteCompleted, job.Stbte)
+			require.Nil(t, job.FbilureMessbge)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
+			require.Fblse(t, job.IsPbrtiblSuccess)
 		}
 
-		// Check that repo sync job wasn't picked up by user sync worker.
+		// Check thbt repo sync job wbsn't picked up by user sync worker.
 		if jobID == 5 {
-			require.Equal(t, database.PermissionsSyncJobStateQueued, job.State)
-			require.Nil(t, job.FailureMessage)
-			require.Equal(t, 0, job.PermissionsAdded)
-			require.Equal(t, 0, job.PermissionsRemoved)
-			require.Equal(t, 0, job.PermissionsFound)
+			require.Equbl(t, dbtbbbse.PermissionsSyncJobStbteQueued, job.Stbte)
+			require.Nil(t, job.FbilureMessbge)
+			require.Equbl(t, 0, job.PermissionsAdded)
+			require.Equbl(t, 0, job.PermissionsRemoved)
+			require.Equbl(t, 0, job.PermissionsFound)
 		}
 	}
 }
@@ -379,28 +379,28 @@ loop:
 func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	logger := logtest.Scoped(t)
 	dbt := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, dbt)
+	db := dbtbbbse.NewDB(logger, dbt)
 
-	if _, err := dbt.ExecContext(context.Background(), `DELETE FROM permission_sync_jobs;`); err != nil {
-		t.Fatalf("unexpected error deleting records: %s", err)
+	if _, err := dbt.ExecContext(context.Bbckground(), `DELETE FROM permission_sync_jobs;`); err != nil {
+		t.Fbtblf("unexpected error deleting records: %s", err)
 	}
 
-	if _, err := dbt.ExecContext(context.Background(), `
-		INSERT INTO users (id, username)
+	if _, err := dbt.ExecContext(context.Bbckground(), `
+		INSERT INTO users (id, usernbme)
 		VALUES (1, 'test_user_1')
 	`); err != nil {
-		t.Fatalf("unexpected error creating user: %s", err)
+		t.Fbtblf("unexpected error crebting user: %s", err)
 	}
 
-	if _, err := dbt.ExecContext(context.Background(), `
-		INSERT INTO repo (id, name)
+	if _, err := dbt.ExecContext(context.Bbckground(), `
+		INSERT INTO repo (id, nbme)
 		VALUES (1, 'test_repo_1')
 	`); err != nil {
-		t.Fatalf("unexpected error creating repo: %s", err)
+		t.Fbtblf("unexpected error crebting repo: %s", err)
 	}
 
-	if _, err := dbt.ExecContext(context.Background(), `
-		INSERT INTO permission_sync_jobs (id, state, user_id, repository_id, priority, process_after, reason)
+	if _, err := dbt.ExecContext(context.Bbckground(), `
+		INSERT INTO permission_sync_jobs (id, stbte, user_id, repository_id, priority, process_bfter, rebson)
 		VALUES
 			(1, 'queued', 1, null, 0, null, 'test'),
 			(2, 'queued', null, 1, 0, null, 'test'),
@@ -408,31 +408,31 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 			(4, 'queued', null, 1, 5, null, 'test'),
 			(5, 'queued', 1, null, 10, null, 'test'),
 			(6, 'queued', null, 1, 10, null, 'test'),
-			(7, 'queued', 1, null, 10, NOW() - '1 minute'::interval, 'test'),
-			(8, 'queued', null, 1, 10, NOW() - '2 minute'::interval, 'test'),
-			(9, 'queued', 1, null, 5, NOW() - '1 minute'::interval, 'test'),
-			(10, 'queued', null, 1, 5, NOW() - '2 minute'::interval, 'test'),
-			(11, 'queued', 1, null, 0, NOW() - '1 minute'::interval, 'test'),
-			(12, 'queued', null, 1, 0, NOW() - '2 minute'::interval, 'test'),
+			(7, 'queued', 1, null, 10, NOW() - '1 minute'::intervbl, 'test'),
+			(8, 'queued', null, 1, 10, NOW() - '2 minute'::intervbl, 'test'),
+			(9, 'queued', 1, null, 5, NOW() - '1 minute'::intervbl, 'test'),
+			(10, 'queued', null, 1, 5, NOW() - '2 minute'::intervbl, 'test'),
+			(11, 'queued', 1, null, 0, NOW() - '1 minute'::intervbl, 'test'),
+			(12, 'queued', null, 1, 0, NOW() - '2 minute'::intervbl, 'test'),
 			(13, 'processing', 1, null, 10, null, 'test'),
 			(14, 'completed', null, 1, 10, null, 'test'),
-			(15, 'cancelled', 1, null, 10, null, 'test'),
-			(16, 'queued', 1, null, 10, NOW() + '2 minute'::interval, 'test')
+			(15, 'cbncelled', 1, null, 10, null, 'test'),
+			(16, 'queued', 1, null, 10, NOW() + '2 minute'::intervbl, 'test')
 	`); err != nil {
-		t.Fatalf("unexpected error inserting records: %s", err)
+		t.Fbtblf("unexpected error inserting records: %s", err)
 	}
 
-	store := MakeStore(&observation.TestContext, db.Handle(), SyncTypeRepo)
-	jobIDs := make([]int, 0)
-	wantJobIDs := []int{5, 6, 8, 7, 3, 4, 10, 9, 1, 2, 12, 11, 0, 0, 0, 0}
-	var dequeueErr error
-	for range wantJobIDs {
-		record, _, err := store.Dequeue(context.Background(), "test", nil)
+	store := MbkeStore(&observbtion.TestContext, db.Hbndle(), SyncTypeRepo)
+	jobIDs := mbke([]int, 0)
+	wbntJobIDs := []int{5, 6, 8, 7, 3, 4, 10, 9, 1, 2, 12, 11, 0, 0, 0, 0}
+	vbr dequeueErr error
+	for rbnge wbntJobIDs {
+		record, _, err := store.Dequeue(context.Bbckground(), "test", nil)
 		if err == nil {
 			if record == nil {
-				jobIDs = append(jobIDs, 0)
+				jobIDs = bppend(jobIDs, 0)
 			} else {
-				jobIDs = append(jobIDs, record.ID)
+				jobIDs = bppend(jobIDs, record.ID)
 			}
 		} else {
 			dequeueErr = err
@@ -440,32 +440,32 @@ func TestPermsSyncerWorker_Store_Dequeue_Order(t *testing.T) {
 	}
 
 	if dequeueErr != nil {
-		t.Fatalf("dequeue operation failed: %s", dequeueErr)
+		t.Fbtblf("dequeue operbtion fbiled: %s", dequeueErr)
 	}
 
-	if diff := cmp.Diff(jobIDs, wantJobIDs); diff != "" {
-		t.Fatalf("jobs dequeued in wrong order: %s", diff)
+	if diff := cmp.Diff(jobIDs, wbntJobIDs); diff != "" {
+		t.Fbtblf("jobs dequeued in wrong order: %s", diff)
 	}
 }
 
-func MakeTestWorker(ctx context.Context, observationCtx *observation.Context, workerStore dbworkerstore.Store[*database.PermissionSyncJob], permsSyncer permsSyncer, typ syncType, jobsStore database.PermissionSyncJobStore) *workerutil.Worker[*database.PermissionSyncJob] {
-	handler := MakePermsSyncerWorker(observationCtx, permsSyncer, typ, jobsStore)
-	return dbworker.NewWorker[*database.PermissionSyncJob](ctx, workerStore, handler, workerutil.WorkerOptions{
-		Name:              "permission_sync_job_worker",
-		Interval:          time.Second,
-		HeartbeatInterval: 10 * time.Second,
-		Metrics:           workerutil.NewMetrics(observationCtx, "permission_sync_job_worker"),
-		NumHandlers:       4,
+func MbkeTestWorker(ctx context.Context, observbtionCtx *observbtion.Context, workerStore dbworkerstore.Store[*dbtbbbse.PermissionSyncJob], permsSyncer permsSyncer, typ syncType, jobsStore dbtbbbse.PermissionSyncJobStore) *workerutil.Worker[*dbtbbbse.PermissionSyncJob] {
+	hbndler := MbkePermsSyncerWorker(observbtionCtx, permsSyncer, typ, jobsStore)
+	return dbworker.NewWorker[*dbtbbbse.PermissionSyncJob](ctx, workerStore, hbndler, workerutil.WorkerOptions{
+		Nbme:              "permission_sync_job_worker",
+		Intervbl:          time.Second,
+		HebrtbebtIntervbl: 10 * time.Second,
+		Metrics:           workerutil.NewMetrics(observbtionCtx, "permission_sync_job_worker"),
+		NumHbndlers:       4,
 	})
 }
 
-// combinedRequest is a test entity which contains properties of both user and
+// combinedRequest is b test entity which contbins properties of both user bnd
 // repo perms sync requests.
 type combinedRequest struct {
-	RepoID  api.RepoID
+	RepoID  bpi.RepoID
 	UserID  int32
 	NoPerms bool
-	Options authz.FetchPermsOptions
+	Options buthz.FetchPermsOptions
 }
 
 type dummyPermsSyncer struct {
@@ -473,7 +473,7 @@ type dummyPermsSyncer struct {
 	request combinedRequest
 }
 
-func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID bpi.RepoID, noPerms bool, options buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -482,9 +482,9 @@ func (d *dummyPermsSyncer) syncRepoPerms(_ context.Context, repoID api.RepoID, n
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
+	return &dbtbbbse.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, dbtbbbse.CodeHostStbtusesSet{}, nil
 }
-func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerms bool, options buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
 
@@ -493,29 +493,29 @@ func (d *dummyPermsSyncer) syncUserPerms(_ context.Context, userID int32, noPerm
 		NoPerms: noPerms,
 		Options: options,
 	}
-	return &database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, database.CodeHostStatusesSet{}, nil
+	return &dbtbbbse.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}, dbtbbbse.CodeHostStbtusesSet{}, nil
 }
 
 type errorType string
 
 const (
-	realError          errorType = "REAL_ERROR"
-	allProvidersFailed errorType = "ALL_PROVIDERS_FAILED"
+	reblError          errorType = "REAL_ERROR"
+	bllProvidersFbiled errorType = "ALL_PROVIDERS_FAILED"
 )
 
 type dummySyncerWithErrors struct {
 	sync.Mutex
 	request           combinedRequest
-	userIDErrors      map[int32]errorType
-	repoIDErrors      map[api.RepoID]errorType
-	userIDNoProviders map[int32]struct{}
+	userIDErrors      mbp[int32]errorType
+	repoIDErrors      mbp[bpi.RepoID]errorType
+	userIDNoProviders mbp[int32]struct{}
 }
 
-func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.RepoID, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID bpi.RepoID, noPerms bool, options buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	if errorTyp, ok := d.repoIDErrors[repoID]; ok && errorTyp == realError {
+	if errorTyp, ok := d.repoIDErrors[repoID]; ok && errorTyp == reblError {
 		return nil, nil, errors.New(errorMsg)
 	}
 	d.request = combinedRequest{
@@ -524,22 +524,22 @@ func (d *dummySyncerWithErrors) syncRepoPerms(_ context.Context, repoID api.Repo
 		Options: options,
 	}
 
-	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusSuccess}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
-	result := database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
-	if typ, ok := d.repoIDErrors[repoID]; ok && typ == allProvidersFailed {
-		for idx := range codeHostStates {
-			codeHostStates[idx].Status = database.CodeHostStatusError
+	codeHostStbtes := dbtbbbse.CodeHostStbtusesSet{{ProviderID: "id1", Stbtus: dbtbbbse.CodeHostStbtusSuccess}, {ProviderID: "id2", Stbtus: dbtbbbse.CodeHostStbtusSuccess}}
+	result := dbtbbbse.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
+	if typ, ok := d.repoIDErrors[repoID]; ok && typ == bllProvidersFbiled {
+		for idx := rbnge codeHostStbtes {
+			codeHostStbtes[idx].Stbtus = dbtbbbse.CodeHostStbtusError
 		}
-		result = database.SetPermissionsResult{}
+		result = dbtbbbse.SetPermissionsResult{}
 	}
 
-	return &result, codeHostStates, nil
+	return &result, codeHostStbtes, nil
 }
-func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options authz.FetchPermsOptions) (*database.SetPermissionsResult, database.CodeHostStatusesSet, error) {
+func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, noPerms bool, options buthz.FetchPermsOptions) (*dbtbbbse.SetPermissionsResult, dbtbbbse.CodeHostStbtusesSet, error) {
 	d.Lock()
 	defer d.Unlock()
 
-	if errorTyp, ok := d.userIDErrors[userID]; ok && errorTyp == realError {
+	if errorTyp, ok := d.userIDErrors[userID]; ok && errorTyp == reblError {
 		return nil, nil, errors.New(errorMsg)
 	}
 	d.request = combinedRequest{
@@ -548,19 +548,19 @@ func (d *dummySyncerWithErrors) syncUserPerms(_ context.Context, userID int32, n
 		Options: options,
 	}
 
-	codeHostStates := database.CodeHostStatusesSet{{ProviderID: "id1", Status: database.CodeHostStatusError}, {ProviderID: "id2", Status: database.CodeHostStatusSuccess}}
-	result := database.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
-	if typ, ok := d.userIDErrors[userID]; ok && typ == allProvidersFailed {
-		for idx := range codeHostStates {
-			codeHostStates[idx].Status = database.CodeHostStatusError
+	codeHostStbtes := dbtbbbse.CodeHostStbtusesSet{{ProviderID: "id1", Stbtus: dbtbbbse.CodeHostStbtusError}, {ProviderID: "id2", Stbtus: dbtbbbse.CodeHostStbtusSuccess}}
+	result := dbtbbbse.SetPermissionsResult{Added: 1, Removed: 2, Found: 5}
+	if typ, ok := d.userIDErrors[userID]; ok && typ == bllProvidersFbiled {
+		for idx := rbnge codeHostStbtes {
+			codeHostStbtes[idx].Stbtus = dbtbbbse.CodeHostStbtusError
 		}
-		return &database.SetPermissionsResult{}, codeHostStates, nil
+		return &dbtbbbse.SetPermissionsResult{}, codeHostStbtes, nil
 	}
 
 	if _, ok := d.userIDNoProviders[userID]; ok {
-		codeHostStates = database.CodeHostStatusesSet{}
-		result = database.SetPermissionsResult{}
+		codeHostStbtes = dbtbbbse.CodeHostStbtusesSet{}
+		result = dbtbbbse.SetPermissionsResult{}
 	}
 
-	return &result, codeHostStates, nil
+	return &result, codeHostStbtes, nil
 }

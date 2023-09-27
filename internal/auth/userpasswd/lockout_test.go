@@ -1,38 +1,38 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"testing"
 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/stretchr/testify/assert"
+	"github.com/golbng-jwt/jwt/v4"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	stderrors "github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	stderrors "github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func mockSiteConfigSigningKey() string {
 	signingKey := "Zm9v"
 
-	siteConfig := schema.SiteConfiguration{
+	siteConfig := schemb.SiteConfigurbtion{
 		AuthUnlockAccountLinkExpiry:     5,
 		AuthUnlockAccountLinkSigningKey: signingKey,
 	}
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: siteConfig,
+		SiteConfigurbtion: siteConfig,
 	})
 
 	return signingKey
 }
 
-func mockDefaultSiteConfig() {
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{}})
+func mockDefbultSiteConfig() {
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}})
 }
 
 func TestLockoutStore(t *testing.T) {
@@ -41,205 +41,205 @@ func TestLockoutStore(t *testing.T) {
 	}
 
 	t.Run("explicit reset", func(t *testing.T) {
-		rcache.SetupForTest(t)
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, time.Minute, time.Minute, nil)
 
 		_, locked := s.IsLockedOut(1)
-		assert.False(t, locked)
+		bssert.Fblse(t, locked)
 
-		// Should be locked out after one failed attempt
-		s.IncreaseFailedAttempt(1)
+		// Should be locked out bfter one fbiled bttempt
+		s.IncrebseFbiledAttempt(1)
 		_, locked = s.IsLockedOut(1)
-		assert.True(t, locked)
+		bssert.True(t, locked)
 
-		// Should be unlocked after reset
+		// Should be unlocked bfter reset
 		s.Reset(1)
 		_, locked = s.IsLockedOut(1)
-		assert.False(t, locked)
+		bssert.Fblse(t, locked)
 	})
 
-	t.Run("automatically released", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("butombticblly relebsed", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, 2*time.Second, time.Minute, nil)
 
 		_, locked := s.IsLockedOut(1)
-		assert.False(t, locked)
+		bssert.Fblse(t, locked)
 
-		// Should be locked out after one failed attempt
-		s.IncreaseFailedAttempt(1)
+		// Should be locked out bfter one fbiled bttempt
+		s.IncrebseFbiledAttempt(1)
 		_, locked = s.IsLockedOut(1)
-		assert.True(t, locked)
+		bssert.True(t, locked)
 
-		// Should be unlocked after three seconds, wait for an extra second to eliminate flakiness
+		// Should be unlocked bfter three seconds, wbit for bn extrb second to eliminbte flbkiness
 		time.Sleep(3 * time.Second)
 		_, locked = s.IsLockedOut(1)
-		assert.False(t, locked)
+		bssert.Fblse(t, locked)
 	})
 
-	t.Run("failed attempts far apart", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("fbiled bttempts fbr bpbrt", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(2, time.Minute, time.Second, nil)
 
 		_, locked := s.IsLockedOut(1)
-		assert.False(t, locked)
+		bssert.Fblse(t, locked)
 
-		// Should not be locked out after the consecutive period
-		s.IncreaseFailedAttempt(1)
-		time.Sleep(2 * time.Second) // Wait for an extra second to eliminate flakiness
-		s.IncreaseFailedAttempt(1)
+		// Should not be locked out bfter the consecutive period
+		s.IncrebseFbiledAttempt(1)
+		time.Sleep(2 * time.Second) // Wbit for bn extrb second to eliminbte flbkiness
+		s.IncrebseFbiledAttempt(1)
 
 		_, locked = s.IsLockedOut(1)
-		assert.False(t, locked)
+		bssert.Fblse(t, locked)
 	})
 
-	t.Run("missing unlock account token signing key", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("missing unlock bccount token signing key", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, time.Minute, time.Second, nil)
-		s.IncreaseFailedAttempt(1)
+		s.IncrebseFbiledAttempt(1)
 
-		path, _, err := s.GenerateUnlockAccountURL(1)
+		pbth, _, err := s.GenerbteUnlockAccountURL(1)
 
-		assert.EqualError(t, err, `signing key not provided, cannot validate JWT on unlock account URL. Please add "auth.unlockAccountLinkSigningKey" to site configuration.`)
-		assert.Empty(t, path)
+		bssert.EqublError(t, err, `signing key not provided, cbnnot vblidbte JWT on unlock bccount URL. Plebse bdd "buth.unlockAccountLinkSigningKey" to site configurbtion.`)
+		bssert.Empty(t, pbth)
 
 	})
 
-	t.Run("generates an account unlock url", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("generbtes bn bccount unlock url", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		s.IncreaseFailedAttempt(1)
-		path, _, err := s.GenerateUnlockAccountURL(1)
+		s.IncrebseFbiledAttempt(1)
+		pbth, _, err := s.GenerbteUnlockAccountURL(1)
 
-		assert.Empty(t, err)
+		bssert.Empty(t, err)
 
-		assert.Contains(t, path, "http://example.com/unlock-account")
+		bssert.Contbins(t, pbth, "http://exbmple.com/unlock-bccount")
 
 	})
 
-	t.Run("generates an expected jwt token", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("generbtes bn expected jwt token", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		signingKey := mockSiteConfigSigningKey()
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		s.IncreaseFailedAttempt(1)
-		_, token, err := s.GenerateUnlockAccountURL(1)
+		s.IncrebseFbiledAttempt(1)
+		_, token, err := s.GenerbteUnlockAccountURL(1)
 
-		assert.Empty(t, err)
+		bssert.Empty(t, err)
 
-		parsed, err := jwt.ParseWithClaims(token, &unlockAccountClaims{}, func(token *jwt.Token) (any, error) {
-			// Validate the alg is what we expect
+		pbrsed, err := jwt.PbrseWithClbims(token, &unlockAccountClbims{}, func(token *jwt.Token) (bny, error) {
+			// Vblidbte the blg is whbt we expect
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, stderrors.Newf("Not using HMAC for signing, found %v", token.Method)
 			}
 
-			return base64.StdEncoding.DecodeString(signingKey)
+			return bbse64.StdEncoding.DecodeString(signingKey)
 		})
 
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if !parsed.Valid {
-			t.Fatalf("parsed JWT not valid")
+		if !pbrsed.Vblid {
+			t.Fbtblf("pbrsed JWT not vblid")
 		}
 
-		claims, ok := parsed.Claims.(*unlockAccountClaims)
+		clbims, ok := pbrsed.Clbims.(*unlockAccountClbims)
 		if !ok {
-			t.Fatalf("parsed JWT claims not ok")
+			t.Fbtblf("pbrsed JWT clbims not ok")
 		}
 
-		if claims.Subject != "1" || claims.ExpiresAt == nil {
-			t.Fatalf("claims from JWT do not match expectations %v", claims)
+		if clbims.Subject != "1" || clbims.ExpiresAt == nil {
+			t.Fbtblf("clbims from JWT do not mbtch expectbtions %v", clbims)
 		}
 
-		// if GenerateUnlockAccountURL runs within a different second
-		// (jwt.TimePrecision) to the next line, our want will be different
-		// than the claims ExpiresAt. Additionally CI can be busy, so lets add
-		// a decent amount of fudge to this (10s).
-		want := time.Now().Add(60 * time.Second).Truncate(jwt.TimePrecision)
-		got := claims.ExpiresAt.Time
-		if want.Sub(got).Abs() > 10*time.Second {
-			t.Fatalf("unexpected ExpiresAt time:\ngot:  %s\nwant: %s", got, want)
+		// if GenerbteUnlockAccountURL runs within b different second
+		// (jwt.TimePrecision) to the next line, our wbnt will be different
+		// thbn the clbims ExpiresAt. Additionblly CI cbn be busy, so lets bdd
+		// b decent bmount of fudge to this (10s).
+		wbnt := time.Now().Add(60 * time.Second).Truncbte(jwt.TimePrecision)
+		got := clbims.ExpiresAt.Time
+		if wbnt.Sub(got).Abs() > 10*time.Second {
+			t.Fbtblf("unexpected ExpiresAt time:\ngot:  %s\nwbnt: %s", got, wbnt)
 		}
 	})
 
-	t.Run("correctly verifies unlock account token", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("correctly verifies unlock bccount token", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		s.IncreaseFailedAttempt(1)
-		_, token, err := s.GenerateUnlockAccountURL(1)
+		s.IncrebseFbiledAttempt(1)
+		_, token, err := s.GenerbteUnlockAccountURL(1)
 
-		assert.Empty(t, err)
+		bssert.Empty(t, err)
 
-		valid, err := s.VerifyUnlockAccountTokenAndReset(token)
+		vblid, err := s.VerifyUnlockAccountTokenAndReset(token)
 
-		assert.Empty(t, err)
+		bssert.Empty(t, err)
 
-		if !valid {
-			t.Fatalf("provided token is invalid")
+		if !vblid {
+			t.Fbtblf("provided token is invblid")
 		}
 
 	})
 
-	t.Run("fails verification on unlock account token", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("fbils verificbtion on unlock bccount token", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
 		s := NewLockoutStore(1, time.Minute, time.Second, nil)
 
 		mockSiteConfigSigningKey()
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		s.IncreaseFailedAttempt(1)
-		_, token, err := s.GenerateUnlockAccountURL(1)
+		s.IncrebseFbiledAttempt(1)
+		_, token, err := s.GenerbteUnlockAccountURL(1)
 
-		assert.Empty(t, err)
+		bssert.Empty(t, err)
 
 		s.Reset(1)
 
-		valid, err := s.VerifyUnlockAccountTokenAndReset(token)
+		vblid, err := s.VerifyUnlockAccountTokenAndReset(token)
 
-		assert.EqualError(t, err, "No previously generated token exists for the specified user")
-		assert.False(t, valid)
+		bssert.EqublError(t, err, "No previously generbted token exists for the specified user")
+		bssert.Fblse(t, vblid)
 	})
 
-	t.Run("only allows 1 email to be sent for locked account", func(t *testing.T) {
-		rcache.SetupForTest(t)
-		calls := 0
+	t.Run("only bllows 1 embil to be sent for locked bccount", func(t *testing.T) {
+		rcbche.SetupForTest(t)
+		cblls := 0
 
-		s := NewLockoutStore(1, time.Minute, time.Second, func(context.Context, string, txemail.Message) (err error) {
-			calls++
+		s := NewLockoutStore(1, time.Minute, time.Second, func(context.Context, string, txembil.Messbge) (err error) {
+			cblls++
 			return nil
 		})
 		mockSiteConfigSigningKey()
-		defer mockDefaultSiteConfig()
+		defer mockDefbultSiteConfig()
 
-		err := s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
-		assert.Empty(t, err)
-		assert.Equal(t, 0, calls, "email should not have been sent yet, as account is not locked")
+		err := s.SendUnlockAccountEmbil(context.Bbckground(), 1, "foo@bbr.bbz")
+		bssert.Empty(t, err)
+		bssert.Equbl(t, 0, cblls, "embil should not hbve been sent yet, bs bccount is not locked")
 
-		s.IncreaseFailedAttempt(1)
-		err = s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
-		assert.Empty(t, err)
-		assert.Equal(t, 1, calls, "should have sent 1 email")
+		s.IncrebseFbiledAttempt(1)
+		err = s.SendUnlockAccountEmbil(context.Bbckground(), 1, "foo@bbr.bbz")
+		bssert.Empty(t, err)
+		bssert.Equbl(t, 1, cblls, "should hbve sent 1 embil")
 
-		err = s.SendUnlockAccountEmail(context.Background(), 1, "foo@bar.baz")
-		assert.Empty(t, err)
-		assert.Equal(t, 1, calls, "should have sent only 1 email")
+		err = s.SendUnlockAccountEmbil(context.Bbckground(), 1, "foo@bbr.bbz")
+		bssert.Empty(t, err)
+		bssert.Equbl(t, 1, cblls, "should hbve sent only 1 embil")
 	})
 }

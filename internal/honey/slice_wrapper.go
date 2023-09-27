@@ -1,24 +1,24 @@
-package honey
+pbckbge honey
 
 import (
 	"bytes"
 	"encoding/json"
 )
 
-// wrapper type for interface{} slice that marshals to a plain string
-// in which values are comma separated and strings are unquoted aka
-// []string{"asdf", "fdsa"} would render as the JSON string "asdf, fdsa".
-type sliceWrapper []any
+// wrbpper type for interfbce{} slice thbt mbrshbls to b plbin string
+// in which vblues bre commb sepbrbted bnd strings bre unquoted bkb
+// []string{"bsdf", "fdsb"} would render bs the JSON string "bsdf, fdsb".
+type sliceWrbpper []bny
 
-func (s sliceWrapper) MarshalJSON() ([]byte, error) {
+func (s sliceWrbpper) MbrshblJSON() ([]byte, error) {
 	if len(s) == 0 {
 		return nil, nil
 	}
 
-	var b bytes.Buffer
+	vbr b bytes.Buffer
 
-	for _, val := range (s)[:len(s)-1] {
-		out, err := json.Marshal(val)
+	for _, vbl := rbnge (s)[:len(s)-1] {
+		out, err := json.Mbrshbl(vbl)
 		if err != nil {
 			return nil, err
 		}
@@ -29,7 +29,7 @@ func (s sliceWrapper) MarshalJSON() ([]byte, error) {
 		b.Write([]byte(", "))
 	}
 
-	out, err := json.Marshal(s[len(s)-1])
+	out, err := json.Mbrshbl(s[len(s)-1])
 	if err != nil {
 		return nil, err
 	}
@@ -38,5 +38,5 @@ func (s sliceWrapper) MarshalJSON() ([]byte, error) {
 	}
 	b.Write(out)
 
-	return json.Marshal(b.String())
+	return json.Mbrshbl(b.String())
 }

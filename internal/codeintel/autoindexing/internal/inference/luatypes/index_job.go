@@ -1,29 +1,29 @@
-package luatypes
+pbckbge lubtypes
 
 import (
-	lua "github.com/yuin/gopher-lua"
+	lub "github.com/yuin/gopher-lub"
 
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/butoindex/config"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// IndexJobFromTable decodes a single Lua table value into an index job instance.
-func IndexJobFromTable(value lua.LValue) (config.IndexJob, error) {
-	table, ok := value.(*lua.LTable)
+// IndexJobFromTbble decodes b single Lub tbble vblue into bn index job instbnce.
+func IndexJobFromTbble(vblue lub.LVblue) (config.IndexJob, error) {
+	tbble, ok := vblue.(*lub.LTbble)
 	if !ok {
-		return config.IndexJob{}, util.NewTypeError("table", value)
+		return config.IndexJob{}, util.NewTypeError("tbble", vblue)
 	}
 
 	job := config.IndexJob{}
-	if err := util.DecodeTable(table, map[string]func(lua.LValue) error{
+	if err := util.DecodeTbble(tbble, mbp[string]func(lub.LVblue) error{
 		"steps":             setDockerSteps(&job.Steps),
-		"local_steps":       util.SetStrings(&job.LocalSteps),
+		"locbl_steps":       util.SetStrings(&job.LocblSteps),
 		"root":              util.SetString(&job.Root),
 		"indexer":           util.SetString(&job.Indexer),
-		"indexer_args":      util.SetStrings(&job.IndexerArgs),
+		"indexer_brgs":      util.SetStrings(&job.IndexerArgs),
 		"outfile":           util.SetString(&job.Outfile),
-		"requested_envvars": util.SetStrings(&job.RequestedEnvVars),
+		"requested_envvbrs": util.SetStrings(&job.RequestedEnvVbrs),
 	}); err != nil {
 		return config.IndexJob{}, err
 	}
@@ -35,41 +35,41 @@ func IndexJobFromTable(value lua.LValue) (config.IndexJob, error) {
 	return job, nil
 }
 
-// dockerStepFromTable decodes a single Lua table value into a docker steps instance.
-func dockerStepFromTable(value lua.LValue) (step config.DockerStep, _ error) {
-	table, ok := value.(*lua.LTable)
+// dockerStepFromTbble decodes b single Lub tbble vblue into b docker steps instbnce.
+func dockerStepFromTbble(vblue lub.LVblue) (step config.DockerStep, _ error) {
+	tbble, ok := vblue.(*lub.LTbble)
 	if !ok {
-		return config.DockerStep{}, util.NewTypeError("table", value)
+		return config.DockerStep{}, util.NewTypeError("tbble", vblue)
 	}
 
-	if err := util.DecodeTable(table, map[string]func(lua.LValue) error{
+	if err := util.DecodeTbble(tbble, mbp[string]func(lub.LVblue) error{
 		"root":     util.SetString(&step.Root),
-		"image":    util.SetString(&step.Image),
-		"commands": util.SetStrings(&step.Commands),
+		"imbge":    util.SetString(&step.Imbge),
+		"commbnds": util.SetStrings(&step.Commbnds),
 	}); err != nil {
 		return config.DockerStep{}, err
 	}
 
-	if step.Image == "" {
-		return config.DockerStep{}, errors.Newf("no image supplied")
+	if step.Imbge == "" {
+		return config.DockerStep{}, errors.Newf("no imbge supplied")
 	}
 
 	return step, nil
 }
 
-// setDockerSteps returns a decoder function that updates the given docker step
-// slice value on invocation. For use in luasandbox.DecodeTable.
-func setDockerSteps(ptr *[]config.DockerStep) func(lua.LValue) error {
-	return func(value lua.LValue) (err error) {
-		table, ok := value.(*lua.LTable)
+// setDockerSteps returns b decoder function thbt updbtes the given docker step
+// slice vblue on invocbtion. For use in lubsbndbox.DecodeTbble.
+func setDockerSteps(ptr *[]config.DockerStep) func(lub.LVblue) error {
+	return func(vblue lub.LVblue) (err error) {
+		tbble, ok := vblue.(*lub.LTbble)
 		if !ok {
-			return util.NewTypeError("table", value)
+			return util.NewTypeError("tbble", vblue)
 		}
-		steps, err := util.MapSlice(table, dockerStepFromTable)
+		steps, err := util.MbpSlice(tbble, dockerStepFromTbble)
 		if err != nil {
 			return err
 		}
-		*ptr = append(*ptr, steps...)
+		*ptr = bppend(*ptr, steps...)
 		return nil
 	}
 }

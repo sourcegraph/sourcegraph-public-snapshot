@@ -1,35 +1,35 @@
-package resolvers
+pbckbge resolvers
 
 import (
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type changesetEventResolver struct {
+type chbngesetEventResolver struct {
 	store             *store.Store
-	changesetResolver *changesetResolver
-	*btypes.ChangesetEvent
+	chbngesetResolver *chbngesetResolver
+	*btypes.ChbngesetEvent
 }
 
-const changesetEventIDKind = "ChangesetEvent"
+const chbngesetEventIDKind = "ChbngesetEvent"
 
-func marshalChangesetEventID(id int64) graphql.ID {
-	return relay.MarshalID(changesetEventIDKind, id)
+func mbrshblChbngesetEventID(id int64) grbphql.ID {
+	return relby.MbrshblID(chbngesetEventIDKind, id)
 }
 
-func (r *changesetEventResolver) ID() graphql.ID {
-	return marshalChangesetEventID(r.ChangesetEvent.ID)
+func (r *chbngesetEventResolver) ID() grbphql.ID {
+	return mbrshblChbngesetEventID(r.ChbngesetEvent.ID)
 }
 
-func (r *changesetEventResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.ChangesetEvent.CreatedAt}
+func (r *chbngesetEventResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.ChbngesetEvent.CrebtedAt}
 }
 
-func (r *changesetEventResolver) Changeset() graphqlbackend.ExternalChangesetResolver {
-	return r.changesetResolver
+func (r *chbngesetEventResolver) Chbngeset() grbphqlbbckend.ExternblChbngesetResolver {
+	return r.chbngesetResolver
 }

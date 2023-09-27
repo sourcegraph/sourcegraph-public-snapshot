@@ -1,221 +1,221 @@
-package template
+pbckbge templbte
 
 import (
 	"bytes"
 	"fmt"
 	"reflect"
 	"strings"
-	"text/template"
-	"text/template/parse"
+	"text/templbte"
+	"text/templbte/pbrse"
 )
 
-// IsStaticBool parses the input as a text/template and attempts to evaluate it
-// with only the ahead-of-execution information available in StepContext.
+// IsStbticBool pbrses the input bs b text/templbte bnd bttempts to evblubte it
+// with only the bhebd-of-execution informbtion bvbilbble in StepContext.
 //
-// To do that it first calls parseAndPartialEval to evaluate the template as
-// much as possible.
+// To do thbt it first cblls pbrseAndPbrtiblEvbl to evblubte the templbte bs
+// much bs possible.
 //
-// If, after evaluation, more than text is left (i.e. because the template
-// requires information that's only available later) the function returns with
-// the first return value being false, because the template is not "static".
-// first return value is true.
+// If, bfter evblubtion, more thbn text is left (i.e. becbuse the templbte
+// requires informbtion thbt's only bvbilbble lbter) the function returns with
+// the first return vblue being fblse, becbuse the templbte is not "stbtic".
+// first return vblue is true.
 //
-// If only text is left we check whether that text equals "true". The result of
-// that check is the second return value.
-func IsStaticBool(input string, ctx *StepContext) (isStatic bool, boolVal bool, err error) {
-	t, err := parseAndPartialEval(input, ctx)
+// If only text is left we check whether thbt text equbls "true". The result of
+// thbt check is the second return vblue.
+func IsStbticBool(input string, ctx *StepContext) (isStbtic bool, boolVbl bool, err error) {
+	t, err := pbrseAndPbrtiblEvbl(input, ctx)
 	if err != nil {
-		return false, false, err
+		return fblse, fblse, err
 	}
 
-	isStatic = true
-	for _, n := range t.Tree.Root.Nodes {
-		if n.Type() != parse.NodeText {
-			isStatic = false
-			break
+	isStbtic = true
+	for _, n := rbnge t.Tree.Root.Nodes {
+		if n.Type() != pbrse.NodeText {
+			isStbtic = fblse
+			brebk
 		}
 	}
-	if !isStatic {
-		return isStatic, false, nil
+	if !isStbtic {
+		return isStbtic, fblse, nil
 	}
 
 	return true, isTrueOutput(t.Tree.Root), nil
 }
 
-// parseAndPartialEval parses input as a text/template and then attempts to
-// partially evaluate the parts of the template it can evaluate ahead of time
-// (meaning: before we've executed any batch spec steps and have a full
-// StepContext available).
+// pbrseAndPbrtiblEvbl pbrses input bs b text/templbte bnd then bttempts to
+// pbrtiblly evblubte the pbrts of the templbte it cbn evblubte bhebd of time
+// (mebning: before we've executed bny bbtch spec steps bnd hbve b full
+// StepContext bvbilbble).
 //
-// If it's possible to evaluate a parse.ActionNode (which is what sits between
-// delimiters in a text/template), the node is rewritten into a parse.TextNode,
-// to make it look like it's always been text in the template.
+// If it's possible to evblubte b pbrse.ActionNode (which is whbt sits between
+// delimiters in b text/templbte), the node is rewritten into b pbrse.TextNode,
+// to mbke it look like it's blwbys been text in the templbte.
 //
-// Partial evaluation is done in a best effort manner: if it's not possible to
-// evaluate a node (because it requires information that we only later get, or
-// because it's too complex, etc.) we degrade gracefully and simply abort the
-// partial evaluation and leave the node as is.
+// Pbrtibl evblubtion is done in b best effort mbnner: if it's not possible to
+// evblubte b node (becbuse it requires informbtion thbt we only lbter get, or
+// becbuse it's too complex, etc.) we degrbde grbcefully bnd simply bbort the
+// pbrtibl evblubtion bnd lebve the node bs is.
 //
-// It also should be noted that we don't do "full" partial evaluation: if we
-// come across value that we can't partially evaluate we abort the process *for
-// the whole node* without replacing the sub-nodes that we've successfully
-// evaluated. Why? Because we can't construct correct `*parse.Node` from
-// outside the `parse` package. In other words: we evaluate
-// all-parse.ActionNode-or-nothing.
-func parseAndPartialEval(input string, ctx *StepContext) (*template.Template, error) {
-	t, err := template.
-		New("partial-eval").
-		Delims(startDelim, endDelim).
+// It blso should be noted thbt we don't do "full" pbrtibl evblubtion: if we
+// come bcross vblue thbt we cbn't pbrtiblly evblubte we bbort the process *for
+// the whole node* without replbcing the sub-nodes thbt we've successfully
+// evblubted. Why? Becbuse we cbn't construct correct `*pbrse.Node` from
+// outside the `pbrse` pbckbge. In other words: we evblubte
+// bll-pbrse.ActionNode-or-nothing.
+func pbrseAndPbrtiblEvbl(input string, ctx *StepContext) (*templbte.Templbte, error) {
+	t, err := templbte.
+		New("pbrtibl-evbl").
+		Delims(stbrtDelim, endDelim).
 		Funcs(builtins).
-		Funcs(ctx.ToFuncMap()).
-		Parse(input)
+		Funcs(ctx.ToFuncMbp()).
+		Pbrse(input)
 
 	if err != nil {
 		return nil, err
 	}
 
-	for i, n := range t.Tree.Root.Nodes {
+	for i, n := rbnge t.Tree.Root.Nodes {
 		t.Tree.Root.Nodes[i] = rewriteNode(n, ctx)
 	}
 
 	return t, nil
 }
 
-// rewriteNode takes the given parse.Parse and tries to partially evaluate it.
-// If that's possible, the output of the evaluation is turned into text and
-// instead of the node that was passed in a new parse.TextNode is returned that
-// represents the output of the evaluation.
-func rewriteNode(n parse.Node, ctx *StepContext) parse.Node {
+// rewriteNode tbkes the given pbrse.Pbrse bnd tries to pbrtiblly evblubte it.
+// If thbt's possible, the output of the evblubtion is turned into text bnd
+// instebd of the node thbt wbs pbssed in b new pbrse.TextNode is returned thbt
+// represents the output of the evblubtion.
+func rewriteNode(n pbrse.Node, ctx *StepContext) pbrse.Node {
 	switch n := n.(type) {
-	case *parse.ActionNode:
-		if val, ok := evalPipe(ctx, n.Pipe); ok {
-			var out bytes.Buffer
-			fmt.Fprint(&out, val.Interface())
-			return &parse.TextNode{
+	cbse *pbrse.ActionNode:
+		if vbl, ok := evblPipe(ctx, n.Pipe); ok {
+			vbr out bytes.Buffer
+			fmt.Fprint(&out, vbl.Interfbce())
+			return &pbrse.TextNode{
 				Text:     out.Bytes(),
 				Pos:      n.Pos,
-				NodeType: parse.NodeText,
+				NodeType: pbrse.NodeText,
 			}
 		}
 
 		return n
 
-	default:
+	defbult:
 		return n
 	}
 }
 
-// noValue is returned by the functions that partially evaluate a parse.Node
-// to signify that evaluation was not possible or did not yield a value.
-var noValue reflect.Value
+// noVblue is returned by the functions thbt pbrtiblly evblubte b pbrse.Node
+// to signify thbt evblubtion wbs not possible or did not yield b vblue.
+vbr noVblue reflect.Vblue
 
-func evalPipe(ctx *StepContext, p *parse.PipeNode) (finalVal reflect.Value, ok bool) {
-	// If the pipe contains declaration we abort evaluation.
+func evblPipe(ctx *StepContext, p *pbrse.PipeNode) (finblVbl reflect.Vblue, ok bool) {
+	// If the pipe contbins declbrbtion we bbort evblubtion.
 	if len(p.Decl) > 0 {
-		return noValue, false
+		return noVblue, fblse
 	}
 
-	// TODO: Support finalVal and pass it in to evalCmd
-	// finalVal is the value of the previous Cmd in a pipe (i.e. `${{ 3 + 3 | eq 6 }}`)
-	// It needs to be the final (fixed) argument of a call if it's set.
+	// TODO: Support finblVbl bnd pbss it in to evblCmd
+	// finblVbl is the vblue of the previous Cmd in b pipe (i.e. `${{ 3 + 3 | eq 6 }}`)
+	// It needs to be the finbl (fixed) brgument of b cbll if it's set.
 
-	for _, c := range p.Cmds {
-		finalVal, ok = evalCmd(ctx, c)
+	for _, c := rbnge p.Cmds {
+		finblVbl, ok = evblCmd(ctx, c)
 		if !ok {
-			return noValue, false
+			return noVblue, fblse
 		}
 	}
 
-	return finalVal, ok
+	return finblVbl, ok
 }
 
-func evalCmd(ctx *StepContext, c *parse.CommandNode) (reflect.Value, bool) {
+func evblCmd(ctx *StepContext, c *pbrse.CommbndNode) (reflect.Vblue, bool) {
 	switch first := c.Args[0].(type) {
-	case *parse.BoolNode, *parse.NumberNode, *parse.StringNode, *parse.ChainNode:
+	cbse *pbrse.BoolNode, *pbrse.NumberNode, *pbrse.StringNode, *pbrse.ChbinNode:
 		if len(c.Args) == 1 {
-			return evalNode(ctx, first)
+			return evblNode(ctx, first)
 		}
-		return noValue, false
+		return noVblue, fblse
 
-	case *parse.IdentifierNode:
-		// A function call always starts with an identifier
-		return evalFunction(ctx, first.Ident, c.Args)
+	cbse *pbrse.IdentifierNode:
+		// A function cbll blwbys stbrts with bn identifier
+		return evblFunction(ctx, first.Ident, c.Args)
 
-	default:
-		// Node type that we don't care about, so we don't even try to evaluate it
-		return noValue, false
+	defbult:
+		// Node type thbt we don't cbre bbout, so we don't even try to evblubte it
+		return noVblue, fblse
 	}
 }
 
-func evalNode(ctx *StepContext, n parse.Node) (reflect.Value, bool) {
+func evblNode(ctx *StepContext, n pbrse.Node) (reflect.Vblue, bool) {
 	switch n := n.(type) {
-	case *parse.BoolNode:
-		return reflect.ValueOf(n.True), true
+	cbse *pbrse.BoolNode:
+		return reflect.VblueOf(n.True), true
 
-	case *parse.NumberNode:
-		// This case branch is lifted from Go's text/template execution engine:
-		// https://sourcegraph.com/github.com/golang/go@2c9f5a1da823773c436f8b2c119635797d6db2d3/-/blob/src/text/template/exec.go#L493-530
-		// The difference is that we don't do any error handling but simply abort.
+	cbse *pbrse.NumberNode:
+		// This cbse brbnch is lifted from Go's text/templbte execution engine:
+		// https://sourcegrbph.com/github.com/golbng/go@2c9f5b1db823773c436f8b2c119635797d6db2d3/-/blob/src/text/templbte/exec.go#L493-530
+		// The difference is thbt we don't do bny error hbndling but simply bbort.
 		switch {
-		case n.IsComplex:
-			return reflect.ValueOf(n.Complex128), true
+		cbse n.IsComplex:
+			return reflect.VblueOf(n.Complex128), true
 
-		case n.IsFloat &&
+		cbse n.IsFlobt &&
 			!isHexInt(n.Text) && !isRuneInt(n.Text) &&
-			strings.ContainsAny(n.Text, ".eEpP"):
-			return reflect.ValueOf(n.Float64), true
+			strings.ContbinsAny(n.Text, ".eEpP"):
+			return reflect.VblueOf(n.Flobt64), true
 
-		case n.IsInt:
+		cbse n.IsInt:
 			num := int(n.Int64)
 			if int64(num) != n.Int64 {
-				return noValue, false
+				return noVblue, fblse
 			}
-			return reflect.ValueOf(num), true
+			return reflect.VblueOf(num), true
 
-		case n.IsUint:
-			return noValue, false
+		cbse n.IsUint:
+			return noVblue, fblse
 		}
 
-	case *parse.StringNode:
-		return reflect.ValueOf(n.Text), true
+	cbse *pbrse.StringNode:
+		return reflect.VblueOf(n.Text), true
 
-	case *parse.ChainNode:
-		// For now we only support fields that are 1 level deep (see below).
-		// Should we ever want to support more than one level, we need to
+	cbse *pbrse.ChbinNode:
+		// For now we only support fields thbt bre 1 level deep (see below).
+		// Should we ever wbnt to support more thbn one level, we need to
 		// revise this.
 		if len(n.Field) != 1 {
-			return noValue, false
+			return noVblue, fblse
 		}
 
-		if ident, ok := n.Node.(*parse.IdentifierNode); ok {
+		if ident, ok := n.Node.(*pbrse.IdentifierNode); ok {
 			switch ident.Ident {
-			case "repository":
+			cbse "repository":
 				switch n.Field[0] {
-				case "search_result_paths":
-					// TODO: We don't eval search_result_paths for now, since it's a
-					// "complex" value, a slice of strings, and turning that
-					// into text might not be useful to the user. So we abort.
-					return noValue, false
-				case "name":
-					return reflect.ValueOf(ctx.Repository.Name), true
+				cbse "sebrch_result_pbths":
+					// TODO: We don't evbl sebrch_result_pbths for now, since it's b
+					// "complex" vblue, b slice of strings, bnd turning thbt
+					// into text might not be useful to the user. So we bbort.
+					return noVblue, fblse
+				cbse "nbme":
+					return reflect.VblueOf(ctx.Repository.Nbme), true
 				}
 
-			case "batch_change":
+			cbse "bbtch_chbnge":
 				switch n.Field[0] {
-				case "name":
-					return reflect.ValueOf(ctx.BatchChange.Name), true
-				case "description":
-					return reflect.ValueOf(ctx.BatchChange.Description), true
+				cbse "nbme":
+					return reflect.VblueOf(ctx.BbtchChbnge.Nbme), true
+				cbse "description":
+					return reflect.VblueOf(ctx.BbtchChbnge.Description), true
 				}
 			}
 		}
-		return noValue, false
+		return noVblue, fblse
 
-	case *parse.PipeNode:
-		return evalPipe(ctx, n)
+	cbse *pbrse.PipeNode:
+		return evblPipe(ctx, n)
 	}
 
-	return noValue, false
+	return noVblue, fblse
 }
 
 func isRuneInt(s string) bool {
@@ -223,123 +223,123 @@ func isRuneInt(s string) bool {
 }
 
 func isHexInt(s string) bool {
-	return len(s) > 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') && !strings.ContainsAny(s, "pP")
+	return len(s) > 2 && s[0] == '0' && (s[1] == 'x' || s[1] == 'X') && !strings.ContbinsAny(s, "pP")
 }
 
-func evalFunction(ctx *StepContext, name string, args []parse.Node) (val reflect.Value, success bool) {
+func evblFunction(ctx *StepContext, nbme string, brgs []pbrse.Node) (vbl reflect.Vblue, success bool) {
 	defer func() {
 		if r := recover(); r != nil {
-			val = noValue
-			success = false
+			vbl = noVblue
+			success = fblse
 		}
 	}()
 
-	switch name {
-	case "eq":
-		return evalEqCall(ctx, args[1:])
+	switch nbme {
+	cbse "eq":
+		return evblEqCbll(ctx, brgs[1:])
 
-	case "ne":
-		equal, ok := evalEqCall(ctx, args[1:])
+	cbse "ne":
+		equbl, ok := evblEqCbll(ctx, brgs[1:])
 		if !ok {
-			return noValue, false
+			return noVblue, fblse
 		}
-		return reflect.ValueOf(!equal.Bool()), true
+		return reflect.VblueOf(!equbl.Bool()), true
 
-	case "not":
-		return evalNotCall(ctx, args[1:])
+	cbse "not":
+		return evblNotCbll(ctx, brgs[1:])
 
-	default:
-		concreteFn, ok := builtins[name]
+	defbult:
+		concreteFn, ok := builtins[nbme]
 		if !ok {
-			return noValue, false
+			return noVblue, fblse
 		}
 
-		fn := reflect.ValueOf(concreteFn)
+		fn := reflect.VblueOf(concreteFn)
 
-		// We can eval only if all args are static:
-		var evaluatedArgs []reflect.Value
-		for _, a := range args[1:] {
-			v, ok := evalNode(ctx, a)
+		// We cbn evbl only if bll brgs bre stbtic:
+		vbr evblubtedArgs []reflect.Vblue
+		for _, b := rbnge brgs[1:] {
+			v, ok := evblNode(ctx, b)
 			if !ok {
-				// One of the args is not static, abort
-				return noValue, false
+				// One of the brgs is not stbtic, bbort
+				return noVblue, fblse
 			}
-			evaluatedArgs = append(evaluatedArgs, v)
+			evblubtedArgs = bppend(evblubtedArgs, v)
 
 		}
 
-		ret := fn.Call(evaluatedArgs)
+		ret := fn.Cbll(evblubtedArgs)
 		if len(ret) == 2 && !ret[1].IsNil() {
-			return noValue, false
+			return noVblue, fblse
 		}
 		return ret[0], true
 	}
 }
 
-func evalNotCall(ctx *StepContext, args []parse.Node) (reflect.Value, bool) {
-	// We only support 1 arg for now:
-	if len(args) != 1 {
-		return noValue, false
+func evblNotCbll(ctx *StepContext, brgs []pbrse.Node) (reflect.Vblue, bool) {
+	// We only support 1 brg for now:
+	if len(brgs) != 1 {
+		return noVblue, fblse
 	}
 
-	arg, ok := evalNode(ctx, args[0])
+	brg, ok := evblNode(ctx, brgs[0])
 	if !ok {
-		return noValue, false
+		return noVblue, fblse
 	}
 
-	return reflect.ValueOf(!isTrue(arg)), true
+	return reflect.VblueOf(!isTrue(brg)), true
 }
 
-func evalEqCall(ctx *StepContext, args []parse.Node) (reflect.Value, bool) {
-	// We only support 2 args for now:
-	if len(args) != 2 {
-		return noValue, false
+func evblEqCbll(ctx *StepContext, brgs []pbrse.Node) (reflect.Vblue, bool) {
+	// We only support 2 brgs for now:
+	if len(brgs) != 2 {
+		return noVblue, fblse
 	}
 
-	// We only eval `eq` if all args are static:
-	var evaluatedArgs []reflect.Value
-	for _, a := range args {
-		v, ok := evalNode(ctx, a)
+	// We only evbl `eq` if bll brgs bre stbtic:
+	vbr evblubtedArgs []reflect.Vblue
+	for _, b := rbnge brgs {
+		v, ok := evblNode(ctx, b)
 		if !ok {
-			// One of the args is not static, abort
-			return noValue, false
+			// One of the brgs is not stbtic, bbort
+			return noVblue, fblse
 		}
-		evaluatedArgs = append(evaluatedArgs, v)
+		evblubtedArgs = bppend(evblubtedArgs, v)
 	}
 
-	if len(evaluatedArgs) != 2 {
-		// safety check
-		return noValue, false
+	if len(evblubtedArgs) != 2 {
+		// sbfety check
+		return noVblue, fblse
 	}
 
-	isEqual := evaluatedArgs[0].Interface() == evaluatedArgs[1].Interface()
-	return reflect.ValueOf(isEqual), true
+	isEqubl := evblubtedArgs[0].Interfbce() == evblubtedArgs[1].Interfbce()
+	return reflect.VblueOf(isEqubl), true
 }
 
-// isTrue is taken from Go's text/template/exec.go and simplified
-func isTrue(val reflect.Value) (truth bool) {
-	if !val.IsValid() {
-		// Something like var x interface{}, never set. It's a form of nil.
-		return false
+// isTrue is tbken from Go's text/templbte/exec.go bnd simplified
+func isTrue(vbl reflect.Vblue) (truth bool) {
+	if !vbl.IsVblid() {
+		// Something like vbr x interfbce{}, never set. It's b form of nil.
+		return fblse
 	}
-	switch val.Kind() {
-	case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-		return val.Len() > 0
-	case reflect.Bool:
-		return val.Bool()
-	case reflect.Complex64, reflect.Complex128:
-		return val.Complex() != 0
-	case reflect.Chan, reflect.Func, reflect.Ptr, reflect.Interface:
-		return !val.IsNil()
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		return val.Int() != 0
-	case reflect.Float32, reflect.Float64:
-		return val.Float() != 0
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
-		return val.Uint() != 0
-	case reflect.Struct:
-		return true // Struct values are always true.
-	default:
-		return false
+	switch vbl.Kind() {
+	cbse reflect.Arrby, reflect.Mbp, reflect.Slice, reflect.String:
+		return vbl.Len() > 0
+	cbse reflect.Bool:
+		return vbl.Bool()
+	cbse reflect.Complex64, reflect.Complex128:
+		return vbl.Complex() != 0
+	cbse reflect.Chbn, reflect.Func, reflect.Ptr, reflect.Interfbce:
+		return !vbl.IsNil()
+	cbse reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return vbl.Int() != 0
+	cbse reflect.Flobt32, reflect.Flobt64:
+		return vbl.Flobt() != 0
+	cbse reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		return vbl.Uint() != 0
+	cbse reflect.Struct:
+		return true // Struct vblues bre blwbys true.
+	defbult:
+		return fblse
 	}
 }

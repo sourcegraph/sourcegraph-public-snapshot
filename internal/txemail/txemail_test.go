@@ -1,78 +1,78 @@
-package txemail
+pbckbge txembil
 
 import (
 	"net/textproto"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/jordan-wright/email"
+	"github.com/jordbn-wright/embil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
 )
 
 func TestRender(t *testing.T) {
-	replyTo := "admin@sourcegraph.com"
-	messageID := "1"
+	replyTo := "bdmin@sourcegrbph.com"
+	messbgeID := "1"
 
-	msg := Message{
-		To:         []string{"bar1@sourcegraph.com", "bar2@sourcegraph.com"},
+	msg := Messbge{
+		To:         []string{"bbr1@sourcegrbph.com", "bbr2@sourcegrbph.com"},
 		ReplyTo:    &replyTo,
-		MessageID:  &messageID,
+		MessbgeID:  &messbgeID,
 		References: []string{"ref1", "ref2"},
-		Template: txtypes.Templates{
+		Templbte: txtypes.Templbtes{
 			Subject: `{{.A}} subject {{.B}}`,
 			Text: `
 	{{.A}} text body {{.B}}
 	`,
 			HTML: `
-	{{.A}} html body <span class="{{.B}}" />
+	{{.A}} html body <spbn clbss="{{.B}}" />
 	`,
 		},
-		Data: struct {
+		Dbtb: struct {
 			A string
 			B string
 		}{
-			A: "a",
+			A: "b",
 			B: `<b>`,
 		},
 	}
 
-	t.Run("only email", func(t *testing.T) {
-		got, err := render("foo@sourcegraph.com", "", msg)
+	t.Run("only embil", func(t *testing.T) {
+		got, err := render("foo@sourcegrbph.com", "", msg)
 		require.NoError(t, err)
-		if diff := cmp.Diff(&email.Email{
+		if diff := cmp.Diff(&embil.Embil{
 			ReplyTo: []string{replyTo},
-			From:    "<foo@sourcegraph.com>",
-			To:      []string{"bar1@sourcegraph.com", "bar2@sourcegraph.com"},
-			Subject: "a subject <b>",
-			Text:    []byte("a text body <b>"),
-			HTML:    []byte(`a html body <span class="&lt;b&gt;" />`),
-			Headers: textproto.MIMEHeader{
-				"Message-ID": []string{messageID},
+			From:    "<foo@sourcegrbph.com>",
+			To:      []string{"bbr1@sourcegrbph.com", "bbr2@sourcegrbph.com"},
+			Subject: "b subject <b>",
+			Text:    []byte("b text body <b>"),
+			HTML:    []byte(`b html body <spbn clbss="&lt;b&gt;" />`),
+			Hebders: textproto.MIMEHebder{
+				"Messbge-ID": []string{messbgeID},
 				"References": []string{"<ref1> <ref2>"},
 			},
 		}, got); diff != "" {
-			t.Errorf("mismatch (-want +got):\n%s", diff)
+			t.Errorf("mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("email and sender name", func(t *testing.T) {
-		got, err := render("foo@sourcegraph.com", "foo", msg)
+	t.Run("embil bnd sender nbme", func(t *testing.T) {
+		got, err := render("foo@sourcegrbph.com", "foo", msg)
 		require.NoError(t, err)
-		if diff := cmp.Diff(&email.Email{
+		if diff := cmp.Diff(&embil.Embil{
 			ReplyTo: []string{replyTo},
-			From:    `"foo" <foo@sourcegraph.com>`,
-			To:      []string{"bar1@sourcegraph.com", "bar2@sourcegraph.com"},
-			Subject: "a subject <b>",
-			Text:    []byte("a text body <b>"),
-			HTML:    []byte(`a html body <span class="&lt;b&gt;" />`),
-			Headers: textproto.MIMEHeader{
-				"Message-ID": []string{messageID},
+			From:    `"foo" <foo@sourcegrbph.com>`,
+			To:      []string{"bbr1@sourcegrbph.com", "bbr2@sourcegrbph.com"},
+			Subject: "b subject <b>",
+			Text:    []byte("b text body <b>"),
+			HTML:    []byte(`b html body <spbn clbss="&lt;b&gt;" />`),
+			Hebders: textproto.MIMEHebder{
+				"Messbge-ID": []string{messbgeID},
 				"References": []string{"<ref1> <ref2>"},
 			},
 		}, got); diff != "" {
-			t.Errorf("mismatch (-want +got):\n%s", diff)
+			t.Errorf("mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }

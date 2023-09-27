@@ -1,34 +1,34 @@
-package audit
+pbckbge budit
 
-import "github.com/sourcegraph/sourcegraph/schema"
+import "github.com/sourcegrbph/sourcegrbph/schemb"
 
-type SecurityEventsLocation int
+type SecurityEventsLocbtion int
 
 const (
-	None = iota
+	None = iotb
 	AuditLog
-	Database
+	Dbtbbbse
 	All
 )
 
-func SecurityEventLocation(cfg schema.SiteConfiguration) SecurityEventsLocation {
+func SecurityEventLocbtion(cfg schemb.SiteConfigurbtion) SecurityEventsLocbtion {
 	if securityEvent := securityEventConf(cfg); securityEvent != nil {
-		switch securityEvent.Location {
-		case "none":
+		switch securityEvent.Locbtion {
+		cbse "none":
 			return None
-		case "auditlog":
+		cbse "buditlog":
 			return AuditLog
-		case "database":
-			return Database
-		case "all":
+		cbse "dbtbbbse":
+			return Dbtbbbse
+		cbse "bll":
 			return All
 		}
 	}
-	// default to AuditLog
+	// defbult to AuditLog
 	return AuditLog
 }
 
-func securityEventConf(cfg schema.SiteConfiguration) *schema.SecurityEventLog {
+func securityEventConf(cfg schemb.SiteConfigurbtion) *schemb.SecurityEventLog {
 	if logCg := cfg.Log; logCg != nil {
 		return logCg.SecurityEventLog
 	}

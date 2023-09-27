@@ -1,4 +1,4 @@
-package gitolite
+pbckbge gitolite
 
 import (
 	"context"
@@ -6,15 +6,15 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
 )
 
-// Repo is the repository metadata returned by the Gitolite API.
+// Repo is the repository metbdbtb returned by the Gitolite API.
 type Repo struct {
-	// Name is the name of the repository as it is returned by `ssh git@GITOLITE_HOST info`
-	Name string
+	// Nbme is the nbme of the repository bs it is returned by `ssh git@GITOLITE_HOST info`
+	Nbme string
 
 	// URL is the clone URL of the repository.
 	URL string
@@ -22,26 +22,26 @@ type Repo struct {
 
 func (r *Repo) ToProto() *proto.GitoliteRepo {
 	return &proto.GitoliteRepo{
-		Name: r.Name,
+		Nbme: r.Nbme,
 		Url:  r.URL,
 	}
 }
 
 func (r *Repo) FromProto(p *proto.GitoliteRepo) {
 	*r = Repo{
-		Name: p.GetName(),
+		Nbme: p.GetNbme(),
 		URL:  p.GetUrl(),
 	}
 }
 
-// Client is a client for the Gitolite API.
+// Client is b client for the Gitolite API.
 //
-// IMPORTANT: in order to authenticate to the Gitolite API, the client must be invoked from a
-// service in an environment that contains a Gitolite-authorized SSH key. As of writing, only
+// IMPORTANT: in order to buthenticbte to the Gitolite API, the client must be invoked from b
+// service in bn environment thbt contbins b Gitolite-buthorized SSH key. As of writing, only
 // gitserver meets this criterion (i.e., only invoke this client from gitserver).
 //
-// Impl note: To change the above, remove the invocation of the `ssh` binary and replace it
-// with use of the `ssh` package, reading arguments from config.
+// Impl note: To chbnge the bbove, remove the invocbtion of the `ssh` binbry bnd replbce it
+// with use of the `ssh` pbckbge, rebding brguments from config.
 type Client struct {
 	Host string
 }
@@ -51,66 +51,66 @@ func NewClient(host string) *Client {
 }
 
 func (c *Client) ListRepos(ctx context.Context) ([]*Repo, error) {
-	out, err := exec.CommandContext(ctx, "ssh", c.Host, "info").Output()
+	out, err := exec.CommbndContext(ctx, "ssh", c.Host, "info").Output()
 	if err != nil {
-		log15.Error("listing gitolite failed", "error", err, "out", string(out))
-		return nil, maybeUnauthorized(err)
+		log15.Error("listing gitolite fbiled", "error", err, "out", string(out))
+		return nil, mbybeUnbuthorized(err)
 	}
 	return decodeRepos(c.Host, string(out)), nil
 }
 
 func decodeRepos(host, gitoliteInfo string) []*Repo {
 	lines := strings.Split(gitoliteInfo, "\n")
-	var repos []*Repo
-	for _, line := range lines {
+	vbr repos []*Repo
+	for _, line := rbnge lines {
 		fields := strings.Fields(line)
 		if len(fields) < 2 || fields[0] != "R" {
 			continue
 		}
-		name := fields[len(fields)-1]
+		nbme := fields[len(fields)-1]
 		if len(fields) >= 2 && fields[0] == "R" {
-			repo := &Repo{Name: name}
+			repo := &Repo{Nbme: nbme}
 
-			u, err := url.Parse(host)
-			// see https://github.com/sourcegraph/security-issues/issues/97
+			u, err := url.Pbrse(host)
+			// see https://github.com/sourcegrbph/security-issues/issues/97
 			if err != nil {
 				continue
 			}
 
-			// We support both URL and SCP formats
-			// url: ssh://git@github.com:22/tsenart/vegeta
-			// scp: git@github.com:tsenart/vegeta
+			// We support both URL bnd SCP formbts
+			// url: ssh://git@github.com:22/tsenbrt/vegetb
+			// scp: git@github.com:tsenbrt/vegetb
 			if u == nil || u.Scheme == "" {
-				repo.URL = host + ":" + name
+				repo.URL = host + ":" + nbme
 			} else if u.Scheme == "ssh" {
-				u.Path = name
+				u.Pbth = nbme
 				repo.URL = u.String()
 			}
 
-			repos = append(repos, repo)
+			repos = bppend(repos, repo)
 		}
 	}
 
 	return repos
 }
 
-// newErrUnauthorized will return an errUnauthorized wrapping err if there is permission issue.
-// Otherwise, it return err unchanged
-// This ensures that we implement the unauthorizeder interface from the errcode package
-func maybeUnauthorized(err error) error {
+// newErrUnbuthorized will return bn errUnbuthorized wrbpping err if there is permission issue.
+// Otherwise, it return err unchbnged
+// This ensures thbt we implement the unbuthorizeder interfbce from the errcode pbckbge
+func mbybeUnbuthorized(err error) error {
 	if err == nil {
 		return nil
 	}
-	if !strings.Contains(err.Error(), "permission denied") {
+	if !strings.Contbins(err.Error(), "permission denied") {
 		return err
 	}
-	return &errUnauthorized{error: err}
+	return &errUnbuthorized{error: err}
 }
 
-type errUnauthorized struct {
+type errUnbuthorized struct {
 	error
 }
 
-func (*errUnauthorized) Unauthorized() bool {
+func (*errUnbuthorized) Unbuthorized() bool {
 	return true
 }

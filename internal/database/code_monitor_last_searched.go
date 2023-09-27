@@ -1,56 +1,56 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (s *codeMonitorStore) HasAnyLastSearched(ctx context.Context, monitorID int64) (bool, error) {
-	rawQuery := `
+func (s *codeMonitorStore) HbsAnyLbstSebrched(ctx context.Context, monitorID int64) (bool, error) {
+	rbwQuery := `
 	SELECT COUNT(*) > 0
-	FROM cm_last_searched
+	FROM cm_lbst_sebrched
 	WHERE monitor_id = %s
 	`
 
-	q := sqlf.Sprintf(rawQuery, monitorID)
-	var hasLastSearched bool
-	return hasLastSearched, s.QueryRow(ctx, q).Scan(&hasLastSearched)
+	q := sqlf.Sprintf(rbwQuery, monitorID)
+	vbr hbsLbstSebrched bool
+	return hbsLbstSebrched, s.QueryRow(ctx, q).Scbn(&hbsLbstSebrched)
 }
 
-func (s *codeMonitorStore) UpsertLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID, commitOIDs []string) error {
-	rawQuery := `
-	INSERT INTO cm_last_searched (monitor_id, repo_id, commit_oids)
+func (s *codeMonitorStore) UpsertLbstSebrched(ctx context.Context, monitorID int64, repoID bpi.RepoID, commitOIDs []string) error {
+	rbwQuery := `
+	INSERT INTO cm_lbst_sebrched (monitor_id, repo_id, commit_oids)
 	VALUES (%s, %s, %s)
 	ON CONFLICT (monitor_id, repo_id) DO UPDATE
 	SET commit_oids = %s
 	`
 
-	// Appease non-null constraint on column
+	// Appebse non-null constrbint on column
 	if commitOIDs == nil {
 		commitOIDs = []string{}
 	}
-	q := sqlf.Sprintf(rawQuery, monitorID, int64(repoID), pq.StringArray(commitOIDs), pq.StringArray(commitOIDs))
+	q := sqlf.Sprintf(rbwQuery, monitorID, int64(repoID), pq.StringArrby(commitOIDs), pq.StringArrby(commitOIDs))
 	return s.Exec(ctx, q)
 }
 
-func (s *codeMonitorStore) GetLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID) ([]string, error) {
-	rawQuery := `
+func (s *codeMonitorStore) GetLbstSebrched(ctx context.Context, monitorID int64, repoID bpi.RepoID) ([]string, error) {
+	rbwQuery := `
 	SELECT commit_oids
-	FROM cm_last_searched
+	FROM cm_lbst_sebrched
 	WHERE monitor_id = %s
 		AND repo_id = %s
 	LIMIT 1
 	`
 
-	q := sqlf.Sprintf(rawQuery, monitorID, int64(repoID))
-	var commitOIDs []string
-	err := s.QueryRow(ctx, q).Scan((*pq.StringArray)(&commitOIDs))
+	q := sqlf.Sprintf(rbwQuery, monitorID, int64(repoID))
+	vbr commitOIDs []string
+	err := s.QueryRow(ctx, q).Scbn((*pq.StringArrby)(&commitOIDs))
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}

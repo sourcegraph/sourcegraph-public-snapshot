@@ -1,13 +1,13 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
 type QueryTrigger struct {
@@ -15,59 +15,59 @@ type QueryTrigger struct {
 	Monitor      int64
 	QueryString  string
 	NextRun      time.Time
-	LatestResult *time.Time
-	CreatedBy    int32
-	CreatedAt    time.Time
-	ChangedBy    int32
-	ChangedAt    time.Time
+	LbtestResult *time.Time
+	CrebtedBy    int32
+	CrebtedAt    time.Time
+	ChbngedBy    int32
+	ChbngedAt    time.Time
 }
 
 // queryColumns is the set of columns in cm_queries
-// It must be kept in sync with scanTriggerQuery
-var queryColumns = []*sqlf.Query{
+// It must be kept in sync with scbnTriggerQuery
+vbr queryColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_queries.id"),
 	sqlf.Sprintf("cm_queries.monitor"),
 	sqlf.Sprintf("cm_queries.query"),
 	sqlf.Sprintf("cm_queries.next_run"),
-	sqlf.Sprintf("cm_queries.latest_result"),
-	sqlf.Sprintf("cm_queries.created_by"),
-	sqlf.Sprintf("cm_queries.created_at"),
-	sqlf.Sprintf("cm_queries.changed_by"),
-	sqlf.Sprintf("cm_queries.changed_at"),
+	sqlf.Sprintf("cm_queries.lbtest_result"),
+	sqlf.Sprintf("cm_queries.crebted_by"),
+	sqlf.Sprintf("cm_queries.crebted_bt"),
+	sqlf.Sprintf("cm_queries.chbnged_by"),
+	sqlf.Sprintf("cm_queries.chbnged_bt"),
 }
 
-const createTriggerQueryFmtStr = `
+const crebteTriggerQueryFmtStr = `
 INSERT INTO cm_queries
-(monitor, query, created_by, created_at, changed_by, changed_at, next_run, latest_result)
+(monitor, query, crebted_by, crebted_bt, chbnged_by, chbnged_bt, next_run, lbtest_result)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error) {
+func (s *codeMonitorStore) CrebteQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error) {
 	now := s.Now()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 	q := sqlf.Sprintf(
-		createTriggerQueryFmtStr,
+		crebteTriggerQueryFmtStr,
 		monitorID,
 		query,
-		a.UID,
+		b.UID,
 		now,
-		a.UID,
+		b.UID,
 		now,
 		now,
 		now,
 		sqlf.Join(queryColumns, ", "),
 	)
 	row := s.QueryRow(ctx, q)
-	return scanTriggerQuery(row)
+	return scbnTriggerQuery(row)
 }
 
-const updateTriggerQueryFmtStr = `
+const updbteTriggerQueryFmtStr = `
 UPDATE cm_queries
 SET query = %s,
-	changed_by = %s,
-	changed_at = %s,
-	latest_result = %s
+	chbnged_by = %s,
+	chbnged_bt = %s,
+	lbtest_result = %s
 WHERE
 	id = %s
 	AND EXISTS (
@@ -78,27 +78,27 @@ WHERE
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateQueryTrigger(ctx context.Context, id int64, query string) error {
+func (s *codeMonitorStore) UpdbteQueryTrigger(ctx context.Context, id int64, query string) error {
 	now := s.Now()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 
-	user, err := a.User(ctx, s.userStore)
+	user, err := b.User(ctx, s.userStore)
 	if err != nil {
 		return err
 	}
 
 	q := sqlf.Sprintf(
-		updateTriggerQueryFmtStr,
+		updbteTriggerQueryFmtStr,
 		query,
-		a.UID,
+		b.UID,
 		now,
 		now,
 		id,
-		namespaceScopeQuery(user),
+		nbmespbceScopeQuery(user),
 		sqlf.Join(queryColumns, ", "),
 	)
 	row := s.QueryRow(ctx, q)
-	_, err = scanTriggerQuery(row)
+	_, err = scbnTriggerQuery(row)
 	return err
 }
 
@@ -115,18 +115,18 @@ func (s *codeMonitorStore) GetQueryTriggerForMonitor(ctx context.Context, monito
 		monitorID,
 	)
 	row := s.QueryRow(ctx, q)
-	return scanTriggerQuery(row)
+	return scbnTriggerQuery(row)
 }
 
-const resetTriggerQueryTimestamps = `
+const resetTriggerQueryTimestbmps = `
 UPDATE cm_queries
-SET latest_result = null,
+SET lbtest_result = null,
     next_run = %s
 WHERE id = %s;
 `
 
-func (s *codeMonitorStore) ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error {
-	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestamps, s.Now(), queryID))
+func (s *codeMonitorStore) ResetQueryTriggerTimestbmps(ctx context.Context, queryID int64) error {
+	return s.Exec(ctx, sqlf.Sprintf(resetTriggerQueryTimestbmps, s.Now(), queryID))
 }
 
 const getQueryByRecordIDFmtStr = `
@@ -143,40 +143,40 @@ func (s *codeMonitorStore) GetQueryTriggerForJob(ctx context.Context, triggerJob
 		triggerJob,
 	)
 	row := s.QueryRow(ctx, q)
-	return scanTriggerQuery(row)
+	return scbnTriggerQuery(row)
 }
 
 const setTriggerQueryNextRunFmtStr = `
 UPDATE cm_queries
 SET next_run = %s,
-latest_result = %s
+lbtest_result = %s
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error {
+func (s *codeMonitorStore) SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, lbtestResults time.Time) error {
 	q := sqlf.Sprintf(
 		setTriggerQueryNextRunFmtStr,
 		next,
-		latestResults,
+		lbtestResults,
 		triggerQueryID,
 	)
 	return s.Exec(ctx, q)
 }
 
-// scanQueryTrigger scans a *sql.Rows or *sql.Row into a MonitorQuery
+// scbnQueryTrigger scbns b *sql.Rows or *sql.Row into b MonitorQuery
 // It must be kept in sync with queryColumns
-func scanTriggerQuery(scanner dbutil.Scanner) (*QueryTrigger, error) {
+func scbnTriggerQuery(scbnner dbutil.Scbnner) (*QueryTrigger, error) {
 	m := &QueryTrigger{}
-	err := scanner.Scan(
+	err := scbnner.Scbn(
 		&m.ID,
 		&m.Monitor,
 		&m.QueryString,
 		&m.NextRun,
-		&m.LatestResult,
-		&m.CreatedBy,
-		&m.CreatedAt,
-		&m.ChangedBy,
-		&m.ChangedAt,
+		&m.LbtestResult,
+		&m.CrebtedBy,
+		&m.CrebtedAt,
+		&m.ChbngedBy,
+		&m.ChbngedAt,
 	)
 	return m, err
 }

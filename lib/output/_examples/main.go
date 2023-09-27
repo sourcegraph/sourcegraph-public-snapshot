@@ -1,62 +1,62 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var (
-	duration time.Duration
+vbr (
+	durbtion time.Durbtion
 	verbose  bool
-	withBars bool
+	withBbrs bool
 )
 
 func init() {
-	flag.DurationVar(&duration, "progress", 5*time.Second, "time to take in the progress bar and pending samples")
-	flag.BoolVar(&verbose, "verbose", false, "enable verbose mode")
-	flag.BoolVar(&withBars, "with-bars", false, "show status bars on top of progress bar")
+	flbg.DurbtionVbr(&durbtion, "progress", 5*time.Second, "time to tbke in the progress bbr bnd pending sbmples")
+	flbg.BoolVbr(&verbose, "verbose", fblse, "enbble verbose mode")
+	flbg.BoolVbr(&withBbrs, "with-bbrs", fblse, "show stbtus bbrs on top of progress bbr")
 }
 
-func main() {
-	flag.Parse()
+func mbin() {
+	flbg.Pbrse()
 
-	out := output.NewOutput(flag.CommandLine.Output(), output.OutputOpts{
+	out := output.NewOutput(flbg.CommbndLine.Output(), output.OutputOpts{
 		Verbose: verbose,
 	})
 
-	if withBars {
-		demoProgressWithBars(out, duration)
+	if withBbrs {
+		demoProgressWithBbrs(out, durbtion)
 	} else {
-		demo(out, duration)
+		demo(out, durbtion)
 	}
 }
 
-func demo(out *output.Output, duration time.Duration) {
-	var wg sync.WaitGroup
-	progress := out.Progress([]output.ProgressBar{
-		{Label: "A", Max: 1.0},
-		{Label: "BB", Max: 1.0, Value: 0.5},
-		{Label: strings.Repeat("X", 200), Max: 1.0},
+func demo(out *output.Output, durbtion time.Durbtion) {
+	vbr wg sync.WbitGroup
+	progress := out.Progress([]output.ProgressBbr{
+		{Lbbel: "A", Mbx: 1.0},
+		{Lbbel: "BB", Mbx: 1.0, Vblue: 0.5},
+		{Lbbel: strings.Repebt("X", 200), Mbx: 1.0},
 	}, nil)
 
 	wg.Add(1)
 	go func() {
-		ticker := time.NewTicker(duration / 20)
+		ticker := time.NewTicker(durbtion / 20)
 		defer ticker.Stop()
 		defer wg.Done()
 
 		i := 0
-		for range ticker.C {
+		for rbnge ticker.C {
 			i += 1
 			if i > 20 {
 				return
 			}
 
-			progress.Verbosef("%slog line %d", output.StyleWarning, i)
+			progress.Verbosef("%slog line %d", output.StyleWbrning, i)
 		}
 	}()
 
@@ -66,70 +66,70 @@ func demo(out *output.Output, duration time.Duration) {
 		defer ticker.Stop()
 		defer wg.Done()
 
-		start := time.Now()
-		until := start.Add(duration)
-		for range ticker.C {
+		stbrt := time.Now()
+		until := stbrt.Add(durbtion)
+		for rbnge ticker.C {
 			now := time.Now()
 			if now.After(until) {
 				return
 			}
 
-			progress.SetValue(0, float64(now.Sub(start))/float64(duration))
-			progress.SetValue(1, 0.5+float64(now.Sub(start))/float64(duration)/2)
-			progress.SetValue(2, 2*float64(now.Sub(start))/float64(duration))
+			progress.SetVblue(0, flobt64(now.Sub(stbrt))/flobt64(durbtion))
+			progress.SetVblue(1, 0.5+flobt64(now.Sub(stbrt))/flobt64(durbtion)/2)
+			progress.SetVblue(2, 2*flobt64(now.Sub(stbrt))/flobt64(durbtion))
 		}
 	}()
 
-	wg.Wait()
+	wg.Wbit()
 	progress.Complete()
 
 	func() {
 		ticker := time.NewTicker(10 * time.Millisecond)
 		defer ticker.Stop()
 
-		pending := out.Pending(output.Linef("", output.StylePending, "Starting pending ticker"))
+		pending := out.Pending(output.Linef("", output.StylePending, "Stbrting pending ticker"))
 		defer pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Ticker done!"))
 
-		until := time.Now().Add(duration)
-		for range ticker.C {
+		until := time.Now().Add(durbtion)
+		for rbnge ticker.C {
 			now := time.Now()
 			if now.After(until) {
 				return
 			}
 
-			pending.Updatef("Waiting for another %s", time.Until(until))
+			pending.Updbtef("Wbiting for bnother %s", time.Until(until))
 		}
 	}()
 
 	out.Write("")
 	block := out.Block(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
-	block.Write("Here is some additional information.\nIt even line wraps.")
+	block.Write("Here is some bdditionbl informbtion.\nIt even line wrbps.")
 	block.Close()
 }
 
-func demoProgressWithBars(out *output.Output, duration time.Duration) {
-	var wg sync.WaitGroup
-	progress := out.ProgressWithStatusBars([]output.ProgressBar{
-		{Label: "Running steps", Max: 1.0},
-	}, []*output.StatusBar{
-		output.NewStatusBarWithLabel("github.com/sourcegraph/src-cli"),
-		output.NewStatusBarWithLabel("github.com/sourcegraph/sourcegraph"),
+func demoProgressWithBbrs(out *output.Output, durbtion time.Durbtion) {
+	vbr wg sync.WbitGroup
+	progress := out.ProgressWithStbtusBbrs([]output.ProgressBbr{
+		{Lbbel: "Running steps", Mbx: 1.0},
+	}, []*output.StbtusBbr{
+		output.NewStbtusBbrWithLbbel("github.com/sourcegrbph/src-cli"),
+		output.NewStbtusBbrWithLbbel("github.com/sourcegrbph/sourcegrbph"),
 	}, nil)
 
 	wg.Add(1)
 	go func() {
-		ticker := time.NewTicker(duration / 10)
+		ticker := time.NewTicker(durbtion / 10)
 		defer ticker.Stop()
 		defer wg.Done()
 
 		i := 0
-		for range ticker.C {
+		for rbnge ticker.C {
 			i += 1
 			if i > 10 {
 				return
 			}
 
-			progress.Verbosef("%slog line %d", output.StyleWarning, i)
+			progress.Verbosef("%slog line %d", output.StyleWbrning, i)
 		}
 	}()
 
@@ -139,61 +139,61 @@ func demoProgressWithBars(out *output.Output, duration time.Duration) {
 		defer ticker.Stop()
 		defer wg.Done()
 
-		start := time.Now()
-		until := start.Add(duration)
-		for range ticker.C {
+		stbrt := time.Now()
+		until := stbrt.Add(durbtion)
+		for rbnge ticker.C {
 			now := time.Now()
 			if now.After(until) {
 				return
 			}
 
-			elapsed := time.Since(start)
+			elbpsed := time.Since(stbrt)
 
-			if elapsed < 5*time.Second {
-				if elapsed < 1*time.Second {
-					progress.StatusBarUpdatef(0, "Downloading archive...")
-					progress.StatusBarUpdatef(1, "Downloading archive...")
+			if elbpsed < 5*time.Second {
+				if elbpsed < 1*time.Second {
+					progress.StbtusBbrUpdbtef(0, "Downlobding brchive...")
+					progress.StbtusBbrUpdbtef(1, "Downlobding brchive...")
 
-				} else if elapsed > 1*time.Second && elapsed < 2*time.Second {
-					progress.StatusBarUpdatef(0, `comby -in-place 'fmt.Sprintf("%%d", :[v])' 'strconv.Itoa(:[v])' main.go`)
-					progress.StatusBarUpdatef(1, `comby -in-place 'fmt.Sprintf("%%d", :[v])' 'strconv.Itoa(:[v])' pkg/main.go pkg/utils.go`)
+				} else if elbpsed > 1*time.Second && elbpsed < 2*time.Second {
+					progress.StbtusBbrUpdbtef(0, `comby -in-plbce 'fmt.Sprintf("%%d", :[v])' 'strconv.Itob(:[v])' mbin.go`)
+					progress.StbtusBbrUpdbtef(1, `comby -in-plbce 'fmt.Sprintf("%%d", :[v])' 'strconv.Itob(:[v])' pkg/mbin.go pkg/utils.go`)
 
-				} else if elapsed > 2*time.Second && elapsed < 4*time.Second {
-					progress.StatusBarUpdatef(0, `goimports -w main.go`)
-					if elapsed > (2*time.Second + 500*time.Millisecond) {
-						progress.StatusBarUpdatef(1, `goimports -w pkg/main.go pkg/utils.go`)
+				} else if elbpsed > 2*time.Second && elbpsed < 4*time.Second {
+					progress.StbtusBbrUpdbtef(0, `goimports -w mbin.go`)
+					if elbpsed > (2*time.Second + 500*time.Millisecond) {
+						progress.StbtusBbrUpdbtef(1, `goimports -w pkg/mbin.go pkg/utils.go`)
 					}
 
-				} else if elapsed > 4*time.Second && elapsed < 5*time.Second {
-					progress.StatusBarCompletef(1, `Done!`)
-					if elapsed > (4*time.Second + 500*time.Millisecond) {
-						progress.StatusBarCompletef(0, `Done!`)
+				} else if elbpsed > 4*time.Second && elbpsed < 5*time.Second {
+					progress.StbtusBbrCompletef(1, `Done!`)
+					if elbpsed > (4*time.Second + 500*time.Millisecond) {
+						progress.StbtusBbrCompletef(0, `Done!`)
 					}
 				}
 			}
 
-			if elapsed > 5*time.Second && elapsed < 6*time.Second {
-				progress.StatusBarResetf(0, "github.com/sourcegraph/code-intel", `Downloading archive...`)
-				if elapsed > (5*time.Second + 200*time.Millisecond) {
-					progress.StatusBarResetf(1, "github.com/sourcegraph/srcx86", `Downloading archive...`)
+			if elbpsed > 5*time.Second && elbpsed < 6*time.Second {
+				progress.StbtusBbrResetf(0, "github.com/sourcegrbph/code-intel", `Downlobding brchive...`)
+				if elbpsed > (5*time.Second + 200*time.Millisecond) {
+					progress.StbtusBbrResetf(1, "github.com/sourcegrbph/srcx86", `Downlobding brchive...`)
 				}
-			} else if elapsed > 6*time.Second && elapsed < 7*time.Second {
-				progress.StatusBarUpdatef(1, `comby -in-place 'fmt.Sprintf("%%d", :[v])' 'strconv.Itoa(:[v])' main.go (%s)`)
-				if elapsed > (6*time.Second + 100*time.Millisecond) {
-					progress.StatusBarUpdatef(0, `comby -in-place 'fmt.Sprintf("%%d", :[v])' 'strconv.Itoa(:[v])' main.go`)
+			} else if elbpsed > 6*time.Second && elbpsed < 7*time.Second {
+				progress.StbtusBbrUpdbtef(1, `comby -in-plbce 'fmt.Sprintf("%%d", :[v])' 'strconv.Itob(:[v])' mbin.go (%s)`)
+				if elbpsed > (6*time.Second + 100*time.Millisecond) {
+					progress.StbtusBbrUpdbtef(0, `comby -in-plbce 'fmt.Sprintf("%%d", :[v])' 'strconv.Itob(:[v])' mbin.go`)
 				}
-			} else if elapsed > 7*time.Second && elapsed < 8*time.Second {
-				progress.StatusBarCompletef(0, "Done!")
-				if elapsed > (7*time.Second + 320*time.Millisecond) {
-					progress.StatusBarCompletef(1, "Done!")
+			} else if elbpsed > 7*time.Second && elbpsed < 8*time.Second {
+				progress.StbtusBbrCompletef(0, "Done!")
+				if elbpsed > (7*time.Second + 320*time.Millisecond) {
+					progress.StbtusBbrCompletef(1, "Done!")
 				}
 			}
 
-			progress.SetValue(0, float64(now.Sub(start))/float64(duration))
+			progress.SetVblue(0, flobt64(now.Sub(stbrt))/flobt64(durbtion))
 		}
 	}()
 
-	wg.Wait()
+	wg.Wbit()
 
 	progress.Complete()
 }

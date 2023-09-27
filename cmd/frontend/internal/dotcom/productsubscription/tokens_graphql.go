@@ -1,12 +1,12 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	internalproductsubscription "github.com/sourcegraph/sourcegraph/internal/productsubscription"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	internblproductsubscription "github.com/sourcegrbph/sourcegrbph/internbl/productsubscription"
 )
 
 type ErrProductSubscriptionNotFound struct {
@@ -20,19 +20,19 @@ func (e ErrProductSubscriptionNotFound) Error() string {
 	return fmt.Sprintf("product subscription not found: %v", e.err)
 }
 
-func (e ErrProductSubscriptionNotFound) Extensions() map[string]any {
-	return map[string]any{"code": internalproductsubscription.GQLErrCodeProductSubscriptionNotFound}
+func (e ErrProductSubscriptionNotFound) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": internblproductsubscription.GQLErrCodeProductSubscriptionNotFound}
 }
 
 // ProductSubscriptionByAccessToken retrieves the subscription corresponding to the
-// given access token.
-func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(ctx context.Context, args *graphqlbackend.ProductSubscriptionByAccessTokenArgs) (graphqlbackend.ProductSubscription, error) {
-	// 🚨 SECURITY: Only specific entities may use this functionality.
-	if _, err := serviceAccountOrSiteAdmin(ctx, r.DB, false); err != nil {
+// given bccess token.
+func (r ProductSubscriptionLicensingResolver) ProductSubscriptionByAccessToken(ctx context.Context, brgs *grbphqlbbckend.ProductSubscriptionByAccessTokenArgs) (grbphqlbbckend.ProductSubscription, error) {
+	// 🚨 SECURITY: Only specific entities mby use this functionblity.
+	if _, err := serviceAccountOrSiteAdmin(ctx, r.DB, fblse); err != nil {
 		return nil, err
 	}
 
-	subID, err := newDBTokens(r.DB).LookupProductSubscriptionIDByAccessToken(ctx, args.AccessToken)
+	subID, err := newDBTokens(r.DB).LookupProductSubscriptionIDByAccessToken(ctx, brgs.AccessToken)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, ErrProductSubscriptionNotFound{err}

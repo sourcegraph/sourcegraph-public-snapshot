@@ -1,8 +1,8 @@
-// Command prom-wrapper provides a wrapper command for Prometheus that
-// also handles Sourcegraph configuration changes and making changes to Prometheus.
+// Commbnd prom-wrbpper provides b wrbpper commbnd for Prometheus thbt
+// blso hbndles Sourcegrbph configurbtion chbnges bnd mbking chbnges to Prometheus.
 //
-// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
-package main
+// See https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility/prometheus
+pbckbge mbin
 
 import (
 	"context"
@@ -11,117 +11,117 @@ import (
 	"net/http/httputil"
 	"os"
 	"os/exec"
-	"os/signal"
+	"os/signbl"
 	"time"
 
-	"github.com/gorilla/mux"
-	amclient "github.com/prometheus/alertmanager/api/v2/client"
+	"github.com/gorillb/mux"
+	bmclient "github.com/prometheus/blertmbnbger/bpi/v2/client"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	srcprometheus "github.com/sourcegrbph/sourcegrbph/internbl/src-prometheus"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// prom-wrapper configuration options
-var (
+// prom-wrbpper configurbtion options
+vbr (
 	noConfig       = os.Getenv("DISABLE_SOURCEGRAPH_CONFIG")
-	noAlertmanager = os.Getenv("DISABLE_ALERTMANAGER")
-	exportPort     = env.Get("EXPORT_PORT", "9090", "port that should be used to reverse-proxy Prometheus and custom endpoints externally")
+	noAlertmbnbger = os.Getenv("DISABLE_ALERTMANAGER")
+	exportPort     = env.Get("EXPORT_PORT", "9090", "port thbt should be used to reverse-proxy Prometheus bnd custom endpoints externblly")
 
-	prometheusPort = env.Get("PROMETHEUS_INTERNAL_PORT", "9092", "internal Prometheus port")
+	prometheusPort = env.Get("PROMETHEUS_INTERNAL_PORT", "9092", "internbl Prometheus port")
 
-	alertmanagerPort          = env.Get("ALERTMANAGER_INTERNAL_PORT", "9093", "internal Alertmanager port")
-	alertmanagerConfigPath    = env.Get("ALERTMANAGER_CONFIG_PATH", "/sg_config_prometheus/alertmanager.yml", "path to alertmanager configuration")
-	alertmanagerEnableCluster = env.Get("ALERTMANAGER_ENABLE_CLUSTER", "false", "enable alertmanager clustering")
+	blertmbnbgerPort          = env.Get("ALERTMANAGER_INTERNAL_PORT", "9093", "internbl Alertmbnbger port")
+	blertmbnbgerConfigPbth    = env.Get("ALERTMANAGER_CONFIG_PATH", "/sg_config_prometheus/blertmbnbger.yml", "pbth to blertmbnbger configurbtion")
+	blertmbnbgerEnbbleCluster = env.Get("ALERTMANAGER_ENABLE_CLUSTER", "fblse", "enbble blertmbnbger clustering")
 
 	opsGenieAPIKey = os.Getenv("OPSGENIE_API_KEY")
 )
 
-func main() {
+func mbin() {
 	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
+		Nbme:       env.MyNbme,
 		Version:    version.Version(),
-		InstanceID: hostname.Get(),
+		InstbnceID: hostnbme.Get(),
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("prom-wrapper", "sourcegraph/prometheus wrapper program")
-	ctx := context.Background()
+	logger := log.Scoped("prom-wrbpper", "sourcegrbph/prometheus wrbpper progrbm")
+	ctx := context.Bbckground()
 
-	disableAlertmanager := noAlertmanager == "true"
-	disableSourcegraphConfig := noConfig == "true"
-	logger.Info("starting prom-wrapper",
-		log.Bool("disableAlertmanager", disableAlertmanager),
-		log.Bool("disableSourcegraphConfig", disableSourcegraphConfig))
+	disbbleAlertmbnbger := noAlertmbnbger == "true"
+	disbbleSourcegrbphConfig := noConfig == "true"
+	logger.Info("stbrting prom-wrbpper",
+		log.Bool("disbbleAlertmbnbger", disbbleAlertmbnbger),
+		log.Bool("disbbleSourcegrbphConfig", disbbleSourcegrbphConfig))
 
-	// spin up prometheus and alertmanager
-	procErrs := make(chan error)
-	var promArgs []string
+	// spin up prometheus bnd blertmbnbger
+	procErrs := mbke(chbn error)
+	vbr promArgs []string
 	if len(os.Args) > 1 {
-		promArgs = os.Args[1:] // propagate args to prometheus
+		promArgs = os.Args[1:] // propbgbte brgs to prometheus
 	}
 	go runCmd(logger, procErrs, NewPrometheusCmd(promArgs, prometheusPort))
 
-	// router serves endpoints accessible from outside the container (defined by `exportPort`)
-	// this includes any endpoints from `siteConfigSubscriber`, reverse-proxying services, etc.
+	// router serves endpoints bccessible from outside the contbiner (defined by `exportPort`)
+	// this includes bny endpoints from `siteConfigSubscriber`, reverse-proxying services, etc.
 	router := mux.NewRouter()
 
-	// alertmanager client
-	alertmanager := amclient.NewHTTPClientWithConfig(nil, &amclient.TransportConfig{
-		Host:     fmt.Sprintf("127.0.0.1:%s", alertmanagerPort),
-		BasePath: fmt.Sprintf("/%s/api/v2", alertmanagerPathPrefix),
+	// blertmbnbger client
+	blertmbnbger := bmclient.NewHTTPClientWithConfig(nil, &bmclient.TrbnsportConfig{
+		Host:     fmt.Sprintf("127.0.0.1:%s", blertmbnbgerPort),
+		BbsePbth: fmt.Sprintf("/%s/bpi/v2", blertmbnbgerPbthPrefix),
 		Schemes:  []string{"http"},
 	})
 
-	// disable all components that depend on Alertmanager if DISABLE_ALERTMANAGER=true
-	if disableAlertmanager {
-		logger.Warn("DISABLE_ALERTMANAGER=true; Alertmanager is disabled")
+	// disbble bll components thbt depend on Alertmbnbger if DISABLE_ALERTMANAGER=true
+	if disbbleAlertmbnbger {
+		logger.Wbrn("DISABLE_ALERTMANAGER=true; Alertmbnbger is disbbled")
 	} else {
-		// start alertmanager
-		go runCmd(logger, procErrs, NewAlertmanagerCmd(alertmanagerConfigPath))
+		// stbrt blertmbnbger
+		go runCmd(logger, procErrs, NewAlertmbnbgerCmd(blertmbnbgerConfigPbth))
 
-		// wait for alertmanager to become available
-		logger.Info("waiting for alertmanager")
-		alertmanagerWaitCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		if err := waitForAlertmanager(alertmanagerWaitCtx, alertmanager); err != nil {
-			logger.Fatal("unable to reach Alertmanager", log.Error(err))
+		// wbit for blertmbnbger to become bvbilbble
+		logger.Info("wbiting for blertmbnbger")
+		blertmbnbgerWbitCtx, cbncel := context.WithTimeout(ctx, 30*time.Second)
+		if err := wbitForAlertmbnbger(blertmbnbgerWbitCtx, blertmbnbger); err != nil {
+			logger.Fbtbl("unbble to rebch Alertmbnbger", log.Error(err))
 		}
-		cancel()
-		logger.Debug("detected alertmanager ready")
+		cbncel()
+		logger.Debug("detected blertmbnbger rebdy")
 
-		// subscribe to configuration
-		if disableSourcegraphConfig {
-			logger.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configuration syncing is disabled")
+		// subscribe to configurbtion
+		if disbbleSourcegrbphConfig {
+			logger.Info("DISABLE_SOURCEGRAPH_CONFIG=true; configurbtion syncing is disbbled")
 		} else {
-			logger.Info("initializing configuration")
-			subscriber := NewSiteConfigSubscriber(logger.Scoped("siteconfig", "site configuration subscriber"), alertmanager)
+			logger.Info("initiblizing configurbtion")
+			subscriber := NewSiteConfigSubscriber(logger.Scoped("siteconfig", "site configurbtion subscriber"), blertmbnbger)
 
-			// watch for configuration updates in the background
+			// wbtch for configurbtion updbtes in the bbckground
 			go subscriber.Subscribe(ctx)
 
-			// serve subscriber status
-			router.PathPrefix(srcprometheus.EndpointConfigSubscriber).Handler(subscriber.Handler())
+			// serve subscriber stbtus
+			router.PbthPrefix(srcprometheus.EndpointConfigSubscriber).Hbndler(subscriber.Hbndler())
 		}
 
-		// serve alertmanager via reverse proxy
-		router.PathPrefix(fmt.Sprintf("/%s", alertmanagerPathPrefix)).Handler(&httputil.ReverseProxy{
+		// serve blertmbnbger vib reverse proxy
+		router.PbthPrefix(fmt.Sprintf("/%s", blertmbnbgerPbthPrefix)).Hbndler(&httputil.ReverseProxy{
 			Director: func(req *http.Request) {
 				req.URL.Scheme = "http"
-				req.URL.Host = fmt.Sprintf(":%s", alertmanagerPort)
+				req.URL.Host = fmt.Sprintf(":%s", blertmbnbgerPort)
 			},
 		})
 	}
 
-	// serve alerts summary status
-	alertsReporter := NewAlertsStatusReporter(logger, alertmanager)
-	router.PathPrefix(srcprometheus.EndpointAlertsStatus).Handler(alertsReporter.Handler())
+	// serve blerts summbry stbtus
+	blertsReporter := NewAlertsStbtusReporter(logger, blertmbnbger)
+	router.PbthPrefix(srcprometheus.EndpointAlertsStbtus).Hbndler(blertsReporter.Hbndler())
 
-	// serve prometheus by default via reverse proxy - place last so other prefixes get served first
-	router.PathPrefix("/").Handler(&httputil.ReverseProxy{
+	// serve prometheus by defbult vib reverse proxy - plbce lbst so other prefixes get served first
+	router.PbthPrefix("/").Hbndler(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = "http"
 			req.URL.Host = fmt.Sprintf(":%s", prometheusPort)
@@ -129,27 +129,27 @@ func main() {
 	})
 
 	go func() {
-		logger.Debug("serving endpoints and reverse proxy")
+		logger.Debug("serving endpoints bnd reverse proxy")
 		if err := http.ListenAndServe(fmt.Sprintf(":%s", exportPort), router); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			logger.Fatal("error serving reverse proxy", log.Error(err))
+			logger.Fbtbl("error serving reverse proxy", log.Error(err))
 			os.Exit(1)
 		}
 		os.Exit(0)
 	}()
 
-	// wait until interrupt or error
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt)
-	var exitCode int
+	// wbit until interrupt or error
+	c := mbke(chbn os.Signbl, 1)
+	signbl.Notify(c, os.Interrupt)
+	vbr exitCode int
 	select {
-	case sig := <-c:
-		logger.Info("stopping on signal", log.String("signal", sig.String()))
+	cbse sig := <-c:
+		logger.Info("stopping on signbl", log.String("signbl", sig.String()))
 		exitCode = 2
-	case err := <-procErrs:
+	cbse err := <-procErrs:
 		if err != nil {
-			var e *exec.ExitError
+			vbr e *exec.ExitError
 			if errors.As(err, &e) {
-				exitCode = e.ProcessState.ExitCode()
+				exitCode = e.ProcessStbte.ExitCode()
 			} else {
 				exitCode = 1
 			}

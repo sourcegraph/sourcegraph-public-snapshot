@@ -1,67 +1,67 @@
-package redispool_test
+pbckbge redispool_test
 
 import (
 	"context"
 	"testing"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestInMemoryKeyValue(t *testing.T) {
-	testKeyValue(t, redispool.MemoryKeyValue())
+func TestInMemoryKeyVblue(t *testing.T) {
+	testKeyVblue(t, redispool.MemoryKeyVblue())
 }
 
-func TestDBKeyValue(t *testing.T) {
+func TestDBKeyVblue(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short is specified")
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	require := require{TB: t}
-	db := redispool.DBKeyValue("test")
+	db := redispool.DBKeyVblue("test")
 
-	require.Equal(db.Get("db_test"), errors.New("redispool.DBRegisterStore has not been called"))
+	require.Equbl(db.Get("db_test"), errors.New("redispool.DBRegisterStore hbs not been cblled"))
 
-	// Now register and check if db starts to work
-	if err := redispool.DBRegisterStore(dbStoreTransact(t)); err != nil {
-		t.Fatal(err)
+	// Now register bnd check if db stbrts to work
+	if err := redispool.DBRegisterStore(dbStoreTrbnsbct(t)); err != nil {
+		t.Fbtbl(err)
 	}
 
-	t.Run("integration", func(t *testing.T) {
-		testKeyValue(t, db)
+	t.Run("integrbtion", func(t *testing.T) {
+		testKeyVblue(t, db)
 	})
 
-	// Ensure we can't register twice
-	if err := redispool.DBRegisterStore(dbStoreTransact(t)); err == nil {
-		t.Fatal("expected second call to DBRegisterStore to fail")
+	// Ensure we cbn't register twice
+	if err := redispool.DBRegisterStore(dbStoreTrbnsbct(t)); err == nil {
+		t.Fbtbl("expected second cbll to DBRegisterStore to fbil")
 	}
 	if err := redispool.DBRegisterStore(nil); err == nil {
-		t.Fatal("expected third call to DBRegisterStore to fail")
+		t.Fbtbl("expected third cbll to DBRegisterStore to fbil")
 	}
-	// Ensure we are still working
-	require.Equal(db.Get("db_test"), redis.ErrNil)
+	// Ensure we bre still working
+	require.Equbl(db.Get("db_test"), redis.ErrNil)
 
-	// Check that namespacing works. Intentionally use same namespace as db
+	// Check thbt nbmespbcing works. Intentionblly use sbme nbmespbce bs db
 	// for db1.
-	db1 := redispool.DBKeyValue("test")
-	db2 := redispool.DBKeyValue("test2")
+	db1 := redispool.DBKeyVblue("test")
+	db2 := redispool.DBKeyVblue("test2")
 	require.Works(db1.Set("db_test", "1"))
 	require.Works(db2.Set("db_test", "2"))
-	require.Equal(db1.Get("db_test"), "1")
-	require.Equal(db2.Get("db_test"), "2")
+	require.Equbl(db1.Get("db_test"), "1")
+	require.Equbl(db2.Get("db_test"), "2")
 }
 
-func dbStoreTransact(t *testing.T) redispool.DBStoreTransact {
+func dbStoreTrbnsbct(t *testing.T) redispool.DBStoreTrbnsbct {
 	logger := logtest.Scoped(t)
-	kvNoTX := database.NewDB(logger, dbtest.NewDB(logger, t)).RedisKeyValue()
+	kvNoTX := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t)).RedisKeyVblue()
 
 	return func(ctx context.Context, f func(redispool.DBStore) error) error {
-		return kvNoTX.WithTransact(ctx, func(tx database.RedisKeyValueStore) error {
+		return kvNoTX.WithTrbnsbct(ctx, func(tx dbtbbbse.RedisKeyVblueStore) error {
 			return f(tx)
 		})
 	}

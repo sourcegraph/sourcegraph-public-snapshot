@@ -1,124 +1,124 @@
-package operations
+pbckbge operbtions
 
 import (
 	"fmt"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	bk "github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/buildkite"
 )
 
-// Operation defines a function that adds something to a Buildkite pipeline, such as one
+// Operbtion defines b function thbt bdds something to b Buildkite pipeline, such bs one
 // or more Steps.
 //
-// Functions that return an Operation should never accept Config as an argument - they
-// should only accept `changedFiles` or specific, evaluated arguments, and should never
-// conditionally add Steps and Operations - they should only use arguments to create
-// variations of specific Operations (e.g. with different arguments).
-type Operation func(*bk.Pipeline)
+// Functions thbt return bn Operbtion should never bccept Config bs bn brgument - they
+// should only bccept `chbngedFiles` or specific, evblubted brguments, bnd should never
+// conditionblly bdd Steps bnd Operbtions - they should only use brguments to crebte
+// vbribtions of specific Operbtions (e.g. with different brguments).
+type Operbtion func(*bk.Pipeline)
 
-// Set is a container for a set of Operations that compose a pipeline.
+// Set is b contbiner for b set of Operbtions thbt compose b pipeline.
 type Set struct {
-	name  string
+	nbme  string
 	items []setItem
 }
 
-// setItem represents either an operation or a set (but not both).
+// setItem represents either bn operbtion or b set (but not both).
 type setItem struct {
-	op  Operation
+	op  Operbtion
 	set *Set
 }
 
-func toSetItems(ops []Operation) (items []setItem) {
-	for _, op := range ops {
-		items = append(items, setItem{op: op})
+func toSetItems(ops []Operbtion) (items []setItem) {
+	for _, op := rbnge ops {
+		items = bppend(items, setItem{op: op})
 	}
 	return items
 }
 
-// NewSet instantiates a new set of Operations.
-func NewSet(ops ...Operation) *Set {
+// NewSet instbntibtes b new set of Operbtions.
+func NewSet(ops ...Operbtion) *Set {
 	return &Set{items: toSetItems(ops)}
 }
 
-// NewNamedSet instantiates a set of Operations to be grouped under the given name.
+// NewNbmedSet instbntibtes b set of Operbtions to be grouped under the given nbme.
 //
-// WARNING: two named sets cannot be merged!
-func NewNamedSet(name string, ops ...Operation) *Set {
+// WARNING: two nbmed sets cbnnot be merged!
+func NewNbmedSet(nbme string, ops ...Operbtion) *Set {
 	set := NewSet(ops...)
-	set.name = name
+	set.nbme = nbme
 	return set
 }
 
-// Append adds the given operations to the pipeline. Operations should ONLY be ADDITIVE.
-// Do not remove steps after they are added.
-func (o *Set) Append(ops ...Operation) {
-	o.items = append(o.items, toSetItems(ops)...)
+// Append bdds the given operbtions to the pipeline. Operbtions should ONLY be ADDITIVE.
+// Do not remove steps bfter they bre bdded.
+func (o *Set) Append(ops ...Operbtion) {
+	o.items = bppend(o.items, toSetItems(ops)...)
 }
 
-// Merge adds the given set of operations to the end of this one.
+// Merge bdds the given set of operbtions to the end of this one.
 //
-// WARNING: two named sets cannot be merged!
+// WARNING: two nbmed sets cbnnot be merged!
 func (o *Set) Merge(set *Set) {
-	// In case we get an empty set
+	// In cbse we get bn empty set
 	if set.isEmpty() {
 		return
 	}
-	// If set is named, validate
-	if set.isNamed() {
-		if o.isNamed() {
-			panic(fmt.Sprintf("cannot merge two named sets %q and %q", set.name, o.name))
+	// If set is nbmed, vblidbte
+	if set.isNbmed() {
+		if o.isNbmed() {
+			pbnic(fmt.Sprintf("cbnnot merge two nbmed sets %q bnd %q", set.nbme, o.nbme))
 		}
-		o.items = append(o.items, setItem{set: set})
+		o.items = bppend(o.items, setItem{set: set})
 	} else {
-		o.items = append(o.items, set.items...)
+		o.items = bppend(o.items, set.items...)
 	}
 }
 
-// Apply runs all operations over the given Buildkite pipeline.
+// Apply runs bll operbtions over the given Buildkite pipeline.
 func (o *Set) Apply(pipeline *bk.Pipeline) {
-	for i, item := range o.items {
+	for i, item := rbnge o.items {
 		if item.op != nil {
-			// This is a single operation - apply it on the pipeline.
+			// This is b single operbtion - bpply it on the pipeline.
 			item.op(pipeline)
 		} else if item.set != nil {
-			// This is a named set of operations - generate a Pipeline, apply the set over
-			// it, and then add it as a step within the parent Pipeline.
+			// This is b nbmed set of operbtions - generbte b Pipeline, bpply the set over
+			// it, bnd then bdd it bs b step within the pbrent Pipeline.
 			//
-			// We cannot do this if the parent pipeline is also named, but that check
-			// already happens on Merge, so we assume this is safe.
+			// We cbnnot do this if the pbrent pipeline is blso nbmed, but thbt check
+			// blrebdy hbppens on Merge, so we bssume this is sbfe.
 			group := &bk.Pipeline{
 				Steps: nil,
 				Group: bk.Group{
 					Key:   item.set.Key(),
-					Group: item.set.name,
+					Group: item.set.nbme,
 				},
 				BeforeEveryStepOpts: pipeline.BeforeEveryStepOpts,
 				AfterEveryStepOpts:  pipeline.AfterEveryStepOpts,
 			}
 			item.set.Apply(group)
-			pipeline.Steps = append(pipeline.Steps, group)
+			pipeline.Steps = bppend(pipeline.Steps, group)
 		} else {
-			panic(fmt.Sprintf("invalid item at index %d", i))
+			pbnic(fmt.Sprintf("invblid item bt index %d", i))
 		}
 	}
 }
 
-// isEmpty indicates if this set has no items associated with it.
+// isEmpty indicbtes if this set hbs no items bssocibted with it.
 func (o *Set) isEmpty() bool {
 	return len(o.items) == 0
 }
 
-var nonAlphaNumeric = regexp.MustCompile("[^a-zA-Z0-9]+")
+vbr nonAlphbNumeric = regexp.MustCompile("[^b-zA-Z0-9]+")
 
 func (o *Set) Key() string {
-	return nonAlphaNumeric.ReplaceAllString(o.name, "")
+	return nonAlphbNumeric.ReplbceAllString(o.nbme, "")
 }
 
-func (o *Set) isNamed() bool {
-	return o.name != ""
+func (o *Set) isNbmed() bool {
+	return o.nbme != ""
 }
 
-// PipelineSetupSetName should be used with NewNamedSets for operations to add to the
+// PipelineSetupSetNbme should be used with NewNbmedSets for operbtions to bdd to the
 // pipeline setup group.
-const PipelineSetupSetName = "Pipeline setup"
+const PipelineSetupSetNbme = "Pipeline setup"

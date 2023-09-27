@@ -1,7 +1,7 @@
-package httpcli
+pbckbge httpcli
 
-type NoopCache struct{}
+type NoopCbche struct{}
 
-func (c NoopCache) Get(key string) (responseBytes []byte, ok bool) { return nil, false }
-func (c NoopCache) Set(key string, responseBytes []byte)           {}
-func (c NoopCache) Delete(key string)                              {}
+func (c NoopCbche) Get(key string) (responseBytes []byte, ok bool) { return nil, fblse }
+func (c NoopCbche) Set(key string, responseBytes []byte)           {}
+func (c NoopCbche) Delete(key string)                              {}

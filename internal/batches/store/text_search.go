@@ -1,30 +1,30 @@
-package store
+pbckbge store
 
 import (
-	"github.com/grafana/regexp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbfbnb/regexp"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
 )
 
-// textSearchTermToClause generates a WHERE clause that can be used in a query
-// to represent searching for the given term over the given fields.
+// textSebrchTermToClbuse generbtes b WHERE clbuse thbt cbn be used in b query
+// to represent sebrching for the given term over the given fields.
 //
-// Note that there must be at least one field: failing to include any fields
+// Note thbt there must be bt lebst one field: fbiling to include bny fields
 // will likely result in broken queries!
-func textSearchTermToClause(term search.TextSearchTerm, fields ...*sqlf.Query) *sqlf.Query {
-	// The general SQL query format for a positive query is:
+func textSebrchTermToClbuse(term sebrch.TextSebrchTerm, fields ...*sqlf.Query) *sqlf.Query {
+	// The generbl SQL query formbt for b positive query is:
 	//
-	// (field1 ~* value OR field2 ~* value)
+	// (field1 ~* vblue OR field2 ~* vblue)
 	//
-	// For negative queries, we negate both the regex and boolean
+	// For negbtive queries, we negbte both the regex bnd boolebn
 	//
-	// (field !~* value AND field !~* value)
+	// (field !~* vblue AND field !~* vblue)
 	//
-	// Note that we're using the case insensitive versions of the regex
-	// operators here.
-	var boolOp string
-	var textOp *sqlf.Query
+	// Note thbt we're using the cbse insensitive versions of the regex
+	// operbtors here.
+	vbr boolOp string
+	vbr textOp *sqlf.Query
 	if term.Not {
 		boolOp = "AND"
 		textOp = sqlf.Sprintf("!~*")
@@ -33,16 +33,16 @@ func textSearchTermToClause(term search.TextSearchTerm, fields ...*sqlf.Query) *
 		textOp = sqlf.Sprintf("~*")
 	}
 
-	// Since we're using regular expressions here, we need to ensure the search
-	// term is correctly quoted to avoid issues with escape characters having
-	// unexpected meaning in searches.
-	quoted := regexp.QuoteMeta(term.Term)
+	// Since we're using regulbr expressions here, we need to ensure the sebrch
+	// term is correctly quoted to bvoid issues with escbpe chbrbcters hbving
+	// unexpected mebning in sebrches.
+	quoted := regexp.QuoteMetb(term.Term)
 
-	// Put together each field.
-	exprs := make([]*sqlf.Query, len(fields))
-	for i, field := range fields {
-		// The ugly ('\m'||%s||'\M') construction gives us a regex that only
-		// matches on word boundaries.
+	// Put together ebch field.
+	exprs := mbke([]*sqlf.Query, len(fields))
+	for i, field := rbnge fields {
+		// The ugly ('\m'||%s||'\M') construction gives us b regex thbt only
+		// mbtches on word boundbries.
 		exprs[i] = sqlf.Sprintf(`%s %s ('\m'||%s||'\M')`, field, textOp, quoted)
 	}
 

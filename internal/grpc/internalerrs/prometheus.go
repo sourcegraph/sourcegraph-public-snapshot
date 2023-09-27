@@ -1,88 +1,88 @@
-package internalerrs
+pbckbge internblerrs
 
 import (
 	"context"
 	"io"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/grpcutil"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
 )
 
-var metricGRPCMethodStatus = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_grpc_method_status",
-	Help: "Counts the number of gRPC methods that return a given status code, and whether a possible error is an go-grpc internal error.",
+vbr metricGRPCMethodStbtus = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_grpc_method_stbtus",
+	Help: "Counts the number of gRPC methods thbt return b given stbtus code, bnd whether b possible error is bn go-grpc internbl error.",
 },
 	[]string{
 		"grpc_service",      // e.g. "gitserver.v1.GitserverService"
 		"grpc_method",       // e.g. "Exec"
 		"grpc_code",         // e.g. "NotFound"
-		"is_internal_error", // e.g. "true"
+		"is_internbl_error", // e.g. "true"
 	},
 )
 
-// PrometheusUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that observes the result of
-// the RPC and records it as a Prometheus metric ("src_grpc_method_status").
-func PrometheusUnaryClientInterceptor(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
-	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
+// PrometheusUnbryClientInterceptor returns b grpc.UnbryClientInterceptor thbt observes the result of
+// the RPC bnd records it bs b Prometheus metric ("src_grpc_method_stbtus").
+func PrometheusUnbryClientInterceptor(ctx context.Context, fullMethod string, req, reply bny, cc *grpc.ClientConn, invoker grpc.UnbryInvoker, opts ...grpc.CbllOption) error {
+	serviceNbme, methodNbme := grpcutil.SplitMethodNbme(fullMethod)
 
 	err := invoker(ctx, fullMethod, req, reply, cc, opts...)
-	doObservation(serviceName, methodName, err)
+	doObservbtion(serviceNbme, methodNbme, err)
 	return err
 }
 
-// PrometheusStreamClientInterceptor returns a grpc.StreamClientInterceptor that observes the result of
-// the RPC and records it as a Prometheus metric ("src_grpc_method_status").
+// PrometheusStrebmClientInterceptor returns b grpc.StrebmClientInterceptor thbt observes the result of
+// the RPC bnd records it bs b Prometheus metric ("src_grpc_method_stbtus").
 //
-// If any errors are encountered during the stream, the first error is recorded. Otherwise, the
-// final status of the stream is recorded.
-func PrometheusStreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
+// If bny errors bre encountered during the strebm, the first error is recorded. Otherwise, the
+// finbl stbtus of the strebm is recorded.
+func PrometheusStrebmClientInterceptor(ctx context.Context, desc *grpc.StrebmDesc, cc *grpc.ClientConn, fullMethod string, strebmer grpc.Strebmer, opts ...grpc.CbllOption) (grpc.ClientStrebm, error) {
+	serviceNbme, methodNbme := grpcutil.SplitMethodNbme(fullMethod)
 
-	s, err := streamer(ctx, desc, cc, fullMethod, opts...)
+	s, err := strebmer(ctx, desc, cc, fullMethod, opts...)
 	if err != nil {
-		doObservation(serviceName, methodName, err) // method failed to be invoked at all, record it
+		doObservbtion(serviceNbme, methodNbme, err) // method fbiled to be invoked bt bll, record it
 		return nil, err
 	}
 
-	return newPrometheusServerStream(s, serviceName, methodName), err
+	return newPrometheusServerStrebm(s, serviceNbme, methodNbme), err
 }
 
-// newPrometheusServerStream wraps a grpc.ClientStream to observe the first error
-// encountered during the stream, if any.
-func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName string) grpc.ClientStream {
-	// Design note: We only want a single observation for each RPC call: it either succeeds or fails
-	// with a single error. This ensures we do not double-count RPCs in Prometheus metrics.
+// newPrometheusServerStrebm wrbps b grpc.ClientStrebm to observe the first error
+// encountered during the strebm, if bny.
+func newPrometheusServerStrebm(s grpc.ClientStrebm, serviceNbme, methodNbme string) grpc.ClientStrebm {
+	// Design note: We only wbnt b single observbtion for ebch RPC cbll: it either succeeds or fbils
+	// with b single error. This ensures we do not double-count RPCs in Prometheus metrics.
 	//
-	// For unary calls this is straightforward, but for streaming RPCs we need to make a compromise. We only
-	// observe the first error (either sending or receiving) that occurs during the stream, instead of every
-	// error that occurs during the stream's lifespan. While this approach swallows some errors, it keeps the
-	// Prometheus metric count clean and non-duplicated. The logging interceptor handles surfacing all errors
-	// that are encountered during a stream.
-	var observeOnce sync.Once
+	// For unbry cblls this is strbightforwbrd, but for strebming RPCs we need to mbke b compromise. We only
+	// observe the first error (either sending or receiving) thbt occurs during the strebm, instebd of every
+	// error thbt occurs during the strebm's lifespbn. While this bpprobch swbllows some errors, it keeps the
+	// Prometheus metric count clebn bnd non-duplicbted. The logging interceptor hbndles surfbcing bll errors
+	// thbt bre encountered during b strebm.
+	vbr observeOnce sync.Once
 
-	return &callBackClientStream{
-		ClientStream: s,
-		postMessageSend: func(_ any, err error) {
+	return &cbllBbckClientStrebm{
+		ClientStrebm: s,
+		postMessbgeSend: func(_ bny, err error) {
 			if err != nil {
 				observeOnce.Do(func() {
-					doObservation(serviceName, methodName, err)
+					doObservbtion(serviceNbme, methodNbme, err)
 				})
 			}
 		},
-		postMessageReceive: func(_ any, err error) {
+		postMessbgeReceive: func(_ bny, err error) {
 			if err != nil {
 				if err == io.EOF {
-					// EOF signals end of stream, not an error. We handle this by setting err to nil, because
-					// we want to treat the stream as successfully completed.
+					// EOF signbls end of strebm, not bn error. We hbndle this by setting err to nil, becbuse
+					// we wbnt to trebt the strebm bs successfully completed.
 					err = nil
 				}
 
 				observeOnce.Do(func() {
-					doObservation(serviceName, methodName, err)
+					doObservbtion(serviceNbme, methodNbme, err)
 				})
 			}
 		},
@@ -90,26 +90,26 @@ func newPrometheusServerStream(s grpc.ClientStream, serviceName, methodName stri
 
 }
 
-func doObservation(serviceName, methodName string, rpcErr error) {
+func doObservbtion(serviceNbme, methodNbme string, rpcErr error) {
 	if rpcErr == nil {
-		// No error occurred, so we record a successful call.
-		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, codes.OK.String(), "false").Inc()
+		// No error occurred, so we record b successful cbll.
+		metricGRPCMethodStbtus.WithLbbelVblues(serviceNbme, methodNbme, codes.OK.String(), "fblse").Inc()
 		return
 	}
 
-	s, ok := massageIntoStatusErr(rpcErr)
+	s, ok := mbssbgeIntoStbtusErr(rpcErr)
 	if !ok {
-		// An error occurred, but it was not an error that has a status.Status implementation. We record this as an unknown error.
-		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, codes.Unknown.String(), "false").Inc()
+		// An error occurred, but it wbs not bn error thbt hbs b stbtus.Stbtus implementbtion. We record this bs bn unknown error.
+		metricGRPCMethodStbtus.WithLbbelVblues(serviceNbme, methodNbme, codes.Unknown.String(), "fblse").Inc()
 		return
 	}
 
-	if !probablyInternalGRPCError(s, allCheckers) {
-		// An error occurred, but it was not an internal gRPC error. We record this as a non-internal error.
-		metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, s.Code().String(), "false").Inc()
+	if !probbblyInternblGRPCError(s, bllCheckers) {
+		// An error occurred, but it wbs not bn internbl gRPC error. We record this bs b non-internbl error.
+		metricGRPCMethodStbtus.WithLbbelVblues(serviceNbme, methodNbme, s.Code().String(), "fblse").Inc()
 		return
 	}
 
-	// An error occurred, and it looks like an internal gRPC error. We record this as an internal error.
-	metricGRPCMethodStatus.WithLabelValues(serviceName, methodName, s.Code().String(), "true").Inc()
+	// An error occurred, bnd it looks like bn internbl gRPC error. We record this bs bn internbl error.
+	metricGRPCMethodStbtus.WithLbbelVblues(serviceNbme, methodNbme, s.Code().String(), "true").Inc()
 }

@@ -1,35 +1,35 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type PreciseIndexResolverFactory struct {
-	uploadsSvc       UploadsService
+type PreciseIndexResolverFbctory struct {
+	uplobdsSvc       UplobdsService
 	policySvc        PolicyService
 	gitserverClient  gitserver.Client
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	repoStore        database.RepoStore
+	siteAdminChecker shbredresolvers.SiteAdminChecker
+	repoStore        dbtbbbse.RepoStore
 }
 
-func NewPreciseIndexResolverFactory(
-	uploadsSvc UploadsService,
+func NewPreciseIndexResolverFbctory(
+	uplobdsSvc UplobdsService,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-) *PreciseIndexResolverFactory {
-	return &PreciseIndexResolverFactory{
-		uploadsSvc:       uploadsSvc,
+	siteAdminChecker shbredresolvers.SiteAdminChecker,
+	repoStore dbtbbbse.RepoStore,
+) *PreciseIndexResolverFbctory {
+	return &PreciseIndexResolverFbctory{
+		uplobdsSvc:       uplobdsSvc,
 		policySvc:        policySvc,
 		gitserverClient:  gitserverClient,
 		siteAdminChecker: siteAdminChecker,
@@ -37,27 +37,27 @@ func NewPreciseIndexResolverFactory(
 	}
 }
 
-func (f *PreciseIndexResolverFactory) Create(
+func (f *PreciseIndexResolverFbctory) Crebte(
 	ctx context.Context,
-	uploadLoader UploadLoader,
-	indexLoader IndexLoader,
-	locationResolver *gitresolvers.CachedLocationResolver,
-	traceErrs *observation.ErrCollector,
-	upload *shared.Upload,
-	index *uploadsshared.Index,
+	uplobdLobder UplobdLobder,
+	indexLobder IndexLobder,
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver,
+	trbceErrs *observbtion.ErrCollector,
+	uplobd *shbred.Uplobd,
+	index *uplobdsshbred.Index,
 ) (resolverstubs.PreciseIndexResolver, error) {
 	return newPreciseIndexResolver(
 		ctx,
-		f.uploadsSvc,
+		f.uplobdsSvc,
 		f.policySvc,
 		f.gitserverClient,
-		uploadLoader,
-		indexLoader,
+		uplobdLobder,
+		indexLobder,
 		f.siteAdminChecker,
 		f.repoStore,
-		locationResolver,
-		traceErrs,
-		upload,
+		locbtionResolver,
+		trbceErrs,
+		uplobd,
 		index,
 	)
 }

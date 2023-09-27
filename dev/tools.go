@@ -1,25 +1,25 @@
 //go:build tools
 // +build tools
 
-package main
+pbckbge mbin
 
 import (
-	// zoekt-* used in sourcegraph/server docker image build
-	_ "github.com/sourcegraph/zoekt/cmd/zoekt-archive-index"
-	_ "github.com/sourcegraph/zoekt/cmd/zoekt-git-index"
-	_ "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver"
-	_ "github.com/sourcegraph/zoekt/cmd/zoekt-webserver"
+	// zoekt-* used in sourcegrbph/server docker imbge build
+	_ "github.com/sourcegrbph/zoekt/cmd/zoekt-brchive-index"
+	_ "github.com/sourcegrbph/zoekt/cmd/zoekt-git-index"
+	_ "github.com/sourcegrbph/zoekt/cmd/zoekt-sourcegrbph-indexserver"
+	_ "github.com/sourcegrbph/zoekt/cmd/zoekt-webserver"
 
-	// go-mockgen is used to codegen mockable interfaces, used in precise code intel tests
+	// go-mockgen is used to codegen mockbble interfbces, used in precise code intel tests
 	_ "github.com/derision-test/go-mockgen/cmd/go-mockgen"
 
-	// used in schema pkg
-	_ "github.com/sourcegraph/go-jsonschema/cmd/go-jsonschema-compiler"
+	// used in schemb pkg
+	_ "github.com/sourcegrbph/go-jsonschemb/cmd/go-jsonschemb-compiler"
 
-	_ "golang.org/x/tools/cmd/goimports"
-	// used in many places
-	_ "golang.org/x/tools/cmd/stringer"
+	_ "golbng.org/x/tools/cmd/goimports"
+	// used in mbny plbces
+	_ "golbng.org/x/tools/cmd/stringer"
 
-	// Used for cody-gateway to generate a GraphQL client
-	_ "github.com/Khan/genqlient"
+	// Used for cody-gbtewby to generbte b GrbphQL client
+	_ "github.com/Khbn/genqlient"
 )

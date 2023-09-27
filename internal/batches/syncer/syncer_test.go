@@ -1,4 +1,4 @@
-package syncer
+pbckbge syncer
 
 import (
 	"context"
@@ -6,387 +6,387 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestMain(m *testing.M) {
+func TestMbin(m *testing.M) {
 	logtest.Init(m)
 	os.Exit(m.Run())
 }
 
 func newTestStore() *MockSyncStore {
 	s := NewMockSyncStore()
-	s.ClockFunc.SetDefaultReturn(timeutil.Now)
+	s.ClockFunc.SetDefbultReturn(timeutil.Now)
 	return s
 }
 
 func TestSyncerRun(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
 	t.Run("Sync due", func(t *testing.T) {
-		ctx, cancel := context.WithCancel(context.Background())
+		ctx, cbncel := context.WithCbncel(context.Bbckground())
 		now := time.Now()
 
 		syncStore := newTestStore()
-		syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+		syncStore.ListChbngesetSyncDbtbFunc.SetDefbultReturn([]*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:       1,
-				UpdatedAt:         now.Add(-2 * maxSyncDelay),
-				LatestEvent:       now.Add(-2 * maxSyncDelay),
-				ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
+				ChbngesetID:       1,
+				UpdbtedAt:         now.Add(-2 * mbxSyncDelby),
+				LbtestEvent:       now.Add(-2 * mbxSyncDelby),
+				ExternblUpdbtedAt: now.Add(-2 * mbxSyncDelby),
 			},
 		}, nil)
 
 		syncFunc := func(ctx context.Context, ids int64) error {
-			cancel()
+			cbncel()
 			return nil
 		}
-		syncer := &changesetSyncer{
+		syncer := &chbngesetSyncer{
 			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
-			scheduleInterval: 10 * time.Minute,
+			scheduleIntervbl: 10 * time.Minute,
 			syncFunc:         syncFunc,
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          mbkeMetrics(&observbtion.TestContext),
 		}
 		go syncer.Run(ctx)
 		select {
-		case <-ctx.Done():
-		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Sync should have been triggered")
+		cbse <-ctx.Done():
+		cbse <-time.After(100 * time.Millisecond):
+			t.Fbtbl("Sync should hbve been triggered")
 		}
 	})
 
 	t.Run("Sync due but reenqueued for reconciler", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 10*time.Millisecond)
+		defer cbncel()
 		now := time.Now()
-		updateCalled := false
+		updbteCblled := fblse
 		syncStore := newTestStore()
-		// Return ErrNoResults, which is the result you get when the changeset preconditions aren't met anymore.
-		// The sync data checks for the reconciler state and if it changed since the sync data was loaded,
-		// we don't get back the changeset here and skip it.
+		// Return ErrNoResults, which is the result you get when the chbngeset preconditions bren't met bnymore.
+		// The sync dbtb checks for the reconciler stbte bnd if it chbnged since the sync dbtb wbs lobded,
+		// we don't get bbck the chbngeset here bnd skip it.
 		//
-		// If we don't return ErrNoResults, the rest of the test will fail, because not all
-		// methods of sync store are mocked.
-		syncStore.GetChangesetFunc.SetDefaultReturn(nil, store.ErrNoResults)
-		syncStore.UpdateChangesetCodeHostStateFunc.SetDefaultHook(func(context.Context, *btypes.Changeset) error {
-			updateCalled = true
+		// If we don't return ErrNoResults, the rest of the test will fbil, becbuse not bll
+		// methods of sync store bre mocked.
+		syncStore.GetChbngesetFunc.SetDefbultReturn(nil, store.ErrNoResults)
+		syncStore.UpdbteChbngesetCodeHostStbteFunc.SetDefbultHook(func(context.Context, *btypes.Chbngeset) error {
+			updbteCblled = true
 			return nil
 		})
-		syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+		syncStore.ListChbngesetSyncDbtbFunc.SetDefbultReturn([]*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:       1,
-				UpdatedAt:         now.Add(-2 * maxSyncDelay),
-				LatestEvent:       now.Add(-2 * maxSyncDelay),
-				ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
+				ChbngesetID:       1,
+				UpdbtedAt:         now.Add(-2 * mbxSyncDelby),
+				LbtestEvent:       now.Add(-2 * mbxSyncDelby),
+				ExternblUpdbtedAt: now.Add(-2 * mbxSyncDelby),
 			},
 		}, nil)
 
-		syncer := &changesetSyncer{
+		syncer := &chbngesetSyncer{
 			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
-			scheduleInterval: 10 * time.Minute,
-			metrics:          makeMetrics(&observation.TestContext),
+			scheduleIntervbl: 10 * time.Minute,
+			metrics:          mbkeMetrics(&observbtion.TestContext),
 		}
 		syncer.Run(ctx)
-		if updateCalled {
-			t.Fatal("Called UpdateChangeset, but shouldn't have")
+		if updbteCblled {
+			t.Fbtbl("Cblled UpdbteChbngeset, but shouldn't hbve")
 		}
 	})
 
 	t.Run("Sync not due", func(t *testing.T) {
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 10*time.Millisecond)
+		defer cbncel()
 		now := time.Now()
 		syncStore := newTestStore()
-		syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+		syncStore.ListChbngesetSyncDbtbFunc.SetDefbultReturn([]*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:       1,
-				UpdatedAt:         now,
-				LatestEvent:       now,
-				ExternalUpdatedAt: now,
+				ChbngesetID:       1,
+				UpdbtedAt:         now,
+				LbtestEvent:       now,
+				ExternblUpdbtedAt: now,
 			},
 		}, nil)
 
-		var syncCalled bool
+		vbr syncCblled bool
 		syncFunc := func(ctx context.Context, ids int64) error {
-			syncCalled = true
+			syncCblled = true
 			return nil
 		}
-		syncer := &changesetSyncer{
+		syncer := &chbngesetSyncer{
 			logger:           logtest.Scoped(t),
 			syncStore:        syncStore,
-			scheduleInterval: 10 * time.Minute,
+			scheduleIntervbl: 10 * time.Minute,
 			syncFunc:         syncFunc,
-			metrics:          makeMetrics(&observation.TestContext),
+			metrics:          mbkeMetrics(&observbtion.TestContext),
 		}
 		syncer.Run(ctx)
-		if syncCalled {
-			t.Fatal("Sync should not have been triggered")
+		if syncCblled {
+			t.Fbtbl("Sync should not hbve been triggered")
 		}
 	})
 
-	t.Run("Priority added", func(t *testing.T) {
-		// Empty schedule but then we add an item
-		ctx, cancel := context.WithCancel(context.Background())
+	t.Run("Priority bdded", func(t *testing.T) {
+		// Empty schedule but then we bdd bn item
+		ctx, cbncel := context.WithCbncel(context.Bbckground())
 
 		syncFunc := func(ctx context.Context, ids int64) error {
-			cancel()
+			cbncel()
 			return nil
 		}
-		syncer := &changesetSyncer{
+		syncer := &chbngesetSyncer{
 			logger:           logtest.Scoped(t),
 			syncStore:        newTestStore(),
-			scheduleInterval: 10 * time.Minute,
+			scheduleIntervbl: 10 * time.Minute,
 			syncFunc:         syncFunc,
-			priorityNotify:   make(chan []int64, 1),
-			metrics:          makeMetrics(&observation.TestContext),
+			priorityNotify:   mbke(chbn []int64, 1),
+			metrics:          mbkeMetrics(&observbtion.TestContext),
 		}
 		syncer.priorityNotify <- []int64{1}
 		go syncer.Run(ctx)
 		select {
-		case <-ctx.Done():
-		case <-time.After(100 * time.Millisecond):
-			t.Fatal("Sync not called")
+		cbse <-ctx.Done():
+		cbse <-time.After(100 * time.Millisecond):
+			t.Fbtbl("Sync not cblled")
 		}
 	})
 
-	t.Run("Sync due but reenqueued when namespace deleted", func(t *testing.T) {
-		t.Skip("skipping because flaky")
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
-		defer cancel()
+	t.Run("Sync due but reenqueued when nbmespbce deleted", func(t *testing.T) {
+		t.Skip("skipping becbuse flbky")
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 10*time.Millisecond)
+		defer cbncel()
 		now := time.Now()
-		updateCalled := false
+		updbteCblled := fblse
 		syncStore := newTestStore()
 
-		syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+		syncStore.ListChbngesetSyncDbtbFunc.SetDefbultReturn([]*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:       1,
-				UpdatedAt:         now.Add(-2 * maxSyncDelay),
-				LatestEvent:       now.Add(-2 * maxSyncDelay),
-				ExternalUpdatedAt: now.Add(-2 * maxSyncDelay),
+				ChbngesetID:       1,
+				UpdbtedAt:         now.Add(-2 * mbxSyncDelby),
+				LbtestEvent:       now.Add(-2 * mbxSyncDelby),
+				ExternblUpdbtedAt: now.Add(-2 * mbxSyncDelby),
 			},
 		}, nil)
-		syncStore.GetChangesetFunc.SetDefaultReturn(&btypes.Changeset{RepoID: 1, OwnedByBatchChangeID: 1}, nil)
+		syncStore.GetChbngesetFunc.SetDefbultReturn(&btypes.Chbngeset{RepoID: 1, OwnedByBbtchChbngeID: 1}, nil)
 
 		rstore := dbmocks.NewMockRepoStore()
-		syncStore.ReposFunc.SetDefaultReturn(rstore)
-		rstore.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/u/r"}, nil)
+		syncStore.ReposFunc.SetDefbultReturn(rstore)
+		rstore.GetFunc.SetDefbultReturn(&types.Repo{ID: 1, Nbme: "github.com/u/r"}, nil)
 
-		ess := dbmocks.NewMockExternalServiceStore()
-		ess.ListFunc.SetDefaultHook(func(ctx context.Context, options database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-			return []*types.ExternalService{{
+		ess := dbmocks.NewMockExternblServiceStore()
+		ess.ListFunc.SetDefbultHook(func(ctx context.Context, options dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+			return []*types.ExternblService{{
 				ID:          1,
 				Kind:        extsvc.KindGitHub,
-				DisplayName: "GitHub.com",
-				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "authorization": {}}`),
+				DisplbyNbme: "GitHub.com",
+				Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "token": "123", "buthorizbtion": {}}`),
 			}}, nil
 		})
-		syncStore.ExternalServicesFunc.SetDefaultReturn(ess)
+		syncStore.ExternblServicesFunc.SetDefbultReturn(ess)
 
-		// Return ErrDeletedNamespace to simulate that a namespace (user or org) has been deleted.
-		syncStore.GetBatchChangeFunc.SetDefaultReturn(nil, store.ErrDeletedNamespace)
+		// Return ErrDeletedNbmespbce to simulbte thbt b nbmespbce (user or org) hbs been deleted.
+		syncStore.GetBbtchChbngeFunc.SetDefbultReturn(nil, store.ErrDeletedNbmespbce)
 
-		syncStore.UpdateChangesetCodeHostStateFunc.SetDefaultHook(func(context.Context, *btypes.Changeset) error {
-			updateCalled = true
+		syncStore.UpdbteChbngesetCodeHostStbteFunc.SetDefbultHook(func(context.Context, *btypes.Chbngeset) error {
+			updbteCblled = true
 			return nil
 		})
 
-		capturingLogger, export := logtest.Captured(t)
-		syncer := &changesetSyncer{
-			logger:           capturingLogger,
+		cbpturingLogger, export := logtest.Cbptured(t)
+		syncer := &chbngesetSyncer{
+			logger:           cbpturingLogger,
 			syncStore:        syncStore,
-			scheduleInterval: 10 * time.Minute,
-			metrics:          makeMetrics(&observation.TestContext),
+			scheduleIntervbl: 10 * time.Minute,
+			metrics:          mbkeMetrics(&observbtion.TestContext),
 		}
 		syncer.Run(ctx)
-		assert.False(t, updateCalled)
+		bssert.Fblse(t, updbteCblled)
 
-		// ensure the deleted namespace error is logged as a debug
-		captured := export()
-		assert.Greater(t, len(captured), 0)
-		var found bool
-		for _, c := range captured {
-			if c.Level == log.LevelDebug && c.Message == "SyncChangeset skipping changeset: namespace deleted" {
+		// ensure the deleted nbmespbce error is logged bs b debug
+		cbptured := export()
+		bssert.Grebter(t, len(cbptured), 0)
+		vbr found bool
+		for _, c := rbnge cbptured {
+			if c.Level == log.LevelDebug && c.Messbge == "SyncChbngeset skipping chbngeset: nbmespbce deleted" {
 				found = true
 			}
 		}
-		assert.True(t, found, "namespace deleted log was not captured")
+		bssert.True(t, found, "nbmespbce deleted log wbs not cbptured")
 	})
 }
 
 func TestSyncRegistry_SyncCodeHosts(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	externalServiceID := "https://example.com/"
+	externblServiceID := "https://exbmple.com/"
 
 	syncStore := newTestStore()
-	syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
+	syncStore.ListChbngesetSyncDbtbFunc.SetDefbultReturn([]*btypes.ChbngesetSyncDbtb{
 		{
-			ChangesetID:           1,
-			UpdatedAt:             time.Now(),
-			RepoExternalServiceID: externalServiceID,
+			ChbngesetID:           1,
+			UpdbtedAt:             time.Now(),
+			RepoExternblServiceID: externblServiceID,
 		},
 	}, nil)
 
-	codeHost := &btypes.CodeHost{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub}
+	codeHost := &btypes.CodeHost{ExternblServiceID: externblServiceID, ExternblServiceType: extsvc.TypeGitHub}
 	codeHosts := []*btypes.CodeHost{codeHost}
-	syncStore.ListCodeHostsFunc.SetDefaultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
+	syncStore.ListCodeHostsFunc.SetDefbultHook(func(c context.Context, lcho store.ListCodeHostsOpts) ([]*btypes.CodeHost, error) {
 		return codeHosts, nil
 	})
 
-	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
+	reg := NewSyncRegistry(ctx, &observbtion.TestContext, syncStore, nil)
 
-	assertSyncerCount := func(t *testing.T, want int) {
+	bssertSyncerCount := func(t *testing.T, wbnt int) {
 		t.Helper()
 
-		if len(reg.syncers) != want {
-			t.Fatalf("Expected %d syncer, got %d", want, len(reg.syncers))
+		if len(reg.syncers) != wbnt {
+			t.Fbtblf("Expected %d syncer, got %d", wbnt, len(reg.syncers))
 		}
 	}
 
 	reg.syncCodeHosts(ctx)
-	assertSyncerCount(t, 1)
+	bssertSyncerCount(t, 1)
 
-	// Adding it again should have no effect
-	reg.addCodeHostSyncer(&btypes.CodeHost{ExternalServiceID: externalServiceID, ExternalServiceType: extsvc.TypeGitHub})
-	assertSyncerCount(t, 1)
+	// Adding it bgbin should hbve no effect
+	reg.bddCodeHostSyncer(&btypes.CodeHost{ExternblServiceID: externblServiceID, ExternblServiceType: extsvc.TypeGitHub})
+	bssertSyncerCount(t, 1)
 
-	// Simulate a service being removed
+	// Simulbte b service being removed
 	codeHosts = []*btypes.CodeHost{}
 	reg.syncCodeHosts(ctx)
-	assertSyncerCount(t, 0)
+	bssertSyncerCount(t, 0)
 
-	// And added again
+	// And bdded bgbin
 	codeHosts = []*btypes.CodeHost{codeHost}
 	reg.syncCodeHosts(ctx)
-	assertSyncerCount(t, 1)
+	bssertSyncerCount(t, 1)
 }
 
-func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
-	t.Parallel()
+func TestSyncRegistry_EnqueueChbngesetSyncs(t *testing.T) {
+	t.Pbrbllel()
 
-	codeHostURL := "https://example.com/"
+	codeHostURL := "https://exbmple.com/"
 
-	ctx, cancel := context.WithCancel(context.Background())
-	t.Cleanup(cancel)
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	t.Clebnup(cbncel)
 
 	syncStore := newTestStore()
-	syncStore.ListChangesetSyncDataFunc.SetDefaultReturn([]*btypes.ChangesetSyncData{
-		{ChangesetID: 1, UpdatedAt: time.Now(), RepoExternalServiceID: codeHostURL},
-		{ChangesetID: 3, UpdatedAt: time.Now(), RepoExternalServiceID: codeHostURL},
+	syncStore.ListChbngesetSyncDbtbFunc.SetDefbultReturn([]*btypes.ChbngesetSyncDbtb{
+		{ChbngesetID: 1, UpdbtedAt: time.Now(), RepoExternblServiceID: codeHostURL},
+		{ChbngesetID: 3, UpdbtedAt: time.Now(), RepoExternblServiceID: codeHostURL},
 	}, nil)
 
-	syncChan := make(chan int64)
+	syncChbn := mbke(chbn int64)
 
-	// In order to test that priority items are delivered we'll inject our own syncer
-	// with a custom sync func
-	syncerCtx, syncerCancel := context.WithCancel(ctx)
-	t.Cleanup(syncerCancel)
+	// In order to test thbt priority items bre delivered we'll inject our own syncer
+	// with b custom sync func
+	syncerCtx, syncerCbncel := context.WithCbncel(ctx)
+	t.Clebnup(syncerCbncel)
 
-	syncer := &changesetSyncer{
+	syncer := &chbngesetSyncer{
 		logger:      logtest.Scoped(t),
 		syncStore:   syncStore,
 		codeHostURL: codeHostURL,
 		syncFunc: func(ctx context.Context, id int64) error {
-			syncChan <- id
+			syncChbn <- id
 			return nil
 		},
-		priorityNotify: make(chan []int64, 1),
-		metrics:        makeMetrics(&observation.TestContext),
-		cancel:         syncerCancel,
+		priorityNotify: mbke(chbn []int64, 1),
+		metrics:        mbkeMetrics(&observbtion.TestContext),
+		cbncel:         syncerCbncel,
 	}
 	go syncer.Run(syncerCtx)
 
-	reg := NewSyncRegistry(ctx, &observation.TestContext, syncStore, nil)
+	reg := NewSyncRegistry(ctx, &observbtion.TestContext, syncStore, nil)
 	reg.syncers[codeHostURL] = syncer
 
-	// Start handler in background, will be canceled when ctx is canceled
-	go reg.handlePriorityItems()
+	// Stbrt hbndler in bbckground, will be cbnceled when ctx is cbnceled
+	go reg.hbndlePriorityItems()
 
-	// Enqueue priority items, but only 1, 3 have valid ChangesetSyncData
-	if err := reg.EnqueueChangesetSyncs(ctx, []int64{1, 2, 3}); err != nil {
-		t.Fatal(err)
+	// Enqueue priority items, but only 1, 3 hbve vblid ChbngesetSyncDbtb
+	if err := reg.EnqueueChbngesetSyncs(ctx, []int64{1, 2, 3}); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// They should be delivered to the changesetSyncer
-	for _, wantId := range []int64{1, 3} {
+	// They should be delivered to the chbngesetSyncer
+	for _, wbntId := rbnge []int64{1, 3} {
 		select {
-		case id := <-syncChan:
-			if id != wantId {
-				t.Fatalf("Expected %d, got %d", wantId, id)
+		cbse id := <-syncChbn:
+			if id != wbntId {
+				t.Fbtblf("Expected %d, got %d", wbntId, id)
 			}
-		case <-time.After(1 * time.Second):
-			t.Fatal("Timed out waiting for sync")
+		cbse <-time.After(1 * time.Second):
+			t.Fbtbl("Timed out wbiting for sync")
 		}
 	}
 }
 
-func TestSyncRegistry_EnqueueChangesetSyncsForRepos(t *testing.T) {
-	ctx := context.Background()
+func TestSyncRegistry_EnqueueChbngesetSyncsForRepos(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("store error", func(t *testing.T) {
 		bstore := NewMockSyncStore()
-		want := errors.New("expected")
-		bstore.ListChangesetsFunc.SetDefaultReturn(nil, 0, want)
+		wbnt := errors.New("expected")
+		bstore.ListChbngesetsFunc.SetDefbultReturn(nil, 0, wbnt)
 
 		s := &SyncRegistry{
 			syncStore: bstore,
 		}
 
-		err := s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{})
-		assert.ErrorIs(t, err, want)
+		err := s.EnqueueChbngesetSyncsForRepos(ctx, []bpi.RepoID{})
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("no changesets", func(t *testing.T) {
+	t.Run("no chbngesets", func(t *testing.T) {
 		bstore := NewMockSyncStore()
-		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
-			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
-			return []*btypes.Changeset{}, 0, nil
+		bstore.ListChbngesetsFunc.SetDefbultHook(func(ctx context.Context, opts store.ListChbngesetsOpts) (btypes.Chbngesets, int64, error) {
+			bssert.Equbl(t, []bpi.RepoID{1}, opts.RepoIDs)
+			return []*btypes.Chbngeset{}, 0, nil
 		})
 
 		s := &SyncRegistry{
 			syncStore: bstore,
 		}
 
-		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+		bssert.NoError(t, s.EnqueueChbngesetSyncsForRepos(ctx, []bpi.RepoID{1}))
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs := []*btypes.Changeset{
+		cs := []*btypes.Chbngeset{
 			{ID: 1},
 			{ID: 2},
 		}
 
 		bstore := NewMockSyncStore()
-		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
-			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+		bstore.ListChbngesetsFunc.SetDefbultHook(func(ctx context.Context, opts store.ListChbngesetsOpts) (btypes.Chbngesets, int64, error) {
+			bssert.Equbl(t, []bpi.RepoID{1}, opts.RepoIDs)
 			return cs, 0, nil
 		})
 
 		s := &SyncRegistry{
 			logger:         logtest.Scoped(t),
-			priorityNotify: make(chan []int64, 1),
+			priorityNotify: mbke(chbn []int64, 1),
 			syncStore:      bstore,
 		}
 
-		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
-		assert.ElementsMatch(t, []int64{1, 2}, <-s.priorityNotify)
+		bssert.NoError(t, s.EnqueueChbngesetSyncsForRepos(ctx, []bpi.RepoID{1}))
+		bssert.ElementsMbtch(t, []int64{1, 2}, <-s.priorityNotify)
 	})
 }

@@ -1,89 +1,89 @@
-package embed
+pbckbge embed
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
-	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/azureopenai"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/openai"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/sourcegraph"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	codeintelContext "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/context"
+	citypes "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	bgrepo "github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed/client/bzureopenbi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed/client/openbi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed/client/sourcegrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/pbths"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func NewEmbeddingsClient(config *conftypes.EmbeddingsConfig) (client.EmbeddingsClient, error) {
 	switch config.Provider {
-	case conftypes.EmbeddingsProviderNameSourcegraph:
-		return sourcegraph.NewClient(httpcli.ExternalClient, config), nil
-	case conftypes.EmbeddingsProviderNameOpenAI:
-		return openai.NewClient(httpcli.ExternalClient, config), nil
-	case conftypes.EmbeddingsProviderNameAzureOpenAI:
-		return azureopenai.NewClient(httpcli.ExternalClient, config), nil
-	default:
-		return nil, errors.Newf("invalid provider %q", config.Provider)
+	cbse conftypes.EmbeddingsProviderNbmeSourcegrbph:
+		return sourcegrbph.NewClient(httpcli.ExternblClient, config), nil
+	cbse conftypes.EmbeddingsProviderNbmeOpenAI:
+		return openbi.NewClient(httpcli.ExternblClient, config), nil
+	cbse conftypes.EmbeddingsProviderNbmeAzureOpenAI:
+		return bzureopenbi.NewClient(httpcli.ExternblClient, config), nil
+	defbult:
+		return nil, errors.Newf("invblid provider %q", config.Provider)
 	}
 }
 
-// EmbedRepo embeds file contents from the given file names for a repository.
-// It separates the file names into code files and text files and embeds them separately.
-// It returns a RepoEmbeddingIndex containing the embeddings and metadata.
+// EmbedRepo embeds file contents from the given file nbmes for b repository.
+// It sepbrbtes the file nbmes into code files bnd text files bnd embeds them sepbrbtely.
+// It returns b RepoEmbeddingIndex contbining the embeddings bnd metbdbtb.
 func EmbedRepo(
 	ctx context.Context,
 	client client.EmbeddingsClient,
 	inserter db.VectorInserter,
 	contextService ContextService,
-	readLister FileReadLister,
-	repo types.RepoIDName,
-	ranks citypes.RepoPathRanks,
+	rebdLister FileRebdLister,
+	repo types.RepoIDNbme,
+	rbnks citypes.RepoPbthRbnks,
 	opts EmbedRepoOpts,
 	logger log.Logger,
-	reportProgress func(*bgrepo.EmbedRepoStats),
-) (*embeddings.RepoEmbeddingIndex, []string, *bgrepo.EmbedRepoStats, error) {
-	var toIndex []FileEntry
-	var toRemove []string
-	var err error
+	reportProgress func(*bgrepo.EmbedRepoStbts),
+) (*embeddings.RepoEmbeddingIndex, []string, *bgrepo.EmbedRepoStbts, error) {
+	vbr toIndex []FileEntry
+	vbr toRemove []string
+	vbr err error
 
-	isIncremental := opts.IndexedRevision != ""
+	isIncrementbl := opts.IndexedRevision != ""
 
-	if isIncremental {
-		toIndex, toRemove, err = readLister.Diff(ctx, opts.IndexedRevision)
+	if isIncrementbl {
+		toIndex, toRemove, err = rebdLister.Diff(ctx, opts.IndexedRevision)
 		if err != nil {
 			logger.Error(
-				"failed to get diff. Falling back to full index",
-				log.String("RepoName", string(opts.RepoName)),
+				"fbiled to get diff. Fblling bbck to full index",
+				log.String("RepoNbme", string(opts.RepoNbme)),
 				log.String("revision", string(opts.Revision)),
 				log.String("old revision", string(opts.IndexedRevision)),
 				log.Error(err),
 			)
 			toRemove = nil
-			isIncremental = false
+			isIncrementbl = fblse
 		}
 	}
 
-	if !isIncremental { // full index
-		toIndex, err = readLister.List(ctx)
+	if !isIncrementbl { // full index
+		toIndex, err = rebdLister.List(ctx)
 		if err != nil {
 			return nil, nil, nil, err
 		}
 	}
 
-	var codeFileNames, textFileNames []FileEntry
-	for _, file := range toIndex {
-		if IsValidTextFile(file.Name) {
-			textFileNames = append(textFileNames, file)
+	vbr codeFileNbmes, textFileNbmes []FileEntry
+	for _, file := rbnge toIndex {
+		if IsVblidTextFile(file.Nbme) {
+			textFileNbmes = bppend(textFileNbmes, file)
 		} else {
-			codeFileNames = append(codeFileNames, file)
+			codeFileNbmes = bppend(codeFileNbmes, file)
 		}
 	}
 
@@ -93,129 +93,129 @@ func EmbedRepo(
 	}
 	newIndex := func(numFiles int) embeddings.EmbeddingIndex {
 		return embeddings.EmbeddingIndex{
-			Embeddings:      make([]int8, 0, numFiles*dimensions/2),
-			RowMetadata:     make([]embeddings.RepoEmbeddingRowMetadata, 0, numFiles/2),
+			Embeddings:      mbke([]int8, 0, numFiles*dimensions/2),
+			RowMetbdbtb:     mbke([]embeddings.RepoEmbeddingRowMetbdbtb, 0, numFiles/2),
 			ColumnDimension: dimensions,
-			Ranks:           make([]float32, 0, numFiles/2),
+			Rbnks:           mbke([]flobt32, 0, numFiles/2),
 		}
 	}
 
-	stats := bgrepo.EmbedRepoStats{
-		CodeIndexStats: bgrepo.NewEmbedFilesStats(len(codeFileNames)),
-		TextIndexStats: bgrepo.NewEmbedFilesStats(len(textFileNames)),
-		IsIncremental:  isIncremental,
+	stbts := bgrepo.EmbedRepoStbts{
+		CodeIndexStbts: bgrepo.NewEmbedFilesStbts(len(codeFileNbmes)),
+		TextIndexStbts: bgrepo.NewEmbedFilesStbts(len(textFileNbmes)),
+		IsIncrementbl:  isIncrementbl,
 	}
 
-	insertDB := func(batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) error {
-		return inserter.InsertChunks(ctx, db.InsertParams{
+	insertDB := func(bbtch []embeddings.RepoEmbeddingRowMetbdbtb, embeddings []flobt32, isCode bool) error {
+		return inserter.InsertChunks(ctx, db.InsertPbrbms{
 			ModelID:     client.GetModelIdentifier(),
-			ChunkPoints: batchToChunkPoints(repo, opts.Revision, batch, embeddings, isCode),
+			ChunkPoints: bbtchToChunkPoints(repo, opts.Revision, bbtch, embeddings, isCode),
 		})
 	}
 
-	insertIndex := func(index *embeddings.EmbeddingIndex, metadata []embeddings.RepoEmbeddingRowMetadata, vectors []float32) {
-		index.RowMetadata = append(index.RowMetadata, metadata...)
-		index.Embeddings = append(index.Embeddings, embeddings.Quantize(vectors, nil)...)
-		// Unknown documents have rank 0. Zoekt is a bit smarter about this, assigning 0
-		// to "unimportant" files and the average for unknown files. We should probably
-		// add this here, too.
-		for _, md := range metadata {
-			index.Ranks = append(index.Ranks, float32(ranks.Paths[md.FileName]))
+	insertIndex := func(index *embeddings.EmbeddingIndex, metbdbtb []embeddings.RepoEmbeddingRowMetbdbtb, vectors []flobt32) {
+		index.RowMetbdbtb = bppend(index.RowMetbdbtb, metbdbtb...)
+		index.Embeddings = bppend(index.Embeddings, embeddings.Qubntize(vectors, nil)...)
+		// Unknown documents hbve rbnk 0. Zoekt is b bit smbrter bbout this, bssigning 0
+		// to "unimportbnt" files bnd the bverbge for unknown files. We should probbbly
+		// bdd this here, too.
+		for _, md := rbnge metbdbtb {
+			index.Rbnks = bppend(index.Rbnks, flobt32(rbnks.Pbths[md.FileNbme]))
 		}
 	}
 
-	codeIndex := newIndex(len(codeFileNames))
-	insertCode := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
+	codeIndex := newIndex(len(codeFileNbmes))
+	insertCode := func(md []embeddings.RepoEmbeddingRowMetbdbtb, embeddings []flobt32) error {
 		insertIndex(&codeIndex, md, embeddings)
 		return insertDB(md, embeddings, true)
 	}
 
-	reportCodeProgress := func(codeIndexStats bgrepo.EmbedFilesStats) {
-		stats.CodeIndexStats = codeIndexStats
-		reportProgress(&stats)
+	reportCodeProgress := func(codeIndexStbts bgrepo.EmbedFilesStbts) {
+		stbts.CodeIndexStbts = codeIndexStbts
+		reportProgress(&stbts)
 	}
 
-	codeIndexStats, err := embedFiles(ctx, logger, codeFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxCodeEmbeddings, opts.BatchSize, opts.ExcludeChunks, insertCode, reportCodeProgress)
+	codeIndexStbts, err := embedFiles(ctx, logger, codeFileNbmes, client, contextService, opts.FileFilters, opts.SplitOptions, rebdLister, opts.MbxCodeEmbeddings, opts.BbtchSize, opts.ExcludeChunks, insertCode, reportCodeProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	if codeIndexStats.ChunksExcluded > 0 {
-		logger.Warn("error getting embeddings for chunks",
-			log.Int("count", codeIndexStats.ChunksExcluded),
+	if codeIndexStbts.ChunksExcluded > 0 {
+		logger.Wbrn("error getting embeddings for chunks",
+			log.Int("count", codeIndexStbts.ChunksExcluded),
 			log.String("file_type", "code"),
 		)
 	}
 
-	stats.CodeIndexStats = codeIndexStats
+	stbts.CodeIndexStbts = codeIndexStbts
 
-	textIndex := newIndex(len(textFileNames))
-	insertText := func(md []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error {
+	textIndex := newIndex(len(textFileNbmes))
+	insertText := func(md []embeddings.RepoEmbeddingRowMetbdbtb, embeddings []flobt32) error {
 		insertIndex(&textIndex, md, embeddings)
-		return insertDB(md, embeddings, false)
+		return insertDB(md, embeddings, fblse)
 	}
 
-	reportTextProgress := func(textIndexStats bgrepo.EmbedFilesStats) {
-		stats.TextIndexStats = textIndexStats
-		reportProgress(&stats)
+	reportTextProgress := func(textIndexStbts bgrepo.EmbedFilesStbts) {
+		stbts.TextIndexStbts = textIndexStbts
+		reportProgress(&stbts)
 	}
 
-	textIndexStats, err := embedFiles(ctx, logger, textFileNames, client, contextService, opts.FileFilters, opts.SplitOptions, readLister, opts.MaxTextEmbeddings, opts.BatchSize, opts.ExcludeChunks, insertText, reportTextProgress)
+	textIndexStbts, err := embedFiles(ctx, logger, textFileNbmes, client, contextService, opts.FileFilters, opts.SplitOptions, rebdLister, opts.MbxTextEmbeddings, opts.BbtchSize, opts.ExcludeChunks, insertText, reportTextProgress)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	if textIndexStats.ChunksExcluded > 0 {
-		logger.Warn("error getting embeddings for chunks",
-			log.Int("count", textIndexStats.ChunksExcluded),
+	if textIndexStbts.ChunksExcluded > 0 {
+		logger.Wbrn("error getting embeddings for chunks",
+			log.Int("count", textIndexStbts.ChunksExcluded),
 			log.String("file_type", "text"),
 		)
 	}
 
-	stats.TextIndexStats = textIndexStats
+	stbts.TextIndexStbts = textIndexStbts
 
 	embeddingsModel := client.GetModelIdentifier()
 	index := &embeddings.RepoEmbeddingIndex{
-		RepoName:        opts.RepoName,
+		RepoNbme:        opts.RepoNbme,
 		Revision:        opts.Revision,
 		EmbeddingsModel: embeddingsModel,
 		CodeIndex:       codeIndex,
 		TextIndex:       textIndex,
 	}
 
-	return index, toRemove, &stats, nil
+	return index, toRemove, &stbts, nil
 }
 
 type EmbedRepoOpts struct {
-	RepoName          api.RepoName
-	Revision          api.CommitID
+	RepoNbme          bpi.RepoNbme
+	Revision          bpi.CommitID
 	FileFilters       FileFilters
 	SplitOptions      codeintelContext.SplitOptions
-	MaxCodeEmbeddings int
-	MaxTextEmbeddings int
-	BatchSize         int
+	MbxCodeEmbeddings int
+	MbxTextEmbeddings int
+	BbtchSize         int
 	ExcludeChunks     bool
 
-	// If set, we already have an index for a previous commit.
-	IndexedRevision api.CommitID
+	// If set, we blrebdy hbve bn index for b previous commit.
+	IndexedRevision bpi.CommitID
 }
 
 type FileFilters struct {
-	ExcludePatterns  []*paths.GlobPattern
-	IncludePatterns  []*paths.GlobPattern
-	MaxFileSizeBytes int
+	ExcludePbtterns  []*pbths.GlobPbttern
+	IncludePbtterns  []*pbths.GlobPbttern
+	MbxFileSizeBytes int
 }
 
-type batchInserter func(metadata []embeddings.RepoEmbeddingRowMetadata, embeddings []float32) error
+type bbtchInserter func(metbdbtb []embeddings.RepoEmbeddingRowMetbdbtb, embeddings []flobt32) error
 
 type FlushResults struct {
 	size  int
 	count int
 }
 
-// embedFiles embeds file contents from the given file names. Since embedding models can only handle a certain amount of text (tokens) we cannot embed
-// entire files. So we split the file contents into chunks and get embeddings for the chunks in batches. Functions returns an EmbeddingIndex containing
-// the embeddings and metadata about the chunks the embeddings correspond to.
+// embedFiles embeds file contents from the given file nbmes. Since embedding models cbn only hbndle b certbin bmount of text (tokens) we cbnnot embed
+// entire files. So we split the file contents into chunks bnd get embeddings for the chunks in bbtches. Functions returns bn EmbeddingIndex contbining
+// the embeddings bnd metbdbtb bbout the chunks the embeddings correspond to.
 func embedFiles(
 	ctx context.Context,
 	logger log.Logger,
@@ -224,216 +224,216 @@ func embedFiles(
 	contextService ContextService,
 	fileFilters FileFilters,
 	splitOptions codeintelContext.SplitOptions,
-	reader FileReader,
-	maxEmbeddingVectors int,
-	batchSize int,
+	rebder FileRebder,
+	mbxEmbeddingVectors int,
+	bbtchSize int,
 	excludeChunksOnError bool,
-	insert batchInserter,
-	reportProgress func(bgrepo.EmbedFilesStats),
-) (bgrepo.EmbedFilesStats, error) {
+	insert bbtchInserter,
+	reportProgress func(bgrepo.EmbedFilesStbts),
+) (bgrepo.EmbedFilesStbts, error) {
 	dimensions, err := embeddingsClient.GetDimensions()
 	if err != nil {
-		return bgrepo.EmbedFilesStats{}, err
+		return bgrepo.EmbedFilesStbts{}, err
 	}
 
-	stats := bgrepo.NewEmbedFilesStats(len(files))
+	stbts := bgrepo.NewEmbedFilesStbts(len(files))
 
-	var batch []codeintelContext.EmbeddableChunk
+	vbr bbtch []codeintelContext.EmbeddbbleChunk
 
 	flush := func() (*FlushResults, error) {
-		if len(batch) == 0 {
+		if len(bbtch) == 0 {
 			return nil, nil
 		}
 
-		batchChunks := make([]string, len(batch))
-		for idx, chunk := range batch {
-			batchChunks[idx] = chunk.Content
+		bbtchChunks := mbke([]string, len(bbtch))
+		for idx, chunk := rbnge bbtch {
+			bbtchChunks[idx] = chunk.Content
 		}
 
-		batchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, batchChunks)
+		bbtchEmbeddings, err := embeddingsClient.GetDocumentEmbeddings(ctx, bbtchChunks)
 		if err != nil {
-			return nil, errors.Wrap(err, "error while getting embeddings")
+			return nil, errors.Wrbp(err, "error while getting embeddings")
 		}
 
-		if expected := len(batchChunks) * dimensions; len(batchEmbeddings.Embeddings) != expected {
-			return nil, errors.Newf("expected embeddings for batch to have length %d, got %d", expected, len(batchEmbeddings.Embeddings))
+		if expected := len(bbtchChunks) * dimensions; len(bbtchEmbeddings.Embeddings) != expected {
+			return nil, errors.Newf("expected embeddings for bbtch to hbve length %d, got %d", expected, len(bbtchEmbeddings.Embeddings))
 		}
 
-		if !excludeChunksOnError && len(batchEmbeddings.Failed) > 0 {
-			// if at least one chunk failed then return an error instead of completing the embedding indexing
-			return nil, errors.Newf("batch failed on file %q", batch[batchEmbeddings.Failed[0]].FileName)
+		if !excludeChunksOnError && len(bbtchEmbeddings.Fbiled) > 0 {
+			// if bt lebst one chunk fbiled then return bn error instebd of completing the embedding indexing
+			return nil, errors.Newf("bbtch fbiled on file %q", bbtch[bbtchEmbeddings.Fbiled[0]].FileNbme)
 		}
 
-		// When excluding failed chunks we
-		// (1) report total chunks failed at the end and
-		// (2) log filenames that have failed chunks
-		excludedBatches := make(map[int]struct{}, len(batchEmbeddings.Failed))
-		filesFailedChunks := make(map[string]int, len(batchEmbeddings.Failed))
-		for _, batchIdx := range batchEmbeddings.Failed {
+		// When excluding fbiled chunks we
+		// (1) report totbl chunks fbiled bt the end bnd
+		// (2) log filenbmes thbt hbve fbiled chunks
+		excludedBbtches := mbke(mbp[int]struct{}, len(bbtchEmbeddings.Fbiled))
+		filesFbiledChunks := mbke(mbp[string]int, len(bbtchEmbeddings.Fbiled))
+		for _, bbtchIdx := rbnge bbtchEmbeddings.Fbiled {
 
-			if batchIdx < 0 || batchIdx >= len(batch) {
+			if bbtchIdx < 0 || bbtchIdx >= len(bbtch) {
 				continue
 			}
-			excludedBatches[batchIdx] = struct{}{}
+			excludedBbtches[bbtchIdx] = struct{}{}
 
-			if chunks, ok := filesFailedChunks[batch[batchIdx].FileName]; ok {
-				filesFailedChunks[batch[batchIdx].FileName] = chunks + 1
+			if chunks, ok := filesFbiledChunks[bbtch[bbtchIdx].FileNbme]; ok {
+				filesFbiledChunks[bbtch[bbtchIdx].FileNbme] = chunks + 1
 			} else {
-				filesFailedChunks[batch[batchIdx].FileName] = 1
+				filesFbiledChunks[bbtch[bbtchIdx].FileNbme] = 1
 			}
 		}
 
-		// log filenames at most once per flush
-		for fileName, count := range filesFailedChunks {
-			logger.Warn("failed to generate one or more chunks for file",
-				log.String("file", fileName),
+		// log filenbmes bt most once per flush
+		for fileNbme, count := rbnge filesFbiledChunks {
+			logger.Wbrn("fbiled to generbte one or more chunks for file",
+				log.String("file", fileNbme),
 				log.Int("count", count),
 			)
 		}
 
-		rowsCount := len(batch) - len(batchEmbeddings.Failed)
-		metadata := make([]embeddings.RepoEmbeddingRowMetadata, 0, rowsCount)
-		var size int
+		rowsCount := len(bbtch) - len(bbtchEmbeddings.Fbiled)
+		metbdbtb := mbke([]embeddings.RepoEmbeddingRowMetbdbtb, 0, rowsCount)
+		vbr size int
 		cursor := 0
-		for idx, chunk := range batch {
-			if _, ok := excludedBatches[idx]; ok {
+		for idx, chunk := rbnge bbtch {
+			if _, ok := excludedBbtches[idx]; ok {
 				continue
 			}
-			copy(batchEmbeddings.Row(cursor), batchEmbeddings.Row(idx))
-			metadata = append(metadata, embeddings.RepoEmbeddingRowMetadata{
-				FileName:  chunk.FileName,
-				StartLine: chunk.StartLine,
+			copy(bbtchEmbeddings.Row(cursor), bbtchEmbeddings.Row(idx))
+			metbdbtb = bppend(metbdbtb, embeddings.RepoEmbeddingRowMetbdbtb{
+				FileNbme:  chunk.FileNbme,
+				StbrtLine: chunk.StbrtLine,
 				EndLine:   chunk.EndLine,
 			})
 			size += len(chunk.Content)
 			cursor++
 		}
 
-		if err := insert(metadata, batchEmbeddings.Embeddings[:cursor*dimensions]); err != nil {
+		if err := insert(metbdbtb, bbtchEmbeddings.Embeddings[:cursor*dimensions]); err != nil {
 			return nil, err
 		}
 
-		batch = batch[:0] // reset batch
-		reportProgress(stats)
+		bbtch = bbtch[:0] // reset bbtch
+		reportProgress(stbts)
 		return &FlushResults{size, rowsCount}, nil
 	}
 
-	addToBatch := func(chunk codeintelContext.EmbeddableChunk) (*FlushResults, error) {
-		batch = append(batch, chunk)
-		if len(batch) >= batchSize {
-			// Flush if we've hit batch size
+	bddToBbtch := func(chunk codeintelContext.EmbeddbbleChunk) (*FlushResults, error) {
+		bbtch = bppend(bbtch, chunk)
+		if len(bbtch) >= bbtchSize {
+			// Flush if we've hit bbtch size
 			return flush()
 		}
 		return nil, nil
 	}
 
-	for _, file := range files {
+	for _, file := rbnge files {
 		if ctx.Err() != nil {
-			return bgrepo.EmbedFilesStats{}, ctx.Err()
+			return bgrepo.EmbedFilesStbts{}, ctx.Err()
 		}
 
-		// This is a fail-safe measure to prevent producing an extremely large index for large repositories.
-		if stats.ChunksEmbedded >= maxEmbeddingVectors {
-			stats.Skip(SkipReasonMaxEmbeddings, int(file.Size))
+		// This is b fbil-sbfe mebsure to prevent producing bn extremely lbrge index for lbrge repositories.
+		if stbts.ChunksEmbedded >= mbxEmbeddingVectors {
+			stbts.Skip(SkipRebsonMbxEmbeddings, int(file.Size))
 			continue
 		}
 
-		if file.Size > int64(fileFilters.MaxFileSizeBytes) {
-			stats.Skip(SkipReasonLarge, int(file.Size))
+		if file.Size > int64(fileFilters.MbxFileSizeBytes) {
+			stbts.Skip(SkipRebsonLbrge, int(file.Size))
 			continue
 		}
 
-		if isExcludedFilePathMatch(file.Name, fileFilters.ExcludePatterns) {
-			stats.Skip(SkipReasonExcluded, int(file.Size))
+		if isExcludedFilePbthMbtch(file.Nbme, fileFilters.ExcludePbtterns) {
+			stbts.Skip(SkipRebsonExcluded, int(file.Size))
 			continue
 		}
 
-		if !isIncludedFilePathMatch(file.Name, fileFilters.IncludePatterns) {
-			stats.Skip(SkipReasonNotIncluded, int(file.Size))
+		if !isIncludedFilePbthMbtch(file.Nbme, fileFilters.IncludePbtterns) {
+			stbts.Skip(SkipRebsonNotIncluded, int(file.Size))
 			continue
 		}
 
-		contentBytes, err := reader.Read(ctx, file.Name)
+		contentBytes, err := rebder.Rebd(ctx, file.Nbme)
 		if err != nil {
-			return bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while reading a file")
+			return bgrepo.EmbedFilesStbts{}, errors.Wrbp(err, "error while rebding b file")
 		}
 
-		if embeddable, skipReason := isEmbeddableFileContent(contentBytes); !embeddable {
-			stats.Skip(skipReason, len(contentBytes))
+		if embeddbble, skipRebson := isEmbeddbbleFileContent(contentBytes); !embeddbble {
+			stbts.Skip(skipRebson, len(contentBytes))
 			continue
 		}
 
-		// At this point, we have determined that we want to embed this file.
-		chunks, err := contextService.SplitIntoEmbeddableChunks(ctx, string(contentBytes), file.Name, splitOptions)
+		// At this point, we hbve determined thbt we wbnt to embed this file.
+		chunks, err := contextService.SplitIntoEmbeddbbleChunks(ctx, string(contentBytes), file.Nbme, splitOptions)
 		if err != nil {
-			return bgrepo.EmbedFilesStats{}, errors.Wrap(err, "error while splitting file")
+			return bgrepo.EmbedFilesStbts{}, errors.Wrbp(err, "error while splitting file")
 		}
 
-		for _, chunk := range chunks {
-			if results, err := addToBatch(chunk); err != nil {
-				return bgrepo.EmbedFilesStats{}, err
+		for _, chunk := rbnge chunks {
+			if results, err := bddToBbtch(chunk); err != nil {
+				return bgrepo.EmbedFilesStbts{}, err
 			} else if results != nil {
-				stats.AddChunks(results.count, results.size)
-				stats.ExcludeChunks(batchSize - results.count)
+				stbts.AddChunks(results.count, results.size)
+				stbts.ExcludeChunks(bbtchSize - results.count)
 			}
 		}
-		stats.AddFile()
+		stbts.AddFile()
 	}
 
-	// Always do a final flush
-	currentBatch := len(batch)
+	// Alwbys do b finbl flush
+	currentBbtch := len(bbtch)
 	if results, err := flush(); err != nil {
-		return bgrepo.EmbedFilesStats{}, err
+		return bgrepo.EmbedFilesStbts{}, err
 	} else if results != nil {
-		stats.AddChunks(results.count, results.size)
-		stats.ExcludeChunks(currentBatch - results.count)
+		stbts.AddChunks(results.count, results.size)
+		stbts.ExcludeChunks(currentBbtch - results.count)
 	}
 
-	return stats, nil
+	return stbts, nil
 }
 
-func batchToChunkPoints(repo types.RepoIDName, revision api.CommitID, batch []embeddings.RepoEmbeddingRowMetadata, embeddings []float32, isCode bool) []db.ChunkPoint {
-	if len(batch) == 0 {
+func bbtchToChunkPoints(repo types.RepoIDNbme, revision bpi.CommitID, bbtch []embeddings.RepoEmbeddingRowMetbdbtb, embeddings []flobt32, isCode bool) []db.ChunkPoint {
+	if len(bbtch) == 0 {
 		return nil
 	}
 
-	dimensions := len(embeddings) / len(batch)
-	points := make([]db.ChunkPoint, 0, len(batch))
-	for i, chunk := range batch {
-		payload := db.ChunkPayload{
-			RepoName:  repo.Name,
+	dimensions := len(embeddings) / len(bbtch)
+	points := mbke([]db.ChunkPoint, 0, len(bbtch))
+	for i, chunk := rbnge bbtch {
+		pbylobd := db.ChunkPbylobd{
+			RepoNbme:  repo.Nbme,
 			RepoID:    repo.ID,
 			Revision:  revision,
-			FilePath:  chunk.FileName,
-			StartLine: uint32(chunk.StartLine),
+			FilePbth:  chunk.FileNbme,
+			StbrtLine: uint32(chunk.StbrtLine),
 			EndLine:   uint32(chunk.EndLine),
 			IsCode:    isCode,
 		}
-		point := db.NewChunkPoint(payload, embeddings[i*dimensions:(i+1)*dimensions])
-		points = append(points, point)
+		point := db.NewChunkPoint(pbylobd, embeddings[i*dimensions:(i+1)*dimensions])
+		points = bppend(points, point)
 	}
 	return points
 }
 
-type FileReadLister interface {
-	FileReader
+type FileRebdLister interfbce {
+	FileRebder
 	FileLister
 	FileDiffer
 }
 
 type FileEntry struct {
-	Name string
+	Nbme string
 	Size int64
 }
 
-type FileLister interface {
+type FileLister interfbce {
 	List(context.Context) ([]FileEntry, error)
 }
 
-type FileReader interface {
-	Read(context.Context, string) ([]byte, error)
+type FileRebder interfbce {
+	Rebd(context.Context, string) ([]byte, error)
 }
 
-type FileDiffer interface {
-	Diff(context.Context, api.CommitID) ([]FileEntry, []string, error)
+type FileDiffer interfbce {
+	Diff(context.Context, bpi.CommitID) ([]FileEntry, []string, error)
 }

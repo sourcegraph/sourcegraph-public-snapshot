@@ -1,96 +1,96 @@
-package upgradestore
+pbckbge upgrbdestore
 
 import (
 	"testing"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 )
 
-func TestIsValidUpgrade(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
+func TestIsVblidUpgrbde(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme     string
 		previous string
-		latest   string
-		want     bool
+		lbtest   string
+		wbnt     bool
 	}{
 		{
-			name:     "no versions",
+			nbme:     "no versions",
 			previous: "",
-			latest:   "",
-			want:     true,
+			lbtest:   "",
+			wbnt:     true,
 		}, {
-			name:     "no previous version",
+			nbme:     "no previous version",
 			previous: "",
-			latest:   "v3.13.0",
-			want:     true,
+			lbtest:   "v3.13.0",
+			wbnt:     true,
 		}, {
-			name:     "no latest version",
+			nbme:     "no lbtest version",
 			previous: "v3.13.0",
-			latest:   "",
-			want:     true,
+			lbtest:   "",
+			wbnt:     true,
 		}, {
-			name:     "same version",
+			nbme:     "sbme version",
 			previous: "v3.13.0",
-			latest:   "v3.13.0",
-			want:     true,
+			lbtest:   "v3.13.0",
+			wbnt:     true,
 		}, {
-			name:     "one minor version up",
+			nbme:     "one minor version up",
 			previous: "v3.12.4",
-			latest:   "v3.13.1",
-			want:     true,
+			lbtest:   "v3.13.1",
+			wbnt:     true,
 		}, {
-			name:     "one patch version up",
+			nbme:     "one pbtch version up",
 			previous: "v3.12.4",
-			latest:   "v3.12.5",
-			want:     true,
+			lbtest:   "v3.12.5",
+			wbnt:     true,
 		}, {
-			name:     "two patch versions up",
+			nbme:     "two pbtch versions up",
 			previous: "v3.12.4",
-			latest:   "v3.12.6",
-			want:     true,
+			lbtest:   "v3.12.6",
+			wbnt:     true,
 		}, {
-			name:     "one major version up",
+			nbme:     "one mbjor version up",
 			previous: "v3.13.1",
-			latest:   "v4.0.0",
-			want:     true,
+			lbtest:   "v4.0.0",
+			wbnt:     true,
 		}, {
-			name:     "more than one minor version up",
+			nbme:     "more thbn one minor version up",
 			previous: "v3.9.4",
-			latest:   "v3.11.0",
-			want:     false,
+			lbtest:   "v3.11.0",
+			wbnt:     fblse,
 		}, {
-			name:     "major jump",
+			nbme:     "mbjor jump",
 			previous: "v3.9.4",
-			latest:   "v4.1.0",
-			want:     false,
+			lbtest:   "v4.1.0",
+			wbnt:     fblse,
 		}, {
-			name:     "major rollback",
+			nbme:     "mbjor rollbbck",
 			previous: "v4.1.0",
-			latest:   "v3.9.4",
-			want:     true,
+			lbtest:   "v3.9.4",
+			wbnt:     true,
 		}, {
-			name:     "minor rollback",
+			nbme:     "minor rollbbck",
 			previous: "v4.1.0",
-			latest:   "v4.0.4",
-			want:     true,
+			lbtest:   "v4.0.4",
+			wbnt:     true,
 		}, {
-			name:     "patch rollback",
+			nbme:     "pbtch rollbbck",
 			previous: "v4.1.4",
-			latest:   "v4.1.3",
-			want:     true,
+			lbtest:   "v4.1.3",
+			wbnt:     true,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			previous, _ := semver.NewVersion(tc.previous)
-			latest, _ := semver.NewVersion(tc.latest)
+			lbtest, _ := semver.NewVersion(tc.lbtest)
 
-			if got := IsValidUpgrade(previous, latest); got != tc.want {
+			if got := IsVblidUpgrbde(previous, lbtest); got != tc.wbnt {
 				t.Errorf(
-					"IsValidUpgrade(previous: %s, latest: %s) = %t, want %t",
+					"IsVblidUpgrbde(previous: %s, lbtest: %s) = %t, wbnt %t",
 					tc.previous,
-					tc.latest,
+					tc.lbtest,
 					got,
-					tc.want,
+					tc.wbnt,
 				)
 			}
 		})

@@ -1,33 +1,33 @@
-package db
+pbckbge db
 
 import (
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"google.golang.org/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"google.golbng.org/grpc"
 )
 
-// NewDBFromConfFunc returns a function that can be called to get an
-// VectorDB instance based on the connection info from the conf package.
-// It will watch conf and update the connection if there are any changes.
+// NewDBFromConfFunc returns b function thbt cbn be cblled to get bn
+// VectorDB instbnce bbsed on the connection info from the conf pbckbge.
+// It will wbtch conf bnd updbte the connection if there bre bny chbnges.
 //
-// If Qdrant is disabled, it will instead return the provided default VectorDB.
+// If Qdrbnt is disbbled, it will instebd return the provided defbult VectorDB.
 func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error) {
-	var (
+	vbr (
 		oldAddr string
 		err     error
-		ptr     atomic.Pointer[grpc.ClientConn]
+		ptr     btomic.Pointer[grpc.ClientConn]
 	)
 
-	conf.Watch(func() {
-		if newAddr := conf.Get().ServiceConnections().Qdrant; newAddr != oldAddr {
-			newConn, dialErr := defaults.Dial(newAddr, logger)
+	conf.Wbtch(func() {
+		if newAddr := conf.Get().ServiceConnections().Qdrbnt; newAddr != oldAddr {
+			newConn, diblErr := defbults.Dibl(newAddr, logger)
 			oldAddr = newAddr
-			err = dialErr
-			oldConn := ptr.Swap(newConn)
+			err = diblErr
+			oldConn := ptr.Swbp(newConn)
 			if oldConn != nil {
 				oldConn.Close()
 			}
@@ -39,11 +39,11 @@ func NewDBFromConfFunc(logger log.Logger, def VectorDB) func() (VectorDB, error)
 			return nil, err
 		}
 
-		conn := ptr.Load()
+		conn := ptr.Lobd()
 		if conn == nil {
 			return def, nil
 		}
 
-		return NewQdrantDBFromConn(conn), nil
+		return NewQdrbntDBFromConn(conn), nil
 	}
 }

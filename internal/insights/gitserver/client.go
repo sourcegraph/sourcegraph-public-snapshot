@@ -1,36 +1,36 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
 func NewGitCommitClient(gitserverClient gitserver.Client) *GitCommitClient {
 	return &GitCommitClient{
-		cachedFirstCommit: NewCachedGitFirstEverCommit(),
+		cbchedFirstCommit: NewCbchedGitFirstEverCommit(),
 		gitserverClient:   gitserverClient,
 	}
 }
 
 type GitCommitClient struct {
-	cachedFirstCommit *CachedGitFirstEverCommit
+	cbchedFirstCommit *CbchedGitFirstEverCommit
 	gitserverClient   gitserver.Client
 }
 
-func (g *GitCommitClient) FirstCommit(ctx context.Context, repoName api.RepoName) (*gitdomain.Commit, error) {
-	return g.cachedFirstCommit.GitFirstEverCommit(ctx, g.gitserverClient, repoName)
+func (g *GitCommitClient) FirstCommit(ctx context.Context, repoNbme bpi.RepoNbme) (*gitdombin.Commit, error) {
+	return g.cbchedFirstCommit.GitFirstEverCommit(ctx, g.gitserverClient, repoNbme)
 }
-func (g *GitCommitClient) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
-	options := gitserver.CommitsOptions{N: 1, Before: target.Format(time.RFC3339), DateOrder: true}
+func (g *GitCommitClient) RecentCommits(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error) {
+	options := gitserver.CommitsOptions{N: 1, Before: tbrget.Formbt(time.RFC3339), DbteOrder: true}
 	if len(revision) > 0 {
-		options.Range = revision
+		options.Rbnge = revision
 	}
-	return g.gitserverClient.Commits(ctx, authz.DefaultSubRepoPermsChecker, repoName, options)
+	return g.gitserverClient.Commits(ctx, buthz.DefbultSubRepoPermsChecker, repoNbme, options)
 }
 
 func (g *GitCommitClient) GitserverClient() gitserver.Client {

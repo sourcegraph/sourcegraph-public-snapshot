@@ -1,68 +1,68 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"sort"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// GetIndexes returns a list of indexes and the total count of records matching the given conditions.
-func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (_ []shared.Index, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", opts.RepositoryID),
-		attribute.String("state", opts.State),
-		attribute.String("term", opts.Term),
-		attribute.Int("limit", opts.Limit),
-		attribute.Int("offset", opts.Offset),
+// GetIndexes returns b list of indexes bnd the totbl count of records mbtching the given conditions.
+func (s *store) GetIndexes(ctx context.Context, opts shbred.GetIndexesOptions) (_ []shbred.Index, _ int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getIndexes.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", opts.RepositoryID),
+		bttribute.String("stbte", opts.Stbte),
+		bttribute.String("term", opts.Term),
+		bttribute.Int("limit", opts.Limit),
+		bttribute.Int("offset", opts.Offset),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var conds []*sqlf.Query
+	vbr conds []*sqlf.Query
 	if opts.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+		conds = bppend(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
 	if opts.Term != "" {
-		conds = append(conds, makeIndexSearchCondition(opts.Term))
+		conds = bppend(conds, mbkeIndexSebrchCondition(opts.Term))
 	}
-	if opts.State != "" {
-		opts.States = append(opts.States, opts.State)
+	if opts.Stbte != "" {
+		opts.Stbtes = bppend(opts.Stbtes, opts.Stbte)
 	}
-	if len(opts.States) > 0 {
-		conds = append(conds, makeIndexStateCondition(opts.States))
+	if len(opts.Stbtes) > 0 {
+		conds = bppend(conds, mbkeIndexStbteCondition(opts.Stbtes))
 	}
-	if opts.WithoutUpload {
-		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
+	if opts.WithoutUplobd {
+		conds = bppend(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uplobds u2 WHERE u2.bssocibted_index_id = u.id)"))
 	}
 
-	if len(opts.IndexerNames) != 0 {
-		var indexerConds []*sqlf.Query
-		for _, indexerName := range opts.IndexerNames {
-			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+	if len(opts.IndexerNbmes) != 0 {
+		vbr indexerConds []*sqlf.Query
+		for _, indexerNbme := rbnge opts.IndexerNbmes {
+			indexerConds = bppend(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerNbme+"%"))
 		}
 
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+		conds = bppend(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
-	var a []shared.Index
-	var b int
-	err = s.withTransaction(ctx, func(tx *store) error {
-		authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, tx.db))
+	vbr b []shbred.Index
+	vbr b int
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
+		buthzConds, err := dbtbbbse.AuthzQueryConds(ctx, dbtbbbse.NewDBWith(s.logger, tx.db))
 		if err != nil {
 			return err
 		}
-		conds = append(conds, authzConds)
+		conds = bppend(conds, buthzConds)
 
-		indexes, err := scanIndexes(tx.db.Query(ctx, sqlf.Sprintf(
+		indexes, err := scbnIndexes(tx.db.Query(ctx, sqlf.Sprintf(
 			getIndexesSelectQuery,
 			sqlf.Join(conds, " AND "),
 			opts.Limit,
@@ -71,63 +71,63 @@ func (s *store) GetIndexes(ctx context.Context, opts shared.GetIndexesOptions) (
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("scanIndexesWithCount",
-			attribute.Int("numIndexes", len(indexes)))
+		trbce.AddEvent("scbnIndexesWithCount",
+			bttribute.Int("numIndexes", len(indexes)))
 
-		totalCount, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
+		totblCount, _, err := bbsestore.ScbnFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
 			getIndexesCountQuery,
 			sqlf.Join(conds, " AND "),
 		)))
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("scanIndexesWithCount",
-			attribute.Int("totalCount", totalCount),
+		trbce.AddEvent("scbnIndexesWithCount",
+			bttribute.Int("totblCount", totblCount),
 		)
 
-		a = indexes
-		b = totalCount
+		b = indexes
+		b = totblCount
 		return nil
 	})
 
-	return a, b, err
+	return b, b, err
 }
 
 const getIndexesSelectQuery = `
 SELECT
 	u.id,
 	u.commit,
-	u.queued_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
+	u.queued_bt,
+	u.stbte,
+	u.fbilure_messbge,
+	u.stbrted_bt,
+	u.finished_bt,
+	u.process_bfter,
 	u.num_resets,
-	u.num_failures,
+	u.num_fbilures,
 	u.repository_id,
-	repo.name,
+	repo.nbme,
 	u.docker_steps,
 	u.root,
 	u.indexer,
-	u.indexer_args,
+	u.indexer_brgs,
 	u.outfile,
 	u.execution_logs,
-	s.rank,
-	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `,
+	s.rbnk,
+	u.locbl_steps,
+	` + indexAssocibtedUplobdIDQueryFrbgment + `,
 	u.should_reindex,
-	u.requested_envvars,
+	u.requested_envvbrs,
 	u.enqueuer_user_id
 FROM lsif_indexes u
-LEFT JOIN (` + indexRankQueryFragment + `) s
+LEFT JOIN (` + indexRbnkQueryFrbgment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
 WHERE
-	repo.deleted_at IS NULL AND
+	repo.deleted_bt IS NULL AND
 	repo.blocked IS NULL AND
 	%s
-ORDER BY queued_at DESC, u.id
+ORDER BY queued_bt DESC, u.id
 LIMIT %d OFFSET %d
 `
 
@@ -136,168 +136,168 @@ SELECT COUNT(*) AS count
 FROM lsif_indexes u
 JOIN repo ON repo.id = u.repository_id
 WHERE
-	repo.deleted_at IS NULL AND
+	repo.deleted_bt IS NULL AND
 	repo.blocked IS NULL AND
 	%s
 `
 
-// scanIndexes scans a slice of indexes from the return value of `*Store.query`.
-var scanIndexes = basestore.NewSliceScanner(scanIndex)
+// scbnIndexes scbns b slice of indexes from the return vblue of `*Store.query`.
+vbr scbnIndexes = bbsestore.NewSliceScbnner(scbnIndex)
 
-// scanFirstIndex scans a slice of indexes from the return value of `*Store.query` and returns the first.
-var scanFirstIndex = basestore.NewFirstScanner(scanIndex)
+// scbnFirstIndex scbns b slice of indexes from the return vblue of `*Store.query` bnd returns the first.
+vbr scbnFirstIndex = bbsestore.NewFirstScbnner(scbnIndex)
 
-func scanIndex(s dbutil.Scanner) (index shared.Index, err error) {
-	var executionLogs []executor.ExecutionLogEntry
-	if err := s.Scan(
+func scbnIndex(s dbutil.Scbnner) (index shbred.Index, err error) {
+	vbr executionLogs []executor.ExecutionLogEntry
+	if err := s.Scbn(
 		&index.ID,
 		&index.Commit,
 		&index.QueuedAt,
-		&index.State,
-		&index.FailureMessage,
-		&index.StartedAt,
+		&index.Stbte,
+		&index.FbilureMessbge,
+		&index.StbrtedAt,
 		&index.FinishedAt,
 		&index.ProcessAfter,
 		&index.NumResets,
-		&index.NumFailures,
+		&index.NumFbilures,
 		&index.RepositoryID,
-		&index.RepositoryName,
-		pq.Array(&index.DockerSteps),
+		&index.RepositoryNbme,
+		pq.Arrby(&index.DockerSteps),
 		&index.Root,
 		&index.Indexer,
-		pq.Array(&index.IndexerArgs),
+		pq.Arrby(&index.IndexerArgs),
 		&index.Outfile,
-		pq.Array(&executionLogs),
-		&index.Rank,
-		pq.Array(&index.LocalSteps),
-		&index.AssociatedUploadID,
+		pq.Arrby(&executionLogs),
+		&index.Rbnk,
+		pq.Arrby(&index.LocblSteps),
+		&index.AssocibtedUplobdID,
 		&index.ShouldReindex,
-		pq.Array(&index.RequestedEnvVars),
+		pq.Arrby(&index.RequestedEnvVbrs),
 		&index.EnqueuerUserID,
 	); err != nil {
 		return index, err
 	}
 
-	index.ExecutionLogs = append(index.ExecutionLogs, executionLogs...)
+	index.ExecutionLogs = bppend(index.ExecutionLogs, executionLogs...)
 
 	return index, nil
 }
 
-// GetIndexByID returns an index by its identifier and boolean flag indicating its existence.
-func (s *store) GetIndexByID(ctx context.Context, id int) (_ shared.Index, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+// GetIndexByID returns bn index by its identifier bnd boolebn flbg indicbting its existence.
+func (s *store) GetIndexByID(ctx context.Context, id int) (_ shbred.Index, _ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.getIndexByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	buthzConds, err := dbtbbbse.AuthzQueryConds(ctx, dbtbbbse.NewDBWith(s.logger, s.db))
 	if err != nil {
-		return shared.Index{}, false, err
+		return shbred.Index{}, fblse, err
 	}
 
-	return scanFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, authzConds)))
+	return scbnFirstIndex(s.db.Query(ctx, sqlf.Sprintf(getIndexByIDQuery, id, buthzConds)))
 }
 
 const getIndexByIDQuery = `
 SELECT
 	u.id,
 	u.commit,
-	u.queued_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
+	u.queued_bt,
+	u.stbte,
+	u.fbilure_messbge,
+	u.stbrted_bt,
+	u.finished_bt,
+	u.process_bfter,
 	u.num_resets,
-	u.num_failures,
+	u.num_fbilures,
 	u.repository_id,
-	repo.name,
+	repo.nbme,
 	u.docker_steps,
 	u.root,
 	u.indexer,
-	u.indexer_args,
+	u.indexer_brgs,
 	u.outfile,
 	u.execution_logs,
-	s.rank,
-	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `,
+	s.rbnk,
+	u.locbl_steps,
+	` + indexAssocibtedUplobdIDQueryFrbgment + `,
 	u.should_reindex,
-	u.requested_envvars,
+	u.requested_envvbrs,
 	u.enqueuer_user_id
 FROM lsif_indexes u
-LEFT JOIN (` + indexRankQueryFragment + `) s
+LEFT JOIN (` + indexRbnkQueryFrbgment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND u.id = %s AND %s
+WHERE repo.deleted_bt IS NULL AND u.id = %s AND %s
 `
 
-// GetIndexesByIDs returns an index for each of the given identifiers. Not all given ids will necessarily
-// have a corresponding element in the returned list.
-func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shared.Index, err error) {
-	ctx, _, endObservation := s.operations.getIndexesByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.IntSlice("ids", ids),
+// GetIndexesByIDs returns bn index for ebch of the given identifiers. Not bll given ids will necessbrily
+// hbve b corresponding element in the returned list.
+func (s *store) GetIndexesByIDs(ctx context.Context, ids ...int) (_ []shbred.Index, err error) {
+	ctx, _, endObservbtion := s.operbtions.getIndexesByIDs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.IntSlice("ids", ids),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	buthzConds, err := dbtbbbse.AuthzQueryConds(ctx, dbtbbbse.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return nil, err
 	}
 
-	queries := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
-		queries = append(queries, sqlf.Sprintf("%d", id))
+	queries := mbke([]*sqlf.Query, 0, len(ids))
+	for _, id := rbnge ids {
+		queries = bppend(queries, sqlf.Sprintf("%d", id))
 	}
 
-	return scanIndexes(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), authzConds)))
+	return scbnIndexes(s.db.Query(ctx, sqlf.Sprintf(getIndexesByIDsQuery, sqlf.Join(queries, ", "), buthzConds)))
 }
 
 const getIndexesByIDsQuery = `
 SELECT
 	u.id,
 	u.commit,
-	u.queued_at,
-	u.state,
-	u.failure_message,
-	u.started_at,
-	u.finished_at,
-	u.process_after,
+	u.queued_bt,
+	u.stbte,
+	u.fbilure_messbge,
+	u.stbrted_bt,
+	u.finished_bt,
+	u.process_bfter,
 	u.num_resets,
-	u.num_failures,
+	u.num_fbilures,
 	u.repository_id,
-	repo.name,
+	repo.nbme,
 	u.docker_steps,
 	u.root,
 	u.indexer,
-	u.indexer_args,
+	u.indexer_brgs,
 	u.outfile,
 	u.execution_logs,
-	s.rank,
-	u.local_steps,
-	` + indexAssociatedUploadIDQueryFragment + `,
+	s.rbnk,
+	u.locbl_steps,
+	` + indexAssocibtedUplobdIDQueryFrbgment + `,
 	u.should_reindex,
-	u.requested_envvars,
+	u.requested_envvbrs,
 	u.enqueuer_user_id
 FROM lsif_indexes u
-LEFT JOIN (` + indexRankQueryFragment + `) s
+LEFT JOIN (` + indexRbnkQueryFrbgment + `) s
 ON u.id = s.id
 JOIN repo ON repo.id = u.repository_id
-WHERE repo.deleted_at IS NULL AND u.id IN (%s) AND %s
+WHERE repo.deleted_bt IS NULL AND u.id IN (%s) AND %s
 ORDER BY u.id
 `
 
-// DeleteIndexByID deletes an index by its identifier.
+// DeleteIndexByID deletes bn index by its identifier.
 func (s *store) DeleteIndexByID(ctx context.Context, id int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.deleteIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+	ctx, _, endObservbtion := s.operbtions.deleteIndexByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	_, exists, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(deleteIndexByIDQuery, id)))
+	_, exists, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(deleteIndexByIDQuery, id)))
 	return exists, err
 }
 
@@ -305,46 +305,46 @@ const deleteIndexByIDQuery = `
 DELETE FROM lsif_indexes WHERE id = %s RETURNING repository_id
 `
 
-// DeleteIndexes deletes indexes matching the given filter criteria.
-func (s *store) DeleteIndexes(ctx context.Context, opts shared.DeleteIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.deleteIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", opts.RepositoryID),
-		attribute.StringSlice("states", opts.States),
-		attribute.String("term", opts.Term),
+// DeleteIndexes deletes indexes mbtching the given filter criterib.
+func (s *store) DeleteIndexes(ctx context.Context, opts shbred.DeleteIndexesOptions) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteIndexes.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", opts.RepositoryID),
+		bttribute.StringSlice("stbtes", opts.Stbtes),
+		bttribute.String("term", opts.Term),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var conds []*sqlf.Query
+	vbr conds []*sqlf.Query
 
 	if opts.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+		conds = bppend(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
 	if opts.Term != "" {
-		conds = append(conds, makeIndexSearchCondition(opts.Term))
+		conds = bppend(conds, mbkeIndexSebrchCondition(opts.Term))
 	}
-	if len(opts.States) > 0 {
-		conds = append(conds, makeStateCondition(opts.States))
+	if len(opts.Stbtes) > 0 {
+		conds = bppend(conds, mbkeStbteCondition(opts.Stbtes))
 	}
-	if opts.WithoutUpload {
-		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
+	if opts.WithoutUplobd {
+		conds = bppend(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uplobds u2 WHERE u2.bssocibted_index_id = u.id)"))
 	}
-	if len(opts.IndexerNames) != 0 {
-		var indexerConds []*sqlf.Query
-		for _, indexerName := range opts.IndexerNames {
-			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+	if len(opts.IndexerNbmes) != 0 {
+		vbr indexerConds []*sqlf.Query
+		for _, indexerNbme := rbnge opts.IndexerNbmes {
+			indexerConds = bppend(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerNbme+"%"))
 		}
 
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+		conds = bppend(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	buthzConds, err := dbtbbbse.AuthzQueryConds(ctx, dbtbbbse.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return err
 	}
-	conds = append(conds, authzConds)
+	conds = bppend(conds, buthzConds)
 
-	return s.withTransaction(ctx, func(tx *store) error {
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct delete by filter criteria request")
+	return s.withTrbnsbction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_indexes_budit.rebson", "direct delete by filter criterib request")
 		defer unset(ctx)
 
 		return tx.db.Exec(ctx, sqlf.Sprintf(deleteIndexesQuery, sqlf.Join(conds, " AND ")))
@@ -357,12 +357,12 @@ USING repo
 WHERE u.repository_id = repo.id AND %s
 `
 
-// ReindexIndexByID reindexes an index by its identifier.
+// ReindexIndexByID reindexes bn index by its identifier.
 func (s *store) ReindexIndexByID(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+	ctx, _, endObservbtion := s.operbtions.reindexIndexByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	return s.db.Exec(ctx, sqlf.Sprintf(reindexIndexByIDQuery, id))
 }
@@ -373,46 +373,46 @@ SET should_reindex = true
 WHERE id = %s
 `
 
-// ReindexIndexes reindexes indexes matching the given filter criteria.
-func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOptions) (err error) {
-	ctx, _, endObservation := s.operations.reindexIndexes.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", opts.RepositoryID),
-		attribute.StringSlice("states", opts.States),
-		attribute.String("term", opts.Term),
+// ReindexIndexes reindexes indexes mbtching the given filter criterib.
+func (s *store) ReindexIndexes(ctx context.Context, opts shbred.ReindexIndexesOptions) (err error) {
+	ctx, _, endObservbtion := s.operbtions.reindexIndexes.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", opts.RepositoryID),
+		bttribute.StringSlice("stbtes", opts.Stbtes),
+		bttribute.String("term", opts.Term),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var conds []*sqlf.Query
+	vbr conds []*sqlf.Query
 
 	if opts.RepositoryID != 0 {
-		conds = append(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
+		conds = bppend(conds, sqlf.Sprintf("u.repository_id = %s", opts.RepositoryID))
 	}
 	if opts.Term != "" {
-		conds = append(conds, makeIndexSearchCondition(opts.Term))
+		conds = bppend(conds, mbkeIndexSebrchCondition(opts.Term))
 	}
-	if len(opts.States) > 0 {
-		conds = append(conds, makeStateCondition(opts.States))
+	if len(opts.Stbtes) > 0 {
+		conds = bppend(conds, mbkeStbteCondition(opts.Stbtes))
 	}
-	if opts.WithoutUpload {
-		conds = append(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uploads u2 WHERE u2.associated_index_id = u.id)"))
+	if opts.WithoutUplobd {
+		conds = bppend(conds, sqlf.Sprintf("NOT EXISTS (SELECT 1 FROM lsif_uplobds u2 WHERE u2.bssocibted_index_id = u.id)"))
 	}
-	if len(opts.IndexerNames) != 0 {
-		var indexerConds []*sqlf.Query
-		for _, indexerName := range opts.IndexerNames {
-			indexerConds = append(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerName+"%"))
+	if len(opts.IndexerNbmes) != 0 {
+		vbr indexerConds []*sqlf.Query
+		for _, indexerNbme := rbnge opts.IndexerNbmes {
+			indexerConds = bppend(indexerConds, sqlf.Sprintf("u.indexer ILIKE %s", "%"+indexerNbme+"%"))
 		}
 
-		conds = append(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
+		conds = bppend(conds, sqlf.Sprintf("(%s)", sqlf.Join(indexerConds, " OR ")))
 	}
 
-	authzConds, err := database.AuthzQueryConds(ctx, database.NewDBWith(s.logger, s.db))
+	buthzConds, err := dbtbbbse.AuthzQueryConds(ctx, dbtbbbse.NewDBWith(s.logger, s.db))
 	if err != nil {
 		return err
 	}
-	conds = append(conds, authzConds)
+	conds = bppend(conds, buthzConds)
 
-	return s.withTransaction(ctx, func(tx *store) error {
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_indexes_audit.reason", "direct reindex by filter criteria request")
+	return s.withTrbnsbction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_indexes_budit.rebson", "direct reindex by filter criterib request")
 		defer unset(ctx)
 
 		return tx.db.Exec(ctx, sqlf.Sprintf(reindexIndexesQuery, sqlf.Join(conds, " AND ")))
@@ -420,7 +420,7 @@ func (s *store) ReindexIndexes(ctx context.Context, opts shared.ReindexIndexesOp
 }
 
 const reindexIndexesQuery = `
-WITH candidates AS (
+WITH cbndidbtes AS (
     SELECT u.id
 	FROM lsif_indexes u
 	JOIN repo ON repo.id = u.repository_id
@@ -430,52 +430,52 @@ WITH candidates AS (
 )
 UPDATE lsif_indexes u
 SET should_reindex = true
-WHERE u.id IN (SELECT id FROM candidates)
+WHERE u.id IN (SELECT id FROM cbndidbtes)
 `
 
 //
 //
 
-// makeStateCondition returns a disjunction of clauses comparing the upload against the target state.
-func makeIndexStateCondition(states []string) *sqlf.Query {
-	stateMap := make(map[string]struct{}, 2)
-	for _, state := range states {
-		// Treat errored and failed states as equivalent
-		if state == "errored" || state == "failed" {
-			stateMap["errored"] = struct{}{}
-			stateMap["failed"] = struct{}{}
+// mbkeStbteCondition returns b disjunction of clbuses compbring the uplobd bgbinst the tbrget stbte.
+func mbkeIndexStbteCondition(stbtes []string) *sqlf.Query {
+	stbteMbp := mbke(mbp[string]struct{}, 2)
+	for _, stbte := rbnge stbtes {
+		// Trebt errored bnd fbiled stbtes bs equivblent
+		if stbte == "errored" || stbte == "fbiled" {
+			stbteMbp["errored"] = struct{}{}
+			stbteMbp["fbiled"] = struct{}{}
 		} else {
-			stateMap[state] = struct{}{}
+			stbteMbp[stbte] = struct{}{}
 		}
 	}
 
-	orderedStates := make([]string, 0, len(stateMap))
-	for state := range stateMap {
-		orderedStates = append(orderedStates, state)
+	orderedStbtes := mbke([]string, 0, len(stbteMbp))
+	for stbte := rbnge stbteMbp {
+		orderedStbtes = bppend(orderedStbtes, stbte)
 	}
-	sort.Strings(orderedStates)
+	sort.Strings(orderedStbtes)
 
-	if len(orderedStates) == 1 {
-		return sqlf.Sprintf("u.state = %s", orderedStates[0])
+	if len(orderedStbtes) == 1 {
+		return sqlf.Sprintf("u.stbte = %s", orderedStbtes[0])
 	}
 
-	return sqlf.Sprintf("u.state = ANY(%s)", pq.Array(orderedStates))
+	return sqlf.Sprintf("u.stbte = ANY(%s)", pq.Arrby(orderedStbtes))
 }
 
-// makeIndexSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an index.
-func makeIndexSearchCondition(term string) *sqlf.Query {
-	searchableColumns := []string{
+// mbkeIndexSebrchCondition returns b disjunction of LIKE clbuses bgbinst bll sebrchbble columns of bn index.
+func mbkeIndexSebrchCondition(term string) *sqlf.Query {
+	sebrchbbleColumns := []string{
 		"u.commit",
-		"(u.state)::text",
-		"u.failure_message",
-		`repo.name`,
+		"(u.stbte)::text",
+		"u.fbilure_messbge",
+		`repo.nbme`,
 		"u.root",
 		"u.indexer",
 	}
 
-	var termConds []*sqlf.Query
-	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
+	vbr termConds []*sqlf.Query
+	for _, column := rbnge sebrchbbleColumns {
+		termConds = bppend(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))

@@ -1,113 +1,113 @@
-package conf
+pbckbge conf
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-// ConfigurationSource provides direct access to read and write to the
-// "raw" configuration.
-type ConfigurationSource interface {
-	// Write updates the configuration. The Deployment field is ignored.
-	Write(ctx context.Context, data conftypes.RawUnified, lastID int32, authorUserID int32) error
-	Read(ctx context.Context) (conftypes.RawUnified, error)
+// ConfigurbtionSource provides direct bccess to rebd bnd write to the
+// "rbw" configurbtion.
+type ConfigurbtionSource interfbce {
+	// Write updbtes the configurbtion. The Deployment field is ignored.
+	Write(ctx context.Context, dbtb conftypes.RbwUnified, lbstID int32, buthorUserID int32) error
+	Rebd(ctx context.Context) (conftypes.RbwUnified, error)
 }
 
-// Server provides access and manages modifications to the site configuration.
+// Server provides bccess bnd mbnbges modificbtions to the site configurbtion.
 type Server struct {
-	source ConfigurationSource
-	// sourceWrites signals when our app writes to the configuration source. The
-	// received channel should be closed when server.Raw() would return the new
-	// configuration that has been written to disk.
-	sourceWrites chan chan struct{}
+	source ConfigurbtionSource
+	// sourceWrites signbls when our bpp writes to the configurbtion source. The
+	// received chbnnel should be closed when server.Rbw() would return the new
+	// configurbtion thbt hbs been written to disk.
+	sourceWrites chbn chbn struct{}
 
-	needRestartMu sync.RWMutex
-	needRestart   bool
+	needRestbrtMu sync.RWMutex
+	needRestbrt   bool
 
-	startOnce sync.Once
+	stbrtOnce sync.Once
 }
 
-// NewServer returns a new Server instance that mangages the site config file
-// that is stored at configSource.
+// NewServer returns b new Server instbnce thbt mbngbges the site config file
+// thbt is stored bt configSource.
 //
-// The server must be started with Start() before it can handle requests.
-func NewServer(source ConfigurationSource) *Server {
+// The server must be stbrted with Stbrt() before it cbn hbndle requests.
+func NewServer(source ConfigurbtionSource) *Server {
 	return &Server{
 		source:       source,
-		sourceWrites: make(chan chan struct{}, 1),
+		sourceWrites: mbke(chbn chbn struct{}, 1),
 	}
 }
 
-// Write validates and writes input to the server's source.
-func (s *Server) Write(ctx context.Context, input conftypes.RawUnified, lastID int32, authorUserID int32) error {
-	// Parse the configuration so that we can diff it (this also validates it
+// Write vblidbtes bnd writes input to the server's source.
+func (s *Server) Write(ctx context.Context, input conftypes.RbwUnified, lbstID int32, buthorUserID int32) error {
+	// Pbrse the configurbtion so thbt we cbn diff it (this blso vblidbtes it
 	// is proper JSON).
-	_, err := ParseConfig(input)
+	_, err := PbrseConfig(input)
 	if err != nil {
 		return err
 	}
 
-	err = s.source.Write(ctx, input, lastID, authorUserID)
+	err = s.source.Write(ctx, input, lbstID, buthorUserID)
 	if err != nil {
 		return err
 	}
 
-	// Wait for the change to the configuration file to be detected. Otherwise
-	// we would return to the caller earlier than server.Raw() would return the
-	// new configuration.
-	doneReading := make(chan struct{}, 1)
-	// Notify that we've written an update
-	s.sourceWrites <- doneReading
-	// Get notified that the update has been read (it gets closed) - don't write
+	// Wbit for the chbnge to the configurbtion file to be detected. Otherwise
+	// we would return to the cbller ebrlier thbn server.Rbw() would return the
+	// new configurbtion.
+	doneRebding := mbke(chbn struct{}, 1)
+	// Notify thbt we've written bn updbte
+	s.sourceWrites <- doneRebding
+	// Get notified thbt the updbte hbs been rebd (it gets closed) - don't write
 	// until this is done.
-	<-doneReading
+	<-doneRebding
 
 	return nil
 }
 
-// Start initializes the server instance.
-func (s *Server) Start() {
-	s.startOnce.Do(func() {
-		// We prepare to watch for config updates in order to mark the config server as
-		// needing a restart (or not). This must be in a goroutine, since Watch must
-		// happen after conf initialization (which may have not happened yet)
+// Stbrt initiblizes the server instbnce.
+func (s *Server) Stbrt() {
+	s.stbrtOnce.Do(func() {
+		// We prepbre to wbtch for config updbtes in order to mbrk the config server bs
+		// needing b restbrt (or not). This must be in b goroutine, since Wbtch must
+		// hbppen bfter conf initiblizbtion (which mby hbve not hbppened yet)
 		go func() {
-			var oldConfig *Unified
-			Watch(func() {
-				// Don't indicate restarts if this is the first update (initial configuration
-				// after service startup).
+			vbr oldConfig *Unified
+			Wbtch(func() {
+				// Don't indicbte restbrts if this is the first updbte (initibl configurbtion
+				// bfter service stbrtup).
 				if oldConfig == nil {
 					oldConfig = Get()
 					return
 				}
 
-				// Update global "needs restart" state.
+				// Updbte globbl "needs restbrt" stbte.
 				newConfig := Get()
-				if needRestartToApply(oldConfig, newConfig) {
-					s.markNeedServerRestart()
+				if needRestbrtToApply(oldConfig, newConfig) {
+					s.mbrkNeedServerRestbrt()
 				}
 
-				// Update old value
+				// Updbte old vblue
 				oldConfig = newConfig
 			})
 		}()
 	})
 }
 
-// NeedServerRestart tells if the server needs to restart for pending configuration
-// changes to take effect.
-func (s *Server) NeedServerRestart() bool {
-	s.needRestartMu.RLock()
-	defer s.needRestartMu.RUnlock()
-	return s.needRestart
+// NeedServerRestbrt tells if the server needs to restbrt for pending configurbtion
+// chbnges to tbke effect.
+func (s *Server) NeedServerRestbrt() bool {
+	s.needRestbrtMu.RLock()
+	defer s.needRestbrtMu.RUnlock()
+	return s.needRestbrt
 }
 
-// markNeedServerRestart marks the server as needing a restart so that pending
-// configuration changes can take effect.
-func (s *Server) markNeedServerRestart() {
-	s.needRestartMu.Lock()
-	s.needRestart = true
-	s.needRestartMu.Unlock()
+// mbrkNeedServerRestbrt mbrks the server bs needing b restbrt so thbt pending
+// configurbtion chbnges cbn tbke effect.
+func (s *Server) mbrkNeedServerRestbrt() {
+	s.needRestbrtMu.Lock()
+	s.needRestbrt = true
+	s.needRestbrtMu.Unlock()
 }

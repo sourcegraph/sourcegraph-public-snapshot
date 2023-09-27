@@ -1,4 +1,4 @@
-package upload
+pbckbge uplobd
 
 import (
 	"bytes"
@@ -15,156 +15,156 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestUploadIndex(t *testing.T) {
-	var expectedPayload []byte
+func TestUplobdIndex(t *testing.T) {
+	vbr expectedPbylobd []byte
 	for i := 0; i < 500; i++ {
-		expectedPayload = append(expectedPayload, byte(i))
+		expectedPbylobd = bppend(expectedPbylobd, byte(i))
 	}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		payload, err := io.ReadAll(r.Body)
+	ts := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pbylobd, err := io.RebdAll(r.Body)
 		if err != nil {
-			t.Fatalf("unexpected error reading request body: %s", err)
+			t.Fbtblf("unexpected error rebding request body: %s", err)
 		}
 
-		if r.Header.Get("Content-Type") != "application/x-ndjson+lsif" {
-			t.Fatalf("Content-Type header expected to be '%s', got '%s'", "application/x-ndjson+lsif", r.Header.Get("Content-Type"))
+		if r.Hebder.Get("Content-Type") != "bpplicbtion/x-ndjson+lsif" {
+			t.Fbtblf("Content-Type hebder expected to be '%s', got '%s'", "bpplicbtion/x-ndjson+lsif", r.Hebder.Get("Content-Type"))
 		}
 
-		if r.Header.Get("Authorization") != "token hunter2" {
-			t.Fatalf("Authorization header expected to be '%s', got '%s'", "token hunter2", r.Header.Get("Authorization"))
+		if r.Hebder.Get("Authorizbtion") != "token hunter2" {
+			t.Fbtblf("Authorizbtion hebder expected to be '%s', got '%s'", "token hunter2", r.Hebder.Get("Authorizbtion"))
 		}
 
-		gzipReader, err := gzip.NewReader(bytes.NewReader(payload))
+		gzipRebder, err := gzip.NewRebder(bytes.NewRebder(pbylobd))
 		if err != nil {
-			t.Fatalf("unexpected error creating gzip.Reader: %s", err)
+			t.Fbtblf("unexpected error crebting gzip.Rebder: %s", err)
 		}
-		decompressed, err := io.ReadAll(gzipReader)
+		decompressed, err := io.RebdAll(gzipRebder)
 		if err != nil {
-			t.Fatalf("unexpected error reading from gzip.Reader: %s", err)
+			t.Fbtblf("unexpected error rebding from gzip.Rebder: %s", err)
 		}
 
-		if diff := cmp.Diff(expectedPayload, decompressed); diff != "" {
-			t.Errorf("unexpected request payload (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expectedPbylobd, decompressed); diff != "" {
+			t.Errorf("unexpected request pbylobd (-wbnt +got):\n%s", diff)
 		}
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHebder(http.StbtusOK)
 		_, _ = w.Write([]byte(`{"id":"42"}`))
 	}))
 	defer ts.Close()
 
-	f, err := os.CreateTemp("", "")
+	f, err := os.CrebteTemp("", "")
 	if err != nil {
-		t.Fatalf("unexpected error creating temp file: %s", err)
+		t.Fbtblf("unexpected error crebting temp file: %s", err)
 	}
-	defer func() { os.Remove(f.Name()) }()
-	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
+	defer func() { os.Remove(f.Nbme()) }()
+	_, _ = io.Copy(f, bytes.NewRebder(expectedPbylobd))
 	_ = f.Close()
 
-	id, err := UploadIndex(context.Background(), f.Name(), http.DefaultClient, UploadOptions{
-		UploadRecordOptions: UploadRecordOptions{
-			Repo:    "foo/bar",
-			Commit:  "deadbeef",
+	id, err := UplobdIndex(context.Bbckground(), f.Nbme(), http.DefbultClient, UplobdOptions{
+		UplobdRecordOptions: UplobdRecordOptions{
+			Repo:    "foo/bbr",
+			Commit:  "debdbeef",
 			Root:    "proj/",
 			Indexer: "lsif-go",
 		},
-		SourcegraphInstanceOptions: SourcegraphInstanceOptions{
-			SourcegraphURL:      ts.URL,
+		SourcegrbphInstbnceOptions: SourcegrbphInstbnceOptions{
+			SourcegrbphURL:      ts.URL,
 			AccessToken:         "hunter2",
 			GitHubToken:         "ght",
-			MaxPayloadSizeBytes: 1000,
-			AdditionalHeaders:   map[string]string{"Content-Type": "application/x-ndjson+lsif"},
+			MbxPbylobdSizeBytes: 1000,
+			AdditionblHebders:   mbp[string]string{"Content-Type": "bpplicbtion/x-ndjson+lsif"},
 		},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error uploading index: %s", err)
+		t.Fbtblf("unexpected error uplobding index: %s", err)
 	}
 
 	if id != 42 {
-		t.Errorf("unexpected id. want=%d have=%d", 42, id)
+		t.Errorf("unexpected id. wbnt=%d hbve=%d", 42, id)
 	}
 }
 
-func TestUploadIndexMultipart(t *testing.T) {
-	var expectedPayload []byte
+func TestUplobdIndexMultipbrt(t *testing.T) {
+	vbr expectedPbylobd []byte
 	for i := 0; i < 20000; i++ {
-		expectedPayload = append(expectedPayload, byte(i))
+		expectedPbylobd = bppend(expectedPbylobd, byte(i))
 	}
 
-	var m sync.Mutex
-	payloads := map[int][]byte{}
+	vbr m sync.Mutex
+	pbylobds := mbp[int][]byte{}
 
-	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Query().Get("multiPart") != "" {
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte(`{"id":"42"}`)) // graphql id is TFNJRlVwbG9hZDoiNDIi
+	ts := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("multiPbrt") != "" {
+			w.WriteHebder(http.StbtusOK)
+			_, _ = w.Write([]byte(`{"id":"42"}`)) // grbphql id is TFNJRlVwbG9hZDoiNDIi
 			return
 		}
 
 		if r.URL.Query().Get("index") != "" {
-			payload, err := io.ReadAll(r.Body)
+			pbylobd, err := io.RebdAll(r.Body)
 			if err != nil {
-				t.Fatalf("unexpected error reading request body: %s", err)
+				t.Fbtblf("unexpected error rebding request body: %s", err)
 			}
 
 			index, _ := strconv.Atoi(r.URL.Query().Get("index"))
 			m.Lock()
-			payloads[index] = payload
+			pbylobds[index] = pbylobd
 			m.Unlock()
 		}
 
-		w.WriteHeader(http.StatusNoContent)
+		w.WriteHebder(http.StbtusNoContent)
 	}))
 	defer ts.Close()
 
-	f, err := os.CreateTemp("", "")
+	f, err := os.CrebteTemp("", "")
 	if err != nil {
-		t.Fatalf("unexpected error creating temp file: %s", err)
+		t.Fbtblf("unexpected error crebting temp file: %s", err)
 	}
-	defer func() { os.Remove(f.Name()) }()
-	_, _ = io.Copy(f, bytes.NewReader(expectedPayload))
+	defer func() { os.Remove(f.Nbme()) }()
+	_, _ = io.Copy(f, bytes.NewRebder(expectedPbylobd))
 	_ = f.Close()
 
-	id, err := UploadIndex(context.Background(), f.Name(), http.DefaultClient, UploadOptions{
-		UploadRecordOptions: UploadRecordOptions{
-			Repo:    "foo/bar",
-			Commit:  "deadbeef",
+	id, err := UplobdIndex(context.Bbckground(), f.Nbme(), http.DefbultClient, UplobdOptions{
+		UplobdRecordOptions: UplobdRecordOptions{
+			Repo:    "foo/bbr",
+			Commit:  "debdbeef",
 			Root:    "proj/",
 			Indexer: "lsif-go",
 		},
-		SourcegraphInstanceOptions: SourcegraphInstanceOptions{
-			SourcegraphURL:      ts.URL,
+		SourcegrbphInstbnceOptions: SourcegrbphInstbnceOptions{
+			SourcegrbphURL:      ts.URL,
 			AccessToken:         "hunter2",
 			GitHubToken:         "ght",
-			MaxPayloadSizeBytes: 100,
+			MbxPbylobdSizeBytes: 100,
 		},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error uploading index: %s", err)
+		t.Fbtblf("unexpected error uplobding index: %s", err)
 	}
 
 	if id != 42 {
-		t.Errorf("unexpected id. want=%d have=%d", 42, id)
+		t.Errorf("unexpected id. wbnt=%d hbve=%d", 42, id)
 	}
 
-	if len(payloads) != 5 {
-		t.Errorf("unexpected payloads size. want=%d have=%d", 5, len(payloads))
+	if len(pbylobds) != 5 {
+		t.Errorf("unexpected pbylobds size. wbnt=%d hbve=%d", 5, len(pbylobds))
 	}
 
-	var allPayloads []byte
+	vbr bllPbylobds []byte
 	for i := 0; i < 5; i++ {
-		allPayloads = append(allPayloads, payloads[i]...)
+		bllPbylobds = bppend(bllPbylobds, pbylobds[i]...)
 	}
 
-	gzipReader, err := gzip.NewReader(bytes.NewReader(allPayloads))
+	gzipRebder, err := gzip.NewRebder(bytes.NewRebder(bllPbylobds))
 	if err != nil {
-		t.Fatalf("unexpected error creating gzip.Reader: %s", err)
+		t.Fbtblf("unexpected error crebting gzip.Rebder: %s", err)
 	}
-	decompressed, err := io.ReadAll(gzipReader)
+	decompressed, err := io.RebdAll(gzipRebder)
 	if err != nil {
-		t.Fatalf("unexpected error reading from gzip.Reader: %s", err)
+		t.Fbtblf("unexpected error rebding from gzip.Rebder: %s", err)
 	}
-	if diff := cmp.Diff(expectedPayload, decompressed); diff != "" {
-		t.Errorf("unexpected gzipped contents (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedPbylobd, decompressed); diff != "" {
+		t.Errorf("unexpected gzipped contents (-wbnt +got):\n%s", diff)
 	}
 }

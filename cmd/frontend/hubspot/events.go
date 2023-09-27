@@ -1,29 +1,29 @@
-package hubspot
+pbckbge hubspot
 
 import (
 	"context"
 	"net/url"
 )
 
-// LogEvent logs a user action or event. The response will have a status code of
-// 200 with no data in the body
+// LogEvent logs b user bction or event. The response will hbve b stbtus code of
+// 200 with no dbtb in the body
 //
-// http://developers.hubspot.com/docs/methods/enterprise_events/http_api
-func (c *Client) LogEvent(ctx context.Context, email string, eventID string, params map[string]string) error {
-	params["_a"] = c.portalID
-	params["_n"] = eventID
-	params["email"] = email
-	err := c.get(ctx, "LogEvent", c.baseEventURL(), email, params)
+// http://developers.hubspot.com/docs/methods/enterprise_events/http_bpi
+func (c *Client) LogEvent(ctx context.Context, embil string, eventID string, pbrbms mbp[string]string) error {
+	pbrbms["_b"] = c.portblID
+	pbrbms["_n"] = eventID
+	pbrbms["embil"] = embil
+	err := c.get(ctx, "LogEvent", c.bbseEventURL(), embil, pbrbms)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (c *Client) baseEventURL() *url.URL {
+func (c *Client) bbseEventURL() *url.URL {
 	return &url.URL{
 		Scheme: "https",
-		Host:   "track.hubspot.com",
-		Path:   "/v1/event",
+		Host:   "trbck.hubspot.com",
+		Pbth:   "/v1/event",
 	}
 }

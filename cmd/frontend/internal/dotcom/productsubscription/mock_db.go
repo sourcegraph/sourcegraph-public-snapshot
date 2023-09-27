@@ -1,10 +1,10 @@
-package productsubscription
+pbckbge productsubscription
 
 type dbMocks struct {
 	subscriptions mockSubscriptions
 	licenses      mockLicenses
 }
 
-var mocks dbMocks
+vbr mocks dbMocks
 
-func pointify[T any](v T) *T { return &v }
+func pointify[T bny](v T) *T { return &v }

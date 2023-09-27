@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"context"
@@ -6,89 +6,89 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// BatchChangeState defines the possible states of a BatchChange
-type BatchChangeState string
+// BbtchChbngeStbte defines the possible stbtes of b BbtchChbnge
+type BbtchChbngeStbte string
 
 const (
-	BatchChangeStateOpen   BatchChangeState = "OPEN"
-	BatchChangeStateClosed BatchChangeState = "CLOSED"
-	BatchChangeStateDraft  BatchChangeState = "DRAFT"
+	BbtchChbngeStbteOpen   BbtchChbngeStbte = "OPEN"
+	BbtchChbngeStbteClosed BbtchChbngeStbte = "CLOSED"
+	BbtchChbngeStbteDrbft  BbtchChbngeStbte = "DRAFT"
 )
 
-// A BatchChange of changesets over multiple Repos over time.
-type BatchChange struct {
+// A BbtchChbnge of chbngesets over multiple Repos over time.
+type BbtchChbnge struct {
 	ID          int64
-	Name        string
+	Nbme        string
 	Description string
 
-	BatchSpecID int64
+	BbtchSpecID int64
 
-	CreatorID     int32
-	LastApplierID int32
-	LastAppliedAt time.Time
+	CrebtorID     int32
+	LbstApplierID int32
+	LbstAppliedAt time.Time
 
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NbmespbceUserID int32
+	NbmespbceOrgID  int32
 
 	ClosedAt time.Time
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-// Clone returns a clone of a BatchChange.
-func (c *BatchChange) Clone() *BatchChange {
+// Clone returns b clone of b BbtchChbnge.
+func (c *BbtchChbnge) Clone() *BbtchChbnge {
 	cc := *c
 	return &cc
 }
 
-// Closed returns true when the ClosedAt timestamp has been set.
-func (c *BatchChange) Closed() bool { return !c.ClosedAt.IsZero() }
+// Closed returns true when the ClosedAt timestbmp hbs been set.
+func (c *BbtchChbnge) Closed() bool { return !c.ClosedAt.IsZero() }
 
-// IsDraft returns true when the BatchChange is a draft ("shallow") Batch
-// Change, i.e. it's associated with a BatchSpec but it hasn't been applied
+// IsDrbft returns true when the BbtchChbnge is b drbft ("shbllow") Bbtch
+// Chbnge, i.e. it's bssocibted with b BbtchSpec but it hbsn't been bpplied
 // yet.
-func (c *BatchChange) IsDraft() bool { return c.LastAppliedAt.IsZero() }
+func (c *BbtchChbnge) IsDrbft() bool { return c.LbstAppliedAt.IsZero() }
 
-// State returns the user-visible state, collapsing the other state fields into
+// Stbte returns the user-visible stbte, collbpsing the other stbte fields into
 // one.
-func (c *BatchChange) State() BatchChangeState {
+func (c *BbtchChbnge) Stbte() BbtchChbngeStbte {
 	if c.Closed() {
-		return BatchChangeStateClosed
-	} else if c.IsDraft() {
-		return BatchChangeStateDraft
+		return BbtchChbngeStbteClosed
+	} else if c.IsDrbft() {
+		return BbtchChbngeStbteDrbft
 	}
-	return BatchChangeStateOpen
+	return BbtchChbngeStbteOpen
 }
 
-func (c *BatchChange) URL(ctx context.Context, namespaceName string) (string, error) {
-	// To build the absolute URL, we need to know where Sourcegraph is!
-	extURL, err := url.Parse(conf.Get().ExternalURL)
+func (c *BbtchChbnge) URL(ctx context.Context, nbmespbceNbme string) (string, error) {
+	// To build the bbsolute URL, we need to know where Sourcegrbph is!
+	extURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
-		return "", errors.Wrap(err, "parsing external Sourcegraph URL")
+		return "", errors.Wrbp(err, "pbrsing externbl Sourcegrbph URL")
 	}
 
-	// This needs to be kept consistent with resolvers.batchChangeURL().
-	// (Refactoring the resolver to use the same function is difficult due to
-	// the different querying and caching behaviour in GraphQL resolvers, so we
-	// simply replicate the logic here.)
-	u := extURL.ResolveReference(&url.URL{Path: namespaceURL(c.NamespaceOrgID, namespaceName) + "/batch-changes/" + c.Name})
+	// This needs to be kept consistent with resolvers.bbtchChbngeURL().
+	// (Refbctoring the resolver to use the sbme function is difficult due to
+	// the different querying bnd cbching behbviour in GrbphQL resolvers, so we
+	// simply replicbte the logic here.)
+	u := extURL.ResolveReference(&url.URL{Pbth: nbmespbceURL(c.NbmespbceOrgID, nbmespbceNbme) + "/bbtch-chbnges/" + c.Nbme})
 
 	return u.String(), nil
 }
 
-// ToGraphQL returns the GraphQL representation of the state.
-func (s BatchChangeState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+// ToGrbphQL returns the GrbphQL representbtion of the stbte.
+func (s BbtchChbngeStbte) ToGrbphQL() string { return strings.ToUpper(string(s)) }
 
-func namespaceURL(orgID int32, namespaceName string) string {
+func nbmespbceURL(orgID int32, nbmespbceNbme string) string {
 	prefix := "/users/"
 	if orgID != 0 {
-		prefix = "/organizations/"
+		prefix = "/orgbnizbtions/"
 	}
 
-	return prefix + namespaceName
+	return prefix + nbmespbceNbme
 }

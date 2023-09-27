@@ -1,46 +1,46 @@
-package command
+pbckbge commbnd
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/kballard/go-shellquote"
+	"github.com/kbbllbrd/go-shellquote"
 )
 
 const (
-	// FirecrackerContainerDir is the directory where the container is mounted in the firecracker VM.
-	FirecrackerContainerDir = "/work"
-	// FirecrackerDockerConfDir is the directory where the docker config is mounted in the firecracker VM.
-	FirecrackerDockerConfDir = "/etc/docker/cli"
+	// FirecrbckerContbinerDir is the directory where the contbiner is mounted in the firecrbcker VM.
+	FirecrbckerContbinerDir = "/work"
+	// FirecrbckerDockerConfDir is the directory where the docker config is mounted in the firecrbcker VM.
+	FirecrbckerDockerConfDir = "/etc/docker/cli"
 )
 
-// NewFirecrackerSpec returns a spec that will run the given command in a firecracker VM.
-func NewFirecrackerSpec(vmName string, image string, scriptPath string, spec Spec, options DockerOptions) Spec {
-	dockerSpec := NewDockerSpec(FirecrackerContainerDir, image, scriptPath, spec, options)
-	innerCommand := shellquote.Join(dockerSpec.Command...)
+// NewFirecrbckerSpec returns b spec thbt will run the given commbnd in b firecrbcker VM.
+func NewFirecrbckerSpec(vmNbme string, imbge string, scriptPbth string, spec Spec, options DockerOptions) Spec {
+	dockerSpec := NewDockerSpec(FirecrbckerContbinerDir, imbge, scriptPbth, spec, options)
+	innerCommbnd := shellquote.Join(dockerSpec.Commbnd...)
 
-	// Note: src-cli run commands don't receive env vars in firecracker so we
-	// have to prepend them inline to the script.
-	// TODO: This branch should disappear when we make src-cli a non-special cased
+	// Note: src-cli run commbnds don't receive env vbrs in firecrbcker so we
+	// hbve to prepend them inline to the script.
+	// TODO: This brbnch should disbppebr when we mbke src-cli b non-specibl cbsed
 	// thing.
-	if image == "" && len(dockerSpec.Env) > 0 {
-		innerCommand = fmt.Sprintf("%s %s", strings.Join(quoteEnv(dockerSpec.Env), " "), innerCommand)
+	if imbge == "" && len(dockerSpec.Env) > 0 {
+		innerCommbnd = fmt.Sprintf("%s %s", strings.Join(quoteEnv(dockerSpec.Env), " "), innerCommbnd)
 	}
 	if dockerSpec.Dir != "" {
-		innerCommand = fmt.Sprintf("cd %s && %s", shellquote.Join(dockerSpec.Dir), innerCommand)
+		innerCommbnd = fmt.Sprintf("cd %s && %s", shellquote.Join(dockerSpec.Dir), innerCommbnd)
 	}
 	return Spec{
 		Key:       spec.Key,
-		Command:   []string{"ignite", "exec", vmName, "--", innerCommand},
-		Operation: spec.Operation,
+		Commbnd:   []string{"ignite", "exec", vmNbme, "--", innerCommbnd},
+		Operbtion: spec.Operbtion,
 	}
 }
 
-// quoteEnv returns a slice of env vars in which the values are properly shell quoted.
+// quoteEnv returns b slice of env vbrs in which the vblues bre properly shell quoted.
 func quoteEnv(env []string) []string {
-	quotedEnv := make([]string, len(env))
+	quotedEnv := mbke([]string, len(env))
 
-	for i, e := range env {
+	for i, e := rbnge env {
 		elems := strings.SplitN(e, "=", 2)
 		quotedEnv[i] = fmt.Sprintf("%s=%s", elems[0], shellquote.Join(elems[1]))
 	}

@@ -1,17 +1,17 @@
-package gerrit
+pbckbge gerrit
 
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
 )
 
-// AnnotatedChange adds metadata we need that lives outside the main
-// Change type returned by the Gerrit API.
-// This type is used as the primary metadata type for Gerrit
-// changesets.
-type AnnotatedChange struct {
-	Change      *gerrit.Change    `json:"change"`
+// AnnotbtedChbnge bdds metbdbtb we need thbt lives outside the mbin
+// Chbnge type returned by the Gerrit API.
+// This type is used bs the primbry metbdbtb type for Gerrit
+// chbngesets.
+type AnnotbtedChbnge struct {
+	Chbnge      *gerrit.Chbnge    `json:"chbnge"`
 	Reviewers   []gerrit.Reviewer `json:"reviewers"`
 	CodeHostURL url.URL           `json:"codeHostURL"`
 }

@@ -1,61 +1,61 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestSettingsMutation_EditSettings(t *testing.T) {
+func TestSettingsMutbtion_EditSettings(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
 
 	settings := dbmocks.NewMockSettingsStore()
-	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
-	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
-		if want := `{
+	settings.GetLbtestFunc.SetDefbultReturn(&bpi.Settings{ID: 1, Contents: "{}"}, nil)
+	settings.CrebteIfUpToDbteFunc.SetDefbultHook(func(ctx context.Context, subject bpi.SettingsSubject, lbstID, buthorUserID *int32, contents string) (*bpi.Settings, error) {
+		if wbnt := `{
   "p": {
     "x": 123
   }
-}`; contents != want {
-			t.Errorf("got %q, want %q", contents, want)
+}`; contents != wbnt {
+			t.Errorf("got %q, wbnt %q", contents, wbnt)
 		}
-		return &api.Settings{ID: 2, Contents: contents}, nil
+		return &bpi.Settings{ID: 2, Contents: contents}, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.SettingsFunc.SetDefaultReturn(settings)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.SettingsFunc.SetDefbultReturn(settings)
 
 	RunTests(t, []*Test{
 		{
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation($value: JSONValue) {
-					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
-						editSettings(edit: {keyPath: [{property: "p"}], value: $value}) {
+				mutbtion($vblue: JSONVblue) {
+					settingsMutbtion(input: {subject: "VXNlcjox", lbstID: 1}) {
+						editSettings(edit: {keyPbth: [{property: "p"}], vblue: $vblue}) {
 							empty {
-								alwaysNil
+								blwbysNil
 							}
 						}
 					}
 				}
 			`,
-			Variables: map[string]any{"value": map[string]int{"x": 123}},
+			Vbribbles: mbp[string]bny{"vblue": mbp[string]int{"x": 123}},
 			ExpectedResult: `
 				{
-					"settingsMutation": {
+					"settingsMutbtion": {
 						"editSettings": {
 							"empty": null
 						}
@@ -66,43 +66,43 @@ func TestSettingsMutation_EditSettings(t *testing.T) {
 	})
 }
 
-func TestSettingsMutation_OverwriteSettings(t *testing.T) {
+func TestSettingsMutbtion_OverwriteSettings(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
 
 	settings := dbmocks.NewMockSettingsStore()
-	settings.GetLatestFunc.SetDefaultReturn(&api.Settings{ID: 1, Contents: "{}"}, nil)
-	settings.CreateIfUpToDateFunc.SetDefaultHook(func(ctx context.Context, subject api.SettingsSubject, lastID, authorUserID *int32, contents string) (*api.Settings, error) {
-		if want := `x`; contents != want {
-			t.Errorf("got %q, want %q", contents, want)
+	settings.GetLbtestFunc.SetDefbultReturn(&bpi.Settings{ID: 1, Contents: "{}"}, nil)
+	settings.CrebteIfUpToDbteFunc.SetDefbultHook(func(ctx context.Context, subject bpi.SettingsSubject, lbstID, buthorUserID *int32, contents string) (*bpi.Settings, error) {
+		if wbnt := `x`; contents != wbnt {
+			t.Errorf("got %q, wbnt %q", contents, wbnt)
 		}
-		return &api.Settings{ID: 2, Contents: contents}, nil
+		return &bpi.Settings{ID: 2, Contents: contents}, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.SettingsFunc.SetDefaultReturn(settings)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.SettingsFunc.SetDefbultReturn(settings)
 
 	RunTests(t, []*Test{
 		{
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation($contents: String!) {
-					settingsMutation(input: {subject: "VXNlcjox", lastID: 1}) {
+				mutbtion($contents: String!) {
+					settingsMutbtion(input: {subject: "VXNlcjox", lbstID: 1}) {
 						overwriteSettings(contents: $contents) {
 							empty {
-								alwaysNil
+								blwbysNil
 							}
 						}
 					}
 				}
 			`,
-			Variables: map[string]any{"contents": "x"},
+			Vbribbles: mbp[string]bny{"contents": "x"},
 			ExpectedResult: `
 				{
-					"settingsMutation": {
+					"settingsMutbtion": {
 						"overwriteSettings": {
 							"empty": null
 						}
@@ -113,62 +113,62 @@ func TestSettingsMutation_OverwriteSettings(t *testing.T) {
 	})
 }
 
-func TestSettingsMutation(t *testing.T) {
+func TestSettingsMutbtion(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("only bllowed by buthenticbted user on Sourcegrbph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 
 		tests := []struct {
-			name  string
+			nbme  string
 			ctx   context.Context
 			setup func()
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				nbme: "unbuthenticbted",
+				ctx:  context.Bbckground(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+					users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 				},
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id}, nil
 					})
 				},
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id, SiteAdmin: true}, nil
 					})
 				},
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient()).SettingsMutation(
+				_, err := newSchembResolver(db, gitserver.NewClient()).SettingsMutbtion(
 					test.ctx,
-					&settingsMutationArgs{
-						Input: &settingsMutationGroupInput{
-							Subject: MarshalUserID(1),
+					&settingsMutbtionArgs{
+						Input: &settingsMutbtionGroupInput{
+							Subject: MbrshblUserID(1),
 						},
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				wbnt := "must be buthenticbted bs user with id 1"
+				bssert.Equbl(t, wbnt, got)
 			})
 		}
 	})

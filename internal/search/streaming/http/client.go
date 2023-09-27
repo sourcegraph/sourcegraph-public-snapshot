@@ -1,4 +1,4 @@
-package http
+pbckbge http
 
 import (
 	"bytes"
@@ -8,135 +8,135 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const maxPayloadSize = 10 * 1024 * 1024 // 10mb
+const mbxPbylobdSize = 10 * 1024 * 1024 // 10mb
 
-// NewRequest returns an http.Request against the streaming API for query.
-func NewRequest(baseURL string, query string) (*http.Request, error) {
-	// when an empty string is passed as version, the route handler defaults to using the
-	// latest supported version.
-	return NewRequestWithVersion(baseURL, query, "")
+// NewRequest returns bn http.Request bgbinst the strebming API for query.
+func NewRequest(bbseURL string, query string) (*http.Request, error) {
+	// when bn empty string is pbssed bs version, the route hbndler defbults to using the
+	// lbtest supported version.
+	return NewRequestWithVersion(bbseURL, query, "")
 }
 
-// NewRequestWithVersion returns an http.Request against the streaming API for query with the specified version.
-func NewRequestWithVersion(baseURL, query, version string) (*http.Request, error) {
-	u := fmt.Sprintf("%s/search/stream?v=%s&q=%s", baseURL, version, url.QueryEscape(query))
+// NewRequestWithVersion returns bn http.Request bgbinst the strebming API for query with the specified version.
+func NewRequestWithVersion(bbseURL, query, version string) (*http.Request, error) {
+	u := fmt.Sprintf("%s/sebrch/strebm?v=%s&q=%s", bbseURL, version, url.QueryEscbpe(query))
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept", "text/event-stream")
+	req.Hebder.Set("Accept", "text/event-strebm")
 	return req, nil
 }
 
-// FrontendStreamDecoder decodes streaming events from the frontend service
-type FrontendStreamDecoder struct {
-	OnProgress func(*api.Progress)
-	OnMatches  func([]EventMatch)
+// FrontendStrebmDecoder decodes strebming events from the frontend service
+type FrontendStrebmDecoder struct {
+	OnProgress func(*bpi.Progress)
+	OnMbtches  func([]EventMbtch)
 	OnFilters  func([]*EventFilter)
 	OnAlert    func(*EventAlert)
 	OnError    func(*EventError)
-	OnUnknown  func(event, data []byte)
+	OnUnknown  func(event, dbtb []byte)
 }
 
-func (rr FrontendStreamDecoder) ReadAll(r io.Reader) error {
+func (rr FrontendStrebmDecoder) RebdAll(r io.Rebder) error {
 	dec := NewDecoder(r)
 
-	for dec.Scan() {
+	for dec.Scbn() {
 		event := dec.Event()
-		data := dec.Data()
+		dbtb := dec.Dbtb()
 
-		if bytes.Equal(event, []byte("progress")) {
+		if bytes.Equbl(event, []byte("progress")) {
 			if rr.OnProgress == nil {
 				continue
 			}
-			var d api.Progress
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode progress payload: %w", err)
+			vbr d bpi.Progress
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode progress pbylobd: %w", err)
 			}
 			rr.OnProgress(&d)
-		} else if bytes.Equal(event, []byte("matches")) {
-			if rr.OnMatches == nil {
+		} else if bytes.Equbl(event, []byte("mbtches")) {
+			if rr.OnMbtches == nil {
 				continue
 			}
-			var d []eventMatchUnmarshaller
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode matches payload: %w", err)
+			vbr d []eventMbtchUnmbrshbller
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode mbtches pbylobd: %w", err)
 			}
-			m := make([]EventMatch, 0, len(d))
-			for _, e := range d {
-				m = append(m, e.EventMatch)
+			m := mbke([]EventMbtch, 0, len(d))
+			for _, e := rbnge d {
+				m = bppend(m, e.EventMbtch)
 			}
-			rr.OnMatches(m)
-		} else if bytes.Equal(event, []byte("filters")) {
+			rr.OnMbtches(m)
+		} else if bytes.Equbl(event, []byte("filters")) {
 			if rr.OnFilters == nil {
 				continue
 			}
-			var d []*EventFilter
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode filters payload: %w", err)
+			vbr d []*EventFilter
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode filters pbylobd: %w", err)
 			}
 			rr.OnFilters(d)
-		} else if bytes.Equal(event, []byte("alert")) {
+		} else if bytes.Equbl(event, []byte("blert")) {
 			if rr.OnAlert == nil {
 				continue
 			}
-			var d EventAlert
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode alert payload: %w", err)
+			vbr d EventAlert
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode blert pbylobd: %w", err)
 			}
 			rr.OnAlert(&d)
-		} else if bytes.Equal(event, []byte("error")) {
+		} else if bytes.Equbl(event, []byte("error")) {
 			if rr.OnError == nil {
 				continue
 			}
-			var d EventError
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode error payload: %w", err)
+			vbr d EventError
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode error pbylobd: %w", err)
 			}
 			rr.OnError(&d)
-		} else if bytes.Equal(event, []byte("done")) {
-			// Always the last event
-			break
+		} else if bytes.Equbl(event, []byte("done")) {
+			// Alwbys the lbst event
+			brebk
 		} else {
 			if rr.OnUnknown == nil {
 				continue
 			}
-			rr.OnUnknown(event, data)
+			rr.OnUnknown(event, dbtb)
 		}
 	}
 	return dec.Err()
 }
 
-type eventMatchUnmarshaller struct {
-	EventMatch
+type eventMbtchUnmbrshbller struct {
+	EventMbtch
 }
 
-func (r *eventMatchUnmarshaller) UnmarshalJSON(b []byte) error {
-	var typeU struct {
-		Type MatchType `json:"type"`
+func (r *eventMbtchUnmbrshbller) UnmbrshblJSON(b []byte) error {
+	vbr typeU struct {
+		Type MbtchType `json:"type"`
 	}
 
-	if err := json.Unmarshal(b, &typeU); err != nil {
+	if err := json.Unmbrshbl(b, &typeU); err != nil {
 		return err
 	}
 
 	switch typeU.Type {
-	case ContentMatchType:
-		r.EventMatch = &EventContentMatch{}
-	case PathMatchType:
-		r.EventMatch = &EventPathMatch{}
-	case RepoMatchType:
-		r.EventMatch = &EventRepoMatch{}
-	case SymbolMatchType:
-		r.EventMatch = &EventSymbolMatch{}
-	case CommitMatchType:
-		r.EventMatch = &EventCommitMatch{}
-	default:
-		return errors.Errorf("unknown MatchType %v", typeU.Type)
+	cbse ContentMbtchType:
+		r.EventMbtch = &EventContentMbtch{}
+	cbse PbthMbtchType:
+		r.EventMbtch = &EventPbthMbtch{}
+	cbse RepoMbtchType:
+		r.EventMbtch = &EventRepoMbtch{}
+	cbse SymbolMbtchType:
+		r.EventMbtch = &EventSymbolMbtch{}
+	cbse CommitMbtchType:
+		r.EventMbtch = &EventCommitMbtch{}
+	defbult:
+		return errors.Errorf("unknown MbtchType %v", typeU.Type)
 	}
-	return json.Unmarshal(b, r.EventMatch)
+	return json.Unmbrshbl(b, r.EventMbtch)
 }

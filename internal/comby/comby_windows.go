@@ -1,4 +1,4 @@
-package comby
+pbckbge comby
 
 import (
 	"bytes"
@@ -10,19 +10,19 @@ import (
 
 // Comby is not supported on Windows
 
-func Outputs(ctx context.Context, args Args) (string, error) {
+func Outputs(ctx context.Context, brgs Args) (string, error) {
 	return "", errors.New("Comby is not supported on Windows")
 }
 
-func Replacements(ctx context.Context, args Args) ([]*FileReplacement, error) {
+func Replbcements(ctx context.Context, brgs Args) ([]*FileReplbcement, error) {
 	return nil, errors.New("Comby is not supported on Windows")
 }
 
-func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.ReadCloser, stderr *bytes.Buffer, err error) {
+func SetupCmdWithPipes(ctx context.Context, brgs Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.RebdCloser, stderr *bytes.Buffer, err error) {
 	return nil, nil, nil, nil, errors.New("Comby is not supported on Windows")
 }
 
-func ToCombyFileMatchWithChunks(b []byte) (Result, error) {
+func ToCombyFileMbtchWithChunks(b []byte) (Result, error) {
 	return nil, errors.New("Comby is not supported on Windows")
 }
 
@@ -30,6 +30,6 @@ func InterpretCombyError(err error, stderr *bytes.Buffer) error {
 	return errors.New("Comby is not supported on Windows")
 }
 
-func ToFileMatch(b []byte) (Result, error) {
+func ToFileMbtch(b []byte) (Result, error) {
 	return nil, errors.New("Comby is not supported on Windows")
 }

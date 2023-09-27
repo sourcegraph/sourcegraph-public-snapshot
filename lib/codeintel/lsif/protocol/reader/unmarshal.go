@@ -1,4 +1,4 @@
-package reader
+pbckbge rebder
 
 import (
 	"bytes"
@@ -6,93 +6,93 @@ import (
 	"strconv"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 )
 
-var unmarshaller = jsoniter.ConfigFastest
+vbr unmbrshbller = jsoniter.ConfigFbstest
 
-func unmarshalElement(interner *Interner, line []byte) (_ Element, err error) {
-	var payload struct {
+func unmbrshblElement(interner *Interner, line []byte) (_ Element, err error) {
+	vbr pbylobd struct {
 		Type  string          `json:"type"`
-		Label string          `json:"label"`
-		ID    json.RawMessage `json:"id"`
+		Lbbel string          `json:"lbbel"`
+		ID    json.RbwMessbge `json:"id"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return Element{}, err
 	}
 
-	id, err := internRaw(interner, payload.ID)
+	id, err := internRbw(interner, pbylobd.ID)
 	if err != nil {
 		return Element{}, err
 	}
 
 	element := Element{
 		ID:    id,
-		Type:  payload.Type,
-		Label: payload.Label,
+		Type:  pbylobd.Type,
+		Lbbel: pbylobd.Lbbel,
 	}
 
 	if element.Type == "edge" {
-		if unmarshaler, ok := edgeUnmarshalers[element.Label]; ok {
-			element.Payload, err = unmarshaler(line)
+		if unmbrshbler, ok := edgeUnmbrshblers[element.Lbbel]; ok {
+			element.Pbylobd, err = unmbrshbler(line)
 		} else {
-			element.Payload, err = unmarshalEdge(interner, line)
+			element.Pbylobd, err = unmbrshblEdge(interner, line)
 		}
 	} else if element.Type == "vertex" {
-		if unmarshaler, ok := vertexUnmarshalers[element.Label]; ok {
-			element.Payload, err = unmarshaler(line)
+		if unmbrshbler, ok := vertexUnmbrshblers[element.Lbbel]; ok {
+			element.Pbylobd, err = unmbrshbler(line)
 		}
 	}
 
 	return element, err
 }
 
-func unmarshalEdge(interner *Interner, line []byte) (any, error) {
-	if edge, ok := unmarshalEdgeFast(line); ok {
+func unmbrshblEdge(interner *Interner, line []byte) (bny, error) {
+	if edge, ok := unmbrshblEdgeFbst(line); ok {
 		return edge, nil
 	}
 
-	var payload struct {
-		OutV     json.RawMessage   `json:"outV"`
-		InV      json.RawMessage   `json:"inV"`
-		InVs     []json.RawMessage `json:"inVs"`
-		Document json.RawMessage   `json:"document"`
-		Shard    json.RawMessage   `json:"shard"` // replaced `document` in 0.5.x
+	vbr pbylobd struct {
+		OutV     json.RbwMessbge   `json:"outV"`
+		InV      json.RbwMessbge   `json:"inV"`
+		InVs     []json.RbwMessbge `json:"inVs"`
+		Document json.RbwMessbge   `json:"document"`
+		Shbrd    json.RbwMessbge   `json:"shbrd"` // replbced `document` in 0.5.x
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return Edge{}, err
 	}
 
-	outV, err := internRaw(interner, payload.OutV)
+	outV, err := internRbw(interner, pbylobd.OutV)
 	if err != nil {
 		return nil, err
 	}
-	inV, err := internRaw(interner, payload.InV)
+	inV, err := internRbw(interner, pbylobd.InV)
 	if err != nil {
 		return nil, err
 	}
-	document, err := internRaw(interner, payload.Document)
+	document, err := internRbw(interner, pbylobd.Document)
 	if err != nil {
 		return nil, err
 	}
 
 	if document == 0 {
-		document, err = internRaw(interner, payload.Shard)
+		document, err = internRbw(interner, pbylobd.Shbrd)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	var inVs []int
-	for _, inV := range payload.InVs {
-		id, err := internRaw(interner, inV)
+	vbr inVs []int
+	for _, inV := rbnge pbylobd.InVs {
+		id, err := internRbw(interner, inV)
 		if err != nil {
 			return nil, err
 		}
 
-		inVs = append(inVs, id)
+		inVs = bppend(inVs, id)
 	}
 
 	return Edge{
@@ -103,172 +103,172 @@ func unmarshalEdge(interner *Interner, line []byte) (any, error) {
 	}, nil
 }
 
-// unmarshalEdgeFast attempts to unmarshal the edge without requiring use of the
-// interner. Doing a bare json.Unmarshal happens is faster than unmarshalling into
-// raw message and then performing strconv.Atoi.
+// unmbrshblEdgeFbst bttempts to unmbrshbl the edge without requiring use of the
+// interner. Doing b bbre json.Unmbrshbl hbppens is fbster thbn unmbrshblling into
+// rbw messbge bnd then performing strconv.Atoi.
 //
-// Note that we do happen to do this for edge unmarshalling. The win here comes from
-// saving the of large inVs sets. Doing the same thing for element envelope identifiers
-// do not net the same benefit.
-func unmarshalEdgeFast(line []byte) (Edge, bool) {
-	var payload struct {
+// Note thbt we do hbppen to do this for edge unmbrshblling. The win here comes from
+// sbving the of lbrge inVs sets. Doing the sbme thing for element envelope identifiers
+// do not net the sbme benefit.
+func unmbrshblEdgeFbst(line []byte) (Edge, bool) {
+	vbr pbylobd struct {
 		InVs     []int `json:"inVs"`
 		OutV     int   `json:"outV"`
 		InV      int   `json:"inV"`
 		Document int   `json:"document"`
-		Shard    int   `json:"shard"` // replaced `document` in 0.5.x
+		Shbrd    int   `json:"shbrd"` // replbced `document` in 0.5.x
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
-		return Edge{}, false
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
+		return Edge{}, fblse
 	}
 
 	edge := Edge{
-		OutV:     payload.OutV,
-		InV:      payload.InV,
-		InVs:     payload.InVs,
-		Document: payload.Document,
+		OutV:     pbylobd.OutV,
+		InV:      pbylobd.InV,
+		InVs:     pbylobd.InVs,
+		Document: pbylobd.Document,
 	}
 
-	if payload.Document == 0 {
-		edge.Document = payload.Shard
+	if pbylobd.Document == 0 {
+		edge.Document = pbylobd.Shbrd
 	}
 
 	return edge, true
 }
 
-var edgeUnmarshalers = map[string]func(line []byte) (any, error){}
+vbr edgeUnmbrshblers = mbp[string]func(line []byte) (bny, error){}
 
-var vertexUnmarshalers = map[string]func(line []byte) (any, error){
-	"metaData":             unmarshalMetaData,
-	"document":             unmarshalDocument,
-	"documentSymbolResult": unmarshalDocumentSymbolResult,
-	"range":                unmarshalRange,
-	"hoverResult":          unmarshalHover,
-	"moniker":              unmarshalMoniker,
-	"packageInformation":   unmarshalPackageInformation,
-	"diagnosticResult":     unmarshalDiagnosticResult,
+vbr vertexUnmbrshblers = mbp[string]func(line []byte) (bny, error){
+	"metbDbtb":             unmbrshblMetbDbtb,
+	"document":             unmbrshblDocument,
+	"documentSymbolResult": unmbrshblDocumentSymbolResult,
+	"rbnge":                unmbrshblRbnge,
+	"hoverResult":          unmbrshblHover,
+	"moniker":              unmbrshblMoniker,
+	"pbckbgeInformbtion":   unmbrshblPbckbgeInformbtion,
+	"dibgnosticResult":     unmbrshblDibgnosticResult,
 }
 
-func unmarshalMetaData(line []byte) (any, error) {
-	var payload struct {
+func unmbrshblMetbDbtb(line []byte) (bny, error) {
+	vbr pbylobd struct {
 		Version     string `json:"version"`
 		ProjectRoot string `json:"projectRoot"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	return MetaData{
-		Version:     payload.Version,
-		ProjectRoot: payload.ProjectRoot,
+	return MetbDbtb{
+		Version:     pbylobd.Version,
+		ProjectRoot: pbylobd.ProjectRoot,
 	}, nil
 }
 
-func unmarshalDocumentSymbolResult(line []byte) (any, error) {
-	var payload struct {
-		Result []*protocol.RangeBasedDocumentSymbol `json:"result"`
+func unmbrshblDocumentSymbolResult(line []byte) (bny, error) {
+	vbr pbylobd struct {
+		Result []*protocol.RbngeBbsedDocumentSymbol `json:"result"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
-	return payload.Result, nil
+	return pbylobd.Result, nil
 }
 
-func unmarshalDocument(line []byte) (any, error) {
-	var payload struct {
+func unmbrshblDocument(line []byte) (bny, error) {
+	vbr pbylobd struct {
 		URI string `json:"uri"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	return payload.URI, nil
+	return pbylobd.URI, nil
 }
 
-func unmarshalRange(line []byte) (any, error) {
+func unmbrshblRbnge(line []byte) (bny, error) {
 	type _position struct {
 		Line      int `json:"line"`
-		Character int `json:"character"`
+		Chbrbcter int `json:"chbrbcter"`
 	}
-	type _range struct {
-		Start _position `json:"start"`
+	type _rbnge struct {
+		Stbrt _position `json:"stbrt"`
 		End   _position `json:"end"`
 	}
-	type _tag struct {
-		FullRange *_range              `json:"fullRange,omitempty"`
+	type _tbg struct {
+		FullRbnge *_rbnge              `json:"fullRbnge,omitempty"`
 		Type      string               `json:"type"`
 		Text      string               `json:"text"`
-		Detail    string               `json:"detail,omitempty"`
-		Tags      []protocol.SymbolTag `json:"tags,omitempty"`
+		Detbil    string               `json:"detbil,omitempty"`
+		Tbgs      []protocol.SymbolTbg `json:"tbgs,omitempty"`
 		Kind      int                  `json:"kind"`
 	}
-	var payload struct {
-		Tag   *_tag     `json:"tag"`
-		Start _position `json:"start"`
+	vbr pbylobd struct {
+		Tbg   *_tbg     `json:"tbg"`
+		Stbrt _position `json:"stbrt"`
 		End   _position `json:"end"`
 	}
 
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	var tag *protocol.RangeTag
-	if payload.Tag != nil {
-		var fullRange *protocol.RangeData
-		if payload.Tag.FullRange != nil {
-			fullRange = &protocol.RangeData{
-				Start: protocol.Pos{
-					Line:      payload.Tag.FullRange.Start.Line,
-					Character: payload.Tag.FullRange.Start.Character,
+	vbr tbg *protocol.RbngeTbg
+	if pbylobd.Tbg != nil {
+		vbr fullRbnge *protocol.RbngeDbtb
+		if pbylobd.Tbg.FullRbnge != nil {
+			fullRbnge = &protocol.RbngeDbtb{
+				Stbrt: protocol.Pos{
+					Line:      pbylobd.Tbg.FullRbnge.Stbrt.Line,
+					Chbrbcter: pbylobd.Tbg.FullRbnge.Stbrt.Chbrbcter,
 				},
 				End: protocol.Pos{
-					Line:      payload.Tag.FullRange.End.Line,
-					Character: payload.Tag.FullRange.End.Character,
+					Line:      pbylobd.Tbg.FullRbnge.End.Line,
+					Chbrbcter: pbylobd.Tbg.FullRbnge.End.Chbrbcter,
 				},
 			}
 		}
-		tag = &protocol.RangeTag{
-			Type:      payload.Tag.Type,
-			Text:      payload.Tag.Text,
-			Kind:      protocol.SymbolKind(payload.Tag.Kind),
-			FullRange: fullRange,
-			Detail:    payload.Tag.Detail,
-			Tags:      payload.Tag.Tags,
+		tbg = &protocol.RbngeTbg{
+			Type:      pbylobd.Tbg.Type,
+			Text:      pbylobd.Tbg.Text,
+			Kind:      protocol.SymbolKind(pbylobd.Tbg.Kind),
+			FullRbnge: fullRbnge,
+			Detbil:    pbylobd.Tbg.Detbil,
+			Tbgs:      pbylobd.Tbg.Tbgs,
 		}
 	}
 
-	return Range{
-		RangeData: protocol.RangeData{
-			Start: protocol.Pos{
-				Line:      payload.Start.Line,
-				Character: payload.Start.Character,
+	return Rbnge{
+		RbngeDbtb: protocol.RbngeDbtb{
+			Stbrt: protocol.Pos{
+				Line:      pbylobd.Stbrt.Line,
+				Chbrbcter: pbylobd.Stbrt.Chbrbcter,
 			},
 			End: protocol.Pos{
-				Line:      payload.End.Line,
-				Character: payload.End.Character,
+				Line:      pbylobd.End.Line,
+				Chbrbcter: pbylobd.End.Chbrbcter,
 			},
 		},
-		Tag: tag,
+		Tbg: tbg,
 	}, nil
 }
 
-var HoverPartSeparator = "\n\n---\n\n"
+vbr HoverPbrtSepbrbtor = "\n\n---\n\n"
 
-func unmarshalHover(line []byte) (any, error) {
+func unmbrshblHover(line []byte) (bny, error) {
 	type _hoverResult struct {
-		Contents json.RawMessage `json:"contents"`
+		Contents json.RbwMessbge `json:"contents"`
 	}
-	var payload struct {
+	vbr pbylobd struct {
 		Result _hoverResult `json:"result"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	var target []json.RawMessage
-	if err := unmarshaller.Unmarshal(payload.Result.Contents, &target); err != nil {
-		// attempt unmarshal into either single MarkedString or MarkupContent
-		v, err := unmarshalHoverPart(payload.Result.Contents)
+	vbr tbrget []json.RbwMessbge
+	if err := unmbrshbller.Unmbrshbl(pbylobd.Result.Contents, &tbrget); err != nil {
+		// bttempt unmbrshbl into either single MbrkedString or MbrkupContent
+		v, err := unmbrshblHoverPbrt(pbylobd.Result.Contents)
 		if err != nil {
 			return nil, err
 		}
@@ -276,135 +276,135 @@ func unmarshalHover(line []byte) (any, error) {
 		return *v, nil
 	}
 
-	var parts []string
-	for _, t := range target {
-		part, err := unmarshalHoverPart(t)
+	vbr pbrts []string
+	for _, t := rbnge tbrget {
+		pbrt, err := unmbrshblHoverPbrt(t)
 		if err != nil {
 			return nil, err
 		}
 
-		parts = append(parts, *part)
+		pbrts = bppend(pbrts, *pbrt)
 	}
 
-	return strings.Join(parts, HoverPartSeparator), nil
+	return strings.Join(pbrts, HoverPbrtSepbrbtor), nil
 }
 
-func unmarshalHoverPart(raw json.RawMessage) (*string, error) {
-	// first, assume MarkedString or MarkupContent. This should be more likely
-	var m struct {
+func unmbrshblHoverPbrt(rbw json.RbwMessbge) (*string, error) {
+	// first, bssume MbrkedString or MbrkupContent. This should be more likely
+	vbr m struct {
 		Kind     string
-		Language string
-		Value    string
+		Lbngubge string
+		Vblue    string
 	}
 
-	err := unmarshaller.Unmarshal(raw, &m)
+	err := unmbrshbller.Unmbrshbl(rbw, &m)
 	if err != nil {
-		// to handle the first part of the union
-		// type MarkedString = string | { language: string; value: string }
-		var strPayload string
-		if err := unmarshaller.Unmarshal(raw, &strPayload); err == nil {
-			trimmed := strings.TrimSpace(strPayload)
+		// to hbndle the first pbrt of the union
+		// type MbrkedString = string | { lbngubge: string; vblue: string }
+		vbr strPbylobd string
+		if err := unmbrshbller.Unmbrshbl(rbw, &strPbylobd); err == nil {
+			trimmed := strings.TrimSpbce(strPbylobd)
 			return &trimmed, nil
 		}
-		return &strPayload, err
+		return &strPbylobd, err
 	}
 
-	// now check if MarkupContent
+	// now check if MbrkupContent
 	if m.Kind != "" {
-		// TODO: validate possible values
-		markup := strings.TrimSpace(protocol.NewMarkupContent(m.Value, protocol.MarkupKind(m.Kind)).String())
-		return &markup, nil
+		// TODO: vblidbte possible vblues
+		mbrkup := strings.TrimSpbce(protocol.NewMbrkupContent(m.Vblue, protocol.MbrkupKind(m.Kind)).String())
+		return &mbrkup, nil
 	}
 
-	// else assume MarkedString
-	marked := strings.TrimSpace(protocol.NewMarkedString(m.Value, m.Language).String())
+	// else bssume MbrkedString
+	mbrked := strings.TrimSpbce(protocol.NewMbrkedString(m.Vblue, m.Lbngubge).String())
 
-	return &marked, nil
+	return &mbrked, nil
 }
 
-func unmarshalMoniker(line []byte) (any, error) {
-	var payload struct {
+func unmbrshblMoniker(line []byte) (bny, error) {
+	vbr pbylobd struct {
 		Kind       string `json:"kind"`
 		Scheme     string `json:"scheme"`
 		Identifier string `json:"identifier"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	if payload.Kind == "" {
-		payload.Kind = "local"
+	if pbylobd.Kind == "" {
+		pbylobd.Kind = "locbl"
 	}
 
 	return Moniker{
-		Kind:       payload.Kind,
-		Scheme:     payload.Scheme,
-		Identifier: payload.Identifier,
+		Kind:       pbylobd.Kind,
+		Scheme:     pbylobd.Scheme,
+		Identifier: pbylobd.Identifier,
 	}, nil
 }
 
-func unmarshalPackageInformation(line []byte) (any, error) {
-	var payload struct {
-		Name    string `json:"name"`
+func unmbrshblPbckbgeInformbtion(line []byte) (bny, error) {
+	vbr pbylobd struct {
+		Nbme    string `json:"nbme"`
 		Version string `json:"version"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	return PackageInformation{
-		Manager: "",
-		Name:    payload.Name,
-		Version: payload.Version,
+	return PbckbgeInformbtion{
+		Mbnbger: "",
+		Nbme:    pbylobd.Nbme,
+		Version: pbylobd.Version,
 	}, nil
 }
 
-func unmarshalDiagnosticResult(line []byte) (any, error) {
+func unmbrshblDibgnosticResult(line []byte) (bny, error) {
 	type _position struct {
 		Line      int `json:"line"`
-		Character int `json:"character"`
+		Chbrbcter int `json:"chbrbcter"`
 	}
-	type _range struct {
-		Start _position `json:"start"`
+	type _rbnge struct {
+		Stbrt _position `json:"stbrt"`
 		End   _position `json:"end"`
 	}
 	type _result struct {
 		Code     StringOrInt `json:"code"`
-		Message  string      `json:"message"`
+		Messbge  string      `json:"messbge"`
 		Source   string      `json:"source"`
-		Range    _range      `json:"range"`
+		Rbnge    _rbnge      `json:"rbnge"`
 		Severity int         `json:"severity"`
 	}
-	var payload struct {
+	vbr pbylobd struct {
 		Results []_result `json:"result"`
 	}
-	if err := unmarshaller.Unmarshal(line, &payload); err != nil {
+	if err := unmbrshbller.Unmbrshbl(line, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	var diagnostics []Diagnostic
-	for _, result := range payload.Results {
-		diagnostics = append(diagnostics, Diagnostic{
+	vbr dibgnostics []Dibgnostic
+	for _, result := rbnge pbylobd.Results {
+		dibgnostics = bppend(dibgnostics, Dibgnostic{
 			Severity:       result.Severity,
 			Code:           string(result.Code),
-			Message:        result.Message,
+			Messbge:        result.Messbge,
 			Source:         result.Source,
-			StartLine:      result.Range.Start.Line,
-			StartCharacter: result.Range.Start.Character,
-			EndLine:        result.Range.End.Line,
-			EndCharacter:   result.Range.End.Character,
+			StbrtLine:      result.Rbnge.Stbrt.Line,
+			StbrtChbrbcter: result.Rbnge.Stbrt.Chbrbcter,
+			EndLine:        result.Rbnge.End.Line,
+			EndChbrbcter:   result.Rbnge.End.Chbrbcter,
 		})
 	}
 
-	return diagnostics, nil
+	return dibgnostics, nil
 }
 
 type StringOrInt string
 
-func (id *StringOrInt) UnmarshalJSON(raw []byte) error {
-	if raw[0] == '"' {
-		var v string
-		if err := unmarshaller.Unmarshal(raw, &v); err != nil {
+func (id *StringOrInt) UnmbrshblJSON(rbw []byte) error {
+	if rbw[0] == '"' {
+		vbr v string
+		if err := unmbrshbller.Unmbrshbl(rbw, &v); err != nil {
 			return err
 		}
 
@@ -412,19 +412,19 @@ func (id *StringOrInt) UnmarshalJSON(raw []byte) error {
 		return nil
 	}
 
-	var v int64
-	if err := unmarshaller.Unmarshal(raw, &v); err != nil {
+	vbr v int64
+	if err := unmbrshbller.Unmbrshbl(rbw, &v); err != nil {
 		return err
 	}
 
-	*id = StringOrInt(strconv.FormatInt(v, 10))
+	*id = StringOrInt(strconv.FormbtInt(v, 10))
 	return nil
 }
 
-// internRaw trims whitespace from the raw message and submits it to the
-// interner to produce a unique identifier for this value. It is necessary
-// to trim the whitespace as json-iterator can add a whitespace prefixe to
-// raw messages during unmarshalling.
-func internRaw(interner *Interner, raw json.RawMessage) (int, error) {
-	return interner.Intern(bytes.TrimSpace(raw))
+// internRbw trims whitespbce from the rbw messbge bnd submits it to the
+// interner to produce b unique identifier for this vblue. It is necessbry
+// to trim the whitespbce bs json-iterbtor cbn bdd b whitespbce prefixe to
+// rbw messbges during unmbrshblling.
+func internRbw(interner *Interner, rbw json.RbwMessbge) (int, error) {
+	return interner.Intern(bytes.TrimSpbce(rbw))
 }

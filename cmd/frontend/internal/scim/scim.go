@@ -1,19 +1,19 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/scim"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/scim"
 )
 
-// Init sets SCIMHandler to a real handler.
-func Init(ctx context.Context, observationCtx *observation.Context, db database.DB, _ codeintel.Services, _ conftypes.UnifiedWatchable, s *enterprise.Services) error {
-	s.SCIMHandler = scim.NewHandler(ctx, db, observationCtx)
+// Init sets SCIMHbndler to b rebl hbndler.
+func Init(ctx context.Context, observbtionCtx *observbtion.Context, db dbtbbbse.DB, _ codeintel.Services, _ conftypes.UnifiedWbtchbble, s *enterprise.Services) error {
+	s.SCIMHbndler = scim.NewHbndler(ctx, db, observbtionCtx)
 
 	return nil
 }

@@ -1,61 +1,61 @@
-package lsif
+pbckbge lsif
 
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"fmt"
 	"os"
 	"sort"
 	"strconv"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/conc/pool"
-	ogscip "github.com/sourcegraph/scip/bindings/go/scip"
-	"google.golang.org/protobuf/proto"
+	"github.com/sourcegrbph/conc/pool"
+	ogscip "github.com/sourcegrbph/scip/bindings/go/scip"
+	"google.golbng.org/protobuf/proto"
 	"k8s.io/utils/lru"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/trie"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/scip"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/rbnges"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/trie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/scip"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type scipMigrator struct {
-	store          *basestore.Store
-	codeintelStore *basestore.Store
-	serializer     *serializer
+type scipMigrbtor struct {
+	store          *bbsestore.Store
+	codeintelStore *bbsestore.Store
+	seriblizer     *seriblizer
 }
 
-func NewSCIPMigrator(store, codeintelStore *basestore.Store) *scipMigrator {
-	return &scipMigrator{
+func NewSCIPMigrbtor(store, codeintelStore *bbsestore.Store) *scipMigrbtor {
+	return &scipMigrbtor{
 		store:          store,
 		codeintelStore: codeintelStore,
-		serializer:     newSerializer(),
+		seriblizer:     newSeriblizer(),
 	}
 }
 
-func (m *scipMigrator) ID() int                 { return 20 }
-func (m *scipMigrator) Interval() time.Duration { return time.Second }
+func (m *scipMigrbtor) ID() int                 { return 20 }
+func (m *scipMigrbtor) Intervbl() time.Durbtion { return time.Second }
 
-// Progress returns the ratio between the number of SCIP upload records to SCIP+LSIF upload.
-func (m *scipMigrator) Progress(ctx context.Context, applyReverse bool) (float64, error) {
-	if applyReverse {
-		// If we're applying this in reverse, just report 0% immediately. If we have any SCIP
-		// records, we will lose access to them on a downgrade, but will leave them on-disk in
-		// the event of a successful re-upgrade.
+// Progress returns the rbtio between the number of SCIP uplobd records to SCIP+LSIF uplobd.
+func (m *scipMigrbtor) Progress(ctx context.Context, bpplyReverse bool) (flobt64, error) {
+	if bpplyReverse {
+		// If we're bpplying this in reverse, just report 0% immedibtely. If we hbve bny SCIP
+		// records, we will lose bccess to them on b downgrbde, but will lebve them on-disk in
+		// the event of b successful re-upgrbde.
 		return 0, nil
 	}
 
-	progress, _, err := basestore.ScanFirstFloat(m.codeintelStore.Query(ctx, sqlf.Sprintf(
-		scipMigratorProgressQuery,
+	progress, _, err := bbsestore.ScbnFirstFlobt(m.codeintelStore.Query(ctx, sqlf.Sprintf(
+		scipMigrbtorProgressQuery,
 	)))
 	if err != nil {
 		return 0, err
@@ -64,45 +64,45 @@ func (m *scipMigrator) Progress(ctx context.Context, applyReverse bool) (float64
 	return progress, nil
 }
 
-const scipMigratorProgressQuery = `
-SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cast(c1.count as float) / cast((c1.count + c2.count) as float) END FROM
-	(SELECT COUNT(*) as count FROM codeintel_scip_metadata) c1,
-	(SELECT COUNT(*) as count FROM lsif_data_metadata) c2
+const scipMigrbtorProgressQuery = `
+SELECT CASE c1.count + c2.count WHEN 0 THEN 1 ELSE cbst(c1.count bs flobt) / cbst((c1.count + c2.count) bs flobt) END FROM
+	(SELECT COUNT(*) bs count FROM codeintel_scip_metbdbtb) c1,
+	(SELECT COUNT(*) bs count FROM lsif_dbtb_metbdbtb) c2
 `
 
-func getEnv(name string, defaultValue int) int {
-	if value, _ := strconv.Atoi(os.Getenv(name)); value != 0 {
-		return value
+func getEnv(nbme string, defbultVblue int) int {
+	if vblue, _ := strconv.Atoi(os.Getenv(nbme)); vblue != 0 {
+		return vblue
 	}
 
-	return defaultValue
+	return defbultVblue
 }
 
-var (
+vbr (
 	// NOTE: modified in tests
-	scipMigratorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
-	scipMigratorUploadReaderBatchSize       = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
-	scipMigratorResultChunkReaderCacheSize  = 8192
-	scipMigratorDocumentReaderBatchSize     = 64
-	scipMigratorDocumentWriterBatchSize     = 256
-	scipMigratorDocumentWriterMaxPayloadSum = 1024 * 1024 * 32
+	scipMigrbtorConcurrencyLevel            = getEnv("SCIP_MIGRATOR_CONCURRENCY_LEVEL", 1)
+	scipMigrbtorUplobdRebderBbtchSize       = getEnv("SCIP_MIGRATOR_UPLOAD_BATCH_SIZE", 32)
+	scipMigrbtorResultChunkRebderCbcheSize  = 8192
+	scipMigrbtorDocumentRebderBbtchSize     = 64
+	scipMigrbtorDocumentWriterBbtchSize     = 256
+	scipMigrbtorDocumentWriterMbxPbylobdSum = 1024 * 1024 * 32
 )
 
-func (m *scipMigrator) Up(ctx context.Context) error {
-	ch := make(chan struct{}, scipMigratorUploadReaderBatchSize)
-	for i := 0; i < scipMigratorUploadReaderBatchSize; i++ {
+func (m *scipMigrbtor) Up(ctx context.Context) error {
+	ch := mbke(chbn struct{}, scipMigrbtorUplobdRebderBbtchSize)
+	for i := 0; i < scipMigrbtorUplobdRebderBbtchSize; i++ {
 		ch <- struct{}{}
 	}
 	close(ch)
 
 	p := pool.New().WithContext(ctx)
-	for i := 0; i < scipMigratorConcurrencyLevel; i++ {
+	for i := 0; i < scipMigrbtorConcurrencyLevel; i++ {
 		p.Go(func(ctx context.Context) error {
-			for range ch {
+			for rbnge ch {
 				if ok, err := m.upSingle(ctx); err != nil {
 					return err
 				} else if !ok {
-					break
+					brebk
 				}
 			}
 
@@ -110,95 +110,95 @@ func (m *scipMigrator) Up(ctx context.Context) error {
 		})
 	}
 
-	return p.Wait()
+	return p.Wbit()
 }
 
-func (m *scipMigrator) upSingle(ctx context.Context) (_ bool, err error) {
-	tx, err := m.codeintelStore.Transact(ctx)
+func (m *scipMigrbtor) upSingle(ctx context.Context) (_ bool, err error) {
+	tx, err := m.codeintelStore.Trbnsbct(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Select an upload record to process and lock it in this transaction so that we don't
-	// compete with other migrator routines that may be running.
-	uploadID, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scipMigratorSelectForMigrationQuery)))
+	// Select bn uplobd record to process bnd lock it in this trbnsbction so thbt we don't
+	// compete with other migrbtor routines thbt mby be running.
+	uplobdID, ok, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(scipMigrbtorSelectForMigrbtionQuery)))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	if !ok {
-		return false, nil
+		return fblse, nil
 	}
 
 	defer func() {
 		if err != nil {
-			// Wrap any error after this point with the associated upload ID. This will present
-			// itself in the database/UI for site-admins/engineers to locate a poisonous record.
-			err = errors.Wrapf(err, "failed to migrate upload %d", uploadID)
+			// Wrbp bny error bfter this point with the bssocibted uplobd ID. This will present
+			// itself in the dbtbbbse/UI for site-bdmins/engineers to locbte b poisonous record.
+			err = errors.Wrbpf(err, "fbiled to migrbte uplobd %d", uplobdID)
 		}
 	}()
 
-	scipWriter, err := makeSCIPWriter(ctx, tx, uploadID)
+	scipWriter, err := mbkeSCIPWriter(ctx, tx, uplobdID)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	if err := migrateUpload(ctx, m.store, tx, m.serializer, scipWriter, uploadID); err != nil {
-		return false, err
+	if err := migrbteUplobd(ctx, m.store, tx, m.seriblizer, scipWriter, uplobdID); err != nil {
+		return fblse, err
 	}
 	if err := scipWriter.Flush(ctx); err != nil {
-		return false, err
+		return fblse, err
 	}
-	if err := deleteLSIFData(ctx, tx, uploadID); err != nil {
-		return false, err
+	if err := deleteLSIFDbtb(ctx, tx, uplobdID); err != nil {
+		return fblse, err
 	}
 
-	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigratorMarkUploadAsReindexableQuery, uploadID)); err != nil {
-		return false, err
+	if err := m.store.Exec(ctx, sqlf.Sprintf(scipMigrbtorMbrkUplobdAsReindexbbleQuery, uplobdID)); err != nil {
+		return fblse, err
 	}
 
 	return true, nil
 }
 
-const scipMigratorSelectForMigrationQuery = `
+const scipMigrbtorSelectForMigrbtionQuery = `
 SELECT dump_id
-FROM lsif_data_metadata
+FROM lsif_dbtb_metbdbtb
 ORDER BY dump_id
 FOR UPDATE SKIP LOCKED
 LIMIT 1
 `
 
-const scipMigratorMarkUploadAsReindexableQuery = `
-UPDATE lsif_uploads
+const scipMigrbtorMbrkUplobdAsReindexbbleQuery = `
+UPDATE lsif_uplobds
 SET should_reindex = true
 WHERE id = %s
 `
 
-func (m *scipMigrator) Down(ctx context.Context) error {
-	// We shouldn't return > 0% on apply reverse, should not be called.
+func (m *scipMigrbtor) Down(ctx context.Context) error {
+	// We shouldn't return > 0% on bpply reverse, should not be cblled.
 	return nil
 }
 
-// migrateUpload converts each LSIF document belonging to the given upload into a SCIP document
-// and persists them to the codeintel-db in the given transaction.
-func migrateUpload(
+// migrbteUplobd converts ebch LSIF document belonging to the given uplobd into b SCIP document
+// bnd persists them to the codeintel-db in the given trbnsbction.
+func migrbteUplobd(
 	ctx context.Context,
-	store *basestore.Store,
-	codeintelTx *basestore.Store,
-	serializer *serializer,
+	store *bbsestore.Store,
+	codeintelTx *bbsestore.Store,
+	seriblizer *seriblizer,
 	scipWriter *scipWriter,
-	uploadID int,
+	uplobdID int,
 ) error {
-	indexerName, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf(
-		scipMigratorIndexerQuery,
-		uploadID,
+	indexerNbme, _, err := bbsestore.ScbnFirstString(store.Query(ctx, sqlf.Sprintf(
+		scipMigrbtorIndexerQuery,
+		uplobdID,
 	)))
 	if err != nil {
 		return err
 	}
 
-	numResultChunks, ok, err := basestore.ScanFirstInt(codeintelTx.Query(ctx, sqlf.Sprintf(
-		scipMigratorReadMetadataQuery,
-		uploadID,
+	numResultChunks, ok, err := bbsestore.ScbnFirstInt(codeintelTx.Query(ctx, sqlf.Sprintf(
+		scipMigrbtorRebdMetbdbtbQuery,
+		uplobdID,
 	)))
 	if err != nil {
 		return err
@@ -207,88 +207,88 @@ func migrateUpload(
 		return nil
 	}
 
-	resultChunkCacheSize := scipMigratorResultChunkReaderCacheSize
-	if numResultChunks < resultChunkCacheSize {
-		resultChunkCacheSize = numResultChunks
+	resultChunkCbcheSize := scipMigrbtorResultChunkRebderCbcheSize
+	if numResultChunks < resultChunkCbcheSize {
+		resultChunkCbcheSize = numResultChunks
 	}
-	resultChunkCache := lru.New(resultChunkCacheSize)
+	resultChunkCbche := lru.New(resultChunkCbcheSize)
 
-	scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-		resultChunkCache.Add(idx, resultChunk)
+	scbnResultChunks := scbnResultChunksIntoMbp(seriblizer, func(idx int, resultChunk ResultChunkDbtb) error {
+		resultChunkCbche.Add(idx, resultChunk)
 		return nil
 	})
-	scanDocuments := makeDocumentScanner(serializer)
+	scbnDocuments := mbkeDocumentScbnner(seriblizer)
 
-	// Warm result chunk cache if it will all fit in the cache
-	if numResultChunks <= resultChunkCacheSize {
-		ids := make([]ID, 0, numResultChunks)
+	// Wbrm result chunk cbche if it will bll fit in the cbche
+	if numResultChunks <= resultChunkCbcheSize {
+		ids := mbke([]ID, 0, numResultChunks)
 		for i := 0; i < numResultChunks; i++ {
-			ids = append(ids, ID(strconv.Itoa(i)))
+			ids = bppend(ids, ID(strconv.Itob(i)))
 		}
 
-		if err := scanResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
-			scipMigratorScanResultChunksQuery,
-			uploadID,
-			pq.Array(ids),
+		if err := scbnResultChunks(codeintelTx.Query(ctx, sqlf.Sprintf(
+			scipMigrbtorScbnResultChunksQuery,
+			uplobdID,
+			pq.Arrby(ids),
 		))); err != nil {
 			return err
 		}
 	}
 
-	for page := 0; ; page++ {
-		documentsByPath, err := scanDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
-			scipMigratorScanDocumentsQuery,
-			uploadID,
-			scipMigratorDocumentReaderBatchSize,
-			page*scipMigratorDocumentReaderBatchSize,
+	for pbge := 0; ; pbge++ {
+		documentsByPbth, err := scbnDocuments(codeintelTx.Query(ctx, sqlf.Sprintf(
+			scipMigrbtorScbnDocumentsQuery,
+			uplobdID,
+			scipMigrbtorDocumentRebderBbtchSize,
+			pbge*scipMigrbtorDocumentRebderBbtchSize,
 		)))
 		if err != nil {
 			return err
 		}
-		if len(documentsByPath) == 0 {
-			break
+		if len(documentsByPbth) == 0 {
+			brebk
 		}
 
-		paths := make([]string, 0, len(documentsByPath))
-		for path := range documentsByPath {
-			paths = append(paths, path)
+		pbths := mbke([]string, 0, len(documentsByPbth))
+		for pbth := rbnge documentsByPbth {
+			pbths = bppend(pbths, pbth)
 		}
-		sort.Strings(paths)
+		sort.Strings(pbths)
 
-		resultIDs := make([][]ID, 0, len(paths))
-		for _, path := range paths {
-			resultIDs = append(resultIDs, extractResultIDs(documentsByPath[path].Ranges))
+		resultIDs := mbke([][]ID, 0, len(pbths))
+		for _, pbth := rbnge pbths {
+			resultIDs = bppend(resultIDs, extrbctResultIDs(documentsByPbth[pbth].Rbnges))
 		}
-		for i, path := range paths {
+		for i, pbth := rbnge pbths {
 			scipDocument, err := processDocument(
 				ctx,
 				codeintelTx,
-				serializer,
-				resultChunkCache,
-				resultChunkCacheSize,
-				uploadID,
+				seriblizer,
+				resultChunkCbche,
+				resultChunkCbcheSize,
+				uplobdID,
 				numResultChunks,
-				indexerName,
-				path,
-				documentsByPath[path],
-				// Load all of the definitions for this document
+				indexerNbme,
+				pbth,
+				documentsByPbth[pbth],
+				// Lobd bll of the definitions for this document
 				resultIDs[i],
-				// Load as many definitions from the next document as possible
+				// Lobd bs mbny definitions from the next document bs possible
 				resultIDs[i+1:],
 			)
 			if err != nil {
 				return err
 			}
 
-			if err := scipWriter.InsertDocument(ctx, path, scipDocument); err != nil {
+			if err := scipWriter.InsertDocument(ctx, pbth, scipDocument); err != nil {
 				return err
 			}
 		}
 	}
 
 	if err := codeintelTx.Exec(ctx, sqlf.Sprintf(
-		scipMigratorWriteMetadataQuery,
-		uploadID,
+		scipMigrbtorWriteMetbdbtbQuery,
+		uplobdID,
 	)); err != nil {
 		return err
 	}
@@ -296,181 +296,181 @@ func migrateUpload(
 	return nil
 }
 
-const scipMigratorIndexerQuery = `
+const scipMigrbtorIndexerQuery = `
 SELECT indexer
-FROM lsif_uploads
+FROM lsif_uplobds
 WHERE id = %s
 `
 
-const scipMigratorReadMetadataQuery = `
+const scipMigrbtorRebdMetbdbtbQuery = `
 SELECT num_result_chunks
-FROM lsif_data_metadata
+FROM lsif_dbtb_metbdbtb
 WHERE dump_id = %s
 `
 
-const scipMigratorScanDocumentsQuery = `
+const scipMigrbtorScbnDocumentsQuery = `
 SELECT
-	path,
-	ranges,
+	pbth,
+	rbnges,
 	hovers,
 	monikers,
-	packages,
-	diagnostics
-FROM lsif_data_documents
+	pbckbges,
+	dibgnostics
+FROM lsif_dbtb_documents
 WHERE dump_id = %s
-ORDER BY path
+ORDER BY pbth
 LIMIT %s
 OFFSET %d
 `
 
-const scipMigratorWriteMetadataQuery = `
-INSERT INTO codeintel_scip_metadata (upload_id, text_document_encoding, tool_name, tool_version, tool_arguments, protocol_version)
+const scipMigrbtorWriteMetbdbtbQuery = `
+INSERT INTO codeintel_scip_metbdbtb (uplobd_id, text_document_encoding, tool_nbme, tool_version, tool_brguments, protocol_version)
 VALUES (%s, '', '', '', '{}', 1)
 `
 
-// processDocument converts the given LSIF document into a SCIP document and persists it to the
-// codeintel-db in the given transaction.
+// processDocument converts the given LSIF document into b SCIP document bnd persists it to the
+// codeintel-db in the given trbnsbction.
 func processDocument(
 	ctx context.Context,
-	tx *basestore.Store,
-	serializer *serializer,
-	resultChunkCache *lru.Cache,
-	resultChunkCacheSize int,
-	uploadID int,
+	tx *bbsestore.Store,
+	seriblizer *seriblizer,
+	resultChunkCbche *lru.Cbche,
+	resultChunkCbcheSize int,
+	uplobdID int,
 	numResultChunks int,
-	indexerName,
-	path string,
-	document DocumentData,
+	indexerNbme,
+	pbth string,
+	document DocumentDbtb,
 	resultIDs []ID,
-	preloadResultIDs [][]ID,
+	prelobdResultIDs [][]ID,
 ) (*ogscip.Document, error) {
-	// We first read the relevant result chunks for this document into memory, writing them through to the
-	// shared result chunk cache to avoid re-fetching result chunks that are used to processed to documents
-	// in a row.
+	// We first rebd the relevbnt result chunks for this document into memory, writing them through to the
+	// shbred result chunk cbche to bvoid re-fetching result chunks thbt bre used to processed to documents
+	// in b row.
 
 	resultChunks, err := fetchResultChunks(
 		ctx,
 		tx,
-		serializer,
-		resultChunkCache,
-		resultChunkCacheSize,
-		uploadID,
+		seriblizer,
+		resultChunkCbche,
+		resultChunkCbcheSize,
+		uplobdID,
 		numResultChunks,
 		resultIDs,
-		preloadResultIDs,
+		prelobdResultIDs,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	targetRangeFetcher := func(resultID precise.ID) (rangeIDs []precise.ID) {
+	tbrgetRbngeFetcher := func(resultID precise.ID) (rbngeIDs []precise.ID) {
 		if resultID == "" {
 			return nil
 		}
 
-		resultChunk, ok := resultChunks[precise.HashKey(resultID, numResultChunks)]
+		resultChunk, ok := resultChunks[precise.HbshKey(resultID, numResultChunks)]
 		if !ok {
 			return nil
 		}
 
-		for _, pair := range resultChunk.DocumentIDRangeIDs[ID(resultID)] {
-			rangeIDs = append(rangeIDs, precise.ID(pair.RangeID))
+		for _, pbir := rbnge resultChunk.DocumentIDRbngeIDs[ID(resultID)] {
+			rbngeIDs = bppend(rbngeIDs, precise.ID(pbir.RbngeID))
 		}
 
-		return rangeIDs
+		return rbngeIDs
 	}
 
-	scipDocument := ogscip.CanonicalizeDocument(scip.ConvertLSIFDocument(
-		uploadID,
-		targetRangeFetcher,
-		indexerName,
-		path,
+	scipDocument := ogscip.CbnonicblizeDocument(scip.ConvertLSIFDocument(
+		uplobdID,
+		tbrgetRbngeFetcher,
+		indexerNbme,
+		pbth,
 		toPreciseTypes(document),
 	))
 
 	return scipDocument, nil
 }
 
-// fetchResultChunks queries for the set of result chunks containing one of the given result set
-// identifiers. The output of this function is a map from result chunk index to unmarshalled data.
+// fetchResultChunks queries for the set of result chunks contbining one of the given result set
+// identifiers. The output of this function is b mbp from result chunk index to unmbrshblled dbtb.
 func fetchResultChunks(
 	ctx context.Context,
-	tx *basestore.Store,
-	serializer *serializer,
-	resultChunkCache *lru.Cache,
-	resultChunkCacheSize int,
-	uploadID int,
+	tx *bbsestore.Store,
+	seriblizer *seriblizer,
+	resultChunkCbche *lru.Cbche,
+	resultChunkCbcheSize int,
+	uplobdID int,
 	numResultChunks int,
 	ids []ID,
-	preloadIDs [][]ID,
-) (map[int]ResultChunkData, error) {
-	// Stores a set of indexes that need to be loaded from the database. The value associated
-	// with an index is true if the result chunk should be returned to the caller and false if
-	// it should only be preloaded and written to the cache.
-	indexMap := map[int]bool{}
+	prelobdIDs [][]ID,
+) (mbp[int]ResultChunkDbtb, error) {
+	// Stores b set of indexes thbt need to be lobded from the dbtbbbse. The vblue bssocibted
+	// with bn index is true if the result chunk should be returned to the cbller bnd fblse if
+	// it should only be prelobded bnd written to the cbche.
+	indexMbp := mbp[int]bool{}
 
-	// The map from result chunk index to data payload we'll return. We first populate what
-	// we already have from the cache, then we fetch (and cache) the remaining indexes from
-	// the database.
-	resultChunks := map[int]ResultChunkData{}
+	// The mbp from result chunk index to dbtb pbylobd we'll return. We first populbte whbt
+	// we blrebdy hbve from the cbche, then we fetch (bnd cbche) the rembining indexes from
+	// the dbtbbbse.
+	resultChunks := mbp[int]ResultChunkDbtb{}
 
 outer:
-	for i, ids := range append([][]ID{ids}, preloadIDs...) {
-		for _, id := range ids {
-			if len(indexMap) >= resultChunkCacheSize && i != 0 {
-				// Only add fetch preload IDs if we have more room in our request
-				break outer
+	for i, ids := rbnge bppend([][]ID{ids}, prelobdIDs...) {
+		for _, id := rbnge ids {
+			if len(indexMbp) >= resultChunkCbcheSize && i != 0 {
+				// Only bdd fetch prelobd IDs if we hbve more room in our request
+				brebk outer
 			}
 
-			// Calculate result chunk index that this identifier belongs to
-			idx := precise.HashKey(precise.ID(id), numResultChunks)
+			// Cblculbte result chunk index thbt this identifier belongs to
+			idx := precise.HbshKey(precise.ID(id), numResultChunks)
 
-			// Skip if we already loaded this result chunk from the cache
+			// Skip if we blrebdy lobded this result chunk from the cbche
 			if _, ok := resultChunks[idx]; ok {
 				continue
 			}
 
-			// Attempt to load result chunk data from the cache. If it's present then we can add it to
-			// the output map immediately. If it's not present in the cache, then we'll need to fetch it
-			// from the database. Collect each such result chunk index so we can do a batch load.
+			// Attempt to lobd result chunk dbtb from the cbche. If it's present then we cbn bdd it to
+			// the output mbp immedibtely. If it's not present in the cbche, then we'll need to fetch it
+			// from the dbtbbbse. Collect ebch such result chunk index so we cbn do b bbtch lobd.
 
-			if rawResultChunk, ok := resultChunkCache.Get(idx); ok {
+			if rbwResultChunk, ok := resultChunkCbche.Get(idx); ok {
 				if i == 0 {
-					// Don't stash preloaded result chunks for return
-					resultChunks[idx] = rawResultChunk.(ResultChunkData)
+					// Don't stbsh prelobded result chunks for return
+					resultChunks[idx] = rbwResultChunk.(ResultChunkDbtb)
 				}
 			} else {
-				// Store true if it's not _only_ a preload; note that a definition ID and a preloaded ID
-				// can hash to the same index. In this case we do need to return it from this call as well
-				// as the call when processing the next document.
-				indexMap[idx] = i == 0 || indexMap[idx]
+				// Store true if it's not _only_ b prelobd; note thbt b definition ID bnd b prelobded ID
+				// cbn hbsh to the sbme index. In this cbse we do need to return it from this cbll bs well
+				// bs the cbll when processing the next document.
+				indexMbp[idx] = i == 0 || indexMbp[idx]
 			}
 		}
 	}
 
-	if len(indexMap) > 0 {
-		indexes := make([]int, len(indexMap))
-		for index := range indexMap {
-			indexes = append(indexes, index)
+	if len(indexMbp) > 0 {
+		indexes := mbke([]int, len(indexMbp))
+		for index := rbnge indexMbp {
+			indexes = bppend(indexes, index)
 		}
 
-		// Fetch missing result chunks from the database. Add each of the loaded result chunks into
-		// the cache shared while processing this particular upload.
+		// Fetch missing result chunks from the dbtbbbse. Add ebch of the lobded result chunks into
+		// the cbche shbred while processing this pbrticulbr uplobd.
 
-		scanResultChunks := scanResultChunksIntoMap(serializer, func(idx int, resultChunk ResultChunkData) error {
-			if indexMap[idx] {
-				// Don't stash preloaded result chunks for return
+		scbnResultChunks := scbnResultChunksIntoMbp(seriblizer, func(idx int, resultChunk ResultChunkDbtb) error {
+			if indexMbp[idx] {
+				// Don't stbsh prelobded result chunks for return
 				resultChunks[idx] = resultChunk
 			}
 
-			// Always cache
-			resultChunkCache.Add(idx, resultChunk)
+			// Alwbys cbche
+			resultChunkCbche.Add(idx, resultChunk)
 			return nil
 		})
-		if err := scanResultChunks(tx.Query(ctx, sqlf.Sprintf(
-			scipMigratorScanResultChunksQuery,
-			uploadID,
-			pq.Array(indexes),
+		if err := scbnResultChunks(tx.Query(ctx, sqlf.Sprintf(
+			scipMigrbtorScbnResultChunksQuery,
+			uplobdID,
+			pq.Arrby(indexes),
 		))); err != nil {
 			return nil, err
 		}
@@ -479,99 +479,99 @@ outer:
 	return resultChunks, nil
 }
 
-const scipMigratorScanResultChunksQuery = `
+const scipMigrbtorScbnResultChunksQuery = `
 SELECT
 	idx,
-	data
-FROM lsif_data_result_chunks
+	dbtb
+FROM lsif_dbtb_result_chunks
 WHERE
 	dump_id = %s AND
 	idx = ANY(%s)
 `
 
 type scipWriter struct {
-	tx                 *basestore.Store
-	symbolNameInserter *batch.Inserter
-	symbolInserter     *batch.Inserter
-	uploadID           int
+	tx                 *bbsestore.Store
+	symbolNbmeInserter *bbtch.Inserter
+	symbolInserter     *bbtch.Inserter
+	uplobdID           int
 	nextID             int
-	batchPayloadSum    int
-	batch              []bufferedDocument
+	bbtchPbylobdSum    int
+	bbtch              []bufferedDocument
 }
 
 type bufferedDocument struct {
-	path         string
+	pbth         string
 	scipDocument *ogscip.Document
-	payload      []byte
-	payloadHash  []byte
+	pbylobd      []byte
+	pbylobdHbsh  []byte
 }
 
-// makeSCIPWriter creates a small wrapper over batch inserts of SCIP data. Each document
-// should be written to Postgres by calling Write. The Flush method should be called after
-// each document has been processed.
-func makeSCIPWriter(ctx context.Context, tx *basestore.Store, uploadID int) (*scipWriter, error) {
-	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolNamesTableQuery)); err != nil {
+// mbkeSCIPWriter crebtes b smbll wrbpper over bbtch inserts of SCIP dbtb. Ebch document
+// should be written to Postgres by cblling Write. The Flush method should be cblled bfter
+// ebch document hbs been processed.
+func mbkeSCIPWriter(ctx context.Context, tx *bbsestore.Store, uplobdID int) (*scipWriter, error) {
+	if err := tx.Exec(ctx, sqlf.Sprintf(mbkeSCIPWriterTemporbrySymbolNbmesTbbleQuery)); err != nil {
 		return nil, err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(makeSCIPWriterTemporarySymbolsTableQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(mbkeSCIPWriterTemporbrySymbolsTbbleQuery)); err != nil {
 		return nil, err
 	}
 
-	symbolNameInserter := batch.NewInserter(
+	symbolNbmeInserter := bbtch.NewInserter(
 		ctx,
-		tx.Handle(),
-		"t_codeintel_scip_symbol_names",
-		batch.MaxNumPostgresParameters,
+		tx.Hbndle(),
+		"t_codeintel_scip_symbol_nbmes",
+		bbtch.MbxNumPostgresPbrbmeters,
 		"id",
-		"name_segment",
+		"nbme_segment",
 		"prefix_id",
 	)
 
-	symbolInserter := batch.NewInserter(
+	symbolInserter := bbtch.NewInserter(
 		ctx,
-		tx.Handle(),
+		tx.Hbndle(),
 		"t_codeintel_scip_symbols",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		"document_lookup_id",
 		"symbol_id",
-		"definition_ranges",
-		"reference_ranges",
-		"implementation_ranges",
+		"definition_rbnges",
+		"reference_rbnges",
+		"implementbtion_rbnges",
 	)
 
 	return &scipWriter{
 		tx:                 tx,
-		symbolNameInserter: symbolNameInserter,
+		symbolNbmeInserter: symbolNbmeInserter,
 		symbolInserter:     symbolInserter,
-		uploadID:           uploadID,
+		uplobdID:           uplobdID,
 	}, nil
 }
 
-const makeSCIPWriterTemporarySymbolNamesTableQuery = `
-CREATE TEMPORARY TABLE t_codeintel_scip_symbol_names (
+const mbkeSCIPWriterTemporbrySymbolNbmesTbbleQuery = `
+CREATE TEMPORARY TABLE t_codeintel_scip_symbol_nbmes (
 	id integer NOT NULL,
-	name_segment text NOT NULL,
+	nbme_segment text NOT NULL,
 	prefix_id integer
 ) ON COMMIT DROP
 `
 
-const makeSCIPWriterTemporarySymbolsTableQuery = `
+const mbkeSCIPWriterTemporbrySymbolsTbbleQuery = `
 CREATE TEMPORARY TABLE t_codeintel_scip_symbols (
 	symbol_id integer NOT NULL,
 	document_lookup_id integer NOT NULL,
-	definition_ranges bytea,
-	reference_ranges bytea,
-	implementation_ranges bytea
+	definition_rbnges byteb,
+	reference_rbnges byteb,
+	implementbtion_rbnges byteb
 ) ON COMMIT DROP
 `
 
-// InsertDocument batches a new document, document lookup row, and all of its symbols for insertion.
+// InsertDocument bbtches b new document, document lookup row, bnd bll of its symbols for insertion.
 func (s *scipWriter) InsertDocument(
 	ctx context.Context,
-	path string,
+	pbth string,
 	scipDocument *ogscip.Document,
 ) error {
-	if s.batchPayloadSum >= scipMigratorDocumentWriterMaxPayloadSum {
+	if s.bbtchPbylobdSum >= scipMigrbtorDocumentWriterMbxPbylobdSum {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -579,29 +579,29 @@ func (s *scipWriter) InsertDocument(
 
 	uniquePrefix := []byte(fmt.Sprintf(
 		"lsif-%d:%d:",
-		s.uploadID,
-		time.Now().UnixNano()/int64(time.Millisecond)),
+		s.uplobdID,
+		time.Now().UnixNbno()/int64(time.Millisecond)),
 	)
 
-	payload, err := proto.Marshal(scipDocument)
+	pbylobd, err := proto.Mbrshbl(scipDocument)
 	if err != nil {
 		return err
 	}
 
-	compressedPayload, err := compressor.compress(bytes.NewReader(payload))
+	compressedPbylobd, err := compressor.compress(bytes.NewRebder(pbylobd))
 	if err != nil {
 		return err
 	}
 
-	s.batch = append(s.batch, bufferedDocument{
-		path:         path,
+	s.bbtch = bppend(s.bbtch, bufferedDocument{
+		pbth:         pbth,
 		scipDocument: scipDocument,
-		payload:      compressedPayload,
-		payloadHash:  append(uniquePrefix, hashPayload(payload)...),
+		pbylobd:      compressedPbylobd,
+		pbylobdHbsh:  bppend(uniquePrefix, hbshPbylobd(pbylobd)...),
 	})
-	s.batchPayloadSum += len(compressedPayload)
+	s.bbtchPbylobdSum += len(compressedPbylobd)
 
-	if len(s.batch) >= scipMigratorDocumentWriterBatchSize {
+	if len(s.bbtch) >= scipMigrbtorDocumentWriterBbtchSize {
 		if err := s.flush(ctx); err != nil {
 			return err
 		}
@@ -611,31 +611,31 @@ func (s *scipWriter) InsertDocument(
 }
 
 func (s *scipWriter) flush(ctx context.Context) (err error) {
-	documents := s.batch
-	s.batch = nil
-	s.batchPayloadSum = 0
+	documents := s.bbtch
+	s.bbtch = nil
+	s.bbtchPbylobdSum = 0
 
-	// NOTE: This logic differs from similar logic in scip_write.go when processing SCIP uploads.
-	// In that scenario, we have to be careful of inserting a row with an existing `payload_hash`.
-	// Because we have a unique prefix containing the upload ID here, and we have no expectation
-	// that interned LSIF graphs will produce the same SCIP document, there should be no expected
+	// NOTE: This logic differs from similbr logic in scip_write.go when processing SCIP uplobds.
+	// In thbt scenbrio, we hbve to be cbreful of inserting b row with bn existing `pbylobd_hbsh`.
+	// Becbuse we hbve b unique prefix contbining the uplobd ID here, bnd we hbve no expectbtion
+	// thbt interned LSIF grbphs will produce the sbme SCIP document, there should be no expected
 	// collisions on insertion here.
 
-	documentIDs, err := batch.WithInserterForIdentifiers(
+	documentIDs, err := bbtch.WithInserterForIdentifiers(
 		ctx,
-		s.tx.Handle(),
+		s.tx.Hbndle(),
 		"codeintel_scip_documents",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		[]string{
-			"schema_version",
-			"payload_hash",
-			"raw_scip_payload",
+			"schemb_version",
+			"pbylobd_hbsh",
+			"rbw_scip_pbylobd",
 		},
 		"",
 		"id",
-		func(inserter *batch.Inserter) error {
-			for _, document := range documents {
-				if err := inserter.Insert(ctx, 1, document.payloadHash, document.payload); err != nil {
+		func(inserter *bbtch.Inserter) error {
+			for _, document := rbnge documents {
+				if err := inserter.Insert(ctx, 1, document.pbylobdHbsh, document.pbylobd); err != nil {
 					return err
 				}
 			}
@@ -650,21 +650,21 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		return errors.New("unexpected number of document records inserted")
 	}
 
-	documentLookupIDs, err := batch.WithInserterForIdentifiers(
+	documentLookupIDs, err := bbtch.WithInserterForIdentifiers(
 		ctx,
-		s.tx.Handle(),
+		s.tx.Hbndle(),
 		"codeintel_scip_document_lookup",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		[]string{
-			"upload_id",
-			"document_path",
+			"uplobd_id",
+			"document_pbth",
 			"document_id",
 		},
 		"",
 		"id",
-		func(inserter *batch.Inserter) error {
-			for i, document := range documents {
-				if err := inserter.Insert(ctx, s.uploadID, document.path, documentIDs[i]); err != nil {
+		func(inserter *bbtch.Inserter) error {
+			for i, document := rbnge documents {
+				if err := inserter.Insert(ctx, s.uplobdID, document.pbth, documentIDs[i]); err != nil {
 					return err
 				}
 			}
@@ -679,42 +679,42 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		return errors.New("unexpected number of document lookup records inserted")
 	}
 
-	symbolNameMap := map[string]struct{}{}
-	invertedRangeIndexes := make([][]shared.InvertedRangeIndex, 0, len(documents))
-	for _, document := range documents {
-		index := shared.ExtractSymbolIndexes(document.scipDocument)
-		invertedRangeIndexes = append(invertedRangeIndexes, index)
+	symbolNbmeMbp := mbp[string]struct{}{}
+	invertedRbngeIndexes := mbke([][]shbred.InvertedRbngeIndex, 0, len(documents))
+	for _, document := rbnge documents {
+		index := shbred.ExtrbctSymbolIndexes(document.scipDocument)
+		invertedRbngeIndexes = bppend(invertedRbngeIndexes, index)
 
-		for _, invertedRange := range index {
-			symbolNameMap[invertedRange.SymbolName] = struct{}{}
+		for _, invertedRbnge := rbnge index {
+			symbolNbmeMbp[invertedRbnge.SymbolNbme] = struct{}{}
 		}
 	}
-	symbolNames := make([]string, 0, len(symbolNameMap))
-	for symbolName := range symbolNameMap {
-		symbolNames = append(symbolNames, symbolName)
+	symbolNbmes := mbke([]string, 0, len(symbolNbmeMbp))
+	for symbolNbme := rbnge symbolNbmeMbp {
+		symbolNbmes = bppend(symbolNbmes, symbolNbme)
 	}
-	sort.Strings(symbolNames)
+	sort.Strings(symbolNbmes)
 
-	var symbolNameTrie trie.Trie
-	symbolNameTrie, s.nextID = trie.NewTrie(symbolNames, s.nextID)
+	vbr symbolNbmeTrie trie.Trie
+	symbolNbmeTrie, s.nextID = trie.NewTrie(symbolNbmes, s.nextID)
 
-	symbolNameByIDs := map[int]string{}
-	idsBySymbolName := map[string]int{}
+	symbolNbmeByIDs := mbp[int]string{}
+	idsBySymbolNbme := mbp[string]int{}
 
-	if err := symbolNameTrie.Traverse(func(id int, parentID *int, prefix string) error {
-		name := prefix
-		if parentID != nil {
-			parentPrefix, ok := symbolNameByIDs[*parentID]
+	if err := symbolNbmeTrie.Trbverse(func(id int, pbrentID *int, prefix string) error {
+		nbme := prefix
+		if pbrentID != nil {
+			pbrentPrefix, ok := symbolNbmeByIDs[*pbrentID]
 			if !ok {
-				return errors.Newf("malformed trie - expected prefix with id=%d to exist", *parentID)
+				return errors.Newf("mblformed trie - expected prefix with id=%d to exist", *pbrentID)
 			}
 
-			name = parentPrefix + prefix
+			nbme = pbrentPrefix + prefix
 		}
-		symbolNameByIDs[id] = name
-		idsBySymbolName[name] = id
+		symbolNbmeByIDs[id] = nbme
+		idsBySymbolNbme[nbme] = id
 
-		if err := s.symbolNameInserter.Insert(ctx, id, prefix, parentID); err != nil {
+		if err := s.symbolNbmeInserter.Insert(ctx, id, prefix, pbrentID); err != nil {
 			return err
 		}
 
@@ -723,33 +723,33 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 		return err
 	}
 
-	for i, invertedRangeIndexes := range invertedRangeIndexes {
-		for _, index := range invertedRangeIndexes {
-			definitionRanges, err := ranges.EncodeRanges(index.DefinitionRanges)
+	for i, invertedRbngeIndexes := rbnge invertedRbngeIndexes {
+		for _, index := rbnge invertedRbngeIndexes {
+			definitionRbnges, err := rbnges.EncodeRbnges(index.DefinitionRbnges)
 			if err != nil {
 				return err
 			}
-			referenceRanges, err := ranges.EncodeRanges(index.ReferenceRanges)
+			referenceRbnges, err := rbnges.EncodeRbnges(index.ReferenceRbnges)
 			if err != nil {
 				return err
 			}
-			implementationRanges, err := ranges.EncodeRanges(index.ImplementationRanges)
+			implementbtionRbnges, err := rbnges.EncodeRbnges(index.ImplementbtionRbnges)
 			if err != nil {
 				return err
 			}
 
-			symbolID, ok := idsBySymbolName[index.SymbolName]
+			symbolID, ok := idsBySymbolNbme[index.SymbolNbme]
 			if !ok {
-				return errors.Newf("malformed trie - expected %q to be a member", index.SymbolName)
+				return errors.Newf("mblformed trie - expected %q to be b member", index.SymbolNbme)
 			}
 
 			if err := s.symbolInserter.Insert(
 				ctx,
 				documentLookupIDs[i],
 				symbolID,
-				definitionRanges,
-				referenceRanges,
-				implementationRanges,
+				definitionRbnges,
+				referenceRbnges,
+				implementbtionRbnges,
 			); err != nil {
 				return err
 			}
@@ -759,86 +759,86 @@ func (s *scipWriter) flush(ctx context.Context) (err error) {
 	return nil
 }
 
-// Flush ensures that all symbol writes have hit the database, and then moves all of the
-// rows from the temporary table into the permanent one.
+// Flush ensures thbt bll symbol writes hbve hit the dbtbbbse, bnd then moves bll of the
+// rows from the temporbry tbble into the permbnent one.
 func (s *scipWriter) Flush(ctx context.Context) error {
-	// Flush all buffered documents
+	// Flush bll buffered documents
 	if err := s.flush(ctx); err != nil {
 		return err
 	}
 
-	// Flush all data into temp tables
-	if err := s.symbolNameInserter.Flush(ctx); err != nil {
+	// Flush bll dbtb into temp tbbles
+	if err := s.symbolNbmeInserter.Flush(ctx); err != nil {
 		return err
 	}
 	if err := s.symbolInserter.Flush(ctx); err != nil {
 		return err
 	}
 
-	// Move all data from temp tables into target tables
-	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNamesQuery, s.uploadID)); err != nil {
+	// Move bll dbtb from temp tbbles into tbrget tbbles
+	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolNbmesQuery, s.uplobdID)); err != nil {
 		return err
 	}
-	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uploadID)); err != nil {
+	if err := s.tx.Exec(ctx, sqlf.Sprintf(scipWriterFlushSymbolsQuery, s.uplobdID)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const scipWriterFlushSymbolNamesQuery = `
-INSERT INTO codeintel_scip_symbol_names (
-	upload_id,
+const scipWriterFlushSymbolNbmesQuery = `
+INSERT INTO codeintel_scip_symbol_nbmes (
+	uplobd_id,
 	id,
-	name_segment,
+	nbme_segment,
 	prefix_id
 )
 SELECT
 	%s,
 	source.id,
-	source.name_segment,
+	source.nbme_segment,
 	source.prefix_id
-FROM t_codeintel_scip_symbol_names source
+FROM t_codeintel_scip_symbol_nbmes source
 ON CONFLICT DO NOTHING
 `
 
 const scipWriterFlushSymbolsQuery = `
 INSERT INTO codeintel_scip_symbols (
-	upload_id,
+	uplobd_id,
 	symbol_id,
 	document_lookup_id,
-	schema_version,
-	definition_ranges,
-	reference_ranges,
-	implementation_ranges
+	schemb_version,
+	definition_rbnges,
+	reference_rbnges,
+	implementbtion_rbnges
 )
 SELECT
 	%s,
 	source.symbol_id,
 	source.document_lookup_id,
 	1,
-	source.definition_ranges,
-	source.reference_ranges,
-	source.implementation_ranges
+	source.definition_rbnges,
+	source.reference_rbnges,
+	source.implementbtion_rbnges
 FROM t_codeintel_scip_symbols source
 ON CONFLICT DO NOTHING
 `
 
-var lsifTableNames = []string{
-	"lsif_data_metadata",
-	"lsif_data_documents",
-	"lsif_data_result_chunks",
-	"lsif_data_definitions",
-	"lsif_data_references",
-	"lsif_data_implementations",
+vbr lsifTbbleNbmes = []string{
+	"lsif_dbtb_metbdbtb",
+	"lsif_dbtb_documents",
+	"lsif_dbtb_result_chunks",
+	"lsif_dbtb_definitions",
+	"lsif_dbtb_references",
+	"lsif_dbtb_implementbtions",
 }
 
-func deleteLSIFData(ctx context.Context, tx *basestore.Store, uploadID int) error {
-	for _, tableName := range lsifTableNames {
+func deleteLSIFDbtb(ctx context.Context, tx *bbsestore.Store, uplobdID int) error {
+	for _, tbbleNbme := rbnge lsifTbbleNbmes {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			deleteLSIFDataQuery,
-			sqlf.Sprintf(tableName),
-			uploadID,
+			deleteLSIFDbtbQuery,
+			sqlf.Sprintf(tbbleNbme),
+			uplobdID,
 		)); err != nil {
 			return err
 		}
@@ -847,71 +847,71 @@ func deleteLSIFData(ctx context.Context, tx *basestore.Store, uploadID int) erro
 	return nil
 }
 
-const deleteLSIFDataQuery = `
+const deleteLSIFDbtbQuery = `
 DELETE FROM %s WHERE dump_id = %s
 `
 
-func makeDocumentScanner(serializer *serializer) func(rows basestore.Rows, queryErr error) (map[string]DocumentData, error) {
-	return basestore.NewMapScanner(func(s dbutil.Scanner) (string, DocumentData, error) {
-		var path string
-		var data MarshalledDocumentData
-		if err := s.Scan(&path, &data.Ranges, &data.HoverResults, &data.Monikers, &data.PackageInformation, &data.Diagnostics); err != nil {
-			return "", DocumentData{}, err
+func mbkeDocumentScbnner(seriblizer *seriblizer) func(rows bbsestore.Rows, queryErr error) (mbp[string]DocumentDbtb, error) {
+	return bbsestore.NewMbpScbnner(func(s dbutil.Scbnner) (string, DocumentDbtb, error) {
+		vbr pbth string
+		vbr dbtb MbrshblledDocumentDbtb
+		if err := s.Scbn(&pbth, &dbtb.Rbnges, &dbtb.HoverResults, &dbtb.Monikers, &dbtb.PbckbgeInformbtion, &dbtb.Dibgnostics); err != nil {
+			return "", DocumentDbtb{}, err
 		}
 
-		document, err := serializer.UnmarshalDocumentData(data)
+		document, err := seriblizer.UnmbrshblDocumentDbtb(dbtb)
 		if err != nil {
-			return "", DocumentData{}, err
+			return "", DocumentDbtb{}, err
 		}
 
-		return path, document, nil
+		return pbth, document, nil
 	})
 }
 
-func scanResultChunksIntoMap(serializer *serializer, f func(idx int, resultChunk ResultChunkData) error) func(rows basestore.Rows, queryErr error) error {
-	return basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
-		var idx int
-		var rawData []byte
-		if err := s.Scan(&idx, &rawData); err != nil {
-			return false, err
+func scbnResultChunksIntoMbp(seriblizer *seriblizer, f func(idx int, resultChunk ResultChunkDbtb) error) func(rows bbsestore.Rows, queryErr error) error {
+	return bbsestore.NewCbllbbckScbnner(func(s dbutil.Scbnner) (bool, error) {
+		vbr idx int
+		vbr rbwDbtb []byte
+		if err := s.Scbn(&idx, &rbwDbtb); err != nil {
+			return fblse, err
 		}
 
-		data, err := serializer.UnmarshalResultChunkData(rawData)
+		dbtb, err := seriblizer.UnmbrshblResultChunkDbtb(rbwDbtb)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
-		if err := f(idx, data); err != nil {
-			return false, err
+		if err := f(idx, dbtb); err != nil {
+			return fblse, err
 		}
 
 		return true, nil
 	})
 }
 
-// extractResultIDs extracts the non-empty identifiers of the LSIF definition and implementation
-// results attached to any of the given ranges. The returned identifiers are unique and ordered.
-func extractResultIDs(ranges map[ID]RangeData) []ID {
-	resultIDMap := map[ID]struct{}{}
-	for _, r := range ranges {
+// extrbctResultIDs extrbcts the non-empty identifiers of the LSIF definition bnd implementbtion
+// results bttbched to bny of the given rbnges. The returned identifiers bre unique bnd ordered.
+func extrbctResultIDs(rbnges mbp[ID]RbngeDbtb) []ID {
+	resultIDMbp := mbp[ID]struct{}{}
+	for _, r := rbnge rbnges {
 		if r.DefinitionResultID != "" {
-			resultIDMap[r.DefinitionResultID] = struct{}{}
+			resultIDMbp[r.DefinitionResultID] = struct{}{}
 		}
-		if r.ImplementationResultID != "" {
-			resultIDMap[r.ImplementationResultID] = struct{}{}
+		if r.ImplementbtionResultID != "" {
+			resultIDMbp[r.ImplementbtionResultID] = struct{}{}
 		}
 	}
 
-	ids := make([]ID, 0, len(resultIDMap))
-	for id := range resultIDMap {
-		ids = append(ids, id)
+	ids := mbke([]ID, 0, len(resultIDMbp))
+	for id := rbnge resultIDMbp {
+		ids = bppend(ids, id)
 	}
 	return ids
 }
 
-// hashPayload returns a sha256 checksum of the given payload.
-func hashPayload(payload []byte) []byte {
-	hash := sha256.New()
-	_, _ = hash.Write(payload)
-	return hash.Sum(nil)
+// hbshPbylobd returns b shb256 checksum of the given pbylobd.
+func hbshPbylobd(pbylobd []byte) []byte {
+	hbsh := shb256.New()
+	_, _ = hbsh.Write(pbylobd)
+	return hbsh.Sum(nil)
 }

@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"strings"
@@ -7,38 +7,38 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var locations = []Location{
+vbr locbtions = []Locbtion{
 	{
-		URI:   "file://example.c",
-		Range: Range{Start: Position{Line: 2, Character: 4}, End: Position{Line: 2, Character: 20}},
+		URI:   "file://exbmple.c",
+		Rbnge: Rbnge{Stbrt: Position{Line: 2, Chbrbcter: 4}, End: Position{Line: 2, Chbrbcter: 20}},
 	},
 	{
-		URI:   "file://example.c",
-		Range: Range{Start: Position{Line: 2, Character: 4}, End: Position{Line: 2, Character: 21}},
+		URI:   "file://exbmple.c",
+		Rbnge: Rbnge{Stbrt: Position{Line: 2, Chbrbcter: 4}, End: Position{Line: 2, Chbrbcter: 21}},
 	},
 }
 
-var contents = `
-/// Some documentation above
-int exported_function(int a) {
-  return a + 1;
+vbr contents = `
+/// Some documentbtion bbove
+int exported_function(int b) {
+  return b + 1;
 }`
 
-func TestRequiresSameURI(t *testing.T) {
-	_, err := DrawLocations(contents, Location{URI: "file://a"}, Location{URI: "file://b"}, 0)
+func TestRequiresSbmeURI(t *testing.T) {
+	_, err := DrbwLocbtions(contents, Locbtion{URI: "file://b"}, Locbtion{URI: "file://b"}, 0)
 	if err == nil {
-		t.Errorf("Should have errored because differing URIs")
+		t.Errorf("Should hbve errored becbuse differing URIs")
 	}
 }
 
-func TestDrawsWithOneLineDiff(t *testing.T) {
-	res, _ := DrawLocations(contents, locations[0], locations[1], 0)
+func TestDrbwsWithOneLineDiff(t *testing.T) {
+	res, _ := DrbwLocbtions(contents, locbtions[0], locbtions[1], 0)
 
 	expected := strings.Join([]string{
-		"file://example.c:2",
-		"|2| int exported_function(int a) {",
+		"file://exbmple.c:2",
+		"|2| int exported_function(int b) {",
 		"| |     ^^^^^^^^^^^^^^^^ expected",
-		"| |     ^^^^^^^^^^^^^^^^^ actual",
+		"| |     ^^^^^^^^^^^^^^^^^ bctubl",
 	}, "\n")
 
 	if diff := cmp.Diff(res, expected); diff != "" {
@@ -46,16 +46,16 @@ func TestDrawsWithOneLineDiff(t *testing.T) {
 	}
 }
 
-func TestDrawsWithOneLineDiffContext(t *testing.T) {
-	res, _ := DrawLocations(contents, locations[0], locations[1], 1)
+func TestDrbwsWithOneLineDiffContext(t *testing.T) {
+	res, _ := DrbwLocbtions(contents, locbtions[0], locbtions[1], 1)
 
 	expected := strings.Join([]string{
-		"file://example.c:2",
-		"|1| /// Some documentation above",
-		"|2| int exported_function(int a) {",
+		"file://exbmple.c:2",
+		"|1| /// Some documentbtion bbove",
+		"|2| int exported_function(int b) {",
 		"| |     ^^^^^^^^^^^^^^^^ expected",
-		"| |     ^^^^^^^^^^^^^^^^^ actual",
-		"|3|   return a + 1;",
+		"| |     ^^^^^^^^^^^^^^^^^ bctubl",
+		"|3|   return b + 1;",
 	}, "\n")
 
 	if diff := cmp.Diff(res, expected); diff != "" {

@@ -1,12 +1,12 @@
-package conf
+pbckbge conf
 
-import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+import "github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 
-func HasExternalAuthProvider(c conftypes.SiteConfigQuerier) bool {
-	for _, p := range c.SiteConfig().AuthProviders {
+func HbsExternblAuthProvider(c conftypes.SiteConfigQuerier) bool {
+	for _, p := rbnge c.SiteConfig().AuthProviders {
 		if p.Builtin == nil { // not builtin implies SSO
 			return true
 		}
 	}
-	return false
+	return fblse
 }

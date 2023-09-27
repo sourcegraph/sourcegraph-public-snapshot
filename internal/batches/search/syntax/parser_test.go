@@ -1,96 +1,96 @@
-package syntax
+pbckbge syntbx
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestParser(t *testing.T) {
-	tests := map[string]struct {
-		wantExpr   ParseTree
-		wantString string
-		wantErr    *ParseError
+func TestPbrser(t *testing.T) {
+	tests := mbp[string]struct {
+		wbntExpr   PbrseTree
+		wbntString string
+		wbntErr    *PbrseError
 	}{
-		"":   {wantExpr: []*Expr{}},
-		" ":  {wantExpr: []*Expr{}, wantString: ""},
-		"  ": {wantExpr: []*Expr{}, wantString: ""},
-		"a": {
-			wantExpr: []*Expr{{Value: "a", ValueType: TokenLiteral}},
+		"":   {wbntExpr: []*Expr{}},
+		" ":  {wbntExpr: []*Expr{}, wbntString: ""},
+		"  ": {wbntExpr: []*Expr{}, wbntString: ""},
+		"b": {
+			wbntExpr: []*Expr{{Vblue: "b", VblueType: TokenLiterbl}},
 		},
-		"a ": {
-			wantExpr:   []*Expr{{Value: "a", ValueType: TokenLiteral}},
-			wantString: "a",
+		"b ": {
+			wbntExpr:   []*Expr{{Vblue: "b", VblueType: TokenLiterbl}},
+			wbntString: "b",
 		},
-		"a:": {wantExpr: []*Expr{{Field: "a", Value: "", ValueType: TokenLiteral}}},
-		"a-": {
-			wantExpr: []*Expr{{Value: "a-", ValueType: TokenLiteral}},
+		"b:": {wbntExpr: []*Expr{{Field: "b", Vblue: "", VblueType: TokenLiterbl}}},
+		"b-": {
+			wbntExpr: []*Expr{{Vblue: "b-", VblueType: TokenLiterbl}},
 		},
-		`"a"`: {
-			wantExpr: []*Expr{{Value: `"a"`, ValueType: TokenQuoted}},
+		`"b"`: {
+			wbntExpr: []*Expr{{Vblue: `"b"`, VblueType: TokenQuoted}},
 		},
-		"-a": {
-			wantExpr: []*Expr{{Not: true, Value: "a", ValueType: TokenLiteral}},
+		"-b": {
+			wbntExpr: []*Expr{{Not: true, Vblue: "b", VblueType: TokenLiterbl}},
 		},
-		"a:b": {
-			wantExpr: []*Expr{{Field: "a", Value: "b", ValueType: TokenLiteral}},
+		"b:b": {
+			wbntExpr: []*Expr{{Field: "b", Vblue: "b", VblueType: TokenLiterbl}},
 		},
-		"a:b-:": {
-			wantExpr: []*Expr{{Field: "a", Value: "b-:", ValueType: TokenLiteral}},
+		"b:b-:": {
+			wbntExpr: []*Expr{{Field: "b", Vblue: "b-:", VblueType: TokenLiterbl}},
 		},
-		`a:"b"`: {
-			wantExpr: []*Expr{{Field: "a", Value: `"b"`, ValueType: TokenQuoted}},
+		`b:"b"`: {
+			wbntExpr: []*Expr{{Field: "b", Vblue: `"b"`, VblueType: TokenQuoted}},
 		},
-		"-a:b": {
-			wantExpr: []*Expr{{Not: true, Field: "a", Value: "b", ValueType: TokenLiteral}},
+		"-b:b": {
+			wbntExpr: []*Expr{{Not: true, Field: "b", Vblue: "b", VblueType: TokenLiterbl}},
 		},
-		"/a/": {
-			wantExpr: []*Expr{{Value: "a", ValueType: TokenPattern}},
+		"/b/": {
+			wbntExpr: []*Expr{{Vblue: "b", VblueType: TokenPbttern}},
 		},
-		`-/a/`: {
-			wantExpr: []*Expr{{Not: true, Value: "a", ValueType: TokenPattern}},
+		`-/b/`: {
+			wbntExpr: []*Expr{{Not: true, Vblue: "b", VblueType: TokenPbttern}},
 		},
-		"a b": {
-			wantExpr: []*Expr{
-				{Value: "a", ValueType: TokenLiteral},
-				{Value: "b", ValueType: TokenLiteral},
+		"b b": {
+			wbntExpr: []*Expr{
+				{Vblue: "b", VblueType: TokenLiterbl},
+				{Vblue: "b", VblueType: TokenLiterbl},
 			},
 		},
-		"a:b c:d": {
-			wantExpr: []*Expr{
-				{Field: "a", Value: "b", ValueType: TokenLiteral},
-				{Field: "c", Value: "d", ValueType: TokenLiteral},
+		"b:b c:d": {
+			wbntExpr: []*Expr{
+				{Field: "b", Vblue: "b", VblueType: TokenLiterbl},
+				{Field: "c", Vblue: "d", VblueType: TokenLiterbl},
 			},
 		},
-		"a: b:": {
-			wantExpr: []*Expr{
-				{Field: "a", Value: "", ValueType: TokenLiteral},
-				{Field: "b", Value: "", ValueType: TokenLiteral},
+		"b: b:": {
+			wbntExpr: []*Expr{
+				{Field: "b", Vblue: "", VblueType: TokenLiterbl},
+				{Field: "b", Vblue: "", VblueType: TokenLiterbl},
 			},
 		},
 		"--": {
-			wantErr: &ParseError{Pos: 1, Msg: "got TokenMinus, want expr"},
+			wbntErr: &PbrseError{Pos: 1, Msg: "got TokenMinus, wbnt expr"},
 		},
-		`a:"b"-`: {
-			wantErr: &ParseError{Pos: 5, Msg: "got TokenMinus, want separator or EOF"},
+		`b:"b"-`: {
+			wbntErr: &PbrseError{Pos: 5, Msg: "got TokenMinus, wbnt sepbrbtor or EOF"},
 		},
-		`"a"-`: {
-			wantErr: &ParseError{Pos: 3, Msg: "got TokenMinus, want separator or EOF"},
+		`"b"-`: {
+			wbntErr: &PbrseError{Pos: 3, Msg: "got TokenMinus, wbnt sepbrbtor or EOF"},
 		},
-		`"a":b`: {
-			wantErr: &ParseError{Pos: 3, Msg: "got TokenColon, want separator or EOF"},
+		`"b":b`: {
+			wbntErr: &PbrseError{Pos: 3, Msg: "got TokenColon, wbnt sepbrbtor or EOF"},
 		},
 	}
-	for input, test := range tests {
+	for input, test := rbnge tests {
 		t.Run(input, func(t *testing.T) {
-			query, err := Parse(input)
-			if err != nil && test.wantErr == nil {
-				t.Fatal(err)
-			} else if err == nil && test.wantErr != nil {
-				t.Fatalf("got err == nil, want %q", test.wantErr)
-			} else if test.wantErr != nil && !errors.Is(err, test.wantErr) {
-				t.Fatalf("got err == %q, want %q", err, test.wantErr)
+			query, err := Pbrse(input)
+			if err != nil && test.wbntErr == nil {
+				t.Fbtbl(err)
+			} else if err == nil && test.wbntErr != nil {
+				t.Fbtblf("got err == nil, wbnt %q", test.wbntErr)
+			} else if test.wbntErr != nil && !errors.Is(err, test.wbntErr) {
+				t.Fbtblf("got err == %q, wbnt %q", err, test.wbntErr)
 			}
 			if err != nil {
 				return
@@ -98,61 +98,61 @@ func TestParser(t *testing.T) {
 			if len(query) == 0 {
 				query = []*Expr{}
 			}
-			for _, expr := range query {
+			for _, expr := rbnge query {
 				expr.Pos = 0
 			}
-			if !reflect.DeepEqual(query, test.wantExpr) {
-				t.Errorf("expr: %s\ngot  %v\nwant %v", input, query, test.wantExpr)
+			if !reflect.DeepEqubl(query, test.wbntExpr) {
+				t.Errorf("expr: %s\ngot  %v\nwbnt %v", input, query, test.wbntExpr)
 			}
-			if test.wantString == "" && len(query) > 0 {
-				test.wantString = input
+			if test.wbntString == "" && len(query) > 0 {
+				test.wbntString = input
 			}
-			if exprString := query.String(); exprString != test.wantString {
-				t.Errorf("expr string: %s\ngot  %s\nwant %s", input, exprString, test.wantString)
+			if exprString := query.String(); exprString != test.wbntString {
+				t.Errorf("expr string: %s\ngot  %s\nwbnt %s", input, exprString, test.wbntString)
 			}
 		})
 	}
 }
 
-func TestParseAllowingErrors(t *testing.T) {
-	type args struct {
+func TestPbrseAllowingErrors(t *testing.T) {
+	type brgs struct {
 		input string
 	}
 	tests := []struct {
-		name string
-		args args
-		want ParseTree
+		nbme string
+		brgs brgs
+		wbnt PbrseTree
 	}{
 		{
-			name: "empty",
-			args: args{input: ""},
-			want: nil,
+			nbme: "empty",
+			brgs: brgs{input: ""},
+			wbnt: nil,
 		},
 		{
-			name: "a",
-			args: args{input: "a"},
-			want: []*Expr{
+			nbme: "b",
+			brgs: brgs{input: "b"},
+			wbnt: []*Expr{
 				{
-					Value:     "a",
-					ValueType: TokenLiteral,
+					Vblue:     "b",
+					VblueType: TokenLiterbl,
 				},
 			},
 		},
 		{
-			name: ":=",
-			args: args{input: ":="},
-			want: []*Expr{
+			nbme: ":=",
+			brgs: brgs{input: ":="},
+			wbnt: []*Expr{
 				{
-					Value:     ":=",
-					ValueType: TokenError,
+					Vblue:     ":=",
+					VblueType: TokenError,
 				},
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := ParseAllowingErrors(tt.args.input); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseAllowingErrors() = %+v, want %+v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := PbrseAllowingErrors(tt.brgs.input); !reflect.DeepEqubl(got, tt.wbnt) {
+				t.Errorf("PbrseAllowingErrors() = %+v, wbnt %+v", got, tt.wbnt)
 			}
 		})
 	}

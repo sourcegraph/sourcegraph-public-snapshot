@@ -1,4 +1,4 @@
-package perforce
+pbckbge perforce
 
 import (
 	"context"
@@ -9,302 +9,302 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	jsoniter "github.com/json-iterbtor/go"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestProvider_FetchAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	user := &types.User{
 		ID:       1,
-		Username: "alice",
+		Usernbme: "blice",
 	}
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		data := `
-alice <alice@example.com> (Alice) accessed 2020/12/04
-cindy <cindy@example.com> (Cindy) accessed 2020/12/04
+	execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
+		dbtb := `
+blice <blice@exbmple.com> (Alice) bccessed 2020/12/04
+cindy <cindy@exbmple.com> (Cindy) bccessed 2020/12/04
 `
-		return io.NopCloser(strings.NewReader(data)), nil, nil
+		return io.NopCloser(strings.NewRebder(dbtb)), nil, nil
 	})
 
-	t.Run("no matching account", func(t *testing.T) {
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@example.com"})
+	t.Run("no mbtching bccount", func(t *testing.T) {
+		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
+		got, err := p.FetchAccount(ctx, user, nil, []string{"bob@exbmple.com"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if got != nil {
-			t.Fatalf("Want nil but got %v", got)
+			t.Fbtblf("Wbnt nil but got %v", got)
 		}
 	})
 
-	t.Run("found matching account", func(t *testing.T) {
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
-		got, err := p.FetchAccount(ctx, user, nil, []string{"alice@example.com"})
+	t.Run("found mbtching bccount", func(t *testing.T) {
+		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
+		got, err := p.FetchAccount(ctx, user, nil, []string{"blice@exbmple.com"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		accountData, err := jsoniter.Marshal(
-			perforce.AccountData{
-				Username: "alice",
-				Email:    "alice@example.com",
+		bccountDbtb, err := jsoniter.Mbrshbl(
+			perforce.AccountDbtb{
+				Usernbme: "blice",
+				Embil:    "blice@exbmple.com",
 			},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		want := &extsvc.Account{
+		wbnt := &extsvc.Account{
 			UserID: user.ID,
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: p.codeHost.ServiceType,
 				ServiceID:   p.codeHost.ServiceID,
-				AccountID:   "alice@example.com",
+				AccountID:   "blice@exbmple.com",
 			},
-			AccountData: extsvc.AccountData{
-				Data: extsvc.NewUnencryptedData(accountData),
+			AccountDbtb: extsvc.AccountDbtb{
+				Dbtb: extsvc.NewUnencryptedDbtb(bccountDbtb),
 			},
 		}
-		if diff := cmp.Diff(want, got, et.CompareEncryptable); diff != "" {
-			t.Fatalf("Mismatch (-want got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, got, et.CompbreEncryptbble); diff != "" {
+			t.Fbtblf("Mismbtch (-wbnt got):\n%s", diff)
 		}
 	})
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("nil account", func(t *testing.T) {
+	t.Run("nil bccount", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", nil, false)
-		_, err := p.FetchUserPerms(ctx, nil, authz.FetchPermsOptions{})
-		want := "no account provided"
+		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", nil, fblse)
+		_, err := p.FetchUserPerms(ctx, nil, buthz.FetchPermsOptions{})
+		wbnt := "no bccount provided"
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("not the code host of the account", func(t *testing.T) {
+	t.Run("not the code host of the bccount", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		_, err := p.FetchUserPerms(context.Background(),
+		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", []extsvc.RepoID{}, fblse)
+		_, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
+					ServiceType: extsvc.TypeGitLbb,
+					ServiceID:   "https://gitlbb.com/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `not a code host of the account: want "https://gitlab.com/" but have "ssl:111.222.333.444:1666"`
+		wbnt := `not b code host of the bccount: wbnt "https://gitlbb.com/" but hbve "ssl:111.222.333.444:1666"`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("no user found in account data", func(t *testing.T) {
+	t.Run("no user found in bccount dbtb", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", []extsvc.RepoID{}, fblse)
 		_, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: extsvc.TypePerforce,
 					ServiceID:   "ssl:111.222.333.444:1666",
 				},
-				AccountData: extsvc.AccountData{},
+				AccountDbtb: extsvc.AccountDbtb{},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `no user found in the external account data`
+		wbnt := `no user found in the externbl bccount dbtb`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	accountData, err := jsoniter.Marshal(
-		perforce.AccountData{
-			Username: "alice",
-			Email:    "alice@example.com",
+	bccountDbtb, err := jsoniter.Mbrshbl(
+		perforce.AccountDbtb{
+			Usernbme: "blice",
+			Embil:    "blice@exbmple.com",
 		},
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name      string
+		nbme      string
 		response  string
-		wantPerms *authz.ExternalUserPermissions
+		wbntPerms *buthz.ExternblUserPermissions
 	}{
 		{
-			name: "include only",
+			nbme: "include only",
 			response: `
-list user alice * //Sourcegraph/Security/... ## "list" can't grant read access
-read user alice * //Sourcegraph/Engineering/...
-owner user alice * //Sourcegraph/Engineering/Backend/...
-open user alice * //Sourcegraph/Engineering/Frontend/...
-review user alice * //Sourcegraph/Handbook/...
-review user alice * //Sourcegraph/*/Handbook/...
-review user alice * //Sourcegraph/.../Handbook/...
+list user blice * //Sourcegrbph/Security/... ## "list" cbn't grbnt rebd bccess
+rebd user blice * //Sourcegrbph/Engineering/...
+owner user blice * //Sourcegrbph/Engineering/Bbckend/...
+open user blice * //Sourcegrbph/Engineering/Frontend/...
+review user blice * //Sourcegrbph/Hbndbook/...
+review user blice * //Sourcegrbph/*/Hbndbook/...
+review user blice * //Sourcegrbph/.../Hbndbook/...
 `,
-			wantPerms: &authz.ExternalUserPermissions{
-				IncludeContains: []extsvc.RepoID{
-					"//Sourcegraph/Engineering/%",
-					"//Sourcegraph/Engineering/Backend/%",
-					"//Sourcegraph/Engineering/Frontend/%",
-					"//Sourcegraph/Handbook/%",
-					"//Sourcegraph/[^/]+/Handbook/%",
-					"//Sourcegraph/%/Handbook/%",
+			wbntPerms: &buthz.ExternblUserPermissions{
+				IncludeContbins: []extsvc.RepoID{
+					"//Sourcegrbph/Engineering/%",
+					"//Sourcegrbph/Engineering/Bbckend/%",
+					"//Sourcegrbph/Engineering/Frontend/%",
+					"//Sourcegrbph/Hbndbook/%",
+					"//Sourcegrbph/[^/]+/Hbndbook/%",
+					"//Sourcegrbph/%/Hbndbook/%",
 				},
 			},
 		},
 		{
-			name: "exclude only",
+			nbme: "exclude only",
 			response: `
-list user alice * -//Sourcegraph/Security/...
-read user alice * -//Sourcegraph/Engineering/...
-owner user alice * -//Sourcegraph/Engineering/Backend/...
-open user alice * -//Sourcegraph/Engineering/Frontend/...
-review user alice * -//Sourcegraph/Handbook/...
-review user alice * -//Sourcegraph/*/Handbook/...
-review user alice * -//Sourcegraph/.../Handbook/...
+list user blice * -//Sourcegrbph/Security/...
+rebd user blice * -//Sourcegrbph/Engineering/...
+owner user blice * -//Sourcegrbph/Engineering/Bbckend/...
+open user blice * -//Sourcegrbph/Engineering/Frontend/...
+review user blice * -//Sourcegrbph/Hbndbook/...
+review user blice * -//Sourcegrbph/*/Hbndbook/...
+review user blice * -//Sourcegrbph/.../Hbndbook/...
 `,
-			wantPerms: &authz.ExternalUserPermissions{
-				ExcludeContains: []extsvc.RepoID{
-					"//Sourcegraph/[^/]+/Handbook/%",
-					"//Sourcegraph/%/Handbook/%",
+			wbntPerms: &buthz.ExternblUserPermissions{
+				ExcludeContbins: []extsvc.RepoID{
+					"//Sourcegrbph/[^/]+/Hbndbook/%",
+					"//Sourcegrbph/%/Hbndbook/%",
 				},
 			},
 		},
 		{
-			name: "include and exclude",
+			nbme: "include bnd exclude",
 			response: `
-read user alice * //Sourcegraph/Security/...
-read user alice * //Sourcegraph/Engineering/...
-owner user alice * //Sourcegraph/Engineering/Backend/...
-open user alice * //Sourcegraph/Engineering/Frontend/...
-review user alice * //Sourcegraph/Handbook/...
-open user alice * //Sourcegraph/Engineering/.../Frontend/...
-open user alice * //Sourcegraph/.../Handbook/...  ## wildcard A
+rebd user blice * //Sourcegrbph/Security/...
+rebd user blice * //Sourcegrbph/Engineering/...
+owner user blice * //Sourcegrbph/Engineering/Bbckend/...
+open user blice * //Sourcegrbph/Engineering/Frontend/...
+review user blice * //Sourcegrbph/Hbndbook/...
+open user blice * //Sourcegrbph/Engineering/.../Frontend/...
+open user blice * //Sourcegrbph/.../Hbndbook/...  ## wildcbrd A
 
-list user alice * -//Sourcegraph/Security/...                        ## "list" can revoke read access
-=read user alice * -//Sourcegraph/Engineering/Frontend/...           ## exact match of a previous include
-open user alice * -//Sourcegraph/Engineering/Backend/Credentials/... ## sub-match of a previous include
-open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-match of a previous include
-open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
+list user blice * -//Sourcegrbph/Security/...                        ## "list" cbn revoke rebd bccess
+=rebd user blice * -//Sourcegrbph/Engineering/Frontend/...           ## exbct mbtch of b previous include
+open user blice * -//Sourcegrbph/Engineering/Bbckend/Credentibls/... ## sub-mbtch of b previous include
+open user blice * -//Sourcegrbph/Engineering/*/Frontend/Folder/...   ## sub-mbtch of b previous include
+open user blice * -//Sourcegrbph/*/Hbndbook/...                      ## sub-mbtch of wildcbrd A include
 `,
-			wantPerms: &authz.ExternalUserPermissions{
-				IncludeContains: []extsvc.RepoID{
-					"//Sourcegraph/Engineering/%",
-					"//Sourcegraph/Engineering/Backend/%",
-					"//Sourcegraph/Engineering/Frontend/%",
-					"//Sourcegraph/Handbook/%",
-					"//Sourcegraph/Engineering/%/Frontend/%",
-					"//Sourcegraph/%/Handbook/%",
+			wbntPerms: &buthz.ExternblUserPermissions{
+				IncludeContbins: []extsvc.RepoID{
+					"//Sourcegrbph/Engineering/%",
+					"//Sourcegrbph/Engineering/Bbckend/%",
+					"//Sourcegrbph/Engineering/Frontend/%",
+					"//Sourcegrbph/Hbndbook/%",
+					"//Sourcegrbph/Engineering/%/Frontend/%",
+					"//Sourcegrbph/%/Hbndbook/%",
 				},
-				ExcludeContains: []extsvc.RepoID{
-					"//Sourcegraph/Engineering/Frontend/%",
-					"//Sourcegraph/Engineering/Backend/Credentials/%",
-					"//Sourcegraph/Engineering/[^/]+/Frontend/Folder/%",
-					"//Sourcegraph/[^/]+/Handbook/%",
+				ExcludeContbins: []extsvc.RepoID{
+					"//Sourcegrbph/Engineering/Frontend/%",
+					"//Sourcegrbph/Engineering/Bbckend/Credentibls/%",
+					"//Sourcegrbph/Engineering/[^/]+/Frontend/Folder/%",
+					"//Sourcegrbph/[^/]+/Hbndbook/%",
 				},
 			},
 		},
 		{
-			name: "include and exclude, then include again",
+			nbme: "include bnd exclude, then include bgbin",
 			response: `
-read user alice * //Sourcegraph/Security/...
-read user alice * //Sourcegraph/Engineering/...
-owner user alice * //Sourcegraph/Engineering/Backend/...
-open user alice * //Sourcegraph/Engineering/Frontend/...
-review user alice * //Sourcegraph/Handbook/...
-open user alice * //Sourcegraph/Engineering/.../Frontend/...
-open user alice * //Sourcegraph/.../Handbook/...  ## wildcard A
+rebd user blice * //Sourcegrbph/Security/...
+rebd user blice * //Sourcegrbph/Engineering/...
+owner user blice * //Sourcegrbph/Engineering/Bbckend/...
+open user blice * //Sourcegrbph/Engineering/Frontend/...
+review user blice * //Sourcegrbph/Hbndbook/...
+open user blice * //Sourcegrbph/Engineering/.../Frontend/...
+open user blice * //Sourcegrbph/.../Hbndbook/...  ## wildcbrd A
 
-list user alice * -//Sourcegraph/Security/...                        ## "list" can revoke read access
-=read user alice * -//Sourcegraph/Engineering/Frontend/...           ## exact match of a previous include
-open user alice * -//Sourcegraph/Engineering/Backend/Credentials/... ## sub-match of a previous include
-open user alice * -//Sourcegraph/Engineering/*/Frontend/Folder/...   ## sub-match of a previous include
-open user alice * -//Sourcegraph/*/Handbook/...                      ## sub-match of wildcard A include
+list user blice * -//Sourcegrbph/Security/...                        ## "list" cbn revoke rebd bccess
+=rebd user blice * -//Sourcegrbph/Engineering/Frontend/...           ## exbct mbtch of b previous include
+open user blice * -//Sourcegrbph/Engineering/Bbckend/Credentibls/... ## sub-mbtch of b previous include
+open user blice * -//Sourcegrbph/Engineering/*/Frontend/Folder/...   ## sub-mbtch of b previous include
+open user blice * -//Sourcegrbph/*/Hbndbook/...                      ## sub-mbtch of wildcbrd A include
 
-read user alice * //Sourcegraph/Security/... 						 ## give access to alice again after revoking
+rebd user blice * //Sourcegrbph/Security/... 						 ## give bccess to blice bgbin bfter revoking
 `,
-			wantPerms: &authz.ExternalUserPermissions{
-				IncludeContains: []extsvc.RepoID{
-					"//Sourcegraph/Engineering/%",
-					"//Sourcegraph/Engineering/Backend/%",
-					"//Sourcegraph/Engineering/Frontend/%",
-					"//Sourcegraph/Handbook/%",
-					"//Sourcegraph/Engineering/%/Frontend/%",
-					"//Sourcegraph/%/Handbook/%",
-					"//Sourcegraph/Security/%",
+			wbntPerms: &buthz.ExternblUserPermissions{
+				IncludeContbins: []extsvc.RepoID{
+					"//Sourcegrbph/Engineering/%",
+					"//Sourcegrbph/Engineering/Bbckend/%",
+					"//Sourcegrbph/Engineering/Frontend/%",
+					"//Sourcegrbph/Hbndbook/%",
+					"//Sourcegrbph/Engineering/%/Frontend/%",
+					"//Sourcegrbph/%/Hbndbook/%",
+					"//Sourcegrbph/Security/%",
 				},
-				ExcludeContains: []extsvc.RepoID{
-					"//Sourcegraph/Engineering/Frontend/%",
-					"//Sourcegraph/Engineering/Backend/Credentials/%",
-					"//Sourcegraph/Engineering/[^/]+/Frontend/Folder/%",
-					"//Sourcegraph/[^/]+/Handbook/%",
+				ExcludeContbins: []extsvc.RepoID{
+					"//Sourcegrbph/Engineering/Frontend/%",
+					"//Sourcegrbph/Engineering/Bbckend/Credentibls/%",
+					"//Sourcegrbph/Engineering/[^/]+/Frontend/Folder/%",
+					"//Sourcegrbph/[^/]+/Hbndbook/%",
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			logger := logtest.Scoped(t)
-			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-				return io.NopCloser(strings.NewReader(test.response)), nil, nil
+			execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
+				return io.NopCloser(strings.NewRebder(test.response)), nil, nil
 			})
 
-			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
 			got, err := p.FetchUserPerms(ctx,
 				&extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: extsvc.TypePerforce,
 						ServiceID:   "ssl:111.222.333.444:1666",
 					},
-					AccountData: extsvc.AccountData{
-						Data: extsvc.NewUnencryptedData(accountData),
+					AccountDbtb: extsvc.AccountDbtb{
+						Dbtb: extsvc.NewUnencryptedDbtb(bccountDbtb),
 					},
 				},
-				authz.FetchPermsOptions{},
+				buthz.FetchPermsOptions{},
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.wantPerms, got); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntPerms, got); diff != "" {
+				t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 
-	// Specific behaviour is tested in TestScanFullRepoPermissions
+	// Specific behbviour is tested in TestScbnFullRepoPermissions
 	t.Run("SubRepoPermissions", func(t *testing.T) {
 		logger := logtest.Scoped(t)
-		execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-			return io.NopCloser(strings.NewReader(`
-read user alice * //Sourcegraph/Engineering/...
-read user alice * -//Sourcegraph/Security/...
+		execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
+			return io.NopCloser(strings.NewRebder(`
+rebd user blice * //Sourcegrbph/Engineering/...
+rebd user blice * -//Sourcegrbph/Security/...
 `)), nil, nil
 		})
-		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
-		p.depots = append(p.depots, "//Sourcegraph/")
+		p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
+		p.depots = bppend(p.depots, "//Sourcegrbph/")
 
 		got, err := p.FetchUserPerms(ctx,
 			&extsvc.Account{
@@ -312,140 +312,140 @@ read user alice * -//Sourcegraph/Security/...
 					ServiceType: extsvc.TypePerforce,
 					ServiceID:   "ssl:111.222.333.444:1666",
 				},
-				AccountData: extsvc.AccountData{
-					Data: extsvc.NewUnencryptedData(accountData),
+				AccountDbtb: extsvc.AccountDbtb{
+					Dbtb: extsvc.NewUnencryptedDbtb(bccountDbtb),
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if diff := cmp.Diff(&authz.ExternalUserPermissions{
-			Exacts: []extsvc.RepoID{"//Sourcegraph/"},
-			SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-				"//Sourcegraph/": {
-					Paths: []string{
-						mustGlobPattern(t, "/Engineering/..."),
-						mustGlobPattern(t, "-/Security/..."),
+		if diff := cmp.Diff(&buthz.ExternblUserPermissions{
+			Exbcts: []extsvc.RepoID{"//Sourcegrbph/"},
+			SubRepoPermissions: mbp[extsvc.RepoID]*buthz.SubRepoPermissions{
+				"//Sourcegrbph/": {
+					Pbths: []string{
+						mustGlobPbttern(t, "/Engineering/..."),
+						mustGlobPbttern(t, "-/Security/..."),
 					},
 				},
 			},
 		}, got); diff != "" {
-			t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	t.Run("nil repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
-		_, err := p.FetchRepoPerms(ctx, nil, authz.FetchPermsOptions{})
-		want := "no repository provided"
+		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", []extsvc.RepoID{}, fblse)
+		_, err := p.FetchRepoPerms(ctx, nil, buthz.FetchPermsOptions{})
+		wbnt := "no repository provided"
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
 	t.Run("not the code host of the repository", func(t *testing.T) {
-		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "admin", "password", []extsvc.RepoID{}, false)
+		p := NewProvider(logger, gitserver.NewClient(), "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", []extsvc.RepoID{}, fblse)
 		_, err := p.FetchRepoPerms(ctx,
 			&extsvc.Repository{
-				URI: "gitlab.com/user/repo",
-				ExternalRepoSpec: api.ExternalRepoSpec{
-					ServiceType: extsvc.TypeGitLab,
-					ServiceID:   "https://gitlab.com/",
+				URI: "gitlbb.com/user/repo",
+				ExternblRepoSpec: bpi.ExternblRepoSpec{
+					ServiceType: extsvc.TypeGitLbb,
+					ServiceID:   "https://gitlbb.com/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `not a code host of the repository: want "https://gitlab.com/" but have "ssl:111.222.333.444:1666"`
+		wbnt := `not b code host of the repository: wbnt "https://gitlbb.com/" but hbve "ssl:111.222.333.444:1666"`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-		var data string
+	execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
+		vbr dbtb string
 
-		switch args[0] {
+		switch brgs[0] {
 
-		case "protects":
-			data = `
-## The actual depot prefix does not matter, the "-" sign does
+		cbse "protects":
+			dbtb = `
+## The bctubl depot prefix does not mbtter, the "-" sign does
 list user * * -//...
-write user alice * //Sourcegraph/...
-write user bob * //Sourcegraph/...
-admin group Backend * //Sourcegraph/...   ## includes "alice" and "cindy"
+write user blice * //Sourcegrbph/...
+write user bob * //Sourcegrbph/...
+bdmin group Bbckend * //Sourcegrbph/...   ## includes "blice" bnd "cindy"
 
-admin group Frontend * -//Sourcegraph/... ## excludes "bob", "david" and "frank"
-read user cindy * -//Sourcegraph/...
+bdmin group Frontend * -//Sourcegrbph/... ## excludes "bob", "dbvid" bnd "frbnk"
+rebd user cindy * -//Sourcegrbph/...
 
-list user david * //Sourcegraph/...       ## "list" can't grant read access
+list user dbvid * //Sourcegrbph/...       ## "list" cbn't grbnt rebd bccess
 `
-		case "users":
-			data = `
-alice <alice@example.com> (Alice) accessed 2020/12/04
-bob <bob@example.com> (Bob) accessed 2020/12/04
-cindy <cindy@example.com> (Cindy) accessed 2020/12/04
-david <david@example.com> (David) accessed 2020/12/04
-frank <frank@example.com> (Frank) accessed 2020/12/04
+		cbse "users":
+			dbtb = `
+blice <blice@exbmple.com> (Alice) bccessed 2020/12/04
+bob <bob@exbmple.com> (Bob) bccessed 2020/12/04
+cindy <cindy@exbmple.com> (Cindy) bccessed 2020/12/04
+dbvid <dbvid@exbmple.com> (Dbvid) bccessed 2020/12/04
+frbnk <frbnk@exbmple.com> (Frbnk) bccessed 2020/12/04
 `
-		case "group":
-			switch args[2] {
-			case "Backend":
-				data = `
+		cbse "group":
+			switch brgs[2] {
+			cbse "Bbckend":
+				dbtb = `
 Users:
-	alice
+	blice
 	cindy
 `
-			case "Frontend":
-				data = `
+			cbse "Frontend":
+				dbtb = `
 Users:
 	bob
-	david
-	frank
+	dbvid
+	frbnk
 `
 			}
 		}
 
-		return io.NopCloser(strings.NewReader(data)), nil, nil
+		return io.NopCloser(strings.NewRebder(dbtb)), nil, nil
 	})
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
 	got, err := p.FetchRepoPerms(ctx,
 		&extsvc.Repository{
-			URI: "gitlab.com/user/repo",
-			ExternalRepoSpec: api.ExternalRepoSpec{
+			URI: "gitlbb.com/user/repo",
+			ExternblRepoSpec: bpi.ExternblRepoSpec{
 				ServiceType: extsvc.TypePerforce,
 				ServiceID:   "ssl:111.222.333.444:1666",
 			},
 		},
-		authz.FetchPermsOptions{},
+		buthz.FetchPermsOptions{},
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []extsvc.AccountID{"alice@example.com"}
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	wbnt := []extsvc.AccountID{"blice@exbmple.com"}
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func NewTestProvider(logger log.Logger, urn, host, user, password string, execer p4Execer) *Provider {
-	p := NewProvider(logger, gitserver.NewClient(), urn, host, user, password, []extsvc.RepoID{}, false)
+func NewTestProvider(logger log.Logger, urn, host, user, pbssword string, execer p4Execer) *Provider {
+	p := NewProvider(logger, gitserver.NewClient(), urn, host, user, pbssword, []extsvc.RepoID{}, fblse)
 	p.p4Execer = execer
 	return p
 }
 
-type p4ExecFunc func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error)
+type p4ExecFunc func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error)
 
-func (p p4ExecFunc) P4Exec(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
-	return p(ctx, host, user, password, args...)
+func (p p4ExecFunc) P4Exec(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
+	return p(ctx, host, user, pbssword, brgs...)
 }

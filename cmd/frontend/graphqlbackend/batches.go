@@ -1,740 +1,740 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type CreateBatchChangeArgs struct {
-	BatchSpec         graphql.ID
-	PublicationStates *[]ChangesetSpecPublicationStateInput
+type CrebteBbtchChbngeArgs struct {
+	BbtchSpec         grbphql.ID
+	PublicbtionStbtes *[]ChbngesetSpecPublicbtionStbteInput
 }
 
-type ApplyBatchChangeArgs struct {
-	BatchSpec         graphql.ID
-	EnsureBatchChange *graphql.ID
-	PublicationStates *[]ChangesetSpecPublicationStateInput
+type ApplyBbtchChbngeArgs struct {
+	BbtchSpec         grbphql.ID
+	EnsureBbtchChbnge *grbphql.ID
+	PublicbtionStbtes *[]ChbngesetSpecPublicbtionStbteInput
 }
 
-type ChangesetSpecPublicationStateInput struct {
-	ChangesetSpec    graphql.ID
-	PublicationState batches.PublishedValue
+type ChbngesetSpecPublicbtionStbteInput struct {
+	ChbngesetSpec    grbphql.ID
+	PublicbtionStbte bbtches.PublishedVblue
 }
 
-type ListBatchChangesArgs struct {
+type ListBbtchChbngesArgs struct {
 	First               int32
 	After               *string
-	State               *string
-	States              *[]string
-	ViewerCanAdminister *bool
+	Stbte               *string
+	Stbtes              *[]string
+	ViewerCbnAdminister *bool
 
-	Namespace *graphql.ID
-	Repo      *graphql.ID
+	Nbmespbce *grbphql.ID
+	Repo      *grbphql.ID
 }
 
-type CloseBatchChangeArgs struct {
-	BatchChange     graphql.ID
-	CloseChangesets bool
+type CloseBbtchChbngeArgs struct {
+	BbtchChbnge     grbphql.ID
+	CloseChbngesets bool
 }
 
-type MoveBatchChangeArgs struct {
-	BatchChange  graphql.ID
-	NewName      *string
-	NewNamespace *graphql.ID
+type MoveBbtchChbngeArgs struct {
+	BbtchChbnge  grbphql.ID
+	NewNbme      *string
+	NewNbmespbce *grbphql.ID
 }
 
-type DeleteBatchChangeArgs struct {
-	BatchChange graphql.ID
+type DeleteBbtchChbngeArgs struct {
+	BbtchChbnge grbphql.ID
 }
 
-type SyncChangesetArgs struct {
-	Changeset graphql.ID
+type SyncChbngesetArgs struct {
+	Chbngeset grbphql.ID
 }
 
-type ReenqueueChangesetArgs struct {
-	Changeset graphql.ID
+type ReenqueueChbngesetArgs struct {
+	Chbngeset grbphql.ID
 }
 
-type CreateChangesetSpecsArgs struct {
-	ChangesetSpecs []string
+type CrebteChbngesetSpecsArgs struct {
+	ChbngesetSpecs []string
 }
 
-type CreateChangesetSpecArgs struct {
-	ChangesetSpec string
+type CrebteChbngesetSpecArgs struct {
+	ChbngesetSpec string
 }
 
-type CreateBatchSpecArgs struct {
-	Namespace graphql.ID
+type CrebteBbtchSpecArgs struct {
+	Nbmespbce grbphql.ID
 
-	BatchSpec      string
-	ChangesetSpecs []graphql.ID
+	BbtchSpec      string
+	ChbngesetSpecs []grbphql.ID
 }
 
-type CreateEmptyBatchChangeArgs struct {
-	Namespace graphql.ID
-	Name      string
+type CrebteEmptyBbtchChbngeArgs struct {
+	Nbmespbce grbphql.ID
+	Nbme      string
 }
 
-type UpsertEmptyBatchChangeArgs struct {
-	Namespace graphql.ID
-	Name      string
+type UpsertEmptyBbtchChbngeArgs struct {
+	Nbmespbce grbphql.ID
+	Nbme      string
 }
 
-type CreateBatchSpecFromRawArgs struct {
-	BatchSpec        string
+type CrebteBbtchSpecFromRbwArgs struct {
+	BbtchSpec        string
 	AllowIgnored     bool
 	AllowUnsupported bool
 	Execute          bool
-	NoCache          bool
-	Namespace        graphql.ID
-	BatchChange      graphql.ID
+	NoCbche          bool
+	Nbmespbce        grbphql.ID
+	BbtchChbnge      grbphql.ID
 }
 
-type ReplaceBatchSpecInputArgs struct {
-	PreviousSpec     graphql.ID
-	BatchSpec        string
+type ReplbceBbtchSpecInputArgs struct {
+	PreviousSpec     grbphql.ID
+	BbtchSpec        string
 	AllowIgnored     bool
 	AllowUnsupported bool
 	Execute          bool
-	NoCache          bool
+	NoCbche          bool
 }
 
-type UpsertBatchSpecInputArgs = CreateBatchSpecFromRawArgs
+type UpsertBbtchSpecInputArgs = CrebteBbtchSpecFromRbwArgs
 
-type DeleteBatchSpecArgs struct {
-	BatchSpec graphql.ID
+type DeleteBbtchSpecArgs struct {
+	BbtchSpec grbphql.ID
 }
 
-type ExecuteBatchSpecArgs struct {
-	BatchSpec graphql.ID
-	NoCache   *bool
+type ExecuteBbtchSpecArgs struct {
+	BbtchSpec grbphql.ID
+	NoCbche   *bool
 	AutoApply bool
 }
 
-type CancelBatchSpecExecutionArgs struct {
-	BatchSpec graphql.ID
+type CbncelBbtchSpecExecutionArgs struct {
+	BbtchSpec grbphql.ID
 }
 
-type CancelBatchSpecWorkspaceExecutionArgs struct {
-	BatchSpecWorkspaces []graphql.ID
+type CbncelBbtchSpecWorkspbceExecutionArgs struct {
+	BbtchSpecWorkspbces []grbphql.ID
 }
 
-type RetryBatchSpecWorkspaceExecutionArgs struct {
-	BatchSpecWorkspaces []graphql.ID
+type RetryBbtchSpecWorkspbceExecutionArgs struct {
+	BbtchSpecWorkspbces []grbphql.ID
 }
 
-type RetryBatchSpecExecutionArgs struct {
-	BatchSpec        graphql.ID
+type RetryBbtchSpecExecutionArgs struct {
+	BbtchSpec        grbphql.ID
 	IncludeCompleted bool
 }
 
-type EnqueueBatchSpecWorkspaceExecutionArgs struct {
-	BatchSpecWorkspaces []graphql.ID
+type EnqueueBbtchSpecWorkspbceExecutionArgs struct {
+	BbtchSpecWorkspbces []grbphql.ID
 }
 
-type ToggleBatchSpecAutoApplyArgs struct {
-	BatchSpec graphql.ID
-	Value     bool
+type ToggleBbtchSpecAutoApplyArgs struct {
+	BbtchSpec grbphql.ID
+	Vblue     bool
 }
 
-type ChangesetSpecsConnectionArgs struct {
+type ChbngesetSpecsConnectionArgs struct {
 	First int32
 	After *string
 }
 
-type ChangesetApplyPreviewConnectionArgs struct {
+type ChbngesetApplyPreviewConnectionArgs struct {
 	First  int32
 	After  *string
-	Search *string
-	// CurrentState is a value of type btypes.ChangesetState.
-	CurrentState *string
-	// Action is a value of type btypes.ReconcilerOperation.
+	Sebrch *string
+	// CurrentStbte is b vblue of type btypes.ChbngesetStbte.
+	CurrentStbte *string
+	// Action is b vblue of type btypes.ReconcilerOperbtion.
 	Action            *string
-	PublicationStates *[]ChangesetSpecPublicationStateInput
+	PublicbtionStbtes *[]ChbngesetSpecPublicbtionStbteInput
 }
 
-type BatchChangeArgs struct {
-	Namespace string
-	Name      string
+type BbtchChbngeArgs struct {
+	Nbmespbce string
+	Nbme      string
 }
 
-type ChangesetEventsConnectionArgs struct {
+type ChbngesetEventsConnectionArgs struct {
 	First int32
 	After *string
 }
 
-type CreateBatchChangesCredentialArgs struct {
-	ExternalServiceKind string
-	ExternalServiceURL  string
-	User                *graphql.ID
-	Username            *string
-	Credential          string
+type CrebteBbtchChbngesCredentiblArgs struct {
+	ExternblServiceKind string
+	ExternblServiceURL  string
+	User                *grbphql.ID
+	Usernbme            *string
+	Credentibl          string
 }
 
-type DeleteBatchChangesCredentialArgs struct {
-	BatchChangesCredential graphql.ID
+type DeleteBbtchChbngesCredentiblArgs struct {
+	BbtchChbngesCredentibl grbphql.ID
 }
 
-type ListBatchChangesCodeHostsArgs struct {
+type ListBbtchChbngesCodeHostsArgs struct {
 	First  int32
 	After  *string
 	UserID *int32
 }
 
-type ListViewerBatchChangesCodeHostsArgs struct {
+type ListViewerBbtchChbngesCodeHostsArgs struct {
 	First                 int32
 	After                 *string
-	OnlyWithoutCredential bool
+	OnlyWithoutCredentibl bool
 	OnlyWithoutWebhooks   bool
 }
 
-type BulkOperationBaseArgs struct {
-	BatchChange graphql.ID
-	Changesets  []graphql.ID
+type BulkOperbtionBbseArgs struct {
+	BbtchChbnge grbphql.ID
+	Chbngesets  []grbphql.ID
 }
 
-type DetachChangesetsArgs struct {
-	BulkOperationBaseArgs
+type DetbchChbngesetsArgs struct {
+	BulkOperbtionBbseArgs
 }
 
-type ListBatchChangeBulkOperationArgs struct {
+type ListBbtchChbngeBulkOperbtionArgs struct {
 	First        int32
 	After        *string
-	CreatedAfter *gqlutil.DateTime
+	CrebtedAfter *gqlutil.DbteTime
 }
 
-type CreateChangesetCommentsArgs struct {
-	BulkOperationBaseArgs
+type CrebteChbngesetCommentsArgs struct {
+	BulkOperbtionBbseArgs
 	Body string
 }
 
-type ReenqueueChangesetsArgs struct {
-	BulkOperationBaseArgs
+type ReenqueueChbngesetsArgs struct {
+	BulkOperbtionBbseArgs
 }
 
-type MergeChangesetsArgs struct {
-	BulkOperationBaseArgs
-	Squash bool
+type MergeChbngesetsArgs struct {
+	BulkOperbtionBbseArgs
+	Squbsh bool
 }
 
-type CloseChangesetsArgs struct {
-	BulkOperationBaseArgs
+type CloseChbngesetsArgs struct {
+	BulkOperbtionBbseArgs
 }
 
-type PublishChangesetsArgs struct {
-	BulkOperationBaseArgs
-	Draft bool
+type PublishChbngesetsArgs struct {
+	BulkOperbtionBbseArgs
+	Drbft bool
 }
 
-type ResolveWorkspacesForBatchSpecArgs struct {
-	BatchSpec string
+type ResolveWorkspbcesForBbtchSpecArgs struct {
+	BbtchSpec string
 }
 
-type ListImportingChangesetsArgs struct {
+type ListImportingChbngesetsArgs struct {
 	First  int32
 	After  *string
-	Search *string
+	Sebrch *string
 }
 
-type BatchSpecWorkspaceStepArgs struct {
+type BbtchSpecWorkspbceStepArgs struct {
 	Index int32
 }
 
-type BatchChangesResolver interface {
+type BbtchChbngesResolver interfbce {
 	//
 	// MUTATIONS
 	//
-	CreateBatchChange(ctx context.Context, args *CreateBatchChangeArgs) (BatchChangeResolver, error)
-	CreateBatchSpec(ctx context.Context, args *CreateBatchSpecArgs) (BatchSpecResolver, error)
-	CreateEmptyBatchChange(ctx context.Context, args *CreateEmptyBatchChangeArgs) (BatchChangeResolver, error)
-	UpsertEmptyBatchChange(ctx context.Context, args *UpsertEmptyBatchChangeArgs) (BatchChangeResolver, error)
-	CreateBatchSpecFromRaw(ctx context.Context, args *CreateBatchSpecFromRawArgs) (BatchSpecResolver, error)
-	ReplaceBatchSpecInput(ctx context.Context, args *ReplaceBatchSpecInputArgs) (BatchSpecResolver, error)
-	UpsertBatchSpecInput(ctx context.Context, args *UpsertBatchSpecInputArgs) (BatchSpecResolver, error)
-	DeleteBatchSpec(ctx context.Context, args *DeleteBatchSpecArgs) (*EmptyResponse, error)
-	ExecuteBatchSpec(ctx context.Context, args *ExecuteBatchSpecArgs) (BatchSpecResolver, error)
-	CancelBatchSpecExecution(ctx context.Context, args *CancelBatchSpecExecutionArgs) (BatchSpecResolver, error)
-	CancelBatchSpecWorkspaceExecution(ctx context.Context, args *CancelBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
-	RetryBatchSpecWorkspaceExecution(ctx context.Context, args *RetryBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
-	RetryBatchSpecExecution(ctx context.Context, args *RetryBatchSpecExecutionArgs) (BatchSpecResolver, error)
-	EnqueueBatchSpecWorkspaceExecution(ctx context.Context, args *EnqueueBatchSpecWorkspaceExecutionArgs) (*EmptyResponse, error)
-	ToggleBatchSpecAutoApply(ctx context.Context, args *ToggleBatchSpecAutoApplyArgs) (BatchSpecResolver, error)
+	CrebteBbtchChbnge(ctx context.Context, brgs *CrebteBbtchChbngeArgs) (BbtchChbngeResolver, error)
+	CrebteBbtchSpec(ctx context.Context, brgs *CrebteBbtchSpecArgs) (BbtchSpecResolver, error)
+	CrebteEmptyBbtchChbnge(ctx context.Context, brgs *CrebteEmptyBbtchChbngeArgs) (BbtchChbngeResolver, error)
+	UpsertEmptyBbtchChbnge(ctx context.Context, brgs *UpsertEmptyBbtchChbngeArgs) (BbtchChbngeResolver, error)
+	CrebteBbtchSpecFromRbw(ctx context.Context, brgs *CrebteBbtchSpecFromRbwArgs) (BbtchSpecResolver, error)
+	ReplbceBbtchSpecInput(ctx context.Context, brgs *ReplbceBbtchSpecInputArgs) (BbtchSpecResolver, error)
+	UpsertBbtchSpecInput(ctx context.Context, brgs *UpsertBbtchSpecInputArgs) (BbtchSpecResolver, error)
+	DeleteBbtchSpec(ctx context.Context, brgs *DeleteBbtchSpecArgs) (*EmptyResponse, error)
+	ExecuteBbtchSpec(ctx context.Context, brgs *ExecuteBbtchSpecArgs) (BbtchSpecResolver, error)
+	CbncelBbtchSpecExecution(ctx context.Context, brgs *CbncelBbtchSpecExecutionArgs) (BbtchSpecResolver, error)
+	CbncelBbtchSpecWorkspbceExecution(ctx context.Context, brgs *CbncelBbtchSpecWorkspbceExecutionArgs) (*EmptyResponse, error)
+	RetryBbtchSpecWorkspbceExecution(ctx context.Context, brgs *RetryBbtchSpecWorkspbceExecutionArgs) (*EmptyResponse, error)
+	RetryBbtchSpecExecution(ctx context.Context, brgs *RetryBbtchSpecExecutionArgs) (BbtchSpecResolver, error)
+	EnqueueBbtchSpecWorkspbceExecution(ctx context.Context, brgs *EnqueueBbtchSpecWorkspbceExecutionArgs) (*EmptyResponse, error)
+	ToggleBbtchSpecAutoApply(ctx context.Context, brgs *ToggleBbtchSpecAutoApplyArgs) (BbtchSpecResolver, error)
 
-	ApplyBatchChange(ctx context.Context, args *ApplyBatchChangeArgs) (BatchChangeResolver, error)
-	CloseBatchChange(ctx context.Context, args *CloseBatchChangeArgs) (BatchChangeResolver, error)
-	MoveBatchChange(ctx context.Context, args *MoveBatchChangeArgs) (BatchChangeResolver, error)
-	DeleteBatchChange(ctx context.Context, args *DeleteBatchChangeArgs) (*EmptyResponse, error)
-	CreateBatchChangesCredential(ctx context.Context, args *CreateBatchChangesCredentialArgs) (BatchChangesCredentialResolver, error)
-	DeleteBatchChangesCredential(ctx context.Context, args *DeleteBatchChangesCredentialArgs) (*EmptyResponse, error)
+	ApplyBbtchChbnge(ctx context.Context, brgs *ApplyBbtchChbngeArgs) (BbtchChbngeResolver, error)
+	CloseBbtchChbnge(ctx context.Context, brgs *CloseBbtchChbngeArgs) (BbtchChbngeResolver, error)
+	MoveBbtchChbnge(ctx context.Context, brgs *MoveBbtchChbngeArgs) (BbtchChbngeResolver, error)
+	DeleteBbtchChbnge(ctx context.Context, brgs *DeleteBbtchChbngeArgs) (*EmptyResponse, error)
+	CrebteBbtchChbngesCredentibl(ctx context.Context, brgs *CrebteBbtchChbngesCredentiblArgs) (BbtchChbngesCredentiblResolver, error)
+	DeleteBbtchChbngesCredentibl(ctx context.Context, brgs *DeleteBbtchChbngesCredentiblArgs) (*EmptyResponse, error)
 
-	CreateChangesetSpec(ctx context.Context, args *CreateChangesetSpecArgs) (ChangesetSpecResolver, error)
-	CreateChangesetSpecs(ctx context.Context, args *CreateChangesetSpecsArgs) ([]ChangesetSpecResolver, error)
-	SyncChangeset(ctx context.Context, args *SyncChangesetArgs) (*EmptyResponse, error)
-	ReenqueueChangeset(ctx context.Context, args *ReenqueueChangesetArgs) (ChangesetResolver, error)
-	DetachChangesets(ctx context.Context, args *DetachChangesetsArgs) (BulkOperationResolver, error)
-	CreateChangesetComments(ctx context.Context, args *CreateChangesetCommentsArgs) (BulkOperationResolver, error)
-	ReenqueueChangesets(ctx context.Context, args *ReenqueueChangesetsArgs) (BulkOperationResolver, error)
-	MergeChangesets(ctx context.Context, args *MergeChangesetsArgs) (BulkOperationResolver, error)
-	CloseChangesets(ctx context.Context, args *CloseChangesetsArgs) (BulkOperationResolver, error)
-	PublishChangesets(ctx context.Context, args *PublishChangesetsArgs) (BulkOperationResolver, error)
+	CrebteChbngesetSpec(ctx context.Context, brgs *CrebteChbngesetSpecArgs) (ChbngesetSpecResolver, error)
+	CrebteChbngesetSpecs(ctx context.Context, brgs *CrebteChbngesetSpecsArgs) ([]ChbngesetSpecResolver, error)
+	SyncChbngeset(ctx context.Context, brgs *SyncChbngesetArgs) (*EmptyResponse, error)
+	ReenqueueChbngeset(ctx context.Context, brgs *ReenqueueChbngesetArgs) (ChbngesetResolver, error)
+	DetbchChbngesets(ctx context.Context, brgs *DetbchChbngesetsArgs) (BulkOperbtionResolver, error)
+	CrebteChbngesetComments(ctx context.Context, brgs *CrebteChbngesetCommentsArgs) (BulkOperbtionResolver, error)
+	ReenqueueChbngesets(ctx context.Context, brgs *ReenqueueChbngesetsArgs) (BulkOperbtionResolver, error)
+	MergeChbngesets(ctx context.Context, brgs *MergeChbngesetsArgs) (BulkOperbtionResolver, error)
+	CloseChbngesets(ctx context.Context, brgs *CloseChbngesetsArgs) (BulkOperbtionResolver, error)
+	PublishChbngesets(ctx context.Context, brgs *PublishChbngesetsArgs) (BulkOperbtionResolver, error)
 
 	// Queries
-	BatchChange(ctx context.Context, args *BatchChangeArgs) (BatchChangeResolver, error)
-	BatchChanges(cx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	BbtchChbnge(ctx context.Context, brgs *BbtchChbngeArgs) (BbtchChbngeResolver, error)
+	BbtchChbnges(cx context.Context, brgs *ListBbtchChbngesArgs) (BbtchChbngesConnectionResolver, error)
 
-	GlobalChangesetsStats(cx context.Context) (GlobalChangesetsStatsResolver, error)
+	GlobblChbngesetsStbts(cx context.Context) (GlobblChbngesetsStbtsResolver, error)
 
-	BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
-	RepoChangesetsStats(ctx context.Context, repo *graphql.ID) (RepoChangesetsStatsResolver, error)
-	RepoDiffStat(ctx context.Context, repo *graphql.ID) (*DiffStat, error)
+	BbtchChbngesCodeHosts(ctx context.Context, brgs *ListBbtchChbngesCodeHostsArgs) (BbtchChbngesCodeHostConnectionResolver, error)
+	RepoChbngesetsStbts(ctx context.Context, repo *grbphql.ID) (RepoChbngesetsStbtsResolver, error)
+	RepoDiffStbt(ctx context.Context, repo *grbphql.ID) (*DiffStbt, error)
 
-	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
-	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
+	BbtchSpecs(cx context.Context, brgs *ListBbtchSpecArgs) (BbtchSpecConnectionResolver, error)
+	AvbilbbleBulkOperbtions(ctx context.Context, brgs *AvbilbbleBulkOperbtionsArgs) ([]string, error)
 
-	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) ([]ResolvedBatchSpecWorkspaceResolver, error)
+	ResolveWorkspbcesForBbtchSpec(ctx context.Context, brgs *ResolveWorkspbcesForBbtchSpecArgs) ([]ResolvedBbtchSpecWorkspbceResolver, error)
 
-	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
+	CheckBbtchChbngesCredentibl(ctx context.Context, brgs *CheckBbtchChbngesCredentiblArgs) (*EmptyResponse, error)
 
-	MaxUnlicensedChangesets(ctx context.Context) int32
+	MbxUnlicensedChbngesets(ctx context.Context) int32
 
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
-type BulkOperationConnectionResolver interface {
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]BulkOperationResolver, error)
+type BulkOperbtionConnectionResolver interfbce {
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
+	Nodes(ctx context.Context) ([]BulkOperbtionResolver, error)
 }
 
-type BulkOperationResolver interface {
-	ID() graphql.ID
+type BulkOperbtionResolver interfbce {
+	ID() grbphql.ID
 	Type() (string, error)
-	State() string
-	Progress() float64
-	Errors(ctx context.Context) ([]ChangesetJobErrorResolver, error)
-	Initiator(ctx context.Context) (*UserResolver, error)
-	ChangesetCount() int32
-	CreatedAt() gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
+	Stbte() string
+	Progress() flobt64
+	Errors(ctx context.Context) ([]ChbngesetJobErrorResolver, error)
+	Initibtor(ctx context.Context) (*UserResolver, error)
+	ChbngesetCount() int32
+	CrebtedAt() gqlutil.DbteTime
+	FinishedAt() *gqlutil.DbteTime
 }
 
-type ChangesetJobErrorResolver interface {
-	Changeset() ChangesetResolver
+type ChbngesetJobErrorResolver interfbce {
+	Chbngeset() ChbngesetResolver
 	Error() *string
 }
 
-type BatchSpecResolver interface {
-	ID() graphql.ID
+type BbtchSpecResolver interfbce {
+	ID() grbphql.ID
 
-	OriginalInput() (string, error)
-	ParsedInput() (JSONValue, error)
-	ChangesetSpecs(ctx context.Context, args *ChangesetSpecsConnectionArgs) (ChangesetSpecConnectionResolver, error)
-	ApplyPreview(ctx context.Context, args *ChangesetApplyPreviewConnectionArgs) (ChangesetApplyPreviewConnectionResolver, error)
+	OriginblInput() (string, error)
+	PbrsedInput() (JSONVblue, error)
+	ChbngesetSpecs(ctx context.Context, brgs *ChbngesetSpecsConnectionArgs) (ChbngesetSpecConnectionResolver, error)
+	ApplyPreview(ctx context.Context, brgs *ChbngesetApplyPreviewConnectionArgs) (ChbngesetApplyPreviewConnectionResolver, error)
 
-	Description() BatchChangeDescriptionResolver
+	Description() BbtchChbngeDescriptionResolver
 
-	Creator(context.Context) (*UserResolver, error)
-	CreatedAt() gqlutil.DateTime
-	Namespace(context.Context) (*NamespaceResolver, error)
+	Crebtor(context.Context) (*UserResolver, error)
+	CrebtedAt() gqlutil.DbteTime
+	Nbmespbce(context.Context) (*NbmespbceResolver, error)
 
-	ExpiresAt() *gqlutil.DateTime
+	ExpiresAt() *gqlutil.DbteTime
 
 	ApplyURL(ctx context.Context) (*string, error)
 
-	ViewerCanAdminister(context.Context) (bool, error)
+	ViewerCbnAdminister(context.Context) (bool, error)
 
-	DiffStat(ctx context.Context) (*DiffStat, error)
+	DiffStbt(ctx context.Context) (*DiffStbt, error)
 
-	AppliesToBatchChange(ctx context.Context) (BatchChangeResolver, error)
+	AppliesToBbtchChbnge(ctx context.Context) (BbtchChbngeResolver, error)
 
-	SupersedingBatchSpec(context.Context) (BatchSpecResolver, error)
+	SupersedingBbtchSpec(context.Context) (BbtchSpecResolver, error)
 
-	ViewerBatchChangesCodeHosts(ctx context.Context, args *ListViewerBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error)
+	ViewerBbtchChbngesCodeHosts(ctx context.Context, brgs *ListViewerBbtchChbngesCodeHostsArgs) (BbtchChbngesCodeHostConnectionResolver, error)
 
-	AutoApplyEnabled() bool
-	State(context.Context) (string, error)
-	StartedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	FinishedAt(ctx context.Context) (*gqlutil.DateTime, error)
-	FailureMessage(ctx context.Context) (*string, error)
-	WorkspaceResolution(ctx context.Context) (BatchSpecWorkspaceResolutionResolver, error)
-	ImportingChangesets(ctx context.Context, args *ListImportingChangesetsArgs) (ChangesetSpecConnectionResolver, error)
+	AutoApplyEnbbled() bool
+	Stbte(context.Context) (string, error)
+	StbrtedAt(ctx context.Context) (*gqlutil.DbteTime, error)
+	FinishedAt(ctx context.Context) (*gqlutil.DbteTime, error)
+	FbilureMessbge(ctx context.Context) (*string, error)
+	WorkspbceResolution(ctx context.Context) (BbtchSpecWorkspbceResolutionResolver, error)
+	ImportingChbngesets(ctx context.Context, brgs *ListImportingChbngesetsArgs) (ChbngesetSpecConnectionResolver, error)
 
 	AllowIgnored() *bool
 	AllowUnsupported() *bool
-	NoCache() *bool
+	NoCbche() *bool
 
-	ViewerCanRetry(context.Context) (bool, error)
+	ViewerCbnRetry(context.Context) (bool, error)
 
 	Source() string
 
-	Files(ctx context.Context, args *ListBatchSpecWorkspaceFilesArgs) (BatchSpecWorkspaceFileConnectionResolver, error)
+	Files(ctx context.Context, brgs *ListBbtchSpecWorkspbceFilesArgs) (BbtchSpecWorkspbceFileConnectionResolver, error)
 }
 
-type BatchChangeDescriptionResolver interface {
-	Name() string
+type BbtchChbngeDescriptionResolver interfbce {
+	Nbme() string
 	Description() string
 }
 
-type ChangesetApplyPreviewResolver interface {
-	ToVisibleChangesetApplyPreview() (VisibleChangesetApplyPreviewResolver, bool)
-	ToHiddenChangesetApplyPreview() (HiddenChangesetApplyPreviewResolver, bool)
+type ChbngesetApplyPreviewResolver interfbce {
+	ToVisibleChbngesetApplyPreview() (VisibleChbngesetApplyPreviewResolver, bool)
+	ToHiddenChbngesetApplyPreview() (HiddenChbngesetApplyPreviewResolver, bool)
 }
 
-type VisibleChangesetApplyPreviewResolver interface {
-	// Operations returns a slice of btypes.ReconcilerOperation.
-	Operations(ctx context.Context) ([]string, error)
-	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
-	Targets() VisibleApplyPreviewTargetsResolver
+type VisibleChbngesetApplyPreviewResolver interfbce {
+	// Operbtions returns b slice of btypes.ReconcilerOperbtion.
+	Operbtions(ctx context.Context) ([]string, error)
+	Deltb(ctx context.Context) (ChbngesetSpecDeltbResolver, error)
+	Tbrgets() VisibleApplyPreviewTbrgetsResolver
 }
 
-type HiddenChangesetApplyPreviewResolver interface {
-	// Operations returns a slice of btypes.ReconcilerOperation.
-	Operations(ctx context.Context) ([]string, error)
-	Delta(ctx context.Context) (ChangesetSpecDeltaResolver, error)
-	Targets() HiddenApplyPreviewTargetsResolver
+type HiddenChbngesetApplyPreviewResolver interfbce {
+	// Operbtions returns b slice of btypes.ReconcilerOperbtion.
+	Operbtions(ctx context.Context) ([]string, error)
+	Deltb(ctx context.Context) (ChbngesetSpecDeltbResolver, error)
+	Tbrgets() HiddenApplyPreviewTbrgetsResolver
 }
 
-type VisibleApplyPreviewTargetsResolver interface {
-	ToVisibleApplyPreviewTargetsAttach() (VisibleApplyPreviewTargetsAttachResolver, bool)
-	ToVisibleApplyPreviewTargetsUpdate() (VisibleApplyPreviewTargetsUpdateResolver, bool)
-	ToVisibleApplyPreviewTargetsDetach() (VisibleApplyPreviewTargetsDetachResolver, bool)
+type VisibleApplyPreviewTbrgetsResolver interfbce {
+	ToVisibleApplyPreviewTbrgetsAttbch() (VisibleApplyPreviewTbrgetsAttbchResolver, bool)
+	ToVisibleApplyPreviewTbrgetsUpdbte() (VisibleApplyPreviewTbrgetsUpdbteResolver, bool)
+	ToVisibleApplyPreviewTbrgetsDetbch() (VisibleApplyPreviewTbrgetsDetbchResolver, bool)
 }
 
-type VisibleApplyPreviewTargetsAttachResolver interface {
-	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+type VisibleApplyPreviewTbrgetsAttbchResolver interfbce {
+	ChbngesetSpec(ctx context.Context) (VisibleChbngesetSpecResolver, error)
 }
-type VisibleApplyPreviewTargetsUpdateResolver interface {
-	ChangesetSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
-	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
+type VisibleApplyPreviewTbrgetsUpdbteResolver interfbce {
+	ChbngesetSpec(ctx context.Context) (VisibleChbngesetSpecResolver, error)
+	Chbngeset(ctx context.Context) (ExternblChbngesetResolver, error)
 }
-type VisibleApplyPreviewTargetsDetachResolver interface {
-	Changeset(ctx context.Context) (ExternalChangesetResolver, error)
-}
-
-type HiddenApplyPreviewTargetsResolver interface {
-	ToHiddenApplyPreviewTargetsAttach() (HiddenApplyPreviewTargetsAttachResolver, bool)
-	ToHiddenApplyPreviewTargetsUpdate() (HiddenApplyPreviewTargetsUpdateResolver, bool)
-	ToHiddenApplyPreviewTargetsDetach() (HiddenApplyPreviewTargetsDetachResolver, bool)
+type VisibleApplyPreviewTbrgetsDetbchResolver interfbce {
+	Chbngeset(ctx context.Context) (ExternblChbngesetResolver, error)
 }
 
-type HiddenApplyPreviewTargetsAttachResolver interface {
-	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
-}
-type HiddenApplyPreviewTargetsUpdateResolver interface {
-	ChangesetSpec(ctx context.Context) (HiddenChangesetSpecResolver, error)
-	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
-}
-type HiddenApplyPreviewTargetsDetachResolver interface {
-	Changeset(ctx context.Context) (HiddenExternalChangesetResolver, error)
+type HiddenApplyPreviewTbrgetsResolver interfbce {
+	ToHiddenApplyPreviewTbrgetsAttbch() (HiddenApplyPreviewTbrgetsAttbchResolver, bool)
+	ToHiddenApplyPreviewTbrgetsUpdbte() (HiddenApplyPreviewTbrgetsUpdbteResolver, bool)
+	ToHiddenApplyPreviewTbrgetsDetbch() (HiddenApplyPreviewTbrgetsDetbchResolver, bool)
 }
 
-type ChangesetApplyPreviewConnectionStatsResolver interface {
+type HiddenApplyPreviewTbrgetsAttbchResolver interfbce {
+	ChbngesetSpec(ctx context.Context) (HiddenChbngesetSpecResolver, error)
+}
+type HiddenApplyPreviewTbrgetsUpdbteResolver interfbce {
+	ChbngesetSpec(ctx context.Context) (HiddenChbngesetSpecResolver, error)
+	Chbngeset(ctx context.Context) (HiddenExternblChbngesetResolver, error)
+}
+type HiddenApplyPreviewTbrgetsDetbchResolver interfbce {
+	Chbngeset(ctx context.Context) (HiddenExternblChbngesetResolver, error)
+}
+
+type ChbngesetApplyPreviewConnectionStbtsResolver interfbce {
 	Push() int32
-	Update() int32
-	Undraft() int32
+	Updbte() int32
+	Undrbft() int32
 	Publish() int32
-	PublishDraft() int32
+	PublishDrbft() int32
 	Sync() int32
 	Import() int32
 	Close() int32
 	Reopen() int32
 	Sleep() int32
-	Detach() int32
+	Detbch() int32
 	Archive() int32
-	Reattach() int32
+	Rebttbch() int32
 
 	Added() int32
 	Modified() int32
 	Removed() int32
 }
 
-type ChangesetApplyPreviewConnectionResolver interface {
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]ChangesetApplyPreviewResolver, error)
-	Stats(ctx context.Context) (ChangesetApplyPreviewConnectionStatsResolver, error)
+type ChbngesetApplyPreviewConnectionResolver interfbce {
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
+	Nodes(ctx context.Context) ([]ChbngesetApplyPreviewResolver, error)
+	Stbts(ctx context.Context) (ChbngesetApplyPreviewConnectionStbtsResolver, error)
 }
 
-type ChangesetSpecConnectionResolver interface {
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]ChangesetSpecResolver, error)
+type ChbngesetSpecConnectionResolver interfbce {
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
+	Nodes(ctx context.Context) ([]ChbngesetSpecResolver, error)
 }
 
-type ChangesetSpecResolver interface {
-	ID() graphql.ID
-	// Type returns a value of type btypes.ChangesetSpecDescriptionType.
+type ChbngesetSpecResolver interfbce {
+	ID() grbphql.ID
+	// Type returns b vblue of type btypes.ChbngesetSpecDescriptionType.
 	Type() string
-	ExpiresAt() *gqlutil.DateTime
+	ExpiresAt() *gqlutil.DbteTime
 
-	ToHiddenChangesetSpec() (HiddenChangesetSpecResolver, bool)
-	ToVisibleChangesetSpec() (VisibleChangesetSpecResolver, bool)
+	ToHiddenChbngesetSpec() (HiddenChbngesetSpecResolver, bool)
+	ToVisibleChbngesetSpec() (VisibleChbngesetSpecResolver, bool)
 }
 
-type HiddenChangesetSpecResolver interface {
-	ChangesetSpecResolver
+type HiddenChbngesetSpecResolver interfbce {
+	ChbngesetSpecResolver
 }
 
-type VisibleChangesetSpecResolver interface {
-	ChangesetSpecResolver
+type VisibleChbngesetSpecResolver interfbce {
+	ChbngesetSpecResolver
 
-	Description(ctx context.Context) (ChangesetDescription, error)
-	Workspace(ctx context.Context) (BatchSpecWorkspaceResolver, error)
+	Description(ctx context.Context) (ChbngesetDescription, error)
+	Workspbce(ctx context.Context) (BbtchSpecWorkspbceResolver, error)
 
-	ForkTarget() ForkTargetInterface
+	ForkTbrget() ForkTbrgetInterfbce
 }
 
-type ChangesetSpecDeltaResolver interface {
-	TitleChanged() bool
-	BodyChanged() bool
-	Undraft() bool
-	BaseRefChanged() bool
-	DiffChanged() bool
-	CommitMessageChanged() bool
-	AuthorNameChanged() bool
-	AuthorEmailChanged() bool
+type ChbngesetSpecDeltbResolver interfbce {
+	TitleChbnged() bool
+	BodyChbnged() bool
+	Undrbft() bool
+	BbseRefChbnged() bool
+	DiffChbnged() bool
+	CommitMessbgeChbnged() bool
+	AuthorNbmeChbnged() bool
+	AuthorEmbilChbnged() bool
 }
 
-type ChangesetDescription interface {
-	ToExistingChangesetReference() (ExistingChangesetReferenceResolver, bool)
-	ToGitBranchChangesetDescription() (GitBranchChangesetDescriptionResolver, bool)
+type ChbngesetDescription interfbce {
+	ToExistingChbngesetReference() (ExistingChbngesetReferenceResolver, bool)
+	ToGitBrbnchChbngesetDescription() (GitBrbnchChbngesetDescriptionResolver, bool)
 }
 
-type ExistingChangesetReferenceResolver interface {
-	BaseRepository() *RepositoryResolver
-	ExternalID() string
+type ExistingChbngesetReferenceResolver interfbce {
+	BbseRepository() *RepositoryResolver
+	ExternblID() string
 }
 
-type GitBranchChangesetDescriptionResolver interface {
-	BaseRepository() *RepositoryResolver
-	BaseRef() string
-	BaseRev() string
+type GitBrbnchChbngesetDescriptionResolver interfbce {
+	BbseRepository() *RepositoryResolver
+	BbseRef() string
+	BbseRev() string
 
-	HeadRef() string
+	HebdRef() string
 
 	Title() string
 	Body() string
 
-	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
-	DiffStat() *DiffStat
+	Diff(ctx context.Context) (PreviewRepositoryCompbrisonResolver, error)
+	DiffStbt() *DiffStbt
 
 	Commits() []GitCommitDescriptionResolver
 
-	Published() *batches.PublishedValue
+	Published() *bbtches.PublishedVblue
 }
 
-type GitCommitDescriptionResolver interface {
-	Message() string
+type GitCommitDescriptionResolver interfbce {
+	Messbge() string
 	Subject() string
 	Body() *string
 	Author() *PersonResolver
 	Diff() string
 }
 
-type ForkTargetInterface interface {
+type ForkTbrgetInterfbce interfbce {
 	PushUser() bool
-	Namespace() *string
+	Nbmespbce() *string
 }
 
-type BatchChangesCodeHostConnectionResolver interface {
-	Nodes(ctx context.Context) ([]BatchChangesCodeHostResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type BbtchChbngesCodeHostConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]BbtchChbngesCodeHostResolver, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type BatchChangesCodeHostResolver interface {
-	ExternalServiceKind() string
-	ExternalServiceURL() string
+type BbtchChbngesCodeHostResolver interfbce {
+	ExternblServiceKind() string
+	ExternblServiceURL() string
 	RequiresSSH() bool
-	RequiresUsername() bool
+	RequiresUsernbme() bool
 	SupportsCommitSigning() bool
-	HasWebhooks() bool
-	Credential() BatchChangesCredentialResolver
-	CommitSigningConfiguration(context.Context) (CommitSigningConfigResolver, error)
+	HbsWebhooks() bool
+	Credentibl() BbtchChbngesCredentiblResolver
+	CommitSigningConfigurbtion(context.Context) (CommitSigningConfigResolver, error)
 }
 
-type BatchChangesCredentialResolver interface {
-	ID() graphql.ID
-	ExternalServiceKind() string
-	ExternalServiceURL() string
+type BbtchChbngesCredentiblResolver interfbce {
+	ID() grbphql.ID
+	ExternblServiceKind() string
+	ExternblServiceURL() string
 	SSHPublicKey(ctx context.Context) (*string, error)
-	CreatedAt() gqlutil.DateTime
-	IsSiteCredential() bool
+	CrebtedAt() gqlutil.DbteTime
+	IsSiteCredentibl() bool
 }
 
-// Only GitHubApps are supported for commit signing for now.
-type CommitSigningConfigResolver interface {
+// Only GitHubApps bre supported for commit signing for now.
+type CommitSigningConfigResolver interfbce {
 	ToGitHubApp() (GitHubAppResolver, bool)
 }
 
-type ChangesetCountsArgs struct {
-	From            *gqlutil.DateTime
-	To              *gqlutil.DateTime
+type ChbngesetCountsArgs struct {
+	From            *gqlutil.DbteTime
+	To              *gqlutil.DbteTime
 	IncludeArchived bool
 }
 
-type ListChangesetsArgs struct {
+type ListChbngesetsArgs struct {
 	First int32
 	After *string
-	// PublicationState is a value of type *btypes.ChangesetPublicationState.
-	PublicationState *string
-	// ReconcilerState is a slice of *btypes.ReconcilerState.
-	ReconcilerState *[]string
-	// ExternalState is a value of type *btypes.ChangesetExternalState.
-	ExternalState *string
-	// State is a value of type *btypes.ChangesetState.
-	State *string
-	// onlyClosable indicates the user only wants open and draft changesets to be returned
-	OnlyClosable *bool
-	// ReviewState is a value of type *btypes.ChangesetReviewState.
-	ReviewState *string
-	// CheckState is a value of type *btypes.ChangesetCheckState.
-	CheckState                     *string
-	OnlyPublishedByThisBatchChange *bool
-	Search                         *string
+	// PublicbtionStbte is b vblue of type *btypes.ChbngesetPublicbtionStbte.
+	PublicbtionStbte *string
+	// ReconcilerStbte is b slice of *btypes.ReconcilerStbte.
+	ReconcilerStbte *[]string
+	// ExternblStbte is b vblue of type *btypes.ChbngesetExternblStbte.
+	ExternblStbte *string
+	// Stbte is b vblue of type *btypes.ChbngesetStbte.
+	Stbte *string
+	// onlyClosbble indicbtes the user only wbnts open bnd drbft chbngesets to be returned
+	OnlyClosbble *bool
+	// ReviewStbte is b vblue of type *btypes.ChbngesetReviewStbte.
+	ReviewStbte *string
+	// CheckStbte is b vblue of type *btypes.ChbngesetCheckStbte.
+	CheckStbte                     *string
+	OnlyPublishedByThisBbtchChbnge *bool
+	Sebrch                         *string
 
 	OnlyArchived bool
-	Repo         *graphql.ID
+	Repo         *grbphql.ID
 }
 
-type ListBatchSpecArgs struct {
+type ListBbtchSpecArgs struct {
 	First                       int32
 	After                       *string
-	IncludeLocallyExecutedSpecs *bool
+	IncludeLocbllyExecutedSpecs *bool
 	ExcludeEmptySpecs           *bool
 }
 
-type ListBatchSpecWorkspaceFilesArgs struct {
+type ListBbtchSpecWorkspbceFilesArgs struct {
 	First int32
 	After *string
 }
 
-type AvailableBulkOperationsArgs struct {
-	BatchChange graphql.ID
-	Changesets  []graphql.ID
+type AvbilbbleBulkOperbtionsArgs struct {
+	BbtchChbnge grbphql.ID
+	Chbngesets  []grbphql.ID
 }
 
-type CheckBatchChangesCredentialArgs struct {
-	BatchChangesCredential graphql.ID
+type CheckBbtchChbngesCredentiblArgs struct {
+	BbtchChbngesCredentibl grbphql.ID
 }
 
-type ListWorkspacesArgs struct {
+type ListWorkspbcesArgs struct {
 	First   int32
 	After   *string
 	OrderBy *string
-	Search  *string
-	State   *string
+	Sebrch  *string
+	Stbte   *string
 }
 
-type ListRecentlyCompletedWorkspacesArgs struct {
+type ListRecentlyCompletedWorkspbcesArgs struct {
 	First int32
 	After *string
 }
 
-type ListRecentlyErroredWorkspacesArgs struct {
+type ListRecentlyErroredWorkspbcesArgs struct {
 	First int32
 	After *string
 }
 
-type BatchSpecWorkspaceStepOutputLinesArgs struct {
+type BbtchSpecWorkspbceStepOutputLinesArgs struct {
 	First int32
 	After *string
 }
 
-type BatchChangeResolver interface {
-	ID() graphql.ID
-	Name() string
+type BbtchChbngeResolver interfbce {
+	ID() grbphql.ID
+	Nbme() string
 	Description() *string
-	State() string
-	Creator(ctx context.Context) (*UserResolver, error)
-	LastApplier(ctx context.Context) (*UserResolver, error)
-	LastAppliedAt() *gqlutil.DateTime
-	ViewerCanAdminister(ctx context.Context) (bool, error)
+	Stbte() string
+	Crebtor(ctx context.Context) (*UserResolver, error)
+	LbstApplier(ctx context.Context) (*UserResolver, error)
+	LbstAppliedAt() *gqlutil.DbteTime
+	ViewerCbnAdminister(ctx context.Context) (bool, error)
 	URL(ctx context.Context) (string, error)
-	Namespace(ctx context.Context) (n NamespaceResolver, err error)
-	CreatedAt() gqlutil.DateTime
-	UpdatedAt() gqlutil.DateTime
-	ChangesetsStats(ctx context.Context) (ChangesetsStatsResolver, error)
-	Changesets(ctx context.Context, args *ListChangesetsArgs) (ChangesetsConnectionResolver, error)
-	ChangesetCountsOverTime(ctx context.Context, args *ChangesetCountsArgs) ([]ChangesetCountsResolver, error)
-	ClosedAt() *gqlutil.DateTime
-	DiffStat(ctx context.Context) (*DiffStat, error)
-	CurrentSpec(ctx context.Context) (BatchSpecResolver, error)
-	BulkOperations(ctx context.Context, args *ListBatchChangeBulkOperationArgs) (BulkOperationConnectionResolver, error)
-	BatchSpecs(ctx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
+	Nbmespbce(ctx context.Context) (n NbmespbceResolver, err error)
+	CrebtedAt() gqlutil.DbteTime
+	UpdbtedAt() gqlutil.DbteTime
+	ChbngesetsStbts(ctx context.Context) (ChbngesetsStbtsResolver, error)
+	Chbngesets(ctx context.Context, brgs *ListChbngesetsArgs) (ChbngesetsConnectionResolver, error)
+	ChbngesetCountsOverTime(ctx context.Context, brgs *ChbngesetCountsArgs) ([]ChbngesetCountsResolver, error)
+	ClosedAt() *gqlutil.DbteTime
+	DiffStbt(ctx context.Context) (*DiffStbt, error)
+	CurrentSpec(ctx context.Context) (BbtchSpecResolver, error)
+	BulkOperbtions(ctx context.Context, brgs *ListBbtchChbngeBulkOperbtionArgs) (BulkOperbtionConnectionResolver, error)
+	BbtchSpecs(ctx context.Context, brgs *ListBbtchSpecArgs) (BbtchSpecConnectionResolver, error)
 }
 
-type BatchChangesConnectionResolver interface {
-	Nodes(ctx context.Context) ([]BatchChangeResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type BbtchChbngesConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]BbtchChbngeResolver, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type BatchSpecConnectionResolver interface {
-	Nodes(ctx context.Context) ([]BatchSpecResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type BbtchSpecConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]BbtchSpecResolver, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type BatchSpecWorkspaceFileConnectionResolver interface {
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]BatchWorkspaceFileResolver, error)
+type BbtchSpecWorkspbceFileConnectionResolver interfbce {
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
+	Nodes(ctx context.Context) ([]BbtchWorkspbceFileResolver, error)
 }
 
-type BatchWorkspaceFileResolver interface {
-	ID() graphql.ID
-	ModifiedAt() gqlutil.DateTime
-	CreatedAt() gqlutil.DateTime
-	UpdatedAt() gqlutil.DateTime
+type BbtchWorkspbceFileResolver interfbce {
+	ID() grbphql.ID
+	ModifiedAt() gqlutil.DbteTime
+	CrebtedAt() gqlutil.DbteTime
+	UpdbtedAt() gqlutil.DbteTime
 
-	Path() string
-	Name() string
+	Pbth() string
+	Nbme() string
 	IsDirectory() bool
-	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
+	Content(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error)
 	ByteSize(ctx context.Context) (int32, error)
-	TotalLines(ctx context.Context) (int32, error)
-	Binary(ctx context.Context) (bool, error)
-	RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
+	TotblLines(ctx context.Context) (int32, error)
+	Binbry(ctx context.Context) (bool, error)
+	RichHTML(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error)
 	URL(ctx context.Context) (string, error)
-	CanonicalURL() string
-	ChangelistURL(ctx context.Context) (*string, error)
-	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
-	Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error)
+	CbnonicblURL() string
+	ChbngelistURL(ctx context.Context) (*string, error)
+	ExternblURLs(ctx context.Context) ([]*externbllink.Resolver, error)
+	Highlight(ctx context.Context, brgs *HighlightArgs) (*HighlightedFileResolver, error)
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
-	ToVirtualFile() (*VirtualFileResolver, bool)
-	ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool)
+	ToVirtublFile() (*VirtublFileResolver, bool)
+	ToBbtchSpecWorkspbceFile() (BbtchWorkspbceFileResolver, bool)
 }
 
-type CommonChangesetsStatsResolver interface {
+type CommonChbngesetsStbtsResolver interfbce {
 	Unpublished() int32
-	Draft() int32
+	Drbft() int32
 	Open() int32
 	Merged() int32
 	Closed() int32
-	Total() int32
+	Totbl() int32
 }
 
-type RepoChangesetsStatsResolver interface {
-	CommonChangesetsStatsResolver
+type RepoChbngesetsStbtsResolver interfbce {
+	CommonChbngesetsStbtsResolver
 }
 
-type GlobalChangesetsStatsResolver interface {
-	CommonChangesetsStatsResolver
+type GlobblChbngesetsStbtsResolver interfbce {
+	CommonChbngesetsStbtsResolver
 }
 
-type ChangesetsStatsResolver interface {
-	CommonChangesetsStatsResolver
+type ChbngesetsStbtsResolver interfbce {
+	CommonChbngesetsStbtsResolver
 	Retrying() int32
-	Failed() int32
+	Fbiled() int32
 	Scheduled() int32
 	Processing() int32
 	Deleted() int32
@@ -743,138 +743,138 @@ type ChangesetsStatsResolver interface {
 	PercentComplete() int32
 }
 
-type ChangesetsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]ChangesetResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type ChbngesetsConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]ChbngesetResolver, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type ChangesetLabelResolver interface {
+type ChbngesetLbbelResolver interfbce {
 	Text() string
 	Color() string
 	Description() *string
 }
 
-// ChangesetResolver is the "interface Changeset" in the GraphQL schema and is
-// implemented by ExternalChangesetResolver and HiddenExternalChangesetResolver.
-type ChangesetResolver interface {
-	ID() graphql.ID
+// ChbngesetResolver is the "interfbce Chbngeset" in the GrbphQL schemb bnd is
+// implemented by ExternblChbngesetResolver bnd HiddenExternblChbngesetResolver.
+type ChbngesetResolver interfbce {
+	ID() grbphql.ID
 
-	CreatedAt() gqlutil.DateTime
-	UpdatedAt() gqlutil.DateTime
-	NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error)
-	// State returns a value of type *btypes.ChangesetState.
-	State() string
-	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
+	CrebtedAt() gqlutil.DbteTime
+	UpdbtedAt() gqlutil.DbteTime
+	NextSyncAt(ctx context.Context) (*gqlutil.DbteTime, error)
+	// Stbte returns b vblue of type *btypes.ChbngesetStbte.
+	Stbte() string
+	BbtchChbnges(ctx context.Context, brgs *ListBbtchChbngesArgs) (BbtchChbngesConnectionResolver, error)
 
-	ToExternalChangeset() (ExternalChangesetResolver, bool)
-	ToHiddenExternalChangeset() (HiddenExternalChangesetResolver, bool)
+	ToExternblChbngeset() (ExternblChbngesetResolver, bool)
+	ToHiddenExternblChbngeset() (HiddenExternblChbngesetResolver, bool)
 }
 
-// HiddenExternalChangesetResolver implements only the common interface,
-// ChangesetResolver, to not reveal information to unauthorized users.
+// HiddenExternblChbngesetResolver implements only the common interfbce,
+// ChbngesetResolver, to not revebl informbtion to unbuthorized users.
 //
-// Theoretically this type is not necessary, but it's easier to understand the
-// implementation of the GraphQL schema if we have a mapping between GraphQL
-// types and Go types.
-type HiddenExternalChangesetResolver interface {
-	ChangesetResolver
+// Theoreticblly this type is not necessbry, but it's ebsier to understbnd the
+// implementbtion of the GrbphQL schemb if we hbve b mbpping between GrbphQL
+// types bnd Go types.
+type HiddenExternblChbngesetResolver interfbce {
+	ChbngesetResolver
 }
 
-// ExternalChangesetResolver implements the ChangesetResolver interface and
-// additional data.
-type ExternalChangesetResolver interface {
-	ChangesetResolver
+// ExternblChbngesetResolver implements the ChbngesetResolver interfbce bnd
+// bdditionbl dbtb.
+type ExternblChbngesetResolver interfbce {
+	ChbngesetResolver
 
-	ExternalID() *string
+	ExternblID() *string
 	Title(context.Context) (*string, error)
 	Body(context.Context) (*string, error)
 	Author() (*PersonResolver, error)
-	ExternalURL() (*externallink.Resolver, error)
+	ExternblURL() (*externbllink.Resolver, error)
 
-	OwnedByBatchChange() *graphql.ID
+	OwnedByBbtchChbnge() *grbphql.ID
 
-	// If the changeset is a fork, this corresponds to the namespace of the fork.
-	ForkNamespace() *string
-	// If the changeset is a fork, this corresponds to the name of the fork.
-	ForkName() *string
+	// If the chbngeset is b fork, this corresponds to the nbmespbce of the fork.
+	ForkNbmespbce() *string
+	// If the chbngeset is b fork, this corresponds to the nbme of the fork.
+	ForkNbme() *string
 
-	CommitVerification(context.Context) (CommitVerificationResolver, error)
+	CommitVerificbtion(context.Context) (CommitVerificbtionResolver, error)
 
-	// ReviewState returns a value of type *btypes.ChangesetReviewState.
-	ReviewState(context.Context) *string
-	// CheckState returns a value of type *btypes.ChangesetCheckState.
-	CheckState() *string
+	// ReviewStbte returns b vblue of type *btypes.ChbngesetReviewStbte.
+	ReviewStbte(context.Context) *string
+	// CheckStbte returns b vblue of type *btypes.ChbngesetCheckStbte.
+	CheckStbte() *string
 	Repository(ctx context.Context) *RepositoryResolver
 
-	Events(ctx context.Context, args *ChangesetEventsConnectionArgs) (ChangesetEventsConnectionResolver, error)
-	Diff(ctx context.Context) (RepositoryComparisonInterface, error)
-	DiffStat(ctx context.Context) (*DiffStat, error)
-	Labels(ctx context.Context) ([]ChangesetLabelResolver, error)
+	Events(ctx context.Context, brgs *ChbngesetEventsConnectionArgs) (ChbngesetEventsConnectionResolver, error)
+	Diff(ctx context.Context) (RepositoryCompbrisonInterfbce, error)
+	DiffStbt(ctx context.Context) (*DiffStbt, error)
+	Lbbels(ctx context.Context) ([]ChbngesetLbbelResolver, error)
 
 	Error() *string
 	SyncerError() *string
-	ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error)
+	ScheduleEstimbteAt(ctx context.Context) (*gqlutil.DbteTime, error)
 
-	CurrentSpec(ctx context.Context) (VisibleChangesetSpecResolver, error)
+	CurrentSpec(ctx context.Context) (VisibleChbngesetSpecResolver, error)
 }
 
-// Only GitHubApps are supported for commit signing for now.
-type CommitVerificationResolver interface {
-	ToGitHubCommitVerification() (GitHubCommitVerificationResolver, bool)
+// Only GitHubApps bre supported for commit signing for now.
+type CommitVerificbtionResolver interfbce {
+	ToGitHubCommitVerificbtion() (GitHubCommitVerificbtionResolver, bool)
 }
 
-type GitHubCommitVerificationResolver interface {
+type GitHubCommitVerificbtionResolver interfbce {
 	Verified() bool
-	Reason() string
-	Signature() string
-	Payload() string
+	Rebson() string
+	Signbture() string
+	Pbylobd() string
 }
 
-type ChangesetEventsConnectionResolver interface {
-	Nodes(ctx context.Context) ([]ChangesetEventResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+type ChbngesetEventsConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]ChbngesetEventResolver, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-type ChangesetEventResolver interface {
-	ID() graphql.ID
-	Changeset() ExternalChangesetResolver
-	CreatedAt() gqlutil.DateTime
+type ChbngesetEventResolver interfbce {
+	ID() grbphql.ID
+	Chbngeset() ExternblChbngesetResolver
+	CrebtedAt() gqlutil.DbteTime
 }
 
-type ChangesetCountsResolver interface {
-	Date() gqlutil.DateTime
-	Total() int32
+type ChbngesetCountsResolver interfbce {
+	Dbte() gqlutil.DbteTime
+	Totbl() int32
 	Merged() int32
 	Closed() int32
-	Draft() int32
+	Drbft() int32
 	Open() int32
 	OpenApproved() int32
-	OpenChangesRequested() int32
+	OpenChbngesRequested() int32
 	OpenPending() int32
 }
 
-type BatchSpecWorkspaceResolutionResolver interface {
-	State() string
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
-	FailureMessage() *string
+type BbtchSpecWorkspbceResolutionResolver interfbce {
+	Stbte() string
+	StbrtedAt() *gqlutil.DbteTime
+	FinishedAt() *gqlutil.DbteTime
+	FbilureMessbge() *string
 
-	Workspaces(ctx context.Context, args *ListWorkspacesArgs) (BatchSpecWorkspaceConnectionResolver, error)
+	Workspbces(ctx context.Context, brgs *ListWorkspbcesArgs) (BbtchSpecWorkspbceConnectionResolver, error)
 
-	RecentlyCompleted(ctx context.Context, args *ListRecentlyCompletedWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
-	RecentlyErrored(ctx context.Context, args *ListRecentlyErroredWorkspacesArgs) BatchSpecWorkspaceConnectionResolver
+	RecentlyCompleted(ctx context.Context, brgs *ListRecentlyCompletedWorkspbcesArgs) BbtchSpecWorkspbceConnectionResolver
+	RecentlyErrored(ctx context.Context, brgs *ListRecentlyErroredWorkspbcesArgs) BbtchSpecWorkspbceConnectionResolver
 }
 
-type BatchSpecWorkspaceConnectionResolver interface {
-	Nodes(ctx context.Context) ([]BatchSpecWorkspaceResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Stats(ctx context.Context) (BatchSpecWorkspacesStatsResolver, error)
+type BbtchSpecWorkspbceConnectionResolver interfbce {
+	Nodes(ctx context.Context) ([]BbtchSpecWorkspbceResolver, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
+	Stbts(ctx context.Context) (BbtchSpecWorkspbcesStbtsResolver, error)
 }
 
-type BatchSpecWorkspacesStatsResolver interface {
+type BbtchSpecWorkspbcesStbtsResolver interfbce {
 	Errored() int32
 	Completed() int32
 	Processing() int32
@@ -882,94 +882,94 @@ type BatchSpecWorkspacesStatsResolver interface {
 	Ignored() int32
 }
 
-type BatchSpecWorkspaceResolver interface {
-	ID() graphql.ID
+type BbtchSpecWorkspbceResolver interfbce {
+	ID() grbphql.ID
 
-	State() string
-	QueuedAt() *gqlutil.DateTime
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
-	CachedResultFound() bool
-	StepCacheResultCount() int32
-	BatchSpec(ctx context.Context) (BatchSpecResolver, error)
-	OnlyFetchWorkspace() bool
+	Stbte() string
+	QueuedAt() *gqlutil.DbteTime
+	StbrtedAt() *gqlutil.DbteTime
+	FinishedAt() *gqlutil.DbteTime
+	CbchedResultFound() bool
+	StepCbcheResultCount() int32
+	BbtchSpec(ctx context.Context) (BbtchSpecResolver, error)
+	OnlyFetchWorkspbce() bool
 	Ignored() bool
 	Unsupported() bool
-	DiffStat(ctx context.Context) (*DiffStat, error)
-	PlaceInQueue() *int32
-	PlaceInGlobalQueue() *int32
+	DiffStbt(ctx context.Context) (*DiffStbt, error)
+	PlbceInQueue() *int32
+	PlbceInGlobblQueue() *int32
 
-	ToHiddenBatchSpecWorkspace() (HiddenBatchSpecWorkspaceResolver, bool)
-	ToVisibleBatchSpecWorkspace() (VisibleBatchSpecWorkspaceResolver, bool)
+	ToHiddenBbtchSpecWorkspbce() (HiddenBbtchSpecWorkspbceResolver, bool)
+	ToVisibleBbtchSpecWorkspbce() (VisibleBbtchSpecWorkspbceResolver, bool)
 }
 
-type HiddenBatchSpecWorkspaceResolver interface {
-	BatchSpecWorkspaceResolver
+type HiddenBbtchSpecWorkspbceResolver interfbce {
+	BbtchSpecWorkspbceResolver
 }
 
-type VisibleBatchSpecWorkspaceResolver interface {
-	BatchSpecWorkspaceResolver
+type VisibleBbtchSpecWorkspbceResolver interfbce {
+	BbtchSpecWorkspbceResolver
 
-	FailureMessage() *string
-	Stages() BatchSpecWorkspaceStagesResolver
+	FbilureMessbge() *string
+	Stbges() BbtchSpecWorkspbceStbgesResolver
 	Repository(ctx context.Context) (*RepositoryResolver, error)
-	Branch(ctx context.Context) (*GitRefResolver, error)
-	Path() string
-	Step(args BatchSpecWorkspaceStepArgs) (BatchSpecWorkspaceStepResolver, error)
-	Steps() ([]BatchSpecWorkspaceStepResolver, error)
-	SearchResultPaths() []string
-	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
+	Brbnch(ctx context.Context) (*GitRefResolver, error)
+	Pbth() string
+	Step(brgs BbtchSpecWorkspbceStepArgs) (BbtchSpecWorkspbceStepResolver, error)
+	Steps() ([]BbtchSpecWorkspbceStepResolver, error)
+	SebrchResultPbths() []string
+	ChbngesetSpecs(ctx context.Context) (*[]VisibleChbngesetSpecResolver, error)
 	Executor(ctx context.Context) (*ExecutorResolver, error)
 }
 
-type ResolvedBatchSpecWorkspaceResolver interface {
-	OnlyFetchWorkspace() bool
+type ResolvedBbtchSpecWorkspbceResolver interfbce {
+	OnlyFetchWorkspbce() bool
 	Ignored() bool
 	Unsupported() bool
 	Repository() *RepositoryResolver
-	Branch(ctx context.Context) *GitRefResolver
-	Path() string
-	SearchResultPaths() []string
+	Brbnch(ctx context.Context) *GitRefResolver
+	Pbth() string
+	SebrchResultPbths() []string
 }
 
-type BatchSpecWorkspaceStagesResolver interface {
+type BbtchSpecWorkspbceStbgesResolver interfbce {
 	Setup() []ExecutionLogEntryResolver
 	SrcExec() []ExecutionLogEntryResolver
-	Teardown() []ExecutionLogEntryResolver
+	Tebrdown() []ExecutionLogEntryResolver
 }
 
-type BatchSpecWorkspaceStepOutputLineConnectionResolver interface {
-	TotalCount() (int32, error)
-	PageInfo() (*graphqlutil.PageInfo, error)
+type BbtchSpecWorkspbceStepOutputLineConnectionResolver interfbce {
+	TotblCount() (int32, error)
+	PbgeInfo() (*grbphqlutil.PbgeInfo, error)
 	Nodes() ([]string, error)
 }
 
-type BatchSpecWorkspaceStepResolver interface {
+type BbtchSpecWorkspbceStepResolver interfbce {
 	Number() int32
 	Run() string
-	Container() string
+	Contbiner() string
 	IfCondition() *string
-	CachedResultFound() bool
+	CbchedResultFound() bool
 	Skipped() bool
-	OutputLines(ctx context.Context, args *BatchSpecWorkspaceStepOutputLinesArgs) BatchSpecWorkspaceStepOutputLineConnectionResolver
+	OutputLines(ctx context.Context, brgs *BbtchSpecWorkspbceStepOutputLinesArgs) BbtchSpecWorkspbceStepOutputLineConnectionResolver
 
-	StartedAt() *gqlutil.DateTime
-	FinishedAt() *gqlutil.DateTime
+	StbrtedAt() *gqlutil.DbteTime
+	FinishedAt() *gqlutil.DbteTime
 
 	ExitCode() *int32
-	Environment() ([]BatchSpecWorkspaceEnvironmentVariableResolver, error)
-	OutputVariables() *[]BatchSpecWorkspaceOutputVariableResolver
+	Environment() ([]BbtchSpecWorkspbceEnvironmentVbribbleResolver, error)
+	OutputVbribbles() *[]BbtchSpecWorkspbceOutputVbribbleResolver
 
-	DiffStat(ctx context.Context) (*DiffStat, error)
-	Diff(ctx context.Context) (PreviewRepositoryComparisonResolver, error)
+	DiffStbt(ctx context.Context) (*DiffStbt, error)
+	Diff(ctx context.Context) (PreviewRepositoryCompbrisonResolver, error)
 }
 
-type BatchSpecWorkspaceEnvironmentVariableResolver interface {
-	Name() string
-	Value() *string
+type BbtchSpecWorkspbceEnvironmentVbribbleResolver interfbce {
+	Nbme() string
+	Vblue() *string
 }
 
-type BatchSpecWorkspaceOutputVariableResolver interface {
-	Name() string
-	Value() JSONValue
+type BbtchSpecWorkspbceOutputVbribbleResolver interfbce {
+	Nbme() string
+	Vblue() JSONVblue
 }

@@ -1,4 +1,4 @@
-package limiter
+pbckbge limiter
 
 import (
 	"context"
@@ -6,77 +6,77 @@ import (
 	"time"
 )
 
-func TestMutableLimiter(t *testing.T) {
-	// cancels created by helpers
-	var cancels []context.CancelFunc
+func TestMutbbleLimiter(t *testing.T) {
+	// cbncels crebted by helpers
+	vbr cbncels []context.CbncelFunc
 	defer func() {
-		for _, f := range cancels {
+		for _, f := rbnge cbncels {
 			f()
 		}
 	}()
 
-	timeoutContext := func(d time.Duration) context.Context {
-		ctx, cancel := context.WithTimeout(context.Background(), d)
-		cancels = append(cancels, cancel)
+	timeoutContext := func(d time.Durbtion) context.Context {
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), d)
+		cbncels = bppend(cbncels, cbncel)
 		return ctx
 	}
 
-	l := NewMutable(2)
+	l := NewMutbble(2)
 
 	// Should not block
-	ctx1, cancel1, err := l.Acquire(context.Background())
+	ctx1, cbncel1, err := l.Acquire(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	defer cancel1()
-	ctx2, cancel2, err := l.Acquire(context.Background())
+	defer cbncel1()
+	ctx2, cbncel2, err := l.Acquire(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	defer cancel2()
+	defer cbncel2()
 
-	// Should block, so use a context with a deadline
+	// Should block, so use b context with b debdline
 	_, _, err = l.Acquire(timeoutContext(250 * time.Millisecond))
-	if err != context.DeadlineExceeded {
-		t.Fatal("expected acquire to fail")
+	if err != context.DebdlineExceeded {
+		t.Fbtbl("expected bcquire to fbil")
 	}
 
 	l.SetLimit(3)
 
-	// verify cap/len
-	cap, len := l.GetLimit()
-	if cap != 3 {
-		t.Fatal("capacity not 3 as expected")
+	// verify cbp/len
+	cbp, len := l.GetLimit()
+	if cbp != 3 {
+		t.Fbtbl("cbpbcity not 3 bs expected")
 	}
 	if len != 2 {
-		t.Fatal("len not 2 as expected")
+		t.Fbtbl("len not 2 bs expected")
 	}
 
-	// Now should work. Still use context with a deadline to ensure acquire
-	// wins over deadline
-	ctx3, cancel3, err := l.Acquire(timeoutContext(10 * time.Second))
+	// Now should work. Still use context with b debdline to ensure bcquire
+	// wins over debdline
+	ctx3, cbncel3, err := l.Acquire(timeoutContext(10 * time.Second))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	defer cancel3()
+	defer cbncel3()
 
-	// Adjust limit down, should cancel oldest job
+	// Adjust limit down, should cbncel oldest job
 	l.SetLimit(2)
 	select {
-	case <-ctx1.Done():
-		// what we want
-	case <-time.After(5 * time.Second):
-		t.Fatal("expected first context to be canceled")
+	cbse <-ctx1.Done():
+		// whbt we wbnt
+	cbse <-time.After(5 * time.Second):
+		t.Fbtbl("expected first context to be cbnceled")
 	}
 	if ctx2.Err() != nil || ctx3.Err() != nil {
-		t.Fatal("expected other contexts to still be running")
+		t.Fbtbl("expected other contexts to still be running")
 	}
 
-	// Cancel 3rd job, should be able to then add another job
-	cancel3()
-	_, cancel4, err := l.Acquire(context.Background())
+	// Cbncel 3rd job, should be bble to then bdd bnother job
+	cbncel3()
+	_, cbncel4, err := l.Acquire(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	defer cancel4()
+	defer cbncel4()
 }

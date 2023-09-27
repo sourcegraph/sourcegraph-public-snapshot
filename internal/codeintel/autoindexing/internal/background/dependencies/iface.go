@@ -1,45 +1,45 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type DependenciesService interface {
-	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
-	ListPackageRepoFilters(ctx context.Context, opts dependencies.ListPackageRepoRefFiltersOpts) (_ []dependencies.PackageRepoFilter, hasMore bool, err error)
+type DependenciesService interfbce {
+	InsertPbckbgeRepoRefs(ctx context.Context, deps []dependencies.MinimblPbckbgeRepoRef) ([]dependencies.PbckbgeRepoReference, []dependencies.PbckbgeRepoRefVersion, error)
+	ListPbckbgeRepoFilters(ctx context.Context, opts dependencies.ListPbckbgeRepoRefFiltersOpts) (_ []dependencies.PbckbgeRepoFilter, hbsMore bool, err error)
 }
 
-type GitserverRepoStore interface {
-	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
+type GitserverRepoStore interfbce {
+	GetByNbmes(ctx context.Context, nbmes ...bpi.RepoNbme) (mbp[bpi.RepoNbme]*types.GitserverRepo, error)
 }
 
-type ExternalServiceStore interface {
-	Upsert(ctx context.Context, svcs ...*types.ExternalService) (err error)
-	List(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
+type ExternblServiceStore interfbce {
+	Upsert(ctx context.Context, svcs ...*types.ExternblService) (err error)
+	List(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error)
 }
 
-type ReposStore interface {
-	ListMinimalRepos(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error)
+type ReposStore interfbce {
+	ListMinimblRepos(context.Context, dbtbbbse.ReposListOptions) ([]types.MinimblRepo, error)
 }
 
-type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) (_ []uploadsshared.Index, err error)
-	QueueIndexesForPackage(ctx context.Context, pkg dependencies.MinimialVersionedPackageRepo, assumeSynced bool) (err error)
+type IndexEnqueuer interfbce {
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configurbtion string, force, bypbssLimit bool) (_ []uplobdsshbred.Index, err error)
+	QueueIndexesForPbckbge(ctx context.Context, pkg dependencies.MinimiblVersionedPbckbgeRepo, bssumeSynced bool) (err error)
 }
 
-type RepoUpdaterClient interface {
-	RepoLookup(ctx context.Context, args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+type RepoUpdbterClient interfbce {
+	RepoLookup(ctx context.Context, brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 }
 
-type UploadService interface {
-	GetUploadByID(ctx context.Context, id int) (shared.Upload, bool, error)
-	ReferencesForUpload(ctx context.Context, uploadID int) (shared.PackageReferenceScanner, error)
+type UplobdService interfbce {
+	GetUplobdByID(ctx context.Context, id int) (shbred.Uplobd, bool, error)
+	ReferencesForUplobd(ctx context.Context, uplobdID int) (shbred.PbckbgeReferenceScbnner, error)
 }

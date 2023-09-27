@@ -1,56 +1,56 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type ExecutorStore interface {
-	basestore.ShareableStore
-	WithTransact(context.Context, func(ExecutorStore) error) error
+type ExecutorStore interfbce {
+	bbsestore.ShbrebbleStore
+	WithTrbnsbct(context.Context, func(ExecutorStore) error) error
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
-	With(basestore.ShareableStore) ExecutorStore
+	With(bbsestore.ShbrebbleStore) ExecutorStore
 
-	// List returns a set of executor activity records matching the given options.
+	// List returns b set of executor bctivity records mbtching the given options.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-	// (e.g., a site-admin).
-	List(ctx context.Context, args ExecutorStoreListOptions) ([]types.Executor, error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is permitted to view executor detbils
+	// (e.g., b site-bdmin).
+	List(ctx context.Context, brgs ExecutorStoreListOptions) ([]types.Executor, error)
 
-	// Count returns the number of executor activity records matching the given options.
+	// Count returns the number of executor bctivity records mbtching the given options.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-	// (e.g., a site-admin).
-	Count(ctx context.Context, args ExecutorStoreListOptions) (int, error)
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is permitted to view executor detbils
+	// (e.g., b site-bdmin).
+	Count(ctx context.Context, brgs ExecutorStoreListOptions) (int, error)
 
-	// GetByID returns an executor activity record by identifier. If no such record exists, a
-	// false-valued flag is returned.
+	// GetByID returns bn executor bctivity record by identifier. If no such record exists, b
+	// fblse-vblued flbg is returned.
 	//
-	// 🚨 SECURITY: The caller must ensure that the actor is permitted to view executor details
-	// (e.g., a site-admin).
+	// 🚨 SECURITY: The cbller must ensure thbt the bctor is permitted to view executor detbils
+	// (e.g., b site-bdmin).
 	GetByID(ctx context.Context, id int) (types.Executor, bool, error)
 
-	// UpsertHeartbeat updates or creates an executor activity record for a particular executor instance.
-	UpsertHeartbeat(ctx context.Context, executor types.Executor) error
+	// UpsertHebrtbebt updbtes or crebtes bn executor bctivity record for b pbrticulbr executor instbnce.
+	UpsertHebrtbebt(ctx context.Context, executor types.Executor) error
 
-	// DeleteInactiveHeartbeats deletes heartbeat records belonging to executor instances that have not pinged
-	// the Sourcegraph instance in at least the given duration.
-	DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error
+	// DeleteInbctiveHebrtbebts deletes hebrtbebt records belonging to executor instbnces thbt hbve not pinged
+	// the Sourcegrbph instbnce in bt lebst the given durbtion.
+	DeleteInbctiveHebrtbebts(ctx context.Context, minAge time.Durbtion) error
 
-	// GetByHostname returns an executor resolver for the given hostname, or
-	// nil when there is no executor record matching the given hostname.
+	// GetByHostnbme returns bn executor resolver for the given hostnbme, or
+	// nil when there is no executor record mbtching the given hostnbme.
 	//
-	// 🚨 SECURITY: This always returns nil for non-site admins.
-	GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error)
+	// 🚨 SECURITY: This blwbys returns nil for non-site bdmins.
+	GetByHostnbme(ctx context.Context, hostnbme string) (types.Executor, bool, error)
 }
 
 type ExecutorStoreListOptions struct {
@@ -61,25 +61,25 @@ type ExecutorStoreListOptions struct {
 }
 
 type executorStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-var _ ExecutorStore = (*executorStore)(nil)
+vbr _ ExecutorStore = (*executorStore)(nil)
 
-// ExecutorsWith instantiates and returns a new ExecutorStore using the other store handle.
-func ExecutorsWith(other basestore.ShareableStore) ExecutorStore {
+// ExecutorsWith instbntibtes bnd returns b new ExecutorStore using the other store hbndle.
+func ExecutorsWith(other bbsestore.ShbrebbleStore) ExecutorStore {
 	return &executorStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-func (s *executorStore) WithTransact(ctx context.Context, f func(ExecutorStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *executorStore) WithTrbnsbct(ctx context.Context, f func(ExecutorStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&executorStore{Store: tx})
 	})
 }
 
-func (s *executorStore) With(other basestore.ShareableStore) ExecutorStore {
+func (s *executorStore) With(other bbsestore.ShbrebbleStore) ExecutorStore {
 	return &executorStore{Store: s.Store.With(other)}
 }
 
@@ -88,7 +88,7 @@ func (s *executorStore) List(ctx context.Context, opts ExecutorStoreListOptions)
 }
 
 func (s *executorStore) list(ctx context.Context, opts ExecutorStoreListOptions, now time.Time) (_ []types.Executor, err error) {
-	executors, err := scanExecutors(s.Query(ctx, sqlf.Sprintf(executorStoreListQuery, executorStoreListOptionsConditions(opts, now), opts.Limit, opts.Offset)))
+	executors, err := scbnExecutors(s.Query(ctx, sqlf.Sprintf(executorStoreListQuery, executorStoreListOptionsConditions(opts, now), opts.Limit, opts.Offset)))
 	if err != nil {
 		return nil, err
 	}
@@ -101,21 +101,21 @@ func (s *executorStore) Count(ctx context.Context, opts ExecutorStoreListOptions
 }
 
 func (s *executorStore) count(ctx context.Context, opts ExecutorStoreListOptions, now time.Time) (_ int, err error) {
-	totalCount, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(executorStoreListCountQuery, executorStoreListOptionsConditions(opts, now))))
+	totblCount, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf(executorStoreListCountQuery, executorStoreListOptionsConditions(opts, now))))
 	if err != nil {
 		return 0, err
 	}
 
-	return totalCount, nil
+	return totblCount, nil
 }
 
 func executorStoreListOptionsConditions(opts ExecutorStoreListOptions, now time.Time) *sqlf.Query {
-	conds := make([]*sqlf.Query, 0, 2)
+	conds := mbke([]*sqlf.Query, 0, 2)
 	if opts.Query != "" {
-		conds = append(conds, makeExecutorSearchCondition(opts.Query))
+		conds = bppend(conds, mbkeExecutorSebrchCondition(opts.Query))
 	}
 	if opts.Active {
-		conds = append(conds, sqlf.Sprintf("%s - h.last_seen_at <= '15 minutes'::interval", now))
+		conds = bppend(conds, sqlf.Sprintf("%s - h.lbst_seen_bt <= '15 minutes'::intervbl", now))
 	}
 
 	whereConditions := sqlf.Sprintf("TRUE")
@@ -127,38 +127,38 @@ func executorStoreListOptionsConditions(opts ExecutorStoreListOptions, now time.
 
 const executorStoreListCountQuery = `
 SELECT COUNT(*)
-FROM executor_heartbeats h
+FROM executor_hebrtbebts h
 WHERE %s
 `
 
 const executorStoreListQuery = `
 SELECT
 	h.id,
-	h.hostname,
-	h.queue_name,
-	h.queue_names,
+	h.hostnbme,
+	h.queue_nbme,
+	h.queue_nbmes,
 	h.os,
-	h.architecture,
+	h.brchitecture,
 	h.docker_version,
 	h.executor_version,
 	h.git_version,
 	h.ignite_version,
 	h.src_cli_version,
-	h.first_seen_at,
-	h.last_seen_at
-FROM executor_heartbeats h
+	h.first_seen_bt,
+	h.lbst_seen_bt
+FROM executor_hebrtbebts h
 WHERE %s
-ORDER BY h.first_seen_at DESC, h.id
+ORDER BY h.first_seen_bt DESC, h.id
 LIMIT %s OFFSET %s
 `
 
-// makeExecutorSearchCondition returns a disjunction of LIKE clauses against all searchable columns of an executor.
-func makeExecutorSearchCondition(term string) *sqlf.Query {
-	searchableColumns := []string{
-		"h.hostname",
-		"h.queue_name",
+// mbkeExecutorSebrchCondition returns b disjunction of LIKE clbuses bgbinst bll sebrchbble columns of bn executor.
+func mbkeExecutorSebrchCondition(term string) *sqlf.Query {
+	sebrchbbleColumns := []string{
+		"h.hostnbme",
+		"h.queue_nbme",
 		"h.os",
-		"h.architecture",
+		"h.brchitecture",
 		"h.docker_version",
 		"h.executor_version",
 		"h.git_version",
@@ -166,9 +166,9 @@ func makeExecutorSearchCondition(term string) *sqlf.Query {
 		"h.src_cli_version",
 	}
 
-	var termConds []*sqlf.Query
-	for _, column := range searchableColumns {
-		termConds = append(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
+	vbr termConds []*sqlf.Query
+	for _, column := rbnge sebrchbbleColumns {
+		termConds = bppend(termConds, sqlf.Sprintf(column+" ILIKE %s", "%"+term+"%"))
 	}
 
 	return sqlf.Sprintf("(%s)", sqlf.Join(termConds, " OR "))
@@ -178,48 +178,48 @@ func (s *executorStore) GetByID(ctx context.Context, id int) (types.Executor, bo
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("h.id = %s", id),
 	}
-	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetQuery, sqlf.Join(preds, "AND"))))
+	return scbnFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetQuery, sqlf.Join(preds, "AND"))))
 }
 
-func (s *executorStore) GetByHostname(ctx context.Context, hostname string) (types.Executor, bool, error) {
+func (s *executorStore) GetByHostnbme(ctx context.Context, hostnbme string) (types.Executor, bool, error) {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("h.hostname = %s", hostname),
+		sqlf.Sprintf("h.hostnbme = %s", hostnbme),
 	}
-	return scanFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetQuery, sqlf.Join(preds, "AND"))))
+	return scbnFirstExecutor(s.Query(ctx, sqlf.Sprintf(executorStoreGetQuery, sqlf.Join(preds, "AND"))))
 }
 
 const executorStoreGetQuery = `
 SELECT
 	h.id,
-	h.hostname,
-	h.queue_name,
-	h.queue_names,
+	h.hostnbme,
+	h.queue_nbme,
+	h.queue_nbmes,
 	h.os,
-	h.architecture,
+	h.brchitecture,
 	h.docker_version,
 	h.executor_version,
 	h.git_version,
 	h.ignite_version,
 	h.src_cli_version,
-	h.first_seen_at,
-	h.last_seen_at
+	h.first_seen_bt,
+	h.lbst_seen_bt
 FROM
-	executor_heartbeats h
+	executor_hebrtbebts h
 WHERE
 	%s
 `
 
-func (s *executorStore) UpsertHeartbeat(ctx context.Context, executor types.Executor) error {
-	return s.upsertHeartbeat(ctx, executor, timeutil.Now())
+func (s *executorStore) UpsertHebrtbebt(ctx context.Context, executor types.Executor) error {
+	return s.upsertHebrtbebt(ctx, executor, timeutil.Now())
 }
 
-func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Executor, now time.Time) error {
+func (s *executorStore) upsertHebrtbebt(ctx context.Context, executor types.Executor, now time.Time) error {
 	return s.Exec(ctx, sqlf.Sprintf(
-		executorStoreUpsertHeartbeatQuery,
+		executorStoreUpsertHebrtbebtQuery,
 
-		executor.Hostname,
-		dbutil.NullStringColumn(executor.QueueName),
-		pq.Array(executor.QueueNames),
+		executor.Hostnbme,
+		dbutil.NullStringColumn(executor.QueueNbme),
+		pq.Arrby(executor.QueueNbmes),
 		executor.OS,
 		executor.Architecture,
 		executor.DockerVersion,
@@ -232,66 +232,66 @@ func (s *executorStore) upsertHeartbeat(ctx context.Context, executor types.Exec
 	))
 }
 
-const executorStoreUpsertHeartbeatQuery = `
-INSERT INTO executor_heartbeats (
-	hostname,
-	queue_name,
-	queue_names,
+const executorStoreUpsertHebrtbebtQuery = `
+INSERT INTO executor_hebrtbebts (
+	hostnbme,
+	queue_nbme,
+	queue_nbmes,
 	os,
-	architecture,
+	brchitecture,
 	docker_version,
 	executor_version,
 	git_version,
 	ignite_version,
 	src_cli_version,
-	first_seen_at,
-	last_seen_at
+	first_seen_bt,
+	lbst_seen_bt
 )
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-ON CONFLICT (hostname) DO UPDATE
+ON CONFLICT (hostnbme) DO UPDATE
 SET
-	queue_name = EXCLUDED.queue_name,
-	queue_names = EXCLUDED.queue_names,
+	queue_nbme = EXCLUDED.queue_nbme,
+	queue_nbmes = EXCLUDED.queue_nbmes,
 	os = EXCLUDED.os,
-	architecture = EXCLUDED.architecture,
+	brchitecture = EXCLUDED.brchitecture,
 	docker_version = EXCLUDED.docker_version,
 	executor_version = EXCLUDED.executor_version,
 	git_version = EXCLUDED.git_version,
 	ignite_version = EXCLUDED.ignite_version,
 	src_cli_version = EXCLUDED.src_cli_version,
-	last_seen_at =EXCLUDED.last_seen_at
+	lbst_seen_bt =EXCLUDED.lbst_seen_bt
 `
 
-func (s *executorStore) DeleteInactiveHeartbeats(ctx context.Context, minAge time.Duration) error {
-	return s.deleteInactiveHeartbeats(ctx, minAge, timeutil.Now())
+func (s *executorStore) DeleteInbctiveHebrtbebts(ctx context.Context, minAge time.Durbtion) error {
+	return s.deleteInbctiveHebrtbebts(ctx, minAge, timeutil.Now())
 }
 
-func (s *executorStore) deleteInactiveHeartbeats(ctx context.Context, minAge time.Duration, now time.Time) error {
-	return s.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInactiveHeartbeatsQuery, now, minAge/time.Second))
+func (s *executorStore) deleteInbctiveHebrtbebts(ctx context.Context, minAge time.Durbtion, now time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(executorStoreDeleteInbctiveHebrtbebtsQuery, now, minAge/time.Second))
 }
 
-const executorStoreDeleteInactiveHeartbeatsQuery = `
-DELETE FROM executor_heartbeats
-WHERE %s - last_seen_at >= %s * interval '1 second'
+const executorStoreDeleteInbctiveHebrtbebtsQuery = `
+DELETE FROM executor_hebrtbebts
+WHERE %s - lbst_seen_bt >= %s * intervbl '1 second'
 `
 
-// scanExecutors reads executor objects from the given row object.
-func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err error) {
+// scbnExecutors rebds executor objects from the given row object.
+func scbnExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var executors []types.Executor
+	vbr executors []types.Executor
 	for rows.Next() {
-		var executor types.Executor
-		var sqlQueueName *string
-		var sqlQueueNames pq.StringArray
-		if err := rows.Scan(
+		vbr executor types.Executor
+		vbr sqlQueueNbme *string
+		vbr sqlQueueNbmes pq.StringArrby
+		if err := rows.Scbn(
 			&executor.ID,
-			&executor.Hostname,
-			&sqlQueueName,
-			&sqlQueueNames,
+			&executor.Hostnbme,
+			&sqlQueueNbme,
+			&sqlQueueNbmes,
 			&executor.OS,
 			&executor.Architecture,
 			&executor.DockerVersion,
@@ -300,32 +300,32 @@ func scanExecutors(rows *sql.Rows, queryErr error) (_ []types.Executor, err erro
 			&executor.IgniteVersion,
 			&executor.SrcCliVersion,
 			&executor.FirstSeenAt,
-			&executor.LastSeenAt,
+			&executor.LbstSeenAt,
 		); err != nil {
 			return nil, err
 		}
 
-		if sqlQueueName != nil {
-			executor.QueueName = *sqlQueueName
+		if sqlQueueNbme != nil {
+			executor.QueueNbme = *sqlQueueNbme
 		}
 
-		var queueNames []string
-		for _, name := range sqlQueueNames {
-			queueNames = append(queueNames, name)
+		vbr queueNbmes []string
+		for _, nbme := rbnge sqlQueueNbmes {
+			queueNbmes = bppend(queueNbmes, nbme)
 		}
-		executor.QueueNames = queueNames
+		executor.QueueNbmes = queueNbmes
 
-		executors = append(executors, executor)
+		executors = bppend(executors, executor)
 	}
 
 	return executors, nil
 }
 
-// scanFirstExecutor scans a slice of executors from the return value of `*Store.query` and returns the first.
-func scanFirstExecutor(rows *sql.Rows, err error) (types.Executor, bool, error) {
-	executors, err := scanExecutors(rows, err)
+// scbnFirstExecutor scbns b slice of executors from the return vblue of `*Store.query` bnd returns the first.
+func scbnFirstExecutor(rows *sql.Rows, err error) (types.Executor, bool, error) {
+	executors, err := scbnExecutors(rows, err)
 	if err != nil || len(executors) == 0 {
-		return types.Executor{}, false, err
+		return types.Executor{}, fblse, err
 	}
 	return executors[0], true, nil
 }

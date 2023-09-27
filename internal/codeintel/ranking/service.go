@@ -1,34 +1,34 @@
-package ranking
+pbckbge rbnking
 
 import (
 	"context"
-	"math"
+	"mbth"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/lsifstore"
-	internalshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/lsifstore"
+	internblshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type Service struct {
 	store      store.Store
 	lsifstore  lsifstore.Store
 	getConf    conftypes.SiteConfigQuerier
-	operations *operations
+	operbtions *operbtions
 	logger     log.Logger
 }
 
 func newService(
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 	lsifStore lsifstore.Store,
 	getConf conftypes.SiteConfigQuerier,
@@ -37,127 +37,127 @@ func newService(
 		store:      store,
 		lsifstore:  lsifStore,
 		getConf:    getConf,
-		operations: newOperations(observationCtx),
-		logger:     observationCtx.Logger,
+		operbtions: newOperbtions(observbtionCtx),
+		logger:     observbtionCtx.Logger,
 	}
 }
 
-// GetRepoRank returns a rank vector for the given repository. Repositories are assumed to
-// be ordered by each pairwise component of the resulting vector, higher ranks coming earlier.
-// We currently rank first by user-defined scores, then by GitHub star count.
-func (s *Service) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
-	_, _, endObservation := s.operations.getRepoRank.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// GetRepoRbnk returns b rbnk vector for the given repository. Repositories bre bssumed to
+// be ordered by ebch pbirwise component of the resulting vector, higher rbnks coming ebrlier.
+// We currently rbnk first by user-defined scores, then by GitHub stbr count.
+func (s *Service) GetRepoRbnk(ctx context.Context, repoNbme bpi.RepoNbme) (_ []flobt64, err error) {
+	_, _, endObservbtion := s.operbtions.getRepoRbnk.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	userRank := repoRankFromConfig(s.getConf.SiteConfig(), string(repoName))
+	userRbnk := repoRbnkFromConfig(s.getConf.SiteConfig(), string(repoNbme))
 
-	starRank, err := s.store.GetStarRank(ctx, repoName)
+	stbrRbnk, err := s.store.GetStbrRbnk(ctx, repoNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	return []float64{squashRange(userRank), starRank}, nil
+	return []flobt64{squbshRbnge(userRbnk), stbrRbnk}, nil
 }
 
-// copy pasta
-// https://github.com/sourcegraph/sourcegraph/blob/942c417363b07c9e0a6377456f1d6a80a94efb99/cmd/frontend/internal/httpapi/search.go#L172
-func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
-	val := 0.0
-	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
-		return val
+// copy pbstb
+// https://github.com/sourcegrbph/sourcegrbph/blob/942c417363b07c9e0b6377456f1d6b80b94efb99/cmd/frontend/internbl/httpbpi/sebrch.go#L172
+func repoRbnkFromConfig(siteConfig schemb.SiteConfigurbtion, repoNbme string) flobt64 {
+	vbl := 0.0
+	if siteConfig.ExperimentblFebtures == nil || siteConfig.ExperimentblFebtures.Rbnking == nil {
+		return vbl
 	}
-	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	scores := siteConfig.ExperimentblFebtures.Rbnking.RepoScores
 	if len(scores) == 0 {
-		return val
+		return vbl
 	}
-	// try every "directory" in the repo name to assign it a value, so a repoName like
-	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
-	// and "github.com/sourcegraph/zoekt" tested.
-	for i := 0; i < len(repoName); i++ {
-		if repoName[i] == '/' {
-			val += scores[repoName[:i]]
+	// try every "directory" in the repo nbme to bssign it b vblue, so b repoNbme like
+	// "github.com/sourcegrbph/zoekt" will hbve "github.com", "github.com/sourcegrbph",
+	// bnd "github.com/sourcegrbph/zoekt" tested.
+	for i := 0; i < len(repoNbme); i++ {
+		if repoNbme[i] == '/' {
+			vbl += scores[repoNbme[:i]]
 		}
 	}
-	val += scores[repoName]
-	return val
+	vbl += scores[repoNbme]
+	return vbl
 }
 
-// squashRange maps a value in the range [0, inf) to a value in the range
-// [0, 1) monotonically (i.e., (a < b) <-> (squashRange(a) < squashRange(b))).
-func squashRange(j float64) float64 {
+// squbshRbnge mbps b vblue in the rbnge [0, inf) to b vblue in the rbnge
+// [0, 1) monotonicblly (i.e., (b < b) <-> (squbshRbnge(b) < squbshRbnge(b))).
+func squbshRbnge(j flobt64) flobt64 {
 	return j / (1 + j)
 }
 
-// GetDocumentRank returns a map from paths within the given repo to their reference count.
-func (s *Service) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ types.RepoPathRanks, err error) {
-	_, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// GetDocumentRbnk returns b mbp from pbths within the given repo to their reference count.
+func (s *Service) GetDocumentRbnks(ctx context.Context, repoNbme bpi.RepoNbme) (_ types.RepoPbthRbnks, err error) {
+	_, _, endObservbtion := s.operbtions.getDocumentRbnks.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	documentRanks, ok, err := s.store.GetDocumentRanks(ctx, repoName)
+	documentRbnks, ok, err := s.store.GetDocumentRbnks(ctx, repoNbme)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 	if !ok {
-		return types.RepoPathRanks{}, nil
+		return types.RepoPbthRbnks{}, nil
 	}
 
-	logmean, err := s.store.GetReferenceCountStatistics(ctx)
+	logmebn, err := s.store.GetReferenceCountStbtistics(ctx)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 
-	paths := map[string]float64{}
-	for path, rank := range documentRanks {
-		if rank == 0 {
-			paths[path] = 0
+	pbths := mbp[string]flobt64{}
+	for pbth, rbnk := rbnge documentRbnks {
+		if rbnk == 0 {
+			pbths[pbth] = 0
 		} else {
-			paths[path] = math.Log2(rank)
+			pbths[pbth] = mbth.Log2(rbnk)
 		}
 	}
 
-	return types.RepoPathRanks{
-		MeanRank: logmean,
-		Paths:    paths,
+	return types.RepoPbthRbnks{
+		MebnRbnk: logmebn,
+		Pbths:    pbths,
 	}, nil
 }
 
-func (s *Service) Summaries(ctx context.Context) ([]shared.Summary, error) {
-	return s.store.Summaries(ctx)
+func (s *Service) Summbries(ctx context.Context) ([]shbred.Summbry, error) {
+	return s.store.Summbries(ctx)
 }
 
-func (s *Service) DerivativeGraphKey(ctx context.Context) (string, bool, error) {
-	derivativeGraphKeyPrefix, _, ok, err := s.store.DerivativeGraphKey(ctx)
-	return internalshared.DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix), ok, err
+func (s *Service) DerivbtiveGrbphKey(ctx context.Context) (string, bool, error) {
+	derivbtiveGrbphKeyPrefix, _, ok, err := s.store.DerivbtiveGrbphKey(ctx)
+	return internblshbred.DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix), ok, err
 }
 
-func (s *Service) BumpDerivativeGraphKey(ctx context.Context) error {
-	return s.store.BumpDerivativeGraphKey(ctx)
+func (s *Service) BumpDerivbtiveGrbphKey(ctx context.Context) error {
+	return s.store.BumpDerivbtiveGrbphKey(ctx)
 }
 
-func (s *Service) DeleteRankingProgress(ctx context.Context, graphKey string) error {
-	return s.store.DeleteRankingProgress(ctx, graphKey)
+func (s *Service) DeleteRbnkingProgress(ctx context.Context, grbphKey string) error {
+	return s.store.DeleteRbnkingProgress(ctx, grbphKey)
 }
 
-func (s *Service) CoverageCounts(ctx context.Context, graphKey string) (shared.CoverageCounts, error) {
-	return s.store.CoverageCounts(ctx, graphKey)
+func (s *Service) CoverbgeCounts(ctx context.Context, grbphKey string) (shbred.CoverbgeCounts, error) {
+	return s.store.CoverbgeCounts(ctx, grbphKey)
 }
 
-func (s *Service) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
-	return s.store.LastUpdatedAt(ctx, repoIDs)
+func (s *Service) LbstUpdbtedAt(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID]time.Time, error) {
+	return s.store.LbstUpdbtedAt(ctx, repoIDs)
 }
 
-func (s *Service) NextJobStartsAt(ctx context.Context) (time.Time, bool, error) {
-	expr, err := conf.CodeIntelRankingDocumentReferenceCountsCronExpression()
+func (s *Service) NextJobStbrtsAt(ctx context.Context) (time.Time, bool, error) {
+	expr, err := conf.CodeIntelRbnkingDocumentReferenceCountsCronExpression()
 	if err != nil {
-		return time.Time{}, false, err
+		return time.Time{}, fblse, err
 	}
 
-	_, previous, ok, err := s.store.DerivativeGraphKey(ctx)
+	_, previous, ok, err := s.store.DerivbtiveGrbphKey(ctx)
 	if err != nil {
-		return time.Time{}, false, err
+		return time.Time{}, fblse, err
 	}
 	if !ok {
-		return time.Time{}, false, nil
+		return time.Time{}, fblse, nil
 	}
 
 	return expr.Next(previous), true, nil

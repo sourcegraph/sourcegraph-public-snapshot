@@ -1,8 +1,8 @@
-package npm
+pbckbge npm
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -10,129 +10,129 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
 	}
 	os.Exit(m.Run())
 }
 
-var updateRecordings = flag.Bool("update", false, "make npm API calls, record and save data")
+vbr updbteRecordings = flbg.Bool("updbte", fblse, "mbke npm API cblls, record bnd sbve dbtb")
 
 func newTestHTTPClient(t *testing.T) (client *HTTPClient, stop func()) {
 	t.Helper()
-	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
+	recorderFbctory, stop := httptestutil.NewRecorderFbctory(t, *updbteRecordings, t.Nbme())
 
-	client, _ = NewHTTPClient("urn", "https://registry.npmjs.org", "", recorderFactory)
-	client.limiter = ratelimit.NewInstrumentedLimiter("npm", rate.NewLimiter(100, 10))
+	client, _ = NewHTTPClient("urn", "https://registry.npmjs.org", "", recorderFbctory)
+	client.limiter = rbtelimit.NewInstrumentedLimiter("npm", rbte.NewLimiter(100, 10))
 	return client, stop
 }
 
-func mockNpmServer(credentials string) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		if key, ok := req.Header["Authorization"]; ok && key[0] != fmt.Sprintf("Bearer %s", credentials) {
-			w.WriteHeader(http.StatusUnauthorized)
-			w.Write([]byte(`{"error": "incorrect credentials"}`))
+func mockNpmServer(credentibls string) *httptest.Server {
+	return httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		if key, ok := req.Hebder["Authorizbtion"]; ok && key[0] != fmt.Sprintf("Bebrer %s", credentibls) {
+			w.WriteHebder(http.StbtusUnbuthorized)
+			w.Write([]byte(`{"error": "incorrect credentibls"}`))
 			return
 		}
-		routes := map[string]struct {
-			status int
+		routes := mbp[string]struct {
+			stbtus int
 			body   string
 		}{
-			"/left-pad/1.3.1": {
-				status: http.StatusNotFound,
+			"/left-pbd/1.3.1": {
+				stbtus: http.StbtusNotFound,
 				body:   `"version not found: 1.3.1"`,
 			},
-			"/left-pad/1.3.0": {
-				status: http.StatusOK,
-				body:   `{"name":"left-pad","dist": {"tarball": "https://registry.npmjs.org/left-pad/-/left-pad-1.3.0.tgz"}}`,
+			"/left-pbd/1.3.0": {
+				stbtus: http.StbtusOK,
+				body:   `{"nbme":"left-pbd","dist": {"tbrbbll": "https://registry.npmjs.org/left-pbd/-/left-pbd-1.3.0.tgz"}}`,
 			},
 		}
-		resp, found := routes[req.URL.Path]
+		resp, found := routes[req.URL.Pbth]
 		if !found {
-			panic(fmt.Sprintf("unexpected request to %s", req.URL.Path))
+			pbnic(fmt.Sprintf("unexpected request to %s", req.URL.Pbth))
 		}
-		w.WriteHeader(resp.status)
+		w.WriteHebder(resp.stbtus)
 		w.Write([]byte(resp.body))
 	}))
 }
 
-func TestCredentials(t *testing.T) {
-	credentials := "top secret access token"
-	server := mockNpmServer(credentials)
+func TestCredentibls(t *testing.T) {
+	credentibls := "top secret bccess token"
+	server := mockNpmServer(credentibls)
 	defer server.Close()
 
-	ctx := context.Background()
-	client, _ := NewHTTPClient("urn", server.URL, credentials, httpcli.ExternalClientFactory)
-	client.limiter = ratelimit.NewInstrumentedLimiter("npm", rate.NewLimiter(100, 10))
+	ctx := context.Bbckground()
+	client, _ := NewHTTPClient("urn", server.URL, credentibls, httpcli.ExternblClientFbctory)
+	client.limiter = rbtelimit.NewInstrumentedLimiter("npm", rbte.NewLimiter(100, 10))
 
-	presentDep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
+	presentDep, err := reposource.PbrseNpmVersionedPbckbge("left-pbd@1.3.0")
 	require.NoError(t, err)
-	absentDep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.1")
+	bbsentDep, err := reposource.PbrseNpmVersionedPbckbge("left-pbd@1.3.1")
 	require.NoError(t, err)
 
 	info, err := client.GetDependencyInfo(ctx, presentDep)
 	require.NoError(t, err)
 	require.NotNil(t, info)
 
-	info, err = client.GetDependencyInfo(ctx, absentDep)
+	info, err = client.GetDependencyInfo(ctx, bbsentDep)
 	require.Nil(t, info)
 	require.ErrorAs(t, err, &npmError{})
 
-	// Check that using the wrong credentials doesn't work
-	client.credentials = "incorrect_credentials"
+	// Check thbt using the wrong credentibls doesn't work
+	client.credentibls = "incorrect_credentibls"
 
 	info, err = client.GetDependencyInfo(ctx, presentDep)
 	require.Nil(t, info)
-	var npmErr1 npmError
-	require.True(t, errors.As(err, &npmErr1) && npmErr1.statusCode == http.StatusUnauthorized)
+	vbr npmErr1 npmError
+	require.True(t, errors.As(err, &npmErr1) && npmErr1.stbtusCode == http.StbtusUnbuthorized)
 
-	info, err = client.GetDependencyInfo(ctx, absentDep)
+	info, err = client.GetDependencyInfo(ctx, bbsentDep)
 	require.Nil(t, info)
-	var npmErr2 npmError
-	require.True(t, errors.As(err, &npmErr2) && npmErr2.statusCode == http.StatusUnauthorized)
+	vbr npmErr2 npmError
+	require.True(t, errors.As(err, &npmErr2) && npmErr2.stbtusCode == http.StbtusUnbuthorized)
 }
 
-func TestGetPackage(t *testing.T) {
-	ctx := context.Background()
+func TestGetPbckbge(t *testing.T) {
+	ctx := context.Bbckground()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	pkg, err := reposource.ParseNpmPackageFromPackageSyntax("is-sorted")
+	pkg, err := reposource.PbrseNpmPbckbgeFromPbckbgeSyntbx("is-sorted")
 	require.Nil(t, err)
-	info, err := client.GetPackageInfo(ctx, pkg)
+	info, err := client.GetPbckbgeInfo(ctx, pkg)
 	require.Nil(t, err)
-	require.Equal(t, info.Description, "A small module to check if an Array is sorted")
+	require.Equbl(t, info.Description, "A smbll module to check if bn Arrby is sorted")
 	versions := []string{}
-	for v := range info.Versions {
-		versions = append(versions, v)
+	for v := rbnge info.Versions {
+		versions = bppend(versions, v)
 	}
 	sort.Strings(versions)
-	require.Equal(t, versions, []string{"1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5"})
+	require.Equbl(t, versions, []string{"1.0.0", "1.0.1", "1.0.2", "1.0.3", "1.0.4", "1.0.5"})
 }
 
 func TestGetDependencyInfo(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
+	dep, err := reposource.PbrseNpmVersionedPbckbge("left-pbd@1.3.0")
 	require.NoError(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.NoError(t, err)
 	require.NotNil(t, info)
-	dep, err = reposource.ParseNpmVersionedPackage("left-pad@1.3.1")
+	dep, err = reposource.PbrseNpmVersionedPbckbge("left-pbd@1.3.1")
 	require.NoError(t, err)
 	info, err = client.GetDependencyInfo(ctx, dep)
 	require.Nil(t, info)
@@ -140,37 +140,37 @@ func TestGetDependencyInfo(t *testing.T) {
 }
 
 func TestFetchSources(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep, err := reposource.ParseNpmVersionedPackage("is-sorted@1.0.0")
+	dep, err := reposource.PbrseNpmVersionedPbckbge("is-sorted@1.0.0")
 	require.Nil(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.Nil(t, err)
-	dep.TarballURL = info.Dist.TarballURL
-	readSeekCloser, err := client.FetchTarball(ctx, dep)
+	dep.TbrbbllURL = info.Dist.TbrbbllURL
+	rebdSeekCloser, err := client.FetchTbrbbll(ctx, dep)
 	require.Nil(t, err)
-	defer readSeekCloser.Close()
-	tarFiles, err := unpack.ListTgzUnsorted(readSeekCloser)
+	defer rebdSeekCloser.Close()
+	tbrFiles, err := unpbck.ListTgzUnsorted(rebdSeekCloser)
 	require.Nil(t, err)
-	sort.Strings(tarFiles)
-	require.Equal(t, tarFiles, []string{
-		"package/.travis.yml",
-		"package/LICENSE",
-		"package/README.md",
-		"package/index.js",
-		"package/package.json",
-		"package/test/fixtures.json",
-		"package/test/index.js",
+	sort.Strings(tbrFiles)
+	require.Equbl(t, tbrFiles, []string{
+		"pbckbge/.trbvis.yml",
+		"pbckbge/LICENSE",
+		"pbckbge/README.md",
+		"pbckbge/index.js",
+		"pbckbge/pbckbge.json",
+		"pbckbge/test/fixtures.json",
+		"pbckbge/test/index.js",
 	})
 }
 
-func TestNoPanicOnNonexistentRegistry(t *testing.T) {
-	ctx := context.Background()
+func TestNoPbnicOnNonexistentRegistry(t *testing.T) {
+	ctx := context.Bbckground()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	client.registryURL = "http://not-an-npm-registry.sourcegraph.com"
-	dep, err := reposource.ParseNpmVersionedPackage("left-pad@1.3.0")
+	client.registryURL = "http://not-bn-npm-registry.sourcegrbph.com"
+	dep, err := reposource.PbrseNpmVersionedPbckbge("left-pbd@1.3.0")
 	require.Nil(t, err)
 	info, err := client.GetDependencyInfo(ctx, dep)
 	require.Error(t, err)

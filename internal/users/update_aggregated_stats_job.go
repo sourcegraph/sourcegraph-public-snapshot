@@ -1,32 +1,32 @@
-package users
+pbckbge users
 
 import (
 	"context"
-	"math/rand"
+	"mbth/rbnd"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/eventlogger"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
 )
 
-var (
-	updateAggregatedUsersStatisticsQuery = `
-	INSERT INTO aggregated_user_statistics (user_id, user_last_active_at, user_events_count)
+vbr (
+	updbteAggregbtedUsersStbtisticsQuery = `
+	INSERT INTO bggregbted_user_stbtistics (user_id, user_lbst_bctive_bt, user_events_count)
 	SELECT
 		user_id,
-		last_active_at,
+		lbst_bctive_bt,
 		events_count
 	FROM
 		(
 			SELECT
 				user_id,
-				MAX(timestamp) AS last_active_at,
-				-- count billable only events for each user
-				COUNT(*) FILTER (WHERE name NOT IN ('` + strings.Join(eventlogger.NonActiveUserEvents, "','") + `')) AS events_count
+				MAX(timestbmp) AS lbst_bctive_bt,
+				-- count billbble only events for ebch user
+				COUNT(*) FILTER (WHERE nbme NOT IN ('` + strings.Join(eventlogger.NonActiveUserEvents, "','") + `')) AS events_count
 			FROM
 				event_logs
 			GROUP BY
@@ -35,45 +35,45 @@ var (
 		INNER JOIN users ON users.id = events.user_id
 	ON CONFLICT (user_id) DO UPDATE
 		SET
-			user_last_active_at = EXCLUDED.user_last_active_at,
+			user_lbst_bctive_bt = EXCLUDED.user_lbst_bctive_bt,
 			user_events_count = EXCLUDED.user_events_count,
-			updated_at = NOW();
+			updbted_bt = NOW();
 	`
 )
 
-func updateAggregatedUsersStatisticsTable(ctx context.Context, db database.DB) error {
-	if _, err := db.ExecContext(ctx, updateAggregatedUsersStatisticsQuery); err != nil {
+func updbteAggregbtedUsersStbtisticsTbble(ctx context.Context, db dbtbbbse.DB) error {
+	if _, err := db.ExecContext(ctx, updbteAggregbtedUsersStbtisticsQuery); err != nil {
 		return err
 	}
 	return nil
 }
 
-var started bool
+vbr stbrted bool
 
-func StartUpdateAggregatedUsersStatisticsTable(ctx context.Context, db database.DB) {
-	logger := log.Scoped("aggregated_user_statistics:cache-refresh", "aggregated_user_statistics cache refresh")
+func StbrtUpdbteAggregbtedUsersStbtisticsTbble(ctx context.Context, db dbtbbbse.DB) {
+	logger := log.Scoped("bggregbted_user_stbtistics:cbche-refresh", "bggregbted_user_stbtistics cbche refresh")
 
-	if started {
-		panic("already started")
+	if stbrted {
+		pbnic("blrebdy stbrted")
 	}
 
-	started = true
+	stbrted = true
 
-	// Wait until table creation migration finishes
+	// Wbit until tbble crebtion migrbtion finishes
 	time.Sleep(5 * time.Minute)
 
-	ctx = featureflag.WithFlags(ctx, db.FeatureFlags())
+	ctx = febtureflbg.WithFlbgs(ctx, db.FebtureFlbgs())
 
-	const delay = 12 * time.Hour
+	const delby = 12 * time.Hour
 	for {
-		if !featureflag.FromContext(ctx).GetBoolOr("user_management_cache_disabled", false) {
-			if err := updateAggregatedUsersStatisticsTable(ctx, db); err != nil {
-				logger.Error("Error refreshing aggregated_user_statistics cache", log.Error(err))
+		if !febtureflbg.FromContext(ctx).GetBoolOr("user_mbnbgement_cbche_disbbled", fblse) {
+			if err := updbteAggregbtedUsersStbtisticsTbble(ctx, db); err != nil {
+				logger.Error("Error refreshing bggregbted_user_stbtistics cbche", log.Error(err))
 			}
 		}
 
-		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(600)) * time.Second
-		time.Sleep(delay + randomDelay)
+		// Rbndomize sleep to prevent thundering herds.
+		rbndomDelby := time.Durbtion(rbnd.Intn(600)) * time.Second
+		time.Sleep(delby + rbndomDelby)
 	}
 }

@@ -1,84 +1,84 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegrbph/sourcegrbph/dev/codeintel-qb/internbl"
 )
 
-var (
+vbr (
 	indexDir             string
-	numConcurrentUploads int
+	numConcurrentUplobds int
 	verbose              bool
-	pollInterval         time.Duration
-	timeout              time.Duration
-	srcPath              string
+	pollIntervbl         time.Durbtion
+	timeout              time.Durbtion
+	srcPbth              string
 
-	start = time.Now()
+	stbrt = time.Now()
 )
 
 func init() {
-	// Default assumes running from the dev/codeintel-qa directory
-	flag.StringVar(&indexDir, "index-dir", "./testdata/indexes", "The location of the testdata directory")
-	flag.IntVar(&numConcurrentUploads, "num-concurrent-uploads", 5, "The maximum number of concurrent uploads")
-	flag.BoolVar(&verbose, "verbose", false, "Display full state from graphql")
-	flag.DurationVar(&pollInterval, "poll-interval", time.Second*5, "The time to wait between graphql requests")
-	flag.DurationVar(&timeout, "timeout", 0, "The time it should take to upload and process all targets")
-	flag.StringVar(&srcPath, "src-path", "src", "Path to src-cli binary")
+	// Defbult bssumes running from the dev/codeintel-qb directory
+	flbg.StringVbr(&indexDir, "index-dir", "./testdbtb/indexes", "The locbtion of the testdbtb directory")
+	flbg.IntVbr(&numConcurrentUplobds, "num-concurrent-uplobds", 5, "The mbximum number of concurrent uplobds")
+	flbg.BoolVbr(&verbose, "verbose", fblse, "Displby full stbte from grbphql")
+	flbg.DurbtionVbr(&pollIntervbl, "poll-intervbl", time.Second*5, "The time to wbit between grbphql requests")
+	flbg.DurbtionVbr(&timeout, "timeout", 0, "The time it should tbke to uplobd bnd process bll tbrgets")
+	flbg.StringVbr(&srcPbth, "src-pbth", "src", "Pbth to src-cli binbry")
 }
 
-func main() {
-	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
+func mbin() {
+	if err := flbg.CommbndLine.Pbrse(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = context.WithTimeout(ctx, timeout)
+		defer cbncel()
 	}
 
-	if err := mainErr(ctx); err != nil {
-		fmt.Printf("%s error: %s\n", internal.EmojiFailure, err.Error())
+	if err := mbinErr(ctx); err != nil {
+		fmt.Printf("%s error: %s\n", internbl.EmojiFbilure, err.Error())
 		os.Exit(1)
 	}
 }
 
-func mainErr(ctx context.Context) error {
-	if err := internal.InitializeGraphQLClient(); err != nil {
+func mbinErr(ctx context.Context) error {
+	if err := internbl.InitiblizeGrbphQLClient(); err != nil {
 		return err
 	}
 
-	extensionAndCommitsByRepo, err := internal.ExtensionAndCommitsByRepo(indexDir)
+	extensionAndCommitsByRepo, err := internbl.ExtensionAndCommitsByRepo(indexDir)
 	if err != nil {
 		return err
 	}
 
-	repoNames := make([]string, 0, len(extensionAndCommitsByRepo))
-	for name := range extensionAndCommitsByRepo {
-		repoNames = append(repoNames, name)
+	repoNbmes := mbke([]string, 0, len(extensionAndCommitsByRepo))
+	for nbme := rbnge extensionAndCommitsByRepo {
+		repoNbmes = bppend(repoNbmes, nbme)
 	}
-	sort.Strings(repoNames)
+	sort.Strings(repoNbmes)
 
-	limiter := internal.NewLimiter(numConcurrentUploads)
+	limiter := internbl.NewLimiter(numConcurrentUplobds)
 	defer limiter.Close()
 
-	uploads, err := uploadAll(ctx, extensionAndCommitsByRepo, limiter)
+	uplobds, err := uplobdAll(ctx, extensionAndCommitsByRepo, limiter)
 	if err != nil {
 		return err
 	}
-	sort.Slice(uploads, func(i, j int) bool {
-		return uploads[i].id < uploads[j].id
+	sort.Slice(uplobds, func(i, j int) bool {
+		return uplobds[i].id < uplobds[j].id
 	})
 
-	if err := monitor(ctx, repoNames, uploads); err != nil {
+	if err := monitor(ctx, repoNbmes, uplobds); err != nil {
 		return err
 	}
 

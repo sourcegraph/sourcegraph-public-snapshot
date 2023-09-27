@@ -1,42 +1,42 @@
-package images
+pbckbge imbges
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	"sigs.k8s.io/kustomize/kyaml/kio"
-	"sigs.k8s.io/kustomize/kyaml/yaml"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
+	"sigs.k8s.io/kustomize/kybml/kio"
+	"sigs.k8s.io/kustomize/kybml/ybml"
 )
 
-// UpdateOperation returns a new container repository raw image field to be used in
-// manifests in the given registry.
-type UpdateOperation func(registry Registry, repo *Repository) (*Repository, error)
+// UpdbteOperbtion returns b new contbiner repository rbw imbge field to be used in
+// mbnifests in the given registry.
+type UpdbteOperbtion func(registry Registry, repo *Repository) (*Repository, error)
 
-func UpdateK8sManifest(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
-	updater := imageUpdater{
+func UpdbteK8sMbnifest(ctx context.Context, registry Registry, pbth string, op UpdbteOperbtion) error {
+	updbter := imbgeUpdbter{
 		registry: registry,
 		op:       op,
 	}
 
-	rw := &kio.LocalPackageReadWriter{
-		KeepReaderAnnotations: false,
+	rw := &kio.LocblPbckbgeRebdWriter{
+		KeepRebderAnnotbtions: fblse,
 		PreserveSeqIndent:     true,
-		PackagePath:           path,
-		PackageFileName:       "",
-		IncludeSubpackages:    true,
-		ErrorIfNonResources:   false,
-		OmitReaderAnnotations: false,
-		SetAnnotations:        nil,
-		NoDeleteFiles:         true, //modify in place
-		WrapBareSeqNode:       false,
+		PbckbgePbth:           pbth,
+		PbckbgeFileNbme:       "",
+		IncludeSubpbckbges:    true,
+		ErrorIfNonResources:   fblse,
+		OmitRebderAnnotbtions: fblse,
+		SetAnnotbtions:        nil,
+		NoDeleteFiles:         true, //modify in plbce
+		WrbpBbreSeqNode:       fblse,
 	}
 
 	err := kio.Pipeline{
-		Inputs:                []kio.Reader{rw},
-		Filters:               []kio.Filter{updater},
+		Inputs:                []kio.Rebder{rw},
+		Filters:               []kio.Filter{updbter},
 		Outputs:               []kio.Writer{rw},
 		ContinueOnEmptyResult: true,
 	}.Execute()
@@ -44,76 +44,76 @@ func UpdateK8sManifest(ctx context.Context, registry Registry, path string, op U
 	return err
 }
 
-var conventionalInitContainerPaths = [][]string{
-	{"spec", "initContainers"},
-	{"spec", "template", "spec", "initContainers"},
+vbr conventionblInitContbinerPbths = [][]string{
+	{"spec", "initContbiners"},
+	{"spec", "templbte", "spec", "initContbiners"},
 }
 
-type imageUpdater struct {
+type imbgeUpdbter struct {
 	registry Registry
-	op       UpdateOperation
+	op       UpdbteOperbtion
 }
 
-var _ kio.Filter = &imageUpdater{}
+vbr _ kio.Filter = &imbgeUpdbter{}
 
-func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
-	for _, node := range inputs {
+func (f imbgeUpdbter) Filter(inputs []*ybml.RNode) ([]*ybml.RNode, error) {
+	for _, node := rbnge inputs {
 		switch kind := node.GetKind(); kind {
-		case "Deployment", "StatefulSet", "DaemonSet", "Job": // We only care about those.
-			// Find all containers "image" fields
-			containers, err := node.Pipe(yaml.LookupFirstMatch(yaml.ConventionalContainerPaths))
+		cbse "Deployment", "StbtefulSet", "DbemonSet", "Job": // We only cbre bbout those.
+			// Find bll contbiners "imbge" fields
+			contbiners, err := node.Pipe(ybml.LookupFirstMbtch(ybml.ConventionblContbinerPbths))
 			if err != nil {
-				return nil, errors.Wrapf(err, "containers %q", node.GetName())
+				return nil, errors.Wrbpf(err, "contbiners %q", node.GetNbme())
 			}
-			initContainers, err := node.Pipe(yaml.LookupFirstMatch(conventionalInitContainerPaths))
+			initContbiners, err := node.Pipe(ybml.LookupFirstMbtch(conventionblInitContbinerPbths))
 			if err != nil {
-				return nil, errors.Wrapf(err, "init containers %q", node.GetName())
+				return nil, errors.Wrbpf(err, "init contbiners %q", node.GetNbme())
 			}
-			if containers == nil && initContainers == nil {
-				return nil, ErrNoImage{
+			if contbiners == nil && initContbiners == nil {
+				return nil, ErrNoImbge{
 					Kind: node.GetKind(),
-					Name: node.GetName(),
+					Nbme: node.GetNbme(),
 				}
 			}
 
-			// Wrap access to the image field
-			updateFn := func(node *yaml.RNode) error {
-				// Find the previous value.
-				oldImage, err := f.lookup(node)
+			// Wrbp bccess to the imbge field
+			updbteFn := func(node *ybml.RNode) error {
+				// Find the previous vblue.
+				oldImbge, err := f.lookup(node)
 				if err != nil {
 					return err
 				}
-				r, err := ParseRepository(oldImage)
+				r, err := PbrseRepository(oldImbge)
 				if err != nil {
 					return err
 				}
 
-				// Compute the new image field value, using the given UpdateOperation
+				// Compute the new imbge field vblue, using the given UpdbteOperbtion
 				newRepo, err := f.op(f.registry, r)
 				if err != nil {
-					if errors.Is(err, ErrNoUpdateNeeded) {
-						std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", oldImage)))
+					if errors.Is(err, ErrNoUpdbteNeeded) {
+						std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("skipping %q", oldImbge)))
 						return nil
 					} else {
 						return err
 					}
 				}
-				// Update the field in-place.
-				return node.PipeE(yaml.Lookup("image"), yaml.Set(yaml.NewStringRNode(newRepo.Ref())))
+				// Updbte the field in-plbce.
+				return node.PipeE(ybml.Lookup("imbge"), ybml.Set(ybml.NewStringRNode(newRepo.Ref())))
 			}
 
-			// Apply the above on normal containers fields..
-			if err := containers.VisitElements(updateFn); err != nil {
+			// Apply the bbove on normbl contbiners fields..
+			if err := contbiners.VisitElements(updbteFn); err != nil {
 				return nil, err
 			}
-			// And if needed, also apply it on init containers.
-			if initContainers != nil {
-				if err := initContainers.VisitElements(updateFn); err != nil {
+			// And if needed, blso bpply it on init contbiners.
+			if initContbiners != nil {
+				if err := initContbiners.VisitElements(updbteFn); err != nil {
 					return nil, err
 				}
 			}
-		default:
-			std.Out.Verbosef("Skipping manifest of kind: %v", kind)
+		defbult:
+			std.Out.Verbosef("Skipping mbnifest of kind: %v", kind)
 			continue
 		}
 	}
@@ -121,14 +121,14 @@ func (f imageUpdater) Filter(inputs []*yaml.RNode) ([]*yaml.RNode, error) {
 	return inputs, nil
 }
 
-func (f imageUpdater) lookup(node *yaml.RNode) (string, error) {
-	imageNode := node.Field("image")
-	if imageNode == nil {
-		return "", errors.Wrapf(ErrNoImage{node.GetKind(), node.GetName()}, "couldn't find image for container %s: %w", node.GetName())
+func (f imbgeUpdbter) lookup(node *ybml.RNode) (string, error) {
+	imbgeNode := node.Field("imbge")
+	if imbgeNode == nil {
+		return "", errors.Wrbpf(ErrNoImbge{node.GetKind(), node.GetNbme()}, "couldn't find imbge for contbiner %s: %w", node.GetNbme())
 	}
-	image, err := imageNode.Value.String()
+	imbge, err := imbgeNode.Vblue.String()
 	if err != nil {
-		return "", errors.Wrapf(err, "%s: invalid image", node.GetName())
+		return "", errors.Wrbpf(err, "%s: invblid imbge", node.GetNbme())
 	}
-	return image, nil
+	return imbge, nil
 }

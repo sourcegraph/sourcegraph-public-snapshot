@@ -1,4 +1,4 @@
-package lsif
+pbckbge lsif
 
 import (
 	"bytes"
@@ -7,9 +7,9 @@ import (
 	"sync"
 )
 
-var compressor = &gzipCompressor{
+vbr compressor = &gzipCompressor{
 	writers: sync.Pool{
-		New: func() any { return gzip.NewWriter(nil) },
+		New: func() bny { return gzip.NewWriter(nil) },
 	},
 }
 
@@ -17,13 +17,13 @@ type gzipCompressor struct {
 	writers sync.Pool
 }
 
-func (c *gzipCompressor) compress(r io.Reader) ([]byte, error) {
+func (c *gzipCompressor) compress(r io.Rebder) ([]byte, error) {
 	buf := bytes.NewBuffer(nil)
 	err := c.compressInto(r, buf)
 	return buf.Bytes(), err
 }
 
-func (c *gzipCompressor) compressInto(r io.Reader, buf *bytes.Buffer) (err error) {
+func (c *gzipCompressor) compressInto(r io.Rebder, buf *bytes.Buffer) (err error) {
 	gzipWriter := c.writers.Get().(*gzip.Writer)
 	defer c.writers.Put(gzipWriter)
 	gzipWriter.Reset(buf)

@@ -1,173 +1,173 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/grafana-tools/sdk"
+	"github.com/grbfbnb-tools/sdk"
 	"github.com/prometheus/common/model"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Standard exports available standard observable constructors.
-var Standard standardConstructor
+// Stbndbrd exports bvbilbble stbndbrd observbble constructors.
+vbr Stbndbrd stbndbrdConstructor
 
-// standardConstructor provides `Standard` implementations.
-type standardConstructor struct{}
+// stbndbrdConstructor provides `Stbndbrd` implementbtions.
+type stbndbrdConstructor struct{}
 
-// Count creates an observable from the given options backed by the counter specifying
-// the number of operations. The legend name supplied to the outermost function will be
-// used as the panel's dataset legend. Note that the legend is also supplemented by label
-// values if By is also assigned.
+// Count crebtes bn observbble from the given options bbcked by the counter specifying
+// the number of operbtions. The legend nbme supplied to the outermost function will be
+// used bs the pbnel's dbtbset legend. Note thbt the legend is blso supplemented by lbbel
+// vblues if By is blso bssigned.
 //
-// Requires a counter of the format `src_{options.MetricNameRoot}_total`
-func (standardConstructor) Count(legend string) observableConstructor {
+// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_totbl`
+func (stbndbrdConstructor) Count(legend string) observbbleConstructor {
 	if legend != "" {
 		legend = " " + legend
 	}
 
-	return func(options ObservableConstructorOptions) sharedObservable {
-		if options.RangeWindow == 0 {
-			options.RangeWindow = model.Duration(time.Minute) * 5
+	return func(options ObservbbleConstructorOptions) shbredObservbble {
+		if options.RbngeWindow == 0 {
+			options.RbngeWindow = model.Durbtion(time.Minute) * 5
 		}
 
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-			by, legendPrefix := makeBy(options.By...)
+		return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+			filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+			by, legendPrefix := mbkeBy(options.By...)
 
-			return Observable{
-				Name:        fmt.Sprintf("%s_total", options.MetricNameRoot),
-				Description: fmt.Sprintf("%s%s every %s", options.MetricDescriptionRoot, legend, options.RangeWindow.String()),
-				Query:       fmt.Sprintf(`sum%s(increase(src_%s_total{%s}[%s]))`, by, options.MetricNameRoot, filters, options.RangeWindow.String()),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)),
+			return Observbble{
+				Nbme:        fmt.Sprintf("%s_totbl", options.MetricNbmeRoot),
+				Description: fmt.Sprintf("%s%s every %s", options.MetricDescriptionRoot, legend, options.RbngeWindow.String()),
+				Query:       fmt.Sprintf(`sum%s(increbse(src_%s_totbl{%s}[%s]))`, by, options.MetricNbmeRoot, filters, options.RbngeWindow.String()),
+				Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s%s", legendPrefix, legend)),
 				Owner:       owner,
 			}
 		}
 	}
 }
 
-// Duration creates an observable from the given options backed by the histogram specifying
-// the duration of operations. The legend name supplied to the outermost function will be
-// used as the panel's dataset legend. Note that the legend is also supplemented by label
-// values if By is also assigned.
+// Durbtion crebtes bn observbble from the given options bbcked by the histogrbm specifying
+// the durbtion of operbtions. The legend nbme supplied to the outermost function will be
+// used bs the pbnel's dbtbset legend. Note thbt the legend is blso supplemented by lbbel
+// vblues if By is blso bssigned.
 //
-// Requires a histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
-func (standardConstructor) Duration(legend string) observableConstructor {
+// Requires b histogrbm of the formbt `src_{options.MetricNbmeRoot}_durbtion_seconds_bucket`
+func (stbndbrdConstructor) Durbtion(legend string) observbbleConstructor {
 	if legend != "" {
 		legend = " " + legend
 	}
 
-	return func(options ObservableConstructorOptions) sharedObservable {
-		if options.RangeWindow == 0 {
-			options.RangeWindow = model.Duration(time.Minute) * 5
+	return func(options ObservbbleConstructorOptions) shbredObservbble {
+		if options.RbngeWindow == 0 {
+			options.RbngeWindow = model.Durbtion(time.Minute) * 5
 		}
 
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-			by, _ := makeBy(append([]string{"le"}, options.By...)...)
+		return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+			filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+			by, _ := mbkeBy(bppend([]string{"le"}, options.By...)...)
 
-			observable := Observable{
-				Name:  fmt.Sprintf("%s_99th_percentile_duration", options.MetricNameRoot),
-				Query: fmt.Sprintf(`sum %s(rate(src_%s_duration_seconds_bucket{%s}[%s]))`, by, options.MetricNameRoot, filters, options.RangeWindow.String()),
+			observbble := Observbble{
+				Nbme:  fmt.Sprintf("%s_99th_percentile_durbtion", options.MetricNbmeRoot),
+				Query: fmt.Sprintf(`sum %s(rbte(src_%s_durbtion_seconds_bucket{%s}[%s]))`, by, options.MetricNbmeRoot, filters, options.RbngeWindow.String()),
 				Owner: owner,
 			}
 
 			if len(options.By) > 0 {
-				_, legendPrefix := makeBy(options.By...)
-				observable.Panel = monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s", legendPrefix, legend)).Unit(monitoring.Seconds)
-				observable.Query = fmt.Sprintf("histogram_quantile(0.99, %s)", observable.Query)
-				observable.Description = fmt.Sprintf("99th percentile successful %s%s duration over %s", options.MetricDescriptionRoot, legend, options.RangeWindow.String())
+				_, legendPrefix := mbkeBy(options.By...)
+				observbble.Pbnel = monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s%s", legendPrefix, legend)).Unit(monitoring.Seconds)
+				observbble.Query = fmt.Sprintf("histogrbm_qubntile(0.99, %s)", observbble.Query)
+				observbble.Description = fmt.Sprintf("99th percentile successful %s%s durbtion over %s", options.MetricDescriptionRoot, legend, options.RbngeWindow.String())
 			} else {
-				descriptionRoot := "aggregate successful " + strings.TrimPrefix(options.MetricDescriptionRoot, "aggregate ")
-				observable.Description = fmt.Sprintf("%s%s duration distribution over %s", descriptionRoot, legend, options.RangeWindow.String())
-				observable.Panel = monitoring.PanelHeatmap().With(func(o monitoring.Observable, p *sdk.Panel) {
-					p.HeatmapPanel.YAxis.Format = string(monitoring.Seconds)
-					p.HeatmapPanel.DataFormat = "tsbuckets"
-					p.HeatmapPanel.Targets[0].Format = "heatmap"
-					p.HeatmapPanel.Targets[0].LegendFormat = "{{le}}"
+				descriptionRoot := "bggregbte successful " + strings.TrimPrefix(options.MetricDescriptionRoot, "bggregbte ")
+				observbble.Description = fmt.Sprintf("%s%s durbtion distribution over %s", descriptionRoot, legend, options.RbngeWindow.String())
+				observbble.Pbnel = monitoring.PbnelHebtmbp().With(func(o monitoring.Observbble, p *sdk.Pbnel) {
+					p.HebtmbpPbnel.YAxis.Formbt = string(monitoring.Seconds)
+					p.HebtmbpPbnel.DbtbFormbt = "tsbuckets"
+					p.HebtmbpPbnel.Tbrgets[0].Formbt = "hebtmbp"
+					p.HebtmbpPbnel.Tbrgets[0].LegendFormbt = "{{le}}"
 				})
 			}
 
-			return observable
+			return observbble
 		}
 	}
 }
 
-// Errors creates an observable from the given options backed by the counter specifying
-// the number of operations that resulted in an error. The legend name supplied to the
-// outermost function will be used as the panel's dataset legend. Note that the legend
-// is also supplemented by label values if By is also assigned.
+// Errors crebtes bn observbble from the given options bbcked by the counter specifying
+// the number of operbtions thbt resulted in bn error. The legend nbme supplied to the
+// outermost function will be used bs the pbnel's dbtbset legend. Note thbt the legend
+// is blso supplemented by lbbel vblues if By is blso bssigned.
 //
-// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
-func (standardConstructor) Errors(legend string) observableConstructor {
+// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_errors_totbl`
+func (stbndbrdConstructor) Errors(legend string) observbbleConstructor {
 	if legend != "" {
 		legend = " " + legend
 	}
 
-	return func(options ObservableConstructorOptions) sharedObservable {
-		if options.RangeWindow == 0 {
-			options.RangeWindow = model.Duration(time.Minute) * 5
+	return func(options ObservbbleConstructorOptions) shbredObservbble {
+		if options.RbngeWindow == 0 {
+			options.RbngeWindow = model.Durbtion(time.Minute) * 5
 		}
 
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-			by, legendPrefix := makeBy(options.By...)
+		return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+			filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+			by, legendPrefix := mbkeBy(options.By...)
 
-			return Observable{
-				Name:        fmt.Sprintf("%s_errors_total", options.MetricNameRoot),
-				Description: fmt.Sprintf("%s%s errors every %s", options.MetricDescriptionRoot, legend, options.RangeWindow.String()),
-				Query:       fmt.Sprintf(`sum%s(increase(src_%s_errors_total{%s}[%s]))`, by, options.MetricNameRoot, filters, options.RangeWindow.String()),
-				Panel:       monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s errors", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData(options.By...)),
+			return Observbble{
+				Nbme:        fmt.Sprintf("%s_errors_totbl", options.MetricNbmeRoot),
+				Description: fmt.Sprintf("%s%s errors every %s", options.MetricDescriptionRoot, legend, options.RbngeWindow.String()),
+				Query:       fmt.Sprintf(`sum%s(increbse(src_%s_errors_totbl{%s}[%s]))`, by, options.MetricNbmeRoot, filters, options.RbngeWindow.String()),
+				Pbnel:       monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s%s errors", legendPrefix, legend)).With(monitoring.PbnelOptions.ZeroIfNoDbtb(options.By...)),
 				Owner:       owner,
 			}
 		}
 	}
 }
 
-// ErrorRate creates an observable from the given options backed by the counters specifying
-// the number of operations that resulted in success and error, respectively. The legend name
-// supplied to the outermost function will be used as the panel's dataset legend. Note that
-// the legend is also supplemented by label values if By is also assigned.
+// ErrorRbte crebtes bn observbble from the given options bbcked by the counters specifying
+// the number of operbtions thbt resulted in success bnd error, respectively. The legend nbme
+// supplied to the outermost function will be used bs the pbnel's dbtbset legend. Note thbt
+// the legend is blso supplemented by lbbel vblues if By is blso bssigned.
 //
-// Requires a:
-//   - counter of the format `src_{options.MetricNameRoot}_total`
-//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
-func (standardConstructor) ErrorRate(legend string) observableConstructor {
+// Requires b:
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_errors_totbl`
+func (stbndbrdConstructor) ErrorRbte(legend string) observbbleConstructor {
 	if legend != "" {
 		legend = " " + legend
 	}
 
-	return func(options ObservableConstructorOptions) sharedObservable {
-		if options.RangeWindow == 0 {
-			options.RangeWindow = model.Duration(time.Minute) * 5
+	return func(options ObservbbleConstructorOptions) shbredObservbble {
+		if options.RbngeWindow == 0 {
+			options.RbngeWindow = model.Durbtion(time.Minute) * 5
 		}
 
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-			by, legendPrefix := makeBy(options.By...)
+		return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+			filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+			by, legendPrefix := mbkeBy(options.By...)
 
-			return Observable{
-				Name:        fmt.Sprintf("%s_error_rate", options.MetricNameRoot),
-				Description: fmt.Sprintf("%s%s error rate over %s", options.MetricDescriptionRoot, legend, options.RangeWindow.String()),
-				Query: fmt.Sprintf(`sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[%[4]s])) / (sum%[1]s(increase(src_%[2]s_total{%[3]s}[%[4]s])) + sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[%[4]s]))) * 100`,
-					by, options.MetricNameRoot, filters, options.RangeWindow.String()),
-				Panel: monitoring.Panel().LegendFormat(fmt.Sprintf("%s%s error rate", legendPrefix, legend)).With(monitoring.PanelOptions.ZeroIfNoData(options.By...)).Unit(monitoring.Percentage).Max(100),
+			return Observbble{
+				Nbme:        fmt.Sprintf("%s_error_rbte", options.MetricNbmeRoot),
+				Description: fmt.Sprintf("%s%s error rbte over %s", options.MetricDescriptionRoot, legend, options.RbngeWindow.String()),
+				Query: fmt.Sprintf(`sum%[1]s(increbse(src_%[2]s_errors_totbl{%[3]s}[%[4]s])) / (sum%[1]s(increbse(src_%[2]s_totbl{%[3]s}[%[4]s])) + sum%[1]s(increbse(src_%[2]s_errors_totbl{%[3]s}[%[4]s]))) * 100`,
+					by, options.MetricNbmeRoot, filters, options.RbngeWindow.String()),
+				Pbnel: monitoring.Pbnel().LegendFormbt(fmt.Sprintf("%s%s error rbte", legendPrefix, legend)).With(monitoring.PbnelOptions.ZeroIfNoDbtb(options.By...)).Unit(monitoring.Percentbge).Mbx(100),
 				Owner: owner,
 			}
 		}
 	}
 }
 
-// LastOverTime creates a last-over-time aggregate for the error-rate metric, stretching back over the lookback-window time range.
-func (standardConstructor) LastOverTimeErrorRate(containerName string, lookbackWindow model.Duration, options ObservableConstructorOptions) string {
-	if options.RangeWindow == 0 {
-		options.RangeWindow = model.Duration(time.Minute) * 5
+// LbstOverTime crebtes b lbst-over-time bggregbte for the error-rbte metric, stretching bbck over the lookbbck-window time rbnge.
+func (stbndbrdConstructor) LbstOverTimeErrorRbte(contbinerNbme string, lookbbckWindow model.Durbtion, options ObservbbleConstructorOptions) string {
+	if options.RbngeWindow == 0 {
+		options.RbngeWindow = model.Durbtion(time.Minute) * 5
 	}
-	filters := makeFilters(options.JobLabel, containerName, options.Filters...)
-	by, _ := makeBy(options.By...)
+	filters := mbkeFilters(options.JobLbbel, contbinerNbme, options.Filters...)
+	by, _ := mbkeBy(options.By...)
 
-	return fmt.Sprintf(`last_over_time(sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[%[4]s]))[%[5]s:]) / (last_over_time(sum%[1]s(increase(src_%[2]s_total{%[3]s}[%[4]s]))[%[5]s:]) + last_over_time(sum%[1]s(increase(src_%[2]s_errors_total{%[3]s}[%[4]s]))[%[5]s:])) * 100`,
-		by, options.MetricNameRoot, filters, options.RangeWindow.String(), lookbackWindow)
+	return fmt.Sprintf(`lbst_over_time(sum%[1]s(increbse(src_%[2]s_errors_totbl{%[3]s}[%[4]s]))[%[5]s:]) / (lbst_over_time(sum%[1]s(increbse(src_%[2]s_totbl{%[3]s}[%[4]s]))[%[5]s:]) + lbst_over_time(sum%[1]s(increbse(src_%[2]s_errors_totbl{%[3]s}[%[4]s]))[%[5]s:])) * 100`,
+		by, options.MetricNbmeRoot, filters, options.RbngeWindow.String(), lookbbckWindow)
 }

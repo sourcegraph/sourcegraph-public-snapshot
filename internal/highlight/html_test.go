@@ -1,4 +1,4 @@
-package highlight
+pbckbge highlight
 
 import (
 	"embed"
@@ -6,114 +6,114 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"google.golang.org/protobuf/proto"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"google.golbng.org/protobuf/proto"
 )
 
 func TestMultilineOccurrence(t *testing.T) {
-	code := `namespace MyCompanyName.MyProjectName;
+	code := `nbmespbce MyCompbnyNbme.MyProjectNbme;
 
 [DependsOn(
-    // ABP Framework packages
+    // ABP Frbmework pbckbges
     typeof(AbpAspNetCoreMvcModule)
 )]`
 
 	document := &scip.Document{
 		Occurrences: []*scip.Occurrence{
-			// Past end range occurrence
+			// Pbst end rbnge occurrence
 			{
-				Range:      []int32{7, 0, 1},
-				SyntaxKind: scip.SyntaxKind_BooleanLiteral,
+				Rbnge:      []int32{7, 0, 1},
+				SyntbxKind: scip.SyntbxKind_BoolebnLiterbl,
 			},
 		},
 	}
 
-	rows := map[int32]bool{}
+	rows := mbp[int32]bool{}
 	scipToHTML(code, document, func(row int32) {
 		rows[row] = true
-	}, func(kind scip.SyntaxKind, line string) {}, nil)
+	}, func(kind scip.SyntbxKind, line string) {}, nil)
 
 	if len(rows) != 6 {
-		t.Error("Should only add once per row, and should skip the 7th row (since it doesn't exist)")
+		t.Error("Should only bdd once per row, bnd should skip the 7th row (since it doesn't exist)")
 	}
 }
 
 func TestMultilineOccurrence2(t *testing.T) {
-	code := `namespace MyCompanyName.MyProjectName;
+	code := `nbmespbce MyCompbnyNbme.MyProjectNbme;
 
 [DependsOn(
-    // ABP Framework packages
+    // ABP Frbmework pbckbges
     typeof(AbpAspNetCoreMvcModule)
 )]`
 
 	document := &scip.Document{
 		Occurrences: []*scip.Occurrence{
-			// Valid range at the beginning, should be skipped.
+			// Vblid rbnge bt the beginning, should be skipped.
 			{
-				Range:      []int32{0, 0, 8},
-				SyntaxKind: scip.SyntaxKind_IdentifierNamespace,
+				Rbnge:      []int32{0, 0, 8},
+				SyntbxKind: scip.SyntbxKind_IdentifierNbmespbce,
 			},
 
-			// Past end range occurrence, should not cause panic
+			// Pbst end rbnge occurrence, should not cbuse pbnic
 			{
-				Range:      []int32{2, 0, 30, 4},
-				SyntaxKind: scip.SyntaxKind_BooleanLiteral,
+				Rbnge:      []int32{2, 0, 30, 4},
+				SyntbxKind: scip.SyntbxKind_BoolebnLiterbl,
 			},
 		},
 	}
 
-	// Should stay false, because we should skip this identifier
-	// due to the valid lines that is passed to lsifToHTML
-	sawNamespaceIdentifier := false
+	// Should stby fblse, becbuse we should skip this identifier
+	// due to the vblid lines thbt is pbssed to lsifToHTML
+	sbwNbmespbceIdentifier := fblse
 
-	rowsSeen := map[int32]bool{}
+	rowsSeen := mbp[int32]bool{}
 	scipToHTML(code, document, func(row int32) {
 		rowsSeen[row] = true
-	}, func(kind scip.SyntaxKind, line string) {
-		if kind == scip.SyntaxKind_IdentifierNamespace {
-			sawNamespaceIdentifier = true
+	}, func(kind scip.SyntbxKind, line string) {
+		if kind == scip.SyntbxKind_IdentifierNbmespbce {
+			sbwNbmespbceIdentifier = true
 		}
 
-	}, map[int32]bool{
-		0: false,
-		1: false,
+	}, mbp[int32]bool{
+		0: fblse,
+		1: fblse,
 		2: true,
-		3: false,
-		4: false,
+		3: fblse,
+		4: fblse,
 	})
 
 	if len(rowsSeen) != 4 {
-		t.Errorf("Should only add the rows from 2 until the end (due to weird multiline occurrence): %+v", rowsSeen)
+		t.Errorf("Should only bdd the rows from 2 until the end (due to weird multiline occurrence): %+v", rowsSeen)
 	}
 
-	if sawNamespaceIdentifier {
-		t.Error("Should not have seen identifier for module, because line was skipped")
+	if sbwNbmespbceIdentifier {
+		t.Error("Should not hbve seen identifier for module, becbuse line wbs skipped")
 	}
 }
 
-//go:embed testdata/*
-var testDir embed.FS
+//go:embed testdbtb/*
+vbr testDir embed.FS
 
-//go:embed testdata/telemetry.scip
-var telemetryDocument string
+//go:embed testdbtb/telemetry.scip
+vbr telemetryDocument string
 
-//go:embed testdata/telemetry-raw.txt
-var telemetryText string
+//go:embed testdbtb/telemetry-rbw.txt
+vbr telemetryText string
 
-func getDocument(t *testing.T, payload string) *scip.Document {
-	var document scip.Document
-	err := proto.Unmarshal([]byte(payload), &document)
+func getDocument(t *testing.T, pbylobd string) *scip.Document {
+	vbr document scip.Document
+	err := proto.Unmbrshbl([]byte(pbylobd), &document)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return &document
 }
 
-func snapshotDocument(t *testing.T, document *scip.Document, code string, validLines map[int32]bool) []string {
+func snbpshotDocument(t *testing.T, document *scip.Document, code string, vblidLines mbp[int32]bool) []string {
 	result := ""
-	addRow := func(row int32) {
+	bddRow := func(row int32) {
 		if result != "" {
 			result += "\n"
 		}
@@ -121,115 +121,115 @@ func snapshotDocument(t *testing.T, document *scip.Document, code string, validL
 		result += fmt.Sprintf("%03d: ", row)
 	}
 
-	addText := func(kind scip.SyntaxKind, line string) {
+	bddText := func(kind scip.SyntbxKind, line string) {
 		if line == "" {
-			t.Fatalf("Line should not be empty: %s\n%s", kind, result)
+			t.Fbtblf("Line should not be empty: %s\n%s", kind, result)
 		}
 
-		line = strings.ReplaceAll(line, "\n", "\\n")
+		line = strings.ReplbceAll(line, "\n", "\\n")
 
-		if kind == scip.SyntaxKind_UnspecifiedSyntaxKind {
+		if kind == scip.SyntbxKind_UnspecifiedSyntbxKind {
 			result += line
 		} else {
 			result += fmt.Sprintf("<%s>%s</>", kind, line)
 		}
 	}
 
-	scipToHTML(code, document, addRow, addText, validLines)
+	scipToHTML(code, document, bddRow, bddText, vblidLines)
 	return strings.Split(result, "\n")
 }
 
 func TestMultilineTypescriptCommentEntire(t *testing.T) {
 	document := getDocument(t, telemetryDocument)
-	splitResult := snapshotDocument(t, document, telemetryText, nil)
+	splitResult := snbpshotDocument(t, document, telemetryText, nil)
 
-	autogold.Expect([]string{
-		"000: <Keyword>import</> * <Keyword>as</> <Identifier>sourcegraph</> <Keyword>from</> <StringLiteral>'</><StringLiteral>./api</><StringLiteral>'</>",
+	butogold.Expect([]string{
+		"000: <Keyword>import</> * <Keyword>bs</> <Identifier>sourcegrbph</> <Keyword>from</> <StringLiterbl>'</><StringLiterbl>./bpi</><StringLiterbl>'</>",
 		"001: \\n",
 		"002: <Comment>/**</>",
-		"003: <Comment> * A wrapper around telemetry events. A new instance of this class</>",
-		"004: <Comment> * should be instantiated at the start of each action as it handles</>",
-		"005: <Comment> * latency tracking.</>",
+		"003: <Comment> * A wrbpper bround telemetry events. A new instbnce of this clbss</>",
+		"004: <Comment> * should be instbntibted bt the stbrt of ebch bction bs it hbndles</>",
+		"005: <Comment> * lbtency trbcking.</>",
 		"006: <Comment> */</>",
-		"007: <Keyword>export</> <Keyword>class</> <IdentifierType>TelemetryEmitter</> {",
-		"008:     <Keyword>private</> <Identifier>languageID</>: <IdentifierBuiltinType>string</>",
-		"009:     <Keyword>private</> <Identifier>repoID</>: <IdentifierBuiltinType>number</>",
-		"010:     <Keyword>private</> <Identifier>started</>: <IdentifierBuiltinType>number</>",
-		"011:     <Keyword>private</> <Identifier>enabled</>: <IdentifierBuiltinType>boolean</>",
-		"012:     <Keyword>private</> <Identifier>emitted</> = <Keyword>new</> <Identifier>Set</><<IdentifierBuiltinType>string</>>()",
+		"007: <Keyword>export</> <Keyword>clbss</> <IdentifierType>TelemetryEmitter</> {",
+		"008:     <Keyword>privbte</> <Identifier>lbngubgeID</>: <IdentifierBuiltinType>string</>",
+		"009:     <Keyword>privbte</> <Identifier>repoID</>: <IdentifierBuiltinType>number</>",
+		"010:     <Keyword>privbte</> <Identifier>stbrted</>: <IdentifierBuiltinType>number</>",
+		"011:     <Keyword>privbte</> <Identifier>enbbled</>: <IdentifierBuiltinType>boolebn</>",
+		"012:     <Keyword>privbte</> <Identifier>emitted</> = <Keyword>new</> <Identifier>Set</><<IdentifierBuiltinType>string</>>()",
 		"013: \\n",
 		"014:     <Comment>/**</>",
-		"015: <Comment>     * Creates a new telemetry emitter object for a given</>",
-		"016: <Comment>     * language ID and repository ID.</>",
-		"017: <Comment>     * Emitting is enabled by default</>",
+		"015: <Comment>     * Crebtes b new telemetry emitter object for b given</>",
+		"016: <Comment>     * lbngubge ID bnd repository ID.</>",
+		"017: <Comment>     * Emitting is enbbled by defbult</>",
 		"018: <Comment>     *</>",
-		"019: <Comment>     * @param languageID The language identifier e.g. 'java'.</>",
-		"020: <Comment>     * @param repoID numeric repository identifier.</>",
-		"021: <Comment>     * @param enabled Whether telemetry is enabled.</>",
+		"019: <Comment>     * @pbrbm lbngubgeID The lbngubge identifier e.g. 'jbvb'.</>",
+		"020: <Comment>     * @pbrbm repoID numeric repository identifier.</>",
+		"021: <Comment>     * @pbrbm enbbled Whether telemetry is enbbled.</>",
 		"022: <Comment>     */</>",
-		"023:     <IdentifierFunction>constructor</>(<Identifier>languageID</>: <IdentifierBuiltinType>string</>, <Identifier>repoID</>: <IdentifierBuiltinType>number</>, <Identifier>enabled</> = <IdentifierBuiltin>true</>) {",
-		"024:         <IdentifierBuiltin>this</>.<Identifier>languageID</> = <Identifier>languageID</>",
-		"025:         <IdentifierBuiltin>this</>.<Identifier>started</> = <Identifier>Date</>.<IdentifierFunction>now</>()",
+		"023:     <IdentifierFunction>constructor</>(<Identifier>lbngubgeID</>: <IdentifierBuiltinType>string</>, <Identifier>repoID</>: <IdentifierBuiltinType>number</>, <Identifier>enbbled</> = <IdentifierBuiltin>true</>) {",
+		"024:         <IdentifierBuiltin>this</>.<Identifier>lbngubgeID</> = <Identifier>lbngubgeID</>",
+		"025:         <IdentifierBuiltin>this</>.<Identifier>stbrted</> = <Identifier>Dbte</>.<IdentifierFunction>now</>()",
 		"026:         <IdentifierBuiltin>this</>.<Identifier>repoID</> = <Identifier>repoID</>",
-		"027:         <IdentifierBuiltin>this</>.<Identifier>enabled</> = <Identifier>enabled</>",
+		"027:         <IdentifierBuiltin>this</>.<Identifier>enbbled</> = <Identifier>enbbled</>",
 		"028:     }",
 		"029: \\n",
 		"030:     <Comment>/**</>",
-		"031: <Comment>     * Emit a telemetry event with a durationMs attribute only if the</>",
-		"032: <Comment>     * same action has not yet emitted for this instance. This method</>",
-		"033: <Comment>     * returns true if an event was emitted and false otherwise.</>",
+		"031: <Comment>     * Emit b telemetry event with b durbtionMs bttribute only if the</>",
+		"032: <Comment>     * sbme bction hbs not yet emitted for this instbnce. This method</>",
+		"033: <Comment>     * returns true if bn event wbs emitted bnd fblse otherwise.</>",
 		"034: <Comment>     */</>",
-		"035:     <Keyword>public</> <IdentifierFunction>emitOnce</>(<Identifier>action</>: <IdentifierBuiltinType>string</>, <Identifier>args</>: <IdentifierBuiltinType>object</> = {}): <IdentifierBuiltinType>boolean</> {",
-		"036:         <Keyword>if</> (<IdentifierBuiltin>this</>.<Identifier>emitted</>.<IdentifierFunction>has</>(<Identifier>action</>)) {",
-		"037:             <Keyword>return</> <IdentifierBuiltin>false</>",
+		"035:     <Keyword>public</> <IdentifierFunction>emitOnce</>(<Identifier>bction</>: <IdentifierBuiltinType>string</>, <Identifier>brgs</>: <IdentifierBuiltinType>object</> = {}): <IdentifierBuiltinType>boolebn</> {",
+		"036:         <Keyword>if</> (<IdentifierBuiltin>this</>.<Identifier>emitted</>.<IdentifierFunction>hbs</>(<Identifier>bction</>)) {",
+		"037:             <Keyword>return</> <IdentifierBuiltin>fblse</>",
 		"038:         }",
 		"039: \\n",
-		"040:         <IdentifierBuiltin>this</>.<Identifier>emitted</>.<IdentifierFunction>add</>(<Identifier>action</>)",
-		"041:         <IdentifierBuiltin>this</>.<IdentifierFunction>emit</>(<Identifier>action</>, <Identifier>args</>)",
+		"040:         <IdentifierBuiltin>this</>.<Identifier>emitted</>.<IdentifierFunction>bdd</>(<Identifier>bction</>)",
+		"041:         <IdentifierBuiltin>this</>.<IdentifierFunction>emit</>(<Identifier>bction</>, <Identifier>brgs</>)",
 		"042:         <Keyword>return</> <IdentifierBuiltin>true</>",
 		"043:     }",
 		"044: \\n",
 		"045:     <Comment>/**</>",
-		"046: <Comment>     * Emit a telemetry event with durationMs and languageId attributes.</>",
+		"046: <Comment>     * Emit b telemetry event with durbtionMs bnd lbngubgeId bttributes.</>",
 		"047: <Comment>     */</>",
-		"048:     <Keyword>public</> <IdentifierFunction>emit</>(<Identifier>action</>: <IdentifierBuiltinType>string</>, <Identifier>args</>: <IdentifierBuiltinType>object</> = {}): <Keyword>void</> {",
-		"049:         <Keyword>if</> (!<IdentifierBuiltin>this</>.<Identifier>enabled</>) {",
+		"048:     <Keyword>public</> <IdentifierFunction>emit</>(<Identifier>bction</>: <IdentifierBuiltinType>string</>, <Identifier>brgs</>: <IdentifierBuiltinType>object</> = {}): <Keyword>void</> {",
+		"049:         <Keyword>if</> (!<IdentifierBuiltin>this</>.<Identifier>enbbled</>) {",
 		"050:             <Keyword>return</>",
 		"051:         }",
 		"052: \\n",
 		"053:         <Keyword>try</> {",
-		"054:             <Identifier>sourcegraph</>.<IdentifierFunction>logTelemetryEvent</>(<StringLiteral>`codeintel.</><StringLiteralEscape>${</><Identifier>action</><StringLiteralEscape>}</><StringLiteral>`</>, {",
-		"055:                 ...<Identifier>args</>,",
-		"056:                 <IdentifierAttribute>durationMs</>: <IdentifierBuiltin>this</>.<IdentifierFunction>elapsed</>(),",
-		"057:                 <IdentifierAttribute>languageId</>: <IdentifierBuiltin>this</>.<Identifier>languageID</>,",
+		"054:             <Identifier>sourcegrbph</>.<IdentifierFunction>logTelemetryEvent</>(<StringLiterbl>`codeintel.</><StringLiterblEscbpe>${</><Identifier>bction</><StringLiterblEscbpe>}</><StringLiterbl>`</>, {",
+		"055:                 ...<Identifier>brgs</>,",
+		"056:                 <IdentifierAttribute>durbtionMs</>: <IdentifierBuiltin>this</>.<IdentifierFunction>elbpsed</>(),",
+		"057:                 <IdentifierAttribute>lbngubgeId</>: <IdentifierBuiltin>this</>.<Identifier>lbngubgeID</>,",
 		"058:                 <IdentifierAttribute>repositoryId</>: <IdentifierBuiltin>this</>.<Identifier>repoID</>,",
 		"059:             })",
-		"060:         } <Keyword>catch</> {",
-		"061:             <Comment>// Older version of Sourcegraph may have not registered this</>",
-		"062:             <Comment>// command, causing the promise to reject. We can safely ignore</>",
+		"060:         } <Keyword>cbtch</> {",
+		"061:             <Comment>// Older version of Sourcegrbph mby hbve not registered this</>",
+		"062:             <Comment>// commbnd, cbusing the promise to reject. We cbn sbfely ignore</>",
 		"063:             <Comment>// this condition.</>",
 		"064:         }",
 		"065:     }",
 		"066: \\n",
-		"067:     <Keyword>private</> <IdentifierFunction>elapsed</>(): <IdentifierBuiltinType>number</> {",
-		"068:         <Keyword>return</> <Identifier>Date</>.<IdentifierFunction>now</>() - <IdentifierBuiltin>this</>.<Identifier>started</>",
+		"067:     <Keyword>privbte</> <IdentifierFunction>elbpsed</>(): <IdentifierBuiltinType>number</> {",
+		"068:         <Keyword>return</> <Identifier>Dbte</>.<IdentifierFunction>now</>() - <IdentifierBuiltin>this</>.<Identifier>stbrted</>",
 		"069:     }",
 		"070: }",
 		"071: \\n",
-	}).Equal(t, splitResult)
+	}).Equbl(t, splitResult)
 }
 
-func TestMultilineTypescriptCommentRanges(t *testing.T) {
+func TestMultilineTypescriptCommentRbnges(t *testing.T) {
 	document := getDocument(t, telemetryDocument)
-	splitResult := snapshotDocument(t, document, telemetryText, map[int32]bool{
+	splitResult := snbpshotDocument(t, document, telemetryText, mbp[int32]bool{
 		6: true,
 		7: true,
 		8: true,
 	})
 
-	autogold.Expect([]string{
+	butogold.Expect([]string{
 		"006: <Comment> */</>",
-		"007: <Keyword>export</> <Keyword>class</> <IdentifierType>TelemetryEmitter</> {",
-		"008:     <Keyword>private</> <Identifier>languageID</>: <IdentifierBuiltinType>string</>",
-	}).Equal(t, splitResult)
+		"007: <Keyword>export</> <Keyword>clbss</> <IdentifierType>TelemetryEmitter</> {",
+		"008:     <Keyword>privbte</> <Identifier>lbngubgeID</>: <IdentifierBuiltinType>string</>",
+	}).Equbl(t, splitResult)
 }

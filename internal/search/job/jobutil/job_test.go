@@ -1,237 +1,237 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
 	"crypto/md5"
-	"encoding/binary"
+	"encoding/binbry"
 	"encoding/json"
 	"fmt"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntbx" //nolint:depgubrd // using the grbfbnb fork of regexp clbshes with zoekt, which uses the std regexp/syntbx.
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbfbnb/regexp"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/exp/slices"
+	"golbng.org/x/sync/errgroup"
 
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	sebrchbbckend "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/printer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	zoektutil "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/zoekt"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestNewPlanJob(t *testing.T) {
-	cases := []struct {
+func TestNewPlbnJob(t *testing.T) {
+	cbses := []struct {
 		query      string
-		protocol   search.Protocol
-		searchType query.SearchType
-		want       autogold.Value
+		protocol   sebrch.Protocol
+		sebrchType query.SebrchType
+		wbnt       butogold.Vblue
 	}{{
 		query:      `foo context:@userA`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLiterbl,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . literal)
+    (originblQuery . )
+    (pbtternType . literbl)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (REPOPAGER
-              (repoOpts.searchContextSpec . @userA)
+              (repoOpts.sebrchContextSpec . @userA)
               (PARTIALREPOS
                 (ZOEKTREPOSUBSETTEXTSEARCH
                   (query . substr:"foo")
                   (type . text))))
             (REPOPAGER
-              (repoOpts.searchContextSpec . @userA)
+              (repoOpts.sebrchContextSpec . @userA)
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . fblse))))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
-              (repoOpts.searchContextSpec . @userA)
-              (repoNamePatterns . [(?i)foo])))
+              (repoOpts.sebrchContextSpec . @userA)
+              (repoNbmePbtterns . [(?i)foo])))
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.searchContextSpec . @userA))
+            (repoOpts.sebrchContextSpec . @userA))
           (PARALLEL
             NOOP
             NOOP))))))`),
 	}, {
-		query:      `foo context:global`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		query:      `foo context:globbl`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLiterbl,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . literal)
+    (originblQuery . )
+    (pbtternType . literbl)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (ZOEKTGLOBALTEXTSEARCH
               (query . substr:"foo")
               (type . text)
-              (repoOpts.searchContextSpec . global))
+              (repoOpts.sebrchContextSpec . globbl))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
-              (repoOpts.searchContextSpec . global)
-              (repoNamePatterns . [(?i)foo])))
+              (repoOpts.sebrchContextSpec . globbl)
+              (repoNbmePbtterns . [(?i)foo])))
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.searchContextSpec . global))
+            (repoOpts.sebrchContextSpec . globbl))
           NOOP)))))`),
 	}, {
 		query:      `foo`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLiterbl,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . literal)
+    (originblQuery . )
+    (pbtternType . literbl)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (ZOEKTGLOBALTEXTSEARCH
               (query . substr:"foo")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
-              (repoNamePatterns . [(?i)foo])))
+              (repoNbmePbtterns . [(?i)foo])))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
-		query:      `foo repo:sourcegraph/sourcegraph`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		query:      `foo repo:sourcegrbph/sourcegrbph`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLiterbl,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . literal)
+    (originblQuery . )
+    (pbtternType . literbl)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (REPOPAGER
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph])
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph])
               (PARTIALREPOS
                 (ZOEKTREPOSUBSETTEXTSEARCH
                   (query . substr:"foo")
                   (type . text))))
             (REPOPAGER
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph])
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph])
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . fblse))))
             (REPOSEARCH
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph foo])
-              (repoNamePatterns . [(?i)sourcegraph/sourcegraph (?i)foo])))
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph foo])
+              (repoNbmePbtterns . [(?i)sourcegrbph/sourcegrbph (?i)foo])))
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.repoFilters . [sourcegraph/sourcegraph]))
+            (repoOpts.repoFilters . [sourcegrbph/sourcegrbph]))
           (PARALLEL
             NOOP
             NOOP))))))`),
 	}, {
 		query:      `ok ok`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (ZOEKTGLOBALTEXTSEARCH
               (query . regex:"ok(?-s:.)*?ok")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [(?:ok).*?(?:ok)])
-              (repoNamePatterns . [(?i)(?:ok).*?(?:ok)])))
+              (repoNbmePbtterns . [(?i)(?:ok).*?(?:ok)])))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
 		query:      `ok @thing`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLiteral,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLiterbl,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . literal)
+    (originblQuery . )
+    (pbtternType . literbl)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (ZOEKTGLOBALTEXTSEARCH
               (query . substr:"ok @thing")
               (type . text))
             (REPOSEARCH
               (repoOpts.repoFilters . [ok ])
-              (repoNamePatterns . [(?i)ok ])))
+              (repoNbmePbtterns . [(?i)ok ])))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
 		query:      `@nope`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
@@ -243,15 +243,15 @@ func TestNewPlanJob(t *testing.T) {
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
-		query:      `repo:sourcegraph/sourcegraph rev:*refs/heads/*`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLucky,
-		want: autogold.Expect(`
+		query:      `repo:sourcegrbph/sourcegrbph rev:*refs/hebds/*`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLucky,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . lucky)
+    (originblQuery . )
+    (pbtternType . lucky)
     (FEELINGLUCKYSEARCH
       (TIMEOUT
         (timeout . 20s)
@@ -259,20 +259,20 @@ func TestNewPlanJob(t *testing.T) {
           (limit . 500)
           (PARALLEL
             (REPOSCOMPUTEEXCLUDED
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph@*refs/hebds/*]))
             (REPOSEARCH
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
-              (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph@*refs/hebds/*])
+              (repoNbmePbtterns . [(?i)sourcegrbph/sourcegrbph]))))))))`),
 	}, {
-		query:      `repo:sourcegraph/sourcegraph@*refs/heads/*`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeLucky,
-		want: autogold.Expect(`
+		query:      `repo:sourcegrbph/sourcegrbph@*refs/hebds/*`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeLucky,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . lucky)
+    (originblQuery . )
+    (pbtternType . lucky)
     (FEELINGLUCKYSEARCH
       (TIMEOUT
         (timeout . 20s)
@@ -280,40 +280,40 @@ func TestNewPlanJob(t *testing.T) {
           (limit . 500)
           (PARALLEL
             (REPOSCOMPUTEEXCLUDED
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*]))
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph@*refs/hebds/*]))
             (REPOSEARCH
-              (repoOpts.repoFilters . [sourcegraph/sourcegraph@*refs/heads/*])
-              (repoNamePatterns . [(?i)sourcegraph/sourcegraph]))))))))`),
+              (repoOpts.repoFilters . [sourcegrbph/sourcegrbph@*refs/hebds/*])
+              (repoNbmePbtterns . [(?i)sourcegrbph/sourcegrbph]))))))))`),
 	}, {
-		query:      `foo @bar`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		query:      `foo @bbr`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
-            (query . regex:"foo(?-s:.)*?@bar")
+            (query . regex:"foo(?-s:.)*?@bbr")
             (type . text))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
 		query:      `type:symbol test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
@@ -326,43 +326,43 @@ func TestNewPlanJob(t *testing.T) {
           NOOP)))))`),
 	}, {
 		query:      `type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
+            (query . *protocol.MessbgeMbtches(test))
+            (diff . fblse)
             (limit . 500)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
 		query:      `type:diff test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (DIFFSEARCH
-            (query . *protocol.DiffMatches(test))
+            (query . *protocol.DiffMbtches(test))
             (diff . true)
             (limit . 500)
             (repoOpts.onlyCloned . true))
@@ -370,14 +370,14 @@ func TestNewPlanJob(t *testing.T) {
           NOOP)))))`),
 	}, {
 		query:      `type:file type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
@@ -387,29 +387,29 @@ func TestNewPlanJob(t *testing.T) {
             (query . content_substr:"test")
             (type . text))
           (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
+            (query . *protocol.MessbgeMbtches(test))
+            (diff . fblse)
             (limit . 500)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
-		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		query:      `type:file type:pbth type:repo type:commit type:symbol repo:test test`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (REPOPAGER
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
@@ -420,18 +420,18 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . fblse))))
             (REPOSEARCH
               (repoOpts.repoFilters . [test test])
-              (repoNamePatterns . [(?i)test (?i)test])))
+              (repoNbmePbtterns . [(?i)test (?i)test])))
           (REPOPAGER
             (repoOpts.repoFilters . [test])
             (PARTIALREPOS
               (ZOEKTSYMBOLSEARCH
                 (query . sym:substr:"test"))))
           (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
+            (query . *protocol.MessbgeMbtches(test))
+            (diff . fblse)
             (limit . 500)
             (repoOpts.repoFilters . [test])
             (repoOpts.onlyCloned . true))
@@ -443,23 +443,23 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)
-                  (patternInfo.isRegexp . true)
-                  (patternInfo.fileMatchLimit . 500)
-                  (patternInfo.patternMatchesPath . true)
+                  (pbtternInfo.pbttern . test)
+                  (pbtternInfo.isRegexp . true)
+                  (pbtternInfo.fileMbtchLimit . 500)
+                  (pbtternInfo.pbtternMbtchesPbth . true)
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
 	}, {
 		query:      `type:file type:commit test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
@@ -469,29 +469,29 @@ func TestNewPlanJob(t *testing.T) {
             (query . content_substr:"test")
             (type . text))
           (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
+            (query . *protocol.MessbgeMbtches(test))
+            (diff . fblse)
             (limit . 500)
             (repoOpts.onlyCloned . true))
           REPOSCOMPUTEEXCLUDED
           NOOP)))))`),
 	}, {
-		query:      `type:file type:path type:repo type:commit type:symbol repo:test test`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		query:      `type:file type:pbth type:repo type:commit type:symbol repo:test test`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (REPOPAGER
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
@@ -502,18 +502,18 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . fblse))))
             (REPOSEARCH
               (repoOpts.repoFilters . [test test])
-              (repoNamePatterns . [(?i)test (?i)test])))
+              (repoNbmePbtterns . [(?i)test (?i)test])))
           (REPOPAGER
             (repoOpts.repoFilters . [test])
             (PARTIALREPOS
               (ZOEKTSYMBOLSEARCH
                 (query . sym:substr:"test"))))
           (COMMITSEARCH
-            (query . *protocol.MessageMatches(test))
-            (diff . false)
+            (query . *protocol.MessbgeMbtches(test))
+            (diff . fblse)
             (limit . 500)
             (repoOpts.repoFilters . [test])
             (repoOpts.onlyCloned . true))
@@ -525,24 +525,24 @@ func TestNewPlanJob(t *testing.T) {
               (repoOpts.repoFilters . [test])
               (PARTIALREPOS
                 (SEARCHERSYMBOLSEARCH
-                  (patternInfo.pattern . test)
-                  (patternInfo.isRegexp . true)
-                  (patternInfo.fileMatchLimit . 500)
-                  (patternInfo.patternMatchesPath . true)
+                  (pbtternInfo.pbttern . test)
+                  (pbtternInfo.isRegexp . true)
+                  (pbtternInfo.fileMbtchLimit . 500)
+                  (pbtternInfo.pbtternMbtchesPbth . true)
                   (numRepos . 0)
                   (limit . 500))))
             NOOP))))))`),
 	}, {
-		query:      `(type:commit or type:diff) (a or b)`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		// TODO this output doesn't look right. There shouldn't be any zoekt or repo jobs
-		want: autogold.Expect(`
+		query:      `(type:commit or type:diff) (b or b)`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		// TODO this output doesn't look right. There shouldn't be bny zoekt or repo jobs
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (OR
       (TIMEOUT
         (timeout . 20s)
@@ -550,8 +550,8 @@ func TestNewPlanJob(t *testing.T) {
           (limit . 500)
           (PARALLEL
             (COMMITSEARCH
-              (query . (*protocol.MessageMatches((?:a)|(?:b))))
-              (diff . false)
+              (query . (*protocol.MessbgeMbtches((?:b)|(?:b))))
+              (diff . fblse)
               (limit . 500)
               (repoOpts.onlyCloned . true))
             REPOSCOMPUTEEXCLUDED
@@ -564,7 +564,7 @@ func TestNewPlanJob(t *testing.T) {
           (limit . 500)
           (PARALLEL
             (DIFFSEARCH
-              (query . (*protocol.DiffMatches((?:a)|(?:b))))
+              (query . (*protocol.DiffMbtches((?:b)|(?:b))))
               (diff . true)
               (limit . 500)
               (repoOpts.onlyCloned . true))
@@ -573,15 +573,15 @@ func TestNewPlanJob(t *testing.T) {
               NOOP
               NOOP)))))))`),
 	}, {
-		query:      `(type:repo a) or (type:file b)`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		query:      `(type:repo b) or (type:file b)`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (OR
       (TIMEOUT
         (timeout . 20s)
@@ -590,8 +590,8 @@ func TestNewPlanJob(t *testing.T) {
           (PARALLEL
             REPOSCOMPUTEEXCLUDED
             (REPOSEARCH
-              (repoOpts.repoFilters . [a])
-              (repoNamePatterns . [(?i)a])))))
+              (repoOpts.repoFilters . [b])
+              (repoNbmePbtterns . [(?i)b])))))
       (TIMEOUT
         (timeout . 20s)
         (LIMIT
@@ -603,22 +603,22 @@ func TestNewPlanJob(t *testing.T) {
             REPOSCOMPUTEEXCLUDED
             NOOP))))))`),
 	}, {
-		query:      `type:symbol a or b`,
-		protocol:   search.Streaming,
-		searchType: query.SearchTypeRegex,
-		want: autogold.Expect(`
+		query:      `type:symbol b or b`,
+		protocol:   sebrch.Strebming,
+		sebrchType: query.SebrchTypeRegex,
+		wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (ZOEKTGLOBALSYMBOLSEARCH
-            (query . (or sym:substr:"a" sym:substr:"b"))
+            (query . (or sym:substr:"b" sym:substr:"b"))
             (type . symbol))
           REPOSCOMPUTEEXCLUDED
           (OR
@@ -626,158 +626,158 @@ func TestNewPlanJob(t *testing.T) {
             NOOP))))))`),
 	},
 		{
-			query:      `repo:contains.path(a) repo:contains.content(b)`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Expect(`
+			query:      `repo:contbins.pbth(b) repo:contbins.content(b)`,
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeRegex,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasFileContent[0].path . a)
-            (repoOpts.hasFileContent[1].content . b))
+            (repoOpts.hbsFileContent[0].pbth . b)
+            (repoOpts.hbsFileContent[1].content . b))
           (REPOSEARCH
-            (repoOpts.hasFileContent[0].path . a)
-            (repoOpts.hasFileContent[1].content . b)
-            (repoNamePatterns . [])))))))`),
+            (repoOpts.hbsFileContent[0].pbth . b)
+            (repoOpts.hbsFileContent[1].content . b)
+            (repoNbmePbtterns . [])))))))`),
 		}, {
-			query:      `repo:contains.file(path:a content:b)`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Expect(`
+			query:      `repo:contbins.file(pbth:b content:b)`,
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeRegex,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasFileContent[0].path . a)
-            (repoOpts.hasFileContent[0].content . b))
+            (repoOpts.hbsFileContent[0].pbth . b)
+            (repoOpts.hbsFileContent[0].content . b))
           (REPOSEARCH
-            (repoOpts.hasFileContent[0].path . a)
-            (repoOpts.hasFileContent[0].content . b)
-            (repoNamePatterns . [])))))))`),
+            (repoOpts.hbsFileContent[0].pbth . b)
+            (repoOpts.hbsFileContent[0].content . b)
+            (repoNbmePbtterns . [])))))))`),
 		}, {
-			query:      `repo:has(key:value)`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Expect(`
+			query:      `repo:hbs(key:vblue)`,
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeRegex,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . key)
-            (repoOpts.hasKVPs[0].value . value))
+            (repoOpts.hbsKVPs[0].key . key)
+            (repoOpts.hbsKVPs[0].vblue . vblue))
           (REPOSEARCH
-            (repoOpts.hasKVPs[0].key . key)
-            (repoOpts.hasKVPs[0].value . value)
-            (repoNamePatterns . [])))))))`),
+            (repoOpts.hbsKVPs[0].key . key)
+            (repoOpts.hbsKVPs[0].vblue . vblue)
+            (repoNbmePbtterns . [])))))))`),
 		}, {
-			query:      `repo:has.tag(tag)`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Expect(`
+			query:      `repo:hbs.tbg(tbg)`,
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeRegex,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . tag))
+            (repoOpts.hbsKVPs[0].key . tbg))
           (REPOSEARCH
-            (repoOpts.hasKVPs[0].key . tag)
-            (repoNamePatterns . [])))))))`),
+            (repoOpts.hbsKVPs[0].key . tbg)
+            (repoNbmePbtterns . [])))))))`),
 		}, {
-			query:      `repo:has.topic(mytopic)`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Expect(`
+			query:      `repo:hbs.topic(mytopic)`,
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeRegex,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasTopics[0].topic . mytopic))
+            (repoOpts.hbsTopics[0].topic . mytopic))
           (REPOSEARCH
-            (repoOpts.hasTopics[0].topic . mytopic)
-            (repoNamePatterns . [])))))))`),
+            (repoOpts.hbsTopics[0].topic . mytopic)
+            (repoNbmePbtterns . [])))))))`),
 		}, {
-			query:      `repo:has.tag(tag) foo`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Expect(`
+			query:      `repo:hbs.tbg(tbg) foo`,
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeRegex,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . regex)
+    (originblQuery . )
+    (pbtternType . regex)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
         (limit . 500)
         (PARALLEL
           (SEQUENTIAL
-            (ensureUnique . false)
+            (ensureUnique . fblse)
             (REPOPAGER
-              (repoOpts.hasKVPs[0].key . tag)
+              (repoOpts.hbsKVPs[0].key . tbg)
               (PARTIALREPOS
                 (ZOEKTREPOSUBSETTEXTSEARCH
                   (query . substr:"foo")
                   (type . text))))
             (REPOPAGER
-              (repoOpts.hasKVPs[0].key . tag)
+              (repoOpts.hbsKVPs[0].key . tbg)
               (PARTIALREPOS
                 (SEARCHERTEXTSEARCH
-                  (indexed . false))))
+                  (indexed . fblse))))
             (REPOSEARCH
               (repoOpts.repoFilters . [foo])
-              (repoOpts.hasKVPs[0].key . tag)
-              (repoNamePatterns . [(?i)foo])))
+              (repoOpts.hbsKVPs[0].key . tbg)
+              (repoNbmePbtterns . [(?i)foo])))
           (REPOSCOMPUTEEXCLUDED
-            (repoOpts.hasKVPs[0].key . tag))
+            (repoOpts.hbsKVPs[0].key . tbg))
           (PARALLEL
             NOOP
             NOOP))))))`),
 		}, {
 			query:      `(...)`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeStructural,
-			want: autogold.Expect(`
+			protocol:   sebrch.Strebming,
+			sebrchType: query.SebrchTypeStructurbl,
+			wbnt: butogold.Expect(`
 (LOG
   (ALERT
     (query . )
-    (originalQuery . )
-    (patternType . structural)
+    (originblQuery . )
+    (pbtternType . structurbl)
     (TIMEOUT
       (timeout . 20s)
       (LIMIT
@@ -785,754 +785,754 @@ func TestNewPlanJob(t *testing.T) {
         (PARALLEL
           REPOSCOMPUTEEXCLUDED
           (STRUCTURALSEARCH
-            (patternInfo.pattern . (:[_]))
-            (patternInfo.isStructural . true)
-            (patternInfo.fileMatchLimit . 500)))))))`),
+            (pbtternInfo.pbttern . (:[_]))
+            (pbtternInfo.isStructurbl . true)
+            (pbtternInfo.fileMbtchLimit . 500)))))))`),
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run(tc.query, func(t *testing.T) {
-			plan, err := query.Pipeline(query.Init(tc.query, tc.searchType))
+			plbn, err := query.Pipeline(query.Init(tc.query, tc.sebrchType))
 			require.NoError(t, err)
 
-			inputs := &search.Inputs{
-				UserSettings:        &schema.Settings{},
-				PatternType:         tc.searchType,
+			inputs := &sebrch.Inputs{
+				UserSettings:        &schemb.Settings{},
+				PbtternType:         tc.sebrchType,
 				Protocol:            tc.protocol,
-				Features:            &search.Features{},
-				OnSourcegraphDotCom: true,
+				Febtures:            &sebrch.Febtures{},
+				OnSourcegrbphDotCom: true,
 			}
 
-			j, err := NewPlanJob(inputs, plan)
+			j, err := NewPlbnJob(inputs, plbn)
 			require.NoError(t, err)
 
-			tc.want.Equal(t, "\n"+printer.SexpPretty(j))
+			tc.wbnt.Equbl(t, "\n"+printer.SexpPretty(j))
 		})
 	}
 }
 
-func TestToEvaluateJob(t *testing.T) {
-	test := func(input string, protocol search.Protocol) string {
-		q, _ := query.ParseLiteral(input)
-		inputs := &search.Inputs{
-			UserSettings:        &schema.Settings{},
-			PatternType:         query.SearchTypeLiteral,
+func TestToEvblubteJob(t *testing.T) {
+	test := func(input string, protocol sebrch.Protocol) string {
+		q, _ := query.PbrseLiterbl(input)
+		inputs := &sebrch.Inputs{
+			UserSettings:        &schemb.Settings{},
+			PbtternType:         query.SebrchTypeLiterbl,
 			Protocol:            protocol,
-			OnSourcegraphDotCom: true,
+			OnSourcegrbphDotCom: true,
 		}
 
-		b, _ := query.ToBasicQuery(q)
-		j, _ := toFlatJobs(inputs, b)
+		b, _ := query.ToBbsicQuery(q)
+		j, _ := toFlbtJobs(inputs, b)
 		return "\n" + printer.SexpPretty(j) + "\n"
 	}
 
-	autogold.Expect(`
+	butogold.Expect(`
 (REPOSEARCH
   (repoOpts.repoFilters . [foo])
-  (repoNamePatterns . [(?i)foo]))
-`).Equal(t, test("foo", search.Streaming))
+  (repoNbmePbtterns . [(?i)foo]))
+`).Equbl(t, test("foo", sebrch.Strebming))
 
-	autogold.Expect(`
+	butogold.Expect(`
 (REPOSEARCH
   (repoOpts.repoFilters . [foo])
-  (repoNamePatterns . [(?i)foo]))
-`).Equal(t, test("foo", search.Batch))
+  (repoNbmePbtterns . [(?i)foo]))
+`).Equbl(t, test("foo", sebrch.Bbtch))
 }
 
-func TestToTextPatternInfo(t *testing.T) {
-	cases := []struct {
+func TestToTextPbtternInfo(t *testing.T) {
+	cbses := []struct {
 		input  string
-		output autogold.Value
+		output butogold.Vblue
 	}{{
-		input:  `type:repo archived`,
-		output: autogold.Expect(`{"Pattern":"archived","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `type:repo brchived`,
+		output: butogold.Expect(`{"Pbttern":"brchived","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `type:repo archived archived:yes`,
-		output: autogold.Expect(`{"Pattern":"archived","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `type:repo brchived brchived:yes`,
+		output: butogold.Expect(`{"Pbttern":"brchived","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
 		input:  `type:repo sgtest/mux`,
-		output: autogold.Expect(`{"Pattern":"sgtest/mux","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		output: butogold.Expect(`{"Pbttern":"sgtest/mux","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
 		input:  `type:repo sgtest/mux fork:yes`,
-		output: autogold.Expect(`{"Pattern":"sgtest/mux","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		output: butogold.Expect(`{"Pbttern":"sgtest/mux","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `"func main() {\n" patterntype:regexp type:file`,
-		output: autogold.Expect(`{"Pattern":"func main\\(\\) \\{\n","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `"func mbin() {\n" pbtterntype:regexp type:file`,
+		output: butogold.Expect(`{"Pbttern":"func mbin\\(\\) \\{\n","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `"func main() {\n" -repo:go-diff patterntype:regexp type:file`,
-		output: autogold.Expect(`{"Pattern":"func main\\(\\) \\{\n","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `"func mbin() {\n" -repo:go-diff pbtterntype:regexp type:file`,
+		output: butogold.Expect(`{"Pbttern":"func mbin\\(\\) \\{\n","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ String case:yes type:file`,
-		output: autogold.Expect(`{"Pattern":"String","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":true,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":true,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ String cbse:yes type:file`,
+		output: butogold.Expect(`{"Pbttern":"String","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":true,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":true,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal type:file`,
-		output: autogold.Expect(`{"Pattern":"void sendPartialResult\\(Object requestId, JsonPatch jsonPatch\\);","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/jbvb-lbngserver$@v1 void sendPbrtiblResult(Object requestId, JsonPbtch jsonPbtch); pbtterntype:literbl type:file`,
+		output: butogold.Expect(`{"Pbttern":"void sendPbrtiblResult\\(Object requestId, JsonPbtch jsonPbtch\\);","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal count:1 type:file`,
-		output: autogold.Expect(`{"Pattern":"void sendPartialResult\\(Object requestId, JsonPatch jsonPatch\\);","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":1,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/jbvb-lbngserver$@v1 void sendPbrtiblResult(Object requestId, JsonPbtch jsonPbtch); pbtterntype:literbl count:1 type:file`,
+		output: butogold.Expect(`{"Pbttern":"void sendPbrtiblResult\\(Object requestId, JsonPbtch jsonPbtch\\);","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":1,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/java-langserver$ \nimport index:only patterntype:regexp type:file`,
-		output: autogold.Expect(`{"Pattern":"\\nimport","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"only","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/jbvb-lbngserver$ \nimport index:only pbtterntype:regexp type:file`,
+		output: butogold.Expect(`{"Pbttern":"\\nimport","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"only","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp type:file`,
-		output: autogold.Expect(`{"Pattern":"\\nimport","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"no","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/jbvb-lbngserver$ \nimport index:no pbtterntype:regexp type:file`,
+		output: butogold.Expect(`{"Pbttern":"\\nimport","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"no","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/java-langserver$ doesnot734734743734743exist`,
-		output: autogold.Expect(`{"Pattern":"doesnot734734743734743exist","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/jbvb-lbngserver$ doesnot734734743734743exist`,
+		output: butogold.Expect(`{"Pbttern":"doesnot734734743734743exist","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
-		output: autogold.Expect(`{"Pattern":"test","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ type:commit test`,
+		output: butogold.Expect(`{"Pbttern":"test","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ type:diff main`,
-		output: autogold.Expect(`{"Pattern":"main","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ type:diff mbin`,
+		output: butogold.Expect(`{"Pbttern":"mbin","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal`,
-		output: autogold.Expect(`{"Pattern":"test","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ repohbscommitbfter:"2019-01-01" test pbtterntype:literbl`,
+		output: butogold.Expect(`{"Pbttern":"test","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `^func.*$ patterntype:regexp index:only type:file`,
-		output: autogold.Expect(`{"Pattern":"^func.*$","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"only","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `^func.*$ pbtterntype:regexp index:only type:file`,
+		output: butogold.Expect(`{"Pbttern":"^func.*$","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"only","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `fork:only patterntype:regexp FORK_SENTINEL`,
-		output: autogold.Expect(`{"Pattern":"FORK_SENTINEL","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `fork:only pbtterntype:regexp FORK_SENTINEL`,
+		output: butogold.Expect(`{"Pbttern":"FORK_SENTINEL","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `\bfunc\b lang:go type:file patterntype:regexp`,
-		output: autogold.Expect(`{"Pattern":"\\bfunc\\b","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["\\.go$"],"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":false,"Languages":["go"]}`),
+		input:  `\bfunc\b lbng:go type:file pbtterntype:regexp`,
+		output: butogold.Expect(`{"Pbttern":"\\bfunc\\b","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":["\\.go$"],"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":fblse,"Lbngubges":["go"]}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
-		output: autogold.Expect(`{"Pattern":"make(:[1])","IsNegated":false,"IsRegExp":false,"IsStructuralPat":true,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":3,"Index":"only","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ mbke(:[1]) index:only pbtterntype:structurbl count:3`,
+		output: butogold.Expect(`{"Pbttern":"mbke(:[1])","IsNegbted":fblse,"IsRegExp":fblse,"IsStructurblPbt":true,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":3,"Index":"only","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ make(:[1]) lang:go rule:'where "backcompat" == "backcompat"' patterntype:structural`,
-		output: autogold.Expect(`{"Pattern":"make(:[1])","IsNegated":false,"IsRegExp":false,"IsStructuralPat":true,"CombyRule":"where \"backcompat\" == \"backcompat\"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["\\.go$"],"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":["go"]}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ mbke(:[1]) lbng:go rule:'where "bbckcompbt" == "bbckcompbt"' pbtterntype:structurbl`,
+		output: butogold.Expect(`{"Pbttern":"mbke(:[1])","IsNegbted":fblse,"IsRegExp":fblse,"IsStructurblPbt":true,"CombyRule":"where \"bbckcompbt\" == \"bbckcompbt\"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":["\\.go$"],"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":["go"]}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$@adde71 make(:[1]) index:no patterntype:structural count:3`,
-		output: autogold.Expect(`{"Pattern":"make(:[1])","IsNegated":false,"IsRegExp":false,"IsStructuralPat":true,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":3,"Index":"no","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$@bdde71 mbke(:[1]) index:no pbtterntype:structurbl count:3`,
+		output: butogold.Expect(`{"Pbttern":"mbke(:[1])","IsNegbted":fblse,"IsRegExp":fblse,"IsStructurblPbt":true,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":3,"Index":"no","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
-		output: autogold.Expect(`{"Pattern":"\"basic :[_] access :[_]\"","IsNegated":false,"IsRegExp":false,"IsStructuralPat":true,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["^README\\.md"],"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ file:^README\.md "bbsic :[_] bccess :[_]" pbtterntype:structurbl`,
+		output: butogold.Expect(`{"Pbttern":"\"bbsic :[_] bccess :[_]\"","IsNegbted":fblse,"IsRegExp":fblse,"IsStructurblPbt":true,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":["^README\\.md"],"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `no results for { ... } raises alert repo:^github\.com/sgtest/go-diff$`,
-		output: autogold.Expect(`{"Pattern":"no results for \\{ \\.\\.\\. \\} raises alert","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `no results for { ... } rbises blert repo:^github\.com/sgtest/go-diff$`,
+		output: butogold.Expect(`{"Pbttern":"no results for \\{ \\.\\.\\. \\} rbises blert","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
-		output: autogold.Expect(`{"Pattern":"(?:\\ and).*?(?:/)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ pbtternType:regexp \ bnd /`,
+		output: butogold.Expect(`{"Pbttern":"(?:\\ bnd).*?(?:/)","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
-		output: autogold.Expect(`{"Pattern":"\\.svg","IsNegated":true,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/go-diff$ (not .svg) pbtterntype:literbl`,
+		output: butogold.Expect(`{"Pbttern":"\\.svg","IsNegbted":true,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ (Fetches OR file:language-server.ts)`,
-		output: autogold.Expect(`{"Pattern":"Fetches","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ (Fetches OR file:lbngubge-server.ts)`,
+		output: butogold.Expect(`{"Pbttern":"Fetches","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ ((file:^renovate\.json extends) or file:progress.ts createProgressProvider)`,
-		output: autogold.Expect(`{"Pattern":"extends","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["^renovate\\.json"],"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ ((file:^renovbte\.json extends) or file:progress.ts crebteProgressProvider)`,
+		output: butogold.Expect(`{"Pbttern":"extends","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":["^renovbte\\.json"],"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
-		output: autogold.Expect(`{"Pattern":"yarn","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ (type:diff or type:commit) buthor:felix ybrn`,
+		output: butogold.Expect(`{"Pbttern":"ybrn","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) subscription after:"june 11 2019" before:"june 13 2019"`,
-		output: autogold.Expect(`{"Pattern":"subscription","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ (type:diff or type:commit) subscription bfter:"june 11 2019" before:"june 13 2019"`,
+		output: butogold.Expect(`{"Pbttern":"subscription","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
-		output: autogold.Expect(`{"Pattern":"#","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":["README.md"],"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `(repo:^github\.com/sgtest/go-diff$@gbro/lsif-indexing-cbmpbign:test-blrebdy-exist-pr or repo:^github\.com/sgtest/sourcegrbph-typescript$) file:README.md #`,
+		output: butogold.Expect(`{"Pbttern":"#","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":["README.md"],"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
-		output: autogold.Expect(`{"Pattern":"package diff provides","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `(repo:^github\.com/sgtest/sourcegrbph-typescript$ or repo:^github\.com/sgtest/go-diff$) pbckbge diff provides`,
+		output: butogold.Expect(`{"Pbttern":"pbckbge diff provides","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:contains.file(path:noexist.go) test`,
-		output: autogold.Expect(`{"Pattern":"test","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:contbins.file(pbth:noexist.go) test`,
+		output: butogold.Expect(`{"Pbttern":"test","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:contains.file(path:go.mod) count:100 fmt`,
-		output: autogold.Expect(`{"Pattern":"fmt","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":100,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:contbins.file(pbth:go.mod) count:100 fmt`,
+		output: butogold.Expect(`{"Pbttern":"fmt","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":100,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
 		input:  `type:commit LSIF`,
-		output: autogold.Expect(`{"Pattern":"LSIF","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		output: butogold.Expect(`{"Pbttern":"LSIF","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
-		output: autogold.Expect(`{"Pattern":"LSIF","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:contbins.file(pbth:diff.pb.go) type:commit LSIF`,
+		output: butogold.Expect(`{"Pbttern":"LSIF","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["repo"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:repo`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":["repo"],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["file"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:file`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":["file"],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:content`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["content"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:content`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":["content"],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl HunkNoChunksize`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["commit"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:commit`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":["commit"],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["symbol"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:symbol`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":["symbol"],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
-		output: autogold.Expect(`{"Pattern":"HunkNoChunksize","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":["symbol"],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":false,"PatternMatchesPath":false,"Languages":null}`),
+		input:  `repo:go-diff pbtterntype:literbl type:symbol HunkNoChunksize select:symbol`,
+		output: butogold.Expect(`{"Pbttern":"HunkNoChunksize","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":["symbol"],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":fblse,"PbtternMbtchesPbth":fblse,"Lbngubges":null}`),
 	}, {
-		input:  `foo\d "bar*" patterntype:regexp`,
-		output: autogold.Expect(`{"Pattern":"(?:foo\\d).*?(?:bar\\*)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `foo\d "bbr*" pbtterntype:regexp`,
+		output: butogold.Expect(`{"Pbttern":"(?:foo\\d).*?(?:bbr\\*)","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `patterntype:regexp // literal slash`,
-		output: autogold.Expect(`{"Pattern":"(?://).*?(?:literal).*?(?:slash)","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `pbtterntype:regexp // literbl slbsh`,
+		output: butogold.Expect(`{"Pbttern":"(?://).*?(?:literbl).*?(?:slbsh)","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repo:contains.path(Dockerfile)`,
-		output: autogold.Expect(`{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repo:contbins.pbth(Dockerfile)`,
+		output: butogold.Expect(`{"Pbttern":"","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}, {
-		input:  `repohasfile:Dockerfile`,
-		output: autogold.Expect(`{"Pattern":"","IsNegated":false,"IsRegExp":true,"IsStructuralPat":false,"CombyRule":"","IsWordMatch":false,"IsCaseSensitive":false,"FileMatchLimit":30,"Index":"yes","Select":[],"IncludePatterns":null,"ExcludePattern":"","PathPatternsAreCaseSensitive":false,"PatternMatchesContent":true,"PatternMatchesPath":true,"Languages":null}`),
+		input:  `repohbsfile:Dockerfile`,
+		output: butogold.Expect(`{"Pbttern":"","IsNegbted":fblse,"IsRegExp":true,"IsStructurblPbt":fblse,"CombyRule":"","IsWordMbtch":fblse,"IsCbseSensitive":fblse,"FileMbtchLimit":30,"Index":"yes","Select":[],"IncludePbtterns":null,"ExcludePbttern":"","PbthPbtternsAreCbseSensitive":fblse,"PbtternMbtchesContent":true,"PbtternMbtchesPbth":true,"Lbngubges":null}`),
 	}}
 
 	test := func(input string) string {
-		searchType := overrideSearchType(input, query.SearchTypeLiteral)
-		plan, err := query.Pipeline(query.Init(input, searchType))
+		sebrchType := overrideSebrchType(input, query.SebrchTypeLiterbl)
+		plbn, err := query.Pipeline(query.Init(input, sebrchType))
 		if err != nil {
 			return "Error"
 		}
-		if len(plan) == 0 {
+		if len(plbn) == 0 {
 			return "Empty"
 		}
-		b := plan[0]
-		mode := search.Batch
-		resultTypes := computeResultTypes(b, query.SearchTypeLiteral)
-		p := toTextPatternInfo(b, resultTypes, mode)
-		v, _ := json.Marshal(p)
+		b := plbn[0]
+		mode := sebrch.Bbtch
+		resultTypes := computeResultTypes(b, query.SebrchTypeLiterbl)
+		p := toTextPbtternInfo(b, resultTypes, mode)
+		v, _ := json.Mbrshbl(p)
 		return string(v)
 	}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run(tc.input, func(t *testing.T) {
-			tc.output.Equal(t, test(tc.input))
+			tc.output.Equbl(t, test(tc.input))
 		})
 	}
 }
 
-func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteral)
-	q = query.LowercaseFieldNames(q)
+func overrideSebrchType(input string, sebrchType query.SebrchType) query.SebrchType {
+	q, err := query.Pbrse(input, query.SebrchTypeLiterbl)
+	q = query.LowercbseFieldNbmes(q)
 	if err != nil {
-		// If parsing fails, return the default search type. Any actual
-		// parse errors will be raised by subsequent parser calls.
-		return searchType
+		// If pbrsing fbils, return the defbult sebrch type. Any bctubl
+		// pbrse errors will be rbised by subsequent pbrser cblls.
+		return sebrchType
 	}
-	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
-		switch value {
-		case "regex", "regexp":
-			searchType = query.SearchTypeRegex
-		case "literal":
-			searchType = query.SearchTypeLiteral
-		case "structural":
-			searchType = query.SearchTypeStructural
+	query.VisitField(q, "pbtterntype", func(vblue string, _ bool, _ query.Annotbtion) {
+		switch vblue {
+		cbse "regex", "regexp":
+			sebrchType = query.SebrchTypeRegex
+		cbse "literbl":
+			sebrchType = query.SebrchTypeLiterbl
+		cbse "structurbl":
+			sebrchType = query.SebrchTypeStructurbl
 		}
 	})
-	return searchType
+	return sebrchType
 }
 
 func Test_computeResultTypes(t *testing.T) {
 	test := func(input string) string {
-		plan, _ := query.Pipeline(query.Init(input, query.SearchTypeStandard))
-		b := plan[0]
-		resultTypes := computeResultTypes(b, query.SearchTypeStandard)
+		plbn, _ := query.Pipeline(query.Init(input, query.SebrchTypeStbndbrd))
+		b := plbn[0]
+		resultTypes := computeResultTypes(b, query.SebrchTypeStbndbrd)
 		return resultTypes.String()
 	}
 
-	t.Run("only search file content when type not set", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo content:bar")))
+	t.Run("only sebrch file content when type not set", func(t *testing.T) {
+		butogold.ExpectFile(t, butogold.Rbw(test("pbth:foo content:bbr")))
 	})
 
-	t.Run("plain pattern searches repo path file content", func(t *testing.T) {
-		autogold.ExpectFile(t, autogold.Raw(test("path:foo bar")))
+	t.Run("plbin pbttern sebrches repo pbth file content", func(t *testing.T) {
+		butogold.ExpectFile(t, butogold.Rbw(test("pbth:foo bbr")))
 	})
 }
 
-func TestRepoSubsetTextSearch(t *testing.T) {
-	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
-		repoName := repo.Name
-		switch repoName {
-		case "foo/one":
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
+func TestRepoSubsetTextSebrch(t *testing.T) {
+	sebrcher.MockSebrchFilesInRepo = func(ctx context.Context, repo types.MinimblRepo, gitserverRepo bpi.RepoNbme, rev string, info *sebrch.TextPbtternInfo, fetchTimeout time.Durbtion, strebm strebming.Sender) (limitHit bool, err error) {
+		repoNbme := repo.Nbme
+		switch repoNbme {
+		cbse "foo/one":
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
 					File: result.File{
 						Repo:     repo,
 						InputRev: &rev,
-						Path:     "main.go",
+						Pbth:     "mbin.go",
 					},
 				}},
 			})
-			return false, nil
-		case "foo/two":
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
+			return fblse, nil
+		cbse "foo/two":
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
 					File: result.File{
 						Repo:     repo,
 						InputRev: &rev,
-						Path:     "main.go",
+						Pbth:     "mbin.go",
 					},
 				}},
 			})
-			return false, nil
-		case "foo/empty":
-			return false, nil
-		case "foo/cloning":
-			return false, &gitdomain.RepoNotExistError{Repo: repoName, CloneInProgress: true}
-		case "foo/missing":
-			return false, &gitdomain.RepoNotExistError{Repo: repoName}
-		case "foo/missing-database":
-			return false, &errcode.Mock{Message: "repo not found: foo/missing-database", IsNotFound: true}
-		case "foo/timedout":
-			return false, context.DeadlineExceeded
-		case "foo/no-rev":
-			// TODO we do not specify a rev when searching "foo/no-rev", so it
-			// is treated as an empty repository. We need to test the fatal
-			// case of trying to search a revision which doesn't exist.
-			return false, &gitdomain.RevisionNotFoundError{Repo: repoName, Spec: "missing"}
-		default:
-			return false, errors.New("Unexpected repo")
+			return fblse, nil
+		cbse "foo/empty":
+			return fblse, nil
+		cbse "foo/cloning":
+			return fblse, &gitdombin.RepoNotExistError{Repo: repoNbme, CloneInProgress: true}
+		cbse "foo/missing":
+			return fblse, &gitdombin.RepoNotExistError{Repo: repoNbme}
+		cbse "foo/missing-dbtbbbse":
+			return fblse, &errcode.Mock{Messbge: "repo not found: foo/missing-dbtbbbse", IsNotFound: true}
+		cbse "foo/timedout":
+			return fblse, context.DebdlineExceeded
+		cbse "foo/no-rev":
+			// TODO we do not specify b rev when sebrching "foo/no-rev", so it
+			// is trebted bs bn empty repository. We need to test the fbtbl
+			// cbse of trying to sebrch b revision which doesn't exist.
+			return fblse, &gitdombin.RevisionNotFoundError{Repo: repoNbme, Spec: "missing"}
+		defbult:
+			return fblse, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { searcher.MockSearchFilesInRepo = nil }()
+	defer func() { sebrcher.MockSebrchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.FakeStreamer{}
+	zoekt := &sebrchbbckend.FbkeStrebmer{}
 
-	q, err := query.ParseLiteral("foo")
+	q, err := query.PbrseLiterbl("foo")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	repoRevs := makeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-database", "foo/timedout", "foo/no-rev")
+	repoRevs := mbkeRepositoryRevisions("foo/one", "foo/two", "foo/empty", "foo/cloning", "foo/missing", "foo/missing-dbtbbbse", "foo/timedout", "foo/no-rev")
 
-	patternInfo := &search.TextPatternInfo{
-		FileMatchLimit: limits.DefaultMaxSearchResults,
-		Pattern:        "foo",
+	pbtternInfo := &sebrch.TextPbtternInfo{
+		FileMbtchLimit: limits.DefbultMbxSebrchResults,
+		Pbttern:        "foo",
 	}
 
-	matches, common, err := RunRepoSubsetTextSearch(
-		context.Background(),
+	mbtches, common, err := RunRepoSubsetTextSebrch(
+		context.Bbckground(),
 		logtest.Scoped(t),
-		patternInfo,
+		pbtternInfo,
 		repoRevs,
 		q,
 		zoekt,
-		endpoint.Static("test"),
-		search.DefaultMode,
-		false,
+		endpoint.Stbtic("test"),
+		sebrch.DefbultMode,
+		fblse,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(matches) != 2 {
-		t.Errorf("expected two results, got %d", len(matches))
+	if len(mbtches) != 2 {
+		t.Errorf("expected two results, got %d", len(mbtches))
 	}
-	repoNames := map[api.RepoID]string{}
-	for _, rr := range repoRevs {
-		repoNames[rr.Repo.ID] = string(rr.Repo.Name)
+	repoNbmes := mbp[bpi.RepoID]string{}
+	for _, rr := rbnge repoRevs {
+		repoNbmes[rr.Repo.ID] = string(rr.Repo.Nbme)
 	}
-	assertReposStatus(t, repoNames, common.Status, map[string]search.RepoStatus{
-		"foo/cloning":          search.RepoStatusCloning,
-		"foo/missing":          search.RepoStatusMissing,
-		"foo/missing-database": search.RepoStatusMissing,
-		"foo/timedout":         search.RepoStatusTimedout,
+	bssertReposStbtus(t, repoNbmes, common.Stbtus, mbp[string]sebrch.RepoStbtus{
+		"foo/cloning":          sebrch.RepoStbtusCloning,
+		"foo/missing":          sebrch.RepoStbtusMissing,
+		"foo/missing-dbtbbbse": sebrch.RepoStbtusMissing,
+		"foo/timedout":         sebrch.RepoStbtusTimedout,
 	})
 
-	// If we specify a rev and it isn't found, we fail the whole search since
-	// that should be checked earlier.
-	_, _, err = RunRepoSubsetTextSearch(
-		context.Background(),
+	// If we specify b rev bnd it isn't found, we fbil the whole sebrch since
+	// thbt should be checked ebrlier.
+	_, _, err = RunRepoSubsetTextSebrch(
+		context.Bbckground(),
 		logtest.Scoped(t),
-		patternInfo,
-		makeRepositoryRevisions("foo/no-rev@dev"),
+		pbtternInfo,
+		mbkeRepositoryRevisions("foo/no-rev@dev"),
 		q,
 		zoekt,
-		endpoint.Static("test"),
-		search.DefaultMode,
-		false,
+		endpoint.Stbtic("test"),
+		sebrch.DefbultMode,
+		fblse,
 	)
-	if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		t.Fatalf("searching non-existent rev expected to fail with RevisionNotFoundError got: %v", err)
+	if !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+		t.Fbtblf("sebrching non-existent rev expected to fbil with RevisionNotFoundError got: %v", err)
 	}
 }
 
-func TestSearchFilesInReposStream(t *testing.T) {
-	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
-		repoName := repo.Name
-		switch repoName {
-		case "foo/one":
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
+func TestSebrchFilesInReposStrebm(t *testing.T) {
+	sebrcher.MockSebrchFilesInRepo = func(ctx context.Context, repo types.MinimblRepo, gitserverRepo bpi.RepoNbme, rev string, info *sebrch.TextPbtternInfo, fetchTimeout time.Durbtion, strebm strebming.Sender) (limitHit bool, err error) {
+		repoNbme := repo.Nbme
+		switch repoNbme {
+		cbse "foo/one":
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
 					File: result.File{
 						Repo:     repo,
 						InputRev: &rev,
-						Path:     "main.go",
+						Pbth:     "mbin.go",
 					},
 				}},
 			})
-			return false, nil
-		case "foo/two":
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
+			return fblse, nil
+		cbse "foo/two":
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
 					File: result.File{
 						Repo:     repo,
 						InputRev: &rev,
-						Path:     "main.go",
+						Pbth:     "mbin.go",
 					},
 				}},
 			})
-			return false, nil
-		case "foo/three":
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
+			return fblse, nil
+		cbse "foo/three":
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
 					File: result.File{
 						Repo:     repo,
 						InputRev: &rev,
-						Path:     "main.go",
+						Pbth:     "mbin.go",
 					},
 				}},
 			})
-			return false, nil
-		default:
-			return false, errors.New("Unexpected repo")
+			return fblse, nil
+		defbult:
+			return fblse, errors.New("Unexpected repo")
 		}
 	}
-	defer func() { searcher.MockSearchFilesInRepo = nil }()
+	defer func() { sebrcher.MockSebrchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.FakeStreamer{}
+	zoekt := &sebrchbbckend.FbkeStrebmer{}
 
-	q, err := query.ParseLiteral("foo")
+	q, err := query.PbrseLiterbl("foo")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	patternInfo := &search.TextPatternInfo{
-		FileMatchLimit: limits.DefaultMaxSearchResults,
-		Pattern:        "foo",
+	pbtternInfo := &sebrch.TextPbtternInfo{
+		FileMbtchLimit: limits.DefbultMbxSebrchResults,
+		Pbttern:        "foo",
 	}
 
-	matches, _, err := RunRepoSubsetTextSearch(
-		context.Background(),
+	mbtches, _, err := RunRepoSubsetTextSebrch(
+		context.Bbckground(),
 		logtest.Scoped(t),
-		patternInfo,
-		makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
+		pbtternInfo,
+		mbkeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
 		q,
 		zoekt,
-		endpoint.Static("test"),
-		search.DefaultMode,
-		false,
+		endpoint.Stbtic("test"),
+		sebrch.DefbultMode,
+		fblse,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if len(matches) != 3 {
-		t.Errorf("expected three results, got %d", len(matches))
+	if len(mbtches) != 3 {
+		t.Errorf("expected three results, got %d", len(mbtches))
 	}
 }
 
-func assertReposStatus(t *testing.T, repoNames map[api.RepoID]string, got search.RepoStatusMap, want map[string]search.RepoStatus) {
+func bssertReposStbtus(t *testing.T, repoNbmes mbp[bpi.RepoID]string, got sebrch.RepoStbtusMbp, wbnt mbp[string]sebrch.RepoStbtus) {
 	t.Helper()
-	gotM := map[string]search.RepoStatus{}
-	got.Iterate(func(id api.RepoID, mask search.RepoStatus) {
-		name := repoNames[id]
-		if name == "" {
-			name = fmt.Sprintf("UNKNOWNREPO{ID=%d}", id)
+	gotM := mbp[string]sebrch.RepoStbtus{}
+	got.Iterbte(func(id bpi.RepoID, mbsk sebrch.RepoStbtus) {
+		nbme := repoNbmes[id]
+		if nbme == "" {
+			nbme = fmt.Sprintf("UNKNOWNREPO{ID=%d}", id)
 		}
-		gotM[name] = mask
+		gotM[nbme] = mbsk
 	})
-	if diff := cmp.Diff(want, gotM); diff != "" {
-		t.Errorf("RepoStatusMap mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, gotM); diff != "" {
+		t.Errorf("RepoStbtusMbp mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
-	searcher.MockSearchFilesInRepo = func(ctx context.Context, repo types.MinimalRepo, gitserverRepo api.RepoName, rev string, info *search.TextPatternInfo, fetchTimeout time.Duration, stream streaming.Sender) (limitHit bool, err error) {
-		repoName := repo.Name
-		switch repoName {
-		case "foo":
-			stream.Send(streaming.SearchEvent{
-				Results: []result.Match{&result.FileMatch{
+func TestSebrchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
+	sebrcher.MockSebrchFilesInRepo = func(ctx context.Context, repo types.MinimblRepo, gitserverRepo bpi.RepoNbme, rev string, info *sebrch.TextPbtternInfo, fetchTimeout time.Durbtion, strebm strebming.Sender) (limitHit bool, err error) {
+		repoNbme := repo.Nbme
+		switch repoNbme {
+		cbse "foo":
+			strebm.Send(strebming.SebrchEvent{
+				Results: []result.Mbtch{&result.FileMbtch{
 					File: result.File{
 						Repo:     repo,
-						CommitID: api.CommitID(rev),
-						Path:     "main.go",
+						CommitID: bpi.CommitID(rev),
+						Pbth:     "mbin.go",
 					},
 				}},
 			})
-			return false, nil
-		default:
-			panic("unexpected repo")
+			return fblse, nil
+		defbult:
+			pbnic("unexpected repo")
 		}
 	}
-	defer func() { searcher.MockSearchFilesInRepo = nil }()
+	defer func() { sebrcher.MockSebrchFilesInRepo = nil }()
 
-	zoekt := &searchbackend.FakeStreamer{}
+	zoekt := &sebrchbbckend.FbkeStrebmer{}
 
-	q, err := query.ParseLiteral("foo")
+	q, err := query.PbrseLiterbl("foo")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	patternInfo := &search.TextPatternInfo{
-		FileMatchLimit: limits.DefaultMaxSearchResults,
-		Pattern:        "foo",
+	pbtternInfo := &sebrch.TextPbtternInfo{
+		FileMbtchLimit: limits.DefbultMbxSebrchResults,
+		Pbttern:        "foo",
 	}
 
-	repos := makeRepositoryRevisions("foo@master:mybranch:branch3:branch4")
+	repos := mbkeRepositoryRevisions("foo@mbster:mybrbnch:brbnch3:brbnch4")
 
-	matches, _, err := RunRepoSubsetTextSearch(
-		context.Background(),
+	mbtches, _, err := RunRepoSubsetTextSebrch(
+		context.Bbckground(),
 		logtest.Scoped(t),
-		patternInfo,
+		pbtternInfo,
 		repos,
 		q,
 		zoekt,
-		endpoint.Static("test"),
-		search.DefaultMode,
-		false,
+		endpoint.Stbtic("test"),
+		sebrch.DefbultMode,
+		fblse,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	matchKeys := make([]result.Key, len(matches))
-	for i, match := range matches {
-		matchKeys[i] = match.Key()
+	mbtchKeys := mbke([]result.Key, len(mbtches))
+	for i, mbtch := rbnge mbtches {
+		mbtchKeys[i] = mbtch.Key()
 	}
-	slices.SortFunc(matchKeys, result.Key.Less)
+	slices.SortFunc(mbtchKeys, result.Key.Less)
 
-	wantResultKeys := []result.Key{
-		{Repo: "foo", Commit: "branch3", Path: "main.go"},
-		{Repo: "foo", Commit: "branch4", Path: "main.go"},
-		{Repo: "foo", Commit: "master", Path: "main.go"},
-		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
+	wbntResultKeys := []result.Key{
+		{Repo: "foo", Commit: "brbnch3", Pbth: "mbin.go"},
+		{Repo: "foo", Commit: "brbnch4", Pbth: "mbin.go"},
+		{Repo: "foo", Commit: "mbster", Pbth: "mbin.go"},
+		{Repo: "foo", Commit: "mybrbnch", Pbth: "mbin.go"},
 	}
-	require.Equal(t, wantResultKeys, matchKeys)
+	require.Equbl(t, wbntResultKeys, mbtchKeys)
 }
 
-func TestZoektQueryPatternsAsRegexps(t *testing.T) {
+func TestZoektQueryPbtternsAsRegexps(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input zoektquery.Q
-		want  []*regexp.Regexp
+		wbnt  []*regexp.Regexp
 	}{
 		{
-			name:  "literal substring query",
-			input: &zoektquery.Substring{Pattern: "foobar"},
-			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)foobar`)},
+			nbme:  "literbl substring query",
+			input: &zoektquery.Substring{Pbttern: "foobbr"},
+			wbnt:  []*regexp.Regexp{regexp.MustCompile(`(?i)foobbr`)},
 		},
 		{
-			name:  "regex query",
-			input: &zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}},
-			want:  []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "foobar"}}.Regexp.String())},
+			nbme:  "regex query",
+			input: &zoektquery.Regexp{Regexp: &syntbx.Regexp{Op: syntbx.OpLiterbl, Nbme: "foobbr"}},
+			wbnt:  []*regexp.Regexp{regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntbx.Regexp{Op: syntbx.OpLiterbl, Nbme: "foobbr"}}.Regexp.String())},
 		},
 		{
-			name: "and query",
+			nbme: "bnd query",
 			input: zoektquery.NewAnd([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Substring{Pattern: "baz"},
+				&zoektquery.Substring{Pbttern: "foobbr"},
+				&zoektquery.Substring{Pbttern: "bbz"},
 			}...),
-			want: []*regexp.Regexp{
-				regexp.MustCompile(`(?i)foobar`),
-				regexp.MustCompile(`(?i)baz`),
+			wbnt: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobbr`),
+				regexp.MustCompile(`(?i)bbz`),
 			},
 		},
 		{
-			name: "or query",
+			nbme: "or query",
 			input: zoektquery.NewOr([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Substring{Pattern: "baz"},
+				&zoektquery.Substring{Pbttern: "foobbr"},
+				&zoektquery.Substring{Pbttern: "bbz"},
 			}...),
-			want: []*regexp.Regexp{
-				regexp.MustCompile(`(?i)foobar`),
-				regexp.MustCompile(`(?i)baz`),
+			wbnt: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobbr`),
+				regexp.MustCompile(`(?i)bbz`),
 			},
 		},
 		{
-			name: "literal and regex",
+			nbme: "literbl bnd regex",
 			input: zoektquery.NewAnd([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+				&zoektquery.Substring{Pbttern: "foobbr"},
+				&zoektquery.Regexp{Regexp: &syntbx.Regexp{Op: syntbx.OpLiterbl, Nbme: "python"}},
 			}...),
-			want: []*regexp.Regexp{
-				regexp.MustCompile(`(?i)foobar`),
-				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			wbnt: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobbr`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntbx.Regexp{Op: syntbx.OpLiterbl, Nbme: "python"}}.Regexp.String()),
 			},
 		},
 		{
-			name: "literal or regex",
+			nbme: "literbl or regex",
 			input: zoektquery.NewOr([]zoektquery.Q{
-				&zoektquery.Substring{Pattern: "foobar"},
-				&zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}},
+				&zoektquery.Substring{Pbttern: "foobbr"},
+				&zoektquery.Regexp{Regexp: &syntbx.Regexp{Op: syntbx.OpLiterbl, Nbme: "python"}},
 			}...),
-			want: []*regexp.Regexp{
-				regexp.MustCompile(`(?i)foobar`),
-				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntax.Regexp{Op: syntax.OpLiteral, Name: "python"}}.Regexp.String()),
+			wbnt: []*regexp.Regexp{
+				regexp.MustCompile(`(?i)foobbr`),
+				regexp.MustCompile(`(?i)` + zoektquery.Regexp{Regexp: &syntbx.Regexp{Op: syntbx.OpLiterbl, Nbme: "python"}}.Regexp.String()),
 			},
 		},
 		{
-			name:  "respect case sensitivity setting",
-			input: &zoektquery.Substring{Pattern: "foo", CaseSensitive: true},
-			want:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMeta("foo"))},
+			nbme:  "respect cbse sensitivity setting",
+			input: &zoektquery.Substring{Pbttern: "foo", CbseSensitive: true},
+			wbnt:  []*regexp.Regexp{regexp.MustCompile(regexp.QuoteMetb("foo"))},
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := zoektQueryPatternsAsRegexps(tc.input)
-			require.Equal(t, tc.want, got)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := zoektQueryPbtternsAsRegexps(tc.input)
+			require.Equbl(t, tc.wbnt, got)
 		})
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
-	r := make([]*search.RepositoryRevisions, len(repos))
-	for i, repospec := range repos {
-		repoRevs, err := query.ParseRepositoryRevisions(repospec)
+func mbkeRepositoryRevisions(repos ...string) []*sebrch.RepositoryRevisions {
+	r := mbke([]*sebrch.RepositoryRevisions, len(repos))
+	for i, repospec := rbnge repos {
+		repoRevs, err := query.PbrseRepositoryRevisions(repospec)
 		if err != nil {
-			panic(errors.Errorf("unexpected error parsing repo spec %s", repospec))
+			pbnic(errors.Errorf("unexpected error pbrsing repo spec %s", repospec))
 		}
 
-		revs := make([]string, 0, len(repoRevs.Revs))
-		for _, revSpec := range repoRevs.Revs {
-			revs = append(revs, revSpec.RevSpec)
+		revs := mbke([]string, 0, len(repoRevs.Revs))
+		for _, revSpec := rbnge repoRevs.Revs {
+			revs = bppend(revs, revSpec.RevSpec)
 		}
 		if len(revs) == 0 {
-			// treat empty list as HEAD
+			// trebt empty list bs HEAD
 			revs = []string{""}
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
+		r[i] = &sebrch.RepositoryRevisions{Repo: mkRepos(repoRevs.Repo)[0], Revs: revs}
 	}
 	return r
 }
 
-func mkRepos(names ...string) []types.MinimalRepo {
-	var repos []types.MinimalRepo
-	for _, name := range names {
-		sum := md5.Sum([]byte(name))
-		id := api.RepoID(binary.BigEndian.Uint64(sum[:]))
+func mkRepos(nbmes ...string) []types.MinimblRepo {
+	vbr repos []types.MinimblRepo
+	for _, nbme := rbnge nbmes {
+		sum := md5.Sum([]byte(nbme))
+		id := bpi.RepoID(binbry.BigEndibn.Uint64(sum[:]))
 		if id < 0 {
 			id = -(id / 2)
 		}
 		if id == 0 {
 			id++
 		}
-		repos = append(repos, types.MinimalRepo{ID: id, Name: api.RepoName(name)})
+		repos = bppend(repos, types.MinimblRepo{ID: id, Nbme: bpi.RepoNbme(nbme)})
 	}
 	return repos
 }
 
-// RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
-func RunRepoSubsetTextSearch(
+// RunRepoSubsetTextSebrch is b convenience function thbt simulbtes the RepoSubsetTextSebrch job.
+func RunRepoSubsetTextSebrch(
 	ctx context.Context,
 	logger log.Logger,
-	patternInfo *search.TextPatternInfo,
-	repos []*search.RepositoryRevisions,
+	pbtternInfo *sebrch.TextPbtternInfo,
+	repos []*sebrch.RepositoryRevisions,
 	q query.Q,
-	zoekt *searchbackend.FakeStreamer,
-	searcherURLs *endpoint.Map,
-	mode search.GlobalSearchMode,
-	useFullDeadline bool,
-) ([]*result.FileMatch, streaming.Stats, error) {
-	notSearcherOnly := mode != search.SearcherOnly
-	searcherArgs := &search.SearcherParameters{
-		PatternInfo:     patternInfo,
-		UseFullDeadline: useFullDeadline,
+	zoekt *sebrchbbckend.FbkeStrebmer,
+	sebrcherURLs *endpoint.Mbp,
+	mode sebrch.GlobblSebrchMode,
+	useFullDebdline bool,
+) ([]*result.FileMbtch, strebming.Stbts, error) {
+	notSebrcherOnly := mode != sebrch.SebrcherOnly
+	sebrcherArgs := &sebrch.SebrcherPbrbmeters{
+		PbtternInfo:     pbtternInfo,
+		UseFullDebdline: useFullDebdline,
 	}
 
-	agg := streaming.NewAggregatingStream()
+	bgg := strebming.NewAggregbtingStrebm()
 
-	indexed, unindexed, err := zoektutil.PartitionRepos(
-		context.Background(),
+	indexed, unindexed, err := zoektutil.PbrtitionRepos(
+		context.Bbckground(),
 		logger,
 		repos,
 		zoekt,
-		search.TextRequest,
+		sebrch.TextRequest,
 		query.Yes,
-		query.ContainsRefGlobs(q),
+		query.ContbinsRefGlobs(q),
 	)
 	if err != nil {
-		return nil, streaming.Stats{}, err
+		return nil, strebming.Stbts{}, err
 	}
 
 	g, ctx := errgroup.WithContext(ctx)
 
-	if notSearcherOnly {
-		b, err := query.ToBasicQuery(q)
+	if notSebrcherOnly {
+		b, err := query.ToBbsicQuery(q)
 		if err != nil {
-			return nil, streaming.Stats{}, err
+			return nil, strebming.Stbts{}, err
 		}
 
-		fieldTypes, _ := q.StringValues(query.FieldType)
-		var resultTypes result.Types
+		fieldTypes, _ := q.StringVblues(query.FieldType)
+		vbr resultTypes result.Types
 		if len(fieldTypes) == 0 {
-			resultTypes = result.TypeFile | result.TypePath | result.TypeRepo
+			resultTypes = result.TypeFile | result.TypePbth | result.TypeRepo
 		} else {
-			for _, t := range fieldTypes {
+			for _, t := rbnge fieldTypes {
 				resultTypes = resultTypes.With(result.TypeFromString[t])
 			}
 		}
 
-		typ := search.TextRequest
+		typ := sebrch.TextRequest
 		zoektQuery, err := zoektutil.QueryToZoektQuery(b, resultTypes, nil, typ)
 		if err != nil {
-			return nil, streaming.Stats{}, err
+			return nil, strebming.Stbts{}, err
 		}
 
-		zoektParams := &search.ZoektParameters{
-			FileMatchLimit: patternInfo.FileMatchLimit,
-			Select:         patternInfo.Select,
+		zoektPbrbms := &sebrch.ZoektPbrbmeters{
+			FileMbtchLimit: pbtternInfo.FileMbtchLimit,
+			Select:         pbtternInfo.Select,
 		}
 
-		zoektJob := &zoektutil.RepoSubsetTextSearchJob{
+		zoektJob := &zoektutil.RepoSubsetTextSebrchJob{
 			Repos:       indexed,
 			Query:       zoektQuery,
-			Typ:         search.TextRequest,
-			ZoektParams: zoektParams,
+			Typ:         sebrch.TextRequest,
+			ZoektPbrbms: zoektPbrbms,
 			Since:       nil,
 		}
 
-		// Run literal and regexp searches on indexed repositories.
+		// Run literbl bnd regexp sebrches on indexed repositories.
 		g.Go(func() error {
 			_, err := zoektJob.Run(ctx, job.RuntimeClients{
 				Logger: logger,
 				Zoekt:  zoekt,
-			}, agg)
+			}, bgg)
 			return err
 		})
 	}
 
-	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
+	// Concurrently run sebrcher for bll unindexed repos regbrdless whether text or regexp.
 	g.Go(func() error {
-		searcherJob := &searcher.TextSearchJob{
-			PatternInfo:     searcherArgs.PatternInfo,
+		sebrcherJob := &sebrcher.TextSebrchJob{
+			PbtternInfo:     sebrcherArgs.PbtternInfo,
 			Repos:           unindexed,
-			Indexed:         false,
-			UseFullDeadline: searcherArgs.UseFullDeadline,
+			Indexed:         fblse,
+			UseFullDebdline: sebrcherArgs.UseFullDebdline,
 		}
 
-		_, err := searcherJob.Run(ctx, job.RuntimeClients{
+		_, err := sebrcherJob.Run(ctx, job.RuntimeClients{
 			Logger:       logger,
-			SearcherURLs: searcherURLs,
+			SebrcherURLs: sebrcherURLs,
 			Zoekt:        zoekt,
-		}, agg)
+		}, bgg)
 		return err
 	})
 
-	err = g.Wait()
+	err = g.Wbit()
 
-	fms, fmErr := matchesToFileMatches(agg.Results)
+	fms, fmErr := mbtchesToFileMbtches(bgg.Results)
 	if fmErr != nil && err == nil {
-		err = errors.Wrap(fmErr, "searchFilesInReposBatch failed to convert results")
+		err = errors.Wrbp(fmErr, "sebrchFilesInReposBbtch fbiled to convert results")
 	}
-	return fms, agg.Stats, err
+	return fms, bgg.Stbts, err
 }
 
-func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
-	fms := make([]*result.FileMatch, 0, len(matches))
-	for _, match := range matches {
-		fm, ok := match.(*result.FileMatch)
+func mbtchesToFileMbtches(mbtches []result.Mbtch) ([]*result.FileMbtch, error) {
+	fms := mbke([]*result.FileMbtch, 0, len(mbtches))
+	for _, mbtch := rbnge mbtches {
+		fm, ok := mbtch.(*result.FileMbtch)
 		if !ok {
-			return nil, errors.Errorf("expected only file match results")
+			return nil, errors.Errorf("expected only file mbtch results")
 		}
-		fms = append(fms, fm)
+		fms = bppend(fms, fm)
 	}
 	return fms, nil
 }

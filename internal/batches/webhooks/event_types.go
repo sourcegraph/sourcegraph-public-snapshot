@@ -1,56 +1,56 @@
-package webhooks
+pbckbge webhooks
 
-import "github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
+import "github.com/sourcegrbph/sourcegrbph/internbl/webhooks/outbound"
 
 const (
-	BatchChangeApply      = "batch_change:apply"
-	BatchChangeClose      = "batch_change:close"
-	BatchChangeDelete     = "batch_change:delete"
-	ChangesetClose        = "changeset:close"
-	ChangesetPublish      = "changeset:publish"
-	ChangesetPublishError = "changeset:publish_error"
-	ChangesetUpdate       = "changeset:update"
-	ChangesetUpdateError  = "changeset:update_error"
+	BbtchChbngeApply      = "bbtch_chbnge:bpply"
+	BbtchChbngeClose      = "bbtch_chbnge:close"
+	BbtchChbngeDelete     = "bbtch_chbnge:delete"
+	ChbngesetClose        = "chbngeset:close"
+	ChbngesetPublish      = "chbngeset:publish"
+	ChbngesetPublishError = "chbngeset:publish_error"
+	ChbngesetUpdbte       = "chbngeset:updbte"
+	ChbngesetUpdbteError  = "chbngeset:updbte_error"
 )
 
 func init() {
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         BatchChangeApply,
-		Description: "sent when a batch change is applied",
+		Key:         BbtchChbngeApply,
+		Description: "sent when b bbtch chbnge is bpplied",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         BatchChangeClose,
-		Description: "sent when a batch change is closed",
+		Key:         BbtchChbngeClose,
+		Description: "sent when b bbtch chbnge is closed",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         BatchChangeDelete,
-		Description: "sent when a batch change is deleted",
+		Key:         BbtchChbngeDelete,
+		Description: "sent when b bbtch chbnge is deleted",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         ChangesetClose,
-		Description: "sent when a changeset is closed",
+		Key:         ChbngesetClose,
+		Description: "sent when b chbngeset is closed",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         ChangesetPublish,
-		Description: "sent when a changeset is published to the code host",
+		Key:         ChbngesetPublish,
+		Description: "sent when b chbngeset is published to the code host",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         ChangesetPublishError,
-		Description: "sent when an attempt to publish a changeset to the code host fails",
+		Key:         ChbngesetPublishError,
+		Description: "sent when bn bttempt to publish b chbngeset to the code host fbils",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         ChangesetUpdate,
-		Description: "sent when a changeset is updated on the code host",
+		Key:         ChbngesetUpdbte,
+		Description: "sent when b chbngeset is updbted on the code host",
 	})
 
 	outbound.RegisterEventType(outbound.EventType{
-		Key:         ChangesetUpdateError,
-		Description: "sent when an attempt to update a changeset on the code host fails",
+		Key:         ChbngesetUpdbteError,
+		Description: "sent when bn bttempt to updbte b chbngeset on the code host fbils",
 	})
 }

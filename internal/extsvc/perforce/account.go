@@ -1,23 +1,23 @@
-package perforce
+pbckbge perforce
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-// AccountData stores information of a Perforce Server account.
-type AccountData struct {
-	Username string `json:"username"`
-	Email    string `json:"email"`
+// AccountDbtb stores informbtion of b Perforce Server bccount.
+type AccountDbtb struct {
+	Usernbme string `json:"usernbme"`
+	Embil    string `json:"embil"`
 }
 
-// GetExternalAccountData extracts account data for the external account.
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (*AccountData, error) {
-	if data.Data == nil {
+// GetExternblAccountDbtb extrbcts bccount dbtb for the externbl bccount.
+func GetExternblAccountDbtb(ctx context.Context, dbtb *extsvc.AccountDbtb) (*AccountDbtb, error) {
+	if dbtb.Dbtb == nil {
 		return nil, nil
 	}
 
-	return encryption.DecryptJSON[AccountData](ctx, data.Data)
+	return encryption.DecryptJSON[AccountDbtb](ctx, dbtb.Dbtb)
 }

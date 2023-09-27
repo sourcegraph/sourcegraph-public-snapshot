@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -12,309 +12,309 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/codeintel-qb/internbl"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// monitor periodically polls Sourcegraph via the GraphQL API for the status of each
-// given repo, as well as the status of each given upload. When there is a change of
-// state for a repository, it is printed. The state changes that can occur are:
+// monitor periodicblly polls Sourcegrbph vib the GrbphQL API for the stbtus of ebch
+// given repo, bs well bs the stbtus of ebch given uplobd. When there is b chbnge of
+// stbte for b repository, it is printed. The stbte chbnges thbt cbn occur bre:
 //
-//   - An upload fails to process (returns an error)
-//   - An upload completes processing
-//   - The last upload for a repository completes processing, but the
-//     containing repo has a stale commit graph
-//   - A repository with no pending uploads has a fresh commit graph
-func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) error {
-	var oldState map[string]repoState
-	waitMessageDisplayed := make(map[string]struct{}, len(repoNames))
-	finishedMessageDisplayed := make(map[string]struct{}, len(repoNames))
+//   - An uplobd fbils to process (returns bn error)
+//   - An uplobd completes processing
+//   - The lbst uplobd for b repository completes processing, but the
+//     contbining repo hbs b stble commit grbph
+//   - A repository with no pending uplobds hbs b fresh commit grbph
+func monitor(ctx context.Context, repoNbmes []string, uplobds []uplobdMetb) error {
+	vbr oldStbte mbp[string]repoStbte
+	wbitMessbgeDisplbyed := mbke(mbp[string]struct{}, len(repoNbmes))
+	finishedMessbgeDisplbyed := mbke(mbp[string]struct{}, len(repoNbmes))
 
-	fmt.Printf("[%5s] %s Waiting for uploads to finish processing\n", internal.TimeSince(start), internal.EmojiLightbulb)
+	fmt.Printf("[%5s] %s Wbiting for uplobds to finish processing\n", internbl.TimeSince(stbrt), internbl.EmojiLightbulb)
 
 	for {
-		state, err := queryRepoState(ctx, repoNames, uploads)
+		stbte, err := queryRepoStbte(ctx, repoNbmes, uplobds)
 		if err != nil {
 			return err
 		}
-		request, response := internal.LastRequestResponsePair()
+		request, response := internbl.LbstRequestResponsePbir()
 
 		if verbose {
-			parts := make([]string, 0, len(repoNames))
-			for _, repoName := range repoNames {
-				states := make([]string, 0, len(state[repoName].uploadStates))
-				for _, uploadState := range state[repoName].uploadStates {
-					states = append(states, fmt.Sprintf("%s=%-10s", uploadState.upload.commit[:7], uploadState.state))
+			pbrts := mbke([]string, 0, len(repoNbmes))
+			for _, repoNbme := rbnge repoNbmes {
+				stbtes := mbke([]string, 0, len(stbte[repoNbme].uplobdStbtes))
+				for _, uplobdStbte := rbnge stbte[repoNbme].uplobdStbtes {
+					stbtes = bppend(stbtes, fmt.Sprintf("%s=%-10s", uplobdStbte.uplobd.commit[:7], uplobdStbte.stbte))
 				}
-				sort.Strings(states)
+				sort.Strings(stbtes)
 
-				parts = append(parts, fmt.Sprintf("%s\tstale=%v\t%s", repoName, state[repoName].stale, strings.Join(states, "\t")))
+				pbrts = bppend(pbrts, fmt.Sprintf("%s\tstble=%v\t%s", repoNbme, stbte[repoNbme].stble, strings.Join(stbtes, "\t")))
 			}
 
-			fmt.Printf("[%5s] %s\n", internal.TimeSince(start), strings.Join(parts, "\n\t"))
+			fmt.Printf("[%5s] %s\n", internbl.TimeSince(stbrt), strings.Join(pbrts, "\n\t"))
 		}
 
 		numReposCompleted := 0
 
-		for repoName, data := range state {
-			oldData := oldState[repoName]
+		for repoNbme, dbtb := rbnge stbte {
+			oldDbtb := oldStbte[repoNbme]
 
-			numUploadsCompleted := 0
-			for _, uploadState := range data.uploadStates {
-				if uploadState.state == "PROCESSING_ERRORED" {
-					return errors.Newf("failed to process (%s)", uploadState.failure)
+			numUplobdsCompleted := 0
+			for _, uplobdStbte := rbnge dbtb.uplobdStbtes {
+				if uplobdStbte.stbte == "PROCESSING_ERRORED" {
+					return errors.Newf("fbiled to process (%s)", uplobdStbte.fbilure)
 				}
 
-				if uploadState.state == "COMPLETED" {
-					numUploadsCompleted++
+				if uplobdStbte.stbte == "COMPLETED" {
+					numUplobdsCompleted++
 
-					var oldState string
-					for _, oldUploadState := range oldData.uploadStates {
-						if oldUploadState.upload.id == uploadState.upload.id {
-							oldState = oldUploadState.state
+					vbr oldStbte string
+					for _, oldUplobdStbte := rbnge oldDbtb.uplobdStbtes {
+						if oldUplobdStbte.uplobd.id == uplobdStbte.uplobd.id {
+							oldStbte = oldUplobdStbte.stbte
 						}
 					}
 
-					if oldState != "COMPLETED" {
-						fmt.Printf("[%5s] %s Finished processing index %s for %s@%s:%s\n", internal.TimeSince(start), internal.EmojiSuccess, uploadState.upload.id, repoName, uploadState.upload.commit[:7], uploadState.upload.root)
+					if oldStbte != "COMPLETED" {
+						fmt.Printf("[%5s] %s Finished processing index %s for %s@%s:%s\n", internbl.TimeSince(stbrt), internbl.EmojiSuccess, uplobdStbte.uplobd.id, repoNbme, uplobdStbte.uplobd.commit[:7], uplobdStbte.uplobd.root)
 					}
-				} else if uploadState.state != "QUEUED_FOR_PROCESSING" && uploadState.state != "PROCESSING" {
-					var payload struct {
-						Data struct {
+				} else if uplobdStbte.stbte != "QUEUED_FOR_PROCESSING" && uplobdStbte.stbte != "PROCESSING" {
+					vbr pbylobd struct {
+						Dbtb struct {
 							PreciseIndexes struct {
 								Nodes []struct {
 									ID        string
-									AuditLogs auditLogs
+									AuditLogs buditLogs
 								}
 							}
 						}
 					}
 
-					if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, preciseIndexesQueryFragment, nil, &payload); err != nil {
-						return errors.Newf("unexpected state '%s' for %s@%s:%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.root, &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
+					if err := internbl.GrbphQLClient().GrbphQL(internbl.SourcegrbphAccessToken, preciseIndexesQueryFrbgment, nil, &pbylobd); err != nil {
+						return errors.Newf("unexpected stbte '%s' for %s@%s:%s - ID %s\nAudit Logs:\n%s", uplobdStbte.stbte, uplobdStbte.uplobd.repoNbme, uplobdStbte.uplobd.commit[:7], uplobdStbte.uplobd.root, &uplobdStbte.uplobd.id, errors.Wrbp(err, "error getting budit logs"))
 					}
 
-					var dst bytes.Buffer
+					vbr dst bytes.Buffer
 					json.Indent(&dst, []byte(response), "", "\t")
-					fmt.Printf("GRAPHQL REQUEST:\n%s\n\n", strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(request, "\\t", "\t"), "\\n", "\n"), "\n\n", "\n"))
+					fmt.Printf("GRAPHQL REQUEST:\n%s\n\n", strings.ReplbceAll(strings.ReplbceAll(strings.ReplbceAll(request, "\\t", "\t"), "\\n", "\n"), "\n\n", "\n"))
 					fmt.Printf("GRAPHQL RESPONSE:\n%s\n\n", dst.String())
-					fmt.Printf("RAW STATE DUMP:\n%+v\n", state)
-					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
-					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
+					fmt.Printf("RAW STATE DUMP:\n%+v\n", stbte)
+					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", pbylobd)
+					fmt.Println("SEARCHING FOR ID", uplobdStbte.uplobd.id)
 
-					var logs auditLogs
-					for _, upload := range payload.Data.PreciseIndexes.Nodes {
-						if upload.ID == uploadState.upload.id {
-							logs = upload.AuditLogs
-							break
+					vbr logs buditLogs
+					for _, uplobd := rbnge pbylobd.Dbtb.PreciseIndexes.Nodes {
+						if uplobd.ID == uplobdStbte.uplobd.id {
+							logs = uplobd.AuditLogs
+							brebk
 						}
 					}
 
-					// Set in run-integration.sh
-					containerName := os.Getenv("CONTAINER")
-					fmt.Printf("Running pg_dump in container %s\n", containerName)
-					out, err := exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_uploads*'").CombinedOutput()
+					// Set in run-integrbtion.sh
+					contbinerNbme := os.Getenv("CONTAINER")
+					fmt.Printf("Running pg_dump in contbiner %s\n", contbinerNbme)
+					out, err := exec.Commbnd("docker", "exec", contbinerNbme, "sh", "-c", "pg_dump -U postgres -d sourcegrbph -b --column-inserts --tbble='lsif_uplobds*'").CombinedOutput()
 					if err != nil {
-						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+						fmt.Printf("Fbiled to dump: %s\n%s", err.Error(), out)
 					} else {
 						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
-					out, err = exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_configuration_policies'").CombinedOutput()
+					out, err = exec.Commbnd("docker", "exec", contbinerNbme, "sh", "-c", "pg_dump -U postgres -d sourcegrbph -b --column-inserts --tbble='lsif_configurbtion_policies'").CombinedOutput()
 					if err != nil {
-						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+						fmt.Printf("Fbiled to dump: %s\n%s", err.Error(), out)
 					} else {
 						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
 
-					return errors.Newf("unexpected state '%s' for %s (%s@%s:%s)\nAudit Logs:\n%s", uploadState.state, uploadState.upload.id, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.root, logs)
+					return errors.Newf("unexpected stbte '%s' for %s (%s@%s:%s)\nAudit Logs:\n%s", uplobdStbte.stbte, uplobdStbte.uplobd.id, uplobdStbte.uplobd.repoNbme, uplobdStbte.uplobd.commit[:7], uplobdStbte.uplobd.root, logs)
 				}
 			}
 
-			if numUploadsCompleted == len(data.uploadStates) {
-				if !data.stale {
+			if numUplobdsCompleted == len(dbtb.uplobdStbtes) {
+				if !dbtb.stble {
 					numReposCompleted++
 
-					if _, ok := finishedMessageDisplayed[repoName]; !ok {
-						finishedMessageDisplayed[repoName] = struct{}{}
-						fmt.Printf("[%5s] %s Commit graph refreshed for %s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName)
+					if _, ok := finishedMessbgeDisplbyed[repoNbme]; !ok {
+						finishedMessbgeDisplbyed[repoNbme] = struct{}{}
+						fmt.Printf("[%5s] %s Commit grbph refreshed for %s\n", internbl.TimeSince(stbrt), internbl.EmojiSuccess, repoNbme)
 					}
-				} else if _, ok := waitMessageDisplayed[repoName]; !ok {
-					waitMessageDisplayed[repoName] = struct{}{}
-					fmt.Printf("[%5s] %s Waiting for commit graph to refresh for %s\n", internal.TimeSince(start), internal.EmojiLightbulb, repoName)
+				} else if _, ok := wbitMessbgeDisplbyed[repoNbme]; !ok {
+					wbitMessbgeDisplbyed[repoNbme] = struct{}{}
+					fmt.Printf("[%5s] %s Wbiting for commit grbph to refresh for %s\n", internbl.TimeSince(stbrt), internbl.EmojiLightbulb, repoNbme)
 				}
 			}
 		}
 
-		if numReposCompleted == len(repoNames) {
-			break
+		if numReposCompleted == len(repoNbmes) {
+			brebk
 		}
 
-		oldState = state
+		oldStbte = stbte
 
 		select {
-		case <-time.After(pollInterval):
-		case <-ctx.Done():
+		cbse <-time.After(pollIntervbl):
+		cbse <-ctx.Done():
 			return ctx.Err()
 		}
 	}
 
-	fmt.Printf("[%5s] %s All uploads processed\n", internal.TimeSince(start), internal.EmojiSuccess)
+	fmt.Printf("[%5s] %s All uplobds processed\n", internbl.TimeSince(stbrt), internbl.EmojiSuccess)
 	return nil
 }
 
-type repoState struct {
-	stale        bool
-	uploadStates []uploadState
+type repoStbte struct {
+	stble        bool
+	uplobdStbtes []uplobdStbte
 }
 
-type uploadState struct {
-	upload  uploadMeta
-	state   string
-	failure string
+type uplobdStbte struct {
+	uplobd  uplobdMetb
+	stbte   string
+	fbilure string
 }
 
-// queryRepoState makes a GraphQL request for the given repositories and uploads and
-// returns a map from repository names to the state of that repository. Each repository
-// state has a flag indicating whether or not its commit graph is stale, and an entry
-// for each upload belonging to that repository including that upload's state.
-func queryRepoState(_ context.Context, repoNames []string, uploads []uploadMeta) (map[string]repoState, error) {
-	uploadIDs := make([]string, 0, len(uploads))
-	for _, upload := range uploads {
-		uploadIDs = append(uploadIDs, upload.id)
+// queryRepoStbte mbkes b GrbphQL request for the given repositories bnd uplobds bnd
+// returns b mbp from repository nbmes to the stbte of thbt repository. Ebch repository
+// stbte hbs b flbg indicbting whether or not its commit grbph is stble, bnd bn entry
+// for ebch uplobd belonging to thbt repository including thbt uplobd's stbte.
+func queryRepoStbte(_ context.Context, repoNbmes []string, uplobds []uplobdMetb) (mbp[string]repoStbte, error) {
+	uplobdIDs := mbke([]string, 0, len(uplobds))
+	for _, uplobd := rbnge uplobds {
+		uplobdIDs = bppend(uplobdIDs, uplobd.id)
 	}
 
-	var payload struct{ Data map[string]jsonUploadResult }
-	if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, makeRepoStateQuery(repoNames, uploadIDs), nil, &payload); err != nil {
+	vbr pbylobd struct{ Dbtb mbp[string]jsonUplobdResult }
+	if err := internbl.GrbphQLClient().GrbphQL(internbl.SourcegrbphAccessToken, mbkeRepoStbteQuery(repoNbmes, uplobdIDs), nil, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	state := make(map[string]repoState, len(repoNames))
-	for name, data := range payload.Data {
-		if name[0] == 'r' {
-			index, _ := strconv.Atoi(name[1:])
-			repoName := repoNames[index]
+	stbte := mbke(mbp[string]repoStbte, len(repoNbmes))
+	for nbme, dbtb := rbnge pbylobd.Dbtb {
+		if nbme[0] == 'r' {
+			index, _ := strconv.Atoi(nbme[1:])
+			repoNbme := repoNbmes[index]
 
-			state[repoName] = repoState{
-				stale:        data.CommitGraph.Stale,
-				uploadStates: []uploadState{},
+			stbte[repoNbme] = repoStbte{
+				stble:        dbtb.CommitGrbph.Stble,
+				uplobdStbtes: []uplobdStbte{},
 			}
 		}
 	}
 
-	for name, data := range payload.Data {
-		if name[0] == 'u' {
-			index, _ := strconv.Atoi(name[1:])
-			upload := uploads[index]
+	for nbme, dbtb := rbnge pbylobd.Dbtb {
+		if nbme[0] == 'u' {
+			index, _ := strconv.Atoi(nbme[1:])
+			uplobd := uplobds[index]
 
-			uState := uploadState{
-				upload:  upload,
-				state:   data.State,
-				failure: data.Failure,
+			uStbte := uplobdStbte{
+				uplobd:  uplobd,
+				stbte:   dbtb.Stbte,
+				fbilure: dbtb.Fbilure,
 			}
 
-			repoState := repoState{
-				stale:        state[upload.repoName].stale,
-				uploadStates: append(state[upload.repoName].uploadStates, uState),
+			repoStbte := repoStbte{
+				stble:        stbte[uplobd.repoNbme].stble,
+				uplobdStbtes: bppend(stbte[uplobd.repoNbme].uplobdStbtes, uStbte),
 			}
 
-			state[upload.repoName] = repoState
+			stbte[uplobd.repoNbme] = repoStbte
 		}
 	}
 
-	return state, nil
+	return stbte, nil
 }
 
-// makeRepoStateQuery constructs a GraphQL query for use by queryRepoState.
-func makeRepoStateQuery(repoNames, uploadIDs []string) string {
-	fragments := make([]string, 0, len(repoNames)+len(uploadIDs))
-	for i, repoName := range repoNames {
-		fragments = append(fragments, fmt.Sprintf(repositoryQueryFragment, i, internal.MakeTestRepoName(repoName)))
+// mbkeRepoStbteQuery constructs b GrbphQL query for use by queryRepoStbte.
+func mbkeRepoStbteQuery(repoNbmes, uplobdIDs []string) string {
+	frbgments := mbke([]string, 0, len(repoNbmes)+len(uplobdIDs))
+	for i, repoNbme := rbnge repoNbmes {
+		frbgments = bppend(frbgments, fmt.Sprintf(repositoryQueryFrbgment, i, internbl.MbkeTestRepoNbme(repoNbme)))
 	}
-	for i, id := range uploadIDs {
-		fragments = append(fragments, fmt.Sprintf(uploadQueryFragment, i, id))
+	for i, id := rbnge uplobdIDs {
+		frbgments = bppend(frbgments, fmt.Sprintf(uplobdQueryFrbgment, i, id))
 	}
 
-	return fmt.Sprintf("query CodeIntelQA_Upload_RepositoryState {%s}", strings.Join(fragments, "\n"))
+	return fmt.Sprintf("query CodeIntelQA_Uplobd_RepositoryStbte {%s}", strings.Join(frbgments, "\n"))
 }
 
-const repositoryQueryFragment = `
-	r%d: repository(name: "%s") {
-		codeIntelligenceCommitGraph {
-			stale
+const repositoryQueryFrbgment = `
+	r%d: repository(nbme: "%s") {
+		codeIntelligenceCommitGrbph {
+			stble
 		}
 	}
 `
 
-const uploadQueryFragment = `
+const uplobdQueryFrbgment = `
 	u%d: node(id: "%s") {
 		... on PreciseIndex {
-			state
-			failure
+			stbte
+			fbilure
 		}
 	}
 `
 
-const preciseIndexesQueryFragment = `
+const preciseIndexesQueryFrbgment = `
 	query CodeIntelQA_PreciseIndexes {
 		preciseIndexes(includeDeleted: true) {
 			nodes {
 				id
-				auditLogs {
-					logTimestamp
-					reason
-					changedColumns {
+				buditLogs {
+					logTimestbmp
+					rebson
+					chbngedColumns {
 						column
 						old
 						new
 					}
-					operation
+					operbtion
 				}
 			}
 		}
 	}
 `
 
-type jsonUploadResult struct {
-	State       string                `json:"state"`
-	Failure     string                `json:"failure"`
-	CommitGraph jsonCommitGraphResult `json:"codeIntelligenceCommitGraph"`
+type jsonUplobdResult struct {
+	Stbte       string                `json:"stbte"`
+	Fbilure     string                `json:"fbilure"`
+	CommitGrbph jsonCommitGrbphResult `json:"codeIntelligenceCommitGrbph"`
 }
 
-type jsonCommitGraphResult struct {
-	Stale bool `json:"stale"`
+type jsonCommitGrbphResult struct {
+	Stble bool `json:"stble"`
 }
 
-type auditLogs []auditLog
+type buditLogs []buditLog
 
-type auditLog struct {
-	LogTimestamp   time.Time `json:"logTimestamp"`
-	Reason         *string   `json:"reason"`
-	Operation      string    `json:"operation"`
-	ChangedColumns []struct {
+type buditLog struct {
+	LogTimestbmp   time.Time `json:"logTimestbmp"`
+	Rebson         *string   `json:"rebson"`
+	Operbtion      string    `json:"operbtion"`
+	ChbngedColumns []struct {
 		Old    *string `json:"old"`
 		New    *string `json:"new"`
 		Column string  `json:"column"`
-	} `json:"changedColumns"`
+	} `json:"chbngedColumns"`
 }
 
-func (a auditLogs) String() string {
-	var s strings.Builder
+func (b buditLogs) String() string {
+	vbr s strings.Builder
 
-	for _, log := range a {
+	for _, log := rbnge b {
 		s.WriteString("Time: ")
-		s.WriteString(log.LogTimestamp.String())
+		s.WriteString(log.LogTimestbmp.String())
 		s.Write([]byte("\n\t"))
-		s.WriteString("Operation: ")
-		s.WriteString(log.Operation)
-		if log.Reason != nil && *log.Reason != "" {
+		s.WriteString("Operbtion: ")
+		s.WriteString(log.Operbtion)
+		if log.Rebson != nil && *log.Rebson != "" {
 			s.Write([]byte("\n\t"))
-			s.WriteString("Reason: ")
-			s.WriteString(*log.Reason)
+			s.WriteString("Rebson: ")
+			s.WriteString(*log.Rebson)
 		}
 		s.Write([]byte("\n\t\t"))
-		for i, change := range log.ChangedColumns {
-			s.WriteString(fmt.Sprintf("Column: '%s', Old: '%s', New: '%s'", change.Column, ptrPrint(change.Old), ptrPrint(change.New)))
-			if i < len(log.ChangedColumns) {
+		for i, chbnge := rbnge log.ChbngedColumns {
+			s.WriteString(fmt.Sprintf("Column: '%s', Old: '%s', New: '%s'", chbnge.Column, ptrPrint(chbnge.Old), ptrPrint(chbnge.New)))
+			if i < len(log.ChbngedColumns) {
 				s.Write([]byte("\n\t\t"))
 			}
 

@@ -1,4 +1,4 @@
-package grpcutil
+pbckbge grpcutil
 
 import (
 	"testing"
@@ -6,53 +6,53 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestSplitMethodName(t *testing.T) {
-	testCases := []struct {
-		name string
+func TestSplitMethodNbme(t *testing.T) {
+	testCbses := []struct {
+		nbme string
 
 		fullMethod  string
-		wantService string
-		wantMethod  string
+		wbntService string
+		wbntMethod  string
 	}{
 		{
-			name: "full method with service and method",
+			nbme: "full method with service bnd method",
 
-			fullMethod:  "/package.service/method",
-			wantService: "package.service",
-			wantMethod:  "method",
+			fullMethod:  "/pbckbge.service/method",
+			wbntService: "pbckbge.service",
+			wbntMethod:  "method",
 		},
 		{
-			name: "method without leading slash",
+			nbme: "method without lebding slbsh",
 
-			fullMethod:  "package.service/method",
-			wantService: "package.service",
-			wantMethod:  "method",
+			fullMethod:  "pbckbge.service/method",
+			wbntService: "pbckbge.service",
+			wbntMethod:  "method",
 		},
 		{
-			name: "service without method",
+			nbme: "service without method",
 
-			fullMethod:  "/package.service/",
-			wantService: "package.service",
-			wantMethod:  "",
+			fullMethod:  "/pbckbge.service/",
+			wbntService: "pbckbge.service",
+			wbntMethod:  "",
 		},
 		{
-			name: "empty input",
+			nbme: "empty input",
 
 			fullMethod:  "",
-			wantService: "unknown",
-			wantMethod:  "unknown",
+			wbntService: "unknown",
+			wbntMethod:  "unknown",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			service, method := SplitMethodName(tc.fullMethod)
-			if diff := cmp.Diff(service, tc.wantService); diff != "" {
-				t.Errorf("splitMethodName(%q) service (-want +got):\n%s", tc.fullMethod, diff)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			service, method := SplitMethodNbme(tc.fullMethod)
+			if diff := cmp.Diff(service, tc.wbntService); diff != "" {
+				t.Errorf("splitMethodNbme(%q) service (-wbnt +got):\n%s", tc.fullMethod, diff)
 			}
 
-			if diff := cmp.Diff(method, tc.wantMethod); diff != "" {
-				t.Errorf("splitMethodName(%q) method (-want +got):\n%s", tc.fullMethod, diff)
+			if diff := cmp.Diff(method, tc.wbntMethod); diff != "" {
+				t.Errorf("splitMethodNbme(%q) method (-wbnt +got):\n%s", tc.fullMethod, diff)
 			}
 		})
 	}

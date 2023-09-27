@@ -1,9 +1,9 @@
 //go:build windows
 // +build windows
 
-package vcs
+pbckbge vcs
 
-// On windows our repositories are local, e.g., `C:\Users\<user>\somerepo`
+// On windows our repositories bre locbl, e.g., `C:\Users\<user>\somerepo`
 func (u *URL) String() string {
-	return u.Path
+	return u.Pbth
 }

@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -7,108 +7,108 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GetMergeRequestResourceStateEvents retrieves the events for the given merge request. As the
-// events are paginated, a function is returned that may be invoked to return the
-// next page of results. An empty slice and a nil error indicates that all pages
-// have been returned.
-func (c *Client) GetMergeRequestResourceStateEvents(ctx context.Context, project *Project, iid ID) func() ([]*ResourceStateEvent, error) {
-	if MockGetMergeRequestResourceStateEvents != nil {
-		return MockGetMergeRequestResourceStateEvents(c, ctx, project, iid)
+// GetMergeRequestResourceStbteEvents retrieves the events for the given merge request. As the
+// events bre pbginbted, b function is returned thbt mby be invoked to return the
+// next pbge of results. An empty slice bnd b nil error indicbtes thbt bll pbges
+// hbve been returned.
+func (c *Client) GetMergeRequestResourceStbteEvents(ctx context.Context, project *Project, iid ID) func() ([]*ResourceStbteEvent, error) {
+	if MockGetMergeRequestResourceStbteEvents != nil {
+		return MockGetMergeRequestResourceStbteEvents(c, ctx, project, iid)
 	}
 
-	baseURL := fmt.Sprintf("projects/%d/merge_requests/%d/resource_state_events", project.ID, iid)
-	currentPage := "1"
-	return func() ([]*ResourceStateEvent, error) {
-		page := []*ResourceStateEvent{}
+	bbseURL := fmt.Sprintf("projects/%d/merge_requests/%d/resource_stbte_events", project.ID, iid)
+	currentPbge := "1"
+	return func() ([]*ResourceStbteEvent, error) {
+		pbge := []*ResourceStbteEvent{}
 
-		// If there aren't any further pages, we'll return the empty slice we
-		// just created.
-		if currentPage == "" {
-			return page, nil
+		// If there bren't bny further pbges, we'll return the empty slice we
+		// just crebted.
+		if currentPbge == "" {
+			return pbge, nil
 		}
 
-		parsedUrl, err := url.Parse(baseURL)
+		pbrsedUrl, err := url.Pbrse(bbseURL)
 		if err != nil {
 			return nil, err
 		}
-		q := parsedUrl.Query()
-		q.Add("page", currentPage)
-		parsedUrl.RawQuery = q.Encode()
+		q := pbrsedUrl.Query()
+		q.Add("pbge", currentPbge)
+		pbrsedUrl.RbwQuery = q.Encode()
 
-		req, err := http.NewRequest("GET", parsedUrl.String(), nil)
+		req, err := http.NewRequest("GET", pbrsedUrl.String(), nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating rse request")
+			return nil, errors.Wrbp(err, "crebting rse request")
 		}
 
-		header, _, err := c.do(ctx, req, &page)
+		hebder, _, err := c.do(ctx, req, &pbge)
 		if err != nil {
-			// If this endpoint is not found, the GitLab instance doesn't support these events yet.
-			// This is okay and we can't do anything about it, but as GitLab <13.2 ages, we should
-			// remove this stopgap.
-			var e HTTPError
-			if errors.As(err, &e) && e.Code() == http.StatusNotFound {
-				return []*ResourceStateEvent{}, nil
+			// If this endpoint is not found, the GitLbb instbnce doesn't support these events yet.
+			// This is okby bnd we cbn't do bnything bbout it, but bs GitLbb <13.2 bges, we should
+			// remove this stopgbp.
+			vbr e HTTPError
+			if errors.As(err, &e) && e.Code() == http.StbtusNotFound {
+				return []*ResourceStbteEvent{}, nil
 			}
-			return nil, errors.Wrap(err, "requesting rse page")
+			return nil, errors.Wrbp(err, "requesting rse pbge")
 		}
 
-		// If there's another page, this will be a page number. If there's not, then
-		// this will be an empty string, and we can detect that next iteration
+		// If there's bnother pbge, this will be b pbge number. If there's not, then
+		// this will be bn empty string, bnd we cbn detect thbt next iterbtion
 		// to short circuit.
-		currentPage = header.Get("X-Next-Page")
+		currentPbge = hebder.Get("X-Next-Pbge")
 
-		return page, nil
+		return pbge, nil
 	}
 }
 
-// ResourceStateEventState is a type of all known resource state event states.
-type ResourceStateEventState string
+// ResourceStbteEventStbte is b type of bll known resource stbte event stbtes.
+type ResourceStbteEventStbte string
 
 const (
-	ResourceStateEventStateClosed   ResourceStateEventState = "closed"
-	ResourceStateEventStateReopened ResourceStateEventState = "reopened"
-	ResourceStateEventStateMerged   ResourceStateEventState = "merged"
+	ResourceStbteEventStbteClosed   ResourceStbteEventStbte = "closed"
+	ResourceStbteEventStbteReopened ResourceStbteEventStbte = "reopened"
+	ResourceStbteEventStbteMerged   ResourceStbteEventStbte = "merged"
 )
 
-type ResourceStateEvent struct {
+type ResourceStbteEvent struct {
 	ID           ID                      `json:"id"`
 	User         User                    `json:"user"`
-	CreatedAt    Time                    `json:"created_at"`
+	CrebtedAt    Time                    `json:"crebted_bt"`
 	ResourceType string                  `json:"resource_type"`
 	ResourceID   ID                      `json:"resource_id"`
-	State        ResourceStateEventState `json:"state"`
+	Stbte        ResourceStbteEventStbte `json:"stbte"`
 }
 
-type MergeRequestClosedEvent struct{ *ResourceStateEvent }
+type MergeRequestClosedEvent struct{ *ResourceStbteEvent }
 
 func (e *MergeRequestClosedEvent) Key() string {
-	return fmt.Sprintf("closed:%s", e.CreatedAt.Time.Truncate(time.Second))
+	return fmt.Sprintf("closed:%s", e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-type MergeRequestReopenedEvent struct{ *ResourceStateEvent }
+type MergeRequestReopenedEvent struct{ *ResourceStbteEvent }
 
 func (e *MergeRequestReopenedEvent) Key() string {
-	return fmt.Sprintf("reopened:%s", e.CreatedAt.Time.Truncate(time.Second))
+	return fmt.Sprintf("reopened:%s", e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-type MergeRequestMergedEvent struct{ *ResourceStateEvent }
+type MergeRequestMergedEvent struct{ *ResourceStbteEvent }
 
 func (e *MergeRequestMergedEvent) Key() string {
-	return fmt.Sprintf("merged:%s", e.CreatedAt.Time.Truncate(time.Second))
+	return fmt.Sprintf("merged:%s", e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-// ToEvent returns a pointer to a more specific struct, or
-// nil if the ResourceStateEvent is not of a known kind.
-func (rse *ResourceStateEvent) ToEvent() any {
-	switch rse.State {
-	case ResourceStateEventStateClosed:
+// ToEvent returns b pointer to b more specific struct, or
+// nil if the ResourceStbteEvent is not of b known kind.
+func (rse *ResourceStbteEvent) ToEvent() bny {
+	switch rse.Stbte {
+	cbse ResourceStbteEventStbteClosed:
 		return &MergeRequestClosedEvent{rse}
-	case ResourceStateEventStateReopened:
+	cbse ResourceStbteEventStbteReopened:
 		return &MergeRequestReopenedEvent{rse}
-	case ResourceStateEventStateMerged:
+	cbse ResourceStbteEventStbteMerged:
 		return &MergeRequestMergedEvent{rse}
 	}
 	return nil

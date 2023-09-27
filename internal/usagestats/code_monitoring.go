@@ -1,54 +1,54 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	_ "embed"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-//go:embed code_monitoring_usage_stats.sql
-var getCodeMonitoringUsageStatisticsQuery string
+//go:embed code_monitoring_usbge_stbts.sql
+vbr getCodeMonitoringUsbgeStbtisticsQuery string
 
-func GetCodeMonitoringUsageStatistics(ctx context.Context, db database.DB) (*types.CodeMonitoringUsageStatistics, error) {
-	var stats types.CodeMonitoringUsageStatistics
-	if err := db.QueryRowContext(ctx, getCodeMonitoringUsageStatisticsQuery).Scan(
-		&stats.CodeMonitoringPageViews,
-		&stats.CreateCodeMonitorPageViews,
-		&stats.CreateCodeMonitorPageViewsWithTriggerQuery,
-		&stats.CreateCodeMonitorPageViewsWithoutTriggerQuery,
-		&stats.ManageCodeMonitorPageViews,
-		&stats.CodeMonitorEmailLinkClicked,
-		&stats.ExampleMonitorClicked,
-		&stats.GettingStartedPageViewed,
-		&stats.CreateFormSubmitted,
-		&stats.ManageFormSubmitted,
-		&stats.ManageDeleteSubmitted,
-		&stats.LogsPageViewed,
-		&stats.EmailActionsEnabled,
-		&stats.EmailActionsEnabledUniqueUsers,
-		&stats.SlackActionsEnabled,
-		&stats.SlackActionsEnabledUniqueUsers,
-		&stats.WebhookActionsEnabled,
-		&stats.WebhookActionsEnabledUniqueUsers,
-		&stats.EmailActionsTriggered,
-		&stats.EmailActionsTriggeredUniqueUsers,
-		&stats.EmailActionsErrored,
-		&stats.SlackActionsTriggered,
-		&stats.SlackActionsTriggeredUniqueUsers,
-		&stats.SlackActionsErrored,
-		&stats.WebhookActionsTriggered,
-		&stats.WebhookActionsTriggeredUniqueUsers,
-		&stats.WebhookActionsErrored,
-		&stats.TriggerRuns,
-		&stats.TriggerRunsErrored,
-		&stats.P50TriggerRunTimeSeconds,
-		&stats.P90TriggerRunTimeSeconds,
-		&stats.MonitorsEnabled,
+func GetCodeMonitoringUsbgeStbtistics(ctx context.Context, db dbtbbbse.DB) (*types.CodeMonitoringUsbgeStbtistics, error) {
+	vbr stbts types.CodeMonitoringUsbgeStbtistics
+	if err := db.QueryRowContext(ctx, getCodeMonitoringUsbgeStbtisticsQuery).Scbn(
+		&stbts.CodeMonitoringPbgeViews,
+		&stbts.CrebteCodeMonitorPbgeViews,
+		&stbts.CrebteCodeMonitorPbgeViewsWithTriggerQuery,
+		&stbts.CrebteCodeMonitorPbgeViewsWithoutTriggerQuery,
+		&stbts.MbnbgeCodeMonitorPbgeViews,
+		&stbts.CodeMonitorEmbilLinkClicked,
+		&stbts.ExbmpleMonitorClicked,
+		&stbts.GettingStbrtedPbgeViewed,
+		&stbts.CrebteFormSubmitted,
+		&stbts.MbnbgeFormSubmitted,
+		&stbts.MbnbgeDeleteSubmitted,
+		&stbts.LogsPbgeViewed,
+		&stbts.EmbilActionsEnbbled,
+		&stbts.EmbilActionsEnbbledUniqueUsers,
+		&stbts.SlbckActionsEnbbled,
+		&stbts.SlbckActionsEnbbledUniqueUsers,
+		&stbts.WebhookActionsEnbbled,
+		&stbts.WebhookActionsEnbbledUniqueUsers,
+		&stbts.EmbilActionsTriggered,
+		&stbts.EmbilActionsTriggeredUniqueUsers,
+		&stbts.EmbilActionsErrored,
+		&stbts.SlbckActionsTriggered,
+		&stbts.SlbckActionsTriggeredUniqueUsers,
+		&stbts.SlbckActionsErrored,
+		&stbts.WebhookActionsTriggered,
+		&stbts.WebhookActionsTriggeredUniqueUsers,
+		&stbts.WebhookActionsErrored,
+		&stbts.TriggerRuns,
+		&stbts.TriggerRunsErrored,
+		&stbts.P50TriggerRunTimeSeconds,
+		&stbts.P90TriggerRunTimeSeconds,
+		&stbts.MonitorsEnbbled,
 	); err != nil {
 		return nil, err
 	}
 
-	return &stats, nil
+	return &stbts, nil
 }

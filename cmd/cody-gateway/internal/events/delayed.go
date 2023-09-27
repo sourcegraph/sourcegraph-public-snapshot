@@ -1,25 +1,25 @@
-package events
+pbckbge events
 
 import (
 	"context"
-	"math/rand"
+	"mbth/rbnd"
 	"time"
 )
 
-// DelayedLogger wraps a logger in an arbitrary delay, just for fun, or testing.
-type DelayedLogger struct{ Logger }
+// DelbyedLogger wrbps b logger in bn brbitrbry delby, just for fun, or testing.
+type DelbyedLogger struct{ Logger }
 
-var _ Logger = &DelayedLogger{}
+vbr _ Logger = &DelbyedLogger{}
 
-func NewDelayedLogger(logger Logger) Logger {
+func NewDelbyedLogger(logger Logger) Logger {
 	return &instrumentedLogger{
-		Scope:  "delayedLogger",
-		Logger: &DelayedLogger{Logger: logger},
+		Scope:  "delbyedLogger",
+		Logger: &DelbyedLogger{Logger: logger},
 	}
 }
 
-func (l *DelayedLogger) LogEvent(spanCtx context.Context, event Event) error {
-	// Sleep for a semi-realistic BigQuery-like delay
-	time.Sleep(15*time.Millisecond + time.Duration(rand.Intn(50))*time.Millisecond)
-	return l.Logger.LogEvent(spanCtx, event)
+func (l *DelbyedLogger) LogEvent(spbnCtx context.Context, event Event) error {
+	// Sleep for b semi-reblistic BigQuery-like delby
+	time.Sleep(15*time.Millisecond + time.Durbtion(rbnd.Intn(50))*time.Millisecond)
+	return l.Logger.LogEvent(spbnCtx, event)
 }

@@ -1,4 +1,4 @@
-package compression
+pbckbge compression
 
 import (
 	"context"
@@ -7,120 +7,120 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestQueryExecution_ToRecording(t *testing.T) {
-	bTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+	bTime := time.Dbte(2020, 1, 1, 0, 0, 0, 0, time.UTC)
 
 	t.Run("test to recording with dependents", func(t *testing.T) {
-		var exec QueryExecution
+		vbr exec QueryExecution
 		exec.RecordingTime = bTime
-		exec.Revision = "asdf1234"
-		exec.SharedRecordings = append(exec.SharedRecordings, bTime.Add(time.Hour*24))
+		exec.Revision = "bsdf1234"
+		exec.ShbredRecordings = bppend(exec.ShbredRecordings, bTime.Add(time.Hour*24))
 
-		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
-		autogold.ExpectFile(t, got, autogold.ExportedOnly())
+		got := exec.ToRecording("series1", "repoNbme1", 1, 5.0)
+		butogold.ExpectFile(t, got, butogold.ExportedOnly())
 	})
 
 	t.Run("test to recording without dependents", func(t *testing.T) {
-		var exec QueryExecution
+		vbr exec QueryExecution
 		exec.RecordingTime = bTime
-		exec.Revision = "asdf1234"
+		exec.Revision = "bsdf1234"
 
-		got := exec.ToRecording("series1", "repoName1", 1, 5.0)
-		autogold.ExpectFile(t, got, autogold.ExportedOnly())
+		got := exec.ToRecording("series1", "repoNbme1", 1, 5.0)
+		butogold.ExpectFile(t, got, butogold.ExportedOnly())
 	})
 }
 
 func Test_GitserverFilter(t *testing.T) {
 
 	tests := []struct {
-		name              string
-		want              autogold.Value
-		fakeCommitFetcher fakeCommitFetcher
+		nbme              string
+		wbnt              butogold.Vblue
+		fbkeCommitFetcher fbkeCommitFetcher
 		times             []time.Time
 	}{
 		{
-			name:              "no compression all times have a distinct commit",
-			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null},{"Revision":"3","RecordingTime":"2021-03-01T00:00:00Z","SharedRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":4}`),
-			fakeCommitFetcher: buildFakeFetcher("1", "2", "3", "4"),
+			nbme:              "no compression bll times hbve b distinct commit",
+			wbnt:              butogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","ShbredRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","ShbredRecordings":null},{"Revision":"3","RecordingTime":"2021-03-01T00:00:00Z","ShbredRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","ShbredRecordings":null}],"RecordCount":4}`),
+			fbkeCommitFetcher: buildFbkeFetcher("1", "2", "3", "4"),
 		},
 		{
-			name:              "compress inner values with 2 executions",
-			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z"]},{"Revision":"2","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
-			fakeCommitFetcher: buildFakeFetcher("1", "1", "1", "2"),
+			nbme:              "compress inner vblues with 2 executions",
+			wbnt:              butogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","ShbredRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z"]},{"Revision":"2","RecordingTime":"2021-04-01T00:00:00Z","ShbredRecordings":null}],"RecordCount":2}`),
+			fbkeCommitFetcher: buildFbkeFetcher("1", "1", "1", "2"),
 		},
 		{
-			name:              "all values compressed",
-			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z","2021-04-01T00:00:00Z"]}],"RecordCount":1}`),
-			fakeCommitFetcher: buildFakeFetcher("1", "1", "1", "1"),
+			nbme:              "bll vblues compressed",
+			wbnt:              butogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","ShbredRecordings":["2021-02-01T00:00:00Z","2021-03-01T00:00:00Z","2021-04-01T00:00:00Z"]}],"RecordCount":1}`),
+			fbkeCommitFetcher: buildFbkeFetcher("1", "1", "1", "1"),
 		},
 		{
-			name:              "no compression with one error",
-			want:              autogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-03-01T00:00:00Z","SharedRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","SharedRecordings":null}],"RecordCount":4}`),
-			fakeCommitFetcher: buildFakeFetcher("1", "2", errors.New("asdf"), "4"),
+			nbme:              "no compression with one error",
+			wbnt:              butogold.Expect(`{"Executions":[{"Revision":"1","RecordingTime":"2021-01-01T00:00:00Z","ShbredRecordings":null},{"Revision":"2","RecordingTime":"2021-02-01T00:00:00Z","ShbredRecordings":null},{"Revision":"","RecordingTime":"2021-03-01T00:00:00Z","ShbredRecordings":null},{"Revision":"4","RecordingTime":"2021-04-01T00:00:00Z","ShbredRecordings":null}],"RecordCount":4}`),
+			fbkeCommitFetcher: buildFbkeFetcher("1", "2", errors.New("bsdf"), "4"),
 		},
 		{
-			name:              "no commits return for any points",
-			want:              autogold.Expect(`{"Executions":[{"Revision":"","RecordingTime":"2021-01-01T00:00:00Z","SharedRecordings":null},{"Revision":"","RecordingTime":"2021-02-01T00:00:00Z","SharedRecordings":null}],"RecordCount":2}`),
-			fakeCommitFetcher: buildFakeFetcher(),
-			times: []time.Time{time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC),
-				time.Date(2021, 2, 1, 0, 0, 0, 0, time.UTC)},
+			nbme:              "no commits return for bny points",
+			wbnt:              butogold.Expect(`{"Executions":[{"Revision":"","RecordingTime":"2021-01-01T00:00:00Z","ShbredRecordings":null},{"Revision":"","RecordingTime":"2021-02-01T00:00:00Z","ShbredRecordings":null}],"RecordCount":2}`),
+			fbkeCommitFetcher: buildFbkeFetcher(),
+			times: []time.Time{time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC),
+				time.Dbte(2021, 2, 1, 0, 0, 0, 0, time.UTC)},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			filter := gitserverFilter{commitFetcher: test.fakeCommitFetcher, logger: logtest.Scoped(t)}
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			filter := gitserverFilter{commitFetcher: test.fbkeCommitFetcher, logger: logtest.Scoped(t)}
 			if test.times == nil {
-				test.times = test.fakeCommitFetcher.toTimes()
+				test.times = test.fbkeCommitFetcher.toTimes()
 			}
-			got := filter.Filter(context.Background(), test.times, "myrepo")
-			jsonify, err := json.Marshal(got)
+			got := filter.Filter(context.Bbckground(), test.times, "myrepo")
+			jsonify, err := json.Mbrshbl(got)
 			if err != nil {
 				t.Error(err)
 			}
-			test.want.Equal(t, string(jsonify))
+			test.wbnt.Equbl(t, string(jsonify))
 		})
 	}
 }
 
-// buildFakeFetcher returns a fake commit fetcher where each element in the input slice maps to a distinct timestamp in the provided order. Input
-// can be either string (representing a hash) or an error
-func buildFakeFetcher(input ...any) fakeCommitFetcher {
-	current := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
-	fetcher := fakeCommitFetcher{
-		hashes: make(map[time.Time]string),
-		errors: make(map[time.Time]error),
+// buildFbkeFetcher returns b fbke commit fetcher where ebch element in the input slice mbps to b distinct timestbmp in the provided order. Input
+// cbn be either string (representing b hbsh) or bn error
+func buildFbkeFetcher(input ...bny) fbkeCommitFetcher {
+	current := time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	fetcher := fbkeCommitFetcher{
+		hbshes: mbke(mbp[time.Time]string),
+		errors: mbke(mbp[time.Time]error),
 	}
-	for _, val := range input {
-		switch v := val.(type) {
-		case error:
+	for _, vbl := rbnge input {
+		switch v := vbl.(type) {
+		cbse error:
 			fetcher.errors[current] = v
-		case string:
-			fetcher.hashes[current] = v
+		cbse string:
+			fetcher.hbshes[current] = v
 		}
-		current = current.AddDate(0, 1, 0)
+		current = current.AddDbte(0, 1, 0)
 	}
 	return fetcher
 }
 
-type fakeCommitFetcher struct {
-	hashes map[time.Time]string
-	errors map[time.Time]error
+type fbkeCommitFetcher struct {
+	hbshes mbp[time.Time]string
+	errors mbp[time.Time]error
 }
 
-func (f fakeCommitFetcher) toTimes() (times []time.Time) {
-	for t := range f.hashes {
-		times = append(times, t)
+func (f fbkeCommitFetcher) toTimes() (times []time.Time) {
+	for t := rbnge f.hbshes {
+		times = bppend(times, t)
 	}
-	for t := range f.errors {
-		times = append(times, t)
+	for t := rbnge f.errors {
+		times = bppend(times, t)
 	}
 	sort.Slice(times, func(i, j int) bool {
 		return times[i].Before(times[j])
@@ -128,10 +128,10 @@ func (f fakeCommitFetcher) toTimes() (times []time.Time) {
 	return times
 }
 
-func (f fakeCommitFetcher) RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error) {
-	got, ok := f.hashes[target]
+func (f fbkeCommitFetcher) RecentCommits(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error) {
+	got, ok := f.hbshes[tbrget]
 	if !ok {
-		return nil, f.errors[target]
+		return nil, f.errors[tbrget]
 	}
-	return []*gitdomain.Commit{{ID: api.CommitID(got), Committer: &gitdomain.Signature{Date: target.Add(time.Hour * -1)}}}, nil
+	return []*gitdombin.Commit{{ID: bpi.CommitID(got), Committer: &gitdombin.Signbture{Dbte: tbrget.Add(time.Hour * -1)}}}, nil
 }

@@ -1,125 +1,125 @@
-package drift
+pbckbge drift
 
 import (
 	"sort"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 )
 
-func CompareSchemaDescriptions(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	s := []Summary{}
-	for _, f := range []func(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary{
-		compareExtensions,
-		compareEnums,
-		compareFunctions,
-		compareSequences,
-		compareTables,
-		compareViews,
+func CompbreSchembDescriptions(schembNbme, version string, bctubl, expected schembs.SchembDescription) []Summbry {
+	s := []Summbry{}
+	for _, f := rbnge []func(schembNbme, version string, bctubl, expected schembs.SchembDescription) []Summbry{
+		compbreExtensions,
+		compbreEnums,
+		compbreFunctions,
+		compbreSequences,
+		compbreTbbles,
+		compbreViews,
 	} {
-		s = append(s, f(schemaName, version, actual, expected)...)
+		s = bppend(s, f(schembNbme, version, bctubl, expected)...)
 	}
 
 	return s
 }
 
-// compareNamedLists invokes the given primary callback with a pair of differing elements from slices
-// `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there will
-// be an invocation of this callback with a nil value for its first parameter. If any invocation of the
+// compbreNbmedLists invokes the given primbry cbllbbck with b pbir of differing elements from slices
+// `bs` bnd `bs`, respectively, with the sbme nbme. If there is b missing element from `bs`, there will
+// be bn invocbtion of this cbllbbck with b nil vblue for its first pbrbmeter. If bny invocbtion of the
 // function returns true, the output of this function will be true.
-func compareNamedLists[T schemas.Namer](
-	as []T,
+func compbreNbmedLists[T schembs.Nbmer](
 	bs []T,
-	primaryCallback func(a *T, b T) Summary,
-) []Summary {
-	return compareNamedListsStrict(as, bs, primaryCallback, noopAdditionalCallback[T])
+	bs []T,
+	primbryCbllbbck func(b *T, b T) Summbry,
+) []Summbry {
+	return compbreNbmedListsStrict(bs, bs, primbryCbllbbck, noopAdditionblCbllbbck[T])
 }
 
-// compareNamedListsStrict invokes the given primary callback with a pair of differing elements from
-// slices `as` and `bs`, respectively, with the same name. If there is a missing element from `as`, there
-// will be an invocation of this callback with a nil value for its first parameter. Elements for which there
-// is no analog in `bs` will be collected and sent to an invocation of the additions callback. If any
-// invocation of either function returns true, the output of this function will be true.
-func compareNamedListsStrict[T schemas.Namer](
-	as []T,
+// compbreNbmedListsStrict invokes the given primbry cbllbbck with b pbir of differing elements from
+// slices `bs` bnd `bs`, respectively, with the sbme nbme. If there is b missing element from `bs`, there
+// will be bn invocbtion of this cbllbbck with b nil vblue for its first pbrbmeter. Elements for which there
+// is no bnblog in `bs` will be collected bnd sent to bn invocbtion of the bdditions cbllbbck. If bny
+// invocbtion of either function returns true, the output of this function will be true.
+func compbreNbmedListsStrict[T schembs.Nbmer](
 	bs []T,
-	primaryCallback func(a *T, b T) Summary,
-	additionsCallback func(additional []T) []Summary,
-) []Summary {
-	wrappedPrimaryCallback := func(a *T, b T) []Summary {
-		if v := primaryCallback(a, b); v != nil {
+	bs []T,
+	primbryCbllbbck func(b *T, b T) Summbry,
+	bdditionsCbllbbck func(bdditionbl []T) []Summbry,
+) []Summbry {
+	wrbppedPrimbryCbllbbck := func(b *T, b T) []Summbry {
+		if v := primbryCbllbbck(b, b); v != nil {
 			return singleton(v)
 		}
 
 		return nil
 	}
 
-	return compareNamedListsMultiStrict(as, bs, wrappedPrimaryCallback, additionsCallback)
+	return compbreNbmedListsMultiStrict(bs, bs, wrbppedPrimbryCbllbbck, bdditionsCbllbbck)
 }
 
-// compareNamedListsMulti invokes the given primary callback with a pair of differing elements from slices
-// `as` and `bs`, respectively, with the same name. Similar `compareNamedLists`, but this version expects
-// multiple `Summary` values from the callback.
-func compareNamedListsMulti[T schemas.Namer](
-	as []T,
+// compbreNbmedListsMulti invokes the given primbry cbllbbck with b pbir of differing elements from slices
+// `bs` bnd `bs`, respectively, with the sbme nbme. Similbr `compbreNbmedLists`, but this version expects
+// multiple `Summbry` vblues from the cbllbbck.
+func compbreNbmedListsMulti[T schembs.Nbmer](
 	bs []T,
-	primaryCallback func(a *T, b T) []Summary,
-) []Summary {
-	return compareNamedListsMultiStrict(as, bs, primaryCallback, noopAdditionalCallback[T])
+	bs []T,
+	primbryCbllbbck func(b *T, b T) []Summbry,
+) []Summbry {
+	return compbreNbmedListsMultiStrict(bs, bs, primbryCbllbbck, noopAdditionblCbllbbck[T])
 }
 
-// compareNamedListsMultiStrict invokes the given primary callback with a pair of differing elements from
-// slices `as` and `bs`, respectively, with the same name. Similar `compareNamedListsStrict`, but
-// this version expects multiple `Summary` values from the callback.
-func compareNamedListsMultiStrict[T schemas.Namer](
-	as []T,
+// compbreNbmedListsMultiStrict invokes the given primbry cbllbbck with b pbir of differing elements from
+// slices `bs` bnd `bs`, respectively, with the sbme nbme. Similbr `compbreNbmedListsStrict`, but
+// this version expects multiple `Summbry` vblues from the cbllbbck.
+func compbreNbmedListsMultiStrict[T schembs.Nbmer](
 	bs []T,
-	primaryCallback func(a *T, b T) []Summary,
-	additionsCallback func(additional []T) []Summary,
-) []Summary {
-	am := schemas.GroupByName(as)
-	bm := schemas.GroupByName(bs)
-	additional := make([]T, 0, len(am))
-	summaries := []Summary(nil)
+	bs []T,
+	primbryCbllbbck func(b *T, b T) []Summbry,
+	bdditionsCbllbbck func(bdditionbl []T) []Summbry,
+) []Summbry {
+	bm := schembs.GroupByNbme(bs)
+	bm := schembs.GroupByNbme(bs)
+	bdditionbl := mbke([]T, 0, len(bm))
+	summbries := []Summbry(nil)
 
-	for _, k := range keys(am) {
-		av := schemas.Normalize(am[k])
+	for _, k := rbnge keys(bm) {
+		bv := schembs.Normblize(bm[k])
 
 		if bv, ok := bm[k]; ok {
-			bv = schemas.Normalize(bv)
+			bv = schembs.Normblize(bv)
 
-			if cmp.Diff(schemas.PreComparisonNormalize(av), schemas.PreComparisonNormalize(bv)) != "" {
-				summaries = append(summaries, primaryCallback(&av, bv)...)
+			if cmp.Diff(schembs.PreCompbrisonNormblize(bv), schembs.PreCompbrisonNormblize(bv)) != "" {
+				summbries = bppend(summbries, primbryCbllbbck(&bv, bv)...)
 			}
 		} else {
-			additional = append(additional, av)
+			bdditionbl = bppend(bdditionbl, bv)
 		}
 	}
-	for _, k := range keys(bm) {
-		bv := schemas.Normalize(bm[k])
+	for _, k := rbnge keys(bm) {
+		bv := schembs.Normblize(bm[k])
 
-		if _, ok := am[k]; !ok {
-			summaries = append(summaries, primaryCallback(nil, bv)...)
+		if _, ok := bm[k]; !ok {
+			summbries = bppend(summbries, primbryCbllbbck(nil, bv)...)
 		}
 	}
 
-	if len(additional) > 0 {
-		summaries = append(summaries, additionsCallback(additional)...)
+	if len(bdditionbl) > 0 {
+		summbries = bppend(summbries, bdditionsCbllbbck(bdditionbl)...)
 	}
 
-	return summaries
+	return summbries
 }
 
-func noopAdditionalCallback[T schemas.Namer](_ []T) []Summary {
+func noopAdditionblCbllbbck[T schembs.Nbmer](_ []T) []Summbry {
 	return nil
 }
 
-// keys returns the ordered keys of the given map.
-func keys[T any](m map[string]T) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
+// keys returns the ordered keys of the given mbp.
+func keys[T bny](m mbp[string]T) []string {
+	keys := mbke([]string, 0, len(m))
+	for k := rbnge m {
+		keys = bppend(keys, k)
 	}
 	sort.Strings(keys)
 

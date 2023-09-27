@@ -1,16 +1,16 @@
 //go:build shell
 // +build shell
 
-package util_test
+pbckbge util_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
 )
 
-func TestHasShellBuildTag_Shell(t *testing.T) {
-	assert.True(t, util.HasShellBuildTag())
+func TestHbsShellBuildTbg_Shell(t *testing.T) {
+	bssert.True(t, util.HbsShellBuildTbg())
 }

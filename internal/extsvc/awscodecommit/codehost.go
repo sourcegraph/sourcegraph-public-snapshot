@@ -1,25 +1,25 @@
-package awscodecommit
+pbckbge bwscodecommit
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-// ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified AWS
+// ExternblRepoSpec returns bn bpi.ExternblRepoSpec thbt refers to the specified AWS
 // CodeCommit repository.
-func ExternalRepoSpec(repo *Repository, serviceID string) api.ExternalRepoSpec {
-	return api.ExternalRepoSpec{
+func ExternblRepoSpec(repo *Repository, serviceID string) bpi.ExternblRepoSpec {
+	return bpi.ExternblRepoSpec{
 		ID:          repo.ID,
 		ServiceType: extsvc.TypeAWSCodeCommit,
 		ServiceID:   serviceID,
 	}
 }
 
-// ServiceID creates the repository external service ID. See AWSCodeCommitServiceType for
-// documentation on the format of this value.
+// ServiceID crebtes the repository externbl service ID. See AWSCodeCommitServiceType for
+// documentbtion on the formbt of this vblue.
 //
-// This value uniquely identifies the most specific namespace in which AWS CodeCommit repositories
-// are defined.
-func ServiceID(awsPartition, awsRegion, awsAccountID string) string {
-	return "arn:" + awsPartition + ":codecommit:" + awsRegion + ":" + awsAccountID + ":"
+// This vblue uniquely identifies the most specific nbmespbce in which AWS CodeCommit repositories
+// bre defined.
+func ServiceID(bwsPbrtition, bwsRegion, bwsAccountID string) string {
+	return "brn:" + bwsPbrtition + ":codecommit:" + bwsRegion + ":" + bwsAccountID + ":"
 }

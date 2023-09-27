@@ -1,217 +1,217 @@
-package http
+pbckbge http
 
 import (
 	"bytes"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// EventMatch is an interface which only the top level match event types
-// implement. Use this for your results slice rather than interface{}.
-type EventMatch interface {
-	// private marker method so only top level event match types are allowed.
-	eventMatch()
+// EventMbtch is bn interfbce which only the top level mbtch event types
+// implement. Use this for your results slice rbther thbn interfbce{}.
+type EventMbtch interfbce {
+	// privbte mbrker method so only top level event mbtch types bre bllowed.
+	eventMbtch()
 }
 
-// EventContentMatch is a subset of zoekt.FileMatch for our Event API.
-type EventContentMatch struct {
-	// Type is always FileMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+// EventContentMbtch is b subset of zoekt.FileMbtch for our Event API.
+type EventContentMbtch struct {
+	// Type is blwbys FileMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
-	Path            string           `json:"path"`
-	PathMatches     []Range          `json:"pathMatches,omitempty"`
+	Pbth            string           `json:"pbth"`
+	PbthMbtches     []Rbnge          `json:"pbthMbtches,omitempty"`
 	RepositoryID    int32            `json:"repositoryID"`
 	Repository      string           `json:"repository"`
-	RepoStars       int              `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time       `json:"repoLastFetched,omitempty"`
-	Branches        []string         `json:"branches,omitempty"`
+	RepoStbrs       int              `json:"repoStbrs,omitempty"`
+	RepoLbstFetched *time.Time       `json:"repoLbstFetched,omitempty"`
+	Brbnches        []string         `json:"brbnches,omitempty"`
 	Commit          string           `json:"commit,omitempty"`
-	Hunks           []DecoratedHunk  `json:"hunks"`
-	LineMatches     []EventLineMatch `json:"lineMatches,omitempty"`
-	ChunkMatches    []ChunkMatch     `json:"chunkMatches,omitempty"`
+	Hunks           []DecorbtedHunk  `json:"hunks"`
+	LineMbtches     []EventLineMbtch `json:"lineMbtches,omitempty"`
+	ChunkMbtches    []ChunkMbtch     `json:"chunkMbtches,omitempty"`
 	Debug           string           `json:"debug,omitempty"`
 }
 
-func (e *EventContentMatch) eventMatch() {}
+func (e *EventContentMbtch) eventMbtch() {}
 
-// EventPathMatch is a subset of zoekt.FileMatch for our Event API.
-// It is used for result.FileMatch results with no line matches and
-// no symbol matches, indicating it represents a match of the file itself
-// and not its content.
-type EventPathMatch struct {
-	// Type is always PathMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+// EventPbthMbtch is b subset of zoekt.FileMbtch for our Event API.
+// It is used for result.FileMbtch results with no line mbtches bnd
+// no symbol mbtches, indicbting it represents b mbtch of the file itself
+// bnd not its content.
+type EventPbthMbtch struct {
+	// Type is blwbys PbthMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
-	Path            string     `json:"path"`
-	PathMatches     []Range    `json:"pathMatches,omitempty"`
+	Pbth            string     `json:"pbth"`
+	PbthMbtches     []Rbnge    `json:"pbthMbtches,omitempty"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Branches        []string   `json:"branches,omitempty"`
+	RepoStbrs       int        `json:"repoStbrs,omitempty"`
+	RepoLbstFetched *time.Time `json:"repoLbstFetched,omitempty"`
+	Brbnches        []string   `json:"brbnches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
 	Debug           string     `json:"debug,omitempty"`
 }
 
-func (e *EventPathMatch) eventMatch() {}
+func (e *EventPbthMbtch) eventMbtch() {}
 
-type DecoratedHunk struct {
-	Content   DecoratedContent `json:"content"`
-	LineStart int              `json:"lineStart"`
+type DecorbtedHunk struct {
+	Content   DecorbtedContent `json:"content"`
+	LineStbrt int              `json:"lineStbrt"`
 	LineCount int              `json:"lineCount"`
-	Matches   []Range          `json:"matches,omitempty"`
+	Mbtches   []Rbnge          `json:"mbtches,omitempty"`
 }
 
-type Range struct {
-	Start Location `json:"start"`
-	End   Location `json:"end"`
+type Rbnge struct {
+	Stbrt Locbtion `json:"stbrt"`
+	End   Locbtion `json:"end"`
 }
 
-type Location struct {
+type Locbtion struct {
 	Offset int `json:"offset"`
 	Line   int `json:"line"`
 	Column int `json:"column"`
 }
 
-type DecoratedContent struct {
-	Plaintext string `json:"plaintext,omitempty"`
+type DecorbtedContent struct {
+	Plbintext string `json:"plbintext,omitempty"`
 	HTML      string `json:"html,omitempty"`
 }
 
-type ChunkMatch struct {
+type ChunkMbtch struct {
 	Content      string   `json:"content"`
-	ContentStart Location `json:"contentStart"`
-	Ranges       []Range  `json:"ranges"`
+	ContentStbrt Locbtion `json:"contentStbrt"`
+	Rbnges       []Rbnge  `json:"rbnges"`
 }
 
-// EventLineMatch is a subset of zoekt.LineMatch for our Event API.
-type EventLineMatch struct {
+// EventLineMbtch is b subset of zoekt.LineMbtch for our Event API.
+type EventLineMbtch struct {
 	Line             string     `json:"line"`
 	LineNumber       int32      `json:"lineNumber"`
 	OffsetAndLengths [][2]int32 `json:"offsetAndLengths"`
 }
 
-// EventRepoMatch is a subset of zoekt.FileMatch for our Event API.
-type EventRepoMatch struct {
-	// Type is always RepoMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+// EventRepoMbtch is b subset of zoekt.FileMbtch for our Event API.
+type EventRepoMbtch struct {
+	// Type is blwbys RepoMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
 	RepositoryID       int32              `json:"repositoryID"`
 	Repository         string             `json:"repository"`
-	RepositoryMatches  []Range            `json:"repositoryMatches,omitempty"`
-	Branches           []string           `json:"branches,omitempty"`
-	RepoStars          int                `json:"repoStars,omitempty"`
-	RepoLastFetched    *time.Time         `json:"repoLastFetched,omitempty"`
+	RepositoryMbtches  []Rbnge            `json:"repositoryMbtches,omitempty"`
+	Brbnches           []string           `json:"brbnches,omitempty"`
+	RepoStbrs          int                `json:"repoStbrs,omitempty"`
+	RepoLbstFetched    *time.Time         `json:"repoLbstFetched,omitempty"`
 	Description        string             `json:"description,omitempty"`
-	DescriptionMatches []Range            `json:"descriptionMatches,omitempty"`
+	DescriptionMbtches []Rbnge            `json:"descriptionMbtches,omitempty"`
 	Fork               bool               `json:"fork,omitempty"`
-	Archived           bool               `json:"archived,omitempty"`
-	Private            bool               `json:"private,omitempty"`
-	Metadata           map[string]*string `json:"metadata,omitempty"`
+	Archived           bool               `json:"brchived,omitempty"`
+	Privbte            bool               `json:"privbte,omitempty"`
+	Metbdbtb           mbp[string]*string `json:"metbdbtb,omitempty"`
 }
 
-func (e *EventRepoMatch) eventMatch() {}
+func (e *EventRepoMbtch) eventMbtch() {}
 
-// EventSymbolMatch is EventFileMatch but with Symbols instead of LineMatches
-type EventSymbolMatch struct {
-	// Type is always SymbolMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+// EventSymbolMbtch is EventFileMbtch but with Symbols instebd of LineMbtches
+type EventSymbolMbtch struct {
+	// Type is blwbys SymbolMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
-	Path            string     `json:"path"`
+	Pbth            string     `json:"pbth"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
-	Branches        []string   `json:"branches,omitempty"`
+	RepoStbrs       int        `json:"repoStbrs,omitempty"`
+	RepoLbstFetched *time.Time `json:"repoLbstFetched,omitempty"`
+	Brbnches        []string   `json:"brbnches,omitempty"`
 	Commit          string     `json:"commit,omitempty"`
 
 	Symbols []Symbol `json:"symbols"`
 }
 
-func (e *EventSymbolMatch) eventMatch() {}
+func (e *EventSymbolMbtch) eventMbtch() {}
 
 type Symbol struct {
 	URL           string `json:"url"`
-	Name          string `json:"name"`
-	ContainerName string `json:"containerName"`
+	Nbme          string `json:"nbme"`
+	ContbinerNbme string `json:"contbinerNbme"`
 	Kind          string `json:"kind"`
 	Line          int32  `json:"line"`
 }
 
-// EventCommitMatch is the generic results interface from GQL. There is a lot
-// of potential data that may be useful here, and some thought needs to be put
-// into what is actually useful in a commit result / or if we should have a
-// "type" for that.
-type EventCommitMatch struct {
-	// Type is always CommitMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+// EventCommitMbtch is the generic results interfbce from GQL. There is b lot
+// of potentibl dbtb thbt mby be useful here, bnd some thought needs to be put
+// into whbt is bctublly useful in b commit result / or if we should hbve b
+// "type" for thbt.
+type EventCommitMbtch struct {
+	// Type is blwbys CommitMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
-	Label           string     `json:"label"`
+	Lbbel           string     `json:"lbbel"`
 	URL             string     `json:"url"`
-	Detail          string     `json:"detail"`
+	Detbil          string     `json:"detbil"`
 	RepositoryID    int32      `json:"repositoryID"`
 	Repository      string     `json:"repository"`
 	OID             string     `json:"oid"`
-	Message         string     `json:"message"`
-	AuthorName      string     `json:"authorName"`
-	AuthorDate      time.Time  `json:"authorDate"`
-	CommitterName   string     `json:"committerName"`
-	CommitterDate   time.Time  `json:"committerDate"`
-	RepoStars       int        `json:"repoStars,omitempty"`
-	RepoLastFetched *time.Time `json:"repoLastFetched,omitempty"`
+	Messbge         string     `json:"messbge"`
+	AuthorNbme      string     `json:"buthorNbme"`
+	AuthorDbte      time.Time  `json:"buthorDbte"`
+	CommitterNbme   string     `json:"committerNbme"`
+	CommitterDbte   time.Time  `json:"committerDbte"`
+	RepoStbrs       int        `json:"repoStbrs,omitempty"`
+	RepoLbstFetched *time.Time `json:"repoLbstFetched,omitempty"`
 	Content         string     `json:"content"`
-	// [line, character, length]
-	Ranges [][3]int32 `json:"ranges"`
+	// [line, chbrbcter, length]
+	Rbnges [][3]int32 `json:"rbnges"`
 }
 
-func (e *EventCommitMatch) eventMatch() {}
+func (e *EventCommitMbtch) eventMbtch() {}
 
-type EventPersonMatch struct {
-	// Type is always PersonMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+type EventPersonMbtch struct {
+	// Type is blwbys PersonMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
-	Handle string `json:"handle"`
-	Email  string `json:"email"`
+	Hbndle string `json:"hbndle"`
+	Embil  string `json:"embil"`
 
-	// User will not be set if no user was matched.
-	User *UserMetadata `json:"user,omitempty"`
+	// User will not be set if no user wbs mbtched.
+	User *UserMetbdbtb `json:"user,omitempty"`
 }
 
-type UserMetadata struct {
-	Username    string `json:"username"`
-	DisplayName string `json:"displayName"`
-	AvatarURL   string `json:"avatarURL"`
+type UserMetbdbtb struct {
+	Usernbme    string `json:"usernbme"`
+	DisplbyNbme string `json:"displbyNbme"`
+	AvbtbrURL   string `json:"bvbtbrURL"`
 }
 
-func (e *EventPersonMatch) eventMatch() {}
+func (e *EventPersonMbtch) eventMbtch() {}
 
-type EventTeamMatch struct {
-	// Type is always TeamMatchType. Included here for marshalling.
-	Type MatchType `json:"type"`
+type EventTebmMbtch struct {
+	// Type is blwbys TebmMbtchType. Included here for mbrshblling.
+	Type MbtchType `json:"type"`
 
-	Handle string `json:"handle"`
-	Email  string `json:"email"`
+	Hbndle string `json:"hbndle"`
+	Embil  string `json:"embil"`
 
-	// The following are a subset of types.Team fields.
-	Name        string `json:"name"`
-	DisplayName string `json:"displayName"`
+	// The following bre b subset of types.Tebm fields.
+	Nbme        string `json:"nbme"`
+	DisplbyNbme string `json:"displbyNbme"`
 }
 
-func (e *EventTeamMatch) eventMatch() {}
+func (e *EventTebmMbtch) eventMbtch() {}
 
-// EventFilter is a suggestion for a search filter. Currently has a 1-1
-// correspondance with the SearchFilter graphql type.
+// EventFilter is b suggestion for b sebrch filter. Currently hbs b 1-1
+// correspondbnce with the SebrchFilter grbphql type.
 type EventFilter struct {
-	Value    string `json:"value"`
-	Label    string `json:"label"`
+	Vblue    string `json:"vblue"`
+	Lbbel    string `json:"lbbel"`
 	Count    int    `json:"count"`
 	LimitHit bool   `json:"limitHit"`
 	Kind     string `json:"kind"`
 }
 
-// EventAlert is GQL.SearchAlert. It replaces when sent to match existing
-// behaviour.
+// EventAlert is GQL.SebrchAlert. It replbces when sent to mbtch existing
+// behbviour.
 type EventAlert struct {
 	Title           string             `json:"title"`
 	Description     string             `json:"description,omitempty"`
@@ -219,74 +219,74 @@ type EventAlert struct {
 	ProposedQueries []QueryDescription `json:"proposedQueries"`
 }
 
-// QueryDescription describes queries emitted in alerts.
+// QueryDescription describes queries emitted in blerts.
 type QueryDescription struct {
 	Description string       `json:"description,omitempty"`
 	Query       string       `json:"query"`
-	Annotations []Annotation `json:"annotations,omitempty"`
+	Annotbtions []Annotbtion `json:"bnnotbtions,omitempty"`
 }
 
-type Annotation struct {
-	Name  string `json:"name"`
-	Value string `json:"value"`
+type Annotbtion struct {
+	Nbme  string `json:"nbme"`
+	Vblue string `json:"vblue"`
 }
 
-// EventError emulates a JavaScript error with a message property
-// as is returned when the search encounters an error.
+// EventError emulbtes b JbvbScript error with b messbge property
+// bs is returned when the sebrch encounters bn error.
 type EventError struct {
-	Message string `json:"message"`
+	Messbge string `json:"messbge"`
 }
 
-type MatchType int
+type MbtchType int
 
 const (
-	ContentMatchType MatchType = iota
-	RepoMatchType
-	SymbolMatchType
-	CommitMatchType
-	PathMatchType
-	PersonMatchType
-	TeamMatchType
+	ContentMbtchType MbtchType = iotb
+	RepoMbtchType
+	SymbolMbtchType
+	CommitMbtchType
+	PbthMbtchType
+	PersonMbtchType
+	TebmMbtchType
 )
 
-func (t MatchType) MarshalJSON() ([]byte, error) {
+func (t MbtchType) MbrshblJSON() ([]byte, error) {
 	switch t {
-	case ContentMatchType:
+	cbse ContentMbtchType:
 		return []byte(`"content"`), nil
-	case RepoMatchType:
+	cbse RepoMbtchType:
 		return []byte(`"repo"`), nil
-	case SymbolMatchType:
+	cbse SymbolMbtchType:
 		return []byte(`"symbol"`), nil
-	case CommitMatchType:
+	cbse CommitMbtchType:
 		return []byte(`"commit"`), nil
-	case PathMatchType:
-		return []byte(`"path"`), nil
-	case PersonMatchType:
+	cbse PbthMbtchType:
+		return []byte(`"pbth"`), nil
+	cbse PersonMbtchType:
 		return []byte(`"person"`), nil
-	case TeamMatchType:
-		return []byte(`"team"`), nil
-	default:
-		return nil, errors.Errorf("unknown MatchType: %d", t)
+	cbse TebmMbtchType:
+		return []byte(`"tebm"`), nil
+	defbult:
+		return nil, errors.Errorf("unknown MbtchType: %d", t)
 	}
 }
 
-func (t *MatchType) UnmarshalJSON(b []byte) error {
-	if bytes.Equal(b, []byte(`"content"`)) {
-		*t = ContentMatchType
-	} else if bytes.Equal(b, []byte(`"repo"`)) {
-		*t = RepoMatchType
-	} else if bytes.Equal(b, []byte(`"symbol"`)) {
-		*t = SymbolMatchType
-	} else if bytes.Equal(b, []byte(`"commit"`)) {
-		*t = CommitMatchType
-	} else if bytes.Equal(b, []byte(`"path"`)) {
-		*t = PathMatchType
-	} else if bytes.Equal(b, []byte(`"person"`)) {
-		*t = PersonMatchType
-	} else if bytes.Equal(b, []byte(`"team"`)) {
-		*t = TeamMatchType
+func (t *MbtchType) UnmbrshblJSON(b []byte) error {
+	if bytes.Equbl(b, []byte(`"content"`)) {
+		*t = ContentMbtchType
+	} else if bytes.Equbl(b, []byte(`"repo"`)) {
+		*t = RepoMbtchType
+	} else if bytes.Equbl(b, []byte(`"symbol"`)) {
+		*t = SymbolMbtchType
+	} else if bytes.Equbl(b, []byte(`"commit"`)) {
+		*t = CommitMbtchType
+	} else if bytes.Equbl(b, []byte(`"pbth"`)) {
+		*t = PbthMbtchType
+	} else if bytes.Equbl(b, []byte(`"person"`)) {
+		*t = PersonMbtchType
+	} else if bytes.Equbl(b, []byte(`"tebm"`)) {
+		*t = TebmMbtchType
 	} else {
-		return errors.Errorf("unknown MatchType: %s", b)
+		return errors.Errorf("unknown MbtchType: %s", b)
 	}
 	return nil
 }

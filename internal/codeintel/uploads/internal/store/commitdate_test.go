@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,145 +6,145 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestGetOldestCommitDate(t *testing.T) {
+func TestGetOldestCommitDbte(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(time.Minute)
 	t3 := t1.Add(time.Minute * 4)
 	t4 := t1.Add(time.Minute * 6)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, State: "completed"},
-		shared.Upload{ID: 2, State: "completed"},
-		shared.Upload{ID: 3, State: "completed"},
-		shared.Upload{ID: 4, State: "errored"},
-		shared.Upload{ID: 5, State: "completed"},
-		shared.Upload{ID: 6, State: "completed", RepositoryID: 51},
-		shared.Upload{ID: 7, State: "completed", RepositoryID: 51},
-		shared.Upload{ID: 8, State: "completed", RepositoryID: 51},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, Stbte: "completed"},
+		shbred.Uplobd{ID: 2, Stbte: "completed"},
+		shbred.Uplobd{ID: 3, Stbte: "completed"},
+		shbred.Uplobd{ID: 4, Stbte: "errored"},
+		shbred.Uplobd{ID: 5, Stbte: "completed"},
+		shbred.Uplobd{ID: 6, Stbte: "completed", RepositoryID: 51},
+		shbred.Uplobd{ID: 7, Stbte: "completed", RepositoryID: 51},
+		shbred.Uplobd{ID: 8, Stbte: "completed", RepositoryID: 51},
 	)
 
-	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(3), "-infinity"); err != nil {
-		t.Fatalf("unexpected error updating commit date %s", err)
+	if err := store.UpdbteCommittedAt(context.Bbckground(), 50, mbkeCommit(3), "-infinity"); err != nil {
+		t.Fbtblf("unexpected error updbting commit dbte %s", err)
 	}
 
 	// Repo 50
-	for commit, committedAtStr := range map[string]string{
-		makeCommit(1): t3.Format(time.RFC3339),
-		makeCommit(2): t4.Format(time.RFC3339),
-		makeCommit(3): "-infinity",
-		makeCommit(4): t1.Format(time.RFC3339),
-		// commit for upload 5 is initially missing
+	for commit, committedAtStr := rbnge mbp[string]string{
+		mbkeCommit(1): t3.Formbt(time.RFC3339),
+		mbkeCommit(2): t4.Formbt(time.RFC3339),
+		mbkeCommit(3): "-infinity",
+		mbkeCommit(4): t1.Formbt(time.RFC3339),
+		// commit for uplobd 5 is initiblly missing
 	} {
-		if err := store.UpdateCommittedAt(context.Background(), 50, commit, committedAtStr); err != nil {
-			t.Fatalf("unexpected error updating commit date %s", err)
+		if err := store.UpdbteCommittedAt(context.Bbckground(), 50, commit, committedAtStr); err != nil {
+			t.Fbtblf("unexpected error updbting commit dbte %s", err)
 		}
 	}
 
-	if _, _, err := store.GetOldestCommitDate(context.Background(), 50); err == nil {
-		t.Fatalf("expected error getting oldest commit date")
-	} else if !errors.Is(err, &backfillIncompleteError{50}) {
-		t.Fatalf("unexpected backfill error, got %q", err)
+	if _, _, err := store.GetOldestCommitDbte(context.Bbckground(), 50); err == nil {
+		t.Fbtblf("expected error getting oldest commit dbte")
+	} else if !errors.Is(err, &bbckfillIncompleteError{50}) {
+		t.Fbtblf("unexpected bbckfill error, got %q", err)
 	}
 
-	// Finish backfill
-	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(5), "-infinity"); err != nil {
-		t.Fatalf("unexpected error updating commit date %s", err)
+	// Finish bbckfill
+	if err := store.UpdbteCommittedAt(context.Bbckground(), 50, mbkeCommit(5), "-infinity"); err != nil {
+		t.Fbtblf("unexpected error updbting commit dbte %s", err)
 	}
 
-	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 50); err != nil {
-		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	if commitDbte, ok, err := store.GetOldestCommitDbte(context.Bbckground(), 50); err != nil {
+		t.Fbtblf("unexpected error getting oldest commit dbte: %s", err)
 	} else if !ok {
-		t.Fatalf("expected commit date for repository")
-	} else if !commitDate.Equal(t3) {
-		t.Fatalf("unexpected commit date. want=%s have=%s", t3, commitDate)
+		t.Fbtblf("expected commit dbte for repository")
+	} else if !commitDbte.Equbl(t3) {
+		t.Fbtblf("unexpected commit dbte. wbnt=%s hbve=%s", t3, commitDbte)
 	}
 
 	// Repo 51
-	for commit, committedAtStr := range map[string]string{
-		makeCommit(6): t2.Format(time.RFC3339),
-		makeCommit(7): "-infinity",
-		makeCommit(8): "-infinity",
+	for commit, committedAtStr := rbnge mbp[string]string{
+		mbkeCommit(6): t2.Formbt(time.RFC3339),
+		mbkeCommit(7): "-infinity",
+		mbkeCommit(8): "-infinity",
 	} {
-		if err := store.UpdateCommittedAt(context.Background(), 51, commit, committedAtStr); err != nil {
-			t.Fatalf("unexpected error updating commit date %s", err)
+		if err := store.UpdbteCommittedAt(context.Bbckground(), 51, commit, committedAtStr); err != nil {
+			t.Fbtblf("unexpected error updbting commit dbte %s", err)
 		}
 	}
 
-	if commitDate, ok, err := store.GetOldestCommitDate(context.Background(), 51); err != nil {
-		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	if commitDbte, ok, err := store.GetOldestCommitDbte(context.Bbckground(), 51); err != nil {
+		t.Fbtblf("unexpected error getting oldest commit dbte: %s", err)
 	} else if !ok {
-		t.Fatalf("expected commit date for repository")
-	} else if !commitDate.Equal(t2) {
-		t.Fatalf("unexpected commit date. want=%s have=%s", t2, commitDate)
+		t.Fbtblf("expected commit dbte for repository")
+	} else if !commitDbte.Equbl(t2) {
+		t.Fbtblf("unexpected commit dbte. wbnt=%s hbve=%s", t2, commitDbte)
 	}
 
 	// Missing repository
-	if _, ok, err := store.GetOldestCommitDate(context.Background(), 52); err != nil {
-		t.Fatalf("unexpected error getting oldest commit date: %s", err)
+	if _, ok, err := store.GetOldestCommitDbte(context.Bbckground(), 52); err != nil {
+		t.Fbtblf("unexpected error getting oldest commit dbte: %s", err)
 	} else if ok {
-		t.Fatalf("unexpected commit date for repository")
+		t.Fbtblf("unexpected commit dbte for repository")
 	}
 }
 
 func TestSourcedCommitsWithoutCommittedAt(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, RepositoryID: 50, Commit: makeCommit(1), State: "completed"},
-		shared.Upload{ID: 2, RepositoryID: 50, Commit: makeCommit(1), State: "completed", Root: "sub/"},
-		shared.Upload{ID: 3, RepositoryID: 51, Commit: makeCommit(4), State: "completed"},
-		shared.Upload{ID: 4, RepositoryID: 51, Commit: makeCommit(5), State: "completed"},
-		shared.Upload{ID: 5, RepositoryID: 52, Commit: makeCommit(7), State: "completed"},
-		shared.Upload{ID: 6, RepositoryID: 52, Commit: makeCommit(8), State: "completed"},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, RepositoryID: 50, Commit: mbkeCommit(1), Stbte: "completed"},
+		shbred.Uplobd{ID: 2, RepositoryID: 50, Commit: mbkeCommit(1), Stbte: "completed", Root: "sub/"},
+		shbred.Uplobd{ID: 3, RepositoryID: 51, Commit: mbkeCommit(4), Stbte: "completed"},
+		shbred.Uplobd{ID: 4, RepositoryID: 51, Commit: mbkeCommit(5), Stbte: "completed"},
+		shbred.Uplobd{ID: 5, RepositoryID: 52, Commit: mbkeCommit(7), Stbte: "completed"},
+		shbred.Uplobd{ID: 6, RepositoryID: 52, Commit: mbkeCommit(8), Stbte: "completed"},
 	)
 
-	sourcedCommits, err := store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
+	sourcedCommits, err := store.SourcedCommitsWithoutCommittedAt(context.Bbckground(), 5)
 	if err != nil {
-		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
+		t.Fbtblf("unexpected error getting stble sourced commits: %s", err)
 	}
 	expectedCommits := []SourcedCommits{
-		{RepositoryID: 50, RepositoryName: "n-50", Commits: []string{makeCommit(1)}},
-		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(4), makeCommit(5)}},
-		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
+		{RepositoryID: 50, RepositoryNbme: "n-50", Commits: []string{mbkeCommit(1)}},
+		{RepositoryID: 51, RepositoryNbme: "n-51", Commits: []string{mbkeCommit(4), mbkeCommit(5)}},
+		{RepositoryID: 52, RepositoryNbme: "n-52", Commits: []string{mbkeCommit(7), mbkeCommit(8)}},
 	}
 	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+		t.Errorf("unexpected sourced commits (-wbnt +got):\n%s", diff)
 	}
 
-	// Update commits 1 and 4
-	if err := store.UpdateCommittedAt(context.Background(), 50, makeCommit(1), now.Format(time.RFC3339)); err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	// Updbte commits 1 bnd 4
+	if err := store.UpdbteCommittedAt(context.Bbckground(), 50, mbkeCommit(1), now.Formbt(time.RFC3339)); err != nil {
+		t.Fbtblf("unexpected error refreshing commit resolvbbility: %s", err)
 	}
-	if err := store.UpdateCommittedAt(context.Background(), 51, makeCommit(4), now.Format(time.RFC3339)); err != nil {
-		t.Fatalf("unexpected error refreshing commit resolvability: %s", err)
+	if err := store.UpdbteCommittedAt(context.Bbckground(), 51, mbkeCommit(4), now.Formbt(time.RFC3339)); err != nil {
+		t.Fbtblf("unexpected error refreshing commit resolvbbility: %s", err)
 	}
 
-	sourcedCommits, err = store.SourcedCommitsWithoutCommittedAt(context.Background(), 5)
+	sourcedCommits, err = store.SourcedCommitsWithoutCommittedAt(context.Bbckground(), 5)
 	if err != nil {
-		t.Fatalf("unexpected error getting stale sourced commits: %s", err)
+		t.Fbtblf("unexpected error getting stble sourced commits: %s", err)
 	}
 	expectedCommits = []SourcedCommits{
-		{RepositoryID: 51, RepositoryName: "n-51", Commits: []string{makeCommit(5)}},
-		{RepositoryID: 52, RepositoryName: "n-52", Commits: []string{makeCommit(7), makeCommit(8)}},
+		{RepositoryID: 51, RepositoryNbme: "n-51", Commits: []string{mbkeCommit(5)}},
+		{RepositoryID: 52, RepositoryNbme: "n-52", Commits: []string{mbkeCommit(7), mbkeCommit(8)}},
 	}
 	if diff := cmp.Diff(expectedCommits, sourcedCommits); diff != "" {
-		t.Errorf("unexpected sourced commits (-want +got):\n%s", diff)
+		t.Errorf("unexpected sourced commits (-wbnt +got):\n%s", diff)
 	}
 }

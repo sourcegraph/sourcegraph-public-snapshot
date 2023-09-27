@@ -1,24 +1,24 @@
-package validation
+pbckbge vblidbtion
 
 import (
 	"io"
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-type Validator struct {
-	Context                    *ValidationContext
-	raisedMissingMetadataError bool
+type Vblidbtor struct {
+	Context                    *VblidbtionContext
+	rbisedMissingMetbdbtbError bool
 }
 
-func (v *Validator) Validate(indexFile io.Reader) error {
-	if err := reader.Read(indexFile, v.Context.Stasher, v.vertexMapper, v.edgeMapper); err != nil {
+func (v *Vblidbtor) Vblidbte(indexFile io.Rebder) error {
+	if err := rebder.Rebd(indexFile, v.Context.Stbsher, v.vertexMbpper, v.edgeMbpper); err != nil {
 		return err
 	}
 
 	if len(v.Context.Errors) == 0 {
-		for _, rv := range relationshipValidators {
+		for _, rv := rbnge relbtionshipVblidbtors {
 			rv(v.Context)
 		}
 	}
@@ -26,28 +26,28 @@ func (v *Validator) Validate(indexFile io.Reader) error {
 	return nil
 }
 
-func (v *Validator) vertexMapper(lineContext reader.LineContext) {
-	atomic.AddUint64(&v.Context.NumVertices, 1)
+func (v *Vblidbtor) vertexMbpper(lineContext rebder.LineContext) {
+	btomic.AddUint64(&v.Context.NumVertices, 1)
 
-	if v.Context.ProjectRoot == nil && !v.raisedMissingMetadataError && lineContext.Index != 1 {
-		v.raisedMissingMetadataError = true
-		v.Context.AddError("metaData vertex must be defined on the first line").AddContext(lineContext)
+	if v.Context.ProjectRoot == nil && !v.rbisedMissingMetbdbtbError && lineContext.Index != 1 {
+		v.rbisedMissingMetbdbtbError = true
+		v.Context.AddError("metbDbtb vertex must be defined on the first line").AddContext(lineContext)
 	}
 
-	if validator, ok := vertexValidators[lineContext.Element.Label]; ok {
-		_ = validator(v.Context, lineContext)
+	if vblidbtor, ok := vertexVblidbtors[lineContext.Element.Lbbel]; ok {
+		_ = vblidbtor(v.Context, lineContext)
 	}
 }
 
-func (v *Validator) edgeMapper(lineContext reader.LineContext) {
-	atomic.AddUint64(&v.Context.NumEdges, 1)
+func (v *Vblidbtor) edgeMbpper(lineContext rebder.LineContext) {
+	btomic.AddUint64(&v.Context.NumEdges, 1)
 
-	if v.Context.ProjectRoot == nil && !v.raisedMissingMetadataError {
-		v.raisedMissingMetadataError = true
-		v.Context.AddError("metaData vertex must be defined on the first line").AddContext(lineContext)
+	if v.Context.ProjectRoot == nil && !v.rbisedMissingMetbdbtbError {
+		v.rbisedMissingMetbdbtbError = true
+		v.Context.AddError("metbDbtb vertex must be defined on the first line").AddContext(lineContext)
 	}
 
-	if validator, ok := edgeValidators[lineContext.Element.Label]; ok {
-		_ = validator(v.Context, lineContext)
+	if vblidbtor, ok := edgeVblidbtors[lineContext.Element.Lbbel]; ok {
+		_ = vblidbtor(v.Context, lineContext)
 	}
 }

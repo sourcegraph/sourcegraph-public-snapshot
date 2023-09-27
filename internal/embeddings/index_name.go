@@ -1,26 +1,26 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"crypto/md5"
 	"encoding/hex"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-var nonAlphanumericCharsRegexp = lazyregexp.New(`[^0-9a-zA-Z]`)
+vbr nonAlphbnumericChbrsRegexp = lbzyregexp.New(`[^0-9b-zA-Z]`)
 
-var CONTEXT_DETECTION_INDEX_NAME = "context_detection.embeddingindex"
+vbr CONTEXT_DETECTION_INDEX_NAME = "context_detection.embeddingindex"
 
-type RepoEmbeddingIndexName string
+type RepoEmbeddingIndexNbme string
 
-func GetRepoEmbeddingIndexNameDeprecated(repoName api.RepoName) RepoEmbeddingIndexName {
-	fsSafeRepoName := nonAlphanumericCharsRegexp.ReplaceAllString(string(repoName), "_")
-	// Add a hash as well to avoid name collisions
-	hash := md5.Sum([]byte(repoName))
-	return RepoEmbeddingIndexName(fmt.Sprintf(`%s_%s.embeddingindex`, fsSafeRepoName, hex.EncodeToString(hash[:])))
+func GetRepoEmbeddingIndexNbmeDeprecbted(repoNbme bpi.RepoNbme) RepoEmbeddingIndexNbme {
+	fsSbfeRepoNbme := nonAlphbnumericChbrsRegexp.ReplbceAllString(string(repoNbme), "_")
+	// Add b hbsh bs well to bvoid nbme collisions
+	hbsh := md5.Sum([]byte(repoNbme))
+	return RepoEmbeddingIndexNbme(fmt.Sprintf(`%s_%s.embeddingindex`, fsSbfeRepoNbme, hex.EncodeToString(hbsh[:])))
 }
-func GetRepoEmbeddingIndexName(repoID api.RepoID) RepoEmbeddingIndexName {
-	return RepoEmbeddingIndexName(fmt.Sprintf(`%d.embeddingindex`, repoID))
+func GetRepoEmbeddingIndexNbme(repoID bpi.RepoID) RepoEmbeddingIndexNbme {
+	return RepoEmbeddingIndexNbme(fmt.Sprintf(`%d.embeddingindex`, repoID))
 }

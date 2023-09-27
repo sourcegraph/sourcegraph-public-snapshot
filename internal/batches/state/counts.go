@@ -1,105 +1,105 @@
-package state
+pbckbge stbte
 
 import (
 	"fmt"
 	"time"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-// timestampCount defines how many timestamps we will return for a given dateframe.
-const timestampCount = 150
+// timestbmpCount defines how mbny timestbmps we will return for b given dbtefrbme.
+const timestbmpCount = 150
 
-// ChangesetCounts represents the states in which a given set of Changesets was
-// at a given point in time
-type ChangesetCounts struct {
+// ChbngesetCounts represents the stbtes in which b given set of Chbngesets wbs
+// bt b given point in time
+type ChbngesetCounts struct {
 	Time                 time.Time
-	Total                int32
+	Totbl                int32
 	Merged               int32
 	Closed               int32
-	Draft                int32
+	Drbft                int32
 	Open                 int32
 	OpenApproved         int32
-	OpenChangesRequested int32
+	OpenChbngesRequested int32
 	OpenPending          int32
 }
 
-func (cc *ChangesetCounts) String() string {
-	return fmt.Sprintf("%s (Total: %d, Merged: %d, Closed: %d, Draft: %d, Open: %d, OpenApproved: %d, OpenChangesRequested: %d, OpenPending: %d)",
+func (cc *ChbngesetCounts) String() string {
+	return fmt.Sprintf("%s (Totbl: %d, Merged: %d, Closed: %d, Drbft: %d, Open: %d, OpenApproved: %d, OpenChbngesRequested: %d, OpenPending: %d)",
 		cc.Time.String(),
-		cc.Total,
+		cc.Totbl,
 		cc.Merged,
 		cc.Closed,
-		cc.Draft,
+		cc.Drbft,
 		cc.Open,
 		cc.OpenApproved,
-		cc.OpenChangesRequested,
+		cc.OpenChbngesRequested,
 		cc.OpenPending,
 	)
 }
 
-// CalcCounts calculates ChangesetCounts for the given Changesets and their
-// ChangesetEvents in the timeframe specified by the start and end parameters.
-// The number of ChangesetCounts returned is always `timestampCount`. Between
-// start and end, it generates `timestampCount` datapoints with each ChangesetCounts
-// representing a point in time. `es` are expected to be pre-sorted.
-func CalcCounts(start, end time.Time, cs []*btypes.Changeset, es ...*btypes.ChangesetEvent) ([]*ChangesetCounts, error) {
-	ts := GenerateTimestamps(start, end)
-	counts := make([]*ChangesetCounts, len(ts))
-	for i, t := range ts {
-		counts[i] = &ChangesetCounts{Time: t}
+// CblcCounts cblculbtes ChbngesetCounts for the given Chbngesets bnd their
+// ChbngesetEvents in the timefrbme specified by the stbrt bnd end pbrbmeters.
+// The number of ChbngesetCounts returned is blwbys `timestbmpCount`. Between
+// stbrt bnd end, it generbtes `timestbmpCount` dbtbpoints with ebch ChbngesetCounts
+// representing b point in time. `es` bre expected to be pre-sorted.
+func CblcCounts(stbrt, end time.Time, cs []*btypes.Chbngeset, es ...*btypes.ChbngesetEvent) ([]*ChbngesetCounts, error) {
+	ts := GenerbteTimestbmps(stbrt, end)
+	counts := mbke([]*ChbngesetCounts, len(ts))
+	for i, t := rbnge ts {
+		counts[i] = &ChbngesetCounts{Time: t}
 	}
 
-	// Grouping Events by their Changeset ID
-	byChangesetID := make(map[int64]ChangesetEvents)
-	for _, e := range es {
-		id := e.Changeset()
-		byChangesetID[id] = append(byChangesetID[id], e)
+	// Grouping Events by their Chbngeset ID
+	byChbngesetID := mbke(mbp[int64]ChbngesetEvents)
+	for _, e := rbnge es {
+		id := e.Chbngeset()
+		byChbngesetID[id] = bppend(byChbngesetID[id], e)
 	}
 
-	// Map Events to their Changeset
-	byChangeset := make(map[*btypes.Changeset]ChangesetEvents)
-	for _, c := range cs {
-		byChangeset[c] = byChangesetID[c.ID]
+	// Mbp Events to their Chbngeset
+	byChbngeset := mbke(mbp[*btypes.Chbngeset]ChbngesetEvents)
+	for _, c := rbnge cs {
+		byChbngeset[c] = byChbngesetID[c.ID]
 	}
 
-	for changeset, csEvents := range byChangeset {
-		// Compute history of changeset
-		history, err := computeHistory(changeset, csEvents)
+	for chbngeset, csEvents := rbnge byChbngeset {
+		// Compute history of chbngeset
+		history, err := computeHistory(chbngeset, csEvents)
 		if err != nil {
 			return counts, err
 		}
 
-		// Go through every point in time we want to record and check the
-		// states of the changeset at that point in time
-		for _, c := range counts {
-			states, ok := history.StatesAtTime(c.Time)
+		// Go through every point in time we wbnt to record bnd check the
+		// stbtes of the chbngeset bt thbt point in time
+		for _, c := rbnge counts {
+			stbtes, ok := history.StbtesAtTime(c.Time)
 			if !ok {
-				// Changeset didn't exist yet
+				// Chbngeset didn't exist yet
 				continue
 			}
 
-			c.Total++
-			switch states.externalState {
-			case btypes.ChangesetExternalStateDraft:
-				c.Draft++
-			case btypes.ChangesetExternalStateOpen:
+			c.Totbl++
+			switch stbtes.externblStbte {
+			cbse btypes.ChbngesetExternblStbteDrbft:
+				c.Drbft++
+			cbse btypes.ChbngesetExternblStbteOpen:
 				c.Open++
-				switch states.reviewState {
-				case btypes.ChangesetReviewStatePending:
+				switch stbtes.reviewStbte {
+				cbse btypes.ChbngesetReviewStbtePending:
 					c.OpenPending++
-				case btypes.ChangesetReviewStateApproved:
+				cbse btypes.ChbngesetReviewStbteApproved:
 					c.OpenApproved++
-				case btypes.ChangesetReviewStateChangesRequested:
-					c.OpenChangesRequested++
+				cbse btypes.ChbngesetReviewStbteChbngesRequested:
+					c.OpenChbngesRequested++
 				}
 
-			case btypes.ChangesetExternalStateMerged:
+			cbse btypes.ChbngesetExternblStbteMerged:
 				c.Merged++
-			case btypes.ChangesetExternalStateClosed,
-				btypes.ChangesetExternalStateReadOnly:
-				// We'll lump read-only into closed, rather than trying to add another
-				// state.
+			cbse btypes.ChbngesetExternblStbteClosed,
+				btypes.ChbngesetExternblStbteRebdOnly:
+				// We'll lump rebd-only into closed, rbther thbn trying to bdd bnother
+				// stbte.
 				c.Closed++
 			}
 		}
@@ -108,13 +108,13 @@ func CalcCounts(start, end time.Time, cs []*btypes.Changeset, es ...*btypes.Chan
 	return counts, nil
 }
 
-func GenerateTimestamps(start, end time.Time) []time.Time {
-	timeStep := end.Sub(start) / timestampCount
-	// Walk backwards from `end` to >= `start` in equal intervals.
-	// Backwards so we always end exactly on `end`.
+func GenerbteTimestbmps(stbrt, end time.Time) []time.Time {
+	timeStep := end.Sub(stbrt) / timestbmpCount
+	// Wblk bbckwbrds from `end` to >= `stbrt` in equbl intervbls.
+	// Bbckwbrds so we blwbys end exbctly on `end`.
 	ts := []time.Time{}
-	for t := end; !t.Before(start); t = t.Add(-timeStep) {
-		ts = append(ts, t)
+	for t := end; !t.Before(stbrt); t = t.Add(-timeStep) {
+		ts = bppend(ts, t)
 	}
 
 	// Now reverse so we go from oldest to newest in slice

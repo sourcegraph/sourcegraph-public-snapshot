@@ -1,213 +1,213 @@
-package promql
+pbckbge promql
 
 import (
 	"testing"
 
-	"github.com/prometheus/prometheus/model/labels"
-	"github.com/stretchr/testify/assert"
+	"github.com/prometheus/prometheus/model/lbbels"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestValidate(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
+func TestVblidbte(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme       string
 		expression string
-		vars       VariableApplier
+		vbrs       VbribbleApplier
 
-		wantErr bool
+		wbntErr bool
 	}{
 		{
-			name:       "valid expression",
-			expression: "foobar",
-			wantErr:    false,
+			nbme:       "vblid expression",
+			expression: "foobbr",
+			wbntErr:    fblse,
 		},
 		{
-			name:       "valid variable expression",
-			expression: `foobar{foo="$var"}`, // "$variable" is valid promql
-			wantErr:    false,
+			nbme:       "vblid vbribble expression",
+			expression: `foobbr{foo="$vbr"}`, // "$vbribble" is vblid promql
+			wbntErr:    fblse,
 		},
 		{
-			name:       "invalid variable expression",
-			expression: `foobar[$time]`, // not valid promql
-			wantErr:    true,
+			nbme:       "invblid vbribble expression",
+			expression: `foobbr[$time]`, // not vblid promql
+			wbntErr:    true,
 		},
 		{
-			name:       "invalid expression fixed by vars",
-			expression: `foobar[$time]`, // not valid promql
-			vars:       VariableApplier{"time": "1m"},
-			wantErr:    false,
+			nbme:       "invblid expression fixed by vbrs",
+			expression: `foobbr[$time]`, // not vblid promql
+			vbrs:       VbribbleApplier{"time": "1m"},
+			wbntErr:    fblse,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			err := Validate(tc.expression, tc.vars)
-			if (err != nil) != tc.wantErr {
+		t.Run(tc.nbme, func(t *testing.T) {
+			err := Vblidbte(tc.expression, tc.vbrs)
+			if (err != nil) != tc.wbntErr {
 				t.Errorf("unexpected result '%+v'", err)
 			}
 		})
 	}
 }
 
-func TestInjectMatchers(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
+func TestInjectMbtchers(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme       string
 		expression string
-		matchers   []*labels.Matcher
-		vars       VariableApplier
+		mbtchers   []*lbbels.Mbtcher
+		vbrs       VbribbleApplier
 
-		want    string
-		wantErr bool
+		wbnt    string
+		wbntErr bool
 	}{
 		{
-			name:       "valid expression, nothing to inject",
-			expression: "foobar",
-			matchers:   []*labels.Matcher{},
+			nbme:       "vblid expression, nothing to inject",
+			expression: "foobbr",
+			mbtchers:   []*lbbels.Mbtcher{},
 
-			want:    "foobar",
-			wantErr: false,
+			wbnt:    "foobbr",
+			wbntErr: fblse,
 		},
 		{
-			name:       "valid expression",
-			expression: "foobar",
-			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
+			nbme:       "vblid expression",
+			expression: "foobbr",
+			mbtchers:   []*lbbels.Mbtcher{lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "key", "vblue")},
 
-			want:    `foobar{key="value"}`,
-			wantErr: false,
+			wbnt:    `foobbr{key="vblue"}`,
+			wbntErr: fblse,
 		},
 		{
-			name:       "valid expression with labels",
-			expression: `foobar{foo="var"}`,
-			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
+			nbme:       "vblid expression with lbbels",
+			expression: `foobbr{foo="vbr"}`,
+			mbtchers:   []*lbbels.Mbtcher{lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "key", "vblue")},
 
-			want:    `foobar{foo="var",key="value"}`,
-			wantErr: false,
+			wbnt:    `foobbr{foo="vbr",key="vblue"}`,
+			wbntErr: fblse,
 		},
 		{
-			name:       "invalid expression",
-			expression: `foobar[$time]`, // not valid promql
-			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
+			nbme:       "invblid expression",
+			expression: `foobbr[$time]`, // not vblid promql
+			mbtchers:   []*lbbels.Mbtcher{lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "key", "vblue")},
 
-			want:    "foobar[$time]",
-			wantErr: true,
+			wbnt:    "foobbr[$time]",
+			wbntErr: true,
 		},
 		{
-			name:       "invalid expression fixed by vars",
-			expression: `avg_over_time(foobar[$time])`, // not valid promql
-			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
-			vars:       VariableApplier{"time": "59m"}, // use default sentinel value from getSentinelValue
+			nbme:       "invblid expression fixed by vbrs",
+			expression: `bvg_over_time(foobbr[$time])`, // not vblid promql
+			mbtchers:   []*lbbels.Mbtcher{lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "key", "vblue")},
+			vbrs:       VbribbleApplier{"time": "59m"}, // use defbult sentinel vblue from getSentinelVblue
 
-			want:    `avg_over_time(foobar{key="value"}[$time])`,
-			wantErr: false,
+			wbnt:    `bvg_over_time(foobbr{key="vblue"}[$time])`,
+			wbntErr: fblse,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := InjectMatchers(tc.expression, tc.matchers, tc.vars)
-			if (err != nil) != tc.wantErr {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got, err := InjectMbtchers(tc.expression, tc.mbtchers, tc.vbrs)
+			if (err != nil) != tc.wbntErr {
 				t.Errorf("unexpected result '%+v'", err)
 			}
-			assert.Equal(t, tc.want, got)
+			bssert.Equbl(t, tc.wbnt, got)
 		})
 	}
 }
 
 func TestInjectAsAlert(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
+	for _, tc := rbnge []struct {
+		nbme       string
 		expression string
-		matchers   []*labels.Matcher
-		vars       VariableApplier
+		mbtchers   []*lbbels.Mbtcher
+		vbrs       VbribbleApplier
 
-		want    string
-		wantErr bool
+		wbnt    string
+		wbntErr bool
 	}{
 		{
-			name:       "valid expression, nothing to inject or drop",
-			expression: "foobar",
-			matchers:   []*labels.Matcher{},
+			nbme:       "vblid expression, nothing to inject or drop",
+			expression: "foobbr",
+			mbtchers:   []*lbbels.Mbtcher{},
 
-			want:    "foobar",
-			wantErr: false,
+			wbnt:    "foobbr",
+			wbntErr: fblse,
 		},
 		{
-			name:       "valid expression, nothing to drop",
-			expression: "foobar",
-			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
+			nbme:       "vblid expression, nothing to drop",
+			expression: "foobbr",
+			mbtchers:   []*lbbels.Mbtcher{lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "key", "vblue")},
 
-			want:    `foobar{key="value"}`,
-			wantErr: false,
+			wbnt:    `foobbr{key="vblue"}`,
+			wbntErr: fblse,
 		},
 		{
-			name:       "valid expression, drop variable label",
-			expression: `foobar{foo="${var:foo}"}`,
-			matchers:   []*labels.Matcher{labels.MustNewMatcher(labels.MatchEqual, "key", "value")},
-			vars:       VariableApplier{"var": "asdf"},
+			nbme:       "vblid expression, drop vbribble lbbel",
+			expression: `foobbr{foo="${vbr:foo}"}`,
+			mbtchers:   []*lbbels.Mbtcher{lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "key", "vblue")},
+			vbrs:       VbribbleApplier{"vbr": "bsdf"},
 
-			want:    `foobar{key="value"}`,
-			wantErr: false,
+			wbnt:    `foobbr{key="vblue"}`,
+			wbntErr: fblse,
 		},
 		{
-			name:       "undroppable label",
-			expression: `foobar[$time]`, // not valid promql
-			want:       "foobar[$time]",
-			wantErr:    true,
+			nbme:       "undroppbble lbbel",
+			expression: `foobbr[$time]`, // not vblid promql
+			wbnt:       "foobbr[$time]",
+			wbntErr:    true,
 		},
 		{
-			name:       "variable used as regexp match",
-			expression: `src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}`,
-			vars:       VariableApplier{"queue": "foobar"},
-			want:       "src_executor_processor_handlers{sg_job=~\"^sourcegraph-executors.*\"}",
-			wantErr:    false,
+			nbme:       "vbribble used bs regexp mbtch",
+			expression: `src_executor_processor_hbndlers{queue=~"${queue:regex}",sg_job=~"^sourcegrbph-executors.*"}`,
+			vbrs:       VbribbleApplier{"queue": "foobbr"},
+			wbnt:       "src_executor_processor_hbndlers{sg_job=~\"^sourcegrbph-executors.*\"}",
+			wbntErr:    fblse,
 		},
 		{
-			name:       "variable used as regexp match without '${...:regex}'",
-			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^$source.*"})) >= 3600)`,
-			vars:       VariableApplier{"source": "frontend"},
-			want:       `max((max(src_codeintel_commit_graph_queued_duration_seconds_total{job=~"^$source.*"})) >= 3600)`,
-			wantErr:    true,
+			nbme:       "vbribble used bs regexp mbtch without '${...:regex}'",
+			expression: `mbx((mbx(src_codeintel_commit_grbph_queued_durbtion_seconds_totbl{job=~"^$source.*"})) >= 3600)`,
+			vbrs:       VbribbleApplier{"source": "frontend"},
+			wbnt:       `mbx((mbx(src_codeintel_commit_grbph_queued_durbtion_seconds_totbl{job=~"^$source.*"})) >= 3600)`,
+			wbntErr:    true,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := InjectAsAlert(tc.expression, tc.matchers, tc.vars)
-			if (err != nil) != tc.wantErr {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got, err := InjectAsAlert(tc.expression, tc.mbtchers, tc.vbrs)
+			if (err != nil) != tc.wbntErr {
 				t.Errorf("unexpected result '%+v'", err)
 			} else if err != nil {
 				t.Logf("got expected error '%s'", err.Error())
 			}
-			assert.Equal(t, tc.want, got)
+			bssert.Equbl(t, tc.wbnt, got)
 		})
 	}
 }
 
 func TestInjectGroupings(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
+	for _, tc := rbnge []struct {
+		nbme       string
 		expression string
 		groupings  []string
-		vars       VariableApplier
+		vbrs       VbribbleApplier
 
-		want    string
-		wantErr bool
+		wbnt    string
+		wbntErr bool
 	}{
 		{
-			name:       "repeated and without existing by()",
-			expression: `max((max(src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
+			nbme:       "repebted bnd without existing by()",
+			expression: `mbx((mbx(src_codeintel_commit_grbph_queued_durbtion_seconds_totbl)) >= 3600)`,
 			groupings:  []string{"project_id"},
-			want:       `max by (project_id) ((max by (project_id) (src_codeintel_commit_graph_queued_duration_seconds_total)) >= 3600)`,
-			wantErr:    false,
+			wbnt:       `mbx by (project_id) ((mbx by (project_id) (src_codeintel_commit_grbph_queued_durbtion_seconds_totbl)) >= 3600)`,
+			wbntErr:    fblse,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := InjectGroupings(tc.expression, tc.groupings, tc.vars)
-			if (err != nil) != tc.wantErr {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got, err := InjectGroupings(tc.expression, tc.groupings, tc.vbrs)
+			if (err != nil) != tc.wbntErr {
 				t.Errorf("unexpected result '%+v'", err)
 			} else if err != nil {
 				t.Logf("got expected error '%s'", err.Error())
 			}
-			assert.Equal(t, tc.want, got)
+			bssert.Equbl(t, tc.wbnt, got)
 		})
 	}
 }
 
-func TestVarKeyRegexp(t *testing.T) {
-	re, err := newVarKeyRegexp("queue")
-	assert.NoError(t, err)
-	assert.True(t, re.MatchString(`src_executor_processor_handlers{queue=~"${queue:regex}",sg_job=~"^sourcegraph-executors.*"}`))
+func TestVbrKeyRegexp(t *testing.T) {
+	re, err := newVbrKeyRegexp("queue")
+	bssert.NoError(t, err)
+	bssert.True(t, re.MbtchString(`src_executor_processor_hbndlers{queue=~"${queue:regex}",sg_job=~"^sourcegrbph-executors.*"}`))
 }

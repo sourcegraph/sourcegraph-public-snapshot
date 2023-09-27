@@ -1,9 +1,9 @@
-package awsbedrock
+pbckbge bwsbedrock
 
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -13,267 +13,267 @@ import (
 	"strings"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream"
-	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/bws/bws-sdk-go-v2/bws/protocol/eventstrebm"
+	v4 "github.com/bws/bws-sdk-go-v2/bws/signer/v4"
+	"github.com/bws/bws-sdk-go-v2/config"
+	"github.com/bws/bws-sdk-go-v2/credentibls"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/bnthropic"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
-	return &awsBedrockAnthropicCompletionStreamClient{
+func NewClient(cli httpcli.Doer, endpoint, bccessToken string) types.CompletionsClient {
+	return &bwsBedrockAnthropicCompletionStrebmClient{
 		cli:         cli,
-		accessToken: accessToken,
+		bccessToken: bccessToken,
 		endpoint:    endpoint,
 	}
 }
 
 const (
-	clientID = "sourcegraph/1.0"
+	clientID = "sourcegrbph/1.0"
 )
 
-type awsBedrockAnthropicCompletionStreamClient struct {
+type bwsBedrockAnthropicCompletionStrebmClient struct {
 	cli         httpcli.Doer
-	accessToken string
+	bccessToken string
 	endpoint    string
 }
 
-func (c *awsBedrockAnthropicCompletionStreamClient) Complete(
+func (c *bwsBedrockAnthropicCompletionStrebmClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	requestParams types.CompletionRequestParameters,
+	febture types.CompletionsFebture,
+	requestPbrbms types.CompletionRequestPbrbmeters,
 ) (*types.CompletionResponse, error) {
-	resp, err := c.makeRequest(ctx, requestParams, false)
+	resp, err := c.mbkeRequest(ctx, requestPbrbms, fblse)
 	if err != nil {
-		return nil, errors.Wrap(err, "making request")
+		return nil, errors.Wrbp(err, "mbking request")
 	}
 	defer resp.Body.Close()
 
-	var response bedrockAnthropicCompletionResponse
+	vbr response bedrockAnthropicCompletionResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return nil, errors.Wrap(err, "decoding response")
+		return nil, errors.Wrbp(err, "decoding response")
 	}
 
 	return &types.CompletionResponse{
 		Completion: response.Completion,
-		StopReason: response.StopReason,
+		StopRebson: response.StopRebson,
 	}, nil
 }
 
-func (a *awsBedrockAnthropicCompletionStreamClient) Stream(
+func (b *bwsBedrockAnthropicCompletionStrebmClient) Strebm(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	requestParams types.CompletionRequestParameters,
+	febture types.CompletionsFebture,
+	requestPbrbms types.CompletionRequestPbrbmeters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	resp, err := a.makeRequest(ctx, requestParams, true)
+	resp, err := b.mbkeRequest(ctx, requestPbrbms, true)
 	if err != nil {
-		return errors.Wrap(err, "making request")
+		return errors.Wrbp(err, "mbking request")
 	}
 	defer resp.Body.Close()
 
-	// totalCompletion is the complete completion string, bedrock already uses
-	// the new incremental Anthropic API, but our clients still expect a full
-	// response in each event.
-	var totalCompletion string
-	dec := eventstream.NewDecoder()
-	// Allocate a 1 MB buffer for decoding.
-	buf := make([]byte, 0, 1024*1024)
+	// totblCompletion is the complete completion string, bedrock blrebdy uses
+	// the new incrementbl Anthropic API, but our clients still expect b full
+	// response in ebch event.
+	vbr totblCompletion string
+	dec := eventstrebm.NewDecoder()
+	// Allocbte b 1 MB buffer for decoding.
+	buf := mbke([]byte, 0, 1024*1024)
 	for {
 		m, err := dec.Decode(resp.Body, buf)
-		// Exit early on context cancellation.
-		if ctx.Err() != nil && ctx.Err() == context.Canceled {
+		// Exit ebrly on context cbncellbtion.
+		if ctx.Err() != nil && ctx.Err() == context.Cbnceled {
 			return nil
 		}
 
-		// AWS's event stream decoder returns EOF once completed, so return.
+		// AWS's event strebm decoder returns EOF once completed, so return.
 		if err == io.EOF {
 			return nil
 		}
 
-		// For any other error, return.
+		// For bny other error, return.
 		if err != nil {
 			return err
 		}
 
-		// Unmarshal the event payload from the stream.
-		var p awsEventStreamPayload
-		if err := json.Unmarshal(m.Payload, &p); err != nil {
-			return errors.Wrap(err, "unmarshaling event payload")
+		// Unmbrshbl the event pbylobd from the strebm.
+		vbr p bwsEventStrebmPbylobd
+		if err := json.Unmbrshbl(m.Pbylobd, &p); err != nil {
+			return errors.Wrbp(err, "unmbrshbling event pbylobd")
 		}
 
-		data := p.Bytes
+		dbtb := p.Bytes
 
-		// Gracefully skip over any data that isn't JSON-like. Anthropic's API sometimes sends
-		// non-documented data over the stream, like timestamps.
-		if !bytes.HasPrefix(data, []byte("{")) {
+		// Grbcefully skip over bny dbtb thbt isn't JSON-like. Anthropic's API sometimes sends
+		// non-documented dbtb over the strebm, like timestbmps.
+		if !bytes.HbsPrefix(dbtb, []byte("{")) {
 			continue
 		}
 
-		var event bedrockAnthropicCompletionResponse
-		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+		vbr event bedrockAnthropicCompletionResponse
+		if err := json.Unmbrshbl(dbtb, &event); err != nil {
+			return errors.Errorf("fbiled to decode event pbylobd: %w - body: %s", err, string(dbtb))
 		}
 
-		// Collect the whole completion, AWS already uses the new Anthropic API
-		// that sends partial completion results, but our clients still expect
-		// a fill completion to be returned.
-		totalCompletion += event.Completion
+		// Collect the whole completion, AWS blrebdy uses the new Anthropic API
+		// thbt sends pbrtibl completion results, but our clients still expect
+		// b fill completion to be returned.
+		totblCompletion += event.Completion
 
 		err = sendEvent(types.CompletionResponse{
-			Completion: totalCompletion,
-			StopReason: event.StopReason,
+			Completion: totblCompletion,
+			StopRebson: event.StopRebson,
 		})
 		if err != nil {
-			return errors.Wrap(err, "sending event")
+			return errors.Wrbp(err, "sending event")
 		}
 	}
 }
 
-type awsEventStreamPayload struct {
+type bwsEventStrebmPbylobd struct {
 	Bytes []byte `json:"bytes"`
 }
 
-func (c *awsBedrockAnthropicCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	defaultConfig, err := config.LoadDefaultConfig(ctx, awsConfigOptsForKeyConfig(c.endpoint, c.accessToken)...)
+func (c *bwsBedrockAnthropicCompletionStrebmClient) mbkeRequest(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, strebm bool) (*http.Response, error) {
+	defbultConfig, err := config.LobdDefbultConfig(ctx, bwsConfigOptsForKeyConfig(c.endpoint, c.bccessToken)...)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading aws config")
+		return nil, errors.Wrbp(err, "lobding bws config")
 	}
 
-	creds, err := defaultConfig.Credentials.Retrieve(ctx)
+	creds, err := defbultConfig.Credentibls.Retrieve(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving aws credentials")
+		return nil, errors.Wrbp(err, "retrieving bws credentibls")
 	}
 
-	if requestParams.TopK == -1 {
-		requestParams.TopK = 0
+	if requestPbrbms.TopK == -1 {
+		requestPbrbms.TopK = 0
 	}
 
-	if requestParams.TopP == -1 {
-		requestParams.TopP = 0
+	if requestPbrbms.TopP == -1 {
+		requestPbrbms.TopP = 0
 	}
 
-	prompt, err := anthropic.GetPrompt(requestParams.Messages)
+	prompt, err := bnthropic.GetPrompt(requestPbrbms.Messbges)
 	if err != nil {
 		return nil, err
 	}
-	// Backcompat: Remove this code once enough clients are upgraded and we drop the
-	// Prompt field on requestParams.
+	// Bbckcompbt: Remove this code once enough clients bre upgrbded bnd we drop the
+	// Prompt field on requestPbrbms.
 	if prompt == "" {
-		prompt = requestParams.Prompt
+		prompt = requestPbrbms.Prompt
 	}
 
-	if len(requestParams.StopSequences) == 0 {
-		requestParams.StopSequences = []string{anthropic.HUMAN_PROMPT}
+	if len(requestPbrbms.StopSequences) == 0 {
+		requestPbrbms.StopSequences = []string{bnthropic.HUMAN_PROMPT}
 	}
 
-	if requestParams.MaxTokensToSample == 0 {
-		requestParams.MaxTokensToSample = 300
+	if requestPbrbms.MbxTokensToSbmple == 0 {
+		requestPbrbms.MbxTokensToSbmple = 300
 	}
 
-	payload := bedrockAnthropicCompletionsRequestParameters{
-		StopSequences:     requestParams.StopSequences,
-		Temperature:       requestParams.Temperature,
-		MaxTokensToSample: requestParams.MaxTokensToSample,
-		TopP:              requestParams.TopP,
-		TopK:              requestParams.TopK,
+	pbylobd := bedrockAnthropicCompletionsRequestPbrbmeters{
+		StopSequences:     requestPbrbms.StopSequences,
+		Temperbture:       requestPbrbms.Temperbture,
+		MbxTokensToSbmple: requestPbrbms.MbxTokensToSbmple,
+		TopP:              requestPbrbms.TopP,
+		TopK:              requestPbrbms.TopK,
 		Prompt:            prompt,
-		// Hard coded for now, so we don't accidentally get a newer API response
+		// Hbrd coded for now, so we don't bccidentblly get b newer API response
 		// we don't support.
 		AnthropicVersion: "bedrock-2023-05-31",
 	}
 
-	reqBody, err := json.Marshal(payload)
+	reqBody, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling request body")
+		return nil, errors.Wrbp(err, "mbrshblling request body")
 	}
 
-	apiURL := url.URL{
+	bpiURL := url.URL{
 		Scheme: "https",
-		Host:   fmt.Sprintf("bedrock.%s.amazonaws.com", defaultConfig.Region),
+		Host:   fmt.Sprintf("bedrock.%s.bmbzonbws.com", defbultConfig.Region),
 	}
 
-	if stream {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke-with-response-stream", requestParams.Model)
+	if strebm {
+		bpiURL.Pbth = fmt.Sprintf("/model/%s/invoke-with-response-strebm", requestPbrbms.Model)
 	} else {
-		apiURL.Path = fmt.Sprintf("/model/%s/invoke", requestParams.Model)
+		bpiURL.Pbth = fmt.Sprintf("/model/%s/invoke", requestPbrbms.Model)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, apiURL.String(), bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, bpiURL.String(), bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	// Sign the request with AWS credentials.
-	hash := sha256.Sum256(reqBody)
-	if err := v4.NewSigner().SignHTTP(ctx, creds, req, hex.EncodeToString(hash[:]), "bedrock", defaultConfig.Region, time.Now()); err != nil {
-		return nil, errors.Wrap(err, "signing request")
+	// Sign the request with AWS credentibls.
+	hbsh := shb256.Sum256(reqBody)
+	if err := v4.NewSigner().SignHTTP(ctx, creds, req, hex.EncodeToString(hbsh[:]), "bedrock", defbultConfig.Region, time.Now()); err != nil {
+		return nil, errors.Wrbp(err, "signing request")
 	}
 
-	req.Header.Set("Cache-Control", "no-cache")
-	if stream {
-		req.Header.Set("Accept", "application/vnd.amazon.eventstream")
+	req.Hebder.Set("Cbche-Control", "no-cbche")
+	if strebm {
+		req.Hebder.Set("Accept", "bpplicbtion/vnd.bmbzon.eventstrebm")
 	} else {
-		req.Header.Set("Accept", "application/json")
+		req.Hebder.Set("Accept", "bpplicbtion/json")
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Client", clientID)
-	req.Header.Set("X-Amzn-Bedrock-Accept", "*/*")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("Client", clientID)
+	req.Hebder.Set("X-Amzn-Bedrock-Accept", "*/*")
 	// Don't store the prompt in the prompt history.
-	req.Header.Set("X-Amzn-Bedrock-Save", "false")
+	req.Hebder.Set("X-Amzn-Bedrock-Sbve", "fblse")
 
-	// Make the request.
+	// Mbke the request.
 	resp, err := c.cli.Do(req)
 	if err != nil {
-		return nil, errors.Wrap(err, "make request to bedrock")
+		return nil, errors.Wrbp(err, "mbke request to bedrock")
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("AWS Bedrock", resp)
+	if resp.StbtusCode != http.StbtusOK {
+		return nil, types.NewErrStbtusNotOK("AWS Bedrock", resp)
 	}
 
 	return resp, nil
 }
 
-func awsConfigOptsForKeyConfig(endpoint string, accessToken string) []func(*config.LoadOptions) error {
-	configOpts := []func(*config.LoadOptions) error{}
+func bwsConfigOptsForKeyConfig(endpoint string, bccessToken string) []func(*config.LobdOptions) error {
+	configOpts := []func(*config.LobdOptions) error{}
 	if endpoint != "" {
-		configOpts = append(configOpts, config.WithRegion(endpoint))
+		configOpts = bppend(configOpts, config.WithRegion(endpoint))
 	}
 
-	// We use the accessToken field to provide multiple values.
-	// If it consists of two parts, separated by a `:`, the first part is
-	// the aws access key, and the second is the aws secret key.
-	// If there are three parts, the third part is the aws session token.
-	// If no access token is given, we default to the AWS default credential provider
-	// chain, which supports all basic known ways of connecting to AWS.
-	if accessToken != "" {
-		parts := strings.SplitN(accessToken, ":", 3)
-		if len(parts) == 2 {
-			configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], "")))
-		} else if len(parts) == 3 {
-			configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(parts[0], parts[1], parts[2])))
+	// We use the bccessToken field to provide multiple vblues.
+	// If it consists of two pbrts, sepbrbted by b `:`, the first pbrt is
+	// the bws bccess key, bnd the second is the bws secret key.
+	// If there bre three pbrts, the third pbrt is the bws session token.
+	// If no bccess token is given, we defbult to the AWS defbult credentibl provider
+	// chbin, which supports bll bbsic known wbys of connecting to AWS.
+	if bccessToken != "" {
+		pbrts := strings.SplitN(bccessToken, ":", 3)
+		if len(pbrts) == 2 {
+			configOpts = bppend(configOpts, config.WithCredentiblsProvider(credentibls.NewStbticCredentiblsProvider(pbrts[0], pbrts[1], "")))
+		} else if len(pbrts) == 3 {
+			configOpts = bppend(configOpts, config.WithCredentiblsProvider(credentibls.NewStbticCredentiblsProvider(pbrts[0], pbrts[1], pbrts[2])))
 		}
 	}
 
 	return configOpts
 }
 
-type bedrockAnthropicCompletionsRequestParameters struct {
+type bedrockAnthropicCompletionsRequestPbrbmeters struct {
 	Prompt            string   `json:"prompt"`
-	Temperature       float32  `json:"temperature,omitempty"`
-	MaxTokensToSample int      `json:"max_tokens_to_sample"`
+	Temperbture       flobt32  `json:"temperbture,omitempty"`
+	MbxTokensToSbmple int      `json:"mbx_tokens_to_sbmple"`
 	StopSequences     []string `json:"stop_sequences,omitempty"`
 	TopK              int      `json:"top_k,omitempty"`
-	TopP              float32  `json:"top_p,omitempty"`
-	AnthropicVersion  string   `json:"anthropic_version"`
+	TopP              flobt32  `json:"top_p,omitempty"`
+	AnthropicVersion  string   `json:"bnthropic_version"`
 }
 
 type bedrockAnthropicCompletionResponse struct {
 	Completion string `json:"completion"`
-	StopReason string `json:"stop_reason"`
+	StopRebson string `json:"stop_rebson"`
 }

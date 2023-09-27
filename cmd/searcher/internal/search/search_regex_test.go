@@ -1,560 +1,560 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"io"
 	"os"
 	"reflect"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntbx" //nolint:depgubrd // using the grbfbnb fork of regexp clbshes with zoekt, which uses the std regexp/syntbx.
 	"sort"
 	"strconv"
 	"testing"
 	"testing/iotest"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func BenchmarkSearchRegex_large_fixed(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern: "error handler",
+func BenchmbrkSebrchRegex_lbrge_fixed(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern: "error hbndler",
 		},
 	})
 }
 
-func BenchmarkSearchRegex_rare_fixed(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern: "REBOOT_CMD",
+func BenchmbrkSebrchRegex_rbre_fixed(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern: "REBOOT_CMD",
 		},
 	})
 }
 
-func BenchmarkSearchRegex_large_fixed_casesensitive(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "error handler",
-			IsCaseSensitive: true,
+func BenchmbrkSebrchRegex_lbrge_fixed_cbsesensitive(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "error hbndler",
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_large_re_dotstar(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:  ".*",
+func BenchmbrkSebrchRegex_lbrge_re_dotstbr(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:  ".*",
 			IsRegExp: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_large_re_common(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "func +[A-Z]",
+func BenchmbrkSebrchRegex_lbrge_re_common(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "func +[A-Z]",
 			IsRegExp:        true,
-			IsCaseSensitive: true,
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_large_re_anchor(b *testing.B) {
-	// TODO(keegan) PERF regex engine performs poorly since LiteralPrefix
-	// is empty when ^. We can improve this by:
-	// * Transforming the regex we use to prune a file to be more
-	// performant/permissive.
-	// * Searching for any literal (Rabin-Karp aka bytes.Index) or group
-	// of literals (Aho-Corasick).
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "^func +[A-Z]",
+func BenchmbrkSebrchRegex_lbrge_re_bnchor(b *testing.B) {
+	// TODO(keegbn) PERF regex engine performs poorly since LiterblPrefix
+	// is empty when ^. We cbn improve this by:
+	// * Trbnsforming the regex we use to prune b file to be more
+	// performbnt/permissive.
+	// * Sebrching for bny literbl (Rbbin-Kbrp bkb bytes.Index) or group
+	// of literbls (Aho-Corbsick).
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "^func +[A-Z]",
 			IsRegExp:        true,
-			IsCaseSensitive: true,
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_large_capture_group(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/golang/go",
-		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "(TODO|FIXME)",
+func BenchmbrkSebrchRegex_lbrge_cbpture_group(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/golbng/go",
+		Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "(TODO|FIXME)",
 			IsRegExp:        true,
-			IsCaseSensitive: true,
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_large_path(b *testing.B) {
-	do := func(b *testing.B, content, path bool) {
-		benchSearchRegex(b, &protocol.Request{
-			Repo:   "github.com/golang/go",
-			Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
-			PatternInfo: protocol.PatternInfo{
-				Pattern:               "http.*client",
+func BenchmbrkSebrchRegex_lbrge_pbth(b *testing.B) {
+	do := func(b *testing.B, content, pbth bool) {
+		benchSebrchRegex(b, &protocol.Request{
+			Repo:   "github.com/golbng/go",
+			Commit: "0ebbcb6bb27534bdd5930b95bcffb9bcff182e2b",
+			PbtternInfo: protocol.PbtternInfo{
+				Pbttern:               "http.*client",
 				IsRegExp:              true,
-				IsCaseSensitive:       true,
-				PatternMatchesContent: content,
-				PatternMatchesPath:    path,
+				IsCbseSensitive:       true,
+				PbtternMbtchesContent: content,
+				PbtternMbtchesPbth:    pbth,
 			},
 		})
 	}
-	b.Run("path only", func(b *testing.B) { do(b, false, true) })
-	b.Run("content only", func(b *testing.B) { do(b, true, false) })
-	b.Run("both path and content", func(b *testing.B) { do(b, true, true) })
+	b.Run("pbth only", func(b *testing.B) { do(b, fblse, true) })
+	b.Run("content only", func(b *testing.B) { do(b, true, fblse) })
+	b.Run("both pbth bnd content", func(b *testing.B) { do(b, true, true) })
 }
 
-func BenchmarkSearchRegex_small_fixed(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/sourcegraph/go-langserver",
-		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		PatternInfo: protocol.PatternInfo{
-			Pattern: "object not found",
+func BenchmbrkSebrchRegex_smbll_fixed(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegrbph/go-lbngserver",
+		Commit: "4193810334683f87b8ed5d896bb4753f0dfcdf20",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern: "object not found",
 		},
 	})
 }
 
-func BenchmarkSearchRegex_small_fixed_casesensitive(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/sourcegraph/go-langserver",
-		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "object not found",
-			IsCaseSensitive: true,
+func BenchmbrkSebrchRegex_smbll_fixed_cbsesensitive(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegrbph/go-lbngserver",
+		Commit: "4193810334683f87b8ed5d896bb4753f0dfcdf20",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "object not found",
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_small_re_dotstar(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/sourcegraph/go-langserver",
-		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:  ".*",
+func BenchmbrkSebrchRegex_smbll_re_dotstbr(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegrbph/go-lbngserver",
+		Commit: "4193810334683f87b8ed5d896bb4753f0dfcdf20",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:  ".*",
 			IsRegExp: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_small_re_common(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/sourcegraph/go-langserver",
-		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "func +[A-Z]",
+func BenchmbrkSebrchRegex_smbll_re_common(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegrbph/go-lbngserver",
+		Commit: "4193810334683f87b8ed5d896bb4753f0dfcdf20",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "func +[A-Z]",
 			IsRegExp:        true,
-			IsCaseSensitive: true,
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_small_re_anchor(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/sourcegraph/go-langserver",
-		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "^func +[A-Z]",
+func BenchmbrkSebrchRegex_smbll_re_bnchor(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegrbph/go-lbngserver",
+		Commit: "4193810334683f87b8ed5d896bb4753f0dfcdf20",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "^func +[A-Z]",
 			IsRegExp:        true,
-			IsCaseSensitive: true,
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func BenchmarkSearchRegex_small_capture_group(b *testing.B) {
-	benchSearchRegex(b, &protocol.Request{
-		Repo:   "github.com/sourcegraph/go-langserver",
-		Commit: "4193810334683f87b8ed5d896aa4753f0dfcdf20",
-		PatternInfo: protocol.PatternInfo{
-			Pattern:         "(TODO|FIXME)",
+func BenchmbrkSebrchRegex_smbll_cbpture_group(b *testing.B) {
+	benchSebrchRegex(b, &protocol.Request{
+		Repo:   "github.com/sourcegrbph/go-lbngserver",
+		Commit: "4193810334683f87b8ed5d896bb4753f0dfcdf20",
+		PbtternInfo: protocol.PbtternInfo{
+			Pbttern:         "(TODO|FIXME)",
 			IsRegExp:        true,
-			IsCaseSensitive: true,
+			IsCbseSensitive: true,
 		},
 	})
 }
 
-func benchSearchRegex(b *testing.B, p *protocol.Request) {
+func benchSebrchRegex(b *testing.B, p *protocol.Request) {
 	if testing.Short() {
 		b.Skip("")
 	}
 	b.ReportAllocs()
 
-	err := validateParams(p)
+	err := vblidbtePbrbms(p)
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 
-	rg, err := compile(&p.PatternInfo)
+	rg, err := compile(&p.PbtternInfo)
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 
-	ctx := context.Background()
-	path, err := githubStore.PrepareZip(ctx, p.Repo, p.Commit)
+	ctx := context.Bbckground()
+	pbth, err := githubStore.PrepbreZip(ctx, p.Repo, p.Commit)
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 
-	var zc zipCache
-	zf, err := zc.Get(path)
+	vbr zc zipCbche
+	zf, err := zc.Get(pbth)
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 	defer zf.Close()
 
 	b.ResetTimer()
 
 	for n := 0; n < b.N; n++ {
-		_, _, err := regexSearchBatch(ctx, rg, zf, 99999999, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated)
+		_, _, err := regexSebrchBbtch(ctx, rg, zf, 99999999, p.PbtternMbtchesContent, p.PbtternMbtchesPbth, p.IsNegbted)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 	}
 }
 
-func TestLongestLiteral(t *testing.T) {
-	cases := map[string]string{
+func TestLongestLiterbl(t *testing.T) {
+	cbses := mbp[string]string{
 		"foo":       "foo",
 		"FoO":       "FoO",
 		"(?m:^foo)": "foo",
 		"(?m:^FoO)": "FoO",
 		"[Z]":       "Z",
 
-		`\wddSuballocation\(dump`:    "ddSuballocation(dump",
-		`\wfoo(\dlongest\wbam)\dbar`: "longest",
+		`\wddSubbllocbtion\(dump`:    "ddSubbllocbtion(dump",
+		`\wfoo(\dlongest\wbbm)\dbbr`: "longest",
 
-		`(foo\dlongest\dbar)`:  "longest",
-		`(foo\dlongest\dbar)+`: "longest",
-		`(foo\dlongest\dbar)*`: "",
+		`(foo\dlongest\dbbr)`:  "longest",
+		`(foo\dlongest\dbbr)+`: "longest",
+		`(foo\dlongest\dbbr)*`: "",
 
-		"(foo|bar)":     "",
+		"(foo|bbr)":     "",
 		"[A-Z]":         "",
 		"[^A-Z]":        "",
-		"[abB-Z]":       "",
-		"([abB-Z]|FoO)": "",
+		"[bbB-Z]":       "",
+		"([bbB-Z]|FoO)": "",
 		`[@-\[]`:        "",
 		`\S`:            "",
 	}
 
-	metaLiteral := "AddSuballocation(dump->guid(), system_allocator_name)"
-	cases[regexp.QuoteMeta(metaLiteral)] = metaLiteral
+	metbLiterbl := "AddSubbllocbtion(dump->guid(), system_bllocbtor_nbme)"
+	cbses[regexp.QuoteMetb(metbLiterbl)] = metbLiterbl
 
-	for expr, want := range cases {
-		re, err := syntax.Parse(expr, syntax.Perl)
+	for expr, wbnt := rbnge cbses {
+		re, err := syntbx.Pbrse(expr, syntbx.Perl)
 		if err != nil {
-			t.Fatal(expr, err)
+			t.Fbtbl(expr, err)
 		}
 		re = re.Simplify()
-		got := longestLiteral(re)
-		if want != got {
-			t.Errorf("longestLiteral(%q) == %q != %q", expr, got, want)
+		got := longestLiterbl(re)
+		if wbnt != got {
+			t.Errorf("longestLiterbl(%q) == %q != %q", expr, got, wbnt)
 		}
 	}
 }
 
-func TestReadAll(t *testing.T) {
+func TestRebdAll(t *testing.T) {
 	input := []byte("Hello World")
 
-	// If we are the same size as input, it should work
-	b := make([]byte, len(input))
-	n, err := readAll(bytes.NewReader(input), b)
+	// If we bre the sbme size bs input, it should work
+	b := mbke([]byte, len(input))
+	n, err := rebdAll(bytes.NewRebder(input), b)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if n != len(input) {
-		t.Fatalf("want to read in %d bytes, read %d", len(input), n)
+		t.Fbtblf("wbnt to rebd in %d bytes, rebd %d", len(input), n)
 	}
 	if string(b[:n]) != string(input) {
-		t.Fatalf("got %s, want %s", string(b[:n]), string(input))
+		t.Fbtblf("got %s, wbnt %s", string(b[:n]), string(input))
 	}
 
-	// If we are larger then it should work
-	b = make([]byte, len(input)*2)
-	n, err = readAll(bytes.NewReader(input), b)
+	// If we bre lbrger then it should work
+	b = mbke([]byte, len(input)*2)
+	n, err = rebdAll(bytes.NewRebder(input), b)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if n != len(input) {
-		t.Fatalf("want to read in %d bytes, read %d", len(input), n)
+		t.Fbtblf("wbnt to rebd in %d bytes, rebd %d", len(input), n)
 	}
 	if string(b[:n]) != string(input) {
-		t.Fatalf("got %s, want %s", string(b[:n]), string(input))
+		t.Fbtblf("got %s, wbnt %s", string(b[:n]), string(input))
 	}
 
-	// Same size, but modify reader to return 1 byte per call to ensure
+	// Sbme size, but modify rebder to return 1 byte per cbll to ensure
 	// our loop works.
-	b = make([]byte, len(input))
-	n, err = readAll(iotest.OneByteReader(bytes.NewReader(input)), b)
+	b = mbke([]byte, len(input))
+	n, err = rebdAll(iotest.OneByteRebder(bytes.NewRebder(input)), b)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if n != len(input) {
-		t.Fatalf("want to read in %d bytes, read %d", len(input), n)
+		t.Fbtblf("wbnt to rebd in %d bytes, rebd %d", len(input), n)
 	}
 	if string(b[:n]) != string(input) {
-		t.Fatalf("got %s, want %s", string(b[:n]), string(input))
+		t.Fbtblf("got %s, wbnt %s", string(b[:n]), string(input))
 	}
 
-	// If we are too small it should fail
-	b = make([]byte, 1)
-	_, err = readAll(bytes.NewReader(input), b)
+	// If we bre too smbll it should fbil
+	b = mbke([]byte, 1)
+	_, err = rebdAll(bytes.NewRebder(input), b)
 	if err == nil {
-		t.Fatal("expected to fail on small buffer")
+		t.Fbtbl("expected to fbil on smbll buffer")
 	}
 }
 
-func TestMaxMatches(t *testing.T) {
-	t.Skip("TODO: Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/22560")
+func TestMbxMbtches(t *testing.T) {
+	t.Skip("TODO: Disbbled becbuse it's flbky. See: https://github.com/sourcegrbph/sourcegrbph/issues/22560")
 
-	pattern := "foo"
+	pbttern := "foo"
 
-	// Create a zip archive which contains our limits + 1
+	// Crebte b zip brchive which contbins our limits + 1
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
-	maxMatches := 33
-	for i := 0; i < maxMatches+1; i++ {
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   strconv.Itoa(i),
+	mbxMbtches := 33
+	for i := 0; i < mbxMbtches+1; i++ {
+		w, err := zw.CrebteHebder(&zip.FileHebder{
+			Nbme:   strconv.Itob(i),
 			Method: zip.Store,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		for j := 0; j < 10; j++ {
-			_, _ = w.Write([]byte(pattern))
+			_, _ = w.Write([]byte(pbttern))
 			_, _ = w.Write([]byte{' '})
 			_, _ = w.Write([]byte{'\n'})
 		}
 	}
 	err := zw.Close()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	zf, err := mockZipFile(buf.Bytes())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	rg, err := compile(&protocol.PatternInfo{Pattern: pattern})
+	rg, err := compile(&protocol.PbtternInfo{Pbttern: pbttern})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	fileMatches, limitHit, err := regexSearchBatch(context.Background(), rg, zf, maxMatches, true, false, false)
+	fileMbtches, limitHit, err := regexSebrchBbtch(context.Bbckground(), rg, zf, mbxMbtches, true, fblse, fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !limitHit {
-		t.Fatalf("expected limitHit on regexSearch")
+		t.Fbtblf("expected limitHit on regexSebrch")
 	}
 
-	totalMatches := 0
-	for _, match := range fileMatches {
-		totalMatches += match.MatchCount()
+	totblMbtches := 0
+	for _, mbtch := rbnge fileMbtches {
+		totblMbtches += mbtch.MbtchCount()
 	}
 
-	if totalMatches != maxMatches {
-		t.Fatalf("expected %d file matches, got %d", maxMatches, totalMatches)
+	if totblMbtches != mbxMbtches {
+		t.Fbtblf("expected %d file mbtches, got %d", mbxMbtches, totblMbtches)
 	}
 }
 
-// Tests that:
+// Tests thbt:
 //
-// - IncludePatterns can match the path in any order
-// - A path must match all (not any) of the IncludePatterns
-// - An empty pattern is allowed
-func TestPathMatches(t *testing.T) {
-	zipData, err := createZip(map[string]string{
-		"a":   "",
-		"a/b": "",
-		"a/c": "",
-		"ab":  "",
-		"b/a": "",
-		"ba":  "",
+// - IncludePbtterns cbn mbtch the pbth in bny order
+// - A pbth must mbtch bll (not bny) of the IncludePbtterns
+// - An empty pbttern is bllowed
+func TestPbthMbtches(t *testing.T) {
+	zipDbtb, err := crebteZip(mbp[string]string{
+		"b":   "",
+		"b/b": "",
+		"b/c": "",
+		"bb":  "",
+		"b/b": "",
+		"bb":  "",
 		"c/d": "",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	zf, err := mockZipFile(zipData)
+	zf, err := mockZipFile(zipDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	rg, err := compile(&protocol.PatternInfo{
-		Pattern:         "",
-		IncludePatterns: []string{"a", "b"},
+	rg, err := compile(&protocol.PbtternInfo{
+		Pbttern:         "",
+		IncludePbtterns: []string{"b", "b"},
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	fileMatches, _, err := regexSearchBatch(context.Background(), rg, zf, 10, true, true, false)
+	fileMbtches, _, err := regexSebrchBbtch(context.Bbckground(), rg, zf, 10, true, true, fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := []string{"a/b", "ab", "b/a", "ba"}
-	got := make([]string, len(fileMatches))
-	for i, fm := range fileMatches {
-		got[i] = fm.Path
+	wbnt := []string{"b/b", "bb", "b/b", "bb"}
+	got := mbke([]string, len(fileMbtches))
+	for i, fm := rbnge fileMbtches {
+		got[i] = fm.Pbth
 	}
 	sort.Strings(got)
-	if !reflect.DeepEqual(got, want) {
-		t.Fatalf("got file matches %v, want %v", got, want)
+	if !reflect.DeepEqubl(got, wbnt) {
+		t.Fbtblf("got file mbtches %v, wbnt %v", got, wbnt)
 	}
 }
 
-// githubStore fetches from github and caches across test runs.
-var githubStore = &Store{
+// githubStore fetches from github bnd cbches bcross test runs.
+vbr githubStore = &Store{
 	GitserverClient: gitserver.NewClient(),
-	FetchTar:        fetchTarFromGithub,
-	Path:            "/tmp/search_test/store",
-	ObservationCtx:  &observation.TestContext,
+	FetchTbr:        fetchTbrFromGithub,
+	Pbth:            "/tmp/sebrch_test/store",
+	ObservbtionCtx:  &observbtion.TestContext,
 }
 
-func fetchTarFromGithub(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-	r, err := fetchTarFromGithubWithPaths(ctx, repo, commit, []string{})
+func fetchTbrFromGithub(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
+	r, err := fetchTbrFromGithubWithPbths(ctx, repo, commit, []string{})
 	return r, err
 }
 
 func init() {
-	// Clear out store so we pick up changes in our store writing code.
-	os.RemoveAll(githubStore.Path)
+	// Clebr out store so we pick up chbnges in our store writing code.
+	os.RemoveAll(githubStore.Pbth)
 }
 
-func TestRegexSearch(t *testing.T) {
-	match, err := compilePathPatterns([]string{`a\.go`}, `README\.md`, false)
+func TestRegexSebrch(t *testing.T) {
+	mbtch, err := compilePbthPbtterns([]string{`b\.go`}, `README\.md`, fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	type args struct {
+	type brgs struct {
 		ctx                   context.Context
-		rg                    *readerGrep
+		rg                    *rebderGrep
 		zf                    *zipFile
 		limit                 int
-		patternMatchesContent bool
-		patternMatchesPaths   bool
+		pbtternMbtchesContent bool
+		pbtternMbtchesPbths   bool
 	}
 	tests := []struct {
-		name         string
-		args         args
-		wantFm       []protocol.FileMatch
-		wantLimitHit bool
-		wantErr      bool
+		nbme         string
+		brgs         brgs
+		wbntFm       []protocol.FileMbtch
+		wbntLimitHit bool
+		wbntErr      bool
 	}{
 		{
-			name: "nil re returns a FileMatch with no LineMatches",
-			args: args{
-				ctx: context.Background(),
-				rg: &readerGrep{
-					// Check this case specifically.
+			nbme: "nil re returns b FileMbtch with no LineMbtches",
+			brgs: brgs{
+				ctx: context.Bbckground(),
+				rg: &rebderGrep{
+					// Check this cbse specificblly.
 					re:        nil,
-					matchPath: match,
+					mbtchPbth: mbtch,
 				},
 				zf: &zipFile{
 					Files: []srcFile{
 						{
-							Name: "a.go",
+							Nbme: "b.go",
 						},
 					},
 				},
-				patternMatchesPaths:   false,
-				patternMatchesContent: true,
+				pbtternMbtchesPbths:   fblse,
+				pbtternMbtchesContent: true,
 				limit:                 5,
 			},
-			wantFm: []protocol.FileMatch{{Path: "a.go"}},
+			wbntFm: []protocol.FileMbtch{{Pbth: "b.go"}},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotFm, gotLimitHit, err := regexSearchBatch(tt.args.ctx, tt.args.rg, tt.args.zf, tt.args.limit, tt.args.patternMatchesContent, tt.args.patternMatchesPaths, false)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("regexSearch() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			gotFm, gotLimitHit, err := regexSebrchBbtch(tt.brgs.ctx, tt.brgs.rg, tt.brgs.zf, tt.brgs.limit, tt.brgs.pbtternMbtchesContent, tt.brgs.pbtternMbtchesPbths, fblse)
+			if (err != nil) != tt.wbntErr {
+				t.Errorf("regexSebrch() error = %v, wbntErr %v", err, tt.wbntErr)
 				return
 			}
-			if !reflect.DeepEqual(gotFm, tt.wantFm) {
-				t.Errorf("regexSearch() gotFm = %v, want %v", gotFm, tt.wantFm)
+			if !reflect.DeepEqubl(gotFm, tt.wbntFm) {
+				t.Errorf("regexSebrch() gotFm = %v, wbnt %v", gotFm, tt.wbntFm)
 			}
-			if gotLimitHit != tt.wantLimitHit {
-				t.Errorf("regexSearch() gotLimitHit = %v, want %v", gotLimitHit, tt.wantLimitHit)
+			if gotLimitHit != tt.wbntLimitHit {
+				t.Errorf("regexSebrch() gotLimitHit = %v, wbnt %v", gotLimitHit, tt.wbntLimitHit)
 			}
 		})
 	}
 }
 
-func Test_locsToRanges(t *testing.T) {
-	cases := []struct {
+func Test_locsToRbnges(t *testing.T) {
+	cbses := []struct {
 		buf    string
 		locs   [][]int
-		ranges []protocol.Range
+		rbnges []protocol.Rbnge
 	}{{
-		// simple multimatch
+		// simple multimbtch
 		buf:  "0.2.4.6.8.",
 		locs: [][]int{{0, 2}, {4, 8}},
-		ranges: []protocol.Range{{
-			Start: protocol.Location{0, 0, 0},
-			End:   protocol.Location{2, 0, 2},
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{0, 0, 0},
+			End:   protocol.Locbtion{2, 0, 2},
 		}, {
-			Start: protocol.Location{4, 0, 4},
-			End:   protocol.Location{8, 0, 8},
+			Stbrt: protocol.Locbtion{4, 0, 4},
+			End:   protocol.Locbtion{8, 0, 8},
 		}},
 	}, {
-		// multibyte match
+		// multibyte mbtch
 		buf:  "0.2.🔧.8.",
 		locs: [][]int{{2, 8}},
-		ranges: []protocol.Range{{
-			Start: protocol.Location{2, 0, 2},
-			End:   protocol.Location{8, 0, 5},
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{2, 0, 2},
+			End:   protocol.Locbtion{8, 0, 5},
 		}},
 	}, {
-		// match crosses newlines and ends on a newline
+		// mbtch crosses newlines bnd ends on b newline
 		buf:  "0.2.4.6.\n9.11.14.17",
 		locs: [][]int{{2, 9}},
-		ranges: []protocol.Range{{
-			Start: protocol.Location{2, 0, 2},
-			End:   protocol.Location{9, 1, 0},
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{2, 0, 2},
+			End:   protocol.Locbtion{9, 1, 0},
 		}},
 	}, {
-		// match starts on a newline
+		// mbtch stbrts on b newline
 		buf:  "0.2.4.6.\n9.11.14.17",
 		locs: [][]int{{8, 11}},
-		ranges: []protocol.Range{{
-			Start: protocol.Location{8, 0, 8},
-			End:   protocol.Location{11, 1, 2},
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{8, 0, 8},
+			End:   protocol.Locbtion{11, 1, 2},
 		}},
 	}, {
-		// match crosses a few lines and has multibyte chars
+		// mbtch crosses b few lines bnd hbs multibyte chbrs
 		buf:  "0.2.🔧.9.\n12.15.18.\n22.25.28.",
 		locs: [][]int{{0, 25}},
-		ranges: []protocol.Range{{
-			Start: protocol.Location{0, 0, 0},
-			End:   protocol.Location{25, 2, 3},
+		rbnges: []protocol.Rbnge{{
+			Stbrt: protocol.Locbtion{0, 0, 0},
+			End:   protocol.Locbtion{25, 2, 3},
 		}},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			got := locsToRanges([]byte(tc.buf), tc.locs)
-			require.Equal(t, tc.ranges, got)
+			got := locsToRbnges([]byte(tc.buf), tc.locs)
+			require.Equbl(t, tc.rbnges, got)
 		})
 	}
 }

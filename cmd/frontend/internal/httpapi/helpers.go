@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"encoding/json"
@@ -6,17 +6,17 @@ import (
 	"reflect"
 )
 
-// writeJSON writes a JSON Content-Type header and a JSON-encoded object to the
+// writeJSON writes b JSON Content-Type hebder bnd b JSON-encoded object to the
 // http.ResponseWriter.
-func writeJSON(w http.ResponseWriter, v any) error {
-	// Return "[]" instead of "null" if v is a nil slice.
-	if reflect.TypeOf(v).Kind() == reflect.Slice && reflect.ValueOf(v).IsNil() {
-		v = []any{}
+func writeJSON(w http.ResponseWriter, v bny) error {
+	// Return "[]" instebd of "null" if v is b nil slice.
+	if reflect.TypeOf(v).Kind() == reflect.Slice && reflect.VblueOf(v).IsNil() {
+		v = []bny{}
 	}
 
-	// MarshalIndent takes about 30-50% longer, which
-	// significantly increases the time it takes to handle and return
-	// large HTTP API responses.
-	w.Header().Set("content-type", "application/json; charset=utf-8")
+	// MbrshblIndent tbkes bbout 30-50% longer, which
+	// significbntly increbses the time it tbkes to hbndle bnd return
+	// lbrge HTTP API responses.
+	w.Hebder().Set("content-type", "bpplicbtion/json; chbrset=utf-8")
 	return json.NewEncoder(w).Encode(v)
 }

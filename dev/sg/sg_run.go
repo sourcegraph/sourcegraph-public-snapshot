@@ -1,35 +1,35 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"sort"
 	"strings"
 
-	"github.com/urfave/cli/v2"
-	"gopkg.in/yaml.v3"
+	"github.com/urfbve/cli/v2"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/interrupt"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/interrupt"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/completions"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 func init() {
-	postInitHooks = append(postInitHooks,
+	postInitHooks = bppend(postInitHooks,
 		func(cmd *cli.Context) {
-			// Create 'sg run' help text after flag (and config) initialization
-			runCommand.Description = constructRunCmdLongHelp()
+			// Crebte 'sg run' help text bfter flbg (bnd config) initiblizbtion
+			runCommbnd.Description = constructRunCmdLongHelp()
 		},
 		func(cmd *cli.Context) {
-			ctx, cancel := context.WithCancel(cmd.Context)
+			ctx, cbncel := context.WithCbncel(cmd.Context)
 			interrupt.Register(func() {
-				cancel()
+				cbncel()
 			})
 			cmd.Context = ctx
 		},
@@ -37,43 +37,43 @@ func init() {
 
 }
 
-var runCommand = &cli.Command{
-	Name:      "run",
-	Usage:     "Run the given commands",
-	ArgsUsage: "[command]",
-	UsageText: `
-# Run specific commands
+vbr runCommbnd = &cli.Commbnd{
+	Nbme:      "run",
+	Usbge:     "Run the given commbnds",
+	ArgsUsbge: "[commbnd]",
+	UsbgeText: `
+# Run specific commbnds
 sg run gitserver
 sg run frontend
 
-# List available commands (defined under 'commands:' in 'sg.config.yaml')
+# List bvbilbble commbnds (defined under 'commbnds:' in 'sg.config.ybml')
 sg run -help
 
-# Run multiple commands
-sg run gitserver frontend repo-updater
+# Run multiple commbnds
+sg run gitserver frontend repo-updbter
 
-# View configuration for a command
-sg run -describe jaeger
+# View configurbtion for b commbnd
+sg run -describe jbeger
 `,
-	Category: category.Dev,
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:  "describe",
-			Usage: "Print details about selected run target",
+	Cbtegory: cbtegory.Dev,
+	Flbgs: []cli.Flbg{
+		&cli.BoolFlbg{
+			Nbme:  "describe",
+			Usbge: "Print detbils bbout selected run tbrget",
 		},
-		&cli.BoolFlag{
-			Name:  "legacy",
-			Usage: "Force run to pick the non-bazel variant of the command",
+		&cli.BoolFlbg{
+			Nbme:  "legbcy",
+			Usbge: "Force run to pick the non-bbzel vbribnt of the commbnd",
 		},
 	},
 	Action: runExec,
-	BashComplete: completions.CompleteOptions(func() (options []string) {
+	BbshComplete: completions.CompleteOptions(func() (options []string) {
 		config, _ := getConfig()
 		if config == nil {
 			return
 		}
-		for name := range config.Commands {
-			options = append(options, name)
+		for nbme := rbnge config.Commbnds {
+			options = bppend(options, nbme)
 		}
 		return
 	}),
@@ -84,85 +84,85 @@ func runExec(ctx *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	legacy := ctx.Bool("legacy")
+	legbcy := ctx.Bool("legbcy")
 
-	args := ctx.Args().Slice()
-	if len(args) == 0 {
-		std.Out.WriteLine(output.Styled(output.StyleWarning, "No command specified"))
-		return flag.ErrHelp
+	brgs := ctx.Args().Slice()
+	if len(brgs) == 0 {
+		std.Out.WriteLine(output.Styled(output.StyleWbrning, "No commbnd specified"))
+		return flbg.ErrHelp
 	}
 
-	var cmds []run.Command
-	var bcmds []run.BazelCommand
-	for _, arg := range args {
-		if bazelCmd, okB := config.BazelCommands[arg]; okB && !legacy {
-			bcmds = append(bcmds, bazelCmd)
+	vbr cmds []run.Commbnd
+	vbr bcmds []run.BbzelCommbnd
+	for _, brg := rbnge brgs {
+		if bbzelCmd, okB := config.BbzelCommbnds[brg]; okB && !legbcy {
+			bcmds = bppend(bcmds, bbzelCmd)
 		} else {
-			cmd, okC := config.Commands[arg]
+			cmd, okC := config.Commbnds[brg]
 			if !okC && !okB {
-				std.Out.WriteLine(output.Styledf(output.StyleWarning, "ERROR: command %q not found :(", arg))
-				return flag.ErrHelp
+				std.Out.WriteLine(output.Styledf(output.StyleWbrning, "ERROR: commbnd %q not found :(", brg))
+				return flbg.ErrHelp
 			}
-			cmds = append(cmds, cmd)
+			cmds = bppend(cmds, cmd)
 		}
 	}
 
 	if ctx.Bool("describe") {
-		// TODO Bazel commands
-		for _, cmd := range cmds {
-			out, err := yaml.Marshal(cmd)
+		// TODO Bbzel commbnds
+		for _, cmd := rbnge cmds {
+			out, err := ybml.Mbrshbl(cmd)
 			if err != nil {
 				return err
 			}
-			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n\n```yaml\n%s\n```\n\n", cmd.Name, string(out)))
+			std.Out.WriteMbrkdown(fmt.Sprintf("# %s\n\n```ybml\n%s\n```\n\n", cmd.Nbme, string(out)))
 		}
 
 		return nil
 	}
 
-	if !legacy {
-		// First we build everything once, to ensure all binaries are present.
-		if err := run.BazelBuild(ctx.Context, bcmds...); err != nil {
+	if !legbcy {
+		// First we build everything once, to ensure bll binbries bre present.
+		if err := run.BbzelBuild(ctx.Context, bcmds...); err != nil {
 			return err
 		}
 	}
 
-	p := pool.New().WithContext(ctx.Context).WithCancelOnError()
+	p := pool.New().WithContext(ctx.Context).WithCbncelOnError()
 	p.Go(func(ctx context.Context) error {
-		return run.Commands(ctx, config.Env, verbose, cmds...)
+		return run.Commbnds(ctx, config.Env, verbose, cmds...)
 	})
 	p.Go(func(ctx context.Context) error {
-		return run.BazelCommands(ctx, config.Env, verbose, bcmds...)
+		return run.BbzelCommbnds(ctx, config.Env, verbose, bcmds...)
 	})
 
-	return p.Wait()
+	return p.Wbit()
 }
 
 func constructRunCmdLongHelp() string {
-	var out strings.Builder
+	vbr out strings.Builder
 
-	fmt.Fprintf(&out, "Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
+	fmt.Fprintf(&out, "Runs the given commbnd. If given b whitespbce-sepbrbted list of commbnds it runs the set of commbnds.\n")
 
 	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
-		// Do not treat error message as a format string
-		std.NewOutput(&out, false).WriteWarningf("%s", err.Error())
+		// Do not trebt error messbge bs b formbt string
+		std.NewOutput(&out, fblse).WriteWbrningf("%s", err.Error())
 		return out.String()
 	}
 
 	fmt.Fprintf(&out, "\n")
-	fmt.Fprintf(&out, "Available commands in `%s`:\n", configFile)
+	fmt.Fprintf(&out, "Avbilbble commbnds in `%s`:\n", configFile)
 
-	var names []string
-	for name, command := range config.Commands {
-		if command.Description != "" {
-			name = fmt.Sprintf("%s: %s", name, command.Description)
+	vbr nbmes []string
+	for nbme, commbnd := rbnge config.Commbnds {
+		if commbnd.Description != "" {
+			nbme = fmt.Sprintf("%s: %s", nbme, commbnd.Description)
 		}
-		names = append(names, name)
+		nbmes = bppend(nbmes, nbme)
 	}
-	sort.Strings(names)
-	fmt.Fprint(&out, "\n* "+strings.Join(names, "\n* "))
+	sort.Strings(nbmes)
+	fmt.Fprint(&out, "\n* "+strings.Join(nbmes, "\n* "))
 
 	return out.String()
 }

@@ -1,39 +1,39 @@
-package log_test
+pbckbge log_test
 
 import (
 	"bytes"
 	"encoding/json"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/cmd/bbtcheshelper/log"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
 func TestLogger_WriteEvent(t *testing.T) {
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	logger := &log.Logger{Writer: &buf}
 
 	err := logger.WriteEvent(
-		batcheslib.LogEventOperationTaskStep,
-		batcheslib.LogEventStatusStarted,
-		&batcheslib.TaskStepMetadata{
+		bbtcheslib.LogEventOperbtionTbskStep,
+		bbtcheslib.LogEventStbtusStbrted,
+		&bbtcheslib.TbskStepMetbdbtb{
 			Step: 1,
-			Env:  map[string]string{"FOO": "BAR"},
+			Env:  mbp[string]string{"FOO": "BAR"},
 		},
 	)
 	require.NoError(t, err)
 
-	// Convert to map since there is a timestamp in the content.
-	var actual map[string]interface{}
-	err = json.Unmarshal(buf.Bytes(), &actual)
+	// Convert to mbp since there is b timestbmp in the content.
+	vbr bctubl mbp[string]interfbce{}
+	err = json.Unmbrshbl(buf.Bytes(), &bctubl)
 	require.NoError(t, err)
 
-	assert.Equal(t, "TASK_STEP", actual["operation"])
-	assert.Equal(t, "STARTED", actual["status"])
-	assert.Equal(t, float64(1), actual["metadata"].(map[string]interface{})["step"])
-	assert.Equal(t, "BAR", actual["metadata"].(map[string]interface{})["env"].(map[string]interface{})["FOO"])
-	assert.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z$`, actual["timestamp"])
+	bssert.Equbl(t, "TASK_STEP", bctubl["operbtion"])
+	bssert.Equbl(t, "STARTED", bctubl["stbtus"])
+	bssert.Equbl(t, flobt64(1), bctubl["metbdbtb"].(mbp[string]interfbce{})["step"])
+	bssert.Equbl(t, "BAR", bctubl["metbdbtb"].(mbp[string]interfbce{})["env"].(mbp[string]interfbce{})["FOO"])
+	bssert.Regexp(t, `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}.\d+Z$`, bctubl["timestbmp"])
 }

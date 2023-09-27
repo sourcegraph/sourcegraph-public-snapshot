@@ -1,24 +1,24 @@
-package registry
+pbckbge registry
 
 import (
 	_ "embed"
 	"encoding/json"
 	"sync"
 
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	registry "github.com/sourcegrbph/sourcegrbph/cmd/frontend/registry/client"
 )
 
-var (
-	//go:embed frozen_legacy_extensions.json
+vbr (
+	//go:embed frozen_legbcy_extensions.json
 	frozenRegistryJSON []byte
 
-	frozenRegistryDataOnce sync.Once
-	frozenRegistryData     []*registry.Extension
+	frozenRegistryDbtbOnce sync.Once
+	frozenRegistryDbtb     []*registry.Extension
 )
 
-func getFrozenRegistryData() []*registry.Extension {
-	frozenRegistryDataOnce.Do(func() {
-		json.Unmarshal(frozenRegistryJSON, &frozenRegistryData)
+func getFrozenRegistryDbtb() []*registry.Extension {
+	frozenRegistryDbtbOnce.Do(func() {
+		json.Unmbrshbl(frozenRegistryJSON, &frozenRegistryDbtb)
 	})
-	return frozenRegistryData
+	return frozenRegistryDbtb
 }

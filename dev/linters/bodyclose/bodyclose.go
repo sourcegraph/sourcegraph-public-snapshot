@@ -1,9 +1,9 @@
-package bodyclose
+pbckbge bodyclose
 
 import (
-	"github.com/timakin/bodyclose/passes/bodyclose"
+	"github.com/timbkin/bodyclose/pbsses/bodyclose"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
 )
 
-var Analyzer = nolint.Wrap(bodyclose.Analyzer)
+vbr Anblyzer = nolint.Wrbp(bodyclose.Anblyzer)

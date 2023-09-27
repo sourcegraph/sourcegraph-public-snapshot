@@ -1,4 +1,4 @@
-package azureoauth
+pbckbge bzureobuth
 
 import (
 	"context"
@@ -10,83 +10,83 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
 func Test_verifyAllowOrgs(t *testing.T) {
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	profile := azuredevops.Profile{
+	profile := bzuredevops.Profile{
 		ID:          "1",
-		DisplayName: "test-user",
-		PublicAlias: "public-alias-123",
+		DisplbyNbme: "test-user",
+		PublicAlibs: "public-blibs-123",
 	}
 
 	mockServerInvokedCount := 0
-	mockServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockServer := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		mockServerInvokedCount += 1
-		if strings.HasPrefix(r.URL.Path, "/_apis/accounts") {
+		if strings.HbsPrefix(r.URL.Pbth, "/_bpis/bccounts") {
 			memberID := r.URL.Query().Get("memberId")
-			if memberID != profile.PublicAlias {
-				w.WriteHeader(http.StatusBadRequest)
-				w.Write([]byte(fmt.Sprintf("incorrect public alias used in API call: %q", memberID)))
+			if memberID != profile.PublicAlibs {
+				w.WriteHebder(http.StbtusBbdRequest)
+				w.Write([]byte(fmt.Sprintf("incorrect public blibs used in API cbll: %q", memberID)))
 				return
 			}
 
-			response := azuredevops.ListAuthorizedUserOrgsResponse{
+			response := bzuredevops.ListAuthorizedUserOrgsResponse{
 				Count: 2,
-				Value: []azuredevops.Org{
+				Vblue: []bzuredevops.Org{
 					{
 						ID:   "1",
-						Name: "foo",
+						Nbme: "foo",
 					},
 					{
 						ID:   "2",
-						Name: "bar",
+						Nbme: "bbr",
 					},
 				},
 			}
 
 			if err := json.NewEncoder(w).Encode(response); err != nil {
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHebder(http.StbtusInternblServerError)
 				w.Write([]byte(err.Error()))
 			}
 
 			return
 		}
 
-		w.WriteHeader(http.StatusBadRequest)
+		w.WriteHebder(http.StbtusBbdRequest)
 	}))
-	azuredevops.MockVisualStudioAppURL = mockServer.URL
+	bzuredevops.MockVisublStudioAppURL = mockServer.URL
 
-	testCases := []struct {
-		name                           string
-		allowOrgs                      map[string]struct{}
+	testCbses := []struct {
+		nbme                           string
+		bllowOrgs                      mbp[string]struct{}
 		expectedAllow                  bool
 		expectedMockServerInvokedCount int
 	}{
 		{
-			name:                           "empty allowOrgs",
-			allowOrgs:                      map[string]struct{}{},
+			nbme:                           "empty bllowOrgs",
+			bllowOrgs:                      mbp[string]struct{}{},
 			expectedAllow:                  true,
 			expectedMockServerInvokedCount: 0,
 		},
 		{
-			name: "user is not part of org",
-			allowOrgs: map[string]struct{}{
+			nbme: "user is not pbrt of org",
+			bllowOrgs: mbp[string]struct{}{
 				"this-org-does-not-exist": {},
 			},
-			expectedAllow:                  false,
+			expectedAllow:                  fblse,
 			expectedMockServerInvokedCount: 1,
 		},
 		{
-			name: "user is part of org",
-			allowOrgs: map[string]struct{}{
+			nbme: "user is pbrt of org",
+			bllowOrgs: mbp[string]struct{}{
 				"foo": {},
 			},
 			expectedAllow:                  true,
@@ -94,21 +94,21 @@ func Test_verifyAllowOrgs(t *testing.T) {
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			mockServerInvokedCount = 0
-			s := &sessionIssuerHelper{allowOrgs: tc.allowOrgs}
+			s := &sessionIssuerHelper{bllowOrgs: tc.bllowOrgs}
 
-			ctx := context.Background()
-			allow, err := s.verifyAllowOrgs(ctx, &profile, &oauth2.Token{AccessToken: "foo"})
+			ctx := context.Bbckground()
+			bllow, err := s.verifyAllowOrgs(ctx, &profile, &obuth2.Token{AccessToken: "foo"})
 			require.NoError(t, err, "unexpected error")
-			if allow != tc.expectedAllow {
-				t.Fatalf("expected allow to be %v, but got %v", tc.expectedAllow, allow)
+			if bllow != tc.expectedAllow {
+				t.Fbtblf("expected bllow to be %v, but got %v", tc.expectedAllow, bllow)
 			}
 
 			if mockServerInvokedCount != tc.expectedMockServerInvokedCount {
-				t.Fatalf("expected mockServer to receive %d requests, but it received %d", tc.expectedMockServerInvokedCount, mockServerInvokedCount)
+				t.Fbtblf("expected mockServer to receive %d requests, but it received %d", tc.expectedMockServerInvokedCount, mockServerInvokedCount)
 			}
 		})
 	}

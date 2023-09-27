@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
@@ -8,155 +8,155 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestGetCodeHostIntegrationUsageStatistics(t *testing.T) {
-	ctx := context.Background()
+func TestGetCodeHostIntegrbtionUsbgeStbtistics(t *testing.T) {
+	ctx := context.Bbckground()
 
 	defer func() {
 		timeNow = time.Now
 	}()
 
-	now := time.Date(2022, 2, 9, 12, 55, 0, 0, time.UTC) // Feb 16 2022, Wednesday
+	now := time.Dbte(2022, 2, 9, 12, 55, 0, 0, time.UTC) // Feb 16 2022, Wednesdby
 	mockTimeNow(now)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	_, err := db.ExecContext(context.Background(), `
+	_, err := db.ExecContext(context.Bbckground(), `
 		INSERT INTO event_logs
-			(name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(nbme, brgument, url, user_id, bnonymous_user_id, source, version, timestbmp)
 			VALUES
-			`+insertBrowserExtensionValuesQueryFragment+`,
-			`+insertNativeIntegrationValuesQueryFragment, now)
+			`+insertBrowserExtensionVbluesQueryFrbgment+`,
+			`+insertNbtiveIntegrbtionVbluesQueryFrbgment, now)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := GetCodeHostIntegrationUsageStatistics(ctx, db)
+	hbve, err := GetCodeHostIntegrbtionUsbgeStbtistics(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := &types.CodeHostIntegrationUsage{
-		Day: types.CodeHostIntegrationUsagePeriod{
-			StartTime: time.Date(2022, 2, 9, 0, 0, 0, 0, time.UTC),
-			BrowserExtension: types.CodeHostIntegrationUsageType{
-				TotalCount:   6,
+	wbnt := &types.CodeHostIntegrbtionUsbge{
+		Dby: types.CodeHostIntegrbtionUsbgePeriod{
+			StbrtTime: time.Dbte(2022, 2, 9, 0, 0, 0, 0, time.UTC),
+			BrowserExtension: types.CodeHostIntegrbtionUsbgeType{
+				TotblCount:   6,
 				UniquesCount: 2,
-				InboundTrafficToWeb: types.CodeHostIntegrationUsageInboundTrafficToWeb{
-					TotalCount:   4,
+				InboundTrbfficToWeb: types.CodeHostIntegrbtionUsbgeInboundTrbfficToWeb{
+					TotblCount:   4,
 					UniquesCount: 2,
 				},
 			},
-			NativeIntegration: types.CodeHostIntegrationUsageType{
-				TotalCount:   6,
+			NbtiveIntegrbtion: types.CodeHostIntegrbtionUsbgeType{
+				TotblCount:   6,
 				UniquesCount: 2,
-				InboundTrafficToWeb: types.CodeHostIntegrationUsageInboundTrafficToWeb{
-					TotalCount:   4,
-					UniquesCount: 2,
-				},
-			},
-		},
-		Week: types.CodeHostIntegrationUsagePeriod{
-			StartTime: time.Date(2022, 2, 7, 0, 0, 0, 0, time.UTC),
-			BrowserExtension: types.CodeHostIntegrationUsageType{
-				TotalCount:   12,
-				UniquesCount: 2,
-				InboundTrafficToWeb: types.CodeHostIntegrationUsageInboundTrafficToWeb{
-					TotalCount:   8,
-					UniquesCount: 2,
-				},
-			},
-			NativeIntegration: types.CodeHostIntegrationUsageType{
-				TotalCount:   12,
-				UniquesCount: 2,
-				InboundTrafficToWeb: types.CodeHostIntegrationUsageInboundTrafficToWeb{
-					TotalCount:   8,
+				InboundTrbfficToWeb: types.CodeHostIntegrbtionUsbgeInboundTrbfficToWeb{
+					TotblCount:   4,
 					UniquesCount: 2,
 				},
 			},
 		},
-		Month: types.CodeHostIntegrationUsagePeriod{
-			StartTime: time.Date(2022, 2, 1, 0, 0, 0, 0, time.UTC),
-			BrowserExtension: types.CodeHostIntegrationUsageType{
-				TotalCount:   18,
+		Week: types.CodeHostIntegrbtionUsbgePeriod{
+			StbrtTime: time.Dbte(2022, 2, 7, 0, 0, 0, 0, time.UTC),
+			BrowserExtension: types.CodeHostIntegrbtionUsbgeType{
+				TotblCount:   12,
 				UniquesCount: 2,
-				InboundTrafficToWeb: types.CodeHostIntegrationUsageInboundTrafficToWeb{
-					TotalCount:   12,
+				InboundTrbfficToWeb: types.CodeHostIntegrbtionUsbgeInboundTrbfficToWeb{
+					TotblCount:   8,
 					UniquesCount: 2,
 				},
 			},
-			NativeIntegration: types.CodeHostIntegrationUsageType{
-				TotalCount:   18,
+			NbtiveIntegrbtion: types.CodeHostIntegrbtionUsbgeType{
+				TotblCount:   12,
 				UniquesCount: 2,
-				InboundTrafficToWeb: types.CodeHostIntegrationUsageInboundTrafficToWeb{
-					TotalCount:   12,
+				InboundTrbfficToWeb: types.CodeHostIntegrbtionUsbgeInboundTrbfficToWeb{
+					TotblCount:   8,
+					UniquesCount: 2,
+				},
+			},
+		},
+		Month: types.CodeHostIntegrbtionUsbgePeriod{
+			StbrtTime: time.Dbte(2022, 2, 1, 0, 0, 0, 0, time.UTC),
+			BrowserExtension: types.CodeHostIntegrbtionUsbgeType{
+				TotblCount:   18,
+				UniquesCount: 2,
+				InboundTrbfficToWeb: types.CodeHostIntegrbtionUsbgeInboundTrbfficToWeb{
+					TotblCount:   12,
+					UniquesCount: 2,
+				},
+			},
+			NbtiveIntegrbtion: types.CodeHostIntegrbtionUsbgeType{
+				TotblCount:   18,
+				UniquesCount: 2,
+				InboundTrbfficToWeb: types.CodeHostIntegrbtionUsbgeInboundTrbfficToWeb{
+					TotblCount:   12,
 					UniquesCount: 2,
 				},
 			},
 		},
 	}
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-const insertBrowserExtensionValuesQueryFragment = `
--- Current day event logs
+const insertBrowserExtensionVbluesQueryFrbgment = `
+-- Current dby event logs
 
 -- registered user
-('Anything', '{"platform": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 hour'),
-('Anything', '{"platform": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 hour'),
-('Anything', '{"platform": "safari-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 hour'),
-('UTMCodeHostIntegration', '{"utm_source": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 hour'),
-('UTMCodeHostIntegration', '{"utm_source": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 hour'),
+('Anything', '{"plbtform": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('Anything', '{"plbtform": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('Anything', '{"plbtform": "sbfbri-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 hour'),
 
----- anonymous user
-('Anything', '{"platform": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 hour'),
-('Anything', '{"platform": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 hour'),
-('Anything', '{"platform": "safari-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 hour'),
-('UTMCodeHostIntegration', '{"utm_source": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestamp - interval '1 hour'),
-('UTMCodeHostIntegration', '{"utm_source": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestamp - interval '1 hour'),
+---- bnonymous user
+('Anything', '{"plbtform": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('Anything', '{"plbtform": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('Anything', '{"plbtform": "sbfbri-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 hour'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 hour'),
 
 
--- Previous day event logs
+-- Previous dby event logs
 
 ---- registered user
-('Anything', '{"platform": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 day'),
-('Anything', '{"platform": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 day'),
-('Anything', '{"platform": "safari-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 day'),
-('UTMCodeHostIntegration', '{"utm_source": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-('UTMCodeHostIntegration', '{"utm_source": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+('Anything', '{"plbtform": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('Anything', '{"plbtform": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('Anything', '{"plbtform": "sbfbri-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
 
----- anonymous user
-('Anything', '{"platform": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 day'),
-('Anything', '{"platform": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 day'),
-('Anything', '{"platform": "safari-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 day'),
-('UTMCodeHostIntegration', '{"utm_source": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-('UTMCodeHostIntegration', '{"utm_source": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
+---- bnonymous user
+('Anything', '{"plbtform": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('Anything', '{"plbtform": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('Anything', '{"plbtform": "sbfbri-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
 
 
 -- Previous week event logs
 
 ---- registered user
-('Anything', '{"platform": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 week'),
-('Anything', '{"platform": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 week'),
-('Anything', '{"platform": "safari-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 week'),
-('UTMCodeHostIntegration', '{"utm_source": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 week'),
-('UTMCodeHostIntegration', '{"utm_source": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 week'),
+('Anything', '{"plbtform": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('Anything', '{"plbtform": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('Anything', '{"plbtform": "sbfbri-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 week'),
 
----- anonymous user
-('Anything', '{"platform": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 week'),
-('Anything', '{"platform": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 week'),
-('Anything', '{"platform": "safari-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestamp - interval '1 week'),
-('UTMCodeHostIntegration', '{"utm_source": "chrome-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestamp - interval '1 week'),
-('UTMCodeHostIntegration', '{"utm_source": "firefox-extension"}', 'https://sourcegraph.test:3443/search', 0, '320657f0-d443-4d16-ac7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestamp - interval '1 week')
+---- bnonymous user
+('Anything', '{"plbtform": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('Anything', '{"plbtform": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('Anything', '{"plbtform": "sbfbri-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'CODEHOSTINTEGRATION', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "chrome-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 week'),
+('UTMCodeHostIntegrbtion', '{"utm_source": "firefox-extension"}', 'https://sourcegrbph.test:3443/sebrch', 0, '320657f0-d443-4d16-bc7d-003d8cdc91gf', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 week')
 `
 
-var insertNativeIntegrationValuesQueryFragment = strings.NewReplacer("chrome-extension", "phabricator-integration", "firefox-extension", "bitbucket-integration", "safari-extension", "gitlab-integration").Replace(insertBrowserExtensionValuesQueryFragment)
+vbr insertNbtiveIntegrbtionVbluesQueryFrbgment = strings.NewReplbcer("chrome-extension", "phbbricbtor-integrbtion", "firefox-extension", "bitbucket-integrbtion", "sbfbri-extension", "gitlbb-integrbtion").Replbce(insertBrowserExtensionVbluesQueryFrbgment)

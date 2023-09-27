@@ -1,47 +1,47 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"net/url"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
+func TestExternblAccounts_DeleteExternblAccount(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 
-	t.Run("has github account", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		act := actor.Actor{UID: 1}
-		ctx := actor.WithActor(context.Background(), &act)
-		sr := newSchemaResolver(db, gitserver.NewClient())
+	t.Run("hbs github bccount", func(t *testing.T) {
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+		bct := bctor.Actor{UID: 1}
+		ctx := bctor.WithActor(context.Bbckground(), &bct)
+		sr := newSchembResolver(db, gitserver.NewClient())
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -50,160 +50,160 @@ func TestExternalAccounts_DeleteExternalAccount(t *testing.T) {
 			AccountID:   "xd",
 		}
 
-		_, err := db.UserExternalAccounts().CreateUserAndSave(ctx, database.NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		_, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, dbtbbbse.NewUser{Usernbme: "u"}, spec, extsvc.AccountDbtb{})
 		require.NoError(t, err)
 
-		graphqlArgs := struct {
-			ExternalAccount graphql.ID
+		grbphqlArgs := struct {
+			ExternblAccount grbphql.ID
 		}{
-			ExternalAccount: graphql.ID(base64.URLEncoding.EncodeToString([]byte("ExternalAccount:1"))),
+			ExternblAccount: grbphql.ID(bbse64.URLEncoding.EncodeToString([]byte("ExternblAccount:1"))),
 		}
-		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
-			if req.Reason != database.ReasonExternalAccountDeleted {
-				t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountDeleted)
+		permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, req protocol.PermsSyncRequest) {
+			if req.Rebson != dbtbbbse.RebsonExternblAccountDeleted {
+				t.Errorf("got rebson %s, wbnt %s", req.Rebson, dbtbbbse.RebsonExternblAccountDeleted)
 			}
 		}
-		_, err = sr.DeleteExternalAccount(ctx, &graphqlArgs)
+		_, err = sr.DeleteExternblAccount(ctx, &grbphqlArgs)
 		require.NoError(t, err)
 
-		accts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: 1})
+		bccts, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{UserID: 1})
 		require.NoError(t, err)
-		require.Equal(t, 0, len(accts))
+		require.Equbl(t, 0, len(bccts))
 	})
 }
 
-func TestExternalAccounts_AddExternalAccount(t *testing.T) {
+func TestExternblAccounts_AddExternblAccount(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
 	users := dbmocks.NewMockUserStore()
-	db.UsersFunc.SetDefaultReturn(users)
-	extservices := dbmocks.NewMockExternalServiceStore()
-	db.ExternalServicesFunc.SetDefaultReturn(extservices)
-	userextaccts := dbmocks.NewMockUserExternalAccountsStore()
-	db.UserExternalAccountsFunc.SetDefaultReturn(userextaccts)
+	db.UsersFunc.SetDefbultReturn(users)
+	extservices := dbmocks.NewMockExternblServiceStore()
+	db.ExternblServicesFunc.SetDefbultReturn(extservices)
+	userextbccts := dbmocks.NewMockUserExternblAccountsStore()
+	db.UserExternblAccountsFunc.SetDefbultReturn(userextbccts)
 
 	gerritURL := "https://gerrit.mycorp.com/"
-	testCases := map[string]struct {
+	testCbses := mbp[string]struct {
 		user            *types.User
 		serviceType     string
 		serviceID       string
-		accountDetails  string
-		wantErr         bool
-		wantErrContains string
+		bccountDetbils  string
+		wbntErr         bool
+		wbntErrContbins string
 	}{
-		"unauthed returns err": {
+		"unbuthed returns err": {
 			user:    nil,
-			wantErr: true,
+			wbntErr: true,
 		},
 		"non-gerrit returns err": {
 			user:        &types.User{ID: 1},
 			serviceType: extsvc.TypeGitHub,
-			wantErr:     true,
+			wbntErr:     true,
 		},
 		"no gerrit connection for serviceID returns err": {
 			user:        &types.User{ID: 1},
 			serviceType: extsvc.TypeGerrit,
 			serviceID:   "https://wrong.id.com",
-			wantErr:     true,
+			wbntErr:     true,
 		},
 		"correct gerrit connection for serviceID returns no err": {
 			user:           &types.User{ID: 1},
 			serviceType:    extsvc.TypeGerrit,
 			serviceID:      gerritURL,
-			wantErr:        false,
-			accountDetails: `{"username": "alice", "password": "test"}`,
+			wbntErr:        fblse,
+			bccountDetbils: `{"usernbme": "blice", "pbssword": "test"}`,
 		},
-		// OSS packages cannot import enterprise packages, but when we build the entire
-		// application this will be implemented.
+		// OSS pbckbges cbnnot import enterprise pbckbges, but when we build the entire
+		// bpplicbtion this will be implemented.
 		//
-		// See cmd/frontend/internal/auth/sourcegraphoperator for more details
-		// and additional test coverage on the functionality.
-		"Sourcegraph operator unimplemented in OSS": {
+		// See cmd/frontend/internbl/buth/sourcegrbphoperbtor for more detbils
+		// bnd bdditionbl test coverbge on the functionblity.
+		"Sourcegrbph operbtor unimplemented in OSS": {
 			user:            &types.User{ID: 1, SiteAdmin: true},
-			serviceType:     auth.SourcegraphOperatorProviderType,
-			wantErr:         true,
-			wantErrContains: "unimplemented in Sourcegraph OSS",
+			serviceType:     buth.SourcegrbphOperbtorProviderType,
+			wbntErr:         true,
+			wbntErrContbins: "unimplemented in Sourcegrbph OSS",
 		},
 	}
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(tc.user, nil)
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(tc.user, nil)
 
-			gerritConfig := &schema.GerritConnection{
+			gerritConfig := &schemb.GerritConnection{
 				Url: gerritURL,
 			}
-			gerritConf, err := json.Marshal(gerritConfig)
+			gerritConf, err := json.Mbrshbl(gerritConfig)
 			require.NoError(t, err)
-			extservices.ListFunc.SetDefaultReturn([]*types.ExternalService{
+			extservices.ListFunc.SetDefbultReturn([]*types.ExternblService{
 				{
 					Kind:   extsvc.KindGerrit,
 					Config: extsvc.NewUnencryptedConfig(string(gerritConf)),
 				},
 			}, nil)
 
-			userextaccts.InsertFunc.SetDefaultHook(func(ctx context.Context, uID int32, acctSpec extsvc.AccountSpec, acctData extsvc.AccountData) error {
+			userextbccts.InsertFunc.SetDefbultHook(func(ctx context.Context, uID int32, bcctSpec extsvc.AccountSpec, bcctDbtb extsvc.AccountDbtb) error {
 				if uID != tc.user.ID {
-					t.Errorf("got userID %d, want %d", uID, tc.user.ID)
+					t.Errorf("got userID %d, wbnt %d", uID, tc.user.ID)
 				}
-				if acctSpec.ServiceType != extsvc.TypeGerrit {
-					t.Errorf("got service type %q, want %q", acctSpec.ServiceType, extsvc.TypeGerrit)
+				if bcctSpec.ServiceType != extsvc.TypeGerrit {
+					t.Errorf("got service type %q, wbnt %q", bcctSpec.ServiceType, extsvc.TypeGerrit)
 				}
-				if acctSpec.ServiceID != gerritURL {
-					t.Errorf("got service ID %q, want %q", acctSpec.ServiceID, "https://gerrit.example.com/")
+				if bcctSpec.ServiceID != gerritURL {
+					t.Errorf("got service ID %q, wbnt %q", bcctSpec.ServiceID, "https://gerrit.exbmple.com/")
 				}
-				if acctSpec.AccountID != "1234" {
-					t.Errorf("got account ID %q, want %q", acctSpec.AccountID, "alice")
+				if bcctSpec.AccountID != "1234" {
+					t.Errorf("got bccount ID %q, wbnt %q", bcctSpec.AccountID, "blice")
 				}
 				return nil
 			})
 			confGet := func() *conf.Unified {
 				return &conf.Unified{}
 			}
-			err = db.ExternalServices().Create(context.Background(), confGet, &types.ExternalService{
+			err = db.ExternblServices().Crebte(context.Bbckground(), confGet, &types.ExternblService{
 				Kind:   extsvc.KindGerrit,
 				Config: extsvc.NewUnencryptedConfig(string(gerritConf)),
 			})
 			require.NoError(t, err)
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 			if tc.user != nil {
-				act := actor.Actor{UID: tc.user.ID}
-				ctx = actor.WithActor(ctx, &act)
+				bct := bctor.Actor{UID: tc.user.ID}
+				ctx = bctor.WithActor(ctx, &bct)
 			}
 
-			sr := newSchemaResolver(db, gitserver.NewClient())
+			sr := newSchembResolver(db, gitserver.NewClient())
 
-			args := struct {
+			brgs := struct {
 				ServiceType    string
 				ServiceID      string
-				AccountDetails string
+				AccountDetbils string
 			}{
 				ServiceType:    tc.serviceType,
 				ServiceID:      tc.serviceID,
-				AccountDetails: tc.accountDetails,
+				AccountDetbils: tc.bccountDetbils,
 			}
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, req protocol.PermsSyncRequest) {
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, req protocol.PermsSyncRequest) {
 				if req.UserIDs[0] != tc.user.ID {
-					t.Errorf("got userID %d, want %d", req.UserIDs[0], tc.user.ID)
+					t.Errorf("got userID %d, wbnt %d", req.UserIDs[0], tc.user.ID)
 				}
-				if req.Reason != database.ReasonExternalAccountAdded {
-					t.Errorf("got reason %s, want %s", req.Reason, database.ReasonExternalAccountAdded)
+				if req.Rebson != dbtbbbse.RebsonExternblAccountAdded {
+					t.Errorf("got rebson %s, wbnt %s", req.Rebson, dbtbbbse.RebsonExternblAccountAdded)
 				}
 			}
 
-			gerrit.MockVerifyAccount = func(_ context.Context, _ *url.URL, _ *gerrit.AccountCredentials) (*gerrit.Account, error) {
+			gerrit.MockVerifyAccount = func(_ context.Context, _ *url.URL, _ *gerrit.AccountCredentibls) (*gerrit.Account, error) {
 				return &gerrit.Account{
 					ID:       1234,
-					Username: "alice",
+					Usernbme: "blice",
 				}, nil
 			}
-			_, err = sr.AddExternalAccount(ctx, &args)
-			if tc.wantErr {
+			_, err = sr.AddExternblAccount(ctx, &brgs)
+			if tc.wbntErr {
 				require.Error(t, err)
-				if tc.wantErrContains != "" {
-					assert.Contains(t, err.Error(), tc.wantErrContains)
+				if tc.wbntErrContbins != "" {
+					bssert.Contbins(t, err.Error(), tc.wbntErrContbins)
 				}
 			} else {
 				require.NoError(t, err)

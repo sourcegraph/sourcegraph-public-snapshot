@@ -1,77 +1,77 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"go.opentelemetry.io/otel/bttribute"
 )
 
-// Trace is a convenience helper around instrumenting our handlers and
-// resolvers which interact with Completions.
+// Trbce is b convenience helper bround instrumenting our hbndlers bnd
+// resolvers which interbct with Completions.
 //
-// Family identifies the endpoint being used, while model is the model we pass
+// Fbmily identifies the endpoint being used, while model is the model we pbss
 // to GetCompletionClient.
-func Trace(ctx context.Context, family, model string, maxTokensToSample int) *traceBuilder {
-	// TODO consider integrating a wrapper in GetCompletionClient. Only issue
-	// is we need to somehow make it cleaner to access fields from the
+func Trbce(ctx context.Context, fbmily, model string, mbxTokensToSbmple int) *trbceBuilder {
+	// TODO consider integrbting b wrbpper in GetCompletionClient. Only issue
+	// is we need to somehow mbke it clebner to bccess fields from the
 	// request.
 
-	tr, ctx := trace.New(ctx, "completions."+family, attribute.String("model", model))
-	var ev honey.Event
-	if honey.Enabled() {
+	tr, ctx := trbce.New(ctx, "completions."+fbmily, bttribute.String("model", model))
+	vbr ev honey.Event
+	if honey.Enbbled() {
 		ev = honey.NewEvent("completions")
-		ev.AddField("family", family)
+		ev.AddField("fbmily", fbmily)
 		ev.AddField("model", model)
-		ev.AddField("maxTokensToSample", maxTokensToSample)
-		ev.AddField("actor", actor.FromContext(ctx).UIDString())
+		ev.AddField("mbxTokensToSbmple", mbxTokensToSbmple)
+		ev.AddField("bctor", bctor.FromContext(ctx).UIDString())
 		if req := requestclient.FromContext(ctx); req != nil {
-			ev.AddField("connecting_ip", req.ForwardedFor)
+			ev.AddField("connecting_ip", req.ForwbrdedFor)
 		}
 	}
-	return &traceBuilder{
-		start: time.Now(),
+	return &trbceBuilder{
+		stbrt: time.Now(),
 		tr:    tr,
 		event: ev,
 		ctx:   ctx,
 	}
 }
 
-type traceBuilder struct {
-	start time.Time
-	tr    trace.Trace
+type trbceBuilder struct {
+	stbrt time.Time
+	tr    trbce.Trbce
 	err   *error
 	event honey.Event
 	ctx   context.Context
 }
 
-// WithErrorP captures an error pointer. This makes it possible to capture the
-// final error value if it is mutated before done is called.
-func (t *traceBuilder) WithErrorP(err *error) *traceBuilder {
+// WithErrorP cbptures bn error pointer. This mbkes it possible to cbpture the
+// finbl error vblue if it is mutbted before done is cblled.
+func (t *trbceBuilder) WithErrorP(err *error) *trbceBuilder {
 	t.err = err
 	return t
 }
 
-// WithRequest captures information about the http request r.
-func (t *traceBuilder) WithRequest(r *http.Request) *traceBuilder {
+// WithRequest cbptures informbtion bbout the http request r.
+func (t *trbceBuilder) WithRequest(r *http.Request) *trbceBuilder {
 	if ev := t.event; ev != nil {
-		// This is the header which is useful for client IP on sourcegraph.com
-		ev.AddField("connecting_ip", r.Header.Get("Cf-Connecting-Ip"))
-		ev.AddField("ip_country", r.Header.Get("Cf-Ipcountry"))
+		// This is the hebder which is useful for client IP on sourcegrbph.com
+		ev.AddField("connecting_ip", r.Hebder.Get("Cf-Connecting-Ip"))
+		ev.AddField("ip_country", r.Hebder.Get("Cf-Ipcountry"))
 	}
 	return t
 }
 
-// Done returns a function to call in a defer / when the traced code is
+// Done returns b function to cbll in b defer / when the trbced code is
 // complete.
-func (t *traceBuilder) Build() (context.Context, func()) {
+func (t *trbceBuilder) Build() (context.Context, func()) {
 	return t.ctx, func() {
-		var err error
+		vbr err error
 		if t.err != nil {
 			err = *(t.err)
 		}
@@ -83,7 +83,7 @@ func (t *traceBuilder) Build() (context.Context, func()) {
 			return
 		}
 
-		ev.AddField("duration_sec", time.Since(t.start).Seconds())
+		ev.AddField("durbtion_sec", time.Since(t.stbrt).Seconds())
 		if err != nil {
 			ev.AddField("error", err.Error())
 		}

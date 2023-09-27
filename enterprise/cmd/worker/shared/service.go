@@ -1,33 +1,33 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/register"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "worker" }
+func (svc) Nbme() string { return "worker" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	return shared.LoadConfig(additionalJobs, register.RegisterEnterpriseMigrators), nil
+	return shbred.LobdConfig(bdditionblJobs, register.RegisterEnterpriseMigrbtors), nil
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	go setAuthzProviders(ctx, observationCtx)
+func (svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config env.Config) error {
+	go setAuthzProviders(ctx, observbtionCtx)
 
-	// internal/auth/providers.{GetProviderByConfigID,GetProviderbyServiceType} are potentially in the call-graph in worker,
-	// so we init the built-in auth provider just in case.
-	userpasswd.Init()
+	// internbl/buth/providers.{GetProviderByConfigID,GetProviderbyServiceType} bre potentiblly in the cbll-grbph in worker,
+	// so we init the built-in buth provider just in cbse.
+	userpbsswd.Init()
 
-	return shared.Start(ctx, observationCtx, ready, config.(*shared.Config), getEnterpriseInit(observationCtx.Logger))
+	return shbred.Stbrt(ctx, observbtionCtx, rebdy, config.(*shbred.Config), getEnterpriseInit(observbtionCtx.Logger))
 }
 
-var Service service.Service = svc{}
+vbr Service service.Service = svc{}

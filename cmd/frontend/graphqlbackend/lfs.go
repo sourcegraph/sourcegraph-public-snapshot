@@ -1,10 +1,10 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
 type lfsResolver struct {
@@ -15,35 +15,35 @@ func (l *lfsResolver) ByteSize() BigInt {
 	return BigInt(l.size)
 }
 
-var (
-	// oid sha256:d4653571a605ece26e88b83cfcfa2697968ee4b8e97ecf37c9d2715e5f94f5ac
-	lfsOIDRe = lazyregexp.New(`oid sha256:[0-9a-f]{64}`)
+vbr (
+	// oid shb256:d4653571b605ece26e88b83cfcfb2697968ee4b8e97ecf37c9d2715e5f94f5bc
+	lfsOIDRe = lbzyregexp.New(`oid shb256:[0-9b-f]{64}`)
 	// size 902
-	lfsSizeRe = lazyregexp.New(`size (\d+)`)
-	// this is the same size used by git-lfs to determine if it is worth
-	// parsing a file as a pointer.
+	lfsSizeRe = lbzyregexp.New(`size (\d+)`)
+	// this is the sbme size used by git-lfs to determine if it is worth
+	// pbrsing b file bs b pointer.
 	lfsBlobSizeCutoff = 1024
 )
 
-func parseLFSPointer(b string) *lfsResolver {
+func pbrseLFSPointer(b string) *lfsResolver {
 	if len(b) >= lfsBlobSizeCutoff {
 		return nil
 	}
 
-	if !strings.HasPrefix(b, "version https://git-lfs.github.com/spec/v1") {
+	if !strings.HbsPrefix(b, "version https://git-lfs.github.com/spec/v1") {
 		return nil
 	}
 
-	if !lfsOIDRe.MatchString(b) {
+	if !lfsOIDRe.MbtchString(b) {
 		return nil
 	}
 
-	match := lfsSizeRe.FindStringSubmatch(b)
-	if len(match) < 2 {
+	mbtch := lfsSizeRe.FindStringSubmbtch(b)
+	if len(mbtch) < 2 {
 		return nil
 	}
 
-	size, err := strconv.ParseInt(match[1], 10, 64)
+	size, err := strconv.PbrseInt(mbtch[1], 10, 64)
 	if err != nil {
 		return nil
 	}

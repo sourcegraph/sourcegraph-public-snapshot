@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,44 +6,44 @@ import (
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestNamespace(t *testing.T) {
+func TestNbmespbce(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
-		const wantUserID = 3
+		const wbntUserID = 3
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-			if id != wantUserID {
-				t.Errorf("got %d, want %d", id, wantUserID)
+		users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
+			if id != wbntUserID {
+				t.Errorf("got %d, wbnt %d", id, wbntUserID)
 			}
-			return &types.User{ID: wantUserID, Username: "alice"}, nil
+			return &types.User{ID: wbntUserID, Usernbme: "blice"}, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					namespace(id: "VXNlcjoz") {
-						__typename
-						... on User { username }
+					nbmespbce(id: "VXNlcjoz") {
+						__typenbme
+						... on User { usernbme }
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"namespace": {
-						"__typename": "User",
-						"username": "alice"
+					"nbmespbce": {
+						"__typenbme": "User",
+						"usernbme": "blice"
 					}
 				}
 			`,
@@ -51,35 +51,35 @@ func TestNamespace(t *testing.T) {
 		})
 	})
 
-	t.Run("organization", func(t *testing.T) {
-		const wantOrgID = 3
+	t.Run("orgbnizbtion", func(t *testing.T) {
+		const wbntOrgID = 3
 		orgs := dbmocks.NewMockOrgStore()
-		orgs.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.Org, error) {
-			if id != wantOrgID {
-				t.Errorf("got %d, want %d", id, wantOrgID)
+		orgs.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.Org, error) {
+			if id != wbntOrgID {
+				t.Errorf("got %d, wbnt %d", id, wbntOrgID)
 			}
-			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
+			return &types.Org{ID: wbntOrgID, Nbme: "bcme"}, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.OrgsFunc.SetDefbultReturn(orgs)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					namespace(id: "T3JnOjM=") {
-						__typename
-						... on Org { name }
+					nbmespbce(id: "T3JnOjM=") {
+						__typenbme
+						... on Org { nbme }
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"namespace": {
-						"__typename": "Org",
-						"name": "acme"
+					"nbmespbce": {
+						"__typenbme": "Org",
+						"nbme": "bcme"
 					}
 				}
 			`,
@@ -87,30 +87,30 @@ func TestNamespace(t *testing.T) {
 		})
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		invalidID := "aW52YWxpZDoz"
-		wantErr := InvalidNamespaceIDErr{id: graphql.ID(invalidID)}
+	t.Run("invblid", func(t *testing.T) {
+		invblidID := "bW52YWxpZDoz"
+		wbntErr := InvblidNbmespbceIDErr{id: grbphql.ID(invblidID)}
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, dbmocks.NewMockDB()),
+				Schemb: mustPbrseGrbphQLSchemb(t, dbmocks.NewMockDB()),
 				Query: fmt.Sprintf(`
 				{
-					namespace(id: %q) {
-						__typename
+					nbmespbce(id: %q) {
+						__typenbme
 					}
 				}
-			`, invalidID),
+			`, invblidID),
 				ExpectedResult: `
 				{
-					"namespace": null
+					"nbmespbce": null
 				}
 			`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []any{"namespace"},
-						Message:       wantErr.Error(),
-						ResolverError: wantErr,
+						Pbth:          []bny{"nbmespbce"},
+						Messbge:       wbntErr.Error(),
+						ResolverError: wbntErr,
 					},
 				},
 			},
@@ -118,129 +118,129 @@ func TestNamespace(t *testing.T) {
 	})
 }
 
-func TestNamespaceByName(t *testing.T) {
+func TestNbmespbceByNbme(t *testing.T) {
 	t.Run("user", func(t *testing.T) {
 		const (
-			wantName   = "alice"
-			wantUserID = 123
+			wbntNbme   = "blice"
+			wbntUserID = 123
 		)
 
-		ns := dbmocks.NewMockNamespaceStore()
-		ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-			if name != wantName {
-				t.Errorf("got %q, want %q", name, wantName)
+		ns := dbmocks.NewMockNbmespbceStore()
+		ns.GetByNbmeFunc.SetDefbultHook(func(ctx context.Context, nbme string) (*dbtbbbse.Nbmespbce, error) {
+			if nbme != wbntNbme {
+				t.Errorf("got %q, wbnt %q", nbme, wbntNbme)
 			}
-			return &database.Namespace{Name: "alice", User: wantUserID}, nil
+			return &dbtbbbse.Nbmespbce{Nbme: "blice", User: wbntUserID}, nil
 		})
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-			if id != wantUserID {
-				t.Errorf("got %d, want %d", id, wantUserID)
+		users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
+			if id != wbntUserID {
+				t.Errorf("got %d, wbnt %d", id, wbntUserID)
 			}
-			return &types.User{ID: wantUserID, Username: wantName}, nil
+			return &types.User{ID: wbntUserID, Usernbme: wbntNbme}, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.NamespacesFunc.SetDefaultReturn(ns)
-		db.UsersFunc.SetDefaultReturn(users)
+		db.NbmespbcesFunc.SetDefbultReturn(ns)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					namespaceByName(name: "alice") {
-						__typename
-						... on User { username }
+					nbmespbceByNbme(nbme: "blice") {
+						__typenbme
+						... on User { usernbme }
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"namespaceByName": {
-						"__typename": "User",
-						"username": "alice"
+					"nbmespbceByNbme": {
+						"__typenbme": "User",
+						"usernbme": "blice"
 					}
 				}
 			`,
 			},
 		})
-		mockrequire.Called(t, ns.GetByNameFunc)
-		mockrequire.Called(t, users.GetByIDFunc)
+		mockrequire.Cblled(t, ns.GetByNbmeFunc)
+		mockrequire.Cblled(t, users.GetByIDFunc)
 	})
 
-	t.Run("organization", func(t *testing.T) {
+	t.Run("orgbnizbtion", func(t *testing.T) {
 		const (
-			wantName  = "acme"
-			wantOrgID = 3
+			wbntNbme  = "bcme"
+			wbntOrgID = 3
 		)
 
-		ns := dbmocks.NewMockNamespaceStore()
-		ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
-			if name != wantName {
-				t.Errorf("got %q, want %q", name, wantName)
+		ns := dbmocks.NewMockNbmespbceStore()
+		ns.GetByNbmeFunc.SetDefbultHook(func(ctx context.Context, nbme string) (*dbtbbbse.Nbmespbce, error) {
+			if nbme != wbntNbme {
+				t.Errorf("got %q, wbnt %q", nbme, wbntNbme)
 			}
-			return &database.Namespace{Name: "alice", Organization: wantOrgID}, nil
+			return &dbtbbbse.Nbmespbce{Nbme: "blice", Orgbnizbtion: wbntOrgID}, nil
 		})
 
 		orgs := dbmocks.NewMockOrgStore()
-		orgs.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.Org, error) {
-			if id != wantOrgID {
-				t.Errorf("got %d, want %d", id, wantOrgID)
+		orgs.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.Org, error) {
+			if id != wbntOrgID {
+				t.Errorf("got %d, wbnt %d", id, wbntOrgID)
 			}
-			return &types.Org{ID: wantOrgID, Name: "acme"}, nil
+			return &types.Org{ID: wbntOrgID, Nbme: "bcme"}, nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.NamespacesFunc.SetDefaultReturn(ns)
-		db.OrgsFunc.SetDefaultReturn(orgs)
+		db.NbmespbcesFunc.SetDefbultReturn(ns)
+		db.OrgsFunc.SetDefbultReturn(orgs)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					namespaceByName(name: "acme") {
-						__typename
-						... on Org { name }
+					nbmespbceByNbme(nbme: "bcme") {
+						__typenbme
+						... on Org { nbme }
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"namespaceByName": {
-						"__typename": "Org",
-						"name": "acme"
+					"nbmespbceByNbme": {
+						"__typenbme": "Org",
+						"nbme": "bcme"
 					}
 				}
 			`,
 			},
 		})
 
-		mockrequire.Called(t, ns.GetByNameFunc)
-		mockrequire.Called(t, orgs.GetByIDFunc)
+		mockrequire.Cblled(t, ns.GetByNbmeFunc)
+		mockrequire.Cblled(t, orgs.GetByIDFunc)
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		ns := dbmocks.NewMockNamespaceStore()
-		ns.GetByNameFunc.SetDefaultReturn(nil, database.ErrNamespaceNotFound)
+	t.Run("invblid", func(t *testing.T) {
+		ns := dbmocks.NewMockNbmespbceStore()
+		ns.GetByNbmeFunc.SetDefbultReturn(nil, dbtbbbse.ErrNbmespbceNotFound)
 		db := dbmocks.NewMockDB()
-		db.NamespacesFunc.SetDefaultReturn(ns)
+		db.NbmespbcesFunc.SetDefbultReturn(ns)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					namespaceByName(name: "doesntexist") {
-						__typename
+					nbmespbceByNbme(nbme: "doesntexist") {
+						__typenbme
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"namespaceByName": null
+					"nbmespbceByNbme": null
 				}
 			`,
 			},

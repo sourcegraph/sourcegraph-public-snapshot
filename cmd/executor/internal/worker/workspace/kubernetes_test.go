@@ -1,112 +1,112 @@
-package workspace_test
+pbckbge workspbce_test
 
 import (
 	"context"
 	"io"
 	"os"
-	"path"
+	"pbth"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestNewKubernetesWorkspace(t *testing.T) {
-	err := os.Setenv("KUBERNETES_SERVICE_HOST", "https://local")
+func TestNewKubernetesWorkspbce(t *testing.T) {
+	err := os.Setenv("KUBERNETES_SERVICE_HOST", "https://locbl")
 	require.NoError(t, err)
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		os.Unsetenv("KUBERNETES_SERVICE_HOST")
 	})
 
-	operations := command.NewOperations(&observation.TestContext)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name                   string
+		nbme                   string
 		job                    types.Job
-		cloneOptions           workspace.CloneOptions
-		mockFunc               func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand)
-		assertMockFunc         func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string)
-		expectedWorkspaceFiles map[string]string
-		expectedDockerScripts  map[string][]string
+		cloneOptions           workspbce.CloneOptions
+		mockFunc               func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd)
+		bssertMockFunc         func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string)
+		expectedWorkspbceFiles mbp[string]string
+		expectedDockerScripts  mbp[string][]string
 		expectedErr            error
 	}{
 		{
-			name: "No repository configured",
+			nbme: "No repository configured",
 			job: types.Job{
 				ID:     42,
 				Token:  "token",
 				Commit: "commit",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
 			},
 		},
 		{
-			name: "Clone repository",
+			nbme: "Clone repository",
 			job: types.Job{
 				ID:             42,
 				Token:          "token",
 				Commit:         "commit",
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				// Init
-				assert.Equal(t, "setup.git.init", cmd.RunFunc.History()[0].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[0].Arg2.Env)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.git.init", cmd.RunFunc.History()[0].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[0].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
 					"init",
-				}, cmd.RunFunc.History()[0].Arg2.Command)
-				assert.Equal(t, operations.SetupGitInit, cmd.RunFunc.History()[0].Arg2.Operation)
+				}, cmd.RunFunc.History()[0].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitInit, cmd.RunFunc.History()[0].Arg2.Operbtion)
 				// Add remote
-				assert.Equal(t, "setup.git.add-remote", cmd.RunFunc.History()[1].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[1].Arg2.Env)
-				// The origin has the proxy address. The port changes. So we need custom assertions
-				assert.Equal(t, "git", cmd.RunFunc.History()[1].Arg2.Command[0])
-				assert.Equal(t, "-C", cmd.RunFunc.History()[1].Arg2.Command[1])
-				assert.Equal(t, tempDir, cmd.RunFunc.History()[1].Arg2.Command[2])
-				assert.Equal(t, "remote", cmd.RunFunc.History()[1].Arg2.Command[3])
-				assert.Equal(t, "add", cmd.RunFunc.History()[1].Arg2.Command[4])
-				assert.Equal(t, "origin", cmd.RunFunc.History()[1].Arg2.Command[5])
-				assert.Regexp(t, "^http://127.0.0.1:[0-9]+/my-repo$", cmd.RunFunc.History()[1].Arg2.Command[6])
-				assert.Equal(t, operations.SetupAddRemote, cmd.RunFunc.History()[1].Arg2.Operation)
-				// Disable GC
-				assert.Equal(t, "setup.git.disable-gc", cmd.RunFunc.History()[2].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[2].Arg2.Env)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.git.bdd-remote", cmd.RunFunc.History()[1].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[1].Arg2.Env)
+				// The origin hbs the proxy bddress. The port chbnges. So we need custom bssertions
+				bssert.Equbl(t, "git", cmd.RunFunc.History()[1].Arg2.Commbnd[0])
+				bssert.Equbl(t, "-C", cmd.RunFunc.History()[1].Arg2.Commbnd[1])
+				bssert.Equbl(t, tempDir, cmd.RunFunc.History()[1].Arg2.Commbnd[2])
+				bssert.Equbl(t, "remote", cmd.RunFunc.History()[1].Arg2.Commbnd[3])
+				bssert.Equbl(t, "bdd", cmd.RunFunc.History()[1].Arg2.Commbnd[4])
+				bssert.Equbl(t, "origin", cmd.RunFunc.History()[1].Arg2.Commbnd[5])
+				bssert.Regexp(t, "^http://127.0.0.1:[0-9]+/my-repo$", cmd.RunFunc.History()[1].Arg2.Commbnd[6])
+				bssert.Equbl(t, operbtions.SetupAddRemote, cmd.RunFunc.History()[1].Arg2.Operbtion)
+				// Disbble GC
+				bssert.Equbl(t, "setup.git.disbble-gc", cmd.RunFunc.History()[2].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[2].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
 					"config",
-					"--local",
-					"gc.auto",
+					"--locbl",
+					"gc.buto",
 					"0",
-				}, cmd.RunFunc.History()[2].Arg2.Command)
-				assert.Equal(t, operations.SetupGitDisableGC, cmd.RunFunc.History()[2].Arg2.Operation)
+				}, cmd.RunFunc.History()[2].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitDisbbleGC, cmd.RunFunc.History()[2].Arg2.Operbtion)
 				// Fetch
-				assert.Equal(t, "setup.git.fetch", cmd.RunFunc.History()[3].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[3].Arg2.Env)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.git.fetch", cmd.RunFunc.History()[3].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[3].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -117,12 +117,12 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"--no-recurse-submodules",
 					"origin",
 					"commit",
-				}, cmd.RunFunc.History()[3].Arg2.Command)
-				assert.Equal(t, operations.SetupGitFetch, cmd.RunFunc.History()[3].Arg2.Operation)
+				}, cmd.RunFunc.History()[3].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitFetch, cmd.RunFunc.History()[3].Arg2.Operbtion)
 				// Checkout
-				assert.Equal(t, "setup.git.checkout", cmd.RunFunc.History()[4].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[4].Arg2.Env)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.git.checkout", cmd.RunFunc.History()[4].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[4].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -130,12 +130,12 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"--progress",
 					"--force",
 					"commit",
-				}, cmd.RunFunc.History()[4].Arg2.Command)
-				assert.Equal(t, operations.SetupGitCheckout, cmd.RunFunc.History()[4].Arg2.Operation)
+				}, cmd.RunFunc.History()[4].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitCheckout, cmd.RunFunc.History()[4].Arg2.Operbtion)
 				// Set Remote
-				assert.Equal(t, "setup.git.set-remote", cmd.RunFunc.History()[5].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[5].Arg2.Env)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, "setup.git.set-remote", cmd.RunFunc.History()[5].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[5].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -143,68 +143,68 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"set-url",
 					"origin",
 					"my-repo",
-				}, cmd.RunFunc.History()[5].Arg2.Command)
-				assert.Equal(t, operations.SetupGitSetRemoteUrl, cmd.RunFunc.History()[5].Arg2.Operation)
+				}, cmd.RunFunc.History()[5].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitSetRemoteUrl, cmd.RunFunc.History()[5].Arg2.Operbtion)
 			},
 		},
 		{
-			name: "Failed to clone repository",
+			nbme: "Fbiled to clone repository",
 			job: types.Job{
 				ID:             42,
 				Token:          "token",
 				Commit:         "commit",
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				cmd.RunFunc.SetDefaultReturn(errors.New("failed"))
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				cmd.RunFunc.SetDefbultReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 1)
 			},
-			expectedErr: errors.New("failed setup.git.init: failed"),
+			expectedErr: errors.New("fbiled setup.git.init: fbiled"),
 		},
 		{
-			name: "Clone repository with directory",
+			nbme: "Clone repository with directory",
 			job: types.Job{
 				ID:                  42,
 				Token:               "token",
 				Commit:              "commit",
-				RepositoryName:      "my-repo",
+				RepositoryNbme:      "my-repo",
 				RepositoryDirectory: "/my/dir",
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
-				repoDir := path.Join(tempDir, "/my/dir")
+				repoDir := pbth.Join(tempDir, "/my/dir")
 				// Init
-				assert.Equal(t, []string{"git", "-C", repoDir, "init"}, cmd.RunFunc.History()[0].Arg2.Command)
+				bssert.Equbl(t, []string{"git", "-C", repoDir, "init"}, cmd.RunFunc.History()[0].Arg2.Commbnd)
 				// Add remote
-				// The origin has the proxy address. The port changes. So we need custom assertions
-				assert.Equal(t, "git", cmd.RunFunc.History()[1].Arg2.Command[0])
-				assert.Equal(t, "-C", cmd.RunFunc.History()[1].Arg2.Command[1])
-				assert.Equal(t, repoDir, cmd.RunFunc.History()[1].Arg2.Command[2])
-				assert.Equal(t, "remote", cmd.RunFunc.History()[1].Arg2.Command[3])
-				assert.Equal(t, "add", cmd.RunFunc.History()[1].Arg2.Command[4])
-				assert.Equal(t, "origin", cmd.RunFunc.History()[1].Arg2.Command[5])
-				assert.Regexp(t, "^http://127.0.0.1:[0-9]+/my-repo$", cmd.RunFunc.History()[1].Arg2.Command[6])
-				// Disable GC
-				assert.Equal(t, []string{
+				// The origin hbs the proxy bddress. The port chbnges. So we need custom bssertions
+				bssert.Equbl(t, "git", cmd.RunFunc.History()[1].Arg2.Commbnd[0])
+				bssert.Equbl(t, "-C", cmd.RunFunc.History()[1].Arg2.Commbnd[1])
+				bssert.Equbl(t, repoDir, cmd.RunFunc.History()[1].Arg2.Commbnd[2])
+				bssert.Equbl(t, "remote", cmd.RunFunc.History()[1].Arg2.Commbnd[3])
+				bssert.Equbl(t, "bdd", cmd.RunFunc.History()[1].Arg2.Commbnd[4])
+				bssert.Equbl(t, "origin", cmd.RunFunc.History()[1].Arg2.Commbnd[5])
+				bssert.Regexp(t, "^http://127.0.0.1:[0-9]+/my-repo$", cmd.RunFunc.History()[1].Arg2.Commbnd[6])
+				// Disbble GC
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					repoDir,
 					"config",
-					"--local",
-					"gc.auto",
+					"--locbl",
+					"gc.buto",
 					"0",
-				}, cmd.RunFunc.History()[2].Arg2.Command)
+				}, cmd.RunFunc.History()[2].Arg2.Commbnd)
 				// Fetch
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					repoDir,
@@ -215,9 +215,9 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"--no-recurse-submodules",
 					"origin",
 					"commit",
-				}, cmd.RunFunc.History()[3].Arg2.Command)
+				}, cmd.RunFunc.History()[3].Arg2.Commbnd)
 				// Checkout
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					repoDir,
@@ -225,9 +225,9 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"--progress",
 					"--force",
 					"commit",
-				}, cmd.RunFunc.History()[4].Arg2.Command)
+				}, cmd.RunFunc.History()[4].Arg2.Commbnd)
 				// Set Remote
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					repoDir,
@@ -235,26 +235,26 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"set-url",
 					"origin",
 					"my-repo",
-				}, cmd.RunFunc.History()[5].Arg2.Command)
+				}, cmd.RunFunc.History()[5].Arg2.Commbnd)
 			},
 		},
 		{
-			name: "Fetch tags",
+			nbme: "Fetch tbgs",
 			job: types.Job{
 				ID:             42,
 				Token:          "token",
 				Commit:         "commit",
-				RepositoryName: "my-repo",
-				FetchTags:      true,
+				RepositoryNbme: "my-repo",
+				FetchTbgs:      true,
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -263,29 +263,29 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"fetch",
 					"--progress",
 					"--no-recurse-submodules",
-					"--tags",
+					"--tbgs",
 					"origin",
 					"commit",
-				}, cmd.RunFunc.History()[3].Arg2.Command)
+				}, cmd.RunFunc.History()[3].Arg2.Commbnd)
 			},
 		},
 		{
-			name: "Shallow clone",
+			nbme: "Shbllow clone",
 			job: types.Job{
 				ID:             42,
 				Token:          "token",
 				Commit:         "commit",
-				RepositoryName: "my-repo",
-				ShallowClone:   true,
+				RepositoryNbme: "my-repo",
+				ShbllowClone:   true,
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -294,31 +294,31 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"fetch",
 					"--progress",
 					"--no-recurse-submodules",
-					"--no-tags",
+					"--no-tbgs",
 					"--depth=1",
 					"origin",
 					"commit",
-				}, cmd.RunFunc.History()[3].Arg2.Command)
+				}, cmd.RunFunc.History()[3].Arg2.Commbnd)
 			},
 		},
 		{
-			name: "Sparse checkout",
+			nbme: "Spbrse checkout",
 			job: types.Job{
 				ID:             42,
 				Token:          "token",
 				Commit:         "commit",
-				RepositoryName: "my-repo",
-				SparseCheckout: []string{"foo/bar/**"},
+				RepositoryNbme: "my-repo",
+				SpbrseCheckout: []string{"foo/bbr/**"},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 8)
 				// Fetch
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -330,36 +330,36 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"--filter=blob:none",
 					"origin",
 					"commit",
-				}, cmd.RunFunc.History()[3].Arg2.Command)
-				// Sparse checkout config
-				assert.Equal(t, "setup.git.sparse-checkout-config", cmd.RunFunc.History()[4].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[4].Arg2.Env)
-				assert.Equal(t, []string{
+				}, cmd.RunFunc.History()[3].Arg2.Commbnd)
+				// Spbrse checkout config
+				bssert.Equbl(t, "setup.git.spbrse-checkout-config", cmd.RunFunc.History()[4].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[4].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
 					"config",
-					"--local",
-					"core.sparseCheckout",
+					"--locbl",
+					"core.spbrseCheckout",
 					"1",
-				}, cmd.RunFunc.History()[4].Arg2.Command)
-				assert.Equal(t, operations.SetupGitSparseCheckoutConfig, cmd.RunFunc.History()[4].Arg2.Operation)
-				// Sparse Checkout Set
-				assert.Equal(t, "setup.git.sparse-checkout-set", cmd.RunFunc.History()[5].Arg2.Key)
-				assert.Equal(t, expectedGitEnv, cmd.RunFunc.History()[5].Arg2.Env)
-				assert.Equal(t, []string{
+				}, cmd.RunFunc.History()[4].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitSpbrseCheckoutConfig, cmd.RunFunc.History()[4].Arg2.Operbtion)
+				// Spbrse Checkout Set
+				bssert.Equbl(t, "setup.git.spbrse-checkout-set", cmd.RunFunc.History()[5].Arg2.Key)
+				bssert.Equbl(t, expectedGitEnv, cmd.RunFunc.History()[5].Arg2.Env)
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
-					"sparse-checkout",
+					"spbrse-checkout",
 					"set",
 					"--no-cone",
 					"--",
-					"foo/bar/**",
-				}, cmd.RunFunc.History()[5].Arg2.Command)
-				assert.Equal(t, operations.SetupGitSparseCheckoutSet, cmd.RunFunc.History()[5].Arg2.Operation)
+					"foo/bbr/**",
+				}, cmd.RunFunc.History()[5].Arg2.Commbnd)
+				bssert.Equbl(t, operbtions.SetupGitSpbrseCheckoutSet, cmd.RunFunc.History()[5].Arg2.Operbtion)
 				// Checkout
-				assert.Equal(t, []string{
+				bssert.Equbl(t, []string{
 					"git",
 					"-C",
 					tempDir,
@@ -369,46 +369,46 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 					"--progress",
 					"--force",
 					"commit",
-				}, cmd.RunFunc.History()[6].Arg2.Command)
+				}, cmd.RunFunc.History()[6].Arg2.Commbnd)
 			},
 		},
 		{
-			name: "Virtual machine files",
+			nbme: "Virtubl mbchine files",
 			job: types.Job{
 				ID:     42,
 				Token:  "token",
 				Commit: "commit",
-				VirtualMachineFiles: map[string]types.VirtualMachineFile{
+				VirtublMbchineFiles: mbp[string]types.VirtublMbchineFile{
 					"file1.txt": {
 						Content:    []byte("content1"),
 						ModifiedAt: time.Now(),
 					},
 					"file2.txt": {
 						Bucket:     "foo",
-						Key:        "bar",
+						Key:        "bbr",
 						ModifiedAt: time.Now(),
 					},
 				},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				filesStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("content2")), nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				filesStore.GetFunc.SetDefbultReturn(io.NopCloser(strings.NewRebder("content2")), nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				require.Len(t, cmd.RunFunc.History(), 0)
 				require.Len(t, filesStore.GetFunc.History(), 1)
-				assert.NotZero(t, filesStore.GetFunc.History()[0].Arg1)
-				assert.Equal(t, "foo", filesStore.GetFunc.History()[0].Arg2)
-				assert.Equal(t, "bar", filesStore.GetFunc.History()[0].Arg3)
+				bssert.NotZero(t, filesStore.GetFunc.History()[0].Arg1)
+				bssert.Equbl(t, "foo", filesStore.GetFunc.History()[0].Arg2)
+				bssert.Equbl(t, "bbr", filesStore.GetFunc.History()[0].Arg3)
 			},
-			expectedWorkspaceFiles: map[string]string{
+			expectedWorkspbceFiles: mbp[string]string{
 				"file1.txt": "content1",
 				"file2.txt": "content2",
 			},
 		},
 		{
-			name: "Docker steps",
+			nbme: "Docker steps",
 			job: types.Job{
 				ID:     42,
 				Token:  "token",
@@ -416,125 +416,125 @@ func TestNewKubernetesWorkspace(t *testing.T) {
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "step1",
-						Image:    "my-image-1",
-						Commands: []string{"command1", "arg"},
+						Imbge:    "my-imbge-1",
+						Commbnds: []string{"commbnd1", "brg"},
 						Dir:      "/my/dir1",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 					{
 						Key:      "step2",
-						Image:    "my-image-2",
-						Commands: []string{"command2", "arg"},
+						Imbge:    "my-imbge-2",
+						Commbnds: []string{"commbnd2", "brg"},
 						Dir:      "/my/dir2",
-						Env:      []string{"FAZ=baz"},
+						Env:      []string{"FAZ=bbz"},
 					},
 				},
 			},
-			mockFunc: func(logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand) {
-				logger.LogEntryFunc.SetDefaultReturn(workspace.NewMockLogEntry())
-				filesStore.GetFunc.SetDefaultReturn(io.NopCloser(strings.NewReader("content2")), nil)
+			mockFunc: func(logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd) {
+				logger.LogEntryFunc.SetDefbultReturn(workspbce.NewMockLogEntry())
+				filesStore.GetFunc.SetDefbultReturn(io.NopCloser(strings.NewRebder("content2")), nil)
 			},
-			assertMockFunc: func(t *testing.T, logger *workspace.MockLogger, filesStore *workspace.MockStore, cmd *workspace.MockCommand, tempDir string) {
+			bssertMockFunc: func(t *testing.T, logger *workspbce.MockLogger, filesStore *workspbce.MockStore, cmd *workspbce.MockCommbnd, tempDir string) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 0)
 			},
-			expectedDockerScripts: map[string][]string{
-				"42.0_@commit.sh": {"command1", "arg"},
-				"42.1_@commit.sh": {"command2", "arg"},
+			expectedDockerScripts: mbp[string][]string{
+				"42.0_@commit.sh": {"commbnd1", "brg"},
+				"42.1_@commit.sh": {"commbnd2", "brg"},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			filesStore := workspace.NewMockStore()
-			cmd := workspace.NewMockCommand()
-			logger := workspace.NewMockLogger()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			filesStore := workspbce.NewMockStore()
+			cmd := workspbce.NewMockCommbnd()
+			logger := workspbce.NewMockLogger()
 
 			if test.mockFunc != nil {
 				test.mockFunc(logger, filesStore, cmd)
 			}
 
-			mountPath := t.TempDir()
+			mountPbth := t.TempDir()
 
-			ws, err := workspace.NewKubernetesWorkspace(
-				context.Background(),
+			ws, err := workspbce.NewKubernetesWorkspbce(
+				context.Bbckground(),
 				filesStore,
 				test.job,
 				cmd,
 				logger,
 				test.cloneOptions,
-				mountPath,
-				false,
-				operations,
+				mountPbth,
+				fblse,
+				operbtions,
 			)
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				if ws != nil {
-					ws.Remove(context.Background(), false)
+					ws.Remove(context.Bbckground(), fblse)
 				}
 			})
 
 			tempDir := ""
 			if ws != nil {
-				tempDir = ws.Path()
+				tempDir = ws.Pbth()
 			}
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				// Workspace files
-				entries, err := os.ReadDir(tempDir)
+				// Workspbce files
+				entries, err := os.RebdDir(tempDir)
 				require.NoError(t, err)
-				// includes .sourcegraph-executor directory
-				additionalEntries := 1
+				// includes .sourcegrbph-executor directory
+				bdditionblEntries := 1
 				if len(test.job.RepositoryDirectory) > 0 {
-					additionalEntries++
+					bdditionblEntries++
 				}
-				assert.Len(t, entries, len(test.expectedWorkspaceFiles)+additionalEntries)
-				for f, content := range test.expectedWorkspaceFiles {
-					b, err := os.ReadFile(path.Join(tempDir, f))
+				bssert.Len(t, entries, len(test.expectedWorkspbceFiles)+bdditionblEntries)
+				for f, content := rbnge test.expectedWorkspbceFiles {
+					b, err := os.RebdFile(pbth.Join(tempDir, f))
 					require.NoError(t, err)
-					assert.Equal(t, content, string(b))
+					bssert.Equbl(t, content, string(b))
 				}
 				// Docker scripts
-				entries, err = os.ReadDir(path.Join(tempDir, ".sourcegraph-executor"))
+				entries, err = os.RebdDir(pbth.Join(tempDir, ".sourcegrbph-executor"))
 				require.NoError(t, err)
-				assert.Len(t, entries, len(test.expectedDockerScripts))
-				for f, commands := range test.expectedDockerScripts {
-					require.Contains(t, ws.ScriptFilenames(), f)
-					b, err := os.ReadFile(path.Join(tempDir, ".sourcegraph-executor", f))
+				bssert.Len(t, entries, len(test.expectedDockerScripts))
+				for f, commbnds := rbnge test.expectedDockerScripts {
+					require.Contbins(t, ws.ScriptFilenbmes(), f)
+					b, err := os.RebdFile(pbth.Join(tempDir, ".sourcegrbph-executor", f))
 					require.NoError(t, err)
-					assert.Equal(t, toDockerStepScript(commands...), string(b))
+					bssert.Equbl(t, toDockerStepScript(commbnds...), string(b))
 				}
 			}
 
-			test.assertMockFunc(t, logger, filesStore, cmd, tempDir)
+			test.bssertMockFunc(t, logger, filesStore, cmd, tempDir)
 		})
 	}
 }
 
-func TestNewKubernetesWorkspace_SingleJob(t *testing.T) {
-	filesStore := workspace.NewMockStore()
-	cmd := workspace.NewMockCommand()
-	logger := workspace.NewMockLogger()
+func TestNewKubernetesWorkspbce_SingleJob(t *testing.T) {
+	filesStore := workspbce.NewMockStore()
+	cmd := workspbce.NewMockCommbnd()
+	logger := workspbce.NewMockLogger()
 
-	operations := command.NewOperations(&observation.TestContext)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
-	ws, err := workspace.NewKubernetesWorkspace(
-		context.Background(),
+	ws, err := workspbce.NewKubernetesWorkspbce(
+		context.Bbckground(),
 		filesStore,
 		types.Job{},
 		cmd,
 		logger,
-		workspace.CloneOptions{},
+		workspbce.CloneOptions{},
 		"",
 		true,
-		operations,
+		operbtions,
 	)
 	require.NoError(t, err)
-	assert.Empty(t, ws.Path())
-	assert.Len(t, ws.ScriptFilenames(), 0)
-	assert.Empty(t, ws.WorkingDirectory())
+	bssert.Empty(t, ws.Pbth())
+	bssert.Len(t, ws.ScriptFilenbmes(), 0)
+	bssert.Empty(t, ws.WorkingDirectory())
 }

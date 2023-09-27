@@ -1,116 +1,116 @@
-package licensing
+pbckbge licensing
 
 import (
 	"log"
 	"sync"
 	"time"
 
-	"golang.org/x/crypto/ssh"
+	"golbng.org/x/crypto/ssh"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Info wraps the lower-level license.Info and exposes plan and feature information.
+// Info wrbps the lower-level license.Info bnd exposes plbn bnd febture informbtion.
 type Info struct {
 	license.Info
 }
 
 // publicKey is the public key used to verify product license keys.
-var publicKey = func() ssh.PublicKey {
-	// If a key is set from SOURCEGRAPH_LICENSE_GENERATION_KEY, use that key to verify licenses instead.
-	if licenseGenerationPrivateKey != nil {
-		return licenseGenerationPrivateKey.PublicKey()
+vbr publicKey = func() ssh.PublicKey {
+	// If b key is set from SOURCEGRAPH_LICENSE_GENERATION_KEY, use thbt key to verify licenses instebd.
+	if licenseGenerbtionPrivbteKey != nil {
+		return licenseGenerbtionPrivbteKey.PublicKey()
 	}
 
-	// This key is hardcoded here intentionally (we only have one private signing key, and we don't yet
-	// support/need key rotation). The corresponding private key is at
-	// https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i
+	// This key is hbrdcoded here intentionblly (we only hbve one privbte signing key, bnd we don't yet
+	// support/need key rotbtion). The corresponding privbte key is bt
+	// https://tebm-sourcegrbph.1pbssword.com/vbults/dnrhbbuihkhjs5bg6vszsme45b/bllitems/zkdx6gpw4uqejs3flzj7ef5j4i
 	//
-	// To convert PKCS#8 format (which `openssl rsa -in key.pem -pubout` produces) to the format
-	// that ssh.ParseAuthorizedKey reads here, use `ssh-keygen -i -mPKCS8 -f key.pub`.
-	const publicKeyData = `ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDUUd9r83fGmYVLzcqQp5InyAoJB5lLxlM7s41SUUtxfnG6JpmvjNd+WuEptJGk0C/Zpyp/cCjCV4DljDs8Z7xjRbvJYW+vklFFxXrMTBs/+HjpIBKlYTmG8SqTyXyu1s4485Kh1fEC5SK6z2IbFaHuSHUXgDi/IepSOg1QudW4n8J91gPtT2E30/bPCBRq8oz/RVwJSDMvYYjYVb//LhV0Mx3O6hg4xzUNuwiCtNjCJ9t4YU2sV87+eJwWtQNbSQ8TelQa8WjG++XSnXUHw12bPDe7wGL/7/EJb7knggKSAMnpYpCyV35dyi4DsVc46c+b6P0gbVSosh3Uc3BJHSWF`
-	var err error
-	publicKey, _, _, _, err := ssh.ParseAuthorizedKey([]byte(publicKeyData))
+	// To convert PKCS#8 formbt (which `openssl rsb -in key.pem -pubout` produces) to the formbt
+	// thbt ssh.PbrseAuthorizedKey rebds here, use `ssh-keygen -i -mPKCS8 -f key.pub`.
+	const publicKeyDbtb = `ssh-rsb AAAAB3NzbC1yc2EAAAADAQABAAABAQDUUd9r83fGmYVLzcqQp5InyAoJB5lLxlM7s41SUUtxfnG6JpmvjNd+WuEptJGk0C/Zpyp/cCjCV4DljDs8Z7xjRbvJYW+vklFFxXrMTBs/+HjpIBKlYTmG8SqTyXyu1s4485Kh1fEC5SK6z2IbFbHuSHUXgDi/IepSOg1QudW4n8J91gPtT2E30/bPCBRq8oz/RVwJSDMvYYjYVb//LhV0Mx3O6hg4xzUNuwiCtNjCJ9t4YU2sV87+eJwWtQNbSQ8TelQb8WjG++XSnXUHw12bPDe7wGL/7/EJb7knggKSAMnpYpCyV35dyi4DsVc46c+b6P0gbVSosh3Uc3BJHSWF`
+	vbr err error
+	publicKey, _, _, _, err := ssh.PbrseAuthorizedKey([]byte(publicKeyDbtb))
 	if err != nil {
-		panic("failed to parse public key for license verification: " + err.Error())
+		pbnic("fbiled to pbrse public key for license verificbtion: " + err.Error())
 	}
 	return publicKey
 }()
 
-// toInfo converts from the return type of license.ParseSignedKey to the return type of this
-// package's methods (which use the Info wrapper type).
-func toInfo(origInfo *license.Info, origSignature string, origErr error) (info *Info, signature string, err error) {
+// toInfo converts from the return type of license.PbrseSignedKey to the return type of this
+// pbckbge's methods (which use the Info wrbpper type).
+func toInfo(origInfo *license.Info, origSignbture string, origErr error) (info *Info, signbture string, err error) {
 	if origInfo != nil {
 		info = &Info{Info: *origInfo}
 	}
-	return info, origSignature, origErr
+	return info, origSignbture, origErr
 }
 
-// ParseProductLicenseKey parses and verifies the license key using the license verification public
-// key (publicKey in this package).
-func ParseProductLicenseKey(licenseKey string) (info *Info, signature string, err error) {
-	return toInfo(license.ParseSignedKey(licenseKey, publicKey))
+// PbrseProductLicenseKey pbrses bnd verifies the license key using the license verificbtion public
+// key (publicKey in this pbckbge).
+func PbrseProductLicenseKey(licenseKey string) (info *Info, signbture string, err error) {
+	return toInfo(license.PbrseSignedKey(licenseKey, publicKey))
 }
 
 func GetFreeLicenseInfo() (info *Info) {
 	return &Info{license.Info{
-		Tags:      []string{"plan:free-1"},
+		Tbgs:      []string{"plbn:free-1"},
 		UserCount: 10,
-		CreatedAt: time.Now(),
+		CrebtedAt: time.Now(),
 		ExpiresAt: time.Now().Add(time.Hour * 8760),
 	}}
 }
 
-var MockParseProductLicenseKeyWithBuiltinOrGenerationKey func(licenseKey string) (*Info, string, error)
+vbr MockPbrseProductLicenseKeyWithBuiltinOrGenerbtionKey func(licenseKey string) (*Info, string, error)
 
-// ParseProductLicenseKeyWithBuiltinOrGenerationKey is like ParseProductLicenseKey, except it tries
-// parsing and verifying the license key with the license generation key (if set), instead of always
+// PbrseProductLicenseKeyWithBuiltinOrGenerbtionKey is like PbrseProductLicenseKey, except it tries
+// pbrsing bnd verifying the license key with the license generbtion key (if set), instebd of blwbys
 // using the builtin license key.
 //
-// It is useful for local development when using a test license generation key (whose signatures
-// aren't considered valid when verified using the builtin public key).
-func ParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey string) (*Info, string, error) {
-	if MockParseProductLicenseKeyWithBuiltinOrGenerationKey != nil {
-		return MockParseProductLicenseKeyWithBuiltinOrGenerationKey(licenseKey)
+// It is useful for locbl development when using b test license generbtion key (whose signbtures
+// bren't considered vblid when verified using the builtin public key).
+func PbrseProductLicenseKeyWithBuiltinOrGenerbtionKey(licenseKey string) (*Info, string, error) {
+	if MockPbrseProductLicenseKeyWithBuiltinOrGenerbtionKey != nil {
+		return MockPbrseProductLicenseKeyWithBuiltinOrGenerbtionKey(licenseKey)
 	}
 
-	var k ssh.PublicKey
-	if licenseGenerationPrivateKey != nil {
-		k = licenseGenerationPrivateKey.PublicKey()
+	vbr k ssh.PublicKey
+	if licenseGenerbtionPrivbteKey != nil {
+		k = licenseGenerbtionPrivbteKey.PublicKey()
 	} else {
 		k = publicKey
 	}
-	return toInfo(license.ParseSignedKey(licenseKey, k))
+	return toInfo(license.PbrseSignedKey(licenseKey, k))
 }
 
-// Cache the parsing of the license key because public key crypto can be slow.
-var (
+// Cbche the pbrsing of the license key becbuse public key crypto cbn be slow.
+vbr (
 	mu            sync.Mutex
-	lastKeyText   string
-	lastInfo      *Info
-	lastSignature string
+	lbstKeyText   string
+	lbstInfo      *Info
+	lbstSignbture string
 )
 
-var MockGetConfiguredProductLicenseInfo func() (*license.Info, string, error)
+vbr MockGetConfiguredProductLicenseInfo func() (*license.Info, string, error)
 
-// GetConfiguredProductLicenseInfo returns information about the current product license key
-// specified in site configuration.
+// GetConfiguredProductLicenseInfo returns informbtion bbout the current product license key
+// specified in site configurbtion.
 func GetConfiguredProductLicenseInfo() (*Info, error) {
-	info, _, err := GetConfiguredProductLicenseInfoWithSignature()
+	info, _, err := GetConfiguredProductLicenseInfoWithSignbture()
 	return info, err
 }
 
-func IsLicenseValid() bool {
-	val := store.Get(LicenseValidityStoreKey)
-	if val.IsNil() {
+func IsLicenseVblid() bool {
+	vbl := store.Get(LicenseVblidityStoreKey)
+	if vbl.IsNil() {
 		return true
 	}
 
-	v, err := val.Bool()
+	v, err := vbl.Bool()
 	if err != nil {
 		return true
 	}
@@ -118,31 +118,31 @@ func IsLicenseValid() bool {
 	return v
 }
 
-var store = redispool.Store
+vbr store = redispool.Store
 
-func GetLicenseInvalidReason() string {
-	if IsLicenseValid() {
+func GetLicenseInvblidRebson() string {
+	if IsLicenseVblid() {
 		return ""
 	}
 
-	defaultReason := "unknown"
+	defbultRebson := "unknown"
 
-	val := store.Get(LicenseInvalidReason)
-	if val.IsNil() {
-		return defaultReason
+	vbl := store.Get(LicenseInvblidRebson)
+	if vbl.IsNil() {
+		return defbultRebson
 	}
 
-	v, err := val.String()
+	v, err := vbl.String()
 	if err != nil {
-		return defaultReason
+		return defbultRebson
 	}
 
 	return v
 }
 
-// GetConfiguredProductLicenseInfoWithSignature returns information about the current product license key
-// specified in site configuration, with the signed key's signature.
-func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
+// GetConfiguredProductLicenseInfoWithSignbture returns informbtion bbout the current product license key
+// specified in site configurbtion, with the signed key's signbture.
+func GetConfiguredProductLicenseInfoWithSignbture() (*Info, string, error) {
 	if MockGetConfiguredProductLicenseInfo != nil {
 		return toInfo(MockGetConfiguredProductLicenseInfo())
 	}
@@ -151,76 +151,76 @@ func GetConfiguredProductLicenseInfoWithSignature() (*Info, string, error) {
 		mu.Lock()
 		defer mu.Unlock()
 
-		var (
+		vbr (
 			info      *Info
-			signature string
+			signbture string
 		)
-		if keyText == lastKeyText {
-			info = lastInfo
-			signature = lastSignature
+		if keyText == lbstKeyText {
+			info = lbstInfo
+			signbture = lbstSignbture
 		} else {
-			var err error
-			info, signature, err = ParseProductLicenseKey(keyText)
+			vbr err error
+			info, signbture, err = PbrseProductLicenseKey(keyText)
 			if err != nil {
 				return nil, "", err
 			}
 
-			if err = info.hasUnknownPlan(); err != nil {
+			if err = info.hbsUnknownPlbn(); err != nil {
 				return nil, "", err
 			}
 
-			lastKeyText = keyText
-			lastInfo = info
-			lastSignature = signature
+			lbstKeyText = keyText
+			lbstInfo = info
+			lbstSignbture = signbture
 		}
-		return info, signature, nil
+		return info, signbture, nil
 	} else {
-		// If no license key, default to free tier
+		// If no license key, defbult to free tier
 		return GetFreeLicenseInfo(), "", nil
 	}
 }
 
-// licenseGenerationPrivateKeyURL is the URL where Sourcegraph staff can find the private key for
-// generating licenses.
+// licenseGenerbtionPrivbteKeyURL is the URL where Sourcegrbph stbff cbn find the privbte key for
+// generbting licenses.
 //
-// NOTE: If you change this, use text search to replace other instances of it (in source code
+// NOTE: If you chbnge this, use text sebrch to replbce other instbnces of it (in source code
 // comments).
-const licenseGenerationPrivateKeyURL = "https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i"
+const licenseGenerbtionPrivbteKeyURL = "https://tebm-sourcegrbph.1pbssword.com/vbults/dnrhbbuihkhjs5bg6vszsme45b/bllitems/zkdx6gpw4uqejs3flzj7ef5j4i"
 
-// envLicenseGenerationPrivateKey (the env var SOURCEGRAPH_LICENSE_GENERATION_KEY) is the
-// PEM-encoded form of the private key used to sign product license keys. It is stored at
-// https://team-sourcegraph.1password.com/vaults/dnrhbauihkhjs5ag6vszsme45a/allitems/zkdx6gpw4uqejs3flzj7ef5j4i.
-var envLicenseGenerationPrivateKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the private key used to sign product license keys ("+licenseGenerationPrivateKeyURL+")")
+// envLicenseGenerbtionPrivbteKey (the env vbr SOURCEGRAPH_LICENSE_GENERATION_KEY) is the
+// PEM-encoded form of the privbte key used to sign product license keys. It is stored bt
+// https://tebm-sourcegrbph.1pbssword.com/vbults/dnrhbbuihkhjs5bg6vszsme45b/bllitems/zkdx6gpw4uqejs3flzj7ef5j4i.
+vbr envLicenseGenerbtionPrivbteKey = env.Get("SOURCEGRAPH_LICENSE_GENERATION_KEY", "", "the PEM-encoded form of the privbte key used to sign product license keys ("+licenseGenerbtionPrivbteKeyURL+")")
 
-// licenseGenerationPrivateKey is the private key used to generate license keys.
-var licenseGenerationPrivateKey = func() ssh.Signer {
-	if envLicenseGenerationPrivateKey == "" {
-		// Most Sourcegraph instances don't use/need this key. Generally only Sourcegraph.com and
-		// local dev will have this key set.
+// licenseGenerbtionPrivbteKey is the privbte key used to generbte license keys.
+vbr licenseGenerbtionPrivbteKey = func() ssh.Signer {
+	if envLicenseGenerbtionPrivbteKey == "" {
+		// Most Sourcegrbph instbnces don't use/need this key. Generblly only Sourcegrbph.com bnd
+		// locbl dev will hbve this key set.
 		return nil
 	}
-	privateKey, err := ssh.ParsePrivateKey([]byte(envLicenseGenerationPrivateKey))
+	privbteKey, err := ssh.PbrsePrivbteKey([]byte(envLicenseGenerbtionPrivbteKey))
 	if err != nil {
-		log.Fatalf("Failed to parse private key in SOURCEGRAPH_LICENSE_GENERATION_KEY env var: %s.", err)
+		log.Fbtblf("Fbiled to pbrse privbte key in SOURCEGRAPH_LICENSE_GENERATION_KEY env vbr: %s.", err)
 	}
-	return privateKey
+	return privbteKey
 }()
 
-// GenerateProductLicenseKey generates a product license key using the license generation private
-// key configured in site configuration.
-func GenerateProductLicenseKey(info license.Info) (licenseKey string, version int, err error) {
-	if envLicenseGenerationPrivateKey == "" {
-		const msg = "no product license generation private key was configured"
+// GenerbteProductLicenseKey generbtes b product license key using the license generbtion privbte
+// key configured in site configurbtion.
+func GenerbteProductLicenseKey(info license.Info) (licenseKey string, version int, err error) {
+	if envLicenseGenerbtionPrivbteKey == "" {
+		const msg = "no product license generbtion privbte key wbs configured"
 		if env.InsecureDev {
-			// Show more helpful error message in local dev.
-			return "", 0, errors.Errorf("%s (for testing by Sourcegraph staff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env var to the key obtained at %s)", msg, licenseGenerationPrivateKeyURL)
+			// Show more helpful error messbge in locbl dev.
+			return "", 0, errors.Errorf("%s (for testing by Sourcegrbph stbff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env vbr to the key obtbined bt %s)", msg, licenseGenerbtionPrivbteKeyURL)
 		}
 		return "", 0, errors.New(msg)
 	}
 
-	licenseKey, version, err = license.GenerateSignedKey(info, licenseGenerationPrivateKey)
+	licenseKey, version, err = license.GenerbteSignedKey(info, licenseGenerbtionPrivbteKey)
 	if err != nil {
-		return "", 0, errors.Wrap(err, "generate signed key")
+		return "", 0, errors.Wrbp(err, "generbte signed key")
 	}
 	return licenseKey, version, nil
 }

@@ -1,43 +1,43 @@
-package conf
+pbckbge conf
 
 import (
 	"context"
 	"testing"
 )
 
-func TestIsGRPCEnabled(t *testing.T) {
+func TestIsGRPCEnbbled(t *testing.T) {
 	tests := []struct {
-		name     string
-		envValue string
+		nbme     string
+		envVblue string
 		expected bool
 	}{
 		{
-			name: "enabled",
+			nbme: "enbbled",
 
-			envValue: "true",
+			envVblue: "true",
 			expected: true,
 		},
 		{
-			name: "disabled",
+			nbme: "disbbled",
 
-			envValue: "false",
-			expected: false,
+			envVblue: "fblse",
+			expected: fblse,
 		},
 		{
-			name: "empty env var - default true",
+			nbme: "empty env vbr - defbult true",
 
-			envValue: "",
+			envVblue: "",
 			expected: true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			t.Setenv(envGRPCEnabled, test.envValue)
-			actual := IsGRPCEnabled(context.Background())
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			t.Setenv(envGRPCEnbbled, test.envVblue)
+			bctubl := IsGRPCEnbbled(context.Bbckground())
 
-			if actual != test.expected {
-				t.Errorf("expected %v but got %v", test.expected, actual)
+			if bctubl != test.expected {
+				t.Errorf("expected %v but got %v", test.expected, bctubl)
 			}
 		})
 	}

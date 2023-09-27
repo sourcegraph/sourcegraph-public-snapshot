@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -8,301 +8,301 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-func TestExternalAccounts_LookupUserAndSave(t *testing.T) {
+func TestExternblAccounts_LookupUserAndSbve(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, extsvc.AccountDbtb{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	lookedUpUserID, err := db.UserExternalAccounts().LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+	lookedUpUserID, err := db.UserExternblAccounts().LookupUserAndSbve(ctx, spec, extsvc.AccountDbtb{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if lookedUpUserID != user.ID {
-		t.Errorf("got %d, want %d", lookedUpUserID, user.ID)
+		t.Errorf("got %d, wbnt %d", lookedUpUserID, user.ID)
 	}
 }
 
-func TestExternalAccounts_AssociateUserAndSave(t *testing.T) {
+func TestExternblAccounts_AssocibteUserAndSbve(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	user, err := db.Users().Create(ctx, NewUser{Username: "u"})
+	user, err := db.Users().Crebte(ctx, NewUser{Usernbme: "u"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
 
-	authData := json.RawMessage(`"authData"`)
-	data := json.RawMessage(`"data"`)
-	accountData := extsvc.AccountData{
-		AuthData: extsvc.NewUnencryptedData(authData),
-		Data:     extsvc.NewUnencryptedData(data),
+	buthDbtb := json.RbwMessbge(`"buthDbtb"`)
+	dbtb := json.RbwMessbge(`"dbtb"`)
+	bccountDbtb := extsvc.AccountDbtb{
+		AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
+		Dbtb:     extsvc.NewUnencryptedDbtb(dbtb),
 	}
-	if err := db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, accountData); err != nil {
-		t.Fatal(err)
+	if err := db.UserExternblAccounts().AssocibteUserAndSbve(ctx, user.ID, spec, bccountDbtb); err != nil {
+		t.Fbtbl(err)
 	}
 
-	accounts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	bccounts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(accounts) != 1 {
-		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+	if len(bccounts) != 1 {
+		t.Fbtblf("got len(bccounts) == %d, wbnt 1", len(bccounts))
 	}
-	account := accounts[0]
-	simplifyExternalAccount(account)
-	account.ID = 0
+	bccount := bccounts[0]
+	simplifyExternblAccount(bccount)
+	bccount.ID = 0
 
-	want := &extsvc.Account{
+	wbnt := &extsvc.Account{
 		UserID:      user.ID,
 		AccountSpec: spec,
-		AccountData: accountData,
+		AccountDbtb: bccountDbtb,
 	}
-	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestExternalAccounts_CreateUserAndSave(t *testing.T) {
+func TestExternblAccounts_CrebteUserAndSbve(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
 
-	authData := json.RawMessage(`"authData"`)
-	data := json.RawMessage(`"data"`)
-	accountData := extsvc.AccountData{
-		AuthData: extsvc.NewUnencryptedData(authData),
-		Data:     extsvc.NewUnencryptedData(data),
+	buthDbtb := json.RbwMessbge(`"buthDbtb"`)
+	dbtb := json.RbwMessbge(`"dbtb"`)
+	bccountDbtb := extsvc.AccountDbtb{
+		AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
+		Dbtb:     extsvc.NewUnencryptedDbtb(dbtb),
 	}
-	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
+	user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, bccountDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := "u"; user.Username != want {
-		t.Errorf("got %q, want %q", user.Username, want)
+	if wbnt := "u"; user.Usernbme != wbnt {
+		t.Errorf("got %q, wbnt %q", user.Usernbme, wbnt)
 	}
 
-	accounts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	bccounts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(accounts) != 1 {
-		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+	if len(bccounts) != 1 {
+		t.Fbtblf("got len(bccounts) == %d, wbnt 1", len(bccounts))
 	}
-	account := accounts[0]
-	simplifyExternalAccount(account)
-	account.ID = 0
+	bccount := bccounts[0]
+	simplifyExternblAccount(bccount)
+	bccount.ID = 0
 
-	want := &extsvc.Account{
+	wbnt := &extsvc.Account{
 		UserID:      user.ID,
 		AccountSpec: spec,
-		AccountData: accountData,
+		AccountDbtb: bccountDbtb,
 	}
-	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 
 	userRoles, err := db.UserRoles().GetByUserID(ctx, GetUserRoleOpts{
 		UserID: user.ID,
 	})
 	require.NoError(t, err)
-	// Both USER and SITE_ADMINISTRATOR role have been assigned.
+	// Both USER bnd SITE_ADMINISTRATOR role hbve been bssigned.
 	require.Len(t, userRoles, 2)
 }
 
-func TestExternalAccounts_CreateUserAndSave_NilData(t *testing.T) {
+func TestExternblAccounts_CrebteUserAndSbve_NilDbtb(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
 
-	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, extsvc.AccountDbtb{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := "u"; user.Username != want {
-		t.Errorf("got %q, want %q", user.Username, want)
+	if wbnt := "u"; user.Usernbme != wbnt {
+		t.Errorf("got %q, wbnt %q", user.Usernbme, wbnt)
 	}
 
-	accounts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{})
+	bccounts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(accounts) != 1 {
-		t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+	if len(bccounts) != 1 {
+		t.Fbtblf("got len(bccounts) == %d, wbnt 1", len(bccounts))
 	}
-	account := accounts[0]
-	simplifyExternalAccount(account)
-	account.ID = 0
+	bccount := bccounts[0]
+	simplifyExternblAccount(bccount)
+	bccount.ID = 0
 
-	want := &extsvc.Account{
+	wbnt := &extsvc.Account{
 		UserID:      user.ID,
 		AccountSpec: spec,
 	}
-	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestExternalAccounts_List(t *testing.T) {
+func TestExternblAccounts_List(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	specs := []extsvc.AccountSpec{
 		{
-			ServiceType: "xa",
+			ServiceType: "xb",
 			ServiceID:   "xb",
 			ClientID:    "xc",
 			AccountID:   "11",
 		},
 		{
-			ServiceType: "xa",
+			ServiceType: "xb",
 			ServiceID:   "xb",
 			ClientID:    "xc",
 			AccountID:   "12",
 		},
 		{
-			ServiceType: "ya",
+			ServiceType: "yb",
 			ServiceID:   "yb",
 			ClientID:    "yc",
 			AccountID:   "3",
 		},
 	}
-	userIDs := make([]int32, 0, len(specs))
+	userIDs := mbke([]int32, 0, len(specs))
 
-	for i, spec := range specs {
-		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
+	for i, spec := rbnge specs {
+		user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountDbtb{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		userIDs = append(userIDs, user.ID)
+		userIDs = bppend(userIDs, user.ID)
 	}
 
-	specByID := make(map[int32]extsvc.AccountSpec)
-	for i, id := range userIDs {
+	specByID := mbke(mbp[int32]extsvc.AccountSpec)
+	for i, id := rbnge userIDs {
 		specByID[id] = specs[i]
 	}
 
 	tc := []struct {
-		name        string
-		args        ExternalAccountsListOptions
+		nbme        string
+		brgs        ExternblAccountsListOptions
 		expectedIDs []int32
 	}{
 		{
-			name:        "ListAll",
+			nbme:        "ListAll",
 			expectedIDs: userIDs,
 		},
 		{
-			name:        "ListByAccountID",
+			nbme:        "ListByAccountID",
 			expectedIDs: []int32{userIDs[2]},
-			args: ExternalAccountsListOptions{
+			brgs: ExternblAccountsListOptions{
 				AccountID: "3",
 			},
 		},
 		{
-			name:        "ListByAccountNotFound",
+			nbme:        "ListByAccountNotFound",
 			expectedIDs: []int32{},
-			args: ExternalAccountsListOptions{
+			brgs: ExternblAccountsListOptions{
 				AccountID: "33333",
 			},
 		},
 		{
-			name:        "ListByService",
+			nbme:        "ListByService",
 			expectedIDs: []int32{userIDs[0], userIDs[1]},
-			args: ExternalAccountsListOptions{
-				ServiceType: "xa",
+			brgs: ExternblAccountsListOptions{
+				ServiceType: "xb",
 				ServiceID:   "xb",
 				ClientID:    "xc",
 			},
 		},
 		{
-			name:        "ListByServiceTypeOnly",
+			nbme:        "ListByServiceTypeOnly",
 			expectedIDs: []int32{userIDs[0], userIDs[1]},
-			args: ExternalAccountsListOptions{
-				ServiceType: "xa",
+			brgs: ExternblAccountsListOptions{
+				ServiceType: "xb",
 			},
 		},
 		{
-			name:        "ListByServiceIDOnly",
+			nbme:        "ListByServiceIDOnly",
 			expectedIDs: []int32{userIDs[0], userIDs[1]},
-			args: ExternalAccountsListOptions{
+			brgs: ExternblAccountsListOptions{
 				ServiceID: "xb",
 			},
 		},
 		{
-			name:        "ListByClientIDOnly",
+			nbme:        "ListByClientIDOnly",
 			expectedIDs: []int32{userIDs[2]},
-			args: ExternalAccountsListOptions{
+			brgs: ExternblAccountsListOptions{
 				ClientID: "yc",
 			},
 		},
 		{
-			name:        "ListByServiceNotFound",
+			nbme:        "ListByServiceNotFound",
 			expectedIDs: []int32{},
-			args: ExternalAccountsListOptions{
+			brgs: ExternblAccountsListOptions{
 				ServiceType: "notfound",
 				ServiceID:   "notfound",
 				ClientID:    "notfound",
@@ -310,433 +310,433 @@ func TestExternalAccounts_List(t *testing.T) {
 		},
 	}
 
-	for _, c := range tc {
-		t.Run(c.name, func(t *testing.T) {
-			accounts, err := db.UserExternalAccounts().List(ctx, c.args)
+	for _, c := rbnge tc {
+		t.Run(c.nbme, func(t *testing.T) {
+			bccounts, err := db.UserExternblAccounts().List(ctx, c.brgs)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if got, expected := len(accounts), len(c.expectedIDs); got != expected {
-				t.Fatalf("len(accounts) got %d, want %d", got, expected)
+			if got, expected := len(bccounts), len(c.expectedIDs); got != expected {
+				t.Fbtblf("len(bccounts) got %d, wbnt %d", got, expected)
 			}
-			for i, id := range c.expectedIDs {
-				account := accounts[i]
-				simplifyExternalAccount(account)
-				want := &extsvc.Account{
+			for i, id := rbnge c.expectedIDs {
+				bccount := bccounts[i]
+				simplifyExternblAccount(bccount)
+				wbnt := &extsvc.Account{
 					UserID:      id,
 					ID:          id,
 					AccountSpec: specByID[id],
 				}
-				if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-					t.Fatalf("Mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+					t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 				}
 			}
 		})
 	}
 }
 
-func TestExternalAccounts_ListForUsers(t *testing.T) {
+func TestExternblAccounts_ListForUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	specs := []extsvc.AccountSpec{
-		{ServiceType: "xa", ServiceID: "xb", ClientID: "xc", AccountID: "11"},
-		{ServiceType: "xa", ServiceID: "xb", ClientID: "xc", AccountID: "12"},
+		{ServiceType: "xb", ServiceID: "xb", ClientID: "xc", AccountID: "11"},
+		{ServiceType: "xb", ServiceID: "xb", ClientID: "xc", AccountID: "12"},
 	}
 	const numberOfUsers = 3
-	userIDs := make([]int32, 0, numberOfUsers)
+	userIDs := mbke([]int32, 0, numberOfUsers)
 	thirdUserSpecs := []extsvc.AccountSpec{
-		{ServiceType: "a", ServiceID: "b", ClientID: "xc", AccountID: "111"},
+		{ServiceType: "b", ServiceID: "b", ClientID: "xc", AccountID: "111"},
 		{ServiceType: "c", ServiceID: "d", ClientID: "xc", AccountID: "112"},
 		{ServiceType: "e", ServiceID: "f", ClientID: "yc", AccountID: "13"},
 	}
 
-	for i, spec := range append(specs, thirdUserSpecs...) {
+	for i, spec := rbnge bppend(specs, thirdUserSpecs...) {
 		if i < 3 {
-			user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountData{})
+			user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: fmt.Sprintf("u%d", i)}, spec, extsvc.AccountDbtb{})
 			require.NoError(t, err)
-			userIDs = append(userIDs, user.ID)
+			userIDs = bppend(userIDs, user.ID)
 		} else {
-			// Last user gets all the accounts.
-			err := db.UserExternalAccounts().AssociateUserAndSave(ctx, userIDs[2], spec, extsvc.AccountData{})
+			// Lbst user gets bll the bccounts.
+			err := db.UserExternblAccounts().AssocibteUserAndSbve(ctx, userIDs[2], spec, extsvc.AccountDbtb{})
 			require.NoError(t, err)
 		}
 	}
 
-	wantAccountsByUserID := make(map[int32][]*extsvc.Account)
-	for _, id := range userIDs {
-		// Last user gets all the accounts.
+	wbntAccountsByUserID := mbke(mbp[int32][]*extsvc.Account)
+	for _, id := rbnge userIDs {
+		// Lbst user gets bll the bccounts.
 		if int(id) == numberOfUsers {
-			accts := make([]*extsvc.Account, 0, numberOfUsers)
-			for idx, spec := range thirdUserSpecs {
-				accts = append(accts, &extsvc.Account{UserID: id, ID: id + int32(idx), AccountSpec: spec})
+			bccts := mbke([]*extsvc.Account, 0, numberOfUsers)
+			for idx, spec := rbnge thirdUserSpecs {
+				bccts = bppend(bccts, &extsvc.Account{UserID: id, ID: id + int32(idx), AccountSpec: spec})
 			}
-			wantAccountsByUserID[id] = accts
+			wbntAccountsByUserID[id] = bccts
 		} else {
-			wantAccountsByUserID[id] = []*extsvc.Account{{UserID: id, ID: id, AccountSpec: specs[int(id)-1]}}
+			wbntAccountsByUserID[id] = []*extsvc.Account{{UserID: id, ID: id, AccountSpec: specs[int(id)-1]}}
 		}
 	}
 
-	// Zero IDs in the input -- empty map in the output.
-	accounts, err := db.UserExternalAccounts().ListForUsers(ctx, []int32{})
+	// Zero IDs in the input -- empty mbp in the output.
+	bccounts, err := db.UserExternblAccounts().ListForUsers(ctx, []int32{})
 	require.NoError(t, err)
-	assert.Empty(t, accounts)
+	bssert.Empty(t, bccounts)
 
-	// All accounts should be returned.
-	accounts, err = db.UserExternalAccounts().ListForUsers(ctx, userIDs)
+	// All bccounts should be returned.
+	bccounts, err = db.UserExternblAccounts().ListForUsers(ctx, userIDs)
 	require.NoError(t, err)
-	assert.Len(t, accounts, numberOfUsers)
+	bssert.Len(t, bccounts, numberOfUsers)
 
-	for userID, wantAccounts := range wantAccountsByUserID {
-		gotAccounts := accounts[userID]
-		// Case of last user with all accounts.
+	for userID, wbntAccounts := rbnge wbntAccountsByUserID {
+		gotAccounts := bccounts[userID]
+		// Cbse of lbst user with bll bccounts.
 		if int(userID) == numberOfUsers {
-			assert.Equal(t, len(wantAccounts), len(gotAccounts))
-			for _, gotAccount := range gotAccounts {
-				simplifyExternalAccount(gotAccount)
+			bssert.Equbl(t, len(wbntAccounts), len(gotAccounts))
+			for _, gotAccount := rbnge gotAccounts {
+				simplifyExternblAccount(gotAccount)
 			}
-			assert.ElementsMatch(t, wantAccounts, gotAccounts)
+			bssert.ElementsMbtch(t, wbntAccounts, gotAccounts)
 		} else {
-			assert.Len(t, gotAccounts, 1)
+			bssert.Len(t, gotAccounts, 1)
 			gotAccount := gotAccounts[0]
-			simplifyExternalAccount(gotAccount)
-			assert.Equal(t, wantAccounts[0], gotAccount)
+			simplifyExternblAccount(gotAccount)
+			bssert.Equbl(t, wbntAccounts[0], gotAccount)
 		}
 	}
 }
 
-func TestExternalAccounts_Encryption(t *testing.T) {
+func TestExternblAccounts_Encryption(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	store := db.UserExternalAccounts().WithEncryptionKey(et.TestKey{})
+	store := db.UserExternblAccounts().WithEncryptionKey(et.TestKey{})
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
 
-	authData := json.RawMessage(`"authData"`)
-	data := json.RawMessage(`"data"`)
-	accountData := extsvc.AccountData{
-		AuthData: extsvc.NewUnencryptedData(authData),
-		Data:     extsvc.NewUnencryptedData(data),
+	buthDbtb := json.RbwMessbge(`"buthDbtb"`)
+	dbtb := json.RbwMessbge(`"dbtb"`)
+	bccountDbtb := extsvc.AccountDbtb{
+		AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
+		Dbtb:     extsvc.NewUnencryptedDbtb(dbtb),
 	}
 
-	// store with encrypted authdata
-	user, err := store.CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, accountData)
+	// store with encrypted buthdbtb
+	user, err := store.CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, bccountDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	listFirstAccount := func(s UserExternalAccountsStore) extsvc.Account {
+	listFirstAccount := func(s UserExternblAccountsStore) extsvc.Account {
 		t.Helper()
 
-		accounts, err := s.List(ctx, ExternalAccountsListOptions{})
+		bccounts, err := s.List(ctx, ExternblAccountsListOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(accounts) != 1 {
-			t.Fatalf("got len(accounts) == %d, want 1", len(accounts))
+		if len(bccounts) != 1 {
+			t.Fbtblf("got len(bccounts) == %d, wbnt 1", len(bccounts))
 		}
-		account := *accounts[0]
-		simplifyExternalAccount(&account)
-		account.ID = 0
-		return account
+		bccount := *bccounts[0]
+		simplifyExternblAccount(&bccount)
+		bccount.ID = 0
+		return bccount
 	}
 
-	// values encrypted should not be readable without the encrypting key
-	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FailDecrypt: true})
-	svcs, err := noopStore.List(ctx, ExternalAccountsListOptions{})
+	// vblues encrypted should not be rebdbble without the encrypting key
+	noopStore := store.WithEncryptionKey(&encryption.NoopKey{FbilDecrypt: true})
+	svcs, err := noopStore.List(ctx, ExternblAccountsListOptions{})
 	if err != nil {
-		t.Fatalf("unexpected error listing services: %s", err)
+		t.Fbtblf("unexpected error listing services: %s", err)
 	}
-	if _, err := svcs[0].Data.Decrypt(ctx); err == nil {
-		t.Fatalf("expected error decrypting with a different key")
+	if _, err := svcs[0].Dbtb.Decrypt(ctx); err == nil {
+		t.Fbtblf("expected error decrypting with b different key")
 	}
 
-	// List should return decrypted data
-	account := listFirstAccount(store)
-	want := extsvc.Account{
+	// List should return decrypted dbtb
+	bccount := listFirstAccount(store)
+	wbnt := extsvc.Account{
 		UserID:      user.ID,
 		AccountSpec: spec,
-		AccountData: accountData,
+		AccountDbtb: bccountDbtb,
 	}
-	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
-	}
-
-	// LookupUserAndSave should encrypt the accountData correctly
-	userID, err := store.LookupUserAndSave(ctx, spec, accountData)
-	if err != nil {
-		t.Fatal(err)
-	}
-	account = listFirstAccount(store)
-	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 
-	// AssociateUserAndSave should encrypt the accountData correctly
-	err = store.AssociateUserAndSave(ctx, userID, spec, accountData)
+	// LookupUserAndSbve should encrypt the bccountDbtb correctly
+	userID, err := store.LookupUserAndSbve(ctx, spec, bccountDbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	account = listFirstAccount(store)
-	if diff := cmp.Diff(want, account, et.CompareEncryptable); diff != "" {
-		t.Fatalf("Mismatch (-want +got):\n%s", diff)
+	bccount = listFirstAccount(store)
+	if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
+	}
+
+	// AssocibteUserAndSbve should encrypt the bccountDbtb correctly
+	err = store.AssocibteUserAndSbve(ctx, userID, spec, bccountDbtb)
+	if err != nil {
+		t.Fbtbl(err)
+	}
+	bccount = listFirstAccount(store)
+	if diff := cmp.Diff(wbnt, bccount, et.CompbreEncryptbble); diff != "" {
+		t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 	}
 }
 
-func simplifyExternalAccount(account *extsvc.Account) {
-	account.CreatedAt = time.Time{}
-	account.UpdatedAt = time.Time{}
+func simplifyExternblAccount(bccount *extsvc.Account) {
+	bccount.CrebtedAt = time.Time{}
+	bccount.UpdbtedAt = time.Time{}
 }
 
-func TestExternalAccounts_expiredAt(t *testing.T) {
+func TestExternblAccounts_expiredAt(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
-	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, extsvc.AccountDbtb{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: user.ID})
+	bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{UserID: user.ID})
 	if err != nil {
-		t.Fatal(err)
-	} else if len(accts) != 1 {
-		t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		t.Fbtbl(err)
+	} else if len(bccts) != 1 {
+		t.Fbtblf("Wbnt 1 externbl bccounts but got %d", len(bccts))
 	}
-	acct := accts[0]
+	bcct := bccts[0]
 
 	t.Run("Exclude expired", func(t *testing.T) {
-		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+		err := db.UserExternblAccounts().TouchExpired(ctx, bcct.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+		bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{
 			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if len(accts) > 0 {
-			t.Fatalf("Want no external accounts but got %d", len(accts))
+		if len(bccts) > 0 {
+			t.Fbtblf("Wbnt no externbl bccounts but got %d", len(bccts))
 		}
 	})
 
 	t.Run("Include expired", func(t *testing.T) {
-		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+		err := db.UserExternblAccounts().TouchExpired(ctx, bcct.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+		bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{
 			UserID:      user.ID,
 			OnlyExpired: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if len(accts) == 0 {
-			t.Fatalf("Want external accounts but got 0")
+		if len(bccts) == 0 {
+			t.Fbtblf("Wbnt externbl bccounts but got 0")
 		}
 	})
 
-	t.Run("LookupUserAndSave should set expired_at to NULL", func(t *testing.T) {
-		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+	t.Run("LookupUserAndSbve should set expired_bt to NULL", func(t *testing.T) {
+		err := db.UserExternblAccounts().TouchExpired(ctx, bcct.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		_, err = db.UserExternalAccounts().LookupUserAndSave(ctx, spec, extsvc.AccountData{})
+		_, err = db.UserExternblAccounts().LookupUserAndSbve(ctx, spec, extsvc.AccountDbtb{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+		bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{
 			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if len(accts) != 1 {
-			t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		if len(bccts) != 1 {
+			t.Fbtblf("Wbnt 1 externbl bccounts but got %d", len(bccts))
 		}
 	})
 
-	t.Run("AssociateUserAndSave should set expired_at to NULL", func(t *testing.T) {
-		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+	t.Run("AssocibteUserAndSbve should set expired_bt to NULL", func(t *testing.T) {
+		err := db.UserExternblAccounts().TouchExpired(ctx, bcct.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		err = db.UserExternalAccounts().AssociateUserAndSave(ctx, user.ID, spec, extsvc.AccountData{})
+		err = db.UserExternblAccounts().AssocibteUserAndSbve(ctx, user.ID, spec, extsvc.AccountDbtb{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+		bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{
 			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if len(accts) != 1 {
-			t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		if len(bccts) != 1 {
+			t.Fbtblf("Wbnt 1 externbl bccounts but got %d", len(bccts))
 		}
 	})
 
-	t.Run("TouchLastValid should set expired_at to NULL", func(t *testing.T) {
-		err := db.UserExternalAccounts().TouchExpired(ctx, acct.ID)
+	t.Run("TouchLbstVblid should set expired_bt to NULL", func(t *testing.T) {
+		err := db.UserExternblAccounts().TouchExpired(ctx, bcct.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		err = db.UserExternalAccounts().TouchLastValid(ctx, acct.ID)
+		err = db.UserExternblAccounts().TouchLbstVblid(ctx, bcct.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{
+		bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{
 			UserID:         user.ID,
 			ExcludeExpired: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(accts) != 1 {
-			t.Fatalf("Want 1 external accounts but got %d", len(accts))
+		if len(bccts) != 1 {
+			t.Fbtblf("Wbnt 1 externbl bccounts but got %d", len(bccts))
 		}
 	})
 }
 
-func TestExternalAccounts_DeleteList(t *testing.T) {
+func TestExternblAccounts_DeleteList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	spec := extsvc.AccountSpec{
-		ServiceType: "xa",
+		ServiceType: "xb",
 		ServiceID:   "xb",
 		ClientID:    "xc",
 		AccountID:   "xd",
 	}
 
-	user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+	user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, extsvc.AccountDbtb{})
 	spec.ServiceID = "xb2"
 	require.NoError(t, err)
-	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	err = db.UserExternblAccounts().Insert(ctx, user.ID, spec, extsvc.AccountDbtb{})
 	require.NoError(t, err)
 	spec.ServiceID = "xb3"
-	err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+	err = db.UserExternblAccounts().Insert(ctx, user.ID, spec, extsvc.AccountDbtb{})
 	require.NoError(t, err)
 
-	accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{UserID: 1})
 	require.NoError(t, err)
-	require.Equal(t, 3, len(accts))
+	require.Equbl(t, 3, len(bccts))
 
-	var acctIDs []int32
-	for _, acct := range accts {
-		acctIDs = append(acctIDs, acct.ID)
+	vbr bcctIDs []int32
+	for _, bcct := rbnge bccts {
+		bcctIDs = bppend(bcctIDs, bcct.ID)
 	}
 
-	err = db.UserExternalAccounts().Delete(ctx, ExternalAccountsDeleteOptions{IDs: acctIDs})
+	err = db.UserExternblAccounts().Delete(ctx, ExternblAccountsDeleteOptions{IDs: bcctIDs})
 	require.NoError(t, err)
 
-	accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+	bccts, err = db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{UserID: 1})
 	require.NoError(t, err)
-	require.Equal(t, 0, len(accts))
+	require.Equbl(t, 0, len(bccts))
 }
 
-func TestExternalAccounts_TouchExpiredList(t *testing.T) {
+func TestExternblAccounts_TouchExpiredList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	t.Run("non-empty list", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
 		spec := extsvc.AccountSpec{
-			ServiceType: "xa",
+			ServiceType: "xb",
 			ServiceID:   "xb",
 			ClientID:    "xc",
 			AccountID:   "xd",
 		}
 
-		user, err := db.UserExternalAccounts().CreateUserAndSave(ctx, NewUser{Username: "u"}, spec, extsvc.AccountData{})
+		user, err := db.UserExternblAccounts().CrebteUserAndSbve(ctx, NewUser{Usernbme: "u"}, spec, extsvc.AccountDbtb{})
 		spec.ServiceID = "xb2"
 		require.NoError(t, err)
-		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		err = db.UserExternblAccounts().Insert(ctx, user.ID, spec, extsvc.AccountDbtb{})
 		require.NoError(t, err)
 		spec.ServiceID = "xb3"
-		err = db.UserExternalAccounts().Insert(ctx, user.ID, spec, extsvc.AccountData{})
+		err = db.UserExternblAccounts().Insert(ctx, user.ID, spec, extsvc.AccountDbtb{})
 		require.NoError(t, err)
 
-		accts, err := db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1})
+		bccts, err := db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{UserID: 1})
 		require.NoError(t, err)
-		require.Equal(t, 3, len(accts))
+		require.Equbl(t, 3, len(bccts))
 
-		acctIds := []int32{}
-		for _, acct := range accts {
-			acctIds = append(acctIds, acct.ID)
+		bcctIds := []int32{}
+		for _, bcct := rbnge bccts {
+			bcctIds = bppend(bcctIds, bcct.ID)
 		}
 
-		err = db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
+		err = db.UserExternblAccounts().TouchExpired(ctx, bcctIds...)
 		require.NoError(t, err)
 
-		// Confirm all accounts are expired
-		accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, OnlyExpired: true})
+		// Confirm bll bccounts bre expired
+		bccts, err = db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{UserID: 1, OnlyExpired: true})
 		require.NoError(t, err)
-		require.Equal(t, 3, len(accts))
+		require.Equbl(t, 3, len(bccts))
 
-		accts, err = db.UserExternalAccounts().List(ctx, ExternalAccountsListOptions{UserID: 1, ExcludeExpired: true})
+		bccts, err = db.UserExternblAccounts().List(ctx, ExternblAccountsListOptions{UserID: 1, ExcludeExpired: true})
 		require.NoError(t, err)
-		require.Equal(t, 0, len(accts))
+		require.Equbl(t, 0, len(bccts))
 	})
 	t.Run("empty list", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
-		acctIds := []int32{}
-		err := db.UserExternalAccounts().TouchExpired(ctx, acctIds...)
+		bcctIds := []int32{}
+		err := db.UserExternblAccounts().TouchExpired(ctx, bcctIds...)
 		require.NoError(t, err)
 	})
 }

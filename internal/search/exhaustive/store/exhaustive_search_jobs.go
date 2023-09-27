@@ -1,176 +1,176 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var exhaustiveSearchJobWorkerOpts = dbworkerstore.Options[*types.ExhaustiveSearchJob]{
-	Name:              "exhaustive_search_worker_store",
-	TableName:         "exhaustive_search_jobs",
-	ColumnExpressions: exhaustiveSearchJobColumns,
+vbr exhbustiveSebrchJobWorkerOpts = dbworkerstore.Options[*types.ExhbustiveSebrchJob]{
+	Nbme:              "exhbustive_sebrch_worker_store",
+	TbbleNbme:         "exhbustive_sebrch_jobs",
+	ColumnExpressions: exhbustiveSebrchJobColumns,
 
-	Scan: dbworkerstore.BuildWorkerScan(scanExhaustiveSearchJob),
+	Scbn: dbworkerstore.BuildWorkerScbn(scbnExhbustiveSebrchJob),
 
-	OrderByExpression: sqlf.Sprintf("exhaustive_search_jobs.state = 'errored', exhaustive_search_jobs.updated_at DESC"),
+	OrderByExpression: sqlf.Sprintf("exhbustive_sebrch_jobs.stbte = 'errored', exhbustive_sebrch_jobs.updbted_bt DESC"),
 
-	StalledMaxAge: 60 * time.Second,
-	MaxNumResets:  0,
+	StblledMbxAge: 60 * time.Second,
+	MbxNumResets:  0,
 
 	RetryAfter:    5 * time.Second,
-	MaxNumRetries: 0,
+	MbxNumRetries: 0,
 }
 
-// NewExhaustiveSearchJobWorkerStore returns a dbworkerstore.Store that wraps the "exhaustive_search_jobs" table.
-func NewExhaustiveSearchJobWorkerStore(observationCtx *observation.Context, handle basestore.TransactableHandle) dbworkerstore.Store[*types.ExhaustiveSearchJob] {
-	return dbworkerstore.New(observationCtx, handle, exhaustiveSearchJobWorkerOpts)
+// NewExhbustiveSebrchJobWorkerStore returns b dbworkerstore.Store thbt wrbps the "exhbustive_sebrch_jobs" tbble.
+func NewExhbustiveSebrchJobWorkerStore(observbtionCtx *observbtion.Context, hbndle bbsestore.TrbnsbctbbleHbndle) dbworkerstore.Store[*types.ExhbustiveSebrchJob] {
+	return dbworkerstore.New(observbtionCtx, hbndle, exhbustiveSebrchJobWorkerOpts)
 }
 
-var exhaustiveSearchJobColumns = []*sqlf.Query{
+vbr exhbustiveSebrchJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("initiator_id"),
-	sqlf.Sprintf("state"),
+	sqlf.Sprintf("initibtor_id"),
+	sqlf.Sprintf("stbte"),
 	sqlf.Sprintf("query"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("fbilure_messbge"),
+	sqlf.Sprintf("stbrted_bt"),
+	sqlf.Sprintf("finished_bt"),
+	sqlf.Sprintf("process_bfter"),
 	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("num_failures"),
+	sqlf.Sprintf("num_fbilures"),
 	sqlf.Sprintf("execution_logs"),
-	sqlf.Sprintf("worker_hostname"),
-	sqlf.Sprintf("cancel"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("worker_hostnbme"),
+	sqlf.Sprintf("cbncel"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
 }
 
-func (s *Store) CreateExhaustiveSearchJob(ctx context.Context, job types.ExhaustiveSearchJob) (_ int64, err error) {
-	ctx, _, endObservation := s.operations.createExhaustiveSearchJob.With(ctx, &err, opAttrs(
-		attribute.String("query", job.Query),
-		attribute.Int("initiator_id", int(job.InitiatorID)),
+func (s *Store) CrebteExhbustiveSebrchJob(ctx context.Context, job types.ExhbustiveSebrchJob) (_ int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteExhbustiveSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.String("query", job.Query),
+		bttribute.Int("initibtor_id", int(job.InitibtorID)),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if job.Query == "" {
 		return 0, MissingQueryErr
 	}
-	if job.InitiatorID <= 0 {
-		return 0, MissingInitiatorIDErr
+	if job.InitibtorID <= 0 {
+		return 0, MissingInitibtorIDErr
 	}
 
-	// 🚨 SECURITY: InitiatorID has to match the actor or can be overridden by SiteAdmin.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, job.InitiatorID); err != nil {
+	// 🚨 SECURITY: InitibtorID hbs to mbtch the bctor or cbn be overridden by SiteAdmin.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, s.db, job.InitibtorID); err != nil {
 		return 0, err
 	}
 
-	return basestore.ScanAny[int64](s.Store.QueryRow(
+	return bbsestore.ScbnAny[int64](s.Store.QueryRow(
 		ctx,
-		sqlf.Sprintf(createExhaustiveSearchJobQueryFmtr, job.Query, job.InitiatorID),
+		sqlf.Sprintf(crebteExhbustiveSebrchJobQueryFmtr, job.Query, job.InitibtorID),
 	))
 }
 
-// MissingQueryErr is returned when a query is missing from a types.ExhaustiveSearchJob.
-var MissingQueryErr = errors.New("missing query")
+// MissingQueryErr is returned when b query is missing from b types.ExhbustiveSebrchJob.
+vbr MissingQueryErr = errors.New("missing query")
 
-// MissingInitiatorIDErr is returned when an initiator ID is missing from a types.ExhaustiveSearchJob.
-var MissingInitiatorIDErr = errors.New("missing initiator ID")
+// MissingInitibtorIDErr is returned when bn initibtor ID is missing from b types.ExhbustiveSebrchJob.
+vbr MissingInitibtorIDErr = errors.New("missing initibtor ID")
 
-const createExhaustiveSearchJobQueryFmtr = `
-INSERT INTO exhaustive_search_jobs (query, initiator_id)
+const crebteExhbustiveSebrchJobQueryFmtr = `
+INSERT INTO exhbustive_sebrch_jobs (query, initibtor_id)
 VALUES (%s, %s)
 RETURNING id
 `
 
-func (s *Store) CancelSearchJob(ctx context.Context, id int64) (totalCanceled int, err error) {
-	ctx, _, endObservation := s.operations.cancelSearchJob.With(ctx, &err, opAttrs(
-		attribute.Int64("ID", id),
+func (s *Store) CbncelSebrchJob(ctx context.Context, id int64) (totblCbnceled int, err error) {
+	ctx, _, endObservbtion := s.operbtions.cbncelSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.Int64("ID", id),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// 🚨 SECURITY: only someone with access to the job may cancel the job
-	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	// 🚨 SECURITY: only someone with bccess to the job mby cbncel the job
+	_, err = s.GetExhbustiveSebrchJob(ctx, id)
 	if err != nil {
 		return -1, err
 	}
 
 	now := time.Now()
-	q := sqlf.Sprintf(cancelJobFmtStr, now, id, now, now)
+	q := sqlf.Sprintf(cbncelJobFmtStr, now, id, now, now)
 
 	row := s.QueryRow(ctx, q)
 
-	err = row.Scan(&totalCanceled)
+	err = row.Scbn(&totblCbnceled)
 	if err != nil {
 		return -1, err
 	}
 
-	return totalCanceled, nil
+	return totblCbnceled, nil
 }
 
-const cancelJobFmtStr = `
-WITH updated_jobs AS (
-    -- Update the state of the main job
-    UPDATE exhaustive_search_jobs
+const cbncelJobFmtStr = `
+WITH updbted_jobs AS (
+    -- Updbte the stbte of the mbin job
+    UPDATE exhbustive_sebrch_jobs
     SET CANCEL = TRUE,
-    -- If the embeddings job is still queued, we directly abort, otherwise we keep the
-    -- state, so the worker can do teardown and later mark it failed.
-    state = CASE WHEN exhaustive_search_jobs.state = 'processing' THEN exhaustive_search_jobs.state ELSE 'canceled' END,
-    finished_at = CASE WHEN exhaustive_search_jobs.state = 'processing' THEN exhaustive_search_jobs.finished_at ELSE %s END
+    -- If the embeddings job is still queued, we directly bbort, otherwise we keep the
+    -- stbte, so the worker cbn do tebrdown bnd lbter mbrk it fbiled.
+    stbte = CASE WHEN exhbustive_sebrch_jobs.stbte = 'processing' THEN exhbustive_sebrch_jobs.stbte ELSE 'cbnceled' END,
+    finished_bt = CASE WHEN exhbustive_sebrch_jobs.stbte = 'processing' THEN exhbustive_sebrch_jobs.finished_bt ELSE %s END
     WHERE id = %s
     RETURNING id
 ),
-updated_repo_jobs AS (
-    -- Update the state of the dependent repo_jobs
-    UPDATE exhaustive_search_repo_jobs
+updbted_repo_jobs AS (
+    -- Updbte the stbte of the dependent repo_jobs
+    UPDATE exhbustive_sebrch_repo_jobs
     SET CANCEL = TRUE,
-    -- If the embeddings job is still queued, we directly abort, otherwise we keep the
-    -- state, so the worker can do teardown and later mark it failed.
-    state = CASE WHEN exhaustive_search_repo_jobs.state = 'processing' THEN exhaustive_search_repo_jobs.state ELSE 'canceled' END,
-    finished_at = CASE WHEN exhaustive_search_repo_jobs.state = 'processing' THEN exhaustive_search_repo_jobs.finished_at ELSE %s END
-    WHERE search_job_id IN (SELECT id FROM updated_jobs)
+    -- If the embeddings job is still queued, we directly bbort, otherwise we keep the
+    -- stbte, so the worker cbn do tebrdown bnd lbter mbrk it fbiled.
+    stbte = CASE WHEN exhbustive_sebrch_repo_jobs.stbte = 'processing' THEN exhbustive_sebrch_repo_jobs.stbte ELSE 'cbnceled' END,
+    finished_bt = CASE WHEN exhbustive_sebrch_repo_jobs.stbte = 'processing' THEN exhbustive_sebrch_repo_jobs.finished_bt ELSE %s END
+    WHERE sebrch_job_id IN (SELECT id FROM updbted_jobs)
     RETURNING id
 ),
-updated_repo_revision_jobs AS (
-    -- Update the state of the dependent repo_revision_jobs
-    UPDATE exhaustive_search_repo_revision_jobs
+updbted_repo_revision_jobs AS (
+    -- Updbte the stbte of the dependent repo_revision_jobs
+    UPDATE exhbustive_sebrch_repo_revision_jobs
     SET CANCEL = TRUE,
-	-- If the embeddings job is still queued, we directly abort, otherwise we keep the
-	-- state, so the worker can do teardown and later mark it failed.
-    state = CASE WHEN exhaustive_search_repo_revision_jobs.state = 'processing' THEN exhaustive_search_repo_revision_jobs.state ELSE 'canceled' END,
-    finished_at = CASE WHEN exhaustive_search_repo_revision_jobs.state = 'processing' THEN exhaustive_search_repo_revision_jobs.finished_at ELSE %s END
-    WHERE search_repo_job_id IN (SELECT id FROM updated_repo_jobs)
+	-- If the embeddings job is still queued, we directly bbort, otherwise we keep the
+	-- stbte, so the worker cbn do tebrdown bnd lbter mbrk it fbiled.
+    stbte = CASE WHEN exhbustive_sebrch_repo_revision_jobs.stbte = 'processing' THEN exhbustive_sebrch_repo_revision_jobs.stbte ELSE 'cbnceled' END,
+    finished_bt = CASE WHEN exhbustive_sebrch_repo_revision_jobs.stbte = 'processing' THEN exhbustive_sebrch_repo_revision_jobs.finished_bt ELSE %s END
+    WHERE sebrch_repo_job_id IN (SELECT id FROM updbted_repo_jobs)
     RETURNING id
 )
-SELECT (SELECT count(*) FROM updated_jobs) + (SELECT count(*) FROM updated_repo_jobs) + (SELECT count(*) FROM updated_repo_revision_jobs) as total_canceled
+SELECT (SELECT count(*) FROM updbted_jobs) + (SELECT count(*) FROM updbted_repo_jobs) + (SELECT count(*) FROM updbted_repo_revision_jobs) bs totbl_cbnceled
 `
 
-func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.ExhaustiveSearchJob, err error) {
-	ctx, _, endObservation := s.operations.getExhaustiveSearchJob.With(ctx, &err, opAttrs(
-		attribute.Int64("ID", id),
+func (s *Store) GetExhbustiveSebrchJob(ctx context.Context, id int64) (_ *types.ExhbustiveSebrchJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.getExhbustiveSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.Int64("ID", id),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	where := sqlf.Sprintf("id = %d", id)
 	q := sqlf.Sprintf(
-		getExhaustiveSearchJobQueryFmtStr,
-		sqlf.Join(exhaustiveSearchJobColumns, ", "),
+		getExhbustiveSebrchJobQueryFmtStr,
+		sqlf.Join(exhbustiveSebrchJobColumns, ", "),
 		where,
 	)
 
-	job, err := scanExhaustiveSearchJob(s.Store.QueryRow(ctx, q))
+	job, err := scbnExhbustiveSebrchJob(s.Store.QueryRow(ctx, q))
 	if err != nil {
 		return nil, err
 	}
@@ -178,225 +178,225 @@ func (s *Store) GetExhaustiveSearchJob(ctx context.Context, id int64) (_ *types.
 		return nil, ErrNoResults
 	}
 
-	// 🚨 SECURITY: only the initiator, internal or site admins may view a job
-	if err := auth.CheckSiteAdminOrSameUser(ctx, s.db, job.InitiatorID); err != nil {
-		// job id is just an incrementing integer that on any new job is
-		// returned. So this information is not private so we can just return
-		// err to indicate the reason for not returning the job.
+	// 🚨 SECURITY: only the initibtor, internbl or site bdmins mby view b job
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, s.db, job.InitibtorID); err != nil {
+		// job id is just bn incrementing integer thbt on bny new job is
+		// returned. So this informbtion is not privbte so we cbn just return
+		// err to indicbte the rebson for not returning the job.
 		return nil, err
 	}
 
 	return job, nil
 }
 
-// aggStateSubQuery takes the results from getAggregateStateTable and computes a
-// single aggregate state that reflects the state of the entire search job
-// cascade better than the state of the top-level worker.
+// bggStbteSubQuery tbkes the results from getAggregbteStbteTbble bnd computes b
+// single bggregbte stbte thbt reflects the stbte of the entire sebrch job
+// cbscbde better thbn the stbte of the top-level worker.
 //
-// The processing chain is as follows:
+// The processing chbin is bs follows:
 //
-// Execute getAggregateStateTable -> transpose table -> compute aggregate state
+// Execute getAggregbteStbteTbble -> trbnspose tbble -> compute bggregbte stbte
 //
 // # The result looks like this:
 //
-// | agg_state  |
+// | bgg_stbte  |
 // |------------|
 // | processing |
 //
-// We want the aggregate state to be returned by the db, so we can use db
-// filtering and pagination.
-const aggStateSubQuery = `
+// We wbnt the bggregbte stbte to be returned by the db, so we cbn use db
+// filtering bnd pbginbtion.
+const bggStbteSubQuery = `
 		SELECT
-		    -- Compute aggregate state
+		    -- Compute bggregbte stbte
 			CASE
-				WHEN canceled > 0 THEN 'canceled'
+				WHEN cbnceled > 0 THEN 'cbnceled'
 				WHEN processing > 0 THEN 'processing'
 				WHEN queued > 0 THEN 'queued'
 				WHEN errored > 0 THEN 'processing'
-				WHEN failed > 0 THEN 'failed'
+				WHEN fbiled > 0 THEN 'fbiled'
 				WHEN completed > 0 THEN 'completed'
-			    -- This should never happen
+			    -- This should never hbppen
 				ELSE 'queued'
 			END
 		FROM (
--- | processing | queued | failed | completed |
+-- | processing | queued | fbiled | completed |
 -- |------------|--------|--------|-----------|
 -- | 2          | 3      | 1      | 8         |
 			SELECT
-			    -- transpose the table
-				max( CASE WHEN state = 'failed' THEN count END) AS failed,
-				max( CASE WHEN state = 'processing' THEN count END) AS processing,
-				max( CASE WHEN state = 'completed' THEN count END) AS completed,
-				max( CASE WHEN state = 'queued' THEN count END) AS queued,
-				max( CASE WHEN state = 'canceled' THEN count END) AS canceled,
-				max( CASE WHEN state = 'errored' THEN count END) AS errored
+			    -- trbnspose the tbble
+				mbx( CASE WHEN stbte = 'fbiled' THEN count END) AS fbiled,
+				mbx( CASE WHEN stbte = 'processing' THEN count END) AS processing,
+				mbx( CASE WHEN stbte = 'completed' THEN count END) AS completed,
+				mbx( CASE WHEN stbte = 'queued' THEN count END) AS queued,
+				mbx( CASE WHEN stbte = 'cbnceled' THEN count END) AS cbnceled,
+				mbx( CASE WHEN stbte = 'errored' THEN count END) AS errored
 			FROM (
-				-- getAggregateStateTable
-				%s) AS state_histogram) AS transposed_state_histogram
+				-- getAggregbteStbteTbble
+				%s) AS stbte_histogrbm) AS trbnsposed_stbte_histogrbm
 `
 
-const getExhaustiveSearchJobQueryFmtStr = `
-SELECT %s FROM exhaustive_search_jobs
+const getExhbustiveSebrchJobQueryFmtStr = `
+SELECT %s FROM exhbustive_sebrch_jobs
 WHERE (%s)
 LIMIT 1
 `
 
 type ListArgs struct {
-	*database.PaginationArgs
+	*dbtbbbse.PbginbtionArgs
 	Query   string
-	States  []string
+	Stbtes  []string
 	UserIDs []int32
 }
 
-func (s *Store) ListExhaustiveSearchJobs(ctx context.Context, args ListArgs) (jobs []*types.ExhaustiveSearchJob, err error) {
-	ctx, _, endObservation := s.operations.listExhaustiveSearchJobs.With(ctx, &err, observation.Args{})
+func (s *Store) ListExhbustiveSebrchJobs(ctx context.Context, brgs ListArgs) (jobs []*types.ExhbustiveSebrchJob, err error) {
+	ctx, _, endObservbtion := s.operbtions.listExhbustiveSebrchJobs.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, opAttrs(attribute.Int("length", len(jobs))))
+		endObservbtion(1, opAttrs(bttribute.Int("length", len(jobs))))
 	}()
 
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 
-	// 🚨 SECURITY: Only authenticated users can list search jobs.
-	if !a.IsAuthenticated() {
-		return nil, errors.New("can only list jobs for an authenticated user")
+	// 🚨 SECURITY: Only buthenticbted users cbn list sebrch jobs.
+	if !b.IsAuthenticbted() {
+		return nil, errors.New("cbn only list jobs for bn buthenticbted user")
 	}
 
-	var conds []*sqlf.Query
+	vbr conds []*sqlf.Query
 
 	// Filter by query.
-	if args.Query != "" {
-		conds = append(conds, sqlf.Sprintf("query LIKE %s", "%"+args.Query+"%"))
+	if brgs.Query != "" {
+		conds = bppend(conds, sqlf.Sprintf("query LIKE %s", "%"+brgs.Query+"%"))
 	}
 
-	// Filter by state.
-	if len(args.States) > 0 {
-		states := make([]*sqlf.Query, len(args.States))
-		for i, state := range args.States {
-			states[i] = sqlf.Sprintf("%s", strings.ToLower(state))
+	// Filter by stbte.
+	if len(brgs.Stbtes) > 0 {
+		stbtes := mbke([]*sqlf.Query, len(brgs.Stbtes))
+		for i, stbte := rbnge brgs.Stbtes {
+			stbtes[i] = sqlf.Sprintf("%s", strings.ToLower(stbte))
 		}
-		conds = append(conds, sqlf.Sprintf("agg_state in (%s)", sqlf.Join(states, ",")))
+		conds = bppend(conds, sqlf.Sprintf("bgg_stbte in (%s)", sqlf.Join(stbtes, ",")))
 	}
 
-	// 🚨 SECURITY: Site admins see any job and may filter based on args.UserIDs.
+	// 🚨 SECURITY: Site bdmins see bny job bnd mby filter bbsed on brgs.UserIDs.
 	// Other users only see their own jobs.
-	isSiteAdmin := auth.CheckUserIsSiteAdmin(ctx, s.db, a.UID) == nil
+	isSiteAdmin := buth.CheckUserIsSiteAdmin(ctx, s.db, b.UID) == nil
 	if isSiteAdmin {
-		if len(args.UserIDs) > 0 {
-			ids := make([]*sqlf.Query, len(args.UserIDs))
-			for i, id := range args.UserIDs {
+		if len(brgs.UserIDs) > 0 {
+			ids := mbke([]*sqlf.Query, len(brgs.UserIDs))
+			for i, id := rbnge brgs.UserIDs {
 				ids[i] = sqlf.Sprintf("%d", id)
 			}
-			conds = append(conds, sqlf.Sprintf("initiator_id in (%s)", sqlf.Join(ids, ",")))
+			conds = bppend(conds, sqlf.Sprintf("initibtor_id in (%s)", sqlf.Join(ids, ",")))
 		}
 	} else {
-		if len(args.UserIDs) > 0 {
-			return nil, errors.New("cannot filter by user id if not a site admin")
+		if len(brgs.UserIDs) > 0 {
+			return nil, errors.New("cbnnot filter by user id if not b site bdmin")
 		}
-		conds = append(conds, sqlf.Sprintf("initiator_id = %d", a.UID))
+		conds = bppend(conds, sqlf.Sprintf("initibtor_id = %d", b.UID))
 	}
 
-	var pagination *database.QueryArgs
-	if args.PaginationArgs != nil {
-		pagination = args.PaginationArgs.SQL()
-		if pagination.Where != nil {
-			conds = append(conds, pagination.Where)
+	vbr pbginbtion *dbtbbbse.QueryArgs
+	if brgs.PbginbtionArgs != nil {
+		pbginbtion = brgs.PbginbtionArgs.SQL()
+		if pbginbtion.Where != nil {
+			conds = bppend(conds, pbginbtion.Where)
 		}
 	}
 
-	var whereClause *sqlf.Query
+	vbr whereClbuse *sqlf.Query
 	if len(conds) != 0 {
-		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+		whereClbuse = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
 	} else {
-		whereClause = sqlf.Sprintf("")
+		whereClbuse = sqlf.Sprintf("")
 	}
 
 	q := sqlf.Sprintf(
-		listExhaustiveSearchJobsQueryFmtStr,
-		sqlf.Join(exhaustiveSearchJobColumns, ", "),
+		listExhbustiveSebrchJobsQueryFmtStr,
+		sqlf.Join(exhbustiveSebrchJobColumns, ", "),
 		sqlf.Sprintf(
-			aggStateSubQuery,
+			bggStbteSubQuery,
 			sqlf.Sprintf(
-				getAggregateStateTable,
-				sqlf.Sprintf("exhaustive_search_jobs.id"),
-				sqlf.Sprintf("exhaustive_search_jobs.id"),
-				sqlf.Sprintf("exhaustive_search_jobs.id"),
+				getAggregbteStbteTbble,
+				sqlf.Sprintf("exhbustive_sebrch_jobs.id"),
+				sqlf.Sprintf("exhbustive_sebrch_jobs.id"),
+				sqlf.Sprintf("exhbustive_sebrch_jobs.id"),
 			),
 		),
-		whereClause,
+		whereClbuse,
 	)
-	if pagination != nil {
-		q = pagination.AppendOrderToQuery(q)
-		q = pagination.AppendLimitToQuery(q)
+	if pbginbtion != nil {
+		q = pbginbtion.AppendOrderToQuery(q)
+		q = pbginbtion.AppendLimitToQuery(q)
 	}
 
-	return scanExhaustiveSearchJobsList(s.Store.Query(ctx, q))
+	return scbnExhbustiveSebrchJobsList(s.Store.Query(ctx, q))
 }
 
-const listExhaustiveSearchJobsQueryFmtStr = `
-SELECT * FROM (SELECT %s, (%s) as agg_state FROM exhaustive_search_jobs) as outer_query
-%s -- whereClause
+const listExhbustiveSebrchJobsQueryFmtStr = `
+SELECT * FROM (SELECT %s, (%s) bs bgg_stbte FROM exhbustive_sebrch_jobs) bs outer_query
+%s -- whereClbuse
 `
 
-const deleteExhaustiveSearchJobQueryFmtStr = `
-DELETE FROM exhaustive_search_jobs
+const deleteExhbustiveSebrchJobQueryFmtStr = `
+DELETE FROM exhbustive_sebrch_jobs
 WHERE id = %d
 `
 
-func (s *Store) DeleteExhaustiveSearchJob(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteExhaustiveSearchJob.With(ctx, &err, opAttrs(
-		attribute.Int64("ID", id),
+func (s *Store) DeleteExhbustiveSebrchJob(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteExhbustiveSebrchJob.With(ctx, &err, opAttrs(
+		bttribute.Int64("ID", id),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// 🚨 SECURITY: only someone with access to the job may delete the job
-	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	// 🚨 SECURITY: only someone with bccess to the job mby delete the job
+	_, err = s.GetExhbustiveSebrchJob(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(deleteExhaustiveSearchJobQueryFmtStr, id))
+	return s.Exec(ctx, sqlf.Sprintf(deleteExhbustiveSebrchJobQueryFmtStr, id))
 }
 
-// | state      | count |
+// | stbte      | count |
 // |------------|-------|
 // | processing | 2     |
 // | queued     | 3     |
-// | failed     | 1     |
+// | fbiled     | 1     |
 // | completed  | 8     |
-const getAggregateStateTable = `
-SELECT state, COUNT(*) as count
+const getAggregbteStbteTbble = `
+SELECT stbte, COUNT(*) bs count
 FROM
   (
-		(SELECT state
-		 -- we need the alias to avoid conflicts with embedding queries.
-		 FROM exhaustive_search_jobs sj
+		(SELECT stbte
+		 -- we need the blibs to bvoid conflicts with embedding queries.
+		 FROM exhbustive_sebrch_jobs sj
 		 WHERE sj.id = %s)
     UNION ALL
-		(SELECT state
-		 FROM exhaustive_search_repo_jobs rj
-		 WHERE rj.search_job_id = %s)
+		(SELECT stbte
+		 FROM exhbustive_sebrch_repo_jobs rj
+		 WHERE rj.sebrch_job_id = %s)
     UNION ALL
-		(SELECT rrj.state
-		 FROM exhaustive_search_repo_revision_jobs rrj
-		JOIN exhaustive_search_repo_jobs rj ON rrj.search_repo_job_id = rj.id
-		WHERE rj.search_job_id = %s)
+		(SELECT rrj.stbte
+		 FROM exhbustive_sebrch_repo_revision_jobs rrj
+		JOIN exhbustive_sebrch_repo_jobs rj ON rrj.sebrch_repo_job_id = rj.id
+		WHERE rj.sebrch_job_id = %s)
   ) AS sub
-GROUP BY state
+GROUP BY stbte
 `
 
-func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[string]int, err error) {
-	ctx, _, endObservation := s.operations.getAggregateRepoRevState.With(ctx, &err, opAttrs(
-		attribute.Int64("ID", id),
+func (s *Store) GetAggregbteRepoRevStbte(ctx context.Context, id int64) (_ mbp[string]int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getAggregbteRepoRevStbte.With(ctx, &err, opAttrs(
+		bttribute.Int64("ID", id),
 	))
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// 🚨 SECURITY: only someone with access to the job may cancel the job
-	_, err = s.GetExhaustiveSearchJob(ctx, id)
+	// 🚨 SECURITY: only someone with bccess to the job mby cbncel the job
+	_, err = s.GetExhbustiveSebrchJob(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	q := sqlf.Sprintf(getAggregateStateTable, id, id, id)
+	q := sqlf.Sprintf(getAggregbteStbteTbble, id, id, id)
 
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
@@ -404,15 +404,15 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 	}
 	defer rows.Close()
 
-	m := make(map[string]int)
+	m := mbke(mbp[string]int)
 	for rows.Next() {
-		var state string
-		var count int
-		if err := rows.Scan(&state, &count); err != nil {
+		vbr stbte string
+		vbr count int
+		if err := rows.Scbn(&stbte, &count); err != nil {
 			return nil, err
 		}
 
-		m[state] = count
+		m[stbte] = count
 	}
 
 	return m, nil
@@ -421,14 +421,14 @@ func (s *Store) GetAggregateRepoRevState(ctx context.Context, id int64) (_ map[s
 const getJobLogsFmtStr = `
 SELECT
 rjj.id,
-r.name,
+r.nbme,
 rjj.revision,
-rjj.state,
-rjj.failure_message,
-rjj.started_at,
-rjj.finished_at
-FROM exhaustive_search_repo_revision_jobs rjj
-JOIN exhaustive_search_repo_jobs rj ON rjj.search_repo_job_id = rj.id
+rjj.stbte,
+rjj.fbilure_messbge,
+rjj.stbrted_bt,
+rjj.finished_bt
+FROM exhbustive_sebrch_repo_revision_jobs rjj
+JOIN exhbustive_sebrch_repo_jobs rj ON rjj.sebrch_repo_job_id = rj.id
 JOIN repo r ON r.id = rj.repo_id
 %s
 `
@@ -438,18 +438,18 @@ type GetJobLogsOpts struct {
 	Limit int
 }
 
-func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) ([]types.SearchJobLog, error) {
-	// 🚨 SECURITY: only someone with access to the job may access the logs
-	_, err := s.GetExhaustiveSearchJob(ctx, id)
+func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) ([]types.SebrchJobLog, error) {
+	// 🚨 SECURITY: only someone with bccess to the job mby bccess the logs
+	_, err := s.GetExhbustiveSebrchJob(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	conds := []*sqlf.Query{sqlf.Sprintf("rj.search_job_id = %s", id)}
-	var limit *sqlf.Query
+	conds := []*sqlf.Query{sqlf.Sprintf("rj.sebrch_job_id = %s", id)}
+	vbr limit *sqlf.Query
 	if opts != nil {
 		if opts.From != 0 {
-			conds = append(conds, sqlf.Sprintf("rjj.id >= %s", opts.From))
+			conds = bppend(conds, sqlf.Sprintf("rjj.id >= %s", opts.From))
 		}
 
 		if opts.Limit != 0 {
@@ -471,67 +471,67 @@ func (s *Store) GetJobLogs(ctx context.Context, id int64, opts *GetJobLogsOpts) 
 	}
 	defer rows.Close()
 
-	var jobs []types.SearchJobLog
+	vbr jobs []types.SebrchJobLog
 	for rows.Next() {
-		job := types.SearchJobLog{}
-		if err := rows.Scan(
+		job := types.SebrchJobLog{}
+		if err := rows.Scbn(
 			&job.ID,
-			&job.RepoName,
+			&job.RepoNbme,
 			&job.Revision,
-			&job.State,
-			&dbutil.NullString{S: &job.FailureMessage},
-			&dbutil.NullTime{Time: &job.StartedAt},
+			&job.Stbte,
+			&dbutil.NullString{S: &job.FbilureMessbge},
+			&dbutil.NullTime{Time: &job.StbrtedAt},
 			&dbutil.NullTime{Time: &job.FinishedAt},
 		); err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, job)
+		jobs = bppend(jobs, job)
 	}
 
 	return jobs, nil
 }
 
-func defaultScanTargets(job *types.ExhaustiveSearchJob) []any {
+func defbultScbnTbrgets(job *types.ExhbustiveSebrchJob) []bny {
 	// required field for the sync worker, but
-	// the value is thrown out here
-	var executionLogs *[]any
+	// the vblue is thrown out here
+	vbr executionLogs *[]bny
 
-	return []any{
+	return []bny{
 		&job.ID,
-		&job.InitiatorID,
-		&job.State,
+		&job.InitibtorID,
+		&job.Stbte,
 		&job.Query,
-		&dbutil.NullString{S: &job.FailureMessage},
-		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullString{S: &job.FbilureMessbge},
+		&dbutil.NullTime{Time: &job.StbrtedAt},
 		&dbutil.NullTime{Time: &job.FinishedAt},
 		&dbutil.NullTime{Time: &job.ProcessAfter},
 		&job.NumResets,
-		&job.NumFailures,
+		&job.NumFbilures,
 		&executionLogs,
-		&job.WorkerHostname,
-		&job.Cancel,
-		&job.CreatedAt,
-		&job.UpdatedAt,
+		&job.WorkerHostnbme,
+		&job.Cbncel,
+		&job.CrebtedAt,
+		&job.UpdbtedAt,
 	}
 }
 
-func scanExhaustiveSearchJob(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
-	var job types.ExhaustiveSearchJob
+func scbnExhbustiveSebrchJob(sc dbutil.Scbnner) (*types.ExhbustiveSebrchJob, error) {
+	vbr job types.ExhbustiveSebrchJob
 
-	return &job, sc.Scan(
-		defaultScanTargets(&job)...,
+	return &job, sc.Scbn(
+		defbultScbnTbrgets(&job)...,
 	)
 }
 
-func scanExhaustiveSearchJobList(sc dbutil.Scanner) (*types.ExhaustiveSearchJob, error) {
-	var job types.ExhaustiveSearchJob
+func scbnExhbustiveSebrchJobList(sc dbutil.Scbnner) (*types.ExhbustiveSebrchJob, error) {
+	vbr job types.ExhbustiveSebrchJob
 
-	return &job, sc.Scan(
-		append(
-			defaultScanTargets(&job),
-			&job.AggState,
+	return &job, sc.Scbn(
+		bppend(
+			defbultScbnTbrgets(&job),
+			&job.AggStbte,
 		)...,
 	)
 }
 
-var scanExhaustiveSearchJobsList = basestore.NewSliceScanner(scanExhaustiveSearchJobList)
+vbr scbnExhbustiveSebrchJobsList = bbsestore.NewSliceScbnner(scbnExhbustiveSebrchJobList)

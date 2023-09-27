@@ -1,4 +1,4 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"context"
@@ -7,59 +7,59 @@ import (
 	"net/http"
 	"strconv"
 
-	sglog "github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	sglog "github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// handleEnqueueSinglePayload handles a non-multipart upload. This creates an upload record
-// with state 'queued', proxies the data to the bundle manager, and returns the generated ID.
-func (h *UploadHandler[T]) handleEnqueueSinglePayload(ctx context.Context, uploadState uploadState[T], body io.Reader) (_ any, statusCode int, err error) {
-	ctx, trace, endObservation := h.operations.handleEnqueueSinglePayload.With(ctx, &err, observation.Args{})
+// hbndleEnqueueSinglePbylobd hbndles b non-multipbrt uplobd. This crebtes bn uplobd record
+// with stbte 'queued', proxies the dbtb to the bundle mbnbger, bnd returns the generbted ID.
+func (h *UplobdHbndler[T]) hbndleEnqueueSinglePbylobd(ctx context.Context, uplobdStbte uplobdStbte[T], body io.Rebder) (_ bny, stbtusCode int, err error) {
+	ctx, trbce, endObservbtion := h.operbtions.hbndleEnqueueSinglePbylobd.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("statusCode", statusCode),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("stbtusCode", stbtusCode),
 		}})
 	}()
 
-	var a int
-	if err := h.dbStore.WithTransaction(ctx, func(tx DBStore[T]) error {
-		id, err := tx.InsertUpload(ctx, Upload[T]{
-			State:            "uploading",
-			NumParts:         1,
-			UploadedParts:    []int{0},
-			UncompressedSize: uploadState.uncompressedSize,
-			Metadata:         uploadState.metadata,
+	vbr b int
+	if err := h.dbStore.WithTrbnsbction(ctx, func(tx DBStore[T]) error {
+		id, err := tx.InsertUplobd(ctx, Uplobd[T]{
+			Stbte:            "uplobding",
+			NumPbrts:         1,
+			UplobdedPbrts:    []int{0},
+			UncompressedSize: uplobdStbte.uncompressedSize,
+			Metbdbtb:         uplobdStbte.metbdbtb,
 		})
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
+		trbce.AddEvent("TODO Dombin Owner", bttribute.Int("uplobdID", id))
 
-		size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.lsif.gz", id), body)
+		size, err := h.uplobdStore.Uplobd(ctx, fmt.Sprintf("uplobd-%d.lsif.gz", id), body)
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadSize", int(size)))
+		trbce.AddEvent("TODO Dombin Owner", bttribute.Int("gzippedUplobdSize", int(size)))
 
-		if err := tx.MarkQueued(ctx, id, &size); err != nil {
+		if err := tx.MbrkQueued(ctx, id, &size); err != nil {
 			return err
 		}
 
-		a = id
+		b = id
 		return nil
 	}); err != nil {
-		return nil, http.StatusInternalServerError, err
+		return nil, http.StbtusInternblServerError, err
 	}
 
 	h.logger.Info(
-		"uploadhandler: enqueued upload",
-		sglog.Int("id", a),
+		"uplobdhbndler: enqueued uplobd",
+		sglog.Int("id", b),
 	)
 
-	// older versions of src-cli expect a string
+	// older versions of src-cli expect b string
 	return struct {
 		ID string `json:"id"`
-	}{ID: strconv.Itoa(a)}, 0, nil
+	}{ID: strconv.Itob(b)}, 0, nil
 }

@@ -1,33 +1,33 @@
-package migration
+pbckbge migrbtion
 
 import (
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/stitch"
 )
 
-func Rewrite(database db.Database, rev string) error {
+func Rewrite(dbtbbbse db.Dbtbbbse, rev string) error {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
-	migrationsDir := filepath.Join(repoRoot, "migrations", database.Name)
+	migrbtionsDir := filepbth.Join(repoRoot, "migrbtions", dbtbbbse.Nbme)
 
-	fs, err := stitch.ReadMigrations(database.Name, repoRoot, rev)
+	fs, err := stitch.RebdMigrbtions(dbtbbbse.Nbme, repoRoot, rev)
 	if err != nil {
 		return err
 	}
 
-	migrationsDirTemp := migrationsDir + ".working"
+	migrbtionsDirTemp := migrbtionsDir + ".working"
 	defer func() {
-		_ = os.RemoveAll(migrationsDirTemp)
+		_ = os.RemoveAll(migrbtionsDirTemp)
 	}()
 
 	rootDir, err := http.FS(fs).Open("/")
@@ -36,34 +36,34 @@ func Rewrite(database db.Database, rev string) error {
 	}
 	defer func() { _ = rootDir.Close() }()
 
-	migrations, err := rootDir.Readdir(0)
+	migrbtions, err := rootDir.Rebddir(0)
 	if err != nil {
 		return err
 	}
 
-	for _, migration := range migrations {
-		if err := os.MkdirAll(filepath.Join(migrationsDirTemp, migration.Name()), os.ModePerm); err != nil {
+	for _, migrbtion := rbnge migrbtions {
+		if err := os.MkdirAll(filepbth.Join(migrbtionsDirTemp, migrbtion.Nbme()), os.ModePerm); err != nil {
 			return err
 		}
 
-		for _, basename := range []string{"up.sql", "down.sql", "metadata.yaml"} {
-			f, err := fs.Open(filepath.Join(migration.Name(), basename))
+		for _, bbsenbme := rbnge []string{"up.sql", "down.sql", "metbdbtb.ybml"} {
+			f, err := fs.Open(filepbth.Join(migrbtion.Nbme(), bbsenbme))
 			if err != nil {
 				return err
 			}
 			defer func() { _ = f.Close() }()
 
-			contents, err := io.ReadAll(f)
+			contents, err := io.RebdAll(f)
 			if err != nil {
 				return err
 			}
 
-			filename := filepath.Join(migrationsDirTemp, migration.Name(), basename)
-			std.Out.Writef("Writing %s", filename)
+			filenbme := filepbth.Join(migrbtionsDirTemp, migrbtion.Nbme(), bbsenbme)
+			std.Out.Writef("Writing %s", filenbme)
 
 			if err := os.WriteFile(
-				filename,
-				[]byte(definition.CanonicalizeQuery(string(contents))),
+				filenbme,
+				[]byte(definition.CbnonicblizeQuery(string(contents))),
 				os.ModePerm,
 			); err != nil {
 				return err
@@ -71,13 +71,13 @@ func Rewrite(database db.Database, rev string) error {
 		}
 	}
 
-	if err := os.RemoveAll(migrationsDir); err != nil {
+	if err := os.RemoveAll(migrbtionsDir); err != nil {
 		return err
 	}
 
-	std.Out.Writef("Renaming %s -> %s", migrationsDirTemp, migrationsDir)
+	std.Out.Writef("Renbming %s -> %s", migrbtionsDirTemp, migrbtionsDir)
 
-	if err := os.Rename(migrationsDirTemp, migrationsDir); err != nil {
+	if err := os.Renbme(migrbtionsDirTemp, migrbtionsDir); err != nil {
 		return err
 	}
 

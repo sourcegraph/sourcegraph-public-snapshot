@@ -1,132 +1,132 @@
-package command_test
+pbckbge commbnd_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
 )
 
-func TestNewFirecrackerSpec(t *testing.T) {
+func TestNewFirecrbckerSpec(t *testing.T) {
 	tests := []struct {
-		name         string
-		vmName       string
-		image        string
-		scriptPath   string
-		spec         command.Spec
-		options      command.DockerOptions
-		expectedSpec command.Spec
+		nbme         string
+		vmNbme       string
+		imbge        string
+		scriptPbth   string
+		spec         commbnd.Spec
+		options      commbnd.DockerOptions
+		expectedSpec commbnd.Spec
 	}{
 		{
-			name:       "Converts to firecracker spec",
-			vmName:     "some-vm",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			nbme:       "Converts to firecrbcker spec",
+			vmNbme:     "some-vm",
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"ignite",
 					"exec",
 					"some-vm",
 					"--",
-					"docker run --rm -v /work:/data -w /data/some/dir -e FOO=BAR --entrypoint /bin/sh some-image /data/.sourcegraph-executor/some/path",
+					"docker run --rm -v /work:/dbtb -w /dbtb/some/dir -e FOO=BAR --entrypoint /bin/sh some-imbge /dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "Converts to firecracker spec",
-			vmName:     "some-vm",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			nbme:       "Converts to firecrbcker spec",
+			vmNbme:     "some-vm",
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"ignite",
 					"exec",
 					"some-vm",
 					"--",
-					"docker run --rm -v /work:/data -w /data/some/dir -e FOO=BAR --entrypoint /bin/sh some-image /data/.sourcegraph-executor/some/path",
+					"docker run --rm -v /work:/dbtb -w /dbtb/some/dir -e FOO=BAR --entrypoint /bin/sh some-imbge /dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "No spec directory",
-			vmName:     "some-vm",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			nbme:       "No spec directory",
+			vmNbme:     "some-vm",
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"ignite",
 					"exec",
 					"some-vm",
 					"--",
-					"docker run --rm -v /work:/data -w /data -e FOO=BAR --entrypoint /bin/sh some-image /data/.sourcegraph-executor/some/path",
+					"docker run --rm -v /work:/dbtb -w /dbtb -e FOO=BAR --entrypoint /bin/sh some-imbge /dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:   "src-cli",
-			vmName: "some-vm",
-			spec: command.Spec{
+			nbme:   "src-cli",
+			vmNbme: "some-vm",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"ignite",
 					"exec",
 					"some-vm",
 					"--",
-					"cd /work/some/dir && FOO=BAR src exec -f batch.yml",
+					"cd /work/some/dir && FOO=BAR src exec -f bbtch.yml",
 				},
 			},
 		},
 		{
-			name:   "src-cli without environment variables",
-			vmName: "some-vm",
-			spec: command.Spec{
+			nbme:   "src-cli without environment vbribbles",
+			vmNbme: "some-vm",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/some/dir",
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"ignite",
 					"exec",
 					"some-vm",
 					"--",
-					"cd /work/some/dir && src exec -f batch.yml",
+					"cd /work/some/dir && src exec -f bbtch.yml",
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actualSpec := command.NewFirecrackerSpec(test.vmName, test.image, test.scriptPath, test.spec, test.options)
-			assert.Equal(t, test.expectedSpec, actualSpec)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			bctublSpec := commbnd.NewFirecrbckerSpec(test.vmNbme, test.imbge, test.scriptPbth, test.spec, test.options)
+			bssert.Equbl(t, test.expectedSpec, bctublSpec)
 		})
 	}
 }

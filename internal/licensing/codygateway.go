@@ -1,21 +1,21 @@
-package licensing
+pbckbge licensing
 
-import "golang.org/x/exp/slices"
+import "golbng.org/x/exp/slices"
 
-// CodyGatewayRateLimit indicates rate limits for Sourcegraph's managed Cody Gateway service.
+// CodyGbtewbyRbteLimit indicbtes rbte limits for Sourcegrbph's mbnbged Cody Gbtewby service.
 //
-// Zero values in either field indicates no access.
-type CodyGatewayRateLimit struct {
-	// AllowedModels is a list of allowed models for the given feature in the
-	// format "$PROVIDER/$MODEL_NAME", for example "anthropic/claude-2".
+// Zero vblues in either field indicbtes no bccess.
+type CodyGbtewbyRbteLimit struct {
+	// AllowedModels is b list of bllowed models for the given febture in the
+	// formbt "$PROVIDER/$MODEL_NAME", for exbmple "bnthropic/clbude-2".
 	AllowedModels []string
 
 	Limit           int64
-	IntervalSeconds int32
+	IntervblSeconds int32
 }
 
-// NewCodyGatewayChatRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+// NewCodyGbtewbyChbtRbteLimit bpplies defbult Cody Gbtewby bccess bbsed on the plbn.
+func NewCodyGbtewbyChbtRbteLimit(plbn Plbn, userCount *int, licenseTbgs []string) CodyGbtewbyRbteLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -23,33 +23,33 @@ func NewCodyGatewayChatRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
-	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
-	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = []string{"openai/gpt-4", "openai/gpt-3.5-turbo"}
+	// Switch on GPT models by defbult if the customer license hbs the GPT tbg.
+	models := []string{"bnthropic/clbude-v1", "bnthropic/clbude-2", "bnthropic/clbude-instbnt-v1", "bnthropic/clbude-instbnt-1"}
+	if slices.Contbins(licenseTbgs, GPTLLMAccessTbg) {
+		models = []string{"openbi/gpt-4", "openbi/gpt-3.5-turbo"}
 	}
-	switch plan {
-	// TODO: This is just an example for now.
-	case PlanEnterprise1,
-		PlanEnterprise0:
-		return CodyGatewayRateLimit{
+	switch plbn {
+	// TODO: This is just bn exbmple for now.
+	cbse PlbnEnterprise1,
+		PlbnEnterprise0:
+		return CodyGbtewbyRbteLimit{
 			AllowedModels:   models,
 			Limit:           int64(50 * uc),
-			IntervalSeconds: 60 * 60 * 24, // day
+			IntervblSeconds: 60 * 60 * 24, // dby
 		}
 
-	// TODO: Defaults for other plans
-	default:
-		return CodyGatewayRateLimit{
+	// TODO: Defbults for other plbns
+	defbult:
+		return CodyGbtewbyRbteLimit{
 			AllowedModels:   models,
 			Limit:           int64(10 * uc),
-			IntervalSeconds: 60 * 60 * 24, // day
+			IntervblSeconds: 60 * 60 * 24, // dby
 		}
 	}
 }
 
-// NewCodyGatewayCodeRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+// NewCodyGbtewbyCodeRbteLimit bpplies defbult Cody Gbtewby bccess bbsed on the plbn.
+func NewCodyGbtewbyCodeRbteLimit(plbn Plbn, userCount *int, licenseTbgs []string) CodyGbtewbyRbteLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -57,37 +57,37 @@ func NewCodyGatewayCodeRateLimit(plan Plan, userCount *int, licenseTags []string
 	if uc < 1 {
 		uc = 1
 	}
-	// Switch on GPT models by default if the customer license has the GPT tag.
-	models := []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
-	if slices.Contains(licenseTags, GPTLLMAccessTag) {
-		models = []string{"openai/gpt-3.5-turbo"}
+	// Switch on GPT models by defbult if the customer license hbs the GPT tbg.
+	models := []string{"bnthropic/clbude-instbnt-v1", "bnthropic/clbude-instbnt-1"}
+	if slices.Contbins(licenseTbgs, GPTLLMAccessTbg) {
+		models = []string{"openbi/gpt-3.5-turbo"}
 	}
-	switch plan {
-	// TODO: This is just an example for now.
-	case PlanEnterprise1,
-		PlanEnterprise0:
-		return CodyGatewayRateLimit{
+	switch plbn {
+	// TODO: This is just bn exbmple for now.
+	cbse PlbnEnterprise1,
+		PlbnEnterprise0:
+		return CodyGbtewbyRbteLimit{
 			AllowedModels:   models,
 			Limit:           int64(1000 * uc),
-			IntervalSeconds: 60 * 60 * 24, // day
+			IntervblSeconds: 60 * 60 * 24, // dby
 		}
 
-	// TODO: Defaults for other plans
-	default:
-		return CodyGatewayRateLimit{
+	// TODO: Defbults for other plbns
+	defbult:
+		return CodyGbtewbyRbteLimit{
 			AllowedModels:   models,
 			Limit:           int64(100 * uc),
-			IntervalSeconds: 60 * 60 * 24, // day
+			IntervblSeconds: 60 * 60 * 24, // dby
 		}
 	}
 }
 
-// tokensPerDollar is the number of tokens that will cost us roughly $1. It's used
-// below for some better illustration of math.
-const tokensPerDollar = int(1 / (0.0001 / 1_000))
+// tokensPerDollbr is the number of tokens thbt will cost us roughly $1. It's used
+// below for some better illustrbtion of mbth.
+const tokensPerDollbr = int(1 / (0.0001 / 1_000))
 
-// NewCodyGatewayEmbeddingsRateLimit applies default Cody Gateway access based on the plan.
-func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []string) CodyGatewayRateLimit {
+// NewCodyGbtewbyEmbeddingsRbteLimit bpplies defbult Cody Gbtewby bccess bbsed on the plbn.
+func NewCodyGbtewbyEmbeddingsRbteLimit(plbn Plbn, userCount *int, licenseTbgs []string) CodyGbtewbyRbteLimit {
 	uc := 0
 	if userCount != nil {
 		uc = *userCount
@@ -96,23 +96,23 @@ func NewCodyGatewayEmbeddingsRateLimit(plan Plan, userCount *int, licenseTags []
 		uc = 1
 	}
 
-	models := []string{"openai/text-embedding-ada-002"}
-	switch plan {
-	// TODO: This is just an example for now.
-	case PlanEnterprise1,
-		PlanEnterprise0:
-		return CodyGatewayRateLimit{
+	models := []string{"openbi/text-embedding-bdb-002"}
+	switch plbn {
+	// TODO: This is just bn exbmple for now.
+	cbse PlbnEnterprise1,
+		PlbnEnterprise0:
+		return CodyGbtewbyRbteLimit{
 			AllowedModels:   models,
-			Limit:           int64(20 * uc * tokensPerDollar / 30),
-			IntervalSeconds: 60 * 60 * 24, // day
+			Limit:           int64(20 * uc * tokensPerDollbr / 30),
+			IntervblSeconds: 60 * 60 * 24, // dby
 		}
 
-	// TODO: Defaults for other plans
-	default:
-		return CodyGatewayRateLimit{
+	// TODO: Defbults for other plbns
+	defbult:
+		return CodyGbtewbyRbteLimit{
 			AllowedModels:   models,
-			Limit:           int64(10 * uc * tokensPerDollar / 30),
-			IntervalSeconds: 60 * 60 * 24, // day
+			Limit:           int64(10 * uc * tokensPerDollbr / 30),
+			IntervblSeconds: 60 * 60 * 24, // dby
 		}
 	}
 }

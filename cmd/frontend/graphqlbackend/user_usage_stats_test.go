@@ -1,37 +1,37 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
 )
 
-func TestUser_UsageStatistics(t *testing.T) {
+func TestUser_UsbgeStbtistics(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1, Usernbme: "blice"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
-	usagestats.MockGetByUserID = func(userID int32) (*types.UserUsageStatistics, error) {
-		return &types.UserUsageStatistics{
-			SearchQueries: 2,
+	usbgestbts.MockGetByUserID = func(userID int32) (*types.UserUsbgeStbtistics, error) {
+		return &types.UserUsbgeStbtistics{
+			SebrchQueries: 2,
 		}, nil
 	}
-	defer func() { usagestats.MockGetByUserID = nil }()
+	defer func() { usbgestbts.MockGetByUserID = nil }()
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					node(id: "VXNlcjox") {
 						id
 						... on User {
-							usageStatistics {
-								searchQueries
+							usbgeStbtistics {
+								sebrchQueries
 							}
 						}
 					}
@@ -41,8 +41,8 @@ func TestUser_UsageStatistics(t *testing.T) {
 				{
 					"node": {
 						"id": "VXNlcjox",
-						"usageStatistics": {
-							"searchQueries": 2
+						"usbgeStbtistics": {
+							"sebrchQueries": 2
 						}
 					}
 				}

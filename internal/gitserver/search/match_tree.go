@@ -1,167 +1,167 @@
-package search
+pbckbge sebrch
 
 import (
 	"bytes"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/casetransform"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/byteutils"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/cbsetrbnsform"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ToMatchTree converts a protocol.SearchQuery into its equivalent MatchTree.
-// We don't send a match tree directly over the wire so using the protocol
-// package doesn't pull in all the dependencies that the match tree needs.
-func ToMatchTree(q protocol.Node) (MatchTree, error) {
+// ToMbtchTree converts b protocol.SebrchQuery into its equivblent MbtchTree.
+// We don't send b mbtch tree directly over the wire so using the protocol
+// pbckbge doesn't pull in bll the dependencies thbt the mbtch tree needs.
+func ToMbtchTree(q protocol.Node) (MbtchTree, error) {
 	switch v := q.(type) {
-	case *protocol.CommitBefore:
+	cbse *protocol.CommitBefore:
 		return &CommitBefore{*v}, nil
-	case *protocol.CommitAfter:
+	cbse *protocol.CommitAfter:
 		return &CommitAfter{*v}, nil
-	case *protocol.AuthorMatches:
-		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
-		return &AuthorMatches{re}, err
-	case *protocol.CommitterMatches:
-		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
-		return &CommitterMatches{re}, err
-	case *protocol.MessageMatches:
-		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
-		return &MessageMatches{re}, err
-	case *protocol.DiffMatches:
-		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
-		return &DiffMatches{re}, err
-	case *protocol.DiffModifiesFile:
-		re, err := casetransform.CompileRegexp(v.Expr, v.IgnoreCase)
+	cbse *protocol.AuthorMbtches:
+		re, err := cbsetrbnsform.CompileRegexp(v.Expr, v.IgnoreCbse)
+		return &AuthorMbtches{re}, err
+	cbse *protocol.CommitterMbtches:
+		re, err := cbsetrbnsform.CompileRegexp(v.Expr, v.IgnoreCbse)
+		return &CommitterMbtches{re}, err
+	cbse *protocol.MessbgeMbtches:
+		re, err := cbsetrbnsform.CompileRegexp(v.Expr, v.IgnoreCbse)
+		return &MessbgeMbtches{re}, err
+	cbse *protocol.DiffMbtches:
+		re, err := cbsetrbnsform.CompileRegexp(v.Expr, v.IgnoreCbse)
+		return &DiffMbtches{re}, err
+	cbse *protocol.DiffModifiesFile:
+		re, err := cbsetrbnsform.CompileRegexp(v.Expr, v.IgnoreCbse)
 		return &DiffModifiesFile{re}, err
-	case *protocol.Boolean:
-		return &Constant{v.Value}, nil
-	case *protocol.Operator:
-		operands := make([]MatchTree, 0, len(v.Operands))
-		for _, operand := range v.Operands {
-			sub, err := ToMatchTree(operand)
+	cbse *protocol.Boolebn:
+		return &Constbnt{v.Vblue}, nil
+	cbse *protocol.Operbtor:
+		operbnds := mbke([]MbtchTree, 0, len(v.Operbnds))
+		for _, operbnd := rbnge v.Operbnds {
+			sub, err := ToMbtchTree(operbnd)
 			if err != nil {
 				return nil, err
 			}
-			operands = append(operands, sub)
+			operbnds = bppend(operbnds, sub)
 		}
-		return &Operator{Kind: v.Kind, Operands: operands}, nil
-	default:
+		return &Operbtor{Kind: v.Kind, Operbnds: operbnds}, nil
+	defbult:
 		return nil, errors.Errorf("unknown protocol query type %T", q)
 	}
 }
 
-// Visit performs a preorder traversal over the match tree, calling f on each node
-func Visit(mt MatchTree, f func(MatchTree)) {
+// Visit performs b preorder trbversbl over the mbtch tree, cblling f on ebch node
+func Visit(mt MbtchTree, f func(MbtchTree)) {
 	switch v := mt.(type) {
-	case *Operator:
+	cbse *Operbtor:
 		f(mt)
-		for _, child := range v.Operands {
+		for _, child := rbnge v.Operbnds {
 			Visit(child, f)
 		}
-	default:
+	defbult:
 		f(mt)
 	}
 }
 
-// MatchTree is an interface representing the queries we can run against a commit.
-type MatchTree interface {
-	// Match returns whether the given predicate matches a commit and, if it does,
-	// the portions of the commit that match in the form of *CommitHighlights
-	Match(*LazyCommit) (CommitFilterResult, MatchedCommit, error)
+// MbtchTree is bn interfbce representing the queries we cbn run bgbinst b commit.
+type MbtchTree interfbce {
+	// Mbtch returns whether the given predicbte mbtches b commit bnd, if it does,
+	// the portions of the commit thbt mbtch in the form of *CommitHighlights
+	Mbtch(*LbzyCommit) (CommitFilterResult, MbtchedCommit, error)
 }
 
-// AuthorMatches is a predicate that matches if the author's name or email address
-// matches the regex pattern.
-type AuthorMatches struct {
-	*casetransform.Regexp
+// AuthorMbtches is b predicbte thbt mbtches if the buthor's nbme or embil bddress
+// mbtches the regex pbttern.
+type AuthorMbtches struct {
+	*cbsetrbnsform.Regexp
 }
 
-func (a *AuthorMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	if a.Regexp.Match(lc.AuthorName, &lc.LowerBuf) || a.Regexp.Match(lc.AuthorEmail, &lc.LowerBuf) {
-		return filterResult(true), MatchedCommit{}, nil
+func (b *AuthorMbtches) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
+	if b.Regexp.Mbtch(lc.AuthorNbme, &lc.LowerBuf) || b.Regexp.Mbtch(lc.AuthorEmbil, &lc.LowerBuf) {
+		return filterResult(true), MbtchedCommit{}, nil
 	}
-	return filterResult(false), MatchedCommit{}, nil
+	return filterResult(fblse), MbtchedCommit{}, nil
 }
 
-// CommitterMatches is a predicate that matches if the author's name or email address
-// matches the regex pattern.
-type CommitterMatches struct {
-	*casetransform.Regexp
+// CommitterMbtches is b predicbte thbt mbtches if the buthor's nbme or embil bddress
+// mbtches the regex pbttern.
+type CommitterMbtches struct {
+	*cbsetrbnsform.Regexp
 }
 
-func (c *CommitterMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	if c.Regexp.Match(lc.CommitterName, &lc.LowerBuf) || c.Regexp.Match(lc.CommitterEmail, &lc.LowerBuf) {
-		return filterResult(true), MatchedCommit{}, nil
+func (c *CommitterMbtches) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
+	if c.Regexp.Mbtch(lc.CommitterNbme, &lc.LowerBuf) || c.Regexp.Mbtch(lc.CommitterEmbil, &lc.LowerBuf) {
+		return filterResult(true), MbtchedCommit{}, nil
 	}
-	return filterResult(false), MatchedCommit{}, nil
+	return filterResult(fblse), MbtchedCommit{}, nil
 }
 
-// CommitBefore is a predicate that matches if the commit is before the given date
+// CommitBefore is b predicbte thbt mbtches if the commit is before the given dbte
 type CommitBefore struct {
 	protocol.CommitBefore
 }
 
-func (c *CommitBefore) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	committerDate, err := lc.CommitterDate()
+func (c *CommitBefore) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
+	committerDbte, err := lc.CommitterDbte()
 	if err != nil {
-		return filterResult(false), MatchedCommit{}, err
+		return filterResult(fblse), MbtchedCommit{}, err
 	}
-	return filterResult(committerDate.Before(c.Time)), MatchedCommit{}, nil
+	return filterResult(committerDbte.Before(c.Time)), MbtchedCommit{}, nil
 }
 
-// CommitAfter is a predicate that matches if the commit is after the given date
+// CommitAfter is b predicbte thbt mbtches if the commit is bfter the given dbte
 type CommitAfter struct {
 	protocol.CommitAfter
 }
 
-func (c *CommitAfter) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	committerDate, err := lc.CommitterDate()
+func (c *CommitAfter) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
+	committerDbte, err := lc.CommitterDbte()
 	if err != nil {
-		return filterResult(false), MatchedCommit{}, err
+		return filterResult(fblse), MbtchedCommit{}, err
 	}
-	return filterResult(committerDate.After(c.Time)), MatchedCommit{}, nil
+	return filterResult(committerDbte.After(c.Time)), MbtchedCommit{}, nil
 }
 
-// MessageMatches is a predicate that matches if the commit message matches
-// the provided regex pattern.
-type MessageMatches struct {
-	*casetransform.Regexp
+// MessbgeMbtches is b predicbte thbt mbtches if the commit messbge mbtches
+// the provided regex pbttern.
+type MessbgeMbtches struct {
+	*cbsetrbnsform.Regexp
 }
 
-func (m *MessageMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	results := m.FindAllIndex(lc.Message, -1, &lc.LowerBuf)
+func (m *MessbgeMbtches) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
+	results := m.FindAllIndex(lc.Messbge, -1, &lc.LowerBuf)
 	if results == nil {
-		return filterResult(false), MatchedCommit{}, nil
+		return filterResult(fblse), MbtchedCommit{}, nil
 	}
 
-	return filterResult(true), MatchedCommit{
-		Message: matchesToRanges(lc.Message, results),
+	return filterResult(true), MbtchedCommit{
+		Messbge: mbtchesToRbnges(lc.Messbge, results),
 	}, nil
 }
 
-// DiffMatches is a a predicate that matches if any of the lines changed by
-// the commit match the given regex pattern.
-type DiffMatches struct {
-	*casetransform.Regexp
+// DiffMbtches is b b predicbte thbt mbtches if bny of the lines chbnged by
+// the commit mbtch the given regex pbttern.
+type DiffMbtches struct {
+	*cbsetrbnsform.Regexp
 }
 
-func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (dm *DiffMbtches) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
 	diff, err := lc.Diff()
 	if err != nil {
-		return filterResult(false), MatchedCommit{}, err
+		return filterResult(fblse), MbtchedCommit{}, err
 	}
 
-	var fileDiffHighlights map[int]MatchedFileDiff
-	matchedFileDiffs := make(map[int]struct{})
-	for fileIdx, fileDiff := range diff {
-		var hunkHighlights map[int]MatchedHunk
-		for hunkIdx, hunk := range fileDiff.Hunks {
-			var lineHighlights map[int]result.Ranges
-			lr := byteutils.NewLineReader(hunk.Body)
+	vbr fileDiffHighlights mbp[int]MbtchedFileDiff
+	mbtchedFileDiffs := mbke(mbp[int]struct{})
+	for fileIdx, fileDiff := rbnge diff {
+		vbr hunkHighlights mbp[int]MbtchedHunk
+		for hunkIdx, hunk := rbnge fileDiff.Hunks {
+			vbr lineHighlights mbp[int]result.Rbnges
+			lr := byteutils.NewLineRebder(hunk.Body)
 			lineIdx := -1
-			for lr.Scan() {
+			for lr.Scbn() {
 				line := lr.Line()
 				lineIdx++
 
@@ -171,271 +171,271 @@ func (dm *DiffMatches) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit,
 
 				origin, lineWithoutPrefix := line[0], line[1:]
 				switch origin {
-				case '+', '-':
-				default:
+				cbse '+', '-':
+				defbult:
 					continue
 				}
 
-				matches := dm.FindAllIndex(lineWithoutPrefix, -1, &lc.LowerBuf)
-				if matches != nil {
+				mbtches := dm.FindAllIndex(lineWithoutPrefix, -1, &lc.LowerBuf)
+				if mbtches != nil {
 					if lineHighlights == nil {
-						lineHighlights = make(map[int]result.Ranges, 1)
+						lineHighlights = mbke(mbp[int]result.Rbnges, 1)
 					}
-					lineHighlights[lineIdx] = matchesToRanges(lineWithoutPrefix, matches)
+					lineHighlights[lineIdx] = mbtchesToRbnges(lineWithoutPrefix, mbtches)
 				}
 			}
 
 			if len(lineHighlights) > 0 {
 				if hunkHighlights == nil {
-					hunkHighlights = make(map[int]MatchedHunk, 1)
+					hunkHighlights = mbke(mbp[int]MbtchedHunk, 1)
 				}
-				hunkHighlights[hunkIdx] = MatchedHunk{lineHighlights}
+				hunkHighlights[hunkIdx] = MbtchedHunk{lineHighlights}
 			}
 		}
 		if len(hunkHighlights) > 0 {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]MatchedFileDiff)
+				fileDiffHighlights = mbke(mbp[int]MbtchedFileDiff)
 			}
-			fileDiffHighlights[fileIdx] = MatchedFileDiff{MatchedHunks: hunkHighlights}
-			matchedFileDiffs[fileIdx] = struct{}{}
+			fileDiffHighlights[fileIdx] = MbtchedFileDiff{MbtchedHunks: hunkHighlights}
+			mbtchedFileDiffs[fileIdx] = struct{}{}
 		}
 	}
 
-	return CommitFilterResult{MatchedFileDiffs: matchedFileDiffs}, MatchedCommit{Diff: fileDiffHighlights}, nil
+	return CommitFilterResult{MbtchedFileDiffs: mbtchedFileDiffs}, MbtchedCommit{Diff: fileDiffHighlights}, nil
 }
 
-// DiffModifiesFile is a predicate that matches if the commit modifies any files
-// that match the given regex pattern.
+// DiffModifiesFile is b predicbte thbt mbtches if the commit modifies bny files
+// thbt mbtch the given regex pbttern.
 type DiffModifiesFile struct {
-	*casetransform.Regexp
+	*cbsetrbnsform.Regexp
 }
 
-func (dmf *DiffModifiesFile) Match(lc *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (dmf *DiffModifiesFile) Mbtch(lc *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
 	{
-		// This block pre-filters a commit based on the output of the `--name-status` output.
-		// It is significantly cheaper to get the changed file names compared to generating the full
+		// This block pre-filters b commit bbsed on the output of the `--nbme-stbtus` output.
+		// It is significbntly chebper to get the chbnged file nbmes compbred to generbting the full
 		// diff, so we try to short-circuit when possible.
 
-		foundMatch := false
-		for _, fileName := range lc.ModifiedFiles() {
-			if dmf.Regexp.Match([]byte(fileName), &lc.LowerBuf) {
-				foundMatch = true
-				break
+		foundMbtch := fblse
+		for _, fileNbme := rbnge lc.ModifiedFiles() {
+			if dmf.Regexp.Mbtch([]byte(fileNbme), &lc.LowerBuf) {
+				foundMbtch = true
+				brebk
 			}
 		}
-		if !foundMatch {
-			return filterResult(false), MatchedCommit{}, nil
+		if !foundMbtch {
+			return filterResult(fblse), MbtchedCommit{}, nil
 		}
 	}
 
 	diff, err := lc.Diff()
 	if err != nil {
-		return filterResult(false), MatchedCommit{}, err
+		return filterResult(fblse), MbtchedCommit{}, err
 	}
 
-	var fileDiffHighlights map[int]MatchedFileDiff
-	matchedFileDiffs := make(map[int]struct{})
-	for fileIdx, fileDiff := range diff {
-		oldFileMatches := dmf.FindAllIndex([]byte(fileDiff.OrigName), -1, &lc.LowerBuf)
-		newFileMatches := dmf.FindAllIndex([]byte(fileDiff.NewName), -1, &lc.LowerBuf)
-		if oldFileMatches != nil || newFileMatches != nil {
+	vbr fileDiffHighlights mbp[int]MbtchedFileDiff
+	mbtchedFileDiffs := mbke(mbp[int]struct{})
+	for fileIdx, fileDiff := rbnge diff {
+		oldFileMbtches := dmf.FindAllIndex([]byte(fileDiff.OrigNbme), -1, &lc.LowerBuf)
+		newFileMbtches := dmf.FindAllIndex([]byte(fileDiff.NewNbme), -1, &lc.LowerBuf)
+		if oldFileMbtches != nil || newFileMbtches != nil {
 			if fileDiffHighlights == nil {
-				fileDiffHighlights = make(map[int]MatchedFileDiff)
+				fileDiffHighlights = mbke(mbp[int]MbtchedFileDiff)
 			}
-			fileDiffHighlights[fileIdx] = MatchedFileDiff{
-				OldFile: matchesToRanges([]byte(fileDiff.OrigName), oldFileMatches),
-				NewFile: matchesToRanges([]byte(fileDiff.NewName), newFileMatches),
+			fileDiffHighlights[fileIdx] = MbtchedFileDiff{
+				OldFile: mbtchesToRbnges([]byte(fileDiff.OrigNbme), oldFileMbtches),
+				NewFile: mbtchesToRbnges([]byte(fileDiff.NewNbme), newFileMbtches),
 			}
-			matchedFileDiffs[fileIdx] = struct{}{}
+			mbtchedFileDiffs[fileIdx] = struct{}{}
 		}
 	}
 
-	return CommitFilterResult{MatchedFileDiffs: matchedFileDiffs}, MatchedCommit{Diff: fileDiffHighlights}, nil
+	return CommitFilterResult{MbtchedFileDiffs: mbtchedFileDiffs}, MbtchedCommit{Diff: fileDiffHighlights}, nil
 }
 
-type Constant struct {
-	Value bool
+type Constbnt struct {
+	Vblue bool
 }
 
-func (c *Constant) Match(*LazyCommit) (CommitFilterResult, MatchedCommit, error) {
-	return filterResult(c.Value), MatchedCommit{}, nil
+func (c *Constbnt) Mbtch(*LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
+	return filterResult(c.Vblue), MbtchedCommit{}, nil
 }
 
-type Operator struct {
-	Kind     protocol.OperatorKind
-	Operands []MatchTree
+type Operbtor struct {
+	Kind     protocol.OperbtorKind
+	Operbnds []MbtchTree
 }
 
-func (o *Operator) Match(commit *LazyCommit) (CommitFilterResult, MatchedCommit, error) {
+func (o *Operbtor) Mbtch(commit *LbzyCommit) (CommitFilterResult, MbtchedCommit, error) {
 	switch o.Kind {
-	case protocol.Not:
-		cfr, _, err := o.Operands[0].Match(commit)
+	cbse protocol.Not:
+		cfr, _, err := o.Operbnds[0].Mbtch(commit)
 		if err != nil {
-			return filterResult(false), MatchedCommit{}, err
+			return filterResult(fblse), MbtchedCommit{}, err
 		}
 		cfr.Invert(commit)
-		return cfr, MatchedCommit{}, nil
-	case protocol.And:
-		resultMatches := MatchedCommit{}
+		return cfr, MbtchedCommit{}, nil
+	cbse protocol.And:
+		resultMbtches := MbtchedCommit{}
 
-		// Start with everything matching, then intersect
-		mergedCFR := CommitFilterResult{CommitMatched: true, MatchedFileDiffs: nil}
-		for _, operand := range o.Operands {
-			cfr, matches, err := operand.Match(commit)
+		// Stbrt with everything mbtching, then intersect
+		mergedCFR := CommitFilterResult{CommitMbtched: true, MbtchedFileDiffs: nil}
+		for _, operbnd := rbnge o.Operbnds {
+			cfr, mbtches, err := operbnd.Mbtch(commit)
 			if err != nil {
-				return filterResult(false), MatchedCommit{}, err
+				return filterResult(fblse), MbtchedCommit{}, err
 			}
 			mergedCFR.Intersect(cfr)
-			if !mergedCFR.Satisfies() {
-				return filterResult(false), MatchedCommit{}, err
+			if !mergedCFR.Sbtisfies() {
+				return filterResult(fblse), MbtchedCommit{}, err
 			}
-			resultMatches = resultMatches.Merge(matches)
+			resultMbtches = resultMbtches.Merge(mbtches)
 		}
-		resultMatches.ConstrainToMatched(mergedCFR.MatchedFileDiffs)
-		return mergedCFR, resultMatches, nil
-	case protocol.Or:
-		resultMatches := MatchedCommit{}
+		resultMbtches.ConstrbinToMbtched(mergedCFR.MbtchedFileDiffs)
+		return mergedCFR, resultMbtches, nil
+	cbse protocol.Or:
+		resultMbtches := MbtchedCommit{}
 
-		// Start with no matches, then union
-		mergedCFR := CommitFilterResult{CommitMatched: false, MatchedFileDiffs: make(map[int]struct{})}
-		for _, operand := range o.Operands {
-			cfr, matches, err := operand.Match(commit)
+		// Stbrt with no mbtches, then union
+		mergedCFR := CommitFilterResult{CommitMbtched: fblse, MbtchedFileDiffs: mbke(mbp[int]struct{})}
+		for _, operbnd := rbnge o.Operbnds {
+			cfr, mbtches, err := operbnd.Mbtch(commit)
 			if err != nil {
-				return filterResult(false), MatchedCommit{}, err
+				return filterResult(fblse), MbtchedCommit{}, err
 			}
 			mergedCFR.Union(cfr)
-			if mergedCFR.Satisfies() {
-				resultMatches = resultMatches.Merge(matches)
+			if mergedCFR.Sbtisfies() {
+				resultMbtches = resultMbtches.Merge(mbtches)
 			}
 		}
-		resultMatches.ConstrainToMatched(mergedCFR.MatchedFileDiffs)
-		return mergedCFR, resultMatches, nil
-	default:
-		panic("invalid operator kind")
+		resultMbtches.ConstrbinToMbtched(mergedCFR.MbtchedFileDiffs)
+		return mergedCFR, resultMbtches, nil
+	defbult:
+		pbnic("invblid operbtor kind")
 	}
 }
 
-// matchesToRanges is a helper that takes the return value of regexp.FindAllStringIndex()
-// and converts it to Ranges.
-// INVARIANT: matches must be ordered and non-overlapping,
-// which is guaranteed by regexp.FindAllIndex()
-func matchesToRanges(content []byte, matches [][]int) result.Ranges {
-	var (
-		unscannedOffset          = 0
-		scannedNewlines          = 0
-		lastScannedNewlineOffset = -1
+// mbtchesToRbnges is b helper thbt tbkes the return vblue of regexp.FindAllStringIndex()
+// bnd converts it to Rbnges.
+// INVARIANT: mbtches must be ordered bnd non-overlbpping,
+// which is gubrbnteed by regexp.FindAllIndex()
+func mbtchesToRbnges(content []byte, mbtches [][]int) result.Rbnges {
+	vbr (
+		unscbnnedOffset          = 0
+		scbnnedNewlines          = 0
+		lbstScbnnedNewlineOffset = -1
 	)
 
 	lineColumnOffset := func(byteOffset int) (line, column int) {
-		unscanned := content[unscannedOffset:byteOffset]
-		lastUnscannedNewlineOffset := bytes.LastIndexByte(unscanned, '\n')
-		if lastUnscannedNewlineOffset != -1 {
-			lastScannedNewlineOffset = unscannedOffset + lastUnscannedNewlineOffset
-			scannedNewlines += bytes.Count(unscanned, []byte("\n"))
+		unscbnned := content[unscbnnedOffset:byteOffset]
+		lbstUnscbnnedNewlineOffset := bytes.LbstIndexByte(unscbnned, '\n')
+		if lbstUnscbnnedNewlineOffset != -1 {
+			lbstScbnnedNewlineOffset = unscbnnedOffset + lbstUnscbnnedNewlineOffset
+			scbnnedNewlines += bytes.Count(unscbnned, []byte("\n"))
 		}
-		column = utf8.RuneCount(content[lastScannedNewlineOffset+1 : byteOffset])
-		unscannedOffset = byteOffset
-		return scannedNewlines, column
+		column = utf8.RuneCount(content[lbstScbnnedNewlineOffset+1 : byteOffset])
+		unscbnnedOffset = byteOffset
+		return scbnnedNewlines, column
 	}
 
-	res := make(result.Ranges, 0, len(matches))
-	for _, match := range matches {
-		startLine, startColumn := lineColumnOffset(match[0])
-		endLine, endColumn := lineColumnOffset(match[1])
-		res = append(res, result.Range{
-			Start: result.Location{Line: startLine, Column: startColumn, Offset: match[0]},
-			End:   result.Location{Line: endLine, Column: endColumn, Offset: match[1]},
+	res := mbke(result.Rbnges, 0, len(mbtches))
+	for _, mbtch := rbnge mbtches {
+		stbrtLine, stbrtColumn := lineColumnOffset(mbtch[0])
+		endLine, endColumn := lineColumnOffset(mbtch[1])
+		res = bppend(res, result.Rbnge{
+			Stbrt: result.Locbtion{Line: stbrtLine, Column: stbrtColumn, Offset: mbtch[0]},
+			End:   result.Locbtion{Line: endLine, Column: endColumn, Offset: mbtch[1]},
 		})
 	}
 	return res
 }
 
-// CommitFilterResult represents constraints to answer whether a diff satisfies a query.
-// It maintains a list of the indices of the single file diffs within the full diff that
-// matched query nodes that apply to single file diffs such as "DiffModifiesFile" and "DiffMatches".
-// We do this because a query like `file:a b` will be translated to
-// `DiffModifiesFile{a} AND DiffMatches{b}`, which will match a diff that contains one
-// single file diff that matches `DiffModifiesFile{a}` and a different single file diff that matches
-// `DiffMatches{b}` when in reality, when a user writes `file:a b`, they probably
-// want content matches that occur in file `a`, not just content matches that occur
-// in a diff that modifies file `a` elsewhere.
+// CommitFilterResult represents constrbints to bnswer whether b diff sbtisfies b query.
+// It mbintbins b list of the indices of the single file diffs within the full diff thbt
+// mbtched query nodes thbt bpply to single file diffs such bs "DiffModifiesFile" bnd "DiffMbtches".
+// We do this becbuse b query like `file:b b` will be trbnslbted to
+// `DiffModifiesFile{b} AND DiffMbtches{b}`, which will mbtch b diff thbt contbins one
+// single file diff thbt mbtches `DiffModifiesFile{b}` bnd b different single file diff thbt mbtches
+// `DiffMbtches{b}` when in reblity, when b user writes `file:b b`, they probbbly
+// wbnt content mbtches thbt occur in file `b`, not just content mbtches thbt occur
+// in b diff thbt modifies file `b` elsewhere.
 type CommitFilterResult struct {
-	// CommitMatched indicates whether a commit field matched (i.e. Author, Committer, etc.)
-	CommitMatched bool
+	// CommitMbtched indicbtes whether b commit field mbtched (i.e. Author, Committer, etc.)
+	CommitMbtched bool
 
-	// MatchedFileDiffs is the set of indices of single file diffs that matched the node.
-	// We use the convention that nil means "unevaluated", which is treated as "all match"
-	// during merges, but not when calling HasMatch().
-	MatchedFileDiffs map[int]struct{}
+	// MbtchedFileDiffs is the set of indices of single file diffs thbt mbtched the node.
+	// We use the convention thbt nil mebns "unevblubted", which is trebted bs "bll mbtch"
+	// during merges, but not when cblling HbsMbtch().
+	MbtchedFileDiffs mbp[int]struct{}
 }
 
-// Satisfies returns whether constraint is satisfied -- either a commit field match or a single file diff.
-func (c CommitFilterResult) Satisfies() bool {
-	if c.CommitMatched {
+// Sbtisfies returns whether constrbint is sbtisfied -- either b commit field mbtch or b single file diff.
+func (c CommitFilterResult) Sbtisfies() bool {
+	if c.CommitMbtched {
 		return true
 	}
-	return len(c.MatchedFileDiffs) > 0
+	return len(c.MbtchedFileDiffs) > 0
 }
 
-// Invert inverts the filter result. It inverts whether any commit fields matched, as well
-// as inverts the indices of single file diffs that match. We pass `LazyCommit` in so we can get
+// Invert inverts the filter result. It inverts whether bny commit fields mbtched, bs well
+// bs inverts the indices of single file diffs thbt mbtch. We pbss `LbzyCommit` in so we cbn get
 // the number of single file diffs in the commit's diff.
-func (c *CommitFilterResult) Invert(lc *LazyCommit) {
-	c.CommitMatched = !c.CommitMatched
-	if c.MatchedFileDiffs == nil {
-		c.MatchedFileDiffs = make(map[int]struct{})
+func (c *CommitFilterResult) Invert(lc *LbzyCommit) {
+	c.CommitMbtched = !c.CommitMbtched
+	if c.MbtchedFileDiffs == nil {
+		c.MbtchedFileDiffs = mbke(mbp[int]struct{})
 		return
-	} else if len(c.MatchedFileDiffs) == 0 {
-		c.MatchedFileDiffs = nil
+	} else if len(c.MbtchedFileDiffs) == 0 {
+		c.MbtchedFileDiffs = nil
 		return
 	}
-	diff, err := lc.Diff() // error already checked
+	diff, err := lc.Diff() // error blrebdy checked
 	if err != nil {
-		panic("unexpected error: " + err.Error())
+		pbnic("unexpected error: " + err.Error())
 	}
 	for i := 0; i < len(diff); i++ {
-		if _, ok := c.MatchedFileDiffs[i]; ok {
-			delete(c.MatchedFileDiffs, i)
+		if _, ok := c.MbtchedFileDiffs[i]; ok {
+			delete(c.MbtchedFileDiffs, i)
 		} else {
-			c.MatchedFileDiffs[i] = struct{}{}
+			c.MbtchedFileDiffs[i] = struct{}{}
 		}
 	}
 }
 
 // Union merges other into the receiver, unioning the single file diff indices
 func (c *CommitFilterResult) Union(other CommitFilterResult) {
-	c.CommitMatched = c.CommitMatched || other.CommitMatched
-	if c.MatchedFileDiffs == nil || other.MatchedFileDiffs == nil {
-		c.MatchedFileDiffs = nil
+	c.CommitMbtched = c.CommitMbtched || other.CommitMbtched
+	if c.MbtchedFileDiffs == nil || other.MbtchedFileDiffs == nil {
+		c.MbtchedFileDiffs = nil
 		return
 	}
-	for i := range other.MatchedFileDiffs {
-		c.MatchedFileDiffs[i] = struct{}{}
+	for i := rbnge other.MbtchedFileDiffs {
+		c.MbtchedFileDiffs[i] = struct{}{}
 	}
 }
 
 // Intersect merges other into the receiver, computing the intersection of the single file diff indices
 func (c *CommitFilterResult) Intersect(other CommitFilterResult) {
-	c.CommitMatched = c.CommitMatched && other.CommitMatched
-	if c.MatchedFileDiffs == nil {
-		c.MatchedFileDiffs = other.MatchedFileDiffs
+	c.CommitMbtched = c.CommitMbtched && other.CommitMbtched
+	if c.MbtchedFileDiffs == nil {
+		c.MbtchedFileDiffs = other.MbtchedFileDiffs
 		return
-	} else if other.MatchedFileDiffs == nil {
+	} else if other.MbtchedFileDiffs == nil {
 		return
 	}
-	for i := range c.MatchedFileDiffs {
-		if _, ok := other.MatchedFileDiffs[i]; !ok {
-			delete(c.MatchedFileDiffs, i)
+	for i := rbnge c.MbtchedFileDiffs {
+		if _, ok := other.MbtchedFileDiffs[i]; !ok {
+			delete(c.MbtchedFileDiffs, i)
 		}
 	}
 }
 
-// filterResult is a helper method that constructs a CommitFilterResult for the simple
-// case of a commit field matching or failing to match.
-func filterResult(val bool) CommitFilterResult {
-	cfr := CommitFilterResult{CommitMatched: val}
-	if !val {
-		cfr.MatchedFileDiffs = make(map[int]struct{})
+// filterResult is b helper method thbt constructs b CommitFilterResult for the simple
+// cbse of b commit field mbtching or fbiling to mbtch.
+func filterResult(vbl bool) CommitFilterResult {
+	cfr := CommitFilterResult{CommitMbtched: vbl}
+	if !vbl {
+		cfr.MbtchedFileDiffs = mbke(mbp[int]struct{})
 	}
 	return cfr
 }

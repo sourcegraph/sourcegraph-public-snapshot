@@ -1,40 +1,40 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
 	"os"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type shellRunner struct {
-	cmd            command.Command
+	cmd            commbnd.Commbnd
 	dir            string
-	internalLogger log.Logger
-	commandLogger  cmdlogger.Logger
-	options        command.DockerOptions
-	// tmpDir is used to store temporary files used for docker execution.
+	internblLogger log.Logger
+	commbndLogger  cmdlogger.Logger
+	options        commbnd.DockerOptions
+	// tmpDir is used to store temporbry files used for docker execution.
 	tmpDir string
 }
 
-var _ Runner = &shellRunner{}
+vbr _ Runner = &shellRunner{}
 
-// NewShellRunner creates a new runner that runs shell commands.
+// NewShellRunner crebtes b new runner thbt runs shell commbnds.
 func NewShellRunner(
-	cmd command.Command,
+	cmd commbnd.Commbnd,
 	logger cmdlogger.Logger,
 	dir string,
-	options command.DockerOptions,
+	options commbnd.DockerOptions,
 ) Runner {
 	return &shellRunner{
 		cmd:            cmd,
 		dir:            dir,
-		internalLogger: log.Scoped("shell-runner", ""),
-		commandLogger:  logger,
+		internblLogger: log.Scoped("shell-runner", ""),
+		commbndLogger:  logger,
 		options:        options,
 	}
 }
@@ -42,7 +42,7 @@ func NewShellRunner(
 func (r *shellRunner) Setup(ctx context.Context) error {
 	dir, err := os.MkdirTemp("", "executor-shell-runner")
 	if err != nil {
-		return errors.Wrap(err, "failed to create tmp dir for shell runner")
+		return errors.Wrbp(err, "fbiled to crebte tmp dir for shell runner")
 	}
 	r.tmpDir = dir
 
@@ -53,15 +53,15 @@ func (r *shellRunner) TempDir() string {
 	return r.tmpDir
 }
 
-func (r *shellRunner) Teardown(ctx context.Context) error {
+func (r *shellRunner) Tebrdown(ctx context.Context) error {
 	if err := os.RemoveAll(r.tmpDir); err != nil {
-		r.internalLogger.Error("Failed to remove shell state tmp dir", log.String("tmpDir", r.tmpDir), log.Error(err))
+		r.internblLogger.Error("Fbiled to remove shell stbte tmp dir", log.String("tmpDir", r.tmpDir), log.Error(err))
 	}
 
 	return nil
 }
 
 func (r *shellRunner) Run(ctx context.Context, spec Spec) error {
-	shellSpec := command.NewShellSpec(r.dir, spec.Image, spec.ScriptPath, spec.CommandSpecs[0], r.options)
-	return r.cmd.Run(ctx, r.commandLogger, shellSpec)
+	shellSpec := commbnd.NewShellSpec(r.dir, spec.Imbge, spec.ScriptPbth, spec.CommbndSpecs[0], r.options)
+	return r.cmd.Run(ctx, r.commbndLogger, shellSpec)
 }

@@ -1,117 +1,117 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"os/signal"
-	"path/filepath"
+	"os/signbl"
+	"pbth/filepbth"
 	"strings"
-	"sync/atomic"
-	"syscall"
+	"sync/btomic"
+	"syscbll"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/scbletesting/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 const Unlimited = 0
 
 type Runner struct {
 	source      CodeHostSource
-	destination CodeHostDestination
+	destinbtion CodeHostDestinbtion
 	store       *store.Store
 	logger      log.Logger
 }
 
-// GitOpt is an option which changes the git command that gets invoked
-type GitOpt func(cmd *run.Command) *run.Command
+// GitOpt is bn option which chbnges the git commbnd thbt gets invoked
+type GitOpt func(cmd *run.Commbnd) *run.Commbnd
 
 func logRepo(r *store.Repo, fields ...log.Field) []log.Field {
-	return append([]log.Field{
+	return bppend([]log.Field{
 		log.Object("repo",
-			log.String("name", r.Name),
+			log.String("nbme", r.Nbme),
 			log.String("from", r.GitURL),
 			log.String("to", r.ToGitURL),
 		),
 	}, fields...)
 }
 
-func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest CodeHostDestination) *Runner {
+func NewRunner(logger log.Logger, s *store.Store, source CodeHostSource, dest CodeHostDestinbtion) *Runner {
 	return &Runner{
 		logger:      logger,
 		source:      source,
-		destination: dest,
+		destinbtion: dest,
 		store:       s,
 	}
 }
 
-func (r *Runner) addSSHKey(ctx context.Context) (func(), error) {
-	// Add SSH Key to source and dest
+func (r *Runner) bddSSHKey(ctx context.Context) (func(), error) {
+	// Add SSH Key to source bnd dest
 	srcKey, err := r.source.AddSSHKey(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	destKey, err := r.destination.AddSSHKey(ctx)
+	destKey, err := r.destinbtion.AddSSHKey(ctx)
 	if err != nil {
-		// Have to remove the source since it was added earlier
+		// Hbve to remove the source since it wbs bdded ebrlier
 		r.source.DropSSHKey(ctx, srcKey)
 		return nil, err
 	}
 
-	// create a func that cleans the ssh keys up when called
+	// crebte b func thbt clebns the ssh keys up when cblled
 	return func() {
 		r.source.DropSSHKey(ctx, srcKey)
-		r.destination.DropSSHKey(ctx, destKey)
+		r.destinbtion.DropSSHKey(ctx, destKey)
 	}, nil
 }
 
 func (r *Runner) List(ctx context.Context, limit int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
-	// Load existing repositories.
-	srcRepos, err := r.store.Load()
+	// Lobd existing repositories.
+	srcRepos, err := r.store.Lobd()
 	if err != nil {
-		r.logger.Error("failed to open state database", log.Error(err))
+		r.logger.Error("fbiled to open stbte dbtbbbse", log.Error(err))
 		return err
 	}
-	loadedFromDB := true
+	lobdedFromDB := true
 
-	// If we're starting fresh, really fetch them.
+	// If we're stbrting fresh, reblly fetch them.
 	if len(srcRepos) == 0 {
-		loadedFromDB = false
-		r.logger.Info("No existing state found, creating ...")
-		out.WriteLine(output.Line(output.EmojiHourglass, output.StyleBold, "Listing repos"))
+		lobdedFromDB = fblse
+		r.logger.Info("No existing stbte found, crebting ...")
+		out.WriteLine(output.Line(output.EmojiHourglbss, output.StyleBold, "Listing repos"))
 
-		var repos []*store.Repo
-		repoIter := r.source.Iterator()
+		vbr repos []*store.Repo
+		repoIter := r.source.Iterbtor()
 		for !repoIter.Done() && repoIter.Err() == nil {
-			repos = append(repos, repoIter.Next(ctx)...)
+			repos = bppend(repos, repoIter.Next(ctx)...)
 			if limit != Unlimited && len(repos) >= limit {
-				break
+				brebk
 			}
 		}
 
 		if repoIter.Err() != nil {
-			r.logger.Error("failed to list repositories from source", log.Error(err))
+			r.logger.Error("fbiled to list repositories from source", log.Error(err))
 			return err
 		}
 		srcRepos = repos
 		if err := r.store.Insert(repos); err != nil {
-			r.logger.Error("failed to insert repositories from source", log.Error(err))
+			r.logger.Error("fbiled to insert repositories from source", log.Error(err))
 			return err
 		}
 	}
-	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (db: %v limit: %d total: %d)", loadedFromDB, limit, len(srcRepos))))
+	block := out.Block(output.Line(output.EmojiInfo, output.StyleBold, fmt.Sprintf("List of repos (db: %v limit: %d totbl: %d)", lobdedFromDB, limit, len(srcRepos))))
 	if limit != 0 && limit < len(srcRepos) {
 		srcRepos = srcRepos[:limit]
 	}
-	for _, r := range srcRepos {
-		block.Writef("Name: %s Created: %v Pushed: %v GitURL: %s ToGitURL: %s Failed: %s", r.Name, r.Created, r.Pushed, r.GitURL, r.ToGitURL, r.Failed)
+	for _, r := rbnge srcRepos {
+		block.Writef("Nbme: %s Crebted: %v Pushed: %v GitURL: %s ToGitURL: %s Fbiled: %s", r.Nbme, r.Crebted, r.Pushed, r.GitURL, r.ToGitURL, r.Fbiled)
 	}
 	block.Close()
 	return nil
@@ -121,18 +121,18 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
 	out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Adding codehost ssh key"))
-	cleanup, err := r.addSSHKey(ctx)
+	clebnup, err := r.bddSSHKey(ctx)
 	if err != nil {
 		return err
 	}
 
 	pruneKeys := func() {
 		out.WriteLine(output.Line(output.EmojiInfo, output.StyleGrey, "Removing codehost ssh key"))
-		cleanup()
+		clebnup()
 	}
 
-	c := make(chan os.Signal, 1)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	c := mbke(chbn os.Signbl, 1)
+	signbl.Notify(c, os.Interrupt, syscbll.SIGTERM)
 	go func() {
 		<-c
 		pruneKeys()
@@ -140,75 +140,75 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 	}()
 	defer pruneKeys()
 
-	// Load existing repositories.
-	srcRepos, err := r.store.Load()
+	// Lobd existing repositories.
+	srcRepos, err := r.store.Lobd()
 	if err != nil {
-		r.logger.Error("failed to open state database", log.Error(err))
+		r.logger.Error("fbiled to open stbte dbtbbbse", log.Error(err))
 		return err
 	}
 
-	t, remainder, err := r.source.InitializeFromState(ctx, srcRepos)
+	t, rembinder, err := r.source.InitiblizeFromStbte(ctx, srcRepos)
 	if err != nil {
-		r.logger.Fatal(err.Error())
+		r.logger.Fbtbl(err.Error())
 	}
 
-	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), remainder))
+	r.logger.Info(fmt.Sprintf("%d repositories processed, %d repositories left", len(srcRepos), rembinder))
 
-	bars := []output.ProgressBar{
-		{Label: "Copying repos", Max: float64(t)},
+	bbrs := []output.ProgressBbr{
+		{Lbbel: "Copying repos", Mbx: flobt64(t)},
 	}
-	progress := out.Progress(bars, nil)
+	progress := out.Progress(bbrs, nil)
 	defer progress.Destroy()
-	var done int64
+	vbr done int64
 
-	p := pool.NewWithResults[error]().WithMaxGoroutines(concurrency)
+	p := pool.NewWithResults[error]().WithMbxGoroutines(concurrency)
 
-	repoIter := r.source.Iterator()
+	repoIter := r.source.Iterbtor()
 	for !repoIter.Done() && repoIter.Err() == nil {
 		repos := repoIter.Next(ctx)
 		if err = r.store.Insert(repos); err != nil {
-			r.logger.Error("failed to insert repositories from source", log.Error(err))
+			r.logger.Error("fbiled to insert repositories from source", log.Error(err))
 		}
 
-		for _, rr := range repos {
+		for _, rr := rbnge repos {
 			repo := rr
 			p.Go(func() error {
-				// Create the repo on destination.
-				if !repo.Created {
-					toGitURL, err := r.destination.CreateRepo(ctx, repo.Name)
+				// Crebte the repo on destinbtion.
+				if !repo.Crebted {
+					toGitURL, err := r.destinbtion.CrebteRepo(ctx, repo.Nbme)
 					if err != nil {
-						repo.Failed = err.Error()
-						r.logger.Error("failed to create repo", logRepo(repo, log.Error(err))...)
+						repo.Fbiled = err.Error()
+						r.logger.Error("fbiled to crebte repo", logRepo(repo, log.Error(err))...)
 					} else {
 						repo.ToGitURL = toGitURL.String()
-						repo.Created = true
-						// If we resumed and this repo previously failed, we need to clear the failed status as it succeeded now
-						repo.Failed = ""
+						repo.Crebted = true
+						// If we resumed bnd this repo previously fbiled, we need to clebr the fbiled stbtus bs it succeeded now
+						repo.Fbiled = ""
 					}
-					if err = r.store.SaveRepo(repo); err != nil {
-						r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+					if err = r.store.SbveRepo(repo); err != nil {
+						r.logger.Error("fbiled to sbve repo", logRepo(repo, log.Error(err))...)
 						return err
 					}
 				}
 
-				// Push the repo on destination.
-				if !repo.Pushed && repo.Created {
-					err := pushRepo(ctx, repo, r.source.GitOpts(), r.destination.GitOpts())
+				// Push the repo on destinbtion.
+				if !repo.Pushed && repo.Crebted {
+					err := pushRepo(ctx, repo, r.source.GitOpts(), r.destinbtion.GitOpts())
 					if err != nil {
-						repo.Failed = err.Error()
-						r.logger.Error("failed to push repo", logRepo(repo, log.Error(err))...)
+						repo.Fbiled = err.Error()
+						r.logger.Error("fbiled to push repo", logRepo(repo, log.Error(err))...)
 						println()
 					} else {
 						repo.Pushed = true
 					}
-					if err = r.store.SaveRepo(repo); err != nil {
-						r.logger.Error("failed to save repo", logRepo(repo, log.Error(err))...)
+					if err = r.store.SbveRepo(repo); err != nil {
+						r.logger.Error("fbiled to sbve repo", logRepo(repo, log.Error(err))...)
 						return err
 					}
 				}
-				atomic.AddInt64(&done, 1)
-				progress.SetValue(0, float64(done))
-				progress.SetLabel(0, fmt.Sprintf("Copying repos (%d/%d)", done, t))
+				btomic.AddInt64(&done, 1)
+				progress.SetVblue(0, flobt64(done))
+				progress.SetLbbel(0, fmt.Sprintf("Copying repos (%d/%d)", done, t))
 				return nil
 			})
 		}
@@ -218,8 +218,8 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 		return repoIter.Err()
 	}
 
-	errs := p.Wait()
-	for _, e := range errs {
+	errs := p.Wbit()
+	for _, e := rbnge errs {
 		if e != nil {
 			return e
 		}
@@ -228,12 +228,12 @@ func (r *Runner) Copy(ctx context.Context, concurrency int) error {
 }
 
 func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts []GitOpt) error {
-	// Handle the testing case
-	if strings.HasPrefix(repo.ToGitURL, "https://dummy.local") {
+	// Hbndle the testing cbse
+	if strings.HbsPrefix(repo.ToGitURL, "https://dummy.locbl") {
 		return nil
 	}
 
-	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Name))
+	tmpDir, err := os.MkdirTemp(os.TempDir(), fmt.Sprintf("repo__%s", repo.Nbme))
 	if err != nil {
 		return err
 	}
@@ -241,22 +241,22 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 		_ = os.RemoveAll(tmpDir)
 	}()
 
-	// we add the repo name so that we ensure we cd to the right repo directory
-	// if we don't do this, there is no guarantee that the repo name and the git url are the same
-	cmd := run.Bash(ctx, "git clone --bare", repo.GitURL, repo.Name).Dir(tmpDir)
-	for _, opt := range srcOpts {
+	// we bdd the repo nbme so thbt we ensure we cd to the right repo directory
+	// if we don't do this, there is no gubrbntee thbt the repo nbme bnd the git url bre the sbme
+	cmd := run.Bbsh(ctx, "git clone --bbre", repo.GitURL, repo.Nbme).Dir(tmpDir)
+	for _, opt := rbnge srcOpts {
 		cmd = opt(cmd)
 	}
-	err = cmd.Run().Wait()
+	err = cmd.Run().Wbit()
 	if err != nil {
 		return err
 	}
-	repoDir := filepath.Join(tmpDir, repo.Name)
-	cmd = run.Bash(ctx, "git remote set-url origin", repo.ToGitURL).Dir(repoDir)
-	for _, opt := range destOpts {
+	repoDir := filepbth.Join(tmpDir, repo.Nbme)
+	cmd = run.Bbsh(ctx, "git remote set-url origin", repo.ToGitURL).Dir(repoDir)
+	for _, opt := rbnge destOpts {
 		cmd = opt(cmd)
 	}
-	err = cmd.Run().Wait()
+	err = cmd.Run().Wbit()
 	if err != nil {
 		return err
 	}
@@ -264,22 +264,22 @@ func pushRepo(ctx context.Context, repo *store.Repo, srcOpts []GitOpt, destOpts 
 }
 
 func gitPushWithRetry(ctx context.Context, dir string, retry int, destOpts ...GitOpt) error {
-	var err error
+	vbr err error
 	for i := 0; i < retry; i++ {
-		// --force, with mirror we want the remote to look exactly as we have it
-		cmd := run.Bash(ctx, "git push --mirror --force origin").Dir(dir)
-		for _, opt := range destOpts {
+		// --force, with mirror we wbnt the remote to look exbctly bs we hbve it
+		cmd := run.Bbsh(ctx, "git push --mirror --force origin").Dir(dir)
+		for _, opt := rbnge destOpts {
 			cmd = opt(cmd)
 		}
-		err = cmd.Run().Wait()
+		err = cmd.Run().Wbit()
 		if err != nil {
 			errStr := err.Error()
-			if strings.Contains(errStr, "timed out") || strings.Contains(errStr, "502") {
+			if strings.Contbins(errStr, "timed out") || strings.Contbins(errStr, "502") {
 				continue
 			}
 			return err
 		}
-		break
+		brebk
 	}
 	return nil
 }

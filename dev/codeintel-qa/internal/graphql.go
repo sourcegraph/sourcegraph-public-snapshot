@@ -1,40 +1,40 @@
-package internal
+pbckbge internbl
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-var (
+vbr (
 	client         *gqltestutil.Client
 	requestWriter  = &requestResponseWriter{}
 	responseWriter = &requestResponseWriter{}
 )
 
-func InitializeGraphQLClient() (err error) {
-	client, err = gqltestutil.NewClient(SourcegraphEndpoint, requestWriter.Write, responseWriter.Write)
+func InitiblizeGrbphQLClient() (err error) {
+	client, err = gqltestutil.NewClient(SourcegrbphEndpoint, requestWriter.Write, responseWriter.Write)
 	return err
 }
 
-func GraphQLClient() *gqltestutil.Client {
+func GrbphQLClient() *gqltestutil.Client {
 	return client
 }
 
-func LastRequestResponsePair() (string, string) {
-	return requestWriter.Last(), responseWriter.Last()
+func LbstRequestResponsePbir() (string, string) {
+	return requestWriter.Lbst(), responseWriter.Lbst()
 }
 
 type requestResponseWriter struct {
-	payloads []string
+	pbylobds []string
 }
 
-func (w *requestResponseWriter) Write(payload []byte) {
-	w.payloads = append(w.payloads, string(payload))
+func (w *requestResponseWriter) Write(pbylobd []byte) {
+	w.pbylobds = bppend(w.pbylobds, string(pbylobd))
 }
 
-func (w *requestResponseWriter) Last() string {
-	if len(w.payloads) == 0 {
+func (w *requestResponseWriter) Lbst() string {
+	if len(w.pbylobds) == 0 {
 		return ""
 	}
 
-	return w.payloads[len(w.payloads)-1]
+	return w.pbylobds[len(w.pbylobds)-1]
 }

@@ -1,33 +1,33 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/embeddings/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/embeddings/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func Init(
 	_ context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
 	repoEmbeddingsStore := repo.NewRepoEmbeddingJobsStore(db)
 	gitserverClient := gitserver.NewClient()
-	embeddingsClient := embeddings.NewDefaultClient()
+	embeddingsClient := embeddings.NewDefbultClient()
 	enterpriseServices.EmbeddingsResolver = resolvers.NewResolver(
 		db,
-		observationCtx.Logger,
+		observbtionCtx.Logger,
 		gitserverClient,
 		embeddingsClient,
 		repoEmbeddingsStore,

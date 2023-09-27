@@ -1,66 +1,66 @@
-//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
+//go:build bix || dbrwin || drbgonfly || freebsd || linux || netbsd || openbsd || solbris
+// +build bix dbrwin drbgonfly freebsd linux netbsd openbsd solbris
 
-package output
+pbckbge output
 
 import (
 	"os"
-	"os/signal"
+	"os/signbl"
 	"sync"
-	"syscall"
+	"syscbll"
 )
 
 func init() {
-	// The platforms this file builds on support the SIGWINCH signal, which
-	// indicates that the terminal has been resized. When we receive that
-	// signal, we can use this to re-detect the terminal capabilities.
+	// The plbtforms this file builds on support the SIGWINCH signbl, which
+	// indicbtes thbt the terminbl hbs been resized. When we receive thbt
+	// signbl, we cbn use this to re-detect the terminbl cbpbbilities.
 	//
-	// We won't do any setup until the first time newCapabilityWatcher is
-	// invoked, but we do need some shared state to be ready.
-	var (
-		// chans contains the listening channels that should be notified when
-		// capabilities are updated.
-		chans []chan capabilities
+	// We won't do bny setup until the first time newCbpbbilityWbtcher is
+	// invoked, but we do need some shbred stbte to be rebdy.
+	vbr (
+		// chbns contbins the listening chbnnels thbt should be notified when
+		// cbpbbilities bre updbted.
+		chbns []chbn cbpbbilities
 
-		// mu guards the chans variable.
+		// mu gubrds the chbns vbribble.
 		mu sync.RWMutex
 
-		// once guards the lazy initialisation, including installing the signal
-		// handler.
+		// once gubrds the lbzy initiblisbtion, including instblling the signbl
+		// hbndler.
 		once sync.Once
 	)
 
-	newCapabilityWatcher = func(opts OutputOpts) chan capabilities {
-		// Lazily initialise the required global state if we haven't already.
+	newCbpbbilityWbtcher = func(opts OutputOpts) chbn cbpbbilities {
+		// Lbzily initiblise the required globbl stbte if we hbven't blrebdy.
 		once.Do(func() {
 			mu.Lock()
-			chans = make([]chan capabilities, 0, 1)
+			chbns = mbke([]chbn cbpbbilities, 0, 1)
 			mu.Unlock()
 
-			// Install the signal handler. To avoid race conditions, we should
-			// do this synchronously before spawning the goroutine that will
-			// actually listen to the channel.
-			c := make(chan os.Signal, 1)
-			signal.Notify(c, syscall.SIGWINCH)
+			// Instbll the signbl hbndler. To bvoid rbce conditions, we should
+			// do this synchronously before spbwning the goroutine thbt will
+			// bctublly listen to the chbnnel.
+			c := mbke(chbn os.Signbl, 1)
+			signbl.Notify(c, syscbll.SIGWINCH)
 
 			go func() {
 				for {
 					<-c
-					caps, err := detectCapabilities(opts)
-					// We won't bother reporting an error here; there's no harm
-					// in the previous capabilities being used besides possibly
+					cbps, err := detectCbpbbilities(opts)
+					// We won't bother reporting bn error here; there's no hbrm
+					// in the previous cbpbbilities being used besides possibly
 					// being ugly.
 					if err == nil {
 						mu.RLock()
-						for _, out := range chans {
-							go func(out chan capabilities, caps capabilities) {
+						for _, out := rbnge chbns {
+							go func(out chbn cbpbbilities, cbps cbpbbilities) {
 								select {
-								case out <- caps:
+								cbse out <- cbps:
 									// success
-								default:
+								defbult:
 									// welp
 								}
-							}(out, caps)
+							}(out, cbps)
 						}
 						mu.RUnlock()
 					}
@@ -68,11 +68,11 @@ func init() {
 			}()
 		})
 
-		// Now we can create and return the actual output channel.
-		out := make(chan capabilities)
+		// Now we cbn crebte bnd return the bctubl output chbnnel.
+		out := mbke(chbn cbpbbilities)
 		mu.Lock()
 		defer mu.Unlock()
-		chans = append(chans, out)
+		chbns = bppend(chbns, out)
 
 		return out
 	}

@@ -1,208 +1,208 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"sort"
 	"strings"
 
-	"github.com/hashicorp/go-version"
-	"github.com/keegancsmith/sqlf"
+	"github.com/hbshicorp/go-version"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *store) VulnerabilityMatchByID(ctx context.Context, id int) (_ shared.VulnerabilityMatch, _ bool, err error) {
-	ctx, _, endObservation := s.operations.vulnerabilityMatchByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+func (s *store) VulnerbbilityMbtchByID(ctx context.Context, id int) (_ shbred.VulnerbbilityMbtch, _ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.vulnerbbilityMbtchByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	matches, _, err := scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(vulnerabilityMatchByIDQuery, id)))
-	if err != nil || len(matches) == 0 {
-		return shared.VulnerabilityMatch{}, false, err
+	mbtches, _, err := scbnVulnerbbilityMbtchesAndCount(s.db.Query(ctx, sqlf.Sprintf(vulnerbbilityMbtchByIDQuery, id)))
+	if err != nil || len(mbtches) == 0 {
+		return shbred.VulnerbbilityMbtch{}, fblse, err
 	}
 
-	return matches[0], true, nil
+	return mbtches[0], true, nil
 }
 
-const vulnerabilityMatchByIDQuery = `
+const vulnerbbilityMbtchByIDQuery = `
 SELECT
 	m.id,
-	m.upload_id,
-	vap.vulnerability_id,
-	vap.package_name,
-	vap.language,
-	vap.namespace,
-	vap.version_constraint,
-	vap.fixed,
-	vap.fixed_in,
-	vas.path,
-	vas.symbols,
+	m.uplobd_id,
+	vbp.vulnerbbility_id,
+	vbp.pbckbge_nbme,
+	vbp.lbngubge,
+	vbp.nbmespbce,
+	vbp.version_constrbint,
+	vbp.fixed,
+	vbp.fixed_in,
+	vbs.pbth,
+	vbs.symbols,
 	vul.severity,
 	0 AS count
-FROM vulnerability_matches m
-LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
-LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
-LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
+FROM vulnerbbility_mbtches m
+LEFT JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.id = m.vulnerbbility_bffected_pbckbge_id
+LEFT JOIN vulnerbbility_bffected_symbols vbs ON vbs.vulnerbbility_bffected_pbckbge_id = vbp.id
+LEFT JOIN vulnerbbilities vul ON vbp.vulnerbbility_id = vul.id
 WHERE m.id = %s
 `
 
-func (s *store) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) (_ []shared.VulnerabilityMatch, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatches.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("limit", args.Limit),
-		attribute.Int("offset", args.Offset),
-		attribute.String("severity", args.Severity),
-		attribute.String("language", args.Language),
-		attribute.String("repositoryName", args.RepositoryName),
+func (s *store) GetVulnerbbilityMbtches(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesArgs) (_ []shbred.VulnerbbilityMbtch, _ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getVulnerbbilityMbtches.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("limit", brgs.Limit),
+		bttribute.Int("offset", brgs.Offset),
+		bttribute.String("severity", brgs.Severity),
+		bttribute.String("lbngubge", brgs.Lbngubge),
+		bttribute.String("repositoryNbme", brgs.RepositoryNbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var conds []*sqlf.Query
-	if args.Language != "" {
-		conds = append(conds, sqlf.Sprintf("vap.language = %s", args.Language))
+	vbr conds []*sqlf.Query
+	if brgs.Lbngubge != "" {
+		conds = bppend(conds, sqlf.Sprintf("vbp.lbngubge = %s", brgs.Lbngubge))
 	}
-	if args.Severity != "" {
-		conds = append(conds, sqlf.Sprintf("vul.severity = %s", args.Severity))
+	if brgs.Severity != "" {
+		conds = bppend(conds, sqlf.Sprintf("vul.severity = %s", brgs.Severity))
 	}
-	if args.RepositoryName != "" {
-		conds = append(conds, sqlf.Sprintf("r.name = %s", args.RepositoryName))
+	if brgs.RepositoryNbme != "" {
+		conds = bppend(conds, sqlf.Sprintf("r.nbme = %s", brgs.RepositoryNbme))
 	}
 	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
+		conds = bppend(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	return scanVulnerabilityMatchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesQuery, sqlf.Join(conds, " AND "), args.Limit, args.Offset)))
+	return scbnVulnerbbilityMbtchesAndCount(s.db.Query(ctx, sqlf.Sprintf(getVulnerbbilityMbtchesQuery, sqlf.Join(conds, " AND "), brgs.Limit, brgs.Offset)))
 }
 
-const getVulnerabilityMatchesQuery = `
-WITH limited_matches AS (
+const getVulnerbbilityMbtchesQuery = `
+WITH limited_mbtches AS (
 	SELECT
 		m.id,
-		m.upload_id,
-		m.vulnerability_affected_package_id
-	FROM vulnerability_matches m
+		m.uplobd_id,
+		m.vulnerbbility_bffected_pbckbge_id
+	FROM vulnerbbility_mbtches m
 	ORDER BY id
 )
 SELECT
 	m.id,
-	m.upload_id,
-	vap.vulnerability_id,
-	vap.package_name,
-	vap.language,
-	vap.namespace,
-	vap.version_constraint,
-	vap.fixed,
-	vap.fixed_in,
-	vas.path,
-	vas.symbols,
+	m.uplobd_id,
+	vbp.vulnerbbility_id,
+	vbp.pbckbge_nbme,
+	vbp.lbngubge,
+	vbp.nbmespbce,
+	vbp.version_constrbint,
+	vbp.fixed,
+	vbp.fixed_in,
+	vbs.pbth,
+	vbs.symbols,
 	vul.severity,
 	COUNT(*) OVER() AS count
-FROM limited_matches m
-LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
-LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
-LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
-LEFT JOIN lsif_uploads lu ON m.upload_id = lu.id
+FROM limited_mbtches m
+LEFT JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.id = m.vulnerbbility_bffected_pbckbge_id
+LEFT JOIN vulnerbbility_bffected_symbols vbs ON vbs.vulnerbbility_bffected_pbckbge_id = vbp.id
+LEFT JOIN vulnerbbilities vul ON vbp.vulnerbbility_id = vul.id
+LEFT JOIN lsif_uplobds lu ON m.uplobd_id = lu.id
 LEFT JOIN repo r ON r.id = lu.repository_id
 WHERE %s
-ORDER BY m.id, vap.id, vas.id
+ORDER BY m.id, vbp.id, vbs.id
 LIMIT %s OFFSET %s
 `
 
-func (s *store) GetVulnerabilityMatchesSummaryCount(ctx context.Context) (counts shared.GetVulnerabilityMatchesSummaryCounts, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatchesSummaryCount.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) GetVulnerbbilityMbtchesSummbryCount(ctx context.Context) (counts shbred.GetVulnerbbilityMbtchesSummbryCounts, err error) {
+	ctx, _, endObservbtion := s.operbtions.getVulnerbbilityMbtchesSummbryCount.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	row := s.db.QueryRow(ctx, sqlf.Sprintf(getVulnerabilityMatchesSummaryCounts))
-	err = row.Scan(
+	row := s.db.QueryRow(ctx, sqlf.Sprintf(getVulnerbbilityMbtchesSummbryCounts))
+	err = row.Scbn(
 		&counts.High,
 		&counts.Medium,
 		&counts.Low,
-		&counts.Critical,
+		&counts.Criticbl,
 		&counts.Repositories,
 	)
 	if err != nil {
-		return shared.GetVulnerabilityMatchesSummaryCounts{}, err
+		return shbred.GetVulnerbbilityMbtchesSummbryCounts{}, err
 	}
 
 	return counts, nil
 }
 
-const getVulnerabilityMatchesSummaryCounts = `
-	WITH limited_matches AS (
+const getVulnerbbilityMbtchesSummbryCounts = `
+	WITH limited_mbtches AS (
 	SELECT
 		m.id,
-		m.upload_id,
-		m.vulnerability_affected_package_id
-	FROM vulnerability_matches m
+		m.uplobd_id,
+		m.vulnerbbility_bffected_pbckbge_id
+	FROM vulnerbbility_mbtches m
 	ORDER BY id
 )
 SELECT
-  sum(case when vul.severity = 'HIGH' then 1 else 0 end) as high,
-  sum(case when vul.severity = 'MEDIUM' then 1 else 0 end) as medium,
-  sum(case when vul.severity = 'LOW' then 1 else 0 end) as low,
-  sum(case when vul.severity = 'CRITICAL' then 1 else 0 end) as critical,
-  count(distinct r.name) as repositories
-FROM limited_matches m
-LEFT JOIN vulnerability_affected_packages vap ON vap.id = m.vulnerability_affected_package_id
-LEFT JOIN vulnerability_affected_symbols vas ON vas.vulnerability_affected_package_id = vap.id
-LEFT JOIN vulnerabilities vul ON vap.vulnerability_id = vul.id
-LEFT JOIN lsif_uploads lu ON lu.id = m.upload_id
+  sum(cbse when vul.severity = 'HIGH' then 1 else 0 end) bs high,
+  sum(cbse when vul.severity = 'MEDIUM' then 1 else 0 end) bs medium,
+  sum(cbse when vul.severity = 'LOW' then 1 else 0 end) bs low,
+  sum(cbse when vul.severity = 'CRITICAL' then 1 else 0 end) bs criticbl,
+  count(distinct r.nbme) bs repositories
+FROM limited_mbtches m
+LEFT JOIN vulnerbbility_bffected_pbckbges vbp ON vbp.id = m.vulnerbbility_bffected_pbckbge_id
+LEFT JOIN vulnerbbility_bffected_symbols vbs ON vbs.vulnerbbility_bffected_pbckbge_id = vbp.id
+LEFT JOIN vulnerbbilities vul ON vbp.vulnerbbility_id = vul.id
+LEFT JOIN lsif_uplobds lu ON lu.id = m.uplobd_id
 LEFT JOIN repo r ON r.id = lu.repository_id
 `
 
-func (s *store) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) (_ []shared.VulnerabilityMatchesByRepository, _ int, err error) {
-	ctx, _, endObservation := s.operations.getVulnerabilityMatchesCountByRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("limit", args.Limit),
-		attribute.Int("offset", args.Offset),
-		attribute.String("repositoryName", args.RepositoryName),
+func (s *store) GetVulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesCountByRepositoryArgs) (_ []shbred.VulnerbbilityMbtchesByRepository, _ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.getVulnerbbilityMbtchesCountByRepository.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("limit", brgs.Limit),
+		bttribute.Int("offset", brgs.Offset),
+		bttribute.String("repositoryNbme", brgs.RepositoryNbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var conds []*sqlf.Query
-	if args.RepositoryName != "" {
-		conds = append(conds, sqlf.Sprintf("r.name ILIKE %s", "%"+args.RepositoryName+"%"))
+	vbr conds []*sqlf.Query
+	if brgs.RepositoryNbme != "" {
+		conds = bppend(conds, sqlf.Sprintf("r.nbme ILIKE %s", "%"+brgs.RepositoryNbme+"%"))
 	}
 	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
+		conds = bppend(conds, sqlf.Sprintf("TRUE"))
 	}
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(getVulnerabilityMatchesGroupedByRepos, sqlf.Join(conds, " AND "), args.Limit, args.Offset))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getVulnerbbilityMbtchesGroupedByRepos, sqlf.Join(conds, " AND "), brgs.Limit, brgs.Offset))
 	if err != nil {
 		return nil, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var matches []shared.VulnerabilityMatchesByRepository
-	var totalCount int
+	vbr mbtches []shbred.VulnerbbilityMbtchesByRepository
+	vbr totblCount int
 	for rows.Next() {
-		var match shared.VulnerabilityMatchesByRepository
-		if err := rows.Scan(&match.ID, &match.RepositoryName, &match.MatchCount, &totalCount); err != nil {
+		vbr mbtch shbred.VulnerbbilityMbtchesByRepository
+		if err := rows.Scbn(&mbtch.ID, &mbtch.RepositoryNbme, &mbtch.MbtchCount, &totblCount); err != nil {
 			return nil, 0, err
 		}
 
-		matches = append(matches, match)
+		mbtches = bppend(mbtches, mbtch)
 	}
 
-	return matches, totalCount, nil
+	return mbtches, totblCount, nil
 }
 
-const getVulnerabilityMatchesGroupedByRepos = `
+const getVulnerbbilityMbtchesGroupedByRepos = `
 select
 	r.id,
-	r.name,
-	count(*) as count,
-	COUNT(*) OVER() AS total_count
-from vulnerability_matches vm
-join lsif_uploads lu on lu.id = vm.upload_id
+	r.nbme,
+	count(*) bs count,
+	COUNT(*) OVER() AS totbl_count
+from vulnerbbility_mbtches vm
+join lsif_uplobds lu on lu.id = vm.uplobd_id
 join repo r on r.id = lu.repository_id
 where %s
-group by r.name, r.id
+group by r.nbme, r.id
 order by count DESC
 limit %s offset %s
 `
@@ -210,64 +210,64 @@ limit %s offset %s
 //
 //
 
-func (s *store) ScanMatches(ctx context.Context, batchSize int) (numReferencesScanned int, numVulnerabilityMatches int, err error) {
-	ctx, _, endObservation := s.operations.scanMatches.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSize", batchSize),
+func (s *store) ScbnMbtches(ctx context.Context, bbtchSize int) (numReferencesScbnned int, numVulnerbbilityMbtches int, err error) {
+	ctx, _, endObservbtion := s.operbtions.scbnMbtches.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSize", bbtchSize),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a, b int
-	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
-		type vulnerabilityMatch struct {
-			UploadID                       int
-			VulnerabilityAffectedPackageID int
+	vbr b, b int
+	err = s.db.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		type vulnerbbilityMbtch struct {
+			UplobdID                       int
+			VulnerbbilityAffectedPbckbgeID int
 		}
-		numScanned := 0
-		scanFilteredVulnerabilityMatches := basestore.NewFilteredSliceScanner(func(s dbutil.Scanner) (m vulnerabilityMatch, _ bool, _ error) {
-			var (
+		numScbnned := 0
+		scbnFilteredVulnerbbilityMbtches := bbsestore.NewFilteredSliceScbnner(func(s dbutil.Scbnner) (m vulnerbbilityMbtch, _ bool, _ error) {
+			vbr (
 				version            string
-				versionConstraints []string
+				versionConstrbints []string
 			)
 
-			if err := s.Scan(&m.UploadID, &m.VulnerabilityAffectedPackageID, &version, pq.Array(&versionConstraints)); err != nil {
-				return vulnerabilityMatch{}, false, err
+			if err := s.Scbn(&m.UplobdID, &m.VulnerbbilityAffectedPbckbgeID, &version, pq.Arrby(&versionConstrbints)); err != nil {
+				return vulnerbbilityMbtch{}, fblse, err
 			}
 
-			numScanned++
-			matches, valid := versionMatchesConstraints(version, versionConstraints)
-			_ = valid // TODO - log un-parseable versions
+			numScbnned++
+			mbtches, vblid := versionMbtchesConstrbints(version, versionConstrbints)
+			_ = vblid // TODO - log un-pbrsebble versions
 
-			return m, matches, nil
+			return m, mbtches, nil
 		})
 
-		matches, err := scanFilteredVulnerabilityMatches(tx.Query(ctx, sqlf.Sprintf(
-			scanMatchesQuery,
-			batchSize,
-			sqlf.Join(makeSchemeTtoVulnerabilityLanguageMappingConditions(), " OR "),
+		mbtches, err := scbnFilteredVulnerbbilityMbtches(tx.Query(ctx, sqlf.Sprintf(
+			scbnMbtchesQuery,
+			bbtchSize,
+			sqlf.Join(mbkeSchemeTtoVulnerbbilityLbngubgeMbppingConditions(), " OR "),
 		)))
 		if err != nil {
 			return err
 		}
 
-		if err := tx.Exec(ctx, sqlf.Sprintf(scanMatchesTemporaryTableQuery)); err != nil {
+		if err := tx.Exec(ctx, sqlf.Sprintf(scbnMbtchesTemporbryTbbleQuery)); err != nil {
 			return err
 		}
 
-		if err := batch.WithInserter(
+		if err := bbtch.WithInserter(
 			ctx,
-			tx.Handle(),
-			"t_vulnerability_affected_packages",
-			batch.MaxNumPostgresParameters,
+			tx.Hbndle(),
+			"t_vulnerbbility_bffected_pbckbges",
+			bbtch.MbxNumPostgresPbrbmeters,
 			[]string{
-				"upload_id",
-				"vulnerability_affected_package_id",
+				"uplobd_id",
+				"vulnerbbility_bffected_pbckbge_id",
 			},
-			func(inserter *batch.Inserter) error {
-				for _, match := range matches {
+			func(inserter *bbtch.Inserter) error {
+				for _, mbtch := rbnge mbtches {
 					if err := inserter.Insert(
 						ctx,
-						match.UploadID,
-						match.VulnerabilityAffectedPackageID,
+						mbtch.UplobdID,
+						mbtch.VulnerbbilityAffectedPbckbgeID,
 					); err != nil {
 						return err
 					}
@@ -279,73 +279,73 @@ func (s *store) ScanMatches(ctx context.Context, batchSize int) (numReferencesSc
 			return err
 		}
 
-		numMatched, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(scanMatchesUpdateQuery)))
+		numMbtched, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(scbnMbtchesUpdbteQuery)))
 		if err != nil {
 			return err
 		}
 
-		a = numScanned
-		b = numMatched
+		b = numScbnned
+		b = numMbtched
 		return nil
 	})
 
-	return a, b, err
+	return b, b, err
 }
 
-const scanMatchesQuery = `
+const scbnMbtchesQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
+	FROM lsif_uplobds u
 	JOIN repo r ON r.id = u.repository_id
 	WHERE
-		u.state = 'completed' AND
-		r.deleted_at IS NULL AND
+		u.stbte = 'completed' AND
+		r.deleted_bt IS NULL AND
 		r.blocked IS NULL AND
 		NOT EXISTS (
 			SELECT 1
-			FROM lsif_uploads_vulnerability_scan uvs
+			FROM lsif_uplobds_vulnerbbility_scbn uvs
 			WHERE
-				uvs.upload_id = u.id AND
-				-- TODO: we'd rather compare this against vuln update times
-				uvs.last_scanned_at < NOW()
+				uvs.uplobd_id = u.id AND
+				-- TODO: we'd rbther compbre this bgbinst vuln updbte times
+				uvs.lbst_scbnned_bt < NOW()
 		)
 	ORDER BY u.id
 	LIMIT %s
 ),
-locked_candidates AS (
-	INSERT INTO lsif_uploads_vulnerability_scan (upload_id, last_scanned_at)
-	SELECT id, NOW() FROM candidates
+locked_cbndidbtes AS (
+	INSERT INTO lsif_uplobds_vulnerbbility_scbn (uplobd_id, lbst_scbnned_bt)
+	SELECT id, NOW() FROM cbndidbtes
 	ON CONFLICT DO NOTHING
-	RETURNING upload_id
+	RETURNING uplobd_id
 )
 SELECT
 	r.dump_id,
-	vap.id,
+	vbp.id,
 	r.version,
-	vap.version_constraint
-FROM locked_candidates lc
-JOIN lsif_references r ON r.dump_id = lc.upload_id
-JOIN vulnerability_affected_packages vap ON
-	-- NOTE: This is currently a bit of a hack that works to find some
-	-- good matches with the dataset we have. We should have a better
-	-- way to match on a normalized name here, or have rules per types
-	-- of language ecosystem.
-	r.name LIKE '%%' || vap.package_name || '%%'
+	vbp.version_constrbint
+FROM locked_cbndidbtes lc
+JOIN lsif_references r ON r.dump_id = lc.uplobd_id
+JOIN vulnerbbility_bffected_pbckbges vbp ON
+	-- NOTE: This is currently b bit of b hbck thbt works to find some
+	-- good mbtches with the dbtbset we hbve. We should hbve b better
+	-- wby to mbtch on b normblized nbme here, or hbve rules per types
+	-- of lbngubge ecosystem.
+	r.nbme LIKE '%%' || vbp.pbckbge_nbme || '%%'
 WHERE %s
 `
 
-const scanMatchesTemporaryTableQuery = `
-CREATE TEMPORARY TABLE t_vulnerability_affected_packages (
-	upload_id                          INT NOT NULL,
-	vulnerability_affected_package_id  INT NOT NULL
+const scbnMbtchesTemporbryTbbleQuery = `
+CREATE TEMPORARY TABLE t_vulnerbbility_bffected_pbckbges (
+	uplobd_id                          INT NOT NULL,
+	vulnerbbility_bffected_pbckbge_id  INT NOT NULL
 ) ON COMMIT DROP
 `
 
-const scanMatchesUpdateQuery = `
+const scbnMbtchesUpdbteQuery = `
 WITH ins AS (
-	INSERT INTO vulnerability_matches (upload_id, vulnerability_affected_package_id)
-	SELECT upload_id, vulnerability_affected_package_id FROM t_vulnerability_affected_packages
+	INSERT INTO vulnerbbility_mbtches (uplobd_id, vulnerbbility_bffected_pbckbge_id)
+	SELECT uplobd_id, vulnerbbility_bffected_pbckbge_id FROM t_vulnerbbility_bffected_pbckbges
 	ON CONFLICT DO NOTHING
 	RETURNING 1
 )
@@ -355,104 +355,104 @@ SELECT COUNT(*) FROM ins
 //
 //
 
-var scanVulnerabilityMatchesAndCount = func(rows basestore.Rows, queryErr error) ([]shared.VulnerabilityMatch, int, error) {
-	matches, totalCount, err := basestore.NewSliceWithCountScanner(func(s dbutil.Scanner) (match shared.VulnerabilityMatch, count int, _ error) {
-		var (
-			vap     shared.AffectedPackage
-			vas     shared.AffectedSymbol
-			vul     shared.Vulnerability
+vbr scbnVulnerbbilityMbtchesAndCount = func(rows bbsestore.Rows, queryErr error) ([]shbred.VulnerbbilityMbtch, int, error) {
+	mbtches, totblCount, err := bbsestore.NewSliceWithCountScbnner(func(s dbutil.Scbnner) (mbtch shbred.VulnerbbilityMbtch, count int, _ error) {
+		vbr (
+			vbp     shbred.AffectedPbckbge
+			vbs     shbred.AffectedSymbol
+			vul     shbred.Vulnerbbility
 			fixedIn string
 		)
 
-		if err := s.Scan(
-			&match.ID,
-			&match.UploadID,
-			&match.VulnerabilityID,
-			// RHS(s) of left join (may be null)
-			&dbutil.NullString{S: &vap.PackageName},
-			&dbutil.NullString{S: &vap.Language},
-			&dbutil.NullString{S: &vap.Namespace},
-			pq.Array(&vap.VersionConstraint),
-			&dbutil.NullBool{B: &vap.Fixed},
+		if err := s.Scbn(
+			&mbtch.ID,
+			&mbtch.UplobdID,
+			&mbtch.VulnerbbilityID,
+			// RHS(s) of left join (mby be null)
+			&dbutil.NullString{S: &vbp.PbckbgeNbme},
+			&dbutil.NullString{S: &vbp.Lbngubge},
+			&dbutil.NullString{S: &vbp.Nbmespbce},
+			pq.Arrby(&vbp.VersionConstrbint),
+			&dbutil.NullBool{B: &vbp.Fixed},
 			&dbutil.NullString{S: &fixedIn},
-			&dbutil.NullString{S: &vas.Path},
-			pq.Array(vas.Symbols),
+			&dbutil.NullString{S: &vbs.Pbth},
+			pq.Arrby(vbs.Symbols),
 			&dbutil.NullString{S: &vul.Severity},
 			&count,
 		); err != nil {
-			return shared.VulnerabilityMatch{}, 0, err
+			return shbred.VulnerbbilityMbtch{}, 0, err
 		}
 
 		if fixedIn != "" {
-			vap.FixedIn = &fixedIn
+			vbp.FixedIn = &fixedIn
 		}
-		if vas.Path != "" {
-			vap.AffectedSymbols = append(vap.AffectedSymbols, vas)
+		if vbs.Pbth != "" {
+			vbp.AffectedSymbols = bppend(vbp.AffectedSymbols, vbs)
 		}
-		if vap.PackageName != "" {
-			match.AffectedPackage = vap
+		if vbp.PbckbgeNbme != "" {
+			mbtch.AffectedPbckbge = vbp
 		}
 
-		return match, count, nil
+		return mbtch, count, nil
 	})(rows, queryErr)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	return flattenMatches(matches), totalCount, nil
+	return flbttenMbtches(mbtches), totblCount, nil
 }
 
-var flattenMatches = func(ms []shared.VulnerabilityMatch) []shared.VulnerabilityMatch {
-	flattened := []shared.VulnerabilityMatch{}
-	for _, m := range ms {
-		i := len(flattened) - 1
-		if len(flattened) == 0 || flattened[i].ID != m.ID {
-			flattened = append(flattened, m)
+vbr flbttenMbtches = func(ms []shbred.VulnerbbilityMbtch) []shbred.VulnerbbilityMbtch {
+	flbttened := []shbred.VulnerbbilityMbtch{}
+	for _, m := rbnge ms {
+		i := len(flbttened) - 1
+		if len(flbttened) == 0 || flbttened[i].ID != m.ID {
+			flbttened = bppend(flbttened, m)
 		} else {
-			if flattened[i].AffectedPackage.PackageName == "" {
-				flattened[i].AffectedPackage = m.AffectedPackage
+			if flbttened[i].AffectedPbckbge.PbckbgeNbme == "" {
+				flbttened[i].AffectedPbckbge = m.AffectedPbckbge
 			} else {
-				symbols := flattened[i].AffectedPackage.AffectedSymbols
-				symbols = append(symbols, m.AffectedPackage.AffectedSymbols...)
-				flattened[i].AffectedPackage.AffectedSymbols = symbols
+				symbols := flbttened[i].AffectedPbckbge.AffectedSymbols
+				symbols = bppend(symbols, m.AffectedPbckbge.AffectedSymbols...)
+				flbttened[i].AffectedPbckbge.AffectedSymbols = symbols
 			}
 		}
 	}
 
-	return flattened
+	return flbttened
 }
 
-func versionMatchesConstraints(versionString string, constraints []string) (matches, valid bool) {
+func versionMbtchesConstrbints(versionString string, constrbints []string) (mbtches, vblid bool) {
 	v, err := version.NewVersion(versionString)
 	if err != nil {
-		return false, false
+		return fblse, fblse
 	}
 
-	constraint, err := version.NewConstraint(strings.Join(constraints, ","))
+	constrbint, err := version.NewConstrbint(strings.Join(constrbints, ","))
 	if err != nil {
-		return false, false
+		return fblse, fblse
 	}
 
-	return constraint.Check(v), true
+	return constrbint.Check(v), true
 }
 
-var scipSchemeToVulnerabilityLanguage = map[string]string{
+vbr scipSchemeToVulnerbbilityLbngubge = mbp[string]string{
 	"gomod": "go",
-	"npm":   "Javascript",
-	// TODO - java mapping
+	"npm":   "Jbvbscript",
+	// TODO - jbvb mbpping
 }
 
-func makeSchemeTtoVulnerabilityLanguageMappingConditions() []*sqlf.Query {
-	schemes := make([]string, 0, len(scipSchemeToVulnerabilityLanguage))
-	for scheme := range scipSchemeToVulnerabilityLanguage {
-		schemes = append(schemes, scheme)
+func mbkeSchemeTtoVulnerbbilityLbngubgeMbppingConditions() []*sqlf.Query {
+	schemes := mbke([]string, 0, len(scipSchemeToVulnerbbilityLbngubge))
+	for scheme := rbnge scipSchemeToVulnerbbilityLbngubge {
+		schemes = bppend(schemes, scheme)
 	}
 	sort.Strings(schemes)
 
-	mappings := make([]*sqlf.Query, 0, len(schemes))
-	for _, scheme := range schemes {
-		mappings = append(mappings, sqlf.Sprintf("(r.scheme = %s AND vap.language = %s)", scheme, scipSchemeToVulnerabilityLanguage[scheme]))
+	mbppings := mbke([]*sqlf.Query, 0, len(schemes))
+	for _, scheme := rbnge schemes {
+		mbppings = bppend(mbppings, sqlf.Sprintf("(r.scheme = %s AND vbp.lbngubge = %s)", scheme, scipSchemeToVulnerbbilityLbngubge[scheme]))
 	}
 
-	return mappings
+	return mbppings
 }

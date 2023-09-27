@@ -1,327 +1,327 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbbc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type KeyValuePair struct {
+type KeyVbluePbir struct {
 	key   string
-	value *string
+	vblue *string
 }
 
-func (k KeyValuePair) Key() string {
+func (k KeyVbluePbir) Key() string {
 	return k.key
 }
 
-func (k KeyValuePair) Value() *string {
-	return k.value
+func (k KeyVbluePbir) Vblue() *string {
+	return k.vblue
 }
 
-var featureDisabledError = errors.New("'repository-metadata' feature flag is not enabled")
+vbr febtureDisbbledError = errors.New("'repository-metbdbtb' febture flbg is not enbbled")
 
-type emptyNonNilValueError struct {
-	value string
+type emptyNonNilVblueError struct {
+	vblue string
 }
 
-func (e emptyNonNilValueError) Error() string {
-	return fmt.Sprintf("value should be null or non-empty string, got %q", e.value)
+func (e emptyNonNilVblueError) Error() string {
+	return fmt.Sprintf("vblue should be null or non-empty string, got %q", e.vblue)
 }
 
-// Deprecated: Use AddRepoMetadata instead.
-func (r *schemaResolver) AddRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
+// Deprecbted: Use AddRepoMetbdbtb instebd.
+func (r *schembResolver) AddRepoKeyVbluePbir(ctx context.Context, brgs struct {
+	Repo  grbphql.ID
 	Key   string
-	Value *string
+	Vblue *string
 },
 ) (*EmptyResponse, error) {
-	return r.AddRepoMetadata(ctx, args)
+	return r.AddRepoMetbdbtb(ctx, brgs)
 }
 
-func (r *schemaResolver) AddRepoMetadata(ctx context.Context, args struct {
-	Repo  graphql.ID
+func (r *schembResolver) AddRepoMetbdbtb(ctx context.Context, brgs struct {
+	Repo  grbphql.ID
 	Key   string
-	Value *string
+	Vblue *string
 },
 ) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.db, rbbc.RepoMetbdbtbWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
+	if !febtureflbg.FromContext(ctx).GetBoolOr("repository-metbdbtb", true) {
+		return nil, febtureDisbbledError
 	}
 
-	repoID, err := UnmarshalRepositoryID(args.Repo)
+	repoID, err := UnmbrshblRepositoryID(brgs.Repo)
 	if err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	if args.Value != nil && strings.TrimSpace(*args.Value) == "" {
-		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
+	if brgs.Vblue != nil && strings.TrimSpbce(*brgs.Vblue) == "" {
+		return &EmptyResponse{}, emptyNonNilVblueError{vblue: *brgs.Vblue}
 	}
 
-	err = r.db.RepoKVPs().Create(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	err = r.db.RepoKVPs().Crebte(ctx, repoID, dbtbbbse.KeyVbluePbir{Key: brgs.Key, Vblue: brgs.Vblue})
 	if err == nil {
-		r.logBackendEvent(ctx, "RepoMetadataAdded")
+		r.logBbckendEvent(ctx, "RepoMetbdbtbAdded")
 	}
 
 	return &EmptyResponse{}, err
 }
 
-// Deprecated: Use UpdateRepoMetadata instead.
-func (r *schemaResolver) UpdateRepoKeyValuePair(ctx context.Context, args struct {
-	Repo  graphql.ID
+// Deprecbted: Use UpdbteRepoMetbdbtb instebd.
+func (r *schembResolver) UpdbteRepoKeyVbluePbir(ctx context.Context, brgs struct {
+	Repo  grbphql.ID
 	Key   string
-	Value *string
+	Vblue *string
 },
 ) (*EmptyResponse, error) {
-	return r.UpdateRepoMetadata(ctx, args)
+	return r.UpdbteRepoMetbdbtb(ctx, brgs)
 }
 
-func (r *schemaResolver) UpdateRepoMetadata(ctx context.Context, args struct {
-	Repo  graphql.ID
+func (r *schembResolver) UpdbteRepoMetbdbtb(ctx context.Context, brgs struct {
+	Repo  grbphql.ID
 	Key   string
-	Value *string
+	Vblue *string
 },
 ) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.db, rbbc.RepoMetbdbtbWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
+	if !febtureflbg.FromContext(ctx).GetBoolOr("repository-metbdbtb", true) {
+		return nil, febtureDisbbledError
 	}
 
-	repoID, err := UnmarshalRepositoryID(args.Repo)
+	repoID, err := UnmbrshblRepositoryID(brgs.Repo)
 	if err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	if args.Value != nil && strings.TrimSpace(*args.Value) == "" {
-		return &EmptyResponse{}, emptyNonNilValueError{value: *args.Value}
+	if brgs.Vblue != nil && strings.TrimSpbce(*brgs.Vblue) == "" {
+		return &EmptyResponse{}, emptyNonNilVblueError{vblue: *brgs.Vblue}
 	}
 
-	_, err = r.db.RepoKVPs().Update(ctx, repoID, database.KeyValuePair{Key: args.Key, Value: args.Value})
+	_, err = r.db.RepoKVPs().Updbte(ctx, repoID, dbtbbbse.KeyVbluePbir{Key: brgs.Key, Vblue: brgs.Vblue})
 	if err == nil {
-		r.logBackendEvent(ctx, "RepoMetadataUpdated")
+		r.logBbckendEvent(ctx, "RepoMetbdbtbUpdbted")
 	}
 	return &EmptyResponse{}, err
 }
 
-// Deprecated: Use DeleteRepoMetadata instead.
-func (r *schemaResolver) DeleteRepoKeyValuePair(ctx context.Context, args struct {
-	Repo graphql.ID
+// Deprecbted: Use DeleteRepoMetbdbtb instebd.
+func (r *schembResolver) DeleteRepoKeyVbluePbir(ctx context.Context, brgs struct {
+	Repo grbphql.ID
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	return r.DeleteRepoMetadata(ctx, args)
+	return r.DeleteRepoMetbdbtb(ctx, brgs)
 }
 
-func (r *schemaResolver) DeleteRepoMetadata(ctx context.Context, args struct {
-	Repo graphql.ID
+func (r *schembResolver) DeleteRepoMetbdbtb(ctx context.Context, brgs struct {
+	Repo grbphql.ID
 	Key  string
 },
 ) (*EmptyResponse, error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.db, rbbc.RepoMetbdbtbWritePermission); err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
+	if !febtureflbg.FromContext(ctx).GetBoolOr("repository-metbdbtb", true) {
+		return nil, febtureDisbbledError
 	}
 
-	repoID, err := UnmarshalRepositoryID(args.Repo)
+	repoID, err := UnmbrshblRepositoryID(brgs.Repo)
 	if err != nil {
 		return &EmptyResponse{}, err
 	}
 
-	err = r.db.RepoKVPs().Delete(ctx, repoID, args.Key)
+	err = r.db.RepoKVPs().Delete(ctx, repoID, brgs.Key)
 	if err == nil {
-		r.logBackendEvent(ctx, "RepoMetadataDeleted")
+		r.logBbckendEvent(ctx, "RepoMetbdbtbDeleted")
 	}
 	return &EmptyResponse{}, err
 }
 
-func (r *schemaResolver) logBackendEvent(ctx context.Context, eventName string) {
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && !a.IsMockUser() {
-		if err := usagestats.LogBackendEvent(
+func (r *schembResolver) logBbckendEvent(ctx context.Context, eventNbme string) {
+	b := bctor.FromContext(ctx)
+	if b.IsAuthenticbted() && !b.IsMockUser() {
+		if err := usbgestbts.LogBbckendEvent(
 			r.db,
-			a.UID,
+			b.UID,
 			deviceid.FromContext(ctx),
-			eventName,
+			eventNbme,
 			nil,
 			nil,
-			featureflag.GetEvaluatedFlagSet(ctx),
+			febtureflbg.GetEvblubtedFlbgSet(ctx),
 			nil,
 		); err != nil {
-			r.logger.Warn("Could not log " + eventName)
+			r.logger.Wbrn("Could not log " + eventNbme)
 		}
 	}
 }
 
-type repoMetaResolver struct {
-	db database.DB
+type repoMetbResolver struct {
+	db dbtbbbse.DB
 }
 
-func (r *schemaResolver) RepoMeta(ctx context.Context) (*repoMetaResolver, error) {
-	return &repoMetaResolver{
+func (r *schembResolver) RepoMetb(ctx context.Context) (*repoMetbResolver, error) {
+	return &repoMetbResolver{
 		db: r.db,
 	}, nil
 }
 
-type RepoMetadataKeysArgs struct {
-	database.RepoKVPListKeysOptions
-	graphqlutil.ConnectionResolverArgs
+type RepoMetbdbtbKeysArgs struct {
+	dbtbbbse.RepoKVPListKeysOptions
+	grbphqlutil.ConnectionResolverArgs
 }
 
-func (r *repoMetaResolver) Keys(ctx context.Context, args *RepoMetadataKeysArgs) (*graphqlutil.ConnectionResolver[string], error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+func (r *repoMetbResolver) Keys(ctx context.Context, brgs *RepoMetbdbtbKeysArgs) (*grbphqlutil.ConnectionResolver[string], error) {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.db, rbbc.RepoMetbdbtbWritePermission); err != nil {
 		return nil, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
+	if !febtureflbg.FromContext(ctx).GetBoolOr("repository-metbdbtb", true) {
+		return nil, febtureDisbbledError
 	}
 
-	listOptions := &args.RepoKVPListKeysOptions
+	listOptions := &brgs.RepoKVPListKeysOptions
 	if listOptions == nil {
-		listOptions = &database.RepoKVPListKeysOptions{}
+		listOptions = &dbtbbbse.RepoKVPListKeysOptions{}
 	}
-	connectionStore := &repoMetaKeysConnectionStore{
+	connectionStore := &repoMetbKeysConnectionStore{
 		db:          r.db,
 		listOptions: *listOptions,
 	}
 
-	reverse := false
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
+	reverse := fblse
+	connectionOptions := grbphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.RepoKVPListKeyColumn)}},
+		OrderBy:   dbtbbbse.OrderBy{{Field: string(dbtbbbse.RepoKVPListKeyColumn)}},
 		Ascending: true,
 	}
-	return graphqlutil.NewConnectionResolver[string](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return grbphqlutil.NewConnectionResolver[string](connectionStore, &brgs.ConnectionResolverArgs, &connectionOptions)
 }
 
-type repoMetaKeysConnectionStore struct {
-	db          database.DB
-	listOptions database.RepoKVPListKeysOptions
+type repoMetbKeysConnectionStore struct {
+	db          dbtbbbse.DB
+	listOptions dbtbbbse.RepoKVPListKeysOptions
 }
 
-func (s *repoMetaKeysConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
+func (s *repoMetbKeysConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
 	count, err := s.db.RepoKVPs().CountKeys(ctx, s.listOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := int32(count)
+	totblCount := int32(count)
 
-	return &totalCount, nil
+	return &totblCount, nil
 }
 
-func (s *repoMetaKeysConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
-	return s.db.RepoKVPs().ListKeys(ctx, s.listOptions, *args)
+func (s *repoMetbKeysConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]string, error) {
+	return s.db.RepoKVPs().ListKeys(ctx, s.listOptions, *brgs)
 }
 
-func (s *repoMetaKeysConnectionStore) MarshalCursor(node string, _ database.OrderBy) (*string, error) {
-	cursor := string(relay.MarshalID("RepositoryMetadataKeyCursor", node))
+func (s *repoMetbKeysConnectionStore) MbrshblCursor(node string, _ dbtbbbse.OrderBy) (*string, error) {
+	cursor := string(relby.MbrshblID("RepositoryMetbdbtbKeyCursor", node))
 
 	return &cursor, nil
 }
 
-func (s *repoMetaKeysConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	var value string
-	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
+func (s *repoMetbKeysConnectionStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
+	vbr vblue string
+	if err := relby.UnmbrshblSpec(grbphql.ID(cursor), &vblue); err != nil {
 		return nil, err
 	}
-	value = fmt.Sprintf("'%v'", value)
-	return &value, nil
+	vblue = fmt.Sprintf("'%v'", vblue)
+	return &vblue, nil
 }
 
-func (r *repoMetaResolver) Key(ctx context.Context, args *struct{ Key string }) (*repoMetaKeyResolver, error) {
-	return &repoMetaKeyResolver{db: r.db, key: args.Key}, nil
+func (r *repoMetbResolver) Key(ctx context.Context, brgs *struct{ Key string }) (*repoMetbKeyResolver, error) {
+	return &repoMetbKeyResolver{db: r.db, key: brgs.Key}, nil
 }
 
-type repoMetaKeyResolver struct {
-	db  database.DB
+type repoMetbKeyResolver struct {
+	db  dbtbbbse.DB
 	key string
 }
 
-type RepoMetadataValuesArgs struct {
+type RepoMetbdbtbVbluesArgs struct {
 	Query *string
-	graphqlutil.ConnectionResolverArgs
+	grbphqlutil.ConnectionResolverArgs
 }
 
-func (r *repoMetaKeyResolver) Values(ctx context.Context, args *RepoMetadataValuesArgs) (*graphqlutil.ConnectionResolver[string], error) {
-	if err := rbac.CheckCurrentUserHasPermission(ctx, r.db, rbac.RepoMetadataWritePermission); err != nil {
+func (r *repoMetbKeyResolver) Vblues(ctx context.Context, brgs *RepoMetbdbtbVbluesArgs) (*grbphqlutil.ConnectionResolver[string], error) {
+	if err := rbbc.CheckCurrentUserHbsPermission(ctx, r.db, rbbc.RepoMetbdbtbWritePermission); err != nil {
 		return nil, err
 	}
 
-	if !featureflag.FromContext(ctx).GetBoolOr("repository-metadata", true) {
-		return nil, featureDisabledError
+	if !febtureflbg.FromContext(ctx).GetBoolOr("repository-metbdbtb", true) {
+		return nil, febtureDisbbledError
 	}
 
-	connectionStore := &repoMetaValuesConnectionStore{
+	connectionStore := &repoMetbVbluesConnectionStore{
 		db: r.db,
-		listOptions: database.RepoKVPListValuesOptions{
+		listOptions: dbtbbbse.RepoKVPListVbluesOptions{
 			Key:   r.key,
-			Query: args.Query,
+			Query: brgs.Query,
 		},
 	}
 
-	reverse := false
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
+	reverse := fblse
+	connectionOptions := grbphqlutil.ConnectionResolverOptions{
 		Reverse:   &reverse,
-		OrderBy:   database.OrderBy{{Field: string(database.RepoKVPListValueColumn)}},
+		OrderBy:   dbtbbbse.OrderBy{{Field: string(dbtbbbse.RepoKVPListVblueColumn)}},
 		Ascending: true,
 	}
-	return graphqlutil.NewConnectionResolver[string](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return grbphqlutil.NewConnectionResolver[string](connectionStore, &brgs.ConnectionResolverArgs, &connectionOptions)
 }
 
-type repoMetaValuesConnectionStore struct {
-	db          database.DB
-	listOptions database.RepoKVPListValuesOptions
+type repoMetbVbluesConnectionStore struct {
+	db          dbtbbbse.DB
+	listOptions dbtbbbse.RepoKVPListVbluesOptions
 }
 
-func (s *repoMetaValuesConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := s.db.RepoKVPs().CountValues(ctx, s.listOptions)
+func (s *repoMetbVbluesConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
+	count, err := s.db.RepoKVPs().CountVblues(ctx, s.listOptions)
 	if err != nil {
 		return nil, err
 	}
 
-	totalCount := int32(count)
+	totblCount := int32(count)
 
-	return &totalCount, nil
+	return &totblCount, nil
 }
 
-func (s *repoMetaValuesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]string, error) {
-	return s.db.RepoKVPs().ListValues(ctx, s.listOptions, *args)
+func (s *repoMetbVbluesConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]string, error) {
+	return s.db.RepoKVPs().ListVblues(ctx, s.listOptions, *brgs)
 }
 
-func (s *repoMetaValuesConnectionStore) MarshalCursor(node string, _ database.OrderBy) (*string, error) {
-	cursor := string(relay.MarshalID("RepositoryMetadataValueCursor", node))
+func (s *repoMetbVbluesConnectionStore) MbrshblCursor(node string, _ dbtbbbse.OrderBy) (*string, error) {
+	cursor := string(relby.MbrshblID("RepositoryMetbdbtbVblueCursor", node))
 
 	return &cursor, nil
 }
 
-func (s *repoMetaValuesConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	var value string
-	if err := relay.UnmarshalSpec(graphql.ID(cursor), &value); err != nil {
+func (s *repoMetbVbluesConnectionStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
+	vbr vblue string
+	if err := relby.UnmbrshblSpec(grbphql.ID(cursor), &vblue); err != nil {
 		return nil, err
 	}
-	value = fmt.Sprintf("'%v'", value)
-	return &value, nil
+	vblue = fmt.Sprintf("'%v'", vblue)
+	return &vblue, nil
 }

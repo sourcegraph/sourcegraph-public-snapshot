@@ -1,20 +1,20 @@
-package repo
+pbckbge repo
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type repoEmbeddingSchedulerJob struct{}
@@ -24,21 +24,21 @@ func NewRepoEmbeddingSchedulerJob() job.Job {
 }
 
 func (r repoEmbeddingSchedulerJob) Description() string {
-	return "resolves policies and schedules repos for embedding"
+	return "resolves policies bnd schedules repos for embedding"
 }
 
 func (r repoEmbeddingSchedulerJob) Config() []env.Config {
 	return nil
 }
 
-func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDB(observationCtx)
+func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	workCtx := actor.WithInternalActor(context.Background())
-	return []goroutine.BackgroundRoutine{
+	workCtx := bctor.WithInternblActor(context.Bbckground())
+	return []goroutine.BbckgroundRoutine{
 		newRepoEmbeddingScheduler(workCtx, gitserver.NewClient(), db, repo.NewRepoEmbeddingJobsStore(db)),
 	}, nil
 }
@@ -46,34 +46,34 @@ func (r repoEmbeddingSchedulerJob) Routines(_ context.Context, observationCtx *o
 func newRepoEmbeddingScheduler(
 	ctx context.Context,
 	gitserverClient gitserver.Client,
-	db database.DB,
+	db dbtbbbse.DB,
 	repoEmbeddingJobsStore repo.RepoEmbeddingJobsStore,
-) goroutine.BackgroundRoutine {
-	enqueueActive := goroutine.HandlerFunc(
+) goroutine.BbckgroundRoutine {
+	enqueueActive := goroutine.HbndlerFunc(
 		func(ctx context.Context) error {
-			opts := repo.GetEmbeddableRepoOpts()
-			embeddableRepos, err := repoEmbeddingJobsStore.GetEmbeddableRepos(ctx, opts)
+			opts := repo.GetEmbeddbbleRepoOpts()
+			embeddbbleRepos, err := repoEmbeddingJobsStore.GetEmbeddbbleRepos(ctx, opts)
 			if err != nil {
 				return err
 			}
 
-			// get repo names from embeddable repos
-			var repoIDs []api.RepoID
-			for _, embeddable := range embeddableRepos {
-				repoIDs = append(repoIDs, embeddable.ID)
+			// get repo nbmes from embeddbble repos
+			vbr repoIDs []bpi.RepoID
+			for _, embeddbble := rbnge embeddbbleRepos {
+				repoIDs = bppend(repoIDs, embeddbble.ID)
 			}
 			repos, err := db.Repos().GetByIDs(ctx, repoIDs...)
 			if err != nil {
 				return err
 			}
-			var repoNames []api.RepoName
-			for _, r := range repos {
-				repoNames = append(repoNames, r.Name)
+			vbr repoNbmes []bpi.RepoNbme
+			for _, r := rbnge repos {
+				repoNbmes = bppend(repoNbmes, r.Nbme)
 			}
 
 			return embeddings.ScheduleRepositoriesForEmbedding(ctx,
-				repoNames,
-				false, // Automatically scheduled jobs never force a full reindex
+				repoNbmes,
+				fblse, // Autombticblly scheduled jobs never force b full reindex
 				db,
 				repoEmbeddingJobsStore,
 				gitserverClient)
@@ -81,8 +81,8 @@ func newRepoEmbeddingScheduler(
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		enqueueActive,
-		goroutine.WithName("repoEmbeddingSchedulerJob"),
-		goroutine.WithDescription("resolves embedding policies and schedules jobs to embed repos"),
-		goroutine.WithInterval(1*time.Minute),
+		goroutine.WithNbme("repoEmbeddingSchedulerJob"),
+		goroutine.WithDescription("resolves embedding policies bnd schedules jobs to embed repos"),
+		goroutine.WithIntervbl(1*time.Minute),
 	)
 }

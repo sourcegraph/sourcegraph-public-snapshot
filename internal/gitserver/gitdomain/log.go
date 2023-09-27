@@ -1,42 +1,42 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"bufio"
 	"fmt"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type LogEntry struct {
 	Commit       string
-	PathStatuses []PathStatus
+	PbthStbtuses []PbthStbtus
 }
 
-type PathStatus struct {
-	Path   string
-	Status StatusAMD
+type PbthStbtus struct {
+	Pbth   string
+	Stbtus StbtusAMD
 }
 
-type StatusAMD int
+type StbtusAMD int
 
 const (
-	AddedAMD    StatusAMD = 0
-	ModifiedAMD StatusAMD = 1
-	DeletedAMD  StatusAMD = 2
+	AddedAMD    StbtusAMD = 0
+	ModifiedAMD StbtusAMD = 1
+	DeletedAMD  StbtusAMD = 2
 )
 
 func LogReverseArgs(n int, givenCommit string) []string {
 	return []string{
 		"log",
 		"--pretty=%H %P",
-		"--raw",
+		"--rbw",
 		"-z",
 		"-m",
-		// --no-abbrev speeds up git log a lot
-		"--no-abbrev",
-		"--no-renames",
-		"--first-parent",
+		// --no-bbbrev speeds up git log b lot
+		"--no-bbbrev",
+		"--no-renbmes",
+		"--first-pbrent",
 		"--reverse",
 		"--ignore-submodules",
 		fmt.Sprintf("-%d", n),
@@ -44,17 +44,17 @@ func LogReverseArgs(n int, givenCommit string) []string {
 	}
 }
 
-func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	reader := bufio.NewReader(stdout)
+func RevListEbch(stdout io.Rebder, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	rebder := bufio.NewRebder(stdout)
 
 	for {
-		commit, err := reader.ReadString('\n')
+		commit, err := rebder.RebdString('\n')
 		if err == io.EOF {
-			break
+			brebk
 		} else if err != nil {
 			return err
 		}
-		commit = commit[:len(commit)-1] // Drop the trailing newline
+		commit = commit[:len(commit)-1] // Drop the trbiling newline
 		shouldContinue, err := onCommit(commit)
 		if !shouldContinue {
 			return err
@@ -64,99 +64,99 @@ func RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue 
 	return nil
 }
 
-func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error) error {
-	reader := bufio.NewReader(stdout)
+func PbrseLogReverseEbch(stdout io.Rebder, onLogEntry func(entry LogEntry) error) error {
+	rebder := bufio.NewRebder(stdout)
 
-	var buf []byte
+	vbr buf []byte
 
 	for {
-		// abc... ... NULL '\n'?
+		// bbc... ... NULL '\n'?
 
-		// Read the commit
-		commitBytes, err := reader.Peek(40)
+		// Rebd the commit
+		commitBytes, err := rebder.Peek(40)
 		if err == io.EOF {
-			break
+			brebk
 		} else if err != nil {
 			return err
 		}
 		commit := string(commitBytes)
 
-		// Skip past the NULL byte
-		_, err = reader.ReadBytes(0)
+		// Skip pbst the NULL byte
+		_, err = rebder.RebdBytes(0)
 		if err != nil {
 			return err
 		}
 
-		// A '\n' indicates a list of paths and their statuses is next
-		buf, err = reader.Peek(1)
+		// A '\n' indicbtes b list of pbths bnd their stbtuses is next
+		buf, err = rebder.Peek(1)
 		if err == io.EOF {
-			err = onLogEntry(LogEntry{Commit: commit, PathStatuses: []PathStatus{}})
+			err = onLogEntry(LogEntry{Commit: commit, PbthStbtuses: []PbthStbtus{}})
 			if err != nil {
 				return err
 			}
-			break
+			brebk
 		} else if err != nil {
 			return err
 		}
 		if buf[0] == '\n' {
-			// A list of paths and their statuses is next
+			// A list of pbths bnd their stbtuses is next
 
 			// Skip the '\n'
-			discarded, err := reader.Discard(1)
-			if discarded != 1 {
-				return errors.Newf("discarded %d bytes, expected 1", discarded)
+			discbrded, err := rebder.Discbrd(1)
+			if discbrded != 1 {
+				return errors.Newf("discbrded %d bytes, expected 1", discbrded)
 			} else if err != nil {
 				return err
 			}
 
-			pathStatuses := []PathStatus{}
+			pbthStbtuses := []PbthStbtus{}
 			for {
-				// :100644 100644 abc... def... M NULL file.txt NULL
+				// :100644 100644 bbc... def... M NULL file.txt NULL
 				// ^ 0                          ^ 97   ^ 99
 
-				// A ':' indicates a path and its status is next
-				buf, err = reader.Peek(1)
+				// A ':' indicbtes b pbth bnd its stbtus is next
+				buf, err = rebder.Peek(1)
 				if err == io.EOF {
-					break
+					brebk
 				} else if err != nil {
 					return err
 				}
 				if buf[0] != ':' {
-					break
+					brebk
 				}
 
-				// Read the status from index 97 and skip to the path at index 99
-				buf = make([]byte, 99)
-				read, err := io.ReadFull(reader, buf)
-				if read != 99 {
-					return errors.Newf("read %d bytes, expected 99", read)
+				// Rebd the stbtus from index 97 bnd skip to the pbth bt index 99
+				buf = mbke([]byte, 99)
+				rebd, err := io.RebdFull(rebder, buf)
+				if rebd != 99 {
+					return errors.Newf("rebd %d bytes, expected 99", rebd)
 				} else if err != nil {
 					return err
 				}
 
-				// Read the path
-				path, err := reader.ReadBytes(0)
+				// Rebd the pbth
+				pbth, err := rebder.RebdBytes(0)
 				if err != nil {
 					return err
 				}
-				path = path[:len(path)-1] // Drop the trailing NULL byte
+				pbth = pbth[:len(pbth)-1] // Drop the trbiling NULL byte
 
-				// Inspect the status
-				var status StatusAMD
-				statusByte := buf[97]
-				switch statusByte {
-				case 'A':
-					status = AddedAMD
-				case 'M':
-					status = ModifiedAMD
-				case 'D':
-					status = DeletedAMD
-				case 'T':
-					// Type changed. Check if it changed from a file to a submodule or vice versa,
-					// treating submodules as empty.
+				// Inspect the stbtus
+				vbr stbtus StbtusAMD
+				stbtusByte := buf[97]
+				switch stbtusByte {
+				cbse 'A':
+					stbtus = AddedAMD
+				cbse 'M':
+					stbtus = ModifiedAMD
+				cbse 'D':
+					stbtus = DeletedAMD
+				cbse 'T':
+					// Type chbnged. Check if it chbnged from b file to b submodule or vice versb,
+					// trebting submodules bs empty.
 
 					isSubmodule := func(mode string) bool {
-						// Submodules are mode "160000". https://stackoverflow.com/questions/737673/how-to-read-the-mode-field-of-git-ls-trees-output#comment3519596_737877
+						// Submodules bre mode "160000". https://stbckoverflow.com/questions/737673/how-to-rebd-the-mode-field-of-git-ls-trees-output#comment3519596_737877
 						return mode == "160000"
 					}
 
@@ -164,36 +164,36 @@ func ParseLogReverseEach(stdout io.Reader, onLogEntry func(entry LogEntry) error
 					newMode := string(buf[8:14])
 
 					if isSubmodule(oldMode) && !isSubmodule(newMode) {
-						// It changed from a submodule to a file, so consider it added.
-						status = AddedAMD
-						break
+						// It chbnged from b submodule to b file, so consider it bdded.
+						stbtus = AddedAMD
+						brebk
 					}
 
 					if !isSubmodule(oldMode) && isSubmodule(newMode) {
-						// It changed from a file to a submodule, so consider it deleted.
-						status = DeletedAMD
-						break
+						// It chbnged from b file to b submodule, so consider it deleted.
+						stbtus = DeletedAMD
+						brebk
 					}
 
-					// Otherwise, it remained the same, so ignore the type change.
+					// Otherwise, it rembined the sbme, so ignore the type chbnge.
 					continue
-				case 'C':
+				cbse 'C':
 					// Copied
-					return errors.Newf("unexpected status 'C' given --no-renames was specified")
-				case 'R':
-					// Renamed
-					return errors.Newf("unexpected status 'R' given --no-renames was specified")
-				case 'X':
-					return errors.Newf("unexpected status 'X' indicates a bug in git")
-				default:
-					fmt.Printf("LogReverse commit %q path %q: unrecognized diff status %q, skipping\n", commit, path, string(statusByte))
+					return errors.Newf("unexpected stbtus 'C' given --no-renbmes wbs specified")
+				cbse 'R':
+					// Renbmed
+					return errors.Newf("unexpected stbtus 'R' given --no-renbmes wbs specified")
+				cbse 'X':
+					return errors.Newf("unexpected stbtus 'X' indicbtes b bug in git")
+				defbult:
+					fmt.Printf("LogReverse commit %q pbth %q: unrecognized diff stbtus %q, skipping\n", commit, pbth, string(stbtusByte))
 					continue
 				}
 
-				pathStatuses = append(pathStatuses, PathStatus{Path: string(path), Status: status})
+				pbthStbtuses = bppend(pbthStbtuses, PbthStbtus{Pbth: string(pbth), Stbtus: stbtus})
 			}
 
-			err = onLogEntry(LogEntry{Commit: commit, PathStatuses: pathStatuses})
+			err = onLogEntry(LogEntry{Commit: commit, PbthStbtuses: pbthStbtuses})
 			if err != nil {
 				return err
 			}

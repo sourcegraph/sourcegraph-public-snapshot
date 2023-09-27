@@ -1,306 +1,306 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type FeatureFlagResolver struct {
-	db    database.DB
-	inner *featureflag.FeatureFlag
+type FebtureFlbgResolver struct {
+	db    dbtbbbse.DB
+	inner *febtureflbg.FebtureFlbg
 }
 
-func (f *FeatureFlagResolver) ToFeatureFlagBoolean() (*FeatureFlagBooleanResolver, bool) {
+func (f *FebtureFlbgResolver) ToFebtureFlbgBoolebn() (*FebtureFlbgBoolebnResolver, bool) {
 	if f.inner.Bool != nil {
-		return &FeatureFlagBooleanResolver{f.db, f.inner}, true
+		return &FebtureFlbgBoolebnResolver{f.db, f.inner}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (f *FeatureFlagResolver) ToFeatureFlagRollout() (*FeatureFlagRolloutResolver, bool) {
+func (f *FebtureFlbgResolver) ToFebtureFlbgRollout() (*FebtureFlbgRolloutResolver, bool) {
 	if f.inner.Rollout != nil {
-		return &FeatureFlagRolloutResolver{f.db, f.inner}, true
+		return &FebtureFlbgRolloutResolver{f.db, f.inner}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-type FeatureFlagBooleanResolver struct {
-	db database.DB
-	// Invariant: inner.Bool is non-nil
-	inner *featureflag.FeatureFlag
+type FebtureFlbgBoolebnResolver struct {
+	db dbtbbbse.DB
+	// Invbribnt: inner.Bool is non-nil
+	inner *febtureflbg.FebtureFlbg
 }
 
-func (f *FeatureFlagBooleanResolver) Name() string { return f.inner.Name }
-func (f *FeatureFlagBooleanResolver) Value() bool  { return f.inner.Bool.Value }
-func (f *FeatureFlagBooleanResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: f.inner.CreatedAt}
+func (f *FebtureFlbgBoolebnResolver) Nbme() string { return f.inner.Nbme }
+func (f *FebtureFlbgBoolebnResolver) Vblue() bool  { return f.inner.Bool.Vblue }
+func (f *FebtureFlbgBoolebnResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: f.inner.CrebtedAt}
 }
-func (f *FeatureFlagBooleanResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: f.inner.UpdatedAt}
+func (f *FebtureFlbgBoolebnResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: f.inner.UpdbtedAt}
 }
-func (f *FeatureFlagBooleanResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
+func (f *FebtureFlbgBoolebnResolver) Overrides(ctx context.Context) ([]*FebtureFlbgOverrideResolver, error) {
+	overrides, err := f.db.FebtureFlbgs().GetOverridesForFlbg(ctx, f.inner.Nbme)
 	if err != nil {
 		return nil, err
 	}
 	return overridesToResolvers(f.db, overrides), nil
 }
 
-type FeatureFlagRolloutResolver struct {
-	db database.DB
-	// Invariant: inner.Rollout is non-nil
-	inner *featureflag.FeatureFlag
+type FebtureFlbgRolloutResolver struct {
+	db dbtbbbse.DB
+	// Invbribnt: inner.Rollout is non-nil
+	inner *febtureflbg.FebtureFlbg
 }
 
-func (f *FeatureFlagRolloutResolver) Name() string              { return f.inner.Name }
-func (f *FeatureFlagRolloutResolver) RolloutBasisPoints() int32 { return f.inner.Rollout.Rollout }
-func (f *FeatureFlagRolloutResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: f.inner.CreatedAt}
+func (f *FebtureFlbgRolloutResolver) Nbme() string              { return f.inner.Nbme }
+func (f *FebtureFlbgRolloutResolver) RolloutBbsisPoints() int32 { return f.inner.Rollout.Rollout }
+func (f *FebtureFlbgRolloutResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: f.inner.CrebtedAt}
 }
-func (f *FeatureFlagRolloutResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: f.inner.UpdatedAt}
+func (f *FebtureFlbgRolloutResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: f.inner.UpdbtedAt}
 }
-func (f *FeatureFlagRolloutResolver) Overrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	overrides, err := f.db.FeatureFlags().GetOverridesForFlag(ctx, f.inner.Name)
+func (f *FebtureFlbgRolloutResolver) Overrides(ctx context.Context) ([]*FebtureFlbgOverrideResolver, error) {
+	overrides, err := f.db.FebtureFlbgs().GetOverridesForFlbg(ctx, f.inner.Nbme)
 	if err != nil {
 		return nil, err
 	}
 	return overridesToResolvers(f.db, overrides), nil
 }
 
-func overridesToResolvers(db database.DB, input []*featureflag.Override) []*FeatureFlagOverrideResolver {
-	res := make([]*FeatureFlagOverrideResolver, 0, len(input))
-	for _, flag := range input {
-		res = append(res, &FeatureFlagOverrideResolver{db, flag})
+func overridesToResolvers(db dbtbbbse.DB, input []*febtureflbg.Override) []*FebtureFlbgOverrideResolver {
+	res := mbke([]*FebtureFlbgOverrideResolver, 0, len(input))
+	for _, flbg := rbnge input {
+		res = bppend(res, &FebtureFlbgOverrideResolver{db, flbg})
 	}
 	return res
 }
 
-type FeatureFlagOverrideResolver struct {
-	db    database.DB
-	inner *featureflag.Override
+type FebtureFlbgOverrideResolver struct {
+	db    dbtbbbse.DB
+	inner *febtureflbg.Override
 }
 
-func (f *FeatureFlagOverrideResolver) TargetFlag(ctx context.Context) (*FeatureFlagResolver, error) {
-	res, err := f.db.FeatureFlags().GetFeatureFlag(ctx, f.inner.FlagName)
-	return &FeatureFlagResolver{f.db, res}, err
+func (f *FebtureFlbgOverrideResolver) TbrgetFlbg(ctx context.Context) (*FebtureFlbgResolver, error) {
+	res, err := f.db.FebtureFlbgs().GetFebtureFlbg(ctx, f.inner.FlbgNbme)
+	return &FebtureFlbgResolver{f.db, res}, err
 }
-func (f *FeatureFlagOverrideResolver) Value() bool { return f.inner.Value }
-func (f *FeatureFlagOverrideResolver) Namespace(ctx context.Context) (*NamespaceResolver, error) {
+func (f *FebtureFlbgOverrideResolver) Vblue() bool { return f.inner.Vblue }
+func (f *FebtureFlbgOverrideResolver) Nbmespbce(ctx context.Context) (*NbmespbceResolver, error) {
 	if f.inner.UserID != nil {
 		u, err := UserByIDInt32(ctx, f.db, *f.inner.UserID)
-		return &NamespaceResolver{u}, err
+		return &NbmespbceResolver{u}, err
 	} else if f.inner.OrgID != nil {
 		o, err := OrgByIDInt32(ctx, f.db, *f.inner.OrgID)
-		return &NamespaceResolver{o}, err
+		return &NbmespbceResolver{o}, err
 	}
 	return nil, errors.Errorf("one of userID or orgID must be set")
 }
-func (f *FeatureFlagOverrideResolver) ID() graphql.ID {
-	return marshalOverrideID(overrideSpec{
+func (f *FebtureFlbgOverrideResolver) ID() grbphql.ID {
+	return mbrshblOverrideID(overrideSpec{
 		UserID:   f.inner.UserID,
 		OrgID:    f.inner.OrgID,
-		FlagName: f.inner.FlagName,
+		FlbgNbme: f.inner.FlbgNbme,
 	})
 }
 
 type overrideSpec struct {
 	UserID, OrgID *int32
-	FlagName      string
+	FlbgNbme      string
 }
 
-func marshalOverrideID(spec overrideSpec) graphql.ID {
-	return relay.MarshalID("FeatureFlagOverride", spec)
+func mbrshblOverrideID(spec overrideSpec) grbphql.ID {
+	return relby.MbrshblID("FebtureFlbgOverride", spec)
 }
 
-func unmarshalOverrideID(id graphql.ID) (spec overrideSpec, err error) {
-	err = relay.UnmarshalSpec(id, &spec)
+func unmbrshblOverrideID(id grbphql.ID) (spec overrideSpec, err error) {
+	err = relby.UnmbrshblSpec(id, &spec)
 	return
 }
 
-type EvaluatedFeatureFlagResolver struct {
-	name  string
-	value bool
+type EvblubtedFebtureFlbgResolver struct {
+	nbme  string
+	vblue bool
 }
 
-func (e *EvaluatedFeatureFlagResolver) Name() string {
-	return e.name
+func (e *EvblubtedFebtureFlbgResolver) Nbme() string {
+	return e.nbme
 }
 
-func (e *EvaluatedFeatureFlagResolver) Value() bool {
-	return e.value
+func (e *EvblubtedFebtureFlbgResolver) Vblue() bool {
+	return e.vblue
 }
 
-func (r *schemaResolver) EvaluateFeatureFlag(ctx context.Context, args *struct {
-	FlagName string
+func (r *schembResolver) EvblubteFebtureFlbg(ctx context.Context, brgs *struct {
+	FlbgNbme string
 }) *bool {
-	flagSet := featureflag.FromContext(ctx)
-	if v, ok := flagSet.GetBool(args.FlagName); ok {
+	flbgSet := febtureflbg.FromContext(ctx)
+	if v, ok := flbgSet.GetBool(brgs.FlbgNbme); ok {
 		return &v
 	}
 	return nil
 }
 
-func (r *schemaResolver) EvaluatedFeatureFlags(ctx context.Context) []*EvaluatedFeatureFlagResolver {
-	return evaluatedFlagsToResolvers(featureflag.GetEvaluatedFlagSet(ctx))
+func (r *schembResolver) EvblubtedFebtureFlbgs(ctx context.Context) []*EvblubtedFebtureFlbgResolver {
+	return evblubtedFlbgsToResolvers(febtureflbg.GetEvblubtedFlbgSet(ctx))
 }
 
-func evaluatedFlagsToResolvers(input map[string]bool) []*EvaluatedFeatureFlagResolver {
-	res := make([]*EvaluatedFeatureFlagResolver, 0, len(input))
-	for k, v := range input {
-		res = append(res, &EvaluatedFeatureFlagResolver{name: k, value: v})
+func evblubtedFlbgsToResolvers(input mbp[string]bool) []*EvblubtedFebtureFlbgResolver {
+	res := mbke([]*EvblubtedFebtureFlbgResolver, 0, len(input))
+	for k, v := rbnge input {
+		res = bppend(res, &EvblubtedFebtureFlbgResolver{nbme: k, vblue: v})
 	}
 	return res
 }
 
-func (r *schemaResolver) OrganizationFeatureFlagValue(ctx context.Context, args *struct {
-	OrgID    graphql.ID
-	FlagName string
+func (r *schembResolver) OrgbnizbtionFebtureFlbgVblue(ctx context.Context, brgs *struct {
+	OrgID    grbphql.ID
+	FlbgNbme string
 }) (bool, error) {
-	org, err := UnmarshalOrgID(args.OrgID)
+	org, err := UnmbrshblOrgID(brgs.OrgID)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	// same behavior as if the flag does not exist
-	if err := auth.CheckOrgAccess(ctx, r.db, org); err != nil {
-		return false, nil
+	// sbme behbvior bs if the flbg does not exist
+	if err := buth.CheckOrgAccess(ctx, r.db, org); err != nil {
+		return fblse, nil
 	}
 
-	result, err := r.db.FeatureFlags().GetOrgFeatureFlag(ctx, org, args.FlagName)
+	result, err := r.db.FebtureFlbgs().GetOrgFebtureFlbg(ctx, org, brgs.FlbgNbme)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return result, nil
 }
 
-func (r *schemaResolver) OrganizationFeatureFlagOverrides(ctx context.Context) ([]*FeatureFlagOverrideResolver, error) {
-	actor := sgactor.FromContext(ctx)
+func (r *schembResolver) OrgbnizbtionFebtureFlbgOverrides(ctx context.Context) ([]*FebtureFlbgOverrideResolver, error) {
+	bctor := sgbctor.FromContext(ctx)
 
-	if !actor.IsAuthenticated() {
+	if !bctor.IsAuthenticbted() {
 		return nil, errors.New("no current user")
 	}
 
-	flags, err := r.db.FeatureFlags().GetOrgOverridesForUser(ctx, actor.UID)
+	flbgs, err := r.db.FebtureFlbgs().GetOrgOverridesForUser(ctx, bctor.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	return overridesToResolvers(r.db, flags), nil
+	return overridesToResolvers(r.db, flbgs), nil
 }
 
-func (r *schemaResolver) FeatureFlag(ctx context.Context, args struct {
-	Name string
-}) (*FeatureFlagResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) FebtureFlbg(ctx context.Context, brgs struct {
+	Nbme string
+}) (*FebtureFlbgResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	ff, err := r.db.FeatureFlags().GetFeatureFlag(ctx, args.Name)
+	ff, err := r.db.FebtureFlbgs().GetFebtureFlbg(ctx, brgs.Nbme)
 	if err != nil {
 		return nil, err
 	}
 
-	return &FeatureFlagResolver{r.db, ff}, nil
+	return &FebtureFlbgResolver{r.db, ff}, nil
 }
 
-func (r *schemaResolver) FeatureFlags(ctx context.Context) ([]*FeatureFlagResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) FebtureFlbgs(ctx context.Context) ([]*FebtureFlbgResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	flags, err := r.db.FeatureFlags().GetFeatureFlags(ctx)
+	flbgs, err := r.db.FebtureFlbgs().GetFebtureFlbgs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return flagsToResolvers(r.db, flags), nil
+	return flbgsToResolvers(r.db, flbgs), nil
 }
 
-func flagsToResolvers(db database.DB, flags []*featureflag.FeatureFlag) []*FeatureFlagResolver {
-	res := make([]*FeatureFlagResolver, 0, len(flags))
-	for _, flag := range flags {
-		res = append(res, &FeatureFlagResolver{db, flag})
+func flbgsToResolvers(db dbtbbbse.DB, flbgs []*febtureflbg.FebtureFlbg) []*FebtureFlbgResolver {
+	res := mbke([]*FebtureFlbgResolver, 0, len(flbgs))
+	for _, flbg := rbnge flbgs {
+		res = bppend(res, &FebtureFlbgResolver{db, flbg})
 	}
 	return res
 }
 
-func (r *schemaResolver) CreateFeatureFlag(ctx context.Context, args struct {
-	Name               string
-	Value              *bool
-	RolloutBasisPoints *int32
-}) (*FeatureFlagResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) CrebteFebtureFlbg(ctx context.Context, brgs struct {
+	Nbme               string
+	Vblue              *bool
+	RolloutBbsisPoints *int32
+}) (*FebtureFlbgResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	ff := r.db.FeatureFlags()
+	ff := r.db.FebtureFlbgs()
 
-	var res *featureflag.FeatureFlag
-	var err error
-	if args.Value != nil {
-		res, err = ff.CreateBool(ctx, args.Name, *args.Value)
-	} else if args.RolloutBasisPoints != nil {
-		res, err = ff.CreateRollout(ctx, args.Name, *args.RolloutBasisPoints)
+	vbr res *febtureflbg.FebtureFlbg
+	vbr err error
+	if brgs.Vblue != nil {
+		res, err = ff.CrebteBool(ctx, brgs.Nbme, *brgs.Vblue)
+	} else if brgs.RolloutBbsisPoints != nil {
+		res, err = ff.CrebteRollout(ctx, brgs.Nbme, *brgs.RolloutBbsisPoints)
 	} else {
-		return nil, errors.Errorf("either 'value' or 'rolloutBasisPoints' must be set")
+		return nil, errors.Errorf("either 'vblue' or 'rolloutBbsisPoints' must be set")
 	}
 
-	return &FeatureFlagResolver{r.db, res}, err
+	return &FebtureFlbgResolver{r.db, res}, err
 }
 
-func (r *schemaResolver) DeleteFeatureFlag(ctx context.Context, args struct {
-	Name string
+func (r *schembResolver) DeleteFebtureFlbg(ctx context.Context, brgs struct {
+	Nbme string
 }) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	return &EmptyResponse{}, r.db.FeatureFlags().DeleteFeatureFlag(ctx, args.Name)
+	return &EmptyResponse{}, r.db.FebtureFlbgs().DeleteFebtureFlbg(ctx, brgs.Nbme)
 }
 
-func (r *schemaResolver) UpdateFeatureFlag(ctx context.Context, args struct {
-	Name               string
-	Value              *bool
-	RolloutBasisPoints *int32
-}) (*FeatureFlagResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) UpdbteFebtureFlbg(ctx context.Context, brgs struct {
+	Nbme               string
+	Vblue              *bool
+	RolloutBbsisPoints *int32
+}) (*FebtureFlbgResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	ff := &featureflag.FeatureFlag{Name: args.Name}
-	if args.Value != nil {
-		ff.Bool = &featureflag.FeatureFlagBool{Value: *args.Value}
-	} else if args.RolloutBasisPoints != nil {
-		ff.Rollout = &featureflag.FeatureFlagRollout{Rollout: *args.RolloutBasisPoints}
+	ff := &febtureflbg.FebtureFlbg{Nbme: brgs.Nbme}
+	if brgs.Vblue != nil {
+		ff.Bool = &febtureflbg.FebtureFlbgBool{Vblue: *brgs.Vblue}
+	} else if brgs.RolloutBbsisPoints != nil {
+		ff.Rollout = &febtureflbg.FebtureFlbgRollout{Rollout: *brgs.RolloutBbsisPoints}
 	} else {
-		return nil, errors.Errorf("either 'value' or 'rolloutBasisPoints' must be set")
+		return nil, errors.Errorf("either 'vblue' or 'rolloutBbsisPoints' must be set")
 	}
 
-	res, err := r.db.FeatureFlags().UpdateFeatureFlag(ctx, ff)
-	return &FeatureFlagResolver{r.db, res}, err
+	res, err := r.db.FebtureFlbgs().UpdbteFebtureFlbg(ctx, ff)
+	return &FebtureFlbgResolver{r.db, res}, err
 }
 
-func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args struct {
-	Namespace graphql.ID
-	FlagName  string
-	Value     bool
-}) (*FeatureFlagOverrideResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) CrebteFebtureFlbgOverride(ctx context.Context, brgs struct {
+	Nbmespbce grbphql.ID
+	FlbgNbme  string
+	Vblue     bool
+}) (*FebtureFlbgOverrideResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	fo := &featureflag.Override{
-		FlagName: args.FlagName,
-		Value:    args.Value,
+	fo := &febtureflbg.Override{
+		FlbgNbme: brgs.FlbgNbme,
+		Vblue:    brgs.Vblue,
 	}
 
-	var uid, oid int32
-	if err := UnmarshalNamespaceID(args.Namespace, &uid, &oid); err != nil {
+	vbr uid, oid int32
+	if err := UnmbrshblNbmespbceID(brgs.Nbmespbce, &uid, &oid); err != nil {
 		return nil, err
 	}
 
@@ -309,35 +309,35 @@ func (r *schemaResolver) CreateFeatureFlagOverride(ctx context.Context, args str
 	} else if oid != 0 {
 		fo.OrgID = &oid
 	}
-	res, err := r.db.FeatureFlags().CreateOverride(ctx, fo)
-	return &FeatureFlagOverrideResolver{r.db, res}, err
+	res, err := r.db.FebtureFlbgs().CrebteOverride(ctx, fo)
+	return &FebtureFlbgOverrideResolver{r.db, res}, err
 }
 
-func (r *schemaResolver) DeleteFeatureFlagOverride(ctx context.Context, args struct {
-	ID graphql.ID
+func (r *schembResolver) DeleteFebtureFlbgOverride(ctx context.Context, brgs struct {
+	ID grbphql.ID
 }) (*EmptyResponse, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	spec, err := unmarshalOverrideID(args.ID)
+	spec, err := unmbrshblOverrideID(brgs.ID)
 	if err != nil {
 		return &EmptyResponse{}, err
 	}
-	return &EmptyResponse{}, r.db.FeatureFlags().DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName)
+	return &EmptyResponse{}, r.db.FebtureFlbgs().DeleteOverride(ctx, spec.OrgID, spec.UserID, spec.FlbgNbme)
 }
 
-func (r *schemaResolver) UpdateFeatureFlagOverride(ctx context.Context, args struct {
-	ID    graphql.ID
-	Value bool
-}) (*FeatureFlagOverrideResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) UpdbteFebtureFlbgOverride(ctx context.Context, brgs struct {
+	ID    grbphql.ID
+	Vblue bool
+}) (*FebtureFlbgOverrideResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	spec, err := unmarshalOverrideID(args.ID)
+	spec, err := unmbrshblOverrideID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	res, err := r.db.FeatureFlags().UpdateOverride(ctx, spec.OrgID, spec.UserID, spec.FlagName, args.Value)
-	return &FeatureFlagOverrideResolver{r.db, res}, err
+	res, err := r.db.FebtureFlbgs().UpdbteOverride(ctx, spec.OrgID, spec.UserID, spec.FlbgNbme, brgs.Vblue)
+	return &FebtureFlbgOverrideResolver{r.db, res}, err
 }

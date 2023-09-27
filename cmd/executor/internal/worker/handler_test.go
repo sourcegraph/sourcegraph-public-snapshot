@@ -1,121 +1,121 @@
-package worker
+pbckbge worker
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHandler_PreDequeue(t *testing.T) {
+func TestHbndler_PreDequeue(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	tests := []struct {
-		name              string
+		nbme              string
 		options           Options
 		mockFunc          func(cmdRunner *MockCmdRunner)
 		expectedDequeue   bool
-		expectedExtraArgs any
+		expectedExtrbArgs bny
 		expectedErr       error
-		assertMockFunc    func(t *testing.T, cmdRunner *MockCmdRunner)
+		bssertMockFunc    func(t *testing.T, cmdRunner *MockCmdRunner)
 	}{
 		{
-			name: "Firecracker not enabled",
+			nbme: "Firecrbcker not enbbled",
 			options: Options{
 				RunnerOptions: runner.Options{
-					FirecrackerOptions: runner.FirecrackerOptions{Enabled: false},
+					FirecrbckerOptions: runner.FirecrbckerOptions{Enbbled: fblse},
 				},
 			},
 			expectedDequeue: true,
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 			},
 		},
 		{
-			name: "Firecracker enabled",
+			nbme: "Firecrbcker enbbled",
 			options: Options{
 				RunnerOptions: runner.Options{
-					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+					FirecrbckerOptions: runner.FirecrbckerOptions{Enbbled: true},
 				},
-				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 1},
+				WorkerOptions: workerutil.WorkerOptions{NumHbndlers: 1},
 			},
 			mockFunc: func(cmdRunner *MockCmdRunner) {
 				cmdRunner.CombinedOutputFunc.PushReturn([]byte{}, nil)
 			},
 			expectedDequeue: true,
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
-				assert.Equal(t, "ignite", cmdRunner.CombinedOutputFunc.History()[0].Arg1)
-				assert.Equal(
+				bssert.Equbl(t, "ignite", cmdRunner.CombinedOutputFunc.History()[0].Arg1)
+				bssert.Equbl(
 					t,
-					[]string{"ps", "-t", "{{ .Name }}:{{ .UID }}"},
+					[]string{"ps", "-t", "{{ .Nbme }}:{{ .UID }}"},
 					cmdRunner.CombinedOutputFunc.History()[0].Arg2,
 				)
 			},
 		},
 		{
-			name: "Orphaned VMs",
+			nbme: "Orphbned VMs",
 			options: Options{
 				RunnerOptions: runner.Options{
-					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+					FirecrbckerOptions: runner.FirecrbckerOptions{Enbbled: true},
 				},
-				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 1},
+				WorkerOptions: workerutil.WorkerOptions{NumHbndlers: 1},
 			},
 			mockFunc: func(cmdRunner *MockCmdRunner) {
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte("foo:bar\nfaz:baz"), nil)
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte("foo:bbr\nfbz:bbz"), nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
 			},
 		},
 		{
-			name: "Less Orphaned VMs than Handlers",
+			nbme: "Less Orphbned VMs thbn Hbndlers",
 			options: Options{
 				RunnerOptions: runner.Options{
-					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+					FirecrbckerOptions: runner.FirecrbckerOptions{Enbbled: true},
 				},
-				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 3},
+				WorkerOptions: workerutil.WorkerOptions{NumHbndlers: 3},
 			},
 			mockFunc: func(cmdRunner *MockCmdRunner) {
-				cmdRunner.CombinedOutputFunc.PushReturn([]byte("foo:bar\nfaz:baz"), nil)
+				cmdRunner.CombinedOutputFunc.PushReturn([]byte("foo:bbr\nfbz:bbz"), nil)
 			},
 			expectedDequeue: true,
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
 			},
 		},
 		{
-			name: "Failed to get active VMs",
+			nbme: "Fbiled to get bctive VMs",
 			options: Options{
 				RunnerOptions: runner.Options{
-					FirecrackerOptions: runner.FirecrackerOptions{Enabled: true},
+					FirecrbckerOptions: runner.FirecrbckerOptions{Enbbled: true},
 				},
-				WorkerOptions: workerutil.WorkerOptions{NumHandlers: 3},
+				WorkerOptions: workerutil.WorkerOptions{NumHbndlers: 3},
 			},
 			mockFunc: func(cmdRunner *MockCmdRunner) {
-				cmdRunner.CombinedOutputFunc.PushReturn(nil, errors.New("failed"))
+				cmdRunner.CombinedOutputFunc.PushReturn(nil, errors.New("fbiled"))
 			},
-			expectedErr: errors.New("failed"),
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
+			expectedErr: errors.New("fbiled"),
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			cmdRunner := NewMockCmdRunner()
 
-			h := &handler{
+			h := &hbndler{
 				cmdRunner: cmdRunner,
 				options:   test.options,
 			}
@@ -124,206 +124,206 @@ func TestHandler_PreDequeue(t *testing.T) {
 				test.mockFunc(cmdRunner)
 			}
 
-			dequeueable, extraArgs, err := h.PreDequeue(context.Background(), logger)
+			dequeuebble, extrbArgs, err := h.PreDequeue(context.Bbckground(), logger)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
-				assert.Equal(t, test.expectedDequeue, dequeueable)
-				assert.Equal(t, test.expectedExtraArgs, extraArgs)
+				bssert.EqublError(t, err, test.expectedErr.Error())
+				bssert.Equbl(t, test.expectedDequeue, dequeuebble)
+				bssert.Equbl(t, test.expectedExtrbArgs, extrbArgs)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expectedDequeue, dequeueable)
-				assert.Equal(t, test.expectedExtraArgs, extraArgs)
+				bssert.Equbl(t, test.expectedDequeue, dequeuebble)
+				bssert.Equbl(t, test.expectedExtrbArgs, extrbArgs)
 			}
 
-			test.assertMockFunc(t, cmdRunner)
+			test.bssertMockFunc(t, cmdRunner)
 		})
 	}
 }
 
-func TestHandler_Handle_Legacy(t *testing.T) {
+func TestHbndler_Hbndle_Legbcy(t *testing.T) {
 	// No runtime is configured.
-	// Will go away once firecracker is implemented.
-	internalLogger := logtest.Scoped(t)
-	operations := command.NewOperations(&observation.TestContext)
+	// Will go bwby once firecrbcker is implemented.
+	internblLogger := logtest.Scoped(t)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name           string
+		nbme           string
 		options        Options
 		job            types.Job
-		mockFunc       func(cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore)
+		mockFunc       func(cmdRunner *MockCmdRunner, commbnd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore)
 		expectedErr    error
-		assertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, command *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore)
+		bssertMockFunc func(t *testing.T, cmdRunner *MockCmdRunner, commbnd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore)
 	}{
 		{
-			name:    "Success with no steps",
+			nbme:    "Success with no steps",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 6)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
 		{
-			name:    "Success with srcCli steps",
+			nbme:    "Success with srcCli steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				CliSteps: []types.CliStep{
 					{
 						Key:      "some-step",
-						Commands: []string{"echo", "hello"},
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
-				assert.Equal(t, "step.src.some-step", cmd.RunFunc.History()[6].Arg2.Key)
-				assert.Equal(t, []string{"src", "echo", "hello"}, cmd.RunFunc.History()[6].Arg2.Command)
-				// Temp directory. Value is covered by other tests. We just want to ensure it's not empty.
-				assert.NotEmpty(t, cmd.RunFunc.History()[6].Arg2.Dir)
-				assert.Equal(t, []string{"FOO=bar"}, cmd.RunFunc.History()[6].Arg2.Env)
-				assert.Equal(t, operations.Exec, cmd.RunFunc.History()[6].Arg2.Operation)
+				bssert.Equbl(t, "step.src.some-step", cmd.RunFunc.History()[6].Arg2.Key)
+				bssert.Equbl(t, []string{"src", "echo", "hello"}, cmd.RunFunc.History()[6].Arg2.Commbnd)
+				// Temp directory. Vblue is covered by other tests. We just wbnt to ensure it's not empty.
+				bssert.NotEmpty(t, cmd.RunFunc.History()[6].Arg2.Dir)
+				bssert.Equbl(t, []string{"FOO=bbr"}, cmd.RunFunc.History()[6].Arg2.Env)
+				bssert.Equbl(t, operbtions.Exec, cmd.RunFunc.History()[6].Arg2.Operbtion)
 
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
 		{
-			name:    "Success with srcCli steps default key",
+			nbme:    "Success with srcCli steps defbult key",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				CliSteps: []types.CliStep{
 					{
-						Commands: []string{"echo", "hello"},
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
-				assert.Equal(t, "step.src.0", cmd.RunFunc.History()[6].Arg2.Key)
+				bssert.Equbl(t, "step.src.0", cmd.RunFunc.History()[6].Arg2.Key)
 
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
 		{
-			name:    "Success with docker steps",
+			nbme:    "Success with docker steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "some-step",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
-				assert.Equal(t, "step.docker.some-step", cmd.RunFunc.History()[6].Arg2.Key)
-				// There is a temporary directory in the command. We don't want to assert on it. The value of command
-				// is covered by other tests. Just want to ensure it at least contains some expected values.
-				assert.Contains(t, cmd.RunFunc.History()[6].Arg2.Command, "docker")
-				assert.Contains(t, cmd.RunFunc.History()[6].Arg2.Command, "run")
-				assert.Empty(t, cmd.RunFunc.History()[6].Arg2.Dir)
-				assert.Nil(t, cmd.RunFunc.History()[6].Arg2.Env)
-				assert.Equal(t, operations.Exec, cmd.RunFunc.History()[6].Arg2.Operation)
+				bssert.Equbl(t, "step.docker.some-step", cmd.RunFunc.History()[6].Arg2.Key)
+				// There is b temporbry directory in the commbnd. We don't wbnt to bssert on it. The vblue of commbnd
+				// is covered by other tests. Just wbnt to ensure it bt lebst contbins some expected vblues.
+				bssert.Contbins(t, cmd.RunFunc.History()[6].Arg2.Commbnd, "docker")
+				bssert.Contbins(t, cmd.RunFunc.History()[6].Arg2.Commbnd, "run")
+				bssert.Empty(t, cmd.RunFunc.History()[6].Arg2.Dir)
+				bssert.Nil(t, cmd.RunFunc.History()[6].Arg2.Env)
+				bssert.Equbl(t, operbtions.Exec, cmd.RunFunc.History()[6].Arg2.Operbtion)
 
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
 		{
-			name:    "Success with docker steps default key",
+			nbme:    "Success with docker steps defbult key",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				DockerSteps: []types.DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
-				cmd.RunFunc.SetDefaultReturn(nil)
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+				cmd.RunFunc.SetDefbultReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 
 				require.Len(t, cmd.RunFunc.History(), 7)
-				assert.Equal(t, "step.docker.0", cmd.RunFunc.History()[6].Arg2.Key)
+				bssert.Equbl(t, "step.docker.0", cmd.RunFunc.History()[6].Arg2.Key)
 
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
 		},
 		{
-			name:    "failed to setup workspace",
+			nbme:    "fbiled to setup workspbce",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
-				// fail on first clone step
-				cmd.RunFunc.PushReturn(errors.New("failed"))
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+				// fbil on first clone step
+				cmd.RunFunc.PushReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 1)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
-			expectedErr: errors.New("failed to prepare workspace: failed setup.git.init: failed"),
+			expectedErr: errors.New("fbiled to prepbre workspbce: fbiled setup.git.init: fbiled"),
 		},
 		{
-			name:    "failed with srcCli steps",
+			nbme:    "fbiled with srcCli steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				CliSteps: []types.CliStep{
 					{
 						Key:      "some-step",
-						Commands: []string{"echo", "hello"},
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				// cloning repo needs to be successful
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
@@ -331,34 +331,34 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
-				// Error on running the actual command
-				cmd.RunFunc.PushReturn(errors.New("failed"))
+				// Error on running the bctubl commbnd
+				cmd.RunFunc.PushReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 7)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
-			expectedErr: errors.New("failed to perform src-cli step: failed"),
+			expectedErr: errors.New("fbiled to perform src-cli step: fbiled"),
 		},
 		{
-			name:    "failed with docker steps",
+			nbme:    "fbiled with docker steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "some-step",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			mockFunc: func(cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				// cloning repo needs to be successful
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
@@ -366,264 +366,264 @@ func TestHandler_Handle_Legacy(t *testing.T) {
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
 				cmd.RunFunc.PushReturn(nil)
-				// Error on running the actual command
-				cmd.RunFunc.PushReturn(errors.New("failed"))
+				// Error on running the bctubl commbnd
+				cmd.RunFunc.PushReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommand, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
+			bssertMockFunc: func(t *testing.T, cmdRunner *MockCmdRunner, cmd *MockCommbnd, logStore *MockExecutionLogEntryStore, filesStore *MockStore) {
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
 				require.Len(t, cmd.RunFunc.History(), 7)
 				require.Len(t, filesStore.GetFunc.History(), 0)
 			},
-			expectedErr: errors.New("failed to perform docker step: failed"),
+			expectedErr: errors.New("fbiled to perform docker step: fbiled"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			nameSet := janitor.NewNameSet()
-			// Used in prepareWorkspace
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			nbmeSet := jbnitor.NewNbmeSet()
+			// Used in prepbreWorkspbce
 			cmdRunner := NewMockCmdRunner()
-			// Used in prepareWorkspace, runner
-			cmd := NewMockCommand()
+			// Used in prepbreWorkspbce, runner
+			cmd := NewMockCommbnd()
 			// Used in NewLogger
 			logStore := NewMockExecutionLogEntryStore()
-			// Used in prepareWorkspace
+			// Used in prepbreWorkspbce
 			filesStore := NewMockStore()
 
-			h := &handler{
-				nameSet:    nameSet,
+			h := &hbndler{
+				nbmeSet:    nbmeSet,
 				cmdRunner:  cmdRunner,
 				cmd:        cmd,
 				logStore:   logStore,
 				filesStore: filesStore,
 				options:    test.options,
-				operations: operations,
+				operbtions: operbtions,
 			}
 
 			if test.mockFunc != nil {
 				test.mockFunc(cmdRunner, cmd, logStore, filesStore)
 			}
 
-			err := h.Handle(context.Background(), internalLogger, test.job)
+			err := h.Hbndle(context.Bbckground(), internblLogger, test.job)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
 
-			test.assertMockFunc(t, cmdRunner, cmd, logStore, filesStore)
+			test.bssertMockFunc(t, cmdRunner, cmd, logStore, filesStore)
 		})
 	}
 }
 
-func TestHandler_Handle(t *testing.T) {
-	internalLogger := logtest.Scoped(t)
-	operations := command.NewOperations(&observation.TestContext)
+func TestHbndler_Hbndle(t *testing.T) {
+	internblLogger := logtest.Scoped(t)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name           string
+		nbme           string
 		options        Options
 		job            types.Job
-		mockFunc       func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace)
+		mockFunc       func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce)
 		expectedErr    error
-		assertMockFunc func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace)
+		bssertMockFunc func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce)
 	}{
 		{
-			name:    "Success with no steps",
+			nbme:    "Success with no steps",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				jobRuntime.PrepbreWorkspbceFunc.PushReturn(jobWorkspbce, nil)
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn(nil, nil)
 				jobRunner.RunFunc.PushReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
-				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				require.Len(t, jobRuntime.PrepbreWorkspbceFunc.History(), 1)
+				require.Len(t, jobWorkspbce.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
-				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRunner.TebrdownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps, 0)
 				require.Len(t, jobRunner.RunFunc.History(), 0)
 			},
 		},
 		{
-			name:    "Success with steps",
+			nbme:    "Success with steps",
 			options: Options{},
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "my-repo",
+				RepositoryNbme: "my-repo",
 				Commit:         "cool-commit",
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "some-step",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				jobRuntime.PrepbreWorkspbceFunc.PushReturn(jobWorkspbce, nil)
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
 					{
-						CommandSpecs: []command.Spec{
+						CommbndSpecs: []commbnd.Spec{
 							{
 								Key:       "my-key",
-								Command:   []string{"echo", "hello"},
+								Commbnd:   []string{"echo", "hello"},
 								Dir:       ".",
-								Env:       []string{"FOO=bar"},
-								Operation: operations.Exec,
+								Env:       []string{"FOO=bbr"},
+								Operbtion: operbtions.Exec,
 							},
 						},
-						Image:      "my-image",
-						ScriptPath: "./foo",
+						Imbge:      "my-imbge",
+						ScriptPbth: "./foo",
 					},
 				}, nil)
 				jobRunner.RunFunc.PushReturn(nil)
 			},
-			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
-				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				require.Len(t, jobRuntime.PrepbreWorkspbceFunc.History(), 1)
+				require.Len(t, jobWorkspbce.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
-				assert.NotEmpty(t, jobRuntime.NewRunnerFunc.History()[0].Arg3.Name)
-				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				bssert.NotEmpty(t, jobRuntime.NewRunnerFunc.History()[0].Arg3.Nbme)
+				require.Len(t, jobRunner.TebrdownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps, 1)
-				assert.Equal(t, "some-step", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Key)
-				assert.Equal(t, "my-image", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Image)
-				assert.Equal(t, []string{"echo", "hello"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Commands)
-				assert.Equal(t, ".", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Dir)
-				assert.Equal(t, []string{"FOO=bar"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Env)
+				bssert.Equbl(t, "some-step", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Key)
+				bssert.Equbl(t, "my-imbge", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Imbge)
+				bssert.Equbl(t, []string{"echo", "hello"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Commbnds)
+				bssert.Equbl(t, ".", jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Dir)
+				bssert.Equbl(t, []string{"FOO=bbr"}, jobRuntime.NewRunnerSpecsFunc.History()[0].Arg1.DockerSteps[0].Env)
 				require.Len(t, jobRunner.RunFunc.History(), 1)
-				assert.Equal(t, "my-image", jobRunner.RunFunc.History()[0].Arg1.Image)
-				assert.Equal(t, "./foo", jobRunner.RunFunc.History()[0].Arg1.ScriptPath)
-				require.Len(t, jobRunner.RunFunc.History()[0].Arg1.CommandSpecs, 1)
-				assert.Equal(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommandSpecs[0].Command)
+				bssert.Equbl(t, "my-imbge", jobRunner.RunFunc.History()[0].Arg1.Imbge)
+				bssert.Equbl(t, "./foo", jobRunner.RunFunc.History()[0].Arg1.ScriptPbth)
+				require.Len(t, jobRunner.RunFunc.History()[0].Arg1.CommbndSpecs, 1)
+				bssert.Equbl(t, []string{"echo", "hello"}, jobRunner.RunFunc.History()[0].Arg1.CommbndSpecs[0].Commbnd)
 			},
 		},
 		{
-			name:    "failed to setup workspace",
+			nbme:    "fbiled to setup workspbce",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				jobRuntime.PrepareWorkspaceFunc.PushReturn(nil, errors.New("failed"))
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				jobRuntime.PrepbreWorkspbceFunc.PushReturn(nil, errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
-				require.Len(t, jobWorkspace.RemoveFunc.History(), 0)
+			bssertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				require.Len(t, jobRuntime.PrepbreWorkspbceFunc.History(), 1)
+				require.Len(t, jobWorkspbce.RemoveFunc.History(), 0)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 0)
-				require.Len(t, jobRunner.TeardownFunc.History(), 0)
+				require.Len(t, jobRunner.TebrdownFunc.History(), 0)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 0)
 				require.Len(t, jobRunner.RunFunc.History(), 0)
 			},
-			expectedErr: errors.New("creating workspace: failed"),
+			expectedErr: errors.New("crebting workspbce: fbiled"),
 		},
 		{
-			name:    "failed to setup runner",
+			nbme:    "fbiled to setup runner",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
-				jobRuntime.NewRunnerFunc.PushReturn(nil, errors.New("failed"))
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				jobRuntime.PrepbreWorkspbceFunc.PushReturn(jobWorkspbce, nil)
+				jobRuntime.NewRunnerFunc.PushReturn(nil, errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
-				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				require.Len(t, jobRuntime.PrepbreWorkspbceFunc.History(), 1)
+				require.Len(t, jobWorkspbce.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
-				require.Len(t, jobRunner.TeardownFunc.History(), 0)
+				require.Len(t, jobRunner.TebrdownFunc.History(), 0)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 0)
 				require.Len(t, jobRunner.RunFunc.History(), 0)
 			},
-			expectedErr: errors.New("creating runtime runner: failed"),
+			expectedErr: errors.New("crebting runtime runner: fbiled"),
 		},
 		{
-			name:    "failed to create commands",
+			nbme:    "fbiled to crebte commbnds",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				jobRuntime.PrepbreWorkspbceFunc.PushReturn(jobWorkspbce, nil)
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
-				jobRuntime.NewRunnerSpecsFunc.PushReturn(nil, errors.New("failed"))
+				jobRuntime.NewRunnerSpecsFunc.PushReturn(nil, errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
-				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				require.Len(t, jobRuntime.PrepbreWorkspbceFunc.History(), 1)
+				require.Len(t, jobWorkspbce.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
-				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRunner.TebrdownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
 				require.Len(t, jobRunner.RunFunc.History(), 0)
 			},
-			expectedErr: errors.New("creating commands: failed"),
+			expectedErr: errors.New("crebting commbnds: fbiled"),
 		},
 		{
-			name:    "failed to run command",
+			nbme:    "fbiled to run commbnd",
 			options: Options{},
-			job:     types.Job{ID: 42, RepositoryName: "my-repo", Commit: "cool-commit"},
-			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				jobRuntime.PrepareWorkspaceFunc.PushReturn(jobWorkspace, nil)
+			job:     types.Job{ID: 42, RepositoryNbme: "my-repo", Commit: "cool-commit"},
+			mockFunc: func(jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				jobRuntime.PrepbreWorkspbceFunc.PushReturn(jobWorkspbce, nil)
 				jobRuntime.NewRunnerFunc.PushReturn(jobRunner, nil)
 				jobRuntime.NewRunnerSpecsFunc.PushReturn([]runner.Spec{
 					{
-						CommandSpecs: []command.Spec{
+						CommbndSpecs: []commbnd.Spec{
 							{
 								Key:       "my-key",
-								Command:   []string{"echo", "hello"},
+								Commbnd:   []string{"echo", "hello"},
 								Dir:       ".",
-								Env:       []string{"FOO=bar"},
-								Operation: operations.Exec,
+								Env:       []string{"FOO=bbr"},
+								Operbtion: operbtions.Exec,
 							},
 						},
-						Image:      "my-image",
-						ScriptPath: "./foo",
+						Imbge:      "my-imbge",
+						ScriptPbth: "./foo",
 					},
 				}, nil)
-				jobRunner.RunFunc.PushReturn(errors.New("failed"))
+				jobRunner.RunFunc.PushReturn(errors.New("fbiled"))
 			},
-			assertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspace *MockWorkspace) {
-				require.Len(t, jobRuntime.PrepareWorkspaceFunc.History(), 1)
-				require.Len(t, jobWorkspace.RemoveFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, jobRuntime *MockRuntime, logStore *MockExecutionLogEntryStore, jobRunner *MockRunner, jobWorkspbce *MockWorkspbce) {
+				require.Len(t, jobRuntime.PrepbreWorkspbceFunc.History(), 1)
+				require.Len(t, jobWorkspbce.RemoveFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerFunc.History(), 1)
-				require.Len(t, jobRunner.TeardownFunc.History(), 1)
+				require.Len(t, jobRunner.TebrdownFunc.History(), 1)
 				require.Len(t, jobRuntime.NewRunnerSpecsFunc.History(), 1)
 				require.Len(t, jobRunner.RunFunc.History(), 1)
 			},
-			expectedErr: errors.New("running command \"my-key\": failed"),
+			expectedErr: errors.New("running commbnd \"my-key\": fbiled"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			nameSet := janitor.NewNameSet()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			nbmeSet := jbnitor.NewNbmeSet()
 			jobRuntime := NewMockRuntime()
 			jobRunner := NewMockRunner()
-			jobWorkspace := NewMockWorkspace()
+			jobWorkspbce := NewMockWorkspbce()
 			// Used in NewLogger
 			logStore := NewMockExecutionLogEntryStore()
 
-			h := &handler{
-				nameSet:    nameSet,
+			h := &hbndler{
+				nbmeSet:    nbmeSet,
 				jobRuntime: jobRuntime,
 				logStore:   logStore,
 				options:    test.options,
-				operations: operations,
+				operbtions: operbtions,
 			}
 
 			if test.mockFunc != nil {
-				test.mockFunc(jobRuntime, logStore, jobRunner, jobWorkspace)
+				test.mockFunc(jobRuntime, logStore, jobRunner, jobWorkspbce)
 			}
 
-			err := h.Handle(context.Background(), internalLogger, test.job)
+			err := h.Hbndle(context.Bbckground(), internblLogger, test.job)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
 
-			test.assertMockFunc(t, jobRuntime, logStore, jobRunner, jobWorkspace)
+			test.bssertMockFunc(t, jobRuntime, logStore, jobRunner, jobWorkspbce)
 		})
 	}
 }

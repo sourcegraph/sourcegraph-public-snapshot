@@ -1,37 +1,37 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type commitGraphUpdaterJob struct{}
+type commitGrbphUpdbterJob struct{}
 
-func NewCommitGraphUpdaterJob() job.Job {
-	return &commitGraphUpdaterJob{}
+func NewCommitGrbphUpdbterJob() job.Job {
+	return &commitGrbphUpdbterJob{}
 }
 
-func (j *commitGraphUpdaterJob) Description() string {
+func (j *commitGrbphUpdbterJob) Description() string {
 	return ""
 }
 
-func (j *commitGraphUpdaterJob) Config() []env.Config {
+func (j *commitGrbphUpdbterJob) Config() []env.Config {
 	return []env.Config{
-		uploads.CommitGraphConfigInst,
+		uplobds.CommitGrbphConfigInst,
 	}
 }
 
-func (j *commitGraphUpdaterJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *commitGrbphUpdbterJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewCommitGraphUpdater(services.UploadsService, services.GitserverClient), nil
+	return uplobds.NewCommitGrbphUpdbter(services.UplobdsService, services.GitserverClient), nil
 }

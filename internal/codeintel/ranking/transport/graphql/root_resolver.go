@@ -1,184 +1,184 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
-	rankingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking"
+	rbnkingshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type rootResolver struct {
-	rankingSvc       RankingService
-	siteAdminChecker sharedresolvers.SiteAdminChecker
-	operations       *operations
+	rbnkingSvc       RbnkingService
+	siteAdminChecker shbredresolvers.SiteAdminChecker
+	operbtions       *operbtions
 }
 
 func NewRootResolver(
-	observationCtx *observation.Context,
-	rankingSvc *ranking.Service,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-) resolverstubs.RankingServiceResolver {
+	observbtionCtx *observbtion.Context,
+	rbnkingSvc *rbnking.Service,
+	siteAdminChecker shbredresolvers.SiteAdminChecker,
+) resolverstubs.RbnkingServiceResolver {
 	return &rootResolver{
-		rankingSvc:       rankingSvc,
+		rbnkingSvc:       rbnkingSvc,
 		siteAdminChecker: siteAdminChecker,
-		operations:       newOperations(observationCtx),
+		operbtions:       newOperbtions(observbtionCtx),
 	}
 }
 
-// 🚨 SECURITY: Only site admins may view ranking job summaries.
-func (r *rootResolver) RankingSummary(ctx context.Context) (_ resolverstubs.GlobalRankingSummaryResolver, err error) {
-	ctx, _, endObservation := r.operations.rankingSummary.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby view rbnking job summbries.
+func (r *rootResolver) RbnkingSummbry(ctx context.Context) (_ resolverstubs.GlobblRbnkingSummbryResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.rbnkingSummbry.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	graphKey := rankingshared.GraphKey()
-	var derivativeGraphKey *string
-	if key, ok, err := r.rankingSvc.DerivativeGraphKey(ctx); err != nil {
+	grbphKey := rbnkingshbred.GrbphKey()
+	vbr derivbtiveGrbphKey *string
+	if key, ok, err := r.rbnkingSvc.DerivbtiveGrbphKey(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		derivativeGraphKey = &key
+		derivbtiveGrbphKey = &key
 	}
 
-	summaries, err := r.rankingSvc.Summaries(ctx)
+	summbries, err := r.rbnkingSvc.Summbries(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.RankingSummaryResolver, 0, len(summaries))
-	for _, summary := range summaries {
-		resolvers = append(resolvers, &rankingSummaryResolver{
-			summary: summary,
+	resolvers := mbke([]resolverstubs.RbnkingSummbryResolver, 0, len(summbries))
+	for _, summbry := rbnge summbries {
+		resolvers = bppend(resolvers, &rbnkingSummbryResolver{
+			summbry: summbry,
 		})
 	}
 
-	var nextJobStartsAt *time.Time
-	if t, ok, err := r.rankingSvc.NextJobStartsAt(ctx); err != nil {
+	vbr nextJobStbrtsAt *time.Time
+	if t, ok, err := r.rbnkingSvc.NextJobStbrtsAt(ctx); err != nil {
 		return nil, err
 	} else if ok {
-		nextJobStartsAt = &t
+		nextJobStbrtsAt = &t
 	}
 
-	counts, err := r.rankingSvc.CoverageCounts(ctx, graphKey)
+	counts, err := r.rbnkingSvc.CoverbgeCounts(ctx, grbphKey)
 	if err != nil {
 		return nil, err
 	}
 
-	return &globalRankingSummaryResolver{
-		derivativeGraphKey: derivativeGraphKey,
+	return &globblRbnkingSummbryResolver{
+		derivbtiveGrbphKey: derivbtiveGrbphKey,
 		resolvers:          resolvers,
-		nextJobStartsAt:    nextJobStartsAt,
+		nextJobStbrtsAt:    nextJobStbrtsAt,
 		counts:             counts,
 	}, nil
 }
 
-// 🚨 SECURITY: Only site admins may modify ranking graph keys.
-func (r *rootResolver) BumpDerivativeGraphKey(ctx context.Context) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.bumpDerivativeGraphKey.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby modify rbnking grbph keys.
+func (r *rootResolver) BumpDerivbtiveGrbphKey(ctx context.Context) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.bumpDerivbtiveGrbphKey.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	return resolverstubs.Empty, r.rankingSvc.BumpDerivativeGraphKey(ctx)
+	return resolverstubs.Empty, r.rbnkingSvc.BumpDerivbtiveGrbphKey(ctx)
 }
 
-// 🚨 SECURITY: Only site admins may modify ranking progress records.
-func (r *rootResolver) DeleteRankingProgress(ctx context.Context, args *resolverstubs.DeleteRankingProgressArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.deleteRankingProgress.With(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+// 🚨 SECURITY: Only site bdmins mby modify rbnking progress records.
+func (r *rootResolver) DeleteRbnkingProgress(ctx context.Context, brgs *resolverstubs.DeleteRbnkingProgressArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.deleteRbnkingProgress.With(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
 	if err := r.siteAdminChecker.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		return nil, err
 	}
 
-	return resolverstubs.Empty, r.rankingSvc.DeleteRankingProgress(ctx, args.GraphKey)
+	return resolverstubs.Empty, r.rbnkingSvc.DeleteRbnkingProgress(ctx, brgs.GrbphKey)
 }
 
-type globalRankingSummaryResolver struct {
-	derivativeGraphKey *string
-	resolvers          []resolverstubs.RankingSummaryResolver
-	nextJobStartsAt    *time.Time
-	counts             shared.CoverageCounts
+type globblRbnkingSummbryResolver struct {
+	derivbtiveGrbphKey *string
+	resolvers          []resolverstubs.RbnkingSummbryResolver
+	nextJobStbrtsAt    *time.Time
+	counts             shbred.CoverbgeCounts
 }
 
-func (r *globalRankingSummaryResolver) DerivativeGraphKey() *string {
-	return r.derivativeGraphKey
+func (r *globblRbnkingSummbryResolver) DerivbtiveGrbphKey() *string {
+	return r.derivbtiveGrbphKey
 }
 
-func (r *globalRankingSummaryResolver) RankingSummary() []resolverstubs.RankingSummaryResolver {
+func (r *globblRbnkingSummbryResolver) RbnkingSummbry() []resolverstubs.RbnkingSummbryResolver {
 	return r.resolvers
 }
 
-func (r *globalRankingSummaryResolver) NextJobStartsAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.nextJobStartsAt)
+func (r *globblRbnkingSummbryResolver) NextJobStbrtsAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.nextJobStbrtsAt)
 }
 
-func (r *globalRankingSummaryResolver) NumExportedIndexes() int32 {
+func (r *globblRbnkingSummbryResolver) NumExportedIndexes() int32 {
 	return int32(r.counts.NumExportedIndexes)
 }
 
-func (r *globalRankingSummaryResolver) NumTargetIndexes() int32 {
-	return int32(r.counts.NumTargetIndexes)
+func (r *globblRbnkingSummbryResolver) NumTbrgetIndexes() int32 {
+	return int32(r.counts.NumTbrgetIndexes)
 }
 
-func (r *globalRankingSummaryResolver) NumRepositoriesWithoutCurrentRanks() int32 {
-	return int32(r.counts.NumRepositoriesWithoutCurrentRanks)
+func (r *globblRbnkingSummbryResolver) NumRepositoriesWithoutCurrentRbnks() int32 {
+	return int32(r.counts.NumRepositoriesWithoutCurrentRbnks)
 }
 
-type rankingSummaryResolver struct {
-	summary shared.Summary
+type rbnkingSummbryResolver struct {
+	summbry shbred.Summbry
 }
 
-func (r *rankingSummaryResolver) GraphKey() string {
-	return r.summary.GraphKey
+func (r *rbnkingSummbryResolver) GrbphKey() string {
+	return r.summbry.GrbphKey
 }
 
-func (r *rankingSummaryResolver) VisibleToZoekt() bool {
-	return r.summary.VisibleToZoekt
+func (r *rbnkingSummbryResolver) VisibleToZoekt() bool {
+	return r.summbry.VisibleToZoekt
 }
 
-func (r *rankingSummaryResolver) PathMapperProgress() resolverstubs.RankingSummaryProgressResolver {
-	return &progressResolver{progress: r.summary.PathMapperProgress}
+func (r *rbnkingSummbryResolver) PbthMbpperProgress() resolverstubs.RbnkingSummbryProgressResolver {
+	return &progressResolver{progress: r.summbry.PbthMbpperProgress}
 }
 
-func (r *rankingSummaryResolver) ReferenceMapperProgress() resolverstubs.RankingSummaryProgressResolver {
-	return &progressResolver{progress: r.summary.ReferenceMapperProgress}
+func (r *rbnkingSummbryResolver) ReferenceMbpperProgress() resolverstubs.RbnkingSummbryProgressResolver {
+	return &progressResolver{progress: r.summbry.ReferenceMbpperProgress}
 }
 
-func (r *rankingSummaryResolver) ReducerProgress() resolverstubs.RankingSummaryProgressResolver {
-	if r.summary.ReducerProgress == nil {
+func (r *rbnkingSummbryResolver) ReducerProgress() resolverstubs.RbnkingSummbryProgressResolver {
+	if r.summbry.ReducerProgress == nil {
 		return nil
 	}
 
-	return &progressResolver{progress: *r.summary.ReducerProgress}
+	return &progressResolver{progress: *r.summbry.ReducerProgress}
 }
 
 type progressResolver struct {
-	progress shared.Progress
+	progress shbred.Progress
 }
 
-func (r *progressResolver) StartedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.progress.StartedAt}
+func (r *progressResolver) StbrtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.progress.StbrtedAt}
 }
 
-func (r *progressResolver) CompletedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.progress.CompletedAt)
+func (r *progressResolver) CompletedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.progress.CompletedAt)
 }
 
 func (r *progressResolver) Processed() int32 {
 	return int32(r.progress.Processed)
 }
 
-func (r *progressResolver) Total() int32 {
-	return int32(r.progress.Total)
+func (r *progressResolver) Totbl() int32 {
+	return int32(r.progress.Totbl)
 }

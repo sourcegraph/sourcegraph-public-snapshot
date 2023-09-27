@@ -1,9 +1,9 @@
-//go:build !amd64 && !arm64
+//go:build !bmd64 && !brm64
 
-package embeddings
+pbckbge embeddings
 
-var haveDotArch = false
+vbr hbveDotArch = fblse
 
-func dotArch(a, b []int8) int32 {
-	panic("unimplemented")
+func dotArch(b, b []int8) int32 {
+	pbnic("unimplemented")
 }

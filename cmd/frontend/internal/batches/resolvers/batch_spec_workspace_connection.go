@@ -1,121 +1,121 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type batchSpecWorkspaceConnectionResolver struct {
+type bbtchSpecWorkspbceConnectionResolver struct {
 	store  *store.Store
 	logger log.Logger
-	opts   store.ListBatchSpecWorkspacesOpts
+	opts   store.ListBbtchSpecWorkspbcesOpts
 
-	// Cache results because they are used by multiple fields.
+	// Cbche results becbuse they bre used by multiple fields.
 	once       sync.Once
-	workspaces []*btypes.BatchSpecWorkspace
+	workspbces []*btypes.BbtchSpecWorkspbce
 	next       int64
 	err        error
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceConnectionResolver = &batchSpecWorkspaceConnectionResolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceConnectionResolver = &bbtchSpecWorkspbceConnectionResolver{}
 
-func (r *batchSpecWorkspaceConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchSpecWorkspaceResolver, error) {
+func (r *bbtchSpecWorkspbceConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.BbtchSpecWorkspbceResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) == 0 {
-		return []graphqlbackend.BatchSpecWorkspaceResolver{}, nil
+		return []grbphqlbbckend.BbtchSpecWorkspbceResolver{}, nil
 	}
 
-	nodeIDs := make([]int64, 0, len(nodes))
-	for _, n := range nodes {
-		nodeIDs = append(nodeIDs, n.ID)
+	nodeIDs := mbke([]int64, 0, len(nodes))
+	for _, n := rbnge nodes {
+		nodeIDs = bppend(nodeIDs, n.ID)
 	}
-	executions, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{BatchSpecWorkspaceIDs: nodeIDs})
+	executions, err := r.store.ListBbtchSpecWorkspbceExecutionJobs(ctx, store.ListBbtchSpecWorkspbceExecutionJobsOpts{BbtchSpecWorkspbceIDs: nodeIDs})
 	if err != nil {
 		return nil, err
 	}
-	executionsByWorkspaceID := make(map[int64]*btypes.BatchSpecWorkspaceExecutionJob)
-	for _, e := range executions {
-		executionsByWorkspaceID[e.BatchSpecWorkspaceID] = e
+	executionsByWorkspbceID := mbke(mbp[int64]*btypes.BbtchSpecWorkspbceExecutionJob)
+	for _, e := rbnge executions {
+		executionsByWorkspbceID[e.BbtchSpecWorkspbceID] = e
 	}
 
-	batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: r.opts.BatchSpecID})
+	bbtchSpec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: r.opts.BbtchSpecID})
 	if err != nil {
 		return nil, err
 	}
 
-	repoIDs := make([]api.RepoID, len(nodes))
-	for _, w := range nodes {
-		repoIDs = append(repoIDs, w.RepoID)
+	repoIDs := mbke([]bpi.RepoID, len(nodes))
+	for _, w := rbnge nodes {
+		repoIDs = bppend(repoIDs, w.RepoID)
 	}
 	repos, err := r.store.Repos().GetReposSetByIDs(ctx, repoIDs...)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceResolver, 0, len(nodes))
-	for _, w := range nodes {
-		res := newBatchSpecWorkspaceResolverWithRepo(r.store, r.logger, w, executionsByWorkspaceID[w.ID], batchSpec.Spec, repos[w.RepoID])
-		resolvers = append(resolvers, res)
+	resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceResolver, 0, len(nodes))
+	for _, w := rbnge nodes {
+		res := newBbtchSpecWorkspbceResolverWithRepo(r.store, r.logger, w, executionsByWorkspbceID[w.ID], bbtchSpec.Spec, repos[w.RepoID])
+		resolvers = bppend(resolvers, res)
 	}
 
 	return resolvers, nil
 }
 
-func (r *batchSpecWorkspaceConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountBatchSpecWorkspaces(ctx, r.opts)
+func (r *bbtchSpecWorkspbceConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	count, err := r.store.CountBbtchSpecWorkspbces(ctx, r.opts)
 	return int32(count), err
 }
 
-func (r *batchSpecWorkspaceConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *bbtchSpecWorkspbceConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next != 0 {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(int(next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *batchSpecWorkspaceConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecWorkspace, int64, error) {
+func (r *bbtchSpecWorkspbceConnectionResolver) compute(ctx context.Context) ([]*btypes.BbtchSpecWorkspbce, int64, error) {
 	r.once.Do(func() {
-		r.workspaces, r.next, r.err = r.store.ListBatchSpecWorkspaces(ctx, r.opts)
+		r.workspbces, r.next, r.err = r.store.ListBbtchSpecWorkspbces(ctx, r.opts)
 	})
-	return r.workspaces, r.next, r.err
+	return r.workspbces, r.next, r.err
 }
 
-func (r *batchSpecWorkspaceConnectionResolver) Stats(ctx context.Context) (graphqlbackend.BatchSpecWorkspacesStatsResolver, error) {
-	stats, err := r.store.GetBatchSpecStats(ctx, []int64{r.opts.BatchSpecID})
+func (r *bbtchSpecWorkspbceConnectionResolver) Stbts(ctx context.Context) (grbphqlbbckend.BbtchSpecWorkspbcesStbtsResolver, error) {
+	stbts, err := r.store.GetBbtchSpecStbts(ctx, []int64{r.opts.BbtchSpecID})
 	if err != nil {
 		return nil, err
 	}
-	stat, ok := stats[r.opts.BatchSpecID]
+	stbt, ok := stbts[r.opts.BbtchSpecID]
 	if !ok {
-		return nil, errors.New("stats not found")
+		return nil, errors.New("stbts not found")
 	}
-	return &batchSpecWorkspacesStatsResolver{
-		errored: int32(stat.Failed),
-		// We count cached workspaces as completed as well.
-		completed:  int32(stat.Completed + stat.CachedWorkspaces),
-		processing: int32(stat.Processing),
-		queued:     int32(stat.Queued),
-		// TODO: Handle more ignored cases here.
-		// Cached workspaces should not be considered ignored, although they
+	return &bbtchSpecWorkspbcesStbtsResolver{
+		errored: int32(stbt.Fbiled),
+		// We count cbched workspbces bs completed bs well.
+		completed:  int32(stbt.Completed + stbt.CbchedWorkspbces),
+		processing: int32(stbt.Processing),
+		queued:     int32(stbt.Queued),
+		// TODO: Hbndle more ignored cbses here.
+		// Cbched workspbces should not be considered ignored, blthough they
 		// were skipped for execution.
-		ignored: int32(stat.SkippedWorkspaces - stat.CachedWorkspaces),
+		ignored: int32(stbt.SkippedWorkspbces - stbt.CbchedWorkspbces),
 	}, nil
 }

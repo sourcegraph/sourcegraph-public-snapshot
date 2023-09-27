@@ -1,89 +1,89 @@
-package reposource
+pbckbge reposource
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const rubyPackagesPrefix = "rubygems/"
+const rubyPbckbgesPrefix = "rubygems/"
 
-type RubyVersionedPackage struct {
-	Name    PackageName
+type RubyVersionedPbckbge struct {
+	Nbme    PbckbgeNbme
 	Version string
 }
 
-func NewRubyVersionedPackage(name PackageName, version string) *RubyVersionedPackage {
-	return &RubyVersionedPackage{
-		Name:    name,
+func NewRubyVersionedPbckbge(nbme PbckbgeNbme, version string) *RubyVersionedPbckbge {
+	return &RubyVersionedPbckbge{
+		Nbme:    nbme,
 		Version: version,
 	}
 }
 
-// ParseRubyVersionedPackage parses a string in a '<name>(@version>)?' format into an
-// RubyVersionedPackage.
-func ParseRubyVersionedPackage(dependency string) *RubyVersionedPackage {
-	var dep RubyVersionedPackage
-	if i := strings.LastIndex(dependency, "@"); i == -1 {
-		dep.Name = PackageName(dependency)
+// PbrseRubyVersionedPbckbge pbrses b string in b '<nbme>(@version>)?' formbt into bn
+// RubyVersionedPbckbge.
+func PbrseRubyVersionedPbckbge(dependency string) *RubyVersionedPbckbge {
+	vbr dep RubyVersionedPbckbge
+	if i := strings.LbstIndex(dependency, "@"); i == -1 {
+		dep.Nbme = PbckbgeNbme(dependency)
 	} else {
-		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
-		dep.Version = strings.TrimSpace(dependency[i+1:])
+		dep.Nbme = PbckbgeNbme(strings.TrimSpbce(dependency[:i]))
+		dep.Version = strings.TrimSpbce(dependency[i+1:])
 	}
 	return &dep
 }
 
-func ParseRubyPackageFromName(name PackageName) *RubyVersionedPackage {
-	return ParseRubyVersionedPackage(string(name))
+func PbrseRubyPbckbgeFromNbme(nbme PbckbgeNbme) *RubyVersionedPbckbge {
+	return PbrseRubyVersionedPbckbge(string(nbme))
 }
 
-// ParseRubyPackageFromRepoName is a convenience function to parse a repo name in a
-// 'crates/<name>(@<version>)?' format into a RubyVersionedPackage.
-func ParseRubyPackageFromRepoName(name api.RepoName) (*RubyVersionedPackage, error) {
-	dependency := strings.TrimPrefix(string(name), rubyPackagesPrefix)
-	if len(dependency) == len(name) {
-		return nil, errors.Newf("invalid Ruby dependency repo name, missing %s prefix '%s'", rubyPackagesPrefix, name)
+// PbrseRubyPbckbgeFromRepoNbme is b convenience function to pbrse b repo nbme in b
+// 'crbtes/<nbme>(@<version>)?' formbt into b RubyVersionedPbckbge.
+func PbrseRubyPbckbgeFromRepoNbme(nbme bpi.RepoNbme) (*RubyVersionedPbckbge, error) {
+	dependency := strings.TrimPrefix(string(nbme), rubyPbckbgesPrefix)
+	if len(dependency) == len(nbme) {
+		return nil, errors.Newf("invblid Ruby dependency repo nbme, missing %s prefix '%s'", rubyPbckbgesPrefix, nbme)
 	}
-	return ParseRubyVersionedPackage(dependency), nil
+	return PbrseRubyVersionedPbckbge(dependency), nil
 }
 
-func (p *RubyVersionedPackage) Scheme() string {
+func (p *RubyVersionedPbckbge) Scheme() string {
 	return "scip-ruby"
 }
 
-func (p *RubyVersionedPackage) PackageSyntax() PackageName {
-	return p.Name
+func (p *RubyVersionedPbckbge) PbckbgeSyntbx() PbckbgeNbme {
+	return p.Nbme
 }
 
-func (p *RubyVersionedPackage) VersionedPackageSyntax() string {
+func (p *RubyVersionedPbckbge) VersionedPbckbgeSyntbx() string {
 	if p.Version == "" {
-		return string(p.Name)
+		return string(p.Nbme)
 	}
-	return string(p.Name) + "@" + p.Version
+	return string(p.Nbme) + "@" + p.Version
 }
 
-func (p *RubyVersionedPackage) PackageVersion() string {
+func (p *RubyVersionedPbckbge) PbckbgeVersion() string {
 	return p.Version
 }
 
-func (p *RubyVersionedPackage) Description() string { return "" }
+func (p *RubyVersionedPbckbge) Description() string { return "" }
 
-func (p *RubyVersionedPackage) RepoName() api.RepoName {
-	return api.RepoName(rubyPackagesPrefix + p.Name)
+func (p *RubyVersionedPbckbge) RepoNbme() bpi.RepoNbme {
+	return bpi.RepoNbme(rubyPbckbgesPrefix + p.Nbme)
 }
 
-func (p *RubyVersionedPackage) GitTagFromVersion() string {
+func (p *RubyVersionedPbckbge) GitTbgFromVersion() string {
 	version := strings.TrimPrefix(p.Version, "v")
 	return "v" + version
 }
 
-func (p *RubyVersionedPackage) Less(other VersionedPackage) bool {
-	o := other.(*RubyVersionedPackage)
+func (p *RubyVersionedPbckbge) Less(other VersionedPbckbge) bool {
+	o := other.(*RubyVersionedPbckbge)
 
-	if p.Name == o.Name {
-		return versionGreaterThan(p.Version, o.Version)
+	if p.Nbme == o.Nbme {
+		return versionGrebterThbn(p.Version, o.Version)
 	}
 
-	return p.Name > o.Name
+	return p.Nbme > o.Nbme
 }

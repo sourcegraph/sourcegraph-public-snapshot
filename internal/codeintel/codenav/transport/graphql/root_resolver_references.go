@@ -1,124 +1,124 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-const DefaultReferencesPageSize = 100
+const DefbultReferencesPbgeSize = 100
 
-// References returns the list of source locations that reference the symbol at the given position.
-func (r *gitBlobLSIFDataResolver) References(ctx context.Context, args *resolverstubs.LSIFPagedQueryPositionArgs) (_ resolverstubs.LocationConnectionResolver, err error) {
-	limit := int(pointers.Deref(args.First, DefaultReferencesPageSize))
+// References returns the list of source locbtions thbt reference the symbol bt the given position.
+func (r *gitBlobLSIFDbtbResolver) References(ctx context.Context, brgs *resolverstubs.LSIFPbgedQueryPositionArgs) (_ resolverstubs.LocbtionConnectionResolver, err error) {
+	limit := int(pointers.Deref(brgs.First, DefbultReferencesPbgeSize))
 	if limit <= 0 {
-		return nil, ErrIllegalLimit
+		return nil, ErrIllegblLimit
 	}
 
-	rawCursor, err := decodeCursor(args.After)
+	rbwCursor, err := decodeCursor(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
+	requestArgs := codenbv.PositionblRequestArgs{
+		RequestArgs: codenbv.RequestArgs{
+			RepositoryID: r.requestStbte.RepositoryID,
+			Commit:       r.requestStbte.Commit,
 			Limit:        limit,
-			RawCursor:    rawCursor,
+			RbwCursor:    rbwCursor,
 		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+		Pbth:      r.requestStbte.Pbth,
+		Line:      int(brgs.Line),
+		Chbrbcter: int(brgs.Chbrbcter),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.references, time.Second, getObservationArgs(requestArgs))
-	defer endObservation()
+	ctx, _, endObservbtion := observeResolver(ctx, &err, r.operbtions.references, time.Second, getObservbtionArgs(requestArgs))
+	defer endObservbtion()
 
-	// Decode cursor given from previous response or create a new one with default values.
-	// We use the cursor state track offsets with the result set and cache initial data that
-	// is used to resolve each page. This cursor will be modified in-place to become the
-	// cursor used to fetch the subsequent page of results in this result set.
-	var nextCursor string
-	cursor, err := decodeTraversalCursor(requestArgs.RawCursor)
+	// Decode cursor given from previous response or crebte b new one with defbult vblues.
+	// We use the cursor stbte trbck offsets with the result set bnd cbche initibl dbtb thbt
+	// is used to resolve ebch pbge. This cursor will be modified in-plbce to become the
+	// cursor used to fetch the subsequent pbge of results in this result set.
+	vbr nextCursor string
+	cursor, err := decodeTrbversblCursor(requestArgs.RbwCursor)
 	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("invalid cursor: %q", rawCursor))
+		return nil, errors.Wrbp(err, fmt.Sprintf("invblid cursor: %q", rbwCursor))
 	}
 
-	refs, refCursor, err := r.codeNavSvc.NewGetReferences(ctx, requestArgs, r.requestState, cursor)
+	refs, refCursor, err := r.codeNbvSvc.NewGetReferences(ctx, requestArgs, r.requestStbte, cursor)
 	if err != nil {
-		return nil, errors.Wrap(err, "svc.GetReferences")
+		return nil, errors.Wrbp(err, "svc.GetReferences")
 	}
 
-	if refCursor.Phase != "done" {
-		nextCursor = encodeTraversalCursor(refCursor)
+	if refCursor.Phbse != "done" {
+		nextCursor = encodeTrbversblCursor(refCursor)
 	}
 
-	if args.Filter != nil && *args.Filter != "" {
+	if brgs.Filter != nil && *brgs.Filter != "" {
 		filtered := refs[:0]
-		for _, loc := range refs {
-			if strings.Contains(loc.Path, *args.Filter) {
-				filtered = append(filtered, loc)
+		for _, loc := rbnge refs {
+			if strings.Contbins(loc.Pbth, *brgs.Filter) {
+				filtered = bppend(filtered, loc)
 			}
 		}
 		refs = filtered
 	}
 
-	return newLocationConnectionResolver(refs, pointers.NonZeroPtr(nextCursor), r.locationResolver), nil
+	return newLocbtionConnectionResolver(refs, pointers.NonZeroPtr(nextCursor), r.locbtionResolver), nil
 }
 
 //
 //
 
-func decodeTraversalCursor(rawEncoded string) (codenav.Cursor, error) {
-	if rawEncoded == "" {
-		return codenav.Cursor{}, nil
+func decodeTrbversblCursor(rbwEncoded string) (codenbv.Cursor, error) {
+	if rbwEncoded == "" {
+		return codenbv.Cursor{}, nil
 	}
 
-	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
+	rbw, err := bbse64.RbwURLEncoding.DecodeString(rbwEncoded)
 	if err != nil {
-		return codenav.Cursor{}, err
+		return codenbv.Cursor{}, err
 	}
 
-	var cursor codenav.Cursor
-	err = json.Unmarshal(raw, &cursor)
+	vbr cursor codenbv.Cursor
+	err = json.Unmbrshbl(rbw, &cursor)
 	return cursor, err
 }
 
-func encodeTraversalCursor(cursor codenav.Cursor) string {
-	rawEncoded, _ := json.Marshal(cursor)
-	return base64.RawURLEncoding.EncodeToString(rawEncoded)
+func encodeTrbversblCursor(cursor codenbv.Cursor) string {
+	rbwEncoded, _ := json.Mbrshbl(cursor)
+	return bbse64.RbwURLEncoding.EncodeToString(rbwEncoded)
 }
 
 //
 //
 
 // decodeReferencesCursor is the inverse of encodeCursor. If the given encoded string is empty, then
-// a fresh cursor is returned.
-func decodeReferencesCursor(rawEncoded string) (codenav.ReferencesCursor, error) {
-	if rawEncoded == "" {
-		return codenav.ReferencesCursor{Phase: "local"}, nil
+// b fresh cursor is returned.
+func decodeReferencesCursor(rbwEncoded string) (codenbv.ReferencesCursor, error) {
+	if rbwEncoded == "" {
+		return codenbv.ReferencesCursor{Phbse: "locbl"}, nil
 	}
 
-	raw, err := base64.RawURLEncoding.DecodeString(rawEncoded)
+	rbw, err := bbse64.RbwURLEncoding.DecodeString(rbwEncoded)
 	if err != nil {
-		return codenav.ReferencesCursor{}, err
+		return codenbv.ReferencesCursor{}, err
 	}
 
-	var cursor codenav.ReferencesCursor
-	err = json.Unmarshal(raw, &cursor)
+	vbr cursor codenbv.ReferencesCursor
+	err = json.Unmbrshbl(rbw, &cursor)
 	return cursor, err
 }
 
-// encodeReferencesCursor returns an encoding of the given cursor suitable for a URL or a GraphQL token.
-func encodeReferencesCursor(cursor codenav.ReferencesCursor) string {
-	rawEncoded, _ := json.Marshal(cursor)
-	return base64.RawURLEncoding.EncodeToString(rawEncoded)
+// encodeReferencesCursor returns bn encoding of the given cursor suitbble for b URL or b GrbphQL token.
+func encodeReferencesCursor(cursor codenbv.ReferencesCursor) string {
+	rbwEncoded, _ := json.Mbrshbl(cursor)
+	return bbse64.RbwURLEncoding.EncodeToString(rbwEncoded)
 }

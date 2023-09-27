@@ -1,24 +1,24 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import "context"
 
-// storeIface is an interface of the Store methods used by Runner.
-type storeIface interface {
-	Transact(ctx context.Context) (storeIface, error)
+// storeIfbce is bn interfbce of the Store methods used by Runner.
+type storeIfbce interfbce {
+	Trbnsbct(ctx context.Context) (storeIfbce, error)
 	Done(err error) error
 
-	SynchronizeMetadata(ctx context.Context) error
-	List(ctx context.Context) ([]Migration, error)
-	UpdateDirection(ctx context.Context, id int, applyReverse bool) error
-	UpdateProgress(ctx context.Context, id int, progress float64) error
-	AddError(ctx context.Context, id int, message string) error
+	SynchronizeMetbdbtb(ctx context.Context) error
+	List(ctx context.Context) ([]Migrbtion, error)
+	UpdbteDirection(ctx context.Context, id int, bpplyReverse bool) error
+	UpdbteProgress(ctx context.Context, id int, progress flobt64) error
+	AddError(ctx context.Context, id int, messbge string) error
 }
 
 type storeShim struct {
 	*Store
 }
 
-func (s *storeShim) Transact(ctx context.Context) (storeIface, error) {
-	tx, err := s.Store.Transact(ctx)
+func (s *storeShim) Trbnsbct(ctx context.Context) (storeIfbce, error) {
+	tx, err := s.Store.Trbnsbct(ctx)
 	return &storeShim{tx}, err
 }

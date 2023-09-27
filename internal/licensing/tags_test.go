@@ -1,68 +1,68 @@
-package licensing
+pbckbge licensing
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestProductNameWithBrand(t *testing.T) {
+func TestProductNbmeWithBrbnd(t *testing.T) {
 	tests := []struct {
-		hasLicense  bool
-		licenseTags []string
-		want        string
+		hbsLicense  bool
+		licenseTbgs []string
+		wbnt        string
 	}{
-		{hasLicense: false, want: "Sourcegraph Free"},
-		{hasLicense: true, licenseTags: nil, want: "Sourcegraph Enterprise"},
-		{hasLicense: true, licenseTags: []string{}, want: "Sourcegraph Enterprise"},
-		{hasLicense: true, licenseTags: []string{"x"}, want: "Sourcegraph Enterprise"}, // unrecognized tag "x" is ignored
-		{hasLicense: true, licenseTags: []string{"starter"}, want: "Sourcegraph Enterprise Starter"},
-		{hasLicense: true, licenseTags: []string{"trial"}, want: "Sourcegraph Enterprise (trial)"},
-		{hasLicense: true, licenseTags: []string{"dev"}, want: "Sourcegraph Enterprise (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"starter", "trial"}, want: "Sourcegraph Enterprise Starter (trial)"},
-		{hasLicense: true, licenseTags: []string{"starter", "dev"}, want: "Sourcegraph Enterprise Starter (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"starter", "trial", "dev"}, want: "Sourcegraph Enterprise Starter (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"trial", "dev"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"internal"}, want: "Sourcegraph Enterprise (internal use only)"},
+		{hbsLicense: fblse, wbnt: "Sourcegrbph Free"},
+		{hbsLicense: true, licenseTbgs: nil, wbnt: "Sourcegrbph Enterprise"},
+		{hbsLicense: true, licenseTbgs: []string{}, wbnt: "Sourcegrbph Enterprise"},
+		{hbsLicense: true, licenseTbgs: []string{"x"}, wbnt: "Sourcegrbph Enterprise"}, // unrecognized tbg "x" is ignored
+		{hbsLicense: true, licenseTbgs: []string{"stbrter"}, wbnt: "Sourcegrbph Enterprise Stbrter"},
+		{hbsLicense: true, licenseTbgs: []string{"tribl"}, wbnt: "Sourcegrbph Enterprise (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"dev"}, wbnt: "Sourcegrbph Enterprise (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"stbrter", "tribl"}, wbnt: "Sourcegrbph Enterprise Stbrter (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"stbrter", "dev"}, wbnt: "Sourcegrbph Enterprise Stbrter (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"stbrter", "tribl", "dev"}, wbnt: "Sourcegrbph Enterprise Stbrter (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"tribl", "dev"}, wbnt: "Sourcegrbph Enterprise (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"internbl"}, wbnt: "Sourcegrbph Enterprise (internbl use only)"},
 
-		{hasLicense: true, licenseTags: []string{"team"}, want: "Sourcegraph Team"},
-		{hasLicense: true, licenseTags: []string{"starter", "team"}, want: "Sourcegraph Team"}, // Team should overrule the old Starter plan
-		{hasLicense: true, licenseTags: []string{"team", "trial"}, want: "Sourcegraph Team (trial)"},
-		{hasLicense: true, licenseTags: []string{"team", "dev"}, want: "Sourcegraph Team (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"team", "dev", "trial"}, want: "Sourcegraph Team (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"team", "internal"}, want: "Sourcegraph Team (internal use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"tebm"}, wbnt: "Sourcegrbph Tebm"},
+		{hbsLicense: true, licenseTbgs: []string{"stbrter", "tebm"}, wbnt: "Sourcegrbph Tebm"}, // Tebm should overrule the old Stbrter plbn
+		{hbsLicense: true, licenseTbgs: []string{"tebm", "tribl"}, wbnt: "Sourcegrbph Tebm (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"tebm", "dev"}, wbnt: "Sourcegrbph Tebm (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"tebm", "dev", "tribl"}, wbnt: "Sourcegrbph Tebm (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"tebm", "internbl"}, wbnt: "Sourcegrbph Tebm (internbl use only)"},
 
-		{hasLicense: true, licenseTags: []string{"plan:team-0"}, want: "Sourcegraph Team"},
-		{hasLicense: true, licenseTags: []string{"plan:team-0", "starter"}, want: "Sourcegraph Team"}, // Team should overrule the old Starter plan
-		{hasLicense: true, licenseTags: []string{"plan:team-0", "trial"}, want: "Sourcegraph Team (trial)"},
-		{hasLicense: true, licenseTags: []string{"plan:team-0", "dev"}, want: "Sourcegraph Team (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:team-0", "dev", "trial"}, want: "Sourcegraph Team (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:team-0", "internal"}, want: "Sourcegraph Team (internal use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:tebm-0"}, wbnt: "Sourcegrbph Tebm"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:tebm-0", "stbrter"}, wbnt: "Sourcegrbph Tebm"}, // Tebm should overrule the old Stbrter plbn
+		{hbsLicense: true, licenseTbgs: []string{"plbn:tebm-0", "tribl"}, wbnt: "Sourcegrbph Tebm (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:tebm-0", "dev"}, wbnt: "Sourcegrbph Tebm (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:tebm-0", "dev", "tribl"}, wbnt: "Sourcegrbph Tebm (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:tebm-0", "internbl"}, wbnt: "Sourcegrbph Tebm (internbl use only)"},
 
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-0"}, want: "Sourcegraph Enterprise"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "starter"}, want: "Sourcegraph Enterprise"}, // Enterprise should overrule the old Starter plan
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "trial"}, want: "Sourcegraph Enterprise (trial)"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "dev"}, want: "Sourcegraph Enterprise (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "dev", "trial"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-0", "internal"}, want: "Sourcegraph Enterprise (internal use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-0"}, wbnt: "Sourcegrbph Enterprise"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-0", "stbrter"}, wbnt: "Sourcegrbph Enterprise"}, // Enterprise should overrule the old Stbrter plbn
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-0", "tribl"}, wbnt: "Sourcegrbph Enterprise (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-0", "dev"}, wbnt: "Sourcegrbph Enterprise (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-0", "dev", "tribl"}, wbnt: "Sourcegrbph Enterprise (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-0", "internbl"}, wbnt: "Sourcegrbph Enterprise (internbl use only)"},
 
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-1"}, want: "Sourcegraph Enterprise"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "starter"}, want: "Sourcegraph Enterprise"}, // Enterprise should overrule the old Starter plan
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "trial"}, want: "Sourcegraph Enterprise (trial)"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "dev"}, want: "Sourcegraph Enterprise (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "dev", "trial"}, want: "Sourcegraph Enterprise (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:enterprise-1", "internal"}, want: "Sourcegraph Enterprise (internal use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-1"}, wbnt: "Sourcegrbph Enterprise"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-1", "stbrter"}, wbnt: "Sourcegrbph Enterprise"}, // Enterprise should overrule the old Stbrter plbn
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-1", "tribl"}, wbnt: "Sourcegrbph Enterprise (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-1", "dev"}, wbnt: "Sourcegrbph Enterprise (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-1", "dev", "tribl"}, wbnt: "Sourcegrbph Enterprise (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:enterprise-1", "internbl"}, wbnt: "Sourcegrbph Enterprise (internbl use only)"},
 
-		{hasLicense: true, licenseTags: []string{"plan:business-0"}, want: "Sourcegraph Business"},
-		{hasLicense: true, licenseTags: []string{"plan:business-0", "trial"}, want: "Sourcegraph Business (trial)"},
-		{hasLicense: true, licenseTags: []string{"plan:business-0", "dev"}, want: "Sourcegraph Business (dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:business-0", "dev", "trial"}, want: "Sourcegraph Business (trial, dev use only)"},
-		{hasLicense: true, licenseTags: []string{"plan:business-0", "internal"}, want: "Sourcegraph Business (internal use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:business-0"}, wbnt: "Sourcegrbph Business"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:business-0", "tribl"}, wbnt: "Sourcegrbph Business (tribl)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:business-0", "dev"}, wbnt: "Sourcegrbph Business (dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:business-0", "dev", "tribl"}, wbnt: "Sourcegrbph Business (tribl, dev use only)"},
+		{hbsLicense: true, licenseTbgs: []string{"plbn:business-0", "internbl"}, wbnt: "Sourcegrbph Business (internbl use only)"},
 	}
-	for _, test := range tests {
-		t.Run(fmt.Sprintf("hasLicense=%v licenseTags=%v", test.hasLicense, test.licenseTags), func(t *testing.T) {
-			assert.Equal(t, test.want, ProductNameWithBrand(test.hasLicense, test.licenseTags))
+	for _, test := rbnge tests {
+		t.Run(fmt.Sprintf("hbsLicense=%v licenseTbgs=%v", test.hbsLicense, test.licenseTbgs), func(t *testing.T) {
+			bssert.Equbl(t, test.wbnt, ProductNbmeWithBrbnd(test.hbsLicense, test.licenseTbgs))
 		})
 	}
 }

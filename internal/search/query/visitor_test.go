@@ -1,53 +1,53 @@
-package query
+pbckbge query
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
 func TestSubstitute(t *testing.T) {
 	test := func(input string) string {
-		q, _ := ParseLiteral(input)
-		var result string
-		VisitPredicate(q, func(field, name, value string, negated bool) {
-			if field == FieldRepo && name == "contains.file" {
-				result = "contains.file value is " + value
+		q, _ := PbrseLiterbl(input)
+		vbr result string
+		VisitPredicbte(q, func(field, nbme, vblue string, negbted bool) {
+			if field == FieldRepo && nbme == "contbins.file" {
+				result = "contbins.file vblue is " + vblue
 			}
 		})
 		return result
 	}
 
-	autogold.Expect("contains.file value is path:foo").
-		Equal(t, test("repo:contains.file(path:foo)"))
+	butogold.Expect("contbins.file vblue is pbth:foo").
+		Equbl(t, test("repo:contbins.file(pbth:foo)"))
 }
 
-func TestVisitTypedPredicate(t *testing.T) {
-	cases := []struct {
+func TestVisitTypedPredicbte(t *testing.T) {
+	cbses := []struct {
 		query  string
-		output autogold.Value
+		output butogold.Vblue
 	}{{
 		"repo:test",
-		autogold.Expect([]*RepoContainsFilePredicate{}),
+		butogold.Expect([]*RepoContbinsFilePredicbte{}),
 	}, {
-		"repo:test repo:contains.file(path:test)",
-		autogold.Expect([]*RepoContainsFilePredicate{{Path: "test"}}),
+		"repo:test repo:contbins.file(pbth:test)",
+		butogold.Expect([]*RepoContbinsFilePredicbte{{Pbth: "test"}}),
 	}, {
-		"repo:test repo:has.file(path:test)",
-		autogold.Expect([]*RepoContainsFilePredicate{{Path: "test"}}),
+		"repo:test repo:hbs.file(pbth:test)",
+		butogold.Expect([]*RepoContbinsFilePredicbte{{Pbth: "test"}}),
 	}, {
-		"repo:test repo:contains.file(test)",
-		autogold.Expect([]*RepoContainsFilePredicate{{Path: "test"}}),
+		"repo:test repo:contbins.file(test)",
+		butogold.Expect([]*RepoContbinsFilePredicbte{{Pbth: "test"}}),
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run(tc.query, func(t *testing.T) {
-			q, _ := ParseLiteral(tc.query)
-			var result []*RepoContainsFilePredicate
-			VisitTypedPredicate(q, func(pred *RepoContainsFilePredicate) {
-				result = append(result, pred)
+			q, _ := PbrseLiterbl(tc.query)
+			vbr result []*RepoContbinsFilePredicbte
+			VisitTypedPredicbte(q, func(pred *RepoContbinsFilePredicbte) {
+				result = bppend(result, pred)
 			})
-			tc.output.Equal(t, result)
+			tc.output.Equbl(t, result)
 		})
 	}
 }

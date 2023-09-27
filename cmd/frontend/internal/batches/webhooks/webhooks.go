@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -7,20 +7,20 @@ import (
 	"net/http"
 	"strconv"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/stbte"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type webhook struct {
@@ -28,99 +28,99 @@ type webhook struct {
 	gitserverClient gitserver.Client
 	logger          sglog.Logger
 
-	// ServiceType corresponds to api.ExternalRepoSpec.ServiceType
-	// Example values: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
+	// ServiceType corresponds to bpi.ExternblRepoSpec.ServiceType
+	// Exbmple vblues: extsvc.TypeBitbucketServer, extsvc.TypeGitHub
 	ServiceType string
 }
 
 type PR struct {
 	ID             int64
-	RepoExternalID string
+	RepoExternblID string
 }
 
 func (h webhook) getRepoForPR(
 	ctx context.Context,
 	tx *store.Store,
 	pr PR,
-	externalServiceID extsvc.CodeHostBaseURL,
+	externblServiceID extsvc.CodeHostBbseURL,
 ) (*types.Repo, error) {
-	rs, err := tx.Repos().List(ctx, database.ReposListOptions{
-		ExternalRepos: []api.ExternalRepoSpec{
+	rs, err := tx.Repos().List(ctx, dbtbbbse.ReposListOptions{
+		ExternblRepos: []bpi.ExternblRepoSpec{
 			{
-				ID:          pr.RepoExternalID,
+				ID:          pr.RepoExternblID,
 				ServiceType: h.ServiceType,
-				ServiceID:   externalServiceID.String(),
+				ServiceID:   externblServiceID.String(),
 			},
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load repository")
+		return nil, errors.Wrbp(err, "fbiled to lobd repository")
 	}
 
 	if len(rs) != 1 {
-		return nil, errors.Errorf("fetched repositories have wrong length: %d", len(rs))
+		return nil, errors.Errorf("fetched repositories hbve wrong length: %d", len(rs))
 	}
 
 	return rs[0], nil
 }
 
-func extractExternalServiceID(ctx context.Context, extSvc *types.ExternalService) (extsvc.CodeHostBaseURL, error) {
-	c, err := extSvc.Configuration(ctx)
+func extrbctExternblServiceID(ctx context.Context, extSvc *types.ExternblService) (extsvc.CodeHostBbseURL, error) {
+	c, err := extSvc.Configurbtion(ctx)
 	if err != nil {
-		return extsvc.CodeHostBaseURL{}, errors.Wrap(err, "failed to get external service config")
+		return extsvc.CodeHostBbseURL{}, errors.Wrbp(err, "fbiled to get externbl service config")
 	}
 
-	var serviceID string
+	vbr serviceID string
 	switch c := c.(type) {
-	case *schema.GitHubConnection:
+	cbse *schemb.GitHubConnection:
 		serviceID = c.Url
-	case *schema.BitbucketServerConnection:
+	cbse *schemb.BitbucketServerConnection:
 		serviceID = c.Url
-	case *schema.GitLabConnection:
+	cbse *schemb.GitLbbConnection:
 		serviceID = c.Url
-	case *schema.BitbucketCloudConnection:
+	cbse *schemb.BitbucketCloudConnection:
 		serviceID = c.Url
-	case *schema.AzureDevOpsConnection:
+	cbse *schemb.AzureDevOpsConnection:
 		serviceID = c.Url
 	}
 	if serviceID == "" {
-		return extsvc.CodeHostBaseURL{}, errors.Errorf("could not determine service id for external service %d", extSvc.ID)
+		return extsvc.CodeHostBbseURL{}, errors.Errorf("could not determine service id for externbl service %d", extSvc.ID)
 	}
 
-	return extsvc.NewCodeHostBaseURL(serviceID)
+	return extsvc.NewCodeHostBbseURL(serviceID)
 }
 
-type keyer interface {
+type keyer interfbce {
 	Key() string
 }
 
-func (h webhook) upsertChangesetEvent(
+func (h webhook) upsertChbngesetEvent(
 	ctx context.Context,
-	externalServiceID extsvc.CodeHostBaseURL,
+	externblServiceID extsvc.CodeHostBbseURL,
 	pr PR,
 	ev keyer,
 ) (err error) {
-	var tx *store.Store
-	if tx, err = h.Store.Transact(ctx); err != nil {
+	vbr tx *store.Store
+	if tx, err = h.Store.Trbnsbct(ctx); err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	r, err := h.getRepoForPR(ctx, tx, pr, externalServiceID)
+	r, err := h.getRepoForPR(ctx, tx, pr, externblServiceID)
 	if err != nil {
-		log15.Warn("Webhook event could not be matched to repo", "err", err)
+		log15.Wbrn("Webhook event could not be mbtched to repo", "err", err)
 		return nil
 	}
 
-	var kind btypes.ChangesetEventKind
-	if kind, err = btypes.ChangesetEventKindFor(ev); err != nil {
+	vbr kind btypes.ChbngesetEventKind
+	if kind, err = btypes.ChbngesetEventKindFor(ev); err != nil {
 		return err
 	}
 
-	cs, err := tx.GetChangeset(ctx, store.GetChangesetOpts{
+	cs, err := tx.GetChbngeset(ctx, store.GetChbngesetOpts{
 		RepoID:              r.ID,
-		ExternalID:          strconv.FormatInt(pr.ID, 10),
-		ExternalServiceType: h.ServiceType,
+		ExternblID:          strconv.FormbtInt(pr.ID, 10),
+		ExternblServiceType: h.ServiceType,
 	})
 	if err != nil {
 		if err == store.ErrNoResults {
@@ -130,17 +130,17 @@ func (h webhook) upsertChangesetEvent(
 	}
 
 	now := h.Store.Clock()()
-	event := &btypes.ChangesetEvent{
-		ChangesetID: cs.ID,
+	event := &btypes.ChbngesetEvent{
+		ChbngesetID: cs.ID,
 		Kind:        kind,
 		Key:         ev.Key(),
-		CreatedAt:   now,
-		UpdatedAt:   now,
-		Metadata:    ev,
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
+		Metbdbtb:    ev,
 	}
 
-	existing, err := tx.GetChangesetEvent(ctx, store.GetChangesetEventOpts{
-		ChangesetID: cs.ID,
+	existing, err := tx.GetChbngesetEvent(ctx, store.GetChbngesetEventOpts{
+		ChbngesetID: cs.ID,
 		Kind:        event.Kind,
 		Key:         event.Key,
 	})
@@ -150,30 +150,30 @@ func (h webhook) upsertChangesetEvent(
 	}
 
 	if existing != nil {
-		// Update is used to create or update the record in the database,
-		// but we're actually "patching" the record with specific merge semantics
-		// encoded in Update. This is because some webhooks payloads don't contain
-		// all the information that we can get from the API, so we only update the
-		// bits that we know are more up to date and leave the others as they were.
-		if err := existing.Update(event); err != nil {
+		// Updbte is used to crebte or updbte the record in the dbtbbbse,
+		// but we're bctublly "pbtching" the record with specific merge sembntics
+		// encoded in Updbte. This is becbuse some webhooks pbylobds don't contbin
+		// bll the informbtion thbt we cbn get from the API, so we only updbte the
+		// bits thbt we know bre more up to dbte bnd lebve the others bs they were.
+		if err := existing.Updbte(event); err != nil {
 			return err
 		}
 		event = existing
 	}
 
 	// Add new event
-	if err := tx.UpsertChangesetEvents(ctx, event); err != nil {
+	if err := tx.UpsertChbngesetEvents(ctx, event); err != nil {
 		return err
 	}
 
-	// The webhook may have caused the external state of the changeset to change
-	// so we need to update it. We need all events as we may have received more than just the
-	// event we are currently handling
-	events, _, err := tx.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{cs.ID},
+	// The webhook mby hbve cbused the externbl stbte of the chbngeset to chbnge
+	// so we need to updbte it. We need bll events bs we mby hbve received more thbn just the
+	// event we bre currently hbndling
+	events, _, err := tx.ListChbngesetEvents(ctx, store.ListChbngesetEventsOpts{
+		ChbngesetIDs: []int64{cs.ID},
 	})
-	state.SetDerivedState(ctx, tx.Repos(), h.gitserverClient, cs, events)
-	if err := tx.UpdateChangesetCodeHostState(ctx, cs); err != nil {
+	stbte.SetDerivedStbte(ctx, tx.Repos(), h.gitserverClient, cs, events)
+	if err := tx.UpdbteChbngesetCodeHostStbte(ctx, cs); err != nil {
 		return err
 	}
 
@@ -189,31 +189,31 @@ func (e httpError) Error() string {
 	if e.err != nil {
 		return fmt.Sprintf("HTTP %d: %v", e.code, e.err)
 	}
-	return fmt.Sprintf("HTTP %d: %s", e.code, http.StatusText(e.code))
+	return fmt.Sprintf("HTTP %d: %s", e.code, http.StbtusText(e.code))
 }
 
-func respond(w http.ResponseWriter, code int, v any) {
-	switch val := v.(type) {
-	case nil:
-		w.WriteHeader(code)
-	case error:
-		if val != nil {
-			log15.Error(val.Error())
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(code)
-			fmt.Fprintf(w, "%v", val)
+func respond(w http.ResponseWriter, code int, v bny) {
+	switch vbl := v.(type) {
+	cbse nil:
+		w.WriteHebder(code)
+	cbse error:
+		if vbl != nil {
+			log15.Error(vbl.Error())
+			w.Hebder().Set("Content-Type", "text/plbin; chbrset=utf-8")
+			w.WriteHebder(code)
+			fmt.Fprintf(w, "%v", vbl)
 		}
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		bs, err := json.Marshal(v)
+	defbult:
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
+		bs, err := json.Mbrshbl(v)
 		if err != nil {
-			respond(w, http.StatusInternalServerError, err)
+			respond(w, http.StbtusInternblServerError, err)
 			return
 		}
 
-		w.WriteHeader(code)
+		w.WriteHebder(code)
 		if _, err = w.Write(bs); err != nil {
-			log15.Error("failed to write response", "error", err)
+			log15.Error("fbiled to write response", "error", err)
 		}
 	}
 }

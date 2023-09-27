@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,153 +7,153 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestBulkOperationResolver(t *testing.T) {
+func TestBulkOperbtionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
-	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
-	changeset1 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test", userID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test", userID, bbtchSpec.ID)
+	repos, _ := bt.CrebteTestRepos(t, ctx, db, 3)
+	chbngeset1 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repos[0].ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
-	changeset2 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	chbngeset2 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repos[1].ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
-	changeset3 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	chbngeset3 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repos[2].ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
 	bt.MockRepoPermissions(t, db, userID, repos[0].ID, repos[1].ID)
 
 	bulkGroupID := "test-group"
-	errorMsg := "Very bad error."
+	errorMsg := "Very bbd error."
 
-	jobs := []*btypes.ChangesetJob{
-		// Accessible and failed.
+	jobs := []*btypes.ChbngesetJob{
+		// Accessible bnd fbiled.
 		{
 			BulkGroup:      bulkGroupID,
 			UserID:         userID,
-			BatchChangeID:  batchChange.ID,
-			ChangesetID:    changeset1.ID,
-			JobType:        btypes.ChangesetJobTypeComment,
-			Payload:        btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:          btypes.ChangesetJobStateFailed,
-			FailureMessage: pointers.Ptr(errorMsg),
-			StartedAt:      now,
+			BbtchChbngeID:  bbtchChbnge.ID,
+			ChbngesetID:    chbngeset1.ID,
+			JobType:        btypes.ChbngesetJobTypeComment,
+			Pbylobd:        btypes.ChbngesetJobCommentPbylobd{Messbge: "test"},
+			Stbte:          btypes.ChbngesetJobStbteFbiled,
+			FbilureMessbge: pointers.Ptr(errorMsg),
+			StbrtedAt:      now,
 			FinishedAt:     now,
 		},
-		// Accessible and successful.
+		// Accessible bnd successful.
 		{
 			BulkGroup:     bulkGroupID,
 			UserID:        userID,
-			BatchChangeID: batchChange.ID,
-			ChangesetID:   changeset2.ID,
-			JobType:       btypes.ChangesetJobTypeComment,
-			Payload:       btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:         btypes.ChangesetJobStateQueued,
-			StartedAt:     now,
+			BbtchChbngeID: bbtchChbnge.ID,
+			ChbngesetID:   chbngeset2.ID,
+			JobType:       btypes.ChbngesetJobTypeComment,
+			Pbylobd:       btypes.ChbngesetJobCommentPbylobd{Messbge: "test"},
+			Stbte:         btypes.ChbngesetJobStbteQueued,
+			StbrtedAt:     now,
 		},
-		// Not accessible and failed.
+		// Not bccessible bnd fbiled.
 		{
 			BulkGroup:      bulkGroupID,
 			UserID:         userID,
-			BatchChangeID:  batchChange.ID,
-			ChangesetID:    changeset3.ID,
-			JobType:        btypes.ChangesetJobTypeComment,
-			Payload:        btypes.ChangesetJobCommentPayload{Message: "test"},
-			State:          btypes.ChangesetJobStateFailed,
-			FailureMessage: pointers.Ptr(errorMsg),
-			StartedAt:      now,
+			BbtchChbngeID:  bbtchChbnge.ID,
+			ChbngesetID:    chbngeset3.ID,
+			JobType:        btypes.ChbngesetJobTypeComment,
+			Pbylobd:        btypes.ChbngesetJobCommentPbylobd{Messbge: "test"},
+			Stbte:          btypes.ChbngesetJobStbteFbiled,
+			FbilureMessbge: pointers.Ptr(errorMsg),
+			StbrtedAt:      now,
 			FinishedAt:     now,
 		},
 	}
-	if err := bstore.CreateChangesetJob(ctx, jobs...); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteChbngesetJob(ctx, jobs...); err != nil {
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	bulkOperationAPIID := string(marshalBulkOperationID(bulkGroupID))
-	wantBatchChange := apitest.BulkOperation{
-		ID:       bulkOperationAPIID,
+	bulkOperbtionAPIID := string(mbrshblBulkOperbtionID(bulkGroupID))
+	wbntBbtchChbnge := bpitest.BulkOperbtion{
+		ID:       bulkOperbtionAPIID,
 		Type:     "COMMENT",
-		State:    string(btypes.BulkOperationStateProcessing),
+		Stbte:    string(btypes.BulkOperbtionStbteProcessing),
 		Progress: 2.0 / 3.0,
-		Errors: []*apitest.ChangesetJobError{
+		Errors: []*bpitest.ChbngesetJobError{
 			{
-				Changeset: &apitest.Changeset{ID: string(bgql.MarshalChangesetID(changeset1.ID))},
+				Chbngeset: &bpitest.Chbngeset{ID: string(bgql.MbrshblChbngesetID(chbngeset1.ID))},
 				Error:     pointers.Ptr(errorMsg),
 			},
 			{
-				Changeset: &apitest.Changeset{ID: string(bgql.MarshalChangesetID(changeset3.ID))},
+				Chbngeset: &bpitest.Chbngeset{ID: string(bgql.MbrshblChbngesetID(chbngeset3.ID))},
 				// Error should not be exposed.
 				Error: nil,
 			},
 		},
-		CreatedAt: marshalDateTime(t, now),
+		CrebtedAt: mbrshblDbteTime(t, now),
 		// Not finished.
 		FinishedAt: "",
 	}
 
-	input := map[string]any{"bulkOperation": bulkOperationAPIID}
-	var response struct{ Node apitest.BulkOperation }
-	apitest.MustExec(actor.WithActor(ctx, actor.FromUser(userID)), t, s, input, &response, queryBulkOperation)
+	input := mbp[string]bny{"bulkOperbtion": bulkOperbtionAPIID}
+	vbr response struct{ Node bpitest.BulkOperbtion }
+	bpitest.MustExec(bctor.WithActor(ctx, bctor.FromUser(userID)), t, s, input, &response, queryBulkOperbtion)
 
-	if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
-		t.Fatalf("wrong bulk operation response (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntBbtchChbnge, response.Node); diff != "" {
+		t.Fbtblf("wrong bulk operbtion response (-wbnt +got):\n%s", diff)
 	}
 }
 
-const queryBulkOperation = `
-query($bulkOperation: ID!){
-  node(id: $bulkOperation) {
-    ... on BulkOperation {
+const queryBulkOperbtion = `
+query($bulkOperbtion: ID!){
+  node(id: $bulkOperbtion) {
+    ... on BulkOperbtion {
       id
       type
-      state
+      stbte
       progress
       errors {
-          changeset {
+          chbngeset {
               id
           }
           error
       }
-      createdAt
+      crebtedAt
       finishedAt
     }
   }

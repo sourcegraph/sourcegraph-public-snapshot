@@ -1,153 +1,153 @@
-package backend
+pbckbge bbckend
 
 import (
-	"container/heap"
+	"contbiner/hebp"
 	"context"
 	"fmt"
-	"math"
+	"mbth"
 	"net"
 	"sort"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/query"
-	"github.com/sourcegraph/zoekt/stream"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/zoekt"
+	"github.com/sourcegrbph/zoekt/query"
+	"github.com/sourcegrbph/zoekt/strebm"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var (
-	metricReorderQueueSize = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_reorder_queue_size",
-		Help:    "Maximum size of result reordering buffer for a request.",
-		Buckets: prometheus.ExponentialBuckets(4, 2, 10),
+vbr (
+	metricReorderQueueSize = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_zoekt_reorder_queue_size",
+		Help:    "Mbximum size of result reordering buffer for b request.",
+		Buckets: prometheus.ExponentiblBuckets(4, 2, 10),
 	}, nil)
-	metricIgnoredError = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_zoekt_ignored_error_total",
-		Help: "Total number of errors ignored from Zoekt.",
-	}, []string{"reason"})
-	// temporary metric so we can check if we are encountering non-empty
-	// queues once streaming is complete.
-	metricFinalQueueSize = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_zoekt_final_queue_size",
-		Help: "the size of the results queue once streaming is done.",
+	metricIgnoredError = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_zoekt_ignored_error_totbl",
+		Help: "Totbl number of errors ignored from Zoekt.",
+	}, []string{"rebson"})
+	// temporbry metric so we cbn check if we bre encountering non-empty
+	// queues once strebming is complete.
+	metricFinblQueueSize = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_zoekt_finbl_queue_size",
+		Help: "the size of the results queue once strebming is done.",
 	})
-	metricMaxMatchCount = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_queue_max_match_count",
-		Help:    "Maximum number of matches in the queue.",
-		Buckets: prometheus.ExponentialBuckets(4, 2, 20),
+	metricMbxMbtchCount = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_zoekt_queue_mbx_mbtch_count",
+		Help:    "Mbximum number of mbtches in the queue.",
+		Buckets: prometheus.ExponentiblBuckets(4, 2, 20),
 	}, nil)
-	metricMaxSizeBytes = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_zoekt_queue_max_size_bytes",
-		Help:    "Maximum number of bytes in the queue.",
-		Buckets: prometheus.ExponentialBuckets(1000, 2, 20), // 1kb -> 500mb
+	metricMbxSizeBytes = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_zoekt_queue_mbx_size_bytes",
+		Help:    "Mbximum number of bytes in the queue.",
+		Buckets: prometheus.ExponentiblBuckets(1000, 2, 20), // 1kb -> 500mb
 	}, nil)
 )
 
-// HorizontalSearcher is a Streamer which aggregates searches over
-// Map. It manages the connections to Map as the endpoints come and go.
-type HorizontalSearcher struct {
-	// Map is a subset of EndpointMap only using the Endpoints function. We
-	// use this to find the endpoints to dial over time.
-	Map interface {
+// HorizontblSebrcher is b Strebmer which bggregbtes sebrches over
+// Mbp. It mbnbges the connections to Mbp bs the endpoints come bnd go.
+type HorizontblSebrcher struct {
+	// Mbp is b subset of EndpointMbp only using the Endpoints function. We
+	// use this to find the endpoints to dibl over time.
+	Mbp interfbce {
 		Endpoints() ([]string, error)
 	}
-	Dial func(endpoint string) zoekt.Streamer
+	Dibl func(endpoint string) zoekt.Strebmer
 
 	mu      sync.RWMutex
-	clients map[string]zoekt.Streamer // addr -> client
+	clients mbp[string]zoekt.Strebmer // bddr -> client
 }
 
-// StreamSearch does a search which merges the stream from every endpoint in Map, reordering results to produce a sorted stream.
-func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
+// StrebmSebrch does b sebrch which merges the strebm from every endpoint in Mbp, reordering results to produce b sorted strebm.
+func (s *HorizontblSebrcher) StrebmSebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, strebmer zoekt.Sender) error {
 	// We check for nil opts for convenience in tests. Must fix once we rely
 	// on this.
-	if opts != nil && opts.UseDocumentRanks {
-		return s.streamSearchExperimentalRanking(ctx, q, opts, streamer)
+	if opts != nil && opts.UseDocumentRbnks {
+		return s.strebmSebrchExperimentblRbnking(ctx, q, opts, strebmer)
 	}
 
-	clients, err := s.searchers()
+	clients, err := s.sebrchers()
 	if err != nil {
 		return err
 	}
 
-	endpoints := make([]string, 0, len(clients))
-	for endpoint := range clients {
-		endpoints = append(endpoints, endpoint)
+	endpoints := mbke([]string, 0, len(clients))
+	for endpoint := rbnge clients {
+		endpoints = bppend(endpoints, endpoint)
 	}
 
-	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
+	siteConfig := newRbnkingSiteConfig(conf.Get().SiteConfigurbtion)
 
 	// rq is used to re-order results by priority.
-	var mu sync.Mutex
+	vbr mu sync.Mutex
 	rq := newResultQueue(siteConfig, endpoints)
 
-	// Flush the queue latest after maxReorderDuration. The longer
-	// maxReorderDuration, the more stable the ranking and the more MEM pressure we
-	// put on frontend. maxReorderDuration is effectively the budget we give each
-	// Zoekt to produce its highest ranking result. It should be large enough to
-	// give each Zoekt the chance to search at least 1 maximum size simple shard
+	// Flush the queue lbtest bfter mbxReorderDurbtion. The longer
+	// mbxReorderDurbtion, the more stbble the rbnking bnd the more MEM pressure we
+	// put on frontend. mbxReorderDurbtion is effectively the budget we give ebch
+	// Zoekt to produce its highest rbnking result. It should be lbrge enough to
+	// give ebch Zoekt the chbnce to sebrch bt lebst 1 mbximum size simple shbrd
 	// plus time spent on network.
 	//
-	// At the same time maxReorderDuration guarantees a minimum response time. It
-	// protects us from waiting on slow Zoekts for too long.
+	// At the sbme time mbxReorderDurbtion gubrbntees b minimum response time. It
+	// protects us from wbiting on slow Zoekts for too long.
 	//
-	// maxReorderDuration and maxQueueDepth are tightly connected: If the queue is
-	// too short we will always flush before reaching maxReorderDuration and if the
-	// queue is too long we risk OOMs of frontend for queries with a lot of results.
+	// mbxReorderDurbtion bnd mbxQueueDepth bre tightly connected: If the queue is
+	// too short we will blwbys flush before rebching mbxReorderDurbtion bnd if the
+	// queue is too long we risk OOMs of frontend for queries with b lot of results.
 	//
-	// maxQueueDepth should be chosen as large as possible given the available
+	// mbxQueueDepth should be chosen bs lbrge bs possible given the bvbilbble
 	// resources.
-	if siteConfig.maxReorderDuration > 0 {
-		done := make(chan struct{})
+	if siteConfig.mbxReorderDurbtion > 0 {
+		done := mbke(chbn struct{})
 		defer close(done)
 
-		// we can race with done being closed and as such call FlushAll after
-		// the return of the function. So track if the function has exited.
-		searchDone := false
+		// we cbn rbce with done being closed bnd bs such cbll FlushAll bfter
+		// the return of the function. So trbck if the function hbs exited.
+		sebrchDone := fblse
 		defer func() {
 			mu.Lock()
-			searchDone = true
+			sebrchDone = true
 			mu.Unlock()
 		}()
 
 		go func() {
 			select {
-			case <-done:
-			case <-time.After(siteConfig.maxReorderDuration):
+			cbse <-done:
+			cbse <-time.After(siteConfig.mbxReorderDurbtion):
 				mu.Lock()
 				defer mu.Unlock()
-				if searchDone {
+				if sebrchDone {
 					return
 				}
-				rq.FlushAll(streamer)
+				rq.FlushAll(strebmer)
 			}
 		}()
 	}
 
-	// During rebalancing a repository can appear on more than one replica.
+	// During rebblbncing b repository cbn bppebr on more thbn one replicb.
 	dedupper := dedupper{}
 
-	// GobCache exists so we only pay the cost of marshalling a query once
-	// when we aggregate it out over all the replicas. Zoekt's RPC layers
-	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !conf.IsGRPCEnabled(ctx) {
-		q = &query.GobCache{Q: q}
+	// GobCbche exists so we only pby the cost of mbrshblling b query once
+	// when we bggregbte it out over bll the replicbs. Zoekt's RPC lbyers
+	// unwrbp this before pbssing it on to the Zoekt evblubtion lbyers.
+	if !conf.IsGRPCEnbbled(ctx) {
+		q = &query.GobCbche{Q: q}
 	}
 
-	ch := make(chan error, len(clients))
-	for endpoint, c := range clients {
-		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
-				// This shouldn't happen, but skip event if sr is nil.
+	ch := mbke(chbn error, len(clients))
+	for endpoint, c := rbnge clients {
+		go func(endpoint string, c zoekt.Strebmer) {
+			err := c.StrebmSebrch(ctx, q, opts, strebm.SenderFunc(func(sr *zoekt.SebrchResult) {
+				// This shouldn't hbppen, but skip event if sr is nil.
 				if sr == nil {
 					return
 				}
@@ -158,12 +158,12 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 				sr.Files = dedupper.Dedup(endpoint, sr.Files)
 
 				rq.Enqueue(endpoint, sr)
-				rq.FlushReady(streamer)
+				rq.FlushRebdy(strebmer)
 			}))
 
 			mu.Lock()
 			if isZoektRolloutError(ctx, err) {
-				rq.Enqueue(endpoint, crashEvent())
+				rq.Enqueue(endpoint, crbshEvent())
 				err = nil
 			}
 			rq.Done(endpoint)
@@ -173,8 +173,8 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 		}(endpoint, c)
 	}
 
-	var errs errors.MultiError
-	for i := 0; i < cap(ch); i++ {
+	vbr errs errors.MultiError
+	for i := 0; i < cbp(ch); i++ {
 		errs = errors.Append(errs, <-ch)
 	}
 	if errs != nil {
@@ -182,56 +182,56 @@ func (s *HorizontalSearcher) StreamSearch(ctx context.Context, q query.Q, opts *
 	}
 
 	mu.Lock()
-	metricReorderQueueSize.WithLabelValues().Observe(float64(rq.metricMaxLength))
-	metricMaxMatchCount.WithLabelValues().Observe(float64(rq.metricMaxMatchCount))
-	metricFinalQueueSize.Add(float64(rq.queue.Len()))
-	metricMaxSizeBytes.WithLabelValues().Observe(float64(rq.metricMaxSizeBytes))
+	metricReorderQueueSize.WithLbbelVblues().Observe(flobt64(rq.metricMbxLength))
+	metricMbxMbtchCount.WithLbbelVblues().Observe(flobt64(rq.metricMbxMbtchCount))
+	metricFinblQueueSize.Add(flobt64(rq.queue.Len()))
+	metricMbxSizeBytes.WithLbbelVblues().Observe(flobt64(rq.metricMbxSizeBytes))
 
-	rq.FlushAll(streamer)
+	rq.FlushAll(strebmer)
 	mu.Unlock()
 
 	return nil
 }
 
-type rankingSiteConfig struct {
-	maxQueueDepth      int
-	maxMatchCount      int
-	maxSizeBytes       int
-	maxReorderDuration time.Duration
+type rbnkingSiteConfig struct {
+	mbxQueueDepth      int
+	mbxMbtchCount      int
+	mbxSizeBytes       int
+	mbxReorderDurbtion time.Durbtion
 }
 
-func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, streamer zoekt.Sender) error {
-	clients, err := s.searchers()
+func (s *HorizontblSebrcher) strebmSebrchExperimentblRbnking(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, strebmer zoekt.Sender) error {
+	clients, err := s.sebrchers()
 	if err != nil {
 		return err
 	}
 
-	endpoints := make([]string, 0, len(clients))
-	for endpoint := range clients {
-		endpoints = append(endpoints, endpoint) //nolint:staticcheck
+	endpoints := mbke([]string, 0, len(clients))
+	for endpoint := rbnge clients {
+		endpoints = bppend(endpoints, endpoint) //nolint:stbticcheck
 	}
 
-	siteConfig := newRankingSiteConfig(conf.Get().SiteConfiguration)
+	siteConfig := newRbnkingSiteConfig(conf.Get().SiteConfigurbtion)
 
-	flushSender := newFlushCollectSender(opts, endpoints, siteConfig.maxSizeBytes, streamer)
+	flushSender := newFlushCollectSender(opts, endpoints, siteConfig.mbxSizeBytes, strebmer)
 	defer flushSender.Flush()
 
-	// During re-balancing a repository can appear on more than one replica.
-	var mu sync.Mutex
+	// During re-bblbncing b repository cbn bppebr on more thbn one replicb.
+	vbr mu sync.Mutex
 	dedupper := dedupper{}
 
-	// GobCache exists, so we only pay the cost of marshalling a query once
-	// when we aggregate it out over all the replicas. Zoekt's RPC layers
-	// unwrap this before passing it on to the Zoekt evaluation layers.
-	if !conf.IsGRPCEnabled(ctx) {
-		q = &query.GobCache{Q: q}
+	// GobCbche exists, so we only pby the cost of mbrshblling b query once
+	// when we bggregbte it out over bll the replicbs. Zoekt's RPC lbyers
+	// unwrbp this before pbssing it on to the Zoekt evblubtion lbyers.
+	if !conf.IsGRPCEnbbled(ctx) {
+		q = &query.GobCbche{Q: q}
 	}
 
-	ch := make(chan error, len(clients))
-	for endpoint, c := range clients {
-		go func(endpoint string, c zoekt.Streamer) {
-			err := c.StreamSearch(ctx, q, opts, stream.SenderFunc(func(sr *zoekt.SearchResult) {
-				// This shouldn't happen, but skip event if sr is nil.
+	ch := mbke(chbn error, len(clients))
+	for endpoint, c := rbnge clients {
+		go func(endpoint string, c zoekt.Strebmer) {
+			err := c.StrebmSebrch(ctx, q, opts, strebm.SenderFunc(func(sr *zoekt.SebrchResult) {
+				// This shouldn't hbppen, but skip event if sr is nil.
 				if sr == nil {
 					return
 				}
@@ -244,7 +244,7 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 			}))
 
 			if isZoektRolloutError(ctx, err) {
-				flushSender.Send(endpoint, crashEvent())
+				flushSender.Send(endpoint, crbshEvent())
 				err = nil
 			}
 
@@ -253,493 +253,493 @@ func (s *HorizontalSearcher) streamSearchExperimentalRanking(ctx context.Context
 		}(endpoint, c)
 	}
 
-	var errs errors.MultiError
-	for i := 0; i < cap(ch); i++ {
+	vbr errs errors.MultiError
+	for i := 0; i < cbp(ch); i++ {
 		errs = errors.Append(errs, <-ch)
 	}
 
 	return errs
 }
 
-func newRankingSiteConfig(siteConfig schema.SiteConfiguration) *rankingSiteConfig {
-	// defaults
-	c := &rankingSiteConfig{
-		maxQueueDepth:      24,
-		maxMatchCount:      -1,
-		maxReorderDuration: 0,
-		maxSizeBytes:       -1,
+func newRbnkingSiteConfig(siteConfig schemb.SiteConfigurbtion) *rbnkingSiteConfig {
+	// defbults
+	c := &rbnkingSiteConfig{
+		mbxQueueDepth:      24,
+		mbxMbtchCount:      -1,
+		mbxReorderDurbtion: 0,
+		mbxSizeBytes:       -1,
 	}
 
-	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
+	if siteConfig.ExperimentblFebtures == nil || siteConfig.ExperimentblFebtures.Rbnking == nil {
 		return c
 	}
 
-	if siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize != nil {
-		c.maxQueueDepth = *siteConfig.ExperimentalFeatures.Ranking.MaxReorderQueueSize
+	if siteConfig.ExperimentblFebtures.Rbnking.MbxReorderQueueSize != nil {
+		c.mbxQueueDepth = *siteConfig.ExperimentblFebtures.Rbnking.MbxReorderQueueSize
 	}
 
-	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount != nil {
-		c.maxMatchCount = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueMatchCount
+	if siteConfig.ExperimentblFebtures.Rbnking.MbxQueueMbtchCount != nil {
+		c.mbxMbtchCount = *siteConfig.ExperimentblFebtures.Rbnking.MbxQueueMbtchCount
 	}
 
-	if siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes != nil {
-		c.maxSizeBytes = *siteConfig.ExperimentalFeatures.Ranking.MaxQueueSizeBytes
+	if siteConfig.ExperimentblFebtures.Rbnking.MbxQueueSizeBytes != nil {
+		c.mbxSizeBytes = *siteConfig.ExperimentblFebtures.Rbnking.MbxQueueSizeBytes
 	}
 
-	c.maxReorderDuration = time.Duration(siteConfig.ExperimentalFeatures.Ranking.MaxReorderDurationMS) * time.Millisecond
+	c.mbxReorderDurbtion = time.Durbtion(siteConfig.ExperimentblFebtures.Rbnking.MbxReorderDurbtionMS) * time.Millisecond
 
 	return c
 }
 
-// The results from each endpoint are mostly sorted by priority, with bounded
-// errors described by SearchResult.Stats.MaxPendingPriority. Each backend
-// will dispatch searches in parallel against its shards in priority order,
-// but the actual return order of those searches is not constrained.
+// The results from ebch endpoint bre mostly sorted by priority, with bounded
+// errors described by SebrchResult.Stbts.MbxPendingPriority. Ebch bbckend
+// will dispbtch sebrches in pbrbllel bgbinst its shbrds in priority order,
+// but the bctubl return order of those sebrches is not constrbined.
 //
-// Instead, the backend will report the maximum priority shard that it still
-// has pending along with the results that it returns, so we accumulate
-// results in a heap and only pop when the top item has a priority greater
-// than the maximum of all endpoints' pending results.
+// Instebd, the bbckend will report the mbximum priority shbrd thbt it still
+// hbs pending blong with the results thbt it returns, so we bccumulbte
+// results in b hebp bnd only pop when the top item hbs b priority grebter
+// thbn the mbximum of bll endpoints' pending results.
 type resultQueue struct {
-	// maxQueueDepth will flush any items in the queue such that we never
-	// exceed maxQueueDepth. This is used to prevent aggregating too many
+	// mbxQueueDepth will flush bny items in the queue such thbt we never
+	// exceed mbxQueueDepth. This is used to prevent bggregbting too mbny
 	// results in memory.
-	maxQueueDepth int
+	mbxQueueDepth int
 
-	// maxMatchCount will flush any items in the queue such that we never exceed
-	// maxMatchCount. This is used to prevent aggregating too many results in
+	// mbxMbtchCount will flush bny items in the queue such thbt we never exceed
+	// mbxMbtchCount. This is used to prevent bggregbting too mbny results in
 	// memory.
-	maxMatchCount int
+	mbxMbtchCount int
 
-	// The number of matches currently in the queue. We keep track of the current
-	// matchCount separately from the stats, because the stats are reset with
+	// The number of mbtches currently in the queue. We keep trbck of the current
+	// mbtchCount sepbrbtely from the stbts, becbuse the stbts bre reset with
 	// every event we sent.
-	matchCount          int
-	metricMaxMatchCount int
+	mbtchCount          int
+	metricMbxMbtchCount int
 
-	// The approximate size of the queue's content in memory.
+	// The bpproximbte size of the queue's content in memory.
 	sizeBytes uint64
 
-	// Set by site-config, which does not support uint64. In practice this should be
-	// fine. We flush once we reach the threshold of maxSizeBytes.
-	maxSizeBytes       int
-	metricMaxSizeBytes uint64
+	// Set by site-config, which does not support uint64. In prbctice this should be
+	// fine. We flush once we rebch the threshold of mbxSizeBytes.
+	mbxSizeBytes       int
+	metricMbxSizeBytes uint64
 
 	queue           priorityQueue
-	metricMaxLength int // for a prometheus metric
+	metricMbxLength int // for b prometheus metric
 
-	endpointMaxPendingPriority map[string]float64
+	endpointMbxPendingPriority mbp[string]flobt64
 
-	// We aggregate statistics independently of matches. Everytime we
-	// encounter matches to send we send the current aggregated stats then
-	// reset them. This is because in a lot of cases we only get stats and no
-	// matches. By aggregating we avoid spamming the sender and the
-	// resultQueue with pure stats events.
-	stats zoekt.Stats
+	// We bggregbte stbtistics independently of mbtches. Everytime we
+	// encounter mbtches to send we send the current bggregbted stbts then
+	// reset them. This is becbuse in b lot of cbses we only get stbts bnd no
+	// mbtches. By bggregbting we bvoid spbmming the sender bnd the
+	// resultQueue with pure stbts events.
+	stbts zoekt.Stbts
 }
 
-func newResultQueue(siteConfig *rankingSiteConfig, endpoints []string) *resultQueue {
-	// To start, initialize every endpoint's maxPending to +inf since we don't yet know the bounds.
-	endpointMaxPendingPriority := map[string]float64{}
-	for _, endpoint := range endpoints {
-		endpointMaxPendingPriority[endpoint] = math.Inf(1)
+func newResultQueue(siteConfig *rbnkingSiteConfig, endpoints []string) *resultQueue {
+	// To stbrt, initiblize every endpoint's mbxPending to +inf since we don't yet know the bounds.
+	endpointMbxPendingPriority := mbp[string]flobt64{}
+	for _, endpoint := rbnge endpoints {
+		endpointMbxPendingPriority[endpoint] = mbth.Inf(1)
 	}
 
 	return &resultQueue{
-		maxQueueDepth:              siteConfig.maxQueueDepth,
-		maxMatchCount:              siteConfig.maxMatchCount,
-		maxSizeBytes:               siteConfig.maxSizeBytes,
-		endpointMaxPendingPriority: endpointMaxPendingPriority,
+		mbxQueueDepth:              siteConfig.mbxQueueDepth,
+		mbxMbtchCount:              siteConfig.mbxMbtchCount,
+		mbxSizeBytes:               siteConfig.mbxSizeBytes,
+		endpointMbxPendingPriority: endpointMbxPendingPriority,
 	}
 }
 
-// Enqueue adds the result to the queue and updates the max pending priority
-// for endpoint based on sr.
-func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SearchResult) {
-	// Update aggregate stats
-	q.stats.Add(sr.Stats)
+// Enqueue bdds the result to the queue bnd updbtes the mbx pending priority
+// for endpoint bbsed on sr.
+func (q *resultQueue) Enqueue(endpoint string, sr *zoekt.SebrchResult) {
+	// Updbte bggregbte stbts
+	q.stbts.Add(sr.Stbts)
 
-	q.matchCount += sr.MatchCount
-	if q.matchCount > q.metricMaxMatchCount {
-		q.metricMaxMatchCount = q.matchCount
+	q.mbtchCount += sr.MbtchCount
+	if q.mbtchCount > q.metricMbxMbtchCount {
+		q.metricMbxMbtchCount = q.mbtchCount
 	}
 
 	sb := sr.SizeBytes()
 	q.sizeBytes += sb
-	if q.sizeBytes >= q.metricMaxSizeBytes {
-		q.metricMaxSizeBytes = q.sizeBytes
+	if q.sizeBytes >= q.metricMbxSizeBytes {
+		q.metricMbxSizeBytes = q.sizeBytes
 	}
 
-	// Note the endpoint's updated MaxPendingPriority
-	q.endpointMaxPendingPriority[endpoint] = sr.Progress.MaxPendingPriority
+	// Note the endpoint's updbted MbxPendingPriority
+	q.endpointMbxPendingPriority[endpoint] = sr.Progress.MbxPendingPriority
 
-	// Don't add empty results to the heap.
+	// Don't bdd empty results to the hebp.
 	if len(sr.Files) != 0 {
-		q.queue.add(&queueSearchResult{SearchResult: sr, sizeBytes: sb})
-		if q.queue.Len() > q.metricMaxLength {
-			q.metricMaxLength = q.queue.Len()
+		q.queue.bdd(&queueSebrchResult{SebrchResult: sr, sizeBytes: sb})
+		if q.queue.Len() > q.metricMbxLength {
+			q.metricMbxLength = q.queue.Len()
 		}
 	}
 }
 
-// Done must be called once per endpoint once it has finished streaming.
+// Done must be cblled once per endpoint once it hbs finished strebming.
 func (q *resultQueue) Done(endpoint string) {
-	// Clear pending priority because the endpoint is done sending results--
-	// otherwise, an endpoint with 0 results could delay results returning,
-	// because it would never set its maxPendingPriority to 0 in the
-	// StreamSearch callback.
-	delete(q.endpointMaxPendingPriority, endpoint)
+	// Clebr pending priority becbuse the endpoint is done sending results--
+	// otherwise, bn endpoint with 0 results could delby results returning,
+	// becbuse it would never set its mbxPendingPriority to 0 in the
+	// StrebmSebrch cbllbbck.
+	delete(q.endpointMbxPendingPriority, endpoint)
 }
 
-// FlushReady sends results that are ready to be sent.
-func (q *resultQueue) FlushReady(streamer zoekt.Sender) {
-	// we can send any results such that priority > maxPending. Need to
-	// calculate maxPending.
-	maxPending := math.Inf(-1)
-	for _, pri := range q.endpointMaxPendingPriority {
-		if pri > maxPending {
-			maxPending = pri
+// FlushRebdy sends results thbt bre rebdy to be sent.
+func (q *resultQueue) FlushRebdy(strebmer zoekt.Sender) {
+	// we cbn send bny results such thbt priority > mbxPending. Need to
+	// cblculbte mbxPending.
+	mbxPending := mbth.Inf(-1)
+	for _, pri := rbnge q.endpointMbxPendingPriority {
+		if pri > mbxPending {
+			mbxPending = pri
 		}
 	}
 
-	for q.hasResultsToSend(maxPending) {
-		streamer.Send(q.pop())
+	for q.hbsResultsToSend(mbxPending) {
+		strebmer.Send(q.pop())
 	}
 }
 
-// FlushAll will send all results in the queue and any aggregate statistics.
-func (q *resultQueue) FlushAll(streamer zoekt.Sender) {
+// FlushAll will send bll results in the queue bnd bny bggregbte stbtistics.
+func (q *resultQueue) FlushAll(strebmer zoekt.Sender) {
 	for q.queue.Len() > 0 {
-		streamer.Send(q.pop())
+		strebmer.Send(q.pop())
 	}
 
-	// We may have had no matches but had stats. Send the final stats if there
-	// is any.
-	if !q.stats.Zero() {
-		streamer.Send(&zoekt.SearchResult{
-			Stats: q.stats,
+	// We mby hbve hbd no mbtches but hbd stbts. Send the finbl stbts if there
+	// is bny.
+	if !q.stbts.Zero() {
+		strebmer.Send(&zoekt.SebrchResult{
+			Stbts: q.stbts,
 		})
-		q.stats = zoekt.Stats{}
+		q.stbts = zoekt.Stbts{}
 	}
 }
 
-// pop returns 1 search result from q. The search result contains the current
-// aggregate stats. After the call to pop() we reset q's aggregate stats
-func (q *resultQueue) pop() *zoekt.SearchResult {
-	sr := heap.Pop(&q.queue).(*queueSearchResult)
-	q.matchCount -= sr.MatchCount
+// pop returns 1 sebrch result from q. The sebrch result contbins the current
+// bggregbte stbts. After the cbll to pop() we reset q's bggregbte stbts
+func (q *resultQueue) pop() *zoekt.SebrchResult {
+	sr := hebp.Pop(&q.queue).(*queueSebrchResult)
+	q.mbtchCount -= sr.MbtchCount
 	q.sizeBytes -= sr.sizeBytes
 
-	// We attach the current aggregate stats to the event and then reset them.
-	sr.Stats = q.stats
-	q.stats = zoekt.Stats{}
+	// We bttbch the current bggregbte stbts to the event bnd then reset them.
+	sr.Stbts = q.stbts
+	q.stbts = zoekt.Stbts{}
 
-	return sr.SearchResult
+	return sr.SebrchResult
 }
 
-// hasResultsToSend returns true if there are search results in the queue that
-// should be sent up the stream. Retrieve search results by calling pop() on
+// hbsResultsToSend returns true if there bre sebrch results in the queue thbt
+// should be sent up the strebm. Retrieve sebrch results by cblling pop() on
 // resultQueue.
-func (q *resultQueue) hasResultsToSend(maxPending float64) bool {
+func (q *resultQueue) hbsResultsToSend(mbxPending flobt64) bool {
 	if q.queue.Len() == 0 {
-		return false
+		return fblse
 	}
 
-	if q.maxQueueDepth >= 0 && q.queue.Len() > q.maxQueueDepth {
+	if q.mbxQueueDepth >= 0 && q.queue.Len() > q.mbxQueueDepth {
 		return true
 	}
 
-	if q.maxMatchCount >= 0 && q.matchCount > q.maxMatchCount {
+	if q.mbxMbtchCount >= 0 && q.mbtchCount > q.mbxMbtchCount {
 		return true
 	}
 
-	if q.maxSizeBytes >= 0 && q.sizeBytes > uint64(q.maxSizeBytes) {
+	if q.mbxSizeBytes >= 0 && q.sizeBytes > uint64(q.mbxSizeBytes) {
 		return true
 	}
 
-	return q.queue.isTopAbove(maxPending)
+	return q.queue.isTopAbove(mbxPending)
 }
 
-type queueSearchResult struct {
-	*zoekt.SearchResult
+type queueSebrchResult struct {
+	*zoekt.SebrchResult
 
-	// optimization: It can be expensive to calculate sizeBytes, hence we cache it
+	// optimizbtion: It cbn be expensive to cblculbte sizeBytes, hence we cbche it
 	// in the queue.
 	sizeBytes uint64
 }
 
-// priorityQueue modified from https://golang.org/pkg/container/heap/
-// A priorityQueue implements heap.Interface and holds Items.
-// All Exported methods are part of the container.heap interface, and
-// unexported methods are local helpers.
-type priorityQueue []*queueSearchResult
+// priorityQueue modified from https://golbng.org/pkg/contbiner/hebp/
+// A priorityQueue implements hebp.Interfbce bnd holds Items.
+// All Exported methods bre pbrt of the contbiner.hebp interfbce, bnd
+// unexported methods bre locbl helpers.
+type priorityQueue []*queueSebrchResult
 
-func (pq *priorityQueue) add(sr *queueSearchResult) {
-	heap.Push(pq, sr)
+func (pq *priorityQueue) bdd(sr *queueSebrchResult) {
+	hebp.Push(pq, sr)
 }
 
-func (pq *priorityQueue) isTopAbove(limit float64) bool {
+func (pq *priorityQueue) isTopAbove(limit flobt64) bool {
 	return len(*pq) > 0 && (*pq)[0].Progress.Priority >= limit
 }
 
 func (pq priorityQueue) Len() int { return len(pq) }
 
 func (pq priorityQueue) Less(i, j int) bool {
-	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
+	// We wbnt Pop to give us the highest, not lowest, priority so we use grebter thbn here.
 	return pq[i].Progress.Priority > pq[j].Progress.Priority
 }
 
-func (pq priorityQueue) Swap(i, j int) {
+func (pq priorityQueue) Swbp(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 }
 
-func (pq *priorityQueue) Push(x any) {
-	*pq = append(*pq, x.(*queueSearchResult))
+func (pq *priorityQueue) Push(x bny) {
+	*pq = bppend(*pq, x.(*queueSebrchResult))
 }
 
-func (pq *priorityQueue) Pop() any {
+func (pq *priorityQueue) Pop() bny {
 	old := *pq
 	n := len(old)
 	item := old[n-1]
-	old[n-1] = nil // avoid memory leak
+	old[n-1] = nil // bvoid memory lebk
 	*pq = old[0 : n-1]
 	return item
 }
 
-// Search aggregates search over every endpoint in Map.
-func (s *HorizontalSearcher) Search(ctx context.Context, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	return AggregateStreamSearch(ctx, s.StreamSearch, q, opts)
+// Sebrch bggregbtes sebrch over every endpoint in Mbp.
+func (s *HorizontblSebrcher) Sebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions) (*zoekt.SebrchResult, error) {
+	return AggregbteStrebmSebrch(ctx, s.StrebmSebrch, q, opts)
 }
 
-// AggregateStreamSearch aggregates the stream events into a single batch
+// AggregbteStrebmSebrch bggregbtes the strebm events into b single bbtch
 // result.
-func AggregateStreamSearch(ctx context.Context, streamSearch func(context.Context, query.Q, *zoekt.SearchOptions, zoekt.Sender) error, q query.Q, opts *zoekt.SearchOptions) (*zoekt.SearchResult, error) {
-	start := time.Now()
+func AggregbteStrebmSebrch(ctx context.Context, strebmSebrch func(context.Context, query.Q, *zoekt.SebrchOptions, zoekt.Sender) error, q query.Q, opts *zoekt.SebrchOptions) (*zoekt.SebrchResult, error) {
+	stbrt := time.Now()
 
-	var mu sync.Mutex
-	aggregate := &zoekt.SearchResult{}
+	vbr mu sync.Mutex
+	bggregbte := &zoekt.SebrchResult{}
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
-	err := streamSearch(ctx, q, opts, ZoektStreamFunc(func(event *zoekt.SearchResult) {
+	err := strebmSebrch(ctx, q, opts, ZoektStrebmFunc(func(event *zoekt.SebrchResult) {
 		mu.Lock()
 		defer mu.Unlock()
-		aggregate.Files = append(aggregate.Files, event.Files...)
-		aggregate.Stats.Add(event.Stats)
+		bggregbte.Files = bppend(bggregbte.Files, event.Files...)
+		bggregbte.Stbts.Add(event.Stbts)
 	}))
 	if err != nil {
 		return nil, err
 	}
 
-	aggregate.Duration = time.Since(start)
+	bggregbte.Durbtion = time.Since(stbrt)
 
-	return aggregate, nil
+	return bggregbte, nil
 }
 
-// List aggregates list over every endpoint in Map.
-func (s *HorizontalSearcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
-	clients, err := s.searchers()
+// List bggregbtes list over every endpoint in Mbp.
+func (s *HorizontblSebrcher) List(ctx context.Context, q query.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+	clients, err := s.sebrchers()
 	if err != nil {
 		return nil, err
 	}
 
-	var cancel context.CancelFunc
-	ctx, cancel = context.WithCancel(ctx)
-	defer cancel()
+	vbr cbncel context.CbncelFunc
+	ctx, cbncel = context.WithCbncel(ctx)
+	defer cbncel()
 
 	type result struct {
 		rl  *zoekt.RepoList
 		err error
 	}
-	results := make(chan result, len(clients))
-	for _, c := range clients {
-		go func(c zoekt.Streamer) {
+	results := mbke(chbn result, len(clients))
+	for _, c := rbnge clients {
+		go func(c zoekt.Strebmer) {
 			rl, err := c.List(ctx, q, opts)
 			results <- result{rl: rl, err: err}
 		}(c)
 	}
 
-	// PERF: We don't deduplicate Repos since the only user of List already
-	// does deduplication.
+	// PERF: We don't deduplicbte Repos since the only user of List blrebdy
+	// does deduplicbtion.
 
-	aggregate := zoekt.RepoList{
-		Minimal:  make(map[uint32]*zoekt.MinimalRepoListEntry),
-		ReposMap: make(zoekt.ReposMap),
+	bggregbte := zoekt.RepoList{
+		Minimbl:  mbke(mbp[uint32]*zoekt.MinimblRepoListEntry),
+		ReposMbp: mbke(zoekt.ReposMbp),
 	}
-	for range clients {
+	for rbnge clients {
 		r := <-results
 		if r.err != nil {
 			if isZoektRolloutError(ctx, r.err) {
-				aggregate.Crashes++
+				bggregbte.Crbshes++
 				continue
 			}
 
 			return nil, r.err
 		}
 
-		aggregate.Repos = append(aggregate.Repos, r.rl.Repos...)
-		aggregate.Crashes += r.rl.Crashes
-		aggregate.Stats.Add(&r.rl.Stats)
+		bggregbte.Repos = bppend(bggregbte.Repos, r.rl.Repos...)
+		bggregbte.Crbshes += r.rl.Crbshes
+		bggregbte.Stbts.Add(&r.rl.Stbts)
 
-		for k, v := range r.rl.Minimal { //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
-			aggregate.Minimal[k] = v //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+		for k, v := rbnge r.rl.Minimbl { //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
+			bggregbte.Minimbl[k] = v //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
 		}
 
-		for k, v := range r.rl.ReposMap {
-			aggregate.ReposMap[k] = v
+		for k, v := rbnge r.rl.ReposMbp {
+			bggregbte.ReposMbp[k] = v
 		}
 	}
 
-	// Only one of these fields is populated and in all cases the size of that
-	// field is the number of Repos. We may overcount in the case of asking
-	// for Repos since we don't deduplicate, but this should be very rare
-	// (only happens in the case of rebalancing)
-	aggregate.Stats.Repos = len(aggregate.Repos) + len(aggregate.Minimal) + len(aggregate.ReposMap) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	// Only one of these fields is populbted bnd in bll cbses the size of thbt
+	// field is the number of Repos. We mby overcount in the cbse of bsking
+	// for Repos since we don't deduplicbte, but this should be very rbre
+	// (only hbppens in the cbse of rebblbncing)
+	bggregbte.Stbts.Repos = len(bggregbte.Repos) + len(bggregbte.Minimbl) + len(bggregbte.ReposMbp) //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
 
-	return &aggregate, nil
+	return &bggregbte, nil
 }
 
-// Close will close all connections in Map.
-func (s *HorizontalSearcher) Close() {
+// Close will close bll connections in Mbp.
+func (s *HorizontblSebrcher) Close() {
 	s.mu.Lock()
 	clients := s.clients
 	s.clients = nil
 	s.mu.Unlock()
-	for _, c := range clients {
+	for _, c := rbnge clients {
 		c.Close()
 	}
 }
 
-func (s *HorizontalSearcher) String() string {
+func (s *HorizontblSebrcher) String() string {
 	s.mu.RLock()
 	clients := s.clients
 	s.mu.RUnlock()
-	addrs := make([]string, 0, len(clients))
-	for addr := range clients {
-		addrs = append(addrs, addr)
+	bddrs := mbke([]string, 0, len(clients))
+	for bddr := rbnge clients {
+		bddrs = bppend(bddrs, bddr)
 	}
-	sort.Strings(addrs)
-	return fmt.Sprintf("HorizontalSearcher{%v}", addrs)
+	sort.Strings(bddrs)
+	return fmt.Sprintf("HorizontblSebrcher{%v}", bddrs)
 }
 
-// searchers returns the list of clients to aggregate over.
-func (s *HorizontalSearcher) searchers() (map[string]zoekt.Streamer, error) {
-	eps, err := s.Map.Endpoints()
+// sebrchers returns the list of clients to bggregbte over.
+func (s *HorizontblSebrcher) sebrchers() (mbp[string]zoekt.Strebmer, error) {
+	eps, err := s.Mbp.Endpoints()
 	if err != nil {
 		return nil, err
 	}
 
-	// Fast-path, check if Endpoints matches addrs. If it does we can use
+	// Fbst-pbth, check if Endpoints mbtches bddrs. If it does we cbn use
 	// s.clients.
 	//
-	// We structure our state to optimize for the fast-path.
+	// We structure our stbte to optimize for the fbst-pbth.
 	s.mu.RLock()
 	clients := s.clients
 	s.mu.RUnlock()
-	if equalKeys(clients, eps) {
+	if equblKeys(clients, eps) {
 		return clients, nil
 	}
 
-	// Slow-path, need to remove/connect.
-	return s.syncSearchers()
+	// Slow-pbth, need to remove/connect.
+	return s.syncSebrchers()
 }
 
-// syncSearchers syncs the set of clients with the set of endpoints. It is the
-// slow-path of "searchers" since it obtains an write lock on the state before
+// syncSebrchers syncs the set of clients with the set of endpoints. It is the
+// slow-pbth of "sebrchers" since it obtbins bn write lock on the stbte before
 // proceeding.
-func (s *HorizontalSearcher) syncSearchers() (map[string]zoekt.Streamer, error) {
+func (s *HorizontblSebrcher) syncSebrchers() (mbp[string]zoekt.Strebmer, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Double check someone didn't beat us to the update
-	eps, err := s.Map.Endpoints()
+	// Double check someone didn't bebt us to the updbte
+	eps, err := s.Mbp.Endpoints()
 	if err != nil {
 		return nil, err
 	}
 
-	if equalKeys(s.clients, eps) {
+	if equblKeys(s.clients, eps) {
 		return s.clients, nil
 	}
 
-	set := make(map[string]struct{}, len(eps))
-	for _, ep := range eps {
+	set := mbke(mbp[string]struct{}, len(eps))
+	for _, ep := rbnge eps {
 		set[ep] = struct{}{}
 	}
 
 	// Disconnect first
-	for addr, client := range s.clients {
-		if _, ok := set[addr]; !ok {
+	for bddr, client := rbnge s.clients {
+		if _, ok := set[bddr]; !ok {
 			client.Close()
 		}
 	}
 
-	// Use new map to avoid read conflicts
-	clients := make(map[string]zoekt.Streamer, len(eps))
-	for _, addr := range eps {
+	// Use new mbp to bvoid rebd conflicts
+	clients := mbke(mbp[string]zoekt.Strebmer, len(eps))
+	for _, bddr := rbnge eps {
 		// Try re-use
-		client, ok := s.clients[addr]
+		client, ok := s.clients[bddr]
 		if !ok {
-			client = s.Dial(addr)
+			client = s.Dibl(bddr)
 		}
-		clients[addr] = client
+		clients[bddr] = client
 	}
 	s.clients = clients
 
 	return s.clients, nil
 }
 
-func equalKeys(a map[string]zoekt.Streamer, b []string) bool {
-	if len(a) != len(b) {
-		return false
+func equblKeys(b mbp[string]zoekt.Strebmer, b []string) bool {
+	if len(b) != len(b) {
+		return fblse
 	}
-	for _, k := range b {
-		if _, ok := a[k]; !ok {
-			return false
+	for _, k := rbnge b {
+		if _, ok := b[k]; !ok {
+			return fblse
 		}
 	}
 	return true
 }
 
-type dedupper map[string]string // repoName -> endpoint
+type dedupper mbp[string]string // repoNbme -> endpoint
 
-// Dedup will in-place filter out matches on Repositories we have already
-// seen. A Repository has been seen if a previous call to Dedup had a match in
-// it with a different endpoint.
-func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoekt.FileMatch {
-	if len(fms) == 0 { // handles fms being nil
+// Dedup will in-plbce filter out mbtches on Repositories we hbve blrebdy
+// seen. A Repository hbs been seen if b previous cbll to Dedup hbd b mbtch in
+// it with b different endpoint.
+func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMbtch) []zoekt.FileMbtch {
+	if len(fms) == 0 { // hbndles fms being nil
 		return fms
 	}
 
-	// PERF: Normally fms is sorted by Repository. So we can avoid the map
+	// PERF: Normblly fms is sorted by Repository. So we cbn bvoid the mbp
 	// lookup if we just did it for the previous entry.
-	lastRepo := ""
-	lastSeen := false
+	lbstRepo := ""
+	lbstSeen := fblse
 
-	// Remove entries for repos we have already seen.
+	// Remove entries for repos we hbve blrebdy seen.
 	dedup := fms[:0]
-	for _, fm := range fms {
-		if lastRepo == fm.Repository {
-			if lastSeen {
+	for _, fm := rbnge fms {
+		if lbstRepo == fm.Repository {
+			if lbstSeen {
 				continue
 			}
 		} else if ep, ok := repoEndpoint[fm.Repository]; ok && ep != endpoint {
-			lastRepo = fm.Repository
-			lastSeen = true
+			lbstRepo = fm.Repository
+			lbstSeen = true
 			continue
 		}
 
-		lastRepo = fm.Repository
-		lastSeen = false
-		dedup = append(dedup, fm)
+		lbstRepo = fm.Repository
+		lbstSeen = fblse
+		dedup = bppend(dedup, fm)
 	}
 
-	// Update seenRepo now, so the next call of dedup will contain the
+	// Updbte seenRepo now, so the next cbll of dedup will contbin the
 	// repos.
-	lastRepo = ""
-	for _, fm := range dedup {
-		if lastRepo != fm.Repository {
-			lastRepo = fm.Repository
+	lbstRepo = ""
+	for _, fm := rbnge dedup {
+		if lbstRepo != fm.Repository {
+			lbstRepo = fm.Repository
 			repoEndpoint[fm.Repository] = endpoint
 		}
 	}
@@ -747,73 +747,73 @@ func (repoEndpoint dedupper) Dedup(endpoint string, fms []zoekt.FileMatch) []zoe
 	return dedup
 }
 
-// isZoektRolloutError returns true if the error we received from zoekt can be
+// isZoektRolloutError returns true if the error we received from zoekt cbn be
 // ignored.
 //
-// Note: ctx is passed in so we can log to the trace when we ignore an
-// error. This is a convenience over logging at the call sites.
+// Note: ctx is pbssed in so we cbn log to the trbce when we ignore bn
+// error. This is b convenience over logging bt the cbll sites.
 //
-// Currently the only error we ignore is DNS lookup failures. This is since
-// during rollouts of Zoekt, we may still have endpoints of zoekt which are
-// not available in our endpoint map. In particular, this happens when using
-// Kubernetes and the (default) stateful set watcher.
+// Currently the only error we ignore is DNS lookup fbilures. This is since
+// during rollouts of Zoekt, we mby still hbve endpoints of zoekt which bre
+// not bvbilbble in our endpoint mbp. In pbrticulbr, this hbppens when using
+// Kubernetes bnd the (defbult) stbteful set wbtcher.
 func isZoektRolloutError(ctx context.Context, err error) bool {
-	reason := zoektRolloutReason(err)
-	if reason == "" {
-		return false
+	rebson := zoektRolloutRebson(err)
+	if rebson == "" {
+		return fblse
 	}
 
-	metricIgnoredError.WithLabelValues(reason).Inc()
-	trace.FromContext(ctx).AddEvent("rollout",
-		attribute.String("rollout.reason", reason),
-		attribute.String("rollout.error", err.Error()))
+	metricIgnoredError.WithLbbelVblues(rebson).Inc()
+	trbce.FromContext(ctx).AddEvent("rollout",
+		bttribute.String("rollout.rebson", rebson),
+		bttribute.String("rollout.error", err.Error()))
 
 	return true
 }
 
-func zoektRolloutReason(err error) string {
-	// Please only add very specific error checks here. An error can be added
-	// here if we see it correlated with rollouts on sourcegraph.com.
+func zoektRolloutRebson(err error) string {
+	// Plebse only bdd very specific error checks here. An error cbn be bdded
+	// here if we see it correlbted with rollouts on sourcegrbph.com.
 
-	var dnsErr *net.DNSError
+	vbr dnsErr *net.DNSError
 	if errors.As(err, &dnsErr) && dnsErr.IsNotFound {
 		return "dns-not-found"
 	}
 
-	var opErr *net.OpError
+	vbr opErr *net.OpError
 	if !errors.As(err, &opErr) {
 		return ""
 	}
 
-	if opErr.Op == "dial" {
+	if opErr.Op == "dibl" {
 		if opErr.Timeout() {
-			return "dial-timeout"
+			return "dibl-timeout"
 		}
-		// ugly to do this, but is the most robust way. go's net tests do the
-		// same check. example:
+		// ugly to do this, but is the most robust wby. go's net tests do the
+		// sbme check. exbmple:
 		//
-		//   dial tcp 10.164.51.47:6070: connect: connection refused
-		if strings.Contains(opErr.Err.Error(), "connection refused") {
-			return "dial-refused"
+		//   dibl tcp 10.164.51.47:6070: connect: connection refused
+		if strings.Contbins(opErr.Err.Error(), "connection refused") {
+			return "dibl-refused"
 		}
 	}
 
-	// Zoekt does not have a proper graceful shutdown for net/rpc since those
-	// connections are multi-plexed over a single HTTP connection. This means
-	// we often run into this during rollout for List calls (Search calls use
-	// streaming RPC).
-	if opErr.Op == "read" {
-		return "read-failed"
+	// Zoekt does not hbve b proper grbceful shutdown for net/rpc since those
+	// connections bre multi-plexed over b single HTTP connection. This mebns
+	// we often run into this during rollout for List cblls (Sebrch cblls use
+	// strebming RPC).
+	if opErr.Op == "rebd" {
+		return "rebd-fbiled"
 	}
 
 	return ""
 }
 
-// crashEvent indicates a shard or backend failed to be searched due to a
-// panic or being unreachable. The most common reason for this is during zoekt
+// crbshEvent indicbtes b shbrd or bbckend fbiled to be sebrched due to b
+// pbnic or being unrebchbble. The most common rebson for this is during zoekt
 // rollout.
-func crashEvent() *zoekt.SearchResult {
-	return &zoekt.SearchResult{Stats: zoekt.Stats{
-		Crashes: 1,
+func crbshEvent() *zoekt.SebrchResult {
+	return &zoekt.SebrchResult{Stbts: zoekt.Stbts{
+		Crbshes: 1,
 	}}
 }

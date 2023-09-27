@@ -1,22 +1,22 @@
-package connections
+pbckbge connections
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"testing"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewTestDB creates a new connection to the a database and applies the given migrations.
-func NewTestDB(t testing.TB, logger log.Logger, dsn string, schemas ...*schemas.Schema) (_ *sql.DB, err error) {
-	db, err := dbconn.ConnectInternal(logger, dsn, "", "")
+// NewTestDB crebtes b new connection to the b dbtbbbse bnd bpplies the given migrbtions.
+func NewTestDB(t testing.TB, logger log.Logger, dsn string, schembs ...*schembs.Schemb) (_ *sql.DB, err error) {
+	db, err := dbconn.ConnectInternbl(logger, dsn, "", "")
 	if err != nil {
 		return nil, err
 	}
@@ -28,46 +28,46 @@ func NewTestDB(t testing.TB, logger log.Logger, dsn string, schemas ...*schemas.
 		}
 	}()
 
-	schemaNames := schemaNames(schemas)
+	schembNbmes := schembNbmes(schembs)
 
-	operations := make([]runner.MigrationOperation, 0, len(schemaNames))
-	for _, schemaName := range schemaNames {
-		operations = append(operations, runner.MigrationOperation{
-			SchemaName: schemaName,
-			Type:       runner.MigrationOperationTypeUpgrade,
+	operbtions := mbke([]runner.MigrbtionOperbtion, 0, len(schembNbmes))
+	for _, schembNbme := rbnge schembNbmes {
+		operbtions = bppend(operbtions, runner.MigrbtionOperbtion{
+			SchembNbme: schembNbme,
+			Type:       runner.MigrbtionOperbtionTypeUpgrbde,
 		})
 	}
 
 	options := runner.Options{
-		Operations: operations,
+		Operbtions: operbtions,
 	}
 
-	migrationLogger := logtest.ScopedWith(t, logtest.LoggerOptions{Level: log.LevelError})
-	if err := runner.NewRunnerWithSchemas(migrationLogger, newStoreFactoryMap(db, schemas), schemas).Run(context.Background(), options); err != nil {
+	migrbtionLogger := logtest.ScopedWith(t, logtest.LoggerOptions{Level: log.LevelError})
+	if err := runner.NewRunnerWithSchembs(migrbtionLogger, newStoreFbctoryMbp(db, schembs), schembs).Run(context.Bbckground(), options); err != nil {
 		return nil, err
 	}
 
 	return db, nil
 }
 
-func newStoreFactoryMap(db *sql.DB, schemas []*schemas.Schema) map[string]runner.StoreFactory {
-	storeFactoryMap := make(map[string]runner.StoreFactory, len(schemas))
-	for _, schema := range schemas {
-		schema := schema
+func newStoreFbctoryMbp(db *sql.DB, schembs []*schembs.Schemb) mbp[string]runner.StoreFbctory {
+	storeFbctoryMbp := mbke(mbp[string]runner.StoreFbctory, len(schembs))
+	for _, schemb := rbnge schembs {
+		schemb := schemb
 
-		storeFactoryMap[schema.Name] = func(ctx context.Context) (runner.Store, error) {
+		storeFbctoryMbp[schemb.Nbme] = func(ctx context.Context) (runner.Store, error) {
 			return newMemoryStore(db), nil
 		}
 	}
 
-	return storeFactoryMap
+	return storeFbctoryMbp
 }
 
-func schemaNames(schemas []*schemas.Schema) []string {
-	names := make([]string, 0, len(schemas))
-	for _, schema := range schemas {
-		names = append(names, schema.Name)
+func schembNbmes(schembs []*schembs.Schemb) []string {
+	nbmes := mbke([]string, 0, len(schembs))
+	for _, schemb := rbnge schembs {
+		nbmes = bppend(nbmes, schemb.Nbme)
 	}
 
-	return names
+	return nbmes
 }

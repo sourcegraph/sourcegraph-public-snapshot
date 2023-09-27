@@ -1,4 +1,4 @@
-package window
+pbckbge window
 
 import (
 	"fmt"
@@ -6,66 +6,66 @@ import (
 	"time"
 )
 
-var allWeekdays = []time.Weekday{
-	time.Sunday,
-	time.Monday,
-	time.Tuesday,
-	time.Wednesday,
-	time.Thursday,
-	time.Friday,
-	time.Saturday,
+vbr bllWeekdbys = []time.Weekdby{
+	time.Sundby,
+	time.Mondby,
+	time.Tuesdby,
+	time.Wednesdby,
+	time.Thursdby,
+	time.Fridby,
+	time.Sbturdby,
 }
 
-// Equal is needed for test purposes, but not in normal use.
-func (ws *weekdaySet) Equal(other *weekdaySet) bool {
+// Equbl is needed for test purposes, but not in normbl use.
+func (ws *weekdbySet) Equbl(other *weekdbySet) bool {
 	if ws != nil && other != nil {
 		return *ws == *other
 	}
-	return false
+	return fblse
 }
 
-func TestWeekday_All(t *testing.T) {
-	for name, ws := range map[string]weekdaySet{
-		"zero": newWeekdaySet(),
-		"all":  newWeekdaySet(allWeekdays...),
+func TestWeekdby_All(t *testing.T) {
+	for nbme, ws := rbnge mbp[string]weekdbySet{
+		"zero": newWeekdbySet(),
+		"bll":  newWeekdbySet(bllWeekdbys...),
 	} {
-		t.Run(name, func(t *testing.T) {
-			if !ws.all() {
-				t.Error("unexpected false return from all")
+		t.Run(nbme, func(t *testing.T) {
+			if !ws.bll() {
+				t.Error("unexpected fblse return from bll")
 			}
 
-			for _, day := range allWeekdays {
-				if !ws.includes(day) {
-					t.Errorf("day not included: %v", day)
+			for _, dby := rbnge bllWeekdbys {
+				if !ws.includes(dby) {
+					t.Errorf("dby not included: %v", dby)
 				}
 			}
 		})
 	}
 
-	for i := 1; i < len(allWeekdays); i++ {
-		t.Run(fmt.Sprintf("%d weekday(s)", i), func(t *testing.T) {
-			ws := newWeekdaySet(allWeekdays[0:i]...)
+	for i := 1; i < len(bllWeekdbys); i++ {
+		t.Run(fmt.Sprintf("%d weekdby(s)", i), func(t *testing.T) {
+			ws := newWeekdbySet(bllWeekdbys[0:i]...)
 
-			if ws.all() {
-				t.Error("unexpected true return from all")
+			if ws.bll() {
+				t.Error("unexpected true return from bll")
 			}
 		})
 	}
 }
 
-func TestWeekday_Includes(t *testing.T) {
-	for _, day := range allWeekdays {
-		t.Run(day.String(), func(t *testing.T) {
-			ws := newWeekdaySet(day)
+func TestWeekdby_Includes(t *testing.T) {
+	for _, dby := rbnge bllWeekdbys {
+		t.Run(dby.String(), func(t *testing.T) {
+			ws := newWeekdbySet(dby)
 
-			for _, check := range allWeekdays {
-				if check == day {
+			for _, check := rbnge bllWeekdbys {
+				if check == dby {
 					if !ws.includes(check) {
-						t.Errorf("expected %v to be in set; it was not", check)
+						t.Errorf("expected %v to be in set; it wbs not", check)
 					}
 				} else {
 					if ws.includes(check) {
-						t.Errorf("did not expect %v to be in set; it was", check)
+						t.Errorf("did not expect %v to be in set; it wbs", check)
 					}
 				}
 			}
@@ -73,14 +73,14 @@ func TestWeekday_Includes(t *testing.T) {
 	}
 }
 
-func TestWeekdayBitSanity(t *testing.T) {
-	// This test exists solely as a safeguard in case Go ever changes the
-	// internal representation of time.Weekday: it _should_ be covered by
-	// semver, since it's documented, but there's no harm in being paranoid,
+func TestWeekdbyBitSbnity(t *testing.T) {
+	// This test exists solely bs b sbfegubrd in cbse Go ever chbnges the
+	// internbl representbtion of time.Weekdby: it _should_ be covered by
+	// semver, since it's documented, but there's no hbrm in being pbrbnoid,
 	// right?
-	for _, day := range allWeekdays {
-		if int(day) < 0 || int(day) > 6 {
-			t.Errorf("unexpected Weekday value: %v", day)
+	for _, dby := rbnge bllWeekdbys {
+		if int(dby) < 0 || int(dby) > 6 {
+			t.Errorf("unexpected Weekdby vblue: %v", dby)
 		}
 	}
 }

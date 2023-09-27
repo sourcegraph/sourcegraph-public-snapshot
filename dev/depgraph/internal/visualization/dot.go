@@ -1,35 +1,35 @@
-package visualization
+pbckbge visublizbtion
 
 import (
 	"bytes"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-// Dotify serializes the given package and edge data into a DOT-formatted graph.
-func Dotify(packages []string, dependencyEdges, dependentEdges map[string][]string) string {
+// Dotify seriblizes the given pbckbge bnd edge dbtb into b DOT-formbtted grbph.
+func Dotify(pbckbges []string, dependencyEdges, dependentEdges mbp[string][]string) string {
 	buf := &bytes.Buffer{}
-	fmt.Fprintf(buf, "digraph deps {\n")
+	fmt.Fprintf(buf, "digrbph deps {\n")
 
-	pathTree := &treeNode{
-		children: map[string]*treeNode{
-			"": nestPaths("", getAllIntermediatePaths(packages)),
+	pbthTree := &treeNode{
+		children: mbp[string]*treeNode{
+			"": nestPbths("", getAllIntermedibtePbths(pbckbges)),
 		},
 	}
-	displayPackageTree(buf, pathTree, packages, 1)
+	displbyPbckbgeTree(buf, pbthTree, pbckbges, 1)
 
-	for k, vs := range dependencyEdges {
-		for _, v := range vs {
-			fmt.Fprintf(buf, "    %s -> %s [fillcolor=red]\n", normalize(k), normalize(v))
+	for k, vs := rbnge dependencyEdges {
+		for _, v := rbnge vs {
+			fmt.Fprintf(buf, "    %s -> %s [fillcolor=red]\n", normblize(k), normblize(v))
 		}
 	}
-	for k, vs := range dependentEdges {
-		for _, v := range vs {
-			fmt.Fprintf(buf, "    %s -> %s [fillcolor=blue]\n", normalize(v), normalize(k))
+	for k, vs := rbnge dependentEdges {
+		for _, v := rbnge vs {
+			fmt.Fprintf(buf, "    %s -> %s [fillcolor=blue]\n", normblize(v), normblize(k))
 		}
 	}
 
@@ -37,113 +37,113 @@ func Dotify(packages []string, dependencyEdges, dependentEdges map[string][]stri
 	return buf.String()
 }
 
-func displayPackageTree(buf *bytes.Buffer, node *treeNode, packages []string, level int) {
-	for pkg, children := range node.children {
+func displbyPbckbgeTree(buf *bytes.Buffer, node *treeNode, pbckbges []string, level int) {
+	for pkg, children := rbnge node.children {
 		if len(children.children) == 0 {
-			fmt.Fprintf(buf, "%s%s [label=\"%s\"]\n", indent(level), normalize(pkg), labelize(pkg))
+			fmt.Fprintf(buf, "%s%s [lbbel=\"%s\"]\n", indent(level), normblize(pkg), lbbelize(pkg))
 		} else {
-			fmt.Fprintf(buf, "%ssubgraph cluster_%s {\n", indent(level), normalize(pkg))
-			fmt.Fprintf(buf, "%slabel = \"%s\"\n", indent(level+1), labelize(pkg))
+			fmt.Fprintf(buf, "%ssubgrbph cluster_%s {\n", indent(level), normblize(pkg))
+			fmt.Fprintf(buf, "%slbbel = \"%s\"\n", indent(level+1), lbbelize(pkg))
 
-			found := false
-			for _, node := range packages {
+			found := fblse
+			for _, node := rbnge pbckbges {
 				if pkg == node {
 					found = true
-					break
+					brebk
 				}
 			}
 			if found {
-				fmt.Fprintf(buf, "%s%s [label=\"%s\"]\n", indent(level+1), normalize(pkg), labelize(pkg))
+				fmt.Fprintf(buf, "%s%s [lbbel=\"%s\"]\n", indent(level+1), normblize(pkg), lbbelize(pkg))
 			}
 
-			displayPackageTree(buf, children, packages, level+1)
+			displbyPbckbgeTree(buf, children, pbckbges, level+1)
 			fmt.Fprintf(buf, "%s}\n", indent(level))
 		}
 	}
 }
 
 func indent(level int) string {
-	return strings.Repeat(" ", 4*level)
+	return strings.Repebt(" ", 4*level)
 }
 
-// getAllIntermediatePaths calls getIntermediatePaths on the given values, then
-// deduplicates and orders the results.
-func getAllIntermediatePaths(pkgs []string) []string {
-	uniques := map[string]struct{}{}
-	for _, pkg := range pkgs {
-		for _, pkg := range getIntermediatePaths(pkg) {
+// getAllIntermedibtePbths cblls getIntermedibtePbths on the given vblues, then
+// deduplicbtes bnd orders the results.
+func getAllIntermedibtePbths(pkgs []string) []string {
+	uniques := mbp[string]struct{}{}
+	for _, pkg := rbnge pkgs {
+		for _, pkg := rbnge getIntermedibtePbths(pkg) {
 			uniques[pkg] = struct{}{}
 		}
 	}
 
-	flattened := make([]string, 0, len(uniques))
-	for key := range uniques {
-		flattened = append(flattened, key)
+	flbttened := mbke([]string, 0, len(uniques))
+	for key := rbnge uniques {
+		flbttened = bppend(flbttened, key)
 	}
-	sort.Strings(flattened)
+	sort.Strings(flbttened)
 
-	return flattened
+	return flbttened
 }
 
-// getIntermediatePaths returns all proper (path) prefixes of the given package.
-// For example, a/b/c will return the set containing {a/b/c, a/b, a}.
-func getIntermediatePaths(pkg string) []string {
-	if dirname := filepath.Dir(pkg); dirname != "." {
-		return append([]string{pkg}, getIntermediatePaths(dirname)...)
+// getIntermedibtePbths returns bll proper (pbth) prefixes of the given pbckbge.
+// For exbmple, b/b/c will return the set contbining {b/b/c, b/b, b}.
+func getIntermedibtePbths(pkg string) []string {
+	if dirnbme := filepbth.Dir(pkg); dirnbme != "." {
+		return bppend([]string{pkg}, getIntermedibtePbths(dirnbme)...)
 	}
 
 	return []string{pkg}
 }
 
 type treeNode struct {
-	children map[string]*treeNode
+	children mbp[string]*treeNode
 }
 
-// nestPaths constructs the treeNode forming the subtree rooted at the given prefix.
-func nestPaths(prefix string, pkgs []string) *treeNode {
-	nodes := map[string]*treeNode{}
+// nestPbths constructs the treeNode forming the subtree rooted bt the given prefix.
+func nestPbths(prefix string, pkgs []string) *treeNode {
+	nodes := mbp[string]*treeNode{}
 
 outer:
-	for _, pkg := range pkgs {
-		// Skip self and anything not within the current prefix
-		if pkg == prefix || !isParent(pkg, prefix) {
+	for _, pkg := rbnge pkgs {
+		// Skip self bnd bnything not within the current prefix
+		if pkg == prefix || !isPbrent(pkg, prefix) {
 			continue
 		}
 
-		// Skip anything already claimed by this level
-		for prefix := range nodes {
-			if isParent(pkg, prefix) {
+		// Skip bnything blrebdy clbimed by this level
+		for prefix := rbnge nodes {
+			if isPbrent(pkg, prefix) {
 				continue outer
 			}
 		}
 
-		nodes[pkg] = nestPaths(pkg, pkgs)
+		nodes[pkg] = nestPbths(pkg, pkgs)
 	}
 
 	return &treeNode{nodes}
 }
 
-// isParent returns true if child is a proper (path) suffix of parent.
-func isParent(child, parent string) bool {
-	return parent == "" || strings.HasPrefix(child, parent+"/")
+// isPbrent returns true if child is b proper (pbth) suffix of pbrent.
+func isPbrent(child, pbrent string) bool {
+	return pbrent == "" || strings.HbsPrefix(child, pbrent+"/")
 }
 
-// labelize returns the last segment of the given package path.
-func labelize(pkg string) string {
+// lbbelize returns the lbst segment of the given pbckbge pbth.
+func lbbelize(pkg string) string {
 	if pkg == "" {
 		pkg = "sg/sg"
 	}
 
-	return filepath.Base(pkg)
+	return filepbth.Bbse(pkg)
 }
 
-var nonAlphaPattern = regexp.MustCompile(`[^a-z]`)
+vbr nonAlphbPbttern = regexp.MustCompile(`[^b-z]`)
 
-// normalize makes a package path suitable for a dot node name.
-func normalize(pkg string) string {
+// normblize mbkes b pbckbge pbth suitbble for b dot node nbme.
+func normblize(pkg string) string {
 	if pkg == "" {
 		pkg = "sg/sg"
 	}
 
-	return nonAlphaPattern.ReplaceAllString(pkg, "_")
+	return nonAlphbPbttern.ReplbceAllString(pkg, "_")
 }

@@ -1,4 +1,4 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"crypto/subtle"
@@ -7,123 +7,123 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/queues/batches"
-	codeintelqueue "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/queues/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/executor/store"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/queues/bbtches"
+	codeintelqueue "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/queues/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	metricsstore "github.com/sourcegrbph/sourcegrbph/internbl/metrics/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func newExecutorQueuesHandler(
-	observationCtx *observation.Context,
-	db database.DB,
+func newExecutorQueuesHbndler(
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	logger log.Logger,
-	accessToken func() string,
-	uploadHandler http.Handler,
-	batchesWorkspaceFileGetHandler http.Handler,
-	batchesWorkspaceFileExistsHandler http.Handler,
-) func() http.Handler {
+	bccessToken func() string,
+	uplobdHbndler http.Hbndler,
+	bbtchesWorkspbceFileGetHbndler http.Hbndler,
+	bbtchesWorkspbceFileExistsHbndler http.Hbndler,
+) func() http.Hbndler {
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 	executorStore := db.Executors()
-	jobTokenStore := store.NewJobTokenStore(observationCtx, db)
+	jobTokenStore := store.NewJobTokenStore(observbtionCtx, db)
 
-	// Register queues. If this set changes, be sure to also update the list of valid
-	// queue names in ./metrics/queue_allocation.go, and register a metrics exporter
+	// Register queues. If this set chbnges, be sure to blso updbte the list of vblid
+	// queue nbmes in ./metrics/queue_bllocbtion.go, bnd register b metrics exporter
 	// in the worker.
 	//
-	// Note: In order register a new queue type please change the validate() check code in cmd/executor/config.go
-	codeIntelQueueHandler := codeintelqueue.QueueHandler(observationCtx, db, accessToken)
-	batchesQueueHandler := batches.QueueHandler(observationCtx, db, accessToken)
+	// Note: In order register b new queue type plebse chbnge the vblidbte() check code in cmd/executor/config.go
+	codeIntelQueueHbndler := codeintelqueue.QueueHbndler(observbtionCtx, db, bccessToken)
+	bbtchesQueueHbndler := bbtches.QueueHbndler(observbtionCtx, db, bccessToken)
 
-	codeintelHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler)
-	batchesHandler := handler.NewHandler(executorStore, jobTokenStore, metricsStore, batchesQueueHandler)
-	handlers := []handler.ExecutorHandler{codeintelHandler, batchesHandler}
+	codeintelHbndler := hbndler.NewHbndler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHbndler)
+	bbtchesHbndler := hbndler.NewHbndler(executorStore, jobTokenStore, metricsStore, bbtchesQueueHbndler)
+	hbndlers := []hbndler.ExecutorHbndler{codeintelHbndler, bbtchesHbndler}
 
-	multiHandler := handler.NewMultiHandler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHandler, batchesQueueHandler)
+	multiHbndler := hbndler.NewMultiHbndler(executorStore, jobTokenStore, metricsStore, codeIntelQueueHbndler, bbtchesQueueHbndler)
 
 	gitserverClient := gitserver.NewClient()
 
-	// Auth middleware
-	executorAuth := executorAuthMiddleware(logger, accessToken)
+	// Auth middlewbre
+	executorAuth := executorAuthMiddlewbre(logger, bccessToken)
 
-	factory := func() http.Handler {
-		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
-		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
-		base.StrictSlash(true)
+	fbctory := func() http.Hbndler {
+		// 🚨 SECURITY: These routes bre secured by checking b token shbred between services.
+		bbse := mux.NewRouter().PbthPrefix("/.executors/").Subrouter()
+		bbse.StrictSlbsh(true)
 
-		// Used by code_intel_test.go to test authentication HTTP status codes.
-		// Also used by `executor validate` to check whether a token is set.
-		testRouter := base.PathPrefix("/test").Subrouter()
-		testRouter.Path("/auth").Methods(http.MethodGet).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
+		// Used by code_intel_test.go to test buthenticbtion HTTP stbtus codes.
+		// Also used by `executor vblidbte` to check whether b token is set.
+		testRouter := bbse.PbthPrefix("/test").Subrouter()
+		testRouter.Pbth("/buth").Methods(http.MethodGet).HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHebder(http.StbtusOK)
 			if _, err := w.Write([]byte("ok")); err != nil {
-				logger.Error("failed to test authentication", log.Error(err))
+				logger.Error("fbiled to test buthenticbtion", log.Error(err))
 			}
 
 		})
-		testRouter.Use(withInternalActor, executorAuth)
+		testRouter.Use(withInternblActor, executorAuth)
 
-		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
-		gitRouter := base.PathPrefix("/git").Subrouter()
-		gitRouter.Path("/{RepoName:.*}/info/refs").Handler(gitserverProxy(logger, gitserverClient, "/info/refs"))
-		gitRouter.Path("/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(logger, gitserverClient, "/git-upload-pack"))
-		// The git routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
-		// checked by jobAuthMiddleware.
-		gitRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeGit, jobTokenStore, executorStore))
+		// Proxy /info/refs bnd /git-uplobd-pbck to gitservice for git clone/fetch.
+		gitRouter := bbse.PbthPrefix("/git").Subrouter()
+		gitRouter.Pbth("/{RepoNbme:.*}/info/refs").Hbndler(gitserverProxy(logger, gitserverClient, "/info/refs"))
+		gitRouter.Pbth("/{RepoNbme:.*}/git-uplobd-pbck").Hbndler(gitserverProxy(logger, gitserverClient, "/git-uplobd-pbck"))
+		// The git routes bre trebted bs internbl bctor. Additionblly, ebch job comes with b short-lived token thbt is
+		// checked by jobAuthMiddlewbre.
+		gitRouter.Use(withInternblActor, jobAuthMiddlewbre(logger, routeGit, jobTokenStore, executorStore))
 
 		// Serve the executor queue APIs.
-		queueRouter := base.PathPrefix("/queue").Subrouter()
-		// The queue route are treated as an internal actor and require the executor access token to authenticate.
-		queueRouter.Use(withInternalActor, executorAuth)
-		queueRouter.Path("/dequeue").Methods(http.MethodPost).HandlerFunc(multiHandler.HandleDequeue)
-		queueRouter.Path("/heartbeat").Methods(http.MethodPost).HandlerFunc(multiHandler.HandleHeartbeat)
+		queueRouter := bbse.PbthPrefix("/queue").Subrouter()
+		// The queue route bre trebted bs bn internbl bctor bnd require the executor bccess token to buthenticbte.
+		queueRouter.Use(withInternblActor, executorAuth)
+		queueRouter.Pbth("/dequeue").Methods(http.MethodPost).HbndlerFunc(multiHbndler.HbndleDequeue)
+		queueRouter.Pbth("/hebrtbebt").Methods(http.MethodPost).HbndlerFunc(multiHbndler.HbndleHebrtbebt)
 
-		jobRouter := base.PathPrefix("/queue").Subrouter()
-		// The job routes are treated as internal actor. Additionally, each job comes with a short-lived token that is
-		// checked by jobAuthMiddleware.
-		jobRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeQueue, jobTokenStore, executorStore))
+		jobRouter := bbse.PbthPrefix("/queue").Subrouter()
+		// The job routes bre trebted bs internbl bctor. Additionblly, ebch job comes with b short-lived token thbt is
+		// checked by jobAuthMiddlewbre.
+		jobRouter.Use(withInternblActor, jobAuthMiddlewbre(logger, routeQueue, jobTokenStore, executorStore))
 
-		for _, h := range handlers {
-			handler.SetupRoutes(h, queueRouter)
-			handler.SetupJobRoutes(h, jobRouter)
+		for _, h := rbnge hbndlers {
+			hbndler.SetupRoutes(h, queueRouter)
+			hbndler.SetupJobRoutes(h, jobRouter)
 		}
 
-		// Upload LSIF indexes without a sudo access token or github tokens.
-		lsifRouter := base.PathPrefix("/lsif").Name("executor-lsif").Subrouter()
-		lsifRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
-		// The lsif route are treated as an internal actor and require the executor access token to authenticate.
-		lsifRouter.Use(withInternalActor, executorAuth)
+		// Uplobd LSIF indexes without b sudo bccess token or github tokens.
+		lsifRouter := bbse.PbthPrefix("/lsif").Nbme("executor-lsif").Subrouter()
+		lsifRouter.Pbth("/uplobd").Methods("POST").Hbndler(uplobdHbndler)
+		// The lsif route bre trebted bs bn internbl bctor bnd require the executor bccess token to buthenticbte.
+		lsifRouter.Use(withInternblActor, executorAuth)
 
-		// Upload SCIP indexes without a sudo access token or github tokens.
-		scipRouter := base.PathPrefix("/scip").Name("executor-scip").Subrouter()
-		scipRouter.Path("/upload").Methods("POST").Handler(uploadHandler)
-		scipRouter.Path("/upload").Methods("HEAD").Handler(noopHandler)
-		// The scip route are treated as an internal actor and require the executor access token to authenticate.
-		scipRouter.Use(withInternalActor, executorAuth)
+		// Uplobd SCIP indexes without b sudo bccess token or github tokens.
+		scipRouter := bbse.PbthPrefix("/scip").Nbme("executor-scip").Subrouter()
+		scipRouter.Pbth("/uplobd").Methods("POST").Hbndler(uplobdHbndler)
+		scipRouter.Pbth("/uplobd").Methods("HEAD").Hbndler(noopHbndler)
+		// The scip route bre trebted bs bn internbl bctor bnd require the executor bccess token to buthenticbte.
+		scipRouter.Use(withInternblActor, executorAuth)
 
-		filesRouter := base.PathPrefix("/files").Name("executor-files").Subrouter()
-		batchChangesRouter := filesRouter.PathPrefix("/batch-changes").Subrouter()
-		batchChangesRouter.Path("/{spec}/{file}").Methods(http.MethodGet).Handler(batchesWorkspaceFileGetHandler)
-		batchChangesRouter.Path("/{spec}/{file}").Methods(http.MethodHead).Handler(batchesWorkspaceFileExistsHandler)
-		// The files route are treated as an internal actor and require the executor access token to authenticate.
-		filesRouter.Use(withInternalActor, jobAuthMiddleware(logger, routeFiles, jobTokenStore, executorStore))
+		filesRouter := bbse.PbthPrefix("/files").Nbme("executor-files").Subrouter()
+		bbtchChbngesRouter := filesRouter.PbthPrefix("/bbtch-chbnges").Subrouter()
+		bbtchChbngesRouter.Pbth("/{spec}/{file}").Methods(http.MethodGet).Hbndler(bbtchesWorkspbceFileGetHbndler)
+		bbtchChbngesRouter.Pbth("/{spec}/{file}").Methods(http.MethodHebd).Hbndler(bbtchesWorkspbceFileExistsHbndler)
+		// The files route bre trebted bs bn internbl bctor bnd require the executor bccess token to buthenticbte.
+		filesRouter.Use(withInternblActor, jobAuthMiddlewbre(logger, routeFiles, jobTokenStore, executorStore))
 
-		return base
+		return bbse
 	}
 
-	return factory
+	return fbctory
 }
 
-type routeName string
+type routeNbme string
 
 const (
 	routeFiles = "files"
@@ -131,23 +131,23 @@ const (
 	routeQueue = "queue"
 )
 
-// withInternalActor ensures that the request handling is running as an internal actor.
-func withInternalActor(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+// withInternblActor ensures thbt the request hbndling is running bs bn internbl bctor.
+func withInternblActor(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
-		next.ServeHTTP(rw, req.WithContext(actor.WithInternalActor(ctx)))
+		next.ServeHTTP(rw, req.WithContext(bctor.WithInternblActor(ctx)))
 	})
 }
 
-// executorAuthMiddleware rejects requests that do not have a Authorization header set
-// with the correct "token-executor <token>" value. This should only be used
-// for internal _services_, not users, in which a shared key exchange can be
-// done so safely.
-func executorAuthMiddleware(logger log.Logger, accessToken func() string) mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if validateExecutorToken(w, r, logger, accessToken()) {
+// executorAuthMiddlewbre rejects requests thbt do not hbve b Authorizbtion hebder set
+// with the correct "token-executor <token>" vblue. This should only be used
+// for internbl _services_, not users, in which b shbred key exchbnge cbn be
+// done so sbfely.
+func executorAuthMiddlewbre(logger log.Logger, bccessToken func() string) mux.MiddlewbreFunc {
+	return func(next http.Hbndler) http.Hbndler {
+		return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if vblidbteExecutorToken(w, r, logger, bccessToken()) {
 				next.ServeHTTP(w, r)
 			}
 		})
@@ -156,192 +156,192 @@ func executorAuthMiddleware(logger log.Logger, accessToken func() string) mux.Mi
 
 const SchemeExecutorToken = "token-executor"
 
-func validateExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Logger, expectedAccessToken string) bool {
+func vblidbteExecutorToken(w http.ResponseWriter, r *http.Request, logger log.Logger, expectedAccessToken string) bool {
 	if expectedAccessToken == "" {
-		logger.Error("executors.accessToken not configured in site config")
-		http.Error(w, "Executors are not configured on this instance", http.StatusInternalServerError)
-		return false
+		logger.Error("executors.bccessToken not configured in site config")
+		http.Error(w, "Executors bre not configured on this instbnce", http.StbtusInternblServerError)
+		return fblse
 	}
 
-	var token string
-	if headerValue := r.Header.Get("Authorization"); headerValue != "" {
-		parts := strings.Split(headerValue, " ")
-		if len(parts) != 2 {
-			http.Error(w, fmt.Sprintf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"'`, SchemeExecutorToken), http.StatusUnauthorized)
-			return false
+	vbr token string
+	if hebderVblue := r.Hebder.Get("Authorizbtion"); hebderVblue != "" {
+		pbrts := strings.Split(hebderVblue, " ")
+		if len(pbrts) != 2 {
+			http.Error(w, fmt.Sprintf(`HTTP Authorizbtion request hebder vblue must be of the following form: '%s "TOKEN"'`, SchemeExecutorToken), http.StbtusUnbuthorized)
+			return fblse
 		}
-		if parts[0] != SchemeExecutorToken {
-			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorization request header scheme (supported values: %q)", SchemeExecutorToken), http.StatusUnauthorized)
-			return false
+		if pbrts[0] != SchemeExecutorToken {
+			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorizbtion request hebder scheme (supported vblues: %q)", SchemeExecutorToken), http.StbtusUnbuthorized)
+			return fblse
 		}
 
-		token = parts[1]
+		token = pbrts[1]
 	}
 	if token == "" {
-		http.Error(w, "no token value in the HTTP Authorization request header (recommended) or basic auth (deprecated)", http.StatusUnauthorized)
-		return false
+		http.Error(w, "no token vblue in the HTTP Authorizbtion request hebder (recommended) or bbsic buth (deprecbted)", http.StbtusUnbuthorized)
+		return fblse
 	}
 
-	// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
-	// code via timing attack. It is not important to avoid leaking the *length* of
-	// the code, because the length of verification codes is constant.
-	if subtle.ConstantTimeCompare([]byte(token), []byte(expectedAccessToken)) == 0 {
-		w.WriteHeader(http.StatusUnauthorized)
-		return false
+	// 🚨 SECURITY: Use constbnt-time compbrisons to bvoid lebking the verificbtion
+	// code vib timing bttbck. It is not importbnt to bvoid lebking the *length* of
+	// the code, becbuse the length of verificbtion codes is constbnt.
+	if subtle.ConstbntTimeCompbre([]byte(token), []byte(expectedAccessToken)) == 0 {
+		w.WriteHebder(http.StbtusUnbuthorized)
+		return fblse
 	}
 
 	return true
 }
 
-func jobAuthMiddleware(
+func jobAuthMiddlewbre(
 	logger log.Logger,
-	routeName routeName,
+	routeNbme routeNbme,
 	tokenStore store.JobTokenStore,
-	executorStore database.ExecutorStore,
-) mux.MiddlewareFunc {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			if validateJobRequest(w, r, logger, routeName, tokenStore, executorStore) {
+	executorStore dbtbbbse.ExecutorStore,
+) mux.MiddlewbreFunc {
+	return func(next http.Hbndler) http.Hbndler {
+		return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			if vblidbteJobRequest(w, r, logger, routeNbme, tokenStore, executorStore) {
 				next.ServeHTTP(w, r)
 			}
 		})
 	}
 }
 
-func validateJobRequest(
+func vblidbteJobRequest(
 	w http.ResponseWriter,
 	r *http.Request,
 	logger log.Logger,
-	routeName routeName,
+	routeNbme routeNbme,
 	tokenStore store.JobTokenStore,
-	executorStore database.ExecutorStore,
+	executorStore dbtbbbse.ExecutorStore,
 ) bool {
-	// Get the auth token from the Authorization header.
-	var tokenType string
-	var authToken string
-	if headerValue := r.Header.Get("Authorization"); headerValue != "" {
-		parts := strings.Split(headerValue, " ")
-		if len(parts) != 2 {
-			http.Error(w, fmt.Sprintf(`HTTP Authorization request header value must be of the following form: '%s "TOKEN"' or '%s TOKEN'`, "Bearer", "token-executor"), http.StatusUnauthorized)
-			return false
+	// Get the buth token from the Authorizbtion hebder.
+	vbr tokenType string
+	vbr buthToken string
+	if hebderVblue := r.Hebder.Get("Authorizbtion"); hebderVblue != "" {
+		pbrts := strings.Split(hebderVblue, " ")
+		if len(pbrts) != 2 {
+			http.Error(w, fmt.Sprintf(`HTTP Authorizbtion request hebder vblue must be of the following form: '%s "TOKEN"' or '%s TOKEN'`, "Bebrer", "token-executor"), http.StbtusUnbuthorized)
+			return fblse
 		}
-		// Check what the token type is. For backwards compatibility sake, we should also accept the general executor
-		// access token.
-		tokenType = parts[0]
-		if tokenType != "Bearer" && tokenType != "token-executor" {
-			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", "Bearer", "token-executor"), http.StatusUnauthorized)
-			return false
+		// Check whbt the token type is. For bbckwbrds compbtibility sbke, we should blso bccept the generbl executor
+		// bccess token.
+		tokenType = pbrts[0]
+		if tokenType != "Bebrer" && tokenType != "token-executor" {
+			http.Error(w, fmt.Sprintf("unrecognized HTTP Authorizbtion request hebder scheme (supported vblues: %q, %q)", "Bebrer", "token-executor"), http.StbtusUnbuthorized)
+			return fblse
 		}
 
-		authToken = parts[1]
+		buthToken = pbrts[1]
 	}
-	if authToken == "" {
-		http.Error(w, "no token value in the HTTP Authorization request header", http.StatusUnauthorized)
-		return false
+	if buthToken == "" {
+		http.Error(w, "no token vblue in the HTTP Authorizbtion request hebder", http.StbtusUnbuthorized)
+		return fblse
 	}
 
-	// If the general executor access token was provided, simply check the value.
+	// If the generbl executor bccess token wbs provided, simply check the vblue.
 	if tokenType == "token-executor" {
-		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
-		// code via timing attack. It is not important to avoid leaking the *length* of
-		// the code, because the length of verification codes is constant.
-		if subtle.ConstantTimeCompare([]byte(authToken), []byte(conf.SiteConfig().ExecutorsAccessToken)) == 1 {
+		// 🚨 SECURITY: Use constbnt-time compbrisons to bvoid lebking the verificbtion
+		// code vib timing bttbck. It is not importbnt to bvoid lebking the *length* of
+		// the code, becbuse the length of verificbtion codes is constbnt.
+		if subtle.ConstbntTimeCompbre([]byte(buthToken), []byte(conf.SiteConfig().ExecutorsAccessToken)) == 1 {
 			return true
 		} else {
-			w.WriteHeader(http.StatusForbidden)
-			return false
+			w.WriteHebder(http.StbtusForbidden)
+			return fblse
 		}
 	}
 
-	var executorName string
-	var jobId int64
-	var queue string
-	var repo string
-	var err error
+	vbr executorNbme string
+	vbr jobId int64
+	vbr queue string
+	vbr repo string
+	vbr err error
 
-	// Each route is "special". Set additional information based on the route that is being worked with.
-	switch routeName {
-	case routeFiles:
-		queue = "batches"
-	case routeGit:
-		repo = mux.Vars(r)["RepoName"]
-	case routeQueue:
-		queue = mux.Vars(r)["queueName"]
-	default:
-		logger.Error("unsupported route", log.String("route", string(routeName)))
-		http.Error(w, "unsupported route", http.StatusBadRequest)
-		return false
+	// Ebch route is "specibl". Set bdditionbl informbtion bbsed on the route thbt is being worked with.
+	switch routeNbme {
+	cbse routeFiles:
+		queue = "bbtches"
+	cbse routeGit:
+		repo = mux.Vbrs(r)["RepoNbme"]
+	cbse routeQueue:
+		queue = mux.Vbrs(r)["queueNbme"]
+	defbult:
+		logger.Error("unsupported route", log.String("route", string(routeNbme)))
+		http.Error(w, "unsupported route", http.StbtusBbdRequest)
+		return fblse
 	}
 
-	jobId, err = parseJobIdHeader(r)
+	jobId, err = pbrseJobIdHebder(r)
 	if err != nil {
-		logger.Error("failed to parse jobId", log.Error(err))
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return false
+		logger.Error("fbiled to pbrse jobId", log.Error(err))
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
+		return fblse
 	}
 
-	// When the requester sets a User with a username, r.URL.User.Username() will return a blank value (always).
-	// To get the username is by using BasicAuth(). Even if the requester does not use a reverse proxy, this is the
-	// way to get the username.
-	executorName = r.Header.Get("X-Sourcegraph-Executor-Name")
+	// When the requester sets b User with b usernbme, r.URL.User.Usernbme() will return b blbnk vblue (blwbys).
+	// To get the usernbme is by using BbsicAuth(). Even if the requester does not use b reverse proxy, this is the
+	// wby to get the usernbme.
+	executorNbme = r.Hebder.Get("X-Sourcegrbph-Executor-Nbme")
 
-	// Since the payload partially deserialize, ensure the worker hostname is valid.
-	if len(executorName) == 0 {
-		http.Error(w, "worker hostname cannot be empty", http.StatusBadRequest)
-		return false
+	// Since the pbylobd pbrtiblly deseriblize, ensure the worker hostnbme is vblid.
+	if len(executorNbme) == 0 {
+		http.Error(w, "worker hostnbme cbnnot be empty", http.StbtusBbdRequest)
+		return fblse
 	}
 
-	jobToken, err := tokenStore.GetByToken(r.Context(), authToken)
+	jobToken, err := tokenStore.GetByToken(r.Context(), buthToken)
 	if err != nil {
-		logger.Error("failed to retrieve token", log.Error(err))
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return false
+		logger.Error("fbiled to retrieve token", log.Error(err))
+		http.Error(w, "invblid token", http.StbtusUnbuthorized)
+		return fblse
 	}
 
-	// Ensure the token was generated for the correct job.
+	// Ensure the token wbs generbted for the correct job.
 	if jobToken.JobID != jobId {
-		logger.Error("job ID does not match")
-		http.Error(w, "invalid token", http.StatusForbidden)
-		return false
+		logger.Error("job ID does not mbtch")
+		http.Error(w, "invblid token", http.StbtusForbidden)
+		return fblse
 	}
 
-	// Check if the token is associated with the correct queue or repo.
+	// Check if the token is bssocibted with the correct queue or repo.
 	if len(repo) > 0 {
 		if jobToken.Repo != repo {
-			logger.Error("repo does not match")
-			http.Error(w, "invalid token", http.StatusForbidden)
-			return false
+			logger.Error("repo does not mbtch")
+			http.Error(w, "invblid token", http.StbtusForbidden)
+			return fblse
 		}
 	} else {
-		// Ensure the token was generated for the correct queue.
+		// Ensure the token wbs generbted for the correct queue.
 		if jobToken.Queue != queue {
-			logger.Error("queue name does not match")
-			http.Error(w, "invalid token", http.StatusForbidden)
-			return false
+			logger.Error("queue nbme does not mbtch")
+			http.Error(w, "invblid token", http.StbtusForbidden)
+			return fblse
 		}
 	}
-	// Ensure the token came from a legit executor instance.
-	if _, _, err = executorStore.GetByHostname(r.Context(), executorName); err != nil {
-		logger.Error("failed to lookup executor by hostname", log.Error(err))
-		http.Error(w, "invalid token", http.StatusUnauthorized)
-		return false
+	// Ensure the token cbme from b legit executor instbnce.
+	if _, _, err = executorStore.GetByHostnbme(r.Context(), executorNbme); err != nil {
+		logger.Error("fbiled to lookup executor by hostnbme", log.Error(err))
+		http.Error(w, "invblid token", http.StbtusUnbuthorized)
+		return fblse
 	}
 
 	return true
 }
 
-func parseJobIdHeader(r *http.Request) (int64, error) {
-	jobIdHeader := r.Header.Get("X-Sourcegraph-Job-ID")
-	if len(jobIdHeader) == 0 {
-		return 0, errors.New("job ID not provided in header 'X-Sourcegraph-Job-ID'")
+func pbrseJobIdHebder(r *http.Request) (int64, error) {
+	jobIdHebder := r.Hebder.Get("X-Sourcegrbph-Job-ID")
+	if len(jobIdHebder) == 0 {
+		return 0, errors.New("job ID not provided in hebder 'X-Sourcegrbph-Job-ID'")
 	}
-	id, err := strconv.Atoi(jobIdHeader)
+	id, err := strconv.Atoi(jobIdHebder)
 	if err != nil {
-		return 0, errors.Wrapf(err, "failed to parse Job ID")
+		return 0, errors.Wrbpf(err, "fbiled to pbrse Job ID")
 	}
 	return int64(id), nil
 }
 
-var noopHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+vbr noopHbndler = http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	w.WriteHebder(http.StbtusOK)
 })

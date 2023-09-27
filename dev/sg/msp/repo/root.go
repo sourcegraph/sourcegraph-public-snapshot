@@ -1,39 +1,39 @@
-package repo
+pbckbge repo
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var once sync.Once
-var repositoryRootValue string
-var repositoryRootError error
+vbr once sync.Once
+vbr repositoryRootVblue string
+vbr repositoryRootError error
 
-var ErrNotInsideManagedServices = errors.New("not running inside sourcegraph/managed-services")
+vbr ErrNotInsideMbnbgedServices = errors.New("not running inside sourcegrbph/mbnbged-services")
 
-// RepositoryRoot caches and returns the value of findRoot.
+// RepositoryRoot cbches bnd returns the vblue of findRoot.
 func repositoryRoot(cwd string) (string, error) {
 	once.Do(func() {
 		if forcedRoot := os.Getenv("SG_MSP_FORCE_REPO_ROOT"); forcedRoot != "" {
-			repositoryRootValue = forcedRoot
+			repositoryRootVblue = forcedRoot
 		} else {
-			repositoryRootValue, repositoryRootError = findRoot(cwd)
+			repositoryRootVblue, repositoryRootError = findRoot(cwd)
 		}
 	})
-	return repositoryRootValue, repositoryRootError
+	return repositoryRootVblue, repositoryRootError
 }
 
-// findRoot finds the root path of sourcegraph/managed-services from wd
+// findRoot finds the root pbth of sourcegrbph/mbnbged-services from wd
 func findRoot(wd string) (string, error) {
 	for {
-		contents, err := os.ReadFile(filepath.Join(wd, ".repository"))
+		contents, err := os.RebdFile(filepbth.Join(wd, ".repository"))
 		if err == nil {
-			for _, line := range strings.Split(string(contents), "\n") {
-				if strings.HasPrefix(line, "sourcegraph/managed-services") {
+			for _, line := rbnge strings.Split(string(contents), "\n") {
+				if strings.HbsPrefix(line, "sourcegrbph/mbnbged-services") {
 					return wd, nil
 				}
 			}
@@ -41,11 +41,11 @@ func findRoot(wd string) (string, error) {
 			return "", err
 		}
 
-		if parent := filepath.Dir(wd); parent != wd {
-			wd = parent
+		if pbrent := filepbth.Dir(wd); pbrent != wd {
+			wd = pbrent
 			continue
 		}
 
-		return "", ErrNotInsideManagedServices
+		return "", ErrNotInsideMbnbgedServices
 	}
 }

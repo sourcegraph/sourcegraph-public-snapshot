@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
@@ -6,696 +6,696 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bdobbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bzuredevops"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-var (
-	testRepoName              = "testrepo"
-	testProjectName           = "testproject"
-	testOrgName               = "testorg"
+vbr (
+	testRepoNbme              = "testrepo"
+	testProjectNbme           = "testproject"
+	testOrgNbme               = "testorg"
 	testPRID                  = "42"
-	testRepository            = azuredevops.Repository{ID: "testrepoid", Name: testRepoName, Project: azuredevops.Project{ID: "testprojectid", Name: testProjectName}, APIURL: fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", testOrgName, testProjectName, testRepoName), CloneURL: fmt.Sprintf("https://dev.azure.com/%s/%s/_git/%s", testOrgName, testProjectName, testRepoName)}
-	testCommonPullRequestArgs = azuredevops.PullRequestCommonArgs{Org: testOrgName, Project: testProjectName, RepoNameOrID: testRepoName, PullRequestID: testPRID}
-	testOrgProjectRepoArgs    = azuredevops.OrgProjectRepoArgs{Org: testOrgName, Project: testProjectName, RepoNameOrID: testRepoName}
+	testRepository            = bzuredevops.Repository{ID: "testrepoid", Nbme: testRepoNbme, Project: bzuredevops.Project{ID: "testprojectid", Nbme: testProjectNbme}, APIURL: fmt.Sprintf("https://dev.bzure.com/%s/%s/_git/%s", testOrgNbme, testProjectNbme, testRepoNbme), CloneURL: fmt.Sprintf("https://dev.bzure.com/%s/%s/_git/%s", testOrgNbme, testProjectNbme, testRepoNbme)}
+	testCommonPullRequestArgs = bzuredevops.PullRequestCommonArgs{Org: testOrgNbme, Project: testProjectNbme, RepoNbmeOrID: testRepoNbme, PullRequestID: testPRID}
+	testOrgProjectRepoArgs    = bzuredevops.OrgProjectRepoArgs{Org: testOrgNbme, Project: testProjectNbme, RepoNbmeOrID: testRepoNbme}
 )
 
 func TestAzureDevOpsSource_GitserverPushConfig(t *testing.T) {
-	// This isn't a full blown test of all the possibilities of
-	// gitserverPushConfig(), but we do need to validate that the authenticator
-	// on the client affects the eventual URL in the correct way, and that
-	// requires a bunch of boilerplate to make it look like we have a valid
-	// external service and repo.
+	// This isn't b full blown test of bll the possibilities of
+	// gitserverPushConfig(), but we do need to vblidbte thbt the buthenticbtor
+	// on the client bffects the eventubl URL in the correct wby, bnd thbt
+	// requires b bunch of boilerplbte to mbke it look like we hbve b vblid
+	// externbl service bnd repo.
 	//
-	// So, cue the boilerplate:
-	au := auth.BasicAuth{Username: "user", Password: "pass"}
+	// So, cue the boilerplbte:
+	bu := buth.BbsicAuth{Usernbme: "user", Pbssword: "pbss"}
 
 	s, client := mockAzureDevOpsSource()
-	client.AuthenticatorFunc.SetDefaultReturn(&au)
+	client.AuthenticbtorFunc.SetDefbultReturn(&bu)
 
 	repo := &types.Repo{
-		ExternalRepo: api.ExternalRepoSpec{
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ServiceType: extsvc.TypeAzureDevOps,
 		},
-		Metadata: &azuredevops.Repository{
+		Metbdbtb: &bzuredevops.Repository{
 			ID:   "testrepoid",
-			Name: "testrepo",
-			Project: azuredevops.Project{
+			Nbme: "testrepo",
+			Project: bzuredevops.Project{
 				ID:   "testprojectid",
-				Name: "testproject",
+				Nbme: "testproject",
 			},
 		},
-		Sources: map[string]*types.SourceInfo{
+		Sources: mbp[string]*types.SourceInfo{
 			"1": {
-				ID:       "extsvc:azuredevops:1",
-				CloneURL: "https://dev.azure.com/testorg/testproject/_git/testrepo",
+				ID:       "extsvc:bzuredevops:1",
+				CloneURL: "https://dev.bzure.com/testorg/testproject/_git/testrepo",
 			},
 		},
 	}
 
 	pushConfig, err := s.GitserverPushConfig(repo)
-	assert.Nil(t, err)
-	assert.NotNil(t, pushConfig)
-	assert.Equal(t, "https://user:pass@dev.azure.com/testorg/testproject/_git/testrepo", pushConfig.RemoteURL)
+	bssert.Nil(t, err)
+	bssert.NotNil(t, pushConfig)
+	bssert.Equbl(t, "https://user:pbss@dev.bzure.com/testorg/testproject/_git/testrepo", pushConfig.RemoteURL)
 }
 
-func TestAzureDevOpsSource_WithAuthenticator(t *testing.T) {
-	t.Run("supports BasicAuth", func(t *testing.T) {
+func TestAzureDevOpsSource_WithAuthenticbtor(t *testing.T) {
+	t.Run("supports BbsicAuth", func(t *testing.T) {
 		newClient := NewStrictMockAzureDevOpsClient()
-		au := &auth.BasicAuth{}
+		bu := &buth.BbsicAuth{}
 		s, client := mockAzureDevOpsSource()
-		client.WithAuthenticatorFunc.SetDefaultHook(func(a auth.Authenticator) (azuredevops.Client, error) {
-			assert.Same(t, au, a)
+		client.WithAuthenticbtorFunc.SetDefbultHook(func(b buth.Authenticbtor) (bzuredevops.Client, error) {
+			bssert.Sbme(t, bu, b)
 			return newClient, nil
 		})
 
-		newSource, err := s.WithAuthenticator(au)
-		assert.Nil(t, err)
-		assert.Same(t, newClient, newSource.(*AzureDevOpsSource).client)
+		newSource, err := s.WithAuthenticbtor(bu)
+		bssert.Nil(t, err)
+		bssert.Sbme(t, newClient, newSource.(*AzureDevOpsSource).client)
 	})
 }
 
-func TestAzureDevOpsSource_ValidateAuthenticator(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_VblidbteAuthenticbtor(t *testing.T) {
+	ctx := context.Bbckground()
 
-	for name, want := range map[string]error{
+	for nbme, wbnt := rbnge mbp[string]error{
 		"nil":   nil,
 		"error": errors.New("error"),
 	} {
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			s, client := mockAzureDevOpsSource()
-			client.GetAuthorizedProfileFunc.SetDefaultReturn(azuredevops.Profile{}, want)
+			client.GetAuthorizedProfileFunc.SetDefbultReturn(bzuredevops.Profile{}, wbnt)
 
-			assert.Equal(t, want, s.ValidateAuthenticator(ctx))
+			bssert.Equbl(t, wbnt, s.VblidbteAuthenticbtor(ctx))
 		})
 	}
 }
 
-func TestAzureDevOpsSource_LoadChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_LobdChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("error getting pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := errors.New("error")
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			return azuredevops.PullRequest{}, want
+		wbnt := errors.New("error")
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		err := s.LoadChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		err := s.LobdChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("pull request not found", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			return azuredevops.PullRequest{}, &notFoundError{}
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			return bzuredevops.PullRequest{}, &notFoundError{}
 		})
 
-		err := s.LoadChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		target := ChangesetNotFoundError{}
-		assert.ErrorAs(t, err, &target)
-		assert.Same(t, target.Changeset, cs)
+		err := s.LobdChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		tbrget := ChbngesetNotFoundError{}
+		bssert.ErrorAs(t, err, &tbrget)
+		bssert.Sbme(t, tbrget.Chbngeset, cs)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
 
-		err := s.LoadChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		err := s.LobdChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
 
-		err := s.LoadChangeset(ctx, cs)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		err := s.LobdChbngeset(ctx, cs)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 }
 
-func TestAzureDevOpsSource_CreateChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_CrebteChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("error creating pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error crebting pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
-		want := errors.New("error")
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
-			return azuredevops.PullRequest{}, want
+		wbnt := errors.New("error")
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		exists, err := s.CreateChangeset(ctx, cs)
-		assert.False(t, exists)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		exists, err := s.CrebteChbngeset(ctx, cs)
+		bssert.Fblse(t, exists)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
 			return *pr, nil
 		})
 
-		exists, err := s.CreateChangeset(ctx, cs)
-		assert.False(t, exists)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		exists, err := s.CrebteChbngeset(ctx, cs)
+		bssert.Fblse(t, exists)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
-			assert.Nil(t, pri.ForkSource)
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
+			bssert.Nil(t, pri.ForkSource)
 			return *pr, nil
 		})
 
-		exists, err := s.CreateChangeset(ctx, cs)
-		assert.True(t, exists)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		exists, err := s.CrebteChbngeset(ctx, cs)
+		bssert.True(t, exists)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 
 	t.Run("success with fork", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
-		fork := &azuredevops.Repository{
+		fork := &bzuredevops.Repository{
 			ID:   "forkedrepoid",
-			Name: "forkedrepo",
+			Nbme: "forkedrepo",
 		}
 		cs.RemoteRepo = &types.Repo{
-			Metadata: fork,
+			Metbdbtb: fork,
 		}
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
-			assert.Equal(t, *fork, pri.ForkSource.Repository)
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
+			bssert.Equbl(t, *fork, pri.ForkSource.Repository)
 			return *pr, nil
 		})
 
-		exists, err := s.CreateChangeset(ctx, cs)
-		assert.True(t, exists)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		exists, err := s.CrebteChbngeset(ctx, cs)
+		bssert.True(t, exists)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 }
 
-func TestAzureDevOpsSource_CreateDraftChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_CrebteDrbftChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("error creating pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error crebting pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
-		want := errors.New("error")
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
-			return azuredevops.PullRequest{}, want
+		wbnt := errors.New("error")
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		exists, err := s.CreateDraftChangeset(ctx, cs)
-		assert.False(t, exists)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		exists, err := s.CrebteDrbftChbngeset(ctx, cs)
+		bssert.Fblse(t, exists)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
 			return *pr, nil
 		})
 
-		exists, err := s.CreateDraftChangeset(ctx, cs)
-		assert.False(t, exists)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		exists, err := s.CrebteDrbftChbngeset(ctx, cs)
+		bssert.Fblse(t, exists)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
-			assert.Nil(t, pri.ForkSource)
-			assert.True(t, pri.IsDraft)
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
+			bssert.Nil(t, pri.ForkSource)
+			bssert.True(t, pri.IsDrbft)
 			return *pr, nil
 		})
 
-		exists, err := s.CreateDraftChangeset(ctx, cs)
-		assert.True(t, exists)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		exists, err := s.CrebteDrbftChbngeset(ctx, cs)
+		bssert.True(t, exists)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 
 	t.Run("success with fork", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
-		fork := &azuredevops.Repository{
+		fork := &bzuredevops.Repository{
 			ID:   "forkedrepoid",
-			Name: "forkedrepo",
+			Nbme: "forkedrepo",
 		}
 		cs.RemoteRepo = &types.Repo{
-			Metadata: fork,
+			Metbdbtb: fork,
 		}
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.OrgProjectRepoArgs, pri azuredevops.CreatePullRequestInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testOrgProjectRepoArgs, r)
-			assert.Equal(t, cs.Title, pri.Title)
-			assert.Equal(t, *fork, pri.ForkSource.Repository)
-			assert.True(t, pri.IsDraft)
+		client.CrebtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.OrgProjectRepoArgs, pri bzuredevops.CrebtePullRequestInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testOrgProjectRepoArgs, r)
+			bssert.Equbl(t, cs.Title, pri.Title)
+			bssert.Equbl(t, *fork, pri.ForkSource.Repository)
+			bssert.True(t, pri.IsDrbft)
 			return *pr, nil
 		})
 
-		exists, err := s.CreateDraftChangeset(ctx, cs)
-		assert.True(t, exists)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		exists, err := s.CrebteDrbftChbngeset(ctx, cs)
+		bssert.True(t, exists)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 }
 
-func TestAzureDevOpsSource_CloseChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_CloseChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("error declining pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		want := errors.New("error")
-		client.AbandonPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			return azuredevops.PullRequest{}, want
+		wbnt := errors.New("error")
+		client.AbbndonPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.CloseChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.CloseChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.AbandonPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.AbbndonPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.CloseChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.CloseChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.AbandonPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.AbbndonPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.CloseChangeset(ctx, cs)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.CloseChbngeset(ctx, cs)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 }
 
-func TestAzureDevOpsSource_UpdateChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_UpdbteChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("error getting pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := errors.New("error")
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			return azuredevops.PullRequest{}, want
+		wbnt := errors.New("error")
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		err := s.UpdateChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		err := s.UpdbteChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error updating pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error updbting pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := errors.New("error")
+		wbnt := errors.New("error")
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
-		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, cs.Title, *pri.Title)
-			return azuredevops.PullRequest{}, want
+		client.UpdbtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, pri bzuredevops.PullRequestUpdbteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, cs.Title, *pri.Title)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.UpdateChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.UpdbteChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
-		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, cs.Title, *pri.Title)
+		client.UpdbtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, pri bzuredevops.PullRequestUpdbteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, cs.Title, *pri.Title)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.UpdateChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.UpdbteChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.GetPullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
+		client.GetPullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
 			return *pr, nil
 		})
-		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, cs.Title, *pri.Title)
+		client.UpdbtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, pri bzuredevops.PullRequestUpdbteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, cs.Title, *pri.Title)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.UpdateChangeset(ctx, cs)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.UpdbteChbngeset(ctx, cs)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 }
 
-func TestAzureDevOpsSource_UndraftChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_UndrbftChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("error updating pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error updbting pull request", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := errors.New("error")
+		wbnt := errors.New("error")
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, cs.Title, *pri.Title)
-			return azuredevops.PullRequest{}, want
+		client.UpdbtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, pri bzuredevops.PullRequestUpdbteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, cs.Title, *pri.Title)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.UndraftChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.UndrbftChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, cs.Title, *pri.Title)
+		client.UpdbtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, pri bzuredevops.PullRequestUpdbteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, cs.Title, *pri.Title)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.UndraftChangeset(ctx, cs)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.UndrbftChbngeset(ctx, cs)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		mockAzureDevOpsAnnotatePullRequestSuccess(client)
+		mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.UpdatePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, pri azuredevops.PullRequestUpdateInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, cs.Title, *pri.Title)
-			assert.False(t, *pri.IsDraft)
+		client.UpdbtePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, pri bzuredevops.PullRequestUpdbteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, cs.Title, *pri.Title)
+			bssert.Fblse(t, *pri.IsDrbft)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.UndraftChangeset(ctx, cs)
-		assert.Nil(t, err)
-		assertChangesetMatchesPullRequest(t, cs, pr)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.UndrbftChbngeset(ctx, cs)
+		bssert.Nil(t, err)
+		bssertChbngesetMbtchesPullRequest(t, cs, pr)
 	})
 }
 
-func TestAzureDevOpsSource_CreateComment(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_CrebteComment(t *testing.T) {
+	ctx := context.Bbckground()
 
-	t.Run("error creating comment", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error crebting comment", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		want := errors.New("error")
-		client.CreatePullRequestCommentThreadFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, ci azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, "comment", ci.Comments[0].Content)
-			return azuredevops.PullRequestCommentResponse{}, want
+		wbnt := errors.New("error")
+		client.CrebtePullRequestCommentThrebdFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, ci bzuredevops.PullRequestCommentInput) (bzuredevops.PullRequestCommentResponse, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, "comment", ci.Comments[0].Content)
+			return bzuredevops.PullRequestCommentResponse{}, wbnt
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.CreateComment(ctx, cs, "comment")
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.CrebteComment(ctx, cs, "comment")
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CreatePullRequestCommentThreadFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, ci azuredevops.PullRequestCommentInput) (azuredevops.PullRequestCommentResponse, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Equal(t, "comment", ci.Comments[0].Content)
-			return azuredevops.PullRequestCommentResponse{}, nil
+		client.CrebtePullRequestCommentThrebdFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, ci bzuredevops.PullRequestCommentInput) (bzuredevops.PullRequestCommentResponse, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Equbl(t, "comment", ci.Comments[0].Content)
+			return bzuredevops.PullRequestCommentResponse{}, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.CreateComment(ctx, cs, "comment")
-		assert.Nil(t, err)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.CrebteComment(ctx, cs, "comment")
+		bssert.Nil(t, err)
 	})
 }
 
-func TestAzureDevOpsSource_MergeChangeset(t *testing.T) {
-	ctx := context.Background()
+func TestAzureDevOpsSource_MergeChbngeset(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("error merging pull request", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		want := errors.New("error")
-		client.CompletePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, input azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Nil(t, input.MergeStrategy)
-			return azuredevops.PullRequest{}, want
+		wbnt := errors.New("error")
+		client.CompletePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, input bzuredevops.PullRequestCompleteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Nil(t, input.MergeStrbtegy)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.MergeChangeset(ctx, cs, false)
-		assert.NotNil(t, err)
-		target := ChangesetNotMergeableError{}
-		assert.ErrorAs(t, err, &target)
-		assert.Equal(t, want.Error(), target.ErrorMsg)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.MergeChbngeset(ctx, cs, fblse)
+		bssert.NotNil(t, err)
+		tbrget := ChbngesetNotMergebbleError{}
+		bssert.ErrorAs(t, err, &tbrget)
+		bssert.Equbl(t, wbnt.Error(), tbrget.ErrorMsg)
 	})
 
 	t.Run("pull request not found", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		want := &notFoundError{}
-		client.CompletePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, input azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Nil(t, input.MergeStrategy)
-			return azuredevops.PullRequest{}, want
+		wbnt := &notFoundError{}
+		client.CompletePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, input bzuredevops.PullRequestCompleteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Nil(t, input.MergeStrbtegy)
+			return bzuredevops.PullRequest{}, wbnt
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.MergeChangeset(ctx, cs, false)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.MergeChbngeset(ctx, cs, fblse)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("error setting changeset metadata", func(t *testing.T) {
-		cs, _ := mockAzureDevOpsChangeset()
+	t.Run("error setting chbngeset metbdbtb", func(t *testing.T) {
+		cs, _ := mockAzureDevOpsChbngeset()
 		s, client := mockAzureDevOpsSource()
-		want := mockAzureDevOpsAnnotatePullRequestError(client)
+		wbnt := mockAzureDevOpsAnnotbtePullRequestError(client)
 
 		pr := mockAzureDevOpsPullRequest(&testRepository)
-		client.CompletePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, input azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
-			assert.Equal(t, testCommonPullRequestArgs, r)
-			assert.Nil(t, input.MergeStrategy)
+		client.CompletePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, input bzuredevops.PullRequestCompleteInput) (bzuredevops.PullRequest, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, r)
+			bssert.Nil(t, input.MergeStrbtegy)
 			return *pr, nil
 		})
 
-		annotateChangesetWithPullRequest(cs, pr)
-		err := s.MergeChangeset(ctx, cs, false)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bnnotbteChbngesetWithPullRequest(cs, pr)
+		err := s.MergeChbngeset(ctx, cs, fblse)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		squash := azuredevops.PullRequestMergeStrategySquash
-		for name, tc := range map[string]struct {
-			squash bool
-			want   *azuredevops.PullRequestMergeStrategy
+		squbsh := bzuredevops.PullRequestMergeStrbtegySqubsh
+		for nbme, tc := rbnge mbp[string]struct {
+			squbsh bool
+			wbnt   *bzuredevops.PullRequestMergeStrbtegy
 		}{
-			"no squash": {false, nil},
-			"squash":    {true, &squash},
+			"no squbsh": {fblse, nil},
+			"squbsh":    {true, &squbsh},
 		} {
-			t.Run(name, func(t *testing.T) {
-				cs, _ := mockAzureDevOpsChangeset()
+			t.Run(nbme, func(t *testing.T) {
+				cs, _ := mockAzureDevOpsChbngeset()
 				s, client := mockAzureDevOpsSource()
-				mockAzureDevOpsAnnotatePullRequestSuccess(client)
+				mockAzureDevOpsAnnotbtePullRequestSuccess(client)
 
 				pr := mockAzureDevOpsPullRequest(&testRepository)
-				client.CompletePullRequestFunc.SetDefaultHook(func(ctx context.Context, r azuredevops.PullRequestCommonArgs, input azuredevops.PullRequestCompleteInput) (azuredevops.PullRequest, error) {
-					assert.Equal(t, testCommonPullRequestArgs, r)
-					assert.Equal(t, tc.want, input.MergeStrategy)
+				client.CompletePullRequestFunc.SetDefbultHook(func(ctx context.Context, r bzuredevops.PullRequestCommonArgs, input bzuredevops.PullRequestCompleteInput) (bzuredevops.PullRequest, error) {
+					bssert.Equbl(t, testCommonPullRequestArgs, r)
+					bssert.Equbl(t, tc.wbnt, input.MergeStrbtegy)
 					return *pr, nil
 				})
 
-				annotateChangesetWithPullRequest(cs, pr)
-				err := s.MergeChangeset(ctx, cs, tc.squash)
-				assert.Nil(t, err)
-				assertChangesetMatchesPullRequest(t, cs, pr)
+				bnnotbteChbngesetWithPullRequest(cs, pr)
+				err := s.MergeChbngeset(ctx, cs, tc.squbsh)
+				bssert.Nil(t, err)
+				bssertChbngesetMbtchesPullRequest(t, cs, pr)
 			})
 		}
 	})
 }
 
 func TestAzureDevOpsSource_GetFork(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	upstream := testRepository
+	upstrebm := testRepository
 	urn := extsvc.URN(extsvc.KindAzureDevOps, 1)
-	upstreamRepo := &types.Repo{Metadata: &upstream, Sources: map[string]*types.SourceInfo{
+	upstrebmRepo := &types.Repo{Metbdbtb: &upstrebm, Sources: mbp[string]*types.SourceInfo{
 		urn: {
 			ID:       urn,
-			CloneURL: "https://dev.azure.com/testorg/testproject/_git/testrepo",
+			CloneURL: "https://dev.bzure.com/testorg/testproject/_git/testrepo",
 		},
 	}}
 
-	args := azuredevops.OrgProjectRepoArgs{
-		Org:          testOrgName,
+	brgs := bzuredevops.OrgProjectRepoArgs{
+		Org:          testOrgNbme,
 		Project:      "fork",
-		RepoNameOrID: "testproject-testrepo",
+		RepoNbmeOrID: "testproject-testrepo",
 	}
 
-	fork := azuredevops.Repository{
+	fork := bzuredevops.Repository{
 		ID:   "forkid",
-		Name: "testproject-testrepo",
-		Project: azuredevops.Project{
+		Nbme: "testproject-testrepo",
+		Project: bzuredevops.Project{
 			ID:   "testprojectid",
-			Name: "fork",
+			Nbme: "fork",
 		},
 		IsFork: true,
 	}
 
-	forkRespositoryInput := azuredevops.ForkRepositoryInput{
-		Name: "testproject-testrepo",
-		Project: azuredevops.ForkRepositoryInputProject{
+	forkRespositoryInput := bzuredevops.ForkRepositoryInput{
+		Nbme: "testproject-testrepo",
+		Project: bzuredevops.ForkRepositoryInputProject{
 			ID: fork.Project.ID,
 		},
-		ParentRepository: azuredevops.ForkRepositoryInputParentRepository{
+		PbrentRepository: bzuredevops.ForkRepositoryInputPbrentRepository{
 			ID: "testrepoid",
-			Project: azuredevops.ForkRepositoryInputProject{
+			Project: bzuredevops.ForkRepositoryInputProject{
 				ID: fork.Project.ID,
 			},
 		},
@@ -704,258 +704,258 @@ func TestAzureDevOpsSource_GetFork(t *testing.T) {
 	t.Run("error checking for repo", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		want := errors.New("error")
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			assert.Equal(t, args, a)
-			return azuredevops.Repository{}, want
+		wbnt := errors.New("error")
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, brgs, b)
+			return bzuredevops.Repository{}, wbnt
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
-		assert.Nil(t, repo)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		repo, err := s.GetFork(ctx, upstrebmRepo, pointers.Ptr("fork"), nil)
+		bssert.Nil(t, repo)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("forked repo already exists", func(t *testing.T) {
+	t.Run("forked repo blrebdy exists", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			assert.Equal(t, args, a)
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, brgs, b)
 			return fork, nil
 		})
 
-		forkRepo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
-		assert.Nil(t, err)
-		assert.NotNil(t, forkRepo)
-		assert.NotEqual(t, forkRepo, upstreamRepo)
-		assert.Equal(t, &fork, forkRepo.Metadata)
-		assert.Equal(t, "https://dev.azure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
+		forkRepo, err := s.GetFork(ctx, upstrebmRepo, pointers.Ptr("fork"), nil)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, forkRepo)
+		bssert.NotEqubl(t, forkRepo, upstrebmRepo)
+		bssert.Equbl(t, &fork, forkRepo.Metbdbtb)
+		bssert.Equbl(t, "https://dev.bzure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
 	})
 
 	t.Run("get project error", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			assert.Equal(t, args, a)
-			return azuredevops.Repository{}, &notFoundError{}
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, brgs, b)
+			return bzuredevops.Repository{}, &notFoundError{}
 		})
-		want := errors.New("error")
-		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
-			assert.Equal(t, testOrgName, org)
-			assert.Equal(t, fork.Project.Name, project)
-			return azuredevops.Project{}, want
+		wbnt := errors.New("error")
+		client.GetProjectFunc.SetDefbultHook(func(ctx context.Context, org string, project string) (bzuredevops.Project, error) {
+			bssert.Equbl(t, testOrgNbme, org)
+			bssert.Equbl(t, fork.Project.Nbme, project)
+			return bzuredevops.Project{}, wbnt
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
-		assert.Nil(t, repo)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		repo, err := s.GetFork(ctx, upstrebmRepo, pointers.Ptr("fork"), nil)
+		bssert.Nil(t, repo)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("fork error", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			assert.Equal(t, args, a)
-			return azuredevops.Repository{}, &notFoundError{}
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, brgs, b)
+			return bzuredevops.Repository{}, &notFoundError{}
 		})
 
-		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
-			assert.Equal(t, testOrgName, org)
-			assert.Equal(t, fork.Project.Name, project)
+		client.GetProjectFunc.SetDefbultHook(func(ctx context.Context, org string, project string) (bzuredevops.Project, error) {
+			bssert.Equbl(t, testOrgNbme, org)
+			bssert.Equbl(t, fork.Project.Nbme, project)
 			return fork.Project, nil
 		})
 
-		want := errors.New("error")
-		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, fi azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
-			assert.Equal(t, testOrgName, org)
-			assert.Equal(t, forkRespositoryInput, fi)
-			return azuredevops.Repository{}, want
+		wbnt := errors.New("error")
+		client.ForkRepositoryFunc.SetDefbultHook(func(ctx context.Context, org string, fi bzuredevops.ForkRepositoryInput) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, testOrgNbme, org)
+			bssert.Equbl(t, forkRespositoryInput, fi)
+			return bzuredevops.Repository{}, wbnt
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
-		assert.Nil(t, repo)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		repo, err := s.GetFork(ctx, upstrebmRepo, pointers.Ptr("fork"), nil)
+		bssert.Nil(t, repo)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
-	t.Run("success with default namespace, name", func(t *testing.T) {
+	t.Run("success with defbult nbmespbce, nbme", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			argsNew := args
-			argsNew.Project = testProjectName
-			assert.Equal(t, argsNew, a)
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			brgsNew := brgs
+			brgsNew.Project = testProjectNbme
+			bssert.Equbl(t, brgsNew, b)
 			return fork, nil
 		})
 
-		repo, err := s.GetFork(ctx, upstreamRepo, nil, nil)
-		assert.Nil(t, err)
-		assert.NotNil(t, repo)
-		assert.Equal(t, &fork, repo.Metadata)
+		repo, err := s.GetFork(ctx, upstrebmRepo, nil, nil)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, repo)
+		bssert.Equbl(t, &fork, repo.Metbdbtb)
 	})
 
-	t.Run("success with default name", func(t *testing.T) {
+	t.Run("success with defbult nbme", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			assert.Equal(t, args, a)
-			return azuredevops.Repository{}, &notFoundError{}
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, brgs, b)
+			return bzuredevops.Repository{}, &notFoundError{}
 		})
 
-		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
-			assert.Equal(t, testOrgName, org)
-			assert.Equal(t, fork.Project.Name, project)
+		client.GetProjectFunc.SetDefbultHook(func(ctx context.Context, org string, project string) (bzuredevops.Project, error) {
+			bssert.Equbl(t, testOrgNbme, org)
+			bssert.Equbl(t, fork.Project.Nbme, project)
 			return fork.Project, nil
 		})
 
-		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, fi azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
-			assert.Equal(t, testOrgName, org)
-			assert.Equal(t, forkRespositoryInput, fi)
+		client.ForkRepositoryFunc.SetDefbultHook(func(ctx context.Context, org string, fi bzuredevops.ForkRepositoryInput) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, testOrgNbme, org)
+			bssert.Equbl(t, forkRespositoryInput, fi)
 			return fork, nil
 		})
 
-		forkRepo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), nil)
-		assert.Nil(t, err)
-		assert.NotNil(t, forkRepo)
-		assert.NotEqual(t, forkRepo, upstreamRepo)
-		assert.Equal(t, &fork, forkRepo.Metadata)
-		assert.Equal(t, "https://dev.azure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
+		forkRepo, err := s.GetFork(ctx, upstrebmRepo, pointers.Ptr("fork"), nil)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, forkRepo)
+		bssert.NotEqubl(t, forkRepo, upstrebmRepo)
+		bssert.Equbl(t, &fork, forkRepo.Metbdbtb)
+		bssert.Equbl(t, "https://dev.bzure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
 	})
 
-	t.Run("success with set namespace, name", func(t *testing.T) {
+	t.Run("success with set nbmespbce, nbme", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 
-		client.GetRepoFunc.SetDefaultHook(func(ctx context.Context, a azuredevops.OrgProjectRepoArgs) (azuredevops.Repository, error) {
-			newArgs := args
-			newArgs.RepoNameOrID = "special-fork-name"
-			assert.Equal(t, newArgs, a)
-			return azuredevops.Repository{}, &notFoundError{}
+		client.GetRepoFunc.SetDefbultHook(func(ctx context.Context, b bzuredevops.OrgProjectRepoArgs) (bzuredevops.Repository, error) {
+			newArgs := brgs
+			newArgs.RepoNbmeOrID = "specibl-fork-nbme"
+			bssert.Equbl(t, newArgs, b)
+			return bzuredevops.Repository{}, &notFoundError{}
 		})
 
-		client.GetProjectFunc.SetDefaultHook(func(ctx context.Context, org string, project string) (azuredevops.Project, error) {
-			assert.Equal(t, testOrgName, org)
-			assert.Equal(t, fork.Project.Name, project)
+		client.GetProjectFunc.SetDefbultHook(func(ctx context.Context, org string, project string) (bzuredevops.Project, error) {
+			bssert.Equbl(t, testOrgNbme, org)
+			bssert.Equbl(t, fork.Project.Nbme, project)
 			return fork.Project, nil
 		})
 
-		client.ForkRepositoryFunc.SetDefaultHook(func(ctx context.Context, org string, fi azuredevops.ForkRepositoryInput) (azuredevops.Repository, error) {
-			assert.Equal(t, testOrgName, org)
+		client.ForkRepositoryFunc.SetDefbultHook(func(ctx context.Context, org string, fi bzuredevops.ForkRepositoryInput) (bzuredevops.Repository, error) {
+			bssert.Equbl(t, testOrgNbme, org)
 			newFRI := forkRespositoryInput
-			newFRI.Name = "special-fork-name"
-			assert.Equal(t, newFRI, fi)
+			newFRI.Nbme = "specibl-fork-nbme"
+			bssert.Equbl(t, newFRI, fi)
 			return fork, nil
 		})
 
-		forkRepo, err := s.GetFork(ctx, upstreamRepo, pointers.Ptr("fork"), pointers.Ptr("special-fork-name"))
-		assert.Nil(t, err)
-		assert.NotNil(t, forkRepo)
-		assert.NotEqual(t, forkRepo, upstreamRepo)
-		assert.Equal(t, &fork, forkRepo.Metadata)
-		assert.Equal(t, "https://dev.azure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
+		forkRepo, err := s.GetFork(ctx, upstrebmRepo, pointers.Ptr("fork"), pointers.Ptr("specibl-fork-nbme"))
+		bssert.Nil(t, err)
+		bssert.NotNil(t, forkRepo)
+		bssert.NotEqubl(t, forkRepo, upstrebmRepo)
+		bssert.Equbl(t, &fork, forkRepo.Metbdbtb)
+		bssert.Equbl(t, "https://dev.bzure.com/testorg/fork/_git/testproject-testrepo", forkRepo.Sources[urn].CloneURL)
 	})
 }
 
-func TestAzureDevOpsSource_annotatePullRequest(t *testing.T) {
-	// The case where GetPullRequestStatuses errors and where it returns an
-	// empty result set are thoroughly covered in other tests, so we'll just
-	// handle the other branches of annotatePullRequest.
+func TestAzureDevOpsSource_bnnotbtePullRequest(t *testing.T) {
+	// The cbse where GetPullRequestStbtuses errors bnd where it returns bn
+	// empty result set bre thoroughly covered in other tests, so we'll just
+	// hbndle the other brbnches of bnnotbtePullRequest.
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("error getting all statuses", func(t *testing.T) {
+	t.Run("error getting bll stbtuses", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 
-		want := errors.New("error")
-		client.GetPullRequestStatusesFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
-			assert.Equal(t, testCommonPullRequestArgs, args)
-			return nil, want
+		wbnt := errors.New("error")
+		client.GetPullRequestStbtusesFunc.SetDefbultHook(func(ctx context.Context, brgs bzuredevops.PullRequestCommonArgs) ([]bzuredevops.PullRequestBuildStbtus, error) {
+			bssert.Equbl(t, testCommonPullRequestArgs, brgs)
+			return nil, wbnt
 		})
 
-		apr, err := s.annotatePullRequest(ctx, &testRepository, pr)
-		assert.Nil(t, apr)
-		assert.NotNil(t, err)
-		assert.ErrorIs(t, err, want)
+		bpr, err := s.bnnotbtePullRequest(ctx, &testRepository, pr)
+		bssert.Nil(t, bpr)
+		bssert.NotNil(t, err)
+		bssert.ErrorIs(t, err, wbnt)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		s, client := mockAzureDevOpsSource()
 		pr := mockAzureDevOpsPullRequest(&testRepository)
 
-		want := []*azuredevops.PullRequestBuildStatus{
+		wbnt := []*bzuredevops.PullRequestBuildStbtus{
 			{ID: 1},
 		}
-		client.GetPullRequestStatusesFunc.SetDefaultHook(func(ctx context.Context, args azuredevops.PullRequestCommonArgs) ([]azuredevops.PullRequestBuildStatus, error) {
-			assert.Equal(t, args, testCommonPullRequestArgs)
-			return []azuredevops.PullRequestBuildStatus{
+		client.GetPullRequestStbtusesFunc.SetDefbultHook(func(ctx context.Context, brgs bzuredevops.PullRequestCommonArgs) ([]bzuredevops.PullRequestBuildStbtus, error) {
+			bssert.Equbl(t, brgs, testCommonPullRequestArgs)
+			return []bzuredevops.PullRequestBuildStbtus{
 				{
 					ID: 1,
 				},
 			}, nil
 		})
 
-		apr, err := s.annotatePullRequest(ctx, &testRepository, pr)
-		assert.Nil(t, err)
-		assert.NotNil(t, apr)
-		assert.Same(t, pr, apr.PullRequest)
+		bpr, err := s.bnnotbtePullRequest(ctx, &testRepository, pr)
+		bssert.Nil(t, err)
+		bssert.NotNil(t, bpr)
+		bssert.Sbme(t, pr, bpr.PullRequest)
 
-		for index, w := range want {
-			assert.Equal(t, w, apr.Statuses[index])
+		for index, w := rbnge wbnt {
+			bssert.Equbl(t, w, bpr.Stbtuses[index])
 		}
 	})
 }
 
-func assertChangesetMatchesPullRequest(t *testing.T, cs *Changeset, pr *azuredevops.PullRequest) {
+func bssertChbngesetMbtchesPullRequest(t *testing.T, cs *Chbngeset, pr *bzuredevops.PullRequest) {
 	t.Helper()
 
-	// We're not thoroughly testing setChangesetMetadata() et al in this
-	// assertion, but we do want to ensure that the PR was used to populate
-	// fields on the Changeset.
-	assert.EqualValues(t, strconv.Itoa(pr.ID), cs.ExternalID)
-	assert.Equal(t, pr.SourceRefName, cs.ExternalBranch)
+	// We're not thoroughly testing setChbngesetMetbdbtb() et bl in this
+	// bssertion, but we do wbnt to ensure thbt the PR wbs used to populbte
+	// fields on the Chbngeset.
+	bssert.EqublVblues(t, strconv.Itob(pr.ID), cs.ExternblID)
+	bssert.Equbl(t, pr.SourceRefNbme, cs.ExternblBrbnch)
 
 	if pr.ForkSource != nil {
-		assert.Equal(t, pr.ForkSource.Repository.Namespace(), cs.ExternalForkNamespace)
+		bssert.Equbl(t, pr.ForkSource.Repository.Nbmespbce(), cs.ExternblForkNbmespbce)
 	} else {
-		assert.Empty(t, cs.ExternalForkNamespace)
+		bssert.Empty(t, cs.ExternblForkNbmespbce)
 	}
 }
 
-// mockAzureDevOpsChangeset creates a plausible non-forked changeset, repo,
-// and AzureDevOps specific repo.
-func mockAzureDevOpsChangeset() (*Changeset, *types.Repo) {
-	repo := &types.Repo{Metadata: &testRepository}
-	cs := &Changeset{
+// mockAzureDevOpsChbngeset crebtes b plbusible non-forked chbngeset, repo,
+// bnd AzureDevOps specific repo.
+func mockAzureDevOpsChbngeset() (*Chbngeset, *types.Repo) {
+	repo := &types.Repo{Metbdbtb: &testRepository}
+	cs := &Chbngeset{
 		Title: "title",
 		Body:  "description",
-		Changeset: &btypes.Changeset{
-			ExternalID: testPRID,
+		Chbngeset: &btypes.Chbngeset{
+			ExternblID: testPRID,
 		},
 		RemoteRepo: repo,
-		TargetRepo: repo,
-		BaseRef:    "refs/heads/targetbranch",
+		TbrgetRepo: repo,
+		BbseRef:    "refs/hebds/tbrgetbrbnch",
 	}
 
 	return cs, repo
 }
 
-// mockAzureDevOpsPullRequest returns a plausible pull request that would be
-// returned from Bitbucket Cloud for a non-forked changeset.
-func mockAzureDevOpsPullRequest(repo *azuredevops.Repository) *azuredevops.PullRequest {
-	return &azuredevops.PullRequest{
+// mockAzureDevOpsPullRequest returns b plbusible pull request thbt would be
+// returned from Bitbucket Cloud for b non-forked chbngeset.
+func mockAzureDevOpsPullRequest(repo *bzuredevops.Repository) *bzuredevops.PullRequest {
+	return &bzuredevops.PullRequest{
 		ID:            42,
-		SourceRefName: "refs/heads/sourcebranch",
-		TargetRefName: "refs/heads/targetbranch",
+		SourceRefNbme: "refs/hebds/sourcebrbnch",
+		TbrgetRefNbme: "refs/hebds/tbrgetbrbnch",
 		Repository:    *repo,
 		Title:         "TestPR",
 	}
 }
 
-func annotateChangesetWithPullRequest(cs *Changeset, pr *azuredevops.PullRequest) {
-	cs.Metadata = &adobatches.AnnotatedPullRequest{
+func bnnotbteChbngesetWithPullRequest(cs *Chbngeset, pr *bzuredevops.PullRequest) {
+	cs.Metbdbtb = &bdobbtches.AnnotbtedPullRequest{
 		PullRequest: pr,
-		Statuses:    []*azuredevops.PullRequestBuildStatus{},
+		Stbtuses:    []*bzuredevops.PullRequestBuildStbtus{},
 	}
 }
 
@@ -966,17 +966,17 @@ func mockAzureDevOpsSource() (*AzureDevOpsSource, *MockAzureDevOpsClient) {
 	return s, client
 }
 
-// mockAzureDevOpsAnnotatePullRequestError configures the mock client to return an error
-// when GetPullRequestStatuses is invoked by annotatePullRequest.
-func mockAzureDevOpsAnnotatePullRequestError(client *MockAzureDevOpsClient) error {
+// mockAzureDevOpsAnnotbtePullRequestError configures the mock client to return bn error
+// when GetPullRequestStbtuses is invoked by bnnotbtePullRequest.
+func mockAzureDevOpsAnnotbtePullRequestError(client *MockAzureDevOpsClient) error {
 	err := errors.New("error")
-	client.GetPullRequestStatusesFunc.SetDefaultReturn(nil, err)
+	client.GetPullRequestStbtusesFunc.SetDefbultReturn(nil, err)
 
 	return err
 }
 
-// mockAzureDevOpsAnnotatePullRequestSuccess configures the mock client to be able to
-// return a valid, empty set of statuses.
-func mockAzureDevOpsAnnotatePullRequestSuccess(client *MockAzureDevOpsClient) {
-	client.GetPullRequestStatusesFunc.SetDefaultReturn([]azuredevops.PullRequestBuildStatus{}, nil)
+// mockAzureDevOpsAnnotbtePullRequestSuccess configures the mock client to be bble to
+// return b vblid, empty set of stbtuses.
+func mockAzureDevOpsAnnotbtePullRequestSuccess(client *MockAzureDevOpsClient) {
+	client.GetPullRequestStbtusesFunc.SetDefbultReturn([]bzuredevops.PullRequestBuildStbtus{}, nil)
 }

@@ -1,311 +1,311 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	_ "embed"
 	"encoding/json"
 	"fmt"
 
-	"github.com/grafana/regexp"
-	sitter "github.com/smacker/go-tree-sitter"
-	"github.com/smacker/go-tree-sitter/cpp"
-	"github.com/smacker/go-tree-sitter/csharp"
-	"github.com/smacker/go-tree-sitter/golang"
-	"github.com/smacker/go-tree-sitter/java"
-	"github.com/smacker/go-tree-sitter/javascript"
-	"github.com/smacker/go-tree-sitter/python"
-	"github.com/smacker/go-tree-sitter/ruby"
-	"github.com/smacker/go-tree-sitter/typescript/tsx"
+	"github.com/grbfbnb/regexp"
+	sitter "github.com/smbcker/go-tree-sitter"
+	"github.com/smbcker/go-tree-sitter/cpp"
+	"github.com/smbcker/go-tree-sitter/cshbrp"
+	"github.com/smbcker/go-tree-sitter/golbng"
+	"github.com/smbcker/go-tree-sitter/jbvb"
+	"github.com/smbcker/go-tree-sitter/jbvbscript"
+	"github.com/smbcker/go-tree-sitter/python"
+	"github.com/smbcker/go-tree-sitter/ruby"
+	"github.com/smbcker/go-tree-sitter/typescript/tsx"
 )
 
-//go:embed language-file-extensions.json
-var languageFileExtensionsJson string
+//go:embed lbngubge-file-extensions.json
+vbr lbngubgeFileExtensionsJson string
 
-// Mapping from langauge name to file extensions.
-var langToExts = func() map[string][]string {
-	var m map[string][]string
-	err := json.Unmarshal([]byte(languageFileExtensionsJson), &m)
+// Mbpping from lbngbuge nbme to file extensions.
+vbr lbngToExts = func() mbp[string][]string {
+	vbr m mbp[string][]string
+	err := json.Unmbrshbl([]byte(lbngubgeFileExtensionsJson), &m)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return m
 }()
 
-// Mapping from file extension to language name.
-var extToLang = func() map[string]string {
-	m := map[string]string{}
-	for lang, exts := range langToExts {
-		for _, ext := range exts {
+// Mbpping from file extension to lbngubge nbme.
+vbr extToLbng = func() mbp[string]string {
+	m := mbp[string]string{}
+	for lbng, exts := rbnge lbngToExts {
+		for _, ext := rbnge exts {
 			if _, ok := m[ext]; ok {
-				panic(fmt.Sprintf("duplicate file extension %s", ext))
+				pbnic(fmt.Sprintf("duplicbte file extension %s", ext))
 			}
-			m[ext] = lang
+			m[ext] = lbng
 		}
 	}
 	return m
 }()
 
-// LangSpec contains info about a language.
-type LangSpec struct {
-	name         string
-	language     *sitter.Language
+// LbngSpec contbins info bbout b lbngubge.
+type LbngSpec struct {
+	nbme         string
+	lbngubge     *sitter.Lbngubge
 	commentStyle CommentStyle
-	// localsQuery is a tree-sitter localsQuery that finds scopes and defs.
-	localsQuery          string
+	// locblsQuery is b tree-sitter locblsQuery thbt finds scopes bnd defs.
+	locblsQuery          string
 	topLevelSymbolsQuery string
 }
 
-// CommentStyle contains info about comments in a language.
+// CommentStyle contbins info bbout comments in b lbngubge.
 type CommentStyle struct {
 	ignoreRegex   *regexp.Regexp
 	stripRegex    *regexp.Regexp
 	skipNodeTypes []string
 	nodeTypes     []string
-	codeFenceName string
+	codeFenceNbme string
 }
 
-var javaStyleStripRegex = regexp.MustCompile(`^//|^\s*\*/?|^/\*\*|\*/$`)
-var javaStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
+vbr jbvbStyleStripRegex = regexp.MustCompile(`^//|^\s*\*/?|^/\*\*|\*/$`)
+vbr jbvbStyleIgnoreRegex = regexp.MustCompile(`^\s*(/\*\*|\*/)\s*$`)
 
-// Mapping from language name to language specification.
-var langToLangSpec = map[string]LangSpec{
-	"java": {
-		name:     "java",
-		language: java.GetLanguage(),
+// Mbpping from lbngubge nbme to lbngubge specificbtion.
+vbr lbngToLbngSpec = mbp[string]LbngSpec{
+	"jbvb": {
+		nbme:     "jbvb",
+		lbngubge: jbvb.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    javaStyleStripRegex,
-			ignoreRegex:   javaStyleIgnoreRegex,
-			codeFenceName: "java",
+			stripRegex:    jbvbStyleStripRegex,
+			ignoreRegex:   jbvbStyleIgnoreRegex,
+			codeFenceNbme: "jbvb",
 			skipNodeTypes: []string{"modifiers"},
 		},
-		localsQuery: `
+		locblsQuery: `
 (block)                   @scope ; { ... }
-(lambda_expression)       @scope ; (x, y) -> ...
-(catch_clause)            @scope ; try { ... } catch (Exception e) { ... }
-(enhanced_for_statement)  @scope ; for (var item : items) ...
-(for_statement)           @scope ; for (var i = 0; i < 5; i++) ...
-(constructor_declaration) @scope ; public Foo() { ... }
-(method_declaration)      @scope ; public void f() { ... }
+(lbmbdb_expression)       @scope ; (x, y) -> ...
+(cbtch_clbuse)            @scope ; try { ... } cbtch (Exception e) { ... }
+(enhbnced_for_stbtement)  @scope ; for (vbr item : items) ...
+(for_stbtement)           @scope ; for (vbr i = 0; i < 5; i++) ...
+(constructor_declbrbtion) @scope ; public Foo() { ... }
+(method_declbrbtion)      @scope ; public void f() { ... }
 
-(local_variable_declaration declarator: (variable_declarator name: (identifier) @definition)) ; int x = ...;
-(formal_parameter           name:       (identifier) @definition)                             ; public void f(int x) { ... }
-(catch_formal_parameter     name:       (identifier) @definition)                             ; try { ... } catch (Exception e) { ... }
-(lambda_expression          parameters: (inferred_parameters (identifier) @definition))       ; (x, y) -> ...
-(lambda_expression          parameters: (identifier) @definition)                             ; x -> ...
-(enhanced_for_statement     name:       (identifier) @definition)                             ; for (var item : items) ...
+(locbl_vbribble_declbrbtion declbrbtor: (vbribble_declbrbtor nbme: (identifier) @definition)) ; int x = ...;
+(formbl_pbrbmeter           nbme:       (identifier) @definition)                             ; public void f(int x) { ... }
+(cbtch_formbl_pbrbmeter     nbme:       (identifier) @definition)                             ; try { ... } cbtch (Exception e) { ... }
+(lbmbdb_expression          pbrbmeters: (inferred_pbrbmeters (identifier) @definition))       ; (x, y) -> ...
+(lbmbdb_expression          pbrbmeters: (identifier) @definition)                             ; x -> ...
+(enhbnced_for_stbtement     nbme:       (identifier) @definition)                             ; for (vbr item : items) ...
 `,
 		topLevelSymbolsQuery: `
-(program (class_declaration     name: (identifier) @symbol))
-(program (enum_declaration      name: (identifier) @symbol))
-(program (interface_declaration name: (identifier) @symbol))
+(progrbm (clbss_declbrbtion     nbme: (identifier) @symbol))
+(progrbm (enum_declbrbtion      nbme: (identifier) @symbol))
+(progrbm (interfbce_declbrbtion nbme: (identifier) @symbol))
 `,
 	},
 	"go": {
-		name:     "go",
-		language: golang.GetLanguage(),
+		nbme:     "go",
+		lbngubge: golbng.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^//`),
-			codeFenceName: "go",
+			codeFenceNbme: "go",
 		},
-		localsQuery: `
+		locblsQuery: `
 (block)                   @scope ; { ... }
-(function_declaration)    @scope ; func f() { ... }
-(method_declaration)      @scope ; func (r R) f() { ... }
-(func_literal)            @scope ; func() { ... }
-(if_statement)            @scope ; if true { ... }
-(for_statement)           @scope ; for x := range xs { ... }
-(expression_case)         @scope ; case "foo": ...
-(communication_case)      @scope ; case x := <-ch: ...
+(function_declbrbtion)    @scope ; func f() { ... }
+(method_declbrbtion)      @scope ; func (r R) f() { ... }
+(func_literbl)            @scope ; func() { ... }
+(if_stbtement)            @scope ; if true { ... }
+(for_stbtement)           @scope ; for x := rbnge xs { ... }
+(expression_cbse)         @scope ; cbse "foo": ...
+(communicbtion_cbse)      @scope ; cbse x := <-ch: ...
 
-(var_spec              name: (identifier) @definition)                   ; var x int = ...
-(const_spec            name: (identifier) @definition)                   ; const x int = ...
-(parameter_declaration name: (identifier) @definition)                   ; func(x int) { ... }
-(short_var_declaration left: (expression_list (identifier) @definition)) ; x, y := ...
-(range_clause          left: (expression_list (identifier) @definition)) ; for i := range ... { ... }
-(receive_statement     left: (expression_list (identifier) @definition)) ; case x := <-ch: ...
+(vbr_spec              nbme: (identifier) @definition)                   ; vbr x int = ...
+(const_spec            nbme: (identifier) @definition)                   ; const x int = ...
+(pbrbmeter_declbrbtion nbme: (identifier) @definition)                   ; func(x int) { ... }
+(short_vbr_declbrbtion left: (expression_list (identifier) @definition)) ; x, y := ...
+(rbnge_clbuse          left: (expression_list (identifier) @definition)) ; for i := rbnge ... { ... }
+(receive_stbtement     left: (expression_list (identifier) @definition)) ; cbse x := <-ch: ...
 `,
 	},
-	"csharp": {
-		name:     "csharp",
-		language: csharp.GetLanguage(),
+	"cshbrp": {
+		nbme:     "cshbrp",
+		lbngubge: cshbrp.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    javaStyleStripRegex,
-			ignoreRegex:   javaStyleIgnoreRegex,
-			codeFenceName: "csharp",
+			stripRegex:    jbvbStyleStripRegex,
+			ignoreRegex:   jbvbStyleIgnoreRegex,
+			codeFenceNbme: "cshbrp",
 		},
-		localsQuery: `
+		locblsQuery: `
 (block)                   @scope ; { ... }
-(method_declaration)      @scope ; void f() { ... }
-(for_statement)           @scope ; for (...) ...
-(using_statement)         @scope ; using (...) ...
-(lambda_expression)       @scope ; (x, y) => ...
-(for_each_statement)      @scope ; foreach (int x in xs) ...
-(catch_clause)            @scope ; try { ... } catch (Exception e) { ... }
-(constructor_declaration) @scope ; public Foo() { ... }
+(method_declbrbtion)      @scope ; void f() { ... }
+(for_stbtement)           @scope ; for (...) ...
+(using_stbtement)         @scope ; using (...) ...
+(lbmbdb_expression)       @scope ; (x, y) => ...
+(for_ebch_stbtement)      @scope ; forebch (int x in xs) ...
+(cbtch_clbuse)            @scope ; try { ... } cbtch (Exception e) { ... }
+(constructor_declbrbtion) @scope ; public Foo() { ... }
 
-(parameter           name: (identifier) @definition) ; void f(x int) { ... }
-(variable_declarator (identifier) @definition)       ; int x = ...
-(for_each_statement  left: (identifier) @definition) ; foreach (int x in xs) ...
-(catch_declaration   name: (identifier) @definition) ; catch (Exception e) { ... }
+(pbrbmeter           nbme: (identifier) @definition) ; void f(x int) { ... }
+(vbribble_declbrbtor (identifier) @definition)       ; int x = ...
+(for_ebch_stbtement  left: (identifier) @definition) ; forebch (int x in xs) ...
+(cbtch_declbrbtion   nbme: (identifier) @definition) ; cbtch (Exception e) { ... }
 `,
 	},
 	"python": {
-		name:     "python",
-		language: python.GetLanguage(),
+		nbme:     "python",
+		lbngubge: python.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^#`),
-			codeFenceName: "python",
+			codeFenceNbme: "python",
 		},
-		localsQuery: pythonLocalsQuery,
+		locblsQuery: pythonLocblsQuery,
 	},
-	"javascript": {
-		name:     "javascript",
-		language: javascript.GetLanguage(),
+	"jbvbscript": {
+		nbme:     "jbvbscript",
+		lbngubge: jbvbscript.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    javaStyleStripRegex,
-			ignoreRegex:   javaStyleIgnoreRegex,
-			codeFenceName: "javascript",
+			stripRegex:    jbvbStyleStripRegex,
+			ignoreRegex:   jbvbStyleIgnoreRegex,
+			codeFenceNbme: "jbvbscript",
 		},
-		localsQuery: `
-(class_declaration)              @scope ; class C { ... }
-(method_definition)              @scope ; class ... { f() { ... } }
-(statement_block)                @scope ; { ... }
-(for_statement)                  @scope ; for (let i = 0; ...) ...
-(for_in_statement)               @scope ; for (const x of xs) ...
-(catch_clause)                   @scope ; catch (e) ...
+		locblsQuery: `
+(clbss_declbrbtion)              @scope ; clbss C { ... }
+(method_definition)              @scope ; clbss ... { f() { ... } }
+(stbtement_block)                @scope ; { ... }
+(for_stbtement)                  @scope ; for (let i = 0; ...) ...
+(for_in_stbtement)               @scope ; for (const x of xs) ...
+(cbtch_clbuse)                   @scope ; cbtch (e) ...
 (function)                       @scope ; function(x) { ... }
-(function_declaration)           @scope ; function f(x) { ... }
-(generator_function)             @scope ; function*(x) { ... }
-(generator_function_declaration) @scope ; function *f(x) { ... }
-(arrow_function)                 @scope ; x => ...
+(function_declbrbtion)           @scope ; function f(x) { ... }
+(generbtor_function)             @scope ; function*(x) { ... }
+(generbtor_function_declbrbtion) @scope ; function *f(x) { ... }
+(brrow_function)                 @scope ; x => ...
 
-(variable_declarator name: (identifier) @definition)                                   ; const x = ...
-(function_declaration name: (identifier) @definition)                                  ; function f() { ... }
-(generator_function_declaration name: (identifier) @definition)                        ; function *f() { ... }
-(formal_parameters (identifier) @definition)                                           ; function(x) { ... }
-(formal_parameters (rest_pattern (identifier) @definition))                            ; function(...x) { ... }
-(formal_parameters (assignment_pattern left: (identifier) @definition))                ; function(x = 5) { ... }
-(formal_parameters (assignment_pattern left: (rest_pattern (identifier) @definition))) ; function(...x = []) { ... }
-(arrow_function parameter: (identifier) @definition)                                   ; x => ...
-(for_in_statement left: (identifier) @definition)                                      ; for (const x of xs) ...
-(catch_clause parameter: (identifier) @definition)                                     ; catch (e) ...
+(vbribble_declbrbtor nbme: (identifier) @definition)                                   ; const x = ...
+(function_declbrbtion nbme: (identifier) @definition)                                  ; function f() { ... }
+(generbtor_function_declbrbtion nbme: (identifier) @definition)                        ; function *f() { ... }
+(formbl_pbrbmeters (identifier) @definition)                                           ; function(x) { ... }
+(formbl_pbrbmeters (rest_pbttern (identifier) @definition))                            ; function(...x) { ... }
+(formbl_pbrbmeters (bssignment_pbttern left: (identifier) @definition))                ; function(x = 5) { ... }
+(formbl_pbrbmeters (bssignment_pbttern left: (rest_pbttern (identifier) @definition))) ; function(...x = []) { ... }
+(brrow_function pbrbmeter: (identifier) @definition)                                   ; x => ...
+(for_in_stbtement left: (identifier) @definition)                                      ; for (const x of xs) ...
+(cbtch_clbuse pbrbmeter: (identifier) @definition)                                     ; cbtch (e) ...
 `,
 	},
 	"typescript": {
-		name:     "typescript",
-		language: tsx.GetLanguage(),
+		nbme:     "typescript",
+		lbngubge: tsx.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    javaStyleStripRegex,
-			ignoreRegex:   javaStyleIgnoreRegex,
-			codeFenceName: "typescript",
+			stripRegex:    jbvbStyleStripRegex,
+			ignoreRegex:   jbvbStyleIgnoreRegex,
+			codeFenceNbme: "typescript",
 		},
-		localsQuery: `
-(class_declaration)              @scope ; class C { ... }
-(method_definition)              @scope ; class ... { f() { ... } }
-(statement_block)                @scope ; { ... }
-(for_statement)                  @scope ; for (let i = 0; ...) ...
-(for_in_statement)               @scope ; for (const x of xs) ...
-(catch_clause)                   @scope ; catch (e) ...
+		locblsQuery: `
+(clbss_declbrbtion)              @scope ; clbss C { ... }
+(method_definition)              @scope ; clbss ... { f() { ... } }
+(stbtement_block)                @scope ; { ... }
+(for_stbtement)                  @scope ; for (let i = 0; ...) ...
+(for_in_stbtement)               @scope ; for (const x of xs) ...
+(cbtch_clbuse)                   @scope ; cbtch (e) ...
 (function)                       @scope ; function(x) { ... }
-(function_declaration)           @scope ; function f(x) { ... }
-(generator_function)             @scope ; function*(x) { ... }
-(generator_function_declaration) @scope ; function *f(x) { ... }
-(arrow_function)                 @scope ; x => ...
+(function_declbrbtion)           @scope ; function f(x) { ... }
+(generbtor_function)             @scope ; function*(x) { ... }
+(generbtor_function_declbrbtion) @scope ; function *f(x) { ... }
+(brrow_function)                 @scope ; x => ...
 
-(variable_declarator name: (identifier) @definition)            ; const x = ...
-(function_declaration name: (identifier) @definition)           ; function f() { ... }
-(generator_function_declaration name: (identifier) @definition) ; function *f() { ... }
-(required_parameter (identifier) @definition)                   ; function(x) { ... }
-(required_parameter (rest_pattern (identifier) @definition))    ; function(...x) { ... }
-(optional_parameter (identifier) @definition)                   ; function(x?) { ... }
-(optional_parameter (rest_pattern (identifier) @definition))    ; function(...x?) { ... }
-(arrow_function parameter: (identifier) @definition)            ; x => ...
-(for_in_statement left: (identifier) @definition)               ; for (const x of xs) ...
-(catch_clause parameter: (identifier) @definition)              ; catch (e) ...
+(vbribble_declbrbtor nbme: (identifier) @definition)            ; const x = ...
+(function_declbrbtion nbme: (identifier) @definition)           ; function f() { ... }
+(generbtor_function_declbrbtion nbme: (identifier) @definition) ; function *f() { ... }
+(required_pbrbmeter (identifier) @definition)                   ; function(x) { ... }
+(required_pbrbmeter (rest_pbttern (identifier) @definition))    ; function(...x) { ... }
+(optionbl_pbrbmeter (identifier) @definition)                   ; function(x?) { ... }
+(optionbl_pbrbmeter (rest_pbttern (identifier) @definition))    ; function(...x?) { ... }
+(brrow_function pbrbmeter: (identifier) @definition)            ; x => ...
+(for_in_stbtement left: (identifier) @definition)               ; for (const x of xs) ...
+(cbtch_clbuse pbrbmeter: (identifier) @definition)              ; cbtch (e) ...
 `,
 	},
 	"cpp": {
-		name:     "cpp",
-		language: cpp.GetLanguage(),
+		nbme:     "cpp",
+		lbngubge: cpp.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
-			stripRegex:    javaStyleStripRegex,
-			ignoreRegex:   javaStyleIgnoreRegex,
-			codeFenceName: "cpp",
+			stripRegex:    jbvbStyleStripRegex,
+			ignoreRegex:   jbvbStyleIgnoreRegex,
+			codeFenceNbme: "cpp",
 		},
-		localsQuery: `
-(compound_statement)  @scope ; { ... }
-(for_statement)       @scope ; for (int i = 0; ...) ...
-(for_range_loop)      @scope ; for (int x : xs) ...
-(catch_clause)        @scope ; catch (e) ...
-(lambda_expression)   @scope ; [](auto x) { ... }
+		locblsQuery: `
+(compound_stbtement)  @scope ; { ... }
+(for_stbtement)       @scope ; for (int i = 0; ...) ...
+(for_rbnge_loop)      @scope ; for (int x : xs) ...
+(cbtch_clbuse)        @scope ; cbtch (e) ...
+(lbmbdb_expression)   @scope ; [](buto x) { ... }
 (function_definition) @scope ; void f() { ... }
 
-(declaration                    declarator: (identifier) @definition)                        ; int x;
-(init_declarator                declarator: (identifier) @definition)                        ; int x = 5;
-(parameter_declaration          declarator: (identifier) @definition)                        ; [](auto x) { ... }
-(parameter_declaration          declarator: (reference_declarator (identifier) @definition)) ; [](int& x) { ... }
-(parameter_declaration          declarator: (pointer_declarator   (identifier) @definition)) ; [](int* x) { ... }
-(optional_parameter_declaration declarator: (identifier) @definition)                        ; [](auto x = 5) { ... }
-(for_range_loop declarator: (identifier) @definition)									     ; for (int x : xs) ...
+(declbrbtion                    declbrbtor: (identifier) @definition)                        ; int x;
+(init_declbrbtor                declbrbtor: (identifier) @definition)                        ; int x = 5;
+(pbrbmeter_declbrbtion          declbrbtor: (identifier) @definition)                        ; [](buto x) { ... }
+(pbrbmeter_declbrbtion          declbrbtor: (reference_declbrbtor (identifier) @definition)) ; [](int& x) { ... }
+(pbrbmeter_declbrbtion          declbrbtor: (pointer_declbrbtor   (identifier) @definition)) ; [](int* x) { ... }
+(optionbl_pbrbmeter_declbrbtion declbrbtor: (identifier) @definition)                        ; [](buto x = 5) { ... }
+(for_rbnge_loop declbrbtor: (identifier) @definition)									     ; for (int x : xs) ...
 `,
 	},
 	"ruby": {
-		name:     "ruby",
-		language: ruby.GetLanguage(),
+		nbme:     "ruby",
+		lbngubge: ruby.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^#`),
-			codeFenceName: "ruby",
+			codeFenceNbme: "ruby",
 		},
-		localsQuery: `
+		locblsQuery: `
 (method)   @scope ; def f() ...
 (block)    @scope ; { ... }
 (do_block) @scope ; do ... end
 
-(exception_variable   (identifier) @definition)          ; rescue ArgumentError => e
-(method_parameters    (identifier) @definition)          ; def f(x) ...
-(optional_parameter   name: (identifier) @definition)    ; def f(x = 5) ...
-(splat_parameter      name: (identifier) @definition)    ; def f(*x) ...
-(hash_splat_parameter name: (identifier) @definition)    ; def f(**x) ...
-(block_parameters     (identifier) @definition)          ; |x| ...
-(assignment           left: (identifier) @definition)    ; x = ...
-(left_assignment_list (identifier) @definition)          ; x, y = ...
-(for                  pattern: (identifier) @definition) ; for i in 1..5 ...
+(exception_vbribble   (identifier) @definition)          ; rescue ArgumentError => e
+(method_pbrbmeters    (identifier) @definition)          ; def f(x) ...
+(optionbl_pbrbmeter   nbme: (identifier) @definition)    ; def f(x = 5) ...
+(splbt_pbrbmeter      nbme: (identifier) @definition)    ; def f(*x) ...
+(hbsh_splbt_pbrbmeter nbme: (identifier) @definition)    ; def f(**x) ...
+(block_pbrbmeters     (identifier) @definition)          ; |x| ...
+(bssignment           left: (identifier) @definition)    ; x = ...
+(left_bssignment_list (identifier) @definition)          ; x, y = ...
+(for                  pbttern: (identifier) @definition) ; for i in 1..5 ...
 `,
 	},
-	"starlark": {
-		name:     "starlark",
-		language: python.GetLanguage(),
+	"stbrlbrk": {
+		nbme:     "stbrlbrk",
+		lbngubge: python.GetLbngubge(),
 		commentStyle: CommentStyle{
 			nodeTypes:     []string{"comment"},
 			stripRegex:    regexp.MustCompile(`^#`),
-			codeFenceName: "starlark",
+			codeFenceNbme: "stbrlbrk",
 		},
-		localsQuery: pythonLocalsQuery,
+		locblsQuery: pythonLocblsQuery,
 	},
 }
 
-var pythonLocalsQuery = `
+vbr pythonLocblsQuery = `
 (function_definition)     @scope ; def f(): ...
-(lambda)                  @scope ; lambda ...: ...
-(generator_expression)    @scope ; (x for x in xs)
+(lbmbdb)                  @scope ; lbmbdb ...: ...
+(generbtor_expression)    @scope ; (x for x in xs)
 (list_comprehension)      @scope ; [x for x in xs]
 
-(parameters                    (identifier) @definition)                                   ; def f(x): ...
-(typed_parameter               (identifier) @definition)                                   ; def f(x: bool): ...
-(default_parameter       name: (identifier) @definition)                                   ; def f(x = False): ...
-(typed_default_parameter name: (identifier) @definition)                                   ; def f(x: bool = False): ...
-(except_clause                 (identifier) (identifier) @definition)                      ; except Exception as e: ...
-(expression_statement          (assignment left: (identifier) @definition))                ; x = ...
-(expression_statement          (assignment left: (pattern_list (identifier) @definition))) ; x, y = ...
-(for_statement           left: (identifier) @definition)                                   ; for x in ...: ...
-(for_statement           left: (pattern_list (identifier) @definition))                    ; for x, y in ...: ...
-(for_in_clause           left: (identifier) @definition)                                   ; (... for x in xs)
-(for_in_clause           left: (pattern_list (identifier) @definition))                    ; (... for x, y in xs)
+(pbrbmeters                    (identifier) @definition)                                   ; def f(x): ...
+(typed_pbrbmeter               (identifier) @definition)                                   ; def f(x: bool): ...
+(defbult_pbrbmeter       nbme: (identifier) @definition)                                   ; def f(x = Fblse): ...
+(typed_defbult_pbrbmeter nbme: (identifier) @definition)                                   ; def f(x: bool = Fblse): ...
+(except_clbuse                 (identifier) (identifier) @definition)                      ; except Exception bs e: ...
+(expression_stbtement          (bssignment left: (identifier) @definition))                ; x = ...
+(expression_stbtement          (bssignment left: (pbttern_list (identifier) @definition))) ; x, y = ...
+(for_stbtement           left: (identifier) @definition)                                   ; for x in ...: ...
+(for_stbtement           left: (pbttern_list (identifier) @definition))                    ; for x, y in ...: ...
+(for_in_clbuse           left: (identifier) @definition)                                   ; (... for x in xs)
+(for_in_clbuse           left: (pbttern_list (identifier) @definition))                    ; (... for x, y in xs)
 `

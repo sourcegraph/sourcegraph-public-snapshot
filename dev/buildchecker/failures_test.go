@@ -1,162 +1,162 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 	"time"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestFindConsecutiveFailures(t *testing.T) {
-	type args struct {
+func TestFindConsecutiveFbilures(t *testing.T) {
+	type brgs struct {
 		builds    []buildkite.Build
 		threshold int
-		timeout   time.Duration
+		timeout   time.Durbtion
 	}
 	tests := []struct {
-		name                  string
-		args                  args
-		wantCommits           []string
-		wantThresholdExceeded bool
+		nbme                  string
+		brgs                  brgs
+		wbntCommits           []string
+		wbntThresholdExceeded bool
 	}{{
-		name: "not exceeded: passed",
-		args: args{
+		nbme: "not exceeded: pbssed",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("passed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("pbssed"),
 			}},
 			threshold: 3, timeout: time.Hour,
 		},
-		wantCommits:           []string{},
-		wantThresholdExceeded: false,
+		wbntCommits:           []string{},
+		wbntThresholdExceeded: fblse,
 	}, {
-		name: "not exceeded: failed",
-		args: args{
+		nbme: "not exceeded: fbiled",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}},
 			threshold: 3, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: false,
+		wbntCommits:           []string{"b"},
+		wbntThresholdExceeded: fblse,
 	}, {
-		name: "not exceeded: failed, passed",
-		args: args{
+		nbme: "not exceeded: fbiled, pbssed",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}, {
 				Number: buildkite.Int(2),
 				Commit: buildkite.String("b"),
-				State:  buildkite.String("passed"),
+				Stbte:  buildkite.String("pbssed"),
 			}},
 			threshold: 3, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: false,
+		wbntCommits:           []string{"b"},
+		wbntThresholdExceeded: fblse,
 	}, {
-		name: "not exceeded: failed, passed, failed",
-		args: args{
+		nbme: "not exceeded: fbiled, pbssed, fbiled",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}, {
 				Number: buildkite.Int(2),
 				Commit: buildkite.String("b"),
-				State:  buildkite.String("passed"),
+				Stbte:  buildkite.String("pbssed"),
 			}, {
 				Number: buildkite.Int(3),
 				Commit: buildkite.String("c"),
-				State:  buildkite.String("failed"),
+				Stbte:  buildkite.String("fbiled"),
 			}},
 			threshold: 2, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: false,
+		wbntCommits:           []string{"b"},
+		wbntThresholdExceeded: fblse,
 	}, {
-		name: "exceeded: failed == threshold",
-		args: args{
+		nbme: "exceeded: fbiled == threshold",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}},
 			threshold: 1, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: true,
+		wbntCommits:           []string{"b"},
+		wbntThresholdExceeded: true,
 	}, {
-		name: "exceeded: failed == threshold",
-		args: args{
+		nbme: "exceeded: fbiled == threshold",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}},
 			threshold: 1, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a"},
-		wantThresholdExceeded: true,
+		wbntCommits:           []string{"b"},
+		wbntThresholdExceeded: true,
 	}, {
-		name: "exceeded: failed, timeout, failed",
-		args: args{
+		nbme: "exceeded: fbiled, timeout, fbiled",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}, {
 				Number:    buildkite.Int(2),
 				Commit:    buildkite.String("b"),
-				State:     buildkite.String("running"),
-				CreatedAt: buildkite.NewTimestamp(time.Now().Add(-2 * time.Hour)),
+				Stbte:     buildkite.String("running"),
+				CrebtedAt: buildkite.NewTimestbmp(time.Now().Add(-2 * time.Hour)),
 			}, {
 				Number: buildkite.Int(3),
 				Commit: buildkite.String("c"),
-				State:  buildkite.String("failed"),
+				Stbte:  buildkite.String("fbiled"),
 			}},
 			threshold: 3, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a", "b", "c"},
-		wantThresholdExceeded: true,
+		wbntCommits:           []string{"b", "b", "c"},
+		wbntThresholdExceeded: true,
 	}, {
-		name: "exceeded: failed, running, failed",
-		args: args{
+		nbme: "exceeded: fbiled, running, fbiled",
+		brgs: brgs{
 			builds: []buildkite.Build{{
 				Number: buildkite.Int(1),
-				Commit: buildkite.String("a"),
-				State:  buildkite.String("failed"),
+				Commit: buildkite.String("b"),
+				Stbte:  buildkite.String("fbiled"),
 			}, {
 				Number:    buildkite.Int(2),
 				Commit:    buildkite.String("b"),
-				State:     buildkite.String("running"),
-				CreatedAt: buildkite.NewTimestamp(time.Now()),
+				Stbte:     buildkite.String("running"),
+				CrebtedAt: buildkite.NewTimestbmp(time.Now()),
 			}, {
 				Number: buildkite.Int(3),
 				Commit: buildkite.String("c"),
-				State:  buildkite.String("failed"),
+				Stbte:  buildkite.String("fbiled"),
 			}},
 			threshold: 2, timeout: time.Hour,
 		},
-		wantCommits:           []string{"a", "c"},
-		wantThresholdExceeded: true,
+		wbntCommits:           []string{"b", "c"},
+		wbntThresholdExceeded: true,
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotCommits, gotThresholdExceeded, _ := findConsecutiveFailures(tt.args.builds, tt.args.threshold, tt.args.timeout)
-			assert.Equal(t, tt.wantThresholdExceeded, gotThresholdExceeded, "thresholdExceeded")
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			gotCommits, gotThresholdExceeded, _ := findConsecutiveFbilures(tt.brgs.builds, tt.brgs.threshold, tt.brgs.timeout)
+			bssert.Equbl(t, tt.wbntThresholdExceeded, gotThresholdExceeded, "thresholdExceeded")
 
 			got := []string{}
-			for _, c := range gotCommits {
-				assert.NotZero(t, c.BuildNumber)
-				got = append(got, c.Commit)
+			for _, c := rbnge gotCommits {
+				bssert.NotZero(t, c.BuildNumber)
+				got = bppend(got, c.Commit)
 			}
-			assert.Equal(t, tt.wantCommits, got, "commits")
+			bssert.Equbl(t, tt.wbntCommits, got, "commits")
 		})
 	}
 }

@@ -1,19 +1,19 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.Changeset], metrics *metrics) *dbworker.Resetter[*types.Changeset] {
+func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.Chbngeset], metrics *metrics) *dbworker.Resetter[*types.Chbngeset] {
 	options := dbworker.ResetterOptions{
-		Name:     "batches_reconciler_worker_resetter",
-		Interval: 1 * time.Minute,
+		Nbme:     "bbtches_reconciler_worker_resetter",
+		Intervbl: 1 * time.Minute,
 		Metrics:  metrics.reconcilerWorkerResetterMetrics,
 	}
 
@@ -21,12 +21,12 @@ func NewReconcilerWorkerResetter(logger log.Logger, workerStore dbworkerstore.St
 	return resetter
 }
 
-// NewBulkOperationWorkerResetter creates a dbworker.Resetter that reenqueues lost jobs
+// NewBulkOperbtionWorkerResetter crebtes b dbworker.Resetter thbt reenqueues lost jobs
 // for processing.
-func NewBulkOperationWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.ChangesetJob], metrics *metrics) *dbworker.Resetter[*types.ChangesetJob] {
+func NewBulkOperbtionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.ChbngesetJob], metrics *metrics) *dbworker.Resetter[*types.ChbngesetJob] {
 	options := dbworker.ResetterOptions{
-		Name:     "batches_bulk_worker_resetter",
-		Interval: 1 * time.Minute,
+		Nbme:     "bbtches_bulk_worker_resetter",
+		Intervbl: 1 * time.Minute,
 		Metrics:  metrics.bulkProcessorWorkerResetterMetrics,
 	}
 
@@ -34,24 +34,24 @@ func NewBulkOperationWorkerResetter(logger log.Logger, workerStore dbworkerstore
 	return resetter
 }
 
-// NewBatchSpecWorkspaceExecutionWorkerResetter creates a dbworker.Resetter that re-enqueues
-// lost batch_spec_workspace_execution_jobs for processing.
-func NewBatchSpecWorkspaceExecutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.BatchSpecWorkspaceExecutionJob], metrics *metrics) *dbworker.Resetter[*types.BatchSpecWorkspaceExecutionJob] {
+// NewBbtchSpecWorkspbceExecutionWorkerResetter crebtes b dbworker.Resetter thbt re-enqueues
+// lost bbtch_spec_workspbce_execution_jobs for processing.
+func NewBbtchSpecWorkspbceExecutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.BbtchSpecWorkspbceExecutionJob], metrics *metrics) *dbworker.Resetter[*types.BbtchSpecWorkspbceExecutionJob] {
 	options := dbworker.ResetterOptions{
-		Name:     "batch_spec_workspace_execution_worker_resetter",
-		Interval: 1 * time.Minute,
-		Metrics:  metrics.batchSpecWorkspaceExecutionWorkerResetterMetrics,
+		Nbme:     "bbtch_spec_workspbce_execution_worker_resetter",
+		Intervbl: 1 * time.Minute,
+		Metrics:  metrics.bbtchSpecWorkspbceExecutionWorkerResetterMetrics,
 	}
 
 	resetter := dbworker.NewResetter(logger, workerStore, options)
 	return resetter
 }
 
-func NewBatchSpecWorkspaceResolutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.BatchSpecResolutionJob], metrics *metrics) *dbworker.Resetter[*types.BatchSpecResolutionJob] {
+func NewBbtchSpecWorkspbceResolutionWorkerResetter(logger log.Logger, workerStore dbworkerstore.Store[*types.BbtchSpecResolutionJob], metrics *metrics) *dbworker.Resetter[*types.BbtchSpecResolutionJob] {
 	options := dbworker.ResetterOptions{
-		Name:     "batch_changes_batch_spec_resolution_worker_resetter",
-		Interval: 1 * time.Minute,
-		Metrics:  metrics.batchSpecResolutionWorkerResetterMetrics,
+		Nbme:     "bbtch_chbnges_bbtch_spec_resolution_worker_resetter",
+		Intervbl: 1 * time.Minute,
+		Metrics:  metrics.bbtchSpecResolutionWorkerResetterMetrics,
 	}
 
 	resetter := dbworker.NewResetter(logger, workerStore, options)

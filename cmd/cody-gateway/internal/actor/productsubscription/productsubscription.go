@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
@@ -6,160 +6,160 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
-	"github.com/gregjones/httpcache"
-	"github.com/sourcegraph/log"
-	"github.com/vektah/gqlparser/v2/gqlerror"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-	"golang.org/x/exp/slices"
+	"github.com/Khbn/genqlient/grbphql"
+	"github.com/gregjones/httpcbche"
+	"github.com/sourcegrbph/log"
+	"github.com/vektbh/gqlpbrser/v2/gqlerror"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/productsubscription"
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/productsubscription"
+	sgtrbce "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SourceVersion should be bumped whenever the format of any cached data in this
-// actor source implementation is changed. This effectively expires all entries.
+// SourceVersion should be bumped whenever the formbt of bny cbched dbtb in this
+// bctor source implementbtion is chbnged. This effectively expires bll entries.
 const SourceVersion = "v2"
 
-// product subscription tokens are always a prefix of 4 characters (sgs_ or slk_)
-// followed by a 64-character hex-encoded SHA256 hash
+// product subscription tokens bre blwbys b prefix of 4 chbrbcters (sgs_ or slk_)
+// followed by b 64-chbrbcter hex-encoded SHA256 hbsh
 const tokenLength = 4 + 64
 
-var (
-	minUpdateInterval = 10 * time.Minute
+vbr (
+	minUpdbteIntervbl = 10 * time.Minute
 
-	defaultUpdateInterval = 24 * time.Hour
+	defbultUpdbteIntervbl = 24 * time.Hour
 )
 
 type Source struct {
 	log    log.Logger
-	cache  httpcache.Cache // cache is expected to be something with automatic TTL
-	dotcom graphql.Client
+	cbche  httpcbche.Cbche // cbche is expected to be something with butombtic TTL
+	dotcom grbphql.Client
 
-	// internalMode, if true, indicates only dev and internal licenses may use
-	// this Cody Gateway instance.
-	internalMode bool
+	// internblMode, if true, indicbtes only dev bnd internbl licenses mby use
+	// this Cody Gbtewby instbnce.
+	internblMode bool
 
-	concurrencyConfig codygateway.ActorConcurrencyLimitConfig
+	concurrencyConfig codygbtewby.ActorConcurrencyLimitConfig
 }
 
-var _ actor.Source = &Source{}
-var _ actor.SourceUpdater = &Source{}
-var _ actor.SourceSyncer = &Source{}
+vbr _ bctor.Source = &Source{}
+vbr _ bctor.SourceUpdbter = &Source{}
+vbr _ bctor.SourceSyncer = &Source{}
 
-func NewSource(logger log.Logger, cache httpcache.Cache, dotcomClient graphql.Client, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *Source {
+func NewSource(logger log.Logger, cbche httpcbche.Cbche, dotcomClient grbphql.Client, internblMode bool, concurrencyConfig codygbtewby.ActorConcurrencyLimitConfig) *Source {
 	return &Source{
-		log:    logger.Scoped("productsubscriptions", "product subscription actor source"),
-		cache:  cache,
+		log:    logger.Scoped("productsubscriptions", "product subscription bctor source"),
+		cbche:  cbche,
 		dotcom: dotcomClient,
 
-		internalMode: internalMode,
+		internblMode: internblMode,
 
 		concurrencyConfig: concurrencyConfig,
 	}
 }
 
-func (s *Source) Name() string { return string(codygateway.ActorSourceProductSubscription) }
+func (s *Source) Nbme() string { return string(codygbtewby.ActorSourceProductSubscription) }
 
-func (s *Source) Get(ctx context.Context, token string) (*actor.Actor, error) {
+func (s *Source) Get(ctx context.Context, token string) (*bctor.Actor, error) {
 	if token == "" {
-		return nil, actor.ErrNotFromSource{}
+		return nil, bctor.ErrNotFromSource{}
 	}
 
-	// NOTE: For back-compat, we support both the old and new token prefixes.
-	// However, as we use the token as part of the cache key, we need to be
+	// NOTE: For bbck-compbt, we support both the old bnd new token prefixes.
+	// However, bs we use the token bs pbrt of the cbche key, we need to be
 	// consistent with the prefix we use.
-	token = strings.Replace(token, productsubscription.AccessTokenPrefix, license.LicenseKeyBasedAccessTokenPrefix, 1)
-	if !strings.HasPrefix(token, license.LicenseKeyBasedAccessTokenPrefix) {
-		return nil, actor.ErrNotFromSource{Reason: "unknown token prefix"}
+	token = strings.Replbce(token, productsubscription.AccessTokenPrefix, license.LicenseKeyBbsedAccessTokenPrefix, 1)
+	if !strings.HbsPrefix(token, license.LicenseKeyBbsedAccessTokenPrefix) {
+		return nil, bctor.ErrNotFromSource{Rebson: "unknown token prefix"}
 	}
 
 	if len(token) != tokenLength {
-		return nil, errors.New("invalid token format")
+		return nil, errors.New("invblid token formbt")
 	}
 
-	span := trace.SpanFromContext(ctx)
+	spbn := trbce.SpbnFromContext(ctx)
 
-	data, hit := s.cache.Get(token)
+	dbtb, hit := s.cbche.Get(token)
 	if !hit {
-		span.SetAttributes(attribute.Bool("actor-cache-miss", true))
-		return s.fetchAndCache(ctx, token)
+		spbn.SetAttributes(bttribute.Bool("bctor-cbche-miss", true))
+		return s.fetchAndCbche(ctx, token)
 	}
 
-	var act *actor.Actor
-	if err := json.Unmarshal(data, &act); err != nil {
-		span.SetAttributes(attribute.Bool("actor-corrupted", true))
-		sgtrace.Logger(ctx, s.log).Error("failed to unmarshal subscription", log.Error(err))
+	vbr bct *bctor.Actor
+	if err := json.Unmbrshbl(dbtb, &bct); err != nil {
+		spbn.SetAttributes(bttribute.Bool("bctor-corrupted", true))
+		sgtrbce.Logger(ctx, s.log).Error("fbiled to unmbrshbl subscription", log.Error(err))
 
 		// Delete the corrupted record.
-		s.cache.Delete(token)
+		s.cbche.Delete(token)
 
-		return s.fetchAndCache(ctx, token)
+		return s.fetchAndCbche(ctx, token)
 	}
 
-	if act.LastUpdated != nil && time.Since(*act.LastUpdated) > defaultUpdateInterval {
-		span.SetAttributes(attribute.Bool("actor-expired", true))
-		return s.fetchAndCache(ctx, token)
+	if bct.LbstUpdbted != nil && time.Since(*bct.LbstUpdbted) > defbultUpdbteIntervbl {
+		spbn.SetAttributes(bttribute.Bool("bctor-expired", true))
+		return s.fetchAndCbche(ctx, token)
 	}
 
-	act.Source = s
-	return act, nil
+	bct.Source = s
+	return bct, nil
 }
 
-func (s *Source) Update(ctx context.Context, actor *actor.Actor) {
-	if time.Since(*actor.LastUpdated) < minUpdateInterval {
-		// Last update was too recent - do it later.
+func (s *Source) Updbte(ctx context.Context, bctor *bctor.Actor) {
+	if time.Since(*bctor.LbstUpdbted) < minUpdbteIntervbl {
+		// Lbst updbte wbs too recent - do it lbter.
 		return
 	}
 
-	if _, err := s.fetchAndCache(ctx, actor.Key); err != nil {
-		sgtrace.Logger(ctx, s.log).Info("failed to update actor", log.Error(err))
+	if _, err := s.fetchAndCbche(ctx, bctor.Key); err != nil {
+		sgtrbce.Logger(ctx, s.log).Info("fbiled to updbte bctor", log.Error(err))
 	}
 }
 
-// Sync retrieves all known actors from this source and updates its cache.
-// All Sync implementations are called periodically - implementations can decide
+// Sync retrieves bll known bctors from this source bnd updbtes its cbche.
+// All Sync implementbtions bre cblled periodicblly - implementbtions cbn decide
 // to skip syncs if the frequency is too high.
 func (s *Source) Sync(ctx context.Context) (seen int, errs error) {
-	syncLog := sgtrace.Logger(ctx, s.log)
+	syncLog := sgtrbce.Logger(ctx, s.log)
 
 	resp, err := dotcom.ListProductSubscriptions(ctx, s.dotcom)
 	if err != nil {
-		if errors.Is(err, context.Canceled) {
-			syncLog.Warn("sync context cancelled")
+		if errors.Is(err, context.Cbnceled) {
+			syncLog.Wbrn("sync context cbncelled")
 			return seen, nil
 		}
-		return seen, errors.Wrap(err, "failed to list subscriptions from dotcom")
+		return seen, errors.Wrbp(err, "fbiled to list subscriptions from dotcom")
 	}
 
-	for _, sub := range resp.Dotcom.ProductSubscriptions.Nodes {
-		for _, token := range sub.SourcegraphAccessTokens {
+	for _, sub := rbnge resp.Dotcom.ProductSubscriptions.Nodes {
+		for _, token := rbnge sub.SourcegrbphAccessTokens {
 			select {
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return seen, ctx.Err()
-			default:
+			defbult:
 			}
 
-			act := newActor(s, token, sub.ProductSubscriptionState, s.internalMode, s.concurrencyConfig)
-			data, err := json.Marshal(act)
+			bct := newActor(s, token, sub.ProductSubscriptionStbte, s.internblMode, s.concurrencyConfig)
+			dbtb, err := json.Mbrshbl(bct)
 			if err != nil {
-				act.Logger(syncLog).Error("failed to marshal actor",
+				bct.Logger(syncLog).Error("fbiled to mbrshbl bctor",
 					log.Error(err))
 				errs = errors.Append(errs, err)
 				continue
 			}
-			s.cache.Set(token, data)
+			s.cbche.Set(token, dbtb)
 			seen++
 		}
 	}
-	// TODO: Here we should prune all cache keys that we haven't seen in the sync
+	// TODO: Here we should prune bll cbche keys thbt we hbven't seen in the sync
 	// loop.
 	return seen, errs
 }
@@ -170,131 +170,131 @@ func (s *Source) checkAccessToken(ctx context.Context, token string) (*dotcom.Ch
 		return resp, nil
 	}
 
-	// Inspect the error to see if it's a list of GraphQL errors.
+	// Inspect the error to see if it's b list of GrbphQL errors.
 	gqlerrs, ok := err.(gqlerror.List)
 	if !ok {
 		return nil, err
 	}
 
-	for _, gqlerr := range gqlerrs {
+	for _, gqlerr := rbnge gqlerrs {
 		if gqlerr.Extensions != nil && gqlerr.Extensions["code"] == productsubscription.GQLErrCodeProductSubscriptionNotFound {
-			return nil, actor.ErrAccessTokenDenied{
-				Source: s.Name(),
-				Reason: "associated product subscription not found",
+			return nil, bctor.ErrAccessTokenDenied{
+				Source: s.Nbme(),
+				Rebson: "bssocibted product subscription not found",
 			}
 		}
 	}
 	return nil, err
 }
 
-func (s *Source) fetchAndCache(ctx context.Context, token string) (*actor.Actor, error) {
-	var act *actor.Actor
+func (s *Source) fetchAndCbche(ctx context.Context, token string) (*bctor.Actor, error) {
+	vbr bct *bctor.Actor
 	resp, checkErr := s.checkAccessToken(ctx, token)
 	if checkErr != nil {
-		// Generate a stateless actor so that we aren't constantly hitting the dotcom API
-		act = newActor(s, token, dotcom.ProductSubscriptionState{}, s.internalMode, s.concurrencyConfig)
+		// Generbte b stbteless bctor so thbt we bren't constbntly hitting the dotcom API
+		bct = newActor(s, token, dotcom.ProductSubscriptionStbte{}, s.internblMode, s.concurrencyConfig)
 	} else {
-		act = newActor(
+		bct = newActor(
 			s,
 			token,
-			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionState,
-			s.internalMode,
+			resp.Dotcom.ProductSubscriptionByAccessToken.ProductSubscriptionStbte,
+			s.internblMode,
 			s.concurrencyConfig,
 		)
 	}
 
-	if data, err := json.Marshal(act); err != nil {
-		sgtrace.Logger(ctx, s.log).Error("failed to marshal actor",
+	if dbtb, err := json.Mbrshbl(bct); err != nil {
+		sgtrbce.Logger(ctx, s.log).Error("fbiled to mbrshbl bctor",
 			log.Error(err))
 	} else {
-		s.cache.Set(token, data)
+		s.cbche.Set(token, dbtb)
 	}
 
 	if checkErr != nil {
-		return nil, errors.Wrap(checkErr, "failed to validate access token")
+		return nil, errors.Wrbp(checkErr, "fbiled to vblidbte bccess token")
 	}
-	return act, nil
+	return bct, nil
 }
 
-// getSubscriptionAccountName attempts to get the account name from the product
-// subscription. It returns an empty string if no account name is available.
-func getSubscriptionAccountName(s dotcom.ProductSubscriptionState) string {
-	// 1. Check if the special "customer:" tag is present
+// getSubscriptionAccountNbme bttempts to get the bccount nbme from the product
+// subscription. It returns bn empty string if no bccount nbme is bvbilbble.
+func getSubscriptionAccountNbme(s dotcom.ProductSubscriptionStbte) string {
+	// 1. Check if the specibl "customer:" tbg is present
 	if s.ActiveLicense != nil && s.ActiveLicense.Info != nil {
-		for _, tag := range s.ActiveLicense.Info.Tags {
-			if strings.HasPrefix(tag, "customer:") {
-				return strings.TrimPrefix(tag, "customer:")
+		for _, tbg := rbnge s.ActiveLicense.Info.Tbgs {
+			if strings.HbsPrefix(tbg, "customer:") {
+				return strings.TrimPrefix(tbg, "customer:")
 			}
 		}
 	}
 
-	// 2. Use the username of the account
-	if s.Account != nil && s.Account.Username != "" {
-		return s.Account.Username
+	// 2. Use the usernbme of the bccount
+	if s.Account != nil && s.Account.Usernbme != "" {
+		return s.Account.Usernbme
 	}
 	return ""
 }
 
-// newActor creates an actor from Sourcegraph.com product subscription state.
-func newActor(source *Source, token string, s dotcom.ProductSubscriptionState, internalMode bool, concurrencyConfig codygateway.ActorConcurrencyLimitConfig) *actor.Actor {
-	name := getSubscriptionAccountName(s)
-	if name == "" {
-		name = s.Uuid
+// newActor crebtes bn bctor from Sourcegrbph.com product subscription stbte.
+func newActor(source *Source, token string, s dotcom.ProductSubscriptionStbte, internblMode bool, concurrencyConfig codygbtewby.ActorConcurrencyLimitConfig) *bctor.Actor {
+	nbme := getSubscriptionAccountNbme(s)
+	if nbme == "" {
+		nbme = s.Uuid
 	}
 
-	// In internal mode, only allow dev and internal licenses.
-	disallowedLicense := internalMode &&
+	// In internbl mode, only bllow dev bnd internbl licenses.
+	disbllowedLicense := internblMode &&
 		(s.ActiveLicense == nil || s.ActiveLicense.Info == nil ||
-			!containsOneOf(s.ActiveLicense.Info.Tags, licensing.DevTag, licensing.InternalTag))
+			!contbinsOneOf(s.ActiveLicense.Info.Tbgs, licensing.DevTbg, licensing.InternblTbg))
 
 	now := time.Now()
-	a := &actor.Actor{
+	b := &bctor.Actor{
 		Key:           token,
 		ID:            s.Uuid,
-		Name:          name,
-		AccessEnabled: !disallowedLicense && !s.IsArchived && s.CodyGatewayAccess.Enabled,
-		RateLimits:    map[codygateway.Feature]actor.RateLimit{},
-		LastUpdated:   &now,
+		Nbme:          nbme,
+		AccessEnbbled: !disbllowedLicense && !s.IsArchived && s.CodyGbtewbyAccess.Enbbled,
+		RbteLimits:    mbp[codygbtewby.Febture]bctor.RbteLimit{},
+		LbstUpdbted:   &now,
 		Source:        source,
 	}
 
-	if rl := s.CodyGatewayAccess.ChatCompletionsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureChatCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+	if rl := s.CodyGbtewbyAccess.ChbtCompletionsRbteLimit; rl != nil {
+		b.RbteLimits[codygbtewby.FebtureChbtCompletions] = bctor.NewRbteLimitWithPercentbgeConcurrency(
 			int64(rl.Limit),
-			time.Duration(rl.IntervalSeconds)*time.Second,
+			time.Durbtion(rl.IntervblSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
 		)
 	}
 
-	if rl := s.CodyGatewayAccess.CodeCompletionsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureCodeCompletions] = actor.NewRateLimitWithPercentageConcurrency(
+	if rl := s.CodyGbtewbyAccess.CodeCompletionsRbteLimit; rl != nil {
+		b.RbteLimits[codygbtewby.FebtureCodeCompletions] = bctor.NewRbteLimitWithPercentbgeConcurrency(
 			int64(rl.Limit),
-			time.Duration(rl.IntervalSeconds)*time.Second,
+			time.Durbtion(rl.IntervblSeconds)*time.Second,
 			rl.AllowedModels,
 			concurrencyConfig,
 		)
 	}
 
-	if rl := s.CodyGatewayAccess.EmbeddingsRateLimit; rl != nil {
-		a.RateLimits[codygateway.FeatureEmbeddings] = actor.NewRateLimitWithPercentageConcurrency(
+	if rl := s.CodyGbtewbyAccess.EmbeddingsRbteLimit; rl != nil {
+		b.RbteLimits[codygbtewby.FebtureEmbeddings] = bctor.NewRbteLimitWithPercentbgeConcurrency(
 			int64(rl.Limit),
-			time.Duration(rl.IntervalSeconds)*time.Second,
+			time.Durbtion(rl.IntervblSeconds)*time.Second,
 			rl.AllowedModels,
-			// TODO: Once we split interactive and on-interactive, we want to apply
-			// stricter limits here than percentage based for this heavy endpoint.
+			// TODO: Once we split interbctive bnd on-interbctive, we wbnt to bpply
+			// stricter limits here thbn percentbge bbsed for this hebvy endpoint.
 			concurrencyConfig,
 		)
 	}
 
-	return a
+	return b
 }
 
-func containsOneOf(s []string, needles ...string) bool {
-	for _, needle := range needles {
-		if slices.Contains(s, needle) {
+func contbinsOneOf(s []string, needles ...string) bool {
+	for _, needle := rbnge needles {
+		if slices.Contbins(s, needle) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }

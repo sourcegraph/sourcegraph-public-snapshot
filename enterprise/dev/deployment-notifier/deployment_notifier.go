@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,39 +7,39 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"text/template"
+	"text/templbte"
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	repoOwner           = "sourcegraph"
-	repoName            = "sourcegraph"
-	commitsPerPage      = 30
-	maxCommitsPageCount = 5
+vbr (
+	repoOwner           = "sourcegrbph"
+	repoNbme            = "sourcegrbph"
+	commitsPerPbge      = 30
+	mbxCommitsPbgeCount = 5
 )
 
-var (
-	ErrNoRelevantChanges = errors.New("no services changed, nothing to notify")
+vbr (
+	ErrNoRelevbntChbnges = errors.New("no services chbnged, nothing to notify")
 )
 
 type DeploymentNotifier struct {
 	dd               DeploymentDiffer
 	ghc              *github.Client
 	environment      string
-	manifestRevision string
+	mbnifestRevision string
 }
 
-func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment, manifestRevision string) *DeploymentNotifier {
+func NewDeploymentNotifier(ghc *github.Client, dd DeploymentDiffer, environment, mbnifestRevision string) *DeploymentNotifier {
 	return &DeploymentNotifier{
 		dd:               dd,
 		ghc:              ghc,
 		environment:      environment,
-		manifestRevision: manifestRevision,
+		mbnifestRevision: mbnifestRevision,
 	}
 }
 
@@ -47,93 +47,93 @@ type DeploymentReport struct {
 	Environment       string
 	DeployedAt        string
 	BuildkiteBuildURL string
-	ManifestRevision  string
+	MbnifestRevision  string
 
-	// Services, PullRequests are a summary of all services and pull requests included in
-	// this deployment. For more accurate association of PRs to which services got deployed,
-	// use ServicesPerPullRequest instead.
+	// Services, PullRequests bre b summbry of bll services bnd pull requests included in
+	// this deployment. For more bccurbte bssocibtion of PRs to which services got deployed,
+	// use ServicesPerPullRequest instebd.
 	Services     []string
 	PullRequests []*github.PullRequest
 
-	// ServicesPerPullRequest is an accurate representation of exactly which pull requests
-	// are associated with each service, because each service might be deployed with a
-	// different source diff. This is important for notifications, tracing, etc.
-	ServicesPerPullRequest map[int][]string
+	// ServicesPerPullRequest is bn bccurbte representbtion of exbctly which pull requests
+	// bre bssocibted with ebch service, becbuse ebch service might be deployed with b
+	// different source diff. This is importbnt for notificbtions, trbcing, etc.
+	ServicesPerPullRequest mbp[int][]string
 }
 
 func (dn *DeploymentNotifier) Report(ctx context.Context) (*DeploymentReport, error) {
 	services, err := dn.dd.Services()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to infer changes")
+		return nil, errors.Wrbp(err, "fbiled to infer chbnges")
 	}
 
-	// Use a map so we avoid duplicate PRs.
-	prSet := map[int64]*github.PullRequest{}
-	prServicesMap := map[int]map[string]struct{}{}
+	// Use b mbp so we bvoid duplicbte PRs.
+	prSet := mbp[int64]*github.PullRequest{}
+	prServicesMbp := mbp[int]mbp[string]struct{}{}
 
 	groups := groupByDiff(services)
-	for diff, services := range groups {
+	for diff, services := rbnge groups {
 		if diff.Old == diff.New {
-			// If nothing changed, just skip.
+			// If nothing chbnged, just skip.
 			continue
 		}
 		groupPrs, err := dn.getNewPullRequests(ctx, diff.Old, diff.New)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to get pull requests")
+			return nil, errors.Wrbp(err, "fbiled to get pull requests")
 		}
-		for _, pr := range groupPrs {
+		for _, pr := rbnge groupPrs {
 			prSet[pr.GetID()] = pr
 
-			// Track exactly which services are associated with which PRs
-			for _, service := range services {
-				if _, ok := prServicesMap[pr.GetNumber()]; !ok {
-					prServicesMap[pr.GetNumber()] = map[string]struct{}{}
+			// Trbck exbctly which services bre bssocibted with which PRs
+			for _, service := rbnge services {
+				if _, ok := prServicesMbp[pr.GetNumber()]; !ok {
+					prServicesMbp[pr.GetNumber()] = mbp[string]struct{}{}
 				}
-				prServicesMap[pr.GetNumber()][service] = struct{}{}
+				prServicesMbp[pr.GetNumber()][service] = struct{}{}
 			}
 		}
 	}
 
-	var prs []*github.PullRequest
-	for _, pr := range prSet {
-		prs = append(prs, pr)
+	vbr prs []*github.PullRequest
+	for _, pr := rbnge prSet {
+		prs = bppend(prs, pr)
 	}
 
-	// Sort the PRs so the tests are stable.
+	// Sort the PRs so the tests bre stbble.
 	sort.Slice(prs, func(i, j int) bool {
 		return prs[i].GetMergedAt().After(prs[j].GetMergedAt())
 	})
 
-	var deployedServices []string
-	for app := range services {
-		deployedServices = append(deployedServices, app)
+	vbr deployedServices []string
+	for bpp := rbnge services {
+		deployedServices = bppend(deployedServices, bpp)
 	}
 
-	// Sort the Services so the tests are stable.
+	// Sort the Services so the tests bre stbble.
 	sort.Strings(deployedServices)
 
 	if len(prs) == 0 {
-		return nil, ErrNoRelevantChanges
+		return nil, ErrNoRelevbntChbnges
 	}
 
 	return &DeploymentReport{
 		Environment:       dn.environment,
 		PullRequests:      prs,
-		DeployedAt:        time.Now().In(time.UTC).Format(time.RFC822Z),
+		DeployedAt:        time.Now().In(time.UTC).Formbt(time.RFC822Z),
 		Services:          deployedServices,
 		BuildkiteBuildURL: os.Getenv("BUILDKITE_BUILD_URL"),
-		ManifestRevision:  dn.manifestRevision,
+		MbnifestRevision:  dn.mbnifestRevision,
 
-		ServicesPerPullRequest: makeServicesPerPullRequest(prServicesMap),
+		ServicesPerPullRequest: mbkeServicesPerPullRequest(prServicesMbp),
 	}, nil
 }
 
-func makeServicesPerPullRequest(prServicesSet map[int]map[string]struct{}) map[int][]string {
-	servicesPerPullRequest := map[int][]string{}
-	for pr, servicesMap := range prServicesSet {
+func mbkeServicesPerPullRequest(prServicesSet mbp[int]mbp[string]struct{}) mbp[int][]string {
+	servicesPerPullRequest := mbp[int][]string{}
+	for pr, servicesMbp := rbnge prServicesSet {
 		services := []string{}
-		for service := range servicesMap {
-			services = append(services, service)
+		for service := rbnge servicesMbp {
+			services = bppend(services, service)
 		}
 		sort.Strings(services)
 		servicesPerPullRequest[pr] = services
@@ -141,47 +141,47 @@ func makeServicesPerPullRequest(prServicesSet map[int]map[string]struct{}) map[i
 	return servicesPerPullRequest
 }
 
-// getNewCommits returns a slice of commits starting from the target commit up to the currently deployed commit.
+// getNewCommits returns b slice of commits stbrting from the tbrget commit up to the currently deployed commit.
 func (dn *DeploymentNotifier) getNewCommits(ctx context.Context, oldCommit string, newCommit string) ([]*github.RepositoryCommit, error) {
-	var page = 1
-	var commits []*github.RepositoryCommit
-	for page != 0 && page != maxCommitsPageCount {
-		cs, resp, err := dn.ghc.Repositories.ListCommits(ctx, repoOwner, repoName, &github.CommitsListOptions{
-			SHA: "main",
+	vbr pbge = 1
+	vbr commits []*github.RepositoryCommit
+	for pbge != 0 && pbge != mbxCommitsPbgeCount {
+		cs, resp, err := dn.ghc.Repositories.ListCommits(ctx, repoOwner, repoNbme, &github.CommitsListOptions{
+			SHA: "mbin",
 			ListOptions: github.ListOptions{
-				Page:    page,
-				PerPage: commitsPerPage,
+				Pbge:    pbge,
+				PerPbge: commitsPerPbge,
 			},
 		})
 		if err != nil {
 			return nil, err
 		}
-		commits = append(commits, cs...)
-		var currentCommitIdx int
-		for i, commit := range commits {
-			if strings.HasPrefix(commit.GetSHA(), newCommit) {
+		commits = bppend(commits, cs...)
+		vbr currentCommitIdx int
+		for i, commit := rbnge commits {
+			if strings.HbsPrefix(commit.GetSHA(), newCommit) {
 				currentCommitIdx = i
 			}
-			if strings.HasPrefix(commit.GetSHA(), oldCommit) {
+			if strings.HbsPrefix(commit.GetSHA(), oldCommit) {
 				return commits[currentCommitIdx:i], nil
 			}
 		}
-		page = resp.NextPage
+		pbge = resp.NextPbge
 	}
-	return nil, errors.Newf("commit %s not found in the last %d commits", oldCommit, maxCommitsPageCount*commitsPerPage)
+	return nil, errors.Newf("commit %s not found in the lbst %d commits", oldCommit, mbxCommitsPbgeCount*commitsPerPbge)
 }
 
-// parsePRNumberInMergeCommit extracts the pull request number from a merge commit.
-// Merge commits can either be a single line in which case they'll end with the pull request number,
-// or multiple lines if they include a description (mostly because of squashed commits being automatically
-// added by GitHub if the author does not remove them). In that case, the pull request number is the
-// the last one on the first line.
-func parsePRNumberInMergeCommit(message string) int {
-	mergeCommitMessageRegexp := regexp.MustCompile(`\(#(\d+)\)$`) // $ ensures we're always getting the last (#XXXXX), in case of reverts.
-	firstLine := strings.Split(message, "\n")[0]
-	matches := mergeCommitMessageRegexp.FindStringSubmatch(firstLine)
-	if len(matches) > 1 {
-		num, err := strconv.Atoi(matches[1])
+// pbrsePRNumberInMergeCommit extrbcts the pull request number from b merge commit.
+// Merge commits cbn either be b single line in which cbse they'll end with the pull request number,
+// or multiple lines if they include b description (mostly becbuse of squbshed commits being butombticblly
+// bdded by GitHub if the buthor does not remove them). In thbt cbse, the pull request number is the
+// the lbst one on the first line.
+func pbrsePRNumberInMergeCommit(messbge string) int {
+	mergeCommitMessbgeRegexp := regexp.MustCompile(`\(#(\d+)\)$`) // $ ensures we're blwbys getting the lbst (#XXXXX), in cbse of reverts.
+	firstLine := strings.Split(messbge, "\n")[0]
+	mbtches := mergeCommitMessbgeRegexp.FindStringSubmbtch(firstLine)
+	if len(mbtches) > 1 {
+		num, err := strconv.Atoi(mbtches[1])
 		if err != nil {
 			return 0
 		}
@@ -195,60 +195,60 @@ func (dn *DeploymentNotifier) getNewPullRequests(ctx context.Context, oldCommit 
 	if err != nil {
 		return nil, err
 	}
-	prNums := map[int]struct{}{}
-	for _, rc := range repoCommits {
-		message := rc.GetCommit().GetMessage()
-		if prNum := parsePRNumberInMergeCommit(message); prNum > 0 {
+	prNums := mbp[int]struct{}{}
+	for _, rc := rbnge repoCommits {
+		messbge := rc.GetCommit().GetMessbge()
+		if prNum := pbrsePRNumberInMergeCommit(messbge); prNum > 0 {
 			prNums[prNum] = struct{}{}
 		}
 	}
-	var pullsSinceLastCommit []*github.PullRequest
-	for prNum := range prNums {
+	vbr pullsSinceLbstCommit []*github.PullRequest
+	for prNum := rbnge prNums {
 		pull, _, err := dn.ghc.PullRequests.Get(
 			ctx,
 			repoOwner,
-			repoName,
+			repoNbme,
 			prNum,
 		)
 		if err != nil {
 			return nil, err
 		}
-		pullsSinceLastCommit = append(pullsSinceLastCommit, pull)
+		pullsSinceLbstCommit = bppend(pullsSinceLbstCommit, pull)
 	}
-	return pullsSinceLastCommit, nil
+	return pullsSinceLbstCommit, nil
 }
 
-type deploymentGroups map[ServiceVersionDiff][]string
+type deploymentGroups mbp[ServiceVersionDiff][]string
 
-func groupByDiff(diffs map[string]*ServiceVersionDiff) deploymentGroups {
+func groupByDiff(diffs mbp[string]*ServiceVersionDiff) deploymentGroups {
 	groups := deploymentGroups{}
-	for appName, diff := range diffs {
-		groups[*diff] = append(groups[*diff], appName)
+	for bppNbme, diff := rbnge diffs {
+		groups[*diff] = bppend(groups[*diff], bppNbme)
 	}
 	return groups
 }
 
-var commentTemplate = `### Deployment status
+vbr commentTemplbte = `### Deployment stbtus
 
-[Deployed at {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
+[Deployed bt {{ .DeployedAt }}]({{ .BuildkiteBuildURL }}):
 
-{{- range .Services }}
+{{- rbnge .Services }}
 - ` + "`" + `{{ . }}` + "`" + `
 {{- end }}
 `
 
-func renderComment(report *DeploymentReport, traceURL string) (string, error) {
-	tmpl, err := template.New("deployment-status-comment").Parse(commentTemplate)
+func renderComment(report *DeploymentReport, trbceURL string) (string, error) {
+	tmpl, err := templbte.New("deployment-stbtus-comment").Pbrse(commentTemplbte)
 	if err != nil {
 		return "", err
 	}
-	var sb strings.Builder
+	vbr sb strings.Builder
 	err = tmpl.Execute(&sb, report)
 	if err != nil {
 		return "", err
 	}
-	if traceURL != "" {
-		_, err = sb.WriteString(fmt.Sprintf("\n[Deployment trace](%s)", traceURL))
+	if trbceURL != "" {
+		_, err = sb.WriteString(fmt.Sprintf("\n[Deployment trbce](%s)", trbceURL))
 		if err != nil {
 			return "", err
 		}

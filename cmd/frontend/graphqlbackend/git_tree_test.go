@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,16 +6,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestGitTree(t *testing.T) {
@@ -23,20 +23,20 @@ func TestGitTree(t *testing.T) {
 	gsClient := setupGitserverClient(t)
 	tests := []*Test{
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, gsClient),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, gsClient),
 			Query: `
 				{
-					repository(name: "github.com/gorilla/mux") {
-						commit(rev: "` + exampleCommitSHA1 + `") {
-							tree(path: "foo bar") {
+					repository(nbme: "github.com/gorillb/mux") {
+						commit(rev: "` + exbmpleCommitSHA1 + `") {
+							tree(pbth: "foo bbr") {
 								directories {
-									name
-									path
+									nbme
+									pbth
 									url
 								}
 								files {
-									name
-									path
+									nbme
+									pbth
 									url
 								}
 							}
@@ -51,26 +51,26 @@ func TestGitTree(t *testing.T) {
       "tree": {
         "directories": [
           {
-            "name": "Geoffrey's random queries.32r242442bf",
-            "path": "foo bar/Geoffrey's random queries.32r242442bf",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/tree/foo%20bar/Geoffrey%27s%20random%20queries.32r242442bf"
+            "nbme": "Geoffrey's rbndom queries.32r242442bf",
+            "pbth": "foo bbr/Geoffrey's rbndom queries.32r242442bf",
+            "url": "/github.com/gorillb/mux@1234567890123456789012345678901234567890/-/tree/foo%20bbr/Geoffrey%27s%20rbndom%20queries.32r242442bf"
           },
           {
-            "name": "testDirectory",
-            "path": "foo bar/testDirectory",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/tree/foo%20bar/testDirectory"
+            "nbme": "testDirectory",
+            "pbth": "foo bbr/testDirectory",
+            "url": "/github.com/gorillb/mux@1234567890123456789012345678901234567890/-/tree/foo%20bbr/testDirectory"
           }
         ],
         "files": [
           {
-            "name": "% token.4288249258.sql",
-            "path": "foo bar/% token.4288249258.sql",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/blob/foo%20bar/%25%20token.4288249258.sql"
+            "nbme": "% token.4288249258.sql",
+            "pbth": "foo bbr/% token.4288249258.sql",
+            "url": "/github.com/gorillb/mux@1234567890123456789012345678901234567890/-/blob/foo%20bbr/%25%20token.4288249258.sql"
           },
           {
-            "name": "testFile",
-            "path": "foo bar/testFile",
-            "url": "/github.com/gorilla/mux@1234567890123456789012345678901234567890/-/blob/foo%20bar/testFile"
+            "nbme": "testFile",
+            "pbth": "foo bbr/testFile",
+            "url": "/github.com/gorillb/mux@1234567890123456789012345678901234567890/-/blob/foo%20bbr/testFile"
           }
         ]
       }
@@ -86,44 +86,44 @@ func TestGitTree(t *testing.T) {
 func setupGitserverClient(t *testing.T) gitserver.Client {
 	t.Helper()
 	gsClient := gitserver.NewMockClient()
-	gsClient.ReadDirFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
-		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
-		assert.Equal(t, "foo bar", name)
-		assert.False(t, recurse)
+	gsClient.RebdDirFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, commit bpi.CommitID, nbme string, recurse bool) ([]fs.FileInfo, error) {
+		bssert.Equbl(t, bpi.CommitID(exbmpleCommitSHA1), commit)
+		bssert.Equbl(t, "foo bbr", nbme)
+		bssert.Fblse(t, recurse)
 		return []fs.FileInfo{
-			&fileutil.FileInfo{Name_: name + "/testDirectory", Mode_: os.ModeDir},
-			&fileutil.FileInfo{Name_: name + "/Geoffrey's random queries.32r242442bf", Mode_: os.ModeDir},
-			&fileutil.FileInfo{Name_: name + "/testFile", Mode_: 0},
-			&fileutil.FileInfo{Name_: name + "/% token.4288249258.sql", Mode_: 0},
+			&fileutil.FileInfo{Nbme_: nbme + "/testDirectory", Mode_: os.ModeDir},
+			&fileutil.FileInfo{Nbme_: nbme + "/Geoffrey's rbndom queries.32r242442bf", Mode_: os.ModeDir},
+			&fileutil.FileInfo{Nbme_: nbme + "/testFile", Mode_: 0},
+			&fileutil.FileInfo{Nbme_: nbme + "/% token.4288249258.sql", Mode_: 0},
 		}, nil
 	})
-	gsClient.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, commit api.CommitID, path string) (fs.FileInfo, error) {
-		assert.Equal(t, api.CommitID(exampleCommitSHA1), commit)
-		assert.Equal(t, "foo bar", path)
-		return &fileutil.FileInfo{Name_: path, Mode_: os.ModeDir}, nil
+	gsClient.StbtFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, commit bpi.CommitID, pbth string) (fs.FileInfo, error) {
+		bssert.Equbl(t, bpi.CommitID(exbmpleCommitSHA1), commit)
+		bssert.Equbl(t, "foo bbr", pbth)
+		return &fileutil.FileInfo{Nbme_: pbth, Mode_: os.ModeDir}, nil
 	})
 	return gsClient
 }
 
 func testGitTree(t *testing.T, db *dbmocks.MockDB, tests []*Test) {
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn(nil, nil)
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListFunc.SetDefbultReturn(nil, nil)
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
-	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}, nil)
+	repos.GetByNbmeFunc.SetDefbultReturn(&types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}, nil)
 
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoID(2), repo.ID)
-		assert.Equal(t, exampleCommitSHA1, rev)
-		return exampleCommitSHA1, nil
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		bssert.Equbl(t, bpi.RepoID(2), repo.ID)
+		bssert.Equbl(t, exbmpleCommitSHA1, rev)
+		return exbmpleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	bbckend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdombin.Commit{ID: exbmpleCommitSHA1})
 	defer func() {
-		backend.Mocks = backend.MockServices{}
+		bbckend.Mocks = bbckend.MockServices{}
 	}()
 
 	RunTests(t, tests)

@@ -1,10 +1,10 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/hmbc"
+	"crypto/shb256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,293 +12,293 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	gitlabwebhooks "github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	v1 "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	gitlbbwebhooks "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb/webhooks"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	v1 "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type mockGRPCServer struct {
-	f func(*proto.EnqueueRepoUpdateRequest) (*proto.EnqueueRepoUpdateResponse, error)
-	proto.UnimplementedRepoUpdaterServiceServer
+	f func(*proto.EnqueueRepoUpdbteRequest) (*proto.EnqueueRepoUpdbteResponse, error)
+	proto.UnimplementedRepoUpdbterServiceServer
 }
 
-func (m *mockGRPCServer) EnqueueRepoUpdate(_ context.Context, req *proto.EnqueueRepoUpdateRequest) (*proto.EnqueueRepoUpdateResponse, error) {
+func (m *mockGRPCServer) EnqueueRepoUpdbte(_ context.Context, req *proto.EnqueueRepoUpdbteRequest) (*proto.EnqueueRepoUpdbteResponse, error) {
 	return m.f(req)
 }
 
-func TestGitHubHandler(t *testing.T) {
-	ctx := context.Background()
+func TestGitHubHbndler(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	store := repos.NewStore(logger, db)
 	repoStore := store.RepoStore()
-	esStore := store.ExternalServiceStore()
+	esStore := store.ExternblServiceStore()
 
 	repo := &types.Repo{
 		ID:   1,
-		Name: "ghe.sgdev.org/milton/test",
+		Nbme: "ghe.sgdev.org/milton/test",
 	}
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	conn := schema.GitHubConnection{
+	conn := schemb.GitHubConnection{
 		Url:      "https://ghe.sgdev.org",
 		Token:    "token",
 		Repos:    []string{"milton/test"},
-		Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
+		Webhooks: []*schemb.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 	}
 
-	config, err := json.Marshal(conn)
+	config, err := json.Mbrshbl(conn)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	svc := &types.ExternalService{
+	svc := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "TestService",
+		DisplbyNbme: "TestService",
 		Config:      extsvc.NewUnencryptedConfig(string(config)),
 	}
 	if err := esStore.Upsert(ctx, svc); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	handler := NewGitHubHandler()
+	hbndler := NewGitHubHbndler()
 	router := &webhooks.GitHubWebhook{
 		Router: &webhooks.Router{
 			DB: db,
 		},
 	}
-	handler.Register(router.Router)
+	hbndler.Register(router.Router)
 
-	gs := grpc.NewServer(defaults.ServerOptions(logger)...)
-	v1.RegisterRepoUpdaterServiceServer(gs, &mockGRPCServer{
-		f: func(req *v1.EnqueueRepoUpdateRequest) (*v1.EnqueueRepoUpdateResponse, error) {
-			repositories, err := repoStore.List(ctx, database.ReposListOptions{Names: []string{req.Repo}})
+	gs := grpc.NewServer(defbults.ServerOptions(logger)...)
+	v1.RegisterRepoUpdbterServiceServer(gs, &mockGRPCServer{
+		f: func(req *v1.EnqueueRepoUpdbteRequest) (*v1.EnqueueRepoUpdbteResponse, error) {
+			repositories, err := repoStore.List(ctx, dbtbbbse.ReposListOptions{Nbmes: []string{req.Repo}})
 			if err != nil {
-				return nil, status.Error(codes.NotFound, err.Error())
+				return nil, stbtus.Error(codes.NotFound, err.Error())
 			}
 			if len(repositories) != 1 {
-				return nil, status.Error(codes.NotFound, fmt.Sprintf("expected 1 repo, got %v", len(repositories)))
+				return nil, stbtus.Error(codes.NotFound, fmt.Sprintf("expected 1 repo, got %v", len(repositories)))
 			}
 
 			repo := repositories[0]
-			return &proto.EnqueueRepoUpdateResponse{
+			return &proto.EnqueueRepoUpdbteResponse{
 				Id:   int32(repo.ID),
-				Name: string(repo.Name),
+				Nbme: string(repo.Nbme),
 			}, nil
 		},
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/enqueue-repo-update", func(w http.ResponseWriter, r *http.Request) {
-		reqBody, err := io.ReadAll(r.Body)
+	mux.HbndleFunc("/enqueue-repo-updbte", func(w http.ResponseWriter, r *http.Request) {
+		reqBody, err := io.RebdAll(r.Body)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 		}
 
-		var req protocol.RepoUpdateRequest
-		if err := json.Unmarshal(reqBody, &req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		vbr req protocol.RepoUpdbteRequest
+		if err := json.Unmbrshbl(reqBody, &req); err != nil {
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 		}
 
-		repositories, err := repoStore.List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+		repositories, err := repoStore.List(ctx, dbtbbbse.ReposListOptions{Nbmes: []string{string(req.Repo)}})
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StbtusNotFound)
 		}
 		if len(repositories) != 1 {
-			http.Error(w, fmt.Sprintf("expected 1 repo, got %v", len(repositories)), http.StatusNotFound)
+			http.Error(w, fmt.Sprintf("expected 1 repo, got %v", len(repositories)), http.StbtusNotFound)
 		}
 
 		repo := repositories[0]
-		res := &protocol.RepoUpdateResponse{
+		res := &protocol.RepoUpdbteResponse{
 			ID:   repo.ID,
-			Name: string(repo.Name),
+			Nbme: string(repo.Nbme),
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
+		w.WriteHebder(http.StbtusOK)
 		json.NewEncoder(w).Encode(res)
 	})
 
-	server := httptest.NewServer(internalgrpc.MultiplexHandlers(gs, mux))
+	server := httptest.NewServer(internblgrpc.MultiplexHbndlers(gs, mux))
 	defer server.Close()
 
-	cf := httpcli.NewExternalClientFactory()
+	cf := httpcli.NewExternblClientFbctory()
 	opts := []httpcli.Opt{}
 	doer, err := cf.Doer(opts...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	repoupdater.DefaultClient = repoupdater.NewClient(server.URL)
-	repoupdater.DefaultClient.HTTPClient = doer
+	repoupdbter.DefbultClient = repoupdbter.NewClient(server.URL)
+	repoupdbter.DefbultClient.HTTPClient = doer
 
-	payload, err := os.ReadFile(filepath.Join("testdata", "github-push.json"))
+	pbylobd, err := os.RebdFile(filepbth.Join("testdbtb", "github-push.json"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	targetURL := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
-	req, err := http.NewRequest("POST", targetURL, bytes.NewReader(payload))
+	tbrgetURL := fmt.Sprintf("%s/github-webhooks", globbls.ExternblURL())
+	req, err := http.NewRequest("POST", tbrgetURL, bytes.NewRebder(pbylobd))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	req.Header.Set("X-GitHub-Event", "push")
-	req.Header.Set("X-Hub-Signature", sign(t, payload, []byte("secret")))
+	req.Hebder.Set("X-GitHub-Event", "push")
+	req.Hebder.Set("X-Hub-Signbture", sign(t, pbylobd, []byte("secret")))
 
 	rec := httptest.NewRecorder()
 	router.ServeHTTP(rec, req)
 	resp := rec.Result()
 
-	if resp.StatusCode != http.StatusOK {
-		t.Fatalf("expected status code: 200, got %v", resp.StatusCode)
+	if resp.StbtusCode != http.StbtusOK {
+		t.Fbtblf("expected stbtus code: 200, got %v", resp.StbtusCode)
 	}
 }
 
-func sign(t *testing.T, message, secret []byte) string {
+func sign(t *testing.T, messbge, secret []byte) string {
 	t.Helper()
 
-	mac := hmac.New(sha256.New, secret)
-	_, err := mac.Write(message)
+	mbc := hmbc.New(shb256.New, secret)
+	_, err := mbc.Write(messbge)
 	if err != nil {
-		t.Fatalf("writing hmac message failed: %s", err)
+		t.Fbtblf("writing hmbc messbge fbiled: %s", err)
 	}
 
-	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+	return "shb256=" + hex.EncodeToString(mbc.Sum(nil))
 }
 
-func TestGitLabHandler(t *testing.T) {
-	repoName := "gitlab.com/ryanslade/ryan-test-private"
+func TestGitLbbHbndler(t *testing.T) {
+	repoNbme := "gitlbb.com/rybnslbde/rybn-test-privbte"
 
 	db := dbmocks.NewMockDB()
 	repositories := dbmocks.NewMockRepoStore()
-	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
-		return api.RepoName(repoName), nil
+	repositories.GetFirstRepoNbmeByCloneURLFunc.SetDefbultHook(func(ctx context.Context, s string) (bpi.RepoNbme, error) {
+		return bpi.RepoNbme(repoNbme), nil
 	})
-	db.ReposFunc.SetDefaultReturn(repositories)
+	db.ReposFunc.SetDefbultReturn(repositories)
 
-	handler := NewGitLabHandler()
-	data, err := os.ReadFile("testdata/gitlab-push.json")
+	hbndler := NewGitLbbHbndler()
+	dbtb, err := os.RebdFile("testdbtb/gitlbb-push.json")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var payload gitlabwebhooks.PushEvent
-	if err := json.Unmarshal(data, &payload); err != nil {
-		t.Fatal(err)
+	vbr pbylobd gitlbbwebhooks.PushEvent
+	if err := json.Unmbrshbl(dbtb, &pbylobd); err != nil {
+		t.Fbtbl(err)
 	}
 
-	var updateQueued string
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
-		updateQueued = string(repo)
-		return &protocol.RepoUpdateResponse{
+	vbr updbteQueued string
+	repoupdbter.MockEnqueueRepoUpdbte = func(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error) {
+		updbteQueued = string(repo)
+		return &protocol.RepoUpdbteResponse{
 			ID:   1,
-			Name: string(repo),
+			Nbme: string(repo),
 		}, nil
 	}
-	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+	t.Clebnup(func() { repoupdbter.MockEnqueueRepoUpdbte = nil })
 
-	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
-		t.Fatal(err)
+	if err := hbndler.hbndlePushEvent(context.Bbckground(), db, &pbylobd); err != nil {
+		t.Fbtbl(err)
 	}
-	assert.Equal(t, repoName, updateQueued)
+	bssert.Equbl(t, repoNbme, updbteQueued)
 }
 
-func TestBitbucketServerHandler(t *testing.T) {
-	repoName := "bitbucket.sgdev.org/private/test-2020-06-01"
+func TestBitbucketServerHbndler(t *testing.T) {
+	repoNbme := "bitbucket.sgdev.org/privbte/test-2020-06-01"
 
 	db := dbmocks.NewMockDB()
 	repositories := dbmocks.NewMockRepoStore()
-	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
-		return "bitbucket.sgdev.org/private/test-2020-06-01", nil
+	repositories.GetFirstRepoNbmeByCloneURLFunc.SetDefbultHook(func(ctx context.Context, s string) (bpi.RepoNbme, error) {
+		return "bitbucket.sgdev.org/privbte/test-2020-06-01", nil
 	})
-	db.ReposFunc.SetDefaultReturn(repositories)
+	db.ReposFunc.SetDefbultReturn(repositories)
 
-	handler := NewBitbucketServerHandler()
-	data, err := os.ReadFile("testdata/bitbucket-server-push.json")
+	hbndler := NewBitbucketServerHbndler()
+	dbtb, err := os.RebdFile("testdbtb/bitbucket-server-push.json")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var payload bitbucketserver.PushEvent
-	if err := json.Unmarshal(data, &payload); err != nil {
-		t.Fatal(err)
+	vbr pbylobd bitbucketserver.PushEvent
+	if err := json.Unmbrshbl(dbtb, &pbylobd); err != nil {
+		t.Fbtbl(err)
 	}
 
-	var updateQueued string
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
-		updateQueued = string(repo)
-		return &protocol.RepoUpdateResponse{
+	vbr updbteQueued string
+	repoupdbter.MockEnqueueRepoUpdbte = func(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error) {
+		updbteQueued = string(repo)
+		return &protocol.RepoUpdbteResponse{
 			ID:   1,
-			Name: string(repo),
+			Nbme: string(repo),
 		}, nil
 	}
-	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+	t.Clebnup(func() { repoupdbter.MockEnqueueRepoUpdbte = nil })
 
-	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
-		t.Fatal(err)
+	if err := hbndler.hbndlePushEvent(context.Bbckground(), db, &pbylobd); err != nil {
+		t.Fbtbl(err)
 	}
-	assert.Equal(t, repoName, updateQueued)
+	bssert.Equbl(t, repoNbme, updbteQueued)
 }
 
-func TestBitbucketCloudHandler(t *testing.T) {
-	repoName := "bitbucket.org/sourcegraph-testing/sourcegraph"
+func TestBitbucketCloudHbndler(t *testing.T) {
+	repoNbme := "bitbucket.org/sourcegrbph-testing/sourcegrbph"
 
 	db := dbmocks.NewMockDB()
 	repositories := dbmocks.NewMockRepoStore()
-	repositories.GetFirstRepoNameByCloneURLFunc.SetDefaultHook(func(ctx context.Context, s string) (api.RepoName, error) {
-		return "bitbucket.org/sourcegraph-testing/sourcegraph", nil
+	repositories.GetFirstRepoNbmeByCloneURLFunc.SetDefbultHook(func(ctx context.Context, s string) (bpi.RepoNbme, error) {
+		return "bitbucket.org/sourcegrbph-testing/sourcegrbph", nil
 	})
-	db.ReposFunc.SetDefaultReturn(repositories)
+	db.ReposFunc.SetDefbultReturn(repositories)
 
-	handler := NewBitbucketCloudHandler()
-	data, err := os.ReadFile("testdata/bitbucket-cloud-push.json")
+	hbndler := NewBitbucketCloudHbndler()
+	dbtb, err := os.RebdFile("testdbtb/bitbucket-cloud-push.json")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var payload bitbucketcloud.PushEvent
-	if err := json.Unmarshal(data, &payload); err != nil {
-		t.Fatal(err)
+	vbr pbylobd bitbucketcloud.PushEvent
+	if err := json.Unmbrshbl(dbtb, &pbylobd); err != nil {
+		t.Fbtbl(err)
 	}
 
-	var updateQueued string
-	repoupdater.MockEnqueueRepoUpdate = func(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error) {
-		updateQueued = string(repo)
-		return &protocol.RepoUpdateResponse{
+	vbr updbteQueued string
+	repoupdbter.MockEnqueueRepoUpdbte = func(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error) {
+		updbteQueued = string(repo)
+		return &protocol.RepoUpdbteResponse{
 			ID:   1,
-			Name: string(repo),
+			Nbme: string(repo),
 		}, nil
 	}
-	t.Cleanup(func() { repoupdater.MockEnqueueRepoUpdate = nil })
+	t.Clebnup(func() { repoupdbter.MockEnqueueRepoUpdbte = nil })
 
-	if err := handler.handlePushEvent(context.Background(), db, &payload); err != nil {
-		t.Fatal(err)
+	if err := hbndler.hbndlePushEvent(context.Bbckground(), db, &pbylobd); err != nil {
+		t.Fbtbl(err)
 	}
-	assert.Equal(t, repoName, updateQueued)
+	bssert.Equbl(t, repoNbme, updbteQueued)
 }

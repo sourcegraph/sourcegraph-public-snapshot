@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,372 +6,372 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type mockFileResolver struct {
 	mock.Mock
 }
 
-func (m *mockFileResolver) Path() string      { return "" }
-func (m *mockFileResolver) Name() string      { return "" }
-func (r *mockFileResolver) IsDirectory() bool { return false }
-func (m *mockFileResolver) Binary(ctx context.Context) (bool, error) {
-	args := m.Called(ctx)
-	return args.Bool(0), args.Error(1)
+func (m *mockFileResolver) Pbth() string      { return "" }
+func (m *mockFileResolver) Nbme() string      { return "" }
+func (r *mockFileResolver) IsDirectory() bool { return fblse }
+func (m *mockFileResolver) Binbry(ctx context.Context) (bool, error) {
+	brgs := m.Cblled(ctx)
+	return brgs.Bool(0), brgs.Error(1)
 }
 func (m *mockFileResolver) ByteSize(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
-func (m *mockFileResolver) TotalLines(ctx context.Context) (int32, error) {
+func (m *mockFileResolver) TotblLines(ctx context.Context) (int32, error) {
 	return 0, errors.New("not implemented")
 }
-func (m *mockFileResolver) Content(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
+func (m *mockFileResolver) Content(ctx context.Context, brgs *grbphqlbbckend.GitTreeContentPbgeArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
-func (m *mockFileResolver) RichHTML(ctx context.Context, args *graphqlbackend.GitTreeContentPageArgs) (string, error) {
+func (m *mockFileResolver) RichHTML(ctx context.Context, brgs *grbphqlbbckend.GitTreeContentPbgeArgs) (string, error) {
 	return "", errors.New("not implemented")
 }
 func (m *mockFileResolver) URL(ctx context.Context) (string, error) {
 	return "", errors.New("not implemented")
 }
 
-func (m *mockFileResolver) CanonicalURL() string { return "" }
+func (m *mockFileResolver) CbnonicblURL() string { return "" }
 
-func (r *mockFileResolver) ChangelistURL(_ context.Context) (*string, error) {
+func (r *mockFileResolver) ChbngelistURL(_ context.Context) (*string, error) {
 	return nil, nil
 }
 
-func (m *mockFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (m *mockFileResolver) ExternblURLs(ctx context.Context) ([]*externbllink.Resolver, error) {
 	return nil, errors.New("not implemented")
 }
-func (m *mockFileResolver) Highlight(ctx context.Context, highlightArgs *graphqlbackend.HighlightArgs) (*graphqlbackend.HighlightedFileResolver, error) {
-	args := m.Called(ctx, highlightArgs)
-	if args.Get(0) != nil {
-		return args.Get(0).(*graphqlbackend.HighlightedFileResolver), args.Error(1)
+func (m *mockFileResolver) Highlight(ctx context.Context, highlightArgs *grbphqlbbckend.HighlightArgs) (*grbphqlbbckend.HighlightedFileResolver, error) {
+	brgs := m.Cblled(ctx, highlightArgs)
+	if brgs.Get(0) != nil {
+		return brgs.Get(0).(*grbphqlbbckend.HighlightedFileResolver), brgs.Error(1)
 	}
-	return nil, args.Error(1)
+	return nil, brgs.Error(1)
 }
 
-func (m *mockFileResolver) ToGitBlob() (*graphqlbackend.GitTreeEntryResolver, bool) {
-	return nil, false
+func (m *mockFileResolver) ToGitBlob() (*grbphqlbbckend.GitTreeEntryResolver, bool) {
+	return nil, fblse
 }
-func (m *mockFileResolver) ToVirtualFile() (*graphqlbackend.VirtualFileResolver, bool) {
-	return nil, false
+func (m *mockFileResolver) ToVirtublFile() (*grbphqlbbckend.VirtublFileResolver, bool) {
+	return nil, fblse
 }
-func (m *mockFileResolver) ToBatchSpecWorkspaceFile() (graphqlbackend.BatchWorkspaceFileResolver, bool) {
-	return nil, false
+func (m *mockFileResolver) ToBbtchSpecWorkspbceFile() (grbphqlbbckend.BbtchWorkspbceFileResolver, bool) {
+	return nil, fblse
 }
 
-func TestBatchSpecWorkspaceFileResolver(t *testing.T) {
-	date := time.Date(2022, 1, 2, 3, 5, 6, 0, time.UTC)
-	batchSpecRandID := "123abc"
-	file := &btypes.BatchSpecWorkspaceFile{
-		RandID:     "987xyz",
-		FileName:   "hello.txt",
-		Path:       "foo/bar",
+func TestBbtchSpecWorkspbceFileResolver(t *testing.T) {
+	dbte := time.Dbte(2022, 1, 2, 3, 5, 6, 0, time.UTC)
+	bbtchSpecRbndID := "123bbc"
+	file := &btypes.BbtchSpecWorkspbceFile{
+		RbndID:     "987xyz",
+		FileNbme:   "hello.txt",
+		Pbth:       "foo/bbr",
 		Size:       12,
 		Content:    []byte("hello world!"),
-		ModifiedAt: date,
-		CreatedAt:  date,
-		UpdatedAt:  date,
+		ModifiedAt: dbte,
+		CrebtedAt:  dbte,
+		UpdbtedAt:  dbte,
 	}
 
-	t.Run("non binary file", func(t *testing.T) {
-		var ctx = context.Background()
-		var highlightResolver = &graphqlbackend.HighlightedFileResolver{}
-		var highlightArgs = &graphqlbackend.HighlightArgs{}
+	t.Run("non binbry file", func(t *testing.T) {
+		vbr ctx = context.Bbckground()
+		vbr highlightResolver = &grbphqlbbckend.HighlightedFileResolver{}
+		vbr highlightArgs = &grbphqlbbckend.HighlightArgs{}
 
-		resolver := &batchSpecWorkspaceFileResolver{
-			batchSpecRandID: batchSpecRandID,
+		resolver := &bbtchSpecWorkspbceFileResolver{
+			bbtchSpecRbndID: bbtchSpecRbndID,
 			file:            file,
-			createVirtualFile: func(content []byte, path string) graphqlbackend.FileResolver {
+			crebteVirtublFile: func(content []byte, pbth string) grbphqlbbckend.FileResolver {
 				fileResolver := new(mockFileResolver)
 
-				fileResolver.On("Binary", ctx).Return(false, nil)
+				fileResolver.On("Binbry", ctx).Return(fblse, nil)
 				fileResolver.On("Highlight", ctx, highlightArgs).Return(highlightResolver, nil)
 				return fileResolver
 			},
 		}
 
 		tests := []struct {
-			name        string
-			getActual   func() (interface{}, error)
-			expected    interface{}
+			nbme        string
+			getActubl   func() (interfbce{}, error)
+			expected    interfbce{}
 			expectedErr error
 		}{
 			{
-				name: "ID",
-				getActual: func() (interface{}, error) {
+				nbme: "ID",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.ID(), nil
 				},
-				expected: graphql.ID("QmF0Y2hTcGVjV29ya3NwYWNlRmlsZToiOTg3eHl6Ig=="),
+				expected: grbphql.ID("QmF0Y2hTcGVjV29yb3NwYWNlRmlsZToiOTg3eHl6Ig=="),
 			},
 			{
-				name: "Name",
-				getActual: func() (interface{}, error) {
-					return resolver.Name(), nil
+				nbme: "Nbme",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Nbme(), nil
 				},
-				expected: file.FileName,
+				expected: file.FileNbme,
 			},
 			{
-				name: "Path",
-				getActual: func() (interface{}, error) {
-					return resolver.Path(), nil
+				nbme: "Pbth",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Pbth(), nil
 				},
-				expected: file.Path,
+				expected: file.Pbth,
 			},
 			{
-				name: "ByteSize",
-				getActual: func() (interface{}, error) {
-					return resolver.ByteSize(context.Background())
+				nbme: "ByteSize",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.ByteSize(context.Bbckground())
 				},
 				expected: int32(file.Size),
 			},
 			{
-				name: "ModifiedAt",
-				getActual: func() (interface{}, error) {
+				nbme: "ModifiedAt",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.ModifiedAt(), nil
 				},
-				expected: gqlutil.DateTime{Time: date},
+				expected: gqlutil.DbteTime{Time: dbte},
 			},
 			{
-				name: "CreatedAt",
-				getActual: func() (interface{}, error) {
-					return resolver.CreatedAt(), nil
+				nbme: "CrebtedAt",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.CrebtedAt(), nil
 				},
-				expected: gqlutil.DateTime{Time: date},
+				expected: gqlutil.DbteTime{Time: dbte},
 			},
 			{
-				name: "UpdatedAt",
-				getActual: func() (interface{}, error) {
-					return resolver.UpdatedAt(), nil
+				nbme: "UpdbtedAt",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.UpdbtedAt(), nil
 				},
-				expected: gqlutil.DateTime{Time: date},
+				expected: gqlutil.DbteTime{Time: dbte},
 			},
 			{
-				name: "IsDirectory",
-				getActual: func() (interface{}, error) {
+				nbme: "IsDirectory",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.IsDirectory(), nil
 				},
-				expected: false,
+				expected: fblse,
 			},
 			{
-				name: "Content",
-				getActual: func() (interface{}, error) {
-					return resolver.Content(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
+				nbme: "Content",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Content(context.Bbckground(), &grbphqlbbckend.GitTreeContentPbgeArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
 			},
 			{
-				name: "Binary",
-				getActual: func() (interface{}, error) {
-					return resolver.Binary(ctx)
+				nbme: "Binbry",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Binbry(ctx)
 				},
-				expected: false,
+				expected: fblse,
 			},
 			{
-				name: "RichHTML",
-				getActual: func() (interface{}, error) {
-					return resolver.RichHTML(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
+				nbme: "RichHTML",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.RichHTML(context.Bbckground(), &grbphqlbbckend.GitTreeContentPbgeArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
 			},
 			{
-				name: "URL",
-				getActual: func() (interface{}, error) {
-					return resolver.URL(context.Background())
+				nbme: "URL",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.URL(context.Bbckground())
 				},
-				expected: fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, file.RandID),
+				expected: fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, file.RbndID),
 			},
 			{
-				name: "CanonicalURL",
-				getActual: func() (interface{}, error) {
-					return resolver.CanonicalURL(), nil
+				nbme: "CbnonicblURL",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.CbnonicblURL(), nil
 				},
 				expected: "",
 			},
 			{
-				name: "ExternalURLs",
-				getActual: func() (interface{}, error) {
-					return resolver.ExternalURLs(context.Background())
+				nbme: "ExternblURLs",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.ExternblURLs(context.Bbckground())
 				},
-				expected:    []*externallink.Resolver(nil),
+				expected:    []*externbllink.Resolver(nil),
 				expectedErr: errors.New("not implemented"),
 			},
 			{
-				name: "Highlight",
-				getActual: func() (interface{}, error) {
+				nbme: "Highlight",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.Highlight(ctx, highlightArgs)
 				},
 				expected: highlightResolver,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				actual, err := test.getActual()
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				bctubl, err := test.getActubl()
 				if test.expectedErr != nil {
-					assert.ErrorContains(t, err, test.expectedErr.Error())
+					bssert.ErrorContbins(t, err, test.expectedErr.Error())
 				} else {
-					assert.NoError(t, err)
+					bssert.NoError(t, err)
 				}
-				assert.Equal(t, test.expected, actual)
+				bssert.Equbl(t, test.expected, bctubl)
 			})
 		}
 	})
 
-	t.Run("binary file", func(t *testing.T) {
-		var ctx = context.Background()
-		var highlightArgs = &graphqlbackend.HighlightArgs{}
-		var highlightErr = errors.New("cannot highlight binary file")
+	t.Run("binbry file", func(t *testing.T) {
+		vbr ctx = context.Bbckground()
+		vbr highlightArgs = &grbphqlbbckend.HighlightArgs{}
+		vbr highlightErr = errors.New("cbnnot highlight binbry file")
 
-		resolver := &batchSpecWorkspaceFileResolver{
-			batchSpecRandID: batchSpecRandID,
+		resolver := &bbtchSpecWorkspbceFileResolver{
+			bbtchSpecRbndID: bbtchSpecRbndID,
 			file:            file,
-			createVirtualFile: func(content []byte, path string) graphqlbackend.FileResolver {
+			crebteVirtublFile: func(content []byte, pbth string) grbphqlbbckend.FileResolver {
 				fileResolver := new(mockFileResolver)
 
-				fileResolver.On("Binary", ctx).Return(true, nil)
+				fileResolver.On("Binbry", ctx).Return(true, nil)
 				fileResolver.On("Highlight", ctx, highlightArgs).Return(nil, highlightErr)
 				return fileResolver
 			},
 		}
 
 		tests := []struct {
-			name        string
-			getActual   func() (interface{}, error)
-			expected    interface{}
+			nbme        string
+			getActubl   func() (interfbce{}, error)
+			expected    interfbce{}
 			expectedErr error
 		}{
 			{
-				name: "ID",
-				getActual: func() (interface{}, error) {
+				nbme: "ID",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.ID(), nil
 				},
-				expected: graphql.ID("QmF0Y2hTcGVjV29ya3NwYWNlRmlsZToiOTg3eHl6Ig=="),
+				expected: grbphql.ID("QmF0Y2hTcGVjV29yb3NwYWNlRmlsZToiOTg3eHl6Ig=="),
 			},
 			{
-				name: "Name",
-				getActual: func() (interface{}, error) {
-					return resolver.Name(), nil
+				nbme: "Nbme",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Nbme(), nil
 				},
 				expected: "hello.txt",
 			},
 			{
-				name: "Path",
-				getActual: func() (interface{}, error) {
-					return resolver.Path(), nil
+				nbme: "Pbth",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Pbth(), nil
 				},
-				expected: "foo/bar",
+				expected: "foo/bbr",
 			},
 			{
-				name: "ByteSize",
-				getActual: func() (interface{}, error) {
-					return resolver.ByteSize(context.Background())
+				nbme: "ByteSize",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.ByteSize(context.Bbckground())
 				},
 				expected: int32(12),
 			},
 			{
-				name: "ModifiedAt",
-				getActual: func() (interface{}, error) {
+				nbme: "ModifiedAt",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.ModifiedAt(), nil
 				},
-				expected: gqlutil.DateTime{Time: date},
+				expected: gqlutil.DbteTime{Time: dbte},
 			},
 			{
-				name: "CreatedAt",
-				getActual: func() (interface{}, error) {
-					return resolver.CreatedAt(), nil
+				nbme: "CrebtedAt",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.CrebtedAt(), nil
 				},
-				expected: gqlutil.DateTime{Time: date},
+				expected: gqlutil.DbteTime{Time: dbte},
 			},
 			{
-				name: "UpdatedAt",
-				getActual: func() (interface{}, error) {
-					return resolver.UpdatedAt(), nil
+				nbme: "UpdbtedAt",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.UpdbtedAt(), nil
 				},
-				expected: gqlutil.DateTime{Time: date},
+				expected: gqlutil.DbteTime{Time: dbte},
 			},
 			{
-				name: "IsDirectory",
-				getActual: func() (interface{}, error) {
+				nbme: "IsDirectory",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.IsDirectory(), nil
 				},
-				expected: false,
+				expected: fblse,
 			},
 			{
-				name: "Content",
-				getActual: func() (interface{}, error) {
-					return resolver.Content(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
+				nbme: "Content",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Content(context.Bbckground(), &grbphqlbbckend.GitTreeContentPbgeArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
 			},
 			{
-				name: "Binary",
-				getActual: func() (interface{}, error) {
-					return resolver.Binary(ctx)
+				nbme: "Binbry",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.Binbry(ctx)
 				},
 				expected: true,
 			},
 			{
-				name: "RichHTML",
-				getActual: func() (interface{}, error) {
-					return resolver.RichHTML(context.Background(), &graphqlbackend.GitTreeContentPageArgs{})
+				nbme: "RichHTML",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.RichHTML(context.Bbckground(), &grbphqlbbckend.GitTreeContentPbgeArgs{})
 				},
 				expected:    "",
 				expectedErr: errors.New("not implemented"),
 			},
 			{
-				name: "URL",
-				getActual: func() (interface{}, error) {
-					return resolver.URL(context.Background())
+				nbme: "URL",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.URL(context.Bbckground())
 				},
-				expected: fmt.Sprintf("/files/batch-changes/%s/%s", batchSpecRandID, file.RandID),
+				expected: fmt.Sprintf("/files/bbtch-chbnges/%s/%s", bbtchSpecRbndID, file.RbndID),
 			},
 			{
-				name: "CanonicalURL",
-				getActual: func() (interface{}, error) {
-					return resolver.CanonicalURL(), nil
+				nbme: "CbnonicblURL",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.CbnonicblURL(), nil
 				},
 				expected: "",
 			},
 			{
-				name: "ExternalURLs",
-				getActual: func() (interface{}, error) {
-					return resolver.ExternalURLs(context.Background())
+				nbme: "ExternblURLs",
+				getActubl: func() (interfbce{}, error) {
+					return resolver.ExternblURLs(context.Bbckground())
 				},
-				expected:    []*externallink.Resolver(nil),
+				expected:    []*externbllink.Resolver(nil),
 				expectedErr: errors.New("not implemented"),
 			},
 			{
-				name: "Highlight",
-				getActual: func() (interface{}, error) {
+				nbme: "Highlight",
+				getActubl: func() (interfbce{}, error) {
 					return resolver.Highlight(ctx, highlightArgs)
 				},
-				expected:    (*graphqlbackend.HighlightedFileResolver)(nil),
+				expected:    (*grbphqlbbckend.HighlightedFileResolver)(nil),
 				expectedErr: highlightErr,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				actual, err := test.getActual()
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				bctubl, err := test.getActubl()
 				if test.expectedErr != nil {
-					assert.ErrorContains(t, err, test.expectedErr.Error())
+					bssert.ErrorContbins(t, err, test.expectedErr.Error())
 				} else {
-					assert.NoError(t, err)
+					bssert.NoError(t, err)
 				}
-				assert.Equal(t, test.expected, actual)
+				bssert.Equbl(t, test.expected, bctubl)
 			})
 		}
 	})

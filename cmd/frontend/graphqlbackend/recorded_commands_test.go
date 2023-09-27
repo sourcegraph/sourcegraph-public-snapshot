@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -8,51 +8,51 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestRecordedCommandsResolver(t *testing.T) {
-	rcache.SetupForTest(t)
+func TestRecordedCommbndsResolver(t *testing.T) {
+	rcbche.SetupForTest(t)
 
-	timeFormat := "2006-01-02T15:04:05Z"
-	startTime, err := time.Parse(timeFormat, "2023-07-20T15:04:05Z")
+	timeFormbt := "2006-01-02T15:04:05Z"
+	stbrtTime, err := time.Pbrse(timeFormbt, "2023-07-20T15:04:05Z")
 	require.NoError(t, err)
 
 	db := dbmocks.NewMockDB()
 
-	repoName := "github.com/sourcegraph/sourcegraph"
-	backend.Mocks.Repos.GetByName = func(context.Context, api.RepoName) (*types.Repo, error) {
-		return &types.Repo{Name: api.RepoName(repoName)}, nil
+	repoNbme := "github.com/sourcegrbph/sourcegrbph"
+	bbckend.Mocks.Repos.GetByNbme = func(context.Context, bpi.RepoNbme) (*types.Repo, error) {
+		return &types.Repo{Nbme: bpi.RepoNbme(repoNbme)}, nil
 	}
-	t.Cleanup(func() {
-		backend.Mocks = backend.MockServices{}
+	t.Clebnup(func() {
+		bbckend.Mocks = bbckend.MockServices{}
 	})
 
 	t.Run("gitRecoreder not configured for repository", func(t *testing.T) {
-		// When gitRecorder isn't set, we return an empty list.
+		// When gitRecorder isn't set, we return bn empty list.
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					repository(name: "github.com/sourcegraph/sourcegraph") {
-						recordedCommands {
+					repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+						recordedCommbnds {
 							nodes {
-								start
-								duration
-								command
+								stbrt
+								durbtion
+								commbnd
 								dir
-								path
+								pbth
 							}
-							totalCount
-							pageInfo {
-								hasNextPage
+							totblCount
+							pbgeInfo {
+								hbsNextPbge
 							}
 						}
 					}
@@ -61,11 +61,11 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": {
+						"recordedCommbnds": {
 							"nodes": [],
-							"totalCount": 0,
-							"pageInfo": {
-								"hasNextPage": false
+							"totblCount": 0,
+							"pbgeInfo": {
+								"hbsNextPbge": fblse
 							}
 						}
 					}
@@ -75,30 +75,30 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 	})
 
-	t.Run("no recorded commands for repository", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
-		t.Cleanup(func() { conf.Mock(nil) })
+	t.Run("no recorded commbnds for repository", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitRecorder: &schemb.GitRecorder{Size: 3}}})
+		t.Clebnup(func() { conf.Mock(nil) })
 
 		repos := dbmocks.NewMockRepoStore()
-		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
+		repos.GetFunc.SetDefbultReturn(&types.Repo{Nbme: bpi.RepoNbme(repoNbme)}, nil)
+		db.ReposFunc.SetDefbultReturn(repos)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 					{
-						repository(name: "github.com/sourcegraph/sourcegraph") {
-							recordedCommands {
+						repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+							recordedCommbnds {
 								nodes {
-									start
-									duration
-									command
+									stbrt
+									durbtion
+									commbnd
 									dir
-									path
+									pbth
 								}
-								totalCount
-								pageInfo {
-									hasNextPage
+								totblCount
+								pbgeInfo {
+									hbsNextPbge
 								}
 							}
 						}
@@ -107,11 +107,11 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			ExpectedResult: `
 					{
 						"repository": {
-							"recordedCommands": {
+							"recordedCommbnds": {
 								"nodes": [],
-								"totalCount": 0,
-								"pageInfo": {
-									"hasNextPage": false
+								"totblCount": 0,
+								"pbgeInfo": {
+									"hbsNextPbge": fblse
 								}
 							}
 						}
@@ -121,41 +121,41 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 	})
 
-	t.Run("one recorded command for repository", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
-		t.Cleanup(func() { conf.Mock(nil) })
+	t.Run("one recorded commbnd for repository", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitRecorder: &schemb.GitRecorder{Size: 3}}})
+		t.Clebnup(func() { conf.Mock(nil) })
 
 		repos := dbmocks.NewMockRepoStore()
-		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
+		repos.GetFunc.SetDefbultReturn(&types.Repo{Nbme: bpi.RepoNbme(repoNbme)}, nil)
+		db.ReposFunc.SetDefbultReturn(repos)
 
-		r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
-		cmd1 := wrexec.RecordedCommand{
-			Start:    startTime,
-			Duration: float64(100),
+		r := rcbche.NewFIFOList(wrexec.GetFIFOListKey(repoNbme), 3)
+		cmd1 := wrexec.RecordedCommbnd{
+			Stbrt:    stbrtTime,
+			Durbtion: flobt64(100),
 			Args:     []string{"git", "fetch"},
-			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-			Path:     "/opt/homebrew/bin/git",
+			Dir:      "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+			Pbth:     "/opt/homebrew/bin/git",
 		}
-		err = r.Insert(marshalCmd(t, cmd1))
+		err = r.Insert(mbrshblCmd(t, cmd1))
 		require.NoError(t, err)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					repository(name: "github.com/sourcegraph/sourcegraph") {
-						recordedCommands {
+					repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+						recordedCommbnds {
 							nodes {
-								start
-								duration
-								command
+								stbrt
+								durbtion
+								commbnd
 								dir
-								path
+								pbth
 							}
-							totalCount
-							pageInfo {
-								hasNextPage
+							totblCount
+							pbgeInfo {
+								hbsNextPbge
 							}
 						}
 					}
@@ -164,19 +164,19 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			ExpectedResult: `
 				{
 					"repository": {
-						"recordedCommands": {
+						"recordedCommbnds": {
 							"nodes": [
 								{
-									"command": "git fetch",
-									"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-									"duration": 100,
-									"path": "/opt/homebrew/bin/git",
-									"start": "2023-07-20T15:04:05Z"
+									"commbnd": "git fetch",
+									"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+									"durbtion": 100,
+									"pbth": "/opt/homebrew/bin/git",
+									"stbrt": "2023-07-20T15:04:05Z"
 								}
 							],
-							"totalCount": 1,
-							"pageInfo": {
-								"hasNextPage": false
+							"totblCount": 1,
+							"pbgeInfo": {
+								"hbsNextPbge": fblse
 							}
 						}
 					}
@@ -186,62 +186,62 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 	})
 
-	t.Run("paginated recorded commands", func(t *testing.T) {
-		cmd1 := wrexec.RecordedCommand{
-			Start:    startTime,
-			Duration: float64(100),
+	t.Run("pbginbted recorded commbnds", func(t *testing.T) {
+		cmd1 := wrexec.RecordedCommbnd{
+			Stbrt:    stbrtTime,
+			Durbtion: flobt64(100),
 			Args:     []string{"git", "fetch"},
-			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-			Path:     "/opt/homebrew/bin/git",
+			Dir:      "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+			Pbth:     "/opt/homebrew/bin/git",
 		}
-		cmd2 := wrexec.RecordedCommand{
-			Start:    startTime,
-			Duration: float64(10),
+		cmd2 := wrexec.RecordedCommbnd{
+			Stbrt:    stbrtTime,
+			Durbtion: flobt64(10),
 			Args:     []string{"git", "clone"},
-			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-			Path:     "/opt/homebrew/bin/git",
+			Dir:      "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+			Pbth:     "/opt/homebrew/bin/git",
 		}
-		cmd3 := wrexec.RecordedCommand{
-			Start:    startTime,
-			Duration: float64(5),
+		cmd3 := wrexec.RecordedCommbnd{
+			Stbrt:    stbrtTime,
+			Durbtion: flobt64(5),
 			Args:     []string{"git", "ls-files"},
-			Dir:      "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-			Path:     "/opt/homebrew/bin/git",
+			Dir:      "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+			Pbth:     "/opt/homebrew/bin/git",
 		}
 
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{GitRecorder: &schema.GitRecorder{Size: 3}}})
-		t.Cleanup(func() { conf.Mock(nil) })
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitRecorder: &schemb.GitRecorder{Size: 3}}})
+		t.Clebnup(func() { conf.Mock(nil) })
 
 		repos := dbmocks.NewMockRepoStore()
-		repos.GetFunc.SetDefaultReturn(&types.Repo{Name: api.RepoName(repoName)}, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
+		repos.GetFunc.SetDefbultReturn(&types.Repo{Nbme: bpi.RepoNbme(repoNbme)}, nil)
+		db.ReposFunc.SetDefbultReturn(repos)
 
-		r := rcache.NewFIFOList(wrexec.GetFIFOListKey(repoName), 3)
+		r := rcbche.NewFIFOList(wrexec.GetFIFOListKey(repoNbme), 3)
 
-		err = r.Insert(marshalCmd(t, cmd1))
+		err = r.Insert(mbrshblCmd(t, cmd1))
 		require.NoError(t, err)
-		err = r.Insert(marshalCmd(t, cmd2))
+		err = r.Insert(mbrshblCmd(t, cmd2))
 		require.NoError(t, err)
-		err = r.Insert(marshalCmd(t, cmd3))
+		err = r.Insert(mbrshblCmd(t, cmd3))
 		require.NoError(t, err)
 
 		t.Run("limit within bounds", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 						{
-							repository(name: "github.com/sourcegraph/sourcegraph") {
-								recordedCommands(limit: 2) {
+							repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+								recordedCommbnds(limit: 2) {
 									nodes {
-										start
-										duration
-										command
+										stbrt
+										durbtion
+										commbnd
 										dir
-										path
+										pbth
 									}
-									totalCount
-									pageInfo {
-										hasNextPage
+									totblCount
+									pbgeInfo {
+										hbsNextPbge
 									}
 								}
 							}
@@ -250,26 +250,26 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				ExpectedResult: `
 						{
 							"repository": {
-								"recordedCommands": {
+								"recordedCommbnds": {
 									"nodes": [
 										{
-											"command": "git ls-files",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 5,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git ls-files",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 5,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										},
 										{
-											"command": "git clone",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 10,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git clone",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 10,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3,
-									"pageInfo": {
-										"hasNextPage": true
+									"totblCount": 3,
+									"pbgeInfo": {
+										"hbsNextPbge": true
 									}
 								}
 							}
@@ -280,21 +280,21 @@ func TestRecordedCommandsResolver(t *testing.T) {
 
 		t.Run("limit exceeds bounds", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 						{
-							repository(name: "github.com/sourcegraph/sourcegraph") {
-								recordedCommands(limit: 10000) {
+							repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+								recordedCommbnds(limit: 10000) {
 									nodes {
-										start
-										duration
-										command
+										stbrt
+										durbtion
+										commbnd
 										dir
-										path
+										pbth
 									}
-									totalCount
-									pageInfo {
-										hasNextPage
+									totblCount
+									pbgeInfo {
+										hbsNextPbge
 									}
 								}
 							}
@@ -303,33 +303,33 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				ExpectedResult: `
 						{
 							"repository": {
-								"recordedCommands": {
+								"recordedCommbnds": {
 									"nodes": [
 										{
-											"command": "git ls-files",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 5,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git ls-files",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 5,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										},
 										{
-											"command": "git clone",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 10,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git clone",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 10,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										},
 										{
-											"command": "git fetch",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 100,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git fetch",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 100,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3,
-									"pageInfo": {
-										"hasNextPage": false
+									"totblCount": 3,
+									"pbgeInfo": {
+										"hbsNextPbge": fblse
 									}
 								}
 							}
@@ -338,23 +338,23 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			})
 		})
 
-		t.Run("offset exceeds total count", func(t *testing.T) {
+		t.Run("offset exceeds totbl count", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 						{
-							repository(name: "github.com/sourcegraph/sourcegraph") {
-								recordedCommands(offset: 1000) {
+							repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+								recordedCommbnds(offset: 1000) {
 									nodes {
-										start
-										duration
-										command
+										stbrt
+										durbtion
+										commbnd
 										dir
-										path
+										pbth
 									}
-									totalCount
-									pageInfo {
-										hasNextPage
+									totblCount
+									pbgeInfo {
+										hbsNextPbge
 									}
 								}
 							}
@@ -363,11 +363,11 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				ExpectedResult: `
 						{
 							"repository": {
-								"recordedCommands": {
+								"recordedCommbnds": {
 									"nodes": [],
-									"totalCount": 3,
-									"pageInfo": {
-										"hasNextPage": false
+									"totblCount": 3,
+									"pbgeInfo": {
+										"hbsNextPbge": fblse
 									}
 								}
 							}
@@ -376,23 +376,23 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			})
 		})
 
-		t.Run("valid offset and limit", func(t *testing.T) {
+		t.Run("vblid offset bnd limit", func(t *testing.T) {
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 						{
-							repository(name: "github.com/sourcegraph/sourcegraph") {
-								recordedCommands(offset: 1, limit: 2) {
+							repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+								recordedCommbnds(offset: 1, limit: 2) {
 									nodes {
-										start
-										duration
-										command
+										stbrt
+										durbtion
+										commbnd
 										dir
-										path
+										pbth
 									}
-									totalCount
-									pageInfo {
-										hasNextPage
+									totblCount
+									pbgeInfo {
+										hbsNextPbge
 									}
 								}
 							}
@@ -401,26 +401,26 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				ExpectedResult: `
 						{
 							"repository": {
-								"recordedCommands": {
+								"recordedCommbnds": {
 									"nodes": [
 										{
-											"command": "git clone",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 10,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git clone",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 10,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										},
 										{
-											"command": "git fetch",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 100,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git fetch",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 100,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3,
-									"pageInfo": {
-										"hasNextPage": false
+									"totblCount": 3,
+									"pbgeInfo": {
+										"hbsNextPbge": fblse
 									}
 								}
 							}
@@ -429,29 +429,29 @@ func TestRecordedCommandsResolver(t *testing.T) {
 			})
 		})
 
-		t.Run("limit exceeds recordedCommandMaxLimit", func(t *testing.T) {
-			MockGetRecordedCommandMaxLimit = func() int {
+		t.Run("limit exceeds recordedCommbndMbxLimit", func(t *testing.T) {
+			MockGetRecordedCommbndMbxLimit = func() int {
 				return 1
 			}
-			t.Cleanup(func() {
-				MockGetRecordedCommandMaxLimit = nil
+			t.Clebnup(func() {
+				MockGetRecordedCommbndMbxLimit = nil
 			})
 			RunTest(t, &Test{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 						{
-							repository(name: "github.com/sourcegraph/sourcegraph") {
-								recordedCommands(limit: 20) {
+							repository(nbme: "github.com/sourcegrbph/sourcegrbph") {
+								recordedCommbnds(limit: 20) {
 									nodes {
-										start
-										duration
-										command
+										stbrt
+										durbtion
+										commbnd
 										dir
-										path
+										pbth
 									}
-									totalCount
-									pageInfo {
-										hasNextPage
+									totblCount
+									pbgeInfo {
+										hbsNextPbge
 									}
 								}
 							}
@@ -460,19 +460,19 @@ func TestRecordedCommandsResolver(t *testing.T) {
 				ExpectedResult: `
 						{
 							"repository": {
-								"recordedCommands": {
+								"recordedCommbnds": {
 									"nodes": [
 										{
-											"command": "git ls-files",
-											"dir": "/.sourcegraph/repos_1/github.com/sourcegraph/sourcegraph/.git",
-											"duration": 5,
-											"path": "/opt/homebrew/bin/git",
-											"start": "2023-07-20T15:04:05Z"
+											"commbnd": "git ls-files",
+											"dir": "/.sourcegrbph/repos_1/github.com/sourcegrbph/sourcegrbph/.git",
+											"durbtion": 5,
+											"pbth": "/opt/homebrew/bin/git",
+											"stbrt": "2023-07-20T15:04:05Z"
 										}
 									],
-									"totalCount": 3,
-									"pageInfo": {
-										"hasNextPage": true
+									"totblCount": 3,
+									"pbgeInfo": {
+										"hbsNextPbge": true
 									}
 								}
 							}
@@ -483,9 +483,9 @@ func TestRecordedCommandsResolver(t *testing.T) {
 	})
 }
 
-func marshalCmd(t *testing.T, command wrexec.RecordedCommand) []byte {
+func mbrshblCmd(t *testing.T, commbnd wrexec.RecordedCommbnd) []byte {
 	t.Helper()
-	bytes, err := json.Marshal(&command)
+	bytes, err := json.Mbrshbl(&commbnd)
 	require.NoError(t, err)
 	return bytes
 }

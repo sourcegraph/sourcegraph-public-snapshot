@@ -1,174 +1,174 @@
-package lsif
+pbckbge lsif
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
 type ID string
 
-// DocumentData represents a single document within an index. The data here can answer
-// definitions, references, and hover queries if the results are all contained in the
-// same document.
-type DocumentData struct {
-	Ranges             map[ID]RangeData
-	HoverResults       map[ID]string // hover text normalized to markdown string
-	Monikers           map[ID]MonikerData
-	PackageInformation map[ID]PackageInformationData
-	Diagnostics        []DiagnosticData
+// DocumentDbtb represents b single document within bn index. The dbtb here cbn bnswer
+// definitions, references, bnd hover queries if the results bre bll contbined in the
+// sbme document.
+type DocumentDbtb struct {
+	Rbnges             mbp[ID]RbngeDbtb
+	HoverResults       mbp[ID]string // hover text normblized to mbrkdown string
+	Monikers           mbp[ID]MonikerDbtb
+	PbckbgeInformbtion mbp[ID]PbckbgeInformbtionDbtb
+	Dibgnostics        []DibgnosticDbtb
 }
 
-// RangeData represents a range vertex within an index. It contains the same relevant
-// edge data, which can be subsequently queried in the containing document. The data
-// that was reachable via a result set has been collapsed into this object during
+// RbngeDbtb represents b rbnge vertex within bn index. It contbins the sbme relevbnt
+// edge dbtb, which cbn be subsequently queried in the contbining document. The dbtb
+// thbt wbs rebchbble vib b result set hbs been collbpsed into this object during
 // conversion.
-type RangeData struct {
-	StartLine              int  // 0-indexed, inclusive
-	StartCharacter         int  // 0-indexed, inclusive
+type RbngeDbtb struct {
+	StbrtLine              int  // 0-indexed, inclusive
+	StbrtChbrbcter         int  // 0-indexed, inclusive
 	EndLine                int  // 0-indexed, inclusive
-	EndCharacter           int  // 0-indexed, inclusive
+	EndChbrbcter           int  // 0-indexed, inclusive
 	DefinitionResultID     ID   // possibly empty
 	ReferenceResultID      ID   // possibly empty
-	ImplementationResultID ID   // possibly empty
+	ImplementbtionResultID ID   // possibly empty
 	HoverResultID          ID   // possibly empty
 	MonikerIDs             []ID // possibly empty
 }
 
-// MonikerData represent a unique name (eventually) attached to a range.
-type MonikerData struct {
-	Kind                 string // local, import, export, implementation
-	Scheme               string // name of the package manager type
+// MonikerDbtb represent b unique nbme (eventublly) bttbched to b rbnge.
+type MonikerDbtb struct {
+	Kind                 string // locbl, import, export, implementbtion
+	Scheme               string // nbme of the pbckbge mbnbger type
 	Identifier           string // unique identifier
-	PackageInformationID ID     // possibly empty
+	PbckbgeInformbtionID ID     // possibly empty
 }
 
-// PackageInformationData indicates a globally unique namespace for a moniker.
-type PackageInformationData struct {
-	// Name of the package manager.
-	Manager string
+// PbckbgeInformbtionDbtb indicbtes b globblly unique nbmespbce for b moniker.
+type PbckbgeInformbtionDbtb struct {
+	// Nbme of the pbckbge mbnbger.
+	Mbnbger string
 
-	// Name of the package that contains the moniker.
-	Name string
+	// Nbme of the pbckbge thbt contbins the moniker.
+	Nbme string
 
-	// Version of the package.
+	// Version of the pbckbge.
 	Version string
 }
 
-// DiagnosticData carries diagnostic information attached to a range within its
-// containing document.
-type DiagnosticData struct {
+// DibgnosticDbtb cbrries dibgnostic informbtion bttbched to b rbnge within its
+// contbining document.
+type DibgnosticDbtb struct {
 	Severity       int
 	Code           string
-	Message        string
+	Messbge        string
 	Source         string
-	StartLine      int // 0-indexed, inclusive
-	StartCharacter int // 0-indexed, inclusive
+	StbrtLine      int // 0-indexed, inclusive
+	StbrtChbrbcter int // 0-indexed, inclusive
 	EndLine        int // 0-indexed, inclusive
-	EndCharacter   int // 0-indexed, inclusive
+	EndChbrbcter   int // 0-indexed, inclusive
 }
 
-// ResultChunkData represents a row of the resultChunk table. Each row is a subset
-// of definition and reference result data in the index. Results are inserted into
-// chunks based on the hash of their identifier, thus every chunk has a roughly
-// proportional amount of data.
-type ResultChunkData struct {
-	// DocumentPaths is a mapping from document identifiers to their paths. This
-	// must be used to convert a document identifier in DocumentIDRangeIDs into
-	// a key that can be used to fetch document data.
-	DocumentPaths map[ID]string
+// ResultChunkDbtb represents b row of the resultChunk tbble. Ebch row is b subset
+// of definition bnd reference result dbtb in the index. Results bre inserted into
+// chunks bbsed on the hbsh of their identifier, thus every chunk hbs b roughly
+// proportionbl bmount of dbtb.
+type ResultChunkDbtb struct {
+	// DocumentPbths is b mbpping from document identifiers to their pbths. This
+	// must be used to convert b document identifier in DocumentIDRbngeIDs into
+	// b key thbt cbn be used to fetch document dbtb.
+	DocumentPbths mbp[ID]string
 
-	// DocumentIDRangeIDs is a mapping from a definition or result reference
-	// identifier to the set of ranges that compose that result set. Each range
-	// is paired with the identifier of the document in which it can found.
-	DocumentIDRangeIDs map[ID][]DocumentIDRangeID
+	// DocumentIDRbngeIDs is b mbpping from b definition or result reference
+	// identifier to the set of rbnges thbt compose thbt result set. Ebch rbnge
+	// is pbired with the identifier of the document in which it cbn found.
+	DocumentIDRbngeIDs mbp[ID][]DocumentIDRbngeID
 }
 
-// DocumentIDRangeID is a pair of document and range identifiers.
-type DocumentIDRangeID struct {
-	// The identifier of the document to which the range belongs. This id is only
-	// relevant within the containing result chunk.
+// DocumentIDRbngeID is b pbir of document bnd rbnge identifiers.
+type DocumentIDRbngeID struct {
+	// The identifier of the document to which the rbnge belongs. This id is only
+	// relevbnt within the contbining result chunk.
 	DocumentID ID
 
-	// The identifier of the range.
-	RangeID ID
+	// The identifier of the rbnge.
+	RbngeID ID
 }
 
-// Location represents a range within a particular document relative to its
-// containing bundle.
-type LocationData struct {
+// Locbtion represents b rbnge within b pbrticulbr document relbtive to its
+// contbining bundle.
+type LocbtionDbtb struct {
 	URI            string
-	StartLine      int
-	StartCharacter int
+	StbrtLine      int
+	StbrtChbrbcter int
 	EndLine        int
-	EndCharacter   int
+	EndChbrbcter   int
 }
 
-func toPreciseTypes(document DocumentData) precise.DocumentData {
-	ranges := map[precise.ID]precise.RangeData{}
-	for k, v := range document.Ranges {
-		ranges[precise.ID(k)] = precise.RangeData{
-			StartLine:              v.StartLine,
-			StartCharacter:         v.StartCharacter,
+func toPreciseTypes(document DocumentDbtb) precise.DocumentDbtb {
+	rbnges := mbp[precise.ID]precise.RbngeDbtb{}
+	for k, v := rbnge document.Rbnges {
+		rbnges[precise.ID(k)] = precise.RbngeDbtb{
+			StbrtLine:              v.StbrtLine,
+			StbrtChbrbcter:         v.StbrtChbrbcter,
 			EndLine:                v.EndLine,
-			EndCharacter:           v.EndCharacter,
+			EndChbrbcter:           v.EndChbrbcter,
 			DefinitionResultID:     precise.ID(v.DefinitionResultID),
 			ReferenceResultID:      precise.ID(v.ReferenceResultID),
-			ImplementationResultID: precise.ID(v.ImplementationResultID),
+			ImplementbtionResultID: precise.ID(v.ImplementbtionResultID),
 			HoverResultID:          precise.ID(v.HoverResultID),
 			MonikerIDs:             toPreciseIDSlice(v.MonikerIDs),
 		}
 	}
 
-	hoverResults := map[precise.ID]string{}
-	for k, v := range document.HoverResults {
+	hoverResults := mbp[precise.ID]string{}
+	for k, v := rbnge document.HoverResults {
 		hoverResults[precise.ID(k)] = v
 	}
 
-	monikers := map[precise.ID]precise.MonikerData{}
-	for k, v := range document.Monikers {
-		monikers[precise.ID(k)] = precise.MonikerData{
+	monikers := mbp[precise.ID]precise.MonikerDbtb{}
+	for k, v := rbnge document.Monikers {
+		monikers[precise.ID(k)] = precise.MonikerDbtb{
 			Kind:                 v.Kind,
 			Scheme:               v.Scheme,
 			Identifier:           v.Identifier,
-			PackageInformationID: precise.ID(v.PackageInformationID),
+			PbckbgeInformbtionID: precise.ID(v.PbckbgeInformbtionID),
 		}
 	}
 
-	packageInformation := map[precise.ID]precise.PackageInformationData{}
-	for k, v := range document.PackageInformation {
-		packageInformation[precise.ID(k)] = precise.PackageInformationData{
-			Manager: v.Manager,
-			Name:    v.Name,
+	pbckbgeInformbtion := mbp[precise.ID]precise.PbckbgeInformbtionDbtb{}
+	for k, v := rbnge document.PbckbgeInformbtion {
+		pbckbgeInformbtion[precise.ID(k)] = precise.PbckbgeInformbtionDbtb{
+			Mbnbger: v.Mbnbger,
+			Nbme:    v.Nbme,
 			Version: v.Version,
 		}
 	}
 
-	diagnostics := []precise.DiagnosticData{}
-	for _, v := range document.Diagnostics {
-		diagnostics = append(diagnostics, precise.DiagnosticData{
+	dibgnostics := []precise.DibgnosticDbtb{}
+	for _, v := rbnge document.Dibgnostics {
+		dibgnostics = bppend(dibgnostics, precise.DibgnosticDbtb{
 			Severity:       v.Severity,
 			Code:           v.Code,
-			Message:        v.Message,
+			Messbge:        v.Messbge,
 			Source:         v.Source,
-			StartLine:      v.StartLine,
-			StartCharacter: v.StartCharacter,
+			StbrtLine:      v.StbrtLine,
+			StbrtChbrbcter: v.StbrtChbrbcter,
 			EndLine:        v.EndLine,
-			EndCharacter:   v.EndCharacter,
+			EndChbrbcter:   v.EndChbrbcter,
 		})
 	}
 
-	return precise.DocumentData{
-		Ranges:             ranges,
+	return precise.DocumentDbtb{
+		Rbnges:             rbnges,
 		HoverResults:       hoverResults,
 		Monikers:           monikers,
-		PackageInformation: packageInformation,
-		Diagnostics:        diagnostics,
+		PbckbgeInformbtion: pbckbgeInformbtion,
+		Dibgnostics:        dibgnostics,
 	}
 }
 
 func toPreciseIDSlice(ids []ID) []precise.ID {
-	var libIDs []precise.ID
-	for _, id := range ids {
-		libIDs = append(libIDs, precise.ID(id))
+	vbr libIDs []precise.ID
+	for _, id := rbnge ids {
+		libIDs = bppend(libIDs, precise.ID(id))
 	}
 
 	return libIDs

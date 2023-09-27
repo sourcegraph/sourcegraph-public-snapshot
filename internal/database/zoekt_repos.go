@@ -1,91 +1,91 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type ZoektReposStore interface {
-	basestore.ShareableStore
+type ZoektReposStore interfbce {
+	bbsestore.ShbrebbleStore
 
-	With(other basestore.ShareableStore) ZoektReposStore
+	With(other bbsestore.ShbrebbleStore) ZoektReposStore
 
-	// UpdateIndexStatuses updates the index status of the rows in zoekt_repos
-	// whose repo_id matches an entry in the `indexed` map.
-	UpdateIndexStatuses(ctx context.Context, indexed zoekt.ReposMap) error
+	// UpdbteIndexStbtuses updbtes the index stbtus of the rows in zoekt_repos
+	// whose repo_id mbtches bn entry in the `indexed` mbp.
+	UpdbteIndexStbtuses(ctx context.Context, indexed zoekt.ReposMbp) error
 
-	// GetStatistics returns a summary of the zoekt_repos table.
-	GetStatistics(ctx context.Context) (ZoektRepoStatistics, error)
+	// GetStbtistics returns b summbry of the zoekt_repos tbble.
+	GetStbtistics(ctx context.Context) (ZoektRepoStbtistics, error)
 
 	// GetZoektRepo returns the ZoektRepo for the given repository ID.
-	GetZoektRepo(ctx context.Context, repo api.RepoID) (*ZoektRepo, error)
+	GetZoektRepo(ctx context.Context, repo bpi.RepoID) (*ZoektRepo, error)
 }
 
-var _ ZoektReposStore = (*zoektReposStore)(nil)
+vbr _ ZoektReposStore = (*zoektReposStore)(nil)
 
-// zoektReposStore is responsible for data stored in the zoekt_repos table.
+// zoektReposStore is responsible for dbtb stored in the zoekt_repos tbble.
 type zoektReposStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// ZoektReposWith instantiates and returns a new zoektReposStore using
-// the other store handle.
-func ZoektReposWith(other basestore.ShareableStore) ZoektReposStore {
-	return &zoektReposStore{Store: basestore.NewWithHandle(other.Handle())}
+// ZoektReposWith instbntibtes bnd returns b new zoektReposStore using
+// the other store hbndle.
+func ZoektReposWith(other bbsestore.ShbrebbleStore) ZoektReposStore {
+	return &zoektReposStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *zoektReposStore) With(other basestore.ShareableStore) ZoektReposStore {
+func (s *zoektReposStore) With(other bbsestore.ShbrebbleStore) ZoektReposStore {
 	return &zoektReposStore{Store: s.Store.With(other)}
 }
 
-func (s *zoektReposStore) Transact(ctx context.Context) (ZoektReposStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &zoektReposStore{Store: txBase}, err
+func (s *zoektReposStore) Trbnsbct(ctx context.Context) (ZoektReposStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &zoektReposStore{Store: txBbse}, err
 }
 
 type ZoektRepo struct {
-	RepoID        api.RepoID
-	Branches      []zoekt.RepositoryBranch
-	IndexStatus   string
-	LastIndexedAt time.Time
+	RepoID        bpi.RepoID
+	Brbnches      []zoekt.RepositoryBrbnch
+	IndexStbtus   string
+	LbstIndexedAt time.Time
 
-	UpdatedAt time.Time
-	CreatedAt time.Time
+	UpdbtedAt time.Time
+	CrebtedAt time.Time
 }
 
-func (s *zoektReposStore) GetZoektRepo(ctx context.Context, repo api.RepoID) (*ZoektRepo, error) {
-	return scanZoektRepo(s.QueryRow(ctx, sqlf.Sprintf(getZoektRepoQueryFmtstr, repo)))
+func (s *zoektReposStore) GetZoektRepo(ctx context.Context, repo bpi.RepoID) (*ZoektRepo, error) {
+	return scbnZoektRepo(s.QueryRow(ctx, sqlf.Sprintf(getZoektRepoQueryFmtstr, repo)))
 }
 
-func scanZoektRepo(sc dbutil.Scanner) (*ZoektRepo, error) {
-	var zr ZoektRepo
-	var branches json.RawMessage
+func scbnZoektRepo(sc dbutil.Scbnner) (*ZoektRepo, error) {
+	vbr zr ZoektRepo
+	vbr brbnches json.RbwMessbge
 
-	err := sc.Scan(
+	err := sc.Scbn(
 		&zr.RepoID,
-		&branches,
-		&zr.IndexStatus,
-		&dbutil.NullTime{Time: &zr.LastIndexedAt},
-		&zr.UpdatedAt,
-		&zr.CreatedAt,
+		&brbnches,
+		&zr.IndexStbtus,
+		&dbutil.NullTime{Time: &zr.LbstIndexedAt},
+		&zr.UpdbtedAt,
+		&zr.CrebtedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	if err = json.Unmarshal(branches, &zr.Branches); err != nil {
-		return nil, errors.Wrapf(err, "scanZoektRepo: failed to unmarshal branches")
+	if err = json.Unmbrshbl(brbnches, &zr.Brbnches); err != nil {
+		return nil, errors.Wrbpf(err, "scbnZoektRepo: fbiled to unmbrshbl brbnches")
 	}
 
 	return &zr, nil
@@ -94,15 +94,15 @@ func scanZoektRepo(sc dbutil.Scanner) (*ZoektRepo, error) {
 const getZoektRepoQueryFmtstr = `
 SELECT
 	zr.repo_id,
-	zr.branches,
-	zr.index_status,
-	zr.last_indexed_at,
-	zr.updated_at,
-	zr.created_at
+	zr.brbnches,
+	zr.index_stbtus,
+	zr.lbst_indexed_bt,
+	zr.updbted_bt,
+	zr.crebted_bt
 FROM zoekt_repos zr
 JOIN repo ON repo.id = zr.repo_id
 WHERE
-	repo.deleted_at is NULL
+	repo.deleted_bt is NULL
 AND
 	repo.blocked IS NULL
 AND
@@ -110,32 +110,32 @@ AND
 ;
 `
 
-func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed zoekt.ReposMap) (err error) {
-	tx, err := s.Store.Transact(ctx)
+func (s *zoektReposStore) UpdbteIndexStbtuses(ctx context.Context, indexed zoekt.ReposMbp) (err error) {
+	tx, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(updateIndexStatusesCreateTempTableQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(updbteIndexStbtusesCrebteTempTbbleQuery)); err != nil {
 		return err
 	}
 
-	inserter := batch.NewInserter(ctx, tx.Handle(), "temp_table", batch.MaxNumPostgresParameters, tempTableColumns...)
+	inserter := bbtch.NewInserter(ctx, tx.Hbndle(), "temp_tbble", bbtch.MbxNumPostgresPbrbmeters, tempTbbleColumns...)
 
-	for repoID, entry := range indexed {
-		branches, err := branchesColumn(entry.Branches)
+	for repoID, entry := rbnge indexed {
+		brbnches, err := brbnchesColumn(entry.Brbnches)
 		if err != nil {
 			return err
 		}
 
-		var lastIndexedAt *time.Time
+		vbr lbstIndexedAt *time.Time
 		if entry.IndexTimeUnix != 0 {
 			t := time.Unix(entry.IndexTimeUnix, 0)
-			lastIndexedAt = &t
+			lbstIndexedAt = &t
 		}
 
-		if err := inserter.Insert(ctx, repoID, "indexed", branches, lastIndexedAt); err != nil {
+		if err := inserter.Insert(ctx, repoID, "indexed", brbnches, lbstIndexedAt); err != nil {
 			return err
 		}
 	}
@@ -144,79 +144,79 @@ func (s *zoektReposStore) UpdateIndexStatuses(ctx context.Context, indexed zoekt
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(updateIndexStatusesUpdateQuery)); err != nil {
-		return errors.Wrap(err, "updating zoekt repos failed")
+	if err := tx.Exec(ctx, sqlf.Sprintf(updbteIndexStbtusesUpdbteQuery)); err != nil {
+		return errors.Wrbp(err, "updbting zoekt repos fbiled")
 	}
 
 	return nil
 }
 
-func branchesColumn(branches []zoekt.RepositoryBranch) (msg json.RawMessage, err error) {
-	if len(branches) == 0 {
-		msg = json.RawMessage("[]")
+func brbnchesColumn(brbnches []zoekt.RepositoryBrbnch) (msg json.RbwMessbge, err error) {
+	if len(brbnches) == 0 {
+		msg = json.RbwMessbge("[]")
 	} else {
-		msg, err = json.Marshal(branches)
+		msg, err = json.Mbrshbl(brbnches)
 	}
 	return
 }
 
-var tempTableColumns = []string{
+vbr tempTbbleColumns = []string{
 	"repo_id",
-	"index_status",
-	"branches",
-	"last_indexed_at",
+	"index_stbtus",
+	"brbnches",
+	"lbst_indexed_bt",
 }
 
-const updateIndexStatusesCreateTempTableQuery = `
-CREATE TEMPORARY TABLE temp_table (
+const updbteIndexStbtusesCrebteTempTbbleQuery = `
+CREATE TEMPORARY TABLE temp_tbble (
 	repo_id         integer NOT NULL,
-	index_status    text NOT NULL,
-	last_indexed_at TIMESTAMP WITH TIME ZONE,
-	branches        jsonb
+	index_stbtus    text NOT NULL,
+	lbst_indexed_bt TIMESTAMP WITH TIME ZONE,
+	brbnches        jsonb
 ) ON COMMIT DROP
 `
 
-const updateIndexStatusesUpdateQuery = `
+const updbteIndexStbtusesUpdbteQuery = `
 UPDATE zoekt_repos zr
 SET
-	index_status    = source.index_status,
-	branches        = source.branches,
-	last_indexed_at = source.last_indexed_at,
-	updated_at      = now()
-FROM temp_table source
+	index_stbtus    = source.index_stbtus,
+	brbnches        = source.brbnches,
+	lbst_indexed_bt = source.lbst_indexed_bt,
+	updbted_bt      = now()
+FROM temp_tbble source
 WHERE
 	zr.repo_id = source.repo_id
 AND
-	(zr.index_status != source.index_status OR zr.branches != source.branches OR zr.last_indexed_at IS DISTINCT FROM source.last_indexed_at)
+	(zr.index_stbtus != source.index_stbtus OR zr.brbnches != source.brbnches OR zr.lbst_indexed_bt IS DISTINCT FROM source.lbst_indexed_bt)
 ;
 `
 
-type ZoektRepoStatistics struct {
-	Total      int
+type ZoektRepoStbtistics struct {
+	Totbl      int
 	Indexed    int
 	NotIndexed int
 }
 
-func (s *zoektReposStore) GetStatistics(ctx context.Context) (ZoektRepoStatistics, error) {
-	var zrs ZoektRepoStatistics
-	row := s.QueryRow(ctx, sqlf.Sprintf(getZoektRepoStatisticsQueryFmtstr))
-	err := row.Scan(&zrs.Total, &zrs.Indexed, &zrs.NotIndexed)
+func (s *zoektReposStore) GetStbtistics(ctx context.Context) (ZoektRepoStbtistics, error) {
+	vbr zrs ZoektRepoStbtistics
+	row := s.QueryRow(ctx, sqlf.Sprintf(getZoektRepoStbtisticsQueryFmtstr))
+	err := row.Scbn(&zrs.Totbl, &zrs.Indexed, &zrs.NotIndexed)
 	if err != nil {
 		return zrs, err
 	}
 	return zrs, nil
 }
 
-const getZoektRepoStatisticsQueryFmtstr = `
--- source: internal/database/zoekt_repos.go:zoektReposStore.GetStatistics
+const getZoektRepoStbtisticsQueryFmtstr = `
+-- source: internbl/dbtbbbse/zoekt_repos.go:zoektReposStore.GetStbtistics
 SELECT
-	COUNT(*) AS total,
-	COUNT(*) FILTER(WHERE index_status = 'indexed') AS indexed,
-	COUNT(*) FILTER(WHERE index_status = 'not_indexed') AS not_indexed
+	COUNT(*) AS totbl,
+	COUNT(*) FILTER(WHERE index_stbtus = 'indexed') AS indexed,
+	COUNT(*) FILTER(WHERE index_stbtus = 'not_indexed') AS not_indexed
 FROM zoekt_repos zr
 JOIN repo ON repo.id = zr.repo_id
 WHERE
-	repo.deleted_at is NULL
+	repo.deleted_bt is NULL
 AND
 	repo.blocked IS NULL
 ;

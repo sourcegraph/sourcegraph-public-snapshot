@@ -1,38 +1,38 @@
-package protocol
+pbckbge protocol
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func TestNormalizeRepo(t *testing.T) {
-	cases := map[api.RepoName]api.RepoName{
-		"FooBar.git":               "FooBar",
-		"foobar":                   "foobar",
-		"FooBar":                   "FooBar",
-		"foo/bar":                  "foo/bar",
-		"gitHub.Com/FooBar.git":    "github.com/foobar",
-		"myServer.Com/FooBar.git":  "myserver.com/FooBar",
-		"myServer.Com/FooBar/.git": "myserver.com/FooBar",
+func TestNormblizeRepo(t *testing.T) {
+	cbses := mbp[bpi.RepoNbme]bpi.RepoNbme{
+		"FooBbr.git":               "FooBbr",
+		"foobbr":                   "foobbr",
+		"FooBbr":                   "FooBbr",
+		"foo/bbr":                  "foo/bbr",
+		"gitHub.Com/FooBbr.git":    "github.com/foobbr",
+		"myServer.Com/FooBbr.git":  "myserver.com/FooBbr",
+		"myServer.Com/FooBbr/.git": "myserver.com/FooBbr",
 
 		// support repos with suffix .git for Go
-		"go/git.foo.org/bar.git": "go/git.foo.org/bar.git",
+		"go/git.foo.org/bbr.git": "go/git.foo.org/bbr.git",
 
-		// trying to escape gitserver root
-		"/etc/passwd":                       "etc/passwd",
-		"../../../etc/passwd":               "etc/passwd",
-		"foobar.git/../etc/passwd":          "etc/passwd",
-		"foobar.git/../../../../etc/passwd": "etc/passwd",
+		// trying to escbpe gitserver root
+		"/etc/pbsswd":                       "etc/pbsswd",
+		"../../../etc/pbsswd":               "etc/pbsswd",
+		"foobbr.git/../etc/pbsswd":          "etc/pbsswd",
+		"foobbr.git/../../../../etc/pbsswd": "etc/pbsswd",
 
-		// Degenerate cases
-		"foo/bar/../..":  "",
-		"/foo/bar/../..": "",
+		// Degenerbte cbses
+		"foo/bbr/../..":  "",
+		"/foo/bbr/../..": "",
 	}
 
-	for k, want := range cases {
-		if got := NormalizeRepo(k); got != want {
-			t.Errorf("NormalizeRepo(%q): got %q want %q", k, got, want)
+	for k, wbnt := rbnge cbses {
+		if got := NormblizeRepo(k); got != wbnt {
+			t.Errorf("NormblizeRepo(%q): got %q wbnt %q", k, got, wbnt)
 		}
 	}
 }

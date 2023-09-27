@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,20 +6,20 @@ import (
 	"net/url"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
@@ -27,82 +27,82 @@ const (
 	webhookCursorKind = "WebhookCursor"
 )
 
-var _ graphqlbackend.WebhooksResolver = &webhooksResolver{}
+vbr _ grbphqlbbckend.WebhooksResolver = &webhooksResolver{}
 
 type webhooksResolver struct {
-	db database.DB
+	db dbtbbbse.DB
 }
 
-func NewWebhooksResolver(db database.DB) graphqlbackend.WebhooksResolver {
+func NewWebhooksResolver(db dbtbbbse.DB) grbphqlbbckend.WebhooksResolver {
 	return &webhooksResolver{db: db}
 }
 
-func (r *webhooksResolver) CreateWebhook(ctx context.Context, args *graphqlbackend.CreateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
+func (r *webhooksResolver) CrebteWebhook(ctx context.Context, brgs *grbphqlbbckend.CrebteWebhookArgs) (grbphqlbbckend.WebhookResolver, error) {
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, buth.ErrMustBeSiteAdmin
 	}
-	ws := backend.NewWebhookService(r.db, keyring.Default())
-	webhook, err := ws.CreateWebhook(ctx, args.Name, args.CodeHostKind, args.CodeHostURN, args.Secret)
+	ws := bbckend.NewWebhookService(r.db, keyring.Defbult())
+	webhook, err := ws.CrebteWebhook(ctx, brgs.Nbme, brgs.CodeHostKind, brgs.CodeHostURN, brgs.Secret)
 	if err != nil {
 		return nil, err
 	}
 	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
-func (r *webhooksResolver) DeleteWebhook(ctx context.Context, args *graphqlbackend.DeleteWebhookArgs) (*graphqlbackend.EmptyResponse, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
+func (r *webhooksResolver) DeleteWebhook(ctx context.Context, brgs *grbphqlbbckend.DeleteWebhookArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, buth.ErrMustBeSiteAdmin
 	}
 
-	id, err := UnmarshalWebhookID(args.ID)
+	id, err := UnmbrshblWebhookID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
-	ws := backend.NewWebhookService(r.db, keyring.Default())
+	ws := bbckend.NewWebhookService(r.db, keyring.Defbult())
 	err = ws.DeleteWebhook(ctx, id)
 	if err != nil {
-		return nil, errors.Wrap(err, "delete webhook")
+		return nil, errors.Wrbp(err, "delete webhook")
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *webhooksResolver) UpdateWebhook(ctx context.Context, args *graphqlbackend.UpdateWebhookArgs) (graphqlbackend.WebhookResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
+func (r *webhooksResolver) UpdbteWebhook(ctx context.Context, brgs *grbphqlbbckend.UpdbteWebhookArgs) (grbphqlbbckend.WebhookResolver, error) {
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, buth.ErrMustBeSiteAdmin
 	}
 
-	whID, err := UnmarshalWebhookID(args.ID)
+	whID, err := UnmbrshblWebhookID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	ws := backend.NewWebhookService(r.db, keyring.Default())
-	var name string
-	if args.Name != nil {
-		name = *args.Name
+	ws := bbckend.NewWebhookService(r.db, keyring.Defbult())
+	vbr nbme string
+	if brgs.Nbme != nil {
+		nbme = *brgs.Nbme
 	}
-	var codeHostKind string
-	if args.CodeHostKind != nil {
-		codeHostKind = *args.CodeHostKind
+	vbr codeHostKind string
+	if brgs.CodeHostKind != nil {
+		codeHostKind = *brgs.CodeHostKind
 	}
-	var codeHostURN string
-	if args.CodeHostURN != nil {
-		codeHostURN = *args.CodeHostURN
+	vbr codeHostURN string
+	if brgs.CodeHostURN != nil {
+		codeHostURN = *brgs.CodeHostURN
 	}
 
-	webhook, err := ws.UpdateWebhook(ctx, whID, name, codeHostKind, codeHostURN, args.Secret)
+	webhook, err := ws.UpdbteWebhook(ctx, whID, nbme, codeHostKind, codeHostURN, brgs.Secret)
 	if err != nil {
-		return nil, errors.Wrap(err, "update webhook")
+		return nil, errors.Wrbp(err, "updbte webhook")
 	}
 
 	return &webhookResolver{hook: webhook, db: r.db}, nil
 }
 
-func (r *webhooksResolver) Webhooks(ctx context.Context, args *graphqlbackend.ListWebhookArgs) (graphqlbackend.WebhookConnectionResolver, error) {
-	if auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
-		return nil, auth.ErrMustBeSiteAdmin
+func (r *webhooksResolver) Webhooks(ctx context.Context, brgs *grbphqlbbckend.ListWebhookArgs) (grbphqlbbckend.WebhookConnectionResolver, error) {
+	if buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) != nil {
+		return nil, buth.ErrMustBeSiteAdmin
 	}
-	opts, err := toWebhookListOptions(args)
+	opts, err := toWebhookListOptions(brgs)
 	if err != nil {
 		return nil, err
 	}
@@ -112,25 +112,25 @@ func (r *webhooksResolver) Webhooks(ctx context.Context, args *graphqlbackend.Li
 	}, nil
 }
 
-func (r *webhooksResolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		webhookKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+func (r *webhooksResolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		webhookKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 			return webhookByID(ctx, r.db, id)
 		},
 	}
 }
 
-func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+func webhookByID(ctx context.Context, db dbtbbbse.DB, gqlID grbphql.ID) (*webhookResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	id, err := UnmarshalWebhookID(gqlID)
+	id, err := UnmbrshblWebhookID(gqlID)
 	if err != nil {
 		return nil, err
 	}
 
-	hook, err := db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, id)
+	hook, err := db.Webhooks(keyring.Defbult().WebhookKey).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -138,13 +138,13 @@ func webhookByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhoo
 	return &webhookResolver{db: db, hook: hook}, nil
 }
 
-func toWebhookListOptions(args *graphqlbackend.ListWebhookArgs) (database.WebhookListOptions, error) {
-	opt := database.WebhookListOptions{}
-	if args.Kind != nil {
-		opt.Kind = *args.Kind
+func toWebhookListOptions(brgs *grbphqlbbckend.ListWebhookArgs) (dbtbbbse.WebhookListOptions, error) {
+	opt := dbtbbbse.WebhookListOptions{}
+	if brgs.Kind != nil {
+		opt.Kind = *brgs.Kind
 	}
-	if args.After != nil {
-		cursor, err := UnmarshalWebhookCursor(args.After)
+	if brgs.After != nil {
+		cursor, err := UnmbrshblWebhookCursor(brgs.After)
 		if err != nil {
 			return opt, err
 		}
@@ -155,29 +155,29 @@ func toWebhookListOptions(args *graphqlbackend.ListWebhookArgs) (database.Webhoo
 			Direction: "next",
 		}
 	}
-	args.Set(&opt.LimitOffset)
+	brgs.Set(&opt.LimitOffset)
 	return opt, nil
 }
 
-var _ graphqlbackend.WebhookConnectionResolver = &webhooksConnectionResolver{}
+vbr _ grbphqlbbckend.WebhookConnectionResolver = &webhooksConnectionResolver{}
 
 type webhooksConnectionResolver struct {
-	db       database.DB
-	opt      database.WebhookListOptions
+	db       dbtbbbse.DB
+	opt      dbtbbbse.WebhookListOptions
 	once     sync.Once
 	webhooks []*types.Webhook
 	next     int32
 	err      error
 }
 
-func (c *webhooksConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.WebhookResolver, error) {
+func (c *webhooksConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.WebhookResolver, error) {
 	webhooks, _, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.WebhookResolver, 0, len(webhooks))
-	for _, wh := range webhooks {
-		resolvers = append(resolvers, &webhookResolver{
+	resolvers := mbke([]grbphqlbbckend.WebhookResolver, 0, len(webhooks))
+	for _, wh := rbnge webhooks {
+		resolvers = bppend(resolvers, &webhookResolver{
 			db:   c.db,
 			hook: wh,
 		})
@@ -185,27 +185,27 @@ func (c *webhooksConnectionResolver) Nodes(ctx context.Context) ([]graphqlbacken
 	return resolvers, nil
 }
 
-func (c *webhooksConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := c.db.Webhooks(keyring.Default().WebhookLogKey).Count(ctx, c.opt)
+func (c *webhooksConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	count, err := c.db.Webhooks(keyring.Defbult().WebhookLogKey).Count(ctx, c.opt)
 	if err != nil {
 		return 0, err
 	}
 	return int32(count), nil
 }
 
-func (c *webhooksConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (c *webhooksConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := c.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
-	return graphqlutil.NextPageCursor(MarshalWebhookCursor(
+	return grbphqlutil.NextPbgeCursor(MbrshblWebhookCursor(
 		&types.Cursor{
 			Column:    c.opt.Cursor.Column,
-			Value:     fmt.Sprintf("%d", next),
+			Vblue:     fmt.Sprintf("%d", next),
 			Direction: c.opt.Cursor.Direction,
 		},
 	)), nil
@@ -217,7 +217,7 @@ func (c *webhooksConnectionResolver) compute(ctx context.Context) ([]*types.Webh
 		if c.opt.LimitOffset != nil {
 			opts.Limit++
 		}
-		c.webhooks, c.err = c.db.Webhooks(keyring.Default().WebhookKey).List(ctx, opts)
+		c.webhooks, c.err = c.db.Webhooks(keyring.Defbult().WebhookKey).List(ctx, opts)
 		if c.opt.LimitOffset != nil && opts.Limit != 0 && len(c.webhooks) == opts.Limit {
 			c.next = c.webhooks[len(c.webhooks)-1].ID
 			c.webhooks = c.webhooks[:len(c.webhooks)-1]
@@ -226,13 +226,13 @@ func (c *webhooksConnectionResolver) compute(ctx context.Context) ([]*types.Webh
 	return c.webhooks, c.next, c.err
 }
 
-func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
-	copied := database.WebhookListOptions{
+func copyOpts(opts dbtbbbse.WebhookListOptions) dbtbbbse.WebhookListOptions {
+	copied := dbtbbbse.WebhookListOptions{
 		Kind:   opts.Kind,
 		Cursor: opts.Cursor,
 	}
 	if opts.LimitOffset != nil {
-		limitOffset := database.LimitOffset{
+		limitOffset := dbtbbbse.LimitOffset{
 			Limit:  opts.Limit,
 			Offset: opts.Offset,
 		}
@@ -241,22 +241,22 @@ func copyOpts(opts database.WebhookListOptions) database.WebhookListOptions {
 	return copied
 }
 
-var _ graphqlbackend.WebhookResolver = &webhookResolver{}
+vbr _ grbphqlbbckend.WebhookResolver = &webhookResolver{}
 
 type webhookResolver struct {
-	db   database.DB
+	db   dbtbbbse.DB
 	hook *types.Webhook
 }
 
-func NewWebhookResolver(db database.DB, hook *types.Webhook) *webhookResolver {
+func NewWebhookResolver(db dbtbbbse.DB, hook *types.Webhook) *webhookResolver {
 	return &webhookResolver{
 		db:   db,
 		hook: hook,
 	}
 }
 
-func (r *webhookResolver) ID() graphql.ID {
-	return marshalWebhookID(r.hook.ID)
+func (r *webhookResolver) ID() grbphql.ID {
+	return mbrshblWebhookID(r.hook.ID)
 }
 
 func (r *webhookResolver) UUID() string {
@@ -264,16 +264,16 @@ func (r *webhookResolver) UUID() string {
 }
 
 func (r *webhookResolver) URL() (string, error) {
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externblURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
-		return "", errors.Wrap(err, "could not parse site config external URL")
+		return "", errors.Wrbp(err, "could not pbrse site config externbl URL")
 	}
-	externalURL.Path = fmt.Sprintf(".api/webhooks/%v", r.hook.UUID)
-	return externalURL.String(), nil
+	externblURL.Pbth = fmt.Sprintf(".bpi/webhooks/%v", r.hook.UUID)
+	return externblURL.String(), nil
 }
 
-func (r *webhookResolver) Name() string {
-	return r.hook.Name
+func (r *webhookResolver) Nbme() string {
+	return r.hook.Nbme
 }
 
 func (r *webhookResolver) CodeHostURN() string {
@@ -285,7 +285,7 @@ func (r *webhookResolver) CodeHostKind() string {
 }
 
 func (r *webhookResolver) Secret(ctx context.Context) (*string, error) {
-	// Secret is optional
+	// Secret is optionbl
 	if r.hook.Secret == nil {
 		return nil, nil
 	}
@@ -296,20 +296,20 @@ func (r *webhookResolver) Secret(ctx context.Context) (*string, error) {
 	return &s, nil
 }
 
-func (r *webhookResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.hook.CreatedAt}
+func (r *webhookResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.hook.CrebtedAt}
 }
 
-func (r *webhookResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.hook.UpdatedAt}
+func (r *webhookResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.hook.UpdbtedAt}
 }
 
-func (r *webhookResolver) CreatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	if r.hook.CreatedByUserID == 0 {
+func (r *webhookResolver) CrebtedBy(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	if r.hook.CrebtedByUserID == 0 {
 		return nil, nil
 	}
 
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.hook.CreatedByUserID)
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.db, r.hook.CrebtedByUserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -317,12 +317,12 @@ func (r *webhookResolver) CreatedBy(ctx context.Context) (*graphqlbackend.UserRe
 	return user, err
 }
 
-func (r *webhookResolver) UpdatedBy(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	if r.hook.UpdatedByUserID == 0 {
+func (r *webhookResolver) UpdbtedBy(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	if r.hook.UpdbtedByUserID == 0 {
 		return nil, nil
 	}
 
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.hook.UpdatedByUserID)
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.db, r.hook.UpdbtedByUserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -330,37 +330,37 @@ func (r *webhookResolver) UpdatedBy(ctx context.Context) (*graphqlbackend.UserRe
 	return user, err
 }
 
-func (r *webhookResolver) WebhookLogs(ctx context.Context, args *graphqlbackend.WebhookLogsArgs) (*graphqlbackend.WebhookLogConnectionResolver, error) {
-	gqlID := marshalWebhookID(r.hook.ID)
-	// We need to make a new args struct, otherwise the pointer gets shared
+func (r *webhookResolver) WebhookLogs(ctx context.Context, brgs *grbphqlbbckend.WebhookLogsArgs) (*grbphqlbbckend.WebhookLogConnectionResolver, error) {
+	gqlID := mbrshblWebhookID(r.hook.ID)
+	// We need to mbke b new brgs struct, otherwise the pointer gets shbred
 	// between resolvers.
-	resolverArgs := *args
+	resolverArgs := *brgs
 	resolverArgs.WebhookID = &gqlID
-	return graphqlbackend.NewWebhookLogConnectionResolver(ctx, r.db, &resolverArgs, graphqlbackend.WebhookLogsAllExternalServices)
+	return grbphqlbbckend.NewWebhookLogConnectionResolver(ctx, r.db, &resolverArgs, grbphqlbbckend.WebhookLogsAllExternblServices)
 }
 
-func marshalWebhookID(id int32) graphql.ID {
-	return relay.MarshalID("Webhook", id)
+func mbrshblWebhookID(id int32) grbphql.ID {
+	return relby.MbrshblID("Webhook", id)
 }
 
-func UnmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
-	err = relay.UnmarshalSpec(id, &hookID)
+func UnmbrshblWebhookID(id grbphql.ID) (hookID int32, err error) {
+	err = relby.UnmbrshblSpec(id, &hookID)
 	return
 }
 
-func MarshalWebhookCursor(cursor *types.Cursor) string {
-	return string(relay.MarshalID(webhookCursorKind, cursor))
+func MbrshblWebhookCursor(cursor *types.Cursor) string {
+	return string(relby.MbrshblID(webhookCursorKind, cursor))
 }
 
-func UnmarshalWebhookCursor(cursor *string) (*types.Cursor, error) {
+func UnmbrshblWebhookCursor(cursor *string) (*types.Cursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}
-	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != webhookCursorKind {
-		return nil, errors.Errorf("cannot unmarshal webhook cursor type: %q", kind)
+	if kind := relby.UnmbrshblKind(grbphql.ID(*cursor)); kind != webhookCursorKind {
+		return nil, errors.Errorf("cbnnot unmbrshbl webhook cursor type: %q", kind)
 	}
-	var spec *types.Cursor
-	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
+	vbr spec *types.Cursor
+	if err := relby.UnmbrshblSpec(grbphql.ID(*cursor), &spec); err != nil {
 		return nil, err
 	}
 	return spec, nil

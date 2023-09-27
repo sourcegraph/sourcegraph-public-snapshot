@@ -1,64 +1,64 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
 type Repos struct {
-	DB    database.DB
-	Cache bool
+	DB    dbtbbbse.DB
+	Cbche bool
 }
 
-func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
-	cacheKey := "Repos:Summary"
-	if r.Cache {
-		if summary, err := getItemFromCache[ReposSummary](cacheKey); err == nil {
-			return summary, nil
+func (r *Repos) Summbry(ctx context.Context) (*ReposSummbry, error) {
+	cbcheKey := "Repos:Summbry"
+	if r.Cbche {
+		if summbry, err := getItemFromCbche[ReposSummbry](cbcheKey); err == nil {
+			return summbry, nil
 		}
 	}
 
 	query := sqlf.Sprintf(`
 	SELECT
-		COUNT(DISTINCT repo.id) as total_repo_count,
-		COUNT(DISTINCT lsif_uploads.repository_id) as lsif_index_repo_count
+		COUNT(DISTINCT repo.id) bs totbl_repo_count,
+		COUNT(DISTINCT lsif_uplobds.repository_id) bs lsif_index_repo_count
 	FROM
 		repo
-		LEFT JOIN lsif_uploads ON lsif_uploads.repository_id = repo.id
+		LEFT JOIN lsif_uplobds ON lsif_uplobds.repository_id = repo.id
 	`)
-	var data ReposSummaryData
+	vbr dbtb ReposSummbryDbtb
 
-	if err := r.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&data.Count, &data.PreciseCodeIntelCount); err != nil {
+	if err := r.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...).Scbn(&dbtb.Count, &dbtb.PreciseCodeIntelCount); err != nil {
 		return nil, err
 	}
 
-	summary := &ReposSummary{data}
+	summbry := &ReposSummbry{dbtb}
 
-	if err := setItemToCache(cacheKey, summary); err != nil {
+	if err := setItemToCbche(cbcheKey, summbry); err != nil {
 		return nil, err
 	}
 
-	return summary, nil
+	return summbry, nil
 }
 
-type ReposSummary struct {
-	Data ReposSummaryData
+type ReposSummbry struct {
+	Dbtb ReposSummbryDbtb
 }
 
-type ReposSummaryData struct {
-	Count                 float64
-	PreciseCodeIntelCount float64
+type ReposSummbryDbtb struct {
+	Count                 flobt64
+	PreciseCodeIntelCount flobt64
 }
 
-func (s *ReposSummary) Count() float64 { return s.Data.Count }
+func (s *ReposSummbry) Count() flobt64 { return s.Dbtb.Count }
 
-func (s *ReposSummary) PreciseCodeIntelCount() float64 { return s.Data.PreciseCodeIntelCount }
+func (s *ReposSummbry) PreciseCodeIntelCount() flobt64 { return s.Dbtb.PreciseCodeIntelCount }
 
-func (s *Repos) CacheAll(ctx context.Context) error {
-	if _, err := s.Summary(ctx); err != nil {
+func (s *Repos) CbcheAll(ctx context.Context) error {
+	if _, err := s.Summbry(ctx); err != nil {
 		return err
 	}
 

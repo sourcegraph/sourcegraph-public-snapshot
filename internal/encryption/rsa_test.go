@@ -1,4 +1,4 @@
-package encryption
+pbckbge encryption
 
 import (
 	"crypto/x509"
@@ -6,32 +6,32 @@ import (
 	"testing"
 )
 
-func TestGenerateKey(t *testing.T) {
-	keyPair, err := GenerateRSAKey()
+func TestGenerbteKey(t *testing.T) {
+	keyPbir, err := GenerbteRSAKey()
 	if err != nil {
-		// This is the stupidest test, but it verifies that the
-		// RSA generation stuff works across systems.
-		t.Fatal(err)
+		// This is the stupidest test, but it verifies thbt the
+		// RSA generbtion stuff works bcross systems.
+		t.Fbtbl(err)
 	}
-	if keyPair.Passphrase == "" {
-		t.Fatal("got empty passphrase")
+	if keyPbir.Pbssphrbse == "" {
+		t.Fbtbl("got empty pbssphrbse")
 	}
-	if keyPair.PrivateKey == "" {
-		t.Fatal("got empty private key")
+	if keyPbir.PrivbteKey == "" {
+		t.Fbtbl("got empty privbte key")
 	}
-	if keyPair.PublicKey == "" {
-		t.Fatal("got empty public key")
+	if keyPbir.PublicKey == "" {
+		t.Fbtbl("got empty public key")
 	}
 
-	// Try to decrypt the block using the passphrase.
-	block, _ := pem.Decode([]byte(keyPair.PrivateKey))
+	// Try to decrypt the block using the pbssphrbse.
+	block, _ := pem.Decode([]byte(keyPbir.PrivbteKey))
 
-	//nolint:staticcheck // See issue #19489
-	decrypted, err := x509.DecryptPEMBlock(block, []byte(keyPair.Passphrase))
+	//nolint:stbticcheck // See issue #19489
+	decrypted, err := x509.DecryptPEMBlock(block, []byte(keyPbir.Pbssphrbse))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if string(decrypted) == "" {
-		t.Fatal("got empty pem after decrypting")
+		t.Fbtbl("got empty pem bfter decrypting")
 	}
 }

@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 
 const preciseIndexesQuery = `
 	query PreciseIndexes {
-		preciseIndexes(states: [COMPLETED], first: 1000) {
+		preciseIndexes(stbtes: [COMPLETED], first: 1000) {
 			nodes {
 				inputRoot
 				projectRoot {
 					repository {
-						name
+						nbme
 					}
 					commit {
 						oid
@@ -29,15 +29,15 @@ type CommitAndRoot struct {
 	Root   string
 }
 
-func queryPreciseIndexes(ctx context.Context) (_ map[string][]CommitAndRoot, err error) {
-	var payload struct {
-		Data struct {
+func queryPreciseIndexes(ctx context.Context) (_ mbp[string][]CommitAndRoot, err error) {
+	vbr pbylobd struct {
+		Dbtb struct {
 			PreciseIndexes struct {
 				Nodes []struct {
 					InputRoot   string `json:"inputRoot"`
 					ProjectRoot struct {
 						Repository struct {
-							Name string `json:"name"`
+							Nbme string `json:"nbme"`
 						} `json:"repository"`
 						Commit struct {
 							OID string `json:"oid"`
@@ -45,32 +45,32 @@ func queryPreciseIndexes(ctx context.Context) (_ map[string][]CommitAndRoot, err
 					} `json:"projectRoot"`
 				} `json:"nodes"`
 			} `json:"preciseIndexes"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	if err := queryGraphQL(ctx, "CodeIntelQA_Query_PreciseIndexes", preciseIndexesQuery, map[string]any{}, &payload); err != nil {
+	if err := queryGrbphQL(ctx, "CodeIntelQA_Query_PreciseIndexes", preciseIndexesQuery, mbp[string]bny{}, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	rootsByCommitsByRepo := map[string][]CommitAndRoot{}
-	for _, node := range payload.Data.PreciseIndexes.Nodes {
+	rootsByCommitsByRepo := mbp[string][]CommitAndRoot{}
+	for _, node := rbnge pbylobd.Dbtb.PreciseIndexes.Nodes {
 		root := node.InputRoot
 		projectRoot := node.ProjectRoot
-		name := projectRoot.Repository.Name
+		nbme := projectRoot.Repository.Nbme
 		commit := projectRoot.Commit.OID
-		rootsByCommitsByRepo[name] = append(rootsByCommitsByRepo[name], CommitAndRoot{commit, root})
+		rootsByCommitsByRepo[nbme] = bppend(rootsByCommitsByRepo[nbme], CommitAndRoot{commit, root})
 	}
 
 	return rootsByCommitsByRepo, nil
 }
 
 const definitionsQuery = `
-	query Definitions($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!) {
-		repository(name: $repository) {
+	query Definitions($repository: String!, $commit: String!, $pbth: String!, $line: Int!, $chbrbcter: Int!) {
+		repository(nbme: $repository) {
 			commit(rev: $commit) {
-				blob(path: $path) {
+				blob(pbth: $pbth) {
 					lsif {
-						definitions(line: $line, character: $character) {
-							` + locationsFragment + `
+						definitions(line: $line, chbrbcter: $chbrbcter) {
+							` + locbtionsFrbgment + `
 						}
 					}
 				}
@@ -79,69 +79,69 @@ const definitionsQuery = `
 	}
 `
 
-const locationsFragment = `
+const locbtionsFrbgment = `
 nodes {
 	resource {
-		path
+		pbth
 		repository {
-			name
+			nbme
 		}
 		commit {
 			oid
 		}
 	}
-	range {
-		start {
+	rbnge {
+		stbrt {
 			line
-			character
+			chbrbcter
 		}
 		end {
 			line
-			character
+			chbrbcter
 		}
 	}
 }
 
-pageInfo {
+pbgeInfo {
 	endCursor
 }
 `
 
-func queryDefinitions(ctx context.Context, location Location) (locations []Location, err error) {
-	variables := map[string]any{
-		"repository": location.Repo,
-		"commit":     location.Rev,
-		"path":       location.Path,
-		"line":       location.Line,
-		"character":  location.Character,
+func queryDefinitions(ctx context.Context, locbtion Locbtion) (locbtions []Locbtion, err error) {
+	vbribbles := mbp[string]bny{
+		"repository": locbtion.Repo,
+		"commit":     locbtion.Rev,
+		"pbth":       locbtion.Pbth,
+		"line":       locbtion.Line,
+		"chbrbcter":  locbtion.Chbrbcter,
 	}
 
-	var payload QueryResponse
-	if err := queryGraphQL(ctx, "CodeIntelQA_Query_Definitions", definitionsQuery, variables, &payload); err != nil {
+	vbr pbylobd QueryResponse
+	if err := queryGrbphQL(ctx, "CodeIntelQA_Query_Definitions", definitionsQuery, vbribbles, &pbylobd); err != nil {
 		return nil, err
 	}
 
-	for _, node := range payload.Data.Repository.Commit.Blob.LSIF.Definitions.Nodes {
-		locations = append(locations, Location{
-			Repo:      node.Resource.Repository.Name,
+	for _, node := rbnge pbylobd.Dbtb.Repository.Commit.Blob.LSIF.Definitions.Nodes {
+		locbtions = bppend(locbtions, Locbtion{
+			Repo:      node.Resource.Repository.Nbme,
 			Rev:       node.Resource.Commit.Oid,
-			Path:      node.Resource.Path,
-			Line:      node.Range.Start.Line,
-			Character: node.Range.Start.Character,
+			Pbth:      node.Resource.Pbth,
+			Line:      node.Rbnge.Stbrt.Line,
+			Chbrbcter: node.Rbnge.Stbrt.Chbrbcter,
 		})
 	}
 
-	return locations, nil
+	return locbtions, nil
 }
 
 const referencesQuery = `
-	query References($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!, $after: String) {
-		repository(name: $repository) {
+	query References($repository: String!, $commit: String!, $pbth: String!, $line: Int!, $chbrbcter: Int!, $bfter: String) {
+		repository(nbme: $repository) {
 			commit(rev: $commit) {
-				blob(path: $path) {
+				blob(pbth: $pbth) {
 					lsif {
-						references(line: $line, character: $character, after: $after) {
-							` + locationsFragment + `
+						references(line: $line, chbrbcter: $chbrbcter, bfter: $bfter) {
+							` + locbtionsFrbgment + `
 						}
 					}
 				}
@@ -150,51 +150,51 @@ const referencesQuery = `
 	}
 `
 
-func queryReferences(ctx context.Context, location Location) (locations []Location, err error) {
+func queryReferences(ctx context.Context, locbtion Locbtion) (locbtions []Locbtion, err error) {
 	endCursor := ""
 	for {
-		variables := map[string]any{
-			"repository": location.Repo,
-			"commit":     location.Rev,
-			"path":       location.Path,
-			"line":       location.Line,
-			"character":  location.Character,
+		vbribbles := mbp[string]bny{
+			"repository": locbtion.Repo,
+			"commit":     locbtion.Rev,
+			"pbth":       locbtion.Pbth,
+			"line":       locbtion.Line,
+			"chbrbcter":  locbtion.Chbrbcter,
 		}
 		if endCursor != "" {
-			variables["after"] = endCursor
+			vbribbles["bfter"] = endCursor
 		}
 
-		var payload QueryResponse
-		if err := queryGraphQL(ctx, "CodeIntelQA_Query_References", referencesQuery, variables, &payload); err != nil {
+		vbr pbylobd QueryResponse
+		if err := queryGrbphQL(ctx, "CodeIntelQA_Query_References", referencesQuery, vbribbles, &pbylobd); err != nil {
 			return nil, err
 		}
 
-		for _, node := range payload.Data.Repository.Commit.Blob.LSIF.References.Nodes {
-			locations = append(locations, Location{
-				Repo:      node.Resource.Repository.Name,
+		for _, node := rbnge pbylobd.Dbtb.Repository.Commit.Blob.LSIF.References.Nodes {
+			locbtions = bppend(locbtions, Locbtion{
+				Repo:      node.Resource.Repository.Nbme,
 				Rev:       node.Resource.Commit.Oid,
-				Path:      node.Resource.Path,
-				Line:      node.Range.Start.Line,
-				Character: node.Range.Start.Character,
+				Pbth:      node.Resource.Pbth,
+				Line:      node.Rbnge.Stbrt.Line,
+				Chbrbcter: node.Rbnge.Stbrt.Chbrbcter,
 			})
 		}
 
-		if endCursor = payload.Data.Repository.Commit.Blob.LSIF.References.PageInfo.EndCursor; endCursor == "" {
-			break
+		if endCursor = pbylobd.Dbtb.Repository.Commit.Blob.LSIF.References.PbgeInfo.EndCursor; endCursor == "" {
+			brebk
 		}
 	}
 
-	return locations, nil
+	return locbtions, nil
 }
 
-const implementationsQuery = `
-	query Implementations($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!, $after: String) {
-		repository(name: $repository) {
+const implementbtionsQuery = `
+	query Implementbtions($repository: String!, $commit: String!, $pbth: String!, $line: Int!, $chbrbcter: Int!, $bfter: String) {
+		repository(nbme: $repository) {
 			commit(rev: $commit) {
-				blob(path: $path) {
+				blob(pbth: $pbth) {
 					lsif {
-						implementations(line: $line, character: $character, after: $after) {
-							` + locationsFragment + `
+						implementbtions(line: $line, chbrbcter: $chbrbcter, bfter: $bfter) {
+							` + locbtionsFrbgment + `
 						}
 					}
 				}
@@ -203,51 +203,51 @@ const implementationsQuery = `
 	}
 `
 
-func queryImplementations(ctx context.Context, location Location) (locations []Location, err error) {
+func queryImplementbtions(ctx context.Context, locbtion Locbtion) (locbtions []Locbtion, err error) {
 	endCursor := ""
 	for {
-		variables := map[string]any{
-			"repository": location.Repo,
-			"commit":     location.Rev,
-			"path":       location.Path,
-			"line":       location.Line,
-			"character":  location.Character,
+		vbribbles := mbp[string]bny{
+			"repository": locbtion.Repo,
+			"commit":     locbtion.Rev,
+			"pbth":       locbtion.Pbth,
+			"line":       locbtion.Line,
+			"chbrbcter":  locbtion.Chbrbcter,
 		}
 		if endCursor != "" {
-			variables["after"] = endCursor
+			vbribbles["bfter"] = endCursor
 		}
 
-		var payload QueryResponse
-		if err := queryGraphQL(ctx, "CodeIntelQA_Query_Implementations", implementationsQuery, variables, &payload); err != nil {
+		vbr pbylobd QueryResponse
+		if err := queryGrbphQL(ctx, "CodeIntelQA_Query_Implementbtions", implementbtionsQuery, vbribbles, &pbylobd); err != nil {
 			return nil, err
 		}
 
-		for _, node := range payload.Data.Repository.Commit.Blob.LSIF.Implementations.Nodes {
-			locations = append(locations, Location{
-				Repo:      node.Resource.Repository.Name,
+		for _, node := rbnge pbylobd.Dbtb.Repository.Commit.Blob.LSIF.Implementbtions.Nodes {
+			locbtions = bppend(locbtions, Locbtion{
+				Repo:      node.Resource.Repository.Nbme,
 				Rev:       node.Resource.Commit.Oid,
-				Path:      node.Resource.Path,
-				Line:      node.Range.Start.Line,
-				Character: node.Range.Start.Character,
+				Pbth:      node.Resource.Pbth,
+				Line:      node.Rbnge.Stbrt.Line,
+				Chbrbcter: node.Rbnge.Stbrt.Chbrbcter,
 			})
 		}
 
-		if endCursor = payload.Data.Repository.Commit.Blob.LSIF.Implementations.PageInfo.EndCursor; endCursor == "" {
-			break
+		if endCursor = pbylobd.Dbtb.Repository.Commit.Blob.LSIF.Implementbtions.PbgeInfo.EndCursor; endCursor == "" {
+			brebk
 		}
 	}
 
-	return locations, nil
+	return locbtions, nil
 }
 
 const prototypesQuery = `
-	query Prototypes($repository: String!, $commit: String!, $path: String!, $line: Int!, $character: Int!, $after: String) {
-		repository(name: $repository) {
+	query Prototypes($repository: String!, $commit: String!, $pbth: String!, $line: Int!, $chbrbcter: Int!, $bfter: String) {
+		repository(nbme: $repository) {
 			commit(rev: $commit) {
-				blob(path: $path) {
+				blob(pbth: $pbth) {
 					lsif {
-						prototypes(line: $line, character: $character, after: $after) {
-							` + locationsFragment + `
+						prototypes(line: $line, chbrbcter: $chbrbcter, bfter: $bfter) {
+							` + locbtionsFrbgment + `
 						}
 					}
 				}
@@ -256,62 +256,62 @@ const prototypesQuery = `
 	}
 `
 
-func queryPrototypes(ctx context.Context, location Location) (locations []Location, err error) {
+func queryPrototypes(ctx context.Context, locbtion Locbtion) (locbtions []Locbtion, err error) {
 	endCursor := ""
 	for {
-		variables := map[string]any{
-			"repository": location.Repo,
-			"commit":     location.Rev,
-			"path":       location.Path,
-			"line":       location.Line,
-			"character":  location.Character,
+		vbribbles := mbp[string]bny{
+			"repository": locbtion.Repo,
+			"commit":     locbtion.Rev,
+			"pbth":       locbtion.Pbth,
+			"line":       locbtion.Line,
+			"chbrbcter":  locbtion.Chbrbcter,
 		}
 		if endCursor != "" {
-			variables["after"] = endCursor
+			vbribbles["bfter"] = endCursor
 		}
 
-		var payload QueryResponse
-		if err := queryGraphQL(ctx, "CodeIntelQA_Query_Prototypes", prototypesQuery, variables, &payload); err != nil {
+		vbr pbylobd QueryResponse
+		if err := queryGrbphQL(ctx, "CodeIntelQA_Query_Prototypes", prototypesQuery, vbribbles, &pbylobd); err != nil {
 			return nil, err
 		}
 
-		for _, node := range payload.Data.Repository.Commit.Blob.LSIF.Prototypes.Nodes {
-			locations = append(locations, Location{
-				Repo:      node.Resource.Repository.Name,
+		for _, node := rbnge pbylobd.Dbtb.Repository.Commit.Blob.LSIF.Prototypes.Nodes {
+			locbtions = bppend(locbtions, Locbtion{
+				Repo:      node.Resource.Repository.Nbme,
 				Rev:       node.Resource.Commit.Oid,
-				Path:      node.Resource.Path,
-				Line:      node.Range.Start.Line,
-				Character: node.Range.Start.Character,
+				Pbth:      node.Resource.Pbth,
+				Line:      node.Rbnge.Stbrt.Line,
+				Chbrbcter: node.Rbnge.Stbrt.Chbrbcter,
 			})
 		}
 
-		if endCursor = payload.Data.Repository.Commit.Blob.LSIF.Prototypes.PageInfo.EndCursor; endCursor == "" {
-			break
+		if endCursor = pbylobd.Dbtb.Repository.Commit.Blob.LSIF.Prototypes.PbgeInfo.EndCursor; endCursor == "" {
+			brebk
 		}
 	}
 
-	return locations, nil
+	return locbtions, nil
 }
 
-// sortLocations sorts a slice of Locations by repo, rev, path, line, then character.
-func sortLocations(locations []Location) {
-	sort.Slice(locations, func(i, j int) bool {
-		return compareLocations(locations[i], locations[j]) < 0
+// sortLocbtions sorts b slice of Locbtions by repo, rev, pbth, line, then chbrbcter.
+func sortLocbtions(locbtions []Locbtion) {
+	sort.Slice(locbtions, func(i, j int) bool {
+		return compbreLocbtions(locbtions[i], locbtions[j]) < 0
 	})
 }
 
-// Compare returns an integer comparing two locations. The result will be 0 if a == b,
-// -1 if a < b, and +1 if a > b.
-func compareLocations(a, b Location) int {
-	fieldComparison := []int{
-		strings.Compare(a.Repo, b.Repo),
-		strings.Compare(a.Rev, b.Rev),
-		strings.Compare(a.Path, b.Path),
-		a.Line - b.Line,
-		a.Character - b.Character,
+// Compbre returns bn integer compbring two locbtions. The result will be 0 if b == b,
+// -1 if b < b, bnd +1 if b > b.
+func compbreLocbtions(b, b Locbtion) int {
+	fieldCompbrison := []int{
+		strings.Compbre(b.Repo, b.Repo),
+		strings.Compbre(b.Rev, b.Rev),
+		strings.Compbre(b.Pbth, b.Pbth),
+		b.Line - b.Line,
+		b.Chbrbcter - b.Chbrbcter,
 	}
 
-	for _, cmp := range fieldComparison {
+	for _, cmp := rbnge fieldCompbrison {
 		if cmp != 0 {
 			return cmp
 		}

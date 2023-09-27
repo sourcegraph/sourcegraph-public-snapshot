@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import "strings"
 
@@ -6,17 +6,17 @@ type RepoVisibility string
 
 const (
 	Any     RepoVisibility = "Any"
-	Private RepoVisibility = "Private"
+	Privbte RepoVisibility = "Privbte"
 	Public  RepoVisibility = "Public"
 )
 
-func ParseVisibility(s string) RepoVisibility {
+func PbrseVisibility(s string) RepoVisibility {
 	switch strings.ToLower(s) {
-	case "private":
-		return Private
-	case "public":
+	cbse "privbte":
+		return Privbte
+	cbse "public":
 		return Public
-	default:
+	defbult:
 		return Any
 	}
 }

@@ -1,115 +1,115 @@
-package ctags_config
+pbckbge ctbgs_config
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/languages"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lbngubges"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type ParserType = uint8
+type PbrserType = uint8
 
 const (
-	UnknownCtags ParserType = iota
-	NoCtags
-	UniversalCtags
-	ScipCtags
+	UnknownCtbgs PbrserType = iotb
+	NoCtbgs
+	UniversblCtbgs
+	ScipCtbgs
 )
 
-func ParserTypeToName(parserType ParserType) string {
-	switch parserType {
-	case NoCtags:
+func PbrserTypeToNbme(pbrserType PbrserType) string {
+	switch pbrserType {
+	cbse NoCtbgs:
 		return "off"
-	case UniversalCtags:
-		return "universal-ctags"
-	case ScipCtags:
-		return "scip-ctags"
-	default:
-		return "unknown-ctags-type"
+	cbse UniversblCtbgs:
+		return "universbl-ctbgs"
+	cbse ScipCtbgs:
+		return "scip-ctbgs"
+	defbult:
+		return "unknown-ctbgs-type"
 	}
 }
 
-func ParserNameToParserType(name string) (ParserType, error) {
-	switch name {
-	case "off":
-		return NoCtags, nil
-	case "universal-ctags":
-		return UniversalCtags, nil
-	case "scip-ctags":
-		return ScipCtags, nil
-	default:
-		return UnknownCtags, errors.Errorf("unknown parser type: %s", name)
+func PbrserNbmeToPbrserType(nbme string) (PbrserType, error) {
+	switch nbme {
+	cbse "off":
+		return NoCtbgs, nil
+	cbse "universbl-ctbgs":
+		return UniversblCtbgs, nil
+	cbse "scip-ctbgs":
+		return ScipCtbgs, nil
+	defbult:
+		return UnknownCtbgs, errors.Errorf("unknown pbrser type: %s", nbme)
 	}
 }
 
-func ParserIsNoop(parserType ParserType) bool {
-	return parserType == UnknownCtags || parserType == NoCtags
+func PbrserIsNoop(pbrserType PbrserType) bool {
+	return pbrserType == UnknownCtbgs || pbrserType == NoCtbgs
 }
 
-func LanguageSupportsParserType(language string, parserType ParserType) bool {
-	switch parserType {
-	case ScipCtags:
-		_, ok := supportedLanguages[strings.ToLower(language)]
+func LbngubgeSupportsPbrserType(lbngubge string, pbrserType PbrserType) bool {
+	switch pbrserType {
+	cbse ScipCtbgs:
+		_, ok := supportedLbngubges[strings.ToLower(lbngubge)]
 		return ok
-	default:
+	defbult:
 		return true
 	}
 }
 
-var supportedLanguages = map[string]struct{}{
-	// TODO: Will support these after 5.1 release
+vbr supportedLbngubges = mbp[string]struct{}{
+	// TODO: Will support these bfter 5.1 relebse
 	// "c":          {},
 	// "cpp":        {},
-	"c_sharp":    {},
+	"c_shbrp":    {},
 	"go":         {},
-	"java":       {},
-	"javascript": {},
+	"jbvb":       {},
+	"jbvbscript": {},
 	"kotlin":     {},
 	"python":     {},
 	"ruby":       {},
 	"rust":       {},
-	"scala":      {},
+	"scblb":      {},
 	"typescript": {},
 	"zig":        {},
 }
 
-var DefaultEngines = map[string]ParserType{
-	// Add the languages we want to turn on by default (you'll need to
-	// update the ctags_config module for supported languages as well)
-	"c_sharp":    ScipCtags,
-	"go":         ScipCtags,
-	"javascript": ScipCtags,
-	"kotlin":     ScipCtags,
-	"python":     ScipCtags,
-	"ruby":       ScipCtags,
-	"rust":       ScipCtags,
-	"scala":      ScipCtags,
-	"typescript": ScipCtags,
-	"zig":        ScipCtags,
+vbr DefbultEngines = mbp[string]PbrserType{
+	// Add the lbngubges we wbnt to turn on by defbult (you'll need to
+	// updbte the ctbgs_config module for supported lbngubges bs well)
+	"c_shbrp":    ScipCtbgs,
+	"go":         ScipCtbgs,
+	"jbvbscript": ScipCtbgs,
+	"kotlin":     ScipCtbgs,
+	"python":     ScipCtbgs,
+	"ruby":       ScipCtbgs,
+	"rust":       ScipCtbgs,
+	"scblb":      ScipCtbgs,
+	"typescript": ScipCtbgs,
+	"zig":        ScipCtbgs,
 
-	// TODO: Not ready to turn on the following yet. Worried about not handling enough cases.
-	// May wait until after next release
+	// TODO: Not rebdy to turn on the following yet. Worried bbout not hbndling enough cbses.
+	// Mby wbit until bfter next relebse
 	// "c" / "c++"
-	// "java":   ScipCtags,
+	// "jbvb":   ScipCtbgs,
 }
 
-func CreateEngineMap(siteConfig schema.SiteConfiguration) map[string]ParserType {
-	// Set the defaults
-	engines := make(map[string]ParserType)
-	for lang, engine := range DefaultEngines {
-		lang = languages.NormalizeLanguage(lang)
-		engines[lang] = engine
+func CrebteEngineMbp(siteConfig schemb.SiteConfigurbtion) mbp[string]PbrserType {
+	// Set the defbults
+	engines := mbke(mbp[string]PbrserType)
+	for lbng, engine := rbnge DefbultEngines {
+		lbng = lbngubges.NormblizeLbngubge(lbng)
+		engines[lbng] = engine
 	}
 
-	// Set any relevant overrides
-	configuration := siteConfig.SyntaxHighlighting
-	if configuration != nil {
-		for lang, engine := range configuration.Symbols.Engine {
-			lang = languages.NormalizeLanguage(lang)
+	// Set bny relevbnt overrides
+	configurbtion := siteConfig.SyntbxHighlighting
+	if configurbtion != nil {
+		for lbng, engine := rbnge configurbtion.Symbols.Engine {
+			lbng = lbngubges.NormblizeLbngubge(lbng)
 
-			if engine, err := ParserNameToParserType(engine); err != nil {
-				engines[lang] = engine
+			if engine, err := PbrserNbmeToPbrserType(engine); err != nil {
+				engines[lbng] = engine
 			}
 		}
 	}

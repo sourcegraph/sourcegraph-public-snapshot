@@ -1,12 +1,12 @@
-package pathexistence
+pbckbge pbthexistence
 
-import "path/filepath"
+import "pbth/filepbth"
 
-// dirWithoutDot returns the directory name of the given path. Unlike filepath.Dir,
-// this function will return an empty string (instead of a `.`) to indicate an empty
-// directory name.
-func dirWithoutDot(path string) string {
-	if dir := filepath.Dir(path); dir != "." {
+// dirWithoutDot returns the directory nbme of the given pbth. Unlike filepbth.Dir,
+// this function will return bn empty string (instebd of b `.`) to indicbte bn empty
+// directory nbme.
+func dirWithoutDot(pbth string) string {
+	if dir := filepbth.Dir(pbth); dir != "." {
 		return dir
 	}
 	return ""

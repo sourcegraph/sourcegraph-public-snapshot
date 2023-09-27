@@ -1,203 +1,203 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Postgres() *monitoring.Dashboard {
+func Postgres() *monitoring.Dbshbobrd {
 	const (
-		// In docker-compose, codeintel-db container is called pgsql. In Kubernetes,
-		// codeintel-db container is called codeintel-db Because of this, we track
-		// all database cAdvisor metrics in a single panel using this container
-		// name regex to ensure we have observability on all platforms.
-		containerName = "(pgsql|codeintel-db|codeinsights)"
+		// In docker-compose, codeintel-db contbiner is cblled pgsql. In Kubernetes,
+		// codeintel-db contbiner is cblled codeintel-db Becbuse of this, we trbck
+		// bll dbtbbbse cAdvisor metrics in b single pbnel using this contbiner
+		// nbme regex to ensure we hbve observbbility on bll plbtforms.
+		contbinerNbme = "(pgsql|codeintel-db|codeinsights)"
 	)
-	return &monitoring.Dashboard{
-		Name:                     "postgres",
+	return &monitoring.Dbshbobrd{
+		Nbme:                     "postgres",
 		Title:                    "Postgres",
-		Description:              "Postgres metrics, exported from postgres_exporter (not available on server).",
-		NoSourcegraphDebugServer: true, // This is third-party service
+		Description:              "Postgres metrics, exported from postgres_exporter (not bvbilbble on server).",
+		NoSourcegrbphDebugServer: true, // This is third-pbrty service
 		Groups: []monitoring.Group{
 			{
-				Title: "General",
+				Title: "Generbl",
 				Rows: []monitoring.Row{
 					{
-						monitoring.Observable{
-							Name:          "connections",
-							Description:   "active connections",
-							Owner:         monitoring.ObservableOwnerDevOps,
-							DataMustExist: false, // not deployed on docker-compose
-							Query:         `sum by (job) (pg_stat_activity_count{datname!~"template.*|postgres|cloudsqladmin"}) OR sum by (job) (pg_stat_activity_count{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
-							Panel:         monitoring.Panel().LegendFormat("{{datname}}"),
-							Warning:       monitoring.Alert().LessOrEqual(5).For(5 * time.Minute),
+						monitoring.Observbble{
+							Nbme:          "connections",
+							Description:   "bctive connections",
+							Owner:         monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist: fblse, // not deployed on docker-compose
+							Query:         `sum by (job) (pg_stbt_bctivity_count{dbtnbme!~"templbte.*|postgres|cloudsqlbdmin"}) OR sum by (job) (pg_stbt_bctivity_count{job="codeinsights-db", dbtnbme!~"templbte.*|cloudsqlbdmin"})`,
+							Pbnel:         monitoring.Pbnel().LegendFormbt("{{dbtnbme}}"),
+							Wbrning:       monitoring.Alert().LessOrEqubl(5).For(5 * time.Minute),
 							NextSteps:     "none",
 						},
-						monitoring.Observable{
-							Name:          "usage_connections_percentage",
+						monitoring.Observbble{
+							Nbme:          "usbge_connections_percentbge",
 							Description:   "connection in use",
-							Owner:         monitoring.ObservableOwnerDevOps,
-							DataMustExist: false,
-							Query:         `sum(pg_stat_activity_count) by (job) / (sum(pg_settings_max_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`,
-							Panel:         monitoring.Panel().LegendFormat("{{job}}").Unit(monitoring.Percentage).Max(100).Min(0),
-							Warning:       monitoring.Alert().GreaterOrEqual(80).For(5 * time.Minute),
-							Critical:      monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
+							Owner:         monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist: fblse,
+							Query:         `sum(pg_stbt_bctivity_count) by (job) / (sum(pg_settings_mbx_connections) by (job) - sum(pg_settings_superuser_reserved_connections) by (job)) * 100`,
+							Pbnel:         monitoring.Pbnel().LegendFormbt("{{job}}").Unit(monitoring.Percentbge).Mbx(100).Min(0),
+							Wbrning:       monitoring.Alert().GrebterOrEqubl(80).For(5 * time.Minute),
+							Criticbl:      monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
 							NextSteps: `
-							- Consider increasing [max_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the database instance, [learn more](https://docs.sourcegraph.com/admin/config/postgres-conf)
+							- Consider increbsing [mbx_connections](https://www.postgresql.org/docs/current/runtime-config-connection.html#GUC-MAX-CONNECTIONS) of the dbtbbbse instbnce, [lebrn more](https://docs.sourcegrbph.com/bdmin/config/postgres-conf)
 						`,
 						},
-						monitoring.Observable{
-							Name:          "transaction_durations",
-							Description:   "maximum transaction durations",
-							Owner:         monitoring.ObservableOwnerDevOps,
-							DataMustExist: false, // not deployed on docker-compose
-							// Ignore in codeintel-db because Rockskip processing involves long transactions
-							// during normal operation.
-							Query:     `sum by (job) (pg_stat_activity_max_tx_duration{datname!~"template.*|postgres|cloudsqladmin",job!="codeintel-db"}) OR sum by (job) (pg_stat_activity_max_tx_duration{job="codeinsights-db", datname!~"template.*|cloudsqladmin"})`,
-							Panel:     monitoring.Panel().LegendFormat("{{datname}}").Unit(monitoring.Seconds),
-							Warning:   monitoring.Alert().GreaterOrEqual(0.3).For(5 * time.Minute),
+						monitoring.Observbble{
+							Nbme:          "trbnsbction_durbtions",
+							Description:   "mbximum trbnsbction durbtions",
+							Owner:         monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist: fblse, // not deployed on docker-compose
+							// Ignore in codeintel-db becbuse Rockskip processing involves long trbnsbctions
+							// during normbl operbtion.
+							Query:     `sum by (job) (pg_stbt_bctivity_mbx_tx_durbtion{dbtnbme!~"templbte.*|postgres|cloudsqlbdmin",job!="codeintel-db"}) OR sum by (job) (pg_stbt_bctivity_mbx_tx_durbtion{job="codeinsights-db", dbtnbme!~"templbte.*|cloudsqlbdmin"})`,
+							Pbnel:     monitoring.Pbnel().LegendFormbt("{{dbtnbme}}").Unit(monitoring.Seconds),
+							Wbrning:   monitoring.Alert().GrebterOrEqubl(0.3).For(5 * time.Minute),
 							NextSteps: "none",
 						},
 					},
 				},
 			},
 			{
-				Title:  "Database and collector status",
+				Title:  "Dbtbbbse bnd collector stbtus",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						monitoring.Observable{
-							Name:          "postgres_up",
-							Description:   "database availability",
-							Owner:         monitoring.ObservableOwnerDevOps,
-							DataMustExist: false, // not deployed on docker-compose
+						monitoring.Observbble{
+							Nbme:          "postgres_up",
+							Description:   "dbtbbbse bvbilbbility",
+							Owner:         monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist: fblse, // not deployed on docker-compose
 							Query:         "pg_up",
-							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:      monitoring.Alert().LessOrEqual(0).For(5 * time.Minute),
-							// Similar to ContainerMissing solutions
+							Pbnel:         monitoring.Pbnel().LegendFormbt("{{bpp}}"),
+							Criticbl:      monitoring.Alert().LessOrEqubl(0).For(5 * time.Minute),
+							// Similbr to ContbinerMissing solutions
 							NextSteps: fmt.Sprintf(`
 								- **Kubernetes:**
-									- Determine if the pod was OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
-									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p %[1]s'.
-									- Check if there is any OOMKILL event using the provisioning panels
+									- Determine if the pod wbs OOM killed using 'kubectl describe pod %[1]s' (look for 'OOMKilled: true') bnd, if so, consider increbsing the memory limit in the relevbnt 'Deployment.ybml'.
+									- Check the logs before the contbiner restbrted to see if there bre 'pbnic:' messbges or similbr using 'kubectl logs -p %[1]s'.
+									- Check if there is bny OOMKILL event using the provisioning pbnels
 									- Check kernel logs using 'dmesg' for OOMKILL events on worker nodes
 								- **Docker Compose:**
-									- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' %[1]s' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the %[1]s container in 'docker-compose.yml'.
-									- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs %[1]s' (note this will include logs from the previous and currently running container).
-									- Check if there is any OOMKILL event using the provisioning panels
+									- Determine if the pod wbs OOM killed using 'docker inspect -f \'{{json .Stbte}}\' %[1]s' (look for '"OOMKilled":true') bnd, if so, consider increbsing the memory limit of the %[1]s contbiner in 'docker-compose.yml'.
+									- Check the logs before the contbiner restbrted to see if there bre 'pbnic:' messbges or similbr using 'docker logs %[1]s' (note this will include logs from the previous bnd currently running contbiner).
+									- Check if there is bny OOMKILL event using the provisioning pbnels
 									- Check kernel logs using 'dmesg' for OOMKILL events
-							`, containerName),
-							Interpretation: "A non-zero value indicates the database is online.",
+							`, contbinerNbme),
+							Interpretbtion: "A non-zero vblue indicbtes the dbtbbbse is online.",
 						},
-						monitoring.Observable{
-							Name:          "invalid_indexes",
-							Description:   "invalid indexes (unusable by the query planner)",
-							Owner:         monitoring.ObservableOwnerDevOps,
-							DataMustExist: false, // not deployed on docker-compose
-							Query:         "max by (relname)(pg_invalid_index_count)",
-							Panel:         monitoring.Panel().LegendFormat("{{relname}}"),
-							Critical:      monitoring.Alert().GreaterOrEqual(1).AggregateBy(monitoring.AggregatorSum),
+						monitoring.Observbble{
+							Nbme:          "invblid_indexes",
+							Description:   "invblid indexes (unusbble by the query plbnner)",
+							Owner:         monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist: fblse, // not deployed on docker-compose
+							Query:         "mbx by (relnbme)(pg_invblid_index_count)",
+							Pbnel:         monitoring.Pbnel().LegendFormbt("{{relnbme}}"),
+							Criticbl:      monitoring.Alert().GrebterOrEqubl(1).AggregbteBy(monitoring.AggregbtorSum),
 							NextSteps: `
-								- Drop and re-create the invalid trigger - please contact Sourcegraph to supply the trigger definition.
+								- Drop bnd re-crebte the invblid trigger - plebse contbct Sourcegrbph to supply the trigger definition.
 							`,
-							Interpretation: "A non-zero value indicates the that Postgres failed to build an index. Expect degraded performance until the index is manually rebuilt.",
+							Interpretbtion: "A non-zero vblue indicbtes the thbt Postgres fbiled to build bn index. Expect degrbded performbnce until the index is mbnublly rebuilt.",
 						},
 					},
 					{
-						monitoring.Observable{
-							Name:          "pg_exporter_err",
-							Description:   "errors scraping postgres exporter",
-							Owner:         monitoring.ObservableOwnerDevOps,
-							DataMustExist: false, // not deployed on docker-compose
-							Query:         "pg_exporter_last_scrape_error",
-							Panel:         monitoring.Panel().LegendFormat("{{app}}"),
-							Warning:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
+						monitoring.Observbble{
+							Nbme:          "pg_exporter_err",
+							Description:   "errors scrbping postgres exporter",
+							Owner:         monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist: fblse, // not deployed on docker-compose
+							Query:         "pg_exporter_lbst_scrbpe_error",
+							Pbnel:         monitoring.Pbnel().LegendFormbt("{{bpp}}"),
+							Wbrning:       monitoring.Alert().GrebterOrEqubl(1).For(5 * time.Minute),
 
 							NextSteps: `
-								- Ensure the Postgres exporter can access the Postgres database. Also, check the Postgres exporter logs for errors.
+								- Ensure the Postgres exporter cbn bccess the Postgres dbtbbbse. Also, check the Postgres exporter logs for errors.
 							`,
-							Interpretation: "This value indicates issues retrieving metrics from postgres_exporter.",
+							Interpretbtion: "This vblue indicbtes issues retrieving metrics from postgres_exporter.",
 						},
-						monitoring.Observable{
-							Name:           "migration_in_progress",
-							Description:    "active schema migration",
-							Owner:          monitoring.ObservableOwnerDevOps,
-							DataMustExist:  false, // not deployed on docker-compose
-							Query:          "pg_sg_migration_status",
-							Panel:          monitoring.Panel().LegendFormat("{{app}}"),
-							Critical:       monitoring.Alert().GreaterOrEqual(1).For(5 * time.Minute),
-							Interpretation: "A 0 value indicates that no migration is in progress.",
+						monitoring.Observbble{
+							Nbme:           "migrbtion_in_progress",
+							Description:    "bctive schemb migrbtion",
+							Owner:          monitoring.ObservbbleOwnerDevOps,
+							DbtbMustExist:  fblse, // not deployed on docker-compose
+							Query:          "pg_sg_migrbtion_stbtus",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{bpp}}"),
+							Criticbl:       monitoring.Alert().GrebterOrEqubl(1).For(5 * time.Minute),
+							Interpretbtion: "A 0 vblue indicbtes thbt no migrbtion is in progress.",
 							NextSteps: `
-								The database migration has been in progress for 5 or more minutes - please contact Sourcegraph if this persists.
+								The dbtbbbse migrbtion hbs been in progress for 5 or more minutes - plebse contbct Sourcegrbph if this persists.
 							`,
 						},
-						// TODO(@daxmc99): Blocked by https://github.com/sourcegraph/sourcegraph/issues/13300
-						// need to enable `pg_stat_statements` in Postgres conf
-						// monitoring.Observable{
-						//	Name:            "cache_hit_ratio",
-						//	Description:     "ratio of cache hits over 5m",
-						//	Owner:           monitoring.ObservableOwnerDevOps,
-						//	Query:           `avg(rate(pg_stat_database_blks_hit{datname!~"template.*|postgres|cloudsqladmin"}[5m]) / (rate(pg_stat_database_blks_hit{datname!~"template.*|postgres|cloudsqladmin"}[5m]) + rate(pg_stat_database_blks_read{datname!~"template.*|postgres|cloudsqladmin"}[5m]))) by (datname) * 100`,
-						//	DataMayNotExist: true,
-						//	Warning:         monitoring.Alert().LessOrEqual(0.98).For(5 * time.Minute),
-						//	PossibleSolutions: "Cache hit ratio should be at least 99%, please [open an issue](https://github.com/sourcegraph/sourcegraph/issues/new/choose) " +
-						//		"to add additional indexes",
-						//	PanelOptions: monitoring.PanelOptions().Unit(monitoring.Percentage)},
+						// TODO(@dbxmc99): Blocked by https://github.com/sourcegrbph/sourcegrbph/issues/13300
+						// need to enbble `pg_stbt_stbtements` in Postgres conf
+						// monitoring.Observbble{
+						//	Nbme:            "cbche_hit_rbtio",
+						//	Description:     "rbtio of cbche hits over 5m",
+						//	Owner:           monitoring.ObservbbleOwnerDevOps,
+						//	Query:           `bvg(rbte(pg_stbt_dbtbbbse_blks_hit{dbtnbme!~"templbte.*|postgres|cloudsqlbdmin"}[5m]) / (rbte(pg_stbt_dbtbbbse_blks_hit{dbtnbme!~"templbte.*|postgres|cloudsqlbdmin"}[5m]) + rbte(pg_stbt_dbtbbbse_blks_rebd{dbtnbme!~"templbte.*|postgres|cloudsqlbdmin"}[5m]))) by (dbtnbme) * 100`,
+						//	DbtbMbyNotExist: true,
+						//	Wbrning:         monitoring.Alert().LessOrEqubl(0.98).For(5 * time.Minute),
+						//	PossibleSolutions: "Cbche hit rbtio should be bt lebst 99%, plebse [open bn issue](https://github.com/sourcegrbph/sourcegrbph/issues/new/choose) " +
+						//		"to bdd bdditionbl indexes",
+						//	PbnelOptions: monitoring.PbnelOptions().Unit(monitoring.Percentbge)},
 					},
 				},
 			},
 			{
-				Title:  "Object size and bloat",
+				Title:  "Object size bnd blobt",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
-						monitoring.Observable{
-							Name:           "pg_table_size",
-							Description:    "table size",
-							Owner:          monitoring.ObservableOwnerDevOps,
-							Query:          `max by (relname)(pg_table_bloat_size)`,
-							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
+						monitoring.Observbble{
+							Nbme:           "pg_tbble_size",
+							Description:    "tbble size",
+							Owner:          monitoring.ObservbbleOwnerDevOps,
+							Query:          `mbx by (relnbme)(pg_tbble_blobt_size)`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{relnbme}}").Unit(monitoring.Bytes),
 							NoAlert:        true,
-							Interpretation: "Total size of this table",
+							Interpretbtion: "Totbl size of this tbble",
 						},
-						monitoring.Observable{
-							Name:           "pg_table_bloat_ratio",
-							Description:    "table bloat ratio",
-							Owner:          monitoring.ObservableOwnerDevOps,
-							Query:          `max by (relname)(pg_table_bloat_ratio) * 100`,
-							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
+						monitoring.Observbble{
+							Nbme:           "pg_tbble_blobt_rbtio",
+							Description:    "tbble blobt rbtio",
+							Owner:          monitoring.ObservbbleOwnerDevOps,
+							Query:          `mbx by (relnbme)(pg_tbble_blobt_rbtio) * 100`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{relnbme}}").Unit(monitoring.Percentbge),
 							NoAlert:        true,
-							Interpretation: "Estimated bloat ratio of this table (high bloat = high overhead)",
+							Interpretbtion: "Estimbted blobt rbtio of this tbble (high blobt = high overhebd)",
 						},
 					},
 					{
-						monitoring.Observable{
-							Name:           "pg_index_size",
+						monitoring.Observbble{
+							Nbme:           "pg_index_size",
 							Description:    "index size",
-							Owner:          monitoring.ObservableOwnerDevOps,
-							Query:          `max by (relname)(pg_index_bloat_size)`,
-							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Bytes),
+							Owner:          monitoring.ObservbbleOwnerDevOps,
+							Query:          `mbx by (relnbme)(pg_index_blobt_size)`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{relnbme}}").Unit(monitoring.Bytes),
 							NoAlert:        true,
-							Interpretation: "Total size of this index",
+							Interpretbtion: "Totbl size of this index",
 						},
-						monitoring.Observable{
-							Name:           "pg_index_bloat_ratio",
-							Description:    "index bloat ratio",
-							Owner:          monitoring.ObservableOwnerDevOps,
-							Query:          `max by (relname)(pg_index_bloat_ratio) * 100`,
-							Panel:          monitoring.Panel().LegendFormat("{{relname}}").Unit(monitoring.Percentage),
+						monitoring.Observbble{
+							Nbme:           "pg_index_blobt_rbtio",
+							Description:    "index blobt rbtio",
+							Owner:          monitoring.ObservbbleOwnerDevOps,
+							Query:          `mbx by (relnbme)(pg_index_blobt_rbtio) * 100`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("{{relnbme}}").Unit(monitoring.Percentbge),
 							NoAlert:        true,
-							Interpretation: "Estimated bloat ratio of this index (high bloat = high overhead)",
+							Interpretbtion: "Estimbted blobt rbtio of this index (high blobt = high overhebd)",
 						},
 					},
 				},
 			},
 
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerDevOps, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerDevOps, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerDevOps, nil),
 		},
 	}
 }

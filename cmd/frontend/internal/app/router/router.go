@@ -1,48 +1,48 @@
-// Package router contains the URL router for the frontend app.
+// Pbckbge router contbins the URL router for the frontend bpp.
 //
-// It is in a separate package from app so that other packages may use it to generate URLs without resulting in Go
+// It is in b sepbrbte pbckbge from bpp so thbt other pbckbges mby use it to generbte URLs without resulting in Go
 // import cycles.
-package router
+pbckbge router
 
 import (
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/codyapp"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/codybpp"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/routevbr"
 )
 
 const (
 	RobotsTxt    = "robots-txt"
-	SitemapXmlGz = "sitemap-xml-gz"
-	Favicon      = "favicon"
+	SitembpXmlGz = "sitembp-xml-gz"
+	Fbvicon      = "fbvicon"
 
-	OpenSearch = "opensearch"
+	OpenSebrch = "opensebrch"
 
-	RepoBadge = "repo.badge"
+	RepoBbdge = "repo.bbdge"
 
 	Logout = "logout"
 
 	SignIn             = "sign-in"
 	SignOut            = "sign-out"
 	SignUp             = "sign-up"
-	RequestAccess      = "request-access"
-	UnlockAccount      = "unlock-account"
-	UnlockUserAccount  = "unlock-user-account"
+	RequestAccess      = "request-bccess"
+	UnlockAccount      = "unlock-bccount"
+	UnlockUserAccount  = "unlock-user-bccount"
 	Welcome            = "welcome"
 	SiteInit           = "site-init"
-	VerifyEmail        = "verify-email"
-	ResetPasswordInit  = "reset-password.init"
-	ResetPasswordCode  = "reset-password.code"
-	CheckUsernameTaken = "check-username-taken"
+	VerifyEmbil        = "verify-embil"
+	ResetPbsswordInit  = "reset-pbssword.init"
+	ResetPbsswordCode  = "reset-pbssword.code"
+	CheckUsernbmeTbken = "check-usernbme-tbken"
 
-	UsageStatsDownload = "usage-stats.download"
+	UsbgeStbtsDownlobd = "usbge-stbts.downlobd"
 
-	OneClickExportArchive = "one-click-export.archive"
+	OneClickExportArchive = "one-click-export.brchive"
 
-	LatestPing = "pings.latest"
+	LbtestPing = "pings.lbtest"
 
-	SetupGitHubAppCloud = "setup.github.app.cloud"
-	SetupGitHubApp      = "setup.github.app"
+	SetupGitHubAppCloud = "setup.github.bpp.cloud"
+	SetupGitHubApp      = "setup.github.bpp"
 
 	OldToolsRedirect = "old-tools-redirect"
 	OldTreeRedirect  = "old-tree-redirect"
@@ -50,71 +50,71 @@ const (
 	Editor = "editor"
 
 	Debug        = "debug"
-	DebugHeaders = "debug.headers"
+	DebugHebders = "debug.hebders"
 
 	GopherconLiveBlog = "gophercon.live.blog"
 
 	UI = "ui"
 
-	AppUpdateCheck = codyapp.RouteAppUpdateCheck
+	AppUpdbteCheck = codybpp.RouteAppUpdbteCheck
 )
 
-// Router returns the frontend app router.
+// Router returns the frontend bpp router.
 func Router() *mux.Router { return router }
 
-var router = newRouter()
+vbr router = newRouter()
 
 func newRouter() *mux.Router {
-	base := mux.NewRouter()
+	bbse := mux.NewRouter()
 
-	base.StrictSlash(true)
+	bbse.StrictSlbsh(true)
 
-	base.Path("/robots.txt").Methods("GET").Name(RobotsTxt)
-	base.Path("/sitemap{number:(?:_(?:[0-9]+))?}.xml.gz").Methods("GET").Name(SitemapXmlGz)
-	base.Path("/favicon.ico").Methods("GET").Name(Favicon)
-	base.Path("/opensearch.xml").Methods("GET").Name(OpenSearch)
+	bbse.Pbth("/robots.txt").Methods("GET").Nbme(RobotsTxt)
+	bbse.Pbth("/sitembp{number:(?:_(?:[0-9]+))?}.xml.gz").Methods("GET").Nbme(SitembpXmlGz)
+	bbse.Pbth("/fbvicon.ico").Methods("GET").Nbme(Fbvicon)
+	bbse.Pbth("/opensebrch.xml").Methods("GET").Nbme(OpenSebrch)
 
-	base.Path("/-/logout").Methods("GET").Name(Logout)
+	bbse.Pbth("/-/logout").Methods("GET").Nbme(Logout)
 
-	base.Path("/-/sign-up").Methods("POST").Name(SignUp)
-	base.Path("/-/request-access").Methods("POST").Name(RequestAccess)
-	base.Path("/-/welcome").Methods("GET").Name(Welcome)
-	base.Path("/-/site-init").Methods("POST").Name(SiteInit)
-	base.Path("/-/verify-email").Methods("GET").Name(VerifyEmail)
-	base.Path("/-/sign-in").Methods("POST").Name(SignIn)
-	base.Path("/-/sign-out").Methods("GET").Name(SignOut)
-	base.Path("/-/unlock-account").Methods("POST").Name(UnlockAccount)
-	base.Path("/-/unlock-user-account").Methods("POST").Name(UnlockUserAccount)
-	base.Path("/-/reset-password-init").Methods("POST").Name(ResetPasswordInit)
-	base.Path("/-/reset-password-code").Methods("POST").Name(ResetPasswordCode)
+	bbse.Pbth("/-/sign-up").Methods("POST").Nbme(SignUp)
+	bbse.Pbth("/-/request-bccess").Methods("POST").Nbme(RequestAccess)
+	bbse.Pbth("/-/welcome").Methods("GET").Nbme(Welcome)
+	bbse.Pbth("/-/site-init").Methods("POST").Nbme(SiteInit)
+	bbse.Pbth("/-/verify-embil").Methods("GET").Nbme(VerifyEmbil)
+	bbse.Pbth("/-/sign-in").Methods("POST").Nbme(SignIn)
+	bbse.Pbth("/-/sign-out").Methods("GET").Nbme(SignOut)
+	bbse.Pbth("/-/unlock-bccount").Methods("POST").Nbme(UnlockAccount)
+	bbse.Pbth("/-/unlock-user-bccount").Methods("POST").Nbme(UnlockUserAccount)
+	bbse.Pbth("/-/reset-pbssword-init").Methods("POST").Nbme(ResetPbsswordInit)
+	bbse.Pbth("/-/reset-pbssword-code").Methods("POST").Nbme(ResetPbsswordCode)
 
-	base.Path("/-/check-username-taken/{username}").Methods("GET").Name(CheckUsernameTaken)
+	bbse.Pbth("/-/check-usernbme-tbken/{usernbme}").Methods("GET").Nbme(CheckUsernbmeTbken)
 
-	base.Path("/-/editor").Methods("GET").Name(Editor)
+	bbse.Pbth("/-/editor").Methods("GET").Nbme(Editor)
 
-	base.Path("/-/debug/headers").Methods("GET").Name(DebugHeaders)
-	base.PathPrefix("/-/debug").Name(Debug)
+	bbse.Pbth("/-/debug/hebders").Methods("GET").Nbme(DebugHebders)
+	bbse.PbthPrefix("/-/debug").Nbme(Debug)
 
-	base.Path("/gophercon").Methods("GET").Name(GopherconLiveBlog)
+	bbse.Pbth("/gophercon").Methods("GET").Nbme(GopherconLiveBlog)
 
-	addOldTreeRedirectRoute(base)
-	base.Path("/tools").Methods("GET").Name(OldToolsRedirect)
+	bddOldTreeRedirectRoute(bbse)
+	bbse.Pbth("/tools").Methods("GET").Nbme(OldToolsRedirect)
 
-	base.Path("/site-admin/usage-statistics/archive").Methods("GET").Name(UsageStatsDownload)
+	bbse.Pbth("/site-bdmin/usbge-stbtistics/brchive").Methods("GET").Nbme(UsbgeStbtsDownlobd)
 
-	base.Path("/site-admin/data-export/archive").Methods("POST").Name(OneClickExportArchive)
+	bbse.Pbth("/site-bdmin/dbtb-export/brchive").Methods("POST").Nbme(OneClickExportArchive)
 
-	base.Path("/site-admin/pings/latest").Methods("GET").Name(LatestPing)
+	bbse.Pbth("/site-bdmin/pings/lbtest").Methods("GET").Nbme(LbtestPing)
 
-	base.Path("/setup/github/app/cloud").Methods("GET").Name(SetupGitHubAppCloud)
-	base.Path("/setup/github/app").Methods("GET").Name(SetupGitHubApp)
+	bbse.Pbth("/setup/github/bpp/cloud").Methods("GET").Nbme(SetupGitHubAppCloud)
+	bbse.Pbth("/setup/github/bpp").Methods("GET").Nbme(SetupGitHubApp)
 
-	repoPath := `/` + routevar.Repo
-	repo := base.PathPrefix(repoPath + "/" + routevar.RepoPathDelim + "/").Subrouter()
-	repo.Path("/badge.svg").Methods("GET").Name(RepoBadge)
+	repoPbth := `/` + routevbr.Repo
+	repo := bbse.PbthPrefix(repoPbth + "/" + routevbr.RepoPbthDelim + "/").Subrouter()
+	repo.Pbth("/bbdge.svg").Methods("GET").Nbme(RepoBbdge)
 
-	// Must come last
-	base.PathPrefix("/").Name(UI)
+	// Must come lbst
+	bbse.PbthPrefix("/").Nbme(UI)
 
-	return base
+	return bbse
 }

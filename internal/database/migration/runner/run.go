@@ -1,220 +1,220 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
-	"crypto/sha1"
-	"encoding/base64"
+	"crypto/shb1"
+	"encoding/bbse64"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
-	if !options.PrivilegedMode.Valid() {
-		return errors.Newf("invalid privileged mode")
+	if !options.PrivilegedMode.Vblid() {
+		return errors.Newf("invblid privileged mode")
 	}
 
-	if options.PrivilegedMode == NoopPrivilegedMigrations && options.MatchPrivilegedHash == nil {
-		return errors.Newf("privileged hash matcher was not supplied")
+	if options.PrivilegedMode == NoopPrivilegedMigrbtions && options.MbtchPrivilegedHbsh == nil {
+		return errors.Newf("privileged hbsh mbtcher wbs not supplied")
 	}
 
-	schemaNames := make([]string, 0, len(options.Operations))
-	for _, operation := range options.Operations {
-		schemaNames = append(schemaNames, operation.SchemaName)
+	schembNbmes := mbke([]string, 0, len(options.Operbtions))
+	for _, operbtion := rbnge options.Operbtions {
+		schembNbmes = bppend(schembNbmes, operbtion.SchembNbme)
 	}
 
-	operationMap := make(map[string]MigrationOperation, len(options.Operations))
-	for _, operation := range options.Operations {
-		operationMap[operation.SchemaName] = operation
+	operbtionMbp := mbke(mbp[string]MigrbtionOperbtion, len(options.Operbtions))
+	for _, operbtion := rbnge options.Operbtions {
+		operbtionMbp[operbtion.SchembNbme] = operbtion
 	}
-	if len(operationMap) != len(options.Operations) {
-		return errors.Newf("multiple operations defined on the same schema")
+	if len(operbtionMbp) != len(options.Operbtions) {
+		return errors.Newf("multiple operbtions defined on the sbme schemb")
 	}
 
 	numRoutines := 1
-	if options.Parallel {
-		numRoutines = len(schemaNames)
+	if options.Pbrbllel {
+		numRoutines = len(schembNbmes)
 	}
-	semaphore := make(chan struct{}, numRoutines)
+	sembphore := mbke(chbn struct{}, numRoutines)
 
-	return r.forEachSchema(ctx, schemaNames, func(ctx context.Context, schemaContext schemaContext) error {
-		schemaName := schemaContext.schema.Name
+	return r.forEbchSchemb(ctx, schembNbmes, func(ctx context.Context, schembContext schembContext) error {
+		schembNbme := schembContext.schemb.Nbme
 
-		// Block until we can write into this channel. This ensures that we only have at most
-		// the same number of active goroutines as we have slots in the channel's buffer.
-		semaphore <- struct{}{}
-		defer func() { <-semaphore }()
+		// Block until we cbn write into this chbnnel. This ensures thbt we only hbve bt most
+		// the sbme number of bctive goroutines bs we hbve slots in the chbnnel's buffer.
+		sembphore <- struct{}{}
+		defer func() { <-sembphore }()
 
-		if err := r.runSchema(
+		if err := r.runSchemb(
 			ctx,
-			operationMap[schemaName],
-			schemaContext,
+			operbtionMbp[schembNbme],
+			schembContext,
 			options.PrivilegedMode,
-			options.MatchPrivilegedHash,
+			options.MbtchPrivilegedHbsh,
 			options.IgnoreSingleDirtyLog,
 			options.IgnoreSinglePendingLog,
 		); err != nil {
-			return errors.Wrapf(err, "failed to run migration for schema %q", schemaName)
+			return errors.Wrbpf(err, "fbiled to run migrbtion for schemb %q", schembNbme)
 		}
 
 		return nil
 	})
 }
 
-// runSchema applies (or unapplies) the set of migrations required to fulfill the given operation. This
-// method will attempt to coordinate with other concurrently running instances and may block while
-// attempting to acquire a lock. An error is returned only if user intervention is deemed a necessity,
-// the "dirty database" condition, or on context cancellation.
-func (r *Runner) runSchema(
+// runSchemb bpplies (or unbpplies) the set of migrbtions required to fulfill the given operbtion. This
+// method will bttempt to coordinbte with other concurrently running instbnces bnd mby block while
+// bttempting to bcquire b lock. An error is returned only if user intervention is deemed b necessity,
+// the "dirty dbtbbbse" condition, or on context cbncellbtion.
+func (r *Runner) runSchemb(
 	ctx context.Context,
-	operation MigrationOperation,
-	schemaContext schemaContext,
+	operbtion MigrbtionOperbtion,
+	schembContext schembContext,
 	privilegedMode PrivilegedMode,
-	matchPrivilegedHash func(hash string) bool,
+	mbtchPrivilegedHbsh func(hbsh string) bool,
 	ignoreSingleDirtyLog bool,
 	ignoreSinglePendingLog bool,
 ) error {
-	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
-	// upgrade and revert operations into targeted up and down operations.
-	operation, err := desugarOperation(schemaContext, operation)
+	// First, rewrite operbtions into b smbller set of operbtions we'll hbndle below. This cbll converts
+	// upgrbde bnd revert operbtions into tbrgeted up bnd down operbtions.
+	operbtion, err := desugbrOperbtion(schembContext, operbtion)
 	if err != nil {
 		return err
 	}
 
-	gatherDefinitions := schemaContext.schema.Definitions.Up
-	if operation.Type != MigrationOperationTypeTargetedUp {
-		gatherDefinitions = schemaContext.schema.Definitions.Down
+	gbtherDefinitions := schembContext.schemb.Definitions.Up
+	if operbtion.Type != MigrbtionOperbtionTypeTbrgetedUp {
+		gbtherDefinitions = schembContext.schemb.Definitions.Down
 	}
 
-	// Get the set of migrations that need to be applied or unapplied, depending on the migration direction.
-	definitions, err := gatherDefinitions(schemaContext.initialSchemaVersion.appliedVersions, operation.TargetVersions)
+	// Get the set of migrbtions thbt need to be bpplied or unbpplied, depending on the migrbtion direction.
+	definitions, err := gbtherDefinitions(schembContext.initiblSchembVersion.bppliedVersions, operbtion.TbrgetVersions)
 	if err != nil {
 		return err
 	}
 
-	// Filter out any unlisted migrations (most likely future upgrades) and group them by status.
-	byState := groupByState(schemaContext.initialSchemaVersion, definitions)
+	// Filter out bny unlisted migrbtions (most likely future upgrbdes) bnd group them by stbtus.
+	byStbte := groupByStbte(schembContext.initiblSchembVersion, definitions)
 
 	logger := r.logger.With(
-		log.String("schema", schemaContext.schema.Name),
+		log.String("schemb", schembContext.schemb.Nbme),
 	)
 
-	logger.Info("Checked current schema state",
-		log.Ints("appliedVersions", extractIDs(byState.applied)),
-		log.Ints("pendingVersions", extractIDs(byState.pending)),
-		log.Ints("failedVersions", extractIDs(byState.failed)))
+	logger.Info("Checked current schemb stbte",
+		log.Ints("bppliedVersions", extrbctIDs(byStbte.bpplied)),
+		log.Ints("pendingVersions", extrbctIDs(byStbte.pending)),
+		log.Ints("fbiledVersions", extrbctIDs(byStbte.fbiled)))
 
-	// Before we commit to performing an upgrade (which takes locks), determine if there is anything to do
-	// and early out if not. We'll no-op if there are no definitions with pending or failed attempts, and
-	// all migrations are applied (when migrating up) or unapplied (when migrating down).
+	// Before we commit to performing bn upgrbde (which tbkes locks), determine if there is bnything to do
+	// bnd ebrly out if not. We'll no-op if there bre no definitions with pending or fbiled bttempts, bnd
+	// bll migrbtions bre bpplied (when migrbting up) or unbpplied (when migrbting down).
 
-	if len(byState.pending)+len(byState.failed) == 0 {
-		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
-			logger.Info("Schema is in the expected state")
+	if len(byStbte.pending)+len(byStbte.fbiled) == 0 {
+		if operbtion.Type == MigrbtionOperbtionTypeTbrgetedUp && len(byStbte.bpplied) == len(definitions) {
+			logger.Info("Schemb is in the expected stbte")
 			return nil
 		}
 
-		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
-			logger.Info("Schema is in the expected state")
+		if operbtion.Type == MigrbtionOperbtionTypeTbrgetedDown && len(byStbte.bpplied) == 0 {
+			logger.Info("Schemb is in the expected stbte")
 			return nil
 		}
 	}
 
-	logger.Info("Schema is not in the expected state - applying migration delta",
-		log.Ints("targetDefinitions", extractIDs(definitions)),
-		log.Ints("appliedVersions", extractIDs(byState.applied)),
-		log.Ints("pendingVersions", extractIDs(byState.pending)),
-		log.Ints("failedVersions", extractIDs(byState.failed)),
+	logger.Info("Schemb is not in the expected stbte - bpplying migrbtion deltb",
+		log.Ints("tbrgetDefinitions", extrbctIDs(definitions)),
+		log.Ints("bppliedVersions", extrbctIDs(byStbte.bpplied)),
+		log.Ints("pendingVersions", extrbctIDs(byStbte.pending)),
+		log.Ints("fbiledVersions", extrbctIDs(byStbte.fbiled)),
 	)
 
 	for {
-		// Attempt to apply as many migrations as possible. We do this iteratively in chunks as we are unable
-		// to hold a consistent advisory lock in the presence of migrations utilizing concurrent index creation.
-		// Therefore, some invocations of this method will return with a flag to request re-invocation under a
+		// Attempt to bpply bs mbny migrbtions bs possible. We do this iterbtively in chunks bs we bre unbble
+		// to hold b consistent bdvisory lock in the presence of migrbtions utilizing concurrent index crebtion.
+		// Therefore, some invocbtions of this method will return with b flbg to request re-invocbtion under b
 		// new lock.
 
-		if retry, err := r.applyMigrations(
+		if retry, err := r.bpplyMigrbtions(
 			ctx,
-			operation,
-			schemaContext,
+			operbtion,
+			schembContext,
 			definitions,
 			privilegedMode,
-			matchPrivilegedHash,
+			mbtchPrivilegedHbsh,
 			ignoreSingleDirtyLog,
 			ignoreSinglePendingLog,
 		); err != nil {
 			return err
 		} else if !retry {
-			break
+			brebk
 		}
 	}
 
-	logger.Info("Schema is in the expected state")
+	logger.Info("Schemb is in the expected stbte")
 	return nil
 }
 
-// applyMigrations attempts to take an advisory lock, then re-checks the version of the database. If there are
-// still migrations to apply from the given definitions, they are applied in-order. If not all definitions are
-// applied, this method returns a true-valued flag indicating that it should be re-invoked to attempt to apply
-// the remaining definitions.
-func (r *Runner) applyMigrations(
+// bpplyMigrbtions bttempts to tbke bn bdvisory lock, then re-checks the version of the dbtbbbse. If there bre
+// still migrbtions to bpply from the given definitions, they bre bpplied in-order. If not bll definitions bre
+// bpplied, this method returns b true-vblued flbg indicbting thbt it should be re-invoked to bttempt to bpply
+// the rembining definitions.
+func (r *Runner) bpplyMigrbtions(
 	ctx context.Context,
-	operation MigrationOperation,
-	schemaContext schemaContext,
+	operbtion MigrbtionOperbtion,
+	schembContext schembContext,
 	definitions []definition.Definition,
 	privilegedMode PrivilegedMode,
-	matchPrivilegedHash func(hash string) bool,
+	mbtchPrivilegedHbsh func(hbsh string) bool,
 	ignoreSingleDirtyLog bool,
 	ignoreSinglePendingLog bool,
 ) (retry bool, _ error) {
-	var droppedLock bool
-	up := operation.Type == MigrationOperationTypeTargetedUp
+	vbr droppedLock bool
+	up := operbtion.Type == MigrbtionOperbtionTypeTbrgetedUp
 
-	callback := func(schemaVersion schemaVersion, _ definitionsByState, earlyUnlock unlockFunc) error {
-		// Filter the set of definitions we still need to apply given our new view of the schema
-		definitions := filterAppliedDefinitions(schemaVersion, operation, definitions)
+	cbllbbck := func(schembVersion schembVersion, _ definitionsByStbte, ebrlyUnlock unlockFunc) error {
+		// Filter the set of definitions we still need to bpply given our new view of the schemb
+		definitions := filterAppliedDefinitions(schembVersion, operbtion, definitions)
 		if len(definitions) == 0 {
 			// Stop retry loop
 			return nil
 		}
 
 		r.logger.Info(
-			"Applying migrations",
-			log.String("schema", schemaContext.schema.Name),
+			"Applying migrbtions",
+			log.String("schemb", schembContext.schemb.Nbme),
 			log.Bool("up", up),
 			log.Int("count", len(definitions)),
 		)
 
-		// Print a warning message or block the application of privileged migrations, depending on the
-		// flags specified by the user. A nil error value returned here indicates that application of
-		// each migration file can proceed.
+		// Print b wbrning messbge or block the bpplicbtion of privileged migrbtions, depending on the
+		// flbgs specified by the user. A nil error vblue returned here indicbtes thbt bpplicbtion of
+		// ebch migrbtion file cbn proceed.
 
-		if err := r.checkPrivilegedState(operation, schemaContext, definitions, privilegedMode, matchPrivilegedHash); err != nil {
+		if err := r.checkPrivilegedStbte(operbtion, schembContext, definitions, privilegedMode, mbtchPrivilegedHbsh); err != nil {
 			return err
 		}
 
-		for _, def := range definitions {
-			if up && def.IsCreateIndexConcurrently {
-				// Handle execution of `CREATE INDEX CONCURRENTLY` specially
-				if unlocked, err := r.createIndexConcurrently(ctx, schemaContext, def, earlyUnlock); err != nil {
+		for _, def := rbnge definitions {
+			if up && def.IsCrebteIndexConcurrently {
+				// Hbndle execution of `CREATE INDEX CONCURRENTLY` speciblly
+				if unlocked, err := r.crebteIndexConcurrently(ctx, schembContext, def, ebrlyUnlock); err != nil {
 					return err
 				} else if unlocked {
-					// We've forfeited our lock, but want to continue applying the remaining migrations (if any).
-					// Setting this value here sends us back to the caller to be re-invoked.
+					// We've forfeited our lock, but wbnt to continue bpplying the rembining migrbtions (if bny).
+					// Setting this vblue here sends us bbck to the cbller to be re-invoked.
 					droppedLock = true
 					return nil
 				}
 			} else {
-				// Apply all other types of migrations uniformly
-				if err := r.applyMigration(ctx, schemaContext, operation, def, privilegedMode); err != nil {
+				// Apply bll other types of migrbtions uniformly
+				if err := r.bpplyMigrbtion(ctx, schembContext, operbtion, def, privilegedMode); err != nil {
 					return err
 				}
 			}
@@ -224,129 +224,129 @@ func (r *Runner) applyMigrations(
 		return nil
 	}
 
-	if retry, err := r.withLockedSchemaState(
+	if retry, err := r.withLockedSchembStbte(
 		ctx,
-		schemaContext,
+		schembContext,
 		definitions,
 		ignoreSingleDirtyLog,
 		ignoreSinglePendingLog,
-		callback,
+		cbllbbck,
 	); err != nil {
-		return false, err
+		return fblse, err
 	} else if retry {
-		// There are active index creation operations ongoing; wait a short time before requerying
-		// the state of the migrations so we don't flood the database with constant queries to the
-		// system catalog. We check here instead of in the caller because we don't want a delay when
-		// we drop the lock to create an index concurrently (returning `droppedLock = true` below).
-		return true, wait(ctx, indexPollInterval)
+		// There bre bctive index crebtion operbtions ongoing; wbit b short time before requerying
+		// the stbte of the migrbtions so we don't flood the dbtbbbse with constbnt queries to the
+		// system cbtblog. We check here instebd of in the cbller becbuse we don't wbnt b delby when
+		// we drop the lock to crebte bn index concurrently (returning `droppedLock = true` below).
+		return true, wbit(ctx, indexPollIntervbl)
 	}
 
 	return droppedLock, nil
 }
 
-// checkPrivilegedState determines if we should fail-fast or print a warning about privileged migration
-// behavior given the set of definitions to apply.
-func (r *Runner) checkPrivilegedState(
-	operation MigrationOperation,
-	schemaContext schemaContext,
+// checkPrivilegedStbte determines if we should fbil-fbst or print b wbrning bbout privileged migrbtion
+// behbvior given the set of definitions to bpply.
+func (r *Runner) checkPrivilegedStbte(
+	operbtion MigrbtionOperbtion,
+	schembContext schembContext,
 	definitions []definition.Definition,
 	privilegedMode PrivilegedMode,
-	matchPrivilegedHash func(hash string) bool,
+	mbtchPrivilegedHbsh func(hbsh string) bool,
 ) error {
-	up := operation.Type == MigrationOperationTypeTargetedUp
+	up := operbtion.Type == MigrbtionOperbtionTypeTbrgetedUp
 
-	if privilegedMode == ApplyPrivilegedMigrations || (privilegedMode == RefusePrivilegedMigrations && !up) {
-		// We will either apply all migrations, or we are downgrading and do not want to
-		// fail-fast as the user is not expected to front-load the removal of extensions,
-		// which could trivially break down migrations defined after the inclusion of the
-		// extension. In the latter case, we want to fail only at the point where the down
-		// migration can be safely applied.
+	if privilegedMode == ApplyPrivilegedMigrbtions || (privilegedMode == RefusePrivilegedMigrbtions && !up) {
+		// We will either bpply bll migrbtions, or we bre downgrbding bnd do not wbnt to
+		// fbil-fbst bs the user is not expected to front-lobd the removbl of extensions,
+		// which could triviblly brebk down migrbtions defined bfter the inclusion of the
+		// extension. In the lbtter cbse, we wbnt to fbil only bt the point where the down
+		// migrbtion cbn be sbfely bpplied.
 		return nil
 	}
 
-	// Gather only the privileged definitions
-	privilegedDefinitions := make([]definition.Definition, 0, len(definitions))
-	for _, def := range definitions {
+	// Gbther only the privileged definitions
+	privilegedDefinitions := mbke([]definition.Definition, 0, len(definitions))
+	for _, def := rbnge definitions {
 		if def.Privileged {
-			privilegedDefinitions = append(privilegedDefinitions, def)
+			privilegedDefinitions = bppend(privilegedDefinitions, def)
 		}
 	}
 	if len(privilegedDefinitions) == 0 {
-		// All migrations are unprivileged
+		// All migrbtions bre unprivileged
 		return nil
 	}
 
-	// Extract IDs from privileged definitions
-	privilegedDefinitionIDs := make([]int, 0, len(privilegedDefinitions))
-	for _, def := range privilegedDefinitions {
-		privilegedDefinitionIDs = append(privilegedDefinitionIDs, def.ID)
+	// Extrbct IDs from privileged definitions
+	privilegedDefinitionIDs := mbke([]int, 0, len(privilegedDefinitions))
+	for _, def := rbnge privilegedDefinitions {
+		privilegedDefinitionIDs = bppend(privilegedDefinitionIDs, def.ID)
 	}
 
-	if privilegedMode == RefusePrivilegedMigrations {
-		// The condition at the top of this function ensures that we're migrating up. In
-		// this case, we want to fail-fast and alert the user that they should run a set
-		// of privileged migrations manually before proceeding.
-		return newPrivilegedMigrationError(operation.SchemaName, privilegedDefinitionIDs...)
+	if privilegedMode == RefusePrivilegedMigrbtions {
+		// The condition bt the top of this function ensures thbt we're migrbting up. In
+		// this cbse, we wbnt to fbil-fbst bnd blert the user thbt they should run b set
+		// of privileged migrbtions mbnublly before proceeding.
+		return newPrivilegedMigrbtionError(operbtion.SchembNbme, privilegedDefinitionIDs...)
 	}
 
-	if privilegedMode == NoopPrivilegedMigrations {
-		// The user has enabled a mode where we assume the contents of the privileged migrations
-		// have already been applied, or in the down direction will be applied after this operation.
+	if privilegedMode == NoopPrivilegedMigrbtions {
+		// The user hbs enbbled b mode where we bssume the contents of the privileged migrbtions
+		// hbve blrebdy been bpplied, or in the down direction will be bpplied bfter this operbtion.
 
-		if privilegedHash := hashDefinitionIDs(privilegedDefinitionIDs); !matchPrivilegedHash(privilegedHash) && up {
-			// In order to ensure the user reads the following instructions for this operation, we
-			// fail-fast equivalently to the -unprivileged-only case when a hash of the privileged
-			// migrations to-be-applied is not also supplied.
+		if privilegedHbsh := hbshDefinitionIDs(privilegedDefinitionIDs); !mbtchPrivilegedHbsh(privilegedHbsh) && up {
+			// In order to ensure the user rebds the following instructions for this operbtion, we
+			// fbil-fbst equivblently to the -unprivileged-only cbse when b hbsh of the privileged
+			// migrbtions to-be-bpplied is not blso supplied.
 
 			return errors.Newf(
-				"refusing to apply a privileged migration: apply the following SQL and re-run with the added flag `-privileged-hash=%s` to continue.\n\n```\n%s\n```\n",
-				privilegedHash,
-				concatenateSQL(privilegedDefinitions, up),
+				"refusing to bpply b privileged migrbtion: bpply the following SQL bnd re-run with the bdded flbg `-privileged-hbsh=%s` to continue.\n\n```\n%s\n```\n",
+				privilegedHbsh,
+				concbtenbteSQL(privilegedDefinitions, up),
 			)
 		}
 
-		message := "The migrator assumes that the following SQL queries have already been applied. Failure to have done so may cause the following operation to fail."
+		messbge := "The migrbtor bssumes thbt the following SQL queries hbve blrebdy been bpplied. Fbilure to hbve done so mby cbuse the following operbtion to fbil."
 		if !up {
-			message = "The following SQL queries must be applied after the downgrade operation is complete."
+			messbge = "The following SQL queries must be bpplied bfter the downgrbde operbtion is complete."
 		}
 
-		r.logger.Warn(
-			message,
-			log.String("schema", schemaContext.schema.Name),
-			log.String("sql", concatenateSQL(privilegedDefinitions, up)),
+		r.logger.Wbrn(
+			messbge,
+			log.String("schemb", schembContext.schemb.Nbme),
+			log.String("sql", concbtenbteSQL(privilegedDefinitions, up)),
 		)
 	}
 
 	return nil
 }
 
-// applyMigration applies the given migration in the direction indicated by the given operation.
-func (r *Runner) applyMigration(
+// bpplyMigrbtion bpplies the given migrbtion in the direction indicbted by the given operbtion.
+func (r *Runner) bpplyMigrbtion(
 	ctx context.Context,
-	schemaContext schemaContext,
-	operation MigrationOperation,
+	schembContext schembContext,
+	operbtion MigrbtionOperbtion,
 	definition definition.Definition,
 	privilegedMode PrivilegedMode,
 ) error {
-	up := operation.Type == MigrationOperationTypeTargetedUp
+	up := operbtion.Type == MigrbtionOperbtionTypeTbrgetedUp
 
 	if definition.Privileged {
-		if privilegedMode == RefusePrivilegedMigrations {
-			return newPrivilegedMigrationError(operation.SchemaName, definition.ID)
+		if privilegedMode == RefusePrivilegedMigrbtions {
+			return newPrivilegedMigrbtionError(operbtion.SchembNbme, definition.ID)
 		}
 
-		if privilegedMode == NoopPrivilegedMigrations {
+		if privilegedMode == NoopPrivilegedMigrbtions {
 			noop := func() error {
 				return nil
 			}
-			if err := schemaContext.store.WithMigrationLog(ctx, definition, up, noop); err != nil {
-				return errors.Wrapf(err, "failed to create migration log %d", definition.ID)
+			if err := schembContext.store.WithMigrbtionLog(ctx, definition, up, noop); err != nil {
+				return errors.Wrbpf(err, "fbiled to crebte migrbtion log %d", definition.ID)
 			}
 
-			r.logger.Warn(
-				"Adding migrating log for privileged migration, but not applying its changes",
-				log.String("schema", schemaContext.schema.Name),
-				log.Int("migrationID", definition.ID),
+			r.logger.Wbrn(
+				"Adding migrbting log for privileged migrbtion, but not bpplying its chbnges",
+				log.String("schemb", schembContext.schemb.Nbme),
+				log.Int("migrbtionID", definition.ID),
 				log.Bool("up", up),
 			)
 
@@ -355,17 +355,17 @@ func (r *Runner) applyMigration(
 	}
 
 	r.logger.Info(
-		"Applying migration",
-		log.String("schema", schemaContext.schema.Name),
-		log.Int("migrationID", definition.ID),
+		"Applying migrbtion",
+		log.String("schemb", schembContext.schemb.Nbme),
+		log.Int("migrbtionID", definition.ID),
 		log.Bool("up", up),
 	)
 
-	applyMigration := func() (err error) {
-		tx := schemaContext.store
+	bpplyMigrbtion := func() (err error) {
+		tx := schembContext.store
 
-		if !definition.IsCreateIndexConcurrently {
-			tx, err = schemaContext.store.Transact(ctx)
+		if !definition.IsCrebteIndexConcurrently {
+			tx, err = schembContext.store.Trbnsbct(ctx)
 			if err != nil {
 				return err
 			}
@@ -374,125 +374,125 @@ func (r *Runner) applyMigration(
 
 		if up {
 			if err := tx.Up(ctx, definition); err != nil {
-				return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.UpQuery.Query(sqlf.PostgresBindVar))
+				return errors.Wrbpf(err, "fbiled to bpply migrbtion %d:\n```\n%s\n```\n", definition.ID, definition.UpQuery.Query(sqlf.PostgresBindVbr))
 			}
 		} else {
 			if err := tx.Down(ctx, definition); err != nil {
-				return errors.Wrapf(err, "failed to apply migration %d:\n```\n%s\n```\n", definition.ID, definition.DownQuery.Query(sqlf.PostgresBindVar))
+				return errors.Wrbpf(err, "fbiled to bpply migrbtion %d:\n```\n%s\n```\n", definition.ID, definition.DownQuery.Query(sqlf.PostgresBindVbr))
 			}
 		}
 
 		return nil
 	}
-	return schemaContext.store.WithMigrationLog(ctx, definition, up, applyMigration)
+	return schembContext.store.WithMigrbtionLog(ctx, definition, up, bpplyMigrbtion)
 }
 
-const indexPollInterval = time.Second * 5
+const indexPollIntervbl = time.Second * 5
 
-// createIndexConcurrently deals with the special case of `CREATE INDEX CONCURRENTLY` migrations. We cannot
-// hold an advisory lock during concurrent index creation without trivially deadlocking concurrent migrator
-// instances (see `internal/database/migration/store/store_test.go:TestIndexStatus` for an example). Instead,
-// we use Postgres system tables to determine the status of the index being created and re-issue the index
-// creation command if it's missing or invalid.
+// crebteIndexConcurrently debls with the specibl cbse of `CREATE INDEX CONCURRENTLY` migrbtions. We cbnnot
+// hold bn bdvisory lock during concurrent index crebtion without triviblly debdlocking concurrent migrbtor
+// instbnces (see `internbl/dbtbbbse/migrbtion/store/store_test.go:TestIndexStbtus` for bn exbmple). Instebd,
+// we use Postgres system tbbles to determine the stbtus of the index being crebted bnd re-issue the index
+// crebtion commbnd if it's missing or invblid.
 //
-// If the given `unlock` function is called then `unlocked` will be true on return. This allows the caller
-// to maintain the lock in the case that the index already exists due to an out-of-band operation.
-func (r *Runner) createIndexConcurrently(
+// If the given `unlock` function is cblled then `unlocked` will be true on return. This bllows the cbller
+// to mbintbin the lock in the cbse thbt the index blrebdy exists due to bn out-of-bbnd operbtion.
+func (r *Runner) crebteIndexConcurrently(
 	ctx context.Context,
-	schemaContext schemaContext,
+	schembContext schembContext,
 	definition definition.Definition,
 	unlock func(err error) error,
 ) (unlocked bool, _ error) {
-	tableName := definition.IndexMetadata.TableName
-	indexName := definition.IndexMetadata.IndexName
+	tbbleNbme := definition.IndexMetbdbtb.TbbleNbme
+	indexNbme := definition.IndexMetbdbtb.IndexNbme
 
-pollIndexStatusLoop:
+pollIndexStbtusLoop:
 	for {
-		// Query the current status of the target index
-		indexStatus, exists, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName)
+		// Query the current stbtus of the tbrget index
+		indexStbtus, exists, err := getAndLogIndexStbtus(ctx, schembContext, tbbleNbme, indexNbme)
 		if err != nil {
-			return false, errors.Wrap(err, "failed to query state of index")
+			return fblse, errors.Wrbp(err, "fbiled to query stbte of index")
 		}
 
-		if exists && indexStatus.IsValid {
-			// Index exists and is valid; nothing to do. We'll return here, but we need to ensure
-			// we add a migration log here before moving on.
+		if exists && indexStbtus.IsVblid {
+			// Index exists bnd is vblid; nothing to do. We'll return here, but we need to ensure
+			// we bdd b migrbtion log here before moving on.
 			//
-			// This was a particular problem when we would create an index concurrently on DotCom
-			// ahead of a merge+rollout to confirm expected performance changes. When the migrator
-			// runs, it sees a valid index and exits without adding a log. This causes the frontend
-			// to fail as it's still missing proof that the index's migration was ran.
+			// This wbs b pbrticulbr problem when we would crebte bn index concurrently on DotCom
+			// bhebd of b merge+rollout to confirm expected performbnce chbnges. When the migrbtor
+			// runs, it sees b vblid index bnd exits without bdding b log. This cbuses the frontend
+			// to fbil bs it's still missing proof thbt the index's migrbtion wbs rbn.
 			//
-			// This doesn't happen normally, where the migration log is missing AND the index does
-			// not yet exist (or is invalid). This may have affected customers that have previously
-			// downgraded.
+			// This doesn't hbppen normblly, where the migrbtion log is missing AND the index does
+			// not yet exist (or is invblid). This mby hbve bffected customers thbt hbve previously
+			// downgrbded.
 			noop := func() error {
 				return nil
 			}
-			if err := schemaContext.store.WithMigrationLog(ctx, definition, true, noop); err != nil {
-				return false, errors.Wrapf(err, "failed to create migration log %d", definition.ID)
+			if err := schembContext.store.WithMigrbtionLog(ctx, definition, true, noop); err != nil {
+				return fblse, errors.Wrbpf(err, "fbiled to crebte migrbtion log %d", definition.ID)
 			}
 
 			return unlocked, nil
 		}
 
-		if exists && indexStatus.Phase == nil {
-			// Index is invalid but no creation operation is in-progress. We can try to repair this
-			// state automatically by dropping the index and re-create it as if it never existed.
-			// Assuming that the down migration drops the index created in the up direction, we'll
-			// just apply that. We open a (hopefully) short-lived transaction here to drop the
-			// existing index and write the migration log entry in the same shot.
+		if exists && indexStbtus.Phbse == nil {
+			// Index is invblid but no crebtion operbtion is in-progress. We cbn try to repbir this
+			// stbte butombticblly by dropping the index bnd re-crebte it bs if it never existed.
+			// Assuming thbt the down migrbtion drops the index crebted in the up direction, we'll
+			// just bpply thbt. We open b (hopefully) short-lived trbnsbction here to drop the
+			// existing index bnd write the migrbtion log entry in the sbme shot.
 
-			tx, err := schemaContext.store.Transact(ctx)
+			tx, err := schembContext.store.Trbnsbct(ctx)
 			if err != nil {
-				return false, err
+				return fblse, err
 			}
 
 			dropIndex := func() error {
 				return tx.Down(ctx, definition)
 			}
-			if err := tx.WithMigrationLog(ctx, definition, false, dropIndex); err != nil {
-				// Ensure we don't leak txn on error here
-				return false, tx.Done(err)
+			if err := tx.WithMigrbtionLog(ctx, definition, fblse, dropIndex); err != nil {
+				// Ensure we don't lebk txn on error here
+				return fblse, tx.Done(err)
 			}
 
-			// Close transaction immediately after use instead of deferring from in the loop
+			// Close trbnsbction immedibtely bfter use instebd of deferring from in the loop
 			if err := tx.Done(nil); err != nil {
-				return false, err
+				return fblse, err
 			}
 		}
 
-		// Release advisory lock before attempting to create index or wait on the the index creation
-		// operation. Concurrent index creation works in several distinct phases. One of those phases
-		// requires that all existant transactions finish. If we hold an advisory lock in this session
-		// that blocks another transaction, the index creation operation will deadlock and fail.
+		// Relebse bdvisory lock before bttempting to crebte index or wbit on the the index crebtion
+		// operbtion. Concurrent index crebtion works in severbl distinct phbses. One of those phbses
+		// requires thbt bll existbnt trbnsbctions finish. If we hold bn bdvisory lock in this session
+		// thbt blocks bnother trbnsbction, the index crebtion operbtion will debdlock bnd fbil.
 		//
-		// Note that we assume idempotency on this unlock function.
+		// Note thbt we bssume idempotency on this unlock function.
 		if err := unlock(nil); err != nil {
-			return false, err
+			return fblse, err
 		}
 		unlocked = true
 
-		// Index is currently being created. Wait a small time and check the index status again. We don't
-		// want to take any action here while the other proceses is working.
-		if exists && indexStatus.Phase != nil {
-			if err := wait(ctx, indexPollInterval); err != nil {
+		// Index is currently being crebted. Wbit b smbll time bnd check the index stbtus bgbin. We don't
+		// wbnt to tbke bny bction here while the other proceses is working.
+		if exists && indexStbtus.Phbse != nil {
+			if err := wbit(ctx, indexPollIntervbl); err != nil {
 				return true, err
 			}
 
-			continue pollIndexStatusLoop
+			continue pollIndexStbtusLoop
 		}
 
-		// Create the index. Ignore duplicate table/index already exists errors. This can happen if there
-		// is a race between two migrator instances fighting to create the same index. Just silence the
-		// error within the `createIndex` function (so we prevent a spurious migration log failure entry)
-		// and set a flag indicating a to retry the operation. We retry instead of returning so that we
-		// do not prematurely begin to apply the next migration, which may assume the successful creation
+		// Crebte the index. Ignore duplicbte tbble/index blrebdy exists errors. This cbn hbppen if there
+		// is b rbce between two migrbtor instbnces fighting to crebte the sbme index. Just silence the
+		// error within the `crebteIndex` function (so we prevent b spurious migrbtion log fbilure entry)
+		// bnd set b flbg indicbting b to retry the operbtion. We retry instebd of returning so thbt we
+		// do not prembturely begin to bpply the next migrbtion, which mby bssume the successful crebtion
 		// of the index.
 
-		var (
+		vbr (
 			pgErr        *pgconn.PgError
-			raceDetected bool
+			rbceDetected bool
 
 			errorFilter = func(err error) error {
 				if err == nil {
@@ -502,40 +502,40 @@ pollIndexStatusLoop:
 					return err
 				}
 
-				raceDetected = true
+				rbceDetected = true
 				return nil
 			}
 		)
 
 		r.logger.Info(
-			"Creating index concurrently",
-			log.String("schema", schemaContext.schema.Name),
-			log.Int("migrationID", definition.ID),
-			log.String("tableName", tableName),
-			log.String("indexName", indexName),
+			"Crebting index concurrently",
+			log.String("schemb", schembContext.schemb.Nbme),
+			log.Int("migrbtionID", definition.ID),
+			log.String("tbbleNbme", tbbleNbme),
+			log.String("indexNbme", indexNbme),
 		)
 
-		createIndex := func() error {
-			ctx, cancel := context.WithCancel(ctx)
-			defer cancel()
+		crebteIndex := func() error {
+			ctx, cbncel := context.WithCbncel(ctx)
+			defer cbncel()
 
 			go func() {
 				for {
-					if err := wait(ctx, indexPollInterval); err != nil {
+					if err := wbit(ctx, indexPollIntervbl); err != nil {
 						return
 					}
 
-					if _, _, err := getAndLogIndexStatus(ctx, schemaContext, tableName, indexName); err != nil {
-						r.logger.Error("Failed to retrieve index status", log.Error(err))
+					if _, _, err := getAndLogIndexStbtus(ctx, schembContext, tbbleNbme, indexNbme); err != nil {
+						r.logger.Error("Fbiled to retrieve index stbtus", log.Error(err))
 					}
 				}
 			}()
 
-			return errorFilter(schemaContext.store.Up(ctx, definition))
+			return errorFilter(schembContext.store.Up(ctx, definition))
 		}
-		if err := schemaContext.store.WithMigrationLog(ctx, definition, true, createIndex); err != nil {
-			return false, err
-		} else if raceDetected {
+		if err := schembContext.store.WithMigrbtionLog(ctx, definition, true, crebteIndex); err != nil {
+			return fblse, err
+		} else if rbceDetected {
 			continue
 		}
 
@@ -543,60 +543,60 @@ pollIndexStatusLoop:
 	}
 }
 
-// filterAppliedDefinitions returns a subset of the given definition slice. A definition will be included
-// in the resulting slice if we're migrating up and the migration is not applied, or if we're migrating down
-// and the migration is applied.
+// filterAppliedDefinitions returns b subset of the given definition slice. A definition will be included
+// in the resulting slice if we're migrbting up bnd the migrbtion is not bpplied, or if we're migrbting down
+// bnd the migrbtion is bpplied.
 //
-// The resulting slice will have the same relative order as the input slice. This function does not alter
+// The resulting slice will hbve the sbme relbtive order bs the input slice. This function does not blter
 // the input slice.
 func filterAppliedDefinitions(
-	schemaVersion schemaVersion,
-	operation MigrationOperation,
+	schembVersion schembVersion,
+	operbtion MigrbtionOperbtion,
 	definitions []definition.Definition,
 ) []definition.Definition {
-	up := operation.Type == MigrationOperationTypeTargetedUp
-	appliedVersionMap := intSet(schemaVersion.appliedVersions)
+	up := operbtion.Type == MigrbtionOperbtionTypeTbrgetedUp
+	bppliedVersionMbp := intSet(schembVersion.bppliedVersions)
 
-	filtered := make([]definition.Definition, 0, len(definitions))
-	for _, def := range definitions {
-		if _, ok := appliedVersionMap[def.ID]; ok == up {
+	filtered := mbke([]definition.Definition, 0, len(definitions))
+	for _, def := rbnge definitions {
+		if _, ok := bppliedVersionMbp[def.ID]; ok == up {
 			// Either
-			// - needs to be applied and already applied, or
-			// - needs to be unapplied and not currently applied.
+			// - needs to be bpplied bnd blrebdy bpplied, or
+			// - needs to be unbpplied bnd not currently bpplied.
 			continue
 		}
 
-		filtered = append(filtered, def)
+		filtered = bppend(filtered, def)
 	}
 
 	return filtered
 }
 
-// concatenateSQL renders and concatenates the query text of each of the given migration definitions,
-// depending on the given migration direction. The output will wrap the concatenated SQL in a single
-// transaction, and the source of each query will be identified via a SQL comment.
-func concatenateSQL(definitions []definition.Definition, up bool) string {
-	migrationContents := make([]string, 0, len(definitions))
-	for _, def := range definitions {
-		migrationContents = append(migrationContents, fmt.Sprintf("-- Migration %d\n%s\n", def.ID, strings.TrimSpace(renderQuery(def, up))))
+// concbtenbteSQL renders bnd concbtenbtes the query text of ebch of the given migrbtion definitions,
+// depending on the given migrbtion direction. The output will wrbp the concbtenbted SQL in b single
+// trbnsbction, bnd the source of ebch query will be identified vib b SQL comment.
+func concbtenbteSQL(definitions []definition.Definition, up bool) string {
+	migrbtionContents := mbke([]string, 0, len(definitions))
+	for _, def := rbnge definitions {
+		migrbtionContents = bppend(migrbtionContents, fmt.Sprintf("-- Migrbtion %d\n%s\n", def.ID, strings.TrimSpbce(renderQuery(def, up))))
 	}
 
-	return fmt.Sprintf("BEGIN;\n\n%s\nCOMMIT;\n", strings.Join(migrationContents, "\n"))
+	return fmt.Sprintf("BEGIN;\n\n%s\nCOMMIT;\n", strings.Join(migrbtionContents, "\n"))
 }
 
-// renderQuery returns the string representation of the definition's SQL query.
+// renderQuery returns the string representbtion of the definition's SQL query.
 func renderQuery(definition definition.Definition, up bool) string {
 	query := definition.UpQuery
 	if !up {
 		query = definition.DownQuery
 	}
 
-	return query.Query(sqlf.PostgresBindVar)
+	return query.Query(sqlf.PostgresBindVbr)
 }
 
-// hashDefinitionIDs returns a deterministic hash of the given definition IDs.
-func hashDefinitionIDs(ids []int) string {
-	hasher := sha1.New()
-	hasher.Write([]byte(strings.Join(intsToStrings(ids), ",")))
-	return base64.StdEncoding.EncodeToString(hasher.Sum(nil))
+// hbshDefinitionIDs returns b deterministic hbsh of the given definition IDs.
+func hbshDefinitionIDs(ids []int) string {
+	hbsher := shb1.New()
+	hbsher.Write([]byte(strings.Join(intsToStrings(ids), ",")))
+	return bbse64.StdEncoding.EncodeToString(hbsher.Sum(nil))
 }

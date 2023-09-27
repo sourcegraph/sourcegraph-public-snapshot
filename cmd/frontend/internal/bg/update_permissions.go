@@ -1,78 +1,78 @@
-package bg
+pbckbge bg
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbbc"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UpdatePermissions is a startup process that compares the permissions in the database against those
-// in the rbac schema config located in internal/rbac/schema.yaml. It ensures the permissions in the
-// database are always up to date, using the schema config as it's source of truth.
+// UpdbtePermissions is b stbrtup process thbt compbres the permissions in the dbtbbbse bgbinst those
+// in the rbbc schemb config locbted in internbl/rbbc/schemb.ybml. It ensures the permissions in the
+// dbtbbbse bre blwbys up to dbte, using the schemb config bs it's source of truth.
 
-// UpdatePermissions is called as part of the background process by the `frontend` service.
-func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
-	scopedLog := logger.Scoped("permission_update", "Updates the permission in the database based on the rbac schema configuration.")
-	err := db.WithTransact(ctx, func(tx database.DB) error {
+// UpdbtePermissions is cblled bs pbrt of the bbckground process by the `frontend` service.
+func UpdbtePermissions(ctx context.Context, logger log.Logger, db dbtbbbse.DB) {
+	scopedLog := logger.Scoped("permission_updbte", "Updbtes the permission in the dbtbbbse bbsed on the rbbc schemb configurbtion.")
+	err := db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
 		permissionStore := tx.Permissions()
 		rolePermissionStore := tx.RolePermissions()
 
-		dbPerms, err := permissionStore.List(ctx, database.PermissionListOpts{
-			PaginationArgs: &database.PaginationArgs{},
+		dbPerms, err := permissionStore.List(ctx, dbtbbbse.PermissionListOpts{
+			PbginbtionArgs: &dbtbbbse.PbginbtionArgs{},
 		})
 		if err != nil {
-			return errors.Wrap(err, "fetching permissions from database")
+			return errors.Wrbp(err, "fetching permissions from dbtbbbse")
 		}
 
-		rbacSchema := rbac.RBACSchema
-		toBeAdded, toBeDeleted := rbac.ComparePermissions(dbPerms, rbacSchema)
-		scopedLog.Info("RBAC Permissions update", log.Int("added", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
+		rbbcSchemb := rbbc.RBACSchemb
+		toBeAdded, toBeDeleted := rbbc.CompbrePermissions(dbPerms, rbbcSchemb)
+		scopedLog.Info("RBAC Permissions updbte", log.Int("bdded", len(toBeAdded)), log.Int("deleted", len(toBeDeleted)))
 
 		if len(toBeDeleted) > 0 {
-			// We delete all the permissions that need to be deleted from the database. The role <> permissions are
-			// automatically deleted: https://app.golinks.io/role_permissions-permission_id_cascade.
+			// We delete bll the permissions thbt need to be deleted from the dbtbbbse. The role <> permissions bre
+			// butombticblly deleted: https://bpp.golinks.io/role_permissions-permission_id_cbscbde.
 			err = permissionStore.BulkDelete(ctx, toBeDeleted)
 			if err != nil {
-				return errors.Wrap(err, "deleting redundant permissions")
+				return errors.Wrbp(err, "deleting redundbnt permissions")
 			}
 		}
 
 		if len(toBeAdded) > 0 {
-			// Adding new permissions to the database. This permissions will be assigned to the System roles
-			// (USER and SITE_ADMINISTRATOR).
-			permissions, err := permissionStore.BulkCreate(ctx, toBeAdded)
+			// Adding new permissions to the dbtbbbse. This permissions will be bssigned to the System roles
+			// (USER bnd SITE_ADMINISTRATOR).
+			permissions, err := permissionStore.BulkCrebte(ctx, toBeAdded)
 			if err != nil {
-				return errors.Wrap(err, "creating new permissions")
+				return errors.Wrbp(err, "crebting new permissions")
 			}
 
-			roles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
-			excludedRoles := collections.NewSet[rtypes.PermissionNamespace](rbacSchema.ExcludeFromUserRole...)
-			for _, permission := range permissions {
-				// Assign the permission to both SITE_ADMINISTRATOR and USER roles. We do this so
-				// that we don't break the current experience and always assume that everyone has
-				// access until a site administrator revokes that access. Context:
-				// https://sourcegraph.slack.com/archives/C044BUJET7C/p1675292124253779?thread_ts=1675280399.192819&cid=C044BUJET7C
+			roles := []types.SystemRole{types.SiteAdministrbtorSystemRole, types.UserSystemRole}
+			excludedRoles := collections.NewSet[rtypes.PermissionNbmespbce](rbbcSchemb.ExcludeFromUserRole...)
+			for _, permission := rbnge permissions {
+				// Assign the permission to both SITE_ADMINISTRATOR bnd USER roles. We do this so
+				// thbt we don't brebk the current experience bnd blwbys bssume thbt everyone hbs
+				// bccess until b site bdministrbtor revokes thbt bccess. Context:
+				// https://sourcegrbph.slbck.com/brchives/C044BUJET7C/p1675292124253779?threbd_ts=1675280399.192819&cid=C044BUJET7C
 
 				rolesToAssign := roles
-				if excludedRoles.Has(permission.Namespace) {
-					// The only exception to the above rule (at the moment) is Ownership, because it
-					// is clearly a permission which should be explicitly granted and only
-					// SITE_ADMINISTRATOR has it by default. All exceptions can be added to the
-					// `excludeFromUserRole` attribute of RBAC schema.
-					rolesToAssign = []types.SystemRole{types.SiteAdministratorSystemRole}
+				if excludedRoles.Hbs(permission.Nbmespbce) {
+					// The only exception to the bbove rule (bt the moment) is Ownership, becbuse it
+					// is clebrly b permission which should be explicitly grbnted bnd only
+					// SITE_ADMINISTRATOR hbs it by defbult. All exceptions cbn be bdded to the
+					// `excludeFromUserRole` bttribute of RBAC schemb.
+					rolesToAssign = []types.SystemRole{types.SiteAdministrbtorSystemRole}
 				}
-				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, database.BulkAssignPermissionsToSystemRolesOpts{
+				if err := rolePermissionStore.BulkAssignPermissionsToSystemRoles(ctx, dbtbbbse.BulkAssignPermissionsToSystemRolesOpts{
 					Roles:        rolesToAssign,
 					PermissionID: permission.ID,
 				}); err != nil {
-					return errors.Wrap(err, "assigning permission to system roles")
+					return errors.Wrbp(err, "bssigning permission to system roles")
 				}
 			}
 		}
@@ -81,6 +81,6 @@ func UpdatePermissions(ctx context.Context, logger log.Logger, db database.DB) {
 	})
 
 	if err != nil {
-		scopedLog.Error("failed to update RBAC permissions", log.Error(err))
+		scopedLog.Error("fbiled to updbte RBAC permissions", log.Error(err))
 	}
 }

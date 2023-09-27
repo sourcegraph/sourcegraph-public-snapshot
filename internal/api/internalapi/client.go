@@ -1,4 +1,4 @@
-package internalapi
+pbckbge internblbpi
 
 import (
 	"bytes"
@@ -12,50 +12,50 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/syncx"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var frontendInternal = func() *url.URL {
-	rawURL := env.Get("SRC_FRONTEND_INTERNAL", defaultFrontendInternal(), "HTTP address for internal frontend HTTP API.")
-	return mustParseSourcegraphInternalURL(rawURL)
+vbr frontendInternbl = func() *url.URL {
+	rbwURL := env.Get("SRC_FRONTEND_INTERNAL", defbultFrontendInternbl(), "HTTP bddress for internbl frontend HTTP API.")
+	return mustPbrseSourcegrbphInternblURL(rbwURL)
 }()
 
-// NOTE: this intentionally does not use the site configuration option because we need to make the decision
-// about whether or not to use gRPC to fetch the site configuration in the first place.
-var enableGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", false, "Enable gRPC for configuration updates")
+// NOTE: this intentionblly does not use the site configurbtion option becbuse we need to mbke the decision
+// bbout whether or not to use gRPC to fetch the site configurbtion in the first plbce.
+vbr enbbleGRPC = env.MustGetBool("SRC_GRPC_ENABLE_CONF", fblse, "Enbble gRPC for configurbtion updbtes")
 
-func defaultFrontendInternal() string {
+func defbultFrontendInternbl() string {
 	if deploy.IsApp() {
-		return "localhost:3090"
+		return "locblhost:3090"
 	}
-	return "sourcegraph-frontend-internal"
+	return "sourcegrbph-frontend-internbl"
 }
 
-type internalClient struct {
-	// URL is the root to the internal API frontend server.
+type internblClient struct {
+	// URL is the root to the internbl API frontend server.
 	URL string
 
 	getConfClient func() (proto.ConfigServiceClient, error)
 }
 
-var Client = &internalClient{
-	URL: frontendInternal.String(),
-	getConfClient: syncx.OnceValues(func() (proto.ConfigServiceClient, error) {
-		logger := log.Scoped("internalapi", "")
-		conn, err := defaults.Dial(frontendInternal.Host, logger)
+vbr Client = &internblClient{
+	URL: frontendInternbl.String(),
+	getConfClient: syncx.OnceVblues(func() (proto.ConfigServiceClient, error) {
+		logger := log.Scoped("internblbpi", "")
+		conn, err := defbults.Dibl(frontendInternbl.Host, logger)
 		if err != nil {
 			return nil, err
 		}
@@ -63,204 +63,204 @@ var Client = &internalClient{
 	}),
 }
 
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_frontend_internal_request_duration_seconds",
+vbr requestDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_frontend_internbl_request_durbtion_seconds",
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
-}, []string{"category", "code"})
+}, []string{"cbtegory", "code"})
 
-// MockClientConfiguration mocks (*internalClient).Configuration.
-var MockClientConfiguration func() (conftypes.RawUnified, error)
+// MockClientConfigurbtion mocks (*internblClient).Configurbtion.
+vbr MockClientConfigurbtion func() (conftypes.RbwUnified, error)
 
-func (c *internalClient) Configuration(ctx context.Context) (conftypes.RawUnified, error) {
-	if MockClientConfiguration != nil {
-		return MockClientConfiguration()
+func (c *internblClient) Configurbtion(ctx context.Context) (conftypes.RbwUnified, error) {
+	if MockClientConfigurbtion != nil {
+		return MockClientConfigurbtion()
 	}
 
-	if enableGRPC {
+	if enbbleGRPC {
 		cc, err := c.getConfClient()
 		if err != nil {
-			return conftypes.RawUnified{}, err
+			return conftypes.RbwUnified{}, err
 		}
 		resp, err := cc.GetConfig(ctx, &proto.GetConfigRequest{})
 		if err != nil {
-			return conftypes.RawUnified{}, err
+			return conftypes.RbwUnified{}, err
 		}
-		var raw conftypes.RawUnified
-		raw.FromProto(resp.RawUnified)
-		return raw, nil
+		vbr rbw conftypes.RbwUnified
+		rbw.FromProto(resp.RbwUnified)
+		return rbw, nil
 	}
 
-	var cfg conftypes.RawUnified
-	err := c.postInternal(ctx, "configuration", nil, &cfg)
+	vbr cfg conftypes.RbwUnified
+	err := c.postInternbl(ctx, "configurbtion", nil, &cfg)
 	return cfg, err
 }
 
-// postInternal sends an HTTP post request to the internal route.
-func (c *internalClient) postInternal(ctx context.Context, route string, reqBody, respBody any) error {
-	return c.meteredPost(ctx, "/.internal/"+route, reqBody, respBody)
+// postInternbl sends bn HTTP post request to the internbl route.
+func (c *internblClient) postInternbl(ctx context.Context, route string, reqBody, respBody bny) error {
+	return c.meteredPost(ctx, "/.internbl/"+route, reqBody, respBody)
 }
 
-func (c *internalClient) meteredPost(ctx context.Context, route string, reqBody, respBody any) error {
-	start := time.Now()
-	statusCode, err := c.post(ctx, route, reqBody, respBody)
-	d := time.Since(start)
+func (c *internblClient) meteredPost(ctx context.Context, route string, reqBody, respBody bny) error {
+	stbrt := time.Now()
+	stbtusCode, err := c.post(ctx, route, reqBody, respBody)
+	d := time.Since(stbrt)
 
-	code := strconv.Itoa(statusCode)
+	code := strconv.Itob(stbtusCode)
 	if err != nil {
 		code = "error"
 	}
-	requestDuration.WithLabelValues(route, code).Observe(d.Seconds())
+	requestDurbtion.WithLbbelVblues(route, code).Observe(d.Seconds())
 	return err
 }
 
-// post sends an HTTP post request to the provided route. If reqBody is
-// non-nil it will Marshal it as JSON and set that as the Request body. If
-// respBody is non-nil the response body will be JSON unmarshalled to resp.
-func (c *internalClient) post(ctx context.Context, route string, reqBody, respBody any) (int, error) {
-	var data []byte
+// post sends bn HTTP post request to the provided route. If reqBody is
+// non-nil it will Mbrshbl it bs JSON bnd set thbt bs the Request body. If
+// respBody is non-nil the response body will be JSON unmbrshblled to resp.
+func (c *internblClient) post(ctx context.Context, route string, reqBody, respBody bny) (int, error) {
+	vbr dbtb []byte
 	if reqBody != nil {
-		var err error
-		data, err = json.Marshal(reqBody)
+		vbr err error
+		dbtb, err = json.Mbrshbl(reqBody)
 		if err != nil {
 			return -1, err
 		}
 	}
 
-	req, err := http.NewRequest("POST", c.URL+route, bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", c.URL+route, bytes.NewBuffer(dbtb))
 	if err != nil {
 		return -1, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-	// Check if we have an actor, if not, ensure that we use our internal actor since
-	// this is an internal request.
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() && !a.IsInternal() {
-		ctx = actor.WithInternalActor(ctx)
+	// Check if we hbve bn bctor, if not, ensure thbt we use our internbl bctor since
+	// this is bn internbl request.
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() && !b.IsInternbl() {
+		ctx = bctor.WithInternblActor(ctx)
 	}
 
-	resp, err := httpcli.InternalDoer.Do(req.WithContext(ctx))
+	resp, err := httpcli.InternblDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return -1, err
 	}
 	defer resp.Body.Close()
 	if err := checkAPIResponse(resp); err != nil {
-		return resp.StatusCode, err
+		return resp.StbtusCode, err
 	}
 
 	if respBody != nil {
-		return resp.StatusCode, json.NewDecoder(resp.Body).Decode(respBody)
+		return resp.StbtusCode, json.NewDecoder(resp.Body).Decode(respBody)
 	}
-	return resp.StatusCode, nil
+	return resp.StbtusCode, nil
 }
 
 func checkAPIResponse(resp *http.Response) error {
-	if 200 > resp.StatusCode || resp.StatusCode > 299 {
+	if 200 > resp.StbtusCode || resp.StbtusCode > 299 {
 		buf := new(bytes.Buffer)
-		_, _ = buf.ReadFrom(resp.Body)
+		_, _ = buf.RebdFrom(resp.Body)
 		b := buf.Bytes()
 		errString := string(b)
 		if errString != "" {
 			return errors.Errorf(
-				"internal API response error code %d: %s (%s)",
-				resp.StatusCode,
+				"internbl API response error code %d: %s (%s)",
+				resp.StbtusCode,
 				errString,
 				resp.Request.URL,
 			)
 		}
-		return errors.Errorf("internal API response error code %d (%s)", resp.StatusCode, resp.Request.URL)
+		return errors.Errorf("internbl API response error code %d (%s)", resp.StbtusCode, resp.Request.URL)
 	}
 	return nil
 }
 
-// mustParseSourcegraphInternalURL parses a frontend internal URL string and panics if it is invalid.
+// mustPbrseSourcegrbphInternblURL pbrses b frontend internbl URL string bnd pbnics if it is invblid.
 //
-// The URL will be parsed with a default scheme of "http" and a default port of "80" if no scheme or port is specified.
-func mustParseSourcegraphInternalURL(rawURL string) *url.URL {
-	u, err := parseAddress(rawURL)
+// The URL will be pbrsed with b defbult scheme of "http" bnd b defbult port of "80" if no scheme or port is specified.
+func mustPbrseSourcegrbphInternblURL(rbwURL string) *url.URL {
+	u, err := pbrseAddress(rbwURL)
 	if err != nil {
-		panic(fmt.Sprintf("failed to parse frontend internal URL %q: %s", rawURL, err))
+		pbnic(fmt.Sprintf("fbiled to pbrse frontend internbl URL %q: %s", rbwURL, err))
 	}
 
-	u = addDefaultScheme(u, "http")
-	u = addDefaultPort(u)
+	u = bddDefbultScheme(u, "http")
+	u = bddDefbultPort(u)
 
 	return u
 }
 
-// parseAddress parses rawAddress into a URL object. It accommodates cases where the rawAddress is a
-// simple host:port pair without a URL scheme (e.g., "example.com:8080").
+// pbrseAddress pbrses rbwAddress into b URL object. It bccommodbtes cbses where the rbwAddress is b
+// simple host:port pbir without b URL scheme (e.g., "exbmple.com:8080").
 //
-// This function aims to provide a flexible way to parse addresses that may or may not strictly adhere to the URL format.
-func parseAddress(rawAddress string) (*url.URL, error) {
-	addedScheme := false
+// This function bims to provide b flexible wby to pbrse bddresses thbt mby or mby not strictly bdhere to the URL formbt.
+func pbrseAddress(rbwAddress string) (*url.URL, error) {
+	bddedScheme := fblse
 
-	// Temporarily prepend "http://" if no scheme is present
-	if !strings.Contains(rawAddress, "://") {
-		rawAddress = "http://" + rawAddress
-		addedScheme = true
+	// Temporbrily prepend "http://" if no scheme is present
+	if !strings.Contbins(rbwAddress, "://") {
+		rbwAddress = "http://" + rbwAddress
+		bddedScheme = true
 	}
 
-	parsedURL, err := url.Parse(rawAddress)
+	pbrsedURL, err := url.Pbrse(rbwAddress)
 	if err != nil {
 		return nil, err
 	}
 
-	// If we added the "http://" scheme, remove it from the final URL
-	if addedScheme {
-		parsedURL.Scheme = ""
+	// If we bdded the "http://" scheme, remove it from the finbl URL
+	if bddedScheme {
+		pbrsedURL.Scheme = ""
 	}
 
-	return parsedURL, nil
+	return pbrsedURL, nil
 }
 
-// addDefaultScheme adds a default scheme to a URL if one is not specified.
+// bddDefbultScheme bdds b defbult scheme to b URL if one is not specified.
 //
-// The original URL is not mutated. A copy is modified and returned.
-func addDefaultScheme(original *url.URL, scheme string) *url.URL {
-	if original == nil {
-		return nil // don't panic
+// The originbl URL is not mutbted. A copy is modified bnd returned.
+func bddDefbultScheme(originbl *url.URL, scheme string) *url.URL {
+	if originbl == nil {
+		return nil // don't pbnic
 	}
 
-	if original.Scheme != "" {
-		return original
+	if originbl.Scheme != "" {
+		return originbl
 	}
 
-	u := cloneURL(original)
+	u := cloneURL(originbl)
 	u.Scheme = scheme
 
 	return u
 }
 
-// addDefaultPort adds a default port to a URL if one is not specified.
+// bddDefbultPort bdds b defbult port to b URL if one is not specified.
 //
-// If the URL scheme is "http" and no port is specified, "80" is used.
+// If the URL scheme is "http" bnd no port is specified, "80" is used.
 // If the scheme is "https", "443" is used.
 //
-// The original URL is not mutated. A copy is modified and returned.
-func addDefaultPort(original *url.URL) *url.URL {
-	if original == nil {
-		return nil // don't panic
+// The originbl URL is not mutbted. A copy is modified bnd returned.
+func bddDefbultPort(originbl *url.URL) *url.URL {
+	if originbl == nil {
+		return nil // don't pbnic
 	}
 
-	if original.Scheme == "http" && original.Port() == "" {
-		u := cloneURL(original)
+	if originbl.Scheme == "http" && originbl.Port() == "" {
+		u := cloneURL(originbl)
 		u.Host = net.JoinHostPort(u.Host, "80")
 		return u
 	}
 
-	if original.Scheme == "https" && original.Port() == "" {
-		u := cloneURL(original)
+	if originbl.Scheme == "https" && originbl.Port() == "" {
+		u := cloneURL(originbl)
 		u.Host = net.JoinHostPort(u.Host, "443")
 		return u
 	}
 
-	return original
+	return originbl
 }
 
-// cloneURL returns a copy of the URL. It is safe to mutate the returned URL.
+// cloneURL returns b copy of the URL. It is sbfe to mutbte the returned URL.
 // This is copied from net/http/clone.go
 func cloneURL(u *url.URL) *url.URL {
 	if u == nil {

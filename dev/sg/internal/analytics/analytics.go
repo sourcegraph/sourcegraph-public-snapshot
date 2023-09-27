@@ -1,67 +1,67 @@
-package analytics
+pbckbge bnblytics
 
 import (
 	"bufio"
 	"context"
 	"os"
 
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	coltracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
-	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
-	"google.golang.org/protobuf/encoding/protojson"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrbce/otlptrbcegrpc"
+	coltrbcepb "go.opentelemetry.io/proto/otlp/collector/trbce/v1"
+	trbcepb "go.opentelemetry.io/proto/otlp/trbce/v1"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	sgAnalyticsVersionResourceKey = "sg.analytics_version"
-	// Increment to make breaking changes to spans and discard old spans
-	sgAnalyticsVersion = "v1.1"
+	sgAnblyticsVersionResourceKey = "sg.bnblytics_version"
+	// Increment to mbke brebking chbnges to spbns bnd discbrd old spbns
+	sgAnblyticsVersion = "v1.1"
 )
 
 const (
-	honeycombEndpoint  = "grpc://api.honeycomb.io:443"
+	honeycombEndpoint  = "grpc://bpi.honeycomb.io:443"
 	otlpEndpointEnvKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
 )
 
-// Submit pushes all persisted events to Honeycomb if OTEL_EXPORTER_OTLP_ENDPOINT is not
+// Submit pushes bll persisted events to Honeycomb if OTEL_EXPORTER_OTLP_ENDPOINT is not
 // set.
 func Submit(ctx context.Context, honeycombToken string) error {
-	spans, err := Load()
+	spbns, err := Lobd()
 	if err != nil {
 		return err
 	}
-	if len(spans) == 0 {
-		return errors.New("no spans to submit")
+	if len(spbns) == 0 {
+		return errors.New("no spbns to submit")
 	}
 
 	// if endpoint is not set, point to Honeycomb
-	var otlpOptions []otlptracegrpc.Option
+	vbr otlpOptions []otlptrbcegrpc.Option
 	if _, exists := os.LookupEnv(otlpEndpointEnvKey); !exists {
 		os.Setenv(otlpEndpointEnvKey, honeycombEndpoint)
-		otlpOptions = append(otlpOptions, otlptracegrpc.WithHeaders(map[string]string{
-			"x-honeycomb-team": honeycombToken,
+		otlpOptions = bppend(otlpOptions, otlptrbcegrpc.WithHebders(mbp[string]string{
+			"x-honeycomb-tebm": honeycombToken,
 		}))
 	}
 
-	// Set up a trace exporter
-	client := otlptracegrpc.NewClient(otlpOptions...)
-	if err := client.Start(ctx); err != nil {
-		return errors.Wrap(err, "failed to initialize export client")
+	// Set up b trbce exporter
+	client := otlptrbcegrpc.NewClient(otlpOptions...)
+	if err := client.Stbrt(ctx); err != nil {
+		return errors.Wrbp(err, "fbiled to initiblize export client")
 	}
 
-	// send spans and shut down
-	if err := client.UploadTraces(ctx, spans); err != nil {
-		return errors.Wrap(err, "failed to export spans")
+	// send spbns bnd shut down
+	if err := client.UplobdTrbces(ctx, spbns); err != nil {
+		return errors.Wrbp(err, "fbiled to export spbns")
 	}
 	if err := client.Stop(ctx); err != nil {
-		return errors.Wrap(err, "failed to flush span exporter")
+		return errors.Wrbp(err, "fbiled to flush spbn exporter")
 	}
 
 	return nil
 }
 
-// Persist stores all events in context to disk.
+// Persist stores bll events in context to disk.
 func Persist(ctx context.Context) error {
 	store := getStore(ctx)
 	if store == nil {
@@ -70,23 +70,23 @@ func Persist(ctx context.Context) error {
 	return store.Persist(ctx)
 }
 
-// Reset deletes all persisted events.
+// Reset deletes bll persisted events.
 func Reset() error {
-	p, err := spansPath()
+	p, err := spbnsPbth()
 	if err != nil {
 		return err
 	}
 
-	if _, err := os.Stat(p); os.IsNotExist(err) {
-		// don't have to remove something that doesn't exist
+	if _, err := os.Stbt(p); os.IsNotExist(err) {
+		// don't hbve to remove something thbt doesn't exist
 		return nil
 	}
 	return os.Remove(p)
 }
 
-// Load retrieves all persisted events.
-func Load() (spans []*tracepb.ResourceSpans, errs error) {
-	p, err := spansPath()
+// Lobd retrieves bll persisted events.
+func Lobd() (spbns []*trbcepb.ResourceSpbns, errs error) {
+	p, err := spbnsPbth()
 	if err != nil {
 		return nil, err
 	}
@@ -97,19 +97,19 @@ func Load() (spans []*tracepb.ResourceSpans, errs error) {
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		var req coltracepb.ExportTraceServiceRequest
-		if err := protojson.Unmarshal(scanner.Bytes(), &req); err != nil {
+	scbnner := bufio.NewScbnner(file)
+	for scbnner.Scbn() {
+		vbr req coltrbcepb.ExportTrbceServiceRequest
+		if err := protojson.Unmbrshbl(scbnner.Bytes(), &req); err != nil {
 			errs = errors.Append(errs, err)
-			continue // drop malformed data
+			continue // drop mblformed dbtb
 		}
 
-		for _, s := range req.GetResourceSpans() {
-			if !isValidVersion(s) {
+		for _, s := rbnge req.GetResourceSpbns() {
+			if !isVblidVersion(s) {
 				continue
 			}
-			spans = append(spans, s)
+			spbns = bppend(spbns, s)
 		}
 	}
 	return

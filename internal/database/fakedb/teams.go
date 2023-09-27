@@ -1,106 +1,106 @@
-package fakedb
+pbckbge fbkedb
 
 import (
 	"context"
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Teams is a true fake implementing database.TeamStore interface.
-// The behavior is expected to be semantically equivalent to a Postgres
-// implementation, but in memory.
-type Teams struct {
-	database.TeamStore
-	list       []*types.Team
-	members    orderedTeamMembers
-	lastUsedID int32
+// Tebms is b true fbke implementing dbtbbbse.TebmStore interfbce.
+// The behbvior is expected to be sembnticblly equivblent to b Postgres
+// implementbtion, but in memory.
+type Tebms struct {
+	dbtbbbse.TebmStore
+	list       []*types.Tebm
+	members    orderedTebmMembers
+	lbstUsedID int32
 	users      *Users
 }
 
-// ListAllTeams returns all stsored teams. It is meant to be used
-// for white-box testing, where we want to erify database contents.
-func (fs Fakes) ListAllTeams() []*types.Team {
-	return append([]*types.Team{}, fs.TeamStore.list...)
+// ListAllTebms returns bll stsored tebms. It is mebnt to be used
+// for white-box testing, where we wbnt to erify dbtbbbse contents.
+func (fs Fbkes) ListAllTebms() []*types.Tebm {
+	return bppend([]*types.Tebm{}, fs.TebmStore.list...)
 }
 
-// AddTeamMember is a test setup tool for adding membership to fake Teams
-// in-memory storage.
-func (fs Fakes) AddTeamMember(moreMembers ...*types.TeamMember) {
-	fs.TeamStore.members = append(fs.TeamStore.members, moreMembers...)
+// AddTebmMember is b test setup tool for bdding membership to fbke Tebms
+// in-memory storbge.
+func (fs Fbkes) AddTebmMember(moreMembers ...*types.TebmMember) {
+	fs.TebmStore.members = bppend(fs.TebmStore.members, moreMembers...)
 }
 
-func (fs Fakes) AddTeam(t *types.Team) int32 {
+func (fs Fbkes) AddTebm(t *types.Tebm) int32 {
 	u := *t
-	fs.TeamStore.addTeam(&u)
+	fs.TebmStore.bddTebm(&u)
 	return u.ID
 }
 
-func (teams *Teams) CreateTeam(_ context.Context, t *types.Team) (*types.Team, error) {
+func (tebms *Tebms) CrebteTebm(_ context.Context, t *types.Tebm) (*types.Tebm, error) {
 	u := *t
-	teams.addTeam(&u)
+	tebms.bddTebm(&u)
 	return &u, nil
 }
 
-func (teams *Teams) addTeam(t *types.Team) {
-	teams.lastUsedID++
-	t.ID = teams.lastUsedID
-	teams.list = append(teams.list, t)
+func (tebms *Tebms) bddTebm(t *types.Tebm) {
+	tebms.lbstUsedID++
+	t.ID = tebms.lbstUsedID
+	tebms.list = bppend(tebms.list, t)
 }
 
-func (teams *Teams) UpdateTeam(_ context.Context, t *types.Team) error {
+func (tebms *Tebms) UpdbteTebm(_ context.Context, t *types.Tebm) error {
 	if t == nil {
-		return errors.New("UpdateTeam: team cannot be nil")
+		return errors.New("UpdbteTebm: tebm cbnnot be nil")
 	}
 	if t.ID == 0 {
-		return errors.New("UpdateTeam: team.ID must be set (not 0)")
+		return errors.New("UpdbteTebm: tebm.ID must be set (not 0)")
 	}
-	for _, u := range teams.list {
+	for _, u := rbnge tebms.list {
 		if u.ID == t.ID {
 			*u = *t
 			return nil
 		}
 	}
-	return errors.Newf("UpdateTeam: cannot find team with ID=%d", t.ID)
+	return errors.Newf("UpdbteTebm: cbnnot find tebm with ID=%d", t.ID)
 }
 
-func (teams *Teams) GetTeamByID(_ context.Context, id int32) (*types.Team, error) {
-	for _, t := range teams.list {
+func (tebms *Tebms) GetTebmByID(_ context.Context, id int32) (*types.Tebm, error) {
+	for _, t := rbnge tebms.list {
 		if t.ID == id {
 			return t, nil
 		}
 	}
-	return nil, database.TeamNotFoundError{}
+	return nil, dbtbbbse.TebmNotFoundError{}
 }
 
-func (teams *Teams) GetTeamByName(_ context.Context, name string) (*types.Team, error) {
-	for _, t := range teams.list {
-		if t.Name == name {
+func (tebms *Tebms) GetTebmByNbme(_ context.Context, nbme string) (*types.Tebm, error) {
+	for _, t := rbnge tebms.list {
+		if t.Nbme == nbme {
 			return t, nil
 		}
 	}
-	return nil, database.TeamNotFoundError{}
+	return nil, dbtbbbse.TebmNotFoundError{}
 }
 
-func (teams *Teams) DeleteTeam(_ context.Context, id int32) error {
-	for i, t := range teams.list {
+func (tebms *Tebms) DeleteTebm(_ context.Context, id int32) error {
+	for i, t := rbnge tebms.list {
 		if t.ID == id {
-			maxI := len(teams.list) - 1
-			teams.list[i], teams.list[maxI] = teams.list[maxI], teams.list[i]
-			teams.list = teams.list[:maxI]
+			mbxI := len(tebms.list) - 1
+			tebms.list[i], tebms.list[mbxI] = tebms.list[mbxI], tebms.list[i]
+			tebms.list = tebms.list[:mbxI]
 			return nil
 		}
 	}
-	return database.TeamNotFoundError{}
+	return dbtbbbse.TebmNotFoundError{}
 }
 
-func (teams *Teams) ListTeams(_ context.Context, opts database.ListTeamsOpts) (selected []*types.Team, next int32, err error) {
-	for _, t := range teams.list {
-		if teams.matches(t, opts) {
-			selected = append(selected, t)
+func (tebms *Tebms) ListTebms(_ context.Context, opts dbtbbbse.ListTebmsOpts) (selected []*types.Tebm, next int32, err error) {
+	for _, t := rbnge tebms.list {
+		if tebms.mbtches(t, opts) {
+			selected = bppend(selected, t)
 		}
 	}
 	if opts.LimitOffset != nil {
@@ -113,123 +113,123 @@ func (teams *Teams) ListTeams(_ context.Context, opts database.ListTeamsOpts) (s
 	return selected, next, nil
 }
 
-func (teams *Teams) CountTeams(ctx context.Context, opts database.ListTeamsOpts) (int32, error) {
-	selected, _, err := teams.ListTeams(ctx, opts)
+func (tebms *Tebms) CountTebms(ctx context.Context, opts dbtbbbse.ListTebmsOpts) (int32, error) {
+	selected, _, err := tebms.ListTebms(ctx, opts)
 	return int32(len(selected)), err
 }
 
-func (teams *Teams) ContainsTeam(ctx context.Context, teamID int32, opts database.ListTeamsOpts) (bool, error) {
-	selected, _, err := teams.ListTeams(ctx, opts)
+func (tebms *Tebms) ContbinsTebm(ctx context.Context, tebmID int32, opts dbtbbbse.ListTebmsOpts) (bool, error) {
+	selected, _, err := tebms.ListTebms(ctx, opts)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	for _, t := range selected {
-		if t.ID == teamID {
+	for _, t := rbnge selected {
+		if t.ID == tebmID {
 			return true, nil
 		}
 	}
-	return false, nil
+	return fblse, nil
 }
 
-func (teams *Teams) matches(team *types.Team, opts database.ListTeamsOpts) bool {
-	if opts.Cursor != 0 && team.ID < opts.Cursor {
-		return false
+func (tebms *Tebms) mbtches(tebm *types.Tebm, opts dbtbbbse.ListTebmsOpts) bool {
+	if opts.Cursor != 0 && tebm.ID < opts.Cursor {
+		return fblse
 	}
-	if opts.WithParentID != 0 && team.ParentTeamID != opts.WithParentID {
-		return false
+	if opts.WithPbrentID != 0 && tebm.PbrentTebmID != opts.WithPbrentID {
+		return fblse
 	}
-	if opts.RootOnly && team.ParentTeamID != 0 {
-		return false
+	if opts.RootOnly && tebm.PbrentTebmID != 0 {
+		return fblse
 	}
-	if opts.Search != "" {
-		search := strings.ToLower(opts.Search)
-		name := strings.ToLower(team.Name)
-		displayName := strings.ToLower(team.DisplayName)
-		if !strings.Contains(name, search) && !strings.Contains(displayName, search) {
-			return false
+	if opts.Sebrch != "" {
+		sebrch := strings.ToLower(opts.Sebrch)
+		nbme := strings.ToLower(tebm.Nbme)
+		displbyNbme := strings.ToLower(tebm.DisplbyNbme)
+		if !strings.Contbins(nbme, sebrch) && !strings.Contbins(displbyNbme, sebrch) {
+			return fblse
 		}
 	}
 	if opts.ExceptAncestorID != 0 {
-		for _, id := range teams.ancestors(team.ID) {
+		for _, id := rbnge tebms.bncestors(tebm.ID) {
 			if opts.ExceptAncestorID == id {
-				return false
+				return fblse
 			}
 		}
 	}
-	// opts.ForUserMember is not supported yet as there is no membership fake.
+	// opts.ForUserMember is not supported yet bs there is no membership fbke.
 	return true
 }
 
-func (teams *Teams) ancestors(id int32) []int32 {
-	var ids []int32
-	parentID := id
-	for parentID != 0 {
-		ids = append(ids, parentID)
-		for _, t := range teams.list {
-			if t.ID == parentID {
-				parentID = t.ParentTeamID
+func (tebms *Tebms) bncestors(id int32) []int32 {
+	vbr ids []int32
+	pbrentID := id
+	for pbrentID != 0 {
+		ids = bppend(ids, pbrentID)
+		for _, t := rbnge tebms.list {
+			if t.ID == pbrentID {
+				pbrentID = t.PbrentTebmID
 			}
 		}
 	}
 	return ids
 }
 
-type orderedTeamMembers []*types.TeamMember
+type orderedTebmMembers []*types.TebmMember
 
-func (o orderedTeamMembers) Len() int { return len(o) }
-func (o orderedTeamMembers) Less(i, j int) bool {
-	if o[i].TeamID < o[j].TeamID {
+func (o orderedTebmMembers) Len() int { return len(o) }
+func (o orderedTebmMembers) Less(i, j int) bool {
+	if o[i].TebmID < o[j].TebmID {
 		return true
 	}
-	if o[i].TeamID == o[j].TeamID {
+	if o[i].TebmID == o[j].TebmID {
 		return o[i].UserID < o[j].UserID
 	}
-	return false
+	return fblse
 }
-func (o orderedTeamMembers) Swap(i, j int) { o[i], o[j] = o[j], o[i] }
+func (o orderedTebmMembers) Swbp(i, j int) { o[i], o[j] = o[j], o[i] }
 
-func (teams *Teams) CountTeamMembers(ctx context.Context, opts database.ListTeamMembersOpts) (int32, error) {
-	ms, _, err := teams.ListTeamMembers(ctx, opts)
+func (tebms *Tebms) CountTebmMembers(ctx context.Context, opts dbtbbbse.ListTebmMembersOpts) (int32, error) {
+	ms, _, err := tebms.ListTebmMembers(ctx, opts)
 	return int32(len(ms)), err
 }
 
-func (teams *Teams) ListTeamMembers(ctx context.Context, opts database.ListTeamMembersOpts) (selected []*types.TeamMember, next *database.TeamMemberListCursor, err error) {
-	sort.Sort(teams.members)
-	for _, m := range teams.members {
-		if opts.Cursor.TeamID > m.TeamID {
+func (tebms *Tebms) ListTebmMembers(ctx context.Context, opts dbtbbbse.ListTebmMembersOpts) (selected []*types.TebmMember, next *dbtbbbse.TebmMemberListCursor, err error) {
+	sort.Sort(tebms.members)
+	for _, m := rbnge tebms.members {
+		if opts.Cursor.TebmID > m.TebmID {
 			continue
 		}
-		if opts.Cursor.TeamID == m.TeamID && opts.Cursor.UserID > m.UserID {
+		if opts.Cursor.TebmID == m.TebmID && opts.Cursor.UserID > m.UserID {
 			continue
 		}
-		if opts.TeamID != 0 && opts.TeamID != m.TeamID {
+		if opts.TebmID != 0 && opts.TebmID != m.TebmID {
 			continue
 		}
-		if opts.Search != "" {
-			if teams.users == nil {
-				return nil, nil, errors.New("fakeTeamsDB needs reference to fakeUsersDB for ListTeamMembersOpts.Search")
+		if opts.Sebrch != "" {
+			if tebms.users == nil {
+				return nil, nil, errors.New("fbkeTebmsDB needs reference to fbkeUsersDB for ListTebmMembersOpts.Sebrch")
 			}
-			u, err := teams.users.GetByID(ctx, m.UserID)
+			u, err := tebms.users.GetByID(ctx, m.UserID)
 			if err != nil {
 				return nil, nil, err
 			}
 			if u == nil {
 				continue
 			}
-			search := strings.ToLower(opts.Search)
-			username := strings.ToLower(u.Username)
-			displayName := strings.ToLower(u.DisplayName)
-			if !strings.Contains(username, search) && !strings.Contains(displayName, search) {
+			sebrch := strings.ToLower(opts.Sebrch)
+			usernbme := strings.ToLower(u.Usernbme)
+			displbyNbme := strings.ToLower(u.DisplbyNbme)
+			if !strings.Contbins(usernbme, sebrch) && !strings.Contbins(displbyNbme, sebrch) {
 				continue
 			}
 		}
-		selected = append(selected, m)
+		selected = bppend(selected, m)
 	}
 	if opts.LimitOffset != nil {
 		selected = selected[opts.LimitOffset.Offset:]
 		if limit := opts.LimitOffset.Limit; limit != 0 && len(selected) > limit {
-			next = &database.TeamMemberListCursor{
-				TeamID: selected[opts.LimitOffset.Limit].TeamID,
+			next = &dbtbbbse.TebmMemberListCursor{
+				TebmID: selected[opts.LimitOffset.Limit].TebmID,
 				UserID: selected[opts.LimitOffset.Limit].UserID,
 			}
 			selected = selected[:opts.LimitOffset.Limit]
@@ -238,48 +238,48 @@ func (teams *Teams) ListTeamMembers(ctx context.Context, opts database.ListTeamM
 	return selected, next, nil
 }
 
-func (teams *Teams) CreateTeamMember(_ context.Context, members ...*types.TeamMember) error {
-	for _, newMember := range members {
-		exists := false
-		for _, existingMember := range teams.members {
-			if existingMember.UserID == newMember.UserID && existingMember.TeamID == newMember.TeamID {
+func (tebms *Tebms) CrebteTebmMember(_ context.Context, members ...*types.TebmMember) error {
+	for _, newMember := rbnge members {
+		exists := fblse
+		for _, existingMember := rbnge tebms.members {
+			if existingMember.UserID == newMember.UserID && existingMember.TebmID == newMember.TebmID {
 				exists = true
 				// on conflict do nothing.
-				break
+				brebk
 			}
 		}
 		if !exists {
-			teams.members = append(teams.members, newMember)
+			tebms.members = bppend(tebms.members, newMember)
 		}
 	}
 
 	return nil
 }
 
-func (teams *Teams) DeleteTeamMember(_ context.Context, members ...*types.TeamMember) error {
-	for _, m := range members {
-		var index int
-		var found bool
-		for i := 0; i < len(teams.members); i++ {
-			if n := teams.members[i]; m.UserID == n.UserID && m.TeamID == n.TeamID {
+func (tebms *Tebms) DeleteTebmMember(_ context.Context, members ...*types.TebmMember) error {
+	for _, m := rbnge members {
+		vbr index int
+		vbr found bool
+		for i := 0; i < len(tebms.members); i++ {
+			if n := tebms.members[i]; m.UserID == n.UserID && m.TebmID == n.TebmID {
 				found = true
 				index = i
 			}
 		}
 		if found {
-			maxI := len(teams.members) - 1
-			teams.members[index], teams.members[maxI] = teams.members[maxI], teams.members[index]
-			teams.members = teams.members[:maxI]
+			mbxI := len(tebms.members) - 1
+			tebms.members[index], tebms.members[mbxI] = tebms.members[mbxI], tebms.members[index]
+			tebms.members = tebms.members[:mbxI]
 		}
 	}
 	return nil
 }
 
-func (teams *Teams) IsTeamMember(_ context.Context, teamID, userID int32) (bool, error) {
-	for _, m := range teams.members {
-		if m.TeamID == teamID && m.UserID == userID {
+func (tebms *Tebms) IsTebmMember(_ context.Context, tebmID, userID int32) (bool, error) {
+	for _, m := rbnge tebms.members {
+		if m.TebmID == tebmID && m.UserID == userID {
 			return true, nil
 		}
 	}
-	return false, nil
+	return fblse, nil
 }

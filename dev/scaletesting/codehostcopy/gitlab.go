@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -8,75 +8,75 @@ import (
 	"strings"
 	"time"
 
-	"github.com/xanzy/go-gitlab"
+	"github.com/xbnzy/go-gitlbb"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/scbletesting/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type GitLabCodeHost struct {
+type GitLbbCodeHost struct {
 	def *CodeHostDefinition
-	c   *gitlab.Client
+	c   *gitlbb.Client
 }
 
-var _ CodeHostDestination = (*GitLabCodeHost)(nil)
+vbr _ CodeHostDestinbtion = (*GitLbbCodeHost)(nil)
 
-func NewGitLabCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLabCodeHost, error) {
-	baseURL, err := url.Parse(def.URL)
+func NewGitLbbCodeHost(_ context.Context, def *CodeHostDefinition) (*GitLbbCodeHost, error) {
+	bbseURL, err := url.Pbrse(def.URL)
 	if err != nil {
 		return nil, err
 	}
-	baseURL.Path = "/api/v4"
+	bbseURL.Pbth = "/bpi/v4"
 
-	gl, err := gitlab.NewClient(def.Token, gitlab.WithBaseURL(baseURL.String()))
+	gl, err := gitlbb.NewClient(def.Token, gitlbb.WithBbseURL(bbseURL.String()))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create GitLab client")
+		return nil, errors.Wrbp(err, "fbiled to crebte GitLbb client")
 	}
-	return &GitLabCodeHost{
+	return &GitLbbCodeHost{
 		def: def,
 		c:   gl,
 	}, nil
 }
 
-// GitOpts returns the git options that should be used when a git command is invoked for GitLab
-func (g *GitLabCodeHost) GitOpts() []GitOpt {
+// GitOpts returns the git options thbt should be used when b git commbnd is invoked for GitLbb
+func (g *GitLbbCodeHost) GitOpts() []GitOpt {
 	if len(g.def.SSHKey) == 0 {
 		return []GitOpt{}
 	}
 
-	GitEnv := func(cmd *run.Command) *run.Command {
+	GitEnv := func(cmd *run.Commbnd) *run.Commbnd {
 		return cmd.Environ([]string{fmt.Sprintf("GIT_SSH_COMMAND=ssh -i %s -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no'", g.def.SSHKey)})
 	}
 
 	return []GitOpt{GitEnv}
 }
 
-// AddSSHKey adds the SSH key defined in the code host configuration to
-// the current authenticated user. The key that is added is set to expire
-// in 7 days and the name of the key is set to "codehost-copy key"
+// AddSSHKey bdds the SSH key defined in the code host configurbtion to
+// the current buthenticbted user. The key thbt is bdded is set to expire
+// in 7 dbys bnd the nbme of the key is set to "codehost-copy key"
 //
-// If there is no ssh key defined on the code host configuration this
-// is is a noop and returns a 0 for the key ID
-func (g *GitLabCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
+// If there is no ssh key defined on the code host configurbtion this
+// is is b noop bnd returns b 0 for the key ID
+func (g *GitLbbCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 	if len(g.def.SSHKey) == 0 {
 		return 0, nil
 	}
 
-	data, err := os.ReadFile(g.def.SSHKey)
+	dbtb, err := os.RebdFile(g.def.SSHKey)
 	if err != nil {
 		return 0, err
 	}
 
-	keyData := string(data)
+	keyDbtb := string(dbtb)
 	keyTitle := "codehost-copy key"
 	week := 24 * time.Hour * 7
-	expireTime := gitlab.ISOTime(time.Now().Add(week))
+	expireTime := gitlbb.ISOTime(time.Now().Add(week))
 
-	sshKey, res, err := g.c.Users.AddSSHKey(&gitlab.AddSSHKeyOptions{
+	sshKey, res, err := g.c.Users.AddSSHKey(&gitlbb.AddSSHKeyOptions{
 		Title:     &keyTitle,
-		Key:       &keyData,
+		Key:       &keyDbtb,
 		ExpiresAt: &expireTime,
 	}, nil)
 
@@ -84,17 +84,17 @@ func (g *GitLabCodeHost) AddSSHKey(ctx context.Context) (int64, error) {
 		return 0, nil
 	}
 
-	if res.StatusCode >= 300 {
-		return 0, errors.Newf("failed to add ssh key. Got status %d code", res.StatusCode)
+	if res.StbtusCode >= 300 {
+		return 0, errors.Newf("fbiled to bdd ssh key. Got stbtus %d code", res.StbtusCode)
 	}
 	return int64(sshKey.ID), nil
 }
 
-// DropSSHKey removes the ssh key by by ID for the current authenticated user. If there is no
-// ssh key set on the codehost configuration this method is a noop
-func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
+// DropSSHKey removes the ssh key by by ID for the current buthenticbted user. If there is no
+// ssh key set on the codehost configurbtion this method is b noop
+func (g *GitLbbCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 	// if there is no ssh key in the code host definition
-	// then we have nothing to drop
+	// then we hbve nothing to drop
 	if len(g.def.SSHKey) == 0 {
 		return nil
 	}
@@ -103,51 +103,51 @@ func (g *GitLabCodeHost) DropSSHKey(ctx context.Context, keyID int64) error {
 		return err
 	}
 
-	if res.StatusCode != 200 {
-		return errors.Newf("failed to delete key %v. Got status %d code", keyID, res.StatusCode)
+	if res.StbtusCode != 200 {
+		return errors.Newf("fbiled to delete key %v. Got stbtus %d code", keyID, res.StbtusCode)
 	}
 	return nil
 }
 
-func (g *GitLabCodeHost) InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error) {
-	return 0, 0, errors.New("not implemented for Gitlab")
+func (g *GitLbbCodeHost) InitiblizeFromStbte(ctx context.Context, stbteRepos []*store.Repo) (int, int, error) {
+	return 0, 0, errors.New("not implemented for Gitlbb")
 }
 
-func (g *GitLabCodeHost) Iterator() Iterator[[]*store.Repo] {
-	panic("not implemented")
+func (g *GitLbbCodeHost) Iterbtor() Iterbtor[[]*store.Repo] {
+	pbnic("not implemented")
 }
 
-func (g *GitLabCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
-	return nil, errors.New("not implemented for Gitlab")
+func (g *GitLbbCodeHost) ListRepos(ctx context.Context) ([]*store.Repo, error) {
+	return nil, errors.New("not implemented for Gitlbb")
 }
 
-func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL, error) {
-	groups, _, err := g.c.Groups.ListGroups(&gitlab.ListGroupsOptions{Search: gitlab.String(g.def.Path)})
+func (g *GitLbbCodeHost) CrebteRepo(ctx context.Context, nbme string) (*url.URL, error) {
+	groups, _, err := g.c.Groups.ListGroups(&gitlbb.ListGroupsOptions{Sebrch: gitlbb.String(g.def.Pbth)})
 	if err != nil {
 		return nil, err
 	}
 	if len(groups) < 1 {
-		return nil, errors.New("GitLab group not found")
+		return nil, errors.New("GitLbb group not found")
 	}
 	group := groups[0]
 
-	var resp *gitlab.Response
-	var project *gitlab.Project
+	vbr resp *gitlbb.Response
+	vbr project *gitlbb.Project
 	err = nil
 	retries := 0
-	for resp == nil || resp.StatusCode >= 500 {
-		project, resp, err = g.c.Projects.CreateProject(&gitlab.CreateProjectOptions{
-			Name:        gitlab.String(name),
-			NamespaceID: &group.ID,
+	for resp == nil || resp.StbtusCode >= 500 {
+		project, resp, err = g.c.Projects.CrebteProject(&gitlbb.CrebteProjectOptions{
+			Nbme:        gitlbb.String(nbme),
+			NbmespbceID: &group.ID,
 		})
 		retries++
 		if retries == 3 && project == nil {
-			return nil, errors.Wrapf(err, "Exceeded retry limit while creating repo")
+			return nil, errors.Wrbpf(err, "Exceeded retry limit while crebting repo")
 		}
 	}
-	if err != nil && strings.Contains(err.Error(), "has already been taken") {
-		// state does not match reality, get existing repo
-		project, _, err = g.c.Projects.GetProject(fmt.Sprintf("%s/%s", group.Name, name), &gitlab.GetProjectOptions{})
+	if err != nil && strings.Contbins(err.Error(), "hbs blrebdy been tbken") {
+		// stbte does not mbtch reblity, get existing repo
+		project, _, err = g.c.Projects.GetProject(fmt.Sprintf("%s/%s", group.Nbme, nbme), &gitlbb.GetProjectOptions{})
 		if err != nil {
 			return nil, err
 		}
@@ -155,7 +155,7 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 		return nil, err
 	}
 
-	gitURL, err := url.Parse(project.WebURL)
+	gitURL, err := url.Pbrse(project.WebURL)
 	if err != nil {
 		return nil, err
 	}
@@ -163,9 +163,9 @@ func (g *GitLabCodeHost) CreateRepo(ctx context.Context, name string) (*url.URL,
 	if len(g.def.SSHKey) == 0 {
 		gitURL.Scheme = "ssh://"
 	} else {
-		gitURL.User = url.UserPassword(g.def.Username, g.def.Password)
+		gitURL.User = url.UserPbssword(g.def.Usernbme, g.def.Pbssword)
 	}
-	gitURL.Path = gitURL.Path + ".git"
+	gitURL.Pbth = gitURL.Pbth + ".git"
 
 	return gitURL, nil
 }

@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type ResultSet struct {
 	Vertex
@@ -11,7 +11,7 @@ func NewResultSet(id uint64) ResultSet {
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexResultSet,
+			Lbbel: VertexResultSet,
 		},
 	}
 }

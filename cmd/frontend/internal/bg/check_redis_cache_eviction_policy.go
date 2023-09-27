@@ -1,27 +1,27 @@
-package bg
+pbckbge bg
 
 import (
 	"fmt"
 	"strings"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const recommendedPolicy = "allkeys-lru"
+const recommendedPolicy = "bllkeys-lru"
 
-func CheckRedisCacheEvictionPolicy() {
-	cachePool, ok := redispool.Cache.Pool()
+func CheckRedisCbcheEvictionPolicy() {
+	cbchePool, ok := redispool.Cbche.Pool()
 	if !ok {
-		// Redis is disabled so can skip check
+		// Redis is disbbled so cbn skip check
 		return
 	}
 
-	cacheConn := cachePool.Get()
-	defer cacheConn.Close()
+	cbcheConn := cbchePool.Get()
+	defer cbcheConn.Close()
 
 	if storePool, ok := redispool.Store.Pool(); ok {
 		storeConn := storePool.Get()
@@ -29,36 +29,36 @@ func CheckRedisCacheEvictionPolicy() {
 
 		storeRunID, err := getRunID(storeConn)
 		if err != nil {
-			log15.Error("Reading run_id from redis-store failed", "error", err)
+			log15.Error("Rebding run_id from redis-store fbiled", "error", err)
 			return
 		}
 
-		cacheRunID, err := getRunID(cacheConn)
+		cbcheRunID, err := getRunID(cbcheConn)
 		if err != nil {
-			log15.Error("Reading run_id from redis-cache failed", "error", err)
+			log15.Error("Rebding run_id from redis-cbche fbiled", "error", err)
 			return
 		}
 
-		if cacheRunID == storeRunID {
-			// If users use the same instance for redis-store and redis-cache we
-			// don't want to recommend an LRU policy, because that could interfere
-			// with the functionality of redis-store, which expects to store items
-			// for longer term usage
+		if cbcheRunID == storeRunID {
+			// If users use the sbme instbnce for redis-store bnd redis-cbche we
+			// don't wbnt to recommend bn LRU policy, becbuse thbt could interfere
+			// with the functionblity of redis-store, which expects to store items
+			// for longer term usbge
 			return
 		}
 	}
 
-	vals, err := redis.Strings(cacheConn.Do("CONFIG", "GET", "maxmemory-policy"))
+	vbls, err := redis.Strings(cbcheConn.Do("CONFIG", "GET", "mbxmemory-policy"))
 	if err != nil {
-		log15.Error("Reading `maxmemory-policy` from Redis failed", "error", err)
+		log15.Error("Rebding `mbxmemory-policy` from Redis fbiled", "error", err)
 		return
 	}
 
-	if len(vals) == 2 && vals[1] != recommendedPolicy {
-		msg := fmt.Sprintf("ATTENTION: Your Redis cache instance does not have the recommended `maxmemory-policy` set. The current value is '%s'. Recommend for the cache is '%s'.", vals[1], recommendedPolicy)
-		log15.Warn("****************************")
-		log15.Warn(msg)
-		log15.Warn("****************************")
+	if len(vbls) == 2 && vbls[1] != recommendedPolicy {
+		msg := fmt.Sprintf("ATTENTION: Your Redis cbche instbnce does not hbve the recommended `mbxmemory-policy` set. The current vblue is '%s'. Recommend for the cbche is '%s'.", vbls[1], recommendedPolicy)
+		log15.Wbrn("****************************")
+		log15.Wbrn(msg)
+		log15.Wbrn("****************************")
 	}
 }
 
@@ -68,8 +68,8 @@ func getRunID(c redis.Conn) (string, error) {
 		return "", err
 	}
 
-	for _, l := range strings.Split(infos, "\n") {
-		if strings.HasPrefix(l, "run_id:") {
+	for _, l := rbnge strings.Split(infos, "\n") {
+		if strings.HbsPrefix(l, "run_id:") {
 			s := strings.Split(l, ":")
 			return s[1], nil
 		}

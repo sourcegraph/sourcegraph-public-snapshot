@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"context"
@@ -7,106 +7,106 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type SqliteConfig struct {
-	CacheDir                string
-	CacheSizeMB             int
-	NumCtagsProcesses       int
+	CbcheDir                string
+	CbcheSizeMB             int
+	NumCtbgsProcesses       int
 	RequestBufferSize       int
-	ProcessingTimeout       time.Duration
-	Ctags                   CtagsConfig
+	ProcessingTimeout       time.Durbtion
+	Ctbgs                   CtbgsConfig
 	RepositoryFetcher       RepositoryFetcherConfig
-	MaxConcurrentlyIndexing int
+	MbxConcurrentlyIndexing int
 }
 
-func LoadSqliteConfig(baseConfig env.BaseConfig, ctags CtagsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
-	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
-	// in searcher when running as a single binary. The old name is treated as an alias to prevent
-	// customer environments from breaking if they still use it, because we have no way of migrating
-	// environment variables today.
-	cacheDirName := env.ChooseFallbackVariableName("SYMBOLS_CACHE_DIR", "CACHE_DIR")
+func LobdSqliteConfig(bbseConfig env.BbseConfig, ctbgs CtbgsConfig, repositoryFetcher RepositoryFetcherConfig) SqliteConfig {
+	// Vbribble wbs renbmed to hbve SYMBOLS_ prefix to bvoid b conflict with the sbme env vbr nbme
+	// in sebrcher when running bs b single binbry. The old nbme is trebted bs bn blibs to prevent
+	// customer environments from brebking if they still use it, becbuse we hbve no wby of migrbting
+	// environment vbribbles todby.
+	cbcheDirNbme := env.ChooseFbllbbckVbribbleNbme("SYMBOLS_CACHE_DIR", "CACHE_DIR")
 
 	return SqliteConfig{
-		Ctags:                   ctags,
+		Ctbgs:                   ctbgs,
 		RepositoryFetcher:       repositoryFetcher,
-		CacheDir:                baseConfig.Get(cacheDirName, "/tmp/symbols-cache", "directory in which to store cached symbols"),
-		CacheSizeMB:             baseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "maximum size of the disk cache (in megabytes)"),
-		NumCtagsProcesses:       baseConfig.GetInt("CTAGS_PROCESSES", strconv.Itoa(runtime.GOMAXPROCS(0)), "number of concurrent parser processes to run"),
-		RequestBufferSize:       baseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "maximum size of buffered parser request channel"),
-		ProcessingTimeout:       baseConfig.GetInterval("PROCESSING_TIMEOUT", "2h0m0s", "maximum time to spend processing a repository"),
-		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "maximum number of repositories to index at a time"),
+		CbcheDir:                bbseConfig.Get(cbcheDirNbme, "/tmp/symbols-cbche", "directory in which to store cbched symbols"),
+		CbcheSizeMB:             bbseConfig.GetInt("SYMBOLS_CACHE_SIZE_MB", "100000", "mbximum size of the disk cbche (in megbbytes)"),
+		NumCtbgsProcesses:       bbseConfig.GetInt("CTAGS_PROCESSES", strconv.Itob(runtime.GOMAXPROCS(0)), "number of concurrent pbrser processes to run"),
+		RequestBufferSize:       bbseConfig.GetInt("REQUEST_BUFFER_SIZE", "8192", "mbximum size of buffered pbrser request chbnnel"),
+		ProcessingTimeout:       bbseConfig.GetIntervbl("PROCESSING_TIMEOUT", "2h0m0s", "mbximum time to spend processing b repository"),
+		MbxConcurrentlyIndexing: bbseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "10", "mbximum number of repositories to index bt b time"),
 	}
 }
 
-type CtagsConfig struct {
-	UniversalCommand   string
-	ScipCommand        string
-	PatternLengthLimit int
+type CtbgsConfig struct {
+	UniversblCommbnd   string
+	ScipCommbnd        string
+	PbtternLengthLimit int
 	LogErrors          bool
 	DebugLogs          bool
-	MaxFileSize        int
-	MaxSymbols         int
+	MbxFileSize        int
+	MbxSymbols         int
 }
 
-func LoadCtagsConfig(baseConfig env.BaseConfig) CtagsConfig {
-	logCtagsErrorsDefault := "false"
+func LobdCtbgsConfig(bbseConfig env.BbseConfig) CtbgsConfig {
+	logCtbgsErrorsDefbult := "fblse"
 	if os.Getenv("DEPLOY_TYPE") == "dev" {
-		logCtagsErrorsDefault = "true"
+		logCtbgsErrorsDefbult = "true"
 	}
 
-	ctagsCommandDefault := "universal-ctags"
-	if deploy.IsSingleBinary() {
-		ctagsCommandDefault = ""
+	ctbgsCommbndDefbult := "universbl-ctbgs"
+	if deploy.IsSingleBinbry() {
+		ctbgsCommbndDefbult = ""
 	}
 
-	scipCtagsCommandDefault := "scip-ctags"
-	if deploy.IsSingleBinary() {
-		scipCtagsCommandDefault = ""
+	scipCtbgsCommbndDefbult := "scip-ctbgs"
+	if deploy.IsSingleBinbry() {
+		scipCtbgsCommbndDefbult = ""
 	}
 
-	return CtagsConfig{
-		UniversalCommand:   baseConfig.Get("CTAGS_COMMAND", ctagsCommandDefault, "ctags command (should point to universal-ctags executable compiled with JSON and seccomp support)"),
-		ScipCommand:        baseConfig.Get("SCIP_CTAGS_COMMAND", scipCtagsCommandDefault, "scip-ctags command"),
-		PatternLengthLimit: baseConfig.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the maximum length of the patterns output by ctags"),
-		LogErrors:          baseConfig.GetBool("LOG_CTAGS_ERRORS", logCtagsErrorsDefault, "log ctags errors"),
-		DebugLogs:          false,
-		MaxFileSize:        baseConfig.GetInt("CTAGS_MAX_FILE_SIZE", "524288", "skip files larger than this size (in bytes)"),
-		MaxSymbols:         baseConfig.GetInt("CTAGS_MAX_SYMBOLS", "2000", "skip files with more than this many symbols"),
+	return CtbgsConfig{
+		UniversblCommbnd:   bbseConfig.Get("CTAGS_COMMAND", ctbgsCommbndDefbult, "ctbgs commbnd (should point to universbl-ctbgs executbble compiled with JSON bnd seccomp support)"),
+		ScipCommbnd:        bbseConfig.Get("SCIP_CTAGS_COMMAND", scipCtbgsCommbndDefbult, "scip-ctbgs commbnd"),
+		PbtternLengthLimit: bbseConfig.GetInt("CTAGS_PATTERN_LENGTH_LIMIT", "250", "the mbximum length of the pbtterns output by ctbgs"),
+		LogErrors:          bbseConfig.GetBool("LOG_CTAGS_ERRORS", logCtbgsErrorsDefbult, "log ctbgs errors"),
+		DebugLogs:          fblse,
+		MbxFileSize:        bbseConfig.GetInt("CTAGS_MAX_FILE_SIZE", "524288", "skip files lbrger thbn this size (in bytes)"),
+		MbxSymbols:         bbseConfig.GetInt("CTAGS_MAX_SYMBOLS", "2000", "skip files with more thbn this mbny symbols"),
 	}
 }
 
 type RepositoryFetcherConfig struct {
-	// The maximum sum of lengths of all paths in a single call to git archive. Without this limit, we
-	// could hit the error "argument list too long" by exceeding the limit on the number of arguments to
-	// a command enforced by the OS.
+	// The mbximum sum of lengths of bll pbths in b single cbll to git brchive. Without this limit, we
+	// could hit the error "brgument list too long" by exceeding the limit on the number of brguments to
+	// b commbnd enforced by the OS.
 	//
-	// Mac  : getconf ARG_MAX returns 1,048,576
+	// Mbc  : getconf ARG_MAX returns 1,048,576
 	// Linux: getconf ARG_MAX returns 2,097,152
 	//
-	// We want to remain well under that limit, so defaulting to 100,000 seems safe (see the
-	// MAX_TOTAL_PATHS_LENGTH environment variable below).
-	MaxTotalPathsLength int
+	// We wbnt to rembin well under thbt limit, so defbulting to 100,000 seems sbfe (see the
+	// MAX_TOTAL_PATHS_LENGTH environment vbribble below).
+	MbxTotblPbthsLength int
 
-	MaxFileSizeKb int
+	MbxFileSizeKb int
 }
 
-func LoadRepositoryFetcherConfig(baseConfig env.BaseConfig) RepositoryFetcherConfig {
-	// Variable was renamed to have SYMBOLS_ prefix to avoid a conflict with the same env var name
-	// in searcher when running as a single binary. The old name is treated as an alias to prevent
-	// customer environments from breaking if they still use it, because we have no way of migrating
-	// environment variables today.
-	maxTotalPathsLengthName := env.ChooseFallbackVariableName("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "MAX_TOTAL_PATHS_LENGTH")
+func LobdRepositoryFetcherConfig(bbseConfig env.BbseConfig) RepositoryFetcherConfig {
+	// Vbribble wbs renbmed to hbve SYMBOLS_ prefix to bvoid b conflict with the sbme env vbr nbme
+	// in sebrcher when running bs b single binbry. The old nbme is trebted bs bn blibs to prevent
+	// customer environments from brebking if they still use it, becbuse we hbve no wby of migrbting
+	// environment vbribbles todby.
+	mbxTotblPbthsLengthNbme := env.ChooseFbllbbckVbribbleNbme("SYMBOLS_MAX_TOTAL_PATHS_LENGTH", "MAX_TOTAL_PATHS_LENGTH")
 
 	return RepositoryFetcherConfig{
-		MaxTotalPathsLength: baseConfig.GetInt(maxTotalPathsLengthName, "100000", "maximum sum of lengths of all paths in a single call to git archive"),
-		MaxFileSizeKb:       baseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "maximum file size in KB, the contents of bigger files are ignored"),
+		MbxTotblPbthsLength: bbseConfig.GetInt(mbxTotblPbthsLengthNbme, "100000", "mbximum sum of lengths of bll pbths in b single cbll to git brchive"),
+		MbxFileSizeKb:       bbseConfig.GetInt("MAX_FILE_SIZE_KB", "1000", "mbximum file size in KB, the contents of bigger files bre ignored"),
 	}
 }
 
-type SearchFunc func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error)
+type SebrchFunc func(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (results result.Symbols, err error)

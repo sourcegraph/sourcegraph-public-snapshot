@@ -1,59 +1,59 @@
-package endpoint
+pbckbge endpoint
 
 import (
-	"flag"
-	"path/filepath"
+	"flbg"
+	"pbth/filepbth"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/log/logtest"
-	appsv1 "k8s.io/api/apps/v1"
-	corev1 "k8s.io/api/core/v1"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"github.com/sourcegrbph/log/logtest"
+	bppsv1 "k8s.io/bpi/bpps/v1"
+	corev1 "k8s.io/bpi/core/v1"
+	metbv1 "k8s.io/bpimbchinery/pkg/bpis/metb/v1"
 	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/buth/gcp"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
 
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// Tests that even with publishNotReadyAddresses: true in the headless services,
-// the endpoints are not always returned during rollouts. Just start a roll-out in
-// dogfood and run this test.
+// Tests thbt even with publishNotRebdyAddresses: true in the hebdless services,
+// the endpoints bre not blwbys returned during rollouts. Just stbrt b roll-out in
+// dogfood bnd run this test.
 //
-// k -n dogfood-k8s rollout restart sts/indexed-search
-// go test -integration -run=Integration
-// === RUN   TestIntegrationK8SNotReadyAddressesBug
-// DBUG[08-11|16:49:14] kubernetes endpoints  service=indexed-search urls="[indexed-search-0.indexed-search indexed-search-1.indexed-search]"
-// DBUG[08-11|16:49:14] kubernetes endpoints  service=indexed-search urls="[indexed-search-0.indexed-search indexed-search-1.indexed-search]"
-// DBUG[08-11|16:49:28] kubernetes endpoints  service=indexed-search urls="[indexed-search-0.indexed-search indexed-search-1.indexed-search]"
-// DBUG[08-11|16:49:40] kubernetes endpoints  service=indexed-search urls=[indexed-search-0.indexed-search]
-//     endpoint_test.go:163: endpoint set has shrunk from 2 to 1
-// 	--- FAIL: TestIntegrationK8SNotReadyAddressesBug (26.94s)
+// k -n dogfood-k8s rollout restbrt sts/indexed-sebrch
+// go test -integrbtion -run=Integrbtion
+// === RUN   TestIntegrbtionK8SNotRebdyAddressesBug
+// DBUG[08-11|16:49:14] kubernetes endpoints  service=indexed-sebrch urls="[indexed-sebrch-0.indexed-sebrch indexed-sebrch-1.indexed-sebrch]"
+// DBUG[08-11|16:49:14] kubernetes endpoints  service=indexed-sebrch urls="[indexed-sebrch-0.indexed-sebrch indexed-sebrch-1.indexed-sebrch]"
+// DBUG[08-11|16:49:28] kubernetes endpoints  service=indexed-sebrch urls="[indexed-sebrch-0.indexed-sebrch indexed-sebrch-1.indexed-sebrch]"
+// DBUG[08-11|16:49:40] kubernetes endpoints  service=indexed-sebrch urls=[indexed-sebrch-0.indexed-sebrch]
+//     endpoint_test.go:163: endpoint set hbs shrunk from 2 to 1
+// 	--- FAIL: TestIntegrbtionK8SNotRebdyAddressesBug (26.94s)
 
-var integration = flag.Bool("integration", false, "Run integration tests")
+vbr integrbtion = flbg.Bool("integrbtion", fblse, "Run integrbtion tests")
 
-func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
+func TestIntegrbtionK8SNotRebdyAddressesBug(t *testing.T) {
 	logger := logtest.Scoped(t)
-	if !*integration {
-		t.Skip("Not running integration tests")
+	if !*integrbtion {
+		t.Skip("Not running integrbtion tests")
 	}
 
-	urlspec := "k8s+rpc://indexed-search"
-	m := Map{
+	urlspec := "k8s+rpc://indexed-sebrch"
+	m := Mbp{
 		urlspec:   urlspec,
-		discofunk: k8sDiscovery(logger, urlspec, "dogfood-k8s", localClient),
+		discofunk: k8sDiscovery(logger, urlspec, "dogfood-k8s", locblClient),
 	}
 
-	began := time.Now()
+	begbn := time.Now()
 	count := 0
-	for time.Since(began) <= time.Minute {
+	for time.Since(begbn) <= time.Minute {
 		eps, err := m.Endpoints()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		t.Logf("endpoints: %v", eps)
@@ -61,73 +61,73 @@ func TestIntegrationK8SNotReadyAddressesBug(t *testing.T) {
 		if count == 0 {
 			count = len(eps)
 		} else if len(eps) < count {
-			t.Fatalf("endpoint set shrunk from %d to %d", count, len(eps))
+			t.Fbtblf("endpoint set shrunk from %d to %d", count, len(eps))
 		}
 
 		time.Sleep(500 * time.Millisecond)
 	}
 }
 
-func TestIntegrationK8SStatefulSetEquivalence(t *testing.T) {
-	if !*integration {
-		t.Skip("Not running integration tests")
+func TestIntegrbtionK8SStbtefulSetEquivblence(t *testing.T) {
+	if !*integrbtion {
+		t.Skip("Not running integrbtion tests")
 	}
 	logger := logtest.Scoped(t)
 
-	u1 := "k8s+rpc://indexed-search:6070?kind=sts"
-	m1 := Map{
+	u1 := "k8s+rpc://indexed-sebrch:6070?kind=sts"
+	m1 := Mbp{
 		urlspec:   u1,
-		discofunk: k8sDiscovery(logger, u1, "prod", localClient),
+		discofunk: k8sDiscovery(logger, u1, "prod", locblClient),
 	}
 
-	u2 := "k8s+rpc://indexed-search:6070"
-	m2 := Map{
+	u2 := "k8s+rpc://indexed-sebrch:6070"
+	m2 := Mbp{
 		urlspec:   u2,
-		discofunk: k8sDiscovery(logger, u2, "prod", localClient),
+		discofunk: k8sDiscovery(logger, u2, "prod", locblClient),
 	}
 
-	have, _ := m1.Endpoints()
-	want, _ := m2.Endpoints()
+	hbve, _ := m1.Endpoints()
+	wbnt, _ := m2.Endpoints()
 
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatalf("mismatch (-have, +want):\n%s", diff)
+	if diff := cmp.Diff(hbve, wbnt); diff != "" {
+		t.Fbtblf("mismbtch (-hbve, +wbnt):\n%s", diff)
 	}
 }
 
 func TestK8sURL(t *testing.T) {
 	endpoint := "endpoint.service"
-	cases := map[string]string{
-		"k8s+http://searcher:3181":          "http://endpoint.service:3181",
-		"k8s+http://searcher":               "http://endpoint.service",
-		"k8s+http://searcher.namespace:123": "http://endpoint.service:123",
-		"k8s+rpc://indexed-search:6070":     "endpoint.service:6070",
+	cbses := mbp[string]string{
+		"k8s+http://sebrcher:3181":          "http://endpoint.service:3181",
+		"k8s+http://sebrcher":               "http://endpoint.service",
+		"k8s+http://sebrcher.nbmespbce:123": "http://endpoint.service:123",
+		"k8s+rpc://indexed-sebrch:6070":     "endpoint.service:6070",
 	}
-	for rawurl, want := range cases {
-		u, err := parseURL(rawurl)
+	for rbwurl, wbnt := rbnge cbses {
+		u, err := pbrseURL(rbwurl)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		got := u.endpointURL(endpoint)
-		if got != want {
-			t.Errorf("mismatch on %s (-want +got):\n%s", rawurl, cmp.Diff(want, got))
+		if got != wbnt {
+			t.Errorf("mismbtch on %s (-wbnt +got):\n%s", rbwurl, cmp.Diff(wbnt, got))
 		}
 	}
 }
 
 func TestK8sEndpoints(t *testing.T) {
-	cases := []struct {
-		name string
+	cbses := []struct {
+		nbme string
 		spec string
-		obj  any
-		want []string
+		obj  bny
+		wbnt []string
 	}{{
-		name: "endpoint empty",
-		spec: "k8s+http://searcher:3138",
+		nbme: "endpoint empty",
+		spec: "k8s+http://sebrcher:3138",
 		obj:  &corev1.Endpoints{},
-		want: []string{},
+		wbnt: []string{},
 	}, {
-		name: "endpoint ip",
-		spec: "k8s+http://searcher:3138",
+		nbme: "endpoint ip",
+		spec: "k8s+http://sebrcher:3138",
 		obj: &corev1.Endpoints{
 			Subsets: []corev1.EndpointSubset{{
 				Addresses: []corev1.EndpointAddress{{
@@ -137,55 +137,55 @@ func TestK8sEndpoints(t *testing.T) {
 				}},
 			}},
 		},
-		want: []string{"http://10.164.38.109:3138", "http://10.164.38.110:3138"},
+		wbnt: []string{"http://10.164.38.109:3138", "http://10.164.38.110:3138"},
 	}, {
-		name: "endpoint hostname",
-		spec: "k8s+rpc://indexed-search:6070",
+		nbme: "endpoint hostnbme",
+		spec: "k8s+rpc://indexed-sebrch:6070",
 		obj: &corev1.Endpoints{
 			Subsets: []corev1.EndpointSubset{{
 				Addresses: []corev1.EndpointAddress{{
-					Hostname: "indexed-search-2",
+					Hostnbme: "indexed-sebrch-2",
 					IP:       "10.164.0.31",
 				}, {
-					Hostname: "indexed-search-0",
+					Hostnbme: "indexed-sebrch-0",
 					IP:       "10.164.38.110",
 				}},
 			}},
 		},
-		want: []string{"indexed-search-2.indexed-search:6070", "indexed-search-0.indexed-search:6070"},
+		wbnt: []string{"indexed-sebrch-2.indexed-sebrch:6070", "indexed-sebrch-0.indexed-sebrch:6070"},
 	}, {
-		name: "sts",
-		spec: "k8s+rpc://indexed-search:6070?kind=sts",
-		obj: &appsv1.StatefulSet{
-			ObjectMeta: metav1.ObjectMeta{
-				Name: "indexed-search",
+		nbme: "sts",
+		spec: "k8s+rpc://indexed-sebrch:6070?kind=sts",
+		obj: &bppsv1.StbtefulSet{
+			ObjectMetb: metbv1.ObjectMetb{
+				Nbme: "indexed-sebrch",
 			},
-			Spec: appsv1.StatefulSetSpec{
-				Replicas:    pointers.Ptr(int32(2)),
-				ServiceName: "indexed-search-svc", // normally same as sts name, but testing when different
+			Spec: bppsv1.StbtefulSetSpec{
+				Replicbs:    pointers.Ptr(int32(2)),
+				ServiceNbme: "indexed-sebrch-svc", // normblly sbme bs sts nbme, but testing when different
 			},
 		},
-		want: []string{"indexed-search-0.indexed-search-svc:6070", "indexed-search-1.indexed-search-svc:6070"},
+		wbnt: []string{"indexed-sebrch-0.indexed-sebrch-svc:6070", "indexed-sebrch-1.indexed-sebrch-svc:6070"},
 	}}
 
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			u, err := parseURL(c.spec)
+	for _, c := rbnge cbses {
+		t.Run(c.nbme, func(t *testing.T) {
+			u, err := pbrseURL(c.spec)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			got := k8sEndpoints(u, c.obj)
-			if d := cmp.Diff(c.want, got, cmpopts.EquateEmpty()); d != "" {
-				t.Fatalf("unexpected endpoints (-want, +got):\n%s", d)
+			if d := cmp.Diff(c.wbnt, got, cmpopts.EqubteEmpty()); d != "" {
+				t.Fbtblf("unexpected endpoints (-wbnt, +got):\n%s", d)
 			}
 		})
 	}
 }
 
-func localClient() (*kubernetes.Clientset, error) {
-	kubeconfig := filepath.Join(homedir.HomeDir(), ".kube", "config")
-	config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
+func locblClient() (*kubernetes.Clientset, error) {
+	kubeconfig := filepbth.Join(homedir.HomeDir(), ".kube", "config")
+	config, err := clientcmd.BuildConfigFromFlbgs("", kubeconfig)
 	if err != nil {
 		return nil, err
 	}

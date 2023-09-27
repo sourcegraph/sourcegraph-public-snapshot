@@ -1,39 +1,39 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	"github.com/stretchr/testify/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHandler(t *testing.T) {
+func TestHbndler(t *testing.T) {
 	t.Run("store error", func(t *testing.T) {
-		want := errors.New("error")
+		wbnt := errors.New("error")
 		store := dbmocks.NewMockWebhookLogStore()
-		store.DeleteStaleFunc.SetDefaultReturn(want)
+		store.DeleteStbleFunc.SetDefbultReturn(wbnt)
 
-		ph := &handler{
+		ph := &hbndler{
 			store: store,
 		}
 
-		err := ph.Handle(context.Background())
-		assert.ErrorIs(t, err, want)
-		mockassert.CalledOnce(t, store.DeleteStaleFunc)
+		err := ph.Hbndle(context.Bbckground())
+		bssert.ErrorIs(t, err, wbnt)
+		mockbssert.CblledOnce(t, store.DeleteStbleFunc)
 	})
 
 	t.Run("success", func(t *testing.T) {
 		store := dbmocks.NewMockWebhookLogStore()
-		ph := &handler{
+		ph := &hbndler{
 			store: store,
 		}
 
-		err := ph.Handle(context.Background())
-		assert.Nil(t, err)
-		mockassert.CalledOnce(t, store.DeleteStaleFunc)
+		err := ph.Hbndle(context.Bbckground())
+		bssert.Nil(t, err)
+		mockbssert.CblledOnce(t, store.DeleteStbleFunc)
 	})
 }

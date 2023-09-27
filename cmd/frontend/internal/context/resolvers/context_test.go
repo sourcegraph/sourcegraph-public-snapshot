@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,44 +7,44 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	codycontext "github.com/sourcegrbph/sourcegrbph/internbl/codycontext"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestContextResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	repo1 := types.Repo{Name: "repo1"}
-	repo2 := types.Repo{Name: "repo2"}
-	// Create populates the IDs in the passed in types.Repo
-	err := db.Repos().Create(ctx, &repo1, &repo2)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	repo1 := types.Repo{Nbme: "repo1"}
+	repo2 := types.Repo{Nbme: "repo2"}
+	// Crebte populbtes the IDs in the pbssed in types.Repo
+	err := db.Repos().Crebte(ctx, &repo1, &repo2)
 	require.NoError(t, err)
 
-	_, err = db.ExecContext(ctx, "INSERT INTO repo_embedding_jobs (state, repo_id, revision) VALUES ('completed', $1, 'HEAD');", int32(repo1.ID))
+	_, err = db.ExecContext(ctx, "INSERT INTO repo_embedding_jobs (stbte, repo_id, revision) VALUES ('completed', $1, 'HEAD');", int32(repo1.ID))
 	require.NoError(t, err)
 
-	files := map[api.RepoName]map[string][]byte{
+	files := mbp[bpi.RepoNbme]mbp[string][]byte{
 		"repo1": {
 			"testcode1.go": []byte("testcode1"),
 			"testtext1.md": []byte("testtext1"),
@@ -56,69 +56,69 @@ func TestContextResolver(t *testing.T) {
 	}
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.StatFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, _ api.CommitID, fileName string) (fs.FileInfo, error) {
-		return fakeFileInfo{path: fileName}, nil
+	mockGitserver.StbtFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, _ bpi.CommitID, fileNbme string) (fs.FileInfo, error) {
+		return fbkeFileInfo{pbth: fileNbme}, nil
 	})
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, repo api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
-		if content, ok := files[repo][fileName]; ok {
+	mockGitserver.RebdFileFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, _ bpi.CommitID, fileNbme string) ([]byte, error) {
+		if content, ok := files[repo][fileNbme]; ok {
 			return content, nil
 		}
 		return nil, os.ErrNotExist
 	})
 
 	mockEmbeddingsClient := embeddings.NewMockClient()
-	mockEmbeddingsClient.SearchFunc.SetDefaultHook(func(_ context.Context, params embeddings.EmbeddingsSearchParameters) (*embeddings.EmbeddingCombinedSearchResults, error) {
-		require.Equal(t, params.RepoNames, []api.RepoName{"repo1"})
-		require.Equal(t, params.TextResultsCount, 1)
-		require.Equal(t, params.CodeResultsCount, 1)
-		return &embeddings.EmbeddingCombinedSearchResults{
-			CodeResults: embeddings.EmbeddingSearchResults{{
-				FileName: "testcode1.go",
+	mockEmbeddingsClient.SebrchFunc.SetDefbultHook(func(_ context.Context, pbrbms embeddings.EmbeddingsSebrchPbrbmeters) (*embeddings.EmbeddingCombinedSebrchResults, error) {
+		require.Equbl(t, pbrbms.RepoNbmes, []bpi.RepoNbme{"repo1"})
+		require.Equbl(t, pbrbms.TextResultsCount, 1)
+		require.Equbl(t, pbrbms.CodeResultsCount, 1)
+		return &embeddings.EmbeddingCombinedSebrchResults{
+			CodeResults: embeddings.EmbeddingSebrchResults{{
+				FileNbme: "testcode1.go",
 			}},
-			TextResults: embeddings.EmbeddingSearchResults{{
-				FileName: "testtext1.md",
+			TextResults: embeddings.EmbeddingSebrchResults{{
+				FileNbme: "testtext1.md",
 			}},
 		}, nil
 	})
 
-	lineRange := func(start, end int) result.ChunkMatches {
-		return result.ChunkMatches{{
-			Ranges: result.Ranges{{
-				Start: result.Location{Line: start},
-				End:   result.Location{Line: end},
+	lineRbnge := func(stbrt, end int) result.ChunkMbtches {
+		return result.ChunkMbtches{{
+			Rbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Line: stbrt},
+				End:   result.Locbtion{Line: end},
 			}},
 		}}
 	}
 
-	mockSearchClient := client.NewMockSearchClient()
-	mockSearchClient.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, query string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
-		return &search.Inputs{OriginalQuery: query}, nil
+	mockSebrchClient := client.NewMockSebrchClient()
+	mockSebrchClient.PlbnFunc.SetDefbultHook(func(_ context.Context, _ string, _ *string, query string, _ sebrch.Mode, _ sebrch.Protocol) (*sebrch.Inputs, error) {
+		return &sebrch.Inputs{OriginblQuery: query}, nil
 	})
-	mockSearchClient.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, inputs *search.Inputs) (*search.Alert, error) {
-		if strings.Contains(inputs.OriginalQuery, "-file") {
-			stream.Send(streaming.SearchEvent{
-				Results: result.Matches{&result.FileMatch{
+	mockSebrchClient.ExecuteFunc.SetDefbultHook(func(_ context.Context, strebm strebming.Sender, inputs *sebrch.Inputs) (*sebrch.Alert, error) {
+		if strings.Contbins(inputs.OriginblQuery, "-file") {
+			strebm.Send(strebming.SebrchEvent{
+				Results: result.Mbtches{&result.FileMbtch{
 					File: result.File{
-						Path: "testcode2.go",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+						Pbth: "testcode2.go",
+						Repo: types.MinimblRepo{ID: repo2.ID, Nbme: repo2.Nbme},
 					},
-					ChunkMatches: lineRange(0, 4),
-				}, &result.FileMatch{
+					ChunkMbtches: lineRbnge(0, 4),
+				}, &result.FileMbtch{
 					File: result.File{
-						Path: "testcode2again.go",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+						Pbth: "testcode2bgbin.go",
+						Repo: types.MinimblRepo{ID: repo2.ID, Nbme: repo2.Nbme},
 					},
-					ChunkMatches: lineRange(0, 4),
+					ChunkMbtches: lineRbnge(0, 4),
 				}},
 			})
 		} else {
-			stream.Send(streaming.SearchEvent{
-				Results: result.Matches{&result.FileMatch{
+			strebm.Send(strebming.SebrchEvent{
+				Results: result.Mbtches{&result.FileMbtch{
 					File: result.File{
-						Path: "testtext2.md",
-						Repo: types.MinimalRepo{ID: repo2.ID, Name: repo2.Name},
+						Pbth: "testtext2.md",
+						Repo: types.MinimblRepo{ID: repo2.ID, Nbme: repo2.Nbme},
 					},
-					ChunkMatches: lineRange(0, 4),
+					ChunkMbtches: lineRbnge(0, 4),
 				}},
 			})
 		}
@@ -126,10 +126,10 @@ func TestContextResolver(t *testing.T) {
 	})
 
 	contextClient := codycontext.NewCodyContextClient(
-		observation.NewContext(logger),
+		observbtion.NewContext(logger),
 		db,
 		mockEmbeddingsClient,
-		mockSearchClient,
+		mockSebrchClient,
 		nil,
 	)
 
@@ -141,37 +141,37 @@ func TestContextResolver(t *testing.T) {
 
 	truePtr := true
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			CodyEnabled: &truePtr,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			CodyEnbbled: &truePtr,
 		},
 	})
 
-	ctx = actor.WithActor(ctx, actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
-	ctx = featureflag.WithFlags(ctx, ffs)
+	ctx = bctor.WithActor(ctx, bctor.FromMockUser(1))
+	ffs := febtureflbg.NewMemoryStore(mbp[string]bool{"cody": true}, nil, nil)
+	ctx = febtureflbg.WithFlbgs(ctx, ffs)
 
-	results, err := resolver.GetCodyContext(ctx, graphqlbackend.GetContextArgs{
-		Repos:            graphqlbackend.MarshalRepositoryIDs([]api.RepoID{1, 2}),
+	results, err := resolver.GetCodyContext(ctx, grbphqlbbckend.GetContextArgs{
+		Repos:            grbphqlbbckend.MbrshblRepositoryIDs([]bpi.RepoID{1, 2}),
 		Query:            "my test query",
 		TextResultsCount: 2,
 		CodeResultsCount: 2,
 	})
 	require.NoError(t, err)
 
-	paths := make([]string, len(results))
-	for i, result := range results {
-		paths[i] = result.(*graphqlbackend.FileChunkContextResolver).Blob().Path()
+	pbths := mbke([]string, len(results))
+	for i, result := rbnge results {
+		pbths[i] = result.(*grbphqlbbckend.FileChunkContextResolver).Blob().Pbth()
 	}
-	// One code result and text result from each repo
+	// One code result bnd text result from ebch repo
 	expected := []string{"testcode1.go", "testtext1.md", "testcode2.go", "testtext2.md"}
-	require.Equal(t, expected, paths)
+	require.Equbl(t, expected, pbths)
 }
 
-type fakeFileInfo struct {
-	path string
+type fbkeFileInfo struct {
+	pbth string
 	fs.FileInfo
 }
 
-func (f fakeFileInfo) Name() string {
-	return f.path
+func (f fbkeFileInfo) Nbme() string {
+	return f.pbth
 }

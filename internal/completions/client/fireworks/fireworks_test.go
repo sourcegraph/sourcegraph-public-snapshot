@@ -1,4 +1,4 @@
-package fireworks
+pbckbge fireworks
 
 import (
 	"bytes"
@@ -7,11 +7,11 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
 )
 
 type mockDoer struct {
@@ -22,32 +22,32 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 	return c.do(r)
 }
 
-func TestErrStatusNotOK(t *testing.T) {
+func TestErrStbtusNotOK(t *testing.T) {
 	mockClient := NewClient(&mockDoer{
 		func(r *http.Request) (*http.Response, error) {
 			return &http.Response{
-				StatusCode: http.StatusTooManyRequests,
-				Body:       io.NopCloser(bytes.NewReader([]byte("oh no, please slow down!"))),
+				StbtusCode: http.StbtusTooMbnyRequests,
+				Body:       io.NopCloser(bytes.NewRebder([]byte("oh no, plebse slow down!"))),
 			}, nil
 		},
 	}, "", "")
 
 	t.Run("Complete", func(t *testing.T) {
-		resp, err := mockClient.Complete(context.Background(), types.CompletionsFeatureCode, types.CompletionRequestParameters{Messages: []types.Message{{Text: ""}}})
+		resp, err := mockClient.Complete(context.Bbckground(), types.CompletionsFebtureCode, types.CompletionRequestPbrbmeters{Messbges: []types.Messbge{{Text: ""}}})
 		require.Error(t, err)
-		assert.Nil(t, resp)
+		bssert.Nil(t, resp)
 
-		autogold.Expect("Fireworks: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
-		_, ok := types.IsErrStatusNotOK(err)
-		assert.True(t, ok)
+		butogold.Expect("Fireworks: unexpected stbtus code 429: oh no, plebse slow down!").Equbl(t, err.Error())
+		_, ok := types.IsErrStbtusNotOK(err)
+		bssert.True(t, ok)
 	})
 
-	t.Run("Stream", func(t *testing.T) {
-		err := mockClient.Stream(context.Background(), types.CompletionsFeatureCode, types.CompletionRequestParameters{Messages: []types.Message{{Text: ""}}}, func(event types.CompletionResponse) error { return nil })
+	t.Run("Strebm", func(t *testing.T) {
+		err := mockClient.Strebm(context.Bbckground(), types.CompletionsFebtureCode, types.CompletionRequestPbrbmeters{Messbges: []types.Messbge{{Text: ""}}}, func(event types.CompletionResponse) error { return nil })
 		require.Error(t, err)
 
-		autogold.Expect("Fireworks: unexpected status code 429: oh no, please slow down!").Equal(t, err.Error())
-		_, ok := types.IsErrStatusNotOK(err)
-		assert.True(t, ok)
+		butogold.Expect("Fireworks: unexpected stbtus code 429: oh no, plebse slow down!").Equbl(t, err.Error())
+		_, ok := types.IsErrStbtusNotOK(err)
+		bssert.True(t, ok)
 	})
 }

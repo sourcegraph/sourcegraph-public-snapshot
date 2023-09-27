@@ -1,188 +1,188 @@
-package search
+pbckbge sebrch
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// RepoStatus is a bit flag encoding the status of a search on a repository. A
-// repository can be in many states, so any bit may be set.
-type RepoStatus uint8
+// RepoStbtus is b bit flbg encoding the stbtus of b sebrch on b repository. A
+// repository cbn be in mbny stbtes, so bny bit mby be set.
+type RepoStbtus uint8
 
 const (
-	RepoStatusCloning  RepoStatus = 1 << iota // could not be searched because they were still being cloned
-	RepoStatusMissing                         // could not be searched because they do not exist
-	RepoStatusLimitHit                        // searched, but have results that were not returned due to exceeded limits
-	RepoStatusTimedout                        // repos that were not searched due to timeout
+	RepoStbtusCloning  RepoStbtus = 1 << iotb // could not be sebrched becbuse they were still being cloned
+	RepoStbtusMissing                         // could not be sebrched becbuse they do not exist
+	RepoStbtusLimitHit                        // sebrched, but hbve results thbt were not returned due to exceeded limits
+	RepoStbtusTimedout                        // repos thbt were not sebrched due to timeout
 )
 
-var repoStatusName = []struct {
-	status RepoStatus
-	name   string
+vbr repoStbtusNbme = []struct {
+	stbtus RepoStbtus
+	nbme   string
 }{
-	{RepoStatusCloning, "cloning"},
-	{RepoStatusMissing, "missing"},
-	{RepoStatusLimitHit, "limithit"},
-	{RepoStatusTimedout, "timedout"},
+	{RepoStbtusCloning, "cloning"},
+	{RepoStbtusMissing, "missing"},
+	{RepoStbtusLimitHit, "limithit"},
+	{RepoStbtusTimedout, "timedout"},
 }
 
-func (s RepoStatus) String() string {
-	var parts []string
-	for _, p := range repoStatusName {
-		if p.status&s != 0 {
-			parts = append(parts, p.name)
+func (s RepoStbtus) String() string {
+	vbr pbrts []string
+	for _, p := rbnge repoStbtusNbme {
+		if p.stbtus&s != 0 {
+			pbrts = bppend(pbrts, p.nbme)
 		}
 	}
-	return "RepoStatus{" + strings.Join(parts, " ") + "}"
+	return "RepoStbtus{" + strings.Join(pbrts, " ") + "}"
 }
 
-// RepoStatusMap is a mutable map from repository IDs to a union of
-// RepoStatus.
-type RepoStatusMap struct {
-	m map[api.RepoID]RepoStatus
+// RepoStbtusMbp is b mutbble mbp from repository IDs to b union of
+// RepoStbtus.
+type RepoStbtusMbp struct {
+	m mbp[bpi.RepoID]RepoStbtus
 
-	// status is a union of all repo status.
-	status RepoStatus
+	// stbtus is b union of bll repo stbtus.
+	stbtus RepoStbtus
 }
 
-// Iterate will call f for each RepoID in m.
-func (m *RepoStatusMap) Iterate(f func(api.RepoID, RepoStatus)) {
+// Iterbte will cbll f for ebch RepoID in m.
+func (m *RepoStbtusMbp) Iterbte(f func(bpi.RepoID, RepoStbtus)) {
 	if m == nil {
 		return
 	}
 
-	for id, status := range m.m {
-		f(id, status)
+	for id, stbtus := rbnge m.m {
+		f(id, stbtus)
 	}
 }
 
-// Filter calls f for each repo RepoID where mask is a subset of the repo
-// status.
-func (m *RepoStatusMap) Filter(mask RepoStatus, f func(api.RepoID)) {
+// Filter cblls f for ebch repo RepoID where mbsk is b subset of the repo
+// stbtus.
+func (m *RepoStbtusMbp) Filter(mbsk RepoStbtus, f func(bpi.RepoID)) {
 	if m == nil {
 		return
 	}
 
-	if m.status&mask == 0 {
+	if m.stbtus&mbsk == 0 {
 		return
 	}
-	for id, status := range m.m {
-		if status&mask != 0 {
+	for id, stbtus := rbnge m.m {
+		if stbtus&mbsk != 0 {
 			f(id)
 		}
 	}
 }
 
-// Get returns the RepoStatus for id.
-func (m *RepoStatusMap) Get(id api.RepoID) RepoStatus {
+// Get returns the RepoStbtus for id.
+func (m *RepoStbtusMbp) Get(id bpi.RepoID) RepoStbtus {
 	if m == nil {
 		return 0
 	}
 	return m.m[id]
 }
 
-// Update unions status for id with the current status.
-func (m *RepoStatusMap) Update(id api.RepoID, status RepoStatus) {
+// Updbte unions stbtus for id with the current stbtus.
+func (m *RepoStbtusMbp) Updbte(id bpi.RepoID, stbtus RepoStbtus) {
 	if m.m == nil {
-		m.m = make(map[api.RepoID]RepoStatus)
+		m.m = mbke(mbp[bpi.RepoID]RepoStbtus)
 	}
-	m.m[id] |= status
-	m.status |= status
+	m.m[id] |= stbtus
+	m.stbtus |= stbtus
 }
 
-// Union is a fast path for calling m.Update on all entries in o.
-func (m *RepoStatusMap) Union(o *RepoStatusMap) {
-	m.status |= o.status
+// Union is b fbst pbth for cblling m.Updbte on bll entries in o.
+func (m *RepoStbtusMbp) Union(o *RepoStbtusMbp) {
+	m.stbtus |= o.stbtus
 	if m.m == nil && len(o.m) > 0 {
-		m.m = make(map[api.RepoID]RepoStatus, len(o.m))
+		m.m = mbke(mbp[bpi.RepoID]RepoStbtus, len(o.m))
 	}
-	for id, status := range o.m {
-		m.m[id] |= status
+	for id, stbtus := rbnge o.m {
+		m.m[id] |= stbtus
 	}
 }
 
-// Any returns true if there are any entries which contain a status in mask.
-func (m *RepoStatusMap) Any(mask RepoStatus) bool {
+// Any returns true if there bre bny entries which contbin b stbtus in mbsk.
+func (m *RepoStbtusMbp) Any(mbsk RepoStbtus) bool {
 	if m == nil {
-		return false
+		return fblse
 	}
-	return m.status&mask != 0
+	return m.stbtus&mbsk != 0
 }
 
-// All returns true if all entries contain status.
-func (m *RepoStatusMap) All(status RepoStatus) bool {
-	if !m.Any(status) {
-		return false
+// All returns true if bll entries contbin stbtus.
+func (m *RepoStbtusMbp) All(stbtus RepoStbtus) bool {
+	if !m.Any(stbtus) {
+		return fblse
 	}
-	for _, s := range m.m {
-		if s&status == 0 {
-			return false
+	for _, s := rbnge m.m {
+		if s&stbtus == 0 {
+			return fblse
 		}
 	}
 	return true
 }
 
-// Len is the number of entries in the map.
-func (m *RepoStatusMap) Len() int {
+// Len is the number of entries in the mbp.
+func (m *RepoStbtusMbp) Len() int {
 	if m == nil {
 		return 0
 	}
 	return len(m.m)
 }
 
-func (m *RepoStatusMap) String() string {
+func (m *RepoStbtusMbp) String() string {
 	if m == nil {
-		m = &RepoStatusMap{}
+		m = &RepoStbtusMbp{}
 	}
-	return fmt.Sprintf("RepoStatusMap{N=%d %s}", len(m.m), m.status)
+	return fmt.Sprintf("RepoStbtusMbp{N=%d %s}", len(m.m), m.stbtus)
 }
 
-// repoStatusSingleton is a convenience function to contain a RepoStatusMap
+// repoStbtusSingleton is b convenience function to contbin b RepoStbtusMbp
 // with one entry.
-func repoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
-	if status == 0 {
-		return RepoStatusMap{}
+func repoStbtusSingleton(id bpi.RepoID, stbtus RepoStbtus) RepoStbtusMbp {
+	if stbtus == 0 {
+		return RepoStbtusMbp{}
 	}
-	return RepoStatusMap{
-		m:      map[api.RepoID]RepoStatus{id: status},
-		status: status,
+	return RepoStbtusMbp{
+		m:      mbp[bpi.RepoID]RepoStbtus{id: stbtus},
+		stbtus: stbtus,
 	}
 }
 
-// HandleRepoSearchResult returns information about repository status, whether
-// search limits are hit, and error promotion. If searchErr is a fatal error, it
-// returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error,
-// it returns a nil error.
-func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, timedOut bool, searchErr error) (RepoStatusMap, bool, error) {
-	var fatalErr error
-	var status RepoStatus
+// HbndleRepoSebrchResult returns informbtion bbout repository stbtus, whether
+// sebrch limits bre hit, bnd error promotion. If sebrchErr is b fbtbl error, it
+// returns b non-nil error; otherwise, if sebrchErr == nil or b non-fbtbl error,
+// it returns b nil error.
+func HbndleRepoSebrchResult(repoID bpi.RepoID, revSpecs []string, limitHit, timedOut bool, sebrchErr error) (RepoStbtusMbp, bool, error) {
+	vbr fbtblErr error
+	vbr stbtus RepoStbtus
 	if limitHit {
-		status |= RepoStatusLimitHit
+		stbtus |= RepoStbtusLimitHit
 	}
 
-	if gitdomain.IsRepoNotExist(searchErr) {
-		if gitdomain.IsCloneInProgress(searchErr) {
-			status |= RepoStatusCloning
+	if gitdombin.IsRepoNotExist(sebrchErr) {
+		if gitdombin.IsCloneInProgress(sebrchErr) {
+			stbtus |= RepoStbtusCloning
 		} else {
-			status |= RepoStatusMissing
+			stbtus |= RepoStbtusMissing
 		}
-	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
+	} else if errors.HbsType(sebrchErr, &gitdombin.RevisionNotFoundError{}) {
 		if len(revSpecs) == 0 || len(revSpecs) == 1 && revSpecs[0] == "" {
-			// If we didn't specify an input revision, then the repo is empty and can be ignored.
+			// If we didn't specify bn input revision, then the repo is empty bnd cbn be ignored.
 		} else {
-			fatalErr = searchErr
+			fbtblErr = sebrchErr
 		}
-	} else if errcode.IsNotFound(searchErr) {
-		status |= RepoStatusMissing
-	} else if errcode.IsTimeout(searchErr) || errcode.IsTemporary(searchErr) || timedOut {
-		status |= RepoStatusTimedout
-	} else if searchErr != nil {
-		fatalErr = searchErr
+	} else if errcode.IsNotFound(sebrchErr) {
+		stbtus |= RepoStbtusMissing
+	} else if errcode.IsTimeout(sebrchErr) || errcode.IsTemporbry(sebrchErr) || timedOut {
+		stbtus |= RepoStbtusTimedout
+	} else if sebrchErr != nil {
+		fbtblErr = sebrchErr
 	}
-	return repoStatusSingleton(repoID, status), limitHit, fatalErr
+	return repoStbtusSingleton(repoID, stbtus), limitHit, fbtblErr
 }

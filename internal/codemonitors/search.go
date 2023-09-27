@@ -1,69 +1,69 @@
-package codemonitors
+pbckbge codemonitors
 
 import (
 	"context"
 	"net/url"
 	"sort"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/commit"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	gitprotocol "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/commit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/jobutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64) (_ []*result.CommitMatch, err error) {
-	searchClient := client.New(logger, db)
-	inputs, err := searchClient.Plan(
+func Sebrch(ctx context.Context, logger log.Logger, db dbtbbbse.DB, query string, monitorID int64) (_ []*result.CommitMbtch, err error) {
+	sebrchClient := client.New(logger, db)
+	inputs, err := sebrchClient.Plbn(
 		ctx,
 		"V3",
 		nil,
 		query,
-		search.Precise,
-		search.Streaming,
+		sebrch.Precise,
+		sebrch.Strebming,
 	)
 	if err != nil {
-		return nil, errcode.MakeNonRetryable(err)
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
 
-	// Inline job creation so we can mutate the commit job before running it
-	clients := searchClient.JobClients()
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	// Inline job crebtion so we cbn mutbte the commit job before running it
+	clients := sebrchClient.JobClients()
+	plbnJob, err := jobutil.NewPlbnJob(inputs, inputs.Plbn)
 	if err != nil {
-		return nil, errcode.MakeNonRetryable(err)
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
 
-	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
-		return hookWithID(ctx, db, logger, gs, monitorID, repoID, args, doSearch)
+	hook := func(ctx context.Context, db dbtbbbse.DB, gs commit.GitserverClient, brgs *gitprotocol.SebrchRequest, repoID bpi.RepoID, doSebrch commit.DoSebrchFunc) error {
+		return hookWithID(ctx, db, logger, gs, monitorID, repoID, brgs, doSebrch)
 	}
-	planJob, err = addCodeMonitorHook(planJob, hook)
+	plbnJob, err = bddCodeMonitorHook(plbnJob, hook)
 	if err != nil {
-		return nil, errcode.MakeNonRetryable(err)
+		return nil, errcode.MbkeNonRetrybble(err)
 	}
 
-	// Execute the search
-	agg := streaming.NewAggregatingStream()
-	_, err = planJob.Run(ctx, clients, agg)
+	// Execute the sebrch
+	bgg := strebming.NewAggregbtingStrebm()
+	_, err = plbnJob.Run(ctx, clients, bgg)
 	if err != nil {
 		return nil, err
 	}
 
-	results := make([]*result.CommitMatch, len(agg.Results))
-	for i, res := range agg.Results {
-		cm, ok := res.(*result.CommitMatch)
+	results := mbke([]*result.CommitMbtch, len(bgg.Results))
+	for i, res := rbnge bgg.Results {
+		cm, ok := res.(*result.CommitMbtch)
 		if !ok {
-			return nil, errors.Errorf("expected search to only return commit matches, but got type %T", res)
+			return nil, errors.Errorf("expected sebrch to only return commit mbtches, but got type %T", res)
 		}
 		results[i] = cm
 	}
@@ -71,82 +71,82 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 	return results, nil
 }
 
-// Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
-// On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
-// be searched from the beginning.
-func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64) error {
-	searchClient := client.New(logger, db)
-	inputs, err := searchClient.Plan(
+// Snbpshot runs b dummy sebrch thbt just sbves the current stbte of the sebrched repos in the dbtbbbse.
+// On subsequent runs, this bllows us to trebt bll new repos or sets of brgs bs something new thbt should
+// be sebrched from the beginning.
+func Snbpshot(ctx context.Context, logger log.Logger, db dbtbbbse.DB, query string, monitorID int64) error {
+	sebrchClient := client.New(logger, db)
+	inputs, err := sebrchClient.Plbn(
 		ctx,
 		"V3",
 		nil,
 		query,
-		search.Precise,
-		search.Streaming,
+		sebrch.Precise,
+		sebrch.Strebming,
 	)
 	if err != nil {
 		return err
 	}
 
-	clients := searchClient.JobClients()
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	clients := sebrchClient.JobClients()
+	plbnJob, err := jobutil.NewPlbnJob(inputs, inputs.Plbn)
 	if err != nil {
 		return err
 	}
 
-	hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, _ commit.DoSearchFunc) error {
-		return snapshotHook(ctx, db, gs, args, monitorID, repoID)
+	hook := func(ctx context.Context, db dbtbbbse.DB, gs commit.GitserverClient, brgs *gitprotocol.SebrchRequest, repoID bpi.RepoID, _ commit.DoSebrchFunc) error {
+		return snbpshotHook(ctx, db, gs, brgs, monitorID, repoID)
 	}
 
-	planJob, err = addCodeMonitorHook(planJob, hook)
+	plbnJob, err = bddCodeMonitorHook(plbnJob, hook)
 	if err != nil {
 		return err
 	}
 
-	// HACK(camdencheek): limit the concurrency of the commit search job
-	// because the db passed into this function might actually be a transaction
-	// and transactions cannot be used concurrently.
-	planJob = limitConcurrency(planJob)
+	// HACK(cbmdencheek): limit the concurrency of the commit sebrch job
+	// becbuse the db pbssed into this function might bctublly be b trbnsbction
+	// bnd trbnsbctions cbnnot be used concurrently.
+	plbnJob = limitConcurrency(plbnJob)
 
-	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
+	_, err = plbnJob.Run(ctx, clients, strebming.NewNullStrebm())
 	return err
 }
 
-var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
+vbr ErrInvblidMonitorQuery = errors.New("code monitor cbnnot use different pbtterns for different repos")
 
 func limitConcurrency(in job.Job) job.Job {
-	return job.Map(in, func(j job.Job) job.Job {
+	return job.Mbp(in, func(j job.Job) job.Job {
 		switch v := j.(type) {
-		case *commit.SearchJob:
+		cbse *commit.SebrchJob:
 			cp := *v
 			cp.Concurrency = 1
 			return &cp
-		default:
+		defbult:
 			return j
 		}
 	})
 }
 
-func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
-	commitSearchJobCount := 0
-	return job.Map(in, func(j job.Job) job.Job {
+func bddCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
+	commitSebrchJobCount := 0
+	return job.Mbp(in, func(j job.Job) job.Job {
 		switch v := j.(type) {
-		case *commit.SearchJob:
-			commitSearchJobCount++
-			if commitSearchJobCount > 1 && err == nil {
-				err = ErrInvalidMonitorQuery
+		cbse *commit.SebrchJob:
+			commitSebrchJobCount++
+			if commitSebrchJobCount > 1 && err == nil {
+				err = ErrInvblidMonitorQuery
 			}
 			cp := *v
-			cp.CodeMonitorSearchWrapper = hook
+			cp.CodeMonitorSebrchWrbpper = hook
 			return &cp
-		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
+		cbse *repos.ComputeExcludedJob, *jobutil.NoopJob:
 			// ComputeExcludedJob is fine for code monitor jobs, but should be
 			// removed since it's not used
 			return jobutil.NewNoopJob()
-		default:
+		defbult:
 			if len(j.Children()) == 0 {
 				if err == nil {
-					err = errors.New("all branches of query must be of type:diff or type:commit. If you have an AND/OR operator in your query, ensure that both sides have type:commit or type:diff.")
+					err = errors.New("bll brbnches of query must be of type:diff or type:commit. If you hbve bn AND/OR operbtor in your query, ensure thbt both sides hbve type:commit or type:diff.")
 				}
 			}
 			return j
@@ -156,106 +156,106 @@ func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err
 
 func hookWithID(
 	ctx context.Context,
-	db database.DB,
+	db dbtbbbse.DB,
 	logger log.Logger,
 	gs commit.GitserverClient,
 	monitorID int64,
-	repoID api.RepoID,
-	args *gitprotocol.SearchRequest,
-	doSearch commit.DoSearchFunc,
+	repoID bpi.RepoID,
+	brgs *gitprotocol.SebrchRequest,
+	doSebrch commit.DoSebrchFunc,
 ) error {
 	cm := db.CodeMonitors()
 
-	// Resolve the requested revisions into a static set of commit hashes
-	commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
+	// Resolve the requested revisions into b stbtic set of commit hbshes
+	commitHbshes, err := gs.ResolveRevisions(ctx, brgs.Repo, brgs.Revisions)
 	if err != nil {
 		return err
 	}
 
-	// Look up the previously searched set of commit hashes
-	lastSearched, err := cm.GetLastSearched(ctx, monitorID, repoID)
+	// Look up the previously sebrched set of commit hbshes
+	lbstSebrched, err := cm.GetLbstSebrched(ctx, monitorID, repoID)
 	if err != nil {
 		return err
 	}
-	if stringsEqual(commitHashes, lastSearched) {
-		// Early return if the repo hasn't changed since last search
+	if stringsEqubl(commitHbshes, lbstSebrched) {
+		// Ebrly return if the repo hbsn't chbnged since lbst sebrch
 		return nil
 	}
 
-	// Merge requested hashes and excluded hashes
-	newRevs := make([]gitprotocol.RevisionSpecifier, 0, len(commitHashes)+len(lastSearched))
-	for _, hash := range commitHashes {
-		newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: hash})
+	// Merge requested hbshes bnd excluded hbshes
+	newRevs := mbke([]gitprotocol.RevisionSpecifier, 0, len(commitHbshes)+len(lbstSebrched))
+	for _, hbsh := rbnge commitHbshes {
+		newRevs = bppend(newRevs, gitprotocol.RevisionSpecifier{RevSpec: hbsh})
 	}
-	for _, exclude := range lastSearched {
-		newRevs = append(newRevs, gitprotocol.RevisionSpecifier{RevSpec: "^" + exclude})
+	for _, exclude := rbnge lbstSebrched {
+		newRevs = bppend(newRevs, gitprotocol.RevisionSpecifier{RevSpec: "^" + exclude})
 	}
 
-	// Update args with the new set of revisions
-	argsCopy := *args
-	argsCopy.Revisions = newRevs
+	// Updbte brgs with the new set of revisions
+	brgsCopy := *brgs
+	brgsCopy.Revisions = newRevs
 
-	// Execute the search
-	err = doSearch(&argsCopy)
+	// Execute the sebrch
+	err = doSebrch(&brgsCopy)
 	if err != nil {
 		if errors.IsContextError(err) {
-			logger.Warn(
-				"commit search timed out, some commits may have been skipped",
+			logger.Wbrn(
+				"commit sebrch timed out, some commits mby hbve been skipped",
 				log.Error(err),
-				log.String("repo", string(args.Repo)),
-				log.Strings("include", commitHashes),
-				log.Strings("exlcude", lastSearched),
+				log.String("repo", string(brgs.Repo)),
+				log.Strings("include", commitHbshes),
+				log.Strings("exlcude", lbstSebrched),
 			)
 		} else {
 			return err
 		}
 	}
 
-	// If the search was successful, store the resolved hashes
-	// as the new "last searched" hashes
-	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
+	// If the sebrch wbs successful, store the resolved hbshes
+	// bs the new "lbst sebrched" hbshes
+	return cm.UpsertLbstSebrched(ctx, monitorID, repoID, commitHbshes)
 }
 
-func snapshotHook(
+func snbpshotHook(
 	ctx context.Context,
-	db database.DB,
+	db dbtbbbse.DB,
 	gs commit.GitserverClient,
-	args *gitprotocol.SearchRequest,
+	brgs *gitprotocol.SebrchRequest,
 	monitorID int64,
-	repoID api.RepoID,
+	repoID bpi.RepoID,
 ) error {
 	cm := db.CodeMonitors()
 
-	// Resolve the requested revisions into a static set of commit hashes
-	commitHashes, err := gs.ResolveRevisions(ctx, args.Repo, args.Revisions)
+	// Resolve the requested revisions into b stbtic set of commit hbshes
+	commitHbshes, err := gs.ResolveRevisions(ctx, brgs.Repo, brgs.Revisions)
 	if err != nil {
 		return err
 	}
 
-	return cm.UpsertLastSearched(ctx, monitorID, repoID, commitHashes)
+	return cm.UpsertLbstSebrched(ctx, monitorID, repoID, commitHbshes)
 }
 
-func gqlURL(queryName string) (string, error) {
-	u, err := url.Parse(internalapi.Client.URL)
+func gqlURL(queryNbme string) (string, error) {
+	u, err := url.Pbrse(internblbpi.Client.URL)
 	if err != nil {
 		return "", err
 	}
-	u.Path = "/.internal/graphql"
-	u.RawQuery = queryName
+	u.Pbth = "/.internbl/grbphql"
+	u.RbwQuery = queryNbme
 	return u.String(), nil
 }
 
-func stringsEqual(left, right []string) bool {
+func stringsEqubl(left, right []string) bool {
 	if len(left) != len(right) {
-		return false
+		return fblse
 	}
 
 	sort.Strings(left)
 	sort.Strings(right)
 
-	for i := range left {
+	for i := rbnge left {
 		if right[i] != left[i] {
-			return false
+			return fblse
 		}
 	}
 	return true

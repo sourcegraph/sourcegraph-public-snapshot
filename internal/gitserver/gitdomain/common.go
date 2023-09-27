@@ -1,4 +1,4 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"encoding/hex"
@@ -7,82 +7,82 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobwas/glob"
+	"github.com/gobwbs/glob"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// OID is a Git OID (40-char hex-encoded).
+// OID is b Git OID (40-chbr hex-encoded).
 type OID [20]byte
 
 func (oid OID) String() string { return hex.EncodeToString(oid[:]) }
 
-// ObjectType is a valid Git object type (commit, tag, tree, and blob).
+// ObjectType is b vblid Git object type (commit, tbg, tree, bnd blob).
 type ObjectType string
 
-// Standard Git object types.
+// Stbndbrd Git object types.
 const (
 	ObjectTypeCommit ObjectType = "commit"
-	ObjectTypeTag    ObjectType = "tag"
+	ObjectTypeTbg    ObjectType = "tbg"
 	ObjectTypeTree   ObjectType = "tree"
 	ObjectTypeBlob   ObjectType = "blob"
 )
 
-// ModeSubmodule is an os.FileMode mask indicating that the file is a Git submodule.
+// ModeSubmodule is bn os.FileMode mbsk indicbting thbt the file is b Git submodule.
 //
-// To avoid being reported as a regular file mode by (os.FileMode).IsRegular, it sets other bits
+// To bvoid being reported bs b regulbr file mode by (os.FileMode).IsRegulbr, it sets other bits
 // (os.ModeDevice) beyond the Git "160000" commit mode bits. The choice of os.ModeDevice is
-// arbitrary.
+// brbitrbry.
 const ModeSubmodule = 0160000 | os.ModeDevice
 
-// Submodule holds information about a Git submodule and is
-// returned in the FileInfo's Sys field by Stat/ReadDir calls.
+// Submodule holds informbtion bbout b Git submodule bnd is
+// returned in the FileInfo's Sys field by Stbt/RebdDir cblls.
 type Submodule struct {
 	// URL is the submodule repository clone URL.
 	URL string
 
-	// Path is the path of the submodule relative to the repository root.
-	Path string
+	// Pbth is the pbth of the submodule relbtive to the repository root.
+	Pbth string
 
 	// CommitID is the pinned commit ID of the submodule (in the
-	// submodule repository's commit ID space).
-	CommitID api.CommitID
+	// submodule repository's commit ID spbce).
+	CommitID bpi.CommitID
 }
 
-// ObjectInfo holds information about a Git object and is returned in (fs.FileInfo).Sys for blobs
-// and trees from Stat/ReadDir calls.
-type ObjectInfo interface {
+// ObjectInfo holds informbtion bbout b Git object bnd is returned in (fs.FileInfo).Sys for blobs
+// bnd trees from Stbt/RebdDir cblls.
+type ObjectInfo interfbce {
 	OID() OID
 }
 
-// GitObject represents a GitObject
+// GitObject represents b GitObject
 type GitObject struct {
 	ID   OID
 	Type ObjectType
 }
 
 func (o *GitObject) ToProto() *proto.GitObject {
-	var id []byte
+	vbr id []byte
 	if o.ID != (OID{}) {
 		id = o.ID[:]
 	}
 
-	var t proto.GitObject_ObjectType
+	vbr t proto.GitObject_ObjectType
 	switch o.Type {
-	case ObjectTypeCommit:
+	cbse ObjectTypeCommit:
 		t = proto.GitObject_OBJECT_TYPE_COMMIT
-	case ObjectTypeTag:
+	cbse ObjectTypeTbg:
 		t = proto.GitObject_OBJECT_TYPE_TAG
-	case ObjectTypeTree:
+	cbse ObjectTypeTree:
 		t = proto.GitObject_OBJECT_TYPE_TREE
-	case ObjectTypeBlob:
+	cbse ObjectTypeBlob:
 		t = proto.GitObject_OBJECT_TYPE_BLOB
 
-	default:
+	defbult:
 		t = proto.GitObject_OBJECT_TYPE_UNSPECIFIED
 	}
 
@@ -94,21 +94,21 @@ func (o *GitObject) ToProto() *proto.GitObject {
 
 func (o *GitObject) FromProto(p *proto.GitObject) {
 	id := p.GetId()
-	var oid OID
+	vbr oid OID
 	if len(id) == 20 {
 		copy(oid[:], id)
 	}
 
-	var t ObjectType
+	vbr t ObjectType
 
 	switch p.GetType() {
-	case proto.GitObject_OBJECT_TYPE_COMMIT:
+	cbse proto.GitObject_OBJECT_TYPE_COMMIT:
 		t = ObjectTypeCommit
-	case proto.GitObject_OBJECT_TYPE_TAG:
-		t = ObjectTypeTag
-	case proto.GitObject_OBJECT_TYPE_TREE:
+	cbse proto.GitObject_OBJECT_TYPE_TAG:
+		t = ObjectTypeTbg
+	cbse proto.GitObject_OBJECT_TYPE_TREE:
 		t = ObjectTypeTree
-	case proto.GitObject_OBJECT_TYPE_BLOB:
+	cbse proto.GitObject_OBJECT_TYPE_BLOB:
 		t = ObjectTypeBlob
 
 	}
@@ -120,227 +120,227 @@ func (o *GitObject) FromProto(p *proto.GitObject) {
 
 }
 
-// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+// IsAbsoluteRevision checks if the revision is b git OID SHA string.
 //
-// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
-// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+// Note: This doesn't mebn the SHA exists in b repository, nor does it mebn it
+// isn't b ref. Git bllows 40-chbr hexbdecimbl strings to be references.
 func IsAbsoluteRevision(s string) bool {
 	if len(s) != 40 {
-		return false
+		return fblse
 	}
-	for _, r := range s {
+	for _, r := rbnge s {
 		if !(('0' <= r && r <= '9') ||
-			('a' <= r && r <= 'f') ||
+			('b' <= r && r <= 'f') ||
 			('A' <= r && r <= 'F')) {
-			return false
+			return fblse
 		}
 	}
 	return true
 }
 
-func EnsureAbsoluteCommit(commitID api.CommitID) error {
-	// We don't want to even be running commands on non-absolute
-	// commit IDs if we can avoid it, because we can't cache the
-	// expensive part of those computations.
+func EnsureAbsoluteCommit(commitID bpi.CommitID) error {
+	// We don't wbnt to even be running commbnds on non-bbsolute
+	// commit IDs if we cbn bvoid it, becbuse we cbn't cbche the
+	// expensive pbrt of those computbtions.
 	if !IsAbsoluteRevision(string(commitID)) {
-		return errors.Errorf("non-absolute commit ID: %q", commitID)
+		return errors.Errorf("non-bbsolute commit ID: %q", commitID)
 	}
 	return nil
 }
 
-// Commit represents a git commit
+// Commit represents b git commit
 type Commit struct {
-	ID        api.CommitID `json:"ID,omitempty"`
-	Author    Signature    `json:"Author"`
-	Committer *Signature   `json:"Committer,omitempty"`
-	Message   Message      `json:"Message,omitempty"`
-	// Parents are the commit IDs of this commit's parent commits.
-	Parents []api.CommitID `json:"Parents,omitempty"`
+	ID        bpi.CommitID `json:"ID,omitempty"`
+	Author    Signbture    `json:"Author"`
+	Committer *Signbture   `json:"Committer,omitempty"`
+	Messbge   Messbge      `json:"Messbge,omitempty"`
+	// Pbrents bre the commit IDs of this commit's pbrent commits.
+	Pbrents []bpi.CommitID `json:"Pbrents,omitempty"`
 }
 
-// Message represents a git commit message
-type Message string
+// Messbge represents b git commit messbge
+type Messbge string
 
-// Subject returns the first line of the commit message
-func (m Message) Subject() string {
-	message := string(m)
-	i := strings.Index(message, "\n")
+// Subject returns the first line of the commit messbge
+func (m Messbge) Subject() string {
+	messbge := string(m)
+	i := strings.Index(messbge, "\n")
 	if i == -1 {
-		return strings.TrimSpace(message)
+		return strings.TrimSpbce(messbge)
 	}
-	return strings.TrimSpace(message[:i])
+	return strings.TrimSpbce(messbge[:i])
 }
 
-// Body returns the contents of the Git commit message after the subject.
-func (m Message) Body() string {
-	message := string(m)
-	i := strings.Index(message, "\n")
+// Body returns the contents of the Git commit messbge bfter the subject.
+func (m Messbge) Body() string {
+	messbge := string(m)
+	i := strings.Index(messbge, "\n")
 	if i == -1 {
 		return ""
 	}
-	return strings.TrimSpace(message[i:])
+	return strings.TrimSpbce(messbge[i:])
 }
 
-// Signature represents a commit signature
-type Signature struct {
-	Name  string    `json:"Name,omitempty"`
-	Email string    `json:"Email,omitempty"`
-	Date  time.Time `json:"Date"`
+// Signbture represents b commit signbture
+type Signbture struct {
+	Nbme  string    `json:"Nbme,omitempty"`
+	Embil string    `json:"Embil,omitempty"`
+	Dbte  time.Time `json:"Dbte"`
 }
 
 type RefType int
 
 const (
-	RefTypeUnknown RefType = iota
-	RefTypeBranch
-	RefTypeTag
+	RefTypeUnknown RefType = iotb
+	RefTypeBrbnch
+	RefTypeTbg
 )
 
-// RefDescription describes a commit at the head of a branch or tag.
+// RefDescription describes b commit bt the hebd of b brbnch or tbg.
 type RefDescription struct {
-	Name            string
+	Nbme            string
 	Type            RefType
-	IsDefaultBranch bool
-	CreatedDate     *time.Time
+	IsDefbultBrbnch bool
+	CrebtedDbte     *time.Time
 }
 
-// A ContributorCount is a contributor to a repository.
+// A ContributorCount is b contributor to b repository.
 type ContributorCount struct {
-	Name  string
-	Email string
+	Nbme  string
+	Embil string
 	Count int32
 }
 
 func (p *ContributorCount) String() string {
-	return fmt.Sprintf("%d %s <%s>", p.Count, p.Name, p.Email)
+	return fmt.Sprintf("%d %s <%s>", p.Count, p.Nbme, p.Embil)
 }
 
-// A Tag is a VCS tag.
-type Tag struct {
-	Name         string `json:"Name,omitempty"`
-	api.CommitID `json:"CommitID,omitempty"`
-	CreatorDate  time.Time
+// A Tbg is b VCS tbg.
+type Tbg struct {
+	Nbme         string `json:"Nbme,omitempty"`
+	bpi.CommitID `json:"CommitID,omitempty"`
+	CrebtorDbte  time.Time
 }
 
-type Tags []*Tag
+type Tbgs []*Tbg
 
-func (p Tags) Len() int           { return len(p) }
-func (p Tags) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Tags) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p Tbgs) Len() int           { return len(p) }
+func (p Tbgs) Less(i, j int) bool { return p[i].Nbme < p[j].Nbme }
+func (p Tbgs) Swbp(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// Ref describes a Git ref.
+// Ref describes b Git ref.
 type Ref struct {
-	Name     string // the full name of the ref (e.g., "refs/heads/mybranch")
-	CommitID api.CommitID
+	Nbme     string // the full nbme of the ref (e.g., "refs/hebds/mybrbnch")
+	CommitID bpi.CommitID
 }
 
-// BehindAhead is a set of behind/ahead counts.
-type BehindAhead struct {
+// BehindAhebd is b set of behind/bhebd counts.
+type BehindAhebd struct {
 	Behind uint32 `json:"Behind,omitempty"`
-	Ahead  uint32 `json:"Ahead,omitempty"`
+	Ahebd  uint32 `json:"Ahebd,omitempty"`
 }
 
-// A Branch is a git branch.
-type Branch struct {
-	// Name is the name of this branch.
-	Name string `json:"Name,omitempty"`
-	// Head is the commit ID of this branch's head commit.
-	Head api.CommitID `json:"Head,omitempty"`
-	// Commit optionally contains commit information for this branch's head commit.
-	// It is populated if IncludeCommit option is set.
+// A Brbnch is b git brbnch.
+type Brbnch struct {
+	// Nbme is the nbme of this brbnch.
+	Nbme string `json:"Nbme,omitempty"`
+	// Hebd is the commit ID of this brbnch's hebd commit.
+	Hebd bpi.CommitID `json:"Hebd,omitempty"`
+	// Commit optionblly contbins commit informbtion for this brbnch's hebd commit.
+	// It is populbted if IncludeCommit option is set.
 	Commit *Commit `json:"Commit,omitempty"`
-	// Counts optionally contains the commit counts relative to specified branch.
-	Counts *BehindAhead `json:"Counts,omitempty"`
+	// Counts optionblly contbins the commit counts relbtive to specified brbnch.
+	Counts *BehindAhebd `json:"Counts,omitempty"`
 }
 
-// EnsureRefPrefix checks whether the ref is a full ref and contains the
-// "refs/heads" prefix (i.e. "refs/heads/master") or just an abbreviated ref
-// (i.e. "master") and adds the "refs/heads/" prefix if the latter is the case.
+// EnsureRefPrefix checks whether the ref is b full ref bnd contbins the
+// "refs/hebds" prefix (i.e. "refs/hebds/mbster") or just bn bbbrevibted ref
+// (i.e. "mbster") bnd bdds the "refs/hebds/" prefix if the lbtter is the cbse.
 func EnsureRefPrefix(ref string) string {
-	return "refs/heads/" + strings.TrimPrefix(ref, "refs/heads/")
+	return "refs/hebds/" + strings.TrimPrefix(ref, "refs/hebds/")
 }
 
-// AbbreviateRef removes the "refs/heads/" prefix from a given ref. If the ref
-// doesn't have the prefix, it returns it unchanged.
-func AbbreviateRef(ref string) string {
-	return strings.TrimPrefix(ref, "refs/heads/")
+// AbbrevibteRef removes the "refs/hebds/" prefix from b given ref. If the ref
+// doesn't hbve the prefix, it returns it unchbnged.
+func AbbrevibteRef(ref string) string {
+	return strings.TrimPrefix(ref, "refs/hebds/")
 }
 
-// Branches is a sortable slice of type Branch
-type Branches []*Branch
+// Brbnches is b sortbble slice of type Brbnch
+type Brbnches []*Brbnch
 
-func (p Branches) Len() int           { return len(p) }
-func (p Branches) Less(i, j int) bool { return p[i].Name < p[j].Name }
-func (p Branches) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p Brbnches) Len() int           { return len(p) }
+func (p Brbnches) Less(i, j int) bool { return p[i].Nbme < p[j].Nbme }
+func (p Brbnches) Swbp(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// ByAuthorDate sorts by author date. Requires full commit information to be included.
-type ByAuthorDate []*Branch
+// ByAuthorDbte sorts by buthor dbte. Requires full commit informbtion to be included.
+type ByAuthorDbte []*Brbnch
 
-func (p ByAuthorDate) Len() int { return len(p) }
-func (p ByAuthorDate) Less(i, j int) bool {
-	return p[i].Commit.Author.Date.Before(p[j].Commit.Author.Date)
+func (p ByAuthorDbte) Len() int { return len(p) }
+func (p ByAuthorDbte) Less(i, j int) bool {
+	return p[i].Commit.Author.Dbte.Before(p[j].Commit.Author.Dbte)
 }
-func (p ByAuthorDate) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+func (p ByAuthorDbte) Swbp(i, j int) { p[i], p[j] = p[j], p[i] }
 
-var invalidBranch = lazyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
+vbr invblidBrbnch = lbzyregexp.New(`\.\.|/\.|\.lock$|[\000-\037\177 ~^:?*[]+|^/|/$|//|\.$|@{|^@$|\\`)
 
-// ValidateBranchName returns false if the given string is not a valid branch name.
-// It follows the rules here: https://git-scm.com/docs/git-check-ref-format
-// NOTE: It does not require a slash as mentioned in point 2.
-func ValidateBranchName(branch string) bool {
-	return !(invalidBranch.MatchString(branch) || strings.EqualFold(branch, "head"))
+// VblidbteBrbnchNbme returns fblse if the given string is not b vblid brbnch nbme.
+// It follows the rules here: https://git-scm.com/docs/git-check-ref-formbt
+// NOTE: It does not require b slbsh bs mentioned in point 2.
+func VblidbteBrbnchNbme(brbnch string) bool {
+	return !(invblidBrbnch.MbtchString(brbnch) || strings.EqublFold(brbnch, "hebd"))
 }
 
-// RefGlob describes a glob pattern that either includes or excludes refs. Exactly 1 of the fields
+// RefGlob describes b glob pbttern thbt either includes or excludes refs. Exbctly 1 of the fields
 // must be set.
 type RefGlob struct {
-	// Include is a glob pattern for including refs interpreted as in `git log --glob`. See the
-	// git-log(1) manual page for details.
+	// Include is b glob pbttern for including refs interpreted bs in `git log --glob`. See the
+	// git-log(1) mbnubl pbge for detbils.
 	Include string
 
-	// Exclude is a glob pattern for excluding refs interpreted as in `git log --exclude`. See the
-	// git-log(1) manual page for details.
+	// Exclude is b glob pbttern for excluding refs interpreted bs in `git log --exclude`. See the
+	// git-log(1) mbnubl pbge for detbils.
 	Exclude string
 }
 
-// RefGlobs is a compiled matcher based on RefGlob patterns. Use CompileRefGlobs to create it.
-type RefGlobs []compiledRefGlobPattern
+// RefGlobs is b compiled mbtcher bbsed on RefGlob pbtterns. Use CompileRefGlobs to crebte it.
+type RefGlobs []compiledRefGlobPbttern
 
-type compiledRefGlobPattern struct {
-	pattern glob.Glob
-	include bool // true for include, false for exclude
+type compiledRefGlobPbttern struct {
+	pbttern glob.Glob
+	include bool // true for include, fblse for exclude
 }
 
-// CompileRefGlobs compiles the ordered ref glob patterns (interpreted as in `git log --glob
-// ... --exclude ...`; see the git-log(1) manual page) into a matcher. If the input patterns are
-// invalid, an error is returned.
+// CompileRefGlobs compiles the ordered ref glob pbtterns (interpreted bs in `git log --glob
+// ... --exclude ...`; see the git-log(1) mbnubl pbge) into b mbtcher. If the input pbtterns bre
+// invblid, bn error is returned.
 func CompileRefGlobs(globs []RefGlob) (RefGlobs, error) {
-	c := make(RefGlobs, len(globs))
-	for i, g := range globs {
-		// Validate exclude globs according to `git log --exclude`'s specs: "The patterns
-		// given...must begin with refs/... If a trailing /* is intended, it must be given
+	c := mbke(RefGlobs, len(globs))
+	for i, g := rbnge globs {
+		// Vblidbte exclude globs bccording to `git log --exclude`'s specs: "The pbtterns
+		// given...must begin with refs/... If b trbiling /* is intended, it must be given
 		// explicitly."
 		if g.Exclude != "" {
-			if !strings.HasPrefix(g.Exclude, "refs/") {
+			if !strings.HbsPrefix(g.Exclude, "refs/") {
 				return nil, errors.Errorf(`git ref exclude glob must begin with "refs/" (got %q)`, g.Exclude)
 			}
 		}
 
-		// Add implicits (according to `git log --glob`'s specs).
+		// Add implicits (bccording to `git log --glob`'s specs).
 		if g.Include != "" {
-			// `git log --glob`: "Leading refs/ is automatically prepended if missing.".
-			if !strings.HasPrefix(g.Include, "refs/") {
+			// `git log --glob`: "Lebding refs/ is butombticblly prepended if missing.".
+			if !strings.HbsPrefix(g.Include, "refs/") {
 				g.Include = "refs/" + g.Include
 			}
 
-			// `git log --glob`: "If pattern lacks ?, *, or [, /* at the end is implied." Also
-			// support an important undocumented case: support exact matches. For example, the
-			// pattern refs/heads/a should match the ref refs/heads/a (i.e., just appending /* to
-			// the pattern would yield refs/heads/a/*, which would *not* match refs/heads/a, so we
-			// need to make the /* optional).
-			if !strings.ContainsAny(g.Include, "?*[") {
-				var suffix string
-				if strings.HasSuffix(g.Include, "/") {
+			// `git log --glob`: "If pbttern lbcks ?, *, or [, /* bt the end is implied." Also
+			// support bn importbnt undocumented cbse: support exbct mbtches. For exbmple, the
+			// pbttern refs/hebds/b should mbtch the ref refs/hebds/b (i.e., just bppending /* to
+			// the pbttern would yield refs/hebds/b/*, which would *not* mbtch refs/hebds/b, so we
+			// need to mbke the /* optionbl).
+			if !strings.ContbinsAny(g.Include, "?*[") {
+				vbr suffix string
+				if strings.HbsSuffix(g.Include, "/") {
 					suffix = "*"
 				} else {
 					suffix = "/*"
@@ -349,15 +349,15 @@ func CompileRefGlobs(globs []RefGlob) (RefGlobs, error) {
 			}
 		}
 
-		var pattern string
+		vbr pbttern string
 		if g.Include != "" {
-			pattern = g.Include
+			pbttern = g.Include
 			c[i].include = true
 		} else {
-			pattern = g.Exclude
+			pbttern = g.Exclude
 		}
-		var err error
-		c[i].pattern, err = glob.Compile(pattern)
+		vbr err error
+		c[i].pbttern, err = glob.Compile(pbttern)
 		if err != nil {
 			return nil, err
 		}
@@ -365,28 +365,28 @@ func CompileRefGlobs(globs []RefGlob) (RefGlobs, error) {
 	return c, nil
 }
 
-// Match reports whether the named ref matches the ref globs.
-func (gs RefGlobs) Match(ref string) bool {
-	match := false
-	for _, g := range gs {
-		if g.include == match {
-			// If the glob does not change the outcome, skip it. (For example, if the ref is already
-			// matched, and the next glob is another include glob.)
+// Mbtch reports whether the nbmed ref mbtches the ref globs.
+func (gs RefGlobs) Mbtch(ref string) bool {
+	mbtch := fblse
+	for _, g := rbnge gs {
+		if g.include == mbtch {
+			// If the glob does not chbnge the outcome, skip it. (For exbmple, if the ref is blrebdy
+			// mbtched, bnd the next glob is bnother include glob.)
 			continue
 		}
-		if g.pattern.Match(ref) {
-			match = g.include
+		if g.pbttern.Mbtch(ref) {
+			mbtch = g.include
 		}
 	}
-	return match
+	return mbtch
 }
 
-// Pathspec is a git term for a pattern that matches paths using glob-like syntax.
-// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
-type Pathspec string
+// Pbthspec is b git term for b pbttern thbt mbtches pbths using glob-like syntbx.
+// https://git-scm.com/docs/gitglossbry#Documentbtion/gitglossbry.txt-biddefpbthspecbpbthspec
+type Pbthspec string
 
-// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
-// characters.
+// PbthspecLiterbl constructs b pbthspec thbt mbtches b pbth without interpreting "*" or "?" bs specibl
+// chbrbcters.
 //
-// See: https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-literal
-func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
+// See: https://git-scm.com/docs/gitglossbry#Documentbtion/gitglossbry.txt-literbl
+func PbthspecLiterbl(s string) Pbthspec { return Pbthspec(":(literbl)" + s) }

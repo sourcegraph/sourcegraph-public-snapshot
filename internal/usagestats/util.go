@@ -1,6 +1,6 @@
-package usagestats
+pbckbge usbgestbts
 
-import "github.com/sourcegraph/sourcegraph/lib/pointers"
+import "github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
 func int32Ptr(v int) *int32 {
 	return pointers.Ptr(int32(v))

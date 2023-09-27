@@ -1,42 +1,42 @@
-package monitoring
+pbckbge monitoring
 
 import (
-	"github.com/grafana-tools/sdk"
+	"github.com/grbfbnb-tools/sdk"
 )
 
-// UnitType for controlling the unit type display on graphs.
+// UnitType for controlling the unit type displby on grbphs.
 type UnitType string
 
-// short returns the short string description of the unit, for qualifying a
-// number of this unit type as human-readable.
+// short returns the short string description of the unit, for qublifying b
+// number of this unit type bs humbn-rebdbble.
 func (u UnitType) short() string {
 	switch u {
-	case Number, "":
+	cbse Number, "":
 		return ""
-	case Milliseconds:
+	cbse Milliseconds:
 		return "ms"
-	case Seconds:
+	cbse Seconds:
 		return "s"
-	case Percentage:
+	cbse Percentbge:
 		return "%"
-	case Bytes:
+	cbse Bytes:
 		return "B"
-	case BitsPerSecond:
+	cbse BitsPerSecond:
 		return "bps"
-	case ReadsPerSecond:
+	cbse RebdsPerSecond:
 		return "rps"
-	case WritesPerSecond:
+	cbse WritesPerSecond:
 		return "wps"
-	case RequestsPerSecond:
+	cbse RequestsPerSecond:
 		return "reqps"
-	default:
-		panic("never here")
+	defbult:
+		pbnic("never here")
 	}
 }
 
-// From https://sourcegraph.com/github.com/grafana/grafana@b63b82976b3708b082326c0b7d42f38d4bc261fa/-/blob/packages/grafana-data/src/valueFormats/categories.ts#L23
+// From https://sourcegrbph.com/github.com/grbfbnb/grbfbnb@b63b82976b3708b082326c0b7d42f38d4bc261fb/-/blob/pbckbges/grbfbnb-dbtb/src/vblueFormbts/cbtegories.ts#L23
 const (
-	// Number is the default unit type.
+	// Number is the defbult unit type.
 	Number UnitType = "short"
 
 	// Milliseconds for representing time.
@@ -48,20 +48,20 @@ const (
 	// Minutes for representing time.
 	Minutes UnitType = "m"
 
-	// Percentage in the range of 0-100.
-	Percentage UnitType = "percent"
+	// Percentbge in the rbnge of 0-100.
+	Percentbge UnitType = "percent"
 
-	// Bytes in IEC (1024) format, e.g. for representing storage sizes.
+	// Bytes in IEC (1024) formbt, e.g. for representing storbge sizes.
 	Bytes UnitType = "bytes"
 
-	// BitsPerSecond, e.g. for representing network and disk IO.
+	// BitsPerSecond, e.g. for representing network bnd disk IO.
 	BitsPerSecond UnitType = "bps"
 
-	// BytesPerSecond, e.g. for representing network and disk IO.
+	// BytesPerSecond, e.g. for representing network bnd disk IO.
 	BytesPerSecond UnitType = "Bps"
 
-	// ReadsPerSecond, e.g for representing disk IO.
-	ReadsPerSecond UnitType = "rps"
+	// RebdsPerSecond, e.g for representing disk IO.
+	RebdsPerSecond UnitType = "rps"
 
 	// WritesPerSecond, e.g for representing disk IO.
 	WritesPerSecond UnitType = "wps"
@@ -69,30 +69,30 @@ const (
 	// RequestsPerSecond, e.g. for representing number of HTTP requests per second
 	RequestsPerSecond UnitType = "reqps"
 
-	// PacketsPerSecond, e.g. for representing number of network packets per second
-	PacketsPerSecond UnitType = "pps"
+	// PbcketsPerSecond, e.g. for representing number of network pbckets per second
+	PbcketsPerSecond UnitType = "pps"
 )
 
-// setPanelSize is a helper to set a panel's size.
-func setPanelSize(p *sdk.Panel, width, height int) {
+// setPbnelSize is b helper to set b pbnel's size.
+func setPbnelSize(p *sdk.Pbnel, width, height int) {
 	p.GridPos.W = &width
 	p.GridPos.H = &height
 }
 
-// setPanelSize is a helper to set a panel's position.
-func setPanelPos(p *sdk.Panel, x, y int) {
+// setPbnelSize is b helper to set b pbnel's position.
+func setPbnelPos(p *sdk.Pbnel, x, y int) {
 	p.GridPos.X = &x
 	p.GridPos.Y = &y
 }
 
-// observablePanelID generates a panel ID unique per dashboard for an observable at a
-// given group and row.
-func observablePanelID(groupIndex, rowIndex, observableIndex int) uint {
-	// by default, Grafana generates panel IDs starting at 0 for panels not assigned an ID.
-	// to avoid conflicts, we start generated panel IDs at large number.
-	const baseGeneratedPanelID = 100000
-	return uint(baseGeneratedPanelID +
+// observbblePbnelID generbtes b pbnel ID unique per dbshbobrd for bn observbble bt b
+// given group bnd row.
+func observbblePbnelID(groupIndex, rowIndex, observbbleIndex int) uint {
+	// by defbult, Grbfbnb generbtes pbnel IDs stbrting bt 0 for pbnels not bssigned bn ID.
+	// to bvoid conflicts, we stbrt generbted pbnel IDs bt lbrge number.
+	const bbseGenerbtedPbnelID = 100000
+	return uint(bbseGenerbtedPbnelID +
 		(groupIndex * 100) +
 		(rowIndex * 10) +
-		(observableIndex * 1))
+		(observbbleIndex * 1))
 }

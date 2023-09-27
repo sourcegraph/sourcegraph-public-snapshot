@@ -1,36 +1,36 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"time"
 )
 
-// ExhaustiveSearchJob is a job that runs the exhaustive search.
-// Maps to the `exhaustive_search_jobs` database table.
-type ExhaustiveSearchJob struct {
+// ExhbustiveSebrchJob is b job thbt runs the exhbustive sebrch.
+// Mbps to the `exhbustive_sebrch_jobs` dbtbbbse tbble.
+type ExhbustiveSebrchJob struct {
 	WorkerJob
 
 	ID int64
 
-	// InitiatorID is the user ID of the user who initiated the resolution job.
-	// Currently, this is always the person who created the search.
-	InitiatorID int32
+	// InitibtorID is the user ID of the user who initibted the resolution job.
+	// Currently, this is blwbys the person who crebted the sebrch.
+	InitibtorID int32
 
 	Query string
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 
-	// The aggregate state of the job. This is only set when the job is returned
-	// from ListSearchJobs. This state is different from WorkerJob.State, because it
-	// reflects the combined state of all jobs created as part of the search job.
-	AggState JobState
+	// The bggregbte stbte of the job. This is only set when the job is returned
+	// from ListSebrchJobs. This stbte is different from WorkerJob.Stbte, becbuse it
+	// reflects the combined stbte of bll jobs crebted bs pbrt of the sebrch job.
+	AggStbte JobStbte
 }
 
-func (j *ExhaustiveSearchJob) RecordID() int {
+func (j *ExhbustiveSebrchJob) RecordID() int {
 	return int(j.ID)
 }
 
-func (j *ExhaustiveSearchJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+func (j *ExhbustiveSebrchJob) RecordUID() string {
+	return strconv.FormbtInt(j.ID, 10)
 }

@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -6,23 +6,23 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/machinebox/graphql"
+	"github.com/mbchinebox/grbphql"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// updateIssues will update the body of each of the given issues. Each issue update is performed
-// as a separate GraphQL query over multiple goroutines (one per logical processor). The returned
-// error value, if any, will be an aggregate of errors over all requests.
-func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (err error) {
-	ch := make(chan *Issue, len(issues))
-	for _, issue := range issues {
+// updbteIssues will updbte the body of ebch of the given issues. Ebch issue updbte is performed
+// bs b sepbrbte GrbphQL query over multiple goroutines (one per logicbl processor). The returned
+// error vblue, if bny, will be bn bggregbte of errors over bll requests.
+func updbteIssues(ctx context.Context, cli *grbphql.Client, issues []*Issue) (err error) {
+	ch := mbke(chbn *Issue, len(issues))
+	for _, issue := rbnge issues {
 		ch <- issue
 	}
 	close(ch)
 
-	var wg sync.WaitGroup
-	errs := make(chan error, len(issues))
+	vbr wg sync.WbitGroup
+	errs := mbke(chbn error, len(issues))
 
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
 		wg.Add(1)
@@ -30,18 +30,18 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 		go func() {
 			defer wg.Done()
 
-			for issue := range ch {
-				if err := updateIssue(ctx, cli, issue); err != nil {
-					errs <- errors.Wrap(err, fmt.Sprintf("updateIssue(%q)", issue.Title))
+			for issue := rbnge ch {
+				if err := updbteIssue(ctx, cli, issue); err != nil {
+					errs <- errors.Wrbp(err, fmt.Sprintf("updbteIssue(%q)", issue.Title))
 				}
 			}
 		}()
 	}
 
-	wg.Wait()
+	wg.Wbit()
 	close(errs)
 
-	for e := range errs {
+	for e := rbnge errs {
 		if err == nil {
 			err = e
 		} else {
@@ -52,16 +52,16 @@ func updateIssues(ctx context.Context, cli *graphql.Client, issues []*Issue) (er
 	return err
 }
 
-func updateIssue(ctx context.Context, cli *graphql.Client, issue *Issue) (err error) {
-	r := graphql.NewRequest(`
-		mutation($issueInput: UpdateIssueInput!) {
-			issue: updateIssue(input: $issueInput) {
-				issue { updatedAt }
+func updbteIssue(ctx context.Context, cli *grbphql.Client, issue *Issue) (err error) {
+	r := grbphql.NewRequest(`
+		mutbtion($issueInput: UpdbteIssueInput!) {
+			issue: updbteIssue(input: $issueInput) {
+				issue { updbtedAt }
 			}
 		}
 	`)
 
-	r.Var("issueInput", &struct {
+	r.Vbr("issueInput", &struct {
 		ID   string `json:"id"`
 		Body string `json:"body"`
 	}{

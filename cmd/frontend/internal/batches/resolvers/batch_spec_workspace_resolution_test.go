@@ -1,91 +1,91 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestWorkspacesListArgsToDBOpts(t *testing.T) {
+func TestWorkspbcesListArgsToDBOpts(t *testing.T) {
 	tcs := []struct {
-		name string
-		args *graphqlbackend.ListWorkspacesArgs
-		want store.ListBatchSpecWorkspacesOpts
+		nbme string
+		brgs *grbphqlbbckend.ListWorkspbcesArgs
+		wbnt store.ListBbtchSpecWorkspbcesOpts
 	}{
 		{
-			name: "empty",
-			args: &graphqlbackend.ListWorkspacesArgs{},
+			nbme: "empty",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{},
 		},
 		{
-			name: "first set",
-			args: &graphqlbackend.ListWorkspacesArgs{
+			nbme: "first set",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{
 				First: 1,
 			},
-			want: store.ListBatchSpecWorkspacesOpts{
+			wbnt: store.ListBbtchSpecWorkspbcesOpts{
 				LimitOpts: store.LimitOpts{Limit: 1},
 			},
 		},
 		{
-			name: "after set",
-			args: &graphqlbackend.ListWorkspacesArgs{
+			nbme: "bfter set",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{
 				After: pointers.Ptr("10"),
 			},
-			want: store.ListBatchSpecWorkspacesOpts{
+			wbnt: store.ListBbtchSpecWorkspbcesOpts{
 				Cursor: 10,
 			},
 		},
 		{
-			name: "search set",
-			args: &graphqlbackend.ListWorkspacesArgs{
-				Search: pointers.Ptr("sourcegraph"),
+			nbme: "sebrch set",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{
+				Sebrch: pointers.Ptr("sourcegrbph"),
 			},
-			want: store.ListBatchSpecWorkspacesOpts{
-				TextSearch: []search.TextSearchTerm{{Term: "sourcegraph"}},
-			},
-		},
-		{
-			name: "state completed",
-			args: &graphqlbackend.ListWorkspacesArgs{
-				State: pointers.Ptr("COMPLETED"),
-			},
-			want: store.ListBatchSpecWorkspacesOpts{
-				OnlyCachedOrCompleted: true,
+			wbnt: store.ListBbtchSpecWorkspbcesOpts{
+				TextSebrch: []sebrch.TextSebrchTerm{{Term: "sourcegrbph"}},
 			},
 		},
 		{
-			name: "state pending",
-			args: &graphqlbackend.ListWorkspacesArgs{
-				State: pointers.Ptr("PENDING"),
+			nbme: "stbte completed",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{
+				Stbte: pointers.Ptr("COMPLETED"),
 			},
-			want: store.ListBatchSpecWorkspacesOpts{
-				OnlyWithoutExecutionAndNotCached: true,
+			wbnt: store.ListBbtchSpecWorkspbcesOpts{
+				OnlyCbchedOrCompleted: true,
 			},
 		},
 		{
-			name: "state queued",
-			args: &graphqlbackend.ListWorkspacesArgs{
-				State: pointers.Ptr("QUEUED"),
+			nbme: "stbte pending",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{
+				Stbte: pointers.Ptr("PENDING"),
 			},
-			want: store.ListBatchSpecWorkspacesOpts{
-				State: types.BatchSpecWorkspaceExecutionJobStateQueued,
+			wbnt: store.ListBbtchSpecWorkspbcesOpts{
+				OnlyWithoutExecutionAndNotCbched: true,
+			},
+		},
+		{
+			nbme: "stbte queued",
+			brgs: &grbphqlbbckend.ListWorkspbcesArgs{
+				Stbte: pointers.Ptr("QUEUED"),
+			},
+			wbnt: store.ListBbtchSpecWorkspbcesOpts{
+				Stbte: types.BbtchSpecWorkspbceExecutionJobStbteQueued,
 			},
 		},
 	}
 
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
-			have, err := workspacesListArgsToDBOpts(tc.args)
+	for _, tc := rbnge tcs {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve, err := workspbcesListArgsToDBOpts(tc.brgs)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(have, tc.want); diff != "" {
-				t.Fatal("invalid args returned" + diff)
+			if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+				t.Fbtbl("invblid brgs returned" + diff)
 			}
 		})
 	}

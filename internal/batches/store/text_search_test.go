@@ -1,59 +1,59 @@
-package store
+pbckbge store
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
 )
 
-func TestTextSearchTermToClause(t *testing.T) {
-	for name, tc := range map[string]struct {
-		term      search.TextSearchTerm
+func TestTextSebrchTermToClbuse(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		term      sebrch.TextSebrchTerm
 		fields    []string
-		wantArgs  []any
-		wantQuery string
+		wbntArgs  []bny
+		wbntQuery string
 	}{
 		"one positive field": {
-			term:      search.TextSearchTerm{Term: "foo"},
+			term:      sebrch.TextSebrchTerm{Term: "foo"},
 			fields:    []string{"field"},
-			wantArgs:  []any{"foo"},
-			wantQuery: `(field ~* ('\m'||$1||'\M'))`,
+			wbntArgs:  []bny{"foo"},
+			wbntQuery: `(field ~* ('\m'||$1||'\M'))`,
 		},
-		"one negative field": {
-			term:      search.TextSearchTerm{Term: "foo", Not: true},
+		"one negbtive field": {
+			term:      sebrch.TextSebrchTerm{Term: "foo", Not: true},
 			fields:    []string{"field"},
-			wantArgs:  []any{"foo"},
-			wantQuery: `(field !~* ('\m'||$1||'\M'))`,
+			wbntArgs:  []bny{"foo"},
+			wbntQuery: `(field !~* ('\m'||$1||'\M'))`,
 		},
 		"two positive fields": {
-			term:      search.TextSearchTerm{Term: "foo"},
-			fields:    []string{"field", "paddock"},
-			wantArgs:  []any{"foo", "foo"},
-			wantQuery: `(field ~* ('\m'||$1||'\M') OR paddock ~* ('\m'||$2||'\M'))`,
+			term:      sebrch.TextSebrchTerm{Term: "foo"},
+			fields:    []string{"field", "pbddock"},
+			wbntArgs:  []bny{"foo", "foo"},
+			wbntQuery: `(field ~* ('\m'||$1||'\M') OR pbddock ~* ('\m'||$2||'\M'))`,
 		},
-		"two negative fields": {
-			term:      search.TextSearchTerm{Term: "foo", Not: true},
-			fields:    []string{"field", "paddock"},
-			wantArgs:  []any{"foo", "foo"},
-			wantQuery: `(field !~* ('\m'||$1||'\M') AND paddock !~* ('\m'||$2||'\M'))`,
+		"two negbtive fields": {
+			term:      sebrch.TextSebrchTerm{Term: "foo", Not: true},
+			fields:    []string{"field", "pbddock"},
+			wbntArgs:  []bny{"foo", "foo"},
+			wbntQuery: `(field !~* ('\m'||$1||'\M') AND pbddock !~* ('\m'||$2||'\M'))`,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			fields := make([]*sqlf.Query, len(tc.fields))
-			for i, field := range tc.fields {
+		t.Run(nbme, func(t *testing.T) {
+			fields := mbke([]*sqlf.Query, len(tc.fields))
+			for i, field := rbnge tc.fields {
 				fields[i] = sqlf.Sprintf(field)
 			}
 
-			query := textSearchTermToClause(tc.term, fields...)
-			args := query.Args()
-			if diff := cmp.Diff(args, tc.wantArgs); diff != "" {
-				t.Errorf("unexpected arguments (-have +want):\n%s", diff)
+			query := textSebrchTermToClbuse(tc.term, fields...)
+			brgs := query.Args()
+			if diff := cmp.Diff(brgs, tc.wbntArgs); diff != "" {
+				t.Errorf("unexpected brguments (-hbve +wbnt):\n%s", diff)
 			}
-			if have := query.Query(sqlf.PostgresBindVar); have != tc.wantQuery {
-				t.Errorf("unexpected query: have=%q want=%q", have, tc.wantQuery)
+			if hbve := query.Query(sqlf.PostgresBindVbr); hbve != tc.wbntQuery {
+				t.Errorf("unexpected query: hbve=%q wbnt=%q", hbve, tc.wbntQuery)
 			}
 		})
 	}

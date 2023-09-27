@@ -1,4 +1,4 @@
-package honey
+pbckbge honey
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 
 type key int
 
-const actorKey key = iota
+const bctorKey key = iotb
 
 func WithEvent(ctx context.Context, event Event) context.Context {
-	return context.WithValue(ctx, actorKey, event)
+	return context.WithVblue(ctx, bctorKey, event)
 }
 
 func FromContext(ctx context.Context) Event {
-	if event, ok := ctx.Value(actorKey).(Event); ok {
+	if event, ok := ctx.Vblue(bctorKey).(Event); ok {
 		return event
 	}
 	return nil

@@ -1,92 +1,92 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbcache"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/inventory"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type ReposService interface {
-	Get(ctx context.Context, repo api.RepoID) (*types.Repo, error)
-	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
-	List(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error)
-	ListIndexable(ctx context.Context) ([]types.MinimalRepo, error)
-	GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (*inventory.Inventory, error)
-	DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) error
-	RequestRepositoryClone(ctx context.Context, repoID api.RepoID) error
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
-	GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (*gitdomain.Commit, error)
+type ReposService interfbce {
+	Get(ctx context.Context, repo bpi.RepoID) (*types.Repo, error)
+	GetByNbme(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error)
+	List(ctx context.Context, opt dbtbbbse.ReposListOptions) ([]*types.Repo, error)
+	ListIndexbble(ctx context.Context) ([]types.MinimblRepo, error)
+	GetInventory(ctx context.Context, repo *types.Repo, commitID bpi.CommitID, forceEnhbncedLbngubgeDetection bool) (*inventory.Inventory, error)
+	DeleteRepositoryFromDisk(ctx context.Context, repoID bpi.RepoID) error
+	RequestRepositoryClone(ctx context.Context, repoID bpi.RepoID) error
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error)
+	GetCommit(ctx context.Context, repo *types.Repo, commitID bpi.CommitID) (*gitdombin.Commit, error)
 }
 
-// NewRepos uses the provided `database.DB` to initialize a new RepoService.
+// NewRepos uses the provided `dbtbbbse.DB` to initiblize b new RepoService.
 //
-// NOTE: The underlying cache is reused from Repos global variable to actually
-// make cache be useful. This is mostly a workaround for now until we come up a
-// more idiomatic solution.
-func NewRepos(logger log.Logger, db database.DB, client gitserver.Client) ReposService {
+// NOTE: The underlying cbche is reused from Repos globbl vbribble to bctublly
+// mbke cbche be useful. This is mostly b workbround for now until we come up b
+// more idiombtic solution.
+func NewRepos(logger log.Logger, db dbtbbbse.DB, client gitserver.Client) ReposService {
 	repoStore := db.Repos()
-	logger = logger.Scoped("repos", "provides a repos store for the backend")
+	logger = logger.Scoped("repos", "provides b repos store for the bbckend")
 	return &repos{
 		logger:          logger,
 		db:              db,
 		gitserverClient: client,
 		store:           repoStore,
-		cache:           dbcache.NewIndexableReposLister(logger, repoStore),
+		cbche:           dbcbche.NewIndexbbleReposLister(logger, repoStore),
 	}
 }
 
 type repos struct {
 	logger          log.Logger
-	db              database.DB
+	db              dbtbbbse.DB
 	gitserverClient gitserver.Client
-	store           database.RepoStore
-	cache           *dbcache.IndexableReposLister
+	store           dbtbbbse.RepoStore
+	cbche           *dbcbche.IndexbbleReposLister
 }
 
-func (s *repos) Get(ctx context.Context, repo api.RepoID) (_ *types.Repo, err error) {
+func (s *repos) Get(ctx context.Context, repo bpi.RepoID) (_ *types.Repo, err error) {
 	if Mocks.Repos.Get != nil {
 		return Mocks.Repos.Get(ctx, repo)
 	}
 
-	ctx, done := startTrace(ctx, "Get", repo, &err)
+	ctx, done := stbrtTrbce(ctx, "Get", repo, &err)
 	defer done()
 
 	return s.store.Get(ctx, repo)
 }
 
-// GetByName retrieves the repository with the given name. It will lazy sync a repo
-// not yet present in the database under certain conditions. See repos.Syncer.SyncRepo.
-func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo, err error) {
-	if Mocks.Repos.GetByName != nil {
-		return Mocks.Repos.GetByName(ctx, name)
+// GetByNbme retrieves the repository with the given nbme. It will lbzy sync b repo
+// not yet present in the dbtbbbse under certbin conditions. See repos.Syncer.SyncRepo.
+func (s *repos) GetByNbme(ctx context.Context, nbme bpi.RepoNbme) (_ *types.Repo, err error) {
+	if Mocks.Repos.GetByNbme != nil {
+		return Mocks.Repos.GetByNbme(ctx, nbme)
 	}
 
-	ctx, done := startTrace(ctx, "GetByName", name, &err)
+	ctx, done := stbrtTrbce(ctx, "GetByNbme", nbme, &err)
 	defer done()
 
-	repo, err := s.store.GetByName(ctx, name)
+	repo, err := s.store.GetByNbme(ctx, nbme)
 	if err == nil {
 		return repo, nil
 	}
@@ -95,78 +95,78 @@ func (s *repos) GetByName(ctx context.Context, name api.RepoName) (_ *types.Repo
 		return nil, err
 	}
 
-	if errcode.IsNotFound(err) && !envvar.SourcegraphDotComMode() {
-		// The repo doesn't exist and we're not on sourcegraph.com, we should not lazy
+	if errcode.IsNotFound(err) && !envvbr.SourcegrbphDotComMode() {
+		// The repo doesn't exist bnd we're not on sourcegrbph.com, we should not lbzy
 		// clone it.
 		return nil, err
 	}
 
-	newName, err := s.add(ctx, name)
+	newNbme, err := s.bdd(ctx, nbme)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.store.GetByName(ctx, newName)
+	return s.store.GetByNbme(ctx, newNbme)
 
 }
 
-var metricIsRepoCloneable = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_frontend_repo_add_is_cloneable",
-	Help: "temporary metric to measure if this codepath is valuable on sourcegraph.com",
-}, []string{"status"})
+vbr metricIsRepoClonebble = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_frontend_repo_bdd_is_clonebble",
+	Help: "temporbry metric to mebsure if this codepbth is vblubble on sourcegrbph.com",
+}, []string{"stbtus"})
 
-// add adds the repository with the given name to the database by calling
-// repo-updater when in sourcegraph.com mode. It's possible that the repo has
-// been renamed on the code host in which case a different name may be returned.
-func (s *repos) add(ctx context.Context, name api.RepoName) (addedName api.RepoName, err error) {
-	ctx, done := startTrace(ctx, "Add", name, &err)
+// bdd bdds the repository with the given nbme to the dbtbbbse by cblling
+// repo-updbter when in sourcegrbph.com mode. It's possible thbt the repo hbs
+// been renbmed on the code host in which cbse b different nbme mby be returned.
+func (s *repos) bdd(ctx context.Context, nbme bpi.RepoNbme) (bddedNbme bpi.RepoNbme, err error) {
+	ctx, done := stbrtTrbce(ctx, "Add", nbme, &err)
 	defer done()
 
-	// Avoid hitting repo-updater (and incurring a hit against our GitHub/etc. API rate
-	// limit) for repositories that don't exist or private repositories that people attempt to
-	// access.
-	codehost := extsvc.CodeHostOf(name, extsvc.PublicCodeHosts...)
+	// Avoid hitting repo-updbter (bnd incurring b hit bgbinst our GitHub/etc. API rbte
+	// limit) for repositories thbt don't exist or privbte repositories thbt people bttempt to
+	// bccess.
+	codehost := extsvc.CodeHostOf(nbme, extsvc.PublicCodeHosts...)
 	if codehost == nil {
-		return "", &database.RepoNotFoundErr{Name: name}
+		return "", &dbtbbbse.RepoNotFoundErr{Nbme: nbme}
 	}
 
-	status := "unknown"
+	stbtus := "unknown"
 	defer func() {
-		metricIsRepoCloneable.WithLabelValues(status).Inc()
+		metricIsRepoClonebble.WithLbbelVblues(stbtus).Inc()
 	}()
 
-	if !codehost.IsPackageHost() {
-		if err := s.gitserverClient.IsRepoCloneable(ctx, name); err != nil {
+	if !codehost.IsPbckbgeHost() {
+		if err := s.gitserverClient.IsRepoClonebble(ctx, nbme); err != nil {
 			if ctx.Err() != nil {
-				status = "timeout"
+				stbtus = "timeout"
 			} else {
-				status = "fail"
+				stbtus = "fbil"
 			}
 			return "", err
 		}
 	}
 
-	status = "success"
+	stbtus = "success"
 
-	// Looking up the repo in repo-updater makes it sync that repo to the
-	// database on sourcegraph.com if that repo is from github.com or gitlab.com
-	lookupResult, err := repoupdater.DefaultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: name})
+	// Looking up the repo in repo-updbter mbkes it sync thbt repo to the
+	// dbtbbbse on sourcegrbph.com if thbt repo is from github.com or gitlbb.com
+	lookupResult, err := repoupdbter.DefbultClient.RepoLookup(ctx, protocol.RepoLookupArgs{Repo: nbme})
 	if lookupResult != nil && lookupResult.Repo != nil {
-		return lookupResult.Repo.Name, err
+		return lookupResult.Repo.Nbme, err
 	}
 	return "", err
 }
 
-func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos []*types.Repo, err error) {
+func (s *repos) List(ctx context.Context, opt dbtbbbse.ReposListOptions) (repos []*types.Repo, err error) {
 	if Mocks.Repos.List != nil {
 		return Mocks.Repos.List(ctx, opt)
 	}
 
-	ctx, done := startTrace(ctx, "List", opt, &err)
+	ctx, done := stbrtTrbce(ctx, "List", opt, &err)
 	defer func() {
 		if err == nil {
-			trace.FromContext(ctx).SetAttributes(
-				attribute.Int("result.len", len(repos)),
+			trbce.FromContext(ctx).SetAttributes(
+				bttribute.Int("result.len", len(repos)),
 			)
 		}
 		done()
@@ -175,57 +175,57 @@ func (s *repos) List(ctx context.Context, opt database.ReposListOptions) (repos 
 	return s.store.List(ctx, opt)
 }
 
-// ListIndexable calls database.ListMinimalRepos, with tracing. It lists ALL
-// indexable repos. In addition, it only lists cloned repositories.
+// ListIndexbble cblls dbtbbbse.ListMinimblRepos, with trbcing. It lists ALL
+// indexbble repos. In bddition, it only lists cloned repositories.
 //
-// The intended call site for this is the logic which assigns repositories to
-// zoekt shards.
-func (s *repos) ListIndexable(ctx context.Context) (repos []types.MinimalRepo, err error) {
-	ctx, done := startTrace(ctx, "ListIndexable", nil, &err)
+// The intended cbll site for this is the logic which bssigns repositories to
+// zoekt shbrds.
+func (s *repos) ListIndexbble(ctx context.Context) (repos []types.MinimblRepo, err error) {
+	ctx, done := stbrtTrbce(ctx, "ListIndexbble", nil, &err)
 	defer func() {
 		if err == nil {
-			trace.FromContext(ctx).SetAttributes(
-				attribute.Int("result.len", len(repos)),
+			trbce.FromContext(ctx).SetAttributes(
+				bttribute.Int("result.len", len(repos)),
 			)
 		}
 		done()
 	}()
 
-	if envvar.SourcegraphDotComMode() {
-		return s.cache.List(ctx)
+	if envvbr.SourcegrbphDotComMode() {
+		return s.cbche.List(ctx)
 	}
 
-	return s.store.ListMinimalRepos(ctx, database.ReposListOptions{
+	return s.store.ListMinimblRepos(ctx, dbtbbbse.ReposListOptions{
 		OnlyCloned: true,
 	})
 }
 
-func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api.CommitID, forceEnhancedLanguageDetection bool) (res *inventory.Inventory, err error) {
+func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID bpi.CommitID, forceEnhbncedLbngubgeDetection bool) (res *inventory.Inventory, err error) {
 	if Mocks.Repos.GetInventory != nil {
 		return Mocks.Repos.GetInventory(ctx, repo, commitID)
 	}
 
-	ctx, done := startTrace(ctx, "GetInventory", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+	ctx, done := stbrtTrbce(ctx, "GetInventory", mbp[string]bny{"repo": repo.Nbme, "commitID": commitID}, &err)
 	defer done()
 
-	// Cap GetInventory operation to some reasonable time.
-	ctx, cancel := context.WithTimeout(ctx, 3*time.Minute)
-	defer cancel()
+	// Cbp GetInventory operbtion to some rebsonbble time.
+	ctx, cbncel := context.WithTimeout(ctx, 3*time.Minute)
+	defer cbncel()
 
-	invCtx, err := InventoryContext(s.logger, repo.Name, s.gitserverClient, commitID, forceEnhancedLanguageDetection)
+	invCtx, err := InventoryContext(s.logger, repo.Nbme, s.gitserverClient, commitID, forceEnhbncedLbngubgeDetection)
 	if err != nil {
 		return nil, err
 	}
 
-	root, err := s.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, "")
+	root, err := s.gitserverClient.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, repo.Nbme, commitID, "")
 	if err != nil {
 		return nil, err
 	}
 
-	// In computing the inventory, sub-tree inventories are cached based on the OID of the Git
-	// tree. Compared to per-blob caching, this creates many fewer cache entries, which means fewer
-	// stores, fewer lookups, and less cache storage overhead. Compared to per-commit caching, this
-	// yields a higher cache hit rate because most trees are unchanged across commits.
+	// In computing the inventory, sub-tree inventories bre cbched bbsed on the OID of the Git
+	// tree. Compbred to per-blob cbching, this crebtes mbny fewer cbche entries, which mebns fewer
+	// stores, fewer lookups, bnd less cbche storbge overhebd. Compbred to per-commit cbching, this
+	// yields b higher cbche hit rbte becbuse most trees bre unchbnged bcross commits.
 	inv, err := invCtx.Entries(ctx, root)
 	if err != nil {
 		return nil, err
@@ -233,82 +233,82 @@ func (s *repos) GetInventory(ctx context.Context, repo *types.Repo, commitID api
 	return &inv, nil
 }
 
-func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID api.RepoID) (err error) {
+func (s *repos) DeleteRepositoryFromDisk(ctx context.Context, repoID bpi.RepoID) (err error) {
 	if Mocks.Repos.DeleteRepositoryFromDisk != nil {
 		return Mocks.Repos.DeleteRepositoryFromDisk(ctx, repoID)
 	}
 
 	repo, err := s.Get(ctx, repoID)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+		return errors.Wrbp(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := startTrace(ctx, "DeleteRepositoryFromDisk", repoID, &err)
+	ctx, done := stbrtTrbce(ctx, "DeleteRepositoryFromDisk", repoID, &err)
 	defer done()
 
-	err = s.gitserverClient.Remove(ctx, repo.Name)
+	err = s.gitserverClient.Remove(ctx, repo.Nbme)
 	return err
 }
 
-func (s *repos) RequestRepositoryClone(ctx context.Context, repoID api.RepoID) (err error) {
+func (s *repos) RequestRepositoryClone(ctx context.Context, repoID bpi.RepoID) (err error) {
 	repo, err := s.Get(ctx, repoID)
 	if err != nil {
-		return errors.Wrap(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
+		return errors.Wrbp(err, fmt.Sprintf("error while fetching repo with ID %d", repoID))
 	}
 
-	ctx, done := startTrace(ctx, "RequestRepositoryClone", repoID, &err)
+	ctx, done := stbrtTrbce(ctx, "RequestRepositoryClone", repoID, &err)
 	defer done()
 
-	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Name)
+	resp, err := s.gitserverClient.RequestRepoClone(ctx, repo.Nbme)
 	if err != nil {
 		return err
 	}
 	if resp.Error != "" {
-		return errors.Newf("requesting clone for repo ID %d failed: %s", repoID, resp.Error)
+		return errors.Newf("requesting clone for repo ID %d fbiled: %s", repoID, resp.Error)
 	}
 
 	return nil
 }
 
-// ResolveRev will return the absolute commit for a commit-ish spec in a repo.
+// ResolveRev will return the bbsolute commit for b commit-ish spec in b repo.
 // If no rev is specified, HEAD is used.
-// Error cases:
-// * Repo does not exist: gitdomain.RepoNotExistError
-// * Commit does not exist: gitdomain.RevisionNotFoundError
-// * Empty repository: gitdomain.RevisionNotFoundError
-// * The user does not have permission: errcode.IsNotFound
+// Error cbses:
+// * Repo does not exist: gitdombin.RepoNotExistError
+// * Commit does not exist: gitdombin.RevisionNotFoundError
+// * Empty repository: gitdombin.RevisionNotFoundError
+// * The user does not hbve permission: errcode.IsNotFound
 // * Other unexpected errors.
-func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID api.CommitID, err error) {
+func (s *repos) ResolveRev(ctx context.Context, repo *types.Repo, rev string) (commitID bpi.CommitID, err error) {
 	if Mocks.Repos.ResolveRev != nil {
 		return Mocks.Repos.ResolveRev(ctx, repo, rev)
 	}
 
-	ctx, done := startTrace(ctx, "ResolveRev", map[string]any{"repo": repo.Name, "rev": rev}, &err)
+	ctx, done := stbrtTrbce(ctx, "ResolveRev", mbp[string]bny{"repo": repo.Nbme, "rev": rev}, &err)
 	defer done()
 
-	return s.gitserverClient.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.ResolveRevision(ctx, repo.Nbme, rev, gitserver.ResolveRevisionOptions{})
 }
 
-func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID api.CommitID) (res *gitdomain.Commit, err error) {
-	ctx, done := startTrace(ctx, "GetCommit", map[string]any{"repo": repo.Name, "commitID": commitID}, &err)
+func (s *repos) GetCommit(ctx context.Context, repo *types.Repo, commitID bpi.CommitID) (res *gitdombin.Commit, err error) {
+	ctx, done := stbrtTrbce(ctx, "GetCommit", mbp[string]bny{"repo": repo.Nbme, "commitID": commitID}, &err)
 	defer done()
 
-	s.logger.Debug("GetCommit", log.String("repo", string(repo.Name)), log.String("commitID", string(commitID)))
+	s.logger.Debug("GetCommit", log.String("repo", string(repo.Nbme)), log.String("commitID", string(commitID)))
 
 	if !gitserver.IsAbsoluteRevision(string(commitID)) {
-		return nil, errors.Errorf("non-absolute CommitID for Repos.GetCommit: %v", commitID)
+		return nil, errors.Errorf("non-bbsolute CommitID for Repos.GetCommit: %v", commitID)
 	}
 
-	return s.gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, commitID, gitserver.ResolveRevisionOptions{})
+	return s.gitserverClient.GetCommit(ctx, buthz.DefbultSubRepoPermsChecker, repo.Nbme, commitID, gitserver.ResolveRevisionOptions{})
 }
 
-// ErrRepoSeeOther indicates that the repo does not exist on this server but might exist on an external Sourcegraph
+// ErrRepoSeeOther indicbtes thbt the repo does not exist on this server but might exist on bn externbl Sourcegrbph
 // server.
 type ErrRepoSeeOther struct {
-	// RedirectURL is the base URL for the repository at an external location.
+	// RedirectURL is the bbse URL for the repository bt bn externbl locbtion.
 	RedirectURL string
 }
 
 func (e ErrRepoSeeOther) Error() string {
-	return fmt.Sprintf("repo not found at this location, but might exist at %s", e.RedirectURL)
+	return fmt.Sprintf("repo not found bt this locbtion, but might exist bt %s", e.RedirectURL)
 }

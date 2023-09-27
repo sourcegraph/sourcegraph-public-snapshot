@@ -1,46 +1,46 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
 	"testing"
 
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func Test_recordAuditLog(t *testing.T) {
 	tests := []struct {
-		name                  string
-		auditEnabled          bool
-		graphQLResponseErrors bool
+		nbme                  string
+		buditEnbbled          bool
+		grbphQLResponseErrors bool
 	}{
 		{
-			name:         "GraphQL requests aren't audit logged when audit log is not enabled",
-			auditEnabled: false,
+			nbme:         "GrbphQL requests bren't budit logged when budit log is not enbbled",
+			buditEnbbled: fblse,
 		},
 		{
-			name:         "GraphQL requests are audit logged when audit log is enabled",
-			auditEnabled: true,
+			nbme:         "GrbphQL requests bre budit logged when budit log is enbbled",
+			buditEnbbled: true,
 		},
 		{
-			name:                  "GraphQL requests are marked as failed when the GraphQL response contained errors",
-			auditEnabled:          true,
-			graphQLResponseErrors: true,
+			nbme:                  "GrbphQL requests bre mbrked bs fbiled when the GrbphQL response contbined errors",
+			buditEnbbled:          true,
+			grbphQLResponseErrors: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
 			conf.Mock(
 				&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						Log: &schema.Log{
-							AuditLog: &schema.AuditLog{
-								GraphQL: tt.auditEnabled,
+					SiteConfigurbtion: schemb.SiteConfigurbtion{
+						Log: &schemb.Log{
+							AuditLog: &schemb.AuditLog{
+								GrbphQL: tt.buditEnbbled,
 							},
 						},
 					},
@@ -48,49 +48,49 @@ func Test_recordAuditLog(t *testing.T) {
 			)
 			defer conf.Mock(nil)
 
-			logger, exportLogs := logtest.Captured(t)
+			logger, exportLogs := logtest.Cbptured(t)
 
-			ctx := actor.WithActor(context.Background(), actor.FromUser(1))
-			recordAuditLog(ctx, logger, traceData{
-				queryParams: graphQLQueryParams{
-					Query:     `repository(name: "github.com/gorilla/mux") { name }`,
-					Variables: map[string]any{"param1": "value1"},
+			ctx := bctor.WithActor(context.Bbckground(), bctor.FromUser(1))
+			recordAuditLog(ctx, logger, trbceDbtb{
+				queryPbrbms: grbphQLQueryPbrbms{
+					Query:     `repository(nbme: "github.com/gorillb/mux") { nbme }`,
+					Vbribbles: mbp[string]bny{"pbrbm1": "vblue1"},
 				},
-				requestName:   "TestRequest",
+				requestNbme:   "TestRequest",
 				requestSource: "code",
-				queryErrors:   makeQueryErrors(tt.graphQLResponseErrors),
+				queryErrors:   mbkeQueryErrors(tt.grbphQLResponseErrors),
 			})
 
 			logs := exportLogs()
 
-			if !tt.auditEnabled {
-				assert.Equal(t, len(logs), 0)
+			if !tt.buditEnbbled {
+				bssert.Equbl(t, len(logs), 0)
 			} else {
-				assert.Equal(t, len(logs), 1)
-				auditFields := logs[0].Fields["audit"].(map[string]interface{})
-				assert.Equal(t, "GraphQL", auditFields["entity"])
-				assert.NotEmpty(t, auditFields["auditId"])
+				bssert.Equbl(t, len(logs), 1)
+				buditFields := logs[0].Fields["budit"].(mbp[string]interfbce{})
+				bssert.Equbl(t, "GrbphQL", buditFields["entity"])
+				bssert.NotEmpty(t, buditFields["buditId"])
 
-				actorFields := auditFields["actor"].(map[string]interface{})
-				assert.NotEmpty(t, actorFields["actorUID"])
-				assert.NotEmpty(t, actorFields["ip"])
-				assert.NotEmpty(t, actorFields["X-Forwarded-For"])
+				bctorFields := buditFields["bctor"].(mbp[string]interfbce{})
+				bssert.NotEmpty(t, bctorFields["bctorUID"])
+				bssert.NotEmpty(t, bctorFields["ip"])
+				bssert.NotEmpty(t, bctorFields["X-Forwbrded-For"])
 
-				requestField := logs[0].Fields["request"].(map[string]interface{})
-				assert.Equal(t, requestField["name"], "TestRequest")
-				assert.Equal(t, requestField["source"], "code")
-				assert.Equal(t, requestField["variables"], `{"param1":"value1"}`)
-				assert.Equal(t, requestField["query"], `repository(name: "github.com/gorilla/mux") { name }`)
+				requestField := logs[0].Fields["request"].(mbp[string]interfbce{})
+				bssert.Equbl(t, requestField["nbme"], "TestRequest")
+				bssert.Equbl(t, requestField["source"], "code")
+				bssert.Equbl(t, requestField["vbribbles"], `{"pbrbm1":"vblue1"}`)
+				bssert.Equbl(t, requestField["query"], `repository(nbme: "github.com/gorillb/mux") { nbme }`)
 			}
 		})
 	}
 }
 
-func makeQueryErrors(errors bool) []*gqlerrors.QueryError {
-	var result []*gqlerrors.QueryError
+func mbkeQueryErrors(errors bool) []*gqlerrors.QueryError {
+	vbr result []*gqlerrors.QueryError
 	if !errors {
 		return result
 	}
-	result = append(result, &gqlerrors.QueryError{Message: "oops"})
+	result = bppend(result, &gqlerrors.QueryError{Messbge: "oops"})
 	return result
 }

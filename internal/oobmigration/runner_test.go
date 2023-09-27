@@ -1,4 +1,4 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"context"
@@ -9,430 +9,430 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestRunner(t *testing.T) {
-	store := NewMockStoreIface()
+	store := NewMockStoreIfbce()
 	ticker := glock.NewMockTicker(time.Second)
 	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
-	store.ListFunc.SetDefaultReturn([]Migration{
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(&observbtion.TestContext, store, refreshTicker)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.SetDefbultReturn(0.5, nil)
 
-	if err := runner.Register(1, migrator, MigratorOptions{ticker: ticker}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(1, migrbtor, MigrbtorOptions{ticker: ticker}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
 
-	go runner.startInternal(allowAll)
+	go runner.stbrtInternbl(bllowAll)
 	tickN(ticker, 3)
 	runner.Stop()
 
-	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 3, callCount)
+	if cbllCount := len(migrbtor.UpFunc.History()); cbllCount != 3 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 3, cbllCount)
 	}
-	if callCount := len(migrator.DownFunc.History()); callCount != 0 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 0, callCount)
+	if cbllCount := len(migrbtor.DownFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 0, cbllCount)
 	}
 }
 
 func TestRunnerError(t *testing.T) {
-	store := NewMockStoreIface()
+	store := NewMockStoreIfbce()
 	ticker := glock.NewMockTicker(time.Second)
 	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
-	store.ListFunc.SetDefaultReturn([]Migration{
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
 		{ID: 1, Progress: 0.5},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(&observbtion.TestContext, store, refreshTicker)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
-	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.SetDefbultReturn(0.5, nil)
+	migrbtor.UpFunc.SetDefbultReturn(errors.New("uh-oh"))
 
-	if err := runner.Register(1, migrator, MigratorOptions{ticker: ticker}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(1, migrbtor, MigrbtorOptions{ticker: ticker}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
 
-	go runner.startInternal(allowAll)
+	go runner.stbrtInternbl(bllowAll)
 	tickN(ticker, 1)
 	runner.Stop()
 
-	if calls := store.AddErrorFunc.history; len(calls) != 1 {
-		t.Fatalf("unexpected number of calls to AddError. want=%d have=%d", 1, len(calls))
+	if cblls := store.AddErrorFunc.history; len(cblls) != 1 {
+		t.Fbtblf("unexpected number of cblls to AddError. wbnt=%d hbve=%d", 1, len(cblls))
 	} else {
-		if calls[0].Arg1 != 1 {
-			t.Errorf("unexpected migrationId. want=%d have=%d", 1, calls[0].Arg1)
+		if cblls[0].Arg1 != 1 {
+			t.Errorf("unexpected migrbtionId. wbnt=%d hbve=%d", 1, cblls[0].Arg1)
 		}
-		if calls[0].Arg2 != "uh-oh" {
-			t.Errorf("unexpected error message. want=%s have=%s", "uh-oh", calls[0].Arg2)
+		if cblls[0].Arg2 != "uh-oh" {
+			t.Errorf("unexpected error messbge. wbnt=%s hbve=%s", "uh-oh", cblls[0].Arg2)
 		}
 	}
 }
 
 func TestRunnerRemovesCompleted(t *testing.T) {
-	store := NewMockStoreIface()
+	store := NewMockStoreIfbce()
 	ticker1 := glock.NewMockTicker(time.Second)
 	ticker2 := glock.NewMockTicker(time.Second)
 	ticker3 := glock.NewMockTicker(time.Second)
 	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
-	store.ListFunc.SetDefaultReturn([]Migration{
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
 		{ID: 1, Progress: 0.5},
 		{ID: 2, Progress: 0.1, ApplyReverse: true},
 		{ID: 3, Progress: 0.9},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(&observbtion.TestContext, store, refreshTicker)
 
-	// Makes no progress
-	migrator1 := NewMockMigrator()
-	migrator1.ProgressFunc.SetDefaultReturn(0.5, nil)
+	// Mbkes no progress
+	migrbtor1 := NewMockMigrbtor()
+	migrbtor1.ProgressFunc.SetDefbultReturn(0.5, nil)
 
 	// Goes to 0
-	migrator2 := NewMockMigrator()
-	migrator2.ProgressFunc.PushReturn(0.05, nil)
-	migrator2.ProgressFunc.SetDefaultReturn(0, nil)
+	migrbtor2 := NewMockMigrbtor()
+	migrbtor2.ProgressFunc.PushReturn(0.05, nil)
+	migrbtor2.ProgressFunc.SetDefbultReturn(0, nil)
 
 	// Goes to 1
-	migrator3 := NewMockMigrator()
-	migrator3.ProgressFunc.PushReturn(0.95, nil)
-	migrator3.ProgressFunc.SetDefaultReturn(1, nil)
+	migrbtor3 := NewMockMigrbtor()
+	migrbtor3.ProgressFunc.PushReturn(0.95, nil)
+	migrbtor3.ProgressFunc.SetDefbultReturn(1, nil)
 
-	if err := runner.Register(1, migrator1, MigratorOptions{ticker: ticker1}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(1, migrbtor1, MigrbtorOptions{ticker: ticker1}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
-	if err := runner.Register(2, migrator2, MigratorOptions{ticker: ticker2}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(2, migrbtor2, MigrbtorOptions{ticker: ticker2}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
-	if err := runner.Register(3, migrator3, MigratorOptions{ticker: ticker3}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(3, migrbtor3, MigrbtorOptions{ticker: ticker3}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
 
-	go runner.startInternal(allowAll)
+	go runner.stbrtInternbl(bllowAll)
 	tickN(ticker1, 5)
 	tickN(ticker2, 5)
 	tickN(ticker3, 5)
 	runner.Stop()
 
 	// not finished
-	if callCount := len(migrator1.UpFunc.History()); callCount != 5 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 5, callCount)
+	if cbllCount := len(migrbtor1.UpFunc.History()); cbllCount != 5 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 5, cbllCount)
 	}
 
-	// finished after 2 updates
-	if callCount := len(migrator2.DownFunc.History()); callCount != 1 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 1, callCount)
+	// finished bfter 2 updbtes
+	if cbllCount := len(migrbtor2.DownFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 1, cbllCount)
 	}
 
-	// finished after 2 updates
-	if callCount := len(migrator3.UpFunc.History()); callCount != 1 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 1, callCount)
+	// finished bfter 2 updbtes
+	if cbllCount := len(migrbtor3.UpFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 1, cbllCount)
 	}
 }
 
-func TestRunMigrator(t *testing.T) {
-	store := NewMockStoreIface()
+func TestRunMigrbtor(t *testing.T) {
+	store := NewMockStoreIfbce()
 	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.SetDefbultReturn(0.5, nil)
 
-	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
-		migrations <- Migration{ID: 1, Progress: 0.5}
+	runMigrbtorWrbpped(store, migrbtor, logger, ticker, func(migrbtions chbn<- Migrbtion) {
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.5}
 		tickN(ticker, 3)
 	})
 
-	if callCount := len(migrator.UpFunc.History()); callCount != 3 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 3, callCount)
+	if cbllCount := len(migrbtor.UpFunc.History()); cbllCount != 3 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 3, cbllCount)
 	}
-	if callCount := len(migrator.DownFunc.History()); callCount != 0 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 0, callCount)
+	if cbllCount := len(migrbtor.DownFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 0, cbllCount)
 	}
 }
 
-func TestRunMigratorMigrationErrors(t *testing.T) {
-	store := NewMockStoreIface()
+func TestRunMigrbtorMigrbtionErrors(t *testing.T) {
+	store := NewMockStoreIfbce()
 	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.SetDefaultReturn(0.5, nil)
-	migrator.UpFunc.SetDefaultReturn(errors.New("uh-oh"))
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.SetDefbultReturn(0.5, nil)
+	migrbtor.UpFunc.SetDefbultReturn(errors.New("uh-oh"))
 
-	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
-		migrations <- Migration{ID: 1, Progress: 0.5}
+	runMigrbtorWrbpped(store, migrbtor, logger, ticker, func(migrbtions chbn<- Migrbtion) {
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.5}
 		tickN(ticker, 1)
 	})
 
-	if calls := store.AddErrorFunc.history; len(calls) != 1 {
-		t.Fatalf("unexpected number of calls to AddError. want=%d have=%d", 1, len(calls))
+	if cblls := store.AddErrorFunc.history; len(cblls) != 1 {
+		t.Fbtblf("unexpected number of cblls to AddError. wbnt=%d hbve=%d", 1, len(cblls))
 	} else {
-		if calls[0].Arg1 != 1 {
-			t.Errorf("unexpected migrationId. want=%d have=%d", 1, calls[0].Arg1)
+		if cblls[0].Arg1 != 1 {
+			t.Errorf("unexpected migrbtionId. wbnt=%d hbve=%d", 1, cblls[0].Arg1)
 		}
-		if calls[0].Arg2 != "uh-oh" {
-			t.Errorf("unexpected error message. want=%s have=%s", "uh-oh", calls[0].Arg2)
+		if cblls[0].Arg2 != "uh-oh" {
+			t.Errorf("unexpected error messbge. wbnt=%s hbve=%s", "uh-oh", cblls[0].Arg2)
 		}
 	}
 }
 
-func TestRunMigratorMigrationFinishesUp(t *testing.T) {
-	store := NewMockStoreIface()
+func TestRunMigrbtorMigrbtionFinishesUp(t *testing.T) {
+	store := NewMockStoreIfbce()
 	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.PushReturn(0.8, nil)       // check
-	migrator.ProgressFunc.PushReturn(0.9, nil)       // after up
-	migrator.ProgressFunc.SetDefaultReturn(1.0, nil) // after up
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.PushReturn(0.8, nil)       // check
+	migrbtor.ProgressFunc.PushReturn(0.9, nil)       // bfter up
+	migrbtor.ProgressFunc.SetDefbultReturn(1.0, nil) // bfter up
 
-	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
-		migrations <- Migration{ID: 1, Progress: 0.8}
+	runMigrbtorWrbpped(store, migrbtor, logger, ticker, func(migrbtions chbn<- Migrbtion) {
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.8}
 		tickN(ticker, 5)
 	})
 
-	if callCount := len(migrator.UpFunc.History()); callCount != 2 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 2, callCount)
+	if cbllCount := len(migrbtor.UpFunc.History()); cbllCount != 2 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 2, cbllCount)
 	}
-	if callCount := len(migrator.DownFunc.History()); callCount != 0 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 0, callCount)
+	if cbllCount := len(migrbtor.DownFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 0, cbllCount)
 	}
 }
 
-func TestRunMigratorMigrationFinishesDown(t *testing.T) {
-	store := NewMockStoreIface()
+func TestRunMigrbtorMigrbtionFinishesDown(t *testing.T) {
+	store := NewMockStoreIfbce()
 	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.PushReturn(0.2, nil)       // check
-	migrator.ProgressFunc.PushReturn(0.1, nil)       // after down
-	migrator.ProgressFunc.SetDefaultReturn(0.0, nil) // after down
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.PushReturn(0.2, nil)       // check
+	migrbtor.ProgressFunc.PushReturn(0.1, nil)       // bfter down
+	migrbtor.ProgressFunc.SetDefbultReturn(0.0, nil) // bfter down
 
-	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
-		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
+	runMigrbtorWrbpped(store, migrbtor, logger, ticker, func(migrbtions chbn<- Migrbtion) {
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.2, ApplyReverse: true}
 		tickN(ticker, 5)
 	})
 
-	if callCount := len(migrator.UpFunc.History()); callCount != 0 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 0, callCount)
+	if cbllCount := len(migrbtor.UpFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 0, cbllCount)
 	}
-	if callCount := len(migrator.DownFunc.History()); callCount != 2 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 2, callCount)
+	if cbllCount := len(migrbtor.DownFunc.History()); cbllCount != 2 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 2, cbllCount)
 	}
 }
 
-func TestRunMigratorMigrationChangesDirection(t *testing.T) {
-	store := NewMockStoreIface()
+func TestRunMigrbtorMigrbtionChbngesDirection(t *testing.T) {
+	store := NewMockStoreIfbce()
 	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
-	migrator := NewMockMigrator()
-	migrator.ProgressFunc.PushReturn(0.2, nil) // check
-	migrator.ProgressFunc.PushReturn(0.1, nil) // after down
-	migrator.ProgressFunc.PushReturn(0.0, nil) // after down
-	migrator.ProgressFunc.PushReturn(0.0, nil) // re-check
-	migrator.ProgressFunc.PushReturn(0.1, nil) // after up
-	migrator.ProgressFunc.PushReturn(0.2, nil) // after up
+	migrbtor := NewMockMigrbtor()
+	migrbtor.ProgressFunc.PushReturn(0.2, nil) // check
+	migrbtor.ProgressFunc.PushReturn(0.1, nil) // bfter down
+	migrbtor.ProgressFunc.PushReturn(0.0, nil) // bfter down
+	migrbtor.ProgressFunc.PushReturn(0.0, nil) // re-check
+	migrbtor.ProgressFunc.PushReturn(0.1, nil) // bfter up
+	migrbtor.ProgressFunc.PushReturn(0.2, nil) // bfter up
 
-	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
-		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: true}
+	runMigrbtorWrbpped(store, migrbtor, logger, ticker, func(migrbtions chbn<- Migrbtion) {
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.2, ApplyReverse: true}
 		tickN(ticker, 5)
-		migrations <- Migration{ID: 1, Progress: 0.0, ApplyReverse: false}
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.0, ApplyReverse: fblse}
 		tickN(ticker, 5)
 	})
 
-	if callCount := len(migrator.UpFunc.History()); callCount != 5 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 5, callCount)
+	if cbllCount := len(migrbtor.UpFunc.History()); cbllCount != 5 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 5, cbllCount)
 	}
-	if callCount := len(migrator.DownFunc.History()); callCount != 2 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 2, callCount)
+	if cbllCount := len(migrbtor.DownFunc.History()); cbllCount != 2 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 2, cbllCount)
 	}
 }
 
-func TestRunMigratorMigrationDesyncedFromData(t *testing.T) {
-	store := NewMockStoreIface()
+func TestRunMigrbtorMigrbtionDesyncedFromDbtb(t *testing.T) {
+	store := NewMockStoreIfbce()
 	logger := logtest.Scoped(t)
 	ticker := glock.NewMockTicker(time.Second)
 
-	progressValues := []float64{
-		0.20,                         // initial check
-		0.25, 0.30, 0.35, 0.40, 0.45, // after up (x5)
+	progressVblues := []flobt64{
+		0.20,                         // initibl check
+		0.25, 0.30, 0.35, 0.40, 0.45, // bfter up (x5)
 		0.45,                         // re-check
-		0.50, 0.55, 0.60, 0.65, 0.70, // after up (x5)
+		0.50, 0.55, 0.60, 0.65, 0.70, // bfter up (x5)
 	}
 
-	migrator := NewMockMigrator()
-	for _, val := range progressValues {
-		migrator.ProgressFunc.PushReturn(val, nil)
+	migrbtor := NewMockMigrbtor()
+	for _, vbl := rbnge progressVblues {
+		migrbtor.ProgressFunc.PushReturn(vbl, nil)
 	}
 
-	runMigratorWrapped(store, migrator, logger, ticker, func(migrations chan<- Migration) {
-		migrations <- Migration{ID: 1, Progress: 0.2, ApplyReverse: false}
+	runMigrbtorWrbpped(store, migrbtor, logger, ticker, func(migrbtions chbn<- Migrbtion) {
+		migrbtions <- Migrbtion{ID: 1, Progress: 0.2, ApplyReverse: fblse}
 		tickN(ticker, 5)
-		migrations <- Migration{ID: 1, Progress: 1.0, ApplyReverse: false}
+		migrbtions <- Migrbtion{ID: 1, Progress: 1.0, ApplyReverse: fblse}
 		tickN(ticker, 5)
 	})
 
-	if callCount := len(migrator.UpFunc.History()); callCount != 10 {
-		t.Errorf("unexpected number of calls to Up. want=%d have=%d", 10, callCount)
+	if cbllCount := len(migrbtor.UpFunc.History()); cbllCount != 10 {
+		t.Errorf("unexpected number of cblls to Up. wbnt=%d hbve=%d", 10, cbllCount)
 	}
-	if callCount := len(migrator.DownFunc.History()); callCount != 0 {
-		t.Errorf("unexpected number of calls to Down. want=%d have=%d", 0, callCount)
+	if cbllCount := len(migrbtor.DownFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected number of cblls to Down. wbnt=%d hbve=%d", 0, cbllCount)
 	}
 }
 
-// runMigratorWrapped creates a migrations channel, then passes it to both the runMigrator
-// function and the given interact function, which execute concurrently. This channel can
-// control the behavior of the migration controller from within the interact function.
+// runMigrbtorWrbpped crebtes b migrbtions chbnnel, then pbsses it to both the runMigrbtor
+// function bnd the given interbct function, which execute concurrently. This chbnnel cbn
+// control the behbvior of the migrbtion controller from within the interbct function.
 //
-// This method blocks until both functions return. The return of the interact function
-// cancels a context controlling the runMigrator main loop.
-func runMigratorWrapped(store storeIface, migrator Migrator, logger log.Logger, ticker glock.Ticker, interact func(migrations chan<- Migration)) {
-	ctx, cancel := context.WithCancel(context.Background())
-	migrations := make(chan Migration)
+// This method blocks until both functions return. The return of the interbct function
+// cbncels b context controlling the runMigrbtor mbin loop.
+func runMigrbtorWrbpped(store storeIfbce, migrbtor Migrbtor, logger log.Logger, ticker glock.Ticker, interbct func(migrbtions chbn<- Migrbtion)) {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	migrbtions := mbke(chbn Migrbtion)
 
-	var wg sync.WaitGroup
+	vbr wg sync.WbitGroup
 	wg.Add(1)
 
 	go func() {
 		defer wg.Done()
 
-		runMigrator(
+		runMigrbtor(
 			ctx,
 			store,
-			migrator,
-			migrations,
-			migratorOptions{ticker: ticker},
+			migrbtor,
+			migrbtions,
+			migrbtorOptions{ticker: ticker},
 			logger,
-			newOperations(&observation.TestContext),
+			newOperbtions(&observbtion.TestContext),
 		)
 	}()
 
-	interact(migrations)
+	interbct(migrbtions)
 
-	cancel()
-	wg.Wait()
+	cbncel()
+	wg.Wbit()
 }
 
-// tickN advances the given ticker by one second n times with a guaranteed reader.
+// tickN bdvbnces the given ticker by one second n times with b gubrbnteed rebder.
 func tickN(ticker *glock.MockTicker, n int) {
 	for i := 0; i < n; i++ {
-		ticker.BlockingAdvance(time.Second)
+		ticker.BlockingAdvbnce(time.Second)
 	}
 }
 
-func TestRunnerValidate(t *testing.T) {
-	store := NewMockStoreIface()
-	store.ListFunc.SetDefaultReturn([]Migration{
-		{ID: 1, Introduced: NewVersion(3, 10), Progress: 1, Deprecated: newVersionPtr(3, 11)},
-		{ID: 1, Introduced: NewVersion(3, 11), Progress: 1, Deprecated: newVersionPtr(3, 13)},
-		{ID: 1, Introduced: NewVersion(3, 11), Progress: 1, Deprecated: newVersionPtr(3, 12)},
+func TestRunnerVblidbte(t *testing.T) {
+	store := NewMockStoreIfbce()
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
+		{ID: 1, Introduced: NewVersion(3, 10), Progress: 1, Deprecbted: newVersionPtr(3, 11)},
+		{ID: 1, Introduced: NewVersion(3, 11), Progress: 1, Deprecbted: newVersionPtr(3, 13)},
+		{ID: 1, Introduced: NewVersion(3, 11), Progress: 1, Deprecbted: newVersionPtr(3, 12)},
 		{ID: 1, Introduced: NewVersion(3, 12), Progress: 0},
 		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, nil)
-	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
-	if statusErr != nil {
-		t.Errorf("unexpected status error: %s ", statusErr)
+	runner := newRunner(&observbtion.TestContext, store, nil)
+	stbtusErr := runner.Vblidbte(context.Bbckground(), NewVersion(3, 12), NewVersion(0, 0))
+	if stbtusErr != nil {
+		t.Errorf("unexpected stbtus error: %s ", stbtusErr)
 	}
 }
 
-func TestRunnerValidateUnfinishedUp(t *testing.T) {
-	store := NewMockStoreIface()
-	store.ListFunc.SetDefaultReturn([]Migration{
-		{ID: 1, Introduced: NewVersion(3, 11), Progress: 0.65, Deprecated: newVersionPtr(3, 12)},
+func TestRunnerVblidbteUnfinishedUp(t *testing.T) {
+	store := NewMockStoreIfbce()
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
+		{ID: 1, Introduced: NewVersion(3, 11), Progress: 0.65, Deprecbted: newVersionPtr(3, 12)},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, nil)
-	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
+	runner := newRunner(&observbtion.TestContext, store, nil)
+	stbtusErr := runner.Vblidbte(context.Bbckground(), NewVersion(3, 12), NewVersion(0, 0))
 
-	if diff := cmp.Diff(wrapMigrationErrors(newMigrationStatusError(1, 1, 0.65)).Error(), statusErr.Error()); diff != "" {
-		t.Errorf("unexpected status error (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wrbpMigrbtionErrors(newMigrbtionStbtusError(1, 1, 0.65)).Error(), stbtusErr.Error()); diff != "" {
+		t.Errorf("unexpected stbtus error (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestRunnerValidateUnfinishedDown(t *testing.T) {
-	store := NewMockStoreIface()
-	store.ListFunc.SetDefaultReturn([]Migration{
-		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0.15, Deprecated: newVersionPtr(3, 15), ApplyReverse: true},
+func TestRunnerVblidbteUnfinishedDown(t *testing.T) {
+	store := NewMockStoreIfbce()
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
+		{ID: 1, Introduced: NewVersion(3, 13), Progress: 0.15, Deprecbted: newVersionPtr(3, 15), ApplyReverse: true},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, nil)
-	statusErr := runner.Validate(context.Background(), NewVersion(3, 12), NewVersion(0, 0))
+	runner := newRunner(&observbtion.TestContext, store, nil)
+	stbtusErr := runner.Vblidbte(context.Bbckground(), NewVersion(3, 12), NewVersion(0, 0))
 
-	if diff := cmp.Diff(wrapMigrationErrors(newMigrationStatusError(1, 0, 0.15)).Error(), statusErr.Error()); diff != "" {
-		t.Errorf("unexpected status error (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wrbpMigrbtionErrors(newMigrbtionStbtusError(1, 0, 0.15)).Error(), stbtusErr.Error()); diff != "" {
+		t.Errorf("unexpected stbtus error (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestRunnerBoundsFilter(t *testing.T) {
-	store := NewMockStoreIface()
+	store := NewMockStoreIfbce()
 	ticker := glock.NewMockTicker(time.Second)
 	refreshTicker := glock.NewMockTicker(time.Second * 30)
 
 	d2 := NewVersion(3, 12)
 	d3 := NewVersion(3, 10)
 
-	store.ListFunc.SetDefaultReturn([]Migration{
-		{ID: 1, Progress: 0.5, Introduced: NewVersion(3, 4), Deprecated: nil},
-		{ID: 2, Progress: 0.5, Introduced: NewVersion(3, 5), Deprecated: &d2},
-		{ID: 3, Progress: 0.5, Introduced: NewVersion(3, 6), Deprecated: &d3},
+	store.ListFunc.SetDefbultReturn([]Migrbtion{
+		{ID: 1, Progress: 0.5, Introduced: NewVersion(3, 4), Deprecbted: nil},
+		{ID: 2, Progress: 0.5, Introduced: NewVersion(3, 5), Deprecbted: &d2},
+		{ID: 3, Progress: 0.5, Introduced: NewVersion(3, 6), Deprecbted: &d3},
 	}, nil)
 
-	runner := newRunner(&observation.TestContext, store, refreshTicker)
+	runner := newRunner(&observbtion.TestContext, store, refreshTicker)
 
-	migrator1 := NewMockMigrator()
-	migrator1.ProgressFunc.SetDefaultReturn(0.5, nil)
-	migrator2 := NewMockMigrator()
-	migrator2.ProgressFunc.SetDefaultReturn(0.5, nil)
-	migrator3 := NewMockMigrator()
-	migrator3.ProgressFunc.SetDefaultReturn(0.5, nil)
+	migrbtor1 := NewMockMigrbtor()
+	migrbtor1.ProgressFunc.SetDefbultReturn(0.5, nil)
+	migrbtor2 := NewMockMigrbtor()
+	migrbtor2.ProgressFunc.SetDefbultReturn(0.5, nil)
+	migrbtor3 := NewMockMigrbtor()
+	migrbtor3.ProgressFunc.SetDefbultReturn(0.5, nil)
 
-	if err := runner.Register(1, migrator1, MigratorOptions{ticker: ticker}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(1, migrbtor1, MigrbtorOptions{ticker: ticker}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
-	if err := runner.Register(2, migrator2, MigratorOptions{ticker: ticker}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(2, migrbtor2, MigrbtorOptions{ticker: ticker}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
-	if err := runner.Register(3, migrator3, MigratorOptions{ticker: ticker}); err != nil {
-		t.Fatalf("unexpected error registering migrator: %s", err)
+	if err := runner.Register(3, migrbtor3, MigrbtorOptions{ticker: ticker}); err != nil {
+		t.Fbtblf("unexpected error registering migrbtor: %s", err)
 	}
 
-	go runner.startInternal(func(m Migration) bool {
+	go runner.stbrtInternbl(func(m Migrbtion) bool {
 		return m.ID != 2
 	})
 	tickN(ticker, 64)
 	runner.Stop()
 
-	// not called
-	if callCount := len(migrator2.UpFunc.History()); callCount != 0 {
-		t.Errorf("unexpected number of calls to migrator2's Up method. want=%d have=%d", 0, callCount)
+	// not cblled
+	if cbllCount := len(migrbtor2.UpFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected number of cblls to migrbtor2's Up method. wbnt=%d hbve=%d", 0, cbllCount)
 	}
 
-	// Only called between these two; do not compare direct as they tick independently
-	// and are not guaranteed to be called an equal number of times. We could additionally
-	// ensure neither count is zero, but there's a small chance that would cause it to
-	// flake in CI when the scheduler goes a bit psycho.
-	if callCount := len(migrator1.UpFunc.History()) + len(migrator3.UpFunc.History()); callCount != 64 {
-		t.Errorf("unexpected number of calls to migrator{1,3}'s Up method. want=%d have=%d", 64, callCount)
+	// Only cblled between these two; do not compbre direct bs they tick independently
+	// bnd bre not gubrbnteed to be cblled bn equbl number of times. We could bdditionblly
+	// ensure neither count is zero, but there's b smbll chbnce thbt would cbuse it to
+	// flbke in CI when the scheduler goes b bit psycho.
+	if cbllCount := len(migrbtor1.UpFunc.History()) + len(migrbtor3.UpFunc.History()); cbllCount != 64 {
+		t.Errorf("unexpected number of cblls to migrbtor{1,3}'s Up method. wbnt=%d hbve=%d", 64, cbllCount)
 	}
 }
 
-func allowAll(m Migration) bool {
+func bllowAll(m Migrbtion) bool {
 	return true
 }

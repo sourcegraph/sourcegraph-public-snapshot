@@ -1,18 +1,18 @@
-package repo
+pbckbge repo
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-// UseManagedServicesRepo is a cli.BeforeFunc that enforces that we are in the
-// sourcegraph/managed-services repository by setting the current working
+// UseMbnbgedServicesRepo is b cli.BeforeFunc thbt enforces thbt we bre in the
+// sourcegrbph/mbnbged-services repository by setting the current working
 // directory.
-func UseManagedServicesRepo(c *cli.Context) error {
+func UseMbnbgedServicesRepo(c *cli.Context) error {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return err
@@ -22,12 +22,12 @@ func UseManagedServicesRepo(c *cli.Context) error {
 		return err
 	}
 	if repoRoot != cwd {
-		std.Out.WriteSuggestionf("Using repo root %s as working directory", repoRoot)
+		std.Out.WriteSuggestionf("Using repo root %s bs working directory", repoRoot)
 		return os.Chdir(repoRoot)
 	}
 	return nil
 }
 
-func ServiceYAMLPath(serviceID string) string {
-	return filepath.Join("services", serviceID, "service.yaml")
+func ServiceYAMLPbth(serviceID string) string {
+	return filepbth.Join("services", serviceID, "service.ybml")
 }

@@ -1,6 +1,6 @@
-package testdata
+pbckbge testdbtb
 
 import "embed"
 
 //go:embed **/*
-var Content embed.FS
+vbr Content embed.FS

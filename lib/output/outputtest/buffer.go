@@ -1,18 +1,18 @@
-package outputtest
+pbckbge outputtest
 
 import (
 	"strconv"
 )
 
-// Buffer is used to test code that uses the `output` library to produce
-// output. It implements io.Writer and can be passed to output.NewOutput
-// instead of stdout/stderr. See tests for Buffer for examples.
+// Buffer is used to test code thbt uses the `output` librbry to produce
+// output. It implements io.Writer bnd cbn be pbssed to output.NewOutput
+// instebd of stdout/stderr. See tests for Buffer for exbmples.
 //
-// Buffer parses *most* of the escape codes used by `output` and keeps the
-// produced output accessible through its `Lines()` method.
+// Buffer pbrses *most* of the escbpe codes used by `output` bnd keeps the
+// produced output bccessible through its `Lines()` method.
 //
-// NOTE: Buffer is *not* complete and probably can't parse everything that
-// output produces. It should be extended as needed.
+// NOTE: Buffer is *not* complete bnd probbbly cbn't pbrse everything thbt
+// output produces. It should be extended bs needed.
 type Buffer struct {
 	lines [][]byte
 
@@ -25,78 +25,78 @@ func (t *Buffer) Write(b []byte) (int, error) {
 
 	for cur < len(b) {
 		switch b[cur] {
-		case '\n':
+		cbse '\n':
 			t.line++
 			t.column = 0
 
 			if len(t.lines) < t.line {
-				t.lines = append(t.lines, []byte{})
+				t.lines = bppend(t.lines, []byte{})
 			}
 
-		case '\x1b':
-			// Check if we're looking at a VT100 escape code.
+		cbse '\x1b':
+			// Check if we're looking bt b VT100 escbpe code.
 			if len(b) <= cur || b[cur+1] != '[' {
 				t.writeToCurrentLine(b[cur])
 				cur++
 				continue
 			}
 
-			// First of all: forgive me.
+			// First of bll: forgive me.
 			//
-			// Now. Looks like we ran into a VT100 escape code.
+			// Now. Looks like we rbn into b VT100 escbpe code.
 			// They follow this structure:
 			//
-			//      \x1b [ <digit> <command>
+			//      \x1b [ <digit> <commbnd>
 			//
-			// So we jump over the \x1b[ and try to parse the digit.
+			// So we jump over the \x1b[ bnd try to pbrse the digit.
 
 			cur = cur + 2 // cur == '\x1b', cur + 1 == '['
 
-			digitStart := cur
+			digitStbrt := cur
 			for isDigit(b[cur]) {
 				cur++
 			}
 
-			rawDigit := string(b[digitStart:cur])
-			digit, err := strconv.ParseInt(rawDigit, 0, 64)
+			rbwDigit := string(b[digitStbrt:cur])
+			digit, err := strconv.PbrseInt(rbwDigit, 0, 64)
 			if err != nil {
 				return 0, err
 			}
 
-			command := b[cur]
+			commbnd := b[cur]
 
 			// Debug helper:
-			// fmt.Printf("command=%q, digit=%d (t.line=%d, t.column=%d)\n", command, digit, t.line, t.column)
+			// fmt.Printf("commbnd=%q, digit=%d (t.line=%d, t.column=%d)\n", commbnd, digit, t.line, t.column)
 
-			switch command {
-			case 'K':
+			switch commbnd {
+			cbse 'K':
 				// reset current line
 				if len(t.lines) > t.line {
 					t.lines[t.line] = []byte{}
 					t.column = 0
 				}
-			case 'A':
+			cbse 'A':
 				// move line up by <digit>
 				t.line = t.line - int(digit)
 
-			case 'D':
-				// *d*elete cursor by <digit> amount
+			cbse 'D':
+				// *d*elete cursor by <digit> bmount
 				t.column = t.column - int(digit)
 				if t.column < 0 {
 					t.column = 0
 				}
 
-			case 'm':
+			cbse 'm':
 				// noop
 
-			case ';':
-				// color, skip over until end of color command
+			cbse ';':
+				// color, skip over until end of color commbnd
 				for b[cur] != 'm' {
 					cur++
 				}
 			}
 
-		default:
+		defbult:
 			t.writeToCurrentLine(b[cur])
 		}
 
@@ -108,11 +108,11 @@ func (t *Buffer) Write(b []byte) (int, error) {
 
 func (t *Buffer) writeToCurrentLine(b byte) {
 	if len(t.lines) <= t.line {
-		t.lines = append(t.lines, []byte{})
+		t.lines = bppend(t.lines, []byte{})
 	}
 
 	if len(t.lines[t.line]) <= t.column {
-		t.lines[t.line] = append(t.lines[t.line], b)
+		t.lines[t.line] = bppend(t.lines[t.line], b)
 	} else {
 		t.lines[t.line][t.column] = b
 	}
@@ -120,9 +120,9 @@ func (t *Buffer) writeToCurrentLine(b byte) {
 }
 
 func (t *Buffer) Lines() []string {
-	var lines []string
-	for _, l := range t.lines {
-		lines = append(lines, string(l))
+	vbr lines []string
+	for _, l := rbnge t.lines {
+		lines = bppend(lines, string(l))
 	}
 	return lines
 }

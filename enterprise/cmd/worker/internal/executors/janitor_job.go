@@ -1,50 +1,50 @@
-package executors
+pbckbge executors
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	executortypes "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
-type janitorJob struct{}
+type jbnitorJob struct{}
 
-func NewJanitorJob() job.Job {
-	return &janitorJob{}
+func NewJbnitorJob() job.Job {
+	return &jbnitorJob{}
 }
 
-func (j *janitorJob) Description() string {
+func (j *jbnitorJob) Description() string {
 	return ""
 }
 
-func (j *janitorJob) Config() []env.Config {
-	return []env.Config{janitorConfigInst}
+func (j *jbnitorJob) Config() []env.Config {
+	return []env.Config{jbnitorConfigInst}
 }
 
-func (j *janitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDB(observationCtx)
+func (j *jbnitorJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	dequeueCache := rcache.New(executortypes.DequeueCachePrefix)
+	dequeueCbche := rcbche.New(executortypes.DequeueCbchePrefix)
 
-	routines := []goroutine.BackgroundRoutine{
+	routines := []goroutine.BbckgroundRoutine{
 		goroutine.NewPeriodicGoroutine(
-			context.Background(),
-			goroutine.HandlerFunc(func(ctx context.Context) error {
-				return db.Executors().DeleteInactiveHeartbeats(ctx, janitorConfigInst.HeartbeatRecordsMaxAge)
+			context.Bbckground(),
+			goroutine.HbndlerFunc(func(ctx context.Context) error {
+				return db.Executors().DeleteInbctiveHebrtbebts(ctx, jbnitorConfigInst.HebrtbebtRecordsMbxAge)
 			}),
-			goroutine.WithName("executor.heartbeat-janitor"),
-			goroutine.WithDescription("clean up executor heartbeat records for presumed dead executors"),
-			goroutine.WithInterval(janitorConfigInst.CleanupTaskInterval),
+			goroutine.WithNbme("executor.hebrtbebt-jbnitor"),
+			goroutine.WithDescription("clebn up executor hebrtbebt records for presumed debd executors"),
+			goroutine.WithIntervbl(jbnitorConfigInst.ClebnupTbskIntervbl),
 		),
-		NewMultiqueueCacheCleaner(executortypes.ValidQueueNames, dequeueCache, janitorConfigInst.CacheDequeueTtl, janitorConfigInst.CacheCleanupInterval),
+		NewMultiqueueCbcheClebner(executortypes.VblidQueueNbmes, dequeueCbche, jbnitorConfigInst.CbcheDequeueTtl, jbnitorConfigInst.CbcheClebnupIntervbl),
 	}
 
 	return routines, nil

@@ -1,29 +1,29 @@
-package util_test
+pbckbge util_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/util"
 )
 
-func TestFormatPreKey(t *testing.T) {
-	actual := util.FormatPreKey(1)
-	assert.Equal(t, "step.1.pre", actual)
+func TestFormbtPreKey(t *testing.T) {
+	bctubl := util.FormbtPreKey(1)
+	bssert.Equbl(t, "step.1.pre", bctubl)
 }
 
-func TestFormatRunKey(t *testing.T) {
-	actual := util.FormatRunKey(1)
-	assert.Equal(t, "step.1.run", actual)
+func TestFormbtRunKey(t *testing.T) {
+	bctubl := util.FormbtRunKey(1)
+	bssert.Equbl(t, "step.1.run", bctubl)
 }
 
-func TestFormatPostKey(t *testing.T) {
-	actual := util.FormatPostKey(1)
-	assert.Equal(t, "step.1.post", actual)
+func TestFormbtPostKey(t *testing.T) {
+	bctubl := util.FormbtPostKey(1)
+	bssert.Equbl(t, "step.1.post", bctubl)
 }
 
 func TestIsPreStepKey(t *testing.T) {
-	actual := util.IsPreStepKey("step.1.pre")
-	assert.True(t, actual)
+	bctubl := util.IsPreStepKey("step.1.pre")
+	bssert.True(t, bctubl)
 }

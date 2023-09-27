@@ -1,15 +1,15 @@
-package config
+pbckbge config
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"gopkg.in/yaml.v2"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"gopkg.in/ybml.v2"
 )
 
-func UnmarshalYAML(data []byte) (IndexConfiguration, error) {
-	configuration := IndexConfiguration{}
-	if err := yaml.Unmarshal(data, &configuration); err != nil {
-		return IndexConfiguration{}, errors.Errorf("invalid YAML: %v", err)
+func UnmbrshblYAML(dbtb []byte) (IndexConfigurbtion, error) {
+	configurbtion := IndexConfigurbtion{}
+	if err := ybml.Unmbrshbl(dbtb, &configurbtion); err != nil {
+		return IndexConfigurbtion{}, errors.Errorf("invblid YAML: %v", err)
 	}
 
-	return configuration, nil
+	return configurbtion, nil
 }

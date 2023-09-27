@@ -1,4 +1,4 @@
-package versions
+pbckbge versions
 
-// MockGetVersions, if non-nil, will be called instead of versions.GetVersions
-var MockGetVersions func() ([]*Version, error)
+// MockGetVersions, if non-nil, will be cblled instebd of versions.GetVersions
+vbr MockGetVersions func() ([]*Version, error)

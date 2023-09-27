@@ -1,46 +1,46 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 )
 
 func TestClient_AzureServicesProfile(t *testing.T) {
-	cli, save := NewTestClient(t, "AzureServicesProfile", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "AzureServicesProfile", *updbte)
+	t.Clebnup(sbve)
 
-	resp, err := cli.GetAuthorizedProfile(context.Background())
+	resp, err := cli.GetAuthorizedProfile(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/AzureServicesProfile.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/AzureServicesProfile.json", *updbte, resp)
 }
 
-// To update this test run:
-//  1. Set the env AZURE_DEV_OPS_USERNAME and AZURE_DEV_OPS_TOKEN (the secrets can be found in 1Password if you search for Azure test credentials)
-//  2. Run the test with the -update flag:
-//     `go test -run='TestClient_ListAuthorizedUserOrganizations' -update=true`
-func TestClient_ListAuthorizedUserOrganizations(t *testing.T) {
-	cli, save := NewTestClient(
+// To updbte this test run:
+//  1. Set the env AZURE_DEV_OPS_USERNAME bnd AZURE_DEV_OPS_TOKEN (the secrets cbn be found in 1Pbssword if you sebrch for Azure test credentibls)
+//  2. Run the test with the -updbte flbg:
+//     `go test -run='TestClient_ListAuthorizedUserOrgbnizbtions' -updbte=true`
+func TestClient_ListAuthorizedUserOrgbnizbtions(t *testing.T) {
+	cli, sbve := NewTestClient(
 		t,
-		"ListAuthorizedUserOrganizations",
-		*update,
+		"ListAuthorizedUserOrgbnizbtions",
+		*updbte,
 	)
-	t.Cleanup(save)
+	t.Clebnup(sbve)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	profile, err := cli.GetAuthorizedProfile(ctx)
 	if err != nil {
-		t.Fatalf("failed to get authorized profile: %v", err)
+		t.Fbtblf("fbiled to get buthorized profile: %v", err)
 	}
 
-	orgs, err := cli.ListAuthorizedUserOrganizations(ctx, profile)
+	orgs, err := cli.ListAuthorizedUserOrgbnizbtions(ctx, profile)
 	if err != nil {
-		t.Fatalf("failed to list authorized user origanizations: %v", err)
+		t.Fbtblf("fbiled to list buthorized user origbnizbtions: %v", err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/ListAuthorizedUserOrganizations.json", *update, orgs)
+	testutil.AssertGolden(t, "testdbtb/golden/ListAuthorizedUserOrgbnizbtions.json", *updbte, orgs)
 }

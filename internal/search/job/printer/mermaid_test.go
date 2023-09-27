@@ -1,31 +1,31 @@
-package printer
+pbckbge printer
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
 )
 
-func TestPrettyMermaid(t *testing.T) {
+func TestPrettyMermbid(t *testing.T) {
 	t.Run("verbose", func(t *testing.T) {
 		t.Run("simpleJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(MermaidVerbose(simpleJob, job.VerbosityBasic)))
+			butogold.ExpectFile(t, butogold.Rbw(MermbidVerbose(simpleJob, job.VerbosityBbsic)))
 		})
 
 		t.Run("bigJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(MermaidVerbose(bigJob, job.VerbosityBasic)))
+			butogold.ExpectFile(t, butogold.Rbw(MermbidVerbose(bigJob, job.VerbosityBbsic)))
 		})
 	})
 
 	t.Run("nonverbose", func(t *testing.T) {
 		t.Run("simpleJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(Mermaid(simpleJob)))
+			butogold.ExpectFile(t, butogold.Rbw(Mermbid(simpleJob)))
 		})
 
 		t.Run("bigJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(Mermaid(bigJob)))
+			butogold.ExpectFile(t, butogold.Rbw(Mermbid(bigJob)))
 		})
 	})
 }

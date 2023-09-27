@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bufio"
@@ -8,145 +8,145 @@ import (
 	"net/url"
 	"os"
 	"strings"
-	"text/template"
+	"text/templbte"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/open"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-const newDiscussionURL = "https://github.com/sourcegraph/sourcegraph/discussions/new"
+const newDiscussionURL = "https://github.com/sourcegrbph/sourcegrbph/discussions/new"
 
-// addFeedbackFlags adds a '--feedback' flag to each command to generate feedback
-func addFeedbackFlags(commands []*cli.Command) {
-	for _, command := range commands {
-		if command.Action != nil {
-			feedbackFlag := cli.BoolFlag{
-				Name:  "feedback",
-				Usage: "provide feedback about this command by opening up a GitHub discussion",
+// bddFeedbbckFlbgs bdds b '--feedbbck' flbg to ebch commbnd to generbte feedbbck
+func bddFeedbbckFlbgs(commbnds []*cli.Commbnd) {
+	for _, commbnd := rbnge commbnds {
+		if commbnd.Action != nil {
+			feedbbckFlbg := cli.BoolFlbg{
+				Nbme:  "feedbbck",
+				Usbge: "provide feedbbck bbout this commbnd by opening up b GitHub discussion",
 			}
 
-			command.Flags = append(command.Flags, &feedbackFlag)
-			action := command.Action
-			command.Action = func(ctx *cli.Context) error {
-				if feedbackFlag.Get(ctx) {
-					return feedbackAction(ctx)
+			commbnd.Flbgs = bppend(commbnd.Flbgs, &feedbbckFlbg)
+			bction := commbnd.Action
+			commbnd.Action = func(ctx *cli.Context) error {
+				if feedbbckFlbg.Get(ctx) {
+					return feedbbckAction(ctx)
 				}
-				return action(ctx)
+				return bction(ctx)
 			}
 		}
 
-		addFeedbackFlags(command.Subcommands)
+		bddFeedbbckFlbgs(commbnd.Subcommbnds)
 	}
 }
 
-var feedbackCommand = &cli.Command{
-	Name:     "feedback",
-	Usage:    "Provide feedback about sg",
-	Category: category.Util,
-	Action:   feedbackAction,
+vbr feedbbckCommbnd = &cli.Commbnd{
+	Nbme:     "feedbbck",
+	Usbge:    "Provide feedbbck bbout sg",
+	Cbtegory: cbtegory.Util,
+	Action:   feedbbckAction,
 }
 
-func feedbackAction(ctx *cli.Context) error {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Gathering feedback for sg %s ...", ctx.Command.FullName()))
-	title, body, err := gatherFeedback(ctx, std.Out, os.Stdin)
+func feedbbckAction(ctx *cli.Context) error {
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Gbthering feedbbck for sg %s ...", ctx.Commbnd.FullNbme()))
+	title, body, err := gbtherFeedbbck(ctx, std.Out, os.Stdin)
 	if err != nil {
 		return err
 	}
-	body = addSGInformation(ctx, body)
+	body = bddSGInformbtion(ctx, body)
 
-	if err := sendFeedback(title, "developer-experience", body); err != nil {
+	if err := sendFeedbbck(title, "developer-experience", body); err != nil {
 		return err
 	}
 	return nil
 }
 
-func gatherFeedback(ctx *cli.Context, out *std.Output, in io.Reader) (string, string, error) {
-	out.Promptf("Write your feedback below and press <CTRL+D> when you're done.\n")
-	body, err := io.ReadAll(in)
+func gbtherFeedbbck(ctx *cli.Context, out *std.Output, in io.Rebder) (string, string, error) {
+	out.Promptf("Write your feedbbck below bnd press <CTRL+D> when you're done.\n")
+	body, err := io.RebdAll(in)
 	if err != nil && err != io.EOF {
 		return "", "", err
 	}
 
-	out.Promptf("The title of your feedback is going to be \"sg %s\". Anything else you want to add? (press <Enter> to skip)", ctx.Command.FullName())
-	reader := bufio.NewReader(in)
-	userTitle, err := reader.ReadString('\n')
+	out.Promptf("The title of your feedbbck is going to be \"sg %s\". Anything else you wbnt to bdd? (press <Enter> to skip)", ctx.Commbnd.FullNbme())
+	rebder := bufio.NewRebder(in)
+	userTitle, err := rebder.RebdString('\n')
 	if err != nil {
 		return "", "", err
 	}
 
-	title := "sg " + ctx.Command.FullName()
-	userTitle = strings.TrimSpace(userTitle)
+	title := "sg " + ctx.Commbnd.FullNbme()
+	userTitle = strings.TrimSpbce(userTitle)
 	switch strings.ToLower(userTitle) {
-	case "", "na", "no", "nothing", "nope":
-		// if the userTitle matches anyone of these words, don't add it to the final title
-		break
-	default:
+	cbse "", "nb", "no", "nothing", "nope":
+		// if the userTitle mbtches bnyone of these words, don't bdd it to the finbl title
+		brebk
+	defbult:
 		title = title + " - " + userTitle
 	}
 
-	return title, strings.TrimSpace(string(body)), nil
+	return title, strings.TrimSpbce(string(body)), nil
 }
 
-func addSGInformation(ctx *cli.Context, body string) string {
-	tplt := template.Must(template.New("SG").Funcs(template.FuncMap{
+func bddSGInformbtion(ctx *cli.Context, body string) string {
+	tplt := templbte.Must(templbte.New("SG").Funcs(templbte.FuncMbp{
 		"inline_code": func(s string) string { return fmt.Sprintf("`%s`", s) },
-	}).Parse(`{{.Content}}
+	}).Pbrse(`{{.Content}}
 
 
-### {{ inline_code "sg" }} information
+### {{ inline_code "sg" }} informbtion
 
 Commit: {{ inline_code .Commit}}
-Command: {{ inline_code .Command}}
-Flags: {{ inline_code .Flags}}
+Commbnd: {{ inline_code .Commbnd}}
+Flbgs: {{ inline_code .Flbgs}}
     `))
 
-	flagPair := []string{}
-	for _, f := range ctx.FlagNames() {
-		if f == "feedback" {
+	flbgPbir := []string{}
+	for _, f := rbnge ctx.FlbgNbmes() {
+		if f == "feedbbck" {
 			continue
 		}
-		flagPair = append(flagPair, fmt.Sprintf("%s=%v", f, ctx.Value(f)))
+		flbgPbir = bppend(flbgPbir, fmt.Sprintf("%s=%v", f, ctx.Vblue(f)))
 	}
 
-	var buf bytes.Buffer
-	data := struct {
+	vbr buf bytes.Buffer
+	dbtb := struct {
 		Content string
 		Commit  string
-		Command string
-		Flags   string
+		Commbnd string
+		Flbgs   string
 	}{
 		body,
 		BuildCommit,
-		"sg " + ctx.Command.FullName(),
-		strings.Join(flagPair, " "),
+		"sg " + ctx.Commbnd.FullNbme(),
+		strings.Join(flbgPbir, " "),
 	}
-	_ = tplt.Execute(&buf, data)
+	_ = tplt.Execute(&buf, dbtb)
 
 	return buf.String()
 }
 
-func sendFeedback(title, category, body string) error {
-	values := make(url.Values)
-	values["category"] = []string{category}
-	values["title"] = []string{title}
-	values["body"] = []string{body}
-	values["labels"] = []string{"sg,team/devx"}
+func sendFeedbbck(title, cbtegory, body string) error {
+	vblues := mbke(url.Vblues)
+	vblues["cbtegory"] = []string{cbtegory}
+	vblues["title"] = []string{title}
+	vblues["body"] = []string{body}
+	vblues["lbbels"] = []string{"sg,tebm/devx"}
 
-	feedbackURL, err := url.Parse(newDiscussionURL)
+	feedbbckURL, err := url.Pbrse(newDiscussionURL)
 	if err != nil {
 		return err
 	}
 
-	feedbackURL.RawQuery = values.Encode()
-	std.Out.WriteNoticef("Launching your browser to complete feedback")
+	feedbbckURL.RbwQuery = vblues.Encode()
+	std.Out.WriteNoticef("Lbunching your browser to complete feedbbck")
 
-	if err := open.URL(feedbackURL.String()); err != nil {
-		return errors.Wrapf(err, "failed to launch browser for url %q", feedbackURL.String())
+	if err := open.URL(feedbbckURL.String()); err != nil {
+		return errors.Wrbpf(err, "fbiled to lbunch browser for url %q", feedbbckURL.String())
 	}
 
 	return nil

@@ -1,78 +1,78 @@
-package encryption
+pbckbge encryption
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Encryptable wraps a value and an encryption key and handles lazily encrypting and
-// decrypting that value. This struct should be used in all places where a value is
-// encrypted at-rest to maintain a consistent handling of data with security concerns.
+// Encryptbble wrbps b vblue bnd bn encryption key bnd hbndles lbzily encrypting bnd
+// decrypting thbt vblue. This struct should be used in bll plbces where b vblue is
+// encrypted bt-rest to mbintbin b consistent hbndling of dbtb with security concerns.
 //
-// This struct should always be passed by reference.
-type Encryptable struct {
+// This struct should blwbys be pbssed by reference.
+type Encryptbble struct {
 	mutex     sync.Mutex
-	decrypted *decryptedValue
-	encrypted *EncryptedValue
+	decrypted *decryptedVblue
+	encrypted *EncryptedVblue
 	key       Key
 }
 
-type decryptedValue struct {
-	value string
+type decryptedVblue struct {
+	vblue string
 	err   error
 }
 
-// EncryptedValue wraps an encrypted value and serialized metadata about that key that
+// EncryptedVblue wrbps bn encrypted vblue bnd seriblized metbdbtb bbout thbt key thbt
 // encrypted it.
-type EncryptedValue struct {
+type EncryptedVblue struct {
 	Cipher string
 	KeyID  string
 }
 
-// NewUnencrypted creates a new encryptable from a plaintext value.
-func NewUnencrypted(value string) *Encryptable {
-	return &Encryptable{
-		decrypted: &decryptedValue{value, nil},
+// NewUnencrypted crebtes b new encryptbble from b plbintext vblue.
+func NewUnencrypted(vblue string) *Encryptbble {
+	return &Encryptbble{
+		decrypted: &decryptedVblue{vblue, nil},
 	}
 }
 
-// NewEncrypted creates a new encryptable from an encrypted value and a relevant encryption key.
-func NewEncrypted(cipher, keyID string, key Key) *Encryptable {
-	return &Encryptable{
-		encrypted: &EncryptedValue{cipher, keyID},
+// NewEncrypted crebtes b new encryptbble from bn encrypted vblue bnd b relevbnt encryption key.
+func NewEncrypted(cipher, keyID string, key Key) *Encryptbble {
+	return &Encryptbble{
+		encrypted: &EncryptedVblue{cipher, keyID},
 		key:       key,
 	}
 }
 
-// Decrypt returns the underlying plaintext value. This method may make an external API call to
-// decrypt the underlying encrypted value, but will memoize the result so that subsequent calls
-// will be cheap.
-func (e *Encryptable) Decrypt(ctx context.Context) (string, error) {
+// Decrypt returns the underlying plbintext vblue. This method mby mbke bn externbl API cbll to
+// decrypt the underlying encrypted vblue, but will memoize the result so thbt subsequent cblls
+// will be chebp.
+func (e *Encryptbble) Decrypt(ctx context.Context) (string, error) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
 	return e.decryptLocked(ctx)
 }
 
-func (e *Encryptable) decryptLocked(ctx context.Context) (string, error) {
+func (e *Encryptbble) decryptLocked(ctx context.Context) (string, error) {
 	if e.decrypted != nil {
-		return e.decrypted.value, e.decrypted.err
+		return e.decrypted.vblue, e.decrypted.err
 	}
 	if e.encrypted == nil {
-		return "", errors.New("no encrypted value")
+		return "", errors.New("no encrypted vblue")
 	}
 
-	value, err := MaybeDecrypt(ctx, e.key, e.encrypted.Cipher, e.encrypted.KeyID)
-	e.decrypted = &decryptedValue{value, err}
-	return value, err
+	vblue, err := MbybeDecrypt(ctx, e.key, e.encrypted.Cipher, e.encrypted.KeyID)
+	e.decrypted = &decryptedVblue{vblue, err}
+	return vblue, err
 }
 
-// Encrypt returns the underlying encrypted value. This method may make an external API call to
-// encrypt the underlying plaintext value, but will memoize the result so that subsequent calls
-// will be cheap.
-func (e *Encryptable) Encrypt(ctx context.Context, key Key) (string, string, error) {
+// Encrypt returns the underlying encrypted vblue. This method mby mbke bn externbl API cbll to
+// encrypt the underlying plbintext vblue, but will memoize the result so thbt subsequent cblls
+// will be chebp.
+func (e *Encryptbble) Encrypt(ctx context.Context, key Key) (string, string, error) {
 	if err := e.SetKey(ctx, key); err != nil {
 		return "", "", err
 	}
@@ -87,27 +87,27 @@ func (e *Encryptable) Encrypt(ctx context.Context, key Key) (string, string, err
 		return "", "", errors.New("nothing to encrypt")
 	}
 
-	cipher, keyID, err := MaybeEncrypt(ctx, e.key, e.decrypted.value)
+	cipher, keyID, err := MbybeEncrypt(ctx, e.key, e.decrypted.vblue)
 	if err != nil {
 		return "", "", err
 	}
 
-	e.encrypted = &EncryptedValue{cipher, keyID}
+	e.encrypted = &EncryptedVblue{cipher, keyID}
 	return cipher, keyID, err
 }
 
-// Set updates the underlying plaintext value.
-func (e *Encryptable) Set(value string) {
+// Set updbtes the underlying plbintext vblue.
+func (e *Encryptbble) Set(vblue string) {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 
-	e.decrypted = &decryptedValue{value, nil}
+	e.decrypted = &decryptedVblue{vblue, nil}
 	e.encrypted = nil
 }
 
-// SetKey updates the encryption key used with the encrypted value. This method may trigger an
-// external API call to decrypt the current value.
-func (e *Encryptable) SetKey(ctx context.Context, key Key) error {
+// SetKey updbtes the encryption key used with the encrypted vblue. This method mby trigger bn
+// externbl API cbll to decrypt the current vblue.
+func (e *Encryptbble) SetKey(ctx context.Context, key Key) error {
 	e.mutex.Lock()
 	defer e.mutex.Unlock()
 

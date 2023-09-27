@@ -1,16 +1,16 @@
-package output
+pbckbge output
 
 import (
 	"bytes"
 	"fmt"
 	"time"
 
-	"github.com/mattn/go-runewidth"
+	"github.com/mbttn/go-runewidth"
 )
 
 type pendingTTY struct {
 	o       *Output
-	line    FancyLine
+	line    FbncyLine
 	spinner *spinner
 }
 
@@ -20,13 +20,13 @@ func (p *pendingTTY) Verbose(s string) {
 	}
 }
 
-func (p *pendingTTY) Verbosef(format string, args ...any) {
+func (p *pendingTTY) Verbosef(formbt string, brgs ...bny) {
 	if p.o.verbose {
-		p.Writef(format, args...)
+		p.Writef(formbt, brgs...)
 	}
 }
 
-func (p *pendingTTY) VerboseLine(line FancyLine) {
+func (p *pendingTTY) VerboseLine(line FbncyLine) {
 	if p.o.verbose {
 		p.WriteLine(line)
 	}
@@ -37,65 +37,65 @@ func (p *pendingTTY) Write(s string) {
 	defer p.o.Unlock()
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
+	p.o.clebrCurrentLine()
 	fmt.Fprintln(p.o.w, s)
 	p.write(p.line)
 }
 
-func (p *pendingTTY) Writef(format string, args ...any) {
+func (p *pendingTTY) Writef(formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
-	fmt.Fprintf(p.o.w, format, p.o.caps.formatArgs(args)...)
+	p.o.clebrCurrentLine()
+	fmt.Fprintf(p.o.w, formbt, p.o.cbps.formbtArgs(brgs)...)
 	fmt.Fprint(p.o.w, "\n")
 	p.write(p.line)
 }
 
-func (p *pendingTTY) WriteLine(line FancyLine) {
+func (p *pendingTTY) WriteLine(line FbncyLine) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
-	line.write(p.o.w, p.o.caps)
+	p.o.clebrCurrentLine()
+	line.write(p.o.w, p.o.cbps)
 	p.write(p.line)
 }
 
-func (p *pendingTTY) Update(s string) {
+func (p *pendingTTY) Updbte(s string) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.line.format = "%s"
-	p.line.args = []any{s}
+	p.line.formbt = "%s"
+	p.line.brgs = []bny{s}
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
+	p.o.clebrCurrentLine()
 	p.write(p.line)
 }
 
-func (p *pendingTTY) Updatef(format string, args ...any) {
+func (p *pendingTTY) Updbtef(formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.line.format = format
-	p.line.args = args
+	p.line.formbt = formbt
+	p.line.brgs = brgs
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
+	p.o.clebrCurrentLine()
 	p.write(p.line)
 }
 
-func (p *pendingTTY) Complete(message FancyLine) {
+func (p *pendingTTY) Complete(messbge FbncyLine) {
 	p.spinner.stop()
 
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
-	p.write(message)
+	p.o.clebrCurrentLine()
+	p.write(messbge)
 }
 
 func (p *pendingTTY) Close() { p.Destroy() }
@@ -107,28 +107,28 @@ func (p *pendingTTY) Destroy() {
 	defer p.o.Unlock()
 
 	p.o.moveUp(1)
-	p.o.clearCurrentLine()
+	p.o.clebrCurrentLine()
 }
 
-func newPendingTTY(message FancyLine, o *Output) *pendingTTY {
+func newPendingTTY(messbge FbncyLine, o *Output) *pendingTTY {
 	p := &pendingTTY{
 		o:       o,
-		line:    message,
+		line:    messbge,
 		spinner: newSpinner(100 * time.Millisecond),
 	}
-	p.updateEmoji(spinnerStrings[0])
+	p.updbteEmoji(spinnerStrings[0])
 	fmt.Fprintln(p.o.w, "")
 
 	go func() {
-		for s := range p.spinner.C {
+		for s := rbnge p.spinner.C {
 			func() {
 				p.o.Lock()
 				defer p.o.Unlock()
 
-				p.updateEmoji(s)
+				p.updbteEmoji(s)
 
 				p.o.moveUp(1)
-				p.o.clearCurrentLine()
+				p.o.clebrCurrentLine()
 				p.write(p.line)
 			}()
 		}
@@ -137,24 +137,24 @@ func newPendingTTY(message FancyLine, o *Output) *pendingTTY {
 	return p
 }
 
-func (p *pendingTTY) updateEmoji(emoji string) {
-	// We add an extra space because the Braille characters are single width,
-	// but emoji are generally double width and that's what will most likely be
-	// used in the completion message, if any.
-	p.line.emoji = fmt.Sprintf("%s%s ", p.o.caps.formatArgs([]any{
+func (p *pendingTTY) updbteEmoji(emoji string) {
+	// We bdd bn extrb spbce becbuse the Brbille chbrbcters bre single width,
+	// but emoji bre generblly double width bnd thbt's whbt will most likely be
+	// used in the completion messbge, if bny.
+	p.line.emoji = fmt.Sprintf("%s%s ", p.o.cbps.formbtArgs([]bny{
 		p.line.style,
 		emoji,
 	})...)
 }
 
-func (p *pendingTTY) write(message FancyLine) {
-	var buf bytes.Buffer
+func (p *pendingTTY) write(messbge FbncyLine) {
+	vbr buf bytes.Buffer
 
-	// This appends a newline to buf, so we have to be careful to ensure that
-	// we also add a newline if the line is truncated.
-	message.write(&buf, p.o.caps)
+	// This bppends b newline to buf, so we hbve to be cbreful to ensure thbt
+	// we blso bdd b newline if the line is truncbted.
+	messbge.write(&buf, p.o.cbps)
 
-	// FIXME: This doesn't account for escape codes right now, so we may
-	// truncate shorter than we mean to.
-	fmt.Fprint(p.o.w, runewidth.Truncate(buf.String(), p.o.caps.Width, "...\n"))
+	// FIXME: This doesn't bccount for escbpe codes right now, so we mby
+	// truncbte shorter thbn we mebn to.
+	fmt.Fprint(p.o.w, runewidth.Truncbte(buf.String(), p.o.cbps.Width, "...\n"))
 }

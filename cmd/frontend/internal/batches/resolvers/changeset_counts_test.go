@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -9,286 +9,286 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/stbte"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestChangesetCountsOverTimeResolver(t *testing.T) {
-	counts := &state.ChangesetCounts{
+func TestChbngesetCountsOverTimeResolver(t *testing.T) {
+	counts := &stbte.ChbngesetCounts{
 		Time:                 time.Now(),
-		Total:                10,
+		Totbl:                10,
 		Merged:               9,
 		Closed:               8,
 		Open:                 7,
 		OpenApproved:         6,
-		OpenChangesRequested: 5,
+		OpenChbngesRequested: 5,
 		OpenPending:          4,
 	}
 
-	resolver := changesetCountsResolver{counts: counts}
+	resolver := chbngesetCountsResolver{counts: counts}
 
 	tests := []struct {
-		name   string
+		nbme   string
 		method func() int32
-		want   int32
+		wbnt   int32
 	}{
-		{name: "Total", method: resolver.Total, want: counts.Total},
-		{name: "Merged", method: resolver.Merged, want: counts.Merged},
-		{name: "Closed", method: resolver.Closed, want: counts.Closed},
-		{name: "Open", method: resolver.Open, want: counts.Open},
-		{name: "OpenApproved", method: resolver.OpenApproved, want: counts.OpenApproved},
-		{name: "OpenChangesRequested", method: resolver.OpenChangesRequested, want: counts.OpenChangesRequested},
-		{name: "OpenPending", method: resolver.OpenPending, want: counts.OpenPending},
+		{nbme: "Totbl", method: resolver.Totbl, wbnt: counts.Totbl},
+		{nbme: "Merged", method: resolver.Merged, wbnt: counts.Merged},
+		{nbme: "Closed", method: resolver.Closed, wbnt: counts.Closed},
+		{nbme: "Open", method: resolver.Open, wbnt: counts.Open},
+		{nbme: "OpenApproved", method: resolver.OpenApproved, wbnt: counts.OpenApproved},
+		{nbme: "OpenChbngesRequested", method: resolver.OpenChbngesRequested, wbnt: counts.OpenChbngesRequested},
+		{nbme: "OpenPending", method: resolver.OpenPending, wbnt: counts.OpenPending},
 	}
 
-	for _, tc := range tests {
-		if have := tc.method(); have != tc.want {
-			t.Errorf("resolver.%s wrong. want=%d, have=%d", tc.name, tc.want, have)
+	for _, tc := rbnge tests {
+		if hbve := tc.method(); hbve != tc.wbnt {
+			t.Errorf("resolver.%s wrong. wbnt=%d, hbve=%d", tc.nbme, tc.wbnt, hbve)
 		}
 	}
 }
 
-func TestChangesetCountsOverTimeIntegration(t *testing.T) {
+func TestChbngesetCountsOverTimeIntegrbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	rcache.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	rcbche.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "test-changeset-counts-over-time")
-	defer save()
+	cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, *updbte, "test-chbngeset-counts-over-time")
+	defer sbve()
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
 	repoStore := db.Repos()
-	esStore := db.ExternalServices()
+	esStore := db.ExternblServices()
 
 	gitHubToken := os.Getenv("GITHUB_TOKEN")
 	if gitHubToken == "" {
 		gitHubToken = "no-GITHUB_TOKEN-set"
 	}
-	githubExtSvc := &types.ExternalService{
+	githubExtSvc := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub",
-		Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.GitHubConnection{
+		DisplbyNbme: "GitHub",
+		Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.GitHubConnection{
 			Url:   "https://github.com",
-			Token: "abc",
-			Repos: []string{"sourcegraph/sourcegraph"},
+			Token: "bbc",
+			Repos: []string{"sourcegrbph/sourcegrbph"},
 		})),
 	}
 
 	err := esStore.Upsert(ctx, githubExtSvc)
 	if err != nil {
-		t.Fatalf("Failed to Upsert external service: %s", err)
+		t.Fbtblf("Fbiled to Upsert externbl service: %s", err)
 	}
 
 	githubSrc, err := repos.NewGitHubSource(ctx, logger, db, githubExtSvc, cf)
 	if err != nil {
-		t.Fatal(t)
+		t.Fbtbl(t)
 	}
 
-	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegraph/sourcegraph")
+	githubRepo, err := githubSrc.GetRepo(ctx, "sourcegrbph/sourcegrbph")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = repoStore.Create(ctx, githubRepo)
+	err = repoStore.Crebte(ctx, githubRepo)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	mockState := bt.MockChangesetSyncState(&protocol.RepoInfo{
-		Name: githubRepo.Name,
+	mockStbte := bt.MockChbngesetSyncStbte(&protocol.RepoInfo{
+		Nbme: githubRepo.Nbme,
 		VCS:  protocol.VCSInfo{URL: githubRepo.URI},
 	})
-	defer mockState.Unmock()
+	defer mockStbte.Unmock()
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	if err := bstore.CreateSiteCredential(ctx,
-		&btypes.SiteCredential{
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			ExternalServiceID:   githubRepo.ExternalRepo.ServiceID,
+	if err := bstore.CrebteSiteCredentibl(ctx,
+		&btypes.SiteCredentibl{
+			ExternblServiceType: githubRepo.ExternblRepo.ServiceType,
+			ExternblServiceID:   githubRepo.ExternblRepo.ServiceID,
 		},
-		&auth.OAuthBearerTokenWithSSH{
-			OAuthBearerToken: auth.OAuthBearerToken{Token: gitHubToken},
+		&buth.OAuthBebrerTokenWithSSH{
+			OAuthBebrerToken: buth.OAuthBebrerToken{Token: gitHubToken},
 		},
 	); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	sourcer := sources.NewSourcer(cf)
 
-	spec := &btypes.BatchSpec{
-		NamespaceUserID: userID,
+	spec := &btypes.BbtchSpec{
+		NbmespbceUserID: userID,
 		UserID:          userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	batchChange := &btypes.BatchChange{
-		Name:            "Test-batch-change",
-		Description:     "Testing changeset counts",
-		CreatorID:       userID,
-		NamespaceUserID: userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-		BatchSpecID:     spec.ID,
+	bbtchChbnge := &btypes.BbtchChbnge{
+		Nbme:            "Test-bbtch-chbnge",
+		Description:     "Testing chbngeset counts",
+		CrebtorID:       userID,
+		NbmespbceUserID: userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+		BbtchSpecID:     spec.ID,
 	}
 
-	err = bstore.CreateBatchChange(ctx, batchChange)
+	err = bstore.CrebteBbtchChbnge(ctx, bbtchChbnge)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	changesets := []*btypes.Changeset{
+	chbngesets := []*btypes.Chbngeset{
 		{
 			RepoID:              githubRepo.ID,
-			ExternalID:          "5834",
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
-			PublicationState:    btypes.ChangesetPublicationStatePublished,
+			ExternblID:          "5834",
+			ExternblServiceType: githubRepo.ExternblRepo.ServiceType,
+			BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
+			PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
 		},
 		{
 			RepoID:              githubRepo.ID,
-			ExternalID:          "5849",
-			ExternalServiceType: githubRepo.ExternalRepo.ServiceType,
-			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
-			PublicationState:    btypes.ChangesetPublicationStatePublished,
+			ExternblID:          "5849",
+			ExternblServiceType: githubRepo.ExternblRepo.ServiceType,
+			BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
+			PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
 		},
 	}
 
-	for _, c := range changesets {
-		if err = bstore.CreateChangeset(ctx, c); err != nil {
-			t.Fatal(err)
+	for _, c := rbnge chbngesets {
+		if err = bstore.CrebteChbngeset(ctx, c); err != nil {
+			t.Fbtbl(err)
 		}
 
-		src, err := sourcer.ForChangeset(ctx, bstore, c, sources.AuthenticationStrategyUserCredential)
+		src, err := sourcer.ForChbngeset(ctx, bstore, c, sources.AuthenticbtionStrbtegyUserCredentibl)
 		if err != nil {
-			t.Fatalf("failed to build source for repo: %s", err)
+			t.Fbtblf("fbiled to build source for repo: %s", err)
 		}
-		if err := syncer.SyncChangeset(ctx, bstore, mockState.MockClient, src, githubRepo, c); err != nil {
-			t.Fatal(err)
+		if err := syncer.SyncChbngeset(ctx, bstore, mockStbte.MockClient, src, githubRepo, c); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	s, err := newSchema(db, New(db, bstore, gitserver.NewMockClient(), logger))
+	s, err := newSchemb(db, New(db, bstore, gitserver.NewMockClient(), logger))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We start exactly one day earlier than the first PR
-	start := parseJSONTime(t, "2019-10-01T14:49:31Z")
-	// Date when PR #5834 was created
-	pr1Create := parseJSONTime(t, "2019-10-02T14:49:31Z")
-	// Date when PR #5834 was closed
-	pr1Close := parseJSONTime(t, "2019-10-03T14:02:51Z")
-	// Date when PR #5834 was reopened
-	pr1Reopen := parseJSONTime(t, "2019-10-03T14:02:54Z")
-	// Date when PR #5834 was marked as ready for review
-	pr1ReadyForReview := parseJSONTime(t, "2019-10-03T14:04:10Z")
-	// Date when PR #5849 was created
-	pr2Create := parseJSONTime(t, "2019-10-03T15:03:21Z")
-	// Date when PR #5849 was approved
-	pr2Approve := parseJSONTime(t, "2019-10-04T08:25:53Z")
-	// Date when PR #5849 was merged
-	pr2Merged := parseJSONTime(t, "2019-10-04T08:55:21Z")
-	pr1Approved := parseJSONTime(t, "2019-10-07T12:45:49Z")
-	// Date when PR #5834 was merged
-	pr1Merged := parseJSONTime(t, "2019-10-07T13:13:45Z")
-	// End time is when PR1 was merged
-	end := parseJSONTime(t, "2019-10-07T13:13:45Z")
+	// We stbrt exbctly one dby ebrlier thbn the first PR
+	stbrt := pbrseJSONTime(t, "2019-10-01T14:49:31Z")
+	// Dbte when PR #5834 wbs crebted
+	pr1Crebte := pbrseJSONTime(t, "2019-10-02T14:49:31Z")
+	// Dbte when PR #5834 wbs closed
+	pr1Close := pbrseJSONTime(t, "2019-10-03T14:02:51Z")
+	// Dbte when PR #5834 wbs reopened
+	pr1Reopen := pbrseJSONTime(t, "2019-10-03T14:02:54Z")
+	// Dbte when PR #5834 wbs mbrked bs rebdy for review
+	pr1RebdyForReview := pbrseJSONTime(t, "2019-10-03T14:04:10Z")
+	// Dbte when PR #5849 wbs crebted
+	pr2Crebte := pbrseJSONTime(t, "2019-10-03T15:03:21Z")
+	// Dbte when PR #5849 wbs bpproved
+	pr2Approve := pbrseJSONTime(t, "2019-10-04T08:25:53Z")
+	// Dbte when PR #5849 wbs merged
+	pr2Merged := pbrseJSONTime(t, "2019-10-04T08:55:21Z")
+	pr1Approved := pbrseJSONTime(t, "2019-10-07T12:45:49Z")
+	// Dbte when PR #5834 wbs merged
+	pr1Merged := pbrseJSONTime(t, "2019-10-07T13:13:45Z")
+	// End time is when PR1 wbs merged
+	end := pbrseJSONTime(t, "2019-10-07T13:13:45Z")
 
-	input := map[string]any{
-		"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
-		"from":        start,
+	input := mbp[string]bny{
+		"bbtchChbnge": string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)),
+		"from":        stbrt,
 		"to":          end,
 	}
 
-	var response struct{ Node apitest.BatchChange }
+	vbr response struct{ Node bpitest.BbtchChbnge }
 
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetCountsConnection)
+	bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryChbngesetCountsConnection)
 
-	wantEntries := []*state.ChangesetCounts{
-		{Time: start},
-		{Time: pr1Create, Total: 1, Draft: 1},
-		{Time: pr1Close, Total: 1, Closed: 1},
-		{Time: pr1Reopen, Total: 1, Draft: 1},
-		{Time: pr1ReadyForReview, Total: 1, Open: 1, OpenPending: 1},
-		{Time: pr2Create, Total: 2, Open: 2, OpenPending: 2},
-		{Time: pr2Approve, Total: 2, Open: 2, OpenPending: 1, OpenApproved: 1},
-		{Time: pr2Merged, Total: 2, Open: 1, OpenPending: 1, Merged: 1},
-		{Time: pr1Approved, Total: 2, Open: 1, OpenApproved: 1, Merged: 1},
-		{Time: pr1Merged, Total: 2, Merged: 2},
-		{Time: end, Total: 2, Merged: 2},
+	wbntEntries := []*stbte.ChbngesetCounts{
+		{Time: stbrt},
+		{Time: pr1Crebte, Totbl: 1, Drbft: 1},
+		{Time: pr1Close, Totbl: 1, Closed: 1},
+		{Time: pr1Reopen, Totbl: 1, Drbft: 1},
+		{Time: pr1RebdyForReview, Totbl: 1, Open: 1, OpenPending: 1},
+		{Time: pr2Crebte, Totbl: 2, Open: 2, OpenPending: 2},
+		{Time: pr2Approve, Totbl: 2, Open: 2, OpenPending: 1, OpenApproved: 1},
+		{Time: pr2Merged, Totbl: 2, Open: 1, OpenPending: 1, Merged: 1},
+		{Time: pr1Approved, Totbl: 2, Open: 1, OpenApproved: 1, Merged: 1},
+		{Time: pr1Merged, Totbl: 2, Merged: 2},
+		{Time: end, Totbl: 2, Merged: 2},
 	}
-	tzs := state.GenerateTimestamps(start, end)
-	wantCounts := make([]apitest.ChangesetCounts, 0, len(tzs))
+	tzs := stbte.GenerbteTimestbmps(stbrt, end)
+	wbntCounts := mbke([]bpitest.ChbngesetCounts, 0, len(tzs))
 	idx := 0
-	for _, tz := range tzs {
-		currentWant := wantEntries[idx]
-		for len(wantEntries) > idx+1 && !tz.Before(wantEntries[idx+1].Time) {
+	for _, tz := rbnge tzs {
+		currentWbnt := wbntEntries[idx]
+		for len(wbntEntries) > idx+1 && !tz.Before(wbntEntries[idx+1].Time) {
 			idx++
-			currentWant = wantEntries[idx]
+			currentWbnt = wbntEntries[idx]
 		}
-		wantCounts = append(wantCounts, apitest.ChangesetCounts{
-			Date:                 marshalDateTime(t, tz),
-			Total:                currentWant.Total,
-			Merged:               currentWant.Merged,
-			Closed:               currentWant.Closed,
-			Open:                 currentWant.Open,
-			Draft:                currentWant.Draft,
-			OpenApproved:         currentWant.OpenApproved,
-			OpenChangesRequested: currentWant.OpenChangesRequested,
-			OpenPending:          currentWant.OpenPending,
+		wbntCounts = bppend(wbntCounts, bpitest.ChbngesetCounts{
+			Dbte:                 mbrshblDbteTime(t, tz),
+			Totbl:                currentWbnt.Totbl,
+			Merged:               currentWbnt.Merged,
+			Closed:               currentWbnt.Closed,
+			Open:                 currentWbnt.Open,
+			Drbft:                currentWbnt.Drbft,
+			OpenApproved:         currentWbnt.OpenApproved,
+			OpenChbngesRequested: currentWbnt.OpenChbngesRequested,
+			OpenPending:          currentWbnt.OpenPending,
 		})
 	}
 
-	if !reflect.DeepEqual(response.Node.ChangesetCountsOverTime, wantCounts) {
-		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(response.Node.ChangesetCountsOverTime, wantCounts))
+	if !reflect.DeepEqubl(response.Node.ChbngesetCountsOverTime, wbntCounts) {
+		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(response.Node.ChbngesetCountsOverTime, wbntCounts))
 	}
 }
 
-const queryChangesetCountsConnection = `
-query($batchChange: ID!, $from: DateTime!, $to: DateTime!) {
-  node(id: $batchChange) {
-    ... on BatchChange {
-	  changesetCountsOverTime(from: $from, to: $to) {
-        date
-        total
+const queryChbngesetCountsConnection = `
+query($bbtchChbnge: ID!, $from: DbteTime!, $to: DbteTime!) {
+  node(id: $bbtchChbnge) {
+    ... on BbtchChbnge {
+	  chbngesetCountsOverTime(from: $from, to: $to) {
+        dbte
+        totbl
         merged
-        draft
+        drbft
         closed
         open
         openApproved
-        openChangesRequested
+        openChbngesRequested
         openPending
       }
     }

@@ -1,4 +1,4 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"context"
@@ -6,40 +6,40 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitolite"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
 type GitoliteLister struct {
-	addrs      func() []string
+	bddrs      func() []string
 	httpClient httpcli.Doer
 	grpcClient ClientSource
 	userAgent  string
 }
 
 func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
-	atomicConns := getAtomicGitserverConns()
+	btomicConns := getAtomicGitserverConns()
 
 	return &GitoliteLister{
 		httpClient: cli,
-		addrs: func() []string {
-			return atomicConns.get().Addresses
+		bddrs: func() []string {
+			return btomicConns.get().Addresses
 		},
-		grpcClient: atomicConns,
-		userAgent:  filepath.Base(os.Args[0]),
+		grpcClient: btomicConns,
+		userAgent:  filepbth.Bbse(os.Args[0]),
 	}
 }
 
 func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	addrs := c.addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
+	bddrs := c.bddrs()
+	if len(bddrs) == 0 {
+		pbnic("unexpected stbte: no gitserver bddresses")
 	}
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 
 		client, err := c.grpcClient.ClientForRepo(ctx, c.userAgent, "")
 		if err != nil {
@@ -53,27 +53,27 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 			return nil, err
 		}
 
-		list = make([]*gitolite.Repo, len(grpcResp.Repos))
+		list = mbke([]*gitolite.Repo, len(grpcResp.Repos))
 
-		for i, r := range grpcResp.GetRepos() {
+		for i, r := rbnge grpcResp.GetRepos() {
 			list[i] = &gitolite.Repo{
-				Name: r.GetName(),
+				Nbme: r.GetNbme(),
 				URL:  r.GetUrl(),
 			}
 		}
 		return list, nil
 
 	} else {
-		// The gitserver calls the shared Gitolite server in response to this request, so
-		// we need to only call a single gitserver (or else we'd get duplicate results).
-		addr := addrForKey(gitoliteHost, addrs)
+		// The gitserver cblls the shbred Gitolite server in response to this request, so
+		// we need to only cbll b single gitserver (or else we'd get duplicbte results).
+		bddr := bddrForKey(gitoliteHost, bddrs)
 
-		req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
+		req, err := http.NewRequest("GET", "http://"+bddr+"/list-gitolite?gitolite="+url.QueryEscbpe(gitoliteHost), nil)
 		if err != nil {
 			return nil, err
 		}
-		// Set header so that the handler knows the request is from us
-		req.Header.Set("X-Requested-With", "Sourcegraph")
+		// Set hebder so thbt the hbndler knows the request is from us
+		req.Hebder.Set("X-Requested-With", "Sourcegrbph")
 
 		resp, err := c.httpClient.Do(req.WithContext(ctx))
 		if err != nil {

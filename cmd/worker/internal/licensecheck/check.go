@@ -1,4 +1,4 @@
-package licensecheck
+pbckbge licensecheck
 
 import (
 	"bytes"
@@ -9,28 +9,28 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	licenseCheckStarted = false
+vbr (
+	licenseCheckStbrted = fblse
 	store               = redispool.Store
-	baseUrl             = env.Get("SOURCEGRAPH_API_URL", "https://sourcegraph.com", "Base URL for license check API")
+	bbseUrl             = env.Get("SOURCEGRAPH_API_URL", "https://sourcegrbph.com", "Bbse URL for license check API")
 )
 
 const (
-	lastCalledAtStoreKey = "licensing:last_called_at"
-	prevLicenseTokenKey  = "licensing:prev_license_hash"
+	lbstCblledAtStoreKey = "licensing:lbst_cblled_bt"
+	prevLicenseTokenKey  = "licensing:prev_license_hbsh"
 )
 
 type licenseChecker struct {
@@ -40,16 +40,16 @@ type licenseChecker struct {
 	logger log.Logger
 }
 
-func (l *licenseChecker) Handle(ctx context.Context) error {
-	l.logger.Debug("starting license check", log.String("siteID", l.siteID))
-	if err := store.Set(lastCalledAtStoreKey, time.Now().Format(time.RFC3339)); err != nil {
+func (l *licenseChecker) Hbndle(ctx context.Context) error {
+	l.logger.Debug("stbrting license check", log.String("siteID", l.siteID))
+	if err := store.Set(lbstCblledAtStoreKey, time.Now().Formbt(time.RFC3339)); err != nil {
 		return err
 	}
 
-	// skip if has explicitly allowed air-gapped feature
-	if err := licensing.Check(licensing.FeatureAllowAirGapped); err == nil {
-		l.logger.Debug("license is air-gapped, skipping check", log.String("siteID", l.siteID))
-		if err := store.Set(licensing.LicenseValidityStoreKey, true); err != nil {
+	// skip if hbs explicitly bllowed bir-gbpped febture
+	if err := licensing.Check(licensing.FebtureAllowAirGbpped); err == nil {
+		l.logger.Debug("license is bir-gbpped, skipping check", log.String("siteID", l.siteID))
+		if err := store.Set(licensing.LicenseVblidityStoreKey, true); err != nil {
 			return err
 		}
 		return nil
@@ -59,15 +59,15 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-	if info.HasTag("dev") || info.HasTag("internal") {
-		l.logger.Debug("internal or dev license, skipping license verification check")
-		if err := store.Set(licensing.LicenseValidityStoreKey, true); err != nil {
+	if info.HbsTbg("dev") || info.HbsTbg("internbl") {
+		l.logger.Debug("internbl or dev license, skipping license verificbtion check")
+		if err := store.Set(licensing.LicenseVblidityStoreKey, true); err != nil {
 			return err
 		}
 		return nil
 	}
 
-	payload, err := json.Marshal(struct {
+	pbylobd, err := json.Mbrshbl(struct {
 		ClientSiteID string `json:"siteID"`
 	}{ClientSiteID: l.siteID})
 
@@ -75,50 +75,50 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 		return err
 	}
 
-	u, err := url.JoinPath(baseUrl, "/.api/license/check")
+	u, err := url.JoinPbth(bbseUrl, "/.bpi/license/check")
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest(http.MethodPost, u, bytes.NewBuffer(payload))
+	req, err := http.NewRequest(http.MethodPost, u, bytes.NewBuffer(pbylobd))
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("Authorization", "Bearer "+l.token)
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Authorizbtion", "Bebrer "+l.token)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
 	res, err := l.doer.Do(req)
 	if err != nil {
-		l.logger.Warn("error while checking license validity", log.Error(err), log.String("siteID", l.siteID))
+		l.logger.Wbrn("error while checking license vblidity", log.Error(err), log.String("siteID", l.siteID))
 		return err
 	}
 	defer res.Body.Close()
-	if res.StatusCode != http.StatusOK {
-		l.logger.Warn("invalid http response while checking license validity", log.String("httpStatus", res.Status), log.String("siteID", l.siteID))
-		return errors.Newf("Failed to check license, status code: %d", res.StatusCode)
+	if res.StbtusCode != http.StbtusOK {
+		l.logger.Wbrn("invblid http response while checking license vblidity", log.String("httpStbtus", res.Stbtus), log.String("siteID", l.siteID))
+		return errors.Newf("Fbiled to check license, stbtus code: %d", res.StbtusCode)
 	}
 
-	var body licensing.LicenseCheckResponse
+	vbr body licensing.LicenseCheckResponse
 	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
-		l.logger.Warn("error while decoding license check response", log.Error(err), log.String("siteID", l.siteID))
+		l.logger.Wbrn("error while decoding license check response", log.Error(err), log.String("siteID", l.siteID))
 		return err
 	}
 
 	if body.Error != "" {
-		l.logger.Warn("error in license check", log.String("responseError", body.Error), log.String("siteID", l.siteID))
+		l.logger.Wbrn("error in license check", log.String("responseError", body.Error), log.String("siteID", l.siteID))
 		return errors.New(body.Error)
 	}
 
-	if body.Data == nil {
-		l.logger.Warn("no data returned from license check", log.String("siteID", l.siteID))
-		return errors.New("No data returned from license check")
+	if body.Dbtb == nil {
+		l.logger.Wbrn("no dbtb returned from license check", log.String("siteID", l.siteID))
+		return errors.New("No dbtb returned from license check")
 	}
 
 	// best effort, ignore errors here
-	_ = store.Set(licensing.LicenseInvalidReason, body.Data.Reason)
+	_ = store.Set(licensing.LicenseInvblidRebson, body.Dbtb.Rebson)
 
-	if err := store.Set(licensing.LicenseValidityStoreKey, body.Data.IsValid); err != nil {
+	if err := store.Set(licensing.LicenseVblidityStoreKey, body.Dbtb.IsVblid); err != nil {
 		return err
 	}
 
@@ -126,81 +126,81 @@ func (l *licenseChecker) Handle(ctx context.Context) error {
 	return nil
 }
 
-// calcDurationSinceLastCalled calculates the duration to wait
+// cblcDurbtionSinceLbstCblled cblculbtes the durbtion to wbit
 // before running the next license check. It returns 0 if the
-// license check should be run immediately.
-func calcDurationSinceLastCalled(clock glock.Clock) (time.Duration, error) {
-	lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+// license check should be run immedibtely.
+func cblcDurbtionSinceLbstCblled(clock glock.Clock) (time.Durbtion, error) {
+	lbstCblledAt, err := store.Get(lbstCblledAtStoreKey).String()
 	if err != nil {
 		return 0, err
 	}
-	lastCalledAtTime, err := time.Parse(time.RFC3339, lastCalledAt)
+	lbstCblledAtTime, err := time.Pbrse(time.RFC3339, lbstCblledAt)
 	if err != nil {
 		return 0, err
 	}
 
-	if lastCalledAtTime.After(clock.Now()) {
-		return 0, errors.New("lastCalledAt cannot be in the future")
+	if lbstCblledAtTime.After(clock.Now()) {
+		return 0, errors.New("lbstCblledAt cbnnot be in the future")
 	}
 
-	elapsed := clock.Since(lastCalledAtTime)
+	elbpsed := clock.Since(lbstCblledAtTime)
 
-	if elapsed > licensing.LicenseCheckInterval {
+	if elbpsed > licensing.LicenseCheckIntervbl {
 		return 0, nil
 	}
-	return licensing.LicenseCheckInterval - elapsed, nil
+	return licensing.LicenseCheckIntervbl - elbpsed, nil
 }
 
-// StartLicenseCheck starts a goroutine that periodically checks
-// license validity from dotcom and stores the result in redis.
-// It re-runs the check if the license key changes.
-func StartLicenseCheck(originalCtx context.Context, logger log.Logger, db database.DB) {
+// StbrtLicenseCheck stbrts b goroutine thbt periodicblly checks
+// license vblidity from dotcom bnd stores the result in redis.
+// It re-runs the check if the license key chbnges.
+func StbrtLicenseCheck(originblCtx context.Context, logger log.Logger, db dbtbbbse.DB) {
 
-	if licenseCheckStarted {
-		logger.Info("license check already started")
+	if licenseCheckStbrted {
+		logger.Info("license check blrebdy stbrted")
 		return
 	}
-	licenseCheckStarted = true
+	licenseCheckStbrted = true
 
-	ctxWithCancel, cancel := context.WithCancel(originalCtx)
-	var siteID string
+	ctxWithCbncel, cbncel := context.WithCbncel(originblCtx)
+	vbr siteID string
 
 	// The entire logic is dependent on config so we will
-	// wait for initial config to be loaded as well as
-	// watch for any config changes
-	conf.Watch(func() {
+	// wbit for initibl config to be lobded bs well bs
+	// wbtch for bny config chbnges
+	conf.Wbtch(func() {
 		// stop previously running routine
-		cancel()
-		ctxWithCancel, cancel = context.WithCancel(originalCtx)
+		cbncel()
+		ctxWithCbncel, cbncel = context.WithCbncel(originblCtx)
 
 		prevLicenseToken, _ := store.Get(prevLicenseTokenKey).String()
-		licenseToken := license.GenerateLicenseKeyBasedAccessToken(conf.Get().LicenseKey)
-		var initialWaitInterval time.Duration = 0
+		licenseToken := license.GenerbteLicenseKeyBbsedAccessToken(conf.Get().LicenseKey)
+		vbr initiblWbitIntervbl time.Durbtion = 0
 		if prevLicenseToken == licenseToken {
-			initialWaitInterval, _ = calcDurationSinceLastCalled(glock.NewRealClock())
+			initiblWbitIntervbl, _ = cblcDurbtionSinceLbstCblled(glock.NewReblClock())
 		}
 
 		// continue running with new license key
 		store.Set(prevLicenseTokenKey, licenseToken)
 
-		// read site_id from global_state table if not done before
+		// rebd site_id from globbl_stbte tbble if not done before
 		if siteID == "" {
-			gs, err := db.GlobalState().Get(ctxWithCancel)
+			gs, err := db.GlobblStbte().Get(ctxWithCbncel)
 			if err != nil {
-				logger.Error("error reading global state from DB", log.Error(err))
+				logger.Error("error rebding globbl stbte from DB", log.Error(err))
 				return
 			}
 			siteID = gs.SiteID
 		}
 
 		routine := goroutine.NewPeriodicGoroutine(
-			ctxWithCancel,
-			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternalDoer, logger: logger.Scoped("licenseChecker", "Periodically checks license validity")},
-			goroutine.WithName("licensing.check-license-validity"),
-			goroutine.WithDescription("check if license is valid from sourcegraph.com"),
-			goroutine.WithInterval(licensing.LicenseCheckInterval),
-			goroutine.WithInitialDelay(initialWaitInterval),
+			ctxWithCbncel,
+			&licenseChecker{siteID: siteID, token: licenseToken, doer: httpcli.ExternblDoer, logger: logger.Scoped("licenseChecker", "Periodicblly checks license vblidity")},
+			goroutine.WithNbme("licensing.check-license-vblidity"),
+			goroutine.WithDescription("check if license is vblid from sourcegrbph.com"),
+			goroutine.WithIntervbl(licensing.LicenseCheckIntervbl),
+			goroutine.WithInitiblDelby(initiblWbitIntervbl),
 		)
-		go goroutine.MonitorBackgroundRoutines(ctxWithCancel, routine)
+		go goroutine.MonitorBbckgroundRoutines(ctxWithCbncel, routine)
 	})
 }

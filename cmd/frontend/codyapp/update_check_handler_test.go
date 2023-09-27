@@ -1,267 +1,267 @@
-package codyapp
+pbckbge codybpp
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-var integrationTest = flag.Bool("IntegrationTest", false, "access external services like GCP")
+vbr integrbtionTest = flbg.Bool("IntegrbtionTest", fblse, "bccess externbl services like GCP")
 
-func TestAppVersionPlatformFormat(t *testing.T) {
+func TestAppVersionPlbtformFormbt(t *testing.T) {
 	tt := []struct {
 		Arch   string
-		Target string
-		Wanted string
+		Tbrget string
+		Wbnted string
 	}{
 		{
 			Arch:   "x86_64",
-			Target: "linux",
-			Wanted: "x86_64-linux",
+			Tbrget: "linux",
+			Wbnted: "x86_64-linux",
 		},
 		{
 			Arch:   "x86_64",
-			Target: "darwin",
-			Wanted: "x86_64-darwin",
+			Tbrget: "dbrwin",
+			Wbnted: "x86_64-dbrwin",
 		},
 		{
-			Arch:   "aarch64",
-			Target: "darwin",
-			Wanted: "aarch64-darwin",
+			Arch:   "bbrch64",
+			Tbrget: "dbrwin",
+			Wbnted: "bbrch64-dbrwin",
 		},
 	}
 
-	for _, tc := range tt {
-		appVersion := AppVersion{
-			Target:  tc.Target,
+	for _, tc := rbnge tt {
+		bppVersion := AppVersion{
+			Tbrget:  tc.Tbrget,
 			Version: "0.0.0+dev",
 			Arch:    tc.Arch,
 		}
 
-		if appVersion.Platform() != tc.Wanted {
-			t.Errorf("incorrect plaform format - got %q wanted %q", appVersion.Platform(), tc.Wanted)
+		if bppVersion.Plbtform() != tc.Wbnted {
+			t.Errorf("incorrect plbform formbt - got %q wbnted %q", bppVersion.Plbtform(), tc.Wbnted)
 		}
 	}
 }
 
-func TestReadAppClientVersion(t *testing.T) {
-	var tt = []struct {
-		Name    string
-		Valid   bool
-		Target  string
+func TestRebdAppClientVersion(t *testing.T) {
+	vbr tt = []struct {
+		Nbme    string
+		Vblid   bool
+		Tbrget  string
 		Arch    string
 		Version string
 	}{
 		{
-			Name:    "client versions gets created from query params",
-			Valid:   true,
-			Target:  "Darwin",
-			Arch:    "x86_64-amd64",
+			Nbme:    "client versions gets crebted from query pbrbms",
+			Vblid:   true,
+			Tbrget:  "Dbrwin",
+			Arch:    "x86_64-bmd64",
 			Version: "1.8.9+debug",
 		},
 		{
-			Name:    "empty target is invalid",
-			Valid:   false,
-			Target:  "",
-			Arch:    "x86_64-amd64",
+			Nbme:    "empty tbrget is invblid",
+			Vblid:   fblse,
+			Tbrget:  "",
+			Arch:    "x86_64-bmd64",
 			Version: "1.8.9+insiders.FFAA",
 		},
 		{
-			Name:    "empty arch is invalid",
-			Valid:   false,
-			Target:  "Toaster",
+			Nbme:    "empty brch is invblid",
+			Vblid:   fblse,
+			Tbrget:  "Tobster",
 			Arch:    "",
-			Version: "1.8.9+1234.cc11bbaa",
+			Version: "1.8.9+1234.cc11bbbb",
 		},
 		{
-			Name:    "empty version is invalid",
-			Valid:   false,
-			Target:  "Kettle",
-			Arch:    "x86_64-amd64",
+			Nbme:    "empty version is invblid",
+			Vblid:   fblse,
+			Tbrget:  "Kettle",
+			Arch:    "x86_64-bmd64",
 			Version: "",
 		},
 	}
-	reqURL, err := url.Parse("/app/check/update")
+	reqURL, err := url.Pbrse("/bpp/check/updbte")
 	if err != nil {
-		t.Fatal("failed to create app update url", err)
+		t.Fbtbl("fbiled to crebte bpp updbte url", err)
 	}
-	for _, tc := range tt {
-		t.Run(tc.Name, func(t *testing.T) {
-			var v = url.Values{}
-			v.Add("target", tc.Target)
-			v.Add("arch", tc.Arch)
+	for _, tc := rbnge tt {
+		t.Run(tc.Nbme, func(t *testing.T) {
+			vbr v = url.Vblues{}
+			v.Add("tbrget", tc.Tbrget)
+			v.Add("brch", tc.Arch)
 
-			// we concat the version here since Tauri does not URL encode the version correctly
-			reqURL.RawQuery = v.Encode() + "&current_version=" + tc.Version
+			// we concbt the version here since Tburi does not URL encode the version correctly
+			reqURL.RbwQuery = v.Encode() + "&current_version=" + tc.Version
 
-			appVersion := readClientAppVersion(reqURL)
-			validationErr := appVersion.validate()
-			if tc.Valid && validationErr != nil {
-				t.Errorf("app version failed validation and should have passed - err=%s, appVersion=%v", err, appVersion)
-			} else if !tc.Valid && validationErr == nil {
-				t.Errorf("invalid app version passed validation - err=%s, appVersion=%v", err, appVersion)
+			bppVersion := rebdClientAppVersion(reqURL)
+			vblidbtionErr := bppVersion.vblidbte()
+			if tc.Vblid && vblidbtionErr != nil {
+				t.Errorf("bpp version fbiled vblidbtion bnd should hbve pbssed - err=%s, bppVersion=%v", err, bppVersion)
+			} else if !tc.Vblid && vblidbtionErr == nil {
+				t.Errorf("invblid bpp version pbssed vblidbtion - err=%s, bppVersion=%v", err, bppVersion)
 			}
 		})
 	}
 }
 
-func TestAppUpdateCheckHandler(t *testing.T) {
-	var resolver = StaticManifestResolver{
-		Manifest: AppUpdateManifest{
-			Version: "3023.5.8", // set the year part of the version FAR ahead so that there is always a version to update to
-			Notes:   "This is a test",
-			PubDate: time.Date(2023, time.May, 8, 12, 0, 0, 0, &time.Location{}),
-			Platforms: map[string]AppLocation{
+func TestAppUpdbteCheckHbndler(t *testing.T) {
+	vbr resolver = StbticMbnifestResolver{
+		Mbnifest: AppUpdbteMbnifest{
+			Version: "3023.5.8", // set the yebr pbrt of the version FAR bhebd so thbt there is blwbys b version to updbte to
+			Notes:   "This is b test",
+			PubDbte: time.Dbte(2023, time.Mby, 8, 12, 0, 0, 0, &time.Locbtion{}),
+			Plbtforms: mbp[string]AppLocbtion{
 				"x86_64-unknown-linux-gnu": {
-					Signature: "Yippy Kay YAY",
-					URL:       "https://example.com",
+					Signbture: "Yippy Kby YAY",
+					URL:       "https://exbmple.com",
 				},
 			},
 		},
 	}
 
-	t.Run("with static manifest resolver, and exact version", func(t *testing.T) {
-		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", resolver.Manifest.Version+"+1234.DEADBEEF")
+	t.Run("with stbtic mbnifest resolver, bnd exbct version", func(t *testing.T) {
+		req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", resolver.Mbnifest.Version+"+1234.DEADBEEF")
 		if err != nil {
-			t.Fatalf("failed to create client version request: %v", err)
+			t.Fbtblf("fbiled to crebte client version request: %v", err)
 		}
 		w := httptest.NewRecorder()
 
-		checker := NewAppUpdateChecker(logtest.NoOp(t), &resolver)
-		checker.Handler().ServeHTTP(w, req)
+		checker := NewAppUpdbteChecker(logtest.NoOp(t), &resolver)
+		checker.Hbndler().ServeHTTP(w, req)
 
 		resp := w.Result()
-		if resp.StatusCode != http.StatusNoContent {
-			t.Errorf("expected HTTP Status %d for exact version match, but got %d", http.StatusNoContent, resp.StatusCode)
+		if resp.StbtusCode != http.StbtusNoContent {
+			t.Errorf("expected HTTP Stbtus %d for exbct version mbtch, but got %d", http.StbtusNoContent, resp.StbtusCode)
 		}
 	})
-	t.Run("with static manifest resolver, and older version", func(t *testing.T) {
-		var clientVersion = AppVersion{
-			Target: "unknown-linux-gnu",
-			// this version has to be higher than 2023.6.13 since versions before that are not allowed to update!
+	t.Run("with stbtic mbnifest resolver, bnd older version", func(t *testing.T) {
+		vbr clientVersion = AppVersion{
+			Tbrget: "unknown-linux-gnu",
+			// this version hbs to be higher thbn 2023.6.13 since versions before thbt bre not bllowed to updbte!
 			Version: "2023.8.23+old.1234",
 			Arch:    "x86_64",
 		}
 
-		req, err := clientVersionRequest(t, clientVersion.Target, clientVersion.Arch, clientVersion.Version)
+		req, err := clientVersionRequest(t, clientVersion.Tbrget, clientVersion.Arch, clientVersion.Version)
 		if err != nil {
-			t.Fatalf("failed to create client version request: %v", err)
+			t.Fbtblf("fbiled to crebte client version request: %v", err)
 		}
 
 		w := httptest.NewRecorder()
 
-		checker := NewAppUpdateChecker(logtest.Scoped(t), &resolver)
-		checker.Handler().ServeHTTP(w, req)
+		checker := NewAppUpdbteChecker(logtest.Scoped(t), &resolver)
+		checker.Hbndler().ServeHTTP(w, req)
 
 		resp := w.Result()
-		if resp.StatusCode != http.StatusOK {
-			t.Fatalf("expected HTTP Status %d for exact version match, but got %d", http.StatusOK, resp.StatusCode)
+		if resp.StbtusCode != http.StbtusOK {
+			t.Fbtblf("expected HTTP Stbtus %d for exbct version mbtch, but got %d", http.StbtusOK, resp.StbtusCode)
 		}
 
-		var updateResp AppUpdateResponse
-		err = json.NewDecoder(resp.Body).Decode(&updateResp)
+		vbr updbteResp AppUpdbteResponse
+		err = json.NewDecoder(resp.Body).Decode(&updbteResp)
 		if err != nil {
-			t.Fatalf("failed to decode AppUpdateManifest: %v", err)
+			t.Fbtblf("fbiled to decode AppUpdbteMbnifest: %v", err)
 		}
 
-		if resolver.Manifest.Version != updateResp.Version {
-			t.Errorf("Wanted %s manifest version, got %s", resolver.Manifest.Version, updateResp.Version)
+		if resolver.Mbnifest.Version != updbteResp.Version {
+			t.Errorf("Wbnted %s mbnifest version, got %s", resolver.Mbnifest.Version, updbteResp.Version)
 		}
-		if resolver.Manifest.PubDate.String() != updateResp.PubDate.String() {
-			t.Errorf("Wanted %s manifest version, got %s", resolver.Manifest.Version, updateResp.Version)
+		if resolver.Mbnifest.PubDbte.String() != updbteResp.PubDbte.String() {
+			t.Errorf("Wbnted %s mbnifest version, got %s", resolver.Mbnifest.Version, updbteResp.Version)
 		}
 
-		if platform, ok := resolver.Manifest.Platforms[clientVersion.Platform()]; !ok {
-			t.Fatalf("failed to get %q platform from manifest", clientVersion.Platform())
-		} else if updateResp.Signature != platform.Signature {
-			t.Errorf("signature mismatch. Got %q wanted %q", updateResp.Signature, platform.Signature)
-		} else if updateResp.URL != platform.URL {
-			t.Errorf("URL mismatch. Got %q wanted %q", updateResp.URL, platform.URL)
+		if plbtform, ok := resolver.Mbnifest.Plbtforms[clientVersion.Plbtform()]; !ok {
+			t.Fbtblf("fbiled to get %q plbtform from mbnifest", clientVersion.Plbtform())
+		} else if updbteResp.Signbture != plbtform.Signbture {
+			t.Errorf("signbture mismbtch. Got %q wbnted %q", updbteResp.Signbture, plbtform.Signbture)
+		} else if updbteResp.URL != plbtform.URL {
+			t.Errorf("URL mismbtch. Got %q wbnted %q", updbteResp.URL, plbtform.URL)
 		}
 	})
-	t.Run("client on or before '2023.6.13' gets told there are no updates", func(t *testing.T) {
-		noUpdateVersions := []string{"2023.6.13+1234.stuff", "2021.1.11+1234.stuff"}
+	t.Run("client on or before '2023.6.13' gets told there bre no updbtes", func(t *testing.T) {
+		noUpdbteVersions := []string{"2023.6.13+1234.stuff", "2021.1.11+1234.stuff"}
 
-		for _, version := range noUpdateVersions {
+		for _, version := rbnge noUpdbteVersions {
 			req, err := clientVersionRequest(t, "unknown-linux-gnu", "x86_64", version)
 			if err != nil {
-				t.Fatalf("failed to create client version request: %v", err)
+				t.Fbtblf("fbiled to crebte client version request: %v", err)
 			}
 			w := httptest.NewRecorder()
 
-			checker := NewAppUpdateChecker(logtest.NoOp(t), &resolver)
-			checker.Handler().ServeHTTP(w, req)
+			checker := NewAppUpdbteChecker(logtest.NoOp(t), &resolver)
+			checker.Hbndler().ServeHTTP(w, req)
 
 			resp := w.Result()
-			if resp.StatusCode != http.StatusNoContent {
-				t.Errorf("expected HTTP Status %d for client on version %s (who should not receive updates) but got %d", http.StatusNoContent, version, resp.StatusCode)
+			if resp.StbtusCode != http.StbtusNoContent {
+				t.Errorf("expected HTTP Stbtus %d for client on version %s (who should not receive updbtes) but got %d", http.StbtusNoContent, version, resp.StbtusCode)
 			}
 		}
 	})
 }
 
 func TestGCSResolver(t *testing.T) {
-	flag.Parse()
+	flbg.Pbrse()
 
-	if !*integrationTest {
-		t.Skip("integration testing is not enabled - to enable this test pass the flag '-IntegrationTest'")
+	if !*integrbtionTest {
+		t.Skip("integrbtion testing is not enbbled - to enbble this test pbss the flbg '-IntegrbtionTest'")
 		return
 	}
 
-	ctx := context.Background()
-	resolver, err := NewGCSManifestResolver(ctx, ManifestBucket, ManifestName)
+	ctx := context.Bbckground()
+	resolver, err := NewGCSMbnifestResolver(ctx, MbnifestBucket, MbnifestNbme)
 	if err != nil {
-		t.Fatalf("failed to create GCS manifest resolver: %v", err)
+		t.Fbtblf("fbiled to crebte GCS mbnifest resolver: %v", err)
 	}
 
-	gcsManifest, err := resolver.Resolve(ctx)
+	gcsMbnifest, err := resolver.Resolve(ctx)
 	if err != nil {
-		t.Fatalf("failed to get manifest using GCS resolver: %v", err)
+		t.Fbtblf("fbiled to get mbnifest using GCS resolver: %v", err)
 	}
 
-	if gcsManifest == nil {
-		t.Errorf("got nil Version Manifest")
+	if gcsMbnifest == nil {
+		t.Errorf("got nil Version Mbnifest")
 	}
 
-	if gcsManifest.Version == "" {
-		t.Errorf("GCS Manifest Version is empty")
+	if gcsMbnifest.Version == "" {
+		t.Errorf("GCS Mbnifest Version is empty")
 	}
-	if gcsManifest.PubDate.IsZero() {
-		t.Errorf("GCS Manifest PubDate is Zero: %s", gcsManifest.PubDate.String())
-	}
-
-	if len(gcsManifest.Platforms) == 0 {
-		t.Errorf("GCS Manifest has zero platforms: %v", gcsManifest)
+	if gcsMbnifest.PubDbte.IsZero() {
+		t.Errorf("GCS Mbnifest PubDbte is Zero: %s", gcsMbnifest.PubDbte.String())
 	}
 
-	for keyPlatform, got := range gcsManifest.Platforms {
-		if got.Signature == "" {
-			t.Errorf("%s platform has an empty signature", keyPlatform)
+	if len(gcsMbnifest.Plbtforms) == 0 {
+		t.Errorf("GCS Mbnifest hbs zero plbtforms: %v", gcsMbnifest)
+	}
+
+	for keyPlbtform, got := rbnge gcsMbnifest.Plbtforms {
+		if got.Signbture == "" {
+			t.Errorf("%s plbtform hbs bn empty signbture", keyPlbtform)
 		}
 		if got.URL == "" {
-			t.Errorf("%s platform has an empty url", keyPlatform)
+			t.Errorf("%s plbtform hbs bn empty url", keyPlbtform)
 		}
 	}
 
 }
 
-func clientVersionRequest(t *testing.T, target, arch, version string) (*http.Request, error) {
+func clientVersionRequest(t *testing.T, tbrget, brch, version string) (*http.Request, error) {
 	t.Helper()
-	var v = url.Values{}
-	v.Add("target", target)
-	v.Add("arch", arch)
-	reqURL, err := url.Parse("http://localhost")
+	vbr v = url.Vblues{}
+	v.Add("tbrget", tbrget)
+	v.Add("brch", brch)
+	reqURL, err := url.Pbrse("http://locblhost")
 	if err != nil {
 		return nil, err
 	}
-	// we concat the version here since Tauri does not URL encode the version correctly
-	reqURL.RawQuery = v.Encode() + "&current_version=" + version
+	// we concbt the version here since Tburi does not URL encode the version correctly
+	reqURL.RbwQuery = v.Encode() + "&current_version=" + version
 	return httptest.NewRequest("GET", reqURL.String(), nil), nil
 }

@@ -1,22 +1,22 @@
-package gitresolvers
+pbckbge gitresolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-type CachedLocationResolverFactory struct {
-	repoStore       database.RepoStore
+type CbchedLocbtionResolverFbctory struct {
+	repoStore       dbtbbbse.RepoStore
 	gitserverClient gitserver.Client
 }
 
-func NewCachedLocationResolverFactory(repoStore database.RepoStore, gitserverClient gitserver.Client) *CachedLocationResolverFactory {
-	return &CachedLocationResolverFactory{
+func NewCbchedLocbtionResolverFbctory(repoStore dbtbbbse.RepoStore, gitserverClient gitserver.Client) *CbchedLocbtionResolverFbctory {
+	return &CbchedLocbtionResolverFbctory{
 		repoStore:       repoStore,
 		gitserverClient: gitserverClient,
 	}
 }
 
-func (f *CachedLocationResolverFactory) Create() *CachedLocationResolver {
-	return newCachedLocationResolver(f.repoStore, f.gitserverClient)
+func (f *CbchedLocbtionResolverFbctory) Crebte() *CbchedLocbtionResolver {
+	return newCbchedLocbtionResolver(f.repoStore, f.gitserverClient)
 }

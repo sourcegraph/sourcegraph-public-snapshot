@@ -1,25 +1,25 @@
-package auth
+pbckbge buth
 
 import (
 	"net/url"
-	"path"
+	"pbth"
 	"strings"
 )
 
-// SafeRedirectURL returns a safe redirect URL based on the input, to protect against open-redirect vulnerabilities.
+// SbfeRedirectURL returns b sbfe redirect URL bbsed on the input, to protect bgbinst open-redirect vulnerbbilities.
 //
-// 🚨 SECURITY: Handlers MUST call this on any redirection destination URL derived from untrusted
-// user input, or else there is a possible open-redirect vulnerability.
-func SafeRedirectURL(urlStr string) string {
-	u, err := url.Parse(urlStr)
-	if err != nil || !strings.HasPrefix(u.Path, "/") {
+// 🚨 SECURITY: Hbndlers MUST cbll this on bny redirection destinbtion URL derived from untrusted
+// user input, or else there is b possible open-redirect vulnerbbility.
+func SbfeRedirectURL(urlStr string) string {
+	u, err := url.Pbrse(urlStr)
+	if err != nil || !strings.HbsPrefix(u.Pbth, "/") {
 		return "/"
 	}
 
-	// Make sure u.Path always starts with a single slash.
-	u.Path = path.Clean(u.Path)
+	// Mbke sure u.Pbth blwbys stbrts with b single slbsh.
+	u.Pbth = pbth.Clebn(u.Pbth)
 
-	// Only take certain known-safe fields.
-	u = &url.URL{Path: u.Path, RawQuery: u.RawQuery}
+	// Only tbke certbin known-sbfe fields.
+	u = &url.URL{Pbth: u.Pbth, RbwQuery: u.RbwQuery}
 	return u.String()
 }

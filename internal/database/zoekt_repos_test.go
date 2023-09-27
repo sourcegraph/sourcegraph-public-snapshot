@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -7,15 +7,15 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestZoektRepos_GetZoektRepo(t *testing.T) {
@@ -25,292 +25,292 @@ func TestZoektRepos_GetZoektRepo(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &zoektReposStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	repo1, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo1"})
-	repo2, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo2"})
-	repo3, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: "repo3"})
+	repo1, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{Nbme: "repo1"})
+	repo2, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{Nbme: "repo2"})
+	repo3, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{Nbme: "repo3"})
 
-	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
-		repo1.ID: {RepoID: repo1.ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
-		repo2.ID: {RepoID: repo2.ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
-		repo3.ID: {RepoID: repo3.ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
+	bssertZoektRepos(t, ctx, s, mbp[bpi.RepoID]*ZoektRepo{
+		repo1.ID: {RepoID: repo1.ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
+		repo2.ID: {RepoID: repo2.ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
+		repo3.ID: {RepoID: repo3.ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
 	})
 }
 
-func TestZoektRepos_UpdateIndexStatuses(t *testing.T) {
+func TestZoektRepos_UpdbteIndexStbtuses(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &zoektReposStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 	timeUnix := int64(1686763487)
 
-	var repos types.MinimalRepos
-	for _, name := range []api.RepoName{
+	vbr repos types.MinimblRepos
+	for _, nbme := rbnge []bpi.RepoNbme{
 		"repo1",
 		"repo2",
 		"repo3",
 	} {
-		r, _ := createTestRepo(ctx, t, db, &createTestRepoPayload{Name: name})
-		repos = append(repos, types.MinimalRepo{ID: r.ID, Name: r.Name})
+		r, _ := crebteTestRepo(ctx, t, db, &crebteTestRepoPbylobd{Nbme: nbme})
+		repos = bppend(repos, types.MinimblRepo{ID: r.ID, Nbme: r.Nbme})
 	}
 
 	// No repo is indexed
-	assertZoektRepoStatistics(t, ctx, s, ZoektRepoStatistics{Total: 3, NotIndexed: 3})
+	bssertZoektRepoStbtistics(t, ctx, s, ZoektRepoStbtistics{Totbl: 3, NotIndexed: 3})
 
-	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
-		repos[0].ID: {RepoID: repos[0].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
-		repos[1].ID: {RepoID: repos[1].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
-		repos[2].ID: {RepoID: repos[2].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
+	bssertZoektRepos(t, ctx, s, mbp[bpi.RepoID]*ZoektRepo{
+		repos[0].ID: {RepoID: repos[0].ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
+		repos[1].ID: {RepoID: repos[1].ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
+		repos[2].ID: {RepoID: repos[2].ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
 	})
 
 	// 1/3 repo is indexed
-	indexed := zoekt.ReposMap{
+	indexed := zoekt.ReposMbp{
 		uint32(repos[0].ID): {
-			Branches:      []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
+			Brbnches:      []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d34db33f"}},
 			IndexTimeUnix: timeUnix,
 		},
 	}
 
-	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if err := s.UpdbteIndexStbtuses(ctx, indexed); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	assertZoektRepoStatistics(t, ctx, s, ZoektRepoStatistics{Total: 3, Indexed: 1, NotIndexed: 2})
+	bssertZoektRepoStbtistics(t, ctx, s, ZoektRepoStbtistics{Totbl: 3, Indexed: 1, NotIndexed: 2})
 
-	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
+	bssertZoektRepos(t, ctx, s, mbp[bpi.RepoID]*ZoektRepo{
 		repos[0].ID: {
 			RepoID:        repos[0].ID,
-			IndexStatus:   "indexed",
-			Branches:      []zoekt.RepositoryBranch{{Name: "main", Version: "d34db33f"}},
-			LastIndexedAt: time.Unix(timeUnix, 0),
+			IndexStbtus:   "indexed",
+			Brbnches:      []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d34db33f"}},
+			LbstIndexedAt: time.Unix(timeUnix, 0),
 		},
-		repos[1].ID: {RepoID: repos[1].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
-		repos[2].ID: {RepoID: repos[2].ID, IndexStatus: "not_indexed", Branches: []zoekt.RepositoryBranch{}},
+		repos[1].ID: {RepoID: repos[1].ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
+		repos[2].ID: {RepoID: repos[2].ID, IndexStbtus: "not_indexed", Brbnches: []zoekt.RepositoryBrbnch{}},
 	})
 
-	// Index all repositories
-	indexed = zoekt.ReposMap{
+	// Index bll repositories
+	indexed = zoekt.ReposMbp{
 		// different commit
-		uint32(repos[0].ID): {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}},
+		uint32(repos[0].ID): {Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "f00b4r"}}},
 		// new
-		uint32(repos[1].ID): {Branches: []zoekt.RepositoryBranch{{Name: "main-2", Version: "b4rf00"}}},
+		uint32(repos[1].ID): {Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "mbin-2", Version: "b4rf00"}}},
 		// new
-		uint32(repos[2].ID): {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}}},
+		uint32(repos[2].ID): {Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d00d00"}}},
 	}
 
-	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if err := s.UpdbteIndexStbtuses(ctx, indexed); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	assertZoektRepoStatistics(t, ctx, s, ZoektRepoStatistics{Total: 3, Indexed: 3})
+	bssertZoektRepoStbtistics(t, ctx, s, ZoektRepoStbtistics{Totbl: 3, Indexed: 3})
 
-	assertZoektRepos(t, ctx, s, map[api.RepoID]*ZoektRepo{
+	bssertZoektRepos(t, ctx, s, mbp[bpi.RepoID]*ZoektRepo{
 		repos[0].ID: {
 			RepoID:      repos[0].ID,
-			IndexStatus: "indexed",
-			Branches:    []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}},
+			IndexStbtus: "indexed",
+			Brbnches:    []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "f00b4r"}},
 		},
 		repos[1].ID: {
 			RepoID:      repos[1].ID,
-			IndexStatus: "indexed",
-			Branches:    []zoekt.RepositoryBranch{{Name: "main-2", Version: "b4rf00"}},
+			IndexStbtus: "indexed",
+			Brbnches:    []zoekt.RepositoryBrbnch{{Nbme: "mbin-2", Version: "b4rf00"}},
 		},
 		repos[2].ID: {
 			RepoID:      repos[2].ID,
-			IndexStatus: "indexed",
-			Branches:    []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}},
+			IndexStbtus: "indexed",
+			Brbnches:    []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d00d00"}},
 		},
 	})
 
-	// Add an additional branch to a single repository
-	indexed = zoekt.ReposMap{
-		// additional branch
-		uint32(repos[2].ID): {Branches: []zoekt.RepositoryBranch{
-			{Name: "main", Version: "d00d00"},
-			{Name: "v15.3.1", Version: "b4rf00"},
+	// Add bn bdditionbl brbnch to b single repository
+	indexed = zoekt.ReposMbp{
+		// bdditionbl brbnch
+		uint32(repos[2].ID): {Brbnches: []zoekt.RepositoryBrbnch{
+			{Nbme: "mbin", Version: "d00d00"},
+			{Nbme: "v15.3.1", Version: "b4rf00"},
 		}},
 	}
 
-	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if err := s.UpdbteIndexStbtuses(ctx, indexed); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	wantZoektRepos := map[api.RepoID]*ZoektRepo{
+	wbntZoektRepos := mbp[bpi.RepoID]*ZoektRepo{
 		repos[0].ID: {
 			RepoID:      repos[0].ID,
-			IndexStatus: "indexed",
-			Branches:    []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}},
+			IndexStbtus: "indexed",
+			Brbnches:    []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "f00b4r"}},
 		},
 		repos[1].ID: {
 			RepoID:      repos[1].ID,
-			IndexStatus: "indexed",
-			Branches:    []zoekt.RepositoryBranch{{Name: "main-2", Version: "b4rf00"}},
+			IndexStbtus: "indexed",
+			Brbnches:    []zoekt.RepositoryBrbnch{{Nbme: "mbin-2", Version: "b4rf00"}},
 		},
 		repos[2].ID: {
 			RepoID:      repos[2].ID,
-			IndexStatus: "indexed",
-			Branches: []zoekt.RepositoryBranch{
-				{Name: "main", Version: "d00d00"},
-				{Name: "v15.3.1", Version: "b4rf00"},
+			IndexStbtus: "indexed",
+			Brbnches: []zoekt.RepositoryBrbnch{
+				{Nbme: "mbin", Version: "d00d00"},
+				{Nbme: "v15.3.1", Version: "b4rf00"},
 			},
 		},
 	}
-	assertZoektRepos(t, ctx, s, wantZoektRepos)
+	bssertZoektRepos(t, ctx, s, wbntZoektRepos)
 
-	// Now we update the indexing status of a repository that doesn't exist and
-	// check that the index status in unchanged:
-	indexed = zoekt.ReposMap{
-		9999: {Branches: []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}}},
+	// Now we updbte the indexing stbtus of b repository thbt doesn't exist bnd
+	// check thbt the index stbtus in unchbnged:
+	indexed = zoekt.ReposMbp{
+		9999: {Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d00d00"}}},
 	}
-	if err := s.UpdateIndexStatuses(ctx, indexed); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if err := s.UpdbteIndexStbtuses(ctx, indexed); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	// Should still be the same
-	assertZoektRepos(t, ctx, s, wantZoektRepos)
+	// Should still be the sbme
+	bssertZoektRepos(t, ctx, s, wbntZoektRepos)
 }
 
-func assertZoektRepoStatistics(t *testing.T, ctx context.Context, s *zoektReposStore, wantZoektStats ZoektRepoStatistics) {
+func bssertZoektRepoStbtistics(t *testing.T, ctx context.Context, s *zoektReposStore, wbntZoektStbts ZoektRepoStbtistics) {
 	t.Helper()
 
-	stats, err := s.GetStatistics(ctx)
+	stbts, err := s.GetStbtistics(ctx)
 	if err != nil {
-		t.Fatalf("zoektRepoStore.GetStatistics failed: %s", err)
+		t.Fbtblf("zoektRepoStore.GetStbtistics fbiled: %s", err)
 	}
 
-	if diff := cmp.Diff(stats, wantZoektStats); diff != "" {
-		t.Errorf("ZoektRepoStatistics differ: %s", diff)
+	if diff := cmp.Diff(stbts, wbntZoektStbts); diff != "" {
+		t.Errorf("ZoektRepoStbtistics differ: %s", diff)
 	}
 }
 
-func assertZoektRepos(t *testing.T, ctx context.Context, s *zoektReposStore, want map[api.RepoID]*ZoektRepo) {
+func bssertZoektRepos(t *testing.T, ctx context.Context, s *zoektReposStore, wbnt mbp[bpi.RepoID]*ZoektRepo) {
 	t.Helper()
 
-	for repoID, w := range want {
-		have, err := s.GetZoektRepo(ctx, repoID)
+	for repoID, w := rbnge wbnt {
+		hbve, err := s.GetZoektRepo(ctx, repoID)
 		if err != nil {
-			t.Fatalf("unexpected error from GetZoektRepo: %s", err)
+			t.Fbtblf("unexpected error from GetZoektRepo: %s", err)
 		}
 
-		assert.NotZero(t, have.UpdatedAt)
-		assert.NotZero(t, have.CreatedAt)
+		bssert.NotZero(t, hbve.UpdbtedAt)
+		bssert.NotZero(t, hbve.CrebtedAt)
 
-		w.UpdatedAt = have.UpdatedAt
-		w.CreatedAt = have.CreatedAt
+		w.UpdbtedAt = hbve.UpdbtedAt
+		w.CrebtedAt = hbve.CrebtedAt
 
-		if diff := cmp.Diff(have, w); diff != "" {
+		if diff := cmp.Diff(hbve, w); diff != "" {
 			t.Errorf("ZoektRepo for repo %d differs: %s", repoID, diff)
 		}
 	}
 }
 
-func benchmarkUpdateIndexStatus(b *testing.B, numRepos int) {
+func benchmbrkUpdbteIndexStbtus(b *testing.B, numRepos int) {
 	logger := logtest.Scoped(b)
 	db := NewDB(logger, dbtest.NewDB(logger, b))
-	ctx := context.Background()
-	s := &zoektReposStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &zoektReposStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	b.Logf("Creating %d repositories...", numRepos)
+	b.Logf("Crebting %d repositories...", numRepos)
 
-	var (
-		indexedAll         = make(zoekt.ReposMap, numRepos)
-		indexedAllBranches = []zoekt.RepositoryBranch{{Name: "main", Version: "d00d00"}}
+	vbr (
+		indexedAll         = mbke(zoekt.ReposMbp, numRepos)
+		indexedAllBrbnches = []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "d00d00"}}
 
-		indexedHalf         = make(zoekt.ReposMap, numRepos/2)
-		indexedHalfBranches = []zoekt.RepositoryBranch{{Name: "main-2", Version: "f00b4r"}}
+		indexedHblf         = mbke(zoekt.ReposMbp, numRepos/2)
+		indexedHblfBrbnches = []zoekt.RepositoryBrbnch{{Nbme: "mbin-2", Version: "f00b4r"}}
 	)
 
-	inserter := batch.NewInserter(ctx, db.Handle(), "repo", batch.MaxNumPostgresParameters, "name")
+	inserter := bbtch.NewInserter(ctx, db.Hbndle(), "repo", bbtch.MbxNumPostgresPbrbmeters, "nbme")
 	for i := 0; i < numRepos; i++ {
 		if err := inserter.Insert(ctx, fmt.Sprintf("repo-%d", i)); err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 
-		indexedAll[uint32(i+1)] = zoekt.MinimalRepoListEntry{Branches: indexedAllBranches}
+		indexedAll[uint32(i+1)] = zoekt.MinimblRepoListEntry{Brbnches: indexedAllBrbnches}
 		if i%2 == 0 {
-			indexedHalf[uint32(i+1)] = zoekt.MinimalRepoListEntry{Branches: indexedHalfBranches}
+			indexedHblf[uint32(i+1)] = zoekt.MinimblRepoListEntry{Brbnches: indexedHblfBrbnches}
 		}
 	}
 	if err := inserter.Flush(ctx); err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
 
-	b.Logf("Done creating %d repositories.", numRepos)
+	b.Logf("Done crebting %d repositories.", numRepos)
 	b.ResetTimer()
 
-	b.Run("update-all", func(b *testing.B) {
+	b.Run("updbte-bll", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			if err := s.UpdateIndexStatuses(ctx, indexedAll); err != nil {
-				b.Fatalf("unexpected error: %s", err)
+			if err := s.UpdbteIndexStbtuses(ctx, indexedAll); err != nil {
+				b.Fbtblf("unexpected error: %s", err)
 			}
 		}
 	})
 
-	b.Run("update-half", func(b *testing.B) {
+	b.Run("updbte-hblf", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			if err := s.UpdateIndexStatuses(ctx, indexedHalf); err != nil {
-				b.Fatalf("unexpected error: %s", err)
+			if err := s.UpdbteIndexStbtuses(ctx, indexedHblf); err != nil {
+				b.Fbtblf("unexpected error: %s", err)
 			}
 		}
 	})
 
-	b.Run("update-none", func(b *testing.B) {
+	b.Run("updbte-none", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
-			if err := s.UpdateIndexStatuses(ctx, make(zoekt.ReposMap)); err != nil {
-				b.Fatalf("unexpected error: %s", err)
+			if err := s.UpdbteIndexStbtuses(ctx, mbke(zoekt.ReposMbp)); err != nil {
+				b.Fbtblf("unexpected error: %s", err)
 			}
 		}
 	})
 }
 
-// 21 Oct 2022 - MacBook Pro M1 Max
+// 21 Oct 2022 - MbcBook Pro M1 Mbx
 //
-// φ go test -v -timeout=900s -run=XXX -benchtime=10s -bench BenchmarkZoektRepos ./internal/database
-// goos: darwin
-// goarch: arm64
-// pkg: github.com/sourcegraph/sourcegraph/internal/database
-// BenchmarkZoektRepos_UpdateIndexStatus_10000/update-all-10                   1102          16114459 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_10000/update-half-10                   848          15444057 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_10000/update-none-10                  5642           2446603 ns/op
+// φ go test -v -timeout=900s -run=XXX -benchtime=10s -bench BenchmbrkZoektRepos ./internbl/dbtbbbse
+// goos: dbrwin
+// gobrch: brm64
+// pkg: github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_10000/updbte-bll-10                   1102          16114459 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_10000/updbte-hblf-10                   848          15444057 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_10000/updbte-none-10                  5642           2446603 ns/op
 //
-// BenchmarkZoektRepos_UpdateIndexStatus_50000/update-all-10                     36         328577991 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_50000/update-half-10                    58         200992639 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_50000/update-none-10                  5430           2369568 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_50000/updbte-bll-10                     36         328577991 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_50000/updbte-hblf-10                    58         200992639 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_50000/updbte-none-10                  5430           2369568 ns/op
 //
-// BenchmarkZoektRepos_UpdateIndexStatus_100000/update-all-10                    19         611171364 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_100000/update-half-10                   32         360921643 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_100000/update-none-10                 5775           2299364 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_100000/updbte-bll-10                    19         611171364 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_100000/updbte-hblf-10                   32         360921643 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_100000/updbte-none-10                 5775           2299364 ns/op
 //
-// BenchmarkZoektRepos_UpdateIndexStatus_200000/update-all-10                     9        1193084662 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_200000/update-half-10                   16         674584125 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_200000/update-none-10                 5733           2170722 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_200000/updbte-bll-10                     9        1193084662 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_200000/updbte-hblf-10                   16         674584125 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_200000/updbte-none-10                 5733           2170722 ns/op
 //
-// BenchmarkZoektRepos_UpdateIndexStatus_500000/update-all-10                     4        2885609312 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_500000/update-half-10                    7        1648433833 ns/op
-// BenchmarkZoektRepos_UpdateIndexStatus_500000/update-none-10                 5858           2377811 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_500000/updbte-bll-10                     4        2885609312 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_500000/updbte-hblf-10                    7        1648433833 ns/op
+// BenchmbrkZoektRepos_UpdbteIndexStbtus_500000/updbte-none-10                 5858           2377811 ns/op
 
-func BenchmarkZoektRepos_UpdateIndexStatus_10000(b *testing.B) {
-	benchmarkUpdateIndexStatus(b, 10_000)
+func BenchmbrkZoektRepos_UpdbteIndexStbtus_10000(b *testing.B) {
+	benchmbrkUpdbteIndexStbtus(b, 10_000)
 }
 
-func BenchmarkZoektRepos_UpdateIndexStatus_50000(b *testing.B) {
-	benchmarkUpdateIndexStatus(b, 50_000)
+func BenchmbrkZoektRepos_UpdbteIndexStbtus_50000(b *testing.B) {
+	benchmbrkUpdbteIndexStbtus(b, 50_000)
 }
 
-func BenchmarkZoektRepos_UpdateIndexStatus_100000(b *testing.B) {
-	benchmarkUpdateIndexStatus(b, 100_000)
+func BenchmbrkZoektRepos_UpdbteIndexStbtus_100000(b *testing.B) {
+	benchmbrkUpdbteIndexStbtus(b, 100_000)
 }
 
-func BenchmarkZoektRepos_UpdateIndexStatus_200000(b *testing.B) {
-	benchmarkUpdateIndexStatus(b, 200_000)
+func BenchmbrkZoektRepos_UpdbteIndexStbtus_200000(b *testing.B) {
+	benchmbrkUpdbteIndexStbtus(b, 200_000)
 }
 
-func BenchmarkZoektRepos_UpdateIndexStatus_500000(b *testing.B) {
-	benchmarkUpdateIndexStatus(b, 500_000)
+func BenchmbrkZoektRepos_UpdbteIndexStbtus_500000(b *testing.B) {
+	benchmbrkUpdbteIndexStbtus(b, 500_000)
 }

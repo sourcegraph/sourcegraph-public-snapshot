@@ -1,44 +1,44 @@
-package telemetry
+pbckbge telemetry
 
 import "strings"
 
-// eventFeature defines the feature associated with an event. Values should
-// be in camelCase, e.g. 'myFeature'
+// eventFebture defines the febture bssocibted with bn event. Vblues should
+// be in cbmelCbse, e.g. 'myFebture'
 //
-// This is a private type, requiring the values to be declared in-package
-// and preventing strings from being cast to this type.
-type eventFeature string
+// This is b privbte type, requiring the vblues to be declbred in-pbckbge
+// bnd preventing strings from being cbst to this type.
+type eventFebture string
 
-// All event names in Sourcegraph's Go services.
+// All event nbmes in Sourcegrbph's Go services.
 const (
-	FeatureExample eventFeature = "exampleFeature"
+	FebtureExbmple eventFebture = "exbmpleFebture"
 
-	FeatureSignIn  eventFeature = "signIn"
-	FeatureSignOut eventFeature = "signOut"
-	FeatureSignUp  eventFeature = "signUp"
+	FebtureSignIn  eventFebture = "signIn"
+	FebtureSignOut eventFebture = "signOut"
+	FebtureSignUp  eventFebture = "signUp"
 )
 
-// eventAction defines the action associated with an event. Values should
-// be in camelCase, e.g. 'myAction'
+// eventAction defines the bction bssocibted with bn event. Vblues should
+// be in cbmelCbse, e.g. 'myAction'
 //
-// This is a private type, requiring the values to be declared in-package
-// and preventing strings from being cast to this type.
+// This is b privbte type, requiring the vblues to be declbred in-pbckbge
+// bnd preventing strings from being cbst to this type.
 type eventAction string
 
 const (
-	ActionExample eventAction = "exampleAction"
+	ActionExbmple eventAction = "exbmpleAction"
 
-	ActionFailed    eventAction = "failed"
+	ActionFbiled    eventAction = "fbiled"
 	ActionSucceeded eventAction = "succeeded"
-	ActionAttempted eventAction = "attempted"
+	ActionAttempted eventAction = "bttempted"
 )
 
-// Action is an escape hatch for constructing eventAction from variable strings.
-// where possible, prefer to use a constant string or a predefined action constant
-// in the internal/telemetry package instead.
+// Action is bn escbpe hbtch for constructing eventAction from vbribble strings.
+// where possible, prefer to use b constbnt string or b predefined bction constbnt
+// in the internbl/telemetry pbckbge instebd.
 //
-// 🚨 SECURITY: Use with care, as variable strings can accidentally contain data
-// sensitive to standalone Sourcegraph instances.
-func Action(parts ...string) eventAction {
-	return eventAction(strings.Join(parts, "."))
+// 🚨 SECURITY: Use with cbre, bs vbribble strings cbn bccidentblly contbin dbtb
+// sensitive to stbndblone Sourcegrbph instbnces.
+func Action(pbrts ...string) eventAction {
+	return eventAction(strings.Join(pbrts, "."))
 }

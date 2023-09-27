@@ -1,8 +1,8 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"embed"
 	"encoding/json"
 	"fmt"
@@ -10,43 +10,43 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"golang.org/x/exp/slices"
-	"gopkg.in/yaml.v3"
+	"golbng.org/x/exp/slices"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Migration stores metadata and tracks progress of an out-of-band migration routine.
-// These fields mirror the out_of_band_migrations table in the database. For docs see
-// the [schema](https://github.com/sourcegraph/sourcegraph/blob/main/internal/database/schema.md#table-publicout_of_band_migrations).
-type Migration struct {
+// Migrbtion stores metbdbtb bnd trbcks progress of bn out-of-bbnd migrbtion routine.
+// These fields mirror the out_of_bbnd_migrbtions tbble in the dbtbbbse. For docs see
+// the [schemb](https://github.com/sourcegrbph/sourcegrbph/blob/mbin/internbl/dbtbbbse/schemb.md#tbble-publicout_of_bbnd_migrbtions).
+type Migrbtion struct {
 	ID             int
-	Team           string
+	Tebm           string
 	Component      string
 	Description    string
 	Introduced     Version
-	Deprecated     *Version
-	Progress       float64
-	Created        time.Time
-	LastUpdated    *time.Time
+	Deprecbted     *Version
+	Progress       flobt64
+	Crebted        time.Time
+	LbstUpdbted    *time.Time
 	NonDestructive bool
 	IsEnterprise   bool
 	ApplyReverse   bool
-	Errors         []MigrationError
-	// Metadata can be used to store custom JSON data
-	Metadata json.RawMessage
+	Errors         []MigrbtionError
+	// Metbdbtb cbn be used to store custom JSON dbtb
+	Metbdbtb json.RbwMessbge
 }
 
-// Complete returns true if the migration has 0 un-migrated record in whichever
-// direction is indicated by the ApplyReverse flag.
-func (m Migration) Complete() bool {
+// Complete returns true if the migrbtion hbs 0 un-migrbted record in whichever
+// direction is indicbted by the ApplyReverse flbg.
+func (m Migrbtion) Complete() bool {
 	if m.Progress == 1 && !m.ApplyReverse {
 		return true
 	}
@@ -55,264 +55,264 @@ func (m Migration) Complete() bool {
 		return true
 	}
 
-	return false
+	return fblse
 }
 
-// MigrationError pairs an error message and the time the error occurred.
-type MigrationError struct {
-	Message string
-	Created time.Time
+// MigrbtionError pbirs bn error messbge bnd the time the error occurred.
+type MigrbtionError struct {
+	Messbge string
+	Crebted time.Time
 }
 
-// scanMigrations scans a slice of migrations from the return value of `*Store.query`.
-func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
+// scbnMigrbtions scbns b slice of migrbtions from the return vblue of `*Store.query`.
+func scbnMigrbtions(rows *sql.Rows, queryErr error) (_ []Migrbtion, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var values []Migration
+	vbr vblues []Migrbtion
 	for rows.Next() {
-		var message string
-		var created *time.Time
-		var deprecatedMajor, deprecatedMinor *int
-		value := Migration{Errors: []MigrationError{}}
+		vbr messbge string
+		vbr crebted *time.Time
+		vbr deprecbtedMbjor, deprecbtedMinor *int
+		vblue := Migrbtion{Errors: []MigrbtionError{}}
 
-		if err := rows.Scan(
-			&value.ID,
-			&value.Team,
-			&value.Component,
-			&value.Description,
-			&value.Introduced.Major,
-			&value.Introduced.Minor,
-			&deprecatedMajor,
-			&deprecatedMinor,
-			&value.Progress,
-			&value.Created,
-			&value.LastUpdated,
-			&value.NonDestructive,
-			&value.IsEnterprise,
-			&value.ApplyReverse,
-			&value.Metadata,
-			&dbutil.NullString{S: &message},
-			&created,
+		if err := rows.Scbn(
+			&vblue.ID,
+			&vblue.Tebm,
+			&vblue.Component,
+			&vblue.Description,
+			&vblue.Introduced.Mbjor,
+			&vblue.Introduced.Minor,
+			&deprecbtedMbjor,
+			&deprecbtedMinor,
+			&vblue.Progress,
+			&vblue.Crebted,
+			&vblue.LbstUpdbted,
+			&vblue.NonDestructive,
+			&vblue.IsEnterprise,
+			&vblue.ApplyReverse,
+			&vblue.Metbdbtb,
+			&dbutil.NullString{S: &messbge},
+			&crebted,
 		); err != nil {
 			return nil, err
 		}
 
-		if message != "" {
-			value.Errors = append(value.Errors, MigrationError{
-				Message: message,
-				Created: *created,
+		if messbge != "" {
+			vblue.Errors = bppend(vblue.Errors, MigrbtionError{
+				Messbge: messbge,
+				Crebted: *crebted,
 			})
 		}
 
-		if deprecatedMajor != nil && deprecatedMinor != nil {
-			value.Deprecated = &Version{
-				Major: *deprecatedMajor,
-				Minor: *deprecatedMinor,
+		if deprecbtedMbjor != nil && deprecbtedMinor != nil {
+			vblue.Deprecbted = &Version{
+				Mbjor: *deprecbtedMbjor,
+				Minor: *deprecbtedMinor,
 			}
 		}
 
-		if n := len(values); n > 0 && values[n-1].ID == value.ID {
-			values[n-1].Errors = append(values[n-1].Errors, value.Errors...)
+		if n := len(vblues); n > 0 && vblues[n-1].ID == vblue.ID {
+			vblues[n-1].Errors = bppend(vblues[n-1].Errors, vblue.Errors...)
 		} else {
-			values = append(values, value)
+			vblues = bppend(vblues, vblue)
 		}
 	}
 
-	return values, nil
+	return vblues, nil
 }
 
-// Store is the interface over the out-of-band migrations tables.
+// Store is the interfbce over the out-of-bbnd migrbtions tbbles.
 type Store struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// NewStoreWithDB creates a new Store with the given database connection.
-func NewStoreWithDB(db database.DB) *Store {
-	return &Store{Store: basestore.NewWithHandle(db.Handle())}
+// NewStoreWithDB crebtes b new Store with the given dbtbbbse connection.
+func NewStoreWithDB(db dbtbbbse.DB) *Store {
+	return &Store{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 }
 
-var _ basestore.ShareableStore = &Store{}
+vbr _ bbsestore.ShbrebbleStore = &Store{}
 
-// With creates a new store with the underlying database handle from the given store.
-// This method should be used when two distinct store instances need to perform an
-// operation within the same shared transaction.
+// With crebtes b new store with the underlying dbtbbbse hbndle from the given store.
+// This method should be used when two distinct store instbnces need to perform bn
+// operbtion within the sbme shbred trbnsbction.
 //
-// This method wraps the basestore.With method.
-func (s *Store) With(other basestore.ShareableStore) *Store {
+// This method wrbps the bbsestore.With method.
+func (s *Store) With(other bbsestore.ShbrebbleStore) *Store {
 	return &Store{Store: s.Store.With(other)}
 }
 
-// Transact returns a new store whose methods operate within the context of a new transaction
-// or a new savepoint. This method will return an error if the underlying connection cannot be
-// interface upgraded to a TxBeginner.
+// Trbnsbct returns b new store whose methods operbte within the context of b new trbnsbction
+// or b new sbvepoint. This method will return bn error if the underlying connection cbnnot be
+// interfbce upgrbded to b TxBeginner.
 //
-// This method wraps the basestore.Transact method.
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &Store{Store: txBase}, err
+// This method wrbps the bbsestore.Trbnsbct method.
+func (s *Store) Trbnsbct(ctx context.Context) (*Store, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &Store{Store: txBbse}, err
 }
 
-type yamlMigration struct {
-	ID                     int    `yaml:"id"`
-	Team                   string `yaml:"team"`
-	Component              string `yaml:"component"`
-	Description            string `yaml:"description"`
-	NonDestructive         bool   `yaml:"non_destructive"`
-	IsEnterprise           bool   `yaml:"is_enterprise"`
-	IntroducedVersionMajor int    `yaml:"introduced_version_major"`
-	IntroducedVersionMinor int    `yaml:"introduced_version_minor"`
-	DeprecatedVersionMajor *int   `yaml:"deprecated_version_major"`
-	DeprecatedVersionMinor *int   `yaml:"deprecated_version_minor"`
+type ybmlMigrbtion struct {
+	ID                     int    `ybml:"id"`
+	Tebm                   string `ybml:"tebm"`
+	Component              string `ybml:"component"`
+	Description            string `ybml:"description"`
+	NonDestructive         bool   `ybml:"non_destructive"`
+	IsEnterprise           bool   `ybml:"is_enterprise"`
+	IntroducedVersionMbjor int    `ybml:"introduced_version_mbjor"`
+	IntroducedVersionMinor int    `ybml:"introduced_version_minor"`
+	DeprecbtedVersionMbjor *int   `ybml:"deprecbted_version_mbjor"`
+	DeprecbtedVersionMinor *int   `ybml:"deprecbted_version_minor"`
 }
 
-//go:embed oobmigrations.yaml
-var migrations embed.FS
+//go:embed oobmigrbtions.ybml
+vbr migrbtions embed.FS
 
-var yamlMigrations = func() []yamlMigration {
-	contents, err := migrations.ReadFile("oobmigrations.yaml")
+vbr ybmlMigrbtions = func() []ybmlMigrbtion {
+	contents, err := migrbtions.RebdFile("oobmigrbtions.ybml")
 	if err != nil {
-		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
+		pbnic(fmt.Sprintf("mblformed oobmigrbtion definitions: %s", err.Error()))
 	}
 
-	var parsedMigrations []yamlMigration
-	if err := yaml.Unmarshal(contents, &parsedMigrations); err != nil {
-		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
+	vbr pbrsedMigrbtions []ybmlMigrbtion
+	if err := ybml.Unmbrshbl(contents, &pbrsedMigrbtions); err != nil {
+		pbnic(fmt.Sprintf("mblformed oobmigrbtion definitions: %s", err.Error()))
 	}
 
-	sort.Slice(parsedMigrations, func(i, j int) bool {
-		return parsedMigrations[i].ID < parsedMigrations[j].ID
+	sort.Slice(pbrsedMigrbtions, func(i, j int) bool {
+		return pbrsedMigrbtions[i].ID < pbrsedMigrbtions[j].ID
 	})
 
-	return parsedMigrations
+	return pbrsedMigrbtions
 }()
 
-var yamlMigrationIDs = func() []int {
-	ids := make([]int, 0, len(yamlMigrations))
-	for _, migration := range yamlMigrations {
-		ids = append(ids, migration.ID)
+vbr ybmlMigrbtionIDs = func() []int {
+	ids := mbke([]int, 0, len(ybmlMigrbtions))
+	for _, migrbtion := rbnge ybmlMigrbtions {
+		ids = bppend(ids, migrbtion.ID)
 	}
 
 	return ids
 }()
 
-// SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
-// Existing out-of-band migration metadata that does not match one of the identifiers in the
-// referenced file are not removed, as they have likely been registered by a later version of
-// the instance prior to a downgrade.
+// SynchronizeMetbdbtb upserts the metbdbtb defined in the sibling file oobmigrbtions.ybml.
+// Existing out-of-bbnd migrbtion metbdbtb thbt does not mbtch one of the identifiers in the
+// referenced file bre not removed, bs they hbve likely been registered by b lbter version of
+// the instbnce prior to b downgrbde.
 //
-// This method will use a fallback query to support an older version of the table (prior to 3.29)
-// so that upgrades of historic instances work with the migrator. This is true of select methods
-// in this store, but not all methods.
-func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
-	var fallback bool
+// This method will use b fbllbbck query to support bn older version of the tbble (prior to 3.29)
+// so thbt upgrbdes of historic instbnces work with the migrbtor. This is true of select methods
+// in this store, but not bll methods.
+func (s *Store) SynchronizeMetbdbtb(ctx context.Context) (err error) {
+	vbr fbllbbck bool
 
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
-		if !fallback {
+		if !fbllbbck {
 			err = tx.Done(err)
 		}
 	}()
 
-	for _, migration := range yamlMigrations {
+	for _, migrbtion := rbnge ybmlMigrbtions {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			synchronizeMetadataUpsertQuery,
-			migration.ID,
-			migration.Team,
-			migration.Component,
-			migration.Description,
-			migration.NonDestructive,
-			migration.IsEnterprise,
-			migration.IntroducedVersionMajor,
-			migration.IntroducedVersionMinor,
-			migration.DeprecatedVersionMajor,
-			migration.DeprecatedVersionMinor,
-			migration.Team,
-			migration.Component,
-			migration.Description,
-			migration.NonDestructive,
-			migration.IsEnterprise,
-			migration.IntroducedVersionMajor,
-			migration.IntroducedVersionMinor,
-			migration.DeprecatedVersionMajor,
-			migration.DeprecatedVersionMinor,
+			synchronizeMetbdbtbUpsertQuery,
+			migrbtion.ID,
+			migrbtion.Tebm,
+			migrbtion.Component,
+			migrbtion.Description,
+			migrbtion.NonDestructive,
+			migrbtion.IsEnterprise,
+			migrbtion.IntroducedVersionMbjor,
+			migrbtion.IntroducedVersionMinor,
+			migrbtion.DeprecbtedVersionMbjor,
+			migrbtion.DeprecbtedVersionMinor,
+			migrbtion.Tebm,
+			migrbtion.Component,
+			migrbtion.Description,
+			migrbtion.NonDestructive,
+			migrbtion.IsEnterprise,
+			migrbtion.IntroducedVersionMbjor,
+			migrbtion.IntroducedVersionMinor,
+			migrbtion.DeprecbtedVersionMbjor,
+			migrbtion.DeprecbtedVersionMinor,
 		)); err != nil {
-			if !shouldFallback(err) {
+			if !shouldFbllbbck(err) {
 				return err
 			}
 
-			fallback = true
+			fbllbbck = true
 			_ = tx.Done(err)
-			return s.synchronizeMetadataFallback(ctx)
+			return s.synchronizeMetbdbtbFbllbbck(ctx)
 		}
 	}
 
 	return nil
 }
 
-const synchronizeMetadataUpsertQuery = `
-INSERT INTO out_of_band_migrations
+const synchronizeMetbdbtbUpsertQuery = `
+INSERT INTO out_of_bbnd_migrbtions
 (
 	id,
-	team,
+	tebm,
 	component,
 	description,
-	created,
+	crebted,
 	non_destructive,
 	is_enterprise,
-	introduced_version_major,
+	introduced_version_mbjor,
 	introduced_version_minor,
-	deprecated_version_major,
-	deprecated_version_minor
+	deprecbted_version_mbjor,
+	deprecbted_version_minor
 )
 VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
 ON CONFLICT (id) DO UPDATE SET
-	team = %s,
+	tebm = %s,
 	component = %s,
 	description = %s,
 	non_destructive = %s,
 	is_enterprise = %s,
-	introduced_version_major = %s,
+	introduced_version_mbjor = %s,
 	introduced_version_minor = %s,
-	deprecated_version_major = %s,
-	deprecated_version_minor = %s
+	deprecbted_version_mbjor = %s,
+	deprecbted_version_minor = %s
 `
 
-func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
-	tx, err := s.Transact(ctx)
+func (s *Store) synchronizeMetbdbtbFbllbbck(ctx context.Context) (err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	for _, migration := range yamlMigrations {
-		introduced := versionString(migration.IntroducedVersionMajor, migration.IntroducedVersionMinor)
-		var deprecated *string
-		if migration.DeprecatedVersionMajor != nil {
-			s := versionString(*migration.DeprecatedVersionMajor, *migration.DeprecatedVersionMinor)
-			deprecated = &s
+	for _, migrbtion := rbnge ybmlMigrbtions {
+		introduced := versionString(migrbtion.IntroducedVersionMbjor, migrbtion.IntroducedVersionMinor)
+		vbr deprecbted *string
+		if migrbtion.DeprecbtedVersionMbjor != nil {
+			s := versionString(*migrbtion.DeprecbtedVersionMbjor, *migrbtion.DeprecbtedVersionMinor)
+			deprecbted = &s
 		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			synchronizeMetadataFallbackUpsertQuery,
-			migration.ID,
-			migration.Team,
-			migration.Component,
-			migration.Description,
-			migration.NonDestructive,
+			synchronizeMetbdbtbFbllbbckUpsertQuery,
+			migrbtion.ID,
+			migrbtion.Tebm,
+			migrbtion.Component,
+			migrbtion.Description,
+			migrbtion.NonDestructive,
 			introduced,
-			deprecated,
-			migration.Team,
-			migration.Component,
-			migration.Description,
-			migration.NonDestructive,
+			deprecbted,
+			migrbtion.Tebm,
+			migrbtion.Component,
+			migrbtion.Description,
+			migrbtion.NonDestructive,
 			introduced,
-			deprecated,
+			deprecbted,
 		)); err != nil {
 			return err
 		}
@@ -321,302 +321,302 @@ func (s *Store) synchronizeMetadataFallback(ctx context.Context) (err error) {
 	return nil
 }
 
-const synchronizeMetadataFallbackUpsertQuery = `
-INSERT INTO out_of_band_migrations
+const synchronizeMetbdbtbFbllbbckUpsertQuery = `
+INSERT INTO out_of_bbnd_migrbtions
 (
 	id,
-	team,
+	tebm,
 	component,
 	description,
-	created,
+	crebted,
 	non_destructive,
 	introduced,
-	deprecated
+	deprecbted
 )
 VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s)
 ON CONFLICT (id) DO UPDATE SET
-	team = %s,
+	tebm = %s,
 	component = %s,
 	description = %s,
 	non_destructive = %s,
 	introduced = %s,
-	deprecated = %s
+	deprecbted = %s
 `
 
-// GetByID retrieves a migration by its identifier. If the migration does not exist, a false
-// valued flag is returned.
-func (s *Store) GetByID(ctx context.Context, id int) (_ Migration, _ bool, err error) {
-	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(getByIDQuery, id)))
+// GetByID retrieves b migrbtion by its identifier. If the migrbtion does not exist, b fblse
+// vblued flbg is returned.
+func (s *Store) GetByID(ctx context.Context, id int) (_ Migrbtion, _ bool, err error) {
+	migrbtions, err := scbnMigrbtions(s.Store.Query(ctx, sqlf.Sprintf(getByIDQuery, id)))
 	if err != nil {
-		return Migration{}, false, err
+		return Migrbtion{}, fblse, err
 	}
 
-	if len(migrations) == 0 {
-		return Migration{}, false, nil
+	if len(migrbtions) == 0 {
+		return Migrbtion{}, fblse, nil
 	}
 
-	return migrations[0], true, nil
+	return migrbtions[0], true, nil
 }
 
 const getByIDQuery = `
 SELECT
 	m.id,
-	m.team,
+	m.tebm,
 	m.component,
 	m.description,
-	m.introduced_version_major,
+	m.introduced_version_mbjor,
 	m.introduced_version_minor,
-	m.deprecated_version_major,
-	m.deprecated_version_minor,
+	m.deprecbted_version_mbjor,
+	m.deprecbted_version_minor,
 	m.progress,
-	m.created,
-	m.last_updated,
+	m.crebted,
+	m.lbst_updbted,
 	m.non_destructive,
 	m.is_enterprise,
-	m.apply_reverse,
-	m.metadata,
-	e.message,
-	e.created
-FROM out_of_band_migrations m
-LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+	m.bpply_reverse,
+	m.metbdbtb,
+	e.messbge,
+	e.crebted
+FROM out_of_bbnd_migrbtions m
+LEFT JOIN out_of_bbnd_migrbtions_errors e ON e.migrbtion_id = m.id
 WHERE m.id = %s
-ORDER BY e.created desc
+ORDER BY e.crebted desc
 `
 
-func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migration, err error) {
-	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(getByIDsQuery, pq.Array(ids))))
+func (s *Store) GetByIDs(ctx context.Context, ids []int) (_ []Migrbtion, err error) {
+	migrbtions, err := scbnMigrbtions(s.Store.Query(ctx, sqlf.Sprintf(getByIDsQuery, pq.Arrby(ids))))
 	if err != nil {
 		return nil, err
 	}
 
-	wanted := collections.NewSet(ids...)
+	wbnted := collections.NewSet(ids...)
 	received := collections.NewSet[int]()
-	for _, migration := range migrations {
-		received.Add(migration.ID)
+	for _, migrbtion := rbnge migrbtions {
+		received.Add(migrbtion.ID)
 	}
-	difference := wanted.Difference(received).Values()
+	difference := wbnted.Difference(received).Vblues()
 	if len(difference) > 0 {
 		slices.Sort(difference)
-		return nil, errors.Newf("unknown migration id(s) %v", difference)
+		return nil, errors.Newf("unknown migrbtion id(s) %v", difference)
 	}
 
-	return migrations, nil
+	return migrbtions, nil
 }
 
 const getByIDsQuery = `
 SELECT
 	m.id,
-	m.team,
+	m.tebm,
 	m.component,
 	m.description,
-	m.introduced_version_major,
+	m.introduced_version_mbjor,
 	m.introduced_version_minor,
-	m.deprecated_version_major,
-	m.deprecated_version_minor,
+	m.deprecbted_version_mbjor,
+	m.deprecbted_version_minor,
 	m.progress,
-	m.created,
-	m.last_updated,
+	m.crebted,
+	m.lbst_updbted,
 	m.non_destructive,
 	m.is_enterprise,
-	m.apply_reverse,
-	m.metadata,
-	e.message,
-	e.created
-FROM out_of_band_migrations m
-LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+	m.bpply_reverse,
+	m.metbdbtb,
+	e.messbge,
+	e.crebted
+FROM out_of_bbnd_migrbtions m
+LEFT JOIN out_of_bbnd_migrbtions_errors e ON e.migrbtion_id = m.id
 WHERE m.id = ANY(%s)
-ORDER BY m.id ASC, e.created DESC
+ORDER BY m.id ASC, e.crebted DESC
 `
 
-// List returns the complete list of out-of-band migrations.
+// List returns the complete list of out-of-bbnd migrbtions.
 //
-// This method will use a fallback query to support an older version of the table (prior to 3.29)
-// so that upgrades of historic instances work with the migrator. This is true of select methods
-// in this store, but not all methods.
-func (s *Store) List(ctx context.Context) (_ []Migration, err error) {
+// This method will use b fbllbbck query to support bn older version of the tbble (prior to 3.29)
+// so thbt upgrbdes of historic instbnces work with the migrbtor. This is true of select methods
+// in this store, but not bll methods.
+func (s *Store) List(ctx context.Context) (_ []Migrbtion, err error) {
 	conds := []*sqlf.Query{
-		// Syncing metadata does not remove unknown migration fields. If we've removed them,
-		// we want to block them from returning from old instances. We also want to ignore
-		// any database content that we don't have metadata for. Similar checks should not
-		// be necessary on the other access methods, as they use ids returned by this method.
-		sqlf.Sprintf("m.id = ANY(%s)", pq.Array(yamlMigrationIDs)),
+		// Syncing metbdbtb does not remove unknown migrbtion fields. If we've removed them,
+		// we wbnt to block them from returning from old instbnces. We blso wbnt to ignore
+		// bny dbtbbbse content thbt we don't hbve metbdbtb for. Similbr checks should not
+		// be necessbry on the other bccess methods, bs they use ids returned by this method.
+		sqlf.Sprintf("m.id = ANY(%s)", pq.Arrby(ybmlMigrbtionIDs)),
 	}
 
-	migrations, err := scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
+	migrbtions, err := scbnMigrbtions(s.Store.Query(ctx, sqlf.Sprintf(listQuery, sqlf.Join(conds, "AND"))))
 	if err != nil {
-		if !shouldFallback(err) {
+		if !shouldFbllbbck(err) {
 			return nil, err
 		}
 
-		return scanMigrations(s.Store.Query(ctx, sqlf.Sprintf(listFallbackQuery, sqlf.Join(conds, "AND"))))
+		return scbnMigrbtions(s.Store.Query(ctx, sqlf.Sprintf(listFbllbbckQuery, sqlf.Join(conds, "AND"))))
 	}
 
-	return migrations, nil
+	return migrbtions, nil
 }
 
 const listQuery = `
 SELECT
 	m.id,
-	m.team,
+	m.tebm,
 	m.component,
 	m.description,
-	m.introduced_version_major,
+	m.introduced_version_mbjor,
 	m.introduced_version_minor,
-	m.deprecated_version_major,
-	m.deprecated_version_minor,
+	m.deprecbted_version_mbjor,
+	m.deprecbted_version_minor,
 	m.progress,
-	m.created,
-	m.last_updated,
+	m.crebted,
+	m.lbst_updbted,
 	m.non_destructive,
 	m.is_enterprise,
-	m.apply_reverse,
-	m.metadata,
-	e.message,
-	e.created
-FROM out_of_band_migrations m
-LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+	m.bpply_reverse,
+	m.metbdbtb,
+	e.messbge,
+	e.crebted
+FROM out_of_bbnd_migrbtions m
+LEFT JOIN out_of_bbnd_migrbtions_errors e ON e.migrbtion_id = m.id
 WHERE %s
-ORDER BY m.id desc, e.created DESC
+ORDER BY m.id desc, e.crebted DESC
 `
 
-const listFallbackQuery = `
-WITH split_migrations AS (
+const listFbllbbckQuery = `
+WITH split_migrbtions AS (
 	SELECT
 		m.*,
-		regexp_matches(m.introduced, E'^(\\d+)\.(\\d+)') AS introduced_parts,
-		regexp_matches(m.deprecated, E'^(\\d+)\.(\\d+)') AS deprecated_parts
-	FROM out_of_band_migrations m
+		regexp_mbtches(m.introduced, E'^(\\d+)\.(\\d+)') AS introduced_pbrts,
+		regexp_mbtches(m.deprecbted, E'^(\\d+)\.(\\d+)') AS deprecbted_pbrts
+	FROM out_of_bbnd_migrbtions m
 )
 SELECT
 	m.id,
-	m.team,
+	m.tebm,
 	m.component,
 	m.description,
-	introduced_parts[1] AS introduced_version_major,
-	introduced_parts[2] AS introduced_version_minor,
-	CASE WHEN m.deprecated = '' THEN NULL ELSE deprecated_parts[1] END AS deprecated_version_major,
-	CASE WHEN m.deprecated = '' THEN NULL ELSE deprecated_parts[2] END AS deprecated_version_minor,
+	introduced_pbrts[1] AS introduced_version_mbjor,
+	introduced_pbrts[2] AS introduced_version_minor,
+	CASE WHEN m.deprecbted = '' THEN NULL ELSE deprecbted_pbrts[1] END AS deprecbted_version_mbjor,
+	CASE WHEN m.deprecbted = '' THEN NULL ELSE deprecbted_pbrts[2] END AS deprecbted_version_minor,
 	m.progress,
-	m.created,
-	m.last_updated,
+	m.crebted,
+	m.lbst_updbted,
 	m.non_destructive,
-	-- Note that we use true here as a default as we only expect to require this fallback
-	-- query when using a newer migrator version against an old instance, and multi-version
-	-- upgrades are an enterprise feature.
+	-- Note thbt we use true here bs b defbult bs we only expect to require this fbllbbck
+	-- query when using b newer migrbtor version bgbinst bn old instbnce, bnd multi-version
+	-- upgrbdes bre bn enterprise febture.
 	true AS is_enterprise,
-	m.apply_reverse,
-	m.metadata,
-	e.message,
-	e.created
-FROM split_migrations m
-LEFT JOIN out_of_band_migrations_errors e ON e.migration_id = m.id
+	m.bpply_reverse,
+	m.metbdbtb,
+	e.messbge,
+	e.crebted
+FROM split_migrbtions m
+LEFT JOIN out_of_bbnd_migrbtions_errors e ON e.migrbtion_id = m.id
 WHERE %s
-ORDER BY m.id desc, e.created DESC
+ORDER BY m.id desc, e.crebted DESC
 `
 
-// UpdateDirection updates the direction for the given migration.
-func (s *Store) UpdateDirection(ctx context.Context, id int, applyReverse bool) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateDirectionQuery, applyReverse, id))
+// UpdbteDirection updbtes the direction for the given migrbtion.
+func (s *Store) UpdbteDirection(ctx context.Context, id int, bpplyReverse bool) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(updbteDirectionQuery, bpplyReverse, id))
 }
 
-const updateDirectionQuery = `
-UPDATE out_of_band_migrations SET apply_reverse = %s WHERE id = %s
+const updbteDirectionQuery = `
+UPDATE out_of_bbnd_migrbtions SET bpply_reverse = %s WHERE id = %s
 `
 
-// UpdateProgress updates the progress for the given migration.
-func (s *Store) UpdateProgress(ctx context.Context, id int, progress float64) error {
-	return s.updateProgress(ctx, id, progress, time.Now())
+// UpdbteProgress updbtes the progress for the given migrbtion.
+func (s *Store) UpdbteProgress(ctx context.Context, id int, progress flobt64) error {
+	return s.updbteProgress(ctx, id, progress, time.Now())
 }
 
-func (s *Store) updateProgress(ctx context.Context, id int, progress float64, now time.Time) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateProgressQuery, progress, now, id, progress))
+func (s *Store) updbteProgress(ctx context.Context, id int, progress flobt64, now time.Time) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(updbteProgressQuery, progress, now, id, progress))
 }
 
-const updateProgressQuery = `
-UPDATE out_of_band_migrations SET progress = %s, last_updated = %s WHERE id = %s AND progress != %s
+const updbteProgressQuery = `
+UPDATE out_of_bbnd_migrbtions SET progress = %s, lbst_updbted = %s WHERE id = %s AND progress != %s
 `
 
-// UpdateMetadata updates the metadata for the given migration.
-func (s *Store) UpdateMetadata(ctx context.Context, id int, meta json.RawMessage) error {
-	return s.updateMetadata(ctx, id, meta, time.Now())
+// UpdbteMetbdbtb updbtes the metbdbtb for the given migrbtion.
+func (s *Store) UpdbteMetbdbtb(ctx context.Context, id int, metb json.RbwMessbge) error {
+	return s.updbteMetbdbtb(ctx, id, metb, time.Now())
 }
 
-func (s *Store) updateMetadata(ctx context.Context, id int, meta json.RawMessage, now time.Time) error {
-	return s.Store.Exec(ctx, sqlf.Sprintf(updateMetadataQuery, meta, now, id, meta))
+func (s *Store) updbteMetbdbtb(ctx context.Context, id int, metb json.RbwMessbge, now time.Time) error {
+	return s.Store.Exec(ctx, sqlf.Sprintf(updbteMetbdbtbQuery, metb, now, id, metb))
 }
 
-const updateMetadataQuery = `
-UPDATE out_of_band_migrations SET metadata = %s, last_updated = %s WHERE id = %s AND metadata != %s
+const updbteMetbdbtbQuery = `
+UPDATE out_of_bbnd_migrbtions SET metbdbtb = %s, lbst_updbted = %s WHERE id = %s AND metbdbtb != %s
 `
 
-// MaxMigrationErrors is the maximum number of errors we'll track for a single migration before
+// MbxMigrbtionErrors is the mbximum number of errors we'll trbck for b single migrbtion before
 // pruning older entries.
-const MaxMigrationErrors = 100
+const MbxMigrbtionErrors = 100
 
-// AddError associates the given error message with the given migration. While there are more
-// than MaxMigrationErrors errors for this, the oldest error entries will be pruned to keep the
-// error list relevant and short.
-func (s *Store) AddError(ctx context.Context, id int, message string) (err error) {
-	return s.addError(ctx, id, message, time.Now())
+// AddError bssocibtes the given error messbge with the given migrbtion. While there bre more
+// thbn MbxMigrbtionErrors errors for this, the oldest error entries will be pruned to keep the
+// error list relevbnt bnd short.
+func (s *Store) AddError(ctx context.Context, id int, messbge string) (err error) {
+	return s.bddError(ctx, id, messbge, time.Now())
 }
 
-func (s *Store) addError(ctx context.Context, id int, message string, now time.Time) (err error) {
-	tx, err := s.Store.Transact(ctx)
+func (s *Store) bddError(ctx context.Context, id int, messbge string, now time.Time) (err error) {
+	tx, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(addErrorQuery, id, message, now)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(bddErrorQuery, id, messbge, now)); err != nil {
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(addErrorUpdateTimeQuery, now, id)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(bddErrorUpdbteTimeQuery, now, id)); err != nil {
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(addErrorPruneQuery, id, MaxMigrationErrors)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(bddErrorPruneQuery, id, MbxMigrbtionErrors)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const addErrorQuery = `
-INSERT INTO out_of_band_migrations_errors (migration_id, message, created) VALUES (%s, %s, %s)
+const bddErrorQuery = `
+INSERT INTO out_of_bbnd_migrbtions_errors (migrbtion_id, messbge, crebted) VALUES (%s, %s, %s)
 `
 
-const addErrorUpdateTimeQuery = `
-UPDATE out_of_band_migrations SET last_updated = %s where id = %s
+const bddErrorUpdbteTimeQuery = `
+UPDATE out_of_bbnd_migrbtions SET lbst_updbted = %s where id = %s
 `
 
-const addErrorPruneQuery = `
-DELETE FROM out_of_band_migrations_errors WHERE id IN (
-	SELECT id FROM out_of_band_migrations_errors WHERE migration_id = %s ORDER BY created DESC OFFSET %s
+const bddErrorPruneQuery = `
+DELETE FROM out_of_bbnd_migrbtions_errors WHERE id IN (
+	SELECT id FROM out_of_bbnd_migrbtions_errors WHERE migrbtion_id = %s ORDER BY crebted DESC OFFSET %s
 )
 `
 
-var columnsSupporingFallback = []string{
+vbr columnsSupporingFbllbbck = []string{
 	"is_enterprise",
-	"introduced_version_major",
+	"introduced_version_mbjor",
 	"introduced_version_minor",
-	"deprecated_version_major",
-	"deprecated_version_minor",
+	"deprecbted_version_mbjor",
+	"deprecbted_version_minor",
 }
 
-func shouldFallback(err error) bool {
-	var pgErr *pgconn.PgError
+func shouldFbllbbck(err error) bool {
+	vbr pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) && pgErr.Code == "42703" {
-		for _, column := range columnsSupporingFallback {
-			if strings.Contains(pgErr.Message, column) {
+		for _, column := rbnge columnsSupporingFbllbbck {
+			if strings.Contbins(pgErr.Messbge, column) {
 				return true
 			}
 		}
 	}
 
-	return false
+	return fblse
 }
 
-func versionString(major, minor int) string {
-	return fmt.Sprintf("%d.%d.0", major, minor)
+func versionString(mbjor, minor int) string {
+	return fmt.Sprintf("%d.%d.0", mbjor, minor)
 }

@@ -1,177 +1,177 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestInsertMetadata(t *testing.T) {
+func TestInsertMetbdbtb(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, codeIntelDB)
-	ctx := context.Background()
+	codeIntelDB := codeintelshbred.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, codeIntelDB)
+	ctx := context.Bbckground()
 
-	if err := store.InsertMetadata(ctx, 42, ProcessedMetadata{
+	if err := store.InsertMetbdbtb(ctx, 42, ProcessedMetbdbtb{
 		TextDocumentEncoding: "UTF8",
-		ToolName:             "scip-test",
+		ToolNbme:             "scip-test",
 		ToolVersion:          "0.1.0",
 		ToolArguments:        []string{"-p", "src"},
 		ProtocolVersion:      1,
 	}); err != nil {
-		t.Fatalf("failed to insert metadata: %s", err)
+		t.Fbtblf("fbiled to insert metbdbtb: %s", err)
 	}
 }
 
-func TestInsertSharedDocumentsConcurrently(t *testing.T) {
+func TestInsertShbredDocumentsConcurrently(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
-	store := newInternal(&observation.TestContext, codeIntelDB)
-	ctx := context.Background()
+	codeIntelDB := codeintelshbred.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := newInternbl(&observbtion.TestContext, codeIntelDB)
+	ctx := context.Bbckground()
 
-	tx1, err := store.Transact(ctx)
+	tx1, err := store.Trbnsbct(ctx)
 	if err != nil {
-		t.Fatalf("failed to start transaction: %s", err)
+		t.Fbtblf("fbiled to stbrt trbnsbction: %s", err)
 	}
 	scipWriter24, err := tx1.NewSCIPWriter(ctx, 24)
 	if err != nil {
-		t.Fatalf("failed to create SCIP writer: %s", err)
+		t.Fbtblf("fbiled to crebte SCIP writer: %s", err)
 	}
 	if err := scipWriter24.InsertDocument(
 		ctx,
-		"internal/util.go",
+		"internbl/util.go",
 		&scip.Document{
-			Symbols: []*scip.SymbolInformation{
-				{Symbol: "lorem ipsum dolor sit amet"},
+			Symbols: []*scip.SymbolInformbtion{
+				{Symbol: "lorem ipsum dolor sit bmet"},
 			},
 		},
 	); err != nil {
-		t.Fatalf("failed to write SCIP document: %s", err)
+		t.Fbtblf("fbiled to write SCIP document: %s", err)
 	}
 	if _, err := scipWriter24.Flush(ctx); err != nil {
-		t.Fatalf("failed to flush SCIP data: %s", err)
+		t.Fbtblf("fbiled to flush SCIP dbtb: %s", err)
 	}
 	if err := tx1.Done(nil); err != nil {
-		t.Fatalf("failed to commit transaction: %s", err)
+		t.Fbtblf("fbiled to commit trbnsbction: %s", err)
 	}
 
-	tx2, err := store.Transact(ctx)
+	tx2, err := store.Trbnsbct(ctx)
 	if err != nil {
-		t.Fatalf("failed to start transaction: %s", err)
+		t.Fbtblf("fbiled to stbrt trbnsbction: %s", err)
 	}
 	scipWriter25, err := tx2.NewSCIPWriter(ctx, 25)
 	if err != nil {
-		t.Fatalf("failed to create SCIP writer: %s", err)
+		t.Fbtblf("fbiled to crebte SCIP writer: %s", err)
 	}
 	if err := scipWriter25.InsertDocument(
 		ctx,
-		"internal/util.go",
+		"internbl/util.go",
 		&scip.Document{
-			Symbols: []*scip.SymbolInformation{
-				{Symbol: "lorem ipsum dolor sit amet"},
+			Symbols: []*scip.SymbolInformbtion{
+				{Symbol: "lorem ipsum dolor sit bmet"},
 			},
 		},
 	); err != nil {
-		t.Fatalf("failed to write SCIP document: %s", err)
+		t.Fbtblf("fbiled to write SCIP document: %s", err)
 	}
 	if err := scipWriter25.InsertDocument(
 		ctx,
-		"internal/util_test.go",
+		"internbl/util_test.go",
 		&scip.Document{
-			Symbols: []*scip.SymbolInformation{
-				{Symbol: "consectetur adipiscing elit, sed do eiusmod"},
+			Symbols: []*scip.SymbolInformbtion{
+				{Symbol: "consectetur bdipiscing elit, sed do eiusmod"},
 			},
 		},
 	); err != nil {
-		t.Fatalf("failed to write SCIP document: %s", err)
+		t.Fbtblf("fbiled to write SCIP document: %s", err)
 	}
 	if _, err := scipWriter25.Flush(ctx); err != nil {
-		t.Fatalf("failed to flush SCIP data: %s", err)
+		t.Fbtblf("fbiled to flush SCIP dbtb: %s", err)
 	}
 	if err := tx2.Done(nil); err != nil {
-		t.Fatalf("failed to commit transaction: %s", err)
+		t.Fbtblf("fbiled to commit trbnsbction: %s", err)
 	}
 
-	count, _, err := basestore.ScanFirstInt(codeIntelDB.Handle().QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_documents`))
+	count, _, err := bbsestore.ScbnFirstInt(codeIntelDB.Hbndle().QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_documents`))
 	if err != nil {
-		t.Fatalf("failed to query number of SCIP documents: %s", err)
+		t.Fbtblf("fbiled to query number of SCIP documents: %s", err)
 	} else if expected := 2; count != expected {
-		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, count)
+		t.Fbtblf("unexpected number of documents. wbnt=%d hbve=%d", expected, count)
 	}
 }
 
 func TestInsertDocumentWithSymbols(t *testing.T) {
 	logger := logtest.Scoped(t)
-	codeIntelDB := codeintelshared.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, codeIntelDB)
-	ctx := context.Background()
+	codeIntelDB := codeintelshbred.NewCodeIntelDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, codeIntelDB)
+	ctx := context.Bbckground()
 
-	var n uint32
-	if err := store.WithTransaction(ctx, func(tx Store) error {
+	vbr n uint32
+	if err := store.WithTrbnsbction(ctx, func(tx Store) error {
 		scipWriter24, err := tx.NewSCIPWriter(ctx, 24)
 		if err != nil {
-			t.Fatalf("failed to write SCIP symbols: %s", err)
+			t.Fbtblf("fbiled to write SCIP symbols: %s", err)
 		}
 
 		if err := scipWriter24.InsertDocument(
 			ctx,
-			"internal/util.go",
+			"internbl/util.go",
 			&scip.Document{
-				Symbols: []*scip.SymbolInformation{
-					{Symbol: "foo.bar.ident"},
-					{Symbol: "bar.baz.longerName"},
-					{Symbol: "baz.bonk.quux"},
+				Symbols: []*scip.SymbolInformbtion{
+					{Symbol: "foo.bbr.ident"},
+					{Symbol: "bbr.bbz.longerNbme"},
+					{Symbol: "bbz.bonk.quux"},
 				},
 				Occurrences: []*scip.Occurrence{
 					{
-						Range:       []int32{3, 25, 3, 30},
-						Symbol:      "foo.bar.ident",
+						Rbnge:       []int32{3, 25, 3, 30},
+						Symbol:      "foo.bbr.ident",
 						SymbolRoles: int32(scip.SymbolRole_Definition),
 					},
 					{
-						Range:       []int32{251, 24, 251, 30},
-						Symbol:      "baz.bonk.quux",
+						Rbnge:       []int32{251, 24, 251, 30},
+						Symbol:      "bbz.bonk.quux",
 						SymbolRoles: int32(scip.SymbolRole_Definition),
 					},
 					{
-						Range:       []int32{4, 25, 4, 30},
-						Symbol:      "foo.bar.ident",
+						Rbnge:       []int32{4, 25, 4, 30},
+						Symbol:      "foo.bbr.ident",
 						SymbolRoles: 0,
 					},
 					{
-						Range:       []int32{100, 10, 100, 20},
-						Symbol:      "bar.baz.longerName",
+						Rbnge:       []int32{100, 10, 100, 20},
+						Symbol:      "bbr.bbz.longerNbme",
 						SymbolRoles: 0,
 					},
 					{
-						Range:       []int32{151, 14, 151, 20},
-						Symbol:      "baz.bonk.quux",
+						Rbnge:       []int32{151, 14, 151, 20},
+						Symbol:      "bbz.bonk.quux",
 						SymbolRoles: 0,
 					},
 				},
 			},
 		); err != nil {
-			t.Fatalf("failed to write SCIP document: %s", err)
+			t.Fbtblf("fbiled to write SCIP document: %s", err)
 		}
 
 		n, err = scipWriter24.Flush(ctx)
 		if err != nil {
-			t.Fatalf("failed to write SCIP symbols: %s", err)
+			t.Fbtblf("fbiled to write SCIP symbols: %s", err)
 		}
 
 		return nil
 	}); err != nil {
-		t.Fatalf("failed to commit transaction: %s", err)
+		t.Fbtblf("fbiled to commit trbnsbction: %s", err)
 	}
 
 	if expected := uint32(3); n != expected {
-		t.Fatalf("unexpected number of symbols inserted. want=%d have=%d", expected, n)
+		t.Fbtblf("unexpected number of symbols inserted. wbnt=%d hbve=%d", expected, n)
 	}
 }

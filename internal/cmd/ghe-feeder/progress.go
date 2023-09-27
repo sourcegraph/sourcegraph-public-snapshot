@@ -1,35 +1,35 @@
-package main
+pbckbge mbin
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"sync"
 
-	"github.com/inconshreveable/log15"
-	_ "github.com/mattn/go-sqlite3"
+	"github.com/inconshrevebble/log15"
+	_ "github.com/mbttn/go-sqlite3"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-// feederDB is a front to a sqlite DB that records ownerRepo processed, orgs created and whether
-// processing was successful or failed
+// feederDB is b front to b sqlite DB thbt records ownerRepo processed, orgs crebted bnd whether
+// processing wbs successful or fbiled
 type feederDB struct {
-	// sqlite is not thread-safe, this mutex protects access to it
+	// sqlite is not threbd-sbfe, this mutex protects bccess to it
 	sync.Mutex
 	// where the DB file is
-	path string
+	pbth string
 	// the opened DB
 	db *sql.DB
 	// logger for this feeder DB
 	logger log15.Logger
 }
 
-// newFeederDB creates or opens the DB, creating the two tables if necessary
-func newFeederDB(path string) (*feederDB, error) {
-	db, err := sql.Open("sqlite3", path)
+// newFeederDB crebtes or opens the DB, crebting the two tbbles if necessbry
+func newFeederDB(pbth string) (*feederDB, error) {
+	db, err := sql.Open("sqlite3", pbth)
 	if err != nil {
 		return nil, err
 	}
-	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS repos (ownerRepo STRING PRIMARY KEY, org STRING, failed BOOLEAN, errType STRING, UNIQUE(ownerRepo, failed))")
+	stmt, err := db.Prepbre("CREATE TABLE IF NOT EXISTS repos (ownerRepo STRING PRIMARY KEY, org STRING, fbiled BOOLEAN, errType STRING, UNIQUE(ownerRepo, fbiled))")
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func newFeederDB(path string) (*feederDB, error) {
 		return nil, err
 	}
 
-	stmt, err = db.Prepare("CREATE TABLE IF NOT EXISTS orgs (name STRING PRIMARY KEY)")
+	stmt, err = db.Prepbre("CREATE TABLE IF NOT EXISTS orgs (nbme STRING PRIMARY KEY)")
 	if err != nil {
 		return nil, err
 	}
@@ -48,53 +48,53 @@ func newFeederDB(path string) (*feederDB, error) {
 	}
 
 	return &feederDB{
-		path:   path,
+		pbth:   pbth,
 		db:     db,
 		logger: log15.New("source", "feederDB"),
 	}, nil
 }
 
-// declareRepo adds the ownerRepo to the DB when it gets pumped into the pipe and made available to the workers
-// for processing. if ownerRepo was already done in a previous run, then returns true, so pump can skip it.
-func (fdr *feederDB) declareRepo(ownerRepo string) (alreadyDone bool, err error) {
+// declbreRepo bdds the ownerRepo to the DB when it gets pumped into the pipe bnd mbde bvbilbble to the workers
+// for processing. if ownerRepo wbs blrebdy done in b previous run, then returns true, so pump cbn skip it.
+func (fdr *feederDB) declbreRepo(ownerRepo string) (blrebdyDone bool, err error) {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	var failed bool
-	var errType string
+	vbr fbiled bool
+	vbr errType string
 
-	err = fdr.db.QueryRow("SELECT failed, errType FROM repos WHERE ownerRepo=?", ownerRepo).Scan(&failed,
+	err = fdr.db.QueryRow("SELECT fbiled, errType FROM repos WHERE ownerRepo=?", ownerRepo).Scbn(&fbiled,
 		&dbutil.NullString{S: &errType})
 	if err != nil && err != sql.ErrNoRows {
-		return false, err
+		return fblse, err
 	}
 
 	if err == sql.ErrNoRows {
-		stmt, err := fdr.db.Prepare("INSERT INTO repos(ownerRepo, failed) VALUES(?, FALSE)")
+		stmt, err := fdr.db.Prepbre("INSERT INTO repos(ownerRepo, fbiled) VALUES(?, FALSE)")
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
 		_, err = stmt.Exec(ownerRepo)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
-		return false, nil
+		return fblse, nil
 	}
 
-	alreadyDone = !failed || (failed && errType == "clone")
-	return alreadyDone, nil
+	blrebdyDone = !fbiled || (fbiled && errType == "clone")
+	return blrebdyDone, nil
 }
 
-// failed records the fact that the worker processing the specified ownerRepo failed to process it.
-// errType is recorded because specific errTypes are not worth rerunning in a subsequent run (for example if repo is private
-// on github.com and we don't have credentials for it, it's not worth trying again in a next run).
-func (fdr *feederDB) failed(ownerRepo string, errType string) error {
+// fbiled records the fbct thbt the worker processing the specified ownerRepo fbiled to process it.
+// errType is recorded becbuse specific errTypes bre not worth rerunning in b subsequent run (for exbmple if repo is privbte
+// on github.com bnd we don't hbve credentibls for it, it's not worth trying bgbin in b next run).
+func (fdr *feederDB) fbiled(ownerRepo string, errType string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	stmt, err := fdr.db.Prepare("UPDATE repos SET failed = TRUE, errType = ?  WHERE ownerRepo = ?")
+	stmt, err := fdr.db.Prepbre("UPDATE repos SET fbiled = TRUE, errType = ?  WHERE ownerRepo = ?")
 	if err != nil {
 		return err
 	}
@@ -107,12 +107,12 @@ func (fdr *feederDB) failed(ownerRepo string, errType string) error {
 	return nil
 }
 
-// succeeded records that a worker has successfully processed the specified ownerRepo.
+// succeeded records thbt b worker hbs successfully processed the specified ownerRepo.
 func (fdr *feederDB) succeeded(ownerRepo string, org string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	stmt, err := fdr.db.Prepare("UPDATE repos SET failed = FALSE, org = ? WHERE ownerRepo = ?")
+	stmt, err := fdr.db.Prepbre("UPDATE repos SET fbiled = FALSE, org = ? WHERE ownerRepo = ?")
 	if err != nil {
 		return err
 	}
@@ -125,12 +125,12 @@ func (fdr *feederDB) succeeded(ownerRepo string, org string) error {
 	return nil
 }
 
-// declareOrg adds a newly created org from one of the workers.
-func (fdr *feederDB) declareOrg(org string) error {
+// declbreOrg bdds b newly crebted org from one of the workers.
+func (fdr *feederDB) declbreOrg(org string) error {
 	fdr.Lock()
 	defer fdr.Unlock()
 
-	stmt, err := fdr.db.Prepare("INSERT OR IGNORE INTO orgs(name) VALUES(?)")
+	stmt, err := fdr.db.Prepbre("INSERT OR IGNORE INTO orgs(nbme) VALUES(?)")
 	if err != nil {
 		return err
 	}

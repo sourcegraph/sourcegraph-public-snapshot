@@ -1,13 +1,13 @@
-package internal
+pbckbge internbl
 
 import (
 	"fmt"
 	"os"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-var indexFilenamePattern = regexp.MustCompile(`^([^.]+)\.([^.]+)\.([0-9A-Fa-f]{40})\.([^.]+)\.(scip|dump)$`)
+vbr indexFilenbmePbttern = regexp.MustCompile(`^([^.]+)\.([^.]+)\.([0-9A-Fb-f]{40})\.([^.]+)\.(scip|dump)$`)
 
 type ExtensionCommitAndRoot struct {
 	Extension string
@@ -15,22 +15,22 @@ type ExtensionCommitAndRoot struct {
 	Root      string
 }
 
-// ExtensionAndCommitsByRepo returns a map from org+repository name to a slice of commit and extension
-// pairs for that repository. The repositories and commits are read from the filesystem state of the
-// index directory supplied by the user. This method assumes that index files have been downloaded or
-// generated locally.
-func ExtensionAndCommitsByRepo(indexDir string) (map[string][]ExtensionCommitAndRoot, error) {
-	infos, err := os.ReadDir(indexDir)
+// ExtensionAndCommitsByRepo returns b mbp from org+repository nbme to b slice of commit bnd extension
+// pbirs for thbt repository. The repositories bnd commits bre rebd from the filesystem stbte of the
+// index directory supplied by the user. This method bssumes thbt index files hbve been downlobded or
+// generbted locblly.
+func ExtensionAndCommitsByRepo(indexDir string) (mbp[string][]ExtensionCommitAndRoot, error) {
+	infos, err := os.RebdDir(indexDir)
 	if err != nil {
 		return nil, err
 	}
 
-	commitsByRepo := map[string][]ExtensionCommitAndRoot{}
-	for _, info := range infos {
-		if matches := indexFilenamePattern.FindStringSubmatch(info.Name()); len(matches) > 0 {
-			orgRepo := fmt.Sprintf("%s/%s", matches[1], matches[2])
-			root := matches[4]
-			commitsByRepo[orgRepo] = append(commitsByRepo[orgRepo], ExtensionCommitAndRoot{Extension: matches[5], Commit: matches[3], Root: root})
+	commitsByRepo := mbp[string][]ExtensionCommitAndRoot{}
+	for _, info := rbnge infos {
+		if mbtches := indexFilenbmePbttern.FindStringSubmbtch(info.Nbme()); len(mbtches) > 0 {
+			orgRepo := fmt.Sprintf("%s/%s", mbtches[1], mbtches[2])
+			root := mbtches[4]
+			commitsByRepo[orgRepo] = bppend(commitsByRepo[orgRepo], ExtensionCommitAndRoot{Extension: mbtches[5], Commit: mbtches[3], Root: root})
 		}
 	}
 

@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -9,235 +9,235 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/web"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/zoekt"
+	"github.com/sourcegrbph/zoekt/web"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	sebrchbbckend "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	sebrchrepos "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/settings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSearch(t *testing.T) {
+func TestSebrch(t *testing.T) {
 	type Results struct {
-		Results    []any
-		MatchCount int
+		Results    []bny
+		MbtchCount int
 	}
 	tcs := []struct {
-		name                         string
-		searchQuery                  string
-		searchVersion                string
-		reposListMock                func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error)
-		repoRevsMock                 func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error)
-		externalServicesListMock     func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-		phabricatorGetRepoByNameMock func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error)
-		wantResults                  Results
+		nbme                         string
+		sebrchQuery                  string
+		sebrchVersion                string
+		reposListMock                func(v0 context.Context, v1 dbtbbbse.ReposListOptions) ([]*types.Repo, error)
+		repoRevsMock                 func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error)
+		externblServicesListMock     func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error)
+		phbbricbtorGetRepoByNbmeMock func(_ context.Context, repo bpi.RepoNbme) (*types.PhbbricbtorRepo, error)
+		wbntResults                  Results
 	}{
 		{
-			name:        "empty query against no repos gets no results",
-			searchQuery: "",
-			reposListMock: func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
+			nbme:        "empty query bgbinst no repos gets no results",
+			sebrchQuery: "",
+			reposListMock: func(v0 context.Context, v1 dbtbbbse.ReposListOptions) ([]*types.Repo, error) {
 				return nil, nil
 			},
-			repoRevsMock: func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
 				return "", nil
 			},
-			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			externblServicesListMock: func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
 				return nil, nil
 			},
-			phabricatorGetRepoByNameMock: func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
+			phbbricbtorGetRepoByNbmeMock: func(_ context.Context, repo bpi.RepoNbme) (*types.PhbbricbtorRepo, error) {
 				return nil, nil
 			},
-			wantResults: Results{
+			wbntResults: Results{
 				Results:    nil,
-				MatchCount: 0,
+				MbtchCount: 0,
 			},
-			searchVersion: "V1",
+			sebrchVersion: "V1",
 		},
 		{
-			name:        "empty query against empty repo gets no results",
-			searchQuery: "",
-			reposListMock: func(v0 context.Context, v1 database.ReposListOptions) ([]*types.Repo, error) {
-				return []*types.Repo{{Name: "test"}},
+			nbme:        "empty query bgbinst empty repo gets no results",
+			sebrchQuery: "",
+			reposListMock: func(v0 context.Context, v1 dbtbbbse.ReposListOptions) ([]*types.Repo, error) {
+				return []*types.Repo{{Nbme: "test"}},
 
 					nil
 			},
-			repoRevsMock: func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+			repoRevsMock: func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
 				return "", nil
 			},
-			externalServicesListMock: func(_ context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			externblServicesListMock: func(_ context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
 				return nil, nil
 			},
-			phabricatorGetRepoByNameMock: func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
+			phbbricbtorGetRepoByNbmeMock: func(_ context.Context, repo bpi.RepoNbme) (*types.PhbbricbtorRepo, error) {
 				return nil, nil
 			},
-			wantResults: Results{
+			wbntResults: Results{
 				Results:    nil,
-				MatchCount: 0,
+				MbtchCount: 0,
 			},
-			searchVersion: "V1",
+			sebrchVersion: "V1",
 		},
 	}
-	for _, tc := range tcs {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge tcs {
+		t.Run(tc.nbme, func(t *testing.T) {
 			conf.Mock(&conf.Unified{})
 			defer conf.Mock(nil)
-			vars := map[string]any{"query": tc.searchQuery, "version": tc.searchVersion}
+			vbrs := mbp[string]bny{"query": tc.sebrchQuery, "version": tc.sebrchVersion}
 
-			settings.MockCurrentUserFinal = &schema.Settings{}
-			defer func() { settings.MockCurrentUserFinal = nil }()
+			settings.MockCurrentUserFinbl = &schemb.Settings{}
+			defer func() { settings.MockCurrentUserFinbl = nil }()
 
 			repos := dbmocks.NewMockRepoStore()
-			repos.ListFunc.SetDefaultHook(tc.reposListMock)
+			repos.ListFunc.SetDefbultHook(tc.reposListMock)
 
-			ext := dbmocks.NewMockExternalServiceStore()
-			ext.ListFunc.SetDefaultHook(tc.externalServicesListMock)
+			ext := dbmocks.NewMockExternblServiceStore()
+			ext.ListFunc.SetDefbultHook(tc.externblServicesListMock)
 
-			phabricator := dbmocks.NewMockPhabricatorStore()
-			phabricator.GetByNameFunc.SetDefaultHook(tc.phabricatorGetRepoByNameMock)
+			phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+			phbbricbtor.GetByNbmeFunc.SetDefbultHook(tc.phbbricbtorGetRepoByNbmeMock)
 
 			db := dbmocks.NewMockDB()
-			db.ReposFunc.SetDefaultReturn(repos)
-			db.ExternalServicesFunc.SetDefaultReturn(ext)
-			db.PhabricatorFunc.SetDefaultReturn(phabricator)
+			db.ReposFunc.SetDefbultReturn(repos)
+			db.ExternblServicesFunc.SetDefbultReturn(ext)
+			db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
 			gsClient := gitserver.NewMockClient()
-			gsClient.ResolveRevisionFunc.SetDefaultHook(tc.repoRevsMock)
+			gsClient.ResolveRevisionFunc.SetDefbultHook(tc.repoRevsMock)
 
-			sr := newSchemaResolver(db, gsClient)
-			gqlSchema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&requestTracer{}))
+			sr := newSchembResolver(db, gsClient)
+			gqlSchemb, err := grbphql.PbrseSchemb(mbinSchemb, sr, grbphql.Trbcer(&requestTrbcer{}))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			response := gqlSchema.Exec(context.Background(), testSearchGQLQuery, "", vars)
+			response := gqlSchemb.Exec(context.Bbckground(), testSebrchGQLQuery, "", vbrs)
 			if len(response.Errors) > 0 {
-				t.Fatalf("graphQL query returned errors: %+v", response.Errors)
+				t.Fbtblf("grbphQL query returned errors: %+v", response.Errors)
 			}
-			var searchStruct struct {
+			vbr sebrchStruct struct {
 				Results Results
 			}
-			if err := json.Unmarshal(response.Data, &searchStruct); err != nil {
-				t.Fatalf("parsing JSON response: %v", err)
+			if err := json.Unmbrshbl(response.Dbtb, &sebrchStruct); err != nil {
+				t.Fbtblf("pbrsing JSON response: %v", err)
 			}
-			gotResults := searchStruct.Results
-			if !reflect.DeepEqual(gotResults, tc.wantResults) {
-				t.Fatalf("results = %+v, want %+v", gotResults, tc.wantResults)
+			gotResults := sebrchStruct.Results
+			if !reflect.DeepEqubl(gotResults, tc.wbntResults) {
+				t.Fbtblf("results = %+v, wbnt %+v", gotResults, tc.wbntResults)
 			}
 		})
 	}
 }
 
-var testSearchGQLQuery = `
-		fragment FileMatchFields on FileMatch {
+vbr testSebrchGQLQuery = `
+		frbgment FileMbtchFields on FileMbtch {
 			repository {
-				name
+				nbme
 				url
 			}
 			file {
-				name
-				path
+				nbme
+				pbth
 				url
 				commit {
 					oid
 				}
 			}
-			lineMatches {
+			lineMbtches {
 				preview
 				lineNumber
 				offsetAndLengths
 			}
 		}
 
-		fragment CommitSearchResultFields on CommitSearchResult {
-			messagePreview {
-				value
+		frbgment CommitSebrchResultFields on CommitSebrchResult {
+			messbgePreview {
+				vblue
 				highlights{
 					line
-					character
+					chbrbcter
 					length
 				}
 			}
 			diffPreview {
-				value
+				vblue
 				highlights {
 					line
-					character
+					chbrbcter
 					length
 				}
 			}
-			label {
+			lbbel {
 				html
 			}
 			url
-			matches {
+			mbtches {
 				url
 				body {
 					html
 					text
 				}
 				highlights {
-					character
+					chbrbcter
 					line
 					length
 				}
 			}
 			commit {
 				repository {
-					name
+					nbme
 				}
 				oid
 				url
 				subject
-				author {
-					date
+				buthor {
+					dbte
 					person {
-						displayName
+						displbyNbme
 					}
 				}
 			}
 		}
 
-		fragment RepositoryFields on Repository {
-			name
+		frbgment RepositoryFields on Repository {
+			nbme
 			url
-			externalURLs {
+			externblURLs {
 				serviceKind
 				url
 			}
-			label {
+			lbbel {
 				html
 			}
 		}
 
-		query ($query: String!, $version: SearchVersion!, $patternType: SearchPatternType) {
+		query ($query: String!, $version: SebrchVersion!, $pbtternType: SebrchPbtternType) {
 			site {
 				buildVersion
 			}
-			search(query: $query, version: $version, patternType: $patternType) {
+			sebrch(query: $query, version: $version, pbtternType: $pbtternType) {
 				results {
 					results{
-						__typename
-						... on FileMatch {
-						...FileMatchFields
+						__typenbme
+						... on FileMbtch {
+						...FileMbtchFields
 					}
-						... on CommitSearchResult {
-						...CommitSearchResultFields
+						... on CommitSebrchResult {
+						...CommitSebrchResultFields
 					}
 						... on Repository {
 						...RepositoryFields
@@ -245,198 +245,198 @@ var testSearchGQLQuery = `
 					}
 					limitHit
 					cloning {
-						name
+						nbme
 					}
 					missing {
-						name
+						nbme
 					}
 					timedout {
-						name
+						nbme
 					}
-					matchCount
-					elapsedMilliseconds
+					mbtchCount
+					elbpsedMilliseconds
 				}
 			}
 		}
 `
 
-func TestExactlyOneRepo(t *testing.T) {
-	cases := []struct {
+func TestExbctlyOneRepo(t *testing.T) {
+	cbses := []struct {
 		repoFilters []string
-		want        bool
+		wbnt        bool
 	}{
 		{
-			repoFilters: []string{`^github\.com/sourcegraph/zoekt$`},
-			want:        true,
+			repoFilters: []string{`^github\.com/sourcegrbph/zoekt$`},
+			wbnt:        true,
 		},
 		{
-			repoFilters: []string{`^github\.com/sourcegraph/zoekt$@ef3ec23`},
-			want:        true,
+			repoFilters: []string{`^github\.com/sourcegrbph/zoekt$@ef3ec23`},
+			wbnt:        true,
 		},
 		{
-			repoFilters: []string{`^github\.com/sourcegraph/zoekt$@ef3ec23:deadbeef`},
-			want:        true,
+			repoFilters: []string{`^github\.com/sourcegrbph/zoekt$@ef3ec23:debdbeef`},
+			wbnt:        true,
 		},
 		{
 			repoFilters: []string{`^.*$`},
-			want:        false,
+			wbnt:        fblse,
 		},
 
 		{
-			repoFilters: []string{`^github\.com/sourcegraph/zoekt`},
-			want:        false,
+			repoFilters: []string{`^github\.com/sourcegrbph/zoekt`},
+			wbnt:        fblse,
 		},
 		{
-			repoFilters: []string{`^github\.com/sourcegraph/zoekt$`, `github\.com/sourcegraph/sourcegraph`},
-			want:        false,
+			repoFilters: []string{`^github\.com/sourcegrbph/zoekt$`, `github\.com/sourcegrbph/sourcegrbph`},
+			wbnt:        fblse,
 		},
 	}
-	for _, c := range cases {
-		t.Run("exactly one repo", func(t *testing.T) {
-			parsedFilters := make([]query.ParsedRepoFilter, len(c.repoFilters))
-			for i, repoFilter := range c.repoFilters {
-				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+	for _, c := rbnge cbses {
+		t.Run("exbctly one repo", func(t *testing.T) {
+			pbrsedFilters := mbke([]query.PbrsedRepoFilter, len(c.repoFilters))
+			for i, repoFilter := rbnge c.repoFilters {
+				pbrsedFilter, err := query.PbrseRepositoryRevisions(repoFilter)
 				if err != nil {
-					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+					t.Fbtblf("unexpected error pbrsing repo filter %s", repoFilter)
 				}
-				parsedFilters[i] = parsedFilter
+				pbrsedFilters[i] = pbrsedFilter
 			}
 
-			if got := searchrepos.ExactlyOneRepo(parsedFilters); got != c.want {
-				t.Errorf("got %t, want %t", got, c.want)
+			if got := sebrchrepos.ExbctlyOneRepo(pbrsedFilters); got != c.wbnt {
+				t.Errorf("got %t, wbnt %t", got, c.wbnt)
 			}
 		})
 	}
 }
 
-func mkFileMatch(repo types.MinimalRepo, path string, lineNumbers ...int) *result.FileMatch {
-	var hms result.ChunkMatches
-	for _, n := range lineNumbers {
-		hms = append(hms, result.ChunkMatch{
-			Ranges: []result.Range{{
-				Start: result.Location{Line: n},
-				End:   result.Location{Line: n},
+func mkFileMbtch(repo types.MinimblRepo, pbth string, lineNumbers ...int) *result.FileMbtch {
+	vbr hms result.ChunkMbtches
+	for _, n := rbnge lineNumbers {
+		hms = bppend(hms, result.ChunkMbtch{
+			Rbnges: []result.Rbnge{{
+				Stbrt: result.Locbtion{Line: n},
+				End:   result.Locbtion{Line: n},
 			}},
 		})
 	}
 
-	return &result.FileMatch{
+	return &result.FileMbtch{
 		File: result.File{
-			Path: path,
+			Pbth: pbth,
 			Repo: repo,
 		},
-		ChunkMatches: hms,
+		ChunkMbtches: hms,
 	}
 }
 
-func BenchmarkSearchResults(b *testing.B) {
-	minimalRepos, zoektRepos := generateRepos(500_000)
-	zoektFileMatches := generateZoektMatches(1000)
+func BenchmbrkSebrchResults(b *testing.B) {
+	minimblRepos, zoektRepos := generbteRepos(500_000)
+	zoektFileMbtches := generbteZoektMbtches(1000)
 
-	z := zoektRPC(b, &searchbackend.FakeStreamer{
+	z := zoektRPC(b, &sebrchbbckend.FbkeStrebmer{
 		Repos:   zoektRepos,
-		Results: []*zoekt.SearchResult{{Files: zoektFileMatches}},
+		Results: []*zoekt.SebrchResult{{Files: zoektFileMbtches}},
 	})
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	db := dbmocks.NewMockDB()
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListMinimalReposFunc.SetDefaultReturn(minimalRepos, nil)
-	repos.CountFunc.SetDefaultReturn(len(minimalRepos), nil)
-	db.ReposFunc.SetDefaultReturn(repos)
+	repos.ListMinimblReposFunc.SetDefbultReturn(minimblRepos, nil)
+	repos.CountFunc.SetDefbultReturn(len(minimblRepos), nil)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
 	for n := 0; n < b.N; n++ {
-		plan, err := query.Pipeline(query.InitLiteral(`print repo:foo index:only count:1000`))
+		plbn, err := query.Pipeline(query.InitLiterbl(`print repo:foo index:only count:1000`))
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
-		resolver := &searchResolver{
+		resolver := &sebrchResolver{
 			client: client.Mocked(job.RuntimeClients{
 				Logger: logtest.Scoped(b),
 				DB:     db,
 				Zoekt:  z,
 			}),
 			db: db,
-			SearchInputs: &search.Inputs{
-				Plan:         plan,
-				Query:        plan.ToQ(),
-				Features:     &search.Features{},
-				UserSettings: &schema.Settings{},
+			SebrchInputs: &sebrch.Inputs{
+				Plbn:         plbn,
+				Query:        plbn.ToQ(),
+				Febtures:     &sebrch.Febtures{},
+				UserSettings: &schemb.Settings{},
 			},
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {
-			b.Fatal("Results:", err)
+			b.Fbtbl("Results:", err)
 		}
-		if int(results.MatchCount()) != len(zoektFileMatches) {
-			b.Fatalf("wrong results length. want=%d, have=%d\n", len(zoektFileMatches), results.MatchCount())
+		if int(results.MbtchCount()) != len(zoektFileMbtches) {
+			b.Fbtblf("wrong results length. wbnt=%d, hbve=%d\n", len(zoektFileMbtches), results.MbtchCount())
 		}
 	}
 }
 
-func generateRepos(count int) ([]types.MinimalRepo, []*zoekt.RepoListEntry) {
-	repos := make([]types.MinimalRepo, 0, count)
-	zoektRepos := make([]*zoekt.RepoListEntry, 0, count)
+func generbteRepos(count int) ([]types.MinimblRepo, []*zoekt.RepoListEntry) {
+	repos := mbke([]types.MinimblRepo, 0, count)
+	zoektRepos := mbke([]*zoekt.RepoListEntry, 0, count)
 
 	for i := 1; i <= count; i++ {
-		name := fmt.Sprintf("repo-%d", i)
+		nbme := fmt.Sprintf("repo-%d", i)
 
-		repoWithIDs := types.MinimalRepo{
-			ID:   api.RepoID(i),
-			Name: api.RepoName(name),
+		repoWithIDs := types.MinimblRepo{
+			ID:   bpi.RepoID(i),
+			Nbme: bpi.RepoNbme(nbme),
 		}
 
-		repos = append(repos, repoWithIDs)
+		repos = bppend(repos, repoWithIDs)
 
-		zoektRepos = append(zoektRepos, &zoekt.RepoListEntry{
+		zoektRepos = bppend(zoektRepos, &zoekt.RepoListEntry{
 			Repository: zoekt.Repository{
 				ID:       uint32(i),
-				Name:     name,
-				Branches: []zoekt.RepositoryBranch{{Name: "HEAD", Version: "deadbeef"}},
+				Nbme:     nbme,
+				Brbnches: []zoekt.RepositoryBrbnch{{Nbme: "HEAD", Version: "debdbeef"}},
 			},
 		})
 	}
 	return repos, zoektRepos
 }
 
-func generateZoektMatches(count int) []zoekt.FileMatch {
-	var zoektFileMatches []zoekt.FileMatch
+func generbteZoektMbtches(count int) []zoekt.FileMbtch {
+	vbr zoektFileMbtches []zoekt.FileMbtch
 	for i := 1; i <= count; i++ {
-		repoName := fmt.Sprintf("repo-%d", i)
-		fileName := fmt.Sprintf("foobar-%d.go", i)
+		repoNbme := fmt.Sprintf("repo-%d", i)
+		fileNbme := fmt.Sprintf("foobbr-%d.go", i)
 
-		zoektFileMatches = append(zoektFileMatches, zoekt.FileMatch{
+		zoektFileMbtches = bppend(zoektFileMbtches, zoekt.FileMbtch{
 			Score:        5.0,
-			FileName:     fileName,
+			FileNbme:     fileNbme,
 			RepositoryID: uint32(i),
-			Repository:   repoName, // Important: this needs to match a name in `repos`
-			Branches:     []string{"master"},
-			ChunkMatches: make([]zoekt.ChunkMatch, 1),
+			Repository:   repoNbme, // Importbnt: this needs to mbtch b nbme in `repos`
+			Brbnches:     []string{"mbster"},
+			ChunkMbtches: mbke([]zoekt.ChunkMbtch, 1),
 			Checksum:     []byte{0, 1, 2},
 		})
 	}
-	return zoektFileMatches
+	return zoektFileMbtches
 }
 
-// zoektRPC starts zoekts rpc interface and returns a client to
-// searcher. Useful for capturing CPU/memory usage when benchmarking the zoekt
+// zoektRPC stbrts zoekts rpc interfbce bnd returns b client to
+// sebrcher. Useful for cbpturing CPU/memory usbge when benchmbrking the zoekt
 // client.
-func zoektRPC(t testing.TB, s zoekt.Streamer) zoekt.Streamer {
+func zoektRPC(t testing.TB, s zoekt.Strebmer) zoekt.Strebmer {
 	srv, err := web.NewMux(&web.Server{
-		Searcher: s,
+		Sebrcher: s,
 		RPC:      true,
 		Top:      web.Top,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	ts := httptest.NewServer(srv)
-	cl := backend.ZoektDial(strings.TrimPrefix(ts.URL, "http://"))
-	t.Cleanup(func() {
+	cl := bbckend.ZoektDibl(strings.TrimPrefix(ts.URL, "http://"))
+	t.Clebnup(func() {
 		cl.Close()
 		ts.Close()
 	})

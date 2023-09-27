@@ -1,4 +1,4 @@
-// Package external is a parent package whose sub-packages exist solely to
-// export certain types and variables from internal packages. An internal
-// package should *never* import a sub-package of this package.
-package external
+// Pbckbge externbl is b pbrent pbckbge whose sub-pbckbges exist solely to
+// export certbin types bnd vbribbles from internbl pbckbges. An internbl
+// pbckbge should *never* import b sub-pbckbge of this pbckbge.
+pbckbge externbl

@@ -1,134 +1,134 @@
-package retention
+pbckbge retention
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ workerutil.Handler[*DataRetentionJob] = &dataRetentionHandler{}
+vbr _ workerutil.Hbndler[*DbtbRetentionJob] = &dbtbRetentionHbndler{}
 
-type dataRetentionHandler struct {
-	baseWorkerStore dbworkerstore.Store[*DataRetentionJob]
+type dbtbRetentionHbndler struct {
+	bbseWorkerStore dbworkerstore.Store[*DbtbRetentionJob]
 	insightsStore   *store.Store
 }
 
-func (h *dataRetentionHandler) Handle(ctx context.Context, logger log.Logger, record *DataRetentionJob) (err error) {
-	doArchive := conf.ExperimentalFeatures().InsightsDataRetention
-	// If the setting is not set we run retention by default.
+func (h *dbtbRetentionHbndler) Hbndle(ctx context.Context, logger log.Logger, record *DbtbRetentionJob) (err error) {
+	doArchive := conf.ExperimentblFebtures().InsightsDbtbRetention
+	// If the setting is not set we run retention by defbult.
 	if doArchive != nil && !*doArchive {
 		return nil
 	}
 
-	maximumSampleSize := getMaximumSampleSize(logger)
+	mbximumSbmpleSize := getMbximumSbmpleSize(logger)
 
-	// All the retention operations need to be completed in the same transaction
-	tx, err := h.insightsStore.Transact(ctx)
+	// All the retention operbtions need to be completed in the sbme trbnsbction
+	tx, err := h.insightsStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// We remove 1 off the maximum sample size so that we get the last timestamp that we want to keep data for.
-	// We ignore snapshot timestamps. This is because if there are 10 record points and 1 snapshot point and a sample
-	// size of 5 we don't want to keep 4 record points and the ephemeral snapshot point, but 5 record points.
-	oldestRecordingTime, err := tx.GetOffsetNRecordingTime(ctx, record.InsightSeriesID, maximumSampleSize-1, true)
+	// We remove 1 off the mbximum sbmple size so thbt we get the lbst timestbmp thbt we wbnt to keep dbtb for.
+	// We ignore snbpshot timestbmps. This is becbuse if there bre 10 record points bnd 1 snbpshot point bnd b sbmple
+	// size of 5 we don't wbnt to keep 4 record points bnd the ephemerbl snbpshot point, but 5 record points.
+	oldestRecordingTime, err := tx.GetOffsetNRecordingTime(ctx, record.InsightSeriesID, mbximumSbmpleSize-1, true)
 	if err != nil {
-		return errors.Wrap(err, "GetOffsetNRecordingTime")
+		return errors.Wrbp(err, "GetOffsetNRecordingTime")
 	}
 
 	if oldestRecordingTime.IsZero() {
-		// this series does not have any data beyond the max sample size
-		logger.Debug("data retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("maxSampleSize", maximumSampleSize))
+		// this series does not hbve bny dbtb beyond the mbx sbmple size
+		logger.Debug("dbtb retention procedure not needed", log.Int("seriesID", record.InsightSeriesID), log.Int("mbxSbmpleSize", mbximumSbmpleSize))
 		return nil
 	}
 
-	if err := archiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, oldestRecordingTime); err != nil {
-		return errors.Wrap(err, "archiveOldRecordingTimes")
+	if err := brchiveOldRecordingTimes(ctx, tx, record.InsightSeriesID, oldestRecordingTime); err != nil {
+		return errors.Wrbp(err, "brchiveOldRecordingTimes")
 	}
 
-	if err := archiveOldSeriesPoints(ctx, tx, record.SeriesID, oldestRecordingTime); err != nil {
-		return errors.Wrap(err, "archiveOldSeriesPoints")
+	if err := brchiveOldSeriesPoints(ctx, tx, record.SeriesID, oldestRecordingTime); err != nil {
+		return errors.Wrbp(err, "brchiveOldSeriesPoints")
 	}
 
 	return nil
 }
 
-func getMaximumSampleSize(logger log.Logger) int {
-	// Default should match what is shown in the schema not to be confusing
-	maximumSampleSize := 30
-	if configured := conf.Get().InsightsMaximumSampleSize; configured > 0 {
-		maximumSampleSize = configured
+func getMbximumSbmpleSize(logger log.Logger) int {
+	// Defbult should mbtch whbt is shown in the schemb not to be confusing
+	mbximumSbmpleSize := 30
+	if configured := conf.Get().InsightsMbximumSbmpleSize; configured > 0 {
+		mbximumSbmpleSize = configured
 	}
-	if maximumSampleSize > 90 {
-		logger.Info("code insights maximum sample size was set over allowed maximum, setting to 90", log.Int("disallowed maximum value", maximumSampleSize))
-		maximumSampleSize = 90
+	if mbximumSbmpleSize > 90 {
+		logger.Info("code insights mbximum sbmple size wbs set over bllowed mbximum, setting to 90", log.Int("disbllowed mbximum vblue", mbximumSbmpleSize))
+		mbximumSbmpleSize = 90
 	}
-	return maximumSampleSize
+	return mbximumSbmpleSize
 }
 
-// NewWorker returns a worker that will find what data to prune and separate for a series.
-func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], insightsStore *store.Store, metrics workerutil.WorkerObservability) *workerutil.Worker[*DataRetentionJob] {
+// NewWorker returns b worker thbt will find whbt dbtb to prune bnd sepbrbte for b series.
+func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DbtbRetentionJob], insightsStore *store.Store, metrics workerutil.WorkerObservbbility) *workerutil.Worker[*DbtbRetentionJob] {
 	options := workerutil.WorkerOptions{
-		Name:              "insights_data_retention_worker",
-		Description:       "archives code insights data points over the maximum sample size",
-		NumHandlers:       5,
-		Interval:          30 * time.Minute,
-		HeartbeatInterval: 15 * time.Second,
+		Nbme:              "insights_dbtb_retention_worker",
+		Description:       "brchives code insights dbtb points over the mbximum sbmple size",
+		NumHbndlers:       5,
+		Intervbl:          30 * time.Minute,
+		HebrtbebtIntervbl: 15 * time.Second,
 		Metrics:           metrics,
 	}
 
-	return dbworker.NewWorker[*DataRetentionJob](ctx, workerStore, &dataRetentionHandler{
-		baseWorkerStore: workerStore,
+	return dbworker.NewWorker[*DbtbRetentionJob](ctx, workerStore, &dbtbRetentionHbndler{
+		bbseWorkerStore: workerStore,
 		insightsStore:   insightsStore,
 	}, options)
 }
 
-// NewResetter returns a resetter that will reset pending data retention jobs if they take too long
+// NewResetter returns b resetter thbt will reset pending dbtb retention jobs if they tbke too long
 // to complete.
-func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DataRetentionJob], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*DataRetentionJob] {
+func NewResetter(ctx context.Context, logger log.Logger, workerStore dbworkerstore.Store[*DbtbRetentionJob], metrics dbworker.ResetterMetrics) *dbworker.Resetter[*DbtbRetentionJob] {
 	options := dbworker.ResetterOptions{
-		Name:     "insights_data_retention_worker_resetter",
-		Interval: 1 * time.Minute,
+		Nbme:     "insights_dbtb_retention_worker_resetter",
+		Intervbl: 1 * time.Minute,
 		Metrics:  metrics,
 	}
 	return dbworker.NewResetter(logger, workerStore, options)
 }
 
-func CreateDBWorkerStore(observationCtx *observation.Context, store *basestore.Store) dbworkerstore.Store[*DataRetentionJob] {
-	return dbworkerstore.New(observationCtx, store.Handle(), dbworkerstore.Options[*DataRetentionJob]{
-		Name:              "insights_data_retention_worker_store",
-		TableName:         "insights_data_retention_jobs",
-		ColumnExpressions: dataRetentionJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanDataRetentionJob),
-		OrderByExpression: sqlf.Sprintf("queued_at, id"),
+func CrebteDBWorkerStore(observbtionCtx *observbtion.Context, store *bbsestore.Store) dbworkerstore.Store[*DbtbRetentionJob] {
+	return dbworkerstore.New(observbtionCtx, store.Hbndle(), dbworkerstore.Options[*DbtbRetentionJob]{
+		Nbme:              "insights_dbtb_retention_worker_store",
+		TbbleNbme:         "insights_dbtb_retention_jobs",
+		ColumnExpressions: dbtbRetentionJobColumns,
+		Scbn:              dbworkerstore.BuildWorkerScbn(scbnDbtbRetentionJob),
+		OrderByExpression: sqlf.Sprintf("queued_bt, id"),
 		RetryAfter:        15 * time.Minute,
-		MaxNumRetries:     5,
-		MaxNumResets:      5,
-		StalledMaxAge:     time.Second * 60,
+		MbxNumRetries:     5,
+		MbxNumResets:      5,
+		StblledMbxAge:     time.Second * 60,
 	})
 }
 
-func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *DataRetentionJob) (id int, err error) {
-	tx, err := workerBaseStore.Transact(ctx)
+func EnqueueJob(ctx context.Context, workerBbseStore *bbsestore.Store, job *DbtbRetentionJob) (id int, err error) {
+	tx, err := workerBbseStore.Trbnsbct(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	id, _, err = basestore.ScanFirstInt(tx.Query(
+	id, _, err = bbsestore.ScbnFirstInt(tx.Query(
 		ctx,
 		sqlf.Sprintf(
 			enqueueJobFmtStr,
@@ -144,36 +144,36 @@ func EnqueueJob(ctx context.Context, workerBaseStore *basestore.Store, job *Data
 }
 
 const enqueueJobFmtStr = `
-INSERT INTO insights_data_retention_jobs (series_id, series_id_string) VALUES (%s, %s)
+INSERT INTO insights_dbtb_retention_jobs (series_id, series_id_string) VALUES (%s, %s)
 RETURNING id
 `
 
-func archiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestamp time.Time) error {
-	return tx.Exec(ctx, sqlf.Sprintf(archiveOldSeriesPointsSql, seriesID, oldestTimestamp))
+func brchiveOldSeriesPoints(ctx context.Context, tx *store.Store, seriesID string, oldestTimestbmp time.Time) error {
+	return tx.Exec(ctx, sqlf.Sprintf(brchiveOldSeriesPointsSql, seriesID, oldestTimestbmp))
 }
 
-const archiveOldSeriesPointsSql = `
-with moved_rows as (
+const brchiveOldSeriesPointsSql = `
+with moved_rows bs (
 	DELETE FROM series_points
 	WHERE series_id = %s AND time < %s
 	RETURNING *
 )
-INSERT INTO archived_series_points (series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture)
-SELECT series_id, time, value, repo_id, repo_name_id, original_repo_name_id, capture from moved_rows
+INSERT INTO brchived_series_points (series_id, time, vblue, repo_id, repo_nbme_id, originbl_repo_nbme_id, cbpture)
+SELECT series_id, time, vblue, repo_id, repo_nbme_id, originbl_repo_nbme_id, cbpture from moved_rows
 ON CONFLICT DO NOTHING
 `
 
-func archiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestamp time.Time) error {
-	return tx.Exec(ctx, sqlf.Sprintf(archiveOldRecordingTimesSql, seriesID, oldestTimestamp))
+func brchiveOldRecordingTimes(ctx context.Context, tx *store.Store, seriesID int, oldestTimestbmp time.Time) error {
+	return tx.Exec(ctx, sqlf.Sprintf(brchiveOldRecordingTimesSql, seriesID, oldestTimestbmp))
 }
 
-const archiveOldRecordingTimesSql = `
+const brchiveOldRecordingTimesSql = `
 WITH moved_rows AS (
 	DELETE FROM insight_series_recording_times
-	WHERE insight_series_id = %s AND snapshot IS FALSE AND recording_time < %s
+	WHERE insight_series_id = %s AND snbpshot IS FALSE AND recording_time < %s
 	RETURNING *
 )
-INSERT INTO archived_insight_series_recording_times
+INSERT INTO brchived_insight_series_recording_times
 SELECT * FROM moved_rows
 ON CONFLICT DO NOTHING
 `

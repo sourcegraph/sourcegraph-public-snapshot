@@ -1,25 +1,25 @@
-package bg
+pbckbge bg
 
 import (
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-func DeleteOldCacheDataInRedis() {
-	for _, kv := range []redispool.KeyValue{redispool.Store, redispool.Cache} {
+func DeleteOldCbcheDbtbInRedis() {
+	for _, kv := rbnge []redispool.KeyVblue{redispool.Store, redispool.Cbche} {
 		pool, ok := kv.Pool()
-		if !ok { // redis disabled, nothing to delete
+		if !ok { // redis disbbled, nothing to delete
 			continue
 		}
 
 		c := pool.Get()
 		defer c.Close()
 
-		err := rcache.DeleteOldCacheData(c)
+		err := rcbche.DeleteOldCbcheDbtb(c)
 		if err != nil {
-			log15.Error("Unable to delete old cache data in redis search. Please report this issue.", "error", err)
+			log15.Error("Unbble to delete old cbche dbtb in redis sebrch. Plebse report this issue.", "error", err)
 			return
 		}
 	}

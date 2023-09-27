@@ -1,16 +1,16 @@
-package srcprometheus
+pbckbge srcprometheus
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-type AlertsStatus struct {
-	Warning          int `json:"warning"`
+type AlertsStbtus struct {
+	Wbrning          int `json:"wbrning"`
 	Silenced         int `json:"silenced"`
-	Critical         int `json:"critical"`
-	ServicesCritical int `json:"services_critical"`
+	Criticbl         int `json:"criticbl"`
+	ServicesCriticbl int `json:"services_criticbl"`
 }
 
-type ConfigStatus struct {
+type ConfigStbtus struct {
 	Problems conf.Problems `json:"problems"`
 }

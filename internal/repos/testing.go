@@ -1,18 +1,18 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewFakeSourcer returns a Sourcer which always returns the given error and source,
-// ignoring the given external services.
-func NewFakeSourcer(err error, src Source) Sourcer {
-	return func(ctc context.Context, svc *types.ExternalService) (Source, error) {
+// NewFbkeSourcer returns b Sourcer which blwbys returns the given error bnd source,
+// ignoring the given externbl services.
+func NewFbkeSourcer(err error, src Source) Sourcer {
+	return func(ctc context.Context, svc *types.ExternblService) (Source, error) {
 		if err != nil {
 			return nil, &SourceError{Err: err, ExtSvc: svc}
 		}
@@ -20,46 +20,46 @@ func NewFakeSourcer(err error, src Source) Sourcer {
 	}
 }
 
-// FakeSource is a fake implementation of Source to be used in tests.
-type FakeSource struct {
-	svc           *types.ExternalService
+// FbkeSource is b fbke implementbtion of Source to be used in tests.
+type FbkeSource struct {
+	svc           *types.ExternblService
 	repos         []*types.Repo
 	err           error
 	connectionErr error
 
-	// ListRepos will send on this channel if it's not nil and wait on the channel
-	// again before quitting. This can help with testing certain concurrent situation
+	// ListRepos will send on this chbnnel if it's not nil bnd wbit on the chbnnel
+	// bgbin before quitting. This cbn help with testing certbin concurrent situbtion
 	// in tests.
-	lockChan chan struct{}
+	lockChbn chbn struct{}
 }
 
-// NewFakeSource returns an instance of FakeSource with the given urn, error
-// and repos.
-func NewFakeSource(svc *types.ExternalService, err error, rs ...*types.Repo) *FakeSource {
-	return &FakeSource{svc: svc, err: err, repos: rs}
+// NewFbkeSource returns bn instbnce of FbkeSource with the given urn, error
+// bnd repos.
+func NewFbkeSource(svc *types.ExternblService, err error, rs ...*types.Repo) *FbkeSource {
+	return &FbkeSource{svc: svc, err: err, repos: rs}
 }
 
-// InitLockChan creates a non nil lock channel and returns it
-func (s *FakeSource) InitLockChan() chan struct{} {
-	s.lockChan = make(chan struct{})
-	return s.lockChan
+// InitLockChbn crebtes b non nil lock chbnnel bnd returns it
+func (s *FbkeSource) InitLockChbn() chbn struct{} {
+	s.lockChbn = mbke(chbn struct{})
+	return s.lockChbn
 }
 
-func (s *FakeSource) Unavailable() *FakeSource {
-	s.connectionErr = errors.New("fake source unavailable")
+func (s *FbkeSource) Unbvbilbble() *FbkeSource {
+	s.connectionErr = errors.New("fbke source unbvbilbble")
 	return s
 }
 
-func (s *FakeSource) CheckConnection(ctx context.Context) error {
+func (s *FbkeSource) CheckConnection(ctx context.Context) error {
 	return s.connectionErr
 }
 
-// ListRepos returns the Repos that FakeSource was instantiated with
-// as well as the error, if any.
-func (s *FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	if s.lockChan != nil {
-		s.lockChan <- struct{}{}
-		<-s.lockChan
+// ListRepos returns the Repos thbt FbkeSource wbs instbntibted with
+// bs well bs the error, if bny.
+func (s *FbkeSource) ListRepos(ctx context.Context, results chbn SourceResult) {
+	if s.lockChbn != nil {
+		s.lockChbn <- struct{}{}
+		<-s.lockChbn
 	}
 
 	if s.err != nil {
@@ -67,14 +67,14 @@ func (s *FakeSource) ListRepos(ctx context.Context, results chan SourceResult) {
 		return
 	}
 
-	for _, r := range s.repos {
+	for _, r := rbnge s.repos {
 		results <- SourceResult{Source: s, Repo: r.With(typestest.Opt.RepoSources(s.svc.URN()))}
 	}
 }
 
-func (s *FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, error) {
-	for _, r := range s.repos {
-		if strings.HasSuffix(string(r.Name), name) {
+func (s *FbkeSource) GetRepo(ctx context.Context, nbme string) (*types.Repo, error) {
+	for _, r := rbnge s.repos {
+		if strings.HbsSuffix(string(r.Nbme), nbme) {
 			return r, s.err
 		}
 	}
@@ -86,31 +86,31 @@ func (s *FakeSource) GetRepo(ctx context.Context, name string) (*types.Repo, err
 	return nil, s.err
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s *FakeSource) ExternalServices() types.ExternalServices {
-	return types.ExternalServices{s.svc}
+// ExternblServices returns b singleton slice contbining the externbl service.
+func (s *FbkeSource) ExternblServices() types.ExternblServices {
+	return types.ExternblServices{s.svc}
 }
 
-func (s *FakeDiscoverableSource) ListNamespaces(ctx context.Context, results chan SourceNamespaceResult) {
-	if s.lockChan != nil {
-		s.lockChan <- struct{}{}
-		<-s.lockChan
+func (s *FbkeDiscoverbbleSource) ListNbmespbces(ctx context.Context, results chbn SourceNbmespbceResult) {
+	if s.lockChbn != nil {
+		s.lockChbn <- struct{}{}
+		<-s.lockChbn
 	}
 
 	if s.err != nil {
-		results <- SourceNamespaceResult{Source: s, Err: s.err}
+		results <- SourceNbmespbceResult{Source: s, Err: s.err}
 		return
 	}
 
-	for _, n := range s.namespaces {
-		results <- SourceNamespaceResult{Source: s, Namespace: &types.ExternalServiceNamespace{ID: n.ID, Name: n.Name, ExternalID: n.ExternalID}}
+	for _, n := rbnge s.nbmespbces {
+		results <- SourceNbmespbceResult{Source: s, Nbmespbce: &types.ExternblServiceNbmespbce{ID: n.ID, Nbme: n.Nbme, ExternblID: n.ExternblID}}
 	}
 }
 
-func (s *FakeDiscoverableSource) SearchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chan SourceResult) {
-	if s.lockChan != nil {
-		s.lockChan <- struct{}{}
-		<-s.lockChan
+func (s *FbkeDiscoverbbleSource) SebrchRepositories(ctx context.Context, query string, first int, excludedRepos []string, results chbn SourceResult) {
+	if s.lockChbn != nil {
+		s.lockChbn <- struct{}{}
+		<-s.lockChbn
 	}
 
 	if s.err != nil {
@@ -118,21 +118,21 @@ func (s *FakeDiscoverableSource) SearchRepositories(ctx context.Context, query s
 		return
 	}
 
-	for _, r := range s.repos {
+	for _, r := rbnge s.repos {
 		results <- SourceResult{Source: s, Repo: r}
 	}
 }
 
-// FakeDiscoverableSource is a fake implementation of DiscoverableSource to be used in tests.
-type FakeDiscoverableSource struct {
-	*FakeSource
-	namespaces []*types.ExternalServiceNamespace
+// FbkeDiscoverbbleSource is b fbke implementbtion of DiscoverbbleSource to be used in tests.
+type FbkeDiscoverbbleSource struct {
+	*FbkeSource
+	nbmespbces []*types.ExternblServiceNbmespbce
 }
 
-// NewFakeDiscoverableSource returns an instance of FakeDiscoverableSource with the given namespaces.
-func NewFakeDiscoverableSource(fs *FakeSource, connectionErr bool, ns ...*types.ExternalServiceNamespace) *FakeDiscoverableSource {
+// NewFbkeDiscoverbbleSource returns bn instbnce of FbkeDiscoverbbleSource with the given nbmespbces.
+func NewFbkeDiscoverbbleSource(fs *FbkeSource, connectionErr bool, ns ...*types.ExternblServiceNbmespbce) *FbkeDiscoverbbleSource {
 	if connectionErr {
-		fs.Unavailable()
+		fs.Unbvbilbble()
 	}
-	return &FakeDiscoverableSource{FakeSource: fs, namespaces: ns}
+	return &FbkeDiscoverbbleSource{FbkeSource: fs, nbmespbces: ns}
 }

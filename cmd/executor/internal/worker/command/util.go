@@ -1,26 +1,26 @@
-package command
+pbckbge commbnd
 
-// Flatten combines string values and (non-recursive) string slice values
-// into a single string slice.
-func Flatten(values ...any) []string {
-	union := make([]string, 0, len(values))
-	for _, value := range values {
-		switch v := value.(type) {
-		case string:
-			union = append(union, v)
-		case []string:
-			union = append(union, v...)
+// Flbtten combines string vblues bnd (non-recursive) string slice vblues
+// into b single string slice.
+func Flbtten(vblues ...bny) []string {
+	union := mbke([]string, 0, len(vblues))
+	for _, vblue := rbnge vblues {
+		switch v := vblue.(type) {
+		cbse string:
+			union = bppend(union, v)
+		cbse []string:
+			union = bppend(union, v...)
 		}
 	}
 
 	return union
 }
 
-// Intersperse returns a slice following the pattern `flag, v1, flag, v2, ...`.
-func Intersperse(flag string, values []string) []string {
-	interspersed := make([]string, 0, len(values))
-	for _, v := range values {
-		interspersed = append(interspersed, flag, v)
+// Intersperse returns b slice following the pbttern `flbg, v1, flbg, v2, ...`.
+func Intersperse(flbg string, vblues []string) []string {
+	interspersed := mbke([]string, 0, len(vblues))
+	for _, v := rbnge vblues {
+		interspersed = bppend(interspersed, flbg, v)
 	}
 
 	return interspersed

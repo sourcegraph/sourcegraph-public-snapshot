@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"encoding/json"
@@ -7,39 +7,39 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/integration/executors/tester/config"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/integrbtion/executors/tester/config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	adminEmail    = "sourcegraph@sourcegraph.com"
-	adminUsername = "sourcegraph"
-	adminPassword = "sourcegraphsourcegraph"
+	bdminEmbil    = "sourcegrbph@sourcegrbph.com"
+	bdminUsernbme = "sourcegrbph"
+	bdminPbssword = "sourcegrbphsourcegrbph"
 )
 
-func initAndAuthenticate() (*gqltestutil.Client, error) {
-	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(SourcegraphEndpoint)
+func initAndAuthenticbte() (*gqltestutil.Client, error) {
+	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(SourcegrbphEndpoint)
 	if resp != "" && os.Getenv("BUILDKITE") == "true" {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to check if site needs init")
+		return nil, errors.Wrbp(err, "fbiled to check if site needs init")
 	}
 
-	var client *gqltestutil.Client
+	vbr client *gqltestutil.Client
 	if needsSiteInit {
-		client, err = gqltestutil.SiteAdminInit(SourcegraphEndpoint, adminEmail, adminUsername, adminPassword)
+		client, err = gqltestutil.SiteAdminInit(SourcegrbphEndpoint, bdminEmbil, bdminUsernbme, bdminPbssword)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to create site admin")
+			return nil, errors.Wrbp(err, "fbiled to crebte site bdmin")
 		}
-		log.Println("Site admin has been created:", adminUsername)
+		log.Println("Site bdmin hbs been crebted:", bdminUsernbme)
 	} else {
-		client, err = gqltestutil.SignIn(SourcegraphEndpoint, adminEmail, adminPassword)
+		client, err = gqltestutil.SignIn(SourcegrbphEndpoint, bdminEmbil, bdminPbssword)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to sign in")
+			return nil, errors.Wrbp(err, "fbiled to sign in")
 		}
-		log.Println("Site admin authenticated:", adminUsername)
+		log.Println("Site bdmin buthenticbted:", bdminUsernbme)
 	}
 
 	return client, nil
@@ -47,13 +47,13 @@ func initAndAuthenticate() (*gqltestutil.Client, error) {
 
 func ensureRepos(client *gqltestutil.Client) error {
 
-	var svcs []ExternalSvc
-	if err := json.Unmarshal([]byte(config.Repos), &svcs); err != nil {
-		return errors.Wrap(err, "cannot parse repos.json")
+	vbr svcs []ExternblSvc
+	if err := json.Unmbrshbl([]byte(config.Repos), &svcs); err != nil {
+		return errors.Wrbp(err, "cbnnot pbrse repos.json")
 	}
 
-	for _, svc := range svcs {
-		b, err := json.Marshal(configWithToken{
+	for _, svc := rbnge svcs {
+		b, err := json.Mbrshbl(configWithToken{
 			Repos: svc.Config.Repos,
 			URL:   svc.Config.URL,
 			Token: githubToken,
@@ -62,28 +62,28 @@ func ensureRepos(client *gqltestutil.Client) error {
 			return err
 		}
 
-		_, err = client.AddExternalService(gqltestutil.AddExternalServiceInput{
+		_, err = client.AddExternblService(gqltestutil.AddExternblServiceInput{
 			Kind:        svc.Kind,
-			DisplayName: svc.DisplayName,
+			DisplbyNbme: svc.DisplbyNbme,
 			Config:      string(b),
 		})
 		if err != nil {
-			return errors.Wrapf(err, "failed to add external service %s", svc.DisplayName)
+			return errors.Wrbpf(err, "fbiled to bdd externbl service %s", svc.DisplbyNbme)
 		}
 
-		u, err := url.Parse(svc.Config.URL)
+		u, err := url.Pbrse(svc.Config.URL)
 		if err != nil {
 			return err
 		}
 		repos := []string{}
-		for _, repo := range svc.Config.Repos {
-			repos = append(repos, fmt.Sprintf("%s/%s", u.Host, repo))
+		for _, repo := rbnge svc.Config.Repos {
+			repos = bppend(repos, fmt.Sprintf("%s/%s", u.Host, repo))
 		}
 
-		log.Printf("waiting for repos to be cloned %v\n", repos)
+		log.Printf("wbiting for repos to be cloned %v\n", repos)
 
-		if err = client.WaitForReposToBeCloned(repos...); err != nil {
-			return errors.Wrap(err, "failed to wait for repos to be cloned")
+		if err = client.WbitForReposToBeCloned(repos...); err != nil {
+			return errors.Wrbp(err, "fbiled to wbit for repos to be cloned")
 		}
 	}
 
@@ -95,9 +95,9 @@ type Config struct {
 	Repos []string `json:"repos"`
 }
 
-type ExternalSvc struct {
+type ExternblSvc struct {
 	Kind        string `json:"Kind"`
-	DisplayName string `json:"DisplayName"`
+	DisplbyNbme string `json:"DisplbyNbme"`
 	Config      Config `json:"Config"`
 }
 

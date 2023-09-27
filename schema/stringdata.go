@@ -1,106 +1,106 @@
-package schema
+pbckbge schemb
 
 import _ "embed"
 
-// AWSCodeCommitSchemaJSON is the content of the file "aws_codecommit.schema.json".
+// AWSCodeCommitSchembJSON is the content of the file "bws_codecommit.schemb.json".
 //
-//go:embed aws_codecommit.schema.json
-var AWSCodeCommitSchemaJSON string
+//go:embed bws_codecommit.schemb.json
+vbr AWSCodeCommitSchembJSON string
 
-// AzureDevOpsSchemaJSON is the content of the file "azuredevops.schema.json".
+// AzureDevOpsSchembJSON is the content of the file "bzuredevops.schemb.json".
 //
-//go:embed azuredevops.schema.json
-var AzureDevOpsSchemaJSON string
+//go:embed bzuredevops.schemb.json
+vbr AzureDevOpsSchembJSON string
 
-// BatchSpecSchemaJSON is the content of the file "batch_spec.schema.json".
+// BbtchSpecSchembJSON is the content of the file "bbtch_spec.schemb.json".
 //
-//go:embed batch_spec.schema.json
-var BatchSpecSchemaJSON string
+//go:embed bbtch_spec.schemb.json
+vbr BbtchSpecSchembJSON string
 
-// BitbucketCloudSchemaJSON is the content of the file "bitbucket_cloud.schema.json".
+// BitbucketCloudSchembJSON is the content of the file "bitbucket_cloud.schemb.json".
 //
-//go:embed bitbucket_cloud.schema.json
-var BitbucketCloudSchemaJSON string
+//go:embed bitbucket_cloud.schemb.json
+vbr BitbucketCloudSchembJSON string
 
-// BitbucketServerSchemaJSON is the content of the file "bitbucket_server.schema.json".
+// BitbucketServerSchembJSON is the content of the file "bitbucket_server.schemb.json".
 //
-//go:embed bitbucket_server.schema.json
-var BitbucketServerSchemaJSON string
+//go:embed bitbucket_server.schemb.json
+vbr BitbucketServerSchembJSON string
 
-// ChangesetSpecSchemaJSON is the content of the file "changeset_spec.schema.json".
+// ChbngesetSpecSchembJSON is the content of the file "chbngeset_spec.schemb.json".
 //
-//go:embed changeset_spec.schema.json
-var ChangesetSpecSchemaJSON string
+//go:embed chbngeset_spec.schemb.json
+vbr ChbngesetSpecSchembJSON string
 
-// GerritSchemaJSON is the content of the file "gerrit.schema.json".
+// GerritSchembJSON is the content of the file "gerrit.schemb.json".
 //
-//go:embed gerrit.schema.json
-var GerritSchemaJSON string
+//go:embed gerrit.schemb.json
+vbr GerritSchembJSON string
 
-// GitHubSchemaJSON is the content of the file "github.schema.json".
+// GitHubSchembJSON is the content of the file "github.schemb.json".
 //
-//go:embed github.schema.json
-var GitHubSchemaJSON string
+//go:embed github.schemb.json
+vbr GitHubSchembJSON string
 
-// GitLabSchemaJSON is the content of the file "gitlab.schema.json".
+// GitLbbSchembJSON is the content of the file "gitlbb.schemb.json".
 //
-//go:embed gitlab.schema.json
-var GitLabSchemaJSON string
+//go:embed gitlbb.schemb.json
+vbr GitLbbSchembJSON string
 
-// GitoliteSchemaJSON is the content of the file "gitolite.schema.json".
+// GitoliteSchembJSON is the content of the file "gitolite.schemb.json".
 //
-//go:embed gitolite.schema.json
-var GitoliteSchemaJSON string
+//go:embed gitolite.schemb.json
+vbr GitoliteSchembJSON string
 
-//go:embed go-modules.schema.json
-var GoModulesSchemaJSON string
+//go:embed go-modules.schemb.json
+vbr GoModulesSchembJSON string
 
-//go:embed jvm-packages.schema.json
-var JVMPackagesSchemaJSON string
+//go:embed jvm-pbckbges.schemb.json
+vbr JVMPbckbgesSchembJSON string
 
-//go:embed npm-packages.schema.json
-var NpmPackagesSchemaJSON string
+//go:embed npm-pbckbges.schemb.json
+vbr NpmPbckbgesSchembJSON string
 
-//go:embed python-packages.schema.json
-var PythonPackagesSchemaJSON string
+//go:embed python-pbckbges.schemb.json
+vbr PythonPbckbgesSchembJSON string
 
-//go:embed rust-packages.schema.json
-var RustPackagesSchemaJSON string
+//go:embed rust-pbckbges.schemb.json
+vbr RustPbckbgesSchembJSON string
 
-//go:embed ruby-packages.schema.json
-var RubyPackagesSchemaJSON string
+//go:embed ruby-pbckbges.schemb.json
+vbr RubyPbckbgesSchembJSON string
 
-// OtherExternalServiceSchemaJSON is the content of the file "other_external_service.schema.json".
+// OtherExternblServiceSchembJSON is the content of the file "other_externbl_service.schemb.json".
 //
-//go:embed other_external_service.schema.json
-var OtherExternalServiceSchemaJSON string
+//go:embed other_externbl_service.schemb.json
+vbr OtherExternblServiceSchembJSON string
 
-// LocalGitExternalServiceSchemaJSON is the content of the file "localgit.schema.json".
+// LocblGitExternblServiceSchembJSON is the content of the file "locblgit.schemb.json".
 //
-//go:embed localgit.schema.json
-var LocalGitExternalServiceSchemaJSON string
+//go:embed locblgit.schemb.json
+vbr LocblGitExternblServiceSchembJSON string
 
-// PerforceSchemaJSON is the content of the file "perforce.schema.json".
+// PerforceSchembJSON is the content of the file "perforce.schemb.json".
 //
-//go:embed perforce.schema.json
-var PerforceSchemaJSON string
+//go:embed perforce.schemb.json
+vbr PerforceSchembJSON string
 
-// PhabricatorSchemaJSON is the content of the file "phabricator.schema.json".
+// PhbbricbtorSchembJSON is the content of the file "phbbricbtor.schemb.json".
 //
-//go:embed phabricator.schema.json
-var PhabricatorSchemaJSON string
+//go:embed phbbricbtor.schemb.json
+vbr PhbbricbtorSchembJSON string
 
-// PagureSchemaJSON is the content of the file "pagure.schema.json".
+// PbgureSchembJSON is the content of the file "pbgure.schemb.json".
 //
-//go:embed pagure.schema.json
-var PagureSchemaJSON string
+//go:embed pbgure.schemb.json
+vbr PbgureSchembJSON string
 
-// SettingsSchemaJSON is the content of the file "settings.schema.json".
+// SettingsSchembJSON is the content of the file "settings.schemb.json".
 //
-//go:embed settings.schema.json
-var SettingsSchemaJSON string
+//go:embed settings.schemb.json
+vbr SettingsSchembJSON string
 
-// SiteSchemaJSON is the content of the file "site.schema.json".
+// SiteSchembJSON is the content of the file "site.schemb.json".
 //
-//go:embed site.schema.json
-var SiteSchemaJSON string
+//go:embed site.schemb.json
+vbr SiteSchembJSON string

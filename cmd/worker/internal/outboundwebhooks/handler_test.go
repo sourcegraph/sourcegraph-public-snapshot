@@ -1,4 +1,4 @@
-package outboundwebhooks
+pbckbge outboundwebhooks
 
 import (
 	"context"
@@ -6,151 +6,151 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHandler_Handle(t *testing.T) {
-	// This isn't a full blown integration test — we're going to mock pretty
-	// much all the dependencies. This is just to ensure that the expected knobs
-	// are twiddled in the expected scenarios.
+func TestHbndler_Hbndle(t *testing.T) {
+	// This isn't b full blown integrbtion test — we're going to mock pretty
+	// much bll the dependencies. This is just to ensure thbt the expected knobs
+	// bre twiddled in the expected scenbrios.
 
 	t.Run("success", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := context.Bbckground()
 		logger := logtest.Scoped(t)
 
-		payload := []byte(`"test payload"`)
-		secret := "shared secret"
+		pbylobd := []byte(`"test pbylobd"`)
+		secret := "shbred secret"
 
-		happyServer := newMockServer(t, payload, http.StatusOK)
-		sadServer := newMockServer(t, payload, http.StatusInternalServerError)
+		hbppyServer := newMockServer(t, pbylobd, http.StbtusOK)
+		sbdServer := newMockServer(t, pbylobd, http.StbtusInternblServerError)
 
 		job := &types.OutboundWebhookJob{
 			ID:        1,
 			EventType: "event",
-			Payload:   encryption.NewUnencrypted(string(payload)),
+			Pbylobd:   encryption.NewUnencrypted(string(pbylobd)),
 		}
 
-		happyWebhook := &types.OutboundWebhook{
+		hbppyWebhook := &types.OutboundWebhook{
 			ID:     1,
-			URL:    encryption.NewUnencrypted(happyServer.URL),
+			URL:    encryption.NewUnencrypted(hbppyServer.URL),
 			Secret: encryption.NewUnencrypted(secret),
 		}
-		sadWebhook := &types.OutboundWebhook{
+		sbdWebhook := &types.OutboundWebhook{
 			ID:     2,
-			URL:    encryption.NewUnencrypted(sadServer.URL),
+			URL:    encryption.NewUnencrypted(sbdServer.URL),
 			Secret: encryption.NewUnencrypted(secret),
 		}
 
 		store := dbmocks.NewMockOutboundWebhookStore()
-		store.ListFunc.SetDefaultReturn([]*types.OutboundWebhook{happyWebhook, sadWebhook}, nil)
+		store.ListFunc.SetDefbultReturn([]*types.OutboundWebhook{hbppyWebhook, sbdWebhook}, nil)
 
 		logStore := dbmocks.NewMockOutboundWebhookLogStore()
 		webhooksSeen := newSeen[int64]()
-		logStore.CreateFunc.SetDefaultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
-			assert.Equal(t, job.ID, log.JobID)
+		logStore.CrebteFunc.SetDefbultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
+			bssert.Equbl(t, job.ID, log.JobID)
 			webhooksSeen.record(log.OutboundWebhookID)
 
-			// Ensure that the network error field is empty.
-			errorMessage, err := log.Error.Decrypt(ctx)
+			// Ensure thbt the network error field is empty.
+			errorMessbge, err := log.Error.Decrypt(ctx)
 			require.NoError(t, err)
-			assert.Empty(t, errorMessage)
+			bssert.Empty(t, errorMessbge)
 
-			// For the sadWebhook, we'll simulate a log write failure to ensure
-			// that the handler still completes.
-			if log.OutboundWebhookID == sadWebhook.ID {
-				assert.EqualValues(t, http.StatusInternalServerError, log.StatusCode)
+			// For the sbdWebhook, we'll simulbte b log write fbilure to ensure
+			// thbt the hbndler still completes.
+			if log.OutboundWebhookID == sbdWebhook.ID {
+				bssert.EqublVblues(t, http.StbtusInternblServerError, log.StbtusCode)
 				return errors.New("no log for you!")
 			}
 
-			assert.EqualValues(t, http.StatusOK, log.StatusCode)
+			bssert.EqublVblues(t, http.StbtusOK, log.StbtusCode)
 			return nil
 		})
 
-		h := &handler{
-			client:   http.DefaultClient,
+		h := &hbndler{
+			client:   http.DefbultClient,
 			store:    store,
 			logStore: logStore,
 		}
 
-		err := h.Handle(ctx, logger, job)
-		// We expect an error here because sadServer returned a 500.
-		assert.Error(t, err)
+		err := h.Hbndle(ctx, logger, job)
+		// We expect bn error here becbuse sbdServer returned b 500.
+		bssert.Error(t, err)
 
-		mockassert.CalledN(t, store.ListFunc, 1)
-		mockassert.CalledN(t, logStore.CreateFunc, 2)
+		mockbssert.CblledN(t, store.ListFunc, 1)
+		mockbssert.CblledN(t, logStore.CrebteFunc, 2)
 
-		assert.EqualValues(t, 1, happyServer.requestCount)
-		assert.EqualValues(t, 1, sadServer.requestCount)
+		bssert.EqublVblues(t, 1, hbppyServer.requestCount)
+		bssert.EqublVblues(t, 1, sbdServer.requestCount)
 
-		assert.EqualValues(t, 1, webhooksSeen.count(happyWebhook.ID))
-		assert.EqualValues(t, 1, webhooksSeen.count(sadWebhook.ID))
+		bssert.EqublVblues(t, 1, webhooksSeen.count(hbppyWebhook.ID))
+		bssert.EqublVblues(t, 1, webhooksSeen.count(sbdWebhook.ID))
 	})
 
-	t.Run("network failure", func(t *testing.T) {
-		ctx := context.Background()
+	t.Run("network fbilure", func(t *testing.T) {
+		ctx := context.Bbckground()
 		logger := logtest.Scoped(t)
 
-		payload := []byte(`"test payload"`)
-		secret := "shared secret"
+		pbylobd := []byte(`"test pbylobd"`)
+		secret := "shbred secret"
 
 		job := &types.OutboundWebhookJob{
 			ID:        1,
 			EventType: "event",
-			Payload:   encryption.NewUnencrypted(string(payload)),
+			Pbylobd:   encryption.NewUnencrypted(string(pbylobd)),
 		}
 
 		webhook := &types.OutboundWebhook{
 			ID:     1,
-			URL:    encryption.NewUnencrypted("http://sourcegraph.com/webhook-receiver/1234"),
+			URL:    encryption.NewUnencrypted("http://sourcegrbph.com/webhook-receiver/1234"),
 			Secret: encryption.NewUnencrypted(secret),
 		}
 
 		store := dbmocks.NewMockOutboundWebhookStore()
-		store.ListFunc.SetDefaultReturn([]*types.OutboundWebhook{webhook}, nil)
+		store.ListFunc.SetDefbultReturn([]*types.OutboundWebhook{webhook}, nil)
 
-		want := errors.New("connection error")
+		wbnt := errors.New("connection error")
 
 		logStore := dbmocks.NewMockOutboundWebhookLogStore()
-		logStore.CreateFunc.SetDefaultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
-			have, err := log.Error.Decrypt(ctx)
+		logStore.CrebteFunc.SetDefbultHook(func(ctx context.Context, log *types.OutboundWebhookLog) error {
+			hbve, err := log.Error.Decrypt(ctx)
 			require.NoError(t, err)
-			assert.Contains(t, have, want.Error())
+			bssert.Contbins(t, hbve, wbnt.Error())
 
 			return nil
 		})
 
-		h := &handler{
-			client:   &http.Client{Transport: &badTransport{Err: want}},
+		h := &hbndler{
+			client:   &http.Client{Trbnsport: &bbdTrbnsport{Err: wbnt}},
 			store:    store,
 			logStore: logStore,
 		}
 
-		err := h.Handle(ctx, logger, job)
-		assert.ErrorIs(t, err, want)
+		err := h.Hbndle(ctx, logger, job)
+		bssert.ErrorIs(t, err, wbnt)
 
-		mockassert.CalledN(t, store.ListFunc, 1)
-		mockassert.CalledN(t, logStore.CreateFunc, 1)
+		mockbssert.CblledN(t, store.ListFunc, 1)
+		mockbssert.CblledN(t, logStore.CrebteFunc, 1)
 	})
 }
 
-type badTransport struct {
+type bbdTrbnsport struct {
 	Err error
 }
 
-var _ http.RoundTripper = &badTransport{}
+vbr _ http.RoundTripper = &bbdTrbnsport{}
 
-func (t *badTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+func (t *bbdTrbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return nil, t.Err
 }
 
@@ -159,45 +159,45 @@ type mockServer struct {
 	requestCount int32
 }
 
-func newMockServer(t *testing.T, expectedPayload []byte, statusCode int) *mockServer {
+func newMockServer(t *testing.T, expectedPbylobd []byte, stbtusCode int) *mockServer {
 	t.Helper()
 
 	ms := &mockServer{}
-	ms.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		atomic.AddInt32(&ms.requestCount, 1)
+	ms.Server = httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		btomic.AddInt32(&ms.requestCount, 1)
 
-		body, err := io.ReadAll(r.Body)
+		body, err := io.RebdAll(r.Body)
 		require.NoError(t, err)
-		assert.Equal(t, expectedPayload, body)
+		bssert.Equbl(t, expectedPbylobd, body)
 
-		w.WriteHeader(statusCode)
+		w.WriteHebder(stbtusCode)
 	}))
-	t.Cleanup(ms.Server.Close)
+	t.Clebnup(ms.Server.Close)
 
 	return ms
 }
 
-type seen[T comparable] struct {
+type seen[T compbrbble] struct {
 	mu   sync.RWMutex
-	seen map[T]int
+	seen mbp[T]int
 }
 
-func newSeen[T comparable]() *seen[T] {
+func newSeen[T compbrbble]() *seen[T] {
 	return &seen[T]{
-		seen: map[T]int{},
+		seen: mbp[T]int{},
 	}
 }
 
-func (s *seen[T]) count(value T) int {
+func (s *seen[T]) count(vblue T) int {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	return s.seen[value]
+	return s.seen[vblue]
 }
 
-func (s *seen[T]) record(value T) {
+func (s *seen[T]) record(vblue T) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.seen[value] = s.seen[value] + 1
+	s.seen[vblue] = s.seen[vblue] + 1
 }

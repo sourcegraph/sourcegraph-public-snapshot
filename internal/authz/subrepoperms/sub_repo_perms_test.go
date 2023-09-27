@@ -1,4 +1,4 @@
-package subrepoperms
+pbckbge subrepoperms
 
 import (
 	"context"
@@ -7,222 +7,222 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestSubRepoPermsPermissions(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SubRepoPermissions: &schemb.SubRepoPermissions{
+					Enbbled: true,
 				},
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
-	testCases := []struct {
-		name     string
+	testCbses := []struct {
+		nbme     string
 		userID   int32
-		content  authz.RepoContent
+		content  buthz.RepoContent
 		clientFn func() (*SubRepoPermsClient, error)
-		want     authz.Perms
+		wbnt     buthz.Perms
 	}{
 		{
-			name:   "Empty path",
+			nbme:   "Empty pbth",
 			userID: 1,
-			content: authz.RepoContent{
-				Repo: "sample",
-				Path: "",
+			content: buthz.RepoContent{
+				Repo: "sbmple",
+				Pbth: "",
 			},
 			clientFn: func() (*SubRepoPermsClient, error) {
 				return NewSubRepoPermsClient(NewMockSubRepoPermissionsGetter())
 			},
-			want: authz.Read,
+			wbnt: buthz.Rebd,
 		},
 		{
-			name:   "No rules",
+			nbme:   "No rules",
 			userID: 1,
-			content: authz.RepoContent{
-				Repo: "sample",
-				Path: "/dev/thing",
+			content: buthz.RepoContent{
+				Repo: "sbmple",
+				Pbth: "/dev/thing",
 			},
 			clientFn: func() (*SubRepoPermsClient, error) {
 				getter := NewMockSubRepoPermissionsGetter()
-				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-					return map[api.RepoName]authz.SubRepoPermissions{
-						"sample": {
-							Paths: []string{},
+				getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+					return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+						"sbmple": {
+							Pbths: []string{},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
-			want: authz.None,
+			wbnt: buthz.None,
 		},
 		{
-			name:   "Exclude",
+			nbme:   "Exclude",
 			userID: 1,
-			content: authz.RepoContent{
-				Repo: "sample",
-				Path: "/dev/thing",
+			content: buthz.RepoContent{
+				Repo: "sbmple",
+				Pbth: "/dev/thing",
 			},
 			clientFn: func() (*SubRepoPermsClient, error) {
 				getter := NewMockSubRepoPermissionsGetter()
-				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-					return map[api.RepoName]authz.SubRepoPermissions{
-						"sample": {
-							Paths: []string{"-/dev/*"},
+				getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+					return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+						"sbmple": {
+							Pbths: []string{"-/dev/*"},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
-			want: authz.None,
+			wbnt: buthz.None,
 		},
 		{
-			name:   "Include",
+			nbme:   "Include",
 			userID: 1,
-			content: authz.RepoContent{
-				Repo: "sample",
-				Path: "/dev/thing",
+			content: buthz.RepoContent{
+				Repo: "sbmple",
+				Pbth: "/dev/thing",
 			},
 			clientFn: func() (*SubRepoPermsClient, error) {
 				getter := NewMockSubRepoPermissionsGetter()
-				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-					return map[api.RepoName]authz.SubRepoPermissions{
-						"sample": {
-							Paths: []string{"/*"},
+				getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+					return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+						"sbmple": {
+							Pbths: []string{"/*"},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
-			want: authz.None,
+			wbnt: buthz.None,
 		},
 		{
-			name:   "Last rule takes precedence (exclude)",
+			nbme:   "Lbst rule tbkes precedence (exclude)",
 			userID: 1,
-			content: authz.RepoContent{
-				Repo: "sample",
-				Path: "/dev/thing",
+			content: buthz.RepoContent{
+				Repo: "sbmple",
+				Pbth: "/dev/thing",
 			},
 			clientFn: func() (*SubRepoPermsClient, error) {
 				getter := NewMockSubRepoPermissionsGetter()
-				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-					return map[api.RepoName]authz.SubRepoPermissions{
-						"sample": {
-							Paths: []string{"/**", "-/dev/*"},
+				getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+					return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+						"sbmple": {
+							Pbths: []string{"/**", "-/dev/*"},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
-			want: authz.None,
+			wbnt: buthz.None,
 		},
 		{
-			name:   "Last rule takes precedence (include)",
+			nbme:   "Lbst rule tbkes precedence (include)",
 			userID: 1,
-			content: authz.RepoContent{
-				Repo: "sample",
-				Path: "/dev/thing",
+			content: buthz.RepoContent{
+				Repo: "sbmple",
+				Pbth: "/dev/thing",
 			},
 			clientFn: func() (*SubRepoPermsClient, error) {
 				getter := NewMockSubRepoPermissionsGetter()
-				getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-					return map[api.RepoName]authz.SubRepoPermissions{
-						"sample": {
-							Paths: []string{"-/dev/*", "/**"},
+				getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+					return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+						"sbmple": {
+							Pbths: []string{"-/dev/*", "/**"},
 						},
 					}, nil
 				})
 				return NewSubRepoPermsClient(getter)
 			},
-			want: authz.Read,
+			wbnt: buthz.Rebd,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			client, err := tc.clientFn()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			have, err := client.Permissions(context.Background(), tc.userID, tc.content)
+			hbve, err := client.Permissions(context.Bbckground(), tc.userID, tc.content)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have != tc.want {
-				t.Fatalf("have %v, want %v", have, tc.want)
+			if hbve != tc.wbnt {
+				t.Fbtblf("hbve %v, wbnt %v", hbve, tc.wbnt)
 			}
 		})
 	}
 }
 
-func BenchmarkFilterActorPaths(b *testing.B) {
-	// This benchmark is simulating the code path taken by a monorepo with sub
-	// repo permissions. Our goal is to support repos with millions of files.
-	// For now we target a lower number since large numbers don't give enough
-	// runs of the benchmark to be useful.
-	const pathCount = 5_000
-	pathPatterns := []string{
-		"base/%d/foo.go",
-		"%d/stuff/baz",
-		"frontend/%d/stuff/baz/bam",
+func BenchmbrkFilterActorPbths(b *testing.B) {
+	// This benchmbrk is simulbting the code pbth tbken by b monorepo with sub
+	// repo permissions. Our gobl is to support repos with millions of files.
+	// For now we tbrget b lower number since lbrge numbers don't give enough
+	// runs of the benchmbrk to be useful.
+	const pbthCount = 5_000
+	pbthPbtterns := []string{
+		"bbse/%d/foo.go",
+		"%d/stuff/bbz",
+		"frontend/%d/stuff/bbz/bbm",
 		"subdir/sub/sub/sub/%d",
 		"%d/foo/README.md",
-		"subdir/remove/me/please/%d",
-		"subdir/%d/also-remove/me/please",
-		"a/deep/path/%d/.secrets.env",
-		"%d/does/not/match/anything",
-		"does/%d/not/match/anything",
-		"does/not/%d/match/anything",
-		"does/not/match/%d/anything",
-		"does/not/match/anything/%d",
+		"subdir/remove/me/plebse/%d",
+		"subdir/%d/blso-remove/me/plebse",
+		"b/deep/pbth/%d/.secrets.env",
+		"%d/does/not/mbtch/bnything",
+		"does/%d/not/mbtch/bnything",
+		"does/not/%d/mbtch/bnything",
+		"does/not/mbtch/%d/bnything",
+		"does/not/mbtch/bnything/%d",
 	}
-	paths := []string{
-		"config.yaml",
-		"dir.yaml",
+	pbths := []string{
+		"config.ybml",
+		"dir.ybml",
 	}
-	for i := 0; len(paths) < pathCount; i++ {
-		for _, pat := range pathPatterns {
-			paths = append(paths, fmt.Sprintf(pat, i))
+	for i := 0; len(pbths) < pbthCount; i++ {
+		for _, pbt := rbnge pbthPbtterns {
+			pbths = bppend(pbths, fmt.Sprintf(pbt, i))
 		}
 	}
-	paths = paths[:pathCount]
-	sort.Strings(paths)
+	pbths = pbths[:pbthCount]
+	sort.Strings(pbths)
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SubRepoPermissions: &schemb.SubRepoPermissions{
+					Enbbled: true,
 				},
 			},
 		},
 	})
 	defer conf.Mock(nil)
-	repo := api.RepoName("repo")
+	repo := bpi.RepoNbme("repo")
 
 	getter := NewMockSubRepoPermissionsGetter()
-	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-		return map[api.RepoName]authz.SubRepoPermissions{
+	getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+		return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
 			repo: {
-				Paths: []string{
-					"/base/**",
+				Pbths: []string{
+					"/bbse/**",
 					"/*/stuff/**",
 					"/frontend/**/stuff/*",
-					"/config.yaml",
+					"/config.ybml",
 					"/subdir/**",
 					"/**/README.md",
-					"/dir.yaml",
+					"/dir.ybml",
 					"-/subdir/remove/",
-					"-/subdir/*/also-remove/**",
+					"-/subdir/*/blso-remove/**",
 					"-/**/.secrets.env",
 				},
 			},
@@ -230,201 +230,201 @@ func BenchmarkFilterActorPaths(b *testing.B) {
 	})
 	checker, err := NewSubRepoPermsClient(getter)
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
-	a := &actor.Actor{
+	b := &bctor.Actor{
 		UID: 1,
 	}
-	ctx := actor.WithActor(context.Background(), a)
+	ctx := bctor.WithActor(context.Bbckground(), b)
 
 	b.ResetTimer()
-	start := time.Now()
+	stbrt := time.Now()
 
 	for n := 0; n <= b.N; n++ {
-		filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
+		filtered, err := buthz.FilterActorPbths(ctx, checker, b, repo, pbths)
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 		if len(filtered) == 0 {
-			b.Fatal("expected paths to be returned")
+			b.Fbtbl("expected pbths to be returned")
 		}
-		if len(filtered) == len(paths) {
-			b.Fatal("expected to filter out some paths")
+		if len(filtered) == len(pbths) {
+			b.Fbtbl("expected to filter out some pbths")
 		}
 	}
 
-	b.ReportMetric(float64(len(paths))*float64(b.N)/time.Since(start).Seconds(), "paths/s")
+	b.ReportMetric(flobt64(len(pbths))*flobt64(b.N)/time.Since(stbrt).Seconds(), "pbths/s")
 }
 
-func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
+func TestSubRepoPermissionsCbnRebdDirectoriesInPbth(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SubRepoPermissions: &schemb.SubRepoPermissions{
+					Enbbled: true,
 				},
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
-	repoName := api.RepoName("repo")
+	t.Clebnup(func() { conf.Mock(nil) })
+	repoNbme := bpi.RepoNbme("repo")
 
-	testCases := []struct {
-		paths         []string
-		canReadAll    []string
-		cannotReadAny []string
+	testCbses := []struct {
+		pbths         []string
+		cbnRebdAll    []string
+		cbnnotRebdAny []string
 	}{
 		{
-			paths:         []string{"foo/bar/thing.txt"},
-			canReadAll:    []string{"foo/", "foo/bar/"},
-			cannotReadAny: []string{"foo/thing.txt", "foo/bar/other.txt"},
+			pbths:         []string{"foo/bbr/thing.txt"},
+			cbnRebdAll:    []string{"foo/", "foo/bbr/"},
+			cbnnotRebdAny: []string{"foo/thing.txt", "foo/bbr/other.txt"},
 		},
 		{
-			paths:      []string{"foo/bar/**"},
-			canReadAll: []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
+			pbths:      []string{"foo/bbr/**"},
+			cbnRebdAll: []string{"foo/", "foo/bbr/", "foo/bbr/bbz/", "foo/bbr/bbz/fox/"},
 		},
 		{
-			paths:         []string{"foo/bar/"},
-			canReadAll:    []string{"foo/", "foo/bar/"},
-			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
+			pbths:         []string{"foo/bbr/"},
+			cbnRebdAll:    []string{"foo/", "foo/bbr/"},
+			cbnnotRebdAny: []string{"foo/thing.txt", "foo/bbr/thing.txt"},
 		},
 		{
-			paths:         []string{"baz/*/foo/bar/thing.txt"},
-			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
-			cannotReadAny: []string{"baz/thing.txt"},
+			pbths:         []string{"bbz/*/foo/bbr/thing.txt"},
+			cbnRebdAll:    []string{"bbz/", "bbz/x/", "bbz/x/foo/bbr/"},
+			cbnnotRebdAny: []string{"bbz/thing.txt"},
 		},
-		// If we have a wildcard in a path we allow all directories that are not
+		// If we hbve b wildcbrd in b pbth we bllow bll directories thbt bre not
 		// explicitly excluded.
 		{
-			paths:      []string{"**/foo/bar/thing.txt"},
-			canReadAll: []string{"foo/", "foo/bar/"},
+			pbths:      []string{"**/foo/bbr/thing.txt"},
+			cbnRebdAll: []string{"foo/", "foo/bbr/"},
 		},
 		{
-			paths:      []string{"*/foo/bar/thing.txt"},
-			canReadAll: []string{"foo/", "foo/bar/"},
+			pbths:      []string{"*/foo/bbr/thing.txt"},
+			cbnRebdAll: []string{"foo/", "foo/bbr/"},
 		},
 		{
-			paths:      []string{"/**/foo/bar/thing.txt"},
-			canReadAll: []string{"foo/", "foo/bar/"},
+			pbths:      []string{"/**/foo/bbr/thing.txt"},
+			cbnRebdAll: []string{"foo/", "foo/bbr/"},
 		},
 		{
-			paths:      []string{"/*/foo/bar/thing.txt"},
-			canReadAll: []string{"foo/", "foo/bar/"},
+			pbths:      []string{"/*/foo/bbr/thing.txt"},
+			cbnRebdAll: []string{"foo/", "foo/bbr/"},
 		},
 		{
-			paths:      []string{"-/**", "/storage/redis/**"},
-			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+			pbths:      []string{"-/**", "/storbge/redis/**"},
+			cbnRebdAll: []string{"storbge/", "/storbge/", "/storbge/redis/"},
 		},
 		{
-			paths:      []string{"-/**", "-/storage/**", "/storage/redis/**"},
-			canReadAll: []string{"storage/", "/storage/", "/storage/redis/"},
+			pbths:      []string{"-/**", "-/storbge/**", "/storbge/redis/**"},
+			cbnRebdAll: []string{"storbge/", "/storbge/", "/storbge/redis/"},
 		},
-		// Even with a wildcard include rule, we should still exclude directories that
-		// are explicitly excluded later
+		// Even with b wildcbrd include rule, we should still exclude directories thbt
+		// bre explicitly excluded lbter
 		{
-			paths:         []string{"/**", "-/storage/**"},
-			canReadAll:    []string{"/foo"},
-			cannotReadAny: []string{"storage/", "/storage/", "/storage/redis/"},
+			pbths:         []string{"/**", "-/storbge/**"},
+			cbnRebdAll:    []string{"/foo"},
+			cbnnotRebdAny: []string{"storbge/", "/storbge/", "/storbge/redis/"},
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		t.Run("", func(t *testing.T) {
 			getter := NewMockSubRepoPermissionsGetter()
-			getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-				return map[api.RepoName]authz.SubRepoPermissions{
-					repoName: {
-						Paths: tc.paths,
+			getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+				return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
+					repoNbme: {
+						Pbths: tc.pbths,
 					},
 				}, nil
 			})
 			client, err := NewSubRepoPermsClient(getter)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 
-			for _, path := range tc.canReadAll {
-				content := authz.RepoContent{
-					Repo: repoName,
-					Path: path,
+			for _, pbth := rbnge tc.cbnRebdAll {
+				content := buthz.RepoContent{
+					Repo: repoNbme,
+					Pbth: pbth,
 				}
 				perm, err := client.Permissions(ctx, 1, content)
 				if err != nil {
 					t.Error(err)
 				}
-				if !perm.Include(authz.Read) {
-					t.Errorf("Should be able to read %q, cannot", path)
+				if !perm.Include(buthz.Rebd) {
+					t.Errorf("Should be bble to rebd %q, cbnnot", pbth)
 				}
 			}
 
-			for _, path := range tc.cannotReadAny {
-				content := authz.RepoContent{
-					Repo: repoName,
-					Path: path,
+			for _, pbth := rbnge tc.cbnnotRebdAny {
+				content := buthz.RepoContent{
+					Repo: repoNbme,
+					Pbth: pbth,
 				}
 				perm, err := client.Permissions(ctx, 1, content)
 				if err != nil {
 					t.Error(err)
 				}
-				if perm.Include(authz.Read) {
-					t.Errorf("Should not be able to read %q, can", path)
+				if perm.Include(buthz.Rebd) {
+					t.Errorf("Should not be bble to rebd %q, cbn", pbth)
 				}
 			}
 		})
 	}
 }
 
-func TestSubRepoPermsPermissionsCache(t *testing.T) {
+func TestSubRepoPermsPermissionsCbche(t *testing.T) {
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SubRepoPermissions: &schema.SubRepoPermissions{
-					Enabled: true,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SubRepoPermissions: &schemb.SubRepoPermissions{
+					Enbbled: true,
 				},
 			},
 		},
 	})
-	t.Cleanup(func() { conf.Mock(nil) })
+	t.Clebnup(func() { conf.Mock(nil) })
 
 	getter := NewMockSubRepoPermissionsGetter()
 	client, err := NewSubRepoPermsClient(getter)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	ctx := context.Background()
-	content := authz.RepoContent{
-		Repo: api.RepoName("thing"),
-		Path: "/stuff",
+	ctx := context.Bbckground()
+	content := buthz.RepoContent{
+		Repo: bpi.RepoNbme("thing"),
+		Pbth: "/stuff",
 	}
 
 	// Should hit DB only once
 	for i := 0; i < 3; i++ {
 		_, err = client.Permissions(ctx, 1, content)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		h := getter.GetByUserFunc.History()
 		if len(h) != 1 {
-			t.Fatal("Should have been called once")
+			t.Fbtbl("Should hbve been cblled once")
 		}
 	}
 
 	// Trigger expiry
-	client.since = func(time time.Time) time.Duration {
-		return defaultCacheTTL + 1
+	client.since = func(time time.Time) time.Durbtion {
+		return defbultCbcheTTL + 1
 	}
 
 	_, err = client.Permissions(ctx, 1, content)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	h := getter.GetByUserFunc.History()
 	if len(h) != 2 {
-		t.Fatal("Should have been called twice")
+		t.Fbtbl("Should hbve been cblled twice")
 	}
 }

@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -9,192 +9,192 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	entries := make([]*btypes.BatchSpecExecutionCacheEntry, 0, 3)
-	for i := 0; i < cap(entries); i++ {
-		job := &btypes.BatchSpecExecutionCacheEntry{
+func testStoreBbtchSpecExecutionCbcheEntries(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	entries := mbke([]*btypes.BbtchSpecExecutionCbcheEntry, 0, 3)
+	for i := 0; i < cbp(entries); i++ {
+		job := &btypes.BbtchSpecExecutionCbcheEntry{
 			UserID: 900 + int32(i),
-			Key:    fmt.Sprintf("check-out-this-cache-key-%d", i),
-			Value:  fmt.Sprintf("what-about-this-cache-value-huh-%d", i),
+			Key:    fmt.Sprintf("check-out-this-cbche-key-%d", i),
+			Vblue:  fmt.Sprintf("whbt-bbout-this-cbche-vblue-huh-%d", i),
 		}
 
-		entries = append(entries, job)
+		entries = bppend(entries, job)
 	}
 
-	t.Run("Create", func(t *testing.T) {
-		for _, job := range entries {
-			if err := s.CreateBatchSpecExecutionCacheEntry(ctx, job); err != nil {
-				t.Fatal(err)
+	t.Run("Crebte", func(t *testing.T) {
+		for _, job := rbnge entries {
+			if err := s.CrebteBbtchSpecExecutionCbcheEntry(ctx, job); err != nil {
+				t.Fbtbl(err)
 			}
 
-			have := job
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
+			hbve := job
+			if hbve.ID == 0 {
+				t.Fbtbl("ID should not be zero")
 			}
 
-			want := have
-			want.CreatedAt = clock.Now()
+			wbnt := hbve
+			wbnt.CrebtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("ListByUserIDAndKeys", func(t *testing.T) {
-			for i, job := range entries {
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					cs, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+			for i, job := rbnge entries {
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					cs, err := s.ListBbtchSpecExecutionCbcheEntries(ctx, ListBbtchSpecExecutionCbcheEntriesOpts{
 						UserID: job.UserID,
 						Keys:   []string{job.Key},
 					})
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 					if len(cs) != 1 {
-						t.Fatal("cache entry not found")
+						t.Fbtbl("cbche entry not found")
 					}
-					have := cs[0]
+					hbve := cs[0]
 
-					if diff := cmp.Diff(have, job); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, job); diff != "" {
+						t.Fbtbl(diff)
 					}
 				})
 			}
 		})
 	})
 
-	t.Run("CreateWithConflictingKey", func(t *testing.T) {
+	t.Run("CrebteWithConflictingKey", func(t *testing.T) {
 		clock.Add(1 * time.Minute)
 
-		keyConflict := &btypes.BatchSpecExecutionCacheEntry{
+		keyConflict := &btypes.BbtchSpecExecutionCbcheEntry{
 			UserID: entries[0].UserID,
 			Key:    entries[0].Key,
-			Value:  "new value",
+			Vblue:  "new vblue",
 		}
-		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, keyConflict); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpecExecutionCbcheEntry(ctx, keyConflict); err != nil {
+			t.Fbtbl(err)
 		}
 
-		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+		relobded, err := s.ListBbtchSpecExecutionCbcheEntries(ctx, ListBbtchSpecExecutionCbcheEntriesOpts{
 			UserID: keyConflict.UserID,
 			Keys:   []string{keyConflict.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloaded) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobded) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloaded[0]
+		relobdedEntry := relobded[0]
 
-		if diff := cmp.Diff(reloadedEntry, keyConflict); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(relobdedEntry, keyConflict); diff != "" {
+			t.Fbtbl(diff)
 		}
 
-		if reloadedEntry.CreatedAt.Equal(entries[0].CreatedAt) {
-			t.Fatal("CreatedAt not updated")
+		if relobdedEntry.CrebtedAt.Equbl(entries[0].CrebtedAt) {
+			t.Fbtbl("CrebtedAt not updbted")
 		}
 	})
 
-	t.Run("MarkUsedBatchSpecExecutionCacheEntries", func(t *testing.T) {
-		entry := &btypes.BatchSpecExecutionCacheEntry{
+	t.Run("MbrkUsedBbtchSpecExecutionCbcheEntries", func(t *testing.T) {
+		entry := &btypes.BbtchSpecExecutionCbcheEntry{
 			UserID: 9999,
-			Key:    "the-amazing-cache-key",
-			Value:  "the-mysterious-cache-value",
+			Key:    "the-bmbzing-cbche-key",
+			Vblue:  "the-mysterious-cbche-vblue",
 		}
 
-		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpecExecutionCbcheEntry(ctx, entry); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if err := s.MarkUsedBatchSpecExecutionCacheEntries(ctx, []int64{entry.ID}); err != nil {
-			t.Fatal(err)
+		if err := s.MbrkUsedBbtchSpecExecutionCbcheEntries(ctx, []int64{entry.ID}); err != nil {
+			t.Fbtbl(err)
 		}
 
-		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
+		relobded, err := s.ListBbtchSpecExecutionCbcheEntries(ctx, ListBbtchSpecExecutionCbcheEntriesOpts{
 			UserID: entry.UserID,
 			Keys:   []string{entry.Key},
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(reloaded) != 1 {
-			t.Fatal("cache entry not found")
+		if len(relobded) != 1 {
+			t.Fbtbl("cbche entry not found")
 		}
-		reloadedEntry := reloaded[0]
+		relobdedEntry := relobded[0]
 
-		if want, have := clock.Now(), reloadedEntry.LastUsedAt; !have.Equal(want) {
-			t.Fatalf("entry.LastUsedAt is wrong.\n\twant=%s\n\thave=%s", want, have)
+		if wbnt, hbve := clock.Now(), relobdedEntry.LbstUsedAt; !hbve.Equbl(wbnt) {
+			t.Fbtblf("entry.LbstUsedAt is wrong.\n\twbnt=%s\n\thbve=%s", wbnt, hbve)
 		}
 	})
 }
 
-func TestStore_CleanBatchSpecExecutionCacheEntries(t *testing.T) {
-	// Separate test function because we want a clean DB
+func TestStore_ClebnBbtchSpecExecutionCbcheEntries(t *testing.T) {
+	// Sepbrbte test function becbuse we wbnt b clebn DB
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	c := &bt.TestClock{Time: timeutil.Now()}
-	s := NewWithClock(db, &observation.TestContext, nil, c.Now)
-	user := bt.CreateTestUser(t, db, true)
+	s := NewWithClock(db, &observbtion.TestContext, nil, c.Now)
+	user := bt.CrebteTestUser(t, db, true)
 
-	maxSize := 10 * 1024 // 10kb
+	mbxSize := 10 * 1024 // 10kb
 
 	for i := 0; i < 20; i += 1 {
-		entry := &btypes.BatchSpecExecutionCacheEntry{
+		entry := &btypes.BbtchSpecExecutionCbcheEntry{
 			UserID: user.ID,
-			Key:    fmt.Sprintf("cache-key-%d", i),
-			Value:  strings.Repeat("a", 1024),
+			Key:    fmt.Sprintf("cbche-key-%d", i),
+			Vblue:  strings.Repebt("b", 1024),
 		}
 
-		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, entry); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpecExecutionCbcheEntry(ctx, entry); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	totalSize, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries")))
+	totblSize, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT sum(octet_length(vblue)) AS totbl FROM bbtch_spec_execution_cbche_entries")))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if totalSize != maxSize*2 {
-		t.Fatalf("totalsize wrong=%d", totalSize)
-	}
-
-	if err := s.CleanBatchSpecExecutionCacheEntries(ctx, int64(maxSize)); err != nil {
-		t.Fatal(err)
+	if totblSize != mbxSize*2 {
+		t.Fbtblf("totblsize wrong=%d", totblSize)
 	}
 
-	entriesLeft, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT count(*) FROM batch_spec_execution_cache_entries")))
+	if err := s.ClebnBbtchSpecExecutionCbcheEntries(ctx, int64(mbxSize)); err != nil {
+		t.Fbtbl(err)
+	}
+
+	entriesLeft, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT count(*) FROM bbtch_spec_execution_cbche_entries")))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantLeft := 10
-	if entriesLeft != wantLeft {
-		t.Fatalf("wrong number of entries left. want=%d, have=%d", wantLeft, entriesLeft)
+	wbntLeft := 10
+	if entriesLeft != wbntLeft {
+		t.Fbtblf("wrong number of entries left. wbnt=%d, hbve=%d", wbntLeft, entriesLeft)
 	}
 
-	totalSize, _, err = basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT sum(octet_length(value)) AS total FROM batch_spec_execution_cache_entries")))
+	totblSize, _, err = bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf("SELECT sum(octet_length(vblue)) AS totbl FROM bbtch_spec_execution_cbche_entries")))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if totalSize != maxSize {
-		t.Fatalf("totalsize wrong=%d", totalSize)
+	if totblSize != mbxSize {
+		t.Fbtblf("totblsize wrong=%d", totblSize)
 	}
 }

@@ -1,15 +1,15 @@
-package testutil
+pbckbge testutil
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 )
 
-var IsTest = func() bool {
-	path, _ := os.Executable()
-	return strings.HasSuffix(filepath.Base(path), "_test") || // Test binary build by Bazel
-		filepath.Ext(path) == ".test" ||
-		strings.Contains(path, "/T/___") || // Test path used by GoLand
-		filepath.Base(path) == "__debug_bin" // Debug binary used by VSCode
+vbr IsTest = func() bool {
+	pbth, _ := os.Executbble()
+	return strings.HbsSuffix(filepbth.Bbse(pbth), "_test") || // Test binbry build by Bbzel
+		filepbth.Ext(pbth) == ".test" ||
+		strings.Contbins(pbth, "/T/___") || // Test pbth used by GoLbnd
+		filepbth.Bbse(pbth) == "__debug_bin" // Debug binbry used by VSCode
 }()

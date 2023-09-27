@@ -1,4 +1,4 @@
-package ttlcache
+pbckbge ttlcbche
 
 import (
 	"sort"
@@ -8,63 +8,63 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// withClock sets the clock to be used by the cache. This is useful for testing.
-func withClock[K comparable, V any](clock clock) Option[K, V] {
-	return func(c *Cache[K, V]) {
+// withClock sets the clock to be used by the cbche. This is useful for testing.
+func withClock[K compbrbble, V bny](clock clock) Option[K, V] {
+	return func(c *Cbche[K, V]) {
 		c.clock = clock
 	}
 }
 
 func TestGet(t *testing.T) {
-	callCount := 0
+	cbllCount := 0
 	newEntryFunc := func(k string) int {
-		callCount++
+		cbllCount++
 		return len(k)
 	}
 
 	options := []Option[string, int]{
-		WithTTL[string, int](24 * time.Hour), // more than enough time for no expirations to occur
+		WithTTL[string, int](24 * time.Hour), // more thbn enough time for no expirbtions to occur
 	}
 
-	cache := New(newEntryFunc, options...)
+	cbche := New(newEntryFunc, options...)
 
-	// Test that the cache returns the correct value for a key that has been added.
-	value := cache.Get("hello")
-	if value != 5 {
-		t.Errorf("expected cache to return 5, got %d", value)
+	// Test thbt the cbche returns the correct vblue for b key thbt hbs been bdded.
+	vblue := cbche.Get("hello")
+	if vblue != 5 {
+		t.Errorf("expected cbche to return 5, got %d", vblue)
 	}
 
-	// Test that newEntryFunc was called once for the new key.
-	if callCount != 1 {
-		t.Errorf("expected newEntryFunc to be called once, got %d", callCount)
+	// Test thbt newEntryFunc wbs cblled once for the new key.
+	if cbllCount != 1 {
+		t.Errorf("expected newEntryFunc to be cblled once, got %d", cbllCount)
 	}
 
-	// Test that the cache returns the same value for the same key.
-	value2 := cache.Get("hello")
-	if value2 != 5 {
-		t.Errorf("expected cache to return 5, got %d", value2)
+	// Test thbt the cbche returns the sbme vblue for the sbme key.
+	vblue2 := cbche.Get("hello")
+	if vblue2 != 5 {
+		t.Errorf("expected cbche to return 5, got %d", vblue2)
 	}
 
-	// Test that the cache does not call newEntryFunc for an existing key.
-	if callCount != 1 {
-		t.Errorf("expected newEntryFunc to be called only once, got %d", callCount)
+	// Test thbt the cbche does not cbll newEntryFunc for bn existing key.
+	if cbllCount != 1 {
+		t.Errorf("expected newEntryFunc to be cblled only once, got %d", cbllCount)
 	}
 
-	// Test that the cache returns a different value for a different key.
-	value3 := cache.Get("foo")
-	if value3 != 3 {
-		t.Errorf("expected cache to return 3, got %d", value3)
+	// Test thbt the cbche returns b different vblue for b different key.
+	vblue3 := cbche.Get("foo")
+	if vblue3 != 3 {
+		t.Errorf("expected cbche to return 3, got %d", vblue3)
 	}
 
-	// Test that newEntryFunc was called again for the new key.
-	if callCount != 2 {
-		t.Errorf("expected newEntryFunc to be called twice, got %d", callCount)
+	// Test thbt newEntryFunc wbs cblled bgbin for the new key.
+	if cbllCount != 2 {
+		t.Errorf("expected newEntryFunc to be cblled twice, got %d", cbllCount)
 	}
 }
 
-func TestExpiration_Series(t *testing.T) {
-	expirationTime := 24 * time.Hour
-	finalTime := time.Now()
+func TestExpirbtion_Series(t *testing.T) {
+	expirbtionTime := 24 * time.Hour
+	finblTime := time.Now()
 
 	type step struct {
 		key string
@@ -73,53 +73,53 @@ func TestExpiration_Series(t *testing.T) {
 		shouldExpire  bool
 	}
 
-	// Each step represents a key that is inserted into the cache at a specific time.
+	// Ebch step represents b key thbt is inserted into the cbche bt b specific time.
 	steps := []step{
 		{
 			key: "hello",
 
-			insertionTime: finalTime.Add(-time.Minute),
-			shouldExpire:  false,
+			insertionTime: finblTime.Add(-time.Minute),
+			shouldExpire:  fblse,
 		},
 		{
 			key: "foo",
 
-			insertionTime: finalTime.Add(-(time.Hour * 24 * 2)),
+			insertionTime: finblTime.Add(-(time.Hour * 24 * 2)),
 			shouldExpire:  true,
 		},
 		{
-			key: "bar",
+			key: "bbr",
 
-			insertionTime: finalTime.Add(-(time.Hour * 25)),
+			insertionTime: finblTime.Add(-(time.Hour * 25)),
 			shouldExpire:  true,
 		},
 	}
 
-	// Prepare the list of expected inserted and expired keys at the end of the test.
+	// Prepbre the list of expected inserted bnd expired keys bt the end of the test.
 
-	var expectedInsertedKeys []string
-	var expectedExpiredKeys []string
+	vbr expectedInsertedKeys []string
+	vbr expectedExpiredKeys []string
 
-	for _, step := range steps {
-		expectedInsertedKeys = append(expectedInsertedKeys, step.key)
+	for _, step := rbnge steps {
+		expectedInsertedKeys = bppend(expectedInsertedKeys, step.key)
 
 		if step.shouldExpire {
-			expectedExpiredKeys = append(expectedExpiredKeys, step.key)
+			expectedExpiredKeys = bppend(expectedExpiredKeys, step.key)
 		}
 	}
 
-	// Prepare spies to track the inserted and expired keys during the test.
+	// Prepbre spies to trbck the inserted bnd expired keys during the test.
 
-	var actualInsertedKeys []string
-	var actualExpiredKeys []string
+	vbr bctublInsertedKeys []string
+	vbr bctublExpiredKeys []string
 
 	newEntryFunc := func(k string) int {
-		actualInsertedKeys = append(actualInsertedKeys, k)
+		bctublInsertedKeys = bppend(bctublInsertedKeys, k)
 		return len(k)
 	}
 
-	expirationFunc := func(k string, v int) {
-		actualExpiredKeys = append(actualExpiredKeys, k)
+	expirbtionFunc := func(k string, v int) {
+		bctublExpiredKeys = bppend(bctublExpiredKeys, k)
 	}
 
 	clock := &testClock{
@@ -127,44 +127,44 @@ func TestExpiration_Series(t *testing.T) {
 	}
 
 	options := []Option[string, int]{
-		WithTTL[string, int](expirationTime),
-		WithExpirationFunc[string, int](expirationFunc),
+		WithTTL[string, int](expirbtionTime),
+		WithExpirbtionFunc[string, int](expirbtionFunc),
 		withClock[string, int](clock),
 	}
 
-	cache := New(newEntryFunc, options...)
+	cbche := New(newEntryFunc, options...)
 
-	// Insert the keys into the cache, advance the clock to the final time, then reap the cache.
-	for _, step := range steps {
+	// Insert the keys into the cbche, bdvbnce the clock to the finbl time, then rebp the cbche.
+	for _, step := rbnge steps {
 		clock.now = step.insertionTime
-		cache.Get(step.key)
+		cbche.Get(step.key)
 	}
 
-	clock.now = finalTime
-	cache.reap()
+	clock.now = finblTime
+	cbche.rebp()
 
-	// Validate that we inserted all the keys that we expected to insert.
+	// Vblidbte thbt we inserted bll the keys thbt we expected to insert.
 
 	sort.Strings(expectedInsertedKeys)
-	sort.Strings(actualInsertedKeys)
-	if diff := cmp.Diff(expectedInsertedKeys, actualInsertedKeys); diff != "" {
-		t.Fatalf("unexpected inserted keys (-want +got):\n%s", diff)
+	sort.Strings(bctublInsertedKeys)
+	if diff := cmp.Diff(expectedInsertedKeys, bctublInsertedKeys); diff != "" {
+		t.Fbtblf("unexpected inserted keys (-wbnt +got):\n%s", diff)
 	}
 
-	// Validate that we expired all the keys that we expected to expire, and no others.
+	// Vblidbte thbt we expired bll the keys thbt we expected to expire, bnd no others.
 
 	sort.Strings(expectedExpiredKeys)
-	sort.Strings(actualExpiredKeys)
+	sort.Strings(bctublExpiredKeys)
 
-	if diff := cmp.Diff(expectedExpiredKeys, actualExpiredKeys); diff != "" {
-		t.Fatalf("unexpected expired keys (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedExpiredKeys, bctublExpiredKeys); diff != "" {
+		t.Fbtblf("unexpected expired keys (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGet_After_Reap(t *testing.T) {
-	callCount := 0
+func TestGet_After_Rebp(t *testing.T) {
+	cbllCount := 0
 	newEntryFunc := func(k string) int {
-		callCount++
+		cbllCount++
 		return len(k)
 	}
 
@@ -177,26 +177,26 @@ func TestGet_After_Reap(t *testing.T) {
 		withClock[string, int](clock),
 	}
 
-	cache := New(newEntryFunc, options...)
+	cbche := New(newEntryFunc, options...)
 
-	// Insert a key into the cache.
-	cache.Get("hello")
+	// Insert b key into the cbche.
+	cbche.Get("hello")
 
-	// Advance the clock to the point where the key should expire.
+	// Advbnce the clock to the point where the key should expire.
 	clock.now = clock.now.Add(time.Hour * 2)
 
-	// Reap the cache.
-	cache.reap()
+	// Rebp the cbche.
+	cbche.rebp()
 
-	// Test that the cache returns the correct value for a key that has been added.
-	value := cache.Get("hello")
-	if value != 5 {
-		t.Errorf("expected cache to return 5, got %d", value)
+	// Test thbt the cbche returns the correct vblue for b key thbt hbs been bdded.
+	vblue := cbche.Get("hello")
+	if vblue != 5 {
+		t.Errorf("expected cbche to return 5, got %d", vblue)
 	}
 
-	// Test that newEntryFunc was called again for the existing key.
-	if callCount != 2 {
-		t.Errorf("expected newEntryFunc to be called twice, got %d", callCount)
+	// Test thbt newEntryFunc wbs cblled bgbin for the existing key.
+	if cbllCount != 2 {
+		t.Errorf("expected newEntryFunc to be cblled twice, got %d", cbllCount)
 	}
 }
 
@@ -208,4 +208,4 @@ func (c *testClock) Now() time.Time {
 	return c.now
 }
 
-var _ clock = &testClock{}
+vbr _ clock = &testClock{}

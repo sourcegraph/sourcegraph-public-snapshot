@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,171 +6,171 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/pings"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/retention"
-	"github.com/sourcegraph/sourcegraph/internal/insights/compression"
-	"github.com/sourcegraph/sourcegraph/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/pipeline"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	internblGitserver "github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/pings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/retention"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/compression"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/discovery"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/pipeline"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/priority"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
 )
 
-type RepoStore interface {
-	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
+type RepoStore interfbce {
+	GetByNbme(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error)
 }
 
-// GetBackgroundJobs is the main entrypoint which starts background jobs for code insights. It is
-// called from the worker service.
-func GetBackgroundJobs(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
-	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+// GetBbckgroundJobs is the mbin entrypoint which stbrts bbckground jobs for code insights. It is
+// cblled from the worker service.
+func GetBbckgroundJobs(ctx context.Context, logger log.Logger, mbinAppDB dbtbbbse.DB, insightsDB edb.InsightsDB) []goroutine.BbckgroundRoutine {
+	insightPermStore := store.NewInsightPermissionStore(mbinAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
-	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the insights DB (which we use only for storing insights data.)
-	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
-	// Create an insights-DB backed store for retention jobs which live in the insights DB.
-	workerInsightsBaseStore := basestore.NewWithHandle(insightsDB.Handle())
+	// Crebte b bbse store to be used for storing worker stbte. We store this in the mbin bpp Postgres
+	// DB, not the insights DB (which we use only for storing insights dbtb.)
+	workerBbseStore := bbsestore.NewWithHbndle(mbinAppDB.Hbndle())
+	// Crebte bn insights-DB bbcked store for retention jobs which live in the insights DB.
+	workerInsightsBbseStore := bbsestore.NewWithHbndle(insightsDB.Hbndle())
 
-	// Create basic metrics for recording information about background jobs.
-	observationCtx := observation.NewContext(logger.Scoped("background", "insights background jobs"))
-	insightsMetadataStore := store.NewInsightStore(insightsDB)
+	// Crebte bbsic metrics for recording informbtion bbout bbckground jobs.
+	observbtionCtx := observbtion.NewContext(logger.Scoped("bbckground", "insights bbckground jobs"))
+	insightsMetbdbtbStore := store.NewInsightStore(insightsDB)
 
-	// Start background goroutines for all of our workers.
-	// The query runner worker is started in a separate routine so it can benefit from horizontal scaling.
-	routines := []goroutine.BackgroundRoutine{
-		// Discovers and enqueues insights work.
-		newInsightEnqueuer(ctx, observationCtx, workerBaseStore, insightsMetadataStore, logger.Scoped("background-insight-enqueuer", "")),
+	// Stbrt bbckground goroutines for bll of our workers.
+	// The query runner worker is stbrted in b sepbrbte routine so it cbn benefit from horizontbl scbling.
+	routines := []goroutine.BbckgroundRoutine{
+		// Discovers bnd enqueues insights work.
+		newInsightEnqueuer(ctx, observbtionCtx, workerBbseStore, insightsMetbdbtbStore, logger.Scoped("bbckground-insight-enqueuer", "")),
 		// Enqueues series to be picked up by the retention worker.
-		newRetentionEnqueuer(ctx, workerInsightsBaseStore, insightsMetadataStore),
-		// Emits backend pings based on insights data.
-		pings.NewInsightsPingEmitterJob(ctx, mainAppDB, insightsDB),
-		// Cleans up soft-deleted insight series.
-		NewInsightsDataPrunerJob(ctx, mainAppDB, insightsDB),
-		// Checks for Code Insights license and freezes insights if necessary.
-		NewLicenseCheckJob(ctx, mainAppDB, insightsDB),
+		newRetentionEnqueuer(ctx, workerInsightsBbseStore, insightsMetbdbtbStore),
+		// Emits bbckend pings bbsed on insights dbtb.
+		pings.NewInsightsPingEmitterJob(ctx, mbinAppDB, insightsDB),
+		// Clebns up soft-deleted insight series.
+		NewInsightsDbtbPrunerJob(ctx, mbinAppDB, insightsDB),
+		// Checks for Code Insights license bnd freezes insights if necessbry.
+		NewLicenseCheckJob(ctx, mbinAppDB, insightsDB),
 	}
 
-	gitserverClient := internalGitserver.NewClient()
+	gitserverClient := internblGitserver.NewClient()
 
-	// Register the background goroutine which discovers historical gaps in data and enqueues
-	// work to fill them - if not disabled.
-	disableHistorical, _ := strconv.ParseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
-	if !disableHistorical {
-		searchRateLimiter := limiter.SearchQueryRate()
-		historicRateLimiter := limiter.HistoricalWorkRate()
-		backfillConfig := pipeline.BackfillerConfig{
-			CompressionPlan:         compression.NewGitserverFilter(logger, gitserverClient),
-			SearchHandlers:          queryrunner.GetSearchHandlers(),
+	// Register the bbckground goroutine which discovers historicbl gbps in dbtb bnd enqueues
+	// work to fill them - if not disbbled.
+	disbbleHistoricbl, _ := strconv.PbrseBool(os.Getenv("DISABLE_CODE_INSIGHTS_HISTORICAL"))
+	if !disbbleHistoricbl {
+		sebrchRbteLimiter := limiter.SebrchQueryRbte()
+		historicRbteLimiter := limiter.HistoricblWorkRbte()
+		bbckfillConfig := pipeline.BbckfillerConfig{
+			CompressionPlbn:         compression.NewGitserverFilter(logger, gitserverClient),
+			SebrchHbndlers:          queryrunner.GetSebrchHbndlers(),
 			InsightStore:            insightsStore,
 			CommitClient:            gitserver.NewGitCommitClient(gitserverClient),
-			SearchPlanWorkerLimit:   1,
-			SearchRunnerWorkerLimit: 1, // TODO: this can scale with the number of searcher endpoints
-			SearchRateLimiter:       searchRateLimiter,
-			HistoricRateLimiter:     historicRateLimiter,
+			SebrchPlbnWorkerLimit:   1,
+			SebrchRunnerWorkerLimit: 1, // TODO: this cbn scble with the number of sebrcher endpoints
+			SebrchRbteLimiter:       sebrchRbteLimiter,
+			HistoricRbteLimiter:     historicRbteLimiter,
 		}
-		backfillRunner := pipeline.NewDefaultBackfiller(backfillConfig)
+		bbckfillRunner := pipeline.NewDefbultBbckfiller(bbckfillConfig)
 		config := scheduler.JobMonitorConfig{
 			InsightsDB:     insightsDB,
 			InsightStore:   insightsStore,
-			RepoStore:      mainAppDB.Repos(),
-			BackfillRunner: backfillRunner,
-			ObservationCtx: observationCtx,
-			AllRepoIterator: discovery.NewAllReposIterator(
-				mainAppDB.Repos(),
+			RepoStore:      mbinAppDB.Repos(),
+			BbckfillRunner: bbckfillRunner,
+			ObservbtionCtx: observbtionCtx,
+			AllRepoIterbtor: discovery.NewAllReposIterbtor(
+				mbinAppDB.Repos(),
 				time.Now,
-				envvar.SourcegraphDotComMode(),
+				envvbr.SourcegrbphDotComMode(),
 				15*time.Minute,
 				&prometheus.CounterOpts{
-					Namespace: "src",
-					Name:      "insight_backfill_new_index_repositories_analyzed",
-					Help:      "Counter of the number of repositories analyzed in the backfiller new state.",
+					Nbmespbce: "src",
+					Nbme:      "insight_bbckfill_new_index_repositories_bnblyzed",
+					Help:      "Counter of the number of repositories bnblyzed in the bbckfiller new stbte.",
 				}),
-			CostAnalyzer:      priority.DefaultQueryAnalyzer(),
-			RepoQueryExecutor: query.NewStreamingRepoQueryExecutor(logger.Scoped("StreamingRepoExecutor", "execute repo search in background workers")),
+			CostAnblyzer:      priority.DefbultQueryAnblyzer(),
+			RepoQueryExecutor: query.NewStrebmingRepoQueryExecutor(logger.Scoped("StrebmingRepoExecutor", "execute repo sebrch in bbckground workers")),
 		}
 
-		// Add the backfill v2 workers
-		monitor := scheduler.NewBackgroundJobMonitor(ctx, config)
-		routines = append(routines, monitor.Routines()...)
+		// Add the bbckfill v2 workers
+		monitor := scheduler.NewBbckgroundJobMonitor(ctx, config)
+		routines = bppend(routines, monitor.Routines()...)
 	}
 
 	return routines
 }
 
-// GetBackgroundQueryRunnerJob is the main entrypoint for starting the background jobs for code
-// insights query runner. It is called from the worker service.
-func GetBackgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
-	insightPermStore := store.NewInsightPermissionStore(mainAppDB)
+// GetBbckgroundQueryRunnerJob is the mbin entrypoint for stbrting the bbckground jobs for code
+// insights query runner. It is cblled from the worker service.
+func GetBbckgroundQueryRunnerJob(ctx context.Context, logger log.Logger, mbinAppDB dbtbbbse.DB, insightsDB edb.InsightsDB) []goroutine.BbckgroundRoutine {
+	insightPermStore := store.NewInsightPermissionStore(mbinAppDB)
 	insightsStore := store.New(insightsDB, insightPermStore)
 
-	// Create a base store to be used for storing worker state. We store this in the main app Postgres
-	// DB, not the insights DB (which we use only for storing insights data.)
-	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
-	repoStore := mainAppDB.Repos()
+	// Crebte b bbse store to be used for storing worker stbte. We store this in the mbin bpp Postgres
+	// DB, not the insights DB (which we use only for storing insights dbtb.)
+	workerBbseStore := bbsestore.NewWithHbndle(mbinAppDB.Hbndle())
+	repoStore := mbinAppDB.Repos()
 
-	// Create basic metrics for recording information about background jobs.
-	observationCtx := observation.NewContext(logger.Scoped("background", "background query runner job"))
-	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observationCtx, "query_runner_worker")
+	// Crebte bbsic metrics for recording informbtion bbout bbckground jobs.
+	observbtionCtx := observbtion.NewContext(logger.Scoped("bbckground", "bbckground query runner job"))
+	queryRunnerWorkerMetrics, queryRunnerResetterMetrics := newWorkerMetrics(observbtionCtx, "query_runner_worker")
 
-	workerStore := queryrunner.CreateDBWorkerStore(observationCtx, workerBaseStore)
-	seachQueryLimiter := limiter.SearchQueryRate()
+	workerStore := queryrunner.CrebteDBWorkerStore(observbtionCtx, workerBbseStore)
+	sebchQueryLimiter := limiter.SebrchQueryRbte()
 
-	return []goroutine.BackgroundRoutine{
-		// Register the query-runner worker and resetter, which executes search queries and records
+	return []goroutine.BbckgroundRoutine{
+		// Register the query-runner worker bnd resetter, which executes sebrch queries bnd records
 		// results to the insights DB.
-		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, seachQueryLimiter),
+		queryrunner.NewWorker(ctx, logger.Scoped("queryrunner.Worker", ""), workerStore, insightsStore, repoStore, queryRunnerWorkerMetrics, sebchQueryLimiter),
 		queryrunner.NewResetter(ctx, logger.Scoped("queryrunner.Resetter", ""), workerStore, queryRunnerResetterMetrics),
-		queryrunner.NewCleaner(ctx, observationCtx, workerBaseStore),
+		queryrunner.NewClebner(ctx, observbtionCtx, workerBbseStore),
 	}
 }
 
-func GetBackgroundDataRetentionJob(ctx context.Context, observationCtx *observation.Context, mainAppDB database.DB, insightsDB edb.InsightsDB) []goroutine.BackgroundRoutine {
-	workerMetrics, resetterMetrics := newWorkerMetrics(observationCtx, "insights_data_retention")
+func GetBbckgroundDbtbRetentionJob(ctx context.Context, observbtionCtx *observbtion.Context, mbinAppDB dbtbbbse.DB, insightsDB edb.InsightsDB) []goroutine.BbckgroundRoutine {
+	workerMetrics, resetterMetrics := newWorkerMetrics(observbtionCtx, "insights_dbtb_retention")
 
-	insightsStore := store.New(insightsDB, store.NewInsightPermissionStore(mainAppDB))
+	insightsStore := store.New(insightsDB, store.NewInsightPermissionStore(mbinAppDB))
 
-	workerBaseStore := basestore.NewWithHandle(insightsDB.Handle())
-	dbWorkerStore := retention.CreateDBWorkerStore(observationCtx, workerBaseStore)
+	workerBbseStore := bbsestore.NewWithHbndle(insightsDB.Hbndle())
+	dbWorkerStore := retention.CrebteDBWorkerStore(observbtionCtx, workerBbseStore)
 
-	return []goroutine.BackgroundRoutine{
-		retention.NewWorker(ctx, observationCtx.Logger.Scoped("Worker", ""), dbWorkerStore, insightsStore, workerMetrics),
-		retention.NewResetter(ctx, observationCtx.Logger.Scoped("Resetter", ""), dbWorkerStore, resetterMetrics),
-		retention.NewCleaner(ctx, observationCtx, workerBaseStore),
+	return []goroutine.BbckgroundRoutine{
+		retention.NewWorker(ctx, observbtionCtx.Logger.Scoped("Worker", ""), dbWorkerStore, insightsStore, workerMetrics),
+		retention.NewResetter(ctx, observbtionCtx.Logger.Scoped("Resetter", ""), dbWorkerStore, resetterMetrics),
+		retention.NewClebner(ctx, observbtionCtx, workerBbseStore),
 	}
 }
 
-// newWorkerMetrics returns a basic set of metrics to be used for a worker and its resetter:
+// newWorkerMetrics returns b bbsic set of metrics to be used for b worker bnd its resetter:
 //
-//   - WorkerMetrics records worker operations & number of jobs.
-//   - ResetterMetrics records the number of jobs that got reset because workers timed out / took too
+//   - WorkerMetrics records worker operbtions & number of jobs.
+//   - ResetterMetrics records the number of jobs thbt got reset becbuse workers timed out / took too
 //     long.
 //
-// Individual insights workers may then _also_ want to register their own metrics, if desired, in
+// Individubl insights workers mby then _blso_ wbnt to register their own metrics, if desired, in
 // their NewWorker functions.
-func newWorkerMetrics(observationCtx *observation.Context, workerName string) (workerutil.WorkerObservability, dbworker.ResetterMetrics) {
-	workerMetrics := workerutil.NewMetrics(observationCtx, workerName+"_processor", workerutil.WithSampler(func(job workerutil.Record) bool {
+func newWorkerMetrics(observbtionCtx *observbtion.Context, workerNbme string) (workerutil.WorkerObservbbility, dbworker.ResetterMetrics) {
+	workerMetrics := workerutil.NewMetrics(observbtionCtx, workerNbme+"_processor", workerutil.WithSbmpler(func(job workerutil.Record) bool {
 		return true
 	}))
-	resetterMetrics := dbworker.NewResetterMetrics(observationCtx, workerName)
+	resetterMetrics := dbworker.NewResetterMetrics(observbtionCtx, workerNbme)
 	return workerMetrics, resetterMetrics
 }

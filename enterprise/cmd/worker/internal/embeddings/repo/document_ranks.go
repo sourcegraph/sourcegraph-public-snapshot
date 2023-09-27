@@ -1,4 +1,4 @@
-package repo
+pbckbge repo
 
 import (
 	"context"
@@ -8,54 +8,54 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func getDocumentRanks(ctx context.Context, repoName string) (types.RepoPathRanks, error) {
-	root, err := url.Parse(internalapi.Client.URL)
+func getDocumentRbnks(ctx context.Context, repoNbme string) (types.RepoPbthRbnks, error) {
+	root, err := url.Pbrse(internblbpi.Client.URL)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 	u := root.ResolveReference(&url.URL{
-		Path: "/.internal/ranks/" + strings.Trim(repoName, "/") + "/documents",
+		Pbth: "/.internbl/rbnks/" + strings.Trim(repoNbme, "/") + "/documents",
 	})
 
 	req, err := http.NewRequestWithContext(ctx, "GET", u.String(), nil)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 
-	resp, err := httpcli.InternalDoer.Do(req)
+	resp, err := httpcli.InternblDoer.Do(req)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		b, err := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	if resp.StbtusCode != http.StbtusOK {
+		b, err := io.RebdAll(io.LimitRebder(resp.Body, 1024))
 		_ = resp.Body.Close()
 		if err != nil {
-			return types.RepoPathRanks{}, err
+			return types.RepoPbthRbnks{}, err
 		}
-		return types.RepoPathRanks{}, &url.Error{
+		return types.RepoPbthRbnks{}, &url.Error{
 			Op:  "Get",
 			URL: u.String(),
-			Err: errors.Errorf("%s: %s", resp.Status, string(b)),
+			Err: errors.Errorf("%s: %s", resp.Stbtus, string(b)),
 		}
 	}
 
-	b, err := io.ReadAll(resp.Body)
+	b, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 
-	ranks := types.RepoPathRanks{}
-	err = json.Unmarshal(b, &ranks)
+	rbnks := types.RepoPbthRbnks{}
+	err = json.Unmbrshbl(b, &rbnks)
 	if err != nil {
-		return types.RepoPathRanks{}, err
+		return types.RepoPbthRbnks{}, err
 	}
 
-	return ranks, nil
+	return rbnks, nil
 }

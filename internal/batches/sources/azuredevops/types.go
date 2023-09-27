@@ -1,12 +1,12 @@
-package azuredevops
+pbckbge bzuredevops
 
-import "github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+import "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
 
-// AnnotatedPullRequest adds metadata we need that lives outside the main
-// PullRequest type returned by the Azure DevOps API alongside the pull request.
-// This type is used as the primary metadata type for Azure DevOps
-// changesets.
-type AnnotatedPullRequest struct {
-	*azuredevops.PullRequest
-	Statuses []*azuredevops.PullRequestBuildStatus
+// AnnotbtedPullRequest bdds metbdbtb we need thbt lives outside the mbin
+// PullRequest type returned by the Azure DevOps API blongside the pull request.
+// This type is used bs the primbry metbdbtb type for Azure DevOps
+// chbngesets.
+type AnnotbtedPullRequest struct {
+	*bzuredevops.PullRequest
+	Stbtuses []*bzuredevops.PullRequestBuildStbtus
 }

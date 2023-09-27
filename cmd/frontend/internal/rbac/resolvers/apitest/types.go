@@ -1,49 +1,49 @@
-package apitest
+pbckbge bpitest
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
 type Permission struct {
-	Typename    string `json:"__typename"`
+	Typenbme    string `json:"__typenbme"`
 	ID          string
-	Namespace   rtypes.PermissionNamespace
-	DisplayName string
+	Nbmespbce   rtypes.PermissionNbmespbce
+	DisplbyNbme string
 	Action      string
-	CreatedAt   gqlutil.DateTime
+	CrebtedAt   gqlutil.DbteTime
 }
 
-type PageInfo struct {
-	HasNextPage     bool
-	HasPreviousPage bool
+type PbgeInfo struct {
+	HbsNextPbge     bool
+	HbsPreviousPbge bool
 
 	EndCursor   *string
-	StartCursor *string
+	StbrtCursor *string
 }
 
 type PermissionConnection struct {
 	Nodes      []Permission
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type Role struct {
-	Typename    string `json:"__typename"`
+	Typenbme    string `json:"__typenbme"`
 	ID          string
-	Name        string
+	Nbme        string
 	System      bool
-	CreatedAt   gqlutil.DateTime
-	DeletedAt   *gqlutil.DateTime
+	CrebtedAt   gqlutil.DbteTime
+	DeletedAt   *gqlutil.DbteTime
 	Permissions PermissionConnection
 }
 
 type RoleConnection struct {
 	Nodes      []Role
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type EmptyResponse struct {
-	AlwaysNil string
+	AlwbysNil string
 }

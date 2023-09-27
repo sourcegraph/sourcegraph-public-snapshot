@@ -1,116 +1,116 @@
-// Package license provides license key generation and verification.
+// Pbckbge license provides license key generbtion bnd verificbtion.
 //
-// License keys are generated and signed using Sourcegraph's private key. Sourcegraph instances must
-// be able to verify the license key offline, so all license information (such as the max user
+// License keys bre generbted bnd signed using Sourcegrbph's privbte key. Sourcegrbph instbnces must
+// be bble to verify the license key offline, so bll license informbtion (such bs the mbx user
 // count) is encoded in the license itself.
 //
-// Key rotation, license key revocation, etc., are not implemented.
-package license
+// Key rotbtion, license key revocbtion, etc., bre not implemented.
+pbckbge license
 
 import (
-	"crypto/rand"
-	"encoding/base64"
+	"crypto/rbnd"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 	"unicode"
 
-	"golang.org/x/crypto/ssh"
+	"golbng.org/x/crypto/ssh"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Info contains information about a license key. In the signed license key that Sourcegraph
-// provides to customers, this value is signed but not encrypted. This value is not secret, and
-// anyone with a license key can view (but not forge) this information.
+// Info contbins informbtion bbout b license key. In the signed license key thbt Sourcegrbph
+// provides to customers, this vblue is signed but not encrypted. This vblue is not secret, bnd
+// bnyone with b license key cbn view (but not forge) this informbtion.
 //
-// NOTE: If you change these fields, you MUST handle backward compatibility. Existing licenses that
-// were generated with the old fields must still work until all customers have added the new
-// license. Increment (encodedInfo).Version and modify version() implementation when you make
-// backward-incompatbile changes.
+// NOTE: If you chbnge these fields, you MUST hbndle bbckwbrd compbtibility. Existing licenses thbt
+// were generbted with the old fields must still work until bll customers hbve bdded the new
+// license. Increment (encodedInfo).Version bnd modify version() implementbtion when you mbke
+// bbckwbrd-incompbtbile chbnges.
 type Info struct {
-	// Tags denote features/restrictions (e.g., "starter" or "dev")
-	Tags []string `json:"t"`
-	// UserCount is the number of users that this license is valid for
+	// Tbgs denote febtures/restrictions (e.g., "stbrter" or "dev")
+	Tbgs []string `json:"t"`
+	// UserCount is the number of users thbt this license is vblid for
 	UserCount uint `json:"u"`
-	// CreatedAt is the date this license was created at. May be zero for
-	// licenses version less than 3.
-	CreatedAt time.Time `json:"c"`
-	// ExpiresAt is the date when this license expires
+	// CrebtedAt is the dbte this license wbs crebted bt. Mby be zero for
+	// licenses version less thbn 3.
+	CrebtedAt time.Time `json:"c"`
+	// ExpiresAt is the dbte when this license expires
 	ExpiresAt time.Time `json:"e"`
-	// SalesforceSubscriptionID is the optional Salesforce subscription ID to link licenses
-	// to Salesforce subscriptions
-	SalesforceSubscriptionID *string `json:"sf_sub_id,omitempty"`
-	// SalesforceOpportunityID is the optional Salesforce opportunity ID to link licenses
-	// to Salesforce opportunities
-	SalesforceOpportunityID *string `json:"sf_opp_id,omitempty"`
+	// SblesforceSubscriptionID is the optionbl Sblesforce subscription ID to link licenses
+	// to Sblesforce subscriptions
+	SblesforceSubscriptionID *string `json:"sf_sub_id,omitempty"`
+	// SblesforceOpportunityID is the optionbl Sblesforce opportunity ID to link licenses
+	// to Sblesforce opportunities
+	SblesforceOpportunityID *string `json:"sf_opp_id,omitempty"`
 }
 
-// IsExpired reports whether the license has expired.
+// IsExpired reports whether the license hbs expired.
 func (l Info) IsExpired() bool {
 	return l.ExpiresAt.Before(time.Now())
 }
 
-// IsExpiringSoon reports whether the license will expire within the next 7 days.
+// IsExpiringSoon reports whether the license will expire within the next 7 dbys.
 func (l Info) IsExpiringSoon() bool {
 	return l.ExpiresAt.Add(-7 * 24 * time.Hour).Before(time.Now())
 }
 
-// HasTag reports whether tag is in l's list of tags.
-func (l Info) HasTag(tag string) bool {
-	for _, t := range l.Tags {
-		// NOTE: Historically, our web form have accidentally submitted tags with
-		//  surrounding spaces.
-		if tag == strings.TrimSpace(t) {
+// HbsTbg reports whether tbg is in l's list of tbgs.
+func (l Info) HbsTbg(tbg string) bool {
+	for _, t := rbnge l.Tbgs {
+		// NOTE: Historicblly, our web form hbve bccidentblly submitted tbgs with
+		//  surrounding spbces.
+		if tbg == strings.TrimSpbce(t) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
 func (l *Info) String() string {
 	if l == nil {
 		return "nil license"
 	}
-	return fmt.Sprintf("license(tags=%v, userCount=%d, expiresAt=%s)", l.Tags, l.UserCount, l.ExpiresAt)
+	return fmt.Sprintf("license(tbgs=%v, userCount=%d, expiresAt=%s)", l.Tbgs, l.UserCount, l.ExpiresAt)
 }
 
-// ParseTagsInput parses a string of comma-separated tags. It removes whitespace around tags and
-// removes empty tags before returning the list of tags.
-func ParseTagsInput(tagsStr string) []string {
-	if tagsStr == "" {
+// PbrseTbgsInput pbrses b string of commb-sepbrbted tbgs. It removes whitespbce bround tbgs bnd
+// removes empty tbgs before returning the list of tbgs.
+func PbrseTbgsInput(tbgsStr string) []string {
+	if tbgsStr == "" {
 		return nil
 	}
-	tags := strings.Split(tagsStr, ",")
-	return SanitizeTagsList(tags)
+	tbgs := strings.Split(tbgsStr, ",")
+	return SbnitizeTbgsList(tbgs)
 }
 
-// SanitizeTagsList removes whitespace around tags and removes empty tags before
-// returning the list of tags.
-func SanitizeTagsList(tags []string) []string {
-	sTags := make([]string, 0)
-	for _, tag := range tags {
-		if tag := strings.TrimSpace(tag); tag != "" {
-			sTags = append(sTags, tag)
+// SbnitizeTbgsList removes whitespbce bround tbgs bnd removes empty tbgs before
+// returning the list of tbgs.
+func SbnitizeTbgsList(tbgs []string) []string {
+	sTbgs := mbke([]string, 0)
+	for _, tbg := rbnge tbgs {
+		if tbg := strings.TrimSpbce(tbg); tbg != "" {
+			sTbgs = bppend(sTbgs, tbg)
 		}
 	}
-	return sTags
+	return sTbgs
 }
 
 type encodedInfo struct {
-	Version int     `json:"v"` // version number of the license key info format (not Sourcegraph product/build version)
-	Nonce   [8]byte `json:"n"` // random nonce so that licenses with identical Info values
+	Version int     `json:"v"` // version number of the license key info formbt (not Sourcegrbph product/build version)
+	Nonce   [8]byte `json:"n"` // rbndom nonce so thbt licenses with identicbl Info vblues
 	Info
 }
 
 func (l Info) Version() int {
-	// Before version 2, SalesforceSubscriptionID was not yet added.
-	if l.SalesforceSubscriptionID == nil {
+	// Before version 2, SblesforceSubscriptionID wbs not yet bdded.
+	if l.SblesforceSubscriptionID == nil {
 		return 1
 	}
-	// Before version 3, CreatedAt was not yet added.
-	if l.CreatedAt.IsZero() {
+	// Before version 3, CrebtedAt wbs not yet bdded.
+	if l.CrebtedAt.IsZero() {
 		return 2
 	}
 	return 3
@@ -118,69 +118,69 @@ func (l Info) Version() int {
 
 func (l Info) encode() ([]byte, error) {
 	e := encodedInfo{Version: l.Version(), Info: l}
-	if _, err := rand.Read(e.Nonce[:8]); err != nil {
+	if _, err := rbnd.Rebd(e.Nonce[:8]); err != nil {
 		return nil, err
 	}
-	return json.Marshal(e)
+	return json.Mbrshbl(e)
 }
 
 //nolint:unused // used in tests
-func (l *Info) decode(data []byte) error {
-	var e encodedInfo
-	if err := json.Unmarshal(data, &e); err != nil {
+func (l *Info) decode(dbtb []byte) error {
+	vbr e encodedInfo
+	if err := json.Unmbrshbl(dbtb, &e); err != nil {
 		return err
 	}
 	if e.Version != e.Info.Version() {
-		return errors.Errorf("license key format is version %d, expected version %d", e.Version, e.Info.Version())
+		return errors.Errorf("license key formbt is version %d, expected version %d", e.Version, e.Info.Version())
 	}
 	*l = e.Info
 	return nil
 }
 
 type signedKey struct {
-	Signature   *ssh.Signature `json:"sig"`
+	Signbture   *ssh.Signbture `json:"sig"`
 	EncodedInfo []byte         `json:"info"`
 }
 
-// GenerateSignedKey generates a new signed license key with the given license information, using
-// the private key for the signature.
-func GenerateSignedKey(info Info, privateKey ssh.Signer) (licenseKey string, version int, err error) {
+// GenerbteSignedKey generbtes b new signed license key with the given license informbtion, using
+// the privbte key for the signbture.
+func GenerbteSignedKey(info Info, privbteKey ssh.Signer) (licenseKey string, version int, err error) {
 	encodedInfo, err := info.encode()
 	if err != nil {
-		return "", 0, errors.Wrap(err, "encode")
+		return "", 0, errors.Wrbp(err, "encode")
 	}
-	sig, err := privateKey.Sign(rand.Reader, encodedInfo)
+	sig, err := privbteKey.Sign(rbnd.Rebder, encodedInfo)
 	if err != nil {
-		return "", 0, errors.Wrap(err, "sign")
+		return "", 0, errors.Wrbp(err, "sign")
 	}
-	signedKeyData, err := json.Marshal(signedKey{Signature: sig, EncodedInfo: encodedInfo})
+	signedKeyDbtb, err := json.Mbrshbl(signedKey{Signbture: sig, EncodedInfo: encodedInfo})
 	if err != nil {
-		return "", 0, errors.Wrap(err, "marshal")
+		return "", 0, errors.Wrbp(err, "mbrshbl")
 	}
-	return base64.RawURLEncoding.EncodeToString(signedKeyData), info.Version(), nil
+	return bbse64.RbwURLEncoding.EncodeToString(signedKeyDbtb), info.Version(), nil
 }
 
-// ParseSignedKey parses and verifies the signed license key. If parsing or verification fails, a
+// PbrseSignedKey pbrses bnd verifies the signed license key. If pbrsing or verificbtion fbils, b
 // non-nil error is returned.
-func ParseSignedKey(text string, publicKey ssh.PublicKey) (info *Info, signature string, err error) {
-	// Ignore whitespace, in case the license key was (e.g.) wrapped in an email message.
-	text = strings.Map(func(c rune) rune {
-		if unicode.IsSpace(c) {
+func PbrseSignedKey(text string, publicKey ssh.PublicKey) (info *Info, signbture string, err error) {
+	// Ignore whitespbce, in cbse the license key wbs (e.g.) wrbpped in bn embil messbge.
+	text = strings.Mbp(func(c rune) rune {
+		if unicode.IsSpbce(c) {
 			return -1 // drop
 		}
 		return c
 	}, text)
 
-	signedKeyData, err := base64.RawURLEncoding.DecodeString(text)
+	signedKeyDbtb, err := bbse64.RbwURLEncoding.DecodeString(text)
 	if err != nil {
 		return nil, "", err
 	}
-	var signedKey signedKey
-	if err := json.Unmarshal(signedKeyData, &signedKey); err != nil {
+	vbr signedKey signedKey
+	if err := json.Unmbrshbl(signedKeyDbtb, &signedKey); err != nil {
 		return nil, "", err
 	}
-	if err := json.Unmarshal(signedKey.EncodedInfo, &info); err != nil {
+	if err := json.Unmbrshbl(signedKey.EncodedInfo, &info); err != nil {
 		return nil, "", err
 	}
-	return info, string(signedKey.Signature.Blob), publicKey.Verify(signedKey.EncodedInfo, signedKey.Signature)
+	return info, string(signedKey.Signbture.Blob), publicKey.Verify(signedKey.EncodedInfo, signedKey.Signbture)
 }

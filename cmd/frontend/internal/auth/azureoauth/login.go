@@ -1,59 +1,59 @@
-package azureoauth
+pbckbge bzureobuth
 
 import (
 	"fmt"
 	"net/http"
 
 	"github.com/dghubble/gologin"
-	oauth2Login "github.com/dghubble/gologin/oauth2"
-	oauth2gologin "github.com/dghubble/gologin/oauth2"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
+	obuth2Login "github.com/dghubble/gologin/obuth2"
+	obuth2gologin "github.com/dghubble/gologin/obuth2"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"golbng.org/x/obuth2"
 )
 
-func loginHandler(c oauth2.Config) http.Handler {
-	return oauth2Login.LoginHandler(&c, gologin.DefaultFailureHandler)
+func loginHbndler(c obuth2.Config) http.Hbndler {
+	return obuth2Login.LoginHbndler(&c, gologin.DefbultFbilureHbndler)
 }
 
-func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failure http.Handler) http.Handler {
+func bzureDevOpsHbndler(logger log.Logger, config *obuth2.Config, success, fbilure http.Hbndler) http.Hbndler {
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
 
-		token, err := oauth2Login.TokenFromContext(ctx)
+		token, err := obuth2Login.TokenFromContext(ctx)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
 
-		azureClient, err := azuredevops.NewClient(
+		bzureClient, err := bzuredevops.NewClient(
 			urnAzureDevOpsOAuth,
-			azuredevops.VisualStudioAppURL,
-			&auth.OAuthBearerToken{Token: token.AccessToken},
+			bzuredevops.VisublStudioAppURL,
+			&buth.OAuthBebrerToken{Token: token.AccessToken},
 			nil,
 		)
 
 		if err != nil {
-			logger.Error("failed to create azuredevops.Client", log.String("error", err.Error()))
-			ctx = gologin.WithError(ctx, errors.Errorf("failed to create HTTP client for azuredevops with AuthURL %q", config.Endpoint.AuthURL))
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			logger.Error("fbiled to crebte bzuredevops.Client", log.String("error", err.Error()))
+			ctx = gologin.WithError(ctx, errors.Errorf("fbiled to crebte HTTP client for bzuredevops with AuthURL %q", config.Endpoint.AuthURL))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
 
-		profile, err := azureClient.GetAuthorizedProfile(ctx)
+		profile, err := bzureClient.GetAuthorizedProfile(ctx)
 		if err != nil {
-			msg := "failed to get Azure profile after oauth2 callback"
+			msg := "fbiled to get Azure profile bfter obuth2 cbllbbck"
 			logger.Error(msg, log.String("error", err.Error()))
-			ctx = gologin.WithError(ctx, errors.Wrap(err, msg))
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			ctx = gologin.WithError(ctx, errors.Wrbp(err, msg))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
 
-		if profile.ID == "" || profile.EmailAddress == "" {
-			msg := "bad Azure profile in API response"
+		if profile.ID == "" || profile.EmbilAddress == "" {
+			msg := "bbd Azure profile in API response"
 			logger.Error(msg, log.String("profile", fmt.Sprintf("%#v", profile)))
 
 			ctx = gologin.WithError(
@@ -61,91 +61,91 @@ func azureDevOpsHandler(logger log.Logger, config *oauth2.Config, success, failu
 				errors.Errorf("%s: %#v", msg, profile),
 			)
 
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
 
 		ctx = withUser(ctx, profile)
 		success.ServeHTTP(w, req.WithContext(ctx))
 	}
-	return http.HandlerFunc(fn)
+	return http.HbndlerFunc(fn)
 }
 
-// Adapted from "github.com/dghubble/gologin/oauth2"
+// Adbpted from "github.com/dghubble/gologin/obuth2"
 //
-// AzureDevOps expects some extra parameters in the POST body of the request to get the access
-// token. Custom implementation is needed to be able to pass those as AuthCodeOption args to the
-// config.Exchange method call.
+// AzureDevOps expects some extrb pbrbmeters in the POST body of the request to get the bccess
+// token. Custom implementbtion is needed to be bble to pbss those bs AuthCodeOption brgs to the
+// config.Exchbnge method cbll.
 
-// CallbackHandler handles OAuth2 redirection URI requests by parsing the auth
-// code and state, comparing with the state value from the ctx, and obtaining
-// an OAuth2 Token.
-func callbackHandler(config *oauth2.Config, success http.Handler) http.Handler {
-	failure := gologin.DefaultFailureHandler
+// CbllbbckHbndler hbndles OAuth2 redirection URI requests by pbrsing the buth
+// code bnd stbte, compbring with the stbte vblue from the ctx, bnd obtbining
+// bn OAuth2 Token.
+func cbllbbckHbndler(config *obuth2.Config, success http.Hbndler) http.Hbndler {
+	fbilure := gologin.DefbultFbilureHbndler
 
 	fn := func(w http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-		authCode, state, err := parseCallback(req)
+		buthCode, stbte, err := pbrseCbllbbck(req)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
-		ownerState, err := oauth2gologin.StateFromContext(ctx)
+		ownerStbte, err := obuth2gologin.StbteFromContext(ctx)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
-		if state != ownerState || state == "" {
-			ctx = gologin.WithError(ctx, oauth2gologin.ErrInvalidState)
-			failure.ServeHTTP(w, req.WithContext(ctx))
+		if stbte != ownerStbte || stbte == "" {
+			ctx = gologin.WithError(ctx, obuth2gologin.ErrInvblidStbte)
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
 
-		// Custom values in the POST body required by the API to get an access token. See:
-		// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#http-request-body---authorize-app
-		clientAssertionType := oauth2.SetAuthURLParam("client_assertion_type", azuredevops.ClientAssertionType)
-		clientAssertion := oauth2.SetAuthURLParam("client_assertion", config.ClientSecret)
-		grantType := oauth2.SetAuthURLParam("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-		assertion := oauth2.SetAuthURLParam("assertion", authCode)
+		// Custom vblues in the POST body required by the API to get bn bccess token. See:
+		// https://lebrn.microsoft.com/en-us/bzure/devops/integrbte/get-stbrted/buthenticbtion/obuth?view=bzure-devops#http-request-body---buthorize-bpp
+		clientAssertionType := obuth2.SetAuthURLPbrbm("client_bssertion_type", bzuredevops.ClientAssertionType)
+		clientAssertion := obuth2.SetAuthURLPbrbm("client_bssertion", config.ClientSecret)
+		grbntType := obuth2.SetAuthURLPbrbm("grbnt_type", "urn:ietf:pbrbms:obuth:grbnt-type:jwt-bebrer")
+		bssertion := obuth2.SetAuthURLPbrbm("bssertion", buthCode)
 
-		// Use the authorization code to get a Token.
+		// Use the buthorizbtion code to get b Token.
 		//
-		// This will set the default value of "grant_type" to "authorization_code". But since we
-		// pass a custom AuthCodeOption, it will overwrite that value.
+		// This will set the defbult vblue of "grbnt_type" to "buthorizbtion_code". But since we
+		// pbss b custom AuthCodeOption, it will overwrite thbt vblue.
 		//
-		// DEBUGGING NOTE: This also sets the authCode in the "code" URL arg, but we need to set the
-		// auth code against the "assertion" URL arg. This means an extra arg in the form of
-		// code=<auth-code> is also sent in the POST request. But it works. However if fetching the
-		// access token breaks in the future by any chance without us having changed any code of our
-		// own, this is a good place to start and writing a custom Exchange method to not send any
-		// extra args.
+		// DEBUGGING NOTE: This blso sets the buthCode in the "code" URL brg, but we need to set the
+		// buth code bgbinst the "bssertion" URL brg. This mebns bn extrb brg in the form of
+		// code=<buth-code> is blso sent in the POST request. But it works. However if fetching the
+		// bccess token brebks in the future by bny chbnce without us hbving chbnged bny code of our
+		// own, this is b good plbce to stbrt bnd writing b custom Exchbnge method to not send bny
+		// extrb brgs.
 		//
 		// For now it works.
-		token, err := config.Exchange(ctx, authCode, clientAssertionType, clientAssertion, grantType, assertion, oauth2.ApprovalForce)
+		token, err := config.Exchbnge(ctx, buthCode, clientAssertionType, clientAssertion, grbntType, bssertion, obuth2.ApprovblForce)
 		if err != nil {
 			ctx = gologin.WithError(ctx, err)
-			failure.ServeHTTP(w, req.WithContext(ctx))
+			fbilure.ServeHTTP(w, req.WithContext(ctx))
 			return
 		}
-		ctx = oauth2gologin.WithToken(ctx, token)
+		ctx = obuth2gologin.WithToken(ctx, token)
 		success.ServeHTTP(w, req.WithContext(ctx))
 	}
-	return http.HandlerFunc(fn)
+	return http.HbndlerFunc(fn)
 }
 
-// parseCallback parses the "code" and "state" parameters from the http.Request
-// and returns them.
-func parseCallback(req *http.Request) (authCode, state string, err error) {
-	err = req.ParseForm()
+// pbrseCbllbbck pbrses the "code" bnd "stbte" pbrbmeters from the http.Request
+// bnd returns them.
+func pbrseCbllbbck(req *http.Request) (buthCode, stbte string, err error) {
+	err = req.PbrseForm()
 	if err != nil {
 		return "", "", err
 	}
-	authCode = req.Form.Get("code")
-	state = req.Form.Get("state")
-	if authCode == "" || state == "" {
-		return "", "", errors.New("oauth2: Request missing code or state")
+	buthCode = req.Form.Get("code")
+	stbte = req.Form.Get("stbte")
+	if buthCode == "" || stbte == "" {
+		return "", "", errors.New("obuth2: Request missing code or stbte")
 	}
-	return authCode, state, nil
+	return buthCode, stbte, nil
 }

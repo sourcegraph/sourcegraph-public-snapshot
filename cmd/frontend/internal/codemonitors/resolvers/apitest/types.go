@@ -1,18 +1,18 @@
-// Package apitest provided types used in testing.
-package apitest
+// Pbckbge bpitest provided types used in testing.
+pbckbge bpitest
 
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Response struct {
 	User User
 }
 
-type UpdateCodeMonitorResponse struct {
-	UpdateCodeMonitor Monitor
+type UpdbteCodeMonitorResponse struct {
+	UpdbteCodeMonitor Monitor
 }
 
 type User struct {
@@ -25,93 +25,93 @@ type Node struct {
 
 type MonitorConnection struct {
 	Nodes      []Monitor
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type Monitor struct {
 	Id          string
 	Description string
-	Enabled     bool
+	Enbbled     bool
 	Owner       UserOrg
-	CreatedBy   UserOrg
-	CreatedAt   string
+	CrebtedBy   UserOrg
+	CrebtedAt   string
 	Trigger     Trigger
 	Actions     ActionConnection
 }
 
 type UserOrg struct {
-	Name string `json:"username"`
+	Nbme string `json:"usernbme"`
 }
 
-type PageInfo struct {
-	HasNextPage bool
+type PbgeInfo struct {
+	HbsNextPbge bool
 	EndCursor   *string
 }
 
 type ActionConnection struct {
 	Nodes      []Action
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type Action struct {
-	Email        *ActionEmail
+	Embil        *ActionEmbil
 	Webhook      *ActionWebhook
-	SlackWebhook *ActionSlackWebhook
+	SlbckWebhook *ActionSlbckWebhook
 }
 
-func (a *Action) UnmarshalJSON(b []byte) error {
-	type typeUnmarshaller struct {
-		TypeName string `json:"__typename"`
+func (b *Action) UnmbrshblJSON(b []byte) error {
+	type typeUnmbrshbller struct {
+		TypeNbme string `json:"__typenbme"`
 	}
-	var t typeUnmarshaller
-	if err := json.Unmarshal(b, &t); err != nil {
+	vbr t typeUnmbrshbller
+	if err := json.Unmbrshbl(b, &t); err != nil {
 		return err
 	}
 
-	switch t.TypeName {
-	case "MonitorEmail":
-		a.Email = &ActionEmail{}
-		return json.Unmarshal(b, &a.Email)
-	case "MonitorWebhook":
-		a.Webhook = &ActionWebhook{}
-		return json.Unmarshal(b, &a.Webhook)
-	case "MonitorSlackWebhook":
-		a.SlackWebhook = &ActionSlackWebhook{}
-		return json.Unmarshal(b, &a.SlackWebhook)
-	default:
-		return errors.Errorf("unexpected typename %q", t.TypeName)
+	switch t.TypeNbme {
+	cbse "MonitorEmbil":
+		b.Embil = &ActionEmbil{}
+		return json.Unmbrshbl(b, &b.Embil)
+	cbse "MonitorWebhook":
+		b.Webhook = &ActionWebhook{}
+		return json.Unmbrshbl(b, &b.Webhook)
+	cbse "MonitorSlbckWebhook":
+		b.SlbckWebhook = &ActionSlbckWebhook{}
+		return json.Unmbrshbl(b, &b.SlbckWebhook)
+	defbult:
+		return errors.Errorf("unexpected typenbme %q", t.TypeNbme)
 	}
 }
 
-type ActionEmail struct {
+type ActionEmbil struct {
 	Id         string
-	Enabled    bool
+	Enbbled    bool
 	Priority   string
 	Recipients RecipientsConnection
-	Header     string
+	Hebder     string
 	Events     ActionEventConnection
 }
 
 type ActionWebhook struct {
 	Id      string
-	Enabled bool
+	Enbbled bool
 	URL     string
 	Events  ActionEventConnection
 }
 
-type ActionSlackWebhook struct {
+type ActionSlbckWebhook struct {
 	Id      string
-	Enabled bool
+	Enbbled bool
 	URL     string
 	Events  ActionEventConnection
 }
 
 type RecipientsConnection struct {
 	Nodes      []UserOrg
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type Trigger struct {
@@ -122,26 +122,26 @@ type Trigger struct {
 
 type TriggerEventConnection struct {
 	Nodes      []TriggerEvent
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type TriggerEvent struct {
 	Id        string
-	Status    string
-	Timestamp string
-	Message   *string
+	Stbtus    string
+	Timestbmp string
+	Messbge   *string
 }
 
 type ActionEventConnection struct {
 	Nodes      []ActionEvent
-	TotalCount int
-	PageInfo   PageInfo
+	TotblCount int
+	PbgeInfo   PbgeInfo
 }
 
 type ActionEvent struct {
 	Id        string
-	Status    string
-	Timestamp string
-	Message   *string
+	Stbtus    string
+	Timestbmp string
+	Messbge   *string
 }

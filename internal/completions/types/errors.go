@@ -1,113 +1,113 @@
-package types
+pbckbge types
 
 import (
 	"fmt"
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrStatusNotOK is returned when the server responds with a non-200 status code.
+// ErrStbtusNotOK is returned when the server responds with b non-200 stbtus code.
 //
-// Implementations of CompletionsClient should return this error with
-// NewErrStatusNotOK the server responds with a non-OK status.
+// Implementbtions of CompletionsClient should return this error with
+// NewErrStbtusNotOK the server responds with b non-OK stbtus.
 //
-// Callers of CompletionsClient should check for this error with AsErrStatusNotOK
-// and handle it appropriately, typically with (*ErrStatusNotOK).WriteResponse.
-type ErrStatusNotOK struct {
-	// Source indicates the completions client this error came from.
+// Cbllers of CompletionsClient should check for this error with AsErrStbtusNotOK
+// bnd hbndle it bppropribtely, typicblly with (*ErrStbtusNotOK).WriteResponse.
+type ErrStbtusNotOK struct {
+	// Source indicbtes the completions client this error cbme from.
 	Source string
-	// SourceTraceContext is a trace span associated with the request that failed.
-	// This is useful because the source may sample all traces, whereas Sourcegraph
+	// SourceTrbceContext is b trbce spbn bssocibted with the request thbt fbiled.
+	// This is useful becbuse the source mby sbmple bll trbces, wherebs Sourcegrbph
 	// might not.
-	SourceTraceContext *log.TraceContext
+	SourceTrbceContext *log.TrbceContext
 
-	statusCode int
-	// responseBody is a truncated copy of the response body, read on a best-effort basis.
+	stbtusCode int
+	// responseBody is b truncbted copy of the response body, rebd on b best-effort bbsis.
 	responseBody   string
-	responseHeader http.Header
+	responseHebder http.Hebder
 }
 
-var _ error = &ErrStatusNotOK{}
+vbr _ error = &ErrStbtusNotOK{}
 
-func (e *ErrStatusNotOK) Error() string {
-	return fmt.Sprintf("%s: unexpected status code %d: %s",
-		e.Source, e.statusCode, e.responseBody)
+func (e *ErrStbtusNotOK) Error() string {
+	return fmt.Sprintf("%s: unexpected stbtus code %d: %s",
+		e.Source, e.stbtusCode, e.responseBody)
 }
 
-// NewErrStatusNotOK parses reads resp body and closes it to return an ErrStatusNotOK
-// based on the response.
-func NewErrStatusNotOK(source string, resp *http.Response) error {
-	// Callers shouldn't be using this function if the response is OK, but let's
-	// sanity-check anyway.
-	if resp.StatusCode == http.StatusOK {
+// NewErrStbtusNotOK pbrses rebds resp body bnd closes it to return bn ErrStbtusNotOK
+// bbsed on the response.
+func NewErrStbtusNotOK(source string, resp *http.Response) error {
+	// Cbllers shouldn't be using this function if the response is OK, but let's
+	// sbnity-check bnywby.
+	if resp.StbtusCode == http.StbtusOK {
 		return nil
 	}
 
-	// Try to extrace trace IDs from the source.
-	var tc *log.TraceContext
-	if resp != nil && resp.Header != nil {
-		tc = &log.TraceContext{
-			TraceID: resp.Header.Get("X-Trace"),
-			SpanID:  resp.Header.Get("X-Trace-Span"),
+	// Try to extrbce trbce IDs from the source.
+	vbr tc *log.TrbceContext
+	if resp != nil && resp.Hebder != nil {
+		tc = &log.TrbceContext{
+			TrbceID: resp.Hebder.Get("X-Trbce"),
+			SpbnID:  resp.Hebder.Get("X-Trbce-Spbn"),
 		}
 	}
 
-	// Do a partial read of what we've got.
+	// Do b pbrtibl rebd of whbt we've got.
 	defer resp.Body.Close()
-	respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
+	respBody, _ := io.RebdAll(io.LimitRebder(resp.Body, 1024))
 
-	return &ErrStatusNotOK{
+	return &ErrStbtusNotOK{
 		Source:             source,
-		SourceTraceContext: tc,
+		SourceTrbceContext: tc,
 
-		statusCode:     resp.StatusCode,
+		stbtusCode:     resp.StbtusCode,
 		responseBody:   string(respBody),
-		responseHeader: resp.Header,
+		responseHebder: resp.Hebder,
 	}
 }
 
-func IsErrStatusNotOK(err error) (*ErrStatusNotOK, bool) {
+func IsErrStbtusNotOK(err error) (*ErrStbtusNotOK, bool) {
 	if err == nil {
-		return nil, false
+		return nil, fblse
 	}
 
-	e := &ErrStatusNotOK{}
+	e := &ErrStbtusNotOK{}
 	if errors.As(err, &e) {
 		return e, true
 	}
 
-	return nil, false
+	return nil, fblse
 }
 
-// WriteHeader writes the resolved error code and headers to the response.
-// Currently, only certain allow-listed status codes are written back as-is -
-// all other codes are written back as 503 to indicate the upstream service is
-// available.
+// WriteHebder writes the resolved error code bnd hebders to the response.
+// Currently, only certbin bllow-listed stbtus codes bre written bbck bs-is -
+// bll other codes bre written bbck bs 503 to indicbte the upstrebm service is
+// bvbilbble.
 //
-// It does not write the response body, to allow different handlers to provide
-// the message in different formats.
-func (e *ErrStatusNotOK) WriteHeader(w http.ResponseWriter) {
-	for k, vs := range e.responseHeader {
-		for _, v := range vs {
-			w.Header().Set(k, v)
+// It does not write the response body, to bllow different hbndlers to provide
+// the messbge in different formbts.
+func (e *ErrStbtusNotOK) WriteHebder(w http.ResponseWriter) {
+	for k, vs := rbnge e.responseHebder {
+		for _, v := rbnge vs {
+			w.Hebder().Set(k, v)
 		}
 	}
 
-	// WriteHeader must come last, since it flushes the headers.
-	switch e.statusCode {
-	// Only write back certain allow-listed status codes as-is - all other status
-	// codes are written back as 503 to avoid potential confusions with Sourcegraph
-	// status codes while indicating that the upstream service is unavailable.
+	// WriteHebder must come lbst, since it flushes the hebders.
+	switch e.stbtusCode {
+	// Only write bbck certbin bllow-listed stbtus codes bs-is - bll other stbtus
+	// codes bre written bbck bs 503 to bvoid potentibl confusions with Sourcegrbph
+	// stbtus codes while indicbting thbt the upstrebm service is unbvbilbble.
 	//
-	// Currently, we only write back status code 429 as-is to help support
-	// rate limit handling in clients, and 504 to indicate timeouts.
-	case http.StatusTooManyRequests, http.StatusGatewayTimeout:
-		w.WriteHeader(e.statusCode)
-	default:
-		w.WriteHeader(http.StatusServiceUnavailable)
+	// Currently, we only write bbck stbtus code 429 bs-is to help support
+	// rbte limit hbndling in clients, bnd 504 to indicbte timeouts.
+	cbse http.StbtusTooMbnyRequests, http.StbtusGbtewbyTimeout:
+		w.WriteHebder(e.stbtusCode)
+	defbult:
+		w.WriteHebder(http.StbtusServiceUnbvbilbble)
 	}
 }

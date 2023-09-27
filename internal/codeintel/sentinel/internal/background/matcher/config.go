@@ -1,19 +1,19 @@
-package matcher
+pbckbge mbtcher
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	MatcherInterval time.Duration
-	BatchSize       int
+	MbtcherIntervbl time.Durbtion
+	BbtchSize       int
 }
 
-func (c *Config) Load() {
-	c.MatcherInterval = c.GetInterval("CODEINTEL_SENTINEL_MATCHER_INTERVAL", "1s", "How frequently to match existing records against known vulnerabilities.")
-	c.BatchSize = c.GetInt("CODEINTEL_SENTINEL_BATCH_SIZE", "100", "How many precise indexes to scan at once for vulnerabilities.")
+func (c *Config) Lobd() {
+	c.MbtcherIntervbl = c.GetIntervbl("CODEINTEL_SENTINEL_MATCHER_INTERVAL", "1s", "How frequently to mbtch existing records bgbinst known vulnerbbilities.")
+	c.BbtchSize = c.GetInt("CODEINTEL_SENTINEL_BATCH_SIZE", "100", "How mbny precise indexes to scbn bt once for vulnerbbilities.")
 }

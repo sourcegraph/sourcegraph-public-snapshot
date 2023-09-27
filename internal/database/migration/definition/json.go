@@ -1,18 +1,18 @@
-package definition
+pbckbge definition
 
 import (
 	"encoding/json"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 )
 
-func (ds *Definitions) MarshalJSON() ([]byte, error) {
-	return json.Marshal(ds.All())
+func (ds *Definitions) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(ds.All())
 }
 
-func (ds *Definitions) UnmarshalJSON(data []byte) error {
-	var definitions []Definition
-	if err := json.Unmarshal(data, &definitions); err != nil {
+func (ds *Definitions) UnmbrshblJSON(dbtb []byte) error {
+	vbr definitions []Definition
+	if err := json.Unmbrshbl(dbtb, &definitions); err != nil {
 		return err
 	}
 
@@ -27,44 +27,44 @@ func (ds *Definitions) UnmarshalJSON(data []byte) error {
 
 type jsonDefinition struct {
 	ID                        int
-	Name                      string
+	Nbme                      string
 	UpQuery                   string
 	DownQuery                 string
 	Privileged                bool
 	NonIdempotent             bool
-	Parents                   []int
-	IsCreateIndexConcurrently bool
-	IndexMetadata             *IndexMetadata
+	Pbrents                   []int
+	IsCrebteIndexConcurrently bool
+	IndexMetbdbtb             *IndexMetbdbtb
 }
 
-func (d *Definition) MarshalJSON() ([]byte, error) {
-	return json.Marshal(jsonDefinition{
+func (d *Definition) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(jsonDefinition{
 		ID:                        d.ID,
-		Name:                      d.Name,
-		UpQuery:                   d.UpQuery.Query(sqlf.PostgresBindVar),
-		DownQuery:                 d.DownQuery.Query(sqlf.PostgresBindVar),
+		Nbme:                      d.Nbme,
+		UpQuery:                   d.UpQuery.Query(sqlf.PostgresBindVbr),
+		DownQuery:                 d.DownQuery.Query(sqlf.PostgresBindVbr),
 		Privileged:                d.Privileged,
 		NonIdempotent:             d.NonIdempotent,
-		Parents:                   d.Parents,
-		IsCreateIndexConcurrently: d.IsCreateIndexConcurrently,
-		IndexMetadata:             d.IndexMetadata,
+		Pbrents:                   d.Pbrents,
+		IsCrebteIndexConcurrently: d.IsCrebteIndexConcurrently,
+		IndexMetbdbtb:             d.IndexMetbdbtb,
 	})
 }
 
-func (d *Definition) UnmarshalJSON(data []byte) error {
-	var jsonDefinition jsonDefinition
-	if err := json.Unmarshal(data, &jsonDefinition); err != nil {
+func (d *Definition) UnmbrshblJSON(dbtb []byte) error {
+	vbr jsonDefinition jsonDefinition
+	if err := json.Unmbrshbl(dbtb, &jsonDefinition); err != nil {
 		return err
 	}
 
 	d.ID = jsonDefinition.ID
-	d.Name = jsonDefinition.Name
+	d.Nbme = jsonDefinition.Nbme
 	d.UpQuery = queryFromString(jsonDefinition.UpQuery)
 	d.DownQuery = queryFromString(jsonDefinition.DownQuery)
 	d.Privileged = jsonDefinition.Privileged
 	d.NonIdempotent = jsonDefinition.NonIdempotent
-	d.Parents = jsonDefinition.Parents
-	d.IsCreateIndexConcurrently = jsonDefinition.IsCreateIndexConcurrently
-	d.IndexMetadata = jsonDefinition.IndexMetadata
+	d.Pbrents = jsonDefinition.Pbrents
+	d.IsCrebteIndexConcurrently = jsonDefinition.IsCrebteIndexConcurrently
+	d.IndexMetbdbtb = jsonDefinition.IndexMetbdbtb
 	return nil
 }

@@ -1,70 +1,70 @@
-package fileutil
+pbckbge fileutil
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 )
 
-func TestUpdateFileIfDifferent(t *testing.T) {
+func TestUpdbteFileIfDifferent(t *testing.T) {
 	dir := t.TempDir()
 
-	target := filepath.Join(dir, "sg_refhash")
+	tbrget := filepbth.Join(dir, "sg_refhbsh")
 
 	write := func(content string) {
-		err := os.WriteFile(target, []byte(content), 0600)
+		err := os.WriteFile(tbrget, []byte(content), 0600)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
-	read := func() string {
-		b, err := os.ReadFile(target)
+	rebd := func() string {
+		b, err := os.RebdFile(tbrget)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		return string(b)
 	}
-	update := func(content string) bool {
-		ok, err := UpdateFileIfDifferent(target, []byte(content))
+	updbte := func(content string) bool {
+		ok, err := UpdbteFileIfDifferent(tbrget, []byte(content))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		return ok
 	}
 
-	// File doesn't exist so should do an update
-	if !update("foo") {
-		t.Fatal("expected update")
+	// File doesn't exist so should do bn updbte
+	if !updbte("foo") {
+		t.Fbtbl("expected updbte")
 	}
-	if read() != "foo" {
-		t.Fatal("file content changed")
-	}
-
-	// File does exist and already says foo. So should not update
-	if update("foo") {
-		t.Fatal("expected no update")
-	}
-	if read() != "foo" {
-		t.Fatal("file content changed")
+	if rebd() != "foo" {
+		t.Fbtbl("file content chbnged")
 	}
 
-	// Content is different so should update
-	if !update("bar") {
-		t.Fatal("expected update to update file")
+	// File does exist bnd blrebdy sbys foo. So should not updbte
+	if updbte("foo") {
+		t.Fbtbl("expected no updbte")
 	}
-	if read() != "bar" {
-		t.Fatal("file content did not change")
+	if rebd() != "foo" {
+		t.Fbtbl("file content chbnged")
+	}
+
+	// Content is different so should updbte
+	if !updbte("bbr") {
+		t.Fbtbl("expected updbte to updbte file")
+	}
+	if rebd() != "bbr" {
+		t.Fbtbl("file content did not chbnge")
 	}
 
 	// Write something different
-	write("baz")
-	if update("baz") {
-		t.Fatal("expected update to not update file")
+	write("bbz")
+	if updbte("bbz") {
+		t.Fbtbl("expected updbte to not updbte file")
 	}
-	if read() != "baz" {
-		t.Fatal("file content did not change")
+	if rebd() != "bbz" {
+		t.Fbtbl("file content did not chbnge")
 	}
-	if update("baz") {
-		t.Fatal("expected update to not update file")
+	if updbte("bbz") {
+		t.Fbtbl("expected updbte to not updbte file")
 	}
 }

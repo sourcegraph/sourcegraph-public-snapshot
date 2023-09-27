@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -6,188 +6,188 @@ import (
 	"testing"
 
 	"github.com/elimity-com/scim"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func Test_UserResourceHandler_Replace(t *testing.T) {
+func Test_UserResourceHbndler_Replbce(t *testing.T) {
 	db := getMockDB([]*types.UserForSCIM{
-		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"b@example.com"}, SCIMExternalID: "id2"},
-		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"c@example.com"}, SCIMExternalID: "id3"},
-		{User: types.User{ID: 4, Username: "user4", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"d@example.com"}, SCIMExternalID: "id4"},
-		{User: types.User{ID: 5, Username: "user5", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": true}", Emails: []string{"e@example.com"}, SCIMExternalID: "id5"},
-		{User: types.User{ID: 6, Username: "user6", DisplayName: "First Last"}, SCIMAccountData: "{\"active\": false}", Emails: []string{"f@example.com"}, SCIMExternalID: "id6"},
+		{User: types.User{ID: 1, Usernbme: "user1", DisplbyNbme: "First Lbst"}, SCIMAccountDbtb: "{\"bctive\": true}", Embils: []string{"b@exbmple.com"}, SCIMExternblID: "id1"},
+		{User: types.User{ID: 2, Usernbme: "user2", DisplbyNbme: "First Lbst"}, SCIMAccountDbtb: "{\"bctive\": true}", Embils: []string{"b@exbmple.com"}, SCIMExternblID: "id2"},
+		{User: types.User{ID: 3, Usernbme: "user3", DisplbyNbme: "First Lbst"}, SCIMAccountDbtb: "{\"bctive\": true}", Embils: []string{"c@exbmple.com"}, SCIMExternblID: "id3"},
+		{User: types.User{ID: 4, Usernbme: "user4", DisplbyNbme: "First Lbst"}, SCIMAccountDbtb: "{\"bctive\": true}", Embils: []string{"d@exbmple.com"}, SCIMExternblID: "id4"},
+		{User: types.User{ID: 5, Usernbme: "user5", DisplbyNbme: "First Lbst"}, SCIMAccountDbtb: "{\"bctive\": true}", Embils: []string{"e@exbmple.com"}, SCIMExternblID: "id5"},
+		{User: types.User{ID: 6, Usernbme: "user6", DisplbyNbme: "First Lbst"}, SCIMAccountDbtb: "{\"bctive\": fblse}", Embils: []string{"f@exbmple.com"}, SCIMExternblID: "id6"},
 	},
-		map[int32][]*database.UserEmail{
-			1: {makeEmail(1, "a@example.com", true, true)},
-			2: {makeEmail(2, "b@example.com", true, true)},
-			3: {makeEmail(3, "c@example.com", true, true)},
-			4: {makeEmail(4, "d@example.com", true, true)},
-			5: {makeEmail(5, "e@example.com", true, true)},
-			6: {makeEmail(6, "f@example.com", true, true)},
+		mbp[int32][]*dbtbbbse.UserEmbil{
+			1: {mbkeEmbil(1, "b@exbmple.com", true, true)},
+			2: {mbkeEmbil(2, "b@exbmple.com", true, true)},
+			3: {mbkeEmbil(3, "c@exbmple.com", true, true)},
+			4: {mbkeEmbil(4, "d@exbmple.com", true, true)},
+			5: {mbkeEmbil(5, "e@exbmple.com", true, true)},
+			6: {mbkeEmbil(6, "f@exbmple.com", true, true)},
 		})
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
 
-	testCases := []struct {
-		name     string
+	testCbses := []struct {
+		nbme     string
 		userId   string
-		attrs    scim.ResourceAttributes
+		bttrs    scim.ResourceAttributes
 		testFunc func(userRes scim.Resource)
 	}{
 		{
-			name:   "replace username",
+			nbme:   "replbce usernbme",
 			userId: "1",
-			attrs: scim.ResourceAttributes{
-				AttrUserName: "replaceduser",
-				AttrEmails: []interface{}{
-					map[string]interface{}{
-						"value":   "a@example.com",
-						"primary": true,
+			bttrs: scim.ResourceAttributes{
+				AttrUserNbme: "replbceduser",
+				AttrEmbils: []interfbce{}{
+					mbp[string]interfbce{}{
+						"vblue":   "b@exbmple.com",
+						"primbry": true,
 					},
 				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Equal(t, "replaceduser", userRes.Attributes[AttrUserName])
-				assert.Equal(t, false, userRes.ExternalID.Present())
+				bssert.Equbl(t, "replbceduser", userRes.Attributes[AttrUserNbme])
+				bssert.Equbl(t, fblse, userRes.ExternblID.Present())
 				userID, _ := strconv.Atoi(userRes.ID)
-				user, _ := db.Users().GetByID(context.Background(), int32(userID))
-				assert.Equal(t, "replaceduser", user.Username)
-				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-				assert.Len(t, userEmails, 1)
+				user, _ := db.Users().GetByID(context.Bbckground(), int32(userID))
+				bssert.Equbl(t, "replbceduser", user.Usernbme)
+				userEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+				bssert.Len(t, userEmbils, 1)
 			},
 		},
 		{
-			name:   "replace emails",
+			nbme:   "replbce embils",
 			userId: "2",
-			attrs: scim.ResourceAttributes{
-				AttrEmails: []interface{}{
-					map[string]interface{}{
-						"value":   "email@address.test",
-						"primary": true,
+			bttrs: scim.ResourceAttributes{
+				AttrEmbils: []interfbce{}{
+					mbp[string]interfbce{}{
+						"vblue":   "embil@bddress.test",
+						"primbry": true,
 					},
 				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Nil(t, userRes.Attributes[AttrUserName])
+				bssert.Nil(t, userRes.Attributes[AttrUserNbme])
 				userID, _ := strconv.Atoi(userRes.ID)
-				user, _ := db.Users().GetByID(context.Background(), int32(userID))
-				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-				assert.Len(t, userEmails, 1)
-				assert.Equal(t, "email@address.test", userEmails[0].Email)
+				user, _ := db.Users().GetByID(context.Bbckground(), int32(userID))
+				userEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+				bssert.Len(t, userEmbils, 1)
+				bssert.Equbl(t, "embil@bddress.test", userEmbils[0].Embil)
 			},
 		},
 		{
-			name:   "replace many",
+			nbme:   "replbce mbny",
 			userId: "3",
-			attrs: scim.ResourceAttributes{
-				AttrDisplayName: "Test User",
-				AttrNickName:    "testy",
-				AttrEmails: []interface{}{
-					map[string]interface{}{
-						"value":   "email@address.test",
-						"primary": true,
+			bttrs: scim.ResourceAttributes{
+				AttrDisplbyNbme: "Test User",
+				AttrNickNbme:    "testy",
+				AttrEmbils: []interfbce{}{
+					mbp[string]interfbce{}{
+						"vblue":   "embil@bddress.test",
+						"primbry": true,
 					},
 				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Nil(t, userRes.Attributes[AttrUserName])
-				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
-				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
-				assert.Len(t, userRes.Attributes[AttrEmails], 1)
-				assert.Equal(t, userRes.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"], "email@address.test")
+				bssert.Nil(t, userRes.Attributes[AttrUserNbme])
+				bssert.Equbl(t, "Test User", userRes.Attributes[AttrDisplbyNbme])
+				bssert.Equbl(t, "testy", userRes.Attributes[AttrNickNbme])
+				bssert.Len(t, userRes.Attributes[AttrEmbils], 1)
+				bssert.Equbl(t, userRes.Attributes[AttrEmbils].([]interfbce{})[0].(mbp[string]interfbce{})["vblue"], "embil@bddress.test")
 				userID, _ := strconv.Atoi(userRes.ID)
-				user, _ := db.Users().GetByID(context.Background(), int32(userID))
-				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-				assert.Len(t, userEmails, 1)
-				assert.Equal(t, "email@address.test", userEmails[0].Email)
+				user, _ := db.Users().GetByID(context.Bbckground(), int32(userID))
+				userEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+				bssert.Len(t, userEmbils, 1)
+				bssert.Equbl(t, "embil@bddress.test", userEmbils[0].Embil)
 			},
 		},
 		{
-			name:   "replace and reuse previous email ",
+			nbme:   "replbce bnd reuse previous embil ",
 			userId: "4",
-			attrs: scim.ResourceAttributes{
-				AttrDisplayName: "Test User",
-				AttrNickName:    "testy",
-				AttrEmails: []interface{}{
-					map[string]interface{}{
-						"value":   "a@example.com",
-						"primary": true,
+			bttrs: scim.ResourceAttributes{
+				AttrDisplbyNbme: "Test User",
+				AttrNickNbme:    "testy",
+				AttrEmbils: []interfbce{}{
+					mbp[string]interfbce{}{
+						"vblue":   "b@exbmple.com",
+						"primbry": true,
 					},
 				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Nil(t, userRes.Attributes[AttrUserName])
-				assert.Equal(t, "Test User", userRes.Attributes[AttrDisplayName])
-				assert.Equal(t, "testy", userRes.Attributes[AttrNickName])
-				assert.Len(t, userRes.Attributes[AttrEmails], 1)
-				assert.Equal(t, userRes.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"], "a@example.com")
+				bssert.Nil(t, userRes.Attributes[AttrUserNbme])
+				bssert.Equbl(t, "Test User", userRes.Attributes[AttrDisplbyNbme])
+				bssert.Equbl(t, "testy", userRes.Attributes[AttrNickNbme])
+				bssert.Len(t, userRes.Attributes[AttrEmbils], 1)
+				bssert.Equbl(t, userRes.Attributes[AttrEmbils].([]interfbce{})[0].(mbp[string]interfbce{})["vblue"], "b@exbmple.com")
 				userID, _ := strconv.Atoi(userRes.ID)
-				user, _ := db.Users().GetByID(context.Background(), int32(userID))
-				userEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-				assert.Len(t, userEmails, 1)
-				assert.Equal(t, "a@example.com", userEmails[0].Email)
+				user, _ := db.Users().GetByID(context.Bbckground(), int32(userID))
+				userEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+				bssert.Len(t, userEmbils, 1)
+				bssert.Equbl(t, "b@exbmple.com", userEmbils[0].Embil)
 			},
 		},
 		{
-			name:   "Trigger soft delete",
+			nbme:   "Trigger soft delete",
 			userId: "5",
-			attrs: scim.ResourceAttributes{
-				AttrDisplayName: "It will be soft deleted",
-				AttrActive:      false,
-				AttrEmails: []interface{}{
-					map[string]interface{}{
-						"value":   "e@example.com",
-						"primary": true,
+			bttrs: scim.ResourceAttributes{
+				AttrDisplbyNbme: "It will be soft deleted",
+				AttrActive:      fblse,
+				AttrEmbils: []interfbce{}{
+					mbp[string]interfbce{}{
+						"vblue":   "e@exbmple.com",
+						"primbry": true,
 					},
 				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Equal(t, "It will be soft deleted", userRes.Attributes[AttrDisplayName])
-				assert.Equal(t, false, userRes.Attributes[AttrActive])
+				bssert.Equbl(t, "It will be soft deleted", userRes.Attributes[AttrDisplbyNbme])
+				bssert.Equbl(t, fblse, userRes.Attributes[AttrActive])
 
 				// Check user in DB
 				userID, _ := strconv.Atoi(userRes.ID)
-				users, err := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{int32(userID)}})
-				assert.NoError(t, err, "user should be found")
-				assert.Len(t, users, 1, "1 user should be found")
-				assert.False(t, users[0].Active, "user should not be active")
+				users, err := db.Users().ListForSCIM(context.Bbckground(), &dbtbbbse.UsersListOptions{UserIDs: []int32{int32(userID)}})
+				bssert.NoError(t, err, "user should be found")
+				bssert.Len(t, users, 1, "1 user should be found")
+				bssert.Fblse(t, users[0].Active, "user should not be bctive")
 			},
 		},
 		{
-			name:   "Reactive user",
+			nbme:   "Rebctive user",
 			userId: "6",
-			attrs: scim.ResourceAttributes{
-				AttrDisplayName: "It will be reactivated",
+			bttrs: scim.ResourceAttributes{
+				AttrDisplbyNbme: "It will be rebctivbted",
 				AttrActive:      true,
-				AttrEmails: []interface{}{
-					map[string]interface{}{
-						"value":   "f@example.com",
-						"primary": true,
+				AttrEmbils: []interfbce{}{
+					mbp[string]interfbce{}{
+						"vblue":   "f@exbmple.com",
+						"primbry": true,
 					},
 				},
 			},
 			testFunc: func(userRes scim.Resource) {
-				assert.Equal(t, "It will be reactivated", userRes.Attributes[AttrDisplayName])
-				assert.Equal(t, true, userRes.Attributes[AttrActive])
+				bssert.Equbl(t, "It will be rebctivbted", userRes.Attributes[AttrDisplbyNbme])
+				bssert.Equbl(t, true, userRes.Attributes[AttrActive])
 
 				// Check user in DB
 				userID, _ := strconv.Atoi(userRes.ID)
-				users, err := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{int32(userID)}})
-				assert.NoError(t, err, "user should be found")
-				assert.Len(t, users, 1, "1 user should be found")
-				assert.True(t, users[0].Active, "user should be active")
+				users, err := db.Users().ListForSCIM(context.Bbckground(), &dbtbbbse.UsersListOptions{UserIDs: []int32{int32(userID)}})
+				bssert.NoError(t, err, "user should be found")
+				bssert.Len(t, users, 1, "1 user should be found")
+				bssert.True(t, users[0].Active, "user should be bctive")
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			user, err := userResourceHandler.Replace(createDummyRequest(), tc.userId, tc.attrs)
-			assert.NoError(t, err)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			user, err := userResourceHbndler.Replbce(crebteDummyRequest(), tc.userId, tc.bttrs)
+			bssert.NoError(t, err)
 			tc.testFunc(user)
 		})
 	}

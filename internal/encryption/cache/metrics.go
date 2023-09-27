@@ -1,43 +1,43 @@
-package cache
+pbckbge cbche
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 )
 
-var (
-	hitTotal = promauto.NewCounterVec(
+vbr (
+	hitTotbl = prombuto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "src_encryption_cache_hit_total",
-			Help: "Total number of cache hits in encryption/cache",
+			Nbme: "src_encryption_cbche_hit_totbl",
+			Help: "Totbl number of cbche hits in encryption/cbche",
 		},
 		[]string{},
 	)
-	missTotal = promauto.NewCounterVec(
+	missTotbl = prombuto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "src_encryption_cache_miss_total",
-			Help: "Total number of cache misses in encryption/cache",
+			Nbme: "src_encryption_cbche_miss_totbl",
+			Help: "Totbl number of cbche misses in encryption/cbche",
 		},
 		[]string{},
 	)
-	loadSuccessTotal = promauto.NewCounterVec(
+	lobdSuccessTotbl = prombuto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "src_encryption_cache_load_success_total",
-			Help: "Total number of successful cache loads in encryption/cache",
+			Nbme: "src_encryption_cbche_lobd_success_totbl",
+			Help: "Totbl number of successful cbche lobds in encryption/cbche",
 		},
 		[]string{},
 	)
-	loadErrorTotal = promauto.NewCounterVec(
+	lobdErrorTotbl = prombuto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "src_encryption_cache_load_error_total",
-			Help: "Total number of failed cache loads in encryption/cache",
+			Nbme: "src_encryption_cbche_lobd_error_totbl",
+			Help: "Totbl number of fbiled cbche lobds in encryption/cbche",
 		},
 		[]string{},
 	)
-	evictTotal = promauto.NewCounterVec(
+	evictTotbl = prombuto.NewCounterVec(
 		prometheus.CounterOpts{
-			Name: "src_encryption_cache_eviction_total",
-			Help: "Total number of cache evictions in encryption/cache",
+			Nbme: "src_encryption_cbche_eviction_totbl",
+			Help: "Totbl number of cbche evictions in encryption/cbche",
 		},
 		[]string{},
 	)

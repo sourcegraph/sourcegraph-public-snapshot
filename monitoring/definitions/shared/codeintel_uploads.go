@@ -1,227 +1,227 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import "github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-// src_codeintel_uploads_total
-// src_codeintel_uploads_duration_seconds_bucket
-// src_codeintel_uploads_errors_total
-func (codeIntelligence) NewUploadsServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_uplobds_totbl
+// src_codeintel_uplobds_durbtion_seconds_bucket
+// src_codeintel_uplobds_errors_totbl
+func (codeIntelligence) NewUplobdsServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > Service",
-			Hidden:          false,
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Uplobds > Service",
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_uploads",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_uplobds",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_uploads_store_total
-// src_codeintel_uploads_store_duration_seconds_bucket
-// src_codeintel_uploads_store_errors_total
-func (codeIntelligence) NewUploadsStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_uplobds_store_totbl
+// src_codeintel_uplobds_store_durbtion_seconds_bucket
+// src_codeintel_uplobds_store_errors_totbl
+func (codeIntelligence) NewUplobdsStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > Store (internal)",
-			Hidden:          false,
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Uplobds > Store (internbl)",
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_uploads_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_uplobds_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_uploads_transport_graphql_total
-// src_codeintel_uploads_transport_graphql_duration_seconds_bucket
-// src_codeintel_uploads_transport_graphql_errors_total
-func (codeIntelligence) NewUploadsGraphQLTransportGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_uplobds_trbnsport_grbphql_totbl
+// src_codeintel_uplobds_trbnsport_grbphql_durbtion_seconds_bucket
+// src_codeintel_uplobds_trbnsport_grbphql_errors_totbl
+func (codeIntelligence) NewUplobdsGrbphQLTrbnsportGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > GQL Transport",
-			Hidden:          false,
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Uplobds > GQL Trbnsport",
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_uploads_transport_graphql",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_uplobds_trbnsport_grbphql",
 				MetricDescriptionRoot: "resolver",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_uploads_transport_http_total
-// src_codeintel_uploads_transport_http_duration_seconds_bucket
-// src_codeintel_uploads_transport_http_errors_total
-func (codeIntelligence) NewUploadsHTTPTransportGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_uplobds_trbnsport_http_totbl
+// src_codeintel_uplobds_trbnsport_http_durbtion_seconds_bucket
+// src_codeintel_uplobds_trbnsport_http_errors_totbl
+func (codeIntelligence) NewUplobdsHTTPTrbnsportGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Uploads > HTTP Transport",
-			Hidden:          false,
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Uplobds > HTTP Trbnsport",
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_uploads_transport_http",
-				MetricDescriptionRoot: "http handler",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_uplobds_trbnsport_http",
+				MetricDescriptionRoot: "http hbndler",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_background_repositories_scanned_total
-// src_codeintel_background_upload_records_scanned_total
-// src_codeintel_background_commits_scanned_total
-// src_codeintel_background_upload_records_expired_total
-func (codeIntelligence) NewUploadsExpirationTaskGroup(containerName string) monitoring.Group {
+// src_codeintel_bbckground_repositories_scbnned_totbl
+// src_codeintel_bbckground_uplobd_records_scbnned_totbl
+// src_codeintel_bbckground_commits_scbnned_totbl
+// src_codeintel_bbckground_uplobd_records_expired_totbl
+func (codeIntelligence) NewUplobdsExpirbtionTbskGroup(contbinerNbme string) monitoring.Group {
 	return monitoring.Group{
-		Title:  "Codeintel: Uploads > Expiration task",
-		Hidden: false,
+		Title:  "Codeintel: Uplobds > Expirbtion tbsk",
+		Hidden: fblse,
 		Rows: []monitoring.Row{
 			{
-				Standard.Count("repositories scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_repositories_scanned",
-					MetricDescriptionRoot: "lsif upload repository scan",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of repositories scanned for data retention
-				`).Observable(),
+				Stbndbrd.Count("repositories scbnned")(ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "codeintel_bbckground_repositories_scbnned",
+					MetricDescriptionRoot: "lsif uplobd repository scbn",
+				})(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel).WithNoAlerts(`
+					Number of repositories scbnned for dbtb retention
+				`).Observbble(),
 
-				Standard.Count("records scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_scanned",
-					MetricDescriptionRoot: "lsif upload records scan",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of codeintel upload records scanned for data retention
-				`).Observable(),
+				Stbndbrd.Count("records scbnned")(ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "codeintel_bbckground_uplobd_records_scbnned",
+					MetricDescriptionRoot: "lsif uplobd records scbn",
+				})(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel).WithNoAlerts(`
+					Number of codeintel uplobd records scbnned for dbtb retention
+				`).Observbble(),
 
-				Standard.Count("commits scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_commits_scanned",
-					MetricDescriptionRoot: "lsif upload commits scanned",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of commits reachable from a codeintel upload record scanned for data retention
-				`).Observable(),
+				Stbndbrd.Count("commits scbnned")(ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "codeintel_bbckground_commits_scbnned",
+					MetricDescriptionRoot: "lsif uplobd commits scbnned",
+				})(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel).WithNoAlerts(`
+					Number of commits rebchbble from b codeintel uplobd record scbnned for dbtb retention
+				`).Observbble(),
 
-				Standard.Count("uploads scanned")(ObservableConstructorOptions{
-					MetricNameRoot:        "codeintel_background_upload_records_expired",
-					MetricDescriptionRoot: "lsif upload records expired",
-				})(containerName, monitoring.ObservableOwnerCodeIntel).WithNoAlerts(`
-					Number of codeintel upload records marked as expired
-				`).Observable(),
+				Stbndbrd.Count("uplobds scbnned")(ObservbbleConstructorOptions{
+					MetricNbmeRoot:        "codeintel_bbckground_uplobd_records_expired",
+					MetricDescriptionRoot: "lsif uplobd records expired",
+				})(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel).WithNoAlerts(`
+					Number of codeintel uplobd records mbrked bs expired
+				`).Observbble(),
 			},
 		},
 	}
 }
 
-// Tasks:
-//   - codeintel_uploads_janitor_unknown_repository
-//   - codeintel_uploads_janitor_unknown_commit
-//   - codeintel_uploads_janitor_abandoned
-//   - codeintel_uploads_expirer_unreferenced
-//   - codeintel_uploads_expirer_unreferenced_graph
-//   - codeintel_uploads_hard_deleter
-//   - codeintel_uploads_janitor_audit_logs
-//   - codeintel_uploads_janitor_scip_documents
+// Tbsks:
+//   - codeintel_uplobds_jbnitor_unknown_repository
+//   - codeintel_uplobds_jbnitor_unknown_commit
+//   - codeintel_uplobds_jbnitor_bbbndoned
+//   - codeintel_uplobds_expirer_unreferenced
+//   - codeintel_uplobds_expirer_unreferenced_grbph
+//   - codeintel_uplobds_hbrd_deleter
+//   - codeintel_uplobds_jbnitor_budit_logs
+//   - codeintel_uplobds_jbnitor_scip_documents
 //
 // Suffixes:
-//   - _total
-//   - _duration_seconds_bucket
-//   - _errors_total
-//   - _records_scanned_total
-//   - _records_altered_total
-func (codeIntelligence) NewJanitorTaskGroups(containerName string) []monitoring.Group {
-	return CodeIntelligence.newJanitorGroups(
-		"Uploads > Janitor task",
-		containerName,
+//   - _totbl
+//   - _durbtion_seconds_bucket
+//   - _errors_totbl
+//   - _records_scbnned_totbl
+//   - _records_bltered_totbl
+func (codeIntelligence) NewJbnitorTbskGroups(contbinerNbme string) []monitoring.Group {
+	return CodeIntelligence.newJbnitorGroups(
+		"Uplobds > Jbnitor tbsk",
+		contbinerNbme,
 		[]string{
-			"codeintel_uploads_janitor_unknown_repository",
-			"codeintel_uploads_janitor_unknown_commit",
-			"codeintel_uploads_janitor_abandoned",
-			"codeintel_uploads_expirer_unreferenced",
-			"codeintel_uploads_expirer_unreferenced_graph",
-			"codeintel_uploads_hard_deleter",
-			"codeintel_uploads_janitor_audit_logs",
-			"codeintel_uploads_janitor_scip_documents",
+			"codeintel_uplobds_jbnitor_unknown_repository",
+			"codeintel_uplobds_jbnitor_unknown_commit",
+			"codeintel_uplobds_jbnitor_bbbndoned",
+			"codeintel_uplobds_expirer_unreferenced",
+			"codeintel_uplobds_expirer_unreferenced_grbph",
+			"codeintel_uplobds_hbrd_deleter",
+			"codeintel_uplobds_jbnitor_budit_logs",
+			"codeintel_uplobds_jbnitor_scip_documents",
 		},
 	)
 }
 
-// Tasks:
-//   - codeintel_uploads_reconciler_scip_metadata
-//   - codeintel_uploads_reconciler_scip_data
+// Tbsks:
+//   - codeintel_uplobds_reconciler_scip_metbdbtb
+//   - codeintel_uplobds_reconciler_scip_dbtb
 //
 // Suffixes:
-//   - _total
-//   - _duration_seconds_bucket
-//   - _errors_total
-//   - _records_scanned_total
-//   - _records_altered_total
-func (codeIntelligence) NewReconcilerTaskGroups(containerName string) []monitoring.Group {
-	return CodeIntelligence.newJanitorGroups(
-		"Uploads > Reconciler task",
-		containerName,
+//   - _totbl
+//   - _durbtion_seconds_bucket
+//   - _errors_totbl
+//   - _records_scbnned_totbl
+//   - _records_bltered_totbl
+func (codeIntelligence) NewReconcilerTbskGroups(contbinerNbme string) []monitoring.Group {
+	return CodeIntelligence.newJbnitorGroups(
+		"Uplobds > Reconciler tbsk",
+		contbinerNbme,
 		[]string{
-			"codeintel_uploads_reconciler_scip_metadata",
-			"codeintel_uploads_reconciler_scip_data",
+			"codeintel_uplobds_reconciler_scip_metbdbtb",
+			"codeintel_uplobds_reconciler_scip_dbtb",
 		},
 	)
 }

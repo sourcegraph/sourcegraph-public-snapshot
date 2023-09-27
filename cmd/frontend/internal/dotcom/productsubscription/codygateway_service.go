@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
@@ -6,186 +6,186 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	"google.golang.org/api/iterator"
-	"google.golang.org/api/option"
+	"google.golbng.org/bpi/iterbtor"
+	"google.golbng.org/bpi/option"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var codyGatewaySACredentialFilePath = func() string {
-	if v := env.Get("CODY_GATEWAY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "BigQuery credentials for the Cody Gateway service"); v != "" {
+vbr codyGbtewbySACredentiblFilePbth = func() string {
+	if v := env.Get("CODY_GATEWAY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "BigQuery credentibls for the Cody Gbtewby service"); v != "" {
 		return v
 	}
-	return env.Get("LLM_PROXY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "DEPRECATED: Use CODY_GATEWAY_BIGQUERY_ACCESS_CREDENTIALS_FILE instead")
+	return env.Get("LLM_PROXY_BIGQUERY_ACCESS_CREDENTIALS_FILE", "", "DEPRECATED: Use CODY_GATEWAY_BIGQUERY_ACCESS_CREDENTIALS_FILE instebd")
 }()
 
-type CodyGatewayService interface {
-	UsageForSubscription(ctx context.Context, uuid string) ([]SubscriptionUsage, error)
+type CodyGbtewbyService interfbce {
+	UsbgeForSubscription(ctx context.Context, uuid string) ([]SubscriptionUsbge, error)
 }
 
-type CodyGatewayServiceOptions struct {
+type CodyGbtewbyServiceOptions struct {
 	BigQuery ServiceBigQueryOptions
 }
 
 type ServiceBigQueryOptions struct {
-	CredentialFilePath string
+	CredentiblFilePbth string
 	ProjectID          string
-	Dataset            string
-	EventsTable        string
+	Dbtbset            string
+	EventsTbble        string
 }
 
 func (o ServiceBigQueryOptions) IsConfigured() bool {
-	return o.ProjectID != "" && o.Dataset != "" && o.EventsTable != ""
+	return o.ProjectID != "" && o.Dbtbset != "" && o.EventsTbble != ""
 }
 
-func NewCodyGatewayService() *codyGatewayService {
-	opts := CodyGatewayServiceOptions{}
+func NewCodyGbtewbyService() *codyGbtewbyService {
+	opts := CodyGbtewbyServiceOptions{}
 
 	d := conf.Get().Dotcom
-	if d != nil && d.CodyGateway != nil {
-		opts.BigQuery.CredentialFilePath = codyGatewaySACredentialFilePath
-		opts.BigQuery.ProjectID = d.CodyGateway.BigQueryGoogleProjectID
-		opts.BigQuery.Dataset = d.CodyGateway.BigQueryDataset
-		opts.BigQuery.EventsTable = d.CodyGateway.BigQueryTable
+	if d != nil && d.CodyGbtewby != nil {
+		opts.BigQuery.CredentiblFilePbth = codyGbtewbySACredentiblFilePbth
+		opts.BigQuery.ProjectID = d.CodyGbtewby.BigQueryGoogleProjectID
+		opts.BigQuery.Dbtbset = d.CodyGbtewby.BigQueryDbtbset
+		opts.BigQuery.EventsTbble = d.CodyGbtewby.BigQueryTbble
 	}
 
-	return NewCodyGatewayServiceWithOptions(opts)
+	return NewCodyGbtewbyServiceWithOptions(opts)
 }
 
-func NewCodyGatewayServiceWithOptions(opts CodyGatewayServiceOptions) *codyGatewayService {
-	return &codyGatewayService{
+func NewCodyGbtewbyServiceWithOptions(opts CodyGbtewbyServiceOptions) *codyGbtewbyService {
+	return &codyGbtewbyService{
 		opts: opts,
 	}
 }
 
-type SubscriptionUsage struct {
-	Date  time.Time
+type SubscriptionUsbge struct {
+	Dbte  time.Time
 	Model string
 	Count int64
 }
 
-type codyGatewayService struct {
-	opts CodyGatewayServiceOptions
+type codyGbtewbyService struct {
+	opts CodyGbtewbyServiceOptions
 }
 
-func (s *codyGatewayService) CompletionsUsageForActor(ctx context.Context, feature types.CompletionsFeature, actorSource codygateway.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *codyGbtewbyService) CompletionsUsbgeForActor(ctx context.Context, febture types.CompletionsFebture, bctorSource codygbtewby.ActorSource, bctorID string) ([]SubscriptionUsbge, error) {
 	if !s.opts.BigQuery.IsConfigured() {
-		// Not configured, nothing we can do.
+		// Not configured, nothing we cbn do.
 		return nil, nil
 	}
 
-	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, gcpClientOptions(s.opts.BigQuery.CredentialFilePath)...)
+	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, gcpClientOptions(s.opts.BigQuery.CredentiblFilePbth)...)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating BigQuery client")
+		return nil, errors.Wrbp(err, "crebting BigQuery client")
 	}
 	defer client.Close()
 
-	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
+	tbl := client.Dbtbset(s.opts.BigQuery.Dbtbset).Tbble(s.opts.BigQuery.EventsTbble)
 
-	// Count events with the name for made requests for each day in the last 7 days.
+	// Count events with the nbme for mbde requests for ebch dby in the lbst 7 dbys.
 	query := fmt.Sprintf(`
-WITH date_range AS (
-	SELECT DATE(date) AS date
+WITH dbte_rbnge AS (
+	SELECT DATE(dbte) AS dbte
 	FROM UNNEST(
 		GENERATE_TIMESTAMP_ARRAY(
 			TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY),
 			CURRENT_TIMESTAMP(),
 			INTERVAL 1 DAY
 		)
-	) AS date
+	) AS dbte
 ),
 models AS (
 	SELECT
-		DISTINCT(STRING(JSON_QUERY(events.metadata, '$.model'))) AS model
+		DISTINCT(STRING(JSON_QUERY(events.metbdbtb, '$.model'))) AS model
 	FROM
 		%s.%s
 	WHERE
 		source = @source
 		AND identifier = @identifier
-		AND name = @eventName
-		AND STRING(JSON_QUERY(events.metadata, '$.feature')) = @feature
-		AND STRING(JSON_QUERY(events.metadata, '$.model')) IS NOT NULL
+		AND nbme = @eventNbme
+		AND STRING(JSON_QUERY(events.metbdbtb, '$.febture')) = @febture
+		AND STRING(JSON_QUERY(events.metbdbtb, '$.model')) IS NOT NULL
 ),
-date_range_with_models AS (
-	SELECT date_range.date, models.model
-	FROM date_range
+dbte_rbnge_with_models AS (
+	SELECT dbte_rbnge.dbte, models.model
+	FROM dbte_rbnge
 	CROSS JOIN models
 )
 SELECT
-	date_range_with_models.date AS date,
-	date_range_with_models.model AS model,
-	IFNULL(COUNT(events.date), 0) AS count
+	dbte_rbnge_with_models.dbte AS dbte,
+	dbte_rbnge_with_models.model AS model,
+	IFNULL(COUNT(events.dbte), 0) AS count
 FROM
-	date_range_with_models
+	dbte_rbnge_with_models
 LEFT JOIN (
 	SELECT
-		DATE(created_at) AS date,
-		metadata
+		DATE(crebted_bt) AS dbte,
+		metbdbtb
 	FROM
 		%s.%s
 	WHERE
 		source = @source
 		AND identifier = @identifier
-		AND name = @eventName
-		AND STRING(JSON_QUERY(events.metadata, '$.feature')) = @feature
+		AND nbme = @eventNbme
+		AND STRING(JSON_QUERY(events.metbdbtb, '$.febture')) = @febture
 	) events
 ON
-	date_range_with_models.date = events.date
-	AND STRING(JSON_QUERY(events.metadata, '$.model')) = date_range_with_models.model
+	dbte_rbnge_with_models.dbte = events.dbte
+	AND STRING(JSON_QUERY(events.metbdbtb, '$.model')) = dbte_rbnge_with_models.model
 GROUP BY
-	date_range_with_models.date, date_range_with_models.model
+	dbte_rbnge_with_models.dbte, dbte_rbnge_with_models.model
 ORDER BY
-	date_range_with_models.date DESC, date_range_with_models.model ASC`,
-		tbl.DatasetID,
-		tbl.TableID,
-		tbl.DatasetID,
-		tbl.TableID,
+	dbte_rbnge_with_models.dbte DESC, dbte_rbnge_with_models.model ASC`,
+		tbl.DbtbsetID,
+		tbl.TbbleID,
+		tbl.DbtbsetID,
+		tbl.TbbleID,
 	)
 
 	q := client.Query(query)
-	q.Parameters = []bigquery.QueryParameter{
+	q.Pbrbmeters = []bigquery.QueryPbrbmeter{
 		{
-			Name:  "source",
-			Value: actorSource,
+			Nbme:  "source",
+			Vblue: bctorSource,
 		},
 		{
-			Name:  "identifier",
-			Value: actorID,
+			Nbme:  "identifier",
+			Vblue: bctorID,
 		},
 		{
-			Name:  "eventName",
-			Value: codygateway.EventNameCompletionsFinished,
+			Nbme:  "eventNbme",
+			Vblue: codygbtewby.EventNbmeCompletionsFinished,
 		},
 		{
-			Name:  codygateway.CompletionsEventFeatureMetadataField,
-			Value: feature,
+			Nbme:  codygbtewby.CompletionsEventFebtureMetbdbtbField,
+			Vblue: febture,
 		},
 	}
 
-	it, err := q.Read(ctx)
+	it, err := q.Rebd(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing query")
+		return nil, errors.Wrbp(err, "executing query")
 	}
 
-	results := make([]SubscriptionUsage, 0)
+	results := mbke([]SubscriptionUsbge, 0)
 	for {
-		var row struct {
-			Date  bigquery.NullDate
+		vbr row struct {
+			Dbte  bigquery.NullDbte
 			Model string
 			Count int64
 		}
 		err := it.Next(&row)
-		if err == iterator.Done {
-			break
+		if err == iterbtor.Done {
+			brebk
 		} else if err != nil {
-			return nil, errors.Wrap(err, "reading query result")
+			return nil, errors.Wrbp(err, "rebding query result")
 		}
-		results = append(results, SubscriptionUsage{
-			Date:  row.Date.Date.In(time.UTC),
+		results = bppend(results, SubscriptionUsbge{
+			Dbte:  row.Dbte.Dbte.In(time.UTC),
 			Model: row.Model,
 			Count: row.Count,
 		})
@@ -194,121 +194,121 @@ ORDER BY
 	return results, nil
 }
 
-func (s *codyGatewayService) EmbeddingsUsageForActor(ctx context.Context, actorSource codygateway.ActorSource, actorID string) ([]SubscriptionUsage, error) {
+func (s *codyGbtewbyService) EmbeddingsUsbgeForActor(ctx context.Context, bctorSource codygbtewby.ActorSource, bctorID string) ([]SubscriptionUsbge, error) {
 	if !s.opts.BigQuery.IsConfigured() {
-		// Not configured, nothing we can do.
+		// Not configured, nothing we cbn do.
 		return nil, nil
 	}
 
-	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, gcpClientOptions(s.opts.BigQuery.CredentialFilePath)...)
+	client, err := bigquery.NewClient(ctx, s.opts.BigQuery.ProjectID, gcpClientOptions(s.opts.BigQuery.CredentiblFilePbth)...)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating BigQuery client")
+		return nil, errors.Wrbp(err, "crebting BigQuery client")
 	}
 	defer client.Close()
 
-	tbl := client.Dataset(s.opts.BigQuery.Dataset).Table(s.opts.BigQuery.EventsTable)
+	tbl := client.Dbtbset(s.opts.BigQuery.Dbtbset).Tbble(s.opts.BigQuery.EventsTbble)
 
-	// Count amount of tokens across all requests for made requests for each day abd model
-	// in the last 7 days.
+	// Count bmount of tokens bcross bll requests for mbde requests for ebch dby bbd model
+	// in the lbst 7 dbys.
 	query := fmt.Sprintf(`
-WITH date_range AS (
-	SELECT DATE(date) AS date
+WITH dbte_rbnge AS (
+	SELECT DATE(dbte) AS dbte
 	FROM UNNEST(
 		GENERATE_TIMESTAMP_ARRAY(
 			TIMESTAMP_SUB(CURRENT_TIMESTAMP(), INTERVAL 7 DAY),
 			CURRENT_TIMESTAMP(),
 			INTERVAL 1 DAY
 		)
-	) AS date
+	) AS dbte
 ),
 models AS (
 	SELECT
-		DISTINCT(STRING(JSON_QUERY(events.metadata, '$.model'))) AS model
+		DISTINCT(STRING(JSON_QUERY(events.metbdbtb, '$.model'))) AS model
 	FROM
 		%s.%s
 	WHERE
 		source = @source
 		AND identifier = @identifier
-		AND name = @eventName
-		AND STRING(JSON_QUERY(events.metadata, '$.feature')) = @feature
-		AND STRING(JSON_QUERY(events.metadata, '$.model')) IS NOT NULL
+		AND nbme = @eventNbme
+		AND STRING(JSON_QUERY(events.metbdbtb, '$.febture')) = @febture
+		AND STRING(JSON_QUERY(events.metbdbtb, '$.model')) IS NOT NULL
 ),
-date_range_with_models AS (
-	SELECT date_range.date, models.model
-	FROM date_range
+dbte_rbnge_with_models AS (
+	SELECT dbte_rbnge.dbte, models.model
+	FROM dbte_rbnge
 	CROSS JOIN models
 )
 SELECT
-	date_range_with_models.date AS date,
-	date_range_with_models.model AS model,
-	IFNULL(SUM(INT64(JSON_QUERY(events.metadata, '$.tokens_used'))), 0) AS count
+	dbte_rbnge_with_models.dbte AS dbte,
+	dbte_rbnge_with_models.model AS model,
+	IFNULL(SUM(INT64(JSON_QUERY(events.metbdbtb, '$.tokens_used'))), 0) AS count
 FROM
-	date_range_with_models
+	dbte_rbnge_with_models
 LEFT JOIN (
 	SELECT
-		DATE(created_at) AS date,
-		metadata
+		DATE(crebted_bt) AS dbte,
+		metbdbtb
 	FROM
 		%s.%s
 	WHERE
 		source = @source
 		AND identifier = @identifier
-		AND name = @eventName
-		AND STRING(JSON_QUERY(events.metadata, '$.feature')) = @feature
+		AND nbme = @eventNbme
+		AND STRING(JSON_QUERY(events.metbdbtb, '$.febture')) = @febture
 	) events
 ON
-	date_range_with_models.date = events.date
-	AND STRING(JSON_QUERY(events.metadata, '$.model')) = date_range_with_models.model
+	dbte_rbnge_with_models.dbte = events.dbte
+	AND STRING(JSON_QUERY(events.metbdbtb, '$.model')) = dbte_rbnge_with_models.model
 GROUP BY
-	date_range_with_models.date, date_range_with_models.model
+	dbte_rbnge_with_models.dbte, dbte_rbnge_with_models.model
 ORDER BY
-	date_range_with_models.date DESC, date_range_with_models.model ASC`,
-		tbl.DatasetID,
-		tbl.TableID,
-		tbl.DatasetID,
-		tbl.TableID,
+	dbte_rbnge_with_models.dbte DESC, dbte_rbnge_with_models.model ASC`,
+		tbl.DbtbsetID,
+		tbl.TbbleID,
+		tbl.DbtbsetID,
+		tbl.TbbleID,
 	)
 
 	q := client.Query(query)
-	q.Parameters = []bigquery.QueryParameter{
+	q.Pbrbmeters = []bigquery.QueryPbrbmeter{
 		{
-			Name:  "source",
-			Value: actorSource,
+			Nbme:  "source",
+			Vblue: bctorSource,
 		},
 		{
-			Name:  "identifier",
-			Value: actorID,
+			Nbme:  "identifier",
+			Vblue: bctorID,
 		},
 		{
-			Name:  "eventName",
-			Value: codygateway.EventNameEmbeddingsFinished,
+			Nbme:  "eventNbme",
+			Vblue: codygbtewby.EventNbmeEmbeddingsFinished,
 		},
 		{
-			Name:  codygateway.CompletionsEventFeatureMetadataField,
-			Value: codygateway.CompletionsEventFeatureEmbeddings,
+			Nbme:  codygbtewby.CompletionsEventFebtureMetbdbtbField,
+			Vblue: codygbtewby.CompletionsEventFebtureEmbeddings,
 		},
 	}
 
-	it, err := q.Read(ctx)
+	it, err := q.Rebd(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing query")
+		return nil, errors.Wrbp(err, "executing query")
 	}
 
-	results := make([]SubscriptionUsage, 0)
+	results := mbke([]SubscriptionUsbge, 0)
 	for {
-		var row struct {
-			Date  bigquery.NullDate
+		vbr row struct {
+			Dbte  bigquery.NullDbte
 			Model string
 			Count int64
 		}
 		err := it.Next(&row)
-		if err == iterator.Done {
-			break
+		if err == iterbtor.Done {
+			brebk
 		} else if err != nil {
-			return nil, errors.Wrap(err, "reading query result")
+			return nil, errors.Wrbp(err, "rebding query result")
 		}
-		results = append(results, SubscriptionUsage{
-			Date:  row.Date.Date.In(time.UTC),
+		results = bppend(results, SubscriptionUsbge{
+			Dbte:  row.Dbte.Dbte.In(time.UTC),
 			Model: row.Model,
 			Count: row.Count,
 		})
@@ -317,9 +317,9 @@ ORDER BY
 	return results, nil
 }
 
-func gcpClientOptions(credentialFilePath string) []option.ClientOption {
-	if credentialFilePath != "" {
-		return []option.ClientOption{option.WithCredentialsFile(credentialFilePath)}
+func gcpClientOptions(credentiblFilePbth string) []option.ClientOption {
+	if credentiblFilePbth != "" {
+		return []option.ClientOption{option.WithCredentiblsFile(credentiblFilePbth)}
 	}
 
 	return nil

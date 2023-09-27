@@ -1,65 +1,65 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-var _ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver = &batchSpecWorkspaceFileConnectionResolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceFileConnectionResolver = &bbtchSpecWorkspbceFileConnectionResolver{}
 
-type batchSpecWorkspaceFileConnectionResolver struct {
+type bbtchSpecWorkspbceFileConnectionResolver struct {
 	store *store.Store
-	opts  store.ListBatchSpecWorkspaceFileOpts
+	opts  store.ListBbtchSpecWorkspbceFileOpts
 
-	// Cache results to save on hit to the database.
+	// Cbche results to sbve on hit to the dbtbbbse.
 	once  sync.Once
-	files []*btypes.BatchSpecWorkspaceFile
+	files []*btypes.BbtchSpecWorkspbceFile
 	next  int64
 	err   error
 }
 
-func (r *batchSpecWorkspaceFileConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountBatchSpecWorkspaceFiles(ctx, r.opts)
+func (r *bbtchSpecWorkspbceFileConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	count, err := r.store.CountBbtchSpecWorkspbceFiles(ctx, r.opts)
 	return int32(count), err
 }
 
-func (r *batchSpecWorkspaceFileConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *bbtchSpecWorkspbceFileConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next != 0 {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(int(next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *batchSpecWorkspaceFileConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchWorkspaceFileResolver, error) {
+func (r *bbtchSpecWorkspbceFileConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.BbtchWorkspbceFileResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) == 0 {
-		return []graphqlbackend.BatchWorkspaceFileResolver{}, nil
+		return []grbphqlbbckend.BbtchWorkspbceFileResolver{}, nil
 	}
 
-	resolvers := make([]graphqlbackend.BatchWorkspaceFileResolver, len(nodes))
-	for i, node := range nodes {
-		resolvers[i] = newBatchSpecWorkspaceFileResolver(r.opts.BatchSpecRandID, node)
+	resolvers := mbke([]grbphqlbbckend.BbtchWorkspbceFileResolver, len(nodes))
+	for i, node := rbnge nodes {
+		resolvers[i] = newBbtchSpecWorkspbceFileResolver(r.opts.BbtchSpecRbndID, node)
 	}
 	return resolvers, nil
 }
 
-func (r *batchSpecWorkspaceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchSpecWorkspaceFile, int64, error) {
+func (r *bbtchSpecWorkspbceFileConnectionResolver) compute(ctx context.Context) ([]*btypes.BbtchSpecWorkspbceFile, int64, error) {
 	r.once.Do(func() {
-		r.files, r.next, r.err = r.store.ListBatchSpecWorkspaceFiles(ctx, r.opts)
+		r.files, r.next, r.err = r.store.ListBbtchSpecWorkspbceFiles(ctx, r.opts)
 	})
 	return r.files, r.next, r.err
 }

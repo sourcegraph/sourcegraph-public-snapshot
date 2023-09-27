@@ -1,44 +1,44 @@
-package audit
+pbckbge budit
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSecurityEventLocation(t *testing.T) {
+func TestSecurityEventLocbtion(t *testing.T) {
 
 	tests := []struct {
-		name string
-		cfg  schema.SiteConfiguration
-		want SecurityEventsLocation
+		nbme string
+		cfg  schemb.SiteConfigurbtion
+		wbnt SecurityEventsLocbtion
 	}{
 		{
-			"base",
-			schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "none"}}},
+			"bbse",
+			schemb.SiteConfigurbtion{Log: &schemb.Log{SecurityEventLog: &schemb.SecurityEventLog{Locbtion: "none"}}},
 			None,
 		},
 		{
-			"all",
-			schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "all"}}},
+			"bll",
+			schemb.SiteConfigurbtion{Log: &schemb.Log{SecurityEventLog: &schemb.SecurityEventLog{Locbtion: "bll"}}},
 			All,
 		},
 		{
-			"database",
-			schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "database"}}},
-			Database,
+			"dbtbbbse",
+			schemb.SiteConfigurbtion{Log: &schemb.Log{SecurityEventLog: &schemb.SecurityEventLog{Locbtion: "dbtbbbse"}}},
+			Dbtbbbse,
 		},
 		{
-			"auditlog",
-			schema.SiteConfiguration{Log: &schema.Log{SecurityEventLog: &schema.SecurityEventLog{Location: "auditlog"}}},
+			"buditlog",
+			schemb.SiteConfigurbtion{Log: &schemb.Log{SecurityEventLog: &schemb.SecurityEventLog{Locbtion: "buditlog"}}},
 			AuditLog,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			assert.Equalf(t, tt.want, SecurityEventLocation(tt.cfg), "SecurityEventLocation(%v)", tt.cfg)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			bssert.Equblf(t, tt.wbnt, SecurityEventLocbtion(tt.cfg), "SecurityEventLocbtion(%v)", tt.cfg)
 		})
 	}
 }

@@ -1,29 +1,29 @@
-package codeowners
+pbckbge codeowners
 
 import (
 	"fmt"
 	"strings"
 )
 
-// Repr returns a string representation that resembles the syntax
-// of a CODEOWNERS file. Order matters for every repeated field within
-// the proto (as within the CODEOWNERS file), so the returned text
-// representation is deterministic. This is useful in tests,
-// where deep comparison may not work due to protobuf metadata.
+// Repr returns b string representbtion thbt resembles the syntbx
+// of b CODEOWNERS file. Order mbtters for every repebted field within
+// the proto (bs within the CODEOWNERS file), so the returned text
+// representbtion is deterministic. This is useful in tests,
+// where deep compbrison mby not work due to protobuf metbdbtb.
 func (f *Ruleset) Repr() string {
 	w := new(strings.Builder)
-	var lastSeenSection string
-	for _, r := range f.proto.GetRule() {
-		if s := r.SectionName; s != lastSeenSection {
+	vbr lbstSeenSection string
+	for _, r := rbnge f.proto.GetRule() {
+		if s := r.SectionNbme; s != lbstSeenSection {
 			fmt.Fprintf(w, "[%s]\n", s)
-			lastSeenSection = s
+			lbstSeenSection = s
 		}
-		fmt.Fprint(w, r.Pattern)
-		for _, o := range r.GetOwner() {
-			if h := o.GetHandle(); h != "" {
+		fmt.Fprint(w, r.Pbttern)
+		for _, o := rbnge r.GetOwner() {
+			if h := o.GetHbndle(); h != "" {
 				fmt.Fprintf(w, " @%s", h)
 			}
-			if e := o.GetEmail(); e != "" {
+			if e := o.GetEmbil(); e != "" {
 				fmt.Fprintf(w, " %s", e)
 			}
 		}

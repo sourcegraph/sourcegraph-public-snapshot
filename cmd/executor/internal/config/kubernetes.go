@@ -1,12 +1,12 @@
-package config
+pbckbge config
 
 import (
 	"os"
 )
 
-// IsKubernetes returns true if the executor is running in a Kubernetes cluster.
+// IsKubernetes returns true if the executor is running in b Kubernetes cluster.
 func IsKubernetes() bool {
-	_, hasKubernetesHost := os.LookupEnv("KUBERNETES_SERVICE_HOST")
-	_, hasKubernetesPort := os.LookupEnv("KUBERNETES_SERVICE_PORT")
-	return hasKubernetesHost && hasKubernetesPort
+	_, hbsKubernetesHost := os.LookupEnv("KUBERNETES_SERVICE_HOST")
+	_, hbsKubernetesPort := os.LookupEnv("KUBERNETES_SERVICE_PORT")
+	return hbsKubernetesHost && hbsKubernetesPort
 }

@@ -1,4 +1,4 @@
-package httpheader
+pbckbge httphebder
 
 import (
 	"context"
@@ -7,237 +7,237 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// SEE ALSO FOR MANUAL TESTING: See the Middleware docstring for information about the testproxy
-// helper program, which helps with manual testing of the HTTP auth proxy behavior.
-func TestMiddleware(t *testing.T) {
-	defer licensing.TestingSkipFeatureChecks()()
+// SEE ALSO FOR MANUAL TESTING: See the Middlewbre docstring for informbtion bbout the testproxy
+// helper progrbm, which helps with mbnubl testing of the HTTP buth proxy behbvior.
+func TestMiddlewbre(t *testing.T) {
+	defer licensing.TestingSkipFebtureChecks()()
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actor := sgactor.FromContext(r.Context())
-		if actor.IsAuthenticated() {
-			fmt.Fprintf(w, "user %v", actor.UID)
+	hbndler := middlewbre(db)(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bctor := sgbctor.FromContext(r.Context())
+		if bctor.IsAuthenticbted() {
+			fmt.Fprintf(w, "user %v", bctor.UID)
 		} else {
 			fmt.Fprint(w, "no user")
 		}
 	}))
 
-	const headerName = "x-sso-user-header"
-	const emailHeaderName = "x-sso-email-header"
-	providers.Update(pkgName, []providers.Provider{
+	const hebderNbme = "x-sso-user-hebder"
+	const embilHebderNbme = "x-sso-embil-hebder"
+	providers.Updbte(pkgNbme, []providers.Provider{
 		&provider{
-			c: &schema.HTTPHeaderAuthProvider{
-				EmailHeader:    emailHeaderName,
-				UsernameHeader: headerName,
+			c: &schemb.HTTPHebderAuthProvider{
+				EmbilHebder:    embilHebderNbme,
+				UsernbmeHebder: hebderNbme,
 			},
 		},
 	})
-	defer func() { providers.Update(pkgName, nil) }()
+	defer func() { providers.Updbte(pkgNbme, nil) }()
 
 	t.Run("not sent", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "no user"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "no user"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("not sent, actor present", func(t *testing.T) {
+	t.Run("not sent, bctor present", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 123}))
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 123"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		req = req.WithContext(sgbctor.WithActor(context.Bbckground(), &sgbctor.Actor{UID: 123}))
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 123"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
 	t.Run("sent, user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "alice")
-		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-			calledMock = true
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice" {
+		req.Hebder.Set(hebderNbme, "blice")
+		vbr cblledMock bool
+		buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+			cblledMock = true
+			if op.ExternblAccount.ServiceType == "http-hebder" && op.ExternblAccount.ServiceID == "" && op.ExternblAccount.ClientID == "" && op.ExternblAccount.AccountID == "blice" {
 				return 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return 0, "sbfeErr", errors.Errorf("bccount %v not found in mock", op.ExternblAccount)
 		}
-		defer func() { auth.MockGetAndSaveUser = nil }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		defer func() { buth.MockGetAndSbveUser = nil }()
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 1"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
-		if !calledMock {
-			t.Error("!calledMock")
+		if !cblledMock {
+			t.Error("!cblledMock")
 		}
 	})
 
-	t.Run("sent, actor already set", func(t *testing.T) {
+	t.Run("sent, bctor blrebdy set", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "alice")
-		req = req.WithContext(sgactor.WithActor(context.Background(), &sgactor.Actor{UID: 123}))
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 123"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		req.Hebder.Set(hebderNbme, "blice")
+		req = req.WithContext(sgbctor.WithActor(context.Bbckground(), &sgbctor.Actor{UID: 123}))
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 123"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("sent, with un-normalized username", func(t *testing.T) {
+	t.Run("sent, with un-normblized usernbme", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "alice%zhao")
-		const wantNormalizedUsername = "alice-zhao"
-		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-			calledMock = true
-			if op.UserProps.Username != wantNormalizedUsername {
-				t.Errorf("got %q, want %q", op.UserProps.Username, wantNormalizedUsername)
+		req.Hebder.Set(hebderNbme, "blice%zhbo")
+		const wbntNormblizedUsernbme = "blice-zhbo"
+		vbr cblledMock bool
+		buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+			cblledMock = true
+			if op.UserProps.Usernbme != wbntNormblizedUsernbme {
+				t.Errorf("got %q, wbnt %q", op.UserProps.Usernbme, wbntNormblizedUsernbme)
 			}
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice%zhao" {
+			if op.ExternblAccount.ServiceType == "http-hebder" && op.ExternblAccount.ServiceID == "" && op.ExternblAccount.ClientID == "" && op.ExternblAccount.AccountID == "blice%zhbo" {
 				return 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return 0, "sbfeErr", errors.Errorf("bccount %v not found in mock", op.ExternblAccount)
 		}
-		defer func() { auth.MockGetAndSaveUser = nil }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		defer func() { buth.MockGetAndSbveUser = nil }()
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 1"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
-		if !calledMock {
-			t.Error("!calledMock")
+		if !cblledMock {
+			t.Error("!cblledMock")
 		}
 	})
 
-	t.Run("sent, email", func(t *testing.T) {
+	t.Run("sent, embil", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(emailHeaderName, "alice@example.com")
-		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-			calledMock = true
-			if got, want := op.UserProps.Username, "alice"; got != want {
-				t.Errorf("expected %v got %v", want, got)
+		req.Hebder.Set(embilHebderNbme, "blice@exbmple.com")
+		vbr cblledMock bool
+		buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+			cblledMock = true
+			if got, wbnt := op.UserProps.Usernbme, "blice"; got != wbnt {
+				t.Errorf("expected %v got %v", wbnt, got)
 			}
-			if got, want := op.UserProps.Email, "alice@example.com"; got != want {
-				t.Errorf("expected %v got %v", want, got)
+			if got, wbnt := op.UserProps.Embil, "blice@exbmple.com"; got != wbnt {
+				t.Errorf("expected %v got %v", wbnt, got)
 			}
-			if got, want := op.UserProps.EmailIsVerified, true; got != want {
-				t.Errorf("expected %v got %v", want, got)
+			if got, wbnt := op.UserProps.EmbilIsVerified, true; got != wbnt {
+				t.Errorf("expected %v got %v", wbnt, got)
 			}
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice@example.com" {
+			if op.ExternblAccount.ServiceType == "http-hebder" && op.ExternblAccount.ServiceID == "" && op.ExternblAccount.ClientID == "" && op.ExternblAccount.AccountID == "blice@exbmple.com" {
 				return 1, "", nil
 			}
-			t.Log(op.ExternalAccount)
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			t.Log(op.ExternblAccount)
+			return 0, "sbfeErr", errors.Errorf("bccount %v not found in mock", op.ExternblAccount)
 		}
-		defer func() { auth.MockGetAndSaveUser = nil }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		defer func() { buth.MockGetAndSbveUser = nil }()
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 1"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
-		if !calledMock {
-			t.Error("!calledMock")
+		if !cblledMock {
+			t.Error("!cblledMock")
 		}
 	})
 
-	t.Run("sent, email & username", func(t *testing.T) {
+	t.Run("sent, embil & usernbme", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(emailHeaderName, "alice@example.com")
-		req.Header.Set(headerName, "bob")
-		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-			calledMock = true
-			if got, want := op.UserProps.Username, "bob"; got != want {
-				t.Errorf("expected %v got %v", want, got)
+		req.Hebder.Set(embilHebderNbme, "blice@exbmple.com")
+		req.Hebder.Set(hebderNbme, "bob")
+		vbr cblledMock bool
+		buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+			cblledMock = true
+			if got, wbnt := op.UserProps.Usernbme, "bob"; got != wbnt {
+				t.Errorf("expected %v got %v", wbnt, got)
 			}
-			if got, want := op.UserProps.Email, "alice@example.com"; got != want {
-				t.Errorf("expected %v got %v", want, got)
+			if got, wbnt := op.UserProps.Embil, "blice@exbmple.com"; got != wbnt {
+				t.Errorf("expected %v got %v", wbnt, got)
 			}
-			if got, want := op.UserProps.EmailIsVerified, true; got != want {
-				t.Errorf("expected %v got %v", want, got)
+			if got, wbnt := op.UserProps.EmbilIsVerified, true; got != wbnt {
+				t.Errorf("expected %v got %v", wbnt, got)
 			}
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice@example.com" {
+			if op.ExternblAccount.ServiceType == "http-hebder" && op.ExternblAccount.ServiceID == "" && op.ExternblAccount.ClientID == "" && op.ExternblAccount.AccountID == "blice@exbmple.com" {
 				return 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return 0, "sbfeErr", errors.Errorf("bccount %v not found in mock", op.ExternblAccount)
 		}
-		defer func() { auth.MockGetAndSaveUser = nil }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		defer func() { buth.MockGetAndSbveUser = nil }()
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 1"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
-		if !calledMock {
-			t.Error("!calledMock")
+		if !cblledMock {
+			t.Error("!cblledMock")
 		}
 	})
 }
 
-func TestMiddleware_stripPrefix(t *testing.T) {
-	defer licensing.TestingSkipFeatureChecks()()
+func TestMiddlewbre_stripPrefix(t *testing.T) {
+	defer licensing.TestingSkipFebtureChecks()()
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	handler := middleware(db)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		actor := sgactor.FromContext(r.Context())
-		if actor.IsAuthenticated() {
-			fmt.Fprintf(w, "user %v", actor.UID)
+	hbndler := middlewbre(db)(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bctor := sgbctor.FromContext(r.Context())
+		if bctor.IsAuthenticbted() {
+			fmt.Fprintf(w, "user %v", bctor.UID)
 		} else {
 			fmt.Fprint(w, "no user")
 		}
 	}))
 
-	const headerName = "x-sso-user-header"
-	providers.Update(pkgName, []providers.Provider{
+	const hebderNbme = "x-sso-user-hebder"
+	providers.Updbte(pkgNbme, []providers.Provider{
 		&provider{
-			c: &schema.HTTPHeaderAuthProvider{
-				UsernameHeader:            headerName,
-				StripUsernameHeaderPrefix: "accounts.google.com:",
+			c: &schemb.HTTPHebderAuthProvider{
+				UsernbmeHebder:            hebderNbme,
+				StripUsernbmeHebderPrefix: "bccounts.google.com:",
 			},
 		},
 	})
-	defer func() { providers.Update(pkgName, nil) }()
+	defer func() { providers.Updbte(pkgNbme, nil) }()
 
 	t.Run("sent, user", func(t *testing.T) {
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		req.Header.Set(headerName, "accounts.google.com:alice")
-		var calledMock bool
-		auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-			calledMock = true
-			if op.ExternalAccount.ServiceType == "http-header" && op.ExternalAccount.ServiceID == "" && op.ExternalAccount.ClientID == "" && op.ExternalAccount.AccountID == "alice" {
+		req.Hebder.Set(hebderNbme, "bccounts.google.com:blice")
+		vbr cblledMock bool
+		buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+			cblledMock = true
+			if op.ExternblAccount.ServiceType == "http-hebder" && op.ExternblAccount.ServiceID == "" && op.ExternblAccount.ClientID == "" && op.ExternblAccount.AccountID == "blice" {
 				return 1, "", nil
 			}
-			return 0, "safeErr", errors.Errorf("account %v not found in mock", op.ExternalAccount)
+			return 0, "sbfeErr", errors.Errorf("bccount %v not found in mock", op.ExternblAccount)
 		}
-		defer func() { auth.MockGetAndSaveUser = nil }()
-		handler.ServeHTTP(rr, req)
-		if got, want := rr.Body.String(), "user 1"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		defer func() { buth.MockGetAndSbveUser = nil }()
+		hbndler.ServeHTTP(rr, req)
+		if got, wbnt := rr.Body.String(), "user 1"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
-		if !calledMock {
-			t.Error("!calledMock")
+		if !cblledMock {
+			t.Error("!cblledMock")
 		}
 	})
 }

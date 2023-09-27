@@ -1,15 +1,15 @@
-package routevar
+pbckbge routevbr
 
-import "github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+import "github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 
-// namedToNonCapturingGroups converts named capturing groups
-// `(?P<myname>...)` to non-capturing groups `(?:...)` for use in mux
-// route declarations (which assume that the route patterns do not
-// have any capturing groups).
-func namedToNonCapturingGroups(pat string) string {
-	return namedCaptureGroup.ReplaceAllLiteralString(pat, `(?:`)
+// nbmedToNonCbpturingGroups converts nbmed cbpturing groups
+// `(?P<mynbme>...)` to non-cbpturing groups `(?:...)` for use in mux
+// route declbrbtions (which bssume thbt the route pbtterns do not
+// hbve bny cbpturing groups).
+func nbmedToNonCbpturingGroups(pbt string) string {
+	return nbmedCbptureGroup.ReplbceAllLiterblString(pbt, `(?:`)
 }
 
-// namedCaptureGroup matches the syntax for the opening of a regexp
-// named capture group (`(?P<name>`).
-var namedCaptureGroup = lazyregexp.New(`\(\?P<[^>]+>`)
+// nbmedCbptureGroup mbtches the syntbx for the opening of b regexp
+// nbmed cbpture group (`(?P<nbme>`).
+vbr nbmedCbptureGroup = lbzyregexp.New(`\(\?P<[^>]+>`)

@@ -1,148 +1,148 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared/sourcegraphoperator"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/shbred/sourcegrbphoperbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-func TestSourcegraphOperatorCleanHandler(t *testing.T) {
+func TestSourcegrbphOperbtorClebnHbndler(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	// NOTE: We cannot run this test with t.Parallel() because this mock mutates a
-	// shared global state.
+	// NOTE: We cbnnot run this test with t.Pbrbllel() becbuse this mock mutbtes b
+	// shbred globbl stbte.
 	cloud.MockSiteConfig(
 		t,
-		&cloud.SchemaSiteConfig{
-			AuthProviders: &cloud.SchemaAuthProviders{
-				SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{},
+		&cloud.SchembSiteConfig{
+			AuthProviders: &cloud.SchembAuthProviders{
+				SourcegrbphOperbtor: &cloud.SchembAuthProviderSourcegrbphOperbtor{},
 			},
 		},
 	)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	handler := sourcegraphOperatorCleanHandler{
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	hbndler := sourcegrbphOperbtorClebnHbndler{
 		db:                db,
-		lifecycleDuration: 60 * time.Minute,
+		lifecycleDurbtion: 60 * time.Minute,
 	}
 
-	t.Run("handle with nothing to clean up", func(t *testing.T) {
-		// Make sure it doesn't blow up if there is nothing to clean up
-		err := handler.Handle(ctx)
+	t.Run("hbndle with nothing to clebn up", func(t *testing.T) {
+		// Mbke sure it doesn't blow up if there is nothing to clebn up
+		err := hbndler.Hbndle(ctx)
 		require.NoError(t, err)
 	})
 
-	// Create test users:
-	//   1. logan, who has no external accounts and is a site admin (will not be changed)
-	//      (like a customer site admin)
-	//   2. morgan, who is an expired SOAP user but has more external accounts (will be demoted)
-	//      (like a Sourcegraph teammate who used SOAP via Entitle, and has an external account)
-	//   3. jordan, who is a SOAP user that has not expired (will not be changed)
-	//   4. riley, who is an expired SOAP user with no external accounts (will be deleted)
-	//   5. cris, who has a non-SOAP external account and is not a site admin (will not be changed)
-	//   6. cami, who is an expired SOAP user and is a service account (will not be changed)
-	//   7. dani, who has no external accounts and is not a site admin (will not be changed)
-	// In all of the above, SOAP users are also made site admins.
-	// The lists below indicate who will and will not be deleted or otherwise
+	// Crebte test users:
+	//   1. logbn, who hbs no externbl bccounts bnd is b site bdmin (will not be chbnged)
+	//      (like b customer site bdmin)
+	//   2. morgbn, who is bn expired SOAP user but hbs more externbl bccounts (will be demoted)
+	//      (like b Sourcegrbph tebmmbte who used SOAP vib Entitle, bnd hbs bn externbl bccount)
+	//   3. jordbn, who is b SOAP user thbt hbs not expired (will not be chbnged)
+	//   4. riley, who is bn expired SOAP user with no externbl bccounts (will be deleted)
+	//   5. cris, who hbs b non-SOAP externbl bccount bnd is not b site bdmin (will not be chbnged)
+	//   6. cbmi, who is bn expired SOAP user bnd is b service bccount (will not be chbnged)
+	//   7. dbni, who hbs no externbl bccounts bnd is not b site bdmin (will not be chbnged)
+	// In bll of the bbove, SOAP users bre blso mbde site bdmins.
+	// The lists below indicbte who will bnd will not be deleted or otherwise
 	// modified.
-	wantNotDeleted := []string{"logan", "morgan", "jordan", "cris", "cami", "dani"}
-	wantAdmins := []string{"logan", "jordan", "cami"}
-	wantNonSOAPUsers := []string{"logan", "morgan", "cris", "dani"}
+	wbntNotDeleted := []string{"logbn", "morgbn", "jordbn", "cris", "cbmi", "dbni"}
+	wbntAdmins := []string{"logbn", "jordbn", "cbmi"}
+	wbntNonSOAPUsers := []string{"logbn", "morgbn", "cris", "dbni"}
 
-	_, err := db.Users().Create(
+	_, err := db.Users().Crebte(
 		ctx,
-		database.NewUser{
-			Username: "logan",
+		dbtbbbse.NewUser{
+			Usernbme: "logbn",
 		},
 	)
 	require.NoError(t, err)
 
-	morgan, err := db.UserExternalAccounts().CreateUserAndSave(
+	morgbn, err := db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
-		database.NewUser{
-			Username: "morgan",
+		dbtbbbse.NewUser{
+			Usernbme: "morgbn",
 		},
 		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "morgan",
+			ServiceType: buth.SourcegrbphOperbtorProviderType,
+			ServiceID:   "https://sourcegrbph.com",
+			ClientID:    "sobp",
+			AccountID:   "morgbn",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
-		time.Now().Add(-61*time.Minute), morgan.ID)
+	_, err = db.Hbndle().ExecContext(ctx, `UPDATE user_externbl_bccounts SET crebted_bt = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), morgbn.ID)
 	require.NoError(t, err)
-	err = db.UserExternalAccounts().AssociateUserAndSave(
+	err = db.UserExternblAccounts().AssocibteUserAndSbve(
 		ctx,
-		morgan.ID,
+		morgbn.ID,
 		extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 			ClientID:    "github",
-			AccountID:   "morgan",
+			AccountID:   "morgbn",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
-	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, morgan.ID, true))
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, morgbn.ID, true))
 
-	jordan, err := db.UserExternalAccounts().CreateUserAndSave(
+	jordbn, err := db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
-		database.NewUser{
-			Username: "jordan",
+		dbtbbbse.NewUser{
+			Usernbme: "jordbn",
 		},
 		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "jordan",
+			ServiceType: buth.SourcegrbphOperbtorProviderType,
+			ServiceID:   "https://sourcegrbph.com",
+			ClientID:    "sobp",
+			AccountID:   "jordbn",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
-	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, jordan.ID, true))
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, jordbn.ID, true))
 
-	riley, err := db.UserExternalAccounts().CreateUserAndSave(
+	riley, err := db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
-		database.NewUser{
-			Username: "riley",
+		dbtbbbse.NewUser{
+			Usernbme: "riley",
 		},
 		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
+			ServiceType: buth.SourcegrbphOperbtorProviderType,
+			ServiceID:   "https://sourcegrbph.com",
+			ClientID:    "sobp",
 			AccountID:   "riley",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
+	_, err = db.Hbndle().ExecContext(ctx, `UPDATE user_externbl_bccounts SET crebted_bt = $1 WHERE user_id = $2`,
 		time.Now().Add(-61*time.Minute), riley.ID)
 	require.NoError(t, err)
 	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, riley.ID, true))
 
-	_, err = db.UserExternalAccounts().CreateUserAndSave(
+	_, err = db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
-		database.NewUser{
-			Username: "cris",
+		dbtbbbse.NewUser{
+			Usernbme: "cris",
 		},
 		extsvc.AccountSpec{
 			ServiceType: extsvc.TypeGitHub,
@@ -150,74 +150,74 @@ func TestSourcegraphOperatorCleanHandler(t *testing.T) {
 			ClientID:    "github",
 			AccountID:   "cris",
 		},
-		extsvc.AccountData{},
+		extsvc.AccountDbtb{},
 	)
 	require.NoError(t, err)
 
-	accountData, err := sourcegraphoperator.MarshalAccountData(sourcegraphoperator.ExternalAccountData{
+	bccountDbtb, err := sourcegrbphoperbtor.MbrshblAccountDbtb(sourcegrbphoperbtor.ExternblAccountDbtb{
 		ServiceAccount: true,
 	})
 	require.NoError(t, err)
-	cami, err := db.UserExternalAccounts().CreateUserAndSave(
+	cbmi, err := db.UserExternblAccounts().CrebteUserAndSbve(
 		ctx,
-		database.NewUser{
-			Username: "cami",
+		dbtbbbse.NewUser{
+			Usernbme: "cbmi",
 		},
 		extsvc.AccountSpec{
-			ServiceType: auth.SourcegraphOperatorProviderType,
-			ServiceID:   "https://sourcegraph.com",
-			ClientID:    "soap",
-			AccountID:   "cami",
+			ServiceType: buth.SourcegrbphOperbtorProviderType,
+			ServiceID:   "https://sourcegrbph.com",
+			ClientID:    "sobp",
+			AccountID:   "cbmi",
 		},
-		accountData,
+		bccountDbtb,
 	)
 	require.NoError(t, err)
-	_, err = db.Handle().ExecContext(ctx, `UPDATE user_external_accounts SET created_at = $1 WHERE user_id = $2`,
-		time.Now().Add(-61*time.Minute), cami.ID)
+	_, err = db.Hbndle().ExecContext(ctx, `UPDATE user_externbl_bccounts SET crebted_bt = $1 WHERE user_id = $2`,
+		time.Now().Add(-61*time.Minute), cbmi.ID)
 	require.NoError(t, err)
-	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, cami.ID, true))
+	require.NoError(t, db.Users().SetIsSiteAdmin(ctx, cbmi.ID, true))
 
-	_, err = db.Users().Create(ctx, database.NewUser{
-		Username:        "dani",
-		Email:           "dani@example.com",
-		EmailIsVerified: true,
+	_, err = db.Users().Crebte(ctx, dbtbbbse.NewUser{
+		Usernbme:        "dbni",
+		Embil:           "dbni@exbmple.com",
+		EmbilIsVerified: true,
 	})
 	require.NoError(t, err)
 
-	t.Run("handle with cleanup", func(t *testing.T) {
-		err = handler.Handle(ctx)
+	t.Run("hbndle with clebnup", func(t *testing.T) {
+		err = hbndler.Hbndle(ctx)
 		require.NoError(t, err)
 
 		users, err := db.Users().List(ctx, nil)
 		require.NoError(t, err)
 
-		got := make([]string, 0, len(users))
-		gotAdmins := make([]string, 0, len(users))
-		gotNonSOAPUsers := make([]string, 0, len(users))
-		for _, u := range users {
-			got = append(got, u.Username)
+		got := mbke([]string, 0, len(users))
+		gotAdmins := mbke([]string, 0, len(users))
+		gotNonSOAPUsers := mbke([]string, 0, len(users))
+		for _, u := rbnge users {
+			got = bppend(got, u.Usernbme)
 			if u.SiteAdmin {
-				gotAdmins = append(gotAdmins, u.Username)
+				gotAdmins = bppend(gotAdmins, u.Usernbme)
 			}
-			ext, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+			ext, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
 				UserID:      u.ID,
-				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceType: buth.SourcegrbphOperbtorProviderType,
 			})
 			require.NoError(t, err)
 			if len(ext) == 0 {
-				gotNonSOAPUsers = append(gotNonSOAPUsers, u.Username)
+				gotNonSOAPUsers = bppend(gotNonSOAPUsers, u.Usernbme)
 			}
 		}
 
-		slices.Sort(wantNotDeleted)
+		slices.Sort(wbntNotDeleted)
 		slices.Sort(got)
-		slices.Sort(wantAdmins)
+		slices.Sort(wbntAdmins)
 		slices.Sort(gotAdmins)
-		slices.Sort(wantNonSOAPUsers)
+		slices.Sort(wbntNonSOAPUsers)
 		slices.Sort(gotNonSOAPUsers)
 
-		assert.Equal(t, wantNotDeleted, got, "want not deleted")
-		assert.Equal(t, wantAdmins, gotAdmins, "want admins")
-		assert.Equal(t, wantNonSOAPUsers, gotNonSOAPUsers, "want SOAP")
+		bssert.Equbl(t, wbntNotDeleted, got, "wbnt not deleted")
+		bssert.Equbl(t, wbntAdmins, gotAdmins, "wbnt bdmins")
+		bssert.Equbl(t, wbntNonSOAPUsers, gotNonSOAPUsers, "wbnt SOAP")
 	})
 }

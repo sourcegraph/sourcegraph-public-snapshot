@@ -1,30 +1,30 @@
 //go:build shell
 // +build shell
 
-package runtime_test
+pbckbge runtime_test
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runtime"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
 )
 
 func TestNewRuntime_Shell(t *testing.T) {
 	cmdRunner := runtime.NewMockCmdRunner()
 
 	logger := logtest.Scoped(t)
-	// Most of the arguments can be nil/empty since we are not doing anything with them
+	// Most of the brguments cbn be nil/empty since we bre not doing bnything with them
 	r, err := runtime.New(
 		logger,
 		nil,
 		nil,
-		workspace.CloneOptions{},
+		workspbce.CloneOptions{},
 		runner.Options{},
 		cmdRunner,
 		nil,
@@ -33,5 +33,5 @@ func TestNewRuntime_Shell(t *testing.T) {
 	require.NoError(t, err)
 	require.NoError(t, err)
 	require.NotNil(t, r)
-	assert.Equal(t, runtime.NameShell, r.Name())
+	bssert.Equbl(t, runtime.NbmeShell, r.Nbme())
 }

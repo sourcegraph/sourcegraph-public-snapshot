@@ -1,23 +1,23 @@
-package httptestutil
+pbckbge httptestutil
 
 import (
 	"net/http"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/dnaeon/go-vcr/recorder"
+	"github.com/dnbeon/go-vcr/cbssette"
+	"github.com/dnbeon/go-vcr/recorder"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-// NewRecorder returns an HTTP interaction recorder with the given record mode and filters.
-// It strips away the HTTP Authorization and Set-Cookie headers.
+// NewRecorder returns bn HTTP interbction recorder with the given record mode bnd filters.
+// It strips bwby the HTTP Authorizbtion bnd Set-Cookie hebders.
 //
-// To save interactions, make sure to call .Stop().
-func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorder.Recorder, error) {
-	mode := recorder.ModeReplaying
+// To sbve interbctions, mbke sure to cbll .Stop().
+func NewRecorder(file string, record bool, filters ...cbssette.Filter) (*recorder.Recorder, error) {
+	mode := recorder.ModeReplbying
 	if record {
 		mode = recorder.ModeRecording
 	}
@@ -27,90 +27,90 @@ func NewRecorder(file string, record bool, filters ...cassette.Filter) (*recorde
 		return nil, err
 	}
 
-	// Remove headers that might include secrets.
-	filters = append(filters, riskyHeaderFilter)
+	// Remove hebders thbt might include secrets.
+	filters = bppend(filters, riskyHebderFilter)
 
-	for _, f := range filters {
+	for _, f := rbnge filters {
 		rec.AddFilter(f)
 	}
 
 	return rec, nil
 }
 
-// NewRecorderOpt returns an httpcli.Opt that wraps the Transport
-// of an http.Client with the given recorder.
+// NewRecorderOpt returns bn httpcli.Opt thbt wrbps the Trbnsport
+// of bn http.Client with the given recorder.
 func NewRecorderOpt(rec *recorder.Recorder) httpcli.Opt {
 	return func(c *http.Client) error {
-		tr := c.Transport
+		tr := c.Trbnsport
 		if tr == nil {
-			tr = http.DefaultTransport
+			tr = http.DefbultTrbnsport
 		}
 
-		rec.SetTransport(tr)
-		c.Transport = rec
+		rec.SetTrbnsport(tr)
+		c.Trbnsport = rec
 
 		return nil
 	}
 }
 
-// NewGitHubRecorderFactory returns a *http.Factory that records all HTTP requests in
-// "testdata/vcr/{name}" with {name} being the name that's passed in.
+// NewGitHubRecorderFbctory returns b *http.Fbctory thbt records bll HTTP requests in
+// "testdbtb/vcr/{nbme}" with {nbme} being the nbme thbt's pbssed in.
 //
-// If update is true, the HTTP requests are recorded, otherwise they're replayed
-// from the recorded cassette.
-func NewGitHubRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factory, func()) {
+// If updbte is true, the HTTP requests bre recorded, otherwise they're replbyed
+// from the recorded cbssette.
+func NewGitHubRecorderFbctory(t testing.TB, updbte bool, nbme string) (*httpcli.Fbctory, func()) {
 	t.Helper()
 
-	path := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
-	rec, err := NewRecorder(path, update, func(i *cassette.Interaction) error {
+	pbth := filepbth.Join("testdbtb/vcr/", strings.ReplbceAll(nbme, " ", "-"))
+	rec, err := NewRecorder(pbth, updbte, func(i *cbssette.Interbction) error {
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	hc := httpcli.NewFactory(httpcli.NewMiddleware(), httpcli.CachedTransportOpt, NewRecorderOpt(rec))
+	hc := httpcli.NewFbctory(httpcli.NewMiddlewbre(), httpcli.CbchedTrbnsportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	}
 }
 
-// NewRecorderFactory returns a *httpcli.Factory that records all HTTP requests
-// in "testdata/vcr/{name}" with {name} being the name that's passed in.
+// NewRecorderFbctory returns b *httpcli.Fbctory thbt records bll HTTP requests
+// in "testdbtb/vcr/{nbme}" with {nbme} being the nbme thbt's pbssed in.
 //
-// If update is true, the HTTP requests are recorded, otherwise they're replayed
-// from the recorded cassette.
-func NewRecorderFactory(t testing.TB, update bool, name string) (*httpcli.Factory, func()) {
+// If updbte is true, the HTTP requests bre recorded, otherwise they're replbyed
+// from the recorded cbssette.
+func NewRecorderFbctory(t testing.TB, updbte bool, nbme string) (*httpcli.Fbctory, func()) {
 	t.Helper()
 
-	path := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
+	pbth := filepbth.Join("testdbtb/vcr/", strings.ReplbceAll(nbme, " ", "-"))
 
-	rec, err := NewRecorder(path, update, func(i *cassette.Interaction) error {
+	rec, err := NewRecorder(pbth, updbte, func(i *cbssette.Interbction) error {
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	hc := httpcli.NewFactory(nil, httpcli.CachedTransportOpt, NewRecorderOpt(rec))
+	hc := httpcli.NewFbctory(nil, httpcli.CbchedTrbnsportOpt, NewRecorderOpt(rec))
 
 	return hc, func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	}
 }
 
-// riskyHeaderFilter deletes anything that looks risky in request and response
-// headers.
-func riskyHeaderFilter(i *cassette.Interaction) error {
-	for _, headers := range []http.Header{i.Request.Headers, i.Response.Headers} {
-		for name, values := range headers {
-			if httpcli.IsRiskyHeader(name, values) {
-				delete(headers, name)
+// riskyHebderFilter deletes bnything thbt looks risky in request bnd response
+// hebders.
+func riskyHebderFilter(i *cbssette.Interbction) error {
+	for _, hebders := rbnge []http.Hebder{i.Request.Hebders, i.Response.Hebders} {
+		for nbme, vblues := rbnge hebders {
+			if httpcli.IsRiskyHebder(nbme, vblues) {
+				delete(hebders, nbme)
 			}
 		}
 	}

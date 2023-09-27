@@ -1,118 +1,118 @@
-package lsif
+pbckbge lsif
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type documentColumnSplitMigrator struct {
-	serializer *serializer
+type documentColumnSplitMigrbtor struct {
+	seriblizer *seriblizer
 }
 
-// NewDocumentColumnSplitMigrator creates a new Migrator instance that reads records from
-// the lsif_data_documents table with a schema version of 2 and unsets the payload in favor
-// of populating the new ranges, hovers, monikers, packages, and diagnostics columns. Updated
-// records will have a schema version of 3.
-func NewDocumentColumnSplitMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
-	driver := &documentColumnSplitMigrator{
-		serializer: newSerializer(),
+// NewDocumentColumnSplitMigrbtor crebtes b new Migrbtor instbnce thbt rebds records from
+// the lsif_dbtb_documents tbble with b schemb version of 2 bnd unsets the pbylobd in fbvor
+// of populbting the new rbnges, hovers, monikers, pbckbges, bnd dibgnostics columns. Updbted
+// records will hbve b schemb version of 3.
+func NewDocumentColumnSplitMigrbtor(store *bbsestore.Store, bbtchSize, numRoutines int) *migrbtor {
+	driver := &documentColumnSplitMigrbtor{
+		seriblizer: newSeriblizer(),
 	}
 
-	return newMigrator(store, driver, migratorOptions{
-		tableName:     "lsif_data_documents",
-		targetVersion: 3,
-		batchSize:     batchSize,
+	return newMigrbtor(store, driver, migrbtorOptions{
+		tbbleNbme:     "lsif_dbtb_documents",
+		tbrgetVersion: 3,
+		bbtchSize:     bbtchSize,
 		numRoutines:   numRoutines,
 		fields: []fieldSpec{
-			{name: "path", postgresType: "text not null", primaryKey: true},
-			{name: "data", postgresType: "bytea"},
-			{name: "ranges", postgresType: "bytea"},
-			{name: "hovers", postgresType: "bytea"},
-			{name: "monikers", postgresType: "bytea"},
-			{name: "packages", postgresType: "bytea"},
-			{name: "diagnostics", postgresType: "bytea"},
+			{nbme: "pbth", postgresType: "text not null", primbryKey: true},
+			{nbme: "dbtb", postgresType: "byteb"},
+			{nbme: "rbnges", postgresType: "byteb"},
+			{nbme: "hovers", postgresType: "byteb"},
+			{nbme: "monikers", postgresType: "byteb"},
+			{nbme: "pbckbges", postgresType: "byteb"},
+			{nbme: "dibgnostics", postgresType: "byteb"},
 		},
 	})
 }
 
-func (m *documentColumnSplitMigrator) ID() int                 { return 7 }
-func (m *documentColumnSplitMigrator) Interval() time.Duration { return time.Second }
+func (m *documentColumnSplitMigrbtor) ID() int                 { return 7 }
+func (m *documentColumnSplitMigrbtor) Intervbl() time.Durbtion { return time.Second }
 
-// MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
-// modify the record to conform to the new schema.
-func (m *documentColumnSplitMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
-	var path string
-	var rawData, ignored []byte
+// MigrbteRowUp rebds the pbylobd of the given row bnd returns bn updbteSpec on how to
+// modify the record to conform to the new schemb.
+func (m *documentColumnSplitMigrbtor) MigrbteRowUp(scbnner dbutil.Scbnner) ([]bny, error) {
+	vbr pbth string
+	vbr rbwDbtb, ignored []byte
 
-	if err := scanner.Scan(
-		&path,
-		&rawData,
-		&ignored, // ranges
+	if err := scbnner.Scbn(
+		&pbth,
+		&rbwDbtb,
+		&ignored, // rbnges
 		&ignored, // hovers
 		&ignored, // monikers
-		&ignored, // packages
-		&ignored, // diagnostics
+		&ignored, // pbckbges
+		&ignored, // dibgnostics
 	); err != nil {
 		return nil, err
 	}
 
-	decoded, err := m.serializer.UnmarshalLegacyDocumentData(rawData)
+	decoded, err := m.seriblizer.UnmbrshblLegbcyDocumentDbtb(rbwDbtb)
 	if err != nil {
 		return nil, err
 	}
-	encoded, err := m.serializer.MarshalDocumentData(decoded)
+	encoded, err := m.seriblizer.MbrshblDocumentDbtb(decoded)
 	if err != nil {
 		return nil, err
 	}
 
-	return []any{
-		path,
-		nil,                        // data
-		encoded.Ranges,             // ranges
+	return []bny{
+		pbth,
+		nil,                        // dbtb
+		encoded.Rbnges,             // rbnges
 		encoded.HoverResults,       // hovers
 		encoded.Monikers,           // monikers
-		encoded.PackageInformation, // packages
-		encoded.Diagnostics,        // diagnostics
+		encoded.PbckbgeInformbtion, // pbckbges
+		encoded.Dibgnostics,        // dibgnostics
 	}, nil
 }
 
-// MigrateRowDown recombines the split payloads into a single column to undo the migration
+// MigrbteRowDown recombines the split pbylobds into b single column to undo the migrbtion
 // up direction.
-func (m *documentColumnSplitMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
-	var path string
-	var rawData []byte
-	var encoded MarshalledDocumentData
+func (m *documentColumnSplitMigrbtor) MigrbteRowDown(scbnner dbutil.Scbnner) ([]bny, error) {
+	vbr pbth string
+	vbr rbwDbtb []byte
+	vbr encoded MbrshblledDocumentDbtb
 
-	if err := scanner.Scan(
-		&path,
-		&rawData,
-		&encoded.Ranges,
+	if err := scbnner.Scbn(
+		&pbth,
+		&rbwDbtb,
+		&encoded.Rbnges,
 		&encoded.HoverResults,
 		&encoded.Monikers,
-		&encoded.PackageInformation,
-		&encoded.Diagnostics,
+		&encoded.PbckbgeInformbtion,
+		&encoded.Dibgnostics,
 	); err != nil {
 		return nil, err
 	}
 
-	decoded, err := m.serializer.UnmarshalDocumentData(encoded)
+	decoded, err := m.seriblizer.UnmbrshblDocumentDbtb(encoded)
 	if err != nil {
 		return nil, err
 	}
-	reencoded, err := m.serializer.MarshalLegacyDocumentData(decoded)
+	reencoded, err := m.seriblizer.MbrshblLegbcyDocumentDbtb(decoded)
 	if err != nil {
 		return nil, err
 	}
 
-	return []any{
-		path,
-		reencoded, // data
-		nil,       // ranges
+	return []bny{
+		pbth,
+		reencoded, // dbtb
+		nil,       // rbnges
 		nil,       // hovers
 		nil,       // monikers
-		nil,       // packages
-		nil,       // diagnostics
+		nil,       // pbckbges
+		nil,       // dibgnostics
 	}, nil
 }

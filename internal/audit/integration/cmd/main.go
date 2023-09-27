@@ -1,59 +1,59 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/budit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func main() {
-	args := os.Args
+func mbin() {
+	brgs := os.Args
 
-	// binary name, audit logs count
-	if len(args) != 2 {
+	// binbry nbme, budit logs count
+	if len(brgs) != 2 {
 		os.Exit(-1)
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	callbacks := log.Init(log.Resource{
-		Name:       "Audit Resource",
-		Namespace:  "Audit Integration Testing",
+	cbllbbcks := log.Init(log.Resource{
+		Nbme:       "Audit Resource",
+		Nbmespbce:  "Audit Integrbtion Testing",
 		Version:    "",
-		InstanceID: "",
+		InstbnceID: "",
 	})
 
-	defer callbacks.Sync()
+	defer cbllbbcks.Sync()
 
-	logger := log.Scoped("test", "logger with sampling config")
+	logger := log.Scoped("test", "logger with sbmpling config")
 
 	logsCount, err := strconv.Atoi(os.Args[1])
 	if err != nil {
 		os.Exit(-1)
 	}
 
-	// audit log depends on site config, but a mock is sufficient
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		Log: &schema.Log{
-			AuditLog: &schema.AuditLog{
-				InternalTraffic: true,
+	// budit log depends on site config, but b mock is sufficient
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+		Log: &schemb.Log{
+			AuditLog: &schemb.AuditLog{
+				InternblTrbffic: true,
 				GitserverAccess: true,
-				GraphQL:         true,
+				GrbphQL:         true,
 				SeverityLevel:   "INFO",
 			},
 		}}})
 	defer conf.Mock(nil)
 
 	for i := 0; i < logsCount; i++ {
-		audit.Log(ctx, logger, audit.Record{
-			Entity: "integration test",
-			Action: "sampling testing",
+		budit.Log(ctx, logger, budit.Record{
+			Entity: "integrbtion test",
+			Action: "sbmpling testing",
 			Fields: nil,
 		})
 	}

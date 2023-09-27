@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"context"
@@ -6,87 +6,87 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TODO: Remove this endpoint after 5.2, it is deprecated.
-func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
+// TODO: Remove this endpoint bfter 5.2, it is deprecbted.
+func (s *Server) hbndleReposStbts(w http.ResponseWriter, r *http.Request) {
 	size, err := s.DB.GitserverRepos().GetGitserverGitDirSize(r.Context())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	shardCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
+	shbrdCount := len(gitserver.NewGitserverAddresses(conf.Get()).Addresses)
 
-	resp := protocol.ReposStats{
-		UpdatedAt: time.Now(), // Unused value, to keep the API pretend the data is fresh.
-		// Divide the size by shard count so that the cumulative number on the client
-		// side is correct again.
-		GitDirBytes: size / int64(shardCount),
+	resp := protocol.ReposStbts{
+		UpdbtedAt: time.Now(), // Unused vblue, to keep the API pretend the dbtb is fresh.
+		// Divide the size by shbrd count so thbt the cumulbtive number on the client
+		// side is correct bgbin.
+		GitDirBytes: size / int64(shbrdCount),
 	}
-	b, err := json.Marshal(resp)
+	b, err := json.Mbrshbl(resp)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	w.Hebder().Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
 	_, _ = w.Write(b)
 }
 
-func repoCloneProgress(reposDir string, locker RepositoryLocker, repo api.RepoName) *protocol.RepoCloneProgress {
-	dir := repoDirFromName(reposDir, repo)
+func repoCloneProgress(reposDir string, locker RepositoryLocker, repo bpi.RepoNbme) *protocol.RepoCloneProgress {
+	dir := repoDirFromNbme(reposDir, repo)
 	resp := protocol.RepoCloneProgress{
 		Cloned: repoCloned(dir),
 	}
-	resp.CloneProgress, resp.CloneInProgress = locker.Status(dir)
-	if isAlwaysCloningTest(repo) {
+	resp.CloneProgress, resp.CloneInProgress = locker.Stbtus(dir)
+	if isAlwbysCloningTest(repo) {
 		resp.CloneInProgress = true
 		resp.CloneProgress = "This will never finish cloning"
 	}
 	return &resp
 }
 
-func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoCloneProgressRequest
+func (s *Server) hbndleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
+	vbr req protocol.RepoCloneProgressRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
 	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
+		Results: mbke(mbp[bpi.RepoNbme]*protocol.RepoCloneProgress, len(req.Repos)),
 	}
-	for _, repoName := range req.Repos {
-		result := repoCloneProgress(s.ReposDir, s.Locker, repoName)
-		resp.Results[repoName] = result
+	for _, repoNbme := rbnge req.Repos {
+		result := repoCloneProgress(s.ReposDir, s.Locker, repoNbme)
+		resp.Results[repoNbme] = result
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 }
 
-func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoDeleteRequest
+func (s *Server) hbndleRepoDelete(w http.ResponseWriter, r *http.Request) {
+	vbr req protocol.RepoDeleteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	if err := deleteRepo(r.Context(), s.Logger, s.DB, s.Hostname, s.ReposDir, req.Repo); err != nil {
-		s.Logger.Error("failed to delete repository", log.String("repo", string(req.Repo)), log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+	if err := deleteRepo(r.Context(), s.Logger, s.DB, s.Hostnbme, s.ReposDir, req.Repo); err != nil {
+		s.Logger.Error("fbiled to delete repository", log.String("repo", string(req.Repo)), log.Error(err))
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 	s.Logger.Info("deleted repository", log.String("repo", string(req.Repo)))
@@ -95,20 +95,20 @@ func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
 func deleteRepo(
 	ctx context.Context,
 	logger log.Logger,
-	db database.DB,
-	shardID string,
+	db dbtbbbse.DB,
+	shbrdID string,
 	reposDir string,
-	repo api.RepoName,
+	repo bpi.RepoNbme,
 ) error {
-	// The repo may be deleted in the database, in this case we need to get the
-	// original name in order to find it on disk
-	err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, repoDirFromName(reposDir, api.UndeletedRepoName(repo)), true)
+	// The repo mby be deleted in the dbtbbbse, in this cbse we need to get the
+	// originbl nbme in order to find it on disk
+	err := removeRepoDirectory(ctx, logger, db, shbrdID, reposDir, repoDirFromNbme(reposDir, bpi.UndeletedRepoNbme(repo)), true)
 	if err != nil {
-		return errors.Wrap(err, "removing repo directory")
+		return errors.Wrbp(err, "removing repo directory")
 	}
-	err = db.GitserverRepos().SetCloneStatus(ctx, repo, types.CloneStatusNotCloned, shardID)
+	err = db.GitserverRepos().SetCloneStbtus(ctx, repo, types.CloneStbtusNotCloned, shbrdID)
 	if err != nil {
-		return errors.Wrap(err, "setting clone status after delete")
+		return errors.Wrbp(err, "setting clone stbtus bfter delete")
 	}
 	return nil
 }

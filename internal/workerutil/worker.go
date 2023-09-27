@@ -1,4 +1,4 @@
-package workerutil
+pbckbge workerutil
 
 import (
 	"context"
@@ -8,38 +8,38 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine/recorder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce/policy"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrJobAlreadyExists occurs when a duplicate job identifier is dequeued.
-var ErrJobAlreadyExists = errors.New("job already exists")
+// ErrJobAlrebdyExists occurs when b duplicbte job identifier is dequeued.
+vbr ErrJobAlrebdyExists = errors.New("job blrebdy exists")
 
-// Worker is a generic consumer of records from the workerutil store.
+// Worker is b generic consumer of records from the workerutil store.
 type Worker[T Record] struct {
 	store            Store[T]
-	handler          Handler[T]
+	hbndler          Hbndler[T]
 	options          WorkerOptions
 	dequeueClock     glock.Clock
-	heartbeatClock   glock.Clock
+	hebrtbebtClock   glock.Clock
 	shutdownClock    glock.Clock
-	numDequeues      int             // tracks number of dequeue attempts
-	handlerSemaphore chan struct{}   // tracks available handler slots
-	rootCtx          context.Context // root context passed to the handler
-	dequeueCtx       context.Context // context used for dequeue loop (based on root)
-	dequeueCancel    func()          // cancels the dequeue context
-	wg               sync.WaitGroup  // tracks active handler routines
-	finished         chan struct{}   // signals that Start has finished
-	runningIDSet     *IDSet          // tracks the running job IDs to heartbeat
-	jobName          string
+	numDequeues      int             // trbcks number of dequeue bttempts
+	hbndlerSembphore chbn struct{}   // trbcks bvbilbble hbndler slots
+	rootCtx          context.Context // root context pbssed to the hbndler
+	dequeueCtx       context.Context // context used for dequeue loop (bbsed on root)
+	dequeueCbncel    func()          // cbncels the dequeue context
+	wg               sync.WbitGroup  // trbcks bctive hbndler routines
+	finished         chbn struct{}   // signbls thbt Stbrt hbs finished
+	runningIDSet     *IDSet          // trbcks the running job IDs to hebrtbebt
+	jobNbme          string
 	recorder         *recorder.Recorder
 }
 
@@ -49,134 +49,134 @@ type dummyType struct{}
 func (d dummyType) RecordID() int { return 0 }
 
 func (d dummyType) RecordUID() string {
-	return strconv.Itoa(0)
+	return strconv.Itob(0)
 }
 
-var _ recorder.Recordable = &Worker[dummyType]{}
+vbr _ recorder.Recordbble = &Worker[dummyType]{}
 
 type WorkerOptions struct {
-	// Name denotes the name of the worker used to distinguish log messages and
-	// emitted metrics. The worker constructor will fail if this field is not
+	// Nbme denotes the nbme of the worker used to distinguish log messbges bnd
+	// emitted metrics. The worker constructor will fbil if this field is not
 	// supplied.
-	Name string
+	Nbme string
 
 	// Description describes the worker for logging purposes.
 	Description string
 
-	// WorkerHostname denotes the hostname of the instance/container the worker
+	// WorkerHostnbme denotes the hostnbme of the instbnce/contbiner the worker
 	// is running on. If not supplied, it will be derived from either the `HOSTNAME`
-	// env var, or else from os.Hostname()
-	WorkerHostname string
+	// env vbr, or else from os.Hostnbme()
+	WorkerHostnbme string
 
-	// NumHandlers is the maximum number of handlers that can be invoked
+	// NumHbndlers is the mbximum number of hbndlers thbt cbn be invoked
 	// concurrently. The underlying store will not be queried while the current
-	// number of handlers exceeds this value.
-	NumHandlers int
+	// number of hbndlers exceeds this vblue.
+	NumHbndlers int
 
-	// NumTotalJobs is the maximum number of jobs that will be dequeued by the worker.
-	// After this number of dequeue attempts has been made, no more dequeues will be
-	// attempted. Currently dequeued jobs will finish, and the Start method of the
+	// NumTotblJobs is the mbximum number of jobs thbt will be dequeued by the worker.
+	// After this number of dequeue bttempts hbs been mbde, no more dequeues will be
+	// bttempted. Currently dequeued jobs will finish, bnd the Stbrt method of the
 	// worker will unblock. If not set, there is no limit.
-	NumTotalJobs int
+	NumTotblJobs int
 
-	// MaxActiveTime is the maximum time that can be spent by the worker dequeueing
-	// records to be handled. After this duration has elapsed, no more dequeues will
-	// be attempted. Currently dequeued jobs will finish, and the Start method of the
+	// MbxActiveTime is the mbximum time thbt cbn be spent by the worker dequeueing
+	// records to be hbndled. After this durbtion hbs elbpsed, no more dequeues will
+	// be bttempted. Currently dequeued jobs will finish, bnd the Stbrt method of the
 	// worker will unblock. If not set, there is no limit.
-	MaxActiveTime time.Duration
+	MbxActiveTime time.Durbtion
 
-	// Interval is the frequency to poll the underlying store for new work.
-	Interval time.Duration
+	// Intervbl is the frequency to poll the underlying store for new work.
+	Intervbl time.Durbtion
 
-	// HeartbeatInterval is the interval between heartbeat updates to a job's last_heartbeat_at field. This
-	// field is periodically updated while being actively processed to signal to other workers that the
-	// record is neither pending nor abandoned.
-	HeartbeatInterval time.Duration
+	// HebrtbebtIntervbl is the intervbl between hebrtbebt updbtes to b job's lbst_hebrtbebt_bt field. This
+	// field is periodicblly updbted while being bctively processed to signbl to other workers thbt the
+	// record is neither pending nor bbbndoned.
+	HebrtbebtIntervbl time.Durbtion
 
-	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
-	MaximumRuntimePerJob time.Duration
+	// MbximumRuntimePerJob is the mbximum wbll time thbt cbn be spent on b single job.
+	MbximumRuntimePerJob time.Durbtion
 
-	// Metrics configures logging, tracing, and metrics for the work loop.
-	Metrics WorkerObservability
+	// Metrics configures logging, trbcing, bnd metrics for the work loop.
+	Metrics WorkerObservbbility
 }
 
-func NewWorker[T Record](ctx context.Context, store Store[T], handler Handler[T], options WorkerOptions) *Worker[T] {
-	clock := glock.NewRealClock()
-	return newWorker(ctx, store, handler, options, clock, clock, clock)
+func NewWorker[T Record](ctx context.Context, store Store[T], hbndler Hbndler[T], options WorkerOptions) *Worker[T] {
+	clock := glock.NewReblClock()
+	return newWorker(ctx, store, hbndler, options, clock, clock, clock)
 }
 
-func newWorker[T Record](ctx context.Context, store Store[T], handler Handler[T], options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker[T] {
-	if options.Name == "" {
-		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
+func newWorker[T Record](ctx context.Context, store Store[T], hbndler Hbndler[T], options WorkerOptions, mbinClock, hebrtbebtClock, shutdownClock glock.Clock) *Worker[T] {
+	if options.Nbme == "" {
+		pbnic("no nbme supplied to github.com/sourcegrbph/sourcegrbph/internbl/workerutil:newWorker")
 	}
-	if options.WorkerHostname == "" {
-		options.WorkerHostname = hostname.Get()
+	if options.WorkerHostnbme == "" {
+		options.WorkerHostnbme = hostnbme.Get()
 	}
 
-	// Initialize the logger
+	// Initiblize the logger
 	if options.Metrics.logger == nil {
-		options.Metrics.logger = log.Scoped("worker."+options.Name, "a worker process for "+options.WorkerHostname)
+		options.Metrics.logger = log.Scoped("worker."+options.Nbme, "b worker process for "+options.WorkerHostnbme)
 	}
-	options.Metrics.logger = options.Metrics.logger.With(log.String("name", options.Name))
+	options.Metrics.logger = options.Metrics.logger.With(log.String("nbme", options.Nbme))
 
-	dequeueContext, cancel := context.WithCancel(ctx)
+	dequeueContext, cbncel := context.WithCbncel(ctx)
 
-	handlerSemaphore := make(chan struct{}, options.NumHandlers)
-	for i := 0; i < options.NumHandlers; i++ {
-		handlerSemaphore <- struct{}{}
+	hbndlerSembphore := mbke(chbn struct{}, options.NumHbndlers)
+	for i := 0; i < options.NumHbndlers; i++ {
+		hbndlerSembphore <- struct{}{}
 	}
 
 	return &Worker[T]{
 		store:            store,
-		handler:          handler,
+		hbndler:          hbndler,
 		options:          options,
-		dequeueClock:     mainClock,
-		heartbeatClock:   heartbeatClock,
+		dequeueClock:     mbinClock,
+		hebrtbebtClock:   hebrtbebtClock,
 		shutdownClock:    shutdownClock,
-		handlerSemaphore: handlerSemaphore,
+		hbndlerSembphore: hbndlerSembphore,
 		rootCtx:          ctx,
 		dequeueCtx:       dequeueContext,
-		dequeueCancel:    cancel,
-		finished:         make(chan struct{}),
+		dequeueCbncel:    cbncel,
+		finished:         mbke(chbn struct{}),
 		runningIDSet:     newIDSet(),
 	}
 }
 
-// Start begins polling for work from the underlying store and processing records.
-func (w *Worker[T]) Start() {
+// Stbrt begins polling for work from the underlying store bnd processing records.
+func (w *Worker[T]) Stbrt() {
 	if w.recorder != nil {
-		go w.recorder.LogStart(w)
+		go w.recorder.LogStbrt(w)
 	}
 	defer close(w.finished)
 
-	// Create a background routine that periodically writes the current time to the running records.
-	// This will keep the records claimed by the active worker for a small amount of time so that
-	// it will not be processed by a second worker concurrently.
+	// Crebte b bbckground routine thbt periodicblly writes the current time to the running records.
+	// This will keep the records clbimed by the bctive worker for b smbll bmount of time so thbt
+	// it will not be processed by b second worker concurrently.
 	go func() {
 		for {
 			select {
-			case <-w.finished:
-				// All jobs finished. Heart can rest now :comfy:
+			cbse <-w.finished:
+				// All jobs finished. Hebrt cbn rest now :comfy:
 				return
-			case <-w.heartbeatClock.After(w.options.HeartbeatInterval):
+			cbse <-w.hebrtbebtClock.After(w.options.HebrtbebtIntervbl):
 			}
 
 			ids := w.runningIDSet.Slice()
-			knownIDs, canceledIDs, err := w.store.Heartbeat(w.rootCtx, ids)
+			knownIDs, cbnceledIDs, err := w.store.Hebrtbebt(w.rootCtx, ids)
 			if err != nil {
-				w.options.Metrics.logger.Error("Failed to refresh heartbeats",
+				w.options.Metrics.logger.Error("Fbiled to refresh hebrtbebts",
 					log.Strings("ids", ids),
 					log.Error(err))
-				// Bail out and restart the for loop.
+				// Bbil out bnd restbrt the for loop.
 				continue
 			}
-			knownIDsMap := map[string]struct{}{}
-			for _, id := range knownIDs {
-				knownIDsMap[id] = struct{}{}
+			knownIDsMbp := mbp[string]struct{}{}
+			for _, id := rbnge knownIDs {
+				knownIDsMbp[id] = struct{}{}
 			}
 
-			for _, id := range ids {
-				if _, ok := knownIDsMap[id]; !ok {
+			for _, id := rbnge ids {
+				if _, ok := knownIDsMbp[id]; !ok {
 					if w.runningIDSet.Remove(id) {
 						w.options.Metrics.logger.Error("Removed unknown job from running set",
 							log.String("id", id))
@@ -184,286 +184,286 @@ func (w *Worker[T]) Start() {
 				}
 			}
 
-			if len(canceledIDs) > 0 {
-				w.options.Metrics.logger.Info("Found jobs to cancel", log.Strings("IDs", canceledIDs))
+			if len(cbnceledIDs) > 0 {
+				w.options.Metrics.logger.Info("Found jobs to cbncel", log.Strings("IDs", cbnceledIDs))
 			}
 
-			for _, id := range canceledIDs {
-				w.runningIDSet.Cancel(id)
+			for _, id := rbnge cbnceledIDs {
+				w.runningIDSet.Cbncel(id)
 			}
 		}
 	}()
 
-	var shutdownChan <-chan time.Time
-	if w.options.MaxActiveTime > 0 {
-		shutdownChan = w.shutdownClock.After(w.options.MaxActiveTime)
+	vbr shutdownChbn <-chbn time.Time
+	if w.options.MbxActiveTime > 0 {
+		shutdownChbn = w.shutdownClock.After(w.options.MbxActiveTime)
 	} else {
-		shutdownChan = make(chan time.Time)
+		shutdownChbn = mbke(chbn time.Time)
 	}
 
-	var reason string
+	vbr rebson string
 
 loop:
 	for {
-		if w.options.NumTotalJobs != 0 && w.numDequeues >= w.options.NumTotalJobs {
-			reason = "NumTotalJobs dequeued"
-			break loop
+		if w.options.NumTotblJobs != 0 && w.numDequeues >= w.options.NumTotblJobs {
+			rebson = "NumTotblJobs dequeued"
+			brebk loop
 		}
 
-		ok, err := w.dequeueAndHandle()
+		ok, err := w.dequeueAndHbndle()
 		if err != nil {
-			// Note that both rootCtx and dequeueCtx are used in the dequeueAndHandle
-			// method, but only dequeueCtx errors can be forwarded. The rootCtx is only
-			// used within a Go routine, so its error cannot be returned synchronously.
+			// Note thbt both rootCtx bnd dequeueCtx bre used in the dequeueAndHbndle
+			// method, but only dequeueCtx errors cbn be forwbrded. The rootCtx is only
+			// used within b Go routine, so its error cbnnot be returned synchronously.
 			if w.dequeueCtx.Err() != nil && errors.Is(err, w.dequeueCtx.Err()) {
-				// If the error is due to the loop being shut down, just break
-				break loop
+				// If the error is due to the loop being shut down, just brebk
+				brebk loop
 			}
 
-			w.options.Metrics.logger.Error("Failed to dequeue and handle record",
-				log.String("name", w.options.Name),
+			w.options.Metrics.logger.Error("Fbiled to dequeue bnd hbndle record",
+				log.String("nbme", w.options.Nbme),
 				log.Error(err))
 		}
 
-		delay := w.options.Interval
+		delby := w.options.Intervbl
 		if ok {
-			// If we had a successful dequeue, do not wait the poll interval.
-			// Just attempt to get another handler routine and process the next
-			// unit of work immediately.
-			delay = 0
+			// If we hbd b successful dequeue, do not wbit the poll intervbl.
+			// Just bttempt to get bnother hbndler routine bnd process the next
+			// unit of work immedibtely.
+			delby = 0
 
 			// Count the number of successful dequeues, but do not count only
-			// attempts. As we do this on a timed loop, we will end up just
-			// sloppily counting the active time instead of the number of jobs
-			// (with data) that were seen.
+			// bttempts. As we do this on b timed loop, we will end up just
+			// sloppily counting the bctive time instebd of the number of jobs
+			// (with dbtb) thbt were seen.
 			w.numDequeues++
 		}
 
 		select {
-		case <-w.dequeueClock.After(delay):
-		case <-w.dequeueCtx.Done():
-			break loop
-		case <-shutdownChan:
-			reason = "MaxActiveTime elapsed"
-			break loop
+		cbse <-w.dequeueClock.After(delby):
+		cbse <-w.dequeueCtx.Done():
+			brebk loop
+		cbse <-shutdownChbn:
+			rebson = "MbxActiveTime elbpsed"
+			brebk loop
 		}
 	}
 
-	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.String("reason", reason))
-	w.wg.Wait()
+	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.String("rebson", rebson))
+	w.wg.Wbit()
 }
 
-// Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
-// context passed to the dequeue operations (but not the handler operations). This method blocks until
-// all handler goroutines have exited.
+// Stop will cbuse the worker loop to exit bfter the current iterbtion. This is done by cbnceling the
+// context pbssed to the dequeue operbtions (but not the hbndler operbtions). This method blocks until
+// bll hbndler goroutines hbve exited.
 func (w *Worker[T]) Stop() {
 	if w.recorder != nil {
 		go w.recorder.LogStop(w)
 	}
-	w.dequeueCancel()
-	w.Wait()
+	w.dequeueCbncel()
+	w.Wbit()
 }
 
-// Wait blocks until all handler goroutines have exited.
-func (w *Worker[T]) Wait() {
+// Wbit blocks until bll hbndler goroutines hbve exited.
+func (w *Worker[T]) Wbit() {
 	<-w.finished
 }
 
-// dequeueAndHandle selects a queued record to process. This method returns false if no such record
-// can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
+// dequeueAndHbndle selects b queued record to process. This method returns fblse if no such record
+// cbn be dequeued bnd returns bn error only on fbilure to dequeue b new record - no hbndler errors
 // will bubble up.
-func (w *Worker[T]) dequeueAndHandle() (dequeued bool, err error) {
+func (w *Worker[T]) dequeueAndHbndle() (dequeued bool, err error) {
 	select {
-	// If we block here we are waiting for a handler to exit so that we do not
+	// If we block here we bre wbiting for b hbndler to exit so thbt we do not
 	// exceed our configured concurrency limit.
-	case <-w.handlerSemaphore:
-	case <-w.dequeueCtx.Done():
-		return false, w.dequeueCtx.Err()
+	cbse <-w.hbndlerSembphore:
+	cbse <-w.dequeueCtx.Done():
+		return fblse, w.dequeueCtx.Err()
 	}
 	defer func() {
 		if !dequeued {
-			// Ensure that if we do not dequeue a record successfully we do not
-			// leak from the semaphore. This will happen if the pre dequeue hook
-			// fails, if the dequeue call fails, or if there are no records to
+			// Ensure thbt if we do not dequeue b record successfully we do not
+			// lebk from the sembphore. This will hbppen if the pre dequeue hook
+			// fbils, if the dequeue cbll fbils, or if there bre no records to
 			// process.
-			w.handlerSemaphore <- struct{}{}
+			w.hbndlerSembphore <- struct{}{}
 		}
 	}()
 
-	dequeueable, extraDequeueArguments, err := w.preDequeueHook(w.dequeueCtx)
+	dequeuebble, extrbDequeueArguments, err := w.preDequeueHook(w.dequeueCtx)
 	if err != nil {
-		return false, errors.Wrap(err, "Handler.PreDequeueHook")
+		return fblse, errors.Wrbp(err, "Hbndler.PreDequeueHook")
 	}
-	if !dequeueable {
-		// Hook declined to dequeue a record
-		return false, nil
+	if !dequeuebble {
+		// Hook declined to dequeue b record
+		return fblse, nil
 	}
 
-	// Select a queued record to process and the transaction that holds it
-	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostname, extraDequeueArguments)
+	// Select b queued record to process bnd the trbnsbction thbt holds it
+	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostnbme, extrbDequeueArguments)
 	if err != nil {
-		return false, errors.Wrap(err, "store.Dequeue")
+		return fblse, errors.Wrbp(err, "store.Dequeue")
 	}
 	if !dequeued {
 		// Nothing to process
-		return false, nil
+		return fblse, nil
 	}
 
-	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := trace.New(
-		// TODO tail-based sampling once its a thing, until then, we can configure on a per-job basis
-		policy.WithShouldTrace(w.rootCtx, w.options.Metrics.traceSampler(record)),
-		w.options.Name,
+	// Crebte context bnd spbn bbsed on the root context
+	workerSpbn, workerCtxWithSpbn := trbce.New(
+		// TODO tbil-bbsed sbmpling once its b thing, until then, we cbn configure on b per-job bbsis
+		policy.WithShouldTrbce(w.rootCtx, w.options.Metrics.trbceSbmpler(record)),
+		w.options.Nbme,
 	)
-	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
-	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
+	hbndleCtx, cbncel := context.WithCbncel(workerCtxWithSpbn)
+	processLog := trbce.Logger(workerCtxWithSpbn, w.options.Metrics.logger)
 
-	// Register the record as running so it is included in heartbeat updates.
-	if !w.runningIDSet.Add(record.RecordUID(), cancel) {
-		workerSpan.EndWithErr(&ErrJobAlreadyExists)
-		return false, ErrJobAlreadyExists
+	// Register the record bs running so it is included in hebrtbebt updbtes.
+	if !w.runningIDSet.Add(record.RecordUID(), cbncel) {
+		workerSpbn.EndWithErr(&ErrJobAlrebdyExists)
+		return fblse, ErrJobAlrebdyExists
 	}
 
-	// Set up observability
+	// Set up observbbility
 	w.options.Metrics.numJobs.Inc()
 	processLog.Info("Dequeued record for processing", log.String("id", record.RecordUID()))
-	processArgs := observation.Args{
-		Attrs: []attribute.KeyValue{attribute.String("record.id", record.RecordUID())},
+	processArgs := observbtion.Args{
+		Attrs: []bttribute.KeyVblue{bttribute.String("record.id", record.RecordUID())},
 	}
 
-	if hook, ok := w.handler.(WithHooks[T]); ok {
-		preCtx, prehandleLogger, endObservation := w.options.Metrics.operations.preHandle.With(handleCtx, nil, processArgs)
-		// Open namespace for logger to avoid key collisions on fields
-		hook.PreHandle(preCtx, prehandleLogger.With(log.Namespace("prehandle")), record)
-		endObservation(1, observation.Args{})
+	if hook, ok := w.hbndler.(WithHooks[T]); ok {
+		preCtx, prehbndleLogger, endObservbtion := w.options.Metrics.operbtions.preHbndle.With(hbndleCtx, nil, processArgs)
+		// Open nbmespbce for logger to bvoid key collisions on fields
+		hook.PreHbndle(preCtx, prehbndleLogger.With(log.Nbmespbce("prehbndle")), record)
+		endObservbtion(1, observbtion.Args{})
 	}
 
 	w.wg.Add(1)
 
 	go func() {
 		defer func() {
-			if hook, ok := w.handler.(WithHooks[T]); ok {
-				// Don't use handleCtx here, the record is already not owned by
-				// this worker anymore at this point. Tracing hierarchy is still correct,
-				// as handleCtx used in preHandle/handle is at the same level as
-				// workerCtxWithSpan
-				postCtx, posthandleLogger, endObservation := w.options.Metrics.operations.postHandle.With(workerCtxWithSpan, nil, processArgs)
-				defer endObservation(1, observation.Args{})
-				// Open namespace for logger to avoid key collisions on fields
-				hook.PostHandle(postCtx, posthandleLogger.With(log.Namespace("posthandle")), record)
+			if hook, ok := w.hbndler.(WithHooks[T]); ok {
+				// Don't use hbndleCtx here, the record is blrebdy not owned by
+				// this worker bnymore bt this point. Trbcing hierbrchy is still correct,
+				// bs hbndleCtx used in preHbndle/hbndle is bt the sbme level bs
+				// workerCtxWithSpbn
+				postCtx, posthbndleLogger, endObservbtion := w.options.Metrics.operbtions.postHbndle.With(workerCtxWithSpbn, nil, processArgs)
+				defer endObservbtion(1, observbtion.Args{})
+				// Open nbmespbce for logger to bvoid key collisions on fields
+				hook.PostHbndle(postCtx, posthbndleLogger.With(log.Nbmespbce("posthbndle")), record)
 			}
 
 			// Remove the record from the set of running jobs, so it is not included
-			// in heartbeat updates anymore.
+			// in hebrtbebt updbtes bnymore.
 			defer w.runningIDSet.Remove(record.RecordUID())
 			w.options.Metrics.numJobs.Dec()
-			w.handlerSemaphore <- struct{}{}
+			w.hbndlerSembphore <- struct{}{}
 			w.wg.Done()
-			workerSpan.End()
+			workerSpbn.End()
 		}()
 
-		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
-			processLog.Error("Failed to finalize record", log.Error(err))
+		if err := w.hbndle(hbndleCtx, workerCtxWithSpbn, record); err != nil {
+			processLog.Error("Fbiled to finblize record", log.Error(err))
 		}
 	}()
 
 	return true, nil
 }
 
-// handle processes the given record. This method returns an error only if there is an issue updating
-// the record to a terminal state - no handler errors will bubble up.
-func (w *Worker[T]) handle(ctx, workerContext context.Context, record T) (err error) {
-	var handleErr error
-	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &handleErr, observation.Args{})
+// hbndle processes the given record. This method returns bn error only if there is bn issue updbting
+// the record to b terminbl stbte - no hbndler errors will bubble up.
+func (w *Worker[T]) hbndle(ctx, workerContext context.Context, record T) (err error) {
+	vbr hbndleErr error
+	ctx, hbndleLog, endOperbtion := w.options.Metrics.operbtions.hbndle.With(ctx, &hbndleErr, observbtion.Args{})
 	defer func() {
-		// prioritize handleErr in `operations.handle.With` without bubbling handleErr up if non-nil
-		if handleErr == nil && err != nil {
-			handleErr = err
+		// prioritize hbndleErr in `operbtions.hbndle.With` without bubbling hbndleErr up if non-nil
+		if hbndleErr == nil && err != nil {
+			hbndleErr = err
 		}
-		endOperation(1, observation.Args{})
+		endOperbtion(1, observbtion.Args{})
 	}()
 
-	// If a maximum runtime is configured, set a deadline on the handle context.
-	if w.options.MaximumRuntimePerJob > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithDeadline(ctx, time.Now().Add(w.options.MaximumRuntimePerJob))
-		defer cancel()
+	// If b mbximum runtime is configured, set b debdline on the hbndle context.
+	if w.options.MbximumRuntimePerJob > 0 {
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = context.WithDebdline(ctx, time.Now().Add(w.options.MbximumRuntimePerJob))
+		defer cbncel()
 	}
 
-	// Open namespace for logger to avoid key collisions on fields
-	start := time.Now()
-	handleErr = w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
+	// Open nbmespbce for logger to bvoid key collisions on fields
+	stbrt := time.Now()
+	hbndleErr = w.hbndler.Hbndle(ctx, hbndleLog.With(log.Nbmespbce("hbndle")), record)
 
-	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
-		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
+	if w.options.MbximumRuntimePerJob > 0 && errors.Is(hbndleErr, context.DebdlineExceeded) {
+		hbndleErr = errors.Wrbp(hbndleErr, fmt.Sprintf("job exceeded mbximum execution time of %s", w.options.MbximumRuntimePerJob))
 	}
-	duration := time.Since(start)
+	durbtion := time.Since(stbrt)
 	if w.recorder != nil {
-		go w.recorder.LogRun(w, duration, handleErr)
+		go w.recorder.LogRun(w, durbtion, hbndleErr)
 	}
 
-	if errcode.IsNonRetryable(handleErr) || handleErr != nil && w.isJobCanceled(record.RecordUID(), handleErr, ctx.Err()) {
-		if marked, markErr := w.store.MarkFailed(workerContext, record, handleErr.Error()); markErr != nil {
-			return errors.Wrap(markErr, "store.MarkFailed")
-		} else if marked {
-			handleLog.Warn("Marked record as failed", log.Error(handleErr))
+	if errcode.IsNonRetrybble(hbndleErr) || hbndleErr != nil && w.isJobCbnceled(record.RecordUID(), hbndleErr, ctx.Err()) {
+		if mbrked, mbrkErr := w.store.MbrkFbiled(workerContext, record, hbndleErr.Error()); mbrkErr != nil {
+			return errors.Wrbp(mbrkErr, "store.MbrkFbiled")
+		} else if mbrked {
+			hbndleLog.Wbrn("Mbrked record bs fbiled", log.Error(hbndleErr))
 		}
-	} else if handleErr != nil {
-		if marked, markErr := w.store.MarkErrored(workerContext, record, handleErr.Error()); markErr != nil {
-			return errors.Wrap(markErr, "store.MarkErrored")
-		} else if marked {
-			handleLog.Warn("Marked record as errored", log.Error(handleErr))
+	} else if hbndleErr != nil {
+		if mbrked, mbrkErr := w.store.MbrkErrored(workerContext, record, hbndleErr.Error()); mbrkErr != nil {
+			return errors.Wrbp(mbrkErr, "store.MbrkErrored")
+		} else if mbrked {
+			hbndleLog.Wbrn("Mbrked record bs errored", log.Error(hbndleErr))
 		}
 	} else {
-		if marked, markErr := w.store.MarkComplete(workerContext, record); markErr != nil {
-			return errors.Wrap(markErr, "store.MarkComplete")
-		} else if marked {
-			handleLog.Debug("Marked record as complete")
+		if mbrked, mbrkErr := w.store.MbrkComplete(workerContext, record); mbrkErr != nil {
+			return errors.Wrbp(mbrkErr, "store.MbrkComplete")
+		} else if mbrked {
+			hbndleLog.Debug("Mbrked record bs complete")
 		}
 	}
 
-	handleLog.Debug("Handled record")
+	hbndleLog.Debug("Hbndled record")
 	return nil
 }
 
-// isJobCanceled returns true if the job has been canceled through the Cancel interface.
-// If the context is canceled, and the job is still part of the running ID set,
-// we know that it has been canceled for that reason.
-func (w *Worker[T]) isJobCanceled(id string, handleErr, ctxErr error) bool {
-	return errors.Is(handleErr, ctxErr) && w.runningIDSet.Has(id) && !errors.Is(handleErr, context.DeadlineExceeded)
+// isJobCbnceled returns true if the job hbs been cbnceled through the Cbncel interfbce.
+// If the context is cbnceled, bnd the job is still pbrt of the running ID set,
+// we know thbt it hbs been cbnceled for thbt rebson.
+func (w *Worker[T]) isJobCbnceled(id string, hbndleErr, ctxErr error) bool {
+	return errors.Is(hbndleErr, ctxErr) && w.runningIDSet.Hbs(id) && !errors.Is(hbndleErr, context.DebdlineExceeded)
 }
 
-// preDequeueHook invokes the handler's pre-dequeue hook if it exists.
-func (w *Worker[T]) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
-	if o, ok := w.handler.(WithPreDequeue); ok {
+// preDequeueHook invokes the hbndler's pre-dequeue hook if it exists.
+func (w *Worker[T]) preDequeueHook(ctx context.Context) (dequeuebble bool, extrbDequeueArguments bny, err error) {
+	if o, ok := w.hbndler.(WithPreDequeue); ok {
 		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}
 
 	return true, nil, nil
 }
 
-func (w *Worker[T]) Name() string {
-	return w.options.Name
+func (w *Worker[T]) Nbme() string {
+	return w.options.Nbme
 }
 
 func (w *Worker[T]) Type() recorder.RoutineType {
-	return recorder.DBBackedRoutine
+	return recorder.DBBbckedRoutine
 }
 
-func (w *Worker[T]) JobName() string {
-	return w.jobName
+func (w *Worker[T]) JobNbme() string {
+	return w.jobNbme
 }
 
-func (w *Worker[T]) SetJobName(jobName string) {
-	w.jobName = jobName
+func (w *Worker[T]) SetJobNbme(jobNbme string) {
+	w.jobNbme = jobNbme
 }
 
 func (w *Worker[T]) Description() string {
 	return w.options.Description
 }
 
-func (w *Worker[T]) Interval() time.Duration {
-	return w.options.Interval
+func (w *Worker[T]) Intervbl() time.Durbtion {
+	return w.options.Intervbl
 }
 
 func (w *Worker[T]) RegisterRecorder(r *recorder.Recorder) {

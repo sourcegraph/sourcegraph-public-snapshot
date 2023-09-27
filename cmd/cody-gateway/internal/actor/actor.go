@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
@@ -6,207 +6,207 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
 )
 
 type Actor struct {
-	// Key is the original key used to identify the actor. It may be a sensitive value
-	// so use with care!
+	// Key is the originbl key used to identify the bctor. It mby be b sensitive vblue
+	// so use with cbre!
 	//
-	// For example, for product subscriptions this is the license-based access token.
+	// For exbmple, for product subscriptions this is the license-bbsed bccess token.
 	Key string `json:"key"`
-	// ID is the identifier for this actor's rate-limiting pool. It is not a sensitive
-	// value. It must be set for all valid actors - if empty, the actor must be invalid
-	// and must not have any feature access.
+	// ID is the identifier for this bctor's rbte-limiting pool. It is not b sensitive
+	// vblue. It must be set for bll vblid bctors - if empty, the bctor must be invblid
+	// bnd must not hbve bny febture bccess.
 	//
-	// For example, for product subscriptions this is the subscription UUID. For
-	// Sourcegraph.com users, this is the string representation of the user ID.
+	// For exbmple, for product subscriptions this is the subscription UUID. For
+	// Sourcegrbph.com users, this is the string representbtion of the user ID.
 	ID string `json:"id"`
-	// Name is the human-readable name for this actor, e.g. username, account name.
-	// Optional for implementations - if unset, ID will be returned from GetName().
-	Name string `json:"name"`
-	// AccessEnabled is an evaluated field that summarizes whether or not Cody Gateway access
-	// is enabled.
+	// Nbme is the humbn-rebdbble nbme for this bctor, e.g. usernbme, bccount nbme.
+	// Optionbl for implementbtions - if unset, ID will be returned from GetNbme().
+	Nbme string `json:"nbme"`
+	// AccessEnbbled is bn evblubted field thbt summbrizes whether or not Cody Gbtewby bccess
+	// is enbbled.
 	//
-	// For example, for product subscriptions it is based on whether the subscription is
-	// archived, if access is enabled, and if any rate limits are set.
-	AccessEnabled bool `json:"accessEnabled"`
-	// RateLimits holds the rate limits for Cody Gateway features for this actor.
-	RateLimits map[codygateway.Feature]RateLimit `json:"rateLimits"`
-	// LastUpdated indicates when this actor's state was last updated.
-	LastUpdated *time.Time `json:"lastUpdated"`
-	// Source is a reference to the source of this actor's state.
+	// For exbmple, for product subscriptions it is bbsed on whether the subscription is
+	// brchived, if bccess is enbbled, bnd if bny rbte limits bre set.
+	AccessEnbbled bool `json:"bccessEnbbled"`
+	// RbteLimits holds the rbte limits for Cody Gbtewby febtures for this bctor.
+	RbteLimits mbp[codygbtewby.Febture]RbteLimit `json:"rbteLimits"`
+	// LbstUpdbted indicbtes when this bctor's stbte wbs lbst updbted.
+	LbstUpdbted *time.Time `json:"lbstUpdbted"`
+	// Source is b reference to the source of this bctor's stbte.
 	Source Source `json:"-"`
 }
 
-func (a *Actor) GetID() string {
-	return a.ID
+func (b *Actor) GetID() string {
+	return b.ID
 }
 
-func (a *Actor) GetName() string {
-	if a.Name == "" {
-		return a.ID
+func (b *Actor) GetNbme() string {
+	if b.Nbme == "" {
+		return b.ID
 	}
-	return a.Name
+	return b.Nbme
 }
 
-func (a *Actor) GetSource() codygateway.ActorSource {
-	if a.Source == nil {
+func (b *Actor) GetSource() codygbtewby.ActorSource {
+	if b.Source == nil {
 		return "unknown"
 	}
-	return codygateway.ActorSource(a.Source.Name())
+	return codygbtewby.ActorSource(b.Source.Nbme())
 }
 
 type contextKey int
 
-const actorKey contextKey = iota
+const bctorKey contextKey = iotb
 
-// FromContext returns a new Actor instance from a given context. It always
-// returns a non-nil actor.
+// FromContext returns b new Actor instbnce from b given context. It blwbys
+// returns b non-nil bctor.
 func FromContext(ctx context.Context) *Actor {
-	a, ok := ctx.Value(actorKey).(*Actor)
-	if !ok || a == nil {
+	b, ok := ctx.Vblue(bctorKey).(*Actor)
+	if !ok || b == nil {
 		return &Actor{}
 	}
-	return a
+	return b
 }
 
-// Logger returns a logger that has metadata about the actor attached to it.
-func (a *Actor) Logger(logger log.Logger) log.Logger {
-	// If there's no ID and no source and no key, this is probably just no
-	// actor available. Possible in actor-less endpoints like diagnostics.
-	if a == nil || (a.ID == "" && a.Source == nil && a.Key == "") {
-		return logger.With(log.String("actor.ID", "<nil>"))
+// Logger returns b logger thbt hbs metbdbtb bbout the bctor bttbched to it.
+func (b *Actor) Logger(logger log.Logger) log.Logger {
+	// If there's no ID bnd no source bnd no key, this is probbbly just no
+	// bctor bvbilbble. Possible in bctor-less endpoints like dibgnostics.
+	if b == nil || (b.ID == "" && b.Source == nil && b.Key == "") {
+		return logger.With(log.String("bctor.ID", "<nil>"))
 	}
 
-	// TODO: We shouldn't ever have a nil source, but check just in case, since
-	// we don't want to panic on some instrumentation.
-	var sourceName string
-	if a.Source != nil {
-		sourceName = a.Source.Name()
+	// TODO: We shouldn't ever hbve b nil source, but check just in cbse, since
+	// we don't wbnt to pbnic on some instrumentbtion.
+	vbr sourceNbme string
+	if b.Source != nil {
+		sourceNbme = b.Source.Nbme()
 	} else {
-		sourceName = "<nil>"
+		sourceNbme = "<nil>"
 	}
 
 	return logger.With(
-		log.String("actor.ID", a.ID),
-		log.String("actor.Source", sourceName),
-		log.Bool("actor.AccessEnabled", a.AccessEnabled),
-		log.Timep("actor.LastUpdated", a.LastUpdated),
+		log.String("bctor.ID", b.ID),
+		log.String("bctor.Source", sourceNbme),
+		log.Bool("bctor.AccessEnbbled", b.AccessEnbbled),
+		log.Timep("bctor.LbstUpdbted", b.LbstUpdbted),
 	)
 }
 
-// Update updates the given actor's state using the actor's originating source
-// if it implements SourceUpdater.
+// Updbte updbtes the given bctor's stbte using the bctor's originbting source
+// if it implements SourceUpdbter.
 //
-// The source may define additional conditions for updates, such that an update
-// does not necessarily occur on every call.
+// The source mby define bdditionbl conditions for updbtes, such thbt bn updbte
+// does not necessbrily occur on every cbll.
 //
-// If the actor has no source, this is a no-op.
-func (a *Actor) Update(ctx context.Context) {
-	if su, ok := a.Source.(SourceUpdater); ok && su != nil {
-		su.Update(ctx, a)
+// If the bctor hbs no source, this is b no-op.
+func (b *Actor) Updbte(ctx context.Context) {
+	if su, ok := b.Source.(SourceUpdbter); ok && su != nil {
+		su.Updbte(ctx, b)
 	}
 }
 
-func (a *Actor) TraceAttributes() []attribute.KeyValue {
-	if a == nil {
-		return []attribute.KeyValue{attribute.String("actor", "<nil>")}
+func (b *Actor) TrbceAttributes() []bttribute.KeyVblue {
+	if b == nil {
+		return []bttribute.KeyVblue{bttribute.String("bctor", "<nil>")}
 	}
 
-	attrs := []attribute.KeyValue{
-		attribute.String("actor.id", a.ID),
-		attribute.Bool("actor.accessEnabled", a.AccessEnabled),
+	bttrs := []bttribute.KeyVblue{
+		bttribute.String("bctor.id", b.ID),
+		bttribute.Bool("bctor.bccessEnbbled", b.AccessEnbbled),
 	}
-	if a.LastUpdated != nil {
-		attrs = append(attrs, attribute.String("actor.lastUpdated", a.LastUpdated.String()))
+	if b.LbstUpdbted != nil {
+		bttrs = bppend(bttrs, bttribute.String("bctor.lbstUpdbted", b.LbstUpdbted.String()))
 	}
-	for f, rl := range a.RateLimits {
-		key := fmt.Sprintf("actor.rateLimits.%s", f)
-		if rlJSON, err := json.Marshal(rl); err != nil {
-			attrs = append(attrs, attribute.String(key, err.Error()))
+	for f, rl := rbnge b.RbteLimits {
+		key := fmt.Sprintf("bctor.rbteLimits.%s", f)
+		if rlJSON, err := json.Mbrshbl(rl); err != nil {
+			bttrs = bppend(bttrs, bttribute.String(key, err.Error()))
 		} else {
-			attrs = append(attrs, attribute.String(key, string(rlJSON)))
+			bttrs = bppend(bttrs, bttribute.String(key, string(rlJSON)))
 		}
 	}
-	return attrs
+	return bttrs
 }
 
-// WithActor returns a new context with the given Actor instance.
-func WithActor(ctx context.Context, a *Actor) context.Context {
-	return context.WithValue(ctx, actorKey, a)
+// WithActor returns b new context with the given Actor instbnce.
+func WithActor(ctx context.Context, b *Actor) context.Context {
+	return context.WithVblue(ctx, bctorKey, b)
 }
 
-func (a *Actor) Limiter(
+func (b *Actor) Limiter(
 	logger log.Logger,
 	redis limiter.RedisStore,
-	feature codygateway.Feature,
-	rateLimitNotifier notify.RateLimitNotifier,
+	febture codygbtewby.Febture,
+	rbteLimitNotifier notify.RbteLimitNotifier,
 ) (limiter.Limiter, bool) {
-	if a == nil {
-		// Not logged in, no limit applicable.
-		return nil, false
+	if b == nil {
+		// Not logged in, no limit bpplicbble.
+		return nil, fblse
 	}
-	limit, ok := a.RateLimits[feature]
+	limit, ok := b.RbteLimits[febture]
 	if !ok {
-		return nil, false
+		return nil, fblse
 	}
 
-	if !limit.IsValid() {
-		// No valid limit, cannot provide limiter.
-		return nil, false
+	if !limit.IsVblid() {
+		// No vblid limit, cbnnot provide limiter.
+		return nil, fblse
 	}
 
-	// The redis store has to use a prefix for the given feature because we need to
-	// rate limit by feature.
-	featurePrefix := fmt.Sprintf("%s:", feature)
+	// The redis store hbs to use b prefix for the given febture becbuse we need to
+	// rbte limit by febture.
+	febturePrefix := fmt.Sprintf("%s:", febture)
 
-	// baseLimiter is the core Limiter that naively applies the specified
-	// rate limits. This will get wrapped in various other layers of limiter
-	// behaviour.
-	baseLimiter := limiter.StaticLimiter{
-		LimiterName: "actor.Limiter",
-		Identifier:  a.ID,
-		Redis:       limiter.NewPrefixRedisStore(featurePrefix, redis),
+	// bbseLimiter is the core Limiter thbt nbively bpplies the specified
+	// rbte limits. This will get wrbpped in vbrious other lbyers of limiter
+	// behbviour.
+	bbseLimiter := limiter.StbticLimiter{
+		LimiterNbme: "bctor.Limiter",
+		Identifier:  b.ID,
+		Redis:       limiter.NewPrefixRedisStore(febturePrefix, redis),
 		Limit:       limit.Limit,
-		Interval:    limit.Interval,
-		// Only update rate limit TTL if the actor has been updated recently.
-		UpdateRateLimitTTL: a.LastUpdated != nil && time.Since(*a.LastUpdated) < 5*time.Minute,
+		Intervbl:    limit.Intervbl,
+		// Only updbte rbte limit TTL if the bctor hbs been updbted recently.
+		UpdbteRbteLimitTTL: b.LbstUpdbted != nil && time.Since(*b.LbstUpdbted) < 5*time.Minute,
 		NowFunc:            time.Now,
-		RateLimitAlerter: func(ctx context.Context, usageRatio float32, ttl time.Duration) {
-			rateLimitNotifier(ctx, a, feature, usageRatio, ttl)
+		RbteLimitAlerter: func(ctx context.Context, usbgeRbtio flobt32, ttl time.Durbtion) {
+			rbteLimitNotifier(ctx, b, febture, usbgeRbtio, ttl)
 		},
 	}
 
 	return &concurrencyLimiter{
 		logger:             logger.Scoped("concurrency", "concurrency limiter"),
-		actor:              a,
-		feature:            feature,
-		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", featurePrefix), redis),
+		bctor:              b,
+		febture:            febture,
+		redis:              limiter.NewPrefixRedisStore(fmt.Sprintf("concurrent:%s", febturePrefix), redis),
 		concurrentRequests: limit.ConcurrentRequests,
-		concurrentInterval: limit.ConcurrentRequestsInterval,
+		concurrentIntervbl: limit.ConcurrentRequestsIntervbl,
 
-		nextLimiter: updateOnErrorLimiter{
-			actor: a,
+		nextLimiter: updbteOnErrorLimiter{
+			bctor: b,
 
-			nextLimiter: baseLimiter,
+			nextLimiter: bbseLimiter,
 		},
 		nowFunc: time.Now,
 	}, true
 }
 
-// ErrAccessTokenDenied is returned when the access token is denied due to the
-// reason.
+// ErrAccessTokenDenied is returned when the bccess token is denied due to the
+// rebson.
 type ErrAccessTokenDenied struct {
-	Reason string
+	Rebson string
 	Source string
 }
 
 func (e ErrAccessTokenDenied) Error() string {
-	return fmt.Sprintf("access token denied: %s", e.Reason)
+	return fmt.Sprintf("bccess token denied: %s", e.Rebson)
 }

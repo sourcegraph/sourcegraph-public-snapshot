@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"bytes"
@@ -13,339 +13,339 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
-	"go.uber.org/atomic"
+	"github.com/gorillb/mux"
+	"go.uber.org/btomic"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/debugproxies"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/otlpbdbpter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/otlpenv"
+	srcprometheus "github.com/sourcegrbph/sourcegrbph/internbl/src-prometheus"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var (
-	grafanaURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL at which Grafana can be reached")
-	jaegerURLFromEnv  = env.Get("JAEGER_SERVER_URL", "", "URL at which Jaeger UI can be reached")
+vbr (
+	grbfbnbURLFromEnv = env.Get("GRAFANA_SERVER_URL", "", "URL bt which Grbfbnb cbn be rebched")
+	jbegerURLFromEnv  = env.Get("JAEGER_SERVER_URL", "", "URL bt which Jbeger UI cbn be rebched")
 )
 
 func init() {
-	conf.ContributeWarning(newPrometheusValidator(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
+	conf.ContributeWbrning(newPrometheusVblidbtor(srcprometheus.NewClient(srcprometheus.PrometheusURL)))
 }
 
-func addNoK8sClientHandler(r *mux.Router, db database.DB) {
-	noHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `Cluster information not available`)
-		fmt.Fprintf(w, `<br><br><a href="headers">headers</a><br>`)
+func bddNoK8sClientHbndler(r *mux.Router, db dbtbbbse.DB) {
+	noHbndler := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `Cluster informbtion not bvbilbble`)
+		fmt.Fprintf(w, `<br><br><b href="hebders">hebders</b><br>`)
 	})
-	r.Handle("/", debugproxies.AdminOnly(db, noHandler))
+	r.Hbndle("/", debugproxies.AdminOnly(db, noHbndler))
 }
 
-// addDebugHandlers registers the reverse proxies to each services debug
+// bddDebugHbndlers registers the reverse proxies to ebch services debug
 // endpoints.
-func addDebugHandlers(r *mux.Router, db database.DB) {
-	addGrafana(r, db)
-	addJaeger(r, db)
-	addSentry(r)
-	addOpenTelemetryProtocolAdapter(r)
+func bddDebugHbndlers(r *mux.Router, db dbtbbbse.DB) {
+	bddGrbfbnb(r, db)
+	bddJbeger(r, db)
+	bddSentry(r)
+	bddOpenTelemetryProtocolAdbpter(r)
 
-	var rph debugproxies.ReverseProxyHandler
+	vbr rph debugproxies.ReverseProxyHbndler
 
 	if len(debugserver.Services) > 0 {
-		peps := make([]debugproxies.Endpoint, 0, len(debugserver.Services))
-		for _, s := range debugserver.Services {
-			peps = append(peps, debugproxies.Endpoint{
-				Service: s.Name,
+		peps := mbke([]debugproxies.Endpoint, 0, len(debugserver.Services))
+		for _, s := rbnge debugserver.Services {
+			peps = bppend(peps, debugproxies.Endpoint{
+				Service: s.Nbme,
 				Addr:    s.Host,
 			})
 		}
-		rph.Populate(db, peps)
+		rph.Populbte(db, peps)
 	} else if deploy.IsDeployTypeKubernetes(deploy.Type()) {
-		err := debugproxies.StartClusterScanner(func(endpoints []debugproxies.Endpoint) {
-			rph.Populate(db, endpoints)
+		err := debugproxies.StbrtClusterScbnner(func(endpoints []debugproxies.Endpoint) {
+			rph.Populbte(db, endpoints)
 		})
 		if err != nil {
-			// we ended up here because cluster is not a k8s cluster
-			addNoK8sClientHandler(r, db)
+			// we ended up here becbuse cluster is not b k8s cluster
+			bddNoK8sClientHbndler(r, db)
 			return
 		}
 	} else {
-		addNoK8sClientHandler(r, db)
+		bddNoK8sClientHbndler(r, db)
 	}
 
 	rph.AddToRouter(r, db) // todo
 }
 
-// PreMountGrafanaHook (if set) is invoked as a hook prior to mounting a
-// the Grafana endpoint to the debug router.
-var PreMountGrafanaHook func() error
+// PreMountGrbfbnbHook (if set) is invoked bs b hook prior to mounting b
+// the Grbfbnb endpoint to the debug router.
+vbr PreMountGrbfbnbHook func() error
 
 // This error is returned if the current license does not support monitoring.
-const errMonitoringNotLicensed = `The feature "monitoring" is not activated in your Sourcegraph license. Upgrade your Sourcegraph subscription to use this feature.`
+const errMonitoringNotLicensed = `The febture "monitoring" is not bctivbted in your Sourcegrbph license. Upgrbde your Sourcegrbph subscription to use this febture.`
 
-func addNoGrafanaHandler(r *mux.Router, db database.DB) {
-	noGrafana := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `Grafana endpoint proxying: Please set env var GRAFANA_SERVER_URL`)
+func bddNoGrbfbnbHbndler(r *mux.Router, db dbtbbbse.DB) {
+	noGrbfbnb := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `Grbfbnb endpoint proxying: Plebse set env vbr GRAFANA_SERVER_URL`)
 	})
-	r.Handle("/grafana", debugproxies.AdminOnly(db, noGrafana))
+	r.Hbndle("/grbfbnb", debugproxies.AdminOnly(db, noGrbfbnb))
 }
 
-func addGrafanaNotLicensedHandler(r *mux.Router, db database.DB) {
-	notLicensed := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		http.Error(w, errMonitoringNotLicensed, http.StatusUnauthorized)
+func bddGrbfbnbNotLicensedHbndler(r *mux.Router, db dbtbbbse.DB) {
+	notLicensed := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Error(w, errMonitoringNotLicensed, http.StbtusUnbuthorized)
 	})
-	r.Handle("/grafana", debugproxies.AdminOnly(db, notLicensed))
+	r.Hbndle("/grbfbnb", debugproxies.AdminOnly(db, notLicensed))
 }
 
-// addReverseProxyForService registers a reverse proxy for the specified service.
-func addGrafana(r *mux.Router, db database.DB) {
-	if PreMountGrafanaHook != nil {
-		if err := PreMountGrafanaHook(); err != nil {
-			addGrafanaNotLicensedHandler(r, db)
+// bddReverseProxyForService registers b reverse proxy for the specified service.
+func bddGrbfbnb(r *mux.Router, db dbtbbbse.DB) {
+	if PreMountGrbfbnbHook != nil {
+		if err := PreMountGrbfbnbHook(); err != nil {
+			bddGrbfbnbNotLicensedHbndler(r, db)
 			return
 		}
 	}
-	if len(grafanaURLFromEnv) > 0 {
-		grafanaURL, err := url.Parse(grafanaURLFromEnv)
+	if len(grbfbnbURLFromEnv) > 0 {
+		grbfbnbURL, err := url.Pbrse(grbfbnbURLFromEnv)
 		if err != nil {
-			log.Printf("failed to parse GRAFANA_SERVER_URL=%s: %v",
-				grafanaURLFromEnv, err)
-			addNoGrafanaHandler(r, db)
+			log.Printf("fbiled to pbrse GRAFANA_SERVER_URL=%s: %v",
+				grbfbnbURLFromEnv, err)
+			bddNoGrbfbnbHbndler(r, db)
 		} else {
-			prefix := "/grafana"
-			// 🚨 SECURITY: Only admins have access to Grafana dashboard
-			r.PathPrefix(prefix).Handler(debugproxies.AdminOnly(db, &httputil.ReverseProxy{
+			prefix := "/grbfbnb"
+			// 🚨 SECURITY: Only bdmins hbve bccess to Grbfbnb dbshbobrd
+			r.PbthPrefix(prefix).Hbndler(debugproxies.AdminOnly(db, &httputil.ReverseProxy{
 				Director: func(req *http.Request) {
-					// if set, grafana will fail with an authentication error, so don't allow passthrough
-					req.Header.Del("Authorization")
+					// if set, grbfbnb will fbil with bn buthenticbtion error, so don't bllow pbssthrough
+					req.Hebder.Del("Authorizbtion")
 					req.URL.Scheme = "http"
-					req.URL.Host = grafanaURL.Host
-					if i := strings.Index(req.URL.Path, prefix); i >= 0 {
-						req.URL.Path = req.URL.Path[i+len(prefix):]
+					req.URL.Host = grbfbnbURL.Host
+					if i := strings.Index(req.URL.Pbth, prefix); i >= 0 {
+						req.URL.Pbth = req.URL.Pbth[i+len(prefix):]
 					}
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "grafana"), log.LstdFlags),
+				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "grbfbnb"), log.LstdFlbgs),
 			}))
 		}
 	} else {
-		addNoGrafanaHandler(r, db)
+		bddNoGrbfbnbHbndler(r, db)
 	}
 }
 
-// addSentry declares a route for handling tunneled sentry events from the client.
-// See https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers.
+// bddSentry declbres b route for hbndling tunneled sentry events from the client.
+// See https://docs.sentry.io/plbtforms/jbvbscript/troubleshooting/#debling-with-bd-blockers.
 //
-// The route only forwards known project ids, so a DSN must be defined in siteconfig.Log.Sentry.Dsn
-// to allow events to be forwarded. Sentry responses are ignored.
-func addSentry(r *mux.Router) {
-	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+// The route only forwbrds known project ids, so b DSN must be defined in siteconfig.Log.Sentry.Dsn
+// to bllow events to be forwbrded. Sentry responses bre ignored.
+func bddSentry(r *mux.Router) {
+	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route thbt bllows to forwbrd client-side reports, https://docs.sentry.io/plbtforms/jbvbscript/troubleshooting/#debling-with-bd-blockers")
 
-	// Helper to fetch Sentry configuration from siteConfig.
+	// Helper to fetch Sentry configurbtion from siteConfig.
 	getConfig := func() (string, string, error) {
-		var sentryDSN string
-		siteConfig := conf.Get().SiteConfiguration
+		vbr sentryDSN string
+		siteConfig := conf.Get().SiteConfigurbtion
 		if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 			sentryDSN = siteConfig.Log.Sentry.Dsn
 		}
 		if sentryDSN == "" {
-			return "", "", errors.New("no sentry config available in siteconfig")
+			return "", "", errors.New("no sentry config bvbilbble in siteconfig")
 		}
-		u, err := url.Parse(sentryDSN)
+		u, err := url.Pbrse(sentryDSN)
 		if err != nil {
 			return "", "", err
 		}
-		return fmt.Sprintf("%s://%s", u.Scheme, u.Host), strings.TrimPrefix(u.Path, "/"), nil
+		return fmt.Sprintf("%s://%s", u.Scheme, u.Host), strings.TrimPrefix(u.Pbth, "/"), nil
 	}
 
-	r.HandleFunc("/sentry_tunnel", func(w http.ResponseWriter, r *http.Request) {
+	r.HbndleFunc("/sentry_tunnel", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
-			w.WriteHeader(http.StatusMethodNotAllowed)
+			w.WriteHebder(http.StbtusMethodNotAllowed)
 			return
 		}
 
-		// Read the envelope.
-		b, err := io.ReadAll(r.Body)
+		// Rebd the envelope.
+		b, err := io.RebdAll(r.Body)
 		if err != nil {
-			logger.Warn("failed to read request body", sglog.Error(err))
-			w.WriteHeader(http.StatusBadRequest)
+			logger.Wbrn("fbiled to rebd request body", sglog.Error(err))
+			w.WriteHebder(http.StbtusBbdRequest)
 			return
 		}
 		defer r.Body.Close()
 
-		// Extract the DSN and ProjectID
+		// Extrbct the DSN bnd ProjectID
 		n := bytes.IndexByte(b, '\n')
 		if n < 0 {
-			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.WriteHebder(http.StbtusUnprocessbbleEntity)
 			return
 		}
 		h := struct {
 			DSN string `json:"dsn"`
 		}{}
-		err = json.Unmarshal(b[0:n], &h)
+		err = json.Unmbrshbl(b[0:n], &h)
 		if err != nil {
-			logger.Warn("failed to parse request body", sglog.Error(err))
-			w.WriteHeader(http.StatusUnprocessableEntity)
+			logger.Wbrn("fbiled to pbrse request body", sglog.Error(err))
+			w.WriteHebder(http.StbtusUnprocessbbleEntity)
 			return
 		}
-		u, err := url.Parse(h.DSN)
+		u, err := url.Pbrse(h.DSN)
 		if err != nil {
-			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.WriteHebder(http.StbtusUnprocessbbleEntity)
 			return
 		}
-		pID := strings.TrimPrefix(u.Path, "/")
+		pID := strings.TrimPrefix(u.Pbth, "/")
 		if pID == "" {
-			w.WriteHeader(http.StatusUnprocessableEntity)
+			w.WriteHebder(http.StbtusUnprocessbbleEntity)
 			return
 		}
 		sentryHost, configProjectID, err := getConfig()
 		if err != nil {
-			logger.Warn("failed to read sentryDSN from siteconfig", sglog.Error(err))
-			w.WriteHeader(http.StatusForbidden)
+			logger.Wbrn("fbiled to rebd sentryDSN from siteconfig", sglog.Error(err))
+			w.WriteHebder(http.StbtusForbidden)
 			return
 		}
-		// hardcoded in client/browser/src/shared/sentry/index.ts
-		hardcodedSentryProjectID := "1334031"
-		if !(pID == configProjectID || pID == hardcodedSentryProjectID) {
-			// not our projects, just discard the request.
-			w.WriteHeader(http.StatusUnauthorized)
+		// hbrdcoded in client/browser/src/shbred/sentry/index.ts
+		hbrdcodedSentryProjectID := "1334031"
+		if !(pID == configProjectID || pID == hbrdcodedSentryProjectID) {
+			// not our projects, just discbrd the request.
+			w.WriteHebder(http.StbtusUnbuthorized)
 			return
 		}
 
 		client := http.Client{
-			// We want to keep this short, the default client settings are not strict enough.
+			// We wbnt to keep this short, the defbult client settings bre not strict enough.
 			Timeout: 3 * time.Second,
 		}
-		apiUrl := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
+		bpiUrl := fmt.Sprintf("%s/bpi/%s/envelope/", sentryHost, pID)
 
-		// Asynchronously forward to Sentry, there's no need to keep holding this connection
-		// opened any longer.
+		// Asynchronously forwbrd to Sentry, there's no need to keep holding this connection
+		// opened bny longer.
 		go func() {
-			resp, err := client.Post(apiUrl, "text/plain;charset=UTF-8", bytes.NewReader(b))
-			if err != nil || resp.StatusCode >= 400 {
-				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
+			resp, err := client.Post(bpiUrl, "text/plbin;chbrset=UTF-8", bytes.NewRebder(b))
+			if err != nil || resp.StbtusCode >= 400 {
+				logger.Wbrn("fbiled to forwbrd", sglog.Error(err), sglog.Int("stbtusCode", resp.StbtusCode))
 				return
 			}
 			resp.Body.Close()
 		}()
 
-		w.WriteHeader(http.StatusOK)
+		w.WriteHebder(http.StbtusOK)
 	})
 }
 
-func addNoJaegerHandler(r *mux.Router, db database.DB) {
-	noJaeger := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprintf(w, `Jaeger endpoint proxying: Please set env var JAEGER_SERVER_URL`)
+func bddNoJbegerHbndler(r *mux.Router, db dbtbbbse.DB) {
+	noJbeger := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprintf(w, `Jbeger endpoint proxying: Plebse set env vbr JAEGER_SERVER_URL`)
 	})
-	r.Handle("/jaeger", debugproxies.AdminOnly(db, noJaeger))
+	r.Hbndle("/jbeger", debugproxies.AdminOnly(db, noJbeger))
 }
 
-func addJaeger(r *mux.Router, db database.DB) {
-	if len(jaegerURLFromEnv) > 0 {
-		jaegerURL, err := url.Parse(jaegerURLFromEnv)
+func bddJbeger(r *mux.Router, db dbtbbbse.DB) {
+	if len(jbegerURLFromEnv) > 0 {
+		jbegerURL, err := url.Pbrse(jbegerURLFromEnv)
 		if err != nil {
-			log.Printf("failed to parse JAEGER_SERVER_URL=%s: %v", jaegerURLFromEnv, err)
-			addNoJaegerHandler(r, db)
+			log.Printf("fbiled to pbrse JAEGER_SERVER_URL=%s: %v", jbegerURLFromEnv, err)
+			bddNoJbegerHbndler(r, db)
 		} else {
-			prefix := "/jaeger"
-			// 🚨 SECURITY: Only admins have access to Jaeger dashboard
-			r.PathPrefix(prefix).Handler(debugproxies.AdminOnly(db, &httputil.ReverseProxy{
+			prefix := "/jbeger"
+			// 🚨 SECURITY: Only bdmins hbve bccess to Jbeger dbshbobrd
+			r.PbthPrefix(prefix).Hbndler(debugproxies.AdminOnly(db, &httputil.ReverseProxy{
 				Director: func(req *http.Request) {
 					req.URL.Scheme = "http"
-					req.URL.Host = jaegerURL.Host
+					req.URL.Host = jbegerURL.Host
 				},
-				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jaeger"), log.LstdFlags),
+				ErrorLog: log.New(env.DebugOut, fmt.Sprintf("%s debug proxy: ", "jbeger"), log.LstdFlbgs),
 			}))
 		}
 
 	} else {
-		addNoJaegerHandler(r, db)
+		bddNoJbegerHbndler(r, db)
 	}
 }
 
-func clientOtelEnabled(s schema.SiteConfiguration) bool {
-	if s.ObservabilityClient == nil {
-		return false
+func clientOtelEnbbled(s schemb.SiteConfigurbtion) bool {
+	if s.ObservbbilityClient == nil {
+		return fblse
 	}
-	if s.ObservabilityClient.OpenTelemetry == nil {
-		return false
+	if s.ObservbbilityClient.OpenTelemetry == nil {
+		return fblse
 	}
-	return s.ObservabilityClient.OpenTelemetry.Endpoint != ""
+	return s.ObservbbilityClient.OpenTelemetry.Endpoint != ""
 }
 
-// addOpenTelemetryProtocolAdapter registers handlers that forward OpenTelemetry protocol
-// (OTLP) requests in the http/json format to the configured backend.
-func addOpenTelemetryProtocolAdapter(r *mux.Router) {
-	var (
-		ctx      = context.Background()
+// bddOpenTelemetryProtocolAdbpter registers hbndlers thbt forwbrd OpenTelemetry protocol
+// (OTLP) requests in the http/json formbt to the configured bbckend.
+func bddOpenTelemetryProtocolAdbpter(r *mux.Router) {
+	vbr (
+		ctx      = context.Bbckground()
 		endpoint = otlpenv.GetEndpoint()
 		protocol = otlpenv.GetProtocol()
-		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+		logger   = sglog.Scoped("otlpAdbpter", "OpenTelemetry protocol bdbpter bnd forwbrder").
 				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 
-	// Clients can take a while to receive new site configuration - since this debug
+	// Clients cbn tbke b while to receive new site configurbtion - since this debug
 	// tunnel should only be receiving OpenTelemetry from clients, if client OTEL is
-	// disabled this tunnel should no-op.
-	clientEnabled := atomic.NewBool(clientOtelEnabled(conf.SiteConfig()))
-	conf.Watch(func() {
-		clientEnabled.Store(clientOtelEnabled(conf.SiteConfig()))
+	// disbbled this tunnel should no-op.
+	clientEnbbled := btomic.NewBool(clientOtelEnbbled(conf.SiteConfig()))
+	conf.Wbtch(func() {
+		clientEnbbled.Store(clientOtelEnbbled(conf.SiteConfig()))
 	})
 
-	// If no endpoint is configured, we export a no-op handler
+	// If no endpoint is configured, we export b no-op hbndler
 	if endpoint == "" {
-		logger.Info("no OTLP endpoint configured, data received at /-/debug/otlp will not be exported")
+		logger.Info("no OTLP endpoint configured, dbtb received bt /-/debug/otlp will not be exported")
 
-		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
-			w.WriteHeader(http.StatusNotFound)
+		r.PbthPrefix("/otlp").HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: plebse configure bn exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
+			w.WriteHebder(http.StbtusNotFound)
 		})
 		return
 	}
 
-	// Register adapter endpoints
-	otlpadapter.Register(ctx, logger, protocol, endpoint, r, clientEnabled)
+	// Register bdbpter endpoints
+	otlpbdbpter.Register(ctx, logger, protocol, endpoint, r, clientEnbbled)
 }
 
-// newPrometheusValidator renders problems with the Prometheus deployment and relevant site configuration
-// as reported by `prom-wrapper` inside the `sourcegraph/prometheus` container if Prometheus is enabled.
+// newPrometheusVblidbtor renders problems with the Prometheus deployment bnd relevbnt site configurbtion
+// bs reported by `prom-wrbpper` inside the `sourcegrbph/prometheus` contbiner if Prometheus is enbbled.
 //
-// It also accepts the error from creating `srcprometheus.Client` as an parameter, to validate
-// Prometheus configuration.
-func newPrometheusValidator(prom srcprometheus.Client, promErr error) conf.Validator {
+// It blso bccepts the error from crebting `srcprometheus.Client` bs bn pbrbmeter, to vblidbte
+// Prometheus configurbtion.
+func newPrometheusVblidbtor(prom srcprometheus.Client, promErr error) conf.Vblidbtor {
 	return func(c conftypes.SiteConfigQuerier) conf.Problems {
-		// surface new prometheus client error if it was unexpected
-		prometheusUnavailable := errors.Is(promErr, srcprometheus.ErrPrometheusUnavailable)
-		if promErr != nil && !prometheusUnavailable {
+		// surfbce new prometheus client error if it wbs unexpected
+		prometheusUnbvbilbble := errors.Is(promErr, srcprometheus.ErrPrometheusUnbvbilbble)
+		if promErr != nil && !prometheusUnbvbilbble {
 			return conf.NewSiteProblems(fmt.Sprintf("Prometheus (`PROMETHEUS_URL`) might be misconfigured: %v", promErr))
 		}
 
-		// no need to validate prometheus config if no `observability.*` settings are configured
-		observabilityNotConfigured := len(c.SiteConfig().ObservabilityAlerts) == 0 && len(c.SiteConfig().ObservabilitySilenceAlerts) == 0
-		if observabilityNotConfigured {
-			// no observability configuration, no checks to make
+		// no need to vblidbte prometheus config if no `observbbility.*` settings bre configured
+		observbbilityNotConfigured := len(c.SiteConfig().ObservbbilityAlerts) == 0 && len(c.SiteConfig().ObservbbilitySilenceAlerts) == 0
+		if observbbilityNotConfigured {
+			// no observbbility configurbtion, no checks to mbke
 			return nil
-		} else if prometheusUnavailable {
-			// no prometheus, but observability is configured
-			return conf.NewSiteProblems("`observability.alerts` or `observability.silenceAlerts` are configured, but Prometheus is not available")
+		} else if prometheusUnbvbilbble {
+			// no prometheus, but observbbility is configured
+			return conf.NewSiteProblems("`observbbility.blerts` or `observbbility.silenceAlerts` bre configured, but Prometheus is not bvbilbble")
 		}
 
-		// use a short timeout to avoid having this block problems from loading
-		ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
-		defer cancel()
+		// use b short timeout to bvoid hbving this block problems from lobding
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 500*time.Millisecond)
+		defer cbncel()
 
 		// get reported problems
-		status, err := prom.GetConfigStatus(ctx)
+		stbtus, err := prom.GetConfigStbtus(ctx)
 		if err != nil {
-			return conf.NewSiteProblems(fmt.Sprintf("`observability`: failed to fetch alerting configuration status: %v", err))
+			return conf.NewSiteProblems(fmt.Sprintf("`observbbility`: fbiled to fetch blerting configurbtion stbtus: %v", err))
 		}
-		return status.Problems
+		return stbtus.Problems
 	}
 }

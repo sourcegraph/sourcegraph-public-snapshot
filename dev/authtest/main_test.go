@@ -1,83 +1,83 @@
-package authtest
+pbckbge buthtest
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
 	"os"
 	"strings"
 	"testing"
 
-	"github.com/inconshreveable/log15"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/inconshrevebble/log15"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-var client *gqltestutil.Client
+vbr client *gqltestutil.Client
 
-var (
-	long = flag.Bool("long", false, "Enable the auth tests to run. Required flag, otherwise tests are skipped.")
+vbr (
+	long = flbg.Bool("long", fblse, "Enbble the buth tests to run. Required flbg, otherwise tests bre skipped.")
 
-	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
-	email    = flag.String("email", "authtest@sourcegraph.com", "The email of the admin user")
-	username = flag.String("username", "authtest-admin", "The username of the admin user")
-	password = flag.String("password", "supersecurepassword", "The password of the admin user")
+	bbseURL  = flbg.String("bbse-url", "http://127.0.0.1:7080", "The bbse URL of the Sourcegrbph instbnce")
+	embil    = flbg.String("embil", "buthtest@sourcegrbph.com", "The embil of the bdmin user")
+	usernbme = flbg.String("usernbme", "buthtest-bdmin", "The usernbme of the bdmin user")
+	pbssword = flbg.String("pbssword", "supersecurepbssword", "The pbssword of the bdmin user")
 
-	githubToken = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
+	githubToken = flbg.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personbl bccess token thbt will be used to buthenticbte b GitHub externbl service")
 
-	dotcom = flag.Bool("dotcom", false, "Whether to test dotcom specific constraints")
+	dotcom = flbg.Bool("dotcom", fblse, "Whether to test dotcom specific constrbints")
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 
 	if !*long {
-		fmt.Println("SKIP: skipping authtest since -long is not specified.")
+		fmt.Println("SKIP: skipping buthtest since -long is not specified.")
 		return
 	}
 
-	*baseURL = strings.TrimSuffix(*baseURL, "/")
+	*bbseURL = strings.TrimSuffix(*bbseURL, "/")
 
-	// Make it possible to use a different token on non-default branches
-	// so we don't break builds on the default branch.
+	// Mbke it possible to use b different token on non-defbult brbnches
+	// so we don't brebk builds on the defbult brbnch.
 	mockGitHubToken := os.Getenv("MOCK_GITHUB_TOKEN")
 	if mockGitHubToken != "" {
 		*githubToken = mockGitHubToken
 	}
 
-	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*baseURL)
+	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*bbseURL)
 	if resp != "" && os.Getenv("BUILDKITE") == "true" {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
-		log.Fatal("Failed to check if site needs init: ", err)
+		log.Fbtbl("Fbiled to check if site needs init: ", err)
 	}
 
 	if needsSiteInit {
-		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
+		client, err = gqltestutil.SiteAdminInit(*bbseURL, *embil, *usernbme, *pbssword)
 		if err != nil {
-			log.Fatal("Failed to create site admin: ", err)
+			log.Fbtbl("Fbiled to crebte site bdmin: ", err)
 		}
-		log.Println("Site admin has been created:", *username)
+		log.Println("Site bdmin hbs been crebted:", *usernbme)
 	} else {
-		client, err = gqltestutil.SignIn(*baseURL, *email, *password)
+		client, err = gqltestutil.SignIn(*bbseURL, *embil, *pbssword)
 		if err != nil {
-			log.Fatal("Failed to sign in:", err)
+			log.Fbtbl("Fbiled to sign in:", err)
 		}
-		log.Println("Site admin authenticated:", *username)
+		log.Println("Site bdmin buthenticbted:", *usernbme)
 	}
 
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
 	}
 	os.Exit(m.Run())
 }
 
-func mustMarshalJSONString(v any) string {
-	str, err := jsoniter.MarshalToString(v)
+func mustMbrshblJSONString(v bny) string {
+	str, err := jsoniter.MbrshblToString(v)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return str
 }

@@ -1,17 +1,17 @@
-package cache
+pbckbge cbche
 
 import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
-func TestCacheKey(t *testing.T) {
-	m := make(map[string]int)
+func TestCbcheKey(t *testing.T) {
+	m := mbke(mbp[string]int)
 	k := &testKey{
 		Key: &encryption.NoopKey{},
 		fn: func(b []byte) {
@@ -19,30 +19,30 @@ func TestCacheKey(t *testing.T) {
 		},
 	}
 
-	cached, err := New(k, 10)
+	cbched, err := New(k, 10)
 	require.NoError(t, err)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// first call, decrypt value
-	_, err = cached.Decrypt(ctx, []byte("foobar"))
+	// first cbll, decrypt vblue
+	_, err = cbched.Decrypt(ctx, []byte("foobbr"))
 	require.NoError(t, err)
 
-	// second call, hit cache
-	_, err = cached.Decrypt(ctx, []byte("foobar"))
+	// second cbll, hit cbche
+	_, err = cbched.Decrypt(ctx, []byte("foobbr"))
 	require.NoError(t, err)
 
-	// first call, decrypt value
-	_, err = cached.Decrypt(ctx, []byte("foobaz"))
+	// first cbll, decrypt vblue
+	_, err = cbched.Decrypt(ctx, []byte("foobbz"))
 	require.NoError(t, err)
 
-	// second call, hit cache
-	_, err = cached.Decrypt(ctx, []byte("foobaz"))
+	// second cbll, hit cbche
+	_, err = cbched.Decrypt(ctx, []byte("foobbz"))
 	require.NoError(t, err)
 
-	// each key will have only been decrypted once, and returned from the cache the second time
-	assert.Equal(t, m["foobar"], 1)
-	assert.Equal(t, m["foobaz"], 1)
+	// ebch key will hbve only been decrypted once, bnd returned from the cbche the second time
+	bssert.Equbl(t, m["foobbr"], 1)
+	bssert.Equbl(t, m["foobbz"], 1)
 }
 
 type testKey struct {

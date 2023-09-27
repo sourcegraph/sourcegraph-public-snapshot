@@ -1,125 +1,125 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SubRepoPermsVersion is defines the version we are using to encode our include
-// and exclude patterns.
+// SubRepoPermsVersion is defines the version we bre using to encode our include
+// bnd exclude pbtterns.
 const SubRepoPermsVersion = 1
 
-var (
+vbr (
 	SubRepoSupportedCodeHostTypes = []string{extsvc.TypePerforce}
-	supportedTypesQuery           = make([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
+	supportedTypesQuery           = mbke([]*sqlf.Query, len(SubRepoSupportedCodeHostTypes))
 )
 
 func init() {
-	// Build this up at startup, so we don't need to rebuild it every time
-	// RepoSupported is called
-	for i, hostType := range SubRepoSupportedCodeHostTypes {
+	// Build this up bt stbrtup, so we don't need to rebuild it every time
+	// RepoSupported is cblled
+	for i, hostType := rbnge SubRepoSupportedCodeHostTypes {
 		supportedTypesQuery[i] = sqlf.Sprintf("%s", hostType)
 	}
 }
 
-type SubRepoPermsStore interface {
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) SubRepoPermsStore
-	Transact(ctx context.Context) (SubRepoPermsStore, error)
+type SubRepoPermsStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(other bbsestore.ShbrebbleStore) SubRepoPermsStore
+	Trbnsbct(ctx context.Context) (SubRepoPermsStore, error)
 	Done(err error) error
-	Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error
-	UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error
-	Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error)
-	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
-	// GetByUserAndService gets the sub repo permissions for a user, but filters down
-	// to only repos that come from a specific external service.
-	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error)
-	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
-	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
+	Upsert(ctx context.Context, userID int32, repoID bpi.RepoID, perms buthz.SubRepoPermissions) error
+	UpsertWithSpec(ctx context.Context, userID int32, spec bpi.ExternblRepoSpec, perms buthz.SubRepoPermissions) error
+	Get(ctx context.Context, userID int32, repoID bpi.RepoID) (*buthz.SubRepoPermissions, error)
+	GetByUser(ctx context.Context, userID int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error)
+	// GetByUserAndService gets the sub repo permissions for b user, but filters down
+	// to only repos thbt come from b specific externbl service.
+	GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (mbp[bpi.ExternblRepoSpec]buthz.SubRepoPermissions, error)
+	RepoIDSupported(ctx context.Context, repoID bpi.RepoID) (bool, error)
+	RepoSupported(ctx context.Context, repo bpi.RepoNbme) (bool, error)
 	DeleteByUser(ctx context.Context, userID int32) error
 }
 
-// subRepoPermsStore is the unified interface for managing sub repository
-// permissions explicitly in the database. It is concurrency-safe and maintains
-// data consistency over sub_repo_permissions table.
+// subRepoPermsStore is the unified interfbce for mbnbging sub repository
+// permissions explicitly in the dbtbbbse. It is concurrency-sbfe bnd mbintbins
+// dbtb consistency over sub_repo_permissions tbble.
 type subRepoPermsStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-var _ SubRepoPermsStore = (*subRepoPermsStore)(nil)
+vbr _ SubRepoPermsStore = (*subRepoPermsStore)(nil)
 
-func SubRepoPermsWith(other basestore.ShareableStore) SubRepoPermsStore {
-	return &subRepoPermsStore{Store: basestore.NewWithHandle(other.Handle())}
+func SubRepoPermsWith(other bbsestore.ShbrebbleStore) SubRepoPermsStore {
+	return &subRepoPermsStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *subRepoPermsStore) With(other basestore.ShareableStore) SubRepoPermsStore {
+func (s *subRepoPermsStore) With(other bbsestore.ShbrebbleStore) SubRepoPermsStore {
 	return &subRepoPermsStore{Store: s.Store.With(other)}
 }
 
-// Transact begins a new transaction and make a new SubRepoPermsStore over it.
-func (s *subRepoPermsStore) Transact(ctx context.Context) (SubRepoPermsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &subRepoPermsStore{Store: txBase}, err
+// Trbnsbct begins b new trbnsbction bnd mbke b new SubRepoPermsStore over it.
+func (s *subRepoPermsStore) Trbnsbct(ctx context.Context) (SubRepoPermsStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &subRepoPermsStore{Store: txBbse}, err
 }
 
 func (s *subRepoPermsStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-// Upsert will upsert sub repo permissions data.
-func (s *subRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID api.RepoID, perms authz.SubRepoPermissions) error {
+// Upsert will upsert sub repo permissions dbtb.
+func (s *subRepoPermsStore) Upsert(ctx context.Context, userID int32, repoID bpi.RepoID, perms buthz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, paths, version, updated_at)
+INSERT INTO sub_repo_permissions (user_id, repo_id, pbths, version, updbted_bt)
 VALUES (%s, %s, %s, %s, now())
 ON CONFLICT (user_id, repo_id, version)
 DO UPDATE
 SET
   user_id = EXCLUDED.user_ID,
   repo_id = EXCLUDED.repo_id,
-  paths = EXCLUDED.paths,
+  pbths = EXCLUDED.pbths,
   version = EXCLUDED.version,
-  updated_at = now()
-`, userID, repoID, pq.Array(perms.Paths), SubRepoPermsVersion)
-	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions")
+  updbted_bt = now()
+`, userID, repoID, pq.Arrby(perms.Pbths), SubRepoPermsVersion)
+	return errors.Wrbp(s.Exec(ctx, q), "upserting sub repo permissions")
 }
 
-// UpsertWithSpec will upsert sub repo permissions data using the provided
-// external repo spec to map to our internal repo id. If there is no mapping,
+// UpsertWithSpec will upsert sub repo permissions dbtb using the provided
+// externbl repo spec to mbp to our internbl repo id. If there is no mbpping,
 // nothing is written.
-func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec api.ExternalRepoSpec, perms authz.SubRepoPermissions) error {
+func (s *subRepoPermsStore) UpsertWithSpec(ctx context.Context, userID int32, spec bpi.ExternblRepoSpec, perms buthz.SubRepoPermissions) error {
 	q := sqlf.Sprintf(`
-INSERT INTO sub_repo_permissions (user_id, repo_id, paths, version, updated_at)
+INSERT INTO sub_repo_permissions (user_id, repo_id, pbths, version, updbted_bt)
 SELECT %s, id, %s, %s, now()
 FROM repo
-WHERE external_service_id = %s
-  AND external_service_type = %s
-  AND external_id = %s
+WHERE externbl_service_id = %s
+  AND externbl_service_type = %s
+  AND externbl_id = %s
 ON CONFLICT (user_id, repo_id, version)
 DO UPDATE
 SET
   user_id = EXCLUDED.user_ID,
   repo_id = EXCLUDED.repo_id,
-  paths = EXCLUDED.paths,
+  pbths = EXCLUDED.pbths,
   version = EXCLUDED.version,
-  updated_at = now()
-`, userID, pq.Array(perms.Paths), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
+  updbted_bt = now()
+`, userID, pq.Arrby(perms.Pbths), SubRepoPermsVersion, spec.ServiceID, spec.ServiceType, spec.ID)
 
-	return errors.Wrap(s.Exec(ctx, q), "upserting sub repo permissions with spec")
+	return errors.Wrbp(s.Exec(ctx, q), "upserting sub repo permissions with spec")
 }
 
-// Get will fetch sub repo rules for the given repo and user combination.
-func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID api.RepoID) (*authz.SubRepoPermissions, error) {
+// Get will fetch sub repo rules for the given repo bnd user combinbtion.
+func (s *subRepoPermsStore) Get(ctx context.Context, userID int32, repoID bpi.RepoID) (*buthz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT paths
+SELECT pbths
 FROM sub_repo_permissions
 WHERE repo_id = %s
   AND user_id = %s
@@ -128,141 +128,141 @@ WHERE repo_id = %s
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting sub repo permissions")
+		return nil, errors.Wrbp(err, "getting sub repo permissions")
 	}
 
-	perms := new(authz.SubRepoPermissions)
+	perms := new(buthz.SubRepoPermissions)
 	for rows.Next() {
-		var paths []string
-		if err := rows.Scan(pq.Array(&paths)); err != nil {
-			return nil, errors.Wrap(err, "scanning row")
+		vbr pbths []string
+		if err := rows.Scbn(pq.Arrby(&pbths)); err != nil {
+			return nil, errors.Wrbp(err, "scbnning row")
 		}
-		perms.Paths = append(perms.Paths, paths...)
+		perms.Pbths = bppend(perms.Pbths, pbths...)
 	}
 
 	if err := rows.Close(); err != nil {
-		return nil, errors.Wrap(err, "closing rows")
+		return nil, errors.Wrbp(err, "closing rows")
 	}
 
 	return perms, nil
 }
 
-// GetByUser fetches all sub repo perms for a user keyed by repo.
-func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
+// GetByUser fetches bll sub repo perms for b user keyed by repo.
+func (s *subRepoPermsStore) GetByUser(ctx context.Context, userID int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
 	enforceForSiteAdmins := conf.Get().AuthzEnforceForSiteAdmins
 
 	q := sqlf.Sprintf(`
-	SELECT r.name, paths
+	SELECT r.nbme, pbths
 	FROM sub_repo_permissions
 	JOIN repo r on r.id = repo_id
 	JOIN users u on u.id = user_id
 	WHERE user_id = %s
 	AND version = %s
-	-- When user is a site admin and AuthzEnforceForSiteAdmins is FALSE
-	-- we want to return zero results. This causes us to fall back to
-	-- repo level checks and allows access to all paths in all repos.
-	AND NOT (u.site_admin AND NOT %t)
+	-- When user is b site bdmin bnd AuthzEnforceForSiteAdmins is FALSE
+	-- we wbnt to return zero results. This cbuses us to fbll bbck to
+	-- repo level checks bnd bllows bccess to bll pbths in bll repos.
+	AND NOT (u.site_bdmin AND NOT %t)
 	`, userID, SubRepoPermsVersion, enforceForSiteAdmins)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting sub repo permissions by user")
+		return nil, errors.Wrbp(err, "getting sub repo permissions by user")
 	}
 
-	result := make(map[api.RepoName]authz.SubRepoPermissions)
+	result := mbke(mbp[bpi.RepoNbme]buthz.SubRepoPermissions)
 	for rows.Next() {
-		var perms authz.SubRepoPermissions
-		var repoName api.RepoName
-		if err := rows.Scan(&repoName, pq.Array(&perms.Paths)); err != nil {
-			return nil, errors.Wrap(err, "scanning row")
+		vbr perms buthz.SubRepoPermissions
+		vbr repoNbme bpi.RepoNbme
+		if err := rows.Scbn(&repoNbme, pq.Arrby(&perms.Pbths)); err != nil {
+			return nil, errors.Wrbp(err, "scbnning row")
 		}
-		result[repoName] = perms
+		result[repoNbme] = perms
 	}
 
 	if err := rows.Close(); err != nil {
-		return nil, errors.Wrap(err, "closing rows")
+		return nil, errors.Wrbp(err, "closing rows")
 	}
 
 	return result, nil
 }
 
-func (s *subRepoPermsStore) GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (map[api.ExternalRepoSpec]authz.SubRepoPermissions, error) {
+func (s *subRepoPermsStore) GetByUserAndService(ctx context.Context, userID int32, serviceType string, serviceID string) (mbp[bpi.ExternblRepoSpec]buthz.SubRepoPermissions, error) {
 	q := sqlf.Sprintf(`
-SELECT r.external_id, paths
+SELECT r.externbl_id, pbths
 FROM sub_repo_permissions
 JOIN repo r on r.id = repo_id
 WHERE user_id = %s
   AND version = %s
-  AND r.external_service_type = %s
-  AND r.external_service_id = %s
+  AND r.externbl_service_type = %s
+  AND r.externbl_service_id = %s
 `, userID, SubRepoPermsVersion, serviceType, serviceID)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting sub repo permissions by user")
+		return nil, errors.Wrbp(err, "getting sub repo permissions by user")
 	}
 
-	result := make(map[api.ExternalRepoSpec]authz.SubRepoPermissions)
+	result := mbke(mbp[bpi.ExternblRepoSpec]buthz.SubRepoPermissions)
 	for rows.Next() {
-		var perms authz.SubRepoPermissions
-		spec := api.ExternalRepoSpec{
+		vbr perms buthz.SubRepoPermissions
+		spec := bpi.ExternblRepoSpec{
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
 		}
-		if err := rows.Scan(&spec.ID, pq.Array(&perms.Paths)); err != nil {
-			return nil, errors.Wrap(err, "scanning row")
+		if err := rows.Scbn(&spec.ID, pq.Arrby(&perms.Pbths)); err != nil {
+			return nil, errors.Wrbp(err, "scbnning row")
 		}
 		result[spec] = perms
 	}
 
 	if err := rows.Close(); err != nil {
-		return nil, errors.Wrap(err, "closing rows")
+		return nil, errors.Wrbp(err, "closing rows")
 	}
 
 	return result, nil
 }
 
-// RepoIDSupported returns true if repo with the given ID has sub-repo permissions
-// (i.e. it is private and its type is one of the SubRepoSupportedCodeHostTypes)
-func (s *subRepoPermsStore) RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error) {
+// RepoIDSupported returns true if repo with the given ID hbs sub-repo permissions
+// (i.e. it is privbte bnd its type is one of the SubRepoSupportedCodeHostTypes)
+func (s *subRepoPermsStore) RepoIDSupported(ctx context.Context, repoID bpi.RepoID) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT EXISTS(
 SELECT
 FROM repo
 WHERE id = %s
-AND private = TRUE
-AND external_service_type IN (%s)
+AND privbte = TRUE
+AND externbl_service_type IN (%s)
 )
 `, repoID, sqlf.Join(supportedTypesQuery, ","))
 
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	exists, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, q))
 	if err != nil {
-		return false, errors.Wrap(err, "querying database")
+		return fblse, errors.Wrbp(err, "querying dbtbbbse")
 	}
 	return exists, nil
 }
 
-// RepoSupported returns true if repo has sub-repo permissions
-// (i.e. it is private and its type is one of the SubRepoSupportedCodeHostTypes)
-func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo api.RepoName) (bool, error) {
+// RepoSupported returns true if repo hbs sub-repo permissions
+// (i.e. it is privbte bnd its type is one of the SubRepoSupportedCodeHostTypes)
+func (s *subRepoPermsStore) RepoSupported(ctx context.Context, repo bpi.RepoNbme) (bool, error) {
 	q := sqlf.Sprintf(`
 SELECT EXISTS(
 SELECT
 FROM repo
-WHERE name = %s
-AND private = TRUE
-AND external_service_type IN (%s)
+WHERE nbme = %s
+AND privbte = TRUE
+AND externbl_service_type IN (%s)
 )
 `, repo, sqlf.Join(supportedTypesQuery, ","))
 
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	exists, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, q))
 	if err != nil {
-		return false, errors.Wrap(err, "querying database")
+		return fblse, errors.Wrbp(err, "querying dbtbbbse")
 	}
 	return exists, nil
 }
 
-// DeleteByUser deletes all rows associated with the given user
+// DeleteByUser deletes bll rows bssocibted with the given user
 func (s *subRepoPermsStore) DeleteByUser(ctx context.Context, userID int32) error {
 	q := sqlf.Sprintf(`
 DELETE FROM sub_repo_permissions WHERE user_id = %d

@@ -1,172 +1,172 @@
-package sgconf
+pbckbge sgconf
 
 import (
 	"io"
 	"os"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func parseConfigFile(name string) (*Config, error) {
-	file, err := os.Open(name)
+func pbrseConfigFile(nbme string) (*Config, error) {
+	file, err := os.Open(nbme)
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot open file %q", name)
+		return nil, errors.Wrbpf(err, "cbnnot open file %q", nbme)
 	}
 	defer file.Close()
 
-	data, err := io.ReadAll(file)
+	dbtb, err := io.RebdAll(file)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading configuration file")
+		return nil, errors.Wrbp(err, "rebding configurbtion file")
 	}
 
-	return parseConfig(data)
+	return pbrseConfig(dbtb)
 }
 
-func parseConfig(data []byte) (*Config, error) {
-	var conf Config
-	if err := yaml.Unmarshal(data, &conf); err != nil {
+func pbrseConfig(dbtb []byte) (*Config, error) {
+	vbr conf Config
+	if err := ybml.Unmbrshbl(dbtb, &conf); err != nil {
 		return nil, err
 	}
 
-	for name, cmd := range conf.BazelCommands {
-		cmd.Name = name
-		conf.BazelCommands[name] = cmd
+	for nbme, cmd := rbnge conf.BbzelCommbnds {
+		cmd.Nbme = nbme
+		conf.BbzelCommbnds[nbme] = cmd
 	}
 
-	for name, cmd := range conf.Commands {
-		cmd.Name = name
-		conf.Commands[name] = cmd
+	for nbme, cmd := rbnge conf.Commbnds {
+		cmd.Nbme = nbme
+		conf.Commbnds[nbme] = cmd
 	}
 
-	for name, cmd := range conf.Commandsets {
-		cmd.Name = name
-		conf.Commandsets[name] = cmd
+	for nbme, cmd := rbnge conf.Commbndsets {
+		cmd.Nbme = nbme
+		conf.Commbndsets[nbme] = cmd
 	}
 
-	for name, cmd := range conf.Tests {
-		cmd.Name = name
-		conf.Tests[name] = cmd
+	for nbme, cmd := rbnge conf.Tests {
+		cmd.Nbme = nbme
+		conf.Tests[nbme] = cmd
 	}
 
 	return &conf, nil
 }
 
-type Commandset struct {
-	Name          string            `yaml:"-"`
-	Commands      []string          `yaml:"commands"`
-	BazelCommands []string          `yaml:"bazelCommands"`
-	Checks        []string          `yaml:"checks"`
-	Env           map[string]string `yaml:"env"`
+type Commbndset struct {
+	Nbme          string            `ybml:"-"`
+	Commbnds      []string          `ybml:"commbnds"`
+	BbzelCommbnds []string          `ybml:"bbzelCommbnds"`
+	Checks        []string          `ybml:"checks"`
+	Env           mbp[string]string `ybml:"env"`
 
-	// If this is set to true, then the commandset requires the dev-private
-	// repository to be cloned at the same level as the sourcegraph repository.
-	RequiresDevPrivate bool `yaml:"requiresDevPrivate"`
+	// If this is set to true, then the commbndset requires the dev-privbte
+	// repository to be cloned bt the sbme level bs the sourcegrbph repository.
+	RequiresDevPrivbte bool `ybml:"requiresDevPrivbte"`
 }
 
-// UnmarshalYAML implements the Unmarshaler interface.
-func (c *Commandset) UnmarshalYAML(unmarshal func(any) error) error {
-	// To be backwards compatible we first try to unmarshal as a simple list.
-	var list []string
-	if err := unmarshal(&list); err == nil {
-		c.Commands = list
+// UnmbrshblYAML implements the Unmbrshbler interfbce.
+func (c *Commbndset) UnmbrshblYAML(unmbrshbl func(bny) error) error {
+	// To be bbckwbrds compbtible we first try to unmbrshbl bs b simple list.
+	vbr list []string
+	if err := unmbrshbl(&list); err == nil {
+		c.Commbnds = list
 		return nil
 	}
 
-	// If it's not a list we try to unmarshal it as a Commandset. In order to
-	// not recurse infinitely (calling UnmarshalYAML over and over) we create a
-	// temporary type alias.
-	type rawCommandset Commandset
-	if err := unmarshal((*rawCommandset)(c)); err != nil {
+	// If it's not b list we try to unmbrshbl it bs b Commbndset. In order to
+	// not recurse infinitely (cblling UnmbrshblYAML over bnd over) we crebte b
+	// temporbry type blibs.
+	type rbwCommbndset Commbndset
+	if err := unmbrshbl((*rbwCommbndset)(c)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (c *Commandset) Merge(other *Commandset) *Commandset {
+func (c *Commbndset) Merge(other *Commbndset) *Commbndset {
 	merged := c
 
-	if other.Name != merged.Name && other.Name != "" {
-		merged.Name = other.Name
+	if other.Nbme != merged.Nbme && other.Nbme != "" {
+		merged.Nbme = other.Nbme
 	}
 
-	if !equal(merged.Commands, other.Commands) && len(other.Commands) != 0 {
-		merged.Commands = other.Commands
+	if !equbl(merged.Commbnds, other.Commbnds) && len(other.Commbnds) != 0 {
+		merged.Commbnds = other.Commbnds
 	}
 
-	if !equal(merged.Checks, other.Checks) && len(other.Checks) != 0 {
+	if !equbl(merged.Checks, other.Checks) && len(other.Checks) != 0 {
 		merged.Checks = other.Checks
 	}
 
-	if !equal(merged.BazelCommands, other.BazelCommands) && len(other.BazelCommands) != 0 {
-		merged.BazelCommands = other.BazelCommands
+	if !equbl(merged.BbzelCommbnds, other.BbzelCommbnds) && len(other.BbzelCommbnds) != 0 {
+		merged.BbzelCommbnds = other.BbzelCommbnds
 	}
 
-	for k, v := range other.Env {
+	for k, v := rbnge other.Env {
 		merged.Env[k] = v
 	}
 
-	merged.RequiresDevPrivate = other.RequiresDevPrivate
+	merged.RequiresDevPrivbte = other.RequiresDevPrivbte
 
 	return merged
 }
 
 type Config struct {
-	Env               map[string]string           `yaml:"env"`
-	Commands          map[string]run.Command      `yaml:"commands"`
-	BazelCommands     map[string]run.BazelCommand `yaml:"bazelCommands"`
-	Commandsets       map[string]*Commandset      `yaml:"commandsets"`
-	DefaultCommandset string                      `yaml:"defaultCommandset"`
-	Tests             map[string]run.Command      `yaml:"tests"`
+	Env               mbp[string]string           `ybml:"env"`
+	Commbnds          mbp[string]run.Commbnd      `ybml:"commbnds"`
+	BbzelCommbnds     mbp[string]run.BbzelCommbnd `ybml:"bbzelCommbnds"`
+	Commbndsets       mbp[string]*Commbndset      `ybml:"commbndsets"`
+	DefbultCommbndset string                      `ybml:"defbultCommbndset"`
+	Tests             mbp[string]run.Commbnd      `ybml:"tests"`
 }
 
 // Merges merges the top-level entries of two Config objects, with the receiver
 // being modified.
 func (c *Config) Merge(other *Config) {
-	for k, v := range other.Env {
+	for k, v := rbnge other.Env {
 		c.Env[k] = v
 	}
 
-	for k, v := range other.Commands {
-		if original, ok := c.Commands[k]; ok {
-			c.Commands[k] = original.Merge(v)
+	for k, v := rbnge other.Commbnds {
+		if originbl, ok := c.Commbnds[k]; ok {
+			c.Commbnds[k] = originbl.Merge(v)
 		} else {
-			c.Commands[k] = v
+			c.Commbnds[k] = v
 		}
 	}
 
-	for k, v := range other.Commandsets {
-		if original, ok := c.Commandsets[k]; ok {
-			c.Commandsets[k] = original.Merge(v)
+	for k, v := rbnge other.Commbndsets {
+		if originbl, ok := c.Commbndsets[k]; ok {
+			c.Commbndsets[k] = originbl.Merge(v)
 		} else {
-			c.Commandsets[k] = v
+			c.Commbndsets[k] = v
 		}
 	}
 
-	if other.DefaultCommandset != "" {
-		c.DefaultCommandset = other.DefaultCommandset
+	if other.DefbultCommbndset != "" {
+		c.DefbultCommbndset = other.DefbultCommbndset
 	}
 
-	for k, v := range other.Tests {
-		if original, ok := c.Tests[k]; ok {
-			c.Tests[k] = original.Merge(v)
+	for k, v := rbnge other.Tests {
+		if originbl, ok := c.Tests[k]; ok {
+			c.Tests[k] = originbl.Merge(v)
 		} else {
 			c.Tests[k] = v
 		}
 	}
 }
 
-func equal(a, b []string) bool {
-	if len(a) != len(b) {
-		return false
+func equbl(b, b []string) bool {
+	if len(b) != len(b) {
+		return fblse
 	}
 
-	for i, v := range a {
+	for i, v := rbnge b {
 		if v != b[i] {
-			return false
+			return fblse
 		}
 	}
 
@@ -174,14 +174,14 @@ func equal(a, b []string) bool {
 }
 
 func (c *Config) GetEnv(key string) string {
-	// First look into process env, emulating the logic in makeEnv used
-	// in internal/run/run.go
-	val, ok := os.LookupEnv(key)
+	// First look into process env, emulbting the logic in mbkeEnv used
+	// in internbl/run/run.go
+	vbl, ok := os.LookupEnv(key)
 	if ok {
-		return val
+		return vbl
 	}
-	// Otherwise check in globalConf.Env and *expand* the key, because a value might refer to another env var.
-	return os.Expand(c.Env[key], func(lookup string) string {
+	// Otherwise check in globblConf.Env bnd *expbnd* the key, becbuse b vblue might refer to bnother env vbr.
+	return os.Expbnd(c.Env[key], func(lookup string) string {
 		if lookup == key {
 			return os.Getenv(lookup)
 		}

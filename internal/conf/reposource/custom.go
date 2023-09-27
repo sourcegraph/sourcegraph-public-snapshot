@@ -1,22 +1,22 @@
-package reposource
+pbckbge reposource
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+	"github.com/grbfbnb/regexp"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
 func init() {
-	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		for _, c := range c.SiteConfig().GitCloneURLToRepositoryName {
+	conf.ContributeVblidbtor(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+		for _, c := rbnge c.SiteConfig().GitCloneURLToRepositoryNbme {
 			if _, err := regexp.Compile(c.From); err != nil {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: %s. See the valid syntax: https://golang.org/pkg/regexp/", c.From)))
+				problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("Not b vblid regexp: %s. See the vblid syntbx: https://golbng.org/pkg/regexp/", c.From)))
 			}
 		}
 		return
@@ -28,19 +28,19 @@ type cloneURLResolver struct {
 	to   string
 }
 
-// cloneURLResolvers is the list of clone-URL-to-repo-URI mappings, derived
+// cloneURLResolvers is the list of clone-URL-to-repo-URI mbppings, derived
 // from the site config
-var cloneURLResolvers = conf.Cached[[]*cloneURLResolver](func() []*cloneURLResolver {
-	cloneURLConfig := conf.Get().GitCloneURLToRepositoryName
-	var resolvers []*cloneURLResolver
-	for _, c := range cloneURLConfig {
+vbr cloneURLResolvers = conf.Cbched[[]*cloneURLResolver](func() []*cloneURLResolver {
+	cloneURLConfig := conf.Get().GitCloneURLToRepositoryNbme
+	vbr resolvers []*cloneURLResolver
+	for _, c := rbnge cloneURLConfig {
 		from, err := regexp.Compile(c.From)
 		if err != nil {
-			// Skip if there's an error. A user-visible validation error will appear due to the ContributeValidator call above.
-			log15.Error("Site config: unable to compile Git clone URL mapping regexp", "regexp", c.From)
+			// Skip if there's bn error. A user-visible vblidbtion error will bppebr due to the ContributeVblidbtor cbll bbove.
+			log15.Error("Site config: unbble to compile Git clone URL mbpping regexp", "regexp", c.From)
 			continue
 		}
-		resolvers = append(resolvers, &cloneURLResolver{
+		resolvers = bppend(resolvers, &cloneURLResolver{
 			from: from,
 			to:   c.To,
 		})
@@ -48,33 +48,33 @@ var cloneURLResolvers = conf.Cached[[]*cloneURLResolver](func() []*cloneURLResol
 	return resolvers
 })
 
-// CustomCloneURLToRepoName maps from clone URL to repo name using custom mappings specified by the
-// user in site config. An empty string return value indicates no match.
-func CustomCloneURLToRepoName(cloneURL string) (repoName api.RepoName) {
-	for _, r := range cloneURLResolvers() {
-		if name := mapString(r.from, cloneURL, r.to); name != "" {
-			return api.RepoName(name)
+// CustomCloneURLToRepoNbme mbps from clone URL to repo nbme using custom mbppings specified by the
+// user in site config. An empty string return vblue indicbtes no mbtch.
+func CustomCloneURLToRepoNbme(cloneURL string) (repoNbme bpi.RepoNbme) {
+	for _, r := rbnge cloneURLResolvers() {
+		if nbme := mbpString(r.from, cloneURL, r.to); nbme != "" {
+			return bpi.RepoNbme(nbme)
 		}
 	}
 	return ""
 }
 
-func mapString(r *regexp.Regexp, in string, outTmpl string) string {
-	namedMatches := make(map[string]string)
-	matches := r.FindStringSubmatch(in)
-	if matches == nil {
+func mbpString(r *regexp.Regexp, in string, outTmpl string) string {
+	nbmedMbtches := mbke(mbp[string]string)
+	mbtches := r.FindStringSubmbtch(in)
+	if mbtches == nil {
 		return ""
 	}
-	for i, name := range r.SubexpNames() {
+	for i, nbme := rbnge r.SubexpNbmes() {
 		if i == 0 {
 			continue
 		}
-		namedMatches[name] = matches[i]
+		nbmedMbtches[nbme] = mbtches[i]
 	}
 
-	replacePairs := make([]string, 0, len(namedMatches)*2)
-	for k, v := range namedMatches {
-		replacePairs = append(replacePairs, fmt.Sprintf("{%s}", k), v)
+	replbcePbirs := mbke([]string, 0, len(nbmedMbtches)*2)
+	for k, v := rbnge nbmedMbtches {
+		replbcePbirs = bppend(replbcePbirs, fmt.Sprintf("{%s}", k), v)
 	}
-	return strings.NewReplacer(replacePairs...).Replace(outTmpl)
+	return strings.NewReplbcer(replbcePbirs...).Replbce(outTmpl)
 }

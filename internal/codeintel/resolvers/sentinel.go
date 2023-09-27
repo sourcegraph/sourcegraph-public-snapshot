@@ -1,96 +1,96 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type SentinelServiceResolver interface {
-	// Fetch vulnerabilities
-	Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (VulnerabilityConnectionResolver, error)
-	VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error)
+type SentinelServiceResolver interfbce {
+	// Fetch vulnerbbilities
+	Vulnerbbilities(ctx context.Context, brgs GetVulnerbbilitiesArgs) (VulnerbbilityConnectionResolver, error)
+	VulnerbbilityByID(ctx context.Context, id grbphql.ID) (_ VulnerbbilityResolver, err error)
 
-	// Fetch matches
-	VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (VulnerabilityMatchConnectionResolver, error)
-	VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error)
-	VulnerabilityMatchesSummaryCounts(ctx context.Context) (VulnerabilityMatchesSummaryCountResolver, error)
-	VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (VulnerabilityMatchCountByRepositoryConnectionResolver, error)
+	// Fetch mbtches
+	VulnerbbilityMbtches(ctx context.Context, brgs GetVulnerbbilityMbtchesArgs) (VulnerbbilityMbtchConnectionResolver, error)
+	VulnerbbilityMbtchByID(ctx context.Context, id grbphql.ID) (_ VulnerbbilityMbtchResolver, err error)
+	VulnerbbilityMbtchesSummbryCounts(ctx context.Context) (VulnerbbilityMbtchesSummbryCountResolver, error)
+	VulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs GetVulnerbbilityMbtchCountByRepositoryArgs) (VulnerbbilityMbtchCountByRepositoryConnectionResolver, error)
 }
 
 type (
-	GetVulnerabilitiesArgs                                = PagedConnectionArgs
-	VulnerabilityConnectionResolver                       = PagedConnectionWithTotalCountResolver[VulnerabilityResolver]
-	VulnerabilityMatchConnectionResolver                  = PagedConnectionWithTotalCountResolver[VulnerabilityMatchResolver]
-	VulnerabilityMatchCountByRepositoryConnectionResolver = PagedConnectionWithTotalCountResolver[VulnerabilityMatchCountByRepositoryResolver]
+	GetVulnerbbilitiesArgs                                = PbgedConnectionArgs
+	VulnerbbilityConnectionResolver                       = PbgedConnectionWithTotblCountResolver[VulnerbbilityResolver]
+	VulnerbbilityMbtchConnectionResolver                  = PbgedConnectionWithTotblCountResolver[VulnerbbilityMbtchResolver]
+	VulnerbbilityMbtchCountByRepositoryConnectionResolver = PbgedConnectionWithTotblCountResolver[VulnerbbilityMbtchCountByRepositoryResolver]
 )
 
-type GetVulnerabilityMatchesArgs struct {
-	PagedConnectionArgs
+type GetVulnerbbilityMbtchesArgs struct {
+	PbgedConnectionArgs
 	Severity       *string
-	Language       *string
-	RepositoryName *string
+	Lbngubge       *string
+	RepositoryNbme *string
 }
 
-type VulnerabilityResolver interface {
-	ID() graphql.ID
+type VulnerbbilityResolver interfbce {
+	ID() grbphql.ID
 	SourceID() string
-	Summary() string
-	Details() string
+	Summbry() string
+	Detbils() string
 	CPEs() []string
 	CWEs() []string
-	Aliases() []string
-	Related() []string
-	DataSource() string
+	Alibses() []string
+	Relbted() []string
+	DbtbSource() string
 	URLs() []string
 	Severity() string
 	CVSSVector() string
 	CVSSScore() string
-	Published() gqlutil.DateTime
-	Modified() *gqlutil.DateTime
-	Withdrawn() *gqlutil.DateTime
-	AffectedPackages() []VulnerabilityAffectedPackageResolver
+	Published() gqlutil.DbteTime
+	Modified() *gqlutil.DbteTime
+	Withdrbwn() *gqlutil.DbteTime
+	AffectedPbckbges() []VulnerbbilityAffectedPbckbgeResolver
 }
 
-type VulnerabilityAffectedPackageResolver interface {
-	PackageName() string
-	Language() string
-	Namespace() string
-	VersionConstraint() []string
+type VulnerbbilityAffectedPbckbgeResolver interfbce {
+	PbckbgeNbme() string
+	Lbngubge() string
+	Nbmespbce() string
+	VersionConstrbint() []string
 	Fixed() bool
 	FixedIn() *string
-	AffectedSymbols() []VulnerabilityAffectedSymbolResolver
+	AffectedSymbols() []VulnerbbilityAffectedSymbolResolver
 }
 
-type VulnerabilityAffectedSymbolResolver interface {
-	Path() string
+type VulnerbbilityAffectedSymbolResolver interfbce {
+	Pbth() string
 	Symbols() []string
 }
 
-type VulnerabilityMatchResolver interface {
-	ID() graphql.ID
-	Vulnerability(ctx context.Context) (VulnerabilityResolver, error)
-	AffectedPackage(ctx context.Context) (VulnerabilityAffectedPackageResolver, error)
+type VulnerbbilityMbtchResolver interfbce {
+	ID() grbphql.ID
+	Vulnerbbility(ctx context.Context) (VulnerbbilityResolver, error)
+	AffectedPbckbge(ctx context.Context) (VulnerbbilityAffectedPbckbgeResolver, error)
 	PreciseIndex(ctx context.Context) (PreciseIndexResolver, error)
 }
 
-type VulnerabilityMatchesSummaryCountResolver interface {
-	Critical() int32
+type VulnerbbilityMbtchesSummbryCountResolver interfbce {
+	Criticbl() int32
 	High() int32
 	Medium() int32
 	Low() int32
 	Repository() int32
 }
 
-type GetVulnerabilityMatchCountByRepositoryArgs struct {
-	PagedConnectionArgs
-	RepositoryName *string
+type GetVulnerbbilityMbtchCountByRepositoryArgs struct {
+	PbgedConnectionArgs
+	RepositoryNbme *string
 }
 
-type VulnerabilityMatchCountByRepositoryResolver interface {
-	ID() graphql.ID
-	RepositoryName() string
-	MatchCount() int32
+type VulnerbbilityMbtchCountByRepositoryResolver interfbce {
+	ID() grbphql.ID
+	RepositoryNbme() string
+	MbtchCount() int32
 }

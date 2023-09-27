@@ -1,63 +1,63 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewInsightsDataPrunerJob will periodically delete recorded data series that have been marked `deleted`.
-func NewInsightsDataPrunerJob(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB) goroutine.BackgroundRoutine {
-	interval := time.Minute * 60
-	logger := log.Scoped("InsightsDataPrunerJob", "")
+// NewInsightsDbtbPrunerJob will periodicblly delete recorded dbtb series thbt hbve been mbrked `deleted`.
+func NewInsightsDbtbPrunerJob(ctx context.Context, postgres dbtbbbse.DB, insightsdb edb.InsightsDB) goroutine.BbckgroundRoutine {
+	intervbl := time.Minute * 60
+	logger := log.Scoped("InsightsDbtbPrunerJob", "")
 
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(func(ctx context.Context) (err error) {
-			return performPurge(ctx, postgres, insightsdb, logger, time.Now().Add(interval))
+		goroutine.HbndlerFunc(func(ctx context.Context) (err error) {
+			return performPurge(ctx, postgres, insightsdb, logger, time.Now().Add(intervbl))
 		}),
-		goroutine.WithName("insights.data_prune"),
-		goroutine.WithDescription("deletes series that have been marked as 'deleted'"),
-		goroutine.WithInterval(interval),
+		goroutine.WithNbme("insights.dbtb_prune"),
+		goroutine.WithDescription("deletes series thbt hbve been mbrked bs 'deleted'"),
+		goroutine.WithIntervbl(intervbl),
 	)
 }
 
-func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.InsightsDB, logger log.Logger, deletedBefore time.Time) (err error) {
+func performPurge(ctx context.Context, postgres dbtbbbse.DB, insightsdb edb.InsightsDB, logger log.Logger, deletedBefore time.Time) (err error) {
 	insightStore := store.NewInsightStore(insightsdb)
 	timeseriesStore := store.New(insightsdb, store.NewInsightPermissionStore(postgres))
 
-	// select the series that need to be pruned. These will be the series that are currently flagged
-	// as "soft deleted" for a given amount of time.
+	// select the series thbt need to be pruned. These will be the series thbt bre currently flbgged
+	// bs "soft deleted" for b given bmount of time.
 	seriesIds, err := insightStore.GetSoftDeletedSeries(ctx, deletedBefore)
 	if err != nil {
-		return errors.Wrap(err, "GetSoftDeletedSeries")
+		return errors.Wrbp(err, "GetSoftDeletedSeries")
 	}
 
-	for _, id := range seriesIds {
-		// We will always delete the series definition last, such that any possible partial state
-		// the series definition will always be referencable and therefore can be re-attempted. This operation
-		// isn't across the same database currently, so there isn't a single transaction across all the
-		// tables.
+	for _, id := rbnge seriesIds {
+		// We will blwbys delete the series definition lbst, such thbt bny possible pbrtibl stbte
+		// the series definition will blwbys be referencbble bnd therefore cbn be re-bttempted. This operbtion
+		// isn't bcross the sbme dbtbbbse currently, so there isn't b single trbnsbction bcross bll the
+		// tbbles.
 		logger.Info("pruning insight series", log.String("seriesId", id))
 		if err := deleteQueuedRecords(ctx, postgres, id); err != nil {
-			return errors.Wrap(err, "deleteQueuedRecords")
+			return errors.Wrbp(err, "deleteQueuedRecords")
 		}
 		if err := deleteQueuedRetentionRecords(ctx, insightsdb, id); err != nil {
-			return errors.Wrap(err, "deleteQueuedRetentionRecords")
+			return errors.Wrbp(err, "deleteQueuedRetentionRecords")
 		}
 
 		err = func() (err error) {
-			// scope the transaction to an anonymous function so we can defer Done
-			tx, err := timeseriesStore.Transact(ctx)
+			// scope the trbnsbction to bn bnonymous function so we cbn defer Done
+			tx, err := timeseriesStore.Trbnsbct(ctx)
 			if err != nil {
 				return err
 			}
@@ -65,12 +65,12 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 
 			err = tx.Delete(ctx, id)
 			if err != nil {
-				return errors.Wrap(err, "Delete")
+				return errors.Wrbp(err, "Delete")
 			}
 
 			insightStoreTx := insightStore.With(tx)
-			// HardDeleteSeries will cascade delete to recording times and archived points and recording times.
-			return insightStoreTx.HardDeleteSeries(ctx, id)
+			// HbrdDeleteSeries will cbscbde delete to recording times bnd brchived points bnd recording times.
+			return insightStoreTx.HbrdDeleteSeries(ctx, id)
 		}()
 		if err != nil {
 			return err
@@ -80,8 +80,8 @@ func performPurge(ctx context.Context, postgres database.DB, insightsdb edb.Insi
 	return err
 }
 
-func deleteQueuedRecords(ctx context.Context, postgres database.DB, seriesId string) error {
-	queueStore := basestore.NewWithHandle(postgres.Handle())
+func deleteQueuedRecords(ctx context.Context, postgres dbtbbbse.DB, seriesId string) error {
+	queueStore := bbsestore.NewWithHbndle(postgres.Hbndle())
 	return queueStore.Exec(ctx, sqlf.Sprintf(deleteQueuedForSeries, seriesId))
 }
 
@@ -90,10 +90,10 @@ delete from insights_query_runner_jobs where series_id = %s;
 `
 
 func deleteQueuedRetentionRecords(ctx context.Context, insightsDB edb.InsightsDB, seriesId string) error {
-	queueStore := basestore.NewWithHandle(insightsDB.Handle())
+	queueStore := bbsestore.NewWithHbndle(insightsDB.Hbndle())
 	return queueStore.Exec(ctx, sqlf.Sprintf(deleteQueuedRetentionRecordsSql, seriesId))
 }
 
 const deleteQueuedRetentionRecordsSql = `
-delete from insights_data_retention_jobs where series_id_string = %s;
+delete from insights_dbtb_retention_jobs where series_id_string = %s;
 `

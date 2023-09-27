@@ -1,13 +1,13 @@
-package queryrunner
+pbckbge queryrunner
 
 import (
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestMain(m *testing.M) {
+func TestMbin(m *testing.M) {
 	logtest.Init(m)
 	os.Exit(m.Run())
 }

@@ -1,83 +1,83 @@
-package ranking
+pbckbge rbnking
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/coordinator"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/exporter"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/janitor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/mapper"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/background/reducer"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/store"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/coordinbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/exporter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/mbpper"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/bbckground/reducer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/store"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func NewService(
-	observationCtx *observation.Context,
-	db database.DB,
-	codeIntelDB codeintelshared.CodeIntelDB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
+	codeIntelDB codeintelshbred.CodeIntelDB,
 ) *Service {
 	return newService(
-		scopedContext("service", observationCtx),
-		store.New(scopedContext("store", observationCtx), db),
-		lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB),
-		conf.DefaultClient(),
+		scopedContext("service", observbtionCtx),
+		store.New(scopedContext("store", observbtionCtx), db),
+		lsifstore.New(scopedContext("lsifstore", observbtionCtx), codeIntelDB),
+		conf.DefbultClient(),
 	)
 }
 
-var (
+vbr (
 	ExporterConfigInst    = &exporter.Config{}
-	CoordinatorConfigInst = &coordinator.Config{}
-	MapperConfigInst      = &mapper.Config{}
+	CoordinbtorConfigInst = &coordinbtor.Config{}
+	MbpperConfigInst      = &mbpper.Config{}
 	ReducerConfigInst     = &reducer.Config{}
-	JanitorConfigInst     = &janitor.Config{}
+	JbnitorConfigInst     = &jbnitor.Config{}
 )
 
-func NewSymbolExporter(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
-	return background.NewSymbolExporter(
-		scopedContext("exporter", observationCtx),
-		rankingService.store,
-		rankingService.lsifstore,
+func NewSymbolExporter(observbtionCtx *observbtion.Context, rbnkingService *Service) goroutine.BbckgroundRoutine {
+	return bbckground.NewSymbolExporter(
+		scopedContext("exporter", observbtionCtx),
+		rbnkingService.store,
+		rbnkingService.lsifstore,
 		ExporterConfigInst,
 	)
 }
 
-func NewCoordinator(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
-	return background.NewCoordinator(
-		scopedContext("coordinator", observationCtx),
-		rankingService.store,
-		CoordinatorConfigInst,
+func NewCoordinbtor(observbtionCtx *observbtion.Context, rbnkingService *Service) goroutine.BbckgroundRoutine {
+	return bbckground.NewCoordinbtor(
+		scopedContext("coordinbtor", observbtionCtx),
+		rbnkingService.store,
+		CoordinbtorConfigInst,
 	)
 }
 
-func NewMapper(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return background.NewMapper(
-		scopedContext("mapper", observationCtx),
-		rankingService.store,
-		MapperConfigInst,
+func NewMbpper(observbtionCtx *observbtion.Context, rbnkingService *Service) []goroutine.BbckgroundRoutine {
+	return bbckground.NewMbpper(
+		scopedContext("mbpper", observbtionCtx),
+		rbnkingService.store,
+		MbpperConfigInst,
 	)
 }
 
-func NewReducer(observationCtx *observation.Context, rankingService *Service) goroutine.BackgroundRoutine {
-	return background.NewReducer(
-		scopedContext("reducer", observationCtx),
-		rankingService.store,
+func NewReducer(observbtionCtx *observbtion.Context, rbnkingService *Service) goroutine.BbckgroundRoutine {
+	return bbckground.NewReducer(
+		scopedContext("reducer", observbtionCtx),
+		rbnkingService.store,
 		ReducerConfigInst,
 	)
 }
 
-func NewSymbolJanitor(observationCtx *observation.Context, rankingService *Service) []goroutine.BackgroundRoutine {
-	return background.NewSymbolJanitor(
-		scopedContext("janitor", observationCtx),
-		rankingService.store,
-		JanitorConfigInst,
+func NewSymbolJbnitor(observbtionCtx *observbtion.Context, rbnkingService *Service) []goroutine.BbckgroundRoutine {
+	return bbckground.NewSymbolJbnitor(
+		scopedContext("jbnitor", observbtionCtx),
+		rbnkingService.store,
+		JbnitorConfigInst,
 	)
 }
 
-func scopedContext(component string, observationCtx *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "ranking", component, observationCtx)
+func scopedContext(component string, observbtionCtx *observbtion.Context) *observbtion.Context {
+	return observbtion.ScopedContext("codeintel", "rbnking", component, observbtionCtx)
 }

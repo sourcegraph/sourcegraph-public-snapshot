@@ -1,220 +1,220 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 	"time"
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type pingLoadFunc func(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error
+type pingLobdFunc func(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error
 
-type pingLoader struct {
+type pingLobder struct {
 	now        time.Time
-	operations map[string]pingLoadFunc
+	operbtions mbp[string]pingLobdFunc
 }
 
-func newPingLoader(now time.Time) *pingLoader {
-	return &pingLoader{now: now, operations: make(map[string]pingLoadFunc)}
+func newPingLobder(now time.Time) *pingLobder {
+	return &pingLobder{now: now, operbtions: mbke(mbp[string]pingLobdFunc)}
 }
 
-func (p *pingLoader) withOperation(name string, loadFunc pingLoadFunc) {
-	p.operations[name] = loadFunc
+func (p *pingLobder) withOperbtion(nbme string, lobdFunc pingLobdFunc) {
+	p.operbtions[nbme] = lobdFunc
 }
 
-func (p *pingLoader) generate(ctx context.Context, db database.DB) *types.CodeInsightsUsageStatistics {
-	stats := &types.CodeInsightsUsageStatistics{}
-	logger := log.Scoped("code insights ping loader", "pings for code insights")
+func (p *pingLobder) generbte(ctx context.Context, db dbtbbbse.DB) *types.CodeInsightsUsbgeStbtistics {
+	stbts := &types.CodeInsightsUsbgeStbtistics{}
+	logger := log.Scoped("code insights ping lobder", "pings for code insights")
 
-	for name, loadFunc := range p.operations {
-		err := loadFunc(ctx, db, stats, p.now)
+	for nbme, lobdFunc := rbnge p.operbtions {
+		err := lobdFunc(ctx, db, stbts, p.now)
 		if err != nil {
-			logger.Error("insights pings loading error, skipping ping", log.String("name", name), log.Error(err))
+			logger.Error("insights pings lobding error, skipping ping", log.String("nbme", nbme), log.Error(err))
 		}
 	}
-	return stats
+	return stbts
 }
 
-func GetCodeInsightsUsageStatistics(ctx context.Context, db database.DB) (*types.CodeInsightsUsageStatistics, error) {
-	loader := newPingLoader(timeNow())
+func GetCodeInsightsUsbgeStbtistics(ctx context.Context, db dbtbbbse.DB) (*types.CodeInsightsUsbgeStbtistics, error) {
+	lobder := newPingLobder(timeNow())
 
-	loader.withOperation("weeklyUsage", weeklyUsage)
-	loader.withOperation("weeklyMetricsByInsight", weeklyMetricsByInsight)
-	loader.withOperation("weeklyFirstTimeCreators", weeklyFirstTimeCreators)
-	loader.withOperation("getCreationViewUsage", getCreationViewUsage)
-	loader.withOperation("getTimeStepCounts", getTimeStepCounts)
-	loader.withOperation("getOrgInsightCounts", getOrgInsightCounts)
-	loader.withOperation("getTotalInsightCounts", getTotalInsightCounts)
-	loader.withOperation("tabClicks", tabClicks)
-	loader.withOperation("insightsTotalOrgsWithDashboard", insightsTotalOrgsWithDashboard)
-	loader.withOperation("insightsDashboardTotalCount", insightsDashboardTotalCount)
-	loader.withOperation("getInsightsPerDashboard", getInsightsPerDashboard)
+	lobder.withOperbtion("weeklyUsbge", weeklyUsbge)
+	lobder.withOperbtion("weeklyMetricsByInsight", weeklyMetricsByInsight)
+	lobder.withOperbtion("weeklyFirstTimeCrebtors", weeklyFirstTimeCrebtors)
+	lobder.withOperbtion("getCrebtionViewUsbge", getCrebtionViewUsbge)
+	lobder.withOperbtion("getTimeStepCounts", getTimeStepCounts)
+	lobder.withOperbtion("getOrgInsightCounts", getOrgInsightCounts)
+	lobder.withOperbtion("getTotblInsightCounts", getTotblInsightCounts)
+	lobder.withOperbtion("tbbClicks", tbbClicks)
+	lobder.withOperbtion("insightsTotblOrgsWithDbshbobrd", insightsTotblOrgsWithDbshbobrd)
+	lobder.withOperbtion("insightsDbshbobrdTotblCount", insightsDbshbobrdTotblCount)
+	lobder.withOperbtion("getInsightsPerDbshbobrd", getInsightsPerDbshbobrd)
 
-	loader.withOperation("groupAggregationModeClicked", groupAggregationModeClicked)
-	loader.withOperation("groupAggregationModeDisabledHover", groupAggregationModeDisabledHover)
-	loader.withOperation("groupResultsChartBarClick", groupResultsChartBarClick)
-	loader.withOperation("groupResultsChartBarHover", groupResultsChartBarHover)
-	loader.withOperation("groupResultsExpandedViewOpen", groupResultsExpandedViewOpen)
-	loader.withOperation("groupResultsExpandedViewCollapse", groupResultsExpandedViewCollapse)
-	loader.withOperation("getBackfillTimePing", getBackfillTimePing)
-	loader.withOperation("getDataExportClicks", getDataExportClickCount)
+	lobder.withOperbtion("groupAggregbtionModeClicked", groupAggregbtionModeClicked)
+	lobder.withOperbtion("groupAggregbtionModeDisbbledHover", groupAggregbtionModeDisbbledHover)
+	lobder.withOperbtion("groupResultsChbrtBbrClick", groupResultsChbrtBbrClick)
+	lobder.withOperbtion("groupResultsChbrtBbrHover", groupResultsChbrtBbrHover)
+	lobder.withOperbtion("groupResultsExpbndedViewOpen", groupResultsExpbndedViewOpen)
+	lobder.withOperbtion("groupResultsExpbndedViewCollbpse", groupResultsExpbndedViewCollbpse)
+	lobder.withOperbtion("getBbckfillTimePing", getBbckfillTimePing)
+	lobder.withOperbtion("getDbtbExportClicks", getDbtbExportClickCount)
 
-	loader.withOperation("getGroupResultsSearchesPings", getGroupResultsSearchesPings(
-		[]types.PingName{
-			"ProactiveLimitHit",
-			"ProactiveLimitSuccess",
+	lobder.withOperbtion("getGroupResultsSebrchesPings", getGroupResultsSebrchesPings(
+		[]types.PingNbme{
+			"ProbctiveLimitHit",
+			"ProbctiveLimitSuccess",
 			"ExplicitLimitHit",
 			"ExplicitLimitSuccess",
 		}))
 
-	return loader.generate(ctx, db), nil
+	return lobder.generbte(ctx, db), nil
 }
 
-func weeklyUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	const platformQuery = `
+func weeklyUsbge(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	const plbtformQuery = `
 	SELECT
-		COUNT(*) FILTER (WHERE name = 'ViewInsights')                       			AS weekly_insights_page_views,
-		COUNT(*) FILTER (WHERE name = 'ViewInsightsGetStartedPage')         			AS weekly_insights_get_started_page_views,
-		COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageViewed')					AS weekly_standalone_insight_page_views,
-		COUNT(*) FILTER (WHERE name = 'StandaloneInsightDashboardClick') 				AS weekly_standalone_dashboard_clicks,
-        COUNT(*) FILTER (WHERE name = 'StandaloneInsightPageEditClick') 				AS weekly_standalone_edit_clicks,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsights')        			AS weekly_insights_unique_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'ViewInsightsGetStartedPage')  	AS weekly_insights_get_started_unique_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageViewed') 	AS weekly_standalone_insight_unique_page_views,
-		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightDashboardClick') AS weekly_standalone_insight_unique_dashboard_clicks,
-		COUNT(distinct user_id) FILTER (WHERE name = 'StandaloneInsightPageEditClick')  AS weekly_standalone_insight_unique_edit_clicks,
-		COUNT(distinct user_id) FILTER (WHERE name = 'InsightAddition')					AS weekly_insight_creators,
-		COUNT(*) FILTER (WHERE name = 'InsightConfigureClick') 							AS weekly_insight_configure_click,
-		COUNT(*) FILTER (WHERE name = 'InsightAddMoreClick') 							AS weekly_insight_add_more_click,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsOpenSection') 						AS weekly_group_results_open_section,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsCollapseSection') 					AS weekly_group_results_collapse_section,
-		COUNT(*) FILTER (WHERE name = 'GroupResultsInfoIconHover') 						AS weekly_group_results_info_icon_hover
+		COUNT(*) FILTER (WHERE nbme = 'ViewInsights')                       			AS weekly_insights_pbge_views,
+		COUNT(*) FILTER (WHERE nbme = 'ViewInsightsGetStbrtedPbge')         			AS weekly_insights_get_stbrted_pbge_views,
+		COUNT(*) FILTER (WHERE nbme = 'StbndbloneInsightPbgeViewed')					AS weekly_stbndblone_insight_pbge_views,
+		COUNT(*) FILTER (WHERE nbme = 'StbndbloneInsightDbshbobrdClick') 				AS weekly_stbndblone_dbshbobrd_clicks,
+        COUNT(*) FILTER (WHERE nbme = 'StbndbloneInsightPbgeEditClick') 				AS weekly_stbndblone_edit_clicks,
+		COUNT(distinct user_id) FILTER (WHERE nbme = 'ViewInsights')        			AS weekly_insights_unique_pbge_views,
+		COUNT(distinct user_id) FILTER (WHERE nbme = 'ViewInsightsGetStbrtedPbge')  	AS weekly_insights_get_stbrted_unique_pbge_views,
+		COUNT(distinct user_id) FILTER (WHERE nbme = 'StbndbloneInsightPbgeViewed') 	AS weekly_stbndblone_insight_unique_pbge_views,
+		COUNT(distinct user_id) FILTER (WHERE nbme = 'StbndbloneInsightDbshbobrdClick') AS weekly_stbndblone_insight_unique_dbshbobrd_clicks,
+		COUNT(distinct user_id) FILTER (WHERE nbme = 'StbndbloneInsightPbgeEditClick')  AS weekly_stbndblone_insight_unique_edit_clicks,
+		COUNT(distinct user_id) FILTER (WHERE nbme = 'InsightAddition')					AS weekly_insight_crebtors,
+		COUNT(*) FILTER (WHERE nbme = 'InsightConfigureClick') 							AS weekly_insight_configure_click,
+		COUNT(*) FILTER (WHERE nbme = 'InsightAddMoreClick') 							AS weekly_insight_bdd_more_click,
+		COUNT(*) FILTER (WHERE nbme = 'GroupResultsOpenSection') 						AS weekly_group_results_open_section,
+		COUNT(*) FILTER (WHERE nbme = 'GroupResultsCollbpseSection') 					AS weekly_group_results_collbpse_section,
+		COUNT(*) FILTER (WHERE nbme = 'GroupResultsInfoIconHover') 						AS weekly_group_results_info_icon_hover
 	FROM event_logs
-	WHERE name in ('ViewInsights', 'StandaloneInsightPageViewed', 'StandaloneInsightDashboardClick', 'StandaloneInsightPageEditClick',
-			'ViewInsightsGetStartedPage', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick', 'GroupResultsOpenSection',
-			'GroupResultsCollapseSection', 'GroupResultsInfoIconHover')
-		AND timestamp > DATE_TRUNC('week', $1::timestamp);
+	WHERE nbme in ('ViewInsights', 'StbndbloneInsightPbgeViewed', 'StbndbloneInsightDbshbobrdClick', 'StbndbloneInsightPbgeEditClick',
+			'ViewInsightsGetStbrtedPbge', 'InsightAddition', 'InsightConfigureClick', 'InsightAddMoreClick', 'GroupResultsOpenSection',
+			'GroupResultsCollbpseSection', 'GroupResultsInfoIconHover')
+		AND timestbmp > DATE_TRUNC('week', $1::timestbmp);
 	`
 
-	if err := db.QueryRowContext(ctx, platformQuery, timeNow()).Scan(
-		&stats.WeeklyInsightsPageViews,
-		&stats.WeeklyInsightsGetStartedPageViews,
-		&stats.WeeklyStandaloneInsightPageViews,
-		&stats.WeeklyStandaloneDashboardClicks,
-		&stats.WeeklyStandaloneEditClicks,
-		&stats.WeeklyInsightsUniquePageViews,
-		&stats.WeeklyInsightsGetStartedUniquePageViews,
-		&stats.WeeklyStandaloneInsightUniquePageViews,
-		&stats.WeeklyStandaloneInsightUniqueDashboardClicks,
-		&stats.WeeklyStandaloneInsightUniqueEditClicks,
-		&stats.WeeklyInsightCreators,
-		&stats.WeeklyInsightConfigureClick,
-		&stats.WeeklyInsightAddMoreClick,
-		&stats.WeeklyGroupResultsOpenSection,
-		&stats.WeeklyGroupResultsCollapseSection,
-		&stats.WeeklyGroupResultsInfoIconHover,
+	if err := db.QueryRowContext(ctx, plbtformQuery, timeNow()).Scbn(
+		&stbts.WeeklyInsightsPbgeViews,
+		&stbts.WeeklyInsightsGetStbrtedPbgeViews,
+		&stbts.WeeklyStbndbloneInsightPbgeViews,
+		&stbts.WeeklyStbndbloneDbshbobrdClicks,
+		&stbts.WeeklyStbndbloneEditClicks,
+		&stbts.WeeklyInsightsUniquePbgeViews,
+		&stbts.WeeklyInsightsGetStbrtedUniquePbgeViews,
+		&stbts.WeeklyStbndbloneInsightUniquePbgeViews,
+		&stbts.WeeklyStbndbloneInsightUniqueDbshbobrdClicks,
+		&stbts.WeeklyStbndbloneInsightUniqueEditClicks,
+		&stbts.WeeklyInsightCrebtors,
+		&stbts.WeeklyInsightConfigureClick,
+		&stbts.WeeklyInsightAddMoreClick,
+		&stbts.WeeklyGroupResultsOpenSection,
+		&stbts.WeeklyGroupResultsCollbpseSection,
+		&stbts.WeeklyGroupResultsInfoIconHover,
 	); err != nil {
 		return err
 	}
 	return nil
 }
 
-func weeklyMetricsByInsight(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+func weeklyMetricsByInsight(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
 	const metricsByInsightQuery = `
-	SELECT argument ->> 'insightType'::text 					             		AS insight_type,
-        COUNT(*) FILTER (WHERE name = 'InsightAddition') 		             		AS additions,
-        COUNT(*) FILTER (WHERE name = 'InsightEdit') 			             		AS edits,
-        COUNT(*) FILTER (WHERE name = 'InsightRemoval') 		             		AS removals,
-		COUNT(*) FILTER (WHERE name = 'InsightHover') 			             		AS hovers,
-		COUNT(*) FILTER (WHERE name = 'InsightUICustomization') 			 		AS ui_customizations,
-		COUNT(*) FILTER (WHERE name = 'InsightDataPointClick') 				 		AS data_point_clicks,
-		COUNT(*) FILTER (WHERE name = 'InsightFiltersChange') 				 		AS filters_change
+	SELECT brgument ->> 'insightType'::text 					             		AS insight_type,
+        COUNT(*) FILTER (WHERE nbme = 'InsightAddition') 		             		AS bdditions,
+        COUNT(*) FILTER (WHERE nbme = 'InsightEdit') 			             		AS edits,
+        COUNT(*) FILTER (WHERE nbme = 'InsightRemovbl') 		             		AS removbls,
+		COUNT(*) FILTER (WHERE nbme = 'InsightHover') 			             		AS hovers,
+		COUNT(*) FILTER (WHERE nbme = 'InsightUICustomizbtion') 			 		AS ui_customizbtions,
+		COUNT(*) FILTER (WHERE nbme = 'InsightDbtbPointClick') 				 		AS dbtb_point_clicks,
+		COUNT(*) FILTER (WHERE nbme = 'InsightFiltersChbnge') 				 		AS filters_chbnge
 	FROM event_logs
-	WHERE name in ('InsightAddition', 'InsightEdit', 'InsightRemoval', 'InsightHover', 'InsightUICustomization', 'InsightDataPointClick', 'InsightFiltersChange')
-		AND timestamp > DATE_TRUNC('week', $1::timestamp)
+	WHERE nbme in ('InsightAddition', 'InsightEdit', 'InsightRemovbl', 'InsightHover', 'InsightUICustomizbtion', 'InsightDbtbPointClick', 'InsightFiltersChbnge')
+		AND timestbmp > DATE_TRUNC('week', $1::timestbmp)
 	GROUP BY insight_type;
 	`
 
-	var weeklyUsageStatisticsByInsight []*types.InsightUsageStatistics
+	vbr weeklyUsbgeStbtisticsByInsight []*types.InsightUsbgeStbtistics
 	rows, err := db.QueryContext(ctx, metricsByInsightQuery, timeNow())
 	if err != nil {
 		return err
 	}
 
 	for rows.Next() {
-		weeklyInsightUsageStatistics := types.InsightUsageStatistics{}
-		if err := rows.Scan(
-			&weeklyInsightUsageStatistics.InsightType,
-			&weeklyInsightUsageStatistics.Additions,
-			&weeklyInsightUsageStatistics.Edits,
-			&weeklyInsightUsageStatistics.Removals,
-			&weeklyInsightUsageStatistics.Hovers,
-			&weeklyInsightUsageStatistics.UICustomizations,
-			&weeklyInsightUsageStatistics.DataPointClicks,
-			&weeklyInsightUsageStatistics.FiltersChange,
+		weeklyInsightUsbgeStbtistics := types.InsightUsbgeStbtistics{}
+		if err := rows.Scbn(
+			&weeklyInsightUsbgeStbtistics.InsightType,
+			&weeklyInsightUsbgeStbtistics.Additions,
+			&weeklyInsightUsbgeStbtistics.Edits,
+			&weeklyInsightUsbgeStbtistics.Removbls,
+			&weeklyInsightUsbgeStbtistics.Hovers,
+			&weeklyInsightUsbgeStbtistics.UICustomizbtions,
+			&weeklyInsightUsbgeStbtistics.DbtbPointClicks,
+			&weeklyInsightUsbgeStbtistics.FiltersChbnge,
 		); err != nil {
 			return err
 		}
-		weeklyUsageStatisticsByInsight = append(weeklyUsageStatisticsByInsight, &weeklyInsightUsageStatistics)
+		weeklyUsbgeStbtisticsByInsight = bppend(weeklyUsbgeStbtisticsByInsight, &weeklyInsightUsbgeStbtistics)
 	}
-	stats.WeeklyUsageStatisticsByInsight = weeklyUsageStatisticsByInsight
+	stbts.WeeklyUsbgeStbtisticsByInsight = weeklyUsbgeStbtisticsByInsight
 	return nil
 }
 
-func weeklyFirstTimeCreators(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	const weeklyFirstTimeCreatorsQuery = `
+func weeklyFirstTimeCrebtors(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	const weeklyFirstTimeCrebtorsQuery = `
 	WITH first_times AS (
 		SELECT
 			user_id,
-			MIN(timestamp) as first_time
+			MIN(timestbmp) bs first_time
 		FROM event_logs
-		WHERE name = 'InsightAddition'
+		WHERE nbme = 'InsightAddition'
 		GROUP BY user_id
 		)
 	SELECT
-		DATE_TRUNC('week', $1::timestamp) AS week_start,
-		COUNT(distinct user_id) as weekly_first_time_insight_creators
+		DATE_TRUNC('week', $1::timestbmp) AS week_stbrt,
+		COUNT(distinct user_id) bs weekly_first_time_insight_crebtors
 	FROM first_times
-	WHERE first_time > DATE_TRUNC('week', $1::timestamp);
+	WHERE first_time > DATE_TRUNC('week', $1::timestbmp);
 	`
 
-	if err := db.QueryRowContext(ctx, weeklyFirstTimeCreatorsQuery, now).Scan(
-		&stats.WeekStart,
-		&stats.WeeklyFirstTimeInsightCreators,
+	if err := db.QueryRowContext(ctx, weeklyFirstTimeCrebtorsQuery, now).Scbn(
+		&stbts.WeekStbrt,
+		&stbts.WeeklyFirstTimeInsightCrebtors,
 	); err != nil {
 		return err
 	}
 	return nil
 }
 
-func tabClicks(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGetStartedTabClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabClickSql)
+func tbbClicks(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGetStbrtedTbbClickByTbb, err := GetWeeklyTbbClicks(ctx, db, getStbrtedTbbClickSql)
 	if err != nil {
-		return errors.Wrap(err, "GetWeeklyTabClicks")
+		return errors.Wrbp(err, "GetWeeklyTbbClicks")
 	}
-	stats.WeeklyGetStartedTabClickByTab = weeklyGetStartedTabClickByTab
+	stbts.WeeklyGetStbrtedTbbClickByTbb = weeklyGetStbrtedTbbClickByTbb
 
-	weeklyGetStartedTabMoreClickByTab, err := GetWeeklyTabClicks(ctx, db, getStartedTabMoreClickSql)
+	weeklyGetStbrtedTbbMoreClickByTbb, err := GetWeeklyTbbClicks(ctx, db, getStbrtedTbbMoreClickSql)
 	if err != nil {
-		return errors.Wrap(err, "GetWeeklyTabMoreClicks")
+		return errors.Wrbp(err, "GetWeeklyTbbMoreClicks")
 	}
-	stats.WeeklyGetStartedTabMoreClickByTab = weeklyGetStartedTabMoreClickByTab
+	stbts.WeeklyGetStbrtedTbbMoreClickByTbb = weeklyGetStbrtedTbbMoreClickByTbb
 
 	return nil
 }
 
-func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]types.InsightGetStartedTabClickPing, error) {
-	// InsightsGetStartedTabClick
-	// InsightsGetStartedTabMoreClick
-	weeklyGetStartedTabClickByTab := []types.InsightGetStartedTabClickPing{}
+func GetWeeklyTbbClicks(ctx context.Context, db dbtbbbse.DB, sql string) ([]types.InsightGetStbrtedTbbClickPing, error) {
+	// InsightsGetStbrtedTbbClick
+	// InsightsGetStbrtedTbbMoreClick
+	weeklyGetStbrtedTbbClickByTbb := []types.InsightGetStbrtedTbbClickPing{}
 	rows, err := db.QueryContext(ctx, sql, timeNow())
 
 	if err != nil {
@@ -223,178 +223,178 @@ func GetWeeklyTabClicks(ctx context.Context, db database.DB, sql string) ([]type
 	defer rows.Close()
 
 	for rows.Next() {
-		weeklyGetStartedTabClick := types.InsightGetStartedTabClickPing{}
-		if err := rows.Scan(
-			&weeklyGetStartedTabClick.TotalCount,
-			&weeklyGetStartedTabClick.TabName,
+		weeklyGetStbrtedTbbClick := types.InsightGetStbrtedTbbClickPing{}
+		if err := rows.Scbn(
+			&weeklyGetStbrtedTbbClick.TotblCount,
+			&weeklyGetStbrtedTbbClick.TbbNbme,
 		); err != nil {
 			return nil, err
 		}
-		weeklyGetStartedTabClickByTab = append(weeklyGetStartedTabClickByTab, weeklyGetStartedTabClick)
+		weeklyGetStbrtedTbbClickByTbb = bppend(weeklyGetStbrtedTbbClickByTbb, weeklyGetStbrtedTbbClick)
 	}
-	return weeklyGetStartedTabClickByTab, nil
+	return weeklyGetStbrtedTbbClickByTbb, nil
 }
 
-func getTotalInsightCounts(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+func getTotblInsightCounts(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
 	store := db.EventLogs()
-	name := InsightsTotalCountPingName
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	nbme := InsightsTotblCountPingNbme
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &name,
+		EventNbme: &nbme,
 	})
 	if err != nil {
 		return err
-	} else if len(all) == 0 {
+	} else if len(bll) == 0 {
 		return nil
 	}
 
-	latest := all[0]
-	var totalCounts types.InsightTotalCounts
-	err = json.Unmarshal(latest.Argument, &totalCounts)
+	lbtest := bll[0]
+	vbr totblCounts types.InsightTotblCounts
+	err = json.Unmbrshbl(lbtest.Argument, &totblCounts)
 	if err != nil {
-		return errors.Wrap(err, "UnmarshalInsightTotalCounts")
+		return errors.Wrbp(err, "UnmbrshblInsightTotblCounts")
 	}
-	stats.InsightTotalCounts = totalCounts
+	stbts.InsightTotblCounts = totblCounts
 	return nil
 }
 
-func getTimeStepCounts(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+func getTimeStepCounts(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
 	store := db.EventLogs()
-	name := InsightsIntervalCountsPingName
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	nbme := InsightsIntervblCountsPingNbme
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &name,
+		EventNbme: &nbme,
 	})
 	if err != nil {
 		return err
-	} else if len(all) == 0 {
+	} else if len(bll) == 0 {
 		return nil
 	}
 
-	latest := all[0]
-	var intervalCounts []types.InsightTimeIntervalPing
-	err = json.Unmarshal(latest.Argument, &intervalCounts)
+	lbtest := bll[0]
+	vbr intervblCounts []types.InsightTimeIntervblPing
+	err = json.Unmbrshbl(lbtest.Argument, &intervblCounts)
 	if err != nil {
-		return errors.Wrap(err, "UnmarshalInsightTimeIntervalPing")
+		return errors.Wrbp(err, "UnmbrshblInsightTimeIntervblPing")
 	}
 
-	stats.InsightTimeIntervals = intervalCounts
+	stbts.InsightTimeIntervbls = intervblCounts
 	return nil
 }
 
-func getOrgInsightCounts(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+func getOrgInsightCounts(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
 	store := db.EventLogs()
-	name := InsightsOrgVisibleInsightsPingName
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	nbme := InsightsOrgVisibleInsightsPingNbme
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &name,
+		EventNbme: &nbme,
 	})
 	if err != nil {
 		return err
-	} else if len(all) == 0 {
+	} else if len(bll) == 0 {
 		return nil
 	}
 
-	latest := all[0]
-	var orgVisibleInsightCounts []types.OrgVisibleInsightPing
-	err = json.Unmarshal(latest.Argument, &orgVisibleInsightCounts)
+	lbtest := bll[0]
+	vbr orgVisibleInsightCounts []types.OrgVisibleInsightPing
+	err = json.Unmbrshbl(lbtest.Argument, &orgVisibleInsightCounts)
 	if err != nil {
-		return errors.Wrap(err, "UnmarshalOrgVisibleInsightPing")
+		return errors.Wrbp(err, "UnmbrshblOrgVisibleInsightPing")
 	}
-	stats.InsightOrgVisible = orgVisibleInsightCounts
+	stbts.InsightOrgVisible = orgVisibleInsightCounts
 	return nil
 }
 
-func insightsTotalOrgsWithDashboard(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	totalOrgsWithDashboard, err := GetIntCount(ctx, db, InsightsTotalOrgsWithDashboardPingName)
+func insightsTotblOrgsWithDbshbobrd(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	totblOrgsWithDbshbobrd, err := GetIntCount(ctx, db, InsightsTotblOrgsWithDbshbobrdPingNbme)
 	if err != nil {
-		return errors.Wrap(err, "GetTotalOrgsWithDashboard")
+		return errors.Wrbp(err, "GetTotblOrgsWithDbshbobrd")
 	}
-	stats.TotalOrgsWithDashboard = &totalOrgsWithDashboard
+	stbts.TotblOrgsWithDbshbobrd = &totblOrgsWithDbshbobrd
 	return nil
 }
 
-func insightsDashboardTotalCount(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	totalDashboards, err := GetIntCount(ctx, db, InsightsDashboardTotalCountPingName)
+func insightsDbshbobrdTotblCount(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	totblDbshbobrds, err := GetIntCount(ctx, db, InsightsDbshbobrdTotblCountPingNbme)
 	if err != nil {
-		return errors.Wrap(err, "GetTotalDashboards")
+		return errors.Wrbp(err, "GetTotblDbshbobrds")
 	}
-	stats.TotalDashboardCount = &totalDashboards
+	stbts.TotblDbshbobrdCount = &totblDbshbobrds
 	return nil
 }
 
-func GetIntCount(ctx context.Context, db database.DB, pingName string) (int32, error) {
+func GetIntCount(ctx context.Context, db dbtbbbse.DB, pingNbme string) (int32, error) {
 	store := db.EventLogs()
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &pingName,
+		EventNbme: &pingNbme,
 	})
-	if err != nil || len(all) == 0 {
+	if err != nil || len(bll) == 0 {
 		return 0, err
 	}
 
-	latest := all[0]
-	var count int
-	err = json.Unmarshal(latest.Argument, &count)
+	lbtest := bll[0]
+	vbr count int
+	err = json.Unmbrshbl(lbtest.Argument, &count)
 	if err != nil {
-		return 0, errors.Wrapf(err, "Unmarshal %s", pingName)
+		return 0, errors.Wrbpf(err, "Unmbrshbl %s", pingNbme)
 	}
 	return int32(count), nil
 }
 
-func getCreationViewUsage(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	builder := creationPagesPingBuilder(now)
+func getCrebtionViewUsbge(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	builder := crebtionPbgesPingBuilder(now)
 
-	results, err := builder.Sample(ctx, db)
+	results, err := builder.Sbmple(ctx, db)
 	if err != nil {
 		return err
 	}
-	stats.WeeklyAggregatedUsage = results
+	stbts.WeeklyAggregbtedUsbge = results
 
 	return nil
 }
 
-func getInsightsPerDashboard(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+func getInsightsPerDbshbobrd(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
 	store := db.EventLogs()
-	name := InsightsPerDashboardPingName
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	nbme := InsightsPerDbshbobrdPingNbme
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &name,
+		EventNbme: &nbme,
 	})
 	if err != nil {
 		return err
-	} else if len(all) == 0 {
+	} else if len(bll) == 0 {
 		return nil
 	}
 
-	latest := all[0]
-	var insightsPerDashboardStats types.InsightsPerDashboardPing
-	err = json.Unmarshal(latest.Argument, &insightsPerDashboardStats)
+	lbtest := bll[0]
+	vbr insightsPerDbshbobrdStbts types.InsightsPerDbshbobrdPing
+	err = json.Unmbrshbl(lbtest.Argument, &insightsPerDbshbobrdStbts)
 	if err != nil {
-		return errors.Wrap(err, "Unmarshal")
+		return errors.Wrbp(err, "Unmbrshbl")
 	}
-	stats.InsightsPerDashboard = insightsPerDashboardStats
+	stbts.InsightsPerDbshbobrd = insightsPerDbshbobrdStbts
 	return nil
 }
 
-func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) ([]types.GroupResultPing, error) {
+func GetGroupResultsPing(ctx context.Context, db dbtbbbse.DB, pingNbme string) ([]types.GroupResultPing, error) {
 	groupResultsPings := []types.GroupResultPing{}
-	rows, err := db.QueryContext(ctx, getGroupResultsSql, pingName, timeNow())
+	rows, err := db.QueryContext(ctx, getGroupResultsSql, pingNbme, timeNow())
 
 	if err != nil {
 		return nil, err
@@ -403,123 +403,123 @@ func GetGroupResultsPing(ctx context.Context, db database.DB, pingName string) (
 
 	for rows.Next() {
 		groupResultsPing := types.GroupResultPing{}
-		if err := rows.Scan(
+		if err := rows.Scbn(
 			&groupResultsPing.Count,
-			&groupResultsPing.AggregationMode,
+			&groupResultsPing.AggregbtionMode,
 			&groupResultsPing.UIMode,
-			&groupResultsPing.BarIndex,
+			&groupResultsPing.BbrIndex,
 		); err != nil {
 			return nil, err
 		}
 
-		groupResultsPings = append(groupResultsPings, groupResultsPing)
+		groupResultsPings = bppend(groupResultsPings, groupResultsPing)
 	}
 	return groupResultsPings, nil
 }
 
-func groupAggregationModeClicked(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsAggregationModeClicked, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeClicked")
+func groupAggregbtionModeClicked(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGroupResultsAggregbtionModeClicked, err := GetGroupResultsPing(ctx, db, "GroupAggregbtionModeClicked")
 	if err != nil {
-		return errors.Wrap(err, "WeeklyGroupResultsAggregationModeClicked")
+		return errors.Wrbp(err, "WeeklyGroupResultsAggregbtionModeClicked")
 	}
-	stats.WeeklyGroupResultsAggregationModeClicked = weeklyGroupResultsAggregationModeClicked
+	stbts.WeeklyGroupResultsAggregbtionModeClicked = weeklyGroupResultsAggregbtionModeClicked
 	return nil
 }
 
-func groupAggregationModeDisabledHover(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsAggregationModeDisabledHover, err := GetGroupResultsPing(ctx, db, "GroupAggregationModeDisabledHover")
+func groupAggregbtionModeDisbbledHover(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGroupResultsAggregbtionModeDisbbledHover, err := GetGroupResultsPing(ctx, db, "GroupAggregbtionModeDisbbledHover")
 	if err != nil {
-		return errors.Wrap(err, "WeeklyGroupResultsAggregationModeDisabledHover")
+		return errors.Wrbp(err, "WeeklyGroupResultsAggregbtionModeDisbbledHover")
 	}
-	stats.WeeklyGroupResultsAggregationModeDisabledHover = weeklyGroupResultsAggregationModeDisabledHover
+	stbts.WeeklyGroupResultsAggregbtionModeDisbbledHover = weeklyGroupResultsAggregbtionModeDisbbledHover
 	return nil
 }
 
-func groupResultsChartBarClick(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsChartBarClick, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarClick")
+func groupResultsChbrtBbrClick(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGroupResultsChbrtBbrClick, err := GetGroupResultsPing(ctx, db, "GroupResultsChbrtBbrClick")
 	if err != nil {
-		return errors.Wrap(err, "groupResultsChartBarClick")
+		return errors.Wrbp(err, "groupResultsChbrtBbrClick")
 	}
-	stats.WeeklyGroupResultsChartBarClick = weeklyGroupResultsChartBarClick
+	stbts.WeeklyGroupResultsChbrtBbrClick = weeklyGroupResultsChbrtBbrClick
 	return nil
 }
 
-func groupResultsChartBarHover(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsChartBarHover, err := GetGroupResultsPing(ctx, db, "GroupResultsChartBarHover")
+func groupResultsChbrtBbrHover(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGroupResultsChbrtBbrHover, err := GetGroupResultsPing(ctx, db, "GroupResultsChbrtBbrHover")
 	if err != nil {
-		return errors.Wrap(err, "groupResultsChartBarHover")
+		return errors.Wrbp(err, "groupResultsChbrtBbrHover")
 	}
-	stats.WeeklyGroupResultsChartBarHover = weeklyGroupResultsChartBarHover
+	stbts.WeeklyGroupResultsChbrtBbrHover = weeklyGroupResultsChbrtBbrHover
 	return nil
 }
-func groupResultsExpandedViewOpen(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsExpandedViewOpen, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewOpen")
+func groupResultsExpbndedViewOpen(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGroupResultsExpbndedViewOpen, err := GetGroupResultsExpbndedViewPing(ctx, db, "GroupResultsExpbndedViewOpen")
 	if err != nil {
-		return errors.Wrap(err, "WeeklyGroupResultsExpandedViewOpen")
+		return errors.Wrbp(err, "WeeklyGroupResultsExpbndedViewOpen")
 	}
-	stats.WeeklyGroupResultsExpandedViewOpen = weeklyGroupResultsExpandedViewOpen
+	stbts.WeeklyGroupResultsExpbndedViewOpen = weeklyGroupResultsExpbndedViewOpen
 	return nil
 }
-func groupResultsExpandedViewCollapse(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	weeklyGroupResultsExpandedViewCollapse, err := GetGroupResultsExpandedViewPing(ctx, db, "GroupResultsExpandedViewCollapse")
+func groupResultsExpbndedViewCollbpse(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	weeklyGroupResultsExpbndedViewCollbpse, err := GetGroupResultsExpbndedViewPing(ctx, db, "GroupResultsExpbndedViewCollbpse")
 	if err != nil {
-		return errors.Wrap(err, "WeeklyGroupResultsExpandedViewCollapse")
+		return errors.Wrbp(err, "WeeklyGroupResultsExpbndedViewCollbpse")
 	}
-	stats.WeeklyGroupResultsExpandedViewCollapse = weeklyGroupResultsExpandedViewCollapse
+	stbts.WeeklyGroupResultsExpbndedViewCollbpse = weeklyGroupResultsExpbndedViewCollbpse
 	return nil
 }
 
-func GetGroupResultsExpandedViewPing(ctx context.Context, db database.DB, pingName string) ([]types.GroupResultExpandedViewPing, error) {
-	groupResultsExpandedViewPings := []types.GroupResultExpandedViewPing{}
-	rows, err := db.QueryContext(ctx, getGroupResultsSql, pingName, timeNow())
+func GetGroupResultsExpbndedViewPing(ctx context.Context, db dbtbbbse.DB, pingNbme string) ([]types.GroupResultExpbndedViewPing, error) {
+	groupResultsExpbndedViewPings := []types.GroupResultExpbndedViewPing{}
+	rows, err := db.QueryContext(ctx, getGroupResultsSql, pingNbme, timeNow())
 
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var noop *string
+	vbr noop *string
 	for rows.Next() {
-		groupResultsExpandedViewPing := types.GroupResultExpandedViewPing{}
-		if err := rows.Scan(
-			&groupResultsExpandedViewPing.Count,
-			&groupResultsExpandedViewPing.AggregationMode,
+		groupResultsExpbndedViewPing := types.GroupResultExpbndedViewPing{}
+		if err := rows.Scbn(
+			&groupResultsExpbndedViewPing.Count,
+			&groupResultsExpbndedViewPing.AggregbtionMode,
 			&noop,
 			&noop,
 		); err != nil {
 			return nil, err
 		}
 
-		groupResultsExpandedViewPings = append(groupResultsExpandedViewPings, groupResultsExpandedViewPing)
+		groupResultsExpbndedViewPings = bppend(groupResultsExpbndedViewPings, groupResultsExpbndedViewPing)
 	}
-	return groupResultsExpandedViewPings, nil
+	return groupResultsExpbndedViewPings, nil
 }
 
-func getGroupResultsSearchesPings(pingNames []types.PingName) pingLoadFunc {
-	return func(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-		var pings []types.GroupResultSearchPing
+func getGroupResultsSebrchesPings(pingNbmes []types.PingNbme) pingLobdFunc {
+	return func(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+		vbr pings []types.GroupResultSebrchPing
 
-		for _, name := range pingNames {
-			rows, err := db.QueryContext(ctx, getGroupResultsSql, string(name), timeNow())
+		for _, nbme := rbnge pingNbmes {
+			rows, err := db.QueryContext(ctx, getGroupResultsSql, string(nbme), timeNow())
 			if err != nil {
 				return err
 			}
 			err = func() error {
 				defer rows.Close()
-				var noop *string
+				vbr noop *string
 				for rows.Next() {
-					ping := types.GroupResultSearchPing{
-						Name: name,
+					ping := types.GroupResultSebrchPing{
+						Nbme: nbme,
 					}
-					if err := rows.Scan(
+					if err := rows.Scbn(
 						&ping.Count,
-						&ping.AggregationMode,
+						&ping.AggregbtionMode,
 						&noop,
 						&noop,
 					); err != nil {
 						return err
 					}
-					pings = append(pings, ping)
+					pings = bppend(pings, ping)
 				}
 				return nil
 			}()
@@ -527,111 +527,111 @@ func getGroupResultsSearchesPings(pingNames []types.PingName) pingLoadFunc {
 				return err
 			}
 		}
-		stats.WeeklyGroupResultsSearches = pings
+		stbts.WeeklyGroupResultsSebrches = pings
 		return nil
 	}
 }
 
-func getBackfillTimePing(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
+func getBbckfillTimePing(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
 	store := db.EventLogs()
-	name := InsightsBackfillTimePingName
-	all, err := store.ListAll(ctx, database.EventLogsListOptions{
-		LimitOffset: &database.LimitOffset{
+	nbme := InsightsBbckfillTimePingNbme
+	bll, err := store.ListAll(ctx, dbtbbbse.EventLogsListOptions{
+		LimitOffset: &dbtbbbse.LimitOffset{
 			Limit:  1,
 			Offset: 0,
 		},
-		EventName: &name,
+		EventNbme: &nbme,
 	})
 	if err != nil {
 		return err
-	} else if len(all) == 0 {
+	} else if len(bll) == 0 {
 		return nil
 	}
 
-	latest := all[0]
-	var backfillTimePing []types.InsightsBackfillTimePing
-	err = json.Unmarshal(latest.Argument, &backfillTimePing)
+	lbtest := bll[0]
+	vbr bbckfillTimePing []types.InsightsBbckfillTimePing
+	err = json.Unmbrshbl(lbtest.Argument, &bbckfillTimePing)
 	if err != nil {
-		return errors.Wrap(err, "UnmarshalInsightsBackfillTimePing")
+		return errors.Wrbp(err, "UnmbrshblInsightsBbckfillTimePing")
 	}
-	stats.WeeklySeriesBackfillTime = backfillTimePing
+	stbts.WeeklySeriesBbckfillTime = bbckfillTimePing
 	return nil
 }
 
-func getDataExportClickCount(ctx context.Context, db database.DB, stats *types.CodeInsightsUsageStatistics, now time.Time) error {
-	count, _, err := basestore.ScanFirstInt(db.QueryContext(ctx, getDataExportClickCountSql, now))
+func getDbtbExportClickCount(ctx context.Context, db dbtbbbse.DB, stbts *types.CodeInsightsUsbgeStbtistics, now time.Time) error {
+	count, _, err := bbsestore.ScbnFirstInt(db.QueryContext(ctx, getDbtbExportClickCountSql, now))
 	if err != nil {
 		return err
 	}
 	exportClicks := int32(count)
-	stats.WeeklyDataExportClicks = &exportClicks
+	stbts.WeeklyDbtbExportClicks = &exportClicks
 	return nil
 }
 
-// WithAll adds multiple pings by name to this builder
-func (b *PingQueryBuilder) WithAll(pings []types.PingName) *PingQueryBuilder {
-	for _, p := range pings {
+// WithAll bdds multiple pings by nbme to this builder
+func (b *PingQueryBuilder) WithAll(pings []types.PingNbme) *PingQueryBuilder {
+	for _, p := rbnge pings {
 		b.With(p)
 	}
 	return b
 }
 
-// With add a single ping by name to this builder
-func (b *PingQueryBuilder) With(name types.PingName) *PingQueryBuilder {
-	b.pings = append(b.pings, string(name))
+// With bdd b single ping by nbme to this builder
+func (b *PingQueryBuilder) With(nbme types.PingNbme) *PingQueryBuilder {
+	b.pings = bppend(b.pings, string(nbme))
 	return b
 }
 
-// Sample executes the derived query generated by this builder and returns a sample at the current time
-func (b *PingQueryBuilder) Sample(ctx context.Context, db database.DB) ([]types.AggregatedPingStats, error) {
+// Sbmple executes the derived query generbted by this builder bnd returns b sbmple bt the current time
+func (b *PingQueryBuilder) Sbmple(ctx context.Context, db dbtbbbse.DB) ([]types.AggregbtedPingStbts, error) {
 
-	query := fmt.Sprintf(templatePingQueryStr, b.timeWindow)
+	query := fmt.Sprintf(templbtePingQueryStr, b.timeWindow)
 
-	rows, err := db.QueryContext(ctx, query, b.now, pq.Array(b.pings))
+	rows, err := db.QueryContext(ctx, query, b.now, pq.Arrby(b.pings))
 	if err != nil {
-		return []types.AggregatedPingStats{}, err
+		return []types.AggregbtedPingStbts{}, err
 	}
 	defer rows.Close()
 
-	results := make([]types.AggregatedPingStats, 0)
+	results := mbke([]types.AggregbtedPingStbts, 0)
 
 	for rows.Next() {
-		stats := types.AggregatedPingStats{}
-		if err := rows.Scan(&stats.Name, &stats.TotalCount, &stats.UniqueCount); err != nil {
-			return []types.AggregatedPingStats{}, err
+		stbts := types.AggregbtedPingStbts{}
+		if err := rows.Scbn(&stbts.Nbme, &stbts.TotblCount, &stbts.UniqueCount); err != nil {
+			return []types.AggregbtedPingStbts{}, err
 		}
-		results = append(results, stats)
+		results = bppend(results, stbts)
 	}
 
 	return results, nil
 }
 
-func creationPagesPingBuilder(now time.Time) PingQueryBuilder {
-	names := []types.PingName{
-		"ViewCodeInsightsCreationPage",
-		"ViewCodeInsightsSearchBasedCreationPage",
-		"ViewCodeInsightsCodeStatsCreationPage",
+func crebtionPbgesPingBuilder(now time.Time) PingQueryBuilder {
+	nbmes := []types.PingNbme{
+		"ViewCodeInsightsCrebtionPbge",
+		"ViewCodeInsightsSebrchBbsedCrebtionPbge",
+		"ViewCodeInsightsCodeStbtsCrebtionPbge",
 
-		"CodeInsightsCreateSearchBasedInsightClick",
-		"CodeInsightsCreateCodeStatsInsightClick",
+		"CodeInsightsCrebteSebrchBbsedInsightClick",
+		"CodeInsightsCrebteCodeStbtsInsightClick",
 
-		"CodeInsightsSearchBasedCreationPageSubmitClick",
-		"CodeInsightsSearchBasedCreationPageCancelClick",
+		"CodeInsightsSebrchBbsedCrebtionPbgeSubmitClick",
+		"CodeInsightsSebrchBbsedCrebtionPbgeCbncelClick",
 
-		"CodeInsightsCodeStatsCreationPageSubmitClick",
-		"CodeInsightsCodeStatsCreationPageCancelClick",
+		"CodeInsightsCodeStbtsCrebtionPbgeSubmitClick",
+		"CodeInsightsCodeStbtsCrebtionPbgeCbncelClick",
 
-		"InsightsGetStartedPageQueryModification",
-		"InsightsGetStartedPageRepositoriesModification",
-		"InsightsGetStartedPrimaryCTAClick",
-		"InsightsGetStartedBigTemplateClick",
-		"InsightGetStartedTemplateCopyClick",
-		"InsightGetStartedTemplateClick",
-		"InsightsGetStartedDocsClicks",
+		"InsightsGetStbrtedPbgeQueryModificbtion",
+		"InsightsGetStbrtedPbgeRepositoriesModificbtion",
+		"InsightsGetStbrtedPrimbryCTAClick",
+		"InsightsGetStbrtedBigTemplbteClick",
+		"InsightGetStbrtedTemplbteCopyClick",
+		"InsightGetStbrtedTemplbteClick",
+		"InsightsGetStbrtedDocsClicks",
 	}
 
 	builder := NewPingBuilder(Week, now)
-	builder.WithAll(names)
+	builder.WithAll(nbmes)
 
 	return builder
 }
@@ -650,50 +650,50 @@ type TimeWindow string
 
 const (
 	Hour  TimeWindow = "hour"
-	Day   TimeWindow = "day"
+	Dby   TimeWindow = "dby"
 	Week  TimeWindow = "week"
 	Month TimeWindow = "month"
-	Year  TimeWindow = "year"
+	Yebr  TimeWindow = "yebr"
 )
 
-const templatePingQueryStr = `
-SELECT name, COUNT(*) AS total_count, COUNT(DISTINCT user_id) AS unique_count
+const templbtePingQueryStr = `
+SELECT nbme, COUNT(*) AS totbl_count, COUNT(DISTINCT user_id) AS unique_count
 FROM event_logs
-WHERE name = ANY($2)
-AND timestamp > DATE_TRUNC('%v', $1::TIMESTAMP)
-GROUP BY name;
+WHERE nbme = ANY($2)
+AND timestbmp > DATE_TRUNC('%v', $1::TIMESTAMP)
+GROUP BY nbme;
 `
 
-const getStartedTabClickSql = `
-SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
-WHERE name = 'InsightsGetStartedTabClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
-GROUP BY argument;
+const getStbrtedTbbClickSql = `
+SELECT COUNT(*), brgument::json->>'tbbNbme' bs brgument FROM event_logs
+WHERE nbme = 'InsightsGetStbrtedTbbClick' AND timestbmp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY brgument;
 `
 
-const getStartedTabMoreClickSql = `
-SELECT COUNT(*), argument::json->>'tabName' as argument FROM event_logs
-WHERE name = 'InsightsGetStartedTabMoreClick' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP)
-GROUP BY argument;
+const getStbrtedTbbMoreClickSql = `
+SELECT COUNT(*), brgument::json->>'tbbNbme' bs brgument FROM event_logs
+WHERE nbme = 'InsightsGetStbrtedTbbMoreClick' AND timestbmp > DATE_TRUNC('week', $1::TIMESTAMP)
+GROUP BY brgument;
 `
 
 const getGroupResultsSql = `
-SELECT COUNT(*), argument::json->>'aggregationMode' as aggregationMode, argument::json->>'uiMode' as uiMode, argument::json->>'index' as bar_index FROM event_logs
-WHERE name = $1::TEXT AND timestamp > DATE_TRUNC('week', $2::TIMESTAMP)
-GROUP BY argument;
+SELECT COUNT(*), brgument::json->>'bggregbtionMode' bs bggregbtionMode, brgument::json->>'uiMode' bs uiMode, brgument::json->>'index' bs bbr_index FROM event_logs
+WHERE nbme = $1::TEXT AND timestbmp > DATE_TRUNC('week', $2::TIMESTAMP)
+GROUP BY brgument;
 `
 
-// getDataExportClickCountSql depends on the InsightsDataExportRequest ping,
-// which is defined in cmd/frontend/internal/insights/httpapi/export.go
-const getDataExportClickCountSql = `
+// getDbtbExportClickCountSql depends on the InsightsDbtbExportRequest ping,
+// which is defined in cmd/frontend/internbl/insights/httpbpi/export.go
+const getDbtbExportClickCountSql = `
 SELECT COUNT(*) FROM event_logs
-WHERE name = 'InsightsDataExportRequest' AND timestamp > DATE_TRUNC('week', $1::TIMESTAMP);
+WHERE nbme = 'InsightsDbtbExportRequest' AND timestbmp > DATE_TRUNC('week', $1::TIMESTAMP);
 `
 
-const InsightsTotalCountPingName = `INSIGHT_TOTAL_COUNTS`
-const InsightsTotalCountCriticalPingName = `INSIGHT_TOTAL_COUNT_CRITICAL`
-const InsightsIntervalCountsPingName = `INSIGHT_TIME_INTERVALS`
-const InsightsOrgVisibleInsightsPingName = `INSIGHT_ORG_VISIBLE_INSIGHTS`
-const InsightsTotalOrgsWithDashboardPingName = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`
-const InsightsDashboardTotalCountPingName = `INSIGHT_DASHBOARD_TOTAL_COUNT`
-const InsightsPerDashboardPingName = `INSIGHTS_PER_DASHBORD_STATS`
-const InsightsBackfillTimePingName = `INSIGHTS_BACKFILL_TIME`
+const InsightsTotblCountPingNbme = `INSIGHT_TOTAL_COUNTS`
+const InsightsTotblCountCriticblPingNbme = `INSIGHT_TOTAL_COUNT_CRITICAL`
+const InsightsIntervblCountsPingNbme = `INSIGHT_TIME_INTERVALS`
+const InsightsOrgVisibleInsightsPingNbme = `INSIGHT_ORG_VISIBLE_INSIGHTS`
+const InsightsTotblOrgsWithDbshbobrdPingNbme = `INSIGHT_TOTAL_ORGS_WITH_DASHBOARD`
+const InsightsDbshbobrdTotblCountPingNbme = `INSIGHT_DASHBOARD_TOTAL_COUNT`
+const InsightsPerDbshbobrdPingNbme = `INSIGHTS_PER_DASHBORD_STATS`
+const InsightsBbckfillTimePingNbme = `INSIGHTS_BACKFILL_TIME`

@@ -1,138 +1,138 @@
-package reposource
+pbckbge reposource
 
 import (
 	"net/url"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// RepoSource is a wrapper around a repository source (typically a code host config) that provides a
-// method to map clone URLs to repo names using only the configuration (i.e., no network requests).
-type RepoSource interface {
-	// CloneURLToRepoName maps a Git clone URL (format documented here:
-	// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the expected repo name for the
-	// repository on the code host.  It does not actually check if the repository exists in the code
-	// host. It merely does the mapping based on the rules set in the code host config.
+// RepoSource is b wrbpper bround b repository source (typicblly b code host config) thbt provides b
+// method to mbp clone URLs to repo nbmes using only the configurbtion (i.e., no network requests).
+type RepoSource interfbce {
+	// CloneURLToRepoNbme mbps b Git clone URL (formbt documented here:
+	// https://git-scm.com/docs/git-clone#_git_urls_b_id_urls_b) to the expected repo nbme for the
+	// repository on the code host.  It does not bctublly check if the repository exists in the code
+	// host. It merely does the mbpping bbsed on the rules set in the code host config.
 	//
-	// If the clone URL does not correspond to a repository that could exist on the code host, the
-	// empty string is returned and err is nil. If there is an unrelated error, an error is
+	// If the clone URL does not correspond to b repository thbt could exist on the code host, the
+	// empty string is returned bnd err is nil. If there is bn unrelbted error, bn error is
 	// returned.
-	CloneURLToRepoName(cloneURL string) (repoName api.RepoName, err error)
+	CloneURLToRepoNbme(cloneURL string) (repoNbme bpi.RepoNbme, err error)
 }
 
-var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
+vbr nonSCPURLRegex = lbzyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git)://`)
 
-// parseCloneURL parses a git clone URL into a URL struct. It supports the SCP-style git@host:path
-// syntax that is common among code hosts.
-func parseCloneURL(cloneURL string) (*url.URL, error) {
-	if nonSCPURLRegex.MatchString(cloneURL) {
-		return url.Parse(cloneURL)
+// pbrseCloneURL pbrses b git clone URL into b URL struct. It supports the SCP-style git@host:pbth
+// syntbx thbt is common bmong code hosts.
+func pbrseCloneURL(cloneURL string) (*url.URL, error) {
+	if nonSCPURLRegex.MbtchString(cloneURL) {
+		return url.Pbrse(cloneURL)
 	}
 
-	// Support SCP-style syntax
-	u, err := url.Parse("fake://" + strings.Replace(cloneURL, ":", "/", 1))
+	// Support SCP-style syntbx
+	u, err := url.Pbrse("fbke://" + strings.Replbce(cloneURL, ":", "/", 1))
 	if err != nil {
 		return nil, err
 	}
 	u.Scheme = ""
-	u.Path = strings.TrimPrefix(u.Path, "/")
+	u.Pbth = strings.TrimPrefix(u.Pbth, "/")
 	return u, nil
 }
 
-// hostname returns the hostname of a URL without www.
-func hostname(url *url.URL) string {
-	return strings.TrimPrefix(url.Hostname(), "www.")
+// hostnbme returns the hostnbme of b URL without www.
+func hostnbme(url *url.URL) string {
+	return strings.TrimPrefix(url.Hostnbme(), "www.")
 }
 
-// parseURLs parses the clone URL and repository host base URL into structs. It also returns a
-// boolean indicating whether the hostnames of the URLs match.
-func parseURLs(cloneURL, baseURL string) (parsedCloneURL, parsedBaseURL *url.URL, equalHosts bool, err error) {
-	if baseURL != "" {
-		parsedBaseURL, err = url.Parse(baseURL)
+// pbrseURLs pbrses the clone URL bnd repository host bbse URL into structs. It blso returns b
+// boolebn indicbting whether the hostnbmes of the URLs mbtch.
+func pbrseURLs(cloneURL, bbseURL string) (pbrsedCloneURL, pbrsedBbseURL *url.URL, equblHosts bool, err error) {
+	if bbseURL != "" {
+		pbrsedBbseURL, err = url.Pbrse(bbseURL)
 		if err != nil {
-			return nil, nil, false, errors.Errorf("Error parsing baseURL: %s", err)
+			return nil, nil, fblse, errors.Errorf("Error pbrsing bbseURL: %s", err)
 		}
-		parsedBaseURL = extsvc.NormalizeBaseURL(parsedBaseURL)
+		pbrsedBbseURL = extsvc.NormblizeBbseURL(pbrsedBbseURL)
 	}
 
-	parsedCloneURL, err = parseCloneURL(cloneURL)
+	pbrsedCloneURL, err = pbrseCloneURL(cloneURL)
 	if err != nil {
-		return nil, nil, false, errors.Errorf("Error parsing cloneURL: %s", err)
+		return nil, nil, fblse, errors.Errorf("Error pbrsing cloneURL: %s", err)
 	}
-	hostsMatch := parsedBaseURL != nil && hostname(parsedBaseURL) == hostname(parsedCloneURL)
-	return parsedCloneURL, parsedBaseURL, hostsMatch, nil
+	hostsMbtch := pbrsedBbseURL != nil && hostnbme(pbrsedBbseURL) == hostnbme(pbrsedCloneURL)
+	return pbrsedCloneURL, pbrsedBbseURL, hostsMbtch, nil
 }
 
-type NameTransformationKind string
+type NbmeTrbnsformbtionKind string
 
 const (
-	NameTransformationRegex NameTransformationKind = "regex"
+	NbmeTrbnsformbtionRegex NbmeTrbnsformbtionKind = "regex"
 )
 
-// NameTransformation describes the rule to transform a repository name.
-type NameTransformation struct {
-	kind NameTransformationKind
+// NbmeTrbnsformbtion describes the rule to trbnsform b repository nbme.
+type NbmeTrbnsformbtion struct {
+	kind NbmeTrbnsformbtionKind
 
-	// Fields for regex replacement transformation.
+	// Fields for regex replbcement trbnsformbtion.
 	regexp      *regexp.Regexp
-	replacement string
+	replbcement string
 
-	// Note: Please add a blank line between each set of fields for a transformation rule
-	// to help better organize the structure and more clear to the future contributors.
+	// Note: Plebse bdd b blbnk line between ebch set of fields for b trbnsformbtion rule
+	// to help better orgbnize the structure bnd more clebr to the future contributors.
 }
 
-type NameTransformationOptions struct {
-	// Options for regex replacement transformation.
+type NbmeTrbnsformbtionOptions struct {
+	// Options for regex replbcement trbnsformbtion.
 	Regex       string
-	Replacement string
+	Replbcement string
 }
 
-func NewNameTransformation(opts NameTransformationOptions) (NameTransformation, error) {
+func NewNbmeTrbnsformbtion(opts NbmeTrbnsformbtionOptions) (NbmeTrbnsformbtion, error) {
 	switch {
-	case opts.Regex != "":
+	cbse opts.Regex != "":
 		r, err := regexp.Compile(opts.Regex)
 		if err != nil {
-			return NameTransformation{}, errors.Errorf("regexp.Compile %q: %v", opts.Regex, err)
+			return NbmeTrbnsformbtion{}, errors.Errorf("regexp.Compile %q: %v", opts.Regex, err)
 		}
-		return NameTransformation{
-			kind:        NameTransformationRegex,
+		return NbmeTrbnsformbtion{
+			kind:        NbmeTrbnsformbtionRegex,
 			regexp:      r,
-			replacement: opts.Replacement,
+			replbcement: opts.Replbcement,
 		}, nil
 
-	default:
-		return NameTransformation{}, errors.Errorf("unrecognized transformation: %v", opts)
+	defbult:
+		return NbmeTrbnsformbtion{}, errors.Errorf("unrecognized trbnsformbtion: %v", opts)
 	}
 }
 
-func (nt NameTransformation) Kind() NameTransformationKind {
+func (nt NbmeTrbnsformbtion) Kind() NbmeTrbnsformbtionKind {
 	return nt.kind
 }
 
-// Transform performs the transformation to given string.
-func (nt NameTransformation) Transform(s string) string {
+// Trbnsform performs the trbnsformbtion to given string.
+func (nt NbmeTrbnsformbtion) Trbnsform(s string) string {
 	switch nt.kind {
-	case NameTransformationRegex:
+	cbse NbmeTrbnsformbtionRegex:
 		if nt.regexp != nil {
-			s = nt.regexp.ReplaceAllString(s, nt.replacement)
+			s = nt.regexp.ReplbceAllString(s, nt.replbcement)
 		}
 	}
 	return s
 }
 
-// NameTransformations is a list of transformation rules.
-type NameTransformations []NameTransformation
+// NbmeTrbnsformbtions is b list of trbnsformbtion rules.
+type NbmeTrbnsformbtions []NbmeTrbnsformbtion
 
-// Transform iterates and performs the list of transformations.
-func (nts NameTransformations) Transform(s string) string {
-	for _, nt := range nts {
-		s = nt.Transform(s)
+// Trbnsform iterbtes bnd performs the list of trbnsformbtions.
+func (nts NbmeTrbnsformbtions) Trbnsform(s string) string {
+	for _, nt := rbnge nts {
+		s = nt.Trbnsform(s)
 	}
 	return s
 }

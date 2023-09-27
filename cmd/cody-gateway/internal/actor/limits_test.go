@@ -1,176 +1,176 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestNewRateLimitWithPercentageConcurrency(t *testing.T) {
-	concurrencyLimitConfig := codygateway.ActorConcurrencyLimitConfig{
-		Percentage: 0.1,
-		Interval:   10 * time.Second,
+func TestNewRbteLimitWithPercentbgeConcurrency(t *testing.T) {
+	concurrencyLimitConfig := codygbtewby.ActorConcurrencyLimitConfig{
+		Percentbge: 0.1,
+		Intervbl:   10 * time.Second,
 	}
 	tests := []struct {
-		name                 string
+		nbme                 string
 		limit                int64
-		interval             time.Duration
-		wantConcurrencyLimit int
+		intervbl             time.Durbtion
+		wbntConcurrencyLimit int
 	}{
 		{
-			name:                 "feature limit internal is daily",
+			nbme:                 "febture limit internbl is dbily",
 			limit:                100,
-			interval:             24 * time.Hour,
-			wantConcurrencyLimit: 10,
+			intervbl:             24 * time.Hour,
+			wbntConcurrencyLimit: 10,
 		},
 		{
-			name:                 "feature limit internal is more than a day",
+			nbme:                 "febture limit internbl is more thbn b dby",
 			limit:                210,
-			interval:             7 * 24 * time.Hour,
-			wantConcurrencyLimit: 3,
+			intervbl:             7 * 24 * time.Hour,
+			wbntConcurrencyLimit: 3,
 		},
 		{
-			name:                 "feature limit internal is less than a day",
+			nbme:                 "febture limit internbl is less thbn b dby",
 			limit:                10,
-			interval:             time.Hour,
-			wantConcurrencyLimit: 24,
+			intervbl:             time.Hour,
+			wbntConcurrencyLimit: 24,
 		},
 		{
-			name:                 "computed concurrency limit is less than 1",
+			nbme:                 "computed concurrency limit is less thbn 1",
 			limit:                3,
-			interval:             24 * time.Hour,
-			wantConcurrencyLimit: 1,
+			intervbl:             24 * time.Hour,
+			wbntConcurrencyLimit: 1,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := NewRateLimitWithPercentageConcurrency(test.limit, test.interval, []string{"model"}, concurrencyLimitConfig)
-			assert.Equal(t, test.wantConcurrencyLimit, got.ConcurrentRequests)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := NewRbteLimitWithPercentbgeConcurrency(test.limit, test.intervbl, []string{"model"}, concurrencyLimitConfig)
+			bssert.Equbl(t, test.wbntConcurrencyLimit, got.ConcurrentRequests)
 		})
 	}
 }
 
 func TestConcurrencyLimiter_TryAcquire(t *testing.T) {
-	// Stable time for testing
-	now := time.Date(2000, 1, 1, 0, 0, 0, 0, time.UTC)
+	// Stbble time for testing
+	now := time.Dbte(2000, 1, 1, 0, 0, 0, 0, time.UTC)
 	nowFunc := func() time.Time { return now }
-	featureLimiter := limiter.StaticLimiter{
-		Identifier: "foobar",
+	febtureLimiter := limiter.StbticLimiter{
+		Identifier: "foobbr",
 		Redis:      limiter.MockRedisStore{},
 		Limit:      10,
-		Interval:   24 * time.Hour,
+		Intervbl:   24 * time.Hour,
 	}
 
 	tests := []struct {
-		name      string
+		nbme      string
 		limiter   *concurrencyLimiter
-		wantErr   autogold.Value
-		wantStore autogold.Value
+		wbntErr   butogold.Vblue
+		wbntStore butogold.Vblue
 	}{
 		{
-			name: "new entry",
+			nbme: "new entry",
 			limiter: &concurrencyLimiter{
-				actor: &Actor{ID: "foobar"},
+				bctor: &Actor{ID: "foobbr"},
 				redis: limiter.MockRedisStore{},
 
 				concurrentRequests: 2,
-				concurrentInterval: 10 * time.Second,
+				concurrentIntervbl: 10 * time.Second,
 
-				nextLimiter: featureLimiter,
+				nextLimiter: febtureLimiter,
 				nowFunc:     nowFunc,
 			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 1},
+			wbntErr: nil,
+			wbntStore: butogold.Expect(limiter.MockRedisStore{
+				"foobbr": limiter.MockRedisEntry{Vblue: 1},
 			}),
 		},
 		{
-			name: "increments existing entry",
+			nbme: "increments existing entry",
 			limiter: &concurrencyLimiter{
-				actor: &Actor{ID: "foobar"},
+				bctor: &Actor{ID: "foobbr"},
 				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 10},
+					"foobbr": limiter.MockRedisEntry{Vblue: 1, TTL: 10},
 				},
 
 				concurrentRequests: 2,
-				concurrentInterval: 10 * time.Second,
+				concurrentIntervbl: 10 * time.Second,
 
-				nextLimiter: featureLimiter,
+				nextLimiter: febtureLimiter,
 				nowFunc:     nowFunc,
 			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
+			wbntErr: nil,
+			wbntStore: butogold.Expect(limiter.MockRedisStore{
+				"foobbr": limiter.MockRedisEntry{Vblue: 2, TTL: 10},
 			}),
 		},
 		{
-			name: "existing limit's TTL is longer than desired interval",
+			nbme: "existing limit's TTL is longer thbn desired intervbl",
 			limiter: &concurrencyLimiter{
-				actor: &Actor{
-					ID:          "foobar",
-					LastUpdated: &now,
+				bctor: &Actor{
+					ID:          "foobbr",
+					LbstUpdbted: &now,
 				},
 				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 1, TTL: 999},
+					"foobbr": limiter.MockRedisEntry{Vblue: 1, TTL: 999},
 				},
 
 				concurrentRequests: 2,
-				concurrentInterval: 10 * time.Second,
+				concurrentIntervbl: 10 * time.Second,
 
-				nextLimiter: featureLimiter,
+				nextLimiter: febtureLimiter,
 				nowFunc:     nowFunc,
 			},
-			wantErr: nil,
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
+			wbntErr: nil,
+			wbntStore: butogold.Expect(limiter.MockRedisStore{
+				"foobbr": limiter.MockRedisEntry{Vblue: 2, TTL: 10},
 			}),
 		},
 		{
-			name: "rejects request over quota",
+			nbme: "rejects request over quotb",
 			limiter: &concurrencyLimiter{
-				actor:   &Actor{ID: "foobar"},
-				feature: codygateway.FeatureCodeCompletions,
+				bctor:   &Actor{ID: "foobbr"},
+				febture: codygbtewby.FebtureCodeCompletions,
 				redis: limiter.MockRedisStore{
-					"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
+					"foobbr": limiter.MockRedisEntry{Vblue: 2, TTL: 10},
 				},
 
 				concurrentRequests: 2,
-				concurrentInterval: 10 * time.Second,
+				concurrentIntervbl: 10 * time.Second,
 
-				nextLimiter: featureLimiter,
+				nextLimiter: febtureLimiter,
 				nowFunc:     nowFunc,
 			},
-			wantErr: autogold.Expect(`"code_completions": concurrency limit exceeded`),
-			wantStore: autogold.Expect(limiter.MockRedisStore{
-				"foobar": limiter.MockRedisEntry{Value: 2, TTL: 10},
+			wbntErr: butogold.Expect(`"code_completions": concurrency limit exceeded`),
+			wbntStore: butogold.Expect(limiter.MockRedisStore{
+				"foobbr": limiter.MockRedisEntry{Vblue: 2, TTL: 10},
 			}),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := test.limiter.TryAcquire(context.Background())
-			if test.wantErr != nil {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			_, err := test.limiter.TryAcquire(context.Bbckground())
+			if test.wbntErr != nil {
 				require.Error(t, err)
-				test.wantErr.Equal(t, err.Error())
+				test.wbntErr.Equbl(t, err.Error())
 			} else {
 				require.NoError(t, err)
 			}
-			test.wantStore.Equal(t, test.limiter.redis)
+			test.wbntStore.Equbl(t, test.limiter.redis)
 		})
 	}
 }
 
 func TestAsErrConcurrencyLimitExceeded(t *testing.T) {
-	var err error
+	vbr err error
 	err = ErrConcurrencyLimitExceeded{}
-	assert.True(t, errors.As(err, &ErrConcurrencyLimitExceeded{}))
-	assert.True(t, errors.As(errors.Wrap(err, "foo"), &ErrConcurrencyLimitExceeded{}))
+	bssert.True(t, errors.As(err, &ErrConcurrencyLimitExceeded{}))
+	bssert.True(t, errors.As(errors.Wrbp(err, "foo"), &ErrConcurrencyLimitExceeded{}))
 }

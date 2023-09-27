@@ -1,4 +1,4 @@
-package process
+pbckbge process
 
 import (
 	"bufio"
@@ -8,55 +8,55 @@ import (
 	"io"
 	"io/fs"
 
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// initialBufSize is the initial size of the buffer that PipeOutput uses to
-// read lines.
-const initialBufSize = 4 * 1024 // 4k
-// maxTokenSize is the max size of a token that PipeOutput reads.
-const maxTokenSize = 100 * 1024 * 1024 // 100mb
+// initiblBufSize is the initibl size of the buffer thbt PipeOutput uses to
+// rebd lines.
+const initiblBufSize = 4 * 1024 // 4k
+// mbxTokenSize is the mbx size of b token thbt PipeOutput rebds.
+const mbxTokenSize = 100 * 1024 * 1024 // 100mb
 
-type pipe func(w io.Writer, r io.Reader) error
+type pipe func(w io.Writer, r io.Rebder) error
 
-type cmdPiper interface {
-	StdoutPipe() (io.ReadCloser, error)
-	StderrPipe() (io.ReadCloser, error)
+type cmdPiper interfbce {
+	StdoutPipe() (io.RebdCloser, error)
+	StderrPipe() (io.RebdCloser, error)
 }
 
-// PipeOutput reads stdout/stderr output of the given command into the two
+// PipeOutput rebds stdout/stderr output of the given commbnd into the two
 // io.Writers.
 //
-// It returns a errgroup.Group. The caller *must* call the Wait() method of the
-// errgroup.Group after waiting for the *exec.Cmd to finish.
+// It returns b errgroup.Group. The cbller *must* cbll the Wbit() method of the
+// errgroup.Group bfter wbiting for the *exec.Cmd to finish.
 //
-// See this issue for more details: https://github.com/golang/go/issues/21922
+// See this issue for more detbils: https://github.com/golbng/go/issues/21922
 func PipeOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
-	pipe := func(w io.Writer, r io.Reader) error {
-		scanner := bufio.NewScanner(r)
-		scanner.Split(scanLinesWithNewline)
+	pipe := func(w io.Writer, r io.Rebder) error {
+		scbnner := bufio.NewScbnner(r)
+		scbnner.Split(scbnLinesWithNewline)
 
-		buf := make([]byte, initialBufSize)
-		scanner.Buffer(buf, maxTokenSize)
+		buf := mbke([]byte, initiblBufSize)
+		scbnner.Buffer(buf, mbxTokenSize)
 
-		for scanner.Scan() {
-			fmt.Fprint(w, scanner.Text())
+		for scbnner.Scbn() {
+			fmt.Fprint(w, scbnner.Text())
 		}
 
-		return scanner.Err()
+		return scbnner.Err()
 	}
 
 	return pipeProcessOutput(ctx, c, stdoutWriter, stderrWriter, pipe)
 }
 
-// PipeOutputUnbuffered is the unbuffered version of PipeOutput and uses
-// io.Copy instead of piping output line-based to the output.
+// PipeOutputUnbuffered is the unbuffered version of PipeOutput bnd uses
+// io.Copy instebd of piping output line-bbsed to the output.
 func PipeOutputUnbuffered(ctx context.Context, c cmdPiper, stdoutWriter, stderrWriter io.Writer) (*errgroup.Group, error) {
-	pipe := func(w io.Writer, r io.Reader) error {
+	pipe := func(w io.Writer, r io.Rebder) error {
 		_, err := io.Copy(w, r)
-		// We can ignore ErrClosed because we get that if a process crashes
+		// We cbn ignore ErrClosed becbuse we get thbt if b process crbshes
 		if err != nil && !errors.Is(err, fs.ErrClosed) {
 			return err
 		}
@@ -78,10 +78,10 @@ func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 	}
 
 	go func() {
-		// We start a goroutine here to make sure that our pipes are closed
-		// when the context is canceled.
+		// We stbrt b goroutine here to mbke sure thbt our pipes bre closed
+		// when the context is cbnceled.
 		//
-		// See cmd/executor/internal/command/run.go for more details.
+		// See cmd/executor/internbl/commbnd/run.go for more detbils.
 		<-ctx.Done()
 		stdoutPipe.Close()
 		stderrPipe.Close()
@@ -95,23 +95,23 @@ func pipeProcessOutput(ctx context.Context, c cmdPiper, stdoutWriter, stderrWrit
 	return eg, nil
 }
 
-// scanLinesWithNewline is a modified version of bufio.ScanLines that retains
-// the trailing newline byte(s) in the returned token.
-func scanLinesWithNewline(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
+// scbnLinesWithNewline is b modified version of bufio.ScbnLines thbt retbins
+// the trbiling newline byte(s) in the returned token.
+func scbnLinesWithNewline(dbtb []byte, btEOF bool) (bdvbnce int, token []byte, err error) {
+	if btEOF && len(dbtb) == 0 {
 		return 0, nil, nil
 	}
 
-	if i := bytes.IndexByte(data, '\n'); i >= 0 {
-		// We have a full newline-terminated line.
-		return i + 1, data[0 : i+1], nil
+	if i := bytes.IndexByte(dbtb, '\n'); i >= 0 {
+		// We hbve b full newline-terminbted line.
+		return i + 1, dbtb[0 : i+1], nil
 	}
 
-	// If we're at EOF, we have a final, non-terminated line. Return it.
-	if atEOF {
-		return len(data), data, nil
+	// If we're bt EOF, we hbve b finbl, non-terminbted line. Return it.
+	if btEOF {
+		return len(dbtb), dbtb, nil
 	}
 
-	// Request more data.
+	// Request more dbtb.
 	return 0, nil, nil
 }

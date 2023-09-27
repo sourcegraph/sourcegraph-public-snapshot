@@ -1,4 +1,4 @@
-package files_test
+pbckbge files_test
 
 import (
 	"context"
@@ -7,237 +7,237 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/files"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestNew(t *testing.T) {
-	observationContext := &observation.TestContext
+	observbtionContext := &observbtion.TestContext
 
 	tests := []struct {
-		name    string
-		baseURL string
+		nbme    string
+		bbseURL string
 
 		expectedErr error
 	}{
 		{
-			name:    "Valid URL",
-			baseURL: "http://some-url.foo",
+			nbme:    "Vblid URL",
+			bbseURL: "http://some-url.foo",
 		},
 		{
-			name:        "Invalid URL",
-			baseURL:     ":foo",
-			expectedErr: errors.New("parse \":foo\": missing protocol scheme"),
+			nbme:        "Invblid URL",
+			bbseURL:     ":foo",
+			expectedErr: errors.New("pbrse \":foo\": missing protocol scheme"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			options := apiclient.BaseClientOptions{
-				EndpointOptions: apiclient.EndpointOptions{
-					URL: test.baseURL,
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			options := bpiclient.BbseClientOptions{
+				EndpointOptions: bpiclient.EndpointOptions{
+					URL: test.bbseURL,
 				},
 			}
 
-			_, err := files.New(observationContext, options)
+			_, err := files.New(observbtionContext, options)
 			if test.expectedErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
+				bssert.Error(t, err)
+				bssert.Equbl(t, test.expectedErr.Error(), err.Error())
 			} else {
-				assert.NoError(t, err)
+				bssert.NoError(t, err)
 			}
 		})
 	}
 }
 
 func TestClient_Exists(t *testing.T) {
-	observationContext := &observation.TestContext
+	observbtionContext := &observbtion.TestContext
 
 	tests := []struct {
-		name string
+		nbme string
 
-		handler func(t *testing.T) http.Handler
+		hbndler func(t *testing.T) http.Hbndler
 		job     types.Job
 
-		expectedValue bool
+		expectedVblue bool
 		expectedErr   error
 	}{
 		{
-			name: "File exists",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					assert.Equal(t, http.MethodHead, r.Method)
-					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
-					assert.Equal(t, r.Header.Get("Authorization"), "token-executor hunter2")
-					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
-					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
-					w.WriteHeader(http.StatusOK)
+			nbme: "File exists",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					bssert.Equbl(t, http.MethodHebd, r.Method)
+					bssert.Contbins(t, r.URL.Pbth, "some-bucket/foo/bbr")
+					bssert.Equbl(t, r.Hebder.Get("Authorizbtion"), "token-executor hunter2")
+					bssert.Equbl(t, "42", r.Hebder.Get("X-Sourcegrbph-Job-ID"))
+					bssert.Equbl(t, "test-executor", r.Hebder.Get("X-Sourcegrbph-Executor-Nbme"))
+					w.WriteHebder(http.StbtusOK)
 				})
 			},
 			job:           types.Job{ID: 42},
-			expectedValue: true,
+			expectedVblue: true,
 		},
 		{
-			name: "File exists with job token",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					assert.Equal(t, http.MethodHead, r.Method)
-					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
-					assert.Equal(t, r.Header.Get("Authorization"), "Bearer sometoken")
-					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
-					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
-					w.WriteHeader(http.StatusOK)
+			nbme: "File exists with job token",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					bssert.Equbl(t, http.MethodHebd, r.Method)
+					bssert.Contbins(t, r.URL.Pbth, "some-bucket/foo/bbr")
+					bssert.Equbl(t, r.Hebder.Get("Authorizbtion"), "Bebrer sometoken")
+					bssert.Equbl(t, "42", r.Hebder.Get("X-Sourcegrbph-Job-ID"))
+					bssert.Equbl(t, "test-executor", r.Hebder.Get("X-Sourcegrbph-Executor-Nbme"))
+					w.WriteHebder(http.StbtusOK)
 				})
 			},
 			job:           types.Job{ID: 42, Token: "sometoken"},
-			expectedValue: true,
+			expectedVblue: true,
 		},
 		{
-			name: "File does not exist",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusNotFound)
+			nbme: "File does not exist",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHebder(http.StbtusNotFound)
 				})
 			},
 			job:           types.Job{ID: 42},
-			expectedValue: false,
+			expectedVblue: fblse,
 		},
 		{
-			name: "Unexpected error",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusInternalServerError)
+			nbme: "Unexpected error",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHebder(http.StbtusInternblServerError)
 				})
 			},
 			job:           types.Job{ID: 42},
-			expectedValue: false,
-			expectedErr:   errors.New("unexpected status code 500"),
+			expectedVblue: fblse,
+			expectedErr:   errors.New("unexpected stbtus code 500"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			srv := httptest.NewServer(test.handler(t))
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			srv := httptest.NewServer(test.hbndler(t))
 			defer srv.Close()
-			options := apiclient.BaseClientOptions{
-				ExecutorName: "test-executor",
-				EndpointOptions: apiclient.EndpointOptions{
+			options := bpiclient.BbseClientOptions{
+				ExecutorNbme: "test-executor",
+				EndpointOptions: bpiclient.EndpointOptions{
 					URL:        srv.URL,
-					PathPrefix: "/.executors/files",
+					PbthPrefix: "/.executors/files",
 					Token:      "hunter2",
 				},
 			}
 
-			client, err := files.New(observationContext, options)
+			client, err := files.New(observbtionContext, options)
 			require.NoError(t, err)
 
-			exists, err := client.Exists(context.Background(), test.job, "some-bucket", "foo/bar")
+			exists, err := client.Exists(context.Bbckground(), test.job, "some-bucket", "foo/bbr")
 
 			if test.expectedErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
-				assert.False(t, exists)
+				bssert.Error(t, err)
+				bssert.Equbl(t, test.expectedErr.Error(), err.Error())
+				bssert.Fblse(t, exists)
 			} else {
-				assert.NoError(t, err)
-				assert.Equal(t, test.expectedValue, exists)
+				bssert.NoError(t, err)
+				bssert.Equbl(t, test.expectedVblue, exists)
 			}
 		})
 	}
 }
 
 func TestClient_Get(t *testing.T) {
-	observationContext := &observation.TestContext
+	observbtionContext := &observbtion.TestContext
 
 	tests := []struct {
-		name string
+		nbme string
 
-		handler func(t *testing.T) http.Handler
+		hbndler func(t *testing.T) http.Hbndler
 
 		job types.Job
 
-		expectedValue string
+		expectedVblue string
 		expectedErr   error
 	}{
 		{
-			name: "Get content",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					assert.Equal(t, http.MethodGet, r.Method)
-					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
-					assert.Equal(t, r.Header.Get("Authorization"), "token-executor hunter2")
-					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
-					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
-					w.WriteHeader(http.StatusOK)
+			nbme: "Get content",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					bssert.Equbl(t, http.MethodGet, r.Method)
+					bssert.Contbins(t, r.URL.Pbth, "some-bucket/foo/bbr")
+					bssert.Equbl(t, r.Hebder.Get("Authorizbtion"), "token-executor hunter2")
+					bssert.Equbl(t, "42", r.Hebder.Get("X-Sourcegrbph-Job-ID"))
+					bssert.Equbl(t, "test-executor", r.Hebder.Get("X-Sourcegrbph-Executor-Nbme"))
+					w.WriteHebder(http.StbtusOK)
 					w.Write([]byte("hello world!"))
 				})
 			},
 			job:           types.Job{ID: 42},
-			expectedValue: "hello world!",
+			expectedVblue: "hello world!",
 		},
 		{
-			name: "Get content with job token",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					assert.Equal(t, http.MethodGet, r.Method)
-					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
-					assert.Equal(t, r.Header.Get("Authorization"), "Bearer sometoken")
-					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
-					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
-					w.WriteHeader(http.StatusOK)
+			nbme: "Get content with job token",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					bssert.Equbl(t, http.MethodGet, r.Method)
+					bssert.Contbins(t, r.URL.Pbth, "some-bucket/foo/bbr")
+					bssert.Equbl(t, r.Hebder.Get("Authorizbtion"), "Bebrer sometoken")
+					bssert.Equbl(t, "42", r.Hebder.Get("X-Sourcegrbph-Job-ID"))
+					bssert.Equbl(t, "test-executor", r.Hebder.Get("X-Sourcegrbph-Executor-Nbme"))
+					w.WriteHebder(http.StbtusOK)
 					w.Write([]byte("hello world!"))
 				})
 			},
 			job:           types.Job{ID: 42, Token: "sometoken"},
-			expectedValue: "hello world!",
+			expectedVblue: "hello world!",
 		},
 		{
-			name: "Failed to get content",
-			handler: func(t *testing.T) http.Handler {
-				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					assert.Equal(t, http.MethodGet, r.Method)
-					assert.Contains(t, r.URL.Path, "some-bucket/foo/bar")
-					assert.Equal(t, r.Header.Get("Authorization"), "token-executor hunter2")
-					assert.Equal(t, "42", r.Header.Get("X-Sourcegraph-Job-ID"))
-					assert.Equal(t, "test-executor", r.Header.Get("X-Sourcegraph-Executor-Name"))
-					w.WriteHeader(http.StatusInternalServerError)
+			nbme: "Fbiled to get content",
+			hbndler: func(t *testing.T) http.Hbndler {
+				return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					bssert.Equbl(t, http.MethodGet, r.Method)
+					bssert.Contbins(t, r.URL.Pbth, "some-bucket/foo/bbr")
+					bssert.Equbl(t, r.Hebder.Get("Authorizbtion"), "token-executor hunter2")
+					bssert.Equbl(t, "42", r.Hebder.Get("X-Sourcegrbph-Job-ID"))
+					bssert.Equbl(t, "test-executor", r.Hebder.Get("X-Sourcegrbph-Executor-Nbme"))
+					w.WriteHebder(http.StbtusInternblServerError)
 				})
 			},
 			job:         types.Job{ID: 42},
-			expectedErr: errors.New("unexpected status code 500"),
+			expectedErr: errors.New("unexpected stbtus code 500"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			srv := httptest.NewServer(test.handler(t))
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			srv := httptest.NewServer(test.hbndler(t))
 			defer srv.Close()
-			options := apiclient.BaseClientOptions{
-				ExecutorName: "test-executor",
-				EndpointOptions: apiclient.EndpointOptions{
+			options := bpiclient.BbseClientOptions{
+				ExecutorNbme: "test-executor",
+				EndpointOptions: bpiclient.EndpointOptions{
 					URL:        srv.URL,
-					PathPrefix: "/.executors/files",
+					PbthPrefix: "/.executors/files",
 					Token:      "hunter2",
 				},
 			}
 
-			client, err := files.New(observationContext, options)
+			client, err := files.New(observbtionContext, options)
 			require.NoError(t, err)
 
-			content, err := client.Get(context.Background(), test.job, "some-bucket", "foo/bar")
+			content, err := client.Get(context.Bbckground(), test.job, "some-bucket", "foo/bbr")
 			if test.expectedErr != nil {
-				assert.Error(t, err)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
-				assert.Nil(t, content)
+				bssert.Error(t, err)
+				bssert.Equbl(t, test.expectedErr.Error(), err.Error())
+				bssert.Nil(t, content)
 			} else {
 				defer content.Close()
-				assert.NoError(t, err)
-				assert.NotNil(t, content)
-				actualBytes, err := io.ReadAll(content)
+				bssert.NoError(t, err)
+				bssert.NotNil(t, content)
+				bctublBytes, err := io.RebdAll(content)
 				require.NoError(t, err)
-				assert.Equal(t, []byte(test.expectedValue), actualBytes)
+				bssert.Equbl(t, []byte(test.expectedVblue), bctublBytes)
 			}
 		})
 	}

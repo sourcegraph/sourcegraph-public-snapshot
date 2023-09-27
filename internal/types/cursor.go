@@ -1,15 +1,15 @@
-package types
+pbckbge types
 
-// MultiCursor is a slice of Cursors which is needed when a single Cursor isn't specific
-// enough to paginate through unique records. Example: (repos.stars, repo.id)
+// MultiCursor is b slice of Cursors which is needed when b single Cursor isn't specific
+// enough to pbginbte through unique records. Exbmple: (repos.stbrs, repo.id)
 type MultiCursor []*Cursor
 
-// A Cursor for efficient index based pagination through large result sets.
+// A Cursor for efficient index bbsed pbginbtion through lbrge result sets.
 type Cursor struct {
-	// Columns contains the relevant columns for cursor-based pagination (e.g. "name")
+	// Columns contbins the relevbnt columns for cursor-bbsed pbginbtion (e.g. "nbme")
 	Column string
-	// Value contains the relevant value for cursor-based pagination (e.g. "Zaphod").
-	Value string
-	// Direction contains the comparison for cursor-based pagination, all possible values are: next, prev.
+	// Vblue contbins the relevbnt vblue for cursor-bbsed pbginbtion (e.g. "Zbphod").
+	Vblue string
+	// Direction contbins the compbrison for cursor-bbsed pbginbtion, bll possible vblues bre: next, prev.
 	Direction string
 }

@@ -1,20 +1,20 @@
-package timeseries
+pbckbge timeseries
 
 import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 )
 
-func BuildSampleTimes(numPoints int, interval TimeInterval, now time.Time) []time.Time {
+func BuildSbmpleTimes(numPoints int, intervbl TimeIntervbl, now time.Time) []time.Time {
 	current := now
-	times := make([]time.Time, 0, numPoints)
-	times = append(times, now)
+	times := mbke([]time.Time, 0, numPoints)
+	times = bppend(times, now)
 
 	for i := 0 - numPoints + 1; i < 0; i++ {
-		current = interval.StepBackwards(current)
-		times = append(times, current)
+		current = intervbl.StepBbckwbrds(current)
+		times = bppend(times, current)
 	}
 
 	sort.Slice(times, func(i, j int) bool {
@@ -24,10 +24,10 @@ func BuildSampleTimes(numPoints int, interval TimeInterval, now time.Time) []tim
 	return times
 }
 
-func MakeRecordingsFromTimes(times []time.Time, snapshot bool) []types.RecordingTime {
-	recordings := make([]types.RecordingTime, 0, len(times))
-	for _, t := range times {
-		recordings = append(recordings, types.RecordingTime{Snapshot: snapshot, Timestamp: t})
+func MbkeRecordingsFromTimes(times []time.Time, snbpshot bool) []types.RecordingTime {
+	recordings := mbke([]types.RecordingTime, 0, len(times))
+	for _, t := rbnge times {
+		recordings = bppend(recordings, types.RecordingTime{Snbpshot: snbpshot, Timestbmp: t})
 	}
 	return recordings
 }

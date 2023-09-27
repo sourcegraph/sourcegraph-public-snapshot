@@ -1,46 +1,46 @@
-package dependencies
+pbckbge dependencies
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/background"
-	dependenciesstore "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/internbl/bbckground"
+	dependenciesstore "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewService(observationCtx *observation.Context, db database.DB) *Service {
-	return newService(scopedContext("service", observationCtx), dependenciesstore.New(scopedContext("store", observationCtx), db))
+func NewService(observbtionCtx *observbtion.Context, db dbtbbbse.DB) *Service {
+	return newService(scopedContext("service", observbtionCtx), dependenciesstore.New(scopedContext("store", observbtionCtx), db))
 }
 
-// TestService creates a new dependencies service with noop observation contexts.
-func TestService(db database.DB) *Service {
-	store := dependenciesstore.New(&observation.TestContext, db)
+// TestService crebtes b new dependencies service with noop observbtion contexts.
+func TestService(db dbtbbbse.DB) *Service {
+	store := dependenciesstore.New(&observbtion.TestContext, db)
 
-	return newService(&observation.TestContext, store)
+	return newService(&observbtion.TestContext, store)
 }
 
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "dependencies", component, parent)
+func scopedContext(component string, pbrent *observbtion.Context) *observbtion.Context {
+	return observbtion.ScopedContext("codeintel", "dependencies", component, pbrent)
 }
 
-func CrateSyncerJob(
-	observationCtx *observation.Context,
-	autoindexingSvc background.AutoIndexingService,
-	dependenciesSvc background.DependenciesService,
+func CrbteSyncerJob(
+	observbtionCtx *observbtion.Context,
+	butoindexingSvc bbckground.AutoIndexingService,
+	dependenciesSvc bbckground.DependenciesService,
 	gitserverClient gitserver.Client,
-	extSvcStore background.ExternalServiceStore,
+	extSvcStore bbckground.ExternblServiceStore,
 ) goroutine.CombinedRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewCrateSyncer(observationCtx, autoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
+	return []goroutine.BbckgroundRoutine{
+		bbckground.NewCrbteSyncer(observbtionCtx, butoindexingSvc, dependenciesSvc, gitserverClient, extSvcStore),
 	}
 }
 
-func PackageFiltersJob(
-	obsctx *observation.Context,
-	db database.DB,
+func PbckbgeFiltersJob(
+	obsctx *observbtion.Context,
+	db dbtbbbse.DB,
 ) goroutine.CombinedRoutine {
-	return []goroutine.BackgroundRoutine{
-		background.NewPackagesFilterApplicator(obsctx, db),
+	return []goroutine.BbckgroundRoutine{
+		bbckground.NewPbckbgesFilterApplicbtor(obsctx, db),
 	}
 }

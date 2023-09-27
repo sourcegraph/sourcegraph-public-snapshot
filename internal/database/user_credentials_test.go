@@ -1,159 +1,159 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
+	"crypto/rbnd"
+	"crypto/rsb"
 	"net/http"
 	"reflect"
 	"testing"
 
-	"github.com/gomodule/oauth1/oauth"
+	"github.com/gomodule/obuth1/obuth"
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestUserCredential_Authenticator(t *testing.T) {
-	ctx := context.Background()
+func TestUserCredentibl_Authenticbtor(t *testing.T) {
+	ctx := context.Bbckground()
 
 	t.Run("errors", func(t *testing.T) {
 		testKey := &et.TestKey{}
-		transparentKey := et.NewTransparentKey(t)
+		trbnspbrentKey := et.NewTrbnspbrentKey(t)
 
-		for name, credential := range map[string]*UserCredential{
-			"no credential": {
-				Credential: NewEncryptedCredential("", testEncryptionKeyID(testKey), testKey),
+		for nbme, credentibl := rbnge mbp[string]*UserCredentibl{
+			"no credentibl": {
+				Credentibl: NewEncryptedCredentibl("", testEncryptionKeyID(testKey), testKey),
 			},
-			"bad decrypter": {
-				Credential: NewEncryptedCredential("foo", "it's the bad guy... uh, key", &et.BadKey{Err: errors.New("bad key bad key what you gonna do")}),
+			"bbd decrypter": {
+				Credentibl: NewEncryptedCredentibl("foo", "it's the bbd guy... uh, key", &et.BbdKey{Err: errors.New("bbd key bbd key whbt you gonnb do")}),
 			},
-			"invalid secret": {
-				Credential: NewEncryptedCredential("foo", testEncryptionKeyID(transparentKey), transparentKey),
+			"invblid secret": {
+				Credentibl: NewEncryptedCredentibl("foo", testEncryptionKeyID(trbnspbrentKey), trbnspbrentKey),
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if _, err := credential.Authenticator(ctx); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				if _, err := credentibl.Authenticbtor(ctx); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
 		}
 	})
 
-	t.Run("plaintext credential", func(t *testing.T) {
-		a := &auth.BasicAuth{}
+	t.Run("plbintext credentibl", func(t *testing.T) {
+		b := &buth.BbsicAuth{}
 
-		enc, _, err := EncryptAuthenticator(ctx, nil, a)
+		enc, _, err := EncryptAuthenticbtor(ctx, nil, b)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		for _, keyID := range []string{"", encryption.UnmigratedEncryptionKeyID} {
+		for _, keyID := rbnge []string{"", encryption.UnmigrbtedEncryptionKeyID} {
 			t.Run(keyID, func(t *testing.T) {
-				uc := &UserCredential{
-					Credential: NewEncryptedCredential(string(enc), keyID, et.TestKey{}),
+				uc := &UserCredentibl{
+					Credentibl: NewEncryptedCredentibl(string(enc), keyID, et.TestKey{}),
 				}
 
-				have, err := uc.Authenticator(ctx)
+				hbve, err := uc.Authenticbtor(ctx)
 				if err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, a); diff != "" {
-					t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+				} else if diff := cmp.Diff(hbve, b); diff != "" {
+					t.Errorf("unexpected buthenticbtor (-hbve +wbnt):\n%s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("encrypted credential", func(t *testing.T) {
+	t.Run("encrypted credentibl", func(t *testing.T) {
 		key := et.TestKey{}
-		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
+		b := &buth.BbsicAuth{Usernbme: "foo", Pbssword: "bbr"}
 
-		enc, kid, err := EncryptAuthenticator(ctx, key, a)
+		enc, kid, err := EncryptAuthenticbtor(ctx, key, b)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		uc := &UserCredential{
-			Credential: NewEncryptedCredential(string(enc), kid, key),
+		uc := &UserCredentibl{
+			Credentibl: NewEncryptedCredentibl(string(enc), kid, key),
 		}
 
-		have, err := uc.Authenticator(ctx)
+		hbve, err := uc.Authenticbtor(ctx)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
-		} else if diff := cmp.Diff(have, a); diff != "" {
-			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+		} else if diff := cmp.Diff(hbve, b); diff != "" {
+			t.Errorf("unexpected buthenticbtor (-hbve +wbnt):\n%s", diff)
 		}
 	})
 
 	t.Run("nil key", func(t *testing.T) {
-		a := &auth.BasicAuth{Username: "foo", Password: "bar"}
+		b := &buth.BbsicAuth{Usernbme: "foo", Pbssword: "bbr"}
 
-		enc, _, err := EncryptAuthenticator(ctx, nil, a)
+		enc, _, err := EncryptAuthenticbtor(ctx, nil, b)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		uc := &UserCredential{
-			Credential: NewEncryptedCredential(string(enc), "", nil),
+		uc := &UserCredentibl{
+			Credentibl: NewEncryptedCredentibl(string(enc), "", nil),
 		}
 
-		have, err := uc.Authenticator(ctx)
+		hbve, err := uc.Authenticbtor(ctx)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
-		} else if diff := cmp.Diff(have, a); diff != "" {
-			t.Errorf("unexpected authenticator (-have +want):\n%s", diff)
+		} else if diff := cmp.Diff(hbve, b); diff != "" {
+			t.Errorf("unexpected buthenticbtor (-hbve +wbnt):\n%s", diff)
 		}
 	})
 }
 
-func TestUserCredential_SetAuthenticator(t *testing.T) {
-	ctx := context.Background()
-	a := &auth.BasicAuth{Username: "foo", Password: "bar"}
+func TestUserCredentibl_SetAuthenticbtor(t *testing.T) {
+	ctx := context.Bbckground()
+	b := &buth.BbsicAuth{Usernbme: "foo", Pbssword: "bbr"}
 
 	t.Run("error", func(t *testing.T) {
-		badKey := &et.BadKey{Err: errors.New("error")}
-		uc := &UserCredential{
-			Credential: NewEncryptedCredential("encoded", "bad key", badKey),
+		bbdKey := &et.BbdKey{Err: errors.New("error")}
+		uc := &UserCredentibl{
+			Credentibl: NewEncryptedCredentibl("encoded", "bbd key", bbdKey),
 		}
 
-		if err := uc.SetAuthenticator(ctx, a); err != nil {
+		if err := uc.SetAuthenticbtor(ctx, b); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		if _, _, err := uc.Credential.Encrypt(ctx, badKey); err == nil {
+		if _, _, err := uc.Credentibl.Encrypt(ctx, bbdKey); err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, key := range map[string]encryption.Key{
+		for nbme, key := rbnge mbp[string]encryption.Key{
 			"":         nil,
 			"test key": et.TestKey{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				uc := &UserCredential{
-					Credential: NewUnencryptedCredential(nil),
+			t.Run(nbme, func(t *testing.T) {
+				uc := &UserCredentibl{
+					Credentibl: NewUnencryptedCredentibl(nil),
 				}
 
-				if err := uc.SetAuthenticator(ctx, a); err != nil {
+				if err := uc.SetAuthenticbtor(ctx, b); err != nil {
 					t.Errorf("unexpected error: %v", err)
 				} else {
-					ctx := context.Background()
-					_, keyID, err := uc.Credential.Encrypt(ctx, key)
+					ctx := context.Bbckground()
+					_, keyID, err := uc.Credentibl.Encrypt(ctx, key)
 					if err != nil {
 						t.Errorf("unexpected error: %v", err)
 					}
@@ -169,389 +169,389 @@ func TestUserCredential_SetAuthenticator(t *testing.T) {
 	})
 }
 
-func TestUserCredentials_CreateUpdate(t *testing.T) {
+func TestUserCredentibls_CrebteUpdbte(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
+	fx := setUpUserCredentiblTest(t, db)
 
-	// Authorisation failure tests. (We'll test the happy path below.)
-	t.Run("unauthorised", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
+	// Authorisbtion fbilure tests. (We'll test the hbppy pbth below.)
+	t.Run("unbuthorised", func(t *testing.T) {
+		for nbme, tc := rbnge buthFbilureTestCbses(t, fx) {
+			t.Run(nbme, func(t *testing.T) {
 				tc.setup(t)
 
-				scope := UserCredentialScope{
-					Domain:              name,
+				scope := UserCredentiblScope{
+					Dombin:              nbme,
 					UserID:              tc.user.ID,
-					ExternalServiceType: extsvc.TypeBitbucketCloud,
-					ExternalServiceID:   "https://bitbucket.org",
+					ExternblServiceType: extsvc.TypeBitbucketCloud,
+					ExternblServiceID:   "https://bitbucket.org",
 				}
-				basicAuth := &auth.BasicAuth{}
+				bbsicAuth := &buth.BbsicAuth{}
 
-				// Attempt to create with the invalid context.
-				cred, err := fx.db.Create(tc.ctx, scope, basicAuth)
-				assert.Error(t, err)
-				assert.Nil(t, cred)
+				// Attempt to crebte with the invblid context.
+				cred, err := fx.db.Crebte(tc.ctx, scope, bbsicAuth)
+				bssert.Error(t, err)
+				bssert.Nil(t, cred)
 
-				// Now we'll create a credential so we can test update.
-				cred, err = fx.db.Create(fx.internalCtx, scope, basicAuth)
+				// Now we'll crebte b credentibl so we cbn test updbte.
+				cred, err = fx.db.Crebte(fx.internblCtx, scope, bbsicAuth)
 				require.NoError(t, err)
 				require.NotNil(t, cred)
 
-				// And let's test that we can't update either.
-				err = fx.db.Update(tc.ctx, cred)
-				assert.Error(t, err)
+				// And let's test thbt we cbn't updbte either.
+				err = fx.db.Updbte(tc.ctx, cred)
+				bssert.Error(t, err)
 			})
 		}
 	})
 
-	// Instead of two of every animal, we want one of every authenticator. Same,
-	// same.
-	for name, authenticator := range createUserCredentialAuths(t) {
-		t.Run(name, func(t *testing.T) {
-			scope := UserCredentialScope{
-				Domain:              name,
+	// Instebd of two of every bnimbl, we wbnt one of every buthenticbtor. Sbme,
+	// sbme.
+	for nbme, buthenticbtor := rbnge crebteUserCredentiblAuths(t) {
+		t.Run(nbme, func(t *testing.T) {
+			scope := UserCredentiblScope{
+				Dombin:              nbme,
 				UserID:              fx.user.ID,
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalServiceID:   "https://github.com",
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblServiceID:   "https://github.com",
 			}
 
-			cred, err := fx.db.Create(fx.userCtx, scope, authenticator)
-			assert.NoError(t, err)
-			assert.NotNil(t, cred)
-			assert.NotZero(t, cred.ID)
-			assert.Equal(t, scope.Domain, cred.Domain)
-			assert.Equal(t, scope.UserID, cred.UserID)
-			assert.Equal(t, scope.ExternalServiceType, cred.ExternalServiceType)
-			assert.Equal(t, scope.ExternalServiceID, cred.ExternalServiceID)
-			assert.NotZero(t, cred.CreatedAt)
-			assert.NotZero(t, cred.UpdatedAt)
+			cred, err := fx.db.Crebte(fx.userCtx, scope, buthenticbtor)
+			bssert.NoError(t, err)
+			bssert.NotNil(t, cred)
+			bssert.NotZero(t, cred.ID)
+			bssert.Equbl(t, scope.Dombin, cred.Dombin)
+			bssert.Equbl(t, scope.UserID, cred.UserID)
+			bssert.Equbl(t, scope.ExternblServiceType, cred.ExternblServiceType)
+			bssert.Equbl(t, scope.ExternblServiceID, cred.ExternblServiceID)
+			bssert.NotZero(t, cred.CrebtedAt)
+			bssert.NotZero(t, cred.UpdbtedAt)
 
-			have, err := cred.Authenticator(fx.userCtx)
-			assert.NoError(t, err)
-			assert.Equal(t, authenticator.Hash(), have.Hash())
+			hbve, err := cred.Authenticbtor(fx.userCtx)
+			bssert.NoError(t, err)
+			bssert.Equbl(t, buthenticbtor.Hbsh(), hbve.Hbsh())
 
-			// Ensure that trying to insert again fails.
-			second, err := fx.db.Create(fx.userCtx, scope, authenticator)
-			assert.Error(t, err)
-			assert.Nil(t, second)
+			// Ensure thbt trying to insert bgbin fbils.
+			second, err := fx.db.Crebte(fx.userCtx, scope, buthenticbtor)
+			bssert.Error(t, err)
+			bssert.Nil(t, second)
 
-			// Valid update contexts.
-			newExternalServiceType := extsvc.TypeGitLab
-			cred.ExternalServiceType = newExternalServiceType
+			// Vblid updbte contexts.
+			newExternblServiceType := extsvc.TypeGitLbb
+			cred.ExternblServiceType = newExternblServiceType
 
-			err = fx.db.Update(fx.userCtx, cred)
-			assert.NoError(t, err)
+			err = fx.db.Updbte(fx.userCtx, cred)
+			bssert.NoError(t, err)
 
-			updatedCred, err := fx.db.GetByID(fx.userCtx, cred.ID)
-			assert.NoError(t, err)
-			assert.Equal(t, cred, updatedCred)
+			updbtedCred, err := fx.db.GetByID(fx.userCtx, cred.ID)
+			bssert.NoError(t, err)
+			bssert.Equbl(t, cred, updbtedCred)
 		})
 	}
 }
 
-func TestUserCredentials_Delete(t *testing.T) {
+func TestUserCredentibls_Delete(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
+	fx := setUpUserCredentiblTest(t, db)
 
-	t.Run("nonextant", func(t *testing.T) {
-		err := fx.db.Delete(fx.internalCtx, 1)
-		assertUserCredentialNotFoundError(t, 1, err)
+	t.Run("nonextbnt", func(t *testing.T) {
+		err := fx.db.Delete(fx.internblCtx, 1)
+		bssertUserCredentiblNotFoundError(t, 1, err)
 	})
 
 	t.Run("no permissions", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
+		for nbme, tc := rbnge buthFbilureTestCbses(t, fx) {
+			t.Run(nbme, func(t *testing.T) {
 				tc.setup(t)
 
-				scope := UserCredentialScope{
-					Domain:              UserCredentialDomainBatches,
+				scope := UserCredentiblScope{
+					Dombin:              UserCredentiblDombinBbtches,
 					UserID:              tc.user.ID,
-					ExternalServiceType: "github",
-					ExternalServiceID:   "https://github.com",
+					ExternblServiceType: "github",
+					ExternblServiceID:   "https://github.com",
 				}
-				token := &auth.OAuthBearerToken{Token: "abcdef"}
+				token := &buth.OAuthBebrerToken{Token: "bbcdef"}
 
-				cred, err := fx.db.Create(fx.internalCtx, scope, token)
+				cred, err := fx.db.Crebte(fx.internblCtx, scope, token)
 				require.NoError(t, err)
-				t.Cleanup(func() { fx.db.Delete(fx.internalCtx, cred.ID) })
+				t.Clebnup(func() { fx.db.Delete(fx.internblCtx, cred.ID) })
 
 				err = fx.db.Delete(tc.ctx, cred.ID)
-				assert.Error(t, err)
+				bssert.Error(t, err)
 			})
 		}
 	})
 
-	t.Run("extant", func(t *testing.T) {
-		scope := UserCredentialScope{
-			Domain:              UserCredentialDomainBatches,
+	t.Run("extbnt", func(t *testing.T) {
+		scope := UserCredentiblScope{
+			Dombin:              UserCredentiblDombinBbtches,
 			UserID:              fx.user.ID,
-			ExternalServiceType: "github",
-			ExternalServiceID:   "https://github.com",
+			ExternblServiceType: "github",
+			ExternblServiceID:   "https://github.com",
 		}
-		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		token := &buth.OAuthBebrerToken{Token: "bbcdef"}
 
-		cred, err := fx.db.Create(fx.internalCtx, scope, token)
+		cred, err := fx.db.Crebte(fx.internblCtx, scope, token)
 		require.NoError(t, err)
 
 		err = fx.db.Delete(fx.userCtx, cred.ID)
-		assert.NoError(t, err)
+		bssert.NoError(t, err)
 
-		_, err = fx.db.GetByID(fx.internalCtx, cred.ID)
-		assert.ErrorAs(t, err, &UserCredentialNotFoundErr{})
+		_, err = fx.db.GetByID(fx.internblCtx, cred.ID)
+		bssert.ErrorAs(t, err, &UserCredentiblNotFoundErr{})
 	})
 }
 
-func TestUserCredentials_GetByID(t *testing.T) {
+func TestUserCredentibls_GetByID(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
+	fx := setUpUserCredentiblTest(t, db)
 
-	t.Run("nonextant", func(t *testing.T) {
-		cred, err := fx.db.GetByID(fx.internalCtx, 1)
-		assert.Nil(t, cred)
-		assertUserCredentialNotFoundError(t, 1, err)
+	t.Run("nonextbnt", func(t *testing.T) {
+		cred, err := fx.db.GetByID(fx.internblCtx, 1)
+		bssert.Nil(t, cred)
+		bssertUserCredentiblNotFoundError(t, 1, err)
 	})
 
 	t.Run("no permissions", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
+		for nbme, tc := rbnge buthFbilureTestCbses(t, fx) {
+			t.Run(nbme, func(t *testing.T) {
 				tc.setup(t)
 
-				scope := UserCredentialScope{
-					Domain:              UserCredentialDomainBatches,
+				scope := UserCredentiblScope{
+					Dombin:              UserCredentiblDombinBbtches,
 					UserID:              tc.user.ID,
-					ExternalServiceType: "github",
-					ExternalServiceID:   "https://github.com",
+					ExternblServiceType: "github",
+					ExternblServiceID:   "https://github.com",
 				}
-				token := &auth.OAuthBearerToken{Token: "abcdef"}
+				token := &buth.OAuthBebrerToken{Token: "bbcdef"}
 
-				cred, err := fx.db.Create(fx.internalCtx, scope, token)
+				cred, err := fx.db.Crebte(fx.internblCtx, scope, token)
 				require.NoError(t, err)
-				t.Cleanup(func() { fx.db.Delete(fx.internalCtx, cred.ID) })
+				t.Clebnup(func() { fx.db.Delete(fx.internblCtx, cred.ID) })
 
 				_, err = fx.db.GetByID(tc.ctx, cred.ID)
-				assert.Error(t, err)
+				bssert.Error(t, err)
 			})
 		}
 	})
 
-	t.Run("extant", func(t *testing.T) {
-		scope := UserCredentialScope{
-			Domain:              UserCredentialDomainBatches,
+	t.Run("extbnt", func(t *testing.T) {
+		scope := UserCredentiblScope{
+			Dombin:              UserCredentiblDombinBbtches,
 			UserID:              fx.user.ID,
-			ExternalServiceType: "github",
-			ExternalServiceID:   "https://github.com",
+			ExternblServiceType: "github",
+			ExternblServiceID:   "https://github.com",
 		}
-		token := &auth.OAuthBearerToken{Token: "abcdef"}
+		token := &buth.OAuthBebrerToken{Token: "bbcdef"}
 
-		want, err := fx.db.Create(fx.internalCtx, scope, token)
+		wbnt, err := fx.db.Crebte(fx.internblCtx, scope, token)
 		require.NoError(t, err)
 
-		have, err := fx.db.GetByID(fx.userCtx, want.ID)
-		assert.NoError(t, err)
-		assert.Equal(t, want, have)
+		hbve, err := fx.db.GetByID(fx.userCtx, wbnt.ID)
+		bssert.NoError(t, err)
+		bssert.Equbl(t, wbnt, hbve)
 	})
 }
 
-func TestUserCredentials_GetByScope(t *testing.T) {
+func TestUserCredentibls_GetByScope(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
+	fx := setUpUserCredentiblTest(t, db)
 
-	scope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
+	scope := UserCredentiblScope{
+		Dombin:              UserCredentiblDombinBbtches,
 		UserID:              fx.user.ID,
-		ExternalServiceType: "github",
-		ExternalServiceID:   "https://github.com",
+		ExternblServiceType: "github",
+		ExternblServiceID:   "https://github.com",
 	}
-	token := &auth.OAuthBearerToken{Token: "abcdef"}
+	token := &buth.OAuthBebrerToken{Token: "bbcdef"}
 
-	t.Run("nonextant", func(t *testing.T) {
-		cred, err := fx.db.GetByScope(fx.internalCtx, scope)
-		assert.Nil(t, cred)
-		assertUserCredentialNotFoundError(t, scope, err)
+	t.Run("nonextbnt", func(t *testing.T) {
+		cred, err := fx.db.GetByScope(fx.internblCtx, scope)
+		bssert.Nil(t, cred)
+		bssertUserCredentiblNotFoundError(t, scope, err)
 	})
 
 	t.Run("no permissions", func(t *testing.T) {
-		for name, tc := range authFailureTestCases(t, fx) {
-			t.Run(name, func(t *testing.T) {
+		for nbme, tc := rbnge buthFbilureTestCbses(t, fx) {
+			t.Run(nbme, func(t *testing.T) {
 				tc.setup(t)
 
 				s := scope
 				s.UserID = tc.user.ID
 
-				cred, err := fx.db.Create(fx.internalCtx, s, token)
+				cred, err := fx.db.Crebte(fx.internblCtx, s, token)
 				require.NoError(t, err)
-				t.Cleanup(func() { fx.db.Delete(fx.internalCtx, cred.ID) })
+				t.Clebnup(func() { fx.db.Delete(fx.internblCtx, cred.ID) })
 
 				_, err = fx.db.GetByScope(tc.ctx, scope)
-				assert.Error(t, err)
+				bssert.Error(t, err)
 			})
 		}
 	})
 
-	t.Run("extant", func(t *testing.T) {
-		want, err := fx.db.Create(fx.internalCtx, scope, token)
+	t.Run("extbnt", func(t *testing.T) {
+		wbnt, err := fx.db.Crebte(fx.internblCtx, scope, token)
 		require.NoError(t, err)
-		require.NotNil(t, want)
+		require.NotNil(t, wbnt)
 
-		have, err := fx.db.GetByScope(fx.userCtx, scope)
-		assert.NoError(t, err)
-		assert.Equal(t, want, have)
+		hbve, err := fx.db.GetByScope(fx.userCtx, scope)
+		bssert.NoError(t, err)
+		bssert.Equbl(t, wbnt, hbve)
 	})
 }
 
-func TestUserCredentials_List(t *testing.T) {
+func TestUserCredentibls_List(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
+	fx := setUpUserCredentiblTest(t, db)
 
-	githubScope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
+	githubScope := UserCredentiblScope{
+		Dombin:              UserCredentiblDombinBbtches,
 		UserID:              fx.user.ID,
-		ExternalServiceType: "github",
-		ExternalServiceID:   "https://github.com",
+		ExternblServiceType: "github",
+		ExternblServiceID:   "https://github.com",
 	}
-	gitlabScope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
+	gitlbbScope := UserCredentiblScope{
+		Dombin:              UserCredentiblDombinBbtches,
 		UserID:              fx.user.ID,
-		ExternalServiceType: "gitlab",
-		ExternalServiceID:   "https://gitlab.com",
+		ExternblServiceType: "gitlbb",
+		ExternblServiceID:   "https://gitlbb.com",
 	}
-	adminScope := UserCredentialScope{
-		Domain:              UserCredentialDomainBatches,
-		UserID:              fx.admin.ID,
-		ExternalServiceType: "gitlab",
-		ExternalServiceID:   "https://gitlab.com",
+	bdminScope := UserCredentiblScope{
+		Dombin:              UserCredentiblDombinBbtches,
+		UserID:              fx.bdmin.ID,
+		ExternblServiceType: "gitlbb",
+		ExternblServiceID:   "https://gitlbb.com",
 	}
-	token := &auth.OAuthBearerToken{Token: "abcdef"}
+	token := &buth.OAuthBebrerToken{Token: "bbcdef"}
 
-	// Unlike the other tests in this file, we'll set up a couple of credentials
-	// right now, and then list from there.
-	githubCred, err := fx.db.Create(fx.userCtx, githubScope, token)
+	// Unlike the other tests in this file, we'll set up b couple of credentibls
+	// right now, bnd then list from there.
+	githubCred, err := fx.db.Crebte(fx.userCtx, githubScope, token)
 	require.NoError(t, err)
 
-	gitlabCred, err := fx.db.Create(fx.userCtx, gitlabScope, token)
+	gitlbbCred, err := fx.db.Crebte(fx.userCtx, gitlbbScope, token)
 	require.NoError(t, err)
 
-	// This one should always be invisible to the user tests below.
-	_, err = fx.db.Create(fx.adminCtx, adminScope, token)
+	// This one should blwbys be invisible to the user tests below.
+	_, err = fx.db.Crebte(fx.bdminCtx, bdminScope, token)
 	require.NoError(t, err)
 
 	t.Run("not found", func(t *testing.T) {
-		creds, next, err := fx.db.List(fx.userCtx, UserCredentialsListOpts{
-			Scope: UserCredentialScope{
-				Domain: "this is not a valid domain",
+		creds, next, err := fx.db.List(fx.userCtx, UserCredentiblsListOpts{
+			Scope: UserCredentiblScope{
+				Dombin: "this is not b vblid dombin",
 			},
 		})
-		assert.NoError(t, err)
-		assert.Zero(t, next)
-		assert.Empty(t, creds)
+		bssert.NoError(t, err)
+		bssert.Zero(t, next)
+		bssert.Empty(t, creds)
 	})
 
-	t.Run("user accessing admin", func(t *testing.T) {
-		creds, next, err := fx.db.List(fx.userCtx, UserCredentialsListOpts{
-			Scope: UserCredentialScope{UserID: fx.admin.ID},
+	t.Run("user bccessing bdmin", func(t *testing.T) {
+		creds, next, err := fx.db.List(fx.userCtx, UserCredentiblsListOpts{
+			Scope: UserCredentiblScope{UserID: fx.bdmin.ID},
 		})
-		assert.NoError(t, err)
-		assert.Zero(t, next)
-		assert.Empty(t, creds)
+		bssert.NoError(t, err)
+		bssert.Zero(t, next)
+		bssert.Empty(t, creds)
 	})
 
-	for name, tc := range map[string]struct {
-		scope UserCredentialScope
-		want  *UserCredential
+	for nbme, tc := rbnge mbp[string]struct {
+		scope UserCredentiblScope
+		wbnt  *UserCredentibl
 	}{
 		"service ID only": {
-			scope: UserCredentialScope{
-				ExternalServiceID: "https://github.com",
+			scope: UserCredentiblScope{
+				ExternblServiceID: "https://github.com",
 			},
-			want: githubCred,
+			wbnt: githubCred,
 		},
 		"service type only": {
-			scope: UserCredentialScope{
-				ExternalServiceType: "gitlab",
+			scope: UserCredentiblScope{
+				ExternblServiceType: "gitlbb",
 			},
-			want: gitlabCred,
+			wbnt: gitlbbCred,
 		},
 		"full scope": {
 			scope: githubScope,
-			want:  githubCred,
+			wbnt:  githubCred,
 		},
 	} {
-		t.Run("single match on "+name, func(t *testing.T) {
-			creds, next, err := fx.db.List(fx.userCtx, UserCredentialsListOpts{
+		t.Run("single mbtch on "+nbme, func(t *testing.T) {
+			creds, next, err := fx.db.List(fx.userCtx, UserCredentiblsListOpts{
 				Scope: tc.scope,
 			})
-			assert.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Equal(t, []*UserCredential{tc.want}, creds)
+			bssert.NoError(t, err)
+			bssert.Zero(t, next)
+			bssert.Equbl(t, []*UserCredentibl{tc.wbnt}, creds)
 		})
 	}
 
-	// Combinations that return all user credentials.
-	for name, opts := range map[string]UserCredentialsListOpts{
+	// Combinbtions thbt return bll user credentibls.
+	for nbme, opts := rbnge mbp[string]UserCredentiblsListOpts{
 		"no options":   {},
-		"domain only":  {Scope: UserCredentialScope{Domain: UserCredentialDomainBatches}},
-		"user ID only": {Scope: UserCredentialScope{UserID: fx.user.ID}},
-		"domain and user ID": {
-			Scope: UserCredentialScope{
-				Domain: UserCredentialDomainBatches,
+		"dombin only":  {Scope: UserCredentiblScope{Dombin: UserCredentiblDombinBbtches}},
+		"user ID only": {Scope: UserCredentiblScope{UserID: fx.user.ID}},
+		"dombin bnd user ID": {
+			Scope: UserCredentiblScope{
+				Dombin: UserCredentiblDombinBbtches,
 				UserID: fx.user.ID,
 			},
 		},
 	} {
-		t.Run("multiple matches on "+name, func(t *testing.T) {
+		t.Run("multiple mbtches on "+nbme, func(t *testing.T) {
 			creds, next, err := fx.db.List(fx.userCtx, opts)
-			assert.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Equal(t, []*UserCredential{githubCred, gitlabCred}, creds)
+			bssert.NoError(t, err)
+			bssert.Zero(t, next)
+			bssert.Equbl(t, []*UserCredentibl{githubCred, gitlbbCred}, creds)
 		})
 
-		t.Run("pagination for "+name, func(t *testing.T) {
+		t.Run("pbginbtion for "+nbme, func(t *testing.T) {
 			o := opts
 			o.LimitOffset = &LimitOffset{Limit: 1}
 			creds, next, err := fx.db.List(fx.userCtx, o)
-			assert.NoError(t, err)
-			assert.EqualValues(t, 1, next)
-			assert.Equal(t, []*UserCredential{githubCred}, creds)
+			bssert.NoError(t, err)
+			bssert.EqublVblues(t, 1, next)
+			bssert.Equbl(t, []*UserCredentibl{githubCred}, creds)
 
 			o.LimitOffset = &LimitOffset{Limit: 1, Offset: next}
 			creds, next, err = fx.db.List(fx.userCtx, o)
-			assert.NoError(t, err)
-			assert.Zero(t, next)
-			assert.Equal(t, []*UserCredential{gitlabCred}, creds)
+			bssert.NoError(t, err)
+			bssert.Zero(t, next)
+			bssert.Equbl(t, []*UserCredentibl{gitlbbCred}, creds)
 		})
 	}
 }
 
-func TestUserCredentials_Invalid(t *testing.T) {
+func TestUserCredentibls_Invblid(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	fx := setUpUserCredentialTest(t, db)
-	ctx := fx.internalCtx
+	fx := setUpUserCredentiblTest(t, db)
+	ctx := fx.internblCtx
 	key := fx.key
 
-	t.Run("marshal", func(t *testing.T) {
-		_, err := fx.db.Create(ctx, UserCredentialScope{}, &invalidAuth{})
-		assert.Error(t, err)
+	t.Run("mbrshbl", func(t *testing.T) {
+		_, err := fx.db.Crebte(ctx, UserCredentiblScope{}, &invblidAuth{})
+		bssert.Error(t, err)
 	})
 
-	t.Run("unmarshal", func(t *testing.T) {
-		// We'll set up some cases here that just shouldn't happen at all, and
-		// make sure they bubble up with errors where we expect. Let's define a
-		// helper to make that easier.
+	t.Run("unmbrshbl", func(t *testing.T) {
+		// We'll set up some cbses here thbt just shouldn't hbppen bt bll, bnd
+		// mbke sure they bubble up with errors where we expect. Let's define b
+		// helper to mbke thbt ebsier.
 
-		insertRawCredential := func(t *testing.T, domain string, raw string) int64 {
+		insertRbwCredentibl := func(t *testing.T, dombin string, rbw string) int64 {
 			kid := testEncryptionKeyID(key)
-			secret, err := key.Encrypt(ctx, []byte(raw))
+			secret, err := key.Encrypt(ctx, []byte(rbw))
 			require.NoError(t, err)
 
 			q := sqlf.Sprintf(
-				userCredentialsCreateQueryFmtstr,
-				domain,
+				userCredentiblsCrebteQueryFmtstr,
+				dombin,
 				fx.user.ID,
 				"type",
 				"id",
@@ -560,170 +560,170 @@ func TestUserCredentials_Invalid(t *testing.T) {
 				sqlf.Sprintf("id"),
 			)
 
-			var id int64
-			err = db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&id)
+			vbr id int64
+			err = db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&id)
 			require.NoError(t, err)
 
 			return id
 		}
 
-		for name, id := range map[string]int64{
-			"invalid credential type": insertRawCredential(t, "invalid", `{"type":"InvalidType"}`),
-			"lying credential type":   insertRawCredential(t, "lying", `{"type":"BasicAuth","username":42}`),
-			"malformed JSON":          insertRawCredential(t, "malformed", "this is not valid JSON"),
+		for nbme, id := rbnge mbp[string]int64{
+			"invblid credentibl type": insertRbwCredentibl(t, "invblid", `{"type":"InvblidType"}`),
+			"lying credentibl type":   insertRbwCredentibl(t, "lying", `{"type":"BbsicAuth","usernbme":42}`),
+			"mblformed JSON":          insertRbwCredentibl(t, "mblformed", "this is not vblid JSON"),
 		} {
-			t.Run(name, func(t *testing.T) {
+			t.Run(nbme, func(t *testing.T) {
 				cred, err := fx.db.GetByID(ctx, id)
 				require.NoError(t, err)
 
-				_, err = cred.Authenticator(ctx)
-				assert.Error(t, err)
+				_, err = cred.Authenticbtor(ctx)
+				bssert.Error(t, err)
 			})
 		}
 	})
 }
 
-func TestUserCredentialNotFoundErr(t *testing.T) {
-	err := UserCredentialNotFoundErr{}
-	if have := errcode.IsNotFound(err); !have {
-		t.Error("UserCredentialNotFoundErr does not say it represents a not found error")
+func TestUserCredentiblNotFoundErr(t *testing.T) {
+	err := UserCredentiblNotFoundErr{}
+	if hbve := errcode.IsNotFound(err); !hbve {
+		t.Error("UserCredentiblNotFoundErr does not sby it represents b not found error")
 	}
 }
 
-func assertUserCredentialNotFoundError(t *testing.T, want any, have error) {
+func bssertUserCredentiblNotFoundError(t *testing.T, wbnt bny, hbve error) {
 	t.Helper()
 
-	var e UserCredentialNotFoundErr
-	assert.ErrorAs(t, have, &e)
-	assert.Len(t, e.args, 1)
-	assert.EqualValues(t, want, e.args[0])
+	vbr e UserCredentiblNotFoundErr
+	bssert.ErrorAs(t, hbve, &e)
+	bssert.Len(t, e.brgs, 1)
+	bssert.EqublVblues(t, wbnt, e.brgs[0])
 }
 
-func createUserCredentialAuths(t *testing.T) map[string]auth.Authenticator {
+func crebteUserCredentiblAuths(t *testing.T) mbp[string]buth.Authenticbtor {
 	t.Helper()
 
-	createOAuthClient := func(t *testing.T, token, secret string) *oauth.Client {
+	crebteOAuthClient := func(t *testing.T, token, secret string) *obuth.Client {
 		t.Helper()
 
-		// Generate a random key so we can test different clients are different.
-		// Note that this is wildly insecure.
-		key, err := rsa.GenerateKey(rand.Reader, 64)
+		// Generbte b rbndom key so we cbn test different clients bre different.
+		// Note thbt this is wildly insecure.
+		key, err := rsb.GenerbteKey(rbnd.Rebder, 64)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		return &oauth.Client{
-			Credentials: oauth.Credentials{
+		return &obuth.Client{
+			Credentibls: obuth.Credentibls{
 				Token:  token,
 				Secret: secret,
 			},
-			PrivateKey: key,
+			PrivbteKey: key,
 		}
 	}
 
-	auths := make(map[string]auth.Authenticator)
-	for _, a := range []auth.Authenticator{
-		&auth.OAuthClient{Client: createOAuthClient(t, "abc", "def")},
-		&auth.BasicAuth{Username: "foo", Password: "bar"},
-		&auth.BasicAuthWithSSH{BasicAuth: auth.BasicAuth{Username: "foo", Password: "bar"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
-		&auth.OAuthBearerToken{Token: "abcdef"},
-		&auth.OAuthBearerTokenWithSSH{OAuthBearerToken: auth.OAuthBearerToken{Token: "abcdef"}, PrivateKey: "private", PublicKey: "public", Passphrase: "pass"},
-		&bitbucketserver.SudoableOAuthClient{
-			Client:   auth.OAuthClient{Client: createOAuthClient(t, "ghi", "jkl")},
-			Username: "neo",
+	buths := mbke(mbp[string]buth.Authenticbtor)
+	for _, b := rbnge []buth.Authenticbtor{
+		&buth.OAuthClient{Client: crebteOAuthClient(t, "bbc", "def")},
+		&buth.BbsicAuth{Usernbme: "foo", Pbssword: "bbr"},
+		&buth.BbsicAuthWithSSH{BbsicAuth: buth.BbsicAuth{Usernbme: "foo", Pbssword: "bbr"}, PrivbteKey: "privbte", PublicKey: "public", Pbssphrbse: "pbss"},
+		&buth.OAuthBebrerToken{Token: "bbcdef"},
+		&buth.OAuthBebrerTokenWithSSH{OAuthBebrerToken: buth.OAuthBebrerToken{Token: "bbcdef"}, PrivbteKey: "privbte", PublicKey: "public", Pbssphrbse: "pbss"},
+		&bitbucketserver.SudobbleOAuthClient{
+			Client:   buth.OAuthClient{Client: crebteOAuthClient(t, "ghi", "jkl")},
+			Usernbme: "neo",
 		},
-		&gitlab.SudoableToken{Token: "mnop", Sudo: "qrs"},
+		&gitlbb.SudobbleToken{Token: "mnop", Sudo: "qrs"},
 	} {
-		auths[reflect.TypeOf(a).String()] = a
+		buths[reflect.TypeOf(b).String()] = b
 	}
 
-	return auths
+	return buths
 }
 
 type testFixture struct {
-	internalCtx context.Context
+	internblCtx context.Context
 	userCtx     context.Context
-	adminCtx    context.Context
+	bdminCtx    context.Context
 
-	db  UserCredentialsStore
+	db  UserCredentiblsStore
 	key encryption.Key
 
 	user  *types.User
-	admin *types.User
+	bdmin *types.User
 }
 
-func setUpUserCredentialTest(t *testing.T, db DB) *testFixture {
+func setUpUserCredentiblTest(t *testing.T, db DB) *testFixture {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	t.Helper()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	key := et.TestKey{}
 
-	admin, err := db.Users().Create(ctx, NewUser{
-		Email:                 "admin@example.com",
-		Username:              "admin",
-		Password:              "pw",
-		EmailVerificationCode: "c",
+	bdmin, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "bdmin@exbmple.com",
+		Usernbme:              "bdmin",
+		Pbssword:              "pw",
+		EmbilVerificbtionCode: "c",
 	})
 	require.NoError(t, err)
 
-	user, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a@example.com",
-		Username:              "u2",
-		Password:              "pw",
-		EmailVerificationCode: "c",
+	user, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "pw",
+		EmbilVerificbtionCode: "c",
 	})
 	require.NoError(t, err)
 
 	return &testFixture{
-		internalCtx: actor.WithInternalActor(ctx),
-		userCtx:     actor.WithActor(ctx, actor.FromUser(user.ID)),
-		adminCtx:    actor.WithActor(ctx, actor.FromUser(admin.ID)),
+		internblCtx: bctor.WithInternblActor(ctx),
+		userCtx:     bctor.WithActor(ctx, bctor.FromUser(user.ID)),
+		bdminCtx:    bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)),
 		key:         key,
-		db:          db.UserCredentials(key),
+		db:          db.UserCredentibls(key),
 		user:        user,
-		admin:       admin,
+		bdmin:       bdmin,
 	}
 }
 
-type authFailureTestCase struct {
+type buthFbilureTestCbse struct {
 	user  *types.User
 	ctx   context.Context
 	setup func(*testing.T)
 }
 
-func authFailureTestCases(t *testing.T, fx *testFixture) map[string]authFailureTestCase {
+func buthFbilureTestCbses(t *testing.T, fx *testFixture) mbp[string]buthFbilureTestCbse {
 	t.Helper()
 
-	return map[string]authFailureTestCase{
-		"user accessing admin": {
-			user:  fx.admin,
+	return mbp[string]buthFbilureTestCbse{
+		"user bccessing bdmin": {
+			user:  fx.bdmin,
 			ctx:   fx.userCtx,
 			setup: func(*testing.T) {},
 		},
-		"admin accessing user without permission": {
+		"bdmin bccessing user without permission": {
 			user: fx.user,
-			ctx:  fx.adminCtx,
+			ctx:  fx.bdminCtx,
 			setup: func(*testing.T) {
-				conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
+				conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
 					AuthzEnforceForSiteAdmins: true,
 				}})
-				t.Cleanup(func() { conf.Mock(nil) })
+				t.Clebnup(func() { conf.Mock(nil) })
 			},
 		},
-		"anonymous accessing user": {
+		"bnonymous bccessing user": {
 			user:  fx.user,
-			ctx:   context.Background(),
+			ctx:   context.Bbckground(),
 			setup: func(*testing.T) {},
 		},
 	}
 }
 
-type invalidAuth struct{}
+type invblidAuth struct{}
 
-var _ auth.Authenticator = &invalidAuth{}
+vbr _ buth.Authenticbtor = &invblidAuth{}
 
-func (*invalidAuth) Authenticate(_ *http.Request) error { panic("should not be called") }
-func (*invalidAuth) Hash() string                       { panic("should not be called") }
+func (*invblidAuth) Authenticbte(_ *http.Request) error { pbnic("should not be cblled") }
+func (*invblidAuth) Hbsh() string                       { pbnic("should not be cblled") }

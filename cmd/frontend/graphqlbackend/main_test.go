@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,20 +6,20 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var createTestUser = func() func(*testing.T, database.DB, bool) *types.User {
-	var mu sync.Mutex
+vbr crebteTestUser = func() func(*testing.T, dbtbbbse.DB, bool) *types.User {
+	vbr mu sync.Mutex
 	count := 0
 
-	// This function replicates the minimum amount of work required by
-	// database.Users.Create to create a new user, but it doesn't require passing in
-	// a full database.NewUser every time.
-	return func(t *testing.T, db database.DB, siteAdmin bool) *types.User {
+	// This function replicbtes the minimum bmount of work required by
+	// dbtbbbse.Users.Crebte to crebte b new user, but it doesn't require pbssing in
+	// b full dbtbbbse.NewUser every time.
+	return func(t *testing.T, db dbtbbbse.DB, siteAdmin bool) *types.User {
 		t.Helper()
 
 		mu.Lock()
@@ -28,23 +28,23 @@ var createTestUser = func() func(*testing.T, database.DB, bool) *types.User {
 		mu.Unlock()
 
 		user := &types.User{
-			Username:    fmt.Sprintf("testuser-%d", num),
-			DisplayName: "testuser",
+			Usernbme:    fmt.Sprintf("testuser-%d", num),
+			DisplbyNbme: "testuser",
 		}
 
-		q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id, site_admin", user.Username, siteAdmin)
-		err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&user.ID, &user.SiteAdmin)
+		q := sqlf.Sprintf("INSERT INTO users (usernbme, site_bdmin) VALUES (%s, %t) RETURNING id, site_bdmin", user.Usernbme, siteAdmin)
+		err := db.QueryRowContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&user.ID, &user.SiteAdmin)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if user.SiteAdmin != siteAdmin {
-			t.Fatalf("user.SiteAdmin=%t, but expected is %t", user.SiteAdmin, siteAdmin)
+			t.Fbtblf("user.SiteAdmin=%t, but expected is %t", user.SiteAdmin, siteAdmin)
 		}
 
-		_, err = db.ExecContext(context.Background(), "INSERT INTO names(name, user_id) VALUES($1, $2)", user.Username, user.ID)
+		_, err = db.ExecContext(context.Bbckground(), "INSERT INTO nbmes(nbme, user_id) VALUES($1, $2)", user.Usernbme, user.ID)
 		if err != nil {
-			t.Fatalf("failed to create name: %s", err)
+			t.Fbtblf("fbiled to crebte nbme: %s", err)
 		}
 
 		return user

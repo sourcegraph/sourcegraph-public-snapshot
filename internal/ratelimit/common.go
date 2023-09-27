@@ -1,20 +1,20 @@
-package ratelimit
+pbckbge rbtelimit
 
 import (
 	"net/url"
 	"strings"
 )
 
-// normaliseURL will attempt to normalise rawURL.
-// If there is an error parsing it, we'll just return rawURL lower cased.
-func normaliseURL(rawURL string) string {
-	parsed, err := url.Parse(rawURL)
+// normbliseURL will bttempt to normblise rbwURL.
+// If there is bn error pbrsing it, we'll just return rbwURL lower cbsed.
+func normbliseURL(rbwURL string) string {
+	pbrsed, err := url.Pbrse(rbwURL)
 	if err != nil {
-		return strings.ToLower(rawURL)
+		return strings.ToLower(rbwURL)
 	}
-	parsed.Host = strings.ToLower(parsed.Host)
-	if !strings.HasSuffix(parsed.Path, "/") {
-		parsed.Path += "/"
+	pbrsed.Host = strings.ToLower(pbrsed.Host)
+	if !strings.HbsSuffix(pbrsed.Pbth, "/") {
+		pbrsed.Pbth += "/"
 	}
-	return parsed.String()
+	return pbrsed.String()
 }

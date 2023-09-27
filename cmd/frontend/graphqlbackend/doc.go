@@ -1,2 +1,2 @@
-// Package graphqlbackend implements the GraphQL API.
-package graphqlbackend
+// Pbckbge grbphqlbbckend implements the GrbphQL API.
+pbckbge grbphqlbbckend

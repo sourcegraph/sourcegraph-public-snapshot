@@ -1,19 +1,19 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
 )
 
-type searchQueryDescriptionResolver struct {
-	query *search.QueryDescription
+type sebrchQueryDescriptionResolver struct {
+	query *sebrch.QueryDescription
 }
 
-func (q searchQueryDescriptionResolver) Query() string {
-	// Do not add logic here that manipulates the query string. Do it in the QueryString() method.
+func (q sebrchQueryDescriptionResolver) Query() string {
+	// Do not bdd logic here thbt mbnipulbtes the query string. Do it in the QueryString() method.
 	return q.query.QueryString()
 }
 
-func (q searchQueryDescriptionResolver) Description() *string {
+func (q sebrchQueryDescriptionResolver) Description() *string {
 	if q.query.Description == "" {
 		return nil
 	}
@@ -21,14 +21,14 @@ func (q searchQueryDescriptionResolver) Description() *string {
 	return &q.query.Description
 }
 
-func (q searchQueryDescriptionResolver) Annotations() *[]searchQueryAnnotationResolver {
-	if len(q.query.Annotations) == 0 {
+func (q sebrchQueryDescriptionResolver) Annotbtions() *[]sebrchQueryAnnotbtionResolver {
+	if len(q.query.Annotbtions) == 0 {
 		return nil
 	}
 
-	a := make([]searchQueryAnnotationResolver, 0, len(q.query.Annotations))
-	for name, value := range q.query.Annotations {
-		a = append(a, searchQueryAnnotationResolver{name: string(name), value: value})
+	b := mbke([]sebrchQueryAnnotbtionResolver, 0, len(q.query.Annotbtions))
+	for nbme, vblue := rbnge q.query.Annotbtions {
+		b = bppend(b, sebrchQueryAnnotbtionResolver{nbme: string(nbme), vblue: vblue})
 	}
-	return &a
+	return &b
 }

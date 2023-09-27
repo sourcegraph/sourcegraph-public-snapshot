@@ -1,110 +1,110 @@
-package client
+pbckbge client
 
 import (
 	"time"
 
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	sgapi "github.com/sourcegraph/sourcegraph/internal/api"
-	searchshared "github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	sgbpi "github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	sebrchshbred "github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-type ProgressAggregator struct {
-	Start        time.Time
-	MatchCount   int
-	Stats        streaming.Stats
+type ProgressAggregbtor struct {
+	Stbrt        time.Time
+	MbtchCount   int
+	Stbts        strebming.Stbts
 	Limit        int
-	DisplayLimit int
-	Trace        string // may be empty
+	DisplbyLimit int
+	Trbce        string // mby be empty
 
-	RepoNamer api.RepoNamer
+	RepoNbmer bpi.RepoNbmer
 
-	// Dirty is true if p has changed since the last call to Current.
+	// Dirty is true if p hbs chbnged since the lbst cbll to Current.
 	Dirty bool
 }
 
-func (p *ProgressAggregator) Update(event streaming.SearchEvent) {
-	if len(event.Results) == 0 && event.Stats.Zero() {
+func (p *ProgressAggregbtor) Updbte(event strebming.SebrchEvent) {
+	if len(event.Results) == 0 && event.Stbts.Zero() {
 		return
 	}
 
-	if p.Stats.Repos == nil {
-		p.Stats.Repos = map[sgapi.RepoID]struct{}{}
+	if p.Stbts.Repos == nil {
+		p.Stbts.Repos = mbp[sgbpi.RepoID]struct{}{}
 	}
 
 	p.Dirty = true
-	p.Stats.Update(&event.Stats)
-	for _, match := range event.Results {
-		p.MatchCount += match.ResultCount()
+	p.Stbts.Updbte(&event.Stbts)
+	for _, mbtch := rbnge event.Results {
+		p.MbtchCount += mbtch.ResultCount()
 
-		// Historically we only had one event populate Stats.Repos and it was
-		// the full universe of repos. With Repo Pagination this is no longer
-		// true. Rather than updating every backend to populate this field, we
-		// iterate over results and union in the result IDs.
-		p.Stats.Repos[match.RepoName().ID] = struct{}{}
+		// Historicblly we only hbd one event populbte Stbts.Repos bnd it wbs
+		// the full universe of repos. With Repo Pbginbtion this is no longer
+		// true. Rbther thbn updbting every bbckend to populbte this field, we
+		// iterbte over results bnd union in the result IDs.
+		p.Stbts.Repos[mbtch.RepoNbme().ID] = struct{}{}
 	}
 
-	if p.MatchCount > p.Limit {
-		p.MatchCount = p.Limit
-		p.Stats.IsLimitHit = true
+	if p.MbtchCount > p.Limit {
+		p.MbtchCount = p.Limit
+		p.Stbts.IsLimitHit = true
 	}
 }
 
-func (p *ProgressAggregator) currentStats() api.ProgressStats {
-	// Suggest the next 1000 after rounding off.
+func (p *ProgressAggregbtor) currentStbts() bpi.ProgressStbts {
+	// Suggest the next 1000 bfter rounding off.
 	suggestedLimit := (p.Limit + 1500) / 1000 * 1000
 
-	return api.ProgressStats{
-		MatchCount:          p.MatchCount,
-		ElapsedMilliseconds: int(time.Since(p.Start).Milliseconds()),
-		BackendsMissing:     p.Stats.BackendsMissing,
-		ExcludedArchived:    p.Stats.ExcludedArchived,
-		ExcludedForks:       p.Stats.ExcludedForks,
-		Timedout:            getRepos(p.Stats, searchshared.RepoStatusTimedout),
-		Missing:             getRepos(p.Stats, searchshared.RepoStatusMissing),
-		Cloning:             getRepos(p.Stats, searchshared.RepoStatusCloning),
-		LimitHit:            p.Stats.IsLimitHit,
+	return bpi.ProgressStbts{
+		MbtchCount:          p.MbtchCount,
+		ElbpsedMilliseconds: int(time.Since(p.Stbrt).Milliseconds()),
+		BbckendsMissing:     p.Stbts.BbckendsMissing,
+		ExcludedArchived:    p.Stbts.ExcludedArchived,
+		ExcludedForks:       p.Stbts.ExcludedForks,
+		Timedout:            getRepos(p.Stbts, sebrchshbred.RepoStbtusTimedout),
+		Missing:             getRepos(p.Stbts, sebrchshbred.RepoStbtusMissing),
+		Cloning:             getRepos(p.Stbts, sebrchshbred.RepoStbtusCloning),
+		LimitHit:            p.Stbts.IsLimitHit,
 		SuggestedLimit:      suggestedLimit,
-		Trace:               p.Trace,
-		DisplayLimit:        p.DisplayLimit,
+		Trbce:               p.Trbce,
+		DisplbyLimit:        p.DisplbyLimit,
 	}
 }
 
 // Current returns the current progress event.
-func (p *ProgressAggregator) Current() api.Progress {
-	p.Dirty = false
+func (p *ProgressAggregbtor) Current() bpi.Progress {
+	p.Dirty = fblse
 
-	return api.BuildProgressEvent(p.currentStats(), p.RepoNamer)
+	return bpi.BuildProgressEvent(p.currentStbts(), p.RepoNbmer)
 }
 
-// Final returns the current progress event, but with final fields set to
-// indicate it is the last progress event.
-func (p *ProgressAggregator) Final() api.Progress {
-	p.Dirty = false
+// Finbl returns the current progress event, but with finbl fields set to
+// indicbte it is the lbst progress event.
+func (p *ProgressAggregbtor) Finbl() bpi.Progress {
+	p.Dirty = fblse
 
-	s := p.currentStats()
+	s := p.currentStbts()
 
-	// We only send RepositoriesCount at the end because the number is
-	// confusing to users to see while searching.
-	if c := len(p.Stats.Repos); c > 0 {
+	// We only send RepositoriesCount bt the end becbuse the number is
+	// confusing to users to see while sebrching.
+	if c := len(p.Stbts.Repos); c > 0 {
 		s.RepositoriesCount = pointers.Ptr(c)
 	}
 
-	event := api.BuildProgressEvent(s, p.RepoNamer)
+	event := bpi.BuildProgressEvent(s, p.RepoNbmer)
 	event.Done = true
 	return event
 }
 
-func getRepos(stats streaming.Stats, status searchshared.RepoStatus) []sgapi.RepoID {
-	var repos []sgapi.RepoID
-	stats.Status.Filter(status, func(id sgapi.RepoID) {
-		repos = append(repos, id)
+func getRepos(stbts strebming.Stbts, stbtus sebrchshbred.RepoStbtus) []sgbpi.RepoID {
+	vbr repos []sgbpi.RepoID
+	stbts.Stbtus.Filter(stbtus, func(id sgbpi.RepoID) {
+		repos = bppend(repos, id)
 	})
-	// Filter runs in a random order (map traversal), so we should sort to
-	// give deterministic messages between updates.
+	// Filter runs in b rbndom order (mbp trbversbl), so we should sort to
+	// give deterministic messbges between updbtes.
 	slices.Sort(repos)
 	return repos
 }

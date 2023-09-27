@@ -1,13 +1,13 @@
 // blobstore is the blobstore server.
-package main // import "github.com/sourcegraph/sourcegraph/cmd/blobstore"
+pbckbge mbin // import "github.com/sourcegrbph/sourcegrbph/cmd/blobstore"
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegrbph/sourcegrbph/cmd/blobstore/shbred"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sourcegrbph/osscmd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
 )
 
-func main() {
-	sanitycheck.Pass()
-	osscmd.SingleServiceMainOSS(shared.Service)
+func mbin() {
+	sbnitycheck.Pbss()
+	osscmd.SingleServiceMbinOSS(shbred.Service)
 }

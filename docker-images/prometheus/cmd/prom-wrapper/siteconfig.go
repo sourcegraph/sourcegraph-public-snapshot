@@ -1,238 +1,238 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/gorilla/mux"
-	amclient "github.com/prometheus/alertmanager/api/v2/client"
-	"github.com/prometheus/alertmanager/api/v2/client/general"
-	amconfig "github.com/prometheus/alertmanager/config"
+	"github.com/gorillb/mux"
+	bmclient "github.com/prometheus/blertmbnbger/bpi/v2/client"
+	"github.com/prometheus/blertmbnbger/bpi/v2/client/generbl"
+	bmconfig "github.com/prometheus/blertmbnbger/config"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	srcprometheus "github.com/sourcegrbph/sourcegrbph/internbl/src-prometheus"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func init() {
-	// by default Alertmanager disallows marshalling of secrets in its configuration - this flag
-	// enables it so we can write secrets to disk
-	amconfig.MarshalSecrets = true
+	// by defbult Alertmbnbger disbllows mbrshblling of secrets in its configurbtion - this flbg
+	// enbbles it so we cbn write secrets to disk
+	bmconfig.MbrshblSecrets = true
 }
 
-type siteEmailConfig struct {
-	SMTP    *schema.SMTPServerConfig
+type siteEmbilConfig struct {
+	SMTP    *schemb.SMTPServerConfig
 	Address string
 }
 
-// subscribedSiteConfig contains fields from SiteConfiguration relevant to the siteConfigSubscriber.
+// subscribedSiteConfig contbins fields from SiteConfigurbtion relevbnt to the siteConfigSubscriber.
 type subscribedSiteConfig struct {
-	Alerts    []*schema.ObservabilityAlerts
-	alertsSum [32]byte
+	Alerts    []*schemb.ObservbbilityAlerts
+	blertsSum [32]byte
 
-	Email    *siteEmailConfig
-	emailSum [32]byte
+	Embil    *siteEmbilConfig
+	embilSum [32]byte
 
 	SilencedAlerts    []string
 	silencedAlertsSum [32]byte
 
-	ExternalURL string
+	ExternblURL string
 }
 
-// newSubscribedSiteConfig creates a subscribedSiteConfig with sha256 sums calculated.
-func newSubscribedSiteConfig(config schema.SiteConfiguration) *subscribedSiteConfig {
-	alertsBytes, err := json.Marshal(config.ObservabilityAlerts)
+// newSubscribedSiteConfig crebtes b subscribedSiteConfig with shb256 sums cblculbted.
+func newSubscribedSiteConfig(config schemb.SiteConfigurbtion) *subscribedSiteConfig {
+	blertsBytes, err := json.Mbrshbl(config.ObservbbilityAlerts)
 	if err != nil {
 		return nil
 	}
-	email := &siteEmailConfig{config.EmailSmtp, config.EmailAddress}
-	emailBytes, err := json.Marshal(email)
+	embil := &siteEmbilConfig{config.EmbilSmtp, config.EmbilAddress}
+	embilBytes, err := json.Mbrshbl(embil)
 	if err != nil {
 		return nil
 	}
-	silencedAlertsBytes, err := json.Marshal(config.ObservabilitySilenceAlerts)
+	silencedAlertsBytes, err := json.Mbrshbl(config.ObservbbilitySilenceAlerts)
 	if err != nil {
 		return nil
 	}
 	return &subscribedSiteConfig{
-		Alerts:    config.ObservabilityAlerts,
-		alertsSum: sha256.Sum256(alertsBytes),
+		Alerts:    config.ObservbbilityAlerts,
+		blertsSum: shb256.Sum256(blertsBytes),
 
-		Email:    email,
-		emailSum: sha256.Sum256(emailBytes),
+		Embil:    embil,
+		embilSum: shb256.Sum256(embilBytes),
 
-		SilencedAlerts:    config.ObservabilitySilenceAlerts,
-		silencedAlertsSum: sha256.Sum256(silencedAlertsBytes),
+		SilencedAlerts:    config.ObservbbilitySilenceAlerts,
+		silencedAlertsSum: shb256.Sum256(silencedAlertsBytes),
 
-		ExternalURL: config.ExternalURL,
+		ExternblURL: config.ExternblURL,
 	}
 }
 
 type siteConfigDiff struct {
 	Type   string
-	change Change
+	chbnge Chbnge
 }
 
 func siteConfigDiffTypes(diffs []siteConfigDiff) (types []string) {
-	for _, d := range diffs {
-		types = append(types, d.Type)
+	for _, d := rbnge diffs {
+		types = bppend(types, d.Type)
 	}
 	return types
 }
 
-// Diff returns a set of changes to apply.
+// Diff returns b set of chbnges to bpply.
 func (c *subscribedSiteConfig) Diff(other *subscribedSiteConfig) []siteConfigDiff {
-	var changes []siteConfigDiff
+	vbr chbnges []siteConfigDiff
 
-	hasAlertReceiversDiff := !bytes.Equal(c.alertsSum[:], other.alertsSum[:])
-	if hasAlertReceiversDiff || c.ExternalURL != other.ExternalURL {
-		changes = append(changes, siteConfigDiff{Type: "alerts", change: changeReceivers})
+	hbsAlertReceiversDiff := !bytes.Equbl(c.blertsSum[:], other.blertsSum[:])
+	if hbsAlertReceiversDiff || c.ExternblURL != other.ExternblURL {
+		chbnges = bppend(chbnges, siteConfigDiff{Type: "blerts", chbnge: chbngeReceivers})
 	}
 
-	// re-apply SMTP on top of receivers diff because we may overwrite receiver config here
-	if hasAlertReceiversDiff || !bytes.Equal(c.emailSum[:], other.emailSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "email", change: changeSMTP})
+	// re-bpply SMTP on top of receivers diff becbuse we mby overwrite receiver config here
+	if hbsAlertReceiversDiff || !bytes.Equbl(c.embilSum[:], other.embilSum[:]) {
+		chbnges = bppend(chbnges, siteConfigDiff{Type: "embil", chbnge: chbngeSMTP})
 	}
 
-	if !bytes.Equal(c.silencedAlertsSum[:], other.silencedAlertsSum[:]) {
-		changes = append(changes, siteConfigDiff{Type: "silenced-alerts", change: changeSilences})
+	if !bytes.Equbl(c.silencedAlertsSum[:], other.silencedAlertsSum[:]) {
+		chbnges = bppend(chbnges, siteConfigDiff{Type: "silenced-blerts", chbnge: chbngeSilences})
 	}
 
-	return changes
+	return chbnges
 }
 
-// SiteConfigSubscriber is a sidecar service that subscribes to Sourcegraph site configuration and
-// applies relevant (subscribedSiteConfig) changes to Grafana.
+// SiteConfigSubscriber is b sidecbr service thbt subscribes to Sourcegrbph site configurbtion bnd
+// bpplies relevbnt (subscribedSiteConfig) chbnges to Grbfbnb.
 type SiteConfigSubscriber struct {
 	log          log.Logger
-	alertmanager *amclient.Alertmanager
+	blertmbnbger *bmclient.Alertmbnbger
 
 	mux      sync.RWMutex
 	config   *subscribedSiteConfig
-	problems conf.Problems // exported by handler
+	problems conf.Problems // exported by hbndler
 }
 
-func NewSiteConfigSubscriber(logger log.Logger, alertmanager *amclient.Alertmanager) *SiteConfigSubscriber {
-	zeroConfig := newSubscribedSiteConfig(schema.SiteConfiguration{})
+func NewSiteConfigSubscriber(logger log.Logger, blertmbnbger *bmclient.Alertmbnbger) *SiteConfigSubscriber {
+	zeroConfig := newSubscribedSiteConfig(schemb.SiteConfigurbtion{})
 	return &SiteConfigSubscriber{
 		log:          logger,
-		alertmanager: alertmanager,
+		blertmbnbger: blertmbnbger,
 		config:       zeroConfig,
 	}
 }
 
-func (c *SiteConfigSubscriber) Handler() http.Handler {
-	handler := mux.NewRouter()
-	handler.StrictSlash(true)
-	// see EndpointConfigSubscriber usages
-	handler.HandleFunc(srcprometheus.EndpointConfigSubscriber, func(w http.ResponseWriter, req *http.Request) {
+func (c *SiteConfigSubscriber) Hbndler() http.Hbndler {
+	hbndler := mux.NewRouter()
+	hbndler.StrictSlbsh(true)
+	// see EndpointConfigSubscriber usbges
+	hbndler.HbndleFunc(srcprometheus.EndpointConfigSubscriber, func(w http.ResponseWriter, req *http.Request) {
 		c.mux.RLock()
 		defer c.mux.RUnlock()
 
 		problems := c.problems
 
-		if _, err := c.alertmanager.General.GetStatus(&general.GetStatusParams{
+		if _, err := c.blertmbnbger.Generbl.GetStbtus(&generbl.GetStbtusPbrbms{
 			Context: req.Context(),
 		}); err != nil {
-			c.log.Error("unable to get Alertmanager status", log.Error(err))
-			problems = append(problems,
-				conf.NewSiteProblem("`observability`: unable to reach Alertmanager - please refer to the Prometheus logs for more details"))
+			c.log.Error("unbble to get Alertmbnbger stbtus", log.Error(err))
+			problems = bppend(problems,
+				conf.NewSiteProblem("`observbbility`: unbble to rebch Alertmbnbger - plebse refer to the Prometheus logs for more detbils"))
 		}
 
-		b, err := json.Marshal(map[string]any{
+		b, err := json.Mbrshbl(mbp[string]bny{
 			"problems": problems,
 		})
 		if err != nil {
-			w.WriteHeader(500)
+			w.WriteHebder(500)
 			_, _ = w.Write([]byte(err.Error()))
 			return
 		}
 		_, _ = w.Write(b)
 	})
-	return handler
+	return hbndler
 }
 
 func (c *SiteConfigSubscriber) Subscribe(ctx context.Context) {
-	// Initialize conf package
+	// Initiblize conf pbckbge
 	conf.Init()
 
-	// Load initial alerts configuration
-	c.log.Debug("making initial site config load")
-	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
+	// Lobd initibl blerts configurbtion
+	c.log.Debug("mbking initibl site config lobd")
+	siteConfig := newSubscribedSiteConfig(conf.Get().SiteConfigurbtion)
 	diffs := siteConfig.Diff(c.config)
 	if len(diffs) > 0 {
 		c.execDiffs(ctx, siteConfig, diffs)
 	} else {
-		c.log.Debug("no relevant configuration to init")
+		c.log.Debug("no relevbnt configurbtion to init")
 	}
 
-	// Watch for future changes
-	conf.Watch(func() {
+	// Wbtch for future chbnges
+	conf.Wbtch(func() {
 		c.mux.RLock()
-		newSiteConfig := newSubscribedSiteConfig(conf.Get().SiteConfiguration)
+		newSiteConfig := newSubscribedSiteConfig(conf.Get().SiteConfigurbtion)
 		diffs := newSiteConfig.Diff(c.config)
 		c.mux.RUnlock()
 
-		// ignore irrelevant changes
+		// ignore irrelevbnt chbnges
 		if len(diffs) == 0 {
-			c.log.Debug("config update contained no relevant changes - ignoring")
+			c.log.Debug("config updbte contbined no relevbnt chbnges - ignoring")
 			return
 		}
 
-		// update configuration
-		configUpdateCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
-		c.execDiffs(configUpdateCtx, newSiteConfig, diffs)
-		cancel()
+		// updbte configurbtion
+		configUpdbteCtx, cbncel := context.WithTimeout(ctx, 30*time.Second)
+		c.execDiffs(configUpdbteCtx, newSiteConfig, diffs)
+		cbncel()
 	})
 }
 
-// execDiffs updates grafanaAlertsSubscriber state and writes it to disk. It never returns an error,
-// instead all errors are reported as problems
+// execDiffs updbtes grbfbnbAlertsSubscriber stbte bnd writes it to disk. It never returns bn error,
+// instebd bll errors bre reported bs problems
 func (c *SiteConfigSubscriber) execDiffs(ctx context.Context, newConfig *subscribedSiteConfig, diffs []siteConfigDiff) {
 	c.mux.Lock()
 	defer c.mux.Unlock()
 
-	c.log.Debug("applying configuration diffs", log.Strings("types", siteConfigDiffTypes(diffs)))
+	c.log.Debug("bpplying configurbtion diffs", log.Strings("types", siteConfigDiffTypes(diffs)))
 	c.problems = nil // reset problems
 
-	amConfig, err := amconfig.LoadFile(alertmanagerConfigPath)
+	bmConfig, err := bmconfig.LobdFile(blertmbnbgerConfigPbth)
 	if err != nil {
-		c.log.Error("failed to load Alertmanager configuration", log.Error(err))
-		c.problems = append(c.problems, conf.NewSiteProblem("`observability`: failed to load Alertmanager configuration, please refer to Prometheus logs for more details"))
+		c.log.Error("fbiled to lobd Alertmbnbger configurbtion", log.Error(err))
+		c.problems = bppend(c.problems, conf.NewSiteProblem("`observbbility`: fbiled to lobd Alertmbnbger configurbtion, plebse refer to Prometheus logs for more detbils"))
 		return
 	}
 
-	// run changeset and aggregate results
-	changeContext := ChangeContext{
-		AMConfig: amConfig,
-		AMClient: c.alertmanager,
+	// run chbngeset bnd bggregbte results
+	chbngeContext := ChbngeContext{
+		AMConfig: bmConfig,
+		AMClient: c.blertmbnbger,
 	}
-	for _, diff := range diffs {
-		c.log.Info(fmt.Sprintf("applying changes for %q diff", diff.Type))
-		result := diff.change(ctx, c.log.With(log.String("change", diff.Type)), changeContext, newConfig)
-		c.problems = append(c.problems, result.Problems...)
+	for _, diff := rbnge diffs {
+		c.log.Info(fmt.Sprintf("bpplying chbnges for %q diff", diff.Type))
+		result := diff.chbnge(ctx, c.log.With(log.String("chbnge", diff.Type)), chbngeContext, newConfig)
+		c.problems = bppend(c.problems, result.Problems...)
 	}
 
-	// attempt to apply changes
-	c.log.Debug("reloading with new configuration")
-	err = applyConfiguration(ctx, changeContext.AMConfig)
+	// bttempt to bpply chbnges
+	c.log.Debug("relobding with new configurbtion")
+	err = bpplyConfigurbtion(ctx, chbngeContext.AMConfig)
 	if err != nil {
-		c.log.Error("failed to apply new configuration", log.Error(err))
-		c.problems = append(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observability`: failed to update Alertmanager configuration (%s)", err.Error())))
+		c.log.Error("fbiled to bpply new configurbtion", log.Error(err))
+		c.problems = bppend(c.problems, conf.NewSiteProblem(fmt.Sprintf("`observbbility`: fbiled to updbte Alertmbnbger configurbtion (%s)", err.Error())))
 		return
 	}
 
-	// update state if changes applied
+	// updbte stbte if chbnges bpplied
 	c.config = newConfig
-	c.log.Debug("configuration diffs applied",
+	c.log.Debug("configurbtion diffs bpplied",
 		log.Strings("types", siteConfigDiffTypes(diffs)),
-		log.Strings("problems", c.problems.Messages()))
+		log.Strings("problems", c.problems.Messbges()))
 }

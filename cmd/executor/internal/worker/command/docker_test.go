@@ -1,177 +1,177 @@
-package command_test
+pbckbge commbnd_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
 )
 
 func TestNewDockerSpec(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		workingDir   string
-		image        string
-		scriptPath   string
-		spec         command.Spec
-		options      command.DockerOptions
-		expectedSpec command.Spec
+		imbge        string
+		scriptPbth   string
+		spec         commbnd.Spec
+		options      commbnd.DockerOptions
+		expectedSpec commbnd.Spec
 	}{
 		{
-			name:       "Converts to docker spec",
+			nbme:       "Converts to docker spec",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "script/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "script/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"run",
 					"--rm",
 					"-v",
-					"/workingDirectory:/data",
+					"/workingDirectory:/dbtb",
 					"-w",
-					"/data/some/dir",
+					"/dbtb/some/dir",
 					"-e",
 					"FOO=BAR",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/script/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/script/pbth",
 				},
 			},
 		},
 		{
-			name:       "Docker Host Mount Path",
+			nbme:       "Docker Host Mount Pbth",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			options: command.DockerOptions{
-				Resources: command.ResourceOptions{
-					DockerHostMountPath: "/docker/host/mount/path",
+			options: commbnd.DockerOptions{
+				Resources: commbnd.ResourceOptions{
+					DockerHostMountPbth: "/docker/host/mount/pbth",
 				},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"run",
 					"--rm",
 					"-v",
-					"/docker/host/mount/path/workingDirectory:/data",
+					"/docker/host/mount/pbth/workingDirectory:/dbtb",
 					"-w",
-					"/data/some/dir",
+					"/dbtb/some/dir",
 					"-e",
 					"FOO=BAR",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "Config Path",
+			nbme:       "Config Pbth",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			options: command.DockerOptions{
-				ConfigPath: "/docker/config/path",
+			options: commbnd.DockerOptions{
+				ConfigPbth: "/docker/config/pbth",
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"--config",
-					"/docker/config/path",
+					"/docker/config/pbth",
 					"run",
 					"--rm",
 					"-v",
-					"/workingDirectory:/data",
+					"/workingDirectory:/dbtb",
 					"-w",
-					"/data/some/dir",
+					"/dbtb/some/dir",
 					"-e",
 					"FOO=BAR",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "Docker Host Gateway",
+			nbme:       "Docker Host Gbtewby",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			options: command.DockerOptions{
-				AddHostGateway: true,
+			options: commbnd.DockerOptions{
+				AddHostGbtewby: true,
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"run",
 					"--rm",
-					"--add-host=host.docker.internal:host-gateway",
+					"--bdd-host=host.docker.internbl:host-gbtewby",
 					"-v",
-					"/workingDirectory:/data",
+					"/workingDirectory:/dbtb",
 					"-w",
-					"/data/some/dir",
+					"/dbtb/some/dir",
 					"-e",
 					"FOO=BAR",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "CPU and Memory",
+			nbme:       "CPU bnd Memory",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			options: command.DockerOptions{
-				Resources: command.ResourceOptions{
+			options: commbnd.DockerOptions{
+				Resources: commbnd.ResourceOptions{
 					NumCPUs: 10,
 					Memory:  "10G",
 				},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"run",
 					"--rm",
@@ -180,114 +180,114 @@ func TestNewDockerSpec(t *testing.T) {
 					"--memory",
 					"10G",
 					"-v",
-					"/workingDirectory:/data",
+					"/workingDirectory:/dbtb",
 					"-w",
-					"/data/some/dir",
+					"/dbtb/some/dir",
 					"-e",
 					"FOO=BAR",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "Default Spec Dir",
+			nbme:       "Defbult Spec Dir",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"run",
 					"--rm",
 					"-v",
-					"/workingDirectory:/data",
+					"/workingDirectory:/dbtb",
 					"-w",
-					"/data",
+					"/dbtb",
 					"-e",
 					"FOO=BAR",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "No environment variables",
+			nbme:       "No environment vbribbles",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key: "some-key",
-				Command: []string{
+				Commbnd: []string{
 					"docker",
 					"run",
 					"--rm",
 					"-v",
-					"/workingDirectory:/data",
+					"/workingDirectory:/dbtb",
 					"-w",
-					"/data/some/dir",
+					"/dbtb/some/dir",
 					"--entrypoint",
 					"/bin/sh",
-					"some-image",
-					"/data/.sourcegraph-executor/some/path",
+					"some-imbge",
+					"/dbtb/.sourcegrbph-executor/some/pbth",
 				},
 			},
 		},
 		{
-			name:       "src-cli Spec",
+			nbme:       "src-cli Spec",
 			workingDir: "/workingDirectory",
-			spec: command.Spec{
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/workingDirectory/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
 		},
 		{
-			name:       "src-cli Spec with Config Path",
+			nbme:       "src-cli Spec with Config Pbth",
 			workingDir: "/workingDirectory",
-			spec: command.Spec{
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			options: command.DockerOptions{
-				ConfigPath: "/my/docker/config/path",
+			options: commbnd.DockerOptions{
+				ConfigPbth: "/my/docker/config/pbth",
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/workingDirectory/some/dir",
-				Env:     []string{"FOO=BAR", "DOCKER_CONFIG=/my/docker/config/path"},
+				Env:     []string{"FOO=BAR", "DOCKER_CONFIG=/my/docker/config/pbth"},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actualSpec := command.NewDockerSpec(test.workingDir, test.image, test.scriptPath, test.spec, test.options)
-			assert.Equal(t, test.expectedSpec, actualSpec)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			bctublSpec := commbnd.NewDockerSpec(test.workingDir, test.imbge, test.scriptPbth, test.spec, test.options)
+			bssert.Equbl(t, test.expectedSpec, bctublSpec)
 		})
 	}
 }

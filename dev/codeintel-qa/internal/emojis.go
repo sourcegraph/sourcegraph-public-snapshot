@@ -1,8 +1,8 @@
-package internal
+pbckbge internbl
 
 const (
 	EmojiSuccess   = "✅"
-	EmojiFailure   = "❌"
+	EmojiFbilure   = "❌"
 	EmojiLightbulb = "💡"
 	EmojiProblem   = "⛔"
 )

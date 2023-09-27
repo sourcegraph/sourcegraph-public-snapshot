@@ -1,6 +1,6 @@
-// Package slack is used to send notifications of an organization's activity
-// to a given Slack webhook.
-package slack
+// Pbckbge slbck is used to send notificbtions of bn orgbnizbtion's bctivity
+// to b given Slbck webhook.
+pbckbge slbck
 
 import (
 	"bytes"
@@ -10,86 +10,86 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Client is capable of posting a message to a Slack webhook
+// Client is cbpbble of posting b messbge to b Slbck webhook
 type Client struct {
 	WebhookURL string
 }
 
-// New creates a new Slack client
+// New crebtes b new Slbck client
 func New(webhookURL string) *Client {
 	return &Client{WebhookURL: webhookURL}
 }
 
-// Payload is the wrapper for a Slack message, defined at:
-// https://api.slack.com/docs/message-formatting
-type Payload struct {
-	Username    string        `json:"username,omitempty"`
+// Pbylobd is the wrbpper for b Slbck messbge, defined bt:
+// https://bpi.slbck.com/docs/messbge-formbtting
+type Pbylobd struct {
+	Usernbme    string        `json:"usernbme,omitempty"`
 	IconEmoji   string        `json:"icon_emoji,omitempty"`
 	UnfurlLinks bool          `json:"unfurl_links,omitempty"`
-	UnfurlMedia bool          `json:"unfurl_media,omitempty"`
+	UnfurlMedib bool          `json:"unfurl_medib,omitempty"`
 	Text        string        `json:"text,omitempty"`
-	Attachments []*Attachment `json:"attachments,omitempty"`
+	Attbchments []*Attbchment `json:"bttbchments,omitempty"`
 }
 
-// Attachment is a Slack message attachment, defined at:
-// https://api.slack.com/docs/message-attachments
-type Attachment struct {
-	AuthorIcon string   `json:"author_icon,omitempty"`
-	AuthorLink string   `json:"author_link,omitempty"`
-	AuthorName string   `json:"author_name,omitempty"`
+// Attbchment is b Slbck messbge bttbchment, defined bt:
+// https://bpi.slbck.com/docs/messbge-bttbchments
+type Attbchment struct {
+	AuthorIcon string   `json:"buthor_icon,omitempty"`
+	AuthorLink string   `json:"buthor_link,omitempty"`
+	AuthorNbme string   `json:"buthor_nbme,omitempty"`
 	Color      string   `json:"color"`
-	Fallback   string   `json:"fallback"`
+	Fbllbbck   string   `json:"fbllbbck"`
 	Fields     []*Field `json:"fields"`
 	Footer     string   `json:"footer"`
-	MarkdownIn []string `json:"mrkdwn_in"`
+	MbrkdownIn []string `json:"mrkdwn_in"`
 	ThumbURL   string   `json:"thumb_url"`
 	Text       string   `json:"text,omitempty"`
-	Timestamp  int64    `json:"ts"`
+	Timestbmp  int64    `json:"ts"`
 	Title      string   `json:"title"`
 	TitleLink  string   `json:"title_link,omitempty"`
 }
 
-// Field is a single item within an attachment, defined at:
-// https://api.slack.com/docs/message-attachments
+// Field is b single item within bn bttbchment, defined bt:
+// https://bpi.slbck.com/docs/messbge-bttbchments
 type Field struct {
 	Short bool   `json:"short"`
 	Title string `json:"title"`
-	Value string `json:"value"`
+	Vblue string `json:"vblue"`
 }
 
-// Post sends payload to a Slack channel.
-func (c *Client) Post(ctx context.Context, payload *Payload) error {
+// Post sends pbylobd to b Slbck chbnnel.
+func (c *Client) Post(ctx context.Context, pbylobd *Pbylobd) error {
 	if c.WebhookURL == "" {
 		return nil
 	}
 
-	payloadJSON, err := json.Marshal(payload)
+	pbylobdJSON, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return errors.Wrap(err, "slack: marshal json")
+		return errors.Wrbp(err, "slbck: mbrshbl json")
 	}
-	req, err := http.NewRequest("POST", c.WebhookURL, bytes.NewReader(payloadJSON))
+	req, err := http.NewRequest("POST", c.WebhookURL, bytes.NewRebder(pbylobdJSON))
 	if err != nil {
-		return errors.Wrap(err, "slack: create post request")
+		return errors.Wrbp(err, "slbck: crebte post request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
-	timeoutCtx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
+	timeoutCtx, cbncel := context.WithTimeout(ctx, time.Minute)
+	defer cbncel()
 
-	resp, err := http.DefaultClient.Do(req.WithContext(timeoutCtx))
+	resp, err := http.DefbultClient.Do(req.WithContext(timeoutCtx))
 	if err != nil {
-		return errors.Wrap(err, "slack: http request")
+		return errors.Wrbp(err, "slbck: http request")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		body, err := io.ReadAll(resp.Body)
+	if resp.StbtusCode != http.StbtusOK {
+		body, err := io.RebdAll(resp.Body)
 		if err != nil {
 			return err
 		}
-		return errors.Errorf("slack: %s failed with %d %s", payloadJSON, resp.StatusCode, string(body))
+		return errors.Errorf("slbck: %s fbiled with %d %s", pbylobdJSON, resp.StbtusCode, string(body))
 	}
 	return nil
 }

@@ -1,4 +1,4 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
@@ -8,76 +8,76 @@ import (
 	"testing"
 	"time"
 
-	"github.com/Khan/genqlient/graphql"
+	"github.com/Khbn/genqlient/grbphql"
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"github.com/vektah/gqlparser/v2/gqlerror"
+	"github.com/vektbh/gqlpbrser/v2/gqlerror"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	internalproductsubscription "github.com/sourcegraph/sourcegraph/internal/productsubscription"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor/bnonymous"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor/productsubscription"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	internblproductsubscription "github.com/sourcegrbph/sourcegrbph/internbl/productsubscription"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TODO(@bobheadxi): Try to rewrite this as a table-driven test for less copy-pasta.
-func TestAuthenticatorMiddleware(t *testing.T) {
+// TODO(@bobhebdxi): Try to rewrite this bs b tbble-driven test for less copy-pbstb.
+func TestAuthenticbtorMiddlewbre(t *testing.T) {
 	logger := logtest.Scoped(t)
-	next := http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHeader(http.StatusOK) })
+	next := http.HbndlerFunc(func(w http.ResponseWriter, _ *http.Request) { w.WriteHebder(http.StbtusOK) })
 
-	concurrencyConfig := codygateway.ActorConcurrencyLimitConfig{Percentage: 50, Interval: time.Hour}
+	concurrencyConfig := codygbtewby.ActorConcurrencyLimitConfig{Percentbge: 50, Intervbl: time.Hour}
 
-	t.Run("unauthenticated and allow anonymous", func(t *testing.T) {
+	t.Run("unbuthenticbted bnd bllow bnonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(anonymous.NewSource(true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
+			Sources:     bctor.NewSources(bnonymous.NewSource(true, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusOK, w.Code)
 	})
 
-	t.Run("unauthenticated but disallow anonymous", func(t *testing.T) {
+	t.Run("unbuthenticbted but disbllow bnonymous", func(t *testing.T) {
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(anonymous.NewSource(false, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusForbidden, w.Code)
+			Sources:     bctor.NewSources(bnonymous.NewSource(fblse, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusForbidden, w.Code)
 	})
 
-	t.Run("authenticated without cache hit", func(t *testing.T) {
-		cache := NewMockCache()
+	t.Run("buthenticbted without cbche hit", func(t *testing.T) {
+		cbche := NewMockCbche()
 		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+		client.MbkeRequestFunc.SetDefbultHook(func(_ context.Context, _ *grbphql.Request, resp *grbphql.Response) error {
+			resp.Dbtb.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
 				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+					ProductSubscriptionStbte: dotcom.ProductSubscriptionStbte{
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+						Uuid:       "6452b8fc-e650-45b7-b0b2-357f776b3b46",
+						IsArchived: fblse,
+						CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+							CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+								Enbbled: true,
+								ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+								CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
 							},
@@ -87,137 +87,137 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 			}
 			return nil
 		})
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.NotNil(t, actor.FromContext(r.Context()))
-			w.WriteHeader(http.StatusOK)
+		next := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.NotNil(t, bctor.FromContext(r.Context()))
+			w.WriteHebder(http.StbtusOK)
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
-		mockrequire.Called(t, client.MakeRequestFunc)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, fblse, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusOK, w.Code)
+		mockrequire.Cblled(t, client.MbkeRequestFunc)
 	})
 
-	t.Run("authenticated with cache hit", func(t *testing.T) {
-		cache := NewMockCache()
-		cache.GetFunc.SetDefaultReturn(
-			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":true,"rateLimit":null}`),
+	t.Run("buthenticbted with cbche hit", func(t *testing.T) {
+		cbche := NewMockCbche()
+		cbche.GetFunc.SetDefbultReturn(
+			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","bccessEnbbled":true,"rbteLimit":null}`),
 			true,
 		)
 		client := dotcom.NewMockClient()
-		next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			require.NotNil(t, actor.FromContext(r.Context()))
-			w.WriteHeader(http.StatusOK)
+		next := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			require.NotNil(t, bctor.FromContext(r.Context()))
+			w.WriteHebder(http.StbtusOK)
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
-		mockrequire.NotCalled(t, client.MakeRequestFunc)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, fblse, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusOK, w.Code)
+		mockrequire.NotCblled(t, client.MbkeRequestFunc)
 	})
 
-	t.Run("authenticated but not enabled", func(t *testing.T) {
-		cache := NewMockCache()
-		cache.GetFunc.SetDefaultReturn(
-			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","accessEnabled":false,"rateLimit":null}`),
+	t.Run("buthenticbted but not enbbled", func(t *testing.T) {
+		cbche := NewMockCbche()
+		cbche.GetFunc.SetDefbultReturn(
+			[]byte(`{"id":"UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==","bccessEnbbled":fblse,"rbteLimit":null}`),
 			true,
 		)
 		client := dotcom.NewMockClient()
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, false, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusForbidden, w.Code)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, fblse, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusForbidden, w.Code)
 	})
 
-	t.Run("access token denied from sources", func(t *testing.T) {
-		cache := NewMockCache()
+	t.Run("bccess token denied from sources", func(t *testing.T) {
+		cbche := NewMockCbche()
 		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+		client.MbkeRequestFunc.SetDefbultHook(func(_ context.Context, _ *grbphql.Request, resp *grbphql.Response) error {
 			return gqlerror.List{
 				{
-					Message:    "access denied",
-					Extensions: map[string]any{"code": internalproductsubscription.GQLErrCodeProductSubscriptionNotFound},
+					Messbge:    "bccess denied",
+					Extensions: mbp[string]bny{"code": internblproductsubscription.GQLErrCodeProductSubscriptionNotFound},
 				},
 			}
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusUnauthorized, w.Code)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, true, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusUnbuthorized, w.Code)
 	})
 
 	t.Run("server error from sources", func(t *testing.T) {
-		cache := NewMockCache()
+		cbche := NewMockCbche()
 		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
+		client.MbkeRequestFunc.SetDefbultHook(func(_ context.Context, _ *grbphql.Request, resp *grbphql.Response) error {
 			return errors.New("server error")
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusServiceUnavailable, w.Code)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, true, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusServiceUnbvbilbble, w.Code)
 	})
 
-	t.Run("internal mode, authenticated but not dev license", func(t *testing.T) {
-		cache := NewMockCache()
+	t.Run("internbl mode, buthenticbted but not dev license", func(t *testing.T) {
+		cbche := NewMockCbche()
 		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+		client.MbkeRequestFunc.SetDefbultHook(func(_ context.Context, _ *grbphql.Request, resp *grbphql.Response) error {
+			resp.Dbtb.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
 				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+					ProductSubscriptionStbte: dotcom.ProductSubscriptionStbte{
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+						Uuid:       "6452b8fc-e650-45b7-b0b2-357f776b3b46",
+						IsArchived: fblse,
+						CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+							CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+								Enbbled: true,
+								ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+								CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
 							},
 						},
-						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-								Tags: []string{""},
+						ActiveLicense: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicense{
+							Info: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicenseInfo{
+								Tbgs: []string{""},
 							},
 						},
 					},
@@ -227,46 +227,46 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusForbidden, w.Code)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, true, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusForbidden, w.Code)
 	})
 
-	t.Run("internal mode, authenticated dev license", func(t *testing.T) {
-		cache := NewMockCache()
+	t.Run("internbl mode, buthenticbted dev license", func(t *testing.T) {
+		cbche := NewMockCbche()
 		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+		client.MbkeRequestFunc.SetDefbultHook(func(_ context.Context, _ *grbphql.Request, resp *grbphql.Response) error {
+			resp.Dbtb.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
 				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+					ProductSubscriptionStbte: dotcom.ProductSubscriptionStbte{
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+						Uuid:       "6452b8fc-e650-45b7-b0b2-357f776b3b46",
+						IsArchived: fblse,
+						CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+							CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+								Enbbled: true,
+								ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+								CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
 							},
 						},
-						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-								Tags: []string{licensing.DevTag},
+						ActiveLicense: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicense{
+							Info: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicenseInfo{
+								Tbgs: []string{licensing.DevTbg},
 							},
 						},
 					},
@@ -276,46 +276,46 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, true, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusOK, w.Code)
 	})
 
-	t.Run("internal mode, authenticated internal license", func(t *testing.T) {
-		cache := NewMockCache()
+	t.Run("internbl mode, buthenticbted internbl license", func(t *testing.T) {
+		cbche := NewMockCbche()
 		client := dotcom.NewMockClient()
-		client.MakeRequestFunc.SetDefaultHook(func(_ context.Context, _ *graphql.Request, resp *graphql.Response) error {
-			resp.Data.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
+		client.MbkeRequestFunc.SetDefbultHook(func(_ context.Context, _ *grbphql.Request, resp *grbphql.Response) error {
+			resp.Dbtb.(*dotcom.CheckAccessTokenResponse).Dotcom = dotcom.CheckAccessTokenDotcomDotcomQuery{
 				ProductSubscriptionByAccessToken: dotcom.CheckAccessTokenDotcomDotcomQueryProductSubscriptionByAccessTokenProductSubscription{
-					ProductSubscriptionState: dotcom.ProductSubscriptionState{
+					ProductSubscriptionStbte: dotcom.ProductSubscriptionStbte{
 						Id:         "UHJvZHVjdFN1YnNjcmlwdGlvbjoiNjQ1MmE4ZmMtZTY1MC00NWE3LWEwYTItMzU3Zjc3NmIzYjQ2Ig==",
-						Uuid:       "6452a8fc-e650-45a7-a0a2-357f776b3b46",
-						IsArchived: false,
-						CodyGatewayAccess: dotcom.ProductSubscriptionStateCodyGatewayAccess{
-							CodyGatewayAccessFields: dotcom.CodyGatewayAccessFields{
-								Enabled: true,
-								ChatCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsChatCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+						Uuid:       "6452b8fc-e650-45b7-b0b2-357f776b3b46",
+						IsArchived: fblse,
+						CodyGbtewbyAccess: dotcom.ProductSubscriptionStbteCodyGbtewbyAccess{
+							CodyGbtewbyAccessFields: dotcom.CodyGbtewbyAccessFields{
+								Enbbled: true,
+								ChbtCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsChbtCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
-								CodeCompletionsRateLimit: &dotcom.CodyGatewayAccessFieldsCodeCompletionsRateLimitCodyGatewayRateLimit{
-									RateLimitFields: dotcom.RateLimitFields{
+								CodeCompletionsRbteLimit: &dotcom.CodyGbtewbyAccessFieldsCodeCompletionsRbteLimitCodyGbtewbyRbteLimit{
+									RbteLimitFields: dotcom.RbteLimitFields{
 										Limit:           10,
-										IntervalSeconds: 10,
+										IntervblSeconds: 10,
 									},
 								},
 							},
 						},
-						ActiveLicense: &dotcom.ProductSubscriptionStateActiveLicenseProductLicense{
-							Info: &dotcom.ProductSubscriptionStateActiveLicenseProductLicenseInfo{
-								Tags: []string{licensing.DevTag},
+						ActiveLicense: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicense{
+							Info: &dotcom.ProductSubscriptionStbteActiveLicenseProductLicenseInfo{
+								Tbgs: []string{licensing.DevTbg},
 							},
 						},
 					},
@@ -325,13 +325,13 @@ func TestAuthenticatorMiddleware(t *testing.T) {
 		})
 
 		w := httptest.NewRecorder()
-		r := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`))
-		r.Header.Set("Authorization", "Bearer sgs_abc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250a4a861f37")
-		(&Authenticator{
+		r := httptest.NewRequest(http.MethodPost, "/", strings.NewRebder(`{}`))
+		r.Hebder.Set("Authorizbtion", "Bebrer sgs_bbc1228e23e789431f08cd15e9be20e69b8694c2dff701b81d16250b4b861f37")
+		(&Authenticbtor{
 			Logger:      logger,
 			EventLogger: events.NewStdoutLogger(logger),
-			Sources:     actor.NewSources(productsubscription.NewSource(logger, cache, client, true, concurrencyConfig)),
-		}).Middleware(next).ServeHTTP(w, r)
-		assert.Equal(t, http.StatusOK, w.Code)
+			Sources:     bctor.NewSources(productsubscription.NewSource(logger, cbche, client, true, concurrencyConfig)),
+		}).Middlewbre(next).ServeHTTP(w, r)
+		bssert.Equbl(t, http.StbtusOK, w.Code)
 	})
 }

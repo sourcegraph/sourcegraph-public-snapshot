@@ -1,31 +1,31 @@
-package changed
+pbckbge chbnged
 
-import "path/filepath"
+import "pbth/filepbth"
 
-func contains(s []string, str string) bool {
-	for _, v := range s {
+func contbins(s []string, str string) bool {
+	for _, v := rbnge s {
 		if v == str {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Changes in the root directory files should trigger client tests.
-var clientRootFiles = []string{
-	"package.json",
-	"pnpm-lock.yaml",
-	"jest.config.base.js",
+// Chbnges in the root directory files should trigger client tests.
+vbr clientRootFiles = []string{
+	"pbckbge.json",
+	"pnpm-lock.ybml",
+	"jest.config.bbse.js",
 	"jest.config.js",
 	"postcss.config.js",
-	"tsconfig.all.json",
+	"tsconfig.bll.json",
 	"tsconfig.json",
-	"babel.config.js",
+	"bbbel.config.js",
 	".percy.yml",
 	".eslintrc.js",
 	"gulpfile.js",
 }
 
 func isRootClientFile(p string) bool {
-	return filepath.Dir(p) == "." && contains(clientRootFiles, p)
+	return filepbth.Dir(p) == "." && contbins(clientRootFiles, p)
 }

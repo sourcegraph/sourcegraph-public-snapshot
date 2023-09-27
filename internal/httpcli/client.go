@@ -1,11 +1,11 @@
-package httpcli
+pbckbge httpcli
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"math"
-	"math/rand"
+	"mbth"
+	"mbth/rbnd"
 	"net"
 	"net/http"
 	"net/url"
@@ -16,28 +16,28 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
-	"github.com/gregjones/httpcache"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/gregjones/httpcbche"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce/policy"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// A Doer captures the Do method of an http.Client. It facilitates decorating
-// an http.Client with orthogonal concerns such as logging, metrics, retries,
+// A Doer cbptures the Do method of bn http.Client. It fbcilitbtes decorbting
+// bn http.Client with orthogonbl concerns such bs logging, metrics, retries,
 // etc.
-type Doer interface {
+type Doer interfbce {
 	Do(*http.Request) (*http.Response, error)
 }
 
@@ -47,252 +47,252 @@ func (m MockDoer) Do(req *http.Request) (*http.Response, error) {
 	return m(req)
 }
 
-// DoerFunc is function adapter that implements the http.RoundTripper
-// interface by calling itself.
+// DoerFunc is function bdbpter thbt implements the http.RoundTripper
+// interfbce by cblling itself.
 type DoerFunc func(*http.Request) (*http.Response, error)
 
-// Do implements the Doer interface.
+// Do implements the Doer interfbce.
 func (f DoerFunc) Do(req *http.Request) (*http.Response, error) {
 	return f(req)
 }
 
-// A Middleware function wraps a Doer with a layer of behaviour. It's used
-// to decorate an http.Client with orthogonal layers of behaviour such as
-// logging, instrumentation, retries, etc.
-type Middleware func(Doer) Doer
+// A Middlewbre function wrbps b Doer with b lbyer of behbviour. It's used
+// to decorbte bn http.Client with orthogonbl lbyers of behbviour such bs
+// logging, instrumentbtion, retries, etc.
+type Middlewbre func(Doer) Doer
 
-// NewMiddleware returns a Middleware stack composed of the given Middlewares.
-func NewMiddleware(mws ...Middleware) Middleware {
-	return func(bottom Doer) (stacked Doer) {
-		stacked = bottom
-		for _, mw := range mws {
-			stacked = mw(stacked)
+// NewMiddlewbre returns b Middlewbre stbck composed of the given Middlewbres.
+func NewMiddlewbre(mws ...Middlewbre) Middlewbre {
+	return func(bottom Doer) (stbcked Doer) {
+		stbcked = bottom
+		for _, mw := rbnge mws {
+			stbcked = mw(stbcked)
 		}
-		return stacked
+		return stbcked
 	}
 }
 
-// Opt configures an aspect of a given *http.Client,
-// returning an error in case of failure.
+// Opt configures bn bspect of b given *http.Client,
+// returning bn error in cbse of fbilure.
 type Opt func(*http.Client) error
 
-// A Factory constructs an http.Client with the given functional
-// options applied, returning an aggregate error of the errors returned by
-// all those options.
-type Factory struct {
-	stack  Middleware
+// A Fbctory constructs bn http.Client with the given functionbl
+// options bpplied, returning bn bggregbte error of the errors returned by
+// bll those options.
+type Fbctory struct {
+	stbck  Middlewbre
 	common []Opt
 }
 
-// redisCache is an HTTP cache backed by Redis. The TTL of a week is a balance
-// between caching values for a useful amount of time versus growing the cache
-// too large.
-var redisCache = rcache.NewWithTTL("http", 604800)
+// redisCbche is bn HTTP cbche bbcked by Redis. The TTL of b week is b bblbnce
+// between cbching vblues for b useful bmount of time versus growing the cbche
+// too lbrge.
+vbr redisCbche = rcbche.NewWithTTL("http", 604800)
 
-// CachedTransportOpt is the default transport cache - it will return values from
-// the cache where possible (avoiding a network request) and will additionally add
-// validators (etag/if-modified-since) to repeated requests allowing servers to
+// CbchedTrbnsportOpt is the defbult trbnsport cbche - it will return vblues from
+// the cbche where possible (bvoiding b network request) bnd will bdditionblly bdd
+// vblidbtors (etbg/if-modified-since) to repebted requests bllowing servers to
 // return 304 / Not Modified.
 //
-// Responses load from cache will have the 'X-From-Cache' header set.
-var CachedTransportOpt = NewCachedTransportOpt(redisCache, true)
+// Responses lobd from cbche will hbve the 'X-From-Cbche' hebder set.
+vbr CbchedTrbnsportOpt = NewCbchedTrbnsportOpt(redisCbche, true)
 
-// ExternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services.
-// WARN: Clients from this factory cache entire responses for etag matching. Do not
-// use them for one-off requests if possible, and definitely not for larger payloads,
-// like downloading arbitrarily sized files! See UncachedExternalClientFactory instead.
-var ExternalClientFactory = NewExternalClientFactory()
+// ExternblClientFbctory is b httpcli.Fbctory with common options
+// bnd middlewbre pre-set for communicbting with externbl services.
+// WARN: Clients from this fbctory cbche entire responses for etbg mbtching. Do not
+// use them for one-off requests if possible, bnd definitely not for lbrger pbylobds,
+// like downlobding brbitrbrily sized files! See UncbchedExternblClientFbctory instebd.
+vbr ExternblClientFbctory = NewExternblClientFbctory()
 
-// UncachedExternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services, but with caching
-// responses disabled.
-var UncachedExternalClientFactory = newExternalClientFactory(false)
+// UncbchedExternblClientFbctory is b httpcli.Fbctory with common options
+// bnd middlewbre pre-set for communicbting with externbl services, but with cbching
+// responses disbbled.
+vbr UncbchedExternblClientFbctory = newExternblClientFbctory(fblse)
 
-var (
-	externalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for external HTTP requests"))
-	externalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Base retry delay duration for external HTTP requests"))
-	externalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Max retry delay duration for external HTTP requests"))
-	externalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for external HTTP requests"))
-	externalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+vbr (
+	externblTimeout, _               = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_EXTERNAL_TIMEOUT", "5m", "Timeout for externbl HTTP requests"))
+	externblRetryDelbyBbse, _        = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_BASE", "200ms", "Bbse retry delby durbtion for externbl HTTP requests"))
+	externblRetryDelbyMbx, _         = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_DELAY_MAX", "3s", "Mbx retry delby durbtion for externbl HTTP requests"))
+	externblRetryMbxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_MAX_ATTEMPTS", "20", "Mbx retry bttempts for externbl HTTP requests"))
+	externblRetryAfterMbxDurbtion, _ = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_EXTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Mbx durbtion to wbit in retry-bfter hebder before we won't buto-retry"))
 )
 
-// NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services. Additional
-// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
-// WARN: Clients from this factory cache entire responses for etag matching. Do not
-// use them for one-off requests if possible, and definitely not for larger payloads,
-// like downloading arbitrarily sized files!
-func NewExternalClientFactory(middleware ...Middleware) *Factory {
-	return newExternalClientFactory(true, middleware...)
+// NewExternblClientFbctory returns b httpcli.Fbctory with common options
+// bnd middlewbre pre-set for communicbting with externbl services. Additionbl
+// middlewbre cbn blso be provided to e.g. enbble logging with NewLoggingMiddlewbre.
+// WARN: Clients from this fbctory cbche entire responses for etbg mbtching. Do not
+// use them for one-off requests if possible, bnd definitely not for lbrger pbylobds,
+// like downlobding brbitrbrily sized files!
+func NewExternblClientFbctory(middlewbre ...Middlewbre) *Fbctory {
+	return newExternblClientFbctory(true, middlewbre...)
 }
 
-// NewExternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with external services. Additional
-// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
-// If cache is true, responses will be cached in redis for improved rate limiting
-// and reduced byte transfer sizes.
-func newExternalClientFactory(cache bool, middleware ...Middleware) *Factory {
-	mw := []Middleware{
-		ContextErrorMiddleware,
-		HeadersMiddleware("User-Agent", "Sourcegraph-Bot"),
-		redisLoggerMiddleware(),
+// NewExternblClientFbctory returns b httpcli.Fbctory with common options
+// bnd middlewbre pre-set for communicbting with externbl services. Additionbl
+// middlewbre cbn blso be provided to e.g. enbble logging with NewLoggingMiddlewbre.
+// If cbche is true, responses will be cbched in redis for improved rbte limiting
+// bnd reduced byte trbnsfer sizes.
+func newExternblClientFbctory(cbche bool, middlewbre ...Middlewbre) *Fbctory {
+	mw := []Middlewbre{
+		ContextErrorMiddlewbre,
+		HebdersMiddlewbre("User-Agent", "Sourcegrbph-Bot"),
+		redisLoggerMiddlewbre(),
 	}
-	mw = append(mw, middleware...)
+	mw = bppend(mw, middlewbre...)
 
 	opts := []Opt{
-		NewTimeoutOpt(externalTimeout),
-		// ExternalTransportOpt needs to be before TracedTransportOpt and
-		// NewCachedTransportOpt since it wants to extract a http.Transport,
-		// not a generic http.RoundTripper.
-		ExternalTransportOpt,
-		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(externalRetryMaxAttempts), externalRetryAfterMaxDuration),
-			ExpJitterDelayOrRetryAfterDelay(externalRetryDelayBase, externalRetryDelayMax),
+		NewTimeoutOpt(externblTimeout),
+		// ExternblTrbnsportOpt needs to be before TrbcedTrbnsportOpt bnd
+		// NewCbchedTrbnsportOpt since it wbnts to extrbct b http.Trbnsport,
+		// not b generic http.RoundTripper.
+		ExternblTrbnsportOpt,
+		NewErrorResilientTrbnsportOpt(
+			NewRetryPolicy(MbxRetries(externblRetryMbxAttempts), externblRetryAfterMbxDurbtion),
+			ExpJitterDelbyOrRetryAfterDelby(externblRetryDelbyBbse, externblRetryDelbyMbx),
 		),
-		TracedTransportOpt,
+		TrbcedTrbnsportOpt,
 	}
-	if cache {
-		opts = append(opts, CachedTransportOpt)
+	if cbche {
+		opts = bppend(opts, CbchedTrbnsportOpt)
 	}
 
-	return NewFactory(
-		NewMiddleware(mw...),
+	return NewFbctory(
+		NewMiddlewbre(mw...),
 		opts...,
 	)
 }
 
-// ExternalDoer is a shared client for external communication. This is a
-// convenience for existing uses of http.DefaultClient.
-// WARN: This client caches entire responses for etag matching. Do not use it for
-// one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
-var ExternalDoer, _ = ExternalClientFactory.Doer()
+// ExternblDoer is b shbred client for externbl communicbtion. This is b
+// convenience for existing uses of http.DefbultClient.
+// WARN: This client cbches entire responses for etbg mbtching. Do not use it for
+// one-off requests if possible, bnd definitely not for lbrger pbylobds, like
+// downlobding brbitrbrily sized files! See UncbchedExternblClient instebd.
+vbr ExternblDoer, _ = ExternblClientFbctory.Doer()
 
-// ExternalClient returns a shared client for external communication. This is
-// a convenience for existing uses of http.DefaultClient.
-// WARN: This client caches entire responses for etag matching. Do not use it for
-// one-off requests if possible, and definitely not for larger payloads, like
-// downloading arbitrarily sized files! See UncachedExternalClient instead.
-var ExternalClient, _ = ExternalClientFactory.Client()
+// ExternblClient returns b shbred client for externbl communicbtion. This is
+// b convenience for existing uses of http.DefbultClient.
+// WARN: This client cbches entire responses for etbg mbtching. Do not use it for
+// one-off requests if possible, bnd definitely not for lbrger pbylobds, like
+// downlobding brbitrbrily sized files! See UncbchedExternblClient instebd.
+vbr ExternblClient, _ = ExternblClientFbctory.Client()
 
-// InternalClientFactory is a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services.
-var InternalClientFactory = NewInternalClientFactory("internal")
+// InternblClientFbctory is b httpcli.Fbctory with common options
+// bnd middlewbre pre-set for communicbting with internbl services.
+vbr InternblClientFbctory = NewInternblClientFbctory("internbl")
 
-var (
-	internalTimeout, _               = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internal HTTP requests"))
-	internalRetryDelayBase, _        = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Base retry delay duration for internal HTTP requests"))
-	internalRetryDelayMax, _         = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Max retry delay duration for internal HTTP requests"))
-	internalRetryMaxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Max retry attempts for internal HTTP requests"))
-	internalRetryAfterMaxDuration, _ = time.ParseDuration(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Max duration to wait in retry-after header before we won't auto-retry"))
+vbr (
+	internblTimeout, _               = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_INTERNAL_TIMEOUT", "0", "Timeout for internbl HTTP requests"))
+	internblRetryDelbyBbse, _        = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_BASE", "50ms", "Bbse retry delby durbtion for internbl HTTP requests"))
+	internblRetryDelbyMbx, _         = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_DELAY_MAX", "1s", "Mbx retry delby durbtion for internbl HTTP requests"))
+	internblRetryMbxAttempts, _      = strconv.Atoi(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_MAX_ATTEMPTS", "20", "Mbx retry bttempts for internbl HTTP requests"))
+	internblRetryAfterMbxDurbtion, _ = time.PbrseDurbtion(env.Get("SRC_HTTP_CLI_INTERNAL_RETRY_AFTER_MAX_DURATION", "3s", "Mbx durbtion to wbit in retry-bfter hebder before we won't buto-retry"))
 )
 
-// NewInternalClientFactory returns a httpcli.Factory with common options
-// and middleware pre-set for communicating with internal services. Additional
-// middleware can also be provided to e.g. enable logging with NewLoggingMiddleware.
-func NewInternalClientFactory(subsystem string, middleware ...Middleware) *Factory {
-	mw := []Middleware{
-		ContextErrorMiddleware,
+// NewInternblClientFbctory returns b httpcli.Fbctory with common options
+// bnd middlewbre pre-set for communicbting with internbl services. Additionbl
+// middlewbre cbn blso be provided to e.g. enbble logging with NewLoggingMiddlewbre.
+func NewInternblClientFbctory(subsystem string, middlewbre ...Middlewbre) *Fbctory {
+	mw := []Middlewbre{
+		ContextErrorMiddlewbre,
 	}
-	mw = append(mw, middleware...)
+	mw = bppend(mw, middlewbre...)
 
-	return NewFactory(
-		NewMiddleware(mw...),
-		NewTimeoutOpt(internalTimeout),
-		NewMaxIdleConnsPerHostOpt(500),
-		NewErrorResilientTransportOpt(
-			NewRetryPolicy(MaxRetries(internalRetryMaxAttempts), internalRetryAfterMaxDuration),
-			ExpJitterDelayOrRetryAfterDelay(internalRetryDelayBase, internalRetryDelayMax),
+	return NewFbctory(
+		NewMiddlewbre(mw...),
+		NewTimeoutOpt(internblTimeout),
+		NewMbxIdleConnsPerHostOpt(500),
+		NewErrorResilientTrbnsportOpt(
+			NewRetryPolicy(MbxRetries(internblRetryMbxAttempts), internblRetryAfterMbxDurbtion),
+			ExpJitterDelbyOrRetryAfterDelby(internblRetryDelbyBbse, internblRetryDelbyMbx),
 		),
-		MeteredTransportOpt(subsystem),
-		ActorTransportOpt,
-		RequestClientTransportOpt,
-		TracedTransportOpt,
+		MeteredTrbnsportOpt(subsystem),
+		ActorTrbnsportOpt,
+		RequestClientTrbnsportOpt,
+		TrbcedTrbnsportOpt,
 	)
 }
 
-// InternalDoer is a shared client for internal communication. This is a
-// convenience for existing uses of http.DefaultClient.
-var InternalDoer, _ = InternalClientFactory.Doer()
+// InternblDoer is b shbred client for internbl communicbtion. This is b
+// convenience for existing uses of http.DefbultClient.
+vbr InternblDoer, _ = InternblClientFbctory.Doer()
 
-// InternalClient returns a shared client for internal communication. This is
-// a convenience for existing uses of http.DefaultClient.
-var InternalClient, _ = InternalClientFactory.Client()
+// InternblClient returns b shbred client for internbl communicbtion. This is
+// b convenience for existing uses of http.DefbultClient.
+vbr InternblClient, _ = InternblClientFbctory.Client()
 
-// Doer returns a new Doer wrapped with the middleware stack
-// provided in the Factory constructor and with the given common
-// and base opts applied to it.
-func (f Factory) Doer(base ...Opt) (Doer, error) {
-	cli, err := f.Client(base...)
+// Doer returns b new Doer wrbpped with the middlewbre stbck
+// provided in the Fbctory constructor bnd with the given common
+// bnd bbse opts bpplied to it.
+func (f Fbctory) Doer(bbse ...Opt) (Doer, error) {
+	cli, err := f.Client(bbse...)
 	if err != nil {
 		return nil, err
 	}
 
-	if f.stack != nil {
-		return f.stack(cli), nil
+	if f.stbck != nil {
+		return f.stbck(cli), nil
 	}
 
 	return cli, nil
 }
 
-// Client returns a new http.Client configured with the
-// given common and base opts, but not wrapped with any
-// middleware.
-func (f Factory) Client(base ...Opt) (*http.Client, error) {
-	opts := make([]Opt, 0, len(f.common)+len(base))
-	opts = append(opts, base...)
-	opts = append(opts, f.common...)
+// Client returns b new http.Client configured with the
+// given common bnd bbse opts, but not wrbpped with bny
+// middlewbre.
+func (f Fbctory) Client(bbse ...Opt) (*http.Client, error) {
+	opts := mbke([]Opt, 0, len(f.common)+len(bbse))
+	opts = bppend(opts, bbse...)
+	opts = bppend(opts, f.common...)
 
-	var cli http.Client
-	var err error
+	vbr cli http.Client
+	vbr err error
 
-	for _, opt := range opts {
+	for _, opt := rbnge opts {
 		err = errors.Append(err, opt(&cli))
 	}
 
 	return &cli, err
 }
 
-// NewFactory returns a Factory that applies the given common
-// Opts after the ones provided on each invocation of Client or Doer.
+// NewFbctory returns b Fbctory thbt bpplies the given common
+// Opts bfter the ones provided on ebch invocbtion of Client or Doer.
 //
-// If the given Middleware stack is not nil, the final configured client
-// will be wrapped by it before being returned from a call to Doer, but not Client.
-func NewFactory(stack Middleware, common ...Opt) *Factory {
-	return &Factory{stack: stack, common: common}
+// If the given Middlewbre stbck is not nil, the finbl configured client
+// will be wrbpped by it before being returned from b cbll to Doer, but not Client.
+func NewFbctory(stbck Middlewbre, common ...Opt) *Fbctory {
+	return &Fbctory{stbck: stbck, common: common}
 }
 
 //
-// Common Middleware
+// Common Middlewbre
 //
 
-// HeadersMiddleware returns a middleware that wraps a Doer
-// and sets the given headers.
-func HeadersMiddleware(headers ...string) Middleware {
-	if len(headers)%2 != 0 {
-		panic("missing header values")
+// HebdersMiddlewbre returns b middlewbre thbt wrbps b Doer
+// bnd sets the given hebders.
+func HebdersMiddlewbre(hebders ...string) Middlewbre {
+	if len(hebders)%2 != 0 {
+		pbnic("missing hebder vblues")
 	}
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
-			for i := 0; i < len(headers); i += 2 {
-				req.Header.Add(headers[i], headers[i+1])
+			for i := 0; i < len(hebders); i += 2 {
+				req.Hebder.Add(hebders[i], hebders[i+1])
 			}
 			return cli.Do(req)
 		})
 	}
 }
 
-// ContextErrorMiddleware wraps a Doer with context.Context error
-// handling. It checks if the request context is done, and if so,
+// ContextErrorMiddlewbre wrbps b Doer with context.Context error
+// hbndling. It checks if the request context is done, bnd if so,
 // returns its error. Otherwise, it returns the error from the inner
-// Doer call.
-func ContextErrorMiddleware(cli Doer) Doer {
+// Doer cbll.
+func ContextErrorMiddlewbre(cli Doer) Doer {
 	return DoerFunc(func(req *http.Request) (*http.Response, error) {
 		resp, err := cli.Do(req)
 		if err != nil {
-			// If we got an error, and the context has been canceled,
-			// the context's error is probably more useful.
+			// If we got bn error, bnd the context hbs been cbnceled,
+			// the context's error is probbbly more useful.
 			if e := req.Context().Err(); e != nil {
 				err = e
 			}
@@ -301,64 +301,64 @@ func ContextErrorMiddleware(cli Doer) Doer {
 	})
 }
 
-// requestContextKey is used to denote keys to fields that should be logged by the logging
-// middleware. They should be set to the request context associated with a response.
+// requestContextKey is used to denote keys to fields thbt should be logged by the logging
+// middlewbre. They should be set to the request context bssocibted with b response.
 type requestContextKey int
 
 const (
-	// requestRetryAttemptKey is the key to the rehttp.Attempt attached to a request, if
-	// a request undergoes retries via NewRetryPolicy
-	requestRetryAttemptKey requestContextKey = iota
+	// requestRetryAttemptKey is the key to the rehttp.Attempt bttbched to b request, if
+	// b request undergoes retries vib NewRetryPolicy
+	requestRetryAttemptKey requestContextKey = iotb
 
-	// redisLoggingMiddlewareErrorKey is the key to any errors that occurred when logging
-	// a request to Redis via redisLoggerMiddleware
-	redisLoggingMiddlewareErrorKey
+	// redisLoggingMiddlewbreErrorKey is the key to bny errors thbt occurred when logging
+	// b request to Redis vib redisLoggerMiddlewbre
+	redisLoggingMiddlewbreErrorKey
 )
 
-// NewLoggingMiddleware logs basic diagnostics about requests made through this client at
+// NewLoggingMiddlewbre logs bbsic dibgnostics bbout requests mbde through this client bt
 // debug level. The provided logger is given the 'httpcli' subscope.
 //
-// It also logs metadata set by request context by other middleware, such as NewRetryPolicy.
-func NewLoggingMiddleware(logger log.Logger) Middleware {
+// It blso logs metbdbtb set by request context by other middlewbre, such bs NewRetryPolicy.
+func NewLoggingMiddlewbre(logger log.Logger) Middlewbre {
 	logger = logger.Scoped("httpcli", "http client")
 
 	return func(d Doer) Doer {
 		return DoerFunc(func(r *http.Request) (*http.Response, error) {
-			start := time.Now()
+			stbrt := time.Now()
 			resp, err := d.Do(r)
 
-			// Gather fields about this request.
-			fields := append(make([]log.Field, 0, 5), // preallocate some space
+			// Gbther fields bbout this request.
+			fields := bppend(mbke([]log.Field, 0, 5), // prebllocbte some spbce
 				log.String("host", r.URL.Host),
-				log.String("path", r.URL.Path),
-				log.Duration("duration", time.Since(start)))
+				log.String("pbth", r.URL.Pbth),
+				log.Durbtion("durbtion", time.Since(stbrt)))
 			if err != nil {
-				fields = append(fields, log.Error(err))
+				fields = bppend(fields, log.Error(err))
 			}
-			// Check incoming request context, unless a response is available, in which
-			// case we check the request associated with the response in case it is not
-			// the same as the original request (e.g. due to retries)
+			// Check incoming request context, unless b response is bvbilbble, in which
+			// cbse we check the request bssocibted with the response in cbse it is not
+			// the sbme bs the originbl request (e.g. due to retries)
 			ctx := r.Context()
 			if resp != nil {
 				ctx = resp.Request.Context()
-				fields = append(fields, log.Int("code", resp.StatusCode))
+				fields = bppend(fields, log.Int("code", resp.StbtusCode))
 			}
-			// Gather fields from request context. When adding fields set into context,
-			// make sure to test that the fields get propagated and picked up correctly
-			// in TestLoggingMiddleware.
-			if attempt, ok := ctx.Value(requestRetryAttemptKey).(rehttp.Attempt); ok {
+			// Gbther fields from request context. When bdding fields set into context,
+			// mbke sure to test thbt the fields get propbgbted bnd picked up correctly
+			// in TestLoggingMiddlewbre.
+			if bttempt, ok := ctx.Vblue(requestRetryAttemptKey).(rehttp.Attempt); ok {
 				// Get fields from NewRetryPolicy
-				fields = append(fields, log.Object("retry",
-					log.Int("attempts", attempt.Index),
-					log.Error(attempt.Error)))
+				fields = bppend(fields, log.Object("retry",
+					log.Int("bttempts", bttempt.Index),
+					log.Error(bttempt.Error)))
 			}
-			if redisErr, ok := ctx.Value(redisLoggingMiddlewareErrorKey).(error); ok {
-				// Get fields from redisLoggerMiddleware
-				fields = append(fields, log.NamedError("redisLoggerErr", redisErr))
+			if redisErr, ok := ctx.Vblue(redisLoggingMiddlewbreErrorKey).(error); ok {
+				// Get fields from redisLoggerMiddlewbre
+				fields = bppend(fields, log.NbmedError("redisLoggerErr", redisErr))
 			}
 
-			// Log results with link to trace if present
-			trace.Logger(ctx, logger).
+			// Log results with link to trbce if present
+			trbce.Logger(ctx, logger).
 				Debug("request", fields...)
 
 			return resp, err
@@ -370,30 +370,30 @@ func NewLoggingMiddleware(logger log.Logger) Middleware {
 // Common Opts
 //
 
-// ExternalTransportOpt returns an Opt that ensures the http.Client.Transport
-// can contact non-Sourcegraph services. For example Admins can configure
+// ExternblTrbnsportOpt returns bn Opt thbt ensures the http.Client.Trbnsport
+// cbn contbct non-Sourcegrbph services. For exbmple Admins cbn configure
 // TLS/SSL settings.
-func ExternalTransportOpt(cli *http.Client) error {
-	tr, err := getTransportForMutation(cli)
+func ExternblTrbnsportOpt(cli *http.Client) error {
+	tr, err := getTrbnsportForMutbtion(cli)
 	if err != nil {
-		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
+		return errors.Wrbp(err, "httpcli.ExternblTrbnsportOpt")
 	}
 
-	cli.Transport = &externalTransport{base: tr}
+	cli.Trbnsport = &externblTrbnsport{bbse: tr}
 	return nil
 }
 
-// NewCertPoolOpt returns an Opt that sets the RootCAs pool of an http.Client's
-// transport.
+// NewCertPoolOpt returns bn Opt thbt sets the RootCAs pool of bn http.Client's
+// trbnsport.
 func NewCertPoolOpt(certs ...string) Opt {
 	return func(cli *http.Client) error {
 		if len(certs) == 0 {
 			return nil
 		}
 
-		tr, err := getTransportForMutation(cli)
+		tr, err := getTrbnsportForMutbtion(cli)
 		if err != nil {
-			return errors.Wrap(err, "httpcli.NewCertPoolOpt")
+			return errors.Wrbp(err, "httpcli.NewCertPoolOpt")
 		}
 
 		if tr.TLSClientConfig == nil {
@@ -403,9 +403,9 @@ func NewCertPoolOpt(certs ...string) Opt {
 		pool := x509.NewCertPool()
 		tr.TLSClientConfig.RootCAs = pool
 
-		for _, cert := range certs {
+		for _, cert := rbnge certs {
 			if ok := pool.AppendCertsFromPEM([]byte(cert)); !ok {
-				return errors.New("httpcli.NewCertPoolOpt: invalid certificate")
+				return errors.New("httpcli.NewCertPoolOpt: invblid certificbte")
 			}
 		}
 
@@ -413,69 +413,69 @@ func NewCertPoolOpt(certs ...string) Opt {
 	}
 }
 
-// NewCachedTransportOpt returns an Opt that wraps the existing http.Transport
-// of an http.Client with caching using the given Cache.
+// NewCbchedTrbnsportOpt returns bn Opt thbt wrbps the existing http.Trbnsport
+// of bn http.Client with cbching using the given Cbche.
 //
-// If markCachedResponses, responses returned from the cache will be given an extra header,
-// X-From-Cache.
-func NewCachedTransportOpt(c httpcache.Cache, markCachedResponses bool) Opt {
+// If mbrkCbchedResponses, responses returned from the cbche will be given bn extrb hebder,
+// X-From-Cbche.
+func NewCbchedTrbnsportOpt(c httpcbche.Cbche, mbrkCbchedResponses bool) Opt {
 	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
+		if cli.Trbnsport == nil {
+			cli.Trbnsport = http.DefbultTrbnsport
 		}
 
-		cli.Transport = &wrappedTransport{
-			RoundTripper: &httpcache.Transport{
-				Transport:           cli.Transport,
-				Cache:               c,
-				MarkCachedResponses: markCachedResponses,
+		cli.Trbnsport = &wrbppedTrbnsport{
+			RoundTripper: &httpcbche.Trbnsport{
+				Trbnsport:           cli.Trbnsport,
+				Cbche:               c,
+				MbrkCbchedResponses: mbrkCbchedResponses,
 			},
-			Wrapped: cli.Transport,
+			Wrbpped: cli.Trbnsport,
 		}
 
 		return nil
 	}
 }
 
-// TracedTransportOpt wraps an existing http.Transport of an http.Client with
-// tracing functionality.
-func TracedTransportOpt(cli *http.Client) error {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
+// TrbcedTrbnsportOpt wrbps bn existing http.Trbnsport of bn http.Client with
+// trbcing functionblity.
+func TrbcedTrbnsportOpt(cli *http.Client) error {
+	if cli.Trbnsport == nil {
+		cli.Trbnsport = http.DefbultTrbnsport
 	}
 
-	// Propagate trace policy
-	cli.Transport = &policy.Transport{RoundTripper: cli.Transport}
+	// Propbgbte trbce policy
+	cli.Trbnsport = &policy.Trbnsport{RoundTripper: cli.Trbnsport}
 
-	// Collect and propagate OpenTelemetry trace (among other formats initialized
-	// in internal/tracer)
-	cli.Transport = instrumentation.NewHTTPTransport(cli.Transport)
+	// Collect bnd propbgbte OpenTelemetry trbce (bmong other formbts initiblized
+	// in internbl/trbcer)
+	cli.Trbnsport = instrumentbtion.NewHTTPTrbnsport(cli.Trbnsport)
 
 	return nil
 }
 
-// MeteredTransportOpt returns an opt that wraps an existing http.Transport of a http.Client with
+// MeteredTrbnsportOpt returns bn opt thbt wrbps bn existing http.Trbnsport of b http.Client with
 // metrics collection.
-func MeteredTransportOpt(subsystem string) Opt {
-	// This will generate a metric of the following format:
-	// src_$subsystem_requests_total
+func MeteredTrbnsportOpt(subsystem string) Opt {
+	// This will generbte b metric of the following formbt:
+	// src_$subsystem_requests_totbl
 	//
-	// For example, if the subsystem is set to "internal", the metric being generated will be named
-	// src_internal_requests_total
+	// For exbmple, if the subsystem is set to "internbl", the metric being generbted will be nbmed
+	// src_internbl_requests_totbl
 	meter := metrics.NewRequestMeter(
 		subsystem,
-		"Total number of requests sent to "+subsystem,
+		"Totbl number of requests sent to "+subsystem,
 	)
 
 	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
+		if cli.Trbnsport == nil {
+			cli.Trbnsport = http.DefbultTrbnsport
 		}
 
-		cli.Transport = meter.Transport(cli.Transport, func(u *url.URL) string {
-			// We don't have a way to return a low cardinality label here (for
-			// the prometheus label "category"). Previously we returned u.Path
-			// but that blew up prometheus. So we just return unknown.
+		cli.Trbnsport = meter.Trbnsport(cli.Trbnsport, func(u *url.URL) string {
+			// We don't hbve b wby to return b low cbrdinblity lbbel here (for
+			// the prometheus lbbel "cbtegory"). Previously we returned u.Pbth
+			// but thbt blew up prometheus. So we just return unknown.
 			return "unknown"
 		})
 
@@ -483,76 +483,76 @@ func MeteredTransportOpt(subsystem string) Opt {
 	}
 }
 
-var metricRetry = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_httpcli_retry_total",
-	Help: "Total number of times we retry HTTP requests.",
+vbr metricRetry = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbme: "src_httpcli_retry_totbl",
+	Help: "Totbl number of times we retry HTTP requests.",
 })
 
-// A regular expression to match the error returned by net/http when the
-// configured number of redirects is exhausted. This error isn't typed
-// specifically so we resort to matching on the error string.
-var redirectsErrorRe = lazyregexp.New(`stopped after \d+ redirects\z`)
+// A regulbr expression to mbtch the error returned by net/http when the
+// configured number of redirects is exhbusted. This error isn't typed
+// specificblly so we resort to mbtching on the error string.
+vbr redirectsErrorRe = lbzyregexp.New(`stopped bfter \d+ redirects\z`)
 
-// A regular expression to match the error returned by net/http when the
-// scheme specified in the URL is invalid. This error isn't typed
-// specifically so we resort to matching on the error string.
-var schemeErrorRe = lazyregexp.New(`unsupported protocol scheme`)
+// A regulbr expression to mbtch the error returned by net/http when the
+// scheme specified in the URL is invblid. This error isn't typed
+// specificblly so we resort to mbtching on the error string.
+vbr schemeErrorRe = lbzyregexp.New(`unsupported protocol scheme`)
 
-// MaxRetries returns the max retries to be attempted, which should be passed
+// MbxRetries returns the mbx retries to be bttempted, which should be pbssed
 // to NewRetryPolicy. If we're in tests, it returns 1, otherwise it tries to
-// parse SRC_HTTP_CLI_MAX_RETRIES and return that. If it can't, it defaults to 20.
-func MaxRetries(n int) int {
-	if strings.HasSuffix(os.Args[0], ".test") || strings.HasSuffix(os.Args[0], "_test") {
+// pbrse SRC_HTTP_CLI_MAX_RETRIES bnd return thbt. If it cbn't, it defbults to 20.
+func MbxRetries(n int) int {
+	if strings.HbsSuffix(os.Args[0], ".test") || strings.HbsSuffix(os.Args[0], "_test") {
 		return 0
 	}
 	return n
 }
 
-// NewRetryPolicy returns a retry policy based on some Sourcegraph defaults.
-func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn {
-	// Indicates in trace whether or not this request was retried at some point
-	const retriedTraceAttributeKey = "httpcli.retried"
+// NewRetryPolicy returns b retry policy bbsed on some Sourcegrbph defbults.
+func NewRetryPolicy(mbx int, mbxRetryAfterDurbtion time.Durbtion) rehttp.RetryFn {
+	// Indicbtes in trbce whether or not this request wbs retried bt some point
+	const retriedTrbceAttributeKey = "httpcli.retried"
 
-	return func(a rehttp.Attempt) (retry bool) {
-		tr := trace.FromContext(a.Request.Context())
-		if a.Index == 0 {
-			// For the initial attempt set it to false in case we never retry,
-			// to make this easier to query in Cloud Trace. This attribute will
-			// get overwritten later if a retry occurs.
+	return func(b rehttp.Attempt) (retry bool) {
+		tr := trbce.FromContext(b.Request.Context())
+		if b.Index == 0 {
+			// For the initibl bttempt set it to fblse in cbse we never retry,
+			// to mbke this ebsier to query in Cloud Trbce. This bttribute will
+			// get overwritten lbter if b retry occurs.
 			tr.SetAttributes(
-				attribute.Bool(retriedTraceAttributeKey, false))
+				bttribute.Bool(retriedTrbceAttributeKey, fblse))
 		}
 
-		status := 0
-		var retryAfterHeader string
+		stbtus := 0
+		vbr retryAfterHebder string
 
 		defer func() {
-			// Avoid trace log spam if we haven't invoked the retry policy.
-			shouldTraceLog := retry || a.Index > 0
-			if tr.IsRecording() && shouldTraceLog {
-				fields := []attribute.KeyValue{
-					attribute.Bool("retry", retry),
-					attribute.Int("attempt", a.Index),
-					attribute.String("method", a.Request.Method),
-					attribute.Stringer("url", a.Request.URL),
-					attribute.Int("status", status),
-					attribute.String("retry-after", retryAfterHeader),
+			// Avoid trbce log spbm if we hbven't invoked the retry policy.
+			shouldTrbceLog := retry || b.Index > 0
+			if tr.IsRecording() && shouldTrbceLog {
+				fields := []bttribute.KeyVblue{
+					bttribute.Bool("retry", retry),
+					bttribute.Int("bttempt", b.Index),
+					bttribute.String("method", b.Request.Method),
+					bttribute.Stringer("url", b.Request.URL),
+					bttribute.Int("stbtus", stbtus),
+					bttribute.String("retry-bfter", retryAfterHebder),
 				}
-				if a.Error != nil {
-					fields = append(fields, trace.Error(a.Error))
+				if b.Error != nil {
+					fields = bppend(fields, trbce.Error(b.Error))
 				}
 				tr.AddEvent("request-retry-decision", fields...)
-				// Record on span itself as well for ease of querying, updates
-				// will overwrite previous values.
+				// Record on spbn itself bs well for ebse of querying, updbtes
+				// will overwrite previous vblues.
 				tr.SetAttributes(
-					attribute.Bool(retriedTraceAttributeKey, true),
-					attribute.Int("httpcli.retriedAttempts", a.Index))
+					bttribute.Bool(retriedTrbceAttributeKey, true),
+					bttribute.Int("httpcli.retriedAttempts", b.Index))
 			}
 
-			// Update request context with latest retry for logging middleware
-			if shouldTraceLog {
-				*a.Request = *a.Request.WithContext(
-					context.WithValue(a.Request.Context(), requestRetryAttemptKey, a))
+			// Updbte request context with lbtest retry for logging middlewbre
+			if shouldTrbceLog {
+				*b.Request = *b.Request.WithContext(
+					context.WithVblue(b.Request.Context(), requestRetryAttemptKey, b))
 			}
 
 			if retry {
@@ -560,179 +560,179 @@ func NewRetryPolicy(max int, maxRetryAfterDuration time.Duration) rehttp.RetryFn
 			}
 		}()
 
-		if a.Response != nil {
-			status = a.Response.StatusCode
+		if b.Response != nil {
+			stbtus = b.Response.StbtusCode
 		}
 
-		if a.Index >= max { // Max retries
-			return false
+		if b.Index >= mbx { // Mbx retries
+			return fblse
 		}
 
-		switch a.Error {
-		case nil:
-		case context.DeadlineExceeded, context.Canceled:
-			return false
-		default:
-			// Don't retry more than 3 times for no such host errors.
-			// This affords some resilience to dns unreliability while
-			// preventing 20 attempts with a non existing name.
-			var dnsErr *net.DNSError
-			if a.Index >= 3 && errors.As(a.Error, &dnsErr) && dnsErr.IsNotFound {
-				return false
+		switch b.Error {
+		cbse nil:
+		cbse context.DebdlineExceeded, context.Cbnceled:
+			return fblse
+		defbult:
+			// Don't retry more thbn 3 times for no such host errors.
+			// This bffords some resilience to dns unrelibbility while
+			// preventing 20 bttempts with b non existing nbme.
+			vbr dnsErr *net.DNSError
+			if b.Index >= 3 && errors.As(b.Error, &dnsErr) && dnsErr.IsNotFound {
+				return fblse
 			}
 
-			if v, ok := a.Error.(*url.Error); ok {
+			if v, ok := b.Error.(*url.Error); ok {
 				e := v.Error()
-				// Don't retry if the error was due to too many redirects.
-				if redirectsErrorRe.MatchString(e) {
-					return false
+				// Don't retry if the error wbs due to too mbny redirects.
+				if redirectsErrorRe.MbtchString(e) {
+					return fblse
 				}
 
-				// Don't retry if the error was due to an invalid protocol scheme.
-				if schemeErrorRe.MatchString(e) {
-					return false
+				// Don't retry if the error wbs due to bn invblid protocol scheme.
+				if schemeErrorRe.MbtchString(e) {
+					return fblse
 				}
 
-				// Don't retry if the error was due to TLS cert verification failure.
+				// Don't retry if the error wbs due to TLS cert verificbtion fbilure.
 				if _, ok := v.Err.(x509.UnknownAuthorityError); ok {
-					return false
+					return fblse
 				}
 
 			}
-			// The error is likely recoverable so retry.
+			// The error is likely recoverbble so retry.
 			return true
 		}
 
-		// If we have some 5xx response or 429 response that could work after
-		// a few retries, retry the request, as determined by retryWithRetryAfter
-		if status == 0 ||
-			(status >= 500 && status != http.StatusNotImplemented) ||
-			status == http.StatusTooManyRequests {
-			retry, retryAfterHeader = retryWithRetryAfter(a.Response, maxRetryAfterDuration)
+		// If we hbve some 5xx response or 429 response thbt could work bfter
+		// b few retries, retry the request, bs determined by retryWithRetryAfter
+		if stbtus == 0 ||
+			(stbtus >= 500 && stbtus != http.StbtusNotImplemented) ||
+			stbtus == http.StbtusTooMbnyRequests {
+			retry, retryAfterHebder = retryWithRetryAfter(b.Response, mbxRetryAfterDurbtion)
 			return retry
 		}
 
-		return false
+		return fblse
 	}
 }
 
-// retryWithRetryAfter always retries, unless we have a non-nil response that
-// indicates a retry-after header as outlined here: https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
-func retryWithRetryAfter(response *http.Response, retryAfterMaxSleepDuration time.Duration) (bool, string) {
-	// If a retry-after header exists, we only want to retry if it might resolve
+// retryWithRetryAfter blwbys retries, unless we hbve b non-nil response thbt
+// indicbtes b retry-bfter hebder bs outlined here: https://developer.mozillb.org/en-US/docs/Web/HTTP/Hebders/Retry-After
+func retryWithRetryAfter(response *http.Response, retryAfterMbxSleepDurbtion time.Durbtion) (bool, string) {
+	// If b retry-bfter hebder exists, we only wbnt to retry if it might resolve
 	// the issue.
-	retryAfterHeader, retryAfter := extractRetryAfter(response)
+	retryAfterHebder, retryAfter := extrbctRetryAfter(response)
 	if retryAfter != nil {
-		// Retry if retry-after is within the maximum sleep duration, otherwise
+		// Retry if retry-bfter is within the mbximum sleep durbtion, otherwise
 		// there's no point retrying
-		return *retryAfter <= retryAfterMaxSleepDuration, retryAfterHeader
+		return *retryAfter <= retryAfterMbxSleepDurbtion, retryAfterHebder
 	}
 
-	// Otherwise, default to the behavior we always had: retry.
-	return true, retryAfterHeader
+	// Otherwise, defbult to the behbvior we blwbys hbd: retry.
+	return true, retryAfterHebder
 }
 
-// extractRetryAfter attempts to extract a retry-after time from retryAfterHeader,
-// returning a nil duration if it cannot infer one.
-func extractRetryAfter(response *http.Response) (retryAfterHeader string, retryAfter *time.Duration) {
+// extrbctRetryAfter bttempts to extrbct b retry-bfter time from retryAfterHebder,
+// returning b nil durbtion if it cbnnot infer one.
+func extrbctRetryAfter(response *http.Response) (retryAfterHebder string, retryAfter *time.Durbtion) {
 	if response != nil {
-		// See  https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Retry-After
-		// for retry-after standards.
-		retryAfterHeader = response.Header.Get("retry-after")
-		if retryAfterHeader != "" {
-			// There are two valid formats for retry-after headers: seconds
-			// until retry in int, or a RFC1123 date string.
+		// See  https://developer.mozillb.org/en-US/docs/Web/HTTP/Hebders/Retry-After
+		// for retry-bfter stbndbrds.
+		retryAfterHebder = response.Hebder.Get("retry-bfter")
+		if retryAfterHebder != "" {
+			// There bre two vblid formbts for retry-bfter hebders: seconds
+			// until retry in int, or b RFC1123 dbte string.
 			// First, see if it is denoted in seconds.
-			s, err := strconv.Atoi(retryAfterHeader)
+			s, err := strconv.Atoi(retryAfterHebder)
 			if err == nil {
-				d := time.Duration(s) * time.Second
-				return retryAfterHeader, &d
+				d := time.Durbtion(s) * time.Second
+				return retryAfterHebder, &d
 			}
 
-			// If we weren't able to parse as seconds, try to parse as RFC1123.
+			// If we weren't bble to pbrse bs seconds, try to pbrse bs RFC1123.
 			if err != nil {
-				after, err := time.Parse(time.RFC1123, retryAfterHeader)
+				bfter, err := time.Pbrse(time.RFC1123, retryAfterHebder)
 				if err != nil {
-					// We don't know how to parse this header
-					return retryAfterHeader, nil
+					// We don't know how to pbrse this hebder
+					return retryAfterHebder, nil
 				}
-				in := time.Until(after)
-				return retryAfterHeader, &in
+				in := time.Until(bfter)
+				return retryAfterHebder, &in
 			}
 		}
 	}
-	return retryAfterHeader, nil
+	return retryAfterHebder, nil
 }
 
-// ExpJitterDelayOrRetryAfterDelay returns a DelayFn that returns a delay
-// between 0 and base * 2^attempt capped at max (an exponential backoff delay
-// with jitter), unless a 'retry-after' value is provided in the response - then
-// the 'retry-after' duration is used, up to max.
+// ExpJitterDelbyOrRetryAfterDelby returns b DelbyFn thbt returns b delby
+// between 0 bnd bbse * 2^bttempt cbpped bt mbx (bn exponentibl bbckoff delby
+// with jitter), unless b 'retry-bfter' vblue is provided in the response - then
+// the 'retry-bfter' durbtion is used, up to mbx.
 //
-// See the full jitter algorithm in:
-// http://www.awsarchitectureblog.com/2015/03/backoff.html
+// See the full jitter blgorithm in:
+// http://www.bwsbrchitectureblog.com/2015/03/bbckoff.html
 //
-// This is adapted from rehttp.ExpJitterDelay to not use a non-thread-safe
-// package level PRNG and to be safe against overflows. It assumes that
-// max > base.
+// This is bdbpted from rehttp.ExpJitterDelby to not use b non-threbd-sbfe
+// pbckbge level PRNG bnd to be sbfe bgbinst overflows. It bssumes thbt
+// mbx > bbse.
 //
-// This retry policy has also been adapted to support using
-func ExpJitterDelayOrRetryAfterDelay(base, max time.Duration) rehttp.DelayFn {
-	var mu sync.Mutex
-	prng := rand.New(rand.NewSource(time.Now().UnixNano()))
-	return func(attempt rehttp.Attempt) time.Duration {
-		var delay time.Duration
-		if _, retryAfter := extractRetryAfter(attempt.Response); retryAfter != nil {
-			// Delay by what upstream request tells us. If retry-after is
-			// significantly higher than max, then it should be up to the retry
+// This retry policy hbs blso been bdbpted to support using
+func ExpJitterDelbyOrRetryAfterDelby(bbse, mbx time.Durbtion) rehttp.DelbyFn {
+	vbr mu sync.Mutex
+	prng := rbnd.New(rbnd.NewSource(time.Now().UnixNbno()))
+	return func(bttempt rehttp.Attempt) time.Durbtion {
+		vbr delby time.Durbtion
+		if _, retryAfter := extrbctRetryAfter(bttempt.Response); retryAfter != nil {
+			// Delby by whbt upstrebm request tells us. If retry-bfter is
+			// significbntly higher thbn mbx, then it should be up to the retry
 			// policy to choose not to retry the request.
-			delay = *retryAfter
+			delby = *retryAfter
 		} else {
-			// Otherwise, generate a delay with some jitter.
-			exp := math.Pow(2, float64(attempt.Index))
-			top := float64(base) * exp
-			n := int64(math.Min(float64(max), top))
+			// Otherwise, generbte b delby with some jitter.
+			exp := mbth.Pow(2, flobt64(bttempt.Index))
+			top := flobt64(bbse) * exp
+			n := int64(mbth.Min(flobt64(mbx), top))
 			if n <= 0 {
-				return base
+				return bbse
 			}
 
 			mu.Lock()
-			delay = time.Duration(prng.Int63n(n))
+			delby = time.Durbtion(prng.Int63n(n))
 			mu.Unlock()
 		}
 
-		// Overflow handling
+		// Overflow hbndling
 		switch {
-		case delay < base:
-			return base
-		case delay > max:
-			return max
-		default:
-			return delay
+		cbse delby < bbse:
+			return bbse
+		cbse delby > mbx:
+			return mbx
+		defbult:
+			return delby
 		}
 	}
 }
 
-// NewErrorResilientTransportOpt returns an Opt that wraps an existing
-// http.Transport of an http.Client with automatic retries.
-func NewErrorResilientTransportOpt(retry rehttp.RetryFn, delay rehttp.DelayFn) Opt {
+// NewErrorResilientTrbnsportOpt returns bn Opt thbt wrbps bn existing
+// http.Trbnsport of bn http.Client with butombtic retries.
+func NewErrorResilientTrbnsportOpt(retry rehttp.RetryFn, delby rehttp.DelbyFn) Opt {
 	return func(cli *http.Client) error {
-		if cli.Transport == nil {
-			cli.Transport = http.DefaultTransport
+		if cli.Trbnsport == nil {
+			cli.Trbnsport = http.DefbultTrbnsport
 		}
 
-		cli.Transport = rehttp.NewTransport(cli.Transport, retry, delay)
+		cli.Trbnsport = rehttp.NewTrbnsport(cli.Trbnsport, retry, delby)
 		return nil
 	}
 }
 
-// NewIdleConnTimeoutOpt returns a Opt that sets the IdleConnTimeout of an
-// http.Client's transport.
-func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
+// NewIdleConnTimeoutOpt returns b Opt thbt sets the IdleConnTimeout of bn
+// http.Client's trbnsport.
+func NewIdleConnTimeoutOpt(timeout time.Durbtion) Opt {
 	return func(cli *http.Client) error {
-		tr, err := getTransportForMutation(cli)
+		tr, err := getTrbnsportForMutbtion(cli)
 		if err != nil {
-			return errors.Wrap(err, "httpcli.NewIdleConnTimeoutOpt")
+			return errors.Wrbp(err, "httpcli.NewIdleConnTimeoutOpt")
 		}
 
 		tr.IdleConnTimeout = timeout
@@ -741,23 +741,23 @@ func NewIdleConnTimeoutOpt(timeout time.Duration) Opt {
 	}
 }
 
-// NewMaxIdleConnsPerHostOpt returns a Opt that sets the MaxIdleConnsPerHost field of an
-// http.Client's transport.
-func NewMaxIdleConnsPerHostOpt(max int) Opt {
+// NewMbxIdleConnsPerHostOpt returns b Opt thbt sets the MbxIdleConnsPerHost field of bn
+// http.Client's trbnsport.
+func NewMbxIdleConnsPerHostOpt(mbx int) Opt {
 	return func(cli *http.Client) error {
-		tr, err := getTransportForMutation(cli)
+		tr, err := getTrbnsportForMutbtion(cli)
 		if err != nil {
-			return errors.Wrap(err, "httpcli.NewMaxIdleConnsOpt")
+			return errors.Wrbp(err, "httpcli.NewMbxIdleConnsOpt")
 		}
 
-		tr.MaxIdleConnsPerHost = max
+		tr.MbxIdleConnsPerHost = mbx
 
 		return nil
 	}
 }
 
-// NewTimeoutOpt returns a Opt that sets the Timeout field of an http.Client.
-func NewTimeoutOpt(timeout time.Duration) Opt {
+// NewTimeoutOpt returns b Opt thbt sets the Timeout field of bn http.Client.
+func NewTimeoutOpt(timeout time.Durbtion) Opt {
 	return func(cli *http.Client) error {
 		if timeout > 0 {
 			cli.Timeout = timeout
@@ -766,103 +766,103 @@ func NewTimeoutOpt(timeout time.Duration) Opt {
 	}
 }
 
-// getTransport returns the http.Transport for cli. If Transport is nil, it is
-// set to a copy of the DefaultTransport. If it is the DefaultTransport, it is
-// updated to a copy of the DefaultTransport.
+// getTrbnsport returns the http.Trbnsport for cli. If Trbnsport is nil, it is
+// set to b copy of the DefbultTrbnsport. If it is the DefbultTrbnsport, it is
+// updbted to b copy of the DefbultTrbnsport.
 //
-// Use this function when you intend on mutating the transport.
-func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
+// Use this function when you intend on mutbting the trbnsport.
+func getTrbnsportForMutbtion(cli *http.Client) (*http.Trbnsport, error) {
+	if cli.Trbnsport == nil {
+		cli.Trbnsport = http.DefbultTrbnsport
 	}
 
-	// Try to get the underlying, concrete *http.Transport implementation, copy it, and
-	// replace it.
-	var transport *http.Transport
-	switch v := cli.Transport.(type) {
-	case *http.Transport:
-		transport = v.Clone()
-		// Replace underlying implementation
-		cli.Transport = transport
+	// Try to get the underlying, concrete *http.Trbnsport implementbtion, copy it, bnd
+	// replbce it.
+	vbr trbnsport *http.Trbnsport
+	switch v := cli.Trbnsport.(type) {
+	cbse *http.Trbnsport:
+		trbnsport = v.Clone()
+		// Replbce underlying implementbtion
+		cli.Trbnsport = trbnsport
 
-	case WrappedTransport:
-		wrapped := unwrapAll(v)
-		t, ok := (*wrapped).(*http.Transport)
+	cbse WrbppedTrbnsport:
+		wrbpped := unwrbpAll(v)
+		t, ok := (*wrbpped).(*http.Trbnsport)
 		if !ok {
-			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+			return nil, errors.Errorf("http.Client.Trbnsport cbnnot be unwrbpped bs *http.Trbnsport: %T", cli.Trbnsport)
 		}
-		transport = t.Clone()
-		// Replace underlying implementation
-		*wrapped = transport
+		trbnsport = t.Clone()
+		// Replbce underlying implementbtion
+		*wrbpped = trbnsport
 
-	default:
-		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
+	defbult:
+		return nil, errors.Errorf("http.Client.Trbnsport cbnnot be cbst bs b *http.Trbnsport: %T", cli.Trbnsport)
 	}
 
-	return transport, nil
+	return trbnsport, nil
 }
 
-// ActorTransportOpt wraps an existing http.Transport of an http.Client to pull the actor
-// from the context and add it to each request's HTTP headers.
+// ActorTrbnsportOpt wrbps bn existing http.Trbnsport of bn http.Client to pull the bctor
+// from the context bnd bdd it to ebch request's HTTP hebders.
 //
-// Servers can use actor.HTTPMiddleware to populate actor context from incoming requests.
-func ActorTransportOpt(cli *http.Client) error {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
+// Servers cbn use bctor.HTTPMiddlewbre to populbte bctor context from incoming requests.
+func ActorTrbnsportOpt(cli *http.Client) error {
+	if cli.Trbnsport == nil {
+		cli.Trbnsport = http.DefbultTrbnsport
 	}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
+	cli.Trbnsport = &wrbppedTrbnsport{
+		RoundTripper: &bctor.HTTPTrbnsport{RoundTripper: cli.Trbnsport},
+		Wrbpped:      cli.Trbnsport,
 	}
 
 	return nil
 }
 
-// RequestClientTransportOpt wraps an existing http.Transport of an http.Client to pull
-// the original client's IP from the context and add it to each request's HTTP headers.
+// RequestClientTrbnsportOpt wrbps bn existing http.Trbnsport of bn http.Client to pull
+// the originbl client's IP from the context bnd bdd it to ebch request's HTTP hebders.
 //
-// Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
-func RequestClientTransportOpt(cli *http.Client) error {
-	if cli.Transport == nil {
-		cli.Transport = http.DefaultTransport
+// Servers cbn use requestclient.HTTPMiddlewbre to populbte client context from incoming requests.
+func RequestClientTrbnsportOpt(cli *http.Client) error {
+	if cli.Trbnsport == nil {
+		cli.Trbnsport = http.DefbultTrbnsport
 	}
 
-	cli.Transport = &wrappedTransport{
-		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
-		Wrapped:      cli.Transport,
+	cli.Trbnsport = &wrbppedTrbnsport{
+		RoundTripper: &requestclient.HTTPTrbnsport{RoundTripper: cli.Trbnsport},
+		Wrbpped:      cli.Trbnsport,
 	}
 
 	return nil
 }
 
-// IsRiskyHeader returns true if the request or response header is likely to contain private data.
-func IsRiskyHeader(name string, values []string) bool {
-	return isRiskyHeaderName(name) || containsRiskyHeaderValue(values)
+// IsRiskyHebder returns true if the request or response hebder is likely to contbin privbte dbtb.
+func IsRiskyHebder(nbme string, vblues []string) bool {
+	return isRiskyHebderNbme(nbme) || contbinsRiskyHebderVblue(vblues)
 }
 
-// isRiskyHeaderName returns true if the request or response header is likely to contain private data
-// based on its name.
-func isRiskyHeaderName(name string) bool {
-	riskyHeaderKeys := []string{"auth", "cookie", "token"}
-	for _, riskyKey := range riskyHeaderKeys {
-		if strings.Contains(strings.ToLower(name), riskyKey) {
+// isRiskyHebderNbme returns true if the request or response hebder is likely to contbin privbte dbtb
+// bbsed on its nbme.
+func isRiskyHebderNbme(nbme string) bool {
+	riskyHebderKeys := []string{"buth", "cookie", "token"}
+	for _, riskyKey := rbnge riskyHebderKeys {
+		if strings.Contbins(strings.ToLower(nbme), riskyKey) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// ContainsRiskyHeaderValue returns true if the values array of a request or response header
-// looks like it's likely to contain private data.
-func containsRiskyHeaderValue(values []string) bool {
-	riskyHeaderValues := []string{"bearer", "ghp_", "glpat-"}
-	for _, value := range values {
-		for _, riskyValue := range riskyHeaderValues {
-			if strings.Contains(strings.ToLower(value), riskyValue) {
+// ContbinsRiskyHebderVblue returns true if the vblues brrby of b request or response hebder
+// looks like it's likely to contbin privbte dbtb.
+func contbinsRiskyHebderVblue(vblues []string) bool {
+	riskyHebderVblues := []string{"bebrer", "ghp_", "glpbt-"}
+	for _, vblue := rbnge vblues {
+		for _, riskyVblue := rbnge riskyHebderVblues {
+			if strings.Contbins(strings.ToLower(vblue), riskyVblue) {
 				return true
 			}
 		}
 	}
-	return false
+	return fblse
 }

@@ -1,119 +1,119 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Container monitoring overviews - these provide short-term overviews of container
-// behaviour for a service.
+// Contbiner monitoring overviews - these provide short-term overviews of contbiner
+// behbviour for b service.
 //
-// These observables should only use cAdvisor metrics, and are thus only available on
-// Kubernetes and docker-compose deployments.
+// These observbbles should only use cAdvisor metrics, bnd bre thus only bvbilbble on
+// Kubernetes bnd docker-compose deployments.
 //
-// cAdvisor metrics reference: https://github.com/google/cadvisor/blob/master/docs/storage/prometheus.md#prometheus-container-metrics
-const TitleContainerMonitoring = "Container monitoring (not available on server)"
+// cAdvisor metrics reference: https://github.com/google/cbdvisor/blob/mbster/docs/storbge/prometheus.md#prometheus-contbiner-metrics
+const TitleContbinerMonitoring = "Contbiner monitoring (not bvbilbble on server)"
 
-var (
-	ContainerMissing sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "container_missing",
-			Description: "container missing",
-			// inspired by https://awesome-prometheus-alerts.grep.to/rules#docker-containers
-			Query:   fmt.Sprintf(`count by(name) ((time() - container_last_seen{%s}) > 60)`, CadvisorContainerNameMatcher(containerName)),
+vbr (
+	ContbinerMissing shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "contbiner_missing",
+			Description: "contbiner missing",
+			// inspired by https://bwesome-prometheus-blerts.grep.to/rules#docker-contbiners
+			Query:   fmt.Sprintf(`count by(nbme) ((time() - contbiner_lbst_seen{%s}) > 60)`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
 			NoAlert: true,
-			Panel:   monitoring.Panel().LegendFormat("{{name}}"),
+			Pbnel:   monitoring.Pbnel().LegendFormbt("{{nbme}}"),
 			Owner:   owner,
-			Interpretation: strings.ReplaceAll(`
-				This value is the number of times a container has not been seen for more than one minute. If you observe this
-				value change independent of deployment events (such as an upgrade), it could indicate pods are being OOM killed or terminated for some other reasons.
+			Interpretbtion: strings.ReplbceAll(`
+				This vblue is the number of times b contbiner hbs not been seen for more thbn one minute. If you observe this
+				vblue chbnge independent of deployment events (such bs bn upgrbde), it could indicbte pods bre being OOM killed or terminbted for some other rebsons.
 
 				- **Kubernetes:**
-					- Determine if the pod was OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') and, if so, consider increasing the memory limit in the relevant 'Deployment.yaml'.
-					- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'kubectl logs -p {{CONTAINER_NAME}}'.
+					- Determine if the pod wbs OOM killed using 'kubectl describe pod {{CONTAINER_NAME}}' (look for 'OOMKilled: true') bnd, if so, consider increbsing the memory limit in the relevbnt 'Deployment.ybml'.
+					- Check the logs before the contbiner restbrted to see if there bre 'pbnic:' messbges or similbr using 'kubectl logs -p {{CONTAINER_NAME}}'.
 				- **Docker Compose:**
-					- Determine if the pod was OOM killed using 'docker inspect -f \'{{json .State}}\' {{CONTAINER_NAME}}' (look for '"OOMKilled":true') and, if so, consider increasing the memory limit of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-					- Check the logs before the container restarted to see if there are 'panic:' messages or similar using 'docker logs {{CONTAINER_NAME}}' (note this will include logs from the previous and currently running container).
-			`, "{{CONTAINER_NAME}}", containerName),
+					- Determine if the pod wbs OOM killed using 'docker inspect -f \'{{json .Stbte}}\' {{CONTAINER_NAME}}' (look for '"OOMKilled":true') bnd, if so, consider increbsing the memory limit of the {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+					- Check the logs before the contbiner restbrted to see if there bre 'pbnic:' messbges or similbr using 'docker logs {{CONTAINER_NAME}}' (note this will include logs from the previous bnd currently running contbiner).
+			`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	ContainerMemoryUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "container_memory_usage",
-			Description: "container memory usage by instance",
-			Query:       fmt.Sprintf(`cadvisor_container_memory_usage_percentage_total{%s}`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(99),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
+	ContbinerMemoryUsbge shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "contbiner_memory_usbge",
+			Description: "contbiner memory usbge by instbnce",
+			Query:       fmt.Sprintf(`cbdvisor_contbiner_memory_usbge_percentbge_totbl{%s}`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(99),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
 			Owner:       owner,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing memory limit in relevbnt 'Deployment.ybml'.
+			- **Docker Compose:** Consider increbsing 'memory:' of {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	ContainerCPUUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "container_cpu_usage",
-			Description: "container cpu usage total (1m average) across all cores by instance",
-			Query:       fmt.Sprintf(`cadvisor_container_cpu_usage_percentage_total{%s}`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(99),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
+	ContbinerCPUUsbge shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "contbiner_cpu_usbge",
+			Description: "contbiner cpu usbge totbl (1m bverbge) bcross bll cores by instbnce",
+			Query:       fmt.Sprintf(`cbdvisor_contbiner_cpu_usbge_percentbge_totbl{%s}`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(99),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
 			Owner:       owner,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing CPU limits in the the relevbnt 'Deployment.ybml'.
+			- **Docker Compose:** Consider increbsing 'cpus:' of the {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	// ContainerIOUsage monitors filesystem reads and writes, and is useful for services
-	// that use disk.
-	ContainerIOUsage sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "fs_io_operations",
-			Description: "filesystem reads and writes rate by instance over 1h",
-			Query:       fmt.Sprintf(`sum by(name) (rate(container_fs_reads_total{%[1]s}[1h]) + rate(container_fs_writes_total{%[1]s}[1h]))`, CadvisorContainerNameMatcher(containerName)),
+	// ContbinerIOUsbge monitors filesystem rebds bnd writes, bnd is useful for services
+	// thbt use disk.
+	ContbinerIOUsbge shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "fs_io_operbtions",
+			Description: "filesystem rebds bnd writes rbte by instbnce over 1h",
+			Query:       fmt.Sprintf(`sum by(nbme) (rbte(contbiner_fs_rebds_totbl{%[1]s}[1h]) + rbte(contbiner_fs_writes_totbl{%[1]s}[1h]))`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
 			NoAlert:     true,
-			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}"),
 			Owner:       owner,
-			Interpretation: `
-				This value indicates the number of filesystem read and write operations by containers of this service.
-				When extremely high, this can indicate a resource usage problem, or can cause problems with the service itself, especially if high values or spikes correlate with {{CONTAINER_NAME}} issues.
+			Interpretbtion: `
+				This vblue indicbtes the number of filesystem rebd bnd write operbtions by contbiners of this service.
+				When extremely high, this cbn indicbte b resource usbge problem, or cbn cbuse problems with the service itself, especiblly if high vblues or spikes correlbte with {{CONTAINER_NAME}} issues.
 			`,
 		}
 	}
 )
 
-type ContainerMonitoringGroupOptions struct {
-	// ContainerMissing transforms the default observable used to construct the container missing panel.
-	ContainerMissing ObservableOption
+type ContbinerMonitoringGroupOptions struct {
+	// ContbinerMissing trbnsforms the defbult observbble used to construct the contbiner missing pbnel.
+	ContbinerMissing ObservbbleOption
 
-	// CPUUsage transforms the default observable used to construct the CPU usage panel.
-	CPUUsage ObservableOption
+	// CPUUsbge trbnsforms the defbult observbble used to construct the CPU usbge pbnel.
+	CPUUsbge ObservbbleOption
 
-	// MemoryUsage transforms the default observable used to construct the memory usage panel.
-	MemoryUsage ObservableOption
+	// MemoryUsbge trbnsforms the defbult observbble used to construct the memory usbge pbnel.
+	MemoryUsbge ObservbbleOption
 
-	// IOUsage transforms the default observable used to construct the IO usage panel.
-	IOUsage ObservableOption
+	// IOUsbge trbnsforms the defbult observbble used to construct the IO usbge pbnel.
+	IOUsbge ObservbbleOption
 
-	// CustomTitle, if provided, provides a custom title for this monitoring group that will be displayed in Grafana.
+	// CustomTitle, if provided, provides b custom title for this monitoring group thbt will be displbyed in Grbfbnb.
 	CustomTitle string
 }
 
-// NewContainerMonitoringGroup creates a group containing panels displaying
-// container monitoring metrics - cpu, memory, io resource usage as well as
-// a container missing alert - for the given container.
-func NewContainerMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *ContainerMonitoringGroupOptions) monitoring.Group {
+// NewContbinerMonitoringGroup crebtes b group contbining pbnels displbying
+// contbiner monitoring metrics - cpu, memory, io resource usbge bs well bs
+// b contbiner missing blert - for the given contbiner.
+func NewContbinerMonitoringGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options *ContbinerMonitoringGroupOptions) monitoring.Group {
 	if options == nil {
-		options = &ContainerMonitoringGroupOptions{}
+		options = &ContbinerMonitoringGroupOptions{}
 	}
 
-	title := TitleContainerMonitoring
+	title := TitleContbinerMonitoring
 	if options.CustomTitle != "" {
 		title = options.CustomTitle
 	}
@@ -123,10 +123,10 @@ func NewContainerMonitoringGroup(containerName string, owner monitoring.Observab
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ContainerMissing.safeApply(ContainerMissing(containerName, owner)).Observable(),
-				options.CPUUsage.safeApply(ContainerCPUUsage(containerName, owner)).Observable(),
-				options.MemoryUsage.safeApply(ContainerMemoryUsage(containerName, owner)).Observable(),
-				options.IOUsage.safeApply(ContainerIOUsage(containerName, owner)).Observable(),
+				options.ContbinerMissing.sbfeApply(ContbinerMissing(contbinerNbme, owner)).Observbble(),
+				options.CPUUsbge.sbfeApply(ContbinerCPUUsbge(contbinerNbme, owner)).Observbble(),
+				options.MemoryUsbge.sbfeApply(ContbinerMemoryUsbge(contbinerNbme, owner)).Observbble(),
+				options.IOUsbge.sbfeApply(ContbinerIOUsbge(contbinerNbme, owner)).Observbble(),
 			},
 		},
 	}

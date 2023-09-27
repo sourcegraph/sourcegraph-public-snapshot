@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,173 +6,173 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ graphqlbackend.InsightsDashboardConnectionResolver = &dashboardConnectionResolver{}
-var _ graphqlbackend.InsightsDashboardResolver = &insightsDashboardResolver{}
-var _ graphqlbackend.InsightViewConnectionResolver = &DashboardInsightViewConnectionResolver{}
-var _ graphqlbackend.InsightsDashboardPayloadResolver = &insightsDashboardPayloadResolver{}
-var _ graphqlbackend.InsightsPermissionGrantsResolver = &insightsPermissionGrantsResolver{}
+vbr _ grbphqlbbckend.InsightsDbshbobrdConnectionResolver = &dbshbobrdConnectionResolver{}
+vbr _ grbphqlbbckend.InsightsDbshbobrdResolver = &insightsDbshbobrdResolver{}
+vbr _ grbphqlbbckend.InsightViewConnectionResolver = &DbshbobrdInsightViewConnectionResolver{}
+vbr _ grbphqlbbckend.InsightsDbshbobrdPbylobdResolver = &insightsDbshbobrdPbylobdResolver{}
+vbr _ grbphqlbbckend.InsightsPermissionGrbntsResolver = &insightsPermissionGrbntsResolver{}
 
-type dashboardConnectionResolver struct {
-	orgStore         database.OrgStore
-	args             *graphqlbackend.InsightsDashboardsArgs
+type dbshbobrdConnectionResolver struct {
+	orgStore         dbtbbbse.OrgStore
+	brgs             *grbphqlbbckend.InsightsDbshbobrdsArgs
 	withViewUniqueID *string
 
-	baseInsightResolver
+	bbseInsightResolver
 
-	// Cache results because they are used by multiple fields
+	// Cbche results becbuse they bre used by multiple fields
 	once       sync.Once
-	dashboards []*types.Dashboard
+	dbshbobrds []*types.Dbshbobrd
 	next       int64
 	err        error
 }
 
-func (d *dashboardConnectionResolver) compute(ctx context.Context) ([]*types.Dashboard, error) {
+func (d *dbshbobrdConnectionResolver) compute(ctx context.Context) ([]*types.Dbshbobrd, error) {
 	d.once.Do(func() {
-		args := store.DashboardQueryArgs{}
-		if d.args.After != nil {
-			afterID, err := unmarshalDashboardID(graphql.ID(*d.args.After))
+		brgs := store.DbshbobrdQueryArgs{}
+		if d.brgs.After != nil {
+			bfterID, err := unmbrshblDbshbobrdID(grbphql.ID(*d.brgs.After))
 			if err != nil {
-				d.err = errors.Wrap(err, "unmarshalID")
+				d.err = errors.Wrbp(err, "unmbrshblID")
 				return
 			}
-			args.After = int(afterID.Arg)
+			brgs.After = int(bfterID.Arg)
 		}
-		if d.args.First != nil {
-			args.Limit = int(*d.args.First)
+		if d.brgs.First != nil {
+			brgs.Limit = int(*d.brgs.First)
 		}
-		var err error
-		args.UserIDs, args.OrgIDs, err = getUserPermissions(ctx, d.orgStore)
+		vbr err error
+		brgs.UserIDs, brgs.OrgIDs, err = getUserPermissions(ctx, d.orgStore)
 		if err != nil {
-			d.err = errors.Wrap(err, "getUserPermissions")
+			d.err = errors.Wrbp(err, "getUserPermissions")
 			return
 		}
 
-		if d.args.ID != nil {
-			id, err := unmarshalDashboardID(*d.args.ID)
+		if d.brgs.ID != nil {
+			id, err := unmbrshblDbshbobrdID(*d.brgs.ID)
 			if err != nil {
-				d.err = errors.Wrap(err, "unmarshalDashboardID")
+				d.err = errors.Wrbp(err, "unmbrshblDbshbobrdID")
 			}
-			if !id.isVirtualized() {
-				args.IDs = []int{int(id.Arg)}
+			if !id.isVirtublized() {
+				brgs.IDs = []int{int(id.Arg)}
 			}
 		}
 
 		if d.withViewUniqueID != nil {
-			args.WithViewUniqueID = d.withViewUniqueID
+			brgs.WithViewUniqueID = d.withViewUniqueID
 		}
 
-		dashboards, err := d.dashboardStore.GetDashboards(ctx, args)
+		dbshbobrds, err := d.dbshbobrdStore.GetDbshbobrds(ctx, brgs)
 		if err != nil {
 			d.err = err
 			return
 		}
-		d.dashboards = dashboards
-		for _, dashboard := range dashboards {
-			if int64(dashboard.ID) > d.next {
-				d.next = int64(dashboard.ID)
+		d.dbshbobrds = dbshbobrds
+		for _, dbshbobrd := rbnge dbshbobrds {
+			if int64(dbshbobrd.ID) > d.next {
+				d.next = int64(dbshbobrd.ID)
 			}
 		}
 	})
-	return d.dashboards, d.err
+	return d.dbshbobrds, d.err
 }
 
-func (d *dashboardConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightsDashboardResolver, error) {
-	dashboards, err := d.compute(ctx)
+func (d *dbshbobrdConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.InsightsDbshbobrdResolver, error) {
+	dbshbobrds, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.InsightsDashboardResolver, 0, len(dashboards))
-	for _, dashboard := range dashboards {
-		id := newRealDashboardID(int64(dashboard.ID))
-		resolvers = append(resolvers, &insightsDashboardResolver{dashboard: dashboard, id: &id, baseInsightResolver: d.baseInsightResolver})
+	resolvers := mbke([]grbphqlbbckend.InsightsDbshbobrdResolver, 0, len(dbshbobrds))
+	for _, dbshbobrd := rbnge dbshbobrds {
+		id := newReblDbshbobrdID(int64(dbshbobrd.ID))
+		resolvers = bppend(resolvers, &insightsDbshbobrdResolver{dbshbobrd: dbshbobrd, id: &id, bbseInsightResolver: d.bbseInsightResolver})
 	}
 	return resolvers, nil
 }
 
-func (d *dashboardConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (d *dbshbobrdConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, err := d.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if d.next != 0 {
-		return graphqlutil.NextPageCursor(string(newRealDashboardID(d.next).marshal())), nil
+		return grbphqlutil.NextPbgeCursor(string(newReblDbshbobrdID(d.next).mbrshbl())), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-type insightsDashboardResolver struct {
-	dashboard *types.Dashboard
-	id        *dashboardID
+type insightsDbshbobrdResolver struct {
+	dbshbobrd *types.Dbshbobrd
+	id        *dbshbobrdID
 
-	baseInsightResolver
+	bbseInsightResolver
 }
 
-func (i *insightsDashboardResolver) Title() string {
-	return i.dashboard.Title
+func (i *insightsDbshbobrdResolver) Title() string {
+	return i.dbshbobrd.Title
 }
 
-func (i *insightsDashboardResolver) ID() graphql.ID {
-	return i.id.marshal()
+func (i *insightsDbshbobrdResolver) ID() grbphql.ID {
+	return i.id.mbrshbl()
 }
 
-func (i *insightsDashboardResolver) Views(ctx context.Context, args graphqlbackend.DashboardInsightViewConnectionArgs) graphqlbackend.InsightViewConnectionResolver {
-	return &DashboardInsightViewConnectionResolver{ids: i.dashboard.InsightIDs, dashboard: i.dashboard, baseInsightResolver: i.baseInsightResolver, args: args}
+func (i *insightsDbshbobrdResolver) Views(ctx context.Context, brgs grbphqlbbckend.DbshbobrdInsightViewConnectionArgs) grbphqlbbckend.InsightViewConnectionResolver {
+	return &DbshbobrdInsightViewConnectionResolver{ids: i.dbshbobrd.InsightIDs, dbshbobrd: i.dbshbobrd, bbseInsightResolver: i.bbseInsightResolver, brgs: brgs}
 }
 
-func (i *insightsDashboardResolver) Grants() graphqlbackend.InsightsPermissionGrantsResolver {
-	return &insightsPermissionGrantsResolver{
-		UserIdGrants: i.dashboard.UserIdGrants,
-		OrgIdGrants:  i.dashboard.OrgIdGrants,
-		GlobalGrant:  i.dashboard.GlobalGrant,
+func (i *insightsDbshbobrdResolver) Grbnts() grbphqlbbckend.InsightsPermissionGrbntsResolver {
+	return &insightsPermissionGrbntsResolver{
+		UserIdGrbnts: i.dbshbobrd.UserIdGrbnts,
+		OrgIdGrbnts:  i.dbshbobrd.OrgIdGrbnts,
+		GlobblGrbnt:  i.dbshbobrd.GlobblGrbnt,
 	}
 }
 
-type insightsPermissionGrantsResolver struct {
-	UserIdGrants []int64
-	OrgIdGrants  []int64
-	GlobalGrant  bool
+type insightsPermissionGrbntsResolver struct {
+	UserIdGrbnts []int64
+	OrgIdGrbnts  []int64
+	GlobblGrbnt  bool
 }
 
-func (i *insightsPermissionGrantsResolver) Users() []graphql.ID {
-	var marshalledUserIds []graphql.ID
-	for _, userIdGrant := range i.UserIdGrants {
-		marshalledUserIds = append(marshalledUserIds, graphqlbackend.MarshalUserID(int32(userIdGrant)))
+func (i *insightsPermissionGrbntsResolver) Users() []grbphql.ID {
+	vbr mbrshblledUserIds []grbphql.ID
+	for _, userIdGrbnt := rbnge i.UserIdGrbnts {
+		mbrshblledUserIds = bppend(mbrshblledUserIds, grbphqlbbckend.MbrshblUserID(int32(userIdGrbnt)))
 	}
-	return marshalledUserIds
+	return mbrshblledUserIds
 }
 
-func (i *insightsPermissionGrantsResolver) Organizations() []graphql.ID {
-	var marshalledOrgIds []graphql.ID
-	for _, orgIdGrant := range i.OrgIdGrants {
-		marshalledOrgIds = append(marshalledOrgIds, graphqlbackend.MarshalOrgID(int32(orgIdGrant)))
+func (i *insightsPermissionGrbntsResolver) Orgbnizbtions() []grbphql.ID {
+	vbr mbrshblledOrgIds []grbphql.ID
+	for _, orgIdGrbnt := rbnge i.OrgIdGrbnts {
+		mbrshblledOrgIds = bppend(mbrshblledOrgIds, grbphqlbbckend.MbrshblOrgID(int32(orgIdGrbnt)))
 	}
-	return marshalledOrgIds
+	return mbrshblledOrgIds
 }
 
-func (i *insightsPermissionGrantsResolver) Global() bool {
-	return i.GlobalGrant
+func (i *insightsPermissionGrbntsResolver) Globbl() bool {
+	return i.GlobblGrbnt
 }
 
-type DashboardInsightViewConnectionResolver struct {
-	baseInsightResolver
+type DbshbobrdInsightViewConnectionResolver struct {
+	bbseInsightResolver
 
-	args graphqlbackend.DashboardInsightViewConnectionArgs
+	brgs grbphqlbbckend.DbshbobrdInsightViewConnectionArgs
 
 	ids       []string
-	dashboard *types.Dashboard
+	dbshbobrd *types.Dbshbobrd
 
 	once  sync.Once
 	views []types.Insight
@@ -180,26 +180,26 @@ type DashboardInsightViewConnectionResolver struct {
 	err   error
 }
 
-func (d *DashboardInsightViewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.InsightViewResolver, error) {
-	resolvers := make([]graphqlbackend.InsightViewResolver, 0, len(d.ids))
+func (d *DbshbobrdInsightViewConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.InsightViewResolver, error) {
+	resolvers := mbke([]grbphqlbbckend.InsightViewResolver, 0, len(d.ids))
 	views, _, err := d.computeConnectedViews(ctx)
 	if err != nil {
 		return nil, err
 	}
-	for i := range views {
-		resolvers = append(resolvers, &insightViewResolver{view: &views[i], baseInsightResolver: d.baseInsightResolver})
+	for i := rbnge views {
+		resolvers = bppend(resolvers, &insightViewResolver{view: &views[i], bbseInsightResolver: d.bbseInsightResolver})
 	}
 	return resolvers, nil
 }
 
-func (d *DashboardInsightViewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	return graphqlutil.HasNextPage(false), nil
+func (d *DbshbobrdInsightViewConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (d *DashboardInsightViewConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
-	var err error
-	viewSeries, err := d.insightStore.GetAllOnDashboard(ctx, args)
+func (d *DbshbobrdInsightViewConnectionResolver) TotblCount(ctx context.Context) (*int32, error) {
+	brgs := store.InsightsOnDbshbobrdQueryArgs{DbshbobrdID: d.dbshbobrd.ID}
+	vbr err error
+	viewSeries, err := d.insightStore.GetAllOnDbshbobrd(ctx, brgs)
 	if err != nil {
 		return nil, err
 	}
@@ -208,24 +208,24 @@ func (d *DashboardInsightViewConnectionResolver) TotalCount(ctx context.Context)
 	return &count, nil
 }
 
-func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
+func (d *DbshbobrdInsightViewConnectionResolver) computeConnectedViews(ctx context.Context) ([]types.Insight, string, error) {
 	d.once.Do(func() {
-		args := store.InsightsOnDashboardQueryArgs{DashboardID: d.dashboard.ID}
-		if d.args.After != nil {
-			var afterID string
-			err := relay.UnmarshalSpec(graphql.ID(*d.args.After), &afterID)
+		brgs := store.InsightsOnDbshbobrdQueryArgs{DbshbobrdID: d.dbshbobrd.ID}
+		if d.brgs.After != nil {
+			vbr bfterID string
+			err := relby.UnmbrshblSpec(grbphql.ID(*d.brgs.After), &bfterID)
 			if err != nil {
-				d.err = errors.Wrap(err, "unmarshalID")
+				d.err = errors.Wrbp(err, "unmbrshblID")
 				return
 			}
-			args.After = afterID
+			brgs.After = bfterID
 		}
-		if d.args.First != nil {
-			args.Limit = int(*d.args.First)
+		if d.brgs.First != nil {
+			brgs.Limit = int(*d.brgs.First)
 		}
-		var err error
+		vbr err error
 
-		viewSeries, err := d.insightStore.GetAllOnDashboard(ctx, args)
+		viewSeries, err := d.insightStore.GetAllOnDbshbobrd(ctx, brgs)
 		if err != nil {
 			d.err = err
 			return
@@ -233,290 +233,290 @@ func (d *DashboardInsightViewConnectionResolver) computeConnectedViews(ctx conte
 
 		d.views = d.insightStore.GroupByView(ctx, viewSeries)
 		sort.Slice(d.views, func(i, j int) bool {
-			return d.views[i].DashboardViewId < d.views[j].DashboardViewId
+			return d.views[i].DbshbobrdViewId < d.views[j].DbshbobrdViewId
 		})
 
 		if len(d.views) > 0 {
-			d.next = fmt.Sprintf("%d", d.views[len(d.views)-1].DashboardViewId)
+			d.next = fmt.Sprintf("%d", d.views[len(d.views)-1].DbshbobrdViewId)
 		}
 	})
 	return d.views, d.next, d.err
 }
 
-func (r *Resolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	dashboardGrants, err := parseDashboardGrants(args.Input.Grants)
+func (r *Resolver) CrebteInsightsDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.CrebteInsightsDbshbobrdArgs) (grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, error) {
+	dbshbobrdGrbnts, err := pbrseDbshbobrdGrbnts(brgs.Input.Grbnts)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to parse dashboard grants")
+		return nil, errors.Wrbp(err, "unbble to pbrse dbshbobrd grbnts")
 	}
-	if len(dashboardGrants) == 0 {
-		return nil, errors.New("dashboard must be created with at least one grant")
+	if len(dbshbobrdGrbnts) == 0 {
+		return nil, errors.New("dbshbobrd must be crebted with bt lebst one grbnt")
 	}
 
-	userIds, orgIds, err := getUserPermissions(ctx, database.NewDBWith(r.logger, r.workerBaseStore).Orgs())
+	userIds, orgIds, err := getUserPermissions(ctx, dbtbbbse.NewDBWith(r.logger, r.workerBbseStore).Orgs())
 	if err != nil {
-		return nil, errors.Wrap(err, "getUserPermissions")
+		return nil, errors.Wrbp(err, "getUserPermissions")
 	}
-	hasPermissionToCreate := hasPermissionForGrants(dashboardGrants, userIds, orgIds)
-	if !hasPermissionToCreate {
-		return nil, errors.New("user does not have permission to create this dashboard")
+	hbsPermissionToCrebte := hbsPermissionForGrbnts(dbshbobrdGrbnts, userIds, orgIds)
+	if !hbsPermissionToCrebte {
+		return nil, errors.New("user does not hbve permission to crebte this dbshbobrd")
 	}
 
-	dashboard, err := r.dashboardStore.CreateDashboard(ctx, store.CreateDashboardArgs{
-		Dashboard: types.Dashboard{Title: args.Input.Title, Save: true},
-		Grants:    dashboardGrants,
+	dbshbobrd, err := r.dbshbobrdStore.CrebteDbshbobrd(ctx, store.CrebteDbshbobrdArgs{
+		Dbshbobrd: types.Dbshbobrd{Title: brgs.Input.Title, Sbve: true},
+		Grbnts:    dbshbobrdGrbnts,
 		UserIDs:   userIds,
 		OrgIDs:    orgIds})
 	if err != nil {
 		return nil, err
 	}
-	if dashboard == nil {
+	if dbshbobrd == nil {
 		return nil, nil
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
+	return &insightsDbshbobrdPbylobdResolver{dbshbobrd: dbshbobrd, bbseInsightResolver: r.bbseInsightResolver}, nil
 }
 
-func (r *Resolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+func (r *Resolver) UpdbteInsightsDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.UpdbteInsightsDbshbobrdArgs) (grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, error) {
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
 
-	var dashboardGrants []store.DashboardGrant
-	if args.Input.Grants != nil {
-		parsedGrants, err := parseDashboardGrants(*args.Input.Grants)
+	vbr dbshbobrdGrbnts []store.DbshbobrdGrbnt
+	if brgs.Input.Grbnts != nil {
+		pbrsedGrbnts, err := pbrseDbshbobrdGrbnts(*brgs.Input.Grbnts)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse dashboard grants")
+			return nil, errors.Wrbp(err, "unbble to pbrse dbshbobrd grbnts")
 		}
-		dashboardGrants = parsedGrants
+		dbshbobrdGrbnts = pbrsedGrbnts
 	}
-	dashboardID, err := unmarshalDashboardID(args.Id)
+	dbshbobrdID, err := unmbrshblDbshbobrdID(brgs.Id)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+		return nil, errors.Wrbp(err, "unbble to unmbrshbl dbshbobrd id")
 	}
-	if dashboardID.isVirtualized() {
-		return nil, errors.New("unable to update a virtualized dashboard")
+	if dbshbobrdID.isVirtublized() {
+		return nil, errors.New("unbble to updbte b virtublized dbshbobrd")
 	}
 
-	err = permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	err = permissionsVblidbtor.vblidbteUserAccessForDbshbobrd(ctx, int(dbshbobrdID.Arg))
 	if err != nil {
 		return nil, err
 	}
 
-	dashboard, err := r.dashboardStore.UpdateDashboard(ctx, store.UpdateDashboardArgs{
-		ID:      int(dashboardID.Arg),
-		Title:   args.Input.Title,
-		Grants:  dashboardGrants,
-		UserIDs: permissionsValidator.userIds,
-		OrgIDs:  permissionsValidator.orgIds})
+	dbshbobrd, err := r.dbshbobrdStore.UpdbteDbshbobrd(ctx, store.UpdbteDbshbobrdArgs{
+		ID:      int(dbshbobrdID.Arg),
+		Title:   brgs.Input.Title,
+		Grbnts:  dbshbobrdGrbnts,
+		UserIDs: permissionsVblidbtor.userIds,
+		OrgIDs:  permissionsVblidbtor.orgIds})
 	if err != nil {
 		return nil, err
 	}
-	if dashboard == nil {
+	if dbshbobrd == nil {
 		return nil, nil
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboard, baseInsightResolver: r.baseInsightResolver}, nil
+	return &insightsDbshbobrdPbylobdResolver{dbshbobrd: dbshbobrd, bbseInsightResolver: r.bbseInsightResolver}, nil
 }
 
-func parseDashboardGrants(inputGrants graphqlbackend.InsightsPermissionGrants) ([]store.DashboardGrant, error) {
-	dashboardGrants := []store.DashboardGrant{}
-	if inputGrants.Users != nil {
-		for _, userGrant := range *inputGrants.Users {
-			userID, err := graphqlbackend.UnmarshalUserID(userGrant)
+func pbrseDbshbobrdGrbnts(inputGrbnts grbphqlbbckend.InsightsPermissionGrbnts) ([]store.DbshbobrdGrbnt, error) {
+	dbshbobrdGrbnts := []store.DbshbobrdGrbnt{}
+	if inputGrbnts.Users != nil {
+		for _, userGrbnt := rbnge *inputGrbnts.Users {
+			userID, err := grbphqlbbckend.UnmbrshblUserID(userGrbnt)
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal user id: %s", userGrant))
+				return nil, errors.Wrbp(err, fmt.Sprintf("unbble to unmbrshbl user id: %s", userGrbnt))
 			}
-			dashboardGrants = append(dashboardGrants, store.UserDashboardGrant(int(userID)))
+			dbshbobrdGrbnts = bppend(dbshbobrdGrbnts, store.UserDbshbobrdGrbnt(int(userID)))
 		}
 	}
-	if inputGrants.Organizations != nil {
-		for _, orgGrant := range *inputGrants.Organizations {
-			orgID, err := graphqlbackend.UnmarshalOrgID(orgGrant)
+	if inputGrbnts.Orgbnizbtions != nil {
+		for _, orgGrbnt := rbnge *inputGrbnts.Orgbnizbtions {
+			orgID, err := grbphqlbbckend.UnmbrshblOrgID(orgGrbnt)
 			if err != nil {
-				return nil, errors.Wrap(err, fmt.Sprintf("unable to unmarshal org id: %s", orgGrant))
+				return nil, errors.Wrbp(err, fmt.Sprintf("unbble to unmbrshbl org id: %s", orgGrbnt))
 			}
-			dashboardGrants = append(dashboardGrants, store.OrgDashboardGrant(int(orgID)))
+			dbshbobrdGrbnts = bppend(dbshbobrdGrbnts, store.OrgDbshbobrdGrbnt(int(orgID)))
 		}
 	}
-	if inputGrants.Global != nil && *inputGrants.Global {
-		dashboardGrants = append(dashboardGrants, store.GlobalDashboardGrant())
+	if inputGrbnts.Globbl != nil && *inputGrbnts.Globbl {
+		dbshbobrdGrbnts = bppend(dbshbobrdGrbnts, store.GlobblDbshbobrdGrbnt())
 	}
-	return dashboardGrants, nil
+	return dbshbobrdGrbnts, nil
 }
 
-// Checks that each grant is contained in the available user/org ids.
-func hasPermissionForGrants(dashboardGrants []store.DashboardGrant, userIds []int, orgIds []int) bool {
-	allowedUsers := make(map[int]bool)
-	allowedOrgs := make(map[int]bool)
+// Checks thbt ebch grbnt is contbined in the bvbilbble user/org ids.
+func hbsPermissionForGrbnts(dbshbobrdGrbnts []store.DbshbobrdGrbnt, userIds []int, orgIds []int) bool {
+	bllowedUsers := mbke(mbp[int]bool)
+	bllowedOrgs := mbke(mbp[int]bool)
 
-	for _, userId := range userIds {
-		allowedUsers[userId] = true
+	for _, userId := rbnge userIds {
+		bllowedUsers[userId] = true
 	}
-	for _, orgId := range orgIds {
-		allowedOrgs[orgId] = true
+	for _, orgId := rbnge orgIds {
+		bllowedOrgs[orgId] = true
 	}
 
-	for _, requestedGrant := range dashboardGrants {
-		if requestedGrant.UserID != nil {
-			if _, ok := allowedUsers[*requestedGrant.UserID]; !ok {
-				return false
+	for _, requestedGrbnt := rbnge dbshbobrdGrbnts {
+		if requestedGrbnt.UserID != nil {
+			if _, ok := bllowedUsers[*requestedGrbnt.UserID]; !ok {
+				return fblse
 			}
 		}
-		if requestedGrant.OrgID != nil {
-			if _, ok := allowedOrgs[*requestedGrant.OrgID]; !ok {
-				return false
+		if requestedGrbnt.OrgID != nil {
+			if _, ok := bllowedOrgs[*requestedGrbnt.OrgID]; !ok {
+				return fblse
 			}
 		}
 	}
 	return true
 }
 
-func (r *Resolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
-	emptyResponse := &graphqlbackend.EmptyResponse{}
+func (r *Resolver) DeleteInsightsDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.DeleteInsightsDbshbobrdArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	emptyResponse := &grbphqlbbckend.EmptyResponse{}
 
-	dashboardID, err := unmarshalDashboardID(args.Id)
+	dbshbobrdID, err := unmbrshblDbshbobrdID(brgs.Id)
 	if err != nil {
 		return emptyResponse, err
 	}
-	if dashboardID.isVirtualized() {
+	if dbshbobrdID.isVirtublized() {
 		return emptyResponse, nil
 	}
 
-	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
-		lamDashboardId, err := r.dashboardStore.EnsureLimitedAccessModeDashboard(ctx)
+	if licenseError := licensing.Check(licensing.FebtureCodeInsights); licenseError != nil {
+		lbmDbshbobrdId, err := r.dbshbobrdStore.EnsureLimitedAccessModeDbshbobrd(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+			return nil, errors.Wrbp(err, "EnsureLimitedAccessModeDbshbobrd")
 		}
-		if lamDashboardId == int(dashboardID.Arg) {
-			return nil, errors.New("Cannot delete this dashboard in Limited Access Mode")
+		if lbmDbshbobrdId == int(dbshbobrdID.Arg) {
+			return nil, errors.New("Cbnnot delete this dbshbobrd in Limited Access Mode")
 		}
 	}
 
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-	err = permissionsValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
+	err = permissionsVblidbtor.vblidbteUserAccessForDbshbobrd(ctx, int(dbshbobrdID.Arg))
 	if err != nil {
 		return nil, err
 	}
 
-	err = r.dashboardStore.DeleteDashboard(ctx, int(dashboardID.Arg))
+	err = r.dbshbobrdStore.DeleteDbshbobrd(ctx, int(dbshbobrdID.Arg))
 	if err != nil {
 		return emptyResponse, err
 	}
 	return emptyResponse, nil
 }
 
-func (r *Resolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (_ graphqlbackend.InsightsDashboardPayloadResolver, err error) {
-	var viewID string
-	err = relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+func (r *Resolver) AddInsightViewToDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.AddInsightViewToDbshbobrdArgs) (_ grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, err error) {
+	vbr viewID string
+	err = relby.UnmbrshblSpec(brgs.Input.InsightViewID, &viewID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+		return nil, errors.Wrbp(err, "unbble to unmbrshbl insight view id")
 	}
-	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
+	dbshbobrdID, err := unmbrshblDbshbobrdID(brgs.Input.DbshbobrdID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+		return nil, errors.Wrbp(err, "unbble to unmbrshbl dbshbobrd id")
 	}
 
-	tx, err := r.dashboardStore.Transact(ctx)
+	tx, err := r.dbshbobrdStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
-		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
+	if licenseError := licensing.Check(licensing.FebtureCodeInsights); licenseError != nil {
+		lbmDbshbobrdId, err := tx.EnsureLimitedAccessModeDbshbobrd(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+			return nil, errors.Wrbp(err, "EnsureLimitedAccessModeDbshbobrd")
 		}
-		if lamDashboardId == int(dashboardID.Arg) {
-			return nil, errors.New("Cannot add insights to this dashboard while in Limited Access Mode")
+		if lbmDbshbobrdId == int(dbshbobrdID.Arg) {
+			return nil, errors.New("Cbnnot bdd insights to this dbshbobrd while in Limited Access Mode")
 		}
 	}
 
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-	txValidator := permissionsValidator.WithBaseStore(tx.Store)
-	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
+	txVblidbtor := permissionsVblidbtor.WithBbseStore(tx.Store)
+	err = txVblidbtor.vblidbteUserAccessForDbshbobrd(ctx, int(dbshbobrdID.Arg))
 	if err != nil {
 		return nil, err
 	}
-	err = txValidator.validateUserAccessForView(ctx, viewID)
+	err = txVblidbtor.vblidbteUserAccessForView(ctx, viewID)
 	if err != nil {
 		return nil, err
 	}
 
-	exists, err := tx.IsViewOnDashboard(ctx, int(dashboardID.Arg), viewID)
+	exists, err := tx.IsViewOnDbshbobrd(ctx, int(dbshbobrdID.Arg), viewID)
 	if err != nil {
-		return nil, errors.Wrap(err, "IsViewOnDashboard")
+		return nil, errors.Wrbp(err, "IsViewOnDbshbobrd")
 	}
 	if !exists {
-		r.logger.Debug("attempting to add insight view to dashboard", log.Int64("dashboardID", dashboardID.Arg), log.String("insightViewID", viewID))
-		err = tx.AddViewsToDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+		r.logger.Debug("bttempting to bdd insight view to dbshbobrd", log.Int64("dbshbobrdID", dbshbobrdID.Arg), log.String("insightViewID", viewID))
+		err = tx.AddViewsToDbshbobrd(ctx, int(dbshbobrdID.Arg), []string{viewID})
 		if err != nil {
-			return nil, errors.Wrap(err, "AddInsightViewToDashboard")
+			return nil, errors.Wrbp(err, "AddInsightViewToDbshbobrd")
 		}
 	}
 
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{IDs: []int{int(dashboardID.Arg)},
-		UserIDs: txValidator.userIds, OrgIDs: txValidator.orgIds})
+	dbshbobrds, err := tx.GetDbshbobrds(ctx, store.DbshbobrdQueryArgs{IDs: []int{int(dbshbobrdID.Arg)},
+		UserIDs: txVblidbtor.userIds, OrgIDs: txVblidbtor.orgIds})
 	if err != nil {
-		return nil, errors.Wrap(err, "GetDashboards")
-	} else if len(dashboards) < 1 {
-		return nil, errors.New("dashboard not found")
+		return nil, errors.Wrbp(err, "GetDbshbobrds")
+	} else if len(dbshbobrds) < 1 {
+		return nil, errors.New("dbshbobrd not found")
 	}
 
-	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
+	return &insightsDbshbobrdPbylobdResolver{dbshbobrd: dbshbobrds[0], bbseInsightResolver: r.bbseInsightResolver}, nil
 }
 
-func (r *Resolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (_ graphqlbackend.InsightsDashboardPayloadResolver, err error) {
-	var viewID string
-	err = relay.UnmarshalSpec(args.Input.InsightViewID, &viewID)
+func (r *Resolver) RemoveInsightViewFromDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.RemoveInsightViewFromDbshbobrdArgs) (_ grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, err error) {
+	vbr viewID string
+	err = relby.UnmbrshblSpec(brgs.Input.InsightViewID, &viewID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal insight view id")
+		return nil, errors.Wrbp(err, "unbble to unmbrshbl insight view id")
 	}
-	dashboardID, err := unmarshalDashboardID(args.Input.DashboardID)
+	dbshbobrdID, err := unmbrshblDbshbobrdID(brgs.Input.DbshbobrdID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to unmarshal dashboard id")
+		return nil, errors.Wrbp(err, "unbble to unmbrshbl dbshbobrd id")
 	}
 
-	tx, err := r.dashboardStore.Transact(ctx)
+	tx, err := r.dbshbobrdStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if licenseError := licensing.Check(licensing.FeatureCodeInsights); licenseError != nil {
-		lamDashboardId, err := tx.EnsureLimitedAccessModeDashboard(ctx)
+	if licenseError := licensing.Check(licensing.FebtureCodeInsights); licenseError != nil {
+		lbmDbshbobrdId, err := tx.EnsureLimitedAccessModeDbshbobrd(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "EnsureLimitedAccessModeDashboard")
+			return nil, errors.Wrbp(err, "EnsureLimitedAccessModeDbshbobrd")
 		}
-		if lamDashboardId == int(dashboardID.Arg) {
-			return nil, errors.New("Cannot remove insights from this dashboard while in Limited Access Mode")
+		if lbmDbshbobrdId == int(dbshbobrdID.Arg) {
+			return nil, errors.New("Cbnnot remove insights from this dbshbobrd while in Limited Access Mode")
 		}
 	}
 
-	permissionsValidator := PermissionsValidatorFromBase(&r.baseInsightResolver)
-	txValidator := permissionsValidator.WithBaseStore(tx.Store)
-	err = txValidator.validateUserAccessForDashboard(ctx, int(dashboardID.Arg))
+	permissionsVblidbtor := PermissionsVblidbtorFromBbse(&r.bbseInsightResolver)
+	txVblidbtor := permissionsVblidbtor.WithBbseStore(tx.Store)
+	err = txVblidbtor.vblidbteUserAccessForDbshbobrd(ctx, int(dbshbobrdID.Arg))
 	if err != nil {
 		return nil, err
 	}
 
-	err = tx.RemoveViewsFromDashboard(ctx, int(dashboardID.Arg), []string{viewID})
+	err = tx.RemoveViewsFromDbshbobrd(ctx, int(dbshbobrdID.Arg), []string{viewID})
 	if err != nil {
-		return nil, errors.Wrap(err, "RemoveViewsFromDashboard")
+		return nil, errors.Wrbp(err, "RemoveViewsFromDbshbobrd")
 	}
-	dashboards, err := tx.GetDashboards(ctx, store.DashboardQueryArgs{IDs: []int{int(dashboardID.Arg)},
-		UserIDs: txValidator.userIds, OrgIDs: txValidator.orgIds})
+	dbshbobrds, err := tx.GetDbshbobrds(ctx, store.DbshbobrdQueryArgs{IDs: []int{int(dbshbobrdID.Arg)},
+		UserIDs: txVblidbtor.userIds, OrgIDs: txVblidbtor.orgIds})
 	if err != nil {
-		return nil, errors.Wrap(err, "GetDashboards")
-	} else if len(dashboards) < 1 {
-		return nil, errors.New("dashboard not found")
+		return nil, errors.Wrbp(err, "GetDbshbobrds")
+	} else if len(dbshbobrds) < 1 {
+		return nil, errors.New("dbshbobrd not found")
 	}
-	return &insightsDashboardPayloadResolver{dashboard: dashboards[0], baseInsightResolver: r.baseInsightResolver}, nil
+	return &insightsDbshbobrdPbylobdResolver{dbshbobrd: dbshbobrds[0], bbseInsightResolver: r.bbseInsightResolver}, nil
 }
 
-type insightsDashboardPayloadResolver struct {
-	dashboard *types.Dashboard
+type insightsDbshbobrdPbylobdResolver struct {
+	dbshbobrd *types.Dbshbobrd
 
-	baseInsightResolver
+	bbseInsightResolver
 }
 
-func (i *insightsDashboardPayloadResolver) Dashboard(ctx context.Context) (graphqlbackend.InsightsDashboardResolver, error) {
-	id := newRealDashboardID(int64(i.dashboard.ID))
-	return &insightsDashboardResolver{dashboard: i.dashboard, id: &id, baseInsightResolver: i.baseInsightResolver}, nil
+func (i *insightsDbshbobrdPbylobdResolver) Dbshbobrd(ctx context.Context) (grbphqlbbckend.InsightsDbshbobrdResolver, error) {
+	id := newReblDbshbobrdID(int64(i.dbshbobrd.ID))
+	return &insightsDbshbobrdResolver{dbshbobrd: i.dbshbobrd, id: &id, bbseInsightResolver: i.bbseInsightResolver}, nil
 }

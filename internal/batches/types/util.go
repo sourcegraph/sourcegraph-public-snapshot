@@ -1,66 +1,66 @@
-package types
+pbckbge types
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-type CodehostCapability string
+type CodehostCbpbbility string
 
 const (
-	CodehostCapabilityLabels          CodehostCapability = "Labels"
-	CodehostCapabilityDraftChangesets CodehostCapability = "DraftChangesets"
+	CodehostCbpbbilityLbbels          CodehostCbpbbility = "Lbbels"
+	CodehostCbpbbilityDrbftChbngesets CodehostCbpbbility = "DrbftChbngesets"
 )
 
-type CodehostCapabilities map[CodehostCapability]bool
+type CodehostCbpbbilities mbp[CodehostCbpbbility]bool
 
-// GetSupportedExternalServices returns the external service types currently supported
-// by the batch changes feature. Repos that are associated with external services
-// whose type is not in this list will simply be filtered out from the search
+// GetSupportedExternblServices returns the externbl service types currently supported
+// by the bbtch chbnges febture. Repos thbt bre bssocibted with externbl services
+// whose type is not in this list will simply be filtered out from the sebrch
 // results.
-func GetSupportedExternalServices() map[string]CodehostCapabilities {
-	supportedExternalServices := map[string]CodehostCapabilities{
-		extsvc.TypeGitHub:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
+func GetSupportedExternblServices() mbp[string]CodehostCbpbbilities {
+	supportedExternblServices := mbp[string]CodehostCbpbbilities{
+		extsvc.TypeGitHub:          {CodehostCbpbbilityLbbels: true, CodehostCbpbbilityDrbftChbngesets: true},
 		extsvc.TypeBitbucketServer: {},
-		extsvc.TypeGitLab:          {CodehostCapabilityLabels: true, CodehostCapabilityDraftChangesets: true},
+		extsvc.TypeGitLbb:          {CodehostCbpbbilityLbbels: true, CodehostCbpbbilityDrbftChbngesets: true},
 		extsvc.TypeBitbucketCloud:  {},
-		extsvc.TypeAzureDevOps:     {CodehostCapabilityDraftChangesets: true},
-		extsvc.TypeGerrit:          {CodehostCapabilityDraftChangesets: true},
+		extsvc.TypeAzureDevOps:     {CodehostCbpbbilityDrbftChbngesets: true},
+		extsvc.TypeGerrit:          {CodehostCbpbbilityDrbftChbngesets: true},
 	}
-	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.BatchChangesEnablePerforce {
-		supportedExternalServices[extsvc.TypePerforce] = CodehostCapabilities{}
+	if c := conf.Get(); c.ExperimentblFebtures != nil && c.ExperimentblFebtures.BbtchChbngesEnbblePerforce {
+		supportedExternblServices[extsvc.TypePerforce] = CodehostCbpbbilities{}
 	}
 
-	return supportedExternalServices
+	return supportedExternblServices
 }
 
-// IsRepoSupported returns whether the given ExternalRepoSpec is supported by
-// the batch changes feature, based on the external service type.
-func IsRepoSupported(spec *api.ExternalRepoSpec) bool {
-	_, ok := GetSupportedExternalServices()[spec.ServiceType]
+// IsRepoSupported returns whether the given ExternblRepoSpec is supported by
+// the bbtch chbnges febture, bbsed on the externbl service type.
+func IsRepoSupported(spec *bpi.ExternblRepoSpec) bool {
+	_, ok := GetSupportedExternblServices()[spec.ServiceType]
 	return ok
 }
 
 // IsKindSupported returns whether the given extsvc Kind is supported by
-// batch changes.
+// bbtch chbnges.
 func IsKindSupported(extSvcKind string) bool {
-	_, ok := GetSupportedExternalServices()[extsvc.KindToType(extSvcKind)]
+	_, ok := GetSupportedExternblServices()[extsvc.KindToType(extSvcKind)]
 	return ok
 }
 
-func ExternalServiceSupports(extSvcType string, capability CodehostCapability) bool {
-	if es, ok := GetSupportedExternalServices()[extSvcType]; ok {
-		val, ok := es[capability]
-		return ok && val
+func ExternblServiceSupports(extSvcType string, cbpbbility CodehostCbpbbility) bool {
+	if es, ok := GetSupportedExternblServices()[extSvcType]; ok {
+		vbl, ok := es[cbpbbility]
+		return ok && vbl
 	}
-	return false
+	return fblse
 }
 
-// Keyer represents items that return a unique key
-type Keyer interface {
+// Keyer represents items thbt return b unique key
+type Keyer interfbce {
 	Key() string
 }
 

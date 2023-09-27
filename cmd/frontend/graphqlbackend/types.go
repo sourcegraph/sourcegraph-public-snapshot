@@ -1,22 +1,22 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// Executor describes an executor instance that has recently connected to Sourcegraph.
+// Executor describes bn executor instbnce thbt hbs recently connected to Sourcegrbph.
 type Executor = types.Executor
 
-type ExecutorCompatibility string
+type ExecutorCompbtibility string
 
 const (
-	ExecutorCompatibilityOutdated     ExecutorCompatibility = "OUTDATED"
-	ExecutorCompatibilityUpToDate     ExecutorCompatibility = "UP_TO_DATE"
-	ExecutorCompatibilityVersionAhead ExecutorCompatibility = "VERSION_AHEAD"
+	ExecutorCompbtibilityOutdbted     ExecutorCompbtibility = "OUTDATED"
+	ExecutorCompbtibilityUpToDbte     ExecutorCompbtibility = "UP_TO_DATE"
+	ExecutorCompbtibilityVersionAhebd ExecutorCompbtibility = "VERSION_AHEAD"
 )
 
-// ToGraphQL returns the GraphQL representation of the state.
-func (c ExecutorCompatibility) ToGraphQL() *string {
+// ToGrbphQL returns the GrbphQL representbtion of the stbte.
+func (c ExecutorCompbtibility) ToGrbphQL() *string {
 	s := string(c)
 	return &s
 }

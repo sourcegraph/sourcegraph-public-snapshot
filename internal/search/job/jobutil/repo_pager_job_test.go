@@ -1,34 +1,34 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/zoekt"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func Test_setRepos(t *testing.T) {
-	// Static test data
+	// Stbtic test dbtb
 	indexed := &zoekt.IndexedRepoRevs{
-		RepoRevs: map[api.RepoID]*search.RepositoryRevisions{
-			1: {Repo: types.MinimalRepo{Name: "indexed"}},
+		RepoRevs: mbp[bpi.RepoID]*sebrch.RepositoryRevisions{
+			1: {Repo: types.MinimblRepo{Nbme: "indexed"}},
 		},
 	}
-	unindexed := []*search.RepositoryRevisions{
-		{Repo: types.MinimalRepo{Name: "unindexed1"}},
-		{Repo: types.MinimalRepo{Name: "unindexed2"}},
+	unindexed := []*sebrch.RepositoryRevisions{
+		{Repo: types.MinimblRepo{Nbme: "unindexed1"}},
+		{Repo: types.MinimblRepo{Nbme: "unindexed2"}},
 	}
 
-	j := NewParallelJob(
-		&zoekt.RepoSubsetTextSearchJob{},
-		&searcher.TextSearchJob{},
+	j := NewPbrbllelJob(
+		&zoekt.RepoSubsetTextSebrchJob{},
+		&sebrcher.TextSebrchJob{},
 	)
 	j = setRepos(j, indexed, unindexed)
-	require.Len(t, j.(*ParallelJob).children[0].(*zoekt.RepoSubsetTextSearchJob).Repos.RepoRevs, 1)
-	require.Len(t, j.(*ParallelJob).children[1].(*searcher.TextSearchJob).Repos, 2)
+	require.Len(t, j.(*PbrbllelJob).children[0].(*zoekt.RepoSubsetTextSebrchJob).Repos.RepoRevs, 1)
+	require.Len(t, j.(*PbrbllelJob).children[1].(*sebrcher.TextSebrchJob).Repos, 2)
 }

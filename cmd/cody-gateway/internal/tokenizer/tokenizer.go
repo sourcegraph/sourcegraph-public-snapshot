@@ -1,4 +1,4 @@
-package tokenizer
+pbckbge tokenizer
 
 import (
 	_ "embed"
@@ -11,5 +11,5 @@ type Tokenizer struct {
 }
 
 func (t *Tokenizer) Tokenize(text string) ([]int, error) {
-	return t.tk.Encode(text, []string{"all"}, nil), nil
+	return t.tk.Encode(text, []string{"bll"}, nil), nil
 }

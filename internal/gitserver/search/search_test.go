@@ -1,242 +1,242 @@
-package search
+pbckbge sebrch
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"math/rand"
+	"mbth/rbnd"
 	"os"
 	"os/exec"
-	"path"
+	"pbth"
 	"reflect"
 	"strings"
 	"testing"
 	"testing/quick"
 	"unicode/utf8"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// initGitRepository initializes a new Git repository and runs cmds in a new
-// temporary directory (returned as dir).
+// initGitRepository initiblizes b new Git repository bnd runs cmds in b new
+// temporbry directory (returned bs dir).
 func initGitRepository(t testing.TB, cmds ...string) string {
 	t.Helper()
 	dir := t.TempDir()
-	cmds = append([]string{"git init"}, cmds...)
-	for _, cmd := range cmds {
-		out, err := gitCommand(dir, "bash", "-c", cmd).CombinedOutput()
+	cmds = bppend([]string{"git init"}, cmds...)
+	for _, cmd := rbnge cmds {
+		out, err := gitCommbnd(dir, "bbsh", "-c", cmd).CombinedOutput()
 		if err != nil {
-			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
+			t.Fbtblf("Commbnd %q fbiled. Output wbs:\n\n%s", cmd, out)
 		}
 	}
 	return dir
 }
 
-func gitCommand(dir, name string, args ...string) *exec.Cmd {
-	c := exec.Command(name, args...)
+func gitCommbnd(dir, nbme string, brgs ...string) *exec.Cmd {
+	c := exec.Commbnd(nbme, brgs...)
 	c.Dir = dir
-	c.Env = append(os.Environ(), "GIT_CONFIG="+path.Join(dir, ".git", "config"), "GIT_CONFIG_NOSYSTEM=1", "HOME=/dev/null")
+	c.Env = bppend(os.Environ(), "GIT_CONFIG="+pbth.Join(dir, ".git", "config"), "GIT_CONFIG_NOSYSTEM=1", "HOME=/dev/null")
 	return c
 }
 
-func TestSearch(t *testing.T) {
+func TestSebrch(t *testing.T) {
 	cmds := []string{
-		"echo lorem ipsum dolor sit amet > file1",
-		"git add -A",
-		"GIT_COMMITTER_NAME=camden1 " +
-			"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
+		"echo lorem ipsum dolor sit bmet > file1",
+		"git bdd -A",
+		"GIT_COMMITTER_NAME=cbmden1 " +
+			"GIT_COMMITTER_EMAIL=cbmden1@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
-			"GIT_AUTHOR_NAME=camden1 " +
-			"GIT_AUTHOR_EMAIL=camden1@ccheek.com " +
+			"GIT_AUTHOR_NAME=cbmden1 " +
+			"GIT_AUTHOR_EMAIL=cbmden1@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit1 ",
-		"echo consectetur adipiscing elit > file2",
-		"echo consectetur adipiscing elit again > file3",
-		"git add -A",
-		"GIT_COMMITTER_NAME=camden2 " +
-			"GIT_COMMITTER_EMAIL=camden2@ccheek.com " +
+		"echo consectetur bdipiscing elit > file2",
+		"echo consectetur bdipiscing elit bgbin > file3",
+		"git bdd -A",
+		"GIT_COMMITTER_NAME=cbmden2 " +
+			"GIT_COMMITTER_EMAIL=cbmden2@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
-			"GIT_AUTHOR_NAME=camden2 " +
-			"GIT_AUTHOR_EMAIL=camden2@ccheek.com " +
+			"GIT_AUTHOR_NAME=cbmden2 " +
+			"GIT_AUTHOR_EMAIL=cbmden2@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit2",
-		"mv file1 file1a",
-		"git add -A",
-		"GIT_COMMITTER_NAME=camden3 " +
-			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
+		"mv file1 file1b",
+		"git bdd -A",
+		"GIT_COMMITTER_NAME=cbmden3 " +
+			"GIT_COMMITTER_EMAIL=cbmden3@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
-			"GIT_AUTHOR_NAME=camden3 " +
-			"GIT_AUTHOR_EMAIL=camden3@ccheek.com " +
+			"GIT_AUTHOR_NAME=cbmden3 " +
+			"GIT_AUTHOR_EMAIL=cbmden3@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit3",
 	}
 	dir := initGitRepository(t, cmds...)
 
-	t.Run("match one", func(t *testing.T) {
-		query := &protocol.MessageMatches{Expr: "commit2"}
-		tree, err := ToMatchTree(query)
+	t.Run("mbtch one", func(t *testing.T) {
+		query := &protocol.MessbgeMbtches{Expr: "commit2"}
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir: dir,
 			Query:   tree,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Empty(t, matches[0].ModifiedFiles)
+		require.Len(t, mbtches, 1)
+		require.Empty(t, mbtches[0].ModifiedFiles)
 	})
 
-	t.Run("match both, in order", func(t *testing.T) {
-		query := &protocol.MessageMatches{Expr: "c"}
-		tree, err := ToMatchTree(query)
+	t.Run("mbtch both, in order", func(t *testing.T) {
+		query := &protocol.MessbgeMbtches{Expr: "c"}
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir: dir,
 			Query:   tree,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 3)
-		require.Equal(t, matches[0].Author.Name, "camden3")
-		require.Equal(t, matches[1].Author.Name, "camden2")
-		require.Equal(t, matches[2].Author.Name, "camden1")
+		require.Len(t, mbtches, 3)
+		require.Equbl(t, mbtches[0].Author.Nbme, "cbmden3")
+		require.Equbl(t, mbtches[1].Author.Nbme, "cbmden2")
+		require.Equbl(t, mbtches[2].Author.Nbme, "cbmden1")
 	})
 
-	t.Run("and with no operands matches all", func(t *testing.T) {
+	t.Run("bnd with no operbnds mbtches bll", func(t *testing.T) {
 		query := protocol.NewAnd()
-		tree, err := ToMatchTree(query)
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir: dir,
 			Query:   tree,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 3)
+		require.Len(t, mbtches, 3)
 	})
 
-	t.Run("match diff content", func(t *testing.T) {
-		query := &protocol.DiffMatches{Expr: "ipsum"}
-		tree, err := ToMatchTree(query)
+	t.Run("mbtch diff content", func(t *testing.T) {
+		query := &protocol.DiffMbtches{Expr: "ipsum"}
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir: dir,
 			Query:   tree,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden3")
-		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Len(t, mbtches, 2)
+		require.Equbl(t, mbtches[0].Author.Nbme, "cbmden3")
+		require.Equbl(t, mbtches[1].Author.Nbme, "cbmden1")
 	})
 
-	t.Run("author matches", func(t *testing.T) {
-		query := &protocol.AuthorMatches{Expr: "2"}
-		tree, err := ToMatchTree(query)
+	t.Run("buthor mbtches", func(t *testing.T) {
+		query := &protocol.AuthorMbtches{Expr: "2"}
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir: dir,
 			Query:   tree,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 1)
-		require.Equal(t, matches[0].Author.Name, "camden2")
+		require.Len(t, mbtches, 1)
+		require.Equbl(t, mbtches[0].Author.Nbme, "cbmden2")
 	})
 
-	t.Run("file matches", func(t *testing.T) {
+	t.Run("file mbtches", func(t *testing.T) {
 		query := &protocol.DiffModifiesFile{Expr: "file1"}
-		tree, err := ToMatchTree(query)
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir:              dir,
 			Query:                tree,
 			IncludeModifiedFiles: true,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden3")
-		require.Equal(t, matches[1].Author.Name, "camden1")
+		require.Len(t, mbtches, 2)
+		require.Equbl(t, mbtches[0].Author.Nbme, "cbmden3")
+		require.Equbl(t, mbtches[1].Author.Nbme, "cbmden1")
 	})
 
-	t.Run("and match", func(t *testing.T) {
+	t.Run("bnd mbtch", func(t *testing.T) {
 		query := protocol.NewAnd(
-			&protocol.DiffMatches{Expr: "lorem"},
-			&protocol.DiffMatches{Expr: "ipsum"},
+			&protocol.DiffMbtches{Expr: "lorem"},
+			&protocol.DiffMbtches{Expr: "ipsum"},
 		)
-		tree, err := ToMatchTree(query)
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir:     dir,
 			Query:       tree,
 			IncludeDiff: true,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 2)
-		require.Equal(t, matches[0].Author.Name, "camden3")
-		require.Equal(t, matches[1].Author.Name, "camden1")
-		require.Len(t, strings.Split(matches[1].Diff.Content, "\n"), 4)
+		require.Len(t, mbtches, 2)
+		require.Equbl(t, mbtches[0].Author.Nbme, "cbmden3")
+		require.Equbl(t, mbtches[1].Author.Nbme, "cbmden1")
+		require.Len(t, strings.Split(mbtches[1].Diff.Content, "\n"), 4)
 	})
 
-	t.Run("match all, in order with modified files", func(t *testing.T) {
-		query := &protocol.MessageMatches{Expr: "c"}
-		tree, err := ToMatchTree(query)
+	t.Run("mbtch bll, in order with modified files", func(t *testing.T) {
+		query := &protocol.MessbgeMbtches{Expr: "c"}
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir:              dir,
 			Query:                tree,
 			IncludeModifiedFiles: true,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
-		require.Len(t, matches, 3)
-		require.Equal(t, matches[0].Author.Name, "camden3")
-		require.Equal(t, matches[1].Author.Name, "camden2")
-		require.Equal(t, matches[2].Author.Name, "camden1")
-		require.Equal(t, []string{"file1", "file1a"}, matches[0].ModifiedFiles)
-		require.Equal(t, []string{"file2", "file3"}, matches[1].ModifiedFiles)
-		require.Equal(t, []string{"file1"}, matches[2].ModifiedFiles)
+		require.Len(t, mbtches, 3)
+		require.Equbl(t, mbtches[0].Author.Nbme, "cbmden3")
+		require.Equbl(t, mbtches[1].Author.Nbme, "cbmden2")
+		require.Equbl(t, mbtches[2].Author.Nbme, "cbmden1")
+		require.Equbl(t, []string{"file1", "file1b"}, mbtches[0].ModifiedFiles)
+		require.Equbl(t, []string{"file2", "file3"}, mbtches[1].ModifiedFiles)
+		require.Equbl(t, []string{"file1"}, mbtches[2].ModifiedFiles)
 	})
 
 	t.Run("non utf8 elements", func(t *testing.T) {
 		cmds := []string{
-			"echo lorem ipsum dolor sit amet > file1",
-			"git add -A",
-			"GIT_COMMITTER_NAME=camden1 " +
-				"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
+			"echo lorem ipsum dolor sit bmet > file1",
+			"git bdd -A",
+			"GIT_COMMITTER_NAME=cbmden1 " +
+				"GIT_COMMITTER_EMAIL=cbmden1@ccheek.com " +
 				"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
 				"GIT_AUTHOR_NAME=\xc0mden " +
 				"GIT_AUTHOR_EMAIL=\xc0mden1@ccheek.com " +
@@ -245,108 +245,108 @@ func TestSearch(t *testing.T) {
 		}
 		dir := initGitRepository(t, cmds...)
 
-		query := &protocol.AuthorMatches{Expr: "c"}
-		tree, err := ToMatchTree(query)
+		query := &protocol.AuthorMbtches{Expr: "c"}
+		tree, err := ToMbtchTree(query)
 		require.NoError(t, err)
-		searcher := &CommitSearcher{
+		sebrcher := &CommitSebrcher{
 			RepoDir:              dir,
 			Query:                tree,
 			IncludeModifiedFiles: true,
 		}
-		var matches []*protocol.CommitMatch
-		err = searcher.Search(context.Background(), func(match *protocol.CommitMatch) {
-			matches = append(matches, match)
+		vbr mbtches []*protocol.CommitMbtch
+		err = sebrcher.Sebrch(context.Bbckground(), func(mbtch *protocol.CommitMbtch) {
+			mbtches = bppend(mbtches, mbtch)
 		})
 		require.NoError(t, err)
 
-		require.Len(t, matches, 1)
-		match := matches[0]
-		require.True(t, utf8.ValidString(match.Author.Name))
-		require.True(t, utf8.ValidString(match.Author.Email))
-		require.True(t, utf8.ValidString(match.Message.Content))
+		require.Len(t, mbtches, 1)
+		mbtch := mbtches[0]
+		require.True(t, utf8.VblidString(mbtch.Author.Nbme))
+		require.True(t, utf8.VblidString(mbtch.Author.Embil))
+		require.True(t, utf8.VblidString(mbtch.Messbge.Content))
 
 	})
 }
 
-func TestCommitScanner(t *testing.T) {
+func TestCommitScbnner(t *testing.T) {
 	cmds := []string{
-		"echo lorem ipsum dolor sit amet > file1",
-		"git add -A",
-		"GIT_COMMITTER_NAME=camden1 " +
-			"GIT_COMMITTER_EMAIL=camden1@ccheek.com " +
+		"echo lorem ipsum dolor sit bmet > file1",
+		"git bdd -A",
+		"GIT_COMMITTER_NAME=cbmden1 " +
+			"GIT_COMMITTER_EMAIL=cbmden1@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
-			"GIT_AUTHOR_NAME=camden1 " +
-			"GIT_AUTHOR_EMAIL=camden1@ccheek.com " +
+			"GIT_AUTHOR_NAME=cbmden1 " +
+			"GIT_AUTHOR_EMAIL=cbmden1@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit1 ",
-		"echo consectetur adipiscing elit > file2",
-		"echo consectetur adipiscing elit again > file3",
-		"git add -A",
-		"GIT_COMMITTER_NAME=camden2 " +
-			"GIT_COMMITTER_EMAIL=camden2@ccheek.com " +
+		"echo consectetur bdipiscing elit > file2",
+		"echo consectetur bdipiscing elit bgbin > file3",
+		"git bdd -A",
+		"GIT_COMMITTER_NAME=cbmden2 " +
+			"GIT_COMMITTER_EMAIL=cbmden2@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
-			"GIT_AUTHOR_NAME=camden2 " +
-			"GIT_AUTHOR_EMAIL=camden2@ccheek.com " +
+			"GIT_AUTHOR_NAME=cbmden2 " +
+			"GIT_AUTHOR_EMAIL=cbmden2@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit2",
-		"mv file1 file1a",
-		"git add -A",
-		"GIT_COMMITTER_NAME=camden3 " +
-			"GIT_COMMITTER_EMAIL=camden3@ccheek.com " +
+		"mv file1 file1b",
+		"git bdd -A",
+		"GIT_COMMITTER_NAME=cbmden3 " +
+			"GIT_COMMITTER_EMAIL=cbmden3@ccheek.com " +
 			"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z " +
-			"GIT_AUTHOR_NAME=camden3 " +
-			"GIT_AUTHOR_EMAIL=camden3@ccheek.com " +
+			"GIT_AUTHOR_NAME=cbmden3 " +
+			"GIT_AUTHOR_EMAIL=cbmden3@ccheek.com " +
 			"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z " +
 			"git commit -m commit3",
 	}
 	dir := initGitRepository(t, cmds...)
 
-	getRaw := func(dir string, includeModifiedFiles bool) []byte {
-		var buf bytes.Buffer
-		cmd := exec.Command("git", (&CommitSearcher{IncludeModifiedFiles: includeModifiedFiles}).gitArgs()...)
+	getRbw := func(dir string, includeModifiedFiles bool) []byte {
+		vbr buf bytes.Buffer
+		cmd := exec.Commbnd("git", (&CommitSebrcher{IncludeModifiedFiles: includeModifiedFiles}).gitArgs()...)
 		cmd.Dir = dir
 		cmd.Stdout = &buf
 		cmd.Run()
 		return buf.Bytes()
 	}
 
-	cases := []struct {
+	cbses := []struct {
 		input    []byte
-		expected []*RawCommit
+		expected []*RbwCommit
 	}{
 		{
-			input: getRaw(dir, true),
-			expected: []*RawCommit{
+			input: getRbw(dir, true),
+			expected: []*RbwCommit{
 				{
-					Hash:           []byte("f45c8f639eeaaaeecd04e60be5800835382fb879"),
-					RefNames:       []byte("HEAD -> refs/heads/master"),
+					Hbsh:           []byte("f45c8f639eebbbeecd04e60be5800835382fb879"),
+					RefNbmes:       []byte("HEAD -> refs/hebds/mbster"),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("camden3"),
-					AuthorEmail:    []byte("camden3@ccheek.com"),
-					AuthorDate:     []byte("1136214245"),
-					CommitterName:  []byte("camden3"),
-					CommitterEmail: []byte("camden3@ccheek.com"),
-					CommitterDate:  []byte("1136214245"),
-					Message:        []byte("commit3"),
-					ParentHashes:   []byte("fa733abad75875e568c949f54f03a38748435e9b"),
+					AuthorNbme:     []byte("cbmden3"),
+					AuthorEmbil:    []byte("cbmden3@ccheek.com"),
+					AuthorDbte:     []byte("1136214245"),
+					CommitterNbme:  []byte("cbmden3"),
+					CommitterEmbil: []byte("cbmden3@ccheek.com"),
+					CommitterDbte:  []byte("1136214245"),
+					Messbge:        []byte("commit3"),
+					PbrentHbshes:   []byte("fb733bbbd75875e568c949f54f03b38748435e9b"),
 					ModifiedFiles: [][]byte{
 						[]byte("R100"),
 						[]byte("file1"),
-						[]byte("file1a"),
+						[]byte("file1b"),
 					},
 				},
 				{
-					Hash:           []byte("fa733abad75875e568c949f54f03a38748435e9b"),
-					RefNames:       []byte(""),
+					Hbsh:           []byte("fb733bbbd75875e568c949f54f03b38748435e9b"),
+					RefNbmes:       []byte(""),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("camden2"),
-					AuthorEmail:    []byte("camden2@ccheek.com"),
-					AuthorDate:     []byte("1136214245"),
-					CommitterName:  []byte("camden2"),
-					CommitterEmail: []byte("camden2@ccheek.com"),
-					CommitterDate:  []byte("1136214245"),
-					Message:        []byte("commit2"),
-					ParentHashes:   []byte("008b80cbf30c8608aec73608becb52168f12d558"),
+					AuthorNbme:     []byte("cbmden2"),
+					AuthorEmbil:    []byte("cbmden2@ccheek.com"),
+					AuthorDbte:     []byte("1136214245"),
+					CommitterNbme:  []byte("cbmden2"),
+					CommitterEmbil: []byte("cbmden2@ccheek.com"),
+					CommitterDbte:  []byte("1136214245"),
+					Messbge:        []byte("commit2"),
+					PbrentHbshes:   []byte("008b80cbf30c8608bec73608becb52168f12d558"),
 					ModifiedFiles: [][]byte{
 						[]byte("A"),
 						[]byte("file2"),
@@ -355,17 +355,17 @@ func TestCommitScanner(t *testing.T) {
 					},
 				},
 				{
-					Hash:           []byte("008b80cbf30c8608aec73608becb52168f12d558"),
-					RefNames:       []byte(""),
+					Hbsh:           []byte("008b80cbf30c8608bec73608becb52168f12d558"),
+					RefNbmes:       []byte(""),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("camden1"),
-					AuthorEmail:    []byte("camden1@ccheek.com"),
-					AuthorDate:     []byte("1136214245"),
-					CommitterName:  []byte("camden1"),
-					CommitterEmail: []byte("camden1@ccheek.com"),
-					CommitterDate:  []byte("1136214245"),
-					Message:        []byte("commit1"),
-					ParentHashes:   []byte(""),
+					AuthorNbme:     []byte("cbmden1"),
+					AuthorEmbil:    []byte("cbmden1@ccheek.com"),
+					AuthorDbte:     []byte("1136214245"),
+					CommitterNbme:  []byte("cbmden1"),
+					CommitterEmbil: []byte("cbmden1@ccheek.com"),
+					CommitterDbte:  []byte("1136214245"),
+					Messbge:        []byte("commit1"),
+					PbrentHbshes:   []byte(""),
 					ModifiedFiles: [][]byte{
 						[]byte("A"),
 						[]byte("file1"),
@@ -374,421 +374,421 @@ func TestCommitScanner(t *testing.T) {
 			},
 		},
 		{
-			input: getRaw(dir, false),
-			expected: []*RawCommit{
+			input: getRbw(dir, fblse),
+			expected: []*RbwCommit{
 				{
-					Hash:           []byte("f45c8f639eeaaaeecd04e60be5800835382fb879"),
-					RefNames:       []byte("HEAD -> refs/heads/master"),
+					Hbsh:           []byte("f45c8f639eebbbeecd04e60be5800835382fb879"),
+					RefNbmes:       []byte("HEAD -> refs/hebds/mbster"),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("camden3"),
-					AuthorEmail:    []byte("camden3@ccheek.com"),
-					AuthorDate:     []byte("1136214245"),
-					CommitterName:  []byte("camden3"),
-					CommitterEmail: []byte("camden3@ccheek.com"),
-					CommitterDate:  []byte("1136214245"),
-					Message:        []byte("commit3"),
-					ParentHashes:   []byte("fa733abad75875e568c949f54f03a38748435e9b"),
+					AuthorNbme:     []byte("cbmden3"),
+					AuthorEmbil:    []byte("cbmden3@ccheek.com"),
+					AuthorDbte:     []byte("1136214245"),
+					CommitterNbme:  []byte("cbmden3"),
+					CommitterEmbil: []byte("cbmden3@ccheek.com"),
+					CommitterDbte:  []byte("1136214245"),
+					Messbge:        []byte("commit3"),
+					PbrentHbshes:   []byte("fb733bbbd75875e568c949f54f03b38748435e9b"),
 					ModifiedFiles:  [][]byte{},
 				},
 				{
-					Hash:           []byte("fa733abad75875e568c949f54f03a38748435e9b"),
-					RefNames:       []byte(""),
+					Hbsh:           []byte("fb733bbbd75875e568c949f54f03b38748435e9b"),
+					RefNbmes:       []byte(""),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("camden2"),
-					AuthorEmail:    []byte("camden2@ccheek.com"),
-					AuthorDate:     []byte("1136214245"),
-					CommitterName:  []byte("camden2"),
-					CommitterEmail: []byte("camden2@ccheek.com"),
-					CommitterDate:  []byte("1136214245"),
-					Message:        []byte("commit2"),
-					ParentHashes:   []byte("008b80cbf30c8608aec73608becb52168f12d558"),
+					AuthorNbme:     []byte("cbmden2"),
+					AuthorEmbil:    []byte("cbmden2@ccheek.com"),
+					AuthorDbte:     []byte("1136214245"),
+					CommitterNbme:  []byte("cbmden2"),
+					CommitterEmbil: []byte("cbmden2@ccheek.com"),
+					CommitterDbte:  []byte("1136214245"),
+					Messbge:        []byte("commit2"),
+					PbrentHbshes:   []byte("008b80cbf30c8608bec73608becb52168f12d558"),
 					ModifiedFiles:  [][]byte{},
 				},
 				{
-					Hash:           []byte("008b80cbf30c8608aec73608becb52168f12d558"),
-					RefNames:       []byte(""),
+					Hbsh:           []byte("008b80cbf30c8608bec73608becb52168f12d558"),
+					RefNbmes:       []byte(""),
 					SourceRefs:     []byte("HEAD"),
-					AuthorName:     []byte("camden1"),
-					AuthorEmail:    []byte("camden1@ccheek.com"),
-					AuthorDate:     []byte("1136214245"),
-					CommitterName:  []byte("camden1"),
-					CommitterEmail: []byte("camden1@ccheek.com"),
-					CommitterDate:  []byte("1136214245"),
-					Message:        []byte("commit1"),
-					ParentHashes:   []byte(""),
+					AuthorNbme:     []byte("cbmden1"),
+					AuthorEmbil:    []byte("cbmden1@ccheek.com"),
+					AuthorDbte:     []byte("1136214245"),
+					CommitterNbme:  []byte("cbmden1"),
+					CommitterEmbil: []byte("cbmden1@ccheek.com"),
+					CommitterDbte:  []byte("1136214245"),
+					Messbge:        []byte("commit1"),
+					PbrentHbshes:   []byte(""),
 					ModifiedFiles:  [][]byte{},
 				},
 			},
 		},
 	}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
 			println(dir)
-			scanner := NewCommitScanner(bytes.NewReader(tc.input))
-			var output []*RawCommit
-			for scanner.Scan() {
-				output = append(output, scanner.NextRawCommit())
+			scbnner := NewCommitScbnner(bytes.NewRebder(tc.input))
+			vbr output []*RbwCommit
+			for scbnner.Scbn() {
+				output = bppend(output, scbnner.NextRbwCommit())
 			}
-			require.NoError(t, scanner.Err())
-			require.Equal(t, tc.expected, output)
+			require.NoError(t, scbnner.Err())
+			require.Equbl(t, tc.expected, output)
 		})
 	}
 }
 
 func TestHighlights(t *testing.T) {
-	rawDiff := `diff --git internal/compute/match.go internal/compute/match.go
+	rbwDiff := `diff --git internbl/compute/mbtch.go internbl/compute/mbtch.go
 new file mode 100644
 index 0000000000..fcc91bf673
 --- /dev/null
-+++ internal/compute/match.go
++++ internbl/compute/mbtch.go
 @@ -0,0 +1,97 @@
-+package compute
++pbckbge compute
 +
 +import (
 +       "fmt"
 +       "regexp"
 +
-+       "github.com/sourcegraph/sourcegraph/internal/search/result"
++       "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 +)
 +
-+func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
-+       matches := make([]Match, 0, len(fm.LineMatches))
-+       for _, l := range fm.LineMatches {
-+               regexpMatches := r.FindAllStringSubmatchIndex(l.Preview, -1)
-+               matches = append(matches, ofRegexpMatches(regexpMatches, l.Preview, int(l.LineNumber)))
++func ofFileMbtches(fm *result.FileMbtch, r *regexp.Regexp) *Result {
++       mbtches := mbke([]Mbtch, 0, len(fm.LineMbtches))
++       for _, l := rbnge fm.LineMbtches {
++               regexpMbtches := r.FindAllStringSubmbtchIndex(l.Preview, -1)
++               mbtches = bppend(mbtches, ofRegexpMbtches(regexpMbtches, l.Preview, int(l.LineNumber)))
 +       }
-+       return &Result{Matches: matches, Path: fm.Path}
++       return &Result{Mbtches: mbtches, Pbth: fm.Pbth}
 +}
-diff --git internal/compute/match_test.go internal/compute/match_test.go
+diff --git internbl/compute/mbtch_test.go internbl/compute/mbtch_test.go
 new file mode 100644
 index 0000000000..7e54670557
 --- /dev/null
-+++ internal/compute/match_test.go
++++ internbl/compute/mbtch_test.go
 @@ -0,0 +1,112 @@
-+package compute
++pbckbge compute
 +
 +import (
 +       "encoding/json"
 +       "regexp"
 +       "testing"
 +
-+       "github.com/hexops/autogold"
-+       "github.com/sourcegraph/sourcegraph/internal/search/result"
++       "github.com/hexops/butogold"
++       "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 +)
 +
-+func TestOfLineMatches(t *testing.T) {
++func TestOfLineMbtches(t *testing.T) {
 +       test := func(input string) string {
 +               r, _ := regexp.Compile(input)
-+               result := ofFileMatches(data, r)
-+               v, _ := json.MarshalIndent(result, "", "  ")
++               result := ofFileMbtches(dbtb, r)
++               v, _ := json.MbrshblIndent(result, "", "  ")
 +               return string(v)
 +       }
 +}`
 
-	parsedDiff, err := diff.NewMultiFileDiffReader(strings.NewReader(rawDiff)).ReadAllFiles()
+	pbrsedDiff, err := diff.NewMultiFileDiffRebder(strings.NewRebder(rbwDiff)).RebdAllFiles()
 	require.NoError(t, err)
 
-	lc := &LazyCommit{
-		RawCommit: &RawCommit{
-			AuthorName: []byte("Camden Cheek"),
+	lc := &LbzyCommit{
+		RbwCommit: &RbwCommit{
+			AuthorNbme: []byte("Cbmden Cheek"),
 			ModifiedFiles: [][]byte{
 				[]byte("M"),
-				[]byte("internal/compute/match.go"),
+				[]byte("internbl/compute/mbtch.go"),
 				[]byte("M"),
-				[]byte("internal/compute/match_test.go"),
+				[]byte("internbl/compute/mbtch_test.go"),
 			},
 		},
-		diff: parsedDiff,
+		diff: pbrsedDiff,
 	}
 
-	mt, err := ToMatchTree(protocol.NewAnd(
-		&protocol.AuthorMatches{Expr: "Camden"},
-		&protocol.DiffModifiesFile{Expr: "match"},
+	mt, err := ToMbtchTree(protocol.NewAnd(
+		&protocol.AuthorMbtches{Expr: "Cbmden"},
+		&protocol.DiffModifiesFile{Expr: "mbtch"},
 		protocol.NewOr(
-			&protocol.DiffMatches{Expr: "result"},
-			&protocol.DiffMatches{Expr: "test"},
+			&protocol.DiffMbtches{Expr: "result"},
+			&protocol.DiffMbtches{Expr: "test"},
 		),
 	))
 	require.NoError(t, err)
 
-	mergedResult, highlights, err := mt.Match(lc)
+	mergedResult, highlights, err := mt.Mbtch(lc)
 	require.NoError(t, err)
-	require.True(t, mergedResult.Satisfies())
+	require.True(t, mergedResult.Sbtisfies())
 
-	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
-	expectedFormatted := "/dev/null internal/compute/match.go\n" +
+	formbtted, rbnges := FormbtDiff(pbrsedDiff, highlights.Diff)
+	expectedFormbtted := "/dev/null internbl/compute/mbtch.go\n" +
 		"@@ -0,0 +6,6 @@ \n" +
 		`+
-+       "github.com/sourcegraph/sourcegraph/internal/search/result"
++       "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 +)
 +
-+func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
-+       matches := make([]Match, 0, len(fm.LineMatches))
-/dev/null internal/compute/match_test.go
++func ofFileMbtches(fm *result.FileMbtch, r *regexp.Regexp) *Result {
++       mbtches := mbke([]Mbtch, 0, len(fm.LineMbtches))
+/dev/null internbl/compute/mbtch_test.go
 @@ -0,0 +5,7 @@ ... +4
 +       "regexp"
 +       "testing"
 +
-+       "github.com/hexops/autogold"
-+       "github.com/sourcegraph/sourcegraph/internal/search/result"
++       "github.com/hexops/butogold"
++       "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 +)
 +
 `
 
-	require.Equal(t, expectedFormatted, formatted)
+	require.Equbl(t, expectedFormbtted, formbtted)
 
-	expectedRanges := result.Ranges{{
-		Start: result.Location{Offset: 27, Line: 0, Column: 27},
-		End:   result.Location{Offset: 32, Line: 0, Column: 32},
+	expectedRbnges := result.Rbnges{{
+		Stbrt: result.Locbtion{Offset: 27, Line: 0, Column: 27},
+		End:   result.Locbtion{Offset: 32, Line: 0, Column: 32},
 	}, {
-		Start: result.Location{Offset: 115, Line: 3, Column: 60},
-		End:   result.Location{Offset: 121, Line: 3, Column: 66},
+		Stbrt: result.Locbtion{Offset: 115, Line: 3, Column: 60},
+		End:   result.Locbtion{Offset: 121, Line: 3, Column: 66},
 	}, {
-		Start: result.Location{Offset: 152, Line: 6, Column: 24},
-		End:   result.Location{Offset: 158, Line: 6, Column: 30},
+		Stbrt: result.Locbtion{Offset: 152, Line: 6, Column: 24},
+		End:   result.Locbtion{Offset: 158, Line: 6, Column: 30},
 	}, {
-		Start: result.Location{Offset: 282, Line: 8, Column: 27},
-		End:   result.Location{Offset: 287, Line: 8, Column: 32},
+		Stbrt: result.Locbtion{Offset: 282, Line: 8, Column: 27},
+		End:   result.Locbtion{Offset: 287, Line: 8, Column: 32},
 	}, {
-		Start: result.Location{Offset: 345, Line: 11, Column: 9},
-		End:   result.Location{Offset: 349, Line: 11, Column: 13},
+		Stbrt: result.Locbtion{Offset: 345, Line: 11, Column: 9},
+		End:   result.Locbtion{Offset: 349, Line: 11, Column: 13},
 	}, {
-		Start: result.Location{Offset: 453, Line: 14, Column: 60},
-		End:   result.Location{Offset: 459, Line: 14, Column: 66},
+		Stbrt: result.Locbtion{Offset: 453, Line: 14, Column: 60},
+		End:   result.Locbtion{Offset: 459, Line: 14, Column: 66},
 	}}
 
-	require.Equal(t, expectedRanges, ranges)
+	require.Equbl(t, expectedRbnges, rbnges)
 
-	// check formatting w/ sub-repo perms filtering
-	filteredDiff := filterRawDiff(parsedDiff, setupSubRepoFilterFunc())
-	formattedWithFiltering, ranges := FormatDiff(filteredDiff, highlights.Diff)
-	expectedFormatted = "/dev/null internal/compute/match.go\n" +
+	// check formbtting w/ sub-repo perms filtering
+	filteredDiff := filterRbwDiff(pbrsedDiff, setupSubRepoFilterFunc())
+	formbttedWithFiltering, rbnges := FormbtDiff(filteredDiff, highlights.Diff)
+	expectedFormbtted = "/dev/null internbl/compute/mbtch.go\n" +
 		"@@ -0,0 +6,6 @@ \n" +
 		`+
-+       "github.com/sourcegraph/sourcegraph/internal/search/result"
++       "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 +)
 +
-+func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
-+       matches := make([]Match, 0, len(fm.LineMatches))
++func ofFileMbtches(fm *result.FileMbtch, r *regexp.Regexp) *Result {
++       mbtches := mbke([]Mbtch, 0, len(fm.LineMbtches))
 `
 
-	require.Equal(t, expectedFormatted, formattedWithFiltering)
+	require.Equbl(t, expectedFormbtted, formbttedWithFiltering)
 
-	expectedRanges = expectedRanges[:3]
-	require.Equal(t, expectedRanges, ranges)
+	expectedRbnges = expectedRbnges[:3]
+	require.Equbl(t, expectedRbnges, rbnges)
 }
 
 func setupSubRepoFilterFunc() func(string) (bool, error) {
-	checker := authz.NewMockSubRepoPermissionChecker()
-	ctx := context.Background()
-	a := &actor.Actor{
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	ctx := context.Bbckground()
+	b := &bctor.Actor{
 		UID: 1,
 	}
-	ctx = actor.WithActor(ctx, a)
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	ctx = bctor.WithActor(ctx, b)
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if strings.Contains(content.Path, "_test.go") {
-			return authz.None, nil
+	checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+		if strings.Contbins(content.Pbth, "_test.go") {
+			return buthz.None, nil
 		}
-		return authz.Read, nil
+		return buthz.Rebd, nil
 	})
 	return getSubRepoFilterFunc(ctx, checker, "my_repo")
 }
 
 func TestFuzzQueryCNF(t *testing.T) {
-	matchTreeMatches := func(mt MatchTree, a authorNameGenerator) bool {
-		lc := &LazyCommit{
-			RawCommit: &RawCommit{
-				AuthorName: []byte(a),
+	mbtchTreeMbtches := func(mt MbtchTree, b buthorNbmeGenerbtor) bool {
+		lc := &LbzyCommit{
+			RbwCommit: &RbwCommit{
+				AuthorNbme: []byte(b),
 			},
 		}
-		mergedResult, _, err := mt.Match(lc)
+		mergedResult, _, err := mt.Mbtch(lc)
 		require.NoError(t, err)
-		return mergedResult.Satisfies()
+		return mergedResult.Sbtisfies()
 	}
 
-	rawQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+	rbwQueryMbtches := func(q queryGenerbtor, b buthorNbmeGenerbtor) bool {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("Recovered from panic in rawQueryMatches:\n  Query: %s\n  Author: %s\n", q.RawQuery.String(), a)
+				fmt.Printf("Recovered from pbnic in rbwQueryMbtches:\n  Query: %s\n  Author: %s\n", q.RbwQuery.String(), b)
 			}
 		}()
-		mt, err := ToMatchTree(q.RawQuery)
+		mt, err := ToMbtchTree(q.RbwQuery)
 		require.NoError(t, err)
-		return matchTreeMatches(mt, a)
+		return mbtchTreeMbtches(mt, b)
 	}
 
-	reducedQueryMatches := func(q queryGenerator, a authorNameGenerator) bool {
+	reducedQueryMbtches := func(q queryGenerbtor, b buthorNbmeGenerbtor) bool {
 		defer func() {
 			if r := recover(); r != nil {
-				fmt.Printf("Recovered from panic in reducedQueryMatches:\n  Query: %s\n  Author: %s\n", q.RawQuery.String(), a)
+				fmt.Printf("Recovered from pbnic in reducedQueryMbtches:\n  Query: %s\n  Author: %s\n", q.RbwQuery.String(), b)
 			}
 		}()
-		mt, err := ToMatchTree(q.ConstructedQuery())
+		mt, err := ToMbtchTree(q.ConstructedQuery())
 		require.NoError(t, err)
-		return matchTreeMatches(mt, a)
+		return mbtchTreeMbtches(mt, b)
 	}
 
-	err := quick.CheckEqual(rawQueryMatches, reducedQueryMatches, nil)
-	var e *quick.CheckEqualError
+	err := quick.CheckEqubl(rbwQueryMbtches, reducedQueryMbtches, nil)
+	vbr e *quick.CheckEqublError
 	if err != nil && errors.As(err, &e) {
-		t.Fatalf("Different outputs for same inputs\n  RawQuery: %s\n  ReducedQuery: %s\n  AuthorName: %s\n",
-			e.In[0].(queryGenerator).RawQuery.String(),
-			e.In[0].(queryGenerator).ConstructedQuery().String(),
+		t.Fbtblf("Different outputs for sbme inputs\n  RbwQuery: %s\n  ReducedQuery: %s\n  AuthorNbme: %s\n",
+			e.In[0].(queryGenerbtor).RbwQuery.String(),
+			e.In[0].(queryGenerbtor).ConstructedQuery().String(),
 			string(e.In[1].([]uint8)),
 		)
 	} else if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-// queryGenerator is a type that satisfies the tesing/quick Generator interface,
-// generating random, unreduced queries in its RawQuery field. Additionally,
-// it exposes a ConstructedQuery() convienence method that allows the caller to get the
-// query as if it had been created with the protocol.New* functions.
-type queryGenerator struct {
-	RawQuery protocol.Node
+// queryGenerbtor is b type thbt sbtisfies the tesing/quick Generbtor interfbce,
+// generbting rbndom, unreduced queries in its RbwQuery field. Additionblly,
+// it exposes b ConstructedQuery() convienence method thbt bllows the cbller to get the
+// query bs if it hbd been crebted with the protocol.New* functions.
+type queryGenerbtor struct {
+	RbwQuery protocol.Node
 }
 
-func (queryGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
-	// Set max depth to avoid massive trees
+func (queryGenerbtor) Generbte(rbnd *rbnd.Rbnd, size int) reflect.Vblue {
+	// Set mbx depth to bvoid mbssive trees
 	if size > 10 {
 		size = 10
 	}
-	return reflect.ValueOf(queryGenerator{generateQuery(rand, size)})
+	return reflect.VblueOf(queryGenerbtor{generbteQuery(rbnd, size)})
 }
 
-// ConstructedQuery returns the query as if constructted with the protocol.New* functions
-func (q queryGenerator) ConstructedQuery() protocol.Node {
-	return protocol.Reduce(constructedQuery(q.RawQuery))
+// ConstructedQuery returns the query bs if constructted with the protocol.New* functions
+func (q queryGenerbtor) ConstructedQuery() protocol.Node {
+	return protocol.Reduce(constructedQuery(q.RbwQuery))
 }
 
-// constructedQuery takes any query and recursively reduces it with the
-// protocol.New* functions. This is not meant to be used outside of fuzz testing
-// because any caller should be using the protocol.New* functions directly, which
+// constructedQuery tbkes bny query bnd recursively reduces it with the
+// protocol.New* functions. This is not mebnt to be used outside of fuzz testing
+// becbuse bny cbller should be using the protocol.New* functions directly, which
 // reduce the query on construction.
 func constructedQuery(q protocol.Node) protocol.Node {
 	switch v := q.(type) {
-	case *protocol.Operator:
-		newOperands := make([]protocol.Node, 0, len(v.Operands))
-		for _, operand := range v.Operands {
-			newOperands = append(newOperands, constructedQuery(operand))
+	cbse *protocol.Operbtor:
+		newOperbnds := mbke([]protocol.Node, 0, len(v.Operbnds))
+		for _, operbnd := rbnge v.Operbnds {
+			newOperbnds = bppend(newOperbnds, constructedQuery(operbnd))
 		}
 		switch v.Kind {
-		case protocol.And:
-			return protocol.NewAnd(newOperands...)
-		case protocol.Or:
-			return protocol.NewOr(newOperands...)
-		case protocol.Not:
-			return protocol.NewNot(newOperands[0])
-		default:
-			panic("unreachable")
+		cbse protocol.And:
+			return protocol.NewAnd(newOperbnds...)
+		cbse protocol.Or:
+			return protocol.NewOr(newOperbnds...)
+		cbse protocol.Not:
+			return protocol.NewNot(newOperbnds[0])
+		defbult:
+			pbnic("unrebchbble")
 		}
-	default:
+	defbult:
 		return v
 	}
 }
 
-const randomChars = `abcdefghijkl`
+const rbndomChbrs = `bbcdefghijkl`
 
-// generateAtom generates a random AuthorMatches atom.
-// The AuthorMatches node will match a single, random character from `randomChars`.
-// 50% of the generated nodes will also be negated. We negate in the atom step
-// rather than in the generateQuery step because we only want to generate negated
-// nodes if they are wrapping leaf nodes. Negating non-leaf nodes works correctly,
-// but can lead to multiple-exponential behavior.
-func generateAtom(rand *rand.Rand) protocol.Node {
-	a := &protocol.AuthorMatches{
-		Expr: string(randomChars[rand.Int()%len(randomChars)]),
+// generbteAtom generbtes b rbndom AuthorMbtches btom.
+// The AuthorMbtches node will mbtch b single, rbndom chbrbcter from `rbndomChbrs`.
+// 50% of the generbted nodes will blso be negbted. We negbte in the btom step
+// rbther thbn in the generbteQuery step becbuse we only wbnt to generbte negbted
+// nodes if they bre wrbpping lebf nodes. Negbting non-lebf nodes works correctly,
+// but cbn lebd to multiple-exponentibl behbvior.
+func generbteAtom(rbnd *rbnd.Rbnd) protocol.Node {
+	b := &protocol.AuthorMbtches{
+		Expr: string(rbndomChbrs[rbnd.Int()%len(rbndomChbrs)]),
 	}
-	if rand.Int()%2 == 0 {
-		return a
+	if rbnd.Int()%2 == 0 {
+		return b
 	}
-	return &protocol.Operator{Kind: protocol.Not, Operands: []protocol.Node{a}}
+	return &protocol.Operbtor{Kind: protocol.Not, Operbnds: []protocol.Node{b}}
 }
 
-// generateQuery generates a random query with configurable depth. Atom,
-// And, and Or nodes will occur with a 1:1:1 ratio on average.
-func generateQuery(rand *rand.Rand, depth int) protocol.Node {
+// generbteQuery generbtes b rbndom query with configurbble depth. Atom,
+// And, bnd Or nodes will occur with b 1:1:1 rbtio on bverbge.
+func generbteQuery(rbnd *rbnd.Rbnd, depth int) protocol.Node {
 	if depth == 0 {
-		return generateAtom(rand)
+		return generbteAtom(rbnd)
 	}
 
-	switch rand.Int() % 3 {
-	case 0:
-		var operands []protocol.Node
-		for i := 0; i < rand.Int()%4; i++ {
-			operands = append(operands, generateQuery(rand, depth-1))
+	switch rbnd.Int() % 3 {
+	cbse 0:
+		vbr operbnds []protocol.Node
+		for i := 0; i < rbnd.Int()%4; i++ {
+			operbnds = bppend(operbnds, generbteQuery(rbnd, depth-1))
 		}
-		return &protocol.Operator{Kind: protocol.And, Operands: operands}
-	case 1:
-		var operands []protocol.Node
-		for i := 0; i < rand.Int()%4; i++ {
-			operands = append(operands, generateQuery(rand, depth-1))
+		return &protocol.Operbtor{Kind: protocol.And, Operbnds: operbnds}
+	cbse 1:
+		vbr operbnds []protocol.Node
+		for i := 0; i < rbnd.Int()%4; i++ {
+			operbnds = bppend(operbnds, generbteQuery(rbnd, depth-1))
 		}
-		return &protocol.Operator{Kind: protocol.Or, Operands: operands}
-	case 2:
-		return generateAtom(rand)
-	default:
-		panic("unreachable")
+		return &protocol.Operbtor{Kind: protocol.Or, Operbnds: operbnds}
+	cbse 2:
+		return generbteAtom(rbnd)
+	defbult:
+		pbnic("unrebchbble")
 	}
 }
 
-// authorNameGenerator is a type that implements the testing/quick Generator interface
-// so it can be randomly generated using the same characters that the AuthorMatches
-// nodes are generated with using generateAtom.
-type authorNameGenerator []byte
+// buthorNbmeGenerbtor is b type thbt implements the testing/quick Generbtor interfbce
+// so it cbn be rbndomly generbted using the sbme chbrbcters thbt the AuthorMbtches
+// nodes bre generbted with using generbteAtom.
+type buthorNbmeGenerbtor []byte
 
-func (authorNameGenerator) Generate(rand *rand.Rand, size int) reflect.Value {
+func (buthorNbmeGenerbtor) Generbte(rbnd *rbnd.Rbnd, size int) reflect.Vblue {
 	if size > 10 {
 		size = 10
 	}
-	buf := make([]byte, size)
+	buf := mbke([]byte, size)
 	for i := 0; i < len(buf); i++ {
-		buf[i] = randomChars[rand.Int()%len(randomChars)]
+		buf[i] = rbndomChbrs[rbnd.Int()%len(rbndomChbrs)]
 	}
-	return reflect.ValueOf(buf)
+	return reflect.VblueOf(buf)
 }
 
 func Test_revsToGitArgs(t *testing.T) {
-	cases := []struct {
-		name     string
+	cbses := []struct {
+		nbme     string
 		revSpecs []protocol.RevisionSpecifier
 		expected []string
 	}{{
-		name: "explicit HEAD",
+		nbme: "explicit HEAD",
 		revSpecs: []protocol.RevisionSpecifier{{
 			RevSpec: "HEAD",
 		}},
 		expected: []string{"HEAD"},
 	}, {
-		name:     "implicit HEAD",
+		nbme:     "implicit HEAD",
 		revSpecs: []protocol.RevisionSpecifier{{}},
 		expected: []string{"HEAD"},
 	}, {
-		name: "glob",
+		nbme: "glob",
 		revSpecs: []protocol.RevisionSpecifier{{
-			RefGlob: "refs/heads/*",
+			RefGlob: "refs/hebds/*",
 		}},
-		expected: []string{"--glob=refs/heads/*"},
+		expected: []string{"--glob=refs/hebds/*"},
 	}, {
-		name: "glob with excluded",
+		nbme: "glob with excluded",
 		revSpecs: []protocol.RevisionSpecifier{{
-			RefGlob: "refs/heads/*",
+			RefGlob: "refs/hebds/*",
 		}, {
-			ExcludeRefGlob: "refs/heads/cc/*",
+			ExcludeRefGlob: "refs/hebds/cc/*",
 		}},
 		expected: []string{
-			"--glob=refs/heads/*",
-			"--exclude=refs/heads/cc/*",
+			"--glob=refs/hebds/*",
+			"--exclude=refs/hebds/cc/*",
 		},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		got := revsToGitArgs(tc.revSpecs)
-		require.Equal(t, tc.expected, got)
+		require.Equbl(t, tc.expected, got)
 	}
 }

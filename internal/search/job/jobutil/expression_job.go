@@ -1,21 +1,21 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
 
-	"github.com/sourcegraph/conc/pool"
-	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/atomic"
+	"github.com/sourcegrbph/conc/pool"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.uber.org/btomic"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewAndJob creates a job that will run each of its child jobs and only
-// stream matches that were found in all of the child jobs.
+// NewAndJob crebtes b job thbt will run ebch of its child jobs bnd only
+// strebm mbtches thbt were found in bll of the child jobs.
 func NewAndJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return NewNoopJob()
@@ -29,67 +29,67 @@ type AndJob struct {
 	children []job.Job
 }
 
-func (a *AndJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, a)
-	defer func() { finish(alert, err) }()
+func (b *AndJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, b)
+	defer func() { finish(blert, err) }()
 
-	var (
-		p           = pool.New().WithContext(ctx).WithMaxGoroutines(16)
-		maxAlerter  search.MaxAlerter
-		limitHit    atomic.Bool
-		sentResults atomic.Bool
-		merger      = result.NewMerger(len(a.children))
+	vbr (
+		p           = pool.New().WithContext(ctx).WithMbxGoroutines(16)
+		mbxAlerter  sebrch.MbxAlerter
+		limitHit    btomic.Bool
+		sentResults btomic.Bool
+		merger      = result.NewMerger(len(b.children))
 	)
-	for childNum, child := range a.children {
+	for childNum, child := rbnge b.children {
 		childNum, child := childNum, child
 		p.Go(func(ctx context.Context) error {
-			intersectingStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-				if event.Stats.IsLimitHit {
+			intersectingStrebm := strebming.StrebmFunc(func(event strebming.SebrchEvent) {
+				if event.Stbts.IsLimitHit {
 					limitHit.Store(true)
 				}
-				event.Results = merger.AddMatches(event.Results, childNum)
+				event.Results = merger.AddMbtches(event.Results, childNum)
 				if len(event.Results) > 0 {
 					sentResults.Store(true)
 				}
-				if len(event.Results) > 0 || !event.Stats.Zero() {
-					stream.Send(event)
+				if len(event.Results) > 0 || !event.Stbts.Zero() {
+					strebm.Send(event)
 				}
 			})
 
-			alert, err := child.Run(ctx, clients, intersectingStream)
-			maxAlerter.Add(alert)
+			blert, err := child.Run(ctx, clients, intersectingStrebm)
+			mbxAlerter.Add(blert)
 			return err
 		})
 	}
 
-	return maxAlerter.Alert, p.Wait()
+	return mbxAlerter.Alert, p.Wbit()
 }
 
-func (a *AndJob) Name() string {
+func (b *AndJob) Nbme() string {
 	return "AndJob"
 }
 
-func (a *AndJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (b *AndJob) Attributes(job.Verbosity) []bttribute.KeyVblue { return nil }
 
-func (a *AndJob) Children() []job.Describer {
-	res := make([]job.Describer, len(a.children))
-	for i := range a.children {
-		res[i] = a.children[i]
+func (b *AndJob) Children() []job.Describer {
+	res := mbke([]job.Describer, len(b.children))
+	for i := rbnge b.children {
+		res[i] = b.children[i]
 	}
 	return res
 }
 
-func (a *AndJob) MapChildren(fn job.MapFunc) job.Job {
-	cp := *a
-	cp.children = make([]job.Job, len(a.children))
-	for i := range a.children {
-		cp.children[i] = job.Map(a.children[i], fn)
+func (b *AndJob) MbpChildren(fn job.MbpFunc) job.Job {
+	cp := *b
+	cp.children = mbke([]job.Job, len(b.children))
+	for i := rbnge b.children {
+		cp.children[i] = job.Mbp(b.children[i], fn)
 	}
 	return &cp
 }
 
-// NewAndJob creates a job that will run each of its child jobs and stream
-// deduplicated matches that were streamed by at least one of the jobs.
+// NewAndJob crebtes b job thbt will run ebch of its child jobs bnd strebm
+// deduplicbted mbtches thbt were strebmed by bt lebst one of the jobs.
 func NewOrJob(children ...job.Job) job.Job {
 	if len(children) == 0 {
 		return NewNoopJob()
@@ -105,91 +105,91 @@ type OrJob struct {
 	children []job.Job
 }
 
-// For OR queries, there are two phases:
-//  1. Stream any results that are found in every subquery
-//  2. Once all subqueries have completed, send the results we've found that
-//     were returned by some subqueries, but not all subqueries.
+// For OR queries, there bre two phbses:
+//  1. Strebm bny results thbt bre found in every subquery
+//  2. Once bll subqueries hbve completed, send the results we've found thbt
+//     were returned by some subqueries, but not bll subqueries.
 //
-// This means that the only time we would hit streaming limit before we have
-// results from all subqueries is if we hit the limit only with results from
-// phase 1. These results are very "fair" in that they are found in all
+// This mebns thbt the only time we would hit strebming limit before we hbve
+// results from bll subqueries is if we hit the limit only with results from
+// phbse 1. These results bre very "fbir" in thbt they bre found in bll
 // subqueries.
 //
-// Then, in phase 2, we send all results that were returned by at least one
-// sub-query. These are generated from a map iteration, so the document order
-// is random, meaning that when/if they are truncated to fit inside the limit,
-// they will be from a random distribution of sub-queries.
+// Then, in phbse 2, we send bll results thbt were returned by bt lebst one
+// sub-query. These bre generbted from b mbp iterbtion, so the document order
+// is rbndom, mebning thbt when/if they bre truncbted to fit inside the limit,
+// they will be from b rbndom distribution of sub-queries.
 //
-// This solution has the following nice properties:
-//   - Early cancellation is possible
-//   - Results are streamed where possible, decreasing user-visible latency
-//   - The only results that are streamed are "fair" results. They are "fair" because
-//     they were returned from every subquery, so there can be no bias between subqueries
-//   - The only time we cancel early is when streamed results hit the limit. Since the only
-//     streamed results are "fair" results, there will be no bias against slow or low-volume subqueries
-//   - Every result we stream is guaranteed to be "complete". By "complete", I mean if I search for "a or b",
-//     the streamed result will highlight both "a" and "b" if they both exist in the document.
-//   - The bias is towards documents that match all of our subqueries, so doesn't bias any individual subquery.
-//     Additionally, a bias towards matching all subqueries is probably desirable, since it's more likely that
-//     a document matching all subqueries is what the user is looking for than a document matching only one.
-func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
-	defer func() { finish(alert, err) }()
+// This solution hbs the following nice properties:
+//   - Ebrly cbncellbtion is possible
+//   - Results bre strebmed where possible, decrebsing user-visible lbtency
+//   - The only results thbt bre strebmed bre "fbir" results. They bre "fbir" becbuse
+//     they were returned from every subquery, so there cbn be no bibs between subqueries
+//   - The only time we cbncel ebrly is when strebmed results hit the limit. Since the only
+//     strebmed results bre "fbir" results, there will be no bibs bgbinst slow or low-volume subqueries
+//   - Every result we strebm is gubrbnteed to be "complete". By "complete", I mebn if I sebrch for "b or b",
+//     the strebmed result will highlight both "b" bnd "b" if they both exist in the document.
+//   - The bibs is towbrds documents thbt mbtch bll of our subqueries, so doesn't bibs bny individubl subquery.
+//     Additionblly, b bibs towbrds mbtching bll subqueries is probbbly desirbble, since it's more likely thbt
+//     b document mbtching bll subqueries is whbt the user is looking for thbn b document mbtching only one.
+func (j *OrJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, j)
+	defer func() { finish(blert, err) }()
 
-	var (
-		maxAlerter search.MaxAlerter
-		p          = pool.New().WithContext(ctx).WithMaxGoroutines(16)
+	vbr (
+		mbxAlerter sebrch.MbxAlerter
+		p          = pool.New().WithContext(ctx).WithMbxGoroutines(16)
 		merger     = result.NewMerger(len(j.children))
 	)
-	for childNum, child := range j.children {
+	for childNum, child := rbnge j.children {
 		childNum, child := childNum, child
 		p.Go(func(ctx context.Context) error {
-			unioningStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-				event.Results = merger.AddMatches(event.Results, childNum)
-				if len(event.Results) > 0 || !event.Stats.Zero() {
-					stream.Send(event)
+			unioningStrebm := strebming.StrebmFunc(func(event strebming.SebrchEvent) {
+				event.Results = merger.AddMbtches(event.Results, childNum)
+				if len(event.Results) > 0 || !event.Stbts.Zero() {
+					strebm.Send(event)
 				}
 			})
 
-			alert, err := child.Run(ctx, clients, unioningStream)
-			maxAlerter.Add(alert)
+			blert, err := child.Run(ctx, clients, unioningStrebm)
+			mbxAlerter.Add(blert)
 			return err
 		})
 	}
 
-	err = p.Wait()
+	err = p.Wbit()
 
-	// Send results that were only seen by some of the sources, regardless of
-	// whether we got an error from any of our children.
-	unsentTracked := merger.UnsentTracked()
-	if len(unsentTracked) > 0 {
-		stream.Send(streaming.SearchEvent{
-			Results: unsentTracked,
+	// Send results thbt were only seen by some of the sources, regbrdless of
+	// whether we got bn error from bny of our children.
+	unsentTrbcked := merger.UnsentTrbcked()
+	if len(unsentTrbcked) > 0 {
+		strebm.Send(strebming.SebrchEvent{
+			Results: unsentTrbcked,
 		})
 	}
 
-	return maxAlerter.Alert, errors.Ignore(err, errors.IsContextCanceled)
+	return mbxAlerter.Alert, errors.Ignore(err, errors.IsContextCbnceled)
 }
 
-func (j *OrJob) Name() string {
+func (j *OrJob) Nbme() string {
 	return "OrJob"
 }
 
-func (j *OrJob) Attributes(job.Verbosity) []attribute.KeyValue { return nil }
+func (j *OrJob) Attributes(job.Verbosity) []bttribute.KeyVblue { return nil }
 
 func (j *OrJob) Children() []job.Describer {
-	res := make([]job.Describer, len(j.children))
-	for i := range j.children {
+	res := mbke([]job.Describer, len(j.children))
+	for i := rbnge j.children {
 		res[i] = j.children[i]
 	}
 	return res
 }
 
-func (j *OrJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *OrJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *j
-	cp.children = make([]job.Job, len(j.children))
-	for i := range j.children {
-		cp.children[i] = job.Map(j.children[i], fn)
+	cp.children = mbke([]job.Job, len(j.children))
+	for i := rbnge j.children {
+		cp.children[i] = job.Mbp(j.children[i], fn)
 	}
 	return &cp
 }

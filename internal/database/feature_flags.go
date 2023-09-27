@@ -1,68 +1,68 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
-	"golang.org/x/sync/errgroup"
+	"github.com/keegbncsmith/sqlf"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	ff "github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var clearRedisCache = ff.ClearEvaluatedFlagFromCache
+vbr clebrRedisCbche = ff.ClebrEvblubtedFlbgFromCbche
 
-type FeatureFlagStore interface {
-	basestore.ShareableStore
-	With(basestore.ShareableStore) FeatureFlagStore
-	WithTransact(context.Context, func(FeatureFlagStore) error) error
-	CreateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
-	UpdateFeatureFlag(context.Context, *ff.FeatureFlag) (*ff.FeatureFlag, error)
-	DeleteFeatureFlag(context.Context, string) error
-	CreateRollout(ctx context.Context, name string, rollout int32) (*ff.FeatureFlag, error)
-	CreateBool(ctx context.Context, name string, value bool) (*ff.FeatureFlag, error)
-	GetFeatureFlag(ctx context.Context, flagName string) (*ff.FeatureFlag, error)
-	GetFeatureFlags(context.Context) ([]*ff.FeatureFlag, error)
-	CreateOverride(context.Context, *ff.Override) (*ff.Override, error)
-	DeleteOverride(ctx context.Context, orgID, userID *int32, flagName string) error
-	UpdateOverride(ctx context.Context, orgID, userID *int32, flagName string, newValue bool) (*ff.Override, error)
-	GetOverridesForFlag(context.Context, string) ([]*ff.Override, error)
+type FebtureFlbgStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(bbsestore.ShbrebbleStore) FebtureFlbgStore
+	WithTrbnsbct(context.Context, func(FebtureFlbgStore) error) error
+	CrebteFebtureFlbg(context.Context, *ff.FebtureFlbg) (*ff.FebtureFlbg, error)
+	UpdbteFebtureFlbg(context.Context, *ff.FebtureFlbg) (*ff.FebtureFlbg, error)
+	DeleteFebtureFlbg(context.Context, string) error
+	CrebteRollout(ctx context.Context, nbme string, rollout int32) (*ff.FebtureFlbg, error)
+	CrebteBool(ctx context.Context, nbme string, vblue bool) (*ff.FebtureFlbg, error)
+	GetFebtureFlbg(ctx context.Context, flbgNbme string) (*ff.FebtureFlbg, error)
+	GetFebtureFlbgs(context.Context) ([]*ff.FebtureFlbg, error)
+	CrebteOverride(context.Context, *ff.Override) (*ff.Override, error)
+	DeleteOverride(ctx context.Context, orgID, userID *int32, flbgNbme string) error
+	UpdbteOverride(ctx context.Context, orgID, userID *int32, flbgNbme string, newVblue bool) (*ff.Override, error)
+	GetOverridesForFlbg(context.Context, string) ([]*ff.Override, error)
 	GetUserOverrides(context.Context, int32) ([]*ff.Override, error)
 	GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error)
-	GetOrgOverrideForFlag(ctx context.Context, orgID int32, flagName string) (*ff.Override, error)
-	GetUserFlags(context.Context, int32) (map[string]bool, error)
-	GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error)
-	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
-	GetOrgFeatureFlag(ctx context.Context, orgID int32, flagName string) (bool, error)
+	GetOrgOverrideForFlbg(ctx context.Context, orgID int32, flbgNbme string) (*ff.Override, error)
+	GetUserFlbgs(context.Context, int32) (mbp[string]bool, error)
+	GetAnonymousUserFlbgs(ctx context.Context, bnonymousUID string) (mbp[string]bool, error)
+	GetGlobblFebtureFlbgs(context.Context) (mbp[string]bool, error)
+	GetOrgFebtureFlbg(ctx context.Context, orgID int32, flbgNbme string) (bool, error)
 }
 
-type featureFlagStore struct {
-	*basestore.Store
+type febtureFlbgStore struct {
+	*bbsestore.Store
 }
 
-func FeatureFlagsWith(other basestore.ShareableStore) FeatureFlagStore {
-	return &featureFlagStore{Store: basestore.NewWithHandle(other.Handle())}
+func FebtureFlbgsWith(other bbsestore.ShbrebbleStore) FebtureFlbgStore {
+	return &febtureFlbgStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (f *featureFlagStore) With(other basestore.ShareableStore) FeatureFlagStore {
-	return &featureFlagStore{Store: f.Store.With(other)}
+func (f *febtureFlbgStore) With(other bbsestore.ShbrebbleStore) FebtureFlbgStore {
+	return &febtureFlbgStore{Store: f.Store.With(other)}
 }
 
-func (f *featureFlagStore) WithTransact(ctx context.Context, fn func(FeatureFlagStore) error) error {
-	return f.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return fn(&featureFlagStore{Store: tx})
+func (f *febtureFlbgStore) WithTrbnsbct(ctx context.Context, fn func(FebtureFlbgStore) error) error {
+	return f.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return fn(&febtureFlbgStore{Store: tx})
 	})
 }
 
-func (f *featureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
-	const newFeatureFlagFmtStr = `
-		INSERT INTO feature_flags (
-			flag_name,
-			flag_type,
-			bool_value,
+func (f *febtureFlbgStore) CrebteFebtureFlbg(ctx context.Context, flbg *ff.FebtureFlbg) (*ff.FebtureFlbg, error) {
+	const newFebtureFlbgFmtStr = `
+		INSERT INTO febture_flbgs (
+			flbg_nbme,
+			flbg_type,
+			bool_vblue,
 			rollout
 		) VALUES (
 			%s,
@@ -70,134 +70,134 @@ func (f *featureFlagStore) CreateFeatureFlag(ctx context.Context, flag *ff.Featu
 			%s,
 			%s
 		) RETURNING
-			flag_name,
-			flag_type,
-			bool_value,
+			flbg_nbme,
+			flbg_type,
+			bool_vblue,
 			rollout,
-			created_at,
-			updated_at,
-			deleted_at
+			crebted_bt,
+			updbted_bt,
+			deleted_bt
 		;
 	`
-	var (
-		flagType string
-		boolVal  *bool
+	vbr (
+		flbgType string
+		boolVbl  *bool
 		rollout  *int32
 	)
 	switch {
-	case flag.Bool != nil:
-		flagType = "bool"
-		boolVal = &flag.Bool.Value
-	case flag.Rollout != nil:
-		flagType = "rollout"
-		rollout = &flag.Rollout.Rollout
-	default:
-		return nil, errors.New("feature flag must have exactly one type")
+	cbse flbg.Bool != nil:
+		flbgType = "bool"
+		boolVbl = &flbg.Bool.Vblue
+	cbse flbg.Rollout != nil:
+		flbgType = "rollout"
+		rollout = &flbg.Rollout.Rollout
+	defbult:
+		return nil, errors.New("febture flbg must hbve exbctly one type")
 	}
 
 	row := f.QueryRow(ctx, sqlf.Sprintf(
-		newFeatureFlagFmtStr,
-		flag.Name,
-		flagType,
-		boolVal,
+		newFebtureFlbgFmtStr,
+		flbg.Nbme,
+		flbgType,
+		boolVbl,
 		rollout))
-	return scanFeatureFlag(row)
+	return scbnFebtureFlbg(row)
 }
 
-func (f *featureFlagStore) UpdateFeatureFlag(ctx context.Context, flag *ff.FeatureFlag) (*ff.FeatureFlag, error) {
-	const updateFeatureFlagFmtStr = `
-		UPDATE feature_flags
+func (f *febtureFlbgStore) UpdbteFebtureFlbg(ctx context.Context, flbg *ff.FebtureFlbg) (*ff.FebtureFlbg, error) {
+	const updbteFebtureFlbgFmtStr = `
+		UPDATE febture_flbgs
 		SET
-			flag_type = %s,
-			bool_value = %s,
+			flbg_type = %s,
+			bool_vblue = %s,
 			rollout = %s,
-			updated_at = NOW()
-		WHERE flag_name = %s
+			updbted_bt = NOW()
+		WHERE flbg_nbme = %s
 		RETURNING
-			flag_name,
-			flag_type,
-			bool_value,
+			flbg_nbme,
+			flbg_type,
+			bool_vblue,
 			rollout,
-			created_at,
-			updated_at,
-			deleted_at
+			crebted_bt,
+			updbted_bt,
+			deleted_bt
 		;
 	`
-	var (
-		flagType string
-		boolVal  *bool
+	vbr (
+		flbgType string
+		boolVbl  *bool
 		rollout  *int32
 	)
 	switch {
-	case flag.Bool != nil:
-		flagType = "bool"
-		boolVal = &flag.Bool.Value
-	case flag.Rollout != nil:
-		flagType = "rollout"
-		rollout = &flag.Rollout.Rollout
-	default:
-		return nil, errors.New("feature flag must have exactly one type")
+	cbse flbg.Bool != nil:
+		flbgType = "bool"
+		boolVbl = &flbg.Bool.Vblue
+	cbse flbg.Rollout != nil:
+		flbgType = "rollout"
+		rollout = &flbg.Rollout.Rollout
+	defbult:
+		return nil, errors.New("febture flbg must hbve exbctly one type")
 	}
 
 	row := f.QueryRow(ctx, sqlf.Sprintf(
-		updateFeatureFlagFmtStr,
-		flagType,
-		boolVal,
+		updbteFebtureFlbgFmtStr,
+		flbgType,
+		boolVbl,
 		rollout,
-		flag.Name,
+		flbg.Nbme,
 	))
-	clearRedisCache(flag.Name)
-	return scanFeatureFlag(row)
+	clebrRedisCbche(flbg.Nbme)
+	return scbnFebtureFlbg(row)
 }
 
-func (f *featureFlagStore) DeleteFeatureFlag(ctx context.Context, name string) error {
-	const deleteFeatureFlagFmtStr = `
-		UPDATE feature_flags
+func (f *febtureFlbgStore) DeleteFebtureFlbg(ctx context.Context, nbme string) error {
+	const deleteFebtureFlbgFmtStr = `
+		UPDATE febture_flbgs
 		SET
-			flag_name = flag_name || '-DELETED-' || TRUNC(random() * 1000000)::varchar(255),
-			deleted_at = now()
-		WHERE flag_name = %s;
+			flbg_nbme = flbg_nbme || '-DELETED-' || TRUNC(rbndom() * 1000000)::vbrchbr(255),
+			deleted_bt = now()
+		WHERE flbg_nbme = %s;
 	`
 
-	clearRedisCache(name)
-	return f.Exec(ctx, sqlf.Sprintf(deleteFeatureFlagFmtStr, name))
+	clebrRedisCbche(nbme)
+	return f.Exec(ctx, sqlf.Sprintf(deleteFebtureFlbgFmtStr, nbme))
 }
 
-func (f *featureFlagStore) CreateRollout(ctx context.Context, name string, rollout int32) (*ff.FeatureFlag, error) {
-	return f.CreateFeatureFlag(ctx, &ff.FeatureFlag{
-		Name: name,
-		Rollout: &ff.FeatureFlagRollout{
+func (f *febtureFlbgStore) CrebteRollout(ctx context.Context, nbme string, rollout int32) (*ff.FebtureFlbg, error) {
+	return f.CrebteFebtureFlbg(ctx, &ff.FebtureFlbg{
+		Nbme: nbme,
+		Rollout: &ff.FebtureFlbgRollout{
 			Rollout: rollout,
 		},
 	})
 }
 
-func (f *featureFlagStore) CreateBool(ctx context.Context, name string, value bool) (*ff.FeatureFlag, error) {
-	return f.CreateFeatureFlag(ctx, &ff.FeatureFlag{
-		Name: name,
-		Bool: &ff.FeatureFlagBool{
-			Value: value,
+func (f *febtureFlbgStore) CrebteBool(ctx context.Context, nbme string, vblue bool) (*ff.FebtureFlbg, error) {
+	return f.CrebteFebtureFlbg(ctx, &ff.FebtureFlbg{
+		Nbme: nbme,
+		Bool: &ff.FebtureFlbgBool{
+			Vblue: vblue,
 		},
 	})
 }
 
-var ErrInvalidColumnState = errors.New("encountered column that is unexpectedly null based on column type")
+vbr ErrInvblidColumnStbte = errors.New("encountered column thbt is unexpectedly null bbsed on column type")
 
-func scanFeatureFlagAndOverride(scanner dbutil.Scanner) (*ff.FeatureFlag, *bool, error) {
-	var (
-		res      ff.FeatureFlag
-		flagType string
-		boolVal  *bool
+func scbnFebtureFlbgAndOverride(scbnner dbutil.Scbnner) (*ff.FebtureFlbg, *bool, error) {
+	vbr (
+		res      ff.FebtureFlbg
+		flbgType string
+		boolVbl  *bool
 		rollout  *int32
 		override *bool
 	)
-	err := scanner.Scan(
-		&res.Name,
-		&flagType,
-		&boolVal,
+	err := scbnner.Scbn(
+		&res.Nbme,
+		&flbgType,
+		&boolVbl,
 		&rollout,
-		&res.CreatedAt,
-		&res.UpdatedAt,
+		&res.CrebtedAt,
+		&res.UpdbtedAt,
 		&res.DeletedAt,
 		&override,
 	)
@@ -205,236 +205,236 @@ func scanFeatureFlagAndOverride(scanner dbutil.Scanner) (*ff.FeatureFlag, *bool,
 		return nil, nil, err
 	}
 
-	switch flagType {
-	case "bool":
-		if boolVal == nil {
-			return nil, nil, ErrInvalidColumnState
+	switch flbgType {
+	cbse "bool":
+		if boolVbl == nil {
+			return nil, nil, ErrInvblidColumnStbte
 		}
-		res.Bool = &ff.FeatureFlagBool{
-			Value: *boolVal,
+		res.Bool = &ff.FebtureFlbgBool{
+			Vblue: *boolVbl,
 		}
-	case "rollout":
+	cbse "rollout":
 		if rollout == nil {
-			return nil, nil, ErrInvalidColumnState
+			return nil, nil, ErrInvblidColumnStbte
 		}
-		res.Rollout = &ff.FeatureFlagRollout{
+		res.Rollout = &ff.FebtureFlbgRollout{
 			Rollout: *rollout,
 		}
-	default:
-		return nil, nil, ErrInvalidColumnState
+	defbult:
+		return nil, nil, ErrInvblidColumnStbte
 	}
 
 	return &res, override, nil
 }
 
-func scanFeatureFlag(scanner dbutil.Scanner) (*ff.FeatureFlag, error) {
-	var (
-		res      ff.FeatureFlag
-		flagType string
-		boolVal  *bool
+func scbnFebtureFlbg(scbnner dbutil.Scbnner) (*ff.FebtureFlbg, error) {
+	vbr (
+		res      ff.FebtureFlbg
+		flbgType string
+		boolVbl  *bool
 		rollout  *int32
 	)
-	err := scanner.Scan(
-		&res.Name,
-		&flagType,
-		&boolVal,
+	err := scbnner.Scbn(
+		&res.Nbme,
+		&flbgType,
+		&boolVbl,
 		&rollout,
-		&res.CreatedAt,
-		&res.UpdatedAt,
+		&res.CrebtedAt,
+		&res.UpdbtedAt,
 		&res.DeletedAt,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	switch flagType {
-	case "bool":
-		if boolVal == nil {
-			return nil, ErrInvalidColumnState
+	switch flbgType {
+	cbse "bool":
+		if boolVbl == nil {
+			return nil, ErrInvblidColumnStbte
 		}
-		res.Bool = &ff.FeatureFlagBool{
-			Value: *boolVal,
+		res.Bool = &ff.FebtureFlbgBool{
+			Vblue: *boolVbl,
 		}
-	case "rollout":
+	cbse "rollout":
 		if rollout == nil {
-			return nil, ErrInvalidColumnState
+			return nil, ErrInvblidColumnStbte
 		}
-		res.Rollout = &ff.FeatureFlagRollout{
+		res.Rollout = &ff.FebtureFlbgRollout{
 			Rollout: *rollout,
 		}
-	default:
-		return nil, ErrInvalidColumnState
+	defbult:
+		return nil, ErrInvblidColumnStbte
 	}
 
 	return &res, nil
 }
 
-func (f *featureFlagStore) GetFeatureFlag(ctx context.Context, flagName string) (*ff.FeatureFlag, error) {
-	const getFeatureFlagsQuery = `
+func (f *febtureFlbgStore) GetFebtureFlbg(ctx context.Context, flbgNbme string) (*ff.FebtureFlbg, error) {
+	const getFebtureFlbgsQuery = `
 		SELECT
-			flag_name,
-			flag_type,
-			bool_value,
+			flbg_nbme,
+			flbg_type,
+			bool_vblue,
 			rollout,
-			created_at,
-			updated_at,
-			deleted_at
-		FROM feature_flags
-		WHERE deleted_at IS NULL
-			AND flag_name = %s;
+			crebted_bt,
+			updbted_bt,
+			deleted_bt
+		FROM febture_flbgs
+		WHERE deleted_bt IS NULL
+			AND flbg_nbme = %s;
 	`
 
-	row := f.QueryRow(ctx, sqlf.Sprintf(getFeatureFlagsQuery, flagName))
-	return scanFeatureFlag(row)
+	row := f.QueryRow(ctx, sqlf.Sprintf(getFebtureFlbgsQuery, flbgNbme))
+	return scbnFebtureFlbg(row)
 }
 
-func (f *featureFlagStore) GetFeatureFlags(ctx context.Context) ([]*ff.FeatureFlag, error) {
-	const listFeatureFlagsQuery = `
+func (f *febtureFlbgStore) GetFebtureFlbgs(ctx context.Context) ([]*ff.FebtureFlbg, error) {
+	const listFebtureFlbgsQuery = `
 		SELECT
-			flag_name,
-			flag_type,
-			bool_value,
+			flbg_nbme,
+			flbg_type,
+			bool_vblue,
 			rollout,
-			created_at,
-			updated_at,
-			deleted_at
-		FROM feature_flags
-		WHERE deleted_at IS NULL;
+			crebted_bt,
+			updbted_bt,
+			deleted_bt
+		FROM febture_flbgs
+		WHERE deleted_bt IS NULL;
 	`
 
-	rows, err := f.Query(ctx, sqlf.Sprintf(listFeatureFlagsQuery))
+	rows, err := f.Query(ctx, sqlf.Sprintf(listFebtureFlbgsQuery))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	res := make([]*ff.FeatureFlag, 0, 10)
+	res := mbke([]*ff.FebtureFlbg, 0, 10)
 	for rows.Next() {
-		flag, err := scanFeatureFlag(rows)
+		flbg, err := scbnFebtureFlbg(rows)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, flag)
+		res = bppend(res, flbg)
 	}
 	return res, nil
 }
 
-func (f *featureFlagStore) CreateOverride(ctx context.Context, override *ff.Override) (*ff.Override, error) {
-	const newFeatureFlagOverrideFmtStr = `
-		INSERT INTO feature_flag_overrides (
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value
+func (f *febtureFlbgStore) CrebteOverride(ctx context.Context, override *ff.Override) (*ff.Override, error) {
+	const newFebtureFlbgOverrideFmtStr = `
+		INSERT INTO febture_flbg_overrides (
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue
 		) VALUES (
 			%s,
 			%s,
 			%s,
 			%s
 		) RETURNING
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value;
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue;
 	`
 	row := f.QueryRow(ctx, sqlf.Sprintf(
-		newFeatureFlagOverrideFmtStr,
+		newFebtureFlbgOverrideFmtStr,
 		&override.OrgID,
 		&override.UserID,
-		&override.FlagName,
-		&override.Value))
-	return scanFeatureFlagOverride(row)
+		&override.FlbgNbme,
+		&override.Vblue))
+	return scbnFebtureFlbgOverride(row)
 }
 
-func (f *featureFlagStore) DeleteOverride(ctx context.Context, orgID, userID *int32, flagName string) error {
-	const newFeatureFlagOverrideFmtStr = `
-		DELETE FROM feature_flag_overrides
+func (f *febtureFlbgStore) DeleteOverride(ctx context.Context, orgID, userID *int32, flbgNbme string) error {
+	const newFebtureFlbgOverrideFmtStr = `
+		DELETE FROM febture_flbg_overrides
 		WHERE
-			%s AND flag_name = %s;
+			%s AND flbg_nbme = %s;
 	`
 
-	var cond *sqlf.Query
+	vbr cond *sqlf.Query
 	switch {
-	case orgID != nil:
-		cond = sqlf.Sprintf("namespace_org_id = %s", *orgID)
-	case userID != nil:
-		cond = sqlf.Sprintf("namespace_user_id = %s", *userID)
-	default:
+	cbse orgID != nil:
+		cond = sqlf.Sprintf("nbmespbce_org_id = %s", *orgID)
+	cbse userID != nil:
+		cond = sqlf.Sprintf("nbmespbce_user_id = %s", *userID)
+	defbult:
 		return errors.New("must set either orgID or userID")
 	}
 
 	return f.Exec(ctx, sqlf.Sprintf(
-		newFeatureFlagOverrideFmtStr,
+		newFebtureFlbgOverrideFmtStr,
 		cond,
-		flagName,
+		flbgNbme,
 	))
 }
 
-func (f *featureFlagStore) UpdateOverride(ctx context.Context, orgID, userID *int32, flagName string, newValue bool) (*ff.Override, error) {
-	const newFeatureFlagOverrideFmtStr = `
-		UPDATE feature_flag_overrides
-		SET flag_value = %s
-		WHERE %s -- namespace condition
-			AND flag_name = %s
+func (f *febtureFlbgStore) UpdbteOverride(ctx context.Context, orgID, userID *int32, flbgNbme string, newVblue bool) (*ff.Override, error) {
+	const newFebtureFlbgOverrideFmtStr = `
+		UPDATE febture_flbg_overrides
+		SET flbg_vblue = %s
+		WHERE %s -- nbmespbce condition
+			AND flbg_nbme = %s
 		RETURNING
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value;
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue;
 	`
 
-	var cond *sqlf.Query
+	vbr cond *sqlf.Query
 	switch {
-	case orgID != nil:
-		cond = sqlf.Sprintf("namespace_org_id = %s", *orgID)
-	case userID != nil:
-		cond = sqlf.Sprintf("namespace_user_id = %s", *userID)
-	default:
+	cbse orgID != nil:
+		cond = sqlf.Sprintf("nbmespbce_org_id = %s", *orgID)
+	cbse userID != nil:
+		cond = sqlf.Sprintf("nbmespbce_user_id = %s", *userID)
+	defbult:
 		return nil, errors.New("must set either orgID or userID")
 	}
 
 	row := f.QueryRow(ctx, sqlf.Sprintf(
-		newFeatureFlagOverrideFmtStr,
-		newValue,
+		newFebtureFlbgOverrideFmtStr,
+		newVblue,
 		cond,
-		flagName,
+		flbgNbme,
 	))
-	return scanFeatureFlagOverride(row)
+	return scbnFebtureFlbgOverride(row)
 }
 
-func (f *featureFlagStore) GetOverridesForFlag(ctx context.Context, flagName string) ([]*ff.Override, error) {
-	const listFlagOverridesFmtString = `
+func (f *febtureFlbgStore) GetOverridesForFlbg(ctx context.Context, flbgNbme string) ([]*ff.Override, error) {
+	const listFlbgOverridesFmtString = `
 		SELECT
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value
-		FROM feature_flag_overrides
-		WHERE flag_name = %s
-			AND deleted_at IS NULL;
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue
+		FROM febture_flbg_overrides
+		WHERE flbg_nbme = %s
+			AND deleted_bt IS NULL;
 	`
-	rows, err := f.Query(ctx, sqlf.Sprintf(listFlagOverridesFmtString, flagName))
+	rows, err := f.Query(ctx, sqlf.Sprintf(listFlbgOverridesFmtString, flbgNbme))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	return scanFeatureFlagOverrides(rows)
+	return scbnFebtureFlbgOverrides(rows)
 }
 
-// GetUserOverrides lists the overrides that have been specifically set for the given userID.
-// NOTE: this does not return any overrides for the user orgs. Those are returned separately
-// by ListOrgOverridesForUser so they can be mered in proper priority order.
-func (f *featureFlagStore) GetUserOverrides(ctx context.Context, userID int32) ([]*ff.Override, error) {
+// GetUserOverrides lists the overrides thbt hbve been specificblly set for the given userID.
+// NOTE: this does not return bny overrides for the user orgs. Those bre returned sepbrbtely
+// by ListOrgOverridesForUser so they cbn be mered in proper priority order.
+func (f *febtureFlbgStore) GetUserOverrides(ctx context.Context, userID int32) ([]*ff.Override, error) {
 	const listUserOverridesFmtString = `
 		SELECT
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value
-		FROM feature_flag_overrides
-		WHERE namespace_user_id = %s
-			AND deleted_at IS NULL;
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue
+		FROM febture_flbg_overrides
+		WHERE nbmespbce_user_id = %s
+			AND deleted_bt IS NULL;
 	`
 	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID))
 	if err != nil {
@@ -442,24 +442,24 @@ func (f *featureFlagStore) GetUserOverrides(ctx context.Context, userID int32) (
 	}
 	defer rows.Close()
 
-	return scanFeatureFlagOverrides(rows)
+	return scbnFebtureFlbgOverrides(rows)
 }
 
-// GetOrgOverridesForUser lists the feature flag overrides for all orgs the given user belongs to.
-func (f *featureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error) {
+// GetOrgOverridesForUser lists the febture flbg overrides for bll orgs the given user belongs to.
+func (f *febtureFlbgStore) GetOrgOverridesForUser(ctx context.Context, userID int32) ([]*ff.Override, error) {
 	const listUserOverridesFmtString = `
 		SELECT
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value
-		FROM feature_flag_overrides
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue
+		FROM febture_flbg_overrides
 		WHERE EXISTS (
 			SELECT org_id
 			FROM org_members
 			WHERE org_members.user_id = %s
-				AND feature_flag_overrides.namespace_org_id = org_members.org_id
-		) AND deleted_at IS NULL;
+				AND febture_flbg_overrides.nbmespbce_org_id = org_members.org_id
+		) AND deleted_bt IS NULL;
 	`
 	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID))
 	if err != nil {
@@ -467,24 +467,24 @@ func (f *featureFlagStore) GetOrgOverridesForUser(ctx context.Context, userID in
 	}
 	defer rows.Close()
 
-	return scanFeatureFlagOverrides(rows)
+	return scbnFebtureFlbgOverrides(rows)
 }
 
-// GetOrgOverrideForFlag returns the flag override for the given organization.
-func (f *featureFlagStore) GetOrgOverrideForFlag(ctx context.Context, orgID int32, flagName string) (*ff.Override, error) {
+// GetOrgOverrideForFlbg returns the flbg override for the given orgbnizbtion.
+func (f *febtureFlbgStore) GetOrgOverrideForFlbg(ctx context.Context, orgID int32, flbgNbme string) (*ff.Override, error) {
 	const listOrgOverridesFmtString = `
 		SELECT
-			namespace_org_id,
-			namespace_user_id,
-			flag_name,
-			flag_value
-		FROM feature_flag_overrides
-		WHERE namespace_org_id = %s
-			AND flag_name = %s
-			AND deleted_at IS NULL;
+			nbmespbce_org_id,
+			nbmespbce_user_id,
+			flbg_nbme,
+			flbg_vblue
+		FROM febture_flbg_overrides
+		WHERE nbmespbce_org_id = %s
+			AND flbg_nbme = %s
+			AND deleted_bt IS NULL;
 	`
-	row := f.QueryRow(ctx, sqlf.Sprintf(listOrgOverridesFmtString, orgID, flagName))
-	override, err := scanFeatureFlagOverride(row)
+	row := f.QueryRow(ctx, sqlf.Sprintf(listOrgOverridesFmtString, orgID, flbgNbme))
+	override, err := scbnFebtureFlbgOverride(row)
 
 	if err == sql.ErrNoRows {
 		return nil, nil
@@ -494,70 +494,70 @@ func (f *featureFlagStore) GetOrgOverrideForFlag(ctx context.Context, orgID int3
 	return override, nil
 }
 
-func scanFeatureFlagOverrides(rows *sql.Rows) ([]*ff.Override, error) {
-	var res []*ff.Override
+func scbnFebtureFlbgOverrides(rows *sql.Rows) ([]*ff.Override, error) {
+	vbr res []*ff.Override
 	for rows.Next() {
-		override, err := scanFeatureFlagOverride(rows)
+		override, err := scbnFebtureFlbgOverride(rows)
 		if err != nil {
 			return nil, err
 		}
-		res = append(res, override)
+		res = bppend(res, override)
 	}
 	return res, nil
 }
 
-func scanFeatureFlagOverride(scanner dbutil.Scanner) (*ff.Override, error) {
-	var res ff.Override
-	err := scanner.Scan(
+func scbnFebtureFlbgOverride(scbnner dbutil.Scbnner) (*ff.Override, error) {
+	vbr res ff.Override
+	err := scbnner.Scbn(
 		&res.OrgID,
 		&res.UserID,
-		&res.FlagName,
-		&res.Value,
+		&res.FlbgNbme,
+		&res.Vblue,
 	)
 	return &res, err
 }
 
-// GetUserFlags returns the calculated values for feature flags for the given userID. This should
-// be the primary entrypoint for getting the user flags since it handles retrieving all the flags,
-// the org overrides, and the user overrides, and merges them in priority order.
-func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[string]bool, error) {
+// GetUserFlbgs returns the cblculbted vblues for febture flbgs for the given userID. This should
+// be the primbry entrypoint for getting the user flbgs since it hbndles retrieving bll the flbgs,
+// the org overrides, bnd the user overrides, bnd merges them in priority order.
+func (f *febtureFlbgStore) GetUserFlbgs(ctx context.Context, userID int32) (mbp[string]bool, error) {
 	const listUserOverridesFmtString = `
 		WITH user_overrides AS (
 			SELECT
-				flag_name,
-				flag_value
-			FROM feature_flag_overrides
-			WHERE namespace_user_id = %s
-				AND deleted_at IS NULL
+				flbg_nbme,
+				flbg_vblue
+			FROM febture_flbg_overrides
+			WHERE nbmespbce_user_id = %s
+				AND deleted_bt IS NULL
 		), org_overrides AS (
 			SELECT
-				DISTINCT ON (flag_name)
-				flag_name,
-				flag_value
-			FROM feature_flag_overrides
+				DISTINCT ON (flbg_nbme)
+				flbg_nbme,
+				flbg_vblue
+			FROM febture_flbg_overrides
 			WHERE EXISTS (
 				SELECT org_id
 				FROM org_members
 				WHERE org_members.user_id = %s
-					AND feature_flag_overrides.namespace_org_id = org_members.org_id
-			) AND deleted_at IS NULL
-			ORDER BY flag_name, created_at desc
+					AND febture_flbg_overrides.nbmespbce_org_id = org_members.org_id
+			) AND deleted_bt IS NULL
+			ORDER BY flbg_nbme, crebted_bt desc
 		)
 		SELECT
-			ff.flag_name,
-			flag_type,
-			bool_value,
+			ff.flbg_nbme,
+			flbg_type,
+			bool_vblue,
 			rollout,
-			created_at,
-			updated_at,
-			deleted_at,
+			crebted_bt,
+			updbted_bt,
+			deleted_bt,
 			-- We prioritize user overrides over org overrides.
 			-- If neither exist override will be NULL.
-			COALESCE(uo.flag_value, oo.flag_value) AS override
-		FROM feature_flags ff
-		LEFT JOIN org_overrides oo ON ff.flag_name = oo.flag_name
-		LEFT JOIN user_overrides uo ON ff.flag_name = uo.flag_name
-		WHERE deleted_at IS NULL
+			COALESCE(uo.flbg_vblue, oo.flbg_vblue) AS override
+		FROM febture_flbgs ff
+		LEFT JOIN org_overrides oo ON ff.flbg_nbme = oo.flbg_nbme
+		LEFT JOIN user_overrides uo ON ff.flbg_nbme = uo.flbg_nbme
+		WHERE deleted_bt IS NULL
 	`
 	rows, err := f.Query(ctx, sqlf.Sprintf(listUserOverridesFmtString, userID, userID))
 	if err != nil {
@@ -565,81 +565,81 @@ func (f *featureFlagStore) GetUserFlags(ctx context.Context, userID int32) (map[
 	}
 	defer rows.Close()
 
-	res := make(map[string]bool)
+	res := mbke(mbp[string]bool)
 	for rows.Next() {
-		flag, override, err := scanFeatureFlagAndOverride(rows)
+		flbg, override, err := scbnFebtureFlbgAndOverride(rows)
 		if err != nil {
 			return nil, err
 		}
 		if override != nil {
-			res[flag.Name] = *override
+			res[flbg.Nbme] = *override
 		} else {
-			res[flag.Name] = flag.EvaluateForUser(userID)
+			res[flbg.Nbme] = flbg.EvblubteForUser(userID)
 		}
 	}
 	return res, rows.Err()
 }
 
-// GetAnonymousUserFlags returns the calculated values for feature flags for the given anonymousUID
-func (f *featureFlagStore) GetAnonymousUserFlags(ctx context.Context, anonymousUID string) (map[string]bool, error) {
-	flags, err := f.GetFeatureFlags(ctx)
+// GetAnonymousUserFlbgs returns the cblculbted vblues for febture flbgs for the given bnonymousUID
+func (f *febtureFlbgStore) GetAnonymousUserFlbgs(ctx context.Context, bnonymousUID string) (mbp[string]bool, error) {
+	flbgs, err := f.GetFebtureFlbgs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make(map[string]bool, len(flags))
-	for _, flag := range flags {
-		res[flag.Name] = flag.EvaluateForAnonymousUser(anonymousUID)
+	res := mbke(mbp[string]bool, len(flbgs))
+	for _, flbg := rbnge flbgs {
+		res[flbg.Nbme] = flbg.EvblubteForAnonymousUser(bnonymousUID)
 	}
 
 	return res, nil
 }
 
-func (f *featureFlagStore) GetGlobalFeatureFlags(ctx context.Context) (map[string]bool, error) {
-	flags, err := f.GetFeatureFlags(ctx)
+func (f *febtureFlbgStore) GetGlobblFebtureFlbgs(ctx context.Context) (mbp[string]bool, error) {
+	flbgs, err := f.GetFebtureFlbgs(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	res := make(map[string]bool, len(flags))
-	for _, flag := range flags {
-		if val, ok := flag.EvaluateGlobal(); ok {
-			res[flag.Name] = val
+	res := mbke(mbp[string]bool, len(flbgs))
+	for _, flbg := rbnge flbgs {
+		if vbl, ok := flbg.EvblubteGlobbl(); ok {
+			res[flbg.Nbme] = vbl
 		}
 	}
 
 	return res, nil
 }
 
-// GetOrgFeatureFlag returns the calculated flag value for the given organization, taking potential override into account
-func (f *featureFlagStore) GetOrgFeatureFlag(ctx context.Context, orgID int32, flagName string) (bool, error) {
+// GetOrgFebtureFlbg returns the cblculbted flbg vblue for the given orgbnizbtion, tbking potentibl override into bccount
+func (f *febtureFlbgStore) GetOrgFebtureFlbg(ctx context.Context, orgID int32, flbgNbme string) (bool, error) {
 	g, ctx := errgroup.WithContext(ctx)
 
-	var override *ff.Override
-	var globalFlag *ff.FeatureFlag
+	vbr override *ff.Override
+	vbr globblFlbg *ff.FebtureFlbg
 
 	g.Go(func() error {
-		res, err := f.GetOrgOverrideForFlag(ctx, orgID, flagName)
+		res, err := f.GetOrgOverrideForFlbg(ctx, orgID, flbgNbme)
 		override = res
 		return err
 	})
 	g.Go(func() error {
-		res, err := f.GetFeatureFlag(ctx, flagName)
+		res, err := f.GetFebtureFlbg(ctx, flbgNbme)
 		if err == sql.ErrNoRows {
 			return nil
 		}
-		globalFlag = res
+		globblFlbg = res
 		return err
 	})
-	if err := g.Wait(); err != nil {
-		return false, err
+	if err := g.Wbit(); err != nil {
+		return fblse, err
 	}
 
 	if override != nil {
-		return override.Value, nil
-	} else if globalFlag != nil {
-		return globalFlag.Bool.Value, nil
+		return override.Vblue, nil
+	} else if globblFlbg != nil {
+		return globblFlbg.Bool.Vblue, nil
 	}
 
-	return false, nil
+	return fblse, nil
 }

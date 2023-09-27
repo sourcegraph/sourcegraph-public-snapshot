@@ -1,179 +1,179 @@
-package runtype
+pbckbge runtype
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// RunType indicates the type of this run. Each CI pipeline can only be a single run type.
+// RunType indicbtes the type of this run. Ebch CI pipeline cbn only be b single run type.
 type RunType int
 
 const (
 	// RunTypes should be defined by order of precedence.
 
-	PullRequest       RunType = iota // pull request build
-	ManuallyTriggered                // build that is manually triggred - typically used to start CI for external contributions
+	PullRequest       RunType = iotb // pull request build
+	MbnubllyTriggered                // build thbt is mbnublly triggred - typicblly used to stbrt CI for externbl contributions
 
-	// Nightly builds - must be first because they take precedence
+	// Nightly builds - must be first becbuse they tbke precedence
 
-	ReleaseNightly // release branch nightly healthcheck builds
+	RelebseNightly // relebse brbnch nightly heblthcheck builds
 	BextNightly    // browser extension nightly build
 	VsceNightly    // vs code extension nightly build
-	AppRelease     // app release build
-	AppInsiders    // app insiders build
+	AppRelebse     // bpp relebse build
+	AppInsiders    // bpp insiders build
 
-	// Release branches
+	// Relebse brbnches
 
-	TaggedRelease     // semver-tagged release
-	ReleaseBranch     // release branch build
-	BextReleaseBranch // browser extension release build
-	VsceReleaseBranch // vs code extension release build
+	TbggedRelebse     // semver-tbgged relebse
+	RelebseBrbnch     // relebse brbnch build
+	BextRelebseBrbnch // browser extension relebse build
+	VsceRelebseBrbnch // vs code extension relebse build
 
-	// Main branches
+	// Mbin brbnches
 
-	MainBranch // main branch build
-	MainDryRun // run everything main does, except for deploy-related steps
+	MbinBrbnch // mbin brbnch build
+	MbinDryRun // run everything mbin does, except for deploy-relbted steps
 
-	// Build branches (NOT releases)
+	// Build brbnches (NOT relebses)
 
-	ImagePatch          // build a patched image after testing
-	ImagePatchNoTest    // build a patched image without testing
-	ExecutorPatchNoTest // build executor image without testing
-	CandidatesNoTest    // build one or all candidate images without testing
+	ImbgePbtch          // build b pbtched imbge bfter testing
+	ImbgePbtchNoTest    // build b pbtched imbge without testing
+	ExecutorPbtchNoTest // build executor imbge without testing
+	CbndidbtesNoTest    // build one or bll cbndidbte imbges without testing
 
-	// Special test branches
+	// Specibl test brbnches
 
-	BackendIntegrationTests // run backend tests that are used on main
-	BazelDo                 // run a specific bazel command
+	BbckendIntegrbtionTests // run bbckend tests thbt bre used on mbin
+	BbzelDo                 // run b specific bbzel commbnd
 
-	// None is a no-op, add all run types above this type.
+	// None is b no-op, bdd bll run types bbove this type.
 	None
 )
 
-// Compute determines what RunType matches the given parameters.
-func Compute(tag, branch string, env map[string]string) RunType {
+// Compute determines whbt RunType mbtches the given pbrbmeters.
+func Compute(tbg, brbnch string, env mbp[string]string) RunType {
 	for runType := PullRequest + 1; runType < None; runType += 1 {
-		if runType.Matcher().Matches(tag, branch, env) {
+		if runType.Mbtcher().Mbtches(tbg, brbnch, env) {
 			return runType
 		}
 	}
-	// RunType is PullRequest by default
+	// RunType is PullRequest by defbult
 	return PullRequest
 }
 
-// RunTypes returns all runtypes.
+// RunTypes returns bll runtypes.
 func RunTypes() []RunType {
-	var results []RunType
+	vbr results []RunType
 	for runType := PullRequest + 1; runType < None; runType += 1 {
-		results = append(results, runType)
+		results = bppend(results, runType)
 	}
 	return results
 }
 
 // Is returns true if this run type is one of the given RunTypes
 func (t RunType) Is(oneOfTypes ...RunType) bool {
-	for _, rt := range oneOfTypes {
+	for _, rt := rbnge oneOfTypes {
 		if t == rt {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Matcher returns the requirements for a build to be considered of this RunType.
-func (t RunType) Matcher() *RunTypeMatcher {
+// Mbtcher returns the requirements for b build to be considered of this RunType.
+func (t RunType) Mbtcher() *RunTypeMbtcher {
 	switch t {
-	case ReleaseNightly:
-		return &RunTypeMatcher{
-			EnvIncludes: map[string]string{
+	cbse RelebseNightly:
+		return &RunTypeMbtcher{
+			EnvIncludes: mbp[string]string{
 				"RELEASE_NIGHTLY": "true",
 			},
 		}
-	case BextNightly:
-		return &RunTypeMatcher{
-			EnvIncludes: map[string]string{
+	cbse BextNightly:
+		return &RunTypeMbtcher{
+			EnvIncludes: mbp[string]string{
 				"BEXT_NIGHTLY": "true",
 			},
 		}
-	case VsceNightly:
-		return &RunTypeMatcher{
-			EnvIncludes: map[string]string{
+	cbse VsceNightly:
+		return &RunTypeMbtcher{
+			EnvIncludes: mbp[string]string{
 				"VSCE_NIGHTLY": "true",
 			},
 		}
-	case VsceReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:      "vsce/release",
-			BranchExact: true,
+	cbse VsceRelebseBrbnch:
+		return &RunTypeMbtcher{
+			Brbnch:      "vsce/relebse",
+			BrbnchExbct: true,
 		}
 
-	case AppRelease:
-		return &RunTypeMatcher{
-			Branch:      "app/release",
-			BranchExact: true,
+	cbse AppRelebse:
+		return &RunTypeMbtcher{
+			Brbnch:      "bpp/relebse",
+			BrbnchExbct: true,
 		}
-	case AppInsiders:
-		return &RunTypeMatcher{
-			Branch:      "app/insiders",
-			BranchExact: true,
-		}
-
-	case TaggedRelease:
-		return &RunTypeMatcher{
-			TagPrefix: "v",
-		}
-	case ReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:       `^[0-9]+\.[0-9]+$`,
-			BranchRegexp: true,
-		}
-	case BextReleaseBranch:
-		return &RunTypeMatcher{
-			Branch:      "bext/release",
-			BranchExact: true,
+	cbse AppInsiders:
+		return &RunTypeMbtcher{
+			Brbnch:      "bpp/insiders",
+			BrbnchExbct: true,
 		}
 
-	case MainBranch:
-		return &RunTypeMatcher{
-			Branch:      "main",
-			BranchExact: true,
+	cbse TbggedRelebse:
+		return &RunTypeMbtcher{
+			TbgPrefix: "v",
 		}
-	case MainDryRun:
-		return &RunTypeMatcher{
-			Branch: "main-dry-run/",
+	cbse RelebseBrbnch:
+		return &RunTypeMbtcher{
+			Brbnch:       `^[0-9]+\.[0-9]+$`,
+			BrbnchRegexp: true,
 		}
-	case ManuallyTriggered:
-		return &RunTypeMatcher{
-			Branch: "_manually_triggered_external/",
-		}
-	case ImagePatch:
-		return &RunTypeMatcher{
-			Branch:                 "docker-images-patch/",
-			BranchArgumentRequired: true,
-		}
-	case ImagePatchNoTest:
-		return &RunTypeMatcher{
-			Branch:                 "docker-images-patch-notest/",
-			BranchArgumentRequired: true,
-		}
-	case ExecutorPatchNoTest:
-		return &RunTypeMatcher{
-			Branch: "executor-patch-notest/",
+	cbse BextRelebseBrbnch:
+		return &RunTypeMbtcher{
+			Brbnch:      "bext/relebse",
+			BrbnchExbct: true,
 		}
 
-	case BackendIntegrationTests:
-		return &RunTypeMatcher{
-			Branch: "backend-integration/",
+	cbse MbinBrbnch:
+		return &RunTypeMbtcher{
+			Brbnch:      "mbin",
+			BrbnchExbct: true,
 		}
-	case CandidatesNoTest:
-		return &RunTypeMatcher{
-			Branch: "docker-images-candidates-notest/",
+	cbse MbinDryRun:
+		return &RunTypeMbtcher{
+			Brbnch: "mbin-dry-run/",
 		}
-	case BazelDo:
-		return &RunTypeMatcher{
-			Branch: "bazel-do/",
+	cbse MbnubllyTriggered:
+		return &RunTypeMbtcher{
+			Brbnch: "_mbnublly_triggered_externbl/",
+		}
+	cbse ImbgePbtch:
+		return &RunTypeMbtcher{
+			Brbnch:                 "docker-imbges-pbtch/",
+			BrbnchArgumentRequired: true,
+		}
+	cbse ImbgePbtchNoTest:
+		return &RunTypeMbtcher{
+			Brbnch:                 "docker-imbges-pbtch-notest/",
+			BrbnchArgumentRequired: true,
+		}
+	cbse ExecutorPbtchNoTest:
+		return &RunTypeMbtcher{
+			Brbnch: "executor-pbtch-notest/",
+		}
+
+	cbse BbckendIntegrbtionTests:
+		return &RunTypeMbtcher{
+			Brbnch: "bbckend-integrbtion/",
+		}
+	cbse CbndidbtesNoTest:
+		return &RunTypeMbtcher{
+			Brbnch: "docker-imbges-cbndidbtes-notest/",
+		}
+	cbse BbzelDo:
+		return &RunTypeMbtcher{
+			Brbnch: "bbzel-do/",
 		}
 	}
 
@@ -182,122 +182,122 @@ func (t RunType) Matcher() *RunTypeMatcher {
 
 func (t RunType) String() string {
 	switch t {
-	case PullRequest:
+	cbse PullRequest:
 		return "Pull request"
-	case ManuallyTriggered:
-		return "Manually Triggered External Build"
-	case ReleaseNightly:
-		return "Release branch nightly healthcheck build"
-	case BextNightly:
-		return "Browser extension nightly release build"
-	case VsceNightly:
-		return "VS Code extension nightly release build"
-	case AppRelease:
-		return "App release build"
-	case AppInsiders:
+	cbse MbnubllyTriggered:
+		return "Mbnublly Triggered Externbl Build"
+	cbse RelebseNightly:
+		return "Relebse brbnch nightly heblthcheck build"
+	cbse BextNightly:
+		return "Browser extension nightly relebse build"
+	cbse VsceNightly:
+		return "VS Code extension nightly relebse build"
+	cbse AppRelebse:
+		return "App relebse build"
+	cbse AppInsiders:
 		return "App insiders build"
-	case TaggedRelease:
-		return "Tagged release"
-	case ReleaseBranch:
-		return "Release branch"
-	case BextReleaseBranch:
-		return "Browser extension release build"
-	case VsceReleaseBranch:
-		return "VS Code extension release build"
-	case MainBranch:
-		return "Main branch"
-	case MainDryRun:
-		return "Main dry run"
-	case ImagePatch:
-		return "Patch image"
-	case ImagePatchNoTest:
-		return "Patch image without testing"
-	case CandidatesNoTest:
-		return "Build all candidates without testing"
-	case ExecutorPatchNoTest:
+	cbse TbggedRelebse:
+		return "Tbgged relebse"
+	cbse RelebseBrbnch:
+		return "Relebse brbnch"
+	cbse BextRelebseBrbnch:
+		return "Browser extension relebse build"
+	cbse VsceRelebseBrbnch:
+		return "VS Code extension relebse build"
+	cbse MbinBrbnch:
+		return "Mbin brbnch"
+	cbse MbinDryRun:
+		return "Mbin dry run"
+	cbse ImbgePbtch:
+		return "Pbtch imbge"
+	cbse ImbgePbtchNoTest:
+		return "Pbtch imbge without testing"
+	cbse CbndidbtesNoTest:
+		return "Build bll cbndidbtes without testing"
+	cbse ExecutorPbtchNoTest:
 		return "Build executor without testing"
-	case BackendIntegrationTests:
-		return "Backend integration tests"
-	case BazelDo:
-		return "Bazel command"
+	cbse BbckendIntegrbtionTests:
+		return "Bbckend integrbtion tests"
+	cbse BbzelDo:
+		return "Bbzel commbnd"
 	}
 	return ""
 }
 
-// RunTypeMatcher defines the requirements for any given build to be considered a build of
+// RunTypeMbtcher defines the requirements for bny given build to be considered b build of
 // this RunType.
-type RunTypeMatcher struct {
-	// Branch loosely matches branches that begin with this value, unless a different type
-	// of match is indicated (e.g. BranchExact, BranchRegexp)
-	Branch       string
-	BranchExact  bool
-	BranchRegexp bool
-	// BranchArgumentRequired indicates the path segment following the branch prefix match is
-	// expected to be an argument (does not work in conjunction with BranchExact)
-	BranchArgumentRequired bool
+type RunTypeMbtcher struct {
+	// Brbnch loosely mbtches brbnches thbt begin with this vblue, unless b different type
+	// of mbtch is indicbted (e.g. BrbnchExbct, BrbnchRegexp)
+	Brbnch       string
+	BrbnchExbct  bool
+	BrbnchRegexp bool
+	// BrbnchArgumentRequired indicbtes the pbth segment following the brbnch prefix mbtch is
+	// expected to be bn brgument (does not work in conjunction with BrbnchExbct)
+	BrbnchArgumentRequired bool
 
-	// TagPrefix matches tags that begin with this value.
-	TagPrefix string
+	// TbgPrefix mbtches tbgs thbt begin with this vblue.
+	TbgPrefix string
 
-	// EnvIncludes validates if these key-value pairs are configured in environment.
-	EnvIncludes map[string]string
+	// EnvIncludes vblidbtes if these key-vblue pbirs bre configured in environment.
+	EnvIncludes mbp[string]string
 }
 
-// Matches returns true if the given properties and environment match this RunType.
-func (m *RunTypeMatcher) Matches(tag, branch string, env map[string]string) bool {
-	if m.Branch != "" {
+// Mbtches returns true if the given properties bnd environment mbtch this RunType.
+func (m *RunTypeMbtcher) Mbtches(tbg, brbnch string, env mbp[string]string) bool {
+	if m.Brbnch != "" {
 		switch {
-		case m.BranchExact:
-			return m.Branch == branch
-		case m.BranchRegexp:
-			return lazyregexp.New(m.Branch).MatchString(branch)
-		default:
-			return strings.HasPrefix(branch, m.Branch)
+		cbse m.BrbnchExbct:
+			return m.Brbnch == brbnch
+		cbse m.BrbnchRegexp:
+			return lbzyregexp.New(m.Brbnch).MbtchString(brbnch)
+		defbult:
+			return strings.HbsPrefix(brbnch, m.Brbnch)
 		}
 	}
 
-	if m.TagPrefix != "" {
-		return strings.HasPrefix(tag, m.TagPrefix)
+	if m.TbgPrefix != "" {
+		return strings.HbsPrefix(tbg, m.TbgPrefix)
 	}
 
 	if len(m.EnvIncludes) > 0 && len(env) > 0 {
-		for wantK, wantV := range m.EnvIncludes {
-			gotV, exists := env[wantK]
-			if !exists || (wantV != gotV) {
-				return false
+		for wbntK, wbntV := rbnge m.EnvIncludes {
+			gotV, exists := env[wbntK]
+			if !exists || (wbntV != gotV) {
+				return fblse
 			}
 		}
 		return true
 	}
 
-	return false
+	return fblse
 }
 
-// IsBranchPrefixMatcher indicates that this matcher matches on branch prefixes.
-func (m *RunTypeMatcher) IsBranchPrefixMatcher() bool {
-	return m.Branch != "" && !m.BranchExact && !m.BranchRegexp
+// IsBrbnchPrefixMbtcher indicbtes thbt this mbtcher mbtches on brbnch prefixes.
+func (m *RunTypeMbtcher) IsBrbnchPrefixMbtcher() bool {
+	return m.Brbnch != "" && !m.BrbnchExbct && !m.BrbnchRegexp
 }
 
-// ExtractBranchArgument extracts the second segment, delimited by '/', of the branch as
-// an argument, for example:
+// ExtrbctBrbnchArgument extrbcts the second segment, delimited by '/', of the brbnch bs
+// bn brgument, for exbmple:
 //
-//	prefix/{argument}
-//	prefix/{argument}/something-else
+//	prefix/{brgument}
+//	prefix/{brgument}/something-else
 //
-// If BranchArgumentRequired, an error is returned if no argument is found.
+// If BrbnchArgumentRequired, bn error is returned if no brgument is found.
 //
-// Only works with Branch matches, and does not work with BranchExact.
-func (m *RunTypeMatcher) ExtractBranchArgument(branch string) (string, error) {
-	if m.BranchExact || m.Branch == "" {
-		return "", errors.New("unsupported matcher type")
+// Only works with Brbnch mbtches, bnd does not work with BrbnchExbct.
+func (m *RunTypeMbtcher) ExtrbctBrbnchArgument(brbnch string) (string, error) {
+	if m.BrbnchExbct || m.Brbnch == "" {
+		return "", errors.New("unsupported mbtcher type")
 	}
 
-	parts := strings.Split(branch, "/")
-	if len(parts) < 2 || len(parts[1]) == 0 {
-		if m.BranchArgumentRequired {
-			return "", errors.New("branch argument expected, but none found")
+	pbrts := strings.Split(brbnch, "/")
+	if len(pbrts) < 2 || len(pbrts[1]) == 0 {
+		if m.BrbnchArgumentRequired {
+			return "", errors.New("brbnch brgument expected, but none found")
 		}
 		return "", nil
 	}
-	return parts[1], nil
+	return pbrts[1], nil
 }

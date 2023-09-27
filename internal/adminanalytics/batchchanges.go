@@ -1,121 +1,121 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-type BatchChanges struct {
+type BbtchChbnges struct {
 	Ctx       context.Context
-	DateRange string
+	DbteRbnge string
 	Grouping  string
-	DB        database.DB
-	Cache     bool
+	DB        dbtbbbse.DB
+	Cbche     bool
 }
 
-var changesetsCreatedNodesQuery = `
+vbr chbngesetsCrebtedNodesQuery = `
 	SELECT
-		%s AS date,
-		COUNT(DISTINCT changesets.id) AS count,
-		COUNT(DISTINCT batch_changes.creator_id) AS unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS registered_users
+		%s AS dbte,
+		COUNT(DISTINCT chbngesets.id) AS count,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS unique_users,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS registered_users
 	FROM
-		changesets
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changesets.created_at %s AND changesets.publication_state = 'PUBLISHED'
-	GROUP BY date
+		chbngesets
+		INNER JOIN bbtch_chbnges ON bbtch_chbnges.id = chbngesets.owned_by_bbtch_chbnge_id
+	WHERE chbngesets.crebted_bt %s AND chbngesets.publicbtion_stbte = 'PUBLISHED'
+	GROUP BY dbte
 `
 
-var changesetsCreatedSummaryQuery = `
+vbr chbngesetsCrebtedSummbryQuery = `
 	SELECT
-		COUNT(DISTINCT changesets.id) AS total_count,
-		COUNT(DISTINCT batch_changes.creator_id) AS total_unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS total_registered_users
+		COUNT(DISTINCT chbngesets.id) AS totbl_count,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS totbl_unique_users,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS totbl_registered_users
 	FROM
-		changesets
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changesets.created_at %s AND changesets.publication_state = 'PUBLISHED'
+		chbngesets
+		INNER JOIN bbtch_chbnges ON bbtch_chbnges.id = chbngesets.owned_by_bbtch_chbnge_id
+	WHERE chbngesets.crebted_bt %s AND chbngesets.publicbtion_stbte = 'PUBLISHED'
 `
 
-func (s *BatchChanges) ChangesetsCreated() (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, s.Grouping, "changesets.created_at")
+func (s *BbtchChbnges) ChbngesetsCrebted() (*AnblyticsFetcher, error) {
+	dbteTruncExp, dbteBetweenCond, err := mbkeDbtePbrbmeters(s.DbteRbnge, s.Grouping, "chbngesets.crebted_bt")
 	if err != nil {
 		return nil, err
 	}
 
-	nodesQuery := sqlf.Sprintf(changesetsCreatedNodesQuery, dateTruncExp, dateBetweenCond)
-	summaryQuery := sqlf.Sprintf(changesetsCreatedSummaryQuery, dateBetweenCond)
+	nodesQuery := sqlf.Sprintf(chbngesetsCrebtedNodesQuery, dbteTruncExp, dbteBetweenCond)
+	summbryQuery := sqlf.Sprintf(chbngesetsCrebtedSummbryQuery, dbteBetweenCond)
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "BatchChanges:ChangesetsCreated",
-		cache:        s.Cache,
+		summbryQuery: summbryQuery,
+		group:        "BbtchChbnges:ChbngesetsCrebted",
+		cbche:        s.Cbche,
 	}, nil
 }
 
-var changesetsMergedNodesQuery = `
+vbr chbngesetsMergedNodesQuery = `
 	SELECT
-		%s AS date,
-		COUNT(DISTINCT changesets.id) AS count,
-		COUNT(DISTINCT batch_changes.creator_id) AS unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS registered_users
+		%s AS dbte,
+		COUNT(DISTINCT chbngesets.id) AS count,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS unique_users,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS registered_users
 	FROM
-		changeset_events
-		INNER JOIN changesets ON changesets.id = changeset_events.changeset_id
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
-	GROUP BY date
+		chbngeset_events
+		INNER JOIN chbngesets ON chbngesets.id = chbngeset_events.chbngeset_id
+		INNER JOIN bbtch_chbnges ON bbtch_chbnges.id = chbngesets.owned_by_bbtch_chbnge_id
+	WHERE chbngeset_events.crebted_bt %s AND chbngeset_events.kind IN (%s)
+	GROUP BY dbte
 `
 
-var changesetsMergedSummaryQuery = `
+vbr chbngesetsMergedSummbryQuery = `
 	SELECT
-		COUNT(DISTINCT changesets.id) AS total_count,
-		COUNT(DISTINCT batch_changes.creator_id) AS total_unique_users,
-		COUNT(DISTINCT batch_changes.creator_id) AS total_registered_users
+		COUNT(DISTINCT chbngesets.id) AS totbl_count,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS totbl_unique_users,
+		COUNT(DISTINCT bbtch_chbnges.crebtor_id) AS totbl_registered_users
 	FROM
-		changeset_events
-		INNER JOIN changesets ON changesets.id = changeset_events.changeset_id
-		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
+		chbngeset_events
+		INNER JOIN chbngesets ON chbngesets.id = chbngeset_events.chbngeset_id
+		INNER JOIN bbtch_chbnges ON bbtch_chbnges.id = chbngesets.owned_by_bbtch_chbnge_id
+	WHERE chbngeset_events.crebted_bt %s AND chbngeset_events.kind IN (%s)
 `
 
-var mergeEventKinds = sqlf.Join([]*sqlf.Query{
+vbr mergeEventKinds = sqlf.Join([]*sqlf.Query{
 	sqlf.Sprintf("'github:merged'"),
 	sqlf.Sprintf("'bitbucketserver:merged'"),
-	sqlf.Sprintf("'gitlab:merged'"),
+	sqlf.Sprintf("'gitlbb:merged'"),
 	sqlf.Sprintf("'bitbucketcloud:pullrequest:fulfilled'"),
 }, ",")
 
-func (s *BatchChanges) ChangesetsMerged() (*AnalyticsFetcher, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, s.Grouping, "changesets.created_at")
+func (s *BbtchChbnges) ChbngesetsMerged() (*AnblyticsFetcher, error) {
+	dbteTruncExp, dbteBetweenCond, err := mbkeDbtePbrbmeters(s.DbteRbnge, s.Grouping, "chbngesets.crebted_bt")
 	if err != nil {
 		return nil, err
 	}
 
-	nodesQuery := sqlf.Sprintf(changesetsMergedNodesQuery, dateTruncExp, dateBetweenCond, mergeEventKinds)
-	summaryQuery := sqlf.Sprintf(changesetsMergedSummaryQuery, dateBetweenCond, mergeEventKinds)
+	nodesQuery := sqlf.Sprintf(chbngesetsMergedNodesQuery, dbteTruncExp, dbteBetweenCond, mergeEventKinds)
+	summbryQuery := sqlf.Sprintf(chbngesetsMergedSummbryQuery, dbteBetweenCond, mergeEventKinds)
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           s.DB,
-		dateRange:    s.DateRange,
+		dbteRbnge:    s.DbteRbnge,
 		grouping:     s.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "BatchChanges:ChangesetsMerged",
-		cache:        s.Cache,
+		summbryQuery: summbryQuery,
+		group:        "BbtchChbnges:ChbngesetsMerged",
+		cbche:        s.Cbche,
 	}, nil
 }
 
-func (s *BatchChanges) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.ChangesetsCreated, s.ChangesetsMerged}
-	for _, buildFetcher := range fetcherBuilders {
+func (s *BbtchChbnges) CbcheAll(ctx context.Context) error {
+	fetcherBuilders := []func() (*AnblyticsFetcher, error){s.ChbngesetsCrebted, s.ChbngesetsMerged}
+	for _, buildFetcher := rbnge fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {
 			return err
@@ -125,7 +125,7 @@ func (s *BatchChanges) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.Summary(ctx); err != nil {
+		if _, err := fetcher.Summbry(ctx); err != nil {
 			return err
 		}
 	}

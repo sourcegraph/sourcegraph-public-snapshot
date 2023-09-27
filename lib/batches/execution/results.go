@@ -1,75 +1,75 @@
-package execution
+pbckbge execution
 
 import (
 	"encoding/json"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
 )
 
-// AfterStepResult is the execution result after executing a step with the given
+// AfterStepResult is the execution result bfter executing b step with the given
 // index in Steps.
 type AfterStepResult struct {
 	Version int `json:"version"`
-	// Files are the changes made to Files by the step.
-	ChangedFiles git.Changes `json:"changedFiles"`
-	// Stdout is the output produced by the step on standard out.
+	// Files bre the chbnges mbde to Files by the step.
+	ChbngedFiles git.Chbnges `json:"chbngedFiles"`
+	// Stdout is the output produced by the step on stbndbrd out.
 	Stdout string `json:"stdout"`
-	// Stderr is the output produced by the step on standard error.
+	// Stderr is the output produced by the step on stbndbrd error.
 	Stderr string `json:"stderr"`
 	// StepIndex is the index of the step in the list of steps.
 	StepIndex int `json:"stepIndex"`
-	// Diff is the cumulative `git diff` after executing the Step.
+	// Diff is the cumulbtive `git diff` bfter executing the Step.
 	Diff []byte `json:"diff"`
-	// Outputs is a copy of the Outputs after executing the Step.
-	Outputs map[string]any `json:"outputs"`
-	// Skipped determines whether the step was skipped.
+	// Outputs is b copy of the Outputs bfter executing the Step.
+	Outputs mbp[string]bny `json:"outputs"`
+	// Skipped determines whether the step wbs skipped.
 	Skipped bool `json:"skipped"`
 }
 
-func (a AfterStepResult) MarshalJSON() ([]byte, error) {
-	if a.Version == 2 {
-		return json.Marshal(v2AfterStepResult(a))
+func (b AfterStepResult) MbrshblJSON() ([]byte, error) {
+	if b.Version == 2 {
+		return json.Mbrshbl(v2AfterStepResult(b))
 	}
-	return json.Marshal(v1AfterStepResult{
-		ChangedFiles: a.ChangedFiles,
-		Stdout:       a.Stdout,
-		Stderr:       a.Stderr,
-		StepIndex:    a.StepIndex,
-		Diff:         string(a.Diff),
-		Outputs:      a.Outputs,
+	return json.Mbrshbl(v1AfterStepResult{
+		ChbngedFiles: b.ChbngedFiles,
+		Stdout:       b.Stdout,
+		Stderr:       b.Stderr,
+		StepIndex:    b.StepIndex,
+		Diff:         string(b.Diff),
+		Outputs:      b.Outputs,
 	})
 }
 
-func (a *AfterStepResult) UnmarshalJSON(data []byte) error {
-	var version versionAfterStepResult
-	if err := json.Unmarshal(data, &version); err != nil {
+func (b *AfterStepResult) UnmbrshblJSON(dbtb []byte) error {
+	vbr version versionAfterStepResult
+	if err := json.Unmbrshbl(dbtb, &version); err != nil {
 		return err
 	}
 	if version.Version == 2 {
-		var v2 v2AfterStepResult
-		if err := json.Unmarshal(data, &v2); err != nil {
+		vbr v2 v2AfterStepResult
+		if err := json.Unmbrshbl(dbtb, &v2); err != nil {
 			return err
 		}
-		a.Version = v2.Version
-		a.ChangedFiles = v2.ChangedFiles
-		a.Stdout = v2.Stdout
-		a.Stderr = v2.Stderr
-		a.StepIndex = v2.StepIndex
-		a.Diff = v2.Diff
-		a.Outputs = v2.Outputs
-		a.Skipped = v2.Skipped
+		b.Version = v2.Version
+		b.ChbngedFiles = v2.ChbngedFiles
+		b.Stdout = v2.Stdout
+		b.Stderr = v2.Stderr
+		b.StepIndex = v2.StepIndex
+		b.Diff = v2.Diff
+		b.Outputs = v2.Outputs
+		b.Skipped = v2.Skipped
 		return nil
 	}
-	var v1 v1AfterStepResult
-	if err := json.Unmarshal(data, &v1); err != nil {
+	vbr v1 v1AfterStepResult
+	if err := json.Unmbrshbl(dbtb, &v1); err != nil {
 		return err
 	}
-	a.ChangedFiles = v1.ChangedFiles
-	a.Stdout = v1.Stdout
-	a.Stderr = v1.Stderr
-	a.StepIndex = v1.StepIndex
-	a.Diff = []byte(v1.Diff)
-	a.Outputs = v1.Outputs
+	b.ChbngedFiles = v1.ChbngedFiles
+	b.Stdout = v1.Stdout
+	b.Stderr = v1.Stderr
+	b.StepIndex = v1.StepIndex
+	b.Diff = []byte(v1.Diff)
+	b.Outputs = v1.Outputs
 	return nil
 }
 
@@ -79,20 +79,20 @@ type versionAfterStepResult struct {
 
 type v2AfterStepResult struct {
 	Version      int            `json:"version"`
-	ChangedFiles git.Changes    `json:"changedFiles"`
+	ChbngedFiles git.Chbnges    `json:"chbngedFiles"`
 	Stdout       string         `json:"stdout"`
 	Stderr       string         `json:"stderr"`
 	StepIndex    int            `json:"stepIndex"`
 	Diff         []byte         `json:"diff"`
-	Outputs      map[string]any `json:"outputs"`
+	Outputs      mbp[string]bny `json:"outputs"`
 	Skipped      bool           `json:"skipped"`
 }
 
 type v1AfterStepResult struct {
-	ChangedFiles git.Changes    `json:"changedFiles"`
+	ChbngedFiles git.Chbnges    `json:"chbngedFiles"`
 	Stdout       string         `json:"stdout"`
 	Stderr       string         `json:"stderr"`
 	StepIndex    int            `json:"stepIndex"`
 	Diff         string         `json:"diff"`
-	Outputs      map[string]any `json:"outputs"`
+	Outputs      mbp[string]bny `json:"outputs"`
 }

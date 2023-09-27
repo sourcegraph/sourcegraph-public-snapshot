@@ -1,491 +1,491 @@
-package codeowners_test
+pbckbge codeowners_test
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/own/codeowners"
-	codeownerspb "github.com/sourcegraph/sourcegraph/internal/own/codeowners/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners"
+	codeownerspb "github.com/sourcegrbph/sourcegrbph/internbl/own/codeowners/v1"
 )
 
-type testCase struct {
-	pattern string
-	paths   []string
+type testCbse struct {
+	pbttern string
+	pbths   []string
 }
 
-func TestFileOwnersMatch(t *testing.T) {
-	cases := []testCase{
+func TestFileOwnersMbtch(t *testing.T) {
+	cbses := []testCbse{
 		{
-			pattern: "filename",
-			paths: []string{
-				"/filename",
-				"/prefix/filename",
+			pbttern: "filenbme",
+			pbths: []string{
+				"/filenbme",
+				"/prefix/filenbme",
 			},
 		},
 		{
-			pattern: "*.md",
-			paths: []string{
+			pbttern: "*.md",
+			pbths: []string{
 				"/README.md",
 				"/README.md.md",
 				"/nested/index.md",
-				"/weird/but/matching/.md",
+				"/weird/but/mbtching/.md",
 			},
 		},
 		{
-			// Regex components are interpreted literally.
-			pattern: "[^a-z].md",
-			paths: []string{
-				"/[^a-z].md",
-				"/nested/[^a-z].md",
+			// Regex components bre interpreted literblly.
+			pbttern: "[^b-z].md",
+			pbths: []string{
+				"/[^b-z].md",
+				"/nested/[^b-z].md",
 			},
 		},
 		{
-			pattern: "foo*bar*baz",
-			paths: []string{
-				"/foobarbaz",
-				"/foo-bar-baz",
-				"/foobarbazfoobarbazfoobarbaz",
+			pbttern: "foo*bbr*bbz",
+			pbths: []string{
+				"/foobbrbbz",
+				"/foo-bbr-bbz",
+				"/foobbrbbzfoobbrbbzfoobbrbbz",
 			},
 		},
 		{
-			pattern: "directory/path/",
-			paths: []string{
-				"/directory/path/file",
-				"/directory/path/deeply/nested/file",
-				"/prefix/directory/path/file",
-				"/prefix/directory/path/deeply/nested/file",
+			pbttern: "directory/pbth/",
+			pbths: []string{
+				"/directory/pbth/file",
+				"/directory/pbth/deeply/nested/file",
+				"/prefix/directory/pbth/file",
+				"/prefix/directory/pbth/deeply/nested/file",
 			},
 		},
 		{
-			pattern: "directory/path/**",
-			paths: []string{
-				"/directory/path/file",
-				"/directory/path/deeply/nested/file",
-				"/prefix/directory/path/file",
-				"/prefix/directory/path/deeply/nested/file",
+			pbttern: "directory/pbth/**",
+			pbths: []string{
+				"/directory/pbth/file",
+				"/directory/pbth/deeply/nested/file",
+				"/prefix/directory/pbth/file",
+				"/prefix/directory/pbth/deeply/nested/file",
 			},
 		},
 		{
-			pattern: "directory/*",
-			paths: []string{
+			pbttern: "directory/*",
+			pbths: []string{
 				"/directory/file",
-				"/prefix/directory/another_file",
+				"/prefix/directory/bnother_file",
 			},
 		},
 		{
-			pattern: "/toplevelfile",
-			paths: []string{
+			pbttern: "/toplevelfile",
+			pbths: []string{
 				"/toplevelfile",
 			},
 		},
 		{
-			pattern: "/main/src/**/README.md",
-			paths: []string{
-				"/main/src/README.md",
-				"/main/src/foo/bar/README.md",
+			pbttern: "/mbin/src/**/README.md",
+			pbths: []string{
+				"/mbin/src/README.md",
+				"/mbin/src/foo/bbr/README.md",
 			},
 		},
-		// Literal absolute match.
+		// Literbl bbsolute mbtch.
 		{
-			pattern: "/main/src/README.md",
-			paths: []string{
-				"/main/src/README.md",
+			pbttern: "/mbin/src/README.md",
+			pbths: []string{
+				"/mbin/src/README.md",
 			},
 		},
-		// Without a leading `/` still matches correctly.
+		// Without b lebding `/` still mbtches correctly.
 		{
-			pattern: "/main/src/README.md",
-			paths: []string{
-				"main/src/README.md",
+			pbttern: "/mbin/src/README.md",
+			pbths: []string{
+				"mbin/src/README.md",
 			},
 		},
 	}
-	for _, c := range cases {
-		for _, path := range c.paths {
-			pattern := c.pattern
+	for _, c := rbnge cbses {
+		for _, pbth := rbnge c.pbths {
+			pbttern := c.pbttern
 			owner := []*codeownerspb.Owner{
-				{Handle: "foo"},
+				{Hbndle: "foo"},
 			}
 			rs := codeowners.NewRuleset(
 				codeowners.IngestedRulesetSource{},
 				&codeownerspb.File{
 					Rule: []*codeownerspb.Rule{
-						{Pattern: pattern, Owner: owner},
+						{Pbttern: pbttern, Owner: owner},
 					},
 				},
 			)
-			got := rs.Match(path)
-			if !reflect.DeepEqual(got.GetOwner(), owner) {
-				t.Errorf("want %q to match %q", pattern, path)
+			got := rs.Mbtch(pbth)
+			if !reflect.DeepEqubl(got.GetOwner(), owner) {
+				t.Errorf("wbnt %q to mbtch %q", pbttern, pbth)
 			}
 		}
 	}
 }
 
-func TestFileOwnersNoMatch(t *testing.T) {
-	cases := []testCase{
+func TestFileOwnersNoMbtch(t *testing.T) {
+	cbses := []testCbse{
 		{
-			pattern: "filename",
-			paths: []string{
-				"/prefix_filename_suffix",
-				"/src/prefix_filename",
-				"/finemale/nested",
+			pbttern: "filenbme",
+			pbths: []string{
+				"/prefix_filenbme_suffix",
+				"/src/prefix_filenbme",
+				"/finemble/nested",
 			},
 		},
 		{
-			pattern: "*.md",
-			paths: []string{
+			pbttern: "*.md",
+			pbths: []string{
 				"/README.mdf",
-				"/not/matching/without/the/dot/md",
+				"/not/mbtching/without/the/dot/md",
 			},
 		},
 		{
-			// Regex components are interpreted literally.
-			pattern: "[^a-z].md",
-			paths: []string{
+			// Regex components bre interpreted literblly.
+			pbttern: "[^b-z].md",
+			pbths: []string{
 				"/-.md",
 				"/nested/%.md",
 			},
 		},
 		{
-			pattern: "foo*bar*baz",
-			paths: []string{
-				"/foo-ba-baz",
-				"/foobarbaz.md",
+			pbttern: "foo*bbr*bbz",
+			pbths: []string{
+				"/foo-bb-bbz",
+				"/foobbrbbz.md",
 			},
 		},
 		{
-			pattern: "directory/leaf/",
-			paths: []string{
-				// These do not match as the right-most directory name `leaf`
-				// is just a prefix to the corresponding directory on the given path.
-				"/directory/leaf_and_more/file",
-				"/prefix/directory/leaf_and_more/file",
-				// These do not match as the pattern matches anything within
+			pbttern: "directory/lebf/",
+			pbths: []string{
+				// These do not mbtch bs the right-most directory nbme `lebf`
+				// is just b prefix to the corresponding directory on the given pbth.
+				"/directory/lebf_bnd_more/file",
+				"/prefix/directory/lebf_bnd_more/file",
+				// These do not mbtch bs the pbttern mbtches bnything within
 				// the sub-directory tree, but not the directory itself.
-				"/directory/leaf",
-				"/prefix/directory/leaf",
+				"/directory/lebf",
+				"/prefix/directory/lebf",
 			},
 		},
 		{
-			pattern: "directory/leaf/**",
-			paths: []string{
-				// These do not match as the right-most directory name `leaf`
-				// is just a prefix to the corresponding directory on the given path.
-				"/directory/leaf_and_more/file",
-				"/prefix/directory/leaf_and_more/file",
-				// These do not match as the pattern matches anything within
+			pbttern: "directory/lebf/**",
+			pbths: []string{
+				// These do not mbtch bs the right-most directory nbme `lebf`
+				// is just b prefix to the corresponding directory on the given pbth.
+				"/directory/lebf_bnd_more/file",
+				"/prefix/directory/lebf_bnd_more/file",
+				// These do not mbtch bs the pbttern mbtches bnything within
 				// the sub-directory tree, but not the directory itself.
-				"/directory/leaf",
-				"/prefix/directory/leaf",
+				"/directory/lebf",
+				"/prefix/directory/lebf",
 			},
 		},
 		{
-			pattern: "directory/*",
-			paths: []string{
+			pbttern: "directory/*",
+			pbths: []string{
 				"/directory/nested/file",
 				"/directory/deeply/nested/file",
 			},
 		},
 		{
-			pattern: "/toplevelfile",
-			paths: []string{
+			pbttern: "/toplevelfile",
+			pbths: []string{
 				"/toplevelfile/nested",
-				"/notreally/toplevelfile",
+				"/notreblly/toplevelfile",
 			},
 		},
 		{
-			pattern: "/main/src/**/README.md",
-			paths: []string{
-				"/main/src/README.mdf",
-				"/main/src/README.md/looks-like-a-file-but-was-dir",
-				"/main/src/foo/bar/README.mdf",
-				"/nested/main/src/README.md",
-				"/nested/main/src/foo/bar/README.md",
+			pbttern: "/mbin/src/**/README.md",
+			pbths: []string{
+				"/mbin/src/README.mdf",
+				"/mbin/src/README.md/looks-like-b-file-but-wbs-dir",
+				"/mbin/src/foo/bbr/README.mdf",
+				"/nested/mbin/src/README.md",
+				"/nested/mbin/src/foo/bbr/README.md",
 			},
 		},
 	}
-	for _, c := range cases {
-		for _, path := range c.paths {
-			pattern := c.pattern
+	for _, c := rbnge cbses {
+		for _, pbth := rbnge c.pbths {
+			pbttern := c.pbttern
 			owner := []*codeownerspb.Owner{
-				{Handle: "foo"},
+				{Hbndle: "foo"},
 			}
 			rs := codeowners.NewRuleset(
 				codeowners.IngestedRulesetSource{},
 				&codeownerspb.File{
 					Rule: []*codeownerspb.Rule{
-						{Pattern: pattern, Owner: owner},
+						{Pbttern: pbttern, Owner: owner},
 					},
 				},
 			)
-			got := rs.Match(path)
+			got := rs.Mbtch(pbth)
 			if got.GetOwner() != nil {
-				t.Errorf("want %q not to match %q", pattern, path)
+				t.Errorf("wbnt %q not to mbtch %q", pbttern, pbth)
 			}
 		}
 	}
 }
 
 func TestFileOwnersOrder(t *testing.T) {
-	wantOwner := []*codeownerspb.Owner{{Handle: "some-path-owner"}}
+	wbntOwner := []*codeownerspb.Owner{{Hbndle: "some-pbth-owner"}}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
 				{
-					Pattern: "/top-level-directory/",
-					Owner:   []*codeownerspb.Owner{{Handle: "top-level-owner"}},
+					Pbttern: "/top-level-directory/",
+					Owner:   []*codeownerspb.Owner{{Hbndle: "top-level-owner"}},
 				},
-				// The owner of the last matching pattern is being picked
+				// The owner of the lbst mbtching pbttern is being picked
 				{
-					Pattern: "some/path/*",
-					Owner:   wantOwner,
+					Pbttern: "some/pbth/*",
+					Owner:   wbntOwner,
 				},
 				{
-					Pattern: "does/not/match",
-					Owner:   []*codeownerspb.Owner{{Handle: "not-matching-owner"}},
+					Pbttern: "does/not/mbtch",
+					Owner:   []*codeownerspb.Owner{{Hbndle: "not-mbtching-owner"}},
 				},
 			},
 		})
-	got := rs.Match("/top-level-directory/some/path/main.go")
-	assert.Equal(t, wantOwner, got.GetOwner())
+	got := rs.Mbtch("/top-level-directory/some/pbth/mbin.go")
+	bssert.Equbl(t, wbntOwner, got.GetOwner())
 }
 
-func BenchmarkOwnersMatchLiteral(b *testing.B) {
-	pattern := "/main/src/foo/bar/README.md"
-	paths := []string{
-		"/main/src/foo/bar/README.md",
+func BenchmbrkOwnersMbtchLiterbl(b *testing.B) {
+	pbttern := "/mbin/src/foo/bbr/README.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.md",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMatchRelativeGlob(b *testing.B) {
-	pattern := "**/*.md"
-	paths := []string{
-		"/main/src/foo/bar/README.md",
+func BenchmbrkOwnersMbtchRelbtiveGlob(b *testing.B) {
+	pbttern := "**/*.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.md",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMatchAbsoluteGlob(b *testing.B) {
-	pattern := "/main/**/*.md"
-	paths := []string{
-		"/main/src/foo/bar/README.md",
+func BenchmbrkOwnersMbtchAbsoluteGlob(b *testing.B) {
+	pbttern := "/mbin/**/*.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.md",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMismatchLiteral(b *testing.B) {
-	pattern := "/main/src/foo/bar/README.md"
-	paths := []string{
-		"/main/src/foo/bar/README.txt",
+func BenchmbrkOwnersMismbtchLiterbl(b *testing.B) {
+	pbttern := "/mbin/src/foo/bbr/README.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.txt",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMismatchRelativeGlob(b *testing.B) {
-	pattern := "**/*.md"
-	paths := []string{
-		"/main/src/foo/bar/README.txt",
+func BenchmbrkOwnersMismbtchRelbtiveGlob(b *testing.B) {
+	pbttern := "**/*.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.txt",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMismatchAbsoluteGlob(b *testing.B) {
-	pattern := "/main/**/*.md"
-	paths := []string{
-		"/main/src/foo/bar/README.txt",
+func BenchmbrkOwnersMismbtchAbsoluteGlob(b *testing.B) {
+	pbttern := "/mbin/**/*.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.txt",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMatchMultiHole(b *testing.B) {
-	pattern := "/main/**/foo/**/*.md"
-	paths := []string{
-		"/main/src/foo/bar/README.md",
+func BenchmbrkOwnersMbtchMultiHole(b *testing.B) {
+	pbttern := "/mbin/**/foo/**/*.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.md",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMismatchMultiHole(b *testing.B) {
-	pattern := "/main/**/foo/**/*.md"
-	paths := []string{
-		"/main/src/foo/bar/README.txt",
+func BenchmbrkOwnersMismbtchMultiHole(b *testing.B) {
+	pbttern := "/mbin/**/foo/**/*.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.txt",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	rs := codeowners.NewRuleset(
 		codeowners.IngestedRulesetSource{},
 		&codeownerspb.File{
 			Rule: []*codeownerspb.Rule{
-				{Pattern: pattern, Owner: owner},
+				{Pbttern: pbttern, Owner: owner},
 			},
 		},
 	)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }
 
-func BenchmarkOwnersMatchLiteralLargeRuleset(b *testing.B) {
-	pattern := "/main/src/foo/bar/README.md"
-	paths := []string{
-		"/main/src/foo/bar/README.md",
+func BenchmbrkOwnersMbtchLiterblLbrgeRuleset(b *testing.B) {
+	pbttern := "/mbin/src/foo/bbr/README.md"
+	pbths := []string{
+		"/mbin/src/foo/bbr/README.md",
 	}
 	owner := []*codeownerspb.Owner{
-		{Handle: "foo"},
+		{Hbndle: "foo"},
 	}
 	f := &codeownerspb.File{
 		Rule: []*codeownerspb.Rule{
-			{Pattern: pattern, Owner: owner},
+			{Pbttern: pbttern, Owner: owner},
 		},
 	}
 	for i := 0; i < 10000; i++ {
-		f.Rule = append(f.Rule, &codeownerspb.Rule{Pattern: fmt.Sprintf("%s-%d", pattern, i), Owner: owner})
+		f.Rule = bppend(f.Rule, &codeownerspb.Rule{Pbttern: fmt.Sprintf("%s-%d", pbttern, i), Owner: owner})
 	}
 	rs := codeowners.NewRuleset(codeowners.IngestedRulesetSource{}, f)
-	// Warm cache.
-	for _, path := range paths {
-		rs.Match(path)
+	// Wbrm cbche.
+	for _, pbth := rbnge pbths {
+		rs.Mbtch(pbth)
 	}
 
 	for i := 0; i < b.N; i++ {
-		rs.Match(pattern)
+		rs.Mbtch(pbttern)
 	}
 }

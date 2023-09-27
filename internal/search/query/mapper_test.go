@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"testing"
@@ -6,38 +6,38 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestMapOperator(t *testing.T) {
+func TestMbpOperbtor(t *testing.T) {
 	input := []Node{
-		Operator{
+		Operbtor{
 			Kind: And,
-			Operands: []Node{
-				Parameter{Field: "repo", Value: "github.com/saucegraph/saucegraph"},
-				Pattern{Value: "pasta_sauce"},
+			Operbnds: []Node{
+				Pbrbmeter{Field: "repo", Vblue: "github.com/sbucegrbph/sbucegrbph"},
+				Pbttern{Vblue: "pbstb_sbuce"},
 			},
 		},
 	}
-	want := input
-	got := MapOperator(input, func(kind OperatorKind, operands []Node) []Node {
-		return NewOperator(NewOperator(NewOperator(operands, kind), And), Or)
+	wbnt := input
+	got := MbpOperbtor(input, func(kind OperbtorKind, operbnds []Node) []Node {
+		return NewOperbtor(NewOperbtor(NewOperbtor(operbnds, kind), And), Or)
 	})
-	if diff := cmp.Diff(want, got); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, got); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestMapField(t *testing.T) {
-	input := Parameter{Field: "before", Value: "today"}
-	want := Operator{
+func TestMbpField(t *testing.T) {
+	input := Pbrbmeter{Field: "before", Vblue: "todby"}
+	wbnt := Operbtor{
 		Kind: Or,
-		Operands: []Node{
-			Parameter{Field: "before", Value: "yesterday"},
-			Parameter{Field: "after", Value: "yesterday"},
+		Operbnds: []Node{
+			Pbrbmeter{Field: "before", Vblue: "yesterdby"},
+			Pbrbmeter{Field: "bfter", Vblue: "yesterdby"},
 		},
 	}
-	got := MapField([]Node{input}, "before", func(_ string, _ bool, _ Annotation) Node {
-		return want
+	got := MbpField([]Node{input}, "before", func(_ string, _ bool, _ Annotbtion) Node {
+		return wbnt
 	})
-	if diff := cmp.Diff(want, got[0]); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, got[0]); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

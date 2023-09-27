@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,262 +7,262 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestBatchChangeResolver(t *testing.T) {
+func TestBbtchChbngeResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	orgName := "test-batch-change-resolver-org"
-	orgID := bt.CreateTestOrg(t, db, orgName).ID
+	userID := bt.CrebteTestUser(t, db, true).ID
+	orgNbme := "test-bbtch-chbnge-resolver-org"
+	orgID := bt.CrebteTestOrg(t, db, orgNbme).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	batchSpec := &btypes.BatchSpec{
-		RawSpec:        bt.TestRawBatchSpec,
+	bbtchSpec := &btypes.BbtchSpec{
+		RbwSpec:        bt.TestRbwBbtchSpec,
 		UserID:         userID,
-		NamespaceOrgID: orgID,
+		NbmespbceOrgID: orgID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
-	}
-
-	batchChange := &btypes.BatchChange{
-		Name:           "my-unique-name",
-		Description:    "The batch change description",
-		NamespaceOrgID: orgID,
-		CreatorID:      userID,
-		LastApplierID:  userID,
-		LastAppliedAt:  now,
-		BatchSpecID:    batchSpec.ID,
-	}
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	bbtchChbnge := &btypes.BbtchChbnge{
+		Nbme:           "my-unique-nbme",
+		Description:    "The bbtch chbnge description",
+		NbmespbceOrgID: orgID,
+		CrebtorID:      userID,
+		LbstApplierID:  userID,
+		LbstAppliedAt:  now,
+		BbtchSpecID:    bbtchSpec.ID,
+	}
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+		t.Fbtbl(err)
+	}
+
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
-	namespaceAPIID := string(graphqlbackend.MarshalOrgID(orgID))
-	apiUser := &apitest.User{DatabaseID: userID, SiteAdmin: true}
-	wantBatchChange := apitest.BatchChange{
-		ID:            batchChangeAPIID,
-		Name:          batchChange.Name,
-		Description:   batchChange.Description,
-		State:         btypes.BatchChangeStateOpen,
-		Namespace:     apitest.UserOrg{ID: namespaceAPIID, Name: orgName},
-		Creator:       apiUser,
-		LastApplier:   apiUser,
-		LastAppliedAt: marshalDateTime(t, now),
-		URL:           fmt.Sprintf("/organizations/%s/batch-changes/%s", orgName, batchChange.Name),
-		CreatedAt:     marshalDateTime(t, now),
-		UpdatedAt:     marshalDateTime(t, now),
+	bbtchChbngeAPIID := string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))
+	nbmespbceAPIID := string(grbphqlbbckend.MbrshblOrgID(orgID))
+	bpiUser := &bpitest.User{DbtbbbseID: userID, SiteAdmin: true}
+	wbntBbtchChbnge := bpitest.BbtchChbnge{
+		ID:            bbtchChbngeAPIID,
+		Nbme:          bbtchChbnge.Nbme,
+		Description:   bbtchChbnge.Description,
+		Stbte:         btypes.BbtchChbngeStbteOpen,
+		Nbmespbce:     bpitest.UserOrg{ID: nbmespbceAPIID, Nbme: orgNbme},
+		Crebtor:       bpiUser,
+		LbstApplier:   bpiUser,
+		LbstAppliedAt: mbrshblDbteTime(t, now),
+		URL:           fmt.Sprintf("/orgbnizbtions/%s/bbtch-chbnges/%s", orgNbme, bbtchChbnge.Nbme),
+		CrebtedAt:     mbrshblDbteTime(t, now),
+		UpdbtedAt:     mbrshblDbteTime(t, now),
 		// Not closed.
 		ClosedAt: "",
 	}
 
-	input := map[string]any{"batchChange": batchChangeAPIID}
+	input := mbp[string]bny{"bbtchChbnge": bbtchChbngeAPIID}
 	{
-		var response struct{ Node apitest.BatchChange }
-		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
+		vbr response struct{ Node bpitest.BbtchChbnge }
+		bpitest.MustExec(ctx, t, s, input, &response, queryBbtchChbnge)
 
-		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBbtchChbnge, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 	}
-	// Test resolver by namespace and name
-	byNameInput := map[string]any{"name": batchChange.Name, "namespace": namespaceAPIID}
+	// Test resolver by nbmespbce bnd nbme
+	byNbmeInput := mbp[string]bny{"nbme": bbtchChbnge.Nbme, "nbmespbce": nbmespbceAPIID}
 	{
-		var response struct{ BatchChange apitest.BatchChange }
-		apitest.MustExec(ctx, t, s, byNameInput, &response, queryBatchChangeByName)
+		vbr response struct{ BbtchChbnge bpitest.BbtchChbnge }
+		bpitest.MustExec(ctx, t, s, byNbmeInput, &response, queryBbtchChbngeByNbme)
 
-		if diff := cmp.Diff(wantBatchChange, response.BatchChange); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBbtchChbnge, response.BbtchChbnge); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	// Now soft-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(logger, bstore).Delete(ctx, userID)
+	// Now soft-delete the user bnd check we cbn still bccess the bbtch chbnge in the org nbmespbce.
+	err = dbtbbbse.UsersWith(logger, bstore).Delete(ctx, userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantBatchChange.Creator = nil
-	wantBatchChange.LastApplier = nil
+	wbntBbtchChbnge.Crebtor = nil
+	wbntBbtchChbnge.LbstApplier = nil
 
 	{
-		var response struct{ Node apitest.BatchChange }
-		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
+		vbr response struct{ Node bpitest.BbtchChbnge }
+		bpitest.MustExec(ctx, t, s, input, &response, queryBbtchChbnge)
 
-		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBbtchChbnge, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	// Now hard-delete the user and check we can still access the batch change in the org namespace.
-	err = database.UsersWith(logger, bstore).HardDelete(ctx, userID)
+	// Now hbrd-delete the user bnd check we cbn still bccess the bbtch chbnge in the org nbmespbce.
+	err = dbtbbbse.UsersWith(logger, bstore).HbrdDelete(ctx, userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	{
-		var response struct{ Node apitest.BatchChange }
-		apitest.MustExec(ctx, t, s, input, &response, queryBatchChange)
+		vbr response struct{ Node bpitest.BbtchChbnge }
+		bpitest.MustExec(ctx, t, s, input, &response, queryBbtchChbnge)
 
-		if diff := cmp.Diff(wantBatchChange, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBbtchChbnge, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestBatchChangeResolver_BatchSpecs(t *testing.T) {
+func TestBbtchChbngeResolver_BbtchSpecs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
-	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	userID := bt.CrebteTestUser(t, db, fblse).ID
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Non-created-from-raw, attached to batch change
-	batchSpec1, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	// Non-crebted-from-rbw, bttbched to bbtch chbnge
+	bbtchSpec1, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	batchSpec1.UserID = userID
-	batchSpec1.NamespaceUserID = userID
+	bbtchSpec1.UserID = userID
+	bbtchSpec1.NbmespbceUserID = userID
 
-	// Non-created-from-raw, not attached to batch change
-	batchSpec2, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	// Non-crebted-from-rbw, not bttbched to bbtch chbnge
+	bbtchSpec2, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	batchSpec2.UserID = userID
-	batchSpec2.NamespaceUserID = userID
+	bbtchSpec2.UserID = userID
+	bbtchSpec2.NbmespbceUserID = userID
 
-	// created-from-raw, not attached to batch change
-	batchSpec3, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	// crebted-from-rbw, not bttbched to bbtch chbnge
+	bbtchSpec3, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	batchSpec3.UserID = userID
-	batchSpec3.NamespaceUserID = userID
-	batchSpec3.CreatedFromRaw = true
+	bbtchSpec3.UserID = userID
+	bbtchSpec3.NbmespbceUserID = userID
+	bbtchSpec3.CrebtedFromRbw = true
 
-	for _, bs := range []*btypes.BatchSpec{batchSpec1, batchSpec2, batchSpec3} {
-		if err := bstore.CreateBatchSpec(ctx, bs); err != nil {
-			t.Fatal(err)
+	for _, bs := rbnge []*btypes.BbtchSpec{bbtchSpec1, bbtchSpec2, bbtchSpec3} {
+		if err := bstore.CrebteBbtchSpec(ctx, bs); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	batchChange := &btypes.BatchChange{
-		// They all have the same name/description
-		Name:        batchSpec1.Spec.Name,
-		Description: batchSpec1.Spec.Description,
+	bbtchChbnge := &btypes.BbtchChbnge{
+		// They bll hbve the sbme nbme/description
+		Nbme:        bbtchSpec1.Spec.Nbme,
+		Description: bbtchSpec1.Spec.Description,
 
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   now,
-		BatchSpecID:     batchSpec1.ID,
+		NbmespbceUserID: userID,
+		CrebtorID:       userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   now,
+		BbtchSpecID:     bbtchSpec1.ID,
 	}
 
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+		t.Fbtbl(err)
 	}
 
-	assertBatchSpecsInResponse(t, userCtx, s, batchChange.ID, batchSpec1, batchSpec2, batchSpec3)
+	bssertBbtchSpecsInResponse(t, userCtx, s, bbtchChbnge.ID, bbtchSpec1, bbtchSpec2, bbtchSpec3)
 
-	// When viewed as another user we don't want the created-from-raw batch spec to be returned
-	otherUserID := bt.CreateTestUser(t, db, false).ID
-	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
-	assertBatchSpecsInResponse(t, otherUserCtx, s, batchChange.ID, batchSpec1, batchSpec2)
+	// When viewed bs bnother user we don't wbnt the crebted-from-rbw bbtch spec to be returned
+	otherUserID := bt.CrebteTestUser(t, db, fblse).ID
+	otherUserCtx := bctor.WithActor(ctx, bctor.FromUser(otherUserID))
+	bssertBbtchSpecsInResponse(t, otherUserCtx, s, bbtchChbnge.ID, bbtchSpec1, bbtchSpec2)
 }
 
-func assertBatchSpecsInResponse(t *testing.T, ctx context.Context, s *graphql.Schema, batchChangeID int64, wantBatchSpecs ...*btypes.BatchSpec) {
+func bssertBbtchSpecsInResponse(t *testing.T, ctx context.Context, s *grbphql.Schemb, bbtchChbngeID int64, wbntBbtchSpecs ...*btypes.BbtchSpec) {
 	t.Helper()
 
-	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChangeID))
+	bbtchChbngeAPIID := string(bgql.MbrshblBbtchChbngeID(bbtchChbngeID))
 
-	input := map[string]any{
-		"batchChange":                 batchChangeAPIID,
-		"includeLocallyExecutedSpecs": true,
+	input := mbp[string]bny{
+		"bbtchChbnge":                 bbtchChbngeAPIID,
+		"includeLocbllyExecutedSpecs": true,
 	}
 
-	var res struct{ Node apitest.BatchChange }
-	apitest.MustExec(ctx, t, s, input, &res, queryBatchChangeBatchSpecs)
+	vbr res struct{ Node bpitest.BbtchChbnge }
+	bpitest.MustExec(ctx, t, s, input, &res, queryBbtchChbngeBbtchSpecs)
 
-	expectedIDs := make(map[string]struct{}, len(wantBatchSpecs))
-	for _, bs := range wantBatchSpecs {
-		expectedIDs[string(marshalBatchSpecRandID(bs.RandID))] = struct{}{}
+	expectedIDs := mbke(mbp[string]struct{}, len(wbntBbtchSpecs))
+	for _, bs := rbnge wbntBbtchSpecs {
+		expectedIDs[string(mbrshblBbtchSpecRbndID(bs.RbndID))] = struct{}{}
 	}
 
-	if have, want := res.Node.BatchSpecs.TotalCount, len(wantBatchSpecs); have != want {
-		t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
+	if hbve, wbnt := res.Node.BbtchSpecs.TotblCount, len(wbntBbtchSpecs); hbve != wbnt {
+		t.Fbtblf("wrong count of bbtch chbnges returned, wbnt=%d hbve=%d", wbnt, hbve)
 	}
-	if have, want := res.Node.BatchSpecs.TotalCount, len(res.Node.BatchSpecs.Nodes); have != want {
-		t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+	if hbve, wbnt := res.Node.BbtchSpecs.TotblCount, len(res.Node.BbtchSpecs.Nodes); hbve != wbnt {
+		t.Fbtblf("totblCount bnd nodes length don't mbtch, wbnt=%d hbve=%d", wbnt, hbve)
 	}
-	for _, node := range res.Node.BatchSpecs.Nodes {
+	for _, node := rbnge res.Node.BbtchSpecs.Nodes {
 		if _, ok := expectedIDs[node.ID]; !ok {
-			t.Fatalf("received wrong batch change with id %q", node.ID)
+			t.Fbtblf("received wrong bbtch chbnge with id %q", node.ID)
 		}
 	}
 }
 
-const queryBatchChange = `
-fragment u on User { databaseID, siteAdmin }
-fragment o on Org  { id, name }
+const queryBbtchChbnge = `
+frbgment u on User { dbtbbbseID, siteAdmin }
+frbgment o on Org  { id, nbme }
 
-query($batchChange: ID!){
-  node(id: $batchChange) {
-    ... on BatchChange {
-      id, name, description, state
-      creator { ...u }
-      lastApplier    { ...u }
-      lastAppliedAt
-      createdAt
-      updatedAt
+query($bbtchChbnge: ID!){
+  node(id: $bbtchChbnge) {
+    ... on BbtchChbnge {
+      id, nbme, description, stbte
+      crebtor { ...u }
+      lbstApplier    { ...u }
+      lbstAppliedAt
+      crebtedAt
+      updbtedAt
       closedAt
-      namespace {
+      nbmespbce {
         ... on User { ...u }
         ... on Org  { ...o }
       }
@@ -272,20 +272,20 @@ query($batchChange: ID!){
 }
 `
 
-const queryBatchChangeByName = `
-fragment u on User { databaseID, siteAdmin }
-fragment o on Org  { id, name }
+const queryBbtchChbngeByNbme = `
+frbgment u on User { dbtbbbseID, siteAdmin }
+frbgment o on Org  { id, nbme }
 
-query($namespace: ID!, $name: String!){
-  batchChange(namespace: $namespace, name: $name) {
-    id, name, description, state
-    creator { ...u }
-    lastApplier    { ...u }
-    lastAppliedAt
-    createdAt
-    updatedAt
+query($nbmespbce: ID!, $nbme: String!){
+  bbtchChbnge(nbmespbce: $nbmespbce, nbme: $nbme) {
+    id, nbme, description, stbte
+    crebtor { ...u }
+    lbstApplier    { ...u }
+    lbstAppliedAt
+    crebtedAt
+    updbtedAt
     closedAt
-    namespace {
+    nbmespbce {
       ... on User { ...u }
       ... on Org  { ...o }
     }
@@ -294,12 +294,12 @@ query($namespace: ID!, $name: String!){
 }
 `
 
-const queryBatchChangeBatchSpecs = `
-query($batchChange: ID!, $includeLocallyExecutedSpecs: Boolean){
-  node(id: $batchChange) {
-    ... on BatchChange {
+const queryBbtchChbngeBbtchSpecs = `
+query($bbtchChbnge: ID!, $includeLocbllyExecutedSpecs: Boolebn){
+  node(id: $bbtchChbnge) {
+    ... on BbtchChbnge {
       id
-      batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) { totalCount nodes { id } }
+      bbtchSpecs(includeLocbllyExecutedSpecs: $includeLocbllyExecutedSpecs) { totblCount nodes { id } }
     }
   }
 }

@@ -1,50 +1,50 @@
-package searcher
+pbckbge sebrcher
 
 import (
 	"bytes"
 	"encoding/json"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type StreamDecoder struct {
-	OnMatches func([]*protocol.FileMatch)
+type StrebmDecoder struct {
+	OnMbtches func([]*protocol.FileMbtch)
 	OnDone    func(EventDone)
-	OnUnknown func(event, data []byte)
+	OnUnknown func(event, dbtb []byte)
 }
 
-func (rr StreamDecoder) ReadAll(r io.Reader) error {
-	dec := streamhttp.NewDecoder(r)
-	for dec.Scan() {
+func (rr StrebmDecoder) RebdAll(r io.Rebder) error {
+	dec := strebmhttp.NewDecoder(r)
+	for dec.Scbn() {
 		event := dec.Event()
-		data := dec.Data()
-		if bytes.Equal(event, []byte("matches")) {
-			if rr.OnMatches == nil {
+		dbtb := dec.Dbtb()
+		if bytes.Equbl(event, []byte("mbtches")) {
+			if rr.OnMbtches == nil {
 				continue
 			}
-			var d []*protocol.FileMatch
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Wrap(err, "decode matches payload")
+			vbr d []*protocol.FileMbtch
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Wrbp(err, "decode mbtches pbylobd")
 			}
-			rr.OnMatches(d)
-		} else if bytes.Equal(event, []byte("done")) {
+			rr.OnMbtches(d)
+		} else if bytes.Equbl(event, []byte("done")) {
 			if rr.OnDone == nil {
 				continue
 			}
-			var e EventDone
-			if err := json.Unmarshal(data, &e); err != nil {
-				return errors.Wrap(err, "decode done payload")
+			vbr e EventDone
+			if err := json.Unmbrshbl(dbtb, &e); err != nil {
+				return errors.Wrbp(err, "decode done pbylobd")
 			}
 			rr.OnDone(e)
-			break // done will always be the last event
+			brebk // done will blwbys be the lbst event
 		} else {
 			if rr.OnUnknown == nil {
 				continue
 			}
-			rr.OnUnknown(event, data)
+			rr.OnUnknown(event, dbtb)
 		}
 	}
 	return dec.Err()

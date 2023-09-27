@@ -1,1008 +1,1008 @@
-package handler_test
+pbckbge hbndler_test
 
 import (
 	"context"
 	"io"
-	"math"
+	"mbth"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
 	"strings"
 	"testing"
 
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue/handler"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	executorstore "github.com/sourcegraph/sourcegraph/internal/executor/store"
-	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	dbworkerstoremocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue/hbndler"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	executorstore "github.com/sourcegrbph/sourcegrbph/internbl/executor/store"
+	executortypes "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	metricsstore "github.com/sourcegrbph/sourcegrbph/internbl/metrics/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	dbworkerstoremocks "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store/mocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type dequeueEvent struct {
-	queueName            string
-	expectedStatusCode   int
+	queueNbme            string
+	expectedStbtusCode   int
 	expectedResponseBody string
 }
 
-func transformerFunc[T workerutil.Record](ctx context.Context, version string, t T, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
+func trbnsformerFunc[T workerutil.Record](ctx context.Context, version string, t T, resourceMetbdbtb hbndler.ResourceMetbdbtb) (executortypes.Job, error) {
 	return executortypes.Job{ID: t.RecordID()}, nil
 }
 
-type dequeueTestCase struct {
-	name string
+type dequeueTestCbse struct {
+	nbme string
 	body string
 
-	// If this is set, we expect all queues to be empty - otherwise, it's configured on a specific dequeue event
-	// only valid status code for this field is http.StatusNoContent
-	expectedStatusCode int
+	// If this is set, we expect bll queues to be empty - otherwise, it's configured on b specific dequeue event
+	// only vblid stbtus code for this field is http.StbtusNoContent
+	expectedStbtusCode int
 
-	mockFunc      func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
-	assertionFunc func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
+	mockFunc      func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
+	bssertionFunc func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore)
 
 	dequeueEvents            []dequeueEvent
-	codeintelTransformerFunc handler.TransformerFunc[uploadsshared.Index]
-	batchesTransformerFunc   handler.TransformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]
+	codeintelTrbnsformerFunc hbndler.TrbnsformerFunc[uplobdsshbred.Index]
+	bbtchesTrbnsformerFunc   hbndler.TrbnsformerFunc[*btypes.BbtchSpecWorkspbceExecutionJob]
 }
 
-func TestMultiHandler_HandleDequeue(t *testing.T) {
-	tests := []dequeueTestCase{
+func TestMultiHbndler_HbndleDequeue(t *testing.T) {
+	tests := []dequeueTestCbse{
 		{
-			name: "Dequeue one record for each queue",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel", "batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				// QueuedCount gets called for each queue in queues on every invocation of HandleDequeue to filter empty queues,
-				// so two calls are mocked for two dequeue events. Functionally it doesn't really matter what these return, but
-				// for the sake of accuracy, the codeintel store returns 1 less. The batches store returns the same value because
-				// the batches job isn't dequeued until after the second call to QueuedCount.
+			nbme: "Dequeue one record for ebch queue",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel", "bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				// QueuedCount gets cblled for ebch queue in queues on every invocbtion of HbndleDequeue to filter empty queues,
+				// so two cblls bre mocked for two dequeue events. Functionblly it doesn't reblly mbtter whbt these return, but
+				// for the sbke of bccurbcy, the codeintel store returns 1 less. The bbtches store returns the sbme vblue becbuse
+				// the bbtches job isn't dequeued until bfter the second cbll to QueuedCount.
 				codeintelMockStore.QueuedCountFunc.PushReturn(2, nil)
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				batchesMockStore.QueuedCountFunc.PushReturn(2, nil)
-				batchesMockStore.QueuedCountFunc.PushReturn(2, nil)
+				bbtchesMockStore.QueuedCountFunc.PushReturn(2, nil)
+				bbtchesMockStore.QueuedCountFunc.PushReturn(2, nil)
 
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("token1", nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 2}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("token2", nil)
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("token1", nil)
+				bbtchesMockStore.DequeueFunc.PushReturn(&btypes.BbtchSpecWorkspbceExecutionJob{ID: 2}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("token2", nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				require.Len(t, jobTokenStore.CreateFunc.History(), 2)
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 2)
 
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 2)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 2)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 2)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
-				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
-				assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
-				assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
+				bssert.Equbl(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
+				bssert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
+				bssert.Equbl(t, 1, jobTokenStore.CrebteFunc.History()[0].Arg1)
+				bssert.Equbl(t, "codeintel", jobTokenStore.CrebteFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
-				assert.Equal(t, "test-executor", batchesMockStore.DequeueFunc.History()[0].Arg1)
-				assert.Nil(t, batchesMockStore.DequeueFunc.History()[0].Arg2)
-				assert.Equal(t, 2, jobTokenStore.CreateFunc.History()[1].Arg1)
-				assert.Equal(t, "batches", jobTokenStore.CreateFunc.History()[1].Arg2)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 1)
+				bssert.Equbl(t, "test-executor", bbtchesMockStore.DequeueFunc.History()[0].Arg1)
+				bssert.Nil(t, bbtchesMockStore.DequeueFunc.History()[0].Arg2)
+				bssert.Equbl(t, 2, jobTokenStore.CrebteFunc.History()[1].Arg1)
+				bssert.Equbl(t, "bbtches", jobTokenStore.CrebteFunc.History()[1].Arg2)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusOK,
-					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusOK,
+					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryNbme":"","repositoryDirectory":"","commit":"","fetchTbgs":fblse,"shbllowClone":fblse,"spbrseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redbctedVblues":null}`,
 				},
 				{
-					queueName:            "batches",
-					expectedStatusCode:   http.StatusOK,
-					expectedResponseBody: `{"id":2,"token":"token2","queue":"batches","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					queueNbme:            "bbtches",
+					expectedStbtusCode:   http.StbtusOK,
+					expectedResponseBody: `{"id":2,"token":"token2","queue":"bbtches","repositoryNbme":"","repositoryDirectory":"","commit":"","fetchTbgs":fblse,"shbllowClone":fblse,"spbrseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redbctedVblues":null}`,
 				},
 			},
 		},
 		{
-			name: "Dequeue only codeintel record when requesting codeintel queue and batches record exists",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				// On the second event, the queue will be empty and return an empty job
+			nbme: "Dequeue only codeintel record when requesting codeintel queue bnd bbtches record exists",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				// On the second event, the queue will be empty bnd return bn empty job
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				// Mock a non-empty queue that will never be reached because it's not requested in the dequeue body
-				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 2}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("token1", nil)
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				// Mock b non-empty queue thbt will never be rebched becbuse it's not requested in the dequeue body
+				bbtchesMockStore.QueuedCountFunc.PushReturn(1, nil)
+				bbtchesMockStore.DequeueFunc.PushReturn(&btypes.BbtchSpecWorkspbceExecutionJob{ID: 2}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("token1", nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 1)
 
-				// The queue will be empty after the first dequeue event, so no second dequeue happens
+				// The queue will be empty bfter the first dequeue event, so no second dequeue hbppens
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
-				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
-				assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
-				assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
+				bssert.Equbl(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
+				bssert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
+				bssert.Equbl(t, 1, jobTokenStore.CrebteFunc.History()[0].Arg1)
+				bssert.Equbl(t, "codeintel", jobTokenStore.CrebteFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusOK,
-					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusOK,
+					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryNbme":"","repositoryDirectory":"","commit":"","fetchTbgs":fblse,"shbllowClone":fblse,"spbrseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redbctedVblues":null}`,
 				},
 				{
-					queueName:          "batches",
-					expectedStatusCode: http.StatusNoContent,
+					queueNbme:          "bbtches",
+					expectedStbtusCode: http.StbtusNoContent,
 				},
 			},
 		},
 		{
-			name: "Dequeue only codeintel record when requesting both queues and batches record doesn't exists",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel", "batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Dequeue only codeintel record when requesting both queues bnd bbtches record doesn't exists",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel", "bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
 				codeintelMockStore.QueuedCountFunc.PushReturn(0, nil)
-				batchesMockStore.QueuedCountFunc.PushReturn(0, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("token1", nil)
+				bbtchesMockStore.QueuedCountFunc.PushReturn(0, nil)
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("token1", nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 1)
 
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 2)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 2)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 2)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				assert.Equal(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
-				assert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
-				assert.Equal(t, 1, jobTokenStore.CreateFunc.History()[0].Arg1)
-				assert.Equal(t, "codeintel", jobTokenStore.CreateFunc.History()[0].Arg2)
+				bssert.Equbl(t, "test-executor", codeintelMockStore.DequeueFunc.History()[0].Arg1)
+				bssert.Nil(t, codeintelMockStore.DequeueFunc.History()[0].Arg2)
+				bssert.Equbl(t, 1, jobTokenStore.CrebteFunc.History()[0].Arg1)
+				bssert.Equbl(t, "codeintel", jobTokenStore.CrebteFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusOK,
-					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusOK,
+					expectedResponseBody: `{"id":1,"token":"token1","queue":"codeintel","repositoryNbme":"","repositoryDirectory":"","commit":"","fetchTbgs":fblse,"shbllowClone":fblse,"spbrseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redbctedVblues":null}`,
 				},
 				{
-					queueName:          "batches",
-					expectedStatusCode: http.StatusNoContent,
+					queueNbme:          "bbtches",
+					expectedStbtusCode: http.StbtusNoContent,
 				},
 			},
 		},
 		{
-			name: "Nothing to dequeue",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, false, nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, nil)
+			nbme: "Nothing to dequeue",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel","bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{}, fblse, nil)
+				bbtchesMockStore.DequeueFunc.PushReturn(&btypes.BbtchSpecWorkspbceExecutionJob{}, fblse, nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 1)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
-			expectedStatusCode: http.StatusNoContent,
+			expectedStbtusCode: http.StbtusNoContent,
 		},
 		{
-			name: "No queue names provided",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": []}`,
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "No queue nbmes provided",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": []}`,
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
-			expectedStatusCode: http.StatusNoContent,
+			expectedStbtusCode: http.StbtusNoContent,
 		},
 		{
-			name: "Invalid queue name",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["invalidqueue"]}`,
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Invblid queue nbme",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["invblidqueue"]}`,
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"Invalid queue name(s) 'invalidqueue' found. Supported queue names are 'batches, codeintel'."}`,
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"Invblid queue nbme(s) 'invblidqueue' found. Supported queue nbmes bre 'bbtches, codeintel'."}`,
 				},
 			},
 		},
 		{
-			name: "Invalid version",
-			body: `{"executorName": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Invblid version",
+			body: `{"executorNbme": "test-executor", "version":"\n1.2", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel","bbtches"]}`,
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"failed to check version \"\\n1.2\": Invalid Semantic Version"}`,
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"fbiled to check version \"\\n1.2\": Invblid Sembntic Version"}`,
 				},
 			},
 		},
 		{
-			name: "Dequeue error codeintel",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Dequeue error codeintel",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{}, false, errors.New("failed to dequeue"))
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{}, fblse, errors.New("fbiled to dequeue"))
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"dbworkerstore.Dequeue codeintel: failed to dequeue"}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"dbworkerstore.Dequeue codeintel: fbiled to dequeue"}`,
 				},
 			},
 		},
 		{
-			name: "Dequeue error batches",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{}, false, errors.New("failed to dequeue"))
+			nbme: "Dequeue error bbtches",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				bbtchesMockStore.QueuedCountFunc.PushReturn(1, nil)
+				bbtchesMockStore.DequeueFunc.PushReturn(&btypes.BbtchSpecWorkspbceExecutionJob{}, fblse, errors.New("fbiled to dequeue"))
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 1)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "batches",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"dbworkerstore.Dequeue batches: failed to dequeue"}`,
+					queueNbme:            "bbtches",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"dbworkerstore.Dequeue bbtches: fbiled to dequeue"}`,
 				},
 			},
 		},
 		{
-			name: "Failed to transform record codeintel",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Fbiled to trbnsform record codeintel",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				codeintelMockStore.MarkFailedFunc.PushReturn(true, nil)
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				codeintelMockStore.MbrkFbiledFunc.PushReturn(true, nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
-				require.Len(t, codeintelMockStore.MarkFailedFunc.History(), 1)
-				assert.Equal(t, 1, codeintelMockStore.MarkFailedFunc.History()[0].Arg1)
-				assert.Equal(t, "failed to transform record: failed", codeintelMockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, codeintelMockStore.MarkFailedFunc.History()[0].Arg3)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, codeintelMockStore.MbrkFbiledFunc.History(), 1)
+				bssert.Equbl(t, 1, codeintelMockStore.MbrkFbiledFunc.History()[0].Arg1)
+				bssert.Equbl(t, "fbiled to trbnsform record: fbiled", codeintelMockStore.MbrkFbiledFunc.History()[0].Arg2)
+				bssert.Equbl(t, dbworkerstore.MbrkFinblOptions{}, codeintelMockStore.MbrkFbiledFunc.History()[0].Arg3)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RecordTransformer codeintel: failed"}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"RecordTrbnsformer codeintel: fbiled"}`,
 				},
 			},
-			codeintelTransformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-				return executortypes.Job{}, errors.New("failed")
+			codeintelTrbnsformerFunc: func(ctx context.Context, version string, record uplobdsshbred.Index, resourceMetbdbtb hbndler.ResourceMetbdbtb) (executortypes.Job, error) {
+				return executortypes.Job{}, errors.New("fbiled")
 			},
 		},
 		{
-			name: "Failed to transform record batches",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
-				batchesMockStore.MarkFailedFunc.PushReturn(true, nil)
+			nbme: "Fbiled to trbnsform record bbtches",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				bbtchesMockStore.QueuedCountFunc.PushReturn(1, nil)
+				bbtchesMockStore.DequeueFunc.PushReturn(&btypes.BbtchSpecWorkspbceExecutionJob{ID: 1}, true, nil)
+				bbtchesMockStore.MbrkFbiledFunc.PushReturn(true, nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
-				require.Len(t, batchesMockStore.MarkFailedFunc.History(), 1)
-				assert.Equal(t, 1, batchesMockStore.MarkFailedFunc.History()[0].Arg1)
-				assert.Equal(t, "failed to transform record: failed", batchesMockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, batchesMockStore.MarkFailedFunc.History()[0].Arg3)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 1)
+				require.Len(t, bbtchesMockStore.MbrkFbiledFunc.History(), 1)
+				bssert.Equbl(t, 1, bbtchesMockStore.MbrkFbiledFunc.History()[0].Arg1)
+				bssert.Equbl(t, "fbiled to trbnsform record: fbiled", bbtchesMockStore.MbrkFbiledFunc.History()[0].Arg2)
+				bssert.Equbl(t, dbworkerstore.MbrkFinblOptions{}, bbtchesMockStore.MbrkFbiledFunc.History()[0].Arg3)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "batches",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RecordTransformer batches: failed"}`,
+					queueNbme:            "bbtches",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"RecordTrbnsformer bbtches: fbiled"}`,
 				},
 			},
-			batchesTransformerFunc: func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-				return executortypes.Job{}, errors.New("failed")
+			bbtchesTrbnsformerFunc: func(ctx context.Context, version string, record *btypes.BbtchSpecWorkspbceExecutionJob, resourceMetbdbtb hbndler.ResourceMetbdbtb) (executortypes.Job, error) {
+				return executortypes.Job{}, errors.New("fbiled")
 			},
 		},
 		{
-			name: "Failed to mark record as failed codeintel",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Fbiled to mbrk record bs fbiled codeintel",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				codeintelMockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				codeintelMockStore.MbrkFbiledFunc.PushReturn(true, errors.New("fbiled to mbrk"))
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 0)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 0)
-				require.Len(t, codeintelMockStore.MarkFailedFunc.History(), 1)
-				assert.Equal(t, 1, codeintelMockStore.MarkFailedFunc.History()[0].Arg1)
-				assert.Equal(t, "failed to transform record: failed", codeintelMockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, codeintelMockStore.MarkFailedFunc.History()[0].Arg3)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 0)
+				require.Len(t, codeintelMockStore.MbrkFbiledFunc.History(), 1)
+				bssert.Equbl(t, 1, codeintelMockStore.MbrkFbiledFunc.History()[0].Arg1)
+				bssert.Equbl(t, "fbiled to trbnsform record: fbiled", codeintelMockStore.MbrkFbiledFunc.History()[0].Arg2)
+				bssert.Equbl(t, dbworkerstore.MbrkFinblOptions{}, codeintelMockStore.MbrkFbiledFunc.History()[0].Arg3)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RecordTransformer codeintel: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"RecordTrbnsformer codeintel: 2 errors occurred:\n\t* fbiled\n\t* fbiled to mbrk"}`,
 				},
 			},
-			codeintelTransformerFunc: func(ctx context.Context, version string, record uploadsshared.Index, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-				return executortypes.Job{}, errors.New("failed")
+			codeintelTrbnsformerFunc: func(ctx context.Context, version string, record uplobdsshbred.Index, resourceMetbdbtb hbndler.ResourceMetbdbtb) (executortypes.Job, error) {
+				return executortypes.Job{}, errors.New("fbiled")
 			},
 		},
 		{
-			name: "Failed to mark record as failed batches",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				batchesMockStore.QueuedCountFunc.PushReturn(1, nil)
-				batchesMockStore.DequeueFunc.PushReturn(&btypes.BatchSpecWorkspaceExecutionJob{ID: 1}, true, nil)
-				batchesMockStore.MarkFailedFunc.PushReturn(true, errors.New("failed to mark"))
+			nbme: "Fbiled to mbrk record bs fbiled bbtches",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				bbtchesMockStore.QueuedCountFunc.PushReturn(1, nil)
+				bbtchesMockStore.DequeueFunc.PushReturn(&btypes.BbtchSpecWorkspbceExecutionJob{ID: 1}, true, nil)
+				bbtchesMockStore.MbrkFbiledFunc.PushReturn(true, errors.New("fbiled to mbrk"))
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 0)
-				require.Len(t, batchesMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, bbtchesMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 0)
-				require.Len(t, batchesMockStore.DequeueFunc.History(), 1)
-				assert.Equal(t, 1, batchesMockStore.MarkFailedFunc.History()[0].Arg1)
-				assert.Equal(t, "failed to transform record: failed", batchesMockStore.MarkFailedFunc.History()[0].Arg2)
-				assert.Equal(t, dbworkerstore.MarkFinalOptions{}, batchesMockStore.MarkFailedFunc.History()[0].Arg3)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.DequeueFunc.History(), 1)
+				bssert.Equbl(t, 1, bbtchesMockStore.MbrkFbiledFunc.History()[0].Arg1)
+				bssert.Equbl(t, "fbiled to trbnsform record: fbiled", bbtchesMockStore.MbrkFbiledFunc.History()[0].Arg2)
+				bssert.Equbl(t, dbworkerstore.MbrkFinblOptions{}, bbtchesMockStore.MbrkFbiledFunc.History()[0].Arg3)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "batches",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RecordTransformer batches: 2 errors occurred:\n\t* failed\n\t* failed to mark"}`,
+					queueNbme:            "bbtches",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"RecordTrbnsformer bbtches: 2 errors occurred:\n\t* fbiled\n\t* fbiled to mbrk"}`,
 				},
 			},
-			batchesTransformerFunc: func(ctx context.Context, version string, record *btypes.BatchSpecWorkspaceExecutionJob, resourceMetadata handler.ResourceMetadata) (executortypes.Job, error) {
-				return executortypes.Job{}, errors.New("failed")
+			bbtchesTrbnsformerFunc: func(ctx context.Context, version string, record *btypes.BbtchSpecWorkspbceExecutionJob, resourceMetbdbtb hbndler.ResourceMetbdbtb) (executortypes.Job, error) {
+				return executortypes.Job{}, errors.New("fbiled")
 			},
 		},
 		{
-			name: "Failed to create job token",
-			body: `{"executorName": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Fbiled to crebte job token",
+			body: `{"executorNbme": "test-executor", "numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel","bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("", errors.New("failed to create token"))
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("", errors.New("fbiled to crebte token"))
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
-				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.RegenerateFunc.History(), 0)
-			},
-			dequeueEvents: []dequeueEvent{
-				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"CreateToken: failed to create token"}`,
-				},
-			},
-		},
-		{
-			name: "Job token already exists",
-			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
-				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
-				jobTokenStore.RegenerateFunc.PushReturn("somenewtoken", nil)
-			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
-				assert.Equal(t, 1, jobTokenStore.RegenerateFunc.History()[0].Arg1)
-				assert.Equal(t, "codeintel", jobTokenStore.RegenerateFunc.History()[0].Arg2)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 1)
+				require.Len(t, jobTokenStore.RegenerbteFunc.History(), 0)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusOK,
-					expectedResponseBody: `{"id":1,"token":"somenewtoken","queue":"codeintel", "repositoryName":"","repositoryDirectory":"","commit":"","fetchTags":false,"shallowClone":false,"sparseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redactedValues":null}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"CrebteToken: fbiled to crebte token"}`,
 				},
 			},
 		},
 		{
-			name: "Failed to regenerate token",
-			body: `{"executorName": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpace": "10GB","queues": ["codeintel","batches"]}`,
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			nbme: "Job token blrebdy exists",
+			body: `{"executorNbme": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel","bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
-				codeintelMockStore.DequeueFunc.PushReturn(uploadsshared.Index{ID: 1}, true, nil)
-				jobTokenStore.CreateFunc.PushReturn("", executorstore.ErrJobTokenAlreadyCreated)
-				jobTokenStore.RegenerateFunc.PushReturn("", errors.New("failed to regen token"))
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("", executorstore.ErrJobTokenAlrebdyCrebted)
+				jobTokenStore.RegenerbteFunc.PushReturn("somenewtoken", nil)
 			},
-			assertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
 				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
 				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
-				require.Len(t, jobTokenStore.CreateFunc.History(), 1)
-				require.Len(t, jobTokenStore.RegenerateFunc.History(), 1)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 1)
+				require.Len(t, jobTokenStore.RegenerbteFunc.History(), 1)
+				bssert.Equbl(t, 1, jobTokenStore.RegenerbteFunc.History()[0].Arg1)
+				bssert.Equbl(t, "codeintel", jobTokenStore.RegenerbteFunc.History()[0].Arg2)
 			},
 			dequeueEvents: []dequeueEvent{
 				{
-					queueName:            "codeintel",
-					expectedStatusCode:   http.StatusInternalServerError,
-					expectedResponseBody: `{"error":"RegenerateToken: failed to regen token"}`,
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusOK,
+					expectedResponseBody: `{"id":1,"token":"somenewtoken","queue":"codeintel", "repositoryNbme":"","repositoryDirectory":"","commit":"","fetchTbgs":fblse,"shbllowClone":fblse,"spbrseCheckout":null,"files":{},"dockerSteps":null,"cliSteps":null,"redbctedVblues":null}`,
+				},
+			},
+		},
+		{
+			nbme: "Fbiled to regenerbte token",
+			body: `{"executorNbme": "test-executor","numCPUs": 1, "memory": "1GB", "diskSpbce": "10GB","queues": ["codeintel","bbtches"]}`,
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				codeintelMockStore.QueuedCountFunc.PushReturn(1, nil)
+				codeintelMockStore.DequeueFunc.PushReturn(uplobdsshbred.Index{ID: 1}, true, nil)
+				jobTokenStore.CrebteFunc.PushReturn("", executorstore.ErrJobTokenAlrebdyCrebted)
+				jobTokenStore.RegenerbteFunc.PushReturn("", errors.New("fbiled to regen token"))
+			},
+			bssertionFunc: func(t *testing.T, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob], jobTokenStore *executorstore.MockJobTokenStore) {
+				require.Len(t, codeintelMockStore.QueuedCountFunc.History(), 1)
+				require.Len(t, codeintelMockStore.DequeueFunc.History(), 1)
+				require.Len(t, jobTokenStore.CrebteFunc.History(), 1)
+				require.Len(t, jobTokenStore.RegenerbteFunc.History(), 1)
+			},
+			dequeueEvents: []dequeueEvent{
+				{
+					queueNbme:            "codeintel",
+					expectedStbtusCode:   http.StbtusInternblServerError,
+					expectedResponseBody: `{"error":"RegenerbteToken: fbiled to regen token"}`,
 				},
 			},
 		},
 	}
 
-	realSelect := handler.DoSelectQueueForDequeueing
+	reblSelect := hbndler.DoSelectQueueForDequeueing
 	mockSiteConfig()
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			rcache.SetupForTest(t)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			rcbche.SetupForTest(t)
 			jobTokenStore := executorstore.NewMockJobTokenStore()
-			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
-			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uplobdsshbred.Index]()
+			bbtchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BbtchSpecWorkspbceExecutionJob]()
 
-			mh := handler.NewMultiHandler(
+			mh := hbndler.NewMultiHbndler(
 				dbmocks.NewMockExecutorStore(),
 				jobTokenStore,
 				metricsstore.NewMockDistributedStore(),
-				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore, RecordTransformer: transformerFunc[uploadsshared.Index]},
-				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore, RecordTransformer: transformerFunc[*btypes.BatchSpecWorkspaceExecutionJob]},
+				hbndler.QueueHbndler[uplobdsshbred.Index]{Nbme: "codeintel", Store: codeIntelMockStore, RecordTrbnsformer: trbnsformerFunc[uplobdsshbred.Index]},
+				hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob]{Nbme: "bbtches", Store: bbtchesMockStore, RecordTrbnsformer: trbnsformerFunc[*btypes.BbtchSpecWorkspbceExecutionJob]},
 			)
 
 			router := mux.NewRouter()
-			router.HandleFunc("/dequeue", mh.HandleDequeue)
+			router.HbndleFunc("/dequeue", mh.HbndleDequeue)
 
 			if test.mockFunc != nil {
-				test.mockFunc(codeIntelMockStore, batchesMockStore, jobTokenStore)
+				test.mockFunc(codeIntelMockStore, bbtchesMockStore, jobTokenStore)
 			}
 
-			if test.expectedStatusCode != 0 {
-				evaluateEvent(test.body, test.expectedStatusCode, "", t, router)
+			if test.expectedStbtusCode != 0 {
+				evblubteEvent(test.body, test.expectedStbtusCode, "", t, router)
 			} else {
-				for _, event := range test.dequeueEvents {
-					if test.codeintelTransformerFunc != nil {
-						mh.CodeIntelQueueHandler.RecordTransformer = test.codeintelTransformerFunc
+				for _, event := rbnge test.dequeueEvents {
+					if test.codeintelTrbnsformerFunc != nil {
+						mh.CodeIntelQueueHbndler.RecordTrbnsformer = test.codeintelTrbnsformerFunc
 					}
-					if test.batchesTransformerFunc != nil {
-						mh.BatchesQueueHandler.RecordTransformer = test.batchesTransformerFunc
+					if test.bbtchesTrbnsformerFunc != nil {
+						mh.BbtchesQueueHbndler.RecordTrbnsformer = test.bbtchesTrbnsformerFunc
 					}
-					// mock random queue picking to return the expected queue name
-					handler.DoSelectQueueForDequeueing = func(candidateQueues []string, config *schema.DequeueCacheConfig) (string, error) {
-						return event.queueName, nil
+					// mock rbndom queue picking to return the expected queue nbme
+					hbndler.DoSelectQueueForDequeueing = func(cbndidbteQueues []string, config *schemb.DequeueCbcheConfig) (string, error) {
+						return event.queueNbme, nil
 					}
-					evaluateEvent(test.body, event.expectedStatusCode, event.expectedResponseBody, t, router)
+					evblubteEvent(test.body, event.expectedStbtusCode, event.expectedResponseBody, t, router)
 				}
 
-				if test.assertionFunc != nil {
-					test.assertionFunc(t, codeIntelMockStore, batchesMockStore, jobTokenStore)
+				if test.bssertionFunc != nil {
+					test.bssertionFunc(t, codeIntelMockStore, bbtchesMockStore, jobTokenStore)
 				}
 			}
 		})
 	}
-	// reset method to original for other tests
-	handler.DoSelectQueueForDequeueing = realSelect
+	// reset method to originbl for other tests
+	hbndler.DoSelectQueueForDequeueing = reblSelect
 }
 
-func TestMultiHandler_HandleHeartbeat(t *testing.T) {
+func TestMultiHbndler_HbndleHebrtbebt(t *testing.T) {
 	tests := []struct {
-		name                 string
+		nbme                 string
 		body                 string
-		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
-		expectedStatusCode   int
+		mockFunc             func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob])
+		expectedStbtusCode   int
 		expectedResponseBody string
-		assertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+		bssertionFunc        func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob])
 	}{
 		{
-			name: "Heartbeat for multiple queues",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
-				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43", "8"}, nil, nil)
+			nbme: "Hebrtbebt for multiple queues",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42", "7"]}, {"queueNbme": "bbtches", "jobIds": ["43", "8"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(nil)
+				codeintelMockStore.HebrtbebtFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				bbtchesMockStore.HebrtbebtFunc.PushReturn([]string{"43", "8"}, nil, nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-batches", "8-batches"],"cancelIds":null}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-bbtches", "8-bbtches"],"cbncelIds":null}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
 
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel", "batches"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel", "bbtches"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"42", "7"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"43", "8"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg2)
 			},
 		},
 		{
-			name: "Heartbeat for single queue",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
+			nbme: "Hebrtbebt for single queue",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel"], "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42", "7"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(nil)
+				codeintelMockStore.HebrtbebtFunc.PushReturn([]string{"42", "7"}, nil, nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel"],"cancelIds":null}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel"],"cbncelIds":null}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
 
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"42", "7"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 0)
 			},
 		},
 		{
-			name: "No running jobs",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
+			nbme: "No running jobs",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":null,"cancelIds":null}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: `{"knownIds":null,"cbncelIds":null}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
 
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel", "batches"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel", "bbtches"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 0)
 			},
 		},
 		{
-			name: "Known and canceled IDs",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42"}, []string{"7"}, nil)
-				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43"}, []string{"8"}, nil)
+			nbme: "Known bnd cbnceled IDs",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42", "7"]}, {"queueNbme": "bbtches", "jobIds": ["43", "8"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(nil)
+				codeintelMockStore.HebrtbebtFunc.PushReturn([]string{"42"}, []string{"7"}, nil)
+				bbtchesMockStore.HebrtbebtFunc.PushReturn([]string{"43"}, []string{"8"}, nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":["42-codeintel", "43-batches"],"cancelIds":["7-codeintel", "8-batches"]}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "43-bbtches"],"cbncelIds":["7-codeintel", "8-bbtches"]}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
 
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel", "batches"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel", "bbtches"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"42", "7"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"43", "8"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg2)
 			},
 		},
 		{
-			name:                 "Invalid worker hostname",
-			body:                 `{"executorName": "", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"worker hostname cannot be empty"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			nbme:                 "Invblid worker hostnbme",
+			body:                 `{"executorNbme": "", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42", "7"]}, {"queueNbme": "bbtches", "jobIds": ["43", "8"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: `{"error":"worker hostnbme cbnnot be empty"}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 0)
 			},
 		},
 		{
-			name:                 "Job IDs by queue contains name not in queue names",
-			body:                 `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "foo", "jobIds": ["42"]}, {"queueName": "bar", "jobIds": ["43"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"unsupported queue name(s) 'foo, bar' submitted in queueJobIds, executor is configured for queues 'codeintel, batches'"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			nbme:                 "Job IDs by queue contbins nbme not in queue nbmes",
+			body:                 `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "foo", "jobIds": ["42"]}, {"queueNbme": "bbr", "jobIds": ["43"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: `{"error":"unsupported queue nbme(s) 'foo, bbr' submitted in queueJobIds, executor is configured for queues 'codeintel, bbtches'"}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 0)
 			},
 		},
 		{
-			name:                 "Queue names missing",
-			body:                 `{"executorName": "test-executor", "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42"]}, {"queueName": "batches", "jobIds": ["43"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"queueNames must be set for multi-queue heartbeats"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 0)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 0)
+			nbme:                 "Queue nbmes missing",
+			body:                 `{"executorNbme": "test-executor", "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42"]}, {"queueNbme": "bbtches", "jobIds": ["43"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: `{"error":"queueNbmes must be set for multi-queue hebrtbebts"}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 0)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 0)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 0)
 			},
 		},
 		{
-			name: "Failed to upsert heartbeat",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(errors.Newf("failed"))
-				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
-				batchesMockStore.HeartbeatFunc.PushReturn([]string{"43", "8"}, nil, nil)
+			nbme: "Fbiled to upsert hebrtbebt",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42", "7"]}, {"queueNbme": "bbtches", "jobIds": ["43", "8"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(errors.Newf("fbiled"))
+				codeintelMockStore.HebrtbebtFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				bbtchesMockStore.HebrtbebtFunc.PushReturn([]string{"43", "8"}, nil, nil)
 			},
-			expectedStatusCode:   http.StatusOK,
-			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-batches", "8-batches"],"cancelIds":null}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
-				assert.Equal(
+			expectedStbtusCode:   http.StbtusOK,
+			expectedResponseBody: `{"knownIds":["42-codeintel", "7-codeintel", "43-bbtches", "8-bbtches"],"cbncelIds":null}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel", "batches"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel", "bbtches"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"42", "7"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"43", "8"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg2)
 			},
 		},
 		{
-			name: "Failed to heartbeat first queue, second is ignored",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "batches", "jobIds": ["43", "8"]}, {"queueName": "codeintel", "jobIds": ["42", "7"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
-				batchesMockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
+			nbme: "Fbiled to hebrtbebt first queue, second is ignored",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "bbtches", "jobIds": ["43", "8"]}, {"queueNbme": "codeintel", "jobIds": ["42", "7"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(nil)
+				codeintelMockStore.HebrtbebtFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				bbtchesMockStore.HebrtbebtFunc.PushReturn(nil, nil, errors.New("fbiled"))
 			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"multiqueue.UpsertHeartbeat: failed"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
-				assert.Equal(
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: `{"error":"multiqueue.UpsertHebrtbebt: fbiled"}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel", "batches"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel", "bbtches"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				// switch statement in MultiHandler.heartbeat starts with batches, which is first in `jobIdsByQueue`, so not called
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 0)
+				// switch stbtement in MultiHbndler.hebrtbebt stbrts with bbtches, which is first in `jobIdsByQueue`, so not cblled
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 0)
 
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"43", "8"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg2)
 			},
 		},
 		{
-			name: "First queue successful heartbeat, failed to heartbeat second queue",
-			body: `{"executorName": "test-executor", "queueNames": ["codeintel", "batches"], "jobIdsByQueue": [{"queueName": "codeintel", "jobIds": ["42", "7"]}, {"queueName": "batches", "jobIds": ["43", "8"]}], "os": "test-os", "architecture": "test-arch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
-			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				executorStore.UpsertHeartbeatFunc.PushReturn(nil)
-				codeintelMockStore.HeartbeatFunc.PushReturn([]string{"42", "7"}, nil, nil)
-				batchesMockStore.HeartbeatFunc.PushReturn(nil, nil, errors.New("failed"))
+			nbme: "First queue successful hebrtbebt, fbiled to hebrtbebt second queue",
+			body: `{"executorNbme": "test-executor", "queueNbmes": ["codeintel", "bbtches"], "jobIdsByQueue": [{"queueNbme": "codeintel", "jobIds": ["42", "7"]}, {"queueNbme": "bbtches", "jobIds": ["43", "8"]}], "os": "test-os", "brchitecture": "test-brch", "dockerVersion": "1.0", "executorVersion": "2.0", "gitVersion": "3.0", "igniteVersion": "4.0", "srcCliVersion": "5.0", "prometheusMetrics": ""}`,
+			mockFunc: func(metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				executorStore.UpsertHebrtbebtFunc.PushReturn(nil)
+				codeintelMockStore.HebrtbebtFunc.PushReturn([]string{"42", "7"}, nil, nil)
+				bbtchesMockStore.HebrtbebtFunc.PushReturn(nil, nil, errors.New("fbiled"))
 			},
-			expectedStatusCode:   http.StatusInternalServerError,
-			expectedResponseBody: `{"error":"multiqueue.UpsertHeartbeat: failed"}`,
-			assertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
-				require.Len(t, executorStore.UpsertHeartbeatFunc.History(), 1)
-				assert.Equal(
+			expectedStbtusCode:   http.StbtusInternblServerError,
+			expectedResponseBody: `{"error":"multiqueue.UpsertHebrtbebt: fbiled"}`,
+			bssertionFunc: func(t *testing.T, metricsStore *metricsstore.MockDistributedStore, executorStore *dbmocks.MockExecutorStore, codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
+				require.Len(t, executorStore.UpsertHebrtbebtFunc.History(), 1)
+				bssert.Equbl(
 					t,
 					types.Executor{
-						Hostname:        "test-executor",
-						QueueNames:      []string{"codeintel", "batches"},
+						Hostnbme:        "test-executor",
+						QueueNbmes:      []string{"codeintel", "bbtches"},
 						OS:              "test-os",
-						Architecture:    "test-arch",
+						Architecture:    "test-brch",
 						DockerVersion:   "1.0",
 						ExecutorVersion: "2.0",
 						GitVersion:      "3.0",
 						IgniteVersion:   "4.0",
 						SrcCliVersion:   "5.0",
 					},
-					executorStore.UpsertHeartbeatFunc.History()[0].Arg1,
+					executorStore.UpsertHebrtbebtFunc.History()[0].Arg1,
 				)
-				// switch statement in MultiHandler.heartbeat starts with batches, which is first in `jobIdsByQueue`, so not called
-				require.Len(t, codeintelMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"42", "7"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, codeintelMockStore.HeartbeatFunc.History()[0].Arg2)
+				// switch stbtement in MultiHbndler.hebrtbebt stbrts with bbtches, which is first in `jobIdsByQueue`, so not cblled
+				require.Len(t, codeintelMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"42", "7"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, codeintelMockStore.HebrtbebtFunc.History()[0].Arg2)
 
-				require.Len(t, batchesMockStore.HeartbeatFunc.History(), 1)
-				assert.Equal(t, []string{"43", "8"}, batchesMockStore.HeartbeatFunc.History()[0].Arg1)
-				assert.Equal(t, dbworkerstore.HeartbeatOptions{WorkerHostname: "test-executor"}, batchesMockStore.HeartbeatFunc.History()[0].Arg2)
+				require.Len(t, bbtchesMockStore.HebrtbebtFunc.History(), 1)
+				bssert.Equbl(t, []string{"43", "8"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg1)
+				bssert.Equbl(t, dbworkerstore.HebrtbebtOptions{WorkerHostnbme: "test-executor"}, bbtchesMockStore.HebrtbebtFunc.History()[0].Arg2)
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			executorStore := dbmocks.NewMockExecutorStore()
 			metricsStore := metricsstore.NewMockDistributedStore()
-			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
-			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uplobdsshbred.Index]()
+			bbtchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BbtchSpecWorkspbceExecutionJob]()
 
-			mh := handler.NewMultiHandler(
+			mh := hbndler.NewMultiHbndler(
 				executorStore,
 				executorstore.NewMockJobTokenStore(),
 				metricsStore,
-				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore},
-				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore},
+				hbndler.QueueHbndler[uplobdsshbred.Index]{Nbme: "codeintel", Store: codeIntelMockStore},
+				hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob]{Nbme: "bbtches", Store: bbtchesMockStore},
 			)
 
 			router := mux.NewRouter()
-			router.HandleFunc("/heartbeat", mh.HandleHeartbeat)
+			router.HbndleFunc("/hebrtbebt", mh.HbndleHebrtbebt)
 
-			req, err := http.NewRequest(http.MethodPost, "/heartbeat", strings.NewReader(test.body))
+			req, err := http.NewRequest(http.MethodPost, "/hebrtbebt", strings.NewRebder(test.body))
 			require.NoError(t, err)
 
 			rw := httptest.NewRecorder()
 
 			if test.mockFunc != nil {
-				test.mockFunc(metricsStore, executorStore, codeIntelMockStore, batchesMockStore)
+				test.mockFunc(metricsStore, executorStore, codeIntelMockStore, bbtchesMockStore)
 			}
 
 			router.ServeHTTP(rw, req)
 
-			assert.Equal(t, test.expectedStatusCode, rw.Code)
+			bssert.Equbl(t, test.expectedStbtusCode, rw.Code)
 
-			b, err := io.ReadAll(rw.Body)
+			b, err := io.RebdAll(rw.Body)
 			require.NoError(t, err)
 
 			if len(test.expectedResponseBody) > 0 {
-				assert.JSONEq(t, test.expectedResponseBody, string(b))
+				bssert.JSONEq(t, test.expectedResponseBody, string(b))
 			} else {
-				assert.Empty(t, string(b))
+				bssert.Empty(t, string(b))
 			}
 
-			if test.assertionFunc != nil {
-				test.assertionFunc(t, metricsStore, executorStore, codeIntelMockStore, batchesMockStore)
+			if test.bssertionFunc != nil {
+				test.bssertionFunc(t, metricsStore, executorStore, codeIntelMockStore, bbtchesMockStore)
 			}
 		})
 	}
 }
 
-func evaluateEvent(
+func evblubteEvent(
 	requestBody string,
-	expectedStatusCode int,
+	expectedStbtusCode int,
 	expectedResponseBody string,
 	t *testing.T,
 	router *mux.Router,
 ) {
-	req, err := http.NewRequest(http.MethodPost, "/dequeue", strings.NewReader(requestBody))
+	req, err := http.NewRequest(http.MethodPost, "/dequeue", strings.NewRebder(requestBody))
 	require.NoError(t, err)
 
 	rw := httptest.NewRecorder()
 
 	router.ServeHTTP(rw, req)
-	assert.Equal(t, expectedStatusCode, rw.Code)
+	bssert.Equbl(t, expectedStbtusCode, rw.Code)
 
-	b, err := io.ReadAll(rw.Body)
+	b, err := io.RebdAll(rw.Body)
 	require.NoError(t, err)
 
 	if len(expectedResponseBody) > 0 {
-		assert.JSONEq(t, expectedResponseBody, string(b))
+		bssert.JSONEq(t, expectedResponseBody, string(b))
 	} else {
-		assert.Empty(t, string(b))
+		bssert.Empty(t, string(b))
 	}
 }
 
-// Note: this test passed multiple times with the bazel flag `--runs_per_test=1000` without failures,
-// but statistically speaking this test _could_ flake. The chance of two subsequent failures is low enough
-// that it shouldn't ever form an issue. If failures keep occurring something is actually broken.
-func TestMultiHandler_SelectQueueForDequeueing(t *testing.T) {
+// Note: this test pbssed multiple times with the bbzel flbg `--runs_per_test=1000` without fbilures,
+// but stbtisticblly spebking this test _could_ flbke. The chbnce of two subsequent fbilures is low enough
+// thbt it shouldn't ever form bn issue. If fbilures keep occurring something is bctublly broken.
+func TestMultiHbndler_SelectQueueForDequeueing(t *testing.T) {
 	tests := []struct {
-		name               string
-		candidateQueues    []string
-		dequeueCacheConfig schema.DequeueCacheConfig
-		amountOfruns       int
+		nbme               string
+		cbndidbteQueues    []string
+		dequeueCbcheConfig schemb.DequeueCbcheConfig
+		bmountOfruns       int
 		expectedErr        error
 	}{
 		{
-			name:            "acceptable deviation",
-			candidateQueues: []string{"batches", "codeintel"},
-			dequeueCacheConfig: schema.DequeueCacheConfig{
-				Batches: &schema.Batches{
+			nbme:            "bcceptbble devibtion",
+			cbndidbteQueues: []string{"bbtches", "codeintel"},
+			dequeueCbcheConfig: schemb.DequeueCbcheConfig{
+				Bbtches: &schemb.Bbtches{
 					Limit:  50,
 					Weight: 4,
 				},
-				Codeintel: &schema.Codeintel{
+				Codeintel: &schemb.Codeintel{
 					Limit:  250,
 					Weight: 1,
 				},
 			},
-			amountOfruns: 5000,
+			bmountOfruns: 5000,
 		},
 	}
 
 	mockSiteConfig()
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			m := handler.NewMultiHandler(
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			m := hbndler.NewMultiHbndler(
 				nil,
 				nil,
 				nil,
-				handler.QueueHandler[uploadsshared.Index]{Name: "codeintel"},
-				handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches"},
+				hbndler.QueueHbndler[uplobdsshbred.Index]{Nbme: "codeintel"},
+				hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob]{Nbme: "bbtches"},
 			)
 
-			selectCounts := make(map[string]int, len(tt.candidateQueues))
-			for _, q := range tt.candidateQueues {
+			selectCounts := mbke(mbp[string]int, len(tt.cbndidbteQueues))
+			for _, q := rbnge tt.cbndidbteQueues {
 				selectCounts[q] = 0
 			}
 
-			for i := 0; i < tt.amountOfruns; i++ {
-				selectedQueue, err := m.SelectQueueForDequeueing(tt.candidateQueues)
+			for i := 0; i < tt.bmountOfruns; i++ {
+				selectedQueue, err := m.SelectQueueForDequeueing(tt.cbndidbteQueues)
 				if err != nil && err != tt.expectedErr {
-					t.Fatalf("expected err %s, got err %s", tt.expectedErr, err)
+					t.Fbtblf("expected err %s, got err %s", tt.expectedErr, err)
 				}
 				selectCounts[selectedQueue]++
 			}
 
-			// calculate the sum of the candidate queue weights
-			var totalWeight int
-			for _, q := range tt.candidateQueues {
+			// cblculbte the sum of the cbndidbte queue weights
+			vbr totblWeight int
+			for _, q := rbnge tt.cbndidbteQueues {
 				switch q {
-				case "batches":
-					totalWeight += tt.dequeueCacheConfig.Batches.Weight
-				case "codeintel":
-					totalWeight += tt.dequeueCacheConfig.Codeintel.Weight
+				cbse "bbtches":
+					totblWeight += tt.dequeueCbcheConfig.Bbtches.Weight
+				cbse "codeintel":
+					totblWeight += tt.dequeueCbcheConfig.Codeintel.Weight
 				}
 			}
-			// then calculate how many times each queue is expected to be chosen
-			expectedSelectCounts := make(map[string]float64, len(tt.candidateQueues))
-			for _, q := range tt.candidateQueues {
+			// then cblculbte how mbny times ebch queue is expected to be chosen
+			expectedSelectCounts := mbke(mbp[string]flobt64, len(tt.cbndidbteQueues))
+			for _, q := rbnge tt.cbndidbteQueues {
 				switch q {
-				case "batches":
-					expectedSelectCounts[q] = float64(tt.dequeueCacheConfig.Batches.Weight) / float64(totalWeight) * float64(tt.amountOfruns)
-				case "codeintel":
-					expectedSelectCounts[q] = float64(tt.dequeueCacheConfig.Codeintel.Weight) / float64(totalWeight) * float64(tt.amountOfruns)
+				cbse "bbtches":
+					expectedSelectCounts[q] = flobt64(tt.dequeueCbcheConfig.Bbtches.Weight) / flobt64(totblWeight) * flobt64(tt.bmountOfruns)
+				cbse "codeintel":
+					expectedSelectCounts[q] = flobt64(tt.dequeueCbcheConfig.Codeintel.Weight) / flobt64(totblWeight) * flobt64(tt.bmountOfruns)
 				}
 			}
-			for key := range selectCounts {
-				// allow a 10% deviation of the expected count of selects per queue
-				lower := int(math.Floor(expectedSelectCounts[key] - expectedSelectCounts[key]*0.1))
-				upper := int(math.Floor(expectedSelectCounts[key] + expectedSelectCounts[key]*0.1))
-				assert.True(t, selectCounts[key] >= lower && selectCounts[key] <= upper, "SelectQueueForDequeueing: %s = %d, lower = %d, upper = %d", key, selectCounts[key], lower, upper)
+			for key := rbnge selectCounts {
+				// bllow b 10% devibtion of the expected count of selects per queue
+				lower := int(mbth.Floor(expectedSelectCounts[key] - expectedSelectCounts[key]*0.1))
+				upper := int(mbth.Floor(expectedSelectCounts[key] + expectedSelectCounts[key]*0.1))
+				bssert.True(t, selectCounts[key] >= lower && selectCounts[key] <= upper, "SelectQueueForDequeueing: %s = %d, lower = %d, upper = %d", key, selectCounts[key], lower, upper)
 			}
 		})
 	}
 }
 
-func TestMultiHandler_SelectEligibleQueues(t *testing.T) {
+func TestMultiHbndler_SelectEligibleQueues(t *testing.T) {
 	tests := []struct {
-		name             string
+		nbme             string
 		queues           []string
-		mockCacheEntries map[string]int
+		mockCbcheEntries mbp[string]int
 		expectedQueues   []string
 	}{
 		{
-			name:   "Nothing discarded",
-			queues: []string{"batches", "codeintel"},
-			mockCacheEntries: map[string]int{
-				// both have dequeued 5 times
-				"batches":   5,
+			nbme:   "Nothing discbrded",
+			queues: []string{"bbtches", "codeintel"},
+			mockCbcheEntries: mbp[string]int{
+				// both hbve dequeued 5 times
+				"bbtches":   5,
 				"codeintel": 5,
 			},
-			expectedQueues: []string{"batches", "codeintel"},
+			expectedQueues: []string{"bbtches", "codeintel"},
 		},
 		{
-			name:   "All discarded",
-			queues: []string{"batches", "codeintel"},
-			mockCacheEntries: map[string]int{
-				// both have dequeued their limit, so both will be returned
-				"batches":   50,
+			nbme:   "All discbrded",
+			queues: []string{"bbtches", "codeintel"},
+			mockCbcheEntries: mbp[string]int{
+				// both hbve dequeued their limit, so both will be returned
+				"bbtches":   50,
 				"codeintel": 250,
 			},
-			expectedQueues: []string{"batches", "codeintel"},
+			expectedQueues: []string{"bbtches", "codeintel"},
 		},
 		{
-			name:   "Batches discarded",
-			queues: []string{"batches", "codeintel"},
-			mockCacheEntries: map[string]int{
-				// batches has dequeued its limit, codeintel 5 times
-				"batches":   50,
+			nbme:   "Bbtches discbrded",
+			queues: []string{"bbtches", "codeintel"},
+			mockCbcheEntries: mbp[string]int{
+				// bbtches hbs dequeued its limit, codeintel 5 times
+				"bbtches":   50,
 				"codeintel": 5,
 			},
 			expectedQueues: []string{"codeintel"},
@@ -1011,45 +1011,45 @@ func TestMultiHandler_SelectEligibleQueues(t *testing.T) {
 
 	mockSiteConfig()
 
-	m := handler.NewMultiHandler(
+	m := hbndler.NewMultiHbndler(
 		nil,
 		nil,
 		nil,
-		handler.QueueHandler[uploadsshared.Index]{Name: "codeintel"},
-		handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches"},
+		hbndler.QueueHbndler[uplobdsshbred.Index]{Nbme: "codeintel"},
+		hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob]{Nbme: "bbtches"},
 	)
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			rcache.SetupForTest(t)
-			for key, value := range tt.mockCacheEntries {
-				for i := 0; i < value; i++ {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			rcbche.SetupForTest(t)
+			for key, vblue := rbnge tt.mockCbcheEntries {
+				for i := 0; i < vblue; i++ {
 					// mock dequeues
-					if err := m.DequeueCache.SetHashItem(key, strconv.Itoa(i), "job-id"); err != nil {
-						t.Fatalf("unexpected error while setting hash item: %s", err)
+					if err := m.DequeueCbche.SetHbshItem(key, strconv.Itob(i), "job-id"); err != nil {
+						t.Fbtblf("unexpected error while setting hbsh item: %s", err)
 					}
 				}
 			}
 
 			queues, err := m.SelectEligibleQueues(tt.queues)
 			if err != nil {
-				t.Fatalf("unexpected error while discarding queues: %s", err)
+				t.Fbtblf("unexpected error while discbrding queues: %s", err)
 			}
-			assert.Equalf(t, tt.expectedQueues, queues, "SelectEligibleQueues(%v)", tt.queues)
+			bssert.Equblf(t, tt.expectedQueues, queues, "SelectEligibleQueues(%v)", tt.queues)
 		})
 	}
 }
 
 func mockSiteConfig() {
-	client := conf.DefaultClient()
-	client.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		ExecutorsMultiqueue: &schema.ExecutorsMultiqueue{
-			DequeueCacheConfig: &schema.DequeueCacheConfig{
-				Batches: &schema.Batches{
+	client := conf.DefbultClient()
+	client.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+		ExecutorsMultiqueue: &schemb.ExecutorsMultiqueue{
+			DequeueCbcheConfig: &schemb.DequeueCbcheConfig{
+				Bbtches: &schemb.Bbtches{
 					Limit:  50,
 					Weight: 4,
 				},
-				Codeintel: &schema.Codeintel{
+				Codeintel: &schemb.Codeintel{
 					Limit:  250,
 					Weight: 1,
 				},
@@ -1058,58 +1058,58 @@ func mockSiteConfig() {
 	}})
 }
 
-func TestMultiHandler_SelectNonEmptyQueues(t *testing.T) {
+func TestMultiHbndler_SelectNonEmptyQueues(t *testing.T) {
 	tests := []struct {
-		name           string
-		queueNames     []string
-		mockFunc       func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob])
+		nbme           string
+		queueNbmes     []string
+		mockFunc       func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob])
 		expectedQueues []string
 	}{
 		{
-			name:       "Both contain jobs",
-			queueNames: []string{"batches", "codeintel"},
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+			nbme:       "Both contbin jobs",
+			queueNbmes: []string{"bbtches", "codeintel"},
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(5, nil)
-				batchesMockStore.QueuedCountFunc.PushReturn(5, nil)
+				bbtchesMockStore.QueuedCountFunc.PushReturn(5, nil)
 			},
-			expectedQueues: []string{"batches", "codeintel"},
+			expectedQueues: []string{"bbtches", "codeintel"},
 		},
 		{
-			name:       "Only batches contains jobs",
-			queueNames: []string{"batches", "codeintel"},
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+			nbme:       "Only bbtches contbins jobs",
+			queueNbmes: []string{"bbtches", "codeintel"},
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(0, nil)
-				batchesMockStore.QueuedCountFunc.PushReturn(5, nil)
+				bbtchesMockStore.QueuedCountFunc.PushReturn(5, nil)
 			},
-			expectedQueues: []string{"batches"},
+			expectedQueues: []string{"bbtches"},
 		},
 		{
-			name:       "None contain jobs",
-			queueNames: []string{"batches", "codeintel"},
-			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uploadsshared.Index], batchesMockStore *dbworkerstoremocks.MockStore[*btypes.BatchSpecWorkspaceExecutionJob]) {
+			nbme:       "None contbin jobs",
+			queueNbmes: []string{"bbtches", "codeintel"},
+			mockFunc: func(codeintelMockStore *dbworkerstoremocks.MockStore[uplobdsshbred.Index], bbtchesMockStore *dbworkerstoremocks.MockStore[*btypes.BbtchSpecWorkspbceExecutionJob]) {
 				codeintelMockStore.QueuedCountFunc.PushReturn(0, nil)
-				batchesMockStore.QueuedCountFunc.PushReturn(0, nil)
+				bbtchesMockStore.QueuedCountFunc.PushReturn(0, nil)
 			},
 			expectedQueues: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctx := context.Background()
-			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uploadsshared.Index]()
-			batchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BatchSpecWorkspaceExecutionJob]()
-			m := &handler.MultiHandler{
-				CodeIntelQueueHandler: handler.QueueHandler[uploadsshared.Index]{Name: "codeintel", Store: codeIntelMockStore},
-				BatchesQueueHandler:   handler.QueueHandler[*btypes.BatchSpecWorkspaceExecutionJob]{Name: "batches", Store: batchesMockStore},
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			codeIntelMockStore := dbworkerstoremocks.NewMockStore[uplobdsshbred.Index]()
+			bbtchesMockStore := dbworkerstoremocks.NewMockStore[*btypes.BbtchSpecWorkspbceExecutionJob]()
+			m := &hbndler.MultiHbndler{
+				CodeIntelQueueHbndler: hbndler.QueueHbndler[uplobdsshbred.Index]{Nbme: "codeintel", Store: codeIntelMockStore},
+				BbtchesQueueHbndler:   hbndler.QueueHbndler[*btypes.BbtchSpecWorkspbceExecutionJob]{Nbme: "bbtches", Store: bbtchesMockStore},
 			}
 
-			tt.mockFunc(codeIntelMockStore, batchesMockStore)
+			tt.mockFunc(codeIntelMockStore, bbtchesMockStore)
 
-			got, err := m.SelectNonEmptyQueues(ctx, tt.queueNames)
+			got, err := m.SelectNonEmptyQueues(ctx, tt.queueNbmes)
 			if err != nil {
-				t.Fatalf("unexpected error while filtering non empty queues: %s", err)
+				t.Fbtblf("unexpected error while filtering non empty queues: %s", err)
 			}
-			assert.Equalf(t, tt.expectedQueues, got, "SelectNonEmptyQueues(%v)", tt.queueNames)
+			bssert.Equblf(t, tt.expectedQueues, got, "SelectNonEmptyQueues(%v)", tt.queueNbmes)
 		})
 	}
 }

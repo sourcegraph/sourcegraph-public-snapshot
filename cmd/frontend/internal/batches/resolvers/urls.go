@@ -1,14 +1,14 @@
-package resolvers
+pbckbge resolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
 )
 
-func batchChangesApplyURL(n graphqlbackend.Namespace, c graphqlbackend.BatchSpecResolver) string {
-	return n.URL() + "/batch-changes/apply/" + string(c.ID())
+func bbtchChbngesApplyURL(n grbphqlbbckend.Nbmespbce, c grbphqlbbckend.BbtchSpecResolver) string {
+	return n.URL() + "/bbtch-chbnges/bpply/" + string(c.ID())
 }
 
-func batchChangeURL(n graphqlbackend.Namespace, c graphqlbackend.BatchChangeResolver) string {
-	// This needs to be kept consistent with btypes.batchChangeURL().
-	return n.URL() + "/batch-changes/" + c.Name()
+func bbtchChbngeURL(n grbphqlbbckend.Nbmespbce, c grbphqlbbckend.BbtchChbngeResolver) string {
+	// This needs to be kept consistent with btypes.bbtchChbngeURL().
+	return n.URL() + "/bbtch-chbnges/" + c.Nbme()
 }

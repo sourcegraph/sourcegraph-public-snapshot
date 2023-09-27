@@ -1,29 +1,29 @@
-package eventlogger
+pbckbge eventlogger
 
-// List of events that don't meet the criteria of "active" usage of Sourcegraph.
-// These are mostly actions taken by signed-out users.
-var NonActiveUserEvents = []string{
+// List of events thbt don't meet the criterib of "bctive" usbge of Sourcegrbph.
+// These bre mostly bctions tbken by signed-out users.
+vbr NonActiveUserEvents = []string{
 	"ViewSignIn",
 	"ViewSignUp",
 	"SignOutAttempted",
-	"SignOutFailed",
+	"SignOutFbiled",
 	"SignOutSucceeded",
 	"SignInAttempted",
-	"SignInFailed",
+	"SignInFbiled",
 	"SignInSucceeded",
-	"PasswordResetRequested",
-	"PasswordRandomized",
-	"PasswordChanged",
-	"EmailVerified",
-	"ExternalAuthSignupFailed",
-	"ExternalAuthSignupSucceeded",
-	"CodyVSCodeExtension:CodySavedLogin:executed",
+	"PbsswordResetRequested",
+	"PbsswordRbndomized",
+	"PbsswordChbnged",
+	"EmbilVerified",
+	"ExternblAuthSignupFbiled",
+	"ExternblAuthSignupSucceeded",
+	"CodyVSCodeExtension:CodySbvedLogin:executed",
 }
 
-// List of events that shouldn't be logged in local (Postgres) databases.
-// These events are high volume and cause a lot of noise and pressure on the backend.
-// Since we only need them for debugging, we don't need to route them to custom instances.
-var OnlyLogRemotelyEvents = []string{
-	"CodyVSCodeExtension:completion:started",
-	"CodyVSCodeExtension:completion:networkRequestStarted",
+// List of events thbt shouldn't be logged in locbl (Postgres) dbtbbbses.
+// These events bre high volume bnd cbuse b lot of noise bnd pressure on the bbckend.
+// Since we only need them for debugging, we don't need to route them to custom instbnces.
+vbr OnlyLogRemotelyEvents = []string{
+	"CodyVSCodeExtension:completion:stbrted",
+	"CodyVSCodeExtension:completion:networkRequestStbrted",
 }

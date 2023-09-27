@@ -1,40 +1,40 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/run"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/run"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var cloudCommand = &cli.Command{
-	Name:  "cloud",
-	Usage: "Install and work with Sourcegraph Cloud tools",
-	Description: `Learn more about Sourcegraph Cloud:
+vbr cloudCommbnd = &cli.Commbnd{
+	Nbme:  "cloud",
+	Usbge: "Instbll bnd work with Sourcegrbph Cloud tools",
+	Description: `Lebrn more bbout Sourcegrbph Cloud:
 
-- Product: https://docs.sourcegraph.com/cloud
-- Handbook: https://handbook.sourcegraph.com/departments/cloud/
+- Product: https://docs.sourcegrbph.com/cloud
+- Hbndbook: https://hbndbook.sourcegrbph.com/depbrtments/cloud/
 `,
-	Category: category.Company,
-	Subcommands: []*cli.Command{
+	Cbtegory: cbtegory.Compbny,
+	Subcommbnds: []*cli.Commbnd{
 		{
-			Name:        "install",
-			Usage:       "Install or upgrade local `mi2` CLI (for Cloud V2)",
-			Description: "To learn more about Cloud V2, see https://handbook.sourcegraph.com/departments/cloud/technical-docs/v2.0/",
+			Nbme:        "instbll",
+			Usbge:       "Instbll or upgrbde locbl `mi2` CLI (for Cloud V2)",
+			Description: "To lebrn more bbout Cloud V2, see https://hbndbook.sourcegrbph.com/depbrtments/cloud/technicbl-docs/v2.0/",
 			Action: func(c *cli.Context) error {
-				if err := installCloudCLI(c.Context); err != nil {
+				if err := instbllCloudCLI(c.Context); err != nil {
 					return err
 				}
 				if err := checkGKEAuthPlugin(); err != nil {
@@ -47,84 +47,84 @@ var cloudCommand = &cli.Command{
 }
 
 func checkGKEAuthPlugin() error {
-	const executable = "gke-gcloud-auth-plugin"
-	existingPath, err := exec.LookPath(executable)
+	const executbble = "gke-gcloud-buth-plugin"
+	existingPbth, err := exec.LookPbth(executbble)
 	if err != nil {
-		return errors.Wrapf(err, "gke-gcloud-auth-plugin not found on path, run `brew info google-cloud-sdk` for instructions OR \n"+
-			"run `gcloud components install gke-gcloud-auth-plugin` to install it manually")
+		return errors.Wrbpf(err, "gke-gcloud-buth-plugin not found on pbth, run `brew info google-cloud-sdk` for instructions OR \n"+
+			"run `gcloud components instbll gke-gcloud-buth-plugin` to instbll it mbnublly")
 	}
-	std.Out.WriteNoticef("Using gcloud auth plugin at %q", existingPath)
+	std.Out.WriteNoticef("Using gcloud buth plugin bt %q", existingPbth)
 	return nil
 }
 
-func installCloudCLI(ctx context.Context) error {
-	const executable = "mi2"
+func instbllCloudCLI(ctx context.Context) error {
+	const executbble = "mi2"
 
-	// Ensure gh is installed
-	ghPath, err := exec.LookPath("gh")
+	// Ensure gh is instblled
+	ghPbth, err := exec.LookPbth("gh")
 	if err != nil {
-		return errors.Wrap(err, "GitHub CLI (https://cli.github.com/) is required for installation")
+		return errors.Wrbp(err, "GitHub CLI (https://cli.github.com/) is required for instbllbtion")
 	}
-	std.Out.Writef("Using GitHub CLI at %q", ghPath)
+	std.Out.Writef("Using GitHub CLI bt %q", ghPbth)
 
-	// Use the same directory as sg, since we add that to path
+	// Use the sbme directory bs sg, since we bdd thbt to pbth
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
 		return err
 	}
-	locationDir, err := sgInstallDir(homeDir)
+	locbtionDir, err := sgInstbllDir(homeDir)
 	if err != nil {
 		return err
 	}
 
-	// Remove existing install if there is one
-	if existingPath, err := exec.LookPath(executable); err == nil {
-		// If this mi2 installation is installed elsewhere, remove it to
-		// avoid conflicts
-		if !strings.HasPrefix(existingPath, locationDir) {
-			std.Out.WriteNoticef("Removing existing installation at of %q at %q",
-				executable, existingPath)
-			_ = os.Remove(existingPath)
+	// Remove existing instbll if there is one
+	if existingPbth, err := exec.LookPbth(executbble); err == nil {
+		// If this mi2 instbllbtion is instblled elsewhere, remove it to
+		// bvoid conflicts
+		if !strings.HbsPrefix(existingPbth, locbtionDir) {
+			std.Out.WriteNoticef("Removing existing instbllbtion bt of %q bt %q",
+				executbble, existingPbth)
+			_ = os.Remove(existingPbth)
 		}
 	}
 
-	version, err := run.Cmd(ctx, ghPath, "version").Run().String()
+	version, err := run.Cmd(ctx, ghPbth, "version").Run().String()
 	if err != nil {
-		return errors.Wrap(err, "get gh version")
+		return errors.Wrbp(err, "get gh version")
 	}
 	std.Out.WriteNoticef("Using GitHub CLI version %q", strings.Split(version, "\n")[0])
 
-	start := time.Now()
-	pending := std.Out.Pending(output.Styledf(output.StylePending, "Downloading %q to %q... (hang tight, this might take a while!)",
-		executable, locationDir))
+	stbrt := time.Now()
+	pending := std.Out.Pending(output.Styledf(output.StylePending, "Downlobding %q to %q... (hbng tight, this might tbke b while!)",
+		executbble, locbtionDir))
 
-	const tempExecutable = "mi2_tmp"
-	tempInstallPath := filepath.Join(locationDir, tempExecutable)
-	finalInstallPath := filepath.Join(locationDir, executable)
-	_ = os.Remove(tempInstallPath)
-	// Get release
+	const tempExecutbble = "mi2_tmp"
+	tempInstbllPbth := filepbth.Join(locbtionDir, tempExecutbble)
+	finblInstbllPbth := filepbth.Join(locbtionDir, executbble)
+	_ = os.Remove(tempInstbllPbth)
+	// Get relebse
 	if err := run.Cmd(ctx,
-		ghPath, " release download -R github.com/sourcegraph/controller",
-		"--pattern", fmt.Sprintf("mi2_%s_%s", runtime.GOOS, runtime.GOARCH),
-		"--output", tempInstallPath).
-		Run().Wait(); err != nil {
+		ghPbth, " relebse downlobd -R github.com/sourcegrbph/controller",
+		"--pbttern", fmt.Sprintf("mi2_%s_%s", runtime.GOOS, runtime.GOARCH),
+		"--output", tempInstbllPbth).
+		Run().Wbit(); err != nil {
 		pending.Close()
-		return errors.Wrap(err, "download mi2")
+		return errors.Wrbp(err, "downlobd mi2")
 	}
 	pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
-		"Download complete! (elapsed: %s)",
-		time.Since(start).String()))
+		"Downlobd complete! (elbpsed: %s)",
+		time.Since(stbrt).String()))
 
-	// Move binary to final destination
-	if err := os.Rename(tempInstallPath, finalInstallPath); err != nil {
-		return errors.Wrap(err, "move mi2 to final path")
+	// Move binbry to finbl destinbtion
+	if err := os.Renbme(tempInstbllPbth, finblInstbllPbth); err != nil {
+		return errors.Wrbp(err, "move mi2 to finbl pbth")
 	}
 
-	// Make binary executable
-	if err := os.Chmod(finalInstallPath, 0755); err != nil {
-		return errors.Wrap(err, "make mi2 executable")
+	// Mbke binbry executbble
+	if err := os.Chmod(finblInstbllPbth, 0755); err != nil {
+		return errors.Wrbp(err, "mbke mi2 executbble")
 	}
 
-	std.Out.WriteSuccessf("%q successfully installed!", executable)
+	std.Out.WriteSuccessf("%q successfully instblled!", executbble)
 	return nil
 }

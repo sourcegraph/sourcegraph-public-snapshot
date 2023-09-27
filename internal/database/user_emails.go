@@ -1,270 +1,270 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"crypto/subtle"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UserEmail represents a row in the `user_emails` table.
-type UserEmail struct {
+// UserEmbil represents b row in the `user_embils` tbble.
+type UserEmbil struct {
 	UserID                 int32
-	Email                  string
-	CreatedAt              time.Time
-	VerificationCode       *string
+	Embil                  string
+	CrebtedAt              time.Time
+	VerificbtionCode       *string
 	VerifiedAt             *time.Time
-	LastVerificationSentAt *time.Time
-	Primary                bool
+	LbstVerificbtionSentAt *time.Time
+	Primbry                bool
 }
 
-// NeedsVerificationCoolDown returns true if the verification cooled down time is behind current time.
-func (email *UserEmail) NeedsVerificationCoolDown() bool {
-	const defaultDur = 30 * time.Second
-	return email.LastVerificationSentAt != nil &&
-		time.Now().UTC().Before(email.LastVerificationSentAt.Add(defaultDur))
+// NeedsVerificbtionCoolDown returns true if the verificbtion cooled down time is behind current time.
+func (embil *UserEmbil) NeedsVerificbtionCoolDown() bool {
+	const defbultDur = 30 * time.Second
+	return embil.LbstVerificbtionSentAt != nil &&
+		time.Now().UTC().Before(embil.LbstVerificbtionSentAt.Add(defbultDur))
 }
 
-// userEmailNotFoundError is the error that is returned when a user email is not found.
-type userEmailNotFoundError struct {
-	args []any
+// userEmbilNotFoundError is the error thbt is returned when b user embil is not found.
+type userEmbilNotFoundError struct {
+	brgs []bny
 }
 
-func (err userEmailNotFoundError) Error() string {
-	return fmt.Sprintf("user email not found: %v", err.args)
+func (err userEmbilNotFoundError) Error() string {
+	return fmt.Sprintf("user embil not found: %v", err.brgs)
 }
 
-func (err userEmailNotFoundError) NotFound() bool {
+func (err userEmbilNotFoundError) NotFound() bool {
 	return true
 }
 
-type UserEmailsStore interface {
-	Add(ctx context.Context, userID int32, email string, verificationCode *string) error
+type UserEmbilsStore interfbce {
+	Add(ctx context.Context, userID int32, embil string, verificbtionCode *string) error
 	Done(error) error
-	Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error)
-	GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error)
-	GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error)
-	GetPrimaryEmail(ctx context.Context, userID int32) (email string, verified bool, err error)
-	HasVerifiedEmail(ctx context.Context, userID int32) (bool, error)
-	GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error)
-	ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error)
-	Remove(ctx context.Context, userID int32, email string) error
-	SetLastVerification(ctx context.Context, userID int32, email, code string, when time.Time) error
-	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
-	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
-	Transact(ctx context.Context) (UserEmailsStore, error)
-	Verify(ctx context.Context, userID int32, email, code string) (bool, error)
-	With(other basestore.ShareableStore) UserEmailsStore
-	basestore.ShareableStore
+	Get(ctx context.Context, userID int32, embil string) (embilCbnonicblCbse string, verified bool, err error)
+	GetInitiblSiteAdminInfo(ctx context.Context) (embil string, tosAccepted bool, err error)
+	GetLbtestVerificbtionSentEmbil(ctx context.Context, embil string) (*UserEmbil, error)
+	GetPrimbryEmbil(ctx context.Context, userID int32) (embil string, verified bool, err error)
+	HbsVerifiedEmbil(ctx context.Context, userID int32) (bool, error)
+	GetVerifiedEmbils(ctx context.Context, embils ...string) ([]*UserEmbil, error)
+	ListByUser(ctx context.Context, opt UserEmbilsListOptions) ([]*UserEmbil, error)
+	Remove(ctx context.Context, userID int32, embil string) error
+	SetLbstVerificbtion(ctx context.Context, userID int32, embil, code string, when time.Time) error
+	SetPrimbryEmbil(ctx context.Context, userID int32, embil string) error
+	SetVerified(ctx context.Context, userID int32, embil string, verified bool) error
+	Trbnsbct(ctx context.Context) (UserEmbilsStore, error)
+	Verify(ctx context.Context, userID int32, embil, code string) (bool, error)
+	With(other bbsestore.ShbrebbleStore) UserEmbilsStore
+	bbsestore.ShbrebbleStore
 }
 
-// userEmailsStore provides access to the `user_emails` table.
-type userEmailsStore struct {
-	*basestore.Store
+// userEmbilsStore provides bccess to the `user_embils` tbble.
+type userEmbilsStore struct {
+	*bbsestore.Store
 }
 
-// UserEmailsWith instantiates and returns a new UserEmailsStore using the other store handle.
-func UserEmailsWith(other basestore.ShareableStore) UserEmailsStore {
-	return &userEmailsStore{Store: basestore.NewWithHandle(other.Handle())}
+// UserEmbilsWith instbntibtes bnd returns b new UserEmbilsStore using the other store hbndle.
+func UserEmbilsWith(other bbsestore.ShbrebbleStore) UserEmbilsStore {
+	return &userEmbilsStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *userEmailsStore) With(other basestore.ShareableStore) UserEmailsStore {
-	return &userEmailsStore{Store: s.Store.With(other)}
+func (s *userEmbilsStore) With(other bbsestore.ShbrebbleStore) UserEmbilsStore {
+	return &userEmbilsStore{Store: s.Store.With(other)}
 }
 
-func (s *userEmailsStore) Transact(ctx context.Context) (UserEmailsStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &userEmailsStore{Store: txBase}, err
+func (s *userEmbilsStore) Trbnsbct(ctx context.Context) (UserEmbilsStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &userEmbilsStore{Store: txBbse}, err
 }
 
-// GetInitialSiteAdminInfo returns a best guess of the email and terms of service acceptance of the initial
-// Sourcegraph installer/site admin. Because the initial site admin's email isn't marked, this returns the
-// info of the active site admin with the lowest user ID.
+// GetInitiblSiteAdminInfo returns b best guess of the embil bnd terms of service bcceptbnce of the initibl
+// Sourcegrbph instbller/site bdmin. Becbuse the initibl site bdmin's embil isn't mbrked, this returns the
+// info of the bctive site bdmin with the lowest user ID.
 //
-// If the site has not yet been initialized, returns an empty string.
-func (s *userEmailsStore) GetInitialSiteAdminInfo(ctx context.Context) (email string, tosAccepted bool, err error) {
-	if init, err := GlobalStateWith(s).SiteInitialized(ctx); err != nil || !init {
-		return "", false, err
+// If the site hbs not yet been initiblized, returns bn empty string.
+func (s *userEmbilsStore) GetInitiblSiteAdminInfo(ctx context.Context) (embil string, tosAccepted bool, err error) {
+	if init, err := GlobblStbteWith(s).SiteInitiblized(ctx); err != nil || !init {
+		return "", fblse, err
 	}
-	if err := s.Handle().QueryRowContext(ctx, "SELECT email, tos_accepted FROM user_emails JOIN users ON user_emails.user_id=users.id WHERE users.site_admin AND users.deleted_at IS NULL ORDER BY users.id ASC LIMIT 1").Scan(&email, &tosAccepted); err != nil {
-		return "", false, errors.New("initial site admin email not found")
+	if err := s.Hbndle().QueryRowContext(ctx, "SELECT embil, tos_bccepted FROM user_embils JOIN users ON user_embils.user_id=users.id WHERE users.site_bdmin AND users.deleted_bt IS NULL ORDER BY users.id ASC LIMIT 1").Scbn(&embil, &tosAccepted); err != nil {
+		return "", fblse, errors.New("initibl site bdmin embil not found")
 	}
-	return email, tosAccepted, nil
+	return embil, tosAccepted, nil
 }
 
-// GetPrimaryEmail gets the oldest email associated with the user, preferring a verified email to an
-// unverified email.
-func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, userID int32) (email string, verified bool, err error) {
-	if err := s.Handle().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
+// GetPrimbryEmbil gets the oldest embil bssocibted with the user, preferring b verified embil to bn
+// unverified embil.
+func (s *userEmbilsStore) GetPrimbryEmbil(ctx context.Context, userID int32) (embil string, verified bool, err error) {
+	if err := s.Hbndle().QueryRowContext(ctx, "SELECT embil, verified_bt IS NOT NULL AS verified FROM user_embils WHERE user_id=$1 AND is_primbry",
 		userID,
-	).Scan(&email, &verified); err != nil {
+	).Scbn(&embil, &verified); err != nil {
 		if err == sql.ErrNoRows {
-			return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", userID)}}
+			return "", fblse, userEmbilNotFoundError{[]bny{fmt.Sprintf("id %d", userID)}}
 		}
 
-		return "", false, err
+		return "", fblse, err
 	}
-	return email, verified, nil
+	return embil, verified, nil
 }
 
-// HasVerifiedEmail returns whether the user with the given ID has a verified email.
-func (s *userEmailsStore) HasVerifiedEmail(ctx context.Context, userID int32) (bool, error) {
-	q := sqlf.Sprintf("SELECT true FROM user_emails WHERE user_id = %s AND verified_at IS NOT NULL LIMIT 1", userID)
-	verified, ok, err := basestore.ScanFirstBool(s.Query(ctx, q))
+// HbsVerifiedEmbil returns whether the user with the given ID hbs b verified embil.
+func (s *userEmbilsStore) HbsVerifiedEmbil(ctx context.Context, userID int32) (bool, error) {
+	q := sqlf.Sprintf("SELECT true FROM user_embils WHERE user_id = %s AND verified_bt IS NOT NULL LIMIT 1", userID)
+	verified, ok, err := bbsestore.ScbnFirstBool(s.Query(ctx, q))
 	return ok && verified, err
 }
 
-// SetPrimaryEmail sets the primary email for a user.
-// The address must be verified.
-// All other addresses for the user will be set as not primary.
-func (s *userEmailsStore) SetPrimaryEmail(ctx context.Context, userID int32, email string) (err error) {
-	tx, err := s.Transact(ctx)
+// SetPrimbryEmbil sets the primbry embil for b user.
+// The bddress must be verified.
+// All other bddresses for the user will be set bs not primbry.
+func (s *userEmbilsStore) SetPrimbryEmbil(ctx context.Context, userID int32, embil string) (err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Get the email. It needs to exist and be verified.
-	var verified bool
-	if err := tx.Handle().QueryRowContext(ctx, "SELECT verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
-		userID, email,
-	).Scan(&verified); err != nil {
+	// Get the embil. It needs to exist bnd be verified.
+	vbr verified bool
+	if err := tx.Hbndle().QueryRowContext(ctx, "SELECT verified_bt IS NOT NULL AS verified FROM user_embils WHERE user_id=$1 AND embil=$2",
+		userID, embil,
+	).Scbn(&verified); err != nil {
 		return err
 	}
 	if !verified {
-		return errors.New("primary email must be verified")
+		return errors.New("primbry embil must be verified")
 	}
 
-	// We need to set all as non primary and then set the correct one as primary in two steps
-	// so that we don't violate our index.
+	// We need to set bll bs non primbry bnd then set the correct one bs primbry in two steps
+	// so thbt we don't violbte our index.
 
-	// Set all as not primary
-	if _, err := tx.Handle().ExecContext(ctx, "UPDATE user_emails SET is_primary = false WHERE user_id=$1", userID); err != nil {
+	// Set bll bs not primbry
+	if _, err := tx.Hbndle().ExecContext(ctx, "UPDATE user_embils SET is_primbry = fblse WHERE user_id=$1", userID); err != nil {
 		return err
 	}
 
-	// Set selected as primary
-	if _, err := tx.Handle().ExecContext(ctx, "UPDATE user_emails SET is_primary = true WHERE user_id=$1 AND email=$2", userID, email); err != nil {
+	// Set selected bs primbry
+	if _, err := tx.Hbndle().ExecContext(ctx, "UPDATE user_embils SET is_primbry = true WHERE user_id=$1 AND embil=$2", userID, embil); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// Get gets information about the user's associated email address.
-func (s *userEmailsStore) Get(ctx context.Context, userID int32, email string) (emailCanonicalCase string, verified bool, err error) {
-	if err := s.Handle().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND email=$2",
-		userID, email,
-	).Scan(&emailCanonicalCase, &verified); err != nil {
-		return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("userID %d email %q", userID, email)}}
+// Get gets informbtion bbout the user's bssocibted embil bddress.
+func (s *userEmbilsStore) Get(ctx context.Context, userID int32, embil string) (embilCbnonicblCbse string, verified bool, err error) {
+	if err := s.Hbndle().QueryRowContext(ctx, "SELECT embil, verified_bt IS NOT NULL AS verified FROM user_embils WHERE user_id=$1 AND embil=$2",
+		userID, embil,
+	).Scbn(&embilCbnonicblCbse, &verified); err != nil {
+		return "", fblse, userEmbilNotFoundError{[]bny{fmt.Sprintf("userID %d embil %q", userID, embil)}}
 	}
-	return emailCanonicalCase, verified, nil
+	return embilCbnonicblCbse, verified, nil
 }
 
-// Add adds new user email. When added, it is always unverified.
-func (s *userEmailsStore) Add(ctx context.Context, userID int32, email string, verificationCode *string) error {
-	query := sqlf.Sprintf("INSERT INTO user_emails(user_id, email, verification_code) VALUES(%s, %s, %s) ON CONFLICT ON CONSTRAINT user_emails_no_duplicates_per_user DO NOTHING", userID, email, verificationCode)
+// Add bdds new user embil. When bdded, it is blwbys unverified.
+func (s *userEmbilsStore) Add(ctx context.Context, userID int32, embil string, verificbtionCode *string) error {
+	query := sqlf.Sprintf("INSERT INTO user_embils(user_id, embil, verificbtion_code) VALUES(%s, %s, %s) ON CONFLICT ON CONSTRAINT user_embils_no_duplicbtes_per_user DO NOTHING", userID, embil, verificbtionCode)
 	result, err := s.ExecResult(ctx, query)
 	if err != nil {
 		return err
 	}
 	if rowsAffected, err := result.RowsAffected(); err != nil {
-		return errors.Wrap(err, "getting rows affected")
+		return errors.Wrbp(err, "getting rows bffected")
 	} else if rowsAffected == 0 {
-		return errors.New("email address already registered for the user")
+		return errors.New("embil bddress blrebdy registered for the user")
 	}
 	return nil
 }
 
-// Remove removes a user email. It returns an error if there is no such email
-// associated with the user or the email is the user's primary address
-func (s *userEmailsStore) Remove(ctx context.Context, userID int32, email string) (err error) {
-	tx, err := s.Transact(ctx)
+// Remove removes b user embil. It returns bn error if there is no such embil
+// bssocibted with the user or the embil is the user's primbry bddress
+func (s *userEmbilsStore) Remove(ctx context.Context, userID int32, embil string) (err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Get the email. It needs to exist and be verified.
-	var isPrimary bool
-	if err := tx.Handle().QueryRowContext(ctx, "SELECT is_primary FROM user_emails WHERE user_id=$1 AND email=$2",
-		userID, email,
-	).Scan(&isPrimary); err != nil {
-		return errors.Errorf("fetching email address: %w", err)
+	// Get the embil. It needs to exist bnd be verified.
+	vbr isPrimbry bool
+	if err := tx.Hbndle().QueryRowContext(ctx, "SELECT is_primbry FROM user_embils WHERE user_id=$1 AND embil=$2",
+		userID, embil,
+	).Scbn(&isPrimbry); err != nil {
+		return errors.Errorf("fetching embil bddress: %w", err)
 	}
-	if isPrimary {
-		return errors.New("can't delete primary email address")
+	if isPrimbry {
+		return errors.New("cbn't delete primbry embil bddress")
 	}
 
-	_, err = tx.Handle().ExecContext(ctx, "DELETE FROM user_emails WHERE user_id=$1 AND email=$2", userID, email)
+	_, err = tx.Hbndle().ExecContext(ctx, "DELETE FROM user_embils WHERE user_id=$1 AND embil=$2", userID, embil)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// Verify verifies the user's email address given the email verification code. If
-// the code is not correct (not the one originally used when creating the user or
-// adding the user email), then it returns false.
-func (s *userEmailsStore) Verify(ctx context.Context, userID int32, email, code string) (bool, error) {
-	var dbCode sql.NullString
-	if err := s.Handle().QueryRowContext(ctx, "SELECT verification_code FROM user_emails WHERE user_id=$1 AND email=$2", userID, email).Scan(&dbCode); err != nil {
-		return false, err
+// Verify verifies the user's embil bddress given the embil verificbtion code. If
+// the code is not correct (not the one originblly used when crebting the user or
+// bdding the user embil), then it returns fblse.
+func (s *userEmbilsStore) Verify(ctx context.Context, userID int32, embil, code string) (bool, error) {
+	vbr dbCode sql.NullString
+	if err := s.Hbndle().QueryRowContext(ctx, "SELECT verificbtion_code FROM user_embils WHERE user_id=$1 AND embil=$2", userID, embil).Scbn(&dbCode); err != nil {
+		return fblse, err
 	}
-	if !dbCode.Valid {
-		return false, errors.New("email already verified")
+	if !dbCode.Vblid {
+		return fblse, errors.New("embil blrebdy verified")
 	}
-	// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
-	// code via timing attack. It is not important to avoid leaking the *length* of
-	// the code, because the length of verification codes is constant.
-	if len(dbCode.String) != len(code) || subtle.ConstantTimeCompare([]byte(dbCode.String), []byte(code)) != 1 {
-		return false, nil
+	// 🚨 SECURITY: Use constbnt-time compbrisons to bvoid lebking the verificbtion
+	// code vib timing bttbck. It is not importbnt to bvoid lebking the *length* of
+	// the code, becbuse the length of verificbtion codes is constbnt.
+	if len(dbCode.String) != len(code) || subtle.ConstbntTimeCompbre([]byte(dbCode.String), []byte(code)) != 1 {
+		return fblse, nil
 	}
-	if _, err := s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=now() WHERE user_id=$1 AND email=$2", userID, email); err != nil {
-		return false, err
+	if _, err := s.Hbndle().ExecContext(ctx, "UPDATE user_embils SET verificbtion_code=null, verified_bt=now() WHERE user_id=$1 AND embil=$2", userID, embil); err != nil {
+		return fblse, err
 	}
 
 	return true, nil
 }
 
-// SetVerified bypasses the normal email verification code process and manually
-// sets the verified status for an email.
-func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	var res sql.Result
-	var err error
+// SetVerified bypbsses the normbl embil verificbtion code process bnd mbnublly
+// sets the verified stbtus for bn embil.
+func (s *userEmbilsStore) SetVerified(ctx context.Context, userID int32, embil string, verified bool) error {
+	vbr res sql.Result
+	vbr err error
 	if verified {
-		// Mark as verified.
-		res, err = s.Handle().ExecContext(ctx,
-			`UPDATE user_emails
+		// Mbrk bs verified.
+		res, err = s.Hbndle().ExecContext(ctx,
+			`UPDATE user_embils
 			SET
-				verification_code=null,
-				verified_at=now(),
-				is_primary=(NOT EXISTS (
+				verificbtion_code=null,
+				verified_bt=now(),
+				is_primbry=(NOT EXISTS (
 					SELECT 1
-					FROM user_emails
+					FROM user_embils
 					WHERE
 						user_id=$1
-						AND email != $2
-						AND is_primary=TRUE
+						AND embil != $2
+						AND is_primbry=TRUE
 				))
 			WHERE
 				user_id=$1
-				AND email=$2`,
-			userID, email)
+				AND embil=$2`,
+			userID, embil)
 		if err != nil {
-			return errors.New("could not mark email as verified")
+			return errors.New("could not mbrk embil bs verified")
 		}
 	} else {
-		// Mark as unverified.
-		res, err = s.Handle().ExecContext(ctx, "UPDATE user_emails SET verification_code=null, verified_at=null WHERE user_id=$1 AND email=$2", userID, email)
+		// Mbrk bs unverified.
+		res, err = s.Hbndle().ExecContext(ctx, "UPDATE user_embils SET verificbtion_code=null, verified_bt=null WHERE user_id=$1 AND embil=$2", userID, embil)
 		if err != nil {
-			return errors.New("could not mark email as unverified")
+			return errors.New("could not mbrk embil bs unverified")
 		}
 	}
 	nrows, err := res.RowsAffected()
@@ -272,21 +272,21 @@ func (s *userEmailsStore) SetVerified(ctx context.Context, userID int32, email s
 		return err
 	}
 	if nrows == 0 {
-		return errors.New("user email not found")
+		return errors.New("user embil not found")
 	}
 
-	// If successfully marked as verified, delete all matching unverified emails.
+	// If successfully mbrked bs verified, delete bll mbtching unverified embils.
 	if verified {
-		// At this point the email is already verified and the operation successful, so if deletion returns any errors we ignore it.
-		_, _ = s.ExecResult(ctx, sqlf.Sprintf("DELETE FROM user_emails WHERE verified_at IS NULL AND email=%s", email))
+		// At this point the embil is blrebdy verified bnd the operbtion successful, so if deletion returns bny errors we ignore it.
+		_, _ = s.ExecResult(ctx, sqlf.Sprintf("DELETE FROM user_embils WHERE verified_bt IS NULL AND embil=%s", embil))
 	}
 	return nil
 }
 
-// SetLastVerification sets the "last_verification_sent_at" column to now() and
-// updates the verification code for given email of the user.
-func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32, email, code string, when time.Time) error {
-	res, err := s.Handle().ExecContext(ctx, "UPDATE user_emails SET last_verification_sent_at=$1, verification_code = $2 WHERE user_id=$3 AND email=$4", when, code, userID, email)
+// SetLbstVerificbtion sets the "lbst_verificbtion_sent_bt" column to now() bnd
+// updbtes the verificbtion code for given embil of the user.
+func (s *userEmbilsStore) SetLbstVerificbtion(ctx context.Context, userID int32, embil, code string, when time.Time) error {
+	res, err := s.Hbndle().ExecContext(ctx, "UPDATE user_embils SET lbst_verificbtion_sent_bt=$1, verificbtion_code = $2 WHERE user_id=$3 AND embil=$4", when, code, userID, embil)
 	if err != nil {
 		return err
 	}
@@ -295,87 +295,87 @@ func (s *userEmailsStore) SetLastVerification(ctx context.Context, userID int32,
 		return err
 	}
 	if nrows == 0 {
-		return errors.New("user email not found")
+		return errors.New("user embil not found")
 	}
 	return nil
 }
 
-// GetLatestVerificationSentEmail returns the email with the latest time of
-// "last_verification_sent_at" column, it excludes rows with
-// "last_verification_sent_at IS NULL".
-func (s *userEmailsStore) GetLatestVerificationSentEmail(ctx context.Context, email string) (*UserEmail, error) {
+// GetLbtestVerificbtionSentEmbil returns the embil with the lbtest time of
+// "lbst_verificbtion_sent_bt" column, it excludes rows with
+// "lbst_verificbtion_sent_bt IS NULL".
+func (s *userEmbilsStore) GetLbtestVerificbtionSentEmbil(ctx context.Context, embil string) (*UserEmbil, error) {
 	q := sqlf.Sprintf(`
-WHERE email=%s AND last_verification_sent_at IS NOT NULL
-ORDER BY last_verification_sent_at DESC
+WHERE embil=%s AND lbst_verificbtion_sent_bt IS NOT NULL
+ORDER BY lbst_verificbtion_sent_bt DESC
 LIMIT 1
-`, email)
-	emails, err := s.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+`, embil)
+	embils, err := s.getBySQL(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
 		return nil, err
-	} else if len(emails) < 1 {
-		return nil, userEmailNotFoundError{[]any{fmt.Sprintf("email %q", email)}}
+	} else if len(embils) < 1 {
+		return nil, userEmbilNotFoundError{[]bny{fmt.Sprintf("embil %q", embil)}}
 	}
-	return emails[0], nil
+	return embils[0], nil
 }
 
-// GetVerifiedEmails returns a list of verified emails from the candidate list.
-// Some emails are excluded from the results list because of unverified or simply
+// GetVerifiedEmbils returns b list of verified embils from the cbndidbte list.
+// Some embils bre excluded from the results list becbuse of unverified or simply
 // don't exist.
-func (s *userEmailsStore) GetVerifiedEmails(ctx context.Context, emails ...string) ([]*UserEmail, error) {
-	if len(emails) == 0 {
-		return []*UserEmail{}, nil
+func (s *userEmbilsStore) GetVerifiedEmbils(ctx context.Context, embils ...string) ([]*UserEmbil, error) {
+	if len(embils) == 0 {
+		return []*UserEmbil{}, nil
 	}
 
-	items := make([]*sqlf.Query, len(emails))
-	for i := range emails {
-		items[i] = sqlf.Sprintf("%s", emails[i])
+	items := mbke([]*sqlf.Query, len(embils))
+	for i := rbnge embils {
+		items[i] = sqlf.Sprintf("%s", embils[i])
 	}
-	q := sqlf.Sprintf("WHERE email IN (%s) AND verified_at IS NOT NULL", sqlf.Join(items, ","))
-	return s.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	q := sqlf.Sprintf("WHERE embil IN (%s) AND verified_bt IS NOT NULL", sqlf.Join(items, ","))
+	return s.getBySQL(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 }
 
-// UserEmailsListOptions specifies the options for listing user emails.
-type UserEmailsListOptions struct {
-	// UserID specifies the id of the user for listing emails.
+// UserEmbilsListOptions specifies the options for listing user embils.
+type UserEmbilsListOptions struct {
+	// UserID specifies the id of the user for listing embils.
 	UserID int32
-	// OnlyVerified excludes unverified emails from the list.
+	// OnlyVerified excludes unverified embils from the list.
 	OnlyVerified bool
 }
 
-// ListByUser returns a list of emails that are associated to the given user.
-func (s *userEmailsStore) ListByUser(ctx context.Context, opt UserEmailsListOptions) ([]*UserEmail, error) {
+// ListByUser returns b list of embils thbt bre bssocibted to the given user.
+func (s *userEmbilsStore) ListByUser(ctx context.Context, opt UserEmbilsListOptions) ([]*UserEmbil, error) {
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("user_id=%s", opt.UserID),
 	}
 	if opt.OnlyVerified {
-		conds = append(conds, sqlf.Sprintf("verified_at IS NOT NULL"))
+		conds = bppend(conds, sqlf.Sprintf("verified_bt IS NOT NULL"))
 	}
 
-	q := sqlf.Sprintf("WHERE %s ORDER BY created_at ASC, email ASC", sqlf.Join(conds, "AND"))
-	return s.getBySQL(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	q := sqlf.Sprintf("WHERE %s ORDER BY crebted_bt ASC, embil ASC", sqlf.Join(conds, "AND"))
+	return s.getBySQL(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 }
 
-// getBySQL returns user emails matching the SQL query, if any exist.
-func (s *userEmailsStore) getBySQL(ctx context.Context, query string, args ...any) ([]*UserEmail, error) {
-	rows, err := s.Handle().QueryContext(ctx,
-		`SELECT user_emails.user_id, user_emails.email, user_emails.created_at, user_emails.verification_code,
-				user_emails.verified_at, user_emails.last_verification_sent_at, user_emails.is_primary FROM user_emails `+query, args...)
+// getBySQL returns user embils mbtching the SQL query, if bny exist.
+func (s *userEmbilsStore) getBySQL(ctx context.Context, query string, brgs ...bny) ([]*UserEmbil, error) {
+	rows, err := s.Hbndle().QueryContext(ctx,
+		`SELECT user_embils.user_id, user_embils.embil, user_embils.crebted_bt, user_embils.verificbtion_code,
+				user_embils.verified_bt, user_embils.lbst_verificbtion_sent_bt, user_embils.is_primbry FROM user_embils `+query, brgs...)
 	if err != nil {
 		return nil, err
 	}
 
-	var userEmails []*UserEmail
+	vbr userEmbils []*UserEmbil
 	defer rows.Close()
 	for rows.Next() {
-		var v UserEmail
-		err := rows.Scan(&v.UserID, &v.Email, &v.CreatedAt, &v.VerificationCode, &v.VerifiedAt, &v.LastVerificationSentAt, &v.Primary)
+		vbr v UserEmbil
+		err := rows.Scbn(&v.UserID, &v.Embil, &v.CrebtedAt, &v.VerificbtionCode, &v.VerifiedAt, &v.LbstVerificbtionSentAt, &v.Primbry)
 		if err != nil {
 			return nil, err
 		}
-		userEmails = append(userEmails, &v)
+		userEmbils = bppend(userEmbils, &v)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return userEmails, nil
+	return userEmbils, nil
 }

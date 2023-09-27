@@ -1,35 +1,35 @@
-package telemetry
+pbckbge telemetry
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-// BestEffortEventRecorder is a version of EventRecorder that logs errors instead
-// of returning them. This is useful for non-critical telemetry collection.
+// BestEffortEventRecorder is b version of EventRecorder thbt logs errors instebd
+// of returning them. This is useful for non-criticbl telemetry collection.
 type BestEffortEventRecorder struct {
 	logger   log.Logger
 	recorder *EventRecorder
 }
 
-// NewEventRecorder creates a custom event recorder backed by a store
-// implementation. In general, prefer to use the telemetryrecorder.NewBestEffort()
-// constructor instead.
+// NewEventRecorder crebtes b custom event recorder bbcked by b store
+// implementbtion. In generbl, prefer to use the telemetryrecorder.NewBestEffort()
+// constructor instebd.
 func NewBestEffortEventRecorder(logger log.Logger, recorder *EventRecorder) *BestEffortEventRecorder {
 	return &BestEffortEventRecorder{logger: logger, recorder: recorder}
 }
 
-// Record records a single telemetry event with the context's Sourcegraph
-// actor, logging any recording errors it encounters. Parameters are optional.
-func (r *BestEffortEventRecorder) Record(ctx context.Context, feature eventFeature, action eventAction, parameters *EventParameters) {
-	if err := r.recorder.Record(ctx, feature, action, parameters); err != nil {
-		trace.Logger(ctx, r.logger).Error("failed to record telemetry event",
-			log.String("feature", string(feature)),
-			log.String("action", string(action)),
-			log.Int("parameters.version", parameters.Version),
+// Record records b single telemetry event with the context's Sourcegrbph
+// bctor, logging bny recording errors it encounters. Pbrbmeters bre optionbl.
+func (r *BestEffortEventRecorder) Record(ctx context.Context, febture eventFebture, bction eventAction, pbrbmeters *EventPbrbmeters) {
+	if err := r.recorder.Record(ctx, febture, bction, pbrbmeters); err != nil {
+		trbce.Logger(ctx, r.logger).Error("fbiled to record telemetry event",
+			log.String("febture", string(febture)),
+			log.String("bction", string(bction)),
+			log.Int("pbrbmeters.version", pbrbmeters.Version),
 			log.Error(err))
 	}
 }

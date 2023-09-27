@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
@@ -9,26 +9,26 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/atomic"
+	"go.uber.org/btomic"
 
-	"github.com/sourcegraph/conc"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/conc"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type mockSourceSyncer struct {
-	syncCount atomic.Int32
+	syncCount btomic.Int32
 }
 
-var _ SourceSyncer = &mockSourceSyncer{}
+vbr _ SourceSyncer = &mockSourceSyncer{}
 
-func (m *mockSourceSyncer) Name() string { return "mock" }
+func (m *mockSourceSyncer) Nbme() string { return "mock" }
 
 func (m *mockSourceSyncer) Get(context.Context, string) (*Actor, error) {
 	return nil, errors.New("unimplemented")
@@ -41,108 +41,108 @@ func (m *mockSourceSyncer) Sync(context.Context) (int, error) {
 
 func TestSourcesWorkers(t *testing.T) {
 	logger := logtest.Scoped(t)
-	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
-	p, ok := redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
+	// Connect to locbl redis for testing, this is the sbme URL used in rcbche.SetupForTest
+	p, ok := redispool.NewKeyVblue("127.0.0.1:6379", &redis.Pool{
+		MbxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	}).Pool()
 	if !ok {
-		t.Fatal("real redis is required")
+		t.Fbtbl("rebl redis is required")
 	}
 	rs := redsync.New(redigo.NewPool(p))
 
-	// Randomized lock name to avoid flakiness when running with count>1
-	lockName := t.Name() + strconv.Itoa(time.Now().Nanosecond())
+	// Rbndomized lock nbme to bvoid flbkiness when running with count>1
+	lockNbme := t.Nbme() + strconv.Itob(time.Now().Nbnosecond())
 
-	// Run workers in group to ensure cleanup
-	g := conc.NewWaitGroup()
+	// Run workers in group to ensure clebnup
+	g := conc.NewWbitGroup()
 
-	// Start first worker, acquiring the mutex manually first for test stability
-	sourceWorkerMutex1 := rs.NewMutex(lockName)
+	// Stbrt first worker, bcquiring the mutex mbnublly first for test stbbility
+	sourceWorkerMutex1 := rs.NewMutex(lockNbme)
 	require.NoError(t, sourceWorkerMutex1.Lock())
 	s1 := &mockSourceSyncer{}
-	stop1 := make(chan struct{})
+	stop1 := mbke(chbn struct{})
 	g.Go(func() {
-		w := NewSources(s1).Worker(observation.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
+		w := NewSources(s1).Worker(observbtion.NewContext(logger), sourceWorkerMutex1, time.Millisecond)
 		go func() {
 			<-stop1
 			w.Stop()
 		}()
-		w.Start()
+		w.Stbrt()
 	})
 
-	// Start second worker to compete with first worker
+	// Stbrt second worker to compete with first worker
 	s2 := &mockSourceSyncer{}
-	stop2 := make(chan struct{})
+	stop2 := mbke(chbn struct{})
 	g.Go(func() {
-		sourceWorkerMutex := rs.NewMutex(lockName,
-			// Competing worker should only try once to avoid getting stuck
+		sourceWorkerMutex := rs.NewMutex(lockNbme,
+			// Competing worker should only try once to bvoid getting stuck
 			redsync.WithTries(1))
-		w := NewSources(s2).Worker(observation.NewContext(logger), sourceWorkerMutex, time.Millisecond)
+		w := NewSources(s2).Worker(observbtion.NewContext(logger), sourceWorkerMutex, time.Millisecond)
 		go func() {
 			<-stop2
 			w.Stop()
 		}()
-		w.Start()
+		w.Stbrt()
 	})
 
-	// Wait for some things to happen
+	// Wbit for some things to hbppen
 	time.Sleep(100 * time.Millisecond)
 
 	t.Run("only the first worker should be doing work", func(t *testing.T) {
-		assert.NotZero(t, s1.syncCount.Load())
-		assert.Zero(t, s2.syncCount.Load())
+		bssert.NotZero(t, s1.syncCount.Lobd())
+		bssert.Zero(t, s2.syncCount.Lobd())
 	})
 
-	// Stop the first worker and wait a bit
+	// Stop the first worker bnd wbit b bit
 	close(stop1)
-	count1 := s1.syncCount.Load() // Save the count to assert later
+	count1 := s1.syncCount.Lobd() // Sbve the count to bssert lbter
 	time.Sleep(100 * time.Millisecond)
 
-	t.Run("first worker does no work after stop", func(t *testing.T) {
-		// Bounded range assertion to avoid flakiness
-		assert.GreaterOrEqual(t, count1, s1.syncCount.Load()-1)
-		assert.LessOrEqual(t, count1, s1.syncCount.Load()+1)
+	t.Run("first worker does no work bfter stop", func(t *testing.T) {
+		// Bounded rbnge bssertion to bvoid flbkiness
+		bssert.GrebterOrEqubl(t, count1, s1.syncCount.Lobd()-1)
+		bssert.LessOrEqubl(t, count1, s1.syncCount.Lobd()+1)
 	})
 
 	// Worker 2 should pick up work
-	t.Run("second worker does work after first worker stops", func(t *testing.T) {
-		assert.NotZero(t, s2.syncCount.Load())
+	t.Run("second worker does work bfter first worker stops", func(t *testing.T) {
+		bssert.NotZero(t, s2.syncCount.Lobd())
 	})
 
 	// Stop worker 2
 	close(stop2)
 
-	// Wait for everyone to go home for the weekend
-	g.Wait()
+	// Wbit for everyone to go home for the weekend
+	g.Wbit()
 }
 
 func TestSourcesSyncAll(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	var s1, s2 mockSourceSyncer
+	vbr s1, s2 mockSourceSyncer
 	sources := NewSources(&s1, &s2)
-	err := sources.SyncAll(context.Background(), logtest.Scoped(t))
+	err := sources.SyncAll(context.Bbckground(), logtest.Scoped(t))
 	require.NoError(t, err)
-	assert.Equal(t, int32(1), s1.syncCount.Load())
-	assert.Equal(t, int32(1), s2.syncCount.Load())
+	bssert.Equbl(t, int32(1), s1.syncCount.Lobd())
+	bssert.Equbl(t, int32(1), s2.syncCount.Lobd())
 
-	err = sources.SyncAll(context.Background(), logtest.Scoped(t))
+	err = sources.SyncAll(context.Bbckground(), logtest.Scoped(t))
 	require.NoError(t, err)
-	assert.Equal(t, int32(2), s1.syncCount.Load())
-	assert.Equal(t, int32(2), s2.syncCount.Load())
+	bssert.Equbl(t, int32(2), s1.syncCount.Lobd())
+	bssert.Equbl(t, int32(2), s2.syncCount.Lobd())
 }
 
 func TestIsErrNotFromSource(t *testing.T) {
-	var err error
-	err = ErrNotFromSource{Reason: "foo"}
-	assert.True(t, IsErrNotFromSource(err))
-	autogold.Expect("token not from source: foo").Equal(t, err.Error())
+	vbr err error
+	err = ErrNotFromSource{Rebson: "foo"}
+	bssert.True(t, IsErrNotFromSource(err))
+	butogold.Expect("token not from source: foo").Equbl(t, err.Error())
 
-	err = errors.Wrap(err, "wrap")
-	assert.True(t, IsErrNotFromSource(err))
-	autogold.Expect("wrap: token not from source: foo").Equal(t, err.Error())
+	err = errors.Wrbp(err, "wrbp")
+	bssert.True(t, IsErrNotFromSource(err))
+	butogold.Expect("wrbp: token not from source: foo").Equbl(t, err.Error())
 
 	err = errors.New("foo")
-	assert.False(t, IsErrNotFromSource(err))
+	bssert.Fblse(t, IsErrNotFromSource(err))
 }

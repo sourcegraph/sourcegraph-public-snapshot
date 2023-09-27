@@ -1,9 +1,9 @@
-package janitor
+pbckbge jbnitor
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metrics struct {
@@ -11,26 +11,26 @@ type metrics struct {
 	numErrors     prometheus.Counter
 }
 
-var NewMetrics = newMetrics
+vbr NewMetrics = newMetrics
 
-func newMetrics(observationCtx *observation.Context) *metrics {
-	counter := func(name, help string) prometheus.Counter {
+func newMetrics(observbtionCtx *observbtion.Context) *metrics {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
 	numVMsRemoved := counter(
-		"src_executor_orphaned_vms_removed_total",
-		"The number of orphaned virtual machines removed from the host.",
+		"src_executor_orphbned_vms_removed_totbl",
+		"The number of orphbned virtubl mbchines removed from the host.",
 	)
 	numErrors := counter(
-		"src_executor_janitor_errors_total",
-		"The number of errors that occur during the janitor job.",
+		"src_executor_jbnitor_errors_totbl",
+		"The number of errors thbt occur during the jbnitor job.",
 	)
 
 	return &metrics{

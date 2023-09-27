@@ -1,132 +1,132 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type SearchContextsOrderBy string
+type SebrchContextsOrderBy string
 
 const (
-	SearchContextCursorKind                              = "SearchContextCursor"
-	SearchContextsOrderByUpdatedAt SearchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
-	SearchContextsOrderBySpec      SearchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
+	SebrchContextCursorKind                              = "SebrchContextCursor"
+	SebrchContextsOrderByUpdbtedAt SebrchContextsOrderBy = "SEARCH_CONTEXT_UPDATED_AT"
+	SebrchContextsOrderBySpec      SebrchContextsOrderBy = "SEARCH_CONTEXT_SPEC"
 )
 
-type SearchContextsResolver interface {
-	SearchContexts(ctx context.Context, args *ListSearchContextsArgs) (SearchContextConnectionResolver, error)
+type SebrchContextsResolver interfbce {
+	SebrchContexts(ctx context.Context, brgs *ListSebrchContextsArgs) (SebrchContextConnectionResolver, error)
 
-	SearchContextByID(ctx context.Context, id graphql.ID) (SearchContextResolver, error)
-	SearchContextBySpec(ctx context.Context, args SearchContextBySpecArgs) (SearchContextResolver, error)
-	IsSearchContextAvailable(ctx context.Context, args IsSearchContextAvailableArgs) (bool, error)
-	DefaultSearchContext(ctx context.Context) (SearchContextResolver, error)
-	CreateSearchContext(ctx context.Context, args CreateSearchContextArgs) (SearchContextResolver, error)
-	UpdateSearchContext(ctx context.Context, args UpdateSearchContextArgs) (SearchContextResolver, error)
-	DeleteSearchContext(ctx context.Context, args DeleteSearchContextArgs) (*EmptyResponse, error)
+	SebrchContextByID(ctx context.Context, id grbphql.ID) (SebrchContextResolver, error)
+	SebrchContextBySpec(ctx context.Context, brgs SebrchContextBySpecArgs) (SebrchContextResolver, error)
+	IsSebrchContextAvbilbble(ctx context.Context, brgs IsSebrchContextAvbilbbleArgs) (bool, error)
+	DefbultSebrchContext(ctx context.Context) (SebrchContextResolver, error)
+	CrebteSebrchContext(ctx context.Context, brgs CrebteSebrchContextArgs) (SebrchContextResolver, error)
+	UpdbteSebrchContext(ctx context.Context, brgs UpdbteSebrchContextArgs) (SebrchContextResolver, error)
+	DeleteSebrchContext(ctx context.Context, brgs DeleteSebrchContextArgs) (*EmptyResponse, error)
 
-	CreateSearchContextStar(ctx context.Context, args CreateSearchContextStarArgs) (*EmptyResponse, error)
-	DeleteSearchContextStar(ctx context.Context, args DeleteSearchContextStarArgs) (*EmptyResponse, error)
-	SetDefaultSearchContext(ctx context.Context, args SetDefaultSearchContextArgs) (*EmptyResponse, error)
+	CrebteSebrchContextStbr(ctx context.Context, brgs CrebteSebrchContextStbrArgs) (*EmptyResponse, error)
+	DeleteSebrchContextStbr(ctx context.Context, brgs DeleteSebrchContextStbrArgs) (*EmptyResponse, error)
+	SetDefbultSebrchContext(ctx context.Context, brgs SetDefbultSebrchContextArgs) (*EmptyResponse, error)
 
-	NodeResolvers() map[string]NodeByIDFunc
-	SearchContextsToResolvers(searchContexts []*types.SearchContext) []SearchContextResolver
+	NodeResolvers() mbp[string]NodeByIDFunc
+	SebrchContextsToResolvers(sebrchContexts []*types.SebrchContext) []SebrchContextResolver
 }
 
-type SearchContextResolver interface {
-	ID() graphql.ID
-	Name() string
+type SebrchContextResolver interfbce {
+	ID() grbphql.ID
+	Nbme() string
 	Description() string
 	Public() bool
 	AutoDefined() bool
 	Spec() string
-	UpdatedAt() gqlutil.DateTime
-	Namespace(ctx context.Context) (*NamespaceResolver, error)
-	ViewerCanManage(ctx context.Context) bool
-	ViewerHasAsDefault(ctx context.Context) bool
-	ViewerHasStarred(ctx context.Context) bool
-	Repositories(ctx context.Context) ([]SearchContextRepositoryRevisionsResolver, error)
+	UpdbtedAt() gqlutil.DbteTime
+	Nbmespbce(ctx context.Context) (*NbmespbceResolver, error)
+	ViewerCbnMbnbge(ctx context.Context) bool
+	ViewerHbsAsDefbult(ctx context.Context) bool
+	ViewerHbsStbrred(ctx context.Context) bool
+	Repositories(ctx context.Context) ([]SebrchContextRepositoryRevisionsResolver, error)
 	Query() string
 }
 
-type SearchContextConnectionResolver interface {
-	Nodes() []SearchContextResolver
-	TotalCount() int32
-	PageInfo() *graphqlutil.PageInfo
+type SebrchContextConnectionResolver interfbce {
+	Nodes() []SebrchContextResolver
+	TotblCount() int32
+	PbgeInfo() *grbphqlutil.PbgeInfo
 }
 
-type SearchContextRepositoryRevisionsResolver interface {
+type SebrchContextRepositoryRevisionsResolver interfbce {
 	Repository() *RepositoryResolver
 	Revisions() []string
 }
 
-type SearchContextInputArgs struct {
-	Name        string
+type SebrchContextInputArgs struct {
+	Nbme        string
 	Description string
 	Public      bool
-	Namespace   *graphql.ID
+	Nbmespbce   *grbphql.ID
 	Query       string
 }
 
-type SearchContextEditInputArgs struct {
-	Name        string
+type SebrchContextEditInputArgs struct {
+	Nbme        string
 	Description string
 	Public      bool
 	Query       string
 }
 
-type SearchContextRepositoryRevisionsInputArgs struct {
-	RepositoryID graphql.ID
+type SebrchContextRepositoryRevisionsInputArgs struct {
+	RepositoryID grbphql.ID
 	Revisions    []string
 }
 
-type CreateSearchContextArgs struct {
-	SearchContext SearchContextInputArgs
-	Repositories  []SearchContextRepositoryRevisionsInputArgs
+type CrebteSebrchContextArgs struct {
+	SebrchContext SebrchContextInputArgs
+	Repositories  []SebrchContextRepositoryRevisionsInputArgs
 }
 
-type UpdateSearchContextArgs struct {
-	ID            graphql.ID
-	SearchContext SearchContextEditInputArgs
-	Repositories  []SearchContextRepositoryRevisionsInputArgs
+type UpdbteSebrchContextArgs struct {
+	ID            grbphql.ID
+	SebrchContext SebrchContextEditInputArgs
+	Repositories  []SebrchContextRepositoryRevisionsInputArgs
 }
 
-type DeleteSearchContextArgs struct {
-	ID graphql.ID
+type DeleteSebrchContextArgs struct {
+	ID grbphql.ID
 }
 
-type CreateSearchContextStarArgs struct {
-	SearchContextID graphql.ID
-	UserID          graphql.ID
+type CrebteSebrchContextStbrArgs struct {
+	SebrchContextID grbphql.ID
+	UserID          grbphql.ID
 }
 
-type DeleteSearchContextStarArgs struct {
-	SearchContextID graphql.ID
-	UserID          graphql.ID
+type DeleteSebrchContextStbrArgs struct {
+	SebrchContextID grbphql.ID
+	UserID          grbphql.ID
 }
 
-type SetDefaultSearchContextArgs struct {
-	SearchContextID graphql.ID
-	UserID          graphql.ID
+type SetDefbultSebrchContextArgs struct {
+	SebrchContextID grbphql.ID
+	UserID          grbphql.ID
 }
 
-type SearchContextBySpecArgs struct {
+type SebrchContextBySpecArgs struct {
 	Spec string
 }
 
-type IsSearchContextAvailableArgs struct {
+type IsSebrchContextAvbilbbleArgs struct {
 	Spec string
 }
 
-type ListSearchContextsArgs struct {
+type ListSebrchContextsArgs struct {
 	First      int32
 	After      *string
 	Query      *string
-	Namespaces []*graphql.ID
-	OrderBy    SearchContextsOrderBy
+	Nbmespbces []*grbphql.ID
+	OrderBy    SebrchContextsOrderBy
 	Descending bool
 }

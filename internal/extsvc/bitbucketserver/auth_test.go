@@ -1,89 +1,89 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
 	"net/http"
 	"testing"
 
-	"github.com/gomodule/oauth1/oauth"
+	"github.com/gomodule/obuth1/obuth"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
-func TestSudoableOAuthClient(t *testing.T) {
-	t.Run("Authenticate without Username", func(t *testing.T) {
-		token := newSudoableOAuthClient("abcdef", "Sourcegraph ❤️ you", "")
+func TestSudobbleOAuthClient(t *testing.T) {
+	t.Run("Authenticbte without Usernbme", func(t *testing.T) {
+		token := newSudobbleOAuthClient("bbcdef", "Sourcegrbph ❤️ you", "")
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := token.Authenticate(req); err != nil {
+		if err := token.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if have := req.Header.Get("Authorization"); have == "" {
-			t.Errorf("unexpected Authorization header: %q", have)
+		if hbve := req.Hebder.Get("Authorizbtion"); hbve == "" {
+			t.Errorf("unexpected Authorizbtion hebder: %q", hbve)
 		}
-		if have := req.URL.Query().Get("user_id"); have != "" {
-			t.Errorf("unexpected user_id parameter: %q", have)
+		if hbve := req.URL.Query().Get("user_id"); hbve != "" {
+			t.Errorf("unexpected user_id pbrbmeter: %q", hbve)
 		}
 	})
 
-	t.Run("Authenticate with Sudo", func(t *testing.T) {
-		token := newSudoableOAuthClient("abcdef", "Sourcegraph ❤️ you", "neo")
+	t.Run("Authenticbte with Sudo", func(t *testing.T) {
+		token := newSudobbleOAuthClient("bbcdef", "Sourcegrbph ❤️ you", "neo")
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := token.Authenticate(req); err != nil {
+		if err := token.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if have := req.Header.Get("Authorization"); have == "" {
-			t.Errorf("unexpected Authorization header: %q", have)
+		if hbve := req.Hebder.Get("Authorizbtion"); hbve == "" {
+			t.Errorf("unexpected Authorizbtion hebder: %q", hbve)
 		}
-		if have, want := req.URL.Query().Get("user_id"), "neo"; have != want {
-			t.Errorf("unexpected user_id parameter: have=%q want=%q", have, want)
+		if hbve, wbnt := req.URL.Query().Get("user_id"), "neo"; hbve != wbnt {
+			t.Errorf("unexpected user_id pbrbmeter: hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
 
-	t.Run("Hash", func(t *testing.T) {
-		hashes := []string{
-			newSudoableOAuthClient("", "", "").Hash(),
-			newSudoableOAuthClient("", "quux", "").Hash(),
-			newSudoableOAuthClient("foobar", "quux", "").Hash(),
-			newSudoableOAuthClient("foobar", "", "").Hash(),
+	t.Run("Hbsh", func(t *testing.T) {
+		hbshes := []string{
+			newSudobbleOAuthClient("", "", "").Hbsh(),
+			newSudobbleOAuthClient("", "quux", "").Hbsh(),
+			newSudobbleOAuthClient("foobbr", "quux", "").Hbsh(),
+			newSudobbleOAuthClient("foobbr", "", "").Hbsh(),
 		}
 
-		seen := make(map[string]struct{})
-		for _, hash := range hashes {
-			if _, ok := seen[hash]; ok {
-				t.Errorf("non-unique hash: %q", hash)
+		seen := mbke(mbp[string]struct{})
+		for _, hbsh := rbnge hbshes {
+			if _, ok := seen[hbsh]; ok {
+				t.Errorf("non-unique hbsh: %q", hbsh)
 			}
-			seen[hash] = struct{}{}
+			seen[hbsh] = struct{}{}
 		}
 
-		with := newSudoableOAuthClient("foobar", "quux", "neo").Hash()
-		without := newSudoableOAuthClient("foobar", "quux", "neo").Hash()
+		with := newSudobbleOAuthClient("foobbr", "quux", "neo").Hbsh()
+		without := newSudobbleOAuthClient("foobbr", "quux", "neo").Hbsh()
 		if with != without {
-			t.Errorf("hashes unexpectedly changed due to username: with=%q without=%q", with, without)
+			t.Errorf("hbshes unexpectedly chbnged due to usernbme: with=%q without=%q", with, without)
 		}
 	})
 }
 
-func newSudoableOAuthClient(token, secret, username string) *SudoableOAuthClient {
-	return &SudoableOAuthClient{
-		Client: auth.OAuthClient{
-			Client: &oauth.Client{
-				Credentials: oauth.Credentials{
+func newSudobbleOAuthClient(token, secret, usernbme string) *SudobbleOAuthClient {
+	return &SudobbleOAuthClient{
+		Client: buth.OAuthClient{
+			Client: &obuth.Client{
+				Credentibls: obuth.Credentibls{
 					Token:  token,
 					Secret: secret,
 				},
 			},
 		},
-		Username: username,
+		Usernbme: usernbme,
 	}
 }

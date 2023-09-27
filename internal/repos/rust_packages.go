@@ -1,57 +1,57 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/crbtes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewRustPackagesSource returns a new RustPackagesSource from the given external service.
-func NewRustPackagesSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewRustPbckbgesSource returns b new RustPbckbgesSource from the given externbl service.
+func NewRustPbckbgesSource(ctx context.Context, svc *types.ExternblService, cf *httpcli.Fbctory) (*PbckbgesSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.RustPackagesConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.RustPbckbgesConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 
-	client, err := crates.NewClient(svc.URN(), cf)
+	client, err := crbtes.NewClient(svc.URN(), cf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &PackagesSource{
+	return &PbckbgesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
-		scheme:     dependencies.RustPackagesScheme,
-		src:        &rustPackagesSource{client},
+		scheme:     dependencies.RustPbckbgesScheme,
+		src:        &rustPbckbgesSource{client},
 	}, nil
 }
 
-type rustPackagesSource struct {
-	client *crates.Client
+type rustPbckbgesSource struct {
+	client *crbtes.Client
 }
 
-var _ packagesSource = &rustPackagesSource{}
+vbr _ pbckbgesSource = &rustPbckbgesSource{}
 
-func (rustPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRustVersionedPackage(dep), nil
+func (rustPbckbgesSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseRustVersionedPbckbge(dep), nil
 }
 
-func (rustPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseRustPackageFromName(name), nil
+func (rustPbckbgesSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseRustPbckbgeFromNbme(nbme), nil
 }
 
-func (rustPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParseRustPackageFromRepoName(repoName)
+func (rustPbckbgesSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseRustPbckbgeFromRepoNbme(repoNbme)
 }

@@ -1,17 +1,17 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
 )
 
-type CodeIntelResolver interface {
+type CodeIntelResolver interfbce {
 	resolverstubs.RootResolver
 
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
 type Resolver struct {
@@ -22,11 +22,11 @@ func NewCodeIntelResolver(resolver *resolverstubs.Resolver) *Resolver {
 	return &Resolver{Resolver: resolver}
 }
 
-func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
-	m := map[string]NodeByIDFunc{}
-	for name, f := range r.Resolver.NodeResolvers() {
-		resolverFunc := f // do not capture loop variable
-		m[name] = func(ctx context.Context, id graphql.ID) (Node, error) {
+func (r *Resolver) NodeResolvers() mbp[string]NodeByIDFunc {
+	m := mbp[string]NodeByIDFunc{}
+	for nbme, f := rbnge r.Resolver.NodeResolvers() {
+		resolverFunc := f // do not cbpture loop vbribble
+		m[nbme] = func(ctx context.Context, id grbphql.ID) (Node, error) {
 			return resolverFunc(ctx, id)
 		}
 	}

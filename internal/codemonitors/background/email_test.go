@@ -1,190 +1,190 @@
-package background
+pbckbge bbckground
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestEmail(t *testing.T) {
-	template := txemail.MustParseTemplate(newSearchResultsEmailTemplates)
+func TestEmbil(t *testing.T) {
+	templbte := txembil.MustPbrseTemplbte(newSebrchResultsEmbilTemplbtes)
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExternalURL: "https://www.sourcegraph.com",
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExternblURL: "https://www.sourcegrbph.com",
 		},
 	})
 	defer conf.Mock(nil)
 
-	t.Run("test message", func(t *testing.T) {
-		templateData := NewTestTemplateDataForNewSearchResults("My test monitor")
+	t.Run("test messbge", func(t *testing.T) {
+		templbteDbtb := NewTestTemplbteDbtbForNewSebrchResults("My test monitor")
 
 		t.Run("html", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Html.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Html.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Text.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Text.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Subj.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Subj.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			require.Equal(t, "Test: Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
+			require.Equbl(t, "Test: Sourcegrbph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("one result", func(t *testing.T) {
-		templateData := &TemplateDataNewSearchResults{
+		templbteDbtb := &TemplbteDbtbNewSebrchResults{
 			Priority:         "",
-			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
-			SearchURL:        "https://sourcegraph.com/search",
+			CodeMonitorURL:   "https://sourcegrbph.com/your/code/monitor",
+			SebrchURL:        "https://sourcegrbph.com/sebrch",
 			Description:      "My test monitor",
-			TotalCount:       1,
-			ResultPluralized: "result",
-			DisplayMoreLink:  false,
+			TotblCount:       1,
+			ResultPlurblized: "result",
+			DisplbyMoreLink:  fblse,
 		}
 
 		t.Run("html", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Html.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Html.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Text.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Text.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Subj.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Subj.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			require.Equal(t, "Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
+			require.Equbl(t, "Sourcegrbph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("multiple results", func(t *testing.T) {
-		templateData := &TemplateDataNewSearchResults{
+		templbteDbtb := &TemplbteDbtbNewSebrchResults{
 			Priority:         "",
-			CodeMonitorURL:   "https://sourcegraph.com/your/code/monitor",
-			SearchURL:        "https://sourcegraph.com/search",
+			CodeMonitorURL:   "https://sourcegrbph.com/your/code/monitor",
+			SebrchURL:        "https://sourcegrbph.com/sebrch",
 			Description:      "My test monitor",
-			TotalCount:       2,
-			ResultPluralized: "results",
-			DisplayMoreLink:  false,
+			TotblCount:       2,
+			ResultPlurblized: "results",
+			DisplbyMoreLink:  fblse,
 		}
 
 		t.Run("html", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Html.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Html.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 
 		})
 
 		t.Run("text", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Text.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Text.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Subj.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Subj.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 	})
 
 	t.Run("one result with results", func(t *testing.T) {
-		templateData := &TemplateDataNewSearchResults{
+		templbteDbtb := &TemplbteDbtbNewSebrchResults{
 			Priority:                  "",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
+			CodeMonitorURL:            "https://sourcegrbph.com/your/code/monitor",
+			SebrchURL:                 "https://sourcegrbph.com/sebrch",
 			Description:               "My test monitor",
-			TotalCount:                1,
-			ResultPluralized:          "result",
+			TotblCount:                1,
+			ResultPlurblized:          "result",
 			IncludeResults:            true,
-			TruncatedCount:            0,
-			TruncatedResults:          []*DisplayResult{commitDisplayResultMock},
-			TruncatedResultPluralized: "results",
-			DisplayMoreLink:           false,
+			TruncbtedCount:            0,
+			TruncbtedResults:          []*DisplbyResult{commitDisplbyResultMock},
+			TruncbtedResultPlurblized: "results",
+			DisplbyMoreLink:           fblse,
 		}
 
 		t.Run("html", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Html.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Html.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Text.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Text.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Subj.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Subj.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			require.Equal(t, "Sourcegraph code monitor My test monitor detected 1 new result", buf.String())
+			require.Equbl(t, "Sourcegrbph code monitor My test monitor detected 1 new result", buf.String())
 		})
 	})
 
 	t.Run("multiple results with results", func(t *testing.T) {
-		templateData := &TemplateDataNewSearchResults{
+		templbteDbtb := &TemplbteDbtbNewSebrchResults{
 			Priority:                  "",
-			CodeMonitorURL:            "https://sourcegraph.com/your/code/monitor",
-			SearchURL:                 "https://sourcegraph.com/search",
+			CodeMonitorURL:            "https://sourcegrbph.com/your/code/monitor",
+			SebrchURL:                 "https://sourcegrbph.com/sebrch",
 			Description:               "My test monitor",
-			TotalCount:                6,
-			TruncatedCount:            1,
-			ResultPluralized:          "results",
+			TotblCount:                6,
+			TruncbtedCount:            1,
+			ResultPlurblized:          "results",
 			IncludeResults:            true,
-			TruncatedResults:          []*DisplayResult{diffDisplayResultMock, commitDisplayResultMock, diffDisplayResultMock},
-			TruncatedResultPluralized: "result",
-			DisplayMoreLink:           true,
+			TruncbtedResults:          []*DisplbyResult{diffDisplbyResultMock, commitDisplbyResultMock, diffDisplbyResultMock},
+			TruncbtedResultPlurblized: "result",
+			DisplbyMoreLink:           true,
 		}
 
 		t.Run("html", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Html.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Html.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("text", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Text.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Text.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(buf.String()))
+			butogold.ExpectFile(t, butogold.Rbw(buf.String()))
 		})
 
 		t.Run("subject", func(t *testing.T) {
-			var buf bytes.Buffer
-			err := template.Subj.Execute(&buf, templateData)
+			vbr buf bytes.Buffer
+			err := templbte.Subj.Execute(&buf, templbteDbtb)
 			require.NoError(t, err)
-			require.Equal(t, "Sourcegraph code monitor My test monitor detected 6 new results", buf.String())
+			require.Equbl(t, "Sourcegrbph code monitor My test monitor detected 6 new results", buf.String())
 		})
 	})
 

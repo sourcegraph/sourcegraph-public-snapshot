@@ -1,152 +1,152 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import "github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-// src_codeintel_ranking_total
-// src_codeintel_ranking_duration_seconds_bucket
-// src_codeintel_ranking_errors_total
-func (codeIntelligence) NewRankingServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_rbnking_totbl
+// src_codeintel_rbnking_durbtion_seconds_bucket
+// src_codeintel_rbnking_errors_totbl
+func (codeIntelligence) NewRbnkingServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Ranking > Service",
-			Hidden:          false,
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Rbnking > Service",
+			Hidden:          fblse,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_ranking",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_rbnking",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_ranking_store_total
-// src_codeintel_ranking_store_duration_seconds_bucket
-// src_codeintel_ranking_store_errors_total
-func (codeIntelligence) NewRankingStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_rbnking_store_totbl
+// src_codeintel_rbnking_store_durbtion_seconds_bucket
+// src_codeintel_rbnking_store_errors_totbl
+func (codeIntelligence) NewRbnkingStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Ranking > Store",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Rbnking > Store",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_ranking_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_rbnking_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_ranking_lsifstore_total
-// src_codeintel_ranking_lsifstore_duration_seconds_bucket
-// src_codeintel_ranking_lsifstore_errors_total
-func (codeIntelligence) NewRankingLSIFStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_rbnking_lsifstore_totbl
+// src_codeintel_rbnking_lsifstore_durbtion_seconds_bucket
+// src_codeintel_rbnking_lsifstore_errors_totbl
+func (codeIntelligence) NewRbnkingLSIFStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Ranking > LSIFStore",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Rbnking > LSIFStore",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_ranking_lsifstore",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_rbnking_lsifstore",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// Tasks:
-//   - codeintel_ranking_symbol_exporter
-//   - codeintel_ranking_file_reference_count_mapper
-//   - codeintel_ranking_file_reference_count_reducer
+// Tbsks:
+//   - codeintel_rbnking_symbol_exporter
+//   - codeintel_rbnking_file_reference_count_mbpper
+//   - codeintel_rbnking_file_reference_count_reducer
 //
 // Suffixes:
-//   - _total
-//   - _duration_seconds_bucket
-//   - _errors_total
-//   - _records_processed_total
-//   - _records_altered_total
-func (codeIntelligence) NewRankingPipelineTaskGroups(containerName string) []monitoring.Group {
+//   - _totbl
+//   - _durbtion_seconds_bucket
+//   - _errors_totbl
+//   - _records_processed_totbl
+//   - _records_bltered_totbl
+func (codeIntelligence) NewRbnkingPipelineTbskGroups(contbinerNbme string) []monitoring.Group {
 	return CodeIntelligence.newPipelineGroups(
-		"Uploads > Pipeline task",
-		containerName,
+		"Uplobds > Pipeline tbsk",
+		contbinerNbme,
 		[]string{
-			"codeintel_ranking_symbol_exporter",
-			"codeintel_ranking_file_reference_count_seed_mapper",
-			"codeintel_ranking_file_reference_count_mapper",
-			"codeintel_ranking_file_reference_count_reducer",
+			"codeintel_rbnking_symbol_exporter",
+			"codeintel_rbnking_file_reference_count_seed_mbpper",
+			"codeintel_rbnking_file_reference_count_mbpper",
+			"codeintel_rbnking_file_reference_count_reducer",
 		},
 	)
 }
 
-// Tasks:
-//   - codeintel_ranking_exported_uploads_janitor
-//   - codeintel_ranking_deleted_exported_uploads_janitor
-//   - codeintel_ranking_abandoned_exported_uploads_janitor
-//   - codeintel_ranking_rank_counts_janitor
-//   - codeintel_ranking_rank_janitor
+// Tbsks:
+//   - codeintel_rbnking_exported_uplobds_jbnitor
+//   - codeintel_rbnking_deleted_exported_uplobds_jbnitor
+//   - codeintel_rbnking_bbbndoned_exported_uplobds_jbnitor
+//   - codeintel_rbnking_rbnk_counts_jbnitor
+//   - codeintel_rbnking_rbnk_jbnitor
 //
 // Suffixes:
-//   - _total
-//   - _duration_seconds_bucket
-//   - _errors_total
-//   - _records_scanned_total
-//   - _records_altered_total
-func (codeIntelligence) NewRankingJanitorTaskGroups(containerName string) []monitoring.Group {
-	return CodeIntelligence.newJanitorGroups(
-		"Uploads > Janitor task",
-		containerName,
+//   - _totbl
+//   - _durbtion_seconds_bucket
+//   - _errors_totbl
+//   - _records_scbnned_totbl
+//   - _records_bltered_totbl
+func (codeIntelligence) NewRbnkingJbnitorTbskGroups(contbinerNbme string) []monitoring.Group {
+	return CodeIntelligence.newJbnitorGroups(
+		"Uplobds > Jbnitor tbsk",
+		contbinerNbme,
 		[]string{
-			"codeintel_ranking_processed_references_janitor",
-			"codeintel_ranking_processed_paths_janitor",
-			"codeintel_ranking_exported_uploads_janitor",
-			"codeintel_ranking_deleted_exported_uploads_janitor",
-			"codeintel_ranking_abandoned_exported_uploads_janitor",
-			"codeintel_ranking_rank_counts_janitor",
-			"codeintel_ranking_rank_janitor",
+			"codeintel_rbnking_processed_references_jbnitor",
+			"codeintel_rbnking_processed_pbths_jbnitor",
+			"codeintel_rbnking_exported_uplobds_jbnitor",
+			"codeintel_rbnking_deleted_exported_uplobds_jbnitor",
+			"codeintel_rbnking_bbbndoned_exported_uplobds_jbnitor",
+			"codeintel_rbnking_rbnk_counts_jbnitor",
+			"codeintel_rbnking_rbnk_jbnitor",
 		},
 	)
 }

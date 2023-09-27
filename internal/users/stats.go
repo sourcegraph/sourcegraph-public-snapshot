@@ -1,41 +1,41 @@
-package users
+pbckbge users
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type UsersStatsDateTimeRange struct {
+type UsersStbtsDbteTimeRbnge struct {
 	Lte   *string
 	Gte   *string
 	Empty *bool
 	Not   *bool
 }
 
-func (d *UsersStatsDateTimeRange) toSQLConds(column string) ([]*sqlf.Query, error) {
+func (d *UsersStbtsDbteTimeRbnge) toSQLConds(column string) ([]*sqlf.Query, error) {
 	conds := []*sqlf.Query{}
 
 	if d.Empty != nil && *d.Empty {
-		conds = append(conds, sqlf.Sprintf(column+" IS NULL"))
+		conds = bppend(conds, sqlf.Sprintf(column+" IS NULL"))
 	} else {
 		if d.Lte != nil {
-			lte, err := time.Parse(time.RFC3339, *d.Lte)
+			lte, err := time.Pbrse(time.RFC3339, *d.Lte)
 			if err != nil {
 				return nil, err
 			}
-			conds = append(conds, sqlf.Sprintf(column+" <= %s", lte))
+			conds = bppend(conds, sqlf.Sprintf(column+" <= %s", lte))
 		}
 		if d.Gte != nil {
-			gte, err := time.Parse(time.RFC3339, *d.Gte)
+			gte, err := time.Pbrse(time.RFC3339, *d.Gte)
 			if err != nil {
 				return nil, err
 			}
-			conds = append(conds, sqlf.Sprintf(column+" >= %s", gte))
+			conds = bppend(conds, sqlf.Sprintf(column+" >= %s", gte))
 		}
 	}
 
@@ -45,151 +45,151 @@ func (d *UsersStatsDateTimeRange) toSQLConds(column string) ([]*sqlf.Query, erro
 	return conds, nil
 }
 
-type UsersStatsNumberRange struct {
-	Gte *float64
-	Lte *float64
+type UsersStbtsNumberRbnge struct {
+	Gte *flobt64
+	Lte *flobt64
 }
 
-func (d *UsersStatsNumberRange) toSQLConds(column string) []*sqlf.Query {
-	var conds []*sqlf.Query
+func (d *UsersStbtsNumberRbnge) toSQLConds(column string) []*sqlf.Query {
+	vbr conds []*sqlf.Query
 
 	if d.Lte != nil {
-		conds = append(conds, sqlf.Sprintf(column+" <= %s", d.Lte))
+		conds = bppend(conds, sqlf.Sprintf(column+" <= %s", d.Lte))
 	}
 	if d.Gte != nil {
-		conds = append(conds, sqlf.Sprintf(column+" >= %s", d.Gte))
+		conds = bppend(conds, sqlf.Sprintf(column+" >= %s", d.Gte))
 	}
 
 	return conds
 }
 
-type UsersStatsFilters struct {
+type UsersStbtsFilters struct {
 	Query        *string
 	SiteAdmin    *bool
-	Username     *string
-	Email        *string
-	LastActiveAt *UsersStatsDateTimeRange
-	DeletedAt    *UsersStatsDateTimeRange
-	CreatedAt    *UsersStatsDateTimeRange
-	EventsCount  *UsersStatsNumberRange
+	Usernbme     *string
+	Embil        *string
+	LbstActiveAt *UsersStbtsDbteTimeRbnge
+	DeletedAt    *UsersStbtsDbteTimeRbnge
+	CrebtedAt    *UsersStbtsDbteTimeRbnge
+	EventsCount  *UsersStbtsNumberRbnge
 }
 
-type UsersStats struct {
-	DB      database.DB
-	Filters UsersStatsFilters
+type UsersStbts struct {
+	DB      dbtbbbse.DB
+	Filters UsersStbtsFilters
 }
 
-func (s *UsersStats) makeQueryParameters() ([]*sqlf.Query, error) {
+func (s *UsersStbts) mbkeQueryPbrbmeters() ([]*sqlf.Query, error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if s.Filters.Query != nil && *s.Filters.Query != "" {
 		query := "%" + *s.Filters.Query + "%"
-		conds = append(conds, sqlf.Sprintf("(username ILIKE %s OR display_name ILIKE %s OR primary_email ILIKE %s)", query, query, query))
+		conds = bppend(conds, sqlf.Sprintf("(usernbme ILIKE %s OR displby_nbme ILIKE %s OR primbry_embil ILIKE %s)", query, query, query))
 	}
 	if s.Filters.SiteAdmin != nil {
-		conds = append(conds, sqlf.Sprintf("site_admin = %s", *s.Filters.SiteAdmin))
+		conds = bppend(conds, sqlf.Sprintf("site_bdmin = %s", *s.Filters.SiteAdmin))
 	}
-	if s.Filters.Username != nil {
-		conds = append(conds, sqlf.Sprintf("username ILIKE %s", "%"+*s.Filters.Username+"%"))
+	if s.Filters.Usernbme != nil {
+		conds = bppend(conds, sqlf.Sprintf("usernbme ILIKE %s", "%"+*s.Filters.Usernbme+"%"))
 	}
-	if s.Filters.Email != nil {
-		conds = append(conds, sqlf.Sprintf("primary_email ILIKE %s", "%"+*s.Filters.Email+"%"))
+	if s.Filters.Embil != nil {
+		conds = bppend(conds, sqlf.Sprintf("primbry_embil ILIKE %s", "%"+*s.Filters.Embil+"%"))
 	}
 	if s.Filters.DeletedAt != nil {
-		deletedAtConds, err := s.Filters.DeletedAt.toSQLConds("deleted_at")
+		deletedAtConds, err := s.Filters.DeletedAt.toSQLConds("deleted_bt")
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, deletedAtConds...)
+		conds = bppend(conds, deletedAtConds...)
 	}
 
-	if s.Filters.LastActiveAt != nil {
-		lastActiveAtConds, err := s.Filters.LastActiveAt.toSQLConds("last_active_at")
+	if s.Filters.LbstActiveAt != nil {
+		lbstActiveAtConds, err := s.Filters.LbstActiveAt.toSQLConds("lbst_bctive_bt")
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, lastActiveAtConds...)
+		conds = bppend(conds, lbstActiveAtConds...)
 	}
-	if s.Filters.CreatedAt != nil {
-		createdAtConds, err := s.Filters.CreatedAt.toSQLConds("created_at")
+	if s.Filters.CrebtedAt != nil {
+		crebtedAtConds, err := s.Filters.CrebtedAt.toSQLConds("crebted_bt")
 		if err != nil {
 			return nil, err
 		}
-		conds = append(conds, createdAtConds...)
+		conds = bppend(conds, crebtedAtConds...)
 	}
 
 	if s.Filters.EventsCount != nil {
 		eventsCountConds := s.Filters.EventsCount.toSQLConds("events_count")
-		conds = append(conds, eventsCountConds...)
+		conds = bppend(conds, eventsCountConds...)
 		if s.Filters.EventsCount.Lte != nil {
-			conds = append(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Lte))
+			conds = bppend(conds, sqlf.Sprintf("events_count <= %s", *s.Filters.EventsCount.Lte))
 		}
 		if s.Filters.EventsCount.Gte != nil {
-			conds = append(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
+			conds = bppend(conds, sqlf.Sprintf("events_count >= %s", *s.Filters.EventsCount.Gte))
 		}
 	}
 
-	// Exclude Sourcegraph Operator user accounts
-	conds = append(conds, sqlf.Sprintf(`
+	// Exclude Sourcegrbph Operbtor user bccounts
+	conds = bppend(conds, sqlf.Sprintf(`
 NOT EXISTS (
-	SELECT FROM user_external_accounts
+	SELECT FROM user_externbl_bccounts
 	WHERE
-		service_type = 'sourcegraph-operator'
-	AND user_id = aggregated_stats.id
+		service_type = 'sourcegrbph-operbtor'
+	AND user_id = bggregbted_stbts.id
 )
 `))
 	return conds, nil
 }
 
-var (
-	statsCTEQuery = `
-	WITH aggregated_stats AS (
+vbr (
+	stbtsCTEQuery = `
+	WITH bggregbted_stbts AS (
 		SELECT
 			users.id AS id,
-			users.username,
-			users.display_name,
-			emails.email primary_email,
-			users.created_at,
-			stats.user_last_active_at AS last_active_at,
-			users.deleted_at,
-			users.site_admin,
-            (SELECT COUNT(user_id) FROM user_external_accounts WHERE user_id=users.id AND service_type = 'scim') >= 1 AS scim_controlled,
-			COALESCE(stats.user_events_count, 0) AS events_count
+			users.usernbme,
+			users.displby_nbme,
+			embils.embil primbry_embil,
+			users.crebted_bt,
+			stbts.user_lbst_bctive_bt AS lbst_bctive_bt,
+			users.deleted_bt,
+			users.site_bdmin,
+            (SELECT COUNT(user_id) FROM user_externbl_bccounts WHERE user_id=users.id AND service_type = 'scim') >= 1 AS scim_controlled,
+			COALESCE(stbts.user_events_count, 0) AS events_count
 		FROM users
-			LEFT JOIN aggregated_user_statistics stats ON stats.user_id = users.id
-			LEFT JOIN user_emails emails ON emails.user_id = users.id AND emails.is_primary = true
+			LEFT JOIN bggregbted_user_stbtistics stbts ON stbts.user_id = users.id
+			LEFT JOIN user_embils embils ON embils.user_id = users.id AND embils.is_primbry = true
 	)
 	%s
 	`
 )
 
-func (s *UsersStats) TotalCount(ctx context.Context) (float64, error) {
-	var totalCount float64
+func (s *UsersStbts) TotblCount(ctx context.Context) (flobt64, error) {
+	vbr totblCount flobt64
 
-	conds, err := s.makeQueryParameters()
+	conds, err := s.mbkeQueryPbrbmeters()
 	if err != nil {
 		return 0, err
 	}
 
-	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`SELECT COUNT(id) FROM aggregated_stats WHERE %s`, sqlf.Join(conds, "AND")))
-	if err := s.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&totalCount); err != nil {
+	query := sqlf.Sprintf(stbtsCTEQuery, sqlf.Sprintf(`SELECT COUNT(id) FROM bggregbted_stbts WHERE %s`, sqlf.Join(conds, "AND")))
+	if err := s.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...).Scbn(&totblCount); err != nil {
 		return 0, err
 	}
 
-	return totalCount, nil
+	return totblCount, nil
 }
 
-type UsersStatsListUsersFilters struct {
+type UsersStbtsListUsersFilters struct {
 	OrderBy    *string
 	Descending *bool
 	Limit      *int32
 	Offset     *int32
 }
 
-func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsersFilters) ([]*UserStatItem, error) {
+func (s *UsersStbts) ListUsers(ctx context.Context, filters *UsersStbtsListUsersFilters) ([]*UserStbtItem, error) {
 	// ORDER BY
 	orderDirection := "ASC"
 	if filters == nil {
-		filters = &UsersStatsListUsersFilters{}
+		filters = &UsersStbtsListUsersFilters{}
 	}
 	if filters.Descending != nil && *filters.Descending {
 		orderDirection = "DESC"
@@ -215,15 +215,15 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 		offset = *filters.Offset
 	}
 
-	conds, err := s.makeQueryParameters()
+	conds, err := s.mbkeQueryPbrbmeters()
 	if err != nil {
 		return nil, err
 	}
 
-	query := sqlf.Sprintf(statsCTEQuery, sqlf.Sprintf(`
-	SELECT id, username, display_name, primary_email, created_at, last_active_at, deleted_at, site_admin, scim_controlled, events_count FROM aggregated_stats WHERE %s ORDER BY %s NULLS LAST LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
+	query := sqlf.Sprintf(stbtsCTEQuery, sqlf.Sprintf(`
+	SELECT id, usernbme, displby_nbme, primbry_embil, crebted_bt, lbst_bctive_bt, deleted_bt, site_bdmin, scim_controlled, events_count FROM bggregbted_stbts WHERE %s ORDER BY %s NULLS LAST LIMIT %s OFFSET %s`, sqlf.Join(conds, "AND"), orderBy, limit, offset))
 
-	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 
 	if err != nil {
 		return nil, err
@@ -231,15 +231,15 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 
 	defer rows.Close()
 
-	nodes := make([]*UserStatItem, 0)
+	nodes := mbke([]*UserStbtItem, 0)
 	for rows.Next() {
-		var node UserStatItem
+		vbr node UserStbtItem
 
-		if err := rows.Scan(&node.Id, &node.Username, &node.DisplayName, &node.PrimaryEmail, &node.CreatedAt, &node.LastActiveAt, &node.DeletedAt, &node.SiteAdmin, &node.SCIMControlled, &node.EventsCount); err != nil {
+		if err := rows.Scbn(&node.Id, &node.Usernbme, &node.DisplbyNbme, &node.PrimbryEmbil, &node.CrebtedAt, &node.LbstActiveAt, &node.DeletedAt, &node.SiteAdmin, &node.SCIMControlled, &node.EventsCount); err != nil {
 			return nil, err
 		}
 
-		nodes = append(nodes, &node)
+		nodes = bppend(nodes, &node)
 	}
 
 	return nodes, nil
@@ -247,34 +247,34 @@ func (s *UsersStats) ListUsers(ctx context.Context, filters *UsersStatsListUsers
 
 func toUsersField(orderBy string) (string, error) {
 	switch orderBy {
-	case "USERNAME":
-		return "username", nil
-	case "EMAIL":
-		return "primary_email", nil
-	case "CREATED_AT":
-		return "created_at", nil
-	case "LAST_ACTIVE_AT":
-		return "last_active_at", nil
-	case "DELETED_AT":
-		return "deleted_at", nil
-	case "EVENTS_COUNT":
+	cbse "USERNAME":
+		return "usernbme", nil
+	cbse "EMAIL":
+		return "primbry_embil", nil
+	cbse "CREATED_AT":
+		return "crebted_bt", nil
+	cbse "LAST_ACTIVE_AT":
+		return "lbst_bctive_bt", nil
+	cbse "DELETED_AT":
+		return "deleted_bt", nil
+	cbse "EVENTS_COUNT":
 		return "events_count", nil
-	case "SITE_ADMIN":
-		return "site_admin", nil
-	default:
-		return "", errors.New("invalid orderBy")
+	cbse "SITE_ADMIN":
+		return "site_bdmin", nil
+	defbult:
+		return "", errors.New("invblid orderBy")
 	}
 }
 
-type UserStatItem struct {
+type UserStbtItem struct {
 	Id             int32
-	Username       string
-	DisplayName    *string
-	PrimaryEmail   *string
-	CreatedAt      time.Time
-	LastActiveAt   *time.Time
+	Usernbme       string
+	DisplbyNbme    *string
+	PrimbryEmbil   *string
+	CrebtedAt      time.Time
+	LbstActiveAt   *time.Time
 	DeletedAt      *time.Time
 	SiteAdmin      bool
 	SCIMControlled bool
-	EventsCount    float64
+	EventsCount    flobt64
 }

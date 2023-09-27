@@ -1,14 +1,14 @@
-// Command repo-updater periodically updates repositories configured in site configuration and serves repository
-// metadata from multiple external code hosts.
-package main
+// Commbnd repo-updbter periodicblly updbtes repositories configured in site configurbtion bnd serves repository
+// metbdbtb from multiple externbl code hosts.
+pbckbge mbin
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegrbph/sourcegrbph/cmd/repo-updbter/shbred"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sourcegrbph/osscmd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
 )
 
-func main() {
-	sanitycheck.Pass()
-	osscmd.SingleServiceMainOSS(shared.Service)
+func mbin() {
+	sbnitycheck.Pbss()
+	osscmd.SingleServiceMbinOSS(shbred.Service)
 }

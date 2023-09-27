@@ -1,4 +1,4 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
@@ -6,273 +6,273 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
+	"github.com/grbfbnb/regexp"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewFileContainsFilterJob creates a filter job to post-filter results for the
-// file:contains.content() predicate.
+// NewFileContbinsFilterJob crebtes b filter job to post-filter results for the
+// file:contbins.content() predicbte.
 //
-// This filter job expects some setup in advance. File results streamed by the
-// child should contain matched ranges both for the original pattern and for
-// the file:contains.content() patterns. This job will filter out any ranges
-// that are matches for the file:contains.content() patterns.
+// This filter job expects some setup in bdvbnce. File results strebmed by the
+// child should contbin mbtched rbnges both for the originbl pbttern bnd for
+// the file:contbins.content() pbtterns. This job will filter out bny rbnges
+// thbt bre mbtches for the file:contbins.content() pbtterns.
 //
-// This filter job will also handle filtering diff results so that they only
-// include files that contain the pattern specified by file:contains.content().
-// Note that this implementation is pretty inefficient, and relies on running
-// an unindexed search for each streamed diff match. However, we cannot pre-filter
-// because then are not checking whether the file contains the requested content
-// at the commit of the diff match.
-func NewFileContainsFilterJob(includePatterns []string, originalPattern query.Node, caseSensitive bool, child job.Job) (job.Job, error) {
-	includeMatchers := make([]*regexp.Regexp, 0, len(includePatterns))
-	for _, pattern := range includePatterns {
-		if !caseSensitive {
-			pattern = "(?i:" + pattern + ")"
+// This filter job will blso hbndle filtering diff results so thbt they only
+// include files thbt contbin the pbttern specified by file:contbins.content().
+// Note thbt this implementbtion is pretty inefficient, bnd relies on running
+// bn unindexed sebrch for ebch strebmed diff mbtch. However, we cbnnot pre-filter
+// becbuse then bre not checking whether the file contbins the requested content
+// bt the commit of the diff mbtch.
+func NewFileContbinsFilterJob(includePbtterns []string, originblPbttern query.Node, cbseSensitive bool, child job.Job) (job.Job, error) {
+	includeMbtchers := mbke([]*regexp.Regexp, 0, len(includePbtterns))
+	for _, pbttern := rbnge includePbtterns {
+		if !cbseSensitive {
+			pbttern = "(?i:" + pbttern + ")"
 		}
-		re, err := regexp.Compile(pattern)
+		re, err := regexp.Compile(pbttern)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to regexp.Compile(%q) for file:contains.content() include patterns", pattern)
+			return nil, errors.Wrbpf(err, "fbiled to regexp.Compile(%q) for file:contbins.content() include pbtterns", pbttern)
 		}
-		includeMatchers = append(includeMatchers, re)
+		includeMbtchers = bppend(includeMbtchers, re)
 	}
 
-	originalPatternStrings := patternsInTree(originalPattern)
-	originalPatternMatchers := make([]*regexp.Regexp, 0, len(originalPatternStrings))
-	for _, originalPatternString := range originalPatternStrings {
-		if !caseSensitive {
-			originalPatternString = "(?i:" + originalPatternString + ")"
+	originblPbtternStrings := pbtternsInTree(originblPbttern)
+	originblPbtternMbtchers := mbke([]*regexp.Regexp, 0, len(originblPbtternStrings))
+	for _, originblPbtternString := rbnge originblPbtternStrings {
+		if !cbseSensitive {
+			originblPbtternString = "(?i:" + originblPbtternString + ")"
 		}
-		re, err := regexp.Compile(originalPatternString)
+		re, err := regexp.Compile(originblPbtternString)
 		if err != nil {
-			return nil, errors.Wrapf(err, "failed to regexp.Compile(%q) for file:contains.content() original patterns", originalPatternString)
+			return nil, errors.Wrbpf(err, "fbiled to regexp.Compile(%q) for file:contbins.content() originbl pbtterns", originblPbtternString)
 		}
-		originalPatternMatchers = append(originalPatternMatchers, re)
+		originblPbtternMbtchers = bppend(originblPbtternMbtchers, re)
 	}
 
-	return &fileContainsFilterJob{
-		caseSensitive:           caseSensitive,
-		includePatterns:         includePatterns,
-		includeMatchers:         includeMatchers,
-		originalPatternMatchers: originalPatternMatchers,
+	return &fileContbinsFilterJob{
+		cbseSensitive:           cbseSensitive,
+		includePbtterns:         includePbtterns,
+		includeMbtchers:         includeMbtchers,
+		originblPbtternMbtchers: originblPbtternMbtchers,
 		child:                   child,
 	}, nil
 }
 
-type fileContainsFilterJob struct {
-	// We maintain the original input patterns and case-sensitivity because
-	// searcher does not correctly handle case-insensitive `(?i:)` regex
-	// patterns. The logic for longest substring is incorrect for
-	// case-insensitive patterns (it returns the all-upper-case version of the
-	// longest substring) and will fail to find any matches.
-	caseSensitive   bool
-	includePatterns []string
+type fileContbinsFilterJob struct {
+	// We mbintbin the originbl input pbtterns bnd cbse-sensitivity becbuse
+	// sebrcher does not correctly hbndle cbse-insensitive `(?i:)` regex
+	// pbtterns. The logic for longest substring is incorrect for
+	// cbse-insensitive pbtterns (it returns the bll-upper-cbse version of the
+	// longest substring) bnd will fbil to find bny mbtches.
+	cbseSensitive   bool
+	includePbtterns []string
 
-	// Regex patterns specified by file:contains.content()
-	includeMatchers []*regexp.Regexp
+	// Regex pbtterns specified by file:contbins.content()
+	includeMbtchers []*regexp.Regexp
 
-	// Regex patterns specified as part of the original pattern
-	originalPatternMatchers []*regexp.Regexp
+	// Regex pbtterns specified bs pbrt of the originbl pbttern
+	originblPbtternMbtchers []*regexp.Regexp
 
 	child job.Job
 }
 
-func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
-	defer func() { finish(alert, err) }()
+func (j *fileContbinsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, j)
+	defer func() { finish(blert, err) }()
 
-	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event = j.filterEvent(ctx, clients.SearcherURLs, event)
-		stream.Send(event)
+	filteredStrebm := strebming.StrebmFunc(func(event strebming.SebrchEvent) {
+		event = j.filterEvent(ctx, clients.SebrcherURLs, event)
+		strebm.Send(event)
 	})
 
-	return j.child.Run(ctx, clients, filteredStream)
+	return j.child.Run(ctx, clients, filteredStrebm)
 }
 
-func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
-	// Don't filter out files with zero chunks because if the file contained
-	// a result, we still want to return a match for the file even if it
-	// has no matched ranges left.
+func (j *fileContbinsFilterJob) filterEvent(ctx context.Context, sebrcherURLs *endpoint.Mbp, event strebming.SebrchEvent) strebming.SebrchEvent {
+	// Don't filter out files with zero chunks becbuse if the file contbined
+	// b result, we still wbnt to return b mbtch for the file even if it
+	// hbs no mbtched rbnges left.
 	filtered := event.Results[:0]
-	for _, res := range event.Results {
+	for _, res := rbnge event.Results {
 		switch v := res.(type) {
-		case *result.FileMatch:
-			filtered = append(filtered, j.filterFileMatch(v))
-		case *result.CommitMatch:
-			cm := j.filterCommitMatch(ctx, searcherURLs, v)
+		cbse *result.FileMbtch:
+			filtered = bppend(filtered, j.filterFileMbtch(v))
+		cbse *result.CommitMbtch:
+			cm := j.filterCommitMbtch(ctx, sebrcherURLs, v)
 			if cm != nil {
-				filtered = append(filtered, cm)
+				filtered = bppend(filtered, cm)
 			}
-		default:
-			// Filter out any results that are not FileMatch or CommitMatch
+		defbult:
+			// Filter out bny results thbt bre not FileMbtch or CommitMbtch
 		}
 	}
 	event.Results = filtered
 	return event
 }
 
-func (j *fileContainsFilterJob) filterFileMatch(fm *result.FileMatch) result.Match {
-	filteredChunks := fm.ChunkMatches[:0]
-	for _, chunk := range fm.ChunkMatches {
+func (j *fileContbinsFilterJob) filterFileMbtch(fm *result.FileMbtch) result.Mbtch {
+	filteredChunks := fm.ChunkMbtches[:0]
+	for _, chunk := rbnge fm.ChunkMbtches {
 		chunk = j.filterChunk(chunk)
-		if len(chunk.Ranges) == 0 {
-			// Skip any chunks where we filtered out all the matched ranges
+		if len(chunk.Rbnges) == 0 {
+			// Skip bny chunks where we filtered out bll the mbtched rbnges
 			continue
 		}
-		filteredChunks = append(filteredChunks, chunk)
+		filteredChunks = bppend(filteredChunks, chunk)
 	}
-	// A file match with zero chunks after filtering is still valid, and just
-	// becomes a path match
-	fm.ChunkMatches = filteredChunks
+	// A file mbtch with zero chunks bfter filtering is still vblid, bnd just
+	// becomes b pbth mbtch
+	fm.ChunkMbtches = filteredChunks
 	return fm
 }
 
-func (j *fileContainsFilterJob) filterChunk(chunk result.ChunkMatch) result.ChunkMatch {
-	filteredRanges := chunk.Ranges[:0]
-	for i, val := range chunk.MatchedContent() {
-		if matchesAny(val, j.includeMatchers) && !matchesAny(val, j.originalPatternMatchers) {
+func (j *fileContbinsFilterJob) filterChunk(chunk result.ChunkMbtch) result.ChunkMbtch {
+	filteredRbnges := chunk.Rbnges[:0]
+	for i, vbl := rbnge chunk.MbtchedContent() {
+		if mbtchesAny(vbl, j.includeMbtchers) && !mbtchesAny(vbl, j.originblPbtternMbtchers) {
 			continue
 		}
-		filteredRanges = append(filteredRanges, chunk.Ranges[i])
+		filteredRbnges = bppend(filteredRbnges, chunk.Rbnges[i])
 	}
-	chunk.Ranges = filteredRanges
+	chunk.Rbnges = filteredRbnges
 	return chunk
 }
 
-func matchesAny(val string, matchers []*regexp.Regexp) bool {
-	for _, re := range matchers {
-		if re.MatchString(val) {
+func mbtchesAny(vbl string, mbtchers []*regexp.Regexp) bool {
+	for _, re := rbnge mbtchers {
+		if re.MbtchString(vbl) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
-	// Skip any commit matches -- we only handle diff matches
+func (j *fileContbinsFilterJob) filterCommitMbtch(ctx context.Context, sebrcherURLs *endpoint.Mbp, cm *result.CommitMbtch) result.Mbtch {
+	// Skip bny commit mbtches -- we only hbndle diff mbtches
 	if cm.DiffPreview == nil {
 		return nil
 	}
 
-	fileNames := make([]string, 0, len(cm.Diff))
-	for _, fileDiff := range cm.Diff {
-		fileNames = append(fileNames, regexp.QuoteMeta(fileDiff.NewName))
+	fileNbmes := mbke([]string, 0, len(cm.Diff))
+	for _, fileDiff := rbnge cm.Diff {
+		fileNbmes = bppend(fileNbmes, regexp.QuoteMetb(fileDiff.NewNbme))
 	}
 
-	// For each pattern specified by file:contains.content(), run a search at
-	// the commit to ensure that the file does, in fact, contain that content.
-	// We cannot do this all at once because searcher does not support complex patterns.
-	// Additionally, we cannot do this in advance because we don't know which commit
-	// we are searching at until we get a result.
-	matchedFileCounts := make(map[string]int)
-	for _, includePattern := range j.includePatterns {
-		patternInfo := search.TextPatternInfo{
-			Pattern:               includePattern,
-			IsCaseSensitive:       j.caseSensitive,
+	// For ebch pbttern specified by file:contbins.content(), run b sebrch bt
+	// the commit to ensure thbt the file does, in fbct, contbin thbt content.
+	// We cbnnot do this bll bt once becbuse sebrcher does not support complex pbtterns.
+	// Additionblly, we cbnnot do this in bdvbnce becbuse we don't know which commit
+	// we bre sebrching bt until we get b result.
+	mbtchedFileCounts := mbke(mbp[string]int)
+	for _, includePbttern := rbnge j.includePbtterns {
+		pbtternInfo := sebrch.TextPbtternInfo{
+			Pbttern:               includePbttern,
+			IsCbseSensitive:       j.cbseSensitive,
 			IsRegExp:              true,
-			FileMatchLimit:        99999999,
+			FileMbtchLimit:        99999999,
 			Index:                 query.No,
-			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
-			PatternMatchesContent: true,
+			IncludePbtterns:       []string{query.UnionRegExps(fileNbmes)},
+			PbtternMbtchesContent: true,
 		}
 
-		onMatch := func(fms []*protocol.FileMatch) {
-			for _, fm := range fms {
-				matchedFileCounts[fm.Path] += 1
+		onMbtch := func(fms []*protocol.FileMbtch) {
+			for _, fm := rbnge fms {
+				mbtchedFileCounts[fm.Pbth] += 1
 			}
 		}
 
-		_, err := searcher.Search(
+		_, err := sebrcher.Sebrch(
 			ctx,
-			searcherURLs,
-			cm.Repo.Name,
+			sebrcherURLs,
+			cm.Repo.Nbme,
 			cm.Repo.ID,
 			"",
 			cm.Commit.ID,
-			false,
-			&patternInfo,
+			fblse,
+			&pbtternInfo,
 			time.Hour,
-			search.Features{},
-			onMatch,
+			sebrch.Febtures{},
+			onMbtch,
 		)
 		if err != nil {
-			// Ignore any files where the search errors
+			// Ignore bny files where the sebrch errors
 			return nil
 		}
 	}
 
-	return j.removeUnmatchedFileDiffs(cm, matchedFileCounts)
+	return j.removeUnmbtchedFileDiffs(cm, mbtchedFileCounts)
 }
 
-func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch, matchedFileCounts map[string]int) result.Match {
-	// Ensure the matched ranges are sorted by start offset
-	slices.SortFunc(cm.DiffPreview.MatchedRanges, func(a, b result.Range) bool {
-		return a.Start.Offset < b.End.Offset
+func (j *fileContbinsFilterJob) removeUnmbtchedFileDiffs(cm *result.CommitMbtch, mbtchedFileCounts mbp[string]int) result.Mbtch {
+	// Ensure the mbtched rbnges bre sorted by stbrt offset
+	slices.SortFunc(cm.DiffPreview.MbtchedRbnges, func(b, b result.Rbnge) bool {
+		return b.Stbrt.Offset < b.End.Offset
 	})
 
-	// Convert each file diff to a string so we know how much we are removing if we drop that file
-	diffStrings := make([]string, 0, len(cm.Diff))
-	for _, fileDiff := range cm.Diff {
-		diffStrings = append(diffStrings, result.FormatDiffFiles([]result.DiffFile{fileDiff}))
+	// Convert ebch file diff to b string so we know how much we bre removing if we drop thbt file
+	diffStrings := mbke([]string, 0, len(cm.Diff))
+	for _, fileDiff := rbnge cm.Diff {
+		diffStrings = bppend(diffStrings, result.FormbtDiffFiles([]result.DiffFile{fileDiff}))
 	}
 
-	// groupedRanges[i] will be the set of ranges that are contained by diffStrings[i]
-	groupedRanges := make([]result.Ranges, len(cm.Diff))
+	// groupedRbnges[i] will be the set of rbnges thbt bre contbined by diffStrings[i]
+	groupedRbnges := mbke([]result.Rbnges, len(cm.Diff))
 	{
-		rangeNumStart := 0
+		rbngeNumStbrt := 0
 		currentDiffEnd := 0
 	OUTER:
-		for i, diffString := range diffStrings {
+		for i, diffString := rbnge diffStrings {
 			currentDiffEnd += len(diffString)
-			for rangeNum := rangeNumStart; rangeNum < len(cm.DiffPreview.MatchedRanges); rangeNum++ {
-				currentRange := cm.DiffPreview.MatchedRanges[rangeNum]
-				if currentRange.Start.Offset > currentDiffEnd {
-					groupedRanges[i] = cm.DiffPreview.MatchedRanges[rangeNumStart:rangeNum]
-					rangeNumStart = rangeNum
+			for rbngeNum := rbngeNumStbrt; rbngeNum < len(cm.DiffPreview.MbtchedRbnges); rbngeNum++ {
+				currentRbnge := cm.DiffPreview.MbtchedRbnges[rbngeNum]
+				if currentRbnge.Stbrt.Offset > currentDiffEnd {
+					groupedRbnges[i] = cm.DiffPreview.MbtchedRbnges[rbngeNumStbrt:rbngeNum]
+					rbngeNumStbrt = rbngeNum
 					continue OUTER
 				}
 			}
-			groupedRanges[i] = cm.DiffPreview.MatchedRanges[rangeNumStart:]
+			groupedRbnges[i] = cm.DiffPreview.MbtchedRbnges[rbngeNumStbrt:]
 		}
 
 	}
 
-	filteredRanges := groupedRanges[:0]
+	filteredRbnges := groupedRbnges[:0]
 	filteredDiffs := cm.Diff[:0]
 	filteredDiffStrings := diffStrings[:0]
-	removedAmount := result.Location{}
-	for i, fileDiff := range cm.Diff {
-		if count := matchedFileCounts[fileDiff.NewName]; count == len(j.includeMatchers) {
-			filteredDiffs = append(filteredDiffs, fileDiff)
-			filteredDiffStrings = append(filteredDiffStrings, diffStrings[i])
-			filteredRanges = append(filteredRanges, groupedRanges[i].Sub(removedAmount))
+	removedAmount := result.Locbtion{}
+	for i, fileDiff := rbnge cm.Diff {
+		if count := mbtchedFileCounts[fileDiff.NewNbme]; count == len(j.includeMbtchers) {
+			filteredDiffs = bppend(filteredDiffs, fileDiff)
+			filteredDiffStrings = bppend(filteredDiffStrings, diffStrings[i])
+			filteredRbnges = bppend(filteredRbnges, groupedRbnges[i].Sub(removedAmount))
 		} else {
-			// If count != len(j.includeMatchers), that means that not all of our file:contains.content() patterns
-			// matched and this fileDiff should be dropped. Skip appending it, and add its length to the removed amount
-			// so we can adjust the matched ranges down.
-			removedAmount = removedAmount.Add(result.Location{Offset: len(diffStrings[i]), Line: strings.Count(diffStrings[i], "\n")})
+			// If count != len(j.includeMbtchers), thbt mebns thbt not bll of our file:contbins.content() pbtterns
+			// mbtched bnd this fileDiff should be dropped. Skip bppending it, bnd bdd its length to the removed bmount
+			// so we cbn bdjust the mbtched rbnges down.
+			removedAmount = removedAmount.Add(result.Locbtion{Offset: len(diffStrings[i]), Line: strings.Count(diffStrings[i], "\n")})
 		}
 	}
 
-	// Re-merge groupedRanges
-	ungroupedRanges := result.Ranges{}
-	for _, grouped := range filteredRanges {
-		ungroupedRanges = append(ungroupedRanges, grouped...)
+	// Re-merge groupedRbnges
+	ungroupedRbnges := result.Rbnges{}
+	for _, grouped := rbnge filteredRbnges {
+		ungroupedRbnges = bppend(ungroupedRbnges, grouped...)
 	}
 
-	// Update the commit match with the filtered slices
-	cm.DiffPreview.MatchedRanges = ungroupedRanges
+	// Updbte the commit mbtch with the filtered slices
+	cm.DiffPreview.MbtchedRbnges = ungroupedRbnges
 	cm.DiffPreview.Content = strings.Join(filteredDiffStrings, "")
 	cm.Diff = filteredDiffs
 	if len(cm.Diff) > 0 {
@@ -283,53 +283,53 @@ func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch,
 	}
 }
 
-func (j *fileContainsFilterJob) MapChildren(f job.MapFunc) job.Job {
+func (j *fileContbinsFilterJob) MbpChildren(f job.MbpFunc) job.Job {
 	cp := *j
-	cp.child = job.Map(j.child, f)
+	cp.child = job.Mbp(j.child, f)
 	return &cp
 }
 
-func (j *fileContainsFilterJob) Children() []job.Describer {
+func (j *fileContbinsFilterJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *fileContainsFilterJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *fileContbinsFilterJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		fallthrough
-	case job.VerbosityBasic:
-		originalPatternStrings := make([]string, 0, len(j.originalPatternMatchers))
-		for _, re := range j.originalPatternMatchers {
-			originalPatternStrings = append(originalPatternStrings, re.String())
+	cbse job.VerbosityMbx:
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		originblPbtternStrings := mbke([]string, 0, len(j.originblPbtternMbtchers))
+		for _, re := rbnge j.originblPbtternMbtchers {
+			originblPbtternStrings = bppend(originblPbtternStrings, re.String())
 		}
-		res = append(res, attribute.StringSlice("originalPatterns", originalPatternStrings))
+		res = bppend(res, bttribute.StringSlice("originblPbtterns", originblPbtternStrings))
 
-		filterStrings := make([]string, 0, len(j.includeMatchers))
-		for _, re := range j.includeMatchers {
-			filterStrings = append(filterStrings, re.String())
+		filterStrings := mbke([]string, 0, len(j.includeMbtchers))
+		for _, re := rbnge j.includeMbtchers {
+			filterStrings = bppend(filterStrings, re.String())
 		}
-		res = append(res, attribute.StringSlice("filterPatterns", filterStrings))
+		res = bppend(res, bttribute.StringSlice("filterPbtterns", filterStrings))
 	}
 	return res
 }
 
-func (j *fileContainsFilterJob) Name() string {
-	return "FileContainsFilterJob"
+func (j *fileContbinsFilterJob) Nbme() string {
+	return "FileContbinsFilterJob"
 }
 
-func patternsInTree(originalPattern query.Node) (res []string) {
-	if originalPattern == nil {
+func pbtternsInTree(originblPbttern query.Node) (res []string) {
+	if originblPbttern == nil {
 		return nil
 	}
-	switch v := originalPattern.(type) {
-	case query.Operator:
-		for _, operand := range v.Operands {
-			res = append(res, patternsInTree(operand)...)
+	switch v := originblPbttern.(type) {
+	cbse query.Operbtor:
+		for _, operbnd := rbnge v.Operbnds {
+			res = bppend(res, pbtternsInTree(operbnd)...)
 		}
-	case query.Pattern:
-		res = append(res, v.Value)
-	default:
-		panic(fmt.Sprintf("unknown pattern node type %T", originalPattern))
+	cbse query.Pbttern:
+		res = bppend(res, v.Vblue)
+	defbult:
+		pbnic(fmt.Sprintf("unknown pbttern node type %T", originblPbttern))
 	}
 	return res
 }

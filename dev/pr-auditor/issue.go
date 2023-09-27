@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -7,69 +7,69 @@ import (
 )
 
 const (
-	testPlanDocs = "https://docs.sourcegraph.com/dev/background-information/testing_principles#test-plans"
+	testPlbnDocs = "https://docs.sourcegrbph.com/dev/bbckground-informbtion/testing_principles#test-plbns"
 )
 
-func generateExceptionIssue(payload *EventPayload, result *checkResult, additionalContext string) *github.IssueRequest {
-	// 🚨 SECURITY: Do not reference other potentially sensitive fields of pull requests
-	prTitle := payload.PullRequest.Title
-	if payload.Repository.Private {
-		prTitle = "<redacted>"
+func generbteExceptionIssue(pbylobd *EventPbylobd, result *checkResult, bdditionblContext string) *github.IssueRequest {
+	// 🚨 SECURITY: Do not reference other potentiblly sensitive fields of pull requests
+	prTitle := pbylobd.PullRequest.Title
+	if pbylobd.Repository.Privbte {
+		prTitle = "<redbcted>"
 	}
 
-	var (
-		issueTitle      = fmt.Sprintf("%s#%d: %q", payload.Repository.FullName, payload.PullRequest.Number, prTitle)
+	vbr (
+		issueTitle      = fmt.Sprintf("%s#%d: %q", pbylobd.Repository.FullNbme, pbylobd.PullRequest.Number, prTitle)
 		issueBody       string
-		exceptionLabels = []string{}
+		exceptionLbbels = []string{}
 		issueAssignees  = []string{}
 	)
 
 	if !result.Reviewed {
-		exceptionLabels = append(exceptionLabels, "exception/review")
+		exceptionLbbels = bppend(exceptionLbbels, "exception/review")
 	}
-	if !result.HasTestPlan() {
-		exceptionLabels = append(exceptionLabels, "exception/test-plan")
+	if !result.HbsTestPlbn() {
+		exceptionLbbels = bppend(exceptionLbbels, "exception/test-plbn")
 	}
-	if result.ProtectedBranch {
-		exceptionLabels = append(exceptionLabels, "exception/protected-branch")
+	if result.ProtectedBrbnch {
+		exceptionLbbels = bppend(exceptionLbbels, "exception/protected-brbnch")
 	}
 
 	if !result.Reviewed {
-		if result.HasTestPlan() {
-			issueBody = fmt.Sprintf("%s %q **has a test plan** but **was not reviewed**.", payload.PullRequest.URL, prTitle)
+		if result.HbsTestPlbn() {
+			issueBody = fmt.Sprintf("%s %q **hbs b test plbn** but **wbs not reviewed**.", pbylobd.PullRequest.URL, prTitle)
 		} else {
-			issueBody = fmt.Sprintf("%s %q **has no test plan** and **was not reviewed**.", payload.PullRequest.URL, prTitle)
+			issueBody = fmt.Sprintf("%s %q **hbs no test plbn** bnd **wbs not reviewed**.", pbylobd.PullRequest.URL, prTitle)
 		}
-	} else if !result.HasTestPlan() {
-		issueBody = fmt.Sprintf("%s %q **has no test plan**.", payload.PullRequest.URL, prTitle)
+	} else if !result.HbsTestPlbn() {
+		issueBody = fmt.Sprintf("%s %q **hbs no test plbn**.", pbylobd.PullRequest.URL, prTitle)
 	}
 
-	if !result.HasTestPlan() {
-		issueBody += fmt.Sprintf("\n\nLearn more about test plans in our [testing guidelines](%s).", testPlanDocs)
+	if !result.HbsTestPlbn() {
+		issueBody += fmt.Sprintf("\n\nLebrn more bbout test plbns in our [testing guidelines](%s).", testPlbnDocs)
 	}
 
-	if result.ProtectedBranch {
-		issueBody += fmt.Sprintf("\n\nThe base branch %q is protected and should not have direct pull requests to it.", payload.PullRequest.Base.Ref)
+	if result.ProtectedBrbnch {
+		issueBody += fmt.Sprintf("\n\nThe bbse brbnch %q is protected bnd should not hbve direct pull requests to it.", pbylobd.PullRequest.Bbse.Ref)
 	}
 
-	if additionalContext != "" {
-		issueBody += fmt.Sprintf("\n\n%s", additionalContext)
+	if bdditionblContext != "" {
+		issueBody += fmt.Sprintf("\n\n%s", bdditionblContext)
 	}
 
-	user := payload.PullRequest.MergedBy.Login
-	issueAssignees = append(issueAssignees, user)
-	issueBody += fmt.Sprintf("\n\n@%s please comment in this issue with an explanation for this exception and close this issue.", user)
+	user := pbylobd.PullRequest.MergedBy.Login
+	issueAssignees = bppend(issueAssignees, user)
+	issueBody += fmt.Sprintf("\n\n@%s plebse comment in this issue with bn explbnbtion for this exception bnd close this issue.", user)
 
 	if result.Error != nil {
 		// Log the error in the issue
 		issueBody += fmt.Sprintf("\n\nEncountered error when checking PR: %s", result.Error)
 	}
 
-	labels := append(exceptionLabels, payload.Repository.FullName)
+	lbbels := bppend(exceptionLbbels, pbylobd.Repository.FullNbme)
 	return &github.IssueRequest{
 		Title:     github.String(issueTitle),
 		Body:      github.String(issueBody),
 		Assignees: &issueAssignees,
-		Labels:    &labels,
+		Lbbels:    &lbbels,
 	}
 }

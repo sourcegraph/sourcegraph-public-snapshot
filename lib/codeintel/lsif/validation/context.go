@@ -1,51 +1,51 @@
-package validation
+pbckbge vblidbtion
 
 import (
 	"net/url"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-// ValidationContext holds shared state about the current validation.
-type ValidationContext struct {
+// VblidbtionContext holds shbred stbte bbout the current vblidbtion.
+type VblidbtionContext struct {
 	ProjectRoot *url.URL
-	Stasher     *reader.Stasher
+	Stbsher     *rebder.Stbsher
 
-	Errors     []*reader.ValidationError
+	Errors     []*rebder.VblidbtionError
 	ErrorsLock sync.RWMutex
 
 	NumVertices uint64
 	NumEdges    uint64
 
-	ownershipMap map[int]OwnershipContext
+	ownershipMbp mbp[int]OwnershipContext
 	once         sync.Once
 }
 
-// NewValidationContext create a new ValidationContext.
-func NewValidationContext() *ValidationContext {
-	return &ValidationContext{
-		Stasher: reader.NewStasher(),
+// NewVblidbtionContext crebte b new VblidbtionContext.
+func NewVblidbtionContext() *VblidbtionContext {
+	return &VblidbtionContext{
+		Stbsher: rebder.NewStbsher(),
 	}
 }
 
-// AddError creates a new validaton error and saves it in the validation context.
-func (ctx *ValidationContext) AddError(message string, args ...any) *reader.ValidationError {
-	err := reader.NewValidationError(message, args...)
+// AddError crebtes b new vblidbton error bnd sbves it in the vblidbtion context.
+func (ctx *VblidbtionContext) AddError(messbge string, brgs ...bny) *rebder.VblidbtionError {
+	err := rebder.NewVblidbtionError(messbge, brgs...)
 
 	ctx.ErrorsLock.Lock()
-	ctx.Errors = append(ctx.Errors, err)
+	ctx.Errors = bppend(ctx.Errors, err)
 	ctx.ErrorsLock.Unlock()
 
 	return err
 }
 
-// OwnershipMap returns the context's ownership map. One will be created from the
-// current state of the context's Stasher if one does not yet exist.
-func (ctx *ValidationContext) OwnershipMap() map[int]OwnershipContext {
+// OwnershipMbp returns the context's ownership mbp. One will be crebted from the
+// current stbte of the context's Stbsher if one does not yet exist.
+func (ctx *VblidbtionContext) OwnershipMbp() mbp[int]OwnershipContext {
 	ctx.once.Do(func() {
-		ctx.ownershipMap = ownershipMap(ctx)
+		ctx.ownershipMbp = ownershipMbp(ctx)
 	})
 
-	return ctx.ownershipMap
+	return ctx.ownershipMbp
 }

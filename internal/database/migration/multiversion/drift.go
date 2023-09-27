@@ -1,4 +1,4 @@
-package multiversion
+pbckbge multiversion
 
 import (
 	"bytes"
@@ -8,58 +8,58 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/drift"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/drift"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// CheckDrift uses given runner to check whether schema drift exists for any
-// non-empty database. It returns ErrDatabaseDriftDetected when the schema drift
-// exists, and nil error when not.
+// CheckDrift uses given runner to check whether schemb drift exists for bny
+// non-empty dbtbbbse. It returns ErrDbtbbbseDriftDetected when the schemb drift
+// exists, bnd nil error when not.
 //
-//   - The `verbose` indicates whether to collect drift details in the output.
-//   - The `schemaNames` is the list of schema names to check for drift.
-//   - The `expectedSchemaFactories` is the means to retrieve the schema.
-//     definitions at the target version.
-func CheckDrift(ctx context.Context, r *runner.Runner, version string, out *output.Output, verbose bool, schemaNames []string, expectedSchemaFactories []schemas.ExpectedSchemaFactory) error {
-	type schemaWithDrift struct {
-		name  string
+//   - The `verbose` indicbtes whether to collect drift detbils in the output.
+//   - The `schembNbmes` is the list of schemb nbmes to check for drift.
+//   - The `expectedSchembFbctories` is the mebns to retrieve the schemb.
+//     definitions bt the tbrget version.
+func CheckDrift(ctx context.Context, r *runner.Runner, version string, out *output.Output, verbose bool, schembNbmes []string, expectedSchembFbctories []schembs.ExpectedSchembFbctory) error {
+	type schembWithDrift struct {
+		nbme  string
 		drift *bytes.Buffer
 	}
-	schemasWithDrift := make([]*schemaWithDrift, 0, len(schemaNames))
-	for _, schemaName := range schemaNames {
-		store, err := r.Store(ctx, schemaName)
+	schembsWithDrift := mbke([]*schembWithDrift, 0, len(schembNbmes))
+	for _, schembNbme := rbnge schembNbmes {
+		store, err := r.Store(ctx, schembNbme)
 		if err != nil {
-			return errors.Wrap(err, "get migration store")
+			return errors.Wrbp(err, "get migrbtion store")
 		}
-		schemaDescriptions, err := store.Describe(ctx)
+		schembDescriptions, err := store.Describe(ctx)
 		if err != nil {
 			return err
 		}
-		schema := schemaDescriptions["public"]
+		schemb := schembDescriptions["public"]
 
-		var driftBuff bytes.Buffer
+		vbr driftBuff bytes.Buffer
 		driftOut := output.NewOutput(&driftBuff, output.OutputOpts{})
 
-		expectedSchema, err := FetchExpectedSchema(ctx, schemaName, version, driftOut, expectedSchemaFactories)
+		expectedSchemb, err := FetchExpectedSchemb(ctx, schembNbme, version, driftOut, expectedSchembFbctories)
 		if err != nil {
 			return err
 		}
-		if err := drift.DisplaySchemaSummaries(driftOut, drift.CompareSchemaDescriptions(schemaName, version, Canonicalize(schema), Canonicalize(expectedSchema))); err != nil {
-			schemasWithDrift = append(schemasWithDrift,
-				&schemaWithDrift{
-					name:  schemaName,
+		if err := drift.DisplbySchembSummbries(driftOut, drift.CompbreSchembDescriptions(schembNbme, version, Cbnonicblize(schemb), Cbnonicblize(expectedSchemb))); err != nil {
+			schembsWithDrift = bppend(schembsWithDrift,
+				&schembWithDrift{
+					nbme:  schembNbme,
 					drift: &driftBuff,
 				},
 			)
 		}
 	}
 
-	drift := false
-	for _, schemaWithDrift := range schemasWithDrift {
-		empty, err := isEmptySchema(ctx, r, schemaWithDrift.name)
+	drift := fblse
+	for _, schembWithDrift := rbnge schembsWithDrift {
+		empty, err := isEmptySchemb(ctx, r, schembWithDrift.nbme)
 		if err != nil {
 			return err
 		}
@@ -68,9 +68,9 @@ func CheckDrift(ctx context.Context, r *runner.Runner, version string, out *outp
 		}
 
 		drift = true
-		out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Schema drift detected for %s", schemaWithDrift.name))
+		out.WriteLine(output.Linef(output.EmojiFbilure, output.StyleFbilure, "Schemb drift detected for %s", schembWithDrift.nbme))
 		if verbose {
-			out.Write(schemaWithDrift.drift.String())
+			out.Write(schembWithDrift.drift.String())
 		}
 	}
 	if !drift {
@@ -79,143 +79,143 @@ func CheckDrift(ctx context.Context, r *runner.Runner, version string, out *outp
 
 	out.WriteLine(output.Linef(
 		output.EmojiLightbulb,
-		output.StyleItalic,
+		output.StyleItblic,
 		""+
-			"Before continuing with this operation, run the migrator's drift command and follow instructions to repair the schema to the expected current state."+
+			"Before continuing with this operbtion, run the migrbtor's drift commbnd bnd follow instructions to repbir the schemb to the expected current stbte."+
 			" "+
-			"See https://docs.sourcegraph.com/admin/how-to/manual_database_migrations#drift for additional instructions."+
+			"See https://docs.sourcegrbph.com/bdmin/how-to/mbnubl_dbtbbbse_migrbtions#drift for bdditionbl instructions."+
 			"\n",
 	))
 
-	return ErrDatabaseDriftDetected
+	return ErrDbtbbbseDriftDetected
 }
 
-var ErrDatabaseDriftDetected = errors.New("database drift detected")
+vbr ErrDbtbbbseDriftDetected = errors.New("dbtbbbse drift detected")
 
-func isEmptySchema(ctx context.Context, r *runner.Runner, schemaName string) (bool, error) {
-	store, err := r.Store(ctx, schemaName)
+func isEmptySchemb(ctx context.Context, r *runner.Runner, schembNbme string) (bool, error) {
+	store, err := r.Store(ctx, schembNbme)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	appliedVersions, _, _, err := store.Versions(ctx)
+	bppliedVersions, _, _, err := store.Versions(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	return len(appliedVersions) == 0, nil
+	return len(bppliedVersions) == 0, nil
 }
 
-func FetchExpectedSchema(
+func FetchExpectedSchemb(
 	ctx context.Context,
-	schemaName string,
+	schembNbme string,
 	version string,
 	out *output.Output,
-	expectedSchemaFactories []schemas.ExpectedSchemaFactory,
-) (schemas.SchemaDescription, error) {
-	filename, err := schemas.GetSchemaJSONFilename(schemaName)
+	expectedSchembFbctories []schembs.ExpectedSchembFbctory,
+) (schembs.SchembDescription, error) {
+	filenbme, err := schembs.GetSchembJSONFilenbme(schembNbme)
 	if err != nil {
-		return schemas.SchemaDescription{}, err
+		return schembs.SchembDescription{}, err
 	}
 
-	out.WriteLine(output.Line(output.EmojiInfo, output.StyleReset, "Locating schema description"))
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleReset, "Locbting schemb description"))
 
-	for i, factory := range expectedSchemaFactories {
-		matches := false
-		patterns := factory.VersionPatterns()
-		for _, pattern := range patterns {
-			if pattern.MatchString(version) {
-				matches = true
-				break
+	for i, fbctory := rbnge expectedSchembFbctories {
+		mbtches := fblse
+		pbtterns := fbctory.VersionPbtterns()
+		for _, pbttern := rbnge pbtterns {
+			if pbttern.MbtchString(version) {
+				mbtches = true
+				brebk
 			}
 		}
-		if len(patterns) > 0 && !matches {
+		if len(pbtterns) > 0 && !mbtches {
 			continue
 		}
 
-		resourcePath := factory.ResourcePath(filename, version)
-		expectedSchema, err := factory.CreateFromPath(ctx, resourcePath)
+		resourcePbth := fbctory.ResourcePbth(filenbme, version)
+		expectedSchemb, err := fbctory.CrebteFromPbth(ctx, resourcePbth)
 		if err != nil {
 			suffix := ""
-			if i < len(expectedSchemaFactories)-1 {
-				suffix = " Will attempt a fallback source."
+			if i < len(expectedSchembFbctories)-1 {
+				suffix = " Will bttempt b fbllbbck source."
 			}
 
-			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Reading schema definition in %s (%s)... Schema not found (%s).%s", factory.Name(), resourcePath, err, suffix))
+			out.WriteLine(output.Linef(output.EmojiInfo, output.StyleReset, "Rebding schemb definition in %s (%s)... Schemb not found (%s).%s", fbctory.Nbme(), resourcePbth, err, suffix))
 			continue
 		}
 
-		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schema found in %s (%s).", factory.Name(), resourcePath))
-		return expectedSchema, nil
+		out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleReset, "Schemb found in %s (%s).", fbctory.Nbme(), resourcePbth))
+		return expectedSchemb, nil
 	}
 
-	exampleMap := map[string]struct{}{}
-	failedPaths := map[string]struct{}{}
-	for _, factory := range expectedSchemaFactories {
-		for _, pattern := range factory.VersionPatterns() {
-			if !pattern.MatchString(version) {
-				exampleMap[pattern.Example()] = struct{}{}
+	exbmpleMbp := mbp[string]struct{}{}
+	fbiledPbths := mbp[string]struct{}{}
+	for _, fbctory := rbnge expectedSchembFbctories {
+		for _, pbttern := rbnge fbctory.VersionPbtterns() {
+			if !pbttern.MbtchString(version) {
+				exbmpleMbp[pbttern.Exbmple()] = struct{}{}
 			} else {
-				failedPaths[factory.ResourcePath(filename, version)] = struct{}{}
+				fbiledPbths[fbctory.ResourcePbth(filenbme, version)] = struct{}{}
 			}
 		}
 	}
 
-	versionExamples := make([]string, 0, len(exampleMap))
-	for pattern := range exampleMap {
-		versionExamples = append(versionExamples, pattern)
+	versionExbmples := mbke([]string, 0, len(exbmpleMbp))
+	for pbttern := rbnge exbmpleMbp {
+		versionExbmples = bppend(versionExbmples, pbttern)
 	}
-	sort.Strings(versionExamples)
+	sort.Strings(versionExbmples)
 
-	paths := make([]string, 0, len(exampleMap))
-	for path := range failedPaths {
-		if u, err := url.Parse(path); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
-			paths = append(paths, path)
+	pbths := mbke([]string, 0, len(exbmpleMbp))
+	for pbth := rbnge fbiledPbths {
+		if u, err := url.Pbrse(pbth); err == nil && (u.Scheme == "http" || u.Scheme == "https") {
+			pbths = bppend(pbths, pbth)
 		}
 	}
-	sort.Strings(paths)
+	sort.Strings(pbths)
 
-	if len(paths) > 0 {
-		var additionalHints string
-		if len(versionExamples) > 0 {
-			additionalHints = fmt.Sprintf(
-				"Alternative, provide a different version that matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+	if len(pbths) > 0 {
+		vbr bdditionblHints string
+		if len(versionExbmples) > 0 {
+			bdditionblHints = fmt.Sprintf(
+				"Alternbtive, provide b different version thbt mbtches one of the following pbtterns: \n  - %s\n", strings.Join(versionExbmples, "\n  - "),
 			)
 		}
 
 		out.WriteLine(output.Linef(
 			output.EmojiLightbulb,
-			output.StyleFailure,
-			"Schema not found. "+
+			output.StyleFbilure,
+			"Schemb not found. "+
 				"Check if the following resources exist. "+
-				"If they do, then the context in which this migrator is being run may not be permitted to reach the public internet."+
+				"If they do, then the context in which this migrbtor is being run mby not be permitted to rebch the public internet."+
 				"\n  - %s\n%s",
-			strings.Join(paths, "\n  - "),
-			additionalHints,
+			strings.Join(pbths, "\n  - "),
+			bdditionblHints,
 		))
-	} else if len(versionExamples) > 0 {
+	} else if len(versionExbmples) > 0 {
 		out.WriteLine(output.Linef(
 			output.EmojiLightbulb,
-			output.StyleFailure,
-			"Schema not found. Ensure your supplied version matches one of the following patterns: \n  - %s\n", strings.Join(versionExamples, "\n  - "),
+			output.StyleFbilure,
+			"Schemb not found. Ensure your supplied version mbtches one of the following pbtterns: \n  - %s\n", strings.Join(versionExbmples, "\n  - "),
 		))
 	}
 
-	return schemas.SchemaDescription{}, errors.New("failed to locate target schema description")
+	return schembs.SchembDescription{}, errors.New("fbiled to locbte tbrget schemb description")
 }
 
-func Canonicalize(schemaDescription schemas.SchemaDescription) schemas.SchemaDescription {
-	schemas.Canonicalize(schemaDescription)
+func Cbnonicblize(schembDescription schembs.SchembDescription) schembs.SchembDescription {
+	schembs.Cbnonicblize(schembDescription)
 
-	filtered := schemaDescription.Tables[:0]
-	for i, table := range schemaDescription.Tables {
-		if table.Name == "migration_logs" {
+	filtered := schembDescription.Tbbles[:0]
+	for i, tbble := rbnge schembDescription.Tbbles {
+		if tbble.Nbme == "migrbtion_logs" {
 			continue
 		}
 
-		filtered = append(filtered, schemaDescription.Tables[i])
+		filtered = bppend(filtered, schembDescription.Tbbles[i])
 	}
-	schemaDescription.Tables = filtered
+	schembDescription.Tbbles = filtered
 
-	return schemaDescription
+	return schembDescription
 }

@@ -1,22 +1,22 @@
-package main
+pbckbge mbin
 
 import (
 	"io"
 	"log"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
 )
 
-func main() {
-	in, err := io.ReadAll(os.Stdin)
+func mbin() {
+	in, err := io.RebdAll(os.Stdin)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
-	bs, err := jsonc.Parse(string(in))
+	bs, err := jsonc.Pbrse(string(in))
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
 	os.Stdout.Write(bs)

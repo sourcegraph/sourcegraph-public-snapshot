@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
@@ -7,98 +7,98 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestSearchJobsUsageStatistics(t *testing.T) {
-	ctx := context.Background()
+func TestSebrchJobsUsbgeStbtistics(t *testing.T) {
+	ctx := context.Bbckground()
 
 	defer func() {
 		timeNow = time.Now
 	}()
 
-	now := time.Date(2021, 1, 28, 0, 0, 0, 0, time.UTC)
+	now := time.Dbte(2021, 1, 28, 0, 0, 0, 0, time.UTC)
 	mockTimeNow(now)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	_, err := db.ExecContext(context.Background(), `
+	_, err := db.ExecContext(context.Bbckground(), `
 		INSERT INTO event_logs
-			(id, name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+			(id, nbme, brgument, url, user_id, bnonymous_user_id, source, version, timestbmp)
 		VALUES
-			(1, 'ViewSearchJobsListPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(2, 'ViewSearchJobsListPage', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(3, 'SearchJobsValidationErrors', '{"errors": ["rev", "or_operator"]}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(4, 'SearchJobsValidationErrors', '{"errors": ["rev", "or_operator"]}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(5, 'SearchJobsValidationErrors', '{"errors": ["and", "or_operator"]}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(6, 'SearchJobsValidationErrors', '{"errors": ["and"]}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(7, 'SearchJobsResultDownloadClick', '{}', '', 2, '420657f0-d443-4d16-ac7d-003d8cdc19ac', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(8, 'SearchJobsResultViewLogsClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '2 days'),
-			(9, 'SearchJobsCreateClick', '{}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(10, 'SearchJobsSearchFormShown', '{"validState": "valid"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day'),
-			(11, 'SearchJobsSearchFormShown', '{"validState": "invalid"}', '', 1, '420657f0-d443-4d16-ac7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestamp - interval '1 day')
+			(1, 'ViewSebrchJobsListPbge', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(2, 'ViewSebrchJobsListPbge', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(3, 'SebrchJobsVblidbtionErrors', '{"errors": ["rev", "or_operbtor"]}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(4, 'SebrchJobsVblidbtionErrors', '{"errors": ["rev", "or_operbtor"]}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(5, 'SebrchJobsVblidbtionErrors', '{"errors": ["bnd", "or_operbtor"]}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(6, 'SebrchJobsVblidbtionErrors', '{"errors": ["bnd"]}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(7, 'SebrchJobsResultDownlobdClick', '{}', '', 2, '420657f0-d443-4d16-bc7d-003d8cdc19bc', 'WEB', '3.23.0', $1::timestbmp - intervbl '2 dbys'),
+			(8, 'SebrchJobsResultViewLogsClick', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '2 dbys'),
+			(9, 'SebrchJobsCrebteClick', '{}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(10, 'SebrchJobsSebrchFormShown', '{"vblidStbte": "vblid"}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby'),
+			(11, 'SebrchJobsSebrchFormShown', '{"vblidStbte": "invblid"}', '', 1, '420657f0-d443-4d16-bc7d-003d8cdc91ef', 'WEB', '3.23.0', $1::timestbmp - intervbl '1 dby')
 	`, now)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := GetSearchJobsUsageStatistics(ctx, db)
+	hbve, err := GetSebrchJobsUsbgeStbtistics(ctx, db)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	oneInt := int32(1)
 	twoInt := int32(2)
 
-	weeklySearchJobsSearchFormShown := []types.SearchJobsSearchFormShownPing{
+	weeklySebrchJobsSebrchFormShown := []types.SebrchJobsSebrchFormShownPing{
 		{
-			ValidState: "invalid",
-			TotalCount: 1,
+			VblidStbte: "invblid",
+			TotblCount: 1,
 		},
 		{
-			ValidState: "valid",
-			TotalCount: 1,
-		},
-	}
-
-	weeklySearchJobsValidationErrors := []types.SearchJobsValidationErrorPing{
-		{
-			TotalCount: 2,
-			Errors:     []string{"rev", "or_operator"},
-		},
-		{
-			TotalCount: 1,
-			Errors:     []string{"and", "or_operator"},
-		},
-		{
-			TotalCount: 1,
-			Errors:     []string{"and"},
+			VblidStbte: "vblid",
+			TotblCount: 1,
 		},
 	}
 
-	want := &types.SearchJobsUsageStatistics{
-		WeeklySearchJobsPageViews:            &twoInt,
-		WeeklySearchJobsCreateClick:          &oneInt,
-		WeeklySearchJobsDownloadClicks:       &oneInt,
-		WeeklySearchJobsViewLogsClicks:       &oneInt,
-		WeeklySearchJobsUniquePageViews:      &oneInt,
-		WeeklySearchJobsUniqueDownloadClicks: &oneInt,
-		WeeklySearchJobsUniqueViewLogsClicks: &oneInt,
-		WeeklySearchJobsSearchFormShown:      []types.SearchJobsSearchFormShownPing{},
-		WeeklySearchJobsValidationErrors:     []types.SearchJobsValidationErrorPing{},
+	weeklySebrchJobsVblidbtionErrors := []types.SebrchJobsVblidbtionErrorPing{
+		{
+			TotblCount: 2,
+			Errors:     []string{"rev", "or_operbtor"},
+		},
+		{
+			TotblCount: 1,
+			Errors:     []string{"bnd", "or_operbtor"},
+		},
+		{
+			TotblCount: 1,
+			Errors:     []string{"bnd"},
+		},
 	}
 
-	want.WeeklySearchJobsSearchFormShown = weeklySearchJobsSearchFormShown
-	want.WeeklySearchJobsValidationErrors = weeklySearchJobsValidationErrors
+	wbnt := &types.SebrchJobsUsbgeStbtistics{
+		WeeklySebrchJobsPbgeViews:            &twoInt,
+		WeeklySebrchJobsCrebteClick:          &oneInt,
+		WeeklySebrchJobsDownlobdClicks:       &oneInt,
+		WeeklySebrchJobsViewLogsClicks:       &oneInt,
+		WeeklySebrchJobsUniquePbgeViews:      &oneInt,
+		WeeklySebrchJobsUniqueDownlobdClicks: &oneInt,
+		WeeklySebrchJobsUniqueViewLogsClicks: &oneInt,
+		WeeklySebrchJobsSebrchFormShown:      []types.SebrchJobsSebrchFormShownPing{},
+		WeeklySebrchJobsVblidbtionErrors:     []types.SebrchJobsVblidbtionErrorPing{},
+	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	wbnt.WeeklySebrchJobsSebrchFormShown = weeklySebrchJobsSebrchFormShown
+	wbnt.WeeklySebrchJobsVblidbtionErrors = weeklySebrchJobsVblidbtionErrors
+
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

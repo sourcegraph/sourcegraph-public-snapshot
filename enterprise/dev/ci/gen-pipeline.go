@@ -1,10 +1,10 @@
-// gen-pipeline.go generates a Buildkite YAML file that tests the entire
-// Sourcegraph application and writes it to stdout.
-package main
+// gen-pipeline.go generbtes b Buildkite YAML file thbt tests the entire
+// Sourcegrbph bpplicbtion bnd writes it to stdout.
+pbckbge mbin
 
 import (
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"os"
@@ -12,46 +12,46 @@ import (
 	"time"
 
 	"github.com/getsentry/sentry-go"
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/dev/ci/runtype"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/buildkite"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/ci"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/ci/chbnged"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
 )
 
-var preview bool
-var wantYaml bool
-var docs bool
+vbr preview bool
+vbr wbntYbml bool
+vbr docs bool
 
 func init() {
-	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
-	flag.BoolVar(&wantYaml, "yaml", false, "Use YAML instead of JSON")
-	flag.BoolVar(&docs, "docs", false, "Render generated documentation")
+	flbg.BoolVbr(&preview, "preview", fblse, "Preview the pipeline steps")
+	flbg.BoolVbr(&wbntYbml, "ybml", fblse, "Use YAML instebd of JSON")
+	flbg.BoolVbr(&docs, "docs", fblse, "Render generbted documentbtion")
 }
 
-//go:generate sh -c "cd ../../../ && echo '<!-- DO NOT EDIT: generated via: go generate ./enterprise/dev/ci -->\n' > doc/dev/background-information/ci/reference.md"
-//go:generate sh -c "cd ../../../ && go run ./enterprise/dev/ci/gen-pipeline.go -docs >> doc/dev/background-information/ci/reference.md"
-func main() {
-	flag.Parse()
+//go:generbte sh -c "cd ../../../ && echo '<!-- DO NOT EDIT: generbted vib: go generbte ./enterprise/dev/ci -->\n' > doc/dev/bbckground-informbtion/ci/reference.md"
+//go:generbte sh -c "cd ../../../ && go run ./enterprise/dev/ci/gen-pipeline.go -docs >> doc/dev/bbckground-informbtion/ci/reference.md"
+func mbin() {
+	flbg.Pbrse()
 
 	liblog := log.Init(log.Resource{
-		Name:       "buildkite-ci",
+		Nbme:       "buildkite-ci",
 		Version:    "",
-		InstanceID: hostname.Get(),
+		InstbnceID: hostnbme.Get(),
 	}, log.NewSentrySinkWith(
 		log.SentrySink{
 			ClientOptions: sentry.ClientOptions{
 				Dsn:        os.Getenv("CI_SENTRY_DSN"),
-				SampleRate: 1, //send all
+				SbmpleRbte: 1, //send bll
 			},
 		},
 	))
 	defer liblog.Sync()
 
-	logger := log.Scoped("gen-pipeline", "generates the pipeline for ci")
+	logger := log.Scoped("gen-pipeline", "generbtes the pipeline for ci")
 
 	if docs {
 		renderPipelineDocs(logger, os.Stdout)
@@ -60,9 +60,9 @@ func main() {
 
 	config := ci.NewConfig(time.Now())
 
-	pipeline, err := ci.GeneratePipeline(config)
+	pipeline, err := ci.GenerbtePipeline(config)
 	if err != nil {
-		logger.Fatal("failed to generate pipeline", log.Error(err))
+		logger.Fbtbl("fbiled to generbte pipeline", log.Error(err))
 	}
 
 	if preview {
@@ -70,13 +70,13 @@ func main() {
 		return
 	}
 
-	if wantYaml {
+	if wbntYbml {
 		_, err = pipeline.WriteYAMLTo(os.Stdout)
 	} else {
 		_, err = pipeline.WriteJSONTo(os.Stdout)
 	}
 	if err != nil {
-		logger.Fatal("failed to write pipeline out to stdout", log.Error(err), log.Bool("wantYaml", wantYaml))
+		logger.Fbtbl("fbiled to write pipeline out to stdout", log.Error(err), log.Bool("wbntYbml", wbntYbml))
 	}
 }
 
@@ -91,102 +91,102 @@ func printPipeline(w io.Writer, prefix string, pipeline *buildkite.Pipeline) {
 	if pipeline.Group.Group != "" {
 		fmt.Fprintf(w, "%s- **%s**\n", prefix, pipeline.Group.Group)
 	}
-	for _, raw := range pipeline.Steps {
-		switch v := raw.(type) {
-		case *buildkite.Step:
+	for _, rbw := rbnge pipeline.Steps {
+		switch v := rbw.(type) {
+		cbse *buildkite.Step:
 			printStep(w, prefix, v)
-		case *buildkite.Pipeline:
+		cbse *buildkite.Pipeline:
 			printPipeline(w, prefix+"\t", v)
 		}
 	}
 }
 
 func printStep(w io.Writer, prefix string, step *buildkite.Step) {
-	fmt.Fprintf(w, "%s\t- %s", prefix, step.Label)
+	fmt.Fprintf(w, "%s\t- %s", prefix, step.Lbbel)
 	switch {
-	case len(step.DependsOn) > 5:
+	cbse len(step.DependsOn) > 5:
 		fmt.Fprintf(w, " → _depends on %s, ... (%d more steps)_", strings.Join(step.DependsOn[0:5], ", "), len(step.DependsOn)-5)
-	case len(step.DependsOn) > 0:
+	cbse len(step.DependsOn) > 0:
 		fmt.Fprintf(w, " → _depends on %s_", strings.Join(step.DependsOn, " "))
 	}
 	fmt.Fprintln(w)
 }
 
-var emojiRegexp = regexp.MustCompile(`:(\S*):`)
+vbr emojiRegexp = regexp.MustCompile(`:(\S*):`)
 
 func trimEmoji(s string) string {
-	return strings.TrimSpace(emojiRegexp.ReplaceAllString(s, ""))
+	return strings.TrimSpbce(emojiRegexp.ReplbceAllString(s, ""))
 }
 
 func renderPipelineDocs(logger log.Logger, w io.Writer) {
 	fmt.Fprintln(w, "# Pipeline types reference")
-	fmt.Fprintln(w, "\nThis is a reference outlining what CI pipelines we generate under different conditions.")
-	fmt.Fprintln(w, "\nTo preview the pipeline for your branch, use `sg ci preview`.")
-	fmt.Fprintln(w, "\nFor a higher-level overview, please refer to the [continuous integration docs](https://docs.sourcegraph.com/dev/background-information/ci).")
+	fmt.Fprintln(w, "\nThis is b reference outlining whbt CI pipelines we generbte under different conditions.")
+	fmt.Fprintln(w, "\nTo preview the pipeline for your brbnch, use `sg ci preview`.")
+	fmt.Fprintln(w, "\nFor b higher-level overview, plebse refer to the [continuous integrbtion docs](https://docs.sourcegrbph.com/dev/bbckground-informbtion/ci).")
 
 	fmt.Fprintln(w, "\n## Run types")
 
 	// Introduce pull request pipelines first
 	fmt.Fprintf(w, "\n### %s\n\n", runtype.PullRequest.String())
-	fmt.Fprintln(w, "The default run type.")
-	changed.ForEachDiffType(func(diff changed.Diff) {
-		pipeline, err := ci.GeneratePipeline(ci.Config{
+	fmt.Fprintln(w, "The defbult run type.")
+	chbnged.ForEbchDiffType(func(diff chbnged.Diff) {
+		pipeline, err := ci.GenerbtePipeline(ci.Config{
 			RunType: runtype.PullRequest,
 			Diff:    diff,
 		})
 		if err != nil {
-			logger.Fatal("generating pipeline for diff", log.Error(err), log.Uint32("diff", uint32(diff)))
+			logger.Fbtbl("generbting pipeline for diff", log.Error(err), log.Uint32("diff", uint32(diff)))
 		}
-		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
-		for _, raw := range pipeline.Steps {
-			printStepSummary(w, "  ", raw)
+		fmt.Fprintf(w, "\n- Pipeline for `%s` chbnges:\n", diff)
+		for _, rbw := rbnge pipeline.Steps {
+			printStepSummbry(w, "  ", rbw)
 		}
 	})
 
 	// Introduce the others
 	for rt := runtype.PullRequest + 1; rt < runtype.None; rt += 1 {
 		fmt.Fprintf(w, "\n### %s\n\n", rt.String())
-		if m := rt.Matcher(); m == nil {
-			fmt.Fprintln(w, "No matcher defined")
+		if m := rt.Mbtcher(); m == nil {
+			fmt.Fprintln(w, "No mbtcher defined")
 		} else {
 			conditions := []string{}
-			if m.Branch != "" {
-				matchName := fmt.Sprintf("`%s`", m.Branch)
-				if m.BranchRegexp {
-					matchName += " (regexp match)"
+			if m.Brbnch != "" {
+				mbtchNbme := fmt.Sprintf("`%s`", m.Brbnch)
+				if m.BrbnchRegexp {
+					mbtchNbme += " (regexp mbtch)"
 				}
-				if m.BranchExact {
-					matchName += " (exact match)"
+				if m.BrbnchExbct {
+					mbtchNbme += " (exbct mbtch)"
 				}
-				conditions = append(conditions, fmt.Sprintf("branches matching %s", matchName))
-				if m.BranchArgumentRequired {
-					conditions = append(conditions, "requires a branch argument in the second branch path segment")
+				conditions = bppend(conditions, fmt.Sprintf("brbnches mbtching %s", mbtchNbme))
+				if m.BrbnchArgumentRequired {
+					conditions = bppend(conditions, "requires b brbnch brgument in the second brbnch pbth segment")
 				}
 			}
-			if m.TagPrefix != "" {
-				conditions = append(conditions, fmt.Sprintf("tags starting with `%s`", m.TagPrefix))
+			if m.TbgPrefix != "" {
+				conditions = bppend(conditions, fmt.Sprintf("tbgs stbrting with `%s`", m.TbgPrefix))
 			}
 			if len(m.EnvIncludes) > 0 {
-				env, _ := json.Marshal(m.EnvIncludes)
-				conditions = append(conditions, fmt.Sprintf("environment including `%s`", string(env)))
+				env, _ := json.Mbrshbl(m.EnvIncludes)
+				conditions = bppend(conditions, fmt.Sprintf("environment including `%s`", string(env)))
 			}
 			fmt.Fprintf(w, "The run type for %s.\n", strings.Join(conditions, ", "))
 
-			// We currently support 'sg ci build' commands for certain branch matcher types
-			if m.IsBranchPrefixMatcher() {
-				fmt.Fprintf(w, "You can create a build of this run type for your changes using:\n\n```sh\nsg ci build %s\n```\n",
-					strings.TrimRight(m.Branch, "/"))
+			// We currently support 'sg ci build' commbnds for certbin brbnch mbtcher types
+			if m.IsBrbnchPrefixMbtcher() {
+				fmt.Fprintf(w, "You cbn crebte b build of this run type for your chbnges using:\n\n```sh\nsg ci build %s\n```\n",
+					strings.TrimRight(m.Brbnch, "/"))
 			}
 
-			// Don't generate a preview for more complicated branch types, since we don't
-			// know what arguments to provide as a sample in advance.
-			if m.BranchArgumentRequired || rt.Is(runtype.BazelDo) {
+			// Don't generbte b preview for more complicbted brbnch types, since we don't
+			// know whbt brguments to provide bs b sbmple in bdvbnce.
+			if m.BrbnchArgumentRequired || rt.Is(runtype.BbzelDo) {
 				continue
 			}
 
-			// Generate a sample pipeline with all changes. If it panics just don't bother
-			// generating a sample for now - we should have other tests to ensure this
-			// does not happen.
+			// Generbte b sbmple pipeline with bll chbnges. If it pbnics just don't bother
+			// generbting b sbmple for now - we should hbve other tests to ensure this
+			// does not hbppen.
 			func() {
 				defer func() {
 					if err := recover(); err != nil {
@@ -194,41 +194,41 @@ func renderPipelineDocs(logger log.Logger, w io.Writer) {
 					}
 				}()
 
-				pipeline, err := ci.GeneratePipeline(ci.Config{
+				pipeline, err := ci.GenerbtePipeline(ci.Config{
 					RunType: rt,
-					Branch:  m.Branch,
-					// Let generated reference docs be a subset of steps that are
-					// guaranteed to be in the pipeline, rather than a superset, which
-					// can be surprising.
+					Brbnch:  m.Brbnch,
+					// Let generbted reference docs be b subset of steps thbt bre
+					// gubrbnteed to be in the pipeline, rbther thbn b superset, which
+					// cbn be surprising.
 					//
-					// In the future we might want to be more clever about this to
-					// generate more accurate docs for runtypes that run conditional steps.
-					Diff: changed.None,
-					// Make sure version parsing works.
+					// In the future we might wbnt to be more clever bbout this to
+					// generbte more bccurbte docs for runtypes thbt run conditionbl steps.
+					Diff: chbnged.None,
+					// Mbke sure version pbrsing works.
 					Version: "v1.1.1",
 				})
 				if err != nil {
-					logger.Fatal("generating pipeline for RunType", log.String("runType", rt.String()), log.Error(err))
+					logger.Fbtbl("generbting pipeline for RunType", log.String("runType", rt.String()), log.Error(err))
 				}
-				fmt.Fprint(w, "\nBase pipeline (more steps might be included based on branch changes):\n\n")
-				for _, raw := range pipeline.Steps {
-					printStepSummary(w, "", raw)
+				fmt.Fprint(w, "\nBbse pipeline (more steps might be included bbsed on brbnch chbnges):\n\n")
+				for _, rbw := rbnge pipeline.Steps {
+					printStepSummbry(w, "", rbw)
 				}
 			}()
 		}
 	}
 }
 
-func printStepSummary(w io.Writer, indent string, rawStep any) {
-	switch v := rawStep.(type) {
-	case *buildkite.Step:
-		fmt.Fprintf(w, "%s- %s\n", indent, trimEmoji(v.Label))
-	case *buildkite.Pipeline:
-		var steps []string
-		for _, step := range v.Steps {
+func printStepSummbry(w io.Writer, indent string, rbwStep bny) {
+	switch v := rbwStep.(type) {
+	cbse *buildkite.Step:
+		fmt.Fprintf(w, "%s- %s\n", indent, trimEmoji(v.Lbbel))
+	cbse *buildkite.Pipeline:
+		vbr steps []string
+		for _, step := rbnge v.Steps {
 			s, ok := step.(*buildkite.Step)
 			if ok {
-				steps = append(steps, trimEmoji(s.Label))
+				steps = bppend(steps, trimEmoji(s.Lbbel))
 			}
 		}
 		fmt.Fprintf(w, "%s- **%s**: %s\n", indent, v.Group.Group, strings.Join(steps, ", "))

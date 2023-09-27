@@ -1,116 +1,116 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestExternalServiceWebhookMigrator(t *testing.T) {
+func TestExternblServiceWebhookMigrbtor(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	var testExtSvcs = []struct {
+	vbr testExtSvcs = []struct {
 		kind        string
-		hasWebhooks bool
-		cfg         any
+		hbsWebhooks bool
+		cfg         bny
 	}{
-		{kind: "AWSCODECOMMIT", cfg: schema.AWSCodeCommitConnection{}},
-		{kind: "BITBUCKETSERVER", cfg: schema.BitbucketServerConnection{}},
-		{kind: "BITBUCKETCLOUD", cfg: schema.BitbucketCloudConnection{}},
-		{kind: "GITHUB", cfg: schema.GitHubConnection{}},
-		{kind: "GITLAB", cfg: schema.GitLabConnection{}},
-		{kind: "GITOLITE", cfg: schema.GitoliteConnection{}},
-		{kind: "PERFORCE", cfg: schema.PerforceConnection{}},
-		{kind: "PHABRICATOR", cfg: schema.PhabricatorConnection{}},
-		{kind: "JVMPACKAGES", cfg: schema.JVMPackagesConnection{}},
-		{kind: "OTHER", cfg: schema.OtherExternalServiceConnection{}},
-		{kind: "BITBUCKETSERVER", hasWebhooks: true, cfg: schema.BitbucketServerConnection{
-			Plugin: &schema.BitbucketServerPlugin{
-				Webhooks: &schema.BitbucketServerPluginWebhooks{
-					DisableSync: false,
-					Secret:      "this is a secret",
+		{kind: "AWSCODECOMMIT", cfg: schemb.AWSCodeCommitConnection{}},
+		{kind: "BITBUCKETSERVER", cfg: schemb.BitbucketServerConnection{}},
+		{kind: "BITBUCKETCLOUD", cfg: schemb.BitbucketCloudConnection{}},
+		{kind: "GITHUB", cfg: schemb.GitHubConnection{}},
+		{kind: "GITLAB", cfg: schemb.GitLbbConnection{}},
+		{kind: "GITOLITE", cfg: schemb.GitoliteConnection{}},
+		{kind: "PERFORCE", cfg: schemb.PerforceConnection{}},
+		{kind: "PHABRICATOR", cfg: schemb.PhbbricbtorConnection{}},
+		{kind: "JVMPACKAGES", cfg: schemb.JVMPbckbgesConnection{}},
+		{kind: "OTHER", cfg: schemb.OtherExternblServiceConnection{}},
+		{kind: "BITBUCKETSERVER", hbsWebhooks: true, cfg: schemb.BitbucketServerConnection{
+			Plugin: &schemb.BitbucketServerPlugin{
+				Webhooks: &schemb.BitbucketServerPluginWebhooks{
+					DisbbleSync: fblse,
+					Secret:      "this is b secret",
 				},
 			},
 		}},
-		{kind: "GITHUB", hasWebhooks: true, cfg: schema.GitHubConnection{
-			Webhooks: []*schema.GitHubWebhook{
+		{kind: "GITHUB", hbsWebhooks: true, cfg: schemb.GitHubConnection{
+			Webhooks: []*schemb.GitHubWebhook{
 				{
 					Org:    "org",
-					Secret: "this is also a secret",
+					Secret: "this is blso b secret",
 				},
 			},
 		}},
-		{kind: "GITLAB", hasWebhooks: true, cfg: schema.GitLabConnection{
-			Webhooks: []*schema.GitLabWebhook{
-				{Secret: "this is yet another secret"},
+		{kind: "GITLAB", hbsWebhooks: true, cfg: schemb.GitLbbConnection{
+			Webhooks: []*schemb.GitLbbWebhook{
+				{Secret: "this is yet bnother secret"},
 			},
 		}},
 	}
 
-	createExternalServices := func(t *testing.T, ctx context.Context, store *basestore.Store) {
+	crebteExternblServices := func(t *testing.T, ctx context.Context, store *bbsestore.Store) {
 		t.Helper()
 
-		// Create a trivial external service of each kind, as well as duplicate
-		// services for the external service kinds that support webhooks.
-		for _, svc := range testExtSvcs {
-			buf, err := json.MarshalIndent(svc.cfg, "", "  ")
+		// Crebte b trivibl externbl service of ebch kind, bs well bs duplicbte
+		// services for the externbl service kinds thbt support webhooks.
+		for _, svc := rbnge testExtSvcs {
+			buf, err := json.MbrshblIndent(svc.cfg, "", "  ")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if err := store.Exec(ctx, sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, created_at, has_webhooks)
+				INSERT INTO externbl_services (kind, displby_nbme, config, crebted_bt, hbs_webhooks)
 				VALUES (%s, %s, %s, NOW(), %s)
 			`,
 				svc.kind,
 				svc.kind,
 				string(buf),
-				svc.hasWebhooks,
+				svc.hbsWebhooks,
 			)); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
-		// Add one more external service with invalid JSON, which was once
-		// possible and may still exist in databases in the wild.  We don't want
-		// the migrator to error in that case!
+		// Add one more externbl service with invblid JSON, which wbs once
+		// possible bnd mby still exist in dbtbbbses in the wild.  We don't wbnt
+		// the migrbtor to error in thbt cbse!
 		//
-		// We'll have to do this the old fashioned way, since Create now
-		// actually checks the validity of the configuration.
+		// We'll hbve to do this the old fbshioned wby, since Crebte now
+		// bctublly checks the vblidity of the configurbtion.
 		if err := store.Exec(
 			ctx,
 			sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, created_at, has_webhooks)
+				INSERT INTO externbl_services (kind, displby_nbme, config, crebted_bt, hbs_webhooks)
 				VALUES (%s, %s, %s, NOW(), %s)
 			`,
 				"OTHER",
 				"other",
-				"invalid JSON",
-				false,
+				"invblid JSON",
+				fblse,
 			),
 		); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// We'll also add another external service that is deleted, and shouldn't count.
+		// We'll blso bdd bnother externbl service thbt is deleted, bnd shouldn't count.
 		if err := store.Exec(
 			ctx,
 			sqlf.Sprintf(`
-				INSERT INTO external_services (kind, display_name, config, deleted_at)
+				INSERT INTO externbl_services (kind, displby_nbme, config, deleted_bt)
 				VALUES (%s, %s, %s, NOW())
 			`,
 				"OTHER",
@@ -118,83 +118,83 @@ func TestExternalServiceWebhookMigrator(t *testing.T) {
 				"{}",
 			),
 		); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	clearHasWebhooks := func(t *testing.T, ctx context.Context, store *basestore.Store) {
+	clebrHbsWebhooks := func(t *testing.T, ctx context.Context, store *bbsestore.Store) {
 		t.Helper()
 
 		if err := store.Exec(
 			ctx,
-			sqlf.Sprintf("UPDATE external_services SET has_webhooks = NULL"),
+			sqlf.Sprintf("UPDATE externbl_services SET hbs_webhooks = NULL"),
 		); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	t.Run("Progress", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := basestore.NewWithHandle(db.Handle())
-		createExternalServices(t, ctx, store)
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+		store := bbsestore.NewWithHbndle(db.Hbndle())
+		crebteExternblServices(t, ctx, store)
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(store, key, 50)
+		m := NewExternblServiceWebhookMigrbtorWithDB(store, key, 50)
 
-		// By default, all the external services should have non-NULL
-		// has_webhooks.
-		progress, err := m.Progress(ctx, false)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 1., progress)
+		// By defbult, bll the externbl services should hbve non-NULL
+		// hbs_webhooks.
+		progress, err := m.Progress(ctx, fblse)
+		bssert.Nil(t, err)
+		bssert.EqublVblues(t, 1., progress)
 
-		// Now we'll clear that flag and ensure the progress drops to zero.
-		clearHasWebhooks(t, ctx, store)
+		// Now we'll clebr thbt flbg bnd ensure the progress drops to zero.
+		clebrHbsWebhooks(t, ctx, store)
 		progress, err = m.Progress(ctx, true)
-		assert.Nil(t, err)
-		assert.EqualValues(t, 0., progress)
+		bssert.Nil(t, err)
+		bssert.EqublVblues(t, 0., progress)
 	})
 
 	t.Run("Up", func(t *testing.T) {
-		db := database.NewDB(logger, dbtest.NewDB(logger, t))
-		store := basestore.NewWithHandle(db.Handle())
-		createExternalServices(t, ctx, store)
-		// Count the invalid JSON, not the deleted one
+		db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+		store := bbsestore.NewWithHbndle(db.Hbndle())
+		crebteExternblServices(t, ctx, store)
+		// Count the invblid JSON, not the deleted one
 		numInitSvcs := len(testExtSvcs) + 1
 
 		key := et.TestKey{}
-		m := NewExternalServiceWebhookMigratorWithDB(store, key, 50)
-		// Ensure that we have to run two Ups.
-		m.batchSize = numInitSvcs - 1
+		m := NewExternblServiceWebhookMigrbtorWithDB(store, key, 50)
+		// Ensure thbt we hbve to run two Ups.
+		m.bbtchSize = numInitSvcs - 1
 
-		// To start with, there should be nothing to do, as Upsert will have set
-		// has_webhooks already. Let's make sure nothing happens successfully.
-		assert.Nil(t, m.Up(ctx))
+		// To stbrt with, there should be nothing to do, bs Upsert will hbve set
+		// hbs_webhooks blrebdy. Let's mbke sure nothing hbppens successfully.
+		bssert.Nil(t, m.Up(ctx))
 
-		// Now we'll clear out the has_webhooks flags and re-run Up. This should
-		// update all but one of the external services.
-		clearHasWebhooks(t, ctx, store)
-		assert.Nil(t, m.Up(ctx))
+		// Now we'll clebr out the hbs_webhooks flbgs bnd re-run Up. This should
+		// updbte bll but one of the externbl services.
+		clebrHbsWebhooks(t, ctx, store)
+		bssert.Nil(t, m.Up(ctx))
 
-		// Do we really have one external service left?
-		numWebhooksNull, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL`)))
-		assert.Nil(t, err)
-		assert.Equal(t, 1, numWebhooksNull)
+		// Do we reblly hbve one externbl service left?
+		numWebhooksNull, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM externbl_services WHERE deleted_bt IS NULL AND hbs_webhooks IS NULL`)))
+		bssert.Nil(t, err)
+		bssert.Equbl(t, 1, numWebhooksNull)
 
-		// Now we'll do the last one.
-		assert.Nil(t, m.Up(ctx))
-		numWebhooksNull, _, err = basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS NULL`)))
-		assert.Nil(t, err)
-		assert.Equal(t, 0, numWebhooksNull)
+		// Now we'll do the lbst one.
+		bssert.Nil(t, m.Up(ctx))
+		numWebhooksNull, _, err = bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM externbl_services WHERE deleted_bt IS NULL AND hbs_webhooks IS NULL`)))
+		bssert.Nil(t, err)
+		bssert.Equbl(t, 0, numWebhooksNull)
 
-		// Finally, let's make sure we have the expected number of each: we
-		// should have three records with has_webhooks = true, and the rest
-		// should be has_webhooks = false.
-		numWebhooksTrue, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS TRUE`)))
-		assert.Nil(t, err)
-		assert.EqualValues(t, 3, numWebhooksTrue)
+		// Finblly, let's mbke sure we hbve the expected number of ebch: we
+		// should hbve three records with hbs_webhooks = true, bnd the rest
+		// should be hbs_webhooks = fblse.
+		numWebhooksTrue, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM externbl_services WHERE deleted_bt IS NULL AND hbs_webhooks IS TRUE`)))
+		bssert.Nil(t, err)
+		bssert.EqublVblues(t, 3, numWebhooksTrue)
 
-		numWebhooksFalse, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM external_services WHERE deleted_at IS NULL AND has_webhooks IS FALSE`)))
-		assert.Nil(t, err)
-		assert.EqualValues(t, numInitSvcs-3, numWebhooksFalse)
+		numWebhooksFblse, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM externbl_services WHERE deleted_bt IS NULL AND hbs_webhooks IS FALSE`)))
+		bssert.Nil(t, err)
+		bssert.EqublVblues(t, numInitSvcs-3, numWebhooksFblse)
 	})
 }

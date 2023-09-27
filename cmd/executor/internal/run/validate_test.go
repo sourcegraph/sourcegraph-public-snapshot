@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -6,62 +6,62 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestValidateAuthorizationToken(t *testing.T) {
+func TestVblidbteAuthorizbtionToken(t *testing.T) {
 	tests := []struct {
-		name                string
-		statusCode          int
+		nbme                string
+		stbtusCode          int
 		expectedErr         error
-		isUnauthorizedError bool
+		isUnbuthorizedError bool
 	}{
 		{
-			name:       "Valid response",
-			statusCode: http.StatusOK,
+			nbme:       "Vblid response",
+			stbtusCode: http.StbtusOK,
 		},
 		{
-			name:                "Unauthorized",
-			statusCode:          http.StatusUnauthorized,
-			expectedErr:         authorizationFailedErr,
-			isUnauthorizedError: true,
+			nbme:                "Unbuthorized",
+			stbtusCode:          http.StbtusUnbuthorized,
+			expectedErr:         buthorizbtionFbiledErr,
+			isUnbuthorizedError: true,
 		},
 		{
-			name:                "Internal server error",
-			statusCode:          http.StatusInternalServerError,
-			expectedErr:         errors.New("failed to validate authorization token: unexpected status code 500"),
-			isUnauthorizedError: false,
+			nbme:                "Internbl server error",
+			stbtusCode:          http.StbtusInternblServerError,
+			expectedErr:         errors.New("fbiled to vblidbte buthorizbtion token: unexpected stbtus code 500"),
+			isUnbuthorizedError: fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			server, client := newTestServerAndClient(t, func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(test.statusCode)
+				w.WriteHebder(test.stbtusCode)
 			})
 			defer server.Close()
 
-			err := validateAuthorizationToken(context.Background(), client)
+			err := vblidbteAuthorizbtionToken(context.Bbckground(), client)
 			if test.expectedErr != nil {
-				assert.NotNil(t, err)
-				assert.Equal(t, errors.Is(err, authorizationFailedErr), test.isUnauthorizedError)
-				assert.Equal(t, test.expectedErr.Error(), err.Error())
+				bssert.NotNil(t, err)
+				bssert.Equbl(t, errors.Is(err, buthorizbtionFbiledErr), test.isUnbuthorizedError)
+				bssert.Equbl(t, test.expectedErr.Error(), err.Error())
 			} else {
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 			}
 		})
 	}
 }
 
-func newTestServerAndClient(t *testing.T, handlerFunc func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, *apiclient.BaseClient) {
-	server := httptest.NewServer(http.HandlerFunc(handlerFunc))
-	testOpts := testOptions(&config.Config{FrontendURL: server.URL, FrontendAuthorizationToken: "hunter2hunter2"})
-	client, err := apiclient.NewBaseClient(logtest.Scoped(t), testOpts)
+func newTestServerAndClient(t *testing.T, hbndlerFunc func(w http.ResponseWriter, r *http.Request)) (*httptest.Server, *bpiclient.BbseClient) {
+	server := httptest.NewServer(http.HbndlerFunc(hbndlerFunc))
+	testOpts := testOptions(&config.Config{FrontendURL: server.URL, FrontendAuthorizbtionToken: "hunter2hunter2"})
+	client, err := bpiclient.NewBbseClient(logtest.Scoped(t), testOpts)
 	require.NoError(t, err)
 
 	return server, client

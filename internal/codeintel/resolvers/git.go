@@ -1,62 +1,62 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RepositoryResolver interface {
-	RepoID() api.RepoID // exposed for internal caches
-	ID() graphql.ID
-	Name() string
+type RepositoryResolver interfbce {
+	RepoID() bpi.RepoID // exposed for internbl cbches
+	ID() grbphql.ID
+	Nbme() string
 	URL() string
-	ExternalRepository() ExternalRepositoryResolver
+	ExternblRepository() ExternblRepositoryResolver
 }
 
-type ExternalRepositoryResolver interface {
+type ExternblRepositoryResolver interfbce {
 	ServiceType() string
 	ServiceID() string
 }
 
-type GitCommitResolver interface {
-	ID() graphql.ID
+type GitCommitResolver interfbce {
+	ID() grbphql.ID
 	Repository() RepositoryResolver
 	OID() GitObjectID
-	AbbreviatedOID() string
+	AbbrevibtedOID() string
 	URL() string
-	URI() string                                // exposed for internal URL construction
-	Tags(ctx context.Context) ([]string, error) // exposed for internal memoization of gitserver requests
+	URI() string                                // exposed for internbl URL construction
+	Tbgs(ctx context.Context) ([]string, error) // exposed for internbl memoizbtion of gitserver requests
 }
 
 type GitObjectID string
 
-func (GitObjectID) ImplementsGraphQLType(name string) bool {
-	return name == "GitObjectID"
+func (GitObjectID) ImplementsGrbphQLType(nbme string) bool {
+	return nbme == "GitObjectID"
 }
 
-func (id *GitObjectID) UnmarshalGraphQL(input any) error {
+func (id *GitObjectID) UnmbrshblGrbphQL(input bny) error {
 	if input, ok := input.(string); ok && gitserver.IsAbsoluteRevision(input) {
 		*id = GitObjectID(input)
 		return nil
 	}
-	return errors.New("GitObjectID: expected 40-character string (SHA-1 hash)")
+	return errors.New("GitObjectID: expected 40-chbrbcter string (SHA-1 hbsh)")
 }
 
-type GitTreeEntryResolver interface {
+type GitTreeEntryResolver interfbce {
 	Repository() RepositoryResolver
 	Commit() GitCommitResolver
-	Path() string
-	Name() string
+	Pbth() string
+	Nbme() string
 	URL() string
-	Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error)
+	Content(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error)
 }
 
-type GitTreeContentPageArgs struct {
-	StartLine *int32
+type GitTreeContentPbgeArgs struct {
+	StbrtLine *int32
 	EndLine   *int32
 }

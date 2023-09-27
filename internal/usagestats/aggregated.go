@@ -1,66 +1,66 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetSiteUsageStats(ctx context.Context, db database.DB, monthsOnly bool) (*types.SiteUsageStatistics, error) {
-	summary, err := db.EventLogs().SiteUsageCurrentPeriods(ctx)
+func GetSiteUsbgeStbts(ctx context.Context, db dbtbbbse.DB, monthsOnly bool) (*types.SiteUsbgeStbtistics, error) {
+	summbry, err := db.EventLogs().SiteUsbgeCurrentPeriods(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	stats := groupSiteUsageStats(summary, monthsOnly)
-	return stats, nil
+	stbts := groupSiteUsbgeStbts(summbry, monthsOnly)
+	return stbts, nil
 }
 
-func groupSiteUsageStats(summary types.SiteUsageSummary, monthsOnly bool) *types.SiteUsageStatistics {
-	stats := &types.SiteUsageStatistics{
+func groupSiteUsbgeStbts(summbry types.SiteUsbgeSummbry, monthsOnly bool) *types.SiteUsbgeStbtistics {
+	stbts := &types.SiteUsbgeStbtistics{
 		DAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            summary.Day,
-				UserCount:            summary.UniquesDay,
-				RegisteredUserCount:  summary.RegisteredUniquesDay,
-				AnonymousUserCount:   summary.UniquesDay - summary.RegisteredUniquesDay,
-				IntegrationUserCount: summary.IntegrationUniquesDay,
+				StbrtTime:            summbry.Dby,
+				UserCount:            summbry.UniquesDby,
+				RegisteredUserCount:  summbry.RegisteredUniquesDby,
+				AnonymousUserCount:   summbry.UniquesDby - summbry.RegisteredUniquesDby,
+				IntegrbtionUserCount: summbry.IntegrbtionUniquesDby,
 			},
 		},
 		WAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            summary.Week,
-				UserCount:            summary.UniquesWeek,
-				RegisteredUserCount:  summary.RegisteredUniquesWeek,
-				AnonymousUserCount:   summary.UniquesWeek - summary.RegisteredUniquesWeek,
-				IntegrationUserCount: summary.IntegrationUniquesWeek,
+				StbrtTime:            summbry.Week,
+				UserCount:            summbry.UniquesWeek,
+				RegisteredUserCount:  summbry.RegisteredUniquesWeek,
+				AnonymousUserCount:   summbry.UniquesWeek - summbry.RegisteredUniquesWeek,
+				IntegrbtionUserCount: summbry.IntegrbtionUniquesWeek,
 			},
 		},
 		MAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            summary.Month,
-				UserCount:            summary.UniquesMonth,
-				RegisteredUserCount:  summary.RegisteredUniquesMonth,
-				AnonymousUserCount:   summary.UniquesMonth - summary.RegisteredUniquesMonth,
-				IntegrationUserCount: summary.IntegrationUniquesMonth,
+				StbrtTime:            summbry.Month,
+				UserCount:            summbry.UniquesMonth,
+				RegisteredUserCount:  summbry.RegisteredUniquesMonth,
+				AnonymousUserCount:   summbry.UniquesMonth - summbry.RegisteredUniquesMonth,
+				IntegrbtionUserCount: summbry.IntegrbtionUniquesMonth,
 			},
 		},
 		RMAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            summary.RollingMonth,
-				UserCount:            summary.UniquesRollingMonth,
-				RegisteredUserCount:  summary.RegisteredUniquesRollingMonth,
-				AnonymousUserCount:   summary.UniquesRollingMonth - summary.RegisteredUniquesRollingMonth,
-				IntegrationUserCount: summary.IntegrationUniquesRollingMonth,
+				StbrtTime:            summbry.RollingMonth,
+				UserCount:            summbry.UniquesRollingMonth,
+				RegisteredUserCount:  summbry.RegisteredUniquesRollingMonth,
+				AnonymousUserCount:   summbry.UniquesRollingMonth - summbry.RegisteredUniquesRollingMonth,
+				IntegrbtionUserCount: summbry.IntegrbtionUniquesRollingMonth,
 			},
 		},
 	}
 
 	if monthsOnly {
-		stats.DAUs = []*types.SiteActivityPeriod{}
-		stats.WAUs = []*types.SiteActivityPeriod{}
+		stbts.DAUs = []*types.SiteActivityPeriod{}
+		stbts.WAUs = []*types.SiteActivityPeriod{}
 	}
 
-	return stats
+	return stbts
 }

@@ -1,5 +1,5 @@
-package schemas
+pbckbge schembs
 
-type SchemaFormatter interface {
-	Format(schemaDescription SchemaDescription) string
+type SchembFormbtter interfbce {
+	Formbt(schembDescription SchembDescription) string
 }

@@ -1,110 +1,110 @@
-package filter
+pbckbge filter
 
 import (
 	"testing"
 
-	"github.com/elimity-com/scim/schema"
+	"github.com/elimity-com/scim/schemb"
 )
 
-// TestValidatorInvalidResourceTypes contains all the cases where an *errors.ScimError gets returned.
-func TestValidatorInvalidResourceTypes(t *testing.T) {
-	for _, test := range []struct {
-		name     string
+// TestVblidbtorInvblidResourceTypes contbins bll the cbses where bn *errors.ScimError gets returned.
+func TestVblidbtorInvblidResourceTypes(t *testing.T) {
+	for _, test := rbnge []struct {
+		nbme     string
 		filter   string
-		attr     schema.CoreAttribute
-		resource map[string]interface{}
+		bttr     schemb.CoreAttribute
+		resource mbp[string]interfbce{}
 	}{
 		{
-			"string", `attr eq "value"`,
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Name: "attr",
+			"string", `bttr eq "vblue"`,
+			schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+				Nbme: "bttr",
 			})),
-			map[string]interface{}{
-				"attr": 1, // expects a string
+			mbp[string]interfbce{}{
+				"bttr": 1, // expects b string
 			},
 		},
 		{
-			"stringMv", `attr eq "value"`,
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Name:        "attr",
-				MultiValued: true,
+			"stringMv", `bttr eq "vblue"`,
+			schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+				Nbme:        "bttr",
+				MultiVblued: true,
 			})),
-			map[string]interface{}{
-				"attr": []interface{}{1}, // expects a []interface{string}
+			mbp[string]interfbce{}{
+				"bttr": []interfbce{}{1}, // expects b []interfbce{string}
 			},
 		},
 		{
 			"stringMv",
-			`attr eq "value"`,
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Name:        "attr",
-				MultiValued: true,
+			`bttr eq "vblue"`,
+			schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+				Nbme:        "bttr",
+				MultiVblued: true,
 			})),
-			map[string]interface{}{
-				"attr": []string{"value"}, // expects a []interface{}
+			mbp[string]interfbce{}{
+				"bttr": []string{"vblue"}, // expects b []interfbce{}
 			},
 		},
 		{
-			"dateTime", `attr eq "2006-01-02T15:04:05"`,
-			schema.SimpleCoreAttribute(schema.SimpleDateTimeParams(schema.DateTimeParams{
-				Name: "attr",
+			"dbteTime", `bttr eq "2006-01-02T15:04:05"`,
+			schemb.SimpleCoreAttribute(schemb.SimpleDbteTimePbrbms(schemb.DbteTimePbrbms{
+				Nbme: "bttr",
 			})),
-			map[string]interface{}{
-				"attr": 1, // expects a string
+			mbp[string]interfbce{}{
+				"bttr": 1, // expects b string
 			},
 		},
 		{
-			"dateTime", `attr eq "2006-01-02T15:04:05"`,
-			schema.SimpleCoreAttribute(schema.SimpleDateTimeParams(schema.DateTimeParams{
-				Name: "attr",
+			"dbteTime", `bttr eq "2006-01-02T15:04:05"`,
+			schemb.SimpleCoreAttribute(schemb.SimpleDbteTimePbrbms(schemb.DbteTimePbrbms{
+				Nbme: "bttr",
 			})),
-			map[string]interface{}{
-				"attr": "2006-01-02T", // expects a valid dateTime
+			mbp[string]interfbce{}{
+				"bttr": "2006-01-02T", // expects b vblid dbteTime
 			},
 		},
 		{
-			"boolean", `attr eq true`,
-			schema.SimpleCoreAttribute(schema.SimpleBooleanParams(schema.BooleanParams{
-				Name: "attr",
+			"boolebn", `bttr eq true`,
+			schemb.SimpleCoreAttribute(schemb.SimpleBoolebnPbrbms(schemb.BoolebnPbrbms{
+				Nbme: "bttr",
 			})),
-			map[string]interface{}{
-				"attr": 1, // expects a boolean
+			mbp[string]interfbce{}{
+				"bttr": 1, // expects b boolebn
 			},
 		},
 		{
-			"decimal", `attr eq 0.0`,
-			schema.SimpleCoreAttribute(schema.SimpleNumberParams(schema.NumberParams{
-				Name: "attr",
-				Type: schema.AttributeTypeDecimal(),
+			"decimbl", `bttr eq 0.0`,
+			schemb.SimpleCoreAttribute(schemb.SimpleNumberPbrbms(schemb.NumberPbrbms{
+				Nbme: "bttr",
+				Type: schemb.AttributeTypeDecimbl(),
 			})),
-			map[string]interface{}{
-				"attr": "0", // expects a decimal value
+			mbp[string]interfbce{}{
+				"bttr": "0", // expects b decimbl vblue
 			},
 		},
 		{
-			"integer", `attr eq 0`,
-			schema.SimpleCoreAttribute(schema.SimpleNumberParams(schema.NumberParams{
-				Name: "attr",
-				Type: schema.AttributeTypeInteger(),
+			"integer", `bttr eq 0`,
+			schemb.SimpleCoreAttribute(schemb.SimpleNumberPbrbms(schemb.NumberPbrbms{
+				Nbme: "bttr",
+				Type: schemb.AttributeTypeInteger(),
 			})),
-			map[string]interface{}{
-				"attr": 0.0, // expects an integer
+			mbp[string]interfbce{}{
+				"bttr": 0.0, // expects bn integer
 			},
 		},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			validator, err := NewValidator(test.filter, schema.Schema{
-				Attributes: []schema.CoreAttribute{test.attr},
+		t.Run(test.nbme, func(t *testing.T) {
+			vblidbtor, err := NewVblidbtor(test.filter, schemb.Schemb{
+				Attributes: []schemb.CoreAttribute{test.bttr},
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			defer func() {
 				if err := recover(); err == nil {
-					t.Fatal(test)
+					t.Fbtbl(test)
 				}
 			}()
-			if err := validator.PassesFilter(test.resource); err != nil {
+			if err := vblidbtor.PbssesFilter(test.resource); err != nil {
 				t.Error(err)
 			}
 		})

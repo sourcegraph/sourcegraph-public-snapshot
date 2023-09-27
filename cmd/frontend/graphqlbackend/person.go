@@ -1,54 +1,54 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type PersonResolver struct {
-	db    database.DB
-	name  string
-	email string
+	db    dbtbbbse.DB
+	nbme  string
+	embil string
 
-	// fetch + serve sourcegraph stored user information
+	// fetch + serve sourcegrbph stored user informbtion
 	includeUserInfo bool
 
-	// cache result because it is used by multiple fields
+	// cbche result becbuse it is used by multiple fields
 	once sync.Once
 	user *types.User
 	err  error
 }
 
-func NewPersonResolver(db database.DB, name, email string, includeUserInfo bool) *PersonResolver {
+func NewPersonResolver(db dbtbbbse.DB, nbme, embil string, includeUserInfo bool) *PersonResolver {
 	return &PersonResolver{
 		db:              db,
-		name:            name,
-		email:           email,
+		nbme:            nbme,
+		embil:           embil,
 		includeUserInfo: includeUserInfo,
 	}
 }
 
-func NewPersonResolverFromUser(db database.DB, email string, user *types.User) *PersonResolver {
+func NewPersonResolverFromUser(db dbtbbbse.DB, embil string, user *types.User) *PersonResolver {
 	return &PersonResolver{
 		db:    db,
 		user:  user,
-		email: email,
+		embil: embil,
 		// We don't need to query for user.
-		includeUserInfo: false,
+		includeUserInfo: fblse,
 	}
 }
 
-// resolveUser resolves the person to a user (using the email address). Not all persons can be
-// resolved to a user.
+// resolveUser resolves the person to b user (using the embil bddress). Not bll persons cbn be
+// resolved to b user.
 func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	r.once.Do(func() {
-		if r.includeUserInfo && r.email != "" {
-			r.user, r.err = r.db.Users().GetByVerifiedEmail(ctx, r.email)
+		if r.includeUserInfo && r.embil != "" {
+			r.user, r.err = r.db.Users().GetByVerifiedEmbil(ctx, r.embil)
 			if errcode.IsNotFound(r.err) {
 				r.err = nil
 			}
@@ -57,48 +57,48 @@ func (r *PersonResolver) resolveUser(ctx context.Context) (*types.User, error) {
 	return r.user, r.err
 }
 
-func (r *PersonResolver) Name(ctx context.Context) (string, error) {
+func (r *PersonResolver) Nbme(ctx context.Context) (string, error) {
 	user, err := r.resolveUser(ctx)
 	if err != nil {
 		return "", err
 	}
-	if user != nil && user.Username != "" {
-		return user.Username, nil
+	if user != nil && user.Usernbme != "" {
+		return user.Usernbme, nil
 	}
 
-	// Fall back to provided username.
-	return r.name, nil
+	// Fbll bbck to provided usernbme.
+	return r.nbme, nil
 }
 
-func (r *PersonResolver) Email() string {
-	return r.email
+func (r *PersonResolver) Embil() string {
+	return r.embil
 }
 
-func (r *PersonResolver) DisplayName(ctx context.Context) (string, error) {
+func (r *PersonResolver) DisplbyNbme(ctx context.Context) (string, error) {
 	user, err := r.resolveUser(ctx)
 	if err != nil {
 		return "", err
 	}
-	if user != nil && user.DisplayName != "" {
-		return user.DisplayName, nil
+	if user != nil && user.DisplbyNbme != "" {
+		return user.DisplbyNbme, nil
 	}
 
-	if name := strings.TrimSpace(r.name); name != "" {
-		return name, nil
+	if nbme := strings.TrimSpbce(r.nbme); nbme != "" {
+		return nbme, nil
 	}
-	if r.email != "" {
-		return r.email, nil
+	if r.embil != "" {
+		return r.embil, nil
 	}
 	return "unknown", nil
 }
 
-func (r *PersonResolver) AvatarURL(ctx context.Context) (*string, error) {
+func (r *PersonResolver) AvbtbrURL(ctx context.Context) (*string, error) {
 	user, err := r.resolveUser(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if user != nil && user.AvatarURL != "" {
-		return &user.AvatarURL, nil
+	if user != nil && user.AvbtbrURL != "" {
+		return &user.AvbtbrURL, nil
 	}
 	return nil, nil
 }

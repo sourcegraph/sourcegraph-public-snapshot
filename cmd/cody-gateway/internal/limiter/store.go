@@ -1,38 +1,38 @@
-package limiter
+pbckbge limiter
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// RedisStore is the backend for tracking limiter state.
-type RedisStore interface {
-	// Incrby increments a key's value, or initializes it to 1 if it does not exist
-	Incrby(key string, val int) (int, error)
-	// Get retrieves a key's value
+// RedisStore is the bbckend for trbcking limiter stbte.
+type RedisStore interfbce {
+	// Incrby increments b key's vblue, or initiblizes it to 1 if it does not exist
+	Incrby(key string, vbl int) (int, error)
+	// Get retrieves b key's vblue
 	GetInt(key string) (int, error)
-	// TTL provides seconds TTL on an existing key
+	// TTL provides seconds TTL on bn existing key
 	TTL(key string) (int, error)
-	// Expire configures an existing key's TTL
+	// Expire configures bn existing key's TTL
 	Expire(key string, ttlSeconds int) error
 }
 
 type MockRedisEntry struct {
-	Value int
+	Vblue int
 	TTL   int
 }
 
-type MockRedisStore map[string]MockRedisEntry
+type MockRedisStore mbp[string]MockRedisEntry
 
-var _ RedisStore = MockRedisStore{}
+vbr _ RedisStore = MockRedisStore{}
 
-func (m MockRedisStore) Incrby(key string, val int) (int, error) {
+func (m MockRedisStore) Incrby(key string, vbl int) (int, error) {
 	entry, ok := m[key]
 	if !ok {
 		entry = MockRedisEntry{}
 	}
-	entry.Value += val
+	entry.Vblue += vbl
 	m[key] = entry
-	return entry.Value, nil
+	return entry.Vblue, nil
 }
 
 func (m MockRedisStore) GetInt(key string) (int, error) {
@@ -40,7 +40,7 @@ func (m MockRedisStore) GetInt(key string) (int, error) {
 	if !ok {
 		return 0, nil
 	}
-	return entry.Value, nil
+	return entry.Vblue, nil
 }
 
 func (m MockRedisStore) TTL(key string) (int, error) {

@@ -1,4 +1,4 @@
-package internalerrs
+pbckbge internblerrs
 
 import (
 	"context"
@@ -9,482 +9,482 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golbng.org/protobuf/proto"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 
-	newspb "github.com/sourcegraph/sourcegraph/internal/grpc/testprotos/news/v1"
+	newspb "github.com/sourcegrbph/sourcegrbph/internbl/grpc/testprotos/news/v1"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
-func TestCallBackClientStream(t *testing.T) {
-	t.Run("SendMsg calls postMessageSend with message and error", func(t *testing.T) {
-		sentinelMessage := struct{}{}
+func TestCbllBbckClientStrebm(t *testing.T) {
+	t.Run("SendMsg cblls postMessbgeSend with messbge bnd error", func(t *testing.T) {
+		sentinelMessbge := struct{}{}
 		sentinelErr := errors.New("send error")
 
-		var called bool
-		stream := callBackClientStream{
-			ClientStream: &mockClientStream{
+		vbr cblled bool
+		strebm := cbllBbckClientStrebm{
+			ClientStrebm: &mockClientStrebm{
 				sendErr: sentinelErr,
 			},
-			postMessageSend: func(message any, err error) {
-				called = true
+			postMessbgeSend: func(messbge bny, err error) {
+				cblled = true
 
-				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
-					t.Errorf("postMessageSend called with unexpected message (-want +got):\n%s", diff)
+				if diff := cmp.Diff(messbge, sentinelMessbge); diff != "" {
+					t.Errorf("postMessbgeSend cblled with unexpected messbge (-wbnt +got):\n%s", diff)
 				}
 				if !errors.Is(err, sentinelErr) {
-					t.Errorf("got %v, want %v", err, sentinelErr)
+					t.Errorf("got %v, wbnt %v", err, sentinelErr)
 				}
 			},
 		}
 
-		sendErr := stream.SendMsg(sentinelMessage)
-		if !called {
-			t.Error("postMessageSend not called")
+		sendErr := strebm.SendMsg(sentinelMessbge)
+		if !cblled {
+			t.Error("postMessbgeSend not cblled")
 		}
 
 		if !errors.Is(sendErr, sentinelErr) {
-			t.Errorf("got %v, want %v", sendErr, sentinelErr)
+			t.Errorf("got %v, wbnt %v", sendErr, sentinelErr)
 		}
 	})
 
-	t.Run("RecvMsg calls postMessageReceive with message and error", func(t *testing.T) {
-		sentinelMessage := struct{}{}
+	t.Run("RecvMsg cblls postMessbgeReceive with messbge bnd error", func(t *testing.T) {
+		sentinelMessbge := struct{}{}
 		sentinelErr := errors.New("receive error")
 
-		var called bool
-		stream := callBackClientStream{
-			ClientStream: &mockClientStream{
+		vbr cblled bool
+		strebm := cbllBbckClientStrebm{
+			ClientStrebm: &mockClientStrebm{
 				recvErr: sentinelErr,
 			},
-			postMessageReceive: func(message any, err error) {
-				called = true
+			postMessbgeReceive: func(messbge bny, err error) {
+				cblled = true
 
-				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
-					t.Errorf("postMessageReceive called with unexpected message (-want +got):\n%s", diff)
+				if diff := cmp.Diff(messbge, sentinelMessbge); diff != "" {
+					t.Errorf("postMessbgeReceive cblled with unexpected messbge (-wbnt +got):\n%s", diff)
 				}
 				if !errors.Is(err, sentinelErr) {
-					t.Errorf("got %v, want %v", err, sentinelErr)
+					t.Errorf("got %v, wbnt %v", err, sentinelErr)
 				}
 			},
 		}
 
-		receiveErr := stream.RecvMsg(sentinelMessage)
-		if !called {
-			t.Error("postMessageReceive not called")
+		receiveErr := strebm.RecvMsg(sentinelMessbge)
+		if !cblled {
+			t.Error("postMessbgeReceive not cblled")
 		}
 
 		if !errors.Is(receiveErr, sentinelErr) {
-			t.Errorf("got %v, want %v", receiveErr, sentinelErr)
+			t.Errorf("got %v, wbnt %v", receiveErr, sentinelErr)
 		}
 	})
 }
 
-func TestRequestSavingClientStream_InitialRequest(t *testing.T) {
-	// Setup: create a mock ClientStream that returns a sentinel error on SendMsg
+func TestRequestSbvingClientStrebm_InitiblRequest(t *testing.T) {
+	// Setup: crebte b mock ClientStrebm thbt returns b sentinel error on SendMsg
 	sentinelErr := errors.New("send error")
-	mockClientStream := &mockClientStream{
+	mockClientStrebm := &mockClientStrebm{
 		sendErr: sentinelErr,
 	}
 
-	// Setup: create a requestSavingClientStream with the mock ClientStream
-	stream := &requestSavingClientStream{
-		ClientStream: mockClientStream,
+	// Setup: crebte b requestSbvingClientStrebm with the mock ClientStrebm
+	strebm := &requestSbvingClientStrebm{
+		ClientStrebm: mockClientStrebm,
 	}
 
-	// Setup: create a sample proto.Message for the request
-	request := &newspb.BinaryAttachment{
-		Name: "sample_request",
-		Data: []byte("sample data"),
+	// Setup: crebte b sbmple proto.Messbge for the request
+	request := &newspb.BinbryAttbchment{
+		Nbme: "sbmple_request",
+		Dbtb: []byte("sbmple dbtb"),
 	}
 
-	// Test: call SendMsg with the request
-	err := stream.SendMsg(request)
+	// Test: cbll SendMsg with the request
+	err := strebm.SendMsg(request)
 
-	// Check: assert SendMsg propagates the error
+	// Check: bssert SendMsg propbgbtes the error
 	if !errors.Is(err, sentinelErr) {
-		t.Errorf("got %v, want %v", err, sentinelErr)
+		t.Errorf("got %v, wbnt %v", err, sentinelErr)
 	}
 
-	// Check: assert InitialRequest returns the request
-	if diff := cmp.Diff(request, *stream.InitialRequest(), cmpopts.IgnoreUnexported(newspb.BinaryAttachment{})); diff != "" {
-		t.Fatalf("InitialRequest() (-want +got):\n%s", diff)
+	// Check: bssert InitiblRequest returns the request
+	if diff := cmp.Diff(request, *strebm.InitiblRequest(), cmpopts.IgnoreUnexported(newspb.BinbryAttbchment{})); diff != "" {
+		t.Fbtblf("InitiblRequest() (-wbnt +got):\n%s", diff)
 	}
 }
 
-// mockClientStream is a grpc.ClientStream that returns a given error on SendMsg and RecvMsg.
-type mockClientStream struct {
-	grpc.ClientStream
+// mockClientStrebm is b grpc.ClientStrebm thbt returns b given error on SendMsg bnd RecvMsg.
+type mockClientStrebm struct {
+	grpc.ClientStrebm
 	sendErr error
 	recvErr error
 }
 
-func (s *mockClientStream) SendMsg(any) error {
+func (s *mockClientStrebm) SendMsg(bny) error {
 	return s.sendErr
 }
 
-func (s *mockClientStream) RecvMsg(any) error {
+func (s *mockClientStrebm) RecvMsg(bny) error {
 	return s.recvErr
 }
 
-func TestCallBackServerStream(t *testing.T) {
-	t.Run("SendMsg calls postMessageSend with message and error", func(t *testing.T) {
-		sentinelMessage := struct{}{}
+func TestCbllBbckServerStrebm(t *testing.T) {
+	t.Run("SendMsg cblls postMessbgeSend with messbge bnd error", func(t *testing.T) {
+		sentinelMessbge := struct{}{}
 		sentinelErr := errors.New("send error")
 
-		var called bool
-		stream := callBackServerStream{
-			ServerStream: &mockServerStream{
+		vbr cblled bool
+		strebm := cbllBbckServerStrebm{
+			ServerStrebm: &mockServerStrebm{
 				sendErr: sentinelErr,
 			},
-			postMessageSend: func(message any, err error) {
-				called = true
+			postMessbgeSend: func(messbge bny, err error) {
+				cblled = true
 
-				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
-					t.Errorf("postMessageSend called with unexpected message (-want +got):\n%s", diff)
+				if diff := cmp.Diff(messbge, sentinelMessbge); diff != "" {
+					t.Errorf("postMessbgeSend cblled with unexpected messbge (-wbnt +got):\n%s", diff)
 				}
 				if !errors.Is(err, sentinelErr) {
-					t.Errorf("got %v, want %v", err, sentinelErr)
+					t.Errorf("got %v, wbnt %v", err, sentinelErr)
 				}
 			},
 		}
 
-		sendErr := stream.SendMsg(sentinelMessage)
-		if !called {
-			t.Error("postMessageSend not called")
+		sendErr := strebm.SendMsg(sentinelMessbge)
+		if !cblled {
+			t.Error("postMessbgeSend not cblled")
 		}
 
 		if !errors.Is(sendErr, sentinelErr) {
-			t.Errorf("got %v, want %v", sendErr, sentinelErr)
+			t.Errorf("got %v, wbnt %v", sendErr, sentinelErr)
 		}
 	})
 
-	t.Run("RecvMsg calls postMessageReceive with message and error", func(t *testing.T) {
-		sentinelMessage := struct{}{}
+	t.Run("RecvMsg cblls postMessbgeReceive with messbge bnd error", func(t *testing.T) {
+		sentinelMessbge := struct{}{}
 		sentinelErr := errors.New("receive error")
 
-		var called bool
-		stream := callBackServerStream{
-			ServerStream: &mockServerStream{
+		vbr cblled bool
+		strebm := cbllBbckServerStrebm{
+			ServerStrebm: &mockServerStrebm{
 				recvErr: sentinelErr,
 			},
-			postMessageReceive: func(message any, err error) {
-				called = true
+			postMessbgeReceive: func(messbge bny, err error) {
+				cblled = true
 
-				if diff := cmp.Diff(message, sentinelMessage); diff != "" {
-					t.Errorf("postMessageReceive called with unexpected message (-want +got):\n%s", diff)
+				if diff := cmp.Diff(messbge, sentinelMessbge); diff != "" {
+					t.Errorf("postMessbgeReceive cblled with unexpected messbge (-wbnt +got):\n%s", diff)
 				}
 				if !errors.Is(err, sentinelErr) {
-					t.Errorf("got %v, want %v", err, sentinelErr)
+					t.Errorf("got %v, wbnt %v", err, sentinelErr)
 				}
 			},
 		}
 
-		receiveErr := stream.RecvMsg(sentinelMessage)
-		if !called {
-			t.Error("postMessageReceive not called")
+		receiveErr := strebm.RecvMsg(sentinelMessbge)
+		if !cblled {
+			t.Error("postMessbgeReceive not cblled")
 		}
 
 		if !errors.Is(receiveErr, sentinelErr) {
-			t.Errorf("got %v, want %v", receiveErr, sentinelErr)
+			t.Errorf("got %v, wbnt %v", receiveErr, sentinelErr)
 		}
 	})
 }
 
-func TestRequestSavingServerStream_InitialRequest(t *testing.T) {
-	// Setup: create a mock ServerStream that returns a sentinel error on SendMsg
+func TestRequestSbvingServerStrebm_InitiblRequest(t *testing.T) {
+	// Setup: crebte b mock ServerStrebm thbt returns b sentinel error on SendMsg
 	sentinelErr := errors.New("receive error")
-	mockServerStream := &mockServerStream{
+	mockServerStrebm := &mockServerStrebm{
 		recvErr: sentinelErr,
 	}
 
-	// Setup: create a requestSavingServerStream with the mock ServerStream
-	stream := &requestSavingServerStream{
-		ServerStream: mockServerStream,
+	// Setup: crebte b requestSbvingServerStrebm with the mock ServerStrebm
+	strebm := &requestSbvingServerStrebm{
+		ServerStrebm: mockServerStrebm,
 	}
 
-	// Setup: create a sample proto.Message for the request
-	request := &newspb.BinaryAttachment{
-		Name: "sample_request",
-		Data: []byte("sample data"),
+	// Setup: crebte b sbmple proto.Messbge for the request
+	request := &newspb.BinbryAttbchment{
+		Nbme: "sbmple_request",
+		Dbtb: []byte("sbmple dbtb"),
 	}
 
-	// Test: call RecvMsg with the request
-	err := stream.RecvMsg(request)
+	// Test: cbll RecvMsg with the request
+	err := strebm.RecvMsg(request)
 
-	// Check: assert RecvMsg propagates the error
+	// Check: bssert RecvMsg propbgbtes the error
 	if !errors.Is(err, sentinelErr) {
-		t.Errorf("got %v, want %v", err, sentinelErr)
+		t.Errorf("got %v, wbnt %v", err, sentinelErr)
 	}
 
-	// Check: assert InitialRequest returns the request
-	if diff := cmp.Diff(request, *stream.InitialRequest(), cmpopts.IgnoreUnexported(newspb.BinaryAttachment{})); diff != "" {
-		t.Fatalf("InitialRequest() (-want +got):\n%s", diff)
+	// Check: bssert InitiblRequest returns the request
+	if diff := cmp.Diff(request, *strebm.InitiblRequest(), cmpopts.IgnoreUnexported(newspb.BinbryAttbchment{})); diff != "" {
+		t.Fbtblf("InitiblRequest() (-wbnt +got):\n%s", diff)
 	}
 }
 
-// mockServerStream is a grpc.ServerStream that returns a given error on SendMsg and RecvMsg.
-type mockServerStream struct {
-	grpc.ServerStream
+// mockServerStrebm is b grpc.ServerStrebm thbt returns b given error on SendMsg bnd RecvMsg.
+type mockServerStrebm struct {
+	grpc.ServerStrebm
 	sendErr error
 	recvErr error
 }
 
-func (s *mockServerStream) SendMsg(any) error {
+func (s *mockServerStrebm) SendMsg(bny) error {
 	return s.sendErr
 }
 
-func (s *mockServerStream) RecvMsg(any) error {
+func (s *mockServerStrebm) RecvMsg(bny) error {
 	return s.recvErr
 }
 
-func TestProbablyInternalGRPCError(t *testing.T) {
-	checker := func(s *status.Status) bool {
-		return strings.HasPrefix(s.Message(), "custom error")
+func TestProbbblyInternblGRPCError(t *testing.T) {
+	checker := func(s *stbtus.Stbtus) bool {
+		return strings.HbsPrefix(s.Messbge(), "custom error")
 	}
 
-	testCases := []struct {
-		status     *status.Status
-		checkers   []internalGRPCErrorChecker
-		wantResult bool
+	testCbses := []struct {
+		stbtus     *stbtus.Stbtus
+		checkers   []internblGRPCErrorChecker
+		wbntResult bool
 	}{
 		{
-			status:     status.New(codes.OK, ""),
-			checkers:   []internalGRPCErrorChecker{func(*status.Status) bool { return true }},
-			wantResult: false,
+			stbtus:     stbtus.New(codes.OK, ""),
+			checkers:   []internblGRPCErrorChecker{func(*stbtus.Stbtus) bool { return true }},
+			wbntResult: fblse,
 		},
 		{
-			status:     status.New(codes.Internal, "custom error message"),
-			checkers:   []internalGRPCErrorChecker{checker},
-			wantResult: true,
+			stbtus:     stbtus.New(codes.Internbl, "custom error messbge"),
+			checkers:   []internblGRPCErrorChecker{checker},
+			wbntResult: true,
 		},
 		{
-			status:     status.New(codes.Internal, "some other error"),
-			checkers:   []internalGRPCErrorChecker{checker},
-			wantResult: false,
+			stbtus:     stbtus.New(codes.Internbl, "some other error"),
+			checkers:   []internblGRPCErrorChecker{checker},
+			wbntResult: fblse,
 		},
 	}
 
-	for _, tc := range testCases {
-		gotResult := probablyInternalGRPCError(tc.status, tc.checkers)
-		if gotResult != tc.wantResult {
-			t.Errorf("probablyInternalGRPCError(%v, %v) = %v, want %v", tc.status, tc.checkers, gotResult, tc.wantResult)
+	for _, tc := rbnge testCbses {
+		gotResult := probbblyInternblGRPCError(tc.stbtus, tc.checkers)
+		if gotResult != tc.wbntResult {
+			t.Errorf("probbblyInternblGRPCError(%v, %v) = %v, wbnt %v", tc.stbtus, tc.checkers, gotResult, tc.wbntResult)
 		}
 	}
 }
 
-func TestGRPCResourceExhaustedChecker(t *testing.T) {
-	testCases := []struct {
-		status     *status.Status
-		expectPass bool
+func TestGRPCResourceExhbustedChecker(t *testing.T) {
+	testCbses := []struct {
+		stbtus     *stbtus.Stbtus
+		expectPbss bool
 	}{
 		{
-			status:     status.New(codes.ResourceExhausted, "trying to send message larger than max (1024 vs 2)"),
-			expectPass: true,
+			stbtus:     stbtus.New(codes.ResourceExhbusted, "trying to send messbge lbrger thbn mbx (1024 vs 2)"),
+			expectPbss: true,
 		},
 		{
-			status:     status.New(codes.ResourceExhausted, "some other error"),
-			expectPass: false,
+			stbtus:     stbtus.New(codes.ResourceExhbusted, "some other error"),
+			expectPbss: fblse,
 		},
 		{
-			status:     status.New(codes.OK, "trying to send message larger than max (1024 vs 5)"),
-			expectPass: false,
+			stbtus:     stbtus.New(codes.OK, "trying to send messbge lbrger thbn mbx (1024 vs 5)"),
+			expectPbss: fblse,
 		},
 	}
 
-	for _, tc := range testCases {
-		actual := gRPCResourceExhaustedChecker(tc.status)
-		if actual != tc.expectPass {
-			t.Errorf("gRPCResourceExhaustedChecker(%v) got %t, want %t", tc.status, actual, tc.expectPass)
+	for _, tc := rbnge testCbses {
+		bctubl := gRPCResourceExhbustedChecker(tc.stbtus)
+		if bctubl != tc.expectPbss {
+			t.Errorf("gRPCResourceExhbustedChecker(%v) got %t, wbnt %t", tc.stbtus, bctubl, tc.expectPbss)
 		}
 	}
 }
 
 func TestGRPCPrefixChecker(t *testing.T) {
 	tests := []struct {
-		status *status.Status
-		want   bool
+		stbtus *stbtus.Stbtus
+		wbnt   bool
 	}{
 		{
-			status: status.New(codes.OK, "not a grpc error"),
-			want:   false,
+			stbtus: stbtus.New(codes.OK, "not b grpc error"),
+			wbnt:   fblse,
 		},
 		{
-			status: status.New(codes.Internal, "grpc: internal server error"),
-			want:   true,
+			stbtus: stbtus.New(codes.Internbl, "grpc: internbl server error"),
+			wbnt:   true,
 		},
 		{
-			status: status.New(codes.Unavailable, "some other error"),
-			want:   false,
+			stbtus: stbtus.New(codes.Unbvbilbble, "some other error"),
+			wbnt:   fblse,
 		},
 	}
-	for _, test := range tests {
-		got := gRPCPrefixChecker(test.status)
-		if got != test.want {
-			t.Errorf("gRPCPrefixChecker(%v) = %v, want %v", test.status, got, test.want)
+	for _, test := rbnge tests {
+		got := gRPCPrefixChecker(test.stbtus)
+		if got != test.wbnt {
+			t.Errorf("gRPCPrefixChecker(%v) = %v, wbnt %v", test.stbtus, got, test.wbnt)
 		}
 	}
 }
 
 func TestGRPCUnexpectedContentTypeChecker(t *testing.T) {
 	tests := []struct {
-		name   string
-		status *status.Status
-		want   bool
+		nbme   string
+		stbtus *stbtus.Stbtus
+		wbnt   bool
 	}{
 		{
-			name:   "gRPC error with OK status",
-			status: status.New(codes.OK, "transport: received unexpected content-type"),
-			want:   false,
+			nbme:   "gRPC error with OK stbtus",
+			stbtus: stbtus.New(codes.OK, "trbnsport: received unexpected content-type"),
+			wbnt:   fblse,
 		},
 		{
-			name:   "gRPC error without unexpected content-type message",
-			status: status.New(codes.Internal, "some random error"),
-			want:   false,
+			nbme:   "gRPC error without unexpected content-type messbge",
+			stbtus: stbtus.New(codes.Internbl, "some rbndom error"),
+			wbnt:   fblse,
 		},
 		{
-			name:   "gRPC error with unexpected content-type message",
-			status: status.Newf(codes.Internal, "transport: received unexpected content-type %q", "application/octet-stream"),
-			want:   true,
+			nbme:   "gRPC error with unexpected content-type messbge",
+			stbtus: stbtus.Newf(codes.Internbl, "trbnsport: received unexpected content-type %q", "bpplicbtion/octet-strebm"),
+			wbnt:   true,
 		},
 		{
-			name:   "gRPC error with unexpected content-type message as part of chain",
-			status: status.Newf(codes.Unknown, "transport: malformed grpc-status %q; transport: received unexpected content-type %q", "random-status", "application/octet-stream"),
-			want:   true,
+			nbme:   "gRPC error with unexpected content-type messbge bs pbrt of chbin",
+			stbtus: stbtus.Newf(codes.Unknown, "trbnsport: mblformed grpc-stbtus %q; trbnsport: received unexpected content-type %q", "rbndom-stbtus", "bpplicbtion/octet-strebm"),
+			wbnt:   true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := gRPCUnexpectedContentTypeChecker(tt.status); got != tt.want {
-				t.Errorf("gRPCUnexpectedContentTypeChecker() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := gRPCUnexpectedContentTypeChecker(tt.stbtus); got != tt.wbnt {
+				t.Errorf("gRPCUnexpectedContentTypeChecker() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
 func TestFindNonUTF8StringFields(t *testing.T) {
-	// Create instances of the BinaryAttachment and KeyValueAttachment messages
-	invalidBinaryAttachment := &newspb.BinaryAttachment{
-		Name: "inval\x80id_binary",
-		Data: []byte("sample data"),
+	// Crebte instbnces of the BinbryAttbchment bnd KeyVblueAttbchment messbges
+	invblidBinbryAttbchment := &newspb.BinbryAttbchment{
+		Nbme: "invbl\x80id_binbry",
+		Dbtb: []byte("sbmple dbtb"),
 	}
 
-	invalidKeyValueAttachment := &newspb.KeyValueAttachment{
-		Name: "inval\x80id_key_value",
-		Data: map[string]string{
-			"key1": "value1",
-			"key2": "inval\x80id_value",
+	invblidKeyVblueAttbchment := &newspb.KeyVblueAttbchment{
+		Nbme: "invbl\x80id_key_vblue",
+		Dbtb: mbp[string]string{
+			"key1": "vblue1",
+			"key2": "invbl\x80id_vblue",
 		},
 	}
 
-	// Create a sample Article message with invalid UTF-8 strings
-	article := &newspb.Article{
-		Author:  "inval\x80id_author",
-		Date:    &timestamppb.Timestamp{Seconds: 1234567890},
-		Title:   "valid_title",
-		Content: "valid_content",
-		Status:  newspb.Article_STATUS_PUBLISHED,
-		Attachments: []*newspb.Attachment{
-			{Contents: &newspb.Attachment_BinaryAttachment{BinaryAttachment: invalidBinaryAttachment}},
-			{Contents: &newspb.Attachment_KeyValueAttachment{KeyValueAttachment: invalidKeyValueAttachment}},
+	// Crebte b sbmple Article messbge with invblid UTF-8 strings
+	brticle := &newspb.Article{
+		Author:  "invbl\x80id_buthor",
+		Dbte:    &timestbmppb.Timestbmp{Seconds: 1234567890},
+		Title:   "vblid_title",
+		Content: "vblid_content",
+		Stbtus:  newspb.Article_STATUS_PUBLISHED,
+		Attbchments: []*newspb.Attbchment{
+			{Contents: &newspb.Attbchment_BinbryAttbchment{BinbryAttbchment: invblidBinbryAttbchment}},
+			{Contents: &newspb.Attbchment_KeyVblueAttbchment{KeyVblueAttbchment: invblidKeyVblueAttbchment}},
 		},
 	}
 
 	tests := []struct {
-		name          string
-		message       proto.Message
-		expectedPaths []string
+		nbme          string
+		messbge       proto.Messbge
+		expectedPbths []string
 	}{
 		{
-			name:    "Article with invalid UTF-8 strings",
-			message: article,
-			expectedPaths: []string{
-				"author",
-				"attachments[0].binary_attachment.name",
-				"attachments[1].key_value_attachment.name",
-				`attachments[1].key_value_attachment.data["key2"]`,
+			nbme:    "Article with invblid UTF-8 strings",
+			messbge: brticle,
+			expectedPbths: []string{
+				"buthor",
+				"bttbchments[0].binbry_bttbchment.nbme",
+				"bttbchments[1].key_vblue_bttbchment.nbme",
+				`bttbchments[1].key_vblue_bttbchment.dbtb["key2"]`,
 			},
 		},
 		{
-			name:          "nil message",
-			message:       nil,
-			expectedPaths: []string{},
+			nbme:          "nil messbge",
+			messbge:       nil,
+			expectedPbths: []string{},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			invalidFields, err := findNonUTF8StringFields(tt.message)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			invblidFields, err := findNonUTF8StringFields(tt.messbge)
 			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
+				t.Fbtblf("unexpected error: %v", err)
 			}
 
-			sort.Strings(invalidFields)
-			sort.Strings(tt.expectedPaths)
+			sort.Strings(invblidFields)
+			sort.Strings(tt.expectedPbths)
 
-			if diff := cmp.Diff(tt.expectedPaths, invalidFields, cmpopts.EquateEmpty()); diff != "" {
-				t.Fatalf("unexpected invalid fields (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.expectedPbths, invblidFields, cmpopts.EqubteEmpty()); diff != "" {
+				t.Fbtblf("unexpected invblid fields (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestMassageIntoStatusErr(t *testing.T) {
-	testCases := []struct {
+func TestMbssbgeIntoStbtusErr(t *testing.T) {
+	testCbses := []struct {
 		description string
 		input       error
-		expected    *status.Status
+		expected    *stbtus.Stbtus
 		expectedOk  bool
 	}{
 		{
 			description: "nil error",
 			input:       nil,
 			expected:    nil,
-			expectedOk:  false,
+			expectedOk:  fblse,
 		},
 		{
-			description: "status error",
-			input:       status.Errorf(codes.InvalidArgument, "invalid argument"),
-			expected:    status.New(codes.InvalidArgument, "invalid argument"),
+			description: "stbtus error",
+			input:       stbtus.Errorf(codes.InvblidArgument, "invblid brgument"),
+			expected:    stbtus.New(codes.InvblidArgument, "invblid brgument"),
 			expectedOk:  true,
 		},
 		{
-			description: "context.Canceled error",
-			input:       context.Canceled,
-			expected:    status.New(codes.Canceled, "context canceled"),
+			description: "context.Cbnceled error",
+			input:       context.Cbnceled,
+			expected:    stbtus.New(codes.Cbnceled, "context cbnceled"),
 			expectedOk:  true,
 		},
 		{
-			description: "context.DeadlineExceeded error",
-			input:       context.DeadlineExceeded,
-			expected:    status.New(codes.DeadlineExceeded, "context deadline exceeded"),
+			description: "context.DebdlineExceeded error",
+			input:       context.DebdlineExceeded,
+			expected:    stbtus.New(codes.DebdlineExceeded, "context debdline exceeded"),
 			expectedOk:  true,
 		},
 		{
-			description: "non-status error",
-			input:       errors.New("non-status error"),
+			description: "non-stbtus error",
+			input:       errors.New("non-stbtus error"),
 			expected:    nil,
-			expectedOk:  false,
+			expectedOk:  fblse,
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		t.Run(tc.description, func(t *testing.T) {
-			result, ok := massageIntoStatusErr(tc.input)
+			result, ok := mbssbgeIntoStbtusErr(tc.input)
 			if ok != tc.expectedOk {
 				t.Errorf("Expected ok to be %v, but got %v", tc.expectedOk, ok)
 			}
 
-			expectedStatusString := fmt.Sprintf("%s", tc.expected)
-			actualStatusString := fmt.Sprintf("%s", result)
+			expectedStbtusString := fmt.Sprintf("%s", tc.expected)
+			bctublStbtusString := fmt.Sprintf("%s", result)
 
-			if diff := cmp.Diff(expectedStatusString, actualStatusString); diff != "" {
-				t.Fatalf("Unexpected status string (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedStbtusString, bctublStbtusString); diff != "" {
+				t.Fbtblf("Unexpected stbtus string (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

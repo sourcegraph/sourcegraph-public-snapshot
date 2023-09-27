@@ -1,69 +1,69 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var MockResetPasswordEnabled func() bool
+vbr MockResetPbsswordEnbbled func() bool
 
-// ResetPasswordEnabled reports whether the reset-password flow is enabled (per site config).
-func ResetPasswordEnabled() bool {
-	if MockResetPasswordEnabled != nil {
-		return MockResetPasswordEnabled()
+// ResetPbsswordEnbbled reports whether the reset-pbssword flow is enbbled (per site config).
+func ResetPbsswordEnbbled() bool {
+	if MockResetPbsswordEnbbled != nil {
+		return MockResetPbsswordEnbbled()
 	}
 
 	builtin, multiple := GetProviderConfig()
 	return builtin != nil && !multiple
 }
 
-// GetProviderConfig returns the builtin auth provider config. At most 1 can be specified in
-// site config; if there is more than 1, it returns multiple == true (which the caller should handle
-// by returning an error and refusing to proceed with auth).
-func GetProviderConfig() (builtin *schema.BuiltinAuthProvider, multiple bool) {
-	for _, p := range conf.Get().AuthProviders {
+// GetProviderConfig returns the builtin buth provider config. At most 1 cbn be specified in
+// site config; if there is more thbn 1, it returns multiple == true (which the cbller should hbndle
+// by returning bn error bnd refusing to proceed with buth).
+func GetProviderConfig() (builtin *schemb.BuiltinAuthProvider, multiple bool) {
+	for _, p := rbnge conf.Get().AuthProviders {
 		if p.Builtin != nil {
 			if builtin != nil {
-				return builtin, true // multiple builtin auth providers
+				return builtin, true // multiple builtin buth providers
 			}
 			builtin = p.Builtin
 		}
 	}
-	return builtin, false
+	return builtin, fblse
 }
 
-func handleEnabledCheck(logger log.Logger, w http.ResponseWriter) (handled bool) {
+func hbndleEnbbledCheck(logger log.Logger, w http.ResponseWriter) (hbndled bool) {
 	pc, multiple := GetProviderConfig()
 	if multiple {
-		logger.Error("At most 1 builtin auth provider may be set in site config.")
-		http.Error(w, "Misconfigured builtin auth provider.", http.StatusInternalServerError)
+		logger.Error("At most 1 builtin buth provider mby be set in site config.")
+		http.Error(w, "Misconfigured builtin buth provider.", http.StbtusInternblServerError)
 		return true
 	}
 	if pc == nil {
-		http.Error(w, "Builtin auth provider is not enabled.", http.StatusForbidden)
+		http.Error(w, "Builtin buth provider is not enbbled.", http.StbtusForbidden)
 		return true
 	}
-	return false
+	return fblse
 }
 
 func init() {
-	conf.ContributeValidator(validateConfig)
+	conf.ContributeVblidbtor(vblidbteConfig)
 }
 
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var builtinAuthProviders int
-	for _, p := range c.SiteConfig().AuthProviders {
+func vblidbteConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+	vbr builtinAuthProviders int
+	for _, p := rbnge c.SiteConfig().AuthProviders {
 		if p.Builtin != nil {
 			builtinAuthProviders++
 		}
 	}
 	if builtinAuthProviders >= 2 {
-		problems = append(problems, conf.NewSiteProblem(`at most 1 builtin auth provider may be used`))
+		problems = bppend(problems, conf.NewSiteProblem(`bt most 1 builtin buth provider mby be used`))
 	}
 	return problems
 }

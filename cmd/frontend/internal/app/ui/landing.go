@@ -1,110 +1,110 @@
-package ui
+pbckbge ui
 
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/gorillb/mux"
+	"github.com/inconshrevebble/log15"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/hbndlerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var goSymbolReg = lazyregexp.New("/info/GoPackage/(.+)$")
+vbr goSymbolReg = lbzyregexp.New("/info/GoPbckbge/(.+)$")
 
-// serveRepoLanding simply redirects the old (sourcegraph.com/<repo>/-/info) repo landing page
-// URLs directly to the repo itself (sourcegraph.com/<repo>).
-func serveRepoLanding(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	logger := log.Scoped("serveRepoLanding", "redirects the old (sourcegraph.com/<repo>/-/info) repo landing page")
+// serveRepoLbnding simply redirects the old (sourcegrbph.com/<repo>/-/info) repo lbnding pbge
+// URLs directly to the repo itself (sourcegrbph.com/<repo>).
+func serveRepoLbnding(db dbtbbbse.DB) func(http.ResponseWriter, *http.Request) error {
+	logger := log.Scoped("serveRepoLbnding", "redirects the old (sourcegrbph.com/<repo>/-/info) repo lbnding pbge")
 	return func(w http.ResponseWriter, r *http.Request) error {
-		legacyRepoLandingCounter.Inc()
+		legbcyRepoLbndingCounter.Inc()
 
-		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
+		repo, commitID, err := hbndlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vbrs(r))
 		if err != nil {
-			if errcode.IsHTTPErrorCode(err, http.StatusNotFound) {
-				return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
+			if errcode.IsHTTPErrorCode(err, http.StbtusNotFound) {
+				return &errcode.HTTPErr{Stbtus: http.StbtusNotFound, Err: err}
 			}
-			return errors.Wrap(err, "GetRepoAndRev")
+			return errors.Wrbp(err, "GetRepoAndRev")
 		}
-		http.Redirect(w, r, "/"+string(repo.Name)+"@"+string(commitID), http.StatusMovedPermanently)
+		http.Redirect(w, r, "/"+string(repo.Nbme)+"@"+string(commitID), http.StbtusMovedPermbnently)
 		return nil
 	}
 }
 
-func serveDefLanding(w http.ResponseWriter, r *http.Request) (err error) {
-	tr, ctx := trace.New(r.Context(), "serveDefLanding")
+func serveDefLbnding(w http.ResponseWriter, r *http.Request) (err error) {
+	tr, ctx := trbce.New(r.Context(), "serveDefLbnding")
 	defer tr.EndWithErr(&err)
 	r = r.WithContext(ctx)
 
-	legacyDefLandingCounter.Inc()
+	legbcyDefLbndingCounter.Inc()
 
-	match := goSymbolReg.FindStringSubmatch(r.URL.Path)
-	if match == nil {
-		return &errcode.HTTPErr{Status: http.StatusNotFound, Err: err}
+	mbtch := goSymbolReg.FindStringSubmbtch(r.URL.Pbth)
+	if mbtch == nil {
+		return &errcode.HTTPErr{Stbtus: http.StbtusNotFound, Err: err}
 	}
-	http.Redirect(w, r, "/go/"+match[1], http.StatusMovedPermanently)
+	http.Redirect(w, r, "/go/"+mbtch[1], http.StbtusMovedPermbnently)
 	return nil
 }
 
-var legacyDefLandingCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "legacy_def_landing_webapp",
-	Help:      "Number of times a legacy def landing page has been served.",
+vbr legbcyDefLbndingCounter = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbmespbce: "src",
+	Nbme:      "legbcy_def_lbnding_webbpp",
+	Help:      "Number of times b legbcy def lbnding pbge hbs been served.",
 })
 
-var legacyRepoLandingCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "legacy_repo_landing_webapp",
-	Help:      "Number of times a legacy repo landing page has been served.",
+vbr legbcyRepoLbndingCounter = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbmespbce: "src",
+	Nbme:      "legbcy_repo_lbnding_webbpp",
+	Help:      "Number of times b legbcy repo lbnding pbge hbs been served.",
 })
 
-// serveDefRedirectToDefLanding redirects from /REPO/refs/... and
-// /REPO/def/... URLs to the def landing page. Those URLs used to
-// point to JavaScript-backed pages in the UI for a refs list and code
-// view, respectively, but now def URLs are only for SEO (and thus
-// those URLs are only handled by this package).
-func serveDefRedirectToDefLanding(w http.ResponseWriter, r *http.Request) {
-	routeVars := mux.Vars(r)
-	pairs := make([]string, 0, len(routeVars)*2)
-	for k, v := range routeVars {
-		if k == "dummy" { // only used for matching string "def" or "refs"
+// serveDefRedirectToDefLbnding redirects from /REPO/refs/... bnd
+// /REPO/def/... URLs to the def lbnding pbge. Those URLs used to
+// point to JbvbScript-bbcked pbges in the UI for b refs list bnd code
+// view, respectively, but now def URLs bre only for SEO (bnd thus
+// those URLs bre only hbndled by this pbckbge).
+func serveDefRedirectToDefLbnding(w http.ResponseWriter, r *http.Request) {
+	routeVbrs := mux.Vbrs(r)
+	pbirs := mbke([]string, 0, len(routeVbrs)*2)
+	for k, v := rbnge routeVbrs {
+		if k == "dummy" { // only used for mbtching string "def" or "refs"
 			continue
 		}
-		pairs = append(pairs, k, v)
+		pbirs = bppend(pbirs, k, v)
 	}
-	u, err := Router().Get(routeLegacyDefLanding).URL(pairs...)
+	u, err := Router().Get(routeLegbcyDefLbnding).URL(pbirs...)
 	if err != nil {
-		log15.Error("Def redirect URL construction failed.", "url", r.URL.String(), "routeVars", routeVars, "err", err)
-		http.Error(w, "", http.StatusBadRequest)
+		log15.Error("Def redirect URL construction fbiled.", "url", r.URL.String(), "routeVbrs", routeVbrs, "err", err)
+		http.Error(w, "", http.StbtusBbdRequest)
 		return
 	}
-	http.Redirect(w, r, u.String(), http.StatusMovedPermanently)
+	http.Redirect(w, r, u.String(), http.StbtusMovedPermbnently)
 }
 
-// Redirect from old /land/ def landing URLs to new /info/ URLs
-func serveOldRouteDefLanding(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	infoURL, err := Router().Get(routeLegacyDefLanding).URL(
-		"Repo", vars["Repo"], "Path", vars["Path"], "Rev", vars["Rev"], "UnitType", vars["UnitType"], "Unit", vars["Unit"])
+// Redirect from old /lbnd/ def lbnding URLs to new /info/ URLs
+func serveOldRouteDefLbnding(w http.ResponseWriter, r *http.Request) {
+	vbrs := mux.Vbrs(r)
+	infoURL, err := Router().Get(routeLegbcyDefLbnding).URL(
+		"Repo", vbrs["Repo"], "Pbth", vbrs["Pbth"], "Rev", vbrs["Rev"], "UnitType", vbrs["UnitType"], "Unit", vbrs["Unit"])
 	if err != nil {
-		repoURL, err := Router().Get(routeRepo).URL("Repo", vars["Repo"], "Rev", vars["Rev"])
+		repoURL, err := Router().Get(routeRepo).URL("Repo", vbrs["Repo"], "Rev", vbrs["Rev"])
 		if err != nil {
-			// Last recourse is redirect to homepage
-			http.Redirect(w, r, "/", http.StatusSeeOther)
+			// Lbst recourse is redirect to homepbge
+			http.Redirect(w, r, "/", http.StbtusSeeOther)
 			return
 		}
-		// Redirect to repo page if info page URL could not be constructed
-		http.Redirect(w, r, repoURL.String(), http.StatusFound)
+		// Redirect to repo pbge if info pbge URL could not be constructed
+		http.Redirect(w, r, repoURL.String(), http.StbtusFound)
 		return
 	}
-	// Redirect to /info/ page
-	http.Redirect(w, r, infoURL.String(), http.StatusMovedPermanently)
+	// Redirect to /info/ pbge
+	http.Redirect(w, r, infoURL.String(), http.StbtusMovedPermbnently)
 }

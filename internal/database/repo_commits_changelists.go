@@ -1,56 +1,56 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type RepoCommitsChangelistsStore interface {
-	// BatchInsertCommitSHAsWithPerforceChangelistID will insert rows into the
-	// repo_commits_changelists table in batches.
-	BatchInsertCommitSHAsWithPerforceChangelistID(context.Context, api.RepoID, []types.PerforceChangelist) error
-	// GetLatestForRepo will return the latest commit that has been mapped in the database.
-	GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error)
+type RepoCommitsChbngelistsStore interfbce {
+	// BbtchInsertCommitSHAsWithPerforceChbngelistID will insert rows into the
+	// repo_commits_chbngelists tbble in bbtches.
+	BbtchInsertCommitSHAsWithPerforceChbngelistID(context.Context, bpi.RepoID, []types.PerforceChbngelist) error
+	// GetLbtestForRepo will return the lbtest commit thbt hbs been mbpped in the dbtbbbse.
+	GetLbtestForRepo(ctx context.Context, repoID bpi.RepoID) (*types.RepoCommit, error)
 
-	// GetRepoCommit will return the mathcing row from the table for the given repo ID and the
-	// given changelist ID.
-	GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error)
+	// GetRepoCommit will return the mbthcing row from the tbble for the given repo ID bnd the
+	// given chbngelist ID.
+	GetRepoCommitChbngelist(ctx context.Context, repoID bpi.RepoID, chbngelistID int64) (*types.RepoCommit, error)
 }
 
-type repoCommitsChangelistsStore struct {
-	*basestore.Store
+type repoCommitsChbngelistsStore struct {
+	*bbsestore.Store
 	logger log.Logger
 }
 
-var _ RepoCommitsChangelistsStore = (*repoCommitsChangelistsStore)(nil)
+vbr _ RepoCommitsChbngelistsStore = (*repoCommitsChbngelistsStore)(nil)
 
-func RepoCommitsChangelistsWith(logger log.Logger, other basestore.ShareableStore) RepoCommitsChangelistsStore {
-	return &repoCommitsChangelistsStore{
+func RepoCommitsChbngelistsWith(logger log.Logger, other bbsestore.ShbrebbleStore) RepoCommitsChbngelistsStore {
+	return &repoCommitsChbngelistsStore{
 		logger: logger,
-		Store:  basestore.NewWithHandle(other.Handle()),
+		Store:  bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-func (s *repoCommitsChangelistsStore) BatchInsertCommitSHAsWithPerforceChangelistID(ctx context.Context, repo_id api.RepoID, commitsMap []types.PerforceChangelist) error {
-	return s.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *repoCommitsChbngelistsStore) BbtchInsertCommitSHAsWithPerforceChbngelistID(ctx context.Context, repo_id bpi.RepoID, commitsMbp []types.PerforceChbngelist) error {
+	return s.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 
-		inserter := batch.NewInserter(ctx, tx.Handle(), "repo_commits_changelists", batch.MaxNumPostgresParameters, "repo_id", "commit_sha", "perforce_changelist_id")
-		for _, item := range commitsMap {
+		inserter := bbtch.NewInserter(ctx, tx.Hbndle(), "repo_commits_chbngelists", bbtch.MbxNumPostgresPbrbmeters, "repo_id", "commit_shb", "perforce_chbngelist_id")
+		for _, item := rbnge commitsMbp {
 			if err := inserter.Insert(
 				ctx,
 				int32(repo_id),
-				dbutil.CommitBytea(item.CommitSHA),
-				item.ChangelistID,
+				dbutil.CommitByteb(item.CommitSHA),
+				item.ChbngelistID,
 			); err != nil {
 				return err
 			}
@@ -60,34 +60,34 @@ func (s *repoCommitsChangelistsStore) BatchInsertCommitSHAsWithPerforceChangelis
 
 }
 
-var getLatestForRepoFmtStr = `
+vbr getLbtestForRepoFmtStr = `
 SELECT
 	id,
 	repo_id,
-	commit_sha,
-	perforce_changelist_id
-	created_at
+	commit_shb,
+	perforce_chbngelist_id
+	crebted_bt
 FROM
-	repo_commits_changelists
+	repo_commits_chbngelists
 WHERE
 	repo_id = %s
 ORDER BY
-	perforce_changelist_id DESC
+	perforce_chbngelist_id DESC
 LIMIT 1`
 
-func (s *repoCommitsChangelistsStore) GetLatestForRepo(ctx context.Context, repoID api.RepoID) (*types.RepoCommit, error) {
-	q := sqlf.Sprintf(getLatestForRepoFmtStr, repoID)
+func (s *repoCommitsChbngelistsStore) GetLbtestForRepo(ctx context.Context, repoID bpi.RepoID) (*types.RepoCommit, error) {
+	q := sqlf.Sprintf(getLbtestForRepoFmtStr, repoID)
 	row := s.QueryRow(ctx, q)
-	return scanRepoCommitRow(row)
+	return scbnRepoCommitRow(row)
 }
 
-func scanRepoCommitRow(scanner dbutil.Scanner) (*types.RepoCommit, error) {
-	var r types.RepoCommit
-	if err := scanner.Scan(
+func scbnRepoCommitRow(scbnner dbutil.Scbnner) (*types.RepoCommit, error) {
+	vbr r types.RepoCommit
+	if err := scbnner.Scbn(
 		&r.ID,
 		&r.RepoID,
 		&r.CommitSHA,
-		&r.PerforceChangelistID,
+		&r.PerforceChbngelistID,
 	); err != nil {
 		return nil, err
 	}
@@ -95,25 +95,25 @@ func scanRepoCommitRow(scanner dbutil.Scanner) (*types.RepoCommit, error) {
 	return &r, nil
 }
 
-var getRepoCommitFmtStr = `
+vbr getRepoCommitFmtStr = `
 SELECT
 	id,
 	repo_id,
-	commit_sha,
-	perforce_changelist_id
+	commit_shb,
+	perforce_chbngelist_id
 FROM
-	repo_commits_changelists
+	repo_commits_chbngelists
 WHERE
 	repo_id = %s
-	AND perforce_changelist_id = %s;
+	AND perforce_chbngelist_id = %s;
 `
 
-func (s *repoCommitsChangelistsStore) GetRepoCommitChangelist(ctx context.Context, repoID api.RepoID, changelistID int64) (*types.RepoCommit, error) {
-	q := sqlf.Sprintf(getRepoCommitFmtStr, repoID, changelistID)
+func (s *repoCommitsChbngelistsStore) GetRepoCommitChbngelist(ctx context.Context, repoID bpi.RepoID, chbngelistID int64) (*types.RepoCommit, error) {
+	q := sqlf.Sprintf(getRepoCommitFmtStr, repoID, chbngelistID)
 
-	repoCommit, err := scanRepoCommitRow(s.QueryRow(ctx, q))
+	repoCommit, err := scbnRepoCommitRow(s.QueryRow(ctx, q))
 	if err == sql.ErrNoRows {
-		return nil, &perforce.ChangelistNotFoundError{RepoID: repoID, ID: changelistID}
+		return nil, &perforce.ChbngelistNotFoundError{RepoID: repoID, ID: chbngelistID}
 	} else if err != nil {
 		return nil, err
 	}

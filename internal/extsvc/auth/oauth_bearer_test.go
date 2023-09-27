@@ -1,41 +1,41 @@
-package auth
+pbckbge buth
 
 import (
 	"net/http"
 	"testing"
 )
 
-func TestOAuthBearerToken(t *testing.T) {
-	t.Run("Authenticate", func(t *testing.T) {
-		token := &OAuthBearerToken{Token: "abcdef"}
+func TestOAuthBebrerToken(t *testing.T) {
+	t.Run("Authenticbte", func(t *testing.T) {
+		token := &OAuthBebrerToken{Token: "bbcdef"}
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := token.Authenticate(req); err != nil {
+		if err := token.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if have, want := req.Header.Get("Authorization"), "Bearer "+token.Token; have != want {
-			t.Errorf("unexpected header: have=%q want=%q", have, want)
+		if hbve, wbnt := req.Hebder.Get("Authorizbtion"), "Bebrer "+token.Token; hbve != wbnt {
+			t.Errorf("unexpected hebder: hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
 
-	t.Run("Hash", func(t *testing.T) {
-		hashes := []string{
-			(&OAuthBearerToken{Token: ""}).Hash(),
-			(&OAuthBearerToken{Token: "foobar"}).Hash(),
-			(&OAuthBearerToken{Token: "foobar\x00"}).Hash(),
+	t.Run("Hbsh", func(t *testing.T) {
+		hbshes := []string{
+			(&OAuthBebrerToken{Token: ""}).Hbsh(),
+			(&OAuthBebrerToken{Token: "foobbr"}).Hbsh(),
+			(&OAuthBebrerToken{Token: "foobbr\x00"}).Hbsh(),
 		}
 
-		seen := make(map[string]struct{})
-		for _, hash := range hashes {
-			if _, ok := seen[hash]; ok {
-				t.Errorf("non-unique hash: %q", hash)
+		seen := mbke(mbp[string]struct{})
+		for _, hbsh := rbnge hbshes {
+			if _, ok := seen[hbsh]; ok {
+				t.Errorf("non-unique hbsh: %q", hbsh)
 			}
-			seen[hash] = struct{}{}
+			seen[hbsh] = struct{}{}
 		}
 	})
 }

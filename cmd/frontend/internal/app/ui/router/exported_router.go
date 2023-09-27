@@ -1,21 +1,21 @@
-// Package router contains the route names for our app UI.
-package router
+// Pbckbge router contbins the route nbmes for our bpp UI.
+pbckbge router
 
-import "github.com/gorilla/mux"
+import "github.com/gorillb/mux"
 
 // Router is the UI router.
 //
-// It is used by packages that can't import the ../ui package without creating an import cycle.
-var Router *mux.Router
+// It is used by pbckbges thbt cbn't import the ../ui pbckbge without crebting bn import cycle.
+vbr Router *mux.Router
 
-// These route names are used by other packages that can't import the ../ui package without creating
-// an import cycle.
+// These route nbmes bre used by other pbckbges thbt cbn't import the ../ui pbckbge without crebting
+// bn import cycle.
 const (
 	RouteSignIn             = "sign-in"
 	RouteSignUp             = "sign-up"
-	RouteUnlockAccount      = "unlock-account"
-	RoutePasswordReset      = "password-reset"
-	RouteRaw                = "raw"
+	RouteUnlockAccount      = "unlock-bccount"
+	RoutePbsswordReset      = "pbssword-reset"
+	RouteRbw                = "rbw"
 	RoutePingFromSelfHosted = "ping-from-self-hosted"
-	RouteRequestAccess      = "request-access"
+	RouteRequestAccess      = "request-bccess"
 )

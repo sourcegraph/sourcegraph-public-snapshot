@@ -1,3 +1,3 @@
-package lsifstore
+pbckbge lsifstore
 
 // TODO

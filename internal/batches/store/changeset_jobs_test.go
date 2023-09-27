@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -7,106 +7,106 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
 )
 
-func testStoreChangesetJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesetJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	repoStore := database.ReposWith(logger, s)
-	esStore := database.ExternalServicesWith(logger, s)
+	repoStore := dbtbbbse.ReposWith(logger, s)
+	esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 	deletedRepo := bt.TestRepo(t, esStore, extsvc.KindGitHub).With(typestest.Opt.RepoDeletedAt(clock.Now()))
 
-	if err := repoStore.Create(ctx, repo, deletedRepo); err != nil {
-		t.Fatal(err)
+	if err := repoStore.Crebte(ctx, repo, deletedRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := repoStore.Delete(ctx, deletedRepo.ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{Repo: repo.ID})
-	changesetWithDeletedRepo := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{Repo: deletedRepo.ID})
+	chbngeset := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{Repo: repo.ID})
+	chbngesetWithDeletedRepo := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{Repo: deletedRepo.ID})
 
-	jobs := make([]*btypes.ChangesetJob, 0, 3)
-	for i := 0; i < cap(jobs); i++ {
-		c := &btypes.ChangesetJob{
+	jobs := mbke([]*btypes.ChbngesetJob, 0, 3)
+	for i := 0; i < cbp(jobs); i++ {
+		c := &btypes.ChbngesetJob{
 			UserID:        int32(i + 1234),
-			BatchChangeID: int64(i + 910),
-			ChangesetID:   changeset.ID,
-			JobType:       btypes.ChangesetJobTypeComment,
+			BbtchChbngeID: int64(i + 910),
+			ChbngesetID:   chbngeset.ID,
+			JobType:       btypes.ChbngesetJobTypeComment,
 		}
 
-		if i == cap(jobs)-1 {
-			c.ChangesetID = changesetWithDeletedRepo.ID
+		if i == cbp(jobs)-1 {
+			c.ChbngesetID = chbngesetWithDeletedRepo.ID
 		}
-		jobs = append(jobs, c)
+		jobs = bppend(jobs, c)
 	}
 
-	t.Run("Create", func(t *testing.T) {
-		haveJobs := []*btypes.ChangesetJob{}
-		for _, c := range jobs {
+	t.Run("Crebte", func(t *testing.T) {
+		hbveJobs := []*btypes.ChbngesetJob{}
+		for _, c := rbnge jobs {
 			// Copy c.
 			c := *c
-			haveJobs = append(haveJobs, &c)
+			hbveJobs = bppend(hbveJobs, &c)
 		}
-		err := s.CreateChangesetJob(ctx, haveJobs...)
+		err := s.CrebteChbngesetJob(ctx, hbveJobs...)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		for i, c := range haveJobs {
-			want := jobs[i]
-			have := c
+		for i, c := rbnge hbveJobs {
+			wbnt := jobs[i]
+			hbve := c
 
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
+			if hbve.ID == 0 {
+				t.Fbtbl("ID should not be zero")
 			}
 
-			want.ID = have.ID
-			want.Payload = &btypes.ChangesetJobCommentPayload{}
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
+			wbnt.ID = hbve.ID
+			wbnt.Pbylobd = &btypes.ChbngesetJobCommentPbylobd{}
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
-		for i, job := range jobs {
-			t.Run(strconv.Itoa(i), func(t *testing.T) {
-				have, err := s.GetChangesetJob(ctx, GetChangesetJobOpts{ID: job.ID})
-				if i == cap(jobs)-1 {
+		for i, job := rbnge jobs {
+			t.Run(strconv.Itob(i), func(t *testing.T) {
+				hbve, err := s.GetChbngesetJob(ctx, GetChbngesetJobOpts{ID: job.ID})
+				if i == cbp(jobs)-1 {
 					if err != ErrNoResults {
-						t.Fatal("unexpected non-no-results error")
+						t.Fbtbl("unexpected non-no-results error")
 					}
 					return
 				} else if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(have, job); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, job); diff != "" {
+					t.Fbtbl(diff)
 				}
 			})
 		}
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetChangesetJobOpts{ID: 0xdeadbeef}
+			opts := GetChbngesetJobOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetChangesetJob(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetChbngesetJob(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 	})

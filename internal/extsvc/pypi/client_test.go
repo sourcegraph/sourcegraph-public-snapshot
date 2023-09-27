@@ -1,127 +1,127 @@
-package pypi
+pbckbge pypi
 
 import (
 	"bytes"
 	"context"
-	"crypto/sha1"
+	"crypto/shb1"
 	"encoding/hex"
-	"flag"
+	"flbg"
 	"io"
 	"io/fs"
 	"os"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"testing"
-	"text/template"
+	"text/templbte"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"golang.org/x/time/rate"
+	"github.com/grbfbnb/regexp"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+vbr updbteRegex = flbg.String("updbte", "", "Updbte testdbtb of tests mbtching the given regex")
 
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+func updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }
 
-func TestDownload(t *testing.T) {
-	ctx := context.Background()
-	cli := newTestClient(t, "Download", update(t.Name()))
+func TestDownlobd(t *testing.T) {
+	ctx := context.Bbckground()
+	cli := newTestClient(t, "Downlobd", updbte(t.Nbme()))
 
 	files, err := cli.Project(ctx, "requests")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Pick the oldest tarball.
+	// Pick the oldest tbrbbll.
 	j := -1
-	for i, f := range files {
-		if path.Ext(f.Name) == ".gz" {
+	for i, f := rbnge files {
+		if pbth.Ext(f.Nbme) == ".gz" {
 			j = i
-			break
+			brebk
 		}
 	}
 
-	p, err := cli.Download(ctx, files[j].URL)
+	p, err := cli.Downlobd(ctx, files[j].URL)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tmp := t.TempDir()
-	err = unpack.Tgz(p, tmp, unpack.Opts{})
+	err = unpbck.Tgz(p, tmp, unpbck.Opts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	hasher := sha1.New()
-	var tarFiles []string
+	hbsher := shb1.New()
+	vbr tbrFiles []string
 
-	err = filepath.WalkDir(tmp, func(path string, d fs.DirEntry, err error) error {
+	err = filepbth.WblkDir(tmp, func(pbth string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
 			return nil
 		}
-		f, lErr := os.Open(path)
+		f, lErr := os.Open(pbth)
 		if lErr != nil {
 			return lErr
 		}
 		defer f.Close()
-		b, lErr := io.ReadAll(f)
+		b, lErr := io.RebdAll(f)
 		if lErr != nil {
 			return lErr
 		}
-		hasher.Write(b)
-		tarFiles = append(tarFiles, strings.TrimPrefix(path, tmp))
+		hbsher.Write(b)
+		tbrFiles = bppend(tbrFiles, strings.TrimPrefix(pbth, tmp))
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/requests", update(t.Name()), struct {
-		TarHash string
+	testutil.AssertGolden(t, "testdbtb/golden/requests", updbte(t.Nbme()), struct {
+		TbrHbsh string
 		Files   []string
 	}{
-		TarHash: hex.EncodeToString(hasher.Sum(nil)),
-		Files:   tarFiles,
+		TbrHbsh: hex.EncodeToString(hbsher.Sum(nil)),
+		Files:   tbrFiles,
 	})
 }
 
 func TestProject(t *testing.T) {
-	cli := newTestClient(t, "parse", update(t.Name()))
-	files, err := cli.Project(context.Background(), "gpg-vault")
+	cli := newTestClient(t, "pbrse", updbte(t.Nbme()))
+	files, err := cli.Project(context.Bbckground(), "gpg-vbult")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	testutil.AssertGolden(t, "testdata/golden/gpg-vault", update(t.Name()), files)
+	testutil.AssertGolden(t, "testdbtb/golden/gpg-vbult", updbte(t.Nbme()), files)
 }
 
 func TestVersion(t *testing.T) {
-	cli := newTestClient(t, "parse", update(t.Name()))
-	f, err := cli.Version(context.Background(), "gpg-vault", "1.4")
+	cli := newTestClient(t, "pbrse", updbte(t.Nbme()))
+	f, err := cli.Version(context.Bbckground(), "gpg-vbult", "1.4")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := "gpg-vault-1.4.tar.gz"; want != f.Name {
-		t.Fatalf("want %s, got %s", want, f.Name)
+	if wbnt := "gpg-vbult-1.4.tbr.gz"; wbnt != f.Nbme {
+		t.Fbtblf("wbnt %s, got %s", wbnt, f.Nbme)
 	}
 }
 
-func TestParse_empty(t *testing.T) {
-	b := bytes.NewReader([]byte(`
+func TestPbrse_empty(t *testing.T) {
+	b := bytes.NewRebder([]byte(`
 <!DOCTYPE html>
 <html>
   <body>
@@ -129,14 +129,14 @@ func TestParse_empty(t *testing.T) {
 </html>
 `))
 
-	_, err := parse(b)
+	_, err := pbrse(b)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func TestParse_broken(t *testing.T) {
-	tmpl, err := template.New("project").Parse(`<!DOCTYPE html>
+func TestPbrse_broken(t *testing.T) {
+	tmpl, err := templbte.New("project").Pbrse(`<!DOCTYPE html>
 <html>
   <body>
 	{{.Body}}
@@ -144,234 +144,234 @@ func TestParse_broken(t *testing.T) {
 </html>
 `)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tc := []struct {
-		name string
+		nbme string
 		Body string
 	}{
 		{
-			name: "no text",
-			Body: "<a href=\"/frob-1.0.0.tar.gz/\"></a>",
+			nbme: "no text",
+			Body: "<b href=\"/frob-1.0.0.tbr.gz/\"></b>",
 		},
 		{
-			name: "text does not match base",
-			Body: "<a href=\"/frob-1.0.0.tar.gz/\">foo</a>",
+			nbme: "text does not mbtch bbse",
+			Body: "<b href=\"/frob-1.0.0.tbr.gz/\">foo</b>",
 		},
 	}
 
-	for _, c := range tc {
-		t.Run(c.name, func(t *testing.T) {
+	for _, c := rbnge tc {
+		t.Run(c.nbme, func(t *testing.T) {
 			buf := bytes.Buffer{}
 			err = tmpl.Execute(&buf, c)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			_, err := parse(&buf)
+			_, err := pbrse(&buf)
 			if err == nil {
-				t.Fatal("expected error")
+				t.Fbtbl("expected error")
 			}
 		})
 	}
 }
 
-func TestParse_PEP503(t *testing.T) {
-	// There may be any other HTML elements on the API pages as long as the required
-	// anchor elements exist.
-	b := bytes.NewReader([]byte(`
+func TestPbrse_PEP503(t *testing.T) {
+	// There mby be bny other HTML elements on the API pbges bs long bs the required
+	// bnchor elements exist.
+	b := bytes.NewRebder([]byte(`
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="pypi:repository-version" content="1.0">
+  <hebd>
+    <metb nbme="pypi:repository-version" content="1.0">
     <title>Links for frob</title>
-  </head>
+  </hebd>
   <body>
 	<h1>Links for frob</h1>
-    <a href="/frob-1.0.0.tar.gz/" data-requires-python="&gt;=3">frob-1.0.0.tar.gz</a>
+    <b href="/frob-1.0.0.tbr.gz/" dbtb-requires-python="&gt;=3">frob-1.0.0.tbr.gz</b>
 	<h2>More links for frob</h1>
 	<div>
-	    <a href="/frob-2.0.0.tar.gz/" data-gpg-sig="true">frob-2.0.0.tar.gz</a>
-	    <a>frob-3.0.0.tar.gz</a>
+	    <b href="/frob-2.0.0.tbr.gz/" dbtb-gpg-sig="true">frob-2.0.0.tbr.gz</b>
+	    <b>frob-3.0.0.tbr.gz</b>
 	</div>
   </body>
 </html>
 `))
 
-	got, err := parse(b)
+	got, err := pbrse(b)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tr := true
-	want := []File{
+	wbnt := []File{
 		{
-			Name:               "frob-1.0.0.tar.gz",
-			URL:                "/frob-1.0.0.tar.gz/",
-			DataRequiresPython: ">=3",
+			Nbme:               "frob-1.0.0.tbr.gz",
+			URL:                "/frob-1.0.0.tbr.gz/",
+			DbtbRequiresPython: ">=3",
 		},
 		{
-			Name:       "frob-2.0.0.tar.gz",
-			URL:        "/frob-2.0.0.tar.gz/",
-			DataGPGSig: &tr,
+			Nbme:       "frob-2.0.0.tbr.gz",
+			URL:        "/frob-2.0.0.tbr.gz/",
+			DbtbGPGSig: &tr,
 		},
 	}
 
-	if d := cmp.Diff(want, got); d != "" {
-		t.Fatalf("-want, +got\n%s", d)
+	if d := cmp.Diff(wbnt, got); d != "" {
+		t.Fbtblf("-wbnt, +got\n%s", d)
 	}
 }
 
 func TestToWheel(t *testing.T) {
-	have := []string{
-		"requests-2.16.2-py2.py3-none-any.whl",
-		"grpcio-1.46.0rc2-cp39-cp39-win_amd64.whl",
+	hbve := []string{
+		"requests-2.16.2-py2.py3-none-bny.whl",
+		"grpcio-1.46.0rc2-cp39-cp39-win_bmd64.whl",
 	}
-	want := []Wheel{
+	wbnt := []Wheel{
 		{
-			File:         File{Name: have[0]},
+			File:         File{Nbme: hbve[0]},
 			Distribution: "requests",
 			Version:      "2.16.2",
-			BuildTag:     "",
-			PythonTag:    "py2.py3",
-			ABITag:       "none",
-			PlatformTag:  "any",
+			BuildTbg:     "",
+			PythonTbg:    "py2.py3",
+			ABITbg:       "none",
+			PlbtformTbg:  "bny",
 		},
 		{
-			File:         File{Name: have[1]},
+			File:         File{Nbme: hbve[1]},
 			Distribution: "grpcio",
 			Version:      "1.46.0rc2",
-			BuildTag:     "",
-			PythonTag:    "cp39",
-			ABITag:       "cp39",
-			PlatformTag:  "win_amd64",
+			BuildTbg:     "",
+			PythonTbg:    "cp39",
+			ABITbg:       "cp39",
+			PlbtformTbg:  "win_bmd64",
 		},
 	}
 
-	var got []Wheel
-	for _, h := range have {
-		g, err := ToWheel(File{Name: h})
+	vbr got []Wheel
+	for _, h := rbnge hbve {
+		g, err := ToWheel(File{Nbme: h})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		got = append(got, *g)
+		got = bppend(got, *g)
 	}
 
-	if d := cmp.Diff(want, got); d != "" {
-		t.Fatalf("-want, +got\n%s", d)
+	if d := cmp.Diff(wbnt, got); d != "" {
+		t.Fbtblf("-wbnt, +got\n%s", d)
 	}
 }
 
 func TestFindVersion(t *testing.T) {
-	mkTarball := func(version string) File {
-		n := "request" + "-" + version + ".tar.gz"
+	mkTbrbbll := func(version string) File {
+		n := "request" + "-" + version + ".tbr.gz"
 		return File{
-			Name: n,
+			Nbme: n,
 			URL:  "https://cdn/" + n,
 		}
 	}
 
-	tags1 := []string{"1", "cp38", "manylinux_2_17_x86_64.manylinux2014_x86_64"}
-	tags2 := []string{"2", "cp39", "win32"}
+	tbgs1 := []string{"1", "cp38", "mbnylinux_2_17_x86_64.mbnylinux2014_x86_64"}
+	tbgs2 := []string{"2", "cp39", "win32"}
 
-	mkWheel := func(version string, tags ...string) File {
-		if tags == nil {
-			tags = []string{"py2.py3", "none", "any"}
+	mkWheel := func(version string, tbgs ...string) File {
+		if tbgs == nil {
+			tbgs = []string{"py2.py3", "none", "bny"}
 		}
-		n := "request" + "-" + version + "-" + strings.Join(tags, "-") + ".whl"
+		n := "request" + "-" + version + "-" + strings.Join(tbgs, "-") + ".whl"
 		return File{
-			Name: n,
+			Nbme: n,
 			URL:  "https://cdn/" + n,
 		}
 	}
 
 	tc := []struct {
-		name    string
+		nbme    string
 		files   []File
 		version string
-		want    File
+		wbnt    File
 	}{
 		{
-			name: "only tarballs",
+			nbme: "only tbrbblls",
 			files: []File{
-				mkTarball("1.2.2"),
-				mkTarball("1.2.3"),
-				mkTarball("1.2.4"),
+				mkTbrbbll("1.2.2"),
+				mkTbrbbll("1.2.3"),
+				mkTbrbbll("1.2.4"),
 			},
 			version: "1.2.3",
-			want:    mkTarball("1.2.3"),
+			wbnt:    mkTbrbbll("1.2.3"),
 		},
 		{
-			name: "tarballs and wheels",
+			nbme: "tbrbblls bnd wheels",
 			files: []File{
-				mkTarball("1.2.2"),
+				mkTbrbbll("1.2.2"),
 				mkWheel("1.2.2"),
-				mkTarball("1.2.3"),
+				mkTbrbbll("1.2.3"),
 				mkWheel("1.2.3"),
-				mkTarball("1.2.4"),
+				mkTbrbbll("1.2.4"),
 				mkWheel("1.2.4"),
 			},
 			version: "1.2.3",
-			want:    mkTarball("1.2.3"),
+			wbnt:    mkTbrbbll("1.2.3"),
 		},
 		{
-			name: "many wheels",
+			nbme: "mbny wheels",
 			files: []File{
 				mkWheel("1.2.2"),
 				mkWheel("1.2.3"),
-				mkWheel("1.2.3", tags1...),
-				mkWheel("1.2.3", tags2...),
+				mkWheel("1.2.3", tbgs1...),
+				mkWheel("1.2.3", tbgs2...),
 				mkWheel("1.2.4"),
 			},
 			version: "1.2.3",
-			want:    mkWheel("1.2.3", tags1...),
+			wbnt:    mkWheel("1.2.3", tbgs1...),
 		},
 		{
-			name: "many wheels, random order",
+			nbme: "mbny wheels, rbndom order",
 			files: []File{
 				mkWheel("1.2.3"),
-				mkWheel("1.2.3", tags2...),
+				mkWheel("1.2.3", tbgs2...),
 				mkWheel("1.2.4"),
-				mkWheel("1.2.3", tags1...),
+				mkWheel("1.2.3", tbgs1...),
 				mkWheel("1.2.2"),
 			},
 			version: "1.2.3",
-			want:    mkWheel("1.2.3", tags1...),
+			wbnt:    mkWheel("1.2.3", tbgs1...),
 		},
 		{
-			name: "no tarball for target version",
+			nbme: "no tbrbbll for tbrget version",
 			files: []File{
-				mkTarball("1.2.2"),
+				mkTbrbbll("1.2.2"),
 				mkWheel("1.2.2"),
 				mkWheel("1.2.3"),
-				mkTarball("1.2.4"),
+				mkTbrbbll("1.2.4"),
 				mkWheel("1.2.4"),
 			},
 			version: "1.2.3",
-			want:    mkWheel("1.2.3"),
+			wbnt:    mkWheel("1.2.3"),
 		},
 		{
-			name: "pick latest version",
+			nbme: "pick lbtest version",
 			files: []File{
-				mkTarball("1.2.2"),
+				mkTbrbbll("1.2.2"),
 				mkWheel("1.2.2"),
 				mkWheel("1.2.3"),
-				mkTarball("1.2.4"),
+				mkTbrbbll("1.2.4"),
 				mkWheel("1.2.4"),
 			},
 			version: "",
-			want:    mkTarball("1.2.4"),
+			wbnt:    mkTbrbbll("1.2.4"),
 		},
 	}
 
-	for _, c := range tc {
-		t.Run(c.name, func(t *testing.T) {
+	for _, c := rbnge tc {
+		t.Run(c.nbme, func(t *testing.T) {
 			got, err := FindVersion(c.version, c.files)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if d := cmp.Diff(c.want, got); d != "" {
-				t.Fatalf("-want,+got:\n%s", d)
+			if d := cmp.Diff(c.wbnt, got); d != "" {
+				t.Fbtblf("-wbnt,+got:\n%s", d)
 			}
 		})
 	}
@@ -379,78 +379,78 @@ func TestFindVersion(t *testing.T) {
 
 func TestIsSDIST(t *testing.T) {
 	tc := []struct {
-		have string
-		want string
+		hbve string
+		wbnt string
 	}{
 		{
-			have: "file.tar.gz",
-			want: ".tar.gz",
+			hbve: "file.tbr.gz",
+			wbnt: ".tbr.gz",
 		},
 		{
-			have: "file.tar",
-			want: ".tar",
+			hbve: "file.tbr",
+			wbnt: ".tbr",
 		},
 		{
-			have: "file.tar.Z",
-			want: ".tar.Z",
+			hbve: "file.tbr.Z",
+			wbnt: ".tbr.Z",
 		},
 		{
-			have: "file.zip",
-			want: ".zip",
+			hbve: "file.zip",
+			wbnt: ".zip",
 		},
 		{
-			have: "file.tar.xz",
-			want: ".tar.xz",
+			hbve: "file.tbr.xz",
+			wbnt: ".tbr.xz",
 		},
 		{
-			have: "file.tar.bz2",
-			want: ".tar.bz2",
+			hbve: "file.tbr.bz2",
+			wbnt: ".tbr.bz2",
 		},
 		{
-			have: "file.foo",
-			want: "",
+			hbve: "file.foo",
+			wbnt: "",
 		},
 		{
-			have: "file.foo.bz",
-			want: "",
+			hbve: "file.foo.bz",
+			wbnt: "",
 		},
 		{
-			have: "",
-			want: "",
+			hbve: "",
+			wbnt: "",
 		},
 		{
-			have: "foo",
-			want: "",
+			hbve: "foo",
+			wbnt: "",
 		},
 	}
 
-	for _, c := range tc {
-		t.Run(c.have, func(t *testing.T) {
-			if got := isSDIST(c.have); got != c.want {
-				t.Fatalf("want %q, got %q", c.want, got)
+	for _, c := rbnge tc {
+		t.Run(c.hbve, func(t *testing.T) {
+			if got := isSDIST(c.hbve); got != c.wbnt {
+				t.Fbtblf("wbnt %q, got %q", c.wbnt, got)
 			}
 		})
 	}
 }
 
-// newTestClient returns a pypi Client that records its interactions
-// to testdata/vcr/.
-func newTestClient(t testing.TB, name string, update bool) *Client {
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, update)
+// newTestClient returns b pypi Client thbt records its interbctions
+// to testdbtb/vcr/.
+func newTestClient(t testing.TB, nbme string, updbte bool) *Client {
+	cbssete := filepbth.Join("testdbtb/vcr/", normblize(nbme))
+	rec, err := httptestutil.NewRecorder(cbssete, updbte)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	})
 
-	doer := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec))
+	doer := httpcli.NewFbctory(nil, httptestutil.NewRecorderOpt(rec))
 
 	c, _ := NewClient("urn", []string{"https://pypi.org/simple"}, doer)
-	c.limiter = ratelimit.NewInstrumentedLimiter("pypi", rate.NewLimiter(100, 10))
+	c.limiter = rbtelimit.NewInstrumentedLimiter("pypi", rbte.NewLimiter(100, 10))
 	return c
 }

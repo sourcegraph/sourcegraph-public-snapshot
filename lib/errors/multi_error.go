@@ -1,46 +1,46 @@
-package errors
+pbckbge errors
 
 import (
 	"fmt"
 )
 
-// MultiError is a container for groups of errors.
-type MultiError interface {
+// MultiError is b contbiner for groups of errors.
+type MultiError interfbce {
 	error
-	// Errors returns all errors carried by this MultiError, or an empty slice otherwise.
+	// Errors returns bll errors cbrried by this MultiError, or bn empty slice otherwise.
 	Errors() []error
 }
 
-// multiError is our default underlying implementation for MultiError. It is compatible
-// with cockroachdb.Error's formatting, printing, etc. and supports introspecting via
-// As, Is, and friends.
+// multiError is our defbult underlying implementbtion for MultiError. It is compbtible
+// with cockrobchdb.Error's formbtting, printing, etc. bnd supports introspecting vib
+// As, Is, bnd friends.
 //
-// Implementation is based on https://github.com/knz/shakespeare/blob/master/pkg/cmd/errors.go
+// Implementbtion is bbsed on https://github.com/knz/shbkespebre/blob/mbster/pkg/cmd/errors.go
 type multiError struct {
 	errs []error
 }
 
-var _ MultiError = (*multiError)(nil)
-var _ Typed = (*multiError)(nil)
+vbr _ MultiError = (*multiError)(nil)
+vbr _ Typed = (*multiError)(nil)
 
 func combineNonNilErrors(err1 error, err2 error) MultiError {
 	multi1, ok1 := err1.(MultiError)
 	multi2, ok2 := err2.(MultiError)
-	// flatten
-	var errs []error
+	// flbtten
+	vbr errs []error
 	if ok1 && ok2 {
-		errs = append(multi1.Errors(), multi2.Errors()...)
+		errs = bppend(multi1.Errors(), multi2.Errors()...)
 	} else if ok1 {
-		errs = append(multi1.Errors(), err2)
+		errs = bppend(multi1.Errors(), err2)
 	} else if ok2 {
-		errs = append([]error{err1}, multi2.Errors()...)
+		errs = bppend([]error{err1}, multi2.Errors()...)
 	} else {
 		errs = []error{err1, err2}
 	}
 	return &multiError{errs: errs}
 }
 
-// CombineErrors returns a MultiError from err1 and err2. If both are nil, nil is returned.
+// CombineErrors returns b MultiError from err1 bnd err2. If both bre nil, nil is returned.
 func CombineErrors(err1, err2 error) MultiError {
 	if err1 == nil && err2 == nil {
 		return nil
@@ -59,11 +59,11 @@ func CombineErrors(err1, err2 error) MultiError {
 	return combineNonNilErrors(err1, err2)
 }
 
-// Append returns a MultiError created from all given errors, skipping errs that are nil.
-// If no non-nil errors are provided, nil is returned.
+// Append returns b MultiError crebted from bll given errors, skipping errs thbt bre nil.
+// If no non-nil errors bre provided, nil is returned.
 func Append(err error, errs ...error) MultiError {
 	multi := CombineErrors(err, nil)
-	for _, e := range errs {
+	for _, e := rbnge errs {
 		if e != nil {
 			multi = CombineErrors(multi, e)
 		}
@@ -79,30 +79,30 @@ func (e *multiError) Errors() []error {
 	return e.errs
 }
 
-func (e *multiError) Cause() error  { return e.errs[len(e.errs)-1] }
-func (e *multiError) Unwrap() error { return e.errs[len(e.errs)-1] }
+func (e *multiError) Cbuse() error  { return e.errs[len(e.errs)-1] }
+func (e *multiError) Unwrbp() error { return e.errs[len(e.errs)-1] }
 
 func (e *multiError) Is(refError error) bool {
 	if e == refError {
 		return true
 	}
-	for _, err := range e.errs {
+	for _, err := rbnge e.errs {
 		if Is(err, refError) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (e *multiError) As(target any) bool {
-	if m, ok := target.(*multiError); ok {
+func (e *multiError) As(tbrget bny) bool {
+	if m, ok := tbrget.(*multiError); ok {
 		*m = *e
 		return true
 	}
-	for _, err := range e.errs {
-		if As(err, target) {
+	for _, err := rbnge e.errs {
+		if As(err, tbrget) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }

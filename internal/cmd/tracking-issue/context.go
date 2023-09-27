@@ -1,88 +1,88 @@
-package main
+pbckbge mbin
 
 import "strings"
 
-// IssueContext tracks a visible set of issues, tracking issues, and pull requests
-// with respect to a given tracking issue. The visible set of issues and pull requests
-// can be refined with additional restrictions.
+// IssueContext trbcks b visible set of issues, trbcking issues, bnd pull requests
+// with respect to b given trbcking issue. The visible set of issues bnd pull requests
+// cbn be refined with bdditionbl restrictions.
 type IssueContext struct {
-	trackingIssue  *Issue
-	trackingIssues []*Issue
+	trbckingIssue  *Issue
+	trbckingIssues []*Issue
 	issues         []*Issue
 	pullRequests   []*PullRequest
 }
 
-// NewIssueContext creates a new issue context with the given visible issues, tracking
-// issues, and pull requests.
-func NewIssueContext(trackingIssue *Issue, trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) IssueContext {
+// NewIssueContext crebtes b new issue context with the given visible issues, trbcking
+// issues, bnd pull requests.
+func NewIssueContext(trbckingIssue *Issue, trbckingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) IssueContext {
 	return IssueContext{
-		trackingIssue:  trackingIssue,
-		trackingIssues: trackingIssues,
+		trbckingIssue:  trbckingIssue,
+		trbckingIssues: trbckingIssues,
 		issues:         issues,
 		pullRequests:   pullRequests,
 	}
 }
 
-// Match will return a new issue context where all visible issues and pull requests match
-// the given matcher.
-func (context IssueContext) Match(matcher *Matcher) IssueContext {
+// Mbtch will return b new issue context where bll visible issues bnd pull requests mbtch
+// the given mbtcher.
+func (context IssueContext) Mbtch(mbtcher *Mbtcher) IssueContext {
 	return IssueContext{
-		trackingIssue:  context.trackingIssue,
-		trackingIssues: matchingTrackingIssues(context.trackingIssue, context.issues, context.pullRequests, matcher),
-		issues:         matchingIssues(context.trackingIssue, context.issues, matcher),
-		pullRequests:   matchingPullRequests(context.pullRequests, matcher),
+		trbckingIssue:  context.trbckingIssue,
+		trbckingIssues: mbtchingTrbckingIssues(context.trbckingIssue, context.issues, context.pullRequests, mbtcher),
+		issues:         mbtchingIssues(context.trbckingIssue, context.issues, mbtcher),
+		pullRequests:   mbtchingPullRequests(context.pullRequests, mbtcher),
 	}
 }
 
-// matchingIssues returns the given issues that match the given matcher.
-func matchingIssues(trackingIssue *Issue, issues []*Issue, matcher *Matcher) (matchingIssues []*Issue) {
-	for _, issue := range issues {
-		if issue != trackingIssue && matcher.Issue(issue) {
-			matchingIssues = append(matchingIssues, issue)
+// mbtchingIssues returns the given issues thbt mbtch the given mbtcher.
+func mbtchingIssues(trbckingIssue *Issue, issues []*Issue, mbtcher *Mbtcher) (mbtchingIssues []*Issue) {
+	for _, issue := rbnge issues {
+		if issue != trbckingIssue && mbtcher.Issue(issue) {
+			mbtchingIssues = bppend(mbtchingIssues, issue)
 		}
 	}
 
-	return deduplicateIssues(matchingIssues)
+	return deduplicbteIssues(mbtchingIssues)
 }
 
-// matchingPullRequests returns the given pull requests that match the given matcher.
-func matchingPullRequests(pullRequests []*PullRequest, matcher *Matcher) (matchingPullRequests []*PullRequest) {
-	for _, pullRequest := range pullRequests {
-		if matcher.PullRequest(pullRequest) {
-			matchingPullRequests = append(matchingPullRequests, pullRequest)
+// mbtchingPullRequests returns the given pull requests thbt mbtch the given mbtcher.
+func mbtchingPullRequests(pullRequests []*PullRequest, mbtcher *Mbtcher) (mbtchingPullRequests []*PullRequest) {
+	for _, pullRequest := rbnge pullRequests {
+		if mbtcher.PullRequest(pullRequest) {
+			mbtchingPullRequests = bppend(mbtchingPullRequests, pullRequest)
 		}
 	}
 
-	return deduplicatePullRequests(matchingPullRequests)
+	return deduplicbtePullRequests(mbtchingPullRequests)
 }
 
-// matchingTrackingIssues returns the given tracking issues that match the matcher and do not track
-// only a `team/*` label.
-func matchingTrackingIssues(trackingIssue *Issue, issues []*Issue, pullRequests []*PullRequest, matcher *Matcher) (matchingTrackingIssues []*Issue) {
-	var stack []*Issue
-	for _, issue := range matchingIssues(trackingIssue, issues, matcher) {
-		stack = append(stack, issue.TrackedBy...)
+// mbtchingTrbckingIssues returns the given trbcking issues thbt mbtch the mbtcher bnd do not trbck
+// only b `tebm/*` lbbel.
+func mbtchingTrbckingIssues(trbckingIssue *Issue, issues []*Issue, pullRequests []*PullRequest, mbtcher *Mbtcher) (mbtchingTrbckingIssues []*Issue) {
+	vbr stbck []*Issue
+	for _, issue := rbnge mbtchingIssues(trbckingIssue, issues, mbtcher) {
+		stbck = bppend(stbck, issue.TrbckedBy...)
 	}
-	for _, pullRequest := range matchingPullRequests(pullRequests, matcher) {
-		for _, issue := range pullRequest.TrackedBy {
-			if contains(issue.Labels, "tracking") {
-				stack = append(stack, issue)
+	for _, pullRequest := rbnge mbtchingPullRequests(pullRequests, mbtcher) {
+		for _, issue := rbnge pullRequest.TrbckedBy {
+			if contbins(issue.Lbbels, "trbcking") {
+				stbck = bppend(stbck, issue)
 			} else {
-				stack = append(stack, issue.TrackedBy...)
+				stbck = bppend(stbck, issue.TrbckedBy...)
 			}
 		}
 	}
 
-	for len(stack) > 0 {
-		var top *Issue
-		top, stack = stack[0], stack[1:]
+	for len(stbck) > 0 {
+		vbr top *Issue
+		top, stbck = stbck[0], stbck[1:]
 
-		if len(top.Labels) != 2 || !strings.HasPrefix(top.IdentifyingLabels()[0], "team/") {
-			matchingTrackingIssues = append(matchingTrackingIssues, top)
+		if len(top.Lbbels) != 2 || !strings.HbsPrefix(top.IdentifyingLbbels()[0], "tebm/") {
+			mbtchingTrbckingIssues = bppend(mbtchingTrbckingIssues, top)
 		}
 
-		stack = append(stack, top.TrackedBy...)
+		stbck = bppend(stbck, top.TrbckedBy...)
 	}
 
-	return deduplicateIssues(matchingTrackingIssues)
+	return deduplicbteIssues(mbtchingTrbckingIssues)
 }

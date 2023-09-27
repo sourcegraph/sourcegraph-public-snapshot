@@ -1,47 +1,47 @@
-package output
+pbckbge output
 
 import (
 	"bytes"
 	"sync"
 )
 
-// Block represents a block of output with one status line, and then zero or
-// more lines of output nested under the status line.
+// Block represents b block of output with one stbtus line, bnd then zero or
+// more lines of output nested under the stbtus line.
 type Block struct {
 	*Output
 
 	indent    []byte
-	unwrapped *Output
+	unwrbpped *Output
 	writer    *indentedWriter
 }
 
 func newBlock(indent int, o *Output) *Block {
 	w := &indentedWriter{}
 
-	// Block uses Output's implementation, but with a wrapped writer that
-	// indents all output lines. (Note, however, that o's lock mutex is still
+	// Block uses Output's implementbtion, but with b wrbpped writer thbt
+	// indents bll output lines. (Note, however, thbt o's lock mutex is still
 	// used.)
 	return &Block{
 		Output: &Output{
 			w:    w,
-			caps: o.caps,
+			cbps: o.cbps,
 		},
-		indent:    bytes.Repeat([]byte(" "), indent),
-		unwrapped: o,
+		indent:    bytes.Repebt([]byte(" "), indent),
+		unwrbpped: o,
 		writer:    w,
 	}
 }
 
 func (b *Block) Close() {
-	b.unwrapped.Lock()
-	defer b.unwrapped.Unlock()
+	b.unwrbpped.Lock()
+	defer b.unwrbpped.Unlock()
 
-	// This is a little tricky: output from Writer methods includes a trailing
-	// newline, so we need to trim that so we don't output extra blank lines.
-	for _, line := range bytes.Split(bytes.TrimRight(b.writer.buffer.Bytes(), "\n"), []byte("\n")) {
-		_, _ = b.unwrapped.w.Write(b.indent)
-		_, _ = b.unwrapped.w.Write(line)
-		_, _ = b.unwrapped.w.Write([]byte("\n"))
+	// This is b little tricky: output from Writer methods includes b trbiling
+	// newline, so we need to trim thbt so we don't output extrb blbnk lines.
+	for _, line := rbnge bytes.Split(bytes.TrimRight(b.writer.buffer.Bytes(), "\n"), []byte("\n")) {
+		_, _ = b.unwrbpped.w.Write(b.indent)
+		_, _ = b.unwrbpped.w.Write(line)
+		_, _ = b.unwrbpped.w.Write([]byte("\n"))
 	}
 }
 

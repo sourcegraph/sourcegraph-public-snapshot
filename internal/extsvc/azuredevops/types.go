@@ -1,4 +1,4 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"fmt"
@@ -6,58 +6,58 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	PullRequestBuildStatusStateSucceeded     PullRequestStatusState = "succeeded"
-	PullRequestBuildStatusStateError         PullRequestStatusState = "error"
-	PullRequestBuildStatusStateFailed        PullRequestStatusState = "failed"
-	PullRequestBuildStatusStatePending       PullRequestStatusState = "pending"
-	PullRequestBuildStatusStateNotApplicable PullRequestStatusState = "notApplicable"
-	PullRequestBuildStatusStateNotSet        PullRequestStatusState = "notSet"
+vbr (
+	PullRequestBuildStbtusStbteSucceeded     PullRequestStbtusStbte = "succeeded"
+	PullRequestBuildStbtusStbteError         PullRequestStbtusStbte = "error"
+	PullRequestBuildStbtusStbteFbiled        PullRequestStbtusStbte = "fbiled"
+	PullRequestBuildStbtusStbtePending       PullRequestStbtusStbte = "pending"
+	PullRequestBuildStbtusStbteNotApplicbble PullRequestStbtusStbte = "notApplicbble"
+	PullRequestBuildStbtusStbteNotSet        PullRequestStbtusStbte = "notSet"
 
-	PullRequestStatusActive    PullRequestStatus = "active"
-	PullRequestStatusAbandoned PullRequestStatus = "abandoned"
-	PullRequestStatusCompleted PullRequestStatus = "completed"
-	PullRequestStatusNotSet    PullRequestStatus = "notSet"
+	PullRequestStbtusActive    PullRequestStbtus = "bctive"
+	PullRequestStbtusAbbndoned PullRequestStbtus = "bbbndoned"
+	PullRequestStbtusCompleted PullRequestStbtus = "completed"
+	PullRequestStbtusNotSet    PullRequestStbtus = "notSet"
 
-	PullRequestMergeStrategySquash        PullRequestMergeStrategy = "squash"
-	PullRequestMergeStrategyRebase        PullRequestMergeStrategy = "rebase"
-	PullRequestMergeStrategyRebaseMerge   PullRequestMergeStrategy = "rebaseMerge"
-	PullRequestMergeStrategyNoFastForward PullRequestMergeStrategy = "notFastForward"
+	PullRequestMergeStrbtegySqubsh        PullRequestMergeStrbtegy = "squbsh"
+	PullRequestMergeStrbtegyRebbse        PullRequestMergeStrbtegy = "rebbse"
+	PullRequestMergeStrbtegyRebbseMerge   PullRequestMergeStrbtegy = "rebbseMerge"
+	PullRequestMergeStrbtegyNoFbstForwbrd PullRequestMergeStrbtegy = "notFbstForwbrd"
 )
 
 type Org struct {
-	ID   string `json:"accountId"`
-	URI  string `json:"accountUri"`
-	Name string `json:"accountName"`
+	ID   string `json:"bccountId"`
+	URI  string `json:"bccountUri"`
+	Nbme string `json:"bccountNbme"`
 }
 
 type ListAuthorizedUserOrgsResponse struct {
 	Count int   `json:"count"`
-	Value []Org `json:"value"`
+	Vblue []Org `json:"vblue"`
 }
 
 type OrgProjectRepoArgs struct {
 	Org          string
 	Project      string
-	RepoNameOrID string
+	RepoNbmeOrID string
 }
 
-// ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' calls.
+// ListRepositoriesByProjectOrOrgArgs defines options to be set on the ListRepositories methods' cblls.
 type ListRepositoriesByProjectOrOrgArgs struct {
-	// Should be in the form of 'org/project' for projects and 'org' for orgs.
-	ProjectOrOrgName string
+	// Should be in the form of 'org/project' for projects bnd 'org' for orgs.
+	ProjectOrOrgNbme string
 }
 
 type ForkRepositoryInput struct {
-	Name             string                              `json:"name"`
+	Nbme             string                              `json:"nbme"`
 	Project          ForkRepositoryInputProject          `json:"project"`
-	ParentRepository ForkRepositoryInputParentRepository `json:"parentRepository"`
+	PbrentRepository ForkRepositoryInputPbrentRepository `json:"pbrentRepository"`
 }
 
-type ForkRepositoryInputParentRepository struct {
+type ForkRepositoryInputPbrentRepository struct {
 	ID      string                     `json:"id"`
 	Project ForkRepositoryInputProject `json:"project"`
 }
@@ -67,81 +67,81 @@ type ForkRepositoryInputProject struct {
 }
 
 type ListRepositoriesResponse struct {
-	Value []Repository `json:"value"`
+	Vblue []Repository `json:"vblue"`
 	Count int          `json:"count"`
 }
 
 type ListRefsResponse struct {
-	Value []Ref `json:"value"`
+	Vblue []Ref `json:"vblue"`
 	Count int   `json:"count"`
 }
 
 type Ref struct {
-	Name      string      `json:"name"`
+	Nbme      string      `json:"nbme"`
 	CommitSHA string      `json:"objectId"`
-	Creator   CreatorInfo `json:"creator"`
+	Crebtor   CrebtorInfo `json:"crebtor"`
 }
 
-type CreatePullRequestInput struct {
-	SourceRefName     string                        `json:"sourceRefName"`
-	TargetRefName     string                        `json:"targetRefName"`
+type CrebtePullRequestInput struct {
+	SourceRefNbme     string                        `json:"sourceRefNbme"`
+	TbrgetRefNbme     string                        `json:"tbrgetRefNbme"`
 	Title             string                        `json:"title"`
 	Description       string                        `json:"description"`
 	Reviewers         []Reviewer                    `json:"reviewers"`
 	ForkSource        *ForkRef                      `json:"forkSource"`
-	IsDraft           bool                          `json:"isDraft"`
+	IsDrbft           bool                          `json:"isDrbft"`
 	CompletionOptions *PullRequestCompletionOptions `json:"completionOptions"`
 }
 
 type ForkRef struct {
 	Repository Repository `json:"repository"`
-	Name       string     `json:"name"`
+	Nbme       string     `json:"nbme"`
 	URl        string     `json:"url"`
 }
 
 type Reviewer struct {
-	// Vote represents the status of a review on Azure DevOps. Here are possible values for Vote:
+	// Vote represents the stbtus of b review on Azure DevOps. Here bre possible vblues for Vote:
 	//
-	//   10: approved
-	//   5 : approved with suggestions
+	//   10: bpproved
+	//   5 : bpproved with suggestions
 	//   0 : no vote
-	//  -5 : waiting for author
+	//  -5 : wbiting for buthor
 	//  -10: rejected
 	Vote        int    `json:"vote"`
 	ID          string `json:"id"`
-	HasDeclined bool   `json:"hasDeclined"`
+	HbsDeclined bool   `json:"hbsDeclined"`
 	IsRequired  bool   `json:"isRequired"`
-	UniqueName  string `json:"uniqueName"`
+	UniqueNbme  string `json:"uniqueNbme"`
 }
 
 type PullRequestCommonArgs struct {
 	PullRequestID string
 	Org           string
 	Project       string
-	RepoNameOrID  string
+	RepoNbmeOrID  string
 }
 
 type PullRequest struct {
 	Repository            Repository        `json:"repository"`
 	ID                    int               `json:"pullRequestId"`
 	CodeReviewID          int               `json:"codeReviewId"`
-	Status                PullRequestStatus `json:"status"`
-	CreationDate          time.Time         `json:"creationDate"`
+	Stbtus                PullRequestStbtus `json:"stbtus"`
+	CrebtionDbte          time.Time         `json:"crebtionDbte"`
 	Title                 string            `json:"title"`
 	Description           string            `json:"description"`
-	CreatedBy             CreatorInfo       `json:"createdBy"`
-	SourceRefName         string            `json:"sourceRefName"`
-	TargetRefName         string            `json:"targetRefName"`
-	MergeStatus           string            `json:"mergeStatus"`
+	CrebtedBy             CrebtorInfo       `json:"crebtedBy"`
+	SourceRefNbme         string            `json:"sourceRefNbme"`
+	TbrgetRefNbme         string            `json:"tbrgetRefNbme"`
+	MergeStbtus           string            `json:"mergeStbtus"`
 	MergeID               string            `json:"mergeId"`
-	LastMergeSourceCommit PullRequestCommit `json:"lastMergeSourceCommit"`
-	LastMergeTargetCommit PullRequestCommit `json:"lastMergeTargetCommit"`
-	SupportsIterations    bool              `json:"supportsIterations"`
-	ArtifactID            string            `json:"artifactId"`
+	LbstMergeSourceCommit PullRequestCommit `json:"lbstMergeSourceCommit"`
+	LbstMergeTbrgetCommit PullRequestCommit `json:"lbstMergeTbrgetCommit"`
+	SupportsIterbtions    bool              `json:"supportsIterbtions"`
+	ArtifbctID            string            `json:"brtifbctId"`
 	Reviewers             []Reviewer        `json:"reviewers"`
 	ForkSource            *ForkRef          `json:"forkSource"`
 	URL                   string            `json:"url"`
-	IsDraft               bool              `json:"isDraft"`
+	IsDrbft               bool              `json:"isDrbft"`
 }
 
 type PullRequestCommit struct {
@@ -149,37 +149,37 @@ type PullRequestCommit struct {
 	URL      string `json:"url"`
 }
 
-type PullRequestUpdateInput struct {
-	Status                *PullRequestStatus            `json:"status"`
+type PullRequestUpdbteInput struct {
+	Stbtus                *PullRequestStbtus            `json:"stbtus"`
 	Title                 *string                       `json:"title"`
 	Description           *string                       `json:"description"`
 	MergeOptions          *PullRequestMergeOptions      `json:"mergeOptions"`
-	LastMergeSourceCommit *PullRequestCommit            `json:"lastMergeSourceCommit"`
-	TargetRefName         *string                       `json:"targetRefName"`
-	IsDraft               *bool                         `json:"isDraft"`
+	LbstMergeSourceCommit *PullRequestCommit            `json:"lbstMergeSourceCommit"`
+	TbrgetRefNbme         *string                       `json:"tbrgetRefNbme"`
+	IsDrbft               *bool                         `json:"isDrbft"`
 	CompletionOptions     *PullRequestCompletionOptions `json:"completionOptions"`
-	// ADO does not seem to support updating Source ref name, only TargetRefName which needs to be explicitly enabled.
+	// ADO does not seem to support updbting Source ref nbme, only TbrgetRefNbme which needs to be explicitly enbbled.
 }
 
-type PullRequestStatus string
-type PullRequestMergeStrategy string
+type PullRequestStbtus string
+type PullRequestMergeStrbtegy string
 
 type PullRequestMergeOptions struct {
 	ConflictAuthorshipCommits  *bool `json:"conflictAuthorshipCommits"`
-	DetectRenameFalsePositives *bool `json:"detectRenameFalsePositives"`
-	DisableRenames             *bool `json:"disableRenames"`
+	DetectRenbmeFblsePositives *bool `json:"detectRenbmeFblsePositives"`
+	DisbbleRenbmes             *bool `json:"disbbleRenbmes"`
 }
 
 type PullRequestCompleteInput struct {
 	CommitID           string
-	MergeStrategy      *PullRequestMergeStrategy
-	DeleteSourceBranch bool
+	MergeStrbtegy      *PullRequestMergeStrbtegy
+	DeleteSourceBrbnch bool
 }
 
 type PullRequestCompletionOptions struct {
-	MergeStrategy      PullRequestMergeStrategy `json:"mergeStrategy,omitempty"`
-	DeleteSourceBranch bool                     `json:"deleteSourceBranch,omitempty"`
-	MergeCommitMessage string                   `json:"mergeCommitMessage"`
+	MergeStrbtegy      PullRequestMergeStrbtegy `json:"mergeStrbtegy,omitempty"`
+	DeleteSourceBrbnch bool                     `json:"deleteSourceBrbnch,omitempty"`
+	MergeCommitMessbge string                   `json:"mergeCommitMessbge"`
 }
 
 type PullRequestCommentInput struct {
@@ -189,112 +189,112 @@ type PullRequestCommentInput struct {
 type PullRequestCommentResponse struct {
 	ID            int                             `json:"id"`
 	Comments      []PullRequestCommentForResponse `json:"Comments"`
-	PublishedDate time.Time                       `json:"publishedDate"`
-	LastUpdatedOn time.Time                       `json:"lastUpdatedOn"`
+	PublishedDbte time.Time                       `json:"publishedDbte"`
+	LbstUpdbtedOn time.Time                       `json:"lbstUpdbtedOn"`
 	IsDeleted     bool                            `json:"isDeleted"`
 }
 
 type PullRequestCommentForInput struct {
-	ParentCommentID int    `json:"parentCommentId"`
+	PbrentCommentID int    `json:"pbrentCommentId"`
 	Content         string `json:"content"`
 	CommentType     int    `json:"commentType"`
 }
 type PullRequestCommentForResponse struct {
 	ID            int64     `json:"id"`
-	PublishedDate time.Time `json:"publishedDate"`
-	LastUpdatedOn time.Time `json:"lastUpdatedOn"`
+	PublishedDbte time.Time `json:"publishedDbte"`
+	LbstUpdbtedOn time.Time `json:"lbstUpdbtedOn"`
 	Content       string    `json:"content"`
 	CommentType   string    `json:"commentType"`
 }
 
-type PullRequestStatuses struct {
-	Value []PullRequestBuildStatus
+type PullRequestStbtuses struct {
+	Vblue []PullRequestBuildStbtus
 	Count int
 }
 
-type PullRequestBuildStatus struct {
+type PullRequestBuildStbtus struct {
 	ID           int                    `json:"id"`
-	State        PullRequestStatusState `json:"state"`
+	Stbte        PullRequestStbtusStbte `json:"stbte"`
 	Description  string                 `json:"description"`
-	CreationDate time.Time              `json:"creationDate"`
-	UpdateDate   time.Time              `json:"updatedDate"`
-	CreatedBy    CreatorInfo            `json:"createdBy"`
+	CrebtionDbte time.Time              `json:"crebtionDbte"`
+	UpdbteDbte   time.Time              `json:"updbtedDbte"`
+	CrebtedBy    CrebtorInfo            `json:"crebtedBy"`
 }
 
-type PullRequestStatusState string
+type PullRequestStbtusStbte string
 
 type Repository struct {
 	ID         string  `json:"id"`
-	Name       string  `json:"name"`
+	Nbme       string  `json:"nbme"`
 	CloneURL   string  `json:"remoteURL"`
 	APIURL     string  `json:"url"`
 	SSHURL     string  `json:"sshUrl"`
 	WebURL     string  `json:"webUrl"`
-	IsDisabled bool    `json:"isDisabled"`
+	IsDisbbled bool    `json:"isDisbbled"`
 	IsFork     bool    `json:"isFork"`
 	Project    Project `json:"project"`
 }
 
 type Project struct {
 	ID         string `json:"id"`
-	Name       string `json:"name"`
-	State      string `json:"state"`
+	Nbme       string `json:"nbme"`
+	Stbte      string `json:"stbte"`
 	Revision   int    `json:"revision"`
 	Visibility string `json:"visibility"`
 	URL        string `json:"url"`
 }
 
-func (p Repository) GetOrganization() (string, error) {
-	u, err := url.Parse(p.APIURL)
+func (p Repository) GetOrgbnizbtion() (string, error) {
+	u, err := url.Pbrse(p.APIURL)
 	if err != nil {
 		return "", err
 	}
 
-	splitPath := strings.SplitN(u.Path, "/", 3)
-	if len(splitPath) != 3 {
-		return "", errors.Errorf("unable to parse Azure DevOps organization from repo URL: %s", p.APIURL)
+	splitPbth := strings.SplitN(u.Pbth, "/", 3)
+	if len(splitPbth) != 3 {
+		return "", errors.Errorf("unbble to pbrse Azure DevOps orgbnizbtion from repo URL: %s", p.APIURL)
 	}
 
-	return splitPath[1], nil
+	return splitPbth[1], nil
 }
 
-func (p Repository) Namespace() string {
-	return p.Project.Name
+func (p Repository) Nbmespbce() string {
+	return p.Project.Nbme
 }
 
 type Profile struct {
 	ID           string    `json:"id"`
-	DisplayName  string    `json:"displayName"`
-	EmailAddress string    `json:"emailAddress"`
-	LastChanged  time.Time `json:"timestamp"`
-	PublicAlias  string    `json:"publicAlias"`
+	DisplbyNbme  string    `json:"displbyNbme"`
+	EmbilAddress string    `json:"embilAddress"`
+	LbstChbnged  time.Time `json:"timestbmp"`
+	PublicAlibs  string    `json:"publicAlibs"`
 }
 
-type CreatorInfo struct {
+type CrebtorInfo struct {
 	ID          string `json:"id"`
-	DisplayName string `json:"displayName"`
-	UniqueName  string `json:"uniqueName"`
+	DisplbyNbme string `json:"displbyNbme"`
+	UniqueNbme  string `json:"uniqueNbme"`
 	URL         string `json:"url"`
-	ImageURL    string `json:"imageUrl"`
+	ImbgeURL    string `json:"imbgeUrl"`
 }
 
 type HTTPError struct {
-	StatusCode int
+	StbtusCode int
 	URL        *url.URL
 	Body       []byte
 }
 
-// Error returns a minimal string of the HTTP error with the status code and the URL.
+// Error returns b minimbl string of the HTTP error with the stbtus code bnd the URL.
 //
-// It does not write HTTPError.Body as part of the error string as the Azure DevOPs API returns raw
-// HTML for 4xx errors and non 200 OK responses inspite of using the "application/json" header in
+// It does not write HTTPError.Body bs pbrt of the error string bs the Azure DevOPs API returns rbw
+// HTML for 4xx errors bnd non 200 OK responses inspite of using the "bpplicbtion/json" hebder in
 // the request. It does return JSON for 200 OK responses though.
 //
-// The body would only add noise to logs and error messages that also may bubble up to the user
-// interface which makes for a bad user experience. For our usecases in debugging, the status
-// code and URL should provide plenty of information on what is going contrary to expectations.
-// In the worst case, we should reproduce the error by manually sending a curl request that
-// causes an error and inspecting the HTML output.
+// The body would only bdd noise to logs bnd error messbges thbt blso mby bubble up to the user
+// interfbce which mbkes for b bbd user experience. For our usecbses in debugging, the stbtus
+// code bnd URL should provide plenty of informbtion on whbt is going contrbry to expectbtions.
+// In the worst cbse, we should reproduce the error by mbnublly sending b curl request thbt
+// cbuses bn error bnd inspecting the HTML output.
 func (e *HTTPError) Error() string {
-	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q", e.StatusCode, e.URL)
+	return fmt.Sprintf("Azure DevOps API HTTP error: code=%d url=%q", e.StbtusCode, e.URL)
 }

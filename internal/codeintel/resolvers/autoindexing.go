@@ -1,81 +1,81 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 )
 
-type AutoindexingServiceResolver interface {
-	// Inference configuration
+type AutoindexingServiceResolver interfbce {
+	// Inference configurbtion
 	CodeIntelligenceInferenceScript(ctx context.Context) (string, error)
-	UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
+	UpdbteCodeIntelligenceInferenceScript(ctx context.Context, brgs *UpdbteCodeIntelligenceInferenceScriptArgs) (*EmptyResponse, error)
 
-	// Repository configuration
-	IndexConfiguration(ctx context.Context, id graphql.ID) (IndexConfigurationResolver, error)
-	UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (*EmptyResponse, error)
+	// Repository configurbtion
+	IndexConfigurbtion(ctx context.Context, id grbphql.ID) (IndexConfigurbtionResolver, error)
+	UpdbteRepositoryIndexConfigurbtion(ctx context.Context, brgs *UpdbteRepositoryIndexConfigurbtionArgs) (*EmptyResponse, error)
 
 	// Inference
-	InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (InferAutoIndexJobsResultResolver, error)
-	QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) ([]PreciseIndexResolver, error)
+	InferAutoIndexJobsForRepo(ctx context.Context, brgs *InferAutoIndexJobsForRepoArgs) (InferAutoIndexJobsResultResolver, error)
+	QueueAutoIndexJobsForRepo(ctx context.Context, brgs *QueueAutoIndexJobsForRepoArgs) ([]PreciseIndexResolver, error)
 }
 
-type UpdateCodeIntelligenceInferenceScriptArgs struct {
+type UpdbteCodeIntelligenceInferenceScriptArgs struct {
 	Script string
 }
 
-type UpdateRepositoryIndexConfigurationArgs struct {
-	Repository    graphql.ID
-	Configuration string
+type UpdbteRepositoryIndexConfigurbtionArgs struct {
+	Repository    grbphql.ID
+	Configurbtion string
 }
 
 type InferAutoIndexJobsForRepoArgs struct {
-	Repository graphql.ID
+	Repository grbphql.ID
 	Rev        *string
 	Script     *string
 }
 
 type QueueAutoIndexJobsForRepoArgs struct {
-	Repository    graphql.ID
+	Repository    grbphql.ID
 	Rev           *string
-	Configuration *string
+	Configurbtion *string
 }
 
-type IndexConfigurationResolver interface {
-	Configuration(ctx context.Context) (*string, error)
-	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
-	InferredConfiguration(ctx context.Context) (InferredConfigurationResolver, error)
+type IndexConfigurbtionResolver interfbce {
+	Configurbtion(ctx context.Context) (*string, error)
+	PbrsedConfigurbtion(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
+	InferredConfigurbtion(ctx context.Context) (InferredConfigurbtionResolver, error)
 }
 
-type InferredConfigurationResolver interface {
-	Configuration() string
-	ParsedConfiguration(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
+type InferredConfigurbtionResolver interfbce {
+	Configurbtion() string
+	PbrsedConfigurbtion(ctx context.Context) (*[]AutoIndexJobDescriptionResolver, error)
 	LimitError() *string
 }
 
-type InferAutoIndexJobsResultResolver interface {
+type InferAutoIndexJobsResultResolver interfbce {
 	Jobs() []AutoIndexJobDescriptionResolver
 	InferenceOutput() string
 }
 
 type (
-	RepositoriesWithErrorsArgs                             = PagedConnectionArgs
-	RepositoriesWithConfigurationArgs                      = PagedConnectionArgs
-	CodeIntelRepositoryWithErrorConnectionResolver         = PagedConnectionWithTotalCountResolver[CodeIntelRepositoryWithErrorResolver]
-	CodeIntelRepositoryWithConfigurationConnectionResolver = PagedConnectionWithTotalCountResolver[CodeIntelRepositoryWithConfigurationResolver]
+	RepositoriesWithErrorsArgs                             = PbgedConnectionArgs
+	RepositoriesWithConfigurbtionArgs                      = PbgedConnectionArgs
+	CodeIntelRepositoryWithErrorConnectionResolver         = PbgedConnectionWithTotblCountResolver[CodeIntelRepositoryWithErrorResolver]
+	CodeIntelRepositoryWithConfigurbtionConnectionResolver = PbgedConnectionWithTotblCountResolver[CodeIntelRepositoryWithConfigurbtionResolver]
 )
 
-type CodeIntelRepositoryWithErrorResolver interface {
+type CodeIntelRepositoryWithErrorResolver interfbce {
 	Repository() RepositoryResolver
 	Count() int32
 }
 
-type CodeIntelRepositoryWithConfigurationResolver interface {
+type CodeIntelRepositoryWithConfigurbtionResolver interfbce {
 	Repository() RepositoryResolver
 	Indexers() []IndexerWithCountResolver
 }
 
-type IndexerWithCountResolver interface {
+type IndexerWithCountResolver interfbce {
 	Indexer() CodeIntelIndexerResolver
 	Count() int32
 }

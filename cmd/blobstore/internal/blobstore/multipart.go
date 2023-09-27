@@ -1,4 +1,4 @@
-package blobstore
+pbckbge blobstore
 
 import (
 	"bytes"
@@ -7,222 +7,222 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/russellhaering/gosaml2/uuid"
-	sglog "github.com/sourcegraph/log"
+	"github.com/russellhbering/gosbml2/uuid"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// the suffixed bucket name used to store pending multipart uploads
-const multipartUploadsBucketSuffix = "---uploads"
+// the suffixed bucket nbme used to store pending multipbrt uplobds
+const multipbrtUplobdsBucketSuffix = "---uplobds"
 
-type pendingUpload struct {
-	BucketName, ObjectName string
-	Parts                  []int
+type pendingUplobd struct {
+	BucketNbme, ObjectNbme string
+	Pbrts                  []int
 }
 
-func (p *pendingUpload) reader() io.ReadCloser {
-	data, _ := json.Marshal(p)
-	return io.NopCloser(bytes.NewReader(data))
+func (p *pendingUplobd) rebder() io.RebdCloser {
+	dbtb, _ := json.Mbrshbl(p)
+	return io.NopCloser(bytes.NewRebder(dbtb))
 }
 
-// Part numbers must be consecutively ordered, but can start/end at any number.
-// Returns the min/max found in p.Parts.
-func (p *pendingUpload) partNumberRange() (min, max int) {
-	max = -1
+// Pbrt numbers must be consecutively ordered, but cbn stbrt/end bt bny number.
+// Returns the min/mbx found in p.Pbrts.
+func (p *pendingUplobd) pbrtNumberRbnge() (min, mbx int) {
+	mbx = -1
 	min = -1
-	for _, partNumber := range p.Parts {
-		if max == -1 || partNumber > max {
-			max = partNumber
+	for _, pbrtNumber := rbnge p.Pbrts {
+		if mbx == -1 || pbrtNumber > mbx {
+			mbx = pbrtNumber
 		}
-		if min == -1 || partNumber < min {
-			min = partNumber
+		if min == -1 || pbrtNumber < min {
+			min = pbrtNumber
 		}
 	}
-	return min, max
+	return min, mbx
 }
 
-func decodePendingUpload(r io.ReadCloser) (*pendingUpload, error) {
+func decodePendingUplobd(r io.RebdCloser) (*pendingUplobd, error) {
 	defer r.Close()
-	var v pendingUpload
+	vbr v pendingUplobd
 	if err := json.NewDecoder(r).Decode(&v); err != nil {
-		return nil, errors.Wrap(err, "Decode")
+		return nil, errors.Wrbp(err, "Decode")
 	}
 	return &v, nil
 }
 
-func (s *Service) createUpload(ctx context.Context, bucketName, objectName string) (uploadID string, err error) {
-	// Create the bucket which will hold multipart uploads for the named bucket.
+func (s *Service) crebteUplobd(ctx context.Context, bucketNbme, objectNbme string) (uplobdID string, err error) {
+	// Crebte the bucket which will hold multipbrt uplobds for the nbmed bucket.
 
-	if err := s.createBucket(ctx, bucketName+multipartUploadsBucketSuffix); err != nil && err != ErrBucketAlreadyExists {
-		return "", errors.Wrap(err, "createBucket")
+	if err := s.crebteBucket(ctx, bucketNbme+multipbrtUplobdsBucketSuffix); err != nil && err != ErrBucketAlrebdyExists {
+		return "", errors.Wrbp(err, "crebteBucket")
 	}
 
-	// Create the upload descriptor object, which represents the upload, time it was created,
-	// if it exists, how many parts have been uploaded so far, etc.
-	uploadID = uuid.NewV4().String()
-	upload := pendingUpload{BucketName: bucketName, ObjectName: objectName}
-	if err := s.upsertPendingUpload(ctx, bucketName, uploadID, &upload); err != nil {
-		return "", errors.Wrap(err, "upsertPendingUpload")
+	// Crebte the uplobd descriptor object, which represents the uplobd, time it wbs crebted,
+	// if it exists, how mbny pbrts hbve been uplobded so fbr, etc.
+	uplobdID = uuid.NewV4().String()
+	uplobd := pendingUplobd{BucketNbme: bucketNbme, ObjectNbme: objectNbme}
+	if err := s.upsertPendingUplobd(ctx, bucketNbme, uplobdID, &uplobd); err != nil {
+		return "", errors.Wrbp(err, "upsertPendingUplobd")
 	}
-	s.Log.Debug("createUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID))
-	return uploadID, nil
+	s.Log.Debug("crebteUplobd", sglog.String("key", bucketNbme+"/"+objectNbme), sglog.String("uplobdID", uplobdID))
+	return uplobdID, nil
 }
 
-func (s *Service) getPendingUpload(ctx context.Context, bucketName, uploadID string) (*pendingUpload, error) {
-	uploadObjectName := uploadID
-	reader, err := s.getObject(ctx, bucketName+multipartUploadsBucketSuffix, uploadObjectName)
+func (s *Service) getPendingUplobd(ctx context.Context, bucketNbme, uplobdID string) (*pendingUplobd, error) {
+	uplobdObjectNbme := uplobdID
+	rebder, err := s.getObject(ctx, bucketNbme+multipbrtUplobdsBucketSuffix, uplobdObjectNbme)
 	if err != nil {
 		if err == ErrNoSuchKey {
-			return nil, ErrNoSuchUpload
+			return nil, ErrNoSuchUplobd
 		}
-		return nil, errors.Wrap(err, "fetching upload object")
+		return nil, errors.Wrbp(err, "fetching uplobd object")
 	}
 
-	upload, err := decodePendingUpload(reader)
+	uplobd, err := decodePendingUplobd(rebder)
 	if err != nil {
-		return nil, errors.Wrap(err, "decodePendingUpload")
+		return nil, errors.Wrbp(err, "decodePendingUplobd")
 	}
-	return upload, nil
+	return uplobd, nil
 }
 
-// Upserts a pending upload descriptor object (which describes that the upload exists, time it was
-// created, how many parts have been uploaded so far, etc.)
+// Upserts b pending uplobd descriptor object (which describes thbt the uplobd exists, time it wbs
+// crebted, how mbny pbrts hbve been uplobded so fbr, etc.)
 //
-// This method must only be called when creating the object, as otherwise it would be racy with
-// mutatePendingUpload.
-func (s *Service) upsertPendingUpload(ctx context.Context, bucketName, uploadID string, upload *pendingUpload) error {
-	uploadObjectName := uploadID
-	_, err := s.putObject(ctx, bucketName+multipartUploadsBucketSuffix, uploadObjectName, upload.reader())
+// This method must only be cblled when crebting the object, bs otherwise it would be rbcy with
+// mutbtePendingUplobd.
+func (s *Service) upsertPendingUplobd(ctx context.Context, bucketNbme, uplobdID string, uplobd *pendingUplobd) error {
+	uplobdObjectNbme := uplobdID
+	_, err := s.putObject(ctx, bucketNbme+multipbrtUplobdsBucketSuffix, uplobdObjectNbme, uplobd.rebder())
 	return err
 }
 
-// Atomically mutates a pending upload descriptor object (which describes that the upload exists,
-// time it was created, how many parts have been uploaded so far, etc.)
+// Atomicblly mutbtes b pending uplobd descriptor object (which describes thbt the uplobd exists,
+// time it wbs crebted, how mbny pbrts hbve been uplobded so fbr, etc.)
 //
-// This function holds a mutex to ensure that between the time the object is read, mutated, and
-// written - that nobody else mutates the object and changes are lost.
-func (s *Service) mutatePendingUploadAtomic(ctx context.Context, bucketName, uploadID string, mutate func(*pendingUpload)) error {
-	s.mutatePendingUploadMu.Lock()
-	defer s.mutatePendingUploadMu.Unlock()
+// This function holds b mutex to ensure thbt between the time the object is rebd, mutbted, bnd
+// written - thbt nobody else mutbtes the object bnd chbnges bre lost.
+func (s *Service) mutbtePendingUplobdAtomic(ctx context.Context, bucketNbme, uplobdID string, mutbte func(*pendingUplobd)) error {
+	s.mutbtePendingUplobdMu.Lock()
+	defer s.mutbtePendingUplobdMu.Unlock()
 
-	upload, err := s.getPendingUpload(ctx, bucketName, uploadID)
+	uplobd, err := s.getPendingUplobd(ctx, bucketNbme, uplobdID)
 	if err != nil {
 		return err
 	}
-	mutate(upload)
-	if err := s.upsertPendingUpload(ctx, bucketName, uploadID, upload); err != nil {
-		return errors.Wrap(err, "upsertPendingUpload")
+	mutbte(uplobd)
+	if err := s.upsertPendingUplobd(ctx, bucketNbme, uplobdID, uplobd); err != nil {
+		return errors.Wrbp(err, "upsertPendingUplobd")
 	}
 	return nil
 }
 
-func (s *Service) uploadPart(ctx context.Context, bucketName, objectName, uploadID string, partNumber int, data io.ReadCloser) (*objectMetadata, error) {
-	defer data.Close()
+func (s *Service) uplobdPbrt(ctx context.Context, bucketNbme, objectNbme, uplobdID string, pbrtNumber int, dbtb io.RebdCloser) (*objectMetbdbtb, error) {
+	defer dbtb.Close()
 
-	// Add the new part number to the upload descriptor
-	if err := s.mutatePendingUploadAtomic(ctx, bucketName, uploadID, func(upload *pendingUpload) {
-		upload.Parts = append(upload.Parts, partNumber)
+	// Add the new pbrt number to the uplobd descriptor
+	if err := s.mutbtePendingUplobdAtomic(ctx, bucketNbme, uplobdID, func(uplobd *pendingUplobd) {
+		uplobd.Pbrts = bppend(uplobd.Pbrts, pbrtNumber)
 	}); err != nil {
 		return nil, err
 	}
 
-	partObjectName := fmt.Sprintf("%v---%v", uploadID, partNumber)
-	metadata, err := s.putObject(ctx, bucketName+multipartUploadsBucketSuffix, partObjectName, data)
+	pbrtObjectNbme := fmt.Sprintf("%v---%v", uplobdID, pbrtNumber)
+	metbdbtb, err := s.putObject(ctx, bucketNbme+multipbrtUplobdsBucketSuffix, pbrtObjectNbme, dbtb)
 	if err != nil {
-		return nil, errors.Wrap(err, "putObject")
+		return nil, errors.Wrbp(err, "putObject")
 	}
 
-	s.Log.Debug("uploadPart", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID), sglog.Int("partNumber", partNumber))
-	return metadata, nil
+	s.Log.Debug("uplobdPbrt", sglog.String("key", bucketNbme+"/"+objectNbme), sglog.String("uplobdID", uplobdID), sglog.Int("pbrtNumber", pbrtNumber))
+	return metbdbtb, nil
 }
 
-func (s *Service) completeUpload(ctx context.Context, bucketName, objectName, uploadID string) error {
-	upload, err := s.getPendingUpload(ctx, bucketName, uploadID)
+func (s *Service) completeUplobd(ctx context.Context, bucketNbme, objectNbme, uplobdID string) error {
+	uplobd, err := s.getPendingUplobd(ctx, bucketNbme, uplobdID)
 	if err != nil {
 		return err
 	}
-	minPartNumber, maxPartNumber := upload.partNumberRange()
+	minPbrtNumber, mbxPbrtNumber := uplobd.pbrtNumberRbnge()
 
-	// Open the parts of the upload.
-	var partReaders []io.Reader
-	var partClosers []io.Closer
+	// Open the pbrts of the uplobd.
+	vbr pbrtRebders []io.Rebder
+	vbr pbrtClosers []io.Closer
 	defer func() {
-		// Close all the opened parts.
-		for _, closer := range partClosers {
+		// Close bll the opened pbrts.
+		for _, closer := rbnge pbrtClosers {
 			closer.Close()
 		}
 
-		// Delete the upload, if we fail past here there is no recovering the upload.
-		if err := s.deletePendingUpload(ctx, bucketName, objectName, uploadID, minPartNumber, maxPartNumber); err != nil {
+		// Delete the uplobd, if we fbil pbst here there is no recovering the uplobd.
+		if err := s.deletePendingUplobd(ctx, bucketNbme, objectNbme, uplobdID, minPbrtNumber, mbxPbrtNumber); err != nil {
 			s.Log.Error(
-				"deleting pending multi-part upload failed",
-				sglog.String("key", bucketName+"/"+objectName),
-				sglog.String("uploadID", uploadID),
+				"deleting pending multi-pbrt uplobd fbiled",
+				sglog.String("key", bucketNbme+"/"+objectNbme),
+				sglog.String("uplobdID", uplobdID),
 				sglog.Error(err),
 			)
 		}
 	}()
-	for partNumber := minPartNumber; partNumber <= maxPartNumber; partNumber++ {
-		partObjectName := fmt.Sprintf("%v---%v", uploadID, partNumber)
-		part, err := s.getObject(ctx, bucketName+multipartUploadsBucketSuffix, partObjectName)
+	for pbrtNumber := minPbrtNumber; pbrtNumber <= mbxPbrtNumber; pbrtNumber++ {
+		pbrtObjectNbme := fmt.Sprintf("%v---%v", uplobdID, pbrtNumber)
+		pbrt, err := s.getObject(ctx, bucketNbme+multipbrtUplobdsBucketSuffix, pbrtObjectNbme)
 		if err != nil {
 			if err == ErrNoSuchKey {
-				return ErrInvalidPartOrder
+				return ErrInvblidPbrtOrder
 			}
-			return errors.Wrap(err, "fetching part")
+			return errors.Wrbp(err, "fetching pbrt")
 		}
-		partReaders = append(partReaders, part)
-		partClosers = append(partClosers, part)
+		pbrtRebders = bppend(pbrtRebders, pbrt)
+		pbrtClosers = bppend(pbrtClosers, pbrt)
 	}
 
-	// Create the composed object.
-	_, err = s.putObject(ctx, bucketName, objectName, io.NopCloser(io.MultiReader(partReaders...)))
+	// Crebte the composed object.
+	_, err = s.putObject(ctx, bucketNbme, objectNbme, io.NopCloser(io.MultiRebder(pbrtRebders...)))
 	if err != nil {
-		return errors.Wrap(err, "creating composed object")
+		return errors.Wrbp(err, "crebting composed object")
 	}
 
-	s.Log.Debug("completeUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID), sglog.Int("parts", len(partReaders)))
+	s.Log.Debug("completeUplobd", sglog.String("key", bucketNbme+"/"+objectNbme), sglog.String("uplobdID", uplobdID), sglog.Int("pbrts", len(pbrtRebders)))
 	return nil
 }
 
-func (s *Service) deletePendingUpload(ctx context.Context, bucketName, objectName, uploadID string, minPartNumber, maxPartNumber int) error {
-	uploadBucketName := bucketName + multipartUploadsBucketSuffix
+func (s *Service) deletePendingUplobd(ctx context.Context, bucketNbme, objectNbme, uplobdID string, minPbrtNumber, mbxPbrtNumber int) error {
+	uplobdBucketNbme := bucketNbme + multipbrtUplobdsBucketSuffix
 
-	var deleteErrors error
-	if err := s.deleteObject(ctx, uploadBucketName, uploadID); err != nil {
+	vbr deleteErrors error
+	if err := s.deleteObject(ctx, uplobdBucketNbme, uplobdID); err != nil {
 		deleteErrors = errors.Append(deleteErrors, err)
 	}
-	for partNumber := minPartNumber; partNumber <= maxPartNumber; partNumber++ {
-		partObjectName := fmt.Sprintf("%v---%v", uploadID, partNumber)
-		if err := s.deleteObject(ctx, uploadBucketName, partObjectName); err != nil {
+	for pbrtNumber := minPbrtNumber; pbrtNumber <= mbxPbrtNumber; pbrtNumber++ {
+		pbrtObjectNbme := fmt.Sprintf("%v---%v", uplobdID, pbrtNumber)
+		if err := s.deleteObject(ctx, uplobdBucketNbme, pbrtObjectNbme); err != nil {
 			deleteErrors = errors.Append(deleteErrors, err)
 		}
 	}
 	if deleteErrors != nil {
 		return deleteErrors
 	}
-	s.Log.Debug("deletePendingUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID))
+	s.Log.Debug("deletePendingUplobd", sglog.String("key", bucketNbme+"/"+objectNbme), sglog.String("uplobdID", uplobdID))
 	return nil
 }
 
-func (s *Service) abortUpload(ctx context.Context, bucketName, objectName, uploadID string) error {
-	upload, err := s.getPendingUpload(ctx, bucketName, uploadID)
+func (s *Service) bbortUplobd(ctx context.Context, bucketNbme, objectNbme, uplobdID string) error {
+	uplobd, err := s.getPendingUplobd(ctx, bucketNbme, uplobdID)
 	if err != nil {
 		return err
 	}
-	minPartNumber, maxPartNumber := upload.partNumberRange()
+	minPbrtNumber, mbxPbrtNumber := uplobd.pbrtNumberRbnge()
 
-	// Delete the upload
-	if err := s.deletePendingUpload(ctx, bucketName, objectName, uploadID, minPartNumber, maxPartNumber); err != nil {
+	// Delete the uplobd
+	if err := s.deletePendingUplobd(ctx, bucketNbme, objectNbme, uplobdID, minPbrtNumber, mbxPbrtNumber); err != nil {
 		s.Log.Error(
-			"deleting pending multi-part upload failed",
-			sglog.String("key", bucketName+"/"+objectName),
-			sglog.String("uploadID", uploadID),
+			"deleting pending multi-pbrt uplobd fbiled",
+			sglog.String("key", bucketNbme+"/"+objectNbme),
+			sglog.String("uplobdID", uplobdID),
 			sglog.Error(err),
 		)
 	}
 
-	s.Log.Debug("abortUpload", sglog.String("key", bucketName+"/"+objectName), sglog.String("uploadID", uploadID))
+	s.Log.Debug("bbortUplobd", sglog.String("key", bucketNbme+"/"+objectNbme), sglog.String("uplobdID", uplobdID))
 	return nil
 }

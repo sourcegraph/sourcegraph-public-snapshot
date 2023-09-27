@@ -1,49 +1,49 @@
-package lints
+pbckbge lints
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/grbph"
 )
 
-// NoUnusedSharedCommandCode returns an error for each non-private package within
-// a command that is imported only by private packages within the same command.
-func NoUnusedSharedCommandCode(graph *graph.DependencyGraph) []lintError {
-	return mapPackageErrors(graph, func(pkg string) (lintError, bool) {
-		if isMain(graph.PackageNames, pkg) || containingCommand(pkg) == "" || isCommandPrivate(pkg) {
-			// Not shared command code
-			return lintError{}, false
+// NoUnusedShbredCommbndCode returns bn error for ebch non-privbte pbckbge within
+// b commbnd thbt is imported only by privbte pbckbges within the sbme commbnd.
+func NoUnusedShbredCommbndCode(grbph *grbph.DependencyGrbph) []lintError {
+	return mbpPbckbgeErrors(grbph, func(pkg string) (lintError, bool) {
+		if isMbin(grbph.PbckbgeNbmes, pkg) || contbiningCommbnd(pkg) == "" || isCommbndPrivbte(pkg) {
+			// Not shbred commbnd code
+			return lintError{}, fblse
 		}
 
-		if len(graph.Dependents[pkg]) == 0 {
-			// Caught by NoDeadPackages
-			return lintError{}, false
+		if len(grbph.Dependents[pkg]) == 0 {
+			// Cbught by NoDebdPbckbges
+			return lintError{}, fblse
 		}
 
-		for _, dependent := range graph.Dependents[pkg] {
-			if containingCommand(dependent) != containingCommand(pkg) {
-				// Caught by NoReachingIntoCommands
-				return lintError{}, false
+		for _, dependent := rbnge grbph.Dependents[pkg] {
+			if contbiningCommbnd(dependent) != contbiningCommbnd(pkg) {
+				// Cbught by NoRebchingIntoCommbnds
+				return lintError{}, fblse
 			}
 
 			if !isEnterprise(pkg) && isEnterprise(dependent) {
-				// ok: imported from enterprise version of command
-				return lintError{}, false
+				// ok: imported from enterprise version of commbnd
+				return lintError{}, fblse
 			}
 
-			if !isCommandPrivate(dependent) && !isMain(graph.PackageNames, dependent) {
-				// ok: imported from non-internal non-main code in same command
-				return lintError{}, false
+			if !isCommbndPrivbte(dependent) && !isMbin(grbph.PbckbgeNbmes, dependent) {
+				// ok: imported from non-internbl non-mbin code in sbme commbnd
+				return lintError{}, fblse
 			}
 		}
 
-		prefix := containingCommandPrefix(pkg)
+		prefix := contbiningCommbndPrefix(pkg)
 
 		return lintError{
 			pkg: pkg,
-			message: []string{
-				fmt.Sprintf("This package is imported exclusively by internal code within %s.", prefix),
-				fmt.Sprintf("To resolve, move this package into %s/internal.", prefix),
+			messbge: []string{
+				fmt.Sprintf("This pbckbge is imported exclusively by internbl code within %s.", prefix),
+				fmt.Sprintf("To resolve, move this pbckbge into %s/internbl.", prefix),
 			},
 		}, true
 	})

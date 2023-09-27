@@ -1,168 +1,168 @@
-// Package shared is the enterprise frontend program's shared main entrypoint.
+// Pbckbge shbred is the enterprise frontend progrbm's shbred mbin entrypoint.
 //
-// It lets the invoker of the OSS frontend shared entrypoint injects a few
-// proprietary things into it via e.g. blank/underscore imports in this file
-// which register side effects with the frontend package.
-package shared
+// It lets the invoker of the OSS frontend shbred entrypoint injects b few
+// proprietbry things into it vib e.g. blbnk/underscore imports in this file
+// which register side effects with the frontend pbckbge.
+pbckbge shbred
 
 import (
 	"context"
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches"
-	codeintelinit "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/completions"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/compute"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/contentlibrary"
-	internalcontext "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/embeddings"
-	executor "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/executorqueue"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/guardrails"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/insights"
-	licensing "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/licensing/init"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/own"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/rbac"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/scim"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth"
+	githubbpp "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/githubbppbuth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches"
+	codeintelinit "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/codemonitors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/completions"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/contentlibrbry"
+	internblcontext "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/context"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/embeddings"
+	executor "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/executorqueue"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/gubrdrbils"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/insights"
+	licensing "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/licensing/init"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/notebooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/rbbc"
+	_ "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/registry"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/repos/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/scim"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrchcontexts"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/telemetry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type EnterpriseInitializer = func(context.Context, *observation.Context, database.DB, codeintel.Services, conftypes.UnifiedWatchable, *enterprise.Services) error
+type EnterpriseInitiblizer = func(context.Context, *observbtion.Context, dbtbbbse.DB, codeintel.Services, conftypes.UnifiedWbtchbble, *enterprise.Services) error
 
-var initFunctions = map[string]EnterpriseInitializer{
-	"app":            app.Init,
-	"authz":          authz.Init,
-	"batches":        batches.Init,
+vbr initFunctions = mbp[string]EnterpriseInitiblizer{
+	"bpp":            bpp.Init,
+	"buthz":          buthz.Init,
+	"bbtches":        bbtches.Init,
 	"codeintel":      codeintelinit.Init,
 	"codemonitors":   codemonitors.Init,
 	"completions":    completions.Init,
 	"compute":        compute.Init,
 	"dotcom":         dotcom.Init,
 	"embeddings":     embeddings.Init,
-	"context":        internalcontext.Init,
-	"githubapp":      githubapp.Init,
-	"guardrails":     guardrails.Init,
+	"context":        internblcontext.Init,
+	"githubbpp":      githubbpp.Init,
+	"gubrdrbils":     gubrdrbils.Init,
 	"insights":       insights.Init,
 	"licensing":      licensing.Init,
 	"notebooks":      notebooks.Init,
 	"own":            own.Init,
-	"rbac":           rbac.Init,
+	"rbbc":           rbbc.Init,
 	"repos.webhooks": webhooks.Init,
 	"scim":           scim.Init,
-	"searchcontexts": searchcontexts.Init,
-	"contentLibrary": contentlibrary.Init,
-	"search":         search.Init,
+	"sebrchcontexts": sebrchcontexts.Init,
+	"contentLibrbry": contentlibrbry.Init,
+	"sebrch":         sebrch.Init,
 	"telemetry":      telemetry.Init,
 }
 
-func EnterpriseSetupHook(db database.DB, conf conftypes.UnifiedWatchable) enterprise.Services {
+func EnterpriseSetupHook(db dbtbbbse.DB, conf conftypes.UnifiedWbtchbble) enterprise.Services {
 	logger := log.Scoped("enterprise", "frontend enterprise edition")
-	debug, _ := strconv.ParseBool(os.Getenv("DEBUG"))
+	debug, _ := strconv.PbrseBool(os.Getenv("DEBUG"))
 	if debug {
 		logger.Debug("enterprise edition")
 	}
 
-	auth.Init(logger, db)
+	buth.Init(logger, db)
 
-	ctx := context.Background()
-	enterpriseServices := enterprise.DefaultServices()
+	ctx := context.Bbckground()
+	enterpriseServices := enterprise.DefbultServices()
 
-	observationCtx := observation.NewContext(logger)
+	observbtionCtx := observbtion.NewContext(logger)
 
 	codeIntelServices, err := codeintel.NewServices(codeintel.ServiceDependencies{
 		DB:             db,
-		CodeIntelDB:    mustInitializeCodeIntelDB(logger),
-		ObservationCtx: observationCtx,
+		CodeIntelDB:    mustInitiblizeCodeIntelDB(logger),
+		ObservbtionCtx: observbtionCtx,
 	})
 	if err != nil {
-		logger.Fatal("failed to initialize code intelligence", log.Error(err))
+		logger.Fbtbl("fbiled to initiblize code intelligence", log.Error(err))
 	}
 
-	for name, fn := range initFunctions {
-		if err := fn(ctx, observationCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
-			logger.Fatal("failed to initialize", log.String("name", name), log.Error(err))
+	for nbme, fn := rbnge initFunctions {
+		if err := fn(ctx, observbtionCtx, db, codeIntelServices, conf, &enterpriseServices); err != nil {
+			logger.Fbtbl("fbiled to initiblize", log.String("nbme", nbme), log.Error(err))
 		}
 	}
 
-	// Inititalize executor last, as we require code intel and batch changes services to be
-	// already populated on the enterpriseServices object.
-	if err := executor.Init(observationCtx, db, conf, &enterpriseServices); err != nil {
-		logger.Fatal("failed to initialize executor", log.Error(err))
+	// Inititblize executor lbst, bs we require code intel bnd bbtch chbnges services to be
+	// blrebdy populbted on the enterpriseServices object.
+	if err := executor.Init(observbtionCtx, db, conf, &enterpriseServices); err != nil {
+		logger.Fbtbl("fbiled to initiblize executor", log.Error(err))
 	}
 
 	return enterpriseServices
 }
 
-func mustInitializeCodeIntelDB(logger log.Logger) codeintelshared.CodeIntelDB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+func mustInitiblizeCodeIntelDB(logger log.Logger) codeintelshbred.CodeIntelDB {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 
-	db, err := connections.EnsureNewCodeIntelDB(observation.NewContext(logger), dsn, "frontend")
+	db, err := connections.EnsureNewCodeIntelDB(observbtion.NewContext(logger), dsn, "frontend")
 	if err != nil {
-		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
+		logger.Fbtbl("Fbiled to connect to codeintel dbtbbbse", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(logger, db)
+	return codeintelshbred.NewCodeIntelDB(logger, db)
 }
 
-func SwitchableSiteConfig() conftypes.WatchableSiteConfig {
-	confClient := conf.DefaultClient()
-	switchable := &switchingSiteConfig{
-		watchers:            make([]func(), 0),
-		WatchableSiteConfig: &noopSiteConfig{},
+func SwitchbbleSiteConfig() conftypes.WbtchbbleSiteConfig {
+	confClient := conf.DefbultClient()
+	switchbble := &switchingSiteConfig{
+		wbtchers:            mbke([]func(), 0),
+		WbtchbbleSiteConfig: &noopSiteConfig{},
 	}
-	switchable.WatchableSiteConfig.(*noopSiteConfig).switcher = switchable
+	switchbble.WbtchbbleSiteConfig.(*noopSiteConfig).switcher = switchbble
 
 	go func() {
-		<-AutoUpgradeDone
+		<-AutoUpgrbdeDone
 		conf.EnsureHTTPClientIsConfigured()
-		switchable.WatchableSiteConfig = confClient
-		for _, watcher := range switchable.watchers {
-			confClient.Watch(watcher)
+		switchbble.WbtchbbleSiteConfig = confClient
+		for _, wbtcher := rbnge switchbble.wbtchers {
+			confClient.Wbtch(wbtcher)
 		}
-		switchable.watchers = nil
+		switchbble.wbtchers = nil
 	}()
 
-	return switchable
+	return switchbble
 }
 
 type switchingSiteConfig struct {
-	watchers []func()
-	conftypes.WatchableSiteConfig
+	wbtchers []func()
+	conftypes.WbtchbbleSiteConfig
 }
 
 type noopSiteConfig struct {
 	switcher *switchingSiteConfig
 }
 
-func (n *noopSiteConfig) SiteConfig() schema.SiteConfiguration {
-	return schema.SiteConfiguration{}
+func (n *noopSiteConfig) SiteConfig() schemb.SiteConfigurbtion {
+	return schemb.SiteConfigurbtion{}
 }
 
-func (n *noopSiteConfig) Watch(f func()) {
+func (n *noopSiteConfig) Wbtch(f func()) {
 	f()
-	n.switcher.watchers = append(n.switcher.watchers, f)
+	n.switcher.wbtchers = bppend(n.switcher.wbtchers, f)
 }

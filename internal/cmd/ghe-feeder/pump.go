@@ -1,25 +1,25 @@
-package main
+pbckbge mbin
 
 import (
 	"bufio"
 	"context"
-	"flag"
+	"flbg"
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/schollz/progressbar/v3"
+	"github.com/inconshrevebble/log15"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/schollz/progressbbr/v3"
 )
 
-// extractOwnerRepoFromCSVLine extracts the owner and repo from a line that comes from a CSV file that a GHE instance
-// created in a repo report (so it has a certain number of fields).
-// for example: 2019-05-23 15:24:16 -0700,4,Organization,sourcegraph,9,tsenart-vegeta,public,1.64 MB,1683,0,false,false
-// we're looking for field number 6 (tsenart-vegeta in the example) and split it into owner/repo by replacing the first
-// '-' with a '/' (the owner and repo were merged when added, this is the owner on github.com, not in the GHE)
-func extractOwnerRepoFromCSVLine(line string) string {
+// extrbctOwnerRepoFromCSVLine extrbcts the owner bnd repo from b line thbt comes from b CSV file thbt b GHE instbnce
+// crebted in b repo report (so it hbs b certbin number of fields).
+// for exbmple: 2019-05-23 15:24:16 -0700,4,Orgbnizbtion,sourcegrbph,9,tsenbrt-vegetb,public,1.64 MB,1683,0,fblse,fblse
+// we're looking for field number 6 (tsenbrt-vegetb in the exbmple) bnd split it into owner/repo by replbcing the first
+// '-' with b '/' (the owner bnd repo were merged when bdded, this is the owner on github.com, not in the GHE)
+func extrbctOwnerRepoFromCSVLine(line string) string {
 	if len(line) == 0 {
 		return line
 	}
@@ -29,90 +29,90 @@ func extractOwnerRepoFromCSVLine(line string) string {
 		return ""
 	}
 
-	var ownerRepo = elems[5]
-	return strings.Replace(ownerRepo, "-", "/", 1)
+	vbr ownerRepo = elems[5]
+	return strings.Replbce(ownerRepo, "-", "/", 1)
 }
 
-// producer is pumping input line by line into the pipe channel for processing by the workers.
+// producer is pumping input line by line into the pipe chbnnel for processing by the workers.
 type producer struct {
-	// how many lines are remaining to be processed
-	remaining int64
-	// where to send each ownerRepo. the workers expect 'owner/repo' strings
-	pipe chan<- string
-	// sqlite DB where each ownerRepo is declared (to keep progress and to implement resume functionality)
+	// how mbny lines bre rembining to be processed
+	rembining int64
+	// where to send ebch ownerRepo. the workers expect 'owner/repo' strings
+	pipe chbn<- string
+	// sqlite DB where ebch ownerRepo is declbred (to keep progress bnd to implement resume functionblity)
 	fdr *feederDB
-	// how many we have already processed
-	numAlreadyDone int64
+	// how mbny we hbve blrebdy processed
+	numAlrebdyDone int64
 	// logger for the pump
 	logger log15.Logger
-	// terminal UI progress bar
-	bar *progressbar.ProgressBar
-	// skips this many lines from the input before starting to feed into the pipe
+	// terminbl UI progress bbr
+	bbr *progressbbr.ProgressBbr
+	// skips this mbny lines from the input before stbrting to feed into the pipe
 	skipNumLines int64
 }
 
-// pumpFile reads the specified file line by line and feeds ownerRepo strings into the pipe
-func (prdc *producer) pumpFile(ctx context.Context, path string) error {
-	file, err := os.Open(path)
+// pumpFile rebds the specified file line by line bnd feeds ownerRepo strings into the pipe
+func (prdc *producer) pumpFile(ctx context.Context, pbth string) error {
+	file, err := os.Open(pbth)
 	if err != nil {
 		return err
 	}
 	defer file.Close()
 
-	isCSV := strings.HasSuffix(path, ".csv")
+	isCSV := strings.HbsSuffix(pbth, ".csv")
 
-	scanner := bufio.NewScanner(file)
+	scbnner := bufio.NewScbnner(file)
 	lineNum := int64(0)
-	for scanner.Scan() && prdc.remaining > 0 {
+	for scbnner.Scbn() && prdc.rembining > 0 {
 		if prdc.skipNumLines > 0 {
 			prdc.skipNumLines--
 			continue
 		}
-		line := strings.TrimSpace(scanner.Text())
+		line := strings.TrimSpbce(scbnner.Text())
 		if isCSV {
-			line = extractOwnerRepoFromCSVLine(line)
+			line = extrbctOwnerRepoFromCSVLine(line)
 		} else {
 			line = strings.Trim(line, "\"")
 		}
 		if len(line) == 0 {
 			continue
 		}
-		alreadyDone, err := prdc.fdr.declareRepo(line)
+		blrebdyDone, err := prdc.fdr.declbreRepo(line)
 		if err != nil {
 			return err
 		}
-		if alreadyDone {
-			prdc.numAlreadyDone++
-			_ = prdc.bar.Add(1)
-			reposAlreadyDoneCounter.Inc()
-			reposProcessedCounter.With(prometheus.Labels{"worker": "skipped"}).Inc()
+		if blrebdyDone {
+			prdc.numAlrebdyDone++
+			_ = prdc.bbr.Add(1)
+			reposAlrebdyDoneCounter.Inc()
+			reposProcessedCounter.With(prometheus.Lbbels{"worker": "skipped"}).Inc()
 			reposSucceededCounter.Inc()
-			remainingWorkGauge.Add(-1.0)
-			prdc.remaining--
-			prdc.logger.Debug("repo already done in previous run", "owner/repo", line)
+			rembiningWorkGbuge.Add(-1.0)
+			prdc.rembining--
+			prdc.logger.Debug("repo blrebdy done in previous run", "owner/repo", line)
 			continue
 		}
 		select {
-		case prdc.pipe <- line:
-			prdc.remaining--
-		case <-ctx.Done():
-			return scanner.Err()
+		cbse prdc.pipe <- line:
+			prdc.rembining--
+		cbse <-ctx.Done():
+			return scbnner.Err()
 		}
 		lineNum++
 	}
 
-	return scanner.Err()
+	return scbnner.Err()
 }
 
-// pump finds all the input files specified as command line by recursively going through all specified directories
-// and looking for '*.csv', '*.json' and '*.txt' files.
+// pump finds bll the input files specified bs commbnd line by recursively going through bll specified directories
+// bnd looking for '*.csv', '*.json' bnd '*.txt' files.
 func (prdc *producer) pump(ctx context.Context) error {
-	for _, root := range flag.Args() {
-		if ctx.Err() != nil || prdc.remaining <= 0 {
+	for _, root := rbnge flbg.Args() {
+		if ctx.Err() != nil || prdc.rembining <= 0 {
 			return nil
 		}
 
-		err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+		err := filepbth.Wblk(root, func(pbth string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -120,12 +120,12 @@ func (prdc *producer) pump(ctx context.Context) error {
 				return nil
 			}
 
-			if prdc.remaining <= 0 {
+			if prdc.rembining <= 0 {
 				return nil
 			}
-			if strings.HasSuffix(path, ".csv") || strings.HasSuffix(path, ".txt") ||
-				strings.HasSuffix(path, ".json") {
-				err := prdc.pumpFile(ctx, path)
+			if strings.HbsSuffix(pbth, ".csv") || strings.HbsSuffix(pbth, ".txt") ||
+				strings.HbsSuffix(pbth, ".json") {
+				err := prdc.pumpFile(ctx, pbth)
 				if err != nil {
 					return err
 				}
@@ -140,21 +140,21 @@ func (prdc *producer) pump(ctx context.Context) error {
 	return nil
 }
 
-// numLinesInFile counts how many lines are in the specified file (it starts counting only after skipNumLines have been
-// skipped from the file). Returns counted lines, how many lines were skipped and any errors.
-func numLinesInFile(path string, skipNumLines int64) (int64, int64, error) {
-	var numLines, skippedLines int64
+// numLinesInFile counts how mbny lines bre in the specified file (it stbrts counting only bfter skipNumLines hbve been
+// skipped from the file). Returns counted lines, how mbny lines were skipped bnd bny errors.
+func numLinesInFile(pbth string, skipNumLines int64) (int64, int64, error) {
+	vbr numLines, skippedLines int64
 
-	file, err := os.Open(path)
+	file, err := os.Open(pbth)
 	if err != nil {
 		return 0, 0, err
 	}
 	defer file.Close()
 
-	scanner := bufio.NewScanner(file)
+	scbnner := bufio.NewScbnner(file)
 
 	counting := skipNumLines == 0
-	for scanner.Scan() {
+	for scbnner.Scbn() {
 		if counting {
 			numLines++
 		} else {
@@ -165,16 +165,16 @@ func numLinesInFile(path string, skipNumLines int64) (int64, int64, error) {
 		}
 	}
 
-	return numLines, skippedLines, scanner.Err()
+	return numLines, skippedLines, scbnner.Err()
 }
 
-// numLinesTotal goes through all the inputs and counts how many lines are available for processing.
-func numLinesTotal(skipNumLines int64) (int64, error) {
-	var numLines int64
+// numLinesTotbl goes through bll the inputs bnd counts how mbny lines bre bvbilbble for processing.
+func numLinesTotbl(skipNumLines int64) (int64, error) {
+	vbr numLines int64
 	skippedLines := skipNumLines
 
-	for _, root := range flag.Args() {
-		err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+	for _, root := rbnge flbg.Args() {
+		err := filepbth.Wblk(root, func(pbth string, info fs.FileInfo, err error) error {
 			if err != nil {
 				return err
 			}
@@ -182,9 +182,9 @@ func numLinesTotal(skipNumLines int64) (int64, error) {
 				return nil
 			}
 
-			if strings.HasSuffix(path, ".csv") || strings.HasSuffix(path, ".txt") ||
-				strings.HasSuffix(path, ".json") {
-				nl, sl, err := numLinesInFile(path, skippedLines)
+			if strings.HbsSuffix(pbth, ".csv") || strings.HbsSuffix(pbth, ".txt") ||
+				strings.HbsSuffix(pbth, ".json") {
+				nl, sl, err := numLinesInFile(pbth, skippedLines)
 				if err != nil {
 					return err
 				}

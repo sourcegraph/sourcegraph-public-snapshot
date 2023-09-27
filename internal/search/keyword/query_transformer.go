@@ -1,145 +1,145 @@
-package keyword
+pbckbge keyword
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
 )
 
-const maxTransformedPatterns = 10
+const mbxTrbnsformedPbtterns = 10
 
 type keywordQuery struct {
-	query    query.Basic
-	patterns []string
+	query    query.Bbsic
+	pbtterns []string
 }
 
-func concatNodeToPatterns(concat query.Operator) []string {
-	patterns := make([]string, 0, len(concat.Operands))
-	for _, operand := range concat.Operands {
-		pattern, ok := operand.(query.Pattern)
+func concbtNodeToPbtterns(concbt query.Operbtor) []string {
+	pbtterns := mbke([]string, 0, len(concbt.Operbnds))
+	for _, operbnd := rbnge concbt.Operbnds {
+		pbttern, ok := operbnd.(query.Pbttern)
 		if ok {
-			patterns = append(patterns, pattern.Value)
+			pbtterns = bppend(pbtterns, pbttern.Vblue)
 		}
 	}
-	return patterns
+	return pbtterns
 }
 
-func nodeToPatternsAndParameters(rootNode query.Node) ([]string, []query.Parameter) {
-	operator, ok := rootNode.(query.Operator)
+func nodeToPbtternsAndPbrbmeters(rootNode query.Node) ([]string, []query.Pbrbmeter) {
+	operbtor, ok := rootNode.(query.Operbtor)
 	if !ok {
 		return nil, nil
 	}
 
-	patterns := []string{}
-	parameters := []query.Parameter{
-		// Only search file content
-		{Field: query.FieldType, Value: "file"},
+	pbtterns := []string{}
+	pbrbmeters := []query.Pbrbmeter{
+		// Only sebrch file content
+		{Field: query.FieldType, Vblue: "file"},
 	}
 
-	switch operator.Kind {
-	case query.And:
-		for _, operand := range operator.Operands {
-			switch op := operand.(type) {
-			case query.Operator:
-				if op.Kind == query.Concat {
-					patterns = append(patterns, concatNodeToPatterns(op)...)
+	switch operbtor.Kind {
+	cbse query.And:
+		for _, operbnd := rbnge operbtor.Operbnds {
+			switch op := operbnd.(type) {
+			cbse query.Operbtor:
+				if op.Kind == query.Concbt {
+					pbtterns = bppend(pbtterns, concbtNodeToPbtterns(op)...)
 				}
-			case query.Parameter:
+			cbse query.Pbrbmeter:
 				if op.Field == query.FieldContent {
-					// Split any content field on white space into a set of patterns
-					patterns = append(patterns, strings.Fields(op.Value)...)
-				} else if op.Field != query.FieldCase && op.Field != query.FieldType {
-					parameters = append(parameters, op)
+					// Split bny content field on white spbce into b set of pbtterns
+					pbtterns = bppend(pbtterns, strings.Fields(op.Vblue)...)
+				} else if op.Field != query.FieldCbse && op.Field != query.FieldType {
+					pbrbmeters = bppend(pbrbmeters, op)
 				}
-			case query.Pattern:
-				patterns = append(patterns, op.Value)
+			cbse query.Pbttern:
+				pbtterns = bppend(pbtterns, op.Vblue)
 			}
 		}
-	case query.Concat:
-		patterns = concatNodeToPatterns(operator)
+	cbse query.Concbt:
+		pbtterns = concbtNodeToPbtterns(operbtor)
 	}
 
-	return patterns, parameters
+	return pbtterns, pbrbmeters
 }
 
-// transformPatterns applies stops words and stemming. The returned slice
-// contains the lowercased patterns and their stems minus the stop words.
-func transformPatterns(patterns []string) []string {
-	var transformedPatterns []string
-	transformedPatternsSet := stringSet{}
+// trbnsformPbtterns bpplies stops words bnd stemming. The returned slice
+// contbins the lowercbsed pbtterns bnd their stems minus the stop words.
+func trbnsformPbtterns(pbtterns []string) []string {
+	vbr trbnsformedPbtterns []string
+	trbnsformedPbtternsSet := stringSet{}
 
-	// To eliminate a possible source of non-determinism of search results, we
-	// want transformPatterns to be a pure function. Hence we maintain a slice
-	// of transformed patterns (transformedPatterns) in addition to
-	// transformedPatternsSet.
-	add := func(pattern string) {
-		if transformedPatternsSet.Has(pattern) {
+	// To eliminbte b possible source of non-determinism of sebrch results, we
+	// wbnt trbnsformPbtterns to be b pure function. Hence we mbintbin b slice
+	// of trbnsformed pbtterns (trbnsformedPbtterns) in bddition to
+	// trbnsformedPbtternsSet.
+	bdd := func(pbttern string) {
+		if trbnsformedPbtternsSet.Hbs(pbttern) {
 			return
 		}
-		transformedPatternsSet.Add(pattern)
-		transformedPatterns = append(transformedPatterns, pattern)
+		trbnsformedPbtternsSet.Add(pbttern)
+		trbnsformedPbtterns = bppend(trbnsformedPbtterns, pbttern)
 	}
 
-	for _, pattern := range patterns {
-		pattern = strings.ToLower(pattern)
-		pattern = removePunctuation(pattern)
-		if len(pattern) < 3 || isCommonTerm(pattern) {
+	for _, pbttern := rbnge pbtterns {
+		pbttern = strings.ToLower(pbttern)
+		pbttern = removePunctubtion(pbttern)
+		if len(pbttern) < 3 || isCommonTerm(pbttern) {
 			continue
 		}
 
-		pattern = stemTerm(pattern)
-		add(pattern)
+		pbttern = stemTerm(pbttern)
+		bdd(pbttern)
 	}
 
-	// To maintain decent latency, limit the number of patterns we search.
-	if len(transformedPatterns) > maxTransformedPatterns {
-		transformedPatterns = transformedPatterns[:maxTransformedPatterns]
+	// To mbintbin decent lbtency, limit the number of pbtterns we sebrch.
+	if len(trbnsformedPbtterns) > mbxTrbnsformedPbtterns {
+		trbnsformedPbtterns = trbnsformedPbtterns[:mbxTrbnsformedPbtterns]
 	}
 
-	return transformedPatterns
+	return trbnsformedPbtterns
 }
 
 func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
-	rawParseTree, err := query.Parse(queryString, query.SearchTypeStandard)
+	rbwPbrseTree, err := query.Pbrse(queryString, query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil, err
 	}
 
-	if len(rawParseTree) != 1 {
+	if len(rbwPbrseTree) != 1 {
 		return nil, nil
 	}
 
-	patterns, parameters := nodeToPatternsAndParameters(rawParseTree[0])
+	pbtterns, pbrbmeters := nodeToPbtternsAndPbrbmeters(rbwPbrseTree[0])
 
-	transformedPatterns := transformPatterns(patterns)
-	if len(transformedPatterns) == 0 {
+	trbnsformedPbtterns := trbnsformPbtterns(pbtterns)
+	if len(trbnsformedPbtterns) == 0 {
 		return nil, nil
 	}
 
 	nodes := []query.Node{}
-	for _, p := range parameters {
-		nodes = append(nodes, p)
+	for _, p := rbnge pbrbmeters {
+		nodes = bppend(nodes, p)
 	}
 
-	patternNodes := make([]query.Node, 0, len(transformedPatterns))
-	for _, p := range transformedPatterns {
-		patternNodes = append(patternNodes, query.Pattern{Value: p})
+	pbtternNodes := mbke([]query.Node, 0, len(trbnsformedPbtterns))
+	for _, p := rbnge trbnsformedPbtterns {
+		pbtternNodes = bppend(pbtternNodes, query.Pbttern{Vblue: p})
 	}
-	nodes = append(nodes, query.NewOperator(patternNodes, query.Or)...)
+	nodes = bppend(nodes, query.NewOperbtor(pbtternNodes, query.Or)...)
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(nodes)
+	newNodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(nodes)
 	if err != nil {
 		return nil, err
 	}
 
-	newBasic, err := query.ToBasicQuery(newNodes)
+	newBbsic, err := query.ToBbsicQuery(newNodes)
 	if err != nil {
 		return nil, err
 	}
 
-	return &keywordQuery{newBasic, transformedPatterns}, nil
+	return &keywordQuery{newBbsic, trbnsformedPbtterns}, nil
 }
 
-func basicQueryToKeywordQuery(basicQuery query.Basic) (*keywordQuery, error) {
-	return queryStringToKeywordQuery(query.StringHuman(basicQuery.ToParseTree()))
+func bbsicQueryToKeywordQuery(bbsicQuery query.Bbsic) (*keywordQuery, error) {
+	return queryStringToKeywordQuery(query.StringHumbn(bbsicQuery.ToPbrseTree()))
 }

@@ -1,4 +1,4 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"encoding/json"
@@ -6,50 +6,50 @@ import (
 	"time"
 )
 
-func ParseWebhookEvent(eventKey string, payload []byte) (any, error) {
-	var target any
+func PbrseWebhookEvent(eventKey string, pbylobd []byte) (bny, error) {
+	vbr tbrget bny
 	switch eventKey {
-	case "pullrequest:approved":
-		target = &PullRequestApprovedEvent{}
-	case "pullrequest:changes_request_created":
-		target = &PullRequestChangesRequestCreatedEvent{}
-	case "pullrequest:changes_request_removed":
-		target = &PullRequestChangesRequestRemovedEvent{}
-	case "pullrequest:comment_created":
-		target = &PullRequestCommentCreatedEvent{}
-	case "pullrequest:comment_deleted":
-		target = &PullRequestCommentDeletedEvent{}
-	case "pullrequest:comment_updated":
-		target = &PullRequestCommentUpdatedEvent{}
-	case "pullrequest:fulfilled":
-		target = &PullRequestFulfilledEvent{}
-	case "pullrequest:rejected":
-		target = &PullRequestRejectedEvent{}
-	case "pullrequest:unapproved":
-		target = &PullRequestUnapprovedEvent{}
-	case "pullrequest:updated":
-		target = &PullRequestUpdatedEvent{}
-	case "repo:commit_status_created":
-		target = &RepoCommitStatusCreatedEvent{}
-	case "repo:commit_status_updated":
-		target = &RepoCommitStatusUpdatedEvent{}
-	case "repo:push":
-		target = &PushEvent{}
-	default:
+	cbse "pullrequest:bpproved":
+		tbrget = &PullRequestApprovedEvent{}
+	cbse "pullrequest:chbnges_request_crebted":
+		tbrget = &PullRequestChbngesRequestCrebtedEvent{}
+	cbse "pullrequest:chbnges_request_removed":
+		tbrget = &PullRequestChbngesRequestRemovedEvent{}
+	cbse "pullrequest:comment_crebted":
+		tbrget = &PullRequestCommentCrebtedEvent{}
+	cbse "pullrequest:comment_deleted":
+		tbrget = &PullRequestCommentDeletedEvent{}
+	cbse "pullrequest:comment_updbted":
+		tbrget = &PullRequestCommentUpdbtedEvent{}
+	cbse "pullrequest:fulfilled":
+		tbrget = &PullRequestFulfilledEvent{}
+	cbse "pullrequest:rejected":
+		tbrget = &PullRequestRejectedEvent{}
+	cbse "pullrequest:unbpproved":
+		tbrget = &PullRequestUnbpprovedEvent{}
+	cbse "pullrequest:updbted":
+		tbrget = &PullRequestUpdbtedEvent{}
+	cbse "repo:commit_stbtus_crebted":
+		tbrget = &RepoCommitStbtusCrebtedEvent{}
+	cbse "repo:commit_stbtus_updbted":
+		tbrget = &RepoCommitStbtusUpdbtedEvent{}
+	cbse "repo:push":
+		tbrget = &PushEvent{}
+	defbult:
 		return nil, UnknownWebhookEventKey(eventKey)
 	}
 
-	if err := json.Unmarshal(payload, target); err != nil {
+	if err := json.Unmbrshbl(pbylobd, tbrget); err != nil {
 		return nil, err
 	}
-	return target, nil
+	return tbrget, nil
 }
 
-// Types (and subtypes) that we can unmarshal from a webhook payload.
+// Types (bnd subtypes) thbt we cbn unmbrshbl from b webhook pbylobd.
 //
-// This is (intentionally) most, but not all, of the payload types as of December
-// 2022. Some repo events are unlikely to ever be useful to us, so we don't even
-// attempt to unmarshal them.
+// This is (intentionblly) most, but not bll, of the pbylobd types bs of December
+// 2022. Some repo events bre unlikely to ever be useful to us, so we don't even
+// bttempt to unmbrshbl them.
 
 type PushEvent struct {
 	RepoEvent
@@ -60,30 +60,30 @@ type PullRequestEvent struct {
 	PullRequest PullRequest `json:"pullrequest"`
 }
 
-type PullRequestApprovalEvent struct {
+type PullRequestApprovblEvent struct {
 	PullRequestEvent
-	Approval DateUserTuple `json:"approval"`
+	Approvbl DbteUserTuple `json:"bpprovbl"`
 }
 
 type PullRequestApprovedEvent struct {
-	PullRequestApprovalEvent
+	PullRequestApprovblEvent
 }
 
-type PullRequestUnapprovedEvent struct {
-	PullRequestApprovalEvent
+type PullRequestUnbpprovedEvent struct {
+	PullRequestApprovblEvent
 }
 
-type PullRequestChangesRequestEvent struct {
+type PullRequestChbngesRequestEvent struct {
 	PullRequestEvent
-	ChangesRequest DateUserTuple `json:"changes_request"`
+	ChbngesRequest DbteUserTuple `json:"chbnges_request"`
 }
 
-type PullRequestChangesRequestCreatedEvent struct {
-	PullRequestChangesRequestEvent
+type PullRequestChbngesRequestCrebtedEvent struct {
+	PullRequestChbngesRequestEvent
 }
 
-type PullRequestChangesRequestRemovedEvent struct {
-	PullRequestChangesRequestEvent
+type PullRequestChbngesRequestRemovedEvent struct {
+	PullRequestChbngesRequestEvent
 }
 
 type PullRequestCommentEvent struct {
@@ -91,7 +91,7 @@ type PullRequestCommentEvent struct {
 	Comment Comment `json:"comment"`
 }
 
-type PullRequestCommentCreatedEvent struct {
+type PullRequestCommentCrebtedEvent struct {
 	PullRequestCommentEvent
 }
 
@@ -99,7 +99,7 @@ type PullRequestCommentDeletedEvent struct {
 	PullRequestCommentEvent
 }
 
-type PullRequestCommentUpdatedEvent struct {
+type PullRequestCommentUpdbtedEvent struct {
 	PullRequestCommentEvent
 }
 
@@ -111,110 +111,110 @@ type PullRequestRejectedEvent struct {
 	PullRequestEvent
 }
 
-type DateUserTuple struct {
-	Date time.Time `json:"date"`
+type DbteUserTuple struct {
+	Dbte time.Time `json:"dbte"`
 	User User      `json:"user"`
 }
 
-type PullRequestUpdatedEvent struct {
+type PullRequestUpdbtedEvent struct {
 	PullRequestEvent
 }
 
 type RepoEvent struct {
-	Actor      User `json:"actor"`
+	Actor      User `json:"bctor"`
 	Repository Repo `json:"repository"`
 }
 
-type RepoCommitStatusEvent struct {
+type RepoCommitStbtusEvent struct {
 	RepoEvent
-	CommitStatus CommitStatus `json:"commit_status"`
+	CommitStbtus CommitStbtus `json:"commit_stbtus"`
 }
 
-type RepoCommitStatusCreatedEvent struct {
-	RepoCommitStatusEvent
+type RepoCommitStbtusCrebtedEvent struct {
+	RepoCommitStbtusEvent
 }
 
-type RepoCommitStatusUpdatedEvent struct {
-	RepoCommitStatusEvent
+type RepoCommitStbtusUpdbtedEvent struct {
+	RepoCommitStbtusEvent
 }
 
-type CommitStatus struct {
-	Name        string                 `json:"name"`
+type CommitStbtus struct {
+	Nbme        string                 `json:"nbme"`
 	Description string                 `json:"description"`
-	State       PullRequestStatusState `json:"state"`
+	Stbte       PullRequestStbtusStbte `json:"stbte"`
 	Key         string                 `json:"key"`
 	URL         string                 `json:"url"`
-	Type        CommitStatusType       `json:"type"`
-	CreatedOn   time.Time              `json:"created_on"`
-	UpdatedOn   time.Time              `json:"updated_on"`
+	Type        CommitStbtusType       `json:"type"`
+	CrebtedOn   time.Time              `json:"crebted_on"`
+	UpdbtedOn   time.Time              `json:"updbted_on"`
 	Commit      Commit                 `json:"commit"`
 	Links       Links                  `json:"links"`
 }
 
 // The single typed string type in the webhook specific types.
 
-type CommitStatusType string
+type CommitStbtusType string
 
 const (
-	CommitStatusTypeBuild CommitStatusType = "build"
+	CommitStbtusTypeBuild CommitStbtusType = "build"
 )
 
 // Error types.
 
 type UnknownWebhookEventKey string
 
-var _ error = UnknownWebhookEventKey("")
+vbr _ error = UnknownWebhookEventKey("")
 
 func (e UnknownWebhookEventKey) Error() string {
 	return "unknown webhook event key: " + string(e)
 }
 
-// Widgetry to ensure all events are keyers.
+// Widgetry to ensure bll events bre keyers.
 //
-// Annoyingly, most of the pull request events don't have UUIDs associated with
-// anything we get, so we just have to do the best we can with what we have.
+// Annoyingly, most of the pull request events don't hbve UUIDs bssocibted with
+// bnything we get, so we just hbve to do the best we cbn with whbt we hbve.
 
-type keyer interface {
+type keyer interfbce {
 	Key() string
 }
 
-var (
+vbr (
 	_ keyer = &PullRequestApprovedEvent{}
-	_ keyer = &PullRequestChangesRequestCreatedEvent{}
-	_ keyer = &PullRequestChangesRequestRemovedEvent{}
-	_ keyer = &PullRequestCommentCreatedEvent{}
+	_ keyer = &PullRequestChbngesRequestCrebtedEvent{}
+	_ keyer = &PullRequestChbngesRequestRemovedEvent{}
+	_ keyer = &PullRequestCommentCrebtedEvent{}
 	_ keyer = &PullRequestCommentDeletedEvent{}
-	_ keyer = &PullRequestCommentUpdatedEvent{}
+	_ keyer = &PullRequestCommentUpdbtedEvent{}
 	_ keyer = &PullRequestFulfilledEvent{}
 	_ keyer = &PullRequestRejectedEvent{}
-	_ keyer = &PullRequestUnapprovedEvent{}
-	_ keyer = &PullRequestUpdatedEvent{}
-	_ keyer = &RepoCommitStatusCreatedEvent{}
-	_ keyer = &RepoCommitStatusUpdatedEvent{}
+	_ keyer = &PullRequestUnbpprovedEvent{}
+	_ keyer = &PullRequestUpdbtedEvent{}
+	_ keyer = &RepoCommitStbtusCrebtedEvent{}
+	_ keyer = &RepoCommitStbtusUpdbtedEvent{}
 )
 
 func (e *PullRequestApprovedEvent) Key() string {
-	return e.PullRequestApprovalEvent.key() + ":approved"
+	return e.PullRequestApprovblEvent.key() + ":bpproved"
 }
 
-func (e *PullRequestChangesRequestCreatedEvent) Key() string {
-	return e.PullRequestChangesRequestEvent.key() + ":created"
+func (e *PullRequestChbngesRequestCrebtedEvent) Key() string {
+	return e.PullRequestChbngesRequestEvent.key() + ":crebted"
 }
 
-func (e *PullRequestChangesRequestRemovedEvent) Key() string {
-	return e.PullRequestChangesRequestEvent.key() + ":removed"
+func (e *PullRequestChbngesRequestRemovedEvent) Key() string {
+	return e.PullRequestChbngesRequestEvent.key() + ":removed"
 }
 
-func (e *PullRequestCommentCreatedEvent) Key() string {
-	return e.PullRequestCommentEvent.key() + ":created"
+func (e *PullRequestCommentCrebtedEvent) Key() string {
+	return e.PullRequestCommentEvent.key() + ":crebted"
 }
 
 func (e *PullRequestCommentDeletedEvent) Key() string {
 	return e.PullRequestCommentEvent.key() + ":deleted"
 }
 
-func (e *PullRequestCommentUpdatedEvent) Key() string {
-	return e.PullRequestCommentEvent.key() + ":updated"
+func (e *PullRequestCommentUpdbtedEvent) Key() string {
+	return e.PullRequestCommentEvent.key() + ":updbted"
 }
 
 func (e *PullRequestFulfilledEvent) Key() string {
@@ -225,46 +225,46 @@ func (e *PullRequestRejectedEvent) Key() string {
 	return e.PullRequestEvent.key() + ":rejected"
 }
 
-func (e *PullRequestUnapprovedEvent) Key() string {
-	return e.PullRequestApprovalEvent.key() + ":unapproved"
+func (e *PullRequestUnbpprovedEvent) Key() string {
+	return e.PullRequestApprovblEvent.key() + ":unbpproved"
 }
 
-func (e *PullRequestUpdatedEvent) Key() string {
-	return e.PullRequestEvent.key() + ":" + e.PullRequest.UpdatedOn.String()
+func (e *PullRequestUpdbtedEvent) Key() string {
+	return e.PullRequestEvent.key() + ":" + e.PullRequest.UpdbtedOn.String()
 }
 
-func (e *RepoCommitStatusCreatedEvent) Key() string {
-	return e.RepoCommitStatusEvent.key() + ":created"
+func (e *RepoCommitStbtusCrebtedEvent) Key() string {
+	return e.RepoCommitStbtusEvent.key() + ":crebted"
 }
 
-func (e *RepoCommitStatusUpdatedEvent) Key() string {
-	return e.RepoCommitStatusEvent.key() + ":updated"
+func (e *RepoCommitStbtusUpdbtedEvent) Key() string {
+	return e.RepoCommitStbtusEvent.key() + ":updbted"
 }
 
-func (e *PullRequestApprovalEvent) key() string {
+func (e *PullRequestApprovblEvent) key() string {
 	return e.PullRequestEvent.key() + ":" +
-		e.Approval.User.UUID + ":" +
-		e.Approval.Date.String()
+		e.Approvbl.User.UUID + ":" +
+		e.Approvbl.Dbte.String()
 }
 
-func (e *PullRequestChangesRequestEvent) key() string {
+func (e *PullRequestChbngesRequestEvent) key() string {
 	return e.PullRequestEvent.key() + ":" +
-		e.ChangesRequest.User.UUID + ":" +
-		e.ChangesRequest.Date.String()
+		e.ChbngesRequest.User.UUID + ":" +
+		e.ChbngesRequest.Dbte.String()
 }
 
 func (e *PullRequestCommentEvent) key() string {
-	return e.PullRequestEvent.key() + ":" + strconv.FormatInt(e.Comment.ID, 10)
+	return e.PullRequestEvent.key() + ":" + strconv.FormbtInt(e.Comment.ID, 10)
 }
 
 func (e *PullRequestEvent) key() string {
-	return e.RepoEvent.key() + ":" + strconv.FormatInt(e.PullRequest.ID, 10)
+	return e.RepoEvent.key() + ":" + strconv.FormbtInt(e.PullRequest.ID, 10)
 }
 
-func (e *RepoCommitStatusEvent) key() string {
+func (e *RepoCommitStbtusEvent) key() string {
 	return e.RepoEvent.key() + ":" +
-		e.CommitStatus.Commit.Hash + ":" +
-		e.CommitStatus.CreatedOn.String()
+		e.CommitStbtus.Commit.Hbsh + ":" +
+		e.CommitStbtus.CrebtedOn.String()
 }
 
 func (e *RepoEvent) key() string {

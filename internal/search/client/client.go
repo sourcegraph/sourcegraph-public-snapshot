@@ -1,211 +1,211 @@
-package client
+pbckbge client
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/grafana/regexp"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbfbnb/regexp"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/jobutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrchcontexts"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/settings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type SearchClient interface {
-	Plan(
+type SebrchClient interfbce {
+	Plbn(
 		ctx context.Context,
 		version string,
-		patternType *string,
-		searchQuery string,
-		searchMode search.Mode,
-		protocol search.Protocol,
-	) (*search.Inputs, error)
+		pbtternType *string,
+		sebrchQuery string,
+		sebrchMode sebrch.Mode,
+		protocol sebrch.Protocol,
+	) (*sebrch.Inputs, error)
 
 	Execute(
 		ctx context.Context,
-		stream streaming.Sender,
-		inputs *search.Inputs,
-	) (_ *search.Alert, err error)
+		strebm strebming.Sender,
+		inputs *sebrch.Inputs,
+	) (_ *sebrch.Alert, err error)
 
 	JobClients() job.RuntimeClients
 }
 
-// New will create a search client with a zoekt and searcher backed by conf.
-func New(logger log.Logger, db database.DB) SearchClient {
-	return &searchClient{
+// New will crebte b sebrch client with b zoekt bnd sebrcher bbcked by conf.
+func New(logger log.Logger, db dbtbbbse.DB) SebrchClient {
+	return &sebrchClient{
 		runtimeClients: job.RuntimeClients{
 			Logger:                      logger,
 			DB:                          db,
-			Zoekt:                       search.Indexed(),
-			SearcherURLs:                search.SearcherURLs(),
-			SearcherGRPCConnectionCache: search.SearcherGRPCConnectionCache(),
+			Zoekt:                       sebrch.Indexed(),
+			SebrcherURLs:                sebrch.SebrcherURLs(),
+			SebrcherGRPCConnectionCbche: sebrch.SebrcherGRPCConnectionCbche(),
 			Gitserver:                   gitserver.NewClient(),
 		},
 		settingsService:       settings.NewService(db),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		sourcegrbphDotComMode: envvbr.SourcegrbphDotComMode(),
 	}
 }
 
-// Mocked will return a search client for tests which uses runtimeClients.
-func Mocked(runtimeClients job.RuntimeClients) SearchClient {
-	return &searchClient{
+// Mocked will return b sebrch client for tests which uses runtimeClients.
+func Mocked(runtimeClients job.RuntimeClients) SebrchClient {
+	return &sebrchClient{
 		runtimeClients:        runtimeClients,
-		settingsService:       settings.Mock(&schema.Settings{}),
-		sourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		settingsService:       settings.Mock(&schemb.Settings{}),
+		sourcegrbphDotComMode: envvbr.SourcegrbphDotComMode(),
 	}
 }
 
-type searchClient struct {
+type sebrchClient struct {
 	runtimeClients        job.RuntimeClients
 	settingsService       settings.Service
-	sourcegraphDotComMode bool
+	sourcegrbphDotComMode bool
 }
 
-func (s *searchClient) Plan(
+func (s *sebrchClient) Plbn(
 	ctx context.Context,
 	version string,
-	patternType *string,
-	searchQuery string,
-	searchMode search.Mode,
-	protocol search.Protocol,
-) (_ *search.Inputs, err error) {
-	tr, ctx := trace.New(ctx, "NewSearchInputs", attribute.String("query", searchQuery))
+	pbtternType *string,
+	sebrchQuery string,
+	sebrchMode sebrch.Mode,
+	protocol sebrch.Protocol,
+) (_ *sebrch.Inputs, err error) {
+	tr, ctx := trbce.New(ctx, "NewSebrchInputs", bttribute.String("query", sebrchQuery))
 	defer tr.EndWithErr(&err)
 
-	searchType, err := detectSearchType(version, patternType)
+	sebrchType, err := detectSebrchType(version, pbtternType)
 	if err != nil {
 		return nil, err
 	}
-	searchType = overrideSearchType(searchQuery, searchType)
+	sebrchType = overrideSebrchType(sebrchQuery, sebrchType)
 
-	if searchType == query.SearchTypeStructural && !conf.StructuralSearchEnabled() {
-		return nil, errors.New("Structural search is disabled in the site configuration.")
+	if sebrchType == query.SebrchTypeStructurbl && !conf.StructurblSebrchEnbbled() {
+		return nil, errors.New("Structurbl sebrch is disbbled in the site configurbtion.")
 	}
 
 	settings, err := s.settingsService.UserFromContext(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to resolve user settings")
+		return nil, errors.Wrbp(err, "fbiled to resolve user settings")
 	}
 
-	// Beta: create a step to replace each context in the query with its repository query if any.
-	searchContextsQueryEnabled := settings.ExperimentalFeatures != nil && getBoolPtr(settings.ExperimentalFeatures.SearchContextsQuery, true)
-	substituteContextsStep := query.SubstituteSearchContexts(func(context string) (string, error) {
-		sc, err := searchcontexts.ResolveSearchContextSpec(ctx, s.runtimeClients.DB, context)
+	// Betb: crebte b step to replbce ebch context in the query with its repository query if bny.
+	sebrchContextsQueryEnbbled := settings.ExperimentblFebtures != nil && getBoolPtr(settings.ExperimentblFebtures.SebrchContextsQuery, true)
+	substituteContextsStep := query.SubstituteSebrchContexts(func(context string) (string, error) {
+		sc, err := sebrchcontexts.ResolveSebrchContextSpec(ctx, s.runtimeClients.DB, context)
 		if err != nil {
 			return "", err
 		}
-		tr.AddEvent("substituted context filter with query", attribute.String("query", sc.Query), attribute.String("context", context))
+		tr.AddEvent("substituted context filter with query", bttribute.String("query", sc.Query), bttribute.String("context", context))
 		return sc.Query, nil
 	})
 
-	var plan query.Plan
-	plan, err = query.Pipeline(
-		query.Init(searchQuery, searchType),
-		query.With(searchContextsQueryEnabled, substituteContextsStep),
+	vbr plbn query.Plbn
+	plbn, err = query.Pipeline(
+		query.Init(sebrchQuery, sebrchType),
+		query.With(sebrchContextsQueryEnbbled, substituteContextsStep),
 	)
 	if err != nil {
-		return nil, &QueryError{Query: searchQuery, Err: err}
+		return nil, &QueryError{Query: sebrchQuery, Err: err}
 	}
-	tr.AddEvent("parsing done")
+	tr.AddEvent("pbrsing done")
 
-	inputs := &search.Inputs{
-		Plan:                   plan,
-		Query:                  plan.ToQ(),
-		OriginalQuery:          searchQuery,
-		SearchMode:             searchMode,
+	inputs := &sebrch.Inputs{
+		Plbn:                   plbn,
+		Query:                  plbn.ToQ(),
+		OriginblQuery:          sebrchQuery,
+		SebrchMode:             sebrchMode,
 		UserSettings:           settings,
-		OnSourcegraphDotCom:    s.sourcegraphDotComMode,
-		Features:               ToFeatures(featureflag.FromContext(ctx), s.runtimeClients.Logger),
-		PatternType:            searchType,
+		OnSourcegrbphDotCom:    s.sourcegrbphDotComMode,
+		Febtures:               ToFebtures(febtureflbg.FromContext(ctx), s.runtimeClients.Logger),
+		PbtternType:            sebrchType,
 		Protocol:               protocol,
-		SanitizeSearchPatterns: sanitizeSearchPatterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimental: check site config to see if search sanitization is enabled
+		SbnitizeSebrchPbtterns: sbnitizeSebrchPbtterns(ctx, s.runtimeClients.DB, s.runtimeClients.Logger), // Experimentbl: check site config to see if sebrch sbnitizbtion is enbbled
 	}
 
-	tr.AddEvent("parsed query", attribute.Stringer("query", inputs.Query))
+	tr.AddEvent("pbrsed query", bttribute.Stringer("query", inputs.Query))
 
 	return inputs, nil
 }
 
-func (s *searchClient) Execute(
+func (s *sebrchClient) Execute(
 	ctx context.Context,
-	stream streaming.Sender,
-	inputs *search.Inputs,
-) (_ *search.Alert, err error) {
-	tr, ctx := trace.New(ctx, "Execute")
+	strebm strebming.Sender,
+	inputs *sebrch.Inputs,
+) (_ *sebrch.Alert, err error) {
+	tr, ctx := trbce.New(ctx, "Execute")
 	defer tr.EndWithErr(&err)
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	plbnJob, err := jobutil.NewPlbnJob(inputs, inputs.Plbn)
 	if err != nil {
 		return nil, err
 	}
 
-	return planJob.Run(ctx, s.JobClients(), stream)
+	return plbnJob.Run(ctx, s.JobClients(), strebm)
 }
 
-func (s *searchClient) JobClients() job.RuntimeClients {
+func (s *sebrchClient) JobClients() job.RuntimeClients {
 	return s.runtimeClients
 }
 
-func sanitizeSearchPatterns(ctx context.Context, db database.DB, log log.Logger) []*regexp.Regexp {
-	var sanitizePatterns []*regexp.Regexp
+func sbnitizeSebrchPbtterns(ctx context.Context, db dbtbbbse.DB, log log.Logger) []*regexp.Regexp {
+	vbr sbnitizePbtterns []*regexp.Regexp
 	c := conf.Get()
-	if c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SearchSanitization != nil {
-		actr := actor.FromContext(ctx)
-		if actr.IsInternal() {
+	if c.ExperimentblFebtures != nil && c.ExperimentblFebtures.SebrchSbnitizbtion != nil {
+		bctr := bctor.FromContext(ctx)
+		if bctr.IsInternbl() {
 			return []*regexp.Regexp{}
 		}
 
-		for _, pat := range c.ExperimentalFeatures.SearchSanitization.SanitizePatterns {
-			if re, err := regexp.Compile(pat); err != nil {
-				log.Warn("invalid regex pattern provided, ignoring")
+		for _, pbt := rbnge c.ExperimentblFebtures.SebrchSbnitizbtion.SbnitizePbtterns {
+			if re, err := regexp.Compile(pbt); err != nil {
+				log.Wbrn("invblid regex pbttern provided, ignoring")
 			} else {
-				sanitizePatterns = append(sanitizePatterns, re)
+				sbnitizePbtterns = bppend(sbnitizePbtterns, re)
 			}
 		}
 
-		user, err := actr.User(ctx, db.Users())
+		user, err := bctr.User(ctx, db.Users())
 		if err != nil {
-			log.Warn("search being run as invalid user")
-			return sanitizePatterns
+			log.Wbrn("sebrch being run bs invblid user")
+			return sbnitizePbtterns
 		}
 
 		if user.SiteAdmin {
 			return []*regexp.Regexp{}
 		}
 
-		if c.ExperimentalFeatures.SearchSanitization.OrgName != "" {
+		if c.ExperimentblFebtures.SebrchSbnitizbtion.OrgNbme != "" {
 			orgStore := db.Orgs()
 			userOrgs, err := orgStore.GetByUserID(ctx, user.ID)
 			if err != nil {
-				return sanitizePatterns
+				return sbnitizePbtterns
 			}
 
-			for _, org := range userOrgs {
-				if org.Name == c.ExperimentalFeatures.SearchSanitization.OrgName {
+			for _, org := rbnge userOrgs {
+				if org.Nbme == c.ExperimentblFebtures.SebrchSbnitizbtion.OrgNbme {
 					return []*regexp.Regexp{}
 				}
 			}
 		}
 	}
-	return sanitizePatterns
+	return sbnitizePbtterns
 }
 
 type QueryError struct {
@@ -214,96 +214,96 @@ type QueryError struct {
 }
 
 func (e *QueryError) Error() string {
-	return fmt.Sprintf("invalid query %q: %s", e.Query, e.Err)
+	return fmt.Sprintf("invblid query %q: %s", e.Query, e.Err)
 }
 
-func SearchTypeFromString(patternType string) (query.SearchType, error) {
-	switch patternType {
-	case "standard":
-		return query.SearchTypeStandard, nil
-	case "literal":
-		return query.SearchTypeLiteral, nil
-	case "regexp":
-		return query.SearchTypeRegex, nil
-	case "structural":
-		return query.SearchTypeStructural, nil
-	case "lucky":
-		return query.SearchTypeLucky, nil
-	case "keyword":
-		return query.SearchTypeKeyword, nil
-	default:
-		return -1, errors.Errorf("unrecognized patternType %q", patternType)
+func SebrchTypeFromString(pbtternType string) (query.SebrchType, error) {
+	switch pbtternType {
+	cbse "stbndbrd":
+		return query.SebrchTypeStbndbrd, nil
+	cbse "literbl":
+		return query.SebrchTypeLiterbl, nil
+	cbse "regexp":
+		return query.SebrchTypeRegex, nil
+	cbse "structurbl":
+		return query.SebrchTypeStructurbl, nil
+	cbse "lucky":
+		return query.SebrchTypeLucky, nil
+	cbse "keyword":
+		return query.SebrchTypeKeyword, nil
+	defbult:
+		return -1, errors.Errorf("unrecognized pbtternType %q", pbtternType)
 	}
 }
 
-// detectSearchType returns the search type to perform. The search type derives
-// from three sources: the version and patternType parameters passed to the
-// search endpoint and the `patternType:` filter in the input query string which
-// overrides the searchType, if present.
-func detectSearchType(version string, patternType *string) (query.SearchType, error) {
-	var searchType query.SearchType
-	if patternType != nil {
-		return SearchTypeFromString(*patternType)
+// detectSebrchType returns the sebrch type to perform. The sebrch type derives
+// from three sources: the version bnd pbtternType pbrbmeters pbssed to the
+// sebrch endpoint bnd the `pbtternType:` filter in the input query string which
+// overrides the sebrchType, if present.
+func detectSebrchType(version string, pbtternType *string) (query.SebrchType, error) {
+	vbr sebrchType query.SebrchType
+	if pbtternType != nil {
+		return SebrchTypeFromString(*pbtternType)
 	} else {
 		switch version {
-		case "V1":
-			searchType = query.SearchTypeRegex
-		case "V2":
-			searchType = query.SearchTypeLiteral
-		case "V3":
-			searchType = query.SearchTypeStandard
-		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
+		cbse "V1":
+			sebrchType = query.SebrchTypeRegex
+		cbse "V2":
+			sebrchType = query.SebrchTypeLiterbl
+		cbse "V3":
+			sebrchType = query.SebrchTypeStbndbrd
+		defbult:
+			return -1, errors.Errorf("unrecognized version: wbnt \"V1\", \"V2\", or \"V3\", got %q", version)
 		}
 	}
-	return searchType, nil
+	return sebrchType, nil
 }
 
-func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteral)
-	q = query.LowercaseFieldNames(q)
+func overrideSebrchType(input string, sebrchType query.SebrchType) query.SebrchType {
+	q, err := query.Pbrse(input, query.SebrchTypeLiterbl)
+	q = query.LowercbseFieldNbmes(q)
 	if err != nil {
-		// If parsing fails, return the default search type. Any actual
-		// parse errors will be raised by subsequent parser calls.
-		return searchType
+		// If pbrsing fbils, return the defbult sebrch type. Any bctubl
+		// pbrse errors will be rbised by subsequent pbrser cblls.
+		return sebrchType
 	}
-	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
-		switch value {
-		case "standard":
-			searchType = query.SearchTypeStandard
-		case "regex", "regexp":
-			searchType = query.SearchTypeRegex
-		case "literal":
-			searchType = query.SearchTypeLiteral
-		case "structural":
-			searchType = query.SearchTypeStructural
-		case "lucky":
-			searchType = query.SearchTypeLucky
-		case "keyword":
-			searchType = query.SearchTypeKeyword
+	query.VisitField(q, "pbtterntype", func(vblue string, _ bool, _ query.Annotbtion) {
+		switch vblue {
+		cbse "stbndbrd":
+			sebrchType = query.SebrchTypeStbndbrd
+		cbse "regex", "regexp":
+			sebrchType = query.SebrchTypeRegex
+		cbse "literbl":
+			sebrchType = query.SebrchTypeLiterbl
+		cbse "structurbl":
+			sebrchType = query.SebrchTypeStructurbl
+		cbse "lucky":
+			sebrchType = query.SebrchTypeLucky
+		cbse "keyword":
+			sebrchType = query.SebrchTypeKeyword
 		}
 	})
-	return searchType
+	return sebrchType
 }
 
-func ToFeatures(flagSet *featureflag.FlagSet, logger log.Logger) *search.Features {
-	if flagSet == nil {
-		flagSet = &featureflag.FlagSet{}
-		metricFeatureFlagUnavailable.Inc()
-		logger.Warn("search feature flags are not available")
+func ToFebtures(flbgSet *febtureflbg.FlbgSet, logger log.Logger) *sebrch.Febtures {
+	if flbgSet == nil {
+		flbgSet = &febtureflbg.FlbgSet{}
+		metricFebtureFlbgUnbvbilbble.Inc()
+		logger.Wbrn("sebrch febture flbgs bre not bvbilbble")
 	}
 
-	return &search.Features{
-		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
-		HybridSearch:            flagSet.GetBoolOr("search-hybrid", true), // can remove flag in 4.5
-		Ranking:                 flagSet.GetBoolOr("search-ranking", true),
-		Debug:                   flagSet.GetBoolOr("search-debug", false),
+	return &sebrch.Febtures{
+		ContentBbsedLbngFilters: flbgSet.GetBoolOr("sebrch-content-bbsed-lbng-detection", fblse),
+		HybridSebrch:            flbgSet.GetBoolOr("sebrch-hybrid", true), // cbn remove flbg in 4.5
+		Rbnking:                 flbgSet.GetBoolOr("sebrch-rbnking", true),
+		Debug:                   flbgSet.GetBoolOr("sebrch-debug", fblse),
 	}
 }
 
-var metricFeatureFlagUnavailable = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_search_featureflag_unavailable",
-	Help: "temporary counter to check if we have feature flag available in practice.",
+vbr metricFebtureFlbgUnbvbilbble = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbme: "src_sebrch_febtureflbg_unbvbilbble",
+	Help: "temporbry counter to check if we hbve febture flbg bvbilbble in prbctice.",
 })
 
 func getBoolPtr(b *bool, def bool) bool {

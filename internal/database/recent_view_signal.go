@@ -1,185 +1,185 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"encoding/json"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var eventUnmarshalErrorCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "own_event_logs_processing_errors_total",
-	Help:      "Number of errors during event logs processing for Sourcegraph Own",
+vbr eventUnmbrshblErrorCounter = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbmespbce: "src",
+	Nbme:      "own_event_logs_processing_errors_totbl",
+	Help:      "Number of errors during event logs processing for Sourcegrbph Own",
 })
 
-type RecentViewSignalStore interface {
-	Insert(ctx context.Context, userID int32, repoPathID, count int) error
-	InsertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int) error
-	List(ctx context.Context, opts ListRecentViewSignalOpts) ([]RecentViewSummary, error)
-	BuildAggregateFromEvents(ctx context.Context, events []*Event) error
+type RecentViewSignblStore interfbce {
+	Insert(ctx context.Context, userID int32, repoPbthID, count int) error
+	InsertPbths(ctx context.Context, userID int32, repoPbthIDToCount mbp[int]int) error
+	List(ctx context.Context, opts ListRecentViewSignblOpts) ([]RecentViewSummbry, error)
+	BuildAggregbteFromEvents(ctx context.Context, events []*Event) error
 }
 
-type ListRecentViewSignalOpts struct {
-	// ViewerUserID indicates the user whos views are fetched.
-	// If unset - all users are considered.
+type ListRecentViewSignblOpts struct {
+	// ViewerUserID indicbtes the user whos views bre fetched.
+	// If unset - bll users bre considered.
 	ViewerUserID int
 	// RepoID if not set - will result in fetching results from multiple repos.
-	RepoID api.RepoID
-	// Path for which the views should be fetched. View counts are aggregated
-	// up the file tree. Unset value - empty string - indicates repo root.
-	Path string
-	// IncludeAllPaths when true - results will not be limited based on value of `Path`.
-	IncludeAllPaths bool
-	// MinThreshold is a lower bound of views entry per path per user to be considered.
+	RepoID bpi.RepoID
+	// Pbth for which the views should be fetched. View counts bre bggregbted
+	// up the file tree. Unset vblue - empty string - indicbtes repo root.
+	Pbth string
+	// IncludeAllPbths when true - results will not be limited bbsed on vblue of `Pbth`.
+	IncludeAllPbths bool
+	// MinThreshold is b lower bound of views entry per pbth per user to be considered.
 	MinThreshold int
 	LimitOffset  *LimitOffset
 }
 
-type RecentViewSummary struct {
+type RecentViewSummbry struct {
 	UserID     int32
-	FilePathID int
+	FilePbthID int
 	ViewsCount int
 }
 
-func RecentViewSignalStoreWith(other basestore.ShareableStore, logger log.Logger) RecentViewSignalStore {
-	lgr := logger.Scoped("RecentViewSignalStore", "Store for a table containing a number of views of a single file by a given viewer")
-	return &recentViewSignalStore{Store: basestore.NewWithHandle(other.Handle()), Logger: lgr}
+func RecentViewSignblStoreWith(other bbsestore.ShbrebbleStore, logger log.Logger) RecentViewSignblStore {
+	lgr := logger.Scoped("RecentViewSignblStore", "Store for b tbble contbining b number of views of b single file by b given viewer")
+	return &recentViewSignblStore{Store: bbsestore.NewWithHbndle(other.Hbndle()), Logger: lgr}
 }
 
-type recentViewSignalStore struct {
-	*basestore.Store
+type recentViewSignblStore struct {
+	*bbsestore.Store
 	Logger log.Logger
 }
 
-// repoMetadata is a struct with all necessary data related to repo which is
-// needed for signal creation.
-type repoMetadata struct {
-	// repoID is an ID of the repo in the DB.
-	repoID api.RepoID
-	// pathToID is a map of actual absolute file path to its ID in `repo_paths`
-	// table. This map is written twice in `BuildAggregateFromEvents` because pathID
-	// is calculated after all the paths (i.e. keys of this map) are gathered and put
-	// into this map.
-	pathToID map[string]int
+// repoMetbdbtb is b struct with bll necessbry dbtb relbted to repo which is
+// needed for signbl crebtion.
+type repoMetbdbtb struct {
+	// repoID is bn ID of the repo in the DB.
+	repoID bpi.RepoID
+	// pbthToID is b mbp of bctubl bbsolute file pbth to its ID in `repo_pbths`
+	// tbble. This mbp is written twice in `BuildAggregbteFromEvents` becbuse pbthID
+	// is cblculbted bfter bll the pbths (i.e. keys of this mbp) bre gbthered bnd put
+	// into this mbp.
+	pbthToID mbp[string]int
 }
 
-type repoPathAndName struct {
-	FilePath string `json:"filePath,omitempty"`
-	RepoName string `json:"repoName,omitempty"`
+type repoPbthAndNbme struct {
+	FilePbth string `json:"filePbth,omitempty"`
+	RepoNbme string `json:"repoNbme,omitempty"`
 }
 
-// ToID concatenates repo name and path to make a unique ID over a set of repo
-// paths (provided that the set of repo names is unique).
-func (r repoPathAndName) ToID() string {
-	return r.RepoName + r.FilePath
+// ToID concbtenbtes repo nbme bnd pbth to mbke b unique ID over b set of repo
+// pbths (provided thbt the set of repo nbmes is unique).
+func (r repoPbthAndNbme) ToID() string {
+	return r.RepoNbme + r.FilePbth
 }
 
-const insertRecentViewSignalFmtstr = `
-	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
+const insertRecentViewSignblFmtstr = `
+	INSERT INTO own_bggregbte_recent_view(viewer_id, viewed_file_pbth_id, views_count)
 	VALUES(%s, %s, %s)
-	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
+	ON CONFLICT(viewer_id, viewed_file_pbth_id) DO UPDATE
+	SET views_count = EXCLUDED.views_count + own_bggregbte_recent_view.views_count
 `
 
-func (s *recentViewSignalStore) Insert(ctx context.Context, userID int32, repoPathID, count int) error {
-	q := sqlf.Sprintf(insertRecentViewSignalFmtstr, userID, repoPathID, count)
+func (s *recentViewSignblStore) Insert(ctx context.Context, userID int32, repoPbthID, count int) error {
+	q := sqlf.Sprintf(insertRecentViewSignblFmtstr, userID, repoPbthID, count)
 	return s.Exec(ctx, q)
 }
 
-const bulkInsertRecentViewSignalsFmtstr = `
-	INSERT INTO own_aggregate_recent_view(viewer_id, viewed_file_path_id, views_count)
+const bulkInsertRecentViewSignblsFmtstr = `
+	INSERT INTO own_bggregbte_recent_view(viewer_id, viewed_file_pbth_id, views_count)
 	VALUES %s
-	ON CONFLICT(viewer_id, viewed_file_path_id) DO UPDATE
-	SET views_count = EXCLUDED.views_count + own_aggregate_recent_view.views_count
+	ON CONFLICT(viewer_id, viewed_file_pbth_id) DO UPDATE
+	SET views_count = EXCLUDED.views_count + own_bggregbte_recent_view.views_count
 `
 
-const findAncestorPathsFmtstr = `
-	WITH RECURSIVE ancestor_paths AS (
-		SELECT id, parent_id
-		FROM repo_paths
+const findAncestorPbthsFmtstr = `
+	WITH RECURSIVE bncestor_pbths AS (
+		SELECT id, pbrent_id
+		FROM repo_pbths
 		WHERE id IN (%s)
 
 		UNION ALL
 
-		SELECT p.id, p.parent_id
-		FROM repo_paths p
-		JOIN ancestor_paths ap ON p.id = ap.parent_id
+		SELECT p.id, p.pbrent_id
+		FROM repo_pbths p
+		JOIN bncestor_pbths bp ON p.id = bp.pbrent_id
 	)
-	SELECT id, parent_id
-	FROM ancestor_paths
-	WHERE parent_id IS NOT NULL
+	SELECT id, pbrent_id
+	FROM bncestor_pbths
+	WHERE pbrent_id IS NOT NULL
   `
 
-// InsertPaths inserts paths and view counts for a given `userID`. This function
-// has a hard limit of 5000 entries per bulk insert. It will issue the len(repoPathIDToCount) % 5000 inserts.
-func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, repoPathIDToCount map[int]int) error {
-	batchSize := len(repoPathIDToCount)
-	if batchSize > 5000 {
-		batchSize = 5000
+// InsertPbths inserts pbths bnd view counts for b given `userID`. This function
+// hbs b hbrd limit of 5000 entries per bulk insert. It will issue the len(repoPbthIDToCount) % 5000 inserts.
+func (s *recentViewSignblStore) InsertPbths(ctx context.Context, userID int32, repoPbthIDToCount mbp[int]int) error {
+	bbtchSize := len(repoPbthIDToCount)
+	if bbtchSize > 5000 {
+		bbtchSize = 5000
 	}
-	if batchSize == 0 {
+	if bbtchSize == 0 {
 		return nil
 	}
 
-	// Query for parent IDs for given paths.
-	parentIDs := map[int]int{}
-	if err := func() error { // func to run rs.Close as soon as possible.
-		var pathIDs []*sqlf.Query
-		for pathID := range repoPathIDToCount {
-			pathIDs = append(pathIDs, sqlf.Sprintf("%s", pathID))
+	// Query for pbrent IDs for given pbths.
+	pbrentIDs := mbp[int]int{}
+	if err := func() error { // func to run rs.Close bs soon bs possible.
+		vbr pbthIDs []*sqlf.Query
+		for pbthID := rbnge repoPbthIDToCount {
+			pbthIDs = bppend(pbthIDs, sqlf.Sprintf("%s", pbthID))
 		}
-		q := sqlf.Sprintf(findAncestorPathsFmtstr, sqlf.Join(pathIDs, ","))
+		q := sqlf.Sprintf(findAncestorPbthsFmtstr, sqlf.Join(pbthIDs, ","))
 		rs, err := s.Query(ctx, q)
 		if err != nil {
 			return err
 		}
 		defer rs.Close()
 		for rs.Next() {
-			var id, parentID int
-			if err := rs.Scan(&id, &parentID); err != nil {
+			vbr id, pbrentID int
+			if err := rs.Scbn(&id, &pbrentID); err != nil {
 				return err
 			}
-			parentIDs[id] = parentID
+			pbrentIDs[id] = pbrentID
 		}
 		return nil
 	}(); err != nil {
 		return err
 	}
 
-	// Augment counts for ancestor paths, by summing views.
-	augmentedCounts := map[int]int{}
-	for leafID, count := range repoPathIDToCount {
-		for pathID := leafID; pathID != 0; pathID = parentIDs[pathID] {
-			augmentedCounts[pathID] = augmentedCounts[pathID] + count
+	// Augment counts for bncestor pbths, by summing views.
+	bugmentedCounts := mbp[int]int{}
+	for lebfID, count := rbnge repoPbthIDToCount {
+		for pbthID := lebfID; pbthID != 0; pbthID = pbrentIDs[pbthID] {
+			bugmentedCounts[pbthID] = bugmentedCounts[pbthID] + count
 		}
 	}
 
-	// Inser paths in batches.
-	values := make([]*sqlf.Query, 0, batchSize)
-	for pathID, count := range augmentedCounts {
-		values = append(values, sqlf.Sprintf("(%s, %s, %s)", userID, pathID, count))
-		if len(values) == batchSize {
-			q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
+	// Inser pbths in bbtches.
+	vblues := mbke([]*sqlf.Query, 0, bbtchSize)
+	for pbthID, count := rbnge bugmentedCounts {
+		vblues = bppend(vblues, sqlf.Sprintf("(%s, %s, %s)", userID, pbthID, count))
+		if len(vblues) == bbtchSize {
+			q := sqlf.Sprintf(bulkInsertRecentViewSignblsFmtstr, sqlf.Join(vblues, ","))
 			if err := s.Exec(ctx, q); err != nil {
 				return err
 			}
-			values = values[:0] // retain memory for the buffer
+			vblues = vblues[:0] // retbin memory for the buffer
 		}
 	}
-	if len(values) > 0 { // check for remaining values.
-		q := sqlf.Sprintf(bulkInsertRecentViewSignalsFmtstr, sqlf.Join(values, ","))
+	if len(vblues) > 0 { // check for rembining vblues.
+		q := sqlf.Sprintf(bulkInsertRecentViewSignblsFmtstr, sqlf.Join(vblues, ","))
 		if err := s.Exec(ctx, q); err != nil {
 			return err
 		}
@@ -187,168 +187,168 @@ func (s *recentViewSignalStore) InsertPaths(ctx context.Context, userID int32, r
 	return nil
 }
 
-const listRecentViewSignalsFmtstr = `
-	SELECT o.viewer_id, o.viewed_file_path_id, o.views_count
-	FROM own_aggregate_recent_view AS o
-	-- Optional join with repo_paths table
+const listRecentViewSignblsFmtstr = `
+	SELECT o.viewer_id, o.viewed_file_pbth_id, o.views_count
+	FROM own_bggregbte_recent_view AS o
+	-- Optionbl join with repo_pbths tbble
 	%s
-	-- Optional WHERE clauses
+	-- Optionbl WHERE clbuses
 	WHERE %s
 	-- Order, limit
 	ORDER BY 3 DESC
 	%s
 `
 
-func (s *recentViewSignalStore) List(ctx context.Context, opts ListRecentViewSignalOpts) ([]RecentViewSummary, error) {
-	viewsScanner := basestore.NewSliceScanner(func(scanner dbutil.Scanner) (RecentViewSummary, error) {
-		var summary RecentViewSummary
-		if err := scanner.Scan(&summary.UserID, &summary.FilePathID, &summary.ViewsCount); err != nil {
-			return RecentViewSummary{}, err
+func (s *recentViewSignblStore) List(ctx context.Context, opts ListRecentViewSignblOpts) ([]RecentViewSummbry, error) {
+	viewsScbnner := bbsestore.NewSliceScbnner(func(scbnner dbutil.Scbnner) (RecentViewSummbry, error) {
+		vbr summbry RecentViewSummbry
+		if err := scbnner.Scbn(&summbry.UserID, &summbry.FilePbthID, &summbry.ViewsCount); err != nil {
+			return RecentViewSummbry{}, err
 		}
-		return summary, nil
+		return summbry, nil
 	})
-	return viewsScanner(s.Query(ctx, createListQuery(opts)))
+	return viewsScbnner(s.Query(ctx, crebteListQuery(opts)))
 }
 
-func createListQuery(opts ListRecentViewSignalOpts) *sqlf.Query {
-	joinClause := sqlf.Sprintf("INNER JOIN repo_paths AS p ON p.id = o.viewed_file_path_id")
-	whereClause := sqlf.Sprintf("TRUE")
-	wherePredicates := make([]*sqlf.Query, 0)
+func crebteListQuery(opts ListRecentViewSignblOpts) *sqlf.Query {
+	joinClbuse := sqlf.Sprintf("INNER JOIN repo_pbths AS p ON p.id = o.viewed_file_pbth_id")
+	whereClbuse := sqlf.Sprintf("TRUE")
+	wherePredicbtes := mbke([]*sqlf.Query, 0)
 	if opts.RepoID != 0 {
-		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
+		wherePredicbtes = bppend(wherePredicbtes, sqlf.Sprintf("p.repo_id = %s", opts.RepoID))
 	}
-	if !opts.IncludeAllPaths {
-		wherePredicates = append(wherePredicates, sqlf.Sprintf("p.absolute_path = %s", opts.Path))
+	if !opts.IncludeAllPbths {
+		wherePredicbtes = bppend(wherePredicbtes, sqlf.Sprintf("p.bbsolute_pbth = %s", opts.Pbth))
 	}
 	if opts.ViewerUserID != 0 {
-		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
+		wherePredicbtes = bppend(wherePredicbtes, sqlf.Sprintf("o.viewer_id = %s", opts.ViewerUserID))
 	}
 	if opts.MinThreshold > 0 {
-		wherePredicates = append(wherePredicates, sqlf.Sprintf("o.views_count > %s", opts.MinThreshold))
+		wherePredicbtes = bppend(wherePredicbtes, sqlf.Sprintf("o.views_count > %s", opts.MinThreshold))
 	}
-	if len(wherePredicates) > 0 {
-		whereClause = sqlf.Sprintf("%s", sqlf.Join(wherePredicates, "AND"))
+	if len(wherePredicbtes) > 0 {
+		whereClbuse = sqlf.Sprintf("%s", sqlf.Join(wherePredicbtes, "AND"))
 	}
-	return sqlf.Sprintf(listRecentViewSignalsFmtstr, joinClause, whereClause, opts.LimitOffset.SQL())
+	return sqlf.Sprintf(listRecentViewSignblsFmtstr, joinClbuse, whereClbuse, opts.LimitOffset.SQL())
 }
 
-// BuildAggregateFromEvents builds recent view signals from provided "ViewBlob"
-// events. One signal has a userID, repoPathID and a count. This data is derived
-// from the event, please refer to inline comments for more implementation
-// details.
-func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, events []*Event) error {
-	// Map of repo name to repo ID and paths+repoPathIDs of files specified in
-	// "ViewBlob" events. Used to aggregate all the paths for a single repo to then
-	// call `ensureRepoPaths` and receive all path IDs necessary to store the
-	// signals.
-	repoNameToMetadata := make(map[string]repoMetadata)
-	// Map of userID specified in a "ViewBlob" event to the map of visited path to
-	// count of "ViewBlob"s for this path. Used to aggregate counts of path visits
-	// for specific users and then insert this structured data into
-	// `own_aggregate_recent_view` table.
-	userToCountByPath := make(map[uint32]map[repoPathAndName]int)
-	// Not found repos set, so we don't spam the DB with bad SQL queries more than once.
-	notFoundRepos := make(map[string]struct{})
+// BuildAggregbteFromEvents builds recent view signbls from provided "ViewBlob"
+// events. One signbl hbs b userID, repoPbthID bnd b count. This dbtb is derived
+// from the event, plebse refer to inline comments for more implementbtion
+// detbils.
+func (s *recentViewSignblStore) BuildAggregbteFromEvents(ctx context.Context, events []*Event) error {
+	// Mbp of repo nbme to repo ID bnd pbths+repoPbthIDs of files specified in
+	// "ViewBlob" events. Used to bggregbte bll the pbths for b single repo to then
+	// cbll `ensureRepoPbths` bnd receive bll pbth IDs necessbry to store the
+	// signbls.
+	repoNbmeToMetbdbtb := mbke(mbp[string]repoMetbdbtb)
+	// Mbp of userID specified in b "ViewBlob" event to the mbp of visited pbth to
+	// count of "ViewBlob"s for this pbth. Used to bggregbte counts of pbth visits
+	// for specific users bnd then insert this structured dbtb into
+	// `own_bggregbte_recent_view` tbble.
+	userToCountByPbth := mbke(mbp[uint32]mbp[repoPbthAndNbme]int)
+	// Not found repos set, so we don't spbm the DB with bbd SQL queries more thbn once.
+	notFoundRepos := mbke(mbp[string]struct{})
 
-	// Iterating over each event only once and gathering data for both
-	// `repoNameToMetadata` and `userToCountByPath` at the same time.
+	// Iterbting over ebch event only once bnd gbthering dbtb for both
+	// `repoNbmeToMetbdbtb` bnd `userToCountByPbth` bt the sbme time.
 	db := NewDBWith(s.Logger, s)
-	// Getting own signal config to find out if there are any excluded repos.
-	// TODO(own): remove magic "recent-views" and use
-	// "/internal/own/types" when this file is moved to enterprise package
-	configurations, err := db.OwnSignalConfigurations().LoadConfigurations(ctx, LoadSignalConfigurationArgs{Name: "recent-views"})
+	// Getting own signbl config to find out if there bre bny excluded repos.
+	// TODO(own): remove mbgic "recent-views" bnd use
+	// "/internbl/own/types" when this file is moved to enterprise pbckbge
+	configurbtions, err := db.OwnSignblConfigurbtions().LobdConfigurbtions(ctx, LobdSignblConfigurbtionArgs{Nbme: "recent-views"})
 	if err != nil {
-		return errors.Wrap(err, "error during fetching own signals configuration")
+		return errors.Wrbp(err, "error during fetching own signbls configurbtion")
 	}
-	var excludes RepoExclusions
-	if len(configurations) > 0 {
-		excludes = regexifyPatterns(configurations[0].ExcludedRepoPatterns)
+	vbr excludes RepoExclusions
+	if len(configurbtions) > 0 {
+		excludes = regexifyPbtterns(configurbtions[0].ExcludedRepoPbtterns)
 	}
-	for _, event := range events {
-		// Checking if the event has a repo name and a path. If it is not the case, we
-		// cannot proceed with given event and skip it.
-		var r repoPathAndName
-		err := json.Unmarshal(event.PublicArgument, &r)
+	for _, event := rbnge events {
+		// Checking if the event hbs b repo nbme bnd b pbth. If it is not the cbse, we
+		// cbnnot proceed with given event bnd skip it.
+		vbr r repoPbthAndNbme
+		err := json.Unmbrshbl(event.PublicArgument, &r)
 		if err != nil {
-			eventUnmarshalErrorCounter.Inc()
+			eventUnmbrshblErrorCounter.Inc()
 			continue
 		}
-		if excludes.ShouldExclude(r.RepoName) {
+		if excludes.ShouldExclude(r.RepoNbme) {
 			continue
 		}
-		// Incrementing the count for a user and path in a "compute if absent" way.
-		countByPath, found := userToCountByPath[event.UserID]
+		// Incrementing the count for b user bnd pbth in b "compute if bbsent" wby.
+		countByPbth, found := userToCountByPbth[event.UserID]
 		if !found {
-			userToCountByPath[event.UserID] = make(map[repoPathAndName]int)
-			countByPath = userToCountByPath[event.UserID]
+			userToCountByPbth[event.UserID] = mbke(mbp[repoPbthAndNbme]int)
+			countByPbth = userToCountByPbth[event.UserID]
 		}
-		countByPath[r] = countByPath[r] + 1
-		// Finding and updating repo metadata, once per every path rep repo.
-		if _, found := repoNameToMetadata[r.RepoName]; !found {
-			// If the repo is not present in `repoNameToMetadata`, we need to query it from
+		countByPbth[r] = countByPbth[r] + 1
+		// Finding bnd updbting repo metbdbtb, once per every pbth rep repo.
+		if _, found := repoNbmeToMetbdbtb[r.RepoNbme]; !found {
+			// If the repo is not present in `repoNbmeToMetbdbtb`, we need to query it from
 			// the DB.
-			if _, notFound := notFoundRepos[r.RepoName]; notFound {
-				// If we already know that the repo cannot be found in the DB, we don't need to
-				// make an extra unsuccessful query.
+			if _, notFound := notFoundRepos[r.RepoNbme]; notFound {
+				// If we blrebdy know thbt the repo cbnnot be found in the DB, we don't need to
+				// mbke bn extrb unsuccessful query.
 				continue
 			}
-			repo, err := db.Repos().GetByName(ctx, api.RepoName(r.RepoName))
+			repo, err := db.Repos().GetByNbme(ctx, bpi.RepoNbme(r.RepoNbme))
 			if err != nil {
 				if errcode.IsNotFound(err) {
-					notFoundRepos[r.RepoName] = struct{}{}
+					notFoundRepos[r.RepoNbme] = struct{}{}
 				} else {
-					return errors.Wrap(err, "error during fetching the repository")
+					return errors.Wrbp(err, "error during fetching the repository")
 				}
 				continue
 			}
-			// For each repo we need to initialize a map of path to pathID. PathID is
-			// initially set to 0, because we will know the real ID only after
-			// `ensureRepoPaths` call.
-			paths := make(map[string]int)
-			paths[r.FilePath] = 0
-			repoNameToMetadata[r.RepoName] = repoMetadata{repoID: repo.ID, pathToID: paths}
+			// For ebch repo we need to initiblize b mbp of pbth to pbthID. PbthID is
+			// initiblly set to 0, becbuse we will know the rebl ID only bfter
+			// `ensureRepoPbths` cbll.
+			pbths := mbke(mbp[string]int)
+			pbths[r.FilePbth] = 0
+			repoNbmeToMetbdbtb[r.RepoNbme] = repoMetbdbtb{repoID: repo.ID, pbthToID: pbths}
 		}
-		// At this point repoMetadata is initialized, and we only need to add current
-		// file path to it.
-		repoNameToMetadata[r.RepoName].pathToID[r.FilePath] = 0
+		// At this point repoMetbdbtb is initiblized, bnd we only need to bdd current
+		// file pbth to it.
+		repoNbmeToMetbdbtb[r.RepoNbme].pbthToID[r.FilePbth] = 0
 	}
 
-	// Ensuring paths for every repo.
-	for _, repoMetadata := range repoNameToMetadata {
-		// `ensureRepoPaths` accepts a repoID (we have it) and a slice of paths we want
-		// to ensure. For the sake of constant-time path lookups we have a map of paths,
-		// that's why we need to convert it to slice here in order to pass to
-		// `ensureRepoPaths`.
-		paths := make([]string, 0, len(repoMetadata.pathToID))
-		for path := range repoMetadata.pathToID {
-			paths = append(paths, path)
+	// Ensuring pbths for every repo.
+	for _, repoMetbdbtb := rbnge repoNbmeToMetbdbtb {
+		// `ensureRepoPbths` bccepts b repoID (we hbve it) bnd b slice of pbths we wbnt
+		// to ensure. For the sbke of constbnt-time pbth lookups we hbve b mbp of pbths,
+		// thbt's why we need to convert it to slice here in order to pbss to
+		// `ensureRepoPbths`.
+		pbths := mbke([]string, 0, len(repoMetbdbtb.pbthToID))
+		for pbth := rbnge repoMetbdbtb.pbthToID {
+			pbths = bppend(pbths, pbth)
 		}
-		repoPathIDs, err := ensureRepoPaths(ctx, s.Store, paths, repoMetadata.repoID)
+		repoPbthIDs, err := ensureRepoPbths(ctx, s.Store, pbths, repoMetbdbtb.repoID)
 		if err != nil {
-			return errors.Wrap(err, "cannot insert repo paths")
+			return errors.Wrbp(err, "cbnnot insert repo pbths")
 		}
-		// Populate pathID for every path. `ensureRepoPaths` returns paths in the same
-		// order as we passed them as an input, we can rely on that.
-		for idx, path := range paths {
-			repoMetadata.pathToID[path] = repoPathIDs[idx]
+		// Populbte pbthID for every pbth. `ensureRepoPbths` returns pbths in the sbme
+		// order bs we pbssed them bs bn input, we cbn rely on thbt.
+		for idx, pbth := rbnge pbths {
+			repoMetbdbtb.pbthToID[pbth] = repoPbthIDs[idx]
 		}
 	}
 
-	// Now that we have all the necessary data, we go on and create signals.
-	for userID, pathAndCount := range userToCountByPath {
-		// Make a map of pathID->count from 2 maps that we have: path->count and
-		// path->pathID.
-		repoPathIDToCount := make(map[int]int)
-		for rpn, count := range pathAndCount {
-			if pathID, found := repoNameToMetadata[rpn.RepoName].pathToID[rpn.FilePath]; found {
-				repoPathIDToCount[pathID] = count
-			} else if _, notFound := notFoundRepos[rpn.RepoName]; notFound {
-				// repo was not found in the database, that's fine.
+	// Now thbt we hbve bll the necessbry dbtb, we go on bnd crebte signbls.
+	for userID, pbthAndCount := rbnge userToCountByPbth {
+		// Mbke b mbp of pbthID->count from 2 mbps thbt we hbve: pbth->count bnd
+		// pbth->pbthID.
+		repoPbthIDToCount := mbke(mbp[int]int)
+		for rpn, count := rbnge pbthAndCount {
+			if pbthID, found := repoNbmeToMetbdbtb[rpn.RepoNbme].pbthToID[rpn.FilePbth]; found {
+				repoPbthIDToCount[pbthID] = count
+			} else if _, notFound := notFoundRepos[rpn.RepoNbme]; notFound {
+				// repo wbs not found in the dbtbbbse, thbt's fine.
 			} else {
-				return errors.Newf("cannot find id of path %q of repo %q: this is a bug", rpn.FilePath, rpn.RepoName)
+				return errors.Newf("cbnnot find id of pbth %q of repo %q: this is b bug", rpn.FilePbth, rpn.RepoNbme)
 			}
 		}
-		err := s.InsertPaths(ctx, int32(userID), repoPathIDToCount)
+		err := s.InsertPbths(ctx, int32(userID), repoPbthIDToCount)
 		if err != nil {
 			return err
 		}
@@ -356,21 +356,21 @@ func (s *recentViewSignalStore) BuildAggregateFromEvents(ctx context.Context, ev
 	return nil
 }
 
-type RepoExclusions []*lazyregexp.Regexp
+type RepoExclusions []*lbzyregexp.Regexp
 
-func (re RepoExclusions) ShouldExclude(repoName string) bool {
-	for _, exclusion := range re {
-		if exclusion.MatchString(repoName) {
+func (re RepoExclusions) ShouldExclude(repoNbme string) bool {
+	for _, exclusion := rbnge re {
+		if exclusion.MbtchString(repoNbme) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// regexifyPatterns will convert postgres patterns to regex patterns. For example github.com/% -> github.com/.*
-func regexifyPatterns(patterns []string) (exclusions RepoExclusions) {
-	for _, pattern := range patterns {
-		exclusions = append(exclusions, lazyregexp.New(strings.ReplaceAll(pattern, "%", ".*")))
+// regexifyPbtterns will convert postgres pbtterns to regex pbtterns. For exbmple github.com/% -> github.com/.*
+func regexifyPbtterns(pbtterns []string) (exclusions RepoExclusions) {
+	for _, pbttern := rbnge pbtterns {
+		exclusions = bppend(exclusions, lbzyregexp.New(strings.ReplbceAll(pbttern, "%", ".*")))
 	}
 	return
 }

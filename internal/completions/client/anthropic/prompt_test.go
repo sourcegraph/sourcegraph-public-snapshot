@@ -1,59 +1,59 @@
-package anthropic
+pbckbge bnthropic
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
 )
 
 func TestGetPrompt(t *testing.T) {
 	tests := []struct {
-		name     string
-		messages []types.Message
-		want     string
-		wantErr  bool
+		nbme     string
+		messbges []types.Messbge
+		wbnt     string
+		wbntErr  bool
 	}{
 		{
-			name: "success",
-			messages: []types.Message{
-				{Speaker: "human", Text: "Hello"},
-				{Speaker: "assistant", Text: "Hi there!"},
+			nbme: "success",
+			messbges: []types.Messbge{
+				{Spebker: "humbn", Text: "Hello"},
+				{Spebker: "bssistbnt", Text: "Hi there!"},
 			},
-			want: "\n\nHuman: Hello\n\nAssistant: Hi there!",
+			wbnt: "\n\nHumbn: Hello\n\nAssistbnt: Hi there!",
 		},
 		{
-			name: "empty message",
-			messages: []types.Message{
-				{Speaker: "human", Text: "Hello"},
-				{Speaker: "assistant", Text: ""},
+			nbme: "empty messbge",
+			messbges: []types.Messbge{
+				{Spebker: "humbn", Text: "Hello"},
+				{Spebker: "bssistbnt", Text: ""},
 			},
-			want: "\n\nHuman: Hello\n\nAssistant:",
+			wbnt: "\n\nHumbn: Hello\n\nAssistbnt:",
 		},
 		{
-			name: "consecutive same speaker error",
-			messages: []types.Message{
-				{Speaker: "human", Text: "Hello"},
-				{Speaker: "human", Text: "Hi"},
+			nbme: "consecutive sbme spebker error",
+			messbges: []types.Messbge{
+				{Spebker: "humbn", Text: "Hello"},
+				{Spebker: "humbn", Text: "Hi"},
 			},
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name: "invalid speaker",
-			messages: []types.Message{
-				{Speaker: "human1", Text: "Hello"},
-				{Speaker: "human2", Text: "Hi"},
+			nbme: "invblid spebker",
+			messbges: []types.Messbge{
+				{Spebker: "humbn1", Text: "Hello"},
+				{Spebker: "humbn2", Text: "Hi"},
 			},
-			wantErr: true,
+			wbntErr: true,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := GetPrompt(tt.messages)
-			if (err != nil) != tt.wantErr {
-				t.Fatalf("getPrompt() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got, err := GetPrompt(tt.messbges)
+			if (err != nil) != tt.wbntErr {
+				t.Fbtblf("getPrompt() error = %v, wbntErr %v", err, tt.wbntErr)
 			}
-			if got != tt.want {
-				t.Fatalf("getPrompt() = %v, want %v", got, tt.want)
+			if got != tt.wbnt {
+				t.Fbtblf("getPrompt() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}

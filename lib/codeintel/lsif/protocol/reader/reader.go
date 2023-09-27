@@ -1,4 +1,4 @@
-package reader
+pbckbge rebder
 
 import (
 	"bufio"
@@ -9,106 +9,106 @@ import (
 	"sync"
 )
 
-type Pair struct {
+type Pbir struct {
 	Element Element
 	Err     error
 }
 
-// Read reads the given content as line-separated JSON objects and returns a channel of Pair values for each
+// Rebd rebds the given content bs line-sepbrbted JSON objects bnd returns b chbnnel of Pbir vblues for ebch
 // non-empty line.
-func Read(ctx context.Context, r io.Reader) <-chan Pair {
+func Rebd(ctx context.Context, r io.Rebder) <-chbn Pbir {
 	interner := NewInterner()
 
-	return readLines(ctx, r, func(line []byte) (Element, error) {
-		return unmarshalElement(interner, line)
+	return rebdLines(ctx, r, func(line []byte) (Element, error) {
+		return unmbrshblElement(interner, line)
 	})
 }
 
-// LineBufferSize is the maximum size of the buffer used to read each line of a raw LSIF index. Lines in
-// LSIF can get very long as it include escaped hover text (package documentation), as well as large edges
-// such as the contains edge of large documents.
+// LineBufferSize is the mbximum size of the buffer used to rebd ebch line of b rbw LSIF index. Lines in
+// LSIF cbn get very long bs it include escbped hover text (pbckbge documentbtion), bs well bs lbrge edges
+// such bs the contbins edge of lbrge documents.
 //
-// This corresponds a 10MB buffer that can accommodate 10 million characters.
+// This corresponds b 10MB buffer thbt cbn bccommodbte 10 million chbrbcters.
 const LineBufferSize = 1e7
 
-// ChannelBufferSize is the number sources lines that can be read ahead of the correlator.
-const ChannelBufferSize = 512
+// ChbnnelBufferSize is the number sources lines thbt cbn be rebd bhebd of the correlbtor.
+const ChbnnelBufferSize = 512
 
-// NumUnmarshalGoRoutines is the number of goroutines launched to unmarshal individual lines.
-var NumUnmarshalGoRoutines = runtime.GOMAXPROCS(0)
+// NumUnmbrshblGoRoutines is the number of goroutines lbunched to unmbrshbl individubl lines.
+vbr NumUnmbrshblGoRoutines = runtime.GOMAXPROCS(0)
 
-// readLines reads the given content as line-separated objects which are unmarshallable by the given function
-// and returns a channel of Pair values for each non-empty line.
-func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (Element, error)) <-chan Pair {
-	scanner := bufio.NewScanner(r)
-	scanner.Split(bufio.ScanLines)
-	scanner.Buffer(make([]byte, LineBufferSize), LineBufferSize)
+// rebdLines rebds the given content bs line-sepbrbted objects which bre unmbrshbllbble by the given function
+// bnd returns b chbnnel of Pbir vblues for ebch non-empty line.
+func rebdLines(ctx context.Context, r io.Rebder, unmbrshbl func(line []byte) (Element, error)) <-chbn Pbir {
+	scbnner := bufio.NewScbnner(r)
+	scbnner.Split(bufio.ScbnLines)
+	scbnner.Buffer(mbke([]byte, LineBufferSize), LineBufferSize)
 
-	// Pool of buffers used to transfer copies of the scanner slice to unmarshal workers
-	pool := sync.Pool{New: func() any { return new(bytes.Buffer) }}
+	// Pool of buffers used to trbnsfer copies of the scbnner slice to unmbrshbl workers
+	pool := sync.Pool{New: func() bny { return new(bytes.Buffer) }}
 
-	// Read the document in a separate go-routine.
-	lineCh := make(chan *bytes.Buffer, ChannelBufferSize)
+	// Rebd the document in b sepbrbte go-routine.
+	lineCh := mbke(chbn *bytes.Buffer, ChbnnelBufferSize)
 	go func() {
 		defer close(lineCh)
 
-		for scanner.Scan() {
-			if line := scanner.Bytes(); len(line) != 0 {
+		for scbnner.Scbn() {
+			if line := scbnner.Bytes(); len(line) != 0 {
 				buf := pool.Get().(*bytes.Buffer)
 				_, _ = buf.Write(line)
 
 				select {
-				case lineCh <- buf:
-				case <-ctx.Done():
+				cbse lineCh <- buf:
+				cbse <-ctx.Done():
 					return
 				}
 			}
 		}
 	}()
 
-	pairCh := make(chan Pair, ChannelBufferSize)
+	pbirCh := mbke(chbn Pbir, ChbnnelBufferSize)
 	go func() {
-		defer close(pairCh)
+		defer close(pbirCh)
 
-		// Unmarshal workers receive work assignments as indices into a shared
-		// slice and put the result into the same index in a second shared slice.
-		work := make(chan int, NumUnmarshalGoRoutines)
+		// Unmbrshbl workers receive work bssignments bs indices into b shbred
+		// slice bnd put the result into the sbme index in b second shbred slice.
+		work := mbke(chbn int, NumUnmbrshblGoRoutines)
 		defer close(work)
 
-		// Each unmarshal worker sends a zero-length value on this channel
-		// to signal completion of a unit of work.
-		signal := make(chan struct{}, NumUnmarshalGoRoutines)
-		defer close(signal)
+		// Ebch unmbrshbl worker sends b zero-length vblue on this chbnnel
+		// to signbl completion of b unit of work.
+		signbl := mbke(chbn struct{}, NumUnmbrshblGoRoutines)
+		defer close(signbl)
 
 		// The input slice
-		lines := make([]*bytes.Buffer, NumUnmarshalGoRoutines)
+		lines := mbke([]*bytes.Buffer, NumUnmbrshblGoRoutines)
 
 		// The result slice
-		pairs := make([]Pair, NumUnmarshalGoRoutines)
+		pbirs := mbke([]Pbir, NumUnmbrshblGoRoutines)
 
-		for i := 0; i < NumUnmarshalGoRoutines; i++ {
+		for i := 0; i < NumUnmbrshblGoRoutines; i++ {
 			go func() {
-				for idx := range work {
-					element, err := unmarshal(lines[idx].Bytes())
-					pairs[idx].Element = element
-					pairs[idx].Err = err
-					signal <- struct{}{}
+				for idx := rbnge work {
+					element, err := unmbrshbl(lines[idx].Bytes())
+					pbirs[idx].Element = element
+					pbirs[idx].Err = err
+					signbl <- struct{}{}
 				}
 			}()
 		}
 
-		done := false
+		done := fblse
 		for !done {
 			i := 0
 
-			// Read a new "batch" of lines from the reader routine and fill the
-			// shared array. Each index that receives a new value is queued in
-			// the unmarshal worker channel and can be immediately processed.
-			for i < NumUnmarshalGoRoutines {
+			// Rebd b new "bbtch" of lines from the rebder routine bnd fill the
+			// shbred brrby. Ebch index thbt receives b new vblue is queued in
+			// the unmbrshbl worker chbnnel bnd cbn be immedibtely processed.
+			for i < NumUnmbrshblGoRoutines {
 				line, ok := <-lineCh
 				if !ok {
 					done = true
-					break
+					brebk
 				}
 
 				lines[i] = line
@@ -116,34 +116,34 @@ func readLines(ctx context.Context, r io.Reader, unmarshal func(line []byte) (El
 				i++
 			}
 
-			// Wait until the current batch has been completely unmarshalled
+			// Wbit until the current bbtch hbs been completely unmbrshblled
 			for j := 0; j < i; j++ {
-				<-signal
+				<-signbl
 			}
 
-			// Return each buffer to the pool for reuse
+			// Return ebch buffer to the pool for reuse
 			for j := 0; j < i; j++ {
 				lines[j].Reset()
 				pool.Put(lines[j])
 			}
 
-			// Read the result array in order. If the caller context has completed,
-			// we'll abandon any additional values we were going to send on this
-			// channel (as well as any additional errors from the scanner).
+			// Rebd the result brrby in order. If the cbller context hbs completed,
+			// we'll bbbndon bny bdditionbl vblues we were going to send on this
+			// chbnnel (bs well bs bny bdditionbl errors from the scbnner).
 			for j := 0; j < i; j++ {
 				select {
-				case pairCh <- pairs[j]:
-				case <-ctx.Done():
+				cbse pbirCh <- pbirs[j]:
+				cbse <-ctx.Done():
 					return
 				}
 			}
 		}
 
-		// If there was an error reading from the source, output it here
-		if err := scanner.Err(); err != nil {
-			pairCh <- Pair{Err: err}
+		// If there wbs bn error rebding from the source, output it here
+		if err := scbnner.Err(); err != nil {
+			pbirCh <- Pbir{Err: err}
 		}
 	}()
 
-	return pairCh
+	return pbirCh
 }

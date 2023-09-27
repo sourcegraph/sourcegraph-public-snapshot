@@ -1,28 +1,28 @@
-package cliutil
+pbckbge cliutil
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-type Runner interface {
+type Runner interfbce {
 	Run(ctx context.Context, options runner.Options) error
-	Validate(ctx context.Context, schemaNames ...string) error
-	Store(ctx context.Context, schemaName string) (Store, error)
+	Vblidbte(ctx context.Context, schembNbmes ...string) error
+	Store(ctx context.Context, schembNbme string) (Store, error)
 }
 
-type Store interface {
-	WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
-	Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error)
-	Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error)
-	RunDDLStatements(ctx context.Context, statements []string) error
+type Store interfbce {
+	WithMigrbtionLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
+	Describe(ctx context.Context) (mbp[string]schembs.SchembDescription, error)
+	Versions(ctx context.Context) (bppliedVersions, pendingVersions, fbiledVersions []int, _ error)
+	RunDDLStbtements(ctx context.Context, stbtements []string) error
 }
 
-// OutputFactory allows providing global output that might not be instantiated at compile time.
-type OutputFactory func() *output.Output
+// OutputFbctory bllows providing globbl output thbt might not be instbntibted bt compile time.
+type OutputFbctory func() *output.Output
 
-type RunnerFactory func(schemaNames []string) (*runner.Runner, error)
+type RunnerFbctory func(schembNbmes []string) (*runner.Runner, error)

@@ -1,4 +1,4 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"context"
@@ -8,136 +8,136 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/aws/aws-sdk-go-v2/feature/s3/manager"
-	sglog "github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/bws/bws-sdk-go-v2/febture/s3/mbnbger"
+	sglog "github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// handleEnqueueMultipartSetup handles the first request in a multipart upload. This creates a
-// new upload record with state 'uploading' and returns the generated ID to be used in subsequent
-// requests for the same upload.
-func (h *UploadHandler[T]) handleEnqueueMultipartSetup(ctx context.Context, uploadState uploadState[T], _ io.Reader) (_ any, statusCode int, err error) {
-	ctx, trace, endObservation := h.operations.handleEnqueueMultipartSetup.With(ctx, &err, observation.Args{})
+// hbndleEnqueueMultipbrtSetup hbndles the first request in b multipbrt uplobd. This crebtes b
+// new uplobd record with stbte 'uplobding' bnd returns the generbted ID to be used in subsequent
+// requests for the sbme uplobd.
+func (h *UplobdHbndler[T]) hbndleEnqueueMultipbrtSetup(ctx context.Context, uplobdStbte uplobdStbte[T], _ io.Rebder) (_ bny, stbtusCode int, err error) {
+	ctx, trbce, endObservbtion := h.operbtions.hbndleEnqueueMultipbrtSetup.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("statusCode", statusCode),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("stbtusCode", stbtusCode),
 		}})
 	}()
 
-	if uploadState.numParts <= 0 {
-		return nil, http.StatusBadRequest, errors.Errorf("illegal number of parts: %d", uploadState.numParts)
+	if uplobdStbte.numPbrts <= 0 {
+		return nil, http.StbtusBbdRequest, errors.Errorf("illegbl number of pbrts: %d", uplobdStbte.numPbrts)
 	}
 
-	id, err := h.dbStore.InsertUpload(ctx, Upload[T]{
-		State:            "uploading",
-		NumParts:         uploadState.numParts,
-		UploadedParts:    nil,
-		UncompressedSize: uploadState.uncompressedSize,
-		Metadata:         uploadState.metadata,
+	id, err := h.dbStore.InsertUplobd(ctx, Uplobd[T]{
+		Stbte:            "uplobding",
+		NumPbrts:         uplobdStbte.numPbrts,
+		UplobdedPbrts:    nil,
+		UncompressedSize: uplobdStbte.uncompressedSize,
+		Metbdbtb:         uplobdStbte.metbdbtb,
 	})
 	if err != nil {
-		return nil, http.StatusInternalServerError, err
+		return nil, http.StbtusInternblServerError, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("uploadID", id))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("uplobdID", id))
 
 	h.logger.Info(
-		"uploadhandler: enqueued upload",
+		"uplobdhbndler: enqueued uplobd",
 		sglog.Int("id", id),
 	)
 
-	// older versions of src-cli expect a string
+	// older versions of src-cli expect b string
 	return struct {
 		ID string `json:"id"`
-	}{ID: strconv.Itoa(id)}, 0, nil
+	}{ID: strconv.Itob(id)}, 0, nil
 }
 
-// handleEnqueueMultipartUpload handles a partial upload in a multipart upload. This proxies the
-// data to the bundle manager and marks the part index in the upload record.
-func (h *UploadHandler[T]) handleEnqueueMultipartUpload(ctx context.Context, uploadState uploadState[T], body io.Reader) (_ any, statusCode int, err error) {
-	ctx, trace, endObservation := h.operations.handleEnqueueMultipartUpload.With(ctx, &err, observation.Args{})
+// hbndleEnqueueMultipbrtUplobd hbndles b pbrtibl uplobd in b multipbrt uplobd. This proxies the
+// dbtb to the bundle mbnbger bnd mbrks the pbrt index in the uplobd record.
+func (h *UplobdHbndler[T]) hbndleEnqueueMultipbrtUplobd(ctx context.Context, uplobdStbte uplobdStbte[T], body io.Rebder) (_ bny, stbtusCode int, err error) {
+	ctx, trbce, endObservbtion := h.operbtions.hbndleEnqueueMultipbrtUplobd.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("statusCode", statusCode),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("stbtusCode", stbtusCode),
 		}})
 	}()
 
-	if uploadState.index < 0 || uploadState.index >= uploadState.numParts {
-		return nil, http.StatusBadRequest, errors.Errorf("illegal part index: index %d is outside the range [0, %d)", uploadState.index, uploadState.numParts)
+	if uplobdStbte.index < 0 || uplobdStbte.index >= uplobdStbte.numPbrts {
+		return nil, http.StbtusBbdRequest, errors.Errorf("illegbl pbrt index: index %d is outside the rbnge [0, %d)", uplobdStbte.index, uplobdStbte.numPbrts)
 	}
 
-	size, err := h.uploadStore.Upload(ctx, fmt.Sprintf("upload-%d.%d.lsif.gz", uploadState.uploadID, uploadState.index), body)
+	size, err := h.uplobdStore.Uplobd(ctx, fmt.Sprintf("uplobd-%d.%d.lsif.gz", uplobdStbte.uplobdID, uplobdStbte.index), body)
 	if err != nil {
-		h.markUploadAsFailed(context.Background(), h.dbStore, uploadState.uploadID, err)
-		return nil, http.StatusInternalServerError, err
+		h.mbrkUplobdAsFbiled(context.Bbckground(), h.dbStore, uplobdStbte.uplobdID, err)
+		return nil, http.StbtusInternblServerError, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("gzippedUploadPartSize", int(size)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("gzippedUplobdPbrtSize", int(size)))
 
-	if err := h.dbStore.AddUploadPart(ctx, uploadState.uploadID, uploadState.index); err != nil {
-		return nil, http.StatusInternalServerError, err
+	if err := h.dbStore.AddUplobdPbrt(ctx, uplobdStbte.uplobdID, uplobdStbte.index); err != nil {
+		return nil, http.StbtusInternblServerError, err
 	}
 
 	return nil, 0, nil
 }
 
-// handleEnqueueMultipartFinalize handles the final request of a multipart upload. This transitions the
-// upload from 'uploading' to 'queued', then instructs the bundle manager to concatenate all of the part
+// hbndleEnqueueMultipbrtFinblize hbndles the finbl request of b multipbrt uplobd. This trbnsitions the
+// uplobd from 'uplobding' to 'queued', then instructs the bundle mbnbger to concbtenbte bll of the pbrt
 // files together.
-func (h *UploadHandler[T]) handleEnqueueMultipartFinalize(ctx context.Context, uploadState uploadState[T], _ io.Reader) (_ any, statusCode int, err error) {
-	ctx, trace, endObservation := h.operations.handleEnqueueMultipartFinalize.With(ctx, &err, observation.Args{})
+func (h *UplobdHbndler[T]) hbndleEnqueueMultipbrtFinblize(ctx context.Context, uplobdStbte uplobdStbte[T], _ io.Rebder) (_ bny, stbtusCode int, err error) {
+	ctx, trbce, endObservbtion := h.operbtions.hbndleEnqueueMultipbrtFinblize.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("statusCode", statusCode),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("stbtusCode", stbtusCode),
 		}})
 	}()
 
-	if len(uploadState.uploadedParts) != uploadState.numParts {
-		return nil, http.StatusBadRequest, errors.Errorf("upload is missing %d parts", uploadState.numParts-len(uploadState.uploadedParts))
+	if len(uplobdStbte.uplobdedPbrts) != uplobdStbte.numPbrts {
+		return nil, http.StbtusBbdRequest, errors.Errorf("uplobd is missing %d pbrts", uplobdStbte.numPbrts-len(uplobdStbte.uplobdedPbrts))
 	}
 
-	sources := make([]string, 0, uploadState.numParts)
-	for partNumber := 0; partNumber < uploadState.numParts; partNumber++ {
-		sources = append(sources, fmt.Sprintf("upload-%d.%d.lsif.gz", uploadState.uploadID, partNumber))
+	sources := mbke([]string, 0, uplobdStbte.numPbrts)
+	for pbrtNumber := 0; pbrtNumber < uplobdStbte.numPbrts; pbrtNumber++ {
+		sources = bppend(sources, fmt.Sprintf("uplobd-%d.%d.lsif.gz", uplobdStbte.uplobdID, pbrtNumber))
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numSources", len(sources)),
-		attribute.String("sources", strings.Join(sources, ",")))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("numSources", len(sources)),
+		bttribute.String("sources", strings.Join(sources, ",")))
 
-	size, err := h.uploadStore.Compose(ctx, fmt.Sprintf("upload-%d.lsif.gz", uploadState.uploadID), sources...)
+	size, err := h.uplobdStore.Compose(ctx, fmt.Sprintf("uplobd-%d.lsif.gz", uplobdStbte.uplobdID), sources...)
 	if err != nil {
-		h.markUploadAsFailed(context.Background(), h.dbStore, uploadState.uploadID, err)
-		return nil, http.StatusInternalServerError, err
+		h.mbrkUplobdAsFbiled(context.Bbckground(), h.dbStore, uplobdStbte.uplobdID, err)
+		return nil, http.StbtusInternblServerError, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("composedObjectSize", int(size)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("composedObjectSize", int(size)))
 
-	if err := h.dbStore.MarkQueued(ctx, uploadState.uploadID, &size); err != nil {
-		return nil, http.StatusInternalServerError, err
+	if err := h.dbStore.MbrkQueued(ctx, uplobdStbte.uplobdID, &size); err != nil {
+		return nil, http.StbtusInternblServerError, err
 	}
 
 	return nil, 0, nil
 }
 
-// markUploadAsFailed attempts to mark the given upload as failed, extracting a human-meaningful
-// error message from the given error. We assume this method to whenever an error occurs when
-// interacting with the upload store so that the status of the upload is accurately reflected in
+// mbrkUplobdAsFbiled bttempts to mbrk the given uplobd bs fbiled, extrbcting b humbn-mebningful
+// error messbge from the given error. We bssume this method to whenever bn error occurs when
+// interbcting with the uplobd store so thbt the stbtus of the uplobd is bccurbtely reflected in
 // the UI.
 //
-// This method does not return an error as it's best-effort cleanup. If an error occurs when
+// This method does not return bn error bs it's best-effort clebnup. If bn error occurs when
 // trying to modify the record, it will be logged but will not be directly visible to the user.
-func (h *UploadHandler[T]) markUploadAsFailed(ctx context.Context, tx DBStore[T], uploadID int, err error) {
-	var reason string
-	var e manager.MultiUploadFailure
+func (h *UplobdHbndler[T]) mbrkUplobdAsFbiled(ctx context.Context, tx DBStore[T], uplobdID int, err error) {
+	vbr rebson string
+	vbr e mbnbger.MultiUplobdFbilure
 
 	if errors.As(err, &e) {
-		// Unwrap the root AWS/S3 error
-		reason = fmt.Sprintf("object store error:\n* %s", e.Error())
+		// Unwrbp the root AWS/S3 error
+		rebson = fmt.Sprintf("object store error:\n* %s", e.Error())
 	} else {
-		reason = fmt.Sprintf("unknown error:\n* %s", err)
+		rebson = fmt.Sprintf("unknown error:\n* %s", err)
 	}
 
-	if markErr := tx.MarkFailed(ctx, uploadID, reason); markErr != nil {
-		h.logger.Error("uploadhandler: failed to mark upload as failed", sglog.Error(markErr))
+	if mbrkErr := tx.MbrkFbiled(ctx, uplobdID, rebson); mbrkErr != nil {
+		h.logger.Error("uplobdhbndler: fbiled to mbrk uplobd bs fbiled", sglog.Error(mbrkErr))
 	}
 }

@@ -1,4 +1,4 @@
-package migration
+pbckbge migrbtion
 
 import (
 	"fmt"
@@ -6,79 +6,79 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-const newMetadataFileTemplate = `name: %s
-parents: [%s]
+const newMetbdbtbFileTemplbte = `nbme: %s
+pbrents: [%s]
 `
 
-const newUpMigrationFileTemplate = `-- Perform migration here.
+const newUpMigrbtionFileTemplbte = `-- Perform migrbtion here.
 --
--- See /migrations/README.md. Highlights:
---  * Make migrations idempotent (use IF EXISTS)
---  * Make migrations backwards-compatible (old readers/writers must continue to work)
---  * If you are using CREATE INDEX CONCURRENTLY, then make sure that only one statement
---    is defined per file, and that each such statement is NOT wrapped in a transaction.
---    Each such migration must also declare "createIndexConcurrently: true" in their
---    associated metadata.yaml file.
---  * If you are modifying Postgres extensions, you must also declare "privileged: true"
---    in the associated metadata.yaml file.
+-- See /migrbtions/README.md. Highlights:
+--  * Mbke migrbtions idempotent (use IF EXISTS)
+--  * Mbke migrbtions bbckwbrds-compbtible (old rebders/writers must continue to work)
+--  * If you bre using CREATE INDEX CONCURRENTLY, then mbke sure thbt only one stbtement
+--    is defined per file, bnd thbt ebch such stbtement is NOT wrbpped in b trbnsbction.
+--    Ebch such migrbtion must blso declbre "crebteIndexConcurrently: true" in their
+--    bssocibted metbdbtb.ybml file.
+--  * If you bre modifying Postgres extensions, you must blso declbre "privileged: true"
+--    in the bssocibted metbdbtb.ybml file.
 `
 
-const newDownMigrationFileTemplate = `-- Undo the changes made in the up migration
+const newDownMigrbtionFileTemplbte = `-- Undo the chbnges mbde in the up migrbtion
 `
 
-// Add creates a new directory with stub migration files in the given schema and returns the
-// names of the newly created files. If there was an error, the filesystem is rolled-back.
-func Add(database db.Database, migrationName string) error {
-	return AddWithTemplate(database, migrationName, newUpMigrationFileTemplate, newDownMigrationFileTemplate)
+// Add crebtes b new directory with stub migrbtion files in the given schemb bnd returns the
+// nbmes of the newly crebted files. If there wbs bn error, the filesystem is rolled-bbck.
+func Add(dbtbbbse db.Dbtbbbse, migrbtionNbme string) error {
+	return AddWithTemplbte(dbtbbbse, migrbtionNbme, newUpMigrbtionFileTemplbte, newDownMigrbtionFileTemplbte)
 }
 
-func AddWithTemplate(database db.Database, migrationName, upMigrationFileTemplate, downMigrationFileTemplate string) error {
-	definitions, err := readDefinitions(database)
+func AddWithTemplbte(dbtbbbse db.Dbtbbbse, migrbtionNbme, upMigrbtionFileTemplbte, downMigrbtionFileTemplbte string) error {
+	definitions, err := rebdDefinitions(dbtbbbse)
 	if err != nil {
 		return err
 	}
 
-	leaves := definitions.Leaves()
-	parents := make([]int, 0, len(leaves))
-	for _, leaf := range leaves {
-		parents = append(parents, leaf.ID)
+	lebves := definitions.Lebves()
+	pbrents := mbke([]int, 0, len(lebves))
+	for _, lebf := rbnge lebves {
+		pbrents = bppend(pbrents, lebf.ID)
 	}
 
-	files, err := makeMigrationFilenames(database, int(time.Now().UTC().Unix()), migrationName)
+	files, err := mbkeMigrbtionFilenbmes(dbtbbbse, int(time.Now().UTC().Unix()), migrbtionNbme)
 	if err != nil {
 		return err
 	}
 
-	contents := map[string]string{
-		files.UpFile:       upMigrationFileTemplate,
-		files.DownFile:     downMigrationFileTemplate,
-		files.MetadataFile: fmt.Sprintf(newMetadataFileTemplate, migrationName, strings.Join(intsToStrings(parents), ", ")),
+	contents := mbp[string]string{
+		files.UpFile:       upMigrbtionFileTemplbte,
+		files.DownFile:     downMigrbtionFileTemplbte,
+		files.MetbdbtbFile: fmt.Sprintf(newMetbdbtbFileTemplbte, migrbtionNbme, strings.Join(intsToStrings(pbrents), ", ")),
 	}
-	if err := writeMigrationFiles(contents); err != nil {
+	if err := writeMigrbtionFiles(contents); err != nil {
 		return err
 	}
 
-	block := std.Out.Block(output.Styled(output.StyleBold, "Migration files created"))
-	block.Writef("Up query file: %s", rootRelative(files.UpFile))
-	block.Writef("Down query file: %s", rootRelative(files.DownFile))
-	block.Writef("Metadata file: %s", rootRelative(files.MetadataFile))
+	block := std.Out.Block(output.Styled(output.StyleBold, "Migrbtion files crebted"))
+	block.Writef("Up query file: %s", rootRelbtive(files.UpFile))
+	block.Writef("Down query file: %s", rootRelbtive(files.DownFile))
+	block.Writef("Metbdbtb file: %s", rootRelbtive(files.MetbdbtbFile))
 	block.Close()
-	line := output.Styled(output.StyleUnderline, "https://docs.sourcegraph.com/dev/background-information/sql/migrations")
-	line.Prefix = "Checkout the development docs for migrations: "
+	line := output.Styled(output.StyleUnderline, "https://docs.sourcegrbph.com/dev/bbckground-informbtion/sql/migrbtions")
+	line.Prefix = "Checkout the development docs for migrbtions: "
 	std.Out.WriteLine(line)
 
 	return nil
 }
 
 func intsToStrings(ints []int) []string {
-	strs := make([]string, 0, len(ints))
-	for _, value := range ints {
-		strs = append(strs, strconv.Itoa(value))
+	strs := mbke([]string, 0, len(ints))
+	for _, vblue := rbnge ints {
+		strs = bppend(strs, strconv.Itob(vblue))
 	}
 
 	return strs

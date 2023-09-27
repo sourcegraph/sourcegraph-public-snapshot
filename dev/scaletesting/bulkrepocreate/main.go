@@ -1,22 +1,22 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"crypto/tls"
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"sync/atomic"
+	"sync/btomic"
 
 	"github.com/google/go-github/v41/github"
-	_ "github.com/mattn/go-sqlite3"
-	"github.com/sourcegraph/conc/pool"
-	"golang.org/x/oauth2"
+	_ "github.com/mbttn/go-sqlite3"
+	"github.com/sourcegrbph/conc/pool"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/scbletesting/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 type config struct {
@@ -24,7 +24,7 @@ type config struct {
 	githubOrg      string
 	githubURL      string
 	githubUser     string
-	githubPassword string
+	githubPbssword string
 
 	count    int
 	prefix   string
@@ -35,261 +35,261 @@ type config struct {
 
 type repo struct {
 	*store.Repo
-	blank *blankRepo
+	blbnk *blbnkRepo
 }
 
-func main() {
-	var cfg config
+func mbin() {
+	vbr cfg config
 
-	flag.StringVar(&cfg.githubToken, "github.token", "", "(required) GitHub personal access token for the destination GHE instance")
-	flag.StringVar(&cfg.githubURL, "github.url", "", "(required) GitHub base URL for the destination GHE instance")
-	flag.StringVar(&cfg.githubOrg, "github.org", "", "(required) GitHub organization for the destination GHE instance to add the repos")
-	flag.StringVar(&cfg.githubUser, "github.login", "", "(required) GitHub organization for the destination GHE instance to add the repos")
-	flag.StringVar(&cfg.githubPassword, "github.password", "", "(required) GitHub organization for the destination GHE instance to add the repos")
-	flag.IntVar(&cfg.count, "count", 100, "Amount of blank repos to create")
-	flag.IntVar(&cfg.retry, "retry", 5, "Retries count")
-	flag.StringVar(&cfg.prefix, "prefix", "repo", "Prefix to use when naming the repo, ex '[prefix]000042'")
-	flag.StringVar(&cfg.resume, "resume", "state.db", "Temporary state to use to resume progress if interrupted")
-	flag.BoolVar(&cfg.insecure, "insecure", false, "Accept invalid TLS certificates")
+	flbg.StringVbr(&cfg.githubToken, "github.token", "", "(required) GitHub personbl bccess token for the destinbtion GHE instbnce")
+	flbg.StringVbr(&cfg.githubURL, "github.url", "", "(required) GitHub bbse URL for the destinbtion GHE instbnce")
+	flbg.StringVbr(&cfg.githubOrg, "github.org", "", "(required) GitHub orgbnizbtion for the destinbtion GHE instbnce to bdd the repos")
+	flbg.StringVbr(&cfg.githubUser, "github.login", "", "(required) GitHub orgbnizbtion for the destinbtion GHE instbnce to bdd the repos")
+	flbg.StringVbr(&cfg.githubPbssword, "github.pbssword", "", "(required) GitHub orgbnizbtion for the destinbtion GHE instbnce to bdd the repos")
+	flbg.IntVbr(&cfg.count, "count", 100, "Amount of blbnk repos to crebte")
+	flbg.IntVbr(&cfg.retry, "retry", 5, "Retries count")
+	flbg.StringVbr(&cfg.prefix, "prefix", "repo", "Prefix to use when nbming the repo, ex '[prefix]000042'")
+	flbg.StringVbr(&cfg.resume, "resume", "stbte.db", "Temporbry stbte to use to resume progress if interrupted")
+	flbg.BoolVbr(&cfg.insecure, "insecure", fblse, "Accept invblid TLS certificbtes")
 
-	flag.Parse()
+	flbg.Pbrse()
 
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
 
-	ctx := context.Background()
-	tc := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: cfg.githubToken},
+	ctx := context.Bbckground()
+	tc := obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+		&obuth2.Token{AccessToken: cfg.githubToken},
 	))
 
 	if cfg.insecure {
-		tc.Transport.(*oauth2.Transport).Base = http.DefaultTransport
-		tc.Transport.(*oauth2.Transport).Base.(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+		tc.Trbnsport.(*obuth2.Trbnsport).Bbse = http.DefbultTrbnsport
+		tc.Trbnsport.(*obuth2.Trbnsport).Bbse.(*http.Trbnsport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
 	}
 
 	gh, err := github.NewEnterpriseClient(cfg.githubURL, cfg.githubURL, tc)
 	if err != nil {
-		writeFailure(out, "Failed to sign-in to GHE")
-		log.Fatal(err)
+		writeFbilure(out, "Fbiled to sign-in to GHE")
+		log.Fbtbl(err)
 	}
 
 	if cfg.githubOrg == "" {
-		writeFailure(out, "-github.org must be provided")
-		flag.Usage()
+		writeFbilure(out, "-github.org must be provided")
+		flbg.Usbge()
 		os.Exit(-1)
 	}
 	if cfg.githubURL == "" {
-		writeFailure(out, "-github.URL must be provided")
-		flag.Usage()
+		writeFbilure(out, "-github.URL must be provided")
+		flbg.Usbge()
 		os.Exit(-1)
 	}
 	if cfg.githubToken == "" {
-		writeFailure(out, "-github.token must be provided")
-		flag.Usage()
+		writeFbilure(out, "-github.token must be provided")
+		flbg.Usbge()
 		os.Exit(-1)
 	}
 	if cfg.githubUser == "" {
-		writeFailure(out, "-github.login must be provided")
-		flag.Usage()
+		writeFbilure(out, "-github.login must be provided")
+		flbg.Usbge()
 		os.Exit(-1)
 	}
-	if cfg.githubPassword == "" {
-		writeFailure(out, "-github.password must be provided")
-		flag.Usage()
+	if cfg.githubPbssword == "" {
+		writeFbilure(out, "-github.pbssword must be provided")
+		flbg.Usbge()
 		os.Exit(-1)
 	}
 
-	blank, err := newBlankRepo(cfg.githubUser, cfg.githubPassword)
+	blbnk, err := newBlbnkRepo(cfg.githubUser, cfg.githubPbssword)
 	if err != nil {
-		writeFailure(out, "Failed to create folder for repository")
-		log.Fatal(err)
+		writeFbilure(out, "Fbiled to crebte folder for repository")
+		log.Fbtbl(err)
 	}
-	defer blank.teardown()
-	err = blank.init(ctx)
+	defer blbnk.tebrdown()
+	err = blbnk.init(ctx)
 	if err != nil {
-		writeFailure(out, "Failed to initialize blank repository")
-		log.Fatal(err)
+		writeFbilure(out, "Fbiled to initiblize blbnk repository")
+		log.Fbtbl(err)
 	}
 
-	state, err := store.New(cfg.resume)
+	stbte, err := store.New(cfg.resume)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
-	var storeRepos []*store.Repo
-	if storeRepos, err = state.Load(); err != nil {
-		log.Fatal(err)
+	vbr storeRepos []*store.Repo
+	if storeRepos, err = stbte.Lobd(); err != nil {
+		log.Fbtbl(err)
 	}
 
 	if len(storeRepos) == 0 {
-		storeRepos, err = generate(state, cfg)
+		storeRepos, err = generbte(stbte, cfg)
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
-		writeSuccess(out, "generated jobs in %s", cfg.resume)
+		writeSuccess(out, "generbted jobs in %s", cfg.resume)
 	} else {
 		writeSuccess(out, "resuming jobs from %s", cfg.resume)
 	}
 
-	// assign blank repo clones to avoid clogging the remotes
-	blanks := []*blankRepo{}
+	// bssign blbnk repo clones to bvoid clogging the remotes
+	blbnks := []*blbnkRepo{}
 	clonesCount := cfg.count / 100
 	if clonesCount < 1 {
 		clonesCount = 1
 	}
 	for i := 0; i < clonesCount; i++ {
-		clone, err := blank.clone(ctx, i)
+		clone, err := blbnk.clone(ctx, i)
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
-		defer clone.teardown()
-		blanks = append(blanks, clone)
+		defer clone.tebrdown()
+		blbnks = bppend(blbnks, clone)
 	}
 
-	// Wrap repos from the store with ones having a blank repo attached.
-	repos := make([]*repo, len(storeRepos))
-	for i, r := range storeRepos {
+	// Wrbp repos from the store with ones hbving b blbnk repo bttbched.
+	repos := mbke([]*repo, len(storeRepos))
+	for i, r := rbnge storeRepos {
 		repos[i] = &repo{Repo: r}
 	}
 
-	// Distribute the blank repos.
+	// Distribute the blbnk repos.
 	for i := 0; i < cfg.count; i++ {
-		repos[i].blank = blanks[i%clonesCount]
+		repos[i].blbnk = blbnks[i%clonesCount]
 	}
 
-	if _, _, err := gh.Organizations.Get(ctx, cfg.githubOrg); err != nil {
-		writeFailure(out, "organization does not exists")
-		log.Fatal(err)
+	if _, _, err := gh.Orgbnizbtions.Get(ctx, cfg.githubOrg); err != nil {
+		writeFbilure(out, "orgbnizbtion does not exists")
+		log.Fbtbl(err)
 	}
 
-	bars := []output.ProgressBar{
-		{Label: "CreatingRepos", Max: float64(cfg.count)},
-		{Label: "Adding remotes", Max: float64(cfg.count)},
-		{Label: "Pushing branches", Max: float64(cfg.count)},
+	bbrs := []output.ProgressBbr{
+		{Lbbel: "CrebtingRepos", Mbx: flobt64(cfg.count)},
+		{Lbbel: "Adding remotes", Mbx: flobt64(cfg.count)},
+		{Lbbel: "Pushing brbnches", Mbx: flobt64(cfg.count)},
 	}
-	progress := out.Progress(bars, nil)
+	progress := out.Progress(bbrs, nil)
 
-	p := pool.New().WithMaxGoroutines(20)
-	var done int64
-	for _, repo := range repos {
+	p := pool.New().WithMbxGoroutines(20)
+	vbr done int64
+	for _, repo := rbnge repos {
 		repo := repo
-		if repo.Created {
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(0, float64(done))
+		if repo.Crebted {
+			btomic.AddInt64(&done, 1)
+			progress.SetVblue(0, flobt64(done))
 			continue
 		}
 		p.Go(func() {
-			newRepo, _, err := gh.Repositories.Create(ctx, cfg.githubOrg, &github.Repository{Name: github.String(repo.Name)})
+			newRepo, _, err := gh.Repositories.Crebte(ctx, cfg.githubOrg, &github.Repository{Nbme: github.String(repo.Nbme)})
 			if err != nil {
-				writeFailure(out, "Failed to create repository %s", repo.Name)
-				repo.Failed = err.Error()
-				if err := state.SaveRepo(repo.Repo); err != nil {
-					log.Fatal(err)
+				writeFbilure(out, "Fbiled to crebte repository %s", repo.Nbme)
+				repo.Fbiled = err.Error()
+				if err := stbte.SbveRepo(repo.Repo); err != nil {
+					log.Fbtbl(err)
 				}
 				return
 			}
 			repo.GitURL = newRepo.GetGitURL()
-			repo.Created = true
-			repo.Failed = ""
-			if err = state.SaveRepo(repo.Repo); err != nil {
-				log.Fatal(err)
+			repo.Crebted = true
+			repo.Fbiled = ""
+			if err = stbte.SbveRepo(repo.Repo); err != nil {
+				log.Fbtbl(err)
 			}
 
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(0, float64(done))
+			btomic.AddInt64(&done, 1)
+			progress.SetVblue(0, flobt64(done))
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
 	done = 0
-	// Adding a remote will lock git configuration, so we shard
-	// them by blank repo duplicates.
-	p = pool.New().WithMaxGoroutines(20)
-	for _, repo := range repos {
+	// Adding b remote will lock git configurbtion, so we shbrd
+	// them by blbnk repo duplicbtes.
+	p = pool.New().WithMbxGoroutines(20)
+	for _, repo := rbnge repos {
 		repo := repo
 		p.Go(func() {
-			err = repo.blank.addRemote(ctx, repo.Name, repo.GitURL)
+			err = repo.blbnk.bddRemote(ctx, repo.Nbme, repo.GitURL)
 			if err != nil {
-				writeFailure(out, "Failed to add remote to repository %s", repo.Name)
-				log.Fatal(err)
+				writeFbilure(out, "Fbiled to bdd remote to repository %s", repo.Nbme)
+				log.Fbtbl(err)
 			}
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(1, float64(done))
+			btomic.AddInt64(&done, 1)
+			progress.SetVblue(1, flobt64(done))
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
 	done = 0
-	p = pool.New().WithMaxGoroutines(30)
-	for _, repo := range repos {
+	p = pool.New().WithMbxGoroutines(30)
+	for _, repo := rbnge repos {
 		repo := repo
-		if !repo.Created {
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(2, float64(done))
+		if !repo.Crebted {
+			btomic.AddInt64(&done, 1)
+			progress.SetVblue(2, flobt64(done))
 			continue
 		}
 		if repo.Pushed {
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(2, float64(done))
+			btomic.AddInt64(&done, 1)
+			progress.SetVblue(2, flobt64(done))
 			continue
 		}
 		p.Go(func() {
-			err := repo.blank.pushRemote(ctx, repo.Name, cfg.retry)
+			err := repo.blbnk.pushRemote(ctx, repo.Nbme, cfg.retry)
 			if err != nil {
-				writeFailure(out, "Failed to push to repository %s", repo.Name)
-				repo.Failed = err.Error()
-				if err := state.SaveRepo(repo.Repo); err != nil {
-					log.Fatal(err)
+				writeFbilure(out, "Fbiled to push to repository %s", repo.Nbme)
+				repo.Fbiled = err.Error()
+				if err := stbte.SbveRepo(repo.Repo); err != nil {
+					log.Fbtbl(err)
 				}
 				return
 			}
 			repo.Pushed = true
-			repo.Failed = ""
-			if err := state.SaveRepo(repo.Repo); err != nil {
-				log.Fatal(err)
+			repo.Fbiled = ""
+			if err := stbte.SbveRepo(repo.Repo); err != nil {
+				log.Fbtbl(err)
 			}
-			atomic.AddInt64(&done, 1)
-			progress.SetValue(2, float64(done))
+			btomic.AddInt64(&done, 1)
+			progress.SetVblue(2, flobt64(done))
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
 	progress.Destroy()
-	all, err := state.CountAllRepos()
+	bll, err := stbte.CountAllRepos()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
-	completed, err := state.CountCompletedRepos()
+	completed, err := stbte.CountCompletedRepos()
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
-	writeSuccess(out, "Successfully added %d repositories on $GHE/%s (%d failures)", completed, cfg.githubOrg, all-completed)
+	writeSuccess(out, "Successfully bdded %d repositories on $GHE/%s (%d fbilures)", completed, cfg.githubOrg, bll-completed)
 }
 
-func writeSuccess(out *output.Output, format string, a ...any) {
-	out.WriteLine(output.Linef("✅", output.StyleSuccess, format, a...))
+func writeSuccess(out *output.Output, formbt string, b ...bny) {
+	out.WriteLine(output.Linef("✅", output.StyleSuccess, formbt, b...))
 }
 
-func writeFailure(out *output.Output, format string, a ...any) {
-	out.WriteLine(output.Linef("❌", output.StyleFailure, format, a...))
+func writeFbilure(out *output.Output, formbt string, b ...bny) {
+	out.WriteLine(output.Linef("❌", output.StyleFbilure, formbt, b...))
 }
 
-func generateNames(prefix string, count int) []string {
-	names := make([]string, count)
+func generbteNbmes(prefix string, count int) []string {
+	nbmes := mbke([]string, count)
 	for i := 0; i < count; i++ {
-		names[i] = fmt.Sprintf("%s%09d", prefix, i)
+		nbmes[i] = fmt.Sprintf("%s%09d", prefix, i)
 	}
-	return names
+	return nbmes
 }
 
-func generate(s *store.Store, cfg config) ([]*store.Repo, error) {
-	names := generateNames(cfg.prefix, cfg.count)
-	repos := make([]*store.Repo, 0, len(names))
-	for _, name := range names {
-		repos = append(repos, &store.Repo{Name: name})
+func generbte(s *store.Store, cfg config) ([]*store.Repo, error) {
+	nbmes := generbteNbmes(cfg.prefix, cfg.count)
+	repos := mbke([]*store.Repo, 0, len(nbmes))
+	for _, nbme := rbnge nbmes {
+		repos = bppend(repos, &store.Repo{Nbme: nbme})
 	}
 
 	if err := s.Insert(repos); err != nil {
 		return nil, err
 	}
-	return s.Load()
+	return s.Lobd()
 }

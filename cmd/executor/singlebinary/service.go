@@ -1,47 +1,47 @@
-package singlebinary
+pbckbge singlebinbry
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/run"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "executor" }
+func (svc) Nbme() string { return "executor" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	conf := config.NewAppConfig()
-	conf.Load()
+	conf.Lobd()
 	return conf, nil
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, cfg env.Config) error {
+func (svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, cfg env.Config) error {
 	conf := cfg.(*config.Config)
 
-	runner := &util.RealCmdRunner{}
-	// TODO(sqs) HACK(sqs): TODO(app): run executors for both queues
+	runner := &util.ReblCmdRunner{}
+	// TODO(sqs) HACK(sqs): TODO(bpp): run executors for both queues
 	otherConfig := *conf
-	if conf.QueueName == "batches" {
-		otherConfig.QueueName = "codeintel"
+	if conf.QueueNbme == "bbtches" {
+		otherConfig.QueueNbme = "codeintel"
 	} else {
-		otherConfig.QueueName = "batches"
+		otherConfig.QueueNbme = "bbtches"
 	}
 	go func() {
-		if err := run.StandaloneRun(ctx, runner, observationCtx.Logger, &otherConfig, false); err != nil {
-			observationCtx.Logger.Warn("executor for other queue failed", log.Error(err))
+		if err := run.StbndbloneRun(ctx, runner, observbtionCtx.Logger, &otherConfig, fblse); err != nil {
+			observbtionCtx.Logger.Wbrn("executor for other queue fbiled", log.Error(err))
 		}
 	}()
 
-	return run.StandaloneRun(ctx, runner, observationCtx.Logger, conf, false)
+	return run.StbndbloneRun(ctx, runner, observbtionCtx.Logger, conf, fblse)
 }
 
-var Service service.Service = svc{}
+vbr Service service.Service = svc{}

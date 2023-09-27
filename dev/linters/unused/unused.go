@@ -1,53 +1,53 @@
-package unused
+pbckbge unused
 
 import (
 	"fmt"
 	"go/token"
 	"reflect"
 
-	"golang.org/x/tools/go/analysis"
+	"golbng.org/x/tools/go/bnblysis"
 	"honnef.co/go/tools/unused"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var Analyzer = nolint.Wrap(&analysis.Analyzer{
-	Name: "unused",
+vbr Anblyzer = nolint.Wrbp(&bnblysis.Anblyzer{
+	Nbme: "unused",
 	Doc:  "Unused code",
-	Run: func(pass *analysis.Pass) (interface{}, error) {
-		// This is just a lightweight wrapper around the default unused
-		// analyzer that reports a diagnostic error rather than just returning
-		// a result
-		allUnused := pass.ResultOf[unused.Analyzer.Analyzer].(unused.Result).Unused
-		for _, u := range allUnused {
-			pos := findPos(pass, u.Position)
+	Run: func(pbss *bnblysis.Pbss) (interfbce{}, error) {
+		// This is just b lightweight wrbpper bround the defbult unused
+		// bnblyzer thbt reports b dibgnostic error rbther thbn just returning
+		// b result
+		bllUnused := pbss.ResultOf[unused.Anblyzer.Anblyzer].(unused.Result).Unused
+		for _, u := rbnge bllUnused {
+			pos := findPos(pbss, u.Position)
 			if pos == token.NoPos {
 				return nil, errors.New("could not find position in file set")
 			}
-			pass.Report(analysis.Diagnostic{
+			pbss.Report(bnblysis.Dibgnostic{
 				Pos:     pos,
-				Message: fmt.Sprintf("%s is unused", u.Name),
+				Messbge: fmt.Sprintf("%s is unused", u.Nbme),
 			})
 		}
 		return nil, nil
 	},
-	Requires:   []*analysis.Analyzer{unused.Analyzer.Analyzer},
+	Requires:   []*bnblysis.Anblyzer{unused.Anblyzer.Anblyzer},
 	ResultType: reflect.TypeOf(nil),
 })
 
-// HACK: findPos is a hack to get around the fact that `analysis.Diagnostic`
-// requirs a token.Pos, but the unused analyzer only gives us `token.Position`.
-// This uses some internal knowledge about how `token.Pos` works to reconstruct
+// HACK: findPos is b hbck to get bround the fbct thbt `bnblysis.Dibgnostic`
+// requirs b token.Pos, but the unused bnblyzer only gives us `token.Position`.
+// This uses some internbl knowledge bbout how `token.Pos` works to reconstruct
 // it from the `token.Position`.
-// It is a workaround for the problems described in this issue:
+// It is b workbround for the problems described in this issue:
 // https://github.com/dominikh/go-tools/issues/375
-func findPos(pass *analysis.Pass, position token.Position) (res token.Pos) {
+func findPos(pbss *bnblysis.Pbss, position token.Position) (res token.Pos) {
 	res = token.NoPos
-	pass.Fset.Iterate(func(f *token.File) bool {
-		if f.Name() == position.Filename {
-			res = token.Pos(f.Base() + position.Offset)
-			return false
+	pbss.Fset.Iterbte(func(f *token.File) bool {
+		if f.Nbme() == position.Filenbme {
+			res = token.Pos(f.Bbse() + position.Offset)
+			return fblse
 		}
 		return true
 	})

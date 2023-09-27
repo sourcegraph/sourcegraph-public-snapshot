@@ -1,4 +1,4 @@
-package githuboauth
+pbckbge githubobuth
 
 import (
 	"context"
@@ -9,171 +9,171 @@ import (
 	"time"
 
 	"github.com/dghubble/gologin/github"
-	"github.com/inconshreveable/log15"
-	"golang.org/x/oauth2"
+	"github.com/inconshrevebble/log15"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	esbuth "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	githubsvc "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type sessionIssuerHelper struct {
 	*extsvc.CodeHost
-	db           database.DB
+	db           dbtbbbse.DB
 	clientID     string
-	allowSignup  bool
-	allowOrgs    []string
-	allowOrgsMap map[string][]string
+	bllowSignup  bool
+	bllowOrgs    []string
+	bllowOrgsMbp mbp[string][]string
 }
 
-func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
-	return database.SecurityEventGitHubAuthSucceeded
+func (s *sessionIssuerHelper) AuthSucceededEventNbme() dbtbbbse.SecurityEventNbme {
+	return dbtbbbse.SecurityEventGitHubAuthSucceeded
 }
 
-func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
-	return database.SecurityEventGitHubAuthFailed
+func (s *sessionIssuerHelper) AuthFbiledEventNbme() dbtbbbse.SecurityEventNbme {
+	return dbtbbbse.SecurityEventGitHubAuthFbiled
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
+func (s *sessionIssuerHelper) GetOrCrebteUser(ctx context.Context, token *obuth2.Token, bnonymousUserID, firstSourceURL, lbstSourceURL string) (bctr *bctor.Actor, sbfeErrMsg string, err error) {
 	ghUser, err := github.UserFromContext(ctx)
 
 	if ghUser == nil {
 		if err != nil {
-			err = errors.Wrap(err, "could not read user from context")
+			err = errors.Wrbp(err, "could not rebd user from context")
 		} else {
-			err = errors.New("could not read user from context")
+			err = errors.New("could not rebd user from context")
 		}
-		return nil, "Could not read GitHub user from callback request.", err
+		return nil, "Could not rebd GitHub user from cbllbbck request.", err
 	}
 	dc := conf.Get().Dotcom
 
-	if dc != nil && dc.MinimumExternalAccountAge > 0 {
+	if dc != nil && dc.MinimumExternblAccountAge > 0 {
 
-		earliestValidCreationDate := time.Now().Add(time.Duration(-dc.MinimumExternalAccountAge) * 24 * time.Hour)
+		ebrliestVblidCrebtionDbte := time.Now().Add(time.Durbtion(-dc.MinimumExternblAccountAge) * 24 * time.Hour)
 
-		if ghUser.CreatedAt.After(earliestValidCreationDate) {
-			return nil, fmt.Sprintf("User account was created less than %d days ago", dc.MinimumExternalAccountAge), errors.New("user account too new")
+		if ghUser.CrebtedAt.After(ebrliestVblidCrebtionDbte) {
+			return nil, fmt.Sprintf("User bccount wbs crebted less thbn %d dbys bgo", dc.MinimumExternblAccountAge), errors.New("user bccount too new")
 		}
 	}
 
-	login, err := auth.NormalizeUsername(deref(ghUser.Login))
+	login, err := buth.NormblizeUsernbme(deref(ghUser.Login))
 	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
+		return nil, fmt.Sprintf("Error normblizing the usernbme %q. See https://docs.sourcegrbph.com/bdmin/buth/#usernbme-normblizbtion.", login), err
 	}
 
 	ghClient := s.newClient(token.AccessToken)
 
-	// 🚨 SECURITY: Ensure that the user email is verified
-	verifiedEmails := getVerifiedEmails(ctx, ghClient)
-	if len(verifiedEmails) == 0 {
-		return nil, "Could not get verified email for GitHub user. Check that your GitHub account has a verified email that matches one of your Sourcegraph verified emails.", errors.New("no verified email")
+	// 🚨 SECURITY: Ensure thbt the user embil is verified
+	verifiedEmbils := getVerifiedEmbils(ctx, ghClient)
+	if len(verifiedEmbils) == 0 {
+		return nil, "Could not get verified embil for GitHub user. Check thbt your GitHub bccount hbs b verified embil thbt mbtches one of your Sourcegrbph verified embils.", errors.New("no verified embil")
 	}
 
-	// 🚨 SECURITY: Ensure that the user is part of one of the allow listed orgs or teams, if any.
-	userBelongsToAllowedOrgsOrTeams := s.verifyUserOrgsAndTeams(ctx, ghClient)
-	if !userBelongsToAllowedOrgsOrTeams {
-		message := "user does not belong to allowed GitHub organizations or teams."
-		return nil, message, errors.New(message)
+	// 🚨 SECURITY: Ensure thbt the user is pbrt of one of the bllow listed orgs or tebms, if bny.
+	userBelongsToAllowedOrgsOrTebms := s.verifyUserOrgsAndTebms(ctx, ghClient)
+	if !userBelongsToAllowedOrgsOrTebms {
+		messbge := "user does not belong to bllowed GitHub orgbnizbtions or tebms."
+		return nil, messbge, errors.New(messbge)
 	}
 
-	// Try every verified email in succession until the first that succeeds
-	var data extsvc.AccountData
-	if err := githubsvc.SetExternalAccountData(&data, ghUser, token); err != nil {
+	// Try every verified embil in succession until the first thbt succeeds
+	vbr dbtb extsvc.AccountDbtb
+	if err := githubsvc.SetExternblAccountDbtb(&dbtb, ghUser, token); err != nil {
 		return nil, "", err
 	}
-	var (
-		lastSafeErrMsg string
-		lastErr        error
+	vbr (
+		lbstSbfeErrMsg string
+		lbstErr        error
 	)
 
-	// We will first attempt to connect one of the verified emails with an existing
-	// account in Sourcegraph
-	type attemptConfig struct {
-		email            string
-		createIfNotExist bool
+	// We will first bttempt to connect one of the verified embils with bn existing
+	// bccount in Sourcegrbph
+	type bttemptConfig struct {
+		embil            string
+		crebteIfNotExist bool
 	}
-	var attempts []attemptConfig
-	for i := range verifiedEmails {
-		attempts = append(attempts, attemptConfig{
-			email:            verifiedEmails[i],
-			createIfNotExist: false,
+	vbr bttempts []bttemptConfig
+	for i := rbnge verifiedEmbils {
+		bttempts = bppend(bttempts, bttemptConfig{
+			embil:            verifiedEmbils[i],
+			crebteIfNotExist: fblse,
 		})
 	}
-	signupErrorMessage := ""
-	// If allowSignup is true, we will create an account using the first verified
-	// email address from GitHub which we expect to be their primary address. Note
-	// that the order of attempts is important. If we manage to connect with an
-	// existing account we return early and don't attempt to create a new account.
-	if s.allowSignup {
-		attempts = append(attempts, attemptConfig{
-			email:            verifiedEmails[0],
-			createIfNotExist: true,
+	signupErrorMessbge := ""
+	// If bllowSignup is true, we will crebte bn bccount using the first verified
+	// embil bddress from GitHub which we expect to be their primbry bddress. Note
+	// thbt the order of bttempts is importbnt. If we mbnbge to connect with bn
+	// existing bccount we return ebrly bnd don't bttempt to crebte b new bccount.
+	if s.bllowSignup {
+		bttempts = bppend(bttempts, bttemptConfig{
+			embil:            verifiedEmbils[0],
+			crebteIfNotExist: true,
 		})
-		signupErrorMessage = "\n\nOr failed on creating a user account"
+		signupErrorMessbge = "\n\nOr fbiled on crebting b user bccount"
 	}
 
-	for _, attempt := range attempts {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
-			UserProps: database.NewUser{
-				Username: login,
+	for _, bttempt := rbnge bttempts {
+		userID, sbfeErrMsg, err := buth.GetAndSbveUser(ctx, s.db, buth.GetAndSbveUserOp{
+			UserProps: dbtbbbse.NewUser{
+				Usernbme: login,
 
-				// We always only take verified emails from an external source.
-				Email:           attempt.email,
-				EmailIsVerified: true,
+				// We blwbys only tbke verified embils from bn externbl source.
+				Embil:           bttempt.embil,
+				EmbilIsVerified: true,
 
-				DisplayName: deref(ghUser.Name),
-				AvatarURL:   deref(ghUser.AvatarURL),
+				DisplbyNbme: deref(ghUser.Nbme),
+				AvbtbrURL:   deref(ghUser.AvbtbrURL),
 			},
-			ExternalAccount: extsvc.AccountSpec{
+			ExternblAccount: extsvc.AccountSpec{
 				ServiceType: s.ServiceType,
 				ServiceID:   s.ServiceID,
 				ClientID:    s.clientID,
-				AccountID:   strconv.FormatInt(derefInt64(ghUser.ID), 10),
+				AccountID:   strconv.FormbtInt(derefInt64(ghUser.ID), 10),
 			},
-			ExternalAccountData: data,
-			CreateIfNotExist:    attempt.createIfNotExist,
+			ExternblAccountDbtb: dbtb,
+			CrebteIfNotExist:    bttempt.crebteIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-				AnonymousUserID: anonymousUserID,
+			go hubspotutil.SyncUser(bttempt.embil, hubspotutil.SignupEventID, &hubspot.ContbctProperties{
+				AnonymousUserID: bnonymousUserID,
 				FirstSourceURL:  firstSourceURL,
-				LastSourceURL:   lastSourceURL,
+				LbstSourceURL:   lbstSourceURL,
 			})
-			return actor.FromUser(userID), "", nil // success
+			return bctor.FromUser(userID), "", nil // success
 		}
-		lastSafeErrMsg, lastErr = safeErrMsg, err
+		lbstSbfeErrMsg, lbstErr = sbfeErrMsg, err
 	}
 
-	// On failure, return the last error
-	return nil, fmt.Sprintf("Could not find existing user matching any of the verified emails: %s %s \n\nLast error was: %s", strings.Join(verifiedEmails, ", "), signupErrorMessage, lastSafeErrMsg), lastErr
+	// On fbilure, return the lbst error
+	return nil, fmt.Sprintf("Could not find existing user mbtching bny of the verified embils: %s %s \n\nLbst error wbs: %s", strings.Join(verifiedEmbils, ", "), signupErrorMessbge, lbstSbfeErrMsg), lbstErr
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := getStateConfig()
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStbteCookie(w http.ResponseWriter) {
+	stbteConfig := getStbteConfig()
+	stbteConfig.MbxAge = -1
+	http.SetCookie(w, obuth.NewCookie(stbteConfig, ""))
 }
 
-func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
-	return oauth.SessionData{
+func (s *sessionIssuerHelper) SessionDbtb(token *obuth2.Token) obuth.SessionDbtb {
+	return obuth.SessionDbtb{
 		ID: providers.ConfigID{
 			ID:   s.ServiceID,
 			Type: s.ServiceType,
 		},
 		AccessToken: token.AccessToken,
 		TokenType:   token.Type(),
-		// TODO(beyang): store and use refresh token to auto-refresh sessions
+		// TODO(beybng): store bnd use refresh token to buto-refresh sessions
 	}
 }
 
@@ -192,112 +192,112 @@ func derefInt64(i *int64) int64 {
 }
 
 func (s *sessionIssuerHelper) newClient(token string) *githubsvc.V3Client {
-	apiURL, _ := githubsvc.APIRoot(s.BaseURL)
+	bpiURL, _ := githubsvc.APIRoot(s.BbseURL)
 	return githubsvc.NewV3Client(log.Scoped("session.github.v3", "github v3 client for session issuer"),
-		extsvc.URNGitHubOAuth, apiURL, &esauth.OAuthBearerToken{Token: token}, nil)
+		extsvc.URNGitHubOAuth, bpiURL, &esbuth.OAuthBebrerToken{Token: token}, nil)
 }
 
-// getVerifiedEmails returns the list of user emails that are verified. If the primary email is verified,
-// it will be the first email in the returned list. It only checks the first 100 user emails.
-func getVerifiedEmails(ctx context.Context, ghClient *githubsvc.V3Client) (verifiedEmails []string) {
-	emails, err := ghClient.GetAuthenticatedUserEmails(ctx)
+// getVerifiedEmbils returns the list of user embils thbt bre verified. If the primbry embil is verified,
+// it will be the first embil in the returned list. It only checks the first 100 user embils.
+func getVerifiedEmbils(ctx context.Context, ghClient *githubsvc.V3Client) (verifiedEmbils []string) {
+	embils, err := ghClient.GetAuthenticbtedUserEmbils(ctx)
 	if err != nil {
-		log15.Warn("Could not get GitHub authenticated user emails", "error", err)
+		log15.Wbrn("Could not get GitHub buthenticbted user embils", "error", err)
 		return nil
 	}
 
-	for _, email := range emails {
-		if !email.Verified {
+	for _, embil := rbnge embils {
+		if !embil.Verified {
 			continue
 		}
-		if email.Primary {
-			verifiedEmails = append([]string{email.Email}, verifiedEmails...)
+		if embil.Primbry {
+			verifiedEmbils = bppend([]string{embil.Embil}, verifiedEmbils...)
 			continue
 		}
-		verifiedEmails = append(verifiedEmails, email.Email)
+		verifiedEmbils = bppend(verifiedEmbils, embil.Embil)
 	}
-	return verifiedEmails
+	return verifiedEmbils
 }
 
-// verifyUserOrgs checks whether the authenticated user belongs to one of the GitHub orgs
-// listed in auth.provider > allowOrgs configuration
+// verifyUserOrgs checks whether the buthenticbted user belongs to one of the GitHub orgs
+// listed in buth.provider > bllowOrgs configurbtion
 func (s *sessionIssuerHelper) verifyUserOrgs(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	allowed := make(map[string]bool, len(s.allowOrgs))
-	for _, org := range s.allowOrgs {
-		allowed[org] = true
+	bllowed := mbke(mbp[string]bool, len(s.bllowOrgs))
+	for _, org := rbnge s.bllowOrgs {
+		bllowed[org] = true
 	}
 
-	hasNextPage := true
-	var userOrgs []*githubsvc.Org
-	var err error
-	page := 1
-	for hasNextPage {
-		userOrgs, hasNextPage, _, err = ghClient.GetAuthenticatedUserOrgsForPage(ctx, page)
+	hbsNextPbge := true
+	vbr userOrgs []*githubsvc.Org
+	vbr err error
+	pbge := 1
+	for hbsNextPbge {
+		userOrgs, hbsNextPbge, _, err = ghClient.GetAuthenticbtedUserOrgsForPbge(ctx, pbge)
 
 		if err != nil {
-			log15.Warn("Could not get GitHub authenticated user organizations", "error", err)
-			return false
+			log15.Wbrn("Could not get GitHub buthenticbted user orgbnizbtions", "error", err)
+			return fblse
 		}
 
-		for _, org := range userOrgs {
-			if allowed[org.Login] {
+		for _, org := rbnge userOrgs {
+			if bllowed[org.Login] {
 				return true
 			}
 		}
-		page++
+		pbge++
 	}
 
-	return false
+	return fblse
 }
 
-// verifyUserTeams checks whether the authenticated user belongs to one of the GitHub teams listed in the auth.provider > allowOrgsMap configuration
-func (s *sessionIssuerHelper) verifyUserTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	var err error
-	hasNextPage := true
-	allowedTeams := make(map[string]map[string]bool, len(s.allowOrgsMap))
+// verifyUserTebms checks whether the buthenticbted user belongs to one of the GitHub tebms listed in the buth.provider > bllowOrgsMbp configurbtion
+func (s *sessionIssuerHelper) verifyUserTebms(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	vbr err error
+	hbsNextPbge := true
+	bllowedTebms := mbke(mbp[string]mbp[string]bool, len(s.bllowOrgsMbp))
 
-	for org, teams := range s.allowOrgsMap {
-		teamsMap := make(map[string]bool)
-		for _, team := range teams {
-			teamsMap[team] = true
+	for org, tebms := rbnge s.bllowOrgsMbp {
+		tebmsMbp := mbke(mbp[string]bool)
+		for _, tebm := rbnge tebms {
+			tebmsMbp[tebm] = true
 		}
 
-		allowedTeams[org] = teamsMap
+		bllowedTebms[org] = tebmsMbp
 	}
 
-	for page := 1; hasNextPage; page++ {
-		var githubTeams []*githubsvc.Team
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr githubTebms []*githubsvc.Tebm
 
-		githubTeams, hasNextPage, _, err = ghClient.GetAuthenticatedUserTeams(ctx, page)
+		githubTebms, hbsNextPbge, _, err = ghClient.GetAuthenticbtedUserTebms(ctx, pbge)
 		if err != nil {
-			log15.Warn("Could not get GitHub authenticated user teams", "error", err)
-			return false
+			log15.Wbrn("Could not get GitHub buthenticbted user tebms", "error", err)
+			return fblse
 		}
 
-		for _, ghTeam := range githubTeams {
-			_, ok := allowedTeams[ghTeam.Organization.Login][ghTeam.Name]
+		for _, ghTebm := rbnge githubTebms {
+			_, ok := bllowedTebms[ghTebm.Orgbnizbtion.Login][ghTebm.Nbme]
 			if ok {
 				return true
 			}
 		}
 	}
 
-	return false
+	return fblse
 }
 
-// verifyUserOrgsAndTeams checks if the user belongs to one of the allowed listed orgs or teams provided in the auth.provider configuration.
-func (s *sessionIssuerHelper) verifyUserOrgsAndTeams(ctx context.Context, ghClient *githubsvc.V3Client) bool {
-	if len(s.allowOrgs) == 0 && len(s.allowOrgsMap) == 0 {
+// verifyUserOrgsAndTebms checks if the user belongs to one of the bllowed listed orgs or tebms provided in the buth.provider configurbtion.
+func (s *sessionIssuerHelper) verifyUserOrgsAndTebms(ctx context.Context, ghClient *githubsvc.V3Client) bool {
+	if len(s.bllowOrgs) == 0 && len(s.bllowOrgsMbp) == 0 {
 		return true
 	}
 
-	if len(s.allowOrgs) > 0 && s.verifyUserOrgs(ctx, ghClient) {
+	if len(s.bllowOrgs) > 0 && s.verifyUserOrgs(ctx, ghClient) {
 		return true
 	}
 
-	if len(s.allowOrgsMap) > 0 && s.verifyUserTeams(ctx, ghClient) {
+	if len(s.bllowOrgsMbp) > 0 && s.verifyUserTebms(ctx, ghClient) {
 		return true
 	}
 
-	return false
+	return fblse
 }

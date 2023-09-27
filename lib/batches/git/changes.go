@@ -1,35 +1,35 @@
-package git
+pbckbge git
 
 import (
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 )
 
-// Changes are the changes made to files in a repository.
-type Changes struct {
+// Chbnges bre the chbnges mbde to files in b repository.
+type Chbnges struct {
 	Modified []string `json:"modified"`
-	Added    []string `json:"added"`
+	Added    []string `json:"bdded"`
 	Deleted  []string `json:"deleted"`
-	Renamed  []string `json:"renamed"`
+	Renbmed  []string `json:"renbmed"`
 }
 
-func ChangesInDiff(rawDiff []byte) (Changes, error) {
-	result := Changes{}
+func ChbngesInDiff(rbwDiff []byte) (Chbnges, error) {
+	result := Chbnges{}
 
-	fileDiffs, err := diff.ParseMultiFileDiff(rawDiff)
+	fileDiffs, err := diff.PbrseMultiFileDiff(rbwDiff)
 	if err != nil {
 		return result, err
 	}
 
-	for _, fd := range fileDiffs {
+	for _, fd := rbnge fileDiffs {
 		switch {
-		case fd.NewName == "/dev/null":
-			result.Deleted = append(result.Deleted, fd.OrigName)
-		case fd.OrigName == "/dev/null":
-			result.Added = append(result.Added, fd.NewName)
-		case fd.OrigName == fd.NewName:
-			result.Modified = append(result.Modified, fd.OrigName)
-		case fd.OrigName != fd.NewName:
-			result.Renamed = append(result.Renamed, fd.NewName)
+		cbse fd.NewNbme == "/dev/null":
+			result.Deleted = bppend(result.Deleted, fd.OrigNbme)
+		cbse fd.OrigNbme == "/dev/null":
+			result.Added = bppend(result.Added, fd.NewNbme)
+		cbse fd.OrigNbme == fd.NewNbme:
+			result.Modified = bppend(result.Modified, fd.OrigNbme)
+		cbse fd.OrigNbme != fd.NewNbme:
+			result.Renbmed = bppend(result.Renbmed, fd.NewNbme)
 		}
 	}
 

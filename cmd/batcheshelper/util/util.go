@@ -1,36 +1,36 @@
-package util
+pbckbge util
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	executorutil "github.com/sourcegrbph/sourcegrbph/internbl/executor/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// StepJSONFile returns the path to the JSON file for the step.
+// StepJSONFile returns the pbth to the JSON file for the step.
 func StepJSONFile(step int) string {
 	return fmt.Sprintf("step%d.json", step)
 }
 
-// FilesMountPath returns the path to the directory where the mount files for the step will be stored.
-func FilesMountPath(workingDirectory string, step int) string {
-	return filepath.Join(workingDirectory, fmt.Sprintf("step%dfiles", step))
+// FilesMountPbth returns the pbth to the directory where the mount files for the step will be stored.
+func FilesMountPbth(workingDirectory string, step int) string {
+	return filepbth.Join(workingDirectory, fmt.Sprintf("step%dfiles", step))
 }
 
 // WriteSkipFile writes the skip file to the working directory.
 func WriteSkipFile(workingDirectory string, nextStep int) error {
-	s := types.Skip{NextStep: executorutil.FormatPreKey(nextStep)}
-	b, err := json.Marshal(s)
+	s := types.Skip{NextStep: executorutil.FormbtPreKey(nextStep)}
+	b, err := json.Mbrshbl(s)
 	if err != nil {
-		return errors.Wrap(err, "marshalling skip file")
+		return errors.Wrbp(err, "mbrshblling skip file")
 	}
-	path := filepath.Join(workingDirectory, types.SkipFile)
-	if err = os.WriteFile(path, b, os.ModePerm); err != nil {
-		return errors.Wrap(err, "writing skip file")
+	pbth := filepbth.Join(workingDirectory, types.SkipFile)
+	if err = os.WriteFile(pbth, b, os.ModePerm); err != nil {
+		return errors.Wrbp(err, "writing skip file")
 	}
 	return nil
 }

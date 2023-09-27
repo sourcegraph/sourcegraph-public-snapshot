@@ -1,26 +1,26 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type DotcomRootResolver interface {
+type DotcomRootResolver interfbce {
 	DotcomResolver
 	Dotcom() DotcomResolver
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
-// DotcomResolver is the interface for the GraphQL types DotcomMutation and DotcomQuery.
-type DotcomResolver interface {
-	// DotcomMutation
-	CreateProductSubscription(context.Context, *CreateProductSubscriptionArgs) (ProductSubscription, error)
-	UpdateProductSubscription(context.Context, *UpdateProductSubscriptionArgs) (*EmptyResponse, error)
-	GenerateProductLicenseForSubscription(context.Context, *GenerateProductLicenseForSubscriptionArgs) (ProductLicense, error)
+// DotcomResolver is the interfbce for the GrbphQL types DotcomMutbtion bnd DotcomQuery.
+type DotcomResolver interfbce {
+	// DotcomMutbtion
+	CrebteProductSubscription(context.Context, *CrebteProductSubscriptionArgs) (ProductSubscription, error)
+	UpdbteProductSubscription(context.Context, *UpdbteProductSubscriptionArgs) (*EmptyResponse, error)
+	GenerbteProductLicenseForSubscription(context.Context, *GenerbteProductLicenseForSubscriptionArgs) (ProductLicense, error)
 	ArchiveProductSubscription(context.Context, *ArchiveProductSubscriptionArgs) (*EmptyResponse, error)
 	RevokeLicense(context.Context, *RevokeLicenseArgs) (*EmptyResponse, error)
 
@@ -29,166 +29,166 @@ type DotcomResolver interface {
 	ProductSubscriptions(context.Context, *ProductSubscriptionsArgs) (ProductSubscriptionConnection, error)
 	ProductSubscriptionByAccessToken(context.Context, *ProductSubscriptionByAccessTokenArgs) (ProductSubscription, error)
 	ProductLicenses(context.Context, *ProductLicensesArgs) (ProductLicenseConnection, error)
-	ProductLicenseByID(ctx context.Context, id graphql.ID) (ProductLicense, error)
-	ProductSubscriptionByID(ctx context.Context, id graphql.ID) (ProductSubscription, error)
-	CodyGatewayDotcomUserByToken(context.Context, *CodyGatewayUsersByAccessTokenArgs) (CodyGatewayUser, error)
+	ProductLicenseByID(ctx context.Context, id grbphql.ID) (ProductLicense, error)
+	ProductSubscriptionByID(ctx context.Context, id grbphql.ID) (ProductSubscription, error)
+	CodyGbtewbyDotcomUserByToken(context.Context, *CodyGbtewbyUsersByAccessTokenArgs) (CodyGbtewbyUser, error)
 }
 
-// ProductSubscription is the interface for the GraphQL type ProductSubscription.
-type ProductSubscription interface {
-	ID() graphql.ID
+// ProductSubscription is the interfbce for the GrbphQL type ProductSubscription.
+type ProductSubscription interfbce {
+	ID() grbphql.ID
 	UUID() string
-	Name() string
+	Nbme() string
 	Account(context.Context) (*UserResolver, error)
 	ActiveLicense(context.Context) (ProductLicense, error)
-	ProductLicenses(context.Context, *graphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
-	CodyGatewayAccess() CodyGatewayAccess
-	CreatedAt() gqlutil.DateTime
+	ProductLicenses(context.Context, *grbphqlutil.ConnectionArgs) (ProductLicenseConnection, error)
+	CodyGbtewbyAccess() CodyGbtewbyAccess
+	CrebtedAt() gqlutil.DbteTime
 	IsArchived() bool
 	URL(context.Context) (string, error)
 	URLForSiteAdmin(context.Context) *string
-	CurrentSourcegraphAccessToken(context.Context) (*string, error)
-	SourcegraphAccessTokens(context.Context) ([]string, error)
+	CurrentSourcegrbphAccessToken(context.Context) (*string, error)
+	SourcegrbphAccessTokens(context.Context) ([]string, error)
 }
 
-type CreateProductSubscriptionArgs struct {
-	AccountID graphql.ID
+type CrebteProductSubscriptionArgs struct {
+	AccountID grbphql.ID
 }
 
-type GenerateProductLicenseForSubscriptionArgs struct {
-	ProductSubscriptionID graphql.ID
+type GenerbteProductLicenseForSubscriptionArgs struct {
+	ProductSubscriptionID grbphql.ID
 	License               *ProductLicenseInput
 }
 
-type GenerateAccessTokenForSubscriptionArgs struct {
-	ProductSubscriptionID graphql.ID
+type GenerbteAccessTokenForSubscriptionArgs struct {
+	ProductSubscriptionID grbphql.ID
 }
 
-// ProductSubscriptionAccessToken is the interface for the GraphQL type ProductSubscriptionAccessToken.
-type ProductSubscriptionAccessToken interface {
+// ProductSubscriptionAccessToken is the interfbce for the GrbphQL type ProductSubscriptionAccessToken.
+type ProductSubscriptionAccessToken interfbce {
 	AccessToken() string
 }
 
-type ArchiveProductSubscriptionArgs struct{ ID graphql.ID }
+type ArchiveProductSubscriptionArgs struct{ ID grbphql.ID }
 
 type ProductSubscriptionArgs struct {
 	UUID string
 }
 
 type ProductSubscriptionsArgs struct {
-	graphqlutil.ConnectionArgs
-	Account *graphql.ID
+	grbphqlutil.ConnectionArgs
+	Account *grbphql.ID
 	Query   *string
 }
 
-// ProductSubscriptionConnection is the interface for the GraphQL type
+// ProductSubscriptionConnection is the interfbce for the GrbphQL type
 // ProductSubscriptionConnection.
-type ProductSubscriptionConnection interface {
+type ProductSubscriptionConnection interfbce {
 	Nodes(context.Context) ([]ProductSubscription, error)
-	TotalCount(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	TotblCount(context.Context) (int32, error)
+	PbgeInfo(context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-// ProductLicense is the interface for the GraphQL type ProductLicense.
-type ProductLicense interface {
-	ID() graphql.ID
+// ProductLicense is the interfbce for the GrbphQL type ProductLicense.
+type ProductLicense interfbce {
+	ID() grbphql.ID
 	Subscription(context.Context) (ProductSubscription, error)
 	Info() (*ProductLicenseInfo, error)
 	LicenseKey() string
 	SiteID() *string
-	CreatedAt() gqlutil.DateTime
-	RevokedAt() *gqlutil.DateTime
-	RevokeReason() *string
+	CrebtedAt() gqlutil.DbteTime
+	RevokedAt() *gqlutil.DbteTime
+	RevokeRebson() *string
 	Version() int32
 }
 
-// ProductLicenseInput implements the GraphQL type ProductLicenseInput.
+// ProductLicenseInput implements the GrbphQL type ProductLicenseInput.
 type ProductLicenseInput struct {
-	Tags                     []string
+	Tbgs                     []string
 	UserCount                int32
 	ExpiresAt                int32
-	SalesforceSubscriptionID *string
-	SalesforceOpportunityID  *string
+	SblesforceSubscriptionID *string
+	SblesforceOpportunityID  *string
 }
 
 type ProductLicensesArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	LicenseKeySubstring   *string
-	ProductSubscriptionID *graphql.ID
+	ProductSubscriptionID *grbphql.ID
 }
 
-// ProductLicenseConnection is the interface for the GraphQL type ProductLicenseConnection.
-type ProductLicenseConnection interface {
+// ProductLicenseConnection is the interfbce for the GrbphQL type ProductLicenseConnection.
+type ProductLicenseConnection interfbce {
 	Nodes(context.Context) ([]ProductLicense, error)
-	TotalCount(context.Context) (int32, error)
-	PageInfo(context.Context) (*graphqlutil.PageInfo, error)
+	TotblCount(context.Context) (int32, error)
+	PbgeInfo(context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
 type ProductSubscriptionByAccessTokenArgs struct {
 	AccessToken string
 }
 
-type UpdateProductSubscriptionArgs struct {
-	ID     graphql.ID
-	Update UpdateProductSubscriptionInput
+type UpdbteProductSubscriptionArgs struct {
+	ID     grbphql.ID
+	Updbte UpdbteProductSubscriptionInput
 }
 
 type RevokeLicenseArgs struct {
-	ID     graphql.ID
-	Reason string
+	ID     grbphql.ID
+	Rebson string
 }
 
-type UpdateProductSubscriptionInput struct {
-	CodyGatewayAccess *UpdateCodyGatewayAccessInput
+type UpdbteProductSubscriptionInput struct {
+	CodyGbtewbyAccess *UpdbteCodyGbtewbyAccessInput
 }
 
-type UpdateCodyGatewayAccessInput struct {
-	Enabled                                 *bool
-	ChatCompletionsRateLimit                *BigInt
-	ChatCompletionsRateLimitIntervalSeconds *int32
-	ChatCompletionsAllowedModels            *[]string
-	CodeCompletionsRateLimit                *BigInt
-	CodeCompletionsRateLimitIntervalSeconds *int32
+type UpdbteCodyGbtewbyAccessInput struct {
+	Enbbled                                 *bool
+	ChbtCompletionsRbteLimit                *BigInt
+	ChbtCompletionsRbteLimitIntervblSeconds *int32
+	ChbtCompletionsAllowedModels            *[]string
+	CodeCompletionsRbteLimit                *BigInt
+	CodeCompletionsRbteLimitIntervblSeconds *int32
 	CodeCompletionsAllowedModels            *[]string
-	EmbeddingsRateLimit                     *BigInt
-	EmbeddingsRateLimitIntervalSeconds      *int32
+	EmbeddingsRbteLimit                     *BigInt
+	EmbeddingsRbteLimitIntervblSeconds      *int32
 	EmbeddingsAllowedModels                 *[]string
 }
 
-type CodyGatewayUsersByAccessTokenArgs struct {
+type CodyGbtewbyUsersByAccessTokenArgs struct {
 	Token string
 }
 
-type CodyGatewayUser interface {
-	Username() string
-	CodyGatewayAccess() CodyGatewayAccess
-	ID() graphql.ID
+type CodyGbtewbyUser interfbce {
+	Usernbme() string
+	CodyGbtewbyAccess() CodyGbtewbyAccess
+	ID() grbphql.ID
 }
 
-type CodyGatewayAccess interface {
-	Enabled() bool
-	ChatCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
-	CodeCompletionsRateLimit(context.Context) (CodyGatewayRateLimit, error)
-	EmbeddingsRateLimit(context.Context) (CodyGatewayRateLimit, error)
+type CodyGbtewbyAccess interfbce {
+	Enbbled() bool
+	ChbtCompletionsRbteLimit(context.Context) (CodyGbtewbyRbteLimit, error)
+	CodeCompletionsRbteLimit(context.Context) (CodyGbtewbyRbteLimit, error)
+	EmbeddingsRbteLimit(context.Context) (CodyGbtewbyRbteLimit, error)
 }
 
-type CodyGatewayUsageDatapoint interface {
-	Date() gqlutil.DateTime
+type CodyGbtewbyUsbgeDbtbpoint interfbce {
+	Dbte() gqlutil.DbteTime
 	Model() string
 	Count() BigInt
 }
 
-type CodyGatewayRateLimitSource string
+type CodyGbtewbyRbteLimitSource string
 
 const (
-	CodyGatewayRateLimitSourceOverride CodyGatewayRateLimitSource = "OVERRIDE"
-	CodyGatewayRateLimitSourcePlan     CodyGatewayRateLimitSource = "PLAN"
+	CodyGbtewbyRbteLimitSourceOverride CodyGbtewbyRbteLimitSource = "OVERRIDE"
+	CodyGbtewbyRbteLimitSourcePlbn     CodyGbtewbyRbteLimitSource = "PLAN"
 )
 
-type CodyGatewayRateLimit interface {
-	Source() CodyGatewayRateLimitSource
+type CodyGbtewbyRbteLimit interfbce {
+	Source() CodyGbtewbyRbteLimitSource
 	AllowedModels() []string
 	Limit() BigInt
-	IntervalSeconds() int32
-	Usage(context.Context) ([]CodyGatewayUsageDatapoint, error)
+	IntervblSeconds() int32
+	Usbge(context.Context) ([]CodyGbtewbyUsbgeDbtbpoint, error)
 }

@@ -1,124 +1,124 @@
-package database_test
+pbckbge dbtbbbse_test
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestExternalServicesStore_ValidateConfig(t *testing.T) {
-	t.Parallel()
+func TestExternblServicesStore_VblidbteConfig(t *testing.T) {
+	t.Pbrbllel()
 
 	tests := []struct {
-		name     string
+		nbme     string
 		kind     string
 		config   string
-		listFunc func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error)
-		wantErr  string
+		listFunc func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error)
+		wbntErr  string
 	}{
 		{
-			name:    "0 errors - GitHub.com",
+			nbme:    "0 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
-			wantErr: "<nil>",
+			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`,
+			wbntErr: "<nil>",
 		},
 		{
-			name:    "0 errors - GitLab.com",
-			kind:    extsvc.KindGitLab,
-			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`,
-			wantErr: "<nil>",
+			nbme:    "0 errors - GitLbb.com",
+			kind:    extsvc.KindGitLbb,
+			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "bbc"}`,
+			wbntErr: "<nil>",
 		},
 		{
-			name:    "0 errors - Bitbucket.org",
+			nbme:    "0 errors - Bitbucket.org",
 			kind:    extsvc.KindBitbucketCloud,
-			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc"}`,
-			wantErr: "<nil>",
+			config:  `{"url": "https://bitbucket.org", "usernbme": "ceo", "bppPbssword": "bbc"}`,
+			wbntErr: "<nil>",
 		},
 		{
-			name: "1 error - Bitbucket.org",
+			nbme: "1 error - Bitbucket.org",
 			kind: extsvc.KindBitbucketCloud,
-			// Invalid UUID, using + instead of -
-			config:  `{"url": "https://bitbucket.org", "username": "ceo", "appPassword": "abc", "exclude": [{"uuid":"{fceb73c7+cef6-4abe-956d-e471281126bd}"}]}`,
-			wantErr: `exclude.0.uuid: Does not match pattern '^\{[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\}$'`,
+			// Invblid UUID, using + instebd of -
+			config:  `{"url": "https://bitbucket.org", "usernbme": "ceo", "bppPbssword": "bbc", "exclude": [{"uuid":"{fceb73c7+cef6-4bbe-956d-e471281126bd}"}]}`,
+			wbntErr: `exclude.0.uuid: Does not mbtch pbttern '^\{[0-9b-fA-F]{8}-[0-9b-fA-F]{4}-[0-9b-fA-F]{4}-[0-9b-fA-F]{4}-[0-9b-fA-F]{12}\}$'`,
 		},
 		{
-			name:    "1 error",
+			nbme:    "1 error",
 			kind:    extsvc.KindGitHub,
-			config:  `{"repositoryQuery": ["none"], "token": "fake"}`,
-			wantErr: "url is required",
+			config:  `{"repositoryQuery": ["none"], "token": "fbke"}`,
+			wbntErr: "url is required",
 		},
 		{
-			name:    "2 errors",
+			nbme:    "2 errors",
 			kind:    extsvc.KindGitHub,
 			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": ""}`,
-			wantErr: "2 errors occurred:\n\t* token: String length must be greater than or equal to 1\n\t* either token or GitHub App Details must be set",
+			wbntErr: "2 errors occurred:\n\t* token: String length must be grebter thbn or equbl to 1\n\t* either token or GitHub App Detbils must be set",
 		},
 		{
-			name:   "no conflicting rate limit",
+			nbme:   "no conflicting rbte limit",
 			kind:   extsvc.KindGitHub,
-			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc", "rateLimit": {"enabled": true, "requestsPerHour": 5000}}`,
-			listFunc: func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
+			config: `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc", "rbteLimit": {"enbbled": true, "requestsPerHour": 5000}}`,
+			listFunc: func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
 				return nil, nil
 			},
-			wantErr: "<nil>",
+			wbntErr: "<nil>",
 		},
 		{
-			name:    "gjson handles comments",
+			nbme:    "gjson hbndles comments",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "token": "abc", "repositoryQuery": ["affiliated"]} // comment`,
-			wantErr: "<nil>",
+			config:  `{"url": "https://github.com", "token": "bbc", "repositoryQuery": ["bffilibted"]} // comment`,
+			wbntErr: "<nil>",
 		},
 		{
-			name:    "1 errors - GitHub.com",
+			nbme:    "1 errors - GitHub.com",
 			kind:    extsvc.KindGitHub,
-			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
+			config:  `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "` + types.RedbctedSecret + `"}`,
+			wbntErr: "unbble to write externbl service config bs it contbins redbcted fields, this is likely b bug rbther thbn b problem with your config",
 		},
 		{
-			name:    "1 errors - GitLab.com",
-			kind:    extsvc.KindGitLab,
-			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedactedSecret + `"}`,
-			wantErr: "unable to write external service config as it contains redacted fields, this is likely a bug rather than a problem with your config",
+			nbme:    "1 errors - GitLbb.com",
+			kind:    extsvc.KindGitLbb,
+			config:  `{"url": "https://github.com", "projectQuery": ["none"], "token": "` + types.RedbctedSecret + `"}`,
+			wbntErr: "unbble to write externbl service config bs it contbins redbcted fields, this is likely b bug rbther thbn b problem with your config",
 		},
 		{
-			name:    "1 errors - dev.azure.com",
+			nbme:    "1 errors - dev.bzure.com",
 			kind:    extsvc.KindAzureDevOps,
-			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username"}`,
-			wantErr: "either 'projects' or 'orgs' must be set",
+			config:  `{"url": "https://dev.bzure.com", "token": "token", "usernbme": "usernbme"}`,
+			wbntErr: "either 'projects' or 'orgs' must be set",
 		},
 		{
-			name:    "0 errors - dev.azure.com",
+			nbme:    "0 errors - dev.bzure.com",
 			kind:    extsvc.KindAzureDevOps,
-			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username", "projects":[]}`,
-			wantErr: "<nil>",
+			config:  `{"url": "https://dev.bzure.com", "token": "token", "usernbme": "usernbme", "projects":[]}`,
+			wbntErr: "<nil>",
 		},
 		{
-			name:    "0 errors - dev.azure.com",
+			nbme:    "0 errors - dev.bzure.com",
 			kind:    extsvc.KindAzureDevOps,
-			config:  `{"url": "https://dev.azure.com", "token": "token", "username": "username", "orgs":[]}`,
-			wantErr: "<nil>",
+			config:  `{"url": "https://dev.bzure.com", "token": "token", "usernbme": "usernbme", "orgs":[]}`,
+			wbntErr: "<nil>",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			dbm := dbmocks.NewMockDB()
-			ess := dbmocks.NewMockExternalServiceStore()
+			ess := dbmocks.NewMockExternblServiceStore()
 			if test.listFunc != nil {
-				ess.ListFunc.SetDefaultHook(test.listFunc)
+				ess.ListFunc.SetDefbultHook(test.listFunc)
 			}
-			dbm.ExternalServicesFunc.SetDefaultReturn(ess)
-			_, err := database.ValidateExternalServiceConfig(context.Background(), dbm, database.ValidateExternalServiceConfigOptions{
+			dbm.ExternblServicesFunc.SetDefbultReturn(ess)
+			_, err := dbtbbbse.VblidbteExternblServiceConfig(context.Bbckground(), dbm, dbtbbbse.VblidbteExternblServiceConfigOptions{
 				Kind:   test.kind,
 				Config: test.config,
 			})
 			gotErr := fmt.Sprintf("%v", err)
-			if gotErr != test.wantErr {
-				t.Errorf("error: want %q but got %q", test.wantErr, gotErr)
+			if gotErr != test.wbntErr {
+				t.Errorf("error: wbnt %q but got %q", test.wbntErr, gotErr)
 			}
 		})
 	}

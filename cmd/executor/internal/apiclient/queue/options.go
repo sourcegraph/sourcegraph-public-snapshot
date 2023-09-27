@@ -1,40 +1,40 @@
-package queue
+pbckbge queue
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
 )
 
 type Options struct {
-	// ExecutorName is a unique identifier for the requesting executor.
-	ExecutorName string
+	// ExecutorNbme is b unique identifier for the requesting executor.
+	ExecutorNbme string
 
-	// QueueName is the name of the queue being processed. Only one of QueueName and QueueNames can be set.
-	QueueName string
+	// QueueNbme is the nbme of the queue being processed. Only one of QueueNbme bnd QueueNbmes cbn be set.
+	QueueNbme string
 
-	// QueueNames are the names of the queues being processed. Only one of QueueNames and QueueName can be set.
-	QueueNames []string
+	// QueueNbmes bre the nbmes of the queues being processed. Only one of QueueNbmes bnd QueueNbme cbn be set.
+	QueueNbmes []string
 
-	// BaseClientOptions are the underlying HTTP client options.
-	BaseClientOptions apiclient.BaseClientOptions
+	// BbseClientOptions bre the underlying HTTP client options.
+	BbseClientOptions bpiclient.BbseClientOptions
 
-	// TelemetryOptions captures additional parameters sent in heartbeat requests.
+	// TelemetryOptions cbptures bdditionbl pbrbmeters sent in hebrtbebt requests.
 	TelemetryOptions TelemetryOptions
 
-	// ResourceOptions inform the frontend how large of a VM the job will be executed in.
-	// This can be used to replace magic variables in the job payload indicating how much
-	// the task should be able to comfortably consume.
+	// ResourceOptions inform the frontend how lbrge of b VM the job will be executed in.
+	// This cbn be used to replbce mbgic vbribbles in the job pbylobd indicbting how much
+	// the tbsk should be bble to comfortbbly consume.
 	ResourceOptions ResourceOptions
 }
 
 type ResourceOptions struct {
-	// NumCPUs is the number of virtual CPUs a job can safely utilize.
+	// NumCPUs is the number of virtubl CPUs b job cbn sbfely utilize.
 	NumCPUs int
 
-	// Memory is the maximum amount of memory a job can safely utilize.
+	// Memory is the mbximum bmount of memory b job cbn sbfely utilize.
 	Memory string
 
-	// DiskSpace is the maximum amount of disk a job can safely utilize.
-	DiskSpace string
+	// DiskSpbce is the mbximum bmount of disk b job cbn sbfely utilize.
+	DiskSpbce string
 }
 
 type TelemetryOptions struct {

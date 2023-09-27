@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -7,56 +7,56 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// A BitbucketServerSource yields repositories from a single BitbucketServer connection configured
-// in Sourcegraph via the external services configuration.
+// A BitbucketServerSource yields repositories from b single BitbucketServer connection configured
+// in Sourcegrbph vib the externbl services configurbtion.
 type BitbucketServerSource struct {
-	svc     *types.ExternalService
-	config  *schema.BitbucketServerConnection
+	svc     *types.ExternblService
+	config  *schemb.BitbucketServerConnection
 	exclude excludeFunc
 	client  *bitbucketserver.Client
 	logger  log.Logger
 }
 
-var _ Source = &BitbucketServerSource{}
-var _ UserSource = &BitbucketServerSource{}
-var _ VersionSource = &BitbucketServerSource{}
+vbr _ Source = &BitbucketServerSource{}
+vbr _ UserSource = &BitbucketServerSource{}
+vbr _ VersionSource = &BitbucketServerSource{}
 
-// NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
-// rl is optional
-func NewBitbucketServerSource(ctx context.Context, logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewBitbucketServerSource returns b new BitbucketServerSource from the given externbl service.
+// rl is optionbl
+func NewBitbucketServerSource(ctx context.Context, logger log.Logger, svc *types.ExternblService, cf *httpcli.Fbctory) (*BitbucketServerSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.BitbucketServerConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.BitbucketServerConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 	return newBitbucketServerSource(logger, svc, &c, cf)
 }
 
-func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(logger log.Logger, svc *types.ExternblService, c *schemb.BitbucketServerConnection, cf *httpcli.Fbctory) (*BitbucketServerSource, error) {
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternblClientFbctory
 	}
 
-	var opts []httpcli.Opt
-	if c.Certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(c.Certificate))
+	vbr opts []httpcli.Opt
+	if c.Certificbte != "" {
+		opts = bppend(opts, httpcli.NewCertPoolOpt(c.Certificbte))
 	}
 
 	cli, err := cf.Doer(opts...)
@@ -64,11 +64,11 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 		return nil, err
 	}
 
-	var eb excludeBuilder
-	for _, r := range c.Exclude {
-		eb.Exact(r.Name)
-		eb.Exact(strconv.Itoa(r.Id))
-		eb.Pattern(r.Pattern)
+	vbr eb excludeBuilder
+	for _, r := rbnge c.Exclude {
+		eb.Exbct(r.Nbme)
+		eb.Exbct(strconv.Itob(r.Id))
+		eb.Pbttern(r.Pbttern)
 	}
 	exclude, err := eb.Build()
 	if err != nil {
@@ -90,67 +90,67 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 }
 
 func (s BitbucketServerSource) CheckConnection(ctx context.Context) error {
-	_, err := s.AuthenticatedUsername(ctx)
+	_, err := s.AuthenticbtedUsernbme(ctx)
 	if err != nil {
-		return errors.Wrap(err, "connection check failed. could not fetch authenticated user")
+		return errors.Wrbp(err, "connection check fbiled. could not fetch buthenticbted user")
 	}
 	return nil
 }
 
-// ListRepos returns all BitbucketServer repositories accessible to all connections configured
-// in Sourcegraph via the external services configuration.
-func (s BitbucketServerSource) ListRepos(ctx context.Context, results chan SourceResult) {
+// ListRepos returns bll BitbucketServer repositories bccessible to bll connections configured
+// in Sourcegrbph vib the externbl services configurbtion.
+func (s BitbucketServerSource) ListRepos(ctx context.Context, results chbn SourceResult) {
 	s.listAllRepos(ctx, results)
 }
 
-func (s BitbucketServerSource) WithAuthenticator(a auth.Authenticator) (Source, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH,
-		*auth.BasicAuth,
-		*auth.BasicAuthWithSSH,
-		*bitbucketserver.SudoableOAuthClient:
-		break
+func (s BitbucketServerSource) WithAuthenticbtor(b buth.Authenticbtor) (Source, error) {
+	switch b.(type) {
+	cbse *buth.OAuthBebrerToken,
+		*buth.OAuthBebrerTokenWithSSH,
+		*buth.BbsicAuth,
+		*buth.BbsicAuthWithSSH,
+		*bitbucketserver.SudobbleOAuthClient:
+		brebk
 
-	default:
-		return nil, newUnsupportedAuthenticatorError("BitbucketServerSource", a)
+	defbult:
+		return nil, newUnsupportedAuthenticbtorError("BitbucketServerSource", b)
 	}
 
 	sc := s
-	sc.client = sc.client.WithAuthenticator(a)
+	sc.client = sc.client.WithAuthenticbtor(b)
 
 	return &sc, nil
 }
 
-// ExternalServices returns a singleton slice containing the external service.
-func (s BitbucketServerSource) ExternalServices() types.ExternalServices {
-	return types.ExternalServices{s.svc}
+// ExternblServices returns b singleton slice contbining the externbl service.
+func (s BitbucketServerSource) ExternblServices() types.ExternblServices {
+	return types.ExternblServices{s.svc}
 }
 
-func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived bool) *types.Repo {
-	host, err := url.Parse(s.config.Url)
+func (s BitbucketServerSource) mbkeRepo(repo *bitbucketserver.Repo, isArchived bool) *types.Repo {
+	host, err := url.Pbrse(s.config.Url)
 	if err != nil {
-		// This should never happen
-		panic(errors.Errorf("malformed bitbucket config, invalid URL: %q, error: %s", s.config.Url, err))
+		// This should never hbppen
+		pbnic(errors.Errorf("mblformed bitbucket config, invblid URL: %q, error: %s", s.config.Url, err))
 	}
-	host = extsvc.NormalizeBaseURL(host)
+	host = extsvc.NormblizeBbseURL(host)
 
-	// Name
+	// Nbme
 	project := "UNKNOWN"
 	if repo.Project != nil {
 		project = repo.Project.Key
 	}
 
 	// Clone URL
-	var cloneURL string
-	for _, l := range repo.Links.Clone {
-		if l.Name == "ssh" && s.config.GitURLType == "ssh" {
+	vbr cloneURL string
+	for _, l := rbnge repo.Links.Clone {
+		if l.Nbme == "ssh" && s.config.GitURLType == "ssh" {
 			cloneURL = l.Href
-			break
+			brebk
 		}
-		if l.Name == "http" {
-			cloneURL = setUserinfoBestEffort(l.Href, s.config.Username, "")
-			// No break, so that we fallback to http in case of ssh missing
+		if l.Nbme == "http" {
+			cloneURL = setUserinfoBestEffort(l.Href, s.config.Usernbme, "")
+			// No brebk, so thbt we fbllbbck to http in cbse of ssh missing
 			// with GitURLType == "ssh"
 		}
 	}
@@ -158,111 +158,111 @@ func (s BitbucketServerSource) makeRepo(repo *bitbucketserver.Repo, isArchived b
 	urn := s.svc.URN()
 
 	return &types.Repo{
-		Name: reposource.BitbucketServerRepoName(
-			s.config.RepositoryPathPattern,
-			host.Hostname(),
+		Nbme: reposource.BitbucketServerRepoNbme(
+			s.config.RepositoryPbthPbttern,
+			host.Hostnbme(),
 			project,
 			repo.Slug,
 		),
-		URI: string(reposource.BitbucketServerRepoName(
+		URI: string(reposource.BitbucketServerRepoNbme(
 			"",
-			host.Hostname(),
+			host.Hostnbme(),
 			project,
 			repo.Slug,
 		)),
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          strconv.Itoa(repo.ID),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          strconv.Itob(repo.ID),
 			ServiceType: extsvc.TypeBitbucketServer,
 			ServiceID:   host.String(),
 		},
 		Description: repo.Description,
 		Fork:        repo.Origin != nil,
 		Archived:    isArchived,
-		Private:     !repo.Public,
-		Sources: map[string]*types.SourceInfo{
+		Privbte:     !repo.Public,
+		Sources: mbp[string]*types.SourceInfo{
 			urn: {
 				ID:       urn,
 				CloneURL: cloneURL,
 			},
 		},
-		Metadata: repo,
+		Metbdbtb: repo,
 	}
 }
 
 func (s *BitbucketServerSource) excludes(r *bitbucketserver.Repo) bool {
-	name := r.Slug
+	nbme := r.Slug
 	if r.Project != nil {
-		name = r.Project.Key + "/" + name
+		nbme = r.Project.Key + "/" + nbme
 	}
-	if r.State != "AVAILABLE" ||
-		s.exclude(name) ||
-		s.exclude(strconv.Itoa(r.ID)) ||
-		(s.config.ExcludePersonalRepositories && r.IsPersonalRepository()) {
+	if r.Stbte != "AVAILABLE" ||
+		s.exclude(nbme) ||
+		s.exclude(strconv.Itob(r.ID)) ||
+		(s.config.ExcludePersonblRepositories && r.IsPersonblRepository()) {
 		return true
 	}
 
-	return false
+	return fblse
 }
 
-func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan SourceResult) {
-	// "archived" label is a convention used at some customers for indicating a
-	// repository is archived (like github's archived state). This is not returned in
-	// the normal repository listing endpoints, so we need to fetch it separately.
-	archived, err := s.listAllLabeledRepos(ctx, "archived")
+func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chbn SourceResult) {
+	// "brchived" lbbel is b convention used bt some customers for indicbting b
+	// repository is brchived (like github's brchived stbte). This is not returned in
+	// the normbl repository listing endpoints, so we need to fetch it sepbrbtely.
+	brchived, err := s.listAllLbbeledRepos(ctx, "brchived")
 	if err != nil {
-		results <- SourceResult{Source: s, Err: errors.Wrap(err, "failed to list repos with archived label")}
+		results <- SourceResult{Source: s, Err: errors.Wrbp(err, "fbiled to list repos with brchived lbbel")}
 		return
 	}
 
-	type batch struct {
+	type bbtch struct {
 		repos []*bitbucketserver.Repo
 		err   error
 	}
 
-	ch := make(chan batch)
+	ch := mbke(chbn bbtch)
 
-	var wg sync.WaitGroup
+	vbr wg sync.WbitGroup
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
 
-		// Admins normally add to end of lists, so end of list most likely has new repos
-		// => stream them first.
+		// Admins normblly bdd to end of lists, so end of list most likely hbs new repos
+		// => strebm them first.
 		for i := len(s.config.Repos) - 1; i >= 0; i-- {
 			if err := ctx.Err(); err != nil {
-				ch <- batch{err: err}
-				break
+				ch <- bbtch{err: err}
+				brebk
 			}
 
-			name := s.config.Repos[i]
-			ps := strings.SplitN(name, "/", 2)
+			nbme := s.config.Repos[i]
+			ps := strings.SplitN(nbme, "/", 2)
 			if len(ps) != 2 {
-				ch <- batch{err: errors.Errorf("bitbucketserver.repos: name=%q", name)}
+				ch <- bbtch{err: errors.Errorf("bitbucketserver.repos: nbme=%q", nbme)}
 				continue
 			}
 
 			projectKey, repoSlug := ps[0], ps[1]
 			repo, err := s.client.Repo(ctx, projectKey, repoSlug)
 			if err != nil {
-				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
-				// 404 errors on external service config validation.
+				// TODO(tsenbrt): When implementing dry-run, reconsider blternbtives to return
+				// 404 errors on externbl service config vblidbtion.
 				if bitbucketserver.IsNotFound(err) {
-					s.logger.Warn("skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
+					s.logger.Wbrn("skipping missing bitbucketserver.repos entry:", log.String("nbme", nbme), log.Error(err))
 					continue
 				}
-				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repos: name: %q", name)}
+				ch <- bbtch{err: errors.Wrbpf(err, "bitbucketserver.repos: nbme: %q", nbme)}
 			} else {
-				ch <- batch{repos: []*bitbucketserver.Repo{repo}}
+				ch <- bbtch{repos: []*bitbucketserver.Repo{repo}}
 			}
 		}
 	}()
 
-	for _, q := range s.config.RepositoryQuery {
+	for _, q := rbnge s.config.RepositoryQuery {
 		switch q {
-		case "none":
+		cbse "none":
 			continue
-		case "all":
+		cbse "bll":
 			q = "" // No filters.
 		}
 
@@ -270,94 +270,94 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 		go func(q string) {
 			defer wg.Done()
 
-			next := &bitbucketserver.PageToken{Limit: 1000}
-			for next.HasMore() {
-				repos, page, err := s.client.Repos(ctx, next, q)
+			next := &bitbucketserver.PbgeToken{Limit: 1000}
+			for next.HbsMore() {
+				repos, pbge, err := s.client.Repos(ctx, next, q)
 				if err != nil {
-					ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repositoryQuery: query=%q, page=%+v", q, next)}
-					break
+					ch <- bbtch{err: errors.Wrbpf(err, "bitbucketserver.repositoryQuery: query=%q, pbge=%+v", q, next)}
+					brebk
 				}
 
-				ch <- batch{repos: repos}
-				next = page
+				ch <- bbtch{repos: repos}
+				next = pbge
 			}
 		}(q)
 	}
 
-	for _, q := range s.config.ProjectKeys {
+	for _, q := rbnge s.config.ProjectKeys {
 		wg.Add(1)
 		go func(q string) {
 			defer wg.Done()
 
 			repos, err := s.client.ProjectRepos(ctx, q)
 			if err != nil {
-				// Getting a "fatal" error for a single project key is not a strong
-				// enough reason to stop syncing, instead wrap this error as a warning
-				// so that the sync can continue.
-				ch <- batch{err: errors.NewWarningError(errors.Wrapf(err, "bitbucketserver.projectKeys: query=%q", q))}
+				// Getting b "fbtbl" error for b single project key is not b strong
+				// enough rebson to stop syncing, instebd wrbp this error bs b wbrning
+				// so thbt the sync cbn continue.
+				ch <- bbtch{err: errors.NewWbrningError(errors.Wrbpf(err, "bitbucketserver.projectKeys: query=%q", q))}
 				return
 			}
 
-			ch <- batch{repos: repos}
+			ch <- bbtch{repos: repos}
 		}(q)
 	}
 
 	go func() {
-		wg.Wait()
+		wg.Wbit()
 		close(ch)
 	}()
 
-	seen := make(map[int]bool)
-	for r := range ch {
+	seen := mbke(mbp[int]bool)
+	for r := rbnge ch {
 		if r.err != nil {
 			results <- SourceResult{Source: s, Err: r.err}
 			continue
 		}
 
-		for _, repo := range r.repos {
+		for _, repo := rbnge r.repos {
 			if !seen[repo.ID] && !s.excludes(repo) {
-				_, isArchived := archived[repo.ID]
-				results <- SourceResult{Source: s, Repo: s.makeRepo(repo, isArchived)}
+				_, isArchived := brchived[repo.ID]
+				results <- SourceResult{Source: s, Repo: s.mbkeRepo(repo, isArchived)}
 				seen[repo.ID] = true
 			}
 		}
 	}
 }
 
-func (s *BitbucketServerSource) listAllLabeledRepos(ctx context.Context, label string) (map[int]struct{}, error) {
-	ids := map[int]struct{}{}
-	next := &bitbucketserver.PageToken{Limit: 1000}
-	for next.HasMore() {
-		repos, page, err := s.client.LabeledRepos(ctx, next, label)
+func (s *BitbucketServerSource) listAllLbbeledRepos(ctx context.Context, lbbel string) (mbp[int]struct{}, error) {
+	ids := mbp[int]struct{}{}
+	next := &bitbucketserver.PbgeToken{Limit: 1000}
+	for next.HbsMore() {
+		repos, pbge, err := s.client.LbbeledRepos(ctx, next, lbbel)
 		if err != nil {
-			// If the instance doesn't have the label then no repos are
-			// labeled. Older versions of bitbucket do not support labels, so
-			// they too have no labelled repos.
-			if bitbucketserver.IsNoSuchLabel(err) || bitbucketserver.IsNotFound(err) {
-				// treat as empty
+			// If the instbnce doesn't hbve the lbbel then no repos bre
+			// lbbeled. Older versions of bitbucket do not support lbbels, so
+			// they too hbve no lbbelled repos.
+			if bitbucketserver.IsNoSuchLbbel(err) || bitbucketserver.IsNotFound(err) {
+				// trebt bs empty
 				return ids, nil
 			}
 			return nil, err
 		}
 
-		for _, r := range repos {
+		for _, r := rbnge repos {
 			ids[r.ID] = struct{}{}
 		}
 
-		next = page
+		next = pbge
 	}
 	return ids, nil
 }
 
-// AuthenticatedUsername uses the underlying bitbucketserver.Client to get the
-// username belonging to the credentials associated with the
+// AuthenticbtedUsernbme uses the underlying bitbucketserver.Client to get the
+// usernbme belonging to the credentibls bssocibted with the
 // BitbucketServerSource.
-func (s *BitbucketServerSource) AuthenticatedUsername(ctx context.Context) (string, error) {
-	return s.client.AuthenticatedUsername(ctx)
+func (s *BitbucketServerSource) AuthenticbtedUsernbme(ctx context.Context) (string, error) {
+	return s.client.AuthenticbtedUsernbme(ctx)
 }
 
-func (s *BitbucketServerSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.client.AuthenticatedUsername(ctx)
+func (s *BitbucketServerSource) VblidbteAuthenticbtor(ctx context.Context) error {
+	_, err := s.client.AuthenticbtedUsernbme(ctx)
 	return err
 }
 

@@ -1,84 +1,84 @@
-package inttests
+pbckbge inttests
 
 import (
 	"context"
 	"net/http"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestGetObject(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	gitCommands := []string{
+	gitCommbnds := []string{
 		"echo x > f",
-		"git add f",
-		"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",
+		"git bdd f",
+		"GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit -m foo --buthor='b <b@b.com>' --dbte 2006-01-02T15:04:05Z",
 	}
 
 	type test struct {
-		repo           api.RepoName
-		objectName     string
-		wantOID        string
-		wantObjectType gitdomain.ObjectType
+		repo           bpi.RepoNbme
+		objectNbme     string
+		wbntOID        string
+		wbntObjectType gitdombin.ObjectType
 	}
-	tests := map[string]test{
-		"basic": {
-			repo:           MakeGitRepository(t, gitCommands...),
-			objectName:     "e86b31b62399cfc86199e8b6e21a35e76d0e8b5e^{tree}",
-			wantOID:        "a1dffc7a64c0b2d395484bf452e9aeb1da3a18f2",
-			wantObjectType: gitdomain.ObjectTypeTree,
+	tests := mbp[string]test{
+		"bbsic": {
+			repo:           MbkeGitRepository(t, gitCommbnds...),
+			objectNbme:     "e86b31b62399cfc86199e8b6e21b35e76d0e8b5e^{tree}",
+			wbntOID:        "b1dffc7b64c0b2d395484bf452e9beb1db3b18f2",
+			wbntObjectType: gitdombin.ObjectTypeTree,
 		},
 	}
 
-	runTest := func(t *testing.T, label string, test test, cli gitserver.Client) {
-		t.Run(label, func(t *testing.T) {
-			obj, err := cli.GetObject(context.Background(), test.repo, test.objectName)
+	runTest := func(t *testing.T, lbbel string, test test, cli gitserver.Client) {
+		t.Run(lbbel, func(t *testing.T) {
+			obj, err := cli.GetObject(context.Bbckground(), test.repo, test.objectNbme)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			oid := obj.ID
-			if oid.String() != test.wantOID {
-				t.Errorf("got OID %q, want %q", oid, test.wantOID)
+			if oid.String() != test.wbntOID {
+				t.Errorf("got OID %q, wbnt %q", oid, test.wbntOID)
 			}
-			if obj.Type != test.wantObjectType {
-				t.Errorf("got object type %q, want %q", obj.Type, test.wantObjectType)
+			if obj.Type != test.wbntObjectType {
+				t.Errorf("got object type %q, wbnt %q", obj.Type, test.wbntObjectType)
 			}
 		})
 	}
 
 	t.Run("gRPC", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: boolPointer(true),
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExperimentblFebtures: &schemb.ExperimentblFebtures{
+					EnbbleGRPC: boolPointer(true),
 				},
 			},
 		})
-		for label, test := range tests {
+		for lbbel, test := rbnge tests {
 			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			cli := gitserver.NewTestClient(http.DefaultClient, source)
-			runTest(t, label, test, cli)
+			cli := gitserver.NewTestClient(http.DefbultClient, source)
+			runTest(t, lbbel, test, cli)
 		}
 	})
 
 	t.Run("HTTP", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				ExperimentalFeatures: &schema.ExperimentalFeatures{
-					EnableGRPC: boolPointer(false),
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExperimentblFebtures: &schemb.ExperimentblFebtures{
+					EnbbleGRPC: boolPointer(fblse),
 				},
 			},
 		})
-		for label, test := range tests {
+		for lbbel, test := rbnge tests {
 			source := gitserver.NewTestClientSource(t, GitserverAddresses)
-			cli := gitserver.NewTestClient(http.DefaultClient, source)
-			runTest(t, label, test, cli)
+			cli := gitserver.NewTestClient(http.DefbultClient, source)
+			runTest(t, lbbel, test, cli)
 		}
 	})
 }

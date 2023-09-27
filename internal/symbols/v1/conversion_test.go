@@ -1,291 +1,291 @@
-package v1
+pbckbge v1
 
 import (
-	"math"
+	"mbth"
 	"testing"
 	"testing/quick"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func Test_Search_SymbolsResponse_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Sebrch_SymbolsResponse_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original search.SymbolsResponse) bool {
-		if !symbolsResponseWithinInt32(original) {
+	f := func(originbl sebrch.SymbolsResponse) bool {
+		if !symbolsResponseWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto SearchResponse
-		originalProto.FromInternal(&original)
+		vbr originblProto SebrchResponse
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted, cmpopts.EquateEmpty()); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted, cmpopts.EqubteEmpty()); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("SymbolsResponse diff (-want +got):\n%s", diff)
+		t.Errorf("SymbolsResponse diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Search_SymbolsParameters_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Sebrch_SymbolsPbrbmeters_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original search.SymbolsParameters) bool {
-		if !symbolsParametersWithinInt32(original) {
+	f := func(originbl sebrch.SymbolsPbrbmeters) bool {
+		if !symbolsPbrbmetersWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto SearchRequest
-		originalProto.FromInternal(&original)
+		vbr originblProto SebrchRequest
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("SymbolsParameters diff (-want +got):\n%s", diff)
+		t.Errorf("SymbolsPbrbmeters diff (-wbnt +got):\n%s", diff)
 	}
 }
 
 func Test_Result_Symbol_ProtoRoundTrip(t *testing.T) {
-	var diff string
+	vbr diff string
 
-	f := func(original result.Symbol) bool {
-		if !symbolWithinInt32(original) {
+	f := func(originbl result.Symbol) bool {
+		if !symbolWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto SearchResponse_Symbol
-		originalProto.FromInternal(&original)
+		vbr originblProto SebrchResponse_Symbol
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("Symbol diff (-want +got):\n%s", diff)
+		t.Errorf("Symbol diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_SymbolInfo_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Internbl_Types_SymbolInfo_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original *types.SymbolInfo) bool {
-		if original != nil {
-			defRange := original.Definition.Range
-			if defRange != nil && !rangeWithinInt32(*defRange) {
+	f := func(originbl *types.SymbolInfo) bool {
+		if originbl != nil {
+			defRbnge := originbl.Definition.Rbnge
+			if defRbnge != nil && !rbngeWithinInt32(*defRbnge) {
 				return true // skip
 			}
 		}
 
-		var originalProto SymbolInfoResponse
-		originalProto.FromInternal(original)
+		vbr originblProto SymbolInfoResponse
+		originblProto.FromInternbl(originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted, cmpopts.EquateEmpty()); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted, cmpopts.EqubteEmpty()); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("SymbolInfo diff (-want +got):\n%s", diff)
+		t.Errorf("SymbolInfo diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_SymbolInfo_ProtoRoundTripNil(t *testing.T) {
-	// Make sure a nil SymbolInfo is returned as nil.
-	var originalProto SymbolInfoResponse
-	originalProto.FromInternal(nil)
-	converted := originalProto.ToInternal()
+func Test_Internbl_Types_SymbolInfo_ProtoRoundTripNil(t *testing.T) {
+	// Mbke sure b nil SymbolInfo is returned bs nil.
+	vbr originblProto SymbolInfoResponse
+	originblProto.FromInternbl(nil)
+	converted := originblProto.ToInternbl()
 
-	var expect *types.SymbolInfo
-	if diff := cmp.Diff(expect, converted, cmpopts.EquateEmpty()); diff != "" {
-		t.Errorf("SymbolInfo diff (-want +got):\n%s", diff)
+	vbr expect *types.SymbolInfo
+	if diff := cmp.Diff(expect, converted, cmpopts.EqubteEmpty()); diff != "" {
+		t.Errorf("SymbolInfo diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_LocalCodeIntelPayload_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Internbl_Types_LocblCodeIntelPbylobd_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original types.LocalCodeIntelPayload) bool {
-		if !localCodeIntelPayloadWithinInt32(original) {
+	f := func(originbl types.LocblCodeIntelPbylobd) bool {
+		if !locblCodeIntelPbylobdWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto LocalCodeIntelResponse
-		originalProto.FromInternal(&original)
+		vbr originblProto LocblCodeIntelResponse
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(&original, converted, cmpopts.EquateEmpty()); diff != "" {
-			return false
+		if diff = cmp.Diff(&originbl, converted, cmpopts.EqubteEmpty()); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("LocalCodeIntelPayload diff (-want +got):\n%s", diff)
+		t.Errorf("LocblCodeIntelPbylobd diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_Symbol_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Internbl_Types_Symbol_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original types.Symbol) bool {
-		if !localCodeIntelSymbolWithinInt32(original) {
+	f := func(originbl types.Symbol) bool {
+		if !locblCodeIntelSymbolWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto LocalCodeIntelResponse_Symbol
-		originalProto.FromInternal(&original)
+		vbr originblProto LocblCodeIntelResponse_Symbol
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted, cmpopts.EquateEmpty()); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted, cmpopts.EqubteEmpty()); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("Symbol diff (-want +got):\n%s", diff)
+		t.Errorf("Symbol diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_RepoCommitPath_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Internbl_Types_RepoCommitPbth_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original types.RepoCommitPath) bool {
+	f := func(originbl types.RepoCommitPbth) bool {
 
-		var originalProto RepoCommitPath
-		originalProto.FromInternal(&original)
+		vbr originblProto RepoCommitPbth
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("RepoCommitPath diff (-want +got):\n%s", diff)
+		t.Errorf("RepoCommitPbth diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_Range_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Internbl_Types_Rbnge_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original types.Range) bool {
-		if !rangeWithinInt32(original) {
+	f := func(originbl types.Rbnge) bool {
+		if !rbngeWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto Range
-		originalProto.FromInternal(&original)
+		vbr originblProto Rbnge
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("Range diff (-want +got):\n%s", diff)
+		t.Errorf("Rbnge diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-func Test_Internal_Types_Point_ProtoRoundTrip(t *testing.T) {
-	var diff string
+func Test_Internbl_Types_Point_ProtoRoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original types.Point) bool {
-		if !pointWithinInt32(original) {
+	f := func(originbl types.Point) bool {
+		if !pointWithinInt32(originbl) {
 			return true // skip
 		}
 
-		var originalProto Point
-		originalProto.FromInternal(&original)
+		vbr originblProto Point
+		originblProto.FromInternbl(&originbl)
 
-		converted := originalProto.ToInternal()
+		converted := originblProto.ToInternbl()
 
-		if diff = cmp.Diff(original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("Point diff (-want +got):\n%s", diff)
+		t.Errorf("Point diff (-wbnt +got):\n%s", diff)
 	}
 }
 
-// These helper functions help ensure that testing/quick doesn't generate
-// int values that are outside the range of the int32 types in the protobuf definitions.
+// These helper functions help ensure thbt testing/quick doesn't generbte
+// int vblues thbt bre outside the rbnge of the int32 types in the protobuf definitions.
 
-// In our application code, these values shouldn't be outside the range of int32:
+// In our bpplicbtion code, these vblues shouldn't be outside the rbnge of int32:
 //
-//   - symbol.Line / Character: 2^31-1 lines / line length is highly unlikely to be exceeded in a real codebase
-//   - symbolsParameters.Timeout: 2^31 - 1 is ~68 years, which nobody will ever set
-//   - symbolsParameters.First: Assuming that each symbol is at least three characters long, 2^31 symbols is would be
-//     a ~17 gigabyte file, which is unlikely to be exceeded in a real codebase
-func symbolsResponseWithinInt32(r search.SymbolsResponse) bool {
-	for _, s := range r.Symbols {
-		if !withinInt32(s.Line, s.Character) {
-			return false
+//   - symbol.Line / Chbrbcter: 2^31-1 lines / line length is highly unlikely to be exceeded in b rebl codebbse
+//   - symbolsPbrbmeters.Timeout: 2^31 - 1 is ~68 yebrs, which nobody will ever set
+//   - symbolsPbrbmeters.First: Assuming thbt ebch symbol is bt lebst three chbrbcters long, 2^31 symbols is would be
+//     b ~17 gigbbyte file, which is unlikely to be exceeded in b rebl codebbse
+func symbolsResponseWithinInt32(r sebrch.SymbolsResponse) bool {
+	for _, s := rbnge r.Symbols {
+		if !withinInt32(s.Line, s.Chbrbcter) {
+			return fblse
 		}
 	}
 
 	return true
 }
 
-func localCodeIntelPayloadWithinInt32(p types.LocalCodeIntelPayload) bool {
-	for _, s := range p.Symbols {
-		if !localCodeIntelSymbolWithinInt32(s) {
-			return false
+func locblCodeIntelPbylobdWithinInt32(p types.LocblCodeIntelPbylobd) bool {
+	for _, s := rbnge p.Symbols {
+		if !locblCodeIntelSymbolWithinInt32(s) {
+			return fblse
 		}
 	}
 
 	return true
 }
 
-func localCodeIntelSymbolWithinInt32(s types.Symbol) bool {
-	ranges := []types.Range{s.Def}
-	ranges = append(ranges, s.Refs...)
+func locblCodeIntelSymbolWithinInt32(s types.Symbol) bool {
+	rbnges := []types.Rbnge{s.Def}
+	rbnges = bppend(rbnges, s.Refs...)
 
-	for _, r := range ranges {
-		if !rangeWithinInt32(r) {
-			return false
+	for _, r := rbnge rbnges {
+		if !rbngeWithinInt32(r) {
+			return fblse
 		}
 	}
 
@@ -295,23 +295,23 @@ func pointWithinInt32(p types.Point) bool {
 	return withinInt32(p.Row, p.Column)
 }
 
-func symbolsParametersWithinInt32(s search.SymbolsParameters) bool {
+func symbolsPbrbmetersWithinInt32(s sebrch.SymbolsPbrbmeters) bool {
 	return withinInt32(s.First)
 }
 
-func rangeWithinInt32(r types.Range) bool {
+func rbngeWithinInt32(r types.Rbnge) bool {
 	return withinInt32(r.Row, r.Column, r.Length)
 }
 
-// Normally, our line/char fields should be within the range of int32 anyway (2^31-1)
+// Normblly, our line/chbr fields should be within the rbnge of int32 bnywby (2^31-1)
 func symbolWithinInt32(s result.Symbol) bool {
-	return withinInt32(s.Line, s.Character)
+	return withinInt32(s.Line, s.Chbrbcter)
 }
 
 func withinInt32(xs ...int) bool {
-	for _, x := range xs {
-		if x < math.MinInt32 || x > math.MaxInt32 {
-			return false
+	for _, x := rbnge xs {
+		if x < mbth.MinInt32 || x > mbth.MbxInt32 {
+			return fblse
 		}
 	}
 

@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -11,28 +11,28 @@ import (
 
 type User struct {
 	ID         int32      `json:"id"`
-	Name       string     `json:"name"`
-	Username   string     `json:"username"`
-	Email      string     `json:"email"`
-	State      string     `json:"state"`
-	AvatarURL  string     `json:"avatar_url"`
+	Nbme       string     `json:"nbme"`
+	Usernbme   string     `json:"usernbme"`
+	Embil      string     `json:"embil"`
+	Stbte      string     `json:"stbte"`
+	AvbtbrURL  string     `json:"bvbtbr_url"`
 	WebURL     string     `json:"web_url"`
 	Identities []Identity `json:"identities"`
 }
 
-// AuthUser represents a GitLab user for authentication it's slightly different from User
-// as this has the CreatedAt field. This object is used for handling authenticating users,
-// so that we can check the creation time of the account.
+// AuthUser represents b GitLbb user for buthenticbtion it's slightly different from User
+// bs this hbs the CrebtedAt field. This object is used for hbndling buthenticbting users,
+// so thbt we cbn check the crebtion time of the bccount.
 type AuthUser struct {
 	ID         int32      `json:"id"`
-	Name       string     `json:"name"`
-	Username   string     `json:"username"`
-	Email      string     `json:"email"`
-	State      string     `json:"state"`
-	AvatarURL  string     `json:"avatar_url"`
+	Nbme       string     `json:"nbme"`
+	Usernbme   string     `json:"usernbme"`
+	Embil      string     `json:"embil"`
+	Stbte      string     `json:"stbte"`
+	AvbtbrURL  string     `json:"bvbtbr_url"`
 	WebURL     string     `json:"web_url"`
 	Identities []Identity `json:"identities"`
-	CreatedAt  time.Time  `json:"created_at,omitempty"`
+	CrebtedAt  time.Time  `json:"crebted_bt,omitempty"`
 }
 
 type Identity struct {
@@ -40,7 +40,7 @@ type Identity struct {
 	ExternUID string `json:"extern_uid"`
 }
 
-func (c *Client) ListUsers(ctx context.Context, urlStr string) (users []*AuthUser, nextPageURL *string, err error) {
+func (c *Client) ListUsers(ctx context.Context, urlStr string) (users []*AuthUser, nextPbgeURL *string, err error) {
 	if MockListUsers != nil {
 		return MockListUsers(c, ctx, urlStr)
 	}
@@ -49,17 +49,17 @@ func (c *Client) ListUsers(ctx context.Context, urlStr string) (users []*AuthUse
 	if err != nil {
 		return nil, nil, err
 	}
-	respHeader, _, err := c.do(ctx, req, &users)
+	respHebder, _, err := c.do(ctx, req, &users)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Get URL to next page. See https://docs.gitlab.com/ee/api/README.html#pagination-link-header.
-	if l := link.Parse(respHeader.Get("Link"))["next"]; l != nil {
-		nextPageURL = &l.URI
+	// Get URL to next pbge. See https://docs.gitlbb.com/ee/bpi/README.html#pbginbtion-link-hebder.
+	if l := link.Pbrse(respHebder.Get("Link"))["next"]; l != nil {
+		nextPbgeURL = &l.URI
 	}
 
-	return users, nextPageURL, nil
+	return users, nextPbgeURL, nil
 }
 
 func (c *Client) GetUser(ctx context.Context, id string) (*AuthUser, error) {
@@ -67,14 +67,14 @@ func (c *Client) GetUser(ctx context.Context, id string) (*AuthUser, error) {
 		return MockGetUser(c, ctx, id)
 	}
 
-	var urlStr string
+	vbr urlStr string
 	if id == "" {
 		urlStr = "user"
 	} else {
 		urlStr = fmt.Sprintf("users/%s", id)
 	}
 
-	var usr AuthUser
+	vbr usr AuthUser
 	req, err := http.NewRequest("GET", urlStr, nil)
 	if err != nil {
 		return nil, err

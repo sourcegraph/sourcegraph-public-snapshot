@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"bytes"
@@ -15,124 +15,124 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/commitgrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestSetRepositoryAsDirty(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	for _, id := range []int{50, 51, 52} {
-		insertRepo(t, db, id, "", false)
+	for _, id := rbnge []int{50, 51, 52} {
+		insertRepo(t, db, id, "", fblse)
 	}
 
-	for _, repositoryID := range []int{50, 51, 52, 51, 52} {
-		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID); err != nil {
-			t.Errorf("unexpected error marking repository as dirty: %s", err)
+	for _, repositoryID := rbnge []int{50, 51, 52, 51, 52} {
+		if err := store.SetRepositoryAsDirty(context.Bbckground(), repositoryID); err != nil {
+			t.Errorf("unexpected error mbrking repository bs dirty: %s", err)
 		}
 	}
 
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 
-	var keys []int
-	for _, dirtyRepository := range dirtyRepositories {
-		keys = append(keys, dirtyRepository.RepositoryID)
+	vbr keys []int
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		keys = bppend(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
 	if diff := cmp.Diff([]int{50, 51, 52}, keys); diff != "" {
-		t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
+		t.Errorf("unexpected repository ids (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestSkipsDeletedRepositories(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertRepo(t, db, 50, "should not be dirty", false)
+	insertRepo(t, db, 50, "should not be dirty", fblse)
 	deleteRepo(t, db, 50, time.Now())
-	insertRepo(t, db, 51, "should be dirty", false)
+	insertRepo(t, db, 51, "should be dirty", fblse)
 
-	// NOTE: We did not insert 52, so it should not show up as dirty, even though we mark it below.
+	// NOTE: We did not insert 52, so it should not show up bs dirty, even though we mbrk it below.
 
-	for _, repositoryID := range []int{50, 51, 52} {
-		if err := store.SetRepositoryAsDirty(context.Background(), repositoryID); err != nil {
-			t.Fatalf("unexpected error marking repository as dirty: %s", err)
+	for _, repositoryID := rbnge []int{50, 51, 52} {
+		if err := store.SetRepositoryAsDirty(context.Bbckground(), repositoryID); err != nil {
+			t.Fbtblf("unexpected error mbrking repository bs dirty: %s", err)
 		}
 	}
 
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 
-	var keys []int
-	for _, dirtyRepository := range dirtyRepositories {
-		keys = append(keys, dirtyRepository.RepositoryID)
+	vbr keys []int
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		keys = bppend(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
 	if diff := cmp.Diff([]int{51}, keys); diff != "" {
-		t.Errorf("unexpected repository ids (-want +got):\n%s", diff)
+		t.Errorf("unexpected repository ids (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCalculateVisibleUploadsResetsDirtyFlagTransactionTimestamp(t *testing.T) {
+func TestCblculbteVisibleUplobdsResetsDirtyFlbgTrbnsbctionTimestbmp(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(2)},
-		{ID: 3, Commit: makeCommit(3)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(2)},
+		{ID: 3, Commit: mbkeCommit(3)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(3): {{IsDefbultBrbnch: true}},
 	}
 
 	for i := 0; i < 3; i++ {
 		// Set dirty token to 3
-		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
-			t.Fatalf("unexpected error marking repository as dirty: %s", err)
+		if err := store.SetRepositoryAsDirty(context.Bbckground(), 50); err != nil {
+			t.Fbtblf("unexpected error mbrking repository bs dirty: %s", err)
 		}
 	}
 
-	// This test is mainly a syntax check against `transaction_timestamp()`
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	// This test is mbinly b syntbx check bgbinst `trbnsbction_timestbmp()`
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 3, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 }
 
-func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
+func TestCblculbteVisibleUplobdsNonDefbultBrbnches(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	//                +-- [08] ----- {09} --+
 	//                |                     |
@@ -140,92 +140,92 @@ func TestCalculateVisibleUploadsNonDefaultBranches(t *testing.T) {
 	//                           |
 	//                           +--- 10 ------ [11] -- {12}
 	//
-	// 02: tag v1
-	// 04: tag v2
-	// 05: tag v3
-	// 07: tip of main branch
-	// 09: tip of branch feat1
-	// 12: tip of branch feat2
+	// 02: tbg v1
+	// 04: tbg v2
+	// 05: tbg v3
+	// 07: tip of mbin brbnch
+	// 09: tip of brbnch febt1
+	// 12: tip of brbnch febt2
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(3)},
-		{ID: 3, Commit: makeCommit(6)},
-		{ID: 4, Commit: makeCommit(8)},
-		{ID: 5, Commit: makeCommit(11)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(3)},
+		{ID: 3, Commit: mbkeCommit(6)},
+		{ID: 4, Commit: mbkeCommit(8)},
+		{ID: 5, Commit: mbkeCommit(11)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
-		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
-		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
-		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
-		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(12), mbkeCommit(11)}, " "),
+		strings.Join([]string{mbkeCommit(11), mbkeCommit(10)}, " "),
+		strings.Join([]string{mbkeCommit(10), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4), mbkeCommit(9)}, " "),
+		strings.Join([]string{mbkeCommit(9), mbkeCommit(8)}, " "),
+		strings.Join([]string{mbkeCommit(8), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		// stale
-		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
-		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		// stble
+		mbkeCommit(2): {{Nbme: "v1", Type: gitdombin.RefTypeTbg, CrebtedDbte: &t1}},
+		mbkeCommit(9): {{Nbme: "febt1", Type: gitdombin.RefTypeBrbnch, CrebtedDbte: &t1}},
 
 		// fresh
-		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
-		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+		mbkeCommit(4):  {{Nbme: "v2", Type: gitdombin.RefTypeTbg, CrebtedDbte: &t2}},
+		mbkeCommit(5):  {{Nbme: "v3", Type: gitdombin.RefTypeTbg, CrebtedDbte: &t2}},
+		mbkeCommit(7):  {{Nbme: "mbin", Type: gitdombin.RefTypeBrbnch, IsDefbultBrbnch: true, CrebtedDbte: &t2}},
+		mbkeCommit(12): {{Nbme: "febt2", Type: gitdombin.RefTypeBrbnch, CrebtedDbte: &t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(1):  {1},
-		makeCommit(2):  {1},
-		makeCommit(3):  {2},
-		makeCommit(4):  {2},
-		makeCommit(5):  {2},
-		makeCommit(6):  {3},
-		makeCommit(7):  {3},
-		makeCommit(8):  {4},
-		makeCommit(9):  {4},
-		makeCommit(10): {2},
-		makeCommit(11): {5},
-		makeCommit(12): {5},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(1):  {1},
+		mbkeCommit(2):  {1},
+		mbkeCommit(3):  {2},
+		mbkeCommit(4):  {2},
+		mbkeCommit(5):  {2},
+		mbkeCommit(6):  {3},
+		mbkeCommit(7):  {3},
+		mbkeCommit(8):  {4},
+		mbkeCommit(9):  {4},
+		mbkeCommit(10): {2},
+		mbkeCommit(11): {5},
+		mbkeCommit(12): {5},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
-	}
-
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
-
-	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
-		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
+
+	if diff := cmp.Diff([]int{3}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUplobds(t, db, 50)); diff != "" {
+		t.Errorf("unexpected protected uplobds (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfiguration(t *testing.T) {
+func TestCblculbteVisibleUplobdsNonDefbultBrbnchesWithCustomRetentionConfigurbtion(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	//                +-- [08] ----- {09} --+
 	//                |                     |
@@ -233,28 +233,28 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 	//                           |
 	//                           +--- 10 ------ [11] -- {12}
 	//
-	// 02: tag v1
-	// 04: tag v2
-	// 05: tag v3
-	// 07: tip of main branch
-	// 09: tip of branch feat1
-	// 12: tip of branch feat2
+	// 02: tbg v1
+	// 04: tbg v2
+	// 05: tbg v3
+	// 07: tip of mbin brbnch
+	// 09: tip of brbnch febt1
+	// 12: tip of brbnch febt2
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(3)},
-		{ID: 3, Commit: makeCommit(6)},
-		{ID: 4, Commit: makeCommit(8)},
-		{ID: 5, Commit: makeCommit(11)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(3)},
+		{ID: 3, Commit: mbkeCommit(6)},
+		{ID: 4, Commit: mbkeCommit(8)},
+		{ID: 5, Commit: mbkeCommit(11)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	retentionConfigurationQuery := `
-		INSERT INTO lsif_retention_configuration (
+	retentionConfigurbtionQuery := `
+		INSERT INTO lsif_retention_configurbtion (
 			id,
 			repository_id,
-			max_age_for_non_stale_branches_seconds,
-			max_age_for_non_stale_tags_seconds
+			mbx_bge_for_non_stble_brbnches_seconds,
+			mbx_bge_for_non_stble_tbgs_seconds
 		) VALUES (
 			1,
 			50,
@@ -262,139 +262,139 @@ func TestCalculateVisibleUploadsNonDefaultBranchesWithCustomRetentionConfigurati
 			3600
 		)
 	`
-	if _, err := db.ExecContext(context.Background(), retentionConfigurationQuery); err != nil {
-		t.Fatalf("unexpected error inserting retention configuration: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), retentionConfigurbtionQuery); err != nil {
+		t.Fbtblf("unexpected error inserting retention configurbtion: %s", err)
 	}
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(12), makeCommit(11)}, " "),
-		strings.Join([]string{makeCommit(11), makeCommit(10)}, " "),
-		strings.Join([]string{makeCommit(10), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4), makeCommit(9)}, " "),
-		strings.Join([]string{makeCommit(9), makeCommit(8)}, " "),
-		strings.Join([]string{makeCommit(8), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(12), mbkeCommit(11)}, " "),
+		strings.Join([]string{mbkeCommit(11), mbkeCommit(10)}, " "),
+		strings.Join([]string{mbkeCommit(10), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4), mbkeCommit(9)}, " "),
+		strings.Join([]string{mbkeCommit(9), mbkeCommit(8)}, " "),
+		strings.Join([]string{mbkeCommit(8), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
 	t1 := time.Now().Add(-time.Minute * 90) // > 1 hr
 	t2 := time.Now().Add(-time.Minute * 30) // < 1 hr
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		// stale
-		makeCommit(2): {{Name: "v1", Type: gitdomain.RefTypeTag, CreatedDate: &t1}},
-		makeCommit(9): {{Name: "feat1", Type: gitdomain.RefTypeBranch, CreatedDate: &t1}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		// stble
+		mbkeCommit(2): {{Nbme: "v1", Type: gitdombin.RefTypeTbg, CrebtedDbte: &t1}},
+		mbkeCommit(9): {{Nbme: "febt1", Type: gitdombin.RefTypeBrbnch, CrebtedDbte: &t1}},
 
 		// fresh
-		makeCommit(4):  {{Name: "v2", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(5):  {{Name: "v3", Type: gitdomain.RefTypeTag, CreatedDate: &t2}},
-		makeCommit(7):  {{Name: "main", Type: gitdomain.RefTypeBranch, IsDefaultBranch: true, CreatedDate: &t2}},
-		makeCommit(12): {{Name: "feat2", Type: gitdomain.RefTypeBranch, CreatedDate: &t2}},
+		mbkeCommit(4):  {{Nbme: "v2", Type: gitdombin.RefTypeTbg, CrebtedDbte: &t2}},
+		mbkeCommit(5):  {{Nbme: "v3", Type: gitdombin.RefTypeTbg, CrebtedDbte: &t2}},
+		mbkeCommit(7):  {{Nbme: "mbin", Type: gitdombin.RefTypeBrbnch, IsDefbultBrbnch: true, CrebtedDbte: &t2}},
+		mbkeCommit(12): {{Nbme: "febt2", Type: gitdombin.RefTypeBrbnch, CrebtedDbte: &t2}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Second, time.Second, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Second, time.Second, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(1):  {1},
-		makeCommit(2):  {1},
-		makeCommit(3):  {2},
-		makeCommit(4):  {2},
-		makeCommit(5):  {2},
-		makeCommit(6):  {3},
-		makeCommit(7):  {3},
-		makeCommit(8):  {4},
-		makeCommit(9):  {4},
-		makeCommit(10): {2},
-		makeCommit(11): {5},
-		makeCommit(12): {5},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(1):  {1},
+		mbkeCommit(2):  {1},
+		mbkeCommit(3):  {2},
+		mbkeCommit(4):  {2},
+		mbkeCommit(5):  {2},
+		mbkeCommit(6):  {3},
+		mbkeCommit(7):  {3},
+		mbkeCommit(8):  {4},
+		mbkeCommit(9):  {4},
+		mbkeCommit(10): {2},
+		mbkeCommit(11): {5},
+		mbkeCommit(12): {5},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
-	}
-
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
-
-	if diff := cmp.Diff([]int{3}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUploads(t, db, 50)); diff != "" {
-		t.Errorf("unexpected protected uploads (-want +got):\n%s", diff)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
+
+	if diff := cmp.Diff([]int{3}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
+	}
+
+	if diff := cmp.Diff([]int{2, 3, 5}, getProtectedUplobds(t, db, 50)); diff != "" {
+		t.Errorf("unexpected protected uplobds (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUpdateUploadsVisibleToCommits(t *testing.T) {
+func TestUpdbteUplobdsVisibleToCommits(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// [1] --+--- 2 --------+--5 -- 6 --+-- [7]
 	//       |              |           |
 	//       +-- [3] -- 4 --+           +--- 8
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(3)},
-		{ID: 3, Commit: makeCommit(7)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(3)},
+		{ID: 3, Commit: mbkeCommit(7)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(8), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(2), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(8): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(8): {{IsDefbultBrbnch: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(1): {1},
-		makeCommit(2): {1},
-		makeCommit(3): {2},
-		makeCommit(4): {2},
-		makeCommit(5): {1},
-		makeCommit(6): {1},
-		makeCommit(7): {3},
-		makeCommit(8): {1},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(1): {1},
+		mbkeCommit(2): {1},
+		mbkeCommit(3): {2},
+		mbkeCommit(4): {2},
+		mbkeCommit(5): {1},
+		mbkeCommit(6): {1},
+		mbkeCommit(7): {3},
+		mbkeCommit(8): {1},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
 
-	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]int{1}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
+func TestUpdbteUplobdsVisibleToCommitsAlternbteCommitGrbph(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// 1 --+-- [2] ---- 3
 	//     |
@@ -402,95 +402,95 @@ func TestUpdateUploadsVisibleToCommitsAlternateCommitGraph(t *testing.T) {
 	//              |
 	//              +-- 7 -- 8
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(2)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(2)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(8), mbkeCommit(7)}, " "),
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(3): {{IsDefbultBrbnch: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(2): {1},
-		makeCommit(3): {1},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(2): {1},
+		mbkeCommit(3): {1},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
 
-	if diff := cmp.Diff([]int{1}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]int{1}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUpdateUploadsVisibleToCommitsDistinctRoots(t *testing.T) {
+func TestUpdbteUplobdsVisibleToCommitsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// 1 -- [2]
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(2), Root: "root1/"},
-		{ID: 2, Commit: makeCommit(2), Root: "root2/"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(2), Root: "root1/"},
+		{ID: 2, Commit: mbkeCommit(2), Root: "root2/"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(2): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(2): {{IsDefbultBrbnch: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(2): {1, 2},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(2): {1, 2},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
 
-	if diff := cmp.Diff([]int{1, 2}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]int{1, 2}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
+func TestUpdbteUplobdsVisibleToCommitsOverlbppingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// 1 -- 2 --+-- 3 --+-- 5 -- 6
 	//          |       |
@@ -498,263 +498,263 @@ func TestUpdateUploadsVisibleToCommitsOverlappingRoots(t *testing.T) {
 	//
 	// With the following LSIF dumps:
 	//
-	// | UploadID | Commit | Root    | Indexer |
+	// | UplobdID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
 	// | 1        | 1      | root3/  | lsif-go |
 	// | 2        | 1      | root4/  | scip-python |
 	// | 3        | 2      | root1/  | lsif-go |
 	// | 4        | 2      | root2/  | lsif-go |
-	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
-	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
-	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
-	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
-	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 5        | 2      |         | scip-python | (overwrites root4/ bt commit 1)
+	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ bt commit 2)
+	// | 7        | 4      |         | scip-python | (overwrites (root) bt commit 2)
+	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ bt commit 2)
+	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ bt commit 2)
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
-		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
-		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
-		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
-		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1), Indexer: "lsif-go", Root: "root3/"},
+		{ID: 2, Commit: mbkeCommit(1), Indexer: "scip-python", Root: "root4/"},
+		{ID: 3, Commit: mbkeCommit(2), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 4, Commit: mbkeCommit(2), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 5, Commit: mbkeCommit(2), Indexer: "scip-python", Root: ""},
+		{ID: 6, Commit: mbkeCommit(3), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 7, Commit: mbkeCommit(4), Indexer: "scip-python", Root: ""},
+		{ID: 8, Commit: mbkeCommit(5), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 9, Commit: mbkeCommit(6), Indexer: "lsif-go", Root: "root1/"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(3), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(6): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(6): {{IsDefbultBrbnch: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(1): {1, 2},
-		makeCommit(2): {1, 2, 3, 4, 5},
-		makeCommit(3): {1, 2, 4, 5, 6},
-		makeCommit(4): {1, 2, 3, 4, 7},
-		makeCommit(5): {1, 2, 6, 7, 8},
-		makeCommit(6): {1, 2, 7, 8, 9},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(1): {1, 2},
+		mbkeCommit(2): {1, 2, 3, 4, 5},
+		mbkeCommit(3): {1, 2, 4, 5, 6},
+		mbkeCommit(4): {1, 2, 3, 4, 7},
+		mbkeCommit(5): {1, 2, 6, 7, 8},
+		mbkeCommit(6): {1, 2, 7, 8, 9},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
 
-	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]int{1, 2, 7, 8, 9}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUpdateUploadsVisibleToCommitsIndexerName(t *testing.T) {
+func TestUpdbteUplobdsVisibleToCommitsIndexerNbme(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// [1] -- [2] -- [3] -- [4] -- 5
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
-		{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
-		{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
-		{ID: 4, Commit: makeCommit(4), Root: "root4/", Indexer: "idx1"},
-		{ID: 5, Commit: makeCommit(1), Root: "root1/", Indexer: "idx2"},
-		{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
-		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
-		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1), Root: "root1/", Indexer: "idx1"},
+		{ID: 2, Commit: mbkeCommit(2), Root: "root2/", Indexer: "idx1"},
+		{ID: 3, Commit: mbkeCommit(3), Root: "root3/", Indexer: "idx1"},
+		{ID: 4, Commit: mbkeCommit(4), Root: "root4/", Indexer: "idx1"},
+		{ID: 5, Commit: mbkeCommit(1), Root: "root1/", Indexer: "idx2"},
+		{ID: 6, Commit: mbkeCommit(2), Root: "root2/", Indexer: "idx2"},
+		{ID: 7, Commit: mbkeCommit(3), Root: "root3/", Indexer: "idx2"},
+		{ID: 8, Commit: mbkeCommit(4), Root: "root4/", Indexer: "idx2"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(5): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(5): {{IsDefbultBrbnch: true}},
 	}
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 
-	expectedVisibleUploads := map[string][]int{
-		makeCommit(1): {1, 5},
-		makeCommit(2): {1, 2, 5, 6},
-		makeCommit(3): {1, 2, 3, 5, 6, 7},
-		makeCommit(4): {1, 2, 3, 4, 5, 6, 7, 8},
-		makeCommit(5): {1, 2, 3, 4, 5, 6, 7, 8},
+	expectedVisibleUplobds := mbp[string][]int{
+		mbkeCommit(1): {1, 5},
+		mbkeCommit(2): {1, 2, 5, 6},
+		mbkeCommit(3): {1, 2, 3, 5, 6, 7},
+		mbkeCommit(4): {1, 2, 3, 4, 5, 6, 7, 8},
+		mbkeCommit(5): {1, 2, 3, 4, 5, 6, 7, 8},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, getVisibleUploads(t, db, 50, keysOf(expectedVisibleUploads))); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, getVisibleUplobds(t, db, 50, keysOf(expectedVisibleUplobds))); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure data can be queried in reverse direction as well
-	assertCommitsVisibleFromUploads(t, store, uploads, expectedVisibleUploads)
+	// Ensure dbtb cbn be queried in reverse direction bs well
+	bssertCommitsVisibleFromUplobds(t, store, uplobds, expectedVisibleUplobds)
 
-	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUploadsVisibleAtTip(t, db, 50)); diff != "" {
-		t.Errorf("unexpected uploads visible at tip (-want +got):\n%s", diff)
+	if diff := cmp.Diff([]int{1, 2, 3, 4, 5, 6, 7, 8}, getUplobdsVisibleAtTip(t, db, 50)); diff != "" {
+		t.Errorf("unexpected uplobds visible bt tip (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUpdateUploadsVisibleToCommitsResetsDirtyFlag(t *testing.T) {
+func TestUpdbteUplobdsVisibleToCommitsResetsDirtyFlbg(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(2)},
-		{ID: 3, Commit: makeCommit(3)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(2)},
+		{ID: 3, Commit: mbkeCommit(3)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(3): {{IsDefbultBrbnch: true}},
 	}
 
 	for i := 0; i < 3; i++ {
 		// Set dirty token to 3
-		if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
-			t.Fatalf("unexpected error marking repository as dirty: %s", err)
+		if err := store.SetRepositoryAsDirty(context.Bbckground(), 50); err != nil {
+			t.Fbtblf("unexpected error mbrking repository bs dirty: %s", err)
 		}
 	}
 
 	now := time.Unix(1587396557, 0).UTC()
 
-	// Non-latest dirty token - should not clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	// Non-lbtest dirty token - should not clebr flbg
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 2, now); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 	if len(dirtyRepositories) == 0 {
-		t.Errorf("did not expect repository to be unmarked")
+		t.Errorf("did not expect repository to be unmbrked")
 	}
 
-	// Latest dirty token - should clear flag
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
-		t.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	// Lbtest dirty token - should clebr flbg
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 3, now); err != nil {
+		t.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
-	dirtyRepositories, err = store.GetDirtyRepositories(context.Background())
+	dirtyRepositories, err = store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 	if len(dirtyRepositories) != 0 {
-		t.Errorf("expected repository to be unmarked")
+		t.Errorf("expected repository to be unmbrked")
 	}
 
-	stale, updatedAt, err := store.GetCommitGraphMetadata(context.Background(), 50)
+	stble, updbtedAt, err := store.GetCommitGrbphMetbdbtb(context.Bbckground(), 50)
 	if err != nil {
-		t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+		t.Fbtblf("unexpected error getting commit grbph metbdbtb: %s", err)
 	}
-	if stale {
-		t.Errorf("unexpected value for stale. want=%v have=%v", false, stale)
+	if stble {
+		t.Errorf("unexpected vblue for stble. wbnt=%v hbve=%v", fblse, stble)
 	}
-	if diff := cmp.Diff(&now, updatedAt); diff != "" {
-		t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+	if diff := cmp.Diff(&now, updbtedAt); diff != "" {
+		t.Errorf("unexpected vblue for uplobdedAt (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestFindClosestDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// [1] --+--- 2 --------+--5 -- 6 --+-- [7]
 	//       |              |           |
 	//       +-- [3] -- 4 --+           +--- 8
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(3)},
-		{ID: 3, Commit: makeCommit(7)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(3)},
+		{ID: 3, Commit: mbkeCommit(7)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(2), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(8), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(2), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 2, Distance: 0}},
-		makeCommit(4): {{UploadID: 2, Distance: 1}},
-		makeCommit(5): {{UploadID: 1, Distance: 2}},
-		makeCommit(6): {{UploadID: 1, Distance: 3}},
-		makeCommit(7): {{UploadID: 3, Distance: 0}},
-		makeCommit(8): {{UploadID: 1, Distance: 4}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {{UplobdID: 1, Distbnce: 0}},
+		mbkeCommit(2): {{UplobdID: 1, Distbnce: 1}},
+		mbkeCommit(3): {{UplobdID: 2, Distbnce: 0}},
+		mbkeCommit(4): {{UplobdID: 2, Distbnce: 1}},
+		mbkeCommit(5): {{UplobdID: 1, Distbnce: 2}},
+		mbkeCommit(6): {{UplobdID: 1, Distbnce: 3}},
+		mbkeCommit(7): {{UplobdID: 3, Distbnce: 0}},
+		mbkeCommit(8): {{UplobdID: 1, Distbnce: 4}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
-		{commit: makeCommit(2), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
-		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
-		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{2}},
-		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1}},
-		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{3}},
-		{commit: makeCommit(5), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1, 2, 3}},
-		{commit: makeCommit(8), file: "file.ts", rootMustEnclosePath: true, graph: graph, anyOfIDs: []int{1, 2}},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(1), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{1}},
+		{commit: mbkeCommit(2), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{1}},
+		{commit: mbkeCommit(3), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{2}},
+		{commit: mbkeCommit(4), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{2}},
+		{commit: mbkeCommit(6), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{1}},
+		{commit: mbkeCommit(7), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{3}},
+		{commit: mbkeCommit(5), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{1, 2, 3}},
+		{commit: mbkeCommit(8), file: "file.ts", rootMustEnclosePbth: true, grbph: grbph, bnyOfIDs: []int{1, 2}},
 	})
 }
 
-func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
+func TestFindClosestDumpsAlternbteCommitGrbph(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// 1 --+-- [2] ---- 3
 	//     |
@@ -762,162 +762,162 @@ func TestFindClosestDumpsAlternateCommitGraph(t *testing.T) {
 	//              |
 	//              +-- 7 -- 8
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(2)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(2)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(8), makeCommit(7)}, " "),
-		strings.Join([]string{makeCommit(7), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(8), mbkeCommit(7)}, " "),
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(2): {{UplobdID: 1, Distbnce: 0}},
+		mbkeCommit(3): {{UplobdID: 1, Distbnce: 1}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(4), graph: graph},
-		{commit: makeCommit(6), graph: graph},
-		{commit: makeCommit(7), graph: graph},
-		{commit: makeCommit(5), graph: graph},
-		{commit: makeCommit(8), graph: graph},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(2), grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(3), grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(4), grbph: grbph},
+		{commit: mbkeCommit(6), grbph: grbph},
+		{commit: mbkeCommit(7), grbph: grbph},
+		{commit: mbkeCommit(5), grbph: grbph},
+		{commit: mbkeCommit(8), grbph: grbph},
 	})
 }
 
-func TestFindClosestDumpsAlternateCommitGraphWithOverwrittenVisibleUploads(t *testing.T) {
+func TestFindClosestDumpsAlternbteCommitGrbphWithOverwrittenVisibleUplobds(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// 1 -- [2] -- 3 -- 4 -- [5]
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(2)},
-		{ID: 2, Commit: makeCommit(5)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(2)},
+		{ID: 2, Commit: mbkeCommit(5)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(2): {{UploadID: 1, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 1}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}},
-		makeCommit(5): {{UploadID: 2, Distance: 0}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(2): {{UplobdID: 1, Distbnce: 0}},
+		mbkeCommit(3): {{UplobdID: 1, Distbnce: 1}},
+		mbkeCommit(4): {{UplobdID: 1, Distbnce: 2}},
+		mbkeCommit(5): {{UplobdID: 2, Distbnce: 0}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(2), graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(3), graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(4), graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(5), graph: graph, allOfIDs: []int{2}},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(2), grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(3), grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(4), grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(5), grbph: grbph, bllOfIDs: []int{2}},
 	})
 }
 
 func TestFindClosestDumpsDistinctRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// [1] -- 2
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Root: "root1/"},
-		{ID: 2, Commit: makeCommit(1), Root: "root2/"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1), Root: "root1/"},
+		{ID: 2, Commit: mbkeCommit(1), Root: "root2/"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {{UplobdID: 1, Distbnce: 0}, {UplobdID: 2, Distbnce: 0}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{
-		makeCommit(2): {Commit: makeCommit(2), AncestorCommit: makeCommit(1), Distance: 1},
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{
+		mbkeCommit(2): {Commit: mbkeCommit(2), AncestorCommit: mbkeCommit(1), Distbnce: 1},
 	}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "blah", rootMustEnclosePath: true, graph: graph},
-		{commit: makeCommit(2), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
-		{commit: makeCommit(2), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
-		{commit: makeCommit(1), file: "root3/file.ts", rootMustEnclosePath: true, graph: graph},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(1), file: "blbh", rootMustEnclosePbth: true, grbph: grbph},
+		{commit: mbkeCommit(2), file: "root1/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(1), file: "root2/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{2}},
+		{commit: mbkeCommit(2), file: "root2/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{2}},
+		{commit: mbkeCommit(1), file: "root3/file.ts", rootMustEnclosePbth: true, grbph: grbph},
 	})
 }
 
-func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
+func TestFindClosestDumpsOverlbppingRoots(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// 1 -- 2 --+-- 3 --+-- 5 -- 6
 	//          |       |
@@ -925,212 +925,212 @@ func TestFindClosestDumpsOverlappingRoots(t *testing.T) {
 	//
 	// With the following LSIF dumps:
 	//
-	// | UploadID | Commit | Root    | Indexer |
+	// | UplobdID | Commit | Root    | Indexer |
 	// | -------- + ------ + ------- + ------- |
 	// | 1        | 1      | root3/  | lsif-go |
 	// | 2        | 1      | root4/  | scip-python |
 	// | 3        | 2      | root1/  | lsif-go |
 	// | 4        | 2      | root2/  | lsif-go |
-	// | 5        | 2      |         | scip-python | (overwrites root4/ at commit 1)
-	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ at commit 2)
-	// | 7        | 4      |         | scip-python | (overwrites (root) at commit 2)
-	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ at commit 2)
-	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ at commit 2)
+	// | 5        | 2      |         | scip-python | (overwrites root4/ bt commit 1)
+	// | 6        | 3      | root1/  | lsif-go | (overwrites root1/ bt commit 2)
+	// | 7        | 4      |         | scip-python | (overwrites (root) bt commit 2)
+	// | 8        | 5      | root2/  | lsif-go | (overwrites root2/ bt commit 2)
+	// | 9        | 6      | root1/  | lsif-go | (overwrites root1/ bt commit 2)
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Indexer: "lsif-go", Root: "root3/"},
-		{ID: 2, Commit: makeCommit(1), Indexer: "scip-python", Root: "root4/"},
-		{ID: 3, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 4, Commit: makeCommit(2), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 5, Commit: makeCommit(2), Indexer: "scip-python", Root: ""},
-		{ID: 6, Commit: makeCommit(3), Indexer: "lsif-go", Root: "root1/"},
-		{ID: 7, Commit: makeCommit(4), Indexer: "scip-python", Root: ""},
-		{ID: 8, Commit: makeCommit(5), Indexer: "lsif-go", Root: "root2/"},
-		{ID: 9, Commit: makeCommit(6), Indexer: "lsif-go", Root: "root1/"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1), Indexer: "lsif-go", Root: "root3/"},
+		{ID: 2, Commit: mbkeCommit(1), Indexer: "scip-python", Root: "root4/"},
+		{ID: 3, Commit: mbkeCommit(2), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 4, Commit: mbkeCommit(2), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 5, Commit: mbkeCommit(2), Indexer: "scip-python", Root: ""},
+		{ID: 6, Commit: mbkeCommit(3), Indexer: "lsif-go", Root: "root1/"},
+		{ID: 7, Commit: mbkeCommit(4), Indexer: "scip-python", Root: ""},
+		{ID: 8, Commit: mbkeCommit(5), Indexer: "lsif-go", Root: "root2/"},
+		{ID: 9, Commit: mbkeCommit(6), Indexer: "lsif-go", Root: "root1/"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(3), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(3), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}, {UploadID: 2, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}, {UploadID: 2, Distance: 1}, {UploadID: 3, Distance: 0}, {UploadID: 4, Distance: 0}, {UploadID: 5, Distance: 0}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 4, Distance: 1}, {UploadID: 5, Distance: 1}, {UploadID: 6, Distance: 0}},
-		makeCommit(4): {{UploadID: 1, Distance: 2}, {UploadID: 2, Distance: 2}, {UploadID: 3, Distance: 1}, {UploadID: 4, Distance: 1}, {UploadID: 7, Distance: 0}},
-		makeCommit(5): {{UploadID: 1, Distance: 3}, {UploadID: 2, Distance: 3}, {UploadID: 6, Distance: 1}, {UploadID: 7, Distance: 1}, {UploadID: 8, Distance: 0}},
-		makeCommit(6): {{UploadID: 1, Distance: 4}, {UploadID: 2, Distance: 4}, {UploadID: 7, Distance: 2}, {UploadID: 8, Distance: 1}, {UploadID: 9, Distance: 0}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {{UplobdID: 1, Distbnce: 0}, {UplobdID: 2, Distbnce: 0}},
+		mbkeCommit(2): {{UplobdID: 1, Distbnce: 1}, {UplobdID: 2, Distbnce: 1}, {UplobdID: 3, Distbnce: 0}, {UplobdID: 4, Distbnce: 0}, {UplobdID: 5, Distbnce: 0}},
+		mbkeCommit(3): {{UplobdID: 1, Distbnce: 2}, {UplobdID: 2, Distbnce: 2}, {UplobdID: 4, Distbnce: 1}, {UplobdID: 5, Distbnce: 1}, {UplobdID: 6, Distbnce: 0}},
+		mbkeCommit(4): {{UplobdID: 1, Distbnce: 2}, {UplobdID: 2, Distbnce: 2}, {UplobdID: 3, Distbnce: 1}, {UplobdID: 4, Distbnce: 1}, {UplobdID: 7, Distbnce: 0}},
+		mbkeCommit(5): {{UplobdID: 1, Distbnce: 3}, {UplobdID: 2, Distbnce: 3}, {UplobdID: 6, Distbnce: 1}, {UplobdID: 7, Distbnce: 1}, {UplobdID: 8, Distbnce: 0}},
+		mbkeCommit(6): {{UplobdID: 1, Distbnce: 4}, {UplobdID: 2, Distbnce: 4}, {UplobdID: 7, Distbnce: 2}, {UplobdID: 8, Distbnce: 1}, {UplobdID: 9, Distbnce: 0}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(4), file: "root1/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{7, 3}},
-		{commit: makeCommit(5), file: "root2/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{8, 7}},
-		{commit: makeCommit(3), file: "root3/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{5, 1}},
-		{commit: makeCommit(1), file: "root4/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2}},
-		{commit: makeCommit(2), file: "root4/file.ts", rootMustEnclosePath: true, graph: graph, allOfIDs: []int{2, 5}},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(4), file: "root1/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{7, 3}},
+		{commit: mbkeCommit(5), file: "root2/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{8, 7}},
+		{commit: mbkeCommit(3), file: "root3/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{5, 1}},
+		{commit: mbkeCommit(1), file: "root4/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{2}},
+		{commit: mbkeCommit(2), file: "root4/file.ts", rootMustEnclosePbth: true, grbph: grbph, bllOfIDs: []int{2, 5}},
 	})
 }
 
-func TestFindClosestDumpsIndexerName(t *testing.T) {
+func TestFindClosestDumpsIndexerNbme(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// [1] --+-- [2] --+-- [3] --+-- [4] --+-- 5
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Root: "root1/", Indexer: "idx1"},
-		{ID: 2, Commit: makeCommit(2), Root: "root2/", Indexer: "idx1"},
-		{ID: 3, Commit: makeCommit(3), Root: "root3/", Indexer: "idx1"},
-		{ID: 4, Commit: makeCommit(4), Root: "root4/", Indexer: "idx1"},
-		{ID: 5, Commit: makeCommit(1), Root: "root1/", Indexer: "idx2"},
-		{ID: 6, Commit: makeCommit(2), Root: "root2/", Indexer: "idx2"},
-		{ID: 7, Commit: makeCommit(3), Root: "root3/", Indexer: "idx2"},
-		{ID: 8, Commit: makeCommit(4), Root: "root4/", Indexer: "idx2"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1), Root: "root1/", Indexer: "idx1"},
+		{ID: 2, Commit: mbkeCommit(2), Root: "root2/", Indexer: "idx1"},
+		{ID: 3, Commit: mbkeCommit(3), Root: "root3/", Indexer: "idx1"},
+		{ID: 4, Commit: mbkeCommit(4), Root: "root4/", Indexer: "idx1"},
+		{ID: 5, Commit: mbkeCommit(1), Root: "root1/", Indexer: "idx2"},
+		{ID: 6, Commit: mbkeCommit(2), Root: "root2/", Indexer: "idx2"},
+		{ID: 7, Commit: mbkeCommit(3), Root: "root3/", Indexer: "idx2"},
+		{ID: 8, Commit: mbkeCommit(4), Root: "root4/", Indexer: "idx2"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(5), makeCommit(4)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(4)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {
-			{UploadID: 1, Distance: 0},
-			{UploadID: 5, Distance: 0},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {
+			{UplobdID: 1, Distbnce: 0},
+			{UplobdID: 5, Distbnce: 0},
 		},
-		makeCommit(2): {
-			{UploadID: 1, Distance: 1},
-			{UploadID: 2, Distance: 0},
-			{UploadID: 5, Distance: 1},
-			{UploadID: 6, Distance: 0},
+		mbkeCommit(2): {
+			{UplobdID: 1, Distbnce: 1},
+			{UplobdID: 2, Distbnce: 0},
+			{UplobdID: 5, Distbnce: 1},
+			{UplobdID: 6, Distbnce: 0},
 		},
-		makeCommit(3): {
-			{UploadID: 1, Distance: 2},
-			{UploadID: 2, Distance: 1},
-			{UploadID: 3, Distance: 0},
-			{UploadID: 5, Distance: 2},
-			{UploadID: 6, Distance: 1},
-			{UploadID: 7, Distance: 0},
+		mbkeCommit(3): {
+			{UplobdID: 1, Distbnce: 2},
+			{UplobdID: 2, Distbnce: 1},
+			{UplobdID: 3, Distbnce: 0},
+			{UplobdID: 5, Distbnce: 2},
+			{UplobdID: 6, Distbnce: 1},
+			{UplobdID: 7, Distbnce: 0},
 		},
-		makeCommit(4): {
-			{UploadID: 1, Distance: 3},
-			{UploadID: 2, Distance: 2},
-			{UploadID: 3, Distance: 1},
-			{UploadID: 4, Distance: 0},
-			{UploadID: 5, Distance: 3},
-			{UploadID: 6, Distance: 2},
-			{UploadID: 7, Distance: 1},
-			{UploadID: 8, Distance: 0},
+		mbkeCommit(4): {
+			{UplobdID: 1, Distbnce: 3},
+			{UplobdID: 2, Distbnce: 2},
+			{UplobdID: 3, Distbnce: 1},
+			{UplobdID: 4, Distbnce: 0},
+			{UplobdID: 5, Distbnce: 3},
+			{UplobdID: 6, Distbnce: 2},
+			{UplobdID: 7, Distbnce: 1},
+			{UplobdID: 8, Distbnce: 0},
 		},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{
-		makeCommit(5): {Commit: makeCommit(5), AncestorCommit: makeCommit(4), Distance: 1},
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{
+		mbkeCommit(5): {Commit: mbkeCommit(5), AncestorCommit: mbkeCommit(4), Distbnce: 1},
 	}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{2}},
-		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{3}},
-		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx1", graph: graph, allOfIDs: []int{4}},
-		{commit: makeCommit(5), file: "root1/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{5}},
-		{commit: makeCommit(5), file: "root2/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{6}},
-		{commit: makeCommit(5), file: "root3/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{7}},
-		{commit: makeCommit(5), file: "root4/file.ts", indexer: "idx2", graph: graph, allOfIDs: []int{8}},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(5), file: "root1/file.ts", indexer: "idx1", grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(5), file: "root2/file.ts", indexer: "idx1", grbph: grbph, bllOfIDs: []int{2}},
+		{commit: mbkeCommit(5), file: "root3/file.ts", indexer: "idx1", grbph: grbph, bllOfIDs: []int{3}},
+		{commit: mbkeCommit(5), file: "root4/file.ts", indexer: "idx1", grbph: grbph, bllOfIDs: []int{4}},
+		{commit: mbkeCommit(5), file: "root1/file.ts", indexer: "idx2", grbph: grbph, bllOfIDs: []int{5}},
+		{commit: mbkeCommit(5), file: "root2/file.ts", indexer: "idx2", grbph: grbph, bllOfIDs: []int{6}},
+		{commit: mbkeCommit(5), file: "root3/file.ts", indexer: "idx2", grbph: grbph, bllOfIDs: []int{7}},
+		{commit: mbkeCommit(5), file: "root4/file.ts", indexer: "idx2", grbph: grbph, bllOfIDs: []int{8}},
 	})
 }
 
-func TestFindClosestDumpsIntersectingPath(t *testing.T) {
+func TestFindClosestDumpsIntersectingPbth(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	// [1]
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1), Root: "web/src/", Indexer: "lsif-eslint"},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1), Root: "web/src/", Indexer: "lsif-eslint"},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	graph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(1)}, " "),
+	grbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(graph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(grbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {{UplobdID: 1}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		{commit: makeCommit(1), file: "", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "web/", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
-		{commit: makeCommit(1), file: "web/src/file.ts", rootMustEnclosePath: false, graph: graph, allOfIDs: []int{1}},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		{commit: mbkeCommit(1), file: "", rootMustEnclosePbth: fblse, grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(1), file: "web/", rootMustEnclosePbth: fblse, grbph: grbph, bllOfIDs: []int{1}},
+		{commit: mbkeCommit(1), file: "web/src/file.ts", rootMustEnclosePbth: fblse, grbph: grbph, bllOfIDs: []int{1}},
 	})
 }
 
-func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
+func TestFindClosestDumpsFromGrbphFrbgment(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// This database has the following commit graph:
+	// This dbtbbbse hbs the following commit grbph:
 	//
 	//       <- known commits || new commits ->
 	//                        ||
@@ -1138,131 +1138,131 @@ func TestFindClosestDumpsFromGraphFragment(t *testing.T) {
 	//       |                ||       /
 	//       +-- [5] -- 6 --- || -----+
 
-	uploads := []shared.Upload{
-		{ID: 1, Commit: makeCommit(1)},
-		{ID: 2, Commit: makeCommit(5)},
+	uplobds := []shbred.Uplobd{
+		{ID: 1, Commit: mbkeCommit(1)},
+		{ID: 2, Commit: mbkeCommit(5)},
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	currentGraph := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(6), makeCommit(5)}, " "),
-		strings.Join([]string{makeCommit(5), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(3), makeCommit(2)}, " "),
-		strings.Join([]string{makeCommit(2), makeCommit(1)}, " "),
-		strings.Join([]string{makeCommit(1)}, " "),
+	currentGrbph := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(6), mbkeCommit(5)}, " "),
+		strings.Join([]string{mbkeCommit(5), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(3), mbkeCommit(2)}, " "),
+		strings.Join([]string{mbkeCommit(2), mbkeCommit(1)}, " "),
+		strings.Join([]string{mbkeCommit(1)}, " "),
 	})
 
-	visibleUploads, links := commitgraph.NewGraph(currentGraph, toCommitGraphView(uploads)).Gather()
+	visibleUplobds, links := commitgrbph.NewGrbph(currentGrbph, toCommitGrbphView(uplobds)).Gbther()
 
-	expectedVisibleUploads := map[string][]commitgraph.UploadMeta{
-		makeCommit(1): {{UploadID: 1, Distance: 0}},
-		makeCommit(2): {{UploadID: 1, Distance: 1}},
-		makeCommit(3): {{UploadID: 1, Distance: 2}},
-		makeCommit(5): {{UploadID: 2, Distance: 0}},
-		makeCommit(6): {{UploadID: 2, Distance: 1}},
+	expectedVisibleUplobds := mbp[string][]commitgrbph.UplobdMetb{
+		mbkeCommit(1): {{UplobdID: 1, Distbnce: 0}},
+		mbkeCommit(2): {{UplobdID: 1, Distbnce: 1}},
+		mbkeCommit(3): {{UplobdID: 1, Distbnce: 2}},
+		mbkeCommit(5): {{UplobdID: 2, Distbnce: 0}},
+		mbkeCommit(6): {{UplobdID: 2, Distbnce: 1}},
 	}
-	if diff := cmp.Diff(expectedVisibleUploads, normalizeVisibleUploads(visibleUploads)); diff != "" {
-		t.Errorf("unexpected visible uploads (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedVisibleUplobds, normblizeVisibleUplobds(visibleUplobds)); diff != "" {
+		t.Errorf("unexpected visible uplobds (-wbnt +got):\n%s", diff)
 	}
 
-	expectedLinks := map[string]commitgraph.LinkRelationship{}
+	expectedLinks := mbp[string]commitgrbph.LinkRelbtionship{}
 	if diff := cmp.Diff(expectedLinks, links); diff != "" {
-		t.Errorf("unexpected visible links (-want +got):\n%s", diff)
+		t.Errorf("unexpected visible links (-wbnt +got):\n%s", diff)
 	}
 
 	// Prep
-	insertNearestUploads(t, db, 50, visibleUploads)
+	insertNebrestUplobds(t, db, 50, visibleUplobds)
 	insertLinks(t, db, 50, links)
 
 	// Test
-	graphFragment := gitdomain.ParseCommitGraph([]string{
-		strings.Join([]string{makeCommit(7), makeCommit(4), makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(4), makeCommit(3)}, " "),
-		strings.Join([]string{makeCommit(6)}, " "),
-		strings.Join([]string{makeCommit(3)}, " "),
+	grbphFrbgment := gitdombin.PbrseCommitGrbph([]string{
+		strings.Join([]string{mbkeCommit(7), mbkeCommit(4), mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(4), mbkeCommit(3)}, " "),
+		strings.Join([]string{mbkeCommit(6)}, " "),
+		strings.Join([]string{mbkeCommit(3)}, " "),
 	})
 
-	testFindClosestDumps(t, store, []FindClosestDumpsTestCase{
-		// Note: Can't query anything outside of the graph fragment
-		{commit: makeCommit(3), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{1}},
-		{commit: makeCommit(6), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, anyOfIDs: []int{2}},
-		{commit: makeCommit(4), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, graphFragmentOnly: true, anyOfIDs: []int{1}},
-		{commit: makeCommit(7), file: "file.ts", rootMustEnclosePath: true, graph: graphFragment, graphFragmentOnly: true, anyOfIDs: []int{2}},
+	testFindClosestDumps(t, store, []FindClosestDumpsTestCbse{
+		// Note: Cbn't query bnything outside of the grbph frbgment
+		{commit: mbkeCommit(3), file: "file.ts", rootMustEnclosePbth: true, grbph: grbphFrbgment, bnyOfIDs: []int{1}},
+		{commit: mbkeCommit(6), file: "file.ts", rootMustEnclosePbth: true, grbph: grbphFrbgment, bnyOfIDs: []int{2}},
+		{commit: mbkeCommit(4), file: "file.ts", rootMustEnclosePbth: true, grbph: grbphFrbgment, grbphFrbgmentOnly: true, bnyOfIDs: []int{1}},
+		{commit: mbkeCommit(7), file: "file.ts", rootMustEnclosePbth: true, grbph: grbphFrbgment, grbphFrbgmentOnly: true, bnyOfIDs: []int{2}},
 	})
 }
 
-func TestGetRepositoriesMaxStaleAge(t *testing.T) {
+func TestGetRepositoriesMbxStbleAge(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	for _, id := range []int{50, 51, 52} {
-		insertRepo(t, db, id, "", false)
+	for _, id := rbnge []int{50, 51, 52} {
+		insertRepo(t, db, id, "", fblse)
 	}
 
-	if _, err := db.ExecContext(context.Background(), `
+	if _, err := db.ExecContext(context.Bbckground(), `
 		INSERT INTO lsif_dirty_repositories (
 			repository_id,
-			update_token,
+			updbte_token,
 			dirty_token,
-			set_dirty_at
+			set_dirty_bt
 		)
 		VALUES
-			(50, 10, 10, NOW() - '45 minutes'::interval), -- not dirty
-			(51, 20, 25, NOW() - '30 minutes'::interval), -- dirty
-			(52, 30, 35, NOW() - '20 minutes'::interval), -- dirty
-			(53, 40, 45, NOW() - '30 minutes'::interval); -- no associated repo
+			(50, 10, 10, NOW() - '45 minutes'::intervbl), -- not dirty
+			(51, 20, 25, NOW() - '30 minutes'::intervbl), -- dirty
+			(52, 30, 35, NOW() - '20 minutes'::intervbl), -- dirty
+			(53, 40, 45, NOW() - '30 minutes'::intervbl); -- no bssocibted repo
 	`); err != nil {
-		t.Fatalf("unexpected error marking repostiory as dirty: %s", err)
+		t.Fbtblf("unexpected error mbrking repostiory bs dirty: %s", err)
 	}
 
-	age, err := store.GetRepositoriesMaxStaleAge(context.Background())
+	bge, err := store.GetRepositoriesMbxStbleAge(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
-	if age.Round(time.Second) != 30*time.Minute {
-		t.Fatalf("unexpected max age. want=%s have=%s", 30*time.Minute, age)
+	if bge.Round(time.Second) != 30*time.Minute {
+		t.Fbtblf("unexpected mbx bge. wbnt=%s hbve=%s", 30*time.Minute, bge)
 	}
 }
 
-func TestCommitGraphMetadata(t *testing.T) {
+func TestCommitGrbphMetbdbtb(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if err := store.SetRepositoryAsDirty(context.Background(), 50); err != nil {
-		t.Errorf("unexpected error marking repository as dirty: %s", err)
+	if err := store.SetRepositoryAsDirty(context.Bbckground(), 50); err != nil {
+		t.Errorf("unexpected error mbrking repository bs dirty: %s", err)
 	}
 
-	updatedAt := time.Unix(1587396557, 0).UTC()
-	query := sqlf.Sprintf("INSERT INTO lsif_dirty_repositories VALUES (%s, %s, %s, %s)", 51, 10, 10, updatedAt)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error inserting commit graph metadata: %s", err)
+	updbtedAt := time.Unix(1587396557, 0).UTC()
+	query := sqlf.Sprintf("INSERT INTO lsif_dirty_repositories VALUES (%s, %s, %s, %s)", 51, 10, 10, updbtedAt)
+	if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error inserting commit grbph metbdbtb: %s", err)
 	}
 
-	testCases := []struct {
+	testCbses := []struct {
 		RepositoryID int
-		Stale        bool
-		UpdatedAt    *time.Time
+		Stble        bool
+		UpdbtedAt    *time.Time
 	}{
 		{50, true, nil},
-		{51, false, &updatedAt},
-		{52, false, nil},
+		{51, fblse, &updbtedAt},
+		{52, fblse, nil},
 	}
 
-	for _, testCase := range testCases {
-		t.Run(fmt.Sprintf("repositoryID=%d", testCase.RepositoryID), func(t *testing.T) {
-			stale, updatedAt, err := store.GetCommitGraphMetadata(context.Background(), testCase.RepositoryID)
+	for _, testCbse := rbnge testCbses {
+		t.Run(fmt.Sprintf("repositoryID=%d", testCbse.RepositoryID), func(t *testing.T) {
+			stble, updbtedAt, err := store.GetCommitGrbphMetbdbtb(context.Bbckground(), testCbse.RepositoryID)
 			if err != nil {
-				t.Fatalf("unexpected error getting commit graph metadata: %s", err)
+				t.Fbtblf("unexpected error getting commit grbph metbdbtb: %s", err)
 			}
 
-			if stale != testCase.Stale {
-				t.Errorf("unexpected value for stale. want=%v have=%v", testCase.Stale, stale)
+			if stble != testCbse.Stble {
+				t.Errorf("unexpected vblue for stble. wbnt=%v hbve=%v", testCbse.Stble, stble)
 			}
 
-			if diff := cmp.Diff(testCase.UpdatedAt, updatedAt); diff != "" {
-				t.Errorf("unexpected value for uploadedAt (-want +got):\n%s", diff)
+			if diff := cmp.Diff(testCbse.UpdbtedAt, updbtedAt); diff != "" {
+				t.Errorf("unexpected vblue for uplobdedAt (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
@@ -1272,102 +1272,102 @@ func TestCommitGraphMetadata(t *testing.T) {
 //
 //
 
-type FindClosestDumpsTestCase struct {
+type FindClosestDumpsTestCbse struct {
 	commit              string
 	file                string
-	rootMustEnclosePath bool
+	rootMustEnclosePbth bool
 	indexer             string
-	graph               *gitdomain.CommitGraph
-	graphFragmentOnly   bool
-	anyOfIDs            []int
-	allOfIDs            []int
+	grbph               *gitdombin.CommitGrbph
+	grbphFrbgmentOnly   bool
+	bnyOfIDs            []int
+	bllOfIDs            []int
 }
 
-func testFindClosestDumps(t *testing.T, store Store, testCases []FindClosestDumpsTestCase) {
-	for _, testCase := range testCases {
-		name := fmt.Sprintf(
-			"commit=%s file=%s rootMustEnclosePath=%v indexer=%s",
-			testCase.commit,
-			testCase.file,
-			testCase.rootMustEnclosePath,
-			testCase.indexer,
+func testFindClosestDumps(t *testing.T, store Store, testCbses []FindClosestDumpsTestCbse) {
+	for _, testCbse := rbnge testCbses {
+		nbme := fmt.Sprintf(
+			"commit=%s file=%s rootMustEnclosePbth=%v indexer=%s",
+			testCbse.commit,
+			testCbse.file,
+			testCbse.rootMustEnclosePbth,
+			testCbse.indexer,
 		)
 
-		assertDumpIDs := func(t *testing.T, dumps []shared.Dump) {
-			if len(testCase.anyOfIDs) > 0 {
-				testAnyOf(t, dumps, testCase.anyOfIDs)
+		bssertDumpIDs := func(t *testing.T, dumps []shbred.Dump) {
+			if len(testCbse.bnyOfIDs) > 0 {
+				testAnyOf(t, dumps, testCbse.bnyOfIDs)
 				return
 			}
 
-			if len(testCase.allOfIDs) > 0 {
-				testAllOf(t, dumps, testCase.allOfIDs)
+			if len(testCbse.bllOfIDs) > 0 {
+				testAllOf(t, dumps, testCbse.bllOfIDs)
 				return
 			}
 
 			if len(dumps) != 0 {
-				t.Errorf("unexpected nearest dump length. want=%d have=%d", 0, len(dumps))
+				t.Errorf("unexpected nebrest dump length. wbnt=%d hbve=%d", 0, len(dumps))
 				return
 			}
 		}
 
-		if !testCase.graphFragmentOnly {
-			t.Run(name, func(t *testing.T) {
-				dumps, err := store.FindClosestDumps(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer)
+		if !testCbse.grbphFrbgmentOnly {
+			t.Run(nbme, func(t *testing.T) {
+				dumps, err := store.FindClosestDumps(context.Bbckground(), 50, testCbse.commit, testCbse.file, testCbse.rootMustEnclosePbth, testCbse.indexer)
 				if err != nil {
-					t.Fatalf("unexpected error finding closest dumps: %s", err)
+					t.Fbtblf("unexpected error finding closest dumps: %s", err)
 				}
 
-				assertDumpIDs(t, dumps)
+				bssertDumpIDs(t, dumps)
 			})
 		}
 
-		if testCase.graph != nil {
-			t.Run(name+" [graph-fragment]", func(t *testing.T) {
-				dumps, err := store.FindClosestDumpsFromGraphFragment(context.Background(), 50, testCase.commit, testCase.file, testCase.rootMustEnclosePath, testCase.indexer, testCase.graph)
+		if testCbse.grbph != nil {
+			t.Run(nbme+" [grbph-frbgment]", func(t *testing.T) {
+				dumps, err := store.FindClosestDumpsFromGrbphFrbgment(context.Bbckground(), 50, testCbse.commit, testCbse.file, testCbse.rootMustEnclosePbth, testCbse.indexer, testCbse.grbph)
 				if err != nil {
-					t.Fatalf("unexpected error finding closest dumps: %s", err)
+					t.Fbtblf("unexpected error finding closest dumps: %s", err)
 				}
 
-				assertDumpIDs(t, dumps)
+				bssertDumpIDs(t, dumps)
 			})
 		}
 	}
 }
 
-func testAnyOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
+func testAnyOf(t *testing.T, dumps []shbred.Dump, expectedIDs []int) {
 	if len(dumps) != 1 {
-		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
+		t.Errorf("unexpected nebrest dump length. wbnt=%d hbve=%d", 1, len(dumps))
 		return
 	}
 
 	if !testPresence(dumps[0].ID, expectedIDs) {
-		t.Errorf("unexpected nearest dump ids. want one of %v have=%v", expectedIDs, dumps[0].ID)
+		t.Errorf("unexpected nebrest dump ids. wbnt one of %v hbve=%v", expectedIDs, dumps[0].ID)
 	}
 }
 
-func testPresence(needle int, haystack []int) bool {
-	for _, candidate := range haystack {
-		if needle == candidate {
+func testPresence(needle int, hbystbck []int) bool {
+	for _, cbndidbte := rbnge hbystbck {
+		if needle == cbndidbte {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-func testAllOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
+func testAllOf(t *testing.T, dumps []shbred.Dump, expectedIDs []int) {
 	if len(dumps) != len(expectedIDs) {
-		t.Errorf("unexpected nearest dump length. want=%d have=%d", 1, len(dumps))
+		t.Errorf("unexpected nebrest dump length. wbnt=%d hbve=%d", 1, len(dumps))
 	}
 
-	var dumpIDs []int
-	for _, dump := range dumps {
-		dumpIDs = append(dumpIDs, dump.ID)
+	vbr dumpIDs []int
+	for _, dump := rbnge dumps {
+		dumpIDs = bppend(dumpIDs, dump.ID)
 	}
 
-	for _, expectedID := range expectedIDs {
+	for _, expectedID := rbnge expectedIDs {
 		if !testPresence(expectedID, dumpIDs) {
-			t.Errorf("unexpected nearest dump ids. want all of %v have=%v", expectedIDs, dumpIDs)
+			t.Errorf("unexpected nebrest dump ids. wbnt bll of %v hbve=%v", expectedIDs, dumpIDs)
 			return
 		}
 	}
@@ -1377,212 +1377,212 @@ func testAllOf(t *testing.T, dumps []shared.Dump, expectedIDs []int) {
 //
 //
 
-// Marks a repo as deleted
-func deleteRepo(t testing.TB, db database.DB, id int, deleted_at time.Time) {
+// Mbrks b repo bs deleted
+func deleteRepo(t testing.TB, db dbtbbbse.DB, id int, deleted_bt time.Time) {
 	query := sqlf.Sprintf(
-		`UPDATE repo SET deleted_at = %s WHERE id = %s`,
-		deleted_at,
+		`UPDATE repo SET deleted_bt = %s WHERE id = %s`,
+		deleted_bt,
 		id,
 	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while deleting repository: %s", err)
+	if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error while deleting repository: %s", err)
 	}
 }
 
-func toCommitGraphView(uploads []shared.Upload) *commitgraph.CommitGraphView {
-	commitGraphView := commitgraph.NewCommitGraphView()
-	for _, upload := range uploads {
-		commitGraphView.Add(commitgraph.UploadMeta{UploadID: upload.ID}, upload.Commit, fmt.Sprintf("%s:%s", upload.Root, upload.Indexer))
+func toCommitGrbphView(uplobds []shbred.Uplobd) *commitgrbph.CommitGrbphView {
+	commitGrbphView := commitgrbph.NewCommitGrbphView()
+	for _, uplobd := rbnge uplobds {
+		commitGrbphView.Add(commitgrbph.UplobdMetb{UplobdID: uplobd.ID}, uplobd.Commit, fmt.Sprintf("%s:%s", uplobd.Root, uplobd.Indexer))
 	}
 
-	return commitGraphView
+	return commitGrbphView
 }
 
-func normalizeVisibleUploads(uploadMetas map[string][]commitgraph.UploadMeta) map[string][]commitgraph.UploadMeta {
-	for _, uploads := range uploadMetas {
-		sort.Slice(uploads, func(i, j int) bool {
-			return uploads[i].UploadID-uploads[j].UploadID < 0
+func normblizeVisibleUplobds(uplobdMetbs mbp[string][]commitgrbph.UplobdMetb) mbp[string][]commitgrbph.UplobdMetb {
+	for _, uplobds := rbnge uplobdMetbs {
+		sort.Slice(uplobds, func(i, j int) bool {
+			return uplobds[i].UplobdID-uplobds[j].UplobdID < 0
 		})
 	}
 
-	return uploadMetas
+	return uplobdMetbs
 }
 
-func insertLinks(t testing.TB, db database.DB, repositoryID int, links map[string]commitgraph.LinkRelationship) {
+func insertLinks(t testing.TB, db dbtbbbse.DB, repositoryID int, links mbp[string]commitgrbph.LinkRelbtionship) {
 	if len(links) == 0 {
 		return
 	}
 
-	var rows []*sqlf.Query
-	for commit, link := range links {
-		rows = append(rows, sqlf.Sprintf(
+	vbr rows []*sqlf.Query
+	for commit, link := rbnge links {
+		rows = bppend(rows, sqlf.Sprintf(
 			"(%s, %s, %s, %s)",
 			repositoryID,
-			dbutil.CommitBytea(commit),
-			dbutil.CommitBytea(link.AncestorCommit),
-			link.Distance,
+			dbutil.CommitByteb(commit),
+			dbutil.CommitByteb(link.AncestorCommit),
+			link.Distbnce,
 		))
 	}
 
 	query := sqlf.Sprintf(
-		`INSERT INTO lsif_nearest_uploads_links (repository_id, commit_bytea, ancestor_commit_bytea, distance) VALUES %s`,
+		`INSERT INTO lsif_nebrest_uplobds_links (repository_id, commit_byteb, bncestor_commit_byteb, distbnce) VALUES %s`,
 		sqlf.Join(rows, ","),
 	)
-	if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-		t.Fatalf("unexpected error while updating links: %s %s", err, query.Query(sqlf.PostgresBindVar))
+	if _, err := db.ExecContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...); err != nil {
+		t.Fbtblf("unexpected error while updbting links: %s %s", err, query.Query(sqlf.PostgresBindVbr))
 	}
 }
 
-func getProtectedUploads(t testing.TB, db database.DB, repositoryID int) []int {
+func getProtectedUplobds(t testing.TB, db dbtbbbse.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
-		`SELECT DISTINCT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s ORDER BY upload_id`,
+		`SELECT DISTINCT uplobd_id FROM lsif_uplobds_visible_bt_tip WHERE repository_id = %s ORDER BY uplobd_id`,
 		repositoryID,
 	)
 
-	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	ids, err := bbsestore.ScbnInts(db.QueryContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...))
 	if err != nil {
-		t.Fatalf("unexpected error getting protected uploads: %s", err)
+		t.Fbtblf("unexpected error getting protected uplobds: %s", err)
 	}
 
 	return ids
 }
 
-func getVisibleUploads(t testing.TB, db database.DB, repositoryID int, commits []string) map[string][]int {
-	idsByCommit := map[string][]int{}
-	for _, commit := range commits {
-		query := makeVisibleUploadsQuery(repositoryID, commit)
+func getVisibleUplobds(t testing.TB, db dbtbbbse.DB, repositoryID int, commits []string) mbp[string][]int {
+	idsByCommit := mbp[string][]int{}
+	for _, commit := rbnge commits {
+		query := mbkeVisibleUplobdsQuery(repositoryID, commit)
 
-		uploadIDs, err := basestore.ScanInts(db.QueryContext(
-			context.Background(),
-			query.Query(sqlf.PostgresBindVar),
+		uplobdIDs, err := bbsestore.ScbnInts(db.QueryContext(
+			context.Bbckground(),
+			query.Query(sqlf.PostgresBindVbr),
 			query.Args()...,
 		))
 		if err != nil {
-			t.Fatalf("unexpected error getting visible upload IDs: %s", err)
+			t.Fbtblf("unexpected error getting visible uplobd IDs: %s", err)
 		}
-		sort.Ints(uploadIDs)
+		sort.Ints(uplobdIDs)
 
-		idsByCommit[commit] = uploadIDs
+		idsByCommit[commit] = uplobdIDs
 	}
 
 	return idsByCommit
 }
 
-func getUploadsVisibleAtTip(t testing.TB, db database.DB, repositoryID int) []int {
+func getUplobdsVisibleAtTip(t testing.TB, db dbtbbbse.DB, repositoryID int) []int {
 	query := sqlf.Sprintf(
-		`SELECT upload_id FROM lsif_uploads_visible_at_tip WHERE repository_id = %s AND is_default_branch ORDER BY upload_id`,
+		`SELECT uplobd_id FROM lsif_uplobds_visible_bt_tip WHERE repository_id = %s AND is_defbult_brbnch ORDER BY uplobd_id`,
 		repositoryID,
 	)
 
-	ids, err := basestore.ScanInts(db.QueryContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...))
+	ids, err := bbsestore.ScbnInts(db.QueryContext(context.Bbckground(), query.Query(sqlf.PostgresBindVbr), query.Args()...))
 	if err != nil {
-		t.Fatalf("unexpected error getting uploads visible at tip: %s", err)
+		t.Fbtblf("unexpected error getting uplobds visible bt tip: %s", err)
 	}
 
 	return ids
 }
 
-func assertCommitsVisibleFromUploads(t *testing.T, store Store, uploads []shared.Upload, expectedVisibleUploads map[string][]int) {
-	expectedVisibleCommits := map[int][]string{}
-	for commit, uploadIDs := range expectedVisibleUploads {
-		for _, uploadID := range uploadIDs {
-			expectedVisibleCommits[uploadID] = append(expectedVisibleCommits[uploadID], commit)
+func bssertCommitsVisibleFromUplobds(t *testing.T, store Store, uplobds []shbred.Uplobd, expectedVisibleUplobds mbp[string][]int) {
+	expectedVisibleCommits := mbp[int][]string{}
+	for commit, uplobdIDs := rbnge expectedVisibleUplobds {
+		for _, uplobdID := rbnge uplobdIDs {
+			expectedVisibleCommits[uplobdID] = bppend(expectedVisibleCommits[uplobdID], commit)
 		}
 	}
-	for _, commits := range expectedVisibleCommits {
+	for _, commits := rbnge expectedVisibleCommits {
 		sort.Strings(commits)
 	}
 
-	// Test pagination by requesting only a couple of
-	// results at a time in this assertion helper.
-	testPageSize := 2
+	// Test pbginbtion by requesting only b couple of
+	// results bt b time in this bssertion helper.
+	testPbgeSize := 2
 
-	for _, upload := range uploads {
-		var token *string
-		var allCommits []string
+	for _, uplobd := rbnge uplobds {
+		vbr token *string
+		vbr bllCommits []string
 
 		for {
-			commits, nextToken, err := store.GetCommitsVisibleToUpload(context.Background(), upload.ID, testPageSize, token)
+			commits, nextToken, err := store.GetCommitsVisibleToUplobd(context.Bbckground(), uplobd.ID, testPbgeSize, token)
 			if err != nil {
-				t.Fatalf("unexpected error getting commits visible to upload %d: %s", upload.ID, err)
+				t.Fbtblf("unexpected error getting commits visible to uplobd %d: %s", uplobd.ID, err)
 			}
 			if nextToken == nil {
-				break
+				brebk
 			}
 
-			allCommits = append(allCommits, commits...)
+			bllCommits = bppend(bllCommits, commits...)
 			token = nextToken
 		}
 
-		if diff := cmp.Diff(expectedVisibleCommits[upload.ID], allCommits); diff != "" {
-			t.Errorf("unexpected commits visible to upload %d (-want +got):\n%s", upload.ID, diff)
+		if diff := cmp.Diff(expectedVisibleCommits[uplobd.ID], bllCommits); diff != "" {
+			t.Errorf("unexpected commits visible to uplobd %d (-wbnt +got):\n%s", uplobd.ID, diff)
 		}
 	}
 }
 
-func keysOf(m map[string][]int) (keys []string) {
-	for k := range m {
-		keys = append(keys, k)
+func keysOf(m mbp[string][]int) (keys []string) {
+	for k := rbnge m {
+		keys = bppend(keys, k)
 	}
 
 	return keys
 }
 
 //
-// Benchmarks
+// Benchmbrks
 //
 
-func BenchmarkCalculateVisibleUploads(b *testing.B) {
+func BenchmbrkCblculbteVisibleUplobds(b *testing.B) {
 	logger := logtest.Scoped(b)
-	db := database.NewDB(logger, dbtest.NewDB(logger, b))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, b))
+	store := New(&observbtion.TestContext, db)
 
-	graph, err := readBenchmarkCommitGraph()
+	grbph, err := rebdBenchmbrkCommitGrbph()
 	if err != nil {
-		b.Fatalf("unexpected error reading benchmark commit graph: %s", err)
+		b.Fbtblf("unexpected error rebding benchmbrk commit grbph: %s", err)
 	}
 
-	refDescriptions := map[string][]gitdomain.RefDescription{
-		makeCommit(3): {{IsDefaultBranch: true}},
+	refDescriptions := mbp[string][]gitdombin.RefDescription{
+		mbkeCommit(3): {{IsDefbultBrbnch: true}},
 	}
 
-	uploads, err := readBenchmarkCommitGraphView()
+	uplobds, err := rebdBenchmbrkCommitGrbphView()
 	if err != nil {
-		b.Fatalf("unexpected error reading benchmark uploads: %s", err)
+		b.Fbtblf("unexpected error rebding benchmbrk uplobds: %s", err)
 	}
-	insertUploads(b, db, uploads...)
+	insertUplobds(b, db, uplobds...)
 
 	b.ResetTimer()
 	b.ReportAllocs()
 
-	if err := store.UpdateUploadsVisibleToCommits(context.Background(), 50, graph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
-		b.Fatalf("unexpected error while calculating visible uploads: %s", err)
+	if err := store.UpdbteUplobdsVisibleToCommits(context.Bbckground(), 50, grbph, refDescriptions, time.Hour, time.Hour, 0, time.Now()); err != nil {
+		b.Fbtblf("unexpected error while cblculbting visible uplobds: %s", err)
 	}
 }
 
-func readBenchmarkCommitGraph() (*gitdomain.CommitGraph, error) {
-	contents, err := readBenchmarkFile("../../../commitgraph/testdata/customer1/commits.txt.gz")
+func rebdBenchmbrkCommitGrbph() (*gitdombin.CommitGrbph, error) {
+	contents, err := rebdBenchmbrkFile("../../../commitgrbph/testdbtb/customer1/commits.txt.gz")
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.ParseCommitGraph(strings.Split(string(contents), "\n")), nil
+	return gitdombin.PbrseCommitGrbph(strings.Split(string(contents), "\n")), nil
 }
 
-func readBenchmarkCommitGraphView() ([]shared.Upload, error) {
-	contents, err := readBenchmarkFile("../../../../codeintel/commitgraph/testdata/customer1/uploads.csv.gz")
+func rebdBenchmbrkCommitGrbphView() ([]shbred.Uplobd, error) {
+	contents, err := rebdBenchmbrkFile("../../../../codeintel/commitgrbph/testdbtb/customer1/uplobds.csv.gz")
 	if err != nil {
 		return nil, err
 	}
 
-	reader := csv.NewReader(bytes.NewReader(contents))
+	rebder := csv.NewRebder(bytes.NewRebder(contents))
 
-	var uploads []shared.Upload
+	vbr uplobds []shbred.Uplobd
 	for {
-		record, err := reader.Read()
+		record, err := rebder.Rebd()
 		if err != nil {
 			if err == io.EOF {
-				break
+				brebk
 			}
 
 			return nil, err
@@ -1593,7 +1593,7 @@ func readBenchmarkCommitGraphView() ([]shared.Upload, error) {
 			return nil, err
 		}
 
-		uploads = append(uploads, shared.Upload{
+		uplobds = bppend(uplobds, shbred.Uplobd{
 			ID:           id,
 			RepositoryID: 50,
 			Commit:       record[1],
@@ -1601,23 +1601,23 @@ func readBenchmarkCommitGraphView() ([]shared.Upload, error) {
 		})
 	}
 
-	return uploads, nil
+	return uplobds, nil
 }
 
-func readBenchmarkFile(path string) ([]byte, error) {
-	uploadsFile, err := os.Open(path)
+func rebdBenchmbrkFile(pbth string) ([]byte, error) {
+	uplobdsFile, err := os.Open(pbth)
 	if err != nil {
 		return nil, err
 	}
-	defer uploadsFile.Close()
+	defer uplobdsFile.Close()
 
-	r, err := gzip.NewReader(uploadsFile)
+	r, err := gzip.NewRebder(uplobdsFile)
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
 
-	contents, err := io.ReadAll(r)
+	contents, err := io.RebdAll(r)
 	if err != nil {
 		return nil, err
 	}

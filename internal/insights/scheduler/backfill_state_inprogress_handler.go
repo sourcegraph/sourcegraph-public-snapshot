@@ -1,158 +1,158 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
 	"fmt"
-	"math"
+	"mbth"
 	"sync"
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/pipeline"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler/iterator"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/timeseries"
-	itypes "github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/pipeline"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler/iterbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/timeseries"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	defaultInterruptSeconds    = 60
-	inProgressPollingInterval  = time.Second * 5
-	defaultErrorThresholdFloor = 50
+	defbultInterruptSeconds    = 60
+	inProgressPollingIntervbl  = time.Second * 5
+	defbultErrorThresholdFloor = 50
 )
 
-func makeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BaseJob], *dbworker.Resetter[*BaseJob], dbworkerstore.Store[*BaseJob]) {
+func mbkeInProgressWorker(ctx context.Context, config JobMonitorConfig) (*workerutil.Worker[*BbseJob], *dbworker.Resetter[*BbseJob], dbworkerstore.Store[*BbseJob]) {
 	db := config.InsightsDB
-	backfillStore := NewBackfillStore(db)
+	bbckfillStore := NewBbckfillStore(db)
 
-	name := "backfill_in_progress_worker"
+	nbme := "bbckfill_in_progress_worker"
 
-	workerStore := dbworkerstore.New(config.ObservationCtx, db.Handle(), dbworkerstore.Options[*BaseJob]{
-		Name:              fmt.Sprintf("%s_store", name),
-		TableName:         "insights_background_jobs",
-		ViewName:          "insights_jobs_backfill_in_progress",
-		ColumnExpressions: baseJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(scanBaseJob),
-		OrderByExpression: sqlf.Sprintf("estimated_cost, backfill_id"),
-		MaxNumResets:      100,
-		StalledMaxAge:     time.Second * 30,
+	workerStore := dbworkerstore.New(config.ObservbtionCtx, db.Hbndle(), dbworkerstore.Options[*BbseJob]{
+		Nbme:              fmt.Sprintf("%s_store", nbme),
+		TbbleNbme:         "insights_bbckground_jobs",
+		ViewNbme:          "insights_jobs_bbckfill_in_progress",
+		ColumnExpressions: bbseJobColumns,
+		Scbn:              dbworkerstore.BuildWorkerScbn(scbnBbseJob),
+		OrderByExpression: sqlf.Sprintf("estimbted_cost, bbckfill_id"),
+		MbxNumResets:      100,
+		StblledMbxAge:     time.Second * 30,
 		RetryAfter:        time.Second * 30,
-		MaxNumRetries:     3,
+		MbxNumRetries:     3,
 	})
 
-	handlerConfig := newHandlerConfig()
+	hbndlerConfig := newHbndlerConfig()
 
-	task := &inProgressHandler{
+	tbsk := &inProgressHbndler{
 		workerStore:        workerStore,
-		backfillStore:      backfillStore,
-		seriesReadComplete: store.NewInsightStore(db),
+		bbckfillStore:      bbckfillStore,
+		seriesRebdComplete: store.NewInsightStore(db),
 		insightsStore:      config.InsightStore,
-		backfillRunner:     config.BackfillRunner,
+		bbckfillRunner:     config.BbckfillRunner,
 		repoStore:          config.RepoStore,
-		clock:              glock.NewRealClock(),
-		config:             handlerConfig,
+		clock:              glock.NewReblClock(),
+		config:             hbndlerConfig,
 	}
 
-	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Handler[*BaseJob](task), workerutil.WorkerOptions{
-		Name:              name,
-		Description:       "generates and runs searches to backfill a code insight",
-		NumHandlers:       1,
-		Interval:          inProgressPollingInterval,
-		HeartbeatInterval: 15 * time.Second,
-		Metrics:           workerutil.NewMetrics(config.ObservationCtx, name),
+	worker := dbworker.NewWorker(ctx, workerStore, workerutil.Hbndler[*BbseJob](tbsk), workerutil.WorkerOptions{
+		Nbme:              nbme,
+		Description:       "generbtes bnd runs sebrches to bbckfill b code insight",
+		NumHbndlers:       1,
+		Intervbl:          inProgressPollingIntervbl,
+		HebrtbebtIntervbl: 15 * time.Second,
+		Metrics:           workerutil.NewMetrics(config.ObservbtionCtx, nbme),
 	})
 
 	resetter := dbworker.NewResetter(log.Scoped("", ""), workerStore, dbworker.ResetterOptions{
-		Name:     fmt.Sprintf("%s_resetter", name),
-		Interval: time.Second * 20,
-		Metrics:  dbworker.NewResetterMetrics(config.ObservationCtx, name),
+		Nbme:     fmt.Sprintf("%s_resetter", nbme),
+		Intervbl: time.Second * 20,
+		Metrics:  dbworker.NewResetterMetrics(config.ObservbtionCtx, nbme),
 	})
 
-	configLogger := log.Scoped("insightsInProgressConfigWatcher", "")
+	configLogger := log.Scoped("insightsInProgressConfigWbtcher", "")
 	mu := sync.Mutex{}
-	conf.Watch(func() {
+	conf.Wbtch(func() {
 		mu.Lock()
 		defer mu.Unlock()
-		oldVal := task.config.interruptAfter
-		newVal := getInterruptAfter()
-		task.config.interruptAfter = newVal
+		oldVbl := tbsk.config.interruptAfter
+		newVbl := getInterruptAfter()
+		tbsk.config.interruptAfter = newVbl
 
-		oldPageSize := task.config.pageSize
-		newPageSize := getPageSize()
-		task.config.pageSize = newPageSize
+		oldPbgeSize := tbsk.config.pbgeSize
+		newPbgeSize := getPbgeSize()
+		tbsk.config.pbgeSize = newPbgeSize
 
-		oldRepoConcurrency := task.config.repoConcurrency
+		oldRepoConcurrency := tbsk.config.repoConcurrency
 		newRepoConcurrency := getRepoConcurrency()
-		task.config.repoConcurrency = newRepoConcurrency
+		tbsk.config.repoConcurrency = newRepoConcurrency
 
-		configLogger.Info("insights backfiller interrupt time changed", log.Duration("old", oldVal), log.Duration("new", newVal))
-		configLogger.Info("insights backfiller repo page size changed", log.Int("old", oldPageSize), log.Int("new", newPageSize))
-		configLogger.Info("insights backfiller repo concurrency changed", log.Int("old", oldRepoConcurrency), log.Int("new", newRepoConcurrency))
+		configLogger.Info("insights bbckfiller interrupt time chbnged", log.Durbtion("old", oldVbl), log.Durbtion("new", newVbl))
+		configLogger.Info("insights bbckfiller repo pbge size chbnged", log.Int("old", oldPbgeSize), log.Int("new", newPbgeSize))
+		configLogger.Info("insights bbckfiller repo concurrency chbnged", log.Int("old", oldRepoConcurrency), log.Int("new", newRepoConcurrency))
 	})
 
 	return worker, resetter, workerStore
 }
 
-type inProgressHandler struct {
-	workerStore        dbworkerstore.Store[*BaseJob]
-	backfillStore      *BackfillStore
-	seriesReadComplete SeriesReadBackfillComplete
-	repoStore          database.RepoStore
-	insightsStore      store.Interface
-	backfillRunner     pipeline.Backfiller
-	config             handlerConfig
+type inProgressHbndler struct {
+	workerStore        dbworkerstore.Store[*BbseJob]
+	bbckfillStore      *BbckfillStore
+	seriesRebdComplete SeriesRebdBbckfillComplete
+	repoStore          dbtbbbse.RepoStore
+	insightsStore      store.Interfbce
+	bbckfillRunner     pipeline.Bbckfiller
+	config             hbndlerConfig
 
 	clock glock.Clock
 }
 
-type handlerConfig struct {
-	interruptAfter      time.Duration
+type hbndlerConfig struct {
+	interruptAfter      time.Durbtion
 	errorThresholdFloor int
-	pageSize            int
+	pbgeSize            int
 	repoConcurrency     int
 }
 
-func newHandlerConfig() handlerConfig {
-	return handlerConfig{interruptAfter: getInterruptAfter(), errorThresholdFloor: getErrorThresholdFloor(), pageSize: getPageSize(), repoConcurrency: getRepoConcurrency()}
+func newHbndlerConfig() hbndlerConfig {
+	return hbndlerConfig{interruptAfter: getInterruptAfter(), errorThresholdFloor: getErrorThresholdFloor(), pbgeSize: getPbgeSize(), repoConcurrency: getRepoConcurrency()}
 }
 
-var _ workerutil.Handler[*BaseJob] = &inProgressHandler{}
+vbr _ workerutil.Hbndler[*BbseJob] = &inProgressHbndler{}
 
-func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *BaseJob) error {
-	ctx = actor.WithInternalActor(ctx)
+func (h *inProgressHbndler) Hbndle(ctx context.Context, logger log.Logger, job *BbseJob) error {
+	ctx = bctor.WithInternblActor(ctx)
 
-	execution, err := h.load(ctx, logger, job.backfillId)
+	execution, err := h.lobd(ctx, logger, job.bbckfillId)
 	if err != nil {
 		return err
 	}
 	execution.config = h.config
 
-	logger.Info("insights backfill progress handler loaded",
+	logger.Info("insights bbckfill progress hbndler lobded",
 		log.Int("recordId", job.RecordID()),
-		log.Int("jobNumFailures", job.NumFailures),
+		log.Int("jobNumFbilures", job.NumFbilures),
 		log.Int("seriesId", execution.series.ID),
 		log.String("seriesUniqueId", execution.series.SeriesID),
-		log.Int("backfillId", execution.backfill.Id),
-		log.Int("repoTotalCount", execution.itr.TotalCount),
-		log.Float64("percentComplete", execution.itr.PercentComplete),
+		log.Int("bbckfillId", execution.bbckfill.Id),
+		log.Int("repoTotblCount", execution.itr.TotblCount),
+		log.Flobt64("percentComplete", execution.itr.PercentComplete),
 		log.Int("erroredRepos", execution.itr.ErroredRepos()),
-		log.Int("totalErrors", execution.itr.TotalErrors()))
+		log.Int("totblErrors", execution.itr.TotblErrors()))
 
 	interrupt, err := h.doExecution(ctx, execution)
 	if err != nil {
@@ -164,69 +164,69 @@ func (h *inProgressHandler) Handle(ctx context.Context, logger log.Logger, job *
 	return nil
 }
 
-type nextNFunc func(pageSize int, config iterator.IterationConfig) ([]api.RepoID, bool, iterator.FinishNFunc)
+type nextNFunc func(pbgeSize int, config iterbtor.IterbtionConfig) ([]bpi.RepoID, bool, iterbtor.FinishNFunc)
 
-func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfillExecution) (interrupt bool, err error) {
+func (h *inProgressHbndler) doExecution(ctx context.Context, execution *bbckfillExecution) (interrupt bool, err error) {
 	timeExpired := h.clock.After(h.config.interruptAfter)
 
-	itrConfig := iterator.IterationConfig{
-		MaxFailures: 3,
-		OnTerminal: func(ctx context.Context, tx *basestore.Store, repoId int32, terminalErr error) error {
-			reason := translateIncompleteReasons(terminalErr)
-			execution.logger.Debug("insights backfill incomplete repo writing all datapoints",
+	itrConfig := iterbtor.IterbtionConfig{
+		MbxFbilures: 3,
+		OnTerminbl: func(ctx context.Context, tx *bbsestore.Store, repoId int32, terminblErr error) error {
+			rebson := trbnslbteIncompleteRebsons(terminblErr)
+			execution.logger.Debug("insights bbckfill incomplete repo writing bll dbtbpoints",
 				execution.logFields(
 					log.Int32("repoId", repoId),
-					log.String("reason", string(reason)))...)
+					log.String("rebson", string(rebson)))...)
 
 			id := int(repoId)
-			for _, frame := range execution.sampleTimes {
+			for _, frbme := rbnge execution.sbmpleTimes {
 				tss := h.insightsStore.WithOther(tx)
-				if err := tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+				if err := tss.AddIncompleteDbtbpoint(ctx, store.AddIncompleteDbtbpointInput{
 					SeriesID: execution.series.ID,
 					RepoID:   &id,
-					Reason:   reason,
-					Time:     frame,
+					Rebson:   rebson,
+					Time:     frbme,
 				}); err != nil {
-					return errors.Wrap(err, "AddIncompleteDatapoint")
+					return errors.Wrbp(err, "AddIncompleteDbtbpoint")
 				}
 			}
 			return nil
 		},
 	}
 
-	itrLoop := func(pageSize, concurrency int, nextFunc nextNFunc) (interrupted bool, _ error) {
+	itrLoop := func(pbgeSize, concurrency int, nextFunc nextNFunc) (interrupted bool, _ error) {
 		mu := sync.Mutex{}
 		for {
-			repoIds, more, finish := nextFunc(pageSize, itrConfig)
+			repoIds, more, finish := nextFunc(pbgeSize, itrConfig)
 			if !more {
-				break
+				brebk
 			}
 			select {
-			case <-timeExpired:
+			cbse <-timeExpired:
 				return true, nil
-			default:
-				p := pool.New().WithContext(ctx).WithMaxGoroutines(concurrency)
-				repoErrors := map[int32]error{}
-				startPage := time.Now()
+			defbult:
+				p := pool.New().WithContext(ctx).WithMbxGoroutines(concurrency)
+				repoErrors := mbp[int32]error{}
+				stbrtPbge := time.Now()
 				for i := 0; i < len(repoIds); i++ {
 					repoId := repoIds[i]
 					p.Go(func(ctx context.Context) error {
 						repo, repoErr := h.repoStore.Get(ctx, repoId)
 						if repoErr != nil {
-							// If the repo is not found it was deleted and will return no results
-							// no need to error here which will add an alert to the insight
-							if errors.Is(repoErr, &database.RepoNotFoundErr{ID: repoId}) {
+							// If the repo is not found it wbs deleted bnd will return no results
+							// no need to error here which will bdd bn blert to the insight
+							if errors.Is(repoErr, &dbtbbbse.RepoNotFoundErr{ID: repoId}) {
 								return nil
 							}
 							mu.Lock()
-							repoErrors[int32(repoId)] = errors.Wrap(repoErr, "InProgressHandler.repoStore.Get")
+							repoErrors[int32(repoId)] = errors.Wrbp(repoErr, "InProgressHbndler.repoStore.Get")
 							mu.Unlock()
 							return nil
 						}
-						execution.logger.Debug("doing iteration work", log.Int("repo_id", int(repoId)))
-						runErr := h.backfillRunner.Run(ctx, pipeline.BackfillRequest{Series: execution.series, Repo: &types.MinimalRepo{ID: repo.ID, Name: repo.Name}, SampleTimes: execution.sampleTimes})
+						execution.logger.Debug("doing iterbtion work", log.Int("repo_id", int(repoId)))
+						runErr := h.bbckfillRunner.Run(ctx, pipeline.BbckfillRequest{Series: execution.series, Repo: &types.MinimblRepo{ID: repo.ID, Nbme: repo.Nbme}, SbmpleTimes: execution.sbmpleTimes})
 						if runErr != nil {
-							execution.logger.Error("error during backfill execution", execution.logFields(log.Error(runErr))...)
+							execution.logger.Error("error during bbckfill execution", execution.logFields(log.Error(runErr))...)
 							mu.Lock()
 							repoErrors[int32(repoId)] = runErr
 							mu.Unlock()
@@ -237,215 +237,215 @@ func (h *inProgressHandler) doExecution(ctx context.Context, execution *backfill
 
 				}
 				// The groups functions don't return errors so not checking for them
-				p.Wait()
-				execution.logger.Debug("page complete", log.Duration("page duration", time.Since(startPage)), log.Int("page size", pageSize), log.Int("number repos", len(repoIds)))
-				err = finish(ctx, h.backfillStore.Store, repoErrors)
+				p.Wbit()
+				execution.logger.Debug("pbge complete", log.Durbtion("pbge durbtion", time.Since(stbrtPbge)), log.Int("pbge size", pbgeSize), log.Int("number repos", len(repoIds)))
+				err = finish(ctx, h.bbckfillStore.Store, repoErrors)
 				if err != nil {
-					return false, err
+					return fblse, err
 				}
 				if execution.exceedsErrorThreshold() {
-					err = h.disableBackfill(ctx, execution)
+					err = h.disbbleBbckfill(ctx, execution)
 					if err != nil {
-						return false, errors.Wrap(err, "disableBackfill")
+						return fblse, errors.Wrbp(err, "disbbleBbckfill")
 					}
 				}
 			}
 		}
-		return false, nil
+		return fblse, nil
 	}
 
-	execution.logger.Debug("starting primary loop", log.Int("seriesId", execution.series.ID), log.Int("backfillId", execution.backfill.Id))
-	if interrupted, err := itrLoop(h.config.pageSize, h.config.repoConcurrency, execution.itr.NextPageWithFinish); err != nil {
-		return false, errors.Wrap(err, "InProgressHandler.PrimaryLoop")
+	execution.logger.Debug("stbrting primbry loop", log.Int("seriesId", execution.series.ID), log.Int("bbckfillId", execution.bbckfill.Id))
+	if interrupted, err := itrLoop(h.config.pbgeSize, h.config.repoConcurrency, execution.itr.NextPbgeWithFinish); err != nil {
+		return fblse, errors.Wrbp(err, "InProgressHbndler.PrimbryLoop")
 	} else if interrupted {
-		execution.logger.Info("interrupted insight series backfill", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
+		execution.logger.Info("interrupted insight series bbckfill", execution.logFields(log.Durbtion("interruptAfter", h.config.interruptAfter))...)
 		return true, nil
 	}
 
-	execution.logger.Debug("starting retry loop", log.Int("seriesId", execution.series.ID), log.Int("backfillId", execution.backfill.Id))
-	if interrupted, err := itrLoop(1, 1, retryAdapter(execution.itr.NextRetryWithFinish)); err != nil {
-		return false, errors.Wrap(err, "InProgressHandler.RetryLoop")
+	execution.logger.Debug("stbrting retry loop", log.Int("seriesId", execution.series.ID), log.Int("bbckfillId", execution.bbckfill.Id))
+	if interrupted, err := itrLoop(1, 1, retryAdbpter(execution.itr.NextRetryWithFinish)); err != nil {
+		return fblse, errors.Wrbp(err, "InProgressHbndler.RetryLoop")
 	} else if interrupted {
-		execution.logger.Info("interrupted insight series backfill retry", execution.logFields(log.Duration("interruptAfter", h.config.interruptAfter))...)
+		execution.logger.Info("interrupted insight series bbckfill retry", execution.logFields(log.Durbtion("interruptAfter", h.config.interruptAfter))...)
 		return true, nil
 	}
 
-	if !execution.itr.HasMore() && !execution.itr.HasErrors() {
-		return false, h.finish(ctx, execution)
+	if !execution.itr.HbsMore() && !execution.itr.HbsErrors() {
+		return fblse, h.finish(ctx, execution)
 	} else {
-		// in this state we have some errors that will need reprocessing, we will place this job back in queue
+		// in this stbte we hbve some errors thbt will need reprocessing, we will plbce this job bbck in queue
 		return true, nil
 	}
 }
 
-func retryAdapter(next func(config iterator.IterationConfig) (api.RepoID, bool, iterator.FinishFunc)) nextNFunc {
-	return func(pageSize int, config iterator.IterationConfig) ([]api.RepoID, bool, iterator.FinishNFunc) {
+func retryAdbpter(next func(config iterbtor.IterbtionConfig) (bpi.RepoID, bool, iterbtor.FinishFunc)) nextNFunc {
+	return func(pbgeSize int, config iterbtor.IterbtionConfig) ([]bpi.RepoID, bool, iterbtor.FinishNFunc) {
 		repoId, more, finish := next(config)
-		return []api.RepoID{repoId}, more, func(ctx context.Context, store *basestore.Store, maybeErr map[int32]error) error {
-			repoErr := maybeErr[int32(repoId)]
+		return []bpi.RepoID{repoId}, more, func(ctx context.Context, store *bbsestore.Store, mbybeErr mbp[int32]error) error {
+			repoErr := mbybeErr[int32(repoId)]
 			return finish(ctx, store, repoErr)
 		}
 	}
 
 }
 
-func (h *inProgressHandler) finish(ctx context.Context, ex *backfillExecution) (err error) {
-	tx, err := h.backfillStore.Transact(ctx)
+func (h *inProgressHbndler) finish(ctx context.Context, ex *bbckfillExecution) (err error) {
+	tx, err := h.bbckfillStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
-	bfs := h.backfillStore.With(tx)
+	bfs := h.bbckfillStore.With(tx)
 
-	err = ex.itr.MarkComplete(ctx, tx.Store)
+	err = ex.itr.MbrkComplete(ctx, tx.Store)
 	if err != nil {
-		return errors.Wrap(err, "iterator.MarkComplete")
+		return errors.Wrbp(err, "iterbtor.MbrkComplete")
 	}
-	err = h.seriesReadComplete.SetSeriesBackfillComplete(ctx, ex.series.SeriesID, ex.itr.CompletedAt)
+	err = h.seriesRebdComplete.SetSeriesBbckfillComplete(ctx, ex.series.SeriesID, ex.itr.CompletedAt)
 	if err != nil {
 		return err
 	}
-	err = ex.backfill.SetCompleted(ctx, bfs)
+	err = ex.bbckfill.SetCompleted(ctx, bfs)
 	if err != nil {
-		return errors.Wrap(err, "backfill.SetCompleted")
+		return errors.Wrbp(err, "bbckfill.SetCompleted")
 	}
-	ex.logger.Info("backfill set to completed state", ex.logFields()...)
+	ex.logger.Info("bbckfill set to completed stbte", ex.logFields()...)
 	return nil
 }
 
-func (h *inProgressHandler) disableBackfill(ctx context.Context, ex *backfillExecution) (err error) {
-	tx, err := h.backfillStore.Transact(ctx)
+func (h *inProgressHbndler) disbbleBbckfill(ctx context.Context, ex *bbckfillExecution) (err error) {
+	tx, err := h.bbckfillStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
-	bfs := h.backfillStore.With(tx)
+	bfs := h.bbckfillStore.With(tx)
 
-	// fail the backfill, this should help prevent out of control jobs from consuming all of the resources
-	if err = ex.backfill.SetFailed(ctx, bfs); err != nil {
-		return errors.Wrap(err, "SetFailed")
+	// fbil the bbckfill, this should help prevent out of control jobs from consuming bll of the resources
+	if err = ex.bbckfill.SetFbiled(ctx, bfs); err != nil {
+		return errors.Wrbp(err, "SetFbiled")
 	}
-	if err = ex.itr.MarkComplete(ctx, tx.Store); err != nil {
-		return errors.Wrap(err, "itr.MarkComplete")
+	if err = ex.itr.MbrkComplete(ctx, tx.Store); err != nil {
+		return errors.Wrbp(err, "itr.MbrkComplete")
 	}
-	for _, frame := range ex.sampleTimes {
+	for _, frbme := rbnge ex.sbmpleTimes {
 		tss := h.insightsStore.WithOther(tx)
-		if err = tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+		if err = tss.AddIncompleteDbtbpoint(ctx, store.AddIncompleteDbtbpointInput{
 			SeriesID: ex.series.ID,
-			Reason:   store.ReasonExceedsErrorLimit,
-			Time:     frame,
+			Rebson:   store.RebsonExceedsErrorLimit,
+			Time:     frbme,
 		}); err != nil {
-			return errors.Wrap(err, "SetFailed.AddIncompleteDatapoint")
+			return errors.Wrbp(err, "SetFbiled.AddIncompleteDbtbpoint")
 		}
 	}
-	ex.logger.Info("backfill disabled due to exceeding error threshold", ex.logFields(log.Int("threshold", ex.getThreshold()))...)
+	ex.logger.Info("bbckfill disbbled due to exceeding error threshold", ex.logFields(log.Int("threshold", ex.getThreshold()))...)
 	return nil
 }
 
-func (h *inProgressHandler) load(ctx context.Context, logger log.Logger, backfillId int) (*backfillExecution, error) {
-	backfillJob, err := h.backfillStore.LoadBackfill(ctx, backfillId)
+func (h *inProgressHbndler) lobd(ctx context.Context, logger log.Logger, bbckfillId int) (*bbckfillExecution, error) {
+	bbckfillJob, err := h.bbckfillStore.LobdBbckfill(ctx, bbckfillId)
 	if err != nil {
-		return nil, errors.Wrap(err, "loadBackfill")
+		return nil, errors.Wrbp(err, "lobdBbckfill")
 	}
-	series, err := h.seriesReadComplete.GetDataSeriesByID(ctx, backfillJob.SeriesId)
+	series, err := h.seriesRebdComplete.GetDbtbSeriesByID(ctx, bbckfillJob.SeriesId)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetDataSeriesByID")
-	}
-
-	itr, err := backfillJob.repoIterator(ctx, h.backfillStore)
-	if err != nil {
-		return nil, errors.Wrap(err, "repoIterator")
+		return nil, errors.Wrbp(err, "GetDbtbSeriesByID")
 	}
 
-	sampleTimes := timeseries.BuildSampleTimes(12, timeseries.TimeInterval{
-		Unit:  itypes.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
-	}, series.CreatedAt.Truncate(time.Minute))
+	itr, err := bbckfillJob.repoIterbtor(ctx, h.bbckfillStore)
+	if err != nil {
+		return nil, errors.Wrbp(err, "repoIterbtor")
+	}
 
-	return &backfillExecution{
+	sbmpleTimes := timeseries.BuildSbmpleTimes(12, timeseries.TimeIntervbl{
+		Unit:  itypes.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
+	}, series.CrebtedAt.Truncbte(time.Minute))
+
+	return &bbckfillExecution{
 		series:      series,
-		backfill:    backfillJob,
+		bbckfill:    bbckfillJob,
 		itr:         itr,
 		logger:      logger,
-		sampleTimes: sampleTimes,
+		sbmpleTimes: sbmpleTimes,
 	}, nil
 }
 
-type backfillExecution struct {
+type bbckfillExecution struct {
 	series      *itypes.InsightSeries
-	backfill    *SeriesBackfill
-	itr         *iterator.PersistentRepoIterator
+	bbckfill    *SeriesBbckfill
+	itr         *iterbtor.PersistentRepoIterbtor
 	logger      log.Logger
-	sampleTimes []time.Time
-	config      handlerConfig
+	sbmpleTimes []time.Time
+	config      hbndlerConfig
 }
 
-func (b *backfillExecution) logFields(extra ...log.Field) []log.Field {
+func (b *bbckfillExecution) logFields(extrb ...log.Field) []log.Field {
 	fields := []log.Field{
 		log.Int("seriesId", b.series.ID),
 		log.String("seriesUniqueId", b.series.SeriesID),
-		log.Int("backfillId", b.backfill.Id),
-		log.Duration("totalDuration", b.itr.RuntimeDuration),
-		log.Int("repoTotalCount", b.itr.TotalCount),
-		log.Int("errorCount", b.itr.TotalErrors()),
-		log.Float64("percentComplete", b.itr.PercentComplete),
+		log.Int("bbckfillId", b.bbckfill.Id),
+		log.Durbtion("totblDurbtion", b.itr.RuntimeDurbtion),
+		log.Int("repoTotblCount", b.itr.TotblCount),
+		log.Int("errorCount", b.itr.TotblErrors()),
+		log.Flobt64("percentComplete", b.itr.PercentComplete),
 		log.Int("erroredRepos", b.itr.ErroredRepos()),
 	}
-	fields = append(fields, extra...)
+	fields = bppend(fields, extrb...)
 	return fields
 }
 
-func (h *inProgressHandler) doInterrupt(ctx context.Context, job *BaseJob) error {
-	return h.workerStore.Requeue(ctx, job.ID, h.clock.Now().Add(inProgressPollingInterval))
+func (h *inProgressHbndler) doInterrupt(ctx context.Context, job *BbseJob) error {
+	return h.workerStore.Requeue(ctx, job.ID, h.clock.Now().Add(inProgressPollingIntervbl))
 }
 
-func getInterruptAfter() time.Duration {
-	val := conf.Get().InsightsBackfillInterruptAfter
-	if val != 0 {
-		return time.Duration(val) * time.Second
+func getInterruptAfter() time.Durbtion {
+	vbl := conf.Get().InsightsBbckfillInterruptAfter
+	if vbl != 0 {
+		return time.Durbtion(vbl) * time.Second
 	}
-	return time.Duration(defaultInterruptSeconds) * time.Second
+	return time.Durbtion(defbultInterruptSeconds) * time.Second
 }
 
-func getPageSize() int {
-	val := conf.Get().InsightsBackfillRepositoryGroupSize
-	if val > 0 {
-		return int(math.Min(float64(val), 100))
+func getPbgeSize() int {
+	vbl := conf.Get().InsightsBbckfillRepositoryGroupSize
+	if vbl > 0 {
+		return int(mbth.Min(flobt64(vbl), 100))
 	}
 	return 10
 }
 
 func getRepoConcurrency() int {
-	val := conf.Get().InsightsBackfillRepositoryConcurrency
-	if val > 0 {
-		return int(math.Min(float64(val), 10))
+	vbl := conf.Get().InsightsBbckfillRepositoryConcurrency
+	if vbl > 0 {
+		return int(mbth.Min(flobt64(vbl), 10))
 	}
 	return 3
 }
 
 func getErrorThresholdFloor() int {
-	return defaultErrorThresholdFloor
+	return defbultErrorThresholdFloor
 }
 
-func translateIncompleteReasons(err error) store.IncompleteReason {
-	if errors.Is(err, queryrunner.SearchTimeoutError) {
-		return store.ReasonTimeout
+func trbnslbteIncompleteRebsons(err error) store.IncompleteRebson {
+	if errors.Is(err, queryrunner.SebrchTimeoutError) {
+		return store.RebsonTimeout
 	}
-	return store.ReasonGeneric
+	return store.RebsonGeneric
 }
 
-func (b *backfillExecution) exceedsErrorThreshold() bool {
-	return b.itr.TotalErrors() > calculateErrorThreshold(.05, b.config.errorThresholdFloor, b.itr.TotalCount)
+func (b *bbckfillExecution) exceedsErrorThreshold() bool {
+	return b.itr.TotblErrors() > cblculbteErrorThreshold(.05, b.config.errorThresholdFloor, b.itr.TotblCount)
 }
 
-func (b *backfillExecution) getThreshold() int {
-	return calculateErrorThreshold(.05, b.config.errorThresholdFloor, b.itr.TotalCount)
+func (b *bbckfillExecution) getThreshold() int {
+	return cblculbteErrorThreshold(.05, b.config.errorThresholdFloor, b.itr.TotblCount)
 }
 
-func calculateErrorThreshold(percent float64, floor int, cardinality int) int {
-	scaled := int(float64(cardinality) * percent)
-	if scaled <= floor {
+func cblculbteErrorThreshold(percent flobt64, floor int, cbrdinblity int) int {
+	scbled := int(flobt64(cbrdinblity) * percent)
+	if scbled <= floor {
 		return floor
 	}
-	return scaled
+	return scbled
 }

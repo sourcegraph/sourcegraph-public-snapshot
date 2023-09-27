@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -9,385 +9,385 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/fakedb"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/fbkedb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func init() {
-	txemail.DisableSilently()
+	txembil.DisbbleSilently()
 }
 
-func TestUserEmail_ViewerCanManuallyVerify(t *testing.T) {
-	t.Parallel()
+func TestUserEmbil_ViewerCbnMbnubllyVerify(t *testing.T) {
+	t.Pbrbllel()
 
 	db := dbmocks.NewMockDB()
-	t.Run("only allowed by site admin", func(t *testing.T) {
+	t.Run("only bllowed by site bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		tests := []struct {
-			name    string
+			nbme    string
 			ctx     context.Context
 			setup   func()
-			allowed bool
+			bllowed bool
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				nbme: "unbuthenticbted",
+				ctx:  context.Bbckground(),
 				setup: func() {
-					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-						return nil, database.ErrNoCurrentUser
+					users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
+						return nil, dbtbbbse.ErrNoCurrentUser
 					})
 				},
-				allowed: false,
+				bllowed: fblse,
 			},
 			{
-				name: "non site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "non site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+					users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
 						return &types.User{
 							ID:        2,
-							SiteAdmin: false,
+							SiteAdmin: fblse,
 						}, nil
 					})
 				},
-				allowed: false,
+				bllowed: fblse,
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+					users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
 						return &types.User{
 							ID:        2,
 							SiteAdmin: true,
 						}, nil
 					})
 				},
-				allowed: true,
+				bllowed: true,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				test.setup()
 
-				ok, _ := (&userEmailResolver{
+				ok, _ := (&userEmbilResolver{
 					db: db,
-				}).ViewerCanManuallyVerify(test.ctx)
-				assert.Equal(t, test.allowed, ok, "ViewerCanManuallyVerify")
+				}).ViewerCbnMbnubllyVerify(test.ctx)
+				bssert.Equbl(t, test.bllowed, ok, "ViewerCbnMbnubllyVerify")
 			})
 		}
 	})
 }
 
-func TestSetUserEmailVerified(t *testing.T) {
-	t.Run("only allowed by site admins", func(t *testing.T) {
-		t.Parallel()
+func TestSetUserEmbilVerified(t *testing.T) {
+	t.Run("only bllowed by site bdmins", func(t *testing.T) {
+		t.Pbrbllel()
 
 		db := dbmocks.NewMockDB()
 
-		db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+		db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 			return f(db)
 		})
 
-		ffs := dbmocks.NewMockFeatureFlagStore()
-		db.FeatureFlagsFunc.SetDefaultReturn(ffs)
+		ffs := dbmocks.NewMockFebtureFlbgStore()
+		db.FebtureFlbgsFunc.SetDefbultReturn(ffs)
 
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		db.UsersFunc.SetDefbultReturn(users)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
 		tests := []struct {
-			name    string
+			nbme    string
 			ctx     context.Context
 			setup   func()
-			wantErr string
+			wbntErr string
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				nbme: "unbuthenticbted",
+				ctx:  context.Bbckground(),
 				setup: func() {
-					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-						return nil, database.ErrNoCurrentUser
+					users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
+						return nil, dbtbbbse.ErrNoCurrentUser
 					})
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, i int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, i int32) (*types.User, error) {
 						return nil, nil
 					})
 				},
-				wantErr: "not authenticated",
+				wbntErr: "not buthenticbted",
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+					users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
 						return &types.User{
 							ID:        2,
-							SiteAdmin: false,
+							SiteAdmin: fblse,
 						}, nil
 					})
 				},
-				wantErr: "must be site admin",
+				wbntErr: "must be site bdmin",
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
+					users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
 						return &types.User{
 							ID:        2,
 							SiteAdmin: true,
 						}, nil
 					})
-					userEmails.SetVerifiedFunc.SetDefaultHook(func(ctx context.Context, i int32, s string, b bool) error {
-						// We just care at this point that we passed user authorization
+					userEmbils.SetVerifiedFunc.SetDefbultHook(func(ctx context.Context, i int32, s string, b bool) error {
+						// We just cbre bt this point thbt we pbssed user buthorizbtion
 						return errors.Errorf("short circuit")
 					})
 				},
-				wantErr: "short circuit",
+				wbntErr: "short circuit",
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient()).SetUserEmailVerified(
+				_, err := newSchembResolver(db, gitserver.NewClient()).SetUserEmbilVerified(
 					test.ctx,
-					&setUserEmailVerifiedArgs{
-						User: MarshalUserID(1),
+					&setUserEmbilVerifiedArgs{
+						User: MbrshblUserID(1),
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				assert.Equal(t, test.wantErr, got)
+				bssert.Equbl(t, test.wbntErr, got)
 			})
 		}
 	})
 
 	tests := []struct {
-		name                                string
-		gqlTests                            func(db database.DB) []*Test
-		expectCalledGrantPendingPermissions bool
+		nbme                                string
+		gqlTests                            func(db dbtbbbse.DB) []*Test
+		expectCblledGrbntPendingPermissions bool
 	}{
 		{
-			name: "set an email to be verified",
-			gqlTests: func(db database.DB) []*Test {
+			nbme: "set bn embil to be verified",
+			gqlTests: func(db dbtbbbse.DB) []*Test {
 				return []*Test{{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-						mutation {
-							setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: true) {
-								alwaysNil
+						mutbtion {
+							setUserEmbilVerified(user: "VXNlcjox", embil: "blice@exbmple.com", verified: true) {
+								blwbysNil
 							}
 						}
 					`,
 					ExpectedResult: `
 						{
-							"setUserEmailVerified": {
-								"alwaysNil": null
+							"setUserEmbilVerified": {
+								"blwbysNil": null
 							}
 						}
 					`,
 				}}
 			},
-			expectCalledGrantPendingPermissions: true,
+			expectCblledGrbntPendingPermissions: true,
 		},
 		{
-			name: "set an email to be unverified",
-			gqlTests: func(db database.DB) []*Test {
+			nbme: "set bn embil to be unverified",
+			gqlTests: func(db dbtbbbse.DB) []*Test {
 				return []*Test{{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
-						mutation {
-							setUserEmailVerified(user: "VXNlcjox", email: "alice@example.com", verified: false) {
-								alwaysNil
+						mutbtion {
+							setUserEmbilVerified(user: "VXNlcjox", embil: "blice@exbmple.com", verified: fblse) {
+								blwbysNil
 							}
 						}
 					`,
 					ExpectedResult: `
 						{
-							"setUserEmailVerified": {
-								"alwaysNil": null
+							"setUserEmbilVerified": {
+								"blwbysNil": null
 							}
 						}
 					`,
 				}}
 			},
-			expectCalledGrantPendingPermissions: false,
+			expectCblledGrbntPendingPermissions: fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+			users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
-			userEmails := dbmocks.NewMockUserEmailsStore()
-			userEmails.SetVerifiedFunc.SetDefaultReturn(nil)
+			userEmbils := dbmocks.NewMockUserEmbilsStore()
+			userEmbils.SetVerifiedFunc.SetDefbultReturn(nil)
 
-			authz := dbmocks.NewMockAuthzStore()
-			authz.GrantPendingPermissionsFunc.SetDefaultReturn(nil)
+			buthz := dbmocks.NewMockAuthzStore()
+			buthz.GrbntPendingPermissionsFunc.SetDefbultReturn(nil)
 
-			userExternalAccounts := dbmocks.NewMockUserExternalAccountsStore()
-			userExternalAccounts.DeleteFunc.SetDefaultReturn(nil)
+			userExternblAccounts := dbmocks.NewMockUserExternblAccountsStore()
+			userExternblAccounts.DeleteFunc.SetDefbultReturn(nil)
 
-			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
-			t.Cleanup(func() { permssync.MockSchedulePermsSync = nil })
+			permssync.MockSchedulePermsSync = func(_ context.Context, _ log.Logger, _ dbtbbbse.DB, _ protocol.PermsSyncRequest) {}
+			t.Clebnup(func() { permssync.MockSchedulePermsSync = nil })
 
 			db := dbmocks.NewMockDB()
-			db.WithTransactFunc.SetDefaultHook(func(ctx context.Context, f func(database.DB) error) error {
+			db.WithTrbnsbctFunc.SetDefbultHook(func(ctx context.Context, f func(dbtbbbse.DB) error) error {
 				return f(db)
 			})
 
-			db.UsersFunc.SetDefaultReturn(users)
-			db.UserEmailsFunc.SetDefaultReturn(userEmails)
-			db.AuthzFunc.SetDefaultReturn(authz)
-			db.UserExternalAccountsFunc.SetDefaultReturn(userExternalAccounts)
+			db.UsersFunc.SetDefbultReturn(users)
+			db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+			db.AuthzFunc.SetDefbultReturn(buthz)
+			db.UserExternblAccountsFunc.SetDefbultReturn(userExternblAccounts)
 
 			RunTests(t, test.gqlTests(db))
 
-			if test.expectCalledGrantPendingPermissions {
-				mockrequire.Called(t, authz.GrantPendingPermissionsFunc)
+			if test.expectCblledGrbntPendingPermissions {
+				mockrequire.Cblled(t, buthz.GrbntPendingPermissionsFunc)
 			} else {
-				mockrequire.NotCalled(t, authz.GrantPendingPermissionsFunc)
+				mockrequire.NotCblled(t, buthz.GrbntPendingPermissionsFunc)
 			}
 		})
 	}
 }
 
-func TestPrimaryEmail(t *testing.T) {
-	var primaryEmailQuery = `query hasPrimaryEmail($id: ID!){
+func TestPrimbryEmbil(t *testing.T) {
+	vbr primbryEmbilQuery = `query hbsPrimbryEmbil($id: ID!){
 		node(id: $id) {
 			... on User {
-				primaryEmail {
-					email
+				primbryEmbil {
+					embil
 				}
 			}
 		}
 	}`
-	type primaryEmail struct {
-		Email string
+	type primbryEmbil struct {
+		Embil string
 	}
 	type node struct {
-		PrimaryEmail *primaryEmail
+		PrimbryEmbil *primbryEmbil
 	}
-	type primaryEmailResponse struct {
+	type primbryEmbilResponse struct {
 		Node node
 	}
 
 	now := time.Now()
-	for name, testCase := range map[string]struct {
-		emails []*database.UserEmail
-		want   primaryEmailResponse
+	for nbme, testCbse := rbnge mbp[string]struct {
+		embils []*dbtbbbse.UserEmbil
+		wbnt   primbryEmbilResponse
 	}{
-		"no emails": {
-			want: primaryEmailResponse{
+		"no embils": {
+			wbnt: primbryEmbilResponse{
 				Node: node{
-					PrimaryEmail: nil,
+					PrimbryEmbil: nil,
 				},
 			},
 		},
-		"has primary email": {
-			emails: []*database.UserEmail{
+		"hbs primbry embil": {
+			embils: []*dbtbbbse.UserEmbil{
 				{
-					Email:      "primary@example.com",
-					Primary:    true,
+					Embil:      "primbry@exbmple.com",
+					Primbry:    true,
 					VerifiedAt: &now,
 				},
 				{
-					Email:      "secondary@example.com",
+					Embil:      "secondbry@exbmple.com",
 					VerifiedAt: &now,
 				},
 			},
-			want: primaryEmailResponse{
+			wbnt: primbryEmbilResponse{
 				Node: node{
-					PrimaryEmail: &primaryEmail{
-						Email: "primary@example.com",
+					PrimbryEmbil: &primbryEmbil{
+						Embil: "primbry@exbmple.com",
 					},
 				},
 			},
 		},
-		"no primary email": {
-			emails: []*database.UserEmail{
+		"no primbry embil": {
+			embils: []*dbtbbbse.UserEmbil{
 				{
-					Email:      "not-primary@example.com",
+					Embil:      "not-primbry@exbmple.com",
 					VerifiedAt: &now,
 				},
 				{
-					Email:      "not-primary-either@example.com",
+					Embil:      "not-primbry-either@exbmple.com",
 					VerifiedAt: &now,
 				},
 			},
-			want: primaryEmailResponse{
+			wbnt: primbryEmbilResponse{
 				Node: node{
-					PrimaryEmail: nil,
+					PrimbryEmbil: nil,
 				},
 			},
 		},
-		"no verified email": {
-			emails: []*database.UserEmail{
+		"no verified embil": {
+			embils: []*dbtbbbse.UserEmbil{
 				{
-					Email:   "primary@example.com",
-					Primary: true,
+					Embil:   "primbry@exbmple.com",
+					Primbry: true,
 				},
 				{
-					Email: "not-primary@example.com",
+					Embil: "not-primbry@exbmple.com",
 				},
 			},
-			want: primaryEmailResponse{
+			wbnt: primbryEmbilResponse{
 				Node: node{
-					PrimaryEmail: nil,
+					PrimbryEmbil: nil,
 				},
 			},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			fs := fakedb.New()
+		t.Run(nbme, func(t *testing.T) {
+			fs := fbkedb.New()
 			db := dbmocks.NewMockDB()
-			emails := dbmocks.NewMockUserEmailsStore()
-			emails.ListByUserFunc.SetDefaultHook(func(_ context.Context, ops database.UserEmailsListOptions) ([]*database.UserEmail, error) {
-				var emails []*database.UserEmail
-				for _, m := range testCase.emails {
+			embils := dbmocks.NewMockUserEmbilsStore()
+			embils.ListByUserFunc.SetDefbultHook(func(_ context.Context, ops dbtbbbse.UserEmbilsListOptions) ([]*dbtbbbse.UserEmbil, error) {
+				vbr embils []*dbtbbbse.UserEmbil
+				for _, m := rbnge testCbse.embils {
 					if ops.OnlyVerified && m.VerifiedAt == nil {
 						continue
 					}
 					copy := *m
 					copy.UserID = ops.UserID
-					emails = append(emails, &copy)
+					embils = bppend(embils, &copy)
 				}
-				return emails, nil
+				return embils, nil
 			})
-			db.UserEmailsFunc.SetDefaultReturn(emails)
+			db.UserEmbilsFunc.SetDefbultReturn(embils)
 			fs.Wire(db)
-			ctx := actor.WithActor(context.Background(), actor.FromUser(fs.AddUser(types.User{SiteAdmin: true})))
+			ctx := bctor.WithActor(context.Bbckground(), bctor.FromUser(fs.AddUser(types.User{SiteAdmin: true})))
 			userID := fs.AddUser(types.User{
-				Username: "horse",
+				Usernbme: "horse",
 			})
-			result := mustParseGraphQLSchema(t, db).Exec(ctx, primaryEmailQuery, "", map[string]any{
-				"id": string(relay.MarshalID("User", userID)),
+			result := mustPbrseGrbphQLSchemb(t, db).Exec(ctx, primbryEmbilQuery, "", mbp[string]bny{
+				"id": string(relby.MbrshblID("User", userID)),
 			})
 			if len(result.Errors) != 0 {
-				t.Fatal(result.Errors)
+				t.Fbtbl(result.Errors)
 			}
-			var resultData primaryEmailResponse
-			if err := json.Unmarshal(result.Data, &resultData); err != nil {
-				t.Fatalf("cannot unmarshal result data: %s", err)
+			vbr resultDbtb primbryEmbilResponse
+			if err := json.Unmbrshbl(result.Dbtb, &resultDbtb); err != nil {
+				t.Fbtblf("cbnnot unmbrshbl result dbtb: %s", err)
 			}
-			if diff := cmp.Diff(testCase.want, resultData); diff != "" {
-				t.Errorf("result data, -want+got: %s", diff)
+			if diff := cmp.Diff(testCbse.wbnt, resultDbtb); diff != "" {
+				t.Errorf("result dbtb, -wbnt+got: %s", diff)
 			}
 		})
 	}

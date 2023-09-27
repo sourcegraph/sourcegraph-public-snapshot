@@ -1,16 +1,16 @@
-package inference
+pbckbge inference
 
 import (
 	"testing"
 )
 
-func TestRustGenerator(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
-			description: "rust-analyzer",
-			repositoryContents: map[string]string{
-				"foo/bar/Cargo.toml": "",
-				"foo/baz/Cargo.toml": "",
+func TestRustGenerbtor(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
+			description: "rust-bnblyzer",
+			repositoryContents: mbp[string]string{
+				"foo/bbr/Cbrgo.toml": "",
+				"foo/bbz/Cbrgo.toml": "",
 			},
 		},
 	)

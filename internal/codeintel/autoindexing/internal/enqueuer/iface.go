@@ -1,12 +1,12 @@
-package enqueuer
+pbckbge enqueuer
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
 )
 
-type RepoUpdaterClient interface {
-	EnqueueRepoUpdate(ctx context.Context, repo api.RepoName) (*protocol.RepoUpdateResponse, error)
+type RepoUpdbterClient interfbce {
+	EnqueueRepoUpdbte(ctx context.Context, repo bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error)
 }

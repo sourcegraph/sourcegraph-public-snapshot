@@ -1,117 +1,117 @@
-package server
+pbckbge server
 
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
 )
 
-// RepositoryLock is returned by RepositoryLocker.TryAcquire. It allows
-// updating the status of a directory lock, as well as releasing the lock.
-type RepositoryLock interface {
-	// SetStatus updates the status for the lock. If the lock has been released,
-	// this is a noop.
-	SetStatus(status string)
-	// Release releases the lock.
-	Release()
+// RepositoryLock is returned by RepositoryLocker.TryAcquire. It bllows
+// updbting the stbtus of b directory lock, bs well bs relebsing the lock.
+type RepositoryLock interfbce {
+	// SetStbtus updbtes the stbtus for the lock. If the lock hbs been relebsed,
+	// this is b noop.
+	SetStbtus(stbtus string)
+	// Relebse relebses the lock.
+	Relebse()
 }
 
-// RepositoryLocker provides locks for doing operations to a repository
-// directory. When a repository is locked, only the owner of the lock is
-// allowed to run commands against it.
+// RepositoryLocker provides locks for doing operbtions to b repository
+// directory. When b repository is locked, only the owner of the lock is
+// bllowed to run commbnds bgbinst it.
 //
-// Repositories are identified by the absolute path to their $GIT_DIR.
+// Repositories bre identified by the bbsolute pbth to their $GIT_DIR.
 //
-// The directory's $GIT_DIR does not have to exist when locked. The owner of
-// the lock may remove the directory's $GIT_DIR while holding the lock.
+// The directory's $GIT_DIR does not hbve to exist when locked. The owner of
+// the lock mby remove the directory's $GIT_DIR while holding the lock.
 //
-// The main use of RepositoryLocker is to prevent concurrent clones. However,
-// it is also used during maintenance tasks such as recloning/migrating/etc.
-type RepositoryLocker interface {
-	// TryAcquire acquires the lock for dir. If it is already held, ok is false
-	// and lock is nil. Otherwise a non-nil lock is returned and true. When
-	// finished with the lock you must call lock.Release.
-	TryAcquire(dir common.GitDir, initialStatus string) (lock RepositoryLock, ok bool)
-	// Status returns the status of the locked directory dir. If dir is not
-	// locked, then locked is false.
-	Status(dir common.GitDir) (status string, locked bool)
+// The mbin use of RepositoryLocker is to prevent concurrent clones. However,
+// it is blso used during mbintenbnce tbsks such bs recloning/migrbting/etc.
+type RepositoryLocker interfbce {
+	// TryAcquire bcquires the lock for dir. If it is blrebdy held, ok is fblse
+	// bnd lock is nil. Otherwise b non-nil lock is returned bnd true. When
+	// finished with the lock you must cbll lock.Relebse.
+	TryAcquire(dir common.GitDir, initiblStbtus string) (lock RepositoryLock, ok bool)
+	// Stbtus returns the stbtus of the locked directory dir. If dir is not
+	// locked, then locked is fblse.
+	Stbtus(dir common.GitDir) (stbtus string, locked bool)
 }
 
 func NewRepositoryLocker() RepositoryLocker {
 	return &repositoryLocker{
-		status: make(map[common.GitDir]string),
+		stbtus: mbke(mbp[common.GitDir]string),
 	}
 }
 
 type repositoryLocker struct {
-	// mu protects status
+	// mu protects stbtus
 	mu sync.RWMutex
-	// status tracks directories that are locked. The value is the status. If
-	// a directory is in status, the directory is locked.
-	status map[common.GitDir]string
+	// stbtus trbcks directories thbt bre locked. The vblue is the stbtus. If
+	// b directory is in stbtus, the directory is locked.
+	stbtus mbp[common.GitDir]string
 }
 
-func (rl *repositoryLocker) TryAcquire(dir common.GitDir, initialStatus string) (lock RepositoryLock, ok bool) {
+func (rl *repositoryLocker) TryAcquire(dir common.GitDir, initiblStbtus string) (lock RepositoryLock, ok bool) {
 	rl.mu.Lock()
-	_, failed := rl.status[dir]
-	if !failed {
-		if rl.status == nil {
-			rl.status = make(map[common.GitDir]string)
+	_, fbiled := rl.stbtus[dir]
+	if !fbiled {
+		if rl.stbtus == nil {
+			rl.stbtus = mbke(mbp[common.GitDir]string)
 		}
-		rl.status[dir] = initialStatus
+		rl.stbtus[dir] = initiblStbtus
 	}
 	rl.mu.Unlock()
 
-	if failed {
-		return nil, false
+	if fbiled {
+		return nil, fblse
 	}
 
 	return &repositoryLock{
 		unlock: func() {
 			rl.mu.Lock()
-			delete(rl.status, dir)
+			delete(rl.stbtus, dir)
 			rl.mu.Unlock()
 		},
-		setStatus: func(status string) {
+		setStbtus: func(stbtus string) {
 			rl.mu.Lock()
-			rl.status[dir] = status
+			rl.stbtus[dir] = stbtus
 			rl.mu.Unlock()
 		},
 		dir: dir,
 	}, true
 }
 
-func (rl *repositoryLocker) Status(dir common.GitDir) (status string, locked bool) {
+func (rl *repositoryLocker) Stbtus(dir common.GitDir) (stbtus string, locked bool) {
 	rl.mu.RLock()
 	defer rl.mu.RUnlock()
-	status, locked = rl.status[dir]
+	stbtus, locked = rl.stbtus[dir]
 	return
 }
 
 type repositoryLock struct {
 	unlock    func()
-	setStatus func(status string)
+	setStbtus func(stbtus string)
 	dir       common.GitDir
 
 	mu   sync.Mutex
 	done bool
 }
 
-func (l *repositoryLock) SetStatus(status string) {
+func (l *repositoryLock) SetStbtus(stbtus string) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// Ensure this is still locked before updating the status
+	// Ensure this is still locked before updbting the stbtus
 	if !l.done {
-		l.setStatus(status)
+		l.setStbtus(stbtus)
 	}
 }
 
-func (l *repositoryLock) Release() {
+func (l *repositoryLock) Relebse() {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	// Prevent double release
+	// Prevent double relebse
 	if !l.done {
 		l.unlock()
 		l.done = true

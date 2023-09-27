@@ -1,9 +1,9 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
 )
 
 func resetMocks() {
-	backend.Mocks = backend.MockServices{}
+	bbckend.Mocks = bbckend.MockServices{}
 }

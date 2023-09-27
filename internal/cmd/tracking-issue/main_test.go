@@ -1,212 +1,212 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 	"time"
 
-	"github.com/machinebox/graphql"
-	"golang.org/x/oauth2"
+	"github.com/mbchinebox/grbphql"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	testUpdate        = flag.Bool("update", false, "update testdata golden")
-	testUpdateFixture = flag.Bool("update.fixture", false, "update testdata API response")
+vbr (
+	testUpdbte        = flbg.Bool("updbte", fblse, "updbte testdbtb golden")
+	testUpdbteFixture = flbg.Bool("updbte.fixture", fblse, "updbte testdbtb API response")
 
 	testIssues = []int{
-		13675, // Distribution 3.21 Tracking issue
-		13987, // Code Intelligence 3.21 Tracking issue
-		13988, // Cloud 2020-09-23 Tracking issue
-		14166, // RFC-214: Tracking issue
-		25768, // RFC 496: Continuous integration observability
+		13675, // Distribution 3.21 Trbcking issue
+		13987, // Code Intelligence 3.21 Trbcking issue
+		13988, // Cloud 2020-09-23 Trbcking issue
+		14166, // RFC-214: Trbcking issue
+		25768, // RFC 496: Continuous integrbtion observbbility
 	}
 )
 
-func TestIsRateLimitErr(t *testing.T) {
-	cases := []struct {
+func TestIsRbteLimitErr(t *testing.T) {
+	cbses := []struct {
 		err      error
 		expected bool
 	}{
 		{
-			err:      errors.Wrap(errors.New("graphql: API rate limit exceeded for user ID 12345"), "fake error"),
+			err:      errors.Wrbp(errors.New("grbphql: API rbte limit exceeded for user ID 12345"), "fbke error"),
 			expected: true,
 		}, {
 			err:      nil,
-			expected: false,
+			expected: fblse,
 		}, {
-			err:      errors.New("fake top error"),
-			expected: false,
+			err:      errors.New("fbke top error"),
+			expected: fblse,
 		},
 	}
 
-	for _, tc := range cases {
-		if isRateLimitErr(tc.err) != tc.expected {
+	for _, tc := rbnge cbses {
+		if isRbteLimitErr(tc.err) != tc.expected {
 			t.Errorf("expected %v got %v for %s", tc.expected, !tc.expected, tc.err)
 		}
 	}
 }
 
-func TestIntegration(t *testing.T) {
-	mockLastUpdate(t)
+func TestIntegrbtion(t *testing.T) {
+	mockLbstUpdbte(t)
 
-	trackingIssues, issues, pullRequests, err := testFixtures()
+	trbckingIssues, issues, pullRequests, err := testFixtures()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if err := Resolve(trackingIssues, issues, pullRequests); err != nil {
-		t.Fatal(err)
+	if err := Resolve(trbckingIssues, issues, pullRequests); err != nil {
+		t.Fbtbl(err)
 	}
 
-	for _, number := range testIssues {
+	for _, number := rbnge testIssues {
 		t.Run(fmt.Sprintf("#%d", number), func(t *testing.T) {
-			for _, trackingIssue := range trackingIssues {
-				if trackingIssue.Number != number {
+			for _, trbckingIssue := rbnge trbckingIssues {
+				if trbckingIssue.Number != number {
 					continue
 				}
 
-				issueContext := NewIssueContext(trackingIssue, trackingIssues, issues, pullRequests)
-				if _, ok := trackingIssue.UpdateBody(RenderTrackingIssue(issueContext)); !ok {
-					t.Fatal("failed to patch issue")
+				issueContext := NewIssueContext(trbckingIssue, trbckingIssues, issues, pullRequests)
+				if _, ok := trbckingIssue.UpdbteBody(RenderTrbckingIssue(issueContext)); !ok {
+					t.Fbtbl("fbiled to pbtch issue")
 				}
 
-				goldenPath := filepath.Join("testdata", fmt.Sprintf("issue-%d.md", number))
-				testutil.AssertGolden(t, goldenPath, *testUpdate, trackingIssue.Body)
+				goldenPbth := filepbth.Join("testdbtb", fmt.Sprintf("issue-%d.md", number))
+				testutil.AssertGolden(t, goldenPbth, *testUpdbte, trbckingIssue.Body)
 				return
 			}
 
-			t.Fatalf(`Could not find golden file for #%d. Please run go test -update.fixture".`, number)
+			t.Fbtblf(`Could not find golden file for #%d. Plebse run go test -updbte.fixture".`, number)
 		})
 	}
 }
 
-func mockLastUpdate(t *testing.T) {
-	lastUpdate, err := getOrUpdateLastUpdateTime(*testUpdate)
+func mockLbstUpdbte(t *testing.T) {
+	lbstUpdbte, err := getOrUpdbteLbstUpdbteTime(*testUpdbte)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err.Error())
+		t.Fbtblf("unexpected error: %s", err.Error())
 	}
-	now = func() time.Time { return lastUpdate }
+	now = func() time.Time { return lbstUpdbte }
 }
 
-func getOrUpdateLastUpdateTime(update bool) (time.Time, error) {
-	lastUpdateFile := filepath.Join("testdata", "last-update.txt")
+func getOrUpdbteLbstUpdbteTime(updbte bool) (time.Time, error) {
+	lbstUpdbteFile := filepbth.Join("testdbtb", "lbst-updbte.txt")
 
-	if update {
+	if updbte {
 		now := time.Now().UTC()
-		if err := os.WriteFile(lastUpdateFile, []byte(now.Format(time.RFC3339)), os.ModePerm); err != nil {
+		if err := os.WriteFile(lbstUpdbteFile, []byte(now.Formbt(time.RFC3339)), os.ModePerm); err != nil {
 			return time.Time{}, err
 		}
 
 		return now, nil
 	}
 
-	content, err := os.ReadFile(lastUpdateFile)
+	content, err := os.RebdFile(lbstUpdbteFile)
 	if err != nil {
 		return time.Time{}, err
 	}
 
-	return time.Parse(time.RFC3339, string(content))
+	return time.Pbrse(time.RFC3339, string(content))
 }
 
-type FixturePayload struct {
-	TrackingIssues []*Issue
+type FixturePbylobd struct {
+	TrbckingIssues []*Issue
 	Issues         []*Issue
 	PullRequests   []*PullRequest
 }
 
-func testFixtures() (trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
-	if *testUpdateFixture {
-		return updateTestFixtures()
+func testFixtures() (trbckingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
+	if *testUpdbteFixture {
+		return updbteTestFixtures()
 	}
 
-	return readFixturesFile()
+	return rebdFixturesFile()
 }
 
-func updateTestFixtures() (trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
-	token := flag.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personal access token")
+func updbteTestFixtures() (trbckingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
+	token := flbg.String("token", os.Getenv("GITHUB_TOKEN"), "GitHub personbl bccess token")
 
-	ctx := context.Background()
-	cli := graphql.NewClient("https://api.github.com/graphql", graphql.WithHTTPClient(
-		oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: *token},
+	ctx := context.Bbckground()
+	cli := grbphql.NewClient("https://bpi.github.com/grbphql", grbphql.WithHTTPClient(
+		obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+			&obuth2.Token{AccessToken: *token},
 		))),
 	)
 
-	trackingIssues, err := ListTrackingIssues(ctx, cli, "sourcegraph")
+	trbckingIssues, err := ListTrbckingIssues(ctx, cli, "sourcegrbph")
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	var matchingIssues []*Issue
-	for _, issues := range trackingIssues {
-		for _, n := range testIssues {
+	vbr mbtchingIssues []*Issue
+	for _, issues := rbnge trbckingIssues {
+		for _, n := rbnge testIssues {
 			if issues.Number == n {
-				matchingIssues = append(matchingIssues, issues)
-				break
+				mbtchingIssues = bppend(mbtchingIssues, issues)
+				brebk
 			}
 		}
 	}
 
-	issues, pullRequests, err = LoadTrackingIssues(ctx, cli, "sourcegraph", matchingIssues)
+	issues, pullRequests, err = LobdTrbckingIssues(ctx, cli, "sourcegrbph", mbtchingIssues)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	// Redact any private data from the response
-	for _, issue := range trackingIssues {
-		if issue.Private {
+	// Redbct bny privbte dbtb from the response
+	for _, issue := rbnge trbckingIssues {
+		if issue.Privbte {
 			issue.Title = issue.Repository
-			issue.Labels = redactLabels(issue.Labels)
+			issue.Lbbels = redbctLbbels(issue.Lbbels)
 			issue.Body = "REDACTED"
 		}
 	}
-	for _, issue := range issues {
-		if issue.Private {
+	for _, issue := rbnge issues {
+		if issue.Privbte {
 			issue.Title = issue.Repository
-			issue.Labels = redactLabels(issue.Labels)
+			issue.Lbbels = redbctLbbels(issue.Lbbels)
 			issue.Body = "REDACTED"
 		}
 	}
-	for _, pullRequest := range pullRequests {
-		if pullRequest.Private {
+	for _, pullRequest := rbnge pullRequests {
+		if pullRequest.Privbte {
 			pullRequest.Title = pullRequest.Repository
-			pullRequest.Labels = redactLabels(pullRequest.Labels)
+			pullRequest.Lbbels = redbctLbbels(pullRequest.Lbbels)
 			pullRequest.Body = "REDACTED"
 		}
 	}
 
-	if err := writeFixturesFile(trackingIssues, issues, pullRequests); err != nil {
+	if err := writeFixturesFile(trbckingIssues, issues, pullRequests); err != nil {
 		return nil, nil, nil, err
 	}
 
-	return trackingIssues, issues, pullRequests, nil
+	return trbckingIssues, issues, pullRequests, nil
 }
 
-func readFixturesFile() (trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
-	contents, err := os.ReadFile(filepath.Join("testdata", "fixtures.json"))
+func rebdFixturesFile() (trbckingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest, _ error) {
+	contents, err := os.RebdFile(filepbth.Join("testdbtb", "fixtures.json"))
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	var payload FixturePayload
-	if err := json.Unmarshal(contents, &payload); err != nil {
+	vbr pbylobd FixturePbylobd
+	if err := json.Unmbrshbl(contents, &pbylobd); err != nil {
 		return nil, nil, nil, err
 	}
 
-	return payload.TrackingIssues, payload.Issues, payload.PullRequests, nil
+	return pbylobd.TrbckingIssues, pbylobd.Issues, pbylobd.PullRequests, nil
 }
 
-func writeFixturesFile(trackingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) error {
-	contents, err := json.MarshalIndent(FixturePayload{
-		TrackingIssues: trackingIssues,
+func writeFixturesFile(trbckingIssues []*Issue, issues []*Issue, pullRequests []*PullRequest) error {
+	contents, err := json.MbrshblIndent(FixturePbylobd{
+		TrbckingIssues: trbckingIssues,
 		Issues:         issues,
 		PullRequests:   pullRequests,
 	}, "", "  ")
@@ -214,5 +214,5 @@ func writeFixturesFile(trackingIssues []*Issue, issues []*Issue, pullRequests []
 		return err
 	}
 
-	return os.WriteFile(filepath.Join("testdata", "fixtures.json"), contents, os.ModePerm)
+	return os.WriteFile(filepbth.Join("testdbtb", "fixtures.json"), contents, os.ModePerm)
 }

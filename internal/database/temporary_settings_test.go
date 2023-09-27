@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,140 +6,140 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	ts "github.com/sourcegraph/sourcegraph/internal/temporarysettings"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	ts "github.com/sourcegrbph/sourcegrbph/internbl/temporbrysettings"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestTemporarySettingsStore(t *testing.T) {
-	t.Parallel()
+func TestTemporbrySettingsStore(t *testing.T) {
+	t.Pbrbllel()
 	t.Run("GetEmpty", testGetEmpty)
 	t.Run("InsertAndGet", testInsertAndGet)
-	t.Run("UpdateAndGet", testUpdateAndGet)
-	t.Run("InsertWithInvalidData", testInsertWithInvalidData)
+	t.Run("UpdbteAndGet", testUpdbteAndGet)
+	t.Run("InsertWithInvblidDbtb", testInsertWithInvblidDbtb)
 	t.Run("TestEdit", testEdit)
 }
 
 func testGetEmpty(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
-	temporarySettingsStore := NewDB(logger, dbtest.NewDB(logger, t)).TemporarySettings()
+	temporbrySettingsStore := NewDB(logger, dbtest.NewDB(logger, t)).TemporbrySettings()
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	expected := ts.TemporarySettings{Contents: "{}"}
+	expected := ts.TemporbrySettings{Contents: "{}"}
 
-	res, err := temporarySettingsStore.GetTemporarySettings(ctx, 1)
+	res, err := temporbrySettingsStore.GetTemporbrySettings(ctx, 1)
 	require.NoError(t, err)
 
-	require.Equal(t, res, &expected)
+	require.Equbl(t, res, &expected)
 }
 
 func testInsertAndGet(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	usersStore := db.Users()
-	temporarySettingsStore := db.TemporarySettings()
+	temporbrySettingsStore := db.TemporbrySettings()
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	contents := "{\"search.collapsedSidebarSections\": {}}"
+	contents := "{\"sebrch.collbpsedSidebbrSections\": {}}"
 
-	user, err := usersStore.Create(ctx, NewUser{Username: "u", Password: "p"})
+	user, err := usersStore.Crebte(ctx, NewUser{Usernbme: "u", Pbssword: "p"})
 	require.NoError(t, err)
 
-	err = temporarySettingsStore.OverwriteTemporarySettings(ctx, user.ID, contents)
+	err = temporbrySettingsStore.OverwriteTemporbrySettings(ctx, user.ID, contents)
 	require.NoError(t, err)
 
-	res, err := temporarySettingsStore.GetTemporarySettings(ctx, user.ID)
+	res, err := temporbrySettingsStore.GetTemporbrySettings(ctx, user.ID)
 	require.NoError(t, err)
 
-	expected := ts.TemporarySettings{Contents: contents}
-	require.Equal(t, res, &expected)
+	expected := ts.TemporbrySettings{Contents: contents}
+	require.Equbl(t, res, &expected)
 }
 
-func testUpdateAndGet(t *testing.T) {
-	t.Parallel()
+func testUpdbteAndGet(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	usersStore := db.Users()
-	temporarySettingsStore := db.TemporarySettings()
+	temporbrySettingsStore := db.TemporbrySettings()
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	contents := "{\"search.collapsedSidebarSections\": {}}"
+	contents := "{\"sebrch.collbpsedSidebbrSections\": {}}"
 
-	user, err := usersStore.Create(ctx, NewUser{Username: "u", Password: "p"})
+	user, err := usersStore.Crebte(ctx, NewUser{Usernbme: "u", Pbssword: "p"})
 	require.NoError(t, err)
 
-	err = temporarySettingsStore.OverwriteTemporarySettings(ctx, user.ID, contents)
+	err = temporbrySettingsStore.OverwriteTemporbrySettings(ctx, user.ID, contents)
 	require.NoError(t, err)
 
-	contents2 := "{\"search.collapsedSidebarSections\": {\"types\": false}}"
+	contents2 := "{\"sebrch.collbpsedSidebbrSections\": {\"types\": fblse}}"
 
-	err = temporarySettingsStore.OverwriteTemporarySettings(ctx, user.ID, contents2)
+	err = temporbrySettingsStore.OverwriteTemporbrySettings(ctx, user.ID, contents2)
 	require.NoError(t, err)
 
-	res, err := temporarySettingsStore.GetTemporarySettings(ctx, user.ID)
+	res, err := temporbrySettingsStore.GetTemporbrySettings(ctx, user.ID)
 	require.NoError(t, err)
 
-	expected := ts.TemporarySettings{Contents: contents2}
-	require.Equal(t, res, &expected)
+	expected := ts.TemporbrySettings{Contents: contents2}
+	require.Equbl(t, res, &expected)
 }
 
-func testInsertWithInvalidData(t *testing.T) {
-	t.Parallel()
+func testInsertWithInvblidDbtb(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	usersStore := db.Users()
-	temporarySettingsStore := db.TemporarySettings()
+	temporbrySettingsStore := db.TemporbrySettings()
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	contents := "{\"search.collapsedSidebarSections\": {}"
+	contents := "{\"sebrch.collbpsedSidebbrSections\": {}"
 
-	user, err := usersStore.Create(ctx, NewUser{Username: "u", Password: "p"})
+	user, err := usersStore.Crebte(ctx, NewUser{Usernbme: "u", Pbssword: "p"})
 	require.NoError(t, err)
 
-	err = temporarySettingsStore.OverwriteTemporarySettings(ctx, user.ID, contents)
-	require.EqualError(t, errors.Unwrap(errors.Unwrap(err)), "ERROR: invalid input syntax for type json (SQLSTATE 22P02)")
+	err = temporbrySettingsStore.OverwriteTemporbrySettings(ctx, user.ID, contents)
+	require.EqublError(t, errors.Unwrbp(errors.Unwrbp(err)), "ERROR: invblid input syntbx for type json (SQLSTATE 22P02)")
 }
 
 func testEdit(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	usersStore := db.Users()
-	temporarySettingsStore := db.TemporarySettings()
+	temporbrySettingsStore := db.TemporbrySettings()
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	edit1 := "{\"search.collapsedSidebarSections\": {}, \"search.onboarding.tourCancelled\": true}"
+	edit1 := "{\"sebrch.collbpsedSidebbrSections\": {}, \"sebrch.onbobrding.tourCbncelled\": true}"
 
-	user, err := usersStore.Create(ctx, NewUser{Username: "u", Password: "p"})
+	user, err := usersStore.Crebte(ctx, NewUser{Usernbme: "u", Pbssword: "p"})
 	require.NoError(t, err)
 
-	err = temporarySettingsStore.EditTemporarySettings(ctx, user.ID, edit1)
+	err = temporbrySettingsStore.EditTemporbrySettings(ctx, user.ID, edit1)
 	require.NoError(t, err)
 
-	res1, err := temporarySettingsStore.GetTemporarySettings(ctx, user.ID)
+	res1, err := temporbrySettingsStore.GetTemporbrySettings(ctx, user.ID)
 	require.NoError(t, err)
 
-	expected1 := ts.TemporarySettings{Contents: edit1}
-	require.Equal(t, res1, &expected1)
+	expected1 := ts.TemporbrySettings{Contents: edit1}
+	require.Equbl(t, res1, &expected1)
 
-	edit2 := "{\"search.collapsedSidebarSections\": {\"types\": false}}"
+	edit2 := "{\"sebrch.collbpsedSidebbrSections\": {\"types\": fblse}}"
 
-	err = temporarySettingsStore.EditTemporarySettings(ctx, user.ID, edit2)
+	err = temporbrySettingsStore.EditTemporbrySettings(ctx, user.ID, edit2)
 	require.NoError(t, err)
 
-	res2, err := temporarySettingsStore.GetTemporarySettings(ctx, user.ID)
+	res2, err := temporbrySettingsStore.GetTemporbrySettings(ctx, user.ID)
 	require.NoError(t, err)
 
-	expected2 := ts.TemporarySettings{Contents: "{\"search.collapsedSidebarSections\": {\"types\": false}, \"search.onboarding.tourCancelled\": true}"}
-	require.Equal(t, res2, &expected2)
+	expected2 := ts.TemporbrySettings{Contents: "{\"sebrch.collbpsedSidebbrSections\": {\"types\": fblse}, \"sebrch.onbobrding.tourCbncelled\": true}"}
+	require.Equbl(t, res2, &expected2)
 }

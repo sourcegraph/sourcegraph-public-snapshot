@@ -1,27 +1,27 @@
-package context
+pbckbge context
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/context/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/context/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type Service struct {
 	store      store.Store
-	operations *operations
+	operbtions *operbtions
 }
 
 func newService(
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 ) *Service {
 	return &Service{
 		store:      store,
-		operations: newOperations(observationCtx),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }
 
-func (s *Service) SplitIntoEmbeddableChunks(ctx context.Context, text string, fileName string, splitOptions SplitOptions) ([]EmbeddableChunk, error) {
-	return SplitIntoEmbeddableChunks(text, fileName, splitOptions), nil
+func (s *Service) SplitIntoEmbeddbbleChunks(ctx context.Context, text string, fileNbme string, splitOptions SplitOptions) ([]EmbeddbbleChunk, error) {
+	return SplitIntoEmbeddbbleChunks(text, fileNbme, splitOptions), nil
 }

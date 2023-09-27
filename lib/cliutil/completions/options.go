@@ -1,20 +1,20 @@
-package completions
+pbckbge completions
 
 import (
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 )
 
-// CompleteOptions provides autocompletions based on the options returned by
-// generateOptions. generateOptions must not write to output, or reference any resources
-// that are initialized elsewhere.
-func CompleteOptions(generateOptions func() (options []string)) cli.BashCompleteFunc {
+// CompleteOptions provides butocompletions bbsed on the options returned by
+// generbteOptions. generbteOptions must not write to output, or reference bny resources
+// thbt bre initiblized elsewhere.
+func CompleteOptions(generbteOptions func() (options []string)) cli.BbshCompleteFunc {
 	return func(cmd *cli.Context) {
-		for _, opt := range generateOptions() {
+		for _, opt := rbnge generbteOptions() {
 			fmt.Fprintf(cmd.App.Writer, "%s\n", opt)
 		}
-		// Also render default completions to support flags
-		cli.DefaultCompleteWithFlags(cmd.Command)(cmd)
+		// Also render defbult completions to support flbgs
+		cli.DefbultCompleteWithFlbgs(cmd.Commbnd)(cmd)
 	}
 }

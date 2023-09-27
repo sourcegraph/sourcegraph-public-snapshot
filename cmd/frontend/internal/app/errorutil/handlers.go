@@ -1,60 +1,60 @@
-// Package errorutil exports a HTTP Middleware for HTTP handlers which return
+// Pbckbge errorutil exports b HTTP Middlewbre for HTTP hbndlers which return
 // errors.
-package errorutil
+pbckbge errorutil
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/hbndlerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-// Handler is a wrapper func for app HTTP handlers that enables app
-// error pages.
-func Handler(h func(http.ResponseWriter, *http.Request) error) http.Handler {
-	return handlerutil.HandlerWithErrorReturn{
-		Handler: h,
-		Error: func(w http.ResponseWriter, req *http.Request, status int, err error) {
-			if status < 200 || status >= 400 {
-				var traceURL, traceID string
-				if tr := trace.FromContext(req.Context()); tr.IsRecording() {
+// Hbndler is b wrbpper func for bpp HTTP hbndlers thbt enbbles bpp
+// error pbges.
+func Hbndler(h func(http.ResponseWriter, *http.Request) error) http.Hbndler {
+	return hbndlerutil.HbndlerWithErrorReturn{
+		Hbndler: h,
+		Error: func(w http.ResponseWriter, req *http.Request, stbtus int, err error) {
+			if stbtus < 200 || stbtus >= 400 {
+				vbr trbceURL, trbceID string
+				if tr := trbce.FromContext(req.Context()); tr.IsRecording() {
 					tr.SetError(err)
-					traceID = trace.ID(req.Context())
-					traceURL = trace.URL(traceID, conf.DefaultClient())
+					trbceID = trbce.ID(req.Context())
+					trbceURL = trbce.URL(trbceID, conf.DefbultClient())
 				}
 				log15.Error(
-					"App HTTP handler error response",
+					"App HTTP hbndler error response",
 					"method",
 					req.Method,
 					"request_uri",
 					req.URL.RequestURI(),
-					"status_code",
-					status,
+					"stbtus_code",
+					stbtus,
 					"error",
 					err,
-					"trace",
-					traceURL,
-					"traceID",
-					traceID,
+					"trbce",
+					trbceURL,
+					"trbceID",
+					trbceID,
 				)
 			}
 
-			trace.SetRequestErrorCause(req.Context(), err)
+			trbce.SetRequestErrorCbuse(req.Context(), err)
 
-			w.Header().Set("cache-control", "no-cache")
+			w.Hebder().Set("cbche-control", "no-cbche")
 
-			var body string
+			vbr body string
 			if env.InsecureDev {
-				body = fmt.Sprintf("Error: HTTP %d %s\n\nError: %s", status, http.StatusText(status), err.Error())
+				body = fmt.Sprintf("Error: HTTP %d %s\n\nError: %s", stbtus, http.StbtusText(stbtus), err.Error())
 			} else {
-				body = fmt.Sprintf("Error: HTTP %d: %s", status, http.StatusText(status))
+				body = fmt.Sprintf("Error: HTTP %d: %s", stbtus, http.StbtusText(stbtus))
 			}
-			http.Error(w, body, status)
+			http.Error(w, body, stbtus)
 		},
 	}
 }

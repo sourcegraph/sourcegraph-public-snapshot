@@ -1,25 +1,25 @@
-package connections
+pbckbge connections
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// memoryStore implements runner.Store but writes to migration metadata are
-// not passed to any underlying persistence layer.
+// memoryStore implements runner.Store but writes to migrbtion metbdbtb bre
+// not pbssed to bny underlying persistence lbyer.
 type memoryStore struct {
 	db              *sql.DB
-	appliedVersions []int
+	bppliedVersions []int
 	pendingVersions []int
-	failedVersions  []int
+	fbiledVersions  []int
 }
 
 func newMemoryStore(db *sql.DB) runner.Store {
@@ -28,7 +28,7 @@ func newMemoryStore(db *sql.DB) runner.Store {
 	}
 }
 
-func (s *memoryStore) Transact(ctx context.Context) (runner.Store, error) {
+func (s *memoryStore) Trbnsbct(ctx context.Context) (runner.Store, error) {
 	return s, nil
 }
 
@@ -36,15 +36,15 @@ func (s *memoryStore) Done(err error) error {
 	return err
 }
 
-func (s *memoryStore) Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error) {
+func (s *memoryStore) Describe(ctx context.Context) (mbp[string]schembs.SchembDescription, error) {
 	return nil, errors.Newf("unimplemented")
 }
 
-func (s *memoryStore) Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error) {
-	return s.appliedVersions, s.pendingVersions, s.failedVersions, nil
+func (s *memoryStore) Versions(ctx context.Context) (bppliedVersions, pendingVersions, fbiledVersions []int, _ error) {
+	return s.bppliedVersions, s.pendingVersions, s.fbiledVersions, nil
 }
 
-func (s *memoryStore) RunDDLStatements(ctx context.Context, statements []string) error {
+func (s *memoryStore) RunDDLStbtements(ctx context.Context, stbtements []string) error {
 	return nil
 }
 
@@ -52,29 +52,29 @@ func (s *memoryStore) TryLock(ctx context.Context) (bool, func(err error) error,
 	return true, func(err error) error { return err }, nil
 }
 
-func (s *memoryStore) Up(ctx context.Context, migration definition.Definition) error {
-	return s.exec(ctx, migration, migration.UpQuery)
+func (s *memoryStore) Up(ctx context.Context, migrbtion definition.Definition) error {
+	return s.exec(ctx, migrbtion, migrbtion.UpQuery)
 }
 
-func (s *memoryStore) Down(ctx context.Context, migration definition.Definition) error {
-	return s.exec(ctx, migration, migration.DownQuery)
+func (s *memoryStore) Down(ctx context.Context, migrbtion definition.Definition) error {
+	return s.exec(ctx, migrbtion, migrbtion.DownQuery)
 }
 
-func (s *memoryStore) WithMigrationLog(_ context.Context, _ definition.Definition, _ bool, f func() error) error {
+func (s *memoryStore) WithMigrbtionLog(_ context.Context, _ definition.Definition, _ bool, f func() error) error {
 	return f()
 }
 
-func (s *memoryStore) IndexStatus(_ context.Context, _, _ string) (shared.IndexStatus, bool, error) {
-	return shared.IndexStatus{}, false, nil
+func (s *memoryStore) IndexStbtus(_ context.Context, _, _ string) (shbred.IndexStbtus, bool, error) {
+	return shbred.IndexStbtus{}, fblse, nil
 }
 
-func (s *memoryStore) exec(ctx context.Context, migration definition.Definition, query *sqlf.Query) error {
-	_, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+func (s *memoryStore) exec(ctx context.Context, migrbtion definition.Definition, query *sqlf.Query) error {
+	_, err := s.db.ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 	if err != nil {
-		s.failedVersions = append(s.failedVersions, migration.ID)
+		s.fbiledVersions = bppend(s.fbiledVersions, migrbtion.ID)
 		return err
 	}
 
-	s.appliedVersions = append(s.appliedVersions, migration.ID)
+	s.bppliedVersions = bppend(s.bppliedVersions, migrbtion.ID)
 	return nil
 }

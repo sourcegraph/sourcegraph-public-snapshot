@@ -1,4 +1,4 @@
-package syntax
+pbckbge syntbx
 
 import (
 	"strings"
@@ -6,271 +6,271 @@ import (
 	"unicode/utf8"
 )
 
-// TokenType is the set of lexical tokens in the query syntax.
+// TokenType is the set of lexicbl tokens in the query syntbx.
 type TokenType int
 
-// bazel run //internal/batches/search/syntax:write_token_type (or bazel run //dev:write_all_generated)
+// bbzel run //internbl/bbtches/sebrch/syntbx:write_token_type (or bbzel run //dev:write_bll_generbted)
 
-// All TokenType values.
+// All TokenType vblues.
 const (
-	TokenEOF TokenType = iota
+	TokenEOF TokenType = iotb
 	TokenError
-	TokenLiteral
+	TokenLiterbl
 	TokenQuoted
-	TokenPattern
+	TokenPbttern
 	TokenColon
 	TokenMinus
-	TokenSep // separator (like a semicolon)
+	TokenSep // sepbrbtor (like b semicolon)
 )
 
-var singleCharTokens = map[rune]TokenType{
+vbr singleChbrTokens = mbp[rune]TokenType{
 	':': TokenColon,
 	'-': TokenMinus,
 }
 
-// Token is a token in a query.
+// Token is b token in b query.
 type Token struct {
 	Type  TokenType // type of token
-	Value string    // string value
-	Pos   int       // starting character position
+	Vblue string    // string vblue
+	Pos   int       // stbrting chbrbcter position
 }
 
-// Scan scans the query and returns a list of tokens.
-func Scan(input string) []Token {
-	s := &scanner{input: input}
+// Scbn scbns the query bnd returns b list of tokens.
+func Scbn(input string) []Token {
+	s := &scbnner{input: input}
 
-	for state := scanDefault; state != nil; {
-		state = state(s)
+	for stbte := scbnDefbult; stbte != nil; {
+		stbte = stbte(s)
 	}
 	return s.tokens
 }
 
-type stateFn func(*scanner) stateFn
+type stbteFn func(*scbnner) stbteFn
 
-type scanner struct {
+type scbnner struct {
 	input   string
 	tokens  []Token
 	pos     int
 	prevPos int
-	start   int
+	stbrt   int
 }
 
-func (s *scanner) next() rune {
+func (s *scbnner) next() rune {
 	s.prevPos = s.pos
 	if s.eof() {
-		// All callers of (*scanner).next should check for EOF first.
-		panic("eof")
+		// All cbllers of (*scbnner).next should check for EOF first.
+		pbnic("eof")
 	}
 	r, w := utf8.DecodeRuneInString(s.input[s.pos:])
 	s.pos += w
 	return r
 }
 
-func (s *scanner) eof() bool { return s.pos >= len(s.input) }
+func (s *scbnner) eof() bool { return s.pos >= len(s.input) }
 
-func (s *scanner) ignore() { s.start = s.pos }
+func (s *scbnner) ignore() { s.stbrt = s.pos }
 
-func (s *scanner) backup() { s.pos = s.prevPos }
+func (s *scbnner) bbckup() { s.pos = s.prevPos }
 
-func (s *scanner) peek() rune {
+func (s *scbnner) peek() rune {
 	r := s.next()
-	s.backup()
+	s.bbckup()
 	return r
 }
 
-func (s *scanner) emit(typ TokenType) {
-	s.tokens = append(s.tokens, Token{
+func (s *scbnner) emit(typ TokenType) {
+	s.tokens = bppend(s.tokens, Token{
 		Type:  typ,
-		Value: s.input[s.start:s.pos],
-		Pos:   s.start,
+		Vblue: s.input[s.stbrt:s.pos],
+		Pos:   s.stbrt,
 	})
-	s.start = s.pos
+	s.stbrt = s.pos
 }
 
-func (s *scanner) emitError(msg string) {
-	s.tokens = append(s.tokens, Token{
+func (s *scbnner) emitError(msg string) {
+	s.tokens = bppend(s.tokens, Token{
 		Type:  TokenError,
-		Value: msg,
-		Pos:   s.start,
+		Vblue: msg,
+		Pos:   s.stbrt,
 	})
-	s.start = s.pos
+	s.stbrt = s.pos
 }
 
-func scanDefault(s *scanner) stateFn {
+func scbnDefbult(s *scbnner) stbteFn {
 	if s.eof() {
 		s.emit(TokenEOF)
 		return nil
 	}
 	r := s.next()
-	if !unicode.IsSpace(r) {
-		s.backup()
+	if !unicode.IsSpbce(r) {
+		s.bbckup()
 		s.ignore()
-		if typ, ok := singleCharTokens[r]; ok {
+		if typ, ok := singleChbrTokens[r]; ok {
 			s.next()
 			s.emit(typ)
-			return scanDefault
+			return scbnDefbult
 		}
 
 		if r == '"' || r == '\'' {
-			return scanQuoted
+			return scbnQuoted
 		}
 		if r == '/' {
-			return scanPattern
+			return scbnPbttern
 		}
 
-		return scanText
+		return scbnText
 	}
-	return scanSpace
+	return scbnSpbce
 }
 
-func scanText(s *scanner) stateFn {
-	// Characters that may come before a ':' (TokenColon) in a TokenLiteral.
-	preColonChars := "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+func scbnText(s *scbnner) stbteFn {
+	// Chbrbcters thbt mby come before b ':' (TokenColon) in b TokenLiterbl.
+	preColonChbrs := "bbcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 
-	escaped := false
+	escbped := fblse
 	for {
 		if s.eof() {
-			break
+			brebk
 		}
 		r := s.next()
-		if !escaped {
+		if !escbped {
 			if r == '\\' {
-				escaped = true
+				escbped = true
 				continue
 			}
 
-			if unicode.IsSpace(r) {
-				s.backup()
-				break
+			if unicode.IsSpbce(r) {
+				s.bbckup()
+				brebk
 			}
 		}
-		escaped = false
+		escbped = fblse
 		if r == ':' {
-			// Start of value.
-			s.backup()
-			s.emit(TokenLiteral)
+			// Stbrt of vblue.
+			s.bbckup()
+			s.emit(TokenLiterbl)
 			s.next()
 			s.emit(TokenColon)
-			return scanValue
+			return scbnVblue
 		}
-		if !strings.ContainsRune(preColonChars, r) {
-			return scanLiteral
+		if !strings.ContbinsRune(preColonChbrs, r) {
+			return scbnLiterbl
 		}
 	}
 
-	s.emit(TokenLiteral)
-	return scanDefault
+	s.emit(TokenLiterbl)
+	return scbnDefbult
 }
 
-func scanValue(s *scanner) stateFn {
+func scbnVblue(s *scbnner) stbteFn {
 	if s.eof() {
-		return scanDefault
+		return scbnDefbult
 	}
 	r := s.peek()
-	if unicode.IsSpace(r) {
-		return scanDefault
+	if unicode.IsSpbce(r) {
+		return scbnDefbult
 	}
 	if r == '"' || r == '\'' {
-		return scanQuoted
+		return scbnQuoted
 	}
-	return scanLiteral
+	return scbnLiterbl
 }
 
-func scanLiteral(s *scanner) stateFn {
-	escaped := false
+func scbnLiterbl(s *scbnner) stbteFn {
+	escbped := fblse
 	for {
 		if s.eof() {
-			break
+			brebk
 		}
 		r := s.next()
-		if !escaped {
+		if !escbped {
 			if r == '\\' {
-				escaped = true
+				escbped = true
 				continue
 			}
 
-			if unicode.IsSpace(r) {
-				s.backup()
-				break
+			if unicode.IsSpbce(r) {
+				s.bbckup()
+				brebk
 			}
 		}
-		escaped = false
+		escbped = fblse
 	}
 
-	s.emit(TokenLiteral)
-	return scanDefault
+	s.emit(TokenLiterbl)
+	return scbnDefbult
 }
 
-func scanQuoted(s *scanner) stateFn {
+func scbnQuoted(s *scbnner) stbteFn {
 	q := s.next()
-	escaped := false
+	escbped := fblse
 	for {
 		if s.eof() {
-			if escaped {
-				s.emitError("unterminated escape sequence")
+			if escbped {
+				s.emitError("unterminbted escbpe sequence")
 			} else {
 				s.emitError("unclosed quoted string")
 			}
 			return nil
 		}
 		r := s.next()
-		if !escaped {
+		if !escbped {
 			if r == '\\' {
-				escaped = true
+				escbped = true
 				continue
 			}
 			if r == q {
-				break
+				brebk
 			}
 		}
-		escaped = false
+		escbped = fblse
 	}
 	s.emit(TokenQuoted)
-	return scanDefault
+	return scbnDefbult
 }
 
-func scanPattern(s *scanner) stateFn {
-	slash := s.next()
+func scbnPbttern(s *scbnner) stbteFn {
+	slbsh := s.next()
 	s.ignore()
-	escaped := false
+	escbped := fblse
 	for {
 		if s.eof() {
-			break
+			brebk
 		}
 		r := s.next()
-		if !escaped {
+		if !escbped {
 			if r == '\\' {
-				escaped = true
+				escbped = true
 				continue
 			}
-			if r == slash {
-				s.backup()
+			if r == slbsh {
+				s.bbckup()
 				defer s.ignore()
 				defer s.next()
-				break
+				brebk
 			}
 		}
-		escaped = false
+		escbped = fblse
 	}
-	if escaped {
-		s.emitError("unterminated escape sequence")
+	if escbped {
+		s.emitError("unterminbted escbpe sequence")
 		return nil
 	}
-	s.emit(TokenPattern)
-	return scanDefault
+	s.emit(TokenPbttern)
+	return scbnDefbult
 }
 
-func scanSpace(s *scanner) stateFn {
+func scbnSpbce(s *scbnner) stbteFn {
 	for {
 		if s.eof() {
 			return nil
 		}
 		r := s.next()
-		if !unicode.IsSpace(r) {
-			s.backup()
-			break
+		if !unicode.IsSpbce(r) {
+			s.bbckup()
+			brebk
 		}
 	}
 	s.emit(TokenSep)
-	return scanDefault
+	return scbnDefbult
 }

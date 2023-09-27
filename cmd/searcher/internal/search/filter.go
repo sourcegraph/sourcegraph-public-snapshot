@@ -1,98 +1,98 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"bytes"
 	"context"
-	"hash"
+	"hbsh"
 	"io"
 	"strings"
 
-	"github.com/bmatcuk/doublestar"
-	"github.com/sourcegraph/zoekt/ignore"
+	"github.com/bmbtcuk/doublestbr"
+	"github.com/sourcegrbph/zoekt/ignore"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewFilter calls gitserver to retrieve the ignore-file. If the file doesn't
-// exist we return an empty ignore.Matcher.
-func NewFilter(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error) {
-	ignoreFile, err := client.ReadFile(ctx, nil, repo, commit, ignore.IgnoreFile)
+// NewFilter cblls gitserver to retrieve the ignore-file. If the file doesn't
+// exist we return bn empty ignore.Mbtcher.
+func NewFilter(ctx context.Context, client gitserver.Client, repo bpi.RepoNbme, commit bpi.CommitID) (FilterFunc, error) {
+	ignoreFile, err := client.RebdFile(ctx, nil, repo, commit, ignore.IgnoreFile)
 	if err != nil {
-		// We do not ignore anything if the ignore file does not exist.
-		if strings.Contains(err.Error(), "file does not exist") {
-			return func(*tar.Header) bool {
-				return false
+		// We do not ignore bnything if the ignore file does not exist.
+		if strings.Contbins(err.Error(), "file does not exist") {
+			return func(*tbr.Hebder) bool {
+				return fblse
 			}, nil
 		}
 		return nil, err
 	}
 
-	ig, err := ignore.ParseIgnoreFile(bytes.NewReader(ignoreFile))
+	ig, err := ignore.PbrseIgnoreFile(bytes.NewRebder(ignoreFile))
 	if err != nil {
 		return nil, err
 	}
 
-	return func(header *tar.Header) bool {
-		if header.Size > maxFileSize {
+	return func(hebder *tbr.Hebder) bool {
+		if hebder.Size > mbxFileSize {
 			return true
 		}
-		return ig.Match(header.Name)
+		return ig.Mbtch(hebder.Nbme)
 	}, nil
 }
 
-func newSearchableFilter(c *schema.SiteConfiguration) *searchableFilter {
-	return &searchableFilter{
-		SearchLargeFiles: c.SearchLargeFiles,
+func newSebrchbbleFilter(c *schemb.SiteConfigurbtion) *sebrchbbleFilter {
+	return &sebrchbbleFilter{
+		SebrchLbrgeFiles: c.SebrchLbrgeFiles,
 	}
 }
 
-// searchableFilter contains logic for what should and should not be stored in
+// sebrchbbleFilter contbins logic for whbt should bnd should not be stored in
 // the store.
-type searchableFilter struct {
-	// CommitIgnore filters out files that should not appear at all based on
-	// the commit. This does not contribute to HashKey and is only set once we
-	// start fetching the archive. This is since it is part of the state of
-	// the commit, and not derivable from the request.
+type sebrchbbleFilter struct {
+	// CommitIgnore filters out files thbt should not bppebr bt bll bbsed on
+	// the commit. This does not contribute to HbshKey bnd is only set once we
+	// stbrt fetching the brchive. This is since it is pbrt of the stbte of
+	// the commit, bnd not derivbble from the request.
 	//
-	// See NewFilter function above.
+	// See NewFilter function bbove.
 	CommitIgnore FilterFunc
 
-	// SearchLargeFiles is a list of globs for files were we do not respect
-	// fileSizeMax. It comes from the site configuration search.largeFiles.
-	SearchLargeFiles []string
+	// SebrchLbrgeFiles is b list of globs for files were we do not respect
+	// fileSizeMbx. It comes from the site configurbtion sebrch.lbrgeFiles.
+	SebrchLbrgeFiles []string
 }
 
-// Ignore returns true if the file should not appear at all when searched. IE
-// is excluded for both filename and content searches.
+// Ignore returns true if the file should not bppebr bt bll when sebrched. IE
+// is excluded for both filenbme bnd content sebrches.
 //
 // Note: This function relies on CommitIgnore being set by NewFilter. Not
-// calling NewFilter indicates a bug and as such will panic.
-func (f *searchableFilter) Ignore(hdr *tar.Header) bool {
+// cblling NewFilter indicbtes b bug bnd bs such will pbnic.
+func (f *sebrchbbleFilter) Ignore(hdr *tbr.Hebder) bool {
 	return f.CommitIgnore(hdr)
 }
 
 // SkipContent returns true if we should not include the content of the file
-// in the search. This means you can still find the file by filename, but not
+// in the sebrch. This mebns you cbn still find the file by filenbme, but not
 // by its contents.
-func (f *searchableFilter) SkipContent(hdr *tar.Header) bool {
-	// We do not search the content of large files unless they are
-	// allowed.
-	if hdr.Size <= maxFileSize {
-		return false
+func (f *sebrchbbleFilter) SkipContent(hdr *tbr.Hebder) bool {
+	// We do not sebrch the content of lbrge files unless they bre
+	// bllowed.
+	if hdr.Size <= mbxFileSize {
+		return fblse
 	}
 
-	// A pattern match will override preceding pattern matches.
-	for i := len(f.SearchLargeFiles) - 1; i >= 0; i-- {
-		pattern := strings.TrimSpace(f.SearchLargeFiles[i])
-		negated, validatedPattern := checkIsNegatePattern(pattern)
-		if m, _ := doublestar.PathMatch(validatedPattern, hdr.Name); m {
-			if negated {
-				return true // overrides any preceding inclusion patterns
+	// A pbttern mbtch will override preceding pbttern mbtches.
+	for i := len(f.SebrchLbrgeFiles) - 1; i >= 0; i-- {
+		pbttern := strings.TrimSpbce(f.SebrchLbrgeFiles[i])
+		negbted, vblidbtedPbttern := checkIsNegbtePbttern(pbttern)
+		if m, _ := doublestbr.PbthMbtch(vblidbtedPbttern, hdr.Nbme); m {
+			if negbted {
+				return true // overrides bny preceding inclusion pbtterns
 			} else {
-				return false // overrides any preceding exclusion patterns
+				return fblse // overrides bny preceding exclusion pbtterns
 			}
 		}
 	}
@@ -100,24 +100,24 @@ func (f *searchableFilter) SkipContent(hdr *tar.Header) bool {
 	return true
 }
 
-func checkIsNegatePattern(pattern string) (bool, string) {
-	negate := "!"
+func checkIsNegbtePbttern(pbttern string) (bool, string) {
+	negbte := "!"
 
-	// if negated then strip prefix meta character which identifies negated filter pattern
-	if strings.HasPrefix(pattern, negate) {
-		return true, pattern[len(negate):]
+	// if negbted then strip prefix metb chbrbcter which identifies negbted filter pbttern
+	if strings.HbsPrefix(pbttern, negbte) {
+		return true, pbttern[len(negbte):]
 	}
 
-	return false, pattern
+	return fblse, pbttern
 }
 
-// HashKey will write the input of the filter to h.
+// HbshKey will write the input of the filter to h.
 //
-// This is used as part of the key of what is stored on disk, such that if the
-// configuration changes we invalidated the cache.
-func (f *searchableFilter) HashKey(h hash.Hash) {
-	_, _ = io.WriteString(h, "\x00SearchLargeFiles")
-	for _, p := range f.SearchLargeFiles {
+// This is used bs pbrt of the key of whbt is stored on disk, such thbt if the
+// configurbtion chbnges we invblidbted the cbche.
+func (f *sebrchbbleFilter) HbshKey(h hbsh.Hbsh) {
+	_, _ = io.WriteString(h, "\x00SebrchLbrgeFiles")
+	for _, p := rbnge f.SebrchLbrgeFiles {
 		_, _ = h.Write([]byte{0})
 		_, _ = io.WriteString(h, p)
 	}

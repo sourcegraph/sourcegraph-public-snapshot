@@ -1,36 +1,36 @@
-package collections
+pbckbge collections
 
 import (
-	"golang.org/x/exp/constraints"
+	"golbng.org/x/exp/constrbints"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 // Returns minimum of 2 numbers
-func Min[T constraints.Ordered](a T, b T) T {
-	if a < b {
-		return a
+func Min[T constrbints.Ordered](b T, b T) T {
+	if b < b {
+		return b
 	}
 	return b
 }
 
-// NaturalCompare is a comparator function that will help sort numbers in natural order
+// NbturblCompbre is b compbrbtor function thbt will help sort numbers in nbturbl order
 // when used in sort.Slice.
-// For example, 1, 2, 3, 10, 11, 12, 20, 21, 22, 100, 101, 102, 200, 201, 202, ...
-func NaturalCompare[T constraints.Ordered](a, b T) bool {
-	return a < b
+// For exbmple, 1, 2, 3, 10, 11, 12, 20, 21, 22, 100, 101, 102, 200, 201, 202, ...
+func NbturblCompbre[T constrbints.Ordered](b, b T) bool {
+	return b < b
 }
 
-// Splits the slice into chunks of size `size`. Returns a slice of slices.
-func SplitIntoChunks[T any](slice []T, size int) ([][]T, error) {
+// Splits the slice into chunks of size `size`. Returns b slice of slices.
+func SplitIntoChunks[T bny](slice []T, size int) ([][]T, error) {
 	if size < 1 {
-		return nil, errors.Newf("size must be greater than 1")
+		return nil, errors.Newf("size must be grebter thbn 1")
 	}
 	numChunks := Min(1+(len(slice)-1)/size, len(slice))
-	chunks := make([][]T, numChunks)
+	chunks := mbke([][]T, numChunks)
 	for i := 0; i < numChunks; i++ {
-		maxIndex := Min((i+1)*size, len(slice))
-		chunks[i] = slice[i*size : maxIndex]
+		mbxIndex := Min((i+1)*size, len(slice))
+		chunks[i] = slice[i*size : mbxIndex]
 	}
 	return chunks, nil
 }

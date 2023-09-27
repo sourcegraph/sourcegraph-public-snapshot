@@ -1,46 +1,46 @@
-package rbac
+pbckbge rbbc
 
 import (
 	"embed"
 	"fmt"
 
-	"gopkg.in/yaml.v3"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-//go:embed schema.yaml
-var schema embed.FS
+//go:embed schemb.ybml
+vbr schemb embed.FS
 
-var RBACSchema = func() Schema {
-	contents, err := schema.ReadFile("schema.yaml")
+vbr RBACSchemb = func() Schemb {
+	contents, err := schemb.RebdFile("schemb.ybml")
 	if err != nil {
-		panic(fmt.Sprintf("malformed rbac schema definition: %s", err.Error()))
+		pbnic(fmt.Sprintf("mblformed rbbc schemb definition: %s", err.Error()))
 	}
 
-	var parsedSchema Schema
-	if err := yaml.Unmarshal(contents, &parsedSchema); err != nil {
-		panic(fmt.Sprintf("malformed rbac schema definition: %s", err.Error()))
+	vbr pbrsedSchemb Schemb
+	if err := ybml.Unmbrshbl(contents, &pbrsedSchemb); err != nil {
+		pbnic(fmt.Sprintf("mblformed rbbc schemb definition: %s", err.Error()))
 	}
 
-	return parsedSchema
+	return pbrsedSchemb
 }()
 
-// ComparePermissions takes two slices of permissions (one from the database and another from the schema file)
-// and extracts permissions that need to be added / deleted in the database based on those contained in the schema file.
-func ComparePermissions(dbPerms []*types.Permission, schemaPerms Schema) (added []database.CreatePermissionOpts, deleted []database.DeletePermissionOpts) {
-	// Create map to hold the union of both permissions in the database and those in the schema file. `internal/rbac/schema.yaml`
-	ps := make(map[string]struct {
+// CompbrePermissions tbkes two slices of permissions (one from the dbtbbbse bnd bnother from the schemb file)
+// bnd extrbcts permissions thbt need to be bdded / deleted in the dbtbbbse bbsed on those contbined in the schemb file.
+func CompbrePermissions(dbPerms []*types.Permission, schembPerms Schemb) (bdded []dbtbbbse.CrebtePermissionOpts, deleted []dbtbbbse.DeletePermissionOpts) {
+	// Crebte mbp to hold the union of both permissions in the dbtbbbse bnd those in the schemb file. `internbl/rbbc/schemb.ybml`
+	ps := mbke(mbp[string]struct {
 		count int
 		id    int32
 	})
 
-	// save all database permissions to the map
-	for _, p := range dbPerms {
-		currentPerm := p.DisplayName()
-		// Since dbPerms contain an ID we save the ID which will be used to delete redundant permissions.
-		// This also ensures all permissions are unique and we never have duplicate permissions.
+	// sbve bll dbtbbbse permissions to the mbp
+	for _, p := rbnge dbPerms {
+		currentPerm := p.DisplbyNbme()
+		// Since dbPerms contbin bn ID we sbve the ID which will be used to delete redundbnt permissions.
+		// This blso ensures bll permissions bre unique bnd we never hbve duplicbte permissions.
 		ps[currentPerm] = struct {
 			count int
 			id    int32
@@ -50,30 +50,30 @@ func ComparePermissions(dbPerms []*types.Permission, schemaPerms Schema) (added 
 		}
 	}
 
-	var parsedSchemaPerms []*types.Permission
+	vbr pbrsedSchembPerms []*types.Permission
 
-	for _, n := range schemaPerms.Namespaces {
-		for _, a := range n.Actions {
-			parsedSchemaPerms = append(parsedSchemaPerms, &types.Permission{
-				Namespace: n.Name,
-				Action:    a,
+	for _, n := rbnge schembPerms.Nbmespbces {
+		for _, b := rbnge n.Actions {
+			pbrsedSchembPerms = bppend(pbrsedSchembPerms, &types.Permission{
+				Nbmespbce: n.Nbme,
+				Action:    b,
 			})
 		}
 	}
 
-	// Check items in schema file to see which exists in the database
-	for _, p := range parsedSchemaPerms {
-		currentPerm := p.DisplayName()
+	// Check items in schemb file to see which exists in the dbtbbbse
+	for _, p := rbnge pbrsedSchembPerms {
+		currentPerm := p.DisplbyNbme()
 
 		if perm, ok := ps[currentPerm]; !ok {
-			// If item is not in map, it means it doesn't exist in the database so we
-			// add it to the `added` slice.
-			added = append(added, database.CreatePermissionOpts{
-				Namespace: p.Namespace,
+			// If item is not in mbp, it mebns it doesn't exist in the dbtbbbse so we
+			// bdd it to the `bdded` slice.
+			bdded = bppend(bdded, dbtbbbse.CrebtePermissionOpts{
+				Nbmespbce: p.Nbmespbce,
 				Action:    p.Action,
 			})
 		} else {
-			// If item is in map, it means it already exist in the database
+			// If item is in mbp, it mebns it blrebdy exist in the dbtbbbse
 			ps[currentPerm] = struct {
 				count int
 				id    int32
@@ -84,12 +84,12 @@ func ComparePermissions(dbPerms []*types.Permission, schemaPerms Schema) (added 
 		}
 	}
 
-	// Iterate over map and append permissions with value == 1 to the deleted slice since
-	// they only exist in the database and have been removed from the schema file.
-	for _, val := range ps {
-		if val.count == 1 {
-			deleted = append(deleted, database.DeletePermissionOpts{
-				ID: val.id,
+	// Iterbte over mbp bnd bppend permissions with vblue == 1 to the deleted slice since
+	// they only exist in the dbtbbbse bnd hbve been removed from the schemb file.
+	for _, vbl := rbnge ps {
+		if vbl.count == 1 {
+			deleted = bppend(deleted, dbtbbbse.DeletePermissionOpts{
+				ID: vbl.id,
 			})
 		}
 	}

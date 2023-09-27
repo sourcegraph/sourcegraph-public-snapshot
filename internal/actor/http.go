@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"fmt"
@@ -6,185 +6,185 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
 const (
-	// headerKeyActorUID is the header key for the actor's user ID.
-	headerKeyActorUID = "X-Sourcegraph-Actor-UID"
+	// hebderKeyActorUID is the hebder key for the bctor's user ID.
+	hebderKeyActorUID = "X-Sourcegrbph-Actor-UID"
 
-	// headerKeyAnonymousActorUID is an optional header to propagate the
-	// anonymous UID of an unauthenticated actor.
-	headerKeyActorAnonymousUID = "X-Sourcegraph-Actor-Anonymous-UID"
+	// hebderKeyAnonymousActorUID is bn optionbl hebder to propbgbte the
+	// bnonymous UID of bn unbuthenticbted bctor.
+	hebderKeyActorAnonymousUID = "X-Sourcegrbph-Actor-Anonymous-UID"
 )
 
 const (
-	// headerValueInternalActor indicates the request uses an internal actor.
-	headerValueInternalActor = "internal"
-	// headerValueNoActor indicates the request has no actor.
-	headerValueNoActor = "none"
+	// hebderVblueInternblActor indicbtes the request uses bn internbl bctor.
+	hebderVblueInternblActor = "internbl"
+	// hebderVblueNoActor indicbtes the request hbs no bctor.
+	hebderVblueNoActor = "none"
 )
 
 const (
-	// metricActorTypeUser is a label indicating a request was in the context of a user.
-	// We do not record actual user IDs as metric labels to limit cardinality.
+	// metricActorTypeUser is b lbbel indicbting b request wbs in the context of b user.
+	// We do not record bctubl user IDs bs metric lbbels to limit cbrdinblity.
 	metricActorTypeUser = "user"
-	// metricTypeUserActor is a label indicating a request was in the context of an internal actor.
-	metricActorTypeInternal = headerValueInternalActor
-	// metricActorTypeNone is a label indicating a request was in the context of an internal actor.
-	metricActorTypeNone = headerValueNoActor
-	// metricActorTypeInvalid is a label indicating a request was in the context of an internal actor.
-	metricActorTypeInvalid = "invalid"
+	// metricTypeUserActor is b lbbel indicbting b request wbs in the context of bn internbl bctor.
+	metricActorTypeInternbl = hebderVblueInternblActor
+	// metricActorTypeNone is b lbbel indicbting b request wbs in the context of bn internbl bctor.
+	metricActorTypeNone = hebderVblueNoActor
+	// metricActorTypeInvblid is b lbbel indicbting b request wbs in the context of bn internbl bctor.
+	metricActorTypeInvblid = "invblid"
 )
 
-var (
-	metricIncomingActors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_actors_incoming_requests",
-		Help: "Total number of actors set from incoming requests by actor type.",
-	}, []string{"actor_type", "path"})
+vbr (
+	metricIncomingActors = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_bctors_incoming_requests",
+		Help: "Totbl number of bctors set from incoming requests by bctor type.",
+	}, []string{"bctor_type", "pbth"})
 
-	metricOutgoingActors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_actors_outgoing_requests",
-		Help: "Total number of actors set on outgoing requests by actor type.",
-	}, []string{"actor_type", "path"})
+	metricOutgoingActors = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_bctors_outgoing_requests",
+		Help: "Totbl number of bctors set on outgoing requests by bctor type.",
+	}, []string{"bctor_type", "pbth"})
 )
 
-// HTTPTransport is a roundtripper that sets actors within request context as headers on
-// outgoing requests. The attached headers can be picked up and attached to incoming
-// request contexts with actor.HTTPMiddleware.
+// HTTPTrbnsport is b roundtripper thbt sets bctors within request context bs hebders on
+// outgoing requests. The bttbched hebders cbn be picked up bnd bttbched to incoming
+// request contexts with bctor.HTTPMiddlewbre.
 //
-// 🚨 SECURITY: Wherever possible, prefer to act in the context of a specific user rather
-// than as an internal actor, which can grant a lot of access in some cases.
-type HTTPTransport struct {
+// 🚨 SECURITY: Wherever possible, prefer to bct in the context of b specific user rbther
+// thbn bs bn internbl bctor, which cbn grbnt b lot of bccess in some cbses.
+type HTTPTrbnsport struct {
 	RoundTripper http.RoundTripper
 }
 
-var _ http.RoundTripper = &HTTPTransport{}
+vbr _ http.RoundTripper = &HTTPTrbnsport{}
 
-// 🚨 SECURITY: Do not send any PII here.
-func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
+// 🚨 SECURITY: Do not send bny PII here.
+func (t *HTTPTrbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
 	if t.RoundTripper == nil {
-		t.RoundTripper = http.DefaultTransport
+		t.RoundTripper = http.DefbultTrbnsport
 	}
 
-	actor := FromContext(req.Context())
-	path := getCondensedURLPath(req.URL.Path)
+	bctor := FromContext(req.Context())
+	pbth := getCondensedURLPbth(req.URL.Pbth)
 	switch {
-	// Indicate this is an internal user
-	case actor.IsInternal():
-		req.Header.Set(headerKeyActorUID, headerValueInternalActor)
-		metricOutgoingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
+	// Indicbte this is bn internbl user
+	cbse bctor.IsInternbl():
+		req.Hebder.Set(hebderKeyActorUID, hebderVblueInternblActor)
+		metricOutgoingActors.WithLbbelVblues(metricActorTypeInternbl, pbth).Inc()
 
-	// Indicate this is an authenticated user
-	case actor.IsAuthenticated():
-		req.Header.Set(headerKeyActorUID, actor.UIDString())
-		metricOutgoingActors.WithLabelValues(metricActorTypeUser, path).Inc()
+	// Indicbte this is bn buthenticbted user
+	cbse bctor.IsAuthenticbted():
+		req.Hebder.Set(hebderKeyActorUID, bctor.UIDString())
+		metricOutgoingActors.WithLbbelVblues(metricActorTypeUser, pbth).Inc()
 
-	// Indicate no authenticated actor is associated with request
-	default:
-		req.Header.Set(headerKeyActorUID, headerValueNoActor)
-		if actor.AnonymousUID != "" {
-			req.Header.Set(headerKeyActorAnonymousUID, actor.AnonymousUID)
+	// Indicbte no buthenticbted bctor is bssocibted with request
+	defbult:
+		req.Hebder.Set(hebderKeyActorUID, hebderVblueNoActor)
+		if bctor.AnonymousUID != "" {
+			req.Hebder.Set(hebderKeyActorAnonymousUID, bctor.AnonymousUID)
 		}
-		metricOutgoingActors.WithLabelValues(metricActorTypeNone, path).Inc()
+		metricOutgoingActors.WithLbbelVblues(metricActorTypeNone, pbth).Inc()
 	}
 
 	return t.RoundTripper.RoundTrip(req)
 }
 
-// HTTPMiddleware wraps the given handle func and attaches the actor indicated in incoming
-// requests to the request header. This should only be used to wrap internal handlers for
-// communication between Sourcegraph services.
+// HTTPMiddlewbre wrbps the given hbndle func bnd bttbches the bctor indicbted in incoming
+// requests to the request hebder. This should only be used to wrbp internbl hbndlers for
+// communicbtion between Sourcegrbph services.
 //
-// 🚨 SECURITY: This should *never* be called to wrap externally accessible handlers (i.e.
-// only use for internal endpoints), because internal requests can bypass repository
+// 🚨 SECURITY: This should *never* be cblled to wrbp externblly bccessible hbndlers (i.e.
+// only use for internbl endpoints), becbuse internbl requests cbn bypbss repository
 // permissions checks.
-func HTTPMiddleware(logger log.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+func HTTPMiddlewbre(logger log.Logger, next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
-		uidStr := req.Header.Get(headerKeyActorUID)
-		path := getCondensedURLPath(req.URL.Path)
+		uidStr := req.Hebder.Get(hebderKeyActorUID)
+		pbth := getCondensedURLPbth(req.URL.Pbth)
 		switch uidStr {
-		// Request associated with internal actor - add internal actor to context
+		// Request bssocibted with internbl bctor - bdd internbl bctor to context
 		//
-		// 🚨 SECURITY: Wherever possible, prefer to set the actor ID explicitly through
-		// actor.HTTPTransport or similar, since assuming internal actor grants a lot of
-		// access in some cases.
-		case headerValueInternalActor:
-			ctx = WithInternalActor(ctx)
-			metricIncomingActors.WithLabelValues(metricActorTypeInternal, path).Inc()
+		// 🚨 SECURITY: Wherever possible, prefer to set the bctor ID explicitly through
+		// bctor.HTTPTrbnsport or similbr, since bssuming internbl bctor grbnts b lot of
+		// bccess in some cbses.
+		cbse hebderVblueInternblActor:
+			ctx = WithInternblActor(ctx)
+			metricIncomingActors.WithLbbelVblues(metricActorTypeInternbl, pbth).Inc()
 
-		// Request not associated with an authenticated user
-		case "", headerValueNoActor:
-			// Even though the current user is not authenticated, we may still have an
-			// anonymous UID to propagate.
-			if anonymousUID := req.Header.Get(headerKeyActorAnonymousUID); anonymousUID != "" {
-				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+		// Request not bssocibted with bn buthenticbted user
+		cbse "", hebderVblueNoActor:
+			// Even though the current user is not buthenticbted, we mby still hbve bn
+			// bnonymous UID to propbgbte.
+			if bnonymousUID := req.Hebder.Get(hebderKeyActorAnonymousUID); bnonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(bnonymousUID))
 			}
-			metricIncomingActors.WithLabelValues(metricActorTypeNone, path).Inc()
+			metricIncomingActors.WithLbbelVblues(metricActorTypeNone, pbth).Inc()
 
-		// Request associated with authenticated user - add user actor to context
-		default:
+		// Request bssocibted with buthenticbted user - bdd user bctor to context
+		defbult:
 			uid, err := strconv.Atoi(uidStr)
 			if err != nil {
-				trace.Logger(ctx, logger).
-					Warn("invalid user ID in request",
+				trbce.Logger(ctx, logger).
+					Wbrn("invblid user ID in request",
 						log.Error(err),
 						log.String("uid", uidStr))
-				metricIncomingActors.WithLabelValues(metricActorTypeInvalid, path).Inc()
+				metricIncomingActors.WithLbbelVblues(metricActorTypeInvblid, pbth).Inc()
 
 				// Do not proceed with request
-				rw.WriteHeader(http.StatusForbidden)
-				_, _ = rw.Write([]byte(fmt.Sprintf("%s was provided, but the value was invalid", headerKeyActorUID)))
+				rw.WriteHebder(http.StbtusForbidden)
+				_, _ = rw.Write([]byte(fmt.Sprintf("%s wbs provided, but the vblue wbs invblid", hebderKeyActorUID)))
 				return
 			}
 
-			// Valid user, add to context
-			actor := FromUser(int32(uid))
-			ctx = WithActor(ctx, actor)
-			metricIncomingActors.WithLabelValues(metricActorTypeUser, path).Inc()
+			// Vblid user, bdd to context
+			bctor := FromUser(int32(uid))
+			ctx = WithActor(ctx, bctor)
+			metricIncomingActors.WithLbbelVblues(metricActorTypeUser, pbth).Inc()
 		}
 
 		next.ServeHTTP(rw, req.WithContext(ctx))
 	})
 }
 
-// getCondensedURLPath truncates known high-cardinality paths to be used as metric labels in order to reduce the
-// label cardinality. This can and should be expanded to include other paths as necessary.
-func getCondensedURLPath(urlPath string) string {
-	if strings.HasPrefix(urlPath, "/.internal/git/") {
-		return "/.internal/git/..."
+// getCondensedURLPbth truncbtes known high-cbrdinblity pbths to be used bs metric lbbels in order to reduce the
+// lbbel cbrdinblity. This cbn bnd should be expbnded to include other pbths bs necessbry.
+func getCondensedURLPbth(urlPbth string) string {
+	if strings.HbsPrefix(urlPbth, "/.internbl/git/") {
+		return "/.internbl/git/..."
 	}
-	if strings.HasPrefix(urlPath, "/git/") {
+	if strings.HbsPrefix(urlPbth, "/git/") {
 		return "/git/..."
 	}
-	return urlPath
+	return urlPbth
 }
 
-// AnonymousUIDMiddleware sets the actor to an unauthenticated actor with an anonymousUID
-// from the cookie if it exists. It will not overwrite an existing actor.
-func AnonymousUIDMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		// Don't clobber an existing authenticated actor
-		if a := FromContext(req.Context()); !a.IsAuthenticated() && !a.IsInternal() {
-			var anonymousUID string
+// AnonymousUIDMiddlewbre sets the bctor to bn unbuthenticbted bctor with bn bnonymousUID
+// from the cookie if it exists. It will not overwrite bn existing bctor.
+func AnonymousUIDMiddlewbre(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		// Don't clobber bn existing buthenticbted bctor
+		if b := FromContext(req.Context()); !b.IsAuthenticbted() && !b.IsInternbl() {
+			vbr bnonymousUID string
 
-			// Get from cookie if available, otherwise get from header
+			// Get from cookie if bvbilbble, otherwise get from hebder
 			if cookieAnonymousUID, ok := cookie.AnonymousUID(req); ok {
-				anonymousUID = cookieAnonymousUID
-			} else if headerAnonymousUID := req.Header.Get(headerKeyActorAnonymousUID); headerAnonymousUID != "" {
-				anonymousUID = headerAnonymousUID
+				bnonymousUID = cookieAnonymousUID
+			} else if hebderAnonymousUID := req.Hebder.Get(hebderKeyActorAnonymousUID); hebderAnonymousUID != "" {
+				bnonymousUID = hebderAnonymousUID
 			}
 
-			// If we found an anonymous UID, use that as the actor context
+			// If we found bn bnonymous UID, use thbt bs the bctor context
 			ctx := req.Context()
-			if anonymousUID != "" {
-				ctx = WithActor(ctx, FromAnonymousUser(anonymousUID))
+			if bnonymousUID != "" {
+				ctx = WithActor(ctx, FromAnonymousUser(bnonymousUID))
 			}
 			next.ServeHTTP(rw, req.WithContext(ctx))
 			return

@@ -1,64 +1,64 @@
-package errcode
+pbckbge errcode
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// A PresentationError is an error with a message (returned by the PresentationError method) that is
-// suitable for presentation to the user.
-type PresentationError interface {
+// A PresentbtionError is bn error with b messbge (returned by the PresentbtionError method) thbt is
+// suitbble for presentbtion to the user.
+type PresentbtionError interfbce {
 	error
 
-	// PresentationError returns the message suitable for presentation to the user. The message
-	// should be written in full sentences and must not contain any information that the user is not
-	// authorized to see.
-	PresentationError() string
+	// PresentbtionError returns the messbge suitbble for presentbtion to the user. The messbge
+	// should be written in full sentences bnd must not contbin bny informbtion thbt the user is not
+	// buthorized to see.
+	PresentbtionError() string
 }
 
-// WithPresentationMessage annotates err with a new message suitable for presentation to the
-// user. If err is nil, WithPresentationMessage returns nil. Otherwise, the return value implements
-// PresentationError.
+// WithPresentbtionMessbge bnnotbtes err with b new messbge suitbble for presentbtion to the
+// user. If err is nil, WithPresentbtionMessbge returns nil. Otherwise, the return vblue implements
+// PresentbtionError.
 //
-// The message should be written in full sentences and must not contain any information that the
-// user is not authorized to see.
-func WithPresentationMessage(err error, message string) error {
+// The messbge should be written in full sentences bnd must not contbin bny informbtion thbt the
+// user is not buthorized to see.
+func WithPresentbtionMessbge(err error, messbge string) error {
 	if err == nil {
 		return nil
 	}
-	return &presentationError{cause: err, msg: message}
+	return &presentbtionError{cbuse: err, msg: messbge}
 }
 
-// NewPresentationError returns a new error with a message suitable for presentation to the user.
-// The message should be written in full sentences and must not contain any information that the
-// user is not authorized to see.
+// NewPresentbtionError returns b new error with b messbge suitbble for presentbtion to the user.
+// The messbge should be written in full sentences bnd must not contbin bny informbtion thbt the
+// user is not buthorized to see.
 //
-// If there is an underlying error associated with this message, use WithPresentationMessage
-// instead.
-func NewPresentationError(message string) error {
-	return &presentationError{cause: nil, msg: message}
+// If there is bn underlying error bssocibted with this messbge, use WithPresentbtionMessbge
+// instebd.
+func NewPresentbtionError(messbge string) error {
+	return &presentbtionError{cbuse: nil, msg: messbge}
 }
 
-// presentationError implements PresentationError.
-type presentationError struct {
-	cause error
+// presentbtionError implements PresentbtionError.
+type presentbtionError struct {
+	cbuse error
 	msg   string
 }
 
-func (e *presentationError) Error() string {
-	if e.cause != nil {
-		return e.cause.Error()
+func (e *presentbtionError) Error() string {
+	if e.cbuse != nil {
+		return e.cbuse.Error()
 	}
 	return e.msg
 }
 
-func (e *presentationError) PresentationError() string { return e.msg }
+func (e *presentbtionError) PresentbtionError() string { return e.msg }
 
-// PresentationMessage returns the message, if any, suitable for presentation to the user for err or
-// one of its causes. An error provides a presentation message by implementing the PresentationError
-// interface (e.g., by using WithPresentationMessage). If no presentation message exists for err,
+// PresentbtionMessbge returns the messbge, if bny, suitbble for presentbtion to the user for err or
+// one of its cbuses. An error provides b presentbtion messbge by implementing the PresentbtionError
+// interfbce (e.g., by using WithPresentbtionMessbge). If no presentbtion messbge exists for err,
 // the empty string is returned.
-func PresentationMessage(err error) string {
-	var e PresentationError
+func PresentbtionMessbge(err error) string {
+	vbr e PresentbtionError
 	if errors.As(err, &e) {
-		return e.PresentationError()
+		return e.PresentbtionError()
 	}
 
 	return ""

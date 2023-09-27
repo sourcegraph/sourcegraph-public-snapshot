@@ -1,242 +1,242 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import "github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-func (codeIntelligence) NewAutoindexingSummaryGroup(containerName string) monitoring.Group {
-	// queueContainerName is the set of potential sources of executor queue metrics
-	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
+func (codeIntelligence) NewAutoindexingSummbryGroup(contbinerNbme string) monitoring.Group {
+	// queueContbinerNbme is the set of potentibl sources of executor queue metrics
+	const queueContbinerNbme = "(executor|sourcegrbph-code-intel-indexers|executor-bbtches|frontend|sourcegrbph-frontend|worker|sourcegrbph-executors)"
 
 	return monitoring.Group{
-		Title:  "Codeintel: Autoindexing > Summary",
-		Hidden: false,
-		Rows: append(
+		Title:  "Codeintel: Autoindexing > Summbry",
+		Hidden: fblse,
+		Rows: bppend(
 			[]monitoring.Row{
 				{
-					monitoring.Observable(NoAlertsOption("none")(Observable{
-						Description: "auto-index jobs inserted over 5m",
-						Owner:       monitoring.ObservableOwnerCodeIntel,
-						Query:       "sum(increase(src_codeintel_dbstore_indexes_inserted[5m]))",
+					monitoring.Observbble(NoAlertsOption("none")(Observbble{
+						Description: "buto-index jobs inserted over 5m",
+						Owner:       monitoring.ObservbbleOwnerCodeIntel,
+						Query:       "sum(increbse(src_codeintel_dbstore_indexes_inserted[5m]))",
 						NoAlert:     true,
-						Panel:       monitoring.Panel().LegendFormat("inserts"),
+						Pbnel:       monitoring.Pbnel().LegendFormbt("inserts"),
 					})),
-					CodeIntelligence.NewIndexSchedulerGroup(containerName).Rows[0][3],
+					CodeIntelligence.NewIndexSchedulerGroup(contbinerNbme).Rows[0][3],
 				},
 			},
-			Executors.NewExecutorQueueGroup("executor", queueContainerName, "codeintel").Rows...),
+			Executors.NewExecutorQueueGroup("executor", queueContbinerNbme, "codeintel").Rows...),
 	}
 }
 
-// src_codeintel_autoindexing_total
-// src_codeintel_autoindexing_duration_seconds_bucket
-// src_codeintel_autoindexing_errors_total
-func (codeIntelligence) NewAutoindexingServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_butoindexing_totbl
+// src_codeintel_butoindexing_durbtion_seconds_bucket
+// src_codeintel_butoindexing_errors_totbl
+func (codeIntelligence) NewAutoindexingServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
+			Nbmespbce:       "codeintel",
 			DescriptionRoot: "Autoindexing > Service",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_autoindexing",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_butoindexing",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_autoindexing_transport_graphql_total
-// src_codeintel_autoindexing_transport_graphql_duration_seconds_bucket
-// src_codeintel_autoindexing_transport_graphql_errors_total
-func (codeIntelligence) NewAutoindexingGraphQLTransportGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_butoindexing_trbnsport_grbphql_totbl
+// src_codeintel_butoindexing_trbnsport_grbphql_durbtion_seconds_bucket
+// src_codeintel_butoindexing_trbnsport_grbphql_errors_totbl
+func (codeIntelligence) NewAutoindexingGrbphQLTrbnsportGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Autoindexing > GQL transport",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Autoindexing > GQL trbnsport",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_autoindexing_transport_graphql",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_butoindexing_trbnsport_grbphql",
 				MetricDescriptionRoot: "resolver",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_autoindexing_store_total
-// src_codeintel_autoindexing_store_duration_seconds_bucket
-// src_codeintel_autoindexing_store_errors_total
-func (codeIntelligence) NewAutoindexingStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_butoindexing_store_totbl
+// src_codeintel_butoindexing_store_durbtion_seconds_bucket
+// src_codeintel_butoindexing_store_errors_totbl
+func (codeIntelligence) NewAutoindexingStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Autoindexing > Store (internal)",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Autoindexing > Store (internbl)",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_autoindexing_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_butoindexing_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_autoindexing_background_total
-// src_codeintel_autoindexing_background_duration_seconds_bucket
-// src_codeintel_autoindexing_background_errors_total
-func (codeIntelligence) NewAutoindexingBackgroundJobGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_butoindexing_bbckground_totbl
+// src_codeintel_butoindexing_bbckground_durbtion_seconds_bucket
+// src_codeintel_butoindexing_bbckground_errors_totbl
+func (codeIntelligence) NewAutoindexingBbckgroundJobGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Autoindexing > Background jobs (internal)",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Autoindexing > Bbckground jobs (internbl)",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_autoindexing_background",
-				MetricDescriptionRoot: "background",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_butoindexing_bbckground",
+				MetricDescriptionRoot: "bbckground",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_codeintel_autoindexing_inference_total
-// src_codeintel_autoindexing_inference_duration_seconds_bucket
-// src_codeintel_autoindexing_inference_errors_total
-func (codeIntelligence) NewAutoindexingInferenceServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_codeintel_butoindexing_inference_totbl
+// src_codeintel_butoindexing_inference_durbtion_seconds_bucket
+// src_codeintel_butoindexing_inference_errors_totbl
+func (codeIntelligence) NewAutoindexingInferenceServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Autoindexing > Inference service (internal)",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Autoindexing > Inference service (internbl)",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "codeintel_autoindexing_inference",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "codeintel_butoindexing_inference",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_luasandbox_store_total
-// src_luasandbox_store_duration_seconds_bucket
-// src_luasandbox_store_errors_total
-func (codeIntelligence) NewLuasandboxServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, ObservationGroupOptions{
+// src_lubsbndbox_store_totbl
+// src_lubsbndbox_store_durbtion_seconds_bucket
+// src_lubsbndbox_store_errors_totbl
+func (codeIntelligence) NewLubsbndboxServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "codeintel",
-			DescriptionRoot: "Luasandbox service",
+			Nbmespbce:       "codeintel",
+			DescriptionRoot: "Lubsbndbox service",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "luasandbox",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "lubsbndbox",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// Tasks:
-//   - codeintel_autoindexing_janitor_unknown_repository
-//   - codeintel_autoindexing_janitor_unknown_commit
-//   - codeintel_autoindexing_janitor_expired
+// Tbsks:
+//   - codeintel_butoindexing_jbnitor_unknown_repository
+//   - codeintel_butoindexing_jbnitor_unknown_commit
+//   - codeintel_butoindexing_jbnitor_expired
 //
 // Suffixes:
-//   - _total
-//   - _duration_seconds_bucket
-//   - _errors_total
-//   - _records_scanned_total
-//   - _records_altered_total
-func (codeIntelligence) NewAutoindexingJanitorTaskGroups(containerName string) []monitoring.Group {
-	return CodeIntelligence.newJanitorGroups(
-		"Autoindexing > Janitor task",
-		containerName,
+//   - _totbl
+//   - _durbtion_seconds_bucket
+//   - _errors_totbl
+//   - _records_scbnned_totbl
+//   - _records_bltered_totbl
+func (codeIntelligence) NewAutoindexingJbnitorTbskGroups(contbinerNbme string) []monitoring.Group {
+	return CodeIntelligence.newJbnitorGroups(
+		"Autoindexing > Jbnitor tbsk",
+		contbinerNbme,
 		[]string{
-			"codeintel_autoindexing_janitor_unknown_repository",
-			"codeintel_autoindexing_janitor_unknown_commit",
-			"codeintel_autoindexing_janitor_expired",
+			"codeintel_butoindexing_jbnitor_unknown_repository",
+			"codeintel_butoindexing_jbnitor_unknown_commit",
+			"codeintel_butoindexing_jbnitor_expired",
 		},
 	)
 }

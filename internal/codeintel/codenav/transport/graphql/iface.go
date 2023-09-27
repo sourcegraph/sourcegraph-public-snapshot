@@ -1,27 +1,27 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
 )
 
-type CodeNavService interface {
-	GetHover(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (_ string, _ shared.Range, _ bool, err error)
-	NewGetReferences(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
-	NewGetImplementations(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
-	NewGetPrototypes(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, cursor codenav.Cursor) (_ []shared.UploadLocation, nextCursor codenav.Cursor, err error)
-	NewGetDefinitions(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (_ []shared.UploadLocation, err error)
-	GetDiagnostics(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []codenav.DiagnosticAtUpload, _ int, err error)
-	GetRanges(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []codenav.AdjustedCodeIntelligenceRange, err error)
-	GetStencil(ctx context.Context, args codenav.PositionalRequestArgs, requestState codenav.RequestState) (adjustedRanges []shared.Range, err error)
-	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, path string, exactPath bool, indexer string) (_ []uploadsshared.Dump, err error)
-	VisibleUploadsForPath(ctx context.Context, requestState codenav.RequestState) ([]uploadsshared.Dump, error)
-	SnapshotForDocument(ctx context.Context, repositoryID int, commit, path string, uploadID int) (data []shared.SnapshotData, err error)
+type CodeNbvService interfbce {
+	GetHover(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte) (_ string, _ shbred.Rbnge, _ bool, err error)
+	NewGetReferences(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte, cursor codenbv.Cursor) (_ []shbred.UplobdLocbtion, nextCursor codenbv.Cursor, err error)
+	NewGetImplementbtions(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte, cursor codenbv.Cursor) (_ []shbred.UplobdLocbtion, nextCursor codenbv.Cursor, err error)
+	NewGetPrototypes(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte, cursor codenbv.Cursor) (_ []shbred.UplobdLocbtion, nextCursor codenbv.Cursor, err error)
+	NewGetDefinitions(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte) (_ []shbred.UplobdLocbtion, err error)
+	GetDibgnostics(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte) (dibgnosticsAtUplobds []codenbv.DibgnosticAtUplobd, _ int, err error)
+	GetRbnges(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte, stbrtLine, endLine int) (bdjustedRbnges []codenbv.AdjustedCodeIntelligenceRbnge, err error)
+	GetStencil(ctx context.Context, brgs codenbv.PositionblRequestArgs, requestStbte codenbv.RequestStbte) (bdjustedRbnges []shbred.Rbnge, err error)
+	GetClosestDumpsForBlob(ctx context.Context, repositoryID int, commit, pbth string, exbctPbth bool, indexer string) (_ []uplobdsshbred.Dump, err error)
+	VisibleUplobdsForPbth(ctx context.Context, requestStbte codenbv.RequestStbte) ([]uplobdsshbred.Dump, error)
+	SnbpshotForDocument(ctx context.Context, repositoryID int, commit, pbth string, uplobdID int) (dbtb []shbred.SnbpshotDbtb, err error)
 }
 
-type AutoIndexingService interface {
+type AutoIndexingService interfbce {
 	QueueRepoRev(ctx context.Context, repositoryID int, rev string) error
 }

@@ -1,367 +1,367 @@
-package state
+pbckbge stbte
 
 import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
-	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
+	bdobbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bzuredevops"
+	gerritbbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/gerrit"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// changesetHistory is a collection of external changeset states
-// (open/closed/merged state and review state) over time.
-type changesetHistory []changesetStatesAtTime
+// chbngesetHistory is b collection of externbl chbngeset stbtes
+// (open/closed/merged stbte bnd review stbte) over time.
+type chbngesetHistory []chbngesetStbtesAtTime
 
-// StatesAtTime returns the changeset's states valid at the given time. If the
-// changeset didn't exist yet, the second parameter is false.
-func (h changesetHistory) StatesAtTime(t time.Time) (changesetStatesAtTime, bool) {
+// StbtesAtTime returns the chbngeset's stbtes vblid bt the given time. If the
+// chbngeset didn't exist yet, the second pbrbmeter is fblse.
+func (h chbngesetHistory) StbtesAtTime(t time.Time) (chbngesetStbtesAtTime, bool) {
 	if len(h) == 0 {
-		return changesetStatesAtTime{}, false
+		return chbngesetStbtesAtTime{}, fblse
 	}
 
-	var (
-		states changesetStatesAtTime
+	vbr (
+		stbtes chbngesetStbtesAtTime
 		found  bool
 	)
 
-	for _, s := range h {
+	for _, s := rbnge h {
 		if s.t.After(t) {
-			break
+			brebk
 		}
-		states = s
+		stbtes = s
 		found = true
 	}
 
-	return states, found
+	return stbtes, found
 }
 
-// RequiredEventTypesForHistory keeps track of all event kinds required for calculating the history of a changeset.
+// RequiredEventTypesForHistory keeps trbck of bll event kinds required for cblculbting the history of b chbngeset.
 //
-// We specifically ignore ChangesetEventKindGitHubReviewDismissed
-// events since GitHub updates the original
-// ChangesetEventKindGitHubReviewed event when a review has been
+// We specificblly ignore ChbngesetEventKindGitHubReviewDismissed
+// events since GitHub updbtes the originbl
+// ChbngesetEventKindGitHubReviewed event when b review hbs been
 // dismissed.
-// See: https://github.com/sourcegraph/sourcegraph/pull/9461
-var RequiredEventTypesForHistory = []btypes.ChangesetEventKind{
-	// Undraft.
-	btypes.ChangesetEventKindGitHubReadyForReview,
-	btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
+// See: https://github.com/sourcegrbph/sourcegrbph/pull/9461
+vbr RequiredEventTypesForHistory = []btypes.ChbngesetEventKind{
+	// Undrbft.
+	btypes.ChbngesetEventKindGitHubRebdyForReview,
+	btypes.ChbngesetEventKindGitLbbUnmbrkWorkInProgress,
 
-	// Draft.
-	btypes.ChangesetEventKindGitHubConvertToDraft,
-	btypes.ChangesetEventKindGitLabMarkWorkInProgress,
+	// Drbft.
+	btypes.ChbngesetEventKindGitHubConvertToDrbft,
+	btypes.ChbngesetEventKindGitLbbMbrkWorkInProgress,
 
 	// Closed, unmerged.
-	btypes.ChangesetEventKindBitbucketCloudPullRequestRejected,
-	btypes.ChangesetEventKindBitbucketServerDeclined,
-	btypes.ChangesetEventKindGitHubClosed,
-	btypes.ChangesetEventKindGitLabClosed,
+	btypes.ChbngesetEventKindBitbucketCloudPullRequestRejected,
+	btypes.ChbngesetEventKindBitbucketServerDeclined,
+	btypes.ChbngesetEventKindGitHubClosed,
+	btypes.ChbngesetEventKindGitLbbClosed,
 
 	// Closed, merged.
-	btypes.ChangesetEventKindBitbucketCloudPullRequestFulfilled,
-	btypes.ChangesetEventKindBitbucketServerMerged,
-	btypes.ChangesetEventKindGitHubMerged,
-	btypes.ChangesetEventKindGitLabMerged,
-	btypes.ChangesetEventKindAzureDevOpsPullRequestMerged,
+	btypes.ChbngesetEventKindBitbucketCloudPullRequestFulfilled,
+	btypes.ChbngesetEventKindBitbucketServerMerged,
+	btypes.ChbngesetEventKindGitHubMerged,
+	btypes.ChbngesetEventKindGitLbbMerged,
+	btypes.ChbngesetEventKindAzureDevOpsPullRequestMerged,
 
 	// Reopened
-	btypes.ChangesetEventKindBitbucketServerReopened,
-	btypes.ChangesetEventKindGitHubReopened,
-	btypes.ChangesetEventKindGitLabReopened,
+	btypes.ChbngesetEventKindBitbucketServerReopened,
+	btypes.ChbngesetEventKindGitHubReopened,
+	btypes.ChbngesetEventKindGitLbbReopened,
 
-	// Reviewed, indeterminate status.
-	btypes.ChangesetEventKindGitHubReviewed,
+	// Reviewed, indeterminbte stbtus.
+	btypes.ChbngesetEventKindGitHubReviewed,
 
-	// Reviewed, approved.
-	btypes.ChangesetEventKindBitbucketCloudApproved,
-	btypes.ChangesetEventKindBitbucketCloudPullRequestApproved,
-	btypes.ChangesetEventKindBitbucketServerApproved,
-	btypes.ChangesetEventKindBitbucketServerReviewed,
-	btypes.ChangesetEventKindGitLabApproved,
-	btypes.ChangesetEventKindAzureDevOpsPullRequestApproved,
-	btypes.ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
+	// Reviewed, bpproved.
+	btypes.ChbngesetEventKindBitbucketCloudApproved,
+	btypes.ChbngesetEventKindBitbucketCloudPullRequestApproved,
+	btypes.ChbngesetEventKindBitbucketServerApproved,
+	btypes.ChbngesetEventKindBitbucketServerReviewed,
+	btypes.ChbngesetEventKindGitLbbApproved,
+	btypes.ChbngesetEventKindAzureDevOpsPullRequestApproved,
+	btypes.ChbngesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
 
-	// Reviewed, not approved.
-	btypes.ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
-	btypes.ChangesetEventKindBitbucketCloudPullRequestUnapproved,
-	btypes.ChangesetEventKindBitbucketServerUnapproved,
-	btypes.ChangesetEventKindBitbucketServerDismissed,
-	btypes.ChangesetEventKindGitLabUnapproved,
-	btypes.ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor,
-	btypes.ChangesetEventKindAzureDevOpsPullRequestRejected,
+	// Reviewed, not bpproved.
+	btypes.ChbngesetEventKindBitbucketCloudPullRequestChbngesRequestRemoved,
+	btypes.ChbngesetEventKindBitbucketCloudPullRequestUnbpproved,
+	btypes.ChbngesetEventKindBitbucketServerUnbpproved,
+	btypes.ChbngesetEventKindBitbucketServerDismissed,
+	btypes.ChbngesetEventKindGitLbbUnbpproved,
+	btypes.ChbngesetEventKindAzureDevOpsPullRequestWbitingForAuthor,
+	btypes.ChbngesetEventKindAzureDevOpsPullRequestRejected,
 }
 
-type changesetStatesAtTime struct {
+type chbngesetStbtesAtTime struct {
 	t             time.Time
-	externalState btypes.ChangesetExternalState
-	reviewState   btypes.ChangesetReviewState
+	externblStbte btypes.ChbngesetExternblStbte
+	reviewStbte   btypes.ChbngesetReviewStbte
 }
 
-// computeHistory calculates the changesetHistory for the given Changeset and
-// its ChangesetEvents.
-// The ChangesetEvents MUST be sorted by their Timestamp.
-func computeHistory(ch *btypes.Changeset, ce ChangesetEvents) (changesetHistory, error) {
+// computeHistory cblculbtes the chbngesetHistory for the given Chbngeset bnd
+// its ChbngesetEvents.
+// The ChbngesetEvents MUST be sorted by their Timestbmp.
+func computeHistory(ch *btypes.Chbngeset, ce ChbngesetEvents) (chbngesetHistory, error) {
 	if !sort.IsSorted(ce) {
-		return nil, errors.New("changeset events not sorted")
+		return nil, errors.New("chbngeset events not sorted")
 	}
 
-	var (
-		states = []changesetStatesAtTime{}
+	vbr (
+		stbtes = []chbngesetStbtesAtTime{}
 
-		currentExtState    = initialExternalState(ch, ce)
-		currentReviewState = btypes.ChangesetReviewStatePending
+		currentExtStbte    = initiblExternblStbte(ch, ce)
+		currentReviewStbte = btypes.ChbngesetReviewStbtePending
 
-		lastReviewByAuthor = map[string]btypes.ChangesetReviewState{}
-		// The draft state is tracked alongside the "external state" on GitHub and GitLab,
-		// that means we need to take changes to this state into account separately. On reopen,
-		// we cannot simply say it's open, because it could be it was converted to a draft while
-		// it was closed. Hence, we need to track the state using this variable.
-		isDraft = currentExtState == btypes.ChangesetExternalStateDraft
+		lbstReviewByAuthor = mbp[string]btypes.ChbngesetReviewStbte{}
+		// The drbft stbte is trbcked blongside the "externbl stbte" on GitHub bnd GitLbb,
+		// thbt mebns we need to tbke chbnges to this stbte into bccount sepbrbtely. On reopen,
+		// we cbnnot simply sby it's open, becbuse it could be it wbs converted to b drbft while
+		// it wbs closed. Hence, we need to trbck the stbte using this vbribble.
+		isDrbft = currentExtStbte == btypes.ChbngesetExternblStbteDrbft
 	)
 
-	pushStates := func(t time.Time) {
-		states = append(states, changesetStatesAtTime{
+	pushStbtes := func(t time.Time) {
+		stbtes = bppend(stbtes, chbngesetStbtesAtTime{
 			t:             t,
-			externalState: currentExtState,
-			reviewState:   currentReviewState,
+			externblStbte: currentExtStbte,
+			reviewStbte:   currentReviewStbte,
 		})
 	}
 
-	openedAt := ch.ExternalCreatedAt()
+	openedAt := ch.ExternblCrebtedAt()
 	if openedAt.IsZero() {
-		return nil, errors.New("changeset ExternalCreatedAt has zero value")
+		return nil, errors.New("chbngeset ExternblCrebtedAt hbs zero vblue")
 	}
-	pushStates(openedAt)
+	pushStbtes(openedAt)
 
-	for _, e := range ce {
-		et := e.Timestamp()
+	for _, e := rbnge ce {
+		et := e.Timestbmp()
 		if et.IsZero() {
 			continue
 		}
 
-		// NOTE: If you add any kinds here, make sure they also appear in `RequiredEventTypesForHistory`.
+		// NOTE: If you bdd bny kinds here, mbke sure they blso bppebr in `RequiredEventTypesForHistory`.
 		switch e.Kind {
-		case btypes.ChangesetEventKindGitHubClosed,
-			btypes.ChangesetEventKindBitbucketServerDeclined,
-			btypes.ChangesetEventKindGitLabClosed,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestRejected:
-			// Merged and ReadOnly are final states. We can ignore everything after.
-			if currentExtState != btypes.ChangesetExternalStateMerged &&
-				currentExtState != btypes.ChangesetExternalStateReadOnly {
-				currentExtState = btypes.ChangesetExternalStateClosed
-				pushStates(et)
+		cbse btypes.ChbngesetEventKindGitHubClosed,
+			btypes.ChbngesetEventKindBitbucketServerDeclined,
+			btypes.ChbngesetEventKindGitLbbClosed,
+			btypes.ChbngesetEventKindBitbucketCloudPullRequestRejected:
+			// Merged bnd RebdOnly bre finbl stbtes. We cbn ignore everything bfter.
+			if currentExtStbte != btypes.ChbngesetExternblStbteMerged &&
+				currentExtStbte != btypes.ChbngesetExternblStbteRebdOnly {
+				currentExtStbte = btypes.ChbngesetExternblStbteClosed
+				pushStbtes(et)
 			}
 
-		case btypes.ChangesetEventKindGitHubMerged,
-			btypes.ChangesetEventKindBitbucketServerMerged,
-			btypes.ChangesetEventKindGitLabMerged,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestFulfilled,
-			btypes.ChangesetEventKindAzureDevOpsPullRequestMerged:
-			currentExtState = btypes.ChangesetExternalStateMerged
-			pushStates(et)
+		cbse btypes.ChbngesetEventKindGitHubMerged,
+			btypes.ChbngesetEventKindBitbucketServerMerged,
+			btypes.ChbngesetEventKindGitLbbMerged,
+			btypes.ChbngesetEventKindBitbucketCloudPullRequestFulfilled,
+			btypes.ChbngesetEventKindAzureDevOpsPullRequestMerged:
+			currentExtStbte = btypes.ChbngesetExternblStbteMerged
+			pushStbtes(et)
 
-		case btypes.ChangesetEventKindGitLabMarkWorkInProgress:
-			isDraft = true
-			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
-			if currentExtState == btypes.ChangesetExternalStateOpen {
-				currentExtState = btypes.ChangesetExternalStateDraft
-				pushStates(et)
+		cbse btypes.ChbngesetEventKindGitLbbMbrkWorkInProgress:
+			isDrbft = true
+			// This event only mbtters when the chbngeset is open, otherwise b chbnge in the title won't chbnge the overbll externbl stbte.
+			if currentExtStbte == btypes.ChbngesetExternblStbteOpen {
+				currentExtStbte = btypes.ChbngesetExternblStbteDrbft
+				pushStbtes(et)
 			}
 
-		case btypes.ChangesetEventKindGitHubConvertToDraft:
-			isDraft = true
-			// Merged and ReadOnly are final states. We can ignore everything after.
-			if currentExtState != btypes.ChangesetExternalStateMerged &&
-				currentExtState != btypes.ChangesetExternalStateReadOnly {
-				currentExtState = btypes.ChangesetExternalStateDraft
-				pushStates(et)
+		cbse btypes.ChbngesetEventKindGitHubConvertToDrbft:
+			isDrbft = true
+			// Merged bnd RebdOnly bre finbl stbtes. We cbn ignore everything bfter.
+			if currentExtStbte != btypes.ChbngesetExternblStbteMerged &&
+				currentExtStbte != btypes.ChbngesetExternblStbteRebdOnly {
+				currentExtStbte = btypes.ChbngesetExternblStbteDrbft
+				pushStbtes(et)
 			}
 
-		case btypes.ChangesetEventKindGitLabUnmarkWorkInProgress,
-			btypes.ChangesetEventKindGitHubReadyForReview:
-			isDraft = false
-			// This event only matters when the changeset is open, otherwise a change in the title won't change the overall external state.
-			if currentExtState == btypes.ChangesetExternalStateDraft {
-				currentExtState = btypes.ChangesetExternalStateOpen
-				pushStates(et)
+		cbse btypes.ChbngesetEventKindGitLbbUnmbrkWorkInProgress,
+			btypes.ChbngesetEventKindGitHubRebdyForReview:
+			isDrbft = fblse
+			// This event only mbtters when the chbngeset is open, otherwise b chbnge in the title won't chbnge the overbll externbl stbte.
+			if currentExtStbte == btypes.ChbngesetExternblStbteDrbft {
+				currentExtStbte = btypes.ChbngesetExternblStbteOpen
+				pushStbtes(et)
 			}
 
-		case btypes.ChangesetEventKindGitHubReopened,
-			btypes.ChangesetEventKindBitbucketServerReopened,
-			btypes.ChangesetEventKindGitLabReopened:
-			// Merged and ReadOnly are final states. We can ignore everything after.
-			if currentExtState != btypes.ChangesetExternalStateMerged &&
-				currentExtState != btypes.ChangesetExternalStateReadOnly {
-				if isDraft {
-					currentExtState = btypes.ChangesetExternalStateDraft
+		cbse btypes.ChbngesetEventKindGitHubReopened,
+			btypes.ChbngesetEventKindBitbucketServerReopened,
+			btypes.ChbngesetEventKindGitLbbReopened:
+			// Merged bnd RebdOnly bre finbl stbtes. We cbn ignore everything bfter.
+			if currentExtStbte != btypes.ChbngesetExternblStbteMerged &&
+				currentExtStbte != btypes.ChbngesetExternblStbteRebdOnly {
+				if isDrbft {
+					currentExtStbte = btypes.ChbngesetExternblStbteDrbft
 				} else {
-					currentExtState = btypes.ChangesetExternalStateOpen
+					currentExtStbte = btypes.ChbngesetExternblStbteOpen
 				}
-				pushStates(et)
+				pushStbtes(et)
 			}
 
-		case btypes.ChangesetEventKindGitHubReviewed,
-			btypes.ChangesetEventKindBitbucketServerApproved,
-			btypes.ChangesetEventKindBitbucketServerReviewed,
-			btypes.ChangesetEventKindGitLabApproved,
-			btypes.ChangesetEventKindBitbucketCloudApproved,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestApproved,
-			btypes.ChangesetEventKindAzureDevOpsPullRequestApproved:
-			s, err := e.ReviewState()
+		cbse btypes.ChbngesetEventKindGitHubReviewed,
+			btypes.ChbngesetEventKindBitbucketServerApproved,
+			btypes.ChbngesetEventKindBitbucketServerReviewed,
+			btypes.ChbngesetEventKindGitLbbApproved,
+			btypes.ChbngesetEventKindBitbucketCloudApproved,
+			btypes.ChbngesetEventKindBitbucketCloudPullRequestApproved,
+			btypes.ChbngesetEventKindAzureDevOpsPullRequestApproved:
+			s, err := e.ReviewStbte()
 			if err != nil {
 				return nil, err
 			}
 
-			// We only care about "Approved", "ChangesRequested" or "Dismissed" reviews
-			if s != btypes.ChangesetReviewStateApproved &&
-				s != btypes.ChangesetReviewStateChangesRequested &&
-				s != btypes.ChangesetReviewStateDismissed {
+			// We only cbre bbout "Approved", "ChbngesRequested" or "Dismissed" reviews
+			if s != btypes.ChbngesetReviewStbteApproved &&
+				s != btypes.ChbngesetReviewStbteChbngesRequested &&
+				s != btypes.ChbngesetReviewStbteDismissed {
 				continue
 			}
 
-			author := e.ReviewAuthor()
-			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
-			if author == "" {
+			buthor := e.ReviewAuthor()
+			// If the user hbs been deleted, skip their reviews, bs they don't count towbrds the finbl stbte bnymore.
+			if buthor == "" {
 				continue
 			}
 
-			// Save current review state, then insert new review or delete
-			// dismissed review, then recompute overall review state
-			oldReviewState := currentReviewState
+			// Sbve current review stbte, then insert new review or delete
+			// dismissed review, then recompute overbll review stbte
+			oldReviewStbte := currentReviewStbte
 
-			if s == btypes.ChangesetReviewStateDismissed {
-				// In case of a dismissed review we dismiss _all_ of the
-				// previous reviews by the author, since that is what GitHub
+			if s == btypes.ChbngesetReviewStbteDismissed {
+				// In cbse of b dismissed review we dismiss _bll_ of the
+				// previous reviews by the buthor, since thbt is whbt GitHub
 				// does in its UI.
-				delete(lastReviewByAuthor, author)
+				delete(lbstReviewByAuthor, buthor)
 			} else {
-				lastReviewByAuthor[author] = s
+				lbstReviewByAuthor[buthor] = s
 			}
 
-			newReviewState := reduceReviewStates(lastReviewByAuthor)
+			newReviewStbte := reduceReviewStbtes(lbstReviewByAuthor)
 
-			if newReviewState != oldReviewState {
-				currentReviewState = newReviewState
-				pushStates(et)
+			if newReviewStbte != oldReviewStbte {
+				currentReviewStbte = newReviewStbte
+				pushStbtes(et)
 			}
 
-		case btypes.ChangesetEventKindBitbucketServerUnapproved,
-			btypes.ChangesetEventKindBitbucketServerDismissed,
-			btypes.ChangesetEventKindGitLabUnapproved,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved,
-			btypes.ChangesetEventKindBitbucketCloudPullRequestUnapproved:
+		cbse btypes.ChbngesetEventKindBitbucketServerUnbpproved,
+			btypes.ChbngesetEventKindBitbucketServerDismissed,
+			btypes.ChbngesetEventKindGitLbbUnbpproved,
+			btypes.ChbngesetEventKindBitbucketCloudPullRequestChbngesRequestRemoved,
+			btypes.ChbngesetEventKindBitbucketCloudPullRequestUnbpproved:
 
-			author := e.ReviewAuthor()
-			// If the user has been deleted, skip their reviews, as they don't count towards the final state anymore.
-			if author == "" {
+			buthor := e.ReviewAuthor()
+			// If the user hbs been deleted, skip their reviews, bs they don't count towbrds the finbl stbte bnymore.
+			if buthor == "" {
 				continue
 			}
 
-			if e.Type() == btypes.ChangesetEventKindBitbucketServerUnapproved {
-				// A BitbucketServer Unapproved can only follow a previous Approved by
-				// the same author.
-				lastReview, ok := lastReviewByAuthor[author]
-				if !ok || lastReview != btypes.ChangesetReviewStateApproved {
-					log15.Warn("Bitbucket Server Unapproval not following an Approval", "event", e)
+			if e.Type() == btypes.ChbngesetEventKindBitbucketServerUnbpproved {
+				// A BitbucketServer Unbpproved cbn only follow b previous Approved by
+				// the sbme buthor.
+				lbstReview, ok := lbstReviewByAuthor[buthor]
+				if !ok || lbstReview != btypes.ChbngesetReviewStbteApproved {
+					log15.Wbrn("Bitbucket Server Unbpprovbl not following bn Approvbl", "event", e)
 					continue
 				}
 			}
 
-			if e.Type() == btypes.ChangesetEventKindBitbucketServerDismissed {
-				// A BitbucketServer Dismissed event can only follow a previous "Changes Requested" review by
-				// the same author.
-				lastReview, ok := lastReviewByAuthor[author]
-				if !ok || lastReview != btypes.ChangesetReviewStateChangesRequested {
-					log15.Warn("Bitbucket Server Dismissal not following a Review", "event", e)
+			if e.Type() == btypes.ChbngesetEventKindBitbucketServerDismissed {
+				// A BitbucketServer Dismissed event cbn only follow b previous "Chbnges Requested" review by
+				// the sbme buthor.
+				lbstReview, ok := lbstReviewByAuthor[buthor]
+				if !ok || lbstReview != btypes.ChbngesetReviewStbteChbngesRequested {
+					log15.Wbrn("Bitbucket Server Dismissbl not following b Review", "event", e)
 					continue
 				}
 			}
 
-			// Save current review state, then remove last approval and
-			// recompute overall review state
-			oldReviewState := currentReviewState
-			delete(lastReviewByAuthor, author)
-			newReviewState := reduceReviewStates(lastReviewByAuthor)
+			// Sbve current review stbte, then remove lbst bpprovbl bnd
+			// recompute overbll review stbte
+			oldReviewStbte := currentReviewStbte
+			delete(lbstReviewByAuthor, buthor)
+			newReviewStbte := reduceReviewStbtes(lbstReviewByAuthor)
 
-			if newReviewState != oldReviewState {
-				currentReviewState = newReviewState
-				pushStates(et)
+			if newReviewStbte != oldReviewStbte {
+				currentReviewStbte = newReviewStbte
+				pushStbtes(et)
 			}
-		case btypes.ChangesetEventKindAzureDevOpsPullRequestRejected,
-			btypes.ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
-			btypes.ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor:
-			currentReviewState = btypes.ChangesetReviewStateChangesRequested
-			author := e.ReviewAuthor()
-			lastReviewByAuthor[author] = currentReviewState
-			pushStates(et)
+		cbse btypes.ChbngesetEventKindAzureDevOpsPullRequestRejected,
+			btypes.ChbngesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions,
+			btypes.ChbngesetEventKindAzureDevOpsPullRequestWbitingForAuthor:
+			currentReviewStbte = btypes.ChbngesetReviewStbteChbngesRequested
+			buthor := e.ReviewAuthor()
+			lbstReviewByAuthor[buthor] = currentReviewStbte
+			pushStbtes(et)
 		}
 	}
 
-	// We don't have an event for the deletion of a Changeset, but we set
-	// ExternalDeletedAt manually in the Syncer.
-	deletedAt := ch.ExternalDeletedAt
+	// We don't hbve bn event for the deletion of b Chbngeset, but we set
+	// ExternblDeletedAt mbnublly in the Syncer.
+	deletedAt := ch.ExternblDeletedAt
 	if !deletedAt.IsZero() {
-		currentExtState = btypes.ChangesetExternalStateClosed
-		pushStates(deletedAt)
+		currentExtStbte = btypes.ChbngesetExternblStbteClosed
+		pushStbtes(deletedAt)
 	}
 
-	return states, nil
+	return stbtes, nil
 }
 
-// reduceReviewStates reduces the given a map of review per author down to a
-// single overall ChangesetReviewState.
-func reduceReviewStates(statesByAuthor map[string]btypes.ChangesetReviewState) btypes.ChangesetReviewState {
-	states := make(map[btypes.ChangesetReviewState]bool)
-	for _, s := range statesByAuthor {
-		states[s] = true
+// reduceReviewStbtes reduces the given b mbp of review per buthor down to b
+// single overbll ChbngesetReviewStbte.
+func reduceReviewStbtes(stbtesByAuthor mbp[string]btypes.ChbngesetReviewStbte) btypes.ChbngesetReviewStbte {
+	stbtes := mbke(mbp[btypes.ChbngesetReviewStbte]bool)
+	for _, s := rbnge stbtesByAuthor {
+		stbtes[s] = true
 	}
-	return selectReviewState(states)
+	return selectReviewStbte(stbtes)
 }
 
-// initialExternalState infers from the changeset state and the list of events in which
-// ChangesetExternalState the changeset must have been when it has been created.
-func initialExternalState(ch *btypes.Changeset, ce ChangesetEvents) btypes.ChangesetExternalState {
+// initiblExternblStbte infers from the chbngeset stbte bnd the list of events in which
+// ChbngesetExternblStbte the chbngeset must hbve been when it hbs been crebted.
+func initiblExternblStbte(ch *btypes.Chbngeset, ce ChbngesetEvents) btypes.ChbngesetExternblStbte {
 	open := true
-	switch m := ch.Metadata.(type) {
-	case *github.PullRequest:
-		if m.IsDraft {
-			open = false
+	switch m := ch.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		if m.IsDrbft {
+			open = fblse
 		}
 
-	case *gitlab.MergeRequest:
+	cbse *gitlbb.MergeRequest:
 		if m.WorkInProgress {
-			open = false
+			open = fblse
 		}
-	case *adobatches.AnnotatedPullRequest:
-		if m.IsDraft {
-			open = false
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		if m.IsDrbft {
+			open = fblse
 		}
-	case *gerritbatches.AnnotatedChange:
-		if m.Change.WorkInProgress {
-			open = false
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		if m.Chbnge.WorkInProgress {
+			open = fblse
 		}
-	default:
-		return btypes.ChangesetExternalStateOpen
+	defbult:
+		return btypes.ChbngesetExternblStbteOpen
 	}
-	// Walk the events backwards, since we need to look from the current time to the past.
+	// Wblk the events bbckwbrds, since we need to look from the current time to the pbst.
 	for i := len(ce) - 1; i >= 0; i-- {
 		e := ce[i]
-		switch e.Metadata.(type) {
-		case *gitlab.UnmarkWorkInProgressEvent, *github.ReadyForReviewEvent:
-			open = false
-		case *gitlab.MarkWorkInProgressEvent, *github.ConvertToDraftEvent:
+		switch e.Metbdbtb.(type) {
+		cbse *gitlbb.UnmbrkWorkInProgressEvent, *github.RebdyForReviewEvent:
+			open = fblse
+		cbse *gitlbb.MbrkWorkInProgressEvent, *github.ConvertToDrbftEvent:
 			open = true
 		}
 	}
 	if open {
-		return btypes.ChangesetExternalStateOpen
+		return btypes.ChbngesetExternblStbteOpen
 	}
-	return btypes.ChangesetExternalStateDraft
+	return btypes.ChbngesetExternblStbteDrbft
 }

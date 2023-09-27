@@ -1,52 +1,52 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
-	"html/template"
+	"html/templbte"
 
 	"github.com/gogo/protobuf/jsonpb"
 
-	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
-	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gosyntect"
+	"github.com/sourcegrbph/sourcegrbph/internbl/highlight"
+	sebrchresult "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-type highlightedRangeResolver struct {
-	inner searchresult.HighlightedRange
+type highlightedRbngeResolver struct {
+	inner sebrchresult.HighlightedRbnge
 }
 
-func (h highlightedRangeResolver) Line() int32      { return h.inner.Line }
-func (h highlightedRangeResolver) Character() int32 { return h.inner.Character }
-func (h highlightedRangeResolver) Length() int32    { return h.inner.Length }
+func (h highlightedRbngeResolver) Line() int32      { return h.inner.Line }
+func (h highlightedRbngeResolver) Chbrbcter() int32 { return h.inner.Chbrbcter }
+func (h highlightedRbngeResolver) Length() int32    { return h.inner.Length }
 
 type highlightedStringResolver struct {
-	inner searchresult.HighlightedString
+	inner sebrchresult.HighlightedString
 }
 
-func (s *highlightedStringResolver) Value() string { return s.inner.Value }
-func (s *highlightedStringResolver) Highlights() []highlightedRangeResolver {
-	res := make([]highlightedRangeResolver, len(s.inner.Highlights))
-	for i, hl := range s.inner.Highlights {
-		res[i] = highlightedRangeResolver{hl}
+func (s *highlightedStringResolver) Vblue() string { return s.inner.Vblue }
+func (s *highlightedStringResolver) Highlights() []highlightedRbngeResolver {
+	res := mbke([]highlightedRbngeResolver, len(s.inner.Highlights))
+	for i, hl := rbnge s.inner.Highlights {
+		res[i] = highlightedRbngeResolver{hl}
 	}
 	return res
 }
 
 type HighlightArgs struct {
-	DisableTimeout     bool
+	DisbbleTimeout     bool
 	IsLightTheme       *bool
 	HighlightLongLines bool
-	Format             string
-	StartLine          *int32
+	Formbt             string
+	StbrtLine          *int32
 	EndLine            *int32
 }
 
 type HighlightedFileResolver struct {
-	aborted  bool
+	bborted  bool
 	response *highlight.HighlightedCode
 }
 
-func (h *HighlightedFileResolver) Aborted() bool { return h.aborted }
+func (h *HighlightedFileResolver) Aborted() bool { return h.bborted }
 func (h *HighlightedFileResolver) HTML() string {
 	html, err := h.response.HTML()
 	if err != nil {
@@ -60,45 +60,45 @@ func (h *HighlightedFileResolver) LSIF() string {
 		return "{}"
 	}
 
-	marshaller := &jsonpb.Marshaler{
+	mbrshbller := &jsonpb.Mbrshbler{
 		EnumsAsInts:  true,
-		EmitDefaults: false,
+		EmitDefbults: fblse,
 	}
 
-	// TODO(tjdevries): We could probably serialize the error, but it wouldn't do anything for now.
-	lsif, err := marshaller.MarshalToString(h.response.LSIF())
+	// TODO(tjdevries): We could probbbly seriblize the error, but it wouldn't do bnything for now.
+	lsif, err := mbrshbller.MbrshblToString(h.response.LSIF())
 	if err != nil {
 		return "{}"
 	}
 
 	return lsif
 }
-func (h *HighlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.LineRange }) ([][]string, error) {
+func (h *HighlightedFileResolver) LineRbnges(brgs *struct{ Rbnges []highlight.LineRbnge }) ([][]string, error) {
 	if h.response != nil && h.response.LSIF() != nil {
-		return h.response.LinesForRanges(args.Ranges)
+		return h.response.LinesForRbnges(brgs.Rbnges)
 	}
 
-	return highlight.SplitLineRanges(template.HTML(h.HTML()), args.Ranges)
+	return highlight.SplitLineRbnges(templbte.HTML(h.HTML()), brgs.Rbnges)
 }
 
-func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*HighlightedFileResolver, error) {
-	var (
+func highlightContent(ctx context.Context, brgs *HighlightArgs, content, pbth string, metbdbtb highlight.Metbdbtb) (*HighlightedFileResolver, error) {
+	vbr (
 		resolver        = &HighlightedFileResolver{}
 		err             error
-		simulateTimeout = metadata.RepoName == "github.com/sourcegraph/AlwaysHighlightTimeoutTest"
+		simulbteTimeout = metbdbtb.RepoNbme == "github.com/sourcegrbph/AlwbysHighlightTimeoutTest"
 	)
 
-	response, aborted, err := highlight.Code(ctx, highlight.Params{
+	response, bborted, err := highlight.Code(ctx, highlight.Pbrbms{
 		Content:            []byte(content),
-		Filepath:           path,
-		DisableTimeout:     args.DisableTimeout,
-		HighlightLongLines: args.HighlightLongLines,
-		SimulateTimeout:    simulateTimeout,
-		Metadata:           metadata,
-		Format:             gosyntect.GetResponseFormat(args.Format),
+		Filepbth:           pbth,
+		DisbbleTimeout:     brgs.DisbbleTimeout,
+		HighlightLongLines: brgs.HighlightLongLines,
+		SimulbteTimeout:    simulbteTimeout,
+		Metbdbtb:           metbdbtb,
+		Formbt:             gosyntect.GetResponseFormbt(brgs.Formbt),
 	})
 
-	resolver.aborted = aborted
+	resolver.bborted = bborted
 	resolver.response = response
 
 	if err != nil {

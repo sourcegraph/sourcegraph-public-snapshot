@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -8,340 +8,340 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	sebrchquery "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ graphqlbackend.InsightSeriesResolver = &precalculatedInsightSeriesResolver{}
-var _ graphqlbackend.InsightsDataPointResolver = insightsDataPointResolver{}
+vbr _ grbphqlbbckend.InsightSeriesResolver = &precblculbtedInsightSeriesResolver{}
+vbr _ grbphqlbbckend.InsightsDbtbPointResolver = insightsDbtbPointResolver{}
 
-type insightsDataPointResolver struct {
+type insightsDbtbPointResolver struct {
 	p        store.SeriesPoint
 	diffInfo *querybuilder.PointDiffQueryOpts
 }
 
-func (i insightsDataPointResolver) DateTime() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: i.p.Time}
+func (i insightsDbtbPointResolver) DbteTime() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: i.p.Time}
 }
 
-func (i insightsDataPointResolver) Value() float64 { return i.p.Value }
+func (i insightsDbtbPointResolver) Vblue() flobt64 { return i.p.Vblue }
 
-func (i insightsDataPointResolver) DiffQuery() (*string, error) {
+func (i insightsDbtbPointResolver) DiffQuery() (*string, error) {
 	if i.diffInfo == nil {
 		return nil, nil
 	}
 	query, err := querybuilder.PointDiffQuery(*i.diffInfo)
 	if err != nil {
-		// we don't want to error the whole process if diff query building errored.
+		// we don't wbnt to error the whole process if diff query building errored.
 		return nil, nil
 	}
 	q := query.String()
 	return &q, nil
 }
 
-type statusInfo struct {
-	totalPoints, pendingJobs, completedJobs, failedJobs int32
-	backfillQueuedAt                                    *time.Time
-	isLoading                                           bool
+type stbtusInfo struct {
+	totblPoints, pendingJobs, completedJobs, fbiledJobs int32
+	bbckfillQueuedAt                                    *time.Time
+	isLobding                                           bool
 }
 
-type GetSeriesQueueStatusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error)
-type GetSeriesBackfillsFunc func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error)
-type GetIncompleteDatapointsFunc func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error)
-type insightStatusResolver struct {
-	getQueueStatus          GetSeriesQueueStatusFunc
-	getSeriesBackfills      GetSeriesBackfillsFunc
-	getIncompleteDatapoints GetIncompleteDatapointsFunc
-	statusOnce              sync.Once
+type GetSeriesQueueStbtusFunc func(ctx context.Context, seriesID string) (*queryrunner.JobsStbtus, error)
+type GetSeriesBbckfillsFunc func(ctx context.Context, seriesID int) ([]scheduler.SeriesBbckfill, error)
+type GetIncompleteDbtbpointsFunc func(ctx context.Context, seriesID int) ([]store.IncompleteDbtbpoint, error)
+type insightStbtusResolver struct {
+	getQueueStbtus          GetSeriesQueueStbtusFunc
+	getSeriesBbckfills      GetSeriesBbckfillsFunc
+	getIncompleteDbtbpoints GetIncompleteDbtbpointsFunc
+	stbtusOnce              sync.Once
 	series                  types.InsightViewSeries
 
-	status    statusInfo
-	statusErr error
+	stbtus    stbtusInfo
+	stbtusErr error
 }
 
-func (i *insightStatusResolver) TotalPoints(ctx context.Context) (int32, error) {
-	status, err := i.calculateStatus(ctx)
-	return status.totalPoints, err
+func (i *insightStbtusResolver) TotblPoints(ctx context.Context) (int32, error) {
+	stbtus, err := i.cblculbteStbtus(ctx)
+	return stbtus.totblPoints, err
 }
-func (i *insightStatusResolver) PendingJobs(ctx context.Context) (int32, error) {
-	status, err := i.calculateStatus(ctx)
-	return status.pendingJobs, err
+func (i *insightStbtusResolver) PendingJobs(ctx context.Context) (int32, error) {
+	stbtus, err := i.cblculbteStbtus(ctx)
+	return stbtus.pendingJobs, err
 }
-func (i *insightStatusResolver) CompletedJobs(ctx context.Context) (int32, error) {
-	status, err := i.calculateStatus(ctx)
-	return status.completedJobs, err
+func (i *insightStbtusResolver) CompletedJobs(ctx context.Context) (int32, error) {
+	stbtus, err := i.cblculbteStbtus(ctx)
+	return stbtus.completedJobs, err
 }
-func (i *insightStatusResolver) FailedJobs(ctx context.Context) (int32, error) {
-	status, err := i.calculateStatus(ctx)
-	return status.failedJobs, err
+func (i *insightStbtusResolver) FbiledJobs(ctx context.Context) (int32, error) {
+	stbtus, err := i.cblculbteStbtus(ctx)
+	return stbtus.fbiledJobs, err
 }
-func (i *insightStatusResolver) BackfillQueuedAt(ctx context.Context) *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(i.series.BackfillQueuedAt)
+func (i *insightStbtusResolver) BbckfillQueuedAt(ctx context.Context) *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(i.series.BbckfillQueuedAt)
 }
-func (i *insightStatusResolver) IsLoadingData(ctx context.Context) (*bool, error) {
-	status, err := i.calculateStatus(ctx)
+func (i *insightStbtusResolver) IsLobdingDbtb(ctx context.Context) (*bool, error) {
+	stbtus, err := i.cblculbteStbtus(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &status.isLoading, nil
+	return &stbtus.isLobding, nil
 }
 
-func (i *insightStatusResolver) calculateStatus(ctx context.Context) (statusInfo, error) {
-	i.statusOnce.Do(func() {
-		status, statusErr := i.getQueueStatus(ctx, i.series.SeriesID)
-		if statusErr != nil {
-			i.statusErr = errors.Wrap(statusErr, "QueryJobsStatus")
+func (i *insightStbtusResolver) cblculbteStbtus(ctx context.Context) (stbtusInfo, error) {
+	i.stbtusOnce.Do(func() {
+		stbtus, stbtusErr := i.getQueueStbtus(ctx, i.series.SeriesID)
+		if stbtusErr != nil {
+			i.stbtusErr = errors.Wrbp(stbtusErr, "QueryJobsStbtus")
 			return
 		}
-		i.status.backfillQueuedAt = i.series.BackfillQueuedAt
-		i.status.completedJobs = int32(status.Completed)
-		i.status.failedJobs = int32(status.Failed)
-		i.status.pendingJobs = int32(status.Queued + status.Processing + status.Errored)
+		i.stbtus.bbckfillQueuedAt = i.series.BbckfillQueuedAt
+		i.stbtus.completedJobs = int32(stbtus.Completed)
+		i.stbtus.fbiledJobs = int32(stbtus.Fbiled)
+		i.stbtus.pendingJobs = int32(stbtus.Queued + stbtus.Processing + stbtus.Errored)
 
-		seriesBackfills, backillErr := i.getSeriesBackfills(ctx, i.series.InsightSeriesID)
-		if backillErr != nil {
-			i.statusErr = errors.Wrap(backillErr, "LoadSeriesBackfills")
+		seriesBbckfills, bbckillErr := i.getSeriesBbckfills(ctx, i.series.InsightSeriesID)
+		if bbckillErr != nil {
+			i.stbtusErr = errors.Wrbp(bbckillErr, "LobdSeriesBbckfills")
 			return
 		}
-		backfillInProgress := false
-		for n := range seriesBackfills {
-			if seriesBackfills[n].SeriesId == i.series.InsightSeriesID && !seriesBackfills[n].IsTerminalState() {
-				backfillInProgress = true
-				break
+		bbckfillInProgress := fblse
+		for n := rbnge seriesBbckfills {
+			if seriesBbckfills[n].SeriesId == i.series.InsightSeriesID && !seriesBbckfills[n].IsTerminblStbte() {
+				bbckfillInProgress = true
+				brebk
 			}
 		}
-		i.status.isLoading = i.status.backfillQueuedAt == nil || i.status.pendingJobs > 0 || backfillInProgress
+		i.stbtus.isLobding = i.stbtus.bbckfillQueuedAt == nil || i.stbtus.pendingJobs > 0 || bbckfillInProgress
 	})
-	return i.status, i.statusErr
+	return i.stbtus, i.stbtusErr
 }
 
-func NewStatusResolver(r *baseInsightResolver, viewSeries types.InsightViewSeries) *insightStatusResolver {
-	getStatus := func(ctx context.Context, series string) (*queryrunner.JobsStatus, error) {
-		return queryrunner.QueryJobsStatus(ctx, r.workerBaseStore, series)
+func NewStbtusResolver(r *bbseInsightResolver, viewSeries types.InsightViewSeries) *insightStbtusResolver {
+	getStbtus := func(ctx context.Context, series string) (*queryrunner.JobsStbtus, error) {
+		return queryrunner.QueryJobsStbtus(ctx, r.workerBbseStore, series)
 	}
-	getBackfills := func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error) {
-		backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-		return backfillStore.LoadSeriesBackfills(ctx, seriesID)
+	getBbckfills := func(ctx context.Context, seriesID int) ([]scheduler.SeriesBbckfill, error) {
+		bbckfillStore := scheduler.NewBbckfillStore(r.insightsDB)
+		return bbckfillStore.LobdSeriesBbckfills(ctx, seriesID)
 	}
-	getIncompletes := func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
-		return r.timeSeriesStore.LoadAggregatedIncompleteDatapoints(ctx, seriesID)
+	getIncompletes := func(ctx context.Context, seriesID int) ([]store.IncompleteDbtbpoint, error) {
+		return r.timeSeriesStore.LobdAggregbtedIncompleteDbtbpoints(ctx, seriesID)
 	}
-	return newStatusResolver(getStatus, getBackfills, getIncompletes, viewSeries)
+	return newStbtusResolver(getStbtus, getBbckfills, getIncompletes, viewSeries)
 }
 
-func newStatusResolver(getQueueStatus GetSeriesQueueStatusFunc, getSeriesBackfills GetSeriesBackfillsFunc, getIncompleteDatapoints GetIncompleteDatapointsFunc, series types.InsightViewSeries) *insightStatusResolver {
-	return &insightStatusResolver{
-		getQueueStatus:          getQueueStatus,
-		getSeriesBackfills:      getSeriesBackfills,
+func newStbtusResolver(getQueueStbtus GetSeriesQueueStbtusFunc, getSeriesBbckfills GetSeriesBbckfillsFunc, getIncompleteDbtbpoints GetIncompleteDbtbpointsFunc, series types.InsightViewSeries) *insightStbtusResolver {
+	return &insightStbtusResolver{
+		getQueueStbtus:          getQueueStbtus,
+		getSeriesBbckfills:      getSeriesBbckfills,
 		series:                  series,
-		getIncompleteDatapoints: getIncompleteDatapoints,
+		getIncompleteDbtbpoints: getIncompleteDbtbpoints,
 	}
 }
 
-type precalculatedInsightSeriesResolver struct {
-	insightsStore   store.Interface
-	workerBaseStore *basestore.Store
+type precblculbtedInsightSeriesResolver struct {
+	insightsStore   store.Interfbce
+	workerBbseStore *bbsestore.Store
 	series          types.InsightViewSeries
-	metadataStore   store.InsightMetadataStore
-	statusResolver  graphqlbackend.InsightStatusResolver
+	metbdbtbStore   store.InsightMetbdbtbStore
+	stbtusResolver  grbphqlbbckend.InsightStbtusResolver
 
 	seriesId string
 	points   []store.SeriesPoint
-	label    string
+	lbbel    string
 	filters  types.InsightViewFilters
 }
 
-func (p *precalculatedInsightSeriesResolver) SeriesId() string {
+func (p *precblculbtedInsightSeriesResolver) SeriesId() string {
 	return p.seriesId
 }
 
-func (p *precalculatedInsightSeriesResolver) Label() string {
-	return p.label
+func (p *precblculbtedInsightSeriesResolver) Lbbel() string {
+	return p.lbbel
 }
 
-func (p *precalculatedInsightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.InsightsPointsArgs) ([]graphqlbackend.InsightsDataPointResolver, error) {
-	resolvers := make([]graphqlbackend.InsightsDataPointResolver, 0, len(p.points))
-	db := database.NewDBWith(log.Scoped("Points", ""), p.workerBaseStore)
-	scHandler := store.NewSearchContextHandler(db)
+func (p *precblculbtedInsightSeriesResolver) Points(ctx context.Context, _ *grbphqlbbckend.InsightsPointsArgs) ([]grbphqlbbckend.InsightsDbtbPointResolver, error) {
+	resolvers := mbke([]grbphqlbbckend.InsightsDbtbPointResolver, 0, len(p.points))
+	db := dbtbbbse.NewDBWith(log.Scoped("Points", ""), p.workerBbseStore)
+	scHbndler := store.NewSebrchContextHbndler(db)
 	modifiedPoints := removeClosePoints(p.points, p.series)
 	filterRepoIncludes := []string{}
 	filterRepoExcludes := []string{}
 
 	if !isNilOrEmpty(p.filters.IncludeRepoRegex) {
-		filterRepoIncludes = append(filterRepoIncludes, *p.filters.IncludeRepoRegex)
+		filterRepoIncludes = bppend(filterRepoIncludes, *p.filters.IncludeRepoRegex)
 	}
 	if !isNilOrEmpty(p.filters.ExcludeRepoRegex) {
-		filterRepoExcludes = append(filterRepoExcludes, *p.filters.ExcludeRepoRegex)
+		filterRepoExcludes = bppend(filterRepoExcludes, *p.filters.ExcludeRepoRegex)
 	}
 
-	// ignoring error to ensure points return - if a search context error would occure it would have likely already happened.
-	includeRepos, excludeRepos, _ := scHandler.UnwrapSearchContexts(ctx, p.filters.SearchContexts)
-	filterRepoIncludes = append(filterRepoIncludes, includeRepos...)
-	filterRepoExcludes = append(filterRepoExcludes, excludeRepos...)
+	// ignoring error to ensure points return - if b sebrch context error would occure it would hbve likely blrebdy hbppened.
+	includeRepos, excludeRepos, _ := scHbndler.UnwrbpSebrchContexts(ctx, p.filters.SebrchContexts)
+	filterRepoIncludes = bppend(filterRepoIncludes, includeRepos...)
+	filterRepoExcludes = bppend(filterRepoExcludes, excludeRepos...)
 
-	// Replacing capture group values if present
-	// Ignoring errors so it falls back to the entered query
+	// Replbcing cbpture group vblues if present
+	// Ignoring errors so it fblls bbck to the entered query
 	query := p.series.Query
-	if p.series.GeneratedFromCaptureGroups && len(modifiedPoints) > 0 {
-		replacer, _ := querybuilder.NewPatternReplacer(querybuilder.BasicQuery(query), searchquery.SearchTypeRegex)
-		if replacer != nil {
-			replaced, err := replacer.Replace(*modifiedPoints[0].Capture)
+	if p.series.GenerbtedFromCbptureGroups && len(modifiedPoints) > 0 {
+		replbcer, _ := querybuilder.NewPbtternReplbcer(querybuilder.BbsicQuery(query), sebrchquery.SebrchTypeRegex)
+		if replbcer != nil {
+			replbced, err := replbcer.Replbce(*modifiedPoints[0].Cbpture)
 			if err == nil {
-				query = replaced.String()
+				query = replbced.String()
 			}
 		}
 	}
 
 	for i := 0; i < len(modifiedPoints); i++ {
-		var after *time.Time
+		vbr bfter *time.Time
 		if i > 0 {
-			after = &modifiedPoints[i-1].Time
+			bfter = &modifiedPoints[i-1].Time
 		}
 
-		pointResolver := insightsDataPointResolver{
+		pointResolver := insightsDbtbPointResolver{
 			p: modifiedPoints[i],
 			diffInfo: &querybuilder.PointDiffQueryOpts{
-				After:              after,
+				After:              bfter,
 				Before:             modifiedPoints[i].Time,
 				FilterRepoIncludes: filterRepoIncludes,
 				FilterRepoExcludes: filterRepoExcludes,
 				RepoList:           p.series.Repositories,
-				RepoSearch:         p.series.RepositoryCriteria,
-				SearchQuery:        querybuilder.BasicQuery(query),
+				RepoSebrch:         p.series.RepositoryCriterib,
+				SebrchQuery:        querybuilder.BbsicQuery(query),
 			},
 		}
-		resolvers = append(resolvers, pointResolver)
+		resolvers = bppend(resolvers, pointResolver)
 	}
 
 	return resolvers, nil
 }
 
-// This will make sure that no two snapshots are too close together. We'll use 20% of the time interval to
+// This will mbke sure thbt no two snbpshots bre too close together. We'll use 20% of the time intervbl to
 // remove these "close" points.
 func removeClosePoints(points []store.SeriesPoint, series types.InsightViewSeries) []store.SeriesPoint {
-	buffer := intervalToMinutes(types.IntervalUnit(series.SampleIntervalUnit), series.SampleIntervalValue) / 5
+	buffer := intervblToMinutes(types.IntervblUnit(series.SbmpleIntervblUnit), series.SbmpleIntervblVblue) / 5
 	modifiedPoints := []store.SeriesPoint{}
 	for i := 0; i < len(points)-1; i++ {
-		modifiedPoints = append(modifiedPoints, points[i])
+		modifiedPoints = bppend(modifiedPoints, points[i])
 		if points[i+1].Time.Sub(points[i].Time).Minutes() < buffer {
 			i++
 		}
 	}
-	// Always add the very last snapshot point if it exists
+	// Alwbys bdd the very lbst snbpshot point if it exists
 	if len(points) > 0 {
-		return append(modifiedPoints, points[len(points)-1])
+		return bppend(modifiedPoints, points[len(points)-1])
 	}
 	return modifiedPoints
 }
 
-// This only needs to be approximate to calculate a comfortable buffer in which to remove points
-func intervalToMinutes(unit types.IntervalUnit, value int) float64 {
+// This only needs to be bpproximbte to cblculbte b comfortbble buffer in which to remove points
+func intervblToMinutes(unit types.IntervblUnit, vblue int) flobt64 {
 	switch unit {
-	case types.Day:
-		return time.Hour.Minutes() * 24 * float64(value)
-	case types.Week:
-		return time.Hour.Minutes() * 24 * 7 * float64(value)
-	case types.Month:
-		return time.Hour.Minutes() * 24 * 30 * float64(value)
-	case types.Year:
-		return time.Hour.Minutes() * 24 * 365 * float64(value)
-	default:
-		// By default return the smallest interval (an hour)
-		return time.Hour.Minutes() * float64(value)
+	cbse types.Dby:
+		return time.Hour.Minutes() * 24 * flobt64(vblue)
+	cbse types.Week:
+		return time.Hour.Minutes() * 24 * 7 * flobt64(vblue)
+	cbse types.Month:
+		return time.Hour.Minutes() * 24 * 30 * flobt64(vblue)
+	cbse types.Yebr:
+		return time.Hour.Minutes() * 24 * 365 * flobt64(vblue)
+	defbult:
+		// By defbult return the smbllest intervbl (bn hour)
+		return time.Hour.Minutes() * flobt64(vblue)
 	}
 }
 
-func (p *precalculatedInsightSeriesResolver) Status(ctx context.Context) (graphqlbackend.InsightStatusResolver, error) {
-	return p.statusResolver, nil
+func (p *precblculbtedInsightSeriesResolver) Stbtus(ctx context.Context) (grbphqlbbckend.InsightStbtusResolver, error) {
+	return p.stbtusResolver, nil
 }
 
-type insightSeriesResolverGenerator interface {
-	Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
-	handles(series types.InsightViewSeries) bool
-	SetNext(nextGenerator insightSeriesResolverGenerator)
+type insightSeriesResolverGenerbtor interfbce {
+	Generbte(ctx context.Context, series types.InsightViewSeries, bbseResolver bbseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplbyOptions) ([]grbphqlbbckend.InsightSeriesResolver, error)
+	hbndles(series types.InsightViewSeries) bool
+	SetNext(nextGenerbtor insightSeriesResolverGenerbtor)
 }
 
-type handleSeriesFunc func(series types.InsightViewSeries) bool
-type resolverGenerator func(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error)
+type hbndleSeriesFunc func(series types.InsightViewSeries) bool
+type resolverGenerbtor func(ctx context.Context, series types.InsightViewSeries, bbseResolver bbseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplbyOptions) ([]grbphqlbbckend.InsightSeriesResolver, error)
 
-type seriesResolverGenerator struct {
-	next             insightSeriesResolverGenerator
-	handlesSeries    handleSeriesFunc
-	generateResolver resolverGenerator
+type seriesResolverGenerbtor struct {
+	next             insightSeriesResolverGenerbtor
+	hbndlesSeries    hbndleSeriesFunc
+	generbteResolver resolverGenerbtor
 }
 
-func (j *seriesResolverGenerator) handles(series types.InsightViewSeries) bool {
-	if j.handlesSeries == nil {
-		return false
+func (j *seriesResolverGenerbtor) hbndles(series types.InsightViewSeries) bool {
+	if j.hbndlesSeries == nil {
+		return fblse
 	}
-	return j.handlesSeries(series)
+	return j.hbndlesSeries(series)
 }
 
-func (j *seriesResolverGenerator) SetNext(nextGenerator insightSeriesResolverGenerator) {
-	j.next = nextGenerator
+func (j *seriesResolverGenerbtor) SetNext(nextGenerbtor insightSeriesResolverGenerbtor) {
+	j.next = nextGenerbtor
 }
 
-func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.InsightViewSeries, baseResolver baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	if j.handles(series) {
-		return j.generateResolver(ctx, series, baseResolver, filters, options)
+func (j *seriesResolverGenerbtor) Generbte(ctx context.Context, series types.InsightViewSeries, bbseResolver bbseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplbyOptions) ([]grbphqlbbckend.InsightSeriesResolver, error) {
+	if j.hbndles(series) {
+		return j.generbteResolver(ctx, series, bbseResolver, filters, options)
 	}
 	if j.next != nil {
-		return j.next.Generate(ctx, series, baseResolver, filters, options)
+		return j.next.Generbte(ctx, series, bbseResolver, filters, options)
 	} else {
 		return nil, errors.Newf("no resolvers for insights series with ID %s", series.SeriesID)
 	}
 }
 
-func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGenerator) insightSeriesResolverGenerator {
-	return &seriesResolverGenerator{
-		handlesSeries:    handles,
-		generateResolver: generate,
+func newSeriesResolverGenerbtor(hbndles hbndleSeriesFunc, generbte resolverGenerbtor) insightSeriesResolverGenerbtor {
+	return &seriesResolverGenerbtor{
+		hbndlesSeries:    hbndles,
+		generbteResolver: generbte,
 	}
 }
 
-func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesStore *store.Store, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplayOptions) (*store.SeriesPointsOpts, error) {
+func getRecordedSeriesPointOpts(ctx context.Context, db dbtbbbse.DB, timeseriesStore *store.Store, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplbyOptions) (*store.SeriesPointsOpts, error) {
 	opts := &store.SeriesPointsOpts{}
-	// Query data points only for the series we are representing.
+	// Query dbtb points only for the series we bre representing.
 	seriesID := definition.SeriesID
 	opts.SeriesID = &seriesID
 	opts.ID = &definition.InsightSeriesID
-	opts.SupportsAugmentation = definition.SupportsAugmentation
+	opts.SupportsAugmentbtion = definition.SupportsAugmentbtion
 
-	// by this point the numSamples option should be set correctly but we're reusing the same struct across functions
-	// so set max again.
-	numSamples := 90
-	if options.NumSamples != nil && *options.NumSamples < 90 && *options.NumSamples > 0 {
-		numSamples = int(*options.NumSamples)
+	// by this point the numSbmples option should be set correctly but we're reusing the sbme struct bcross functions
+	// so set mbx bgbin.
+	numSbmples := 90
+	if options.NumSbmples != nil && *options.NumSbmples < 90 && *options.NumSbmples > 0 {
+		numSbmples = int(*options.NumSbmples)
 	}
-	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, numSamples, false)
+	oldest, err := timeseriesStore.GetOffsetNRecordingTime(ctx, definition.InsightSeriesID, numSbmples, fblse)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetOffsetNRecordingTime")
+		return nil, errors.Wrbp(err, "GetOffsetNRecordingTime")
 	}
 	if !oldest.IsZero() {
 		opts.After = &oldest
 	}
 
 	includeRepo := func(regex ...string) {
-		opts.IncludeRepoRegex = append(opts.IncludeRepoRegex, regex...)
+		opts.IncludeRepoRegex = bppend(opts.IncludeRepoRegex, regex...)
 	}
 	excludeRepo := func(regex ...string) {
-		opts.ExcludeRepoRegex = append(opts.ExcludeRepoRegex, regex...)
+		opts.ExcludeRepoRegex = bppend(opts.ExcludeRepoRegex, regex...)
 	}
 
 	if filters.IncludeRepoRegex != nil {
@@ -351,42 +351,42 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, timeseriesS
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
 
-	scHandler := store.NewSearchContextHandler(db)
-	inc, exc, err := scHandler.UnwrapSearchContexts(ctx, filters.SearchContexts)
+	scHbndler := store.NewSebrchContextHbndler(db)
+	inc, exc, err := scHbndler.UnwrbpSebrchContexts(ctx, filters.SebrchContexts)
 	if err != nil {
-		return nil, errors.Wrap(err, "unwrapSearchContexts")
+		return nil, errors.Wrbp(err, "unwrbpSebrchContexts")
 	}
 	includeRepo(inc...)
 	excludeRepo(exc...)
 	return opts, nil
 }
 
-var loadingStrategyRED = metrics.NewREDMetrics(prometheus.DefaultRegisterer, "src_insights_loading_strategy", metrics.WithLabels("in_mem", "capture"))
+vbr lobdingStrbtegyRED = metrics.NewREDMetrics(prometheus.DefbultRegisterer, "src_insights_lobding_strbtegy", metrics.WithLbbels("in_mem", "cbpture"))
 
-func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplayOptions, r *baseInsightResolver) (points []store.SeriesPoint, err error) {
-	opts, err := getRecordedSeriesPointOpts(ctx, database.NewDBWith(log.Scoped("recordedSeries", ""), r.postgresDB), r.timeSeriesStore, definition, filters, options)
+func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filters types.InsightViewFilters, options types.SeriesDisplbyOptions, r *bbseInsightResolver) (points []store.SeriesPoint, err error) {
+	opts, err := getRecordedSeriesPointOpts(ctx, dbtbbbse.NewDBWith(log.Scoped("recordedSeries", ""), r.postgresDB), r.timeSeriesStore, definition, filters, options)
 	if err != nil {
-		return nil, errors.Wrap(err, "getRecordedSeriesPointOpts")
+		return nil, errors.Wrbp(err, "getRecordedSeriesPointOpts")
 	}
 
-	getAltFlag := func() bool {
-		ex := conf.Get().ExperimentalFeatures
+	getAltFlbg := func() bool {
+		ex := conf.Get().ExperimentblFebtures
 		if ex == nil {
-			return false
+			return fblse
 		}
-		return ex.InsightsAlternateLoadingStrategy
+		return ex.InsightsAlternbteLobdingStrbtegy
 	}
-	alternativeLoadingStrategy := getAltFlag()
+	blternbtiveLobdingStrbtegy := getAltFlbg()
 
-	var start, end time.Time
-	start = time.Now()
-	if !alternativeLoadingStrategy {
+	vbr stbrt, end time.Time
+	stbrt = time.Now()
+	if !blternbtiveLobdingStrbtegy {
 		points, err = r.timeSeriesStore.SeriesPoints(ctx, *opts)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		points, err = r.timeSeriesStore.LoadSeriesInMem(ctx, *opts)
+		points, err = r.timeSeriesStore.LobdSeriesInMem(ctx, *opts)
 		if err != nil {
 			return nil, err
 		}
@@ -395,147 +395,147 @@ func fetchSeries(ctx context.Context, definition types.InsightViewSeries, filter
 		})
 	}
 	end = time.Now()
-	loadingStrategyRED.Observe(end.Sub(start).Seconds(), 1, &err, strconv.FormatBool(alternativeLoadingStrategy), strconv.FormatBool(definition.GeneratedFromCaptureGroups))
+	lobdingStrbtegyRED.Observe(end.Sub(stbrt).Seconds(), 1, &err, strconv.FormbtBool(blternbtiveLobdingStrbtegy), strconv.FormbtBool(definition.GenerbtedFromCbptureGroups))
 
 	return points, err
 }
 
-func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) (_ []graphqlbackend.InsightSeriesResolver, err error) {
+func recordedSeries(ctx context.Context, definition types.InsightViewSeries, r bbseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplbyOptions) (_ []grbphqlbbckend.InsightSeriesResolver, err error) {
 	points, err := fetchSeries(ctx, definition, filters, options, &r)
 	if err != nil {
 		return nil, err
 	}
 
-	statusResolver := NewStatusResolver(&r, definition)
+	stbtusResolver := NewStbtusResolver(&r, definition)
 
-	var resolvers []graphqlbackend.InsightSeriesResolver
+	vbr resolvers []grbphqlbbckend.InsightSeriesResolver
 
-	resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+	resolvers = bppend(resolvers, &precblculbtedInsightSeriesResolver{
 		insightsStore:   r.timeSeriesStore,
-		workerBaseStore: r.workerBaseStore,
+		workerBbseStore: r.workerBbseStore,
 		series:          definition,
-		metadataStore:   r.insightStore,
+		metbdbtbStore:   r.insightStore,
 		points:          points,
-		label:           definition.Label,
+		lbbel:           definition.Lbbel,
 		filters:         filters,
 		seriesId:        definition.SeriesID,
-		statusResolver:  statusResolver,
+		stbtusResolver:  stbtusResolver,
 	})
 	return resolvers, nil
 }
 
-func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplayOptions) ([]graphqlbackend.InsightSeriesResolver, error) {
-	allPoints, err := fetchSeries(ctx, definition, filters, options, &r)
+func expbndCbptureGroupSeriesRecorded(ctx context.Context, definition types.InsightViewSeries, r bbseInsightResolver, filters types.InsightViewFilters, options types.SeriesDisplbyOptions) ([]grbphqlbbckend.InsightSeriesResolver, error) {
+	bllPoints, err := fetchSeries(ctx, definition, filters, options, &r)
 	if err != nil {
 		return nil, err
 	}
-	groupedByCapture := make(map[string][]store.SeriesPoint)
+	groupedByCbpture := mbke(mbp[string][]store.SeriesPoint)
 
-	for i := range allPoints {
-		point := allPoints[i]
-		if point.Capture == nil {
-			// skip nil values, this shouldn't be a real possibility
+	for i := rbnge bllPoints {
+		point := bllPoints[i]
+		if point.Cbpture == nil {
+			// skip nil vblues, this shouldn't be b rebl possibility
 			continue
 		}
-		groupedByCapture[*point.Capture] = append(groupedByCapture[*point.Capture], point)
+		groupedByCbpture[*point.Cbpture] = bppend(groupedByCbpture[*point.Cbpture], point)
 	}
 
-	statusResolver := NewStatusResolver(&r, definition)
+	stbtusResolver := NewStbtusResolver(&r, definition)
 
-	var resolvers []graphqlbackend.InsightSeriesResolver
-	for capturedValue, points := range groupedByCapture {
+	vbr resolvers []grbphqlbbckend.InsightSeriesResolver
+	for cbpturedVblue, points := rbnge groupedByCbpture {
 		sort.Slice(points, func(i, j int) bool {
 			return points[i].Time.Before(points[j].Time)
 		})
-		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+		resolvers = bppend(resolvers, &precblculbtedInsightSeriesResolver{
 			insightsStore:   r.timeSeriesStore,
-			workerBaseStore: r.workerBaseStore,
+			workerBbseStore: r.workerBbseStore,
 			series:          definition,
-			metadataStore:   r.insightStore,
+			metbdbtbStore:   r.insightStore,
 			points:          points,
-			label:           capturedValue,
+			lbbel:           cbpturedVblue,
 			filters:         filters,
-			seriesId:        fmt.Sprintf("%s-%s", definition.SeriesID, capturedValue),
-			statusResolver:  statusResolver,
+			seriesId:        fmt.Sprintf("%s-%s", definition.SeriesID, cbpturedVblue),
+			stbtusResolver:  stbtusResolver,
 		})
 	}
 	if len(resolvers) == 0 {
-		// We are manually populating a mostly empty resolver here - this slightly hacky solution is to unify the
-		// expectations of the webapp when querying for series state. For a standard search series there is
-		// always a resolver since each series maps one to one with it's definition.
-		// With a capture groups series we derive each unique series dynamically - which means it's possible to have a
-		// series definition with zero resulting series. This most commonly occurs when the insight is just created,
-		// before any data has been generated yet. Without this,
-		// our capture groups insights don't share the loading state behavior.
-		resolvers = append(resolvers, &precalculatedInsightSeriesResolver{
+		// We bre mbnublly populbting b mostly empty resolver here - this slightly hbcky solution is to unify the
+		// expectbtions of the webbpp when querying for series stbte. For b stbndbrd sebrch series there is
+		// blwbys b resolver since ebch series mbps one to one with it's definition.
+		// With b cbpture groups series we derive ebch unique series dynbmicblly - which mebns it's possible to hbve b
+		// series definition with zero resulting series. This most commonly occurs when the insight is just crebted,
+		// before bny dbtb hbs been generbted yet. Without this,
+		// our cbpture groups insights don't shbre the lobding stbte behbvior.
+		resolvers = bppend(resolvers, &precblculbtedInsightSeriesResolver{
 			insightsStore:   r.timeSeriesStore,
-			workerBaseStore: r.workerBaseStore,
+			workerBbseStore: r.workerBbseStore,
 			series:          definition,
-			metadataStore:   r.insightStore,
-			statusResolver:  statusResolver,
+			metbdbtbStore:   r.insightStore,
+			stbtusResolver:  stbtusResolver,
 			seriesId:        definition.SeriesID,
 			points:          nil,
-			label:           definition.Label,
+			lbbel:           definition.Lbbel,
 			filters:         filters,
 		})
 	}
 	return resolvers, nil
 }
 
-var _ graphqlbackend.TimeoutDatapointAlert = &timeoutDatapointAlertResolver{}
-var _ graphqlbackend.GenericIncompleteDatapointAlert = &genericIncompleteDatapointAlertResolver{}
-var _ graphqlbackend.IncompleteDatapointAlert = &IncompleteDataPointAlertResolver{}
+vbr _ grbphqlbbckend.TimeoutDbtbpointAlert = &timeoutDbtbpointAlertResolver{}
+vbr _ grbphqlbbckend.GenericIncompleteDbtbpointAlert = &genericIncompleteDbtbpointAlertResolver{}
+vbr _ grbphqlbbckend.IncompleteDbtbpointAlert = &IncompleteDbtbPointAlertResolver{}
 
-type IncompleteDataPointAlertResolver struct {
-	point store.IncompleteDatapoint
+type IncompleteDbtbPointAlertResolver struct {
+	point store.IncompleteDbtbpoint
 }
 
-func (i *IncompleteDataPointAlertResolver) ToTimeoutDatapointAlert() (graphqlbackend.TimeoutDatapointAlert, bool) {
-	if i.point.Reason == store.ReasonTimeout {
-		return &timeoutDatapointAlertResolver{point: i.point}, true
+func (i *IncompleteDbtbPointAlertResolver) ToTimeoutDbtbpointAlert() (grbphqlbbckend.TimeoutDbtbpointAlert, bool) {
+	if i.point.Rebson == store.RebsonTimeout {
+		return &timeoutDbtbpointAlertResolver{point: i.point}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (i *IncompleteDataPointAlertResolver) ToGenericIncompleteDatapointAlert() (graphqlbackend.GenericIncompleteDatapointAlert, bool) {
-	switch i.point.Reason {
-	case store.ReasonTimeout:
-		return nil, false
+func (i *IncompleteDbtbPointAlertResolver) ToGenericIncompleteDbtbpointAlert() (grbphqlbbckend.GenericIncompleteDbtbpointAlert, bool) {
+	switch i.point.Rebson {
+	cbse store.RebsonTimeout:
+		return nil, fblse
 	}
-	return &genericIncompleteDatapointAlertResolver{point: i.point}, true
+	return &genericIncompleteDbtbpointAlertResolver{point: i.point}, true
 }
 
-func (i *IncompleteDataPointAlertResolver) Time() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: i.point.Time}
+func (i *IncompleteDbtbPointAlertResolver) Time() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: i.point.Time}
 }
 
-type timeoutDatapointAlertResolver struct {
-	point store.IncompleteDatapoint
+type timeoutDbtbpointAlertResolver struct {
+	point store.IncompleteDbtbpoint
 }
 
-func (t *timeoutDatapointAlertResolver) Time() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: t.point.Time}
+func (t *timeoutDbtbpointAlertResolver) Time() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: t.point.Time}
 }
 
-type genericIncompleteDatapointAlertResolver struct {
-	point store.IncompleteDatapoint
+type genericIncompleteDbtbpointAlertResolver struct {
+	point store.IncompleteDbtbpoint
 }
 
-func (g *genericIncompleteDatapointAlertResolver) Time() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: g.point.Time}
+func (g *genericIncompleteDbtbpointAlertResolver) Time() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: g.point.Time}
 }
 
-func (g *genericIncompleteDatapointAlertResolver) Reason() string {
-	switch g.point.Reason {
-	default:
-		return "There was an issue during data processing that caused this point to be incomplete."
+func (g *genericIncompleteDbtbpointAlertResolver) Rebson() string {
+	switch g.point.Rebson {
+	defbult:
+		return "There wbs bn issue during dbtb processing thbt cbused this point to be incomplete."
 	}
 }
 
-func (i *insightStatusResolver) IncompleteDatapoints(ctx context.Context) (resolvers []graphqlbackend.IncompleteDatapointAlert, err error) {
-	incomplete, err := i.getIncompleteDatapoints(ctx, i.series.InsightSeriesID)
-	for _, reason := range incomplete {
-		resolvers = append(resolvers, &IncompleteDataPointAlertResolver{point: reason})
+func (i *insightStbtusResolver) IncompleteDbtbpoints(ctx context.Context) (resolvers []grbphqlbbckend.IncompleteDbtbpointAlert, err error) {
+	incomplete, err := i.getIncompleteDbtbpoints(ctx, i.series.InsightSeriesID)
+	for _, rebson := rbnge incomplete {
+		resolvers = bppend(resolvers, &IncompleteDbtbPointAlertResolver{point: rebson})
 	}
 
 	return resolvers, err

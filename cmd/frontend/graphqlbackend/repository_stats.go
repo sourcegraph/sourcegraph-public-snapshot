@@ -1,162 +1,162 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
 )
 
-type repositoryStatsResolver struct {
-	db database.DB
+type repositoryStbtsResolver struct {
+	db dbtbbbse.DB
 
-	indexedStatsOnce  sync.Once
+	indexedStbtsOnce  sync.Once
 	indexedRepos      int32
 	indexedLinesCount int64
-	indexedStatsErr   error
+	indexedStbtsErr   error
 
-	repoStatisticsOnce sync.Once
-	repoStatistics     database.RepoStatistics
-	repoStatisticsErr  error
+	repoStbtisticsOnce sync.Once
+	repoStbtistics     dbtbbbse.RepoStbtistics
+	repoStbtisticsErr  error
 
-	embeddedStatsOnce sync.Once
+	embeddedStbtsOnce sync.Once
 	embeddedRepos     int32
-	embeddedStatsErr  error
+	embeddedStbtsErr  error
 }
 
-func (r *repositoryStatsResolver) Embedded(ctx context.Context) (int32, error) {
+func (r *repositoryStbtsResolver) Embedded(ctx context.Context) (int32, error) {
 	return r.computeEmbeddedRepos(ctx)
 }
 
-func (r *repositoryStatsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
+func (r *repositoryStbtsResolver) GitDirBytes(ctx context.Context) (BigInt, error) {
 	gitDirBytes, err := r.db.GitserverRepos().GetGitserverGitDirSize(ctx)
 	return BigInt(gitDirBytes), err
 
 }
 
-func (r *repositoryStatsResolver) Indexed(ctx context.Context) (int32, error) {
-	indexedRepos, _, err := r.computeIndexedStats(ctx)
+func (r *repositoryStbtsResolver) Indexed(ctx context.Context) (int32, error) {
+	indexedRepos, _, err := r.computeIndexedStbts(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	// Since the number of indexed repositories might lag behind the number of
-	// repositories in our database (if we recently deleted a repository but
-	// Zoekt hasn't removed it from memory yet), we use min(indexed, total)
-	// here, so we don't confuse users by returning indexed > total.
-	total, err := r.Total(ctx)
+	// Since the number of indexed repositories might lbg behind the number of
+	// repositories in our dbtbbbse (if we recently deleted b repository but
+	// Zoekt hbsn't removed it from memory yet), we use min(indexed, totbl)
+	// here, so we don't confuse users by returning indexed > totbl.
+	totbl, err := r.Totbl(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return min(indexedRepos, total), nil
+	return min(indexedRepos, totbl), nil
 }
 
-func min(a, b int32) int32 {
-	if a < b {
-		return a
+func min(b, b int32) int32 {
+	if b < b {
+		return b
 	}
 	return b
 }
 
-func (r *repositoryStatsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
-	_, indexedLinesCount, err := r.computeIndexedStats(ctx)
+func (r *repositoryStbtsResolver) IndexedLinesCount(ctx context.Context) (BigInt, error) {
+	_, indexedLinesCount, err := r.computeIndexedStbts(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return BigInt(indexedLinesCount), nil
 }
 
-func (r *repositoryStatsResolver) computeIndexedStats(ctx context.Context) (int32, int64, error) {
-	r.indexedStatsOnce.Do(func() {
-		repos, err := search.ListAllIndexed(ctx)
+func (r *repositoryStbtsResolver) computeIndexedStbts(ctx context.Context) (int32, int64, error) {
+	r.indexedStbtsOnce.Do(func() {
+		repos, err := sebrch.ListAllIndexed(ctx)
 		if err != nil {
-			r.indexedStatsErr = err
+			r.indexedStbtsErr = err
 			return
 		}
-		r.indexedRepos = int32(repos.Stats.Repos)
-		r.indexedLinesCount = int64(repos.Stats.DefaultBranchNewLinesCount) + int64(repos.Stats.OtherBranchesNewLinesCount)
+		r.indexedRepos = int32(repos.Stbts.Repos)
+		r.indexedLinesCount = int64(repos.Stbts.DefbultBrbnchNewLinesCount) + int64(repos.Stbts.OtherBrbnchesNewLinesCount)
 	})
 
-	return r.indexedRepos, r.indexedLinesCount, r.indexedStatsErr
+	return r.indexedRepos, r.indexedLinesCount, r.indexedStbtsErr
 }
 
-func (r *repositoryStatsResolver) Total(ctx context.Context) (int32, error) {
-	counts, err := r.computeRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) Totbl(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStbtistics(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(counts.Total), nil
+	return int32(counts.Totbl), nil
 }
 
-func (r *repositoryStatsResolver) Cloned(ctx context.Context) (int32, error) {
-	counts, err := r.computeRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) Cloned(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStbtistics(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(counts.Cloned), nil
 }
 
-func (r *repositoryStatsResolver) Cloning(ctx context.Context) (int32, error) {
-	counts, err := r.computeRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) Cloning(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStbtistics(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(counts.Cloning), nil
 }
 
-func (r *repositoryStatsResolver) NotCloned(ctx context.Context) (int32, error) {
-	counts, err := r.computeRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) NotCloned(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStbtistics(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(counts.NotCloned), nil
 }
 
-func (r *repositoryStatsResolver) FailedFetch(ctx context.Context) (int32, error) {
-	counts, err := r.computeRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) FbiledFetch(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStbtistics(ctx)
 	if err != nil {
 		return 0, err
 	}
-	return int32(counts.FailedFetch), nil
+	return int32(counts.FbiledFetch), nil
 }
 
-func (r *repositoryStatsResolver) Corrupted(ctx context.Context) (int32, error) {
-	counts, err := r.computeRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) Corrupted(ctx context.Context) (int32, error) {
+	counts, err := r.computeRepoStbtistics(ctx)
 	if err != nil {
 		return 0, err
 	}
 	return int32(counts.Corrupted), nil
 }
 
-func (r *repositoryStatsResolver) computeRepoStatistics(ctx context.Context) (database.RepoStatistics, error) {
-	r.repoStatisticsOnce.Do(func() {
-		r.repoStatistics, r.repoStatisticsErr = r.db.RepoStatistics().GetRepoStatistics(ctx)
+func (r *repositoryStbtsResolver) computeRepoStbtistics(ctx context.Context) (dbtbbbse.RepoStbtistics, error) {
+	r.repoStbtisticsOnce.Do(func() {
+		r.repoStbtistics, r.repoStbtisticsErr = r.db.RepoStbtistics().GetRepoStbtistics(ctx)
 	})
-	return r.repoStatistics, r.repoStatisticsErr
+	return r.repoStbtistics, r.repoStbtisticsErr
 }
 
-func (r *repositoryStatsResolver) computeEmbeddedRepos(ctx context.Context) (int32, error) {
-	r.embeddedStatsOnce.Do(func() {
+func (r *repositoryStbtsResolver) computeEmbeddedRepos(ctx context.Context) (int32, error) {
+	r.embeddedStbtsOnce.Do(func() {
 		count, err := repo.NewRepoEmbeddingJobsStore(r.db).CountRepoEmbeddings(ctx)
 		if err != nil {
-			r.embeddedStatsErr = err
+			r.embeddedStbtsErr = err
 			return
 		}
 		r.embeddedRepos = int32(count)
 	})
 
-	return r.embeddedRepos, r.embeddedStatsErr
+	return r.embeddedRepos, r.embeddedStbtsErr
 }
 
-func (r *schemaResolver) RepositoryStats(ctx context.Context) (*repositoryStatsResolver, error) {
-	// 🚨 SECURITY: Only site admins may query repository statistics for the site.
+func (r *schembResolver) RepositoryStbts(ctx context.Context) (*repositoryStbtsResolver, error) {
+	// 🚨 SECURITY: Only site bdmins mby query repository stbtistics for the site.
 	db := r.db
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	return &repositoryStatsResolver{db: db}, nil
+	return &repositoryStbtsResolver{db: db}, nil
 }

@@ -1,4 +1,4 @@
-package autoindexing
+pbckbge butoindexing
 
 import (
 	"context"
@@ -9,21 +9,21 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/jobselector"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/jobselector"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/butoindex/config"
 )
 
 func init() {
-	jobselector.MaximumIndexJobsPerInferredConfiguration = 50
+	jobselector.MbximumIndexJobsPerInferredConfigurbtion = 50
 }
 
 func TestQueueIndexesExplicit(t *testing.T) {
@@ -32,116 +32,116 @@ func TestQueueIndexesExplicit(t *testing.T) {
 			{
 				"steps": [
 					{
-						// Comments are the future
-						"image": "go:latest",
-						"commands": ["go mod vendor"],
+						// Comments bre the future
+						"imbge": "go:lbtest",
+						"commbnds": ["go mod vendor"],
 					}
 				],
 				"indexer": "lsif-go",
-				"indexer_args": ["--no-animation"],
+				"indexer_brgs": ["--no-bnimbtion"],
 			},
 			{
 				"root": "web/",
 				"indexer": "scip-typescript",
-				"indexer_args": ["index", "--no-progress-bar"],
+				"indexer_brgs": ["index", "--no-progress-bbr"],
 				"outfile": "lsif.dump",
 			},
 		]
 	}`
 
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefbultHook(func(ctx context.Context, indexes []uplobdsshbred.Index) ([]uplobdsshbred.Index, error) {
 		return indexes, nil
 	})
-	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefbultReturn(true, true, nil)
 
 	mockGitserverClient := gitserver.NewMockClient()
-	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, rev string, opts gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID(fmt.Sprintf("c%s", repo)), nil
 	})
 
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
-		&observation.TestContext,
+		&observbtion.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
-		defaultMockRepoStore(), // repoStore
+		nil,                    // repoUpdbter
+		defbultMockRepoStore(), // repoStore
 		mockGitserverClient,
 	)
-	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", conf, false, false)
+	_, _ = service.QueueIndexes(context.Bbckground(), 42, "HEAD", conf, fblse, fblse)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
+		t.Errorf("unexpected number of cblls to IsQueued. wbnt=%d hbve=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
-		var commits []string
-		for _, call := range mockDBStore.IsQueuedFunc.History() {
-			commits = append(commits, call.Arg2)
+		vbr commits []string
+		for _, cbll := rbnge mockDBStore.IsQueuedFunc.History() {
+			commits = bppend(commits, cbll.Arg2)
 		}
 		sort.Strings(commits)
 
 		if diff := cmp.Diff([]string{"cr42"}, commits); diff != "" {
-			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+			t.Errorf("unexpected commits (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	var indexes []uploadsshared.Index
-	for _, call := range mockDBStore.InsertIndexesFunc.History() {
-		indexes = append(indexes, call.Result0...)
+	vbr indexes []uplobdsshbred.Index
+	for _, cbll := rbnge mockDBStore.InsertIndexesFunc.History() {
+		indexes = bppend(indexes, cbll.Result0...)
 	}
 
-	expectedIndexes := []uploadsshared.Index{
+	expectedIndexes := []uplobdsshbred.Index{
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
-			State:        "queued",
-			DockerSteps: []uploadsshared.DockerStep{
+			Stbte:        "queued",
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "go:latest",
-					Commands: []string{"go mod vendor"},
+					Imbge:    "go:lbtest",
+					Commbnds: []string{"go mod vendor"},
 				},
 			},
 			Indexer:     "lsif-go",
-			IndexerArgs: []string{"--no-animation"},
+			IndexerArgs: []string{"--no-bnimbtion"},
 		},
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
-			State:        "queued",
+			Stbte:        "queued",
 			DockerSteps:  nil,
 			Root:         "web/",
 			Indexer:      "scip-typescript",
-			IndexerArgs:  []string{"index", "--no-progress-bar"},
+			IndexerArgs:  []string{"index", "--no-progress-bbr"},
 			Outfile:      "lsif.dump",
 		},
 	}
 	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
-		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexes (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestQueueIndexesInDatabase(t *testing.T) {
-	indexConfiguration := shared.IndexConfiguration{
+func TestQueueIndexesInDbtbbbse(t *testing.T) {
+	indexConfigurbtion := shbred.IndexConfigurbtion{
 		ID:           1,
 		RepositoryID: 42,
-		Data: []byte(`{
+		Dbtb: []byte(`{
 			"index_jobs": [
 				{
 					"steps": [
 						{
-							// Comments are the future
-							"image": "go:latest",
-							"commands": ["go mod vendor"],
+							// Comments bre the future
+							"imbge": "go:lbtest",
+							"commbnds": ["go mod vendor"],
 						}
 					],
 					"indexer": "lsif-go",
-					"indexer_args": ["--no-animation"],
+					"indexer_brgs": ["--no-bnimbtion"],
 				},
 				{
 					"root": "web/",
 					"indexer": "scip-typescript",
-					"indexer_args": ["index", "--no-progress-bar"],
+					"indexer_brgs": ["index", "--no-progress-bbr"],
 					"outfile": "lsif.dump",
 				},
 			]
@@ -149,362 +149,362 @@ func TestQueueIndexesInDatabase(t *testing.T) {
 	}
 
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefbultHook(func(ctx context.Context, indexes []uplobdsshbred.Index) ([]uplobdsshbred.Index, error) {
 		return indexes, nil
 	})
-	mockDBStore.GetIndexConfigurationByRepositoryIDFunc.SetDefaultReturn(indexConfiguration, true, nil)
-	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
+	mockDBStore.GetIndexConfigurbtionByRepositoryIDFunc.SetDefbultReturn(indexConfigurbtion, true, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefbultReturn(true, true, nil)
 
 	mockGitserverClient := gitserver.NewMockClient()
-	mockGitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
+	mockGitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, rev string, opts gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID(fmt.Sprintf("c%s", repo)), nil
 	})
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
-		&observation.TestContext,
+		&observbtion.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
-		defaultMockRepoStore(), // repoStore
+		nil,                    // repoUpdbter
+		defbultMockRepoStore(), // repoStore
 		mockGitserverClient,
 	)
-	_, _ = service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false)
+	_, _ = service.QueueIndexes(context.Bbckground(), 42, "HEAD", "", fblse, fblse)
 
-	if len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to GetIndexConfigurationByRepositoryID. want=%d have=%d", 1, len(mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History()))
+	if len(mockDBStore.GetIndexConfigurbtionByRepositoryIDFunc.History()) != 1 {
+		t.Errorf("unexpected number of cblls to GetIndexConfigurbtionByRepositoryID. wbnt=%d hbve=%d", 1, len(mockDBStore.GetIndexConfigurbtionByRepositoryIDFunc.History()))
 	} else {
-		var repositoryIDs []int
-		for _, call := range mockDBStore.GetIndexConfigurationByRepositoryIDFunc.History() {
-			repositoryIDs = append(repositoryIDs, call.Arg1)
+		vbr repositoryIDs []int
+		for _, cbll := rbnge mockDBStore.GetIndexConfigurbtionByRepositoryIDFunc.History() {
+			repositoryIDs = bppend(repositoryIDs, cbll.Arg1)
 		}
 		sort.Ints(repositoryIDs)
 
 		if diff := cmp.Diff([]int{42}, repositoryIDs); diff != "" {
-			t.Errorf("unexpected repository identifiers (-want +got):\n%s", diff)
+			t.Errorf("unexpected repository identifiers (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
+		t.Errorf("unexpected number of cblls to IsQueued. wbnt=%d hbve=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
-		var commits []string
-		for _, call := range mockDBStore.IsQueuedFunc.History() {
-			commits = append(commits, call.Arg2)
+		vbr commits []string
+		for _, cbll := rbnge mockDBStore.IsQueuedFunc.History() {
+			commits = bppend(commits, cbll.Arg2)
 		}
 		sort.Strings(commits)
 
 		if diff := cmp.Diff([]string{"cr42"}, commits); diff != "" {
-			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+			t.Errorf("unexpected commits (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	var indexes []uploadsshared.Index
-	for _, call := range mockDBStore.InsertIndexesFunc.History() {
-		indexes = append(indexes, call.Result0...)
+	vbr indexes []uplobdsshbred.Index
+	for _, cbll := rbnge mockDBStore.InsertIndexesFunc.History() {
+		indexes = bppend(indexes, cbll.Result0...)
 	}
 
-	expectedIndexes := []uploadsshared.Index{
+	expectedIndexes := []uplobdsshbred.Index{
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
-			State:        "queued",
-			DockerSteps: []uploadsshared.DockerStep{
+			Stbte:        "queued",
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "go:latest",
-					Commands: []string{"go mod vendor"},
+					Imbge:    "go:lbtest",
+					Commbnds: []string{"go mod vendor"},
 				},
 			},
 			Indexer:     "lsif-go",
-			IndexerArgs: []string{"--no-animation"},
+			IndexerArgs: []string{"--no-bnimbtion"},
 		},
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
-			State:        "queued",
+			Stbte:        "queued",
 			DockerSteps:  nil,
 			Root:         "web/",
 			Indexer:      "scip-typescript",
-			IndexerArgs:  []string{"index", "--no-progress-bar"},
+			IndexerArgs:  []string{"index", "--no-progress-bbr"},
 			Outfile:      "lsif.dump",
 		},
 	}
 	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
-		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexes (-wbnt +got):\n%s", diff)
 	}
 }
 
-var yamlIndexConfiguration = []byte(`
+vbr ybmlIndexConfigurbtion = []byte(`
 index_jobs:
   -
     steps:
-      - image: go:latest
-        commands:
+      - imbge: go:lbtest
+        commbnds:
           - go mod vendor
     indexer: lsif-go
-    indexer_args:
-      - --no-animation
+    indexer_brgs:
+      - --no-bnimbtion
   -
     root: web/
     indexer: scip-typescript
-    indexer_args: ['index', '--no-progress-bar']
+    indexer_brgs: ['index', '--no-progress-bbr']
     outfile: lsif.dump
 `)
 
 func TestQueueIndexesInRepository(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefbultHook(func(ctx context.Context, indexes []uplobdsshbred.Index) ([]uplobdsshbred.Index, error) {
 		return indexes, nil
 	})
-	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefbultReturn(true, true, nil)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
+	gitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, rev string, opts gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID(fmt.Sprintf("c%s", repo)), nil
 	})
-	gitserverClient.ReadFileFunc.SetDefaultReturn(yamlIndexConfiguration, nil)
+	gitserverClient.RebdFileFunc.SetDefbultReturn(ybmlIndexConfigurbtion, nil)
 	inferenceService := NewMockInferenceService()
 
 	service := newService(
-		&observation.TestContext,
+		&observbtion.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
-		defaultMockRepoStore(), // repoStore
+		nil,                    // repoUpdbter
+		defbultMockRepoStore(), // repoStore
 		gitserverClient,
 	)
 
-	if _, err := service.QueueIndexes(context.Background(), 42, "HEAD", "", false, false); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if _, err := service.QueueIndexes(context.Bbckground(), 42, "HEAD", "", fblse, fblse); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
+		t.Errorf("unexpected number of cblls to IsQueued. wbnt=%d hbve=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
-		var commits []string
-		for _, call := range mockDBStore.IsQueuedFunc.History() {
-			commits = append(commits, call.Arg2)
+		vbr commits []string
+		for _, cbll := rbnge mockDBStore.IsQueuedFunc.History() {
+			commits = bppend(commits, cbll.Arg2)
 		}
 		sort.Strings(commits)
 
 		if diff := cmp.Diff([]string{"cr42"}, commits); diff != "" {
-			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+			t.Errorf("unexpected commits (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	var indexes []uploadsshared.Index
-	for _, call := range mockDBStore.InsertIndexesFunc.History() {
-		indexes = append(indexes, call.Result0...)
+	vbr indexes []uplobdsshbred.Index
+	for _, cbll := rbnge mockDBStore.InsertIndexesFunc.History() {
+		indexes = bppend(indexes, cbll.Result0...)
 	}
 
-	expectedIndexes := []uploadsshared.Index{
+	expectedIndexes := []uplobdsshbred.Index{
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
-			State:        "queued",
-			DockerSteps: []uploadsshared.DockerStep{
+			Stbte:        "queued",
+			DockerSteps: []uplobdsshbred.DockerStep{
 				{
-					Image:    "go:latest",
-					Commands: []string{"go mod vendor"},
+					Imbge:    "go:lbtest",
+					Commbnds: []string{"go mod vendor"},
 				},
 			},
 			Indexer:     "lsif-go",
-			IndexerArgs: []string{"--no-animation"},
+			IndexerArgs: []string{"--no-bnimbtion"},
 		},
 		{
 			RepositoryID: 42,
 			Commit:       "cr42",
-			State:        "queued",
+			Stbte:        "queued",
 			DockerSteps:  nil,
 			Root:         "web/",
 			Indexer:      "scip-typescript",
-			IndexerArgs:  []string{"index", "--no-progress-bar"},
+			IndexerArgs:  []string{"index", "--no-progress-bbr"},
 			Outfile:      "lsif.dump",
 		},
 	}
 	if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
-		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexes (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestQueueIndexesInferred(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefbultHook(func(ctx context.Context, indexes []uplobdsshbred.Index) ([]uplobdsshbred.Index, error) {
 		return indexes, nil
 	})
-	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefbultReturn(true, true, nil)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, rev string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(fmt.Sprintf("c%s", repo)), nil
+	gitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, rev string, opts gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID(fmt.Sprintf("c%s", repo)), nil
 	})
-	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, os.ErrNotExist)
+	gitserverClient.RebdFileFunc.SetDefbultReturn(nil, os.ErrNotExist)
 
 	inferenceService := NewMockInferenceService()
-	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
+	inferenceService.InferIndexJobsFunc.SetDefbultHook(func(ctx context.Context, rn bpi.RepoNbme, s1, s2 string) (*shbred.InferenceResult, error) {
 		switch string(rn) {
-		case "r42":
-			return &shared.InferenceResult{IndexJobs: []config.IndexJob{{Root: ""}}}, nil
-		case "r44":
-			return &shared.InferenceResult{IndexJobs: []config.IndexJob{{Root: "a"}, {Root: "b"}}}, nil
-		default:
-			return &shared.InferenceResult{IndexJobs: nil}, nil
+		cbse "r42":
+			return &shbred.InferenceResult{IndexJobs: []config.IndexJob{{Root: ""}}}, nil
+		cbse "r44":
+			return &shbred.InferenceResult{IndexJobs: []config.IndexJob{{Root: "b"}, {Root: "b"}}}, nil
+		defbult:
+			return &shbred.InferenceResult{IndexJobs: nil}, nil
 		}
 	})
 
 	service := newService(
-		&observation.TestContext,
+		&observbtion.TestContext,
 		mockDBStore,
 		inferenceService,
-		nil,                    // repoUpdater
-		defaultMockRepoStore(), // repoStore
+		nil,                    // repoUpdbter
+		defbultMockRepoStore(), // repoStore
 		gitserverClient,
 	)
 
-	for _, id := range []int{41, 42, 43, 44} {
-		if _, err := service.QueueIndexes(context.Background(), id, "HEAD", "", false, false); err != nil {
-			t.Fatalf("unexpected error performing update: %s", err)
+	for _, id := rbnge []int{41, 42, 43, 44} {
+		if _, err := service.QueueIndexes(context.Bbckground(), id, "HEAD", "", fblse, fblse); err != nil {
+			t.Fbtblf("unexpected error performing updbte: %s", err)
 		}
 	}
 
-	indexRoots := map[int][]string{}
-	for _, call := range mockDBStore.InsertIndexesFunc.History() {
-		for _, index := range call.Result0 {
-			indexRoots[index.RepositoryID] = append(indexRoots[index.RepositoryID], index.Root)
+	indexRoots := mbp[int][]string{}
+	for _, cbll := rbnge mockDBStore.InsertIndexesFunc.History() {
+		for _, index := rbnge cbll.Result0 {
+			indexRoots[index.RepositoryID] = bppend(indexRoots[index.RepositoryID], index.Root)
 		}
 	}
 
-	expectedIndexRoots := map[int][]string{
+	expectedIndexRoots := mbp[int][]string{
 		42: {""},
-		44: {"a", "b"},
+		44: {"b", "b"},
 	}
 	if diff := cmp.Diff(expectedIndexRoots, indexRoots); diff != "" {
-		t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexes (-wbnt +got):\n%s", diff)
 	}
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 4 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 4, len(mockDBStore.IsQueuedFunc.History()))
+		t.Errorf("unexpected number of cblls to IsQueued. wbnt=%d hbve=%d", 4, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
-		var commits []string
-		for _, call := range mockDBStore.IsQueuedFunc.History() {
-			commits = append(commits, call.Arg2)
+		vbr commits []string
+		for _, cbll := rbnge mockDBStore.IsQueuedFunc.History() {
+			commits = bppend(commits, cbll.Arg2)
 		}
 		sort.Strings(commits)
 
 		if diff := cmp.Diff([]string{"cr41", "cr42", "cr43", "cr44"}, commits); diff != "" {
-			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+			t.Errorf("unexpected commits (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestQueueIndexesForPackage(t *testing.T) {
+func TestQueueIndexesForPbckbge(t *testing.T) {
 	mockDBStore := NewMockStore()
-	mockDBStore.InsertIndexesFunc.SetDefaultHook(func(ctx context.Context, indexes []uploadsshared.Index) ([]uploadsshared.Index, error) {
+	mockDBStore.InsertIndexesFunc.SetDefbultHook(func(ctx context.Context, indexes []uplobdsshbred.Index) ([]uplobdsshbred.Index, error) {
 		return indexes, nil
 	})
-	mockDBStore.IsQueuedFunc.SetDefaultReturn(false, nil)
-	mockDBStore.RepositoryExceptionsFunc.SetDefaultReturn(true, true, nil)
+	mockDBStore.IsQueuedFunc.SetDefbultReturn(fblse, nil)
+	mockDBStore.RepositoryExceptionsFunc.SetDefbultReturn(true, true, nil)
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, versionString string, opts gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if repo != "r42" && versionString != "4e7eeb0f8a96" {
-			t.Errorf("unexpected (repoID, versionString) (%v, %v) supplied to EnqueueRepoUpdate", repo, versionString)
+	gitserverClient.ResolveRevisionFunc.SetDefbultHook(func(ctx context.Context, repo bpi.RepoNbme, versionString string, opts gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if repo != "r42" && versionString != "4e7eeb0f8b96" {
+			t.Errorf("unexpected (repoID, versionString) (%v, %v) supplied to EnqueueRepoUpdbte", repo, versionString)
 		}
 		return "c42", nil
 	})
-	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, os.ErrNotExist)
+	gitserverClient.RebdFileFunc.SetDefbultReturn(nil, os.ErrNotExist)
 
-	mockRepoUpdater := NewMockRepoUpdaterClient()
-	mockRepoUpdater.EnqueueRepoUpdateFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName) (*protocol.RepoUpdateResponse, error) {
-		if repoName != "github.com/sourcegraph/sourcegraph" {
-			t.Errorf("unexpected repo %v supplied to EnqueueRepoUpdate", repoName)
+	mockRepoUpdbter := NewMockRepoUpdbterClient()
+	mockRepoUpdbter.EnqueueRepoUpdbteFunc.SetDefbultHook(func(ctx context.Context, repoNbme bpi.RepoNbme) (*protocol.RepoUpdbteResponse, error) {
+		if repoNbme != "github.com/sourcegrbph/sourcegrbph" {
+			t.Errorf("unexpected repo %v supplied to EnqueueRepoUpdbte", repoNbme)
 		}
-		return &protocol.RepoUpdateResponse{ID: 42}, nil
+		return &protocol.RepoUpdbteResponse{ID: 42}, nil
 	})
 
 	inferenceService := NewMockInferenceService()
-	inferenceService.InferIndexJobsFunc.SetDefaultHook(func(ctx context.Context, rn api.RepoName, s1, s2 string) (*shared.InferenceResult, error) {
-		return &shared.InferenceResult{
+	inferenceService.InferIndexJobsFunc.SetDefbultHook(func(ctx context.Context, rn bpi.RepoNbme, s1, s2 string) (*shbred.InferenceResult, error) {
+		return &shbred.InferenceResult{
 			IndexJobs: []config.IndexJob{
 				{
 					Root: "",
 					Steps: []config.DockerStep{
 						{
-							Image:    "sourcegraph/lsif-go:latest",
-							Commands: []string{"go mod download"},
+							Imbge:    "sourcegrbph/lsif-go:lbtest",
+							Commbnds: []string{"go mod downlobd"},
 						},
 					},
-					Indexer:     "sourcegraph/lsif-go:latest",
-					IndexerArgs: []string{"lsif-go", "--no-animation"},
+					Indexer:     "sourcegrbph/lsif-go:lbtest",
+					IndexerArgs: []string{"lsif-go", "--no-bnimbtion"},
 				},
 			},
 		}, nil
 	})
 
 	service := newService(
-		&observation.TestContext,
+		&observbtion.TestContext,
 		mockDBStore,
 		inferenceService,
-		mockRepoUpdater,        // repoUpdater
-		defaultMockRepoStore(), // repoStore
+		mockRepoUpdbter,        // repoUpdbter
+		defbultMockRepoStore(), // repoStore
 		gitserverClient,
 	)
 
-	_ = service.QueueIndexesForPackage(context.Background(), dependencies.MinimialVersionedPackageRepo{
+	_ = service.QueueIndexesForPbckbge(context.Bbckground(), dependencies.MinimiblVersionedPbckbgeRepo{
 		Scheme:  "gomod",
-		Name:    "https://github.com/sourcegraph/sourcegraph",
-		Version: "v3.26.0-4e7eeb0f8a96",
-	}, false)
+		Nbme:    "https://github.com/sourcegrbph/sourcegrbph",
+		Version: "v3.26.0-4e7eeb0f8b96",
+	}, fblse)
 
 	if len(mockDBStore.IsQueuedFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to IsQueued. want=%d have=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
+		t.Errorf("unexpected number of cblls to IsQueued. wbnt=%d hbve=%d", 1, len(mockDBStore.IsQueuedFunc.History()))
 	} else {
-		var commits []string
-		for _, call := range mockDBStore.IsQueuedFunc.History() {
-			commits = append(commits, call.Arg2)
+		vbr commits []string
+		for _, cbll := rbnge mockDBStore.IsQueuedFunc.History() {
+			commits = bppend(commits, cbll.Arg2)
 		}
 		sort.Strings(commits)
 
 		if diff := cmp.Diff([]string{"c42"}, commits); diff != "" {
-			t.Errorf("unexpected commits (-want +got):\n%s", diff)
+			t.Errorf("unexpected commits (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if len(mockDBStore.InsertIndexesFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertIndexes. want=%d have=%d", 1, len(mockDBStore.InsertIndexesFunc.History()))
+		t.Errorf("unexpected number of cblls to InsertIndexes. wbnt=%d hbve=%d", 1, len(mockDBStore.InsertIndexesFunc.History()))
 	} else {
-		var indexes []uploadsshared.Index
-		for _, call := range mockDBStore.InsertIndexesFunc.History() {
-			indexes = append(indexes, call.Result0...)
+		vbr indexes []uplobdsshbred.Index
+		for _, cbll := rbnge mockDBStore.InsertIndexesFunc.History() {
+			indexes = bppend(indexes, cbll.Result0...)
 		}
 
-		expectedIndexes := []uploadsshared.Index{
+		expectedIndexes := []uplobdsshbred.Index{
 			{
 				RepositoryID: 42,
 				Commit:       "c42",
-				State:        "queued",
-				DockerSteps: []uploadsshared.DockerStep{
+				Stbte:        "queued",
+				DockerSteps: []uplobdsshbred.DockerStep{
 					{
-						Image:    "sourcegraph/lsif-go:latest",
-						Commands: []string{"go mod download"},
+						Imbge:    "sourcegrbph/lsif-go:lbtest",
+						Commbnds: []string{"go mod downlobd"},
 					},
 				},
-				Indexer:     "sourcegraph/lsif-go:latest",
-				IndexerArgs: []string{"lsif-go", "--no-animation"},
+				Indexer:     "sourcegrbph/lsif-go:lbtest",
+				IndexerArgs: []string{"lsif-go", "--no-bnimbtion"},
 			},
 		}
 		if diff := cmp.Diff(expectedIndexes, indexes); diff != "" {
-			t.Errorf("unexpected indexes (-want +got):\n%s", diff)
+			t.Errorf("unexpected indexes (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func defaultMockRepoStore() *dbmocks.MockRepoStore {
+func defbultMockRepoStore() *dbmocks.MockRepoStore {
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*internaltypes.Repo, error) {
-		return &internaltypes.Repo{
+	repoStore.GetFunc.SetDefbultHook(func(ctx context.Context, id bpi.RepoID) (*internbltypes.Repo, error) {
+		return &internbltypes.Repo{
 			ID:   id,
-			Name: api.RepoName(fmt.Sprintf("r%d", id)),
+			Nbme: bpi.RepoNbme(fmt.Sprintf("r%d", id)),
 		}, nil
 	})
 	return repoStore

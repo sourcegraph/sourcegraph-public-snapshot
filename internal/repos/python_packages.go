@@ -1,28 +1,28 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/pypi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewPythonPackagesSource returns a new PythonPackagesSource from the given external service.
-func NewPythonPackagesSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewPythonPbckbgesSource returns b new PythonPbckbgesSource from the given externbl service.
+func NewPythonPbckbgesSource(ctx context.Context, svc *types.ExternblService, cf *httpcli.Fbctory) (*PbckbgesSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.PythonPackagesConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.PythonPbckbgesConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 
 	client, err := pypi.NewClient(svc.URN(), c.Urls, cf)
@@ -30,36 +30,36 @@ func NewPythonPackagesSource(ctx context.Context, svc *types.ExternalService, cf
 		return nil, err
 	}
 
-	return &PackagesSource{
+	return &PbckbgesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
-		scheme:     dependencies.PythonPackagesScheme,
-		src:        &pythonPackagesSource{client},
+		scheme:     dependencies.PythonPbckbgesScheme,
+		src:        &pythonPbckbgesSource{client},
 	}, nil
 }
 
-type pythonPackagesSource struct {
+type pythonPbckbgesSource struct {
 	client *pypi.Client
 }
 
-var _ packagesSource = &pythonPackagesSource{}
+vbr _ pbckbgesSource = &pythonPbckbgesSource{}
 
-func (s *pythonPackagesSource) Get(ctx context.Context, name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	_, err := s.client.Version(ctx, name, version)
+func (s *pythonPbckbgesSource) Get(ctx context.Context, nbme reposource.PbckbgeNbme, version string) (reposource.VersionedPbckbge, error) {
+	_, err := s.client.Version(ctx, nbme, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewPythonVersionedPackage(name, version), nil
+	return reposource.NewPythonVersionedPbckbge(nbme, version), nil
 }
 
-func (pythonPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(dep), nil
+func (pythonPbckbgesSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseVersionedPbckbge(dep), nil
 }
 
-func (pythonPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromName(name), nil
+func (pythonPbckbgesSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrsePythonPbckbgeFromNbme(nbme), nil
 }
 
-func (pythonPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromRepoName(repoName)
+func (pythonPbckbgesSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrsePythonPbckbgeFromRepoNbme(repoNbme)
 }

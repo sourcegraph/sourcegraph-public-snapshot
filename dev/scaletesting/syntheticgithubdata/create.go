@@ -1,490 +1,490 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"io"
 	"log"
-	"math"
+	"mbth"
 	"strconv"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// create executes a number of steps:
-// 1. Creates the amount of users and teams as defined in the flags.
-// 2. Assigns the users to the teams in equal shares.
-// 3. Assigns the externally created repositories to the orgs, teams, and users to replicate different scale variations.
-func create(ctx context.Context, orgs []*org, cfg config) {
-	var err error
+// crebte executes b number of steps:
+// 1. Crebtes the bmount of users bnd tebms bs defined in the flbgs.
+// 2. Assigns the users to the tebms in equbl shbres.
+// 3. Assigns the externblly crebted repositories to the orgs, tebms, bnd users to replicbte different scble vbribtions.
+func crebte(ctx context.Context, orgs []*org, cfg config) {
+	vbr err error
 
-	// load or generate users
-	var users []*user
-	if users, err = store.loadUsers(); err != nil {
-		log.Fatalf("Failed to load users from state: %s", err)
+	// lobd or generbte users
+	vbr users []*user
+	if users, err = store.lobdUsers(); err != nil {
+		log.Fbtblf("Fbiled to lobd users from stbte: %s", err)
 	}
 
 	if len(users) == 0 {
-		if users, err = store.generateUsers(cfg); err != nil {
-			log.Fatalf("Failed to generate users: %s", err)
+		if users, err = store.generbteUsers(cfg); err != nil {
+			log.Fbtblf("Fbiled to generbte users: %s", err)
 		}
-		writeSuccess(out, "generated user jobs in %s", cfg.resume)
+		writeSuccess(out, "generbted user jobs in %s", cfg.resume)
 	} else {
 		writeSuccess(out, "resuming user jobs from %s", cfg.resume)
 	}
 
-	// load or generate teams
-	var teams []*team
-	if teams, err = store.loadTeams(); err != nil {
-		log.Fatalf("Failed to load teams from state: %s", err)
+	// lobd or generbte tebms
+	vbr tebms []*tebm
+	if tebms, err = store.lobdTebms(); err != nil {
+		log.Fbtblf("Fbiled to lobd tebms from stbte: %s", err)
 	}
 
-	if len(teams) == 0 {
-		if teams, err = store.generateTeams(cfg); err != nil {
-			log.Fatalf("Failed to generate teams: %s", err)
+	if len(tebms) == 0 {
+		if tebms, err = store.generbteTebms(cfg); err != nil {
+			log.Fbtblf("Fbiled to generbte tebms: %s", err)
 		}
-		writeSuccess(out, "generated team jobs in %s", cfg.resume)
+		writeSuccess(out, "generbted tebm jobs in %s", cfg.resume)
 	} else {
-		writeSuccess(out, "resuming team jobs from %s", cfg.resume)
+		writeSuccess(out, "resuming tebm jobs from %s", cfg.resume)
 	}
 
-	var repos []*repo
-	if repos, err = store.loadRepos(); err != nil {
-		log.Fatalf("Failed to load repos from state: %s", err)
+	vbr repos []*repo
+	if repos, err = store.lobdRepos(); err != nil {
+		log.Fbtblf("Fbiled to lobd repos from stbte: %s", err)
 	}
 
 	if len(repos) == 0 {
 		remoteRepos := getGitHubRepos(ctx, cfg.reposSourceOrg)
 
 		if repos, err = store.insertRepos(remoteRepos); err != nil {
-			log.Fatalf("Failed to insert repos in state: %s", err)
+			log.Fbtblf("Fbiled to insert repos in stbte: %s", err)
 		}
-		writeSuccess(out, "Fetched %d private repos and stored in state", len(remoteRepos))
+		writeSuccess(out, "Fetched %d privbte repos bnd stored in stbte", len(remoteRepos))
 	} else {
 		writeSuccess(out, "resuming repo jobs from %s", cfg.resume)
 	}
 
-	bars := []output.ProgressBar{
-		{Label: "Creating orgs", Max: float64(cfg.subOrgCount + 1)},
-		{Label: "Creating teams", Max: float64(cfg.teamCount)},
-		{Label: "Creating users", Max: float64(cfg.userCount)},
-		{Label: "Adding users to teams", Max: float64(cfg.userCount)},
-		{Label: "Assigning repos", Max: float64(len(repos))},
+	bbrs := []output.ProgressBbr{
+		{Lbbel: "Crebting orgs", Mbx: flobt64(cfg.subOrgCount + 1)},
+		{Lbbel: "Crebting tebms", Mbx: flobt64(cfg.tebmCount)},
+		{Lbbel: "Crebting users", Mbx: flobt64(cfg.userCount)},
+		{Lbbel: "Adding users to tebms", Mbx: flobt64(cfg.userCount)},
+		{Lbbel: "Assigning repos", Mbx: flobt64(len(repos))},
 	}
-	if cfg.generateTokens {
-		bars = append(bars, output.ProgressBar{Label: "Generating OAuth tokens", Max: float64(cfg.userCount)})
+	if cfg.generbteTokens {
+		bbrs = bppend(bbrs, output.ProgressBbr{Lbbel: "Generbting OAuth tokens", Mbx: flobt64(cfg.userCount)})
 	}
-	progress = out.Progress(bars, nil)
-	var usersDone int64
-	var orgsDone int64
-	var teamsDone int64
-	var tokensDone int64
-	var membershipsDone int64
-	var reposDone int64
+	progress = out.Progress(bbrs, nil)
+	vbr usersDone int64
+	vbr orgsDone int64
+	vbr tebmsDone int64
+	vbr tokensDone int64
+	vbr membershipsDone int64
+	vbr reposDone int64
 
-	p := pool.New().WithMaxGoroutines(1000)
+	p := pool.New().WithMbxGoroutines(1000)
 
-	for _, o := range orgs {
+	for _, o := rbnge orgs {
 		currentOrg := o
 		p.Go(func() {
-			currentOrg.executeCreate(ctx, cfg.orgAdmin, &orgsDone)
+			currentOrg.executeCrebte(ctx, cfg.orgAdmin, &orgsDone)
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
-	// Default permission is "read"; we need members to not have access by default on the main organisation.
-	defaultRepoPermission := "none"
-	var res *github.Response
-	_, res, err = gh.Organizations.Edit(ctx, "main-org", &github.Organization{DefaultRepoPermission: &defaultRepoPermission})
-	if err != nil && res.StatusCode != 409 {
-		// 409 means the base repo permissions are currently being updated already due to a previous run
-		log.Fatalf("Failed to make main-org private by default: %s", err)
+	// Defbult permission is "rebd"; we need members to not hbve bccess by defbult on the mbin orgbnisbtion.
+	defbultRepoPermission := "none"
+	vbr res *github.Response
+	_, res, err = gh.Orgbnizbtions.Edit(ctx, "mbin-org", &github.Orgbnizbtion{DefbultRepoPermission: &defbultRepoPermission})
+	if err != nil && res.StbtusCode != 409 {
+		// 409 mebns the bbse repo permissions bre currently being updbted blrebdy due to b previous run
+		log.Fbtblf("Fbiled to mbke mbin-org privbte by defbult: %s", err)
 	}
 
-	for _, t := range teams {
-		currentTeam := t
+	for _, t := rbnge tebms {
+		currentTebm := t
 		p.Go(func() {
-			currentTeam.executeCreate(ctx, &teamsDone)
+			currentTebm.executeCrebte(ctx, &tebmsDone)
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
-	for _, u := range users {
+	for _, u := rbnge users {
 		currentUser := u
 		p.Go(func() {
-			currentUser.executeCreate(ctx, &usersDone)
+			currentUser.executeCrebte(ctx, &usersDone)
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
-	membershipsPerTeam := int(math.Ceil(float64(cfg.userCount) / float64(cfg.teamCount)))
-	p2 := pool.New().WithMaxGoroutines(100)
+	membershipsPerTebm := int(mbth.Ceil(flobt64(cfg.userCount) / flobt64(cfg.tebmCount)))
+	p2 := pool.New().WithMbxGoroutines(100)
 
-	for i, t := range teams {
-		currentTeam := t
+	for i, t := rbnge tebms {
+		currentTebm := t
 		currentIter := i
-		var usersToAssign []*user
+		vbr usersToAssign []*user
 
-		for j := currentIter * membershipsPerTeam; j < ((currentIter + 1) * membershipsPerTeam); j++ {
-			usersToAssign = append(usersToAssign, users[j])
+		for j := currentIter * membershipsPerTebm; j < ((currentIter + 1) * membershipsPerTebm); j++ {
+			usersToAssign = bppend(usersToAssign, users[j])
 		}
 
 		p2.Go(func() {
-			currentTeam.executeCreateMemberships(ctx, usersToAssign, &membershipsDone)
+			currentTebm.executeCrebteMemberships(ctx, usersToAssign, &membershipsDone)
 		})
 	}
-	p2.Wait()
+	p2.Wbit()
 
-	mainOrg, orgRepos := categorizeOrgRepos(cfg, repos, orgs)
+	mbinOrg, orgRepos := cbtegorizeOrgRepos(cfg, repos, orgs)
 	executeAssignOrgRepos(ctx, orgRepos, users, &reposDone, p2)
-	p2.Wait()
+	p2.Wbit()
 
-	// 0.5% repos with only users attached
-	amountReposWithOnlyUsers := int(math.Ceil(float64(len(repos)) * 0.005))
-	reposWithOnlyUsers := orgRepos[mainOrg][:amountReposWithOnlyUsers]
+	// 0.5% repos with only users bttbched
+	bmountReposWithOnlyUsers := int(mbth.Ceil(flobt64(len(repos)) * 0.005))
+	reposWithOnlyUsers := orgRepos[mbinOrg][:bmountReposWithOnlyUsers]
 	// slice out the user repos
-	orgRepos[mainOrg] = orgRepos[mainOrg][amountReposWithOnlyUsers:]
+	orgRepos[mbinOrg] = orgRepos[mbinOrg][bmountReposWithOnlyUsers:]
 
-	teamRepos := categorizeTeamRepos(cfg, orgRepos[mainOrg], teams)
-	userRepos := categorizeUserRepos(reposWithOnlyUsers, users)
+	tebmRepos := cbtegorizeTebmRepos(cfg, orgRepos[mbinOrg], tebms)
+	userRepos := cbtegorizeUserRepos(reposWithOnlyUsers, users)
 
-	executeAssignTeamRepos(ctx, teamRepos, &reposDone, p2)
-	p2.Wait()
+	executeAssignTebmRepos(ctx, tebmRepos, &reposDone, p2)
+	p2.Wbit()
 
 	executeAssignUserRepos(ctx, userRepos, &reposDone, p2)
-	p2.Wait()
+	p2.Wbit()
 
-	if cfg.generateTokens {
-		generateUserOAuthCsv(ctx, users, tokensDone)
+	if cfg.generbteTokens {
+		generbteUserOAuthCsv(ctx, users, tokensDone)
 	}
 }
 
-// executeCreate checks whether the org already exists. If it does not, it is created.
-// The result is stored in the local state.
-func (o *org) executeCreate(ctx context.Context, orgAdmin string, orgsDone *int64) {
-	if o.Created && o.Failed == "" {
-		atomic.AddInt64(orgsDone, 1)
-		progress.SetValue(0, float64(*orgsDone))
+// executeCrebte checks whether the org blrebdy exists. If it does not, it is crebted.
+// The result is stored in the locbl stbte.
+func (o *org) executeCrebte(ctx context.Context, orgAdmin string, orgsDone *int64) {
+	if o.Crebted && o.Fbiled == "" {
+		btomic.AddInt64(orgsDone, 1)
+		progress.SetVblue(0, flobt64(*orgsDone))
 		return
 	}
 
-	existingOrg, resp, oErr := gh.Organizations.Get(ctx, o.Login)
-	if oErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get org %s, reason: %s\n", o.Login, oErr)
+	existingOrg, resp, oErr := gh.Orgbnizbtions.Get(ctx, o.Login)
+	if oErr != nil && resp.StbtusCode != 404 {
+		writeFbilure(out, "Fbiled to get org %s, rebson: %s\n", o.Login, oErr)
 		return
 	}
 
 	oErr = nil
 	if existingOrg != nil {
-		o.Created = true
-		o.Failed = ""
-		atomic.AddInt64(orgsDone, 1)
-		progress.SetValue(0, float64(*orgsDone))
+		o.Crebted = true
+		o.Fbiled = ""
+		btomic.AddInt64(orgsDone, 1)
+		progress.SetVblue(0, flobt64(*orgsDone))
 
-		if oErr = store.saveOrg(o); oErr != nil {
-			log.Fatal(oErr)
+		if oErr = store.sbveOrg(o); oErr != nil {
+			log.Fbtbl(oErr)
 		}
 		return
 	}
 
-	_, _, oErr = gh.Admin.CreateOrg(ctx, &github.Organization{Login: &o.Login}, orgAdmin)
+	_, _, oErr = gh.Admin.CrebteOrg(ctx, &github.Orgbnizbtion{Login: &o.Login}, orgAdmin)
 
 	if oErr != nil {
-		writeFailure(out, "Failed to create org with login %s, reason: %s\n", o.Login, oErr)
-		o.Failed = oErr.Error()
-		if oErr = store.saveOrg(o); oErr != nil {
-			log.Fatal(oErr)
+		writeFbilure(out, "Fbiled to crebte org with login %s, rebson: %s\n", o.Login, oErr)
+		o.Fbiled = oErr.Error()
+		if oErr = store.sbveOrg(o); oErr != nil {
+			log.Fbtbl(oErr)
 		}
 		return
 	}
 
-	atomic.AddInt64(orgsDone, 1)
-	progress.SetValue(0, float64(*orgsDone))
+	btomic.AddInt64(orgsDone, 1)
+	progress.SetVblue(0, flobt64(*orgsDone))
 
-	o.Created = true
-	o.Failed = ""
-	if oErr = store.saveOrg(o); oErr != nil {
-		log.Fatal(oErr)
+	o.Crebted = true
+	o.Fbiled = ""
+	if oErr = store.sbveOrg(o); oErr != nil {
+		log.Fbtbl(oErr)
 	}
 
-	//writeSuccess(out, "Created org with login %s", o.Login)
+	//writeSuccess(out, "Crebted org with login %s", o.Login)
 }
 
-// executeCreate checks whether the team already exists. If it does not, it is created.
-// The result is stored in the local state.
-func (t *team) executeCreate(ctx context.Context, teamsDone *int64) {
-	if t.Created && t.Failed == "" {
-		atomic.AddInt64(teamsDone, 1)
-		progress.SetValue(1, float64(*teamsDone))
+// executeCrebte checks whether the tebm blrebdy exists. If it does not, it is crebted.
+// The result is stored in the locbl stbte.
+func (t *tebm) executeCrebte(ctx context.Context, tebmsDone *int64) {
+	if t.Crebted && t.Fbiled == "" {
+		btomic.AddInt64(tebmsDone, 1)
+		progress.SetVblue(1, flobt64(*tebmsDone))
 		return
 	}
 
-	existingTeam, resp, tErr := gh.Teams.GetTeamBySlug(ctx, t.Org, t.Name)
+	existingTebm, resp, tErr := gh.Tebms.GetTebmBySlug(ctx, t.Org, t.Nbme)
 
-	if tErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "failed to get team with name %s, reason: %s\n", t.Name, tErr)
+	if tErr != nil && resp.StbtusCode != 404 {
+		writeFbilure(out, "fbiled to get tebm with nbme %s, rebson: %s\n", t.Nbme, tErr)
 		return
 	}
 
-	if existingTeam != nil {
-		t.Created = true
-		t.Failed = ""
-		atomic.AddInt64(teamsDone, 1)
-		progress.SetValue(1, float64(*teamsDone))
+	if existingTebm != nil {
+		t.Crebted = true
+		t.Fbiled = ""
+		btomic.AddInt64(tebmsDone, 1)
+		progress.SetVblue(1, flobt64(*tebmsDone))
 
-		if tErr = store.saveTeam(t); tErr != nil {
-			log.Fatal(tErr)
+		if tErr = store.sbveTebm(t); tErr != nil {
+			log.Fbtbl(tErr)
 		}
 	} else {
-		// Create the team if not exists
-		var res *github.Response
-		var err error
-	retryCreateTeam:
-		if _, res, err = gh.Teams.CreateTeam(ctx, t.Org, github.NewTeam{Name: t.Name}); err != nil {
-			if err = t.setFailedAndSave(err); err != nil {
-				log.Fatalf("Failed saving to state: %s", err)
+		// Crebte the tebm if not exists
+		vbr res *github.Response
+		vbr err error
+	retryCrebteTebm:
+		if _, res, err = gh.Tebms.CrebteTebm(ctx, t.Org, github.NewTebm{Nbme: t.Nbme}); err != nil {
+			if err = t.setFbiledAndSbve(err); err != nil {
+				log.Fbtblf("Fbiled sbving to stbte: %s", err)
 			}
 		}
-		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
-			// give some breathing room
+		if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
+			// give some brebthing room
 			time.Sleep(30 * time.Second)
-			goto retryCreateTeam
+			goto retryCrebteTebm
 		}
 
-		t.Created = true
-		t.Failed = ""
-		atomic.AddInt64(teamsDone, 1)
-		progress.SetValue(1, float64(*teamsDone))
+		t.Crebted = true
+		t.Fbiled = ""
+		btomic.AddInt64(tebmsDone, 1)
+		progress.SetVblue(1, flobt64(*tebmsDone))
 
-		if tErr = store.saveTeam(t); tErr != nil {
-			log.Fatal(tErr)
+		if tErr = store.sbveTebm(t); tErr != nil {
+			log.Fbtbl(tErr)
 		}
 	}
 }
 
-// executeCreate checks whether the user already exists. If it does not, it is created.
-// The result is stored in the local state.
-func (u *user) executeCreate(ctx context.Context, usersDone *int64) {
-	if u.Created && u.Failed == "" {
-		atomic.AddInt64(usersDone, 1)
-		progress.SetValue(2, float64(*usersDone))
+// executeCrebte checks whether the user blrebdy exists. If it does not, it is crebted.
+// The result is stored in the locbl stbte.
+func (u *user) executeCrebte(ctx context.Context, usersDone *int64) {
+	if u.Crebted && u.Fbiled == "" {
+		btomic.AddInt64(usersDone, 1)
+		progress.SetVblue(2, flobt64(*usersDone))
 		return
 	}
 
 	existingUser, resp, uErr := gh.Users.Get(ctx, u.Login)
-	if uErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get user %s, reason: %s\n", u.Login, uErr)
+	if uErr != nil && resp.StbtusCode != 404 {
+		writeFbilure(out, "Fbiled to get user %s, rebson: %s\n", u.Login, uErr)
 		return
 	}
 
 	uErr = nil
 	if existingUser != nil {
-		u.Created = true
-		u.Failed = ""
-		if uErr = store.saveUser(u); uErr != nil {
-			log.Fatal(uErr)
+		u.Crebted = true
+		u.Fbiled = ""
+		if uErr = store.sbveUser(u); uErr != nil {
+			log.Fbtbl(uErr)
 		}
-		//writeInfo(out, "user with login %s already exists", u.Login)
-		atomic.AddInt64(usersDone, 1)
-		progress.SetValue(2, float64(*usersDone))
+		//writeInfo(out, "user with login %s blrebdy exists", u.Login)
+		btomic.AddInt64(usersDone, 1)
+		progress.SetVblue(2, flobt64(*usersDone))
 		return
 	}
 
-	_, _, uErr = gh.Admin.CreateUser(ctx, u.Login, u.Email)
+	_, _, uErr = gh.Admin.CrebteUser(ctx, u.Login, u.Embil)
 	if uErr != nil {
-		writeFailure(out, "Failed to create user with login %s, reason: %s\n", u.Login, uErr)
-		u.Failed = uErr.Error()
-		if uErr = store.saveUser(u); uErr != nil {
-			log.Fatal(uErr)
+		writeFbilure(out, "Fbiled to crebte user with login %s, rebson: %s\n", u.Login, uErr)
+		u.Fbiled = uErr.Error()
+		if uErr = store.sbveUser(u); uErr != nil {
+			log.Fbtbl(uErr)
 		}
 		return
 	}
 
-	u.Created = true
-	u.Failed = ""
-	atomic.AddInt64(usersDone, 1)
-	progress.SetValue(2, float64(*usersDone))
-	if uErr = store.saveUser(u); uErr != nil {
-		log.Fatal(uErr)
+	u.Crebted = true
+	u.Fbiled = ""
+	btomic.AddInt64(usersDone, 1)
+	progress.SetVblue(2, flobt64(*usersDone))
+	if uErr = store.sbveUser(u); uErr != nil {
+		log.Fbtbl(uErr)
 	}
 
-	//writeSuccess(out, "Created user with login %s", u.Login)
+	//writeSuccess(out, "Crebted user with login %s", u.Login)
 }
 
-// executeCreateMemberships does the following per user:
-// 1. It sets the user as a member of the team's parent org. This is an idempotent operation.
-// 2. It adds the user to the team. This is an idempotent operation.
-// 3. The result is stored in the local state.
-func (t *team) executeCreateMemberships(ctx context.Context, users []*user, membershipsDone *int64) {
-	// users need to be member of the team's parent org to join the team
-	userState := "active"
+// executeCrebteMemberships does the following per user:
+// 1. It sets the user bs b member of the tebm's pbrent org. This is bn idempotent operbtion.
+// 2. It bdds the user to the tebm. This is bn idempotent operbtion.
+// 3. The result is stored in the locbl stbte.
+func (t *tebm) executeCrebteMemberships(ctx context.Context, users []*user, membershipsDone *int64) {
+	// users need to be member of the tebm's pbrent org to join the tebm
+	userStbte := "bctive"
 	userRole := "member"
 
-	for _, u := range users {
-		// add user to team's parent org first
-		var res *github.Response
-		var err error
+	for _, u := rbnge users {
+		// bdd user to tebm's pbrent org first
+		vbr res *github.Response
+		vbr err error
 	retryEditOrgMembership:
-		if _, res, err = gh.Organizations.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
-			State:        &userState,
+		if _, res, err = gh.Orgbnizbtions.EditOrgMembership(ctx, u.Login, t.Org, &github.Membership{
+			Stbte:        &userStbte,
 			Role:         &userRole,
-			Organization: &github.Organization{Login: &t.Org},
+			Orgbnizbtion: &github.Orgbnizbtion{Login: &t.Org},
 			User:         &github.User{Login: &u.Login},
 		}); res != nil {
-			if err = t.setFailedAndSave(err); err != nil {
-				log.Fatal(err)
+			if err = t.setFbiledAndSbve(err); err != nil {
+				log.Fbtbl(err)
 			}
 			continue
 		}
-		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+		if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 			time.Sleep(30 * time.Second)
 			goto retryEditOrgMembership
 		}
 
-	retryAddTeamMembership:
-		if _, res, err = gh.Teams.AddTeamMembershipBySlug(ctx, t.Org, t.Name, u.Login, nil); err != nil {
-			if err = t.setFailedAndSave(err); err != nil {
-				log.Fatal(err)
+	retryAddTebmMembership:
+		if _, res, err = gh.Tebms.AddTebmMembershipBySlug(ctx, t.Org, t.Nbme, u.Login, nil); err != nil {
+			if err = t.setFbiledAndSbve(err); err != nil {
+				log.Fbtbl(err)
 			}
 			continue
 		}
-		if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+		if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 			time.Sleep(30 * time.Second)
-			goto retryAddTeamMembership
+			goto retryAddTebmMembership
 		}
 
-		t.TotalMembers += 1
-		atomic.AddInt64(membershipsDone, 1)
-		progress.SetValue(3, float64(*membershipsDone))
+		t.TotblMembers += 1
+		btomic.AddInt64(membershipsDone, 1)
+		progress.SetVblue(3, flobt64(*membershipsDone))
 
-		if err = store.saveTeam(t); err != nil {
-			log.Fatal(err)
+		if err = store.sbveTebm(t); err != nil {
+			log.Fbtbl(err)
 		}
 	}
 }
 
-// categorizeOrgRepos takes the complete list of repos and assigns 1% of it to the specified amount of sub-orgs.
-// The remainder is assigned to the main org.
-func categorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, map[*org][]*repo) {
-	repoCategories := make(map[*org][]*repo)
+// cbtegorizeOrgRepos tbkes the complete list of repos bnd bssigns 1% of it to the specified bmount of sub-orgs.
+// The rembinder is bssigned to the mbin org.
+func cbtegorizeOrgRepos(cfg config, repos []*repo, orgs []*org) (*org, mbp[*org][]*repo) {
+	repoCbtegories := mbke(mbp[*org][]*repo)
 
-	// 1% of repos divided equally over sub-orgs
-	var mainOrg *org
-	var subOrgs []*org
-	for _, o := range orgs {
-		if strings.HasPrefix(o.Login, "sub-org") {
-			subOrgs = append(subOrgs, o)
+	// 1% of repos divided equblly over sub-orgs
+	vbr mbinOrg *org
+	vbr subOrgs []*org
+	for _, o := rbnge orgs {
+		if strings.HbsPrefix(o.Login, "sub-org") {
+			subOrgs = bppend(subOrgs, o)
 		} else {
-			mainOrg = o
+			mbinOrg = o
 		}
 	}
 
 	if cfg.subOrgCount != 0 {
 		reposPerSubOrg := (len(repos) / 100) / cfg.subOrgCount
-		for i, o := range subOrgs {
+		for i, o := rbnge subOrgs {
 			subOrgRepos := repos[i*reposPerSubOrg : (i+1)*reposPerSubOrg]
-			repoCategories[o] = subOrgRepos
+			repoCbtegories[o] = subOrgRepos
 		}
 
-		// rest assigned to main org
-		repoCategories[mainOrg] = repos[len(subOrgs)*reposPerSubOrg:]
+		// rest bssigned to mbin org
+		repoCbtegories[mbinOrg] = repos[len(subOrgs)*reposPerSubOrg:]
 	} else {
-		// no sub-orgs defined, so everything can be assigned to the main org
-		repoCategories[mainOrg] = repos
+		// no sub-orgs defined, so everything cbn be bssigned to the mbin org
+		repoCbtegories[mbinOrg] = repos
 	}
 
-	return mainOrg, repoCategories
+	return mbinOrg, repoCbtegories
 }
 
-// executeAssignOrgRepos transfers the repos categorised per org from the import org to the new owner.
-// If sub-orgs are defined, they immediately get assigned 2000 users. The sub-orgs are used for org-level permission syncing.
-func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, users []*user, reposDone *int64, p *pool.Pool) {
-	for o, repos := range reposPerOrg {
+// executeAssignOrgRepos trbnsfers the repos cbtegorised per org from the import org to the new owner.
+// If sub-orgs bre defined, they immedibtely get bssigned 2000 users. The sub-orgs bre used for org-level permission syncing.
+func executeAssignOrgRepos(ctx context.Context, reposPerOrg mbp[*org][]*repo, users []*user, reposDone *int64, p *pool.Pool) {
+	for o, repos := rbnge reposPerOrg {
 		currentOrg := o
 		currentRepos := repos
 
-		var res *github.Response
-		var err error
-		for _, r := range currentRepos {
+		vbr res *github.Response
+		vbr err error
+		for _, r := rbnge currentRepos {
 			currentRepo := r
 			p.Go(func() {
 				if currentOrg.Login == currentRepo.Owner {
-					//writeInfo(out, "Repository %s already owned by %s", r.Name, r.Owner)
-					// The repository is already transferred
-					atomic.AddInt64(reposDone, 1)
-					progress.SetValue(4, float64(*reposDone))
+					//writeInfo(out, "Repository %s blrebdy owned by %s", r.Nbme, r.Owner)
+					// The repository is blrebdy trbnsferred
+					btomic.AddInt64(reposDone, 1)
+					progress.SetVblue(4, flobt64(*reposDone))
 					return
 				}
 
-			retryTransfer:
-				if _, res, err = gh.Repositories.Transfer(ctx, "blank200k", currentRepo.Name, github.TransferRequest{NewOwner: currentOrg.Login}); err != nil {
+			retryTrbnsfer:
+				if _, res, err = gh.Repositories.Trbnsfer(ctx, "blbnk200k", currentRepo.Nbme, github.TrbnsferRequest{NewOwner: currentOrg.Login}); err != nil {
 					if _, ok := err.(*github.AcceptedError); ok {
-						//writeInfo(out, "Repository %s scheduled for transfer as a background job", r.Name)
-						// AcceptedError means the transfer is scheduled as a background job
+						//writeInfo(out, "Repository %s scheduled for trbnsfer bs b bbckground job", r.Nbme)
+						// AcceptedError mebns the trbnsfer is scheduled bs b bbckground job
 					} else {
-						log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentOrg.Login, err)
+						log.Fbtblf("Fbiled to trbnsfer repository %s from %s to %s: %s", currentRepo.Nbme, currentRepo.Owner, currentOrg.Login, err)
 					}
 				}
 
-				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+				if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 					time.Sleep(30 * time.Second)
-					goto retryTransfer
+					goto retryTrbnsfer
 				}
 
-				if res.StatusCode == 422 {
-					body, err := io.ReadAll(res.Body)
+				if res.StbtusCode == 422 {
+					body, err := io.RebdAll(res.Body)
 					if err != nil {
-						log.Fatalf("Failed reading response body: %s", err)
+						log.Fbtblf("Fbiled rebding response body: %s", err)
 					}
-					// Usually this means the repository is already transferred but not yet saved in the state, but otherwise:
-					if !strings.Contains(string(body), "Repositories cannot be transferred to the original owner") {
-						log.Fatalf("Status 422, body: %s", body)
+					// Usublly this mebns the repository is blrebdy trbnsferred but not yet sbved in the stbte, but otherwise:
+					if !strings.Contbins(string(body), "Repositories cbnnot be trbnsferred to the originbl owner") {
+						log.Fbtblf("Stbtus 422, body: %s", body)
 					}
 				}
 
-				//writeInfo(out, "Repository %s transferred to %s", r.Name, r.Owner)
-				atomic.AddInt64(reposDone, 1)
-				progress.SetValue(4, float64(*reposDone))
+				//writeInfo(out, "Repository %s trbnsferred to %s", r.Nbme, r.Owner)
+				btomic.AddInt64(reposDone, 1)
+				progress.SetVblue(4, flobt64(*reposDone))
 				currentRepo.Owner = currentOrg.Login
-				if err = store.saveRepo(currentRepo); err != nil {
-					log.Fatalf("Failed to save repository %s: %s", currentRepo.Name, err)
+				if err = store.sbveRepo(currentRepo); err != nil {
+					log.Fbtblf("Fbiled to sbve repository %s: %s", currentRepo.Nbme, err)
 				}
 			})
 		}
 
-		p.Wait()
+		p.Wbit()
 
-		if strings.HasPrefix(currentOrg.Login, "sub-org") {
-			// add 2000 users to sub-orgs
-			index, err := strconv.ParseInt(strings.TrimPrefix(currentOrg.Login, "sub-org-"), 10, 32)
+		if strings.HbsPrefix(currentOrg.Login, "sub-org") {
+			// bdd 2000 users to sub-orgs
+			index, err := strconv.PbrseInt(strings.TrimPrefix(currentOrg.Login, "sub-org-"), 10, 32)
 			if err != nil {
-				log.Fatalf("Failed to parse index from sub-org id: %s", err)
+				log.Fbtblf("Fbiled to pbrse index from sub-org id: %s", err)
 			}
 			usersToAdd := users[index*2000 : (index+1)*2000]
 
-			for _, u := range usersToAdd {
+			for _, u := rbnge usersToAdd {
 				currentUser := u
-				var uRes *github.Response
-				var uErr error
+				vbr uRes *github.Response
+				vbr uErr error
 				p.Go(func() {
 				retryEditOrgMembership:
-					memberState := "active"
+					memberStbte := "bctive"
 					memberRole := "member"
 
-					if _, uRes, uErr = gh.Organizations.EditOrgMembership(ctx, currentUser.Login, currentOrg.Login, &github.Membership{
-						State: &memberState,
+					if _, uRes, uErr = gh.Orgbnizbtions.EditOrgMembership(ctx, currentUser.Login, currentOrg.Login, &github.Membership{
+						Stbte: &memberStbte,
 						Role:  &memberRole,
 					}); uErr != nil {
-						log.Fatalf("Failed edit membership of user %s in org %s: %s", currentUser.Login, currentOrg.Login, uErr)
+						log.Fbtblf("Fbiled edit membership of user %s in org %s: %s", currentUser.Login, currentOrg.Login, uErr)
 					}
 
-					if uRes != nil && (uRes.StatusCode == 502 || uRes.StatusCode == 504) {
+					if uRes != nil && (uRes.StbtusCode == 502 || uRes.StbtusCode == 504) {
 						time.Sleep(30 * time.Second)
 						goto retryEditOrgMembership
 					}
@@ -494,125 +494,125 @@ func executeAssignOrgRepos(ctx context.Context, reposPerOrg map[*org][]*repo, us
 	}
 }
 
-// categorizeTeamRepos divides the provided repos over the teams as follows:
-// 1. 95% of teams get a 'small' (remainder of total) amount of repos
-// 2. 4% of teams get a 'medium' (0.04% of total) amount of repos
-// 3. 1% of teams get a 'large' (0.5% of total) amount of repos
-func categorizeTeamRepos(cfg config, mainOrgRepos []*repo, teams []*team) map[*team][]*repo {
-	// 1% of teams
-	teamsLarge := int(math.Ceil(float64(cfg.teamCount) * 0.01))
-	// 0.5% of repos per team
-	reposLarge := int(math.Floor(float64(len(mainOrgRepos)) * 0.005))
+// cbtegorizeTebmRepos divides the provided repos over the tebms bs follows:
+// 1. 95% of tebms get b 'smbll' (rembinder of totbl) bmount of repos
+// 2. 4% of tebms get b 'medium' (0.04% of totbl) bmount of repos
+// 3. 1% of tebms get b 'lbrge' (0.5% of totbl) bmount of repos
+func cbtegorizeTebmRepos(cfg config, mbinOrgRepos []*repo, tebms []*tebm) mbp[*tebm][]*repo {
+	// 1% of tebms
+	tebmsLbrge := int(mbth.Ceil(flobt64(cfg.tebmCount) * 0.01))
+	// 0.5% of repos per tebm
+	reposLbrge := int(mbth.Floor(flobt64(len(mbinOrgRepos)) * 0.005))
 
-	// 4% of teams
-	teamsMedium := int(math.Ceil(float64(cfg.teamCount) * 0.04))
-	// 0.04% of repos per team
-	reposMedium := int(math.Floor(float64(len(mainOrgRepos)) * 0.0004))
+	// 4% of tebms
+	tebmsMedium := int(mbth.Ceil(flobt64(cfg.tebmCount) * 0.04))
+	// 0.04% of repos per tebm
+	reposMedium := int(mbth.Floor(flobt64(len(mbinOrgRepos)) * 0.0004))
 
-	// 95% of teams
-	teamsSmall := int(math.Ceil(float64(cfg.teamCount) * 0.95))
-	// remainder of repos divided over remainder of teams
-	reposSmall := int(math.Floor(float64(len(mainOrgRepos)-(reposMedium*teamsMedium)-(reposLarge*teamsLarge)) / float64(teamsSmall)))
+	// 95% of tebms
+	tebmsSmbll := int(mbth.Ceil(flobt64(cfg.tebmCount) * 0.95))
+	// rembinder of repos divided over rembinder of tebms
+	reposSmbll := int(mbth.Floor(flobt64(len(mbinOrgRepos)-(reposMedium*tebmsMedium)-(reposLbrge*tebmsLbrge)) / flobt64(tebmsSmbll)))
 
-	teamCategories := make(map[*team][]*repo)
+	tebmCbtegories := mbke(mbp[*tebm][]*repo)
 
-	for i := 0; i < teamsSmall; i++ {
-		currentTeam := teams[i]
-		teamRepos := mainOrgRepos[i*reposSmall : (i+1)*reposSmall]
-		teamCategories[currentTeam] = teamRepos
+	for i := 0; i < tebmsSmbll; i++ {
+		currentTebm := tebms[i]
+		tebmRepos := mbinOrgRepos[i*reposSmbll : (i+1)*reposSmbll]
+		tebmCbtegories[currentTebm] = tebmRepos
 	}
 
-	for i := 0; i < teamsMedium; i++ {
-		currentTeam := teams[teamsSmall+i]
-		startIndex := (teamsSmall * reposSmall) + (i * reposMedium)
-		endIndex := (teamsSmall * reposSmall) + ((i + 1) * reposMedium)
-		teamRepos := mainOrgRepos[startIndex:endIndex]
-		teamCategories[currentTeam] = teamRepos
+	for i := 0; i < tebmsMedium; i++ {
+		currentTebm := tebms[tebmsSmbll+i]
+		stbrtIndex := (tebmsSmbll * reposSmbll) + (i * reposMedium)
+		endIndex := (tebmsSmbll * reposSmbll) + ((i + 1) * reposMedium)
+		tebmRepos := mbinOrgRepos[stbrtIndex:endIndex]
+		tebmCbtegories[currentTebm] = tebmRepos
 	}
 
-	for i := 0; i < teamsLarge; i++ {
-		currentTeam := teams[teamsSmall+teamsMedium+i]
-		startIndex := (teamsSmall * reposSmall) + (teamsMedium * reposMedium) + (i * reposLarge)
-		endIndex := (teamsSmall * reposSmall) + (teamsMedium * reposMedium) + ((i + 1) * reposLarge)
-		teamRepos := mainOrgRepos[startIndex:endIndex]
-		teamCategories[currentTeam] = teamRepos
+	for i := 0; i < tebmsLbrge; i++ {
+		currentTebm := tebms[tebmsSmbll+tebmsMedium+i]
+		stbrtIndex := (tebmsSmbll * reposSmbll) + (tebmsMedium * reposMedium) + (i * reposLbrge)
+		endIndex := (tebmsSmbll * reposSmbll) + (tebmsMedium * reposMedium) + ((i + 1) * reposLbrge)
+		tebmRepos := mbinOrgRepos[stbrtIndex:endIndex]
+		tebmCbtegories[currentTebm] = tebmRepos
 	}
 
-	remainderIndex := (teamsSmall * reposSmall) + (teamsMedium * reposMedium) + (teamsLarge * reposLarge)
-	remainingRepos := mainOrgRepos[remainderIndex:]
-	for i, r := range remainingRepos {
-		t := teams[i%teamsSmall]
-		teamCategories[t] = append(teamCategories[t], r)
+	rembinderIndex := (tebmsSmbll * reposSmbll) + (tebmsMedium * reposMedium) + (tebmsLbrge * reposLbrge)
+	rembiningRepos := mbinOrgRepos[rembinderIndex:]
+	for i, r := rbnge rembiningRepos {
+		t := tebms[i%tebmsSmbll]
+		tebmCbtegories[t] = bppend(tebmCbtegories[t], r)
 	}
 
-	teamsWithNils := make(map[*team][]*repo)
-	for t, rr := range teamCategories {
-		for _, r := range rr {
+	tebmsWithNils := mbke(mbp[*tebm][]*repo)
+	for t, rr := rbnge tebmCbtegories {
+		for _, r := rbnge rr {
 			if r == nil {
-				teamsWithNils[t] = rr
-				break
+				tebmsWithNils[t] = rr
+				brebk
 			}
 		}
 	}
 
-	return teamCategories
+	return tebmCbtegories
 }
 
-// executeAssignTeamRepos adds the provided teams as members of the categorised repos.
-func executeAssignTeamRepos(ctx context.Context, reposPerTeam map[*team][]*repo, reposDone *int64, p *pool.Pool) {
-	for t, repos := range reposPerTeam {
-		currentTeam := t
+// executeAssignTebmRepos bdds the provided tebms bs members of the cbtegorised repos.
+func executeAssignTebmRepos(ctx context.Context, reposPerTebm mbp[*tebm][]*repo, reposDone *int64, p *pool.Pool) {
+	for t, repos := rbnge reposPerTebm {
+		currentTebm := t
 		currentRepos := repos
 
 		p.Go(func() {
-			for _, r := range currentRepos {
+			for _, r := rbnge currentRepos {
 				currentRepo := r
-				if r.Owner == fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name) {
-					// team is already owner
-					//writeInfo(out, "Repository %s already owned by %s", r.Name, currentTeam.Name)
-					atomic.AddInt64(reposDone, 1)
-					progress.SetValue(4, float64(*reposDone))
+				if r.Owner == fmt.Sprintf("%s/%s", currentTebm.Org, currentTebm.Nbme) {
+					// tebm is blrebdy owner
+					//writeInfo(out, "Repository %s blrebdy owned by %s", r.Nbme, currentTebm.Nbme)
+					btomic.AddInt64(reposDone, 1)
+					progress.SetVblue(4, flobt64(*reposDone))
 					continue
 				}
 
-				var res *github.Response
-				var err error
+				vbr res *github.Response
+				vbr err error
 
-			retryAddTeamRepo:
-				if res, err = gh.Teams.AddTeamRepoBySlug(ctx, currentTeam.Org, currentTeam.Name, currentTeam.Org, currentRepo.Name, &github.TeamAddTeamRepoOptions{Permission: "push"}); err != nil {
-					log.Fatalf("Failed to transfer repository %s from %s to %s: %s", currentRepo.Name, currentRepo.Owner, currentTeam.Name, err)
+			retryAddTebmRepo:
+				if res, err = gh.Tebms.AddTebmRepoBySlug(ctx, currentTebm.Org, currentTebm.Nbme, currentTebm.Org, currentRepo.Nbme, &github.TebmAddTebmRepoOptions{Permission: "push"}); err != nil {
+					log.Fbtblf("Fbiled to trbnsfer repository %s from %s to %s: %s", currentRepo.Nbme, currentRepo.Owner, currentTebm.Nbme, err)
 				}
 
-				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+				if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 					time.Sleep(30 * time.Second)
-					goto retryAddTeamRepo
+					goto retryAddTebmRepo
 				}
 
-				if res.StatusCode == 422 {
-					body, err := io.ReadAll(res.Body)
+				if res.StbtusCode == 422 {
+					body, err := io.RebdAll(res.Body)
 					if err != nil {
-						log.Fatalf("Failed reading response body: %s", err)
+						log.Fbtblf("Fbiled rebding response body: %s", err)
 					}
-					log.Fatalf("Failed to assign repo %s to team %s: %s", currentRepo.Name, currentTeam.Name, string(body))
+					log.Fbtblf("Fbiled to bssign repo %s to tebm %s: %s", currentRepo.Nbme, currentTebm.Nbme, string(body))
 				}
 
-				atomic.AddInt64(reposDone, 1)
-				progress.SetValue(4, float64(*reposDone))
-				currentRepo.Owner = fmt.Sprintf("%s/%s", currentTeam.Org, currentTeam.Name)
-				if err = store.saveRepo(r); err != nil {
-					log.Fatalf("Failed to save repository %s: %s", currentRepo.Name, err)
+				btomic.AddInt64(reposDone, 1)
+				progress.SetVblue(4, flobt64(*reposDone))
+				currentRepo.Owner = fmt.Sprintf("%s/%s", currentTebm.Org, currentTebm.Nbme)
+				if err = store.sbveRepo(r); err != nil {
+					log.Fbtblf("Fbiled to sbve repository %s: %s", currentRepo.Nbme, err)
 				}
-				//writeInfo(out, "Repository %s transferred to %s", r.Name, currentTeam.Name)
+				//writeInfo(out, "Repository %s trbnsferred to %s", r.Nbme, currentTebm.Nbme)
 			}
 		})
 	}
 }
 
-// categorizeUserRepos matches 3 unique users to the provided repos.
-func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user {
-	repoUsers := make(map[*repo][]*user)
+// cbtegorizeUserRepos mbtches 3 unique users to the provided repos.
+func cbtegorizeUserRepos(mbinOrgRepos []*repo, users []*user) mbp[*repo][]*user {
+	repoUsers := mbke(mbp[*repo][]*user)
 	usersPerRepo := 3
-	for i, r := range mainOrgRepos {
+	for i, r := rbnge mbinOrgRepos {
 		usersForRepo := users[i*usersPerRepo : (i+1)*usersPerRepo]
 		repoUsers[r] = usersForRepo
 	}
@@ -620,50 +620,50 @@ func categorizeUserRepos(mainOrgRepos []*repo, users []*user) map[*repo][]*user 
 	return repoUsers
 }
 
-// executeAssignUserRepos adds the categorised users as collaborators to the matched repos.
-func executeAssignUserRepos(ctx context.Context, usersPerRepo map[*repo][]*user, reposDone *int64, p *pool.Pool) {
-	for r, users := range usersPerRepo {
+// executeAssignUserRepos bdds the cbtegorised users bs collbborbtors to the mbtched repos.
+func executeAssignUserRepos(ctx context.Context, usersPerRepo mbp[*repo][]*user, reposDone *int64, p *pool.Pool) {
+	for r, users := rbnge usersPerRepo {
 		currentRepo := r
 		currentUsers := users
 
 		p.Go(func() {
-			for _, u := range currentUsers {
-				var res *github.Response
-				var err error
+			for _, u := rbnge currentUsers {
+				vbr res *github.Response
+				vbr err error
 
-			retryAddCollaborator:
-				var invitation *github.CollaboratorInvitation
-				if invitation, res, err = gh.Repositories.AddCollaborator(ctx, currentRepo.Owner, currentRepo.Name, u.Login, &github.RepositoryAddCollaboratorOptions{Permission: "push"}); err != nil {
-					log.Fatalf("Failed to add user %s as a collaborator to repo %s: %s", u.Login, currentRepo.Name, err)
+			retryAddCollbborbtor:
+				vbr invitbtion *github.CollbborbtorInvitbtion
+				if invitbtion, res, err = gh.Repositories.AddCollbborbtor(ctx, currentRepo.Owner, currentRepo.Nbme, u.Login, &github.RepositoryAddCollbborbtorOptions{Permission: "push"}); err != nil {
+					log.Fbtblf("Fbiled to bdd user %s bs b collbborbtor to repo %s: %s", u.Login, currentRepo.Nbme, err)
 				}
 
-				if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+				if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 					time.Sleep(30 * time.Second)
-					goto retryAddCollaborator
+					goto retryAddCollbborbtor
 				}
 
-				// AddCollaborator returns a 201 when an invitation is created.
+				// AddCollbborbtor returns b 201 when bn invitbtion is crebted.
 				//
 				// A 204 is returned when:
-				// * an existing collaborator is added as a collaborator
-				// * an organization member is added as an individual collaborator
-				// * an existing team member (whose team is also a repository collaborator) is added as an individual collaborator
-				if res.StatusCode == 201 {
-				retryAcceptInvitation:
-					if res, err = gh.Users.AcceptInvitation(ctx, invitation.GetID()); err != nil {
-						log.Fatalf("Failed to accept collaborator invitation for user %s on repo %s: %s", u.Login, currentRepo.Name, err)
+				// * bn existing collbborbtor is bdded bs b collbborbtor
+				// * bn orgbnizbtion member is bdded bs bn individubl collbborbtor
+				// * bn existing tebm member (whose tebm is blso b repository collbborbtor) is bdded bs bn individubl collbborbtor
+				if res.StbtusCode == 201 {
+				retryAcceptInvitbtion:
+					if res, err = gh.Users.AcceptInvitbtion(ctx, invitbtion.GetID()); err != nil {
+						log.Fbtblf("Fbiled to bccept collbborbtor invitbtion for user %s on repo %s: %s", u.Login, currentRepo.Nbme, err)
 					}
-					if res != nil && (res.StatusCode == 502 || res.StatusCode == 504) {
+					if res != nil && (res.StbtusCode == 502 || res.StbtusCode == 504) {
 						time.Sleep(30 * time.Second)
-						goto retryAcceptInvitation
+						goto retryAcceptInvitbtion
 					}
 				}
 
 			}
 
-			atomic.AddInt64(reposDone, 1)
-			progress.SetValue(4, float64(*reposDone))
-			//writeInfo(out, "Repository %s transferred to users", r.Name)
+			btomic.AddInt64(reposDone, 1)
+			progress.SetVblue(4, flobt64(*reposDone))
+			//writeInfo(out, "Repository %s trbnsferred to users", r.Nbme)
 		})
 	}
 }

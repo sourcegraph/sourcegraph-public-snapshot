@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"testing"
@@ -6,53 +6,53 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRepoHasDescription(t *testing.T) {
-	ps := Parameters{
-		Parameter{
+func TestRepoHbsDescription(t *testing.T) {
+	ps := Pbrbmeters{
+		Pbrbmeter{
 			Field:      FieldRepo,
-			Value:      "has.description(test)",
-			Annotation: Annotation{Labels: IsPredicate},
+			Vblue:      "hbs.description(test)",
+			Annotbtion: Annotbtion{Lbbels: IsPredicbte},
 		},
-		Parameter{
+		Pbrbmeter{
 			Field:      FieldRepo,
-			Value:      "has.description(test input)",
-			Annotation: Annotation{Labels: IsPredicate},
+			Vblue:      "hbs.description(test input)",
+			Annotbtion: Annotbtion{Lbbels: IsPredicbte},
 		},
 	}
 
-	want := []string{
+	wbnt := []string{
 		"(?:test)",
 		"(?:test).*?(?:input)",
 	}
 
-	require.Equal(t, want, ps.RepoHasDescription())
+	require.Equbl(t, wbnt, ps.RepoHbsDescription())
 }
 
-func TestRepoHasKVPs(t *testing.T) {
-	ps := Parameters{
-		Parameter{
+func TestRepoHbsKVPs(t *testing.T) {
+	ps := Pbrbmeters{
+		Pbrbmeter{
 			Field:      FieldRepo,
-			Value:      "has(key:value)",
-			Annotation: Annotation{Labels: IsPredicate},
+			Vblue:      "hbs(key:vblue)",
+			Annotbtion: Annotbtion{Lbbels: IsPredicbte},
 		},
-		Parameter{
+		Pbrbmeter{
 			Field:      FieldRepo,
-			Value:      "has.tag(tag)",
-			Annotation: Annotation{Labels: IsPredicate},
+			Vblue:      "hbs.tbg(tbg)",
+			Annotbtion: Annotbtion{Lbbels: IsPredicbte},
 		},
-		Parameter{
+		Pbrbmeter{
 			Field:      FieldRepo,
-			Value:      "has.key(key)",
-			Annotation: Annotation{Labels: IsPredicate},
+			Vblue:      "hbs.key(key)",
+			Annotbtion: Annotbtion{Lbbels: IsPredicbte},
 		},
 	}
 
-	value := "value"
-	want := []RepoKVPFilter{
-		{Key: "key", Value: &value, Negated: false, KeyOnly: false},
-		{Key: "tag", Value: nil, Negated: false, KeyOnly: false},
-		{Key: "key", Value: nil, Negated: false, KeyOnly: true},
+	vblue := "vblue"
+	wbnt := []RepoKVPFilter{
+		{Key: "key", Vblue: &vblue, Negbted: fblse, KeyOnly: fblse},
+		{Key: "tbg", Vblue: nil, Negbted: fblse, KeyOnly: fblse},
+		{Key: "key", Vblue: nil, Negbted: fblse, KeyOnly: true},
 	}
 
-	require.Equal(t, want, ps.RepoHasKVPs())
+	require.Equbl(t, wbnt, ps.RepoHbsKVPs())
 }

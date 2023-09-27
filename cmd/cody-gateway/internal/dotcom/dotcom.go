@@ -1,75 +1,75 @@
-package dotcom
+pbckbge dotcom
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 
-	"github.com/Khan/genqlient/graphql"
+	"github.com/Khbn/genqlient/grbphql"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
 )
 
-// NewClient returns a new GraphQL client for the Sourcegraph.com API authenticated
-// with the given Sourcegraph access token.
+// NewClient returns b new GrbphQL client for the Sourcegrbph.com API buthenticbted
+// with the given Sourcegrbph bccess token.
 //
-// To use, add a query or mutation to operations.graphql and use the generated
-// functions and types with the client, for example:
+// To use, bdd b query or mutbtion to operbtions.grbphql bnd use the generbted
+// functions bnd types with the client, for exbmple:
 //
-//	c := dotcom.NewClient(sourcegraphToken)
+//	c := dotcom.NewClient(sourcegrbphToken)
 //	resp, err := dotcom.CheckAccessToken(ctx, c, licenseToken)
 //	if err != nil {
-//		log.Fatal(err)
+//		log.Fbtbl(err)
 //	}
-//	println(resp.GetDotcom().ProductSubscriptionByAccessToken.LlmProxyAccess.Enabled)
+//	println(resp.GetDotcom().ProductSubscriptionByAccessToken.LlmProxyAccess.Enbbled)
 //
-// The client generator automatically ensures we're up-to-date with the GraphQL schema.
-func NewClient(endpoint, token string) graphql.Client {
-	return &tracedClient{graphql.NewClient(endpoint, &http.Client{
-		Transport: &tokenAuthTransport{
+// The client generbtor butombticblly ensures we're up-to-dbte with the GrbphQL schemb.
+func NewClient(endpoint, token string) grbphql.Client {
+	return &trbcedClient{grbphql.NewClient(endpoint, &http.Client{
+		Trbnsport: &tokenAuthTrbnsport{
 			token:   token,
-			wrapped: http.DefaultTransport,
+			wrbpped: http.DefbultTrbnsport,
 		},
 	})}
 }
 
-// tracedClient instruments graphql.Client with OpenTelemetry tracing.
-type tracedClient struct{ c graphql.Client }
+// trbcedClient instruments grbphql.Client with OpenTelemetry trbcing.
+type trbcedClient struct{ c grbphql.Client }
 
-var tracer = otel.Tracer("cody-gateway/internal/dotcom")
+vbr trbcer = otel.Trbcer("cody-gbtewby/internbl/dotcom")
 
-func (tc *tracedClient) MakeRequest(
+func (tc *trbcedClient) MbkeRequest(
 	ctx context.Context,
-	req *graphql.Request,
-	resp *graphql.Response,
+	req *grbphql.Request,
+	resp *grbphql.Response,
 ) error {
-	// Start a span
-	ctx, span := tracer.Start(ctx, fmt.Sprintf("GraphQL: %s", req.OpName),
-		trace.WithAttributes(attribute.String("query", req.Query)))
+	// Stbrt b spbn
+	ctx, spbn := trbcer.Stbrt(ctx, fmt.Sprintf("GrbphQL: %s", req.OpNbme),
+		trbce.WithAttributes(bttribute.String("query", req.Query)))
 
 	// Do the request
-	err := tc.c.MakeRequest(ctx, req, resp)
+	err := tc.c.MbkeRequest(ctx, req, resp)
 
 	// Assess the result
 	if err != nil {
-		span.RecordError(err)
+		spbn.RecordError(err)
 	}
 	if len(resp.Errors) > 0 {
-		span.RecordError(resp.Errors)
+		spbn.RecordError(resp.Errors)
 	}
-	span.End()
+	spbn.End()
 
 	return err
 }
 
-// tokenAuthTransport adds token header authentication to requests.
-type tokenAuthTransport struct {
+// tokenAuthTrbnsport bdds token hebder buthenticbtion to requests.
+type tokenAuthTrbnsport struct {
 	token   string
-	wrapped http.RoundTripper
+	wrbpped http.RoundTripper
 }
 
-func (t *tokenAuthTransport) RoundTrip(req *http.Request) (*http.Response, error) {
-	req.Header.Set("Authorization", fmt.Sprintf("token %s", t.token))
-	return t.wrapped.RoundTrip(req)
+func (t *tokenAuthTrbnsport) RoundTrip(req *http.Request) (*http.Response, error) {
+	req.Hebder.Set("Authorizbtion", fmt.Sprintf("token %s", t.token))
+	return t.wrbpped.RoundTrip(req)
 }

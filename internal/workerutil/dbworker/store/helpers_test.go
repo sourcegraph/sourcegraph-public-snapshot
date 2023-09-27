@@ -1,33 +1,33 @@
-package store
+pbckbge store
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"strconv"
 	"testing"
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
 )
 
 func testStore[T workerutil.Record](db *sql.DB, options Options[T]) *store[T] {
-	return newStore(&observation.TestContext, basestore.NewHandleWithDB(log.NoOp(), db, sql.TxOptions{}), options)
+	return newStore(&observbtion.TestContext, bbsestore.NewHbndleWithDB(log.NoOp(), db, sql.TxOptions{}), options)
 }
 
 type TestRecord struct {
 	ID            int
-	State         string
+	Stbte         string
 	ExecutionLogs []executor.ExecutionLogEntry
 }
 
@@ -36,17 +36,17 @@ func (v TestRecord) RecordID() int {
 }
 
 func (v TestRecord) RecordUID() string {
-	return strconv.Itoa(v.ID)
+	return strconv.Itob(v.ID)
 }
 
-func testScanRecord(sc dbutil.Scanner) (*TestRecord, error) {
-	var record TestRecord
-	return &record, sc.Scan(&record.ID, &record.State, pq.Array(&record.ExecutionLogs))
+func testScbnRecord(sc dbutil.Scbnner) (*TestRecord, error) {
+	vbr record TestRecord
+	return &record, sc.Scbn(&record.ID, &record.Stbte, pq.Arrby(&record.ExecutionLogs))
 }
 
 type TestRecordView struct {
 	ID       int
-	State    string
+	Stbte    string
 	NewField int
 }
 
@@ -55,17 +55,17 @@ func (v TestRecordView) RecordID() int {
 }
 
 func (v TestRecordView) RecordUID() string {
-	return strconv.Itoa(v.ID)
+	return strconv.Itob(v.ID)
 }
 
-func testScanRecordView(sc dbutil.Scanner) (*TestRecordView, error) {
-	var record TestRecordView
-	return &record, sc.Scan(&record.ID, &record.State, &record.NewField)
+func testScbnRecordView(sc dbutil.Scbnner) (*TestRecordView, error) {
+	vbr record TestRecordView
+	return &record, sc.Scbn(&record.ID, &record.Stbte, &record.NewField)
 }
 
 type TestRecordRetry struct {
 	ID        int
-	State     string
+	Stbte     string
 	NumResets int
 }
 
@@ -74,12 +74,12 @@ func (v TestRecordRetry) RecordID() int {
 }
 
 func (v TestRecordRetry) RecordUID() string {
-	return strconv.Itoa(v.ID)
+	return strconv.Itob(v.ID)
 }
 
-func testScanRecordRetry(sc dbutil.Scanner) (*TestRecordRetry, error) {
-	var record TestRecordRetry
-	return &record, sc.Scan(&record.ID, &record.State, &record.NumResets)
+func testScbnRecordRetry(sc dbutil.Scbnner) (*TestRecordRetry, error) {
+	vbr record TestRecordRetry
+	return &record, sc.Scbn(&record.ID, &record.Stbte, &record.NumResets)
 }
 
 func setupStoreTest(t *testing.T) *sql.DB {
@@ -89,111 +89,111 @@ func setupStoreTest(t *testing.T) *sql.DB {
 	if _, err := db.Exec(`
 		CREATE TABLE IF NOT EXISTS workerutil_test (
 			id                integer NOT NULL,
-			state             text NOT NULL,
-			failure_message   text,
-			started_at        timestamp with time zone,
-			last_heartbeat_at timestamp with time zone,
-			finished_at       timestamp with time zone,
-			process_after     timestamp with time zone,
-			num_resets        integer NOT NULL default 0,
-			num_failures      integer NOT NULL default 0,
-			created_at        timestamp with time zone NOT NULL default NOW(),
+			stbte             text NOT NULL,
+			fbilure_messbge   text,
+			stbrted_bt        timestbmp with time zone,
+			lbst_hebrtbebt_bt timestbmp with time zone,
+			finished_bt       timestbmp with time zone,
+			process_bfter     timestbmp with time zone,
+			num_resets        integer NOT NULL defbult 0,
+			num_fbilures      integer NOT NULL defbult 0,
+			crebted_bt        timestbmp with time zone NOT NULL defbult NOW(),
 			execution_logs    json[],
-			worker_hostname   text NOT NULL default '',
-			cancel            boolean NOT NULL default false
+			worker_hostnbme   text NOT NULL defbult '',
+			cbncel            boolebn NOT NULL defbult fblse
 		)
 	`); err != nil {
-		t.Fatalf("unexpected error creating test table: %s", err)
+		t.Fbtblf("unexpected error crebting test tbble: %s", err)
 	}
 
 	if _, err := db.Exec(`
 		CREATE OR REPLACE VIEW workerutil_test_view AS (
-			SELECT w.*, (w.id * 7) as new_field FROM workerutil_test w
+			SELECT w.*, (w.id * 7) bs new_field FROM workerutil_test w
 		)
 	`); err != nil {
-		t.Fatalf("unexpected error creating test table: %s", err)
+		t.Fbtblf("unexpected error crebting test tbble: %s", err)
 	}
 	return db
 }
 
-func defaultTestStoreOptions[T workerutil.Record](clock glock.Clock, scanFn func(sc dbutil.Scanner) (T, error)) Options[T] {
+func defbultTestStoreOptions[T workerutil.Record](clock glock.Clock, scbnFn func(sc dbutil.Scbnner) (T, error)) Options[T] {
 	return Options[T]{
-		Name:              "test",
-		TableName:         "workerutil_test",
-		Scan:              BuildWorkerScan(scanFn),
-		OrderByExpression: sqlf.Sprintf("workerutil_test.created_at"),
+		Nbme:              "test",
+		TbbleNbme:         "workerutil_test",
+		Scbn:              BuildWorkerScbn(scbnFn),
+		OrderByExpression: sqlf.Sprintf("workerutil_test.crebted_bt"),
 		ColumnExpressions: []*sqlf.Query{
 			sqlf.Sprintf("workerutil_test.id"),
-			sqlf.Sprintf("workerutil_test.state"),
+			sqlf.Sprintf("workerutil_test.stbte"),
 			sqlf.Sprintf("workerutil_test.execution_logs"),
 		},
-		AlternateColumnNames: map[string]string{
-			"queued_at": "created_at",
+		AlternbteColumnNbmes: mbp[string]string{
+			"queued_bt": "crebted_bt",
 		},
-		StalledMaxAge: time.Second * 5,
-		MaxNumResets:  5,
-		MaxNumRetries: 3,
+		StblledMbxAge: time.Second * 5,
+		MbxNumResets:  5,
+		MbxNumRetries: 3,
 		clock:         clock,
 	}
 }
 
-func assertDequeueRecordResult(t *testing.T, expectedID int, record any, ok bool, err error) {
+func bssertDequeueRecordResult(t *testing.T, expectedID int, record bny, ok bool, err error) {
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if !ok {
-		t.Fatalf("expected a dequeueable record")
+		t.Fbtblf("expected b dequeuebble record")
 	}
 
-	if val := record.(*TestRecord).ID; val != expectedID {
-		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
+	if vbl := record.(*TestRecord).ID; vbl != expectedID {
+		t.Errorf("unexpected id. wbnt=%d hbve=%d", expectedID, vbl)
 	}
-	if val := record.(*TestRecord).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
+	if vbl := record.(*TestRecord).Stbte; vbl != "processing" {
+		t.Errorf("unexpected stbte. wbnt=%s hbve=%s", "processing", vbl)
 	}
 }
 
-func assertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record any) {
-	if val := len(record.(*TestRecord).ExecutionLogs); val != expectedLogCount {
-		t.Errorf("unexpected count of logs. want=%d have=%d", expectedLogCount, val)
+func bssertDequeueRecordResultLogCount(t *testing.T, expectedLogCount int, record bny) {
+	if vbl := len(record.(*TestRecord).ExecutionLogs); vbl != expectedLogCount {
+		t.Errorf("unexpected count of logs. wbnt=%d hbve=%d", expectedLogCount, vbl)
 	}
 }
 
-func assertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record any, ok bool, err error) {
+func bssertDequeueRecordViewResult(t *testing.T, expectedID, expectedNewField int, record bny, ok bool, err error) {
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if !ok {
-		t.Fatalf("expected a dequeueable record")
+		t.Fbtblf("expected b dequeuebble record")
 	}
 
-	if val := record.(*TestRecordView).ID; val != expectedID {
-		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
+	if vbl := record.(*TestRecordView).ID; vbl != expectedID {
+		t.Errorf("unexpected id. wbnt=%d hbve=%d", expectedID, vbl)
 	}
-	if val := record.(*TestRecordView).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
+	if vbl := record.(*TestRecordView).Stbte; vbl != "processing" {
+		t.Errorf("unexpected stbte. wbnt=%s hbve=%s", "processing", vbl)
 	}
-	if val := record.(*TestRecordView).NewField; val != expectedNewField {
-		t.Errorf("unexpected new field. want=%d have=%d", expectedNewField, val)
+	if vbl := record.(*TestRecordView).NewField; vbl != expectedNewField {
+		t.Errorf("unexpected new field. wbnt=%d hbve=%d", expectedNewField, vbl)
 	}
 }
 
-func assertDequeueRecordRetryResult(t *testing.T, expectedID, record any, ok bool, err error) {
+func bssertDequeueRecordRetryResult(t *testing.T, expectedID, record bny, ok bool, err error) {
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 	if !ok {
-		t.Fatalf("expected a dequeueable record")
+		t.Fbtblf("expected b dequeuebble record")
 	}
 
-	if val := record.(*TestRecordRetry).ID; val != expectedID {
-		t.Errorf("unexpected id. want=%d have=%d", expectedID, val)
+	if vbl := record.(*TestRecordRetry).ID; vbl != expectedID {
+		t.Errorf("unexpected id. wbnt=%d hbve=%d", expectedID, vbl)
 	}
-	if val := record.(*TestRecordRetry).State; val != "processing" {
-		t.Errorf("unexpected state. want=%s have=%s", "processing", val)
+	if vbl := record.(*TestRecordRetry).Stbte; vbl != "processing" {
+		t.Errorf("unexpected stbte. wbnt=%s hbve=%s", "processing", vbl)
 	}
 }
 
 func testNow() time.Time {
-	return time.Now().UTC().Truncate(time.Second)
+	return time.Now().UTC().Truncbte(time.Second)
 }

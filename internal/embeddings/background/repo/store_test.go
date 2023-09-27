@@ -1,4 +1,4 @@
-package repo
+pbckbge repo
 
 import (
 	"context"
@@ -6,423 +6,423 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestRepoEmbeddingJobsStore(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, createdRepo)
+	crebtedRepo := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, crebtedRepo)
 	require.NoError(t, err)
 
-	createdRepo2 := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
-	err = repoStore.Create(ctx, createdRepo2)
+	crebtedRepo2 := &types.Repo{Nbme: "github.com/sourcegrbph/zoekt", URI: "github.com/sourcegrbph/zoekt", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err = repoStore.Crebte(ctx, crebtedRepo2)
 	require.NoError(t, err)
 
 	store := NewRepoEmbeddingJobsStore(db)
 
 	// no job exists
-	exists, err := repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
+	exists, err := repoStore.RepoEmbeddingExists(ctx, crebtedRepo.ID)
 	require.NoError(t, err)
-	require.Equal(t, exists, false)
+	require.Equbl(t, exists, fblse)
 
-	// Create three repo embedding jobs.
-	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
-	require.NoError(t, err)
-
-	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	// Crebte three repo embedding jobs.
+	id1, err := store.CrebteRepoEmbeddingJob(ctx, crebtedRepo.ID, "debdbeef")
 	require.NoError(t, err)
 
-	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo2.ID, "tea")
+	id2, err := store.CrebteRepoEmbeddingJob(ctx, crebtedRepo.ID, "coffee")
+	require.NoError(t, err)
+
+	id3, err := store.CrebteRepoEmbeddingJob(ctx, crebtedRepo2.ID, "teb")
 	require.NoError(t, err)
 
 	count, err := store.CountRepoEmbeddingJobs(ctx, ListOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 3, count)
+	require.Equbl(t, 3, count)
 
-	pattern := "oek" // matching zoekt
-	count, err = store.CountRepoEmbeddingJobs(ctx, ListOpts{Query: &pattern})
+	pbttern := "oek" // mbtching zoekt
+	count, err = store.CountRepoEmbeddingJobs(ctx, ListOpts{Query: &pbttern})
 	require.NoError(t, err)
-	require.Equal(t, 1, count)
+	require.Equbl(t, 1, count)
 
-	pattern = "unknown"
-	count, err = store.CountRepoEmbeddingJobs(ctx, ListOpts{Query: &pattern})
+	pbttern = "unknown"
+	count, err = store.CountRepoEmbeddingJobs(ctx, ListOpts{Query: &pbttern})
 	require.NoError(t, err)
-	require.Equal(t, 0, count)
+	require.Equbl(t, 0, count)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// only queued job exists
-	exists, err = repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
+	exists, err = repoStore.RepoEmbeddingExists(ctx, crebtedRepo.ID)
 	require.NoError(t, err)
-	require.Equal(t, exists, false)
+	require.Equbl(t, exists, fblse)
 
 	// Expect to get the three repo embedding jobs in the list.
-	require.Equal(t, 3, len(jobs))
-	require.Equal(t, id1, jobs[0].ID)
-	require.Equal(t, id2, jobs[1].ID)
-	require.Equal(t, id3, jobs[2].ID)
+	require.Equbl(t, 3, len(jobs))
+	require.Equbl(t, id1, jobs[0].ID)
+	require.Equbl(t, id2, jobs[1].ID)
+	require.Equbl(t, id3, jobs[2].ID)
 
-	// Check that we get the correct repo embedding job for repo and revision.
-	lastEmbeddingJobForRevision, err := store.GetLastRepoEmbeddingJobForRevision(ctx, createdRepo.ID, "deadbeef")
+	// Check thbt we get the correct repo embedding job for repo bnd revision.
+	lbstEmbeddingJobForRevision, err := store.GetLbstRepoEmbeddingJobForRevision(ctx, crebtedRepo.ID, "debdbeef")
 	require.NoError(t, err)
 
-	require.Equal(t, id1, lastEmbeddingJobForRevision.ID)
+	require.Equbl(t, id1, lbstEmbeddingJobForRevision.ID)
 
-	// Complete the second job and check if we get it back when calling GetLastCompletedRepoEmbeddingJob.
-	stateCompleted := "completed"
-	setJobState(t, ctx, store, id2, stateCompleted)
-	lastCompletedJob, err := store.GetLastCompletedRepoEmbeddingJob(ctx, createdRepo.ID)
+	// Complete the second job bnd check if we get it bbck when cblling GetLbstCompletedRepoEmbeddingJob.
+	stbteCompleted := "completed"
+	setJobStbte(t, ctx, store, id2, stbteCompleted)
+	lbstCompletedJob, err := store.GetLbstCompletedRepoEmbeddingJob(ctx, crebtedRepo.ID)
 	require.NoError(t, err)
 
-	require.Equal(t, id2, lastCompletedJob.ID)
+	require.Equbl(t, id2, lbstCompletedJob.ID)
 
 	// completed job present
-	exists, err = repoStore.RepoEmbeddingExists(ctx, createdRepo.ID)
+	exists, err = repoStore.RepoEmbeddingExists(ctx, crebtedRepo.ID)
 	require.NoError(t, err)
-	require.Equal(t, exists, true)
+	require.Equbl(t, exists, true)
 
-	// Check that we get the correct repo embedding job if we filter by "state".
-	jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{State: &stateCompleted, PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	// Check thbt we get the correct repo embedding job if we filter by "stbte".
+	jobs, err = store.ListRepoEmbeddingJobs(ctx, ListOpts{Stbte: &stbteCompleted, PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(jobs))
-	require.Equal(t, id2, jobs[0].ID)
+	require.Equbl(t, 1, len(jobs))
+	require.Equbl(t, id2, jobs[0].ID)
 
-	t.Run("update stats", func(t *testing.T) {
-		stats, err := store.GetRepoEmbeddingJobStats(ctx, jobs[0].ID)
+	t.Run("updbte stbts", func(t *testing.T) {
+		stbts, err := store.GetRepoEmbeddingJobStbts(ctx, jobs[0].ID)
 		require.NoError(t, err)
-		require.Equal(t, EmbedRepoStats{}, stats, "expected empty stats")
+		require.Equbl(t, EmbedRepoStbts{}, stbts, "expected empty stbts")
 
-		updatedStats := EmbedRepoStats{
-			IsIncremental: false,
-			CodeIndexStats: EmbedFilesStats{
+		updbtedStbts := EmbedRepoStbts{
+			IsIncrementbl: fblse,
+			CodeIndexStbts: EmbedFilesStbts{
 				FilesScheduled: 123,
 				FilesEmbedded:  12,
-				FilesSkipped:   map[string]int{"longLine": 10},
+				FilesSkipped:   mbp[string]int{"longLine": 10},
 				ChunksEmbedded: 20,
 				ChunksExcluded: 2,
 				BytesEmbedded:  200,
 			},
-			TextIndexStats: EmbedFilesStats{
+			TextIndexStbts: EmbedFilesStbts{
 				FilesScheduled: 456,
 				FilesEmbedded:  45,
-				FilesSkipped:   map[string]int{"longLine": 20, "autogenerated": 12},
+				FilesSkipped:   mbp[string]int{"longLine": 20, "butogenerbted": 12},
 				ChunksEmbedded: 40,
 				ChunksExcluded: 4,
 				BytesEmbedded:  400,
 			},
 		}
-		err = store.UpdateRepoEmbeddingJobStats(ctx, jobs[0].ID, &updatedStats)
+		err = store.UpdbteRepoEmbeddingJobStbts(ctx, jobs[0].ID, &updbtedStbts)
 		require.NoError(t, err)
 
-		stats, err = store.GetRepoEmbeddingJobStats(ctx, jobs[0].ID)
+		stbts, err = store.GetRepoEmbeddingJobStbts(ctx, jobs[0].ID)
 		require.NoError(t, err)
-		require.Equal(t, updatedStats, stats)
+		require.Equbl(t, updbtedStbts, stbts)
 	})
 }
 
-func TestCancelRepoEmbeddingJob(t *testing.T) {
-	t.Parallel()
+func TestCbncelRepoEmbeddingJob(t *testing.T) {
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	createdRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, createdRepo)
+	crebtedRepo := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, crebtedRepo)
 	require.NoError(t, err)
 
 	store := NewRepoEmbeddingJobsStore(db)
 
-	// Create two repo embedding jobs.
-	id1, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "deadbeef")
+	// Crebte two repo embedding jobs.
+	id1, err := store.CrebteRepoEmbeddingJob(ctx, crebtedRepo.ID, "debdbeef")
 	require.NoError(t, err)
 
-	id2, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "coffee")
+	id2, err := store.CrebteRepoEmbeddingJob(ctx, crebtedRepo.ID, "coffee")
 	require.NoError(t, err)
 
-	// Cancel the first one.
-	err = store.CancelRepoEmbeddingJob(ctx, id1)
+	// Cbncel the first one.
+	err = store.CbncelRepoEmbeddingJob(ctx, id1)
 	require.NoError(t, err)
 
-	// Move the second job to 'processing' state and cancel it too
-	setJobState(t, ctx, store, id2, "processing")
-	err = store.CancelRepoEmbeddingJob(ctx, id2)
+	// Move the second job to 'processing' stbte bnd cbncel it too
+	setJobStbte(t, ctx, store, id2, "processing")
+	err = store.CbncelRepoEmbeddingJob(ctx, id2)
 	require.NoError(t, err)
 
 	first := 10
-	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PaginationArgs: &database.PaginationArgs{First: &first, OrderBy: database.OrderBy{{Field: "id"}}, Ascending: true}})
+	jobs, err := store.ListRepoEmbeddingJobs(ctx, ListOpts{PbginbtionArgs: &dbtbbbse.PbginbtionArgs{First: &first, OrderBy: dbtbbbse.OrderBy{{Field: "id"}}, Ascending: true}})
 	require.NoError(t, err)
 
 	// Expect to get the two repo embedding jobs in the list.
-	require.Equal(t, 2, len(jobs))
-	require.Equal(t, id1, jobs[0].ID)
-	require.Equal(t, true, jobs[0].Cancel)
-	require.Equal(t, "canceled", jobs[0].State)
-	require.Equal(t, id2, jobs[1].ID)
-	require.Equal(t, true, jobs[1].Cancel)
+	require.Equbl(t, 2, len(jobs))
+	require.Equbl(t, id1, jobs[0].ID)
+	require.Equbl(t, true, jobs[0].Cbncel)
+	require.Equbl(t, "cbnceled", jobs[0].Stbte)
+	require.Equbl(t, id2, jobs[1].ID)
+	require.Equbl(t, true, jobs[1].Cbncel)
 
-	// Attempting to cancel a non-existent job should fail
-	err = store.CancelRepoEmbeddingJob(ctx, id1+42)
+	// Attempting to cbncel b non-existent job should fbil
+	err = store.CbncelRepoEmbeddingJob(ctx, id1+42)
 	require.Error(t, err)
 
-	// Attempting to cancel a completed job should fail
-	id3, err := store.CreateRepoEmbeddingJob(ctx, createdRepo.ID, "avocado")
+	// Attempting to cbncel b completed job should fbil
+	id3, err := store.CrebteRepoEmbeddingJob(ctx, crebtedRepo.ID, "bvocbdo")
 	require.NoError(t, err)
 
-	setJobState(t, ctx, store, id3, "completed")
-	err = store.CancelRepoEmbeddingJob(ctx, id3)
+	setJobStbte(t, ctx, store, id3, "completed")
+	err = store.CbncelRepoEmbeddingJob(ctx, id3)
 	require.Error(t, err)
 }
 
-func TestGetEmbeddableRepos(t *testing.T) {
-	t.Parallel()
+func TestGetEmbeddbbleRepos(t *testing.T) {
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create two repositories
-	firstRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, firstRepo)
+	// Crebte two repositories
+	firstRepo := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, firstRepo)
 	require.NoError(t, err)
 
-	secondRepo := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
-	err = repoStore.Create(ctx, secondRepo)
+	secondRepo := &types.Repo{Nbme: "github.com/sourcegrbph/zoekt", URI: "github.com/sourcegrbph/zoekt", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err = repoStore.Crebte(ctx, secondRepo)
 	require.NoError(t, err)
 
 	// Clone the repos
 	gitserverStore := db.GitserverRepos()
-	err = gitserverStore.SetCloneStatus(ctx, firstRepo.Name, types.CloneStatusCloned, "test")
+	err = gitserverStore.SetCloneStbtus(ctx, firstRepo.Nbme, types.CloneStbtusCloned, "test")
 	require.NoError(t, err)
 
-	err = gitserverStore.SetCloneStatus(ctx, secondRepo.Name, types.CloneStatusCloned, "test")
+	err = gitserverStore.SetCloneStbtus(ctx, secondRepo.Nbme, types.CloneStbtusCloned, "test")
 	require.NoError(t, err)
 
-	// Create a embeddings policy that applies to all repos
+	// Crebte b embeddings policy thbt bpplies to bll repos
 	store := NewRepoEmbeddingJobsStore(db)
-	err = createGlobalPolicy(ctx, store)
+	err = crebteGlobblPolicy(ctx, store)
 	require.NoError(t, err)
 
-	// At first, both repos should be embeddable.
-	repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
+	// At first, both repos should be embeddbble.
+	repos, err := store.GetEmbeddbbleRepos(ctx, EmbeddbbleRepoOpts{MinimumIntervbl: 1 * time.Hour})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(repos))
+	require.Equbl(t, 2, len(repos))
 
-	// Create and queue an embedding job for the first repo.
-	_, err = store.CreateRepoEmbeddingJob(ctx, firstRepo.ID, "coffee")
+	// Crebte bnd queue bn embedding job for the first repo.
+	_, err = store.CrebteRepoEmbeddingJob(ctx, firstRepo.ID, "coffee")
 	require.NoError(t, err)
 
-	// Only the second repo should be embeddable, since the first was recently queued
-	repos, err = store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
+	// Only the second repo should be embeddbble, since the first wbs recently queued
+	repos, err = store.GetEmbeddbbleRepos(ctx, EmbeddbbleRepoOpts{MinimumIntervbl: 1 * time.Hour})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(repos))
+	require.Equbl(t, 1, len(repos))
 }
 
-func TestEmbeddingsPolicyWithFailures(t *testing.T) {
-	t.Parallel()
+func TestEmbeddingsPolicyWithFbilures(t *testing.T) {
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create two repositories
-	firstRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, firstRepo)
+	// Crebte two repositories
+	firstRepo := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, firstRepo)
 	require.NoError(t, err)
 
-	secondRepo := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
-	err = repoStore.Create(ctx, secondRepo)
+	secondRepo := &types.Repo{Nbme: "github.com/sourcegrbph/zoekt", URI: "github.com/sourcegrbph/zoekt", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err = repoStore.Crebte(ctx, secondRepo)
 	require.NoError(t, err)
 
 	// Clone the repos
 	gitserverStore := db.GitserverRepos()
-	err = gitserverStore.SetCloneStatus(ctx, firstRepo.Name, types.CloneStatusCloned, "test")
+	err = gitserverStore.SetCloneStbtus(ctx, firstRepo.Nbme, types.CloneStbtusCloned, "test")
 	require.NoError(t, err)
 
-	err = gitserverStore.SetCloneStatus(ctx, secondRepo.Name, types.CloneStatusCloned, "test")
+	err = gitserverStore.SetCloneStbtus(ctx, secondRepo.Nbme, types.CloneStbtusCloned, "test")
 	require.NoError(t, err)
 
-	// Create a embeddings policy that applies to all repos
+	// Crebte b embeddings policy thbt bpplies to bll repos
 	store := NewRepoEmbeddingJobsStore(db)
-	err = createGlobalPolicy(ctx, store)
+	err = crebteGlobblPolicy(ctx, store)
 	require.NoError(t, err)
 
-	// At first, both repos should be embeddable.
-	repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
+	// At first, both repos should be embeddbble.
+	repos, err := store.GetEmbeddbbleRepos(ctx, EmbeddbbleRepoOpts{MinimumIntervbl: 1 * time.Hour})
 	require.NoError(t, err)
-	require.Equal(t, 2, len(repos))
+	require.Equbl(t, 2, len(repos))
 
-	// Create and queue an embedding job for the first repo.
-	_, err = store.CreateRepoEmbeddingJob(ctx, firstRepo.ID, "coffee")
+	// Crebte bnd queue bn embedding job for the first repo.
+	_, err = store.CrebteRepoEmbeddingJob(ctx, firstRepo.ID, "coffee")
 	require.NoError(t, err)
 
-	// Only the second repo should be embeddable, since the first was recently queued
-	repos, err = store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour})
+	// Only the second repo should be embeddbble, since the first wbs recently queued
+	repos, err = store.GetEmbeddbbleRepos(ctx, EmbeddbbleRepoOpts{MinimumIntervbl: 1 * time.Hour})
 	require.NoError(t, err)
-	require.Equal(t, 1, len(repos))
+	require.Equbl(t, 1, len(repos))
 }
 
-func TestGetEmbeddableReposLimit(t *testing.T) {
+func TestGetEmbeddbbleReposLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	repoStore := db.Repos()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create two repositories
-	firstRepo := &types.Repo{Name: "github.com/sourcegraph/sourcegraph", URI: "github.com/sourcegraph/sourcegraph", ExternalRepo: api.ExternalRepoSpec{}}
-	err := repoStore.Create(ctx, firstRepo)
+	// Crebte two repositories
+	firstRepo := &types.Repo{Nbme: "github.com/sourcegrbph/sourcegrbph", URI: "github.com/sourcegrbph/sourcegrbph", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err := repoStore.Crebte(ctx, firstRepo)
 	require.NoError(t, err)
 
-	secondRepo := &types.Repo{Name: "github.com/sourcegraph/zoekt", URI: "github.com/sourcegraph/zoekt", ExternalRepo: api.ExternalRepoSpec{}}
-	err = repoStore.Create(ctx, secondRepo)
+	secondRepo := &types.Repo{Nbme: "github.com/sourcegrbph/zoekt", URI: "github.com/sourcegrbph/zoekt", ExternblRepo: bpi.ExternblRepoSpec{}}
+	err = repoStore.Crebte(ctx, secondRepo)
 	require.NoError(t, err)
 
 	// Clone the repos
 	gitserverStore := db.GitserverRepos()
-	err = gitserverStore.SetCloneStatus(ctx, firstRepo.Name, types.CloneStatusCloned, "test")
+	err = gitserverStore.SetCloneStbtus(ctx, firstRepo.Nbme, types.CloneStbtusCloned, "test")
 	require.NoError(t, err)
 
-	err = gitserverStore.SetCloneStatus(ctx, secondRepo.Name, types.CloneStatusCloned, "test")
+	err = gitserverStore.SetCloneStbtus(ctx, secondRepo.Nbme, types.CloneStbtusCloned, "test")
 	require.NoError(t, err)
 
-	// Create an embeddings policy that applies to all repos
+	// Crebte bn embeddings policy thbt bpplies to bll repos
 	store := NewRepoEmbeddingJobsStore(db)
-	err = createGlobalPolicy(ctx, store)
+	err = crebteGlobblPolicy(ctx, store)
 	require.NoError(t, err)
 
-	cases := []struct {
-		policyRepositoryMatchLimit int
-		wantMatches                int
+	cbses := []struct {
+		policyRepositoryMbtchLimit int
+		wbntMbtches                int
 	}{
 		{
-			policyRepositoryMatchLimit: -1, // unlimited
-			wantMatches:                2,
+			policyRepositoryMbtchLimit: -1, // unlimited
+			wbntMbtches:                2,
 		},
 		{
-			policyRepositoryMatchLimit: 0,
-			wantMatches:                0,
+			policyRepositoryMbtchLimit: 0,
+			wbntMbtches:                0,
 		},
 		{
-			policyRepositoryMatchLimit: 1,
-			wantMatches:                1,
+			policyRepositoryMbtchLimit: 1,
+			wbntMbtches:                1,
 		},
 		{
-			policyRepositoryMatchLimit: 2,
-			wantMatches:                2,
+			policyRepositoryMbtchLimit: 2,
+			wbntMbtches:                2,
 		},
 		{
-			policyRepositoryMatchLimit: 3,
-			wantMatches:                2,
+			policyRepositoryMbtchLimit: 3,
+			wbntMbtches:                2,
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(fmt.Sprintf("policyRepositoryMatchLimit=%d", tt.policyRepositoryMatchLimit), func(t *testing.T) {
-			repos, err := store.GetEmbeddableRepos(ctx, EmbeddableRepoOpts{MinimumInterval: 1 * time.Hour, PolicyRepositoryMatchLimit: &tt.policyRepositoryMatchLimit})
+	for _, tt := rbnge cbses {
+		t.Run(fmt.Sprintf("policyRepositoryMbtchLimit=%d", tt.policyRepositoryMbtchLimit), func(t *testing.T) {
+			repos, err := store.GetEmbeddbbleRepos(ctx, EmbeddbbleRepoOpts{MinimumIntervbl: 1 * time.Hour, PolicyRepositoryMbtchLimit: &tt.policyRepositoryMbtchLimit})
 			require.NoError(t, err)
-			require.Equal(t, tt.wantMatches, len(repos))
+			require.Equbl(t, tt.wbntMbtches, len(repos))
 		})
 	}
 }
 
-func TestGetEmbeddableRepoOpts(t *testing.T) {
+func TestGetEmbeddbbleRepoOpts(t *testing.T) {
 	conf.Mock(&conf.Unified{})
 	defer conf.Mock(nil)
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		CodyEnabled: pointers.Ptr(true),
-		LicenseKey:  "asdf",
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+		CodyEnbbled: pointers.Ptr(true),
+		LicenseKey:  "bsdf",
 	}})
 
-	opts := GetEmbeddableRepoOpts()
-	require.Equal(t, 24*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5000, *opts.PolicyRepositoryMatchLimit)
+	opts := GetEmbeddbbleRepoOpts()
+	require.Equbl(t, 24*time.Hour, opts.MinimumIntervbl)
+	require.Equbl(t, 5000, *opts.PolicyRepositoryMbtchLimit)
 
-	opts = GetEmbeddableRepoOpts()
-	require.Equal(t, 24*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5000, *opts.PolicyRepositoryMatchLimit)
+	opts = GetEmbeddbbleRepoOpts()
+	require.Equbl(t, 24*time.Hour, opts.MinimumIntervbl)
+	require.Equbl(t, 5000, *opts.PolicyRepositoryMbtchLimit)
 
 	limit := 5
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			CodyEnabled: pointers.Ptr(true),
-			Embeddings: &schema.Embeddings{
-				Provider:                   "openai",
-				AccessToken:                "asdf",
-				MinimumInterval:            "1h",
-				PolicyRepositoryMatchLimit: &limit,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			CodyEnbbled: pointers.Ptr(true),
+			Embeddings: &schemb.Embeddings{
+				Provider:                   "openbi",
+				AccessToken:                "bsdf",
+				MinimumIntervbl:            "1h",
+				PolicyRepositoryMbtchLimit: &limit,
 			},
 		},
 	})
 
-	opts = GetEmbeddableRepoOpts()
-	require.Equal(t, 1*time.Hour, opts.MinimumInterval)
-	require.Equal(t, 5, *opts.PolicyRepositoryMatchLimit)
+	opts = GetEmbeddbbleRepoOpts()
+	require.Equbl(t, 1*time.Hour, opts.MinimumIntervbl)
+	require.Equbl(t, 5, *opts.PolicyRepositoryMbtchLimit)
 }
 
-func setJobState(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int, state string) {
+func setJobStbte(t *testing.T, ctx context.Context, store RepoEmbeddingJobsStore, jobID int, stbte string) {
 	t.Helper()
-	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_embedding_jobs SET state = %s, finished_at = now() WHERE id = %s", state, jobID))
+	err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo_embedding_jobs SET stbte = %s, finished_bt = now() WHERE id = %s", stbte, jobID))
 	if err != nil {
-		t.Fatalf("failed to set repo embedding job state: %s", err)
+		t.Fbtblf("fbiled to set repo embedding job stbte: %s", err)
 	}
 }
 
-const insertGlobalPolicyStr = `
-INSERT INTO lsif_configuration_policies (
+const insertGlobblPolicyStr = `
+INSERT INTO lsif_configurbtion_policies (
 	repository_id,
-	repository_patterns,
-	name,
+	repository_pbtterns,
+	nbme,
 	type,
-	pattern,
-	retention_enabled,
-	retention_duration_hours,
-	retain_intermediate_commits,
-	indexing_enabled,
-	index_commit_max_age_hours,
-	index_intermediate_commits,
-	embeddings_enabled
+	pbttern,
+	retention_enbbled,
+	retention_durbtion_hours,
+	retbin_intermedibte_commits,
+	indexing_enbbled,
+	index_commit_mbx_bge_hours,
+	index_intermedibte_commits,
+	embeddings_enbbled
 ) VALUES  (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
       `
 
-func createGlobalPolicy(ctx context.Context, store RepoEmbeddingJobsStore) error {
-	q := sqlf.Sprintf(insertGlobalPolicyStr,
+func crebteGlobblPolicy(ctx context.Context, store RepoEmbeddingJobsStore) error {
+	q := sqlf.Sprintf(insertGlobblPolicyStr,
 		nil,
 		nil,
-		"global",
-		string(shared.GitObjectTypeCommit),
+		"globbl",
+		string(shbred.GitObjectTypeCommit),
 		"HEAD",
-		false,
+		fblse,
 		nil,
-		false,
-		false,
+		fblse,
+		fblse,
 		nil,
-		false,
-		true, // Embeddings enabled
+		fblse,
+		true, // Embeddings enbbled
 	)
 	return store.Exec(ctx, q)
 }

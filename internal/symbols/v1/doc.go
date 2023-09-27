@@ -1,2 +1,2 @@
-// Package v1 contains protocol buffer definitions for the symbols service.
-package v1
+// Pbckbge v1 contbins protocol buffer definitions for the symbols service.
+pbckbge v1

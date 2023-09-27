@@ -1,53 +1,53 @@
-package output
+pbckbge output
 
 import (
-	"math"
+	"mbth"
 	"time"
 )
 
 type progressSimple struct {
 	*Output
 
-	bars []*ProgressBar
-	done chan chan struct{}
+	bbrs []*ProgressBbr
+	done chbn chbn struct{}
 }
 
 func (p *progressSimple) Complete() {
 	p.stop()
-	writeBars(p.Output, p.bars)
+	writeBbrs(p.Output, p.bbrs)
 }
 
 func (p *progressSimple) Close()   { p.Destroy() }
 func (p *progressSimple) Destroy() { p.stop() }
 
-func (p *progressSimple) SetLabel(i int, label string) {
-	p.bars[i].Label = label
+func (p *progressSimple) SetLbbel(i int, lbbel string) {
+	p.bbrs[i].Lbbel = lbbel
 }
 
-func (p *progressSimple) SetLabelAndRecalc(i int, label string) {
-	p.bars[i].Label = label
+func (p *progressSimple) SetLbbelAndRecblc(i int, lbbel string) {
+	p.bbrs[i].Lbbel = lbbel
 }
 
-func (p *progressSimple) SetValue(i int, v float64) {
-	p.bars[i].Value = v
+func (p *progressSimple) SetVblue(i int, v flobt64) {
+	p.bbrs[i].Vblue = v
 }
 
 func (p *progressSimple) stop() {
-	c := make(chan struct{})
+	c := mbke(chbn struct{})
 	p.done <- c
 	<-c
 }
 
-func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progressSimple {
+func newProgressSimple(bbrs []*ProgressBbr, o *Output, opts *ProgressOpts) *progressSimple {
 	p := &progressSimple{
 		Output: o,
-		bars:   bars,
-		done:   make(chan chan struct{}),
+		bbrs:   bbrs,
+		done:   mbke(chbn chbn struct{}),
 	}
 
 	if opts != nil && opts.NoSpinner {
 		if p.Output.verbose {
-			writeBars(p.Output, p.bars)
+			writeBbrs(p.Output, p.bbrs)
 		}
 		return p
 	}
@@ -58,12 +58,12 @@ func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *prog
 
 		for {
 			select {
-			case <-ticker.C:
+			cbse <-ticker.C:
 				if p.Output.verbose {
-					writeBars(p.Output, p.bars)
+					writeBbrs(p.Output, p.bbrs)
 				}
 
-			case c := <-p.done:
+			cbse c := <-p.done:
 				c <- struct{}{}
 				return
 			}
@@ -73,19 +73,19 @@ func newProgressSimple(bars []*ProgressBar, o *Output, opts *ProgressOpts) *prog
 	return p
 }
 
-func writeBar(w Writer, bar *ProgressBar) {
-	w.Writef("%s: %d%%", bar.Label, int64(math.Round((100.0*bar.Value)/bar.Max)))
+func writeBbr(w Writer, bbr *ProgressBbr) {
+	w.Writef("%s: %d%%", bbr.Lbbel, int64(mbth.Round((100.0*bbr.Vblue)/bbr.Mbx)))
 }
 
-func writeBars(o *Output, bars []*ProgressBar) {
-	if len(bars) > 1 {
+func writeBbrs(o *Output, bbrs []*ProgressBbr) {
+	if len(bbrs) > 1 {
 		block := o.Block(Line("", StyleReset, "Progress:"))
 		defer block.Close()
 
-		for _, bar := range bars {
-			writeBar(block, bar)
+		for _, bbr := rbnge bbrs {
+			writeBbr(block, bbr)
 		}
-	} else if len(bars) == 1 {
-		writeBar(o, bars[0])
+	} else if len(bbrs) == 1 {
+		writeBbr(o, bbrs[0])
 	}
 }

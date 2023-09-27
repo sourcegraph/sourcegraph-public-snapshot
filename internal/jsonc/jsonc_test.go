@@ -1,4 +1,4 @@
-package jsonc
+pbckbge jsonc
 
 import (
 	"reflect"
@@ -6,69 +6,69 @@ import (
 	"testing"
 )
 
-func TestUnmarshal(t *testing.T) {
+func TestUnmbrshbl(t *testing.T) {
 	tests := []struct {
 		input string
-		want  any
+		wbnt  bny
 	}{
 		{
 			input: `{
 // comment
-/* another comment */
+/* bnother comment */
 "hello": "world",
 }`,
-			want: map[string]any{"hello": "world"},
+			wbnt: mbp[string]bny{"hello": "world"},
 		},
 		{
 			input: `// just
 		// comments
 		// here`,
-			want: nil,
+			wbnt: nil,
 		},
 	}
 
-	for i, test := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			var got any
-			if err := Unmarshal(test.input, &got); err != nil {
-				t.Fatal(err)
+	for i, test := rbnge tests {
+		t.Run(strconv.Itob(i), func(t *testing.T) {
+			vbr got bny
+			if err := Unmbrshbl(test.input, &got); err != nil {
+				t.Fbtbl(err)
 			}
-			if !reflect.DeepEqual(got, test.want) {
-				t.Errorf("got %+v, want %+v", got, test.want)
+			if !reflect.DeepEqubl(got, test.wbnt) {
+				t.Errorf("got %+v, wbnt %+v", got, test.wbnt)
 			}
 		})
 	}
 }
 
-func TestParse(t *testing.T) {
+func TestPbrse(t *testing.T) {
 	tests := []struct {
 		input string
-		want  any
+		wbnt  bny
 	}{
 		{
 			input: `{
 // comment
-/* another comment */
+/* bnother comment */
 "hello": "world",
 }`,
-			want: `{"hello":"world"}`,
+			wbnt: `{"hello":"world"}`,
 		},
 		{
 			input: `// just
 		// comments
 		// here`,
-			want: `null`,
+			wbnt: `null`,
 		},
 	}
 
-	for i, test := range tests {
-		t.Run(strconv.Itoa(i), func(t *testing.T) {
-			got, err := Parse(test.input)
+	for i, test := rbnge tests {
+		t.Run(strconv.Itob(i), func(t *testing.T) {
+			got, err := Pbrse(test.input)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if string(got) != test.want {
-				t.Errorf("got %s, want %s", got, test.want)
+			if string(got) != test.wbnt {
+				t.Errorf("got %s, wbnt %s", got, test.wbnt)
 			}
 		})
 	}

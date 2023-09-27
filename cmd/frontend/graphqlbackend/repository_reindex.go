@@ -1,29 +1,29 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/zoekt"
 )
 
 // ReindexRepository will trigger Zoekt indexserver to reindex the repository.
-func (r *schemaResolver) ReindexRepository(ctx context.Context, args *struct {
-	Repository graphql.ID
+func (r *schembResolver) ReindexRepository(ctx context.Context, brgs *struct {
+	Repository grbphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: There is no rebson why non-site-bdmins would need to run this operbtion.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	repo, err := r.repositoryByID(ctx, args.Repository)
+	repo, err := r.repositoryByID(ctx, brgs.Repository)
 	if err != nil {
 		return nil, err
 	}
 
-	err = zoekt.Reindex(ctx, repo.RepoName(), repo.IDInt32())
+	err = zoekt.Reindex(ctx, repo.RepoNbme(), repo.IDInt32())
 	if err != nil {
 		return nil, err
 	}

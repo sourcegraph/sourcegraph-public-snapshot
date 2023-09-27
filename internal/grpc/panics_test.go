@@ -1,53 +1,53 @@
-package grpc
+pbckbge grpc
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
-func TestStreamPanicCatcher(t *testing.T) {
-	logger, getLogs := logtest.Captured(t)
+func TestStrebmPbnicCbtcher(t *testing.T) {
+	logger, getLogs := logtest.Cbptured(t)
 
-	streamInterceptor := NewStreamPanicCatcher(logger)
-	err := streamInterceptor(
+	strebmInterceptor := NewStrebmPbnicCbtcher(logger)
+	err := strebmInterceptor(
 		nil,
 		nil,
-		&grpc.StreamServerInfo{FullMethod: "testmethod"},
-		func(_ interface{}, _ grpc.ServerStream) error {
-			panic("ouch")
+		&grpc.StrebmServerInfo{FullMethod: "testmethod"},
+		func(_ interfbce{}, _ grpc.ServerStrebm) error {
+			pbnic("ouch")
 		},
 	)
 	require.Error(t, err)
-	require.Equal(t, codes.Internal, status.Code(err))
+	require.Equbl(t, codes.Internbl, stbtus.Code(err))
 
 	logs := getLogs()
 	require.Len(t, logs, 1)
-	require.Equal(t, log.LevelError, logs[0].Level)
+	require.Equbl(t, log.LevelError, logs[0].Level)
 }
 
-func TestUnaryPanicCatcher(t *testing.T) {
-	logger, getLogs := logtest.Captured(t)
+func TestUnbryPbnicCbtcher(t *testing.T) {
+	logger, getLogs := logtest.Cbptured(t)
 
-	unaryInterceptor := NewUnaryPanicCatcher(logger)
-	_, err := unaryInterceptor(
+	unbryInterceptor := NewUnbryPbnicCbtcher(logger)
+	_, err := unbryInterceptor(
 		nil,
 		nil,
-		&grpc.UnaryServerInfo{FullMethod: "testmethod"},
-		func(_ context.Context, _ interface{}) (interface{}, error) {
-			panic("ouch")
+		&grpc.UnbryServerInfo{FullMethod: "testmethod"},
+		func(_ context.Context, _ interfbce{}) (interfbce{}, error) {
+			pbnic("ouch")
 		},
 	)
 	require.Error(t, err)
-	require.Equal(t, codes.Internal, status.Code(err))
+	require.Equbl(t, codes.Internbl, stbtus.Code(err))
 
 	logs := getLogs()
 	require.Len(t, logs, 1)
-	require.Equal(t, log.LevelError, logs[0].Level)
+	require.Equbl(t, log.LevelError, logs[0].Level)
 }

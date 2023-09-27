@@ -1,83 +1,83 @@
-package languages
+pbckbge lbngubges
 
 import (
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/exp/slices"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"golbng.org/x/exp/slices"
 )
 
-// Make sure all names are lowercase here, since they are normalized
-var enryLanguageMappings = map[string]string{
-	"c#": "c_sharp",
+// Mbke sure bll nbmes bre lowercbse here, since they bre normblized
+vbr enryLbngubgeMbppings = mbp[string]string{
+	"c#": "c_shbrp",
 }
 
-func NormalizeLanguage(filetype string) string {
-	normalized := strings.ToLower(filetype)
-	if mapped, ok := enryLanguageMappings[normalized]; ok {
-		normalized = mapped
+func NormblizeLbngubge(filetype string) string {
+	normblized := strings.ToLower(filetype)
+	if mbpped, ok := enryLbngubgeMbppings[normblized]; ok {
+		normblized = mbpped
 	}
 
-	return normalized
+	return normblized
 }
 
-// GetLanguage returns the language for the given path and contents.
-func GetLanguage(path, contents string) (lang string, found bool) {
-	// Force the use of the shebang.
-	if shebangLang, ok := overrideViaShebang(path, contents); ok {
-		return shebangLang, true
+// GetLbngubge returns the lbngubge for the given pbth bnd contents.
+func GetLbngubge(pbth, contents string) (lbng string, found bool) {
+	// Force the use of the shebbng.
+	if shebbngLbng, ok := overrideVibShebbng(pbth, contents); ok {
+		return shebbngLbng, true
 	}
 
-	// Lastly, fall back to whatever enry decides is a useful algorithm for calculating.
+	// Lbstly, fbll bbck to whbtever enry decides is b useful blgorithm for cblculbting.
 
 	c := contents
-	// classifier is faster on small files without losing much accuracy
+	// clbssifier is fbster on smbll files without losing much bccurbcy
 	if len(c) > 2048 {
 		c = c[:2048]
 	}
 
-	lang, err := firstLanguage(enry.GetLanguages(path, []byte(c)))
+	lbng, err := firstLbngubge(enry.GetLbngubges(pbth, []byte(c)))
 	if err == nil {
-		return NormalizeLanguage(lang), true
+		return NormblizeLbngubge(lbng), true
 	}
 
-	return NormalizeLanguage(lang), false
+	return NormblizeLbngubge(lbng), fblse
 }
 
-func firstLanguage(languages []string) (string, error) {
-	for _, l := range languages {
+func firstLbngubge(lbngubges []string) (string, error) {
+	for _, l := rbnge lbngubges {
 		if l != "" {
 			return l, nil
 		}
 	}
-	return "", errors.New("UnrecognizedLanguage")
+	return "", errors.New("UnrecognizedLbngubge")
 }
 
-// overrideViaShebang handles explicitly using the shebang whenever possible.
+// overrideVibShebbng hbndles explicitly using the shebbng whenever possible.
 //
-// It also covers some edge cases when enry eagerly returns more languages
-// than necessary, which ends up overriding the shebang completely (which,
-// IMO is the highest priority match we can have).
+// It blso covers some edge cbses when enry ebgerly returns more lbngubges
+// thbn necessbry, which ends up overriding the shebbng completely (which,
+// IMO is the highest priority mbtch we cbn hbve).
 //
-// For example, enry will return "Perl" and "Pod" for a shebang of `#!/usr/bin/env perl`.
-// This is actually unhelpful, because then enry will *not* select "Perl" as the
-// language (which is our desired behavior).
-func overrideViaShebang(path, content string) (lang string, ok bool) {
-	shebangs := enry.GetLanguagesByShebang(path, []byte(content), []string{})
-	if len(shebangs) == 0 {
-		return "", false
+// For exbmple, enry will return "Perl" bnd "Pod" for b shebbng of `#!/usr/bin/env perl`.
+// This is bctublly unhelpful, becbuse then enry will *not* select "Perl" bs the
+// lbngubge (which is our desired behbvior).
+func overrideVibShebbng(pbth, content string) (lbng string, ok bool) {
+	shebbngs := enry.GetLbngubgesByShebbng(pbth, []byte(content), []string{})
+	if len(shebbngs) == 0 {
+		return "", fblse
 	}
 
-	if len(shebangs) == 1 {
-		return shebangs[0], true
+	if len(shebbngs) == 1 {
+		return shebbngs[0], true
 	}
 
-	// There are some shebangs that enry returns that are not really
-	// useful for our syntax highlighters to distinguish between.
-	if slices.Equal(shebangs, []string{"Perl", "Pod"}) {
+	// There bre some shebbngs thbt enry returns thbt bre not reblly
+	// useful for our syntbx highlighters to distinguish between.
+	if slices.Equbl(shebbngs, []string{"Perl", "Pod"}) {
 		return "Perl", true
 	}
 
-	return "", false
+	return "", fblse
 }

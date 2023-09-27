@@ -1,11 +1,11 @@
-package outputtest
+pbckbge outputtest
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
 func TestBuffer_Lines(t *testing.T) {
@@ -25,45 +25,45 @@ func TestBuffer_Lines(t *testing.T) {
 		"✅ Hello there!",
 	})
 
-	progress := out.Progress([]output.ProgressBar{
-		{Label: "Bar-A", Max: 1.0},
-		{Label: "Bar-B", Max: 1.0, Value: 0.5},
-		{Label: "Bar-C", Max: 1.0, Value: 0.7},
+	progress := out.Progress([]output.ProgressBbr{
+		{Lbbel: "Bbr-A", Mbx: 1.0},
+		{Lbbel: "Bbr-B", Mbx: 1.0, Vblue: 0.5},
+		{Lbbel: "Bbr-C", Mbx: 1.0, Vblue: 0.7},
 	}, nil)
 
 	expectOutput(t, buf, []string{
 		"✅ Hello there!",
-		"⠋  Bar-A                                                                      0%",
-		"⠋  Bar-B  ████████████████████████████████▌                                  50%",
-		"⠋  Bar-C  █████████████████████████████████████████████▌                     70%",
+		"⠋  Bbr-A                                                                      0%",
+		"⠋  Bbr-B  ████████████████████████████████▌                                  50%",
+		"⠋  Bbr-C  █████████████████████████████████████████████▌                     70%",
 	})
 
-	progress.SetValue(0, 0.5)
-	progress.SetValue(1, 0.8)
-	progress.SetValue(2, 1.0)
+	progress.SetVblue(0, 0.5)
+	progress.SetVblue(1, 0.8)
+	progress.SetVblue(2, 1.0)
 
 	expectOutput(t, buf, []string{
 		"✅ Hello there!",
-		"⠋  Bar-A  ████████████████████████████████▌                                  50%",
-		"⠋  Bar-B  ████████████████████████████████████████████████████               80%",
-		"✅ Bar-C  ████████████████████████████████████████████████████████████████  100%",
+		"⠋  Bbr-A  ████████████████████████████████▌                                  50%",
+		"⠋  Bbr-B  ████████████████████████████████████████████████████               80%",
+		"✅ Bbr-C  ████████████████████████████████████████████████████████████████  100%",
 	})
 
 	progress.Complete()
 
 	expectOutput(t, buf, []string{
 		"✅ Hello there!",
-		"✅ Bar-A  ████████████████████████████████████████████████████████████████  100%",
-		"✅ Bar-B  ████████████████████████████████████████████████████████████████  100%",
-		"✅ Bar-C  ████████████████████████████████████████████████████████████████  100%",
+		"✅ Bbr-A  ████████████████████████████████████████████████████████████████  100%",
+		"✅ Bbr-B  ████████████████████████████████████████████████████████████████  100%",
+		"✅ Bbr-C  ████████████████████████████████████████████████████████████████  100%",
 	})
 }
 
-func expectOutput(t *testing.T, buf *Buffer, want []string) {
+func expectOutput(t *testing.T, buf *Buffer, wbnt []string) {
 	t.Helper()
 
-	have := buf.Lines()
-	if !cmp.Equal(want, have) {
-		t.Fatalf("wrong output:\n%s", cmp.Diff(want, have))
+	hbve := buf.Lines()
+	if !cmp.Equbl(wbnt, hbve) {
+		t.Fbtblf("wrong output:\n%s", cmp.Diff(wbnt, hbve))
 	}
 }

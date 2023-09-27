@@ -1,24 +1,24 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
+	"gotest.tools/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type fakeCodeownersStats map[string][]PathCodeownersCounts
+type fbkeCodeownersStbts mbp[string][]PbthCodeownersCounts
 
-func (w fakeCodeownersStats) Iterate(f func(string, PathCodeownersCounts) error) error {
-	for path, owners := range w {
-		for _, o := range owners {
-			if err := f(path, o); err != nil {
+func (w fbkeCodeownersStbts) Iterbte(f func(string, PbthCodeownersCounts) error) error {
+	for pbth, owners := rbnge w {
+		for _, o := rbnge owners {
+			if err := f(pbth, o); err != nil {
 				return err
 			}
 		}
@@ -26,18 +26,18 @@ func (w fakeCodeownersStats) Iterate(f func(string, PathCodeownersCounts) error)
 	return nil
 }
 
-func TestUpdateIndividualCountsSuccess(t *testing.T) {
+func TestUpdbteIndividublCountsSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	// 1. Setup repo and paths:
-	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
+	ctx := context.Bbckground()
+	// 1. Setup repo bnd pbths:
+	repo := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
 	// 2. Insert countsg:
-	iter := fakeCodeownersStats{
+	iter := fbkeCodeownersStbts{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
@@ -50,28 +50,28 @@ func TestUpdateIndividualCountsSuccess(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 		},
 	}
-	timestamp := time.Now()
-	updatedRows, err := db.OwnershipStats().UpdateIndividualCounts(ctx, repo.ID, iter, timestamp)
+	timestbmp := time.Now()
+	updbtedRows, err := db.OwnershipStbts().UpdbteIndividublCounts(ctx, repo.ID, iter, timestbmp)
 	require.NoError(t, err)
-	if got, want := updatedRows, 5; got != want {
-		t.Errorf("UpdateIndividualCounts, updated rows, got %d, want %d", got, want)
+	if got, wbnt := updbtedRows, 5; got != wbnt {
+		t.Errorf("UpdbteIndividublCounts, updbted rows, got %d, wbnt %d", got, wbnt)
 	}
 }
 
-func TestQueryIndividualCountsAggregation(t *testing.T) {
+func TestQueryIndividublCountsAggregbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	// 1. Setup repos and paths:
-	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
-	repo2 := mustCreate(ctx, t, db, &types.Repo{Name: "a/c"})
+	ctx := context.Bbckground()
+	// 1. Setup repos bnd pbths:
+	repo1 := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
+	repo2 := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/c"})
 	// 2. Insert counts:
-	timestamp := time.Now()
-	iter1 := fakeCodeownersStats{
+	timestbmp := time.Now()
+	iter1 := fbkeCodeownersStbts{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
@@ -84,9 +84,9 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 		},
 	}
-	_, err := db.OwnershipStats().UpdateIndividualCounts(ctx, repo1.ID, iter1, timestamp)
+	_, err := db.OwnershipStbts().UpdbteIndividublCounts(ctx, repo1.ID, iter1, timestbmp)
 	require.NoError(t, err)
-	iter2 := fakeCodeownersStats{
+	iter2 := fbkeCodeownersStbts{
 		"": {
 			{CodeownersReference: "ownerA", CodeownedFileCount: 20},
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
@@ -99,241 +99,241 @@ func TestQueryIndividualCountsAggregation(t *testing.T) {
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10},
 		},
 	}
-	_, err = db.OwnershipStats().UpdateIndividualCounts(ctx, repo2.ID, iter2, timestamp)
+	_, err = db.OwnershipStbts().UpdbteIndividublCounts(ctx, repo2.ID, iter2, timestbmp)
 	require.NoError(t, err)
-	// 3. Query with or without aggregation:
+	// 3. Query with or without bggregbtion:
 	t.Run("query single file", func(t *testing.T) {
-		opts := TreeLocationOpts{
+		opts := TreeLocbtionOpts{
 			RepoID: repo1.ID,
-			Path:   "file1",
+			Pbth:   "file1",
 		}
-		var limitOffset *LimitOffset
-		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		vbr limitOffset *LimitOffset
+		got, err := db.OwnershipStbts().QueryIndividublCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []PathCodeownersCounts{
+		wbnt := []PbthCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 1},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 	t.Run("query single repo", func(t *testing.T) {
-		opts := TreeLocationOpts{
+		opts := TreeLocbtionOpts{
 			RepoID: repo1.ID,
 		}
-		var limitOffset *LimitOffset
-		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+		vbr limitOffset *LimitOffset
+		got, err := db.OwnershipStbts().QueryIndividublCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []PathCodeownersCounts{
+		wbnt := []PbthCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 2},
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
-	t.Run("query whole instance", func(t *testing.T) {
-		opts := TreeLocationOpts{}
-		var limitOffset *LimitOffset
-		got, err := db.OwnershipStats().QueryIndividualCounts(ctx, opts, limitOffset)
+	t.Run("query whole instbnce", func(t *testing.T) {
+		opts := TreeLocbtionOpts{}
+		vbr limitOffset *LimitOffset
+		got, err := db.OwnershipStbts().QueryIndividublCounts(ctx, opts, limitOffset)
 		require.NoError(t, err)
-		want := []PathCodeownersCounts{
+		wbnt := []PbthCodeownersCounts{
 			{CodeownersReference: "ownerA", CodeownedFileCount: 22}, // from both repos
 			{CodeownersReference: "ownerC", CodeownedFileCount: 10}, // only repo2
 			{CodeownersReference: "ownerB", CodeownedFileCount: 1},  // only repo1
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 }
 
-// fakeAggregateStatsIterator contains aggregate counts by file path.
-type fakeAggregateStatsIterator map[string]PathAggregateCounts
+// fbkeAggregbteStbtsIterbtor contbins bggregbte counts by file pbth.
+type fbkeAggregbteStbtsIterbtor mbp[string]PbthAggregbteCounts
 
-func (w fakeAggregateStatsIterator) Iterate(f func(string, PathAggregateCounts) error) error {
-	for path, counts := range w {
-		if err := f(path, counts); err != nil {
+func (w fbkeAggregbteStbtsIterbtor) Iterbte(f func(string, PbthAggregbteCounts) error) error {
+	for pbth, counts := rbnge w {
+		if err := f(pbth, counts); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func TestUpdateAggregateCountsSuccess(t *testing.T) {
+func TestUpdbteAggregbteCountsSuccess(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	// 1. Setup repo and paths:
-	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
-	// 2. Insert aggregate counts:
-	iter := fakeAggregateStatsIterator{
+	ctx := context.Bbckground()
+	// 1. Setup repo bnd pbths:
+	repo := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
+	// 2. Insert bggregbte counts:
+	iter := fbkeAggregbteStbtsIterbtor{
 		"": {
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 2,
-			TotalOwnedFileCount:        3,
+			TotblOwnedFileCount:        3,
 		},
 		"file1.go": {
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        1,
+			TotblOwnedFileCount:        1,
 		},
 		"dir": {
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        2,
+			TotblOwnedFileCount:        2,
 		},
 		"dir/file2.go": {
 			CodeownedFileCount:  1,
-			TotalOwnedFileCount: 1,
+			TotblOwnedFileCount: 1,
 		},
 		"dir/file3.go": {
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        1,
+			TotblOwnedFileCount:        1,
 		},
 	}
-	timestamp := time.Now()
-	updatedRows, err := db.OwnershipStats().UpdateAggregateCounts(ctx, repo.ID, iter, timestamp)
+	timestbmp := time.Now()
+	updbtedRows, err := db.OwnershipStbts().UpdbteAggregbteCounts(ctx, repo.ID, iter, timestbmp)
 	require.NoError(t, err)
-	if got, want := updatedRows, len(iter); got != want {
-		t.Errorf("UpdateAggregateCounts, updated rows, got %d, want %d", got, want)
+	if got, wbnt := updbtedRows, len(iter); got != wbnt {
+		t.Errorf("UpdbteAggregbteCounts, updbted rows, got %d, wbnt %d", got, wbnt)
 	}
 }
 
-func TestQueryAggregateCounts(t *testing.T) {
+func TestQueryAggregbteCounts(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	// 1. Setup repo and paths:
-	repo1 := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
-	repo2 := mustCreate(ctx, t, db, &types.Repo{Name: "a/c"})
-	_ = mustCreate(ctx, t, db, &types.Repo{Name: "a/d"}) // No data for this repo
+	ctx := context.Bbckground()
+	// 1. Setup repo bnd pbths:
+	repo1 := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
+	repo2 := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/c"})
+	_ = mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/d"}) // No dbtb for this repo
 
-	t.Run("no data - query single repo", func(t *testing.T) {
-		opts := TreeLocationOpts{
+	t.Run("no dbtb - query single repo", func(t *testing.T) {
+		opts := TreeLocbtionOpts{
 			RepoID: repo1.ID,
 		}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{CodeownedFileCount: 0}
-		assert.DeepEqual(t, want, got)
+		wbnt := PbthAggregbteCounts{CodeownedFileCount: 0}
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 
-	t.Run("no data - query all", func(t *testing.T) {
-		opts := TreeLocationOpts{}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+	t.Run("no dbtb - query bll", func(t *testing.T) {
+		opts := TreeLocbtionOpts{}
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{CodeownedFileCount: 0}
-		assert.DeepEqual(t, want, got)
+		wbnt := PbthAggregbteCounts{CodeownedFileCount: 0}
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 
-	// 2. Insert aggregate counts:
-	timestamp := time.Date(2023, 1, 1, 0, 0, 0, 0, time.UTC)
-	repo1Counts := fakeAggregateStatsIterator{
+	// 2. Insert bggregbte counts:
+	timestbmp := time.Dbte(2023, 1, 1, 0, 0, 0, 0, time.UTC)
+	repo1Counts := fbkeAggregbteStbtsIterbtor{
 		"": {
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        2,
+			TotblOwnedFileCount:        2,
 		},
 		"dir": {
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        2,
+			TotblOwnedFileCount:        2,
 		},
 		"dir/file1.go": {
 			CodeownedFileCount:  1,
-			TotalOwnedFileCount: 1,
+			TotblOwnedFileCount: 1,
 		},
 		"dir/file2.go": {
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        1,
+			TotblOwnedFileCount:        1,
 		},
 	}
-	_, err := db.OwnershipStats().UpdateAggregateCounts(ctx, repo1.ID, repo1Counts, timestamp)
+	_, err := db.OwnershipStbts().UpdbteAggregbteCounts(ctx, repo1.ID, repo1Counts, timestbmp)
 	require.NoError(t, err)
-	repo2Counts := fakeAggregateStatsIterator{
-		"": { // Just the root data
+	repo2Counts := fbkeAggregbteStbtsIterbtor{
+		"": { // Just the root dbtb
 			CodeownedFileCount:  10,
-			TotalOwnedFileCount: 10,
+			TotblOwnedFileCount: 10,
 		},
 	}
-	_, err = db.OwnershipStats().UpdateAggregateCounts(ctx, repo2.ID, repo2Counts, timestamp)
+	_, err = db.OwnershipStbts().UpdbteAggregbteCounts(ctx, repo2.ID, repo2Counts, timestbmp)
 	require.NoError(t, err)
 
-	// 3. Query aggregate counts:
+	// 3. Query bggregbte counts:
 	t.Run("query single file", func(t *testing.T) {
-		opts := TreeLocationOpts{
+		opts := TreeLocbtionOpts{
 			RepoID: repo1.ID,
-			Path:   "dir/file1.go",
+			Pbth:   "dir/file1.go",
 		}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{
+		wbnt := PbthAggregbteCounts{
 			CodeownedFileCount:  1,
-			TotalOwnedFileCount: 1,
-			UpdatedAt:           timestamp,
+			TotblOwnedFileCount: 1,
+			UpdbtedAt:           timestbmp,
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 
 	t.Run("query single dir", func(t *testing.T) {
-		opts := TreeLocationOpts{
+		opts := TreeLocbtionOpts{
 			RepoID: repo1.ID,
-			Path:   "dir",
+			Pbth:   "dir",
 		}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{
+		wbnt := PbthAggregbteCounts{
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        2,
-			UpdatedAt:                  timestamp,
+			TotblOwnedFileCount:        2,
+			UpdbtedAt:                  timestbmp,
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 
 	t.Run("query repo root", func(t *testing.T) {
-		opts := TreeLocationOpts{
+		opts := TreeLocbtionOpts{
 			RepoID: repo1.ID,
 		}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{
+		wbnt := PbthAggregbteCounts{
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        2,
-			UpdatedAt:                  timestamp,
+			TotblOwnedFileCount:        2,
+			UpdbtedAt:                  timestbmp,
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 
-	t.Run("query whole instance", func(t *testing.T) {
-		opts := TreeLocationOpts{}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+	t.Run("query whole instbnce", func(t *testing.T) {
+		opts := TreeLocbtionOpts{}
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{
+		wbnt := PbthAggregbteCounts{
 			CodeownedFileCount:         11,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        12,
-			UpdatedAt:                  timestamp,
+			TotblOwnedFileCount:        12,
+			UpdbtedAt:                  timestbmp,
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 
-	t.Run("query whole instance with excluded repo in signal config", func(t *testing.T) {
-		err = SignalConfigurationStoreWith(db).UpdateConfiguration(ctx, UpdateSignalConfigurationArgs{Name: "analytics", Enabled: true, ExcludedRepoPatterns: []string{"a/c"}})
+	t.Run("query whole instbnce with excluded repo in signbl config", func(t *testing.T) {
+		err = SignblConfigurbtionStoreWith(db).UpdbteConfigurbtion(ctx, UpdbteSignblConfigurbtionArgs{Nbme: "bnblytics", Enbbled: true, ExcludedRepoPbtterns: []string{"b/c"}})
 		require.NoError(t, err)
-		opts := TreeLocationOpts{}
-		got, err := db.OwnershipStats().QueryAggregateCounts(ctx, opts)
+		opts := TreeLocbtionOpts{}
+		got, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, opts)
 		require.NoError(t, err)
-		want := PathAggregateCounts{
+		wbnt := PbthAggregbteCounts{
 			CodeownedFileCount:         1,
 			AssignedOwnershipFileCount: 1,
-			TotalOwnedFileCount:        2,
-			UpdatedAt:                  timestamp,
+			TotblOwnedFileCount:        2,
+			UpdbtedAt:                  timestbmp,
 		}
-		assert.DeepEqual(t, want, got)
+		bssert.DeepEqubl(t, wbnt, got)
 	})
 }

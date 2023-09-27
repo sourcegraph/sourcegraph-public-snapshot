@@ -1,89 +1,89 @@
-package reposource
+pbckbge reposource
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type PythonVersionedPackage struct {
-	Name    PackageName
+type PythonVersionedPbckbge struct {
+	Nbme    PbckbgeNbme
 	Version string
 }
 
-func NewPythonVersionedPackage(name PackageName, version string) *PythonVersionedPackage {
-	return &PythonVersionedPackage{
-		Name:    name,
+func NewPythonVersionedPbckbge(nbme PbckbgeNbme, version string) *PythonVersionedPbckbge {
+	return &PythonVersionedPbckbge{
+		Nbme:    nbme,
 		Version: version,
 	}
 }
 
-// ParseVersionedPackage parses a string in a '<name>(==<version>)?' format into an
-// PythonVersionedPackage.
-func ParseVersionedPackage(dependency string) *PythonVersionedPackage {
-	var dep PythonVersionedPackage
-	if i := strings.LastIndex(dependency, "=="); i == -1 {
-		dep.Name = PackageName(dependency)
+// PbrseVersionedPbckbge pbrses b string in b '<nbme>(==<version>)?' formbt into bn
+// PythonVersionedPbckbge.
+func PbrseVersionedPbckbge(dependency string) *PythonVersionedPbckbge {
+	vbr dep PythonVersionedPbckbge
+	if i := strings.LbstIndex(dependency, "=="); i == -1 {
+		dep.Nbme = PbckbgeNbme(dependency)
 	} else {
-		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
-		dep.Version = strings.TrimSpace(dependency[i+2:])
+		dep.Nbme = PbckbgeNbme(strings.TrimSpbce(dependency[:i]))
+		dep.Version = strings.TrimSpbce(dependency[i+2:])
 	}
 	return &dep
 }
 
-func ParsePythonPackageFromName(name PackageName) *PythonVersionedPackage {
-	return ParseVersionedPackage(string(name))
+func PbrsePythonPbckbgeFromNbme(nbme PbckbgeNbme) *PythonVersionedPbckbge {
+	return PbrseVersionedPbckbge(string(nbme))
 }
 
-// ParsePythonPackageFromRepoName is a convenience function to parse a repo name in a
-// 'python/<name>(==<version>)?' format into a PythonVersionedPackage.
-func ParsePythonPackageFromRepoName(name api.RepoName) (*PythonVersionedPackage, error) {
-	dependency := strings.TrimPrefix(string(name), "python/")
-	if len(dependency) == len(name) {
-		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
+// PbrsePythonPbckbgeFromRepoNbme is b convenience function to pbrse b repo nbme in b
+// 'python/<nbme>(==<version>)?' formbt into b PythonVersionedPbckbge.
+func PbrsePythonPbckbgeFromRepoNbme(nbme bpi.RepoNbme) (*PythonVersionedPbckbge, error) {
+	dependency := strings.TrimPrefix(string(nbme), "python/")
+	if len(dependency) == len(nbme) {
+		return nil, errors.New("invblid python dependency repo nbme, missing python/ prefix")
 	}
-	return ParseVersionedPackage(dependency), nil
+	return PbrseVersionedPbckbge(dependency), nil
 }
 
-func (p *PythonVersionedPackage) Scheme() string {
+func (p *PythonVersionedPbckbge) Scheme() string {
 	return "python"
 }
 
-func (p *PythonVersionedPackage) PackageSyntax() PackageName {
-	return p.Name
+func (p *PythonVersionedPbckbge) PbckbgeSyntbx() PbckbgeNbme {
+	return p.Nbme
 }
 
-func (p *PythonVersionedPackage) VersionedPackageSyntax() string {
+func (p *PythonVersionedPbckbge) VersionedPbckbgeSyntbx() string {
 	if p.Version == "" {
-		return string(p.Name)
+		return string(p.Nbme)
 	}
-	return fmt.Sprintf("%s==%s", p.Name, p.Version)
+	return fmt.Sprintf("%s==%s", p.Nbme, p.Version)
 }
 
-func (p *PythonVersionedPackage) PackageVersion() string {
+func (p *PythonVersionedPbckbge) PbckbgeVersion() string {
 	return p.Version
 }
 
-func (p *PythonVersionedPackage) Description() string { return "" }
+func (p *PythonVersionedPbckbge) Description() string { return "" }
 
-func (p *PythonVersionedPackage) RepoName() api.RepoName {
-	return api.RepoName("python/" + p.Name)
+func (p *PythonVersionedPbckbge) RepoNbme() bpi.RepoNbme {
+	return bpi.RepoNbme("python/" + p.Nbme)
 }
 
-func (p *PythonVersionedPackage) GitTagFromVersion() string {
+func (p *PythonVersionedPbckbge) GitTbgFromVersion() string {
 	version := strings.TrimPrefix(p.Version, "v")
 	return "v" + version
 }
 
-func (p *PythonVersionedPackage) Less(other VersionedPackage) bool {
-	o := other.(*PythonVersionedPackage)
+func (p *PythonVersionedPbckbge) Less(other VersionedPbckbge) bool {
+	o := other.(*PythonVersionedPbckbge)
 
-	if p.Name == o.Name {
-		// TODO: validate once we add a dependency source for vcs syncer.
-		return versionGreaterThan(p.Version, o.Version)
+	if p.Nbme == o.Nbme {
+		// TODO: vblidbte once we bdd b dependency source for vcs syncer.
+		return versionGrebterThbn(p.Version, o.Version)
 	}
 
-	return p.Name > o.Name
+	return p.Nbme > o.Nbme
 }

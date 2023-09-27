@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"fmt"
@@ -7,1180 +7,1180 @@ import (
 	"strings"
 	"time"
 
-	"github.com/goware/urlx"
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/gowbre/urlx"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
 
-	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
+	gerritbbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	adobatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
-	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bdobbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bzuredevops"
+	bbcs "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ChangesetState defines the possible states of a Changeset.
-// These are displayed in the UI as well.
-type ChangesetState string
+// ChbngesetStbte defines the possible stbtes of b Chbngeset.
+// These bre displbyed in the UI bs well.
+type ChbngesetStbte string
 
-// ChangesetState constants.
+// ChbngesetStbte constbnts.
 const (
-	ChangesetStateUnpublished ChangesetState = "UNPUBLISHED"
-	ChangesetStateScheduled   ChangesetState = "SCHEDULED"
-	ChangesetStateProcessing  ChangesetState = "PROCESSING"
-	ChangesetStateOpen        ChangesetState = "OPEN"
-	ChangesetStateDraft       ChangesetState = "DRAFT"
-	ChangesetStateClosed      ChangesetState = "CLOSED"
-	ChangesetStateMerged      ChangesetState = "MERGED"
-	ChangesetStateDeleted     ChangesetState = "DELETED"
-	ChangesetStateReadOnly    ChangesetState = "READONLY"
-	ChangesetStateRetrying    ChangesetState = "RETRYING"
-	ChangesetStateFailed      ChangesetState = "FAILED"
+	ChbngesetStbteUnpublished ChbngesetStbte = "UNPUBLISHED"
+	ChbngesetStbteScheduled   ChbngesetStbte = "SCHEDULED"
+	ChbngesetStbteProcessing  ChbngesetStbte = "PROCESSING"
+	ChbngesetStbteOpen        ChbngesetStbte = "OPEN"
+	ChbngesetStbteDrbft       ChbngesetStbte = "DRAFT"
+	ChbngesetStbteClosed      ChbngesetStbte = "CLOSED"
+	ChbngesetStbteMerged      ChbngesetStbte = "MERGED"
+	ChbngesetStbteDeleted     ChbngesetStbte = "DELETED"
+	ChbngesetStbteRebdOnly    ChbngesetStbte = "READONLY"
+	ChbngesetStbteRetrying    ChbngesetStbte = "RETRYING"
+	ChbngesetStbteFbiled      ChbngesetStbte = "FAILED"
 )
 
-// Valid returns true if the given ChangesetState is valid.
-func (s ChangesetState) Valid() bool {
+// Vblid returns true if the given ChbngesetStbte is vblid.
+func (s ChbngesetStbte) Vblid() bool {
 	switch s {
-	case ChangesetStateUnpublished,
-		ChangesetStateScheduled,
-		ChangesetStateProcessing,
-		ChangesetStateOpen,
-		ChangesetStateDraft,
-		ChangesetStateClosed,
-		ChangesetStateMerged,
-		ChangesetStateDeleted,
-		ChangesetStateReadOnly,
-		ChangesetStateRetrying,
-		ChangesetStateFailed:
+	cbse ChbngesetStbteUnpublished,
+		ChbngesetStbteScheduled,
+		ChbngesetStbteProcessing,
+		ChbngesetStbteOpen,
+		ChbngesetStbteDrbft,
+		ChbngesetStbteClosed,
+		ChbngesetStbteMerged,
+		ChbngesetStbteDeleted,
+		ChbngesetStbteRebdOnly,
+		ChbngesetStbteRetrying,
+		ChbngesetStbteFbiled:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ChangesetPublicationState defines the possible publication states of a Changeset.
-type ChangesetPublicationState string
+// ChbngesetPublicbtionStbte defines the possible publicbtion stbtes of b Chbngeset.
+type ChbngesetPublicbtionStbte string
 
-// ChangesetPublicationState constants.
+// ChbngesetPublicbtionStbte constbnts.
 const (
-	ChangesetPublicationStateUnpublished ChangesetPublicationState = "UNPUBLISHED"
-	ChangesetPublicationStatePublished   ChangesetPublicationState = "PUBLISHED"
+	ChbngesetPublicbtionStbteUnpublished ChbngesetPublicbtionStbte = "UNPUBLISHED"
+	ChbngesetPublicbtionStbtePublished   ChbngesetPublicbtionStbte = "PUBLISHED"
 )
 
-// Valid returns true if the given ChangesetPublicationState is valid.
-func (s ChangesetPublicationState) Valid() bool {
+// Vblid returns true if the given ChbngesetPublicbtionStbte is vblid.
+func (s ChbngesetPublicbtionStbte) Vblid() bool {
 	switch s {
-	case ChangesetPublicationStateUnpublished, ChangesetPublicationStatePublished:
+	cbse ChbngesetPublicbtionStbteUnpublished, ChbngesetPublicbtionStbtePublished:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// Published returns true if the given state is ChangesetPublicationStatePublished.
-func (s ChangesetPublicationState) Published() bool { return s == ChangesetPublicationStatePublished }
+// Published returns true if the given stbte is ChbngesetPublicbtionStbtePublished.
+func (s ChbngesetPublicbtionStbte) Published() bool { return s == ChbngesetPublicbtionStbtePublished }
 
-// Unpublished returns true if the given state is ChangesetPublicationStateUnpublished.
-func (s ChangesetPublicationState) Unpublished() bool {
-	return s == ChangesetPublicationStateUnpublished
+// Unpublished returns true if the given stbte is ChbngesetPublicbtionStbteUnpublished.
+func (s ChbngesetPublicbtionStbte) Unpublished() bool {
+	return s == ChbngesetPublicbtionStbteUnpublished
 }
 
-type ChangesetUiPublicationState string
+type ChbngesetUiPublicbtionStbte string
 
-var (
-	ChangesetUiPublicationStateUnpublished ChangesetUiPublicationState = "UNPUBLISHED"
-	ChangesetUiPublicationStateDraft       ChangesetUiPublicationState = "DRAFT"
-	ChangesetUiPublicationStatePublished   ChangesetUiPublicationState = "PUBLISHED"
+vbr (
+	ChbngesetUiPublicbtionStbteUnpublished ChbngesetUiPublicbtionStbte = "UNPUBLISHED"
+	ChbngesetUiPublicbtionStbteDrbft       ChbngesetUiPublicbtionStbte = "DRAFT"
+	ChbngesetUiPublicbtionStbtePublished   ChbngesetUiPublicbtionStbte = "PUBLISHED"
 )
 
-func ChangesetUiPublicationStateFromPublishedValue(value batches.PublishedValue) *ChangesetUiPublicationState {
-	if value.True() {
-		return &ChangesetUiPublicationStatePublished
-	} else if value.Draft() {
-		return &ChangesetUiPublicationStateDraft
-	} else if !value.Nil() {
-		return &ChangesetUiPublicationStateUnpublished
+func ChbngesetUiPublicbtionStbteFromPublishedVblue(vblue bbtches.PublishedVblue) *ChbngesetUiPublicbtionStbte {
+	if vblue.True() {
+		return &ChbngesetUiPublicbtionStbtePublished
+	} else if vblue.Drbft() {
+		return &ChbngesetUiPublicbtionStbteDrbft
+	} else if !vblue.Nil() {
+		return &ChbngesetUiPublicbtionStbteUnpublished
 	}
 	return nil
 }
 
-func (s ChangesetUiPublicationState) Valid() bool {
+func (s ChbngesetUiPublicbtionStbte) Vblid() bool {
 	switch s {
-	case ChangesetUiPublicationStateUnpublished,
-		ChangesetUiPublicationStateDraft,
-		ChangesetUiPublicationStatePublished:
+	cbse ChbngesetUiPublicbtionStbteUnpublished,
+		ChbngesetUiPublicbtionStbteDrbft,
+		ChbngesetUiPublicbtionStbtePublished:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ReconcilerState defines the possible states of a Reconciler.
-type ReconcilerState string
+// ReconcilerStbte defines the possible stbtes of b Reconciler.
+type ReconcilerStbte string
 
-// ReconcilerState constants.
+// ReconcilerStbte constbnts.
 const (
-	ReconcilerStateScheduled  ReconcilerState = "SCHEDULED"
-	ReconcilerStateQueued     ReconcilerState = "QUEUED"
-	ReconcilerStateProcessing ReconcilerState = "PROCESSING"
-	ReconcilerStateErrored    ReconcilerState = "ERRORED"
-	ReconcilerStateFailed     ReconcilerState = "FAILED"
-	ReconcilerStateCompleted  ReconcilerState = "COMPLETED"
+	ReconcilerStbteScheduled  ReconcilerStbte = "SCHEDULED"
+	ReconcilerStbteQueued     ReconcilerStbte = "QUEUED"
+	ReconcilerStbteProcessing ReconcilerStbte = "PROCESSING"
+	ReconcilerStbteErrored    ReconcilerStbte = "ERRORED"
+	ReconcilerStbteFbiled     ReconcilerStbte = "FAILED"
+	ReconcilerStbteCompleted  ReconcilerStbte = "COMPLETED"
 )
 
-// Valid returns true if the given ReconcilerState is valid.
-func (s ReconcilerState) Valid() bool {
+// Vblid returns true if the given ReconcilerStbte is vblid.
+func (s ReconcilerStbte) Vblid() bool {
 	switch s {
-	case ReconcilerStateScheduled,
-		ReconcilerStateQueued,
-		ReconcilerStateProcessing,
-		ReconcilerStateErrored,
-		ReconcilerStateFailed,
-		ReconcilerStateCompleted:
+	cbse ReconcilerStbteScheduled,
+		ReconcilerStbteQueued,
+		ReconcilerStbteProcessing,
+		ReconcilerStbteErrored,
+		ReconcilerStbteFbiled,
+		ReconcilerStbteCompleted:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ToDB returns the database representation of the reconciler state. That's
-// needed because we want to use UPPERCASE ReconcilerStates in the application
-// and GraphQL layer, but need to use lowercase in the database to make it work
+// ToDB returns the dbtbbbse representbtion of the reconciler stbte. Thbt's
+// needed becbuse we wbnt to use UPPERCASE ReconcilerStbtes in the bpplicbtion
+// bnd GrbphQL lbyer, but need to use lowercbse in the dbtbbbse to mbke it work
 // with workerutil.Worker.
-func (s ReconcilerState) ToDB() string { return strings.ToLower(string(s)) }
+func (s ReconcilerStbte) ToDB() string { return strings.ToLower(string(s)) }
 
-// ChangesetExternalState defines the possible states of a Changeset on a code host.
-type ChangesetExternalState string
+// ChbngesetExternblStbte defines the possible stbtes of b Chbngeset on b code host.
+type ChbngesetExternblStbte string
 
-// ChangesetExternalState constants.
+// ChbngesetExternblStbte constbnts.
 const (
-	ChangesetExternalStateDraft    ChangesetExternalState = "DRAFT"
-	ChangesetExternalStateOpen     ChangesetExternalState = "OPEN"
-	ChangesetExternalStateClosed   ChangesetExternalState = "CLOSED"
-	ChangesetExternalStateMerged   ChangesetExternalState = "MERGED"
-	ChangesetExternalStateDeleted  ChangesetExternalState = "DELETED"
-	ChangesetExternalStateReadOnly ChangesetExternalState = "READONLY"
+	ChbngesetExternblStbteDrbft    ChbngesetExternblStbte = "DRAFT"
+	ChbngesetExternblStbteOpen     ChbngesetExternblStbte = "OPEN"
+	ChbngesetExternblStbteClosed   ChbngesetExternblStbte = "CLOSED"
+	ChbngesetExternblStbteMerged   ChbngesetExternblStbte = "MERGED"
+	ChbngesetExternblStbteDeleted  ChbngesetExternblStbte = "DELETED"
+	ChbngesetExternblStbteRebdOnly ChbngesetExternblStbte = "READONLY"
 )
 
-// Valid returns true if the given ChangesetExternalState is valid.
-func (s ChangesetExternalState) Valid() bool {
+// Vblid returns true if the given ChbngesetExternblStbte is vblid.
+func (s ChbngesetExternblStbte) Vblid() bool {
 	switch s {
-	case ChangesetExternalStateOpen,
-		ChangesetExternalStateDraft,
-		ChangesetExternalStateClosed,
-		ChangesetExternalStateMerged,
-		ChangesetExternalStateDeleted,
-		ChangesetExternalStateReadOnly:
+	cbse ChbngesetExternblStbteOpen,
+		ChbngesetExternblStbteDrbft,
+		ChbngesetExternblStbteClosed,
+		ChbngesetExternblStbteMerged,
+		ChbngesetExternblStbteDeleted,
+		ChbngesetExternblStbteRebdOnly:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ChangesetLabel represents a label applied to a changeset
-type ChangesetLabel struct {
-	Name        string
+// ChbngesetLbbel represents b lbbel bpplied to b chbngeset
+type ChbngesetLbbel struct {
+	Nbme        string
 	Color       string
 	Description string
 }
 
-// ChangesetReviewState defines the possible states of a Changeset's review.
-type ChangesetReviewState string
+// ChbngesetReviewStbte defines the possible stbtes of b Chbngeset's review.
+type ChbngesetReviewStbte string
 
-// ChangesetReviewState constants.
+// ChbngesetReviewStbte constbnts.
 const (
-	ChangesetReviewStateApproved         ChangesetReviewState = "APPROVED"
-	ChangesetReviewStateChangesRequested ChangesetReviewState = "CHANGES_REQUESTED"
-	ChangesetReviewStatePending          ChangesetReviewState = "PENDING"
-	ChangesetReviewStateCommented        ChangesetReviewState = "COMMENTED"
-	ChangesetReviewStateDismissed        ChangesetReviewState = "DISMISSED"
+	ChbngesetReviewStbteApproved         ChbngesetReviewStbte = "APPROVED"
+	ChbngesetReviewStbteChbngesRequested ChbngesetReviewStbte = "CHANGES_REQUESTED"
+	ChbngesetReviewStbtePending          ChbngesetReviewStbte = "PENDING"
+	ChbngesetReviewStbteCommented        ChbngesetReviewStbte = "COMMENTED"
+	ChbngesetReviewStbteDismissed        ChbngesetReviewStbte = "DISMISSED"
 )
 
-// Valid returns true if the given Changeset review state is valid.
-func (s ChangesetReviewState) Valid() bool {
+// Vblid returns true if the given Chbngeset review stbte is vblid.
+func (s ChbngesetReviewStbte) Vblid() bool {
 	switch s {
-	case ChangesetReviewStateApproved,
-		ChangesetReviewStateChangesRequested,
-		ChangesetReviewStatePending,
-		ChangesetReviewStateCommented,
-		ChangesetReviewStateDismissed:
+	cbse ChbngesetReviewStbteApproved,
+		ChbngesetReviewStbteChbngesRequested,
+		ChbngesetReviewStbtePending,
+		ChbngesetReviewStbteCommented,
+		ChbngesetReviewStbteDismissed:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ChangesetCheckState constants.
-type ChangesetCheckState string
+// ChbngesetCheckStbte constbnts.
+type ChbngesetCheckStbte string
 
 const (
-	ChangesetCheckStateUnknown ChangesetCheckState = "UNKNOWN"
-	ChangesetCheckStatePending ChangesetCheckState = "PENDING"
-	ChangesetCheckStatePassed  ChangesetCheckState = "PASSED"
-	ChangesetCheckStateFailed  ChangesetCheckState = "FAILED"
+	ChbngesetCheckStbteUnknown ChbngesetCheckStbte = "UNKNOWN"
+	ChbngesetCheckStbtePending ChbngesetCheckStbte = "PENDING"
+	ChbngesetCheckStbtePbssed  ChbngesetCheckStbte = "PASSED"
+	ChbngesetCheckStbteFbiled  ChbngesetCheckStbte = "FAILED"
 )
 
-// Valid returns true if the given Changeset check state is valid.
-func (s ChangesetCheckState) Valid() bool {
+// Vblid returns true if the given Chbngeset check stbte is vblid.
+func (s ChbngesetCheckStbte) Vblid() bool {
 	switch s {
-	case ChangesetCheckStateUnknown,
-		ChangesetCheckStatePending,
-		ChangesetCheckStatePassed,
-		ChangesetCheckStateFailed:
+	cbse ChbngesetCheckStbteUnknown,
+		ChbngesetCheckStbtePending,
+		ChbngesetCheckStbtePbssed,
+		ChbngesetCheckStbteFbiled:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// BatchChangeAssoc stores the details of a association to a BatchChange.
-type BatchChangeAssoc struct {
-	BatchChangeID int64 `json:"-"`
-	Detach        bool  `json:"detach,omitempty"`
-	Archive       bool  `json:"archive,omitempty"`
+// BbtchChbngeAssoc stores the detbils of b bssocibtion to b BbtchChbnge.
+type BbtchChbngeAssoc struct {
+	BbtchChbngeID int64 `json:"-"`
+	Detbch        bool  `json:"detbch,omitempty"`
+	Archive       bool  `json:"brchive,omitempty"`
 	IsArchived    bool  `json:"isArchived,omitempty"`
 }
 
-// A Changeset is a changeset on a code host belonging to a Repository and many
-// BatchChanges.
-type Changeset struct {
+// A Chbngeset is b chbngeset on b code host belonging to b Repository bnd mbny
+// BbtchChbnges.
+type Chbngeset struct {
 	ID                  int64
-	RepoID              api.RepoID
-	CreatedAt           time.Time
-	UpdatedAt           time.Time
-	Metadata            any
-	BatchChanges        []BatchChangeAssoc
-	ExternalID          string
-	ExternalServiceType string
-	// ExternalBranch should always be prefixed with refs/heads/. Call git.EnsureRefPrefix before setting this value.
-	ExternalBranch string
-	// ExternalForkName[space] is only set if the changeset is opened on a fork.
-	ExternalForkName      string
-	ExternalForkNamespace string
-	ExternalDeletedAt     time.Time
-	ExternalUpdatedAt     time.Time
-	ExternalState         ChangesetExternalState
-	ExternalReviewState   ChangesetReviewState
-	ExternalCheckState    ChangesetCheckState
+	RepoID              bpi.RepoID
+	CrebtedAt           time.Time
+	UpdbtedAt           time.Time
+	Metbdbtb            bny
+	BbtchChbnges        []BbtchChbngeAssoc
+	ExternblID          string
+	ExternblServiceType string
+	// ExternblBrbnch should blwbys be prefixed with refs/hebds/. Cbll git.EnsureRefPrefix before setting this vblue.
+	ExternblBrbnch string
+	// ExternblForkNbme[spbce] is only set if the chbngeset is opened on b fork.
+	ExternblForkNbme      string
+	ExternblForkNbmespbce string
+	ExternblDeletedAt     time.Time
+	ExternblUpdbtedAt     time.Time
+	ExternblStbte         ChbngesetExternblStbte
+	ExternblReviewStbte   ChbngesetReviewStbte
+	ExternblCheckStbte    ChbngesetCheckStbte
 
-	// If the commit created for a changeset is signed, commit verification is the
-	// signature verification result from the code host.
-	CommitVerification *github.Verification
+	// If the commit crebted for b chbngeset is signed, commit verificbtion is the
+	// signbture verificbtion result from the code host.
+	CommitVerificbtion *github.Verificbtion
 
-	DiffStatAdded   *int32
-	DiffStatDeleted *int32
-	SyncState       ChangesetSyncState
+	DiffStbtAdded   *int32
+	DiffStbtDeleted *int32
+	SyncStbte       ChbngesetSyncStbte
 
-	// The batch change that "owns" this changeset: it can create/close
-	// it on code host. If this is 0, it is imported/tracked by a batch change.
-	OwnedByBatchChangeID int64
+	// The bbtch chbnge thbt "owns" this chbngeset: it cbn crebte/close
+	// it on code host. If this is 0, it is imported/trbcked by b bbtch chbnge.
+	OwnedByBbtchChbngeID int64
 
-	// This is 0 if the Changeset isn't owned by Sourcegraph.
+	// This is 0 if the Chbngeset isn't owned by Sourcegrbph.
 	CurrentSpecID  int64
 	PreviousSpecID int64
 
-	PublicationState   ChangesetPublicationState // "unpublished", "published"
-	UiPublicationState *ChangesetUiPublicationState
+	PublicbtionStbte   ChbngesetPublicbtionStbte // "unpublished", "published"
+	UiPublicbtionStbte *ChbngesetUiPublicbtionStbte
 
-	// State is a computed value. Changes to this value will never be persisted to the database.
-	State ChangesetState
+	// Stbte is b computed vblue. Chbnges to this vblue will never be persisted to the dbtbbbse.
+	Stbte ChbngesetStbte
 
-	// All of the following fields are used by workerutil.Worker.
-	ReconcilerState  ReconcilerState
-	FailureMessage   *string
-	StartedAt        time.Time
+	// All of the following fields bre used by workerutil.Worker.
+	ReconcilerStbte  ReconcilerStbte
+	FbilureMessbge   *string
+	StbrtedAt        time.Time
 	FinishedAt       time.Time
 	ProcessAfter     time.Time
 	NumResets        int64
-	NumFailures      int64
-	SyncErrorMessage *string
+	NumFbilures      int64
+	SyncErrorMessbge *string
 
-	PreviousFailureMessage *string
+	PreviousFbilureMessbge *string
 
-	// Closing is set to true (along with the ReocncilerState) when the
-	// reconciler should close the changeset.
+	// Closing is set to true (blong with the ReocncilerStbte) when the
+	// reconciler should close the chbngeset.
 	Closing bool
 
-	// DetachedAt is the time when the changeset became "detached".
-	DetachedAt time.Time
+	// DetbchedAt is the time when the chbngeset becbme "detbched".
+	DetbchedAt time.Time
 }
 
-// RecordID is needed to implement the workerutil.Record interface.
-func (c *Changeset) RecordID() int { return int(c.ID) }
+// RecordID is needed to implement the workerutil.Record interfbce.
+func (c *Chbngeset) RecordID() int { return int(c.ID) }
 
-func (c *Changeset) RecordUID() string {
-	return strconv.FormatInt(c.ID, 10)
+func (c *Chbngeset) RecordUID() string {
+	return strconv.FormbtInt(c.ID, 10)
 }
 
-// Clone returns a clone of a Changeset.
-func (c *Changeset) Clone() *Changeset {
+// Clone returns b clone of b Chbngeset.
+func (c *Chbngeset) Clone() *Chbngeset {
 	tt := *c
-	tt.BatchChanges = make([]BatchChangeAssoc, len(c.BatchChanges))
-	copy(tt.BatchChanges, c.BatchChanges)
+	tt.BbtchChbnges = mbke([]BbtchChbngeAssoc, len(c.BbtchChbnges))
+	copy(tt.BbtchChbnges, c.BbtchChbnges)
 	return &tt
 }
 
-// Closeable returns whether the Changeset is already closed or merged.
-func (c *Changeset) Closeable() bool {
-	return c.ExternalState != ChangesetExternalStateClosed &&
-		c.ExternalState != ChangesetExternalStateMerged &&
-		c.ExternalState != ChangesetExternalStateReadOnly
+// Closebble returns whether the Chbngeset is blrebdy closed or merged.
+func (c *Chbngeset) Closebble() bool {
+	return c.ExternblStbte != ChbngesetExternblStbteClosed &&
+		c.ExternblStbte != ChbngesetExternblStbteMerged &&
+		c.ExternblStbte != ChbngesetExternblStbteRebdOnly
 }
 
-// Complete returns whether the Changeset has been published and its
-// ExternalState is in a final state.
-func (c *Changeset) Complete() bool {
-	return c.Published() && c.ExternalState != ChangesetExternalStateOpen &&
-		c.ExternalState != ChangesetExternalStateDraft
+// Complete returns whether the Chbngeset hbs been published bnd its
+// ExternblStbte is in b finbl stbte.
+func (c *Chbngeset) Complete() bool {
+	return c.Published() && c.ExternblStbte != ChbngesetExternblStbteOpen &&
+		c.ExternblStbte != ChbngesetExternblStbteDrbft
 }
 
-// Published returns whether the Changeset's PublicationState is Published.
-func (c *Changeset) Published() bool { return c.PublicationState.Published() }
+// Published returns whether the Chbngeset's PublicbtionStbte is Published.
+func (c *Chbngeset) Published() bool { return c.PublicbtionStbte.Published() }
 
-// Unpublished returns whether the Changeset's PublicationState is Unpublished.
-func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished() }
+// Unpublished returns whether the Chbngeset's PublicbtionStbte is Unpublished.
+func (c *Chbngeset) Unpublished() bool { return c.PublicbtionStbte.Unpublished() }
 
-// IsImporting returns whether the Changeset is being imported but it's not finished yet.
-func (c *Changeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
+// IsImporting returns whether the Chbngeset is being imported but it's not finished yet.
+func (c *Chbngeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
 
-// IsImported returns whether the Changeset is imported
-func (c *Changeset) IsImported() bool { return c.OwnedByBatchChangeID == 0 }
+// IsImported returns whether the Chbngeset is imported
+func (c *Chbngeset) IsImported() bool { return c.OwnedByBbtchChbngeID == 0 }
 
-// SetCurrentSpec sets the CurrentSpecID field and copies the diff stat over from the spec.
-func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
+// SetCurrentSpec sets the CurrentSpecID field bnd copies the diff stbt over from the spec.
+func (c *Chbngeset) SetCurrentSpec(spec *ChbngesetSpec) {
 	c.CurrentSpecID = spec.ID
 
-	// Copy over diff stat from the spec.
-	diffStat := spec.DiffStat()
-	c.SetDiffStat(&diffStat)
+	// Copy over diff stbt from the spec.
+	diffStbt := spec.DiffStbt()
+	c.SetDiffStbt(&diffStbt)
 }
 
-// DiffStat returns a *diff.Stat if DiffStatAdded and
-// DiffStatDeleted are set, or nil if one or more is not.
-func (c *Changeset) DiffStat() *diff.Stat {
-	if c.DiffStatAdded == nil || c.DiffStatDeleted == nil {
+// DiffStbt returns b *diff.Stbt if DiffStbtAdded bnd
+// DiffStbtDeleted bre set, or nil if one or more is not.
+func (c *Chbngeset) DiffStbt() *diff.Stbt {
+	if c.DiffStbtAdded == nil || c.DiffStbtDeleted == nil {
 		return nil
 	}
 
-	return &diff.Stat{
-		Added:   *c.DiffStatAdded,
-		Deleted: *c.DiffStatDeleted,
+	return &diff.Stbt{
+		Added:   *c.DiffStbtAdded,
+		Deleted: *c.DiffStbtDeleted,
 	}
 }
 
-func (c *Changeset) SetDiffStat(stat *diff.Stat) {
-	if stat == nil {
-		c.DiffStatAdded = nil
-		c.DiffStatDeleted = nil
+func (c *Chbngeset) SetDiffStbt(stbt *diff.Stbt) {
+	if stbt == nil {
+		c.DiffStbtAdded = nil
+		c.DiffStbtDeleted = nil
 	} else {
-		added := stat.Added + stat.Changed
-		c.DiffStatAdded = &added
+		bdded := stbt.Added + stbt.Chbnged
+		c.DiffStbtAdded = &bdded
 
-		deleted := stat.Deleted + stat.Changed
-		c.DiffStatDeleted = &deleted
+		deleted := stbt.Deleted + stbt.Chbnged
+		c.DiffStbtDeleted = &deleted
 	}
 }
 
-func (c *Changeset) SetMetadata(meta any) error {
-	switch pr := meta.(type) {
-	case *github.PullRequest:
-		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(pr.Number, 10)
-		c.ExternalServiceType = extsvc.TypeGitHub
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.HeadRefName)
-		c.ExternalUpdatedAt = pr.UpdatedAt
+func (c *Chbngeset) SetMetbdbtb(metb bny) error {
+	switch pr := metb.(type) {
+	cbse *github.PullRequest:
+		c.Metbdbtb = pr
+		c.ExternblID = strconv.FormbtInt(pr.Number, 10)
+		c.ExternblServiceType = extsvc.TypeGitHub
+		c.ExternblBrbnch = gitdombin.EnsureRefPrefix(pr.HebdRefNbme)
+		c.ExternblUpdbtedAt = pr.UpdbtedAt
 
-		if pr.BaseRepository.ID != pr.HeadRepository.ID {
-			c.ExternalForkNamespace = pr.HeadRepository.Owner.Login
-			c.ExternalForkName = pr.HeadRepository.Name
+		if pr.BbseRepository.ID != pr.HebdRepository.ID {
+			c.ExternblForkNbmespbce = pr.HebdRepository.Owner.Login
+			c.ExternblForkNbme = pr.HebdRepository.Nbme
 		} else {
-			c.ExternalForkNamespace = ""
-			c.ExternalForkName = ""
+			c.ExternblForkNbmespbce = ""
+			c.ExternblForkNbme = ""
 		}
-	case *bitbucketserver.PullRequest:
-		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(int64(pr.ID), 10)
-		c.ExternalServiceType = extsvc.TypeBitbucketServer
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.FromRef.ID)
-		c.ExternalUpdatedAt = unixMilliToTime(int64(pr.UpdatedDate))
+	cbse *bitbucketserver.PullRequest:
+		c.Metbdbtb = pr
+		c.ExternblID = strconv.FormbtInt(int64(pr.ID), 10)
+		c.ExternblServiceType = extsvc.TypeBitbucketServer
+		c.ExternblBrbnch = gitdombin.EnsureRefPrefix(pr.FromRef.ID)
+		c.ExternblUpdbtedAt = unixMilliToTime(int64(pr.UpdbtedDbte))
 
 		if pr.FromRef.Repository.ID != pr.ToRef.Repository.ID {
-			c.ExternalForkNamespace = pr.FromRef.Repository.Project.Key
-			c.ExternalForkName = pr.FromRef.Repository.Slug
+			c.ExternblForkNbmespbce = pr.FromRef.Repository.Project.Key
+			c.ExternblForkNbme = pr.FromRef.Repository.Slug
 		} else {
-			c.ExternalForkNamespace = ""
-			c.ExternalForkName = ""
+			c.ExternblForkNbmespbce = ""
+			c.ExternblForkNbme = ""
 		}
-	case *gitlab.MergeRequest:
-		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(int64(pr.IID), 10)
-		c.ExternalServiceType = extsvc.TypeGitLab
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceBranch)
-		c.ExternalUpdatedAt = pr.UpdatedAt.Time
-		c.ExternalForkNamespace = pr.SourceProjectNamespace
-		c.ExternalForkName = pr.SourceProjectName
-	case *bbcs.AnnotatedPullRequest:
-		c.Metadata = pr
-		c.ExternalID = strconv.FormatInt(pr.ID, 10)
-		c.ExternalServiceType = extsvc.TypeBitbucketCloud
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Source.Branch.Name)
-		c.ExternalUpdatedAt = pr.UpdatedOn
+	cbse *gitlbb.MergeRequest:
+		c.Metbdbtb = pr
+		c.ExternblID = strconv.FormbtInt(int64(pr.IID), 10)
+		c.ExternblServiceType = extsvc.TypeGitLbb
+		c.ExternblBrbnch = gitdombin.EnsureRefPrefix(pr.SourceBrbnch)
+		c.ExternblUpdbtedAt = pr.UpdbtedAt.Time
+		c.ExternblForkNbmespbce = pr.SourceProjectNbmespbce
+		c.ExternblForkNbme = pr.SourceProjectNbme
+	cbse *bbcs.AnnotbtedPullRequest:
+		c.Metbdbtb = pr
+		c.ExternblID = strconv.FormbtInt(pr.ID, 10)
+		c.ExternblServiceType = extsvc.TypeBitbucketCloud
+		c.ExternblBrbnch = gitdombin.EnsureRefPrefix(pr.Source.Brbnch.Nbme)
+		c.ExternblUpdbtedAt = pr.UpdbtedOn
 
-		if pr.Source.Repo.UUID != pr.Destination.Repo.UUID {
-			namespace, err := pr.Source.Repo.Namespace()
+		if pr.Source.Repo.UUID != pr.Destinbtion.Repo.UUID {
+			nbmespbce, err := pr.Source.Repo.Nbmespbce()
 			if err != nil {
-				return errors.Wrap(err, "determining fork namespace")
+				return errors.Wrbp(err, "determining fork nbmespbce")
 			}
-			c.ExternalForkNamespace = namespace
-			c.ExternalForkName = pr.Source.Repo.Name
+			c.ExternblForkNbmespbce = nbmespbce
+			c.ExternblForkNbme = pr.Source.Repo.Nbme
 		} else {
-			c.ExternalForkNamespace = ""
-			c.ExternalForkName = ""
+			c.ExternblForkNbmespbce = ""
+			c.ExternblForkNbme = ""
 		}
-	case *adobatches.AnnotatedPullRequest:
-		c.Metadata = pr
-		c.ExternalID = strconv.Itoa(pr.ID)
-		c.ExternalServiceType = extsvc.TypeAzureDevOps
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.SourceRefName)
-		// ADO does not have a last updated at field on its PR objects, so we set the creation time.
-		c.ExternalUpdatedAt = pr.CreationDate
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		c.Metbdbtb = pr
+		c.ExternblID = strconv.Itob(pr.ID)
+		c.ExternblServiceType = extsvc.TypeAzureDevOps
+		c.ExternblBrbnch = gitdombin.EnsureRefPrefix(pr.SourceRefNbme)
+		// ADO does not hbve b lbst updbted bt field on its PR objects, so we set the crebtion time.
+		c.ExternblUpdbtedAt = pr.CrebtionDbte
 
 		if pr.ForkSource != nil {
-			c.ExternalForkNamespace = pr.ForkSource.Repository.Namespace()
-			c.ExternalForkName = pr.ForkSource.Repository.Name
+			c.ExternblForkNbmespbce = pr.ForkSource.Repository.Nbmespbce()
+			c.ExternblForkNbme = pr.ForkSource.Repository.Nbme
 		} else {
-			c.ExternalForkNamespace = ""
-			c.ExternalForkName = ""
+			c.ExternblForkNbmespbce = ""
+			c.ExternblForkNbme = ""
 		}
-	case *gerritbatches.AnnotatedChange:
-		c.Metadata = pr
-		c.ExternalID = pr.Change.ChangeID
-		c.ExternalServiceType = extsvc.TypeGerrit
-		c.ExternalBranch = gitdomain.EnsureRefPrefix(pr.Change.Branch)
-		c.ExternalUpdatedAt = pr.Change.Updated
-	case *protocol.PerforceChangelist:
-		c.Metadata = pr
-		c.ExternalID = pr.ID
-		c.ExternalServiceType = extsvc.TypePerforce
-		// Perforce does not have a last updated at field on its CL objects, so we set the creation time.
-		c.ExternalUpdatedAt = pr.CreationDate
-	default:
-		return errors.New("setmetadata unknown changeset type")
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		c.Metbdbtb = pr
+		c.ExternblID = pr.Chbnge.ChbngeID
+		c.ExternblServiceType = extsvc.TypeGerrit
+		c.ExternblBrbnch = gitdombin.EnsureRefPrefix(pr.Chbnge.Brbnch)
+		c.ExternblUpdbtedAt = pr.Chbnge.Updbted
+	cbse *protocol.PerforceChbngelist:
+		c.Metbdbtb = pr
+		c.ExternblID = pr.ID
+		c.ExternblServiceType = extsvc.TypePerforce
+		// Perforce does not hbve b lbst updbted bt field on its CL objects, so we set the crebtion time.
+		c.ExternblUpdbtedAt = pr.CrebtionDbte
+	defbult:
+		return errors.New("setmetbdbtb unknown chbngeset type")
 	}
 	return nil
 }
 
-// RemoveBatchChangeID removes the given id from the Changesets BatchChangesIDs slice.
-// If the id is not in BatchChangesIDs calling this method doesn't have an effect.
-func (c *Changeset) RemoveBatchChangeID(id int64) {
-	for i := len(c.BatchChanges) - 1; i >= 0; i-- {
-		if c.BatchChanges[i].BatchChangeID == id {
-			c.BatchChanges = append(c.BatchChanges[:i], c.BatchChanges[i+1:]...)
+// RemoveBbtchChbngeID removes the given id from the Chbngesets BbtchChbngesIDs slice.
+// If the id is not in BbtchChbngesIDs cblling this method doesn't hbve bn effect.
+func (c *Chbngeset) RemoveBbtchChbngeID(id int64) {
+	for i := len(c.BbtchChbnges) - 1; i >= 0; i-- {
+		if c.BbtchChbnges[i].BbtchChbngeID == id {
+			c.BbtchChbnges = bppend(c.BbtchChbnges[:i], c.BbtchChbnges[i+1:]...)
 		}
 	}
 }
 
-// Title of the Changeset.
-func (c *Changeset) Title() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
+// Title of the Chbngeset.
+func (c *Chbngeset) Title() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
 		return m.Title, nil
-	case *bitbucketserver.PullRequest:
+	cbse *bitbucketserver.PullRequest:
 		return m.Title, nil
-	case *gitlab.MergeRequest:
+	cbse *gitlbb.MergeRequest:
 		return m.Title, nil
-	case *bbcs.AnnotatedPullRequest:
+	cbse *bbcs.AnnotbtedPullRequest:
 		return m.Title, nil
-	case *adobatches.AnnotatedPullRequest:
+	cbse *bdobbtches.AnnotbtedPullRequest:
 		return m.Title, nil
-	case *gerritbatches.AnnotatedChange:
-		title, _, _ := strings.Cut(m.Change.Subject, "\n")
-		// Remove extra quotes added by the commit message
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		title, _, _ := strings.Cut(m.Chbnge.Subject, "\n")
+		// Remove extrb quotes bdded by the commit messbge
 		title = strings.TrimPrefix(strings.TrimSuffix(title, "\""), "\"")
 		return title, nil
-	case *protocol.PerforceChangelist:
+	cbse *protocol.PerforceChbngelist:
 		return m.Title, nil
-	default:
-		return "", errors.New("title unknown changeset type")
+	defbult:
+		return "", errors.New("title unknown chbngeset type")
 	}
 }
 
-// AuthorName of the Changeset.
-func (c *Changeset) AuthorName() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
+// AuthorNbme of the Chbngeset.
+func (c *Chbngeset) AuthorNbme() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
 		return m.Author.Login, nil
-	case *bitbucketserver.PullRequest:
+	cbse *bitbucketserver.PullRequest:
 		if m.Author.User == nil {
 			return "", nil
 		}
-		return m.Author.User.Name, nil
-	case *gitlab.MergeRequest:
-		return m.Author.Username, nil
-	case *bbcs.AnnotatedPullRequest:
-		// Bitbucket Cloud no longer exposes username in its API, but we can still try to
-		// check this field for backwards compatibility.
-		return m.Author.Username, nil
-	case *adobatches.AnnotatedPullRequest:
-		return m.CreatedBy.UniqueName, nil
-	case *gerritbatches.AnnotatedChange:
-		return m.Change.Owner.Name, nil
-	case *protocol.PerforceChangelist:
+		return m.Author.User.Nbme, nil
+	cbse *gitlbb.MergeRequest:
+		return m.Author.Usernbme, nil
+	cbse *bbcs.AnnotbtedPullRequest:
+		// Bitbucket Cloud no longer exposes usernbme in its API, but we cbn still try to
+		// check this field for bbckwbrds compbtibility.
+		return m.Author.Usernbme, nil
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		return m.CrebtedBy.UniqueNbme, nil
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		return m.Chbnge.Owner.Nbme, nil
+	cbse *protocol.PerforceChbngelist:
 		return m.Author, nil
-	default:
-		return "", errors.New("authorname unknown changeset type")
+	defbult:
+		return "", errors.New("buthornbme unknown chbngeset type")
 	}
 }
 
-// AuthorEmail of the Changeset.
-func (c *Changeset) AuthorEmail() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		// For GitHub we can't get the email of the actor without
-		// expanding the token scope by `user:email`. Since the email
-		// is only a nice-to-have for mapping the GitHub user against
-		// a Sourcegraph user, we wait until there is a bigger reason
-		// to have users reconfigure token scopes. Once we ask users for
-		// that scope as well, we should return it here.
+// AuthorEmbil of the Chbngeset.
+func (c *Chbngeset) AuthorEmbil() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		// For GitHub we cbn't get the embil of the bctor without
+		// expbnding the token scope by `user:embil`. Since the embil
+		// is only b nice-to-hbve for mbpping the GitHub user bgbinst
+		// b Sourcegrbph user, we wbit until there is b bigger rebson
+		// to hbve users reconfigure token scopes. Once we bsk users for
+		// thbt scope bs well, we should return it here.
 		return "", nil
-	case *bitbucketserver.PullRequest:
+	cbse *bitbucketserver.PullRequest:
 		if m.Author.User == nil {
 			return "", nil
 		}
-		return m.Author.User.EmailAddress, nil
-	case *gitlab.MergeRequest:
-		// This doesn't seem to be available in the GitLab response anymore, but we can
-		// still try to check this field for backwards compatibility.
-		return m.Author.Email, nil
-	case *bbcs.AnnotatedPullRequest:
-		// Bitbucket Cloud does not provide the e-mail of the author under any
-		// circumstances.
+		return m.Author.User.EmbilAddress, nil
+	cbse *gitlbb.MergeRequest:
+		// This doesn't seem to be bvbilbble in the GitLbb response bnymore, but we cbn
+		// still try to check this field for bbckwbrds compbtibility.
+		return m.Author.Embil, nil
+	cbse *bbcs.AnnotbtedPullRequest:
+		// Bitbucket Cloud does not provide the e-mbil of the buthor under bny
+		// circumstbnces.
 		return "", nil
-	case *adobatches.AnnotatedPullRequest:
-		return m.CreatedBy.UniqueName, nil
-	case *gerritbatches.AnnotatedChange:
-		return m.Change.Owner.Email, nil
-	case *protocol.PerforceChangelist:
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		return m.CrebtedBy.UniqueNbme, nil
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		return m.Chbnge.Owner.Embil, nil
+	cbse *protocol.PerforceChbngelist:
 		return "", nil
-	default:
-		return "", errors.New("author email unknown changeset type")
+	defbult:
+		return "", errors.New("buthor embil unknown chbngeset type")
 	}
 }
 
-// ExternalCreatedAt is when the Changeset was created on the codehost. When it
-// cannot be determined when the changeset was created, a zero-value timestamp
+// ExternblCrebtedAt is when the Chbngeset wbs crebted on the codehost. When it
+// cbnnot be determined when the chbngeset wbs crebted, b zero-vblue timestbmp
 // is returned.
-func (c *Changeset) ExternalCreatedAt() time.Time {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		return m.CreatedAt
-	case *bitbucketserver.PullRequest:
-		return unixMilliToTime(int64(m.CreatedDate))
-	case *gitlab.MergeRequest:
-		return m.CreatedAt.Time
-	case *bbcs.AnnotatedPullRequest:
-		return m.CreatedOn
-	case *adobatches.AnnotatedPullRequest:
-		return m.CreationDate
-	case *gerritbatches.AnnotatedChange:
-		return m.Change.Created
-	case *protocol.PerforceChangelist:
-		return m.CreationDate
-	default:
+func (c *Chbngeset) ExternblCrebtedAt() time.Time {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		return m.CrebtedAt
+	cbse *bitbucketserver.PullRequest:
+		return unixMilliToTime(int64(m.CrebtedDbte))
+	cbse *gitlbb.MergeRequest:
+		return m.CrebtedAt.Time
+	cbse *bbcs.AnnotbtedPullRequest:
+		return m.CrebtedOn
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		return m.CrebtionDbte
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		return m.Chbnge.Crebted
+	cbse *protocol.PerforceChbngelist:
+		return m.CrebtionDbte
+	defbult:
 		return time.Time{}
 	}
 }
 
-// Body of the Changeset.
-func (c *Changeset) Body() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
+// Body of the Chbngeset.
+func (c *Chbngeset) Body() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
 		return m.Body, nil
-	case *bitbucketserver.PullRequest:
+	cbse *bitbucketserver.PullRequest:
 		return m.Description, nil
-	case *gitlab.MergeRequest:
+	cbse *gitlbb.MergeRequest:
 		return m.Description, nil
-	case *bbcs.AnnotatedPullRequest:
-		return m.Rendered.Description.Raw, nil
-	case *adobatches.AnnotatedPullRequest:
+	cbse *bbcs.AnnotbtedPullRequest:
+		return m.Rendered.Description.Rbw, nil
+	cbse *bdobbtches.AnnotbtedPullRequest:
 		return m.Description, nil
-	case *gerritbatches.AnnotatedChange:
-		// Gerrit doesn't really differentiate between title/description.
-		return m.Change.Subject, nil
-	case *protocol.PerforceChangelist:
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		// Gerrit doesn't reblly differentibte between title/description.
+		return m.Chbnge.Subject, nil
+	cbse *protocol.PerforceChbngelist:
 		return "", nil
-	default:
-		return "", errors.New("body unknown changeset type")
+	defbult:
+		return "", errors.New("body unknown chbngeset type")
 	}
 }
 
-// SetDeleted sets the internal state of a Changeset so that its State is
-// ChangesetStateDeleted.
-func (c *Changeset) SetDeleted() {
-	c.ExternalDeletedAt = timeutil.Now()
+// SetDeleted sets the internbl stbte of b Chbngeset so thbt its Stbte is
+// ChbngesetStbteDeleted.
+func (c *Chbngeset) SetDeleted() {
+	c.ExternblDeletedAt = timeutil.Now()
 }
 
-// IsDeleted returns true when the Changeset's ExternalDeletedAt is a non-zero
-// timestamp.
-func (c *Changeset) IsDeleted() bool {
-	return !c.ExternalDeletedAt.IsZero()
+// IsDeleted returns true when the Chbngeset's ExternblDeletedAt is b non-zero
+// timestbmp.
+func (c *Chbngeset) IsDeleted() bool {
+	return !c.ExternblDeletedAt.IsZero()
 }
 
-// HasDiff returns true when the changeset is in an open state. That is because
-// currently we do not support diff rendering for historic branches, because we
-// can't guarantee that we have the refs on gitserver.
-func (c *Changeset) HasDiff() bool {
-	return c.ExternalState == ChangesetExternalStateDraft || c.ExternalState == ChangesetExternalStateOpen
+// HbsDiff returns true when the chbngeset is in bn open stbte. Thbt is becbuse
+// currently we do not support diff rendering for historic brbnches, becbuse we
+// cbn't gubrbntee thbt we hbve the refs on gitserver.
+func (c *Chbngeset) HbsDiff() bool {
+	return c.ExternblStbte == ChbngesetExternblStbteDrbft || c.ExternblStbte == ChbngesetExternblStbteOpen
 }
 
-// URL of a Changeset.
-func (c *Changeset) URL() (s string, err error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
+// URL of b Chbngeset.
+func (c *Chbngeset) URL() (s string, err error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
 		return m.URL, nil
-	case *bitbucketserver.PullRequest:
+	cbse *bitbucketserver.PullRequest:
 		if len(m.Links.Self) < 1 {
-			return "", errors.New("bitbucketserver pull request has no self links")
+			return "", errors.New("bitbucketserver pull request hbs no self links")
 		}
 		selfLink := m.Links.Self[0]
 		return selfLink.Href, nil
-	case *gitlab.MergeRequest:
+	cbse *gitlbb.MergeRequest:
 		return m.WebURL, nil
-	case *bbcs.AnnotatedPullRequest:
+	cbse *bbcs.AnnotbtedPullRequest:
 		if link, ok := m.Links["html"]; ok {
 			return link.Href, nil
 		}
-		// We could probably synthesise the URL based on the repo URL and the
+		// We could probbbly synthesise the URL bbsed on the repo URL bnd the
 		// pull request ID, but since the link _should_ be there, we'll error
-		// instead.
-		return "", errors.New("Bitbucket Cloud pull request does not have a html link")
-	case *adobatches.AnnotatedPullRequest:
-		org, err := m.Repository.GetOrganization()
+		// instebd.
+		return "", errors.New("Bitbucket Cloud pull request does not hbve b html link")
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		org, err := m.Repository.GetOrgbnizbtion()
 		if err != nil {
 			return "", err
 		}
-		u, err := urlx.Parse(m.URL)
+		u, err := urlx.Pbrse(m.URL)
 		if err != nil {
 			return "", err
 		}
 
 		// The URL returned by the API is for the PR API endpoint, so we need to reconstruct it.
-		prPath := fmt.Sprintf("/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Name, m.Repository.Name, strconv.Itoa(m.ID))
+		prPbth := fmt.Sprintf("/%s/%s/_git/%s/pullrequest/%s", org, m.Repository.Project.Nbme, m.Repository.Nbme, strconv.Itob(m.ID))
 		returnURL := url.URL{
 			Scheme: u.Scheme,
 			Host:   u.Host,
-			Path:   prPath,
+			Pbth:   prPbth,
 		}
 
 		return returnURL.String(), nil
-	case *gerritbatches.AnnotatedChange:
-		return m.CodeHostURL.JoinPath("c", url.PathEscape(m.Change.Project), "+", url.PathEscape(strconv.Itoa(m.Change.ChangeNumber))).String(), nil
-	case *protocol.PerforceChangelist:
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		return m.CodeHostURL.JoinPbth("c", url.PbthEscbpe(m.Chbnge.Project), "+", url.PbthEscbpe(strconv.Itob(m.Chbnge.ChbngeNumber))).String(), nil
+	cbse *protocol.PerforceChbngelist:
 		return "", nil
-	default:
-		return "", errors.New("url unknown changeset type")
+	defbult:
+		return "", errors.New("url unknown chbngeset type")
 	}
 }
 
-// Events returns the deduplicated list of ChangesetEvents from the Changeset's metadata.
-func (c *Changeset) Events() (events []*ChangesetEvent, err error) {
-	uniqueEvents := make(map[string]struct{})
+// Events returns the deduplicbted list of ChbngesetEvents from the Chbngeset's metbdbtb.
+func (c *Chbngeset) Events() (events []*ChbngesetEvent, err error) {
+	uniqueEvents := mbke(mbp[string]struct{})
 
-	appendEvent := func(e *ChangesetEvent) {
+	bppendEvent := func(e *ChbngesetEvent) {
 		k := string(e.Kind) + e.Key
 		if _, ok := uniqueEvents[k]; ok {
-			log15.Info("dropping duplicate changeset event", "changeset_id", e.ChangesetID, "kind", e.Kind, "key", e.Key)
+			log15.Info("dropping duplicbte chbngeset event", "chbngeset_id", e.ChbngesetID, "kind", e.Kind, "key", e.Key)
 			return
 		}
 		uniqueEvents[k] = struct{}{}
-		events = append(events, e)
+		events = bppend(events, e)
 	}
 
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.TimelineItems))
-		for _, ti := range m.TimelineItems {
-			ev := ChangesetEvent{ChangesetID: c.ID}
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		events = mbke([]*ChbngesetEvent, 0, len(m.TimelineItems))
+		for _, ti := rbnge m.TimelineItems {
+			ev := ChbngesetEvent{ChbngesetID: c.ID}
 
 			switch e := ti.Item.(type) {
-			case *github.PullRequestReviewThread:
-				for _, c := range e.Comments {
+			cbse *github.PullRequestReviewThrebd:
+				for _, c := rbnge e.Comments {
 					ev := ev
 					ev.Key = c.Key()
-					if ev.Kind, err = ChangesetEventKindFor(c); err != nil {
+					if ev.Kind, err = ChbngesetEventKindFor(c); err != nil {
 						return
 					}
-					ev.Metadata = c
-					appendEvent(&ev)
+					ev.Metbdbtb = c
+					bppendEvent(&ev)
 				}
 
-			case *github.ReviewRequestedEvent:
-				// If the reviewer of a ReviewRequestedEvent has been deleted,
-				// the fields are blank and we cannot match the event to an
-				// entry in the database and/or reliably use it, so we drop it.
+			cbse *github.ReviewRequestedEvent:
+				// If the reviewer of b ReviewRequestedEvent hbs been deleted,
+				// the fields bre blbnk bnd we cbnnot mbtch the event to bn
+				// entry in the dbtbbbse bnd/or relibbly use it, so we drop it.
 				if e.ReviewerDeleted() {
 					continue
 				}
 				ev.Key = e.Key()
-				if ev.Kind, err = ChangesetEventKindFor(e); err != nil {
+				if ev.Kind, err = ChbngesetEventKindFor(e); err != nil {
 					return
 				}
-				ev.Metadata = e
-				appendEvent(&ev)
+				ev.Metbdbtb = e
+				bppendEvent(&ev)
 
-			default:
+			defbult:
 				ev.Key = ti.Item.(Keyer).Key()
-				if ev.Kind, err = ChangesetEventKindFor(ti.Item); err != nil {
+				if ev.Kind, err = ChbngesetEventKindFor(ti.Item); err != nil {
 					return
 				}
-				ev.Metadata = ti.Item
-				appendEvent(&ev)
+				ev.Metbdbtb = ti.Item
+				bppendEvent(&ev)
 			}
 		}
 
-	case *bitbucketserver.PullRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Activities)+len(m.CommitStatus))
+	cbse *bitbucketserver.PullRequest:
+		events = mbke([]*ChbngesetEvent, 0, len(m.Activities)+len(m.CommitStbtus))
 
-		addEvent := func(e Keyer) error {
-			kind, err := ChangesetEventKindFor(e)
+		bddEvent := func(e Keyer) error {
+			kind, err := ChbngesetEventKindFor(e)
 			if err != nil {
 				return err
 			}
 
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
 				Key:         e.Key(),
 				Kind:        kind,
-				Metadata:    e,
+				Metbdbtb:    e,
 			})
 			return nil
 		}
-		for _, a := range m.Activities {
-			if err = addEvent(a); err != nil {
+		for _, b := rbnge m.Activities {
+			if err = bddEvent(b); err != nil {
 				return
 			}
 		}
-		for _, s := range m.CommitStatus {
-			if err = addEvent(s); err != nil {
+		for _, s := rbnge m.CommitStbtus {
+			if err = bddEvent(s); err != nil {
 				return
 			}
 		}
 
-	case *gitlab.MergeRequest:
-		events = make([]*ChangesetEvent, 0, len(m.Notes)+len(m.ResourceStateEvents)+len(m.Pipelines))
-		var kind ChangesetEventKind
+	cbse *gitlbb.MergeRequest:
+		events = mbke([]*ChbngesetEvent, 0, len(m.Notes)+len(m.ResourceStbteEvents)+len(m.Pipelines))
+		vbr kind ChbngesetEventKind
 
-		for _, note := range m.Notes {
+		for _, note := rbnge m.Notes {
 			if event := note.ToEvent(); event != nil {
-				if kind, err = ChangesetEventKindFor(event); err != nil {
+				if kind, err = ChbngesetEventKindFor(event); err != nil {
 					return
 				}
-				appendEvent(&ChangesetEvent{
-					ChangesetID: c.ID,
+				bppendEvent(&ChbngesetEvent{
+					ChbngesetID: c.ID,
 					Key:         event.(Keyer).Key(),
 					Kind:        kind,
-					Metadata:    event,
+					Metbdbtb:    event,
 				})
 			}
 		}
 
-		for _, e := range m.ResourceStateEvents {
+		for _, e := rbnge m.ResourceStbteEvents {
 			if event := e.ToEvent(); event != nil {
-				if kind, err = ChangesetEventKindFor(event); err != nil {
+				if kind, err = ChbngesetEventKindFor(event); err != nil {
 					return
 				}
-				appendEvent(&ChangesetEvent{
-					ChangesetID: c.ID,
+				bppendEvent(&ChbngesetEvent{
+					ChbngesetID: c.ID,
 					Key:         event.(Keyer).Key(),
 					Kind:        kind,
-					Metadata:    event,
+					Metbdbtb:    event,
 				})
 			}
 		}
 
-		for _, pipeline := range m.Pipelines {
-			if kind, err = ChangesetEventKindFor(pipeline); err != nil {
+		for _, pipeline := rbnge m.Pipelines {
+			if kind, err = ChbngesetEventKindFor(pipeline); err != nil {
 				return
 			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
 				Key:         pipeline.Key(),
 				Kind:        kind,
-				Metadata:    pipeline,
+				Metbdbtb:    pipeline,
 			})
 		}
 
-	case *bbcs.AnnotatedPullRequest:
-		// There are two types of event that we create from an annotated pull
-		// request: review events, based on the participants within the pull
-		// request, and check events, based on the commit statuses.
+	cbse *bbcs.AnnotbtedPullRequest:
+		// There bre two types of event thbt we crebte from bn bnnotbted pull
+		// request: review events, bbsed on the pbrticipbnts within the pull
+		// request, bnd check events, bbsed on the commit stbtuses.
 		//
-		// Unlike some other code host types, we don't need to handle general
-		// comments, as we can access the historical data required through more
-		// specialised APIs.
+		// Unlike some other code host types, we don't need to hbndle generbl
+		// comments, bs we cbn bccess the historicbl dbtb required through more
+		// speciblised APIs.
 
-		var kind ChangesetEventKind
+		vbr kind ChbngesetEventKind
 
-		for _, participant := range m.Participants {
-			if kind, err = ChangesetEventKindFor(&participant); err != nil {
+		for _, pbrticipbnt := rbnge m.Pbrticipbnts {
+			if kind, err = ChbngesetEventKindFor(&pbrticipbnt); err != nil {
 				return
 			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				// There's no unique ID within the participant structure itself,
-				// but the combination of the user UUID, the repo UUID, and the
-				// PR ID should be unique. We can't implement this as a Keyer on
-				// the participant because it requires knowledge of things
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
+				// There's no unique ID within the pbrticipbnt structure itself,
+				// but the combinbtion of the user UUID, the repo UUID, bnd the
+				// PR ID should be unique. We cbn't implement this bs b Keyer on
+				// the pbrticipbnt becbuse it requires knowledge of things
 				// outside the struct.
-				Key:      m.Destination.Repo.UUID + ":" + strconv.FormatInt(m.ID, 10) + ":" + participant.User.UUID,
+				Key:      m.Destinbtion.Repo.UUID + ":" + strconv.FormbtInt(m.ID, 10) + ":" + pbrticipbnt.User.UUID,
 				Kind:     kind,
-				Metadata: participant,
+				Metbdbtb: pbrticipbnt,
 			})
 		}
 
-		for _, status := range m.Statuses {
-			if kind, err = ChangesetEventKindFor(status); err != nil {
+		for _, stbtus := rbnge m.Stbtuses {
+			if kind, err = ChbngesetEventKindFor(stbtus); err != nil {
 				return
 			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         status.Key(),
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
+				Key:         stbtus.Key(),
 				Kind:        kind,
-				Metadata:    status,
+				Metbdbtb:    stbtus,
 			})
 		}
-	case *adobatches.AnnotatedPullRequest:
-		// There are two types of event that we create from an annotated pull
-		// request: review events, based on the reviewers within the pull
-		// request, and check events, based on the build statuses.
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		// There bre two types of event thbt we crebte from bn bnnotbted pull
+		// request: review events, bbsed on the reviewers within the pull
+		// request, bnd check events, bbsed on the build stbtuses.
 
-		var kind ChangesetEventKind
+		vbr kind ChbngesetEventKind
 
-		for _, reviewer := range m.Reviewers {
-			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
+		for _, reviewer := rbnge m.Reviewers {
+			if kind, err = ChbngesetEventKindFor(&reviewer); err != nil {
 				return
 			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
 				Key:         reviewer.ID,
 				Kind:        kind,
-				Metadata:    reviewer,
+				Metbdbtb:    reviewer,
 			})
 		}
 
-		for _, status := range m.Statuses {
-			if kind, err = ChangesetEventKindFor(status); err != nil {
+		for _, stbtus := rbnge m.Stbtuses {
+			if kind, err = ChbngesetEventKindFor(stbtus); err != nil {
 				return
 			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         strconv.Itoa(status.ID),
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
+				Key:         strconv.Itob(stbtus.ID),
 				Kind:        kind,
-				Metadata:    status,
+				Metbdbtb:    stbtus,
 			})
 		}
-	case *gerritbatches.AnnotatedChange:
-		// There is one type of event that we create from an annotated pull
-		// request: review events, based on the reviewers within the change.
-		var kind ChangesetEventKind
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		// There is one type of event thbt we crebte from bn bnnotbted pull
+		// request: review events, bbsed on the reviewers within the chbnge.
+		vbr kind ChbngesetEventKind
 
-		for _, reviewer := range m.Reviewers {
-			if kind, err = ChangesetEventKindFor(&reviewer); err != nil {
+		for _, reviewer := rbnge m.Reviewers {
+			if kind, err = ChbngesetEventKindFor(&reviewer); err != nil {
 				return
 			}
-			appendEvent(&ChangesetEvent{
-				ChangesetID: c.ID,
-				Key:         strconv.Itoa(reviewer.AccountID),
+			bppendEvent(&ChbngesetEvent{
+				ChbngesetID: c.ID,
+				Key:         strconv.Itob(reviewer.AccountID),
 				Kind:        kind,
-				Metadata:    reviewer,
+				Metbdbtb:    reviewer,
 			})
 		}
-	case *protocol.PerforceChangelist:
-		// We don't have any events we care about right now
-		break
+	cbse *protocol.PerforceChbngelist:
+		// We don't hbve bny events we cbre bbout right now
+		brebk
 	}
 
 	return events, nil
 }
 
-// HeadRefOid returns the git ObjectID of the HEAD reference associated with
-// Changeset on the codehost. If the codehost doesn't include the ObjectID, an
+// HebdRefOid returns the git ObjectID of the HEAD reference bssocibted with
+// Chbngeset on the codehost. If the codehost doesn't include the ObjectID, bn
 // empty string is returned.
-func (c *Changeset) HeadRefOid() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		return m.HeadRefOid, nil
-	case *bitbucketserver.PullRequest:
+func (c *Chbngeset) HebdRefOid() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		return m.HebdRefOid, nil
+	cbse *bitbucketserver.PullRequest:
 		return "", nil
-	case *gitlab.MergeRequest:
-		return m.DiffRefs.HeadSHA, nil
-	case *bbcs.AnnotatedPullRequest:
-		return m.Source.Commit.Hash, nil
-	case *adobatches.AnnotatedPullRequest:
+	cbse *gitlbb.MergeRequest:
+		return m.DiffRefs.HebdSHA, nil
+	cbse *bbcs.AnnotbtedPullRequest:
+		return m.Source.Commit.Hbsh, nil
+	cbse *bdobbtches.AnnotbtedPullRequest:
 		return "", nil
-	case *gerritbatches.AnnotatedChange:
+	cbse *gerritbbtches.AnnotbtedChbnge:
 		return "", nil
-	case *protocol.PerforceChangelist:
+	cbse *protocol.PerforceChbngelist:
 		return "", nil
-	default:
-		return "", errors.New("head ref oid unknown changeset type")
+	defbult:
+		return "", errors.New("hebd ref oid unknown chbngeset type")
 	}
 }
 
-// HeadRef returns the full ref (e.g. `refs/heads/my-branch`) of the
-// HEAD reference associated with the Changeset on the codehost.
-func (c *Changeset) HeadRef() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		return "refs/heads/" + m.HeadRefName, nil
-	case *bitbucketserver.PullRequest:
+// HebdRef returns the full ref (e.g. `refs/hebds/my-brbnch`) of the
+// HEAD reference bssocibted with the Chbngeset on the codehost.
+func (c *Chbngeset) HebdRef() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		return "refs/hebds/" + m.HebdRefNbme, nil
+	cbse *bitbucketserver.PullRequest:
 		return m.FromRef.ID, nil
-	case *gitlab.MergeRequest:
-		return "refs/heads/" + m.SourceBranch, nil
-	case *bbcs.AnnotatedPullRequest:
-		return "refs/heads/" + m.Source.Branch.Name, nil
-	case *adobatches.AnnotatedPullRequest:
-		return m.SourceRefName, nil
-	case *gerritbatches.AnnotatedChange:
+	cbse *gitlbb.MergeRequest:
+		return "refs/hebds/" + m.SourceBrbnch, nil
+	cbse *bbcs.AnnotbtedPullRequest:
+		return "refs/hebds/" + m.Source.Brbnch.Nbme, nil
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		return m.SourceRefNbme, nil
+	cbse *gerritbbtches.AnnotbtedChbnge:
 		return "", nil
-	case *protocol.PerforceChangelist:
+	cbse *protocol.PerforceChbngelist:
 		return "", nil
-	default:
-		return "", errors.New("headref unknown changeset type")
+	defbult:
+		return "", errors.New("hebdref unknown chbngeset type")
 	}
 }
 
-// BaseRefOid returns the git ObjectID of the base reference associated with the
-// Changeset on the codehost. If the codehost doesn't include the ObjectID, an
+// BbseRefOid returns the git ObjectID of the bbse reference bssocibted with the
+// Chbngeset on the codehost. If the codehost doesn't include the ObjectID, bn
 // empty string is returned.
-func (c *Changeset) BaseRefOid() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		return m.BaseRefOid, nil
-	case *bitbucketserver.PullRequest:
+func (c *Chbngeset) BbseRefOid() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		return m.BbseRefOid, nil
+	cbse *bitbucketserver.PullRequest:
 		return "", nil
-	case *gitlab.MergeRequest:
-		return m.DiffRefs.BaseSHA, nil
-	case *bbcs.AnnotatedPullRequest:
-		return m.Destination.Commit.Hash, nil
-	case *adobatches.AnnotatedPullRequest:
+	cbse *gitlbb.MergeRequest:
+		return m.DiffRefs.BbseSHA, nil
+	cbse *bbcs.AnnotbtedPullRequest:
+		return m.Destinbtion.Commit.Hbsh, nil
+	cbse *bdobbtches.AnnotbtedPullRequest:
 		return "", nil
-	case *gerritbatches.AnnotatedChange:
+	cbse *gerritbbtches.AnnotbtedChbnge:
 		return "", nil
-	case *protocol.PerforceChangelist:
+	cbse *protocol.PerforceChbngelist:
 		return "", nil
-	default:
-		return "", errors.New("base ref oid unknown changeset type")
+	defbult:
+		return "", errors.New("bbse ref oid unknown chbngeset type")
 	}
 }
 
-// BaseRef returns the full ref (e.g. `refs/heads/my-branch`) of the base ref
-// associated with the Changeset on the codehost.
-func (c *Changeset) BaseRef() (string, error) {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		return "refs/heads/" + m.BaseRefName, nil
-	case *bitbucketserver.PullRequest:
+// BbseRef returns the full ref (e.g. `refs/hebds/my-brbnch`) of the bbse ref
+// bssocibted with the Chbngeset on the codehost.
+func (c *Chbngeset) BbseRef() (string, error) {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		return "refs/hebds/" + m.BbseRefNbme, nil
+	cbse *bitbucketserver.PullRequest:
 		return m.ToRef.ID, nil
-	case *gitlab.MergeRequest:
-		return "refs/heads/" + m.TargetBranch, nil
-	case *bbcs.AnnotatedPullRequest:
-		return "refs/heads/" + m.Destination.Branch.Name, nil
-	case *adobatches.AnnotatedPullRequest:
-		return m.TargetRefName, nil
-	case *gerritbatches.AnnotatedChange:
-		return "refs/heads/" + m.Change.Branch, nil
-	case *protocol.PerforceChangelist:
-		// TODO: @peterguy we may need to change this to something.
+	cbse *gitlbb.MergeRequest:
+		return "refs/hebds/" + m.TbrgetBrbnch, nil
+	cbse *bbcs.AnnotbtedPullRequest:
+		return "refs/hebds/" + m.Destinbtion.Brbnch.Nbme, nil
+	cbse *bdobbtches.AnnotbtedPullRequest:
+		return m.TbrgetRefNbme, nil
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		return "refs/hebds/" + m.Chbnge.Brbnch, nil
+	cbse *protocol.PerforceChbngelist:
+		// TODO: @peterguy we mby need to chbnge this to something.
 		return "", nil
-	default:
-		return "", errors.New(" base ref unknown changeset type")
+	defbult:
+		return "", errors.New(" bbse ref unknown chbngeset type")
 	}
 }
 
-// AttachedTo returns true if the changeset is currently attached to the batch
-// change with the given batchChangeID.
-func (c *Changeset) AttachedTo(batchChangeID int64) bool {
-	for _, assoc := range c.BatchChanges {
-		if assoc.BatchChangeID == batchChangeID {
+// AttbchedTo returns true if the chbngeset is currently bttbched to the bbtch
+// chbnge with the given bbtchChbngeID.
+func (c *Chbngeset) AttbchedTo(bbtchChbngeID int64) bool {
+	for _, bssoc := rbnge c.BbtchChbnges {
+		if bssoc.BbtchChbngeID == bbtchChbngeID {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Attach attaches the batch change with the given ID to the changeset.
-// If the batch change is already attached, this is a noop.
-// If the batch change is still attached but is marked as to be detached,
-// the detach flag is removed.
-func (c *Changeset) Attach(batchChangeID int64) {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID {
-			c.BatchChanges[i].Detach = false
-			c.BatchChanges[i].IsArchived = false
-			c.BatchChanges[i].Archive = false
+// Attbch bttbches the bbtch chbnge with the given ID to the chbngeset.
+// If the bbtch chbnge is blrebdy bttbched, this is b noop.
+// If the bbtch chbnge is still bttbched but is mbrked bs to be detbched,
+// the detbch flbg is removed.
+func (c *Chbngeset) Attbch(bbtchChbngeID int64) {
+	for i := rbnge c.BbtchChbnges {
+		if c.BbtchChbnges[i].BbtchChbngeID == bbtchChbngeID {
+			c.BbtchChbnges[i].Detbch = fblse
+			c.BbtchChbnges[i].IsArchived = fblse
+			c.BbtchChbnges[i].Archive = fblse
 			return
 		}
 	}
-	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
-	if !c.DetachedAt.IsZero() {
-		c.DetachedAt = time.Time{}
+	c.BbtchChbnges = bppend(c.BbtchChbnges, BbtchChbngeAssoc{BbtchChbngeID: bbtchChbngeID})
+	if !c.DetbchedAt.IsZero() {
+		c.DetbchedAt = time.Time{}
 	}
 }
 
-// Detach marks the given batch change as to-be-detached. Returns true, if the
-// batch change currently is attached to the batch change. This function is a noop,
-// if the given batch change was not attached to the changeset.
-func (c *Changeset) Detach(batchChangeID int64) bool {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID {
-			c.BatchChanges[i].Detach = true
+// Detbch mbrks the given bbtch chbnge bs to-be-detbched. Returns true, if the
+// bbtch chbnge currently is bttbched to the bbtch chbnge. This function is b noop,
+// if the given bbtch chbnge wbs not bttbched to the chbngeset.
+func (c *Chbngeset) Detbch(bbtchChbngeID int64) bool {
+	for i := rbnge c.BbtchChbnges {
+		if c.BbtchChbnges[i].BbtchChbngeID == bbtchChbngeID {
+			c.BbtchChbnges[i].Detbch = true
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Archive marks the given batch change as to-be-archived. Returns true, if the
-// batch change currently is attached to the batch change and *not* archived.
-// This function is a noop, if the given changeset was already archived.
-func (c *Changeset) Archive(batchChangeID int64) bool {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID && !c.BatchChanges[i].IsArchived {
-			c.BatchChanges[i].Archive = true
+// Archive mbrks the given bbtch chbnge bs to-be-brchived. Returns true, if the
+// bbtch chbnge currently is bttbched to the bbtch chbnge bnd *not* brchived.
+// This function is b noop, if the given chbngeset wbs blrebdy brchived.
+func (c *Chbngeset) Archive(bbtchChbngeID int64) bool {
+	for i := rbnge c.BbtchChbnges {
+		if c.BbtchChbnges[i].BbtchChbngeID == bbtchChbngeID && !c.BbtchChbnges[i].IsArchived {
+			c.BbtchChbnges[i].Archive = true
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// ArchivedIn checks whether the changeset is archived in the given batch change.
-func (c *Changeset) ArchivedIn(batchChangeID int64) bool {
-	for i := range c.BatchChanges {
-		if c.BatchChanges[i].BatchChangeID == batchChangeID && c.BatchChanges[i].IsArchived {
+// ArchivedIn checks whether the chbngeset is brchived in the given bbtch chbnge.
+func (c *Chbngeset) ArchivedIn(bbtchChbngeID int64) bool {
+	for i := rbnge c.BbtchChbnges {
+		if c.BbtchChbnges[i].BbtchChbngeID == bbtchChbngeID && c.BbtchChbnges[i].IsArchived {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// SupportsLabels returns whether the code host on which the changeset is
-// hosted supports labels and whether it's safe to call the
-// (*Changeset).Labels() method.
-func (c *Changeset) SupportsLabels() bool {
-	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityLabels)
+// SupportsLbbels returns whether the code host on which the chbngeset is
+// hosted supports lbbels bnd whether it's sbfe to cbll the
+// (*Chbngeset).Lbbels() method.
+func (c *Chbngeset) SupportsLbbels() bool {
+	return ExternblServiceSupports(c.ExternblServiceType, CodehostCbpbbilityLbbels)
 }
 
-// SupportsDraft returns whether the code host on which the changeset is
-// hosted supports draft changesets.
-func (c *Changeset) SupportsDraft() bool {
-	return ExternalServiceSupports(c.ExternalServiceType, CodehostCapabilityDraftChangesets)
+// SupportsDrbft returns whether the code host on which the chbngeset is
+// hosted supports drbft chbngesets.
+func (c *Chbngeset) SupportsDrbft() bool {
+	return ExternblServiceSupports(c.ExternblServiceType, CodehostCbpbbilityDrbftChbngesets)
 }
 
-func (c *Changeset) Labels() []ChangesetLabel {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		labels := make([]ChangesetLabel, len(m.Labels.Nodes))
-		for i, l := range m.Labels.Nodes {
-			labels[i] = ChangesetLabel{
-				Name:        l.Name,
+func (c *Chbngeset) Lbbels() []ChbngesetLbbel {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		lbbels := mbke([]ChbngesetLbbel, len(m.Lbbels.Nodes))
+		for i, l := rbnge m.Lbbels.Nodes {
+			lbbels[i] = ChbngesetLbbel{
+				Nbme:        l.Nbme,
 				Color:       l.Color,
 				Description: l.Description,
 			}
 		}
-		return labels
-	case *gitlab.MergeRequest:
-		// Similarly to GitHub above, GitLab labels can have colors (foreground
-		// _and_ background, in fact) and descriptions. Unfortunately, the REST
-		// API only returns this level of detail on the list endpoint (with an
-		// option added in GitLab 12.7), and not when retrieving individual MRs.
+		return lbbels
+	cbse *gitlbb.MergeRequest:
+		// Similbrly to GitHub bbove, GitLbb lbbels cbn hbve colors (foreground
+		// _bnd_ bbckground, in fbct) bnd descriptions. Unfortunbtely, the REST
+		// API only returns this level of detbil on the list endpoint (with bn
+		// option bdded in GitLbb 12.7), bnd not when retrieving individubl MRs.
 		//
-		// When our minimum GitLab version is 12.0, we should be able to switch
-		// to retrieving MRs via GraphQL, and then we can start retrieving
-		// richer label data.
-		labels := make([]ChangesetLabel, len(m.Labels))
-		for i, l := range m.Labels {
-			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
+		// When our minimum GitLbb version is 12.0, we should be bble to switch
+		// to retrieving MRs vib GrbphQL, bnd then we cbn stbrt retrieving
+		// richer lbbel dbtb.
+		lbbels := mbke([]ChbngesetLbbel, len(m.Lbbels))
+		for i, l := rbnge m.Lbbels {
+			lbbels[i] = ChbngesetLbbel{Nbme: l, Color: "000000"}
 		}
-		return labels
-	case *gerritbatches.AnnotatedChange:
-		labels := make([]ChangesetLabel, len(m.Change.Hashtags))
-		for i, l := range m.Change.Hashtags {
-			labels[i] = ChangesetLabel{Name: l, Color: "000000"}
+		return lbbels
+	cbse *gerritbbtches.AnnotbtedChbnge:
+		lbbels := mbke([]ChbngesetLbbel, len(m.Chbnge.Hbshtbgs))
+		for i, l := rbnge m.Chbnge.Hbshtbgs {
+			lbbels[i] = ChbngesetLbbel{Nbme: l, Color: "000000"}
 		}
-		return labels
-	default:
-		return []ChangesetLabel{}
+		return lbbels
+	defbult:
+		return []ChbngesetLbbel{}
 	}
 }
 
-// ResetReconcilerState resets the failure message and reset count and sets the
-// changeset's ReconcilerState to the given value.
-func (c *Changeset) ResetReconcilerState(state ReconcilerState) {
-	c.ReconcilerState = state
+// ResetReconcilerStbte resets the fbilure messbge bnd reset count bnd sets the
+// chbngeset's ReconcilerStbte to the given vblue.
+func (c *Chbngeset) ResetReconcilerStbte(stbte ReconcilerStbte) {
+	c.ReconcilerStbte = stbte
 	c.NumResets = 0
-	c.NumFailures = 0
-	// Copy over and reset the previous failure message
-	c.PreviousFailureMessage = c.FailureMessage
-	c.FailureMessage = nil
-	// The reconciler syncs where needed, so we reset this message.
-	c.SyncErrorMessage = nil
+	c.NumFbilures = 0
+	// Copy over bnd reset the previous fbilure messbge
+	c.PreviousFbilureMessbge = c.FbilureMessbge
+	c.FbilureMessbge = nil
+	// The reconciler syncs where needed, so we reset this messbge.
+	c.SyncErrorMessbge = nil
 }
 
-// Changesets is a slice of *Changesets.
-type Changesets []*Changeset
+// Chbngesets is b slice of *Chbngesets.
+type Chbngesets []*Chbngeset
 
-// IDs returns the IDs of all changesets in the slice.
-func (cs Changesets) IDs() []int64 {
-	ids := make([]int64, len(cs))
-	for i, c := range cs {
+// IDs returns the IDs of bll chbngesets in the slice.
+func (cs Chbngesets) IDs() []int64 {
+	ids := mbke([]int64, len(cs))
+	for i, c := rbnge cs {
 		ids[i] = c.ID
 	}
 	return ids
 }
 
-// IDs returns the unique RepoIDs of all changesets in the slice.
-func (cs Changesets) RepoIDs() []api.RepoID {
-	repoIDMap := make(map[api.RepoID]struct{})
-	for _, c := range cs {
-		repoIDMap[c.RepoID] = struct{}{}
+// IDs returns the unique RepoIDs of bll chbngesets in the slice.
+func (cs Chbngesets) RepoIDs() []bpi.RepoID {
+	repoIDMbp := mbke(mbp[bpi.RepoID]struct{})
+	for _, c := rbnge cs {
+		repoIDMbp[c.RepoID] = struct{}{}
 	}
-	repoIDs := make([]api.RepoID, 0, len(repoIDMap))
-	for id := range repoIDMap {
-		repoIDs = append(repoIDs, id)
+	repoIDs := mbke([]bpi.RepoID, 0, len(repoIDMbp))
+	for id := rbnge repoIDMbp {
+		repoIDs = bppend(repoIDs, id)
 	}
 	return repoIDs
 }
 
-// Filter returns a new Changesets slice in which changesets have been filtered
-// out for which the predicate didn't return true.
-func (cs Changesets) Filter(predicate func(*Changeset) bool) (filtered Changesets) {
-	for _, c := range cs {
-		if predicate(c) {
-			filtered = append(filtered, c)
+// Filter returns b new Chbngesets slice in which chbngesets hbve been filtered
+// out for which the predicbte didn't return true.
+func (cs Chbngesets) Filter(predicbte func(*Chbngeset) bool) (filtered Chbngesets) {
+	for _, c := rbnge cs {
+		if predicbte(c) {
+			filtered = bppend(filtered, c)
 		}
 	}
 
 	return filtered
 }
 
-// Find returns the first changeset in the slice for which the predicate
+// Find returns the first chbngeset in the slice for which the predicbte
 // returned true.
-func (cs Changesets) Find(predicate func(*Changeset) bool) *Changeset {
-	for _, c := range cs {
-		if predicate(c) {
+func (cs Chbngesets) Find(predicbte func(*Chbngeset) bool) *Chbngeset {
+	for _, c := rbnge cs {
+		if predicbte(c) {
 			return c
 		}
 	}
@@ -1188,366 +1188,366 @@ func (cs Changesets) Find(predicate func(*Changeset) bool) *Changeset {
 	return nil
 }
 
-// WithCurrentSpecID returns a predicate function that can be passed to
-// Changesets.Filter/Find, etc.
-func WithCurrentSpecID(id int64) func(*Changeset) bool {
-	return func(c *Changeset) bool { return c.CurrentSpecID == id }
+// WithCurrentSpecID returns b predicbte function thbt cbn be pbssed to
+// Chbngesets.Filter/Find, etc.
+func WithCurrentSpecID(id int64) func(*Chbngeset) bool {
+	return func(c *Chbngeset) bool { return c.CurrentSpecID == id }
 }
 
-// WithExternalID returns a predicate function that can be passed to
-// Changesets.Filter/Find, etc.
-func WithExternalID(id string) func(*Changeset) bool {
-	return func(c *Changeset) bool { return c.ExternalID == id }
+// WithExternblID returns b predicbte function thbt cbn be pbssed to
+// Chbngesets.Filter/Find, etc.
+func WithExternblID(id string) func(*Chbngeset) bool {
+	return func(c *Chbngeset) bool { return c.ExternblID == id }
 }
 
-type CommonChangesetsStats struct {
+type CommonChbngesetsStbts struct {
 	Unpublished int32
-	Draft       int32
+	Drbft       int32
 	Open        int32
 	Merged      int32
 	Closed      int32
-	Total       int32
+	Totbl       int32
 }
 
-// RepoChangesetsStats holds stats information on a list of changesets for a repo.
-type RepoChangesetsStats struct {
-	CommonChangesetsStats
+// RepoChbngesetsStbts holds stbts informbtion on b list of chbngesets for b repo.
+type RepoChbngesetsStbts struct {
+	CommonChbngesetsStbts
 }
 
-// GlobalChangesetsStats holds stats information on all the changsets across the instance.
-type GlobalChangesetsStats struct {
-	CommonChangesetsStats
+// GlobblChbngesetsStbts holds stbts informbtion on bll the chbngsets bcross the instbnce.
+type GlobblChbngesetsStbts struct {
+	CommonChbngesetsStbts
 }
 
-// ChangesetsStats holds additional stats information on a list of changesets.
-type ChangesetsStats struct {
-	CommonChangesetsStats
+// ChbngesetsStbts holds bdditionbl stbts informbtion on b list of chbngesets.
+type ChbngesetsStbts struct {
+	CommonChbngesetsStbts
 	Retrying   int32
-	Failed     int32
+	Fbiled     int32
 	Scheduled  int32
 	Processing int32
 	Deleted    int32
 	Archived   int32
 }
 
-// ChangesetEventKindFor returns the ChangesetEventKind for the given
+// ChbngesetEventKindFor returns the ChbngesetEventKind for the given
 // specific code host event.
-func ChangesetEventKindFor(e any) (ChangesetEventKind, error) {
+func ChbngesetEventKindFor(e bny) (ChbngesetEventKind, error) {
 	switch e := e.(type) {
-	case *github.AssignedEvent:
-		return ChangesetEventKindGitHubAssigned, nil
-	case *github.ClosedEvent:
-		return ChangesetEventKindGitHubClosed, nil
-	case *github.IssueComment:
-		return ChangesetEventKindGitHubCommented, nil
-	case *github.RenamedTitleEvent:
-		return ChangesetEventKindGitHubRenamedTitle, nil
-	case *github.MergedEvent:
-		return ChangesetEventKindGitHubMerged, nil
-	case *github.PullRequestReview:
-		return ChangesetEventKindGitHubReviewed, nil
-	case *github.PullRequestReviewComment:
-		return ChangesetEventKindGitHubReviewCommented, nil
-	case *github.ReopenedEvent:
-		return ChangesetEventKindGitHubReopened, nil
-	case *github.ReviewDismissedEvent:
-		return ChangesetEventKindGitHubReviewDismissed, nil
-	case *github.ReviewRequestRemovedEvent:
-		return ChangesetEventKindGitHubReviewRequestRemoved, nil
-	case *github.ReviewRequestedEvent:
-		return ChangesetEventKindGitHubReviewRequested, nil
-	case *github.ReadyForReviewEvent:
-		return ChangesetEventKindGitHubReadyForReview, nil
-	case *github.ConvertToDraftEvent:
-		return ChangesetEventKindGitHubConvertToDraft, nil
-	case *github.UnassignedEvent:
-		return ChangesetEventKindGitHubUnassigned, nil
-	case *github.PullRequestCommit:
-		return ChangesetEventKindGitHubCommit, nil
-	case *github.LabelEvent:
+	cbse *github.AssignedEvent:
+		return ChbngesetEventKindGitHubAssigned, nil
+	cbse *github.ClosedEvent:
+		return ChbngesetEventKindGitHubClosed, nil
+	cbse *github.IssueComment:
+		return ChbngesetEventKindGitHubCommented, nil
+	cbse *github.RenbmedTitleEvent:
+		return ChbngesetEventKindGitHubRenbmedTitle, nil
+	cbse *github.MergedEvent:
+		return ChbngesetEventKindGitHubMerged, nil
+	cbse *github.PullRequestReview:
+		return ChbngesetEventKindGitHubReviewed, nil
+	cbse *github.PullRequestReviewComment:
+		return ChbngesetEventKindGitHubReviewCommented, nil
+	cbse *github.ReopenedEvent:
+		return ChbngesetEventKindGitHubReopened, nil
+	cbse *github.ReviewDismissedEvent:
+		return ChbngesetEventKindGitHubReviewDismissed, nil
+	cbse *github.ReviewRequestRemovedEvent:
+		return ChbngesetEventKindGitHubReviewRequestRemoved, nil
+	cbse *github.ReviewRequestedEvent:
+		return ChbngesetEventKindGitHubReviewRequested, nil
+	cbse *github.RebdyForReviewEvent:
+		return ChbngesetEventKindGitHubRebdyForReview, nil
+	cbse *github.ConvertToDrbftEvent:
+		return ChbngesetEventKindGitHubConvertToDrbft, nil
+	cbse *github.UnbssignedEvent:
+		return ChbngesetEventKindGitHubUnbssigned, nil
+	cbse *github.PullRequestCommit:
+		return ChbngesetEventKindGitHubCommit, nil
+	cbse *github.LbbelEvent:
 		if e.Removed {
-			return ChangesetEventKindGitHubUnlabeled, nil
+			return ChbngesetEventKindGitHubUnlbbeled, nil
 		}
-		return ChangesetEventKindGitHubLabeled, nil
-	case *github.CommitStatus:
-		return ChangesetEventKindCommitStatus, nil
-	case *github.CheckSuite:
-		return ChangesetEventKindCheckSuite, nil
-	case *github.CheckRun:
-		return ChangesetEventKindCheckRun, nil
-	case *bitbucketserver.Activity:
-		return ChangesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action))), nil
-	case *bitbucketserver.ParticipantStatusEvent:
-		return ChangesetEventKind("bitbucketserver:participant_status:" + strings.ToLower(string(e.Action))), nil
-	case *bitbucketserver.CommitStatus:
-		return ChangesetEventKindBitbucketServerCommitStatus, nil
-	case *gitlab.Pipeline:
-		return ChangesetEventKindGitLabPipeline, nil
-	case *gitlab.ReviewApprovedEvent:
-		return ChangesetEventKindGitLabApproved, nil
-	case *gitlab.ReviewUnapprovedEvent:
-		return ChangesetEventKindGitLabUnapproved, nil
-	case *gitlab.MarkWorkInProgressEvent:
-		return ChangesetEventKindGitLabMarkWorkInProgress, nil
-	case *gitlab.UnmarkWorkInProgressEvent:
-		return ChangesetEventKindGitLabUnmarkWorkInProgress, nil
+		return ChbngesetEventKindGitHubLbbeled, nil
+	cbse *github.CommitStbtus:
+		return ChbngesetEventKindCommitStbtus, nil
+	cbse *github.CheckSuite:
+		return ChbngesetEventKindCheckSuite, nil
+	cbse *github.CheckRun:
+		return ChbngesetEventKindCheckRun, nil
+	cbse *bitbucketserver.Activity:
+		return ChbngesetEventKind("bitbucketserver:" + strings.ToLower(string(e.Action))), nil
+	cbse *bitbucketserver.PbrticipbntStbtusEvent:
+		return ChbngesetEventKind("bitbucketserver:pbrticipbnt_stbtus:" + strings.ToLower(string(e.Action))), nil
+	cbse *bitbucketserver.CommitStbtus:
+		return ChbngesetEventKindBitbucketServerCommitStbtus, nil
+	cbse *gitlbb.Pipeline:
+		return ChbngesetEventKindGitLbbPipeline, nil
+	cbse *gitlbb.ReviewApprovedEvent:
+		return ChbngesetEventKindGitLbbApproved, nil
+	cbse *gitlbb.ReviewUnbpprovedEvent:
+		return ChbngesetEventKindGitLbbUnbpproved, nil
+	cbse *gitlbb.MbrkWorkInProgressEvent:
+		return ChbngesetEventKindGitLbbMbrkWorkInProgress, nil
+	cbse *gitlbb.UnmbrkWorkInProgressEvent:
+		return ChbngesetEventKindGitLbbUnmbrkWorkInProgress, nil
 
-	case *gitlab.MergeRequestClosedEvent:
-		return ChangesetEventKindGitLabClosed, nil
-	case *gitlab.MergeRequestReopenedEvent:
-		return ChangesetEventKindGitLabReopened, nil
-	case *gitlab.MergeRequestMergedEvent:
-		return ChangesetEventKindGitLabMerged, nil
+	cbse *gitlbb.MergeRequestClosedEvent:
+		return ChbngesetEventKindGitLbbClosed, nil
+	cbse *gitlbb.MergeRequestReopenedEvent:
+		return ChbngesetEventKindGitLbbReopened, nil
+	cbse *gitlbb.MergeRequestMergedEvent:
+		return ChbngesetEventKindGitLbbMerged, nil
 
-	case *bitbucketcloud.Participant:
-		switch e.State {
-		case bitbucketcloud.ParticipantStateApproved:
-			return ChangesetEventKindBitbucketCloudApproved, nil
-		case bitbucketcloud.ParticipantStateChangesRequested:
-			return ChangesetEventKindBitbucketCloudChangesRequested, nil
-		default:
-			return ChangesetEventKindBitbucketCloudReviewed, nil
+	cbse *bitbucketcloud.Pbrticipbnt:
+		switch e.Stbte {
+		cbse bitbucketcloud.PbrticipbntStbteApproved:
+			return ChbngesetEventKindBitbucketCloudApproved, nil
+		cbse bitbucketcloud.PbrticipbntStbteChbngesRequested:
+			return ChbngesetEventKindBitbucketCloudChbngesRequested, nil
+		defbult:
+			return ChbngesetEventKindBitbucketCloudReviewed, nil
 		}
-	case *bitbucketcloud.PullRequestStatus:
-		return ChangesetEventKindBitbucketCloudCommitStatus, nil
+	cbse *bitbucketcloud.PullRequestStbtus:
+		return ChbngesetEventKindBitbucketCloudCommitStbtus, nil
 
-	case *bitbucketcloud.PullRequestApprovedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestApproved, nil
-	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated, nil
-	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved, nil
-	case *bitbucketcloud.PullRequestCommentCreatedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestCommentCreated, nil
-	case *bitbucketcloud.PullRequestCommentDeletedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestCommentDeleted, nil
-	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestCommentUpdated, nil
-	case *bitbucketcloud.PullRequestFulfilledEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestFulfilled, nil
-	case *bitbucketcloud.PullRequestRejectedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestRejected, nil
-	case *bitbucketcloud.PullRequestUnapprovedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestUnapproved, nil
-	case *bitbucketcloud.PullRequestUpdatedEvent:
-		return ChangesetEventKindBitbucketCloudPullRequestUpdated, nil
-	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
-		return ChangesetEventKindBitbucketCloudRepoCommitStatusCreated, nil
-	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
-		return ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated, nil
-	case *azuredevops.PullRequestMergedEvent:
-		return ChangesetEventKindAzureDevOpsPullRequestMerged, nil
-	case *azuredevops.PullRequestApprovedEvent:
-		return ChangesetEventKindAzureDevOpsPullRequestApproved, nil
-	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
-		return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
-	case *azuredevops.PullRequestWaitingForAuthorEvent:
-		return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
-	case *azuredevops.PullRequestRejectedEvent:
-		return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
-	case *azuredevops.PullRequestUpdatedEvent:
-		return ChangesetEventKindAzureDevOpsPullRequestUpdated, nil
-	case *azuredevops.Reviewer:
+	cbse *bitbucketcloud.PullRequestApprovedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestApproved, nil
+	cbse *bitbucketcloud.PullRequestChbngesRequestCrebtedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestChbngesRequestCrebted, nil
+	cbse *bitbucketcloud.PullRequestChbngesRequestRemovedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestChbngesRequestRemoved, nil
+	cbse *bitbucketcloud.PullRequestCommentCrebtedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestCommentCrebted, nil
+	cbse *bitbucketcloud.PullRequestCommentDeletedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestCommentDeleted, nil
+	cbse *bitbucketcloud.PullRequestCommentUpdbtedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestCommentUpdbted, nil
+	cbse *bitbucketcloud.PullRequestFulfilledEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestFulfilled, nil
+	cbse *bitbucketcloud.PullRequestRejectedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestRejected, nil
+	cbse *bitbucketcloud.PullRequestUnbpprovedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestUnbpproved, nil
+	cbse *bitbucketcloud.PullRequestUpdbtedEvent:
+		return ChbngesetEventKindBitbucketCloudPullRequestUpdbted, nil
+	cbse *bitbucketcloud.RepoCommitStbtusCrebtedEvent:
+		return ChbngesetEventKindBitbucketCloudRepoCommitStbtusCrebted, nil
+	cbse *bitbucketcloud.RepoCommitStbtusUpdbtedEvent:
+		return ChbngesetEventKindBitbucketCloudRepoCommitStbtusUpdbted, nil
+	cbse *bzuredevops.PullRequestMergedEvent:
+		return ChbngesetEventKindAzureDevOpsPullRequestMerged, nil
+	cbse *bzuredevops.PullRequestApprovedEvent:
+		return ChbngesetEventKindAzureDevOpsPullRequestApproved, nil
+	cbse *bzuredevops.PullRequestApprovedWithSuggestionsEvent:
+		return ChbngesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
+	cbse *bzuredevops.PullRequestWbitingForAuthorEvent:
+		return ChbngesetEventKindAzureDevOpsPullRequestWbitingForAuthor, nil
+	cbse *bzuredevops.PullRequestRejectedEvent:
+		return ChbngesetEventKindAzureDevOpsPullRequestRejected, nil
+	cbse *bzuredevops.PullRequestUpdbtedEvent:
+		return ChbngesetEventKindAzureDevOpsPullRequestUpdbted, nil
+	cbse *bzuredevops.Reviewer:
 		switch e.Vote {
-		case 10:
-			return ChangesetEventKindAzureDevOpsPullRequestApproved, nil
-		case 5:
-			return ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
-		case 0:
-			return ChangesetEventKindAzureDevOpsPullRequestReviewed, nil
-		case -5:
-			return ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor, nil
-		case -10:
-			return ChangesetEventKindAzureDevOpsPullRequestRejected, nil
+		cbse 10:
+			return ChbngesetEventKindAzureDevOpsPullRequestApproved, nil
+		cbse 5:
+			return ChbngesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions, nil
+		cbse 0:
+			return ChbngesetEventKindAzureDevOpsPullRequestReviewed, nil
+		cbse -5:
+			return ChbngesetEventKindAzureDevOpsPullRequestWbitingForAuthor, nil
+		cbse -10:
+			return ChbngesetEventKindAzureDevOpsPullRequestRejected, nil
 		}
-	case *azuredevops.PullRequestBuildStatus:
-		switch e.State {
-		case azuredevops.PullRequestBuildStatusStateSucceeded:
-			return ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded, nil
-		case azuredevops.PullRequestBuildStatusStateError:
-			return ChangesetEventKindAzureDevOpsPullRequestBuildError, nil
-		case azuredevops.PullRequestBuildStatusStateFailed:
-			return ChangesetEventKindAzureDevOpsPullRequestBuildFailed, nil
-		default:
-			return ChangesetEventKindAzureDevOpsPullRequestBuildPending, nil
+	cbse *bzuredevops.PullRequestBuildStbtus:
+		switch e.Stbte {
+		cbse bzuredevops.PullRequestBuildStbtusStbteSucceeded:
+			return ChbngesetEventKindAzureDevOpsPullRequestBuildSucceeded, nil
+		cbse bzuredevops.PullRequestBuildStbtusStbteError:
+			return ChbngesetEventKindAzureDevOpsPullRequestBuildError, nil
+		cbse bzuredevops.PullRequestBuildStbtusStbteFbiled:
+			return ChbngesetEventKindAzureDevOpsPullRequestBuildFbiled, nil
+		defbult:
+			return ChbngesetEventKindAzureDevOpsPullRequestBuildPending, nil
 		}
-	case *gerrit.Reviewer:
-		for key, val := range e.Approvals {
+	cbse *gerrit.Reviewer:
+		for key, vbl := rbnge e.Approvbls {
 			if key == gerrit.CodeReviewKey {
-				switch val {
-				case "+2":
-					return ChangesetEventKindGerritChangeApproved, nil
-				case "+1":
-					return ChangesetEventKindGerritChangeApprovedWithSuggestions, nil
-				case " 0": // Not a typo, this is how Gerrit displays a no score.
-					return ChangesetEventKindGerritChangeReviewed, nil
-				case "-1":
-					return ChangesetEventKindGerritChangeNeedsChanges, nil
-				case "-2":
-					return ChangesetEventKindGerritChangeRejected, nil
+				switch vbl {
+				cbse "+2":
+					return ChbngesetEventKindGerritChbngeApproved, nil
+				cbse "+1":
+					return ChbngesetEventKindGerritChbngeApprovedWithSuggestions, nil
+				cbse " 0": // Not b typo, this is how Gerrit displbys b no score.
+					return ChbngesetEventKindGerritChbngeReviewed, nil
+				cbse "-1":
+					return ChbngesetEventKindGerritChbngeNeedsChbnges, nil
+				cbse "-2":
+					return ChbngesetEventKindGerritChbngeRejected, nil
 				}
 			} else {
-				switch val {
-				case "+2", "+1":
-					return ChangesetEventKindGerritChangeBuildSucceeded, nil
-				case " 0": // Not a typo, this is how Gerrit displays a no score.
-					return ChangesetEventKindGerritChangeBuildPending, nil
-				case "-1", "-2":
-					return ChangesetEventKindGerritChangeBuildFailed, nil
-				default:
-					return ChangesetEventKindGerritChangeBuildPending, nil
+				switch vbl {
+				cbse "+2", "+1":
+					return ChbngesetEventKindGerritChbngeBuildSucceeded, nil
+				cbse " 0": // Not b typo, this is how Gerrit displbys b no score.
+					return ChbngesetEventKindGerritChbngeBuildPending, nil
+				cbse "-1", "-2":
+					return ChbngesetEventKindGerritChbngeBuildFbiled, nil
+				defbult:
+					return ChbngesetEventKindGerritChbngeBuildPending, nil
 				}
 			}
 		}
 	}
 
-	return ChangesetEventKindInvalid, errors.Errorf("changeset eventkindfor unknown changeset event kind for %T", e)
+	return ChbngesetEventKindInvblid, errors.Errorf("chbngeset eventkindfor unknown chbngeset event kind for %T", e)
 }
 
-// NewChangesetEventMetadata returns a new metadata object for the given
-// ChangesetEventKind.
-func NewChangesetEventMetadata(k ChangesetEventKind) (any, error) {
+// NewChbngesetEventMetbdbtb returns b new metbdbtb object for the given
+// ChbngesetEventKind.
+func NewChbngesetEventMetbdbtb(k ChbngesetEventKind) (bny, error) {
 	switch {
-	case strings.HasPrefix(string(k), "bitbucketcloud"):
+	cbse strings.HbsPrefix(string(k), "bitbucketcloud"):
 		switch k {
-		case ChangesetEventKindBitbucketCloudApproved,
-			ChangesetEventKindBitbucketCloudChangesRequested,
-			ChangesetEventKindBitbucketCloudReviewed:
-			return new(bitbucketcloud.Participant), nil
-		case ChangesetEventKindBitbucketCloudCommitStatus:
-			return new(bitbucketcloud.PullRequestStatus), nil
+		cbse ChbngesetEventKindBitbucketCloudApproved,
+			ChbngesetEventKindBitbucketCloudChbngesRequested,
+			ChbngesetEventKindBitbucketCloudReviewed:
+			return new(bitbucketcloud.Pbrticipbnt), nil
+		cbse ChbngesetEventKindBitbucketCloudCommitStbtus:
+			return new(bitbucketcloud.PullRequestStbtus), nil
 
-		case ChangesetEventKindBitbucketCloudPullRequestApproved:
+		cbse ChbngesetEventKindBitbucketCloudPullRequestApproved:
 			return new(bitbucketcloud.PullRequestApprovedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestChangesRequestCreated:
-			return new(bitbucketcloud.PullRequestChangesRequestCreatedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestChangesRequestRemoved:
-			return new(bitbucketcloud.PullRequestChangesRequestRemovedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestCommentCreated:
-			return new(bitbucketcloud.PullRequestCommentCreatedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestCommentDeleted:
+		cbse ChbngesetEventKindBitbucketCloudPullRequestChbngesRequestCrebted:
+			return new(bitbucketcloud.PullRequestChbngesRequestCrebtedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudPullRequestChbngesRequestRemoved:
+			return new(bitbucketcloud.PullRequestChbngesRequestRemovedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudPullRequestCommentCrebted:
+			return new(bitbucketcloud.PullRequestCommentCrebtedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudPullRequestCommentDeleted:
 			return new(bitbucketcloud.PullRequestCommentDeletedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestCommentUpdated:
-			return new(bitbucketcloud.PullRequestCommentUpdatedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestFulfilled:
+		cbse ChbngesetEventKindBitbucketCloudPullRequestCommentUpdbted:
+			return new(bitbucketcloud.PullRequestCommentUpdbtedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudPullRequestFulfilled:
 			return new(bitbucketcloud.PullRequestFulfilledEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestRejected:
+		cbse ChbngesetEventKindBitbucketCloudPullRequestRejected:
 			return new(bitbucketcloud.PullRequestRejectedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestUnapproved:
-			return new(bitbucketcloud.PullRequestUnapprovedEvent), nil
-		case ChangesetEventKindBitbucketCloudPullRequestUpdated:
-			return new(bitbucketcloud.PullRequestUpdatedEvent), nil
-		case ChangesetEventKindBitbucketCloudRepoCommitStatusCreated:
-			return new(bitbucketcloud.RepoCommitStatusCreatedEvent), nil
-		case ChangesetEventKindBitbucketCloudRepoCommitStatusUpdated:
-			return new(bitbucketcloud.RepoCommitStatusUpdatedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudPullRequestUnbpproved:
+			return new(bitbucketcloud.PullRequestUnbpprovedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudPullRequestUpdbted:
+			return new(bitbucketcloud.PullRequestUpdbtedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudRepoCommitStbtusCrebted:
+			return new(bitbucketcloud.RepoCommitStbtusCrebtedEvent), nil
+		cbse ChbngesetEventKindBitbucketCloudRepoCommitStbtusUpdbted:
+			return new(bitbucketcloud.RepoCommitStbtusUpdbtedEvent), nil
 		}
-	case strings.HasPrefix(string(k), "bitbucketserver"):
+	cbse strings.HbsPrefix(string(k), "bitbucketserver"):
 		switch k {
-		case ChangesetEventKindBitbucketServerCommitStatus:
-			return new(bitbucketserver.CommitStatus), nil
-		case ChangesetEventKindBitbucketServerDismissed:
-			return new(bitbucketserver.ParticipantStatusEvent), nil
-		default:
+		cbse ChbngesetEventKindBitbucketServerCommitStbtus:
+			return new(bitbucketserver.CommitStbtus), nil
+		cbse ChbngesetEventKindBitbucketServerDismissed:
+			return new(bitbucketserver.PbrticipbntStbtusEvent), nil
+		defbult:
 			return new(bitbucketserver.Activity), nil
 		}
-	case strings.HasPrefix(string(k), "github"):
+	cbse strings.HbsPrefix(string(k), "github"):
 		switch k {
-		case ChangesetEventKindGitHubAssigned:
+		cbse ChbngesetEventKindGitHubAssigned:
 			return new(github.AssignedEvent), nil
-		case ChangesetEventKindGitHubClosed:
+		cbse ChbngesetEventKindGitHubClosed:
 			return new(github.ClosedEvent), nil
-		case ChangesetEventKindGitHubCommented:
+		cbse ChbngesetEventKindGitHubCommented:
 			return new(github.IssueComment), nil
-		case ChangesetEventKindGitHubRenamedTitle:
-			return new(github.RenamedTitleEvent), nil
-		case ChangesetEventKindGitHubMerged:
+		cbse ChbngesetEventKindGitHubRenbmedTitle:
+			return new(github.RenbmedTitleEvent), nil
+		cbse ChbngesetEventKindGitHubMerged:
 			return new(github.MergedEvent), nil
-		case ChangesetEventKindGitHubReviewed:
+		cbse ChbngesetEventKindGitHubReviewed:
 			return new(github.PullRequestReview), nil
-		case ChangesetEventKindGitHubReviewCommented:
+		cbse ChbngesetEventKindGitHubReviewCommented:
 			return new(github.PullRequestReviewComment), nil
-		case ChangesetEventKindGitHubReopened:
+		cbse ChbngesetEventKindGitHubReopened:
 			return new(github.ReopenedEvent), nil
-		case ChangesetEventKindGitHubReviewDismissed:
+		cbse ChbngesetEventKindGitHubReviewDismissed:
 			return new(github.ReviewDismissedEvent), nil
-		case ChangesetEventKindGitHubReviewRequestRemoved:
+		cbse ChbngesetEventKindGitHubReviewRequestRemoved:
 			return new(github.ReviewRequestRemovedEvent), nil
-		case ChangesetEventKindGitHubReviewRequested:
+		cbse ChbngesetEventKindGitHubReviewRequested:
 			return new(github.ReviewRequestedEvent), nil
-		case ChangesetEventKindGitHubReadyForReview:
-			return new(github.ReadyForReviewEvent), nil
-		case ChangesetEventKindGitHubConvertToDraft:
-			return new(github.ConvertToDraftEvent), nil
-		case ChangesetEventKindGitHubUnassigned:
-			return new(github.UnassignedEvent), nil
-		case ChangesetEventKindGitHubCommit:
+		cbse ChbngesetEventKindGitHubRebdyForReview:
+			return new(github.RebdyForReviewEvent), nil
+		cbse ChbngesetEventKindGitHubConvertToDrbft:
+			return new(github.ConvertToDrbftEvent), nil
+		cbse ChbngesetEventKindGitHubUnbssigned:
+			return new(github.UnbssignedEvent), nil
+		cbse ChbngesetEventKindGitHubCommit:
 			return new(github.PullRequestCommit), nil
-		case ChangesetEventKindGitHubLabeled:
-			return new(github.LabelEvent), nil
-		case ChangesetEventKindGitHubUnlabeled:
-			return &github.LabelEvent{Removed: true}, nil
-		case ChangesetEventKindCommitStatus:
-			return new(github.CommitStatus), nil
-		case ChangesetEventKindCheckSuite:
+		cbse ChbngesetEventKindGitHubLbbeled:
+			return new(github.LbbelEvent), nil
+		cbse ChbngesetEventKindGitHubUnlbbeled:
+			return &github.LbbelEvent{Removed: true}, nil
+		cbse ChbngesetEventKindCommitStbtus:
+			return new(github.CommitStbtus), nil
+		cbse ChbngesetEventKindCheckSuite:
 			return new(github.CheckSuite), nil
-		case ChangesetEventKindCheckRun:
+		cbse ChbngesetEventKindCheckRun:
 			return new(github.CheckRun), nil
 		}
-	case strings.HasPrefix(string(k), "gitlab"):
+	cbse strings.HbsPrefix(string(k), "gitlbb"):
 		switch k {
-		case ChangesetEventKindGitLabApproved:
-			return new(gitlab.ReviewApprovedEvent), nil
-		case ChangesetEventKindGitLabPipeline:
-			return new(gitlab.Pipeline), nil
-		case ChangesetEventKindGitLabUnapproved:
-			return new(gitlab.ReviewUnapprovedEvent), nil
-		case ChangesetEventKindGitLabMarkWorkInProgress:
-			return new(gitlab.MarkWorkInProgressEvent), nil
-		case ChangesetEventKindGitLabUnmarkWorkInProgress:
-			return new(gitlab.UnmarkWorkInProgressEvent), nil
-		case ChangesetEventKindGitLabClosed:
-			return new(gitlab.MergeRequestClosedEvent), nil
-		case ChangesetEventKindGitLabMerged:
-			return new(gitlab.MergeRequestMergedEvent), nil
-		case ChangesetEventKindGitLabReopened:
-			return new(gitlab.MergeRequestReopenedEvent), nil
+		cbse ChbngesetEventKindGitLbbApproved:
+			return new(gitlbb.ReviewApprovedEvent), nil
+		cbse ChbngesetEventKindGitLbbPipeline:
+			return new(gitlbb.Pipeline), nil
+		cbse ChbngesetEventKindGitLbbUnbpproved:
+			return new(gitlbb.ReviewUnbpprovedEvent), nil
+		cbse ChbngesetEventKindGitLbbMbrkWorkInProgress:
+			return new(gitlbb.MbrkWorkInProgressEvent), nil
+		cbse ChbngesetEventKindGitLbbUnmbrkWorkInProgress:
+			return new(gitlbb.UnmbrkWorkInProgressEvent), nil
+		cbse ChbngesetEventKindGitLbbClosed:
+			return new(gitlbb.MergeRequestClosedEvent), nil
+		cbse ChbngesetEventKindGitLbbMerged:
+			return new(gitlbb.MergeRequestMergedEvent), nil
+		cbse ChbngesetEventKindGitLbbReopened:
+			return new(gitlbb.MergeRequestReopenedEvent), nil
 		}
-	case strings.HasPrefix(string(k), "azuredevops"):
+	cbse strings.HbsPrefix(string(k), "bzuredevops"):
 		switch k {
-		case ChangesetEventKindAzureDevOpsPullRequestMerged:
-			return new(azuredevops.PullRequestMergedEvent), nil
-		case ChangesetEventKindAzureDevOpsPullRequestApproved:
-			return new(azuredevops.PullRequestApprovedEvent), nil
-		case ChangesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions:
-			return new(azuredevops.PullRequestApprovedWithSuggestionsEvent), nil
-		case ChangesetEventKindAzureDevOpsPullRequestWaitingForAuthor:
-			return new(azuredevops.PullRequestWaitingForAuthorEvent), nil
-		case ChangesetEventKindAzureDevOpsPullRequestRejected:
-			return new(azuredevops.PullRequestRejectedEvent), nil
-		case ChangesetEventKindAzureDevOpsPullRequestBuildSucceeded:
-			return new(azuredevops.PullRequestBuildStatus), nil
-		case ChangesetEventKindAzureDevOpsPullRequestBuildFailed:
-			return new(azuredevops.PullRequestBuildStatus), nil
-		case ChangesetEventKindAzureDevOpsPullRequestBuildError:
-			return new(azuredevops.PullRequestBuildStatus), nil
-		case ChangesetEventKindAzureDevOpsPullRequestBuildPending:
-			return new(azuredevops.PullRequestBuildStatus), nil
-		default:
-			return new(azuredevops.PullRequestUpdatedEvent), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestMerged:
+			return new(bzuredevops.PullRequestMergedEvent), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestApproved:
+			return new(bzuredevops.PullRequestApprovedEvent), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestApprovedWithSuggestions:
+			return new(bzuredevops.PullRequestApprovedWithSuggestionsEvent), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestWbitingForAuthor:
+			return new(bzuredevops.PullRequestWbitingForAuthorEvent), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestRejected:
+			return new(bzuredevops.PullRequestRejectedEvent), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestBuildSucceeded:
+			return new(bzuredevops.PullRequestBuildStbtus), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestBuildFbiled:
+			return new(bzuredevops.PullRequestBuildStbtus), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestBuildError:
+			return new(bzuredevops.PullRequestBuildStbtus), nil
+		cbse ChbngesetEventKindAzureDevOpsPullRequestBuildPending:
+			return new(bzuredevops.PullRequestBuildStbtus), nil
+		defbult:
+			return new(bzuredevops.PullRequestUpdbtedEvent), nil
 		}
-	case strings.HasPrefix(string(k), "gerrit"):
+	cbse strings.HbsPrefix(string(k), "gerrit"):
 		switch k {
-		case ChangesetEventKindGerritChangeApproved,
-			ChangesetEventKindGerritChangeApprovedWithSuggestions,
-			ChangesetEventKindGerritChangeReviewed,
-			ChangesetEventKindGerritChangeNeedsChanges,
-			ChangesetEventKindGerritChangeRejected,
-			ChangesetEventKindGerritChangeBuildFailed,
-			ChangesetEventKindGerritChangeBuildPending,
-			ChangesetEventKindGerritChangeBuildSucceeded:
+		cbse ChbngesetEventKindGerritChbngeApproved,
+			ChbngesetEventKindGerritChbngeApprovedWithSuggestions,
+			ChbngesetEventKindGerritChbngeReviewed,
+			ChbngesetEventKindGerritChbngeNeedsChbnges,
+			ChbngesetEventKindGerritChbngeRejected,
+			ChbngesetEventKindGerritChbngeBuildFbiled,
+			ChbngesetEventKindGerritChbngeBuildPending,
+			ChbngesetEventKindGerritChbngeBuildSucceeded:
 			return new(gerrit.Reviewer), nil
 		}
 	}
-	return nil, errors.Errorf("changeset event metadata unknown changeset event kind %q", k)
+	return nil, errors.Errorf("chbngeset event metbdbtb unknown chbngeset event kind %q", k)
 }

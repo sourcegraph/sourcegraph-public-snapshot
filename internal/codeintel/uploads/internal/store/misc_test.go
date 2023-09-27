@@ -1,80 +1,80 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/commitgraph"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/commitgrbph"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestHasRepository(t *testing.T) {
+func TestHbsRepository(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	testCases := []struct {
+	testCbses := []struct {
 		repositoryID int
 		exists       bool
 	}{
 		{50, true},
-		{51, false},
-		{52, false},
+		{51, fblse},
+		{52, fblse},
 	}
 
-	insertUploads(t, db, shared.Upload{ID: 1, RepositoryID: 50})
-	insertUploads(t, db, shared.Upload{ID: 2, RepositoryID: 51, State: "deleted"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, RepositoryID: 50})
+	insertUplobds(t, db, shbred.Uplobd{ID: 2, RepositoryID: 51, Stbte: "deleted"})
 
-	for _, testCase := range testCases {
-		name := fmt.Sprintf("repositoryID=%d", testCase.repositoryID)
+	for _, testCbse := rbnge testCbses {
+		nbme := fmt.Sprintf("repositoryID=%d", testCbse.repositoryID)
 
-		t.Run(name, func(t *testing.T) {
-			exists, err := store.HasRepository(context.Background(), testCase.repositoryID)
+		t.Run(nbme, func(t *testing.T) {
+			exists, err := store.HbsRepository(context.Bbckground(), testCbse.repositoryID)
 			if err != nil {
-				t.Fatalf("unexpected error checking if repository exists: %s", err)
+				t.Fbtblf("unexpected error checking if repository exists: %s", err)
 			}
-			if exists != testCase.exists {
-				t.Errorf("unexpected exists. want=%v have=%v", testCase.exists, exists)
+			if exists != testCbse.exists {
+				t.Errorf("unexpected exists. wbnt=%v hbve=%v", testCbse.exists, exists)
 			}
 		})
 	}
 }
 
-func TestHasCommit(t *testing.T) {
+func TestHbsCommit(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
-	testCases := []struct {
+	testCbses := []struct {
 		repositoryID int
 		commit       string
 		exists       bool
 	}{
-		{50, makeCommit(1), true},
-		{50, makeCommit(2), false},
-		{51, makeCommit(1), false},
+		{50, mbkeCommit(1), true},
+		{50, mbkeCommit(2), fblse},
+		{51, mbkeCommit(1), fblse},
 	}
 
-	insertNearestUploads(t, db, 50, map[string][]commitgraph.UploadMeta{makeCommit(1): {{UploadID: 42, Distance: 1}}})
-	insertNearestUploads(t, db, 51, map[string][]commitgraph.UploadMeta{makeCommit(2): {{UploadID: 43, Distance: 2}}})
+	insertNebrestUplobds(t, db, 50, mbp[string][]commitgrbph.UplobdMetb{mbkeCommit(1): {{UplobdID: 42, Distbnce: 1}}})
+	insertNebrestUplobds(t, db, 51, mbp[string][]commitgrbph.UplobdMetb{mbkeCommit(2): {{UplobdID: 43, Distbnce: 2}}})
 
-	for _, testCase := range testCases {
-		name := fmt.Sprintf("repositoryID=%d commit=%s", testCase.repositoryID, testCase.commit)
+	for _, testCbse := rbnge testCbses {
+		nbme := fmt.Sprintf("repositoryID=%d commit=%s", testCbse.repositoryID, testCbse.commit)
 
-		t.Run(name, func(t *testing.T) {
-			exists, err := store.HasCommit(context.Background(), testCase.repositoryID, testCase.commit)
+		t.Run(nbme, func(t *testing.T) {
+			exists, err := store.HbsCommit(context.Bbckground(), testCbse.repositoryID, testCbse.commit)
 			if err != nil {
-				t.Fatalf("unexpected error checking if commit exists: %s", err)
+				t.Fbtblf("unexpected error checking if commit exists: %s", err)
 			}
-			if exists != testCase.exists {
-				t.Errorf("unexpected exists. want=%v have=%v", testCase.exists, exists)
+			if exists != testCbse.exists {
+				t.Errorf("unexpected exists. wbnt=%v hbve=%v", testCbse.exists, exists)
 			}
 		})
 	}
@@ -82,29 +82,29 @@ func TestHasCommit(t *testing.T) {
 
 func TestInsertDependencySyncingJob(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	uploadID := 42
-	insertRepo(t, db, 50, "", false)
-	insertUploads(t, db, shared.Upload{
-		ID:            uploadID,
-		Commit:        makeCommit(1),
+	uplobdID := 42
+	insertRepo(t, db, 50, "", fblse)
+	insertUplobds(t, db, shbred.Uplobd{
+		ID:            uplobdID,
+		Commit:        mbkeCommit(1),
 		Root:          "sub/",
-		State:         "queued",
+		Stbte:         "queued",
 		RepositoryID:  50,
 		Indexer:       "lsif-go",
-		NumParts:      1,
-		UploadedParts: []int{0},
+		NumPbrts:      1,
+		UplobdedPbrts: []int{0},
 	})
 
-	// No error if upload exists
-	if _, err := store.InsertDependencySyncingJob(context.Background(), uploadID); err != nil {
-		t.Fatalf("unexpected error enqueueing dependency indexing job: %s", err)
+	// No error if uplobd exists
+	if _, err := store.InsertDependencySyncingJob(context.Bbckground(), uplobdID); err != nil {
+		t.Fbtblf("unexpected error enqueueing dependency indexing job: %s", err)
 	}
 
 	// Error with unknown identifier
-	if _, err := store.InsertDependencySyncingJob(context.Background(), uploadID+1); err == nil {
-		t.Fatalf("expected error enqueueing dependency indexing job for unknown upload")
+	if _, err := store.InsertDependencySyncingJob(context.Bbckground(), uplobdID+1); err == nil {
+		t.Fbtblf("expected error enqueueing dependency indexing job for unknown uplobd")
 	}
 }

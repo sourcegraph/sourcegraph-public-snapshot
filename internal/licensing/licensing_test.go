@@ -1,4 +1,4 @@
-package licensing
+pbckbge licensing
 
 import (
 	"testing"
@@ -7,72 +7,72 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-func cleanupStore(t *testing.T, store redispool.KeyValue) {
-	t.Cleanup(func() {
-		store.Del(LicenseValidityStoreKey)
-		store.Del(LicenseInvalidReason)
+func clebnupStore(t *testing.T, store redispool.KeyVblue) {
+	t.Clebnup(func() {
+		store.Del(LicenseVblidityStoreKey)
+		store.Del(LicenseInvblidRebson)
 	})
 }
 
-func TestIsLicenseValid(t *testing.T) {
-	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
+func TestIsLicenseVblid(t *testing.T) {
+	store = redispool.NewKeyVblue("127.0.0.1:6379", &redis.Pool{
+		MbxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
-	store.Del(LicenseValidityStoreKey)
+	store.Del(LicenseVblidityStoreKey)
 
 	t.Run("unset key returns true", func(t *testing.T) {
-		cleanupStore(t, store)
-		require.True(t, IsLicenseValid())
+		clebnupStore(t, store)
+		require.True(t, IsLicenseVblid())
 	})
 
-	t.Run("set false key returns false", func(t *testing.T) {
-		cleanupStore(t, store)
-		require.NoError(t, store.Set(LicenseValidityStoreKey, false))
-		require.False(t, IsLicenseValid())
+	t.Run("set fblse key returns fblse", func(t *testing.T) {
+		clebnupStore(t, store)
+		require.NoError(t, store.Set(LicenseVblidityStoreKey, fblse))
+		require.Fblse(t, IsLicenseVblid())
 	})
 
 	t.Run("set true key returns true", func(t *testing.T) {
-		cleanupStore(t, store)
-		require.NoError(t, store.Set(LicenseValidityStoreKey, true))
-		require.True(t, IsLicenseValid())
+		clebnupStore(t, store)
+		require.NoError(t, store.Set(LicenseVblidityStoreKey, true))
+		require.True(t, IsLicenseVblid())
 	})
 }
 
-func TestGetLicenseInvalidReason(t *testing.T) {
-	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
+func TestGetLicenseInvblidRebson(t *testing.T) {
+	store = redispool.NewKeyVblue("127.0.0.1:6379", &redis.Pool{
+		MbxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
-	store.Del(LicenseValidityStoreKey)
-	store.Del(LicenseInvalidReason)
+	store.Del(LicenseVblidityStoreKey)
+	store.Del(LicenseInvblidRebson)
 
-	t.Run("unset licenseValidityStoreKey returns empty string", func(t *testing.T) {
-		cleanupStore(t, store)
-		require.Empty(t, GetLicenseInvalidReason())
+	t.Run("unset licenseVblidityStoreKey returns empty string", func(t *testing.T) {
+		clebnupStore(t, store)
+		require.Empty(t, GetLicenseInvblidRebson())
 	})
 
-	t.Run("true licenseValidityStoreKey returns empty string", func(t *testing.T) {
-		cleanupStore(t, store)
-		require.NoError(t, store.Set(LicenseValidityStoreKey, true))
-		require.Empty(t, GetLicenseInvalidReason())
+	t.Run("true licenseVblidityStoreKey returns empty string", func(t *testing.T) {
+		clebnupStore(t, store)
+		require.NoError(t, store.Set(LicenseVblidityStoreKey, true))
+		require.Empty(t, GetLicenseInvblidRebson())
 	})
 
-	t.Run("unset reason returns `unknown`", func(t *testing.T) {
-		cleanupStore(t, store)
-		require.NoError(t, store.Set(LicenseValidityStoreKey, false))
-		require.Equal(t, "unknown", GetLicenseInvalidReason())
+	t.Run("unset rebson returns `unknown`", func(t *testing.T) {
+		clebnupStore(t, store)
+		require.NoError(t, store.Set(LicenseVblidityStoreKey, fblse))
+		require.Equbl(t, "unknown", GetLicenseInvblidRebson())
 	})
 
-	t.Run("set reason returns the reason", func(t *testing.T) {
-		cleanupStore(t, store)
+	t.Run("set rebson returns the rebson", func(t *testing.T) {
+		clebnupStore(t, store)
 
-		reason := "test reason"
-		require.NoError(t, store.Set(LicenseValidityStoreKey, false))
-		require.NoError(t, store.Set(LicenseInvalidReason, reason))
-		require.Equal(t, reason, GetLicenseInvalidReason())
+		rebson := "test rebson"
+		require.NoError(t, store.Set(LicenseVblidityStoreKey, fblse))
+		require.NoError(t, store.Set(LicenseInvblidRebson, rebson))
+		require.Equbl(t, rebson, GetLicenseInvblidRebson())
 	})
 }

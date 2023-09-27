@@ -1,19 +1,19 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func unmarshalExecutorID(id graphql.ID) (executorID int64, err error) {
-	err = relay.UnmarshalSpec(id, &executorID)
+func unmbrshblExecutorID(id grbphql.ID) (executorID int64, err error) {
+	err = relby.UnmbrshblSpec(id, &executorID)
 	return
 }
 
@@ -24,48 +24,48 @@ type ExecutorsListArgs struct {
 	After  *string
 }
 
-func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) (*executorConnectionResolver, error) {
-	// 🚨 SECURITY: Only site-admins may view executor details
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) Executors(ctx context.Context, brgs ExecutorsListArgs) (*executorConnectionResolver, error) {
+	// 🚨 SECURITY: Only site-bdmins mby view executor detbils
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	offset, err := graphqlutil.DecodeIntCursor(args.After)
+	offset, err := grbphqlutil.DecodeIntCursor(brgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	var executorConnection *executorConnectionResolver
-	err = r.db.WithTransact(ctx, func(tx database.DB) error {
-		opts := database.ExecutorStoreListOptions{
+	vbr executorConnection *executorConnectionResolver
+	err = r.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		opts := dbtbbbse.ExecutorStoreListOptions{
 			Offset: offset,
-			Limit:  int(args.First),
+			Limit:  int(brgs.First),
 		}
-		if args.Query != nil {
-			opts.Query = *args.Query
+		if brgs.Query != nil {
+			opts.Query = *brgs.Query
 		}
-		if args.Active != nil {
-			opts.Active = *args.Active
+		if brgs.Active != nil {
+			opts.Active = *brgs.Active
 		}
 		execs, err := tx.Executors().List(ctx, opts)
 		if err != nil {
 			return err
 		}
-		totalCount, err := tx.Executors().Count(ctx, opts)
+		totblCount, err := tx.Executors().Count(ctx, opts)
 		if err != nil {
 			return err
 		}
 
-		resolvers := make([]*ExecutorResolver, 0, len(execs))
-		for _, executor := range execs {
-			resolvers = append(resolvers, &ExecutorResolver{executor: executor})
+		resolvers := mbke([]*ExecutorResolver, 0, len(execs))
+		for _, executor := rbnge execs {
+			resolvers = bppend(resolvers, &ExecutorResolver{executor: executor})
 		}
 
-		nextOffset := graphqlutil.NextOffset(offset, len(execs), totalCount)
+		nextOffset := grbphqlutil.NextOffset(offset, len(execs), totblCount)
 
 		executorConnection = &executorConnectionResolver{
 			resolvers:  resolvers,
-			totalCount: totalCount,
+			totblCount: totblCount,
 			nextOffset: nextOffset,
 		}
 
@@ -78,16 +78,16 @@ func (r *schemaResolver) Executors(ctx context.Context, args ExecutorsListArgs) 
 	return executorConnection, nil
 }
 
-func (r *schemaResolver) AreExecutorsConfigured() bool {
+func (r *schembResolver) AreExecutorsConfigured() bool {
 	return conf.ExecutorsAccessToken() != ""
 }
 
-func executorByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*ExecutorResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+func executorByID(ctx context.Context, db dbtbbbse.DB, gqlID grbphql.ID) (*ExecutorResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalExecutorID(gqlID)
+	id, err := unmbrshblExecutorID(gqlID)
 	if err != nil {
 		return nil, err
 	}

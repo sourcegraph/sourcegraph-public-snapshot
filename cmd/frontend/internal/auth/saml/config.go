@@ -1,34 +1,34 @@
-package saml
+pbckbge sbml
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/shb256"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
 	stdlog "log"
 	"net/http"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var mockGetProviderValue *provider
+vbr mockGetProviderVblue *provider
 
-// getProvider looks up the registered saml auth provider with the given ID.
+// getProvider looks up the registered sbml buth provider with the given ID.
 func getProvider(pcID string) *provider {
-	if mockGetProviderValue != nil {
-		return mockGetProviderValue
+	if mockGetProviderVblue != nil {
+		return mockGetProviderVblue
 	}
 
 	p, _ := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType, ID: pcID}).(*provider)
@@ -36,99 +36,99 @@ func getProvider(pcID string) *provider {
 		return p
 	}
 
-	// Special case: if there is only a single SAML auth provider, return it regardless of the pcID.
-	for _, ap := range providers.Providers() {
-		if ap.Config().Saml != nil {
+	// Specibl cbse: if there is only b single SAML buth provider, return it regbrdless of the pcID.
+	for _, bp := rbnge providers.Providers() {
+		if bp.Config().Sbml != nil {
 			if p != nil {
-				return nil // multiple SAML providers, can't use this special case
+				return nil // multiple SAML providers, cbn't use this specibl cbse
 			}
-			p = ap.(*provider)
+			p = bp.(*provider)
 		}
 	}
 
 	return p
 }
 
-func handleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) (p *provider, handled bool) {
+func hbndleGetProvider(ctx context.Context, w http.ResponseWriter, pcID string) (p *provider, hbndled bool) {
 	p = getProvider(pcID)
 	if p == nil {
-		log15.Error("No SAML auth provider found with ID", "id", pcID)
-		http.Error(w, "Misconfigured SAML auth provider", http.StatusInternalServerError)
+		log15.Error("No SAML buth provider found with ID", "id", pcID)
+		http.Error(w, "Misconfigured SAML buth provider", http.StbtusInternblServerError)
 		return nil, true
 	}
 	if err := p.Refresh(ctx); err != nil {
-		log15.Error("Error getting SAML auth provider", "id", p.ConfigID(), "error", err)
-		http.Error(w, "Unexpected error getting SAML authentication provider. This may indicate that the SAML IdP does not exist. Ask a site admin to check the server \"frontend\" logs for \"Error getting SAML auth provider\".", http.StatusInternalServerError)
+		log15.Error("Error getting SAML buth provider", "id", p.ConfigID(), "error", err)
+		http.Error(w, "Unexpected error getting SAML buthenticbtion provider. This mby indicbte thbt the SAML IdP does not exist. Ask b site bdmin to check the server \"frontend\" logs for \"Error getting SAML buth provider\".", http.StbtusInternblServerError)
 		return nil, true
 	}
-	return p, false
+	return p, fblse
 }
 
 func Init() {
-	conf.ContributeValidator(validateConfig)
+	conf.ContributeVblidbtor(vblidbteConfig)
 
-	const pkgName = "saml"
-	logger := log.Scoped(pkgName, "SAML config watch")
+	const pkgNbme = "sbml"
+	logger := log.Scoped(pkgNbme, "SAML config wbtch")
 	go func() {
-		conf.Watch(func() {
+		conf.Wbtch(func() {
 			ps := getProviders()
 			if len(ps) == 0 {
-				providers.Update(pkgName, nil)
+				providers.Updbte(pkgNbme, nil)
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
+			if err := licensing.Check(licensing.FebtureSSO); err != nil {
 				logger.Error("Check license for SSO (SAML)", log.Error(err))
-				providers.Update(pkgName, nil)
+				providers.Updbte(pkgNbme, nil)
 				return
 			}
 
-			for _, p := range ps {
+			for _, p := rbnge ps {
 				go func(p providers.Provider) {
-					if err := p.Refresh(context.Background()); err != nil {
-						logger.Error("Error prefetching SAML service provider metadata.", log.Error(err))
+					if err := p.Refresh(context.Bbckground()); err != nil {
+						logger.Error("Error prefetching SAML service provider metbdbtb.", log.Error(err))
 					}
 				}(p)
 			}
-			providers.Update(pkgName, ps)
+			providers.Updbte(pkgNbme, ps)
 		})
 	}()
 }
 
 func getProviders() []providers.Provider {
-	var cfgs []*schema.SAMLAuthProvider
-	for _, p := range conf.Get().AuthProviders {
-		if p.Saml == nil {
+	vbr cfgs []*schemb.SAMLAuthProvider
+	for _, p := rbnge conf.Get().AuthProviders {
+		if p.Sbml == nil {
 			continue
 		}
-		cfgs = append(cfgs, withConfigDefaults(p.Saml))
+		cfgs = bppend(cfgs, withConfigDefbults(p.Sbml))
 	}
 	multiple := len(cfgs) >= 2
-	ps := make([]providers.Provider, 0, len(cfgs))
-	for _, cfg := range cfgs {
+	ps := mbke([]providers.Provider, 0, len(cfgs))
+	for _, cfg := rbnge cfgs {
 		p := &provider{config: *cfg, multiple: multiple}
-		ps = append(ps, p)
+		ps = bppend(ps, p)
 	}
 	return ps
 }
 
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var loggedNeedsExternalURL bool
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.Saml != nil && c.SiteConfig().ExternalURL == "" && !loggedNeedsExternalURL {
-			problems = append(problems, conf.NewSiteProblem("saml auth provider requires `externalURL` to be set to the external URL of your site (example: https://sourcegraph.example.com)"))
-			loggedNeedsExternalURL = true
+func vblidbteConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+	vbr loggedNeedsExternblURL bool
+	for _, p := rbnge c.SiteConfig().AuthProviders {
+		if p.Sbml != nil && c.SiteConfig().ExternblURL == "" && !loggedNeedsExternblURL {
+			problems = bppend(problems, conf.NewSiteProblem("sbml buth provider requires `externblURL` to be set to the externbl URL of your site (exbmple: https://sourcegrbph.exbmple.com)"))
+			loggedNeedsExternblURL = true
 		}
 	}
 
-	seen := map[string]int{}
-	for i, p := range c.SiteConfig().AuthProviders {
-		if p.Saml != nil {
-			// we can ignore errors: converting to JSON must work, as we parsed from JSON before
-			bytes, _ := json.Marshal(*p.Saml)
+	seen := mbp[string]int{}
+	for i, p := rbnge c.SiteConfig().AuthProviders {
+		if p.Sbml != nil {
+			// we cbn ignore errors: converting to JSON must work, bs we pbrsed from JSON before
+			bytes, _ := json.Mbrshbl(*p.Sbml)
 			key := string(bytes)
 			if j, ok := seen[key]; ok {
-				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("SAML auth provider at index %d is duplicate of index %d, ignoring", i, j)))
+				problems = bppend(problems, conf.NewSiteProblem(fmt.Sprintf("SAML buth provider bt index %d is duplicbte of index %d, ignoring", i, j)))
 			} else {
 				seen[key] = i
 			}
@@ -138,58 +138,58 @@ func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 	return problems
 }
 
-func withConfigDefaults(pc *schema.SAMLAuthProvider) *schema.SAMLAuthProvider {
+func withConfigDefbults(pc *schemb.SAMLAuthProvider) *schemb.SAMLAuthProvider {
 	if pc.ServiceProviderIssuer == "" {
-		externalURL := conf.Get().ExternalURL
-		if externalURL == "" {
-			// An empty issuer will be detected as an error later.
+		externblURL := conf.Get().ExternblURL
+		if externblURL == "" {
+			// An empty issuer will be detected bs bn error lbter.
 			return pc
 		}
 
-		// Derive default issuer from externalURL.
+		// Derive defbult issuer from externblURL.
 		tmp := *pc
-		tmp.ServiceProviderIssuer = strings.TrimSuffix(externalURL, "/") + path.Join(authPrefix, "metadata")
+		tmp.ServiceProviderIssuer = strings.TrimSuffix(externblURL, "/") + pbth.Join(buthPrefix, "metbdbtb")
 		return &tmp
 	}
 	return pc
 }
 
-func getNameIDFormat(pc *schema.SAMLAuthProvider) string {
-	// Persistent is best because users will reuse their user_external_accounts row instead of (as
-	// with transient) creating a new one each time they authenticate.
-	const defaultNameIDFormat = "urn:oasis:names:tc:SAML:2.0:nameid-format:persistent"
-	if pc.NameIDFormat != "" {
-		return pc.NameIDFormat
+func getNbmeIDFormbt(pc *schemb.SAMLAuthProvider) string {
+	// Persistent is best becbuse users will reuse their user_externbl_bccounts row instebd of (bs
+	// with trbnsient) crebting b new one ebch time they buthenticbte.
+	const defbultNbmeIDFormbt = "urn:obsis:nbmes:tc:SAML:2.0:nbmeid-formbt:persistent"
+	if pc.NbmeIDFormbt != "" {
+		return pc.NbmeIDFormbt
 	}
-	return defaultNameIDFormat
+	return defbultNbmeIDFormbt
 }
 
-// providerConfigID produces a semi-stable identifier for a saml auth provider config object. It is
-// used to distinguish between multiple auth providers of the same type when in multi-step auth
-// flows. Its value is never persisted, and it must be deterministic.
+// providerConfigID produces b semi-stbble identifier for b sbml buth provider config object. It is
+// used to distinguish between multiple buth providers of the sbme type when in multi-step buth
+// flows. Its vblue is never persisted, bnd it must be deterministic.
 //
-// If there is only a single saml auth provider, it returns the empty string because that satisfies
-// the requirements above.
-func providerConfigID(pc *schema.SAMLAuthProvider, multiple bool) string {
+// If there is only b single sbml buth provider, it returns the empty string becbuse thbt sbtisfies
+// the requirements bbove.
+func providerConfigID(pc *schemb.SAMLAuthProvider, multiple bool) string {
 	if pc.ConfigID != "" {
 		return pc.ConfigID
 	}
 	if !multiple {
 		return ""
 	}
-	data, err := json.Marshal(pc)
+	dbtb, err := json.Mbrshbl(pc)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
-	b := sha256.Sum256(data)
-	return base64.RawURLEncoding.EncodeToString(b[:16])
+	b := shb256.Sum256(dbtb)
+	return bbse64.RbwURLEncoding.EncodeToString(b[:16])
 }
 
-var traceLogEnabled, _ = strconv.ParseBool(env.Get("INSECURE_SAML_LOG_TRACES", "false", "Log all SAML requests and responses. Only use during testing because the log messages will contain sensitive data."))
+vbr trbceLogEnbbled, _ = strconv.PbrseBool(env.Get("INSECURE_SAML_LOG_TRACES", "fblse", "Log bll SAML requests bnd responses. Only use during testing becbuse the log messbges will contbin sensitive dbtb."))
 
-func traceLog(description, body string) {
-	if traceLogEnabled {
+func trbceLog(description, body string) {
+	if trbceLogEnbbled {
 		const n = 40
-		stdlog.Printf("%s SAML trace: %s\n%s\n%s", strings.Repeat("=", n), description, body, strings.Repeat("=", n+len(description)+1))
+		stdlog.Printf("%s SAML trbce: %s\n%s\n%s", strings.Repebt("=", n), description, body, strings.Repebt("=", n+len(description)+1))
 	}
 }

@@ -1,7 +1,7 @@
-// Package search is search specific logic for the frontend. Also see
-// github.com/sourcegraph/sourcegraph/internal/search for more generic search
+// Pbckbge sebrch is sebrch specific logic for the frontend. Also see
+// github.com/sourcegrbph/sourcegrbph/internbl/sebrch for more generic sebrch
 // code.
-package search
+pbckbge sebrch
 
 import (
 	"context"
@@ -13,65 +13,65 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	sebrchlogs "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch/logs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	sebrchhoney "github.com/sourcegrbph/sourcegrbph/internbl/honey/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	strebmclient "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/client"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// StreamHandler is an http handler which streams back search results.
-func StreamHandler(db database.DB) http.Handler {
-	logger := log.Scoped("searchStreamHandler", "")
-	return &streamHandler{
+// StrebmHbndler is bn http hbndler which strebms bbck sebrch results.
+func StrebmHbndler(db dbtbbbse.DB) http.Hbndler {
+	logger := log.Scoped("sebrchStrebmHbndler", "")
+	return &strebmHbndler{
 		logger:              logger,
 		db:                  db,
-		searchClient:        client.New(logger, db),
-		flushTickerInternal: 100 * time.Millisecond,
-		pingTickerInterval:  5 * time.Second,
+		sebrchClient:        client.New(logger, db),
+		flushTickerInternbl: 100 * time.Millisecond,
+		pingTickerIntervbl:  5 * time.Second,
 	}
 }
 
-type streamHandler struct {
+type strebmHbndler struct {
 	logger              log.Logger
-	db                  database.DB
-	searchClient        client.SearchClient
-	flushTickerInternal time.Duration
-	pingTickerInterval  time.Duration
+	db                  dbtbbbse.DB
+	sebrchClient        client.SebrchClient
+	flushTickerInternbl time.Durbtion
+	pingTickerIntervbl  time.Durbtion
 }
 
-func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	tr, ctx := trace.New(r.Context(), "search.ServeStream")
+func (h *strebmHbndler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	tr, ctx := trbce.New(r.Context(), "sebrch.ServeStrebm")
 	defer tr.End()
 	r = r.WithContext(ctx)
 
-	streamWriter, err := streamhttp.NewWriter(w)
+	strebmWriter, err := strebmhttp.NewWriter(w)
 	if err != nil {
 		tr.SetError(err)
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
-	// Log events to trace
-	streamWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
+	// Log events to trbce
+	strebmWriter.StbtHook = eventStrebmTrbceHook(tr.AddEvent)
 
-	eventWriter := newEventWriter(streamWriter)
+	eventWriter := newEventWriter(strebmWriter)
 	defer eventWriter.Done()
 
 	err = h.serveHTTP(r, tr, eventWriter)
@@ -82,143 +82,143 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *streamHandler) serveHTTP(r *http.Request, tr trace.Trace, eventWriter *eventWriter) (err error) {
+func (h *strebmHbndler) serveHTTP(r *http.Request, tr trbce.Trbce, eventWriter *eventWriter) (err error) {
 	ctx := r.Context()
-	start := time.Now()
+	stbrt := time.Now()
 
-	args, err := parseURLQuery(r.URL.Query())
+	brgs, err := pbrseURLQuery(r.URL.Query())
 	if err != nil {
 		return err
 	}
 	tr.SetAttributes(
-		attribute.String("query", args.Query),
-		attribute.String("version", args.Version),
-		attribute.String("pattern_type", args.PatternType),
-		attribute.Int("search_mode", args.SearchMode),
+		bttribute.String("query", brgs.Query),
+		bttribute.String("version", brgs.Version),
+		bttribute.String("pbttern_type", brgs.PbtternType),
+		bttribute.Int("sebrch_mode", brgs.SebrchMode),
 	)
 
-	inputs, err := h.searchClient.Plan(
+	inputs, err := h.sebrchClient.Plbn(
 		ctx,
-		args.Version,
-		pointers.NonZeroPtr(args.PatternType),
-		args.Query,
-		search.Mode(args.SearchMode),
-		search.Streaming,
+		brgs.Version,
+		pointers.NonZeroPtr(brgs.PbtternType),
+		brgs.Query,
+		sebrch.Mode(brgs.SebrchMode),
+		sebrch.Strebming,
 	)
 	if err != nil {
-		var queryErr *client.QueryError
+		vbr queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
-			eventWriter.Alert(search.AlertForQuery(queryErr.Query, queryErr.Err))
+			eventWriter.Alert(sebrch.AlertForQuery(queryErr.Query, queryErr.Err))
 			return nil
 		} else {
 			return err
 		}
 	}
 
-	// Display is the number of results we send down. If display is < 0 we
-	// want to send everything we find before hitting a limit. Otherwise we
-	// can only send up to limit results.
-	displayLimit := args.Display
-	limit := inputs.MaxResults()
-	if displayLimit < 0 || displayLimit > limit {
-		displayLimit = limit
+	// Displby is the number of results we send down. If displby is < 0 we
+	// wbnt to send everything we find before hitting b limit. Otherwise we
+	// cbn only send up to limit results.
+	displbyLimit := brgs.Displby
+	limit := inputs.MbxResults()
+	if displbyLimit < 0 || displbyLimit > limit {
+		displbyLimit = limit
 	}
 
-	progress := &streamclient.ProgressAggregator{
-		Start:        start,
+	progress := &strebmclient.ProgressAggregbtor{
+		Stbrt:        stbrt,
 		Limit:        limit,
-		Trace:        trace.URL(trace.ID(ctx), conf.DefaultClient()),
-		DisplayLimit: displayLimit,
-		RepoNamer:    streamclient.RepoNamer(ctx, h.db),
+		Trbce:        trbce.URL(trbce.ID(ctx), conf.DefbultClient()),
+		DisplbyLimit: displbyLimit,
+		RepoNbmer:    strebmclient.RepoNbmer(ctx, h.db),
 	}
 
-	var latency *time.Duration
-	logLatency := func() {
-		elapsed := time.Since(start)
-		metricLatency.WithLabelValues(string(GuessSource(r))).
-			Observe(elapsed.Seconds())
-		latency = &elapsed
+	vbr lbtency *time.Durbtion
+	logLbtency := func() {
+		elbpsed := time.Since(stbrt)
+		metricLbtency.WithLbbelVblues(string(GuessSource(r))).
+			Observe(elbpsed.Seconds())
+		lbtency = &elbpsed
 	}
 
-	// HACK: We awkwardly call an inline function here so that we can defer the
-	// cleanups. Defers are guaranteed to run even when unrolling a panic, so
-	// we can guarantee that the goroutines spawned by `newEventHandler` are
-	// cleaned up when this function exits. This is necessary because otherwise
-	// the background goroutines might try to write to the http response, which
-	// is no longer valid, which will cause a panic of its own that crashes the
-	// process because they are running in a goroutine that does not have a
-	// panic handler. We cannot add a panic handler because the goroutines are
-	// spawned by the go runtime.
-	alert, err := func() (*search.Alert, error) {
-		eventHandler := newEventHandler(
+	// HACK: We bwkwbrdly cbll bn inline function here so thbt we cbn defer the
+	// clebnups. Defers bre gubrbnteed to run even when unrolling b pbnic, so
+	// we cbn gubrbntee thbt the goroutines spbwned by `newEventHbndler` bre
+	// clebned up when this function exits. This is necessbry becbuse otherwise
+	// the bbckground goroutines might try to write to the http response, which
+	// is no longer vblid, which will cbuse b pbnic of its own thbt crbshes the
+	// process becbuse they bre running in b goroutine thbt does not hbve b
+	// pbnic hbndler. We cbnnot bdd b pbnic hbndler becbuse the goroutines bre
+	// spbwned by the go runtime.
+	blert, err := func() (*sebrch.Alert, error) {
+		eventHbndler := newEventHbndler(
 			ctx,
 			h.logger,
 			h.db,
 			eventWriter,
 			progress,
-			h.flushTickerInternal,
-			h.pingTickerInterval,
-			displayLimit,
-			args.EnableChunkMatches,
-			logLatency,
+			h.flushTickerInternbl,
+			h.pingTickerIntervbl,
+			displbyLimit,
+			brgs.EnbbleChunkMbtches,
+			logLbtency,
 		)
-		defer eventHandler.Done()
+		defer eventHbndler.Done()
 
-		batchedStream := streaming.NewBatchingStream(50*time.Millisecond, eventHandler)
-		defer batchedStream.Done()
+		bbtchedStrebm := strebming.NewBbtchingStrebm(50*time.Millisecond, eventHbndler)
+		defer bbtchedStrebm.Done()
 
-		return h.searchClient.Execute(ctx, batchedStream, inputs)
+		return h.sebrchClient.Execute(ctx, bbtchedStrebm, inputs)
 	}()
-	if alert != nil {
-		eventWriter.Alert(alert)
+	if blert != nil {
+		eventWriter.Alert(blert)
 	}
-	logSearch(ctx, h.logger, alert, err, time.Since(start), latency, inputs.OriginalQuery, progress)
+	logSebrch(ctx, h.logger, blert, err, time.Since(stbrt), lbtency, inputs.OriginblQuery, progress)
 	return err
 }
 
-func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, duration time.Duration, latency *time.Duration, originalQuery string, progress *streamclient.ProgressAggregator) {
-	if honey.Enabled() {
-		status := client.DetermineStatusForLogs(alert, progress.Stats, err)
-		var alertType string
-		if alert != nil {
-			alertType = alert.PrometheusType
+func logSebrch(ctx context.Context, logger log.Logger, blert *sebrch.Alert, err error, durbtion time.Durbtion, lbtency *time.Durbtion, originblQuery string, progress *strebmclient.ProgressAggregbtor) {
+	if honey.Enbbled() {
+		stbtus := client.DetermineStbtusForLogs(blert, progress.Stbts, err)
+		vbr blertType string
+		if blert != nil {
+			blertType = blert.PrometheusType
 		}
 
-		var latencyMs *int64
-		if latency != nil {
-			ms := latency.Milliseconds()
-			latencyMs = &ms
+		vbr lbtencyMs *int64
+		if lbtency != nil {
+			ms := lbtency.Milliseconds()
+			lbtencyMs = &ms
 		}
 
-		_ = searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: originalQuery,
-			Typ:           "stream",
-			Source:        string(trace.RequestSource(ctx)),
-			Status:        status,
-			AlertType:     alertType,
-			DurationMs:    duration.Milliseconds(),
-			LatencyMs:     latencyMs,
-			ResultSize:    progress.MatchCount,
+		_ = sebrchhoney.SebrchEvent(ctx, sebrchhoney.SebrchEventArgs{
+			OriginblQuery: originblQuery,
+			Typ:           "strebm",
+			Source:        string(trbce.RequestSource(ctx)),
+			Stbtus:        stbtus,
+			AlertType:     blertType,
+			DurbtionMs:    durbtion.Milliseconds(),
+			LbtencyMs:     lbtencyMs,
+			ResultSize:    progress.MbtchCount,
 			Error:         err,
 		}).Send()
 	}
 
-	isSlow := duration > searchlogs.LogSlowSearchesThreshold()
+	isSlow := durbtion > sebrchlogs.LogSlowSebrchesThreshold()
 	if isSlow {
-		logger.Warn("streaming: slow search request", log.String("query", originalQuery))
+		logger.Wbrn("strebming: slow sebrch request", log.String("query", originblQuery))
 	}
 }
 
-type args struct {
+type brgs struct {
 	Query              string
 	Version            string
-	PatternType        string
-	Display            int
-	EnableChunkMatches bool
-	SearchMode         int
+	PbtternType        string
+	Displby            int
+	EnbbleChunkMbtches bool
+	SebrchMode         int
 }
 
-func parseURLQuery(q url.Values) (*args, error) {
+func pbrseURLQuery(q url.Vblues) (*brgs, error) {
 	get := func(k, def string) string {
 		v := q.Get(k)
 		if v == "" {
@@ -227,134 +227,134 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return v
 	}
 
-	a := args{
+	b := brgs{
 		Query:       get("q", ""),
 		Version:     get("v", "V3"),
-		PatternType: get("t", ""),
+		PbtternType: get("t", ""),
 	}
 
-	if a.Query == "" {
+	if b.Query == "" {
 		return nil, errors.New("no query found")
 	}
 
-	display := get("display", "-1")
-	var err error
-	if a.Display, err = strconv.Atoi(display); err != nil {
-		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	displby := get("displby", "-1")
+	vbr err error
+	if b.Displby, err = strconv.Atoi(displby); err != nil {
+		return nil, errors.Errorf("displby must be bn integer, got %q: %w", displby, err)
 	}
 
-	chunkMatches := get("cm", "f")
-	if a.EnableChunkMatches, err = strconv.ParseBool(chunkMatches); err != nil {
-		return nil, errors.Errorf("chunk matches must be parseable as a boolean, got %q: %w", chunkMatches, err)
+	chunkMbtches := get("cm", "f")
+	if b.EnbbleChunkMbtches, err = strconv.PbrseBool(chunkMbtches); err != nil {
+		return nil, errors.Errorf("chunk mbtches must be pbrsebble bs b boolebn, got %q: %w", chunkMbtches, err)
 	}
 
-	searchMode := get("sm", "0")
-	if a.SearchMode, err = strconv.Atoi(searchMode); err != nil {
-		return nil, errors.Errorf("search mode must be integer, got %q: %w", searchMode, err)
+	sebrchMode := get("sm", "0")
+	if b.SebrchMode, err = strconv.Atoi(sebrchMode); err != nil {
+		return nil, errors.Errorf("sebrch mode must be integer, got %q: %w", sebrchMode, err)
 	}
 
-	return &a, nil
+	return &b, nil
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
-	switch v := match.(type) {
-	case *result.FileMatch:
-		return fromFileMatch(v, repoCache, enableChunkMatches)
-	case *result.RepoMatch:
-		return fromRepository(v, repoCache)
-	case *result.CommitMatch:
-		return fromCommit(v, repoCache)
-	case *result.OwnerMatch:
+func fromMbtch(mbtch result.Mbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo, enbbleChunkMbtches bool) strebmhttp.EventMbtch {
+	switch v := mbtch.(type) {
+	cbse *result.FileMbtch:
+		return fromFileMbtch(v, repoCbche, enbbleChunkMbtches)
+	cbse *result.RepoMbtch:
+		return fromRepository(v, repoCbche)
+	cbse *result.CommitMbtch:
+		return fromCommit(v, repoCbche)
+	cbse *result.OwnerMbtch:
 		return fromOwner(v)
-	default:
-		panic(fmt.Sprintf("unknown match type %T", v))
+	defbult:
+		pbnic(fmt.Sprintf("unknown mbtch type %T", v))
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
+func fromFileMbtch(fm *result.FileMbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo, enbbleChunkMbtches bool) strebmhttp.EventMbtch {
 	if len(fm.Symbols) > 0 {
-		return fromSymbolMatch(fm, repoCache)
-	} else if fm.ChunkMatches.MatchCount() > 0 {
-		return fromContentMatch(fm, repoCache, enableChunkMatches)
+		return fromSymbolMbtch(fm, repoCbche)
+	} else if fm.ChunkMbtches.MbtchCount() > 0 {
+		return fromContentMbtch(fm, repoCbche, enbbleChunkMbtches)
 	}
-	return fromPathMatch(fm, repoCache)
+	return fromPbthMbtch(fm, repoCbche)
 }
 
-func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
-	pathEvent := &streamhttp.EventPathMatch{
-		Type:         streamhttp.PathMatchType,
-		Path:         fm.Path,
-		PathMatches:  fromRanges(fm.PathMatches),
-		Repository:   string(fm.Repo.Name),
+func fromPbthMbtch(fm *result.FileMbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo) *strebmhttp.EventPbthMbtch {
+	pbthEvent := &strebmhttp.EventPbthMbtch{
+		Type:         strebmhttp.PbthMbtchType,
+		Pbth:         fm.Pbth,
+		PbthMbtches:  fromRbnges(fm.PbthMbtches),
+		Repository:   string(fm.Repo.Nbme),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
 	}
 
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		pathEvent.RepoStars = r.Stars
-		pathEvent.RepoLastFetched = r.LastFetched
+	if r, ok := repoCbche[fm.Repo.ID]; ok {
+		pbthEvent.RepoStbrs = r.Stbrs
+		pbthEvent.RepoLbstFetched = r.LbstFetched
 	}
 
 	if fm.InputRev != nil {
-		pathEvent.Branches = []string{*fm.InputRev}
+		pbthEvent.Brbnches = []string{*fm.InputRev}
 	}
 
 	if fm.Debug != nil {
-		pathEvent.Debug = *fm.Debug
+		pbthEvent.Debug = *fm.Debug
 	}
 
-	return pathEvent
+	return pbthEvent
 }
 
-func fromChunkMatches(cms result.ChunkMatches) []streamhttp.ChunkMatch {
-	res := make([]streamhttp.ChunkMatch, 0, len(cms))
-	for _, cm := range cms {
-		res = append(res, fromChunkMatch(cm))
+func fromChunkMbtches(cms result.ChunkMbtches) []strebmhttp.ChunkMbtch {
+	res := mbke([]strebmhttp.ChunkMbtch, 0, len(cms))
+	for _, cm := rbnge cms {
+		res = bppend(res, fromChunkMbtch(cm))
 	}
 	return res
 }
 
-func fromChunkMatch(cm result.ChunkMatch) streamhttp.ChunkMatch {
-	return streamhttp.ChunkMatch{
+func fromChunkMbtch(cm result.ChunkMbtch) strebmhttp.ChunkMbtch {
+	return strebmhttp.ChunkMbtch{
 		Content:      cm.Content,
-		ContentStart: fromLocation(cm.ContentStart),
-		Ranges:       fromRanges(cm.Ranges),
+		ContentStbrt: fromLocbtion(cm.ContentStbrt),
+		Rbnges:       fromRbnges(cm.Rbnges),
 	}
 }
 
-func fromLocation(l result.Location) streamhttp.Location {
-	return streamhttp.Location{
+func fromLocbtion(l result.Locbtion) strebmhttp.Locbtion {
+	return strebmhttp.Locbtion{
 		Offset: l.Offset,
 		Line:   l.Line,
 		Column: l.Column,
 	}
 }
 
-func fromRanges(rs result.Ranges) []streamhttp.Range {
-	res := make([]streamhttp.Range, 0, len(rs))
-	for _, r := range rs {
-		res = append(res, streamhttp.Range{
-			Start: fromLocation(r.Start),
-			End:   fromLocation(r.End),
+func fromRbnges(rs result.Rbnges) []strebmhttp.Rbnge {
+	res := mbke([]strebmhttp.Rbnge, 0, len(rs))
+	for _, r := rbnge rs {
+		res = bppend(res, strebmhttp.Rbnge{
+			Stbrt: fromLocbtion(r.Stbrt),
+			End:   fromLocbtion(r.End),
 		})
 	}
 	return res
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
+func fromContentMbtch(fm *result.FileMbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo, enbbleChunkMbtches bool) *strebmhttp.EventContentMbtch {
 
-	var (
-		eventLineMatches  []streamhttp.EventLineMatch
-		eventChunkMatches []streamhttp.ChunkMatch
+	vbr (
+		eventLineMbtches  []strebmhttp.EventLineMbtch
+		eventChunkMbtches []strebmhttp.ChunkMbtch
 	)
 
-	if enableChunkMatches {
-		eventChunkMatches = fromChunkMatches(fm.ChunkMatches)
+	if enbbleChunkMbtches {
+		eventChunkMbtches = fromChunkMbtches(fm.ChunkMbtches)
 	} else {
-		lineMatches := fm.ChunkMatches.AsLineMatches()
-		eventLineMatches = make([]streamhttp.EventLineMatch, 0, len(lineMatches))
-		for _, lm := range lineMatches {
-			eventLineMatches = append(eventLineMatches, streamhttp.EventLineMatch{
+		lineMbtches := fm.ChunkMbtches.AsLineMbtches()
+		eventLineMbtches = mbke([]strebmhttp.EventLineMbtch, 0, len(lineMbtches))
+		for _, lm := rbnge lineMbtches {
+			eventLineMbtches = bppend(eventLineMbtches, strebmhttp.EventLineMbtch{
 				Line:             lm.Preview,
 				LineNumber:       lm.LineNumber,
 				OffsetAndLengths: lm.OffsetAndLengths,
@@ -362,24 +362,24 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		}
 	}
 
-	contentEvent := &streamhttp.EventContentMatch{
-		Type:         streamhttp.ContentMatchType,
-		Path:         fm.Path,
-		PathMatches:  fromRanges(fm.PathMatches),
+	contentEvent := &strebmhttp.EventContentMbtch{
+		Type:         strebmhttp.ContentMbtchType,
+		Pbth:         fm.Pbth,
+		PbthMbtches:  fromRbnges(fm.PbthMbtches),
 		RepositoryID: int32(fm.Repo.ID),
-		Repository:   string(fm.Repo.Name),
+		Repository:   string(fm.Repo.Nbme),
 		Commit:       string(fm.CommitID),
-		LineMatches:  eventLineMatches,
-		ChunkMatches: eventChunkMatches,
+		LineMbtches:  eventLineMbtches,
+		ChunkMbtches: eventChunkMbtches,
 	}
 
 	if fm.InputRev != nil {
-		contentEvent.Branches = []string{*fm.InputRev}
+		contentEvent.Brbnches = []string{*fm.InputRev}
 	}
 
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		contentEvent.RepoStars = r.Stars
-		contentEvent.RepoLastFetched = r.LastFetched
+	if r, ok := repoCbche[fm.Repo.ID]; ok {
+		contentEvent.RepoStbrs = r.Stbrs
+		contentEvent.RepoLbstFetched = r.LbstFetched
 	}
 
 	if fm.Debug != nil {
@@ -389,354 +389,354 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 	return contentEvent
 }
 
-func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventSymbolMatch {
-	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
-	for _, sym := range fm.Symbols {
+func fromSymbolMbtch(fm *result.FileMbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo) *strebmhttp.EventSymbolMbtch {
+	symbols := mbke([]strebmhttp.Symbol, 0, len(fm.Symbols))
+	for _, sym := rbnge fm.Symbols {
 		kind := sym.Symbol.LSPKind()
 		kindString := "UNKNOWN"
 		if kind != 0 {
 			kindString = strings.ToUpper(kind.String())
 		}
 
-		symbols = append(symbols, streamhttp.Symbol{
+		symbols = bppend(symbols, strebmhttp.Symbol{
 			URL:           sym.URL().String(),
-			Name:          sym.Symbol.Name,
-			ContainerName: sym.Symbol.Parent,
+			Nbme:          sym.Symbol.Nbme,
+			ContbinerNbme: sym.Symbol.Pbrent,
 			Kind:          kindString,
 			Line:          int32(sym.Symbol.Line),
 		})
 	}
 
-	symbolMatch := &streamhttp.EventSymbolMatch{
-		Type:         streamhttp.SymbolMatchType,
-		Path:         fm.Path,
-		Repository:   string(fm.Repo.Name),
+	symbolMbtch := &strebmhttp.EventSymbolMbtch{
+		Type:         strebmhttp.SymbolMbtchType,
+		Pbth:         fm.Pbth,
+		Repository:   string(fm.Repo.Nbme),
 		RepositoryID: int32(fm.Repo.ID),
 		Commit:       string(fm.CommitID),
 		Symbols:      symbols,
 	}
 
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		symbolMatch.RepoStars = r.Stars
-		symbolMatch.RepoLastFetched = r.LastFetched
+	if r, ok := repoCbche[fm.Repo.ID]; ok {
+		symbolMbtch.RepoStbrs = r.Stbrs
+		symbolMbtch.RepoLbstFetched = r.LbstFetched
 	}
 
 	if fm.InputRev != nil {
-		symbolMatch.Branches = []string{*fm.InputRev}
+		symbolMbtch.Brbnches = []string{*fm.InputRev}
 	}
 
-	return symbolMatch
+	return symbolMbtch
 }
 
-func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventRepoMatch {
-	var branches []string
+func fromRepository(rm *result.RepoMbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo) *strebmhttp.EventRepoMbtch {
+	vbr brbnches []string
 	if rev := rm.Rev; rev != "" {
-		branches = []string{rev}
+		brbnches = []string{rev}
 	}
 
-	repoEvent := &streamhttp.EventRepoMatch{
-		Type:               streamhttp.RepoMatchType,
+	repoEvent := &strebmhttp.EventRepoMbtch{
+		Type:               strebmhttp.RepoMbtchType,
 		RepositoryID:       int32(rm.ID),
-		Repository:         string(rm.Name),
-		RepositoryMatches:  fromRanges(rm.RepoNameMatches),
-		Branches:           branches,
-		DescriptionMatches: fromRanges(rm.DescriptionMatches),
+		Repository:         string(rm.Nbme),
+		RepositoryMbtches:  fromRbnges(rm.RepoNbmeMbtches),
+		Brbnches:           brbnches,
+		DescriptionMbtches: fromRbnges(rm.DescriptionMbtches),
 	}
 
-	if r, ok := repoCache[rm.ID]; ok {
-		repoEvent.RepoStars = r.Stars
-		repoEvent.RepoLastFetched = r.LastFetched
+	if r, ok := repoCbche[rm.ID]; ok {
+		repoEvent.RepoStbrs = r.Stbrs
+		repoEvent.RepoLbstFetched = r.LbstFetched
 		repoEvent.Description = r.Description
 		repoEvent.Fork = r.Fork
 		repoEvent.Archived = r.Archived
-		repoEvent.Private = r.Private
-		repoEvent.Metadata = r.KeyValuePairs
+		repoEvent.Privbte = r.Privbte
+		repoEvent.Metbdbtb = r.KeyVbluePbirs
 	}
 
 	return repoEvent
 }
 
-func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
+func fromCommit(commit *result.CommitMbtch, repoCbche mbp[bpi.RepoID]*types.SebrchedRepo) *strebmhttp.EventCommitMbtch {
 	hls := commit.Body().ToHighlightedString()
-	ranges := make([][3]int32, len(hls.Highlights))
-	for i, h := range hls.Highlights {
-		ranges[i] = [3]int32{h.Line, h.Character, h.Length}
+	rbnges := mbke([][3]int32, len(hls.Highlights))
+	for i, h := rbnge hls.Highlights {
+		rbnges[i] = [3]int32{h.Line, h.Chbrbcter, h.Length}
 	}
 
-	commitEvent := &streamhttp.EventCommitMatch{
-		Type:          streamhttp.CommitMatchType,
-		Label:         commit.Label(),
+	commitEvent := &strebmhttp.EventCommitMbtch{
+		Type:          strebmhttp.CommitMbtchType,
+		Lbbel:         commit.Lbbel(),
 		URL:           commit.URL().String(),
-		Detail:        commit.Detail(),
-		Repository:    string(commit.Repo.Name),
+		Detbil:        commit.Detbil(),
+		Repository:    string(commit.Repo.Nbme),
 		RepositoryID:  int32(commit.Repo.ID),
 		OID:           string(commit.Commit.ID),
-		Message:       string(commit.Commit.Message),
-		AuthorName:    commit.Commit.Author.Name,
-		AuthorDate:    commit.Commit.Author.Date,
-		CommitterName: commit.Commit.Committer.Name,
-		CommitterDate: commit.Commit.Committer.Date,
-		Content:       hls.Value,
-		Ranges:        ranges,
+		Messbge:       string(commit.Commit.Messbge),
+		AuthorNbme:    commit.Commit.Author.Nbme,
+		AuthorDbte:    commit.Commit.Author.Dbte,
+		CommitterNbme: commit.Commit.Committer.Nbme,
+		CommitterDbte: commit.Commit.Committer.Dbte,
+		Content:       hls.Vblue,
+		Rbnges:        rbnges,
 	}
 
-	if r, ok := repoCache[commit.Repo.ID]; ok {
-		commitEvent.RepoStars = r.Stars
-		commitEvent.RepoLastFetched = r.LastFetched
+	if r, ok := repoCbche[commit.Repo.ID]; ok {
+		commitEvent.RepoStbrs = r.Stbrs
+		commitEvent.RepoLbstFetched = r.LbstFetched
 	}
 
 	return commitEvent
 }
 
-func fromOwner(owner *result.OwnerMatch) streamhttp.EventMatch {
+func fromOwner(owner *result.OwnerMbtch) strebmhttp.EventMbtch {
 	switch v := owner.ResolvedOwner.(type) {
-	case *result.OwnerPerson:
-		person := &streamhttp.EventPersonMatch{
-			Type:   streamhttp.PersonMatchType,
-			Handle: v.Handle,
-			Email:  v.Email,
+	cbse *result.OwnerPerson:
+		person := &strebmhttp.EventPersonMbtch{
+			Type:   strebmhttp.PersonMbtchType,
+			Hbndle: v.Hbndle,
+			Embil:  v.Embil,
 		}
 		if v.User != nil {
-			person.User = &streamhttp.UserMetadata{
-				Username:    v.User.Username,
-				DisplayName: v.User.DisplayName,
-				AvatarURL:   v.User.AvatarURL,
+			person.User = &strebmhttp.UserMetbdbtb{
+				Usernbme:    v.User.Usernbme,
+				DisplbyNbme: v.User.DisplbyNbme,
+				AvbtbrURL:   v.User.AvbtbrURL,
 			}
 		}
 		return person
-	case *result.OwnerTeam:
-		return &streamhttp.EventTeamMatch{
-			Type:        streamhttp.TeamMatchType,
-			Handle:      v.Handle,
-			Email:       v.Email,
-			Name:        v.Team.Name,
-			DisplayName: v.Team.DisplayName,
+	cbse *result.OwnerTebm:
+		return &strebmhttp.EventTebmMbtch{
+			Type:        strebmhttp.TebmMbtchType,
+			Hbndle:      v.Hbndle,
+			Embil:       v.Embil,
+			Nbme:        v.Tebm.Nbme,
+			DisplbyNbme: v.Tebm.DisplbyNbme,
 		}
-	default:
-		panic(fmt.Sprintf("unknown owner match type %T", v))
+	defbult:
+		pbnic(fmt.Sprintf("unknown owner mbtch type %T", v))
 	}
 }
 
-// eventStreamTraceHook returns a StatHook which logs to log.
-func eventStreamTraceHook(addEvent func(string, ...attribute.KeyValue)) func(streamhttp.WriterStat) {
-	return func(stat streamhttp.WriterStat) {
-		fields := []attribute.KeyValue{
-			attribute.Int("bytes", stat.Bytes),
-			attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
+// eventStrebmTrbceHook returns b StbtHook which logs to log.
+func eventStrebmTrbceHook(bddEvent func(string, ...bttribute.KeyVblue)) func(strebmhttp.WriterStbt) {
+	return func(stbt strebmhttp.WriterStbt) {
+		fields := []bttribute.KeyVblue{
+			bttribute.Int("bytes", stbt.Bytes),
+			bttribute.Int64("durbtion_ms", stbt.Durbtion.Milliseconds()),
 		}
-		if stat.Error != nil {
-			fields = append(fields, trace.Error(stat.Error))
+		if stbt.Error != nil {
+			fields = bppend(fields, trbce.Error(stbt.Error))
 		}
-		addEvent(stat.Event, fields...)
+		bddEvent(stbt.Event, fields...)
 	}
 }
 
-var metricLatency = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_search_streaming_latency_seconds",
-	Help:    "Histogram with time to first result in seconds",
-	Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
+vbr metricLbtency = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_sebrch_strebming_lbtency_seconds",
+	Help:    "Histogrbm with time to first result in seconds",
+	Buckets: []flobt64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
 }, []string{"source"})
 
-var searchBlitzUserAgentRegexp = lazyregexp.New(`^SearchBlitz \(([^\)]+)\)$`)
+vbr sebrchBlitzUserAgentRegexp = lbzyregexp.New(`^SebrchBlitz \(([^\)]+)\)$`)
 
-// GuessSource guesses the source the request came from (browser, other HTTP client, etc.)
-func GuessSource(r *http.Request) trace.SourceType {
+// GuessSource guesses the source the request cbme from (browser, other HTTP client, etc.)
+func GuessSource(r *http.Request) trbce.SourceType {
 	userAgent := r.UserAgent()
-	for _, guess := range []string{
-		"Mozilla",
+	for _, guess := rbnge []string{
+		"Mozillb",
 		"WebKit",
 		"Gecko",
 		"Chrome",
 		"Firefox",
-		"Safari",
+		"Sbfbri",
 		"Edge",
 	} {
-		if strings.Contains(userAgent, guess) {
-			return trace.SourceBrowser
+		if strings.Contbins(userAgent, guess) {
+			return trbce.SourceBrowser
 		}
 	}
 
-	// We send some automated search requests in order to measure baseline search perf. Track the source of these.
-	if match := searchBlitzUserAgentRegexp.FindStringSubmatch(userAgent); match != nil {
-		return trace.SourceType("searchblitz_" + match[1])
+	// We send some butombted sebrch requests in order to mebsure bbseline sebrch perf. Trbck the source of these.
+	if mbtch := sebrchBlitzUserAgentRegexp.FindStringSubmbtch(userAgent); mbtch != nil {
+		return trbce.SourceType("sebrchblitz_" + mbtch[1])
 	}
 
-	return trace.SourceOther
+	return trbce.SourceOther
 }
 
-func repoIDs(results []result.Match) []api.RepoID {
-	ids := make(map[api.RepoID]struct{}, 5)
-	for _, r := range results {
-		ids[r.RepoName().ID] = struct{}{}
+func repoIDs(results []result.Mbtch) []bpi.RepoID {
+	ids := mbke(mbp[bpi.RepoID]struct{}, 5)
+	for _, r := rbnge results {
+		ids[r.RepoNbme().ID] = struct{}{}
 	}
 
-	res := make([]api.RepoID, 0, len(ids))
-	for id := range ids {
-		res = append(res, id)
+	res := mbke([]bpi.RepoID, 0, len(ids))
+	for id := rbnge ids {
+		res = bppend(res, id)
 	}
 	return res
 }
 
-// newEventHandler creates a stream that can write streaming search events to
-// an HTTP stream.
-func newEventHandler(
+// newEventHbndler crebtes b strebm thbt cbn write strebming sebrch events to
+// bn HTTP strebm.
+func newEventHbndler(
 	ctx context.Context,
 	logger log.Logger,
-	db database.DB,
+	db dbtbbbse.DB,
 	eventWriter *eventWriter,
-	progress *streamclient.ProgressAggregator,
-	flushInterval time.Duration,
-	progressInterval time.Duration,
-	displayLimit int,
-	enableChunkMatches bool,
-	logLatency func(),
-) *eventHandler {
-	// Store marshalled matches and flush periodically or when we go over
-	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
-	// still write more than that.
-	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
-		return eventWriter.MatchesJSON(data)
+	progress *strebmclient.ProgressAggregbtor,
+	flushIntervbl time.Durbtion,
+	progressIntervbl time.Durbtion,
+	displbyLimit int,
+	enbbleChunkMbtches bool,
+	logLbtency func(),
+) *eventHbndler {
+	// Store mbrshblled mbtches bnd flush periodicblly or when we go over
+	// 32kb. 32kb chosen to be smbller thbn bufio.MbxTokenSize. Note: we cbn
+	// still write more thbn thbt.
+	mbtchesBuf := strebmhttp.NewJSONArrbyBuf(32*1024, func(dbtb []byte) error {
+		return eventWriter.MbtchesJSON(dbtb)
 	})
 
-	eh := &eventHandler{
+	eh := &eventHbndler{
 		ctx:                ctx,
 		logger:             logger,
 		db:                 db,
 		eventWriter:        eventWriter,
-		matchesBuf:         matchesBuf,
-		filters:            &streaming.SearchFilters{},
-		flushInterval:      flushInterval,
+		mbtchesBuf:         mbtchesBuf,
+		filters:            &strebming.SebrchFilters{},
+		flushIntervbl:      flushIntervbl,
 		progress:           progress,
-		progressInterval:   progressInterval,
-		displayRemaining:   displayLimit,
-		enableChunkMatches: enableChunkMatches,
+		progressIntervbl:   progressIntervbl,
+		displbyRembining:   displbyLimit,
+		enbbleChunkMbtches: enbbleChunkMbtches,
 		first:              true,
-		logLatency:         logLatency,
+		logLbtency:         logLbtency,
 	}
 
 	// Schedule the first flushes.
-	// Lock because if flushInterval is small, scheduled tick could
-	// race with setting eh.flushTimer.
+	// Lock becbuse if flushIntervbl is smbll, scheduled tick could
+	// rbce with setting eh.flushTimer.
 	eh.mu.Lock()
-	eh.flushTimer = time.AfterFunc(eh.flushInterval, eh.flushTick)
-	eh.progressTimer = time.AfterFunc(eh.progressInterval, eh.progressTick)
+	eh.flushTimer = time.AfterFunc(eh.flushIntervbl, eh.flushTick)
+	eh.progressTimer = time.AfterFunc(eh.progressIntervbl, eh.progressTick)
 	eh.mu.Unlock()
 
 	return eh
 }
 
-type eventHandler struct {
+type eventHbndler struct {
 	ctx    context.Context
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 
-	// Config params
-	enableChunkMatches bool
-	flushInterval      time.Duration
-	progressInterval   time.Duration
+	// Config pbrbms
+	enbbleChunkMbtches bool
+	flushIntervbl      time.Durbtion
+	progressIntervbl   time.Durbtion
 
-	logLatency func()
+	logLbtency func()
 
 	// Everything below this line is protected by the mutex
 	mu sync.Mutex
 
 	eventWriter *eventWriter
 
-	matchesBuf *streamhttp.JSONArrayBuf
-	filters    *streaming.SearchFilters
-	progress   *streamclient.ProgressAggregator
+	mbtchesBuf *strebmhttp.JSONArrbyBuf
+	filters    *strebming.SebrchFilters
+	progress   *strebmclient.ProgressAggregbtor
 
-	// These timers will be non-nil unless Done() was called
+	// These timers will be non-nil unless Done() wbs cblled
 	flushTimer    *time.Timer
 	progressTimer *time.Timer
 
-	displayRemaining int
+	displbyRembining int
 	first            bool
 }
 
-func (h *eventHandler) Send(event streaming.SearchEvent) {
+func (h *eventHbndler) Send(event strebming.SebrchEvent) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	h.progress.Update(event)
-	h.filters.Update(event)
+	h.progress.Updbte(event)
+	h.filters.Updbte(event)
 
-	h.displayRemaining = event.Results.Limit(h.displayRemaining)
+	h.displbyRembining = event.Results.Limit(h.displbyRembining)
 
-	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
+	repoMetbdbtb, err := getEventRepoMetbdbtb(h.ctx, h.db, event)
 	if err != nil {
-		if !errors.IsContextCanceled(err) {
-			h.logger.Error("failed to get repo metadata", log.Error(err))
+		if !errors.IsContextCbnceled(err) {
+			h.logger.Error("fbiled to get repo metbdbtb", log.Error(err))
 		}
 		return
 	}
 
-	for _, match := range event.Results {
-		repo := match.RepoName()
+	for _, mbtch := rbnge event.Results {
+		repo := mbtch.RepoNbme()
 
-		// Don't send matches which we cannot map to a repo the actor has access to. This
-		// check is expected to always pass. Missing metadata is a sign that we have
-		// searched repos that user shouldn't have access to.
-		if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
+		// Don't send mbtches which we cbnnot mbp to b repo the bctor hbs bccess to. This
+		// check is expected to blwbys pbss. Missing metbdbtb is b sign thbt we hbve
+		// sebrched repos thbt user shouldn't hbve bccess to.
+		if md, ok := repoMetbdbtb[repo.ID]; !ok || md.Nbme != repo.Nbme {
 			continue
 		}
 
-		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
-		h.matchesBuf.Append(eventMatch)
+		eventMbtch := fromMbtch(mbtch, repoMetbdbtb, h.enbbleChunkMbtches)
+		h.mbtchesBuf.Append(eventMbtch)
 	}
 
-	// Instantly send results if we have not sent any yet.
+	// Instbntly send results if we hbve not sent bny yet.
 	if h.first && len(event.Results) > 0 {
-		h.first = false
+		h.first = fblse
 		h.eventWriter.Filters(h.filters.Compute())
-		h.matchesBuf.Flush()
-		h.logLatency()
+		h.mbtchesBuf.Flush()
+		h.logLbtency()
 	}
 }
 
-// Done cleans up any background tasks and flushes any buffered data to the stream
-func (h *eventHandler) Done() {
+// Done clebns up bny bbckground tbsks bnd flushes bny buffered dbtb to the strebm
+func (h *eventHbndler) Done() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	// Cancel any in-flight timers
+	// Cbncel bny in-flight timers
 	h.flushTimer.Stop()
 	h.flushTimer = nil
 	h.progressTimer.Stop()
 	h.progressTimer = nil
 
-	// Flush the final state
+	// Flush the finbl stbte
 	h.eventWriter.Filters(h.filters.Compute())
-	h.matchesBuf.Flush()
-	h.eventWriter.Progress(h.progress.Final())
+	h.mbtchesBuf.Flush()
+	h.eventWriter.Progress(h.progress.Finbl())
 }
 
-func (h *eventHandler) progressTick() {
+func (h *eventHbndler) progressTick() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	// a nil progressTimer indicates that Done() was called
+	// b nil progressTimer indicbtes thbt Done() wbs cblled
 	if h.progressTimer != nil {
 		h.eventWriter.Progress(h.progress.Current())
 
 		// schedule the next progress event
-		h.progressTimer = time.AfterFunc(h.progressInterval, h.progressTick)
+		h.progressTimer = time.AfterFunc(h.progressIntervbl, h.progressTick)
 	}
 }
 
-func (h *eventHandler) flushTick() {
+func (h *eventHbndler) flushTick() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	// a nil flushTimer indicates that Done() was called
+	// b nil flushTimer indicbtes thbt Done() wbs cblled
 	if h.flushTimer != nil {
 		h.eventWriter.Filters(h.filters.Compute())
-		h.matchesBuf.Flush()
+		h.mbtchesBuf.Flush()
 		if h.progress.Dirty {
 			h.eventWriter.Progress(h.progress.Current())
 		}
 
 		// schedule the next flush
-		h.flushTimer = time.AfterFunc(h.flushInterval, h.flushTick)
+		h.flushTimer = time.AfterFunc(h.flushIntervbl, h.flushTick)
 	}
 }

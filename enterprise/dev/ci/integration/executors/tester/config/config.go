@@ -1,6 +1,6 @@
-package config
+pbckbge config
 
 import _ "embed"
 
 //go:embed repos.json
-var Repos string
+vbr Repos string

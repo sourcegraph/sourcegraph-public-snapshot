@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,77 +6,77 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func insertTestUser(t *testing.T, db database.DB, name string, isAdmin bool) *types.User {
+func insertTestUser(t *testing.T, db dbtbbbse.DB, nbme string, isAdmin bool) *types.User {
 	t.Helper()
 
-	u, err := db.Users().Create(context.Background(), database.NewUser{Username: name})
+	u, err := db.Users().Crebte(context.Bbckground(), dbtbbbse.NewUser{Usernbme: nbme})
 	require.NoError(t, err)
 
-	err = db.Users().SetIsSiteAdmin(context.Background(), u.ID, isAdmin)
+	err = db.Users().SetIsSiteAdmin(context.Bbckground(), u.ID, isAdmin)
 	require.NoError(t, err)
 
 	return u
 }
 
-func addUserToOrg(t *testing.T, db database.DB, userID int32, orgID int32) {
+func bddUserToOrg(t *testing.T, db dbtbbbse.DB, userID int32, orgID int32) {
 	t.Helper()
 
 	q := sqlf.Sprintf("INSERT INTO org_members (org_id, user_id) VALUES (%s, %s)", orgID, userID)
 
-	_, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
+	_, err := db.ExecContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-type Option interface {
-	apply(*options)
+type Option interfbce {
+	bpply(*options)
 }
 
 type hook func() error
 
 type options struct {
-	actions   []*graphqlbackend.CreateActionArgs
-	owner     graphql.ID
+	bctions   []*grbphqlbbckend.CrebteActionArgs
+	owner     grbphql.ID
 	postHooks []hook
 }
 
-type actionOption struct {
-	actions []*graphqlbackend.CreateActionArgs
+type bctionOption struct {
+	bctions []*grbphqlbbckend.CrebteActionArgs
 }
 
-func (a actionOption) apply(opts *options) {
-	opts.actions = a.actions
+func (b bctionOption) bpply(opts *options) {
+	opts.bctions = b.bctions
 }
 
-func WithActions(actions []*graphqlbackend.CreateActionArgs) Option {
-	return actionOption{actions: actions}
+func WithActions(bctions []*grbphqlbbckend.CrebteActionArgs) Option {
+	return bctionOption{bctions: bctions}
 }
 
 type ownerOption struct {
-	owner graphql.ID
+	owner grbphql.ID
 }
 
-func (o ownerOption) apply(opts *options) {
+func (o ownerOption) bpply(opts *options) {
 	opts.owner = o.owner
 }
 
-func WithOwner(owner graphql.ID) Option {
+func WithOwner(owner grbphql.ID) Option {
 	return ownerOption{owner: owner}
 }
 
@@ -84,7 +84,7 @@ type postHookOption struct {
 	hooks []hook
 }
 
-func (h postHookOption) apply(opts *options) {
+func (h postHookOption) bpply(opts *options) {
 	opts.postHooks = h.hooks
 }
 
@@ -92,42 +92,42 @@ func WithPostHooks(hooks []hook) Option {
 	return postHookOption{hooks: hooks}
 }
 
-// insertTestMonitorWithOpts is a test helper that creates monitors for test
-// purposes with sensible defaults. You can override the defaults by providing
-// (optional) opts.
-func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, opts ...Option) (graphqlbackend.MonitorResolver, error) {
+// insertTestMonitorWithOpts is b test helper thbt crebtes monitors for test
+// purposes with sensible defbults. You cbn override the defbults by providing
+// (optionbl) opts.
+func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, opts ...Option) (grbphqlbbckend.MonitorResolver, error) {
 	t.Helper()
 
-	defaultOwner := relay.MarshalID("User", actor.FromContext(ctx).UID)
-	defaultActions := []*graphqlbackend.CreateActionArgs{
-		{Email: &graphqlbackend.CreateActionEmailArgs{
-			Enabled:    true,
+	defbultOwner := relby.MbrshblID("User", bctor.FromContext(ctx).UID)
+	defbultActions := []*grbphqlbbckend.CrebteActionArgs{
+		{Embil: &grbphqlbbckend.CrebteActionEmbilArgs{
+			Enbbled:    true,
 			Priority:   "NORMAL",
-			Recipients: []graphql.ID{defaultOwner},
-			Header:     "test header"}},
+			Recipients: []grbphql.ID{defbultOwner},
+			Hebder:     "test hebder"}},
 	}
 
 	options := options{
-		actions:   defaultActions,
-		owner:     defaultOwner,
+		bctions:   defbultActions,
+		owner:     defbultOwner,
 		postHooks: nil,
 	}
-	for _, opt := range opts {
-		opt.apply(&options)
+	for _, opt := rbnge opts {
+		opt.bpply(&options)
 	}
-	m, err := r.CreateCodeMonitor(ctx, &graphqlbackend.CreateCodeMonitorArgs{
-		Monitor: &graphqlbackend.CreateMonitorArgs{
-			Namespace:   options.owner,
+	m, err := r.CrebteCodeMonitor(ctx, &grbphqlbbckend.CrebteCodeMonitorArgs{
+		Monitor: &grbphqlbbckend.CrebteMonitorArgs{
+			Nbmespbce:   options.owner,
 			Description: "test monitor",
-			Enabled:     true,
+			Enbbled:     true,
 		},
-		Trigger: &graphqlbackend.CreateTriggerArgs{Query: "repo:foo type:commit"},
-		Actions: options.actions,
+		Trigger: &grbphqlbbckend.CrebteTriggerArgs{Query: "repo:foo type:commit"},
+		Actions: options.bctions,
 	})
 	if err != nil {
 		return nil, err
 	}
-	for _, h := range options.postHooks {
+	for _, h := rbnge options.postHooks {
 		err = h()
 		if err != nil {
 			return nil, err
@@ -136,33 +136,33 @@ func (r *Resolver) insertTestMonitorWithOpts(ctx context.Context, t *testing.T, 
 	return m, nil
 }
 
-// newTestResolver returns a Resolver with stopped clock, which is useful to
-// compare input and outputs in tests.
-func newTestResolver(t *testing.T, db database.DB) *Resolver {
+// newTestResolver returns b Resolver with stopped clock, which is useful to
+// compbre input bnd outputs in tests.
+func newTestResolver(t *testing.T, db dbtbbbse.DB) *Resolver {
 	t.Helper()
 
-	now := time.Now().UTC().Truncate(time.Microsecond)
+	now := time.Now().UTC().Truncbte(time.Microsecond)
 	clock := func() time.Time { return now }
 	return newResolverWithClock(logtest.Scoped(t), db, clock)
 }
 
-// newResolverWithClock is used in tests to set the clock manually.
-func newResolverWithClock(logger log.Logger, db database.DB, clock func() time.Time) *Resolver {
+// newResolverWithClock is used in tests to set the clock mbnublly.
+func newResolverWithClock(logger log.Logger, db dbtbbbse.DB, clock func() time.Time) *Resolver {
 	mockDB := dbmocks.NewMockDBFrom(db)
-	mockDB.CodeMonitorsFunc.SetDefaultReturn(database.CodeMonitorsWithClock(db, clock))
+	mockDB.CodeMonitorsFunc.SetDefbultReturn(dbtbbbse.CodeMonitorsWithClock(db, clock))
 	return &Resolver{logger: logger, db: mockDB}
 }
 
-func marshalDateTime(t testing.TB, ts time.Time) string {
+func mbrshblDbteTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := gqlutil.DateTime{Time: ts}
+	dt := gqlutil.DbteTime{Time: ts}
 
-	bs, err := dt.MarshalJSON()
+	bs, err := dt.MbrshblJSON()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Unquote the date time.
-	return strings.ReplaceAll(string(bs), "\"", "")
+	// Unquote the dbte time.
+	return strings.ReplbceAll(string(bs), "\"", "")
 }

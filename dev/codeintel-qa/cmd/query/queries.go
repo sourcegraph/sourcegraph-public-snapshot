@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -6,21 +6,21 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// buildQueries returns a channel that is fed all of the test functions that should be invoked
-// as part of the test. This function depends on the flags provided by the user to alter the
-// behavior of the testing functions.
-func buildQueries() <-chan queryFunc {
-	fns := make(chan queryFunc)
+// buildQueries returns b chbnnel thbt is fed bll of the test functions thbt should be invoked
+// bs pbrt of the test. This function depends on the flbgs provided by the user to blter the
+// behbvior of the testing functions.
+func buildQueries() <-chbn queryFunc {
+	fns := mbke(chbn queryFunc)
 
 	go func() {
 		defer close(fns)
 
-		for _, generator := range testCaseGenerators {
-			for _, testCase := range generator() {
-				fns <- testCase
+		for _, generbtor := rbnge testCbseGenerbtors {
+			for _, testCbse := rbnge generbtor() {
+				fns <- testCbse
 			}
 		}
 	}()
@@ -28,72 +28,72 @@ func buildQueries() <-chan queryFunc {
 	return fns
 }
 
-type testFunc func(ctx context.Context, location Location) ([]Location, error)
+type testFunc func(ctx context.Context, locbtion Locbtion) ([]Locbtion, error)
 
-// makeTestFunc returns a test function that invokes the given function f with the given
-// source, then compares the result against the set of expected locations. This function
-// depends on the flags provided by the user to alter the behavior of the testing
+// mbkeTestFunc returns b test function thbt invokes the given function f with the given
+// source, then compbres the result bgbinst the set of expected locbtions. This function
+// depends on the flbgs provided by the user to blter the behbvior of the testing
 // functions.
-func makeTestFunc(name string, f testFunc, source Location, expectedLocations []Location) func(ctx context.Context) error {
+func mbkeTestFunc(nbme string, f testFunc, source Locbtion, expectedLocbtions []Locbtion) func(ctx context.Context) error {
 	return func(ctx context.Context) error {
-		locations, err := f(ctx, source)
+		locbtions, err := f(ctx, source)
 		if err != nil {
 			return err
 		}
 
 		if checkQueryResult {
-			sortLocations(locations)
-			sortLocations(expectedLocations)
+			sortLocbtions(locbtions)
+			sortLocbtions(expectedLocbtions)
 
-			if allowDirtyInstance {
-				// We allow other upload records to exist on the instance, so we might have
-				// additional locations. Here, we trim down the set of returned locations
-				// to only include the expected values, and check only that the instance gave
-				// us a superset of the expected output.
+			if bllowDirtyInstbnce {
+				// We bllow other uplobd records to exist on the instbnce, so we might hbve
+				// bdditionbl locbtions. Here, we trim down the set of returned locbtions
+				// to only include the expected vblues, bnd check only thbt the instbnce gbve
+				// us b superset of the expected output.
 
-				filteredLocations := locations[:0]
+				filteredLocbtions := locbtions[:0]
 			outer:
-				for _, location := range locations {
-					for _, expectedLocation := range expectedLocations {
-						if expectedLocation == location {
-							filteredLocations = append(filteredLocations, location)
+				for _, locbtion := rbnge locbtions {
+					for _, expectedLocbtion := rbnge expectedLocbtions {
+						if expectedLocbtion == locbtion {
+							filteredLocbtions = bppend(filteredLocbtions, locbtion)
 							continue outer
 						}
 					}
 				}
 
-				locations = filteredLocations
+				locbtions = filteredLocbtions
 			}
 
-			if diff := cmp.Diff(expectedLocations, locations); diff != "" {
-				collectRepositoryToResults := func(locations []Location) map[string]int {
-					repositoryToResults := map[string]int{}
-					for _, location := range locations {
-						if _, ok := repositoryToResults[location.Repo]; !ok {
-							repositoryToResults[location.Repo] = 0
+			if diff := cmp.Diff(expectedLocbtions, locbtions); diff != "" {
+				collectRepositoryToResults := func(locbtions []Locbtion) mbp[string]int {
+					repositoryToResults := mbp[string]int{}
+					for _, locbtion := rbnge locbtions {
+						if _, ok := repositoryToResults[locbtion.Repo]; !ok {
+							repositoryToResults[locbtion.Repo] = 0
 						}
-						repositoryToResults[location.Repo] += 1
+						repositoryToResults[locbtion.Repo] += 1
 					}
 					return repositoryToResults
 				}
 
 				e := ""
-				e += fmt.Sprintf("%s: unexpected results\n\n", name)
-				e += fmt.Sprintf("started at location:\n\n    %+v\n\n", source)
+				e += fmt.Sprintf("%s: unexpected results\n\n", nbme)
+				e += fmt.Sprintf("stbrted bt locbtion:\n\n    %+v\n\n", source)
 				e += "results by repository:\n\n"
 
-				allRepos := map[string]struct{}{}
-				for _, location := range append(locations, expectedLocations...) {
-					allRepos[location.Repo] = struct{}{}
+				bllRepos := mbp[string]struct{}{}
+				for _, locbtion := rbnge bppend(locbtions, expectedLocbtions...) {
+					bllRepos[locbtion.Repo] = struct{}{}
 				}
-				repositoryToGottenResults := collectRepositoryToResults(locations)
-				repositoryToWantedResults := collectRepositoryToResults(expectedLocations)
-				for repo := range allRepos {
-					e += fmt.Sprintf("    - %s: want %d locations, got %d locations\n", repo, repositoryToWantedResults[repo], repositoryToGottenResults[repo])
+				repositoryToGottenResults := collectRepositoryToResults(locbtions)
+				repositoryToWbntedResults := collectRepositoryToResults(expectedLocbtions)
+				for repo := rbnge bllRepos {
+					e += fmt.Sprintf("    - %s: wbnt %d locbtions, got %d locbtions\n", repo, repositoryToWbntedResults[repo], repositoryToGottenResults[repo])
 				}
 				e += "\n"
 
-				e += "raw diff (-want +got):\n\n" + diff
+				e += "rbw diff (-wbnt +got):\n\n" + diff
 
 				return errors.Errorf(e)
 			}

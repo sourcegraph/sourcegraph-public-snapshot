@@ -1,217 +1,217 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type rootResolver struct {
-	svc                            CodeNavService
-	autoindexingSvc                AutoIndexingService
+	svc                            CodeNbvService
+	butoindexingSvc                AutoIndexingService
 	gitserverClient                gitserver.Client
-	siteAdminChecker               sharedresolvers.SiteAdminChecker
-	repoStore                      database.RepoStore
-	uploadLoaderFactory            uploadsgraphql.UploadLoaderFactory
-	indexLoaderFactory             uploadsgraphql.IndexLoaderFactory
-	locationResolverFactory        *gitresolvers.CachedLocationResolverFactory
-	hunkCache                      codenav.HunkCache
-	indexResolverFactory           *uploadsgraphql.PreciseIndexResolverFactory
-	maximumIndexesPerMonikerSearch int
-	operations                     *operations
+	siteAdminChecker               shbredresolvers.SiteAdminChecker
+	repoStore                      dbtbbbse.RepoStore
+	uplobdLobderFbctory            uplobdsgrbphql.UplobdLobderFbctory
+	indexLobderFbctory             uplobdsgrbphql.IndexLobderFbctory
+	locbtionResolverFbctory        *gitresolvers.CbchedLocbtionResolverFbctory
+	hunkCbche                      codenbv.HunkCbche
+	indexResolverFbctory           *uplobdsgrbphql.PreciseIndexResolverFbctory
+	mbximumIndexesPerMonikerSebrch int
+	operbtions                     *operbtions
 }
 
 func NewRootResolver(
-	observationCtx *observation.Context,
-	svc CodeNavService,
-	autoindexingSvc AutoIndexingService,
+	observbtionCtx *observbtion.Context,
+	svc CodeNbvService,
+	butoindexingSvc AutoIndexingService,
 	gitserverClient gitserver.Client,
-	siteAdminChecker sharedresolvers.SiteAdminChecker,
-	repoStore database.RepoStore,
-	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
-	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
-	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
-	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
-	maxIndexSearch int,
-	hunkCacheSize int,
-) (resolverstubs.CodeNavServiceResolver, error) {
-	hunkCache, err := codenav.NewHunkCache(hunkCacheSize)
+	siteAdminChecker shbredresolvers.SiteAdminChecker,
+	repoStore dbtbbbse.RepoStore,
+	uplobdLobderFbctory uplobdsgrbphql.UplobdLobderFbctory,
+	indexLobderFbctory uplobdsgrbphql.IndexLobderFbctory,
+	indexResolverFbctory *uplobdsgrbphql.PreciseIndexResolverFbctory,
+	locbtionResolverFbctory *gitresolvers.CbchedLocbtionResolverFbctory,
+	mbxIndexSebrch int,
+	hunkCbcheSize int,
+) (resolverstubs.CodeNbvServiceResolver, error) {
+	hunkCbche, err := codenbv.NewHunkCbche(hunkCbcheSize)
 	if err != nil {
 		return nil, err
 	}
 
 	return &rootResolver{
 		svc:                            svc,
-		autoindexingSvc:                autoindexingSvc,
+		butoindexingSvc:                butoindexingSvc,
 		gitserverClient:                gitserverClient,
 		siteAdminChecker:               siteAdminChecker,
 		repoStore:                      repoStore,
-		uploadLoaderFactory:            uploadLoaderFactory,
-		indexLoaderFactory:             indexLoaderFactory,
-		indexResolverFactory:           indexResolverFactory,
-		locationResolverFactory:        locationResolverFactory,
-		hunkCache:                      hunkCache,
-		maximumIndexesPerMonikerSearch: maxIndexSearch,
-		operations:                     newOperations(observationCtx),
+		uplobdLobderFbctory:            uplobdLobderFbctory,
+		indexLobderFbctory:             indexLobderFbctory,
+		indexResolverFbctory:           indexResolverFbctory,
+		locbtionResolverFbctory:        locbtionResolverFbctory,
+		hunkCbche:                      hunkCbche,
+		mbximumIndexesPerMonikerSebrch: mbxIndexSebrch,
+		operbtions:                     newOperbtions(observbtionCtx),
 	}, nil
 }
 
-// 🚨 SECURITY: dbstore layer handles authz for query resolution
-func (r *rootResolver) GitBlobLSIFData(ctx context.Context, args *resolverstubs.GitBlobLSIFDataArgs) (_ resolverstubs.GitBlobLSIFDataResolver, err error) {
-	ctx, _, endObservation := r.operations.gitBlobLsifData.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", int(args.Repo.ID)),
-		args.Commit.Attr(),
-		attribute.String("path", args.Path),
-		attribute.Bool("exactPath", args.ExactPath),
-		attribute.String("toolName", args.ToolName),
+// 🚨 SECURITY: dbstore lbyer hbndles buthz for query resolution
+func (r *rootResolver) GitBlobLSIFDbtb(ctx context.Context, brgs *resolverstubs.GitBlobLSIFDbtbArgs) (_ resolverstubs.GitBlobLSIFDbtbResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.gitBlobLsifDbtb.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repoID", int(brgs.Repo.ID)),
+		brgs.Commit.Attr(),
+		bttribute.String("pbth", brgs.Pbth),
+		bttribute.Bool("exbctPbth", brgs.ExbctPbth),
+		bttribute.String("toolNbme", brgs.ToolNbme),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	uploads, err := r.svc.GetClosestDumpsForBlob(ctx, int(args.Repo.ID), string(args.Commit), args.Path, args.ExactPath, args.ToolName)
-	if err != nil || len(uploads) == 0 {
+	uplobds, err := r.svc.GetClosestDumpsForBlob(ctx, int(brgs.Repo.ID), string(brgs.Commit), brgs.Pbth, brgs.ExbctPbth, brgs.ToolNbme)
+	if err != nil || len(uplobds) == 0 {
 		return nil, err
 	}
 
-	if len(uploads) == 0 {
-		// If we're on sourcegraph.com and it's a rust package repo, index it on-demand
-		if envvar.SourcegraphDotComMode() && strings.HasPrefix(string(args.Repo.Name), "crates/") {
-			err = r.autoindexingSvc.QueueRepoRev(ctx, int(args.Repo.ID), string(args.Commit))
+	if len(uplobds) == 0 {
+		// If we're on sourcegrbph.com bnd it's b rust pbckbge repo, index it on-dembnd
+		if envvbr.SourcegrbphDotComMode() && strings.HbsPrefix(string(brgs.Repo.Nbme), "crbtes/") {
+			err = r.butoindexingSvc.QueueRepoRev(ctx, int(brgs.Repo.ID), string(brgs.Commit))
 		}
 
 		return nil, err
 	}
 
-	reqState := codenav.NewRequestState(
-		uploads,
+	reqStbte := codenbv.NewRequestStbte(
+		uplobds,
 		r.repoStore,
-		authz.DefaultSubRepoPermsChecker,
+		buthz.DefbultSubRepoPermsChecker,
 		r.gitserverClient,
-		args.Repo,
-		string(args.Commit),
-		args.Path,
-		r.maximumIndexesPerMonikerSearch,
-		r.hunkCache,
+		brgs.Repo,
+		string(brgs.Commit),
+		brgs.Pbth,
+		r.mbximumIndexesPerMonikerSebrch,
+		r.hunkCbche,
 	)
 
-	return newGitBlobLSIFDataResolver(
+	return newGitBlobLSIFDbtbResolver(
 		r.svc,
-		r.indexResolverFactory,
-		reqState,
-		r.uploadLoaderFactory.Create(),
-		r.indexLoaderFactory.Create(),
-		r.locationResolverFactory.Create(),
-		r.operations,
+		r.indexResolverFbctory,
+		reqStbte,
+		r.uplobdLobderFbctory.Crebte(),
+		r.indexLobderFbctory.Crebte(),
+		r.locbtionResolverFbctory.Crebte(),
+		r.operbtions,
 	), nil
 }
 
-// gitBlobLSIFDataResolver is the main interface to bundle-related operations exposed to the GraphQL API. This
-// resolver concerns itself with GraphQL/API-specific behaviors (auth, validation, marshaling, etc.).
-// All code intel-specific behavior is delegated to the underlying resolver instance, which is defined
-// in the parent package.
-type gitBlobLSIFDataResolver struct {
-	codeNavSvc           CodeNavService
-	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
-	requestState         codenav.RequestState
-	uploadLoader         uploadsgraphql.UploadLoader
-	indexLoader          uploadsgraphql.IndexLoader
-	locationResolver     *gitresolvers.CachedLocationResolver
-	operations           *operations
+// gitBlobLSIFDbtbResolver is the mbin interfbce to bundle-relbted operbtions exposed to the GrbphQL API. This
+// resolver concerns itself with GrbphQL/API-specific behbviors (buth, vblidbtion, mbrshbling, etc.).
+// All code intel-specific behbvior is delegbted to the underlying resolver instbnce, which is defined
+// in the pbrent pbckbge.
+type gitBlobLSIFDbtbResolver struct {
+	codeNbvSvc           CodeNbvService
+	indexResolverFbctory *uplobdsgrbphql.PreciseIndexResolverFbctory
+	requestStbte         codenbv.RequestStbte
+	uplobdLobder         uplobdsgrbphql.UplobdLobder
+	indexLobder          uplobdsgrbphql.IndexLobder
+	locbtionResolver     *gitresolvers.CbchedLocbtionResolver
+	operbtions           *operbtions
 }
 
-// NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
-// behavior. A cached location resolver instance is also given to the query resolver, which should be used
-// to resolve all location-related values.
-func newGitBlobLSIFDataResolver(
-	codeNavSvc CodeNavService,
-	indexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
-	requestState codenav.RequestState,
-	uploadLoader uploadsgraphql.UploadLoader,
-	indexLoader uploadsgraphql.IndexLoader,
-	locationResolver *gitresolvers.CachedLocationResolver,
-	operations *operations,
-) resolverstubs.GitBlobLSIFDataResolver {
-	return &gitBlobLSIFDataResolver{
-		codeNavSvc:           codeNavSvc,
-		uploadLoader:         uploadLoader,
-		indexLoader:          indexLoader,
-		indexResolverFactory: indexResolverFactory,
-		requestState:         requestState,
-		locationResolver:     locationResolver,
-		operations:           operations,
+// NewQueryResolver crebtes b new QueryResolver with the given resolver thbt defines bll code intel-specific
+// behbvior. A cbched locbtion resolver instbnce is blso given to the query resolver, which should be used
+// to resolve bll locbtion-relbted vblues.
+func newGitBlobLSIFDbtbResolver(
+	codeNbvSvc CodeNbvService,
+	indexResolverFbctory *uplobdsgrbphql.PreciseIndexResolverFbctory,
+	requestStbte codenbv.RequestStbte,
+	uplobdLobder uplobdsgrbphql.UplobdLobder,
+	indexLobder uplobdsgrbphql.IndexLobder,
+	locbtionResolver *gitresolvers.CbchedLocbtionResolver,
+	operbtions *operbtions,
+) resolverstubs.GitBlobLSIFDbtbResolver {
+	return &gitBlobLSIFDbtbResolver{
+		codeNbvSvc:           codeNbvSvc,
+		uplobdLobder:         uplobdLobder,
+		indexLobder:          indexLobder,
+		indexResolverFbctory: indexResolverFbctory,
+		requestStbte:         requestStbte,
+		locbtionResolver:     locbtionResolver,
+		operbtions:           operbtions,
 	}
 }
 
-func (r *gitBlobLSIFDataResolver) ToGitTreeLSIFData() (resolverstubs.GitTreeLSIFDataResolver, bool) {
+func (r *gitBlobLSIFDbtbResolver) ToGitTreeLSIFDbtb() (resolverstubs.GitTreeLSIFDbtbResolver, bool) {
 	return r, true
 }
 
-func (r *gitBlobLSIFDataResolver) ToGitBlobLSIFData() (resolverstubs.GitBlobLSIFDataResolver, bool) {
+func (r *gitBlobLSIFDbtbResolver) ToGitBlobLSIFDbtb() (resolverstubs.GitBlobLSIFDbtbResolver, bool) {
 	return r, true
 }
 
-func (r *gitBlobLSIFDataResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
-	ctx, traceErrs, endObservation := r.operations.visibleIndexes.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repoID", r.requestState.RepositoryID),
-		attribute.String("commit", r.requestState.Commit),
-		attribute.String("path", r.requestState.Path),
+func (r *gitBlobLSIFDbtbResolver) VisibleIndexes(ctx context.Context) (_ *[]resolverstubs.PreciseIndexResolver, err error) {
+	ctx, trbceErrs, endObservbtion := r.operbtions.visibleIndexes.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repoID", r.requestStbte.RepositoryID),
+		bttribute.String("commit", r.requestStbte.Commit),
+		bttribute.String("pbth", r.requestStbte.Pbth),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	visibleUploads, err := r.codeNavSvc.VisibleUploadsForPath(ctx, r.requestState)
+	visibleUplobds, err := r.codeNbvSvc.VisibleUplobdsForPbth(ctx, r.requestStbte)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(visibleUploads))
-	for _, u := range visibleUploads {
-		resolver, err := r.indexResolverFactory.Create(
+	resolvers := mbke([]resolverstubs.PreciseIndexResolver, 0, len(visibleUplobds))
+	for _, u := rbnge visibleUplobds {
+		resolver, err := r.indexResolverFbctory.Crebte(
 			ctx,
-			r.uploadLoader,
-			r.indexLoader,
-			r.locationResolver,
-			traceErrs,
-			dumpToUpload(u),
+			r.uplobdLobder,
+			r.indexLobder,
+			r.locbtionResolver,
+			trbceErrs,
+			dumpToUplobd(u),
 			nil,
 		)
 		if err != nil {
 			return nil, err
 		}
-		resolvers = append(resolvers, resolver)
+		resolvers = bppend(resolvers, resolver)
 	}
 
 	return &resolvers, nil
 }
 
-func dumpToUpload(expected uploadsshared.Dump) *uploadsshared.Upload {
-	return &uploadsshared.Upload{
+func dumpToUplobd(expected uplobdsshbred.Dump) *uplobdsshbred.Uplobd {
+	return &uplobdsshbred.Uplobd{
 		ID:                expected.ID,
 		Commit:            expected.Commit,
 		Root:              expected.Root,
-		UploadedAt:        expected.UploadedAt,
-		State:             expected.State,
-		FailureMessage:    expected.FailureMessage,
-		StartedAt:         expected.StartedAt,
+		UplobdedAt:        expected.UplobdedAt,
+		Stbte:             expected.Stbte,
+		FbilureMessbge:    expected.FbilureMessbge,
+		StbrtedAt:         expected.StbrtedAt,
 		FinishedAt:        expected.FinishedAt,
 		ProcessAfter:      expected.ProcessAfter,
 		NumResets:         expected.NumResets,
-		NumFailures:       expected.NumFailures,
+		NumFbilures:       expected.NumFbilures,
 		RepositoryID:      expected.RepositoryID,
-		RepositoryName:    expected.RepositoryName,
+		RepositoryNbme:    expected.RepositoryNbme,
 		Indexer:           expected.Indexer,
 		IndexerVersion:    expected.IndexerVersion,
-		AssociatedIndexID: expected.AssociatedIndexID,
+		AssocibtedIndexID: expected.AssocibtedIndexID,
 	}
 }

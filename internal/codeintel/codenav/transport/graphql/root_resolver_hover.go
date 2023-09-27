@@ -1,36 +1,36 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/go-lsp"
+	"github.com/sourcegrbph/go-lsp"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
 )
 
-// Hover returns the hover text and range for the symbol at the given position.
-func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.HoverResolver, err error) {
-	requestArgs := codenav.PositionalRequestArgs{
-		RequestArgs: codenav.RequestArgs{
-			RepositoryID: r.requestState.RepositoryID,
-			Commit:       r.requestState.Commit,
+// Hover returns the hover text bnd rbnge for the symbol bt the given position.
+func (r *gitBlobLSIFDbtbResolver) Hover(ctx context.Context, brgs *resolverstubs.LSIFQueryPositionArgs) (_ resolverstubs.HoverResolver, err error) {
+	requestArgs := codenbv.PositionblRequestArgs{
+		RequestArgs: codenbv.RequestArgs{
+			RepositoryID: r.requestStbte.RepositoryID,
+			Commit:       r.requestStbte.Commit,
 		},
-		Path:      r.requestState.Path,
-		Line:      int(args.Line),
-		Character: int(args.Character),
+		Pbth:      r.requestStbte.Pbth,
+		Line:      int(brgs.Line),
+		Chbrbcter: int(brgs.Chbrbcter),
 	}
-	ctx, _, endObservation := observeResolver(ctx, &err, r.operations.hover, time.Second, getObservationArgs(requestArgs))
-	defer endObservation()
+	ctx, _, endObservbtion := observeResolver(ctx, &err, r.operbtions.hover, time.Second, getObservbtionArgs(requestArgs))
+	defer endObservbtion()
 
-	text, rx, exists, err := r.codeNavSvc.GetHover(ctx, requestArgs, r.requestState)
+	text, rx, exists, err := r.codeNbvSvc.GetHover(ctx, requestArgs, r.requestStbte)
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	return newHoverResolver(text, sharedRangeTolspRange(rx)), nil
+	return newHoverResolver(text, shbredRbngeTolspRbnge(rx)), nil
 }
 
 //
@@ -38,22 +38,22 @@ func (r *gitBlobLSIFDataResolver) Hover(ctx context.Context, args *resolverstubs
 
 type hoverResolver struct {
 	text     string
-	lspRange lsp.Range
+	lspRbnge lsp.Rbnge
 }
 
-func newHoverResolver(text string, lspRange lsp.Range) resolverstubs.HoverResolver {
+func newHoverResolver(text string, lspRbnge lsp.Rbnge) resolverstubs.HoverResolver {
 	return &hoverResolver{
 		text:     text,
-		lspRange: lspRange,
+		lspRbnge: lspRbnge,
 	}
 }
 
-func (r *hoverResolver) Markdown() resolverstubs.Markdown   { return resolverstubs.Markdown(r.text) }
-func (r *hoverResolver) Range() resolverstubs.RangeResolver { return newRangeResolver(r.lspRange) }
+func (r *hoverResolver) Mbrkdown() resolverstubs.Mbrkdown   { return resolverstubs.Mbrkdown(r.text) }
+func (r *hoverResolver) Rbnge() resolverstubs.RbngeResolver { return newRbngeResolver(r.lspRbnge) }
 
 //
 //
 
-func sharedRangeTolspRange(r shared.Range) lsp.Range {
-	return lsp.Range{Start: convertPosition(r.Start.Line, r.Start.Character), End: convertPosition(r.End.Line, r.End.Character)}
+func shbredRbngeTolspRbnge(r shbred.Rbnge) lsp.Rbnge {
+	return lsp.Rbnge{Stbrt: convertPosition(r.Stbrt.Line, r.Stbrt.Chbrbcter), End: convertPosition(r.End.Line, r.End.Chbrbcter)}
 }

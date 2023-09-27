@@ -1,4 +1,4 @@
-package open
+pbckbge open
 
 import (
 	"fmt"
@@ -6,9 +6,9 @@ import (
 
 func Prompt(req string) (string, error) {
 	fmt.Print(req + " ")
-	var answer string
-	if _, err := fmt.Scan(&answer); err != nil {
+	vbr bnswer string
+	if _, err := fmt.Scbn(&bnswer); err != nil {
 		return "", err
 	}
-	return answer, nil
+	return bnswer, nil
 }

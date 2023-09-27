@@ -1,173 +1,173 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type InsightPermStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 }
 
-func NewInsightPermissionStore(db database.DB) *InsightPermStore {
+func NewInsightPermissionStore(db dbtbbbse.DB) *InsightPermStore {
 	return &InsightPermStore{
 		logger: log.Scoped("InsightPermStore", ""),
-		Store:  basestore.NewWithHandle(db.Handle()),
+		Store:  bbsestore.NewWithHbndle(db.Hbndle()),
 	}
 }
 
-type InsightPermissionStore interface {
-	GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error)
+type InsightPermissionStore interfbce {
+	GetUnbuthorizedRepoIDs(ctx context.Context) (results []bpi.RepoID, err error)
 	GetUserPermissions(ctx context.Context) (userIDs []int, orgIDs []int, err error)
 }
 
-// GetUnauthorizedRepoIDs returns a list of repo IDs that the current user does *not* have access to. The primary
-// purpose of this is to quickly resolve permissions at query time from the primary postgres database and filter
-// code insights in the timeseries database. This approach makes the assumption that most users have access to most
-// repos - which is highly likely given the public / private model that repos use today.
-func (i *InsightPermStore) GetUnauthorizedRepoIDs(ctx context.Context) (results []api.RepoID, err error) {
-	db := database.NewDBWith(i.logger, i.Store)
+// GetUnbuthorizedRepoIDs returns b list of repo IDs thbt the current user does *not* hbve bccess to. The primbry
+// purpose of this is to quickly resolve permissions bt query time from the primbry postgres dbtbbbse bnd filter
+// code insights in the timeseries dbtbbbse. This bpprobch mbkes the bssumption thbt most users hbve bccess to most
+// repos - which is highly likely given the public / privbte model thbt repos use todby.
+func (i *InsightPermStore) GetUnbuthorizedRepoIDs(ctx context.Context) (results []bpi.RepoID, err error) {
+	db := dbtbbbse.NewDBWith(i.logger, i.Store)
 	store := db.Repos()
-	conds, err := database.AuthzQueryConds(ctx, db)
+	conds, err := dbtbbbse.AuthzQueryConds(ctx, db)
 	if err != nil {
-		return []api.RepoID{}, err
+		return []bpi.RepoID{}, err
 	}
 
-	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnauthorizedReposSql), conds}, " ")
+	q := sqlf.Join([]*sqlf.Query{sqlf.Sprintf(fetchUnbuthorizedReposSql), conds}, " ")
 
 	rows, err := store.Query(ctx, q)
 	if err != nil {
-		return []api.RepoID{}, err
+		return []bpi.RepoID{}, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var temp int
-		if err := rows.Scan(&temp); err != nil {
-			return []api.RepoID{}, err
+		vbr temp int
+		if err := rows.Scbn(&temp); err != nil {
+			return []bpi.RepoID{}, err
 		}
-		results = append(results, api.RepoID(temp))
+		results = bppend(results, bpi.RepoID(temp))
 	}
 
 	return results, nil
 }
 
-const fetchUnauthorizedReposSql = `
+const fetchUnbuthorizedReposSql = `
 SELECT id FROM repo WHERE NOT
 `
 
 func (i *InsightPermStore) GetUserPermissions(ctx context.Context) ([]int, []int, error) {
-	db := database.NewDBWith(i.logger, i.Store)
+	db := dbtbbbse.NewDBWith(i.logger, i.Store)
 	orgStore := db.Orgs()
 
-	currentActor := actor.FromContext(ctx)
-	var userIDs, orgIds []int
-	if currentActor.IsAuthenticated() {
-		userId := currentActor.UID // UID is only equal to 0 if the actor is unauthenticated.
+	currentActor := bctor.FromContext(ctx)
+	vbr userIDs, orgIds []int
+	if currentActor.IsAuthenticbted() {
+		userId := currentActor.UID // UID is only equbl to 0 if the bctor is unbuthenticbted.
 		orgs, err := orgStore.GetByUserID(ctx, userId)
 		if err != nil {
-			return nil, nil, errors.Wrap(err, "GetByUserID")
+			return nil, nil, errors.Wrbp(err, "GetByUserID")
 		}
-		for _, org := range orgs {
-			orgIds = append(orgIds, int(org.ID))
+		for _, org := rbnge orgs {
+			orgIds = bppend(orgIds, int(org.ID))
 		}
-		userIDs = append(userIDs, int(userId))
+		userIDs = bppend(userIDs, int(userId))
 	}
 	return userIDs, orgIds, nil
 }
 
-type InsightViewGrant struct {
+type InsightViewGrbnt struct {
 	UserID *int
 	OrgID  *int
-	Global *bool
+	Globbl *bool
 }
 
-func (i InsightViewGrant) toQuery(insightViewID int) *sqlf.Query {
-	// insight_view_id, org_id, user_id, global
-	valuesFmt := "(%s, %s, %s, %s)"
-	return sqlf.Sprintf(valuesFmt, insightViewID, i.OrgID, i.UserID, i.Global)
+func (i InsightViewGrbnt) toQuery(insightViewID int) *sqlf.Query {
+	// insight_view_id, org_id, user_id, globbl
+	vbluesFmt := "(%s, %s, %s, %s)"
+	return sqlf.Sprintf(vbluesFmt, insightViewID, i.OrgID, i.UserID, i.Globbl)
 }
 
-func UserGrant(userID int) InsightViewGrant {
-	return InsightViewGrant{UserID: &userID}
+func UserGrbnt(userID int) InsightViewGrbnt {
+	return InsightViewGrbnt{UserID: &userID}
 }
 
-func OrgGrant(orgID int) InsightViewGrant {
-	return InsightViewGrant{OrgID: &orgID}
+func OrgGrbnt(orgID int) InsightViewGrbnt {
+	return InsightViewGrbnt{OrgID: &orgID}
 }
 
-func GlobalGrant() InsightViewGrant {
+func GlobblGrbnt() InsightViewGrbnt {
 	b := true
-	return InsightViewGrant{Global: &b}
+	return InsightViewGrbnt{Globbl: &b}
 }
 
-type DashboardGrant struct {
+type DbshbobrdGrbnt struct {
 	UserID *int
 	OrgID  *int
-	Global *bool
+	Globbl *bool
 }
 
-func scanDashboardGrants(rows *sql.Rows, queryErr error) (_ []*DashboardGrant, err error) {
+func scbnDbshbobrdGrbnts(rows *sql.Rows, queryErr error) (_ []*DbshbobrdGrbnt, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var results []*DashboardGrant
-	var placeholder int
+	vbr results []*DbshbobrdGrbnt
+	vbr plbceholder int
 	for rows.Next() {
-		var temp DashboardGrant
-		if err := rows.Scan(
-			&placeholder,
-			&placeholder,
+		vbr temp DbshbobrdGrbnt
+		if err := rows.Scbn(
+			&plbceholder,
+			&plbceholder,
 			&temp.UserID,
 			&temp.OrgID,
-			&temp.Global,
+			&temp.Globbl,
 		); err != nil {
-			return []*DashboardGrant{}, err
+			return []*DbshbobrdGrbnt{}, err
 		}
-		results = append(results, &temp)
+		results = bppend(results, &temp)
 	}
 
 	return results, nil
 }
 
-func (i DashboardGrant) IsValid() bool {
-	if i.OrgID != nil || i.UserID != nil || i.Global != nil {
+func (i DbshbobrdGrbnt) IsVblid() bool {
+	if i.OrgID != nil || i.UserID != nil || i.Globbl != nil {
 		return true
 	}
-	return false
+	return fblse
 }
 
-func (i DashboardGrant) toQuery(dashboardID int) (*sqlf.Query, error) {
-	if !i.IsValid() {
-		return nil, errors.New("invalid dashboard grant, no principal assigned")
+func (i DbshbobrdGrbnt) toQuery(dbshbobrdID int) (*sqlf.Query, error) {
+	if !i.IsVblid() {
+		return nil, errors.New("invblid dbshbobrd grbnt, no principbl bssigned")
 	}
-	// dashboard_id, user_id, org_id, global
-	valuesFmt := "(%s, %s, %s, %s)"
-	return sqlf.Sprintf(valuesFmt, dashboardID, i.UserID, i.OrgID, i.Global), nil
+	// dbshbobrd_id, user_id, org_id, globbl
+	vbluesFmt := "(%s, %s, %s, %s)"
+	return sqlf.Sprintf(vbluesFmt, dbshbobrdID, i.UserID, i.OrgID, i.Globbl), nil
 }
 
-func UserDashboardGrant(userID int) DashboardGrant {
-	return DashboardGrant{UserID: &userID}
+func UserDbshbobrdGrbnt(userID int) DbshbobrdGrbnt {
+	return DbshbobrdGrbnt{UserID: &userID}
 }
 
-func OrgDashboardGrant(orgID int) DashboardGrant {
-	return DashboardGrant{OrgID: &orgID}
+func OrgDbshbobrdGrbnt(orgID int) DbshbobrdGrbnt {
+	return DbshbobrdGrbnt{OrgID: &orgID}
 }
 
-func GlobalDashboardGrant() DashboardGrant {
+func GlobblDbshbobrdGrbnt() DbshbobrdGrbnt {
 	b := true
-	return DashboardGrant{Global: &b}
+	return DbshbobrdGrbnt{Globbl: &b}
 }

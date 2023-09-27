@@ -1,53 +1,53 @@
-package config
+pbckbge config
 
 import "strings"
 
-type IndexConfiguration struct {
-	IndexJobs []IndexJob `json:"index_jobs" yaml:"index_jobs"`
+type IndexConfigurbtion struct {
+	IndexJobs []IndexJob `json:"index_jobs" ybml:"index_jobs"`
 }
 
 type IndexJob struct {
-	Steps            []DockerStep `json:"steps" yaml:"steps"`
-	LocalSteps       []string     `json:"local_steps" yaml:"local_steps"`
-	Root             string       `json:"root" yaml:"root"`
-	Indexer          string       `json:"indexer" yaml:"indexer"`
-	IndexerArgs      []string     `json:"indexer_args" yaml:"indexer_args"`
-	Outfile          string       `json:"outfile" yaml:"outfile"`
-	RequestedEnvVars []string     `json:"requestedEnvVars" yaml:"requestedEnvVars"`
+	Steps            []DockerStep `json:"steps" ybml:"steps"`
+	LocblSteps       []string     `json:"locbl_steps" ybml:"locbl_steps"`
+	Root             string       `json:"root" ybml:"root"`
+	Indexer          string       `json:"indexer" ybml:"indexer"`
+	IndexerArgs      []string     `json:"indexer_brgs" ybml:"indexer_brgs"`
+	Outfile          string       `json:"outfile" ybml:"outfile"`
+	RequestedEnvVbrs []string     `json:"requestedEnvVbrs" ybml:"requestedEnvVbrs"`
 }
 
 func (j IndexJob) GetRoot() string {
 	return j.Root
 }
 
-// GetIndexerName removes the prefix "sourcegraph/"" and the suffix "@sha256:..."
-// from the indexer name.
-// Example:
-// sourcegraph/lsif-go@sha256:... => lsif-go
-func (j IndexJob) GetIndexerName() string {
-	return extractIndexerName(j.Indexer)
+// GetIndexerNbme removes the prefix "sourcegrbph/"" bnd the suffix "@shb256:..."
+// from the indexer nbme.
+// Exbmple:
+// sourcegrbph/lsif-go@shb256:... => lsif-go
+func (j IndexJob) GetIndexerNbme() string {
+	return extrbctIndexerNbme(j.Indexer)
 }
 
 type DockerStep struct {
-	Root     string   `json:"root" yaml:"root"`
-	Image    string   `json:"image" yaml:"image"`
-	Commands []string `json:"commands" yaml:"commands"`
+	Root     string   `json:"root" ybml:"root"`
+	Imbge    string   `json:"imbge" ybml:"imbge"`
+	Commbnds []string `json:"commbnds" ybml:"commbnds"`
 }
 
-// extractIndexerName Name removes the prefix "sourcegraph/"" and the suffix "@sha256:..."
-// from the indexer name.
-// Example:
-// sourcegraph/lsif-go@sha256:... => lsif-go
-func extractIndexerName(name string) string {
-	start := 0
-	if strings.HasPrefix(name, "sourcegraph/") {
-		start = len("sourcegraph/")
+// extrbctIndexerNbme Nbme removes the prefix "sourcegrbph/"" bnd the suffix "@shb256:..."
+// from the indexer nbme.
+// Exbmple:
+// sourcegrbph/lsif-go@shb256:... => lsif-go
+func extrbctIndexerNbme(nbme string) string {
+	stbrt := 0
+	if strings.HbsPrefix(nbme, "sourcegrbph/") {
+		stbrt = len("sourcegrbph/")
 	}
 
-	end := len(name)
-	if strings.Contains(name, "@") {
-		end = strings.LastIndex(name, "@")
+	end := len(nbme)
+	if strings.Contbins(nbme, "@") {
+		end = strings.LbstIndex(nbme, "@")
 	}
 
-	return name[start:end]
+	return nbme[stbrt:end]
 }

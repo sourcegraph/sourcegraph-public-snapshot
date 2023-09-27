@@ -1,37 +1,37 @@
-package database
+pbckbge dbtbbbse
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/grafana/regexp"
-	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/mattn/go-sqlite3"
+	"github.com/grbfbnb/regexp"
+	lru "github.com/hbshicorp/golbng-lru/v2"
+	"github.com/mbttn/go-sqlite3"
 )
 
 func Init() {
 	sql.Register("sqlite3_with_regexp",
 		&sqlite3.SQLiteDriver{
 			ConnectHook: func(conn *sqlite3.SQLiteConn) error {
-				return conn.RegisterFunc("REGEXP", MatchString, true)
+				return conn.RegisterFunc("REGEXP", MbtchString, true)
 			},
 		})
 }
 
-var (
-	cacheSize     = 1000
-	regexCache, _ = lru.New[string, *regexp.Regexp](cacheSize)
+vbr (
+	cbcheSize     = 1000
+	regexCbche, _ = lru.New[string, *regexp.Regexp](cbcheSize)
 )
 
-func MatchString(pattern string, s string) (bool, error) {
-	if re, ok := regexCache.Get(pattern); ok {
-		return re.MatchString(s), nil
+func MbtchString(pbttern string, s string) (bool, error) {
+	if re, ok := regexCbche.Get(pbttern); ok {
+		return re.MbtchString(s), nil
 	}
 
-	re, err := regexp.Compile(pattern)
+	re, err := regexp.Compile(pbttern)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	regexCache.Add(pattern, re)
-	return re.MatchString(s), nil
+	regexCbche.Add(pbttern, re)
+	return re.MbtchString(s), nil
 }

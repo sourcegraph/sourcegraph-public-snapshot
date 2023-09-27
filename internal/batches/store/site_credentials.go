@@ -1,52 +1,52 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *Store) CreateSiteCredential(ctx context.Context, c *btypes.SiteCredential, credential auth.Authenticator) (err error) {
-	ctx, _, endObservation := s.operations.createSiteCredential.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Store) CrebteSiteCredentibl(ctx context.Context, c *btypes.SiteCredentibl, credentibl buth.Authenticbtor) (err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteSiteCredentibl.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if c.CreatedAt.IsZero() {
-		c.CreatedAt = s.now()
+	if c.CrebtedAt.IsZero() {
+		c.CrebtedAt = s.now()
 	}
 
-	if c.UpdatedAt.IsZero() {
-		c.UpdatedAt = c.CreatedAt
+	if c.UpdbtedAt.IsZero() {
+		c.UpdbtedAt = c.CrebtedAt
 	}
 
-	if err := c.SetAuthenticator(ctx, credential); err != nil {
+	if err := c.SetAuthenticbtor(ctx, credentibl); err != nil {
 		return err
 	}
 
-	q, err := createSiteCredentialQuery(ctx, c, s.key)
+	q, err := crebteSiteCredentiblQuery(ctx, c, s.key)
 	if err != nil {
 		return err
 	}
-	return s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanSiteCredential(c, s.key, sc)
+	return s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		return scbnSiteCredentibl(c, s.key, sc)
 	})
 }
 
-var createSiteCredentialQueryFmtstr = `
-INSERT INTO	batch_changes_site_credentials (
-	external_service_type,
-	external_service_id,
-	credential,
+vbr crebteSiteCredentiblQueryFmtstr = `
+INSERT INTO	bbtch_chbnges_site_credentibls (
+	externbl_service_type,
+	externbl_service_id,
+	credentibl,
 	encryption_key_id,
-	created_at,
-	updated_at
+	crebted_bt,
+	updbted_bt
 )
 VALUES
 	(%s, %s, %s, %s, %s, %s)
@@ -54,36 +54,36 @@ RETURNING
 	%s
 `
 
-func createSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, key encryption.Key) (*sqlf.Query, error) {
-	encryptedCredential, keyID, err := c.Credential.Encrypt(ctx, key)
+func crebteSiteCredentiblQuery(ctx context.Context, c *btypes.SiteCredentibl, key encryption.Key) (*sqlf.Query, error) {
+	encryptedCredentibl, keyID, err := c.Credentibl.Encrypt(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
 	return sqlf.Sprintf(
-		createSiteCredentialQueryFmtstr,
-		c.ExternalServiceType,
-		c.ExternalServiceID,
-		[]byte(encryptedCredential),
+		crebteSiteCredentiblQueryFmtstr,
+		c.ExternblServiceType,
+		c.ExternblServiceID,
+		[]byte(encryptedCredentibl),
 		keyID,
-		c.CreatedAt,
-		c.UpdatedAt,
-		sqlf.Join(siteCredentialColumns, ","),
+		c.CrebtedAt,
+		c.UpdbtedAt,
+		sqlf.Join(siteCredentiblColumns, ","),
 	), nil
 }
 
-func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.deleteSiteCredential.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(id)),
+func (s *Store) DeleteSiteCredentibl(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteSiteCredentibl.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(id)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	res, err := s.ExecResult(ctx, deleteSiteCredentialQuery(id))
+	res, err := s.ExecResult(ctx, deleteSiteCredentiblQuery(id))
 	if err != nil {
 		return err
 	}
 
-	// Check the credential existed before.
+	// Check the credentibl existed before.
 	if rows, err := res.RowsAffected(); err != nil {
 		return err
 	} else if rows == 0 {
@@ -92,36 +92,36 @@ func (s *Store) DeleteSiteCredential(ctx context.Context, id int64) (err error) 
 	return nil
 }
 
-var deleteSiteCredentialQueryFmtstr = `
+vbr deleteSiteCredentiblQueryFmtstr = `
 DELETE FROM
-	batch_changes_site_credentials
+	bbtch_chbnges_site_credentibls
 WHERE
 	%s
 `
 
-func deleteSiteCredentialQuery(id int64) *sqlf.Query {
+func deleteSiteCredentiblQuery(id int64) *sqlf.Query {
 	return sqlf.Sprintf(
-		deleteSiteCredentialQueryFmtstr,
+		deleteSiteCredentiblQueryFmtstr,
 		sqlf.Sprintf("id = %d", id),
 	)
 }
 
-type GetSiteCredentialOpts struct {
+type GetSiteCredentiblOpts struct {
 	ID                  int64
-	ExternalServiceType string
-	ExternalServiceID   string
+	ExternblServiceType string
+	ExternblServiceID   string
 }
 
-func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpts) (sc *btypes.SiteCredential, err error) {
-	ctx, _, endObservation := s.operations.getSiteCredential.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(opts.ID)),
+func (s *Store) GetSiteCredentibl(ctx context.Context, opts GetSiteCredentiblOpts) (sc *btypes.SiteCredentibl, err error) {
+	ctx, _, endObservbtion := s.operbtions.getSiteCredentibl.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(opts.ID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getSiteCredentialQuery(opts)
+	q := getSiteCredentiblQuery(opts)
 
-	cred := btypes.SiteCredential{}
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error { return scanSiteCredential(&cred, s.key, sc) })
+	cred := btypes.SiteCredentibl{}
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error { return scbnSiteCredentibl(&cred, s.key, sc) })
 	if err != nil {
 		return nil, err
 	}
@@ -133,51 +133,51 @@ func (s *Store) GetSiteCredential(ctx context.Context, opts GetSiteCredentialOpt
 	return &cred, nil
 }
 
-var getSiteCredentialQueryFmtstr = `
+vbr getSiteCredentiblQueryFmtstr = `
 SELECT
 	%s
-FROM batch_changes_site_credentials
+FROM bbtch_chbnges_site_credentibls
 WHERE
     %s
 `
 
-func getSiteCredentialQuery(opts GetSiteCredentialOpts) *sqlf.Query {
+func getSiteCredentiblQuery(opts GetSiteCredentiblOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
-	if opts.ExternalServiceType != "" {
-		preds = append(preds, sqlf.Sprintf("external_service_type = %s", opts.ExternalServiceType))
+	if opts.ExternblServiceType != "" {
+		preds = bppend(preds, sqlf.Sprintf("externbl_service_type = %s", opts.ExternblServiceType))
 	}
-	if opts.ExternalServiceID != "" {
-		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	if opts.ExternblServiceID != "" {
+		preds = bppend(preds, sqlf.Sprintf("externbl_service_id = %s", opts.ExternblServiceID))
 	}
 	if opts.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %d", opts.ID))
+		preds = bppend(preds, sqlf.Sprintf("id = %d", opts.ID))
 	}
 
 	return sqlf.Sprintf(
-		getSiteCredentialQueryFmtstr,
-		sqlf.Join(siteCredentialColumns, ","),
+		getSiteCredentiblQueryFmtstr,
+		sqlf.Join(siteCredentiblColumns, ","),
 		sqlf.Join(preds, "AND"),
 	)
 }
 
-type ListSiteCredentialsOpts struct {
+type ListSiteCredentiblsOpts struct {
 	LimitOpts
-	ForUpdate bool
+	ForUpdbte bool
 }
 
-func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredentialsOpts) (cs []*btypes.SiteCredential, next int64, err error) {
-	ctx, _, endObservation := s.operations.listSiteCredentials.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Store) ListSiteCredentibls(ctx context.Context, opts ListSiteCredentiblsOpts) (cs []*btypes.SiteCredentibl, next int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.listSiteCredentibls.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := listSiteCredentialsQuery(opts)
+	q := listSiteCredentiblsQuery(opts)
 
-	cs = make([]*btypes.SiteCredential, 0, opts.DBLimit())
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		c := btypes.SiteCredential{}
-		if err := scanSiteCredential(&c, s.key, sc); err != nil {
+	cs = mbke([]*btypes.SiteCredentibl, 0, opts.DBLimit())
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) (err error) {
+		c := btypes.SiteCredentibl{}
+		if err := scbnSiteCredentibl(&c, s.key, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		cs = bppend(cs, &c)
 		return nil
 	})
 
@@ -189,118 +189,118 @@ func (s *Store) ListSiteCredentials(ctx context.Context, opts ListSiteCredential
 	return cs, next, err
 }
 
-var listSiteCredentialsQueryFmtstr = `
+vbr listSiteCredentiblsQueryFmtstr = `
 SELECT
 	%s
-FROM batch_changes_site_credentials
+FROM bbtch_chbnges_site_credentibls
 WHERE %s
-ORDER BY external_service_type ASC, external_service_id ASC
-%s  -- optional FOR UPDATE
+ORDER BY externbl_service_type ASC, externbl_service_id ASC
+%s  -- optionbl FOR UPDATE
 `
 
-func listSiteCredentialsQuery(opts ListSiteCredentialsOpts) *sqlf.Query {
+func listSiteCredentiblsQuery(opts ListSiteCredentiblsOpts) *sqlf.Query {
 	preds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-	forUpdate := &sqlf.Query{}
-	if opts.ForUpdate {
-		forUpdate = sqlf.Sprintf("FOR UPDATE")
+	forUpdbte := &sqlf.Query{}
+	if opts.ForUpdbte {
+		forUpdbte = sqlf.Sprintf("FOR UPDATE")
 	}
 
 	return sqlf.Sprintf(
-		listSiteCredentialsQueryFmtstr+opts.ToDB(),
-		sqlf.Join(siteCredentialColumns, ","),
+		listSiteCredentiblsQueryFmtstr+opts.ToDB(),
+		sqlf.Join(siteCredentiblColumns, ","),
 		sqlf.Join(preds, "AND"),
-		forUpdate,
+		forUpdbte,
 	)
 }
 
-func (s *Store) UpdateSiteCredential(ctx context.Context, c *btypes.SiteCredential) (err error) {
-	ctx, _, endObservation := s.operations.updateSiteCredential.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(c.ID)),
+func (s *Store) UpdbteSiteCredentibl(ctx context.Context, c *btypes.SiteCredentibl) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbteSiteCredentibl.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(c.ID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	c.UpdatedAt = s.now()
+	c.UpdbtedAt = s.now()
 
-	updated := &btypes.SiteCredential{}
-	q, err := s.updateSiteCredentialQuery(ctx, c, s.key)
+	updbted := &btypes.SiteCredentibl{}
+	q, err := s.updbteSiteCredentiblQuery(ctx, c, s.key)
 	if err != nil {
 		return err
 	}
-	if err := s.query(ctx, q, func(sc dbutil.Scanner) error {
-		return scanSiteCredential(updated, s.key, sc)
+	if err := s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		return scbnSiteCredentibl(updbted, s.key, sc)
 	}); err != nil {
 		return err
 	}
 
-	if updated.ID == 0 {
+	if updbted.ID == 0 {
 		return ErrNoResults
 	}
-	*c = *updated
+	*c = *updbted
 	return nil
 }
 
-const updateSiteCredentialQueryFmtstr = `
+const updbteSiteCredentiblQueryFmtstr = `
 UPDATE
-	batch_changes_site_credentials
+	bbtch_chbnges_site_credentibls
 SET
-	external_service_type = %s,
-	external_service_id = %s,
-	credential = %s,
+	externbl_service_type = %s,
+	externbl_service_id = %s,
+	credentibl = %s,
 	encryption_key_id = %s,
-	created_at = %s,
-	updated_at = %s
+	crebted_bt = %s,
+	updbted_bt = %s
 WHERE
 	id = %s
 RETURNING
 	%s
 `
 
-func (s *Store) updateSiteCredentialQuery(ctx context.Context, c *btypes.SiteCredential, key encryption.Key) (*sqlf.Query, error) {
-	encryptedCredential, keyID, err := c.Credential.Encrypt(ctx, key)
+func (s *Store) updbteSiteCredentiblQuery(ctx context.Context, c *btypes.SiteCredentibl, key encryption.Key) (*sqlf.Query, error) {
+	encryptedCredentibl, keyID, err := c.Credentibl.Encrypt(ctx, key)
 	if err != nil {
 		return nil, err
 	}
 
 	return sqlf.Sprintf(
-		updateSiteCredentialQueryFmtstr,
-		c.ExternalServiceType,
-		c.ExternalServiceID,
-		[]byte(encryptedCredential),
+		updbteSiteCredentiblQueryFmtstr,
+		c.ExternblServiceType,
+		c.ExternblServiceID,
+		[]byte(encryptedCredentibl),
 		keyID,
-		c.CreatedAt,
-		c.UpdatedAt,
+		c.CrebtedAt,
+		c.UpdbtedAt,
 		c.ID,
-		sqlf.Join(siteCredentialColumns, ","),
+		sqlf.Join(siteCredentiblColumns, ","),
 	), nil
 }
 
-var siteCredentialColumns = []*sqlf.Query{
+vbr siteCredentiblColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("external_service_type"),
-	sqlf.Sprintf("external_service_id"),
-	sqlf.Sprintf("credential"),
+	sqlf.Sprintf("externbl_service_type"),
+	sqlf.Sprintf("externbl_service_id"),
+	sqlf.Sprintf("credentibl"),
 	sqlf.Sprintf("encryption_key_id"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
 }
 
-func scanSiteCredential(c *btypes.SiteCredential, key encryption.Key, sc dbutil.Scanner) error {
-	var (
-		encryptedCredential []byte
+func scbnSiteCredentibl(c *btypes.SiteCredentibl, key encryption.Key, sc dbutil.Scbnner) error {
+	vbr (
+		encryptedCredentibl []byte
 		keyID               string
 	)
-	if err := sc.Scan(
+	if err := sc.Scbn(
 		&c.ID,
-		&c.ExternalServiceType,
-		&c.ExternalServiceID,
-		&encryptedCredential,
+		&c.ExternblServiceType,
+		&c.ExternblServiceID,
+		&encryptedCredentibl,
 		&keyID,
-		&dbutil.NullTime{Time: &c.CreatedAt},
-		&dbutil.NullTime{Time: &c.UpdatedAt},
+		&dbutil.NullTime{Time: &c.CrebtedAt},
+		&dbutil.NullTime{Time: &c.UpdbtedAt},
 	); err != nil {
 		return err
 	}
 
-	c.Credential = database.NewEncryptedCredential(string(encryptedCredential), keyID, key)
+	c.Credentibl = dbtbbbse.NewEncryptedCredentibl(string(encryptedCredentibl), keyID, key)
 	return nil
 }

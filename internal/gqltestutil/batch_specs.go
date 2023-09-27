@@ -1,205 +1,205 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (c *Client) CreateEmptyBatchChange(namespace, name string) (string, error) {
+func (c *Client) CrebteEmptyBbtchChbnge(nbmespbce, nbme string) (string, error) {
 	const query = `
-	mutation CreateEmptyBatchChange($namespace: ID!, $name: String!) {
-		createEmptyBatchChange(namespace: $namespace, name: $name) {
+	mutbtion CrebteEmptyBbtchChbnge($nbmespbce: ID!, $nbme: String!) {
+		crebteEmptyBbtchChbnge(nbmespbce: $nbmespbce, nbme: $nbme) {
 			id
 		}
 	}
 	`
-	variables := map[string]any{
-		"namespace": namespace,
-		"name":      name,
+	vbribbles := mbp[string]bny{
+		"nbmespbce": nbmespbce,
+		"nbme":      nbme,
 	}
-	var resp struct {
-		Data struct {
-			CreateEmptyBatchChange struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteEmptyBbtchChbnge struct {
 				ID string `json:"id"`
-			} `json:"createEmptyBatchChange"`
-		} `json:"data"`
+			} `json:"crebteEmptyBbtchChbnge"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CreateEmptyBatchChange.ID, nil
+	return resp.Dbtb.CrebteEmptyBbtchChbnge.ID, nil
 }
 
-func (c *Client) CreateBatchSpecFromRaw(batchChange, namespace, batchSpec string) (string, error) {
+func (c *Client) CrebteBbtchSpecFromRbw(bbtchChbnge, nbmespbce, bbtchSpec string) (string, error) {
 	const query = `
-	mutation CreateBatchSpecFromRaw($namespace: ID!, $batchChange: ID!, $batchSpec: String!) {
-		createBatchSpecFromRaw(namespace: $namespace, batchChange: $batchChange, batchSpec: $batchSpec) {
+	mutbtion CrebteBbtchSpecFromRbw($nbmespbce: ID!, $bbtchChbnge: ID!, $bbtchSpec: String!) {
+		crebteBbtchSpecFromRbw(nbmespbce: $nbmespbce, bbtchChbnge: $bbtchChbnge, bbtchSpec: $bbtchSpec) {
 			id
 		}
 	}
 	`
-	variables := map[string]any{
-		"namespace":   namespace,
-		"batchChange": batchChange,
-		"batchSpec":   batchSpec,
+	vbribbles := mbp[string]bny{
+		"nbmespbce":   nbmespbce,
+		"bbtchChbnge": bbtchChbnge,
+		"bbtchSpec":   bbtchSpec,
 	}
-	var resp struct {
-		Data struct {
-			CreateBatchSpecFromRaw struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteBbtchSpecFromRbw struct {
 				ID string `json:"id"`
-			} `json:"createBatchSpecFromRaw"`
-		} `json:"data"`
+			} `json:"crebteBbtchSpecFromRbw"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CreateBatchSpecFromRaw.ID, nil
+	return resp.Dbtb.CrebteBbtchSpecFromRbw.ID, nil
 }
 
-func (c *Client) GetBatchSpecWorkspaceResolutionStatus(batchSpec string) (string, error) {
+func (c *Client) GetBbtchSpecWorkspbceResolutionStbtus(bbtchSpec string) (string, error) {
 	const query = `
-	query GetBatchSpecWorkspaceResolutionStatus($batchSpec: ID!) {
-		node(id: $batchSpec) {
-			__typename
-			... on BatchSpec {
-				workspaceResolution {
-					state
+	query GetBbtchSpecWorkspbceResolutionStbtus($bbtchSpec: ID!) {
+		node(id: $bbtchSpec) {
+			__typenbme
+			... on BbtchSpec {
+				workspbceResolution {
+					stbte
 				}
 			}
 		}
 	}
 	`
-	variables := map[string]any{
-		"batchSpec": batchSpec,
+	vbribbles := mbp[string]bny{
+		"bbtchSpec": bbtchSpec,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Node struct {
-				Typename            string `json:"__typename"`
-				WorkspaceResolution struct {
-					State string `json:"state"`
-				} `json:"workspaceResolution"`
+				Typenbme            string `json:"__typenbme"`
+				WorkspbceResolution struct {
+					Stbte string `json:"stbte"`
+				} `json:"workspbceResolution"`
 			} `json:"node"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Node.WorkspaceResolution.State, nil
+	return resp.Dbtb.Node.WorkspbceResolution.Stbte, nil
 }
 
-func (c *Client) ExecuteBatchSpec(batchSpec string, noCache bool) error {
+func (c *Client) ExecuteBbtchSpec(bbtchSpec string, noCbche bool) error {
 	const query = `
-	mutation ExecuteBatchSpec($batchSpec: ID!, $noCache: Boolean!) {
-		executeBatchSpec(batchSpec: $batchSpec, noCache: $noCache) {
+	mutbtion ExecuteBbtchSpec($bbtchSpec: ID!, $noCbche: Boolebn!) {
+		executeBbtchSpec(bbtchSpec: $bbtchSpec, noCbche: $noCbche) {
 			id
 		}
 	}
 	`
-	variables := map[string]any{
-		"batchSpec": batchSpec,
-		"noCache":   noCache,
+	vbribbles := mbp[string]bny{
+		"bbtchSpec": bbtchSpec,
+		"noCbche":   noCbche,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 
 	return nil
 }
 
-func (c *Client) GetBatchSpecState(batchSpec string) (string, string, error) {
+func (c *Client) GetBbtchSpecStbte(bbtchSpec string) (string, string, error) {
 	const query = `
-	query GetBatchSpecState($batchSpec: ID!) {
-		node(id: $batchSpec) {
-			__typename
-			... on BatchSpec {
-				state
-				failureMessage
+	query GetBbtchSpecStbte($bbtchSpec: ID!) {
+		node(id: $bbtchSpec) {
+			__typenbme
+			... on BbtchSpec {
+				stbte
+				fbilureMessbge
 			}
 		}
 	}
 	`
-	variables := map[string]any{
-		"batchSpec": batchSpec,
+	vbribbles := mbp[string]bny{
+		"bbtchSpec": bbtchSpec,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Node struct {
-				Typename       string `json:"__typename"`
-				State          string `json:"state"`
-				FailureMessage string `json:"failureMessage"`
+				Typenbme       string `json:"__typenbme"`
+				Stbte          string `json:"stbte"`
+				FbilureMessbge string `json:"fbilureMessbge"`
 			} `json:"node"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", "", errors.Wrap(err, "request GraphQL")
+		return "", "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Node.State, resp.Data.Node.FailureMessage, nil
+	return resp.Dbtb.Node.Stbte, resp.Dbtb.Node.FbilureMessbge, nil
 }
 
-const getBatchSpecDeep = `
-query GetBatchSpecDeep($id: ID!) {
+const getBbtchSpecDeep = `
+query GetBbtchSpecDeep($id: ID!) {
 	node(id: $id) {
-	  ... on BatchSpec {
+	  ... on BbtchSpec {
 		id
-		autoApplyEnabled
-		state
-		changesetSpecs {
-		  totalCount
+		butoApplyEnbbled
+		stbte
+		chbngesetSpecs {
+		  totblCount
 		  nodes {
 			id
 			type
-			... on VisibleChangesetSpec {
+			... on VisibleChbngesetSpec {
 			  description {
-				... on GitBranchChangesetDescription {
-				  baseRepository {
-					name
+				... on GitBrbnchChbngesetDescription {
+				  bbseRepository {
+					nbme
 				  }
-				  baseRef
-				  baseRev
-				  headRef
+				  bbseRef
+				  bbseRev
+				  hebdRef
 				  title
 				  body
 				  commits {
-					message
+					messbge
 					subject
 					body
-					author {
-					  name
-					  email
+					buthor {
+					  nbme
+					  embil
 					}
 				  }
 				  diff {
 					fileDiffs {
-					  rawDiff
+					  rbwDiff
 					}
 				  }
 				}
 			  }
-			  forkTarget {
-				namespace
+			  forkTbrget {
+				nbmespbce
 			  }
 			}
 		  }
 		}
-		createdAt
-		startedAt
+		crebtedAt
+		stbrtedAt
 		finishedAt
-		namespace {
+		nbmespbce {
 		  id
 		}
-		workspaceResolution {
-		  workspaces {
-			totalCount
-			stats {
+		workspbceResolution {
+		  workspbces {
+			totblCount
+			stbts {
 			  errored
 			  completed
 			  processing
@@ -207,109 +207,109 @@ query GetBatchSpecDeep($id: ID!) {
 			  ignored
 			}
 			nodes {
-			  onlyFetchWorkspace
+			  onlyFetchWorkspbce
 			  ignored
 			  unsupported
-			  cachedResultFound
-			  stepCacheResultCount
+			  cbchedResultFound
+			  stepCbcheResultCount
 			  queuedAt
-			  startedAt
+			  stbrtedAt
 			  finishedAt
-			  state
-			  placeInQueue
-			  placeInGlobalQueue
-			  diffStat {
-				added
+			  stbte
+			  plbceInQueue
+			  plbceInGlobblQueue
+			  diffStbt {
+				bdded
 				deleted
 			  }
-			  ... on VisibleBatchSpecWorkspace {
+			  ... on VisibleBbtchSpecWorkspbce {
 				repository {
-				  name
+				  nbme
 				}
-				branch {
-				  name
+				brbnch {
+				  nbme
 				}
-				path
-				stages {
+				pbth
+				stbges {
 				  setup {
 					key
-					command
-					startTime
+					commbnd
+					stbrtTime
 					exitCode
 					out
-					durationMilliseconds
+					durbtionMilliseconds
 				  }
 				  srcExec {
 					key
-					command
-					startTime
+					commbnd
+					stbrtTime
 					exitCode
 					out
-					durationMilliseconds
+					durbtionMilliseconds
 				  }
-				  teardown {
+				  tebrdown {
 					key
-					command
-					startTime
+					commbnd
+					stbrtTime
 					exitCode
 					out
-					durationMilliseconds
+					durbtionMilliseconds
 				  }
 				}
 				steps {
 				  number
 				  run
-				  container
+				  contbiner
 				  ifCondition
-				  cachedResultFound
+				  cbchedResultFound
 				  skipped
 				  outputLines {
 					nodes
-					totalCount
+					totblCount
 				  }
-				  startedAt
+				  stbrtedAt
 				  finishedAt
 				  exitCode
 				  environment {
-					name
-					value
+					nbme
+					vblue
 				  }
-				  outputVariables {
-					name
-					value
+				  outputVbribbles {
+					nbme
+					vblue
 				  }
-				  diffStat {
-					added
+				  diffStbt {
+					bdded
 					deleted
 				  }
 				  diff {
 					fileDiffs {
-					  rawDiff
+					  rbwDiff
 					}
 				  }
 				}
-				searchResultPaths
-				failureMessage
-				changesetSpecs {
+				sebrchResultPbths
+				fbilureMessbge
+				chbngesetSpecs {
 				  id
 				}
 				executor {
-				  hostname
-				  queueName
-				  active
+				  hostnbme
+				  queueNbme
+				  bctive
 				}
 			  }
 			}
 		  }
 		}
 		expiresAt
-		failureMessage
+		fbilureMessbge
 		source
 		files {
-		  totalCount
+		  totblCount
 		  nodes {
-			path
-			name
+			pbth
+			nbme
 		  }
 		}
 	  }
@@ -317,132 +317,132 @@ query GetBatchSpecDeep($id: ID!) {
 }
 `
 
-type BatchSpecDeep struct {
+type BbtchSpecDeep struct {
 	ID                  string `json:"id"`
-	AutoApplyEnabled    bool   `json:"autoApplyEnabled"`
-	State               string `json:"state"`
-	ChangesetSpecs      BatchSpecChangesetSpecs
-	CreatedAt           string
-	StartedAt           string
+	AutoApplyEnbbled    bool   `json:"butoApplyEnbbled"`
+	Stbte               string `json:"stbte"`
+	ChbngesetSpecs      BbtchSpecChbngesetSpecs
+	CrebtedAt           string
+	StbrtedAt           string
 	FinishedAt          string
-	Namespace           Namespace
-	WorkspaceResolution WorkspaceResolution
+	Nbmespbce           Nbmespbce
+	WorkspbceResolution WorkspbceResolution
 	ExpiresAt           string
-	FailureMessage      string
+	FbilureMessbge      string
 	Source              string
-	Files               BatchSpecFiles
+	Files               BbtchSpecFiles
 }
 
-type BatchSpecFiles struct {
-	TotalCount int
-	Nodes      []BatchSpecFile
+type BbtchSpecFiles struct {
+	TotblCount int
+	Nodes      []BbtchSpecFile
 }
 
-type BatchSpecFile struct {
-	Path string
-	Name string
+type BbtchSpecFile struct {
+	Pbth string
+	Nbme string
 }
 
-type WorkspaceResolution struct {
-	Workspaces WorkspaceResolutionWorkspaces
+type WorkspbceResolution struct {
+	Workspbces WorkspbceResolutionWorkspbces
 }
 
-type WorkspaceResolutionWorkspaces struct {
-	TotalCount int
-	Stats      WorkspaceResolutionWorkspacesStats
-	Nodes      []BatchSpecWorkspace
+type WorkspbceResolutionWorkspbces struct {
+	TotblCount int
+	Stbts      WorkspbceResolutionWorkspbcesStbts
+	Nodes      []BbtchSpecWorkspbce
 }
 
-type BatchSpecWorkspace struct {
-	OnlyFetchWorkspace   bool
+type BbtchSpecWorkspbce struct {
+	OnlyFetchWorkspbce   bool
 	Ignored              bool
 	Unsupported          bool
-	CachedResultFound    bool
-	StepCacheResultCount int
+	CbchedResultFound    bool
+	StepCbcheResultCount int
 	QueuedAt             string
-	StartedAt            string
+	StbrtedAt            string
 	FinishedAt           string
-	State                string
-	PlaceInQueue         int
-	PlaceInGlobalQueue   int
-	DiffStat             DiffStat
-	Repository           ChangesetRepository
-	Branch               WorkspaceBranch
-	Path                 string
-	SearchResultPaths    []string
-	FailureMessage       string
-	ChangesetSpecs       []WorkspaceChangesetSpec
-	Stages               BatchSpecWorkspaceStages
-	Steps                []BatchSpecWorkspaceStep
+	Stbte                string
+	PlbceInQueue         int
+	PlbceInGlobblQueue   int
+	DiffStbt             DiffStbt
+	Repository           ChbngesetRepository
+	Brbnch               WorkspbceBrbnch
+	Pbth                 string
+	SebrchResultPbths    []string
+	FbilureMessbge       string
+	ChbngesetSpecs       []WorkspbceChbngesetSpec
+	Stbges               BbtchSpecWorkspbceStbges
+	Steps                []BbtchSpecWorkspbceStep
 	Executor             Executor
 }
 
-type WorkspaceOutputLines struct {
+type WorkspbceOutputLines struct {
 	Nodes      []string
-	TotalCount int
+	TotblCount int
 }
 
-type BatchSpecWorkspaceStep struct {
+type BbtchSpecWorkspbceStep struct {
 	Number            int
 	Run               string
-	Container         string
+	Contbiner         string
 	IfCondition       string
-	CachedResultFound bool
+	CbchedResultFound bool
 	Skipped           bool
-	OutputLines       WorkspaceOutputLines
-	StartedAt         string
+	OutputLines       WorkspbceOutputLines
+	StbrtedAt         string
 	FinishedAt        string
 	ExitCode          int
-	Environment       []WorkspaceEnvironmentVariable
-	OutputVariables   []WorkspaceOutputVariable
-	DiffStat          DiffStat
-	Diff              ChangesetSpecDiffs
+	Environment       []WorkspbceEnvironmentVbribble
+	OutputVbribbles   []WorkspbceOutputVbribble
+	DiffStbt          DiffStbt
+	Diff              ChbngesetSpecDiffs
 }
 
-type WorkspaceEnvironmentVariable struct {
-	Name  string
-	Value string
+type WorkspbceEnvironmentVbribble struct {
+	Nbme  string
+	Vblue string
 }
-type WorkspaceOutputVariable struct {
-	Name  string
-	Value string
+type WorkspbceOutputVbribble struct {
+	Nbme  string
+	Vblue string
 }
 
-type BatchSpecWorkspaceStages struct {
+type BbtchSpecWorkspbceStbges struct {
 	Setup    []ExecutionLogEntry
 	SrcExec  []ExecutionLogEntry
-	Teardown []ExecutionLogEntry
+	Tebrdown []ExecutionLogEntry
 }
 
 type ExecutionLogEntry struct {
 	Key                  string
-	Command              []string
-	StartTime            string
+	Commbnd              []string
+	StbrtTime            string
 	ExitCode             int
 	Out                  string
-	DurationMilliseconds int
+	DurbtionMilliseconds int
 }
 
 type Executor struct {
-	Hostname  string
-	QueueName string
+	Hostnbme  string
+	QueueNbme string
 	Active    bool
 }
 
-type WorkspaceChangesetSpec struct {
+type WorkspbceChbngesetSpec struct {
 	ID string
 }
 
-type WorkspaceBranch struct {
-	Name string
+type WorkspbceBrbnch struct {
+	Nbme string
 }
 
-type DiffStat struct {
+type DiffStbt struct {
 	Added   int
 	Deleted int
 }
 
-type WorkspaceResolutionWorkspacesStats struct {
+type WorkspbceResolutionWorkspbcesStbts struct {
 	Errored    int
 	Completed  int
 	Processing int
@@ -450,74 +450,74 @@ type WorkspaceResolutionWorkspacesStats struct {
 	Ignored    int
 }
 
-type Namespace struct {
+type Nbmespbce struct {
 	ID string
 }
 
-type BatchSpecChangesetSpecs struct {
-	TotalCount int
-	Nodes      []ChangesetSpec
+type BbtchSpecChbngesetSpecs struct {
+	TotblCount int
+	Nodes      []ChbngesetSpec
 }
 
-type ChangesetSpec struct {
+type ChbngesetSpec struct {
 	ID          string
 	Type        string
-	Description ChangesetSpecDescription
-	ForkTarget  ChangesetForkTarget
+	Description ChbngesetSpecDescription
+	ForkTbrget  ChbngesetForkTbrget
 }
 
-type ChangesetForkTarget struct {
-	Namespace string
+type ChbngesetForkTbrget struct {
+	Nbmespbce string
 }
 
-type ChangesetSpecDescription struct {
-	BaseRepository ChangesetRepository
-	BaseRef        string
-	BaseRev        string
-	HeadRef        string
+type ChbngesetSpecDescription struct {
+	BbseRepository ChbngesetRepository
+	BbseRef        string
+	BbseRev        string
+	HebdRef        string
 	Title          string
 	Body           string
-	Commits        []ChangesetSpecCommit
-	Diffs          ChangesetSpecDiffs
+	Commits        []ChbngesetSpecCommit
+	Diffs          ChbngesetSpecDiffs
 }
 
-type ChangesetSpecDiffs struct {
-	FileDiffs ChangesetSpecFileDiffs
+type ChbngesetSpecDiffs struct {
+	FileDiffs ChbngesetSpecFileDiffs
 }
 
-type ChangesetSpecFileDiffs struct {
-	RawDiff string
+type ChbngesetSpecFileDiffs struct {
+	RbwDiff string
 }
 
-type ChangesetSpecCommit struct {
-	Message string
+type ChbngesetSpecCommit struct {
+	Messbge string
 	Subject string
 	Body    string
-	Author  ChangesetSpecCommitAuthor
+	Author  ChbngesetSpecCommitAuthor
 }
 
-type ChangesetSpecCommitAuthor struct {
-	Name  string
-	Email string
+type ChbngesetSpecCommitAuthor struct {
+	Nbme  string
+	Embil string
 }
 
-type ChangesetRepository struct {
-	Name string
+type ChbngesetRepository struct {
+	Nbme string
 }
 
-func (c *Client) GetBatchSpecDeep(batchSpec string) (*BatchSpecDeep, error) {
-	variables := map[string]any{
-		"id": batchSpec,
+func (c *Client) GetBbtchSpecDeep(bbtchSpec string) (*BbtchSpecDeep, error) {
+	vbribbles := mbp[string]bny{
+		"id": bbtchSpec,
 	}
-	var resp struct {
-		Data struct {
-			Node *BatchSpecDeep `json:"node"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			Node *BbtchSpecDeep `json:"node"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", getBatchSpecDeep, variables, &resp)
+	err := c.GrbphQL("", getBbtchSpecDeep, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Node, nil
+	return resp.Dbtb.Node, nil
 }

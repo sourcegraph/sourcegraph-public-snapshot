@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -9,377 +9,377 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/inconshrevebble/log15"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
 
-	searchlogs "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/logs"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchclient "github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sebrchlogs "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch/logs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	sebrchhoney "github.com/sourcegrbph/sourcegrbph/internbl/honey/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	sebrchclient "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/jobutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SearchResultsResolver is a resolver for the GraphQL type `SearchResults`
-type SearchResultsResolver struct {
-	db          database.DB
-	Matches     result.Matches
-	Stats       streaming.Stats
-	SearchAlert *search.Alert
+// SebrchResultsResolver is b resolver for the GrbphQL type `SebrchResults`
+type SebrchResultsResolver struct {
+	db          dbtbbbse.DB
+	Mbtches     result.Mbtches
+	Stbts       strebming.Stbts
+	SebrchAlert *sebrch.Alert
 
-	// The time it took to compute all results.
-	elapsed time.Duration
+	// The time it took to compute bll results.
+	elbpsed time.Durbtion
 }
 
-func (c *SearchResultsResolver) LimitHit() bool {
-	return c.Stats.IsLimitHit
+func (c *SebrchResultsResolver) LimitHit() bool {
+	return c.Stbts.IsLimitHit
 }
 
-func (c *SearchResultsResolver) matchesRepoIDs() map[api.RepoID]struct{} {
-	m := map[api.RepoID]struct{}{}
-	for _, id := range c.Matches {
-		m[id.RepoName().ID] = struct{}{}
+func (c *SebrchResultsResolver) mbtchesRepoIDs() mbp[bpi.RepoID]struct{} {
+	m := mbp[bpi.RepoID]struct{}{}
+	for _, id := rbnge c.Mbtches {
+		m[id.RepoNbme().ID] = struct{}{}
 	}
 	return m
 }
 
-func (c *SearchResultsResolver) Repositories(ctx context.Context) ([]*RepositoryResolver, error) {
-	// c.Stats.Repos does not necessarily respect limits that are applied in
-	// our graphql layers. Instead we generate the list from the matches.
-	m := c.matchesRepoIDs()
-	ids := make([]api.RepoID, 0, len(m))
-	for id := range m {
-		ids = append(ids, id)
+func (c *SebrchResultsResolver) Repositories(ctx context.Context) ([]*RepositoryResolver, error) {
+	// c.Stbts.Repos does not necessbrily respect limits thbt bre bpplied in
+	// our grbphql lbyers. Instebd we generbte the list from the mbtches.
+	m := c.mbtchesRepoIDs()
+	ids := mbke([]bpi.RepoID, 0, len(m))
+	for id := rbnge m {
+		ids = bppend(ids, id)
 	}
 	return c.repositoryResolvers(ctx, ids)
 }
 
-func (c *SearchResultsResolver) RepositoriesCount() int32 {
-	return int32(len(c.matchesRepoIDs()))
+func (c *SebrchResultsResolver) RepositoriesCount() int32 {
+	return int32(len(c.mbtchesRepoIDs()))
 }
 
-func (c *SearchResultsResolver) repositoryResolvers(ctx context.Context, ids []api.RepoID) ([]*RepositoryResolver, error) {
+func (c *SebrchResultsResolver) repositoryResolvers(ctx context.Context, ids []bpi.RepoID) ([]*RepositoryResolver, error) {
 	if len(ids) == 0 {
 		return nil, nil
 	}
 
 	gsClient := gitserver.NewClient()
-	resolvers := make([]*RepositoryResolver, 0, len(ids))
-	err := c.db.Repos().StreamMinimalRepos(ctx, database.ReposListOptions{
+	resolvers := mbke([]*RepositoryResolver, 0, len(ids))
+	err := c.db.Repos().StrebmMinimblRepos(ctx, dbtbbbse.ReposListOptions{
 		IDs: ids,
-	}, func(repo *types.MinimalRepo) {
-		resolvers = append(resolvers, NewRepositoryResolver(c.db, gsClient, repo.ToRepo()))
+	}, func(repo *types.MinimblRepo) {
+		resolvers = bppend(resolvers, NewRepositoryResolver(c.db, gsClient, repo.ToRepo()))
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	sort.Slice(resolvers, func(a, b int) bool {
-		return resolvers[a].ID() < resolvers[b].ID()
+	sort.Slice(resolvers, func(b, b int) bool {
+		return resolvers[b].ID() < resolvers[b].ID()
 	})
 	return resolvers, nil
 }
 
-func (c *SearchResultsResolver) repoIDsByStatus(mask search.RepoStatus) []api.RepoID {
-	var ids []api.RepoID
-	c.Stats.Status.Filter(mask, func(id api.RepoID) {
-		ids = append(ids, id)
+func (c *SebrchResultsResolver) repoIDsByStbtus(mbsk sebrch.RepoStbtus) []bpi.RepoID {
+	vbr ids []bpi.RepoID
+	c.Stbts.Stbtus.Filter(mbsk, func(id bpi.RepoID) {
+		ids = bppend(ids, id)
 	})
 	return ids
 }
 
-func (c *SearchResultsResolver) Cloning(ctx context.Context) ([]*RepositoryResolver, error) {
-	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusCloning))
+func (c *SebrchResultsResolver) Cloning(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, c.repoIDsByStbtus(sebrch.RepoStbtusCloning))
 }
 
-func (c *SearchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResolver, error) {
-	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusMissing))
+func (c *SebrchResultsResolver) Missing(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, c.repoIDsByStbtus(sebrch.RepoStbtusMissing))
 }
 
-func (c *SearchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
-	return c.repositoryResolvers(ctx, c.repoIDsByStatus(search.RepoStatusTimedout))
+func (c *SebrchResultsResolver) Timedout(ctx context.Context) ([]*RepositoryResolver, error) {
+	return c.repositoryResolvers(ctx, c.repoIDsByStbtus(sebrch.RepoStbtusTimedout))
 }
 
-func (c *SearchResultsResolver) IndexUnavailable() bool {
-	// This used to return c.Stats.IsIndexUnavailable, but it was never set,
-	// so would always return false
-	return false
+func (c *SebrchResultsResolver) IndexUnbvbilbble() bool {
+	// This used to return c.Stbts.IsIndexUnbvbilbble, but it wbs never set,
+	// so would blwbys return fblse
+	return fblse
 }
 
-// Results are the results found by the search. It respects the limits set. To
-// access all results directly access the SearchResults field.
-func (sr *SearchResultsResolver) Results() []SearchResultResolver {
-	return matchesToResolvers(sr.db, sr.Matches)
+// Results bre the results found by the sebrch. It respects the limits set. To
+// bccess bll results directly bccess the SebrchResults field.
+func (sr *SebrchResultsResolver) Results() []SebrchResultResolver {
+	return mbtchesToResolvers(sr.db, sr.Mbtches)
 }
 
-func matchesToResolvers(db database.DB, matches []result.Match) []SearchResultResolver {
+func mbtchesToResolvers(db dbtbbbse.DB, mbtches []result.Mbtch) []SebrchResultResolver {
 	type repoKey struct {
-		Name types.MinimalRepo
+		Nbme types.MinimblRepo
 		Rev  string
 	}
-	repoResolvers := make(map[repoKey]*RepositoryResolver, 10)
+	repoResolvers := mbke(mbp[repoKey]*RepositoryResolver, 10)
 	gsClient := gitserver.NewClient()
-	getRepoResolver := func(repoName types.MinimalRepo, rev string) *RepositoryResolver {
-		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
+	getRepoResolver := func(repoNbme types.MinimblRepo, rev string) *RepositoryResolver {
+		if existing, ok := repoResolvers[repoKey{repoNbme, rev}]; ok {
 			return existing
 		}
-		resolver := NewRepositoryResolver(db, gsClient, repoName.ToRepo())
-		resolver.RepoMatch.Rev = rev
-		repoResolvers[repoKey{repoName, rev}] = resolver
+		resolver := NewRepositoryResolver(db, gsClient, repoNbme.ToRepo())
+		resolver.RepoMbtch.Rev = rev
+		repoResolvers[repoKey{repoNbme, rev}] = resolver
 		return resolver
 	}
 
-	resolvers := make([]SearchResultResolver, 0, len(matches))
-	for _, match := range matches {
-		switch v := match.(type) {
-		case *result.FileMatch:
-			resolvers = append(resolvers, &FileMatchResolver{
+	resolvers := mbke([]SebrchResultResolver, 0, len(mbtches))
+	for _, mbtch := rbnge mbtches {
+		switch v := mbtch.(type) {
+		cbse *result.FileMbtch:
+			resolvers = bppend(resolvers, &FileMbtchResolver{
 				db:           db,
-				FileMatch:    *v,
+				FileMbtch:    *v,
 				RepoResolver: getRepoResolver(v.Repo, ""),
 			})
-		case *result.RepoMatch:
-			resolvers = append(resolvers, getRepoResolver(v.RepoName(), v.Rev))
-		case *result.CommitMatch:
-			resolvers = append(resolvers, &CommitSearchResultResolver{
+		cbse *result.RepoMbtch:
+			resolvers = bppend(resolvers, getRepoResolver(v.RepoNbme(), v.Rev))
+		cbse *result.CommitMbtch:
+			resolvers = bppend(resolvers, &CommitSebrchResultResolver{
 				db:          db,
-				CommitMatch: *v,
+				CommitMbtch: *v,
 			})
-		case *result.OwnerMatch:
-			// todo(own): add OwnerSearchResultResolver
+		cbse *result.OwnerMbtch:
+			// todo(own): bdd OwnerSebrchResultResolver
 		}
 	}
 	return resolvers
 }
 
-func (sr *SearchResultsResolver) MatchCount() int32 {
-	return int32(sr.Matches.ResultCount())
+func (sr *SebrchResultsResolver) MbtchCount() int32 {
+	return int32(sr.Mbtches.ResultCount())
 }
 
-// Deprecated. Prefer MatchCount.
-func (sr *SearchResultsResolver) ResultCount() int32 { return sr.MatchCount() }
+// Deprecbted. Prefer MbtchCount.
+func (sr *SebrchResultsResolver) ResultCount() int32 { return sr.MbtchCount() }
 
-func (sr *SearchResultsResolver) ApproximateResultCount() string {
-	count := sr.MatchCount()
-	if sr.LimitHit() || sr.Stats.Status.Any(search.RepoStatusCloning|search.RepoStatusTimedout) {
+func (sr *SebrchResultsResolver) ApproximbteResultCount() string {
+	count := sr.MbtchCount()
+	if sr.LimitHit() || sr.Stbts.Stbtus.Any(sebrch.RepoStbtusCloning|sebrch.RepoStbtusTimedout) {
 		return fmt.Sprintf("%d+", count)
 	}
-	return strconv.Itoa(int(count))
+	return strconv.Itob(int(count))
 }
 
-func (sr *SearchResultsResolver) Alert() *searchAlertResolver {
-	return NewSearchAlertResolver(sr.SearchAlert)
+func (sr *SebrchResultsResolver) Alert() *sebrchAlertResolver {
+	return NewSebrchAlertResolver(sr.SebrchAlert)
 }
 
-func (sr *SearchResultsResolver) ElapsedMilliseconds() int32 {
-	return int32(sr.elapsed.Milliseconds())
+func (sr *SebrchResultsResolver) ElbpsedMilliseconds() int32 {
+	return int32(sr.elbpsed.Milliseconds())
 }
 
-func (sr *SearchResultsResolver) DynamicFilters(ctx context.Context) []*searchFilterResolver {
-	tr, _ := trace.New(ctx, "DynamicFilters", attribute.String("resolver", "SearchResultsResolver"))
+func (sr *SebrchResultsResolver) DynbmicFilters(ctx context.Context) []*sebrchFilterResolver {
+	tr, _ := trbce.New(ctx, "DynbmicFilters", bttribute.String("resolver", "SebrchResultsResolver"))
 	defer tr.End()
 
-	var filters streaming.SearchFilters
-	filters.Update(streaming.SearchEvent{
-		Results: sr.Matches,
-		Stats:   sr.Stats,
+	vbr filters strebming.SebrchFilters
+	filters.Updbte(strebming.SebrchEvent{
+		Results: sr.Mbtches,
+		Stbts:   sr.Stbts,
 	})
 
-	var resolvers []*searchFilterResolver
-	for _, f := range filters.Compute() {
-		resolvers = append(resolvers, &searchFilterResolver{filter: *f})
+	vbr resolvers []*sebrchFilterResolver
+	for _, f := rbnge filters.Compute() {
+		resolvers = bppend(resolvers, &sebrchFilterResolver{filter: *f})
 	}
 	return resolvers
 }
 
-type searchFilterResolver struct {
-	filter streaming.Filter
+type sebrchFilterResolver struct {
+	filter strebming.Filter
 }
 
-func (sf *searchFilterResolver) Value() string {
-	return sf.filter.Value
+func (sf *sebrchFilterResolver) Vblue() string {
+	return sf.filter.Vblue
 }
 
-func (sf *searchFilterResolver) Label() string {
-	return sf.filter.Label
+func (sf *sebrchFilterResolver) Lbbel() string {
+	return sf.filter.Lbbel
 }
 
-func (sf *searchFilterResolver) Count() int32 {
+func (sf *sebrchFilterResolver) Count() int32 {
 	return int32(sf.filter.Count)
 }
 
-func (sf *searchFilterResolver) LimitHit() bool {
+func (sf *sebrchFilterResolver) LimitHit() bool {
 	return sf.filter.IsLimitHit
 }
 
-func (sf *searchFilterResolver) Kind() string {
+func (sf *sebrchFilterResolver) Kind() string {
 	return sf.filter.Kind
 }
 
-// blameFileMatch blames the specified file match to produce the time at which
-// the first line match inside of it was authored.
-func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.FileMatch) (t time.Time, err error) {
-	tr, ctx := trace.New(ctx, "SearchResultsResolver.blameFileMatch")
+// blbmeFileMbtch blbmes the specified file mbtch to produce the time bt which
+// the first line mbtch inside of it wbs buthored.
+func (sr *SebrchResultsResolver) blbmeFileMbtch(ctx context.Context, fm *result.FileMbtch) (t time.Time, err error) {
+	tr, ctx := trbce.New(ctx, "SebrchResultsResolver.blbmeFileMbtch")
 	defer tr.EndWithErr(&err)
 
-	// Blame the first line match.
-	if len(fm.ChunkMatches) == 0 {
-		// No line match
+	// Blbme the first line mbtch.
+	if len(fm.ChunkMbtches) == 0 {
+		// No line mbtch
 		return time.Time{}, nil
 	}
-	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient().BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hm := fm.ChunkMbtches[0]
+	hunks, err := gitserver.NewClient().BlbmeFile(ctx, buthz.DefbultSubRepoPermsChecker, fm.Repo.Nbme, fm.Pbth, &gitserver.BlbmeOptions{
 		NewestCommit: fm.CommitID,
-		StartLine:    hm.Ranges[0].Start.Line,
-		EndLine:      hm.Ranges[0].Start.Line,
+		StbrtLine:    hm.Rbnges[0].Stbrt.Line,
+		EndLine:      hm.Rbnges[0].Stbrt.Line,
 	})
 	if err != nil {
 		return time.Time{}, err
 	}
 
-	return hunks[0].Author.Date, nil
+	return hunks[0].Author.Dbte, nil
 }
 
-func (sr *SearchResultsResolver) Sparkline(ctx context.Context) (sparkline []int32, err error) {
-	var (
-		days     = 30  // number of days the sparkline represents
-		maxBlame = 100 // maximum number of file results to blame for date/time information.
-		p        = pool.New().WithMaxGoroutines(8)
+func (sr *SebrchResultsResolver) Spbrkline(ctx context.Context) (spbrkline []int32, err error) {
+	vbr (
+		dbys     = 30  // number of dbys the spbrkline represents
+		mbxBlbme = 100 // mbximum number of file results to blbme for dbte/time informbtion.
+		p        = pool.New().WithMbxGoroutines(8)
 	)
 
-	var (
-		sparklineMu sync.Mutex
-		blameOps    = 0
+	vbr (
+		spbrklineMu sync.Mutex
+		blbmeOps    = 0
 	)
-	sparkline = make([]int32, days)
-	addPoint := func(t time.Time) {
-		// Check if the author date of the search result is inside of our sparkline
-		// timerange.
+	spbrkline = mbke([]int32, dbys)
+	bddPoint := func(t time.Time) {
+		// Check if the buthor dbte of the sebrch result is inside of our spbrkline
+		// timerbnge.
 		now := time.Now()
-		if t.Before(now.Add(-time.Duration(len(sparkline)) * 24 * time.Hour)) {
-			// Outside the range of the sparkline.
+		if t.Before(now.Add(-time.Durbtion(len(spbrkline)) * 24 * time.Hour)) {
+			// Outside the rbnge of the spbrkline.
 			return
 		}
-		sparklineMu.Lock()
-		defer sparklineMu.Unlock()
-		for n := range sparkline {
-			d1 := now.Add(-time.Duration(n) * 24 * time.Hour)
-			d2 := now.Add(-time.Duration(n-1) * 24 * time.Hour)
+		spbrklineMu.Lock()
+		defer spbrklineMu.Unlock()
+		for n := rbnge spbrkline {
+			d1 := now.Add(-time.Durbtion(n) * 24 * time.Hour)
+			d2 := now.Add(-time.Durbtion(n-1) * 24 * time.Hour)
 			if t.After(d1) && t.Before(d2) {
-				sparkline[n]++ // on the nth day
+				spbrkline[n]++ // on the nth dby
 			}
 		}
 	}
 
-	// Consider all of our search results as a potential data point in our
-	// sparkline.
+	// Consider bll of our sebrch results bs b potentibl dbtb point in our
+	// spbrkline.
 loop:
-	for _, r := range sr.Matches {
-		r := r // shadow so it doesn't change in the goroutine
+	for _, r := rbnge sr.Mbtches {
+		r := r // shbdow so it doesn't chbnge in the goroutine
 		switch m := r.(type) {
-		case *result.RepoMatch, *result.OwnerMatch:
-			// We don't care about repo or owner results here.
+		cbse *result.RepoMbtch, *result.OwnerMbtch:
+			// We don't cbre bbout repo or owner results here.
 			continue
-		case *result.CommitMatch:
-			// Diff searches are cheap, because we implicitly have author date info.
-			addPoint(m.Commit.Author.Date)
-		case *result.FileMatch:
-			// File match searches are more expensive, because we must blame the
-			// (first) line in order to know its placement in our sparkline.
-			blameOps++
-			if blameOps > maxBlame {
-				// We have exceeded our budget of blame operations for
-				// calculating this sparkline, so don't do any more file match
-				// blaming.
+		cbse *result.CommitMbtch:
+			// Diff sebrches bre chebp, becbuse we implicitly hbve buthor dbte info.
+			bddPoint(m.Commit.Author.Dbte)
+		cbse *result.FileMbtch:
+			// File mbtch sebrches bre more expensive, becbuse we must blbme the
+			// (first) line in order to know its plbcement in our spbrkline.
+			blbmeOps++
+			if blbmeOps > mbxBlbme {
+				// We hbve exceeded our budget of blbme operbtions for
+				// cblculbting this spbrkline, so don't do bny more file mbtch
+				// blbming.
 				continue loop
 			}
 
 			p.Go(func() {
-				// Blame the file match in order to retrieve date informatino.
-				t, err := sr.blameFileMatch(ctx, m)
+				// Blbme the file mbtch in order to retrieve dbte informbtino.
+				t, err := sr.blbmeFileMbtch(ctx, m)
 				if err != nil {
-					log15.Warn("failed to blame fileMatch during sparkline generation", "error", err)
+					log15.Wbrn("fbiled to blbme fileMbtch during spbrkline generbtion", "error", err)
 					return
 				}
-				addPoint(t)
+				bddPoint(t)
 			})
-		default:
-			panic("SearchResults.Sparkline unexpected union type state")
+		defbult:
+			pbnic("SebrchResults.Spbrkline unexpected union type stbte")
 		}
 	}
-	p.Wait()
-	return sparkline, nil
+	p.Wbit()
+	return spbrkline, nil
 }
 
-var (
-	searchResponseCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_graphql_search_response",
-		Help: "Number of searches that have ended in the given status (success, error, timeout, partial_timeout).",
-	}, []string{"status", "alert_type", "source", "request_name"})
+vbr (
+	sebrchResponseCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_grbphql_sebrch_response",
+		Help: "Number of sebrches thbt hbve ended in the given stbtus (success, error, timeout, pbrtibl_timeout).",
+	}, []string{"stbtus", "blert_type", "source", "request_nbme"})
 
-	searchLatencyHistogram = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "src_search_response_latency_seconds",
-		Help:    "Search response latencies in seconds that have ended in the given status (success, error, timeout, partial_timeout).",
-		Buckets: []float64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
-	}, []string{"status", "alert_type", "source", "request_name"})
+	sebrchLbtencyHistogrbm = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "src_sebrch_response_lbtency_seconds",
+		Help:    "Sebrch response lbtencies in seconds thbt hbve ended in the given stbtus (success, error, timeout, pbrtibl_timeout).",
+		Buckets: []flobt64{0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 2, 5, 10, 15, 20, 30},
+	}, []string{"stbtus", "blert_type", "source", "request_nbme"})
 )
 
-func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
-	searchResponseCounter.WithLabelValues(
-		status,
-		alertType,
+func logPrometheusBbtch(stbtus, blertType, requestSource, requestNbme string, elbpsed time.Durbtion) {
+	sebrchResponseCounter.WithLbbelVblues(
+		stbtus,
+		blertType,
 		requestSource,
-		requestName,
+		requestNbme,
 	).Inc()
 
-	searchLatencyHistogram.WithLabelValues(
-		status,
-		alertType,
+	sebrchLbtencyHistogrbm.WithLbbelVblues(
+		stbtus,
+		blertType,
 		requestSource,
-		requestName,
-	).Observe(elapsed.Seconds())
+		requestNbme,
+	).Observe(elbpsed.Seconds())
 }
 
-func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
-	var status, alertType string
-	status = searchclient.DetermineStatusForLogs(srr.SearchAlert, srr.Stats, err)
-	if srr.SearchAlert != nil {
-		alertType = srr.SearchAlert.PrometheusType
+func logBbtch(ctx context.Context, sebrchInputs *sebrch.Inputs, srr *SebrchResultsResolver, err error) {
+	vbr stbtus, blertType string
+	stbtus = sebrchclient.DetermineStbtusForLogs(srr.SebrchAlert, srr.Stbts, err)
+	if srr.SebrchAlert != nil {
+		blertType = srr.SebrchAlert.PrometheusType
 	}
-	requestSource := string(trace.RequestSource(ctx))
-	requestName := trace.GraphQLRequestName(ctx)
-	logPrometheusBatch(status, alertType, requestSource, requestName, srr.elapsed)
+	requestSource := string(trbce.RequestSource(ctx))
+	requestNbme := trbce.GrbphQLRequestNbme(ctx)
+	logPrometheusBbtch(stbtus, blertType, requestSource, requestNbme, srr.elbpsed)
 
-	isSlow := srr.elapsed > searchlogs.LogSlowSearchesThreshold()
-	if honey.Enabled() || isSlow {
-		var n int
+	isSlow := srr.elbpsed > sebrchlogs.LogSlowSebrchesThreshold()
+	if honey.Enbbled() || isSlow {
+		vbr n int
 		if srr != nil {
-			n = len(srr.Matches)
+			n = len(srr.Mbtches)
 		}
-		ev := searchhoney.SearchEvent(ctx, searchhoney.SearchEventArgs{
-			OriginalQuery: searchInputs.OriginalQuery,
-			Typ:           requestName,
+		ev := sebrchhoney.SebrchEvent(ctx, sebrchhoney.SebrchEventArgs{
+			OriginblQuery: sebrchInputs.OriginblQuery,
+			Typ:           requestNbme,
 			Source:        requestSource,
-			Status:        status,
-			AlertType:     alertType,
-			DurationMs:    srr.elapsed.Milliseconds(),
-			LatencyMs:     nil, // no latency for batch requests
+			Stbtus:        stbtus,
+			AlertType:     blertType,
+			DurbtionMs:    srr.elbpsed.Milliseconds(),
+			LbtencyMs:     nil, // no lbtency for bbtch requests
 			ResultSize:    n,
 			Error:         err,
 		})
@@ -387,154 +387,154 @@ func logBatch(ctx context.Context, searchInputs *search.Inputs, srr *SearchResul
 		_ = ev.Send()
 
 		if isSlow {
-			log15.Warn("slow search request", "query", searchInputs.OriginalQuery, "type", requestName, "source", requestSource, "status", status, "alertType", alertType, "durationMs", srr.elapsed.Milliseconds(), "resultSize", n, "error", err)
+			log15.Wbrn("slow sebrch request", "query", sebrchInputs.OriginblQuery, "type", requestNbme, "source", requestSource, "stbtus", stbtus, "blertType", blertType, "durbtionMs", srr.elbpsed.Milliseconds(), "resultSize", n, "error", err)
 		}
 	}
 }
 
-func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
-	start := time.Now()
-	agg := streaming.NewAggregatingStream()
-	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
-	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
-	srr.elapsed = time.Since(start)
-	logBatch(ctx, r.SearchInputs, srr, err)
+func (r *sebrchResolver) Results(ctx context.Context) (*SebrchResultsResolver, error) {
+	stbrt := time.Now()
+	bgg := strebming.NewAggregbtingStrebm()
+	blert, err := r.client.Execute(ctx, bgg, r.SebrchInputs)
+	srr := r.resultsToResolver(bgg.Results, blert, bgg.Stbts)
+	srr.elbpsed = time.Since(stbrt)
+	logBbtch(ctx, r.SebrchInputs, srr, err)
 	return srr, err
 }
 
-func (r *searchResolver) resultsToResolver(matches result.Matches, alert *search.Alert, stats streaming.Stats) *SearchResultsResolver {
-	return &SearchResultsResolver{
-		Matches:     matches,
-		SearchAlert: alert,
-		Stats:       stats,
+func (r *sebrchResolver) resultsToResolver(mbtches result.Mbtches, blert *sebrch.Alert, stbts strebming.Stbts) *SebrchResultsResolver {
+	return &SebrchResultsResolver{
+		Mbtches:     mbtches,
+		SebrchAlert: blert,
+		Stbts:       stbts,
 		db:          r.db,
 	}
 }
 
-type searchResultsStats struct {
+type sebrchResultsStbts struct {
 	logger                  log.Logger
-	JApproximateResultCount string
-	JSparkline              []int32
+	JApproximbteResultCount string
+	JSpbrkline              []int32
 
-	sr *searchResolver
+	sr *sebrchResolver
 
-	// These items are lazily populated by getResults
+	// These items bre lbzily populbted by getResults
 	once    sync.Once
-	results result.Matches
+	results result.Mbtches
 	err     error
 }
 
-func (srs *searchResultsStats) ApproximateResultCount() string { return srs.JApproximateResultCount }
-func (srs *searchResultsStats) Sparkline() []int32             { return srs.JSparkline }
+func (srs *sebrchResultsStbts) ApproximbteResultCount() string { return srs.JApproximbteResultCount }
+func (srs *sebrchResultsStbts) Spbrkline() []int32             { return srs.JSpbrkline }
 
-var (
-	searchResultsStatsCache   = rcache.NewWithTTL("search_results_stats", 3600) // 1h
-	searchResultsStatsCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_graphql_search_results_stats_cache_hit",
-		Help: "Counts cache hits and misses for search results stats (e.g. sparklines).",
+vbr (
+	sebrchResultsStbtsCbche   = rcbche.NewWithTTL("sebrch_results_stbts", 3600) // 1h
+	sebrchResultsStbtsCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_grbphql_sebrch_results_stbts_cbche_hit",
+		Help: "Counts cbche hits bnd misses for sebrch results stbts (e.g. spbrklines).",
 	}, []string{"type"})
 )
 
-func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, err error) {
-	cacheKey := r.SearchInputs.OriginalQuery
-	// Check if value is in the cache.
-	jsonRes, ok := searchResultsStatsCache.Get(cacheKey)
+func (r *sebrchResolver) Stbts(ctx context.Context) (stbts *sebrchResultsStbts, err error) {
+	cbcheKey := r.SebrchInputs.OriginblQuery
+	// Check if vblue is in the cbche.
+	jsonRes, ok := sebrchResultsStbtsCbche.Get(cbcheKey)
 	if ok {
-		searchResultsStatsCounter.WithLabelValues("hit").Inc()
-		if err := json.Unmarshal(jsonRes, &stats); err != nil {
+		sebrchResultsStbtsCounter.WithLbbelVblues("hit").Inc()
+		if err := json.Unmbrshbl(jsonRes, &stbts); err != nil {
 			return nil, err
 		}
-		stats.logger = r.logger.Scoped("searchResultsStats", "provides status on search results")
-		stats.sr = r
-		return stats, nil
+		stbts.logger = r.logger.Scoped("sebrchResultsStbts", "provides stbtus on sebrch results")
+		stbts.sr = r
+		return stbts, nil
 	}
 
-	// Calculate value from scratch.
-	searchResultsStatsCounter.WithLabelValues("miss").Inc()
-	attempts := 0
-	var v *SearchResultsResolver
+	// Cblculbte vblue from scrbtch.
+	sebrchResultsStbtsCounter.WithLbbelVblues("miss").Inc()
+	bttempts := 0
+	vbr v *SebrchResultsResolver
 
 	for {
-		// Query search results.
-		b, err := query.ToBasicQuery(r.SearchInputs.Query)
+		// Query sebrch results.
+		b, err := query.ToBbsicQuery(r.SebrchInputs.Query)
 		if err != nil {
 			return nil, err
 		}
-		j, err := jobutil.NewBasicJob(r.SearchInputs, b)
+		j, err := jobutil.NewBbsicJob(r.SebrchInputs, b)
 		if err != nil {
 			return nil, err
 		}
-		j = jobutil.NewLogJob(r.SearchInputs, j)
-		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.client.JobClients(), agg)
+		j = jobutil.NewLogJob(r.SebrchInputs, j)
+		bgg := strebming.NewAggregbtingStrebm()
+		blert, err := j.Run(ctx, r.client.JobClients(), bgg)
 		if err != nil {
-			return nil, err // do not cache errors.
+			return nil, err // do not cbche errors.
 		}
-		v = r.resultsToResolver(agg.Results, alert, agg.Stats)
-		if v.MatchCount() > 0 {
-			break
-		}
-
-		status := v.Stats.Status
-		if !status.Any(search.RepoStatusCloning) && !status.Any(search.RepoStatusTimedout) {
-			break // zero results, but no cloning or timed out repos. No point in retrying.
+		v = r.resultsToResolver(bgg.Results, blert, bgg.Stbts)
+		if v.MbtchCount() > 0 {
+			brebk
 		}
 
-		var cloning, timedout int
-		status.Filter(search.RepoStatusCloning, func(api.RepoID) {
+		stbtus := v.Stbts.Stbtus
+		if !stbtus.Any(sebrch.RepoStbtusCloning) && !stbtus.Any(sebrch.RepoStbtusTimedout) {
+			brebk // zero results, but no cloning or timed out repos. No point in retrying.
+		}
+
+		vbr cloning, timedout int
+		stbtus.Filter(sebrch.RepoStbtusCloning, func(bpi.RepoID) {
 			cloning++
 		})
-		status.Filter(search.RepoStatusTimedout, func(api.RepoID) {
+		stbtus.Filter(sebrch.RepoStbtusTimedout, func(bpi.RepoID) {
 			timedout++
 		})
 
-		if attempts > 5 {
-			log15.Error("failed to generate sparkline due to cloning or timed out repos", "cloning", cloning, "timedout", timedout)
-			return nil, errors.Errorf("failed to generate sparkline due to %d cloning %d timedout repos", cloning, timedout)
+		if bttempts > 5 {
+			log15.Error("fbiled to generbte spbrkline due to cloning or timed out repos", "cloning", cloning, "timedout", timedout)
+			return nil, errors.Errorf("fbiled to generbte spbrkline due to %d cloning %d timedout repos", cloning, timedout)
 		}
 
-		// We didn't find any search results. Some repos are cloning or timed
-		// out, so try again in a few seconds.
-		attempts++
-		log15.Warn("sparkline generation found 0 search results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout)
+		// We didn't find bny sebrch results. Some repos bre cloning or timed
+		// out, so try bgbin in b few seconds.
+		bttempts++
+		log15.Wbrn("spbrkline generbtion found 0 sebrch results due to cloning or timed out repos (retrying in 5s)", "cloning", cloning, "timedout", timedout)
 		time.Sleep(5 * time.Second)
 	}
 
-	sparkline, err := v.Sparkline(ctx)
+	spbrkline, err := v.Spbrkline(ctx)
 	if err != nil {
-		return nil, err // sparkline generation failed, so don't cache.
+		return nil, err // spbrkline generbtion fbiled, so don't cbche.
 	}
-	stats = &searchResultsStats{
-		logger:                  r.logger.Scoped("searchResultsStats", "provides status on search results"),
-		JApproximateResultCount: v.ApproximateResultCount(),
-		JSparkline:              sparkline,
+	stbts = &sebrchResultsStbts{
+		logger:                  r.logger.Scoped("sebrchResultsStbts", "provides stbtus on sebrch results"),
+		JApproximbteResultCount: v.ApproximbteResultCount(),
+		JSpbrkline:              spbrkline,
 		sr:                      r,
 	}
 
-	// Store in the cache if we got non-zero results. If we got zero results,
-	// it should be quick and caching is not desired because e.g. it could be
-	// a query for a repo that has not been added by the user yet.
+	// Store in the cbche if we got non-zero results. If we got zero results,
+	// it should be quick bnd cbching is not desired becbuse e.g. it could be
+	// b query for b repo thbt hbs not been bdded by the user yet.
 	if v.ResultCount() > 0 {
-		jsonRes, err = json.Marshal(stats)
+		jsonRes, err = json.Mbrshbl(stbts)
 		if err != nil {
 			return nil, err
 		}
-		searchResultsStatsCache.Set(cacheKey, jsonRes)
+		sebrchResultsStbtsCbche.Set(cbcheKey, jsonRes)
 	}
-	return stats, nil
+	return stbts, nil
 }
 
-// SearchResultResolver is a resolver for the GraphQL union type `SearchResult`.
+// SebrchResultResolver is b resolver for the GrbphQL union type `SebrchResult`.
 //
 // Supported types:
 //
-//   - *RepositoryResolver         // repo name match
-//   - *fileMatchResolver          // text match
-//   - *commitSearchResultResolver // diff or commit match
+//   - *RepositoryResolver         // repo nbme mbtch
+//   - *fileMbtchResolver          // text mbtch
+//   - *commitSebrchResultResolver // diff or commit mbtch
 //
-// Note: Any new result types added here also need to be handled properly in search_results.go:301 (sparklines)
-type SearchResultResolver interface {
+// Note: Any new result types bdded here blso need to be hbndled properly in sebrch_results.go:301 (spbrklines)
+type SebrchResultResolver interfbce {
 	ToRepository() (*RepositoryResolver, bool)
-	ToFileMatch() (*FileMatchResolver, bool)
-	ToCommitSearchResult() (*CommitSearchResultResolver, bool)
+	ToFileMbtch() (*FileMbtchResolver, bool)
+	ToCommitSebrchResult() (*CommitSebrchResultResolver, bool)
 }

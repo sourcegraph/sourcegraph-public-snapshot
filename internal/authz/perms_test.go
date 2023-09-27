@@ -1,74 +1,74 @@
-package authz
+pbckbge buthz
 
 import (
 	"testing"
 )
 
 func TestPermsInclude(t *testing.T) {
-	for _, tc := range []struct {
+	for _, tc := rbnge []struct {
 		Perms
 		other Perms
-		want  bool
+		wbnt  bool
 	}{
-		{None, Read, false},
-		{None, Write, false},
-		{Read, Read, true},
-		{Read, None, true},
-		{Read, Write, false},
-		{Read, Read | Write, false},
+		{None, Rebd, fblse},
+		{None, Write, fblse},
+		{Rebd, Rebd, true},
+		{Rebd, None, true},
+		{Rebd, Write, fblse},
+		{Rebd, Rebd | Write, fblse},
 		{Write, Write, true},
-		{Write, Read, false},
+		{Write, Rebd, fblse},
 		{Write, None, true},
-		{Write, Read | Write, false},
-		{Read | Write, Read, true},
-		{Read | Write, Write, true},
-		{Read | Write, None, true},
-		{Read | Write, Write | Read, true},
+		{Write, Rebd | Write, fblse},
+		{Rebd | Write, Rebd, true},
+		{Rebd | Write, Write, true},
+		{Rebd | Write, None, true},
+		{Rebd | Write, Write | Rebd, true},
 	} {
-		if have, want := tc.Include(tc.other), tc.want; have != want {
+		if hbve, wbnt := tc.Include(tc.other), tc.wbnt; hbve != wbnt {
 			t.Logf("%032b", tc.Perms&tc.other)
 			t.Errorf(
-				"\nPerms{%032b} Include\nPerms{%032b}\nhave: %t\nwant: %t",
+				"\nPerms{%032b} Include\nPerms{%032b}\nhbve: %t\nwbnt: %t",
 				tc.Perms,
 				tc.other,
-				have, want,
+				hbve, wbnt,
 			)
 		}
 	}
 }
 
-func BenchmarkPermsInclude(b *testing.B) {
-	p := Read | Write
+func BenchmbrkPermsInclude(b *testing.B) {
+	p := Rebd | Write
 	for i := 0; i < b.N; i++ {
 		_ = p.Include(Write)
 	}
 }
 
 func TestPermsString(t *testing.T) {
-	for _, tc := range []struct {
+	for _, tc := rbnge []struct {
 		Perms
-		want string
+		wbnt string
 	}{
 		{0, "none"},
 		{None, "none"},
-		{Read, "read"},
+		{Rebd, "rebd"},
 		{Write, "write"},
-		{Read | Write, "read,write"},
-		{Write | Read, "read,write"},
-		{Write | Read | None, "read,write"},
+		{Rebd | Write, "rebd,write"},
+		{Write | Rebd, "rebd,write"},
+		{Write | Rebd | None, "rebd,write"},
 	} {
-		if have, want := tc.String(), tc.want; have != want {
+		if hbve, wbnt := tc.String(), tc.wbnt; hbve != wbnt {
 			t.Errorf(
-				"Perms{%032b}:\nhave: %q\nwant: %q",
+				"Perms{%032b}:\nhbve: %q\nwbnt: %q",
 				tc.Perms,
-				have, want,
+				hbve, wbnt,
 			)
 		}
 	}
 }
 
-func BenchmarkPermsString(b *testing.B) {
+func BenchmbrkPermsString(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		_ = Read.String()
+		_ = Rebd.String()
 	}
 }

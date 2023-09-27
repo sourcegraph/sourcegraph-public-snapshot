@@ -1,57 +1,57 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/priority"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// newInsightEnqueuer returns a background goroutine which will periodically find all of the search
-// and webhook insights across all user settings, and enqueue work for the query runner and webhook
+// newInsightEnqueuer returns b bbckground goroutine which will periodicblly find bll of the sebrch
+// bnd webhook insights bcross bll user settings, bnd enqueue work for the query runner bnd webhook
 // runner workers to perform.
-func newInsightEnqueuer(ctx context.Context, observationCtx *observation.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore, logger log.Logger) goroutine.BackgroundRoutine {
+func newInsightEnqueuer(ctx context.Context, observbtionCtx *observbtion.Context, workerBbseStore *bbsestore.Store, insightStore store.DbtbSeriesStore, logger log.Logger) goroutine.BbckgroundRoutine {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
+		observbtionCtx.Registerer,
 		"insights_enqueuer",
-		metrics.WithCountHelp("Total number of insights enqueuer executions"),
+		metrics.WithCountHelp("Totbl number of insights enqueuer executions"),
 	)
-	operation := observationCtx.Operation(observation.Op{
-		Name:    "Enqueuer.Run",
+	operbtion := observbtionCtx.Operbtion(observbtion.Op{
+		Nbme:    "Enqueuer.Run",
 		Metrics: redMetrics,
 	})
 
-	// Note: We run this goroutine once every hour, and StalledMaxAge in queryrunner/ is
-	// set to 60s. If you change this, make sure the StalledMaxAge is less than this period
-	// otherwise there is a fair chance we could enqueue work faster than it can be completed.
+	// Note: We run this goroutine once every hour, bnd StblledMbxAge in queryrunner/ is
+	// set to 60s. If you chbnge this, mbke sure the StblledMbxAge is less thbn this period
+	// otherwise there is b fbir chbnce we could enqueue work fbster thbn it cbn be completed.
 	//
-	// See also https://github.com/sourcegraph/sourcegraph/pull/17227#issuecomment-779515187 for some very rough
-	// data retention / scale concerns.
+	// See blso https://github.com/sourcegrbph/sourcegrbph/pull/17227#issuecomment-779515187 for some very rough
+	// dbtb retention / scble concerns.
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(
+		goroutine.HbndlerFunc(
 			func(ctx context.Context) error {
-				ie := NewInsightEnqueuer(time.Now, workerBaseStore, logger)
+				ie := NewInsightEnqueuer(time.Now, workerBbseStore, logger)
 
 				return ie.discoverAndEnqueueInsights(ctx, insightStore)
 			},
 		),
-		goroutine.WithName("insights.enqueuer"),
-		goroutine.WithDescription("enqueues snapshot and current recording query jobs"),
-		goroutine.WithInterval(1*time.Hour),
-		goroutine.WithOperation(operation),
+		goroutine.WithNbme("insights.enqueuer"),
+		goroutine.WithDescription("enqueues snbpshot bnd current recording query jobs"),
+		goroutine.WithIntervbl(1*time.Hour),
+		goroutine.WithOperbtion(operbtion),
 	)
 }
 
@@ -62,11 +62,11 @@ type InsightEnqueuer struct {
 	enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error
 }
 
-func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store, logger log.Logger) *InsightEnqueuer {
+func NewInsightEnqueuer(now func() time.Time, workerBbseStore *bbsestore.Store, logger log.Logger) *InsightEnqueuer {
 	return &InsightEnqueuer{
 		now: now,
 		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
-			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
+			_, err := queryrunner.EnqueueJob(ctx, workerBbseStore, job)
 			return err
 		},
 		logger: logger,
@@ -75,29 +75,29 @@ func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store, 
 
 func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 	ctx context.Context,
-	insightStore store.DataSeriesStore,
+	insightStore store.DbtbSeriesStore,
 ) error {
-	var multi error
+	vbr multi error
 
 	ie.logger.Info("enqueuing indexed insight recordings")
-	// this job will do the work of both recording (permanent) queries, and snapshot (ephemeral) queries. We want to try both, so if either has a soft-failure we will attempt both.
-	recordingArgs := store.GetDataSeriesArgs{NextRecordingBefore: ie.now(), ExcludeJustInTime: true}
-	recordingSeries, err := insightStore.GetDataSeries(ctx, recordingArgs)
+	// this job will do the work of both recording (permbnent) queries, bnd snbpshot (ephemerbl) queries. We wbnt to try both, so if either hbs b soft-fbilure we will bttempt both.
+	recordingArgs := store.GetDbtbSeriesArgs{NextRecordingBefore: ie.now(), ExcludeJustInTime: true}
+	recordingSeries, err := insightStore.GetDbtbSeries(ctx, recordingArgs)
 	if err != nil {
-		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for recordings")
+		return errors.Wrbp(err, "indexed insight recorder: unbble to fetch series for recordings")
 	}
-	err = ie.Enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StampRecording)
+	err = ie.Enqueue(ctx, recordingSeries, store.RecordMode, insightStore.StbmpRecording)
 	if err != nil {
 		multi = errors.Append(multi, err)
 	}
 
-	ie.logger.Info("enqueuing indexed insight snapshots")
-	snapshotArgs := store.GetDataSeriesArgs{NextSnapshotBefore: ie.now(), ExcludeJustInTime: true}
-	snapshotSeries, err := insightStore.GetDataSeries(ctx, snapshotArgs)
+	ie.logger.Info("enqueuing indexed insight snbpshots")
+	snbpshotArgs := store.GetDbtbSeriesArgs{NextSnbpshotBefore: ie.now(), ExcludeJustInTime: true}
+	snbpshotSeries, err := insightStore.GetDbtbSeries(ctx, snbpshotArgs)
 	if err != nil {
-		return errors.Wrap(err, "indexed insight recorder: unable to fetch series for snapshots")
+		return errors.Wrbp(err, "indexed insight recorder: unbble to fetch series for snbpshots")
 	}
-	err = ie.Enqueue(ctx, snapshotSeries, store.SnapshotMode, insightStore.StampSnapshot)
+	err = ie.Enqueue(ctx, snbpshotSeries, store.SnbpshotMode, insightStore.StbmpSnbpshot)
 	if err != nil {
 		multi = errors.Append(multi, err)
 	}
@@ -107,25 +107,25 @@ func (ie *InsightEnqueuer) discoverAndEnqueueInsights(
 
 func (ie *InsightEnqueuer) Enqueue(
 	ctx context.Context,
-	dataSeries []types.InsightSeries,
+	dbtbSeries []types.InsightSeries,
 	mode store.PersistMode,
-	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
+	stbmpFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
 ) error {
-	// Deduplicate series that may be unique (e.g. different name/description) but do not have
-	// unique data (i.e. use the same exact search query or webhook URL.)
-	var (
-		uniqueSeries = map[string]types.InsightSeries{}
+	// Deduplicbte series thbt mby be unique (e.g. different nbme/description) but do not hbve
+	// unique dbtb (i.e. use the sbme exbct sebrch query or webhook URL.)
+	vbr (
+		uniqueSeries = mbp[string]types.InsightSeries{}
 		multi        error
 	)
-	for _, series := range dataSeries {
+	for _, series := rbnge dbtbSeries {
 		seriesID := series.SeriesID
-		_, enqueuedAlready := uniqueSeries[seriesID]
-		if enqueuedAlready {
+		_, enqueuedAlrebdy := uniqueSeries[seriesID]
+		if enqueuedAlrebdy {
 			continue
 		}
 		uniqueSeries[seriesID] = series
 
-		if err := ie.EnqueueSingle(ctx, series, mode, stampFunc); err != nil {
+		if err := ie.EnqueueSingle(ctx, series, mode, stbmpFunc); err != nil {
 			multi = errors.Append(multi, err)
 		}
 	}
@@ -137,58 +137,58 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	ctx context.Context,
 	series types.InsightSeries,
 	mode store.PersistMode,
-	stampFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
+	stbmpFunc func(ctx context.Context, insightSeries types.InsightSeries) (types.InsightSeries, error),
 ) error {
-	// Construct the search query that will generate data for this repository and time (revision) tuple.
-	defaultQueryParams := querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0)
+	// Construct the sebrch query thbt will generbte dbtb for this repository bnd time (revision) tuple.
+	defbultQueryPbrbms := querybuilder.CodeInsightsQueryDefbults(len(series.Repositories) == 0)
 	seriesID := series.SeriesID
-	var err error
+	vbr err error
 
-	basicQuery := querybuilder.BasicQuery(series.Query)
-	var modifiedQuery querybuilder.BasicQuery
-	var finalQuery string
+	bbsicQuery := querybuilder.BbsicQuery(series.Query)
+	vbr modifiedQuery querybuilder.BbsicQuery
+	vbr finblQuery string
 
-	if series.RepositoryCriteria != nil {
-		modifiedQuery, err = querybuilder.MakeQueryWithRepoFilters(*series.RepositoryCriteria, basicQuery, true, querybuilder.CodeInsightsQueryDefaults(true)...)
+	if series.RepositoryCriterib != nil {
+		modifiedQuery, err = querybuilder.MbkeQueryWithRepoFilters(*series.RepositoryCriterib, bbsicQuery, true, querybuilder.CodeInsightsQueryDefbults(true)...)
 	} else if len(series.Repositories) > 0 {
-		modifiedQuery, err = querybuilder.MultiRepoQuery(basicQuery, series.Repositories, defaultQueryParams)
+		modifiedQuery, err = querybuilder.MultiRepoQuery(bbsicQuery, series.Repositories, defbultQueryPbrbms)
 	} else {
-		modifiedQuery, err = querybuilder.GlobalQuery(basicQuery, defaultQueryParams)
+		modifiedQuery, err = querybuilder.GlobblQuery(bbsicQuery, defbultQueryPbrbms)
 	}
 	if err != nil {
-		return errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID)
+		return errors.Wrbpf(err, "GlobblQuery series_id:%s", seriesID)
 	}
-	finalQuery = modifiedQuery.String()
+	finblQuery = modifiedQuery.String()
 	if series.GroupBy != nil {
-		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy), gitserver.NewClient())
+		computeQuery, err := querybuilder.ComputeInsightCommbndQuery(modifiedQuery, querybuilder.MbpType(*series.GroupBy), gitserver.NewClient())
 		if err != nil {
-			return errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID)
+			return errors.Wrbpf(err, "ComputeInsightCommbndQuery series_id:%s", seriesID)
 		}
-		finalQuery = computeQuery.String()
+		finblQuery = computeQuery.String()
 	}
 
 	err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
-		SearchJob: queryrunner.SearchJob{
+		SebrchJob: queryrunner.SebrchJob{
 			SeriesID:    seriesID,
-			SearchQuery: finalQuery,
+			SebrchQuery: finblQuery,
 			PersistMode: string(mode),
 		},
-		State:    "queued",
+		Stbte:    "queued",
 		Priority: int(priority.High),
 		Cost:     int(priority.Indexed),
 	})
 	if err != nil {
-		return errors.Wrapf(err, "failed to enqueue insight series_id: %s", seriesID)
+		return errors.Wrbpf(err, "fbiled to enqueue insight series_id: %s", seriesID)
 	}
 
-	// The timestamp update can't be transactional because this is a separate database currently, so we will use
-	// at-least-once semantics by waiting until the queue transaction is complete and without error.
-	_, err = stampFunc(ctx, series)
+	// The timestbmp updbte cbn't be trbnsbctionbl becbuse this is b sepbrbte dbtbbbse currently, so we will use
+	// bt-lebst-once sembntics by wbiting until the queue trbnsbction is complete bnd without error.
+	_, err = stbmpFunc(ctx, series)
 	if err != nil {
-		// might as well try the other insights and just skip this one
-		return errors.Wrapf(err, "failed to stamp insight series_id: %s", seriesID)
+		// might bs well try the other insights bnd just skip this one
+		return errors.Wrbpf(err, "fbiled to stbmp insight series_id: %s", seriesID)
 	}
 
-	ie.logger.Info("queued global search for insight", log.String("persist mode", string(mode)), log.String("seriesID", series.SeriesID))
+	ie.logger.Info("queued globbl sebrch for insight", log.String("persist mode", string(mode)), log.String("seriesID", series.SeriesID))
 	return nil
 }

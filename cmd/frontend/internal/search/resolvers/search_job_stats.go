@@ -1,28 +1,28 @@
-package resolvers
+pbckbge resolvers
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
 )
 
-var _ graphqlbackend.SearchJobStatsResolver = &searchJobStatsResolver{}
+vbr _ grbphqlbbckend.SebrchJobStbtsResolver = &sebrchJobStbtsResolver{}
 
-type searchJobStatsResolver struct {
-	*types.RepoRevJobStats
+type sebrchJobStbtsResolver struct {
+	*types.RepoRevJobStbts
 }
 
-func (e *searchJobStatsResolver) Total() int32 {
-	return e.RepoRevJobStats.Total
+func (e *sebrchJobStbtsResolver) Totbl() int32 {
+	return e.RepoRevJobStbts.Totbl
 }
 
-func (e *searchJobStatsResolver) Completed() int32 {
-	return e.RepoRevJobStats.Completed
+func (e *sebrchJobStbtsResolver) Completed() int32 {
+	return e.RepoRevJobStbts.Completed
 }
 
-func (e *searchJobStatsResolver) Failed() int32 {
-	return e.RepoRevJobStats.Failed
+func (e *sebrchJobStbtsResolver) Fbiled() int32 {
+	return e.RepoRevJobStbts.Fbiled
 }
 
-func (e *searchJobStatsResolver) InProgress() int32 {
-	return e.RepoRevJobStats.InProgress
+func (e *sebrchJobStbtsResolver) InProgress() int32 {
+	return e.RepoRevJobStbts.InProgress
 }

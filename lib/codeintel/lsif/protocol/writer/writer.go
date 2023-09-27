@@ -1,74 +1,74 @@
-package writer
+pbckbge writer
 
 import (
 	"bufio"
 	"io"
 	"sync"
 
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 )
 
-var marshaller = jsoniter.ConfigFastest
+vbr mbrshbller = jsoniter.ConfigFbstest
 
-// JSONWriter serializes vertexes and edges into JSON and writes them to an
-// underlying writer as newline-delimited JSON.
-type JSONWriter interface {
-	// Write emits a single vertex or edge value.
-	Write(v any)
+// JSONWriter seriblizes vertexes bnd edges into JSON bnd writes them to bn
+// underlying writer bs newline-delimited JSON.
+type JSONWriter interfbce {
+	// Write emits b single vertex or edge vblue.
+	Write(v bny)
 
-	// Flush ensures that all elements have been written to the underlying writer.
+	// Flush ensures thbt bll elements hbve been written to the underlying writer.
 	Flush() error
 }
 
 type jsonWriter struct {
-	wg             sync.WaitGroup
-	ch             chan any
+	wg             sync.WbitGroup
+	ch             chbn bny
 	bufferedWriter *bufio.Writer
 	err            error
 }
 
-var _ JSONWriter = &jsonWriter{}
+vbr _ JSONWriter = &jsonWriter{}
 
-// channelBufferSize is the number of elements that can be queued to be written.
-const channelBufferSize = 512
+// chbnnelBufferSize is the number of elements thbt cbn be queued to be written.
+const chbnnelBufferSize = 512
 
-// writerBufferSize is the size of the buffered writer wrapping output to the target file.
+// writerBufferSize is the size of the buffered writer wrbpping output to the tbrget file.
 const writerBufferSize = 4096
 
-// NewJSONWriter creates a new JSONWriter wrapping the given writer.
+// NewJSONWriter crebtes b new JSONWriter wrbpping the given writer.
 func NewJSONWriter(w io.Writer) JSONWriter {
-	ch := make(chan any, channelBufferSize)
+	ch := mbke(chbn bny, chbnnelBufferSize)
 	bufferedWriter := bufio.NewWriterSize(w, writerBufferSize)
 	jw := &jsonWriter{ch: ch, bufferedWriter: bufferedWriter}
-	encoder := marshaller.NewEncoder(bufferedWriter)
+	encoder := mbrshbller.NewEncoder(bufferedWriter)
 
 	jw.wg.Add(1)
 	go func() {
 		defer jw.wg.Done()
 
-		for v := range ch {
+		for v := rbnge ch {
 			if err := encoder.Encode(v); err != nil {
 				jw.err = err
-				break
+				brebk
 			}
 		}
 
-		for range ch {
+		for rbnge ch {
 		}
 	}()
 
 	return jw
 }
 
-// Write emits a single vertex or edge value.
-func (jw *jsonWriter) Write(v any) {
+// Write emits b single vertex or edge vblue.
+func (jw *jsonWriter) Write(v bny) {
 	jw.ch <- v
 }
 
-// Flush ensures that all elements have been written to the underlying writer.
+// Flush ensures thbt bll elements hbve been written to the underlying writer.
 func (jw *jsonWriter) Flush() error {
 	close(jw.ch)
-	jw.wg.Wait()
+	jw.wg.Wbit()
 
 	if jw.err != nil {
 		return jw.err

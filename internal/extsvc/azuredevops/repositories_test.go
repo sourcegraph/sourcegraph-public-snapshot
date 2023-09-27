@@ -1,85 +1,85 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 )
 
 func TestClient_GetRepository(t *testing.T) {
-	cli, save := NewTestClient(t, "GetRepository", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "GetRepository", *updbte)
+	t.Clebnup(sbve)
 
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure",
+	brgs := OrgProjectRepoArgs{
+		Org:          "sgtestbzure",
+		Project:      "sgtestbzure",
+		RepoNbmeOrID: "sgtestbzure",
 	}
 
-	resp, err := cli.GetRepo(context.Background(), args)
+	resp, err := cli.GetRepo(context.Bbckground(), brgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/GetRepository.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/GetRepository.json", *updbte, resp)
 }
 
 func TestClient_ListRepositoriesByProjectOrOrg(t *testing.T) {
-	cli, save := NewTestClient(t, "ListRepositoriesByProjectOrOrg", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "ListRepositoriesByProjectOrOrg", *updbte)
+	t.Clebnup(sbve)
 
 	opts := ListRepositoriesByProjectOrOrgArgs{
-		ProjectOrOrgName: "sgtestazure",
+		ProjectOrOrgNbme: "sgtestbzure",
 	}
 
-	resp, err := cli.ListRepositoriesByProjectOrOrg(context.Background(), opts)
+	resp, err := cli.ListRepositoriesByProjectOrOrg(context.Bbckground(), opts)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/ListProjects.json", *updbte, resp)
 }
 
 func TestClient_ForkRepository(t *testing.T) {
-	cli, save := NewTestClient(t, "ForkRepository", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "ForkRepository", *updbte)
+	t.Clebnup(sbve)
 
 	input := ForkRepositoryInput{
-		Name: "sgtestazureforks2",
+		Nbme: "sgtestbzureforks2",
 		Project: ForkRepositoryInputProject{
-			ID: "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+			ID: "dc493f7d-0b57-4de2-b59b-3f74ff3eb334",
 		},
-		ParentRepository: ForkRepositoryInputParentRepository{
-			ID: "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+		PbrentRepository: ForkRepositoryInputPbrentRepository{
+			ID: "c4d186ef-18b6-4de4-b610-bb9ebd4e1fbb",
 			Project: ForkRepositoryInputProject{
-				ID: "dc493f7d-0b57-4de2-a59b-3f74ff3ea334",
+				ID: "dc493f7d-0b57-4de2-b59b-3f74ff3eb334",
 			},
 		},
 	}
 
-	resp, err := cli.ForkRepository(context.Background(), "sgtestazure", input)
+	resp, err := cli.ForkRepository(context.Bbckground(), "sgtestbzure", input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/ForkRepository.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/ForkRepository.json", *updbte, resp)
 }
 
-func TestClient_GetRepositoryBranch(t *testing.T) {
-	cli, save := NewTestClient(t, "GetRepositoryBranch", *update)
-	t.Cleanup(save)
+func TestClient_GetRepositoryBrbnch(t *testing.T) {
+	cli, sbve := NewTestClient(t, "GetRepositoryBrbnch", *updbte)
+	t.Clebnup(sbve)
 
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "sgtestazure3",
+	brgs := OrgProjectRepoArgs{
+		Org:          "sgtestbzure",
+		Project:      "sgtestbzure",
+		RepoNbmeOrID: "sgtestbzure3",
 	}
 
-	resp, err := cli.GetRepositoryBranch(context.Background(), args, "main")
+	resp, err := cli.GetRepositoryBrbnch(context.Bbckground(), brgs, "mbin")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/GetRepositoryBranch.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/GetRepositoryBrbnch.json", *updbte, resp)
 }

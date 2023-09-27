@@ -1,62 +1,62 @@
-package repo
+pbckbge repo
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/diff"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	codeintelContext "github.com/sourcegraph/sourcegraph/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	bgrepo "github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/db"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/paths"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/diff"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	codeintelContext "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/context"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	bgrepo "github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/pbths"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type handler struct {
-	db                     database.DB
-	uploadStore            uploadstore.Store
+type hbndler struct {
+	db                     dbtbbbse.DB
+	uplobdStore            uplobdstore.Store
 	gitserverClient        gitserver.Client
-	getQdrantInserter      func() (db.VectorInserter, error)
+	getQdrbntInserter      func() (db.VectorInserter, error)
 	contextService         embed.ContextService
 	repoEmbeddingJobsStore bgrepo.RepoEmbeddingJobsStore
 }
 
-var _ workerutil.Handler[*bgrepo.RepoEmbeddingJob] = &handler{}
+vbr _ workerutil.Hbndler[*bgrepo.RepoEmbeddingJob] = &hbndler{}
 
-// The threshold to embed the entire file is slightly larger than the chunk threshold to
-// avoid splitting small files unnecessarily.
+// The threshold to embed the entire file is slightly lbrger thbn the chunk threshold to
+// bvoid splitting smbll files unnecessbrily.
 const (
 	embedEntireFileTokensThreshold          = 384
 	embeddingChunkTokensThreshold           = 256
-	embeddingChunkEarlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
-	embeddingsBatchSize                     = 512
+	embeddingChunkEbrlySplitTokensThreshold = embeddingChunkTokensThreshold - 32
+	embeddingsBbtchSize                     = 512
 )
 
-var splitOptions = codeintelContext.SplitOptions{
+vbr splitOptions = codeintelContext.SplitOptions{
 	NoSplitTokensThreshold:         embedEntireFileTokensThreshold,
 	ChunkTokensThreshold:           embeddingChunkTokensThreshold,
-	ChunkEarlySplitTokensThreshold: embeddingChunkEarlySplitTokensThreshold,
+	ChunkEbrlySplitTokensThreshold: embeddingChunkEbrlySplitTokensThreshold,
 }
 
-func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) (err error) {
+func (h *hbndler) Hbndle(ctx context.Context, logger log.Logger, record *bgrepo.RepoEmbeddingJob) (err error) {
 	embeddingsConfig := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if embeddingsConfig == nil {
-		return errors.New("embeddings are not configured or disabled")
+		return errors.New("embeddings bre not configured or disbbled")
 	}
 
-	ctx = featureflag.WithFlags(ctx, h.db.FeatureFlags())
+	ctx = febtureflbg.WithFlbgs(ctx, h.db.FebtureFlbgs())
 
 	repo, err := h.db.Repos().Get(ctx, record.RepoID)
 	if err != nil {
@@ -64,17 +64,17 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 	}
 
 	logger = logger.With(
-		log.String("repoName", string(repo.Name)),
+		log.String("repoNbme", string(repo.Nbme)),
 		log.Int32("repoID", int32(repo.ID)),
 	)
 
 	fetcher := &revisionFetcher{
-		repo:      repo.Name,
+		repo:      repo.Nbme,
 		revision:  record.Revision,
 		gitserver: h.gitserverClient,
 	}
 
-	err = fetcher.validateRevision(ctx)
+	err = fetcher.vblidbteRevision(ctx)
 	if err != nil {
 		return err
 	}
@@ -84,12 +84,12 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 			return
 		}
 
-		// If we return with err=nil, then we have created a new index with a
-		// name based on the repo ID. It might be that the previous index had a
-		// name based on the repo name (deprecated), which we can delete now on
-		// a best-effort basis.
-		indexNameDeprecated := string(embeddings.GetRepoEmbeddingIndexNameDeprecated(repo.Name))
-		_ = h.uploadStore.Delete(ctx, indexNameDeprecated)
+		// If we return with err=nil, then we hbve crebted b new index with b
+		// nbme bbsed on the repo ID. It might be thbt the previous index hbd b
+		// nbme bbsed on the repo nbme (deprecbted), which we cbn delete now on
+		// b best-effort bbsis.
+		indexNbmeDeprecbted := string(embeddings.GetRepoEmbeddingIndexNbmeDeprecbted(repo.Nbme))
+		_ = h.uplobdStore.Delete(ctx, indexNbmeDeprecbted)
 	}()
 
 	embeddingsClient, err := embed.NewEmbeddingsClient(embeddingsConfig)
@@ -103,88 +103,88 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	qdrantInserter, err := h.getQdrantInserter()
+	qdrbntInserter, err := h.getQdrbntInserter()
 	if err != nil {
 		return err
 	}
 
-	err = qdrantInserter.PrepareUpdate(ctx, modelID, uint64(modelDims))
+	err = qdrbntInserter.PrepbreUpdbte(ctx, modelID, uint64(modelDims))
 	if err != nil {
 		return err
 	}
 
-	var previousIndex *embeddings.RepoEmbeddingIndex
-	if embeddingsConfig.Incremental {
-		previousIndex, err = embeddings.DownloadRepoEmbeddingIndex(ctx, h.uploadStore, repo.ID, repo.Name)
+	vbr previousIndex *embeddings.RepoEmbeddingIndex
+	if embeddingsConfig.Incrementbl {
+		previousIndex, err = embeddings.DownlobdRepoEmbeddingIndex(ctx, h.uplobdStore, repo.ID, repo.Nbme)
 		if err != nil {
-			logger.Info("no previous embeddings index found. Performing a full index", log.Error(err))
-		} else if !previousIndex.IsModelCompatible(embeddingsClient.GetModelIdentifier()) {
-			logger.Info("Embeddings model has changed in config. Performing a full index")
+			logger.Info("no previous embeddings index found. Performing b full index", log.Error(err))
+		} else if !previousIndex.IsModelCompbtible(embeddingsClient.GetModelIdentifier()) {
+			logger.Info("Embeddings model hbs chbnged in config. Performing b full index")
 			previousIndex = nil
 		}
 	}
 
-	includedFiles, excludedFiles := getFileFilterPathPatterns(embeddingsConfig)
+	includedFiles, excludedFiles := getFileFilterPbthPbtterns(embeddingsConfig)
 	opts := embed.EmbedRepoOpts{
-		RepoName: repo.Name,
+		RepoNbme: repo.Nbme,
 		Revision: record.Revision,
 		FileFilters: embed.FileFilters{
-			ExcludePatterns:  excludedFiles,
-			IncludePatterns:  includedFiles,
-			MaxFileSizeBytes: embeddingsConfig.FileFilters.MaxFileSizeBytes,
+			ExcludePbtterns:  excludedFiles,
+			IncludePbtterns:  includedFiles,
+			MbxFileSizeBytes: embeddingsConfig.FileFilters.MbxFileSizeBytes,
 		},
 		SplitOptions:      splitOptions,
-		MaxCodeEmbeddings: embeddingsConfig.MaxCodeEmbeddingsPerRepo,
-		MaxTextEmbeddings: embeddingsConfig.MaxTextEmbeddingsPerRepo,
-		BatchSize:         embeddingsBatchSize,
+		MbxCodeEmbeddings: embeddingsConfig.MbxCodeEmbeddingsPerRepo,
+		MbxTextEmbeddings: embeddingsConfig.MbxTextEmbeddingsPerRepo,
+		BbtchSize:         embeddingsBbtchSize,
 		ExcludeChunks:     embeddingsConfig.ExcludeChunkOnError,
 	}
 
 	if previousIndex != nil {
-		logger.Info("found previous embeddings index. Attempting incremental update", log.String("old_revision", string(previousIndex.Revision)))
+		logger.Info("found previous embeddings index. Attempting incrementbl updbte", log.String("old_revision", string(previousIndex.Revision)))
 		opts.IndexedRevision = previousIndex.Revision
 
-		hasPreviousIndex, err := qdrantInserter.HasIndex(ctx, modelID, repo.ID, previousIndex.Revision)
+		hbsPreviousIndex, err := qdrbntInserter.HbsIndex(ctx, modelID, repo.ID, previousIndex.Revision)
 		if err != nil {
 			return err
 		}
 
-		if !hasPreviousIndex {
-			err = uploadPreviousIndex(ctx, modelID, qdrantInserter, repo.ID, previousIndex)
+		if !hbsPreviousIndex {
+			err = uplobdPreviousIndex(ctx, modelID, qdrbntInserter, repo.ID, previousIndex)
 			if err != nil {
 				return err
 			}
 		}
 	}
 
-	ranks, err := getDocumentRanks(ctx, string(repo.Name))
+	rbnks, err := getDocumentRbnks(ctx, string(repo.Nbme))
 	if err != nil {
 		return err
 	}
 
-	reportStats := func(stats *bgrepo.EmbedRepoStats) {
-		if err := h.repoEmbeddingJobsStore.UpdateRepoEmbeddingJobStats(ctx, record.ID, stats); err != nil {
-			logger.Error("failed to update embedding stats", log.Error(err))
+	reportStbts := func(stbts *bgrepo.EmbedRepoStbts) {
+		if err := h.repoEmbeddingJobsStore.UpdbteRepoEmbeddingJobStbts(ctx, record.ID, stbts); err != nil {
+			logger.Error("fbiled to updbte embedding stbts", log.Error(err))
 		}
 	}
 
-	repoEmbeddingIndex, toRemove, stats, err := embed.EmbedRepo(
+	repoEmbeddingIndex, toRemove, stbts, err := embed.EmbedRepo(
 		ctx,
 		embeddingsClient,
-		qdrantInserter,
+		qdrbntInserter,
 		h.contextService,
 		fetcher,
-		repo.IDName(),
-		ranks,
+		repo.IDNbme(),
+		rbnks,
 		opts,
 		logger,
-		reportStats,
+		reportStbts,
 	)
 	if err != nil {
 		return err
 	}
 
-	err = qdrantInserter.FinalizeUpdate(ctx, db.FinalizeUpdateParams{
+	err = qdrbntInserter.FinblizeUpdbte(ctx, db.FinblizeUpdbtePbrbms{
 		ModelID:       modelID,
 		RepoID:        repo.ID,
 		Revision:      record.Revision,
@@ -194,59 +194,59 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record *bgrepo.
 		return err
 	}
 
-	reportStats(stats) // final, complete report
+	reportStbts(stbts) // finbl, complete report
 
 	logger.Info(
-		"finished generating repo embeddings",
+		"finished generbting repo embeddings",
 		log.String("revision", string(record.Revision)),
-		log.Object("stats", stats.ToFields()...),
+		log.Object("stbts", stbts.ToFields()...),
 	)
 
-	indexName := string(embeddings.GetRepoEmbeddingIndexName(repo.ID))
-	if stats.IsIncremental {
-		return embeddings.UpdateRepoEmbeddingIndex(ctx, h.uploadStore, indexName, previousIndex, repoEmbeddingIndex, toRemove, ranks)
+	indexNbme := string(embeddings.GetRepoEmbeddingIndexNbme(repo.ID))
+	if stbts.IsIncrementbl {
+		return embeddings.UpdbteRepoEmbeddingIndex(ctx, h.uplobdStore, indexNbme, previousIndex, repoEmbeddingIndex, toRemove, rbnks)
 	} else {
-		return embeddings.UploadRepoEmbeddingIndex(ctx, h.uploadStore, indexName, repoEmbeddingIndex)
+		return embeddings.UplobdRepoEmbeddingIndex(ctx, h.uplobdStore, indexNbme, repoEmbeddingIndex)
 	}
 }
 
-func getFileFilterPathPatterns(embeddingsConfig *conftypes.EmbeddingsConfig) (includedFiles, excludedFiles []*paths.GlobPattern) {
-	var includedGlobPatterns, excludedGlobPatterns []*paths.GlobPattern
+func getFileFilterPbthPbtterns(embeddingsConfig *conftypes.EmbeddingsConfig) (includedFiles, excludedFiles []*pbths.GlobPbttern) {
+	vbr includedGlobPbtterns, excludedGlobPbtterns []*pbths.GlobPbttern
 	if embeddingsConfig != nil {
-		if len(embeddingsConfig.FileFilters.ExcludedFilePathPatterns) != 0 {
-			excludedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.FileFilters.ExcludedFilePathPatterns)
+		if len(embeddingsConfig.FileFilters.ExcludedFilePbthPbtterns) != 0 {
+			excludedGlobPbtterns = embed.CompileGlobPbtterns(embeddingsConfig.FileFilters.ExcludedFilePbthPbtterns)
 		}
-		if len(embeddingsConfig.FileFilters.IncludedFilePathPatterns) != 0 {
-			includedGlobPatterns = embed.CompileGlobPatterns(embeddingsConfig.FileFilters.IncludedFilePathPatterns)
+		if len(embeddingsConfig.FileFilters.IncludedFilePbthPbtterns) != 0 {
+			includedGlobPbtterns = embed.CompileGlobPbtterns(embeddingsConfig.FileFilters.IncludedFilePbthPbtterns)
 		}
 	}
-	if len(excludedGlobPatterns) == 0 {
-		excludedGlobPatterns = embed.GetDefaultExcludedFilePathPatterns()
+	if len(excludedGlobPbtterns) == 0 {
+		excludedGlobPbtterns = embed.GetDefbultExcludedFilePbthPbtterns()
 	}
-	return includedGlobPatterns, excludedGlobPatterns
+	return includedGlobPbtterns, excludedGlobPbtterns
 }
 
 type revisionFetcher struct {
-	repo      api.RepoName
-	revision  api.CommitID
+	repo      bpi.RepoNbme
+	revision  bpi.CommitID
 	gitserver gitserver.Client
 }
 
-func (r *revisionFetcher) Read(ctx context.Context, fileName string) ([]byte, error) {
-	return r.gitserver.ReadFile(ctx, nil, r.repo, r.revision, fileName)
+func (r *revisionFetcher) Rebd(ctx context.Context, fileNbme string) ([]byte, error) {
+	return r.gitserver.RebdFile(ctx, nil, r.repo, r.revision, fileNbme)
 }
 
 func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
-	fileInfos, err := r.gitserver.ReadDir(ctx, nil, r.repo, r.revision, "", true)
+	fileInfos, err := r.gitserver.RebdDir(ctx, nil, r.repo, r.revision, "", true)
 	if err != nil {
 		return nil, err
 	}
 
-	entries := make([]embed.FileEntry, 0, len(fileInfos))
-	for _, fileInfo := range fileInfos {
+	entries := mbke([]embed.FileEntry, 0, len(fileInfos))
+	for _, fileInfo := rbnge fileInfos {
 		if !fileInfo.IsDir() {
-			entries = append(entries, embed.FileEntry{
-				Name: fileInfo.Name(),
+			entries = bppend(entries, embed.FileEntry{
+				Nbme: fileInfo.Nbme(),
 				Size: fileInfo.Size(),
 			})
 		}
@@ -254,96 +254,96 @@ func (r *revisionFetcher) List(ctx context.Context) ([]embed.FileEntry, error) {
 	return entries, nil
 }
 
-func (r *revisionFetcher) Diff(ctx context.Context, oldCommit api.CommitID) (
+func (r *revisionFetcher) Diff(ctx context.Context, oldCommit bpi.CommitID) (
 	toIndex []embed.FileEntry,
 	toRemove []string,
 	err error,
 ) {
-	ctx = actor.WithInternalActor(ctx)
+	ctx = bctor.WithInternblActor(ctx)
 	b, err := r.gitserver.DiffSymbols(ctx, r.repo, oldCommit, r.revision)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	toRemove, changedNew, err := diff.ParseGitDiffNameStatus(b)
+	toRemove, chbngedNew, err := diff.PbrseGitDiffNbmeStbtus(b)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// toRemove only contains file names, but we also need the file sizes. We could
-	// ask gitserver for the file size of each file, however my intuition tells me
-	// it is cheaper to call r.List(ctx) once. As a downside we have to loop over
-	// allFiles.
-	allFiles, err := r.List(ctx)
+	// toRemove only contbins file nbmes, but we blso need the file sizes. We could
+	// bsk gitserver for the file size of ebch file, however my intuition tells me
+	// it is chebper to cbll r.List(ctx) once. As b downside we hbve to loop over
+	// bllFiles.
+	bllFiles, err := r.List(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	changedNewSet := make(map[string]struct{})
-	for _, file := range changedNew {
-		changedNewSet[file] = struct{}{}
+	chbngedNewSet := mbke(mbp[string]struct{})
+	for _, file := rbnge chbngedNew {
+		chbngedNewSet[file] = struct{}{}
 	}
 
-	for _, file := range allFiles {
-		if _, ok := changedNewSet[file.Name]; ok {
-			toIndex = append(toIndex, file)
+	for _, file := rbnge bllFiles {
+		if _, ok := chbngedNewSet[file.Nbme]; ok {
+			toIndex = bppend(toIndex, file)
 		}
 	}
 
 	return
 }
 
-// validateRevision returns an error if the revision provided to this job is empty.
-// This can happen when GetDefaultBranch's response is error or empty at the time this job was scheduled.
-// Only the handler should provide the error to mark a failed/errored job, therefore handler requires a revision check.
-func (r *revisionFetcher) validateRevision(ctx context.Context) error {
-	// if the revision is empty then fetch from gitserver to determine this job's failure message
+// vblidbteRevision returns bn error if the revision provided to this job is empty.
+// This cbn hbppen when GetDefbultBrbnch's response is error or empty bt the time this job wbs scheduled.
+// Only the hbndler should provide the error to mbrk b fbiled/errored job, therefore hbndler requires b revision check.
+func (r *revisionFetcher) vblidbteRevision(ctx context.Context) error {
+	// if the revision is empty then fetch from gitserver to determine this job's fbilure messbge
 	if r.revision == "" {
-		_, _, err := r.gitserver.GetDefaultBranch(ctx, r.repo, false)
+		_, _, err := r.gitserver.GetDefbultBrbnch(ctx, r.repo, fblse)
 
 		if err != nil {
 			return err
 		}
 
-		// We likely had an empty repo at the time of scheduling this job.
-		// The repo can be processed once it's resubmitted with a non-empty revision.
-		return errors.Newf("could not get latest commit for repo %s", r.repo)
+		// We likely hbd bn empty repo bt the time of scheduling this job.
+		// The repo cbn be processed once it's resubmitted with b non-empty revision.
+		return errors.Newf("could not get lbtest commit for repo %s", r.repo)
 	}
 	return nil
 }
 
-func uploadPreviousIndex(ctx context.Context, modelID string, inserter db.VectorInserter, repoID api.RepoID, previousIndex *embeddings.RepoEmbeddingIndex) error {
-	const batchSize = 128
-	batch := make([]db.ChunkPoint, batchSize)
+func uplobdPreviousIndex(ctx context.Context, modelID string, inserter db.VectorInserter, repoID bpi.RepoID, previousIndex *embeddings.RepoEmbeddingIndex) error {
+	const bbtchSize = 128
+	bbtch := mbke([]db.ChunkPoint, bbtchSize)
 
-	for indexNum, index := range []embeddings.EmbeddingIndex{previousIndex.CodeIndex, previousIndex.TextIndex} {
+	for indexNum, index := rbnge []embeddings.EmbeddingIndex{previousIndex.CodeIndex, previousIndex.TextIndex} {
 		isCode := indexNum == 0
 
-		// returns the ith row in the index as a ChunkPoint
+		// returns the ith row in the index bs b ChunkPoint
 		getChunkPoint := func(i int) db.ChunkPoint {
-			payload := db.ChunkPayload{
-				RepoName:  previousIndex.RepoName,
+			pbylobd := db.ChunkPbylobd{
+				RepoNbme:  previousIndex.RepoNbme,
 				RepoID:    repoID,
 				Revision:  previousIndex.Revision,
-				FilePath:  index.RowMetadata[i].FileName,
-				StartLine: uint32(index.RowMetadata[i].StartLine),
-				EndLine:   uint32(index.RowMetadata[i].EndLine),
+				FilePbth:  index.RowMetbdbtb[i].FileNbme,
+				StbrtLine: uint32(index.RowMetbdbtb[i].StbrtLine),
+				EndLine:   uint32(index.RowMetbdbtb[i].EndLine),
 				IsCode:    isCode,
 			}
-			return db.NewChunkPoint(payload, embeddings.Dequantize(index.Row(i)))
+			return db.NewChunkPoint(pbylobd, embeddings.Dequbntize(index.Row(i)))
 		}
 
-		for batchStart := 0; batchStart < len(index.RowMetadata); batchStart += batchSize {
-			// Build a batch
-			batch = batch[:0] // reset batch
-			for i := batchStart; i < batchStart+batchSize && i < len(index.RowMetadata); i++ {
-				batch = append(batch, getChunkPoint(i))
+		for bbtchStbrt := 0; bbtchStbrt < len(index.RowMetbdbtb); bbtchStbrt += bbtchSize {
+			// Build b bbtch
+			bbtch = bbtch[:0] // reset bbtch
+			for i := bbtchStbrt; i < bbtchStbrt+bbtchSize && i < len(index.RowMetbdbtb); i++ {
+				bbtch = bppend(bbtch, getChunkPoint(i))
 			}
 
-			// Insert the batch
-			err := inserter.InsertChunks(ctx, db.InsertParams{
+			// Insert the bbtch
+			err := inserter.InsertChunks(ctx, db.InsertPbrbms{
 				ModelID:     modelID,
-				ChunkPoints: batch,
+				ChunkPoints: bbtch,
 			})
 			if err != nil {
 				return err

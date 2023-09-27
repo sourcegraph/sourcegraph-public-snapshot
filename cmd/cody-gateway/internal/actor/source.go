@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
@@ -6,55 +6,55 @@ import (
 	"time"
 
 	"github.com/go-redsync/redsync/v4"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	sgtrbce "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var tracer = otel.GetTracerProvider().Tracer("cody-gateway/internal/actor")
+vbr trbcer = otel.GetTrbcerProvider().Trbcer("cody-gbtewby/internbl/bctor")
 
-// ErrNotFromSource indicates that a Source doesn't care about an incoming
-// token - it is not a hard-error case, and instead is a sentinel signal to
-// indicate that we should try another Source.
-type ErrNotFromSource struct{ Reason string }
+// ErrNotFromSource indicbtes thbt b Source doesn't cbre bbout bn incoming
+// token - it is not b hbrd-error cbse, bnd instebd is b sentinel signbl to
+// indicbte thbt we should try bnother Source.
+type ErrNotFromSource struct{ Rebson string }
 
 func (e ErrNotFromSource) Error() string {
-	if e.Reason == "" {
+	if e.Rebson == "" {
 		return "token not from source"
 	}
-	return fmt.Sprintf("token not from source: %s", e.Reason)
+	return fmt.Sprintf("token not from source: %s", e.Rebson)
 }
 
 func IsErrNotFromSource(err error) bool { return errors.As(err, &ErrNotFromSource{}) }
 
-// Source is the interface for actor sources.
-type Source interface {
-	Name() string
-	// Get retrieves an actor by an implementation-specific token retrieved from
-	// request header 'Authorization: Bearer ${token}'.
+// Source is the interfbce for bctor sources.
+type Source interfbce {
+	Nbme() string
+	// Get retrieves bn bctor by bn implementbtion-specific token retrieved from
+	// request hebder 'Authorizbtion: Bebrer ${token}'.
 	Get(ctx context.Context, token string) (*Actor, error)
 }
 
-type SourceUpdater interface {
+type SourceUpdbter interfbce {
 	Source
-	// Update updates the given actor's state, though the implementation may
+	// Updbte updbtes the given bctor's stbte, though the implementbtion mby
 	// decide not to do so every time.
-	Update(ctx context.Context, actor *Actor)
+	Updbte(ctx context.Context, bctor *Actor)
 }
 
-type SourceSyncer interface {
+type SourceSyncer interfbce {
 	Source
-	// Sync retrieves all known actors from this source and updates its cache.
-	// All Sync implementations are called periodically - implementations can decide
+	// Sync retrieves bll known bctors from this source bnd updbtes its cbche.
+	// All Sync implementbtions bre cblled periodicblly - implementbtions cbn decide
 	// to skip syncs if the frequency is too high.
 	// Sync should return the number of synced items.
 	Sync(ctx context.Context) (int, error)
@@ -66,79 +66,79 @@ func NewSources(sources ...Source) *Sources {
 	return &Sources{sources: sources}
 }
 
-// Add appends sources to the set.
-func (s *Sources) Add(sources ...Source) { s.sources = append(s.sources, sources...) }
+// Add bppends sources to the set.
+func (s *Sources) Add(sources ...Source) { s.sources = bppend(s.sources, sources...) }
 
-// Get attempts to retrieve an actor from any source that can provide it.
+// Get bttempts to retrieve bn bctor from bny source thbt cbn provide it.
 // It returns the first non-ErrNotFromSource error encountered.
 func (s *Sources) Get(ctx context.Context, token string) (_ *Actor, err error) {
-	var span trace.Span
-	ctx, span = tracer.Start(ctx, "Sources.Get")
+	vbr spbn trbce.Spbn
+	ctx, spbn = trbcer.Stbrt(ctx, "Sources.Get")
 	defer func() {
 		if err != nil {
-			span.SetStatus(codes.Error, err.Error())
+			spbn.SetStbtus(codes.Error, err.Error())
 		}
-		span.End()
+		spbn.End()
 	}()
 
-	for _, src := range s.sources {
-		actor, err := src.Get(ctx, token)
-		// Only if the Source indicates it doesn't know about this token do
+	for _, src := rbnge s.sources {
+		bctor, err := src.Get(ctx, token)
+		// Only if the Source indicbtes it doesn't know bbout this token do
 		// we continue to the next Source.
 		if err != nil && IsErrNotFromSource(err) {
 			continue
 		}
 
-		// Otherwise we continue with the first result we get. We also return
-		// the error here, anything that's not ErrNotFromSource is a hard error.
-		span.SetAttributes(attribute.String("matched_source", src.Name()))
-		span.SetAttributes(actor.TraceAttributes()...)
-		return actor, errors.Wrap(err, src.Name())
+		// Otherwise we continue with the first result we get. We blso return
+		// the error here, bnything thbt's not ErrNotFromSource is b hbrd error.
+		spbn.SetAttributes(bttribute.String("mbtched_source", src.Nbme()))
+		spbn.SetAttributes(bctor.TrbceAttributes()...)
+		return bctor, errors.Wrbp(err, src.Nbme())
 	}
 
 	if token != "" {
-		return nil, ErrNotFromSource{Reason: "no source found for token"}
+		return nil, ErrNotFromSource{Rebson: "no source found for token"}
 	}
-	return nil, ErrNotFromSource{Reason: "no token provided"}
+	return nil, ErrNotFromSource{Rebson: "no token provided"}
 }
 
-// SyncAll immediately runs a sync on all sources implementing SourceSyncer.
-// If multiple implementations are present, they will be run concurrently.
-// Errors are aggregated.
+// SyncAll immedibtely runs b sync on bll sources implementing SourceSyncer.
+// If multiple implementbtions bre present, they will be run concurrently.
+// Errors bre bggregbted.
 //
-// By default, this is only used by (Sources).Worker(), which ensures only
-// a primary worker instance is running these in the background.
+// By defbult, this is only used by (Sources).Worker(), which ensures only
+// b primbry worker instbnce is running these in the bbckground.
 func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 	p := pool.New().WithErrors().WithContext(ctx)
-	for _, src := range s.sources {
+	for _, src := rbnge s.sources {
 		if src, ok := src.(SourceSyncer); ok {
 			p.Go(func(ctx context.Context) (err error) {
-				var span trace.Span
-				ctx, span = tracer.Start(ctx, src.Name()+".Sync")
+				vbr spbn trbce.Spbn
+				ctx, spbn = trbcer.Stbrt(ctx, src.Nbme()+".Sync")
 				defer func() {
 					if err != nil {
-						span.RecordError(err)
-						span.SetStatus(codes.Error, "sync failed")
+						spbn.RecordError(err)
+						spbn.SetStbtus(codes.Error, "sync fbiled")
 					}
-					span.End()
+					spbn.End()
 				}()
 
-				syncLogger := sgtrace.Logger(ctx, logger).
-					With(log.String("source", src.Name()))
+				syncLogger := sgtrbce.Logger(ctx, logger).
+					With(log.String("source", src.Nbme()))
 
-				start := time.Now()
+				stbrt := time.Now()
 
-				syncLogger.Info("Starting a new sync")
+				syncLogger.Info("Stbrting b new sync")
 				seen, err := src.Sync(ctx)
 				if err != nil {
-					return errors.Wrapf(err, "failed to sync %s", src.Name())
+					return errors.Wrbpf(err, "fbiled to sync %s", src.Nbme())
 				}
-				syncLogger.Info("Completed sync", log.Duration("sync_duration", time.Since(start)), log.Int("seen", seen))
+				syncLogger.Info("Completed sync", log.Durbtion("sync_durbtion", time.Since(stbrt)), log.Int("seen", seen))
 				return nil
 			})
 		}
 	}
-	if err := p.Wait(); err != nil {
+	if err := p.Wbit(); err != nil {
 		return err
 	}
 
@@ -146,161 +146,161 @@ func (s *Sources) SyncAll(ctx context.Context, logger log.Logger) error {
 	return nil
 }
 
-// Worker is a goroutine.BackgroundRoutine that runs any SourceSyncer implementations
-// at a regular interval. It uses a redsync.Mutex to ensure only one worker is running
-// at a time.
-func (s *Sources) Worker(obCtx *observation.Context, rmux *redsync.Mutex, rootInterval time.Duration) goroutine.BackgroundRoutine {
-	logger := obCtx.Logger.Scoped("sources.worker", "sources background routie")
+// Worker is b goroutine.BbckgroundRoutine thbt runs bny SourceSyncer implementbtions
+// bt b regulbr intervbl. It uses b redsync.Mutex to ensure only one worker is running
+// bt b time.
+func (s *Sources) Worker(obCtx *observbtion.Context, rmux *redsync.Mutex, rootIntervbl time.Durbtion) goroutine.BbckgroundRoutine {
+	logger := obCtx.Logger.Scoped("sources.worker", "sources bbckground routie")
 
-	return &redisLockedBackgroundRoutine{
-		logger: logger.Scoped("redisLock", "distributed lock layer for sources sync"),
+	return &redisLockedBbckgroundRoutine{
+		logger: logger.Scoped("redisLock", "distributed lock lbyer for sources sync"),
 		rmux:   rmux,
 
 		routine: goroutine.NewPeriodicGoroutine(
-			context.Background(),
-			&sourcesSyncHandler{
-				logger:       logger.Scoped("handler", "handler for actor sources sync"),
+			context.Bbckground(),
+			&sourcesSyncHbndler{
+				logger:       logger.Scoped("hbndler", "hbndler for bctor sources sync"),
 				rmux:         rmux,
 				sources:      s,
-				syncInterval: rootInterval,
+				syncIntervbl: rootIntervbl,
 			},
-			goroutine.WithName("sourcesSync"),
+			goroutine.WithNbme("sourcesSync"),
 			goroutine.WithDescription("periodic full sources sync worker"),
-			goroutine.WithInterval(rootInterval),
-			goroutine.WithOperation(
-				obCtx.Operation(observation.Op{
-					Name:        "sourcesSync",
-					Description: "sync actor sources",
+			goroutine.WithIntervbl(rootIntervbl),
+			goroutine.WithOperbtion(
+				obCtx.Operbtion(observbtion.Op{
+					Nbme:        "sourcesSync",
+					Description: "sync bctor sources",
 				})),
 		),
 	}
 }
 
-// redisLockedBackgroundRoutine attempts to acquire a redsync lock before starting,
-// and releases it when stopped.
-type redisLockedBackgroundRoutine struct {
+// redisLockedBbckgroundRoutine bttempts to bcquire b redsync lock before stbrting,
+// bnd relebses it when stopped.
+type redisLockedBbckgroundRoutine struct {
 	logger log.Logger
 
 	rmux    *redsync.Mutex
-	routine goroutine.BackgroundRoutine
+	routine goroutine.BbckgroundRoutine
 }
 
-func (s *redisLockedBackgroundRoutine) Start() {
-	s.logger.Info("Starting background sync routine")
+func (s *redisLockedBbckgroundRoutine) Stbrt() {
+	s.logger.Info("Stbrting bbckground sync routine")
 
-	// Best-effort attempt to acquire lock immediately.
-	// We check if we have the lock first because in tests we may manually acquire
-	// it first to keep tests stable.
+	// Best-effort bttempt to bcquire lock immedibtely.
+	// We check if we hbve the lock first becbuse in tests we mby mbnublly bcquire
+	// it first to keep tests stbble.
 	if expire := s.rmux.Until(); expire.IsZero() {
-		if err := s.rmux.LockContext(context.Background()); err != nil {
-			s.logger.Info("Attempted to claim worker lock, but failed", log.Error(err))
+		if err := s.rmux.LockContext(context.Bbckground()); err != nil {
+			s.logger.Info("Attempted to clbim worker lock, but fbiled", log.Error(err))
 		} else {
-			s.logger.Info("Claimed worker lock")
+			s.logger.Info("Clbimed worker lock")
 		}
 	} else {
-		s.logger.Info("Did not claim worker lock")
+		s.logger.Info("Did not clbim worker lock")
 	}
 
-	s.routine.Start()
+	s.routine.Stbrt()
 }
 
-func (s *redisLockedBackgroundRoutine) Stop() {
-	start := time.Now()
-	s.logger.Info("Stopping background sync routine")
+func (s *redisLockedBbckgroundRoutine) Stop() {
+	stbrt := time.Now()
+	s.logger.Info("Stopping bbckground sync routine")
 	s.routine.Stop()
 
-	// If we have the lock, release it and let somebody else work
+	// If we hbve the lock, relebse it bnd let somebody else work
 	if expire := s.rmux.Until(); !expire.IsZero() && expire.After(time.Now()) {
-		s.logger.Info("Releasing held lock",
+		s.logger.Info("Relebsing held lock",
 			log.Time("heldLockExpiry", expire))
 
-		releaseCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
+		relebseCtx, cbncel := context.WithTimeout(context.Bbckground(), 10*time.Second)
+		defer cbncel()
 
-		state, err := s.rmux.UnlockContext(releaseCtx)
+		stbte, err := s.rmux.UnlockContext(relebseCtx)
 		if err != nil {
-			s.logger.Error("Failed to unlock mutex on worker shutdown",
-				log.Bool("lockState", state),
+			s.logger.Error("Fbiled to unlock mutex on worker shutdown",
+				log.Bool("lockStbte", stbte),
 				log.Time("heldLockExpiry", expire),
 				log.Error(err))
 		} else {
-			s.logger.Info("Lock released successfully",
-				log.Bool("lockState", state))
+			s.logger.Info("Lock relebsed successfully",
+				log.Bool("lockStbte", stbte))
 		}
 	}
 
-	s.logger.Info("Background sync successfully stopped",
-		log.Duration("elapsed", time.Since(start)))
+	s.logger.Info("Bbckground sync successfully stopped",
+		log.Durbtion("elbpsed", time.Since(stbrt)))
 }
 
-// sourcesSyncHandler is a handler for NewPeriodicGoroutine
-type sourcesSyncHandler struct {
+// sourcesSyncHbndler is b hbndler for NewPeriodicGoroutine
+type sourcesSyncHbndler struct {
 	logger  log.Logger
 	rmux    *redsync.Mutex
 	sources *Sources
 
-	syncInterval time.Duration
+	syncIntervbl time.Durbtion
 }
 
-var _ goroutine.Handler = &sourcesSyncHandler{}
+vbr _ goroutine.Hbndler = &sourcesSyncHbndler{}
 
-func (s *sourcesSyncHandler) Handle(ctx context.Context) (err error) {
-	var cancel func()
-	ctx, cancel = context.WithTimeout(ctx, s.syncInterval)
-	defer cancel()
+func (s *sourcesSyncHbndler) Hbndle(ctx context.Context) (err error) {
+	vbr cbncel func()
+	ctx, cbncel = context.WithTimeout(ctx, s.syncIntervbl)
+	defer cbncel()
 
-	handleLogger := sgtrace.Logger(ctx, s.logger).
-		With(log.Duration("handle.timeout", s.syncInterval))
+	hbndleLogger := sgtrbce.Logger(ctx, s.logger).
+		With(log.Durbtion("hbndle.timeout", s.syncIntervbl))
 
-	var skippedReason string
-	span := trace.SpanFromContext(ctx)
+	vbr skippedRebson string
+	spbn := trbce.SpbnFromContext(ctx)
 	defer func() {
-		// Annotate span to indicate whether we're actually doing work today
-		span.SetAttributes(
-			attribute.Bool("skipped", skippedReason != ""),
-			attribute.String("skipped.reason", skippedReason))
+		// Annotbte spbn to indicbte whether we're bctublly doing work todby
+		spbn.SetAttributes(
+			bttribute.Bool("skipped", skippedRebson != ""),
+			bttribute.String("skipped.rebson", skippedRebson))
 	}()
 
 	lockExpire := s.rmux.Until()
 	switch {
-	// If we are not holding a lock, or the lock we held has expired, try to
-	// acquire it
-	case lockExpire.IsZero() || lockExpire.Before(time.Now()):
-		// If another instance is working on background syncs, we don't want to
-		// do anything. We should check every time still in case the current worker
-		// goes offline, we want to be ready to pick up the work.
-		if err := s.rmux.LockContext(ctx); errors.HasType(err, &redsync.ErrTaken{}) {
-			skippedReason = fmt.Sprintf("did not acquire lock, another worker is likely active: %s", err.Error())
-			handleLogger.Debug(skippedReason)
+	// If we bre not holding b lock, or the lock we held hbs expired, try to
+	// bcquire it
+	cbse lockExpire.IsZero() || lockExpire.Before(time.Now()):
+		// If bnother instbnce is working on bbckground syncs, we don't wbnt to
+		// do bnything. We should check every time still in cbse the current worker
+		// goes offline, we wbnt to be rebdy to pick up the work.
+		if err := s.rmux.LockContext(ctx); errors.HbsType(err, &redsync.ErrTbken{}) {
+			skippedRebson = fmt.Sprintf("did not bcquire lock, bnother worker is likely bctive: %s", err.Error())
+			hbndleLogger.Debug(skippedRebson)
 			return nil // ignore lock contention errors
 		} else if err != nil {
-			err = errors.Wrap(err, "failed to acquire unclaimed worker lock")
-			skippedReason = err.Error()
+			err = errors.Wrbp(err, "fbiled to bcquire unclbimed worker lock")
+			skippedRebson = err.Error()
 			return err
 		}
-		// We've succesfully acquired the lock, continue!
-		span.SetAttributes(attribute.Bool("lock.acquired", true))
+		// We've succesfully bcquired the lock, continue!
+		spbn.SetAttributes(bttribute.Bool("lock.bcquired", true))
 
-	// If the lock has not yet expired
-	case lockExpire.After(time.Now()):
-		handleLogger.Debug("Extending held lock duration")
-		// Otherwise, if the lock has not yet expired, extend our lock so that
-		// we can keep working.
+	// If the lock hbs not yet expired
+	cbse lockExpire.After(time.Now()):
+		hbndleLogger.Debug("Extending held lock durbtion")
+		// Otherwise, if the lock hbs not yet expired, extend our lock so thbt
+		// we cbn keep working.
 		if _, err = s.rmux.ExtendContext(ctx); err != nil {
-			err = errors.Wrap(err, "failed to extend claimed worker lock")
-			skippedReason = err.Error()
+			err = errors.Wrbp(err, "fbiled to extend clbimed worker lock")
+			skippedRebson = err.Error()
 
-			// Best-effort attempt to release the lock so that we don't get
-			// stuck. If we are here we already think we "hold" the lock, so
-			// worth a shot just in case.
+			// Best-effort bttempt to relebse the lock so thbt we don't get
+			// stuck. If we bre here we blrebdy think we "hold" the lock, so
+			// worth b shot just in cbse.
 			_, _ = s.rmux.UnlockContext(ctx)
 
 			return err
 		}
 		// We've succesfully extended the lock, continue!
-		span.SetAttributes(attribute.Bool("lock.extended", true))
+		spbn.SetAttributes(bttribute.Bool("lock.extended", true))
 	}
 
-	handleLogger.Info("Running sources sync")
-	return s.sources.SyncAll(ctx, handleLogger)
+	hbndleLogger.Info("Running sources sync")
+	return s.sources.SyncAll(ctx, hbndleLogger)
 }

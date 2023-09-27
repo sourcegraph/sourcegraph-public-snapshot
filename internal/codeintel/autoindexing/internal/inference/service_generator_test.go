@@ -1,60 +1,60 @@
-package inference
+pbckbge inference
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 	"io"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v3"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/butoindex/config"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	os.Exit(m.Run())
 }
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
-func TestEmptyGenerators(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
+func TestEmptyGenerbtors(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
 			description:        "empty",
 			repositoryContents: nil,
 		},
 	)
 }
 
-func TestOverrideGenerators(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
+func TestOverrideGenerbtors(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
 			description: "override",
 			overrideScript: `
-				local path = require("path")
-				local pattern = require("sg.autoindex.patterns")
-				local recognizer = require("sg.autoindex.recognizer")
+				locbl pbth = require("pbth")
+				locbl pbttern = require("sg.butoindex.pbtterns")
+				locbl recognizer = require("sg.butoindex.recognizer")
 
-				local custom_recognizer = recognizer.new_path_recognizer {
-					patterns = { pattern.new_path_basename("sg-test") },
+				locbl custom_recognizer = recognizer.new_pbth_recognizer {
+					pbtterns = { pbttern.new_pbth_bbsenbme("sg-test") },
 
 					-- Invoked when go.mod files exist
-					generate = function(_, paths)
-						local jobs = {}
-						for i = 1, #paths do
-							table.insert(jobs, {
+					generbte = function(_, pbths)
+						locbl jobs = {}
+						for i = 1, #pbths do
+							tbble.insert(jobs, {
 								steps = {},
-								root = path.dirname(paths[i]),
+								root = pbth.dirnbme(pbths[i]),
 								indexer = "test-override",
-								indexer_args = {},
+								indexer_brgs = {},
 								outfile = "",
 							})
 						end
@@ -63,38 +63,38 @@ func TestOverrideGenerators(t *testing.T) {
 					end,
 				}
 
-				return require("sg.autoindex.config").new({
+				return require("sg.butoindex.config").new({
 					["custom.test"] = custom_recognizer,
 				})
 			`,
-			repositoryContents: map[string]string{
+			repositoryContents: mbp[string]string{
 				"sg-test":     "",
 				"foo/sg-test": "",
-				"bar/sg-test": "",
-				"baz/sg-test": "",
+				"bbr/sg-test": "",
+				"bbz/sg-test": "",
 			},
 		},
-		generatorTestCase{
-			description: "disable default",
+		generbtorTestCbse{
+			description: "disbble defbult",
 			overrideScript: `
-				local path = require("path")
-				local pattern = require("sg.autoindex.patterns")
-				local recognizer = require("sg.autoindex.recognizer")
+				locbl pbth = require("pbth")
+				locbl pbttern = require("sg.butoindex.pbtterns")
+				locbl recognizer = require("sg.butoindex.recognizer")
 
-				local custom_recognizer = recognizer.new_path_recognizer {
-					patterns = {
-						pattern.new_path_basename("acme-custom.yaml")
+				locbl custom_recognizer = recognizer.new_pbth_recognizer {
+					pbtterns = {
+						pbttern.new_pbth_bbsenbme("bcme-custom.ybml")
 					},
 
-					-- Invoked with paths matching acme-custom.yaml anywhere in repo
-					generate = function(_, paths)
-						local jobs = {}
-						for i = 1, #paths do
-							table.insert(jobs, {
+					-- Invoked with pbths mbtching bcme-custom.ybml bnywhere in repo
+					generbte = function(_, pbths)
+						locbl jobs = {}
+						for i = 1, #pbths do
+							tbble.insert(jobs, {
 								steps = {},
-								root = path.dirname(paths[i]),
-								indexer = "acme/custom-indexer",
-								indexer_args = {},
+								root = pbth.dirnbme(pbths[i]),
+								indexer = "bcme/custom-indexer",
+								indexer_brgs = {},
 								outfile = "",
 							})
 						end
@@ -103,69 +103,69 @@ func TestOverrideGenerators(t *testing.T) {
 					end,
 				}
 
-				return require("sg.autoindex.config").new({
-					["sg.test"] = false,
-					["acme.custom"] = custom_recognizer,
+				return require("sg.butoindex.config").new({
+					["sg.test"] = fblse,
+					["bcme.custom"] = custom_recognizer,
 				})
 			`,
-			repositoryContents: map[string]string{
-				"acme-custom.yaml":     "",
-				"foo/acme-custom.yaml": "",
-				"bar/acme-custom.yaml": "",
-				"baz/acme-custom.yaml": "",
+			repositoryContents: mbp[string]string{
+				"bcme-custom.ybml":     "",
+				"foo/bcme-custom.ybml": "",
+				"bbr/bcme-custom.ybml": "",
+				"bbz/bcme-custom.ybml": "",
 			},
 			// sg.test -> emits jobs with `test` indexer
-			// No jobs should have been generated
-			// acme.custom -> emits jobs with `acme/custom-indexer` indexer
+			// No jobs should hbve been generbted
+			// bcme.custom -> emits jobs with `bcme/custom-indexer` indexer
 		},
 	)
 }
 
-// Run 'go test ./... -update' in this subdirectory to update snapshot outputs
-type generatorTestCase struct {
+// Run 'go test ./... -updbte' in this subdirectory to updbte snbpshot outputs
+type generbtorTestCbse struct {
 	description        string
 	overrideScript     string
-	repositoryContents map[string]string
+	repositoryContents mbp[string]string
 }
 
-func testGenerators(t *testing.T, testCases ...generatorTestCase) {
-	for _, testCase := range testCases {
-		testGenerator(t, testCase)
+func testGenerbtors(t *testing.T, testCbses ...generbtorTestCbse) {
+	for _, testCbse := rbnge testCbses {
+		testGenerbtor(t, testCbse)
 	}
 }
 
-func testGenerator(t *testing.T, testCase generatorTestCase) {
-	t.Run(testCase.description, func(t *testing.T) {
-		service := testService(t, testCase.repositoryContents)
+func testGenerbtor(t *testing.T, testCbse generbtorTestCbse) {
+	t.Run(testCbse.description, func(t *testing.T) {
+		service := testService(t, testCbse.repositoryContents)
 
 		result, err := service.InferIndexJobs(
-			context.Background(),
+			context.Bbckground(),
 			"github.com/test/test",
 			"HEAD",
-			testCase.overrideScript,
+			testCbse.overrideScript,
 		)
 		if err != nil {
-			t.Fatalf("unexpected error inferring jobs: %s", err)
+			t.Fbtblf("unexpected error inferring jobs: %s", err)
 		}
-		snapshotPath := filepath.Join("testdata", strings.Replace(testCase.description, " ", "_", -1)+".yaml")
+		snbpshotPbth := filepbth.Join("testdbtb", strings.Replbce(testCbse.description, " ", "_", -1)+".ybml")
 		sortIndexJobs(result.IndexJobs)
-		if update != nil && *update == true {
-			bytes, err := yaml.Marshal(result.IndexJobs)
+		if updbte != nil && *updbte == true {
+			bytes, err := ybml.Mbrshbl(result.IndexJobs)
 			require.NoError(t, err)
-			file, err := os.Create(snapshotPath)
+			file, err := os.Crebte(snbpshotPbth)
 			require.NoError(t, err)
 			_, err = file.Write(bytes)
 			require.NoError(t, err)
 			return
 		}
-		file, err := os.Open(snapshotPath)
+		file, err := os.Open(snbpshotPbth)
 		require.NoError(t, err)
-		bytes, err := io.ReadAll(file)
+		bytes, err := io.RebdAll(file)
 		require.NoError(t, err)
-		var expected []config.IndexJob
-		require.NoError(t, yaml.Unmarshal(bytes, &expected))
-		if diff := cmp.Diff(expected, result.IndexJobs, cmpopts.EquateEmpty()); diff != "" {
-			t.Errorf("unexpected index jobs (-want +got):\n%s", diff)
+		vbr expected []config.IndexJob
+		require.NoError(t, ybml.Unmbrshbl(bytes, &expected))
+		if diff := cmp.Diff(expected, result.IndexJobs, cmpopts.EqubteEmpty()); diff != "" {
+			t.Errorf("unexpected index jobs (-wbnt +got):\n%s", diff)
 		}
 	})
 }

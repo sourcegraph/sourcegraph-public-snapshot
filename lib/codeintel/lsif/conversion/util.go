@@ -1,14 +1,14 @@
-package conversion
+pbckbge conversion
 
 import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-func makeKey(parts ...string) string {
-	return strings.Join(parts, ":")
+func mbkeKey(pbrts ...string) string {
+	return strings.Join(pbrts, ":")
 }
 
 func toID(id int) precise.ID {
@@ -16,5 +16,5 @@ func toID(id int) precise.ID {
 		return ""
 	}
 
-	return precise.ID(strconv.FormatInt(int64(id), 10))
+	return precise.ID(strconv.FormbtInt(int64(id), 10))
 }

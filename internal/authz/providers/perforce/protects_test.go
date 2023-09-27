@@ -1,4 +1,4 @@
-package perforce
+pbckbge perforce
 
 import (
 	"bytes"
@@ -11,120 +11,120 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	srp "github.com/sourcegrbph/sourcegrbph/internbl/buthz/subrepoperms"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestConvertToPostgresMatch(t *testing.T) {
+func TestConvertToPostgresMbtch(t *testing.T) {
 	// Only needs to implement directory-level perforce protects
 	tests := []struct {
-		name  string
-		match string
-		want  string
+		nbme  string
+		mbtch string
+		wbnt  string
 	}{{
-		name:  "*",
-		match: "//Sourcegraph/Engineering/*/Frontend/",
-		want:  "//Sourcegraph/Engineering/[^/]+/Frontend/",
+		nbme:  "*",
+		mbtch: "//Sourcegrbph/Engineering/*/Frontend/",
+		wbnt:  "//Sourcegrbph/Engineering/[^/]+/Frontend/",
 	}, {
-		name:  "...",
-		match: "//Sourcegraph/Engineering/.../Frontend/",
-		want:  "//Sourcegraph/Engineering/%/Frontend/",
+		nbme:  "...",
+		mbtch: "//Sourcegrbph/Engineering/.../Frontend/",
+		wbnt:  "//Sourcegrbph/Engineering/%/Frontend/",
 	}, {
-		name:  "* and ...",
-		match: "//Sourcegraph/*/Src/.../Frontend/",
-		want:  "//Sourcegraph/[^/]+/Src/%/Frontend/",
+		nbme:  "* bnd ...",
+		mbtch: "//Sourcegrbph/*/Src/.../Frontend/",
+		wbnt:  "//Sourcegrbph/[^/]+/Src/%/Frontend/",
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := convertToPostgresMatch(tt.match)
-			if diff := cmp.Diff(tt.want, got); diff != "" {
-				t.Fatal(diff)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got := convertToPostgresMbtch(tt.mbtch)
+			if diff := cmp.Diff(tt.wbnt, got); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-func TestConvertToGlobMatch(t *testing.T) {
+func TestConvertToGlobMbtch(t *testing.T) {
 	// Should fully implement perforce protects
-	// Some cases taken directly from https://www.perforce.com/manuals/cmdref/Content/CmdRef/filespecs.html
+	// Some cbses tbken directly from https://www.perforce.com/mbnubls/cmdref/Content/CmdRef/filespecs.html
 	// Useful for debugging:
 	//
-	//   go run github.com/gobwas/glob/cmd/globdraw -p '{//gra*/dep*/,//gra*/dep*}' -s '/' | dot -Tpng -o pattern.png
+	//   go run github.com/gobwbs/glob/cmd/globdrbw -p '{//grb*/dep*/,//grb*/dep*}' -s '/' | dot -Tpng -o pbttern.png
 	//
 	tests := []struct {
-		name  string
-		match string
-		want  string
+		nbme  string
+		mbtch string
+		wbnt  string
 
-		shouldMatch    []string
-		shouldNotMatch []string
+		shouldMbtch    []string
+		shouldNotMbtch []string
 	}{{
-		name:  "*",
-		match: "//Sourcegraph/Engineering/*/Frontend/",
-		want:  "//Sourcegraph/Engineering/*/Frontend/",
+		nbme:  "*",
+		mbtch: "//Sourcegrbph/Engineering/*/Frontend/",
+		wbnt:  "//Sourcegrbph/Engineering/*/Frontend/",
 	}, {
-		name:  "...",
-		match: "//Sourcegraph/Engineering/.../Frontend/",
-		want:  "//Sourcegraph/Engineering/**/Frontend/",
+		nbme:  "...",
+		mbtch: "//Sourcegrbph/Engineering/.../Frontend/",
+		wbnt:  "//Sourcegrbph/Engineering/**/Frontend/",
 	}, {
-		name:           "* and ...",
-		match:          "//Sourcegraph/*/Src/.../Frontend/",
-		want:           "//Sourcegraph/*/Src/**/Frontend/",
-		shouldMatch:    []string{"//Sourcegraph/Path/Src/One/Two/Frontend/"},
-		shouldNotMatch: []string{"//Sourcegraph/One/Two/Src/Path/Frontend/"},
+		nbme:           "* bnd ...",
+		mbtch:          "//Sourcegrbph/*/Src/.../Frontend/",
+		wbnt:           "//Sourcegrbph/*/Src/**/Frontend/",
+		shouldMbtch:    []string{"//Sourcegrbph/Pbth/Src/One/Two/Frontend/"},
+		shouldNotMbtch: []string{"//Sourcegrbph/One/Two/Src/Pbth/Frontend/"},
 	}, {
-		name:  "./....c",
-		match: "./....c",
-		want:  "./**.c",
-		shouldMatch: []string{
+		nbme:  "./....c",
+		mbtch: "./....c",
+		wbnt:  "./**.c",
+		shouldMbtch: []string{
 			"./file.c", "./dir/file.c",
 		},
 	}, {
-		name:  "//gra*/dep*",
-		match: "//gra*/dep*",
-		want:  `//gra*/dep*{/,}`,
-		shouldMatch: []string{
-			"//graph/depot/", "//graphs/depots",
+		nbme:  "//grb*/dep*",
+		mbtch: "//grb*/dep*",
+		wbnt:  `//grb*/dep*{/,}`,
+		shouldMbtch: []string{
+			"//grbph/depot/", "//grbphs/depots",
 		},
-		shouldNotMatch: []string{"//graph/depot/release1/"},
+		shouldNotMbtch: []string{"//grbph/depot/relebse1/"},
 	}, {
-		name:        "//depot/main/rel...",
-		match:       "//depot/main/rel...",
-		want:        "//depot/main/rel**",
-		shouldMatch: []string{"//depot/main/rel/", "//depot/main/releases/", "//depot/main/release-note.txt", "//depot/main/rel1/product1"},
+		nbme:        "//depot/mbin/rel...",
+		mbtch:       "//depot/mbin/rel...",
+		wbnt:        "//depot/mbin/rel**",
+		shouldMbtch: []string{"//depot/mbin/rel/", "//depot/mbin/relebses/", "//depot/mbin/relebse-note.txt", "//depot/mbin/rel1/product1"},
 	}, {
-		name:        "//depot/*",
-		match:       "//depot/*",
-		want:        "//depot/*{/,}",
-		shouldMatch: []string{"//depot/main", "//depot/main/"},
+		nbme:        "//depot/*",
+		mbtch:       "//depot/*",
+		wbnt:        "//depot/*{/,}",
+		shouldMbtch: []string{"//depot/mbin", "//depot/mbin/"},
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := convertToGlobMatch(tt.match)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got, err := convertToGlobMbtch(tt.mbtch)
 			if err != nil {
-				t.Fatal(fmt.Sprintf("unexpected error: %+v", err))
+				t.Fbtbl(fmt.Sprintf("unexpected error: %+v", err))
 			}
-			if diff := cmp.Diff(tt.want, got.pattern); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(tt.wbnt, got.pbttern); diff != "" {
+				t.Fbtbl(diff)
 			}
-			if len(tt.shouldMatch) > 0 {
-				for _, m := range tt.shouldMatch {
-					if !got.Match(m) {
-						t.Errorf("%q should have matched %q", got.pattern, m)
+			if len(tt.shouldMbtch) > 0 {
+				for _, m := rbnge tt.shouldMbtch {
+					if !got.Mbtch(m) {
+						t.Errorf("%q should hbve mbtched %q", got.pbttern, m)
 					}
 				}
 			}
-			if len(tt.shouldNotMatch) > 0 {
-				for _, m := range tt.shouldNotMatch {
-					if got.Match(m) {
-						t.Errorf("%q should not have matched %q", got.pattern, m)
+			if len(tt.shouldNotMbtch) > 0 {
+				for _, m := rbnge tt.shouldNotMbtch {
+					if got.Mbtch(m) {
+						t.Errorf("%q should not hbve mbtched %q", got.pbttern, m)
 					}
 				}
 			}
@@ -132,531 +132,531 @@ func TestConvertToGlobMatch(t *testing.T) {
 	}
 }
 
-func mustGlob(t *testing.T, match string) globMatch {
-	m, err := convertToGlobMatch(match)
+func mustGlob(t *testing.T, mbtch string) globMbtch {
+	m, err := convertToGlobMbtch(mbtch)
 	if err != nil {
 		t.Error(err)
 	}
 	return m
 }
 
-// mustGlobPattern gets the glob pattern for a given p4 match for use in testing
-func mustGlobPattern(t *testing.T, match string) string {
-	return mustGlob(t, match).pattern
+// mustGlobPbttern gets the glob pbttern for b given p4 mbtch for use in testing
+func mustGlobPbttern(t *testing.T, mbtch string) string {
+	return mustGlob(t, mbtch).pbttern
 }
 
-func TestMatchesAgainstDepot(t *testing.T) {
-	type args struct {
-		match globMatch
+func TestMbtchesAgbinstDepot(t *testing.T) {
+	type brgs struct {
+		mbtch globMbtch
 		depot string
 	}
 	tests := []struct {
-		name string
-		args args
-		want bool
+		nbme string
+		brgs brgs
+		wbnt bool
 	}{{
-		name: "simple match",
-		args: args{
-			match: mustGlob(t, "//depot/main/..."),
-			depot: "//depot/main/",
+		nbme: "simple mbtch",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/mbin/..."),
+			depot: "//depot/mbin/",
 		},
-		want: true,
+		wbnt: true,
 	}, {
-		name: "no wildcard in match",
-		args: args{
-			match: mustGlob(t, "//depot/"),
-			depot: "//depot/main/",
+		nbme: "no wildcbrd in mbtch",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/"),
+			depot: "//depot/mbin/",
 		},
-		want: false,
+		wbnt: fblse,
 	}, {
-		name: "match parent path",
-		args: args{
-			match: mustGlob(t, "//depot/..."),
-			depot: "//depot/main/",
+		nbme: "mbtch pbrent pbth",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/..."),
+			depot: "//depot/mbin/",
 		},
-		want: true,
+		wbnt: true,
 	}, {
-		name: "match sub path with all wildcard",
-		args: args{
-			match: mustGlob(t, "//depot/.../file"),
-			depot: "//depot/main/",
+		nbme: "mbtch sub pbth with bll wildcbrd",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/.../file"),
+			depot: "//depot/mbin/",
 		},
-		want: true,
+		wbnt: true,
 	}, {
-		name: "match sub path with dir wildcard",
-		args: args{
-			match: mustGlob(t, "//depot/*/file"),
-			depot: "//depot/main/",
+		nbme: "mbtch sub pbth with dir wildcbrd",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/*/file"),
+			depot: "//depot/mbin/",
 		},
-		want: true,
+		wbnt: true,
 	}, {
-		name: "match sub path with dir and all wildcards",
-		args: args{
-			match: mustGlob(t, "//depot/*/file/.../path"),
-			depot: "//depot/main/",
+		nbme: "mbtch sub pbth with dir bnd bll wildcbrds",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/*/file/.../pbth"),
+			depot: "//depot/mbin/",
 		},
-		want: true,
+		wbnt: true,
 	}, {
-		name: "match sub path with dir wildcard that's deeply nested",
-		args: args{
-			match: mustGlob(t, "//depot/*/file/*/another-file/path/"),
-			depot: "//depot/main/",
+		nbme: "mbtch sub pbth with dir wildcbrd thbt's deeply nested",
+		brgs: brgs{
+			mbtch: mustGlob(t, "//depot/*/file/*/bnother-file/pbth/"),
+			depot: "//depot/mbin/",
 		},
-		want: true,
+		wbnt: true,
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := matchesAgainstDepot(tt.args.match, tt.args.depot); got != tt.want {
-				t.Errorf("matchesAgainstDepot() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := mbtchesAgbinstDepot(tt.brgs.mbtch, tt.brgs.depot); got != tt.wbnt {
+				t.Errorf("mbtchesAgbinstDepot() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestScanFullRepoPermissions(t *testing.T) {
+func TestScbnFullRepoPermissions(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f, err := os.Open("testdata/sample-protects-u.txt")
+	f, err := os.Open("testdbtb/sbmple-protects-u.txt")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	data, err := io.ReadAll(f)
+	dbtb, err := io.RebdAll(f)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := f.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	rc := io.NopCloser(bytes.NewReader(data))
+	rc := io.NopCloser(bytes.NewRebder(dbtb))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+	execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
 	p.depots = []extsvc.RepoID{
-		"//depot/main/",
-		"//depot/training/",
+		"//depot/mbin/",
+		"//depot/trbining/",
 		"//depot/test/",
 		"//depot/rickroll/",
-		"//not-depot/not-main/", // no rules exist
+		"//not-depot/not-mbin/", // no rules exist
 	}
-	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+	perms := &buthz.ExternblUserPermissions{
+		SubRepoPermissions: mbke(mbp[extsvc.RepoID]*buthz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
-		t.Fatal(err)
+	if err := scbnProtects(logger, rc, fullRepoPermsScbnner(logger, perms, p.depots), fblse); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// See sample-protects-u.txt for notes
-	want := &authz.ExternalUserPermissions{
-		Exacts: []extsvc.RepoID{
-			"//depot/main/",
-			"//depot/training/",
+	// See sbmple-protects-u.txt for notes
+	wbnt := &buthz.ExternblUserPermissions{
+		Exbcts: []extsvc.RepoID{
+			"//depot/mbin/",
+			"//depot/trbining/",
 			"//depot/test/",
 		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-			"//depot/main/": {
-				Paths: []string{
-					mustGlobPattern(t, "-/..."),
-					mustGlobPattern(t, "/base/..."),
-					mustGlobPattern(t, "/*/stuff/..."),
-					mustGlobPattern(t, "/frontend/.../stuff/*"),
-					mustGlobPattern(t, "/config.yaml"),
-					mustGlobPattern(t, "/subdir/**"),
-					mustGlobPattern(t, "-/subdir/remove/"),
-					mustGlobPattern(t, "/subdir/some-dir/also-remove/..."),
-					mustGlobPattern(t, "/subdir/another-dir/also-remove/..."),
-					mustGlobPattern(t, "-/subdir/*/also-remove/..."),
-					mustGlobPattern(t, "/.../README.md"),
-					mustGlobPattern(t, "/dir.yaml"),
-					mustGlobPattern(t, "-/.../.secrets.env"),
+		SubRepoPermissions: mbp[extsvc.RepoID]*buthz.SubRepoPermissions{
+			"//depot/mbin/": {
+				Pbths: []string{
+					mustGlobPbttern(t, "-/..."),
+					mustGlobPbttern(t, "/bbse/..."),
+					mustGlobPbttern(t, "/*/stuff/..."),
+					mustGlobPbttern(t, "/frontend/.../stuff/*"),
+					mustGlobPbttern(t, "/config.ybml"),
+					mustGlobPbttern(t, "/subdir/**"),
+					mustGlobPbttern(t, "-/subdir/remove/"),
+					mustGlobPbttern(t, "/subdir/some-dir/blso-remove/..."),
+					mustGlobPbttern(t, "/subdir/bnother-dir/blso-remove/..."),
+					mustGlobPbttern(t, "-/subdir/*/blso-remove/..."),
+					mustGlobPbttern(t, "/.../README.md"),
+					mustGlobPbttern(t, "/dir.ybml"),
+					mustGlobPbttern(t, "-/.../.secrets.env"),
 				},
 			},
 			"//depot/test/": {
-				Paths: []string{
-					mustGlobPattern(t, "/..."),
-					mustGlobPattern(t, "/.../README.md"),
-					mustGlobPattern(t, "/dir.yaml"),
-					mustGlobPattern(t, "-/.../.secrets.env"),
+				Pbths: []string{
+					mustGlobPbttern(t, "/..."),
+					mustGlobPbttern(t, "/.../README.md"),
+					mustGlobPbttern(t, "/dir.ybml"),
+					mustGlobPbttern(t, "-/.../.secrets.env"),
 				},
 			},
-			"//depot/training/": {
-				Paths: []string{
-					mustGlobPattern(t, "/..."),
-					mustGlobPattern(t, "-/secrets/..."),
-					mustGlobPattern(t, "-/.env"),
-					mustGlobPattern(t, "/.../README.md"),
-					mustGlobPattern(t, "/dir.yaml"),
-					mustGlobPattern(t, "-/.../.secrets.env"),
+			"//depot/trbining/": {
+				Pbths: []string{
+					mustGlobPbttern(t, "/..."),
+					mustGlobPbttern(t, "-/secrets/..."),
+					mustGlobPbttern(t, "-/.env"),
+					mustGlobPbttern(t, "/.../README.md"),
+					mustGlobPbttern(t, "/dir.ybml"),
+					mustGlobPbttern(t, "-/.../.secrets.env"),
 				},
 			},
 		},
 	}
-	if diff := cmp.Diff(want, perms); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, perms); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
+func TestScbnFullRepoPermissionsWithWildcbrdMbtchingDepot(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f, err := os.Open("testdata/sample-protects-m.txt")
+	f, err := os.Open("testdbtb/sbmple-protects-m.txt")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	data, err := io.ReadAll(f)
+	dbtb, err := io.RebdAll(f)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := f.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	rc := io.NopCloser(bytes.NewReader(data))
+	rc := io.NopCloser(bytes.NewRebder(dbtb))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+	execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
 	p.depots = []extsvc.RepoID{
-		"//depot/main/base/",
+		"//depot/mbin/bbse/",
 	}
-	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+	perms := &buthz.ExternblUserPermissions{
+		SubRepoPermissions: mbke(mbp[extsvc.RepoID]*buthz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
-		t.Fatal(err)
+	if err := scbnProtects(logger, rc, fullRepoPermsScbnner(logger, perms, p.depots), fblse); err != nil {
+		t.Fbtbl(err)
 	}
 
-	want := &authz.ExternalUserPermissions{
-		Exacts: []extsvc.RepoID{
-			"//depot/main/base/",
+	wbnt := &buthz.ExternblUserPermissions{
+		Exbcts: []extsvc.RepoID{
+			"//depot/mbin/bbse/",
 		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-			"//depot/main/base/": {
-				Paths: []string{
-					mustGlobPattern(t, "-/**"),
-					mustGlobPattern(t, "/**"),
-					mustGlobPattern(t, "-/**"),
-					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/**/base/build/**/asdf.txt"),
-					mustGlobPattern(t, "-/build/**/asdf.txt"),
+		SubRepoPermissions: mbp[extsvc.RepoID]*buthz.SubRepoPermissions{
+			"//depot/mbin/bbse/": {
+				Pbths: []string{
+					mustGlobPbttern(t, "-/**"),
+					mustGlobPbttern(t, "/**"),
+					mustGlobPbttern(t, "-/**"),
+					mustGlobPbttern(t, "-/**/bbse/build/deleteorgs.txt"),
+					mustGlobPbttern(t, "-/build/deleteorgs.txt"),
+					mustGlobPbttern(t, "-/**/bbse/build/**/bsdf.txt"),
+					mustGlobPbttern(t, "-/build/**/bsdf.txt"),
 				},
 			},
 		},
 	}
 
-	if diff := cmp.Diff(want, perms); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, perms); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestFullScanMatchRules(t *testing.T) {
-	for _, tc := range []struct {
-		name          string
+func TestFullScbnMbtchRules(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme          string
 		depot         string
 		protects      string
 		protectsFile  string
-		canReadAll    []string
-		cannotReadAny []string
+		cbnRebdAll    []string
+		cbnnotRebdAny []string
 		noRules       bool
 	}{
-		// Confirm the rules as defined in
-		// https://www.perforce.com/manuals/p4sag/Content/P4SAG/protections-implementation.html
+		// Confirm the rules bs defined in
+		// https://www.perforce.com/mbnubls/p4sbg/Content/P4SAG/protections-implementbtion.html
 		//
-		// Modified slightly by removing the //depot prefix and only including rules
-		// applicable to the actual user since that's what we'll get back from protect -u
+		// Modified slightly by removing the //depot prefix bnd only including rules
+		// bpplicbble to the bctubl user since thbt's whbt we'll get bbck from protect -u
 		{
-			name:  "Without an exclusionary mapping, the most permissive line rules",
+			nbme:  "Without bn exclusionbry mbpping, the most permissive line rules",
 			depot: "//depot/",
 			protects: `
 write       group       Dev2    *    //depot/dev/...
-read        group       Dev1    *    //depot/dev/productA/...
+rebd        group       Dev1    *    //depot/dev/productA/...
 write       group       Dev1    *    //depot/elm_proj/...
 `,
-			canReadAll: []string{"dev/productA/readme.txt"},
+			cbnRebdAll: []string{"dev/productA/rebdme.txt"},
 		},
 		{
-			name:  "Rules that include a host are ignored",
+			nbme:  "Rules thbt include b host bre ignored",
 			depot: "//depot/",
 			protects: `
 write       group       Dev2    *    //depot/dev/...
-read        group       Dev1    *    //depot/dev/productA/...
+rebd        group       Dev1    *    //depot/dev/productA/...
 write       group       Dev1    *    //depot/elm_proj/...
-read		group		Dev1    192.168.10.1/24    -//depot/dev/productA/...
+rebd		group		Dev1    192.168.10.1/24    -//depot/dev/productA/...
 `,
-			canReadAll: []string{"dev/productA/readme.txt"},
+			cbnRebdAll: []string{"dev/productA/rebdme.txt"},
 		},
 		{
-			name:  "Exclusion overrides prior inclusion",
+			nbme:  "Exclusion overrides prior inclusion",
 			depot: "//depot/",
 			protects: `
-write   group   Dev1   *   //depot/dev/...            ## Maria is a member of Dev1
-list    group   Dev1   *   -//depot/dev/productA/...  ## exclusionary mapping overrides the line above
+write   group   Dev1   *   //depot/dev/...            ## Mbrib is b member of Dev1
+list    group   Dev1   *   -//depot/dev/productA/...  ## exclusionbry mbpping overrides the line bbove
 `,
-			cannotReadAny: []string{"dev/productA/readme.txt"},
+			cbnnotRebdAny: []string{"dev/productA/rebdme.txt"},
 		},
 		{
-			name:  "Exclusionary mapping and =, - before file path",
+			nbme:  "Exclusionbry mbpping bnd =, - before file pbth",
 			depot: "//depot/",
 			protects: `
-list   group   Rome    *   -//depot/dev/prodA/...   ## exclusion of list implies no read, no write, etc.
-read   group   Rome    *   //depot/dev/prodA/...   ## Rome can only read this one path
+list   group   Rome    *   -//depot/dev/prodA/...   ## exclusion of list implies no rebd, no write, etc.
+rebd   group   Rome    *   //depot/dev/prodA/...   ## Rome cbn only rebd this one pbth
 `,
-			cannotReadAny: []string{"dev/prodB/things.txt"},
-			// The include appears after the exclude so it should take preference
-			canReadAll: []string{"dev/prodA/things.txt"},
+			cbnnotRebdAny: []string{"dev/prodB/things.txt"},
+			// The include bppebrs bfter the exclude so it should tbke preference
+			cbnRebdAll: []string{"dev/prodA/things.txt"},
 		},
 		{
-			name:  "Exclusionary mapping and =, - before the file path and = before the access level",
+			nbme:  "Exclusionbry mbpping bnd =, - before the file pbth bnd = before the bccess level",
 			depot: "//depot/",
 			protects: `
-read  group     Rome    *  //depot/dev/...
-=read  group    Rome    *  -//depot/dev/prodA/...   ## Rome cannot read this one path
+rebd  group     Rome    *  //depot/dev/...
+=rebd  group    Rome    *  -//depot/dev/prodA/...   ## Rome cbnnot rebd this one pbth
 `,
-			cannotReadAny: []string{"dev/prodA/things.txt"},
+			cbnnotRebdAny: []string{"dev/prodA/things.txt"},
 		},
-		// Extra test cases not from the above perforce page. These are obfuscated tests
-		// generated from production use cases
+		// Extrb test cbses not from the bbove perforce pbge. These bre obfuscbted tests
+		// generbted from production use cbses
 		{
-			name:         "File visibility on a group allowing repository level access",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-ed.txt",
-			canReadAll:   []string{"depot/foo/bar", "depot/foo/bar/activities", "depot/foo/bar/activity-platform-api/BUILD", "depot/foo/bar/aa/build/README"},
+			nbme:         "File visibility on b group bllowing repository level bccess",
+			depot:        "//depot/foo/bbr/",
+			protectsFile: "testdbtb/sbmple-protects-ed.txt",
+			cbnRebdAll:   []string{"depot/foo/bbr", "depot/foo/bbr/bctivities", "depot/foo/bbr/bctivity-plbtform-bpi/BUILD", "depot/foo/bbr/bb/build/README"},
 		},
 		{
-			name:  "Restricted access tests with edm",
-			depot: "//depot/foo/bar/",
-			// NOTE that this file has many =write exclude rules which are ignored since
-			// revoking write access with = does not remove read access.
-			protectsFile: "testdata/sample-protects-edm.txt",
-			// This file only includes exclude rules so our logic strips them out so that we
+			nbme:  "Restricted bccess tests with edm",
+			depot: "//depot/foo/bbr/",
+			// NOTE thbt this file hbs mbny =write exclude rules which bre ignored since
+			// revoking write bccess with = does not remove rebd bccess.
+			protectsFile: "testdbtb/sbmple-protects-edm.txt",
+			// This file only includes exclude rules so our logic strips them out so thbt we
 			// end up with zero rules.
 			noRules: true,
 		},
 		{
-			name:         "Restricted access tests",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-e.txt",
-			// This file only includes exclude rules so our logic strips them out so that we
+			nbme:         "Restricted bccess tests",
+			depot:        "//depot/foo/bbr/",
+			protectsFile: "testdbtb/sbmple-protects-e.txt",
+			// This file only includes exclude rules so our logic strips them out so thbt we
 			// end up with zero rules.
 			noRules: true,
 		},
 		{
-			name:         "Allow read access to a path using a rule containing a wildcard",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-edb.txt",
-			canReadAll:   []string{"db/plpgsql/seed.psql"},
+			nbme:         "Allow rebd bccess to b pbth using b rule contbining b wildcbrd",
+			depot:        "//depot/foo/bbr/",
+			protectsFile: "testdbtb/sbmple-protects-edb.txt",
+			cbnRebdAll:   []string{"db/plpgsql/seed.psql"},
 		},
 		{
-			name:         "Singular group allowing read access to a particular path",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-readonly.txt",
-			canReadAll:   []string{"pom.xml"},
+			nbme:         "Singulbr group bllowing rebd bccess to b pbrticulbr pbth",
+			depot:        "//depot/foo/bbr/",
+			protectsFile: "testdbtb/sbmple-protects-rebdonly.txt",
+			cbnRebdAll:   []string{"pom.xml"},
 		},
 		{
-			name:         "Allow high, allow low",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-dcro.txt",
-			canReadAll:   []string{"depot/foo/bar"},
+			nbme:         "Allow high, bllow low",
+			depot:        "//depot/foo/bbr/",
+			protectsFile: "testdbtb/sbmple-protects-dcro.txt",
+			cbnRebdAll:   []string{"depot/foo/bbr"},
 		},
 		{
-			name:          "Allow high, deny low",
-			depot:         "//depot/foo/bar/",
-			protectsFile:  "testdata/sample-protects-everyone-revoke-read.txt",
-			cannotReadAny: []string{"depot/foo/bar"},
+			nbme:          "Allow high, deny low",
+			depot:         "//depot/foo/bbr/",
+			protectsFile:  "testdbtb/sbmple-protects-everyone-revoke-rebd.txt",
+			cbnnotRebdAny: []string{"depot/foo/bbr"},
 		},
 		{
-			name:          "Deny high, deny low",
-			depot:         "//depot/foo/bar/",
-			protectsFile:  "testdata/sample-protects-everyone-revoke-read.txt",
-			cannotReadAny: []string{"depot/foo/bar"},
+			nbme:          "Deny high, deny low",
+			depot:         "//depot/foo/bbr/",
+			protectsFile:  "testdbtb/sbmple-protects-everyone-revoke-rebd.txt",
+			cbnnotRebdAny: []string{"depot/foo/bbr"},
 		},
 		{
-			name:         "Allow path, allow path",
-			depot:        "//depot/foo/bar/",
-			protectsFile: "testdata/sample-protects-ro-aw.txt",
-			canReadAll:   []string{"depot/foo/bar"},
+			nbme:         "Allow pbth, bllow pbth",
+			depot:        "//depot/foo/bbr/",
+			protectsFile: "testdbtb/sbmple-protects-ro-bw.txt",
+			cbnRebdAll:   []string{"depot/foo/bbr"},
 		},
 		{
-			name:         "Allow read access to a path using a rule containing a wildcard",
+			nbme:         "Allow rebd bccess to b pbth using b rule contbining b wildcbrd",
 			depot:        "//depot/236/freeze/cc/",
-			protectsFile: "testdata/sample-protects-edb.txt",
-			canReadAll:   []string{"db/plpgsql/seed.psql"},
+			protectsFile: "testdbtb/sbmple-protects-edb.txt",
+			cbnRebdAll:   []string{"db/plpgsql/seed.psql"},
 		},
 		{
-			name:  "Leading slash edge cases",
+			nbme:  "Lebding slbsh edge cbses",
 			depot: "//depot/",
 			protects: `
-read   group   Rome    *   //depot/.../something.java   ## Can read all files named 'something.java'
-read   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
+rebd   group   Rome    *   //depot/.../something.jbvb   ## Cbn rebd bll files nbmed 'something.jbvb'
+rebd   group   Rome    *   -//depot/dev/prodA/...   ## Except files in this directory
 `,
-			cannotReadAny: []string{"dev/prodA/something.java", "dev/prodA/another_dir/something.java", "/dev/prodA/something.java", "/dev/prodA/another_dir/something.java"},
-			canReadAll:    []string{"something.java", "/something.java", "dev/prodB/something.java", "/dev/prodC/something.java"},
+			cbnnotRebdAny: []string{"dev/prodA/something.jbvb", "dev/prodA/bnother_dir/something.jbvb", "/dev/prodA/something.jbvb", "/dev/prodA/bnother_dir/something.jbvb"},
+			cbnRebdAll:    []string{"something.jbvb", "/something.jbvb", "dev/prodB/something.jbvb", "/dev/prodC/something.jbvb"},
 		},
 		{
-			name:  "Deny all, grant some",
-			depot: "//depot/main/",
+			nbme:  "Deny bll, grbnt some",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   -//depot/main/...
-read    group   Dev1    *   -//depot/main/.../*.java
-read    group   Dev1    *   //depot/main/.../dev/foo.java
+rebd    group   Dev1    *   -//depot/mbin/...
+rebd    group   Dev1    *   -//depot/mbin/.../*.jbvb
+rebd    group   Dev1    *   //depot/mbin/.../dev/foo.jbvb
 `,
-			canReadAll:    []string{"dev/foo.java"},
-			cannotReadAny: []string{"dev/bar.java"},
+			cbnRebdAll:    []string{"dev/foo.jbvb"},
+			cbnnotRebdAny: []string{"dev/bbr.jbvb"},
 		},
 		{
-			name:  "Grant all, deny some",
-			depot: "//depot/main/",
+			nbme:  "Grbnt bll, deny some",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   //depot/main/...
-read    group   Dev1    *   //depot/main/.../*.java
-read    group   Dev1    *   -//depot/main/.../dev/foo.java
+rebd    group   Dev1    *   //depot/mbin/...
+rebd    group   Dev1    *   //depot/mbin/.../*.jbvb
+rebd    group   Dev1    *   -//depot/mbin/.../dev/foo.jbvb
 `,
-			canReadAll:    []string{"dev/bar.java"},
-			cannotReadAny: []string{"dev/foo.java"},
+			cbnRebdAll:    []string{"dev/bbr.jbvb"},
+			cbnnotRebdAny: []string{"dev/foo.jbvb"},
 		},
 		{
-			name:  "Tricky minus names",
-			depot: "//-depot/-main/",
+			nbme:  "Tricky minus nbmes",
+			depot: "//-depot/-mbin/",
 			protects: `
-read    group   Dev1    *   //-depot/-main/...
-read    group   Dev1    *   //-depot/-main/.../*.java
-read    group   Dev1    *   -//-depot/-main/.../dev/foo.java
+rebd    group   Dev1    *   //-depot/-mbin/...
+rebd    group   Dev1    *   //-depot/-mbin/.../*.jbvb
+rebd    group   Dev1    *   -//-depot/-mbin/.../dev/foo.jbvb
 `,
-			canReadAll:    []string{"dev/bar.java", "/-minus/dev/bar.java"},
-			cannotReadAny: []string{"dev/foo.java"},
+			cbnRebdAll:    []string{"dev/bbr.jbvb", "/-minus/dev/bbr.jbvb"},
+			cbnnotRebdAny: []string{"dev/foo.jbvb"},
 		},
 		{
-			name:  "Root matching",
-			depot: "//depot/main/",
+			nbme:  "Root mbtching",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   //depot/main/.../*.java
+rebd    group   Dev1    *   //depot/mbin/.../*.jbvb
 `,
-			canReadAll:    []string{"dev/bar.java", "foo.java", "/foo.java"},
-			cannotReadAny: []string{"dev/foo.go"},
+			cbnRebdAll:    []string{"dev/bbr.jbvb", "foo.jbvb", "/foo.jbvb"},
+			cbnnotRebdAny: []string{"dev/foo.go"},
 		},
 		{
-			name:  "Root matching, multiple levels",
-			depot: "//depot/main/",
+			nbme:  "Root mbtching, multiple levels",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   //depot/main/.../.../*.java
+rebd    group   Dev1    *   //depot/mbin/.../.../*.jbvb
 `,
-			canReadAll:    []string{"/foo/dev/bar.java", "foo.java", "/foo.java"},
-			cannotReadAny: []string{"dev/foo.go"},
+			cbnRebdAll:    []string{"/foo/dev/bbr.jbvb", "foo.jbvb", "/foo.jbvb"},
+			cbnnotRebdAny: []string{"dev/foo.go"},
 		},
 		{
-			// In this case, Perforce still shows the parent directory
-			name:  "Files in side directory hidden",
-			depot: "//depot/main/",
+			// In this cbse, Perforce still shows the pbrent directory
+			nbme:  "Files in side directory hidden",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   //depot/main/...
-read    group   Dev1    *   -//depot/main/dir/*.java
+rebd    group   Dev1    *   //depot/mbin/...
+rebd    group   Dev1    *   -//depot/mbin/dir/*.jbvb
 `,
-			canReadAll:    []string{"dir/"},
-			cannotReadAny: []string{"dir/foo.java", "dir/bar.java"},
+			cbnRebdAll:    []string{"dir/"},
+			cbnnotRebdAny: []string{"dir/foo.jbvb", "dir/bbr.jbvb"},
 		},
 		{
 			// Directory excluded, but file inside included: Directory visible
-			name:  "Directory excluded",
-			depot: "//depot/main/",
+			nbme:  "Directory excluded",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   //depot/main/...
-read    group   Dev1    *   -//depot/main/dir/...
-read    group   Dev1    *   //depot/main/dir/file.java
+rebd    group   Dev1    *   //depot/mbin/...
+rebd    group   Dev1    *   -//depot/mbin/dir/...
+rebd    group   Dev1    *   //depot/mbin/dir/file.jbvb
 `,
-			canReadAll: []string{"dir/file.java", "dir/"},
+			cbnRebdAll: []string{"dir/file.jbvb", "dir/"},
 		},
 		{
-			// Should still be able to browse directories
-			name:  "Rules start with wildcard",
-			depot: "//depot/main/",
+			// Should still be bble to browse directories
+			nbme:  "Rules stbrt with wildcbrd",
+			depot: "//depot/mbin/",
 			protects: `
-read    group   Dev1    *   //depot/main/.../*.go
+rebd    group   Dev1    *   //depot/mbin/.../*.go
 `,
-			canReadAll: []string{"dir/file.go", "dir/"},
+			cbnRebdAll: []string{"dir/file.go", "dir/"},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			logger := logtest.Scoped(t)
-			if !strings.HasPrefix(tc.depot, "/") {
-				t.Fatal("depot must end in '/'")
+			if !strings.HbsPrefix(tc.depot, "/") {
+				t.Fbtbl("depot must end in '/'")
 			}
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						SubRepoPermissions: &schema.SubRepoPermissions{
-							Enabled: true,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					ExperimentblFebtures: &schemb.ExperimentblFebtures{
+						SubRepoPermissions: &schemb.SubRepoPermissions{
+							Enbbled: true,
 						},
 					},
 				},
 			})
-			t.Cleanup(func() { conf.Mock(nil) })
+			t.Clebnup(func() { conf.Mock(nil) })
 
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
 
-			var rc io.ReadCloser
-			var err error
+			vbr rc io.RebdCloser
+			vbr err error
 			if len(tc.protects) > 0 {
-				rc = io.NopCloser(strings.NewReader(tc.protects))
+				rc = io.NopCloser(strings.NewRebder(tc.protects))
 			}
 			if len(tc.protectsFile) > 0 {
 				rc, err = os.Open(tc.protectsFile)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 			}
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				if err := rc.Close(); err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 			})
-			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+			execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
 				return rc, nil, nil
 			})
-			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+			p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
 			p.depots = []extsvc.RepoID{
 				extsvc.RepoID(tc.depot),
 			}
-			perms := &authz.ExternalUserPermissions{
-				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+			perms := &buthz.ExternblUserPermissions{
+				SubRepoPermissions: mbke(mbp[extsvc.RepoID]*buthz.SubRepoPermissions),
 			}
-			if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), true); err != nil {
-				t.Fatal(err)
+			if err := scbnProtects(logger, rc, fullRepoPermsScbnner(logger, perms, p.depots), true); err != nil {
+				t.Fbtbl(err)
 			}
 			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
 			if !ok && tc.noRules {
 				return
 			}
 			if !ok && !tc.noRules {
-				t.Fatal("no rules found")
+				t.Fbtbl("no rules found")
 			} else if ok && tc.noRules {
-				t.Fatal("expected no rules")
+				t.Fbtbl("expected no rules")
 			}
-			checker, err := srp.NewSimpleChecker(api.RepoName(tc.depot), rules.Paths)
+			checker, err := srp.NewSimpleChecker(bpi.RepoNbme(tc.depot), rules.Pbths)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if len(tc.canReadAll) > 0 {
-				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(tc.depot), tc.canReadAll)
+			if len(tc.cbnRebdAll) > 0 {
+				ok, err = buthz.CbnRebdAllPbths(ctx, checker, bpi.RepoNbme(tc.depot), tc.cbnRebdAll)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				if !ok {
-					t.Fatal("should be able to read path")
+					t.Fbtbl("should be bble to rebd pbth")
 				}
 			}
-			if len(tc.cannotReadAny) > 0 {
-				for _, path := range tc.cannotReadAny {
-					ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(tc.depot), []string{path})
+			if len(tc.cbnnotRebdAny) > 0 {
+				for _, pbth := rbnge tc.cbnnotRebdAny {
+					ok, err = buthz.CbnRebdAllPbths(ctx, checker, bpi.RepoNbme(tc.depot), []string{pbth})
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 					if ok {
-						t.Errorf("should not be able to read %q, but can", path)
+						t.Errorf("should not be bble to rebd %q, but cbn", pbth)
 					}
 				}
 			}
@@ -664,147 +664,147 @@ read    group   Dev1    *   //depot/main/.../*.go
 	}
 }
 
-func TestFullScanWildcardDepotMatching(t *testing.T) {
+func TestFullScbnWildcbrdDepotMbtching(t *testing.T) {
 	logger := logtest.Scoped(t)
-	f, err := os.Open("testdata/sample-protects-x.txt")
+	f, err := os.Open("testdbtb/sbmple-protects-x.txt")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	data, err := io.ReadAll(f)
+	dbtb, err := io.RebdAll(f)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := f.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	rc := io.NopCloser(bytes.NewReader(data))
+	rc := io.NopCloser(bytes.NewRebder(dbtb))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+	execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
 	p.depots = []extsvc.RepoID{
-		"//depot/654/deploy/base/",
+		"//depot/654/deploy/bbse/",
 	}
-	perms := &authz.ExternalUserPermissions{
-		SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
+	perms := &buthz.ExternblUserPermissions{
+		SubRepoPermissions: mbke(mbp[extsvc.RepoID]*buthz.SubRepoPermissions),
 	}
-	if err := scanProtects(logger, rc, fullRepoPermsScanner(logger, perms, p.depots), false); err != nil {
-		t.Fatal(err)
+	if err := scbnProtects(logger, rc, fullRepoPermsScbnner(logger, perms, p.depots), fblse); err != nil {
+		t.Fbtbl(err)
 	}
 
-	want := &authz.ExternalUserPermissions{
-		Exacts: []extsvc.RepoID{
-			"//depot/654/deploy/base/",
+	wbnt := &buthz.ExternblUserPermissions{
+		Exbcts: []extsvc.RepoID{
+			"//depot/654/deploy/bbse/",
 		},
-		SubRepoPermissions: map[extsvc.RepoID]*authz.SubRepoPermissions{
-			"//depot/654/deploy/base/": {
-				Paths: []string{
-					mustGlobPattern(t, "-/**"),
-					mustGlobPattern(t, "-/**/base/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/build/deleteorgs.txt"),
-					mustGlobPattern(t, "-/asdf/plsql/base/cCustomSchema*.sql"),
-					mustGlobPattern(t, "/db/upgrade-scripts/**"),
-					mustGlobPattern(t, "/db/my_db/upgrade-scripts/**"),
-					mustGlobPattern(t, "/asdf/config/my_schema.xml"),
-					mustGlobPattern(t, "/db/plpgsql/**"),
+		SubRepoPermissions: mbp[extsvc.RepoID]*buthz.SubRepoPermissions{
+			"//depot/654/deploy/bbse/": {
+				Pbths: []string{
+					mustGlobPbttern(t, "-/**"),
+					mustGlobPbttern(t, "-/**/bbse/build/deleteorgs.txt"),
+					mustGlobPbttern(t, "-/build/deleteorgs.txt"),
+					mustGlobPbttern(t, "-/bsdf/plsql/bbse/cCustomSchemb*.sql"),
+					mustGlobPbttern(t, "/db/upgrbde-scripts/**"),
+					mustGlobPbttern(t, "/db/my_db/upgrbde-scripts/**"),
+					mustGlobPbttern(t, "/bsdf/config/my_schemb.xml"),
+					mustGlobPbttern(t, "/db/plpgsql/**"),
 				},
 			},
 		},
 	}
 
-	if diff := cmp.Diff(want, perms); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, perms); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestCheckWildcardDepotMatch(t *testing.T) {
-	testDepot := extsvc.RepoID("//depot/main/base/")
-	testCases := []struct {
-		name               string
-		pattern            string
-		original           string
+func TestCheckWildcbrdDepotMbtch(t *testing.T) {
+	testDepot := extsvc.RepoID("//depot/mbin/bbse/")
+	testCbses := []struct {
+		nbme               string
+		pbttern            string
+		originbl           string
 		expectedNewRules   []string
-		expectedFoundMatch bool
+		expectedFoundMbtch bool
 		depot              extsvc.RepoID
 	}{
 		{
-			name:             "depot match ends with double wildcard",
-			pattern:          "//depot/**/README.md",
-			original:         "//depot/.../README.md",
+			nbme:             "depot mbtch ends with double wildcbrd",
+			pbttern:          "//depot/**/README.md",
+			originbl:         "//depot/.../README.md",
 			expectedNewRules: []string{"**/README.md"},
 			depot:            "//depot/test/",
 		},
 		{
-			name:             "single wildcard",
-			pattern:          "//depot/*/dir.yaml",
-			original:         "//depot/*/dir.yaml",
-			expectedNewRules: []string{"dir.yaml"},
+			nbme:             "single wildcbrd",
+			pbttern:          "//depot/*/dir.ybml",
+			originbl:         "//depot/*/dir.ybml",
+			expectedNewRules: []string{"dir.ybml"},
 			depot:            "//depot/test/",
 		},
 		{
-			name:             "single wildcard in depot match",
-			pattern:          "//depot/**/base/build/deleteorgs.txt",
-			original:         "//depot/.../base/build/deleteorgs.txt",
-			expectedNewRules: []string{"**/base/build/deleteorgs.txt", "build/deleteorgs.txt"},
+			nbme:             "single wildcbrd in depot mbtch",
+			pbttern:          "//depot/**/bbse/build/deleteorgs.txt",
+			originbl:         "//depot/.../bbse/build/deleteorgs.txt",
+			expectedNewRules: []string{"**/bbse/build/deleteorgs.txt", "build/deleteorgs.txt"},
 			depot:            testDepot,
 		},
 		{
-			name:             "ends with wildcard",
-			pattern:          "//depot/**",
-			original:         "//depot/...",
+			nbme:             "ends with wildcbrd",
+			pbttern:          "//depot/**",
+			originbl:         "//depot/...",
 			expectedNewRules: []string{"**"},
 			depot:            testDepot,
 		},
 		{
-			name:             "two wildcards",
-			pattern:          "//depot/**/tests/**/my_test",
-			original:         "//depot/.../test/.../my_test",
+			nbme:             "two wildcbrds",
+			pbttern:          "//depot/**/tests/**/my_test",
+			originbl:         "//depot/.../test/.../my_test",
 			expectedNewRules: []string{"**/tests/**/my_test"},
 			depot:            testDepot,
 		},
 		{
-			name:             "no match no effect",
-			pattern:          "//foo/**/base/build/asdf.txt",
-			original:         "//foo/.../base/build/asdf.txt",
-			expectedNewRules: []string{"//foo/**/base/build/asdf.txt"},
+			nbme:             "no mbtch no effect",
+			pbttern:          "//foo/**/bbse/build/bsdf.txt",
+			originbl:         "//foo/.../bbse/build/bsdf.txt",
+			expectedNewRules: []string{"//foo/**/bbse/build/bsdf.txt"},
 			depot:            testDepot,
 		},
 		{
-			name:             "original rule is fine, no changes needed",
-			pattern:          "//**/.secrets.env",
-			original:         "//.../.secrets.env",
+			nbme:             "originbl rule is fine, no chbnges needed",
+			pbttern:          "//**/.secrets.env",
+			originbl:         "//.../.secrets.env",
 			expectedNewRules: []string{"//**/.secrets.env"},
 			depot:            testDepot,
 		},
 		{
-			name:             "single wildcard match",
-			pattern:          "//depot/6*/*/base/schema/submodules**",
-			original:         "//depot/6*/*/base/schema/submodules**",
-			expectedNewRules: []string{"schema/submodules**"},
-			depot:            "//depot/654/deploy/base/",
+			nbme:             "single wildcbrd mbtch",
+			pbttern:          "//depot/6*/*/bbse/schemb/submodules**",
+			originbl:         "//depot/6*/*/bbse/schemb/submodules**",
+			expectedNewRules: []string{"schemb/submodules**"},
+			depot:            "//depot/654/deploy/bbse/",
 		},
 		{
-			name:             "single wildcard match no double wildcard",
-			pattern:          "//depot/6*/*/base/asdf/java/resources/foo.xml",
-			original:         "//depot/6*/*/base/asdf/java/resources/foo.xml",
-			expectedNewRules: []string{"asdf/java/resources/foo.xml"},
-			depot:            "//depot/654/deploy/base/",
+			nbme:             "single wildcbrd mbtch no double wildcbrd",
+			pbttern:          "//depot/6*/*/bbse/bsdf/jbvb/resources/foo.xml",
+			originbl:         "//depot/6*/*/bbse/bsdf/jbvb/resources/foo.xml",
+			expectedNewRules: []string{"bsdf/jbvb/resources/foo.xml"},
+			depot:            "//depot/654/deploy/bbse/",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			pattern := tc.pattern
-			glob := mustGlob(t, pattern)
-			rule := globMatch{
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			pbttern := tc.pbttern
+			glob := mustGlob(t, pbttern)
+			rule := globMbtch{
 				glob,
-				pattern,
-				tc.original,
+				pbttern,
+				tc.originbl,
 			}
-			newRules := convertRulesForWildcardDepotMatch(rule, tc.depot, map[string]globMatch{})
+			newRules := convertRulesForWildcbrdDepotMbtch(rule, tc.depot, mbp[string]globMbtch{})
 			if diff := cmp.Diff(newRules, tc.expectedNewRules); diff != "" {
 				t.Errorf(diff)
 			}
@@ -812,46 +812,46 @@ func TestCheckWildcardDepotMatch(t *testing.T) {
 	}
 }
 
-func TestScanAllUsers(t *testing.T) {
+func TestScbnAllUsers(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	f, err := os.Open("testdata/sample-protects-a.txt")
+	ctx := context.Bbckground()
+	f, err := os.Open("testdbtb/sbmple-protects-b.txt")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	data, err := io.ReadAll(f)
+	dbtb, err := io.RebdAll(f)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if err := f.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	rc := io.NopCloser(bytes.NewReader(data))
+	rc := io.NopCloser(bytes.NewRebder(dbtb))
 
-	execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
+	execer := p4ExecFunc(func(ctx context.Context, host, user, pbssword string, brgs ...string) (io.RebdCloser, http.Hebder, error) {
 		return rc, nil, nil
 	})
 
-	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "admin", "password", execer)
-	p.cachedGroupMembers = map[string][]string{
+	p := NewTestProvider(logger, "", "ssl:111.222.333.444:1666", "bdmin", "pbssword", execer)
+	p.cbchedGroupMembers = mbp[string][]string{
 		"dev": {"user1", "user2"},
 	}
-	p.cachedAllUserEmails = map[string]string{
-		"user1": "user1@example.com",
-		"user2": "user2@example.com",
+	p.cbchedAllUserEmbils = mbp[string]string{
+		"user1": "user1@exbmple.com",
+		"user2": "user2@exbmple.com",
 	}
 
-	users := make(map[string]struct{})
-	if err := scanProtects(logger, rc, allUsersScanner(ctx, p, users), false); err != nil {
-		t.Fatal(err)
+	users := mbke(mbp[string]struct{})
+	if err := scbnProtects(logger, rc, bllUsersScbnner(ctx, p, users), fblse); err != nil {
+		t.Fbtbl(err)
 	}
-	want := map[string]struct{}{
+	wbnt := mbp[string]struct{}{
 		"user1": {},
 		"user2": {},
 	}
-	if diff := cmp.Diff(want, users); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, users); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

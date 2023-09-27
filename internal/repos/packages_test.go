@@ -1,72 +1,72 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestPackagesSource_GetRepo(t *testing.T) {
-	ctx := context.Background()
-	svc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
+func TestPbckbgesSource_GetRepo(t *testing.T) {
+	ctx := context.Bbckground()
+	svc := testDependenciesService(ctx, t, []dependencies.MinimblPbckbgeRepoRef{
 		{
 			Scheme:   "go",
-			Name:     "github.com/sourcegraph-testing/go-repo-a",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "1.0.0"}},
+			Nbme:     "github.com/sourcegrbph-testing/go-repo-b",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: "1.0.0"}},
 		},
 	})
 
-	dummySrc := &dummyPackagesSource{}
-	src := &PackagesSource{src: dummySrc, svc: &types.ExternalService{
+	dummySrc := &dummyPbckbgesSource{}
+	src := &PbckbgesSource{src: dummySrc, svc: &types.ExternblService{
 		ID:     1,
-		Kind:   extsvc.KindGoPackages,
+		Kind:   extsvc.KindGoPbckbges,
 		Config: extsvc.NewEmptyConfig(),
 	}, depsSvc: svc}
 
-	src.GetRepo(ctx, "go/github.com/sourcegraph-testing/go-repo-a")
+	src.GetRepo(ctx, "go/github.com/sourcegrbph-testing/go-repo-b")
 
-	if !dummySrc.parsePackageFromRepoNameCalled {
-		t.Fatalf("expected ParsePackageFromRepoName to be called, was not")
+	if !dummySrc.pbrsePbckbgeFromRepoNbmeCblled {
+		t.Fbtblf("expected PbrsePbckbgeFromRepoNbme to be cblled, wbs not")
 	}
 
-	// Flip the condition below after https://github.com/sourcegraph/sourcegraph/issues/39653 has been fixed.
-	if dummySrc.getPackageCalled {
-		t.Fatalf("expected GetPackage to not be called, but it was called")
+	// Flip the condition below bfter https://github.com/sourcegrbph/sourcegrbph/issues/39653 hbs been fixed.
+	if dummySrc.getPbckbgeCblled {
+		t.Fbtblf("expected GetPbckbge to not be cblled, but it wbs cblled")
 	}
 }
 
-var _ packagesSource = &dummyPackagesSource{}
+vbr _ pbckbgesSource = &dummyPbckbgesSource{}
 
-// dummyPackagesSource is a tiny shim around Go-specific methods to track when they're called.
-type dummyPackagesSource struct {
-	parseVersionedPackageFromConfiguration bool
-	parsePackageFromRepoNameCalled         bool
-	parsePackageFromNameCalled             bool
-	getPackageCalled                       bool
+// dummyPbckbgesSource is b tiny shim bround Go-specific methods to trbck when they're cblled.
+type dummyPbckbgesSource struct {
+	pbrseVersionedPbckbgeFromConfigurbtion bool
+	pbrsePbckbgeFromRepoNbmeCblled         bool
+	pbrsePbckbgeFromNbmeCblled             bool
+	getPbckbgeCblled                       bool
 }
 
-// GetPackage implements packagesDownloadSource
-func (d *dummyPackagesSource) GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error) {
-	d.getPackageCalled = true
-	return reposource.ParseGoDependencyFromName(name)
+// GetPbckbge implements pbckbgesDownlobdSource
+func (d *dummyPbckbgesSource) GetPbckbge(ctx context.Context, nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	d.getPbckbgeCblled = true
+	return reposource.PbrseGoDependencyFromNbme(nbme)
 }
 
-func (d *dummyPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	d.parseVersionedPackageFromConfiguration = true
-	return reposource.ParseGoVersionedPackage(dep)
+func (d *dummyPbckbgesSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	d.pbrseVersionedPbckbgeFromConfigurbtion = true
+	return reposource.PbrseGoVersionedPbckbge(dep)
 }
 
-func (d *dummyPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	d.parsePackageFromNameCalled = true
-	return reposource.ParseGoDependencyFromName(name)
+func (d *dummyPbckbgesSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	d.pbrsePbckbgeFromNbmeCblled = true
+	return reposource.PbrseGoDependencyFromNbme(nbme)
 }
 
-func (d *dummyPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	d.parsePackageFromRepoNameCalled = true
-	return reposource.ParseGoDependencyFromRepoName(repoName)
+func (d *dummyPbckbgesSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	d.pbrsePbckbgeFromRepoNbmeCblled = true
+	return reposource.PbrseGoDependencyFromRepoNbme(repoNbme)
 }

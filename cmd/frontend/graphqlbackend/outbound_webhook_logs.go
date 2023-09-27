@@ -1,17 +1,17 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strconv"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/syncx"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 const (
@@ -19,69 +19,69 @@ const (
 	outboundWebhookLogIDKind = "OutboundWebhookLog"
 )
 
-type OutboundWebhookLogStatsResolver interface {
-	Total() int32
+type OutboundWebhookLogStbtsResolver interfbce {
+	Totbl() int32
 	Errored() int32
 }
 
-type OutboundWebhookLogConnectionResolver interface {
+type OutboundWebhookLogConnectionResolver interfbce {
 	Nodes() ([]OutboundWebhookLogResolver, error)
-	TotalCount() (int32, error)
-	PageInfo() (*graphqlutil.PageInfo, error)
+	TotblCount() (int32, error)
+	PbgeInfo() (*grbphqlutil.PbgeInfo, error)
 }
 
-type OutboundWebhookLogResolver interface {
-	ID() graphql.ID
+type OutboundWebhookLogResolver interfbce {
+	ID() grbphql.ID
 	Job(context.Context) OutboundWebhookJobResolver
-	SentAt() gqlutil.DateTime
-	StatusCode() int32
+	SentAt() gqlutil.DbteTime
+	StbtusCode() int32
 	Request(context.Context) (*webhookLogRequestResolver, error)
-	Response(context.Context) (*webhookLogMessageResolver, error)
+	Response(context.Context) (*webhookLogMessbgeResolver, error)
 	Error(context.Context) (*string, error)
 }
 
-type OutboundWebhookJobResolver interface {
-	ID() graphql.ID
+type OutboundWebhookJobResolver interfbce {
+	ID() grbphql.ID
 	EventType() (string, error)
 	Scope() (*string, error)
-	Payload(context.Context) (string, error)
+	Pbylobd(context.Context) (string, error)
 }
 
-type outboundWebhookLogStatsResolver struct {
-	total, errored int64
+type outboundWebhookLogStbtsResolver struct {
+	totbl, errored int64
 }
 
-func (r *outboundWebhookLogStatsResolver) Total() int32 {
-	return int32(r.total)
+func (r *outboundWebhookLogStbtsResolver) Totbl() int32 {
+	return int32(r.totbl)
 }
 
-func (r *outboundWebhookLogStatsResolver) Errored() int32 {
+func (r *outboundWebhookLogStbtsResolver) Errored() int32 {
 	return int32(r.errored)
 }
 
 type outboundWebhookLogConnectionResolver struct {
 	nodes      func() ([]*types.OutboundWebhookLog, error)
 	resolvers  func() ([]OutboundWebhookLogResolver, error)
-	totalCount func() (int32, error)
+	totblCount func() (int32, error)
 	first      int
 	offset     int
 }
 
 func newOutboundWebhookLogConnectionResolver(
-	ctx context.Context, store database.OutboundWebhookStore,
-	opts database.OutboundWebhookLogListOpts,
+	ctx context.Context, store dbtbbbse.OutboundWebhookStore,
+	opts dbtbbbse.OutboundWebhookLogListOpts,
 ) OutboundWebhookLogConnectionResolver {
 	limit := opts.Limit
 	logStore := store.ToLogStore()
 
-	nodes := syncx.OnceValues(func() ([]*types.OutboundWebhookLog, error) {
+	nodes := syncx.OnceVblues(func() ([]*types.OutboundWebhookLog, error) {
 		opts.Limit += 1
 		return logStore.ListForOutboundWebhook(ctx, opts)
 	})
 
 	return &outboundWebhookLogConnectionResolver{
 		nodes: nodes,
-		resolvers: syncx.OnceValues(func() ([]OutboundWebhookLogResolver, error) {
+		resolvers: syncx.OnceVblues(func() ([]OutboundWebhookLogResolver, error) {
 			logs, err := nodes()
 			if err != nil {
 				return nil, err
@@ -91,8 +91,8 @@ func newOutboundWebhookLogConnectionResolver(
 				logs = logs[0:limit]
 			}
 
-			resolvers := make([]OutboundWebhookLogResolver, len(logs))
-			for i := range logs {
+			resolvers := mbke([]OutboundWebhookLogResolver, len(logs))
+			for i := rbnge logs {
 				resolvers[i] = &outboundWebhookLogResolver{
 					store: store,
 					log:   logs[i],
@@ -101,12 +101,12 @@ func newOutboundWebhookLogConnectionResolver(
 
 			return resolvers, nil
 		}),
-		totalCount: syncx.OnceValues(func() (int32, error) {
-			total, errored, err := logStore.CountsForOutboundWebhook(ctx, opts.OutboundWebhookID)
+		totblCount: syncx.OnceVblues(func() (int32, error) {
+			totbl, errored, err := logStore.CountsForOutboundWebhook(ctx, opts.OutboundWebhookID)
 			if opts.OnlyErrors {
 				return int32(errored), err
 			}
-			return int32(total), err
+			return int32(totbl), err
 		}),
 		first:  opts.Limit,
 		offset: opts.Offset,
@@ -117,41 +117,41 @@ func (r *outboundWebhookLogConnectionResolver) Nodes() ([]OutboundWebhookLogReso
 	return r.resolvers()
 }
 
-func (r *outboundWebhookLogConnectionResolver) TotalCount() (int32, error) {
-	return r.totalCount()
+func (r *outboundWebhookLogConnectionResolver) TotblCount() (int32, error) {
+	return r.totblCount()
 }
 
-func (r *outboundWebhookLogConnectionResolver) PageInfo() (*graphqlutil.PageInfo, error) {
+func (r *outboundWebhookLogConnectionResolver) PbgeInfo() (*grbphqlutil.PbgeInfo, error) {
 	nodes, err := r.nodes()
 	if err != nil {
 		return nil, err
 	}
 
 	if len(nodes) > r.first {
-		return graphqlutil.NextPageCursor(strconv.Itoa(r.first + r.offset)), nil
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(r.first + r.offset)), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
 type outboundWebhookLogResolver struct {
-	store database.OutboundWebhookStore
+	store dbtbbbse.OutboundWebhookStore
 	log   *types.OutboundWebhookLog
 }
 
-func (r *outboundWebhookLogResolver) ID() graphql.ID {
-	return marshalOutboundWebhookLogID(r.log.ID)
+func (r *outboundWebhookLogResolver) ID() grbphql.ID {
+	return mbrshblOutboundWebhookLogID(r.log.ID)
 }
 
 func (r *outboundWebhookLogResolver) Job(ctx context.Context) OutboundWebhookJobResolver {
 	return newOutboundWebhookJobResolver(ctx, r.store.ToJobStore(), r.log.JobID)
 }
 
-func (r *outboundWebhookLogResolver) SentAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.log.SentAt}
+func (r *outboundWebhookLogResolver) SentAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.log.SentAt}
 }
 
-func (r *outboundWebhookLogResolver) StatusCode() int32 {
-	return int32(r.log.StatusCode)
+func (r *outboundWebhookLogResolver) StbtusCode() int32 {
+	return int32(r.log.StbtusCode)
 }
 
 func (r *outboundWebhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
@@ -160,11 +160,11 @@ func (r *outboundWebhookLogResolver) Request(ctx context.Context) (*webhookLogRe
 		return nil, err
 	}
 
-	return &webhookLogRequestResolver{webhookLogMessageResolver{&request}}, nil
+	return &webhookLogRequestResolver{webhookLogMessbgeResolver{&request}}, nil
 }
 
-func (r *outboundWebhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
-	if r.log.StatusCode == types.OutboundWebhookLogUnsentStatusCode {
+func (r *outboundWebhookLogResolver) Response(ctx context.Context) (*webhookLogMessbgeResolver, error) {
+	if r.log.StbtusCode == types.OutboundWebhookLogUnsentStbtusCode {
 		return nil, nil
 	}
 
@@ -173,20 +173,20 @@ func (r *outboundWebhookLogResolver) Response(ctx context.Context) (*webhookLogM
 		return nil, err
 	}
 
-	return &webhookLogMessageResolver{&response}, nil
+	return &webhookLogMessbgeResolver{&response}, nil
 }
 
 func (r *outboundWebhookLogResolver) Error(ctx context.Context) (*string, error) {
-	if r.log.StatusCode != types.OutboundWebhookLogUnsentStatusCode {
+	if r.log.StbtusCode != types.OutboundWebhookLogUnsentStbtusCode {
 		return nil, nil
 	}
 
-	message, err := r.log.Error.Decrypt(ctx)
+	messbge, err := r.log.Error.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &message, nil
+	return &messbge, nil
 }
 
 type outboundWebhookJobResolver struct {
@@ -195,18 +195,18 @@ type outboundWebhookJobResolver struct {
 }
 
 func newOutboundWebhookJobResolver(
-	ctx context.Context, store database.OutboundWebhookJobStore,
+	ctx context.Context, store dbtbbbse.OutboundWebhookJobStore,
 	id int64,
 ) OutboundWebhookJobResolver {
 	return &outboundWebhookJobResolver{
-		job: syncx.OnceValues(func() (*types.OutboundWebhookJob, error) {
+		job: syncx.OnceVblues(func() (*types.OutboundWebhookJob, error) {
 			return store.GetByID(ctx, id)
 		}),
 	}
 }
 
-func (r *outboundWebhookJobResolver) ID() graphql.ID {
-	return marshalOutboundWebhookJobID(r.id)
+func (r *outboundWebhookJobResolver) ID() grbphql.ID {
+	return mbrshblOutboundWebhookJobID(r.id)
 }
 
 func (r *outboundWebhookJobResolver) EventType() (string, error) {
@@ -227,24 +227,24 @@ func (r *outboundWebhookJobResolver) Scope() (*string, error) {
 	return job.Scope, nil
 }
 
-func (r *outboundWebhookJobResolver) Payload(ctx context.Context) (string, error) {
+func (r *outboundWebhookJobResolver) Pbylobd(ctx context.Context) (string, error) {
 	job, err := r.job()
 	if err != nil {
 		return "", err
 	}
 
-	payload, err := job.Payload.Decrypt(ctx)
+	pbylobd, err := job.Pbylobd.Decrypt(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	return payload, nil
+	return pbylobd, nil
 }
 
-func marshalOutboundWebhookJobID(id int64) graphql.ID {
-	return relay.MarshalID(outboundWebhookJobIDKind, id)
+func mbrshblOutboundWebhookJobID(id int64) grbphql.ID {
+	return relby.MbrshblID(outboundWebhookJobIDKind, id)
 }
 
-func marshalOutboundWebhookLogID(id int64) graphql.ID {
-	return relay.MarshalID(outboundWebhookLogIDKind, id)
+func mbrshblOutboundWebhookLogID(id int64) grbphql.ID {
+	return relby.MbrshblID(outboundWebhookLogIDKind, id)
 }

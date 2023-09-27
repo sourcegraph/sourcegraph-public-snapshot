@@ -1,4 +1,4 @@
-package reader
+pbckbge rebder
 
 import (
 	"fmt"
@@ -6,45 +6,45 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 )
 
-func TestUnmarshalElement(t *testing.T) {
-	element, err := unmarshalElement(NewInterner(), []byte(`{"id": "47", "type": "vertex", "label": "test"}`))
+func TestUnmbrshblElement(t *testing.T) {
+	element, err := unmbrshblElement(NewInterner(), []byte(`{"id": "47", "type": "vertex", "lbbel": "test"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling element data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling element dbtb: %s", err)
 	}
 
 	expectedElement := Element{
 		ID:    47,
 		Type:  "vertex",
-		Label: "test",
+		Lbbel: "test",
 	}
 	if diff := cmp.Diff(expectedElement, element); diff != "" {
-		t.Errorf("unexpected element (-want +got):\n%s", diff)
+		t.Errorf("unexpected element (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalElementNumericIDs(t *testing.T) {
-	element, err := unmarshalElement(NewInterner(), []byte(`{"id": 47, "type": "vertex", "label": "test"}`))
+func TestUnmbrshblElementNumericIDs(t *testing.T) {
+	element, err := unmbrshblElement(NewInterner(), []byte(`{"id": 47, "type": "vertex", "lbbel": "test"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling element data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling element dbtb: %s", err)
 	}
 
 	expectedElement := Element{
 		ID:    47,
 		Type:  "vertex",
-		Label: "test",
+		Lbbel: "test",
 	}
 	if diff := cmp.Diff(expectedElement, element); diff != "" {
-		t.Errorf("unexpected element (-want +got):\n%s", diff)
+		t.Errorf("unexpected element (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalEdge(t *testing.T) {
-	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": "35", "type": "edge", "label": "item", "outV": "12", "inVs": ["07"], "document": "03"}`))
+func TestUnmbrshblEdge(t *testing.T) {
+	edge, err := unmbrshblEdge(NewInterner(), []byte(`{"id": "35", "type": "edge", "lbbel": "item", "outV": "12", "inVs": ["07"], "document": "03"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling metb dbtb: %s", err)
 	}
 
 	expectedEdge := Edge{
@@ -54,14 +54,14 @@ func TestUnmarshalEdge(t *testing.T) {
 		Document: 3,
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
-		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+		t.Errorf("unexpected edge (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalEdgeWithShard(t *testing.T) {
-	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": "35", "type": "edge", "label": "item", "outV": "12", "inVs": ["07"], "shard": "03"}`))
+func TestUnmbrshblEdgeWithShbrd(t *testing.T) {
+	edge, err := unmbrshblEdge(NewInterner(), []byte(`{"id": "35", "type": "edge", "lbbel": "item", "outV": "12", "inVs": ["07"], "shbrd": "03"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling metb dbtb: %s", err)
 	}
 
 	expectedEdge := Edge{
@@ -71,14 +71,14 @@ func TestUnmarshalEdgeWithShard(t *testing.T) {
 		Document: 3,
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
-		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+		t.Errorf("unexpected edge (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalEdgeWithShardNumeric(t *testing.T) {
-	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "shard": 3}`))
+func TestUnmbrshblEdgeWithShbrdNumeric(t *testing.T) {
+	edge, err := unmbrshblEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "lbbel": "item", "outV": 12, "inVs": [7], "shbrd": 3}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling metb dbtb: %s", err)
 	}
 
 	expectedEdge := Edge{
@@ -88,14 +88,14 @@ func TestUnmarshalEdgeWithShardNumeric(t *testing.T) {
 		Document: 3,
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
-		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+		t.Errorf("unexpected edge (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalEdgeNumericIDs(t *testing.T) {
-	edge, err := unmarshalEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "label": "item", "outV": 12, "inVs": [7], "document": 3}`))
+func TestUnmbrshblEdgeNumericIDs(t *testing.T) {
+	edge, err := unmbrshblEdge(NewInterner(), []byte(`{"id": 35, "type": "edge", "lbbel": "item", "outV": 12, "inVs": [7], "document": 3}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling metb dbtb: %s", err)
 	}
 
 	expectedEdge := Edge{
@@ -105,113 +105,113 @@ func TestUnmarshalEdgeNumericIDs(t *testing.T) {
 		Document: 3,
 	}
 	if diff := cmp.Diff(expectedEdge, edge); diff != "" {
-		t.Errorf("unexpected edge (-want +got):\n%s", diff)
+		t.Errorf("unexpected edge (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalMetaData(t *testing.T) {
-	metadata, err := unmarshalMetaData([]byte(`{"id": "01", "type": "vertex", "label": "metaData", "version": "0.4.3", "projectRoot": "file:///test"}`))
+func TestUnmbrshblMetbDbtb(t *testing.T) {
+	metbdbtb, err := unmbrshblMetbDbtb([]byte(`{"id": "01", "type": "vertex", "lbbel": "metbDbtb", "version": "0.4.3", "projectRoot": "file:///test"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling meta data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling metb dbtb: %s", err)
 	}
 
-	expectedMetadata := MetaData{
+	expectedMetbdbtb := MetbDbtb{
 		Version:     "0.4.3",
 		ProjectRoot: "file:///test",
 	}
-	if diff := cmp.Diff(expectedMetadata, metadata); diff != "" {
-		t.Errorf("unexpected metadata (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedMetbdbtb, metbdbtb); diff != "" {
+		t.Errorf("unexpected metbdbtb (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalDocument(t *testing.T) {
-	uri, err := unmarshalDocument([]byte(`{"id": "02", "type": "vertex", "label": "document", "uri": "file:///test/root/foo.go"}`))
+func TestUnmbrshblDocument(t *testing.T) {
+	uri, err := unmbrshblDocument([]byte(`{"id": "02", "type": "vertex", "lbbel": "document", "uri": "file:///test/root/foo.go"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling document data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling document dbtb: %s", err)
 	}
 
 	if diff := cmp.Diff("file:///test/root/foo.go", uri); diff != "" {
-		t.Errorf("unexpected uri (-want +got):\n%s", diff)
+		t.Errorf("unexpected uri (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalRange(t *testing.T) {
-	r, err := unmarshalRange([]byte(`{"id": "04", "type": "vertex", "label": "range", "start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}}`))
+func TestUnmbrshblRbnge(t *testing.T) {
+	r, err := unmbrshblRbnge([]byte(`{"id": "04", "type": "vertex", "lbbel": "rbnge", "stbrt": {"line": 1, "chbrbcter": 2}, "end": {"line": 3, "chbrbcter": 4}}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling range data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling rbnge dbtb: %s", err)
 	}
 
-	expectedRange := Range{
-		RangeData: protocol.RangeData{
-			Start: protocol.Pos{
+	expectedRbnge := Rbnge{
+		RbngeDbtb: protocol.RbngeDbtb{
+			Stbrt: protocol.Pos{
 				Line:      1,
-				Character: 2,
+				Chbrbcter: 2,
 			},
 			End: protocol.Pos{
 				Line:      3,
-				Character: 4,
+				Chbrbcter: 4,
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedRange, r); diff != "" {
-		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnge, r); diff != "" {
+		t.Errorf("unexpected rbnge (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalRangeWithTag(t *testing.T) {
-	r, err := unmarshalRange([]byte(`{"id": "04", "type": "vertex", "label": "range", "start": {"line": 1, "character": 2}, "end": {"line": 3, "character": 4}, "tag": {"type": "declaration", "text": "foo", "kind": 12, "fullRange": {"start": {"line": 1, "character": 2}, "end": {"line": 5, "character": 1}}, "detail": "detail", "tags": [1]}}`))
+func TestUnmbrshblRbngeWithTbg(t *testing.T) {
+	r, err := unmbrshblRbnge([]byte(`{"id": "04", "type": "vertex", "lbbel": "rbnge", "stbrt": {"line": 1, "chbrbcter": 2}, "end": {"line": 3, "chbrbcter": 4}, "tbg": {"type": "declbrbtion", "text": "foo", "kind": 12, "fullRbnge": {"stbrt": {"line": 1, "chbrbcter": 2}, "end": {"line": 5, "chbrbcter": 1}}, "detbil": "detbil", "tbgs": [1]}}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling range data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling rbnge dbtb: %s", err)
 	}
 
-	expectedRange := Range{
-		RangeData: protocol.RangeData{
-			Start: protocol.Pos{
+	expectedRbnge := Rbnge{
+		RbngeDbtb: protocol.RbngeDbtb{
+			Stbrt: protocol.Pos{
 				Line:      1,
-				Character: 2,
+				Chbrbcter: 2,
 			},
 			End: protocol.Pos{
 				Line:      3,
-				Character: 4,
+				Chbrbcter: 4,
 			},
 		},
-		Tag: &protocol.RangeTag{
-			Type: "declaration",
+		Tbg: &protocol.RbngeTbg{
+			Type: "declbrbtion",
 			Text: "foo",
 			Kind: protocol.Function,
-			FullRange: &protocol.RangeData{
-				Start: protocol.Pos{
+			FullRbnge: &protocol.RbngeDbtb{
+				Stbrt: protocol.Pos{
 					Line:      1,
-					Character: 2,
+					Chbrbcter: 2,
 				},
 				End: protocol.Pos{
 					Line:      5,
-					Character: 1,
+					Chbrbcter: 1,
 				},
 			},
-			Detail: "detail",
-			Tags:   []protocol.SymbolTag{protocol.Deprecated},
+			Detbil: "detbil",
+			Tbgs:   []protocol.SymbolTbg{protocol.Deprecbted},
 		},
 	}
-	if diff := cmp.Diff(expectedRange, r); diff != "" {
-		t.Errorf("unexpected range (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnge, r); diff != "" {
+		t.Errorf("unexpected rbnge (-wbnt +got):\n%s", diff)
 	}
 }
 
-var result any
+vbr result bny
 
-func BenchmarkUnmarshalHover(b *testing.B) {
+func BenchmbrkUnmbrshblHover(b *testing.B) {
 	for i := 0; i < b.N; i++ {
-		var err error
-		result, err = unmarshalHover([]byte(`{"id": "16", "type": "vertex", "label": "hoverResult", "result": {"contents": [{"language": "go", "value": "text"}, {"language": "python", "value": "pext"}]}}`))
+		vbr err error
+		result, err = unmbrshblHover([]byte(`{"id": "16", "type": "vertex", "lbbel": "hoverResult", "result": {"contents": [{"lbngubge": "go", "vblue": "text"}, {"lbngubge": "python", "vblue": "pext"}]}}`))
 		if err != nil {
-			b.Fatal(err)
+			b.Fbtbl(err)
 		}
 	}
 }
 
-func TestUnmarshalHover(t *testing.T) {
-	testCases := []struct {
+func TestUnmbrshblHover(t *testing.T) {
+	testCbses := []struct {
 		contents      string
 		expectedHover string
 	}{
@@ -220,47 +220,47 @@ func TestUnmarshalHover(t *testing.T) {
 			expectedHover: "text",
 		},
 		{
-			contents:      `[{"kind": "markdown", "value": "text"}]`,
+			contents:      `[{"kind": "mbrkdown", "vblue": "text"}]`,
 			expectedHover: "text",
 		},
 		{
-			contents:      `[{"language": "go", "value": "text"}]`,
+			contents:      `[{"lbngubge": "go", "vblue": "text"}]`,
 			expectedHover: "```go\ntext\n```",
 		},
 		{
-			contents:      `[{"value": "text"}]`,
+			contents:      `[{"vblue": "text"}]`,
 			expectedHover: "text",
 		},
 		{
-			contents:      "[{\"kind\": \"markdown\", \"value\": \"asdf\\n```java\\ntest\\n```\"}]",
-			expectedHover: "asdf\n```java\ntest\n```",
+			contents:      "[{\"kind\": \"mbrkdown\", \"vblue\": \"bsdf\\n```jbvb\\ntest\\n```\"}]",
+			expectedHover: "bsdf\n```jbvb\ntest\n```",
 		},
 		{
-			contents:      `[{"language": "go", "value": "text"}, {"language": "python", "value": "pext"}]`,
+			contents:      `[{"lbngubge": "go", "vblue": "text"}, {"lbngubge": "python", "vblue": "pext"}]`,
 			expectedHover: "```go\ntext\n```\n\n---\n\n```python\npext\n```",
 		},
 	}
 
-	for _, testCase := range testCases {
-		name := fmt.Sprintf("contents=%s", testCase.contents)
+	for _, testCbse := rbnge testCbses {
+		nbme := fmt.Sprintf("contents=%s", testCbse.contents)
 
-		t.Run(name, func(t *testing.T) {
-			hover, err := unmarshalHover([]byte(fmt.Sprintf(`{"id": "16", "type": "vertex", "label": "hoverResult", "result": {"contents": %s}}`, testCase.contents)))
+		t.Run(nbme, func(t *testing.T) {
+			hover, err := unmbrshblHover([]byte(fmt.Sprintf(`{"id": "16", "type": "vertex", "lbbel": "hoverResult", "result": {"contents": %s}}`, testCbse.contents)))
 			if err != nil {
-				t.Fatalf("unexpected error unmarshalling hover data: %s", err)
+				t.Fbtblf("unexpected error unmbrshblling hover dbtb: %s", err)
 			}
 
-			if diff := cmp.Diff(testCase.expectedHover, hover); diff != "" {
-				t.Errorf("unexpected hover text (-want +got):\n%s", diff)
+			if diff := cmp.Diff(testCbse.expectedHover, hover); diff != "" {
+				t.Errorf("unexpected hover text (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestUnmarshalMoniker(t *testing.T) {
-	moniker, err := unmarshalMoniker([]byte(`{"id": "18", "type": "vertex", "label": "moniker", "kind": "import", "scheme": "scheme A", "identifier": "ident A"}`))
+func TestUnmbrshblMoniker(t *testing.T) {
+	moniker, err := unmbrshblMoniker([]byte(`{"id": "18", "type": "vertex", "lbbel": "moniker", "kind": "import", "scheme": "scheme A", "identifier": "ident A"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling moniker data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling moniker dbtb: %s", err)
 	}
 
 	expectedMoniker := Moniker{
@@ -269,44 +269,44 @@ func TestUnmarshalMoniker(t *testing.T) {
 		Identifier: "ident A",
 	}
 	if diff := cmp.Diff(expectedMoniker, moniker); diff != "" {
-		t.Errorf("unexpected moniker (-want +got):\n%s", diff)
+		t.Errorf("unexpected moniker (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalPackageInformation(t *testing.T) {
-	packageInformation, err := unmarshalPackageInformation([]byte(`{"id": "22", "type": "vertex", "label": "packageInformation", "name": "pkg A", "version": "v0.1.0"}`))
+func TestUnmbrshblPbckbgeInformbtion(t *testing.T) {
+	pbckbgeInformbtion, err := unmbrshblPbckbgeInformbtion([]byte(`{"id": "22", "type": "vertex", "lbbel": "pbckbgeInformbtion", "nbme": "pkg A", "version": "v0.1.0"}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling package information data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling pbckbge informbtion dbtb: %s", err)
 	}
 
-	expectedPackageInformation := PackageInformation{
-		Name:    "pkg A",
+	expectedPbckbgeInformbtion := PbckbgeInformbtion{
+		Nbme:    "pkg A",
 		Version: "v0.1.0",
 	}
-	if diff := cmp.Diff(expectedPackageInformation, packageInformation); diff != "" {
-		t.Errorf("unexpected package information (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedPbckbgeInformbtion, pbckbgeInformbtion); diff != "" {
+		t.Errorf("unexpected pbckbge informbtion (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestUnmarshalDiagnosticResult(t *testing.T) {
-	diagnosticResult, err := unmarshalDiagnosticResult([]byte(`{"id": 18, "type": "vertex", "label": "diagnosticResult", "result": [{"severity": 1, "code": 2322, "source": "eslint", "message": "Type '10' is not assignable to type 'string'.", "range": {"start": {"line": 1, "character": 5}, "end": {"line": 1, "character": 6}}}]}`))
+func TestUnmbrshblDibgnosticResult(t *testing.T) {
+	dibgnosticResult, err := unmbrshblDibgnosticResult([]byte(`{"id": 18, "type": "vertex", "lbbel": "dibgnosticResult", "result": [{"severity": 1, "code": 2322, "source": "eslint", "messbge": "Type '10' is not bssignbble to type 'string'.", "rbnge": {"stbrt": {"line": 1, "chbrbcter": 5}, "end": {"line": 1, "chbrbcter": 6}}}]}`))
 	if err != nil {
-		t.Fatalf("unexpected error unmarshalling diagnostic result data: %s", err)
+		t.Fbtblf("unexpected error unmbrshblling dibgnostic result dbtb: %s", err)
 	}
 
-	expectedDiagnosticResult := []Diagnostic{
+	expectedDibgnosticResult := []Dibgnostic{
 		{
 			Severity:       1,
 			Code:           "2322",
-			Message:        "Type '10' is not assignable to type 'string'.",
+			Messbge:        "Type '10' is not bssignbble to type 'string'.",
 			Source:         "eslint",
-			StartLine:      1,
-			StartCharacter: 5,
+			StbrtLine:      1,
+			StbrtChbrbcter: 5,
 			EndLine:        1,
-			EndCharacter:   6,
+			EndChbrbcter:   6,
 		},
 	}
-	if diff := cmp.Diff(expectedDiagnosticResult, diagnosticResult); diff != "" {
-		t.Errorf("unexpected diagnostic result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedDibgnosticResult, dibgnosticResult); diff != "" {
+		t.Errorf("unexpected dibgnostic result (-wbnt +got):\n%s", diff)
 	}
 }

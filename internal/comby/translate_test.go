@@ -1,4 +1,4 @@
-package comby
+pbckbge comby
 
 import (
 	"testing"
@@ -6,114 +6,114 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestStructuralPatToRegexpQuery(t *testing.T) {
-	cases := []struct {
-		Name    string
-		Pattern string
-		Want    string
+func TestStructurblPbtToRegexpQuery(t *testing.T) {
+	cbses := []struct {
+		Nbme    string
+		Pbttern string
+		Wbnt    string
 	}{
 		{
-			Name:    "Just a hole",
-			Pattern: ":[1]",
-			Want:    `(?:.|\s)*?`,
+			Nbme:    "Just b hole",
+			Pbttern: ":[1]",
+			Wbnt:    `(?:.|\s)*?`,
 		},
 		{
-			Name:    "Adjacent holes",
-			Pattern: ":[1]:[2]:[3]",
-			Want:    `(?:.|\s)*?`,
+			Nbme:    "Adjbcent holes",
+			Pbttern: ":[1]:[2]:[3]",
+			Wbnt:    `(?:.|\s)*?`,
 		},
 		{
-			Name:    "Substring between holes",
-			Pattern: ":[1] substring :[2]",
-			Want:    `(?:[\s]+substring[\s]+)`,
+			Nbme:    "Substring between holes",
+			Pbttern: ":[1] substring :[2]",
+			Wbnt:    `(?:[\s]+substring[\s]+)`,
 		},
 		{
-			Name:    "Substring before and after different hole kinds",
-			Pattern: "prefix :[[1]] :[2.] suffix",
-			Want:    `(?:prefix[\s]+)(?:.|\s)*?(?:[\s]+)(?:.|\s)*?(?:[\s]+suffix)`,
+			Nbme:    "Substring before bnd bfter different hole kinds",
+			Pbttern: "prefix :[[1]] :[2.] suffix",
+			Wbnt:    `(?:prefix[\s]+)(?:.|\s)*?(?:[\s]+)(?:.|\s)*?(?:[\s]+suffix)`,
 		},
 		{
-			Name:    "Substrings covering all hole kinds.",
-			Pattern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
-			Want:    `(?:1\.[\s]+)(?:.|\s)*?(?:[\s]+2\.[\s]+)(?:.|\s)*?(?:[\s]+3\.[\s]+)(?:.|\s)*?(?:[\s]+4\.[\s]+)(?:.|\s)*?(?:[\s]+5\.[\s]+)(?:.|\s)*?(?:[\s]+6\.[\s]+)(?:.|\s)*?(?:[\s]+done\.)`,
+			Nbme:    "Substrings covering bll hole kinds.",
+			Pbttern: `1. :[1] 2. :[[2]] 3. :[3.] 4. :[4\n] 5. :[ ] 6. :[ 6] done.`,
+			Wbnt:    `(?:1\.[\s]+)(?:.|\s)*?(?:[\s]+2\.[\s]+)(?:.|\s)*?(?:[\s]+3\.[\s]+)(?:.|\s)*?(?:[\s]+4\.[\s]+)(?:.|\s)*?(?:[\s]+5\.[\s]+)(?:.|\s)*?(?:[\s]+6\.[\s]+)(?:.|\s)*?(?:[\s]+done\.)`,
 		},
 		{
-			Name:    "Allow alphanumeric identifiers in holes",
-			Pattern: "sub :[alphanum_ident_123] string",
-			Want:    `(?:sub[\s]+)(?:.|\s)*?(?:[\s]+string)`,
+			Nbme:    "Allow blphbnumeric identifiers in holes",
+			Pbttern: "sub :[blphbnum_ident_123] string",
+			Wbnt:    `(?:sub[\s]+)(?:.|\s)*?(?:[\s]+string)`,
 		},
 
 		{
-			Name:    "Whitespace separated holes",
-			Pattern: ":[1] :[2]",
-			Want:    `(?:[\s]+)`,
+			Nbme:    "Whitespbce sepbrbted holes",
+			Pbttern: ":[1] :[2]",
+			Wbnt:    `(?:[\s]+)`,
 		},
 		{
-			Name:    "Expect newline separated pattern",
-			Pattern: "ParseInt(:[stuff], :[x]) if err ",
-			Want:    `(?:ParseInt\()(?:.|\s)*?(?:,[\s]+)(?:.|\s)*?(?:\)[\s]+if[\s]+err[\s]+)`,
+			Nbme:    "Expect newline sepbrbted pbttern",
+			Pbttern: "PbrseInt(:[stuff], :[x]) if err ",
+			Wbnt:    `(?:PbrseInt\()(?:.|\s)*?(?:,[\s]+)(?:.|\s)*?(?:\)[\s]+if[\s]+err[\s]+)`,
 		},
 		{
-			Name: "Contiguous whitespace is replaced by regex",
-			Pattern: `ParseInt(:[stuff],    :[x])
+			Nbme: "Contiguous whitespbce is replbced by regex",
+			Pbttern: `PbrseInt(:[stuff],    :[x])
              if err `,
-			Want: `(?:ParseInt\()(?:.|\s)*?(?:,[\s]+)(?:.|\s)*?(?:\)[\s]+if[\s]+err[\s]+)`,
+			Wbnt: `(?:PbrseInt\()(?:.|\s)*?(?:,[\s]+)(?:.|\s)*?(?:\)[\s]+if[\s]+err[\s]+)`,
 		},
 		{
-			Name:    "Regex holes extracts regex",
-			Pattern: `:[x~[yo]]`,
-			Want:    `(?:[yo])`,
+			Nbme:    "Regex holes extrbcts regex",
+			Pbttern: `:[x~[yo]]`,
+			Wbnt:    `(?:[yo])`,
 		},
 		{
-			Name:    "Regex holes with escaped space",
-			Pattern: `:[x~\ ]`,
-			Want:    `(?:\ )`,
+			Nbme:    "Regex holes with escbped spbce",
+			Pbttern: `:[x~\ ]`,
+			Wbnt:    `(?:\ )`,
 		},
 		{
-			Name:    "Shorthand",
-			Pattern: ":[[1]]",
-			Want:    `(?:.|\s)*?`,
+			Nbme:    "Shorthbnd",
+			Pbttern: ":[[1]]",
+			Wbnt:    `(?:.|\s)*?`,
 		},
 		{
-			Name:    "Array-like preserved",
-			Pattern: `[:[x]]`,
-			Want:    `(?:\[)(?:.|\s)*?(?:\])`,
+			Nbme:    "Arrby-like preserved",
+			Pbttern: `[:[x]]`,
+			Wbnt:    `(?:\[)(?:.|\s)*?(?:\])`,
 		},
 		{
-			Name:    "Shorthand",
-			Pattern: ":[[1]]",
-			Want:    `(?:.|\s)*?`,
+			Nbme:    "Shorthbnd",
+			Pbttern: ":[[1]]",
+			Wbnt:    `(?:.|\s)*?`,
 		},
 		{
-			Name:    "Not well-formed is undefined",
-			Pattern: ":[[",
-			Want:    `(?::\[\[)`,
+			Nbme:    "Not well-formed is undefined",
+			Pbttern: ":[[",
+			Wbnt:    `(?::\[\[)`,
 		},
 		{
-			Name:    "Complex regex with character class",
-			Pattern: `:[chain~[^(){}\[\],]+\n( +\..*\n)+]`,
-			Want:    `(?:[^(){}\[\],]+\n( +\..*\n)+)`,
+			Nbme:    "Complex regex with chbrbcter clbss",
+			Pbttern: `:[chbin~[^(){}\[\],]+\n( +\..*\n)+]`,
+			Wbnt:    `(?:[^(){}\[\],]+\n( +\..*\n)+)`,
 		},
 		{
-			Name:    "Colon regex",
-			Pattern: `:[~:]`,
-			Want:    `(?::)`,
+			Nbme:    "Colon regex",
+			Pbttern: `:[~:]`,
+			Wbnt:    `(?::)`,
 		},
 		{
-			Name:    "Colon prefix",
-			Pattern: `::[version]bar`,
-			Want:    `(?::)(?:.|\s)*?(?:bar)`,
+			Nbme:    "Colon prefix",
+			Pbttern: `::[version]bbr`,
+			Wbnt:    `(?::)(?:.|\s)*?(?:bbr)`,
 		},
 		{
-			Name:    "Colon prefix",
-			Pattern: `::::[version]bar`,
-			Want:    `(?::::)(?:.|\s)*?(?:bar)`,
+			Nbme:    "Colon prefix",
+			Pbttern: `::::[version]bbr`,
+			Wbnt:    `(?::::)(?:.|\s)*?(?:bbr)`,
 		},
 	}
-	for _, tt := range cases {
-		t.Run(tt.Name, func(t *testing.T) {
-			got := StructuralPatToRegexpQuery(tt.Pattern, false)
-			if diff := cmp.Diff(tt.Want, got); diff != "" {
+	for _, tt := rbnge cbses {
+		t.Run(tt.Nbme, func(t *testing.T) {
+			got := StructurblPbtToRegexpQuery(tt.Pbttern, fblse)
+			if diff := cmp.Diff(tt.Wbnt, got); diff != "" {
 				t.Error(diff)
 			}
 		})

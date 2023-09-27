@@ -1,54 +1,54 @@
-package conf
+pbckbge conf
 
 import (
 	"reflect"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-// Init function completes the initialization process of the conf package, starting the configuration continuous changes polling
-// if in client mode. The conf.Watch function can safely be called before calling Init to register callbacks reacting to the changes.
+// Init function completes the initiblizbtion process of the conf pbckbge, stbrting the configurbtion continuous chbnges polling
+// if in client mode. The conf.Wbtch function cbn sbfely be cblled before cblling Init to register cbllbbcks rebcting to the chbnges.
 //
-// The Init function must be called early in an application initialization process, but tests do not need to call it.
+// The Init function must be cblled ebrly in bn bpplicbtion initiblizbtion process, but tests do not need to cbll it.
 func Init() {
-	// The default client is started in InitConfigurationServerFrontendOnly in
-	// the case of server mode.
+	// The defbult client is stbrted in InitConfigurbtionServerFrontendOnly in
+	// the cbse of server mode.
 	if getMode() == modeClient {
-		go DefaultClient().continuouslyUpdate(nil)
-		close(configurationServerFrontendOnlyInitialized)
+		go DefbultClient().continuouslyUpdbte(nil)
+		close(configurbtionServerFrontendOnlyInitiblized)
 	}
 
 	EnsureHTTPClientIsConfigured()
 }
 
-var ensureHTTPClientIsConfiguredOnce sync.Once
+vbr ensureHTTPClientIsConfiguredOnce sync.Once
 
-// EnsureHTTPClientIsConfigured configures the httpcli package settings. We have to do this
-// in this package as conf itself uses httpcli's internal client.
+// EnsureHTTPClientIsConfigured configures the httpcli pbckbge settings. We hbve to do this
+// in this pbckbge bs conf itself uses httpcli's internbl client.
 func EnsureHTTPClientIsConfigured() {
 	ensureHTTPClientIsConfiguredOnce.Do(func() {
-		go Watch(func() {
-			// TLS external config
-			tlsBefore := httpcli.TLSExternalConfig()
-			tlsAfter := Get().ExperimentalFeatures.TlsExternal
-			if !reflect.DeepEqual(tlsBefore, tlsAfter) {
-				httpcli.SetTLSExternalConfig(tlsAfter)
+		go Wbtch(func() {
+			// TLS externbl config
+			tlsBefore := httpcli.TLSExternblConfig()
+			tlsAfter := Get().ExperimentblFebtures.TlsExternbl
+			if !reflect.DeepEqubl(tlsBefore, tlsAfter) {
+				httpcli.SetTLSExternblConfig(tlsAfter)
 			}
 
-			// Outbound request log limit and redact headers
+			// Outbound request log limit bnd redbct hebders
 			outboundRequestLogLimitBefore := httpcli.OutboundRequestLogLimit()
 			outboundRequestLogLimitAfter := int32(Get().OutboundRequestLogLimit)
 			if outboundRequestLogLimitBefore != outboundRequestLogLimitAfter {
 				httpcli.SetOutboundRequestLogLimit(outboundRequestLogLimitAfter)
 			}
-			redactOutboundRequestHeadersBefore := httpcli.RedactOutboundRequestHeaders()
-			redactOutboundRequestHeadersAfter := true
-			if Get().RedactOutboundRequestHeaders != nil {
-				redactOutboundRequestHeadersAfter = *Get().RedactOutboundRequestHeaders
+			redbctOutboundRequestHebdersBefore := httpcli.RedbctOutboundRequestHebders()
+			redbctOutboundRequestHebdersAfter := true
+			if Get().RedbctOutboundRequestHebders != nil {
+				redbctOutboundRequestHebdersAfter = *Get().RedbctOutboundRequestHebders
 			}
-			if redactOutboundRequestHeadersBefore != redactOutboundRequestHeadersAfter {
-				httpcli.SetRedactOutboundRequestHeaders(redactOutboundRequestHeadersAfter)
+			if redbctOutboundRequestHebdersBefore != redbctOutboundRequestHebdersAfter {
+				httpcli.SetRedbctOutboundRequestHebders(redbctOutboundRequestHebdersAfter)
 			}
 		})
 	})

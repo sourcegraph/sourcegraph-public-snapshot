@@ -1,4 +1,4 @@
-package openai
+pbckbge openbi
 
 import (
 	"bytes"
@@ -7,43 +7,43 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
-	return &openAIChatCompletionStreamClient{
+func NewClient(cli httpcli.Doer, endpoint, bccessToken string) types.CompletionsClient {
+	return &openAIChbtCompletionStrebmClient{
 		cli:         cli,
-		accessToken: accessToken,
+		bccessToken: bccessToken,
 		endpoint:    endpoint,
 	}
 }
 
-type openAIChatCompletionStreamClient struct {
+type openAIChbtCompletionStrebmClient struct {
 	cli         httpcli.Doer
-	accessToken string
+	bccessToken string
 	endpoint    string
 }
 
-func (c *openAIChatCompletionStreamClient) Complete(
+func (c *openAIChbtCompletionStrebmClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	requestParams types.CompletionRequestParameters,
+	febture types.CompletionsFebture,
+	requestPbrbms types.CompletionRequestPbrbmeters,
 ) (*types.CompletionResponse, error) {
-	// TODO: If we add support for CompletionsFeatureCode, Cody Gateway must
-	// also be updated to allow OpenAI code completions requests.
-	if feature == types.CompletionsFeatureCode {
+	// TODO: If we bdd support for CompletionsFebtureCode, Cody Gbtewby must
+	// blso be updbted to bllow OpenAI code completions requests.
+	if febture == types.CompletionsFebtureCode {
 		return nil, errors.Newf("%q for OpenAI is currently not supported")
 	}
 
-	resp, err := c.makeRequest(ctx, requestParams, false)
+	resp, err := c.mbkeRequest(ctx, requestPbrbms, fblse)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var response openaiResponse
+	vbr response openbiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
@@ -55,45 +55,45 @@ func (c *openAIChatCompletionStreamClient) Complete(
 
 	return &types.CompletionResponse{
 		Completion: response.Choices[0].Content,
-		StopReason: response.Choices[0].FinishReason,
+		StopRebson: response.Choices[0].FinishRebson,
 	}, nil
 }
 
-func (c *openAIChatCompletionStreamClient) Stream(
+func (c *openAIChbtCompletionStrebmClient) Strebm(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	requestParams types.CompletionRequestParameters,
+	febture types.CompletionsFebture,
+	requestPbrbms types.CompletionRequestPbrbmeters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	resp, err := c.makeRequest(ctx, requestParams, true)
+	resp, err := c.mbkeRequest(ctx, requestPbrbms, true)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 
 	dec := NewDecoder(resp.Body)
-	var content string
-	for dec.Scan() {
-		if ctx.Err() != nil && ctx.Err() == context.Canceled {
+	vbr content string
+	for dec.Scbn() {
+		if ctx.Err() != nil && ctx.Err() == context.Cbnceled {
 			return nil
 		}
 
-		data := dec.Data()
-		// Gracefully skip over any data that isn't JSON-like.
-		if !bytes.HasPrefix(data, []byte("{")) {
+		dbtb := dec.Dbtb()
+		// Grbcefully skip over bny dbtb thbt isn't JSON-like.
+		if !bytes.HbsPrefix(dbtb, []byte("{")) {
 			continue
 		}
 
-		var event openaiResponse
-		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+		vbr event openbiResponse
+		if err := json.Unmbrshbl(dbtb, &event); err != nil {
+			return errors.Errorf("fbiled to decode event pbylobd: %w - body: %s", err, string(dbtb))
 		}
 
 		if len(event.Choices) > 0 {
-			content += event.Choices[0].Delta.Content
+			content += event.Choices[0].Deltb.Content
 			ev := types.CompletionResponse{
 				Completion: content,
-				StopReason: event.Choices[0].FinishReason,
+				StopRebson: event.Choices[0].FinishRebson,
 			}
 			err = sendEvent(ev)
 			if err != nil {
@@ -105,111 +105,111 @@ func (c *openAIChatCompletionStreamClient) Stream(
 	return dec.Err()
 }
 
-func (c *openAIChatCompletionStreamClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	if requestParams.TopK < 0 {
-		requestParams.TopK = 0
+func (c *openAIChbtCompletionStrebmClient) mbkeRequest(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, strebm bool) (*http.Response, error) {
+	if requestPbrbms.TopK < 0 {
+		requestPbrbms.TopK = 0
 	}
-	if requestParams.TopP < 0 {
-		requestParams.TopP = 0
+	if requestPbrbms.TopP < 0 {
+		requestPbrbms.TopP = 0
 	}
 
-	// TODO(sqs): make CompletionRequestParameters non-anthropic-specific
-	payload := openAIChatCompletionsRequestParameters{
-		Model:       requestParams.Model,
-		Temperature: requestParams.Temperature,
-		TopP:        requestParams.TopP,
-		// TODO(sqs): map requestParams.TopK to openai
+	// TODO(sqs): mbke CompletionRequestPbrbmeters non-bnthropic-specific
+	pbylobd := openAIChbtCompletionsRequestPbrbmeters{
+		Model:       requestPbrbms.Model,
+		Temperbture: requestPbrbms.Temperbture,
+		TopP:        requestPbrbms.TopP,
+		// TODO(sqs): mbp requestPbrbms.TopK to openbi
 		N:         1,
-		Stream:    stream,
-		MaxTokens: requestParams.MaxTokensToSample,
-		// TODO: Our clients are currently heavily biased towards Anthropic,
-		// so the stop sequences we send might not actually be very useful
+		Strebm:    strebm,
+		MbxTokens: requestPbrbms.MbxTokensToSbmple,
+		// TODO: Our clients bre currently hebvily bibsed towbrds Anthropic,
+		// so the stop sequences we send might not bctublly be very useful
 		// for OpenAI.
-		Stop: requestParams.StopSequences,
+		Stop: requestPbrbms.StopSequences,
 	}
-	for _, m := range requestParams.Messages {
-		// TODO(sqs): map these 'roles' to openai system/user/assistant
-		var role string
-		switch m.Speaker {
-		case types.HUMAN_MESSAGE_SPEAKER:
+	for _, m := rbnge requestPbrbms.Messbges {
+		// TODO(sqs): mbp these 'roles' to openbi system/user/bssistbnt
+		vbr role string
+		switch m.Spebker {
+		cbse types.HUMAN_MESSAGE_SPEAKER:
 			role = "user"
-		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = "assistant"
+		cbse types.ASISSTANT_MESSAGE_SPEAKER:
+			role = "bssistbnt"
 			//
-		default:
+		defbult:
 			role = strings.ToLower(role)
 		}
-		payload.Messages = append(payload.Messages, message{
+		pbylobd.Messbges = bppend(pbylobd.Messbges, messbge{
 			Role:    role,
 			Content: m.Text,
 		})
 	}
 
-	reqBody, err := json.Marshal(payload)
+	reqBody, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "POST", c.endpoint, bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", c.endpoint, bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("Authorizbtion", "Bebrer "+c.bccessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("OpenAI", resp)
+	if resp.StbtusCode != http.StbtusOK {
+		return nil, types.NewErrStbtusNotOK("OpenAI", resp)
 	}
 
 	return resp, nil
 }
 
-type openAIChatCompletionsRequestParameters struct {
+type openAIChbtCompletionsRequestPbrbmeters struct {
 	Model            string             `json:"model"`
-	Messages         []message          `json:"messages"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
+	Messbges         []messbge          `json:"messbges"`
+	Temperbture      flobt32            `json:"temperbture,omitempty"`
+	TopP             flobt32            `json:"top_p,omitempty"`
 	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
+	Strebm           bool               `json:"strebm,omitempty"`
 	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
+	MbxTokens        int                `json:"mbx_tokens,omitempty"`
+	PresencePenblty  flobt32            `json:"presence_penblty,omitempty"`
+	FrequencyPenblty flobt32            `json:"frequency_penblty,omitempty"`
+	LogitBibs        mbp[string]flobt32 `json:"logit_bibs,omitempty"`
 	User             string             `json:"user,omitempty"`
 }
 
-type message struct {
+type messbge struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-type openaiUsage struct {
+type openbiUsbge struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	TotblTokens      int `json:"totbl_tokens"`
 }
 
-type openaiChoiceDelta struct {
+type openbiChoiceDeltb struct {
 	Content string `json:"content"`
 }
 
-type openaiChoice struct {
-	Delta        openaiChoiceDelta `json:"delta"`
+type openbiChoice struct {
+	Deltb        openbiChoiceDeltb `json:"deltb"`
 	Role         string            `json:"role"`
 	Content      string            `json:"content"`
-	FinishReason string            `json:"finish_reason"`
+	FinishRebson string            `json:"finish_rebson"`
 }
 
-type openaiResponse struct {
-	// Usage is only available for non-streaming requests.
-	Usage   openaiUsage    `json:"usage"`
+type openbiResponse struct {
+	// Usbge is only bvbilbble for non-strebming requests.
+	Usbge   openbiUsbge    `json:"usbge"`
 	Model   string         `json:"model"`
-	Choices []openaiChoice `json:"choices"`
+	Choices []openbiChoice `json:"choices"`
 }

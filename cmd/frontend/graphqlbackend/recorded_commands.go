@@ -1,61 +1,61 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
 )
 
-// recordedCommandMaxLimit is the maximum number of recorded commands that can be
-// returned in a single query. This limit prevents returning an excessive number of
-// recorded commands. It should always be in sync with the default in `cmd/frontend/graphqlbackend/schema.graphql`
-const recordedCommandMaxLimit = 40
+// recordedCommbndMbxLimit is the mbximum number of recorded commbnds thbt cbn be
+// returned in b single query. This limit prevents returning bn excessive number of
+// recorded commbnds. It should blwbys be in sync with the defbult in `cmd/frontend/grbphqlbbckend/schemb.grbphql`
+const recordedCommbndMbxLimit = 40
 
-var MockGetRecordedCommandMaxLimit func() int
+vbr MockGetRecordedCommbndMbxLimit func() int
 
-func GetRecordedCommandMaxLimit() int {
-	if MockGetRecordedCommandMaxLimit != nil {
-		return MockGetRecordedCommandMaxLimit()
+func GetRecordedCommbndMbxLimit() int {
+	if MockGetRecordedCommbndMbxLimit != nil {
+		return MockGetRecordedCommbndMbxLimit()
 	}
-	return recordedCommandMaxLimit
+	return recordedCommbndMbxLimit
 }
 
-type RecordedCommandsArgs struct {
+type RecordedCommbndsArgs struct {
 	Limit  int32
 	Offset int32
 }
 
-func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *RecordedCommandsArgs) (graphqlutil.SliceConnectionResolver[RecordedCommandResolver], error) {
-	offset := int(args.Offset)
-	limit := int(args.Limit)
-	maxLimit := GetRecordedCommandMaxLimit()
-	if limit == 0 || limit > maxLimit {
-		limit = maxLimit
+func (r *RepositoryResolver) RecordedCommbnds(ctx context.Context, brgs *RecordedCommbndsArgs) (grbphqlutil.SliceConnectionResolver[RecordedCommbndResolver], error) {
+	offset := int(brgs.Offset)
+	limit := int(brgs.Limit)
+	mbxLimit := GetRecordedCommbndMbxLimit()
+	if limit == 0 || limit > mbxLimit {
+		limit = mbxLimit
 	}
 	currentEnd := offset + limit
 
 	recordingConf := conf.Get().SiteConfig().GitRecorder
 	if recordingConf == nil {
-		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
+		return grbphqlutil.NewSliceConnectionResolver([]RecordedCommbndResolver{}, 0, currentEnd), nil
 	}
-	store := rcache.NewFIFOList(wrexec.GetFIFOListKey(r.Name()), recordingConf.Size)
+	store := rcbche.NewFIFOList(wrexec.GetFIFOListKey(r.Nbme()), recordingConf.Size)
 	empty, err := store.IsEmpty()
 	if err != nil {
 		return nil, err
 	}
 	if empty {
-		return graphqlutil.NewSliceConnectionResolver([]RecordedCommandResolver{}, 0, currentEnd), nil
+		return grbphqlutil.NewSliceConnectionResolver([]RecordedCommbndResolver{}, 0, currentEnd), nil
 	}
 
 	// the FIFO list is zero-indexed, so we need to deduct one from the limit
-	// to be able to get the correct amount of data.
+	// to be bble to get the correct bmount of dbtb.
 	to := currentEnd - 1
-	raws, err := store.Slice(ctx, offset, to)
+	rbws, err := store.Slice(ctx, offset, to)
 	if err != nil {
 		return nil, err
 	}
@@ -65,76 +65,76 @@ func (r *RepositoryResolver) RecordedCommands(ctx context.Context, args *Recorde
 		return nil, err
 	}
 
-	resolvers := make([]RecordedCommandResolver, len(raws))
-	for i, raw := range raws {
-		command, err := wrexec.UnmarshalCommand(raw)
+	resolvers := mbke([]RecordedCommbndResolver, len(rbws))
+	for i, rbw := rbnge rbws {
+		commbnd, err := wrexec.UnmbrshblCommbnd(rbw)
 		if err != nil {
 			return nil, err
 		}
-		resolvers[i] = NewRecordedCommandResolver(command)
+		resolvers[i] = NewRecordedCommbndResolver(commbnd)
 	}
 
-	return graphqlutil.NewSliceConnectionResolver(resolvers, size, currentEnd), nil
+	return grbphqlutil.NewSliceConnectionResolver(resolvers, size, currentEnd), nil
 }
 
-type RecordedCommandResolver interface {
-	Start() gqlutil.DateTime
-	Duration() float64
-	Command() string
+type RecordedCommbndResolver interfbce {
+	Stbrt() gqlutil.DbteTime
+	Durbtion() flobt64
+	Commbnd() string
 	Dir() string
-	Path() string
+	Pbth() string
 	Output() string
 	IsSuccess() bool
 }
 
-type recordedCommandResolver struct {
-	command wrexec.RecordedCommand
+type recordedCommbndResolver struct {
+	commbnd wrexec.RecordedCommbnd
 }
 
-func NewRecordedCommandResolver(command wrexec.RecordedCommand) RecordedCommandResolver {
-	return &recordedCommandResolver{command: command}
+func NewRecordedCommbndResolver(commbnd wrexec.RecordedCommbnd) RecordedCommbndResolver {
+	return &recordedCommbndResolver{commbnd: commbnd}
 }
 
-func (r *recordedCommandResolver) Start() gqlutil.DateTime {
-	return *gqlutil.FromTime(r.command.Start)
+func (r *recordedCommbndResolver) Stbrt() gqlutil.DbteTime {
+	return *gqlutil.FromTime(r.commbnd.Stbrt)
 }
 
-func (r *recordedCommandResolver) Duration() float64 {
-	return r.command.Duration
+func (r *recordedCommbndResolver) Durbtion() flobt64 {
+	return r.commbnd.Durbtion
 }
 
-func (r *recordedCommandResolver) Command() string {
-	return strings.Join(r.command.Args, " ")
+func (r *recordedCommbndResolver) Commbnd() string {
+	return strings.Join(r.commbnd.Args, " ")
 }
 
-func (r *recordedCommandResolver) Dir() string {
-	return r.command.Dir
+func (r *recordedCommbndResolver) Dir() string {
+	return r.commbnd.Dir
 }
 
-func (r *recordedCommandResolver) Path() string {
-	return r.command.Path
+func (r *recordedCommbndResolver) Pbth() string {
+	return r.commbnd.Pbth
 }
 
-func (r *recordedCommandResolver) Output() string {
-	return r.command.Output
+func (r *recordedCommbndResolver) Output() string {
+	return r.commbnd.Output
 }
 
-func (r *recordedCommandResolver) IsSuccess() bool {
-	return r.command.IsSuccess
+func (r *recordedCommbndResolver) IsSuccess() bool {
+	return r.commbnd.IsSuccess
 }
 
-func (r *RepositoryResolver) IsRecordingEnabled() bool {
+func (r *RepositoryResolver) IsRecordingEnbbled() bool {
 	recordingConf := conf.Get().SiteConfig().GitRecorder
 	if recordingConf != nil && len(recordingConf.Repos) > 0 {
 		if recordingConf.Repos[0] == "*" {
 			return true
 		}
 
-		for _, repo := range recordingConf.Repos {
-			if strings.EqualFold(repo, r.Name()) {
+		for _, repo := rbnge recordingConf.Repos {
+			if strings.EqublFold(repo, r.Nbme()) {
 				return true
 			}
 		}
 	}
-	return false
+	return fblse
 }

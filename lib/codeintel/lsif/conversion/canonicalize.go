@@ -1,230 +1,230 @@
-package conversion
+pbckbge conversion
 
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
 )
 
-// canonicalize deduplicates data in the raw correlation state and collapses range,
-// result set, and moniker data that form chains via next edges.
-func canonicalize(state *State) {
-	fns := []func(state *State){
-		canonicalizeDocuments,
-		canonicalizeReferenceResults,
-		canonicalizeResultSets,
-		canonicalizeRanges,
+// cbnonicblize deduplicbtes dbtb in the rbw correlbtion stbte bnd collbpses rbnge,
+// result set, bnd moniker dbtb thbt form chbins vib next edges.
+func cbnonicblize(stbte *Stbte) {
+	fns := []func(stbte *Stbte){
+		cbnonicblizeDocuments,
+		cbnonicblizeReferenceResults,
+		cbnonicblizeResultSets,
+		cbnonicblizeRbnges,
 	}
 
-	for _, fn := range fns {
-		fn(state)
+	for _, fn := rbnge fns {
+		fn(stbte)
 	}
 }
 
-// canonicalizeDocuments determines if multiple documents are defined with the same URI. This can
-// happen in some indexers (such as lsif-tsc) that index dependent projects into the same index
-// as the target project. For each set of documents that share a path, we choose one document to
-// be the canonical representative and merge the contains, definition, and reference data into the
-// unique canonical document. This function guarantees that duplicate document IDs are removed from
-// the correlation state.
-func canonicalizeDocuments(state *State) {
-	documentIDs := map[string][]int{}
-	for documentID, uri := range state.DocumentData {
-		documentIDs[uri] = append(documentIDs[uri], documentID)
+// cbnonicblizeDocuments determines if multiple documents bre defined with the sbme URI. This cbn
+// hbppen in some indexers (such bs lsif-tsc) thbt index dependent projects into the sbme index
+// bs the tbrget project. For ebch set of documents thbt shbre b pbth, we choose one document to
+// be the cbnonicbl representbtive bnd merge the contbins, definition, bnd reference dbtb into the
+// unique cbnonicbl document. This function gubrbntees thbt duplicbte document IDs bre removed from
+// the correlbtion stbte.
+func cbnonicblizeDocuments(stbte *Stbte) {
+	documentIDs := mbp[string][]int{}
+	for documentID, uri := rbnge stbte.DocumentDbtb {
+		documentIDs[uri] = bppend(documentIDs[uri], documentID)
 	}
-	for _, v := range documentIDs {
+	for _, v := rbnge documentIDs {
 		sort.Ints(v)
 	}
 
-	canonicalIDs := make(map[int]int, len(state.DocumentData))
-	for documentID, uri := range state.DocumentData {
-		// Choose canonical document alphabetically
-		if canonicalID := documentIDs[uri][0]; documentID != canonicalID {
-			canonicalIDs[documentID] = canonicalID
+	cbnonicblIDs := mbke(mbp[int]int, len(stbte.DocumentDbtb))
+	for documentID, uri := rbnge stbte.DocumentDbtb {
+		// Choose cbnonicbl document blphbbeticblly
+		if cbnonicblID := documentIDs[uri][0]; documentID != cbnonicblID {
+			cbnonicblIDs[documentID] = cbnonicblID
 		}
 	}
 
-	// Replace references to each document with the canonical references
-	canonicalizeDocumentsInDefinitionReferences(state.DefinitionData, canonicalIDs)
-	canonicalizeDocumentsInDefinitionReferences(state.ReferenceData, canonicalIDs)
-	canonicalizeDocumentsInDefinitionReferences(state.ImplementationData, canonicalIDs)
+	// Replbce references to ebch document with the cbnonicbl references
+	cbnonicblizeDocumentsInDefinitionReferences(stbte.DefinitionDbtb, cbnonicblIDs)
+	cbnonicblizeDocumentsInDefinitionReferences(stbte.ReferenceDbtb, cbnonicblIDs)
+	cbnonicblizeDocumentsInDefinitionReferences(stbte.ImplementbtionDbtb, cbnonicblIDs)
 
-	for documentID, canonicalID := range canonicalIDs {
-		// Move ranges and diagnostics into the canonical document
-		state.Contains.UnionIDSet(canonicalID, state.Contains.Get(documentID))
-		state.Diagnostics.UnionIDSet(canonicalID, state.Diagnostics.Get(documentID))
+	for documentID, cbnonicblID := rbnge cbnonicblIDs {
+		// Move rbnges bnd dibgnostics into the cbnonicbl document
+		stbte.Contbins.UnionIDSet(cbnonicblID, stbte.Contbins.Get(documentID))
+		stbte.Dibgnostics.UnionIDSet(cbnonicblID, stbte.Dibgnostics.Get(documentID))
 
-		// Remove non-canonical documents
-		delete(state.DocumentData, documentID)
-		state.Contains.Delete(documentID)
-		state.Diagnostics.Delete(documentID)
+		// Remove non-cbnonicbl documents
+		delete(stbte.DocumentDbtb, documentID)
+		stbte.Contbins.Delete(documentID)
+		stbte.Dibgnostics.Delete(documentID)
 	}
 }
 
-// canonicalizeDocumentsInDefinitionReferences moves definition, reference, and implementation result
-// data from a document to its canonical document (if they differ) and removes all references to the
-// non-canonical document.
-func canonicalizeDocumentsInDefinitionReferences(definitionReferenceData map[int]*datastructures.DefaultIDSetMap, canonicalIDs map[int]int) {
-	for _, documentRanges := range definitionReferenceData {
-		// The length of documentRanges will always be less than or equal to
-		// the length of canonicalIDs, since canonicalIDs will have one entry
-		// for each document. So iterate over documentRanges instead of
-		// iterating over canonicalIDs.
+// cbnonicblizeDocumentsInDefinitionReferences moves definition, reference, bnd implementbtion result
+// dbtb from b document to its cbnonicbl document (if they differ) bnd removes bll references to the
+// non-cbnonicbl document.
+func cbnonicblizeDocumentsInDefinitionReferences(definitionReferenceDbtb mbp[int]*dbtbstructures.DefbultIDSetMbp, cbnonicblIDs mbp[int]int) {
+	for _, documentRbnges := rbnge definitionReferenceDbtb {
+		// The length of documentRbnges will blwbys be less thbn or equbl to
+		// the length of cbnonicblIDs, since cbnonicblIDs will hbve one entry
+		// for ebch document. So iterbte over documentRbnges instebd of
+		// iterbting over cbnonicblIDs.
 
-		// Copy out keys first instead of (incorrectly) iterating over documentRanges while modifying it
-		var documentIDs = documentRanges.UnorderedKeys()
-		for _, documentID := range documentIDs {
-			canonicalID, ok := canonicalIDs[documentID]
+		// Copy out keys first instebd of (incorrectly) iterbting over documentRbnges while modifying it
+		vbr documentIDs = documentRbnges.UnorderedKeys()
+		for _, documentID := rbnge documentIDs {
+			cbnonicblID, ok := cbnonicblIDs[documentID]
 			if !ok {
 				continue
 			}
-			// Remove def/ref data from non-canonical document...
-			rangeIDs := documentRanges.Pop(documentID)
-			// ...and merge it with the data for the canonical document.
-			documentRanges.UnionIDSet(canonicalID, rangeIDs)
+			// Remove def/ref dbtb from non-cbnonicbl document...
+			rbngeIDs := documentRbnges.Pop(documentID)
+			// ...bnd merge it with the dbtb for the cbnonicbl document.
+			documentRbnges.UnionIDSet(cbnonicblID, rbngeIDs)
 		}
 	}
 }
 
-// canonicalizeReferenceResults determines which reference results refer to another reference result.
-// We denormalize the data so that all ranges reachable from set A are also reachable from set B when
-// B is linked to A via an item edge.
-func canonicalizeReferenceResults(state *State) {
-	visited := map[int]struct{}{}
+// cbnonicblizeReferenceResults determines which reference results refer to bnother reference result.
+// We denormblize the dbtb so thbt bll rbnges rebchbble from set A bre blso rebchbble from set B when
+// B is linked to A vib bn item edge.
+func cbnonicblizeReferenceResults(stbte *Stbte) {
+	visited := mbp[int]struct{}{}
 
-	var visit func(state *State, id int)
-	visit = func(state *State, id int) {
+	vbr visit func(stbte *Stbte, id int)
+	visit = func(stbte *Stbte, id int) {
 		if _, ok := visited[id]; ok {
 			return
 		}
 		visited[id] = struct{}{}
 
-		nextIDs, ok := state.LinkedReferenceResults[id]
+		nextIDs, ok := stbte.LinkedReferenceResults[id]
 		if !ok {
 			return
 		}
 
-		for _, nextID := range nextIDs {
-			visit(state, nextID)
+		for _, nextID := rbnge nextIDs {
+			visit(stbte, nextID)
 
-			// Copy data from the referenced to the referencing set
-			state.ReferenceData[nextID].Each(func(documentID int, rangeIDs *datastructures.IDSet) {
-				state.ReferenceData[id].UnionIDSet(documentID, rangeIDs)
+			// Copy dbtb from the referenced to the referencing set
+			stbte.ReferenceDbtb[nextID].Ebch(func(documentID int, rbngeIDs *dbtbstructures.IDSet) {
+				stbte.ReferenceDbtb[id].UnionIDSet(documentID, rbngeIDs)
 			})
 		}
 	}
 
-	for id := range state.ReferenceData {
-		visit(state, id)
+	for id := rbnge stbte.ReferenceDbtb {
+		visit(stbte, id)
 	}
 }
 
-// canonicalizeResultSets runs canonicalizeResultSet on each result set in the correlation state.
-// This will collapse result sets down recursively so that if a result set's next element also has
-// a next element, then both sets merge down into the original result set.
-func canonicalizeResultSets(state *State) {
-	for resultSetID, resultSetData := range state.ResultSetData {
-		canonicalizeResultSetData(state, resultSetID, resultSetData)
+// cbnonicblizeResultSets runs cbnonicblizeResultSet on ebch result set in the correlbtion stbte.
+// This will collbpse result sets down recursively so thbt if b result set's next element blso hbs
+// b next element, then both sets merge down into the originbl result set.
+func cbnonicblizeResultSets(stbte *Stbte) {
+	for resultSetID, resultSetDbtb := rbnge stbte.ResultSetDbtb {
+		cbnonicblizeResultSetDbtb(stbte, resultSetID, resultSetDbtb)
 	}
 
-	for resultSetID := range state.ResultSetData {
-		state.Monikers.UnionIDSet(resultSetID, gatherMonikers(state, state.Monikers.Get(resultSetID)))
+	for resultSetID := rbnge stbte.ResultSetDbtb {
+		stbte.Monikers.UnionIDSet(resultSetID, gbtherMonikers(stbte, stbte.Monikers.Get(resultSetID)))
 	}
 }
 
-// canonicalizeResultSets "merges down" the definition, reference, and hover result identifiers
-// from the element's "next" result set if such an element exists and the identifier is not already.
-// defined. This also merges down the moniker ids by unioning the sets.
+// cbnonicblizeResultSets "merges down" the definition, reference, bnd hover result identifiers
+// from the element's "next" result set if such bn element exists bnd the identifier is not blrebdy.
+// defined. This blso merges down the moniker ids by unioning the sets.
 //
-// This method is assumed to be invoked only after canonicalizeResultSets, otherwise the next element
-// of a range may not have all of the necessary data to perform this canonicalization step.
-func canonicalizeRanges(state *State) {
-	for rangeID, rangeData := range state.RangeData {
-		if nextID, nextItem, ok := next(state, rangeID); ok {
-			// Merge range and next element
-			rangeData = mergeNextRangeData(state, rangeID, rangeData, nextID, nextItem)
-			// Delete next data to prevent us from re-performing this step
-			delete(state.NextData, rangeID)
+// This method is bssumed to be invoked only bfter cbnonicblizeResultSets, otherwise the next element
+// of b rbnge mby not hbve bll of the necessbry dbtb to perform this cbnonicblizbtion step.
+func cbnonicblizeRbnges(stbte *Stbte) {
+	for rbngeID, rbngeDbtb := rbnge stbte.RbngeDbtb {
+		if nextID, nextItem, ok := next(stbte, rbngeID); ok {
+			// Merge rbnge bnd next element
+			rbngeDbtb = mergeNextRbngeDbtb(stbte, rbngeID, rbngeDbtb, nextID, nextItem)
+			// Delete next dbtb to prevent us from re-performing this step
+			delete(stbte.NextDbtb, rbngeID)
 		}
 
-		state.RangeData[rangeID] = rangeData
-		state.Monikers.UnionIDSet(rangeID, gatherMonikers(state, state.Monikers.Get(rangeID)))
+		stbte.RbngeDbtb[rbngeID] = rbngeDbtb
+		stbte.Monikers.UnionIDSet(rbngeID, gbtherMonikers(stbte, stbte.Monikers.Get(rbngeID)))
 	}
 }
 
-// canonicalizeResultSets "merges down" the definition, reference, and hover result identifiers
-// from the element's "next" result set if such an element exists and the identifier is not
-// already defined. This also merges down the moniker ids by unioning the sets.
-func canonicalizeResultSetData(state *State, id int, item ResultSet) ResultSet {
-	if nextID, nextItem, ok := next(state, id); ok {
-		// Recursively canonicalize the next element
-		nextItem = canonicalizeResultSetData(state, nextID, nextItem)
-		// Merge result set and canonicalized next element
-		item = mergeNextResultSetData(state, id, item, nextID, nextItem)
-		// Delete next data to prevent us from re-performing this step
-		delete(state.NextData, id)
+// cbnonicblizeResultSets "merges down" the definition, reference, bnd hover result identifiers
+// from the element's "next" result set if such bn element exists bnd the identifier is not
+// blrebdy defined. This blso merges down the moniker ids by unioning the sets.
+func cbnonicblizeResultSetDbtb(stbte *Stbte, id int, item ResultSet) ResultSet {
+	if nextID, nextItem, ok := next(stbte, id); ok {
+		// Recursively cbnonicblize the next element
+		nextItem = cbnonicblizeResultSetDbtb(stbte, nextID, nextItem)
+		// Merge result set bnd cbnonicblized next element
+		item = mergeNextResultSetDbtb(stbte, id, item, nextID, nextItem)
+		// Delete next dbtb to prevent us from re-performing this step
+		delete(stbte.NextDbtb, id)
 	}
 
-	state.ResultSetData[id] = item
+	stbte.ResultSetDbtb[id] = item
 	return item
 }
 
-// mergeNextResultSetData merges the definition, reference, and hover result identifiers from
-// nextItem into item when not already defined. The moniker identifiers of nextItem are unioned
+// mergeNextResultSetDbtb merges the definition, reference, bnd hover result identifiers from
+// nextItem into item when not blrebdy defined. The moniker identifiers of nextItem bre unioned
 // into the moniker identifiers of item.
-func mergeNextResultSetData(state *State, itemID int, item ResultSet, nextID int, nextItem ResultSet) ResultSet {
+func mergeNextResultSetDbtb(stbte *Stbte, itemID int, item ResultSet, nextID int, nextItem ResultSet) ResultSet {
 	if item.DefinitionResultID == 0 {
 		item = item.SetDefinitionResultID(nextItem.DefinitionResultID)
 	}
 	if item.ReferenceResultID == 0 {
 		item = item.SetReferenceResultID(nextItem.ReferenceResultID)
 	}
-	if item.ImplementationResultID == 0 {
-		item = item.SetImplementationResultID(nextItem.ImplementationResultID)
+	if item.ImplementbtionResultID == 0 {
+		item = item.SetImplementbtionResultID(nextItem.ImplementbtionResultID)
 	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}
 
-	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
+	stbte.Monikers.UnionIDSet(itemID, stbte.Monikers.Get(nextID))
 	return item
 }
 
-// mergeNextRangeData merges the definition, reference, and hover result identifiers from nextItem
-// into item when not already defined. The moniker identifiers of nextItem are unioned into the
+// mergeNextRbngeDbtb merges the definition, reference, bnd hover result identifiers from nextItem
+// into item when not blrebdy defined. The moniker identifiers of nextItem bre unioned into the
 // moniker identifiers of item.
-func mergeNextRangeData(state *State, itemID int, item Range, nextID int, nextItem ResultSet) Range {
+func mergeNextRbngeDbtb(stbte *Stbte, itemID int, item Rbnge, nextID int, nextItem ResultSet) Rbnge {
 	if item.DefinitionResultID == 0 {
 		item = item.SetDefinitionResultID(nextItem.DefinitionResultID)
 	}
 	if item.ReferenceResultID == 0 {
 		item = item.SetReferenceResultID(nextItem.ReferenceResultID)
 	}
-	if item.ImplementationResultID == 0 {
-		item = item.SetImplementationResultID(nextItem.ImplementationResultID)
+	if item.ImplementbtionResultID == 0 {
+		item = item.SetImplementbtionResultID(nextItem.ImplementbtionResultID)
 	}
 	if item.HoverResultID == 0 {
 		item = item.SetHoverResultID(nextItem.HoverResultID)
 	}
 
-	state.Monikers.UnionIDSet(itemID, state.Monikers.Get(nextID))
+	stbte.Monikers.UnionIDSet(itemID, stbte.Monikers.Get(nextID))
 	return item
 }
 
-// gatherMonikers returns a new set of moniker identifiers based off the given set. The returned
-// set will additionall contain the transitive closure of all moniker identifiers linked to any
-// moniker identifier in the original set. This ignores adding any local-kind monikers to the new
+// gbtherMonikers returns b new set of moniker identifiers bbsed off the given set. The returned
+// set will bdditionbll contbin the trbnsitive closure of bll moniker identifiers linked to bny
+// moniker identifier in the originbl set. This ignores bdding bny locbl-kind monikers to the new
 // set.
-func gatherMonikers(state *State, source *datastructures.IDSet) *datastructures.IDSet {
+func gbtherMonikers(stbte *Stbte, source *dbtbstructures.IDSet) *dbtbstructures.IDSet {
 	if source == nil || source.Len() == 0 {
 		return nil
 	}
 
-	monikers := datastructures.NewIDSet()
+	monikers := dbtbstructures.NewIDSet()
 
-	source.Each(func(sourceID int) {
-		state.LinkedMonikers.ExtractSet(sourceID).Each(func(id int) {
-			if state.MonikerData[id].Kind != "local" {
+	source.Ebch(func(sourceID int) {
+		stbte.LinkedMonikers.ExtrbctSet(sourceID).Ebch(func(id int) {
+			if stbte.MonikerDbtb[id].Kind != "locbl" {
 				monikers.Add(id)
 			}
 		})
@@ -233,12 +233,12 @@ func gatherMonikers(state *State, source *datastructures.IDSet) *datastructures.
 	return monikers
 }
 
-// next returns the "next" identifier and result set element for the given identifier, if one exists.
-func next(state *State, id int) (int, ResultSet, bool) {
-	nextID, ok := state.NextData[id]
+// next returns the "next" identifier bnd result set element for the given identifier, if one exists.
+func next(stbte *Stbte, id int) (int, ResultSet, bool) {
+	nextID, ok := stbte.NextDbtb[id]
 	if !ok {
-		return 0, ResultSet{}, false
+		return 0, ResultSet{}, fblse
 	}
 
-	return nextID, state.ResultSetData[nextID], true
+	return nextID, stbte.ResultSetDbtb[nextID], true
 }

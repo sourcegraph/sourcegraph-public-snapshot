@@ -1,45 +1,45 @@
-package versions
+pbckbge versions
 
 import (
 	"encoding/json"
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
-var (
+vbr (
 	store       = redispool.Store
 	versionsKey = "extsvcversions"
 )
 
 type Version struct {
-	ExternalServiceKind string `json:"external_service_kind"`
+	ExternblServiceKind string `json:"externbl_service_kind"`
 	Version             string `json:"version"`
 	Key                 string `json:"-"`
 }
 
 func storeVersions(versions []*Version) error {
-	payload, err := json.Marshal(versions)
+	pbylobd, err := json.Mbrshbl(versions)
 	if err != nil {
 		return err
 	}
 
-	return store.Set(versionsKey, payload)
+	return store.Set(versionsKey, pbylobd)
 }
 
 func GetVersions() ([]*Version, error) {
 	if MockGetVersions != nil {
 		return MockGetVersions()
 	}
-	var versions []*Version
+	vbr versions []*Version
 
-	raw, err := store.Get(versionsKey).Bytes()
+	rbw, err := store.Get(versionsKey).Bytes()
 	if err != nil && err != redis.ErrNil {
 		return versions, err
 	}
 
-	if err := json.Unmarshal(raw, &versions); err != nil {
+	if err := json.Unmbrshbl(rbw, &versions); err != nil {
 		return versions, err
 	}
 

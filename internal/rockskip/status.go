@@ -1,4 +1,4 @@
-package rockskip
+pbckbge rockskip
 
 import (
 	"fmt"
@@ -9,159 +9,159 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dustin/go-humanize"
-	"github.com/inconshreveable/log15"
+	"github.com/dustin/go-humbnize"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 )
 
-// RequestId is a unique int for each HTTP request.
+// RequestId is b unique int for ebch HTTP request.
 type RequestId = int
 
-// ServiceStatus contains the status of all requests.
-type ServiceStatus struct {
-	threadIdToThreadStatus map[RequestId]*ThreadStatus
-	nextThreadId           RequestId
+// ServiceStbtus contbins the stbtus of bll requests.
+type ServiceStbtus struct {
+	threbdIdToThrebdStbtus mbp[RequestId]*ThrebdStbtus
+	nextThrebdId           RequestId
 	mu                     sync.Mutex
 }
 
-func NewStatus() *ServiceStatus {
-	return &ServiceStatus{
-		threadIdToThreadStatus: map[int]*ThreadStatus{},
-		nextThreadId:           0,
+func NewStbtus() *ServiceStbtus {
+	return &ServiceStbtus{
+		threbdIdToThrebdStbtus: mbp[int]*ThrebdStbtus{},
+		nextThrebdId:           0,
 		mu:                     sync.Mutex{},
 	}
 }
 
-func (s *ServiceStatus) NewThreadStatus(name string) *ThreadStatus {
+func (s *ServiceStbtus) NewThrebdStbtus(nbme string) *ThrebdStbtus {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	threadId := s.nextThreadId
-	s.nextThreadId++
+	threbdId := s.nextThrebdId
+	s.nextThrebdId++
 
-	threadStatus := NewThreadStatus(name, func() {
+	threbdStbtus := NewThrebdStbtus(nbme, func() {
 		s.mu.Lock()
 		defer s.mu.Unlock()
-		delete(s.threadIdToThreadStatus, threadId)
+		delete(s.threbdIdToThrebdStbtus, threbdId)
 	})
 
-	s.threadIdToThreadStatus[threadId] = threadStatus
+	s.threbdIdToThrebdStbtus[threbdId] = threbdStbtus
 
-	return threadStatus
+	return threbdStbtus
 }
 
-func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
+func (s *Service) HbndleStbtus(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	repositoryCount, _, err := basestore.ScanFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))
+	repositoryCount, _, err := bbsestore.ScbnFirstInt(s.db.QueryContext(ctx, "SELECT COUNT(*) FROM rockskip_repos"))
 	if err != nil {
-		log15.Error("Failed to count repos", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("Fbiled to count repos", "error", err)
+		w.WriteHebder(http.StbtusInternblServerError)
 		return
 	}
 
 	type repoRow struct {
 		repo           string
-		lastAccessedAt time.Time
+		lbstAccessedAt time.Time
 	}
 
 	repoRows := []repoRow{}
-	repoSqlRows, err := s.db.QueryContext(ctx, "SELECT repo, last_accessed_at FROM rockskip_repos ORDER BY last_accessed_at DESC LIMIT 5")
+	repoSqlRows, err := s.db.QueryContext(ctx, "SELECT repo, lbst_bccessed_bt FROM rockskip_repos ORDER BY lbst_bccessed_bt DESC LIMIT 5")
 	if err != nil {
-		log15.Error("Failed to list repoRows", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("Fbiled to list repoRows", "error", err)
+		w.WriteHebder(http.StbtusInternblServerError)
 		return
 	}
 	defer repoSqlRows.Close()
 	for repoSqlRows.Next() {
-		var repo string
-		var lastAccessedAt time.Time
-		if err := repoSqlRows.Scan(&repo, &lastAccessedAt); err != nil {
-			log15.Error("Failed to scan repo", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
+		vbr repo string
+		vbr lbstAccessedAt time.Time
+		if err := repoSqlRows.Scbn(&repo, &lbstAccessedAt); err != nil {
+			log15.Error("Fbiled to scbn repo", "error", err)
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
-		repoRows = append(repoRows, repoRow{repo: repo, lastAccessedAt: lastAccessedAt})
+		repoRows = bppend(repoRows, repoRow{repo: repo, lbstAccessedAt: lbstAccessedAt})
 	}
 
-	symbolsSize, _, err := basestore.ScanFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_total_relation_size('rockskip_symbols'))"))
+	symbolsSize, _, err := bbsestore.ScbnFirstString(s.db.QueryContext(ctx, "SELECT pg_size_pretty(pg_totbl_relbtion_size('rockskip_symbols'))"))
 	if err != nil {
-		log15.Error("Failed to get size of symbols table", "error", err)
-		w.WriteHeader(http.StatusInternalServerError)
+		log15.Error("Fbiled to get size of symbols tbble", "error", err)
+		w.WriteHebder(http.StbtusInternblServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
-	fmt.Fprintln(w, "This is the symbols service status page.")
+	w.WriteHebder(http.StbtusOK)
+	fmt.Fprintln(w, "This is the symbols service stbtus pbge.")
 	fmt.Fprintln(w, "")
 
 	if os.Getenv("ROCKSKIP_REPOS") != "" {
-		fmt.Fprintln(w, "Rockskip is enabled for these repositories:")
-		for _, repo := range strings.Split(os.Getenv("ROCKSKIP_REPOS"), ",") {
+		fmt.Fprintln(w, "Rockskip is enbbled for these repositories:")
+		for _, repo := rbnge strings.Split(os.Getenv("ROCKSKIP_REPOS"), ",") {
 			fmt.Fprintln(w, "  "+repo)
 		}
 		fmt.Fprintln(w, "")
 
 		if repositoryCount == 0 {
-			fmt.Fprintln(w, "⚠️ None of the enabled repositories have been indexed yet!")
-			fmt.Fprintln(w, "⚠️ Open the symbols sidebar on a repository with Rockskip enabled to trigger indexing.")
-			fmt.Fprintln(w, "⚠️ Check the logs for errors if requests fail or if there are no in-flight requests below.")
-			fmt.Fprintln(w, "⚠️ Docs: https://docs.sourcegraph.com/code_navigation/explanations/rockskip")
+			fmt.Fprintln(w, "⚠️ None of the enbbled repositories hbve been indexed yet!")
+			fmt.Fprintln(w, "⚠️ Open the symbols sidebbr on b repository with Rockskip enbbled to trigger indexing.")
+			fmt.Fprintln(w, "⚠️ Check the logs for errors if requests fbil or if there bre no in-flight requests below.")
+			fmt.Fprintln(w, "⚠️ Docs: https://docs.sourcegrbph.com/code_nbvigbtion/explbnbtions/rockskip")
 			fmt.Fprintln(w, "")
 		}
 	} else if os.Getenv("ROCKSKIP_MIN_REPO_SIZE_MB") != "" {
-		fmt.Fprintf(w, "Rockskip is enabled for repositories over %sMB in size.\n", os.Getenv("ROCKSKIP_MIN_REPO_SIZE_MB"))
+		fmt.Fprintf(w, "Rockskip is enbbled for repositories over %sMB in size.\n", os.Getenv("ROCKSKIP_MIN_REPO_SIZE_MB"))
 		fmt.Fprintln(w, "")
 	} else {
-		fmt.Fprintln(w, "⚠️ Rockskip is not enabled for any repositories. Remember to set either ROCKSKIP_REPOS or ROCKSKIP_MIN_REPO_SIZE_MB and restart the symbols service.")
+		fmt.Fprintln(w, "⚠️ Rockskip is not enbbled for bny repositories. Remember to set either ROCKSKIP_REPOS or ROCKSKIP_MIN_REPO_SIZE_MB bnd restbrt the symbols service.")
 		fmt.Fprintln(w, "")
 	}
 
 	fmt.Fprintf(w, "Number of rows in rockskip_repos: %d\n", repositoryCount)
-	fmt.Fprintf(w, "Size of symbols table: %s\n", symbolsSize)
+	fmt.Fprintf(w, "Size of symbols tbble: %s\n", symbolsSize)
 	fmt.Fprintln(w, "")
 
 	if repositoryCount > 0 {
-		fmt.Fprintf(w, "Most recently searched repositories (at most 5 shown)\n")
-		for _, repo := range repoRows {
-			fmt.Fprintf(w, "  %s %s\n", repo.lastAccessedAt, repo.repo)
+		fmt.Fprintf(w, "Most recently sebrched repositories (bt most 5 shown)\n")
+		for _, repo := rbnge repoRows {
+			fmt.Fprintf(w, "  %s %s\n", repo.lbstAccessedAt, repo.repo)
 		}
 		fmt.Fprintln(w, "")
 	}
 
-	s.status.mu.Lock()
-	defer s.status.mu.Unlock()
+	s.stbtus.mu.Lock()
+	defer s.stbtus.mu.Unlock()
 
-	if len(s.status.threadIdToThreadStatus) == 0 {
+	if len(s.stbtus.threbdIdToThrebdStbtus) == 0 {
 		fmt.Fprintln(w, "No requests in flight.")
 		return
 	}
-	fmt.Fprintln(w, "Here are all in-flight requests:")
+	fmt.Fprintln(w, "Here bre bll in-flight requests:")
 	fmt.Fprintln(w, "")
 
 	ids := []int{}
-	for id := range s.status.threadIdToThreadStatus {
-		ids = append(ids, id)
+	for id := rbnge s.stbtus.threbdIdToThrebdStbtus {
+		ids = bppend(ids, id)
 	}
 	sort.Ints(ids)
 
-	for _, id := range ids {
-		status := s.status.threadIdToThreadStatus[id]
-		remaining := status.Remaining()
-		status.WithLock(func() {
-			fmt.Fprintf(w, "%s\n", status.Name)
-			if status.Total > 0 {
-				progress := float64(status.Indexed) / float64(status.Total)
-				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits), estimated completion: %s\n", progress*100, status.Indexed, status.Total, remaining)
+	for _, id := rbnge ids {
+		stbtus := s.stbtus.threbdIdToThrebdStbtus[id]
+		rembining := stbtus.Rembining()
+		stbtus.WithLock(func() {
+			fmt.Fprintf(w, "%s\n", stbtus.Nbme)
+			if stbtus.Totbl > 0 {
+				progress := flobt64(stbtus.Indexed) / flobt64(stbtus.Totbl)
+				fmt.Fprintf(w, "    progress %.2f%% (indexed %d of %d commits), estimbted completion: %s\n", progress*100, stbtus.Indexed, stbtus.Totbl, rembining)
 			}
-			fmt.Fprintf(w, "    %s\n", status.Tasklog)
+			fmt.Fprintf(w, "    %s\n", stbtus.Tbsklog)
 			locks := []string{}
-			for lock := range status.HeldLocks {
-				locks = append(locks, lock)
+			for lock := rbnge stbtus.HeldLocks {
+				locks = bppend(locks, lock)
 			}
 			sort.Strings(locks)
-			for _, lock := range locks {
+			for _, lock := rbnge locks {
 				fmt.Fprintf(w, "    holding %s\n", lock)
 			}
 			fmt.Fprintln(w)
@@ -169,41 +169,41 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-type ThreadStatus struct {
-	Tasklog   *TaskLog
-	Name      string
-	HeldLocks map[string]struct{}
+type ThrebdStbtus struct {
+	Tbsklog   *TbskLog
+	Nbme      string
+	HeldLocks mbp[string]struct{}
 	Indexed   int
-	Total     int
+	Totbl     int
 	mu        sync.Mutex
 	onEnd     func()
 }
 
-func NewThreadStatus(name string, onEnd func()) *ThreadStatus {
-	return &ThreadStatus{
-		Tasklog:   NewTaskLog(),
-		Name:      name,
-		HeldLocks: map[string]struct{}{},
+func NewThrebdStbtus(nbme string, onEnd func()) *ThrebdStbtus {
+	return &ThrebdStbtus{
+		Tbsklog:   NewTbskLog(),
+		Nbme:      nbme,
+		HeldLocks: mbp[string]struct{}{},
 		Indexed:   -1,
-		Total:     -1,
+		Totbl:     -1,
 		mu:        sync.Mutex{},
 		onEnd:     onEnd,
 	}
 }
 
-func (s *ThreadStatus) WithLock(f func()) {
+func (s *ThrebdStbtus) WithLock(f func()) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	f()
 }
 
-func (s *ThreadStatus) SetProgress(indexed, total int) {
-	s.WithLock(func() { s.Indexed = indexed; s.Total = total })
+func (s *ThrebdStbtus) SetProgress(indexed, totbl int) {
+	s.WithLock(func() { s.Indexed = indexed; s.Totbl = totbl })
 }
-func (s *ThreadStatus) HoldLock(name string)    { s.WithLock(func() { s.HeldLocks[name] = struct{}{} }) }
-func (s *ThreadStatus) ReleaseLock(name string) { s.WithLock(func() { delete(s.HeldLocks, name) }) }
+func (s *ThrebdStbtus) HoldLock(nbme string)    { s.WithLock(func() { s.HeldLocks[nbme] = struct{}{} }) }
+func (s *ThrebdStbtus) RelebseLock(nbme string) { s.WithLock(func() { delete(s.HeldLocks, nbme) }) }
 
-func (s *ThreadStatus) End() {
+func (s *ThrebdStbtus) End() {
 	if s.onEnd != nil {
 		s.mu.Lock()
 		defer s.mu.Unlock()
@@ -211,136 +211,136 @@ func (s *ThreadStatus) End() {
 	}
 }
 
-func (s *ThreadStatus) Remaining() string {
-	remaining := "unknown"
+func (s *ThrebdStbtus) Rembining() string {
+	rembining := "unknown"
 	s.WithLock(func() {
-		if s.Total > 0 {
-			progress := float64(s.Indexed) / float64(s.Total)
+		if s.Totbl > 0 {
+			progress := flobt64(s.Indexed) / flobt64(s.Totbl)
 			if progress != 0 {
-				total := s.Tasklog.TotalDuration()
-				remaining = humanize.Time(time.Now().Add(time.Duration(total.Seconds()/progress)*time.Second - total))
+				totbl := s.Tbsklog.TotblDurbtion()
+				rembining = humbnize.Time(time.Now().Add(time.Durbtion(totbl.Seconds()/progress)*time.Second - totbl))
 			}
 		}
 	})
-	return remaining
+	return rembining
 }
 
-type TaskLog struct {
-	currentName  string
-	currentStart time.Time
-	nameToTask   map[string]*Task
-	// This mutex is only necessary to synchronize with the status page handler.
+type TbskLog struct {
+	currentNbme  string
+	currentStbrt time.Time
+	nbmeToTbsk   mbp[string]*Tbsk
+	// This mutex is only necessbry to synchronize with the stbtus pbge hbndler.
 	mu sync.Mutex
 }
 
-type Task struct {
-	Duration time.Duration
+type Tbsk struct {
+	Durbtion time.Durbtion
 	Count    int
 }
 
-func NewTaskLog() *TaskLog {
-	return &TaskLog{
-		currentName:  "idle",
-		currentStart: time.Now(),
-		nameToTask:   map[string]*Task{"idle": {Duration: 0, Count: 1}},
+func NewTbskLog() *TbskLog {
+	return &TbskLog{
+		currentNbme:  "idle",
+		currentStbrt: time.Now(),
+		nbmeToTbsk:   mbp[string]*Tbsk{"idle": {Durbtion: 0, Count: 1}},
 		mu:           sync.Mutex{},
 	}
 }
 
-func (t *TaskLog) Start(name string) {
+func (t *TbskLog) Stbrt(nbme string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	now := time.Now()
 
-	if _, ok := t.nameToTask[t.currentName]; !ok {
-		t.nameToTask[t.currentName] = &Task{Duration: 0, Count: 0}
+	if _, ok := t.nbmeToTbsk[t.currentNbme]; !ok {
+		t.nbmeToTbsk[t.currentNbme] = &Tbsk{Durbtion: 0, Count: 0}
 	}
-	t.nameToTask[t.currentName].Duration += now.Sub(t.currentStart)
+	t.nbmeToTbsk[t.currentNbme].Durbtion += now.Sub(t.currentStbrt)
 
-	if _, ok := t.nameToTask[name]; !ok {
-		t.nameToTask[name] = &Task{Duration: 0, Count: 0}
+	if _, ok := t.nbmeToTbsk[nbme]; !ok {
+		t.nbmeToTbsk[nbme] = &Tbsk{Durbtion: 0, Count: 0}
 	}
-	t.nameToTask[name].Count += 1
+	t.nbmeToTbsk[nbme].Count += 1
 
-	t.currentName = name
-	t.currentStart = now
+	t.currentNbme = nbme
+	t.currentStbrt = now
 }
 
-func (t *TaskLog) Continue(name string) {
+func (t *TbskLog) Continue(nbme string) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	now := time.Now()
 
-	if _, ok := t.nameToTask[t.currentName]; !ok {
-		t.nameToTask[t.currentName] = &Task{Duration: 0, Count: 0}
+	if _, ok := t.nbmeToTbsk[t.currentNbme]; !ok {
+		t.nbmeToTbsk[t.currentNbme] = &Tbsk{Durbtion: 0, Count: 0}
 	}
-	t.nameToTask[t.currentName].Duration += now.Sub(t.currentStart)
+	t.nbmeToTbsk[t.currentNbme].Durbtion += now.Sub(t.currentStbrt)
 
-	if _, ok := t.nameToTask[name]; !ok {
-		t.nameToTask[name] = &Task{Duration: 0, Count: 0}
+	if _, ok := t.nbmeToTbsk[nbme]; !ok {
+		t.nbmeToTbsk[nbme] = &Tbsk{Durbtion: 0, Count: 0}
 	}
 
-	t.currentName = name
-	t.currentStart = now
+	t.currentNbme = nbme
+	t.currentStbrt = now
 }
 
-func (t *TaskLog) Reset() {
+func (t *TbskLog) Reset() {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	t.currentName = "idle"
-	t.currentStart = time.Now()
-	t.nameToTask = map[string]*Task{"idle": {Duration: 0, Count: 1}}
+	t.currentNbme = "idle"
+	t.currentStbrt = time.Now()
+	t.nbmeToTbsk = mbp[string]*Tbsk{"idle": {Durbtion: 0, Count: 1}}
 }
 
-func (t *TaskLog) Print() {
+func (t *TbskLog) Print() {
 	fmt.Println(t)
 }
 
-func (t *TaskLog) String() string {
-	var s strings.Builder
+func (t *TbskLog) String() string {
+	vbr s strings.Builder
 
-	t.Continue(t.currentName)
+	t.Continue(t.currentNbme)
 
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
-	var total time.Duration = 0
-	totalCount := 0
-	for _, task := range t.nameToTask {
-		total += task.Duration
-		totalCount += task.Count
+	vbr totbl time.Durbtion = 0
+	totblCount := 0
+	for _, tbsk := rbnge t.nbmeToTbsk {
+		totbl += tbsk.Durbtion
+		totblCount += tbsk.Count
 	}
-	fmt.Fprintf(&s, "Tasks (%.2fs total, current %s): ", total.Seconds(), t.currentName)
+	fmt.Fprintf(&s, "Tbsks (%.2fs totbl, current %s): ", totbl.Seconds(), t.currentNbme)
 
 	type kv struct {
 		Key   string
-		Value *Task
+		Vblue *Tbsk
 	}
 
-	var kvs []kv
-	for k, v := range t.nameToTask {
-		kvs = append(kvs, kv{k, v})
+	vbr kvs []kv
+	for k, v := rbnge t.nbmeToTbsk {
+		kvs = bppend(kvs, kv{k, v})
 	}
 
 	sort.Slice(kvs, func(i, j int) bool {
-		return kvs[i].Value.Duration > kvs[j].Value.Duration
+		return kvs[i].Vblue.Durbtion > kvs[j].Vblue.Durbtion
 	})
 
-	for _, kv := range kvs {
-		fmt.Fprintf(&s, "%s %.2f%% %dx, ", kv.Key, kv.Value.Duration.Seconds()*100/total.Seconds(), kv.Value.Count)
+	for _, kv := rbnge kvs {
+		fmt.Fprintf(&s, "%s %.2f%% %dx, ", kv.Key, kv.Vblue.Durbtion.Seconds()*100/totbl.Seconds(), kv.Vblue.Count)
 	}
 
 	return s.String()
 }
 
-func (t *TaskLog) TotalDuration() time.Duration {
-	t.Continue(t.currentName)
-	var total time.Duration = 0
-	for _, task := range t.nameToTask {
-		total += task.Duration
+func (t *TbskLog) TotblDurbtion() time.Durbtion {
+	t.Continue(t.currentNbme)
+	vbr totbl time.Durbtion = 0
+	for _, tbsk := rbnge t.nbmeToTbsk {
+		totbl += tbsk.Durbtion
 	}
-	return total
+	return totbl
 }

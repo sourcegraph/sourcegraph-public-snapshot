@@ -1,152 +1,152 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
+	"crypto/rbnd"
+	"encoding/bbse64"
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UserEmailsService contains backend methods related to user email addresses.
-type UserEmailsService interface {
-	Add(ctx context.Context, userID int32, email string) error
-	Remove(ctx context.Context, userID int32, email string) error
-	SetPrimaryEmail(ctx context.Context, userID int32, email string) error
-	SetVerified(ctx context.Context, userID int32, email string, verified bool) error
-	HasVerifiedEmail(ctx context.Context, userID int32) (bool, error)
-	CurrentActorHasVerifiedEmail(ctx context.Context) (bool, error)
-	ResendVerificationEmail(ctx context.Context, userID int32, email string, now time.Time) error
-	SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error
-	SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error
+// UserEmbilsService contbins bbckend methods relbted to user embil bddresses.
+type UserEmbilsService interfbce {
+	Add(ctx context.Context, userID int32, embil string) error
+	Remove(ctx context.Context, userID int32, embil string) error
+	SetPrimbryEmbil(ctx context.Context, userID int32, embil string) error
+	SetVerified(ctx context.Context, userID int32, embil string, verified bool) error
+	HbsVerifiedEmbil(ctx context.Context, userID int32) (bool, error)
+	CurrentActorHbsVerifiedEmbil(ctx context.Context) (bool, error)
+	ResendVerificbtionEmbil(ctx context.Context, userID int32, embil string, now time.Time) error
+	SendUserEmbilOnFieldUpdbte(ctx context.Context, id int32, chbnge string) error
+	SendUserEmbilOnAccessTokenChbnge(ctx context.Context, id int32, tokenNbme string, deleted bool) error
 }
 
-// NewUserEmailsService creates an instance of UserEmailsService that contains
-// backend methods related to user email addresses.
-func NewUserEmailsService(db database.DB, logger log.Logger) UserEmailsService {
-	return &userEmails{
+// NewUserEmbilsService crebtes bn instbnce of UserEmbilsService thbt contbins
+// bbckend methods relbted to user embil bddresses.
+func NewUserEmbilsService(db dbtbbbse.DB, logger log.Logger) UserEmbilsService {
+	return &userEmbils{
 		db:     db,
-		logger: logger.Scoped("UserEmails", "user emails handling service"),
+		logger: logger.Scoped("UserEmbils", "user embils hbndling service"),
 	}
 }
 
-type userEmails struct {
-	db     database.DB
+type userEmbils struct {
+	db     dbtbbbse.DB
 	logger log.Logger
 }
 
-// Add adds an email address to a user. If email verification is required, it sends an email
-// verification email.
-func (e *userEmails) Add(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("Add", "handles addition of user emails")
-	// 🚨 SECURITY: Only the user and site admins can add an email address to a user.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
+// Add bdds bn embil bddress to b user. If embil verificbtion is required, it sends bn embil
+// verificbtion embil.
+func (e *userEmbils) Add(ctx context.Context, userID int32, embil string) error {
+	logger := e.logger.Scoped("Add", "hbndles bddition of user embils")
+	// 🚨 SECURITY: Only the user bnd site bdmins cbn bdd bn embil bddress to b user.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, e.db, userID); err != nil {
 		return err
 	}
 
-	// Prevent abuse (users adding emails of other people whom they want to annoy) with the
-	// following abuse prevention checks.
-	if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, e.db) == nil; !isSiteAdmin {
-		abused, reason, err := checkEmailAbuse(ctx, e.db, userID)
+	// Prevent bbuse (users bdding embils of other people whom they wbnt to bnnoy) with the
+	// following bbuse prevention checks.
+	if isSiteAdmin := buth.CheckCurrentUserIsSiteAdmin(ctx, e.db) == nil; !isSiteAdmin {
+		bbused, rebson, err := checkEmbilAbuse(ctx, e.db, userID)
 		if err != nil {
 			return err
-		} else if abused {
-			return errors.Errorf("refusing to add email address because %s", reason)
+		} else if bbused {
+			return errors.Errorf("refusing to bdd embil bddress becbuse %s", rebson)
 		}
 	}
 
-	var code *string
-	if conf.EmailVerificationRequired() {
-		tmp, err := MakeEmailVerificationCode()
+	vbr code *string
+	if conf.EmbilVerificbtionRequired() {
+		tmp, err := MbkeEmbilVerificbtionCode()
 		if err != nil {
 			return err
 		}
 		code = &tmp
 	}
 
-	if _, err := e.db.Users().GetByVerifiedEmail(ctx, email); err != nil && !errcode.IsNotFound(err) {
+	if _, err := e.db.Users().GetByVerifiedEmbil(ctx, embil); err != nil && !errcode.IsNotFound(err) {
 		return err
 	} else if err == nil {
-		return errors.New("a user with this email already exists")
+		return errors.New("b user with this embil blrebdy exists")
 	}
 
-	if err := e.db.UserEmails().Add(ctx, userID, email, code); err != nil {
+	if err := e.db.UserEmbils().Add(ctx, userID, embil, code); err != nil {
 		return err
 	}
 
-	if conf.EmailVerificationRequired() {
+	if conf.EmbilVerificbtionRequired() {
 		usr, err := e.db.Users().GetByID(ctx, userID)
 		if err != nil {
 			return err
 		}
 
 		defer func() {
-			// Note: We want to mark as sent regardless because every part of the codebase
-			// assumed the email sending would never fail and uses the value of the
-			// "last_verification_sent_at" column to calculate cooldown (instead of using
-			// cache), while still aligning the semantics to the column name.
-			if err = e.db.UserEmails().SetLastVerification(ctx, userID, email, *code, time.Now()); err != nil {
-				logger.Warn("Failed to set last verification sent at for the user email", log.Int32("userID", userID), log.Error(err))
+			// Note: We wbnt to mbrk bs sent regbrdless becbuse every pbrt of the codebbse
+			// bssumed the embil sending would never fbil bnd uses the vblue of the
+			// "lbst_verificbtion_sent_bt" column to cblculbte cooldown (instebd of using
+			// cbche), while still bligning the sembntics to the column nbme.
+			if err = e.db.UserEmbils().SetLbstVerificbtion(ctx, userID, embil, *code, time.Now()); err != nil {
+				logger.Wbrn("Fbiled to set lbst verificbtion sent bt for the user embil", log.Int32("userID", userID), log.Error(err))
 			}
 		}()
 
-		// Send email verification email.
-		if err := SendUserEmailVerificationEmail(ctx, usr.Username, email, *code); err != nil {
-			return errors.Wrap(err, "SendUserEmailVerificationEmail")
+		// Send embil verificbtion embil.
+		if err := SendUserEmbilVerificbtionEmbil(ctx, usr.Usernbme, embil, *code); err != nil {
+			return errors.Wrbp(err, "SendUserEmbilVerificbtionEmbil")
 		}
 	}
 	return nil
 }
 
-// Remove removes the e-mail from the specified user. Perforce external accounts
-// using the e-mail will also be removed.
-func (e *userEmails) Remove(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("Remove", "handles removal of user emails").
+// Remove removes the e-mbil from the specified user. Perforce externbl bccounts
+// using the e-mbil will blso be removed.
+func (e *userEmbils) Remove(ctx context.Context, userID int32, embil string) error {
+	logger := e.logger.Scoped("Remove", "hbndles removbl of user embils").
 		With(log.Int32("userID", userID))
 
-	// 🚨 SECURITY: Only the authenticated user and site admins can remove email
-	// from users' accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
+	// 🚨 SECURITY: Only the buthenticbted user bnd site bdmins cbn remove embil
+	// from users' bccounts.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, e.db, userID); err != nil {
 		return err
 	}
 
-	err := e.db.WithTransact(ctx, func(tx database.DB) error {
-		if err := tx.UserEmails().Remove(ctx, userID, email); err != nil {
-			return errors.Wrap(err, "removing user e-mail")
+	err := e.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		if err := tx.UserEmbils().Remove(ctx, userID, embil); err != nil {
+			return errors.Wrbp(err, "removing user e-mbil")
 		}
 
-		// 🚨 SECURITY: If an email is removed, invalidate any existing password reset
-		// tokens that may have been sent to that email.
-		if err := tx.Users().DeletePasswordResetCode(ctx, userID); err != nil {
-			return errors.Wrap(err, "deleting reset codes")
+		// 🚨 SECURITY: If bn embil is removed, invblidbte bny existing pbssword reset
+		// tokens thbt mby hbve been sent to thbt embil.
+		if err := tx.Users().DeletePbsswordResetCode(ctx, userID); err != nil {
+			return errors.Wrbp(err, "deleting reset codes")
 		}
 
-		if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
-			return errors.Wrap(err, "removing stale perforce external account")
+		if err := deleteStblePerforceExternblAccounts(ctx, tx, userID, embil); err != nil {
+			return errors.Wrbp(err, "removing stble perforce externbl bccount")
 		}
 
-		if conf.CanSendEmail() {
-			if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "removed an email"); err != nil {
-				logger.Warn("Failed to send email to inform user of email removal", log.Error(err))
+		if conf.CbnSendEmbil() {
+			if err := e.SendUserEmbilOnFieldUpdbte(ctx, userID, "removed bn embil"); err != nil {
+				logger.Wbrn("Fbiled to send embil to inform user of embil removbl", log.Error(err))
 			}
 		}
 
@@ -156,70 +156,70 @@ func (e *userEmails) Remove(ctx context.Context, userID int32, email string) err
 		return err
 	}
 
-	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-	// transaction has committed so that it takes into account any changes triggered
-	// by the removal of the e-mail.
-	triggerPermissionsSync(ctx, logger, e.db, userID, database.ReasonUserEmailRemoved)
+	// Ebgerly bttempt to sync permissions bgbin. This needs to hbppen _bfter_ the
+	// trbnsbction hbs committed so thbt it tbkes into bccount bny chbnges triggered
+	// by the removbl of the e-mbil.
+	triggerPermissionsSync(ctx, logger, e.db, userID, dbtbbbse.RebsonUserEmbilRemoved)
 
 	return nil
 }
 
-// SetPrimaryEmail sets the supplied e-mail address as the primary address for
+// SetPrimbryEmbil sets the supplied e-mbil bddress bs the primbry bddress for
 // the given user.
-func (e *userEmails) SetPrimaryEmail(ctx context.Context, userID int32, email string) error {
-	logger := e.logger.Scoped("SetPrimaryEmail", "handles setting primary e-mail for user").
+func (e *userEmbils) SetPrimbryEmbil(ctx context.Context, userID int32, embil string) error {
+	logger := e.logger.Scoped("SetPrimbryEmbil", "hbndles setting primbry e-mbil for user").
 		With(log.Int32("userID", userID))
 
-	// 🚨 SECURITY: Only the authenticated user and site admins can set the primary
-	// email for users' accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
+	// 🚨 SECURITY: Only the buthenticbted user bnd site bdmins cbn set the primbry
+	// embil for users' bccounts.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, e.db, userID); err != nil {
 		return err
 	}
 
-	if err := e.db.UserEmails().SetPrimaryEmail(ctx, userID, email); err != nil {
+	if err := e.db.UserEmbils().SetPrimbryEmbil(ctx, userID, embil); err != nil {
 		return err
 	}
 
-	if conf.CanSendEmail() {
-		if err := e.SendUserEmailOnFieldUpdate(ctx, userID, "changed primary email"); err != nil {
-			logger.Warn("Failed to send email to inform user of primary address change", log.Error(err))
+	if conf.CbnSendEmbil() {
+		if err := e.SendUserEmbilOnFieldUpdbte(ctx, userID, "chbnged primbry embil"); err != nil {
+			logger.Wbrn("Fbiled to send embil to inform user of primbry bddress chbnge", log.Error(err))
 		}
 	}
 
 	return nil
 }
 
-// SetVerified sets the supplied e-mail as the verified email for the given user.
-// If verified is false, Perforce external accounts using the e-mail will be
+// SetVerified sets the supplied e-mbil bs the verified embil for the given user.
+// If verified is fblse, Perforce externbl bccounts using the e-mbil will be
 // removed.
-func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string, verified bool) error {
-	logger := e.logger.Scoped("SetVerified", "handles setting e-mail as verified")
+func (e *userEmbils) SetVerified(ctx context.Context, userID int32, embil string, verified bool) error {
+	logger := e.logger.Scoped("SetVerified", "hbndles setting e-mbil bs verified")
 
-	// 🚨 SECURITY: Only site admins (NOT users themselves) can manually set email
-	// verification status. Users themselves must go through the normal email
-	// verification process.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, e.db); err != nil {
+	// 🚨 SECURITY: Only site bdmins (NOT users themselves) cbn mbnublly set embil
+	// verificbtion stbtus. Users themselves must go through the normbl embil
+	// verificbtion process.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, e.db); err != nil {
 		return err
 	}
 
-	err := e.db.WithTransact(ctx, func(tx database.DB) error {
-		if err := tx.UserEmails().SetVerified(ctx, userID, email, verified); err != nil {
+	err := e.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		if err := tx.UserEmbils().SetVerified(ctx, userID, embil, verified); err != nil {
 			return err
 		}
 
 		if !verified {
-			if err := deleteStalePerforceExternalAccounts(ctx, tx, userID, email); err != nil {
-				return errors.Wrap(err, "removing stale perforce external account")
+			if err := deleteStblePerforceExternblAccounts(ctx, tx, userID, embil); err != nil {
+				return errors.Wrbp(err, "removing stble perforce externbl bccount")
 			}
 			return nil
 		}
 
-		if err := tx.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err := tx.Authz().GrbntPendingPermissions(ctx, &dbtbbbse.GrbntPendingPermissionsArgs{
 			UserID: userID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			Perm:   buthz.Rebd,
+			Type:   buthz.PermRepos,
 		}); err != nil {
-			logger.Error("failed to grant user pending permissions", log.Int32("userID", userID), log.Error(err))
+			logger.Error("fbiled to grbnt user pending permissions", log.Int32("userID", userID), log.Error(err))
 		}
 
 		return nil
@@ -228,45 +228,45 @@ func (e *userEmails) SetVerified(ctx context.Context, userID int32, email string
 		return err
 	}
 
-	// Eagerly attempt to sync permissions again. This needs to happen _after_ the
-	// transaction has committed so that it takes into account any changes triggered
-	// by changes in the verification status of the e-mail.
-	triggerPermissionsSync(ctx, logger, e.db, userID, database.ReasonUserEmailVerified)
+	// Ebgerly bttempt to sync permissions bgbin. This needs to hbppen _bfter_ the
+	// trbnsbction hbs committed so thbt it tbkes into bccount bny chbnges triggered
+	// by chbnges in the verificbtion stbtus of the e-mbil.
+	triggerPermissionsSync(ctx, logger, e.db, userID, dbtbbbse.RebsonUserEmbilVerified)
 
 	return nil
 }
 
-// CurrentActorHasVerifiedEmail returns whether the actor associated with the given
-// context.Context has a verified email.
-func (e *userEmails) CurrentActorHasVerifiedEmail(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: We require an authenticated, non-internal actor
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() || a.IsInternal() {
-		return false, auth.ErrNotAuthenticated
+// CurrentActorHbsVerifiedEmbil returns whether the bctor bssocibted with the given
+// context.Context hbs b verified embil.
+func (e *userEmbils) CurrentActorHbsVerifiedEmbil(ctx context.Context) (bool, error) {
+	// 🚨 SECURITY: We require bn buthenticbted, non-internbl bctor
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() || b.IsInternbl() {
+		return fblse, buth.ErrNotAuthenticbted
 	}
 
-	return e.HasVerifiedEmail(ctx, a.UID)
+	return e.HbsVerifiedEmbil(ctx, b.UID)
 }
 
-// HasVerifiedEmail returns whether the user with the given userID has a
-// verified email.
-func (e *userEmails) HasVerifiedEmail(ctx context.Context, userID int32) (bool, error) {
-	// 🚨 SECURITY: Only the authenticated user and site admins can check
-	// whether the user has verified email.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
-		return false, err
+// HbsVerifiedEmbil returns whether the user with the given userID hbs b
+// verified embil.
+func (e *userEmbils) HbsVerifiedEmbil(ctx context.Context, userID int32) (bool, error) {
+	// 🚨 SECURITY: Only the buthenticbted user bnd site bdmins cbn check
+	// whether the user hbs verified embil.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, e.db, userID); err != nil {
+		return fblse, err
 	}
 
-	return e.db.UserEmails().HasVerifiedEmail(ctx, userID)
+	return e.db.UserEmbils().HbsVerifiedEmbil(ctx, userID)
 }
 
-// ResendVerificationEmail attempts to re-send the verification e-mail for the
-// given user and email combination. If an e-mail sent within the last minute we
+// ResendVerificbtionEmbil bttempts to re-send the verificbtion e-mbil for the
+// given user bnd embil combinbtion. If bn e-mbil sent within the lbst minute we
 // do nothing.
-func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, email string, now time.Time) error {
-	// 🚨 SECURITY: Only the authenticated user and site admins can resend
-	// verification email for their accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, e.db, userID); err != nil {
+func (e *userEmbils) ResendVerificbtionEmbil(ctx context.Context, userID int32, embil string, now time.Time) error {
+	// 🚨 SECURITY: Only the buthenticbted user bnd site bdmins cbn resend
+	// verificbtion embil for their bccounts.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, e.db, userID); err != nil {
 		return err
 	}
 
@@ -275,18 +275,18 @@ func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, 
 		return err
 	}
 
-	userEmails := e.db.UserEmails()
-	lastSent, err := userEmails.GetLatestVerificationSentEmail(ctx, email)
+	userEmbils := e.db.UserEmbils()
+	lbstSent, err := userEmbils.GetLbtestVerificbtionSentEmbil(ctx, embil)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
-	if lastSent != nil &&
-		lastSent.LastVerificationSentAt != nil &&
-		now.Sub(*lastSent.LastVerificationSentAt) < 1*time.Minute {
-		return errors.New("Last verification email sent too recently")
+	if lbstSent != nil &&
+		lbstSent.LbstVerificbtionSentAt != nil &&
+		now.Sub(*lbstSent.LbstVerificbtionSentAt) < 1*time.Minute {
+		return errors.New("Lbst verificbtion embil sent too recently")
 	}
 
-	email, verified, err := userEmails.Get(ctx, userID, email)
+	embil, verified, err := userEmbils.Get(ctx, userID, embil)
 	if err != nil {
 		return err
 	}
@@ -294,273 +294,273 @@ func (e *userEmails) ResendVerificationEmail(ctx context.Context, userID int32, 
 		return nil
 	}
 
-	code, err := MakeEmailVerificationCode()
+	code, err := MbkeEmbilVerificbtionCode()
 	if err != nil {
 		return err
 	}
 
-	err = userEmails.SetLastVerification(ctx, userID, email, code, now)
+	err = userEmbils.SetLbstVerificbtion(ctx, userID, embil, code, now)
 	if err != nil {
 		return err
 	}
 
-	return SendUserEmailVerificationEmail(ctx, user.Username, email, code)
+	return SendUserEmbilVerificbtionEmbil(ctx, user.Usernbme, embil, code)
 }
 
-func (e *userEmails) loadUserForEmail(ctx context.Context, id int32) (*types.User, string, error) {
-	email, verified, err := e.db.UserEmails().GetPrimaryEmail(ctx, id)
+func (e *userEmbils) lobdUserForEmbil(ctx context.Context, id int32) (*types.User, string, error) {
+	embil, verified, err := e.db.UserEmbils().GetPrimbryEmbil(ctx, id)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "get user primary email")
+		return nil, "", errors.Wrbp(err, "get user primbry embil")
 	}
 	if !verified {
-		return nil, "", errors.Newf("unable to send email to user ID %d's unverified primary email address", id)
+		return nil, "", errors.Newf("unbble to send embil to user ID %d's unverified primbry embil bddress", id)
 	}
 	usr, err := e.db.Users().GetByID(ctx, id)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "get user")
+		return nil, "", errors.Wrbp(err, "get user")
 	}
-	return usr, email, nil
+	return usr, embil, nil
 }
 
-// SendUserEmailOnFieldUpdate sends the user an email that important account information has changed.
-// The change is the information we want to provide the user about the change
-func (e *userEmails) SendUserEmailOnFieldUpdate(ctx context.Context, id int32, change string) error {
-	usr, email, err := e.loadUserForEmail(ctx, id)
+// SendUserEmbilOnFieldUpdbte sends the user bn embil thbt importbnt bccount informbtion hbs chbnged.
+// The chbnge is the informbtion we wbnt to provide the user bbout the chbnge
+func (e *userEmbils) SendUserEmbilOnFieldUpdbte(ctx context.Context, id int32, chbnge string) error {
+	usr, embil, err := e.lobdUserForEmbil(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	return txemail.Send(ctx, "user_account_update", txemail.Message{
-		To:       []string{email},
-		Template: updateAccountEmailTemplate,
-		Data: struct {
-			Email    string
-			Change   string
-			Username string
+	return txembil.Send(ctx, "user_bccount_updbte", txembil.Messbge{
+		To:       []string{embil},
+		Templbte: updbteAccountEmbilTemplbte,
+		Dbtb: struct {
+			Embil    string
+			Chbnge   string
+			Usernbme string
 			Host     string
 		}{
-			Email:    email,
-			Change:   change,
-			Username: usr.Username,
-			Host:     globals.ExternalURL().Host,
+			Embil:    embil,
+			Chbnge:   chbnge,
+			Usernbme: usr.Usernbme,
+			Host:     globbls.ExternblURL().Host,
 		},
 	})
 }
 
-var updateAccountEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Update to your Sourcegraph account ({{.Host}})`,
+vbr updbteAccountEmbilTemplbte = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `Updbte to your Sourcegrbph bccount ({{.Host}})`,
 	Text: `
-Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) {{.Chbnge}} for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 
-If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+If this wbs you, cbrry on, bnd thbnks for using Sourcegrbph! Otherwise, plebse chbnge your pbssword immedibtely.
 `,
 	HTML: `
 <p>
-Hi there! Somebody (likely you) {{.Change}} for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) {{.Chbnge}} for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 </p>
 
-<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+<p>If this wbs you, cbrry on, bnd thbnks for using Sourcegrbph! Otherwise, plebse chbnge your pbssword immedibtely.</p>
 `,
 })
 
-// SendUserEmailOnAccessTokenCreation sends the user an email that an access
-// token has been created or deleted.
-func (e *userEmails) SendUserEmailOnAccessTokenChange(ctx context.Context, id int32, tokenName string, deleted bool) error {
-	usr, email, err := e.loadUserForEmail(ctx, id)
+// SendUserEmbilOnAccessTokenCrebtion sends the user bn embil thbt bn bccess
+// token hbs been crebted or deleted.
+func (e *userEmbils) SendUserEmbilOnAccessTokenChbnge(ctx context.Context, id int32, tokenNbme string, deleted bool) error {
+	usr, embil, err := e.lobdUserForEmbil(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	var tmpl txtypes.Templates
+	vbr tmpl txtypes.Templbtes
 	if deleted {
-		tmpl = accessTokenDeletedEmailTemplate
+		tmpl = bccessTokenDeletedEmbilTemplbte
 	} else {
-		tmpl = accessTokenCreatedEmailTemplate
+		tmpl = bccessTokenCrebtedEmbilTemplbte
 	}
-	return txemail.Send(ctx, "user_access_token_created", txemail.Message{
-		To:       []string{email},
-		Template: tmpl,
-		Data: struct {
-			Email     string
-			TokenName string
-			Username  string
+	return txembil.Send(ctx, "user_bccess_token_crebted", txembil.Messbge{
+		To:       []string{embil},
+		Templbte: tmpl,
+		Dbtb: struct {
+			Embil     string
+			TokenNbme string
+			Usernbme  string
 			Host      string
 		}{
-			Email:     email,
-			TokenName: tokenName,
-			Username:  usr.Username,
-			Host:      globals.ExternalURL().Host,
+			Embil:     embil,
+			TokenNbme: tokenNbme,
+			Usernbme:  usr.Usernbme,
+			Host:      globbls.ExternblURL().Host,
 		},
 	})
 }
 
-var accessTokenCreatedEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `New Sourcegraph access token created ({{.Host}})`,
+vbr bccessTokenCrebtedEmbilTemplbte = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `New Sourcegrbph bccess token crebted ({{.Host}})`,
 	Text: `
-Hi there! Somebody (likely you) created a new access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) crebted b new bccess token "{{.TokenNbme}}" for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 
-If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+If this wbs you, cbrry on, bnd thbnks for using Sourcegrbph! Otherwise, plebse chbnge your pbssword immedibtely.
 `,
 	HTML: `
 <p>
-Hi there! Somebody (likely you) created a new access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) crebted b new bccess token "{{.TokenNbme}}" for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 </p>
 
-<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+<p>If this wbs you, cbrry on, bnd thbnks for using Sourcegrbph! Otherwise, plebse chbnge your pbssword immedibtely.</p>
 `,
 })
 
-var accessTokenDeletedEmailTemplate = txemail.MustValidate(txtypes.Templates{
-	Subject: `Sourcegraph access token deleted ({{.Host}})`,
+vbr bccessTokenDeletedEmbilTemplbte = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `Sourcegrbph bccess token deleted ({{.Host}})`,
 	Text: `
-Hi there! Somebody (likely you) deleted the access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) deleted the bccess token "{{.TokenNbme}}" for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 
-If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.
+If this wbs you, cbrry on, bnd thbnks for using Sourcegrbph! Otherwise, plebse chbnge your pbssword immedibtely.
 `,
 	HTML: `
 <p>
-Hi there! Somebody (likely you) deleted the access token "{{.TokenName}}" for the user {{.Username}} on Sourcegraph ({{.Host}}).
+Hi there! Somebody (likely you) deleted the bccess token "{{.TokenNbme}}" for the user {{.Usernbme}} on Sourcegrbph ({{.Host}}).
 </p>
 
-<p>If this was you, carry on, and thanks for using Sourcegraph! Otherwise, please change your password immediately.</p>
+<p>If this wbs you, cbrry on, bnd thbnks for using Sourcegrbph! Otherwise, plebse chbnge your pbssword immedibtely.</p>
 `,
 })
 
-// deleteStalePerforceExternalAccounts will remove any Perforce external accounts
-// associated with the given user and e-mail combination.
-func deleteStalePerforceExternalAccounts(ctx context.Context, db database.DB, userID int32, email string) error {
-	if err := db.UserExternalAccounts().Delete(ctx, database.ExternalAccountsDeleteOptions{
+// deleteStblePerforceExternblAccounts will remove bny Perforce externbl bccounts
+// bssocibted with the given user bnd e-mbil combinbtion.
+func deleteStblePerforceExternblAccounts(ctx context.Context, db dbtbbbse.DB, userID int32, embil string) error {
+	if err := db.UserExternblAccounts().Delete(ctx, dbtbbbse.ExternblAccountsDeleteOptions{
 		UserID:      userID,
-		AccountID:   email,
+		AccountID:   embil,
 		ServiceType: extsvc.TypePerforce,
 	}); err != nil {
-		return errors.Wrap(err, "deleting stale external account")
+		return errors.Wrbp(err, "deleting stble externbl bccount")
 	}
 
-	// Since we deleted an external account for the user we can no longer trust user
-	// based permissions, so we clear them out.
-	// This also removes the user's sub-repo permissions.
-	if err := db.Authz().RevokeUserPermissions(ctx, &database.RevokeUserPermissionsArgs{UserID: userID}); err != nil {
-		return errors.Wrapf(err, "revoking user permissions for user with ID %d", userID)
+	// Since we deleted bn externbl bccount for the user we cbn no longer trust user
+	// bbsed permissions, so we clebr them out.
+	// This blso removes the user's sub-repo permissions.
+	if err := db.Authz().RevokeUserPermissions(ctx, &dbtbbbse.RevokeUserPermissionsArgs{UserID: userID}); err != nil {
+		return errors.Wrbpf(err, "revoking user permissions for user with ID %d", userID)
 	}
 
 	return nil
 
 }
 
-// checkEmailAbuse performs abuse prevention checks to prevent email abuse, i.e. users using emails
-// of other people whom they want to annoy.
-func checkEmailAbuse(ctx context.Context, db database.DB, userID int32) (abused bool, reason string, err error) {
-	if conf.EmailVerificationRequired() {
-		emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+// checkEmbilAbuse performs bbuse prevention checks to prevent embil bbuse, i.e. users using embils
+// of other people whom they wbnt to bnnoy.
+func checkEmbilAbuse(ctx context.Context, db dbtbbbse.DB, userID int32) (bbused bool, rebson string, err error) {
+	if conf.EmbilVerificbtionRequired() {
+		embils, err := db.UserEmbils().ListByUser(ctx, dbtbbbse.UserEmbilsListOptions{
 			UserID: userID,
 		})
 		if err != nil {
-			return false, "", err
+			return fblse, "", err
 		}
 
-		var verifiedCount, unverifiedCount int
-		for _, email := range emails {
-			if email.VerifiedAt == nil {
+		vbr verifiedCount, unverifiedCount int
+		for _, embil := rbnge embils {
+			if embil.VerifiedAt == nil {
 				unverifiedCount++
 			} else {
 				verifiedCount++
 			}
 		}
 
-		// Abuse prevention check 1: Require user to have at least one verified email address
-		// before adding another.
+		// Abuse prevention check 1: Require user to hbve bt lebst one verified embil bddress
+		// before bdding bnother.
 		//
-		// (We need to also allow users who have zero addresses to add one, or else they could
-		// delete all emails and then get into an unrecoverable state.)
+		// (We need to blso bllow users who hbve zero bddresses to bdd one, or else they could
+		// delete bll embils bnd then get into bn unrecoverbble stbte.)
 		//
-		// TODO(sqs): prevent users from deleting their last email, when we have the true notion
-		// of a "primary" email address.)
-		if verifiedCount == 0 && len(emails) != 0 {
-			return true, "a verified email is required before you can add additional email addressed to your account", nil
+		// TODO(sqs): prevent users from deleting their lbst embil, when we hbve the true notion
+		// of b "primbry" embil bddress.)
+		if verifiedCount == 0 && len(embils) != 0 {
+			return true, "b verified embil is required before you cbn bdd bdditionbl embil bddressed to your bccount", nil
 		}
 
-		// Abuse prevention check 2: Forbid user from having many unverified emails to prevent attackers from using this to
-		// send spam or a high volume of annoying emails.
-		const maxUnverified = 3
-		if unverifiedCount >= maxUnverified {
-			return true, "too many existing unverified email addresses", nil
+		// Abuse prevention check 2: Forbid user from hbving mbny unverified embils to prevent bttbckers from using this to
+		// send spbm or b high volume of bnnoying embils.
+		const mbxUnverified = 3
+		if unverifiedCount >= mbxUnverified {
+			return true, "too mbny existing unverified embil bddresses", nil
 		}
 	}
-	if envvar.SourcegraphDotComMode() {
-		// Abuse prevention check 3: Set a quota on Sourcegraph.com users to prevent abuse.
+	if envvbr.SourcegrbphDotComMode() {
+		// Abuse prevention check 3: Set b quotb on Sourcegrbph.com users to prevent bbuse.
 		//
-		// There is no quota for on-prem instances because we assume they can trust their users
-		// to not abuse adding emails.
+		// There is no quotb for on-prem instbnces becbuse we bssume they cbn trust their users
+		// to not bbuse bdding embils.
 		//
-		// TODO(sqs): This reuses the "invite quota", which is really just a number that counts
-		// down (not specific to invites). Generalize this to just "quota" (remove "invite" from
-		// the name).
-		if ok, err := db.Users().CheckAndDecrementInviteQuota(ctx, userID); err != nil {
-			return false, "", err
+		// TODO(sqs): This reuses the "invite quotb", which is reblly just b number thbt counts
+		// down (not specific to invites). Generblize this to just "quotb" (remove "invite" from
+		// the nbme).
+		if ok, err := db.Users().CheckAndDecrementInviteQuotb(ctx, userID); err != nil {
+			return fblse, "", err
 		} else if !ok {
-			return true, "email address quota exceeded (contact support to increase the quota)", nil
+			return true, "embil bddress quotb exceeded (contbct support to increbse the quotb)", nil
 		}
 	}
-	return false, "", nil
+	return fblse, "", nil
 }
 
-// MakeEmailVerificationCode returns a random string that can be used as an email verification
-// code. If there is not enough entropy to create a random string, it returns a non-nil error.
-func MakeEmailVerificationCode() (string, error) {
-	emailCodeBytes := make([]byte, 20)
-	if _, err := rand.Read(emailCodeBytes); err != nil {
+// MbkeEmbilVerificbtionCode returns b rbndom string thbt cbn be used bs bn embil verificbtion
+// code. If there is not enough entropy to crebte b rbndom string, it returns b non-nil error.
+func MbkeEmbilVerificbtionCode() (string, error) {
+	embilCodeBytes := mbke([]byte, 20)
+	if _, err := rbnd.Rebd(embilCodeBytes); err != nil {
 		return "", err
 	}
-	return base64.StdEncoding.EncodeToString(emailCodeBytes), nil
+	return bbse64.StdEncoding.EncodeToString(embilCodeBytes), nil
 }
 
-// SendUserEmailVerificationEmail sends an email to the user to verify the email address. The code
-// is the verification code that the user must provide to verify their access to the email address.
-func SendUserEmailVerificationEmail(ctx context.Context, username, email, code string) error {
-	q := make(url.Values)
+// SendUserEmbilVerificbtionEmbil sends bn embil to the user to verify the embil bddress. The code
+// is the verificbtion code thbt the user must provide to verify their bccess to the embil bddress.
+func SendUserEmbilVerificbtionEmbil(ctx context.Context, usernbme, embil, code string) error {
+	q := mbke(url.Vblues)
 	q.Set("code", code)
-	q.Set("email", email)
-	verifyEmailPath, _ := router.Router().Get(router.VerifyEmail).URLPath()
-	return txemail.Send(ctx, "user_email_verification", txemail.Message{
-		To:       []string{email},
-		Template: verifyEmailTemplates,
-		Data: struct {
-			Username string
+	q.Set("embil", embil)
+	verifyEmbilPbth, _ := router.Router().Get(router.VerifyEmbil).URLPbth()
+	return txembil.Send(ctx, "user_embil_verificbtion", txembil.Messbge{
+		To:       []string{embil},
+		Templbte: verifyEmbilTemplbtes,
+		Dbtb: struct {
+			Usernbme string
 			URL      string
 			Host     string
 		}{
-			Username: username,
-			URL: globals.ExternalURL().ResolveReference(&url.URL{
-				Path:     verifyEmailPath.Path,
-				RawQuery: q.Encode(),
+			Usernbme: usernbme,
+			URL: globbls.ExternblURL().ResolveReference(&url.URL{
+				Pbth:     verifyEmbilPbth.Pbth,
+				RbwQuery: q.Encode(),
 			}).String(),
-			Host: globals.ExternalURL().Host,
+			Host: globbls.ExternblURL().Host,
 		},
 	})
 }
 
-var verifyEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `Verify your email on Sourcegraph ({{.Host}})`,
-	Text: `Hi {{.Username}},
+vbr verifyEmbilTemplbtes = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `Verify your embil on Sourcegrbph ({{.Host}})`,
+	Text: `Hi {{.Usernbme}},
 
-Please verify your email address on Sourcegraph ({{.Host}}) by clicking this link:
+Plebse verify your embil bddress on Sourcegrbph ({{.Host}}) by clicking this link:
 
 {{.URL}}
 `,
-	HTML: `<p>Hi <a>{{.Username}},</a></p>
+	HTML: `<p>Hi <b>{{.Usernbme}},</b></p>
 
-<p>Please verify your email address on Sourcegraph ({{.Host}}) by clicking this link:</p>
+<p>Plebse verify your embil bddress on Sourcegrbph ({{.Host}}) by clicking this link:</p>
 
-<p><strong><a href="{{.URL}}">Verify email address</a></p>
+<p><strong><b href="{{.URL}}">Verify embil bddress</b></p>
 `,
 })
 
-// triggerPermissionsSync is a helper that attempts to schedule a new permissions
+// triggerPermissionsSync is b helper thbt bttempts to schedule b new permissions
 // sync for the given user.
-func triggerPermissionsSync(ctx context.Context, logger log.Logger, db database.DB, userID int32, reason database.PermissionsSyncJobReason) {
+func triggerPermissionsSync(ctx context.Context, logger log.Logger, db dbtbbbse.DB, userID int32, rebson dbtbbbse.PermissionsSyncJobRebson) {
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
 		UserIDs: []int32{userID},
-		Reason:  reason,
+		Rebson:  rebson,
 	})
 }

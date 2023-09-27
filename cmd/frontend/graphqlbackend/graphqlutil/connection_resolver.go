@@ -1,300 +1,300 @@
-package graphqlutil
+pbckbge grbphqlutil
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const DefaultMaxPageSize = 100
+const DefbultMbxPbgeSize = 100
 
-type ConnectionResolver[N any] struct {
+type ConnectionResolver[N bny] struct {
 	store   ConnectionResolverStore[N]
-	args    *ConnectionResolverArgs
+	brgs    *ConnectionResolverArgs
 	options *ConnectionResolverOptions
-	data    connectionData[N]
+	dbtb    connectionDbtb[N]
 	once    resolveOnce
 }
 
-type ConnectionResolverStore[N any] interface {
-	// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
-	ComputeTotal(context.Context) (*int32, error)
-	// ComputeNodes returns the list of nodes based on the pagination args.
-	ComputeNodes(context.Context, *database.PaginationArgs) ([]N, error)
-	// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-	MarshalCursor(N, database.OrderBy) (*string, error)
-	// UnmarshalCursor returns node id from after/before cursor string.
-	UnmarshalCursor(string, database.OrderBy) (*string, error)
+type ConnectionResolverStore[N bny] interfbce {
+	// ComputeTotbl returns the totbl count of bll the items in the connection, independent of pbginbtion brguments.
+	ComputeTotbl(context.Context) (*int32, error)
+	// ComputeNodes returns the list of nodes bbsed on the pbginbtion brgs.
+	ComputeNodes(context.Context, *dbtbbbse.PbginbtionArgs) ([]N, error)
+	// MbrshblCursor returns cursor for b node bnd is cblled for generbting stbrt bnd end cursors.
+	MbrshblCursor(N, dbtbbbse.OrderBy) (*string, error)
+	// UnmbrshblCursor returns node id from bfter/before cursor string.
+	UnmbrshblCursor(string, dbtbbbse.OrderBy) (*string, error)
 }
 
 type ConnectionResolverArgs struct {
 	First  *int32
-	Last   *int32
+	Lbst   *int32
 	After  *string
 	Before *string
 }
 
-// Limit returns max nodes limit based on resolver arguments.
-func (a *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
-	var limit *int32
+// Limit returns mbx nodes limit bbsed on resolver brguments.
+func (b *ConnectionResolverArgs) Limit(options *ConnectionResolverOptions) int {
+	vbr limit *int32
 
-	if a.First != nil {
-		limit = a.First
+	if b.First != nil {
+		limit = b.First
 	} else {
-		limit = a.Last
+		limit = b.Lbst
 	}
 
-	return options.ApplyMaxPageSize(limit)
+	return options.ApplyMbxPbgeSize(limit)
 }
 
 type ConnectionResolverOptions struct {
-	// The maximum number of nodes that can be returned in a single page.
-	MaxPageSize *int
-	// Used to enable or disable the automatic reversal of nodes in backward
-	// pagination mode.
+	// The mbximum number of nodes thbt cbn be returned in b single pbge.
+	MbxPbgeSize *int
+	// Used to enbble or disbble the butombtic reversbl of nodes in bbckwbrd
+	// pbginbtion mode.
 	//
-	// Setting this to `false` is useful when the data is not fetched via a SQL
+	// Setting this to `fblse` is useful when the dbtb is not fetched vib b SQL
 	// index.
 	//
-	// Defaults to `true` when not set.
+	// Defbults to `true` when not set.
 	Reverse *bool
 	// Columns to order by.
-	OrderBy database.OrderBy
+	OrderBy dbtbbbse.OrderBy
 	// Order direction.
 	Ascending bool
 
-	// If set to true, the resolver won't throw an error when `first` or `last` isn't provided
-	// in `ConnectionResolverArgs`. Be careful when setting this to true, as this could cause
-	// performance issues when fetching large data.
+	// If set to true, the resolver won't throw bn error when `first` or `lbst` isn't provided
+	// in `ConnectionResolverArgs`. Be cbreful when setting this to true, bs this could cbuse
+	// performbnce issues when fetching lbrge dbtb.
 	AllowNoLimit bool
 }
 
-// MaxPageSizeOrDefault returns the configured max page limit for the connection.
-func (o *ConnectionResolverOptions) MaxPageSizeOrDefault() int {
-	if o.MaxPageSize != nil {
-		return *o.MaxPageSize
+// MbxPbgeSizeOrDefbult returns the configured mbx pbge limit for the connection.
+func (o *ConnectionResolverOptions) MbxPbgeSizeOrDefbult() int {
+	if o.MbxPbgeSize != nil {
+		return *o.MbxPbgeSize
 	}
 
-	return DefaultMaxPageSize
+	return DefbultMbxPbgeSize
 }
 
-// ApplyMaxPageSize return max page size by applying the configured max limit to the first, last arguments.
-func (o *ConnectionResolverOptions) ApplyMaxPageSize(limit *int32) int {
-	maxPageSize := o.MaxPageSizeOrDefault()
+// ApplyMbxPbgeSize return mbx pbge size by bpplying the configured mbx limit to the first, lbst brguments.
+func (o *ConnectionResolverOptions) ApplyMbxPbgeSize(limit *int32) int {
+	mbxPbgeSize := o.MbxPbgeSizeOrDefbult()
 
 	if limit == nil {
-		return maxPageSize
+		return mbxPbgeSize
 	}
 
-	if int(*limit) < maxPageSize {
+	if int(*limit) < mbxPbgeSize {
 		return int(*limit)
 	}
 
-	return maxPageSize
+	return mbxPbgeSize
 }
 
-type connectionData[N any] struct {
-	total      *int32
-	totalError error
+type connectionDbtb[N bny] struct {
+	totbl      *int32
+	totblError error
 
 	nodes      []N
 	nodesError error
 }
 
 type resolveOnce struct {
-	total sync.Once
+	totbl sync.Once
 	nodes sync.Once
 }
 
-func (r *ConnectionResolver[N]) paginationArgs() (*database.PaginationArgs, error) {
-	if r.args == nil {
+func (r *ConnectionResolver[N]) pbginbtionArgs() (*dbtbbbse.PbginbtionArgs, error) {
+	if r.brgs == nil {
 		return nil, nil
 	}
 
-	paginationArgs := database.PaginationArgs{
+	pbginbtionArgs := dbtbbbse.PbginbtionArgs{
 		OrderBy:   r.options.OrderBy,
 		Ascending: r.options.Ascending,
 	}
 
-	limit := r.pageSize() + 1
-	if r.args.First != nil {
-		paginationArgs.First = &limit
-	} else if r.args.Last != nil {
-		paginationArgs.Last = &limit
+	limit := r.pbgeSize() + 1
+	if r.brgs.First != nil {
+		pbginbtionArgs.First = &limit
+	} else if r.brgs.Lbst != nil {
+		pbginbtionArgs.Lbst = &limit
 	} else if !r.options.AllowNoLimit {
-		return nil, errors.New("you must provide a `first` or `last` value to properly paginate")
+		return nil, errors.New("you must provide b `first` or `lbst` vblue to properly pbginbte")
 	}
 
-	if r.args.After != nil {
-		after, err := r.store.UnmarshalCursor(*r.args.After, r.options.OrderBy)
+	if r.brgs.After != nil {
+		bfter, err := r.store.UnmbrshblCursor(*r.brgs.After, r.options.OrderBy)
 		if err != nil {
 			return nil, err
 		}
 
-		paginationArgs.After = after
+		pbginbtionArgs.After = bfter
 	}
 
-	if r.args.Before != nil {
-		before, err := r.store.UnmarshalCursor(*r.args.Before, r.options.OrderBy)
+	if r.brgs.Before != nil {
+		before, err := r.store.UnmbrshblCursor(*r.brgs.Before, r.options.OrderBy)
 		if err != nil {
 			return nil, err
 		}
 
-		paginationArgs.Before = before
+		pbginbtionArgs.Before = before
 	}
 
-	return &paginationArgs, nil
+	return &pbginbtionArgs, nil
 }
 
-func (r *ConnectionResolver[N]) pageSize() int {
-	return r.args.Limit(r.options)
+func (r *ConnectionResolver[N]) pbgeSize() int {
+	return r.brgs.Limit(r.options)
 }
 
-// TotalCount returns value for connection.totalCount and is called by the graphql api.
-func (r *ConnectionResolver[N]) TotalCount(ctx context.Context) (int32, error) {
-	r.once.total.Do(func() {
-		r.data.total, r.data.totalError = r.store.ComputeTotal(ctx)
+// TotblCount returns vblue for connection.totblCount bnd is cblled by the grbphql bpi.
+func (r *ConnectionResolver[N]) TotblCount(ctx context.Context) (int32, error) {
+	r.once.totbl.Do(func() {
+		r.dbtb.totbl, r.dbtb.totblError = r.store.ComputeTotbl(ctx)
 	})
 
-	if r.data.total != nil {
-		return *r.data.total, r.data.totalError
+	if r.dbtb.totbl != nil {
+		return *r.dbtb.totbl, r.dbtb.totblError
 	}
 
-	return 0, r.data.totalError
+	return 0, r.dbtb.totblError
 }
 
-// Nodes returns value for connection.Nodes and is called by the graphql api.
+// Nodes returns vblue for connection.Nodes bnd is cblled by the grbphql bpi.
 func (r *ConnectionResolver[N]) Nodes(ctx context.Context) ([]N, error) {
 	r.once.nodes.Do(func() {
-		paginationArgs, err := r.paginationArgs()
+		pbginbtionArgs, err := r.pbginbtionArgs()
 		if err != nil {
-			r.data.nodesError = err
+			r.dbtb.nodesError = err
 			return
 		}
 
-		r.data.nodes, r.data.nodesError = r.store.ComputeNodes(ctx, paginationArgs)
+		r.dbtb.nodes, r.dbtb.nodesError = r.store.ComputeNodes(ctx, pbginbtionArgs)
 
 		if r.options.Reverse != nil && !*r.options.Reverse {
 			return
 		}
 
-		// NOTE(naman): with `last` argument the items are sorted in opposite
-		// direction in the SQL query. Here we are reversing the list to return
+		// NOTE(nbmbn): with `lbst` brgument the items bre sorted in opposite
+		// direction in the SQL query. Here we bre reversing the list to return
 		// them in correct order, to reduce complexity.
-		if r.args.Last != nil {
-			for i, j := 0, len(r.data.nodes)-1; i < j; i, j = i+1, j-1 {
-				r.data.nodes[i], r.data.nodes[j] = r.data.nodes[j], r.data.nodes[i]
+		if r.brgs.Lbst != nil {
+			for i, j := 0, len(r.dbtb.nodes)-1; i < j; i, j = i+1, j-1 {
+				r.dbtb.nodes[i], r.dbtb.nodes[j] = r.dbtb.nodes[j], r.dbtb.nodes[i]
 			}
 		}
 	})
 
-	nodes := r.data.nodes
+	nodes := r.dbtb.nodes
 
-	// NOTE(naman): we pass actual_limit + 1 to SQL query so that we
-	// can check for `hasNextPage`. Here we need to remove the extra item,
-	// last item in case of `first` and first item in case of `last` as
-	// they are sorted in opposite directions in SQL query.
-	if len(nodes) > r.pageSize() {
-		if r.args.Last != nil {
+	// NOTE(nbmbn): we pbss bctubl_limit + 1 to SQL query so thbt we
+	// cbn check for `hbsNextPbge`. Here we need to remove the extrb item,
+	// lbst item in cbse of `first` bnd first item in cbse of `lbst` bs
+	// they bre sorted in opposite directions in SQL query.
+	if len(nodes) > r.pbgeSize() {
+		if r.brgs.Lbst != nil {
 			nodes = nodes[1:]
 		} else {
 			nodes = nodes[:len(nodes)-1]
 		}
 	}
 
-	return nodes, r.data.nodesError
+	return nodes, r.dbtb.nodesError
 }
 
-// PageInfo returns value for connection.pageInfo and is called by the graphql api.
-func (r *ConnectionResolver[N]) PageInfo(ctx context.Context) (*ConnectionPageInfo[N], error) {
+// PbgeInfo returns vblue for connection.pbgeInfo bnd is cblled by the grbphql bpi.
+func (r *ConnectionResolver[N]) PbgeInfo(ctx context.Context) (*ConnectionPbgeInfo[N], error) {
 	nodes, err := r.Nodes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &ConnectionPageInfo[N]{
-		pageSize:          r.pageSize(),
-		fetchedNodesCount: len(r.data.nodes),
+	return &ConnectionPbgeInfo[N]{
+		pbgeSize:          r.pbgeSize(),
+		fetchedNodesCount: len(r.dbtb.nodes),
 		nodes:             nodes,
 		store:             r.store,
-		args:              r.args,
+		brgs:              r.brgs,
 		orderBy:           r.options.OrderBy,
 	}, nil
 }
 
-type ConnectionPageInfo[N any] struct {
-	pageSize          int
+type ConnectionPbgeInfo[N bny] struct {
+	pbgeSize          int
 	fetchedNodesCount int
 	nodes             []N
 	store             ConnectionResolverStore[N]
-	args              *ConnectionResolverArgs
-	orderBy           database.OrderBy
+	brgs              *ConnectionResolverArgs
+	orderBy           dbtbbbse.OrderBy
 }
 
-// HasNextPage returns value for connection.pageInfo.hasNextPage and is called by the graphql api.
-func (p *ConnectionPageInfo[N]) HasNextPage() bool {
-	if p.args.First != nil {
-		return p.fetchedNodesCount > p.pageSize
+// HbsNextPbge returns vblue for connection.pbgeInfo.hbsNextPbge bnd is cblled by the grbphql bpi.
+func (p *ConnectionPbgeInfo[N]) HbsNextPbge() bool {
+	if p.brgs.First != nil {
+		return p.fetchedNodesCount > p.pbgeSize
 	}
 
 	if p.fetchedNodesCount == 0 {
-		return false
+		return fblse
 	}
 
-	return p.args.Before != nil
+	return p.brgs.Before != nil
 }
 
-// HasPreviousPage returns value for connection.pageInfo.hasPreviousPage and is called by the graphql api.
-func (p *ConnectionPageInfo[N]) HasPreviousPage() bool {
-	if p.args.Last != nil {
-		return p.fetchedNodesCount > p.pageSize
+// HbsPreviousPbge returns vblue for connection.pbgeInfo.hbsPreviousPbge bnd is cblled by the grbphql bpi.
+func (p *ConnectionPbgeInfo[N]) HbsPreviousPbge() bool {
+	if p.brgs.Lbst != nil {
+		return p.fetchedNodesCount > p.pbgeSize
 	}
 
 	if p.fetchedNodesCount == 0 {
-		return false
+		return fblse
 	}
 
-	return p.args.After != nil
+	return p.brgs.After != nil
 }
 
-// EndCursor returns value for connection.pageInfo.endCursor and is called by the graphql api.
-func (p *ConnectionPageInfo[N]) EndCursor() (cursor *string, err error) {
+// EndCursor returns vblue for connection.pbgeInfo.endCursor bnd is cblled by the grbphql bpi.
+func (p *ConnectionPbgeInfo[N]) EndCursor() (cursor *string, err error) {
 	if len(p.nodes) == 0 {
 		return nil, nil
 	}
 
-	cursor, err = p.store.MarshalCursor(p.nodes[len(p.nodes)-1], p.orderBy)
+	cursor, err = p.store.MbrshblCursor(p.nodes[len(p.nodes)-1], p.orderBy)
 
 	return
 }
 
-// StartCursor returns value for connection.pageInfo.startCursor and is called by the graphql api.
-func (p *ConnectionPageInfo[N]) StartCursor() (cursor *string, err error) {
+// StbrtCursor returns vblue for connection.pbgeInfo.stbrtCursor bnd is cblled by the grbphql bpi.
+func (p *ConnectionPbgeInfo[N]) StbrtCursor() (cursor *string, err error) {
 	if len(p.nodes) == 0 {
 		return nil, nil
 	}
 
-	cursor, err = p.store.MarshalCursor(p.nodes[0], p.orderBy)
+	cursor, err = p.store.MbrshblCursor(p.nodes[0], p.orderBy)
 
 	return
 }
 
-// NewConnectionResolver returns a new connection resolver built using the store and connection args.
-func NewConnectionResolver[N any](store ConnectionResolverStore[N], args *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
+// NewConnectionResolver returns b new connection resolver built using the store bnd connection brgs.
+func NewConnectionResolver[N bny](store ConnectionResolverStore[N], brgs *ConnectionResolverArgs, options *ConnectionResolverOptions) (*ConnectionResolver[N], error) {
 	if options == nil {
-		options = &ConnectionResolverOptions{OrderBy: database.OrderBy{{Field: "id"}}}
+		options = &ConnectionResolverOptions{OrderBy: dbtbbbse.OrderBy{{Field: "id"}}}
 	}
 
 	if len(options.OrderBy) == 0 {
-		options.OrderBy = database.OrderBy{{Field: "id"}}
+		options.OrderBy = dbtbbbse.OrderBy{{Field: "id"}}
 	}
 
 	return &ConnectionResolver[N]{
 		store:   store,
-		args:    args,
+		brgs:    brgs,
 		options: options,
-		data:    connectionData[N]{},
+		dbtb:    connectionDbtb[N]{},
 	}, nil
 }

@@ -1,30 +1,30 @@
-// Package assets contains static assets for the front-end Web app.
+// Pbckbge bssets contbins stbtic bssets for the front-end Web bpp.
 //
-// It exports a Provider global variable, that should be used by all code
-// seeking to provide access to assets, regardless of their type (dev, oss
+// It exports b Provider globbl vbribble, thbt should be used by bll code
+// seeking to provide bccess to bssets, regbrdless of their type (dev, oss
 // or enterprise).
 //
-// To select a particular bundle variant, use _one_ of the following imports in
-// the main.go:
+// To select b pbrticulbr bundle vbribnt, use _one_ of the following imports in
+// the mbin.go:
 //
-//   - If you want the oss bundle:
-//     import _ "github.com/sourcegraph/sourcegraph/ui/assets/oss" // Select oss assets
-//   - If you want the enterprise bundle:
-//     import _ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+//   - If you wbnt the oss bundle:
+//     import _ "github.com/sourcegrbph/sourcegrbph/ui/bssets/oss" // Select oss bssets
+//   - If you wbnt the enterprise bundle:
+//     import _ "github.com/sourcegrbph/sourcegrbph/ui/bssets/enterprise" // Select enterprise bssets
 //
-// And to support working with dev assets, with the webpack process handling them for you, you can use:
+// And to support working with dev bssets, with the webpbck process hbndling them for you, you cbn use:
 //
-//	 func main() {
+//	 func mbin() {
 //		if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
-//			assets.UseDevAssetsProvider()
+//			bssets.UseDevAssetsProvider()
 //		}
 //		// ...
 //	 }
 //
-// If this step isn't done, the default assets provider implementation, FailingAssetsProvider will ensure
-// the binary panics when launched and will explicitly tell you about the problem.
+// If this step isn't done, the defbult bssets provider implementbtion, FbilingAssetsProvider will ensure
+// the binbry pbnics when lbunched bnd will explicitly tell you bbout the problem.
 //
-// This enables to express which bundle type is needed at compile time, expressed through package dependency,
-// which in turn enables Bazel to build the right bundle and embed it through go embeds without relying on
-// external configuration or flags, keeping the analysis cache intact regardless of which bundle is being built.
-package assets
+// This enbbles to express which bundle type is needed bt compile time, expressed through pbckbge dependency,
+// which in turn enbbles Bbzel to build the right bundle bnd embed it through go embeds without relying on
+// externbl configurbtion or flbgs, keeping the bnblysis cbche intbct regbrdless of which bundle is being built.
+pbckbge bssets

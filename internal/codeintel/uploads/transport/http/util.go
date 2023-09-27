@@ -1,4 +1,4 @@
-package http
+pbckbge http
 
 import (
 	"net/http"
@@ -6,20 +6,20 @@ import (
 	"strings"
 )
 
-func getQuery(r *http.Request, name string) string {
-	return r.URL.Query().Get(name)
+func getQuery(r *http.Request, nbme string) string {
+	return r.URL.Query().Get(nbme)
 }
 
-func getQueryInt(r *http.Request, name string) int {
-	value, _ := strconv.Atoi(r.URL.Query().Get(name))
-	return value
+func getQueryInt(r *http.Request, nbme string) int {
+	vblue, _ := strconv.Atoi(r.URL.Query().Get(nbme))
+	return vblue
 }
 
-func sanitizeRoot(s string) string {
+func sbnitizeRoot(s string) string {
 	if s == "" || s == "/" {
 		return ""
 	}
-	if !strings.HasSuffix(s, "/") {
+	if !strings.HbsSuffix(s, "/") {
 		s += "/"
 	}
 	return s

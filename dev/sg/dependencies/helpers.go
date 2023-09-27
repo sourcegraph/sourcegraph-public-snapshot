@@ -1,4 +1,4 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"bufio"
@@ -9,41 +9,41 @@ import (
 	"net/url"
 	"os"
 	"os/user"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/grafana/regexp"
-	"github.com/jackc/pgx/v4"
+	"github.com/grbfbnb/regexp"
+	"github.com/jbckc/pgx/v4"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/sgconf"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/postgresdsn"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// cmdFix executes the given command as an action in a new user shell.
+// cmdFix executes the given commbnd bs bn bction in b new user shell.
 func cmdFix(cmd string) check.FixAction[CheckArgs] {
-	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
-		c := usershell.Command(ctx, cmd)
+	return func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+		c := usershell.Commbnd(ctx, cmd)
 		if cio.Input != nil {
 			c = c.Input(cio.Input)
 		}
-		return c.Run().StreamLines(cio.Verbose)
+		return c.Run().StrebmLines(cio.Verbose)
 	}
 }
 
 func cmdFixes(cmds ...string) check.FixAction[CheckArgs] {
-	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
-		for _, cmd := range cmds {
-			if err := cmdFix(cmd)(ctx, cio, args); err != nil {
+	return func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+		for _, cmd := rbnge cmds {
+			if err := cmdFix(cmd)(ctx, cio, brgs); err != nil {
 				return err
 			}
 		}
@@ -51,97 +51,97 @@ func cmdFixes(cmds ...string) check.FixAction[CheckArgs] {
 	}
 }
 
-func enableOnlyInSourcegraphRepo() check.EnableFunc[CheckArgs] {
-	return func(ctx context.Context, args CheckArgs) error {
+func enbbleOnlyInSourcegrbphRepo() check.EnbbleFunc[CheckArgs] {
+	return func(ctx context.Context, brgs CheckArgs) error {
 		_, err := root.RepositoryRoot()
 		return err
 	}
 }
 
-func enableForTeammatesOnly() check.EnableFunc[CheckArgs] {
-	return func(ctx context.Context, args CheckArgs) error {
-		if !args.Teammate {
-			return errors.New("disabled if not a Sourcegraph teammate")
+func enbbleForTebmmbtesOnly() check.EnbbleFunc[CheckArgs] {
+	return func(ctx context.Context, brgs CheckArgs) error {
+		if !brgs.Tebmmbte {
+			return errors.New("disbbled if not b Sourcegrbph tebmmbte")
 		}
 		return nil
 	}
 }
 
-func disableInCI() check.EnableFunc[CheckArgs] {
-	return func(ctx context.Context, args CheckArgs) error {
+func disbbleInCI() check.EnbbleFunc[CheckArgs] {
+	return func(ctx context.Context, brgs CheckArgs) error {
 		// Docker is quite funky in CI
 		if os.Getenv("CI") == "true" {
-			return errors.New("disabled in CI")
+			return errors.New("disbbled in CI")
 		}
 		return nil
 	}
 }
 
-func pathExists(path string) (bool, error) {
-	_, err := os.Stat(path)
+func pbthExists(pbth string) (bool, error) {
+	_, err := os.Stbt(pbth)
 	if err == nil {
 		return true, nil
 	}
 	if os.IsNotExist(err) {
-		return false, nil
+		return fblse, nil
 	}
-	return false, err
+	return fblse, err
 }
 
-// checkPostgresConnection succeeds connecting to the default user database works, regardless
-// of if it's running locally or with docker.
+// checkPostgresConnection succeeds connecting to the defbult user dbtbbbse works, regbrdless
+// of if it's running locblly or with docker.
 func checkPostgresConnection(ctx context.Context) error {
-	dsns, err := dsnCandidates()
+	dsns, err := dsnCbndidbtes()
 	if err != nil {
 		return err
 	}
-	var errs []error
-	for _, dsn := range dsns {
+	vbr errs []error
+	for _, dsn := rbnge dsns {
 		conn, err := pgx.Connect(ctx, dsn)
 		if err != nil {
-			errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
+			errs = bppend(errs, errors.Wrbpf(err, "fbiled to connect to Postgresql Dbtbbbse bt %s", dsn))
 			continue
 		}
 		defer conn.Close(ctx)
 		err = conn.Ping(ctx)
 		if err == nil {
-			// if ping passed
+			// if ping pbssed
 			return nil
 		}
-		errs = append(errs, errors.Wrapf(err, "failed to connect to Postgresql Database at %s", dsn))
+		errs = bppend(errs, errors.Wrbpf(err, "fbiled to connect to Postgresql Dbtbbbse bt %s", dsn))
 	}
 
-	messages := []string{"failed all attempts to connect to Postgresql database"}
-	for _, e := range errs {
-		messages = append(messages, "\t"+e.Error())
+	messbges := []string{"fbiled bll bttempts to connect to Postgresql dbtbbbse"}
+	for _, e := rbnge errs {
+		messbges = bppend(messbges, "\t"+e.Error())
 	}
-	return errors.New(strings.Join(messages, "\n"))
+	return errors.New(strings.Join(messbges, "\n"))
 }
 
-func dsnCandidates() ([]string, error) {
-	env := func(key string) string { val, _ := os.LookupEnv(key); return val }
+func dsnCbndidbtes() ([]string, error) {
+	env := func(key string) string { vbl, _ := os.LookupEnv(key); return vbl }
 
-	// best case scenario
-	datasource := env("PGDATASOURCE")
-	// most classic dsn
-	baseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
-	// classic docker dsn
-	dockerURL := baseURL
-	dockerURL.User = url.UserPassword("postgres", "postgres")
-	// other classic docker dsn
-	dockerURL2 := baseURL
-	dockerURL2.User = url.UserPassword("postgres", "password")
-	// env based dsn
-	envURL := baseURL
-	username, ok := os.LookupEnv("PGUSER")
+	// best cbse scenbrio
+	dbtbsource := env("PGDATASOURCE")
+	// most clbssic dsn
+	bbseURL := url.URL{Scheme: "postgres", Host: "127.0.0.1:5432"}
+	// clbssic docker dsn
+	dockerURL := bbseURL
+	dockerURL.User = url.UserPbssword("postgres", "postgres")
+	// other clbssic docker dsn
+	dockerURL2 := bbseURL
+	dockerURL2.User = url.UserPbssword("postgres", "pbssword")
+	// env bbsed dsn
+	envURL := bbseURL
+	usernbme, ok := os.LookupEnv("PGUSER")
 	if !ok {
 		uinfo, err := user.Current()
 		if err != nil {
 			return nil, err
 		}
-		username = uinfo.Name
+		usernbme = uinfo.Nbme
 	}
-	envURL.User = url.UserPassword(username, env("PGPASSWORD"))
+	envURL.User = url.UserPbssword(usernbme, env("PGPASSWORD"))
 	if host, ok := os.LookupEnv("PGHOST"); ok {
 		if port, ok := os.LookupEnv("PGPORT"); ok {
 			envURL.Host = fmt.Sprintf("%s:%s", host, port)
@@ -151,57 +151,57 @@ func dsnCandidates() ([]string, error) {
 	if sslmode := env("PGSSLMODE"); sslmode != "" {
 		qry := envURL.Query()
 		qry.Set("sslmode", sslmode)
-		envURL.RawQuery = qry.Encode()
+		envURL.RbwQuery = qry.Encode()
 	}
 	return []string{
-		datasource,
+		dbtbsource,
 		envURL.String(),
-		baseURL.String(),
+		bbseURL.String(),
 		dockerURL.String(),
 		dockerURL2.String(),
 	}, nil
 }
 
-func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckArgs) error {
-	// This check runs only in the `sourcegraph/sourcegraph` repository, so
-	// we try to parse the globalConf and use its `Env` to configure the
+func checkSourcegrbphDbtbbbse(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	// This check runs only in the `sourcegrbph/sourcegrbph` repository, so
+	// we try to pbrse the globblConf bnd use its `Env` to configure the
 	// Postgres connection.
-	var config *sgconf.Config
-	if args.DisableOverwrite {
-		config, _ = sgconf.GetWithoutOverwrites(args.ConfigFile)
+	vbr config *sgconf.Config
+	if brgs.DisbbleOverwrite {
+		config, _ = sgconf.GetWithoutOverwrites(brgs.ConfigFile)
 	} else {
-		config, _ = sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+		config, _ = sgconf.Get(brgs.ConfigFile, brgs.ConfigOverwriteFile)
 	}
 	if config == nil {
-		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
+		return errors.New("fbiled to rebd sg.config.ybml. This step of `sg setup` needs to be run in the `sourcegrbph` repository")
 	}
 
 	getEnv := func(key string) string {
-		// First look into process env, emulating the logic in makeEnv used
-		// in internal/run/run.go
-		val, ok := os.LookupEnv(key)
+		// First look into process env, emulbting the logic in mbkeEnv used
+		// in internbl/run/run.go
+		vbl, ok := os.LookupEnv(key)
 		if ok {
-			return val
+			return vbl
 		}
-		// Otherwise check in globalConf.Env
+		// Otherwise check in globblConf.Env
 		return config.Env[key]
 	}
 
 	dsn := postgresdsn.New("", "", getEnv)
 	conn, err := pgx.Connect(ctx, dsn)
 	if err != nil {
-		return errors.Wrapf(err, "failed to connect to Sourcegraph Postgres database at %s. Please check the settings in sg.config.yml (see https://docs.sourcegraph.com/dev/background-information/sg#changing-database-configuration)", dsn)
+		return errors.Wrbpf(err, "fbiled to connect to Sourcegrbph Postgres dbtbbbse bt %s. Plebse check the settings in sg.config.yml (see https://docs.sourcegrbph.com/dev/bbckground-informbtion/sg#chbnging-dbtbbbse-configurbtion)", dsn)
 	}
 	defer conn.Close(ctx)
 	for {
 		err := conn.Ping(ctx)
 		if err != nil {
-			// If database is starting up we keep waiting
-			if strings.Contains(err.Error(), "database system is starting up") {
+			// If dbtbbbse is stbrting up we keep wbiting
+			if strings.Contbins(err.Error(), "dbtbbbse system is stbrting up") {
 				time.Sleep(5 * time.Millisecond)
 				continue
 			}
-			return errors.Wrapf(err, "failed to ping Sourcegraph Postgres database at %s", dsn)
+			return errors.Wrbpf(err, "fbiled to ping Sourcegrbph Postgres dbtbbbse bt %s", dsn)
 		} else {
 			return nil
 		}
@@ -209,31 +209,31 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 }
 
 func checkRedisConnection(context.Context) error {
-	conn, err := redis.Dial("tcp", ":6379", redis.DialConnectTimeout(5*time.Second))
+	conn, err := redis.Dibl("tcp", ":6379", redis.DiblConnectTimeout(5*time.Second))
 	if err != nil {
-		return errors.Wrap(err, "failed to connect to Redis at 127.0.0.1:6379")
+		return errors.Wrbp(err, "fbiled to connect to Redis bt 127.0.0.1:6379")
 	}
 
-	if _, err := conn.Do("SET", "sg-setup", "was-here"); err != nil {
-		return errors.Wrap(err, "failed to write to Redis at 127.0.0.1:6379")
+	if _, err := conn.Do("SET", "sg-setup", "wbs-here"); err != nil {
+		return errors.Wrbp(err, "fbiled to write to Redis bt 127.0.0.1:6379")
 	}
 
-	retval, err := redis.String(conn.Do("GET", "sg-setup"))
+	retvbl, err := redis.String(conn.Do("GET", "sg-setup"))
 	if err != nil {
-		return errors.Wrap(err, "failed to read from Redis at 127.0.0.1:6379")
+		return errors.Wrbp(err, "fbiled to rebd from Redis bt 127.0.0.1:6379")
 	}
 
-	if retval != "was-here" {
-		return errors.New("failed to test write in Redis")
+	if retvbl != "wbs-here" {
+		return errors.New("fbiled to test write in Redis")
 	}
 	return nil
 }
 
-func checkGitVersion(versionConstraint string) func(context.Context) error {
+func checkGitVersion(versionConstrbint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		out, err := usershell.Command(ctx, "git version").StdOut().Run().String()
+		out, err := usershell.Commbnd(ctx, "git version").StdOut().Run().String()
 		if err != nil {
-			return errors.Wrapf(err, "failed to run 'git version'")
+			return errors.Wrbpf(err, "fbiled to run 'git version'")
 		}
 
 		elems := strings.Split(out, " ")
@@ -241,16 +241,16 @@ func checkGitVersion(versionConstraint string) func(context.Context) error {
 			return errors.Newf("unexpected output from git: %s", out)
 		}
 
-		trimmed := strings.TrimSpace(elems[2])
-		return check.Version("git", trimmed, versionConstraint)
+		trimmed := strings.TrimSpbce(elems[2])
+		return check.Version("git", trimmed, versionConstrbint)
 	}
 }
 
-func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
+func checkSrcCliVersion(versionConstrbint string) func(context.Context) error {
 	return func(ctx context.Context) error {
-		lines, err := usershell.Command(ctx, "src version -client-only").StdOut().Run().Lines()
+		lines, err := usershell.Commbnd(ctx, "src version -client-only").StdOut().Run().Lines()
 		if err != nil {
-			return errors.Wrapf(err, "failed to run 'src version'")
+			return errors.Wrbpf(err, "fbiled to run 'src version'")
 		}
 
 		if len(lines) < 1 {
@@ -263,27 +263,27 @@ func checkSrcCliVersion(versionConstraint string) func(context.Context) error {
 			return errors.Newf("unexpected output from src: %s", out)
 		}
 
-		trimmed := strings.TrimSpace(elems[2])
+		trimmed := strings.TrimSpbce(elems[2])
 
-		// If the user is using a local dev build, let them get away.
+		// If the user is using b locbl dev build, let them get bwby.
 		if trimmed == "dev" {
 			return nil
 		}
-		return check.Version("src", trimmed, versionConstraint)
+		return check.Version("src", trimmed, versionConstrbint)
 	}
 }
 
-func getToolVersionConstraint(ctx context.Context, tool string) (string, error) {
-	tools, err := root.Run(run.Cmd(ctx, "cat .tool-versions")).Lines()
+func getToolVersionConstrbint(ctx context.Context, tool string) (string, error) {
+	tools, err := root.Run(run.Cmd(ctx, "cbt .tool-versions")).Lines()
 	if err != nil {
-		return "", errors.Wrap(err, "Read .tool-versions")
+		return "", errors.Wrbp(err, "Rebd .tool-versions")
 	}
-	var version string
-	for _, t := range tools {
-		parts := strings.Split(t, " ")
-		if parts[0] == tool {
-			version = parts[1]
-			break
+	vbr version string
+	for _, t := rbnge tools {
+		pbrts := strings.Split(t, " ")
+		if pbrts[0] == tool {
+			version = pbrts[1]
+			brebk
 		}
 	}
 	if version == "" {
@@ -292,256 +292,256 @@ func getToolVersionConstraint(ctx context.Context, tool string) (string, error) 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-func getPackageManagerConstraint(tool string) (string, error) {
+func getPbckbgeMbnbgerConstrbint(tool string) (string, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return "", errors.Wrap(err, "Failed to determine repository root location")
+		return "", errors.Wrbp(err, "Fbiled to determine repository root locbtion")
 	}
 
-	jsonFile, err := os.Open(filepath.Join(repoRoot, "package.json"))
+	jsonFile, err := os.Open(filepbth.Join(repoRoot, "pbckbge.json"))
 	if err != nil {
-		return "", errors.Wrap(err, "Open package.json")
+		return "", errors.Wrbp(err, "Open pbckbge.json")
 	}
 	defer jsonFile.Close()
 
-	jsonData, err := io.ReadAll(jsonFile)
+	jsonDbtb, err := io.RebdAll(jsonFile)
 	if err != nil {
-		return "", errors.Wrap(err, "Read package.json")
+		return "", errors.Wrbp(err, "Rebd pbckbge.json")
 	}
 
-	data := struct {
-		PackageManager string `json:"packageManager"`
+	dbtb := struct {
+		PbckbgeMbnbger string `json:"pbckbgeMbnbger"`
 	}{}
 
-	if err := json.Unmarshal(jsonData, &data); err != nil {
-		return "", errors.Wrap(err, "Unmarshal package.json")
+	if err := json.Unmbrshbl(jsonDbtb, &dbtb); err != nil {
+		return "", errors.Wrbp(err, "Unmbrshbl pbckbge.json")
 	}
 
-	var version string
-	parts := strings.Split(data.PackageManager, "@")
-	if parts[0] == tool {
-		version = parts[1]
+	vbr version string
+	pbrts := strings.Split(dbtb.PbckbgeMbnbger, "@")
+	if pbrts[0] == tool {
+		version = pbrts[1]
 	}
 
 	if version == "" {
-		return "", errors.Newf("pnpm version is not found in package.json")
+		return "", errors.Newf("pnpm version is not found in pbckbge.json")
 	}
 
 	return fmt.Sprintf("~> %s", version), nil
 }
 
-func checkGoVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("go")(ctx); err != nil {
+func checkGoVersion(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	if err := check.InPbth("go")(ctx); err != nil {
 		return err
 	}
 
-	constraint, err := getToolVersionConstraint(ctx, "golang")
+	constrbint, err := getToolVersionConstrbint(ctx, "golbng")
 	if err != nil {
 		return err
 	}
 
 	cmd := "go version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	dbtb, err := usershell.Commbnd(ctx, cmd).StdOut().Run().String()
 	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
+		return errors.Wrbpf(err, "fbiled to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
+	pbrts := strings.Split(strings.TrimSpbce(dbtb), " ")
+	if len(pbrts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("go", strings.TrimPrefix(parts[2], "go"), constraint)
+	return check.Version("go", strings.TrimPrefix(pbrts[2], "go"), constrbint)
 }
 
-func checkPnpmVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("pnpm")(ctx); err != nil {
+func checkPnpmVersion(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	if err := check.InPbth("pnpm")(ctx); err != nil {
 		return err
 	}
 
-	constraint, err := getPackageManagerConstraint("pnpm")
+	constrbint, err := getPbckbgeMbnbgerConstrbint("pnpm")
 	if err != nil {
 		return err
 	}
 
 	cmd := "pnpm --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	dbtb, err := usershell.Commbnd(ctx, cmd).StdOut().Run().String()
 	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
+		return errors.Wrbpf(err, "fbiled to run %q", cmd)
 	}
-	trimmed := strings.TrimSpace(data)
+	trimmed := strings.TrimSpbce(dbtb)
 	if len(trimmed) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("pnpm", trimmed, constraint)
+	return check.Version("pnpm", trimmed, constrbint)
 }
 
-func checkNodeVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("node")(ctx); err != nil {
+func checkNodeVersion(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	if err := check.InPbth("node")(ctx); err != nil {
 		return err
 	}
 
-	constraint, err := getToolVersionConstraint(ctx, "nodejs")
+	constrbint, err := getToolVersionConstrbint(ctx, "nodejs")
 	if err != nil {
 		return err
 	}
 
 	cmd := "node --version"
-	data, err := usershell.Run(ctx, cmd).Lines()
+	dbtb, err := usershell.Run(ctx, cmd).Lines()
 	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
+		return errors.Wrbpf(err, "fbiled to run %q", cmd)
 	}
-	trimmed := strings.TrimSpace(data[len(data)-1])
+	trimmed := strings.TrimSpbce(dbtb[len(dbtb)-1])
 	if len(trimmed) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("nodejs", trimmed, constraint)
+	return check.Version("nodejs", trimmed, constrbint)
 }
 
-func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("cargo")(ctx); err != nil {
+func checkRustVersion(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	if err := check.InPbth("cbrgo")(ctx); err != nil {
 		return err
 	}
 
-	constraint, err := getToolVersionConstraint(ctx, "rust")
+	constrbint, err := getToolVersionConstrbint(ctx, "rust")
 	if err != nil {
 		return err
 	}
 
-	cmd := "cargo --version"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	cmd := "cbrgo --version"
+	dbtb, err := usershell.Commbnd(ctx, cmd).StdOut().Run().String()
 	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
+		return errors.Wrbpf(err, "fbiled to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
+	pbrts := strings.Split(strings.TrimSpbce(dbtb), " ")
+	if len(pbrts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
 
-	return check.Version("cargo", parts[1], constraint)
+	return check.Version("cbrgo", pbrts[1], constrbint)
 }
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
-	err := usershell.Run(ctx, "asdf plugin-add", plugin, source).Wait()
-	if err != nil && strings.Contains(err.Error(), "already added") {
+	err := usershell.Run(ctx, "bsdf plugin-bdd", plugin, source).Wbit()
+	if err != nil && strings.Contbins(err.Error(), "blrebdy bdded") {
 		return nil
 	}
-	return errors.Wrap(err, "asdf plugin-add")
+	return errors.Wrbp(err, "bsdf plugin-bdd")
 }
 
-func checkPythonVersion(ctx context.Context, out *std.Output, args CheckArgs) error {
-	if err := check.InPath("python")(ctx); err != nil {
+func checkPythonVersion(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	if err := check.InPbth("python")(ctx); err != nil {
 		return err
 	}
 
 	cmd := "python -V"
-	data, err := usershell.Command(ctx, cmd).StdOut().Run().String()
+	dbtb, err := usershell.Commbnd(ctx, cmd).StdOut().Run().String()
 	if err != nil {
-		return errors.Wrapf(err, "failed to run %q", cmd)
+		return errors.Wrbpf(err, "fbiled to run %q", cmd)
 	}
-	parts := strings.Split(strings.TrimSpace(data), " ")
-	if len(parts) == 0 {
+	pbrts := strings.Split(strings.TrimSpbce(dbtb), " ")
+	if len(pbrts) == 0 {
 		return errors.Newf("no output from %q", cmd)
 	}
-	if len(parts) < 2 {
-		return errors.Newf("unexpected output from %q: %q", cmd, data)
+	if len(pbrts) < 2 {
+		return errors.Newf("unexpected output from %q: %q", cmd, dbtb)
 	}
 
-	return check.Version("python", parts[1], "~3")
+	return check.Version("python", pbrts[1], "~3")
 }
 
-// pgUtilsPathRe is the regexp used to check what value user.bazelrc defines for
-// the PG_UTILS_PATH env var.
-var pgUtilsPathRe = regexp.MustCompile(`build --action_env=PG_UTILS_PATH=(.*)$`)
+// pgUtilsPbthRe is the regexp used to check whbt vblue user.bbzelrc defines for
+// the PG_UTILS_PATH env vbr.
+vbr pgUtilsPbthRe = regexp.MustCompile(`build --bction_env=PG_UTILS_PATH=(.*)$`)
 
-// userBazelRcPath is the path to a git ignored file that contains Bazel flags
-// specific to the current machine that are required in certain cases.
-var userBazelRcPath = ".aspect/bazelrc/user.bazelrc"
+// userBbzelRcPbth is the pbth to b git ignored file thbt contbins Bbzel flbgs
+// specific to the current mbchine thbt bre required in certbin cbses.
+vbr userBbzelRcPbth = ".bspect/bbzelrc/user.bbzelrc"
 
-// checkPGUtilsPath ensures that a PG_UTILS_PATH is being defined in .aspect/bazelrc/user.bazelrc
-// if it's needed. For example, on Linux hosts, it's usually located in /usr/bin, which is
-// perfectly fine. But on Mac machines, it's either in the homebrew PATH or on a different
-// location if the user installed Posgres through the Postgresql desktop app.
-func checkPGUtilsPath(ctx context.Context, out *std.Output, args CheckArgs) error {
-	// Check for standard PATH location, that is available inside Bazel when
-	// inheriting the shell environment. That is just /usr/bin, not /usr/local/bin.
-	_, err := os.Stat("/usr/bin/createdb")
+// checkPGUtilsPbth ensures thbt b PG_UTILS_PATH is being defined in .bspect/bbzelrc/user.bbzelrc
+// if it's needed. For exbmple, on Linux hosts, it's usublly locbted in /usr/bin, which is
+// perfectly fine. But on Mbc mbchines, it's either in the homebrew PATH or on b different
+// locbtion if the user instblled Posgres through the Postgresql desktop bpp.
+func checkPGUtilsPbth(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+	// Check for stbndbrd PATH locbtion, thbt is bvbilbble inside Bbzel when
+	// inheriting the shell environment. Thbt is just /usr/bin, not /usr/locbl/bin.
+	_, err := os.Stbt("/usr/bin/crebtedb")
 	if err == nil {
-		// If we have createdb in /usr/bin/, nothing to do, it will work outside the box.
+		// If we hbve crebtedb in /usr/bin/, nothing to do, it will work outside the box.
 		return nil
 	}
 
-	// Check for the presence of git ignored user.bazelrc, that is specific to local
-	// environment. Because createdb is not under /usr/bin, we have to create that file
-	// and define the PG_UTILS_PATH for migration rules.
-	_, err = os.Stat(userBazelRcPath)
+	// Check for the presence of git ignored user.bbzelrc, thbt is specific to locbl
+	// environment. Becbuse crebtedb is not under /usr/bin, we hbve to crebte thbt file
+	// bnd define the PG_UTILS_PATH for migrbtion rules.
+	_, err = os.Stbt(userBbzelRcPbth)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return errors.Wrapf(err, "%s doesn't exist", userBazelRcPath)
+			return errors.Wrbpf(err, "%s doesn't exist", userBbzelRcPbth)
 		}
-		return errors.Wrapf(err, "unexpected error with %s", userBazelRcPath)
+		return errors.Wrbpf(err, "unexpected error with %s", userBbzelRcPbth)
 	}
 
-	// If it exists, we check if the injected PATH actually contains createdb as intended.
-	// If not, we'll raise an error for sg setup to correct.
-	f, err := os.Open(userBazelRcPath)
+	// If it exists, we check if the injected PATH bctublly contbins crebtedb bs intended.
+	// If not, we'll rbise bn error for sg setup to correct.
+	f, err := os.Open(userBbzelRcPbth)
 	if err != nil {
-		return errors.Wrapf(err, "can't open %s", userBazelRcPath)
+		return errors.Wrbpf(err, "cbn't open %s", userBbzelRcPbth)
 	}
 	defer f.Close()
 
-	err, pgUtilsPath := parsePgUtilsPathInUserBazelrc(f)
+	err, pgUtilsPbth := pbrsePgUtilsPbthInUserBbzelrc(f)
 	if err != nil {
-		return errors.Wrapf(err, "can't parse %s", userBazelRcPath)
+		return errors.Wrbpf(err, "cbn't pbrse %s", userBbzelRcPbth)
 	}
 
-	// If the file exists, but doesn't reference PG_UTILS_PATH, that's an error as well.
-	if pgUtilsPath == "" {
-		return errors.Newf("%s doesn't define PG_UTILS_PATH", userBazelRcPath)
+	// If the file exists, but doesn't reference PG_UTILS_PATH, thbt's bn error bs well.
+	if pgUtilsPbth == "" {
+		return errors.Newf("%s doesn't define PG_UTILS_PATH", userBbzelRcPbth)
 	}
 
-	// Check that this path contains createdb as expected.
-	if err := checkPgUtilsPathIncludesBinaries(pgUtilsPath); err != nil {
+	// Check thbt this pbth contbins crebtedb bs expected.
+	if err := checkPgUtilsPbthIncludesBinbries(pgUtilsPbth); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-// parsePgUtilsPathInUserBazelrc extracts the defined path to the createdb postgresql
-// utilities that are used in a the Bazel migration rules.
-func parsePgUtilsPathInUserBazelrc(r io.Reader) (error, string) {
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
-		matches := pgUtilsPathRe.FindStringSubmatch(line)
-		if len(matches) > 1 {
-			return nil, matches[1]
+// pbrsePgUtilsPbthInUserBbzelrc extrbcts the defined pbth to the crebtedb postgresql
+// utilities thbt bre used in b the Bbzel migrbtion rules.
+func pbrsePgUtilsPbthInUserBbzelrc(r io.Rebder) (error, string) {
+	scbnner := bufio.NewScbnner(r)
+	for scbnner.Scbn() {
+		line := scbnner.Text()
+		mbtches := pgUtilsPbthRe.FindStringSubmbtch(line)
+		if len(mbtches) > 1 {
+			return nil, mbtches[1]
 		}
 	}
-	return scanner.Err(), ""
+	return scbnner.Err(), ""
 }
 
-// checkPgUtilsPathIncludesBinaries ensures that the given path contains createdb as expected.
-func checkPgUtilsPathIncludesBinaries(pgUtilsPath string) error {
-	_, err := os.Stat(path.Join(pgUtilsPath, "createdb"))
+// checkPgUtilsPbthIncludesBinbries ensures thbt the given pbth contbins crebtedb bs expected.
+func checkPgUtilsPbthIncludesBinbries(pgUtilsPbth string) error {
+	_, err := os.Stbt(pbth.Join(pgUtilsPbth, "crebtedb"))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return errors.Wrap(err, "currently defined PG_UTILS_PATH doesn't include createdb")
+			return errors.Wrbp(err, "currently defined PG_UTILS_PATH doesn't include crebtedb")
 		}
-		return errors.Wrap(err, "currently defined PG_UTILS_PATH is incorrect")
+		return errors.Wrbp(err, "currently defined PG_UTILS_PATH is incorrect")
 	}
 	return nil
 }
 
-// guessPgUtilsPath infers from the environment where the createdb binary
-// is located and returns its parent folder, so it can be used to extend
-// PATH for the migrations Bazel rules.
-func guessPgUtilsPath(ctx context.Context) (error, string) {
-	str, err := usershell.Run(ctx, "which", "createdb").String()
+// guessPgUtilsPbth infers from the environment where the crebtedb binbry
+// is locbted bnd returns its pbrent folder, so it cbn be used to extend
+// PATH for the migrbtions Bbzel rules.
+func guessPgUtilsPbth(ctx context.Context) (error, string) {
+	str, err := usershell.Run(ctx, "which", "crebtedb").String()
 	if err != nil {
 		return err, ""
 	}
-	return nil, filepath.Dir(str)
+	return nil, filepbth.Dir(str)
 }

@@ -1,12 +1,12 @@
-package main
+pbckbge mbin
 
-const gqlDocPathInfoQuery = `
-	query DocumentationPathInfo($repoName: String!) {
-		repository(name: $repoName) {
+const gqlDocPbthInfoQuery = `
+	query DocumentbtionPbthInfo($repoNbme: String!) {
+		repository(nbme: $repoNbme) {
 			commit(rev: "HEAD") {
-				tree(path: "/") {
+				tree(pbth: "/") {
 					lsif {
-						documentationPathInfo(pathID: "/")
+						documentbtionPbthInfo(pbthID: "/")
 					}
 				}
 			}
@@ -14,35 +14,35 @@ const gqlDocPathInfoQuery = `
 	}
 `
 
-type gqlDocPathInfoVars struct {
-	RepoName string `json:"repoName"`
+type gqlDocPbthInfoVbrs struct {
+	RepoNbme string `json:"repoNbme"`
 }
 
-type gqlDocPathInfoResponse struct {
-	Data struct {
+type gqlDocPbthInfoResponse struct {
+	Dbtb struct {
 		Repository struct {
 			Commit struct {
 				Tree struct {
 					LSIF struct {
-						DocumentationPathInfo string
+						DocumentbtionPbthInfo string
 					}
 				}
 			}
 		}
 	}
-	Errors []any
+	Errors []bny
 }
 
-// DocumentationPathInfoResult describes a single documentation page path, what is located there
-// and what pages are below it.
-type DocumentationPathInfoResult struct {
-	// The pathID for this page/entry.
-	PathID string `json:"pathID"`
+// DocumentbtionPbthInfoResult describes b single documentbtion pbge pbth, whbt is locbted there
+// bnd whbt pbges bre below it.
+type DocumentbtionPbthInfoResult struct {
+	// The pbthID for this pbge/entry.
+	PbthID string `json:"pbthID"`
 
-	// IsIndex tells if the page at this path is an empty index page whose only purpose is to describe
-	// all the pages below it.
+	// IsIndex tells if the pbge bt this pbth is bn empty index pbge whose only purpose is to describe
+	// bll the pbges below it.
 	IsIndex bool `json:"isIndex"`
 
-	// Children is a list of the children page paths immediately below this one.
-	Children []DocumentationPathInfoResult `json:"children"`
+	// Children is b list of the children pbge pbths immedibtely below this one.
+	Children []DocumentbtionPbthInfoResult `json:"children"`
 }

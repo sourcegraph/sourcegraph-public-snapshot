@@ -1,83 +1,83 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	summaries                      *observation.Operation
-	getStarRank                    *observation.Operation
-	getDocumentRanks               *observation.Operation
-	getReferenceCountStatistics    *observation.Operation
-	coverageCounts                 *observation.Operation
-	lastUpdatedAt                  *observation.Operation
-	getUploadsForRanking           *observation.Operation
-	vacuumAbandonedExportedUploads *observation.Operation
-	softDeleteStaleExportedUploads *observation.Operation
-	vacuumDeletedExportedUploads   *observation.Operation
-	insertDefinitionsForRanking    *observation.Operation
-	insertReferencesForRanking     *observation.Operation
-	insertInitialPathRanks         *observation.Operation
-	derivativeGraphKey             *observation.Operation
-	bumpDerivativeGraphKey         *observation.Operation
-	deleteRankingProgress          *observation.Operation
-	coordinate                     *observation.Operation
-	insertPathCountInputs          *observation.Operation
-	insertInitialPathCounts        *observation.Operation
-	vacuumStaleProcessedReferences *observation.Operation
-	vacuumStaleProcessedPaths      *observation.Operation
-	vacuumStaleGraphs              *observation.Operation
-	insertPathRanks                *observation.Operation
-	vacuumStaleRanks               *observation.Operation
+type operbtions struct {
+	summbries                      *observbtion.Operbtion
+	getStbrRbnk                    *observbtion.Operbtion
+	getDocumentRbnks               *observbtion.Operbtion
+	getReferenceCountStbtistics    *observbtion.Operbtion
+	coverbgeCounts                 *observbtion.Operbtion
+	lbstUpdbtedAt                  *observbtion.Operbtion
+	getUplobdsForRbnking           *observbtion.Operbtion
+	vbcuumAbbndonedExportedUplobds *observbtion.Operbtion
+	softDeleteStbleExportedUplobds *observbtion.Operbtion
+	vbcuumDeletedExportedUplobds   *observbtion.Operbtion
+	insertDefinitionsForRbnking    *observbtion.Operbtion
+	insertReferencesForRbnking     *observbtion.Operbtion
+	insertInitiblPbthRbnks         *observbtion.Operbtion
+	derivbtiveGrbphKey             *observbtion.Operbtion
+	bumpDerivbtiveGrbphKey         *observbtion.Operbtion
+	deleteRbnkingProgress          *observbtion.Operbtion
+	coordinbte                     *observbtion.Operbtion
+	insertPbthCountInputs          *observbtion.Operbtion
+	insertInitiblPbthCounts        *observbtion.Operbtion
+	vbcuumStbleProcessedReferences *observbtion.Operbtion
+	vbcuumStbleProcessedPbths      *observbtion.Operbtion
+	vbcuumStbleGrbphs              *observbtion.Operbtion
+	insertPbthRbnks                *observbtion.Operbtion
+	vbcuumStbleRbnks               *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_ranking_store",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_rbnking_store",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.ranking.store.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.rbnking.store.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		summaries:                      op("Summaries"),
-		getStarRank:                    op("GetStarRank"),
-		getDocumentRanks:               op("GetDocumentRanks"),
-		getReferenceCountStatistics:    op("GetReferenceCountStatistics"),
-		coverageCounts:                 op("CoverageCounts"),
-		lastUpdatedAt:                  op("LastUpdatedAt"),
-		getUploadsForRanking:           op("GetUploadsForRanking"),
-		vacuumAbandonedExportedUploads: op("VacuumAbandonedExportedUploads"),
-		softDeleteStaleExportedUploads: op("SoftDeleteStaleExportedUploads"),
-		vacuumDeletedExportedUploads:   op("VacuumDeletedExportedUploads"),
-		insertDefinitionsForRanking:    op("InsertDefinitionsForRanking"),
-		insertReferencesForRanking:     op("InsertReferencesForRanking"),
-		insertInitialPathRanks:         op("InsertInitialPathRanks"),
-		coordinate:                     op("Coordinate"),
-		derivativeGraphKey:             op("DerivativeGraphKey"),
-		bumpDerivativeGraphKey:         op("BumpDerivativeGraphKey"),
-		deleteRankingProgress:          op("DeleteRankingProgress"),
-		insertPathCountInputs:          op("InsertPathCountInputs"),
-		insertInitialPathCounts:        op("InsertInitialPathCounts"),
-		vacuumStaleProcessedReferences: op("VacuumStaleProcessedReferences"),
-		vacuumStaleProcessedPaths:      op("VacuumStaleProcessedPaths"),
-		vacuumStaleGraphs:              op("VacuumStaleGraphs"),
-		insertPathRanks:                op("InsertPathRanks"),
-		vacuumStaleRanks:               op("VacuumStaleRanks"),
+	return &operbtions{
+		summbries:                      op("Summbries"),
+		getStbrRbnk:                    op("GetStbrRbnk"),
+		getDocumentRbnks:               op("GetDocumentRbnks"),
+		getReferenceCountStbtistics:    op("GetReferenceCountStbtistics"),
+		coverbgeCounts:                 op("CoverbgeCounts"),
+		lbstUpdbtedAt:                  op("LbstUpdbtedAt"),
+		getUplobdsForRbnking:           op("GetUplobdsForRbnking"),
+		vbcuumAbbndonedExportedUplobds: op("VbcuumAbbndonedExportedUplobds"),
+		softDeleteStbleExportedUplobds: op("SoftDeleteStbleExportedUplobds"),
+		vbcuumDeletedExportedUplobds:   op("VbcuumDeletedExportedUplobds"),
+		insertDefinitionsForRbnking:    op("InsertDefinitionsForRbnking"),
+		insertReferencesForRbnking:     op("InsertReferencesForRbnking"),
+		insertInitiblPbthRbnks:         op("InsertInitiblPbthRbnks"),
+		coordinbte:                     op("Coordinbte"),
+		derivbtiveGrbphKey:             op("DerivbtiveGrbphKey"),
+		bumpDerivbtiveGrbphKey:         op("BumpDerivbtiveGrbphKey"),
+		deleteRbnkingProgress:          op("DeleteRbnkingProgress"),
+		insertPbthCountInputs:          op("InsertPbthCountInputs"),
+		insertInitiblPbthCounts:        op("InsertInitiblPbthCounts"),
+		vbcuumStbleProcessedReferences: op("VbcuumStbleProcessedReferences"),
+		vbcuumStbleProcessedPbths:      op("VbcuumStbleProcessedPbths"),
+		vbcuumStbleGrbphs:              op("VbcuumStbleGrbphs"),
+		insertPbthRbnks:                op("InsertPbthRbnks"),
+		vbcuumStbleRbnks:               op("VbcuumStbleRbnks"),
 	}
 }

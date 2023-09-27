@@ -1,52 +1,52 @@
-package promql
+pbckbge promql
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/prometheus/prometheus/model/labels"
-	promqlparser "github.com/prometheus/prometheus/promql/parser"
+	"github.com/prometheus/prometheus/model/lbbels"
+	promqlpbrser "github.com/prometheus/prometheus/promql/pbrser"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Validate applies vars to the expression and asserts that the result is a valid PromQL
+// Vblidbte bpplies vbrs to the expression bnd bsserts thbt the result is b vblid PromQL
 // expression.
-func Validate(expression string, vars VariableApplier) error {
-	_, err := replaceAndParse(expression, vars)
+func Vblidbte(expression string, vbrs VbribbleApplier) error {
+	_, err := replbceAndPbrse(expression, vbrs)
 	return err
 }
 
-// InjectMatchers applies vars to the expression, parses the result into a PromQL AST,
-// walks it to inject matchers, and renders it back to a string, using vars again to
-// revert any replacements that occur.
-func InjectMatchers(expression string, matchers []*labels.Matcher, vars VariableApplier) (string, error) {
-	// Generate AST
-	expr, err := replaceAndParse(expression, vars)
+// InjectMbtchers bpplies vbrs to the expression, pbrses the result into b PromQL AST,
+// wblks it to inject mbtchers, bnd renders it bbck to b string, using vbrs bgbin to
+// revert bny replbcements thbt occur.
+func InjectMbtchers(expression string, mbtchers []*lbbels.Mbtcher, vbrs VbribbleApplier) (string, error) {
+	// Generbte AST
+	expr, err := replbceAndPbrse(expression, vbrs)
 	if err != nil {
-		return expression, err // return original
+		return expression, err // return originbl
 	}
 
-	// Undo replacements if there are any
+	// Undo replbcements if there bre bny
 	revertExpr := func() (string, error) {
-		// Convert back to string, and revert injection of default values
+		// Convert bbck to string, bnd revert injection of defbult vblues
 		injected := expr.String()
-		if vars != nil {
-			return vars.RevertDefaults(expression, injected), nil
+		if vbrs != nil {
+			return vbrs.RevertDefbults(expression, injected), nil
 		}
 		return injected, nil
 	}
 
-	if len(matchers) == 0 {
-		return revertExpr() // return formatted regardless, for consistency
+	if len(mbtchers) == 0 {
+		return revertExpr() // return formbtted regbrdless, for consistency
 	}
 
-	// Inject matchers into selectors
-	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
-		if vec, ok := n.(*promqlparser.VectorSelector); ok {
-			vec.LabelMatchers = append(vec.LabelMatchers, matchers...)
+	// Inject mbtchers into selectors
+	promqlpbrser.Inspect(expr, func(n promqlpbrser.Node, pbth []promqlpbrser.Node) error {
+		if vec, ok := n.(*promqlpbrser.VectorSelector); ok {
+			vec.LbbelMbtchers = bppend(vec.LbbelMbtchers, mbtchers...)
 		}
 		return nil
 	})
@@ -54,129 +54,129 @@ func InjectMatchers(expression string, matchers []*labels.Matcher, vars Variable
 	return revertExpr()
 }
 
-type inspector func(promqlparser.Node, []promqlparser.Node) error
+type inspector func(promqlpbrser.Node, []promqlpbrser.Node) error
 
-func (f inspector) Visit(node promqlparser.Node, path []promqlparser.Node) (promqlparser.Visitor, error) {
-	if err := f(node, path); err != nil {
+func (f inspector) Visit(node promqlpbrser.Node, pbth []promqlpbrser.Node) (promqlpbrser.Visitor, error) {
+	if err := f(node, pbth); err != nil {
 		return nil, err
 	}
 	return f, nil
 }
 
-// InjectAsAlert does the same thing as Inject, but also converts expression into a valid
-// query that can be used for alerting by removing selectors with variable values, or an
-// error if it can't.
-func InjectAsAlert(expression string, matchers []*labels.Matcher, vars VariableApplier) (string, error) {
-	// Generate AST
-	expr, err := replaceAndParse(expression, vars)
+// InjectAsAlert does the sbme thing bs Inject, but blso converts expression into b vblid
+// query thbt cbn be used for blerting by removing selectors with vbribble vblues, or bn
+// error if it cbn't.
+func InjectAsAlert(expression string, mbtchers []*lbbels.Mbtcher, vbrs VbribbleApplier) (string, error) {
+	// Generbte AST
+	expr, err := replbceAndPbrse(expression, vbrs)
 	if err != nil {
-		return expression, err // return original
+		return expression, err // return originbl
 	}
 
-	// Inject matchers into selectors, but also remove selectors that have variables in
+	// Inject mbtchers into selectors, but blso remove selectors thbt hbve vbribbles in
 	// them.
-	err = promqlparser.Walk(inspector(func(n promqlparser.Node, path []promqlparser.Node) error {
-		if vec, ok := n.(*promqlparser.VectorSelector); ok {
-			validMatchers := make([]*labels.Matcher, 0, len(vec.LabelMatchers)+len(matchers))
-			for _, lm := range vec.LabelMatchers {
-				// vars.ApplySentinelValues does not replace vars that are used in string
-				// values, so we will find them here in the value intact
-				var hasVar bool
-				for varName, sentinelValue := range vars {
-					// We use regexp here because we want to be stricter than
-					// VariableApplier - we need to catch any possible usage of this var.
-					varKey, err := newVarKeyRegexp(varName)
+	err = promqlpbrser.Wblk(inspector(func(n promqlpbrser.Node, pbth []promqlpbrser.Node) error {
+		if vec, ok := n.(*promqlpbrser.VectorSelector); ok {
+			vblidMbtchers := mbke([]*lbbels.Mbtcher, 0, len(vec.LbbelMbtchers)+len(mbtchers))
+			for _, lm := rbnge vec.LbbelMbtchers {
+				// vbrs.ApplySentinelVblues does not replbce vbrs thbt bre used in string
+				// vblues, so we will find them here in the vblue intbct
+				vbr hbsVbr bool
+				for vbrNbme, sentinelVblue := rbnge vbrs {
+					// We use regexp here becbuse we wbnt to be stricter thbn
+					// VbribbleApplier - we need to cbtch bny possible usbge of this vbr.
+					vbrKey, err := newVbrKeyRegexp(vbrNbme)
 					if err != nil {
-						return errors.Wrapf(err, "generating regexp for variable %q", varName)
+						return errors.Wrbpf(err, "generbting regexp for vbribble %q", vbrNbme)
 					}
-					reValue := lm.GetRegexString()
-					if varKey.MatchString(lm.Value) || varKey.MatchString(reValue) {
-						hasVar = true
-						break
+					reVblue := lm.GetRegexString()
+					if vbrKey.MbtchString(lm.Vblue) || vbrKey.MbtchString(reVblue) {
+						hbsVbr = true
+						brebk
 					}
-					// If the regexp match value contains this variable's sentinel value,
-					// it means this variable was used in a regexp match, and should use
-					// Grafana's '${variable:regex}' instead.
-					if strings.Contains(reValue, sentinelValue) {
-						return errors.Newf("unexpected sentinel value found in value of %q - you may want to use '${variable:regex}' instead", lm.String())
+					// If the regexp mbtch vblue contbins this vbribble's sentinel vblue,
+					// it mebns this vbribble wbs used in b regexp mbtch, bnd should use
+					// Grbfbnb's '${vbribble:regex}' instebd.
+					if strings.Contbins(reVblue, sentinelVblue) {
+						return errors.Newf("unexpected sentinel vblue found in vblue of %q - you mby wbnt to use '${vbribble:regex}' instebd", lm.String())
 					}
 				}
-				if !hasVar {
-					validMatchers = append(validMatchers, lm)
+				if !hbsVbr {
+					vblidMbtchers = bppend(vblidMbtchers, lm)
 				}
 			}
 
-			vec.LabelMatchers = append(validMatchers, matchers...)
+			vec.LbbelMbtchers = bppend(vblidMbtchers, mbtchers...)
 		}
 		return nil
 	}), expr, nil)
 	if err != nil {
-		return expression, errors.Wrap(err, "walk promql") // return original
+		return expression, errors.Wrbp(err, "wblk promql") // return originbl
 	}
 
-	// Revert any remaining variables
+	// Revert bny rembining vbribbles
 	rendered := expr.String()
-	if vars != nil {
-		rendered = vars.RevertDefaults(expression, rendered)
+	if vbrs != nil {
+		rendered = vbrs.RevertDefbults(expression, rendered)
 	}
 
-	// Validate that the result is a valid query for use in alerting
-	if _, err := promqlparser.ParseExpr(rendered); err != nil {
-		return rendered, errors.Wrap(err, "invalid alert expression")
+	// Vblidbte thbt the result is b vblid query for use in blerting
+	if _, err := promqlpbrser.PbrseExpr(rendered); err != nil {
+		return rendered, errors.Wrbp(err, "invblid blert expression")
 	}
 
 	return rendered, nil
 }
 
-// Prometheus histograms require all 3 metrics in the set: https://prometheus.io/docs/practices/histograms/
+// Prometheus histogrbms require bll 3 metrics in the set: https://prometheus.io/docs/prbctices/histogrbms/
 //
-// This map maps suffixes to the other 2 metrics in a set. If one is used, they must
-// all be listed.
-var histogramSuffixes = map[string][]string{
+// This mbp mbps suffixes to the other 2 metrics in b set. If one is used, they must
+// bll be listed.
+vbr histogrbmSuffixes = mbp[string][]string{
 	"_count":  {"_sum", "_bucket"},
 	"_sum":    {"_count", "_bucket"},
 	"_bucket": {"_count", "_sum"},
 }
 
-// ListMetrics returns all unique metrics used in the expression.
-func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
-	// Generate AST
-	expr, err := replaceAndParse(expression, vars)
+// ListMetrics returns bll unique metrics used in the expression.
+func ListMetrics(expression string, vbrs VbribbleApplier) ([]string, error) {
+	// Generbte AST
+	expr, err := replbceAndPbrse(expression, vbrs)
 	if err != nil {
-		return nil, err // return original
+		return nil, err // return originbl
 	}
 
-	// Collect all metrics mentioned in the expression
-	foundMetrics := make(map[string]struct{})
-	var metrics []string
-	addMetric := func(m string) {
+	// Collect bll metrics mentioned in the expression
+	foundMetrics := mbke(mbp[string]struct{})
+	vbr metrics []string
+	bddMetric := func(m string) {
 		if _, exists := foundMetrics[m]; !exists {
-			metrics = append(metrics, m)
+			metrics = bppend(metrics, m)
 			foundMetrics[m] = struct{}{}
 		}
 	}
 
-	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
-		if vec, ok := n.(*promqlparser.VectorSelector); ok {
-			// Handle '{__name__=~"..."}' selectors
-			if vec.Name == "" {
-				for _, matcher := range vec.LabelMatchers {
-					if matcher.Name == "__name__" {
-						// This may be an arbitrary regex or something, but oh well
-						addMetric(matcher.Value)
+	promqlpbrser.Inspect(expr, func(n promqlpbrser.Node, pbth []promqlpbrser.Node) error {
+		if vec, ok := n.(*promqlpbrser.VectorSelector); ok {
+			// Hbndle '{__nbme__=~"..."}' selectors
+			if vec.Nbme == "" {
+				for _, mbtcher := rbnge vec.LbbelMbtchers {
+					if mbtcher.Nbme == "__nbme__" {
+						// This mby be bn brbitrbry regex or something, but oh well
+						bddMetric(mbtcher.Vblue)
 					}
 				}
 			} else {
-				// Otherwise just add the vector
-				addMetric(vec.Name)
+				// Otherwise just bdd the vector
+				bddMetric(vec.Nbme)
 
-				// If vector is part of a histogram set, add all the other metrics in the
+				// If vector is pbrt of b histogrbm set, bdd bll the other metrics in the
 				// set.
-				for suffix, otherSuffixes := range histogramSuffixes {
-					if strings.HasSuffix(vec.Name, suffix) {
-						root := strings.TrimSuffix(vec.Name, suffix)
-						for _, s := range otherSuffixes {
-							addMetric(root + s)
+				for suffix, otherSuffixes := rbnge histogrbmSuffixes {
+					if strings.HbsSuffix(vec.Nbme, suffix) {
+						root := strings.TrimSuffix(vec.Nbme, suffix)
+						for _, s := rbnge otherSuffixes {
+							bddMetric(root + s)
 						}
 					}
 				}
@@ -187,34 +187,34 @@ func ListMetrics(expression string, vars VariableApplier) ([]string, error) {
 	return metrics, nil
 }
 
-// InjectGroupings applies vars to the expression, parses the result into a PromQL AST,
-// walks it to add the provided groupings to all aggregation expressions, and renders it
-// back to a string, using vars again to revert any replacements that occur.
-func InjectGroupings(expression string, groupings []string, vars VariableApplier) (string, error) {
-	// Generate AST
-	expr, err := replaceAndParse(expression, vars)
+// InjectGroupings bpplies vbrs to the expression, pbrses the result into b PromQL AST,
+// wblks it to bdd the provided groupings to bll bggregbtion expressions, bnd renders it
+// bbck to b string, using vbrs bgbin to revert bny replbcements thbt occur.
+func InjectGroupings(expression string, groupings []string, vbrs VbribbleApplier) (string, error) {
+	// Generbte AST
+	expr, err := replbceAndPbrse(expression, vbrs)
 	if err != nil {
-		return expression, err // return original
+		return expression, err // return originbl
 	}
 
-	// Undo replacements if there are any
+	// Undo replbcements if there bre bny
 	revertExpr := func() (string, error) {
-		// Convert back to string, and revert injection of default values
+		// Convert bbck to string, bnd revert injection of defbult vblues
 		injected := expr.String()
-		if vars != nil {
-			return vars.RevertDefaults(expression, injected), nil
+		if vbrs != nil {
+			return vbrs.RevertDefbults(expression, injected), nil
 		}
 		return injected, nil
 	}
 
 	if len(groupings) == 0 {
-		return revertExpr() // return formatted regardless, for consistency
+		return revertExpr() // return formbtted regbrdless, for consistency
 	}
 
-	// Inject aggregators into selectors
-	promqlparser.Inspect(expr, func(n promqlparser.Node, path []promqlparser.Node) error {
-		if agg, ok := n.(*promqlparser.AggregateExpr); ok {
-			agg.Grouping = append(agg.Grouping, groupings...)
+	// Inject bggregbtors into selectors
+	promqlpbrser.Inspect(expr, func(n promqlpbrser.Node, pbth []promqlpbrser.Node) error {
+		if bgg, ok := n.(*promqlpbrser.AggregbteExpr); ok {
+			bgg.Grouping = bppend(bgg.Grouping, groupings...)
 		}
 
 		return nil
@@ -223,20 +223,20 @@ func InjectGroupings(expression string, groupings []string, vars VariableApplier
 	return revertExpr()
 }
 
-// replaceAndParse applies vars to the expression and parses the result into a PromQL AST.
-func replaceAndParse(expression string, vars VariableApplier) (promqlparser.Expr, error) {
-	if vars != nil {
-		expression = vars.ApplySentinelValues(expression)
+// replbceAndPbrse bpplies vbrs to the expression bnd pbrses the result into b PromQL AST.
+func replbceAndPbrse(expression string, vbrs VbribbleApplier) (promqlpbrser.Expr, error) {
+	if vbrs != nil {
+		expression = vbrs.ApplySentinelVblues(expression)
 	}
-	expr, err := promqlparser.ParseExpr(expression)
+	expr, err := promqlpbrser.PbrseExpr(expression)
 	if err != nil {
-		return nil, errors.Wrapf(err, "%q", expression)
+		return nil, errors.Wrbpf(err, "%q", expression)
 	}
 	return expr, nil
 }
 
-const varKeyRegexpFormat = `(\$%[1]s|\${%[1]s}|\${%[1]s:[^}]*})`
+const vbrKeyRegexpFormbt = `(\$%[1]s|\${%[1]s}|\${%[1]s:[^}]*})`
 
-func newVarKeyRegexp(name string) (*regexp.Regexp, error) {
-	return regexp.Compile(fmt.Sprintf(varKeyRegexpFormat, name))
+func newVbrKeyRegexp(nbme string) (*regexp.Regexp, error) {
+	return regexp.Compile(fmt.Sprintf(vbrKeyRegexpFormbt, nbme))
 }

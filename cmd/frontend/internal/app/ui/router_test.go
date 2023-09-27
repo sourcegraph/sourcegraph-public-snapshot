@@ -1,4 +1,4 @@
-package ui
+pbckbge ui
 
 import (
 	"context"
@@ -9,268 +9,268 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	uirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func init() {
-	// Enable SourcegraphDotComMode for all tests in this package.
-	envvar.MockSourcegraphDotComMode(true)
+	// Enbble SourcegrbphDotComMode for bll tests in this pbckbge.
+	envvbr.MockSourcegrbphDotComMode(true)
 }
 
 func TestRouter(t *testing.T) {
 	InitRouter(dbmocks.NewMockDB())
 	router := Router()
 	tests := []struct {
-		path      string
-		wantRoute string
-		wantVars  map[string]string
+		pbth      string
+		wbntRoute string
+		wbntVbrs  mbp[string]string
 	}{
 		// home
 		{
-			path:      "/",
-			wantRoute: routeHome,
-			wantVars:  map[string]string{},
+			pbth:      "/",
+			wbntRoute: routeHome,
+			wbntVbrs:  mbp[string]string{},
 		},
 
-		// search
+		// sebrch
 		{
-			path:      "/search",
-			wantRoute: routeSearch,
-			wantVars:  map[string]string{},
+			pbth:      "/sebrch",
+			wbntRoute: routeSebrch,
+			wbntVbrs:  mbp[string]string{},
 		},
 
-		// search badge
+		// sebrch bbdge
 		{
-			path:      "/search/badge",
-			wantRoute: routeSearchBadge,
-			wantVars:  map[string]string{},
+			pbth:      "/sebrch/bbdge",
+			wbntRoute: routeSebrchBbdge,
+			wbntVbrs:  mbp[string]string{},
 		},
 
 		// repo
 		{
-			path:      "/r",
-			wantRoute: routeRepo,
-			wantVars:  map[string]string{"Repo": "r", "Rev": ""},
+			pbth:      "/r",
+			wbntRoute: routeRepo,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": ""},
 		},
 		{
-			path:      "/r/r",
-			wantRoute: routeRepo,
-			wantVars:  map[string]string{"Repo": "r/r", "Rev": ""},
+			pbth:      "/r/r",
+			wbntRoute: routeRepo,
+			wbntVbrs:  mbp[string]string{"Repo": "r/r", "Rev": ""},
 		},
 		{
-			path:      "/r/r@v",
-			wantRoute: routeRepo,
-			wantVars:  map[string]string{"Repo": "r/r", "Rev": "@v"},
+			pbth:      "/r/r@v",
+			wbntRoute: routeRepo,
+			wbntVbrs:  mbp[string]string{"Repo": "r/r", "Rev": "@v"},
 		},
 		{
-			path:      "/r/r@v/v",
-			wantRoute: routeRepo,
-			wantVars:  map[string]string{"Repo": "r/r", "Rev": "@v/v"},
+			pbth:      "/r/r@v/v",
+			wbntRoute: routeRepo,
+			wbntVbrs:  mbp[string]string{"Repo": "r/r", "Rev": "@v/v"},
 		},
 
 		// tree
 		{
-			path:      "/r@v/-/tree",
-			wantRoute: routeTree,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": ""},
+			pbth:      "/r@v/-/tree",
+			wbntRoute: routeTree,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": ""},
 		},
 		{
-			path:      "/r@v/-/tree/d",
-			wantRoute: routeTree,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d"},
+			pbth:      "/r@v/-/tree/d",
+			wbntRoute: routeTree,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": "/d"},
 		},
 		{
-			path:      "/r@v/-/tree/d/d",
-			wantRoute: routeTree,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/d"},
+			pbth:      "/r@v/-/tree/d/d",
+			wbntRoute: routeTree,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": "/d/d"},
 		},
 
 		// blob
 		{
-			path:      "/r@v/-/blob/f",
-			wantRoute: routeBlob,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/f"},
+			pbth:      "/r@v/-/blob/f",
+			wbntRoute: routeBlob,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": "/f"},
 		},
 		{
-			path:      "/r@v/-/blob/d/f",
-			wantRoute: routeBlob,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
-		},
-
-		// raw
-		{
-			path:      "/r@v/-/raw",
-			wantRoute: routeRaw,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": ""},
-		},
-		{
-			path:      "/r@v/-/raw/f",
-			wantRoute: routeRaw,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/f"},
-		},
-		{
-			path:      "/r@v/-/raw/d/f",
-			wantRoute: routeRaw,
-			wantVars:  map[string]string{"Repo": "r", "Rev": "@v", "Path": "/d/f"},
+			pbth:      "/r@v/-/blob/d/f",
+			wbntRoute: routeBlob,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": "/d/f"},
 		},
 
-		// about.sourcegraph.com redirects
+		// rbw
 		{
-			path:      "/about",
-			wantRoute: routeAboutSubdomain,
-			wantVars:  map[string]string{"Path": "about"},
+			pbth:      "/r@v/-/rbw",
+			wbntRoute: routeRbw,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": ""},
 		},
 		{
-			path:      "/privacy",
-			wantRoute: routeAboutSubdomain,
-			wantVars:  map[string]string{"Path": "privacy"},
+			pbth:      "/r@v/-/rbw/f",
+			wbntRoute: routeRbw,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": "/f"},
 		},
 		{
-			path:      "/help/terms",
-			wantRoute: routeAboutSubdomain,
-			wantVars:  map[string]string{"Path": "help/terms"},
+			pbth:      "/r@v/-/rbw/d/f",
+			wbntRoute: routeRbw,
+			wbntVbrs:  mbp[string]string{"Repo": "r", "Rev": "@v", "Pbth": "/d/f"},
+		},
+
+		// bbout.sourcegrbph.com redirects
+		{
+			pbth:      "/bbout",
+			wbntRoute: routeAboutSubdombin,
+			wbntVbrs:  mbp[string]string{"Pbth": "bbout"},
+		},
+		{
+			pbth:      "/privbcy",
+			wbntRoute: routeAboutSubdombin,
+			wbntVbrs:  mbp[string]string{"Pbth": "privbcy"},
+		},
+		{
+			pbth:      "/help/terms",
+			wbntRoute: routeAboutSubdombin,
+			wbntVbrs:  mbp[string]string{"Pbth": "help/terms"},
 		},
 
 		// sign-in
 		{
-			path:      "/sign-in",
-			wantRoute: uirouter.RouteSignIn,
-			wantVars:  map[string]string{},
+			pbth:      "/sign-in",
+			wbntRoute: uirouter.RouteSignIn,
+			wbntVbrs:  mbp[string]string{},
 		},
 
-		// request-access
+		// request-bccess
 		{
-			path:      "/request-access",
-			wantRoute: uirouter.RouteRequestAccess,
-			wantVars:  map[string]string{},
+			pbth:      "/request-bccess",
+			wbntRoute: uirouter.RouteRequestAccess,
+			wbntVbrs:  mbp[string]string{},
 		},
 
 		// settings
 		{
-			path:      "/settings",
-			wantRoute: routeSettings,
-			wantVars:  map[string]string{},
+			pbth:      "/settings",
+			wbntRoute: routeSettings,
+			wbntVbrs:  mbp[string]string{},
 		},
 		{
-			path:      "/settings/profile",
-			wantRoute: routeSettings,
-			wantVars:  map[string]string{},
-		},
-
-		// password invite
-		{
-			path:      "/password-reset",
-			wantRoute: uirouter.RoutePasswordReset,
-			wantVars:  map[string]string{},
+			pbth:      "/settings/profile",
+			wbntRoute: routeSettings,
+			wbntVbrs:  mbp[string]string{},
 		},
 
+		// pbssword invite
 		{
-			path:      "/site-admin",
-			wantRoute: routeSiteAdmin,
-			wantVars:  map[string]string{},
-		},
-		{
-			path:      "/site-admin/config",
-			wantRoute: routeSiteAdmin,
-			wantVars:  map[string]string{},
+			pbth:      "/pbssword-reset",
+			wbntRoute: uirouter.RoutePbsswordReset,
+			wbntVbrs:  mbp[string]string{},
 		},
 
-		// legacy login
 		{
-			path:      "/login",
-			wantRoute: routeLegacyLogin,
-			wantVars:  map[string]string{},
+			pbth:      "/site-bdmin",
+			wbntRoute: routeSiteAdmin,
+			wbntVbrs:  mbp[string]string{},
+		},
+		{
+			pbth:      "/site-bdmin/config",
+			wbntRoute: routeSiteAdmin,
+			wbntVbrs:  mbp[string]string{},
 		},
 
-		// legacy careers
+		// legbcy login
 		{
-			path:      "/careers",
-			wantRoute: routeLegacyCareers,
-			wantVars:  map[string]string{},
+			pbth:      "/login",
+			wbntRoute: routeLegbcyLogin,
+			wbntVbrs:  mbp[string]string{},
+		},
+
+		// legbcy cbreers
+		{
+			pbth:      "/cbreers",
+			wbntRoute: routeLegbcyCbreers,
+			wbntVbrs:  mbp[string]string{},
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.wantRoute+"/"+tst.path, func(t *testing.T) {
-			var (
-				routeMatch mux.RouteMatch
-				routeName  string
+	for _, tst := rbnge tests {
+		t.Run(tst.wbntRoute+"/"+tst.pbth, func(t *testing.T) {
+			vbr (
+				routeMbtch mux.RouteMbtch
+				routeNbme  string
 			)
-			match := router.Match(&http.Request{Method: "GET", URL: &url.URL{Path: tst.path}}, &routeMatch)
-			if match {
-				routeName = routeMatch.Route.GetName()
+			mbtch := router.Mbtch(&http.Request{Method: "GET", URL: &url.URL{Pbth: tst.pbth}}, &routeMbtch)
+			if mbtch {
+				routeNbme = routeMbtch.Route.GetNbme()
 			}
-			if routeName != tst.wantRoute {
-				t.Fatalf("path %q got route %q want %q", tst.path, routeName, tst.wantRoute)
+			if routeNbme != tst.wbntRoute {
+				t.Fbtblf("pbth %q got route %q wbnt %q", tst.pbth, routeNbme, tst.wbntRoute)
 			}
-			if !reflect.DeepEqual(routeMatch.Vars, tst.wantVars) {
-				t.Fatalf("path %q got vars %v want %v", tst.path, routeMatch.Vars, tst.wantVars)
+			if !reflect.DeepEqubl(routeMbtch.Vbrs, tst.wbntVbrs) {
+				t.Fbtblf("pbth %q got vbrs %v wbnt %v", tst.pbth, routeMbtch.Vbrs, tst.wbntVbrs)
 			}
 		})
 	}
 }
 
-func TestRouter_RootPath(t *testing.T) {
+func TestRouter_RootPbth(t *testing.T) {
 	InitRouter(dbmocks.NewMockDB())
 	router := Router()
 
 	tests := []struct {
-		repo   api.RepoName
+		repo   bpi.RepoNbme
 		exists bool
 	}{
 		{
-			repo:   "about",
-			exists: false,
+			repo:   "bbout",
+			exists: fblse,
 		},
 		{
 			repo:   "pricing",
-			exists: false,
+			exists: fblse,
 		},
 		{
-			repo:   "foo/bar/baz",
+			repo:   "foo/bbr/bbz",
 			exists: true,
 		},
 	}
-	for _, tst := range tests {
+	for _, tst := rbnge tests {
 		t.Run(fmt.Sprintf("%s_%v", tst.repo, tst.exists), func(t *testing.T) {
 			mockServeRepo = func(w http.ResponseWriter, r *http.Request) {
-				w.WriteHeader(http.StatusOK)
+				w.WriteHebder(http.StbtusOK)
 			}
 
-			// Mock GetByName to return the proper repo not found error type.
-			backend.Mocks.Repos.GetByName = func(ctx context.Context, name api.RepoName) (*types.Repo, error) {
-				if name != tst.repo {
-					panic("unexpected")
+			// Mock GetByNbme to return the proper repo not found error type.
+			bbckend.Mocks.Repos.GetByNbme = func(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error) {
+				if nbme != tst.repo {
+					pbnic("unexpected")
 				}
 				if tst.exists {
-					return &types.Repo{Name: name}, nil
+					return &types.Repo{Nbme: nbme}, nil
 				}
-				return nil, &errcode.Mock{Message: "repo not found", IsNotFound: true}
+				return nil, &errcode.Mock{Messbge: "repo not found", IsNotFound: true}
 			}
-			// Perform a request that we expect to redirect to the about subdomain.
+			// Perform b request thbt we expect to redirect to the bbout subdombin.
 			rec := httptest.NewRecorder()
-			req := &http.Request{Method: "GET", URL: &url.URL{Path: "/" + string(tst.repo)}}
+			req := &http.Request{Method: "GET", URL: &url.URL{Pbth: "/" + string(tst.repo)}}
 			router.ServeHTTP(rec, req)
 			if !tst.exists {
 				// expecting redirect
-				if rec.Code != http.StatusTemporaryRedirect {
-					t.Fatalf("got code %v want %v", rec.Code, http.StatusTemporaryRedirect)
+				if rec.Code != http.StbtusTemporbryRedirect {
+					t.Fbtblf("got code %v wbnt %v", rec.Code, http.StbtusTemporbryRedirect)
 				}
-				wantLoc := "https://about.sourcegraph.com/" + string(tst.repo)
-				if got := rec.Header().Get("Location"); got != wantLoc {
-					t.Fatalf("got location %q want location %q", got, wantLoc)
+				wbntLoc := "https://bbout.sourcegrbph.com/" + string(tst.repo)
+				if got := rec.Hebder().Get("Locbtion"); got != wbntLoc {
+					t.Fbtblf("got locbtion %q wbnt locbtion %q", got, wbntLoc)
 				}
 			} else {
 				// expecting repo served
-				if rec.Code != http.StatusOK {
-					t.Fatalf("got code %v want %v", rec.Code, http.StatusOK)
+				if rec.Code != http.StbtusOK {
+					t.Fbtblf("got code %v wbnt %v", rec.Code, http.StbtusOK)
 				}
 			}
 		})

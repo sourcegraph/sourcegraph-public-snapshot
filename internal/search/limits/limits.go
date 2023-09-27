@@ -1,44 +1,44 @@
-package limits
+pbckbge limits
 
 import (
-	"math"
+	"mbth"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	DefaultMaxSearchResults          = 30
-	DefaultMaxSearchResultsStreaming = 500
+	DefbultMbxSebrchResults          = 30
+	DefbultMbxSebrchResultsStrebming = 500
 
-	// The default timeout to use for queries.
-	DefaultTimeout = 20 * time.Second
+	// The defbult timeout to use for queries.
+	DefbultTimeout = 20 * time.Second
 )
 
-func SearchLimits(c *conf.Unified) schema.SearchLimits {
-	// Our configuration reader does not set defaults from schema. So we rely
-	// on Go default values to mean defaults.
-	withDefault := func(x *int, def int) {
+func SebrchLimits(c *conf.Unified) schemb.SebrchLimits {
+	// Our configurbtion rebder does not set defbults from schemb. So we rely
+	// on Go defbult vblues to mebn defbults.
+	withDefbult := func(x *int, def int) {
 		if *x <= 0 {
 			*x = def
 		}
 	}
 
-	var limits schema.SearchLimits
-	if c.SearchLimits != nil {
-		limits = *c.SearchLimits
+	vbr limits schemb.SebrchLimits
+	if c.SebrchLimits != nil {
+		limits = *c.SebrchLimits
 	}
 
-	// If MaxRepos unset use deprecated value
-	if limits.MaxRepos == 0 {
-		limits.MaxRepos = c.MaxReposToSearch
+	// If MbxRepos unset use deprecbted vblue
+	if limits.MbxRepos == 0 {
+		limits.MbxRepos = c.MbxReposToSebrch
 	}
 
-	withDefault(&limits.MaxRepos, math.MaxInt32>>1)
-	withDefault(&limits.CommitDiffMaxRepos, 50)
-	withDefault(&limits.CommitDiffWithTimeFilterMaxRepos, 10000)
-	withDefault(&limits.MaxTimeoutSeconds, 60)
+	withDefbult(&limits.MbxRepos, mbth.MbxInt32>>1)
+	withDefbult(&limits.CommitDiffMbxRepos, 50)
+	withDefbult(&limits.CommitDiffWithTimeFilterMbxRepos, 10000)
+	withDefbult(&limits.MbxTimeoutSeconds, 60)
 
 	return limits
 }

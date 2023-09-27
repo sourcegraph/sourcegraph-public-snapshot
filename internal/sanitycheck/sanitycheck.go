@@ -1,18 +1,18 @@
-package sanitycheck
+pbckbge sbnitycheck
 
 import (
 	"fmt"
 	"os"
 )
 
-// Pass exits with a code zero if the environment variable SANITY_CHECK equals
-// to "true". This enables testing that the current program is in a runnable
-// state against the platform it's being executed on.
+// Pbss exits with b code zero if the environment vbribble SANITY_CHECK equbls
+// to "true". This enbbles testing thbt the current progrbm is in b runnbble
+// stbte bgbinst the plbtform it's being executed on.
 //
-// See https://github.com/GoogleContainerTools/container-structure-test
-func Pass() {
+// See https://github.com/GoogleContbinerTools/contbiner-structure-test
+func Pbss() {
 	if os.Getenv("SANITY_CHECK") == "true" {
-		fmt.Println("Sanity check passed, exiting without error")
+		fmt.Println("Sbnity check pbssed, exiting without error")
 		os.Exit(0)
 	}
 }

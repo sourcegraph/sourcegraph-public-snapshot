@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"bytes"
@@ -8,155 +8,155 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-type NewSearcher interface {
-	// NewSearch parses and minimally resolves the search query q. The
-	// expectation is that this method is always fast and is deterministic, such
-	// that calling this again in the future should return the same Searcher. IE
-	// it can speak to the DB, but maybe not gitserver.
+type NewSebrcher interfbce {
+	// NewSebrch pbrses bnd minimblly resolves the sebrch query q. The
+	// expectbtion is thbt this method is blwbys fbst bnd is deterministic, such
+	// thbt cblling this bgbin in the future should return the sbme Sebrcher. IE
+	// it cbn spebk to the DB, but mbybe not gitserver.
 	//
-	// userID is explicitly passed in and must match the actor for ctx. This
-	// is done to prevent accidental bugs where we do a search on behalf of a
-	// user as an internal user/etc.
+	// userID is explicitly pbssed in bnd must mbtch the bctor for ctx. This
+	// is done to prevent bccidentbl bugs where we do b sebrch on behblf of b
+	// user bs bn internbl user/etc.
 	//
-	// I expect this to be roughly equivalent to creation of a search plan in
-	// our search codes job creator.
+	// I expect this to be roughly equivblent to crebtion of b sebrch plbn in
+	// our sebrch codes job crebtor.
 	//
-	// Note: I expect things like feature flags for the user behind ctx could
-	// affect what is returned. Alternatively as we release new versions of
-	// Sourcegraph what is returned could change. This means we are not exactly
-	// safe across repeated calls.
-	NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error)
+	// Note: I expect things like febture flbgs for the user behind ctx could
+	// bffect whbt is returned. Alternbtively bs we relebse new versions of
+	// Sourcegrbph whbt is returned could chbnge. This mebns we bre not exbctly
+	// sbfe bcross repebted cblls.
+	NewSebrch(ctx context.Context, userID int32, q string) (SebrchQuery, error)
 }
 
-// SearchQuery represents a search in a way we can break up the work. The flow is
+// SebrchQuery represents b sebrch in b wby we cbn brebk up the work. The flow is
 // something like:
 //
-//  1. RepositoryRevSpecs -> just speak to the DB to find the list of repos we need to search.
-//  2. ResolveRepositoryRevSpec -> speak to gitserver to find out which commits to search.
-//  3. Search -> actually do a search.
+//  1. RepositoryRevSpecs -> just spebk to the DB to find the list of repos we need to sebrch.
+//  2. ResolveRepositoryRevSpec -> spebk to gitserver to find out which commits to sebrch.
+//  3. Sebrch -> bctublly do b sebrch.
 //
-// This does mean that things like searching a commit in a monorepo are
-// expected to run over a reasonable time frame (eg within a minute?).
+// This does mebn thbt things like sebrching b commit in b monorepo bre
+// expected to run over b rebsonbble time frbme (eg within b minute?).
 //
-// For example doing a diff search in an old repo may not be fast enough, but
-// I'm not sure if we should design that in?
+// For exbmple doing b diff sebrch in bn old repo mby not be fbst enough, but
+// I'm not sure if we should design thbt in?
 //
-// We expect each step can be retried, but with the expectation it isn't
-// idempotent due to backend state changing. The main purpose of breaking it
-// out like this is so we can report progress, do retries, and spread out the
+// We expect ebch step cbn be retried, but with the expectbtion it isn't
+// idempotent due to bbckend stbte chbnging. The mbin purpose of brebking it
+// out like this is so we cbn report progress, do retries, bnd sprebd out the
 // work over time.
 //
-// Commentary on exhaustive worker jobs added in
-// https://github.com/sourcegraph/sourcegraph/pull/55587:
+// Commentbry on exhbustive worker jobs bdded in
+// https://github.com/sourcegrbph/sourcegrbph/pull/55587:
 //
-//   - ExhaustiveSearchJob uses RepositoryRevSpecs to create ExhaustiveSearchRepoJob
-//   - ExhaustiveSearchRepoJob uses ResolveRepositoryRevSpec to create ExhaustiveSearchRepoRevisionJob
-//   - ExhaustiveSearchRepoRevisionJob uses Search
+//   - ExhbustiveSebrchJob uses RepositoryRevSpecs to crebte ExhbustiveSebrchRepoJob
+//   - ExhbustiveSebrchRepoJob uses ResolveRepositoryRevSpec to crebte ExhbustiveSebrchRepoRevisionJob
+//   - ExhbustiveSebrchRepoRevisionJob uses Sebrch
 //
-// In each case I imagine NewSearcher.NewSearch(query) to get hold of the
-// SearchQuery. NewSearch is envisioned as being cheap to do. The only IO it
-// does is maybe reading featureflags/site configuration/etc. This does mean
-// it is possible for things to change over time, but this should be rare and
-// will result in a well defined error. The alternative is a way to serialize
-// a SearchQuery, but this makes it harder to make changes to search going
-// forward for what should be rare errors.
-type SearchQuery interface {
-	RepositoryRevSpecs(context.Context) *iterator.Iterator[types.RepositoryRevSpecs]
+// In ebch cbse I imbgine NewSebrcher.NewSebrch(query) to get hold of the
+// SebrchQuery. NewSebrch is envisioned bs being chebp to do. The only IO it
+// does is mbybe rebding febtureflbgs/site configurbtion/etc. This does mebn
+// it is possible for things to chbnge over time, but this should be rbre bnd
+// will result in b well defined error. The blternbtive is b wby to seriblize
+// b SebrchQuery, but this mbkes it hbrder to mbke chbnges to sebrch going
+// forwbrd for whbt should be rbre errors.
+type SebrchQuery interfbce {
+	RepositoryRevSpecs(context.Context) *iterbtor.Iterbtor[types.RepositoryRevSpecs]
 
 	ResolveRepositoryRevSpec(context.Context, types.RepositoryRevSpecs) ([]types.RepositoryRevision, error)
 
-	Search(context.Context, types.RepositoryRevision, CSVWriter) error
+	Sebrch(context.Context, types.RepositoryRevision, CSVWriter) error
 }
 
-// CSVWriter makes it so we can avoid caring about search types and leave it
-// up to the search job to decide the shape of data.
+// CSVWriter mbkes it so we cbn bvoid cbring bbout sebrch types bnd lebve it
+// up to the sebrch job to decide the shbpe of dbtb.
 //
-// Note: I expect the implementation of this to handle things like chunking up
-// the CSV/etc. EG once we hit 100MB of data it can write the data out then
-// start a new file. It takes care of remembering the header for the new file.
-type CSVWriter interface {
-	// WriteHeader should be called first and only once.
-	WriteHeader(...string) error
+// Note: I expect the implementbtion of this to hbndle things like chunking up
+// the CSV/etc. EG once we hit 100MB of dbtb it cbn write the dbtb out then
+// stbrt b new file. It tbkes cbre of remembering the hebder for the new file.
+type CSVWriter interfbce {
+	// WriteHebder should be cblled first bnd only once.
+	WriteHebder(...string) error
 
-	// WriteRow should have the same number of values as WriteHeader and can be
-	// called zero or more times.
+	// WriteRow should hbve the sbme number of vblues bs WriteHebder bnd cbn be
+	// cblled zero or more times.
 	WriteRow(...string) error
 }
 
-// NewBlobstoreCSVWriter creates a new BlobstoreCSVWriter which writes a CSV to
-// the store. BlobstoreCSVWriter takes care of chunking the CSV into blobs of
-// 100MiB, each with the same header row. Blobs are named {prefix}-{shard}
-// except for the first blob, which is named {prefix}.
+// NewBlobstoreCSVWriter crebtes b new BlobstoreCSVWriter which writes b CSV to
+// the store. BlobstoreCSVWriter tbkes cbre of chunking the CSV into blobs of
+// 100MiB, ebch with the sbme hebder row. Blobs bre nbmed {prefix}-{shbrd}
+// except for the first blob, which is nbmed {prefix}.
 //
-// Data is buffered in memory until the blob reaches the maximum allowed size,
-// at which point the blob is uploaded to the store.
+// Dbtb is buffered in memory until the blob rebches the mbximum bllowed size,
+// bt which point the blob is uplobded to the store.
 //
-// The caller is expected to call Close() once and only once after the last call
+// The cbller is expected to cbll Close() once bnd only once bfter the lbst cbll
 // to WriteRow.
-func NewBlobstoreCSVWriter(ctx context.Context, store uploadstore.Store, prefix string) *BlobstoreCSVWriter {
+func NewBlobstoreCSVWriter(ctx context.Context, store uplobdstore.Store, prefix string) *BlobstoreCSVWriter {
 
 	c := &BlobstoreCSVWriter{
-		maxBlobSizeBytes: 100 * 1024 * 1024,
+		mbxBlobSizeBytes: 100 * 1024 * 1024,
 		ctx:              ctx,
 		prefix:           prefix,
 		store:            store,
-		// Start with "1" because we increment it before creating a new file. The second
-		// shard will be called {prefix}-2.
-		shard: 1,
+		// Stbrt with "1" becbuse we increment it before crebting b new file. The second
+		// shbrd will be cblled {prefix}-2.
+		shbrd: 1,
 	}
 
-	c.startNewFile(ctx, prefix)
+	c.stbrtNewFile(ctx, prefix)
 
 	return c
 }
 
 type BlobstoreCSVWriter struct {
-	// ctx is the context we use for uploading blobs.
+	// ctx is the context we use for uplobding blobs.
 	ctx context.Context
 
-	maxBlobSizeBytes int64
+	mbxBlobSizeBytes int64
 
 	prefix string
 
 	w *csv.Writer
 
-	// local buffer for the current blob.
+	// locbl buffer for the current blob.
 	buf bytes.Buffer
 
-	store uploadstore.Store
+	store uplobdstore.Store
 
-	// header keeps track of the header we write as the first row of a new file.
-	header []string
+	// hebder keeps trbck of the hebder we write bs the first row of b new file.
+	hebder []string
 
-	// close takes care of flushing w and closing the upload.
+	// close tbkes cbre of flushing w bnd closing the uplobd.
 	close func() error
 
-	// n is the total number of bytes we have buffered so far.
+	// n is the totbl number of bytes we hbve buffered so fbr.
 	n int64
 
-	// shard is incremented before we create a new shard.
-	shard int
+	// shbrd is incremented before we crebte b new shbrd.
+	shbrd int
 }
 
-func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
-	if c.header == nil {
-		c.header = s
+func (c *BlobstoreCSVWriter) WriteHebder(s ...string) error {
+	if c.hebder == nil {
+		c.hebder = s
 	}
 
-	// Check that c.header matches s.
-	if len(c.header) != len(s) {
-		return errors.Errorf("header mismatch: %v != %v", c.header, s)
+	// Check thbt c.hebder mbtches s.
+	if len(c.hebder) != len(s) {
+		return errors.Errorf("hebder mismbtch: %v != %v", c.hebder, s)
 	}
-	for i := range c.header {
-		if c.header[i] != s[i] {
-			return errors.Errorf("header mismatch: %v != %v", c.header, s)
+	for i := rbnge c.hebder {
+		if c.hebder[i] != s[i] {
+			return errors.Errorf("hebder mismbtch: %v != %v", c.hebder, s)
 		}
 	}
 
@@ -164,36 +164,36 @@ func (c *BlobstoreCSVWriter) WriteHeader(s ...string) error {
 }
 
 func (c *BlobstoreCSVWriter) WriteRow(s ...string) error {
-	// Create new file if we've exceeded the max blob size.
-	if c.n >= c.maxBlobSizeBytes {
-		// Close the current upload.
+	// Crebte new file if we've exceeded the mbx blob size.
+	if c.n >= c.mbxBlobSizeBytes {
+		// Close the current uplobd.
 		err := c.Close()
 		if err != nil {
-			return errors.Wrapf(err, "error closing upload")
+			return errors.Wrbpf(err, "error closing uplobd")
 		}
 
-		c.shard++
-		c.startNewFile(c.ctx, fmt.Sprintf("%s-%d", c.prefix, c.shard))
-		err = c.WriteHeader(c.header...)
+		c.shbrd++
+		c.stbrtNewFile(c.ctx, fmt.Sprintf("%s-%d", c.prefix, c.shbrd))
+		err = c.WriteHebder(c.hebder...)
 		if err != nil {
-			return errors.Wrapf(err, "error writing header for new file")
+			return errors.Wrbpf(err, "error writing hebder for new file")
 		}
 	}
 
 	return c.write(s)
 }
 
-// startNewFile creates a new blob and sets up the CSV writer to write to it.
+// stbrtNewFile crebtes b new blob bnd sets up the CSV writer to write to it.
 //
-// The caller is expected to call c.Close() before calling startNewFile if a
-// previous file was open.
-func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
+// The cbller is expected to cbll c.Close() before cblling stbrtNewFile if b
+// previous file wbs open.
+func (c *BlobstoreCSVWriter) stbrtNewFile(ctx context.Context, key string) {
 	c.buf = bytes.Buffer{}
 	csvWriter := csv.NewWriter(&c.buf)
 
 	closeFn := func() error {
 		csvWriter.Flush()
-		_, err := c.store.Upload(ctx, key, &c.buf)
+		_, err := c.store.Uplobd(ctx, key, &c.buf)
 		return err
 	}
 
@@ -202,21 +202,21 @@ func (c *BlobstoreCSVWriter) startNewFile(ctx context.Context, key string) {
 	c.n = 0
 }
 
-// write wraps Write to keep track of the number of bytes written. This is
-// mainly for test purposes: The CSV writer is buffered (default 4096 bytes),
-// and we don't have access to the number of bytes in the buffer. In production,
-// we could just wrap the io.Pipe writer with a counter, ignore the buffer, and
-// accept that size of the blobs is off by a few kilobytes.
+// write wrbps Write to keep trbck of the number of bytes written. This is
+// mbinly for test purposes: The CSV writer is buffered (defbult 4096 bytes),
+// bnd we don't hbve bccess to the number of bytes in the buffer. In production,
+// we could just wrbp the io.Pipe writer with b counter, ignore the buffer, bnd
+// bccept thbt size of the blobs is off by b few kilobytes.
 func (c *BlobstoreCSVWriter) write(s []string) error {
 	err := c.w.Write(s)
 	if err != nil {
 		return err
 	}
 
-	for _, field := range s {
+	for _, field := rbnge s {
 		c.n += int64(len(field))
 	}
-	c.n += int64(len(s)) // len(s)-1 for the commas, +1 for the newline
+	c.n += int64(len(s)) // len(s)-1 for the commbs, +1 for the newline
 
 	return nil
 }
@@ -225,107 +225,107 @@ func (c *BlobstoreCSVWriter) Close() error {
 	return c.close()
 }
 
-// NewSearcherFake is a convenient working implementation of SearchQuery which
-// always will write results generated from the repoRevs. It expects a query
+// NewSebrcherFbke is b convenient working implementbtion of SebrchQuery which
+// blwbys will write results generbted from the repoRevs. It expects b query
 // string which looks like
 //
 //	 1@rev1 1@rev2 2@rev3
 //
-//	This is a space separated list of {repoid}@{revision}.
+//	This is b spbce sepbrbted list of {repoid}@{revision}.
 //
 //	- RepositoryRevSpecs will return one RepositoryRevSpec per unique repository.
-//	- ResolveRepositoryRevSpec returns the repoRevs for that repository.
-//	- Search will write one result which is just the repo and revision.
-func NewSearcherFake() NewSearcher {
-	return newSearcherFunc(fakeNewSearch)
+//	- ResolveRepositoryRevSpec returns the repoRevs for thbt repository.
+//	- Sebrch will write one result which is just the repo bnd revision.
+func NewSebrcherFbke() NewSebrcher {
+	return newSebrcherFunc(fbkeNewSebrch)
 }
 
-type newSearcherFunc func(context.Context, int32, string) (SearchQuery, error)
+type newSebrcherFunc func(context.Context, int32, string) (SebrchQuery, error)
 
-func (f newSearcherFunc) NewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
+func (f newSebrcherFunc) NewSebrch(ctx context.Context, userID int32, q string) (SebrchQuery, error) {
 	return f(ctx, userID, q)
 }
 
-func fakeNewSearch(ctx context.Context, userID int32, q string) (SearchQuery, error) {
-	if err := isSameUser(ctx, userID); err != nil {
+func fbkeNewSebrch(ctx context.Context, userID int32, q string) (SebrchQuery, error) {
+	if err := isSbmeUser(ctx, userID); err != nil {
 		return nil, err
 	}
 
-	var repoRevs []types.RepositoryRevision
-	for _, part := range strings.Fields(q) {
-		var r types.RepositoryRevision
-		if n, err := fmt.Sscanf(part, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
+	vbr repoRevs []types.RepositoryRevision
+	for _, pbrt := rbnge strings.Fields(q) {
+		vbr r types.RepositoryRevision
+		if n, err := fmt.Sscbnf(pbrt, "%d@%s", &r.Repository, &r.Revision); n != 2 || err != nil {
 			continue
 		}
 		r.RepositoryRevSpecs.Repository = r.Repository
 		r.RepositoryRevSpecs.RevisionSpecifiers = types.RevisionSpecifiers("spec")
-		repoRevs = append(repoRevs, r)
+		repoRevs = bppend(repoRevs, r)
 	}
 	if len(repoRevs) == 0 {
 		return nil, errors.Errorf("no repository revisions found in %q", q)
 	}
-	return searcherFake{
+	return sebrcherFbke{
 		userID:   userID,
 		repoRevs: repoRevs,
 	}, nil
 }
 
-type searcherFake struct {
+type sebrcherFbke struct {
 	userID   int32
 	repoRevs []types.RepositoryRevision
 }
 
-func (s searcherFake) RepositoryRevSpecs(ctx context.Context) *iterator.Iterator[types.RepositoryRevSpecs] {
-	if err := isSameUser(ctx, s.userID); err != nil {
-		iterator.New(func() ([]types.RepositoryRevSpecs, error) {
+func (s sebrcherFbke) RepositoryRevSpecs(ctx context.Context) *iterbtor.Iterbtor[types.RepositoryRevSpecs] {
+	if err := isSbmeUser(ctx, s.userID); err != nil {
+		iterbtor.New(func() ([]types.RepositoryRevSpecs, error) {
 			return nil, err
 		})
 	}
 
-	seen := map[types.RepositoryRevSpecs]bool{}
-	var repoRevSpecs []types.RepositoryRevSpecs
-	for _, r := range s.repoRevs {
+	seen := mbp[types.RepositoryRevSpecs]bool{}
+	vbr repoRevSpecs []types.RepositoryRevSpecs
+	for _, r := rbnge s.repoRevs {
 		if seen[r.RepositoryRevSpecs] {
 			continue
 		}
 		seen[r.RepositoryRevSpecs] = true
-		repoRevSpecs = append(repoRevSpecs, r.RepositoryRevSpecs)
+		repoRevSpecs = bppend(repoRevSpecs, r.RepositoryRevSpecs)
 	}
-	return iterator.From(repoRevSpecs)
+	return iterbtor.From(repoRevSpecs)
 }
 
-func (s searcherFake) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
-	if err := isSameUser(ctx, s.userID); err != nil {
+func (s sebrcherFbke) ResolveRepositoryRevSpec(ctx context.Context, repoRevSpec types.RepositoryRevSpecs) ([]types.RepositoryRevision, error) {
+	if err := isSbmeUser(ctx, s.userID); err != nil {
 		return nil, err
 	}
 
-	var repoRevs []types.RepositoryRevision
-	for _, r := range s.repoRevs {
+	vbr repoRevs []types.RepositoryRevision
+	for _, r := rbnge s.repoRevs {
 		if r.RepositoryRevSpecs == repoRevSpec {
-			repoRevs = append(repoRevs, r)
+			repoRevs = bppend(repoRevs, r)
 		}
 	}
 	return repoRevs, nil
 }
 
-func (s searcherFake) Search(ctx context.Context, r types.RepositoryRevision, w CSVWriter) error {
-	if err := isSameUser(ctx, s.userID); err != nil {
+func (s sebrcherFbke) Sebrch(ctx context.Context, r types.RepositoryRevision, w CSVWriter) error {
+	if err := isSbmeUser(ctx, s.userID); err != nil {
 		return err
 	}
 
-	if err := w.WriteHeader("repo", "revspec", "revision"); err != nil {
+	if err := w.WriteHebder("repo", "revspec", "revision"); err != nil {
 		return err
 	}
-	return w.WriteRow(strconv.Itoa(int(r.Repository)), string(r.RevisionSpecifiers), string(r.Revision))
+	return w.WriteRow(strconv.Itob(int(r.Repository)), string(r.RevisionSpecifiers), string(r.Revision))
 }
 
-func isSameUser(ctx context.Context, userID int32) error {
+func isSbmeUser(ctx context.Context, userID int32) error {
 	if userID == 0 {
-		return errors.New("exhaustive search must be done on behalf of an authenticated user")
+		return errors.New("exhbustive sebrch must be done on behblf of bn buthenticbted user")
 	}
-	a := actor.FromContext(ctx)
-	if a == nil || a.UID != userID {
-		return errors.Errorf("exhaustive search must be run as user %d", userID)
+	b := bctor.FromContext(ctx)
+	if b == nil || b.UID != userID {
+		return errors.Errorf("exhbustive sebrch must be run bs user %d", userID)
 	}
 	return nil
 }

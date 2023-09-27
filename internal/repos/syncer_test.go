@@ -1,4 +1,4 @@
-package repos_test
+pbckbge repos_test
 
 import (
 	"context"
@@ -11,46 +11,46 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bwscodecommit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitolite"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestSyncerSync(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	servicesPerKind := createExternalServices(t, store)
+	servicesPerKind := crebteExternblServices(t, store)
 
 	githubService := servicesPerKind[extsvc.KindGitHub]
 
 	githubRepo := (&types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
@@ -58,26 +58,26 @@ func TestSyncerSync(t *testing.T) {
 		typestest.Opt.RepoSources(githubService.URN()),
 	)
 
-	gitlabService := servicesPerKind[extsvc.KindGitLab]
+	gitlbbService := servicesPerKind[extsvc.KindGitLbb]
 
-	gitlabRepo := (&types.Repo{
-		Name:     "gitlab.com/org/foo",
-		Metadata: &gitlab.Project{},
-		ExternalRepo: api.ExternalRepoSpec{
+	gitlbbRepo := (&types.Repo{
+		Nbme:     "gitlbb.com/org/foo",
+		Metbdbtb: &gitlbb.Project{},
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "12345",
-			ServiceID:   "https://gitlab.com/",
-			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlbb.com/",
+			ServiceType: extsvc.TypeGitLbb,
 		},
 	}).With(
-		typestest.Opt.RepoSources(gitlabService.URN()),
+		typestest.Opt.RepoSources(gitlbbService.URN()),
 	)
 
 	bitbucketServerService := servicesPerKind[extsvc.KindBitbucketServer]
 
 	bitbucketServerRepo := (&types.Repo{
-		Name:     "bitbucketserver.mycorp.com/org/foo",
-		Metadata: &bitbucketserver.Repo{},
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme:     "bitbucketserver.mycorp.com/org/foo",
+		Metbdbtb: &bitbucketserver.Repo{},
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "23456",
 			ServiceID:   "https://bitbucketserver.mycorp.com/",
 			ServiceType: "bitbucketServer",
@@ -86,30 +86,30 @@ func TestSyncerSync(t *testing.T) {
 		typestest.Opt.RepoSources(bitbucketServerService.URN()),
 	)
 
-	awsCodeCommitService := servicesPerKind[extsvc.KindAWSCodeCommit]
+	bwsCodeCommitService := servicesPerKind[extsvc.KindAWSCodeCommit]
 
-	awsCodeCommitRepo := (&types.Repo{
-		Name:     "git-codecommit.us-west-1.amazonaws.com/stripe-go",
-		Metadata: &awscodecommit.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "f001337a-3450-46fd-b7d2-650c0EXAMPLE",
-			ServiceID:   "arn:aws:codecommit:us-west-1:999999999999:",
+	bwsCodeCommitRepo := (&types.Repo{
+		Nbme:     "git-codecommit.us-west-1.bmbzonbws.com/stripe-go",
+		Metbdbtb: &bwscodecommit.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "f001337b-3450-46fd-b7d2-650c0EXAMPLE",
+			ServiceID:   "brn:bws:codecommit:us-west-1:999999999999:",
 			ServiceType: extsvc.TypeAWSCodeCommit,
 		},
 	}).With(
-		typestest.Opt.RepoSources(awsCodeCommitService.URN()),
+		typestest.Opt.RepoSources(bwsCodeCommitService.URN()),
 	)
 
 	otherService := servicesPerKind[extsvc.KindOther]
 
 	otherRepo := (&types.Repo{
-		Name: "git-host.com/org/foo",
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme: "git-host.com/org/foo",
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "git-host.com/org/foo",
 			ServiceID:   "https://git-host.com/",
 			ServiceType: extsvc.TypeOther,
 		},
-		Metadata: &extsvc.OtherRepoMetadata{},
+		Metbdbtb: &extsvc.OtherRepoMetbdbtb{},
 	}).With(
 		typestest.Opt.RepoSources(otherService.URN()),
 	)
@@ -117,9 +117,9 @@ func TestSyncerSync(t *testing.T) {
 	gitoliteService := servicesPerKind[extsvc.KindGitolite]
 
 	gitoliteRepo := (&types.Repo{
-		Name:     "gitolite.mycorp.com/foo",
-		Metadata: &gitolite.Repo{},
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme:     "gitolite.mycorp.com/foo",
+		Metbdbtb: &gitolite.Repo{},
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "foo",
 			ServiceID:   "git@gitolite.mycorp.com",
 			ServiceType: extsvc.TypeGitolite,
@@ -131,10 +131,10 @@ func TestSyncerSync(t *testing.T) {
 	bitbucketCloudService := servicesPerKind[extsvc.KindBitbucketCloud]
 
 	bitbucketCloudRepo := (&types.Repo{
-		Name:     "bitbucket.org/team/foo",
-		Metadata: &bitbucketcloud.Repo{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
+		Nbme:     "bitbucket.org/tebm/foo",
+		Metbdbtb: &bitbucketcloud.Repo{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "{e164b64c-bd73-4b40-b447-d71b43f328b8}",
 			ServiceID:   "https://bitbucket.org/",
 			ServiceType: extsvc.TypeBitbucketCloud,
 		},
@@ -142,82 +142,82 @@ func TestSyncerSync(t *testing.T) {
 		typestest.Opt.RepoSources(bitbucketCloudService.URN()),
 	)
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 
-	svcdup := types.ExternalService{
+	svcdup := types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github2 - Test",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   clock.Now(),
-		UpdatedAt:   clock.Now(),
+		DisplbyNbme: "Github2 - Test",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   clock.Now(),
+		UpdbtedAt:   clock.Now(),
 	}
 
-	q := sqlf.Sprintf(`INSERT INTO users (id, username) VALUES (1, 'u')`)
-	_, err := store.Handle().ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...)
+	q := sqlf.Sprintf(`INSERT INTO users (id, usernbme) VALUES (1, 'u')`)
+	_, err := store.Hbndle().ExecContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// create a few external services
-	if err := store.ExternalServiceStore().Upsert(context.Background(), &svcdup); err != nil {
-		t.Fatalf("failed to insert external services: %v", err)
+	// crebte b few externbl services
+	if err := store.ExternblServiceStore().Upsert(context.Bbckground(), &svcdup); err != nil {
+		t.Fbtblf("fbiled to insert externbl services: %v", err)
 	}
 
-	type testCase struct {
-		name    string
+	type testCbse struct {
+		nbme    string
 		sourcer repos.Sourcer
 		store   repos.Store
 		stored  types.Repos
-		svcs    []*types.ExternalService
+		svcs    []*types.ExternblService
 		ctx     context.Context
 		now     func() time.Time
 		diff    repos.Diff
 		err     string
 	}
 
-	var testCases []testCase
-	for _, tc := range []struct {
+	vbr testCbses []testCbse
+	for _, tc := rbnge []struct {
 		repo *types.Repo
-		svc  *types.ExternalService
+		svc  *types.ExternblService
 	}{
 		{repo: githubRepo, svc: githubService},
-		{repo: gitlabRepo, svc: gitlabService},
+		{repo: gitlbbRepo, svc: gitlbbService},
 		{repo: bitbucketServerRepo, svc: bitbucketServerService},
-		{repo: awsCodeCommitRepo, svc: awsCodeCommitService},
+		{repo: bwsCodeCommitRepo, svc: bwsCodeCommitService},
 		{repo: otherRepo, svc: otherService},
 		{repo: gitoliteRepo, svc: gitoliteService},
 		{repo: bitbucketCloudRepo, svc: bitbucketCloudService},
 	} {
-		testCases = append(testCases,
-			testCase{
-				name: string(tc.repo.Name) + "/new repo",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
+		testCbses = bppend(testCbses,
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/new repo",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 				),
 				store:  store,
 				stored: types.Repos{},
 				now:    clock.Now,
 				diff: repos.Diff{Added: types.Repos{tc.repo.With(
-					typestest.Opt.RepoCreatedAt(clock.Time(1)),
+					typestest.Opt.RepoCrebtedAt(clock.Time(1)),
 					typestest.Opt.RepoSources(tc.svc.Clone().URN()),
 				)}},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
 		)
 
-		var diff repos.Diff
-		diff.Unmodified = append(diff.Unmodified, tc.repo.With(
+		vbr diff repos.Diff
+		diff.Unmodified = bppend(diff.Unmodified, tc.repo.With(
 			typestest.Opt.RepoSources(tc.svc.URN()),
 		))
 
-		testCases = append(testCases,
-			testCase{
-				// If the source is unauthorized we should treat this as if zero repos were
-				// returned as it indicates that the source no longer has access to its repos
-				name: string(tc.repo.Name) + "/unauthorized",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrUnauthorized{}),
+		testCbses = bppend(testCbses,
+			testCbse{
+				// If the source is unbuthorized we should trebt this bs if zero repos were
+				// returned bs it indicbtes thbt the source no longer hbs bccess to its repos
+				nbme: string(tc.repo.Nbme) + "/unbuthorized",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), &repos.ErrUnbuthorized{}),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -225,16 +225,16 @@ func TestSyncerSync(t *testing.T) {
 				)},
 				now:  clock.Now,
 				diff: diff,
-				svcs: []*types.ExternalService{tc.svc},
-				err:  "bad credentials",
+				svcs: []*types.ExternblService{tc.svc},
+				err:  "bbd credentibls",
 			},
-			testCase{
-				// If the source is unauthorized with a warning rather than an error,
-				// the sync will continue. If the warning error is unauthorized, the
-				// corresponding repos will be deleted as it's seen as permissions changes.
-				name: string(tc.repo.Name) + "/unauthorized-with-warning",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrUnauthorized{})),
+			testCbse{
+				// If the source is unbuthorized with b wbrning rbther thbn bn error,
+				// the sync will continue. If the wbrning error is unbuthorized, the
+				// corresponding repos will be deleted bs it's seen bs permissions chbnges.
+				nbme: string(tc.repo.Nbme) + "/unbuthorized-with-wbrning",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), errors.NewWbrningError(&repos.ErrUnbuthorized{})),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -244,21 +244,21 @@ func TestSyncerSync(t *testing.T) {
 				diff: repos.Diff{
 					Deleted: types.Repos{
 						tc.repo.With(func(r *types.Repo) {
-							r.Sources = map[string]*types.SourceInfo{}
+							r.Sources = mbp[string]*types.SourceInfo{}
 							r.DeletedAt = clock.Time(0)
-							r.UpdatedAt = clock.Time(0)
+							r.UpdbtedAt = clock.Time(0)
 						}),
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
-				err:  "bad credentials",
+				svcs: []*types.ExternblService{tc.svc},
+				err:  "bbd credentibls",
 			},
-			testCase{
-				// If the source is forbidden we should treat this as if zero repos were returned
-				// as it indicates that the source no longer has access to its repos
-				name: string(tc.repo.Name) + "/forbidden",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrForbidden{}),
+			testCbse{
+				// If the source is forbidden we should trebt this bs if zero repos were returned
+				// bs it indicbtes thbt the source no longer hbs bccess to its repos
+				nbme: string(tc.repo.Nbme) + "/forbidden",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), &repos.ErrForbidden{}),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -266,16 +266,16 @@ func TestSyncerSync(t *testing.T) {
 				)},
 				now:  clock.Now,
 				diff: diff,
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "forbidden",
 			},
-			testCase{
-				// If the source is forbidden with a warning rather than an error,
-				// the sync will continue. If the warning error is forbidden, the
-				// corresponding repos will be deleted as it's seen as permissions changes.
-				name: string(tc.repo.Name) + "/forbidden-with-warning",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrForbidden{})),
+			testCbse{
+				// If the source is forbidden with b wbrning rbther thbn bn error,
+				// the sync will continue. If the wbrning error is forbidden, the
+				// corresponding repos will be deleted bs it's seen bs permissions chbnges.
+				nbme: string(tc.repo.Nbme) + "/forbidden-with-wbrning",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), errors.NewWbrningError(&repos.ErrForbidden{})),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -285,21 +285,21 @@ func TestSyncerSync(t *testing.T) {
 				diff: repos.Diff{
 					Deleted: types.Repos{
 						tc.repo.With(func(r *types.Repo) {
-							r.Sources = map[string]*types.SourceInfo{}
+							r.Sources = mbp[string]*types.SourceInfo{}
 							r.DeletedAt = clock.Time(0)
-							r.UpdatedAt = clock.Time(0)
+							r.UpdbtedAt = clock.Time(0)
 						}),
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "forbidden",
 			},
-			testCase{
-				// If the source account has been suspended we should treat this as if zero repos were returned as it indicates
-				// that the source no longer has access to its repos
-				name: string(tc.repo.Name) + "/accountsuspended",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), &repos.ErrAccountSuspended{}),
+			testCbse{
+				// If the source bccount hbs been suspended we should trebt this bs if zero repos were returned bs it indicbtes
+				// thbt the source no longer hbs bccess to its repos
+				nbme: string(tc.repo.Nbme) + "/bccountsuspended",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), &repos.ErrAccountSuspended{}),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -307,15 +307,15 @@ func TestSyncerSync(t *testing.T) {
 				)},
 				now:  clock.Now,
 				diff: diff,
-				svcs: []*types.ExternalService{tc.svc},
-				err:  "account suspended",
+				svcs: []*types.ExternblService{tc.svc},
+				err:  "bccount suspended",
 			},
-			testCase{
-				// If the source is account suspended with a warning rather than an error,
-				// the sync will terminate. This is the only warning error that the sync will abort
-				name: string(tc.repo.Name) + "/accountsuspended-with-warning",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(&repos.ErrAccountSuspended{})),
+			testCbse{
+				// If the source is bccount suspended with b wbrning rbther thbn bn error,
+				// the sync will terminbte. This is the only wbrning error thbt the sync will bbort
+				nbme: string(tc.repo.Nbme) + "/bccountsuspended-with-wbrning",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), errors.NewWbrningError(&repos.ErrAccountSuspended{})),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -323,14 +323,14 @@ func TestSyncerSync(t *testing.T) {
 				)},
 				now:  clock.Now,
 				diff: diff,
-				svcs: []*types.ExternalService{tc.svc},
-				err:  "account suspended",
+				svcs: []*types.ExternblService{tc.svc},
+				err:  "bccount suspended",
 			},
-			testCase{
-				// Test that spurious errors don't cause deletions.
-				name: string(tc.repo.Name) + "/spurious-error",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), io.EOF),
+			testCbse{
+				// Test thbt spurious errors don't cbuse deletions.
+				nbme: string(tc.repo.Nbme) + "/spurious-error",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), io.EOF),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -340,15 +340,15 @@ func TestSyncerSync(t *testing.T) {
 				diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
 					typestest.Opt.RepoSources(tc.svc.URN()),
 				)}},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  io.EOF.Error(),
 			},
-			testCase{
-				// If the source is a spurious error with a warning rather than an error,
+			testCbse{
+				// If the source is b spurious error with b wbrning rbther thbn bn error,
 				// the sync will continue. However, no repos will be deleted.
-				name: string(tc.repo.Name) + "/spurious-error-with-warning",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), errors.NewWarningError(io.EOF)),
+				nbme: string(tc.repo.Nbme) + "/spurious-error-with-wbrning",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), errors.NewWbrningError(io.EOF)),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -358,15 +358,15 @@ func TestSyncerSync(t *testing.T) {
 				diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
 					typestest.Opt.RepoSources(tc.svc.URN()),
 				)}},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  io.EOF.Error(),
 			},
-			testCase{
-				// It's expected that there could be multiple stored sources but only one will ever be returned
-				// by the code host as it can't know about others.
-				name: string(tc.repo.Name) + "/source already stored",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
+			testCbse{
+				// It's expected thbt there could be multiple stored sources but only one will ever be returned
+				// by the code host bs it cbn't know bbout others.
+				nbme: string(tc.repo.Nbme) + "/source blrebdy stored",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), nil, tc.repo.Clone()),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -376,13 +376,13 @@ func TestSyncerSync(t *testing.T) {
 				diff: repos.Diff{Unmodified: types.Repos{tc.repo.With(
 					typestest.Opt.RepoSources(tc.svc.URN(), svcdup.URN()),
 				)}},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name: string(tc.repo.Name) + "/deleted ALL repo sources",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), nil),
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/deleted ALL repo sources",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), nil),
 				),
 				store: store,
 				stored: types.Repos{tc.repo.With(
@@ -392,203 +392,203 @@ func TestSyncerSync(t *testing.T) {
 				diff: repos.Diff{Deleted: types.Repos{tc.repo.With(
 					typestest.Opt.RepoDeletedAt(clock.Time(1)),
 				)}},
-				svcs: []*types.ExternalService{tc.svc, &svcdup},
+				svcs: []*types.ExternblService{tc.svc, &svcdup},
 				err:  "<nil>",
 			},
-			testCase{
-				name:    string(tc.repo.Name) + "/renamed repo is detected via external_id",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
+			testCbse{
+				nbme:    string(tc.repo.Nbme) + "/renbmed repo is detected vib externbl_id",
+				sourcer: repos.NewFbkeSourcer(nil, repos.NewFbkeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   store,
 				stored: types.Repos{tc.repo.With(func(r *types.Repo) {
-					r.Name = "old-name"
+					r.Nbme = "old-nbme"
 				})},
 				now: clock.Now,
 				diff: repos.Diff{
 					Modified: repos.ReposModified{
 						{
 							Repo:     tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(1))),
-							Modified: types.RepoModifiedName,
+							Modified: types.RepoModifiedNbme,
 						},
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name: string(tc.repo.Name) + "/repo got renamed to another repo that gets deleted",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), nil,
-						tc.repo.With(func(r *types.Repo) { r.ExternalRepo.ID = "another-id" }),
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/repo got renbmed to bnother repo thbt gets deleted",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), nil,
+						tc.repo.With(func(r *types.Repo) { r.ExternblRepo.ID = "bnother-id" }),
 					),
 				),
 				store: store,
 				stored: types.Repos{
 					tc.repo.Clone(),
 					tc.repo.With(func(r *types.Repo) {
-						r.Name = "another-repo"
-						r.ExternalRepo.ID = "another-id"
+						r.Nbme = "bnother-repo"
+						r.ExternblRepo.ID = "bnother-id"
 					}),
 				},
 				now: clock.Now,
 				diff: repos.Diff{
 					Deleted: types.Repos{
 						tc.repo.With(func(r *types.Repo) {
-							r.Sources = map[string]*types.SourceInfo{}
+							r.Sources = mbp[string]*types.SourceInfo{}
 							r.DeletedAt = clock.Time(0)
-							r.UpdatedAt = clock.Time(0)
+							r.UpdbtedAt = clock.Time(0)
 						}),
 					},
 					Modified: repos.ReposModified{
 						{
 							Repo: tc.repo.With(
 								typestest.Opt.RepoModifiedAt(clock.Time(1)),
-								func(r *types.Repo) { r.ExternalRepo.ID = "another-id" },
+								func(r *types.Repo) { r.ExternblRepo.ID = "bnother-id" },
 							),
-							Modified: types.RepoModifiedExternalRepo,
+							Modified: types.RepoModifiedExternblRepo,
 						},
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name: string(tc.repo.Name) + "/repo inserted with same name as another repo that gets deleted",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), nil,
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/repo inserted with sbme nbme bs bnother repo thbt gets deleted",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), nil,
 						tc.repo,
 					),
 				),
 				store: store,
 				stored: types.Repos{
-					tc.repo.With(typestest.Opt.RepoExternalID("another-id")),
+					tc.repo.With(typestest.Opt.RepoExternblID("bnother-id")),
 				},
 				now: clock.Now,
 				diff: repos.Diff{
 					Added: types.Repos{
 						tc.repo.With(
-							typestest.Opt.RepoCreatedAt(clock.Time(1)),
+							typestest.Opt.RepoCrebtedAt(clock.Time(1)),
 							typestest.Opt.RepoModifiedAt(clock.Time(1)),
 						),
 					},
 					Deleted: types.Repos{
 						tc.repo.With(func(r *types.Repo) {
-							r.ExternalRepo.ID = "another-id"
-							r.Sources = map[string]*types.SourceInfo{}
+							r.ExternblRepo.ID = "bnother-id"
+							r.Sources = mbp[string]*types.SourceInfo{}
 							r.DeletedAt = clock.Time(0)
-							r.UpdatedAt = clock.Time(0)
+							r.UpdbtedAt = clock.Time(0)
 						}),
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name: string(tc.repo.Name) + "/repo inserted with same name as repo without id",
-				sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(tc.svc.Clone(), nil,
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/repo inserted with sbme nbme bs repo without id",
+				sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(tc.svc.Clone(), nil,
 						tc.repo,
 					),
 				),
 				store: store,
 				stored: types.Repos{
-					tc.repo.With(typestest.Opt.RepoName("old-name")),  // same external id as sourced
-					tc.repo.With(typestest.Opt.RepoExternalID("bar")), // same name as sourced
-				}.With(typestest.Opt.RepoCreatedAt(clock.Time(1))),
+					tc.repo.With(typestest.Opt.RepoNbme("old-nbme")),  // sbme externbl id bs sourced
+					tc.repo.With(typestest.Opt.RepoExternblID("bbr")), // sbme nbme bs sourced
+				}.With(typestest.Opt.RepoCrebtedAt(clock.Time(1))),
 				now: clock.Now,
 				diff: repos.Diff{
 					Modified: repos.ReposModified{
 						{
 							Repo: tc.repo.With(
-								typestest.Opt.RepoCreatedAt(clock.Time(1)),
+								typestest.Opt.RepoCrebtedAt(clock.Time(1)),
 								typestest.Opt.RepoModifiedAt(clock.Time(1)),
 							),
-							Modified: types.RepoModifiedName | types.RepoModifiedExternalRepo,
+							Modified: types.RepoModifiedNbme | types.RepoModifiedExternblRepo,
 						},
 					},
 					Deleted: types.Repos{
 						tc.repo.With(func(r *types.Repo) {
-							r.ExternalRepo.ID = ""
-							r.Sources = map[string]*types.SourceInfo{}
+							r.ExternblRepo.ID = ""
+							r.Sources = mbp[string]*types.SourceInfo{}
 							r.DeletedAt = clock.Time(0)
-							r.UpdatedAt = clock.Time(0)
-							r.CreatedAt = clock.Time(0)
+							r.UpdbtedAt = clock.Time(0)
+							r.CrebtedAt = clock.Time(0)
 						}),
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name:    string(tc.repo.Name) + "/renamed repo which was deleted is detected and added",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
+			testCbse{
+				nbme:    string(tc.repo.Nbme) + "/renbmed repo which wbs deleted is detected bnd bdded",
+				sourcer: repos.NewFbkeSourcer(nil, repos.NewFbkeSource(tc.svc.Clone(), nil, tc.repo.Clone())),
 				store:   store,
 				stored: types.Repos{tc.repo.With(func(r *types.Repo) {
-					r.Sources = map[string]*types.SourceInfo{}
-					r.Name = "old-name"
+					r.Sources = mbp[string]*types.SourceInfo{}
+					r.Nbme = "old-nbme"
 					r.DeletedAt = clock.Time(0)
 				})},
 				now: clock.Now,
 				diff: repos.Diff{Added: types.Repos{
 					tc.repo.With(
-						typestest.Opt.RepoCreatedAt(clock.Time(1))),
+						typestest.Opt.RepoCrebtedAt(clock.Time(1))),
 				}},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name: string(tc.repo.Name) + "/repos have their names swapped",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/repos hbve their nbmes swbpped",
+				sourcer: repos.NewFbkeSourcer(nil, repos.NewFbkeSource(tc.svc.Clone(), nil,
 					tc.repo.With(func(r *types.Repo) {
-						r.Name = "foo"
-						r.ExternalRepo.ID = "1"
+						r.Nbme = "foo"
+						r.ExternblRepo.ID = "1"
 					}),
 					tc.repo.With(func(r *types.Repo) {
-						r.Name = "bar"
-						r.ExternalRepo.ID = "2"
+						r.Nbme = "bbr"
+						r.ExternblRepo.ID = "2"
 					}),
 				)),
 				now:   clock.Now,
 				store: store,
 				stored: types.Repos{
 					tc.repo.With(func(r *types.Repo) {
-						r.Name = "bar"
-						r.ExternalRepo.ID = "1"
+						r.Nbme = "bbr"
+						r.ExternblRepo.ID = "1"
 					}),
 					tc.repo.With(func(r *types.Repo) {
-						r.Name = "foo"
-						r.ExternalRepo.ID = "2"
+						r.Nbme = "foo"
+						r.ExternblRepo.ID = "2"
 					}),
 				},
 				diff: repos.Diff{
 					Modified: repos.ReposModified{
 						{
 							Repo: tc.repo.With(func(r *types.Repo) {
-								r.Name = "foo"
-								r.ExternalRepo.ID = "1"
-								r.UpdatedAt = clock.Time(0)
+								r.Nbme = "foo"
+								r.ExternblRepo.ID = "1"
+								r.UpdbtedAt = clock.Time(0)
 							}),
 						},
 						{
 							Repo: tc.repo.With(func(r *types.Repo) {
-								r.Name = "bar"
-								r.ExternalRepo.ID = "2"
-								r.UpdatedAt = clock.Time(0)
+								r.Nbme = "bbr"
+								r.ExternblRepo.ID = "2"
+								r.UpdbtedAt = clock.Time(0)
 							}),
 						},
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
-			testCase{
-				name: string(tc.repo.Name) + "/case insensitive name",
-				sourcer: repos.NewFakeSourcer(nil, repos.NewFakeSource(tc.svc.Clone(), nil,
+			testCbse{
+				nbme: string(tc.repo.Nbme) + "/cbse insensitive nbme",
+				sourcer: repos.NewFbkeSourcer(nil, repos.NewFbkeSource(tc.svc.Clone(), nil,
 					tc.repo.Clone(),
-					tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
+					tc.repo.With(typestest.Opt.RepoNbme(bpi.RepoNbme(strings.ToUpper(string(tc.repo.Nbme))))),
 				)),
 				store: store,
 				stored: types.Repos{
-					tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
+					tc.repo.With(typestest.Opt.RepoNbme(bpi.RepoNbme(strings.ToUpper(string(tc.repo.Nbme))))),
 				},
 				now: clock.Now,
 				diff: repos.Diff{
@@ -596,199 +596,199 @@ func TestSyncerSync(t *testing.T) {
 						{Repo: tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(0)))},
 					},
 				},
-				svcs: []*types.ExternalService{tc.svc},
+				svcs: []*types.ExternblService{tc.svc},
 				err:  "<nil>",
 			},
 		)
 	}
 
-	for _, tc := range testCases {
-		if tc.name == "" {
-			t.Error("Test case name is blank")
+	for _, tc := rbnge testCbses {
+		if tc.nbme == "" {
+			t.Error("Test cbse nbme is blbnk")
 			continue
 		}
 
 		tc := tc
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
-		t.Run(tc.name, transact(ctx, tc.store, func(t testing.TB, st repos.Store) {
+		t.Run(tc.nbme, trbnsbct(ctx, tc.store, func(t testing.TB, st repos.Store) {
 			defer func() {
 				if err := recover(); err != nil {
-					t.Fatalf("%q panicked: %v", tc.name, err)
+					t.Fbtblf("%q pbnicked: %v", tc.nbme, err)
 				}
 			}()
 			if st == nil {
-				t.Fatal("nil store")
+				t.Fbtbl("nil store")
 			}
 			now := tc.now
 			if now == nil {
-				clock := timeutil.NewFakeClock(time.Now(), time.Second)
+				clock := timeutil.NewFbkeClock(time.Now(), time.Second)
 				now = clock.Now
 			}
 
 			ctx := tc.ctx
 			if ctx == nil {
-				ctx = context.Background()
+				ctx = context.Bbckground()
 			}
 
 			if len(tc.stored) > 0 {
 				cloned := tc.stored.Clone()
-				if err := st.RepoStore().Create(ctx, cloned...); err != nil {
-					t.Fatalf("failed to prepare store: %v", err)
+				if err := st.RepoStore().Crebte(ctx, cloned...); err != nil {
+					t.Fbtblf("fbiled to prepbre store: %v", err)
 				}
 			}
 
 			syncer := &repos.Syncer{
-				ObsvCtx: observation.TestContextTB(t),
+				ObsvCtx: observbtion.TestContextTB(t),
 				Sourcer: tc.sourcer,
 				Store:   st,
 				Now:     now,
 			}
 
-			for _, svc := range tc.svcs {
-				before, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
+			for _, svc := rbnge tc.svcs {
+				before, err := st.ExternblServiceStore().GetByID(ctx, svc.ID)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				err = syncer.SyncExternalService(ctx, svc.ID, time.Millisecond, noopProgressRecorder)
-				if have, want := fmt.Sprint(err), tc.err; !strings.Contains(have, want) {
-					t.Errorf("error %q doesn't contain %q", have, want)
+				err = syncer.SyncExternblService(ctx, svc.ID, time.Millisecond, noopProgressRecorder)
+				if hbve, wbnt := fmt.Sprint(err), tc.err; !strings.Contbins(hbve, wbnt) {
+					t.Errorf("error %q doesn't contbin %q", hbve, wbnt)
 				}
 
-				after, err := st.ExternalServiceStore().GetByID(ctx, svc.ID)
+				bfter, err := st.ExternblServiceStore().GetByID(ctx, svc.ID)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				// last_synced should always be updated
-				if before.LastSyncAt == after.LastSyncAt {
-					t.Log(before.LastSyncAt, after.LastSyncAt)
-					t.Errorf("Service %q last_synced was not updated", svc.DisplayName)
+				// lbst_synced should blwbys be updbted
+				if before.LbstSyncAt == bfter.LbstSyncAt {
+					t.Log(before.LbstSyncAt, bfter.LbstSyncAt)
+					t.Errorf("Service %q lbst_synced wbs not updbted", svc.DisplbyNbme)
 				}
 			}
 
-			var want, have types.Repos
-			want.Concat(tc.diff.Added, tc.diff.Modified.Repos(), tc.diff.Unmodified)
-			have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
+			vbr wbnt, hbve types.Repos
+			wbnt.Concbt(tc.diff.Added, tc.diff.Modified.Repos(), tc.diff.Unmodified)
+			hbve, _ = st.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 
-			want = want.With(typestest.Opt.RepoID(0))
-			have = have.With(typestest.Opt.RepoID(0))
-			sort.Sort(want)
-			sort.Sort(have)
+			wbnt = wbnt.With(typestest.Opt.RepoID(0))
+			hbve = hbve.With(typestest.Opt.RepoID(0))
+			sort.Sort(wbnt)
+			sort.Sort(hbve)
 
-			typestest.Assert.ReposEqual(want...)(t, have)
+			typestest.Assert.ReposEqubl(wbnt...)(t, hbve)
 		}))
 	}
 }
 
 func TestSyncRepo(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	servicesPerKind := createExternalServices(t, store, func(svc *types.ExternalService) { svc.CloudDefault = true })
+	servicesPerKind := crebteExternblServices(t, store, func(svc *types.ExternblService) { svc.CloudDefbult = true })
 
 	repo := &types.Repo{
-		ID:          0, // explicitly make default value for sourced repo
-		Name:        "github.com/foo/bar",
+		ID:          0, // explicitly mbke defbult vblue for sourced repo
+		Nbme:        "github.com/foo/bbr",
 		Description: "The description",
-		Archived:    false,
-		Fork:        false,
-		Stars:       100,
-		ExternalRepo: api.ExternalRepoSpec{
+		Archived:    fblse,
+		Fork:        fblse,
+		Stbrs:       100,
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
+		Sources: mbp[string]*types.SourceInfo{
 			servicesPerKind[extsvc.KindGitHub].URN(): {
 				ID:       servicesPerKind[extsvc.KindGitHub].URN(),
-				CloneURL: "git@github.com:foo/bar.git",
+				CloneURL: "git@github.com:foo/bbr.git",
 			},
 		},
-		Metadata: &github.Repository{
+		Metbdbtb: &github.Repository{
 			ID:             "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-			URL:            "github.com/foo/bar",
-			DatabaseID:     1234,
+			URL:            "github.com/foo/bbr",
+			DbtbbbseID:     1234,
 			Description:    "The description",
-			NameWithOwner:  "foo/bar",
-			StargazerCount: 100,
+			NbmeWithOwner:  "foo/bbr",
+			StbrgbzerCount: 100,
 		},
 	}
 
 	now := time.Now().UTC()
 	oldRepo := repo.With(func(r *types.Repo) {
-		r.UpdatedAt = now.Add(-time.Hour)
-		r.CreatedAt = r.UpdatedAt.Add(-time.Hour)
-		r.Stars = 0
+		r.UpdbtedAt = now.Add(-time.Hour)
+		r.CrebtedAt = r.UpdbtedAt.Add(-time.Hour)
+		r.Stbrs = 0
 	})
 
-	testCases := []struct {
-		name       string
-		repo       api.RepoName
-		background bool        // whether to run SyncRepo in the background
-		before     types.Repos // the repos to insert into the database before syncing
-		sourced    *types.Repo // the repo that is returned by the fake sourcer
-		returned   *types.Repo // the expected return value from SyncRepo (which changes meaning depending on background)
-		after      types.Repos // the expected database repos after syncing
+	testCbses := []struct {
+		nbme       string
+		repo       bpi.RepoNbme
+		bbckground bool        // whether to run SyncRepo in the bbckground
+		before     types.Repos // the repos to insert into the dbtbbbse before syncing
+		sourced    *types.Repo // the repo thbt is returned by the fbke sourcer
+		returned   *types.Repo // the expected return vblue from SyncRepo (which chbnges mebning depending on bbckground)
+		bfter      types.Repos // the expected dbtbbbse repos bfter syncing
 		diff       repos.Diff  // the expected repos.Diff sent by the syncer
 	}{{
-		name:       "insert",
-		repo:       repo.Name,
-		background: true,
+		nbme:       "insert",
+		repo:       repo.Nbme,
+		bbckground: true,
 		sourced:    repo.Clone(),
 		returned:   repo,
-		after:      types.Repos{repo},
+		bfter:      types.Repos{repo},
 		diff: repos.Diff{
 			Added: types.Repos{repo},
 		},
 	}, {
-		name:       "update",
-		repo:       repo.Name,
-		background: true,
+		nbme:       "updbte",
+		repo:       repo.Nbme,
+		bbckground: true,
 		before:     types.Repos{oldRepo},
 		sourced:    repo.Clone(),
 		returned:   oldRepo,
-		after:      types.Repos{repo},
+		bfter:      types.Repos{repo},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
-				{Repo: repo, Modified: types.RepoModifiedStars},
+				{Repo: repo, Modified: types.RepoModifiedStbrs},
 			},
 		},
 	}, {
-		name:       "blocking update",
-		repo:       repo.Name,
-		background: false,
+		nbme:       "blocking updbte",
+		repo:       repo.Nbme,
+		bbckground: fblse,
 		before:     types.Repos{oldRepo},
 		sourced:    repo.Clone(),
 		returned:   repo,
-		after:      types.Repos{repo},
+		bfter:      types.Repos{repo},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
-				{Repo: repo, Modified: types.RepoModifiedStars},
+				{Repo: repo, Modified: types.RepoModifiedStbrs},
 			},
 		},
 	}, {
-		name:       "update name",
-		repo:       repo.Name,
-		background: true,
-		before:     types.Repos{repo.With(typestest.Opt.RepoName("old/name"))},
+		nbme:       "updbte nbme",
+		repo:       repo.Nbme,
+		bbckground: true,
+		before:     types.Repos{repo.With(typestest.Opt.RepoNbme("old/nbme"))},
 		sourced:    repo.Clone(),
 		returned:   repo,
-		after:      types.Repos{repo},
+		bfter:      types.Repos{repo},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
-				{Repo: repo, Modified: types.RepoModifiedName},
+				{Repo: repo, Modified: types.RepoModifiedNbme},
 			},
 		},
 	}, {
-		name:       "archived",
-		repo:       repo.Name,
-		background: true,
+		nbme:       "brchived",
+		repo:       repo.Nbme,
+		bbckground: true,
 		before:     types.Repos{repo},
 		sourced:    repo.With(typestest.Opt.RepoArchived(true)),
 		returned:   repo,
-		after:      types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+		bfter:      types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
 				{
@@ -798,253 +798,253 @@ func TestSyncRepo(t *testing.T) {
 			},
 		},
 	}, {
-		name:       "unarchived",
-		repo:       repo.Name,
-		background: true,
+		nbme:       "unbrchived",
+		repo:       repo.Nbme,
+		bbckground: true,
 		before:     types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
 		sourced:    repo.Clone(),
 		returned:   repo.With(typestest.Opt.RepoArchived(true)),
-		after:      types.Repos{repo},
+		bfter:      types.Repos{repo},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
 				{Repo: repo, Modified: types.RepoModifiedArchived},
 			},
 		},
 	}, {
-		name:       "delete conflicting name",
-		repo:       repo.Name,
-		background: true,
-		before:     types.Repos{repo.With(typestest.Opt.RepoExternalID("old id"))},
+		nbme:       "delete conflicting nbme",
+		repo:       repo.Nbme,
+		bbckground: true,
+		before:     types.Repos{repo.With(typestest.Opt.RepoExternblID("old id"))},
 		sourced:    repo.Clone(),
-		returned:   repo.With(typestest.Opt.RepoExternalID("old id")),
-		after:      types.Repos{repo},
+		returned:   repo.With(typestest.Opt.RepoExternblID("old id")),
+		bfter:      types.Repos{repo},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
-				{Repo: repo, Modified: types.RepoModifiedExternalRepo},
+				{Repo: repo, Modified: types.RepoModifiedExternblRepo},
 			},
 		},
 	}, {
-		name:       "rename and delete conflicting name",
-		repo:       repo.Name,
-		background: true,
+		nbme:       "renbme bnd delete conflicting nbme",
+		repo:       repo.Nbme,
+		bbckground: true,
 		before: types.Repos{
-			repo.With(typestest.Opt.RepoExternalID("old id")),
-			repo.With(typestest.Opt.RepoName("old name")),
+			repo.With(typestest.Opt.RepoExternblID("old id")),
+			repo.With(typestest.Opt.RepoNbme("old nbme")),
 		},
 		sourced:  repo.Clone(),
-		returned: repo.With(typestest.Opt.RepoExternalID("old id")),
-		after:    types.Repos{repo},
+		returned: repo.With(typestest.Opt.RepoExternblID("old id")),
+		bfter:    types.Repos{repo},
 		diff: repos.Diff{
 			Modified: repos.ReposModified{
-				{Repo: repo, Modified: types.RepoModifiedName},
+				{Repo: repo, Modified: types.RepoModifiedNbme},
 			},
 		},
 	}}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			q := sqlf.Sprintf("DELETE FROM repo")
-			_, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+			_, err := store.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(tc.before) > 0 {
-				if err := store.RepoStore().Create(ctx, tc.before.Clone()...); err != nil {
-					t.Fatalf("failed to prepare store: %v", err)
+				if err := store.RepoStore().Crebte(ctx, tc.before.Clone()...); err != nil {
+					t.Fbtblf("fbiled to prepbre store: %v", err)
 				}
 			}
 
 			syncer := &repos.Syncer{
-				ObsvCtx: observation.TestContextTB(t),
+				ObsvCtx: observbtion.TestContextTB(t),
 				Now:     time.Now,
 				Store:   store,
-				Synced:  make(chan repos.Diff, 1),
-				Sourcer: repos.NewFakeSourcer(nil,
-					repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
+				Synced:  mbke(chbn repos.Diff, 1),
+				Sourcer: repos.NewFbkeSourcer(nil,
+					repos.NewFbkeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
 				),
 			}
 
-			have, err := syncer.SyncRepo(ctx, tc.repo, tc.background)
+			hbve, err := syncer.SyncRepo(ctx, tc.repo, tc.bbckground)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have.ID == 0 {
-				t.Errorf("expected returned synced repo to have an ID set")
+			if hbve.ID == 0 {
+				t.Errorf("expected returned synced repo to hbve bn ID set")
 			}
 
-			opt := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt")
-			if diff := cmp.Diff(have, tc.returned, opt); diff != "" {
-				t.Errorf("returned mismatch: (-have, +want):\n%s", diff)
+			opt := cmpopts.IgnoreFields(types.Repo{}, "ID", "CrebtedAt", "UpdbtedAt")
+			if diff := cmp.Diff(hbve, tc.returned, opt); diff != "" {
+				t.Errorf("returned mismbtch: (-hbve, +wbnt):\n%s", diff)
 			}
 
 			if diff := cmp.Diff(<-syncer.Synced, tc.diff, opt); diff != "" {
-				t.Errorf("diff mismatch: (-have, +want):\n%s", diff)
+				t.Errorf("diff mismbtch: (-hbve, +wbnt):\n%s", diff)
 			}
 
-			after, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+			bfter, err := store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(types.Repos(after), tc.after, opt); diff != "" {
-				t.Errorf("repos mismatch: (-have, +want):\n%s", diff)
+			if diff := cmp.Diff(types.Repos(bfter), tc.bfter, opt); diff != "" {
+				t.Errorf("repos mismbtch: (-hbve, +wbnt):\n%s", diff)
 			}
 		})
 	}
 }
 
 func TestSyncRun(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	svc := &types.ExternalService{
-		Config: extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`),
+	svc := &types.ExternblService{
+		Config: extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 		Kind:   extsvc.KindGitHub,
 	}
 
-	if err := store.ExternalServiceStore().Upsert(ctx, svc); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc); err != nil {
+		t.Fbtbl(err)
 	}
 
-	mk := func(name string) *types.Repo {
+	mk := func(nbme string) *types.Repo {
 		return &types.Repo{
-			Name:     api.RepoName(name),
-			Metadata: &github.Repository{},
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          name,
+			Nbme:     bpi.RepoNbme(nbme),
+			Metbdbtb: &github.Repository{},
+			ExternblRepo: bpi.ExternblRepoSpec{
+				ID:          nbme,
 				ServiceID:   "https://github.com",
 				ServiceType: svc.Kind,
 			},
 		}
 	}
 
-	// Our test will have 1 initial repo, and discover a new repo on sourcing.
-	stored := types.Repos{mk("initial")}.With(typestest.Opt.RepoSources(svc.URN()))
+	// Our test will hbve 1 initibl repo, bnd discover b new repo on sourcing.
+	stored := types.Repos{mk("initibl")}.With(typestest.Opt.RepoSources(svc.URN()))
 	sourced := types.Repos{
-		mk("initial").With(func(r *types.Repo) { r.Description = "updated" }),
+		mk("initibl").With(func(r *types.Repo) { r.Description = "updbted" }),
 		mk("new"),
 	}
 
-	fakeSource := repos.NewFakeSource(svc, nil, sourced...)
+	fbkeSource := repos.NewFbkeSource(svc, nil, sourced...)
 
-	// Lock our source here so that we block when trying to list repos, this allows
-	// us to test lower down that we can't delete a syncing service.
-	lockChan := fakeSource.InitLockChan()
+	// Lock our source here so thbt we block when trying to list repos, this bllows
+	// us to test lower down thbt we cbn't delete b syncing service.
+	lockChbn := fbkeSource.InitLockChbn()
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: repos.NewFakeSourcer(nil, fakeSource),
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: repos.NewFbkeSourcer(nil, fbkeSource),
 		Store:   store,
-		Synced:  make(chan repos.Diff),
+		Synced:  mbke(chbn repos.Diff),
 		Now:     time.Now,
 	}
 
-	// Initial repos in store
-	if err := store.RepoStore().Create(ctx, stored...); err != nil {
-		t.Fatal(err)
+	// Initibl repos in store
+	if err := store.RepoStore().Crebte(ctx, stored...); err != nil {
+		t.Fbtbl(err)
 	}
 
-	done := make(chan struct{})
+	done := mbke(chbn struct{})
 	go func() {
-		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
-			EnqueueInterval: func() time.Duration { return time.Second },
-			IsDotCom:        false,
-			MinSyncInterval: func() time.Duration { return 1 * time.Millisecond },
-			DequeueInterval: 1 * time.Millisecond,
+		goroutine.MonitorBbckgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
+			EnqueueIntervbl: func() time.Durbtion { return time.Second },
+			IsDotCom:        fblse,
+			MinSyncIntervbl: func() time.Durbtion { return 1 * time.Millisecond },
+			DequeueIntervbl: 1 * time.Millisecond,
 		})...)
 		done <- struct{}{}
 	}()
 
-	// Ignore fields store adds
-	ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
+	// Ignore fields store bdds
+	ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CrebtedAt", "UpdbtedAt", "Sources")
 
 	// The first thing sent down Synced is the list of repos in store during
-	// initialisation
+	// initiblisbtion
 	diff := <-syncer.Synced
 	if d := cmp.Diff(repos.Diff{Unmodified: stored}, diff, ignore); d != "" {
-		t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+		t.Fbtblf("Synced mismbtch (-wbnt +got):\n%s", d)
 	}
 
-	// Once we receive on lockChan we know our syncer is running
-	<-lockChan
+	// Once we receive on lockChbn we know our syncer is running
+	<-lockChbn
 
-	// We can now send on lockChan again to unblock the sync job
-	lockChan <- struct{}{}
+	// We cbn now send on lockChbn bgbin to unblock the sync job
+	lockChbn <- struct{}{}
 
-	// Next up it should find the existing repo and send it down Synced
+	// Next up it should find the existing repo bnd send it down Synced
 	diff = <-syncer.Synced
 	if d := cmp.Diff(repos.Diff{
 		Modified: repos.ReposModified{
 			{Repo: sourced[0], Modified: types.RepoModifiedDescription},
 		},
 	}, diff, ignore); d != "" {
-		t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+		t.Fbtblf("Synced mismbtch (-wbnt +got):\n%s", d)
 	}
 
 	// Then the new repo.
 	diff = <-syncer.Synced
 	if d := cmp.Diff(repos.Diff{Added: sourced[1:]}, diff, ignore); d != "" {
-		t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+		t.Fbtblf("Synced mismbtch (-wbnt +got):\n%s", d)
 	}
 
 	// Allow second round
-	<-lockChan
-	lockChan <- struct{}{}
+	<-lockChbn
+	lockChbn <- struct{}{}
 
-	// We check synced again to test us going around the Run loop 2 times in
-	// total.
+	// We check synced bgbin to test us going bround the Run loop 2 times in
+	// totbl.
 	diff = <-syncer.Synced
 	if d := cmp.Diff(repos.Diff{Unmodified: sourced[:1]}, diff, ignore); d != "" {
-		t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+		t.Fbtblf("Synced mismbtch (-wbnt +got):\n%s", d)
 	}
 
 	diff = <-syncer.Synced
 	if d := cmp.Diff(repos.Diff{Unmodified: sourced[1:]}, diff, ignore); d != "" {
-		t.Fatalf("Synced mismatch (-want +got):\n%s", d)
+		t.Fbtblf("Synced mismbtch (-wbnt +got):\n%s", d)
 	}
 
-	// Cancel context and the run loop should stop
-	cancel()
+	// Cbncel context bnd the run loop should stop
+	cbncel()
 	<-done
 }
 
 func TestSyncerMultipleServices(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	services := mkExternalServices(time.Now())
+	services := mkExternblServices(time.Now())
 
 	githubService := services[0]
-	gitlabService := services[1]
+	gitlbbService := services[1]
 	bitbucketCloudService := services[3]
 
-	services = types.ExternalServices{
+	services = types.ExternblServices{
 		githubService,
-		gitlabService,
+		gitlbbService,
 		bitbucketCloudService,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, services...); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, services...); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo := (&types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
@@ -1052,23 +1052,23 @@ func TestSyncerMultipleServices(t *testing.T) {
 		typestest.Opt.RepoSources(githubService.URN()),
 	)
 
-	gitlabRepo := (&types.Repo{
-		Name:     "gitlab.com/org/foo",
-		Metadata: &gitlab.Project{},
-		ExternalRepo: api.ExternalRepoSpec{
+	gitlbbRepo := (&types.Repo{
+		Nbme:     "gitlbb.com/org/foo",
+		Metbdbtb: &gitlbb.Project{},
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ID:          "12345",
-			ServiceID:   "https://gitlab.com/",
-			ServiceType: extsvc.TypeGitLab,
+			ServiceID:   "https://gitlbb.com/",
+			ServiceType: extsvc.TypeGitLbb,
 		},
 	}).With(
-		typestest.Opt.RepoSources(gitlabService.URN()),
+		typestest.Opt.RepoSources(gitlbbService.URN()),
 	)
 
 	bitbucketCloudRepo := (&types.Repo{
-		Name:     "bitbucket.org/team/foo",
-		Metadata: &bitbucketcloud.Repo{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "{e164a64c-bd73-4a40-b447-d71b43f328a8}",
+		Nbme:     "bitbucket.org/tebm/foo",
+		Metbdbtb: &bitbucketcloud.Repo{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "{e164b64c-bd73-4b40-b447-d71b43f328b8}",
 			ServiceID:   "https://bitbucket.org/",
 			ServiceType: extsvc.TypeBitbucketCloud,
 		},
@@ -1080,1121 +1080,1121 @@ func TestSyncerMultipleServices(t *testing.T) {
 		r.Sources = nil
 	}
 
-	baseGithubRepos := mkRepos(10, githubRepo)
-	githubSourced := baseGithubRepos.Clone().With(removeSources)
-	baseGitlabRepos := mkRepos(10, gitlabRepo)
-	gitlabSourced := baseGitlabRepos.Clone().With(removeSources)
-	baseBitbucketCloudRepos := mkRepos(10, bitbucketCloudRepo)
-	bitbucketCloudSourced := baseBitbucketCloudRepos.Clone().With(removeSources)
+	bbseGithubRepos := mkRepos(10, githubRepo)
+	githubSourced := bbseGithubRepos.Clone().With(removeSources)
+	bbseGitlbbRepos := mkRepos(10, gitlbbRepo)
+	gitlbbSourced := bbseGitlbbRepos.Clone().With(removeSources)
+	bbseBitbucketCloudRepos := mkRepos(10, bitbucketCloudRepo)
+	bitbucketCloudSourced := bbseBitbucketCloudRepos.Clone().With(removeSources)
 
-	sourcers := map[int64]repos.Source{
-		githubService.ID:         repos.NewFakeSource(githubService, nil, githubSourced...),
-		gitlabService.ID:         repos.NewFakeSource(gitlabService, nil, gitlabSourced...),
-		bitbucketCloudService.ID: repos.NewFakeSource(bitbucketCloudService, nil, bitbucketCloudSourced...),
+	sourcers := mbp[int64]repos.Source{
+		githubService.ID:         repos.NewFbkeSource(githubService, nil, githubSourced...),
+		gitlbbService.ID:         repos.NewFbkeSource(gitlbbService, nil, gitlbbSourced...),
+		bitbucketCloudService.ID: repos.NewFbkeSource(bitbucketCloudService, nil, bitbucketCloudSourced...),
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
 			s, ok := sourcers[service.ID]
 			if !ok {
-				t.Fatalf("sourcer not found: %d", service.ID)
+				t.Fbtblf("sourcer not found: %d", service.ID)
 			}
 			return s, nil
 		},
 		Store:  store,
-		Synced: make(chan repos.Diff),
+		Synced: mbke(chbn repos.Diff),
 		Now:    time.Now,
 	}
 
-	done := make(chan struct{})
+	done := mbke(chbn struct{})
 	go func() {
-		goroutine.MonitorBackgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
-			EnqueueInterval: func() time.Duration { return time.Second },
-			IsDotCom:        false,
-			MinSyncInterval: func() time.Duration { return 1 * time.Minute },
-			DequeueInterval: 1 * time.Millisecond,
+		goroutine.MonitorBbckgroundRoutines(ctx, syncer.Routines(ctx, store, repos.RunOptions{
+			EnqueueIntervbl: func() time.Durbtion { return time.Second },
+			IsDotCom:        fblse,
+			MinSyncIntervbl: func() time.Durbtion { return 1 * time.Minute },
+			DequeueIntervbl: 1 * time.Millisecond,
 		})...)
 		done <- struct{}{}
 	}()
 
-	// Ignore fields store adds
-	ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CreatedAt", "UpdatedAt", "Sources")
+	// Ignore fields store bdds
+	ignore := cmpopts.IgnoreFields(types.Repo{}, "ID", "CrebtedAt", "UpdbtedAt", "Sources")
 
-	// The first thing sent down Synced is an empty list of repos in store.
+	// The first thing sent down Synced is bn empty list of repos in store.
 	diff := <-syncer.Synced
 	if d := cmp.Diff(repos.Diff{}, diff, ignore); d != "" {
-		t.Fatalf("initial Synced mismatch (-want +got):\n%s", d)
+		t.Fbtblf("initibl Synced mismbtch (-wbnt +got):\n%s", d)
 	}
 
-	// we poll, so lets set an aggressive deadline
-	deadline := time.Now().Add(10 * time.Second)
-	if tDeadline, ok := t.Deadline(); ok && tDeadline.Before(deadline) {
+	// we poll, so lets set bn bggressive debdline
+	debdline := time.Now().Add(10 * time.Second)
+	if tDebdline, ok := t.Debdline(); ok && tDebdline.Before(debdline) {
 		// give time to report errors
-		deadline = tDeadline.Add(-100 * time.Millisecond)
+		debdline = tDebdline.Add(-100 * time.Millisecond)
 	}
 
-	// it should add a job for all external services
-	var jobCount int
-	for time.Now().Before(deadline) {
-		q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs")
-		if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobCount); err != nil {
-			t.Fatal(err)
+	// it should bdd b job for bll externbl services
+	vbr jobCount int
+	for time.Now().Before(debdline) {
+		q := sqlf.Sprintf("SELECT COUNT(*) FROM externbl_service_sync_jobs")
+		if err := store.Hbndle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&jobCount); err != nil {
+			t.Fbtbl(err)
 		}
 		if jobCount == len(services) {
-			break
+			brebk
 		}
-		// We need to give the worker package time to create the jobs
+		// We need to give the worker pbckbge time to crebte the jobs
 		time.Sleep(10 * time.Millisecond)
 	}
 	if jobCount != len(services) {
-		t.Fatalf("expected %d sync jobs, got %d", len(services), jobCount)
+		t.Fbtblf("expected %d sync jobs, got %d", len(services), jobCount)
 	}
 
 	for i := 0; i < len(services)*10; i++ {
 		diff := <-syncer.Synced
 
 		if len(diff.Added) != 1 {
-			t.Fatalf("Expected 1 Added repos. got %d", len(diff.Added))
+			t.Fbtblf("Expected 1 Added repos. got %d", len(diff.Added))
 		}
 		if len(diff.Deleted) != 0 {
-			t.Fatalf("Expected 0 Deleted repos. got %d", len(diff.Added))
+			t.Fbtblf("Expected 0 Deleted repos. got %d", len(diff.Added))
 		}
 		if len(diff.Modified) != 0 {
-			t.Fatalf("Expected 0 Modified repos. got %d", len(diff.Added))
+			t.Fbtblf("Expected 0 Modified repos. got %d", len(diff.Added))
 		}
 		if len(diff.Unmodified) != 0 {
-			t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
+			t.Fbtblf("Expected 0 Unmodified repos. got %d", len(diff.Added))
 		}
 	}
 
-	var jobsCompleted int
-	for time.Now().Before(deadline) {
-		q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
-		if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
-			t.Fatal(err)
+	vbr jobsCompleted int
+	for time.Now().Before(debdline) {
+		q := sqlf.Sprintf("SELECT COUNT(*) FROM externbl_service_sync_jobs where stbte = 'completed'")
+		if err := store.Hbndle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&jobsCompleted); err != nil {
+			t.Fbtbl(err)
 		}
 		if jobsCompleted == len(services) {
-			break
+			brebk
 		}
-		// We need to give the worker package time to create the jobs
+		// We need to give the worker pbckbge time to crebte the jobs
 		time.Sleep(10 * time.Millisecond)
 	}
 
-	// Cancel context and the run loop should stop
-	cancel()
+	// Cbncel context bnd the run loop should stop
+	cbncel()
 	<-done
 }
 
-func TestOrphanedRepo(t *testing.T) {
-	t.Parallel()
+func TestOrphbnedRepo(t *testing.T) {
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test1",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
-	svc2 := &types.ExternalService{
+	svc2 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test2",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test2",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1, svc2); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo := &types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
-	// Add two services, both pointing at the same repo
+	// Add two services, both pointing bt the sbme repo
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Sync second service
-	syncer.Sourcer = func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-		s := repos.NewFakeSource(svc2, nil, githubRepo)
+	syncer.Sourcer = func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+		s := repos.NewFbkeSource(svc2, nil, githubRepo)
 		return s, nil
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that there are two relationships
-	assertSourceCount(ctx, t, store, 2)
+	// Confirm thbt there bre two relbtionships
+	bssertSourceCount(ctx, t, store, 2)
 
-	// We should have no deleted repos
-	assertDeletedRepoCount(ctx, t, store, 0)
+	// We should hbve no deleted repos
+	bssertDeletedRepoCount(ctx, t, store, 0)
 
-	// Remove the repo from one service and sync again
-	syncer.Sourcer = func(ctx context.Context, services *types.ExternalService) (repos.Source, error) {
-		s := repos.NewFakeSource(svc1, nil)
+	// Remove the repo from one service bnd sync bgbin
+	syncer.Sourcer = func(ctx context.Context, services *types.ExternblService) (repos.Source, error) {
+		s := repos.NewFbkeSource(svc1, nil)
 		return s, nil
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that the repository hasn't been deleted
-	rs, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+	// Confirm thbt the repository hbsn't been deleted
+	rs, err := store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(rs) != 1 {
-		t.Fatalf("Expected 1 repo, got %d", len(rs))
+		t.Fbtblf("Expected 1 repo, got %d", len(rs))
 	}
 
-	// Confirm that there is one relationship
-	assertSourceCount(ctx, t, store, 1)
+	// Confirm thbt there is one relbtionship
+	bssertSourceCount(ctx, t, store, 1)
 
-	// We should have no deleted repos
-	assertDeletedRepoCount(ctx, t, store, 0)
+	// We should hbve no deleted repos
+	bssertDeletedRepoCount(ctx, t, store, 0)
 
-	// Remove the repo from the second service and sync again
-	syncer.Sourcer = func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-		s := repos.NewFakeSource(svc2, nil)
+	// Remove the repo from the second service bnd sync bgbin
+	syncer.Sourcer = func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+		s := repos.NewFbkeSource(svc2, nil)
 		return s, nil
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that there no relationships
-	assertSourceCount(ctx, t, store, 0)
+	// Confirm thbt there no relbtionships
+	bssertSourceCount(ctx, t, store, 0)
 
-	// We should have one deleted repo
-	assertDeletedRepoCount(ctx, t, store, 1)
+	// We should hbve one deleted repo
+	bssertDeletedRepoCount(ctx, t, store, 1)
 }
 
-func TestCloudDefaultExternalServicesDontSync(t *testing.T) {
-	t.Parallel()
+func TestCloudDefbultExternblServicesDontSync(t *testing.T) {
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:         extsvc.KindGitHub,
-		DisplayName:  "Github - Test1",
-		Config:       extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CloudDefault: true,
-		CreatedAt:    now,
-		UpdatedAt:    now,
+		DisplbyNbme:  "Github - Test1",
+		Config:       extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CloudDefbult: true,
+		CrebtedAt:    now,
+		UpdbtedAt:    now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo := &types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
 
-	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
-	want := repos.ErrCloudDefaultSync
+	hbve := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
+	wbnt := repos.ErrCloudDefbultSync
 
-	if !errors.Is(have, want) {
-		t.Fatalf("have err: %v, want %v", have, want)
+	if !errors.Is(hbve, wbnt) {
+		t.Fbtblf("hbve err: %v, wbnt %v", hbve, wbnt)
 	}
 }
 
-func TestDotComPrivateReposDontSync(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
+func TestDotComPrivbteReposDontSync(t *testing.T) {
+	orig := envvbr.SourcegrbphDotComMode()
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
-	t.Cleanup(func() {
-		envvar.MockSourcegraphDotComMode(orig)
-		cancel()
+	t.Clebnup(func() {
+		envvbr.MockSourcegrbphDotComMode(orig)
+		cbncel()
 	})
 
 	store := getTestRepoStore(t)
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test1",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1); err != nil {
+		t.Fbtbl(err)
 	}
 
-	privateRepo := &types.Repo{
-		Name:    "github.com/org/foo",
-		Private: true,
+	privbteRepo := &types.Repo{
+		Nbme:    "github.com/org/foo",
+		Privbte: true,
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, privateRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, privbteRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
 
-	have := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
-	errorMsg := fmt.Sprintf("%s is private, but dotcom does not support private repositories.", string(privateRepo.Name))
+	hbve := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder)
+	errorMsg := fmt.Sprintf("%s is privbte, but dotcom does not support privbte repositories.", string(privbteRepo.Nbme))
 
-	require.EqualError(t, have, errorMsg)
+	require.EqublError(t, hbve, errorMsg)
 }
 
-var basicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/name"]}`
+vbr bbsicGitHubConfig = `{"url": "https://github.com", "token": "beef", "repos": ["owner/nbme"]}`
 
 func TestConflictingSyncers(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test1",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
-	svc2 := &types.ExternalService{
+	svc2 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test2",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test2",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1, svc2); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo := &types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
-	// Add two services, both pointing at the same repo
+	// Add two services, both pointing bt the sbme repo
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc2, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc2, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that there are two relationships
-	assertSourceCount(ctx, t, store, 2)
+	// Confirm thbt there bre two relbtionships
+	bssertSourceCount(ctx, t, store, 2)
 
-	fromDB, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+	fromDB, err := store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(fromDB) != 1 {
-		t.Fatalf("Expected 1 repo, got %d", len(fromDB))
+		t.Fbtblf("Expected 1 repo, got %d", len(fromDB))
 	}
-	beforeUpdate := fromDB[0]
-	if beforeUpdate.Description != "" {
-		t.Fatalf("Expected %q, got %q", "", beforeUpdate.Description)
+	beforeUpdbte := fromDB[0]
+	if beforeUpdbte.Description != "" {
+		t.Fbtblf("Expected %q, got %q", "", beforeUpdbte.Description)
 	}
 
-	// Create two transactions
-	tx1, err := store.Transact(ctx)
+	// Crebte two trbnsbctions
+	tx1, err := store.Trbnsbct(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	tx2, err := store.Transact(ctx)
+	tx2, err := store.Trbnsbct(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	newDescription := "This has changed"
-	updatedRepo := githubRepo.With(func(r *types.Repo) {
+	newDescription := "This hbs chbnged"
+	updbtedRepo := githubRepo.With(func(r *types.Repo) {
 		r.Description = newDescription
 	})
 
-	// Start syncing using tx1
+	// Stbrt syncing using tx1
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, updatedRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, updbtedRepo)
 			return s, nil
 		},
 		Store: tx1,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	syncer2 := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc2, nil, githubRepo.With(func(r *types.Repo) {
 				r.Description = newDescription
 			}))
 			return s, nil
 		},
 		Store:  tx2,
-		Synced: make(chan repos.Diff, 2),
+		Synced: mbke(chbn repos.Diff, 2),
 		Now:    time.Now,
 	}
 
-	errChan := make(chan error)
+	errChbn := mbke(chbn error)
 	go func() {
-		errChan <- syncer2.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder)
+		errChbn <- syncer2.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder)
 	}()
 
 	tx1.Done(nil)
 
-	if err = <-errChan; err != nil {
-		t.Fatalf("syncer2 err: %v", err)
+	if err = <-errChbn; err != nil {
+		t.Fbtblf("syncer2 err: %v", err)
 	}
 
 	diff := <-syncer2.Synced
-	if have, want := diff.Repos().Names(), []string{string(updatedRepo.Name)}; !cmp.Equal(want, have) {
-		t.Fatalf("syncer2 Synced mismatch: (-want, +have): %s", cmp.Diff(want, have))
+	if hbve, wbnt := diff.Repos().Nbmes(), []string{string(updbtedRepo.Nbme)}; !cmp.Equbl(wbnt, hbve) {
+		t.Fbtblf("syncer2 Synced mismbtch: (-wbnt, +hbve): %s", cmp.Diff(wbnt, hbve))
 	}
 
 	tx2.Done(nil)
 
-	fromDB, err = store.RepoStore().List(ctx, database.ReposListOptions{})
+	fromDB, err = store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(fromDB) != 1 {
-		t.Fatalf("Expected 1 repo, got %d", len(fromDB))
+		t.Fbtblf("Expected 1 repo, got %d", len(fromDB))
 	}
-	afterUpdate := fromDB[0]
-	if afterUpdate.Description != newDescription {
-		t.Fatalf("Expected %q, got %q", newDescription, afterUpdate.Description)
+	bfterUpdbte := fromDB[0]
+	if bfterUpdbte.Description != newDescription {
+		t.Fbtblf("Expected %q, got %q", newDescription, bfterUpdbte.Description)
 	}
 }
 
-// Test that sync repo does not clear out any other repo relationships
-func TestSyncRepoMaintainsOtherSources(t *testing.T) {
-	t.Parallel()
+// Test thbt sync repo does not clebr out bny other repo relbtionships
+func TestSyncRepoMbintbinsOtherSources(t *testing.T) {
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test1",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
-	svc2 := &types.ExternalService{
+	svc2 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test2",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test2",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1, svc2); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo := &types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
-	// Add two services, both pointing at the same repo
+	// Add two services, both pointing bt the sbme repo
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc2, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc2, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that there are two relationships
-	assertSourceCount(ctx, t, store, 2)
+	// Confirm thbt there bre two relbtionships
+	bssertSourceCount(ctx, t, store, 2)
 
 	// Run syncRepo with only one source
 	urn := extsvc.URN(extsvc.KindGitHub, svc1.ID)
-	githubRepo.Sources = map[string]*types.SourceInfo{
+	githubRepo.Sources = mbp[string]*types.SourceInfo{
 		urn: {
 			ID:       urn,
 			CloneURL: "cloneURL",
 		},
 	}
-	_, err := syncer.SyncRepo(ctx, githubRepo.Name, true)
+	_, err := syncer.SyncRepo(ctx, githubRepo.Nbme, true)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We should still have two sources
-	assertSourceCount(ctx, t, store, 2)
+	// We should still hbve two sources
+	bssertSourceCount(ctx, t, store, 2)
 }
 
-func TestNameOnConflictOnRename(t *testing.T) {
-	// Test the case where more than one external service returns the same name for different repos. The names
-	// are the same, but the external id are different.
-	t.Parallel()
+func TestNbmeOnConflictOnRenbme(t *testing.T) {
+	// Test the cbse where more thbn one externbl service returns the sbme nbme for different repos. The nbmes
+	// bre the sbme, but the externbl id bre different.
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test1",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
-	svc2 := &types.ExternalService{
+	svc2 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test2",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test2",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1, svc2); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo1 := &types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-foo",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-foo",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
 	githubRepo2 := &types.Repo{
-		Name:     "github.com/org/bar",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-bar",
+		Nbme:     "github.com/org/bbr",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-bbr",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
-	// Add two services, one with each repo
+	// Add two services, one with ebch repo
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo1)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, githubRepo1)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc2, nil, githubRepo2)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(context.Context, *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc2, nil, githubRepo2)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Rename repo1 with the same name as repo2
-	renamedRepo1 := githubRepo1.With(func(r *types.Repo) {
-		r.Name = githubRepo2.Name
+	// Renbme repo1 with the sbme nbme bs repo2
+	renbmedRepo1 := githubRepo1.With(func(r *types.Repo) {
+		r.Nbme = githubRepo2.Nbme
 	})
 
 	// Sync first service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(context.Context, *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, renamedRepo1)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(context.Context, *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, renbmedRepo1)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
-	fromDB, err := store.RepoStore().List(ctx, database.ReposListOptions{})
+	fromDB, err := store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if len(fromDB) != 1 {
-		t.Fatalf("Expected 1 repo, have %d", len(fromDB))
+		t.Fbtblf("Expected 1 repo, hbve %d", len(fromDB))
 	}
 
 	found := fromDB[0]
-	// We expect repo2 to be synced since we always pick the just sourced repo as the winner, deleting the other.
-	// If the existing conflicting repo still exists, it'll have a different name (because names are unique in
-	// the code host), so it'll get re-created once we sync it later.
-	expectedID := "foo-external-foo"
+	// We expect repo2 to be synced since we blwbys pick the just sourced repo bs the winner, deleting the other.
+	// If the existing conflicting repo still exists, it'll hbve b different nbme (becbuse nbmes bre unique in
+	// the code host), so it'll get re-crebted once we sync it lbter.
+	expectedID := "foo-externbl-foo"
 
-	if found.ExternalRepo.ID != expectedID {
-		t.Fatalf("Want %q, got %q", expectedID, found.ExternalRepo.ID)
+	if found.ExternblRepo.ID != expectedID {
+		t.Fbtblf("Wbnt %q, got %q", expectedID, found.ExternblRepo.ID)
 	}
 }
 
-func TestDeleteExternalService(t *testing.T) {
-	t.Parallel()
+func TestDeleteExternblService(t *testing.T) {
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
 	now := time.Now()
 
-	svc1 := &types.ExternalService{
+	svc1 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test1",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test1",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
-	svc2 := &types.ExternalService{
+	svc2 := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test2",
-		Config:      extsvc.NewUnencryptedConfig(basicGitHubConfig),
-		CreatedAt:   now,
-		UpdatedAt:   now,
+		DisplbyNbme: "Github - Test2",
+		Config:      extsvc.NewUnencryptedConfig(bbsicGitHubConfig),
+		CrebtedAt:   now,
+		UpdbtedAt:   now,
 	}
 
 	// setup services
-	if err := store.ExternalServiceStore().Upsert(ctx, svc1, svc2); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Upsert(ctx, svc1, svc2); err != nil {
+		t.Fbtbl(err)
 	}
 
 	githubRepo := &types.Repo{
-		Name:     "github.com/org/foo",
-		Metadata: &github.Repository{},
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          "foo-external-12345",
+		Nbme:     "github.com/org/foo",
+		Metbdbtb: &github.Repository{},
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          "foo-externbl-12345",
 			ServiceID:   "https://github.com/",
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
 
-	// Add two services, both pointing at the same repo
+	// Add two services, both pointing bt the sbme repo
 
 	// Sync first service
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc1, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc1, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc1.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Sync second service
 	syncer = &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
-		Sourcer: func(ctx context.Context, service *types.ExternalService) (repos.Source, error) {
-			s := repos.NewFakeSource(svc2, nil, githubRepo)
+		ObsvCtx: observbtion.TestContextTB(t),
+		Sourcer: func(ctx context.Context, service *types.ExternblService) (repos.Source, error) {
+			s := repos.NewFbkeSource(svc2, nil, githubRepo)
 			return s, nil
 		},
 		Store: store,
 		Now:   time.Now,
 	}
-	if err := syncer.SyncExternalService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
-		t.Fatal(err)
+	if err := syncer.SyncExternblService(ctx, svc2.ID, 10*time.Second, noopProgressRecorder); err != nil {
+		t.Fbtbl(err)
 	}
 
 	// Delete the first service
-	if err := store.ExternalServiceStore().Delete(ctx, svc1.ID); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Delete(ctx, svc1.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that there is one relationship
-	assertSourceCount(ctx, t, store, 1)
+	// Confirm thbt there is one relbtionship
+	bssertSourceCount(ctx, t, store, 1)
 
-	// We should have no deleted repos
-	assertDeletedRepoCount(ctx, t, store, 0)
+	// We should hbve no deleted repos
+	bssertDeletedRepoCount(ctx, t, store, 0)
 
 	// Delete the second service
-	if err := store.ExternalServiceStore().Delete(ctx, svc2.ID); err != nil {
-		t.Fatal(err)
+	if err := store.ExternblServiceStore().Delete(ctx, svc2.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Confirm that there no relationships
-	assertSourceCount(ctx, t, store, 0)
+	// Confirm thbt there no relbtionships
+	bssertSourceCount(ctx, t, store, 0)
 
-	// We should have one deleted repo
-	assertDeletedRepoCount(ctx, t, store, 1)
+	// We should hbve one deleted repo
+	bssertDeletedRepoCount(ctx, t, store, 1)
 }
 
-func assertSourceCount(ctx context.Context, t *testing.T, store repos.Store, want int) {
+func bssertSourceCount(ctx context.Context, t *testing.T, store repos.Store, wbnt int) {
 	t.Helper()
-	var rowCount int
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_repos")
-	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
-		t.Fatal(err)
+	vbr rowCount int
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM externbl_service_repos")
+	if err := store.Hbndle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&rowCount); err != nil {
+		t.Fbtbl(err)
 	}
-	if rowCount != want {
-		t.Fatalf("Expected %d rows, got %d", want, rowCount)
+	if rowCount != wbnt {
+		t.Fbtblf("Expected %d rows, got %d", wbnt, rowCount)
 	}
 }
 
-func assertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store, want int) {
+func bssertDeletedRepoCount(ctx context.Context, t *testing.T, store repos.Store, wbnt int) {
 	t.Helper()
-	var rowCount int
-	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_at is not null")
-	if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&rowCount); err != nil {
-		t.Fatal(err)
+	vbr rowCount int
+	q := sqlf.Sprintf("SELECT COUNT(*) FROM repo where deleted_bt is not null")
+	if err := store.Hbndle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&rowCount); err != nil {
+		t.Fbtbl(err)
 	}
-	if rowCount != want {
-		t.Fatalf("Expected %d rows, got %d", want, rowCount)
+	if rowCount != wbnt {
+		t.Fbtblf("Expected %d rows, got %d", wbnt, rowCount)
 	}
 }
 
-func TestSyncReposWithLastErrors(t *testing.T) {
-	t.Parallel()
+func TestSyncReposWithLbstErrors(t *testing.T) {
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx := context.Background()
-	testCases := []struct {
-		label     string
+	ctx := context.Bbckground()
+	testCbses := []struct {
+		lbbel     string
 		svcKind   string
-		repoName  api.RepoName
+		repoNbme  bpi.RepoNbme
 		config    string
 		extSvcErr error
 		serviceID string
 	}{
 		{
-			label:     "github test",
+			lbbel:     "github test",
 			svcKind:   extsvc.KindGitHub,
-			repoName:  api.RepoName("github.com/foo/bar"),
-			config:    `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+			repoNbme:  bpi.RepoNbme("github.com/foo/bbr"),
+			config:    `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "bbc"}`,
 			extSvcErr: github.ErrRepoNotFound,
 			serviceID: "https://github.com/",
 		},
 		{
-			label:     "gitlab test",
-			svcKind:   extsvc.KindGitLab,
-			repoName:  api.RepoName("gitlab.com/foo/bar"),
-			config:    `{"url": "https://gitlab.com", "projectQuery": ["none"], "token": "abc"}`,
-			extSvcErr: gitlab.ProjectNotFoundError{Name: "/foo/bar"},
-			serviceID: "https://gitlab.com/",
+			lbbel:     "gitlbb test",
+			svcKind:   extsvc.KindGitLbb,
+			repoNbme:  bpi.RepoNbme("gitlbb.com/foo/bbr"),
+			config:    `{"url": "https://gitlbb.com", "projectQuery": ["none"], "token": "bbc"}`,
+			extSvcErr: gitlbb.ProjectNotFoundError{Nbme: "/foo/bbr"},
+			serviceID: "https://gitlbb.com/",
 		},
 	}
 
-	for i, tc := range testCases {
-		t.Run(tc.label, func(t *testing.T) {
+	for i, tc := rbnge testCbses {
+		t.Run(tc.lbbel, func(t *testing.T) {
 			syncer, dbRepos := setupSyncErroredTest(ctx, store, t, tc.svcKind,
-				tc.extSvcErr, tc.config, tc.serviceID, tc.repoName)
+				tc.extSvcErr, tc.config, tc.serviceID, tc.repoNbme)
 			if len(dbRepos) != 1 {
-				t.Fatalf("should've inserted exactly 1 repo in the db for testing, got %d instead", len(dbRepos))
+				t.Fbtblf("should've inserted exbctly 1 repo in the db for testing, got %d instebd", len(dbRepos))
 			}
 
-			// Run the syncer, which should find the repo with non-empty last_error and delete it
-			err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(200, 1)))
+			// Run the syncer, which should find the repo with non-empty lbst_error bnd delete it
+			err := syncer.SyncReposWithLbstErrors(ctx, rbtelimit.NewInstrumentedLimiter("TestSyncRepos", rbte.NewLimiter(200, 1)))
 			if err != nil {
-				t.Fatalf("unexpected error running SyncReposWithLastErrors: %s", err)
+				t.Fbtblf("unexpected error running SyncReposWithLbstErrors: %s", err)
 			}
 
 			diff := <-syncer.Synced
 
 			deleted := types.Repos{&types.Repo{ID: dbRepos[0].ID}}
 			if d := cmp.Diff(repos.Diff{Deleted: deleted}, diff); d != "" {
-				t.Fatalf("Deleted mismatch (-want +got):\n%s", d)
+				t.Fbtblf("Deleted mismbtch (-wbnt +got):\n%s", d)
 			}
 
-			// each iteration will result in one more deleted repo.
-			assertDeletedRepoCount(ctx, t, store, i+1)
-			// Try to fetch the repo to verify that it was deleted by the syncer
-			myRepo, err := store.RepoStore().GetByName(ctx, tc.repoName)
+			// ebch iterbtion will result in one more deleted repo.
+			bssertDeletedRepoCount(ctx, t, store, i+1)
+			// Try to fetch the repo to verify thbt it wbs deleted by the syncer
+			myRepo, err := store.RepoStore().GetByNbme(ctx, tc.repoNbme)
 			if err == nil {
-				t.Fatalf("repo should've been deleted. expected a repo not found error")
+				t.Fbtblf("repo should've been deleted. expected b repo not found error")
 			}
-			if !errors.Is(err, &database.RepoNotFoundErr{Name: tc.repoName}) {
-				t.Fatalf("expected a RepoNotFound error, got %s", err)
+			if !errors.Is(err, &dbtbbbse.RepoNotFoundErr{Nbme: tc.repoNbme}) {
+				t.Fbtblf("expected b RepoNotFound error, got %s", err)
 			}
 			if myRepo != nil {
-				t.Fatalf("repo should've been deleted: %v", myRepo)
+				t.Fbtblf("repo should've been deleted: %v", myRepo)
 			}
 		})
 	}
 }
 
-func TestSyncReposWithLastErrorsHitsRateLimiter(t *testing.T) {
-	t.Parallel()
+func TestSyncReposWithLbstErrorsHitsRbteLimiter(t *testing.T) {
+	t.Pbrbllel()
 	store := getTestRepoStore(t)
 
-	ctx := context.Background()
-	repoNames := []api.RepoName{
-		"github.com/asdf/jkl",
-		"github.com/foo/bar",
+	ctx := context.Bbckground()
+	repoNbmes := []bpi.RepoNbme{
+		"github.com/bsdf/jkl",
+		"github.com/foo/bbr",
 	}
-	syncer, _ := setupSyncErroredTest(ctx, store, t, extsvc.KindGitLab, github.ErrRepoNotFound, `{"url": "https://github.com", "projectQuery": ["none"], "token": "abc"}`, "https://gitlab.com/", repoNames...)
+	syncer, _ := setupSyncErroredTest(ctx, store, t, extsvc.KindGitLbb, github.ErrRepoNotFound, `{"url": "https://github.com", "projectQuery": ["none"], "token": "bbc"}`, "https://gitlbb.com/", repoNbmes...)
 
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-	// Run the syncer, which should return an error due to hitting the rate limit
-	err := syncer.SyncReposWithLastErrors(ctx, ratelimit.NewInstrumentedLimiter("TestSyncRepos", rate.NewLimiter(1, 1)))
+	ctx, cbncel := context.WithTimeout(ctx, time.Second)
+	defer cbncel()
+	// Run the syncer, which should return bn error due to hitting the rbte limit
+	err := syncer.SyncReposWithLbstErrors(ctx, rbtelimit.NewInstrumentedLimiter("TestSyncRepos", rbte.NewLimiter(1, 1)))
 	if err == nil {
-		t.Fatal("SyncReposWithLastErrors should've returned an error due to hitting rate limit")
+		t.Fbtbl("SyncReposWithLbstErrors should've returned bn error due to hitting rbte limit")
 	}
-	if !strings.Contains(err.Error(), "error waiting for rate limiter: rate: Wait(n=1) would exceed context deadline") {
-		t.Fatalf("expected an error from rate limiting, got %s instead", err)
+	if !strings.Contbins(err.Error(), "error wbiting for rbte limiter: rbte: Wbit(n=1) would exceed context debdline") {
+		t.Fbtblf("expected bn error from rbte limiting, got %s instebd", err)
 	}
 }
 
 func setupSyncErroredTest(ctx context.Context, s repos.Store, t *testing.T,
-	serviceType string, externalSvcError error, config, serviceID string, repoNames ...api.RepoName,
+	serviceType string, externblSvcError error, config, serviceID string, repoNbmes ...bpi.RepoNbme,
 ) (*repos.Syncer, types.Repos) {
 	t.Helper()
 	now := time.Now()
 	dbRepos := types.Repos{}
-	service := types.ExternalService{
+	service := types.ExternblService{
 		Kind:         serviceType,
-		DisplayName:  fmt.Sprintf("%s - Test", serviceType),
+		DisplbyNbme:  fmt.Sprintf("%s - Test", serviceType),
 		Config:       extsvc.NewUnencryptedConfig(config),
-		CreatedAt:    now,
-		UpdatedAt:    now,
-		CloudDefault: true,
+		CrebtedAt:    now,
+		UpdbtedAt:    now,
+		CloudDefbult: true,
 	}
 
-	// Create a new external service
+	// Crebte b new externbl service
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
 	}
 
-	err := s.ExternalServiceStore().Create(ctx, confGet, &service)
+	err := s.ExternblServiceStore().Crebte(ctx, confGet, &service)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, repoName := range repoNames {
+	for _, repoNbme := rbnge repoNbmes {
 		dbRepo := (&types.Repo{
-			Name:        repoName,
+			Nbme:        repoNbme,
 			Description: "",
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          fmt.Sprintf("external-%s", repoName), // TODO: make this something else?
+			ExternblRepo: bpi.ExternblRepoSpec{
+				ID:          fmt.Sprintf("externbl-%s", repoNbme), // TODO: mbke this something else?
 				ServiceID:   serviceID,
 				ServiceType: serviceType,
 			},
 		}).With(typestest.Opt.RepoSources(service.URN()))
-		// Insert the repo into our database
-		if err := s.RepoStore().Create(ctx, dbRepo); err != nil {
-			t.Fatal(err)
+		// Insert the repo into our dbtbbbse
+		if err := s.RepoStore().Crebte(ctx, dbRepo); err != nil {
+			t.Fbtbl(err)
 		}
-		// Log a failure in gitserver_repos for this repo
-		if err := s.GitserverReposStore().Update(ctx, &types.GitserverRepo{
+		// Log b fbilure in gitserver_repos for this repo
+		if err := s.GitserverReposStore().Updbte(ctx, &types.GitserverRepo{
 			RepoID:      dbRepo.ID,
-			ShardID:     "test",
-			CloneStatus: types.CloneStatusCloned,
-			LastError:   "error fetching repo: Not found",
+			ShbrdID:     "test",
+			CloneStbtus: types.CloneStbtusCloned,
+			LbstError:   "error fetching repo: Not found",
 		}); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// Validate that the repo exists and we can fetch it
-		_, err := s.RepoStore().GetByName(ctx, dbRepo.Name)
+		// Vblidbte thbt the repo exists bnd we cbn fetch it
+		_, err := s.RepoStore().GetByNbme(ctx, dbRepo.Nbme)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		dbRepos = append(dbRepos, dbRepo)
+		dbRepos = bppend(dbRepos, dbRepo)
 	}
 
 	syncer := &repos.Syncer{
-		ObsvCtx: observation.TestContextTB(t),
+		ObsvCtx: observbtion.TestContextTB(t),
 		Now:     time.Now,
 		Store:   s,
-		Synced:  make(chan repos.Diff, 1),
-		Sourcer: repos.NewFakeSourcer(
+		Synced:  mbke(chbn repos.Diff, 1),
+		Sourcer: repos.NewFbkeSourcer(
 			nil,
-			repos.NewFakeSource(&service,
-				externalSvcError,
+			repos.NewFbkeSource(&service,
+				externblSvcError,
 				dbRepos...),
 		),
 	}
 	return syncer, dbRepos
 }
 
-var noopProgressRecorder = func(ctx context.Context, progress repos.SyncProgress, final bool) error {
+vbr noopProgressRecorder = func(ctx context.Context, progress repos.SyncProgress, finbl bool) error {
 	return nil
 }
 
-func TestCreateRepoLicenseHook(t *testing.T) {
-	ctx := context.Background()
+func TestCrebteRepoLicenseHook(t *testing.T) {
+	ctx := context.Bbckground()
 
 	// Set up mock repo count
 	mockRepoStore := dbmocks.NewMockRepoStore()
 	mockStore := repos.NewMockStore()
-	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
+	mockStore.RepoStoreFunc.SetDefbultReturn(mockRepoStore)
 
-	tests := map[string]struct {
-		maxPrivateRepos int
+	tests := mbp[string]struct {
+		mbxPrivbteRepos int
 		unrestricted    bool
-		numPrivateRepos int
+		numPrivbteRepos int
 		newRepo         *types.Repo
-		wantErr         bool
+		wbntErr         bool
 	}{
-		"private repo, unrestricted": {
+		"privbte repo, unrestricted": {
 			unrestricted:    true,
-			numPrivateRepos: 99999999,
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         false,
+			numPrivbteRepos: 99999999,
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         fblse,
 		},
-		"private repo, max private repos reached": {
-			maxPrivateRepos: 1,
-			numPrivateRepos: 1,
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         true,
+		"privbte repo, mbx privbte repos rebched": {
+			mbxPrivbteRepos: 1,
+			numPrivbteRepos: 1,
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         true,
 		},
-		"public repo, max private repos reached": {
-			maxPrivateRepos: 1,
-			numPrivateRepos: 1,
-			newRepo:         &types.Repo{Private: false},
-			wantErr:         false,
+		"public repo, mbx privbte repos rebched": {
+			mbxPrivbteRepos: 1,
+			numPrivbteRepos: 1,
+			newRepo:         &types.Repo{Privbte: fblse},
+			wbntErr:         fblse,
 		},
-		"private repo, max private repos not reached": {
-			maxPrivateRepos: 2,
-			numPrivateRepos: 1,
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         false,
+		"privbte repo, mbx privbte repos not rebched": {
+			mbxPrivbteRepos: 2,
+			numPrivbteRepos: 1,
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         fblse,
 		},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockRepoStore.CountFunc.SetDefaultReturn(test.numPrivateRepos, nil)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			mockRepoStore.CountFunc.SetDefbultReturn(test.numPrivbteRepos, nil)
 
-			defaultMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if prFeature, ok := feature.(*licensing.FeaturePrivateRepositories); ok {
-					prFeature.MaxNumPrivateRepos = test.maxPrivateRepos
-					prFeature.Unrestricted = test.unrestricted
+			defbultMock := licensing.MockCheckFebture
+			licensing.MockCheckFebture = func(febture licensing.Febture) error {
+				if prFebture, ok := febture.(*licensing.FebturePrivbteRepositories); ok {
+					prFebture.MbxNumPrivbteRepos = test.mbxPrivbteRepos
+					prFebture.Unrestricted = test.unrestricted
 				}
 
 				return nil
 			}
 			defer func() {
-				licensing.MockCheckFeature = defaultMock
+				licensing.MockCheckFebture = defbultMock
 			}()
 
-			err := repos.CreateRepoLicenseHook(ctx, mockStore, test.newRepo)
-			if gotErr := err != nil; gotErr != test.wantErr {
-				t.Fatalf("got err: %t, want err: %t, err: %q", gotErr, test.wantErr, err)
+			err := repos.CrebteRepoLicenseHook(ctx, mockStore, test.newRepo)
+			if gotErr := err != nil; gotErr != test.wbntErr {
+				t.Fbtblf("got err: %t, wbnt err: %t, err: %q", gotErr, test.wbntErr, err)
 			}
 		})
 	}
 }
 
-func TestUpdateRepoLicenseHook(t *testing.T) {
-	ctx := context.Background()
+func TestUpdbteRepoLicenseHook(t *testing.T) {
+	ctx := context.Bbckground()
 
 	// Set up mock repo count
 	mockRepoStore := dbmocks.NewMockRepoStore()
 	mockStore := repos.NewMockStore()
-	mockStore.RepoStoreFunc.SetDefaultReturn(mockRepoStore)
+	mockStore.RepoStoreFunc.SetDefbultReturn(mockRepoStore)
 
-	tests := map[string]struct {
-		maxPrivateRepos int
+	tests := mbp[string]struct {
+		mbxPrivbteRepos int
 		unrestricted    bool
-		numPrivateRepos int
+		numPrivbteRepos int
 		existingRepo    *types.Repo
 		newRepo         *types.Repo
-		wantErr         bool
+		wbntErr         bool
 	}{
-		"from public to private, unrestricted": {
+		"from public to privbte, unrestricted": {
 			unrestricted:    true,
-			numPrivateRepos: 99999999,
-			existingRepo:    &types.Repo{Private: false},
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         false,
+			numPrivbteRepos: 99999999,
+			existingRepo:    &types.Repo{Privbte: fblse},
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         fblse,
 		},
-		"from public to private, max private repos reached": {
-			maxPrivateRepos: 1,
-			numPrivateRepos: 1,
-			existingRepo:    &types.Repo{Private: false},
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         true,
+		"from public to privbte, mbx privbte repos rebched": {
+			mbxPrivbteRepos: 1,
+			numPrivbteRepos: 1,
+			existingRepo:    &types.Repo{Privbte: fblse},
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         true,
 		},
-		"from private to private, max private repos reached": {
-			maxPrivateRepos: 1,
-			numPrivateRepos: 1,
-			existingRepo:    &types.Repo{Private: true},
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         false,
+		"from privbte to privbte, mbx privbte repos rebched": {
+			mbxPrivbteRepos: 1,
+			numPrivbteRepos: 1,
+			existingRepo:    &types.Repo{Privbte: true},
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         fblse,
 		},
-		"from private to public, max private repos reached": {
-			maxPrivateRepos: 1,
-			numPrivateRepos: 1,
-			existingRepo:    &types.Repo{Private: true},
-			newRepo:         &types.Repo{Private: false},
-			wantErr:         false,
+		"from privbte to public, mbx privbte repos rebched": {
+			mbxPrivbteRepos: 1,
+			numPrivbteRepos: 1,
+			existingRepo:    &types.Repo{Privbte: true},
+			newRepo:         &types.Repo{Privbte: fblse},
+			wbntErr:         fblse,
 		},
-		"from private deleted to private not deleted, max private repos reached": {
-			maxPrivateRepos: 1,
-			numPrivateRepos: 1,
-			existingRepo:    &types.Repo{Private: true, DeletedAt: time.Now()},
-			newRepo:         &types.Repo{Private: true, DeletedAt: time.Time{}},
-			wantErr:         true,
+		"from privbte deleted to privbte not deleted, mbx privbte repos rebched": {
+			mbxPrivbteRepos: 1,
+			numPrivbteRepos: 1,
+			existingRepo:    &types.Repo{Privbte: true, DeletedAt: time.Now()},
+			newRepo:         &types.Repo{Privbte: true, DeletedAt: time.Time{}},
+			wbntErr:         true,
 		},
-		"from public to private, max private repos not reached": {
-			maxPrivateRepos: 2,
-			numPrivateRepos: 1,
-			existingRepo:    &types.Repo{Private: false},
-			newRepo:         &types.Repo{Private: true},
-			wantErr:         false,
+		"from public to privbte, mbx privbte repos not rebched": {
+			mbxPrivbteRepos: 2,
+			numPrivbteRepos: 1,
+			existingRepo:    &types.Repo{Privbte: fblse},
+			newRepo:         &types.Repo{Privbte: true},
+			wbntErr:         fblse,
 		},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			mockRepoStore.CountFunc.SetDefaultReturn(test.numPrivateRepos, nil)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			mockRepoStore.CountFunc.SetDefbultReturn(test.numPrivbteRepos, nil)
 
-			defaultMock := licensing.MockCheckFeature
-			licensing.MockCheckFeature = func(feature licensing.Feature) error {
-				if prFeature, ok := feature.(*licensing.FeaturePrivateRepositories); ok {
-					prFeature.MaxNumPrivateRepos = test.maxPrivateRepos
-					prFeature.Unrestricted = test.unrestricted
+			defbultMock := licensing.MockCheckFebture
+			licensing.MockCheckFebture = func(febture licensing.Febture) error {
+				if prFebture, ok := febture.(*licensing.FebturePrivbteRepositories); ok {
+					prFebture.MbxNumPrivbteRepos = test.mbxPrivbteRepos
+					prFebture.Unrestricted = test.unrestricted
 				}
 
 				return nil
 			}
 			defer func() {
-				licensing.MockCheckFeature = defaultMock
+				licensing.MockCheckFebture = defbultMock
 			}()
 
-			err := repos.UpdateRepoLicenseHook(ctx, mockStore, test.existingRepo, test.newRepo)
-			if gotErr := err != nil; gotErr != test.wantErr {
-				t.Fatalf("got err: %t, want err: %t, err: %q", gotErr, test.wantErr, err)
+			err := repos.UpdbteRepoLicenseHook(ctx, mockStore, test.existingRepo, test.newRepo)
+			if gotErr := err != nil; gotErr != test.wbntErr {
+				t.Fbtblf("got err: %t, wbnt err: %t, err: %q", gotErr, test.wbntErr, err)
 			}
 		})
 	}

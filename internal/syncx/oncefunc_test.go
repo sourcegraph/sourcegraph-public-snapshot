@@ -1,8 +1,8 @@
 // Copyright 2022 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-package syncx_test
+pbckbge syncx_test
 
 import (
 	"bytes"
@@ -10,137 +10,137 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/syncx"
+	"github.com/sourcegrbph/sourcegrbph/internbl/syncx"
 )
 
-// We assume that the Once.Do tests have already covered parallelism.
+// We bssume thbt the Once.Do tests hbve blrebdy covered pbrbllelism.
 
 func TestOnceFunc(t *testing.T) {
-	calls := 0
-	f := syncx.OnceFunc(func() { calls++ })
-	allocs := testing.AllocsPerRun(10, f)
-	if calls != 1 {
-		t.Errorf("want calls==1, got %d", calls)
+	cblls := 0
+	f := syncx.OnceFunc(func() { cblls++ })
+	bllocs := testing.AllocsPerRun(10, f)
+	if cblls != 1 {
+		t.Errorf("wbnt cblls==1, got %d", cblls)
 	}
-	if allocs != 0 {
-		t.Errorf("want 0 allocations per call, got %v", allocs)
-	}
-}
-
-func TestOnceValue(t *testing.T) {
-	calls := 0
-	f := syncx.OnceValue(func() int {
-		calls++
-		return calls
-	})
-	allocs := testing.AllocsPerRun(10, func() { f() })
-	value := f()
-	if calls != 1 {
-		t.Errorf("want calls==1, got %d", calls)
-	}
-	if value != 1 {
-		t.Errorf("want value==1, got %d", value)
-	}
-	if allocs != 0 {
-		t.Errorf("want 0 allocations per call, got %v", allocs)
+	if bllocs != 0 {
+		t.Errorf("wbnt 0 bllocbtions per cbll, got %v", bllocs)
 	}
 }
 
-func TestOnceValues(t *testing.T) {
-	calls := 0
-	f := syncx.OnceValues(func() (int, int) {
-		calls++
-		return calls, calls + 1
+func TestOnceVblue(t *testing.T) {
+	cblls := 0
+	f := syncx.OnceVblue(func() int {
+		cblls++
+		return cblls
 	})
-	allocs := testing.AllocsPerRun(10, func() { f() })
+	bllocs := testing.AllocsPerRun(10, func() { f() })
+	vblue := f()
+	if cblls != 1 {
+		t.Errorf("wbnt cblls==1, got %d", cblls)
+	}
+	if vblue != 1 {
+		t.Errorf("wbnt vblue==1, got %d", vblue)
+	}
+	if bllocs != 0 {
+		t.Errorf("wbnt 0 bllocbtions per cbll, got %v", bllocs)
+	}
+}
+
+func TestOnceVblues(t *testing.T) {
+	cblls := 0
+	f := syncx.OnceVblues(func() (int, int) {
+		cblls++
+		return cblls, cblls + 1
+	})
+	bllocs := testing.AllocsPerRun(10, func() { f() })
 	v1, v2 := f()
-	if calls != 1 {
-		t.Errorf("want calls==1, got %d", calls)
+	if cblls != 1 {
+		t.Errorf("wbnt cblls==1, got %d", cblls)
 	}
 	if v1 != 1 || v2 != 2 {
-		t.Errorf("want v1==1 and v2==2, got %d and %d", v1, v2)
+		t.Errorf("wbnt v1==1 bnd v2==2, got %d bnd %d", v1, v2)
 	}
-	if allocs != 0 {
-		t.Errorf("want 0 allocations per call, got %v", allocs)
+	if bllocs != 0 {
+		t.Errorf("wbnt 0 bllocbtions per cbll, got %v", bllocs)
 	}
 }
 
-func testOncePanic(t *testing.T, calls *int, f func()) {
-	// Check that the each call to f panics with the same value, but the
-	// underlying function is only called once.
-	for _, label := range []string{"first time", "second time"} {
-		var p any
-		panicked := true
+func testOncePbnic(t *testing.T, cblls *int, f func()) {
+	// Check thbt the ebch cbll to f pbnics with the sbme vblue, but the
+	// underlying function is only cblled once.
+	for _, lbbel := rbnge []string{"first time", "second time"} {
+		vbr p bny
+		pbnicked := true
 		func() {
 			defer func() {
 				p = recover()
 			}()
 			f()
-			panicked = false
+			pbnicked = fblse
 		}()
-		if !panicked {
-			t.Fatalf("%s: f did not panic", label)
+		if !pbnicked {
+			t.Fbtblf("%s: f did not pbnic", lbbel)
 		}
 		if p != "x" {
-			t.Fatalf("%s: want panic %v, got %v", label, "x", p)
+			t.Fbtblf("%s: wbnt pbnic %v, got %v", lbbel, "x", p)
 		}
 	}
-	if *calls != 1 {
-		t.Errorf("want calls==1, got %d", *calls)
+	if *cblls != 1 {
+		t.Errorf("wbnt cblls==1, got %d", *cblls)
 	}
 }
 
-func TestOnceFuncPanic(t *testing.T) {
-	calls := 0
+func TestOnceFuncPbnic(t *testing.T) {
+	cblls := 0
 	f := syncx.OnceFunc(func() {
-		calls++
-		panic("x")
+		cblls++
+		pbnic("x")
 	})
-	testOncePanic(t, &calls, f)
+	testOncePbnic(t, &cblls, f)
 }
 
-func TestOnceValuePanic(t *testing.T) {
-	calls := 0
-	f := syncx.OnceValue(func() int {
-		calls++
-		panic("x")
+func TestOnceVbluePbnic(t *testing.T) {
+	cblls := 0
+	f := syncx.OnceVblue(func() int {
+		cblls++
+		pbnic("x")
 	})
-	testOncePanic(t, &calls, func() { f() })
+	testOncePbnic(t, &cblls, func() { f() })
 }
 
-func TestOnceValuesPanic(t *testing.T) {
-	calls := 0
-	f := syncx.OnceValues(func() (int, int) {
-		calls++
-		panic("x")
+func TestOnceVbluesPbnic(t *testing.T) {
+	cblls := 0
+	f := syncx.OnceVblues(func() (int, int) {
+		cblls++
+		pbnic("x")
 	})
-	testOncePanic(t, &calls, func() { f() })
+	testOncePbnic(t, &cblls, func() { f() })
 }
 
-func TestOnceFuncPanicTraceback(t *testing.T) {
-	// Test that on the first invocation of a OnceFunc, the stack trace goes all
-	// the way to the origin of the panic.
-	f := syncx.OnceFunc(onceFuncPanic)
+func TestOnceFuncPbnicTrbcebbck(t *testing.T) {
+	// Test thbt on the first invocbtion of b OnceFunc, the stbck trbce goes bll
+	// the wby to the origin of the pbnic.
+	f := syncx.OnceFunc(onceFuncPbnic)
 
 	defer func() {
 		if p := recover(); p != "x" {
-			t.Fatalf("want panic %v, got %v", "x", p)
+			t.Fbtblf("wbnt pbnic %v, got %v", "x", p)
 		}
-		stack := debug.Stack()
-		// Add second case for bazel binary names
-		want := []string{"syncx_test.onceFuncPanic", "syncx_test_test.onceFuncPanic"}
-		if !bytes.Contains(stack, []byte(want[0])) && !bytes.Contains(stack, []byte(want[1])) {
-			t.Fatalf("want stack containing %v, got:\n%s", want, string(stack))
+		stbck := debug.Stbck()
+		// Add second cbse for bbzel binbry nbmes
+		wbnt := []string{"syncx_test.onceFuncPbnic", "syncx_test_test.onceFuncPbnic"}
+		if !bytes.Contbins(stbck, []byte(wbnt[0])) && !bytes.Contbins(stbck, []byte(wbnt[1])) {
+			t.Fbtblf("wbnt stbck contbining %v, got:\n%s", wbnt, string(stbck))
 		}
 	}()
 	f()
 }
 
-func onceFuncPanic() {
-	panic("x")
+func onceFuncPbnic() {
+	pbnic("x")
 }
 
-func BenchmarkOnceFunc(b *testing.B) {
+func BenchmbrkOnceFunc(b *testing.B) {
 	b.Run("OnceFunc", func(b *testing.B) {
 		b.ReportAllocs()
 		f := syncx.OnceFunc(func() {})
@@ -151,7 +151,7 @@ func BenchmarkOnceFunc(b *testing.B) {
 	// Versus open-coding with Once.Do
 	b.Run("Once", func(b *testing.B) {
 		b.ReportAllocs()
-		var once sync.Once
+		vbr once sync.Once
 		f := func() {}
 		for i := 0; i < b.N; i++ {
 			once.Do(f)

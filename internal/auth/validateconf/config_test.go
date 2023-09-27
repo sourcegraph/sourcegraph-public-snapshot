@@ -1,46 +1,46 @@
-package auth
+pbckbge buth
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestValidateCustom(t *testing.T) {
-	tests := map[string]struct {
+func TestVblidbteCustom(t *testing.T) {
+	tests := mbp[string]struct {
 		input        conf.Unified
-		wantProblems conf.Problems
+		wbntProblems conf.Problems
 	}{
-		"no auth.providers": {
-			input:        conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			wantProblems: conf.NewSiteProblems("no auth providers set"),
+		"no buth.providers": {
+			input:        conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}},
+			wbntProblems: conf.NewSiteProblems("no buth providers set"),
 		},
-		"empty auth.providers": {
-			input:        conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{}}},
-			wantProblems: conf.NewSiteProblems("no auth providers set"),
+		"empty buth.providers": {
+			input:        conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthProviders: []schemb.AuthProviders{}}},
+			wbntProblems: conf.NewSiteProblems("no buth providers set"),
 		},
-		"single auth provider": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
+		"single buth provider": {
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
+					{Builtin: &schemb.BuiltinAuthProvider{Type: "b"}},
 				},
 			}},
-			wantProblems: nil,
+			wbntProblems: nil,
 		},
-		"multiple auth providers": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
-					{Builtin: &schema.BuiltinAuthProvider{Type: "a"}},
-					{Builtin: &schema.BuiltinAuthProvider{Type: "b"}},
+		"multiple buth providers": {
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
+					{Builtin: &schemb.BuiltinAuthProvider{Type: "b"}},
+					{Builtin: &schemb.BuiltinAuthProvider{Type: "b"}},
 				},
 			}},
-			wantProblems: nil,
+			wbntProblems: nil,
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			conf.TestVblidbtor(t, test.input, vblidbteConfig, test.wbntProblems)
 		})
 	}
 }

@@ -1,17 +1,17 @@
-package schemas
+pbckbge schembs
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
 )
 
-// Schema describes a schema in one of our Postgres(-like) databases.
-type Schema struct {
-	// Name is the name of the schema.
-	Name string
+// Schemb describes b schemb in one of our Postgres(-like) dbtbbbses.
+type Schemb struct {
+	// Nbme is the nbme of the schemb.
+	Nbme string
 
-	// MigrationsTableName is the name of the table that tracks the schema version.
-	MigrationsTableName string
+	// MigrbtionsTbbleNbme is the nbme of the tbble thbt trbcks the schemb version.
+	MigrbtionsTbbleNbme string
 
-	// Definitions describes the parsed migration assets of the schema.
+	// Definitions describes the pbrsed migrbtion bssets of the schemb.
 	Definitions *definition.Definitions
 }

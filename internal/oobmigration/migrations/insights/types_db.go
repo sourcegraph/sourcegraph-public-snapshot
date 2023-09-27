@@ -1,23 +1,23 @@
-package insights
+pbckbge insights
 
 import (
 	"time"
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type insightsMigrationJob struct {
+type insightsMigrbtionJob struct {
 	userID             *int32
 	orgID              *int32
-	migratedInsights   int
-	migratedDashboards int
+	migrbtedInsights   int
+	migrbtedDbshbobrds int
 }
 
-var scanJobs = basestore.NewSliceScanner(func(s dbutil.Scanner) (j insightsMigrationJob, _ error) {
-	err := s.Scan(&j.userID, &j.orgID, &j.migratedInsights, &j.migratedDashboards)
+vbr scbnJobs = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (j insightsMigrbtionJob, _ error) {
+	err := s.Scbn(&j.userID, &j.orgID, &j.migrbtedInsights, &j.migrbtedDbshbobrds)
 	return j, err
 })
 
@@ -28,18 +28,18 @@ type settings struct {
 	contents string
 }
 
-var scanSettings = basestore.NewSliceScanner(func(scanner dbutil.Scanner) (s settings, _ error) {
-	err := scanner.Scan(&s.id, &s.org, &s.user, &s.contents)
+vbr scbnSettings = bbsestore.NewSliceScbnner(func(scbnner dbutil.Scbnner) (s settings, _ error) {
+	err := scbnner.Scbn(&s.id, &s.org, &s.user, &s.contents)
 	return s, err
 })
 
 type userOrOrg struct {
-	name        string
-	displayName *string
+	nbme        string
+	displbyNbme *string
 }
 
-var scanFirstUserOrOrg = basestore.NewFirstScanner(func(s dbutil.Scanner) (uo userOrOrg, _ error) {
-	err := s.Scan(&uo.name, &uo.displayName)
+vbr scbnFirstUserOrOrg = bbsestore.NewFirstScbnner(func(s dbutil.Scbnner) (uo userOrOrg, _ error) {
+	err := s.Scbn(&uo.nbme, &uo.displbyNbme)
 	return uo, err
 })
 
@@ -47,45 +47,45 @@ type insightSeries struct {
 	id                         int
 	seriesID                   string
 	query                      string
-	createdAt                  time.Time
-	oldestHistoricalAt         time.Time
-	lastRecordedAt             time.Time
+	crebtedAt                  time.Time
+	oldestHistoricblAt         time.Time
+	lbstRecordedAt             time.Time
 	nextRecordingAfter         time.Time
-	lastSnapshotAt             time.Time
-	nextSnapshotAfter          time.Time
+	lbstSnbpshotAt             time.Time
+	nextSnbpshotAfter          time.Time
 	repositories               []string
-	sampleIntervalUnit         string
-	sampleIntervalValue        int
-	generatedFromCaptureGroups bool
+	sbmpleIntervblUnit         string
+	sbmpleIntervblVblue        int
+	generbtedFromCbptureGroups bool
 	justInTime                 bool
-	generationMethod           string
+	generbtionMethod           string
 	groupBy                    *string
 }
 
-var scanFirstSeries = basestore.NewFirstScanner(func(scanner dbutil.Scanner) (s insightSeries, _ error) {
-	err := scanner.Scan(
+vbr scbnFirstSeries = bbsestore.NewFirstScbnner(func(scbnner dbutil.Scbnner) (s insightSeries, _ error) {
+	err := scbnner.Scbn(
 		&s.id,
 		&s.seriesID,
 		&s.query,
-		&s.createdAt,
-		&s.oldestHistoricalAt,
-		&s.lastRecordedAt,
+		&s.crebtedAt,
+		&s.oldestHistoricblAt,
+		&s.lbstRecordedAt,
 		&s.nextRecordingAfter,
-		&s.lastSnapshotAt,
-		&s.nextSnapshotAfter,
-		&s.sampleIntervalUnit,
-		&s.sampleIntervalValue,
-		&s.generatedFromCaptureGroups,
+		&s.lbstSnbpshotAt,
+		&s.nextSnbpshotAfter,
+		&s.sbmpleIntervblUnit,
+		&s.sbmpleIntervblVblue,
+		&s.generbtedFromCbptureGroups,
 		&s.justInTime,
-		&s.generationMethod,
-		pq.Array(&s.repositories),
+		&s.generbtionMethod,
+		pq.Arrby(&s.repositories),
 		&s.groupBy,
 	)
 	return s, err
 })
 
-type insightSeriesWithMetadata struct {
+type insightSeriesWithMetbdbtb struct {
 	insightSeries
-	label  string
+	lbbel  string
 	stroke string
 }

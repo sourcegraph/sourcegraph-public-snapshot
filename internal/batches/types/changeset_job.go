@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
@@ -6,98 +6,98 @@ import (
 	"time"
 )
 
-// ChangesetJobState defines the possible states of a changeset job.
-type ChangesetJobState string
+// ChbngesetJobStbte defines the possible stbtes of b chbngeset job.
+type ChbngesetJobStbte string
 
-// ChangesetJobState constants.
+// ChbngesetJobStbte constbnts.
 const (
-	ChangesetJobStateQueued     ChangesetJobState = "QUEUED"
-	ChangesetJobStateProcessing ChangesetJobState = "PROCESSING"
-	ChangesetJobStateErrored    ChangesetJobState = "ERRORED"
-	ChangesetJobStateFailed     ChangesetJobState = "FAILED"
-	ChangesetJobStateCompleted  ChangesetJobState = "COMPLETED"
+	ChbngesetJobStbteQueued     ChbngesetJobStbte = "QUEUED"
+	ChbngesetJobStbteProcessing ChbngesetJobStbte = "PROCESSING"
+	ChbngesetJobStbteErrored    ChbngesetJobStbte = "ERRORED"
+	ChbngesetJobStbteFbiled     ChbngesetJobStbte = "FAILED"
+	ChbngesetJobStbteCompleted  ChbngesetJobStbte = "COMPLETED"
 )
 
-// Valid returns true if the given ChangesetJobState is valid.
-func (s ChangesetJobState) Valid() bool {
+// Vblid returns true if the given ChbngesetJobStbte is vblid.
+func (s ChbngesetJobStbte) Vblid() bool {
 	switch s {
-	case ChangesetJobStateQueued,
-		ChangesetJobStateProcessing,
-		ChangesetJobStateErrored,
-		ChangesetJobStateFailed,
-		ChangesetJobStateCompleted:
+	cbse ChbngesetJobStbteQueued,
+		ChbngesetJobStbteProcessing,
+		ChbngesetJobStbteErrored,
+		ChbngesetJobStbteFbiled,
+		ChbngesetJobStbteCompleted:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ToDB returns the database representation of the worker state. That's
-// needed because we want to use UPPERCASE in the application and GraphQL layer,
-// but need to use lowercase in the database to make it work with workerutil.Worker.
-func (s ChangesetJobState) ToDB() string { return strings.ToLower(string(s)) }
+// ToDB returns the dbtbbbse representbtion of the worker stbte. Thbt's
+// needed becbuse we wbnt to use UPPERCASE in the bpplicbtion bnd GrbphQL lbyer,
+// but need to use lowercbse in the dbtbbbse to mbke it work with workerutil.Worker.
+func (s ChbngesetJobStbte) ToDB() string { return strings.ToLower(string(s)) }
 
-// ChangesetJobType specifies all valid type of jobs that the bulk processor
-// understands.
-type ChangesetJobType string
+// ChbngesetJobType specifies bll vblid type of jobs thbt the bulk processor
+// understbnds.
+type ChbngesetJobType string
 
-var (
-	ChangesetJobTypeComment   ChangesetJobType = "commentatore"
-	ChangesetJobTypeDetach    ChangesetJobType = "detach"
-	ChangesetJobTypeReenqueue ChangesetJobType = "reenqueue"
-	ChangesetJobTypeMerge     ChangesetJobType = "merge"
-	ChangesetJobTypeClose     ChangesetJobType = "close"
-	ChangesetJobTypePublish   ChangesetJobType = "publish"
+vbr (
+	ChbngesetJobTypeComment   ChbngesetJobType = "commentbtore"
+	ChbngesetJobTypeDetbch    ChbngesetJobType = "detbch"
+	ChbngesetJobTypeReenqueue ChbngesetJobType = "reenqueue"
+	ChbngesetJobTypeMerge     ChbngesetJobType = "merge"
+	ChbngesetJobTypeClose     ChbngesetJobType = "close"
+	ChbngesetJobTypePublish   ChbngesetJobType = "publish"
 )
 
-type ChangesetJobCommentPayload struct {
-	Message string `json:"message"`
+type ChbngesetJobCommentPbylobd struct {
+	Messbge string `json:"messbge"`
 }
 
-type ChangesetJobDetachPayload struct{}
+type ChbngesetJobDetbchPbylobd struct{}
 
-type ChangesetJobReenqueuePayload struct{}
+type ChbngesetJobReenqueuePbylobd struct{}
 
-type ChangesetJobMergePayload struct {
-	Squash bool `json:"squash,omitempty"`
+type ChbngesetJobMergePbylobd struct {
+	Squbsh bool `json:"squbsh,omitempty"`
 }
 
-type ChangesetJobClosePayload struct{}
+type ChbngesetJobClosePbylobd struct{}
 
-type ChangesetJobPublishPayload struct {
-	Draft bool `json:"draft"`
+type ChbngesetJobPublishPbylobd struct {
+	Drbft bool `json:"drbft"`
 }
 
-// ChangesetJob describes a one-time action to be taken on a changeset.
-type ChangesetJob struct {
+// ChbngesetJob describes b one-time bction to be tbken on b chbngeset.
+type ChbngesetJob struct {
 	ID int64
-	// BulkGroup is a random string that can be used to group jobs together in a
-	// single invocation.
+	// BulkGroup is b rbndom string thbt cbn be used to group jobs together in b
+	// single invocbtion.
 	BulkGroup     string
-	BatchChangeID int64
+	BbtchChbngeID int64
 	UserID        int32
-	ChangesetID   int64
-	JobType       ChangesetJobType
-	Payload       any
+	ChbngesetID   int64
+	JobType       ChbngesetJobType
+	Pbylobd       bny
 
 	// workerutil fields
 
-	State          ChangesetJobState
-	FailureMessage *string
-	StartedAt      time.Time
+	Stbte          ChbngesetJobStbte
+	FbilureMessbge *string
+	StbrtedAt      time.Time
 	FinishedAt     time.Time
 	ProcessAfter   time.Time
 	NumResets      int64
-	NumFailures    int64
+	NumFbilures    int64
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-func (j *ChangesetJob) RecordID() int {
+func (j *ChbngesetJob) RecordID() int {
 	return int(j.ID)
 }
 
-func (j *ChangesetJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+func (j *ChbngesetJob) RecordUID() string {
+	return strconv.FormbtInt(j.ID, 10)
 }

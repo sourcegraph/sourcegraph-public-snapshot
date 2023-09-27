@@ -1,96 +1,96 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/config"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types/scheduler/config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine/recorder"
 )
 
-// Scheduler provides a scheduling service that moves changesets from the
-// scheduled state to the queued state based on the current rate limit, if
-// anything. Changesets are processed in a FIFO manner.
+// Scheduler provides b scheduling service thbt moves chbngesets from the
+// scheduled stbte to the queued stbte bbsed on the current rbte limit, if
+// bnything. Chbngesets bre processed in b FIFO mbnner.
 type Scheduler struct {
 	ctx      context.Context
-	done     chan struct{}
+	done     chbn struct{}
 	store    *store.Store
-	jobName  string
+	jobNbme  string
 	recorder *recorder.Recorder
 }
 
-var _ recorder.Recordable = &Scheduler{}
+vbr _ recorder.Recordbble = &Scheduler{}
 
 func NewScheduler(ctx context.Context, bstore *store.Store) *Scheduler {
 	return &Scheduler{
 		ctx:   ctx,
-		done:  make(chan struct{}),
+		done:  mbke(chbn struct{}),
 		store: bstore,
 	}
 }
 
-func (s *Scheduler) Start() {
+func (s *Scheduler) Stbrt() {
 	if s.recorder != nil {
-		go s.recorder.LogStart(s)
+		go s.recorder.LogStbrt(s)
 	}
 
-	// Set up a global backoff strategy where we start at 5 seconds, up to a
-	// minute, when we don't have any changesets to enqueue. Without this, an
-	// unlimited schedule will essentially busy-wait calling Take().
-	backoff := newBackoff(5*time.Second, 2, 1*time.Minute)
+	// Set up b globbl bbckoff strbtegy where we stbrt bt 5 seconds, up to b
+	// minute, when we don't hbve bny chbngesets to enqueue. Without this, bn
+	// unlimited schedule will essentiblly busy-wbit cblling Tbke().
+	bbckoff := newBbckoff(5*time.Second, 2, 1*time.Minute)
 
-	// Set up our configuration listener.
+	// Set up our configurbtion listener.
 	cfg := config.Subscribe()
 	defer config.Unsubscribe(cfg)
 
 	for {
 		schedule := config.ActiveWindow().Schedule()
 		ticker := newTicker(schedule)
-		validity := time.NewTimer(time.Until(schedule.ValidUntil()))
+		vblidity := time.NewTimer(time.Until(schedule.VblidUntil()))
 
-		log15.Debug("applying batch change schedule", "schedule", schedule, "until", schedule.ValidUntil())
+		log15.Debug("bpplying bbtch chbnge schedule", "schedule", schedule, "until", schedule.VblidUntil())
 
 	scheduleloop:
 		for {
 			select {
-			case delay := <-ticker.C:
-				start := time.Now()
+			cbse delby := <-ticker.C:
+				stbrt := time.Now()
 
-				// We can enqueue a changeset. Let's try to do so, ensuring that
-				// we always return a duration back down the delay channel.
-				if err := s.enqueueChangeset(); err != nil {
-					// If we get an error back, we need to increment the backoff
-					// delay and return that. enqueueChangeset will have handled
-					// any logging we need to do.
-					delay <- backoff.next()
+				// We cbn enqueue b chbngeset. Let's try to do so, ensuring thbt
+				// we blwbys return b durbtion bbck down the delby chbnnel.
+				if err := s.enqueueChbngeset(); err != nil {
+					// If we get bn error bbck, we need to increment the bbckoff
+					// delby bnd return thbt. enqueueChbngeset will hbve hbndled
+					// bny logging we need to do.
+					delby <- bbckoff.next()
 				} else {
-					// All is well, so we should reset the backoff delay and
-					// loop immediately.
-					backoff.reset()
-					delay <- time.Duration(0)
+					// All is well, so we should reset the bbckoff delby bnd
+					// loop immedibtely.
+					bbckoff.reset()
+					delby <- time.Durbtion(0)
 				}
 
-				duration := time.Since(start)
+				durbtion := time.Since(stbrt)
 				if s.recorder != nil {
-					go s.recorder.LogRun(s, duration, nil)
+					go s.recorder.LogRun(s, durbtion, nil)
 				}
 
-			case <-validity.C:
-				// The schedule is no longer valid, so let's break out of this
-				// loop and build a new schedule.
-				break scheduleloop
+			cbse <-vblidity.C:
+				// The schedule is no longer vblid, so let's brebk out of this
+				// loop bnd build b new schedule.
+				brebk scheduleloop
 
-			case <-cfg:
-				// The batch change rollout window configuration was updated, so
-				// let's break out of this loop and build a new schedule.
-				break scheduleloop
+			cbse <-cfg:
+				// The bbtch chbnge rollout window configurbtion wbs updbted, so
+				// let's brebk out of this loop bnd build b new schedule.
+				brebk scheduleloop
 
-			case <-s.done:
-				// The scheduler service has been asked to stop, so let's stop.
-				log15.Debug("stopping the batch change scheduler")
+			cbse <-s.done:
+				// The scheduler service hbs been bsked to stop, so let's stop.
+				log15.Debug("stopping the bbtch chbnge scheduler")
 				ticker.stop()
 				return
 			}
@@ -108,30 +108,30 @@ func (s *Scheduler) Stop() {
 	close(s.done)
 }
 
-func (s *Scheduler) enqueueChangeset() error {
-	_, err := s.store.EnqueueNextScheduledChangeset(s.ctx)
+func (s *Scheduler) enqueueChbngeset() error {
+	_, err := s.store.EnqueueNextScheduledChbngeset(s.ctx)
 
-	// Let's see if this is an error caused by there being no changesets to
-	// enqueue (which is fine), or something less expected, in which case we
+	// Let's see if this is bn error cbused by there being no chbngesets to
+	// enqueue (which is fine), or something less expected, in which cbse we
 	// should log the error.
 	if err != nil && err != store.ErrNoResults {
-		log15.Warn("error enqueueing the next scheduled changeset", "err", err)
+		log15.Wbrn("error enqueueing the next scheduled chbngeset", "err", err)
 	}
 
 	return err
 }
 
-// backoff implements a very simple bounded exponential backoff strategy.
-type backoff struct {
-	init       time.Duration
+// bbckoff implements b very simple bounded exponentibl bbckoff strbtegy.
+type bbckoff struct {
+	init       time.Durbtion
 	multiplier int
-	limit      time.Duration
+	limit      time.Durbtion
 
-	current time.Duration
+	current time.Durbtion
 }
 
-func newBackoff(init time.Duration, multiplier int, limit time.Duration) *backoff {
-	return &backoff{
+func newBbckoff(init time.Durbtion, multiplier int, limit time.Durbtion) *bbckoff {
+	return &bbckoff{
 		init:       init,
 		multiplier: multiplier,
 		limit:      limit,
@@ -139,10 +139,10 @@ func newBackoff(init time.Duration, multiplier int, limit time.Duration) *backof
 	}
 }
 
-func (b *backoff) next() time.Duration {
+func (b *bbckoff) next() time.Durbtion {
 	curr := b.current
 
-	b.current *= time.Duration(b.multiplier)
+	b.current *= time.Durbtion(b.multiplier)
 	if b.current > b.limit {
 		b.current = b.limit
 	}
@@ -150,32 +150,32 @@ func (b *backoff) next() time.Duration {
 	return curr
 }
 
-func (b *backoff) reset() {
+func (b *bbckoff) reset() {
 	b.current = b.init
 }
 
-func (s *Scheduler) Name() string {
-	return "batches-scheduler"
+func (s *Scheduler) Nbme() string {
+	return "bbtches-scheduler"
 }
 
 func (s *Scheduler) Type() recorder.RoutineType {
 	return recorder.CustomRoutine
 }
 
-func (s *Scheduler) JobName() string {
-	return s.jobName
+func (s *Scheduler) JobNbme() string {
+	return s.jobNbme
 }
 
-func (s *Scheduler) SetJobName(jobName string) {
-	s.jobName = jobName
+func (s *Scheduler) SetJobNbme(jobNbme string) {
+	s.jobNbme = jobNbme
 }
 
 func (s *Scheduler) Description() string {
-	return "Scheduler for batch changes"
+	return "Scheduler for bbtch chbnges"
 }
 
-func (s *Scheduler) Interval() time.Duration {
-	return 1 * time.Minute // Actually between 5 sec and 1 min, changes dynamically
+func (s *Scheduler) Intervbl() time.Durbtion {
+	return 1 * time.Minute // Actublly between 5 sec bnd 1 min, chbnges dynbmicblly
 }
 
 func (s *Scheduler) RegisterRecorder(recorder *recorder.Recorder) {

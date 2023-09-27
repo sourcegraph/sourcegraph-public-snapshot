@@ -1,107 +1,107 @@
-package ui
+pbckbge ui
 
 import (
 	"fmt"
 	"net/url"
-	"path"
+	"pbth"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-var (
-	singleLineRegexp     = lazyregexp.New(`^L(\d+)(:\d+)?$`)
-	multiLineRangeRegexp = lazyregexp.New(`^L(\d+)(:\d+)?-(\d+)(:\d+)?$`)
+vbr (
+	singleLineRegexp     = lbzyregexp.New(`^L(\d+)(:\d+)?$`)
+	multiLineRbngeRegexp = lbzyregexp.New(`^L(\d+)(:\d+)?-(\d+)(:\d+)?$`)
 )
 
-type lineRange struct {
-	StartLine          int
-	StartLineCharacter int
+type lineRbnge struct {
+	StbrtLine          int
+	StbrtLineChbrbcter int
 	EndLine            int
-	EndLineCharacter   int
+	EndLineChbrbcter   int
 }
 
-func FindLineRangeInQueryParameters(queryParameters map[string][]string) *lineRange {
-	for key := range queryParameters {
-		if lineRange := getLineRange(key); lineRange != nil {
-			return lineRange
+func FindLineRbngeInQueryPbrbmeters(queryPbrbmeters mbp[string][]string) *lineRbnge {
+	for key := rbnge queryPbrbmeters {
+		if lineRbnge := getLineRbnge(key); lineRbnge != nil {
+			return lineRbnge
 		}
 	}
 	return nil
 }
 
-func parseCharacterMatch(characterMatch string) int {
-	var character int
-	if characterMatch != "" {
-		character, _ = strconv.Atoi(strings.TrimLeft(characterMatch, ":"))
+func pbrseChbrbcterMbtch(chbrbcterMbtch string) int {
+	vbr chbrbcter int
+	if chbrbcterMbtch != "" {
+		chbrbcter, _ = strconv.Atoi(strings.TrimLeft(chbrbcterMbtch, ":"))
 	}
-	return character
+	return chbrbcter
 }
 
-func getLineRange(value string) *lineRange {
-	var startLine, startLineCharacter, endLine, endLineCharacter int
-	if submatches := multiLineRangeRegexp.FindStringSubmatch(value); submatches != nil {
-		startLine, _ = strconv.Atoi(submatches[1])
-		startLineCharacter = parseCharacterMatch(submatches[2])
-		endLine, _ = strconv.Atoi(submatches[3])
-		endLineCharacter = parseCharacterMatch(submatches[4])
-		return &lineRange{StartLine: startLine, StartLineCharacter: startLineCharacter, EndLine: endLine, EndLineCharacter: endLineCharacter}
-	} else if submatches := singleLineRegexp.FindStringSubmatch(value); submatches != nil {
-		startLine, _ = strconv.Atoi(submatches[1])
-		startLineCharacter = parseCharacterMatch(submatches[2])
-		return &lineRange{StartLine: startLine, StartLineCharacter: startLineCharacter}
+func getLineRbnge(vblue string) *lineRbnge {
+	vbr stbrtLine, stbrtLineChbrbcter, endLine, endLineChbrbcter int
+	if submbtches := multiLineRbngeRegexp.FindStringSubmbtch(vblue); submbtches != nil {
+		stbrtLine, _ = strconv.Atoi(submbtches[1])
+		stbrtLineChbrbcter = pbrseChbrbcterMbtch(submbtches[2])
+		endLine, _ = strconv.Atoi(submbtches[3])
+		endLineChbrbcter = pbrseChbrbcterMbtch(submbtches[4])
+		return &lineRbnge{StbrtLine: stbrtLine, StbrtLineChbrbcter: stbrtLineChbrbcter, EndLine: endLine, EndLineChbrbcter: endLineChbrbcter}
+	} else if submbtches := singleLineRegexp.FindStringSubmbtch(vblue); submbtches != nil {
+		stbrtLine, _ = strconv.Atoi(submbtches[1])
+		stbrtLineChbrbcter = pbrseChbrbcterMbtch(submbtches[2])
+		return &lineRbnge{StbrtLine: stbrtLine, StbrtLineChbrbcter: stbrtLineChbrbcter}
 	}
 	return nil
 }
 
-func formatCharacter(character int) string {
-	if character == 0 {
+func formbtChbrbcter(chbrbcter int) string {
+	if chbrbcter == 0 {
 		return ""
 	}
-	return fmt.Sprintf(":%d", character)
+	return fmt.Sprintf(":%d", chbrbcter)
 }
 
-func FormatLineRange(lineRange *lineRange) string {
-	if lineRange == nil {
+func FormbtLineRbnge(lineRbnge *lineRbnge) string {
+	if lineRbnge == nil {
 		return ""
 	}
 
-	formattedLineRange := ""
-	if lineRange.StartLine != 0 && lineRange.EndLine != 0 {
-		formattedLineRange = fmt.Sprintf("L%d%s-%d%s", lineRange.StartLine, formatCharacter(lineRange.StartLineCharacter), lineRange.EndLine, formatCharacter(lineRange.EndLineCharacter))
-	} else if lineRange.StartLine != 0 {
-		formattedLineRange = fmt.Sprintf("L%d%s", lineRange.StartLine, formatCharacter(lineRange.StartLineCharacter))
+	formbttedLineRbnge := ""
+	if lineRbnge.StbrtLine != 0 && lineRbnge.EndLine != 0 {
+		formbttedLineRbnge = fmt.Sprintf("L%d%s-%d%s", lineRbnge.StbrtLine, formbtChbrbcter(lineRbnge.StbrtLineChbrbcter), lineRbnge.EndLine, formbtChbrbcter(lineRbnge.EndLineChbrbcter))
+	} else if lineRbnge.StbrtLine != 0 {
+		formbttedLineRbnge = fmt.Sprintf("L%d%s", lineRbnge.StbrtLine, formbtChbrbcter(lineRbnge.StbrtLineChbrbcter))
 	}
-	return formattedLineRange
+	return formbttedLineRbnge
 }
 
-func getBlobPreviewImageURL(previewServiceURL string, blobURLPath string, lineRange *lineRange) string {
-	blobPreviewImageURL := previewServiceURL + blobURLPath
-	formattedLineRange := FormatLineRange(lineRange)
+func getBlobPreviewImbgeURL(previewServiceURL string, blobURLPbth string, lineRbnge *lineRbnge) string {
+	blobPreviewImbgeURL := previewServiceURL + blobURLPbth
+	formbttedLineRbnge := FormbtLineRbnge(lineRbnge)
 
-	queryValues := url.Values{}
-	if formattedLineRange != "" {
-		queryValues.Add("range", formattedLineRange)
+	queryVblues := url.Vblues{}
+	if formbttedLineRbnge != "" {
+		queryVblues.Add("rbnge", formbttedLineRbnge)
 	}
 
-	encodedQueryValues := queryValues.Encode()
-	if encodedQueryValues != "" {
-		encodedQueryValues = "?" + encodedQueryValues
+	encodedQueryVblues := queryVblues.Encode()
+	if encodedQueryVblues != "" {
+		encodedQueryVblues = "?" + encodedQueryVblues
 	}
 
-	return blobPreviewImageURL + encodedQueryValues
+	return blobPreviewImbgeURL + encodedQueryVblues
 }
 
-func getBlobPreviewTitle(blobFilePath string, lineRange *lineRange, symbolResult *result.Symbol) string {
-	formattedLineRange := FormatLineRange(lineRange)
-	formattedBlob := path.Base(blobFilePath)
-	if formattedLineRange != "" {
-		formattedBlob += "?" + formattedLineRange
+func getBlobPreviewTitle(blobFilePbth string, lineRbnge *lineRbnge, symbolResult *result.Symbol) string {
+	formbttedLineRbnge := FormbtLineRbnge(lineRbnge)
+	formbttedBlob := pbth.Bbse(blobFilePbth)
+	if formbttedLineRbnge != "" {
+		formbttedBlob += "?" + formbttedLineRbnge
 	}
 	if symbolResult != nil {
-		return fmt.Sprintf("%s %s (%s)", symbolResult.LSPKind().String(), symbolResult.Name, formattedBlob)
+		return fmt.Sprintf("%s %s (%s)", symbolResult.LSPKind().String(), symbolResult.Nbme, formbttedBlob)
 	}
-	return formattedBlob
+	return formbttedBlob
 }

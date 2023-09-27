@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
@@ -37,64 +37,64 @@ func newClient() (*client, error) {
 	return &client{
 		token:    tkn,
 		endpoint: endpoint,
-		client:   http.DefaultClient,
+		client:   http.DefbultClient,
 	}, nil
 }
 
-func (s *client) search(ctx context.Context, query, queryName string) (*metrics, error) {
-	return s.doGraphQL(ctx, graphQLRequest{
-		QueryName:        queryName,
-		GraphQLQuery:     graphQLSearchQuery,
-		GraphQLVariables: map[string]string{"query": query},
-		MetricsFromBody: func(body io.Reader) (*metrics, error) {
-			var respDec struct {
-				Data struct {
-					Search struct{ Results struct{ MatchCount int } }
+func (s *client) sebrch(ctx context.Context, query, queryNbme string) (*metrics, error) {
+	return s.doGrbphQL(ctx, grbphQLRequest{
+		QueryNbme:        queryNbme,
+		GrbphQLQuery:     grbphQLSebrchQuery,
+		GrbphQLVbribbles: mbp[string]string{"query": query},
+		MetricsFromBody: func(body io.Rebder) (*metrics, error) {
+			vbr respDec struct {
+				Dbtb struct {
+					Sebrch struct{ Results struct{ MbtchCount int } }
 				}
 			}
 			if err := json.NewDecoder(body).Decode(&respDec); err != nil {
 				return nil, err
 			}
 			return &metrics{
-				matchCount: respDec.Data.Search.Results.MatchCount,
+				mbtchCount: respDec.Dbtb.Sebrch.Results.MbtchCount,
 			}, nil
 		},
 	})
 }
 
-func (s *client) attribution(ctx context.Context, snippet, queryName string) (*metrics, error) {
-	return s.doGraphQL(ctx, graphQLRequest{
-		QueryName:        queryName,
-		GraphQLQuery:     graphQLAttributionQuery,
-		GraphQLVariables: map[string]string{"snippet": snippet},
-		MetricsFromBody: func(body io.Reader) (*metrics, error) {
-			var respDec struct {
-				Data struct{ SnippetAttribution struct{ TotalCount int } }
+func (s *client) bttribution(ctx context.Context, snippet, queryNbme string) (*metrics, error) {
+	return s.doGrbphQL(ctx, grbphQLRequest{
+		QueryNbme:        queryNbme,
+		GrbphQLQuery:     grbphQLAttributionQuery,
+		GrbphQLVbribbles: mbp[string]string{"snippet": snippet},
+		MetricsFromBody: func(body io.Rebder) (*metrics, error) {
+			vbr respDec struct {
+				Dbtb struct{ SnippetAttribution struct{ TotblCount int } }
 			}
 			if err := json.NewDecoder(body).Decode(&respDec); err != nil {
 				return nil, err
 			}
 			return &metrics{
-				matchCount: respDec.Data.SnippetAttribution.TotalCount,
+				mbtchCount: respDec.Dbtb.SnippetAttribution.TotblCount,
 			}, nil
 		},
 	})
 }
 
-type graphQLRequest struct {
-	QueryName string
+type grbphQLRequest struct {
+	QueryNbme string
 
-	GraphQLQuery     string
-	GraphQLVariables map[string]string
+	GrbphQLQuery     string
+	GrbphQLVbribbles mbp[string]string
 
-	MetricsFromBody func(io.Reader) (*metrics, error)
+	MetricsFromBody func(io.Rebder) (*metrics, error)
 }
 
-func (s *client) doGraphQL(ctx context.Context, greq graphQLRequest) (*metrics, error) {
-	var body bytes.Buffer
-	if err := json.NewEncoder(&body).Encode(map[string]any{
-		"query":     greq.GraphQLQuery,
-		"variables": greq.GraphQLVariables,
+func (s *client) doGrbphQL(ctx context.Context, greq grbphQLRequest) (*metrics, error) {
+	vbr body bytes.Buffer
+	if err := json.NewEncoder(&body).Encode(mbp[string]bny{
+		"query":     greq.GrbphQLQuery,
+		"vbribbles": greq.GrbphQLVbribbles,
 	}); err != nil {
 		return nil, err
 	}
@@ -104,22 +104,22 @@ func (s *client) doGraphQL(ctx context.Context, greq graphQLRequest) (*metrics, 
 		return nil, err
 	}
 
-	req.Header.Set("Authorization", "token "+s.token)
-	req.Header.Set("X-Sourcegraph-Should-Trace", "true")
-	req.Header.Set("User-Agent", fmt.Sprintf("SearchBlitz (%s)", greq.QueryName))
+	req.Hebder.Set("Authorizbtion", "token "+s.token)
+	req.Hebder.Set("X-Sourcegrbph-Should-Trbce", "true")
+	req.Hebder.Set("User-Agent", fmt.Sprintf("SebrchBlitz (%s)", greq.QueryNbme))
 
-	start := time.Now()
+	stbrt := time.Now()
 	resp, err := s.client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	switch resp.StatusCode {
-	case 200:
-		break
-	default:
-		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	switch resp.StbtusCode {
+	cbse 200:
+		brebk
+	defbult:
+		return nil, errors.Errorf("unexpected stbtus code: %d", resp.StbtusCode)
 	}
 
 	// Decode the response.
@@ -128,18 +128,18 @@ func (s *client) doGraphQL(ctx context.Context, greq graphQLRequest) (*metrics, 
 		return nil, err
 	}
 
-	duration := time.Since(start)
-	metrics.took = duration
-	metrics.firstResult = duration
-	metrics.trace = resp.Header.Get("x-trace")
+	durbtion := time.Since(stbrt)
+	metrics.took = durbtion
+	metrics.firstResult = durbtion
+	metrics.trbce = resp.Hebder.Get("x-trbce")
 
 	return metrics, nil
 }
 
 func (s *client) url() string {
-	return s.endpoint + "/.api/graphql?SearchBlitz"
+	return s.endpoint + "/.bpi/grbphql?SebrchBlitz"
 }
 
 func (s *client) clientType() string {
-	return "batch"
+	return "bbtch"
 }

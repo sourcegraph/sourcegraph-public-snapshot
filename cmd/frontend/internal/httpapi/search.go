@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"bytes"
@@ -9,239 +9,239 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/gorillb/mux"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+	proto "github.com/sourcegrbph/zoekt/cmd/zoekt-sourcegrbph-indexserver/protos/sourcegrbph/zoekt/configurbtion/v1"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	citypes "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	sebrchbbckend "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func repoRankFromConfig(siteConfig schema.SiteConfiguration, repoName string) float64 {
-	val := 0.0
-	if siteConfig.ExperimentalFeatures == nil || siteConfig.ExperimentalFeatures.Ranking == nil {
-		return val
+func repoRbnkFromConfig(siteConfig schemb.SiteConfigurbtion, repoNbme string) flobt64 {
+	vbl := 0.0
+	if siteConfig.ExperimentblFebtures == nil || siteConfig.ExperimentblFebtures.Rbnking == nil {
+		return vbl
 	}
-	scores := siteConfig.ExperimentalFeatures.Ranking.RepoScores
+	scores := siteConfig.ExperimentblFebtures.Rbnking.RepoScores
 	if len(scores) == 0 {
-		return val
+		return vbl
 	}
-	// try every "directory" in the repo name to assign it a value, so a repoName like
-	// "github.com/sourcegraph/zoekt" will have "github.com", "github.com/sourcegraph",
-	// and "github.com/sourcegraph/zoekt" tested.
-	for i := 0; i < len(repoName); i++ {
-		if repoName[i] == '/' {
-			val += scores[repoName[:i]]
+	// try every "directory" in the repo nbme to bssign it b vblue, so b repoNbme like
+	// "github.com/sourcegrbph/zoekt" will hbve "github.com", "github.com/sourcegrbph",
+	// bnd "github.com/sourcegrbph/zoekt" tested.
+	for i := 0; i < len(repoNbme); i++ {
+		if repoNbme[i] == '/' {
+			vbl += scores[repoNbme[:i]]
 		}
 	}
-	val += scores[repoName]
-	return val
+	vbl += scores[repoNbme]
+	return vbl
 }
 
-type searchIndexerGRPCServer struct {
-	server *searchIndexerServer
-	proto.ZoektConfigurationServiceServer
+type sebrchIndexerGRPCServer struct {
+	server *sebrchIndexerServer
+	proto.ZoektConfigurbtionServiceServer
 }
 
-func (s *searchIndexerGRPCServer) SearchConfiguration(ctx context.Context, request *proto.SearchConfigurationRequest) (*proto.SearchConfigurationResponse, error) {
-	repoIDs := make([]api.RepoID, 0, len(request.GetRepoIds()))
-	for _, repoID := range request.GetRepoIds() {
-		repoIDs = append(repoIDs, api.RepoID(repoID))
+func (s *sebrchIndexerGRPCServer) SebrchConfigurbtion(ctx context.Context, request *proto.SebrchConfigurbtionRequest) (*proto.SebrchConfigurbtionResponse, error) {
+	repoIDs := mbke([]bpi.RepoID, 0, len(request.GetRepoIds()))
+	for _, repoID := rbnge request.GetRepoIds() {
+		repoIDs = bppend(repoIDs, bpi.RepoID(repoID))
 	}
 
-	var fingerprint searchbackend.ConfigFingerprint
+	vbr fingerprint sebrchbbckend.ConfigFingerprint
 	fingerprint.FromProto(request.GetFingerprint())
 
-	parameters := searchConfigurationParameters{
+	pbrbmeters := sebrchConfigurbtionPbrbmeters{
 		fingerprint: fingerprint,
 		repoIDs:     repoIDs,
 	}
 
-	r, err := s.server.doSearchConfiguration(ctx, parameters)
+	r, err := s.server.doSebrchConfigurbtion(ctx, pbrbmeters)
 	if err != nil {
-		var parameterErr *parameterError
-		if errors.As(err, &parameterErr) {
-			return nil, status.Error(codes.InvalidArgument, err.Error())
+		vbr pbrbmeterErr *pbrbmeterError
+		if errors.As(err, &pbrbmeterErr) {
+			return nil, stbtus.Error(codes.InvblidArgument, err.Error())
 		}
 
 		return nil, err
 	}
 
-	options := make([]*proto.ZoektIndexOptions, 0, len(r.options))
-	for _, o := range r.options {
-		options = append(options, o.ToProto())
+	options := mbke([]*proto.ZoektIndexOptions, 0, len(r.options))
+	for _, o := rbnge r.options {
+		options = bppend(options, o.ToProto())
 	}
 
-	return &proto.SearchConfigurationResponse{
-		UpdatedOptions: options,
+	return &proto.SebrchConfigurbtionResponse{
+		UpdbtedOptions: options,
 		Fingerprint:    r.fingerprint.ToProto(),
 	}, nil
 }
 
-func (s *searchIndexerGRPCServer) List(ctx context.Context, r *proto.ListRequest) (*proto.ListResponse, error) {
-	indexedIDs := make([]api.RepoID, 0, len(r.GetIndexedIds()))
-	for _, repoID := range r.GetIndexedIds() {
-		indexedIDs = append(indexedIDs, api.RepoID(repoID))
+func (s *sebrchIndexerGRPCServer) List(ctx context.Context, r *proto.ListRequest) (*proto.ListResponse, error) {
+	indexedIDs := mbke([]bpi.RepoID, 0, len(r.GetIndexedIds()))
+	for _, repoID := rbnge r.GetIndexedIds() {
+		indexedIDs = bppend(indexedIDs, bpi.RepoID(repoID))
 	}
 
-	var parameters listParameters
-	parameters.IndexedIDs = indexedIDs
-	parameters.Hostname = r.GetHostname()
+	vbr pbrbmeters listPbrbmeters
+	pbrbmeters.IndexedIDs = indexedIDs
+	pbrbmeters.Hostnbme = r.GetHostnbme()
 
-	repoIDs, err := s.server.doList(ctx, &parameters)
+	repoIDs, err := s.server.doList(ctx, &pbrbmeters)
 	if err != nil {
 		return nil, err
 	}
 
-	var response proto.ListResponse
-	response.RepoIds = make([]int32, 0, len(repoIDs))
-	for _, repoID := range repoIDs {
-		response.RepoIds = append(response.RepoIds, int32(repoID))
+	vbr response proto.ListResponse
+	response.RepoIds = mbke([]int32, 0, len(repoIDs))
+	for _, repoID := rbnge repoIDs {
+		response.RepoIds = bppend(response.RepoIds, int32(repoID))
 	}
 
 	return &response, nil
 }
 
-func (s *searchIndexerGRPCServer) DocumentRanks(ctx context.Context, request *proto.DocumentRanksRequest) (*proto.DocumentRanksResponse, error) {
-	ranks, err := s.server.Ranking.GetDocumentRanks(ctx, api.RepoName(request.Repository))
+func (s *sebrchIndexerGRPCServer) DocumentRbnks(ctx context.Context, request *proto.DocumentRbnksRequest) (*proto.DocumentRbnksResponse, error) {
+	rbnks, err := s.server.Rbnking.GetDocumentRbnks(ctx, bpi.RepoNbme(request.Repository))
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return nil, status.Error(codes.NotFound, err.Error())
+			return nil, stbtus.Error(codes.NotFound, err.Error())
 		}
 
 		return nil, err
 	}
 
-	return repoPathRanksToProto(&ranks), nil
+	return repoPbthRbnksToProto(&rbnks), nil
 }
 
-func (s *searchIndexerGRPCServer) UpdateIndexStatus(ctx context.Context, req *proto.UpdateIndexStatusRequest) (*proto.UpdateIndexStatusResponse, error) {
-	var request indexStatusUpdateArgs
+func (s *sebrchIndexerGRPCServer) UpdbteIndexStbtus(ctx context.Context, req *proto.UpdbteIndexStbtusRequest) (*proto.UpdbteIndexStbtusResponse, error) {
+	vbr request indexStbtusUpdbteArgs
 	request.FromProto(req)
 
-	err := s.server.doIndexStatusUpdate(ctx, &request)
+	err := s.server.doIndexStbtusUpdbte(ctx, &request)
 	if err != nil {
 		return nil, err
 	}
 
-	return &proto.UpdateIndexStatusResponse{}, nil
+	return &proto.UpdbteIndexStbtusResponse{}, nil
 }
 
-var _ proto.ZoektConfigurationServiceServer = &searchIndexerGRPCServer{}
+vbr _ proto.ZoektConfigurbtionServiceServer = &sebrchIndexerGRPCServer{}
 
-// searchIndexerServer has handlers that zoekt-sourcegraph-indexserver
-// interacts with (search-indexer).
-type searchIndexerServer struct {
-	db     database.DB
+// sebrchIndexerServer hbs hbndlers thbt zoekt-sourcegrbph-indexserver
+// interbcts with (sebrch-indexer).
+type sebrchIndexerServer struct {
+	db     dbtbbbse.DB
 	logger log.Logger
 
 	gitserverClient gitserver.Client
-	// ListIndexable returns the repositories to index.
-	ListIndexable func(context.Context) ([]types.MinimalRepo, error)
+	// ListIndexbble returns the repositories to index.
+	ListIndexbble func(context.Context) ([]types.MinimblRepo, error)
 
-	// RepoStore is a subset of database.RepoStore used by searchIndexerServer.
-	RepoStore interface {
-		List(context.Context, database.ReposListOptions) ([]*types.Repo, error)
-		StreamMinimalRepos(context.Context, database.ReposListOptions, func(*types.MinimalRepo)) error
+	// RepoStore is b subset of dbtbbbse.RepoStore used by sebrchIndexerServer.
+	RepoStore interfbce {
+		List(context.Context, dbtbbbse.ReposListOptions) ([]*types.Repo, error)
+		StrebmMinimblRepos(context.Context, dbtbbbse.ReposListOptions, func(*types.MinimblRepo)) error
 	}
 
-	SearchContextsRepoRevs func(context.Context, []api.RepoID) (map[api.RepoID][]string, error)
+	SebrchContextsRepoRevs func(context.Context, []bpi.RepoID) (mbp[bpi.RepoID][]string, error)
 
-	// Indexers is the subset of searchbackend.Indexers methods we
-	// use. reposListServer is used by indexed-search to get the list of
-	// repositories to index. These methods are used to return the correct
-	// subset for horizontal indexed search. Declared as an interface for
+	// Indexers is the subset of sebrchbbckend.Indexers methods we
+	// use. reposListServer is used by indexed-sebrch to get the list of
+	// repositories to index. These methods bre used to return the correct
+	// subset for horizontbl indexed sebrch. Declbred bs bn interfbce for
 	// testing.
-	Indexers interface {
-		// ReposSubset returns the subset of repoNames that hostname should
+	Indexers interfbce {
+		// ReposSubset returns the subset of repoNbmes thbt hostnbme should
 		// index.
-		ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error)
-		// Enabled is true if horizontal indexed search is enabled.
-		Enabled() bool
+		ReposSubset(ctx context.Context, hostnbme string, indexed zoekt.ReposMbp, indexbble []types.MinimblRepo) ([]types.MinimblRepo, error)
+		// Enbbled is true if horizontbl indexed sebrch is enbbled.
+		Enbbled() bool
 	}
 
-	// Ranking is a service that provides ranking scores for various code objects.
-	Ranking enterprise.RankingService
+	// Rbnking is b service thbt provides rbnking scores for vbrious code objects.
+	Rbnking enterprise.RbnkingService
 
-	// MinLastChangedDisabled is a feature flag for disabling more efficient
-	// polling by zoekt. This can be removed after v3.34 is cut (Dec 2021).
-	MinLastChangedDisabled bool
+	// MinLbstChbngedDisbbled is b febture flbg for disbbling more efficient
+	// polling by zoekt. This cbn be removed bfter v3.34 is cut (Dec 2021).
+	MinLbstChbngedDisbbled bool
 }
 
-// serveConfiguration is _only_ used by the zoekt index server. Zoekt does
-// not depend on frontend and therefore does not have access to `conf.Watch`.
-// Additionally, it only cares about certain search specific settings so this
-// search specific endpoint is used rather than serving the entire site settings
-// from /.internal/configuration.
+// serveConfigurbtion is _only_ used by the zoekt index server. Zoekt does
+// not depend on frontend bnd therefore does not hbve bccess to `conf.Wbtch`.
+// Additionblly, it only cbres bbout certbin sebrch specific settings so this
+// sebrch specific endpoint is used rbther thbn serving the entire site settings
+// from /.internbl/configurbtion.
 //
-// This endpoint also supports batch requests to avoid managing concurrency in
-// zoekt. On vertically scaled instances we have observed zoekt requesting
-// this endpoint concurrently leading to socket starvation.
-func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.Request) error {
+// This endpoint blso supports bbtch requests to bvoid mbnbging concurrency in
+// zoekt. On verticblly scbled instbnces we hbve observed zoekt requesting
+// this endpoint concurrently lebding to socket stbrvbtion.
+func (h *sebrchIndexerServer) serveConfigurbtion(w http.ResponseWriter, r *http.Request) error {
 	ctx := r.Context()
-	if err := r.ParseForm(); err != nil {
+	if err := r.PbrseForm(); err != nil {
 		return err
 	}
 
-	indexedIDs := make([]api.RepoID, 0, len(r.Form["repoID"]))
-	for _, idStr := range r.Form["repoID"] {
+	indexedIDs := mbke([]bpi.RepoID, 0, len(r.Form["repoID"]))
+	for _, idStr := rbnge r.Form["repoID"] {
 		id, err := strconv.Atoi(idStr)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("invalid repo id %s: %s", idStr, err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("invblid repo id %s: %s", idStr, err), http.StbtusBbdRequest)
 			return nil
 		}
-		indexedIDs = append(indexedIDs, api.RepoID(id))
+		indexedIDs = bppend(indexedIDs, bpi.RepoID(id))
 	}
 
-	var clientFingerprint searchbackend.ConfigFingerprint
-	err := clientFingerprint.FromHeaders(r.Header)
+	vbr clientFingerprint sebrchbbckend.ConfigFingerprint
+	err := clientFingerprint.FromHebders(r.Hebder)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("invalid fingerprint: %s", err), http.StatusBadRequest)
+		http.Error(w, fmt.Sprintf("invblid fingerprint: %s", err), http.StbtusBbdRequest)
 		return nil
 	}
 
-	response, err := h.doSearchConfiguration(ctx, searchConfigurationParameters{
+	response, err := h.doSebrchConfigurbtion(ctx, sebrchConfigurbtionPbrbmeters{
 		repoIDs:     indexedIDs,
 		fingerprint: clientFingerprint,
 	})
 
 	if err != nil {
-		var parameterErr *parameterError
-		code := http.StatusInternalServerError
+		vbr pbrbmeterErr *pbrbmeterError
+		code := http.StbtusInternblServerError
 
-		if errors.As(err, &parameterErr) {
-			code = http.StatusBadRequest
+		if errors.As(err, &pbrbmeterErr) {
+			code = http.StbtusBbdRequest
 		}
 
 		http.Error(w, err.Error(), code)
 		return nil
 	}
 
-	response.fingerprint.ToHeaders(w.Header())
+	response.fingerprint.ToHebders(w.Hebder())
 
-	jsonOptions := make([][]byte, 0, len(response.options))
-	for _, opt := range response.options {
-		marshalled, err := json.Marshal(opt)
+	jsonOptions := mbke([][]byte, 0, len(response.options))
+	for _, opt := rbnge response.options {
+		mbrshblled, err := json.Mbrshbl(opt)
 		if err != nil {
 			_, _ = w.Write([]byte(err.Error()))
 		}
 
-		jsonOptions = append(jsonOptions, marshalled)
+		jsonOptions = bppend(jsonOptions, mbrshblled)
 	}
 
 	_, _ = w.Write(bytes.Join(jsonOptions, []byte("\n")))
@@ -249,240 +249,240 @@ func (h *searchIndexerServer) serveConfiguration(w http.ResponseWriter, r *http.
 	return nil
 }
 
-func (h *searchIndexerServer) doSearchConfiguration(ctx context.Context, parameters searchConfigurationParameters) (*searchConfigurationResponse, error) {
-	siteConfig := conf.Get().SiteConfiguration
+func (h *sebrchIndexerServer) doSebrchConfigurbtion(ctx context.Context, pbrbmeters sebrchConfigurbtionPbrbmeters) (*sebrchConfigurbtionResponse, error) {
+	siteConfig := conf.Get().SiteConfigurbtion
 
-	if len(parameters.repoIDs) == 0 {
-		return nil, &parameterError{err: "at least one repoID required"}
+	if len(pbrbmeters.repoIDs) == 0 {
+		return nil, &pbrbmeterError{err: "bt lebst one repoID required"}
 	}
 
-	var minLastChanged time.Time
-	nextFingerPrint := parameters.fingerprint
-	if !h.MinLastChangedDisabled {
-		var err error
-		fp, err := searchbackend.NewConfigFingerprint(&siteConfig)
+	vbr minLbstChbnged time.Time
+	nextFingerPrint := pbrbmeters.fingerprint
+	if !h.MinLbstChbngedDisbbled {
+		vbr err error
+		fp, err := sebrchbbckend.NewConfigFingerprint(&siteConfig)
 		if err != nil {
 			return nil, err
 		}
 
-		minLastChanged = parameters.fingerprint.ChangesSince(fp)
+		minLbstChbnged = pbrbmeters.fingerprint.ChbngesSince(fp)
 		nextFingerPrint = *fp
 	}
 
-	// Preload repos to support fast lookups by repo ID.
-	repos, loadReposErr := h.RepoStore.List(ctx, database.ReposListOptions{
-		IDs: parameters.repoIDs,
-		// When minLastChanged is non-zero we will only return the
-		// repositories that have changed since minLastChanged. This takes
-		// into account repo metadata, repo content and search context
-		// changes.
-		MinLastChanged: minLastChanged,
-		// Not needed here and expensive to compute for so many repos.
+	// Prelobd repos to support fbst lookups by repo ID.
+	repos, lobdReposErr := h.RepoStore.List(ctx, dbtbbbse.ReposListOptions{
+		IDs: pbrbmeters.repoIDs,
+		// When minLbstChbnged is non-zero we will only return the
+		// repositories thbt hbve chbnged since minLbstChbnged. This tbkes
+		// into bccount repo metbdbtb, repo content bnd sebrch context
+		// chbnges.
+		MinLbstChbnged: minLbstChbnged,
+		// Not needed here bnd expensive to compute for so mbny repos.
 		ExcludeSources: true,
 	})
-	reposMap := make(map[api.RepoID]*types.Repo, len(repos))
-	for _, repo := range repos {
-		reposMap[repo.ID] = repo
+	reposMbp := mbke(mbp[bpi.RepoID]*types.Repo, len(repos))
+	for _, repo := rbnge repos {
+		reposMbp[repo.ID] = repo
 	}
 
-	// If we used MinLastChanged, we should only return information for the
-	// repositories that we found from List.
-	if !minLastChanged.IsZero() {
-		filtered := parameters.repoIDs[:0]
-		for _, id := range parameters.repoIDs {
-			if _, ok := reposMap[id]; ok {
-				filtered = append(filtered, id)
+	// If we used MinLbstChbnged, we should only return informbtion for the
+	// repositories thbt we found from List.
+	if !minLbstChbnged.IsZero() {
+		filtered := pbrbmeters.repoIDs[:0]
+		for _, id := rbnge pbrbmeters.repoIDs {
+			if _, ok := reposMbp[id]; ok {
+				filtered = bppend(filtered, id)
 			}
 		}
-		parameters.repoIDs = filtered
+		pbrbmeters.repoIDs = filtered
 	}
 
-	rankingLastUpdatedAt, err := h.Ranking.LastUpdatedAt(ctx, parameters.repoIDs)
+	rbnkingLbstUpdbtedAt, err := h.Rbnking.LbstUpdbtedAt(ctx, pbrbmeters.repoIDs)
 	if err != nil {
-		h.logger.Warn("failed to get ranking last updated timestamps, falling back to no ranking",
-			log.Int("repos", len(parameters.repoIDs)),
+		h.logger.Wbrn("fbiled to get rbnking lbst updbted timestbmps, fblling bbck to no rbnking",
+			log.Int("repos", len(pbrbmeters.repoIDs)),
 			log.Error(err),
 		)
-		rankingLastUpdatedAt = make(map[api.RepoID]time.Time)
+		rbnkingLbstUpdbtedAt = mbke(mbp[bpi.RepoID]time.Time)
 	}
 
-	getRepoIndexOptions := func(repoID api.RepoID) (*searchbackend.RepoIndexOptions, error) {
-		if loadReposErr != nil {
-			return nil, loadReposErr
+	getRepoIndexOptions := func(repoID bpi.RepoID) (*sebrchbbckend.RepoIndexOptions, error) {
+		if lobdReposErr != nil {
+			return nil, lobdReposErr
 		}
-		// Replicate what database.Repos.GetByName would do here:
-		repo, ok := reposMap[repoID]
+		// Replicbte whbt dbtbbbse.Repos.GetByNbme would do here:
+		repo, ok := reposMbp[repoID]
 		if !ok {
-			return nil, &database.RepoNotFoundErr{ID: repoID}
+			return nil, &dbtbbbse.RepoNotFoundErr{ID: repoID}
 		}
 
-		getVersion := func(branch string) (string, error) {
+		getVersion := func(brbnch string) (string, error) {
 			metricGetVersion.Inc()
-			// Do not to trigger a repo-updater lookup since this is a batch job.
-			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Name, branch, gitserver.ResolveRevisionOptions{
+			// Do not to trigger b repo-updbter lookup since this is b bbtch job.
+			commitID, err := h.gitserverClient.ResolveRevision(ctx, repo.Nbme, brbnch, gitserver.ResolveRevisionOptions{
 				NoEnsureRevision: true,
 			})
-			if err != nil && errcode.HTTP(err) == http.StatusNotFound {
-				// GetIndexOptions wants an empty rev for a missing rev or empty
+			if err != nil && errcode.HTTP(err) == http.StbtusNotFound {
+				// GetIndexOptions wbnts bn empty rev for b missing rev or empty
 				// repo.
 				return "", nil
 			}
 			return string(commitID), err
 		}
 
-		priority := float64(repo.Stars) + repoRankFromConfig(siteConfig, string(repo.Name))
+		priority := flobt64(repo.Stbrs) + repoRbnkFromConfig(siteConfig, string(repo.Nbme))
 
-		var documentRanksVersion string
-		if t, ok := rankingLastUpdatedAt[repoID]; ok {
-			documentRanksVersion = t.String()
+		vbr documentRbnksVersion string
+		if t, ok := rbnkingLbstUpdbtedAt[repoID]; ok {
+			documentRbnksVersion = t.String()
 		}
 
-		return &searchbackend.RepoIndexOptions{
-			Name:       string(repo.Name),
+		return &sebrchbbckend.RepoIndexOptions{
+			Nbme:       string(repo.Nbme),
 			RepoID:     repo.ID,
-			Public:     !repo.Private,
+			Public:     !repo.Privbte,
 			Priority:   priority,
 			Fork:       repo.Fork,
 			Archived:   repo.Archived,
 			GetVersion: getVersion,
 
-			DocumentRanksVersion: documentRanksVersion,
+			DocumentRbnksVersion: documentRbnksVersion,
 		}, nil
 	}
 
-	revisionsForRepo, revisionsForRepoErr := h.SearchContextsRepoRevs(ctx, parameters.repoIDs)
-	getSearchContextRevisions := func(repoID api.RepoID) ([]string, error) {
+	revisionsForRepo, revisionsForRepoErr := h.SebrchContextsRepoRevs(ctx, pbrbmeters.repoIDs)
+	getSebrchContextRevisions := func(repoID bpi.RepoID) ([]string, error) {
 		if revisionsForRepoErr != nil {
 			return nil, revisionsForRepoErr
 		}
 		return revisionsForRepo[repoID], nil
 	}
 
-	indexOptions := searchbackend.GetIndexOptions(
+	indexOptions := sebrchbbckend.GetIndexOptions(
 		&siteConfig,
 		getRepoIndexOptions,
-		getSearchContextRevisions,
-		parameters.repoIDs...,
+		getSebrchContextRevisions,
+		pbrbmeters.repoIDs...,
 	)
 
-	return &searchConfigurationResponse{
+	return &sebrchConfigurbtionResponse{
 		options:     indexOptions,
 		fingerprint: nextFingerPrint,
 	}, nil
 }
 
-type parameterError struct {
+type pbrbmeterError struct {
 	err string
 }
 
-func (e *parameterError) Error() string { return e.err }
+func (e *pbrbmeterError) Error() string { return e.err }
 
-type searchConfigurationParameters struct {
-	repoIDs     []api.RepoID
-	fingerprint searchbackend.ConfigFingerprint
+type sebrchConfigurbtionPbrbmeters struct {
+	repoIDs     []bpi.RepoID
+	fingerprint sebrchbbckend.ConfigFingerprint
 }
 
-type searchConfigurationResponse struct {
-	options     []searchbackend.ZoektIndexOptions
-	fingerprint searchbackend.ConfigFingerprint
+type sebrchConfigurbtionResponse struct {
+	options     []sebrchbbckend.ZoektIndexOptions
+	fingerprint sebrchbbckend.ConfigFingerprint
 }
 
 // serveList is used by zoekt to get the list of repositories for it to index.
-func (h *searchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) error {
-	var parameters listParameters
-	err := json.NewDecoder(r.Body).Decode(&parameters)
+func (h *sebrchIndexerServer) serveList(w http.ResponseWriter, r *http.Request) error {
+	vbr pbrbmeters listPbrbmeters
+	err := json.NewDecoder(r.Body).Decode(&pbrbmeters)
 	if err != nil {
 		return err
 	}
 
-	repoIDs, err := h.doList(r.Context(), &parameters)
+	repoIDs, err := h.doList(r.Context(), &pbrbmeters)
 	if err != nil {
 		return err
 	}
 
-	// TODO: Avoid batching up so much in memory by:
-	// 1. Changing the schema from object of arrays to array of objects.
-	// 2. Stream out each object marshalled rather than marshall the full list in memory.
+	// TODO: Avoid bbtching up so much in memory by:
+	// 1. Chbnging the schemb from object of brrbys to brrby of objects.
+	// 2. Strebm out ebch object mbrshblled rbther thbn mbrshbll the full list in memory.
 
-	data := struct {
-		RepoIDs []api.RepoID
+	dbtb := struct {
+		RepoIDs []bpi.RepoID
 	}{
 		RepoIDs: repoIDs,
 	}
 
-	return json.NewEncoder(w).Encode(&data)
+	return json.NewEncoder(w).Encode(&dbtb)
 }
 
-func (h *searchIndexerServer) doList(ctx context.Context, parameters *listParameters) (repoIDS []api.RepoID, err error) {
-	indexable, err := h.ListIndexable(ctx)
+func (h *sebrchIndexerServer) doList(ctx context.Context, pbrbmeters *listPbrbmeters) (repoIDS []bpi.RepoID, err error) {
+	indexbble, err := h.ListIndexbble(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if h.Indexers.Enabled() {
-		indexed := make(zoekt.ReposMap, len(parameters.IndexedIDs))
-		add := func(r *types.MinimalRepo) { indexed[uint32(r.ID)] = zoekt.MinimalRepoListEntry{} }
-		if len(parameters.IndexedIDs) > 0 {
-			opts := database.ReposListOptions{IDs: parameters.IndexedIDs}
-			err = h.RepoStore.StreamMinimalRepos(ctx, opts, add)
+	if h.Indexers.Enbbled() {
+		indexed := mbke(zoekt.ReposMbp, len(pbrbmeters.IndexedIDs))
+		bdd := func(r *types.MinimblRepo) { indexed[uint32(r.ID)] = zoekt.MinimblRepoListEntry{} }
+		if len(pbrbmeters.IndexedIDs) > 0 {
+			opts := dbtbbbse.ReposListOptions{IDs: pbrbmeters.IndexedIDs}
+			err = h.RepoStore.StrebmMinimblRepos(ctx, opts, bdd)
 			if err != nil {
 				return nil, err
 			}
 		}
 
-		indexable, err = h.Indexers.ReposSubset(ctx, parameters.Hostname, indexed, indexable)
+		indexbble, err = h.Indexers.ReposSubset(ctx, pbrbmeters.Hostnbme, indexed, indexbble)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	// TODO: Avoid batching up so much in memory by:
-	// 1. Changing the schema from object of arrays to array of objects.
-	// 2. Stream out each object marshalled rather than marshall the full list in memory.
+	// TODO: Avoid bbtching up so much in memory by:
+	// 1. Chbnging the schemb from object of brrbys to brrby of objects.
+	// 2. Strebm out ebch object mbrshblled rbther thbn mbrshbll the full list in memory.
 
-	ids := make([]api.RepoID, 0, len(indexable))
-	for _, r := range indexable {
-		ids = append(ids, r.ID)
+	ids := mbke([]bpi.RepoID, 0, len(indexbble))
+	for _, r := rbnge indexbble {
+		ids = bppend(ids, r.ID)
 	}
 
 	return ids, nil
 }
 
-type listParameters struct {
-	// Hostname is used to determine the subset of repos to return
-	Hostname string
-	// IndexedIDs are the repository IDs of indexed repos by Hostname.
-	IndexedIDs []api.RepoID
+type listPbrbmeters struct {
+	// Hostnbme is used to determine the subset of repos to return
+	Hostnbme string
+	// IndexedIDs bre the repository IDs of indexed repos by Hostnbme.
+	IndexedIDs []bpi.RepoID
 }
 
-var metricGetVersion = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_search_get_version_total",
-	Help: "The total number of times we poll gitserver for the version of a indexable branch.",
+vbr metricGetVersion = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbme: "src_sebrch_get_version_totbl",
+	Help: "The totbl number of times we poll gitserver for the version of b indexbble brbnch.",
 })
 
-func (h *searchIndexerServer) serveDocumentRanks(w http.ResponseWriter, r *http.Request) error {
-	return serveRank(h.Ranking.GetDocumentRanks, w, r)
+func (h *sebrchIndexerServer) serveDocumentRbnks(w http.ResponseWriter, r *http.Request) error {
+	return serveRbnk(h.Rbnking.GetDocumentRbnks, w, r)
 }
 
-func serveRank[T []float64 | citypes.RepoPathRanks](
-	f func(ctx context.Context, name api.RepoName) (r T, err error),
+func serveRbnk[T []flobt64 | citypes.RepoPbthRbnks](
+	f func(ctx context.Context, nbme bpi.RepoNbme) (r T, err error),
 	w http.ResponseWriter,
 	r *http.Request,
 ) error {
 	ctx := r.Context()
 
-	repoName := api.RepoName(mux.Vars(r)["RepoName"])
+	repoNbme := bpi.RepoNbme(mux.Vbrs(r)["RepoNbme"])
 
-	rank, err := f(ctx, repoName)
+	rbnk, err := f(ctx, repoNbme)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StbtusNotFound)
 			return nil
 		}
 		return err
 	}
 
-	b, err := json.Marshal(rank)
+	b, err := json.Mbrshbl(rbnk)
 	if err != nil {
 		return err
 	}
@@ -491,107 +491,107 @@ func serveRank[T []float64 | citypes.RepoPathRanks](
 	return nil
 }
 
-func (h *searchIndexerServer) handleIndexStatusUpdate(_ http.ResponseWriter, r *http.Request) error {
-	var args indexStatusUpdateArgs
+func (h *sebrchIndexerServer) hbndleIndexStbtusUpdbte(_ http.ResponseWriter, r *http.Request) error {
+	vbr brgs indexStbtusUpdbteArgs
 
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		return errors.Wrap(err, "failed to decode request args")
+	if err := json.NewDecoder(r.Body).Decode(&brgs); err != nil {
+		return errors.Wrbp(err, "fbiled to decode request brgs")
 	}
 
-	return h.doIndexStatusUpdate(r.Context(), &args)
+	return h.doIndexStbtusUpdbte(r.Context(), &brgs)
 }
 
-func (h *searchIndexerServer) doIndexStatusUpdate(ctx context.Context, args *indexStatusUpdateArgs) error {
-	var (
-		ids     = make([]int32, len(args.Repositories))
-		minimal = make(zoekt.ReposMap, len(args.Repositories))
+func (h *sebrchIndexerServer) doIndexStbtusUpdbte(ctx context.Context, brgs *indexStbtusUpdbteArgs) error {
+	vbr (
+		ids     = mbke([]int32, len(brgs.Repositories))
+		minimbl = mbke(zoekt.ReposMbp, len(brgs.Repositories))
 	)
 
-	for i, repo := range args.Repositories {
+	for i, repo := rbnge brgs.Repositories {
 		ids[i] = int32(repo.RepoID)
-		minimal[repo.RepoID] = zoekt.MinimalRepoListEntry{Branches: repo.Branches, IndexTimeUnix: repo.IndexTimeUnix}
+		minimbl[repo.RepoID] = zoekt.MinimblRepoListEntry{Brbnches: repo.Brbnches, IndexTimeUnix: repo.IndexTimeUnix}
 	}
 
-	h.logger.Info("updating index status", log.Int32s("repositories", ids))
-	return h.db.ZoektRepos().UpdateIndexStatuses(ctx, minimal)
+	h.logger.Info("updbting index stbtus", log.Int32s("repositories", ids))
+	return h.db.ZoektRepos().UpdbteIndexStbtuses(ctx, minimbl)
 }
 
-type indexStatusUpdateArgs struct {
-	Repositories []indexStatusUpdateRepository
+type indexStbtusUpdbteArgs struct {
+	Repositories []indexStbtusUpdbteRepository
 }
 
-type indexStatusUpdateRepository struct {
+type indexStbtusUpdbteRepository struct {
 	RepoID        uint32
-	Branches      []zoekt.RepositoryBranch
+	Brbnches      []zoekt.RepositoryBrbnch
 	IndexTimeUnix int64
 }
 
-func (a *indexStatusUpdateArgs) FromProto(req *proto.UpdateIndexStatusRequest) {
-	a.Repositories = make([]indexStatusUpdateRepository, 0, len(req.Repositories))
+func (b *indexStbtusUpdbteArgs) FromProto(req *proto.UpdbteIndexStbtusRequest) {
+	b.Repositories = mbke([]indexStbtusUpdbteRepository, 0, len(req.Repositories))
 
-	for _, repo := range req.Repositories {
-		branches := make([]zoekt.RepositoryBranch, 0, len(repo.Branches))
-		for _, b := range repo.Branches {
-			branches = append(branches, zoekt.RepositoryBranch{
-				Name:    b.Name,
+	for _, repo := rbnge req.Repositories {
+		brbnches := mbke([]zoekt.RepositoryBrbnch, 0, len(repo.Brbnches))
+		for _, b := rbnge repo.Brbnches {
+			brbnches = bppend(brbnches, zoekt.RepositoryBrbnch{
+				Nbme:    b.Nbme,
 				Version: b.Version,
 			})
 		}
 
-		a.Repositories = append(a.Repositories, indexStatusUpdateRepository{
+		b.Repositories = bppend(b.Repositories, indexStbtusUpdbteRepository{
 			RepoID:        repo.RepoId,
-			Branches:      branches,
+			Brbnches:      brbnches,
 			IndexTimeUnix: repo.GetIndexTimeUnix(),
 		})
 	}
 }
 
-func (a *indexStatusUpdateArgs) ToProto() *proto.UpdateIndexStatusRequest {
-	repos := make([]*proto.UpdateIndexStatusRequest_Repository, 0, len(a.Repositories))
+func (b *indexStbtusUpdbteArgs) ToProto() *proto.UpdbteIndexStbtusRequest {
+	repos := mbke([]*proto.UpdbteIndexStbtusRequest_Repository, 0, len(b.Repositories))
 
-	for _, repo := range a.Repositories {
-		branches := make([]*proto.ZoektRepositoryBranch, 0, len(repo.Branches))
-		for _, b := range repo.Branches {
-			branches = append(branches, &proto.ZoektRepositoryBranch{
-				Name:    b.Name,
+	for _, repo := rbnge b.Repositories {
+		brbnches := mbke([]*proto.ZoektRepositoryBrbnch, 0, len(repo.Brbnches))
+		for _, b := rbnge repo.Brbnches {
+			brbnches = bppend(brbnches, &proto.ZoektRepositoryBrbnch{
+				Nbme:    b.Nbme,
 				Version: b.Version,
 			})
 		}
 
-		repos = append(repos, &proto.UpdateIndexStatusRequest_Repository{
+		repos = bppend(repos, &proto.UpdbteIndexStbtusRequest_Repository{
 			RepoId:        repo.RepoID,
-			Branches:      branches,
+			Brbnches:      brbnches,
 			IndexTimeUnix: repo.IndexTimeUnix,
 		})
 	}
 
-	return &proto.UpdateIndexStatusRequest{
+	return &proto.UpdbteIndexStbtusRequest{
 		Repositories: repos,
 	}
 }
 
-func repoPathRanksToProto(r *citypes.RepoPathRanks) *proto.DocumentRanksResponse {
-	paths := make(map[string]float64, len(r.Paths))
-	for path, counts := range r.Paths {
-		paths[path] = counts
+func repoPbthRbnksToProto(r *citypes.RepoPbthRbnks) *proto.DocumentRbnksResponse {
+	pbths := mbke(mbp[string]flobt64, len(r.Pbths))
+	for pbth, counts := rbnge r.Pbths {
+		pbths[pbth] = counts
 	}
 
-	return &proto.DocumentRanksResponse{
-		Paths:    paths,
-		MeanRank: r.MeanRank,
+	return &proto.DocumentRbnksResponse{
+		Pbths:    pbths,
+		MebnRbnk: r.MebnRbnk,
 	}
 }
 
-func repoPathRanksFromProto(x *proto.DocumentRanksResponse) *citypes.RepoPathRanks {
-	protoPaths := x.GetPaths()
+func repoPbthRbnksFromProto(x *proto.DocumentRbnksResponse) *citypes.RepoPbthRbnks {
+	protoPbths := x.GetPbths()
 
-	paths := make(map[string]float64, len(protoPaths))
-	for path, counts := range protoPaths {
-		paths[path] = counts
+	pbths := mbke(mbp[string]flobt64, len(protoPbths))
+	for pbth, counts := rbnge protoPbths {
+		pbths[pbth] = counts
 	}
 
-	return &citypes.RepoPathRanks{
-		Paths:    paths,
-		MeanRank: x.MeanRank,
+	return &citypes.RepoPbthRbnks{
+		Pbths:    pbths,
+		MebnRbnk: x.MebnRbnk,
 	}
 }

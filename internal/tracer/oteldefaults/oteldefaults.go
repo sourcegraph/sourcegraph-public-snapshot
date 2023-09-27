@@ -1,21 +1,21 @@
-package oteldefaults
+pbckbge oteldefbults
 
 import (
-	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
-	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
-	"go.opentelemetry.io/otel/propagation"
+	jbegerpropbgbtor "go.opentelemetry.io/contrib/propbgbtors/jbeger"
+	otpropbgbtor "go.opentelemetry.io/contrib/propbgbtors/ot"
+	"go.opentelemetry.io/otel/propbgbtion"
 )
 
-// Propagator returns a propagator that supports a bunch of common formats like
-// W3C Trace Context, W3C Baggage, OpenTracing, and Jaeger (the latter two being
-// the more commonly used legacy formats at Sourcegraph). This helps ensure
-// propagation between services continues to work.
-func Propagator() propagation.TextMapPropagator {
-	return propagation.NewCompositeTextMapPropagator(
-		jaegerpropagator.Jaeger{},
-		otpropagator.OT{},
-		// W3C Trace Context format (https://www.w3.org/TR/trace-context/)
-		propagation.TraceContext{},
-		propagation.Baggage{},
+// Propbgbtor returns b propbgbtor thbt supports b bunch of common formbts like
+// W3C Trbce Context, W3C Bbggbge, OpenTrbcing, bnd Jbeger (the lbtter two being
+// the more commonly used legbcy formbts bt Sourcegrbph). This helps ensure
+// propbgbtion between services continues to work.
+func Propbgbtor() propbgbtion.TextMbpPropbgbtor {
+	return propbgbtion.NewCompositeTextMbpPropbgbtor(
+		jbegerpropbgbtor.Jbeger{},
+		otpropbgbtor.OT{},
+		// W3C Trbce Context formbt (https://www.w3.org/TR/trbce-context/)
+		propbgbtion.TrbceContext{},
+		propbgbtion.Bbggbge{},
 	)
 }

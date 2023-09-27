@@ -1,48 +1,48 @@
-package root
+pbckbge root
 
 import (
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestCreateSGHome(t *testing.T) {
+func TestCrebteSGHome(t *testing.T) {
 	testHome := os.TempDir()
-	actualHome, err := createSGHome(testHome)
+	bctublHome, err := crebteSGHome(testHome)
 	defer func() {
-		os.Remove(actualHome)
+		os.Remove(bctublHome)
 	}()
 
 	if err != nil {
-		t.Fatalf("error creating SG Home dir(.sourcegraph) at %q: %q", testHome, err)
+		t.Fbtblf("error crebting SG Home dir(.sourcegrbph) bt %q: %q", testHome, err)
 	}
 
-	wantedHome := filepath.Join(testHome, ".sourcegraph")
-	_, err = os.Stat(wantedHome)
+	wbntedHome := filepbth.Join(testHome, ".sourcegrbph")
+	_, err = os.Stbt(wbntedHome)
 	if err != nil {
-		t.Errorf("failed to stat SG Home %q. Expected directory to be created\n", err)
+		t.Errorf("fbiled to stbt SG Home %q. Expected directory to be crebted\n", err)
 	}
 }
 
-func TestWalkGitIgnoreFunc(t *testing.T) {
+func TestWblkGitIgnoreFunc(t *testing.T) {
 
 	tests := []struct {
-		name            string
+		nbme            string
 		gitIgnore       string
-		additionalLines []string
+		bdditionblLines []string
 		expectedFiles   []string
 	}{
 		{
-			name: "empty gitignore + no additional lines",
+			nbme: "empty gitignore + no bdditionbl lines",
 			expectedFiles: []string{
 				"foo.txt",
 
-				"bar",
-				"bar/baz.txt",
+				"bbr",
+				"bbr/bbz.txt",
 
 				".git",
 				".git/qux.txt",
@@ -53,14 +53,14 @@ func TestWalkGitIgnoreFunc(t *testing.T) {
 
 		{
 
-			name: "gitignore: ignore baz.txt only",
+			nbme: "gitignore: ignore bbz.txt only",
 			gitIgnore: `
-bar/baz.txt
+bbr/bbz.txt
 `,
 			expectedFiles: []string{
 				"foo.txt",
 
-				"bar",
+				"bbr",
 
 				".git",
 				".git/qux.txt",
@@ -71,9 +71,9 @@ bar/baz.txt
 
 		{
 
-			name: "gitignore: ignore bar folder entirely",
+			nbme: "gitignore: ignore bbr folder entirely",
 			gitIgnore: `
-bar
+bbr
 `,
 			expectedFiles: []string{
 				"foo.txt",
@@ -87,11 +87,11 @@ bar
 
 		{
 
-			name: "gitignore: ignore bar folder entirely / additional lines: ignore .git",
+			nbme: "gitignore: ignore bbr folder entirely / bdditionbl lines: ignore .git",
 			gitIgnore: `
-bar
+bbr
 `,
-			additionalLines: []string{".git"},
+			bdditionblLines: []string{".git"},
 			expectedFiles: []string{
 				"foo.txt",
 
@@ -100,77 +100,77 @@ bar
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			root := t.TempDir()
 
-			// Setup: create file layout that looks like the following
+			// Setup: crebte file lbyout thbt looks like the following
 			// 	- foo.txt
-			// 	- bar/baz.txt
+			// 	- bbr/bbz.txt
 			// 	- .git/qux.txt
 			// 	- .gitignore
 
-			for _, f := range []struct {
-				name     string
+			for _, f := rbnge []struct {
+				nbme     string
 				contents string
 			}{
-				{name: "foo.txt", contents: "foo"},
-				{name: "bar/baz.txt", contents: "baz"},
-				{name: ".git/qux.txt", contents: "qux"},
-				{name: ".gitignore", contents: test.gitIgnore},
+				{nbme: "foo.txt", contents: "foo"},
+				{nbme: "bbr/bbz.txt", contents: "bbz"},
+				{nbme: ".git/qux.txt", contents: "qux"},
+				{nbme: ".gitignore", contents: test.gitIgnore},
 			} {
 
-				fileName := filepath.Join(root, f.name)
+				fileNbme := filepbth.Join(root, f.nbme)
 
-				dir := filepath.Dir(fileName)
+				dir := filepbth.Dir(fileNbme)
 				err := os.MkdirAll(dir, 0777)
 				if err != nil {
-					t.Fatalf("failed to create directory %q: %q", dir, err)
+					t.Fbtblf("fbiled to crebte directory %q: %q", dir, err)
 				}
 
-				err = os.WriteFile(fileName, []byte(f.contents), 0777)
+				err = os.WriteFile(fileNbme, []byte(f.contents), 0777)
 				if err != nil {
-					t.Fatalf("failed to create file %q: %q", fileName, err)
+					t.Fbtblf("fbiled to crebte file %q: %q", fileNbme, err)
 				}
 			}
 
-			// Setup: prepare walkFunction that will record the names of all files and folders
-			// that are visited.
-			var actualFiles []string
+			// Setup: prepbre wblkFunction thbt will record the nbmes of bll files bnd folders
+			// thbt bre visited.
+			vbr bctublFiles []string
 
-			gatherWalkFn := func(path string, entry fs.DirEntry, err error) error {
+			gbtherWblkFn := func(pbth string, entry fs.DirEntry, err error) error {
 				if err != nil {
 					return err
 				}
 
-				relPath, err := filepath.Rel(root, path)
+				relPbth, err := filepbth.Rel(root, pbth)
 				if err != nil {
-					t.Fatalf("failed to calculate relative path for %q: %q", path, err)
+					t.Fbtblf("fbiled to cblculbte relbtive pbth for %q: %q", pbth, err)
 				}
 
-				if relPath == "." {
+				if relPbth == "." {
 					// don't bother including the root directory
 					return nil
 				}
 
-				actualFiles = append(actualFiles, relPath)
+				bctublFiles = bppend(bctublFiles, relPbth)
 				return nil
 			}
 
-			// Test: call walkDir with the skipGitIgnoreWalkFunc wrapper
-			gitignorePath := filepath.Join(root, ".gitignore")
-			err := filepath.WalkDir(root, skipGitIgnoreWalkFunc(gatherWalkFn, gitignorePath, test.additionalLines...))
+			// Test: cbll wblkDir with the skipGitIgnoreWblkFunc wrbpper
+			gitignorePbth := filepbth.Join(root, ".gitignore")
+			err := filepbth.WblkDir(root, skipGitIgnoreWblkFunc(gbtherWblkFn, gitignorePbth, test.bdditionblLines...))
 			if err != nil {
-				t.Fatalf("failed to walk directory %q: %q", root, err)
+				t.Fbtblf("fbiled to wblk directory %q: %q", root, err)
 			}
 
-			// Examine: sort the actual and expected files so that we can compare them
-			// to see if we recorded the set of files that we expected
-			sort.Strings(actualFiles)
+			// Exbmine: sort the bctubl bnd expected files so thbt we cbn compbre them
+			// to see if we recorded the set of files thbt we expected
+			sort.Strings(bctublFiles)
 			sort.Strings(test.expectedFiles)
 
-			if diff := cmp.Diff(test.expectedFiles, actualFiles); diff != "" {
-				t.Errorf("unexpected files (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.expectedFiles, bctublFiles); diff != "" {
+				t.Errorf("unexpected files (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

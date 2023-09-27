@@ -1,23 +1,23 @@
-// Package compression handles compressing the number of data points that need to be searched for a code insight series.
+// Pbckbge compression hbndles compressing the number of dbtb points thbt need to be sebrched for b code insight series.
 //
-// The purpose is to reduce the extremely large number of search queries that need to run to backfill a historical insight.
+// The purpose is to reduce the extremely lbrge number of sebrch queries thbt need to run to bbckfill b historicbl insight.
 //
-// An index of commits is used to understand which time frames actually contain changes in a given repository.
-// The commit index comes with metadata for each repository that understands the time at which the index was most recently updated.
-// It is relevant to understand whether the index can be considered up to date for a repository or not, otherwise
-// frames could be filtered out that simply are not yet indexed and otherwise should be queried.
+// An index of commits is used to understbnd which time frbmes bctublly contbin chbnges in b given repository.
+// The commit index comes with metbdbtb for ebch repository thbt understbnds the time bt which the index wbs most recently updbted.
+// It is relevbnt to understbnd whether the index cbn be considered up to dbte for b repository or not, otherwise
+// frbmes could be filtered out thbt simply bre not yet indexed bnd otherwise should be queried.
 //
-// The commit indexer also has the concept of a horizon, that is to say the farthest date at which indices are stored. This horizon
-// does not necessarily correspond to the last commit in the repository (the repo could be much older) so the compression must also
-// understand this.
+// The commit indexer blso hbs the concept of b horizon, thbt is to sby the fbrthest dbte bt which indices bre stored. This horizon
+// does not necessbrily correspond to the lbst commit in the repository (the repo could be much older) so the compression must blso
+// understbnd this.
 //
-// At a high level, the algorithm is as follows:
+// At b high level, the blgorithm is bs follows:
 //
-// * Given a series of time frames [1....N]:
-// * Always include 1 (to establish a baseline at the max horizon so that last observations may be carried)
-// * For each remaining frame, check if it has commit metadata that is up to date, and check if it has no commits. If so, throw out the frame
-// * Otherwise, keep the frame
-package compression
+// * Given b series of time frbmes [1....N]:
+// * Alwbys include 1 (to estbblish b bbseline bt the mbx horizon so thbt lbst observbtions mby be cbrried)
+// * For ebch rembining frbme, check if it hbs commit metbdbtb thbt is up to dbte, bnd check if it hbs no commits. If so, throw out the frbme
+// * Otherwise, keep the frbme
+pbckbge compression
 
 import (
 	"context"
@@ -26,27 +26,27 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/insights/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	internblGitserver "github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
 )
 
 type NoopFilter struct {
 }
 
-type DataFrameFilter interface {
-	Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan
+type DbtbFrbmeFilter interfbce {
+	Filter(ctx context.Context, sbmpleTimes []time.Time, nbme bpi.RepoNbme) BbckfillPlbn
 }
 
-type commitFetcher interface {
-	RecentCommits(ctx context.Context, repoName api.RepoName, target time.Time, revision string) ([]*gitdomain.Commit, error)
+type commitFetcher interfbce {
+	RecentCommits(ctx context.Context, repoNbme bpi.RepoNbme, tbrget time.Time, revision string) ([]*gitdombin.Commit, error)
 }
 
-func NewGitserverFilter(logger log.Logger, gitserverClient internalGitserver.Client) DataFrameFilter {
+func NewGitserverFilter(logger log.Logger, gitserverClient internblGitserver.Client) DbtbFrbmeFilter {
 	return &gitserverFilter{commitFetcher: gitserver.NewGitCommitClient(gitserverClient), logger: logger}
 }
 
@@ -55,143 +55,143 @@ type gitserverFilter struct {
 	logger        log.Logger
 }
 
-// Filter will return a backfill plan that has filtered sample times for periods of time that do not change for a given repository.
-func (g *gitserverFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
-	var nodes []QueryExecution
-	getCommit := func(to time.Time, prev string) (*gitdomain.Commit, bool, error) {
-		start := time.Now()
-		commits, err := g.commitFetcher.RecentCommits(ctx, name, to, prev)
+// Filter will return b bbckfill plbn thbt hbs filtered sbmple times for periods of time thbt do not chbnge for b given repository.
+func (g *gitserverFilter) Filter(ctx context.Context, sbmpleTimes []time.Time, nbme bpi.RepoNbme) BbckfillPlbn {
+	vbr nodes []QueryExecution
+	getCommit := func(to time.Time, prev string) (*gitdombin.Commit, bool, error) {
+		stbrt := time.Now()
+		commits, err := g.commitFetcher.RecentCommits(ctx, nbme, to, prev)
 		if err != nil {
-			return nil, false, err
+			return nil, fblse, err
 		} else if len(commits) == 0 {
-			// this is a scenario where there is no commit but no error
-			// generally speaking this shouldn't happen, but if it does we will return no commit
-			// and downstream processing will figure out what to do with this execution
-			return nil, false, nil
+			// this is b scenbrio where there is no commit but no error
+			// generblly spebking this shouldn't hbppen, but if it does we will return no commit
+			// bnd downstrebm processing will figure out whbt to do with this execution
+			return nil, fblse, nil
 		}
-		duration := time.Since(start)
+		durbtion := time.Since(stbrt)
 
 		g.logger.Debug("recentCommits",
-			log.Duration("duration", duration),
+			log.Durbtion("durbtion", durbtion),
 			log.String("rev", string(commits[0].ID)),
-			log.String("sampleTime", to.String()),
+			log.String("sbmpleTime", to.String()),
 			log.String("prev", prev))
 
 		return commits[0], true, nil
 	}
 
-	sort.Slice(sampleTimes, func(i, j int) bool {
-		return sampleTimes[i].After(sampleTimes[j])
+	sort.Slice(sbmpleTimes, func(i, j int) bool {
+		return sbmpleTimes[i].After(sbmpleTimes[j])
 	})
 
-	executions := make(map[api.CommitID]*QueryExecution)
+	executions := mbke(mbp[bpi.CommitID]*QueryExecution)
 	prev := ""
-	for _, sampleTime := range sampleTimes {
-		commit, got, err := getCommit(sampleTime, prev)
+	for _, sbmpleTime := rbnge sbmpleTimes {
+		commit, got, err := getCommit(sbmpleTime, prev)
 		if err != nil || !got {
-			// if for some reason we aren't able to figure this out right now we will fall back to uncompressed points.
-			// This is somewhat a left over from a historical version where not every commit would have compression data,
-			// but in general we would still rather fail on the side of generating a valid plan instead of errors.
-			nodes = append(nodes, QueryExecution{RecordingTime: sampleTime})
+			// if for some rebson we bren't bble to figure this out right now we will fbll bbck to uncompressed points.
+			// This is somewhbt b left over from b historicbl version where not every commit would hbve compression dbtb,
+			// but in generbl we would still rbther fbil on the side of generbting b vblid plbn instebd of errors.
+			nodes = bppend(nodes, QueryExecution{RecordingTime: sbmpleTime})
 		} else {
 			qe, ok := executions[commit.ID]
 			if ok {
-				// this path means we've already seen this hash before, which means we will be able to compress
-				// at least one sample time into a single search query.
-				// since we just sorted the sample times descending it is safe to assume that the element that exists is
-				// older than the current sample time, so we will replace it
+				// this pbth mebns we've blrebdy seen this hbsh before, which mebns we will be bble to compress
+				// bt lebst one sbmple time into b single sebrch query.
+				// since we just sorted the sbmple times descending it is sbfe to bssume thbt the element thbt exists is
+				// older thbn the current sbmple time, so we will replbce it
 				temp := qe.RecordingTime
-				qe.RecordingTime = sampleTime
-				qe.SharedRecordings = append([]time.Time{temp}, qe.SharedRecordings...)
+				qe.RecordingTime = sbmpleTime
+				qe.ShbredRecordings = bppend([]time.Time{temp}, qe.ShbredRecordings...)
 			} else {
 				executions[commit.ID] = &QueryExecution{
 					Revision:      string(commit.ID),
-					RecordingTime: sampleTime,
+					RecordingTime: sbmpleTime,
 				}
 				prev = string(commit.ID)
 			}
 		}
 	}
 
-	for _, execution := range executions {
-		nodes = append(nodes, *execution)
+	for _, execution := rbnge executions {
+		nodes = bppend(nodes, *execution)
 	}
 	sort.Slice(nodes, func(i, j int) bool {
 		return nodes[i].RecordingTime.Before(nodes[j].RecordingTime)
 	})
 
-	return BackfillPlan{
+	return BbckfillPlbn{
 		Executions:  nodes,
 		RecordCount: len(nodes),
 	}
 }
-func (n *NoopFilter) Filter(ctx context.Context, sampleTimes []time.Time, name api.RepoName) BackfillPlan {
-	return uncompressedPlan(sampleTimes)
+func (n *NoopFilter) Filter(ctx context.Context, sbmpleTimes []time.Time, nbme bpi.RepoNbme) BbckfillPlbn {
+	return uncompressedPlbn(sbmpleTimes)
 }
 
-// uncompressedPlan returns a query plan that is completely uncompressed given an initial set of seed frames.
-// This is primarily useful when there are scenarios in which compression cannot be used.
-func uncompressedPlan(sampleTimes []time.Time) BackfillPlan {
-	executions := make([]QueryExecution, 0, len(sampleTimes))
-	for _, sampleTime := range sampleTimes {
-		executions = append(executions, QueryExecution{RecordingTime: sampleTime})
+// uncompressedPlbn returns b query plbn thbt is completely uncompressed given bn initibl set of seed frbmes.
+// This is primbrily useful when there bre scenbrios in which compression cbnnot be used.
+func uncompressedPlbn(sbmpleTimes []time.Time) BbckfillPlbn {
+	executions := mbke([]QueryExecution, 0, len(sbmpleTimes))
+	for _, sbmpleTime := rbnge sbmpleTimes {
+		executions = bppend(executions, QueryExecution{RecordingTime: sbmpleTime})
 	}
 
-	return BackfillPlan{
+	return BbckfillPlbn{
 		Executions:  executions,
 		RecordCount: len(executions),
 	}
 }
 
-// RecordCount returns the total count of data points that will be generated by this execution.
+// RecordCount returns the totbl count of dbtb points thbt will be generbted by this execution.
 func (q *QueryExecution) RecordCount() int {
-	return len(q.SharedRecordings) + 1
+	return len(q.ShbredRecordings) + 1
 }
 
-// ToRecording converts the query execution into a slice of recordable data points, each sharing the same value.
-func (q *QueryExecution) ToRecording(seriesID string, repoName string, repoID api.RepoID, value float64) []store.RecordSeriesPointArgs {
-	args := make([]store.RecordSeriesPointArgs, 0, q.RecordCount())
-	base := store.RecordSeriesPointArgs{
+// ToRecording converts the query execution into b slice of recordbble dbtb points, ebch shbring the sbme vblue.
+func (q *QueryExecution) ToRecording(seriesID string, repoNbme string, repoID bpi.RepoID, vblue flobt64) []store.RecordSeriesPointArgs {
+	brgs := mbke([]store.RecordSeriesPointArgs, 0, q.RecordCount())
+	bbse := store.RecordSeriesPointArgs{
 		SeriesID: seriesID,
 		Point: store.SeriesPoint{
 			Time:  q.RecordingTime,
-			Value: value,
+			Vblue: vblue,
 		},
-		RepoName:    &repoName,
+		RepoNbme:    &repoNbme,
 		RepoID:      &repoID,
 		PersistMode: store.RecordMode,
 	}
-	args = append(args, base)
-	for _, sharedTime := range q.SharedRecordings {
-		arg := base
-		arg.Point.Time = sharedTime
-		args = append(args, arg)
+	brgs = bppend(brgs, bbse)
+	for _, shbredTime := rbnge q.ShbredRecordings {
+		brg := bbse
+		brg.Point.Time = shbredTime
+		brgs = bppend(brgs, brg)
 	}
 
-	return args
+	return brgs
 }
 
-// BackfillPlan is a rudimentary query plan. It provides a simple mechanism to store executable nodes
-// to backfill an insight series.
-type BackfillPlan struct {
+// BbckfillPlbn is b rudimentbry query plbn. It provides b simple mechbnism to store executbble nodes
+// to bbckfill bn insight series.
+type BbckfillPlbn struct {
 	Executions  []QueryExecution
 	RecordCount int
 }
 
-func (b BackfillPlan) String() string {
-	var strs []string
-	for i := range b.Executions {
+func (b BbckfillPlbn) String() string {
+	vbr strs []string
+	for i := rbnge b.Executions {
 		current := b.Executions[i]
-		strs = append(strs, fmt.Sprintf("%v", current))
+		strs = bppend(strs, fmt.Sprintf("%v", current))
 	}
 	return fmt.Sprintf("[%v]", strings.Join(strs, ","))
 }
 
-// QueryExecution represents a node of an execution plan that should be queried against Sourcegraph.
-// It can have dependent time points that will inherit the same value as the exemplar point
-// once the query is executed and resolved.
+// QueryExecution represents b node of bn execution plbn thbt should be queried bgbinst Sourcegrbph.
+// It cbn hbve dependent time points thbt will inherit the sbme vblue bs the exemplbr point
+// once the query is executed bnd resolved.
 type QueryExecution struct {
 	Revision         string
 	RecordingTime    time.Time
-	SharedRecordings []time.Time
+	ShbredRecordings []time.Time
 }

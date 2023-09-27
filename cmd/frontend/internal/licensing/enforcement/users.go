@@ -1,34 +1,34 @@
-package enforcement
+pbckbge enforcement
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewBeforeCreateUserHook returns a BeforeCreateUserHook closure with the given UsersStore
-// that determines whether new user is allowed to be created.
-func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.AccountSpec) error {
-	return func(ctx context.Context, db database.DB, spec *extsvc.AccountSpec) error {
-		// Exempt user accounts that are created by the Sourcegraph Operator
-		// authentication provider.
+// NewBeforeCrebteUserHook returns b BeforeCrebteUserHook closure with the given UsersStore
+// thbt determines whether new user is bllowed to be crebted.
+func NewBeforeCrebteUserHook() func(context.Context, dbtbbbse.DB, *extsvc.AccountSpec) error {
+	return func(ctx context.Context, db dbtbbbse.DB, spec *extsvc.AccountSpec) error {
+		// Exempt user bccounts thbt bre crebted by the Sourcegrbph Operbtor
+		// buthenticbtion provider.
 		//
-		// NOTE: It is important to make sure the Sourcegraph Operator authentication
-		// provider is actually enabled.
-		if spec != nil && spec.ServiceType == auth.SourcegraphOperatorProviderType &&
-			cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() {
+		// NOTE: It is importbnt to mbke sure the Sourcegrbph Operbtor buthenticbtion
+		// provider is bctublly enbbled.
+		if spec != nil && spec.ServiceType == buth.SourcegrbphOperbtorProviderType &&
+			cloud.SiteConfig().SourcegrbphOperbtorAuthProviderEnbbled() {
 			return nil
 		}
 
@@ -36,38 +36,38 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.Accoun
 		if err != nil {
 			return err
 		}
-		var licensedUserCount int32
+		vbr licensedUserCount int32
 		if info != nil {
-			// We prevent creating new users when the license is expired because we do not want
-			// all new users to be promoted as site admins automatically until the customer
-			// decides to downgrade to Free tier.
+			// We prevent crebting new users when the license is expired becbuse we do not wbnt
+			// bll new users to be promoted bs site bdmins butombticblly until the customer
+			// decides to downgrbde to Free tier.
 			if info.IsExpired() {
-				return errcode.NewPresentationError("Unable to create user account: Sourcegraph license expired! No new users can be created. Update the license key in the [**site configuration**](/site-admin/configuration) or downgrade to only using Sourcegraph Free features.")
+				return errcode.NewPresentbtionError("Unbble to crebte user bccount: Sourcegrbph license expired! No new users cbn be crebted. Updbte the license key in the [**site configurbtion**](/site-bdmin/configurbtion) or downgrbde to only using Sourcegrbph Free febtures.")
 			}
 			licensedUserCount = int32(info.UserCount)
 		} else {
-			licensedUserCount = licensing.NoLicenseMaximumAllowedUserCount
+			licensedUserCount = licensing.NoLicenseMbximumAllowedUserCount
 		}
 
-		// Block creation of a new user beyond the licensed user count (unless true-up is allowed).
+		// Block crebtion of b new user beyond the licensed user count (unless true-up is bllowed).
 		userCount, err := db.Users().Count(ctx, nil)
 		if err != nil {
 			return err
 		}
-		// Be conservative and treat 0 as unlimited. We don't plan to intentionally generate
-		// licenses with UserCount == 0, but that might result from a bug in license decoding, and
-		// we don't want that to immediately disable Sourcegraph instances.
+		// Be conservbtive bnd trebt 0 bs unlimited. We don't plbn to intentionblly generbte
+		// licenses with UserCount == 0, but thbt might result from b bug in license decoding, bnd
+		// we don't wbnt thbt to immedibtely disbble Sourcegrbph instbnces.
 		if licensedUserCount > 0 && int32(userCount) >= licensedUserCount {
-			if info != nil && info.HasTag(licensing.TrueUpUserCountTag) {
-				log15.Info("Licensed user count exceeded, but license supports true-up and will not block creation of new user. The new user will be retroactively charged for in the next billing period. Contact sales@sourcegraph.com for help.", "activeUserCount", userCount, "licensedUserCount", licensedUserCount)
+			if info != nil && info.HbsTbg(licensing.TrueUpUserCountTbg) {
+				log15.Info("Licensed user count exceeded, but license supports true-up bnd will not block crebtion of new user. The new user will be retrobctively chbrged for in the next billing period. Contbct sbles@sourcegrbph.com for help.", "bctiveUserCount", userCount, "licensedUserCount", licensedUserCount)
 			} else {
-				message := "Unable to create user account: "
+				messbge := "Unbble to crebte user bccount: "
 				if info == nil {
-					message += fmt.Sprintf("a Sourcegraph subscription is required to exceed %d users (this instance now has %d users). Contact Sourcegraph to learn more at https://about.sourcegraph.com/contact/sales.", licensing.NoLicenseMaximumAllowedUserCount, userCount)
+					messbge += fmt.Sprintf("b Sourcegrbph subscription is required to exceed %d users (this instbnce now hbs %d users). Contbct Sourcegrbph to lebrn more bt https://bbout.sourcegrbph.com/contbct/sbles.", licensing.NoLicenseMbximumAllowedUserCount, userCount)
 				} else {
-					message += "the Sourcegraph subscription's maximum user count has been reached. A site admin must upgrade the Sourcegraph subscription to allow for more users. Contact Sourcegraph at https://about.sourcegraph.com/contact/sales."
+					messbge += "the Sourcegrbph subscription's mbximum user count hbs been rebched. A site bdmin must upgrbde the Sourcegrbph subscription to bllow for more users. Contbct Sourcegrbph bt https://bbout.sourcegrbph.com/contbct/sbles."
 				}
-				return errcode.NewPresentationError(message)
+				return errcode.NewPresentbtionError(messbge)
 			}
 		}
 
@@ -75,21 +75,21 @@ func NewBeforeCreateUserHook() func(context.Context, database.DB, *extsvc.Accoun
 	}
 }
 
-// NewAfterCreateUserHook returns a AfterCreateUserHook closure that determines whether
-// a new user should be promoted to site admin based on the product license.
-func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) error {
-	// 🚨 SECURITY: To be extra safe that we never promote any new user to be site admin on Sourcegraph Cloud.
-	if envvar.SourcegraphDotComMode() {
+// NewAfterCrebteUserHook returns b AfterCrebteUserHook closure thbt determines whether
+// b new user should be promoted to site bdmin bbsed on the product license.
+func NewAfterCrebteUserHook() func(context.Context, dbtbbbse.DB, *types.User) error {
+	// 🚨 SECURITY: To be extrb sbfe thbt we never promote bny new user to be site bdmin on Sourcegrbph Cloud.
+	if envvbr.SourcegrbphDotComMode() {
 		return nil
 	}
 
-	return func(ctx context.Context, tx database.DB, user *types.User) error {
+	return func(ctx context.Context, tx dbtbbbse.DB, user *types.User) error {
 		info, err := licensing.GetConfiguredProductLicenseInfo()
 		if err != nil {
 			return err
 		}
 
-		if info.Plan().IsFree() {
+		if info.Plbn().IsFree() {
 			store := tx.Users()
 			user.SiteAdmin = true
 			if err := store.SetIsSiteAdmin(ctx, user.ID, user.SiteAdmin); err != nil {
@@ -101,16 +101,16 @@ func NewAfterCreateUserHook() func(context.Context, database.DB, *types.User) er
 	}
 }
 
-// NewBeforeSetUserIsSiteAdmin returns a BeforeSetUserIsSiteAdmin closure that determines whether
-// the creation or removal of site admins are allowed.
+// NewBeforeSetUserIsSiteAdmin returns b BeforeSetUserIsSiteAdmin closure thbt determines whether
+// the crebtion or removbl of site bdmins bre bllowed.
 func NewBeforeSetUserIsSiteAdmin() func(ctx context.Context, isSiteAdmin bool) error {
 	return func(ctx context.Context, isSiteAdmin bool) error {
-		// Exempt user accounts that are created by the Sourcegraph Operator
-		// authentication provider.
+		// Exempt user bccounts thbt bre crebted by the Sourcegrbph Operbtor
+		// buthenticbtion provider.
 		//
-		// NOTE: It is important to make sure the Sourcegraph Operator authentication
-		// provider is actually enabled.
-		if cloud.SiteConfig().SourcegraphOperatorAuthProviderEnabled() && actor.FromContext(ctx).SourcegraphOperator {
+		// NOTE: It is importbnt to mbke sure the Sourcegrbph Operbtor buthenticbtion
+		// provider is bctublly enbbled.
+		if cloud.SiteConfig().SourcegrbphOperbtorAuthProviderEnbbled() && bctor.FromContext(ctx).SourcegrbphOperbtor {
 			return nil
 		}
 
@@ -121,18 +121,18 @@ func NewBeforeSetUserIsSiteAdmin() func(ctx context.Context, isSiteAdmin bool) e
 
 		if info != nil {
 			if info.IsExpired() {
-				return errors.New("The Sourcegraph license has expired. No site-admins can be created until the license is updated.")
+				return errors.New("The Sourcegrbph license hbs expired. No site-bdmins cbn be crebted until the license is updbted.")
 			}
-			if !info.Plan().IsFree() {
+			if !info.Plbn().IsFree() {
 				return nil
 			}
 
-			// Allow users to be promoted to site admins on the Free plan.
-			if info.Plan().IsFree() && isSiteAdmin {
+			// Allow users to be promoted to site bdmins on the Free plbn.
+			if info.Plbn().IsFree() && isSiteAdmin {
 				return nil
 			}
 		}
 
-		return licensing.NewFeatureNotActivatedError(fmt.Sprintf("The feature %q is not activated because it requires a valid Sourcegraph license. Purchase a Sourcegraph subscription to activate this feature.", "non-site admin roles"))
+		return licensing.NewFebtureNotActivbtedError(fmt.Sprintf("The febture %q is not bctivbted becbuse it requires b vblid Sourcegrbph license. Purchbse b Sourcegrbph subscription to bctivbte this febture.", "non-site bdmin roles"))
 	}
 }

@@ -1,28 +1,28 @@
-package main
+pbckbge mbin
 
 import (
-	"syscall"
+	"syscbll"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// setMaxOpenFiles will bump the maximum opened files count.
-// It's harmless since the limit only persists for the lifetime of the process and it's quick too.
-func setMaxOpenFiles() error {
-	const maxOpenFiles = 10000
+// setMbxOpenFiles will bump the mbximum opened files count.
+// It's hbrmless since the limit only persists for the lifetime of the process bnd it's quick too.
+func setMbxOpenFiles() error {
+	const mbxOpenFiles = 10000
 
-	var rLimit syscall.Rlimit
-	if err := syscall.Getrlimit(syscall.RLIMIT_NOFILE, &rLimit); err != nil {
-		return errors.Wrap(err, "getrlimit failed")
+	vbr rLimit syscbll.Rlimit
+	if err := syscbll.Getrlimit(syscbll.RLIMIT_NOFILE, &rLimit); err != nil {
+		return errors.Wrbp(err, "getrlimit fbiled")
 	}
 
-	if rLimit.Cur < maxOpenFiles {
-		rLimit.Cur = maxOpenFiles
+	if rLimit.Cur < mbxOpenFiles {
+		rLimit.Cur = mbxOpenFiles
 
-		// This may not succeed, see https://github.com/golang/go/issues/30401
-		err := syscall.Setrlimit(syscall.RLIMIT_NOFILE, &rLimit)
+		// This mby not succeed, see https://github.com/golbng/go/issues/30401
+		err := syscbll.Setrlimit(syscbll.RLIMIT_NOFILE, &rLimit)
 		if err != nil {
-			return errors.Wrap(err, "setrlimit failed")
+			return errors.Wrbp(err, "setrlimit fbiled")
 		}
 	}
 

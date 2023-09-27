@@ -1,9 +1,9 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"log"
@@ -13,28 +13,28 @@ import (
 	"os"
 	"reflect"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 
-	"github.com/inconshreveable/log15"
-	sglog "github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/inconshrevebble/log15"
+	sglog "github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
-		log.SetOutput(io.Discard)
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
+		log.SetOutput(io.Discbrd)
 		logtest.InitWithLevel(m, sglog.LevelNone)
 	} else {
 		logtest.Init(m)
@@ -42,20 +42,20 @@ func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
-func BenchmarkPrometheusFieldName(b *testing.B) {
+func BenchmbrkPrometheusFieldNbme(b *testing.B) {
 	tests := [][3]string{
 		{"Query", "settingsSubject", "settingsSubject"},
-		{"SearchResultMatch", "highlights", "highlights"},
+		{"SebrchResultMbtch", "highlights", "highlights"},
 		{"TreeEntry", "isSingleChild", "isSingleChild"},
-		{"NoMatch", "NotMatch", "other"},
+		{"NoMbtch", "NotMbtch", "other"},
 	}
-	for i, t := range tests {
-		typeName, fieldName, want := t[0], t[1], t[2]
+	for i, t := rbnge tests {
+		typeNbme, fieldNbme, wbnt := t[0], t[1], t[2]
 		b.Run(fmt.Sprintf("test-%v", i), func(b *testing.B) {
 			for i := 0; i < b.N; i++ {
-				got := prometheusFieldName(typeName, fieldName)
-				if got != want {
-					b.Fatalf("got %q want %q", got, want)
+				got := prometheusFieldNbme(typeNbme, fieldNbme)
+				if got != wbnt {
+					b.Fbtblf("got %q wbnt %q", got, wbnt)
 				}
 			}
 		})
@@ -65,22 +65,22 @@ func BenchmarkPrometheusFieldName(b *testing.B) {
 func TestRepository(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetByNameFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
-	db.ReposFunc.SetDefaultReturn(repos)
+	repos.GetByNbmeFunc.SetDefbultReturn(&types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}, nil)
+	db.ReposFunc.SetDefbultReturn(repos)
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					repository(name: "github.com/gorilla/mux") {
-						name
+					repository(nbme: "github.com/gorillb/mux") {
+						nbme
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
 					"repository": {
-						"name": "github.com/gorilla/mux"
+						"nbme": "github.com/gorillb/mux"
 					}
 				}
 			`,
@@ -91,68 +91,68 @@ func TestRepository(t *testing.T) {
 func TestRecloneRepository(t *testing.T) {
 	resetMocks()
 
-	var gitserverCalled atomic.Bool
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		resp := protocol.RepoUpdateResponse{}
-		gitserverCalled.Store(true)
+	vbr gitserverCblled btomic.Bool
+	srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHebder(http.StbtusOK)
+		resp := protocol.RepoUpdbteResponse{}
+		gitserverCblled.Store(true)
 		json.NewEncoder(w).Encode(&resp)
 	}))
 	defer srv.Close()
 
-	serverURL, err := url.Parse(srv.URL)
-	assert.Nil(t, err)
+	serverURL, err := url.Pbrse(srv.URL)
+	bssert.Nil(t, err)
 	conf.Mock(&conf.Unified{
 		ServiceConnectionConfig: conftypes.ServiceConnections{
 			GitServers: []string{serverURL.Host},
-		}, SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				EnableGRPC: boolPointer(false),
+		}, SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				EnbbleGRPC: boolPointer(fblse),
 			},
 		},
 	})
 	defer conf.Mock(nil)
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 1, Name: "github.com/gorilla/mux"}, nil)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: 1, Nbme: "github.com/gorillb/mux"}, nil)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
-	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
+	gitserverRepos.GetByIDFunc.SetDefbultReturn(&types.GitserverRepo{RepoID: 1, CloneStbtus: "cloned"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
+	db.ReposFunc.SetDefbultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.GitserverReposFunc.SetDefbultReturn(gitserverRepos)
 
-	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
+	cblled := bbckend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
-	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
+	repoID := bbse64.StdEncoding.EncodeToString([]byte("Repository:1"))
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: fmt.Sprintf(`
-                mutation {
+                mutbtion {
                     recloneRepository(repo: "%s") {
-                        alwaysNil
+                        blwbysNil
                     }
                 }
             `, repoID),
 			ExpectedResult: `
                 {
                     "recloneRepository": {
-                        "alwaysNil": null
+                        "blwbysNil": null
                     }
                 }
             `,
 		},
 	})
 
-	assert.True(t, *called)
-	assert.True(t, gitserverCalled.Load())
+	bssert.True(t, *cblled)
+	bssert.True(t, gitserverCblled.Lobd())
 }
 
 func TestDeleteRepositoryFromDisk(t *testing.T) {
@@ -161,74 +161,74 @@ func TestDeleteRepositoryFromDisk(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-	called := backend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	cblled := bbckend.Mocks.Repos.MockDeleteRepositoryFromDisk(t, 1)
 
 	gitserverRepos := dbmocks.NewMockGitserverRepoStore()
-	gitserverRepos.GetByIDFunc.SetDefaultReturn(&types.GitserverRepo{RepoID: 1, CloneStatus: "cloned"}, nil)
+	gitserverRepos.GetByIDFunc.SetDefbultReturn(&types.GitserverRepo{RepoID: 1, CloneStbtus: "cloned"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.GitserverReposFunc.SetDefaultReturn(gitserverRepos)
-	repoID := base64.StdEncoding.EncodeToString([]byte("Repository:1"))
+	db.ReposFunc.SetDefbultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.GitserverReposFunc.SetDefbultReturn(gitserverRepos)
+	repoID := bbse64.StdEncoding.EncodeToString([]byte("Repository:1"))
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: fmt.Sprintf(`
-                mutation {
+                mutbtion {
                     deleteRepositoryFromDisk(repo: "%s") {
-                        alwaysNil
+                        blwbysNil
                     }
                 }
             `, repoID),
 			ExpectedResult: `
                 {
                     "deleteRepositoryFromDisk": {
-                        "alwaysNil": null
+                        "blwbysNil": null
                     }
                 }
             `,
 		},
 	})
 
-	assert.True(t, *called)
+	bssert.True(t, *cblled)
 }
 
 func TestResolverTo(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	// This test exists purely to remove some non determinism in our tests
-	// run. The To* resolvers are stored in a map in our graphql
-	// implementation => the order we call them is non deterministic =>
-	// codecov coverage reports are noisy.
-	resolvers := []any{
-		&FileMatchResolver{db: db},
-		&NamespaceResolver{},
+	// run. The To* resolvers bre stored in b mbp in our grbphql
+	// implementbtion => the order we cbll them is non deterministic =>
+	// codecov coverbge reports bre noisy.
+	resolvers := []bny{
+		&FileMbtchResolver{db: db},
+		&NbmespbceResolver{},
 		&NodeResolver{},
 		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
-		&CommitSearchResultResolver{},
+		&CommitSebrchResultResolver{},
 		&gitRevSpec{},
 		&settingsSubjectResolver{},
-		&statusMessageResolver{db: db},
+		&stbtusMessbgeResolver{db: db},
 	}
-	for _, r := range resolvers {
+	for _, r := rbnge resolvers {
 		typ := reflect.TypeOf(r)
-		t.Run(typ.Name(), func(t *testing.T) {
+		t.Run(typ.Nbme(), func(t *testing.T) {
 			for i := 0; i < typ.NumMethod(); i++ {
-				if name := typ.Method(i).Name; strings.HasPrefix(name, "To") {
-					reflect.ValueOf(r).MethodByName(name).Call(nil)
+				if nbme := typ.Method(i).Nbme; strings.HbsPrefix(nbme, "To") {
+					reflect.VblueOf(r).MethodByNbme(nbme).Cbll(nil)
 				}
 			}
 		})
 	}
 
 	t.Run("GitTreeEntryResolver", func(t *testing.T) {
-		blobStat, err := os.Stat("graphqlbackend_test.go")
+		blobStbt, err := os.Stbt("grbphqlbbckend_test.go")
 		if err != nil {
-			t.Fatalf("unexpected error opening file: %s", err)
+			t.Fbtblf("unexpected error opening file: %s", err)
 		}
-		blobEntry := &GitTreeEntryResolver{db: db, stat: blobStat}
+		blobEntry := &GitTreeEntryResolver{db: db, stbt: blobStbt}
 		if _, isBlob := blobEntry.ToGitBlob(); !isBlob {
 			t.Errorf("expected blobEntry to be blob")
 		}
@@ -236,11 +236,11 @@ func TestResolverTo(t *testing.T) {
 			t.Errorf("expected blobEntry to be blob, but is tree")
 		}
 
-		treeStat, err := os.Stat(".")
+		treeStbt, err := os.Stbt(".")
 		if err != nil {
-			t.Fatalf("unexpected error opening directory: %s", err)
+			t.Fbtblf("unexpected error opening directory: %s", err)
 		}
-		treeEntry := &GitTreeEntryResolver{db: db, stat: treeStat}
+		treeEntry := &GitTreeEntryResolver{db: db, stbt: treeStbt}
 		if _, isBlob := treeEntry.ToGitBlob(); isBlob {
 			t.Errorf("expected treeEntry to be tree, but is blob")
 		}

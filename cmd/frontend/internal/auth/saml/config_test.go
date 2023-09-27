@@ -1,37 +1,37 @@
-package saml
+pbckbge sbml
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestValidateCustom(t *testing.T) {
-	tests := map[string]struct {
+func TestVblidbteCustom(t *testing.T) {
+	tests := mbp[string]struct {
 		input        conf.Unified
-		wantProblems conf.Problems
+		wbntProblems conf.Problems
 	}{
-		"duplicates": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "x",
-				AuthProviders: []schema.AuthProviders{
-					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
-					{Saml: &schema.SAMLAuthProvider{Type: "saml", IdentityProviderMetadataURL: "x"}},
+		"duplicbtes": {
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "x",
+				AuthProviders: []schemb.AuthProviders{
+					{Sbml: &schemb.SAMLAuthProvider{Type: "sbml", IdentityProviderMetbdbtbURL: "x"}},
+					{Sbml: &schemb.SAMLAuthProvider{Type: "sbml", IdentityProviderMetbdbtbURL: "x"}},
 				},
 			}},
-			wantProblems: conf.NewSiteProblems("SAML auth provider at index 1 is duplicate of index 0"),
+			wbntProblems: conf.NewSiteProblems("SAML buth provider bt index 1 is duplicbte of index 0"),
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			conf.TestVblidbtor(t, test.input, vblidbteConfig, test.wbntProblems)
 		})
 	}
 }
 
 func TestProviderConfigID(t *testing.T) {
-	p := schema.SAMLAuthProvider{ServiceProviderIssuer: "x"}
+	p := schemb.SAMLAuthProvider{ServiceProviderIssuer: "x"}
 	id1 := providerConfigID(&p, true)
 	id2 := providerConfigID(&p, true)
 	if id1 != id2 {

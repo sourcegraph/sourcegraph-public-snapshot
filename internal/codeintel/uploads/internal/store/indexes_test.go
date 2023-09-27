@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -9,23 +9,23 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestGetIndexes(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(-time.Minute * 1)
@@ -37,200 +37,200 @@ func TestGetIndexes(t *testing.T) {
 	t8 := t1.Add(-time.Minute * 7)
 	t9 := t1.Add(-time.Minute * 8)
 	t10 := t1.Add(-time.Minute * 9)
-	failureMessage := "unlucky 333"
+	fbilureMessbge := "unlucky 333"
 
-	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
-	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
+	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplicbtion
+	uplobdID1, uplobdID2, uplobdID3, uplobdID4 := 10, 11, 12, 13
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, Commit: makeCommit(3331), QueuedAt: t1, State: "queued", AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 2, QueuedAt: t2, State: "errored", FailureMessage: &failureMessage},
-		uploadsshared.Index{ID: 3, Commit: makeCommit(3333), QueuedAt: t3, State: "queued", AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 4, QueuedAt: t4, State: "queued", RepositoryID: 51, RepositoryName: "foo bar x"},
-		uploadsshared.Index{ID: 5, Commit: makeCommit(3333), QueuedAt: t5, State: "processing", AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 6, QueuedAt: t6, State: "processing", RepositoryID: 52, RepositoryName: "foo bar y"},
-		uploadsshared.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
-		uploadsshared.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocaml"},
-		uploadsshared.Index{ID: 9, QueuedAt: t9, State: "queued"},
-		uploadsshared.Index{ID: 10, QueuedAt: t10},
+		uplobdsshbred.Index{ID: 1, Commit: mbkeCommit(3331), QueuedAt: t1, Stbte: "queued", AssocibtedUplobdID: &uplobdID1},
+		uplobdsshbred.Index{ID: 2, QueuedAt: t2, Stbte: "errored", FbilureMessbge: &fbilureMessbge},
+		uplobdsshbred.Index{ID: 3, Commit: mbkeCommit(3333), QueuedAt: t3, Stbte: "queued", AssocibtedUplobdID: &uplobdID1},
+		uplobdsshbred.Index{ID: 4, QueuedAt: t4, Stbte: "queued", RepositoryID: 51, RepositoryNbme: "foo bbr x"},
+		uplobdsshbred.Index{ID: 5, Commit: mbkeCommit(3333), QueuedAt: t5, Stbte: "processing", AssocibtedUplobdID: &uplobdID1},
+		uplobdsshbred.Index{ID: 6, QueuedAt: t6, Stbte: "processing", RepositoryID: 52, RepositoryNbme: "foo bbr y"},
+		uplobdsshbred.Index{ID: 7, QueuedAt: t7, Indexer: "lsif-typescript"},
+		uplobdsshbred.Index{ID: 8, QueuedAt: t8, Indexer: "scip-ocbml"},
+		uplobdsshbred.Index{ID: 9, QueuedAt: t9, Stbte: "queued"},
+		uplobdsshbred.Index{ID: 10, QueuedAt: t10},
 	)
-	insertUploads(t, db,
-		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
-		shared.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
-		shared.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
-		shared.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: uplobdID1, AssocibtedIndexID: &indexID1},
+		shbred.Uplobd{ID: uplobdID2, AssocibtedIndexID: &indexID2},
+		shbred.Uplobd{ID: uplobdID3, AssocibtedIndexID: &indexID3},
+		shbred.Uplobd{ID: uplobdID4, AssocibtedIndexID: &indexID4},
 	)
 
-	testCases := []struct {
+	testCbses := []struct {
 		repositoryID  int
-		state         string
-		states        []string
+		stbte         string
+		stbtes        []string
 		term          string
-		indexerNames  []string
-		withoutUpload bool
+		indexerNbmes  []string
+		withoutUplobd bool
 		expectedIDs   []int
 	}{
 		{expectedIDs: []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}},
 		{repositoryID: 50, expectedIDs: []int{1, 2, 3, 5, 7, 8, 9, 10}},
-		{state: "completed", expectedIDs: []int{7, 8, 10}},
-		{term: "003", expectedIDs: []int{1, 3, 5}},                                 // searches commits
-		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                              // searches commits and failure message
-		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},                           // searches text status
-		{term: "bAr", expectedIDs: []int{4, 6}},                                    // search repo names
-		{state: "failed", expectedIDs: []int{2}},                                   // treats errored/failed states equivalently
-		{states: []string{"completed", "failed"}, expectedIDs: []int{2, 7, 8, 10}}, // searches multiple states
-		{withoutUpload: true, expectedIDs: []int{2, 4, 6, 7, 8, 9, 10}},            // anti-join with upload records
-		{indexerNames: []string{"typescript", "ocaml"}, expectedIDs: []int{7, 8}},  // searches indexer name (only)
+		{stbte: "completed", expectedIDs: []int{7, 8, 10}},
+		{term: "003", expectedIDs: []int{1, 3, 5}},                                 // sebrches commits
+		{term: "333", expectedIDs: []int{1, 2, 3, 5}},                              // sebrches commits bnd fbilure messbge
+		{term: "QuEuEd", expectedIDs: []int{1, 3, 4, 9}},                           // sebrches text stbtus
+		{term: "bAr", expectedIDs: []int{4, 6}},                                    // sebrch repo nbmes
+		{stbte: "fbiled", expectedIDs: []int{2}},                                   // trebts errored/fbiled stbtes equivblently
+		{stbtes: []string{"completed", "fbiled"}, expectedIDs: []int{2, 7, 8, 10}}, // sebrches multiple stbtes
+		{withoutUplobd: true, expectedIDs: []int{2, 4, 6, 7, 8, 9, 10}},            // bnti-join with uplobd records
+		{indexerNbmes: []string{"typescript", "ocbml"}, expectedIDs: []int{7, 8}},  // sebrches indexer nbme (only)
 	}
 
-	for _, testCase := range testCases {
-		for lo := 0; lo < len(testCase.expectedIDs); lo++ {
+	for _, testCbse := rbnge testCbses {
+		for lo := 0; lo < len(testCbse.expectedIDs); lo++ {
 			hi := lo + 3
-			if hi > len(testCase.expectedIDs) {
-				hi = len(testCase.expectedIDs)
+			if hi > len(testCbse.expectedIDs) {
+				hi = len(testCbse.expectedIDs)
 			}
 
-			name := fmt.Sprintf(
-				"repositoryID=%d state=%s states=%s term=%s without_upload=%v indexer_names=%v offset=%d",
-				testCase.repositoryID,
-				testCase.state,
-				strings.Join(testCase.states, ","),
-				testCase.term,
-				testCase.withoutUpload,
-				testCase.indexerNames,
+			nbme := fmt.Sprintf(
+				"repositoryID=%d stbte=%s stbtes=%s term=%s without_uplobd=%v indexer_nbmes=%v offset=%d",
+				testCbse.repositoryID,
+				testCbse.stbte,
+				strings.Join(testCbse.stbtes, ","),
+				testCbse.term,
+				testCbse.withoutUplobd,
+				testCbse.indexerNbmes,
 				lo,
 			)
 
-			t.Run(name, func(t *testing.T) {
-				indexes, totalCount, err := store.GetIndexes(ctx, shared.GetIndexesOptions{
-					RepositoryID:  testCase.repositoryID,
-					State:         testCase.state,
-					States:        testCase.states,
-					Term:          testCase.term,
-					IndexerNames:  testCase.indexerNames,
-					WithoutUpload: testCase.withoutUpload,
+			t.Run(nbme, func(t *testing.T) {
+				indexes, totblCount, err := store.GetIndexes(ctx, shbred.GetIndexesOptions{
+					RepositoryID:  testCbse.repositoryID,
+					Stbte:         testCbse.stbte,
+					Stbtes:        testCbse.stbtes,
+					Term:          testCbse.term,
+					IndexerNbmes:  testCbse.indexerNbmes,
+					WithoutUplobd: testCbse.withoutUplobd,
 					Limit:         3,
 					Offset:        lo,
 				})
 				if err != nil {
-					t.Fatalf("unexpected error getting indexes for repo: %s", err)
+					t.Fbtblf("unexpected error getting indexes for repo: %s", err)
 				}
-				if totalCount != len(testCase.expectedIDs) {
-					t.Errorf("unexpected total count. want=%d have=%d", len(testCase.expectedIDs), totalCount)
-				}
-
-				var ids []int
-				for _, index := range indexes {
-					ids = append(ids, index.ID)
+				if totblCount != len(testCbse.expectedIDs) {
+					t.Errorf("unexpected totbl count. wbnt=%d hbve=%d", len(testCbse.expectedIDs), totblCount)
 				}
 
-				if diff := cmp.Diff(testCase.expectedIDs[lo:hi], ids); diff != "" {
-					t.Errorf("unexpected index ids at offset %d (-want +got):\n%s", lo, diff)
+				vbr ids []int
+				for _, index := rbnge indexes {
+					ids = bppend(ids, index.ID)
+				}
+
+				if diff := cmp.Diff(testCbse.expectedIDs[lo:hi], ids); diff != "" {
+					t.Errorf("unexpected index ids bt offset %d (-wbnt +got):\n%s", lo, diff)
 				}
 			})
 		}
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
-		indexes, totalCount, err := store.GetIndexes(ctx,
-			shared.GetIndexesOptions{
+		indexes, totblCount, err := store.GetIndexes(ctx,
+			shbred.GetIndexesOptions{
 				Limit: 1,
 			},
 		)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if len(indexes) > 0 || totalCount > 0 {
-			t.Fatalf("Want no index but got %d indexes with totalCount %d", len(indexes), totalCount)
+		if len(indexes) > 0 || totblCount > 0 {
+			t.Fbtblf("Wbnt no index but got %d indexes with totblCount %d", len(indexes), totblCount)
 		}
 	})
 }
 
 func TestGetIndexByID(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// Index does not exist initially
+	// Index does not exist initiblly
 	if _, exists, err := store.GetIndexByID(ctx, 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
+		t.Fbtblf("unexpected error getting index: %s", err)
 	} else if exists {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 
-	uploadID := 5
+	uplobdID := 5
 	queuedAt := time.Unix(1587396557, 0).UTC()
-	startedAt := queuedAt.Add(time.Minute)
-	expected := uploadsshared.Index{
+	stbrtedAt := queuedAt.Add(time.Minute)
+	expected := uplobdsshbred.Index{
 		ID:             1,
-		Commit:         makeCommit(1),
+		Commit:         mbkeCommit(1),
 		QueuedAt:       queuedAt,
-		State:          "processing",
-		FailureMessage: nil,
-		StartedAt:      &startedAt,
+		Stbte:          "processing",
+		FbilureMessbge: nil,
+		StbrtedAt:      &stbrtedAt,
 		FinishedAt:     nil,
 		RepositoryID:   123,
-		RepositoryName: "n-123",
-		DockerSteps: []uploadsshared.DockerStep{
+		RepositoryNbme: "n-123",
+		DockerSteps: []uplobdsshbred.DockerStep{
 			{
-				Image:    "cimg/node:12.16",
-				Commands: []string{"yarn install --frozen-lockfile --no-progress"},
+				Imbge:    "cimg/node:12.16",
+				Commbnds: []string{"ybrn instbll --frozen-lockfile --no-progress"},
 			},
 		},
-		LocalSteps:  []string{"echo hello"},
-		Root:        "/foo/bar",
-		Indexer:     "sourcegraph/scip-typescript:latest",
-		IndexerArgs: []string{"index", "--yarn-workspaces"},
+		LocblSteps:  []string{"echo hello"},
+		Root:        "/foo/bbr",
+		Indexer:     "sourcegrbph/scip-typescript:lbtest",
+		IndexerArgs: []string{"index", "--ybrn-workspbces"},
 		Outfile:     "dump.lsif",
 		ExecutionLogs: []executor.ExecutionLogEntry{
-			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
-			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
+			{Commbnd: []string{"op", "1"}, Out: "Indexing\nUplobding\nDone with 1.\n"},
+			{Commbnd: []string{"op", "2"}, Out: "Indexing\nUplobding\nDone with 2.\n"},
 		},
-		Rank:               nil,
-		AssociatedUploadID: &uploadID,
+		Rbnk:               nil,
+		AssocibtedUplobdID: &uplobdID,
 	}
 
 	insertIndexes(t, db, expected)
-	insertUploads(t, db, shared.Upload{ID: uploadID, AssociatedIndexID: &expected.ID})
+	insertUplobds(t, db, shbred.Uplobd{ID: uplobdID, AssocibtedIndexID: &expected.ID})
 
 	if index, exists, err := store.GetIndexByID(ctx, 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
+		t.Fbtblf("unexpected error getting index: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
+		t.Fbtbl("expected record to exist")
 	} else if diff := cmp.Diff(expected, index); diff != "" {
-		t.Errorf("unexpected index (-want +got):\n%s", diff)
+		t.Errorf("unexpected index (-wbnt +got):\n%s", diff)
 	}
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
 		_, exists, err := store.GetIndexByID(ctx, 1)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if exists {
-			t.Fatalf("exists: want false but got %v", exists)
+			t.Fbtblf("exists: wbnt fblse but got %v", exists)
 		}
 	})
 }
 
-func TestGetQueuedIndexRank(t *testing.T) {
+func TestGetQueuedIndexRbnk(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	t1 := time.Unix(1587396557, 0).UTC()
 	t2 := t1.Add(+time.Minute * 6)
@@ -241,274 +241,274 @@ func TestGetQueuedIndexRank(t *testing.T) {
 	t7 := t1.Add(+time.Minute * 5)
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, QueuedAt: t1, State: "queued"},
-		uploadsshared.Index{ID: 2, QueuedAt: t2, State: "queued"},
-		uploadsshared.Index{ID: 3, QueuedAt: t3, State: "queued"},
-		uploadsshared.Index{ID: 4, QueuedAt: t4, State: "queued"},
-		uploadsshared.Index{ID: 5, QueuedAt: t5, State: "queued"},
-		uploadsshared.Index{ID: 6, QueuedAt: t6, State: "processing"},
-		uploadsshared.Index{ID: 7, QueuedAt: t1, State: "queued", ProcessAfter: &t7},
+		uplobdsshbred.Index{ID: 1, QueuedAt: t1, Stbte: "queued"},
+		uplobdsshbred.Index{ID: 2, QueuedAt: t2, Stbte: "queued"},
+		uplobdsshbred.Index{ID: 3, QueuedAt: t3, Stbte: "queued"},
+		uplobdsshbred.Index{ID: 4, QueuedAt: t4, Stbte: "queued"},
+		uplobdsshbred.Index{ID: 5, QueuedAt: t5, Stbte: "queued"},
+		uplobdsshbred.Index{ID: 6, QueuedAt: t6, Stbte: "processing"},
+		uplobdsshbred.Index{ID: 7, QueuedAt: t1, Stbte: "queued", ProcessAfter: &t7},
 	)
 
-	if index, _, _ := store.GetIndexByID(context.Background(), 1); index.Rank == nil || *index.Rank != 1 {
-		t.Errorf("unexpected rank. want=%d have=%s", 1, printableRank{index.Rank})
+	if index, _, _ := store.GetIndexByID(context.Bbckground(), 1); index.Rbnk == nil || *index.Rbnk != 1 {
+		t.Errorf("unexpected rbnk. wbnt=%d hbve=%s", 1, printbbleRbnk{index.Rbnk})
 	}
-	if index, _, _ := store.GetIndexByID(context.Background(), 2); index.Rank == nil || *index.Rank != 6 {
-		t.Errorf("unexpected rank. want=%d have=%s", 5, printableRank{index.Rank})
+	if index, _, _ := store.GetIndexByID(context.Bbckground(), 2); index.Rbnk == nil || *index.Rbnk != 6 {
+		t.Errorf("unexpected rbnk. wbnt=%d hbve=%s", 5, printbbleRbnk{index.Rbnk})
 	}
-	if index, _, _ := store.GetIndexByID(context.Background(), 3); index.Rank == nil || *index.Rank != 3 {
-		t.Errorf("unexpected rank. want=%d have=%s", 3, printableRank{index.Rank})
+	if index, _, _ := store.GetIndexByID(context.Bbckground(), 3); index.Rbnk == nil || *index.Rbnk != 3 {
+		t.Errorf("unexpected rbnk. wbnt=%d hbve=%s", 3, printbbleRbnk{index.Rbnk})
 	}
-	if index, _, _ := store.GetIndexByID(context.Background(), 4); index.Rank == nil || *index.Rank != 2 {
-		t.Errorf("unexpected rank. want=%d have=%s", 2, printableRank{index.Rank})
+	if index, _, _ := store.GetIndexByID(context.Bbckground(), 4); index.Rbnk == nil || *index.Rbnk != 2 {
+		t.Errorf("unexpected rbnk. wbnt=%d hbve=%s", 2, printbbleRbnk{index.Rbnk})
 	}
-	if index, _, _ := store.GetIndexByID(context.Background(), 5); index.Rank == nil || *index.Rank != 4 {
-		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{index.Rank})
-	}
-
-	// Only considers queued indexes to determine rank
-	if index, _, _ := store.GetIndexByID(context.Background(), 6); index.Rank != nil {
-		t.Errorf("unexpected rank. want=%s have=%s", "nil", printableRank{index.Rank})
+	if index, _, _ := store.GetIndexByID(context.Bbckground(), 5); index.Rbnk == nil || *index.Rbnk != 4 {
+		t.Errorf("unexpected rbnk. wbnt=%d hbve=%s", 4, printbbleRbnk{index.Rbnk})
 	}
 
-	// Process after takes priority over upload time
-	if upload, _, _ := store.GetIndexByID(context.Background(), 7); upload.Rank == nil || *upload.Rank != 5 {
-		t.Errorf("unexpected rank. want=%d have=%s", 4, printableRank{upload.Rank})
+	// Only considers queued indexes to determine rbnk
+	if index, _, _ := store.GetIndexByID(context.Bbckground(), 6); index.Rbnk != nil {
+		t.Errorf("unexpected rbnk. wbnt=%s hbve=%s", "nil", printbbleRbnk{index.Rbnk})
+	}
+
+	// Process bfter tbkes priority over uplobd time
+	if uplobd, _, _ := store.GetIndexByID(context.Bbckground(), 7); uplobd.Rbnk == nil || *uplobd.Rbnk != 5 {
+		t.Errorf("unexpected rbnk. wbnt=%d hbve=%s", 4, printbbleRbnk{uplobd.Rbnk})
 	}
 }
 
 func TestGetIndexesByIDs(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplication
-	uploadID1, uploadID2, uploadID3, uploadID4 := 10, 11, 12, 13
+	indexID1, indexID2, indexID3, indexID4 := 1, 3, 5, 5 // note the duplicbtion
+	uplobdID1, uplobdID2, uplobdID3, uplobdID4 := 10, 11, 12, 13
 
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 1, AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 2},
-		uploadsshared.Index{ID: 3, AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 4},
-		uploadsshared.Index{ID: 5, AssociatedUploadID: &uploadID1},
-		uploadsshared.Index{ID: 6},
-		uploadsshared.Index{ID: 7},
-		uploadsshared.Index{ID: 8},
-		uploadsshared.Index{ID: 9},
-		uploadsshared.Index{ID: 10},
+		uplobdsshbred.Index{ID: 1, AssocibtedUplobdID: &uplobdID1},
+		uplobdsshbred.Index{ID: 2},
+		uplobdsshbred.Index{ID: 3, AssocibtedUplobdID: &uplobdID1},
+		uplobdsshbred.Index{ID: 4},
+		uplobdsshbred.Index{ID: 5, AssocibtedUplobdID: &uplobdID1},
+		uplobdsshbred.Index{ID: 6},
+		uplobdsshbred.Index{ID: 7},
+		uplobdsshbred.Index{ID: 8},
+		uplobdsshbred.Index{ID: 9},
+		uplobdsshbred.Index{ID: 10},
 	)
-	insertUploads(t, db,
-		shared.Upload{ID: uploadID1, AssociatedIndexID: &indexID1},
-		shared.Upload{ID: uploadID2, AssociatedIndexID: &indexID2},
-		shared.Upload{ID: uploadID3, AssociatedIndexID: &indexID3},
-		shared.Upload{ID: uploadID4, AssociatedIndexID: &indexID4},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: uplobdID1, AssocibtedIndexID: &indexID1},
+		shbred.Uplobd{ID: uplobdID2, AssocibtedIndexID: &indexID2},
+		shbred.Uplobd{ID: uplobdID3, AssocibtedIndexID: &indexID3},
+		shbred.Uplobd{ID: uplobdID4, AssocibtedIndexID: &indexID4},
 	)
 
 	t.Run("fetch", func(t *testing.T) {
 		indexes, err := store.GetIndexesByIDs(ctx, 2, 4, 6, 8, 12)
 		if err != nil {
-			t.Fatalf("unexpected error getting indexes for repo: %s", err)
+			t.Fbtblf("unexpected error getting indexes for repo: %s", err)
 		}
 
-		var ids []int
-		for _, index := range indexes {
-			ids = append(ids, index.ID)
+		vbr ids []int
+		for _, index := rbnge indexes {
+			ids = bppend(ids, index.ID)
 		}
 		sort.Ints(ids)
 
 		if diff := cmp.Diff([]int{2, 4, 6, 8}, ids); diff != "" {
-			t.Errorf("unexpected index ids (-want +got):\n%s", diff)
+			t.Errorf("unexpected index ids (-wbnt +got):\n%s", diff)
 		}
 	})
 
 	t.Run("enforce repository permissions", func(t *testing.T) {
-		// Enable permissions user mapping forces checking repository permissions
-		// against permissions tables in the database, which should effectively block
-		// all access because permissions tables are empty.
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
-		defer globals.SetPermissionsUserMapping(before)
+		// Enbble permissions user mbpping forces checking repository permissions
+		// bgbinst permissions tbbles in the dbtbbbse, which should effectively block
+		// bll bccess becbuse permissions tbbles bre empty.
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
+		defer globbls.SetPermissionsUserMbpping(before)
 
 		indexes, err := store.GetIndexesByIDs(ctx, 1, 2, 3, 4)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(indexes) > 0 {
-			t.Fatalf("Want no index but got %d indexes", len(indexes))
+			t.Fbtblf("Wbnt no index but got %d indexes", len(indexes))
 		}
 	})
 }
 
 func TestDeleteIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1})
 
-	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error deleting index: %s", err)
+	if found, err := store.DeleteIndexByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error deleting index: %s", err)
 	} else if !found {
-		t.Fatalf("expected record to exist")
+		t.Fbtblf("expected record to exist")
 	}
 
 	// Index no longer exists
-	if _, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
+	if _, exists, err := store.GetIndexByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting index: %s", err)
 	} else if exists {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 }
 
 func TestDeleteIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, Stbte: "completed"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, Stbte: "errored"})
 
-	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
-		States:       []string{"errored"},
+	if err := store.DeleteIndexes(context.Bbckground(), shbred.DeleteIndexesOptions{
+		Stbtes:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
-		t.Fatalf("unexpected error deleting indexes: %s", err)
+		t.Fbtblf("unexpected error deleting indexes: %s", err)
 	}
 
 	// Index no longer exists
-	if _, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
+	if _, exists, err := store.GetIndexByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error getting index: %s", err)
 	} else if exists {
-		t.Fatal("unexpected record")
+		t.Fbtbl("unexpected record")
 	}
 }
 
 func TestDeleteIndexesWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, Indexer: "sourcegrbph/scip-go@shb256:123456"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, Indexer: "sourcegrbph/scip-go"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 3, Indexer: "sourcegrbph/scip-typescript"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 4, Indexer: "sourcegrbph/scip-typescript"})
 
-	if err := store.DeleteIndexes(context.Background(), shared.DeleteIndexesOptions{
-		IndexerNames: []string{"scip-go"},
+	if err := store.DeleteIndexes(context.Bbckground(), shbred.DeleteIndexesOptions{
+		IndexerNbmes: []string{"scip-go"},
 	}); err != nil {
-		t.Fatalf("unexpected error deleting indexes: %s", err)
+		t.Fbtblf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Target indexes no longer exist
-	for _, id := range []int{1, 2} {
-		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-			t.Fatalf("unexpected error getting index: %s", err)
+	// Tbrget indexes no longer exist
+	for _, id := rbnge []int{1, 2} {
+		if _, exists, err := store.GetIndexByID(context.Bbckground(), id); err != nil {
+			t.Fbtblf("unexpected error getting index: %s", err)
 		} else if exists {
-			t.Fatal("unexpected record")
+			t.Fbtbl("unexpected record")
 		}
 	}
 
-	// Unmatched indexes remain
-	for _, id := range []int{3, 4} {
-		if _, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-			t.Fatalf("unexpected error getting index: %s", err)
+	// Unmbtched indexes rembin
+	for _, id := rbnge []int{3, 4} {
+		if _, exists, err := store.GetIndexByID(context.Bbckground(), id); err != nil {
+			t.Fbtblf("unexpected error getting index: %s", err)
 		} else if !exists {
-			t.Fatal("expected record, got none")
+			t.Fbtbl("expected record, got none")
 		}
 	}
 }
 
 func TestReindexIndexByID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, Stbte: "completed"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, Stbte: "errored"})
 
-	if err := store.ReindexIndexByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error deleting indexes: %s", err)
+	if err := store.ReindexIndexByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Index has been marked for reindexing
-	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
+	// Index hbs been mbrked for reindexing
+	if index, exists, err := store.GetIndexByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error getting index: %s", err)
 	} else if !exists {
-		t.Fatal("index missing")
+		t.Fbtbl("index missing")
 	} else if !index.ShouldReindex {
-		t.Fatal("index not marked for reindexing")
+		t.Fbtbl("index not mbrked for reindexing")
 	}
 }
 
 func TestReindexIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, State: "completed"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, State: "errored"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, Stbte: "completed"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, Stbte: "errored"})
 
-	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
-		States:       []string{"errored"},
+	if err := store.ReindexIndexes(context.Bbckground(), shbred.ReindexIndexesOptions{
+		Stbtes:       []string{"errored"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
-		t.Fatalf("unexpected error deleting indexes: %s", err)
+		t.Fbtblf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Index has been marked for reindexing
-	if index, exists, err := store.GetIndexByID(context.Background(), 2); err != nil {
-		t.Fatalf("unexpected error getting index: %s", err)
+	// Index hbs been mbrked for reindexing
+	if index, exists, err := store.GetIndexByID(context.Bbckground(), 2); err != nil {
+		t.Fbtblf("unexpected error getting index: %s", err)
 	} else if !exists {
-		t.Fatal("index missing")
+		t.Fbtbl("index missing")
 	} else if !index.ShouldReindex {
-		t.Fatal("index not marked for reindexing")
+		t.Fbtbl("index not mbrked for reindexing")
 	}
 }
 
 func TestReindexIndexesWithIndexerKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertIndexes(t, db, uploadsshared.Index{ID: 1, Indexer: "sourcegraph/scip-go@sha256:123456"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 2, Indexer: "sourcegraph/scip-go"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 3, Indexer: "sourcegraph/scip-typescript"})
-	insertIndexes(t, db, uploadsshared.Index{ID: 4, Indexer: "sourcegraph/scip-typescript"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 1, Indexer: "sourcegrbph/scip-go@shb256:123456"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 2, Indexer: "sourcegrbph/scip-go"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 3, Indexer: "sourcegrbph/scip-typescript"})
+	insertIndexes(t, db, uplobdsshbred.Index{ID: 4, Indexer: "sourcegrbph/scip-typescript"})
 
-	if err := store.ReindexIndexes(context.Background(), shared.ReindexIndexesOptions{
-		IndexerNames: []string{"scip-go"},
+	if err := store.ReindexIndexes(context.Bbckground(), shbred.ReindexIndexesOptions{
+		IndexerNbmes: []string{"scip-go"},
 		Term:         "",
 		RepositoryID: 0,
 	}); err != nil {
-		t.Fatalf("unexpected error deleting indexes: %s", err)
+		t.Fbtblf("unexpected error deleting indexes: %s", err)
 	}
 
-	// Expected indexes marked for re-indexing
-	for id, expected := range map[int]bool{
+	// Expected indexes mbrked for re-indexing
+	for id, expected := rbnge mbp[int]bool{
 		1: true, 2: true,
-		3: false, 4: false,
+		3: fblse, 4: fblse,
 	} {
-		if index, exists, err := store.GetIndexByID(context.Background(), id); err != nil {
-			t.Fatalf("unexpected error getting index: %s", err)
+		if index, exists, err := store.GetIndexByID(context.Bbckground(), id); err != nil {
+			t.Fbtblf("unexpected error getting index: %s", err)
 		} else if !exists {
-			t.Fatal("index missing")
+			t.Fbtbl("index missing")
 		} else if index.ShouldReindex != expected {
-			t.Fatalf("unexpected mark. want=%v have=%v", expected, index.ShouldReindex)
+			t.Fbtblf("unexpected mbrk. wbnt=%v hbve=%v", expected, index.ShouldReindex)
 		}
 	}
 }
 
 func TestDeleteIndexByIDMissingRow(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if found, err := store.DeleteIndexByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error deleting index: %s", err)
+	if found, err := store.DeleteIndexByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error deleting index: %s", err)
 	} else if found {
-		t.Fatalf("unexpected record")
+		t.Fbtblf("unexpected record")
 	}
 }

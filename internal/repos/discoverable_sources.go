@@ -1,33 +1,33 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-const UnimplementedDiscoverySource = "External Service type does not support discovery of repositories and namespaces."
+const UnimplementedDiscoverySource = "Externbl Service type does not support discovery of repositories bnd nbmespbces."
 
-// A DiscoverableSource yields metadata for remote entities (e.g. repositories, namespaces) on a readable external service
-// that Sourcegraph may or may not have setup for mirror/sync operations
-type DiscoverableSource interface {
-	// ListNamespaces returns the namespaces available on the source.
-	// Namespaces are used to organize which members and users can access repositories
-	// and are defined by external service kind (e.g. Github organizations, Bitbucket projects, etc.)
-	ListNamespaces(context.Context, chan SourceNamespaceResult)
+// A DiscoverbbleSource yields metbdbtb for remote entities (e.g. repositories, nbmespbces) on b rebdbble externbl service
+// thbt Sourcegrbph mby or mby not hbve setup for mirror/sync operbtions
+type DiscoverbbleSource interfbce {
+	// ListNbmespbces returns the nbmespbces bvbilbble on the source.
+	// Nbmespbces bre used to orgbnize which members bnd users cbn bccess repositories
+	// bnd bre defined by externbl service kind (e.g. Github orgbnizbtions, Bitbucket projects, etc.)
+	ListNbmespbces(context.Context, chbn SourceNbmespbceResult)
 
-	// SearchRepositories returns the repositories available on the source which match a given search query
-	// and excluded repositories criteria.
-	SearchRepositories(context.Context, string, int, []string, chan SourceResult)
+	// SebrchRepositories returns the repositories bvbilbble on the source which mbtch b given sebrch query
+	// bnd excluded repositories criterib.
+	SebrchRepositories(context.Context, string, int, []string, chbn SourceResult)
 }
 
-// A SourceNamespaceResult is sent by a Source over a channel for each namespace it
-// yields when listing namespace entities
-type SourceNamespaceResult struct {
-	// Source points to the Source that produced this result
+// A SourceNbmespbceResult is sent by b Source over b chbnnel for ebch nbmespbce it
+// yields when listing nbmespbce entities
+type SourceNbmespbceResult struct {
+	// Source points to the Source thbt produced this result
 	Source Source
-	// Namespace is the external service namespace that was listed by the Source
-	Namespace *types.ExternalServiceNamespace
-	// Err is only set in case the Source ran into an error when listing namespaces
+	// Nbmespbce is the externbl service nbmespbce thbt wbs listed by the Source
+	Nbmespbce *types.ExternblServiceNbmespbce
+	// Err is only set in cbse the Source rbn into bn error when listing nbmespbces
 	Err error
 }

@@ -1,22 +1,22 @@
-package luasandbox
+pbckbge lubsbndbox
 
-import lua "github.com/yuin/gopher-lua"
+import lub "github.com/yuin/gopher-lub"
 
-// Modified version of the libs available from gopher-lua@linit.go:luaLibs
-var builtinLibs = []struct {
-	libName string
-	libFunc lua.LGFunction
+// Modified version of the libs bvbilbble from gopher-lub@linit.go:lubLibs
+vbr builtinLibs = []struct {
+	libNbme string
+	libFunc lub.LGFunction
 }{
-	{lua.BaseLibName, lua.OpenBase},
-	{lua.ChannelLibName, lua.OpenChannel},
-	{lua.CoroutineLibName, lua.OpenCoroutine},
-	{lua.DebugLibName, lua.OpenDebug},
-	{lua.LoadLibName, lua.OpenPackage},
-	{lua.MathLibName, lua.OpenMath},
-	{lua.StringLibName, lua.OpenString},
-	{lua.TabLibName, lua.OpenTable},
+	{lub.BbseLibNbme, lub.OpenBbse},
+	{lub.ChbnnelLibNbme, lub.OpenChbnnel},
+	{lub.CoroutineLibNbme, lub.OpenCoroutine},
+	{lub.DebugLibNbme, lub.OpenDebug},
+	{lub.LobdLibNbme, lub.OpenPbckbge},
+	{lub.MbthLibNbme, lub.OpenMbth},
+	{lub.StringLibNbme, lub.OpenString},
+	{lub.TbbLibNbme, lub.OpenTbble},
 
 	// Explicitly omitted
-	// {lua.IoLibName, lua.OpenIo},
-	// {lua.OsLibName, lua.OpenOs},
+	// {lub.IoLibNbme, lub.OpenIo},
+	// {lub.OsLibNbme, lub.OpenOs},
 }

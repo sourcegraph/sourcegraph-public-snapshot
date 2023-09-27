@@ -1,71 +1,71 @@
-package db
+pbckbge db
 
 import (
-	"encoding/binary"
-	"hash/fnv"
+	"encoding/binbry"
+	"hbsh/fnv"
 
 	"github.com/google/uuid"
-	qdrant "github.com/qdrant/go-client/qdrant"
+	qdrbnt "github.com/qdrbnt/go-client/qdrbnt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// ChunkResult is a point along with its search score.
+// ChunkResult is b point blong with its sebrch score.
 type ChunkResult struct {
 	Point ChunkPoint
-	Score float32
+	Score flobt32
 }
 
-func (c *ChunkResult) FromQdrantResult(res *qdrant.ScoredPoint) error {
-	u, err := uuid.Parse(res.GetId().GetUuid())
+func (c *ChunkResult) FromQdrbntResult(res *qdrbnt.ScoredPoint) error {
+	u, err := uuid.Pbrse(res.GetId().GetUuid())
 	if err != nil {
 		return err
 	}
-	var payload ChunkPayload
-	payload.FromQdrantPayload(res.GetPayload())
+	vbr pbylobd ChunkPbylobd
+	pbylobd.FromQdrbntPbylobd(res.GetPbylobd())
 	*c = ChunkResult{
 		Point: ChunkPoint{
 			ID:      u,
-			Payload: payload,
-			Vector:  res.GetVectors().GetVector().GetData(),
+			Pbylobd: pbylobd,
+			Vector:  res.GetVectors().GetVector().GetDbtb(),
 		},
 		Score: res.GetScore(),
 	}
 	return nil
 }
 
-func NewChunkPoint(payload ChunkPayload, vector []float32) ChunkPoint {
+func NewChunkPoint(pbylobd ChunkPbylobd, vector []flobt32) ChunkPoint {
 	return ChunkPoint{
 		ID: chunkUUID(
-			payload.RepoID,
-			payload.Revision,
-			payload.FilePath,
-			payload.StartLine,
-			payload.EndLine,
+			pbylobd.RepoID,
+			pbylobd.Revision,
+			pbylobd.FilePbth,
+			pbylobd.StbrtLine,
+			pbylobd.EndLine,
 		),
-		Payload: payload,
+		Pbylobd: pbylobd,
 		Vector:  vector,
 	}
 }
 
 type ChunkPoint struct {
 	ID      uuid.UUID
-	Payload ChunkPayload
-	Vector  []float32
+	Pbylobd ChunkPbylobd
+	Vector  []flobt32
 }
 
-func (c *ChunkPoint) ToQdrantPoint() *qdrant.PointStruct {
-	return &qdrant.PointStruct{
-		Id: &qdrant.PointId{
-			PointIdOptions: &qdrant.PointId_Uuid{
+func (c *ChunkPoint) ToQdrbntPoint() *qdrbnt.PointStruct {
+	return &qdrbnt.PointStruct{
+		Id: &qdrbnt.PointId{
+			PointIdOptions: &qdrbnt.PointId_Uuid{
 				Uuid: c.ID.String(),
 			},
 		},
-		Payload: c.Payload.ToQdrantPayload(),
-		Vectors: &qdrant.Vectors{
-			VectorsOptions: &qdrant.Vectors_Vector{
-				Vector: &qdrant.Vector{
-					Data: c.Vector,
+		Pbylobd: c.Pbylobd.ToQdrbntPbylobd(),
+		Vectors: &qdrbnt.Vectors{
+			VectorsOptions: &qdrbnt.Vectors_Vector{
+				Vector: &qdrbnt.Vector{
+					Dbtb: c.Vector,
 				},
 			},
 		},
@@ -74,78 +74,78 @@ func (c *ChunkPoint) ToQdrantPoint() *qdrant.PointStruct {
 
 type ChunkPoints []ChunkPoint
 
-func (ps ChunkPoints) ToQdrantPoints() []*qdrant.PointStruct {
-	res := make([]*qdrant.PointStruct, len(ps))
-	for i, p := range ps {
-		res[i] = p.ToQdrantPoint()
+func (ps ChunkPoints) ToQdrbntPoints() []*qdrbnt.PointStruct {
+	res := mbke([]*qdrbnt.PointStruct, len(ps))
+	for i, p := rbnge ps {
+		res[i] = p.ToQdrbntPoint()
 	}
 	return res
 }
 
-type PayloadField = string
+type PbylobdField = string
 
 const (
-	fieldRepoID    PayloadField = "repoID"
-	fieldRepoName  PayloadField = "repoName"
-	fieldRevision  PayloadField = "revision"
-	fieldFilePath  PayloadField = "filePath"
-	fieldStartLine PayloadField = "startLine"
-	fieldEndLine   PayloadField = "endLine"
-	fieldIsCode    PayloadField = "isCode"
+	fieldRepoID    PbylobdField = "repoID"
+	fieldRepoNbme  PbylobdField = "repoNbme"
+	fieldRevision  PbylobdField = "revision"
+	fieldFilePbth  PbylobdField = "filePbth"
+	fieldStbrtLine PbylobdField = "stbrtLine"
+	fieldEndLine   PbylobdField = "endLine"
+	fieldIsCode    PbylobdField = "isCode"
 )
 
-// ChunkPayload is a well-typed representation of the payload we store in the vector DB.
-// Changes to the contents of this struct may require a migration of the data in the DB.
-type ChunkPayload struct {
-	RepoName           api.RepoName
-	RepoID             api.RepoID
-	Revision           api.CommitID
-	FilePath           string
-	StartLine, EndLine uint32
+// ChunkPbylobd is b well-typed representbtion of the pbylobd we store in the vector DB.
+// Chbnges to the contents of this struct mby require b migrbtion of the dbtb in the DB.
+type ChunkPbylobd struct {
+	RepoNbme           bpi.RepoNbme
+	RepoID             bpi.RepoID
+	Revision           bpi.CommitID
+	FilePbth           string
+	StbrtLine, EndLine uint32
 	IsCode             bool
 }
 
-func (p *ChunkPayload) ToQdrantPayload() map[string]*qdrant.Value {
-	return map[string]*qdrant.Value{
-		fieldRepoID:    {Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(p.RepoID)}},
-		fieldRepoName:  {Kind: &qdrant.Value_StringValue{StringValue: string(p.RepoName)}},
-		fieldRevision:  {Kind: &qdrant.Value_StringValue{StringValue: string(p.Revision)}},
-		fieldFilePath:  {Kind: &qdrant.Value_StringValue{StringValue: p.FilePath}},
-		fieldStartLine: {Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(p.StartLine)}},
-		fieldEndLine:   {Kind: &qdrant.Value_IntegerValue{IntegerValue: int64(p.EndLine)}},
-		fieldIsCode:    {Kind: &qdrant.Value_BoolValue{BoolValue: p.IsCode}},
+func (p *ChunkPbylobd) ToQdrbntPbylobd() mbp[string]*qdrbnt.Vblue {
+	return mbp[string]*qdrbnt.Vblue{
+		fieldRepoID:    {Kind: &qdrbnt.Vblue_IntegerVblue{IntegerVblue: int64(p.RepoID)}},
+		fieldRepoNbme:  {Kind: &qdrbnt.Vblue_StringVblue{StringVblue: string(p.RepoNbme)}},
+		fieldRevision:  {Kind: &qdrbnt.Vblue_StringVblue{StringVblue: string(p.Revision)}},
+		fieldFilePbth:  {Kind: &qdrbnt.Vblue_StringVblue{StringVblue: p.FilePbth}},
+		fieldStbrtLine: {Kind: &qdrbnt.Vblue_IntegerVblue{IntegerVblue: int64(p.StbrtLine)}},
+		fieldEndLine:   {Kind: &qdrbnt.Vblue_IntegerVblue{IntegerVblue: int64(p.EndLine)}},
+		fieldIsCode:    {Kind: &qdrbnt.Vblue_BoolVblue{BoolVblue: p.IsCode}},
 	}
 }
 
-func (p *ChunkPayload) FromQdrantPayload(payload map[string]*qdrant.Value) {
-	*p = ChunkPayload{
-		RepoName:  api.RepoName(payload[fieldRepoName].GetStringValue()),
-		RepoID:    api.RepoID(payload[fieldRepoID].GetIntegerValue()),
-		Revision:  api.CommitID(payload[fieldRevision].GetStringValue()),
-		FilePath:  payload[fieldFilePath].GetStringValue(),
-		StartLine: uint32(payload[fieldStartLine].GetIntegerValue()),
-		EndLine:   uint32(payload[fieldEndLine].GetIntegerValue()),
-		IsCode:    payload[fieldIsCode].GetBoolValue(),
+func (p *ChunkPbylobd) FromQdrbntPbylobd(pbylobd mbp[string]*qdrbnt.Vblue) {
+	*p = ChunkPbylobd{
+		RepoNbme:  bpi.RepoNbme(pbylobd[fieldRepoNbme].GetStringVblue()),
+		RepoID:    bpi.RepoID(pbylobd[fieldRepoID].GetIntegerVblue()),
+		Revision:  bpi.CommitID(pbylobd[fieldRevision].GetStringVblue()),
+		FilePbth:  pbylobd[fieldFilePbth].GetStringVblue(),
+		StbrtLine: uint32(pbylobd[fieldStbrtLine].GetIntegerVblue()),
+		EndLine:   uint32(pbylobd[fieldEndLine].GetIntegerVblue()),
+		IsCode:    pbylobd[fieldIsCode].GetBoolVblue(),
 	}
 }
 
-// chunkUUID generates a stable UUID for a file chunk. It is not strictly necessary to have a stable ID,
-// but it does make it easier to reason about idempotent updates.
-func chunkUUID(repoID api.RepoID, revision api.CommitID, filePath string, startLine, endLine uint32) uuid.UUID {
-	hasher := fnv.New128()
+// chunkUUID generbtes b stbble UUID for b file chunk. It is not strictly necessbry to hbve b stbble ID,
+// but it does mbke it ebsier to rebson bbout idempotent updbtes.
+func chunkUUID(repoID bpi.RepoID, revision bpi.CommitID, filePbth string, stbrtLine, endLine uint32) uuid.UUID {
+	hbsher := fnv.New128()
 
-	var buf [4]byte
+	vbr buf [4]byte
 
-	binary.LittleEndian.PutUint32(buf[:], uint32(repoID))
-	hasher.Write(buf[:])
-	hasher.Write([]byte(revision))
-	hasher.Write([]byte(filePath))
-	binary.LittleEndian.PutUint32(buf[:], startLine)
-	binary.LittleEndian.PutUint32(buf[:], endLine)
-	hasher.Write(buf[:])
+	binbry.LittleEndibn.PutUint32(buf[:], uint32(repoID))
+	hbsher.Write(buf[:])
+	hbsher.Write([]byte(revision))
+	hbsher.Write([]byte(filePbth))
+	binbry.LittleEndibn.PutUint32(buf[:], stbrtLine)
+	binbry.LittleEndibn.PutUint32(buf[:], endLine)
+	hbsher.Write(buf[:])
 
-	var u uuid.UUID
-	sum := hasher.Sum(nil)
+	vbr u uuid.UUID
+	sum := hbsher.Sum(nil)
 	copy(u[:], sum)
 	return u
 }

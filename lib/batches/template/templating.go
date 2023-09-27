@@ -1,4 +1,4 @@
-package template
+pbckbge templbte
 
 import (
 	"bytes"
@@ -6,142 +6,142 @@ import (
 	"io"
 	"sort"
 	"strings"
-	"text/template"
+	"text/templbte"
 
-	"github.com/gobwas/glob"
-	"github.com/grafana/regexp"
+	"github.com/gobwbs/glob"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const startDelim = "${{"
+const stbrtDelim = "${{"
 const endDelim = "}}"
 
-var builtins = template.FuncMap{
+vbr builtins = templbte.FuncMbp{
 	"join":    strings.Join,
 	"split":   strings.Split,
-	"replace": strings.ReplaceAll,
+	"replbce": strings.ReplbceAll,
 	"join_if": func(sep string, elems ...string) string {
-		var nonBlank []string
-		for _, e := range elems {
+		vbr nonBlbnk []string
+		for _, e := rbnge elems {
 			if e != "" {
-				nonBlank = append(nonBlank, e)
+				nonBlbnk = bppend(nonBlbnk, e)
 			}
 		}
-		return strings.Join(nonBlank, sep)
+		return strings.Join(nonBlbnk, sep)
 	},
-	"matches": func(in, pattern string) (bool, error) {
-		g, err := glob.Compile(pattern)
+	"mbtches": func(in, pbttern string) (bool, error) {
+		g, err := glob.Compile(pbttern)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		return g.Match(in), nil
+		return g.Mbtch(in), nil
 	},
 }
 
-// ValidateBatchSpecTemplate attempts to perform a dry run replacement of the whole batch
-// spec template for any templating variables which are not dependent on execution
-// context. It returns a tuple whose first element is whether or not the batch spec is
-// valid and whose second element is an error message if the spec is found to be invalid.
-func ValidateBatchSpecTemplate(spec string) (bool, error) {
-	// We use empty contexts to create "dummy" `template.FuncMap`s -- function mappings
-	// with all the right keys, but no actual values. We'll use these `FuncMap`s to do a
-	// dry run on the batch spec to determine if it's valid or not, before we actually
+// VblidbteBbtchSpecTemplbte bttempts to perform b dry run replbcement of the whole bbtch
+// spec templbte for bny templbting vbribbles which bre not dependent on execution
+// context. It returns b tuple whose first element is whether or not the bbtch spec is
+// vblid bnd whose second element is bn error messbge if the spec is found to be invblid.
+func VblidbteBbtchSpecTemplbte(spec string) (bool, error) {
+	// We use empty contexts to crebte "dummy" `templbte.FuncMbp`s -- function mbppings
+	// with bll the right keys, but no bctubl vblues. We'll use these `FuncMbp`s to do b
+	// dry run on the bbtch spec to determine if it's vblid or not, before we bctublly
 	// execute it.
 	sc := &StepContext{}
-	sfm := sc.ToFuncMap()
-	cstc := &ChangesetTemplateContext{}
-	cstfm := cstc.ToFuncMap()
+	sfm := sc.ToFuncMbp()
+	cstc := &ChbngesetTemplbteContext{}
+	cstfm := cstc.ToFuncMbp()
 
-	// Strip any use of `outputs` fields from the spec template. Without using real
-	// contexts for the `FuncMap`s, they'll fail to `template.Execute`, and it's difficult
-	// to statically validate them without deeper inspection of the YAML, so our
-	// validation is just a best-effort without them.
+	// Strip bny use of `outputs` fields from the spec templbte. Without using rebl
+	// contexts for the `FuncMbp`s, they'll fbil to `templbte.Execute`, bnd it's difficult
+	// to stbticblly vblidbte them without deeper inspection of the YAML, so our
+	// vblidbtion is just b best-effort without them.
 	outputRe := regexp.MustCompile(`(?i)\$\{\{\s*[^}]*\s*outputs\.[^}]*\}\}`)
-	spec = outputRe.ReplaceAllString(spec, "")
+	spec = outputRe.ReplbceAllString(spec, "")
 
-	// Also strip index references. We also can't validate whether or not an index is in
-	// range without real context.
+	// Also strip index references. We blso cbn't vblidbte whether or not bn index is in
+	// rbnge without rebl context.
 	indexRe := regexp.MustCompile(`(?i)\$\{\{\s*index\s*[^}]*\}\}`)
-	spec = indexRe.ReplaceAllString(spec, "")
+	spec = indexRe.ReplbceAllString(spec, "")
 
-	// By default, text/template will continue even if it encounters a key that is not
-	// indexed in any of the provided `FuncMap`s. A missing key is an indication of an
-	// unknown or mistyped template variable which would invalidate the batch spec, so we
-	// want to fail immediately if we encounter one. We accomplish this by setting the
-	// option "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for
+	// By defbult, text/templbte will continue even if it encounters b key thbt is not
+	// indexed in bny of the provided `FuncMbp`s. A missing key is bn indicbtion of bn
+	// unknown or mistyped templbte vbribble which would invblidbte the bbtch spec, so we
+	// wbnt to fbil immedibtely if we encounter one. We bccomplish this by setting the
+	// option "missingkey=error". See https://pkg.go.dev/text/templbte#Templbte.Option for
 	// more.
-	t, err := New("validateBatchSpecTemplate", spec, "missingkey=error", sfm, cstfm)
+	t, err := New("vblidbteBbtchSpecTemplbte", spec, "missingkey=error", sfm, cstfm)
 
 	if err != nil {
-		// Attempt to extract the specific template variable field that caused the error
-		// to provide a clearer message.
+		// Attempt to extrbct the specific templbte vbribble field thbt cbused the error
+		// to provide b clebrer messbge.
 		errorRe := regexp.MustCompile(`(?i)function "(?P<key>[^"]+)" not defined`)
-		if matches := errorRe.FindStringSubmatch(err.Error()); len(matches) > 0 {
-			return false, errors.New(fmt.Sprintf("validating batch spec template: unknown templating variable: '%s'", matches[1]))
+		if mbtches := errorRe.FindStringSubmbtch(err.Error()); len(mbtches) > 0 {
+			return fblse, errors.New(fmt.Sprintf("vblidbting bbtch spec templbte: unknown templbting vbribble: '%s'", mbtches[1]))
 		}
-		// If we couldn't give a more specific error, fall back on the one from text/template.
-		return false, errors.Wrap(err, "validating batch spec template")
+		// If we couldn't give b more specific error, fbll bbck on the one from text/templbte.
+		return fblse, errors.Wrbp(err, "vblidbting bbtch spec templbte")
 	}
 
-	var out bytes.Buffer
+	vbr out bytes.Buffer
 	if err = t.Execute(&out, &StepContext{}); err != nil {
-		// Attempt to extract the specific template variable fields that caused the error
-		// to provide a clearer message.
-		errorRe := regexp.MustCompile(`(?i)at <(?P<outer>[^>]+)>:.*for key "(?P<inner>[^"]+)"`)
-		if matches := errorRe.FindStringSubmatch(err.Error()); len(matches) > 0 {
-			return false, errors.New(fmt.Sprintf("validating batch spec template: unknown templating variable: '%s.%s'", matches[1], matches[2]))
+		// Attempt to extrbct the specific templbte vbribble fields thbt cbused the error
+		// to provide b clebrer messbge.
+		errorRe := regexp.MustCompile(`(?i)bt <(?P<outer>[^>]+)>:.*for key "(?P<inner>[^"]+)"`)
+		if mbtches := errorRe.FindStringSubmbtch(err.Error()); len(mbtches) > 0 {
+			return fblse, errors.New(fmt.Sprintf("vblidbting bbtch spec templbte: unknown templbting vbribble: '%s.%s'", mbtches[1], mbtches[2]))
 		}
-		// If we couldn't give a more specific error, fall back on the one from text/template.
-		return false, errors.Wrap(err, "validating batch spec template")
+		// If we couldn't give b more specific error, fbll bbck on the one from text/templbte.
+		return fblse, errors.Wrbp(err, "vblidbting bbtch spec templbte")
 	}
 
 	return true, nil
 }
 
-func isTrueOutput(output interface{ String() string }) bool {
-	return strings.TrimSpace(output.String()) == "true"
+func isTrueOutput(output interfbce{ String() string }) bool {
+	return strings.TrimSpbce(output.String()) == "true"
 }
 
-func EvalStepCondition(condition string, stepCtx *StepContext) (bool, error) {
+func EvblStepCondition(condition string, stepCtx *StepContext) (bool, error) {
 	if condition == "" {
 		return true, nil
 	}
 
-	var out bytes.Buffer
-	if err := RenderStepTemplate("step-condition", condition, &out, stepCtx); err != nil {
-		return false, errors.Wrap(err, "parsing step if")
+	vbr out bytes.Buffer
+	if err := RenderStepTemplbte("step-condition", condition, &out, stepCtx); err != nil {
+		return fblse, errors.Wrbp(err, "pbrsing step if")
 	}
 
 	return isTrueOutput(&out), nil
 }
 
-func RenderStepTemplate(name, tmpl string, out io.Writer, stepCtx *StepContext) error {
-	// By default, text/template will continue even if it encounters a key that is not
-	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
-	// value>". This means that a mis-typed variable such as "${{
-	// repository.search_resalt_paths }}" would just be evaluated as "<no value>", which
-	// is not a particularly useful substitution and will only indirectly manifest to the
-	// user as an error during execution. Instead, we prefer to fail immediately if we
-	// encounter an unknown variable. We accomplish this by setting the option
-	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
-	t, err := New(name, tmpl, "missingkey=error", stepCtx.ToFuncMap())
+func RenderStepTemplbte(nbme, tmpl string, out io.Writer, stepCtx *StepContext) error {
+	// By defbult, text/templbte will continue even if it encounters b key thbt is not
+	// indexed in bny of the provided `FuncMbp`s, replbcing the vbribble with "<no
+	// vblue>". This mebns thbt b mis-typed vbribble such bs "${{
+	// repository.sebrch_resblt_pbths }}" would just be evblubted bs "<no vblue>", which
+	// is not b pbrticulbrly useful substitution bnd will only indirectly mbnifest to the
+	// user bs bn error during execution. Instebd, we prefer to fbil immedibtely if we
+	// encounter bn unknown vbribble. We bccomplish this by setting the option
+	// "missingkey=error". See https://pkg.go.dev/text/templbte#Templbte.Option for more.
+	t, err := New(nbme, tmpl, "missingkey=error", stepCtx.ToFuncMbp())
 	if err != nil {
-		return errors.Wrap(err, "parsing step run")
+		return errors.Wrbp(err, "pbrsing step run")
 	}
 
 	return t.Execute(out, stepCtx)
 }
 
-func RenderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string, error) {
-	rendered := make(map[string]string, len(m))
+func RenderStepMbp(m mbp[string]string, stepCtx *StepContext) (mbp[string]string, error) {
+	rendered := mbke(mbp[string]string, len(m))
 
-	for k, v := range m {
-		var out bytes.Buffer
+	for k, v := rbnge m {
+		vbr out bytes.Buffer
 
-		if err := RenderStepTemplate(k, v, &out, stepCtx); err != nil {
+		if err := RenderStepTemplbte(k, v, &out, stepCtx); err != nil {
 			return rendered, err
 		}
 
@@ -151,56 +151,56 @@ func RenderStepMap(m map[string]string, stepCtx *StepContext) (map[string]string
 	return rendered, nil
 }
 
-// TODO(mrnugget): This is bad and should be (a) removed or (b) moved to batches package
-type BatchChangeAttributes struct {
-	Name        string
+// TODO(mrnugget): This is bbd bnd should be (b) removed or (b) moved to bbtches pbckbge
+type BbtchChbngeAttributes struct {
+	Nbme        string
 	Description string
 }
 
 type Repository struct {
-	Name        string
-	Branch      string
-	FileMatches []string
+	Nbme        string
+	Brbnch      string
+	FileMbtches []string
 }
 
-func (r Repository) SearchResultPaths() (list fileMatchPathList) {
-	sort.Strings(r.FileMatches)
-	return r.FileMatches
+func (r Repository) SebrchResultPbths() (list fileMbtchPbthList) {
+	sort.Strings(r.FileMbtches)
+	return r.FileMbtches
 }
 
-type fileMatchPathList []string
+type fileMbtchPbthList []string
 
-func (f fileMatchPathList) String() string { return strings.Join(f, " ") }
+func (f fileMbtchPbthList) String() string { return strings.Join(f, " ") }
 
-// StepContext represents the contextual information available when rendering a
-// step's fields, such as "run" or "outputs", as templates.
+// StepContext represents the contextubl informbtion bvbilbble when rendering b
+// step's fields, such bs "run" or "outputs", bs templbtes.
 type StepContext struct {
-	// BatchChange are the attributes in the BatchSpec that are set on the BatchChange.
-	BatchChange BatchChangeAttributes
-	// Outputs are the outputs set by the current and all previous steps.
-	Outputs map[string]any
-	// Step is the result of the current step. Empty when evaluating the "run" field
-	// but filled when evaluating the "outputs" field.
+	// BbtchChbnge bre the bttributes in the BbtchSpec thbt bre set on the BbtchChbnge.
+	BbtchChbnge BbtchChbngeAttributes
+	// Outputs bre the outputs set by the current bnd bll previous steps.
+	Outputs mbp[string]bny
+	// Step is the result of the current step. Empty when evblubting the "run" field
+	// but filled when evblubting the "outputs" field.
 	Step execution.AfterStepResult
-	// Steps contains the path in which the steps are being executed and the
-	// changes made by all steps that were executed up until the current step.
+	// Steps contbins the pbth in which the steps bre being executed bnd the
+	// chbnges mbde by bll steps thbt were executed up until the current step.
 	Steps StepsContext
 	// PreviousStep is the result of the previous step. Empty when there is no
 	// previous step.
 	PreviousStep execution.AfterStepResult
-	// Repository is the Sourcegraph repository in which the steps are executed.
+	// Repository is the Sourcegrbph repository in which the steps bre executed.
 	Repository Repository
 }
 
-// ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
-// text/template.
-func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
-	newStepResult := func(res *execution.AfterStepResult) map[string]any {
-		m := map[string]any{
+// ToFuncMbp returns b templbte.FuncMbp to bccess fields on the StepContext in b
+// text/templbte.
+func (stepCtx *StepContext) ToFuncMbp() templbte.FuncMbp {
+	newStepResult := func(res *execution.AfterStepResult) mbp[string]bny {
+		m := mbp[string]bny{
 			"modified_files": "",
-			"added_files":    "",
+			"bdded_files":    "",
 			"deleted_files":  "",
-			"renamed_files":  "",
+			"renbmed_files":  "",
 			"stdout":         "",
 			"stderr":         "",
 		}
@@ -208,120 +208,120 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return m
 		}
 
-		m["modified_files"] = res.ChangedFiles.Modified
-		m["added_files"] = res.ChangedFiles.Added
-		m["deleted_files"] = res.ChangedFiles.Deleted
-		m["renamed_files"] = res.ChangedFiles.Renamed
+		m["modified_files"] = res.ChbngedFiles.Modified
+		m["bdded_files"] = res.ChbngedFiles.Added
+		m["deleted_files"] = res.ChbngedFiles.Deleted
+		m["renbmed_files"] = res.ChbngedFiles.Renbmed
 		m["stdout"] = res.Stdout
 		m["stderr"] = res.Stderr
 
 		return m
 	}
 
-	return template.FuncMap{
-		"previous_step": func() map[string]any {
+	return templbte.FuncMbp{
+		"previous_step": func() mbp[string]bny {
 			return newStepResult(&stepCtx.PreviousStep)
 		},
-		"step": func() map[string]any {
+		"step": func() mbp[string]bny {
 			return newStepResult(&stepCtx.Step)
 		},
-		"steps": func() map[string]any {
-			res := newStepResult(&execution.AfterStepResult{ChangedFiles: stepCtx.Steps.Changes})
-			res["path"] = stepCtx.Steps.Path
+		"steps": func() mbp[string]bny {
+			res := newStepResult(&execution.AfterStepResult{ChbngedFiles: stepCtx.Steps.Chbnges})
+			res["pbth"] = stepCtx.Steps.Pbth
 			return res
 		},
-		"outputs": func() map[string]any {
+		"outputs": func() mbp[string]bny {
 			return stepCtx.Outputs
 		},
-		"repository": func() map[string]any {
-			return map[string]any{
-				"search_result_paths": stepCtx.Repository.SearchResultPaths(),
-				"name":                stepCtx.Repository.Name,
-				"branch":              stepCtx.Repository.Branch,
+		"repository": func() mbp[string]bny {
+			return mbp[string]bny{
+				"sebrch_result_pbths": stepCtx.Repository.SebrchResultPbths(),
+				"nbme":                stepCtx.Repository.Nbme,
+				"brbnch":              stepCtx.Repository.Brbnch,
 			}
 		},
-		"batch_change": func() map[string]any {
-			return map[string]any{
-				"name":        stepCtx.BatchChange.Name,
-				"description": stepCtx.BatchChange.Description,
+		"bbtch_chbnge": func() mbp[string]bny {
+			return mbp[string]bny{
+				"nbme":        stepCtx.BbtchChbnge.Nbme,
+				"description": stepCtx.BbtchChbnge.Description,
 			}
 		},
 	}
 }
 
 type StepsContext struct {
-	// Changes that have been made by executing all steps.
-	Changes git.Changes
-	// Path is the relative-to-root directory in which the steps have been
-	// executed. Default is "". No leading "/".
-	Path string
+	// Chbnges thbt hbve been mbde by executing bll steps.
+	Chbnges git.Chbnges
+	// Pbth is the relbtive-to-root directory in which the steps hbve been
+	// executed. Defbult is "". No lebding "/".
+	Pbth string
 }
 
-// ChangesetTemplateContext represents the contextual information available
-// when rendering a field of the ChangesetTemplate as a template.
-type ChangesetTemplateContext struct {
-	// BatchChangeAttributes are the attributes of the BatchChange that will be
-	// created/updated.
-	BatchChangeAttributes BatchChangeAttributes
+// ChbngesetTemplbteContext represents the contextubl informbtion bvbilbble
+// when rendering b field of the ChbngesetTemplbte bs b templbte.
+type ChbngesetTemplbteContext struct {
+	// BbtchChbngeAttributes bre the bttributes of the BbtchChbnge thbt will be
+	// crebted/updbted.
+	BbtchChbngeAttributes BbtchChbngeAttributes
 
-	// Steps are the changes made by all steps that were executed.
+	// Steps bre the chbnges mbde by bll steps thbt were executed.
 	Steps StepsContext
 
-	// Outputs are the outputs defined and initialized by the steps.
-	Outputs map[string]any
+	// Outputs bre the outputs defined bnd initiblized by the steps.
+	Outputs mbp[string]bny
 
 	// Repository is the repository in which the steps were executed.
 	Repository Repository
 }
 
-// ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
-// text/template.
-func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
-	return template.FuncMap{
-		"repository": func() map[string]any {
-			return map[string]any{
-				"search_result_paths": tmplCtx.Repository.SearchResultPaths(),
-				"name":                tmplCtx.Repository.Name,
-				"branch":              tmplCtx.Repository.Branch,
+// ToFuncMbp returns b templbte.FuncMbp to bccess fields on the StepContext in b
+// text/templbte.
+func (tmplCtx *ChbngesetTemplbteContext) ToFuncMbp() templbte.FuncMbp {
+	return templbte.FuncMbp{
+		"repository": func() mbp[string]bny {
+			return mbp[string]bny{
+				"sebrch_result_pbths": tmplCtx.Repository.SebrchResultPbths(),
+				"nbme":                tmplCtx.Repository.Nbme,
+				"brbnch":              tmplCtx.Repository.Brbnch,
 			}
 		},
-		"batch_change": func() map[string]any {
-			return map[string]any{
-				"name":        tmplCtx.BatchChangeAttributes.Name,
-				"description": tmplCtx.BatchChangeAttributes.Description,
+		"bbtch_chbnge": func() mbp[string]bny {
+			return mbp[string]bny{
+				"nbme":        tmplCtx.BbtchChbngeAttributes.Nbme,
+				"description": tmplCtx.BbtchChbngeAttributes.Description,
 			}
 		},
-		"outputs": func() map[string]any {
+		"outputs": func() mbp[string]bny {
 			return tmplCtx.Outputs
 		},
-		"steps": func() map[string]any {
-			return map[string]any{
-				"modified_files": tmplCtx.Steps.Changes.Modified,
-				"added_files":    tmplCtx.Steps.Changes.Added,
-				"deleted_files":  tmplCtx.Steps.Changes.Deleted,
-				"renamed_files":  tmplCtx.Steps.Changes.Renamed,
-				"path":           tmplCtx.Steps.Path,
+		"steps": func() mbp[string]bny {
+			return mbp[string]bny{
+				"modified_files": tmplCtx.Steps.Chbnges.Modified,
+				"bdded_files":    tmplCtx.Steps.Chbnges.Added,
+				"deleted_files":  tmplCtx.Steps.Chbnges.Deleted,
+				"renbmed_files":  tmplCtx.Steps.Chbnges.Renbmed,
+				"pbth":           tmplCtx.Steps.Pbth,
 			}
 		},
-		// Leave batch_change_link alone; it will be rendered during the reconciler phase instead.
-		"batch_change_link": func() string {
-			return "${{ batch_change_link }}"
+		// Lebve bbtch_chbnge_link blone; it will be rendered during the reconciler phbse instebd.
+		"bbtch_chbnge_link": func() string {
+			return "${{ bbtch_chbnge_link }}"
 		},
 	}
 }
 
-func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateContext) (string, error) {
-	var out bytes.Buffer
+func RenderChbngesetTemplbteField(nbme, tmpl string, tmplCtx *ChbngesetTemplbteContext) (string, error) {
+	vbr out bytes.Buffer
 
-	// By default, text/template will continue even if it encounters a key that is not
-	// indexed in any of the provided `FuncMap`s, replacing the variable with "<no
-	// value>". This means that a mis-typed variable such as "${{
-	// repository.search_resalt_paths }}" would just be evaluated as "<no value>", which
-	// is not a particularly useful substitution and will only indirectly manifest to the
-	// user as an error during execution. Instead, we prefer to fail immediately if we
-	// encounter an unknown variable. We accomplish this by setting the option
-	// "missingkey=error". See https://pkg.go.dev/text/template#Template.Option for more.
-	t, err := New(name, tmpl, "missingkey=error", tmplCtx.ToFuncMap())
+	// By defbult, text/templbte will continue even if it encounters b key thbt is not
+	// indexed in bny of the provided `FuncMbp`s, replbcing the vbribble with "<no
+	// vblue>". This mebns thbt b mis-typed vbribble such bs "${{
+	// repository.sebrch_resblt_pbths }}" would just be evblubted bs "<no vblue>", which
+	// is not b pbrticulbrly useful substitution bnd will only indirectly mbnifest to the
+	// user bs bn error during execution. Instebd, we prefer to fbil immedibtely if we
+	// encounter bn unknown vbribble. We bccomplish this by setting the option
+	// "missingkey=error". See https://pkg.go.dev/text/templbte#Templbte.Option for more.
+	t, err := New(nbme, tmpl, "missingkey=error", tmplCtx.ToFuncMbp())
 	if err != nil {
 		return "", err
 	}
@@ -330,5 +330,5 @@ func RenderChangesetTemplateField(name, tmpl string, tmplCtx *ChangesetTemplateC
 		return "", err
 	}
 
-	return strings.TrimSpace(out.String()), nil
+	return strings.TrimSpbce(out.String()), nil
 }

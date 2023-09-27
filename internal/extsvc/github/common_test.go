@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"io"
@@ -7,34 +7,34 @@ import (
 	"testing"
 )
 
-func TestSplitRepositoryNameWithOwner(t *testing.T) {
-	owner, name, err := SplitRepositoryNameWithOwner("a/b")
+func TestSplitRepositoryNbmeWithOwner(t *testing.T) {
+	owner, nbme, err := SplitRepositoryNbmeWithOwner("b/b")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := "a"; owner != want {
-		t.Errorf("got owner %q, want %q", owner, want)
+	if wbnt := "b"; owner != wbnt {
+		t.Errorf("got owner %q, wbnt %q", owner, wbnt)
 	}
-	if want := "b"; name != want {
-		t.Errorf("got name %q, want %q", name, want)
+	if wbnt := "b"; nbme != wbnt {
+		t.Errorf("got nbme %q, wbnt %q", nbme, wbnt)
 	}
 }
 
 type mockHTTPResponseBody struct {
 	count        int
 	responseBody string
-	status       int
+	stbtus       int
 }
 
 func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	s.count++
-	status := s.status
-	if status == 0 {
-		status = http.StatusOK
+	stbtus := s.stbtus
+	if stbtus == 0 {
+		stbtus = http.StbtusOK
 	}
 	return &http.Response{
 		Request:    req,
-		StatusCode: status,
-		Body:       io.NopCloser(strings.NewReader(s.responseBody)),
+		StbtusCode: stbtus,
+		Body:       io.NopCloser(strings.NewRebder(s.responseBody)),
 	}, nil
 }

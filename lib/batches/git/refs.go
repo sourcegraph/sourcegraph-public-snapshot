@@ -1,10 +1,10 @@
-package git
+pbckbge git
 
 import "strings"
 
 func EnsureRefPrefix(ref string) string {
-	if strings.HasPrefix(ref, "refs/heads/") {
+	if strings.HbsPrefix(ref, "refs/hebds/") {
 		return ref
 	}
-	return "refs/heads/" + ref
+	return "refs/hebds/" + ref
 }

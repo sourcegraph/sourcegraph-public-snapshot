@@ -1,81 +1,81 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	sitter "github.com/smacker/go-tree-sitter"
+	sitter "github.com/smbcker/go-tree-sitter"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func (s *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Node, err error) {
-	defer s.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+	defer s.onCbll(node, String(node.Type()), lbzyNodeStringer(&ret))()
 
 	switch node.Type() {
-	case "identifier":
+	cbse "identifier":
 		ident := node.Content(node.Contents)
 
 		cur := node.Node
 
 		for {
 			prev := cur
-			cur = cur.Parent()
+			cur = cur.Pbrent()
 			if cur == nil {
-				s.breadcrumb(node, "getDefPython: ran out of parents")
+				s.brebdcrumb(node, "getDefPython: rbn out of pbrents")
 				return nil, nil
 			}
 
 			switch cur.Type() {
 
-			case "module":
-				found := s.findNodeInScopePython(swapNode(node, cur), ident)
+			cbse "module":
+				found := s.findNodeInScopePython(swbpNode(node, cur), ident)
 				if found != nil {
 					return found, nil
 				}
-				return s.getDefInImports(ctx, swapNode(node, cur), ident)
+				return s.getDefInImports(ctx, swbpNode(node, cur), ident)
 
-			case "attribute":
-				object := cur.ChildByFieldName("object")
+			cbse "bttribute":
+				object := cur.ChildByFieldNbme("object")
 				if object == nil {
-					s.breadcrumb(node, "getDefPython: attribute has no object field")
+					s.brebdcrumb(node, "getDefPython: bttribute hbs no object field")
 					return nil, nil
 				}
-				attribute := cur.ChildByFieldName("attribute")
-				if attribute == nil {
-					s.breadcrumb(node, "getDefPython: attribute has no attribute field")
+				bttribute := cur.ChildByFieldNbme("bttribute")
+				if bttribute == nil {
+					s.brebdcrumb(node, "getDefPython: bttribute hbs no bttribute field")
 					return nil, nil
 				}
 				if nodeId(object) == nodeId(prev) {
 					continue
 				}
-				return s.getFieldPython(ctx, swapNode(node, object), attribute.Content(node.Contents))
+				return s.getFieldPython(ctx, swbpNode(node, object), bttribute.Content(node.Contents))
 
-			case "for_statement":
-				left := cur.ChildByFieldName("left")
+			cbse "for_stbtement":
+				left := cur.ChildByFieldNbme("left")
 				if left == nil {
 					continue
 				}
 				if left.Type() == "identifier" {
 					if left.Content(node.Contents) == ident {
-						return swapNodePtr(node, left), nil
+						return swbpNodePtr(node, left), nil
 					}
 				}
 				continue
 
-			case "with_statement":
-				for _, child := range children(cur) {
-					if child.Type() == "with_clause" {
-						for _, child := range children(cur) {
+			cbse "with_stbtement":
+				for _, child := rbnge children(cur) {
+					if child.Type() == "with_clbuse" {
+						for _, child := rbnge children(cur) {
 							if child.Type() == "with_item" {
-								value := child.ChildByFieldName("value")
-								if value == nil {
+								vblue := child.ChildByFieldNbme("vblue")
+								if vblue == nil {
 									continue
 								}
-								if value.Type() == "identifier" && value.Content(node.Contents) == ident {
-									return swapNodePtr(node, value), nil
+								if vblue.Type() == "identifier" && vblue.Content(node.Contents) == ident {
+									return swbpNodePtr(node, vblue), nil
 								}
 							}
 						}
@@ -83,187 +83,187 @@ func (s *SquirrelService) getDefPython(ctx context.Context, node Node) (ret *Nod
 				}
 				continue
 
-			case "except_clause":
-				if cur.NamedChildCount() < 3 {
+			cbse "except_clbuse":
+				if cur.NbmedChildCount() < 3 {
 					continue
 				}
 				//        vvvvvvvvv identifier
 				//                     v identifier
 				//                      v block
-				// except Exception as e:
-				exceptIdent := cur.NamedChild(1)
+				// except Exception bs e:
+				exceptIdent := cur.NbmedChild(1)
 				if exceptIdent == nil || exceptIdent.Type() != "identifier" {
 					continue
 				}
 				if exceptIdent.Content(node.Contents) == ident {
-					return swapNodePtr(node, exceptIdent), nil
+					return swbpNodePtr(node, exceptIdent), nil
 				}
 				continue
 
-			case "lambda":
-				// Check the parameters
+			cbse "lbmbdb":
+				// Check the pbrbmeters
 				query := `
-					(lambda parameters:
-						(lambda_parameters [
+					(lbmbdb pbrbmeters:
+						(lbmbdb_pbrbmeters [
 							(identifier) @ident
-							(default_parameter name: (identifier) @ident)
-							(list_splat_pattern (identifier) @ident)
-							(dictionary_splat_pattern (identifier) @ident)
+							(defbult_pbrbmeter nbme: (identifier) @ident)
+							(list_splbt_pbttern (identifier) @ident)
+							(dictionbry_splbt_pbttern (identifier) @ident)
 						])
 					)
 				`
-				captures := allCaptures(query, swapNode(node, cur))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, cur))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 				continue
 
-			case "function_definition":
-				// Check the function name and parameters
-				name := cur.ChildByFieldName("name")
-				if name != nil && name.Type() == "identifier" && name.Content(node.Contents) == ident {
-					return swapNodePtr(node, name), nil
+			cbse "function_definition":
+				// Check the function nbme bnd pbrbmeters
+				nbme := cur.ChildByFieldNbme("nbme")
+				if nbme != nil && nbme.Type() == "identifier" && nbme.Content(node.Contents) == ident {
+					return swbpNodePtr(node, nbme), nil
 				}
-				parameters := cur.ChildByFieldName("parameters")
-				if parameters == nil {
+				pbrbmeters := cur.ChildByFieldNbme("pbrbmeters")
+				if pbrbmeters == nil {
 					continue
 				}
 				query := `
-					(parameters [
+					(pbrbmeters [
 						(identifier) @ident
-						(default_parameter name: (identifier) @ident)
-						(list_splat_pattern (identifier) @ident)
-						(dictionary_splat_pattern (identifier) @ident)
+						(defbult_pbrbmeter nbme: (identifier) @ident)
+						(list_splbt_pbttern (identifier) @ident)
+						(dictionbry_splbt_pbttern (identifier) @ident)
 
-						(typed_parameter [
+						(typed_pbrbmeter [
 							(identifier) @ident
-							(list_splat_pattern (identifier) @ident)
-							(dictionary_splat_pattern (identifier) @ident)
+							(list_splbt_pbttern (identifier) @ident)
+							(dictionbry_splbt_pbttern (identifier) @ident)
 						])
-						(typed_default_parameter name: (identifier) @ident)
+						(typed_defbult_pbrbmeter nbme: (identifier) @ident)
 					])
 				`
-				captures := allCaptures(query, swapNode(node, parameters))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == ident {
-						return swapNodePtr(node, capture.Node), nil
+				cbptures := bllCbptures(query, swbpNode(node, pbrbmeters))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == ident {
+						return swbpNodePtr(node, cbpture.Node), nil
 					}
 				}
 
-				// Check the function body by doing an in-order traversal of all expression-statements
+				// Check the function body by doing bn in-order trbversbl of bll expression-stbtements
 				// scoped to this function.
-				body := cur.ChildByFieldName("body")
+				body := cur.ChildByFieldNbme("body")
 				if body == nil || body.Type() != "block" {
-					s.breadcrumb(swapNode(node, cur), "getDefPython: expected function_definition to have a block body")
+					s.brebdcrumb(swbpNode(node, cur), "getDefPython: expected function_definition to hbve b block body")
 					continue
 				}
-				found := s.findNodeInScopePython(swapNode(node, body), ident)
+				found := s.findNodeInScopePython(swbpNode(node, body), ident)
 				if found != nil {
 					return found, nil
 				}
 
 				continue
 
-			case "block":
-				continue // Blocks are not scopes in Python, so keep looking up the tree
+			cbse "block":
+				continue // Blocks bre not scopes in Python, so keep looking up the tree
 
-			// Skip all other nodes
-			default:
+			// Skip bll other nodes
+			defbult:
 				continue
 			}
 		}
 
-	// No other nodes have a definition
-	default:
+	// No other nodes hbve b definition
+	defbult:
 		return nil, nil
 	}
 }
 
 func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *Node) {
-	defer s.onCall(block, &Tuple{String(block.Type()), String(ident)}, lazyNodeStringer(&ret))()
+	defer s.onCbll(block, &Tuple{String(block.Type()), String(ident)}, lbzyNodeStringer(&ret))()
 
-	for i := 0; i < int(block.NamedChildCount()); i++ {
-		child := block.NamedChild(i)
+	for i := 0; i < int(block.NbmedChildCount()); i++ {
+		child := block.NbmedChild(i)
 
 		switch child.Type() {
-		case "function_definition":
-			name := child.ChildByFieldName("name")
-			if name != nil && name.Type() == "identifier" && name.Content(block.Contents) == ident {
-				return swapNodePtr(block, name)
+		cbse "function_definition":
+			nbme := child.ChildByFieldNbme("nbme")
+			if nbme != nil && nbme.Type() == "identifier" && nbme.Content(block.Contents) == ident {
+				return swbpNodePtr(block, nbme)
 			}
 			continue
-		case "class_definition":
-			name := child.ChildByFieldName("name")
-			if name != nil && name.Type() == "identifier" && name.Content(block.Contents) == ident {
-				return swapNodePtr(block, name)
+		cbse "clbss_definition":
+			nbme := child.ChildByFieldNbme("nbme")
+			if nbme != nil && nbme.Type() == "identifier" && nbme.Content(block.Contents) == ident {
+				return swbpNodePtr(block, nbme)
 			}
 			continue
-		case "expression_statement":
-			query := `(expression_statement (assignment left: (identifier) @ident))`
-			captures := allCaptures(query, swapNode(block, child))
-			for _, capture := range captures {
-				if capture.Content(capture.Contents) == ident {
-					return swapNodePtr(block, capture.Node)
+		cbse "expression_stbtement":
+			query := `(expression_stbtement (bssignment left: (identifier) @ident))`
+			cbptures := bllCbptures(query, swbpNode(block, child))
+			for _, cbpture := rbnge cbptures {
+				if cbpture.Content(cbpture.Contents) == ident {
+					return swbpNodePtr(block, cbpture.Node)
 				}
 			}
 			continue
-		case "if_statement":
-			var found *Node
-			next := child.ChildByFieldName("consequence")
+		cbse "if_stbtement":
+			vbr found *Node
+			next := child.ChildByFieldNbme("consequence")
 			if next == nil {
 				return nil
 			}
-			found = s.findNodeInScopePython(swapNode(block, next), ident)
+			found = s.findNodeInScopePython(swbpNode(block, next), ident)
 			if found != nil {
 				return found
 			}
-			elseClause := child.ChildByFieldName("alternative")
-			if elseClause == nil {
+			elseClbuse := child.ChildByFieldNbme("blternbtive")
+			if elseClbuse == nil {
 				continue
 			}
-			next = elseClause.ChildByFieldName("body")
+			next = elseClbuse.ChildByFieldNbme("body")
 			if next == nil {
 				return nil
 			}
-			found = s.findNodeInScopePython(swapNode(block, next), ident)
+			found = s.findNodeInScopePython(swbpNode(block, next), ident)
 			if found != nil {
 				return found
 			}
 			continue
-		case "while_statement":
-			fallthrough
-		case "for_statement":
-			next := child.ChildByFieldName("body")
+		cbse "while_stbtement":
+			fbllthrough
+		cbse "for_stbtement":
+			next := child.ChildByFieldNbme("body")
 			if next == nil {
 				return nil
 			}
-			found := s.findNodeInScopePython(swapNode(block, next), ident)
+			found := s.findNodeInScopePython(swbpNode(block, next), ident)
 			if found != nil {
 				return found
 			}
 			continue
-		case "try_statement":
-			next := child.ChildByFieldName("body")
+		cbse "try_stbtement":
+			next := child.ChildByFieldNbme("body")
 			if next == nil {
 				return nil
 			}
-			found := s.findNodeInScopePython(swapNode(block, next), ident)
+			found := s.findNodeInScopePython(swbpNode(block, next), ident)
 			if found != nil {
 				return found
 			}
-			for j := 0; j < int(child.NamedChildCount()); j++ {
-				tryChild := child.NamedChild(j)
-				if tryChild.Type() == "except_clause" {
-					for k := 0; k < int(tryChild.NamedChildCount()); k++ {
-						exceptChild := tryChild.NamedChild(k)
+			for j := 0; j < int(child.NbmedChildCount()); j++ {
+				tryChild := child.NbmedChild(j)
+				if tryChild.Type() == "except_clbuse" {
+					for k := 0; k < int(tryChild.NbmedChildCount()); k++ {
+						exceptChild := tryChild.NbmedChild(k)
 						if exceptChild.Type() == "block" {
 							next := exceptChild
 							if next == nil {
 								return nil
 							}
-							found := s.findNodeInScopePython(swapNode(block, next), ident)
+							found := s.findNodeInScopePython(swbpNode(block, next), ident)
 							if found != nil {
 								return found
 							}
@@ -272,7 +272,7 @@ func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *
 				}
 			}
 			continue
-		default:
+		defbult:
 			continue
 		}
 	}
@@ -281,7 +281,7 @@ func (s *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *
 }
 
 func (s *SquirrelService) getFieldPython(ctx context.Context, object Node, field string) (ret *Node, err error) {
-	defer s.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+	defer s.onCbll(object, &Tuple{String(object.Type()), String(field)}, lbzyNodeStringer(&ret))()
 
 	ty, err := s.getTypeDefPython(ctx, object)
 	if err != nil {
@@ -294,73 +294,73 @@ func (s *SquirrelService) getFieldPython(ctx context.Context, object Node, field
 }
 
 func (s *SquirrelService) lookupFieldPython(ctx context.Context, ty TypePython, field string) (ret *Node, err error) {
-	defer s.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
+	defer s.onCbll(ty.node(), &Tuple{String(ty.vbribnt()), String(field)}, lbzyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
-	case ModuleTypePython:
+	cbse ModuleTypePython:
 		return s.findNodeInScopePython(ty2.module, field), nil
-	case ClassTypePython:
-		body := ty2.def.ChildByFieldName("body")
+	cbse ClbssTypePython:
+		body := ty2.def.ChildByFieldNbme("body")
 		if body == nil {
 			return nil, nil
 		}
-		for _, child := range children(body) {
+		for _, child := rbnge children(body) {
 			switch child.Type() {
-			case "expression_statement":
-				query := `(expression_statement (assignment left: (identifier) @ident))`
-				captures := allCaptures(query, swapNode(ty2.def, child))
-				for _, capture := range captures {
-					if capture.Content(capture.Contents) == field {
-						return swapNodePtr(ty2.def, capture.Node), nil
+			cbse "expression_stbtement":
+				query := `(expression_stbtement (bssignment left: (identifier) @ident))`
+				cbptures := bllCbptures(query, swbpNode(ty2.def, child))
+				for _, cbpture := rbnge cbptures {
+					if cbpture.Content(cbpture.Contents) == field {
+						return swbpNodePtr(ty2.def, cbpture.Node), nil
 					}
 				}
 				continue
-			case "function_definition":
-				name := child.ChildByFieldName("name")
-				if name == nil {
+			cbse "function_definition":
+				nbme := child.ChildByFieldNbme("nbme")
+				if nbme == nil {
 					continue
 				}
-				if name.Content(ty2.def.Contents) == field {
-					return swapNodePtr(ty2.def, name), nil
+				if nbme.Content(ty2.def.Contents) == field {
+					return swbpNodePtr(ty2.def, nbme), nil
 				}
-				if name.Content(ty2.def.Contents) == "__init__" {
+				if nbme.Content(ty2.def.Contents) == "__init__" {
 					query := `
-						(expression_statement
-							(assignment
-								left: (attribute
+						(expression_stbtement
+							(bssignment
+								left: (bttribute
 									object: (identifier) @object
-									attribute: (identifier) @attribute
+									bttribute: (identifier) @bttribute
 								)
 							)
 						)
 					`
-					var found *Node
-					forEachCapture(query, swapNode(ty2.def, child), func(nameToNode map[string]Node) {
-						object, ok := nameToNode["object"]
+					vbr found *Node
+					forEbchCbpture(query, swbpNode(ty2.def, child), func(nbmeToNode mbp[string]Node) {
+						object, ok := nbmeToNode["object"]
 						if !ok || object.Content(ty2.def.Contents) != "self" {
 							return
 						}
-						attribute, ok := nameToNode["attribute"]
-						if !ok || attribute.Content(ty2.def.Contents) != field {
+						bttribute, ok := nbmeToNode["bttribute"]
+						if !ok || bttribute.Content(ty2.def.Contents) != field {
 							return
 						}
-						found = &attribute
+						found = &bttribute
 					})
 					if found != nil {
 						return found, nil
 					}
 				}
-			case "class_definition":
-				name := child.ChildByFieldName("name")
-				if name == nil {
+			cbse "clbss_definition":
+				nbme := child.ChildByFieldNbme("nbme")
+				if nbme == nil {
 					continue
 				}
-				if name.Content(ty2.def.Contents) == field {
-					return swapNodePtr(ty2.def, name), nil
+				if nbme.Content(ty2.def.Contents) == field {
+					return swbpNodePtr(ty2.def, nbme), nil
 				}
 			}
 		}
-		for _, super := range getSuperclassesPython(ty2.def) {
+		for _, super := rbnge getSuperclbssesPython(ty2.def) {
 			found, err := s.getFieldPython(ctx, super, field)
 			if err != nil {
 				return nil, err
@@ -370,20 +370,20 @@ func (s *SquirrelService) lookupFieldPython(ctx context.Context, ty TypePython, 
 			}
 		}
 		return nil, nil
-	case FnTypePython:
-		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
+	cbse FnTypePython:
+		s.brebdcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.vbribnt()))
 		return nil, nil
-	case PrimTypePython:
-		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
+	cbse PrimTypePython:
+		s.brebdcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.vbribnt()))
 		return nil, nil
-	default:
-		s.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unrecognized type variant %q", ty.variant()))
+	defbult:
+		s.brebdcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unrecognized type vbribnt %q", ty.vbribnt()))
 		return nil, nil
 	}
 }
 
 func (s *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypePython, err error) {
-	defer s.onCall(node, String(node.Type()), lazyTypePythonStringer(&ret))()
+	defer s.onCbll(node, String(node.Type()), lbzyTypePythonStringer(&ret))()
 
 	onIdent := func() (TypePython, error) {
 		found, err := s.getDefPython(ctx, node)
@@ -400,30 +400,30 @@ func (s *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret 
 	}
 
 	switch node.Type() {
-	case "type":
-		for _, child := range children(node.Node) {
-			return s.getTypeDefPython(ctx, swapNode(node, child))
+	cbse "type":
+		for _, child := rbnge children(node.Node) {
+			return s.getTypeDefPython(ctx, swbpNode(node, child))
 		}
 		return nil, nil
-	case "identifier":
+	cbse "identifier":
 		return onIdent()
-	case "attribute":
-		object := node.ChildByFieldName("object")
+	cbse "bttribute":
+		object := node.ChildByFieldNbme("object")
 		if object == nil {
 			return nil, nil
 		}
-		attribute := node.ChildByFieldName("attribute")
-		if attribute == nil {
+		bttribute := node.ChildByFieldNbme("bttribute")
+		if bttribute == nil {
 			return nil, nil
 		}
-		objectType, err := s.getTypeDefPython(ctx, swapNode(node, object))
+		objectType, err := s.getTypeDefPython(ctx, swbpNode(node, object))
 		if err != nil {
 			return nil, err
 		}
 		if objectType == nil {
 			return nil, nil
 		}
-		found, err := s.lookupFieldPython(ctx, objectType, attribute.Content(node.Contents))
+		found, err := s.lookupFieldPython(ctx, objectType, bttribute.Content(node.Contents))
 		if err != nil {
 			return nil, err
 		}
@@ -431,12 +431,12 @@ func (s *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret 
 			return nil, nil
 		}
 		return s.defToTypePython(ctx, *found)
-	case "call":
-		fn := node.ChildByFieldName("function")
+	cbse "cbll":
+		fn := node.ChildByFieldNbme("function")
 		if fn == nil {
 			return nil, nil
 		}
-		ty, err := s.getTypeDefPython(ctx, swapNode(node, fn))
+		ty, err := s.getTypeDefPython(ctx, swbpNode(node, fn))
 		if err != nil {
 			return nil, err
 		}
@@ -444,69 +444,69 @@ func (s *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret 
 			return nil, nil
 		}
 		switch ty2 := ty.(type) {
-		case FnTypePython:
+		cbse FnTypePython:
 			return ty2.ret, nil
-		case ClassTypePython:
+		cbse ClbssTypePython:
 			return ty2, nil
-		default:
-			s.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected function, got %q", ty.variant()))
+		defbult:
+			s.brebdcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected function, got %q", ty.vbribnt()))
 			return nil, nil
 		}
-	default:
-		s.breadcrumb(node, fmt.Sprintf("getTypeDefPython: unrecognized node type %q", node.Type()))
+	defbult:
+		s.brebdcrumb(node, fmt.Sprintf("getTypeDefPython: unrecognized node type %q", node.Type()))
 		return nil, nil
 	}
 }
 
-func (s *SquirrelService) getDefInImports(ctx context.Context, program Node, ident string) (ret *Node, err error) {
-	defer s.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefInImports(ctx context.Context, progrbm Node, ident string) (ret *Node, err error) {
+	defer s.onCbll(progrbm, &Tuple{String(progrbm.Type()), String(ident)}, lbzyNodeStringer(&ret))()
 
 	findModuleOrPkg := func(moduleOrPkg *sitter.Node) *Node {
 		if moduleOrPkg == nil {
 			return nil
 		}
 
-		path := program.RepoCommitPath.Path
-		path = strings.TrimSuffix(path, filepath.Base(path))
-		path = strings.TrimSuffix(path, "/")
+		pbth := progrbm.RepoCommitPbth.Pbth
+		pbth = strings.TrimSuffix(pbth, filepbth.Bbse(pbth))
+		pbth = strings.TrimSuffix(pbth, "/")
 
-		var dottedName *sitter.Node
-		if moduleOrPkg.Type() == "relative_import" {
-			if moduleOrPkg.NamedChildCount() < 1 {
+		vbr dottedNbme *sitter.Node
+		if moduleOrPkg.Type() == "relbtive_import" {
+			if moduleOrPkg.NbmedChildCount() < 1 {
 				return nil
 			}
-			importPrefix := moduleOrPkg.NamedChild(0)
+			importPrefix := moduleOrPkg.NbmedChild(0)
 			if importPrefix == nil || importPrefix.Type() != "import_prefix" {
 				return nil
 			}
 			dots := int(importPrefix.ChildCount())
 			for i := 0; i < dots-1; i++ {
-				path = strings.TrimSuffix(path, filepath.Base(path))
-				path = strings.TrimSuffix(path, "/")
+				pbth = strings.TrimSuffix(pbth, filepbth.Bbse(pbth))
+				pbth = strings.TrimSuffix(pbth, "/")
 			}
-			if moduleOrPkg.NamedChildCount() > 1 {
-				dottedName = moduleOrPkg.NamedChild(1)
+			if moduleOrPkg.NbmedChildCount() > 1 {
+				dottedNbme = moduleOrPkg.NbmedChild(1)
 			}
 		} else {
-			dottedName = moduleOrPkg
+			dottedNbme = moduleOrPkg
 		}
 
-		if dottedName == nil || dottedName.Type() != "dotted_name" {
+		if dottedNbme == nil || dottedNbme.Type() != "dotted_nbme" {
 			return nil
 		}
 
-		for _, component := range children(dottedName) {
+		for _, component := rbnge children(dottedNbme) {
 			if component.Type() != "identifier" {
 				return nil
 			}
-			path = filepath.Join(path, component.Content(program.Contents))
+			pbth = filepbth.Join(pbth, component.Content(progrbm.Contents))
 		}
-		// TODO support package imports
-		path += ".py"
-		result, _ := s.parse(ctx, types.RepoCommitPath{
-			Repo:   program.RepoCommitPath.Repo,
-			Commit: program.RepoCommitPath.Commit,
-			Path:   path,
+		// TODO support pbckbge imports
+		pbth += ".py"
+		result, _ := s.pbrse(ctx, types.RepoCommitPbth{
+			Repo:   progrbm.RepoCommitPbth.Repo,
+			Commit: progrbm.RepoCommitPbth.Commit,
+			Pbth:   pbth,
 		})
 		return result
 	}
@@ -520,60 +520,60 @@ func (s *SquirrelService) getDefInImports(ctx context.Context, program Node, ide
 	}
 
 	query := `[
-		(import_statement) @import
-		(import_from_statement) @import
+		(import_stbtement) @import
+		(import_from_stbtement) @import
 	]`
-	captures := allCaptures(query, program)
-	for _, stmt := range captures {
+	cbptures := bllCbptures(query, progrbm)
+	for _, stmt := rbnge cbptures {
 		switch stmt.Type() {
-		case "import_statement":
-			for _, importChild := range children(stmt.Node) {
+		cbse "import_stbtement":
+			for _, importChild := rbnge children(stmt.Node) {
 				switch importChild.Type() {
-				case "dotted_name":
-					if importChild.NamedChildCount() == 0 {
+				cbse "dotted_nbme":
+					if importChild.NbmedChildCount() == 0 {
 						continue
 					}
-					lastChild := importChild.NamedChild(int(importChild.NamedChildCount()) - 1)
-					if lastChild == nil || lastChild.Type() != "identifier" {
+					lbstChild := importChild.NbmedChild(int(importChild.NbmedChildCount()) - 1)
+					if lbstChild == nil || lbstChild.Type() != "identifier" {
 						continue
 					}
-					if lastChild.Content(program.Contents) != ident {
+					if lbstChild.Content(progrbm.Contents) != ident {
 						continue
 					}
 					return findModuleOrPkg(importChild), nil
-				case "aliased_import":
-					alias := importChild.ChildByFieldName("alias")
-					if alias == nil || alias.Type() != "identifier" {
+				cbse "blibsed_import":
+					blibs := importChild.ChildByFieldNbme("blibs")
+					if blibs == nil || blibs.Type() != "identifier" {
 						continue
 					}
-					if alias.Content(program.Contents) != ident {
+					if blibs.Content(progrbm.Contents) != ident {
 						continue
 					}
-					name := importChild.ChildByFieldName("name")
-					return findModuleOrPkg(name), nil
+					nbme := importChild.ChildByFieldNbme("nbme")
+					return findModuleOrPkg(nbme), nil
 				}
 			}
-		case "import_from_statement":
-			moduleName := stmt.ChildByFieldName("module_name")
-			if moduleName == nil {
+		cbse "import_from_stbtement":
+			moduleNbme := stmt.ChildByFieldNbme("module_nbme")
+			if moduleNbme == nil {
 				continue
 			}
 
-			// Advance a cursor to just past the "import" keyword
+			// Advbnce b cursor to just pbst the "import" keyword
 			i := 0
 			for ; i < int(stmt.ChildCount()); i++ {
 				if stmt.Child(i).Type() == "import" {
 					i++
-					break
+					brebk
 				}
 			}
 			if i == 0 || i >= int(stmt.ChildCount()) {
 				continue
 			}
 
-			// Check if it's a wildcard import
-			if stmt.Child(i).Type() == "wildcard_import" {
-				found := findModuleIdent(moduleName, ident)
+			// Check if it's b wildcbrd import
+			if stmt.Child(i).Type() == "wildcbrd_import" {
+				found := findModuleIdent(moduleNbme, ident)
 				if found != nil {
 					return found, nil
 				}
@@ -582,45 +582,45 @@ func (s *SquirrelService) getDefInImports(ctx context.Context, program Node, ide
 			// Loop through the imports
 			for ; i < int(stmt.ChildCount()); i++ {
 				child := stmt.Child(i)
-				if !child.IsNamed() {
+				if !child.IsNbmed() {
 					continue
 				}
 				switch child.Type() {
-				case "dotted_name":
-					if child.NamedChildCount() == 0 {
+				cbse "dotted_nbme":
+					if child.NbmedChildCount() == 0 {
 						continue
 					}
-					childIdent := child.NamedChild(0)
+					childIdent := child.NbmedChild(0)
 					if childIdent.Type() != "identifier" {
 						continue
 					}
-					if childIdent.Content(program.Contents) != ident {
+					if childIdent.Content(progrbm.Contents) != ident {
 						continue
 					}
-					found := findModuleIdent(moduleName, ident)
+					found := findModuleIdent(moduleNbme, ident)
 					if found != nil {
 						return found, nil
 					}
-				case "aliased_import":
-					alias := child.ChildByFieldName("alias")
-					if alias == nil || alias.Type() != "identifier" {
+				cbse "blibsed_import":
+					blibs := child.ChildByFieldNbme("blibs")
+					if blibs == nil || blibs.Type() != "identifier" {
 						continue
 					}
-					if alias.Content(program.Contents) != ident {
+					if blibs.Content(progrbm.Contents) != ident {
 						continue
 					}
-					name := child.ChildByFieldName("name")
-					if name == nil || name.Type() != "dotted_name" {
+					nbme := child.ChildByFieldNbme("nbme")
+					if nbme == nil || nbme.Type() != "dotted_nbme" {
 						continue
 					}
-					if name.NamedChildCount() == 0 {
+					if nbme.NbmedChildCount() == 0 {
 						continue
 					}
-					nameIdent := name.NamedChild(0)
-					if nameIdent == nil || nameIdent.Type() != "identifier" {
+					nbmeIdent := nbme.NbmedChild(0)
+					if nbmeIdent == nil || nbmeIdent.Type() != "identifier" {
 						continue
 					}
-					found := findModuleIdent(moduleName, nameIdent.Content(program.Contents))
+					found := findModuleIdent(moduleNbme, nbmeIdent.Content(progrbm.Contents))
 					if found != nil {
 						return found, nil
 					}
@@ -637,109 +637,109 @@ func (s *SquirrelService) defToTypePython(ctx context.Context, def Node) (TypePy
 		return (TypePython)(ModuleTypePython{module: def}), nil
 	}
 
-	parent := def.Node.Parent()
-	if parent == nil {
+	pbrent := def.Node.Pbrent()
+	if pbrent == nil {
 		return nil, nil
 	}
 
-	switch parent.Type() {
-	case "parameters":
+	switch pbrent.Type() {
+	cbse "pbrbmeters":
 		if def.Node.Type() == "identifier" && def.Node.Content(def.Contents) == "self" {
-			fn := parent.Parent()
+			fn := pbrent.Pbrent()
 			if fn == nil || fn.Type() != "function_definition" {
 				return nil, nil
 			}
-			block := fn.Parent()
+			block := fn.Pbrent()
 			if block == nil || block.Type() != "block" {
 				return nil, nil
 			}
-			class := block.Parent()
-			if class == nil || class.Type() != "class_definition" {
+			clbss := block.Pbrent()
+			if clbss == nil || clbss.Type() != "clbss_definition" {
 				return nil, nil
 			}
-			name := class.ChildByFieldName("name")
-			if name == nil {
+			nbme := clbss.ChildByFieldNbme("nbme")
+			if nbme == nil {
 				return nil, nil
 			}
-			return s.defToTypePython(ctx, swapNode(def, name))
+			return s.defToTypePython(ctx, swbpNode(def, nbme))
 		}
-		fmt.Println("TODO defToTypePython:", parent.Type())
+		fmt.Println("TODO defToTypePython:", pbrent.Type())
 		return nil, nil
-	case "typed_parameter":
-		ty := parent.ChildByFieldName("type")
+	cbse "typed_pbrbmeter":
+		ty := pbrent.ChildByFieldNbme("type")
 		if ty == nil {
 			return nil, nil
 		}
-		return s.getTypeDefPython(ctx, swapNode(def, ty))
-	case "class_definition":
-		return (TypePython)(ClassTypePython{def: swapNode(def, parent)}), nil
-	case "function_definition":
-		retTyNode := parent.ChildByFieldName("return_type")
+		return s.getTypeDefPython(ctx, swbpNode(def, ty))
+	cbse "clbss_definition":
+		return (TypePython)(ClbssTypePython{def: swbpNode(def, pbrent)}), nil
+	cbse "function_definition":
+		retTyNode := pbrent.ChildByFieldNbme("return_type")
 		if retTyNode == nil {
 			return (TypePython)(FnTypePython{
 				ret:  nil,
-				noad: swapNode(def, parent),
+				nobd: swbpNode(def, pbrent),
 			}), nil
 		}
-		retTy, err := s.getTypeDefPython(ctx, swapNode(def, retTyNode))
+		retTy, err := s.getTypeDefPython(ctx, swbpNode(def, retTyNode))
 		if err != nil {
 			return nil, err
 		}
 		return (TypePython)(FnTypePython{
 			ret:  retTy,
-			noad: swapNode(def, parent),
+			nobd: swbpNode(def, pbrent),
 		}), nil
-	case "assignment":
-		ty := parent.ChildByFieldName("type")
+	cbse "bssignment":
+		ty := pbrent.ChildByFieldNbme("type")
 		if ty == nil {
-			right := parent.ChildByFieldName("right")
+			right := pbrent.ChildByFieldNbme("right")
 			if right == nil {
 				return nil, nil
 			}
-			return s.getTypeDefPython(ctx, swapNode(def, right))
+			return s.getTypeDefPython(ctx, swbpNode(def, right))
 		}
-		return s.getTypeDefPython(ctx, swapNode(def, ty))
-	default:
-		s.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
+		return s.getTypeDefPython(ctx, swbpNode(def, ty))
+	defbult:
+		s.brebdcrumb(swbpNode(def, pbrent), fmt.Sprintf("unrecognized def pbrent %q", pbrent.Type()))
 		return nil, nil
 	}
 }
 
-func getSuperclassesPython(definition Node) []Node {
+func getSuperclbssesPython(definition Node) []Node {
 	supers := []Node{}
-	for _, super := range children(definition.ChildByFieldName("superclasses")) {
-		supers = append(supers, swapNode(definition, super))
+	for _, super := rbnge children(definition.ChildByFieldNbme("superclbsses")) {
+		supers = bppend(supers, swbpNode(definition, super))
 	}
 	return supers
 }
 
-type TypePython interface {
-	variant() string
+type TypePython interfbce {
+	vbribnt() string
 	node() Node
 }
 
 type FnTypePython struct {
 	ret  TypePython
-	noad Node
+	nobd Node
 }
 
-func (t FnTypePython) variant() string {
+func (t FnTypePython) vbribnt() string {
 	return "fn"
 }
 
 func (t FnTypePython) node() Node {
-	return t.noad
+	return t.nobd
 }
 
-type ClassTypePython struct {
+type ClbssTypePython struct {
 	def Node
 }
 
-func (t ClassTypePython) variant() string {
-	return "class"
+func (t ClbssTypePython) vbribnt() string {
+	return "clbss"
 }
 
-func (t ClassTypePython) node() Node {
+func (t ClbssTypePython) node() Node {
 	return t.def
 }
 
@@ -747,7 +747,7 @@ type ModuleTypePython struct {
 	module Node
 }
 
-func (t ModuleTypePython) variant() string {
+func (t ModuleTypePython) vbribnt() string {
 	return "module"
 }
 
@@ -756,51 +756,51 @@ func (t ModuleTypePython) node() Node {
 }
 
 type PrimTypePython struct {
-	noad    Node
-	varient string
+	nobd    Node
+	vbrient string
 }
 
-func (t PrimTypePython) variant() string {
-	return fmt.Sprintf("prim:%s", t.varient)
+func (t PrimTypePython) vbribnt() string {
+	return fmt.Sprintf("prim:%s", t.vbrient)
 }
 
 func (t PrimTypePython) node() Node {
-	return t.noad
+	return t.nobd
 }
 
-func lazyTypePythonStringer(ty *TypePython) func() fmt.Stringer {
+func lbzyTypePythonStringer(ty *TypePython) func() fmt.Stringer {
 	return func() fmt.Stringer {
 		if ty != nil && *ty != nil {
-			return String((*ty).variant())
+			return String((*ty).vbribnt())
 		} else {
 			return String("<nil>")
 		}
 	}
 }
 
-// isRecursiveDefinitionPython detects cases like `x = x.foo` that would cause infinite recursion when
-// attempting to determine the type of `x`. This is known to happen in the wild, but it's not clear (to
-// me) what the proper type should be or how to find it, so it's simply unsupported.
+// isRecursiveDefinitionPython detects cbses like `x = x.foo` thbt would cbuse infinite recursion when
+// bttempting to determine the type of `x`. This is known to hbppen in the wild, but it's not clebr (to
+// me) whbt the proper type should be or how to find it, so it's simply unsupported.
 func isRecursiveDefinitionPython(node Node, def Node) bool {
-	if node.RepoCommitPath != def.RepoCommitPath {
-		return false
+	if node.RepoCommitPbth != def.RepoCommitPbth {
+		return fblse
 	}
 	if def.Type() != "identifier" {
-		return false
+		return fblse
 	}
-	if def.Parent() == nil {
-		return false
+	if def.Pbrent() == nil {
+		return fblse
 	}
-	if def.Parent().Type() != "assignment" {
-		return false
+	if def.Pbrent().Type() != "bssignment" {
+		return fblse
 	}
-	assignment := def.Parent()
-	nodeAncestor := node.Parent()
+	bssignment := def.Pbrent()
+	nodeAncestor := node.Pbrent()
 	for nodeAncestor != nil {
-		if nodeId(nodeAncestor) == nodeId(assignment) {
+		if nodeId(nodeAncestor) == nodeId(bssignment) {
 			return true
 		}
-		nodeAncestor = nodeAncestor.Parent()
+		nodeAncestor = nodeAncestor.Pbrent()
 	}
-	return false
+	return fblse
 }

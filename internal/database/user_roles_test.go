@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,30 +6,30 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestUserRoleAssign(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, role := createUserAndRole(ctx, t, db)
+	user, role := crebteUserAndRole(ctx, t, db)
 
 	t.Run("without user id", func(t *testing.T) {
 		err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 		})
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing user id")
+		require.Equbl(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role id", func(t *testing.T) {
@@ -37,7 +37,7 @@ func TestUserRoleAssign(t *testing.T) {
 			UserID: user.ID,
 		})
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing role id")
+		require.Equbl(t, err.Error(), "missing role id")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -53,10 +53,10 @@ func TestUserRoleAssign(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, ur)
-		require.Equal(t, ur.RoleID, role.ID)
-		require.Equal(t, ur.UserID, user.ID)
+		require.Equbl(t, ur.RoleID, role.ID)
+		require.Equbl(t, ur.UserID, user.ID)
 
-		// shoudln't fail the second time, since we are "upsert"-ing here
+		// shoudln't fbil the second time, since we bre "upsert"-ing here
 		err = store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
@@ -66,22 +66,22 @@ func TestUserRoleAssign(t *testing.T) {
 }
 
 func TestUserRoleBulkAssignForUser(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, role := createUserAndRole(ctx, t, db)
-	role2, err := createTestRole(ctx, "another-role", false, t, db.Roles())
+	user, role := crebteUserAndRole(ctx, t, db)
+	role2, err := crebteTestRole(ctx, "bnother-role", fblse, t, db.Roles())
 	require.NoError(t, err)
 
 	t.Run("without user id", func(t *testing.T) {
 		err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{})
 
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing user id")
+		require.Equbl(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role ids", func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 		})
 
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing role ids")
+		require.Equbl(t, err.Error(), "missing role ids")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -107,12 +107,12 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, urs)
 		require.Len(t, urs, len(roleIDs))
-		for i, ur := range urs {
-			require.Equal(t, ur.UserID, user.ID)
-			require.Equal(t, ur.RoleID, roleIDs[i])
+		for i, ur := rbnge urs {
+			require.Equbl(t, ur.UserID, user.ID)
+			require.Equbl(t, ur.RoleID, roleIDs[i])
 		}
 
-		// shoudln't fail the second time, since we are "upsert"-ing here
+		// shoudln't fbil the second time, since we bre "upsert"-ing here
 		err = store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
 			UserID: user.ID,
 			Roles:  roleIDs,
@@ -122,25 +122,25 @@ func TestUserRoleBulkAssignForUser(t *testing.T) {
 }
 
 func TestUserRoleAssignSysemRole(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, _ := createUserAndRole(ctx, t, db)
+	user, _ := crebteUserAndRole(ctx, t, db)
 
 	t.Run("without user id", func(t *testing.T) {
 		err := store.AssignSystemRole(ctx, AssignSystemRoleOpts{})
-		require.ErrorContains(t, err, "user id is required")
+		require.ErrorContbins(t, err, "user id is required")
 	})
 
 	t.Run("without role", func(t *testing.T) {
 		err := store.AssignSystemRole(ctx, AssignSystemRoleOpts{
 			UserID: user.ID,
 		})
-		require.ErrorContains(t, err, "role is required")
+		require.ErrorContbins(t, err, "role is required")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -157,7 +157,7 @@ func TestUserRoleAssignSysemRole(t *testing.T) {
 		require.NotNil(t, urs)
 		require.Len(t, urs, 1)
 
-		// shoudln't fail the second time, since we are "upsert"-ing here
+		// shoudln't fbil the second time, since we bre "upsert"-ing here
 		err = store.AssignSystemRole(ctx, AssignSystemRoleOpts{
 			UserID: user.ID,
 			Role:   types.UserSystemRole,
@@ -167,29 +167,29 @@ func TestUserRoleAssignSysemRole(t *testing.T) {
 }
 
 func TestUserRoleBulkAssignSystemRolesToUsers(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, _ := createUserAndRole(ctx, t, db)
+	user, _ := crebteUserAndRole(ctx, t, db)
 
 	t.Run("without user id", func(t *testing.T) {
 		err := store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{})
-		require.ErrorContains(t, err, "user id is required")
+		require.ErrorContbins(t, err, "user id is required")
 	})
 
 	t.Run("without roles", func(t *testing.T) {
 		err := store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
 			UserID: user.ID,
 		})
-		require.ErrorContains(t, err, "roles are required")
+		require.ErrorContbins(t, err, "roles bre required")
 	})
 
 	t.Run("success", func(t *testing.T) {
-		systemRoles := []types.SystemRole{types.SiteAdministratorSystemRole, types.UserSystemRole}
+		systemRoles := []types.SystemRole{types.SiteAdministrbtorSystemRole, types.UserSystemRole}
 		err := store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
 			UserID: user.ID,
 			Roles:  systemRoles,
@@ -203,7 +203,7 @@ func TestUserRoleBulkAssignSystemRolesToUsers(t *testing.T) {
 		require.NotNil(t, urs)
 		require.Len(t, urs, len(systemRoles))
 
-		// This shoudln't fail the second time since we are upserting.
+		// This shoudln't fbil the second time since we bre upserting.
 		err = store.BulkAssignSystemRolesToUser(ctx, BulkAssignSystemRolesToUserOpts{
 			UserID: user.ID,
 			Roles:  systemRoles,
@@ -213,36 +213,36 @@ func TestUserRoleBulkAssignSystemRolesToUsers(t *testing.T) {
 }
 
 func TestUserRoleRevoke(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, role := createUserAndRole(ctx, t, db)
+	user, role := crebteUserAndRole(ctx, t, db)
 
-	// create a user role
+	// crebte b user role
 	err := store.Assign(ctx, AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: user.ID,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("missing user id", func(t *testing.T) {
 		err := store.Revoke(ctx, RevokeUserRoleOpts{
 			RoleID: role.ID,
 		})
-		require.ErrorContains(t, err, "missing user id")
+		require.ErrorContbins(t, err, "missing user id")
 	})
 
 	t.Run("missing role id", func(t *testing.T) {
 		err := store.Revoke(ctx, RevokeUserRoleOpts{
 			UserID: user.ID,
 		})
-		require.ErrorContains(t, err, "missing role id")
+		require.ErrorContbins(t, err, "missing role id")
 	})
 
 	t.Run("with existing user role", func(t *testing.T) {
@@ -258,7 +258,7 @@ func TestUserRoleRevoke(t *testing.T) {
 		})
 		require.Nil(t, ur)
 		require.Error(t, err)
-		require.Equal(t, err, &UserRoleNotFoundErr{
+		require.Equbl(t, err, &UserRoleNotFoundErr{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
@@ -273,29 +273,29 @@ func TestUserRoleRevoke(t *testing.T) {
 			UserID: userID,
 		})
 		require.Error(t, err)
-		require.ErrorContains(t, err, "failed to revoke user role")
+		require.ErrorContbins(t, err, "fbiled to revoke user role")
 	})
 }
 
 func TestUserRoleGetByRoleID(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	role := createTestRoleForUserRole(ctx, "TESTROLE", t, db)
+	role := crebteTestRoleForUserRole(ctx, "TESTROLE", t, db)
 
-	totalUsersWithRole := 10
-	for i := 1; i <= totalUsersWithRole; i++ {
-		username := fmt.Sprintf("ANOTHERTESTUSER%d", i)
-		user := createTestUserWithoutRoles(t, db, username, false)
+	totblUsersWithRole := 10
+	for i := 1; i <= totblUsersWithRole; i++ {
+		usernbme := fmt.Sprintf("ANOTHERTESTUSER%d", i)
+		user := crebteTestUserWithoutRoles(t, db, usernbme, fblse)
 
 		err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
@@ -303,7 +303,7 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 		urs, err := store.GetByRoleID(ctx, GetUserRoleOpts{})
 		require.Error(t, err)
 		require.Nil(t, urs)
-		require.Equal(t, err.Error(), "missing role id")
+		require.Equbl(t, err.Error(), "missing role id")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {
@@ -312,33 +312,33 @@ func TestUserRoleGetByRoleID(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		require.Len(t, urs, totalUsersWithRole)
+		require.Len(t, urs, totblUsersWithRole)
 
-		for _, ur := range urs {
-			require.Equal(t, ur.RoleID, role.ID)
+		for _, ur := rbnge urs {
+			require.Equbl(t, ur.RoleID, role.ID)
 		}
 	})
 }
 
 func TestUserRoleGetByUserID(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user := createTestUserWithoutRoles(t, db, "ANOTHERTESTUSER", false)
+	user := crebteTestUserWithoutRoles(t, db, "ANOTHERTESTUSER", fblse)
 
-	totalRoles := 3
-	for i := 1; i <= totalRoles; i++ {
-		name := fmt.Sprintf("TESTROLE%d", i)
-		role := createTestRoleForUserRole(ctx, name, t, db)
+	totblRoles := 3
+	for i := 1; i <= totblRoles; i++ {
+		nbme := fmt.Sprintf("TESTROLE%d", i)
+		role := crebteTestRoleForUserRole(ctx, nbme, t, db)
 
 		err := store.Assign(ctx, AssignUserRoleOpts{
 			RoleID: role.ID,
 			UserID: user.ID,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
@@ -346,7 +346,7 @@ func TestUserRoleGetByUserID(t *testing.T) {
 		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{})
 		require.Error(t, err)
 		require.Nil(t, urs)
-		require.Equal(t, err.Error(), "missing user id")
+		require.Equbl(t, err.Error(), "missing user id")
 	})
 
 	t.Run("with provided role id", func(t *testing.T) {
@@ -355,27 +355,27 @@ func TestUserRoleGetByUserID(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		require.Len(t, urs, totalRoles)
+		require.Len(t, urs, totblRoles)
 
-		for _, ur := range urs {
-			require.Equal(t, ur.UserID, user.ID)
+		for _, ur := rbnge urs {
+			require.Equbl(t, ur.UserID, user.ID)
 		}
 	})
 }
 
 func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, role := createUserAndRole(ctx, t, db)
+	user, role := crebteUserAndRole(ctx, t, db)
 	err := store.Assign(ctx, AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: user.ID,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("without user id", func(t *testing.T) {
@@ -384,7 +384,7 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 		})
 		require.Nil(t, ur)
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing user id")
+		require.Equbl(t, err.Error(), "missing user id")
 	})
 
 	t.Run("without role id", func(t *testing.T) {
@@ -393,37 +393,37 @@ func TestUserRoleGetByRoleIDAndUserID(t *testing.T) {
 		})
 		require.Nil(t, ur)
 		require.Error(t, err)
-		require.Equal(t, err.Error(), "missing role id")
+		require.Equbl(t, err.Error(), "missing role id")
 	})
 
-	t.Run("with correct args", func(t *testing.T) {
+	t.Run("with correct brgs", func(t *testing.T) {
 		ur, err := store.GetByRoleIDAndUserID(ctx, GetUserRoleOpts{
 			UserID: user.ID,
 			RoleID: role.ID,
 		})
 
 		require.NoError(t, err)
-		require.Equal(t, ur.RoleID, role.ID)
-		require.Equal(t, ur.UserID, user.ID)
+		require.Equbl(t, ur.RoleID, role.ID)
+		require.Equbl(t, ur.UserID, user.ID)
 	})
 }
 
 func TestSetRolesForUser(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	u1 := createTestUserWithoutRoles(t, db, "u1", false)
-	u2 := createTestUserWithoutRoles(t, db, "u2", false)
-	u3 := createTestUserWithoutRoles(t, db, "u3", false)
+	u1 := crebteTestUserWithoutRoles(t, db, "u1", fblse)
+	u2 := crebteTestUserWithoutRoles(t, db, "u2", fblse)
+	u3 := crebteTestUserWithoutRoles(t, db, "u3", fblse)
 
-	r1 := createTestRoleForUserRole(ctx, "TEST-ROLE-1", t, db)
-	r2 := createTestRoleForUserRole(ctx, "TEST-ROLE-2", t, db)
-	r3 := createTestRoleForUserRole(ctx, "TEST-ROLE-3", t, db)
-	r4 := createTestRoleForUserRole(ctx, "TEST-ROLE-4", t, db)
+	r1 := crebteTestRoleForUserRole(ctx, "TEST-ROLE-1", t, db)
+	r2 := crebteTestRoleForUserRole(ctx, "TEST-ROLE-2", t, db)
+	r3 := crebteTestRoleForUserRole(ctx, "TEST-ROLE-3", t, db)
+	r4 := crebteTestRoleForUserRole(ctx, "TEST-ROLE-4", t, db)
 
 	err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
 		UserID: u1.ID,
@@ -439,7 +439,7 @@ func TestSetRolesForUser(t *testing.T) {
 
 	t.Run("without user id", func(t *testing.T) {
 		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{})
-		require.ErrorContains(t, err, "missing user id")
+		require.ErrorContbins(t, err, "missing user id")
 	})
 
 	t.Run("revoke only", func(t *testing.T) {
@@ -454,9 +454,9 @@ func TestSetRolesForUser(t *testing.T) {
 		require.Len(t, urs, 0)
 	})
 
-	t.Run("assign and revoke", func(t *testing.T) {
-		// u2 is already assigned the role `r1`, however because it's not included
-		// in `opts`, it'll be revoked for `u2` and `r2` will be assigned to the user.
+	t.Run("bssign bnd revoke", func(t *testing.T) {
+		// u2 is blrebdy bssigned the role `r1`, however becbuse it's not included
+		// in `opts`, it'll be revoked for `u2` bnd `r2` will be bssigned to the user.
 		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{
 			UserID: u2.ID,
 			Roles:  []int32{r2.ID},
@@ -466,14 +466,14 @@ func TestSetRolesForUser(t *testing.T) {
 		urs, err := store.GetByUserID(ctx, GetUserRoleOpts{UserID: u2.ID})
 		require.NoError(t, err)
 		require.Len(t, urs, 1)
-		require.Equal(t, urs[0].RoleID, r2.ID)
-		require.Equal(t, urs[0].UserID, u2.ID)
+		require.Equbl(t, urs[0].RoleID, r2.ID)
+		require.Equbl(t, urs[0].UserID, u2.ID)
 	})
 
-	t.Run("assign only", func(t *testing.T) {
+	t.Run("bssign only", func(t *testing.T) {
 		roles := []int32{r1.ID, r2.ID, r3.ID, r4.ID}
-		// `u3` doesn't have any role assigned to them. We'll assign them the
-		// 4 roles defined above.
+		// `u3` doesn't hbve bny role bssigned to them. We'll bssign them the
+		// 4 roles defined bbove.
 		err := store.SetRolesForUser(ctx, SetRolesForUserOpts{
 			UserID: u3.ID,
 			Roles:  roles,
@@ -487,23 +487,23 @@ func TestSetRolesForUser(t *testing.T) {
 		sort.Slice(urs, func(i, j int) bool {
 			return urs[i].RoleID < urs[j].RoleID
 		})
-		for index, ur := range urs {
-			require.Equal(t, ur.UserID, u3.ID)
-			require.Equal(t, ur.RoleID, roles[index])
+		for index, ur := rbnge urs {
+			require.Equbl(t, ur.UserID, u3.ID)
+			require.Equbl(t, ur.RoleID, roles[index])
 		}
 	})
 }
 
 func TestBulkRevokeRolesForUser(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 	store := db.UserRoles()
 
-	user, role := createUserAndRole(ctx, t, db)
-	roleTwo := createTestRoleForUserRole(ctx, "TESTING-ROLE", t, db)
+	user, role := crebteUserAndRole(ctx, t, db)
+	roleTwo := crebteTestRoleForUserRole(ctx, "TESTING-ROLE", t, db)
 
 	err := store.BulkAssignRolesToUser(ctx, BulkAssignRolesToUserOpts{
 		UserID: user.ID,
@@ -513,14 +513,14 @@ func TestBulkRevokeRolesForUser(t *testing.T) {
 
 	t.Run("without user id", func(t *testing.T) {
 		err := store.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{})
-		require.ErrorContains(t, err, "missing user id")
+		require.ErrorContbins(t, err, "missing user id")
 	})
 
 	t.Run("without roles", func(t *testing.T) {
 		err := store.BulkRevokeRolesForUser(ctx, BulkRevokeRolesForUserOpts{
 			UserID: user.ID,
 		})
-		require.ErrorContains(t, err, "missing roles")
+		require.ErrorContbins(t, err, "missing roles")
 	})
 
 	t.Run("success", func(t *testing.T) {
@@ -536,43 +536,43 @@ func TestBulkRevokeRolesForUser(t *testing.T) {
 	})
 }
 
-func createUserAndRole(ctx context.Context, t *testing.T, db DB) (*types.User, *types.Role) {
+func crebteUserAndRole(ctx context.Context, t *testing.T, db DB) (*types.User, *types.Role) {
 	t.Helper()
-	user := createTestUserWithoutRoles(t, db, "u1", false)
-	role := createTestRoleForUserRole(ctx, "ANOTHERTESTROLE - 1", t, db)
+	user := crebteTestUserWithoutRoles(t, db, "u1", fblse)
+	role := crebteTestRoleForUserRole(ctx, "ANOTHERTESTROLE - 1", t, db)
 	return user, role
 }
 
-func createTestRoleForUserRole(ctx context.Context, name string, t *testing.T, db DB) *types.Role {
+func crebteTestRoleForUserRole(ctx context.Context, nbme string, t *testing.T, db DB) *types.Role {
 	t.Helper()
-	role, err := db.Roles().Create(ctx, name, false)
+	role, err := db.Roles().Crebte(ctx, nbme, fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	return role
 }
 
-func createTestUserWithoutRoles(t *testing.T, db DB, username string, siteAdmin bool) *types.User {
+func crebteTestUserWithoutRoles(t *testing.T, db DB, usernbme string, siteAdmin bool) *types.User {
 	t.Helper()
 
 	user := &types.User{
-		Username:    username,
-		DisplayName: "testuser",
+		Usernbme:    usernbme,
+		DisplbyNbme: "testuser",
 	}
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id, site_admin", user.Username, siteAdmin)
-	err := db.QueryRowContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&user.ID, &user.SiteAdmin)
+	q := sqlf.Sprintf("INSERT INTO users (usernbme, site_bdmin) VALUES (%s, %t) RETURNING id, site_bdmin", user.Usernbme, siteAdmin)
+	err := db.QueryRowContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&user.ID, &user.SiteAdmin)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if user.SiteAdmin != siteAdmin {
-		t.Fatalf("user.SiteAdmin=%t, but expected is %t", user.SiteAdmin, siteAdmin)
+		t.Fbtblf("user.SiteAdmin=%t, but expected is %t", user.SiteAdmin, siteAdmin)
 	}
 
-	_, err = db.ExecContext(context.Background(), "INSERT INTO names(name, user_id) VALUES($1, $2)", user.Username, user.ID)
+	_, err = db.ExecContext(context.Bbckground(), "INSERT INTO nbmes(nbme, user_id) VALUES($1, $2)", user.Usernbme, user.ID)
 	if err != nil {
-		t.Fatalf("failed to create name: %s", err)
+		t.Fbtblf("fbiled to crebte nbme: %s", err)
 	}
 
 	return user

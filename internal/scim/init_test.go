@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -8,195 +8,195 @@ import (
 	"testing"
 	"time"
 
-	"gotest.tools/assert"
+	"gotest.tools/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestAuthMiddleware(t *testing.T) {
-	testHandlerFunc := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+func TestAuthMiddlewbre(t *testing.T) {
+	testHbndlerFunc := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHebder(http.StbtusOK)
 	}
-	testHandler := scimAuthMiddleware(http.HandlerFunc(testHandlerFunc))
+	testHbndler := scimAuthMiddlewbre(http.HbndlerFunc(testHbndlerFunc))
 
-	testCases := []struct {
-		name     string
+	testCbses := []struct {
+		nbme     string
 		token    string
 		config   *conf.Unified
 		testFunc func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
-			name:   "matching token",
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
-			token:  "Bearer testtoken",
+			nbme:   "mbtching token",
+			config: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimAuthToken: "testtoken"}},
+			token:  "Bebrer testtoken",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusOK, "request should be ok if tokens match")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusOK, "request should be ok if tokens mbtch")
 			},
 		},
 		{
-			name:   "no token",
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
+			nbme:   "no token",
+			config: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimAuthToken: "testtoken"}},
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusUnauthorized, "unauthorized if no token")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusUnbuthorized, "unbuthorized if no token")
 			},
 		},
 		{
-			name:   "not configured fails auth check",
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{}},
+			nbme:   "not configured fbils buth check",
+			config: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}},
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusUnauthorized, "unauthorized if not configured")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusUnbuthorized, "unbuthorized if not configured")
 			},
 		},
 		{
-			name:   "not matching token",
-			config: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
-			token:  "Bearer idontmatch",
+			nbme:   "not mbtching token",
+			config: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimAuthToken: "testtoken"}},
+			token:  "Bebrer idontmbtch",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusUnauthorized, "unauthorized if token doesnt match")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusUnbuthorized, "unbuthorized if token doesnt mbtch")
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			conf.Mock(tc.config)
 			defer conf.Mock(nil)
-			req := &http.Request{Header: make(http.Header)}
+			req := &http.Request{Hebder: mbke(http.Hebder)}
 			if tc.token != "" {
-				req.Header.Set("Authorization", tc.token)
+				req.Hebder.Set("Authorizbtion", tc.token)
 			}
 			rr := httptest.NewRecorder()
-			testHandler.ServeHTTP(rr, req)
+			testHbndler.ServeHTTP(rr, req)
 			tc.testFunc(t, rr)
 		})
 	}
 
 }
 
-func TestLicenseMiddleware(t *testing.T) {
-	testHandlerFunc := func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
+func TestLicenseMiddlewbre(t *testing.T) {
+	testHbndlerFunc := func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHebder(http.StbtusOK)
 	}
-	testHandler := scimLicenseCheckMiddleware(http.HandlerFunc(testHandlerFunc))
+	testHbndler := scimLicenseCheckMiddlewbre(http.HbndlerFunc(testHbndlerFunc))
 
-	licensingInfo := func(tags ...string) *license.Info {
-		return &license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}
+	licensingInfo := func(tbgs ...string) *license.Info {
+		return &license.Info{Tbgs: tbgs, ExpiresAt: time.Now().Add(1 * time.Hour)}
 	}
 
-	testCases := []struct {
-		name     string
+	testCbses := []struct {
+		nbme     string
 		license  *license.Info
 		testFunc func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
-			name:    "starter license should not have access",
-			license: licensingInfo("starter"),
+			nbme:    "stbrter license should not hbve bccess",
+			license: licensingInfo("stbrter"),
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusForbidden)
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusForbidden)
 			},
 		},
 		{
-			name:    "plan:free-1 should not have access",
-			license: licensingInfo("plan:free-1"),
+			nbme:    "plbn:free-1 should not hbve bccess",
+			license: licensingInfo("plbn:free-1"),
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusForbidden, "not allowed for free plan")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusForbidden, "not bllowed for free plbn")
 			},
 		},
 		{
-			name:    "plan:business-0 should have access",
-			license: licensingInfo("plan:business-0"),
+			nbme:    "plbn:business-0 should hbve bccess",
+			license: licensingInfo("plbn:business-0"),
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusOK, "allowed for business-0 plan")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusOK, "bllowed for business-0 plbn")
 			},
 		},
 		{
-			name:    "plan:enterprise-1 should have access",
-			license: licensingInfo("plan:enterprise-1"),
+			nbme:    "plbn:enterprise-1 should hbve bccess",
+			license: licensingInfo("plbn:enterprise-1"),
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusOK, "allowed for enterprise-1 plan")
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusOK, "bllowed for enterprise-1 plbn")
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return tc.license, "test-signature", nil
+				return tc.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			req := &http.Request{Header: make(http.Header)}
+			req := &http.Request{Hebder: mbke(http.Hebder)}
 			rr := httptest.NewRecorder()
-			testHandler.ServeHTTP(rr, req)
+			testHbndler.ServeHTTP(rr, req)
 			tc.testFunc(t, rr)
 		})
 	}
 
 }
 
-func TestHandler(t *testing.T) {
-	db := getMockDB([]*types.UserForSCIM{}, map[int32][]*database.UserEmail{})
-	testHandler := NewHandler(context.Background(), db, &observation.TestContext)
+func TestHbndler(t *testing.T) {
+	db := getMockDB([]*types.UserForSCIM{}, mbp[int32][]*dbtbbbse.UserEmbil{})
+	testHbndler := NewHbndler(context.Bbckground(), db, &observbtion.TestContext)
 
-	licensingInfo := func(tags ...string) *license.Info {
-		return &license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}
+	licensingInfo := func(tbgs ...string) *license.Info {
+		return &license.Info{Tbgs: tbgs, ExpiresAt: time.Now().Add(1 * time.Hour)}
 	}
 
-	testCases := []struct {
-		name     string
+	testCbses := []struct {
+		nbme     string
 		config   *conf.Unified
 		token    string
 		license  *license.Info
 		testFunc func(t *testing.T, rr *httptest.ResponseRecorder)
 	}{
 		{
-			name:    "auth should fail first",
-			license: licensingInfo("starter"),
-			config:  &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
-			token:   "Bearer idontmatch",
+			nbme:    "buth should fbil first",
+			license: licensingInfo("stbrter"),
+			config:  &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimAuthToken: "testtoken"}},
+			token:   "Bebrer idontmbtch",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusUnauthorized)
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusUnbuthorized)
 			},
 		},
 		{
-			name:    "license check should fail after auth passes",
-			license: licensingInfo("starter"),
-			config:  &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
-			token:   "Bearer testtoken",
+			nbme:    "license check should fbil bfter buth pbsses",
+			license: licensingInfo("stbrter"),
+			config:  &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimAuthToken: "testtoken"}},
+			token:   "Bebrer testtoken",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusForbidden)
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusForbidden)
 			},
 		},
 		{
-			name:    "Auth & license check passes it runs",
-			license: licensingInfo("plan:enterprise-1"),
-			config:  &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimAuthToken: "testtoken"}},
-			token:   "Bearer testtoken",
+			nbme:    "Auth & license check pbsses it runs",
+			license: licensingInfo("plbn:enterprise-1"),
+			config:  &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimAuthToken: "testtoken"}},
+			token:   "Bebrer testtoken",
 			testFunc: func(t *testing.T, rr *httptest.ResponseRecorder) {
-				assert.Equal(t, rr.Result().StatusCode, http.StatusOK)
+				bssert.Equbl(t, rr.Result().StbtusCode, http.StbtusOK)
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			conf.Mock(tc.config)
 			defer conf.Mock(nil)
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return tc.license, "test-signature", nil
+				return tc.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
-			req := &http.Request{Header: make(http.Header), Method: http.MethodGet, URL: &url.URL{Path: "/.api/scim/v2/Schemas"}}
+			req := &http.Request{Hebder: mbke(http.Hebder), Method: http.MethodGet, URL: &url.URL{Pbth: "/.bpi/scim/v2/Schembs"}}
 			if tc.token != "" {
-				req.Header.Set("Authorization", tc.token)
+				req.Hebder.Set("Authorizbtion", tc.token)
 			}
 			rr := httptest.NewRecorder()
-			testHandler.ServeHTTP(rr, req)
+			testHbndler.ServeHTTP(rr, req)
 			tc.testFunc(t, rr)
 		})
 	}

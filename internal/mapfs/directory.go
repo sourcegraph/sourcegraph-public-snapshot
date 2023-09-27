@@ -1,24 +1,24 @@
-package mapfs
+pbckbge mbpfs
 
 import (
 	"io"
 	"io/fs"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type mapFSDirectory struct {
-	name    string
+type mbpFSDirectory struct {
+	nbme    string
 	entries []string
 	offset  int
 }
 
-func (d *mapFSDirectory) Stat() (fs.FileInfo, error) {
-	return &mapFSDirectoryEntry{name: d.name}, nil
+func (d *mbpFSDirectory) Stbt() (fs.FileInfo, error) {
+	return &mbpFSDirectoryEntry{nbme: d.nbme}, nil
 }
 
-func (d *mapFSDirectory) ReadDir(count int) ([]fs.DirEntry, error) {
+func (d *mbpFSDirectory) RebdDir(count int) ([]fs.DirEntry, error) {
 	n := len(d.entries) - d.offset
 	if n == 0 {
 		if count <= 0 {
@@ -30,33 +30,33 @@ func (d *mapFSDirectory) ReadDir(count int) ([]fs.DirEntry, error) {
 		n = count
 	}
 
-	list := make([]fs.DirEntry, 0, n)
+	list := mbke([]fs.DirEntry, 0, n)
 	for i := 0; i < n; i++ {
-		name := d.entries[d.offset]
-		list = append(list, &mapFSDirectoryEntry{name: name})
+		nbme := d.entries[d.offset]
+		list = bppend(list, &mbpFSDirectoryEntry{nbme: nbme})
 		d.offset++
 	}
 
 	return list, nil
 }
 
-func (d *mapFSDirectory) Read(_ []byte) (int, error) {
-	return 0, &fs.PathError{Op: "read", Path: d.name, Err: errors.New("is a directory")}
+func (d *mbpFSDirectory) Rebd(_ []byte) (int, error) {
+	return 0, &fs.PbthError{Op: "rebd", Pbth: d.nbme, Err: errors.New("is b directory")}
 }
 
-func (d *mapFSDirectory) Close() error {
+func (d *mbpFSDirectory) Close() error {
 	return nil
 }
 
-type mapFSDirectoryEntry struct {
-	name string
+type mbpFSDirectoryEntry struct {
+	nbme string
 }
 
-func (e *mapFSDirectoryEntry) Name() string               { return e.name }
-func (e *mapFSDirectoryEntry) Size() int64                { return 0 }
-func (e *mapFSDirectoryEntry) Mode() fs.FileMode          { return fs.ModeDir }
-func (e *mapFSDirectoryEntry) ModTime() time.Time         { return time.Time{} }
-func (e *mapFSDirectoryEntry) IsDir() bool                { return e.Mode().IsDir() }
-func (e *mapFSDirectoryEntry) Sys() any                   { return nil }
-func (e *mapFSDirectoryEntry) Type() fs.FileMode          { return fs.ModeDir }
-func (e *mapFSDirectoryEntry) Info() (fs.FileInfo, error) { return e, nil }
+func (e *mbpFSDirectoryEntry) Nbme() string               { return e.nbme }
+func (e *mbpFSDirectoryEntry) Size() int64                { return 0 }
+func (e *mbpFSDirectoryEntry) Mode() fs.FileMode          { return fs.ModeDir }
+func (e *mbpFSDirectoryEntry) ModTime() time.Time         { return time.Time{} }
+func (e *mbpFSDirectoryEntry) IsDir() bool                { return e.Mode().IsDir() }
+func (e *mbpFSDirectoryEntry) Sys() bny                   { return nil }
+func (e *mbpFSDirectoryEntry) Type() fs.FileMode          { return fs.ModeDir }
+func (e *mbpFSDirectoryEntry) Info() (fs.FileInfo, error) { return e, nil }

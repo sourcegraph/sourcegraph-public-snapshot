@@ -1,36 +1,36 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewDeletedRepositoryJanitor(
+func NewDeletedRepositoryJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.janitor.unknown-repository"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.jbnitor.unknown-repository"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes upload records associated with an unknown repository.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.DeleteUploadsWithoutRepository(ctx, time.Now())
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes uplobd records bssocibted with bn unknown repository.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.DeleteUplobdsWithoutRepository(ctx, time.Now())
 		},
 	})
 }
@@ -38,27 +38,27 @@ func NewDeletedRepositoryJanitor(
 //
 //
 
-func NewUnknownCommitJanitor(
+func NewUnknownCommitJbnitor(
 	store store.Store,
 	gitserverClient gitserver.Client,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.janitor.unknown-commit"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.jbnitor.unknown-commit"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes upload records associated with an unknown commit.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes uplobd records bssocibted with bn unknown commit.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
 			return store.ProcessSourcedCommits(
 				ctx,
-				config.MinimumTimeSinceLastCheck,
-				config.CommitResolverMaximumCommitLag,
-				config.CommitResolverBatchSize,
-				func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error) {
-					return shouldDeleteRecordsForCommit(ctx, gitserverClient, repositoryName, commit)
+				config.MinimumTimeSinceLbstCheck,
+				config.CommitResolverMbximumCommitLbg,
+				config.CommitResolverBbtchSize,
+				func(ctx context.Context, repositoryID int, repositoryNbme, commit string) (bool, error) {
+					return shouldDeleteRecordsForCommit(ctx, gitserverClient, repositoryNbme, commit)
 				},
 				time.Now(),
 			)
@@ -66,43 +66,43 @@ func NewUnknownCommitJanitor(
 	})
 }
 
-func shouldDeleteRecordsForCommit(ctx context.Context, gitserverClient gitserver.Client, repositoryName, commit string) (bool, error) {
-	if _, err := gitserverClient.ResolveRevision(ctx, api.RepoName(repositoryName), commit, gitserver.ResolveRevisionOptions{}); err != nil {
-		if gitdomain.IsRepoNotExist(err) {
-			// Repository not found; we'll delete these in a separate process
-			return false, nil
+func shouldDeleteRecordsForCommit(ctx context.Context, gitserverClient gitserver.Client, repositoryNbme, commit string) (bool, error) {
+	if _, err := gitserverClient.ResolveRevision(ctx, bpi.RepoNbme(repositoryNbme), commit, gitserver.ResolveRevisionOptions{}); err != nil {
+		if gitdombin.IsRepoNotExist(err) {
+			// Repository not found; we'll delete these in b sepbrbte process
+			return fblse, nil
 		}
 
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			// Repository is resolvable but commit is not - remove it
+		if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+			// Repository is resolvbble but commit is not - remove it
 			return true, nil
 		}
 
 		// Unexpected error
-		return false, err
+		return fblse, err
 	}
 
-	// Commit is resolvable, don't touch it
-	return false, nil
+	// Commit is resolvbble, don't touch it
+	return fblse, nil
 }
 
 //
 //
 
-func NewAbandonedUploadJanitor(
+func NewAbbndonedUplobdJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.janitor.abandoned"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.jbnitor.bbbndoned"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes upload records that did did not receive a full payload from the user.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-config.UploadTimeout))
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes uplobd records thbt did did not receive b full pbylobd from the user.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.DeleteUplobdsStuckUplobding(ctx, time.Now().UTC().Add(-config.UplobdTimeout))
 		},
 	})
 }
@@ -111,42 +111,42 @@ func NewAbandonedUploadJanitor(
 //
 
 const (
-	expiredUploadsBatchSize    = 1000
-	expiredUploadsMaxTraversal = 100
+	expiredUplobdsBbtchSize    = 1000
+	expiredUplobdsMbxTrbversbl = 100
 )
 
-func NewExpiredUploadJanitor(
+func NewExpiredUplobdJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.expirer.unreferenced"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.expirer.unreferenced"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Soft-deletes unreferenced upload records that are not protected by any data retention policy.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.SoftDeleteExpiredUploads(ctx, expiredUploadsBatchSize)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Soft-deletes unreferenced uplobd records thbt bre not protected by bny dbtb retention policy.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.SoftDeleteExpiredUplobds(ctx, expiredUplobdsBbtchSize)
 		},
 	})
 }
 
-func NewExpiredUploadTraversalJanitor(
+func NewExpiredUplobdTrbversblJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.expirer.unreferenced-graph"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.expirer.unreferenced-grbph"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Soft-deletes a tree of externally unreferenced upload records that are not protected by any data retention policy.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.SoftDeleteExpiredUploadsViaTraversal(ctx, expiredUploadsMaxTraversal)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Soft-deletes b tree of externblly unreferenced uplobd records thbt bre not protected by bny dbtb retention policy.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.SoftDeleteExpiredUplobdsVibTrbversbl(ctx, expiredUplobdsMbxTrbversbl)
 		},
 	})
 }
@@ -154,51 +154,51 @@ func NewExpiredUploadTraversalJanitor(
 //
 //
 
-func NewHardDeleter(
+func NewHbrdDeleter(
 	store store.Store,
 	lsifStore lsifstore.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.hard-deleter"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.hbrd-deleter"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Deleted data associated with soft-deleted upload records.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			const uploadsBatchSize = 100
-			options := shared.GetUploadsOptions{
-				State:            "deleted",
-				Limit:            uploadsBatchSize,
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Deleted dbtb bssocibted with soft-deleted uplobd records.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			const uplobdsBbtchSize = 100
+			options := shbred.GetUplobdsOptions{
+				Stbte:            "deleted",
+				Limit:            uplobdsBbtchSize,
 				AllowExpired:     true,
 				AllowDeletedRepo: true,
 			}
 
 			count := 0
 			for {
-				// Always request the first page of deleted uploads. If this is not
-				// the first iteration of the loop, then the previous iteration has
-				// deleted the records that composed the previous page, and the
-				// previous "second" page is now the first page.
-				uploads, totalCount, err := store.GetUploads(ctx, options)
+				// Alwbys request the first pbge of deleted uplobds. If this is not
+				// the first iterbtion of the loop, then the previous iterbtion hbs
+				// deleted the records thbt composed the previous pbge, bnd the
+				// previous "second" pbge is now the first pbge.
+				uplobds, totblCount, err := store.GetUplobds(ctx, options)
 				if err != nil {
 					return 0, 0, err
 				}
 
-				ids := uploadIDs(uploads)
-				if err := lsifStore.DeleteLsifDataByUploadIds(ctx, ids...); err != nil {
+				ids := uplobdIDs(uplobds)
+				if err := lsifStore.DeleteLsifDbtbByUplobdIds(ctx, ids...); err != nil {
 					return 0, 0, err
 				}
 
-				if err := store.HardDeleteUploadsByIDs(ctx, ids...); err != nil {
+				if err := store.HbrdDeleteUplobdsByIDs(ctx, ids...); err != nil {
 					return 0, 0, err
 				}
 
-				count += len(uploads)
-				if count >= totalCount {
-					break
+				count += len(uplobds)
+				if count >= totblCount {
+					brebk
 				}
 			}
 
@@ -207,10 +207,10 @@ func NewHardDeleter(
 	})
 }
 
-func uploadIDs(uploads []shared.Upload) []int {
-	ids := make([]int, 0, len(uploads))
-	for i := range uploads {
-		ids = append(ids, uploads[i].ID)
+func uplobdIDs(uplobds []shbred.Uplobd) []int {
+	ids := mbke([]int, 0, len(uplobds))
+	for i := rbnge uplobds {
+		ids = bppend(ids, uplobds[i].ID)
 	}
 	sort.Ints(ids)
 
@@ -220,20 +220,20 @@ func uploadIDs(uploads []shared.Upload) []int {
 //
 //
 
-func NewAuditLogJanitor(
+func NewAuditLogJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.janitor.audit-logs"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.jbnitor.budit-logs"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Deletes sufficiently old upload audit log records.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.DeleteOldAuditLogs(ctx, config.AuditLogMaxAge, time.Now())
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Deletes sufficiently old uplobd budit log records.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.DeleteOldAuditLogs(ctx, config.AuditLogMbxAge, time.Now())
 		},
 	})
 }
@@ -241,38 +241,38 @@ func NewAuditLogJanitor(
 //
 //
 
-func NewSCIPExpirationTask(
+func NewSCIPExpirbtionTbsk(
 	lsifStore lsifstore.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.janitor.scip-documents"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.jbnitor.scip-documents"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Deletes SCIP document payloads that are not referenced by any index.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return lsifStore.DeleteUnreferencedDocuments(ctx, config.UnreferencedDocumentBatchSize, config.UnreferencedDocumentMaxAge, time.Now())
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Deletes SCIP document pbylobds thbt bre not referenced by bny index.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return lsifStore.DeleteUnreferencedDocuments(ctx, config.UnreferencedDocumentBbtchSize, config.UnreferencedDocumentMbxAge, time.Now())
 		},
 	})
 }
 
-func NewAbandonedSchemaVersionsRecordsTask(
+func NewAbbndonedSchembVersionsRecordsTbsk(
 	lsifStore lsifstore.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.uploads.janitor.abandoned-schema-versions-records"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.uplobds.jbnitor.bbbndoned-schemb-versions-records"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Deletes schema version metadata records for indexes that no longer exist.",
-		Interval:    config.AbandonedSchemaVersionsInterval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			numDeleted, err := lsifStore.DeleteAbandonedSchemaVersionsRecords(ctx)
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Deletes schemb version metbdbtb records for indexes thbt no longer exist.",
+		Intervbl:    config.AbbndonedSchembVersionsIntervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			numDeleted, err := lsifStore.DeleteAbbndonedSchembVersionsRecords(ctx)
 			return numDeleted, numDeleted, err
 		},
 	})

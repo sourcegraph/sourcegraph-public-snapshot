@@ -1,322 +1,322 @@
-package protocol
+pbckbge protocol
 
-// Sourcegraph extension to LSIF: documentation.
-// See https://github.com/slimsag/language-server-protocol/pull/2
+// Sourcegrbph extension to LSIF: documentbtion.
+// See https://github.com/slimsbg/lbngubge-server-protocol/pull/2
 
-// A "documentationResult" edge connects a "project" or "resultSet" vertex to a
-// "documentationResult" vertex.
+// A "documentbtionResult" edge connects b "project" or "resultSet" vertex to b
+// "documentbtionResult" vertex.
 //
-// It allows one to attach extensive documentation to a project or range (via being attached to a
-// "resultSet" vertex). Combined with the "documentationChildren" edge, this can be used to
-// represent hierarchical documentation.
-type DocumentationResultEdge struct {
+// It bllows one to bttbch extensive documentbtion to b project or rbnge (vib being bttbched to b
+// "resultSet" vertex). Combined with the "documentbtionChildren" edge, this cbn be used to
+// represent hierbrchicbl documentbtion.
+type DocumentbtionResultEdge struct {
 	Edge
 
-	// The "documentationResult" vertex ID.
+	// The "documentbtionResult" vertex ID.
 	InV uint64 `json:"inV"`
 
 	// A "project" or "resultSet" vertex ID.
 	OutV uint64 `json:"outV"`
 }
 
-func NewDocumentationResultEdge(id, inV, outV uint64) DocumentationResultEdge {
-	return DocumentationResultEdge{
+func NewDocumentbtionResultEdge(id, inV, outV uint64) DocumentbtionResultEdge {
+	return DocumentbtionResultEdge{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeSourcegraphDocumentationResult,
+			Lbbel: EdgeSourcegrbphDocumentbtionResult,
 		},
 		OutV: outV,
 		InV:  inV,
 	}
 }
 
-// A "documentationChildren" edge connects one "documentationResult" vertex (the parent) to its
-// children "documentationResult" vertices.
+// A "documentbtionChildren" edge connects one "documentbtionResult" vertex (the pbrent) to its
+// children "documentbtionResult" vertices.
 //
-// It allows one represent hierarchical documentation like:
+// It bllows one represent hierbrchicbl documentbtion like:
 //
-//	"project" (e.g. an HTTP library)
-//	-> "documentationResult" (e.g. "HTTP library" library documentation)
-//	  -> "documentationResult" (e.g. docs for the "Server" class in the HTTP library)
-//	    -> "documentationResult" (e.g. docs for the "Listen" method on the "Server" class)
-//	    -> "documentationResult" (e.g. docs for the "Shutdown" method on the "Server" class)
+//	"project" (e.g. bn HTTP librbry)
+//	-> "documentbtionResult" (e.g. "HTTP librbry" librbry documentbtion)
+//	  -> "documentbtionResult" (e.g. docs for the "Server" clbss in the HTTP librbry)
+//	    -> "documentbtionResult" (e.g. docs for the "Listen" method on the "Server" clbss)
+//	    -> "documentbtionResult" (e.g. docs for the "Shutdown" method on the "Server" clbss)
 //	      -> ...
 //
-// Note: the "project" -> "documentationResult" attachment above is expressed via a
-// "documentationResult" edge, since the parent is not a "documentationResult" vertex.
-type DocumentationChildrenEdge struct {
+// Note: the "project" -> "documentbtionResult" bttbchment bbove is expressed vib b
+// "documentbtionResult" edge, since the pbrent is not b "documentbtionResult" vertex.
+type DocumentbtionChildrenEdge struct {
 	Edge
 
-	// The ordered children "documentationResult" vertex IDs.
+	// The ordered children "documentbtionResult" vertex IDs.
 	InVs []uint64 `json:"inVs"`
 
-	// The parent "documentationResult" vertex ID.
+	// The pbrent "documentbtionResult" vertex ID.
 	OutV uint64 `json:"outV"`
 }
 
-func NewDocumentationChildrenEdge(id uint64, inVs []uint64, outV uint64) DocumentationChildrenEdge {
-	return DocumentationChildrenEdge{
+func NewDocumentbtionChildrenEdge(id uint64, inVs []uint64, outV uint64) DocumentbtionChildrenEdge {
+	return DocumentbtionChildrenEdge{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeSourcegraphDocumentationChildren,
+			Lbbel: EdgeSourcegrbphDocumentbtionChildren,
 		},
 		OutV: outV,
 		InVs: inVs,
 	}
 }
 
-// A "documentationResult" vertex
-type DocumentationResult struct {
+// A "documentbtionResult" vertex
+type DocumentbtionResult struct {
 	Vertex
-	Result Documentation `json:"result"`
+	Result Documentbtion `json:"result"`
 }
 
-// NewDocumentationResult creates a new "documentationResult" vertex.
-func NewDocumentationResult(id uint64, result Documentation) DocumentationResult {
-	return DocumentationResult{
+// NewDocumentbtionResult crebtes b new "documentbtionResult" vertex.
+func NewDocumentbtionResult(id uint64, result Documentbtion) DocumentbtionResult {
+	return DocumentbtionResult{
 		Vertex: Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexSourcegraphDocumentationResult,
+			Lbbel: VertexSourcegrbphDocumentbtionResult,
 		},
 		Result: result,
 	}
 }
 
-// A "documentationResult" vertex describes hierarchial project-wide documentation. It represents
-// documentation for a programming construct (variable, function, etc.) or group of programming
-// constructs in a workspace (library, package, crate, module, etc.)
+// A "documentbtionResult" vertex describes hierbrchibl project-wide documentbtion. It represents
+// documentbtion for b progrbmming construct (vbribble, function, etc.) or group of progrbmming
+// constructs in b workspbce (librbry, pbckbge, crbte, module, etc.)
 //
-// The exact structure of the documentation depends on what makes sense for the specific language
-// and concepts being described.
+// The exbct structure of the documentbtion depends on whbt mbkes sense for the specific lbngubge
+// bnd concepts being described.
 //
-// Attached to this vertex MUST be two "documentationString" vertices:
+// Attbched to this vertex MUST be two "documentbtionString" vertices:
 //
-//  1. A "documentationString" vertex with `type: "label"`, which is a one-line label or this section
-//     of documentation.
-//  1. A "documentationString" vertex with `type: "detail"`, which is a multi-line detailed string
-//     for this section of documentation.
+//  1. A "documentbtionString" vertex with `type: "lbbel"`, which is b one-line lbbel or this section
+//     of documentbtion.
+//  1. A "documentbtionString" vertex with `type: "detbil"`, which is b multi-line detbiled string
+//     for this section of documentbtion.
 //
-// Both are attached to the documentationResult via a "documentationString" edge.
+// Both bre bttbched to the documentbtionResult vib b "documentbtionString" edge.
 //
-// If the label or detail vertex is missing, or the label string is empty (has no content) then a
-// client should consider all "documentationResult" vertices in the entire LSIF dump to be invalid
-// and malformed, and ignore them.
+// If the lbbel or detbil vertex is missing, or the lbbel string is empty (hbs no content) then b
+// client should consider bll "documentbtionResult" vertices in the entire LSIF dump to be invblid
+// bnd mblformed, bnd ignore them.
 //
-// If no detail is available (such as a function with no documentation), a `type:"detail"`
-// "documentationString" should still be emitted - but with an empty string for the MarkupContent.
-// This enables validators to ensure the indexer knows how to emit both label and detail strings
-// properly, and just chose to emit none specifically.
+// If no detbil is bvbilbble (such bs b function with no documentbtion), b `type:"detbil"`
+// "documentbtionString" should still be emitted - but with bn empty string for the MbrkupContent.
+// This enbbles vblidbtors to ensure the indexer knows how to emit both lbbel bnd detbil strings
+// properly, bnd just chose to emit none specificblly.
 //
-// If this documentationResult is for the project root, the identifier and searchKey should be an
+// If this documentbtionResult is for the project root, the identifier bnd sebrchKey should be bn
 // empty string.
 //
-// If a pages' only purpose is to connect other pages below it (i.e. it is an index page), it
-// should have empty label and detail strings attached.
-type Documentation struct {
-	// A human readable identifier for this documentationResult, uniquely identifying it within the
-	// scope of the parent page (or an empty string, if this is the root documentationResult.)
+// If b pbges' only purpose is to connect other pbges below it (i.e. it is bn index pbge), it
+// should hbve empty lbbel bnd detbil strings bttbched.
+type Documentbtion struct {
+	// A humbn rebdbble identifier for this documentbtionResult, uniquely identifying it within the
+	// scope of the pbrent pbge (or bn empty string, if this is the root documentbtionResult.)
 	//
-	// Clients may build a path identifiers to a specific documentationResult _page_ by joining the
-	// identifiers of each documentationResult with `newPage: true` starting from the desired root
-	// until the target page is reached. For example, if trying to build a paths from the workspace
-	// root to a Go method "ServeHTTP" on a "Router" struct, you may have the following
-	// documentationResults describing the Go package structure:
+	// Clients mby build b pbth identifiers to b specific documentbtionResult _pbge_ by joining the
+	// identifiers of ebch documentbtionResult with `newPbge: true` stbrting from the desired root
+	// until the tbrget pbge is rebched. For exbmple, if trying to build b pbths from the workspbce
+	// root to b Go method "ServeHTTP" on b "Router" struct, you mby hbve the following
+	// documentbtionResults describing the Go pbckbge structure:
 	//
 	//  	[
-	//  	  {identifier: "",                 newPage: true},
-	//  	  {identifier: "internal",         newPage: true},
-	//  	  {identifier: "pkg",              newPage: true},
-	//  	  {identifier: "mux",              newPage: true},
-	//  	  {identifier: "Router",           newPage: false},
-	//  	  {identifier: "Router.ServeHTTP", newPage: false},
+	//  	  {identifier: "",                 newPbge: true},
+	//  	  {identifier: "internbl",         newPbge: true},
+	//  	  {identifier: "pkg",              newPbge: true},
+	//  	  {identifier: "mux",              newPbge: true},
+	//  	  {identifier: "Router",           newPbge: fblse},
+	//  	  {identifier: "Router.ServeHTTP", newPbge: fblse},
 	//  	]
 	//
-	// The first entry (identifier="") is root documentationResult of the workspace. Note that
-	// since identifiers are unique relative to the parent page, the `Router` struct and the
-	// `Router.ServeHTTP` method have unique identifiers relative to the parent `mux` page.
-	// Thus, to build a path to either simply join all the `newPage: true` identifiers
-	// ("/internal/pkg/mux") and use the identifier of any child once `newPage: false` is reached:
+	// The first entry (identifier="") is root documentbtionResult of the workspbce. Note thbt
+	// since identifiers bre unique relbtive to the pbrent pbge, the `Router` struct bnd the
+	// `Router.ServeHTTP` method hbve unique identifiers relbtive to the pbrent `mux` pbge.
+	// Thus, to build b pbth to either simply join bll the `newPbge: true` identifiers
+	// ("/internbl/pkg/mux") bnd use the identifier of bny child once `newPbge: fblse` is rebched:
 	//
-	//  	/internal/pkg/mux#Router
-	//  	/internal/pkg/mux#Router.ServeHTTP
+	//  	/internbl/pkg/mux#Router
+	//  	/internbl/pkg/mux#Router.ServeHTTP
 	//
-	// The identifier is relative to the parent page so that language indexers may choose to format
-	// the effective e.g. URL hash in a way that makes sense in the given language, e.g. C++ for
-	// example could use `Router::ServeHTTP` instead of a "." joiner.
+	// The identifier is relbtive to the pbrent pbge so thbt lbngubge indexers mby choose to formbt
+	// the effective e.g. URL hbsh in b wby thbt mbkes sense in the given lbngubge, e.g. C++ for
+	// exbmple could use `Router::ServeHTTP` instebd of b "." joiner.
 	//
-	// An identifier may contain any characters, including slashes and "#". If clients intend to
-	// use identifiers in a context where those characters are forbidden (e.g. URLs) then they must
-	// replace them with something else.
+	// An identifier mby contbin bny chbrbcters, including slbshes bnd "#". If clients intend to
+	// use identifiers in b context where those chbrbcters bre forbidden (e.g. URLs) then they must
+	// replbce them with something else.
 	Identifier string `json:"identifier"`
 
-	// Whether or not this Documentation is the beginning of a new major section, meaning it and its
-	// its children should be e.g. displayed on their own dedicated page.
-	NewPage bool `json:"newPage"`
+	// Whether or not this Documentbtion is the beginning of b new mbjor section, mebning it bnd its
+	// its children should be e.g. displbyed on their own dedicbted pbge.
+	NewPbge bool `json:"newPbge"`
 
-	// SearchKey is a key which can be used to implement search for a specific documentationResult.
-	// For example, in Go this may look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
-	// of a format that makes sense to users of the language being documented.
+	// SebrchKey is b key which cbn be used to implement sebrch for b specific documentbtionResult.
+	// For exbmple, in Go this mby look like `mux.Router` or `mux.Router.ServeHTTP`. It should be
+	// of b formbt thbt mbkes sense to users of the lbngubge being documented.
 	//
-	// Search keys are not required to be unique. It is desirable for them to be generally unique
-	// within the scope of the workspace itself, or a project within the workspace (if the
-	// documentation is for something in a project.) However, it is not desirable for it to be unique
-	// globally across workspaces (you can think of the searchKey as always being prefixed with the
-	// workspace URI.)
+	// Sebrch keys bre not required to be unique. It is desirbble for them to be generblly unique
+	// within the scope of the workspbce itself, or b project within the workspbce (if the
+	// documentbtion is for something in b project.) However, it is not desirbble for it to be unique
+	// globblly bcross workspbces (you cbn think of the sebrchKey bs blwbys being prefixed with the
+	// workspbce URI.)
 	//
-	// If a search key is describing a project within the workspace itself, it is encouraged for it
-	// to be unique within the context of the workspace. Sometimes this means using a full project
-	// path/name (e.g. `github.com/gorilla/mux/router` or `com.JodaOrg.JodaTime`) is required - while
-	// in other contexts the shortened name (`router` or `JodaTime`) may be sufficient.
+	// If b sebrch key is describing b project within the workspbce itself, it is encourbged for it
+	// to be unique within the context of the workspbce. Sometimes this mebns using b full project
+	// pbth/nbme (e.g. `github.com/gorillb/mux/router` or `com.JodbOrg.JodbTime`) is required - while
+	// in other contexts the shortened nbme (`router` or `JodbTime`) mby be sufficient.
 	//
-	// If a search key is describing a symbol within a project, a shortened project path/name prefix
-	// is usually sufficient: using `router.New` over `github.com/gorilla/mux/router.New` or
-	// `JodaTime.Time.now` over `com.JodaOrg.JodaTime.Time.now` is preferred. Clients will display
-	// enough additional information to disambiguiate between any conflicts (see below.)
+	// If b sebrch key is describing b symbol within b project, b shortened project pbth/nbme prefix
+	// is usublly sufficient: using `router.New` over `github.com/gorillb/mux/router.New` or
+	// `JodbTime.Time.now` over `com.JodbOrg.JodbTime.Time.now` is preferred. Clients will displby
+	// enough bdditionbl informbtion to disbmbiguibte between bny conflicts (see below.)
 	//
-	// Clients are encouraged to treat matches towards the left of the string with higher relevance
-	// than matches towards the end of the string. For example, it is typically the case that search
-	// keys will start with the project/package/library/etc name, followed by namespaces, then a
-	// specific symbol. For example, if a user searches for `gorilla/mux.Error` the desired ranking
-	// for three theoretical semi-conflicting results would be:
+	// Clients bre encourbged to trebt mbtches towbrds the left of the string with higher relevbnce
+	// thbn mbtches towbrds the end of the string. For exbmple, it is typicblly the cbse thbt sebrch
+	// keys will stbrt with the project/pbckbge/librbry/etc nbme, followed by nbmespbces, then b
+	// specific symbol. For exbmple, if b user sebrches for `gorillb/mux.Error` the desired rbnking
+	// for three theoreticbl semi-conflicting results would be:
 	//
-	// * github.com/gorilla/mux.Error (near exact match)
-	// * github.com/gorilla/router.Error (`mux` not matching on left, result ranked lower)
-	// * github.com/sourcegraph/mux.Error (`gorilla` not matching on left, result ranked lower)
+	// * github.com/gorillb/mux.Error (nebr exbct mbtch)
+	// * github.com/gorillb/router.Error (`mux` not mbtching on left, result rbnked lower)
+	// * github.com/sourcegrbph/mux.Error (`gorillb` not mbtching on left, result rbnked lower)
 	//
-	// Clients are encouraged to use smart case sensitivity by default: if the user is searching for
-	// a mixed-case query, the search should be case-sensitive (and otherwise not.)
+	// Clients bre encourbged to use smbrt cbse sensitivity by defbult: if the user is sebrching for
+	// b mixed-cbse query, the sebrch should be cbse-sensitive (bnd otherwise not.)
 	//
-	// Since search keys may not be unique, clients are encouraged to display alongside the search
-	// key other information about the documentation that will disambiguate identical keys. The
-	// following in specific is encouraged:
+	// Since sebrch keys mby not be unique, clients bre encourbged to displby blongside the sebrch
+	// key other informbtion bbout the documentbtion thbt will disbmbigubte identicbl keys. The
+	// following in specific is encourbged:
 	//
-	// * Always display the `label` string, which provides e.g. a one-line function signature.
-	// * Optionally display the `detail` string (e.g. when considering a specific result), as it
-	//   contains detailed information that can help disambiguate.
-	// * Always display the path identifier to the documentationResult _somewhere_, even if it is
-	//   a much more subtle location (see `identifier` docs), as it is a truly unique path to the
-	//   documentation and can be a final way for users to disambiguate if all other options fail.
+	// * Alwbys displby the `lbbel` string, which provides e.g. b one-line function signbture.
+	// * Optionblly displby the `detbil` string (e.g. when considering b specific result), bs it
+	//   contbins detbiled informbtion thbt cbn help disbmbigubte.
+	// * Alwbys displby the pbth identifier to the documentbtionResult _somewhere_, even if it is
+	//   b much more subtle locbtion (see `identifier` docs), bs it is b truly unique pbth to the
+	//   documentbtion bnd cbn be b finbl wby for users to disbmbigubte if bll other options fbil.
 	//
-	// An empty string indicates this documentationResult should not be indexed by a search engine.
-	SearchKey string `json:"searchKey"`
+	// An empty string indicbtes this documentbtionResult should not be indexed by b sebrch engine.
+	SebrchKey string `json:"sebrchKey"`
 
-	// Tags about the type of content this documentation contains.
-	Tags []Tag `json:"tags"`
+	// Tbgs bbout the type of content this documentbtion contbins.
+	Tbgs []Tbg `json:"tbgs"`
 }
 
-type Tag string
+type Tbg string
 
 const (
-	// The documentation describes a concept that is private/unexported, not a public/exported
+	// The documentbtion describes b concept thbt is privbte/unexported, not b public/exported
 	// concept.
-	TagPrivate Tag = "private"
+	TbgPrivbte Tbg = "privbte"
 
-	// The documentation describes a concept that is deprecated.
-	TagDeprecated Tag = "deprecated"
+	// The documentbtion describes b concept thbt is deprecbted.
+	TbgDeprecbted Tbg = "deprecbted"
 
-	// The documentation describes e.g. a test function or concept related to testing.
-	TagTest Tag = "test"
+	// The documentbtion describes e.g. b test function or concept relbted to testing.
+	TbgTest Tbg = "test"
 
-	// The documentation describes e.g. a benchmark function or concept related to benchmarking.
-	TagBenchmark Tag = "benchmark"
+	// The documentbtion describes e.g. b benchmbrk function or concept relbted to benchmbrking.
+	TbgBenchmbrk Tbg = "benchmbrk"
 
-	// The documentation describes e.g. an example function or example code.
-	TagExample Tag = "example"
+	// The documentbtion describes e.g. bn exbmple function or exbmple code.
+	TbgExbmple Tbg = "exbmple"
 
-	// The documentation describes license information.
-	TagLicense Tag = "license"
+	// The documentbtion describes license informbtion.
+	TbgLicense Tbg = "license"
 
-	// The documentation describes owner information.
-	TagOwner Tag = "owner"
+	// The documentbtion describes owner informbtion.
+	TbgOwner Tbg = "owner"
 
-	// The documentation describes package/library registry information, e.g. where a package is
-	// available for download.
-	TagRegistryInfo Tag = "owner"
+	// The documentbtion describes pbckbge/librbry registry informbtion, e.g. where b pbckbge is
+	// bvbilbble for downlobd.
+	TbgRegistryInfo Tbg = "owner"
 
-	// Tags derived from SymbolKind
-	TagFile          Tag = "file"
-	TagModule        Tag = "module"
-	TagNamespace     Tag = "namespace"
-	TagPackage       Tag = "package"
-	TagClass         Tag = "class"
-	TagMethod        Tag = "method"
-	TagProperty      Tag = "property"
-	TagField         Tag = "field"
-	TagConstructor   Tag = "constructor"
-	TagEnum          Tag = "enum"
-	TagInterface     Tag = "interface"
-	TagFunction      Tag = "function"
-	TagVariable      Tag = "variable"
-	TagConstant      Tag = "constant"
-	TagString        Tag = "string"
-	TagNumber        Tag = "number"
-	TagBoolean       Tag = "boolean"
-	TagArray         Tag = "array"
-	TagObject        Tag = "object"
-	TagKey           Tag = "key"
-	TagNull          Tag = "null"
-	TagEnumNumber    Tag = "enumNumber"
-	TagStruct        Tag = "struct"
-	TagEvent         Tag = "event"
-	TagOperator      Tag = "operator"
-	TagTypeParameter Tag = "typeParameter"
+	// Tbgs derived from SymbolKind
+	TbgFile          Tbg = "file"
+	TbgModule        Tbg = "module"
+	TbgNbmespbce     Tbg = "nbmespbce"
+	TbgPbckbge       Tbg = "pbckbge"
+	TbgClbss         Tbg = "clbss"
+	TbgMethod        Tbg = "method"
+	TbgProperty      Tbg = "property"
+	TbgField         Tbg = "field"
+	TbgConstructor   Tbg = "constructor"
+	TbgEnum          Tbg = "enum"
+	TbgInterfbce     Tbg = "interfbce"
+	TbgFunction      Tbg = "function"
+	TbgVbribble      Tbg = "vbribble"
+	TbgConstbnt      Tbg = "constbnt"
+	TbgString        Tbg = "string"
+	TbgNumber        Tbg = "number"
+	TbgBoolebn       Tbg = "boolebn"
+	TbgArrby         Tbg = "brrby"
+	TbgObject        Tbg = "object"
+	TbgKey           Tbg = "key"
+	TbgNull          Tbg = "null"
+	TbgEnumNumber    Tbg = "enumNumber"
+	TbgStruct        Tbg = "struct"
+	TbgEvent         Tbg = "event"
+	TbgOperbtor      Tbg = "operbtor"
+	TbgTypePbrbmeter Tbg = "typePbrbmeter"
 )
 
-// A "documentationString" edge connects a "documentationResult" vertex to its label or detail
-// strings, which are "documentationString" vertices. The overall structure looks like the
+// A "documentbtionString" edge connects b "documentbtionResult" vertex to its lbbel or detbil
+// strings, which bre "documentbtionString" vertices. The overbll structure looks like the
 // following roughly:
 //
-//	{id: 53, type:"vertex", label:"documentationResult", result:{identifier:"httpserver", ...}}
-//	{id: 54, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A single-line label for an HTTPServer instance"}}
-//	{id: 55, type:"vertex", label:"documentationString", result:{kind:"plaintext", "value": "A multi-line\n detailed\n explanation of an HTTPServer instance, what it does, etc."}}
-//	{id: 54, type:"edge", label:"documentationString", inV: 54, outV: 53, kind:"label"}
-//	{id: 54, type:"edge", label:"documentationString", inV: 55, outV: 53, kind:"detail"}
+//	{id: 53, type:"vertex", lbbel:"documentbtionResult", result:{identifier:"httpserver", ...}}
+//	{id: 54, type:"vertex", lbbel:"documentbtionString", result:{kind:"plbintext", "vblue": "A single-line lbbel for bn HTTPServer instbnce"}}
+//	{id: 55, type:"vertex", lbbel:"documentbtionString", result:{kind:"plbintext", "vblue": "A multi-line\n detbiled\n explbnbtion of bn HTTPServer instbnce, whbt it does, etc."}}
+//	{id: 54, type:"edge", lbbel:"documentbtionString", inV: 54, outV: 53, kind:"lbbel"}
+//	{id: 54, type:"edge", lbbel:"documentbtionString", inV: 55, outV: 53, kind:"detbil"}
 //
-// Hover, definition, etc. results can then be attached to ranges within the "documentationString"
-// vertices themselves (vertex 54 / 55), see the docs for DocumentationString for more details.
-type DocumentationStringEdge struct {
+// Hover, definition, etc. results cbn then be bttbched to rbnges within the "documentbtionString"
+// vertices themselves (vertex 54 / 55), see the docs for DocumentbtionString for more detbils.
+type DocumentbtionStringEdge struct {
 	Edge
 
-	// The "documentationString" vertex ID.
+	// The "documentbtionString" vertex ID.
 	InV uint64 `json:"inV"`
 
-	// The "documentationResult" vertex ID.
+	// The "documentbtionResult" vertex ID.
 	OutV uint64 `json:"outV"`
 
-	// Whether this links the "label" or "detail" string of the documentation.
-	Kind DocumentationStringKind `json:"kind"`
+	// Whether this links the "lbbel" or "detbil" string of the documentbtion.
+	Kind DocumentbtionStringKind `json:"kind"`
 }
 
-type DocumentationStringKind string
+type DocumentbtionStringKind string
 
 const (
-	// A single-line label to display for this documentation in e.g. the index of a book. For
-	// example, the name of a group of documentation, the name of a library, the signature of a
-	// function or class, etc.
-	DocumentationStringKindLabel DocumentationStringKind = "label"
+	// A single-line lbbel to displby for this documentbtion in e.g. the index of b book. For
+	// exbmple, the nbme of b group of documentbtion, the nbme of b librbry, the signbture of b
+	// function or clbss, etc.
+	DocumentbtionStringKindLbbel DocumentbtionStringKind = "lbbel"
 
-	// A detailed multi-line string that contains detailed documentation for the section described by
+	// A detbiled multi-line string thbt contbins detbiled documentbtion for the section described by
 	// the title.
-	DocumentationStringKindDetail DocumentationStringKind = "detail"
+	DocumentbtionStringKindDetbil DocumentbtionStringKind = "detbil"
 )
 
-func NewDocumentationStringEdge(id, inV, outV uint64, kind DocumentationStringKind) DocumentationStringEdge {
-	return DocumentationStringEdge{
+func NewDocumentbtionStringEdge(id, inV, outV uint64, kind DocumentbtionStringKind) DocumentbtionStringEdge {
+	return DocumentbtionStringEdge{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeSourcegraphDocumentationString,
+			Lbbel: EdgeSourcegrbphDocumentbtionString,
 		},
 		OutV: outV,
 		InV:  inV,
@@ -324,34 +324,34 @@ func NewDocumentationStringEdge(id, inV, outV uint64, kind DocumentationStringKi
 	}
 }
 
-// A "documentationString" vertex is referred to by a "documentationResult" vertex using a
-// "documentationString" edge. It represents the actual string of content for the documentation's
-// label (a one-line string) or detail (a multi-line string).
+// A "documentbtionString" vertex is referred to by b "documentbtionResult" vertex using b
+// "documentbtionString" edge. It represents the bctubl string of content for the documentbtion's
+// lbbel (b one-line string) or detbil (b multi-line string).
 //
-// A "documentationString" vertex can itself be linked to "range" vertices (which describe a range
-// in the documentation string's markup content itself) using a "contains" edge. This enables
-// ranges within a documentation string to have:
+// A "documentbtionString" vertex cbn itself be linked to "rbnge" vertices (which describe b rbnge
+// in the documentbtion string's mbrkup content itself) using b "contbins" edge. This enbbles
+// rbnges within b documentbtion string to hbve:
 //
-//   - "hoverResult"s (e.g. you can hover over a type signature in the documentation string and get info)
-//   - "definitionResult" and "referenceResults"
-//   - "documentationResult" itself - allowing a range of text in one documentation to link to another
-//     documentation section (e.g. in the same way a hyperlink works in HTML.)
-//   - "moniker" to link to another project's hover/definition/documentation results, across
+//   - "hoverResult"s (e.g. you cbn hover over b type signbture in the documentbtion string bnd get info)
+//   - "definitionResult" bnd "referenceResults"
+//   - "documentbtionResult" itself - bllowing b rbnge of text in one documentbtion to link to bnother
+//     documentbtion section (e.g. in the sbme wby b hyperlink works in HTML.)
+//   - "moniker" to link to bnother project's hover/definition/documentbtion results, bcross
 //     repositories.
-type DocumentationString struct {
+type DocumentbtionString struct {
 	Vertex
-	Result MarkupContent `json:"result"`
+	Result MbrkupContent `json:"result"`
 }
 
-// NewDocumentationString creates a new "documentationString" vertex.
-func NewDocumentationString(id uint64, result MarkupContent) DocumentationString {
-	return DocumentationString{
+// NewDocumentbtionString crebtes b new "documentbtionString" vertex.
+func NewDocumentbtionString(id uint64, result MbrkupContent) DocumentbtionString {
+	return DocumentbtionString{
 		Vertex: Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexSourcegraphDocumentationString,
+			Lbbel: VertexSourcegrbphDocumentbtionString,
 		},
 		Result: result,
 	}

@@ -1,4 +1,4 @@
-package db
+pbckbge db
 
 import (
 	"testing"
@@ -6,21 +6,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPayload(t *testing.T) {
+func TestPbylobd(t *testing.T) {
 	t.Run("roundtrip", func(t *testing.T) {
-		pp := ChunkPayload{
-			RepoName:  "a",
+		pp := ChunkPbylobd{
+			RepoNbme:  "b",
 			RepoID:    2,
 			Revision:  "c",
-			FilePath:  "d",
-			StartLine: 5,
+			FilePbth:  "d",
+			StbrtLine: 5,
 			EndLine:   6,
-			IsCode:    false,
+			IsCode:    fblse,
 		}
 
-		qp := pp.ToQdrantPayload()
-		var newPP ChunkPayload
-		newPP.FromQdrantPayload(qp)
-		require.Equal(t, pp, newPP)
+		qp := pp.ToQdrbntPbylobd()
+		vbr newPP ChunkPbylobd
+		newPP.FromQdrbntPbylobd(qp)
+		require.Equbl(t, pp, newPP)
 	})
 }

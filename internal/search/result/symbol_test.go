@@ -1,55 +1,55 @@
-package result
+pbckbge result
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestSymbolURL(t *testing.T) {
-	repoA := types.MinimalRepo{Name: "repo/A", ID: 1}
-	fileAA := File{Repo: repoA, Path: "A"}
+	repoA := types.MinimblRepo{Nbme: "repo/A", ID: 1}
+	fileAA := File{Repo: repoA, Pbth: "A"}
 
 	rev := "testrev"
-	fileAB := File{Repo: repoA, Path: "B", InputRev: &rev}
+	fileAB := File{Repo: repoA, Pbth: "B", InputRev: &rev}
 
-	cases := []struct {
-		name   string
-		symbol SymbolMatch
+	cbses := []struct {
+		nbme   string
+		symbol SymbolMbtch
 		url    string
 	}{
 		{
-			name: "simple",
-			symbol: SymbolMatch{
+			nbme: "simple",
+			symbol: SymbolMbtch{
 				File: &fileAA,
 				Symbol: Symbol{
-					Name:      "testsymbol",
+					Nbme:      "testsymbol",
 					Line:      3,
-					Character: 4,
+					Chbrbcter: 4,
 				},
 			},
 			url: "/repo/A/-/blob/A?L3:5-3:15",
 		},
 		{
-			name: "with rev",
-			symbol: SymbolMatch{
+			nbme: "with rev",
+			symbol: SymbolMbtch{
 				File: &fileAB,
 				Symbol: Symbol{
-					Name:      "testsymbol",
+					Nbme:      "testsymbol",
 					Line:      3,
-					Character: 4,
+					Chbrbcter: 4,
 				},
 			},
 			url: "/repo/A@testrev/-/blob/B?L3:5-3:15",
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			u := tc.symbol.URL().String()
-			require.Equal(t, tc.url, u)
+			require.Equbl(t, tc.url, u)
 		})
 	}
 }

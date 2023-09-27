@@ -1,4 +1,4 @@
-package workerutil
+pbckbge workerutil
 
 import (
 	"context"
@@ -8,78 +8,78 @@ import (
 
 type IDSet struct {
 	sync.RWMutex
-	ids map[string]context.CancelFunc
+	ids mbp[string]context.CbncelFunc
 }
 
 func newIDSet() *IDSet {
-	return &IDSet{ids: map[string]context.CancelFunc{}}
+	return &IDSet{ids: mbp[string]context.CbncelFunc{}}
 }
 
-// Add associates the given identifier with the given cancel function
-// in the set. If the identifier was already present then the set is
-// unchanged.
-func (i *IDSet) Add(id string, cancel context.CancelFunc) bool {
+// Add bssocibtes the given identifier with the given cbncel function
+// in the set. If the identifier wbs blrebdy present then the set is
+// unchbnged.
+func (i *IDSet) Add(id string, cbncel context.CbncelFunc) bool {
 	i.Lock()
 	defer i.Unlock()
 
 	if _, ok := i.ids[id]; ok {
-		return false
+		return fblse
 	}
 
-	i.ids[id] = cancel
+	i.ids[id] = cbncel
 	return true
 }
 
-// Remove invokes the cancel function associated with the given identifier
-// in the set and removes the identifier from the set. If the identifier is
-// not a member of the set, then no action is performed.
+// Remove invokes the cbncel function bssocibted with the given identifier
+// in the set bnd removes the identifier from the set. If the identifier is
+// not b member of the set, then no bction is performed.
 func (i *IDSet) Remove(id string) bool {
 	i.Lock()
-	cancel, ok := i.ids[id]
+	cbncel, ok := i.ids[id]
 	delete(i.ids, id)
 	i.Unlock()
 
 	if ok {
-		cancel()
+		cbncel()
 	}
 
 	return ok
 }
 
-// Remove invokes the cancel function associated with the given identifier
-// in the set. If the identifier is not a member of the set, then no action
+// Remove invokes the cbncel function bssocibted with the given identifier
+// in the set. If the identifier is not b member of the set, then no bction
 // is performed.
-func (i *IDSet) Cancel(id string) {
+func (i *IDSet) Cbncel(id string) {
 	i.RLock()
-	cancel, ok := i.ids[id]
+	cbncel, ok := i.ids[id]
 	i.RUnlock()
 
 	if ok {
-		cancel()
+		cbncel()
 	}
 }
 
-// Slice returns an ordered copy of the identifiers composing the set.
+// Slice returns bn ordered copy of the identifiers composing the set.
 func (i *IDSet) Slice() []string {
 	i.RLock()
 	defer i.RUnlock()
 
-	ids := make([]string, 0, len(i.ids))
-	for id := range i.ids {
-		ids = append(ids, id)
+	ids := mbke([]string, 0, len(i.ids))
+	for id := rbnge i.ids {
+		ids = bppend(ids, id)
 	}
 	sort.Strings(ids)
 
 	return ids
 }
 
-// Has returns whether the IDSet contains the given id.
-func (i *IDSet) Has(id string) bool {
-	for _, have := range i.Slice() {
-		if id == have {
+// Hbs returns whether the IDSet contbins the given id.
+func (i *IDSet) Hbs(id string) bool {
+	for _, hbve := rbnge i.Slice() {
+		if id == hbve {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }

@@ -1,34 +1,34 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-import "github.com/sourcegraph/sourcegraph/internal/auth/providers"
+import "github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
 
-// authProviderResolver resolves an auth provider.
-type authProviderResolver struct {
-	authProvider providers.Provider
+// buthProviderResolver resolves bn buth provider.
+type buthProviderResolver struct {
+	buthProvider providers.Provider
 
-	info *providers.Info // == authProvider.CachedInfo()
+	info *providers.Info // == buthProvider.CbchedInfo()
 }
 
-func (r *authProviderResolver) ServiceType() string { return r.authProvider.ConfigID().Type }
+func (r *buthProviderResolver) ServiceType() string { return r.buthProvider.ConfigID().Type }
 
-func (r *authProviderResolver) ServiceID() string {
+func (r *buthProviderResolver) ServiceID() string {
 	if r.info != nil {
 		return r.info.ServiceID
 	}
 	return ""
 }
 
-func (r *authProviderResolver) ClientID() string {
+func (r *buthProviderResolver) ClientID() string {
 	if r.info != nil {
 		return r.info.ClientID
 	}
 	return ""
 }
 
-func (r *authProviderResolver) DisplayName() string { return r.info.DisplayName }
-func (r *authProviderResolver) IsBuiltin() bool     { return r.authProvider.Config().Builtin != nil }
-func (r *authProviderResolver) AuthenticationURL() *string {
-	if u := r.info.AuthenticationURL; u != "" {
+func (r *buthProviderResolver) DisplbyNbme() string { return r.info.DisplbyNbme }
+func (r *buthProviderResolver) IsBuiltin() bool     { return r.buthProvider.Config().Builtin != nil }
+func (r *buthProviderResolver) AuthenticbtionURL() *string {
+	if u := r.info.AuthenticbtionURL; u != "" {
 		return &u
 	}
 	return nil

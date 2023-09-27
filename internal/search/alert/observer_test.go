@@ -1,118 +1,118 @@
-package alert
+pbckbge blert
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestErrorToAlertStructuralSearch(t *testing.T) {
-	cases := []struct {
-		name           string
+func TestErrorToAlertStructurblSebrch(t *testing.T) {
+	cbses := []struct {
+		nbme           string
 		errors         []error
-		wantAlertTitle string
+		wbntAlertTitle string
 	}{
 		{
-			name:           "multierr_is_unaffected",
+			nbme:           "multierr_is_unbffected",
 			errors:         []error{errors.New("some error")},
-			wantAlertTitle: "",
+			wbntAlertTitle: "",
 		},
 		{
-			name: "surface_friendly_alert_on_oom_err_message",
+			nbme: "surfbce_friendly_blert_on_oom_err_messbge",
 			errors: []error{
 				errors.New("some error"),
 				errors.New("Worker_oomed"),
 				errors.New("some other error"),
 			},
-			wantAlertTitle: "Structural search needs more memory",
+			wbntAlertTitle: "Structurbl sebrch needs more memory",
 		},
 	}
-	for _, test := range cases {
+	for _, test := rbnge cbses {
 		multiErr := errors.Append(nil, test.errors...)
-		haveAlert, _ := (&Observer{
+		hbveAlert, _ := (&Observer{
 			Logger: logtest.Scoped(t),
-		}).errorToAlert(context.Background(), multiErr)
+		}).errorToAlert(context.Bbckground(), multiErr)
 
-		if haveAlert != nil && haveAlert.Title != test.wantAlertTitle {
-			t.Fatalf("test %s, have alert: %q, want: %q", test.name, haveAlert.Title, test.wantAlertTitle)
+		if hbveAlert != nil && hbveAlert.Title != test.wbntAlertTitle {
+			t.Fbtblf("test %s, hbve blert: %q, wbnt: %q", test.nbme, hbveAlert.Title, test.wbntAlertTitle)
 		}
 
 	}
 }
 
-func TestAlertForNoResolvedReposWithNonGlobalSearchContext(t *testing.T) {
+func TestAlertForNoResolvedReposWithNonGlobblSebrchContext(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, nil)
+	db := dbtbbbse.NewDB(logger, nil)
 
-	searchQuery := "context:@user repo:r1 foo"
-	wantAlert := &search.Alert{
+	sebrchQuery := "context:@user repo:r1 foo"
+	wbntAlert := &sebrch.Alert{
 		PrometheusType: "no_resolved_repos__context_none_in_common",
 		Title:          "No repositories found for your query within the context @user",
-		ProposedQueries: []*search.QueryDescription{
+		ProposedQueries: []*sebrch.QueryDescription{
 			{
 
-				Description: "search in the global context",
-				Query:       "context:global repo:r1 foo",
-				PatternType: query.SearchTypeRegex,
+				Description: "sebrch in the globbl context",
+				Query:       "context:globbl repo:r1 foo",
+				PbtternType: query.SebrchTypeRegex,
 			},
 		},
 	}
 
-	q, err := query.ParseLiteral(searchQuery)
+	q, err := query.PbrseLiterbl(sebrchQuery)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	sr := Observer{
 		Logger: logger,
 		Db:     db,
-		Inputs: &search.Inputs{
-			OriginalQuery: searchQuery,
+		Inputs: &sebrch.Inputs{
+			OriginblQuery: sebrchQuery,
 			Query:         q,
-			UserSettings:  &schema.Settings{},
-			Features:      &search.Features{},
+			UserSettings:  &schemb.Settings{},
+			Febtures:      &sebrch.Febtures{},
 		},
 	}
 
-	alert := sr.alertForNoResolvedRepos(context.Background(), q)
+	blert := sr.blertForNoResolvedRepos(context.Bbckground(), q)
 	require.NoError(t, err)
-	require.Equal(t, wantAlert, alert)
+	require.Equbl(t, wbntAlert, blert)
 }
 
 func TestIsContextError(t *testing.T) {
-	cases := []struct {
+	cbses := []struct {
 		err  error
-		want bool
+		wbnt bool
 	}{
 		{
-			context.Canceled,
+			context.Cbnceled,
 			true,
 		},
 		{
-			context.DeadlineExceeded,
+			context.DebdlineExceeded,
 			true,
 		},
 		{
-			errors.Wrap(context.Canceled, "wrapped"),
+			errors.Wrbp(context.Cbnceled, "wrbpped"),
 			true,
 		},
 		{
-			errors.New("not a context error"),
-			false,
+			errors.New("not b context error"),
+			fblse,
 		},
 	}
-	ctx := context.Background()
-	for _, c := range cases {
+	ctx := context.Bbckground()
+	for _, c := rbnge cbses {
 		t.Run(c.err.Error(), func(t *testing.T) {
-			if got := isContextError(ctx, c.err); got != c.want {
-				t.Fatalf("wanted %t, got %t", c.want, got)
+			if got := isContextError(ctx, c.err); got != c.wbnt {
+				t.Fbtblf("wbnted %t, got %t", c.wbnt, got)
 			}
 		})
 	}

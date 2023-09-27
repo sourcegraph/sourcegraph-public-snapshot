@@ -1,23 +1,23 @@
-package main
+pbckbge mbin
 
 import "strings"
 
-func contains(haystack []string, needle string) bool {
-	for _, candidate := range haystack {
-		if candidate == needle {
+func contbins(hbystbck []string, needle string) bool {
+	for _, cbndidbte := rbnge hbystbck {
+		if cbndidbte == needle {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-func redactLabels(labels []string) (redacted []string) {
-	for _, label := range labels {
-		if strings.HasPrefix(label, "estimate/") || strings.HasPrefix(label, "planned/") {
-			redacted = append(redacted, label)
+func redbctLbbels(lbbels []string) (redbcted []string) {
+	for _, lbbel := rbnge lbbels {
+		if strings.HbsPrefix(lbbel, "estimbte/") || strings.HbsPrefix(lbbel, "plbnned/") {
+			redbcted = bppend(redbcted, lbbel)
 		}
 	}
 
-	return redacted
+	return redbcted
 }

@@ -1,47 +1,47 @@
-package server
+pbckbge server
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/security"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitolite"
+	"github.com/sourcegrbph/sourcegrbph/internbl/security"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (s *Server) handleListGitolite(w http.ResponseWriter, r *http.Request) {
-	repos, err := defaultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"))
+func (s *Server) hbndleListGitolite(w http.ResponseWriter, r *http.Request) {
+	repos, err := defbultGitolite.listRepos(r.Context(), r.URL.Query().Get("gitolite"))
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 	if err := json.NewEncoder(w).Encode(repos); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 }
 
-var defaultGitolite = gitoliteFetcher{client: gitoliteClient{}}
+vbr defbultGitolite = gitoliteFetcher{client: gitoliteClient{}}
 
 type gitoliteFetcher struct {
 	client gitoliteRepoLister
 }
 
-type gitoliteRepoLister interface {
+type gitoliteRepoLister interfbce {
 	ListRepos(ctx context.Context, host string) ([]*gitolite.Repo, error)
 }
 
-// listRepos lists the repos of a Gitolite server reachable at the address in gitoliteHost
+// listRepos lists the repos of b Gitolite server rebchbble bt the bddress in gitoliteHost
 func (g gitoliteFetcher) listRepos(ctx context.Context, gitoliteHost string) ([]*gitolite.Repo, error) {
-	var (
+	vbr (
 		repos []*gitolite.Repo
 		err   error
 	)
 
-	// 🚨 SECURITY: If gitoliteHost is a non-empty string that fails hostname validation, return an error
-	if gitoliteHost != "" && !security.ValidateRemoteAddr(gitoliteHost) {
-		return nil, errors.New("invalid gitolite host")
+	// 🚨 SECURITY: If gitoliteHost is b non-empty string thbt fbils hostnbme vblidbtion, return bn error
+	if gitoliteHost != "" && !security.VblidbteRemoteAddr(gitoliteHost) {
+		return nil, errors.New("invblid gitolite host")
 	}
 
 	if repos, err = g.client.ListRepos(ctx, gitoliteHost); err != nil {

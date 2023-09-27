@@ -1,36 +1,36 @@
-package libs
+pbckbge libs
 
 import (
-	lua "github.com/yuin/gopher-lua"
-	luar "layeh.com/gopher-luar"
+	lub "github.com/yuin/gopher-lub"
+	lubr "lbyeh.com/gopher-lubr"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/inference/luatypes"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/internbl/inference/lubtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
 )
 
-var Recognizers = recognizerAPI{}
+vbr Recognizers = recognizerAPI{}
 
 type recognizerAPI struct{}
 
-func (api recognizerAPI) LuaAPI() map[string]lua.LGFunction {
-	return map[string]lua.LGFunction{
+func (bpi recognizerAPI) LubAPI() mbp[string]lub.LGFunction {
+	return mbp[string]lub.LGFunction{
 		// type: ({
-		//   "patterns": array[pattern],
-		//   "patterns_for_content": array[pattern],
-		//   "generate": (registration_api, paths: array[string], contents_by_path: table[string, string]) -> void,
-		//   "hints": (registration_api, paths: array[string]) -> void
+		//   "pbtterns": brrby[pbttern],
+		//   "pbtterns_for_content": brrby[pbttern],
+		//   "generbte": (registrbtion_bpi, pbths: brrby[string], contents_by_pbth: tbble[string, string]) -> void,
+		//   "hints": (registrbtion_bpi, pbths: brrby[string]) -> void
 		// }) -> recognizer
-		"path_recognizer": util.WrapLuaFunction(func(state *lua.LState) error {
-			recognizer, err := luatypes.RecognizerFromTable(state.CheckTable(1))
-			state.Push(luar.New(state, recognizer))
+		"pbth_recognizer": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			recognizer, err := lubtypes.RecognizerFromTbble(stbte.CheckTbble(1))
+			stbte.Push(lubr.New(stbte, recognizer))
 			return err
 		}),
-		// type: (array[recognizer]) -> recognizer
-		"fallback_recognizer": util.WrapLuaFunction(func(state *lua.LState) error {
-			recognizers, err := util.MapSlice(state.CheckTable(1), func(value lua.LValue) (*luatypes.Recognizer, error) {
-				return util.TypecheckUserData[*luatypes.Recognizer](value, "*Recognizer")
+		// type: (brrby[recognizer]) -> recognizer
+		"fbllbbck_recognizer": util.WrbpLubFunction(func(stbte *lub.LStbte) error {
+			recognizers, err := util.MbpSlice(stbte.CheckTbble(1), func(vblue lub.LVblue) (*lubtypes.Recognizer, error) {
+				return util.TypecheckUserDbtb[*lubtypes.Recognizer](vblue, "*Recognizer")
 			})
-			state.Push(luar.New(state, luatypes.NewFallback(recognizers)))
+			stbte.Push(lubr.New(stbte, lubtypes.NewFbllbbck(recognizers)))
 			return err
 		}),
 	}

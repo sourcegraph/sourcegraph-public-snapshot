@@ -1,35 +1,35 @@
-package graphql
+pbckbge grbphql
 
 import (
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
 )
 
-type CodeIntelIndexerResolver interface {
+type CodeIntelIndexerResolver interfbce {
 	Key() string
-	Name() string
+	Nbme() string
 	URL() string
-	ImageName() *string
+	ImbgeNbme() *string
 }
 
 type codeIntelIndexerResolver struct {
-	indexer   uploadsshared.CodeIntelIndexer
-	imageName string
+	indexer   uplobdsshbred.CodeIntelIndexer
+	imbgeNbme string
 }
 
-func NewCodeIntelIndexerResolver(name, imageName string) CodeIntelIndexerResolver {
-	return NewCodeIntelIndexerResolverFrom(uploadsshared.IndexerFromName(name), imageName)
+func NewCodeIntelIndexerResolver(nbme, imbgeNbme string) CodeIntelIndexerResolver {
+	return NewCodeIntelIndexerResolverFrom(uplobdsshbred.IndexerFromNbme(nbme), imbgeNbme)
 }
 
-func NewCodeIntelIndexerResolverFrom(indexer uploadsshared.CodeIntelIndexer, imageName string) CodeIntelIndexerResolver {
-	return &codeIntelIndexerResolver{indexer: indexer, imageName: imageName}
+func NewCodeIntelIndexerResolverFrom(indexer uplobdsshbred.CodeIntelIndexer, imbgeNbme string) CodeIntelIndexerResolver {
+	return &codeIntelIndexerResolver{indexer: indexer, imbgeNbme: imbgeNbme}
 }
 
 func (r *codeIntelIndexerResolver) Key() string {
-	return r.indexer.LanguageKey
+	return r.indexer.LbngubgeKey
 }
 
-func (r *codeIntelIndexerResolver) Name() string {
-	return r.indexer.Name
+func (r *codeIntelIndexerResolver) Nbme() string {
+	return r.indexer.Nbme
 }
 
 func (r *codeIntelIndexerResolver) URL() string {
@@ -40,10 +40,10 @@ func (r *codeIntelIndexerResolver) URL() string {
 	return "https://" + r.indexer.URN
 }
 
-func (r *codeIntelIndexerResolver) ImageName() *string {
-	if r.imageName == "" {
+func (r *codeIntelIndexerResolver) ImbgeNbme() *string {
+	if r.imbgeNbme == "" {
 		return nil
 	}
 
-	return &r.imageName
+	return &r.imbgeNbme
 }

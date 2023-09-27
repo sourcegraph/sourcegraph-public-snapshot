@@ -1,28 +1,28 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func (r *rootResolver) CodeIntelligenceInferenceScript(ctx context.Context) (script string, err error) {
-	ctx, _, endObservation := r.operations.codeIntelligenceInferenceScript.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+	ctx, _, endObservbtion := r.operbtions.codeIntelligenceInferenceScript.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return r.autoindexSvc.GetInferenceScript(ctx)
+	return r.butoindexSvc.GetInferenceScript(ctx)
 }
 
-func (r *rootResolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *resolverstubs.UpdateCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
-	ctx, _, endObservation := r.operations.updateCodeIntelligenceInferenceScript.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("script", args.Script),
+func (r *rootResolver) UpdbteCodeIntelligenceInferenceScript(ctx context.Context, brgs *resolverstubs.UpdbteCodeIntelligenceInferenceScriptArgs) (_ *resolverstubs.EmptyResponse, err error) {
+	ctx, _, endObservbtion := r.operbtions.updbteCodeIntelligenceInferenceScript.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("script", brgs.Script),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := r.autoindexSvc.SetInferenceScript(ctx, args.Script); err != nil {
+	if err := r.butoindexSvc.SetInferenceScript(ctx, brgs.Script); err != nil {
 		return nil, err
 	}
 

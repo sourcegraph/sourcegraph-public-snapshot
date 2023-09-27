@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -6,26 +6,26 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	fewebhooks "github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var azureDevOpsEvents = []string{
-	"git.pullrequest.updated",
+vbr bzureDevOpsEvents = []string{
+	"git.pullrequest.updbted",
 	"git.pullrequest.merged",
-	"git.pullrequest.approved",
-	"git.pullrequest.approved_with_suggestions",
+	"git.pullrequest.bpproved",
+	"git.pullrequest.bpproved_with_suggestions",
 	"git.pullrequest.rejected",
-	"git.pullrequest.waiting_for_author",
+	"git.pullrequest.wbiting_for_buthor",
 }
 
 type AzureDevOpsWebhook struct {
@@ -40,32 +40,32 @@ func NewAzureDevOpsWebhook(store *store.Store, gitserverClient gitserver.Client,
 
 func (h *AzureDevOpsWebhook) Register(router *fewebhooks.Router) {
 	router.Register(
-		h.handleEvent,
+		h.hbndleEvent,
 		extsvc.KindAzureDevOps,
-		azureDevOpsEvents...,
+		bzureDevOpsEvents...,
 	)
 }
 
-func (h *AzureDevOpsWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
-	ctx = actor.WithInternalActor(ctx)
+func (h *AzureDevOpsWebhook) hbndleEvent(ctx context.Context, db dbtbbbse.DB, codeHostURN extsvc.CodeHostBbseURL, event bny) error {
+	ctx = bctor.WithInternblActor(ctx)
 
-	// If the event is: PullRequestUpdatedEvent or PullRequestMergedEvent, it is best to just not try to derive the state from it and
-	// pull it in manually 💪.
+	// If the event is: PullRequestUpdbtedEvent or PullRequestMergedEvent, it is best to just not try to derive the stbte from it bnd
+	// pull it in mbnublly 💪.
 	switch e := event.(type) {
-	case *azuredevops.PullRequestUpdatedEvent:
-		event := azuredevops.PullRequestEvent(*e)
-		if err := h.enqueueAzureDevOpsChangesetSyncFromEvent(ctx, codeHostURN, event); err != nil {
+	cbse *bzuredevops.PullRequestUpdbtedEvent:
+		event := bzuredevops.PullRequestEvent(*e)
+		if err := h.enqueueAzureDevOpsChbngesetSyncFromEvent(ctx, codeHostURN, event); err != nil {
 			return &httpError{
-				code: http.StatusInternalServerError,
+				code: http.StbtusInternblServerError,
 				err:  err,
 			}
 		}
 		return nil
-	case *azuredevops.PullRequestMergedEvent:
-		event := azuredevops.PullRequestEvent(*e)
-		if err := h.enqueueAzureDevOpsChangesetSyncFromEvent(ctx, codeHostURN, event); err != nil {
+	cbse *bzuredevops.PullRequestMergedEvent:
+		event := bzuredevops.PullRequestEvent(*e)
+		if err := h.enqueueAzureDevOpsChbngesetSyncFromEvent(ctx, codeHostURN, event); err != nil {
 			return &httpError{
-				code: http.StatusInternalServerError,
+				code: http.StbtusInternblServerError,
 				err:  err,
 			}
 		}
@@ -76,13 +76,13 @@ func (h *AzureDevOpsWebhook) handleEvent(ctx context.Context, db database.DB, co
 		return err
 	}
 
-	for _, pr := range prs {
+	for _, pr := rbnge prs {
 		if pr == (PR{}) {
-			h.logger.Warn("Dropping Azure DevOps webhook event", log.String("type", fmt.Sprintf("%T", event)))
+			h.logger.Wbrn("Dropping Azure DevOps webhook event", log.String("type", fmt.Sprintf("%T", event)))
 			continue
 		}
 
-		eventErr := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
+		eventErr := h.upsertChbngesetEvent(ctx, codeHostURN, pr, ev)
 		if eventErr != nil {
 			err = errors.Append(err, eventErr)
 		}
@@ -90,69 +90,69 @@ func (h *AzureDevOpsWebhook) handleEvent(ctx context.Context, db database.DB, co
 	return err
 }
 
-func (h *AzureDevOpsWebhook) convertEvent(theirs interface{}) ([]PR, keyer, error) {
+func (h *AzureDevOpsWebhook) convertEvent(theirs interfbce{}) ([]PR, keyer, error) {
 	switch e := theirs.(type) {
-	case *azuredevops.PullRequestMergedEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
-	case *azuredevops.PullRequestApprovedEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
-	case *azuredevops.PullRequestApprovedWithSuggestionsEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
-	case *azuredevops.PullRequestWaitingForAuthorEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
-	case *azuredevops.PullRequestRejectedEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
-	case *azuredevops.PullRequestUpdatedEvent:
-		return azureDevOpsPullRequestEventPRs(azuredevops.PullRequestEvent(*e)), e, nil
+	cbse *bzuredevops.PullRequestMergedEvent:
+		return bzureDevOpsPullRequestEventPRs(bzuredevops.PullRequestEvent(*e)), e, nil
+	cbse *bzuredevops.PullRequestApprovedEvent:
+		return bzureDevOpsPullRequestEventPRs(bzuredevops.PullRequestEvent(*e)), e, nil
+	cbse *bzuredevops.PullRequestApprovedWithSuggestionsEvent:
+		return bzureDevOpsPullRequestEventPRs(bzuredevops.PullRequestEvent(*e)), e, nil
+	cbse *bzuredevops.PullRequestWbitingForAuthorEvent:
+		return bzureDevOpsPullRequestEventPRs(bzuredevops.PullRequestEvent(*e)), e, nil
+	cbse *bzuredevops.PullRequestRejectedEvent:
+		return bzureDevOpsPullRequestEventPRs(bzuredevops.PullRequestEvent(*e)), e, nil
+	cbse *bzuredevops.PullRequestUpdbtedEvent:
+		return bzureDevOpsPullRequestEventPRs(bzuredevops.PullRequestEvent(*e)), e, nil
 
-	default:
+	defbult:
 		return nil, nil, errors.Newf("unknown event type: %T", theirs)
 	}
 }
 
-func azureDevOpsPullRequestEventPRs(e azuredevops.PullRequestEvent) []PR {
+func bzureDevOpsPullRequestEventPRs(e bzuredevops.PullRequestEvent) []PR {
 	return []PR{
 		{
 			ID:             int64(e.PullRequest.ID),
-			RepoExternalID: e.PullRequest.Repository.ID,
+			RepoExternblID: e.PullRequest.Repository.ID,
 		},
 	}
 }
 
-// enqueueAzureDevOpsChangesetSyncFromEvent enqueues a sync request for a specified changeset in repo-updater.
-// This is used instead of deriving the changeset from the incoming webhook event when doing so
+// enqueueAzureDevOpsChbngesetSyncFromEvent enqueues b sync request for b specified chbngeset in repo-updbter.
+// This is used instebd of deriving the chbngeset from the incoming webhook event when doing so
 // would be difficult.
-func (h *AzureDevOpsWebhook) enqueueAzureDevOpsChangesetSyncFromEvent(ctx context.Context, esID extsvc.CodeHostBaseURL, event azuredevops.PullRequestEvent) error {
-	// We need to get our changeset ID for this to work. To get _there_, we need
-	// the repo ID, and then we can use the merge request ID to match the
-	// external ID.
-	pr := azureDevOpsToPR(event.PullRequest)
+func (h *AzureDevOpsWebhook) enqueueAzureDevOpsChbngesetSyncFromEvent(ctx context.Context, esID extsvc.CodeHostBbseURL, event bzuredevops.PullRequestEvent) error {
+	// We need to get our chbngeset ID for this to work. To get _there_, we need
+	// the repo ID, bnd then we cbn use the merge request ID to mbtch the
+	// externbl ID.
+	pr := bzureDevOpsToPR(event.PullRequest)
 	repo, err := h.getRepoForPR(ctx, h.Store, pr, esID)
 	if err != nil {
-		return errors.Wrap(err, "getting repo")
+		return errors.Wrbp(err, "getting repo")
 	}
 
-	c, err := h.Store.GetChangeset(ctx, store.GetChangesetOpts{
+	c, err := h.Store.GetChbngeset(ctx, store.GetChbngesetOpts{
 		RepoID:              repo.ID,
-		ExternalID:          strconv.FormatInt(pr.ID, 10),
-		ExternalServiceType: h.ServiceType,
+		ExternblID:          strconv.FormbtInt(pr.ID, 10),
+		ExternblServiceType: h.ServiceType,
 	})
 	if err != nil {
-		return errors.Wrap(err, "getting changeset")
+		return errors.Wrbp(err, "getting chbngeset")
 	}
 
-	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, []int64{c.ID}); err != nil {
-		return errors.Wrap(err, "enqueuing changeset sync")
+	if err := repoupdbter.DefbultClient.EnqueueChbngesetSync(ctx, []int64{c.ID}); err != nil {
+		return errors.Wrbp(err, "enqueuing chbngeset sync")
 	}
 
 	return nil
 }
 
-// azureDevOpsToPR instantiates a new PR instance given fields that are commonly
-// available in Azure DevOps webhook payloads.
-func azureDevOpsToPR(pr azuredevops.PullRequest) PR {
+// bzureDevOpsToPR instbntibtes b new PR instbnce given fields thbt bre commonly
+// bvbilbble in Azure DevOps webhook pbylobds.
+func bzureDevOpsToPR(pr bzuredevops.PullRequest) PR {
 	return PR{
 		ID:             int64(pr.ID),
-		RepoExternalID: pr.Repository.ID,
+		RepoExternblID: pr.Repository.ID,
 	}
 }

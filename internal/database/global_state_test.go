@@ -1,119 +1,119 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestGlobalState_Get(t *testing.T) {
-	ctx := context.Background()
-	store := testGlobalStateStore(t)
+func TestGlobblStbte_Get(t *testing.T) {
+	ctx := context.Bbckground()
+	store := testGlobblStbteStore(t)
 
-	// Test pre-initialization
+	// Test pre-initiblizbtion
 	config1, err := store.Get(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if config1.SiteID == "" {
-		t.Fatal("expected site_id to be set")
+		t.Fbtbl("expected site_id to be set")
 	}
-	if config1.Initialized {
-		t.Fatal("site expected to be uninitialized")
+	if config1.Initiblized {
+		t.Fbtbl("site expected to be uninitiblized")
 	}
 
-	// Test post-initialization
-	if _, err := store.EnsureInitialized(ctx); err != nil {
-		t.Fatal(err)
+	// Test post-initiblizbtion
+	if _, err := store.EnsureInitiblized(ctx); err != nil {
+		t.Fbtbl(err)
 	}
 
 	config2, err := store.Get(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if config2.SiteID != config1.SiteID {
-		t.Fatalf("unexpected site id. want=%s have=%s", config1.SiteID, config2.SiteID)
+		t.Fbtblf("unexpected site id. wbnt=%s hbve=%s", config1.SiteID, config2.SiteID)
 	}
-	if !config2.Initialized {
-		t.Fatal("site expected to be initialized")
-	}
-}
-
-func TestGlobalState_SiteInitialized(t *testing.T) {
-	ctx := context.Background()
-	store := testGlobalStateStore(t)
-
-	// Test pre-initialization
-	siteInitialized, err := store.SiteInitialized(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if siteInitialized {
-		t.Fatal("site expected to be uninitialized")
-	}
-
-	// Test post-initialization
-	if _, err := store.EnsureInitialized(ctx); err != nil {
-		t.Fatal(err)
-	}
-	siteInitialized, err = store.SiteInitialized(ctx)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if !siteInitialized {
-		t.Fatal("site expected to be initialized")
+	if !config2.Initiblized {
+		t.Fbtbl("site expected to be initiblized")
 	}
 }
 
-func TestGlobalState_PrunesValues(t *testing.T) {
-	ctx := context.Background()
-	store := testGlobalStateStore(t)
+func TestGlobblStbte_SiteInitiblized(t *testing.T) {
+	ctx := context.Bbckground()
+	store := testGlobblStbteStore(t)
 
-	if err := store.(*globalStateStore).Exec(ctx, sqlf.Sprintf(`
-		INSERT INTO global_state(
+	// Test pre-initiblizbtion
+	siteInitiblized, err := store.SiteInitiblized(ctx)
+	if err != nil {
+		t.Fbtbl(err)
+	}
+	if siteInitiblized {
+		t.Fbtbl("site expected to be uninitiblized")
+	}
+
+	// Test post-initiblizbtion
+	if _, err := store.EnsureInitiblized(ctx); err != nil {
+		t.Fbtbl(err)
+	}
+	siteInitiblized, err = store.SiteInitiblized(ctx)
+	if err != nil {
+		t.Fbtbl(err)
+	}
+	if !siteInitiblized {
+		t.Fbtbl("site expected to be initiblized")
+	}
+}
+
+func TestGlobblStbte_PrunesVblues(t *testing.T) {
+	ctx := context.Bbckground()
+	store := testGlobblStbteStore(t)
+
+	if err := store.(*globblStbteStore).Exec(ctx, sqlf.Sprintf(`
+		INSERT INTO globbl_stbte(
 			site_id,
-			initialized
+			initiblized
 		)
 		VALUES
-			('00000000-0000-0000-0000-000000000000', false),
-			('00000000-0000-0000-0000-000000000001', false),
-			('00000000-0000-0000-0000-000000000010', false),
-			('00000000-0000-0000-0000-000000000100', false),
-			('00000000-0000-0000-0000-000000001000', false),
-			('00000000-0000-0000-0000-000000010000', false),
-			('00000000-0000-0000-0000-000000100000', false),
-			('00000000-0000-0000-0000-000001000000', false),
+			('00000000-0000-0000-0000-000000000000', fblse),
+			('00000000-0000-0000-0000-000000000001', fblse),
+			('00000000-0000-0000-0000-000000000010', fblse),
+			('00000000-0000-0000-0000-000000000100', fblse),
+			('00000000-0000-0000-0000-000000001000', fblse),
+			('00000000-0000-0000-0000-000000010000', fblse),
+			('00000000-0000-0000-0000-000000100000', fblse),
+			('00000000-0000-0000-0000-000001000000', fblse),
 			('00000000-0000-0000-0000-000010000000', true),
-			('00000000-0000-0000-0000-000100000000', false),
-			('00000000-0000-0000-0000-001000000000', false),
-			('00000000-0000-0000-0000-010000000000', false),
-			('00000000-0000-0000-0000-100000000000', false)
+			('00000000-0000-0000-0000-000100000000', fblse),
+			('00000000-0000-0000-0000-001000000000', fblse),
+			('00000000-0000-0000-0000-010000000000', fblse),
+			('00000000-0000-0000-0000-100000000000', fblse)
 	`)); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	config, err := store.Get(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	expectedSiteID := "00000000-0000-0000-0000-000000000000"
 	if config.SiteID != expectedSiteID {
-		t.Fatalf("unexpected site-id. want=%s have=%s", expectedSiteID, config.SiteID)
+		t.Fbtblf("unexpected site-id. wbnt=%s hbve=%s", expectedSiteID, config.SiteID)
 	}
-	if !config.Initialized {
-		t.Fatal("expected site to be initialized")
+	if !config.Initiblized {
+		t.Fbtbl("expected site to be initiblized")
 	}
 }
 
-func testGlobalStateStore(t *testing.T) GlobalStateStore {
+func testGlobblStbteStore(t *testing.T) GlobblStbteStore {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	return NewDB(logger, dbtest.NewDB(logger, t)).GlobalState()
+	return NewDB(logger, dbtest.NewDB(logger, t)).GlobblStbte()
 }

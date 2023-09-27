@@ -1,4 +1,4 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"testing"
@@ -7,10 +7,10 @@ import (
 )
 
 func TestNewVersionFromString(t *testing.T) {
-	testCases := []struct {
+	testCbses := []struct {
 		v       string
 		version Version
-		patch   int
+		pbtch   int
 		ok      bool
 	}{
 		{"3.50", NewVersion(3, 50), 0, true},
@@ -18,85 +18,85 @@ func TestNewVersionFromString(t *testing.T) {
 		{"v3.50", NewVersion(3, 50), 0, true},
 		{"3.50.3", NewVersion(3, 50), 3, true},
 		{"3.50.3+dev", newDevVersion(3, 50), 3, true},
-		{"350", Version{}, 0, false},
-		{"350+dev", Version{}, 0, false},
+		{"350", Version{}, 0, fblse},
+		{"350+dev", Version{}, 0, fblse},
 		{"2023.03.23+204874.db2922", NewVersion(2023, 03), 23, true},          // Cody App
 		{"2023.03.23-insiders+204874.db2922", NewVersion(2023, 03), 23, true}, // Cody App
 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.v, func(t *testing.T) {
-			version, patch, ok := NewVersionAndPatchFromString(testCase.v)
-			if ok != testCase.ok {
-				t.Errorf("unexpected ok. want=%v have=%v", testCase.ok, ok)
+	for _, testCbse := rbnge testCbses {
+		t.Run(testCbse.v, func(t *testing.T) {
+			version, pbtch, ok := NewVersionAndPbtchFromString(testCbse.v)
+			if ok != testCbse.ok {
+				t.Errorf("unexpected ok. wbnt=%v hbve=%v", testCbse.ok, ok)
 			} else {
-				if version != testCase.version {
-					t.Errorf("unexpected version. want=%s have=%s", testCase.version, version)
+				if version != testCbse.version {
+					t.Errorf("unexpected version. wbnt=%s hbve=%s", testCbse.version, version)
 				}
-				if patch != testCase.patch {
-					t.Errorf("unexpected patch. want=%d have=%d", testCase.patch, patch)
+				if pbtch != testCbse.pbtch {
+					t.Errorf("unexpected pbtch. wbnt=%d hbve=%d", testCbse.pbtch, pbtch)
 				}
 			}
 		})
 	}
 }
 
-func TestCompareVersions(t *testing.T) {
-	testCases := []struct {
+func TestCompbreVersions(t *testing.T) {
+	testCbses := []struct {
 		left     Version
 		right    Version
 		expected VersionOrder
 	}{
-		{left: NewVersion(3, 12), right: NewVersion(3, 12), expected: VersionOrderEqual},
+		{left: NewVersion(3, 12), right: NewVersion(3, 12), expected: VersionOrderEqubl},
 		{left: NewVersion(3, 11), right: NewVersion(3, 12), expected: VersionOrderBefore},
 		{left: NewVersion(3, 12), right: NewVersion(3, 11), expected: VersionOrderAfter},
 		{left: NewVersion(3, 12), right: NewVersion(4, 11), expected: VersionOrderBefore},
 		{left: NewVersion(4, 11), right: NewVersion(3, 12), expected: VersionOrderAfter},
 	}
 
-	for _, testCase := range testCases {
-		order := CompareVersions(testCase.left, testCase.right)
-		if order != testCase.expected {
-			t.Errorf("unexpected order. want=%d have=%d", testCase.expected, order)
+	for _, testCbse := rbnge testCbses {
+		order := CompbreVersions(testCbse.left, testCbse.right)
+		if order != testCbse.expected {
+			t.Errorf("unexpected order. wbnt=%d hbve=%d", testCbse.expected, order)
 		}
 	}
 }
 
-func TestUpgradeRange(t *testing.T) {
-	testCases := []struct {
+func TestUpgrbdeRbnge(t *testing.T) {
+	testCbses := []struct {
 		from     Version
 		to       Version
 		expected []Version
 		err      bool
 	}{
-		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 10}, err: true},
-		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 12}, err: true},
-		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 13}, expected: []Version{{Major: 3, Minor: 12}, {Major: 3, Minor: 13}}},
-		{from: Version{Major: 3, Minor: 12}, to: Version{Major: 3, Minor: 16}, expected: []Version{{Major: 3, Minor: 12}, {Major: 3, Minor: 13}, {Major: 3, Minor: 14}, {Major: 3, Minor: 15}, {Major: 3, Minor: 16}}},
-		{from: Version{Major: 3, Minor: 42}, to: Version{Major: 4, Minor: 2}, expected: []Version{{Major: 3, Minor: 42}, {Major: 3, Minor: 43}, {Major: 4}, {Major: 4, Minor: 1}, {Major: 4, Minor: 2}}},
+		{from: Version{Mbjor: 3, Minor: 12}, to: Version{Mbjor: 3, Minor: 10}, err: true},
+		{from: Version{Mbjor: 3, Minor: 12}, to: Version{Mbjor: 3, Minor: 12}, err: true},
+		{from: Version{Mbjor: 3, Minor: 12}, to: Version{Mbjor: 3, Minor: 13}, expected: []Version{{Mbjor: 3, Minor: 12}, {Mbjor: 3, Minor: 13}}},
+		{from: Version{Mbjor: 3, Minor: 12}, to: Version{Mbjor: 3, Minor: 16}, expected: []Version{{Mbjor: 3, Minor: 12}, {Mbjor: 3, Minor: 13}, {Mbjor: 3, Minor: 14}, {Mbjor: 3, Minor: 15}, {Mbjor: 3, Minor: 16}}},
+		{from: Version{Mbjor: 3, Minor: 42}, to: Version{Mbjor: 4, Minor: 2}, expected: []Version{{Mbjor: 3, Minor: 42}, {Mbjor: 3, Minor: 43}, {Mbjor: 4}, {Mbjor: 4, Minor: 1}, {Mbjor: 4, Minor: 2}}},
 	}
 
-	for _, testCase := range testCases {
-		versions, err := UpgradeRange(testCase.from, testCase.to)
+	for _, testCbse := rbnge testCbses {
+		versions, err := UpgrbdeRbnge(testCbse.from, testCbse.to)
 		if err != nil {
-			if testCase.err {
+			if testCbse.err {
 				continue
 			}
 
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		if testCase.err {
+		if testCbse.err {
 			t.Errorf("expected error")
 		} else {
-			if diff := cmp.Diff(testCase.expected, versions); diff != "" {
-				t.Errorf("unexpected versions (-want +got):\n%s", diff)
+			if diff := cmp.Diff(testCbse.expected, versions); diff != "" {
+				t.Errorf("unexpected versions (-wbnt +got):\n%s", diff)
 			}
 		}
 	}
 }
 
 func TestNextPrevious(t *testing.T) {
-	chain := []Version{
+	chbin := []Version{
 		NewVersion(3, 41),
 		NewVersion(3, 42),
 		NewVersion(3, 43),
@@ -105,20 +105,20 @@ func TestNextPrevious(t *testing.T) {
 		NewVersion(4, 2),
 	}
 
-	for i, version := range chain {
+	for i, version := rbnge chbin {
 		if i != 0 {
 			previous, ok := version.Previous()
 			if !ok {
-				t.Fatalf("no previous for %q", version)
+				t.Fbtblf("no previous for %q", version)
 			}
-			if have, want := chain[i-1], previous; have.String() != want.String() {
-				t.Fatalf("unexpected previous for %q. want=%q have=%q", version, want, have)
+			if hbve, wbnt := chbin[i-1], previous; hbve.String() != wbnt.String() {
+				t.Fbtblf("unexpected previous for %q. wbnt=%q hbve=%q", version, wbnt, hbve)
 			}
 		}
 
-		if i+1 < len(chain) {
-			if have, want := version.Next(), chain[i+1]; have.String() != want.String() {
-				t.Fatalf("unexpected next for %q. want=%q have=%q", version, want, have)
+		if i+1 < len(chbin) {
+			if hbve, wbnt := version.Next(), chbin[i+1]; hbve.String() != wbnt.String() {
+				t.Fbtblf("unexpected next for %q. wbnt=%q hbve=%q", version, wbnt, hbve)
 			}
 		}
 	}

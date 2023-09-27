@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
@@ -6,96 +6,96 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/budit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const auditEntityProductSubscriptions = "dotcom-productsubscriptions"
+const buditEntityProductSubscriptions = "dotcom-productsubscriptions"
 
-// productSubscription implements the GraphQL type ProductSubscription.
+// productSubscription implements the GrbphQL type ProductSubscription.
 // It must not be copied.
 type productSubscription struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 	v      *dbSubscription
 
-	activeLicense     *dbLicense
-	activeLicenseErr  error
-	activeLicenseOnce sync.Once
+	bctiveLicense     *dbLicense
+	bctiveLicenseErr  error
+	bctiveLicenseOnce sync.Once
 }
 
-// ProductSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
-// ID. If no such ProductSubscription exists, it returns a non-nil error.
+// ProductSubscriptionByID looks up bnd returns the ProductSubscription with the given GrbphQL
+// ID. If no such ProductSubscription exists, it returns b non-nil error.
 //
-// 🚨 SECURITY: This checks that the actor has appropriate permissions on a product subscription
+// 🚨 SECURITY: This checks thbt the bctor hbs bppropribte permissions on b product subscription
 // using productSubscriptionByDBID
-func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx context.Context, id graphql.ID) (graphqlbackend.ProductSubscription, error) {
-	return productSubscriptionByID(ctx, p.Logger, p.DB, id, "access")
+func (p ProductSubscriptionLicensingResolver) ProductSubscriptionByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.ProductSubscription, error) {
+	return productSubscriptionByID(ctx, p.Logger, p.DB, id, "bccess")
 }
 
-// productSubscriptionByID looks up and returns the ProductSubscription with the given GraphQL
-// ID. If no such ProductSubscription exists, it returns a non-nil error.
+// productSubscriptionByID looks up bnd returns the ProductSubscription with the given GrbphQL
+// ID. If no such ProductSubscription exists, it returns b non-nil error.
 //
-// 🚨 SECURITY: This checks that the actor has appropriate permissions on a product subscription
+// 🚨 SECURITY: This checks thbt the bctor hbs bppropribte permissions on b product subscription
 // using productSubscriptionByDBID
-func productSubscriptionByID(ctx context.Context, logger log.Logger, db database.DB, id graphql.ID, action string) (*productSubscription, error) {
-	idString, err := unmarshalProductSubscriptionID(id)
+func productSubscriptionByID(ctx context.Context, logger log.Logger, db dbtbbbse.DB, id grbphql.ID, bction string) (*productSubscription, error) {
+	idString, err := unmbrshblProductSubscriptionID(id)
 	if err != nil {
 		return nil, err
 	}
-	return productSubscriptionByDBID(ctx, logger, db, idString, action)
+	return productSubscriptionByDBID(ctx, logger, db, idString, bction)
 }
 
-// productSubscriptionByDBID looks up and returns the ProductSubscription with the given database
-// ID. If no such ProductSubscription exists, it returns a non-nil error.
+// productSubscriptionByDBID looks up bnd returns the ProductSubscription with the given dbtbbbse
+// ID. If no such ProductSubscription exists, it returns b non-nil error.
 //
-// 🚨 SECURITY: This checks that the actor has appropriate permissions on a product subscription.
-func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db database.DB, id, action string) (*productSubscription, error) {
+// 🚨 SECURITY: This checks thbt the bctor hbs bppropribte permissions on b product subscription.
+func productSubscriptionByDBID(ctx context.Context, logger log.Logger, db dbtbbbse.DB, id, bction string) (*productSubscription, error) {
 	v, err := dbSubscriptions{db: db}.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Only site admins and the subscription account's user may view a product subscription.
-	grantReason, err := serviceAccountOrOwnerOrSiteAdmin(ctx, db, &v.UserID, false)
+	// 🚨 SECURITY: Only site bdmins bnd the subscription bccount's user mby view b product subscription.
+	grbntRebson, err := serviceAccountOrOwnerOrSiteAdmin(ctx, db, &v.UserID, fblse)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: If access to a subscription is granted, make sure we log it.
-	audit.Log(ctx, logger, audit.Record{
-		Entity: auditEntityProductSubscriptions,
-		Action: action,
+	// 🚨 SECURITY: If bccess to b subscription is grbnted, mbke sure we log it.
+	budit.Log(ctx, logger, budit.Record{
+		Entity: buditEntityProductSubscriptions,
+		Action: bction,
 		Fields: []log.Field{
-			log.String("grant_reason", grantReason),
-			log.String("accessed_product_subscription_id", id),
+			log.String("grbnt_rebson", grbntRebson),
+			log.String("bccessed_product_subscription_id", id),
 		},
 	})
 	return &productSubscription{logger: logger, v: v, db: db}, nil
 }
 
-func (r *productSubscription) ID() graphql.ID {
-	return marshalProductSubscriptionID(r.v.ID)
+func (r *productSubscription) ID() grbphql.ID {
+	return mbrshblProductSubscriptionID(r.v.ID)
 }
 
 const ProductSubscriptionIDKind = "ProductSubscription"
 
-func marshalProductSubscriptionID(id string) graphql.ID {
-	return relay.MarshalID(ProductSubscriptionIDKind, id)
+func mbrshblProductSubscriptionID(id string) grbphql.ID {
+	return relby.MbrshblID(ProductSubscriptionIDKind, id)
 }
 
-func unmarshalProductSubscriptionID(id graphql.ID) (productSubscriptionID string, err error) {
-	err = relay.UnmarshalSpec(id, &productSubscriptionID)
+func unmbrshblProductSubscriptionID(id grbphql.ID) (productSubscriptionID string, err error) {
+	err = relby.UnmbrshblSpec(id, &productSubscriptionID)
 	return
 }
 
@@ -103,15 +103,15 @@ func (r *productSubscription) UUID() string {
 	return r.v.ID
 }
 
-func (r *productSubscription) Name() string {
-	return fmt.Sprintf("L-%s", strings.ToUpper(strings.ReplaceAll(r.v.ID, "-", "")[:10]))
+func (r *productSubscription) Nbme() string {
+	return fmt.Sprintf("L-%s", strings.ToUpper(strings.ReplbceAll(r.v.ID, "-", "")[:10]))
 }
 
-func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.v.UserID)
+func (r *productSubscription) Account(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.db, r.v.UserID)
 	if errcode.IsNotFound(err) {
-		// NOTE: It is possible that the user has been deleted, but we do not want to
-		// lose information of the product subscription because of that.
+		// NOTE: It is possible thbt the user hbs been deleted, but we do not wbnt to
+		// lose informbtion of the product subscription becbuse of thbt.
 		return nil, nil
 	} else if err != nil {
 		return nil, err
@@ -119,231 +119,231 @@ func (r *productSubscription) Account(ctx context.Context) (*graphqlbackend.User
 	return user, nil
 }
 
-func (r *productSubscription) ActiveLicense(ctx context.Context) (graphqlbackend.ProductLicense, error) {
-	activeLicense, err := r.computeActiveLicense(ctx)
+func (r *productSubscription) ActiveLicense(ctx context.Context) (grbphqlbbckend.ProductLicense, error) {
+	bctiveLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if activeLicense == nil {
+	if bctiveLicense == nil {
 		return nil, nil
 	}
-	return &productLicense{logger: r.logger, db: r.db, v: activeLicense}, nil
+	return &productLicense{logger: r.logger, db: r.db, v: bctiveLicense}, nil
 }
 
-// computeActiveLicense populates r.activeLicense and r.activeLicenseErr once,
-// make sure this is called before attempting to use either.
+// computeActiveLicense populbtes r.bctiveLicense bnd r.bctiveLicenseErr once,
+// mbke sure this is cblled before bttempting to use either.
 func (r *productSubscription) computeActiveLicense(ctx context.Context) (*dbLicense, error) {
-	r.activeLicenseOnce.Do(func() {
-		r.activeLicense, r.activeLicenseErr = dbLicenses{db: r.db}.Active(ctx, r.v.ID)
+	r.bctiveLicenseOnce.Do(func() {
+		r.bctiveLicense, r.bctiveLicenseErr = dbLicenses{db: r.db}.Active(ctx, r.v.ID)
 	})
 
-	return r.activeLicense, r.activeLicenseErr
+	return r.bctiveLicense, r.bctiveLicenseErr
 }
 
-func (r *productSubscription) ProductLicenses(ctx context.Context, args *graphqlutil.ConnectionArgs) (graphqlbackend.ProductLicenseConnection, error) {
-	// 🚨 SECURITY: Only site admins may list historical product licenses (to reduce confusion
-	// around old license reuse). Other viewers should use ProductSubscription.activeLicense.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *productSubscription) ProductLicenses(ctx context.Context, brgs *grbphqlutil.ConnectionArgs) (grbphqlbbckend.ProductLicenseConnection, error) {
+	// 🚨 SECURITY: Only site bdmins mby list historicbl product licenses (to reduce confusion
+	// bround old license reuse). Other viewers should use ProductSubscription.bctiveLicense.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
 	opt := dbLicensesListOptions{ProductSubscriptionID: r.v.ID}
-	args.Set(&opt.LimitOffset)
+	brgs.Set(&opt.LimitOffset)
 	return &productLicenseConnection{logger: r.logger, db: r.db, opt: opt}, nil
 }
 
-func (r *productSubscription) CodyGatewayAccess() graphqlbackend.CodyGatewayAccess {
-	return codyGatewayAccessResolver{sub: r}
+func (r *productSubscription) CodyGbtewbyAccess() grbphqlbbckend.CodyGbtewbyAccess {
+	return codyGbtewbyAccessResolver{sub: r}
 }
 
-func (r *productSubscription) CurrentSourcegraphAccessToken(ctx context.Context) (*string, error) {
-	activeLicense, err := r.computeActiveLicense(ctx)
+func (r *productSubscription) CurrentSourcegrbphAccessToken(ctx context.Context) (*string, error) {
+	bctiveLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if activeLicense == nil {
-		return nil, errors.New("an active license is required")
+	if bctiveLicense == nil {
+		return nil, errors.New("bn bctive license is required")
 	}
 
-	if !activeLicense.AccessTokenEnabled {
-		return nil, errors.New("active license has been disabled for access")
+	if !bctiveLicense.AccessTokenEnbbled {
+		return nil, errors.New("bctive license hbs been disbbled for bccess")
 	}
 
-	token := license.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
+	token := license.GenerbteLicenseKeyBbsedAccessToken(r.bctiveLicense.LicenseKey)
 	return &token, nil
 }
 
-func (r *productSubscription) SourcegraphAccessTokens(ctx context.Context) (tokens []string, err error) {
-	activeLicense, err := r.computeActiveLicense(ctx)
+func (r *productSubscription) SourcegrbphAccessTokens(ctx context.Context) (tokens []string, err error) {
+	bctiveLicense, err := r.computeActiveLicense(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var mainToken string
-	if activeLicense != nil && activeLicense.AccessTokenEnabled {
-		mainToken = license.GenerateLicenseKeyBasedAccessToken(r.activeLicense.LicenseKey)
-		tokens = append(tokens, mainToken)
+	vbr mbinToken string
+	if bctiveLicense != nil && bctiveLicense.AccessTokenEnbbled {
+		mbinToken = license.GenerbteLicenseKeyBbsedAccessToken(r.bctiveLicense.LicenseKey)
+		tokens = bppend(tokens, mbinToken)
 	}
 
-	allLicenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: r.v.ID})
+	bllLicenses, err := dbLicenses{db: r.db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: r.v.ID})
 	if err != nil {
-		return nil, errors.Wrap(err, "listing subscription licenses")
+		return nil, errors.Wrbp(err, "listing subscription licenses")
 	}
-	for _, l := range allLicenses {
-		if !l.AccessTokenEnabled {
+	for _, l := rbnge bllLicenses {
+		if !l.AccessTokenEnbbled {
 			continue
 		}
-		lt := license.GenerateLicenseKeyBasedAccessToken(l.LicenseKey)
-		if mainToken == "" || lt != mainToken {
-			tokens = append(tokens, lt)
+		lt := license.GenerbteLicenseKeyBbsedAccessToken(l.LicenseKey)
+		if mbinToken == "" || lt != mbinToken {
+			tokens = bppend(tokens, lt)
 		}
 	}
 	return tokens, nil
 }
 
-func (r *productSubscription) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.v.CreatedAt}
+func (r *productSubscription) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.v.CrebtedAt}
 }
 
 func (r *productSubscription) IsArchived() bool { return r.v.ArchivedAt != nil }
 
 func (r *productSubscription) URL(ctx context.Context) (string, error) {
-	accountUser, err := r.Account(ctx)
+	bccountUser, err := r.Account(ctx)
 	if err != nil {
 		return "", err
 	}
-	// TODO: accountUser can be nil if the user has been deleted.
-	return *accountUser.SettingsURL() + "/subscriptions/" + r.v.ID, nil
+	// TODO: bccountUser cbn be nil if the user hbs been deleted.
+	return *bccountUser.SettingsURL() + "/subscriptions/" + r.v.ID, nil
 }
 
 func (r *productSubscription) URLForSiteAdmin(ctx context.Context) *string {
-	// 🚨 SECURITY: Only site admins may see this URL. Currently it does not contain any sensitive
-	// info, but there is no need to show it to non-site admins.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only site bdmins mby see this URL. Currently it does not contbin bny sensitive
+	// info, but there is no need to show it to non-site bdmins.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil
 	}
-	u := fmt.Sprintf("/site-admin/dotcom/product/subscriptions/%s", r.v.ID)
+	u := fmt.Sprintf("/site-bdmin/dotcom/product/subscriptions/%s", r.v.ID)
 	return &u
 }
 
-func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx context.Context, args *graphqlbackend.CreateProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
-	// 🚨 SECURITY: Only site admins may create product subscriptions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+func (r ProductSubscriptionLicensingResolver) CrebteProductSubscription(ctx context.Context, brgs *grbphqlbbckend.CrebteProductSubscriptionArgs) (grbphqlbbckend.ProductSubscription, error) {
+	// 🚨 SECURITY: Only site bdmins mby crebte product subscriptions.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
-	user, err := graphqlbackend.UserByID(ctx, r.DB, args.AccountID)
+	user, err := grbphqlbbckend.UserByID(ctx, r.DB, brgs.AccountID)
 	if err != nil {
 		return nil, err
 	}
-	id, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID(), user.Username())
+	id, err := dbSubscriptions{db: r.DB}.Crebte(ctx, user.DbtbbbseID(), user.Usernbme())
 	if err != nil {
 		return nil, err
 	}
-	return productSubscriptionByDBID(ctx, r.Logger, r.DB, id, "create")
+	return productSubscriptionByDBID(ctx, r.Logger, r.DB, id, "crebte")
 }
 
-func (r ProductSubscriptionLicensingResolver) UpdateProductSubscription(ctx context.Context, args *graphqlbackend.UpdateProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins or the service accounts may update product subscriptions.
+func (r ProductSubscriptionLicensingResolver) UpdbteProductSubscription(ctx context.Context, brgs *grbphqlbbckend.UpdbteProductSubscriptionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site bdmins or the service bccounts mby updbte product subscriptions.
 	_, err := serviceAccountOrSiteAdmin(ctx, r.DB, true)
 	if err != nil {
 		return nil, err
 	}
 
-	sub, err := productSubscriptionByID(ctx, r.Logger, r.DB, args.ID, "update")
+	sub, err := productSubscriptionByID(ctx, r.Logger, r.DB, brgs.ID, "updbte")
 	if err != nil {
 		return nil, err
 	}
-	if err := (dbSubscriptions{db: r.DB}).Update(ctx, sub.v.ID, dbSubscriptionUpdate{
-		codyGatewayAccess: args.Update.CodyGatewayAccess,
+	if err := (dbSubscriptions{db: r.DB}).Updbte(ctx, sub.v.ID, dbSubscriptionUpdbte{
+		codyGbtewbyAccess: brgs.Updbte.CodyGbtewbyAccess,
 	}); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, args *graphqlbackend.ArchiveProductSubscriptionArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins may archive product subscriptions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+func (r ProductSubscriptionLicensingResolver) ArchiveProductSubscription(ctx context.Context, brgs *grbphqlbbckend.ArchiveProductSubscriptionArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site bdmins mby brchive product subscriptions.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 		return nil, err
 	}
 
-	sub, err := productSubscriptionByID(ctx, r.Logger, r.DB, args.ID, "archive")
+	sub, err := productSubscriptionByID(ctx, r.Logger, r.DB, brgs.ID, "brchive")
 	if err != nil {
 		return nil, err
 	}
 	if err := (dbSubscriptions{db: r.DB}).Archive(ctx, sub.v.ID); err != nil {
 		return nil, err
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r ProductSubscriptionLicensingResolver) ProductSubscription(ctx context.Context, args *graphqlbackend.ProductSubscriptionArgs) (graphqlbackend.ProductSubscription, error) {
-	// 🚨 SECURITY: Only site admins and the subscription's account owner may get a product
+func (r ProductSubscriptionLicensingResolver) ProductSubscription(ctx context.Context, brgs *grbphqlbbckend.ProductSubscriptionArgs) (grbphqlbbckend.ProductSubscription, error) {
+	// 🚨 SECURITY: Only site bdmins bnd the subscription's bccount owner mby get b product
 	// subscription. This check is performed in productSubscriptionByDBID.
-	return productSubscriptionByDBID(ctx, r.Logger, r.DB, args.UUID, "access")
+	return productSubscriptionByDBID(ctx, r.Logger, r.DB, brgs.UUID, "bccess")
 }
 
-func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Context, args *graphqlbackend.ProductSubscriptionsArgs) (graphqlbackend.ProductSubscriptionConnection, error) {
-	var accountUser *graphqlbackend.UserResolver
-	var accountUserID *int32
-	if args.Account != nil {
-		var err error
-		accountUser, err = graphqlbackend.UserByID(ctx, r.DB, *args.Account)
+func (r ProductSubscriptionLicensingResolver) ProductSubscriptions(ctx context.Context, brgs *grbphqlbbckend.ProductSubscriptionsArgs) (grbphqlbbckend.ProductSubscriptionConnection, error) {
+	vbr bccountUser *grbphqlbbckend.UserResolver
+	vbr bccountUserID *int32
+	if brgs.Account != nil {
+		vbr err error
+		bccountUser, err = grbphqlbbckend.UserByID(ctx, r.DB, *brgs.Account)
 		if err != nil {
 			return nil, err
 		}
-		id := accountUser.DatabaseID()
-		accountUserID = &id
+		id := bccountUser.DbtbbbseID()
+		bccountUserID = &id
 	}
 
-	// 🚨 SECURITY: Users may only list their own product subscriptions. Site admins may list
-	// licenses for all users, or for any other user.
-	grantReason, err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, accountUserID, false)
+	// 🚨 SECURITY: Users mby only list their own product subscriptions. Site bdmins mby list
+	// licenses for bll users, or for bny other user.
+	grbntRebson, err := serviceAccountOrOwnerOrSiteAdmin(ctx, r.DB, bccountUserID, fblse)
 	if err != nil {
 		return nil, err
 	}
-	// 🚨 SECURITY: Record access with target
-	audit.Log(ctx, r.Logger, audit.Record{
-		Entity: auditEntityProductSubscriptions,
+	// 🚨 SECURITY: Record bccess with tbrget
+	budit.Log(ctx, r.Logger, budit.Record{
+		Entity: buditEntityProductSubscriptions,
 		Action: "list",
 		Fields: []log.Field{
-			log.String("grant_reason", grantReason),
-			log.Int32p("accessed_user_id", accountUserID),
+			log.String("grbnt_rebson", grbntRebson),
+			log.Int32p("bccessed_user_id", bccountUserID),
 		},
 	})
 
-	var opt dbSubscriptionsListOptions
-	if accountUser != nil {
-		opt.UserID = accountUser.DatabaseID()
+	vbr opt dbSubscriptionsListOptions
+	if bccountUser != nil {
+		opt.UserID = bccountUser.DbtbbbseID()
 	}
 
-	if args.Query != nil {
-		// 🚨 SECURITY: Only site admins may query or view license for all users, or for any other user.
-		// Note this check is currently repetitive with the check above. However, it is duplicated here to
-		// ensure it remains in effect if the code path above chagnes.
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
+	if brgs.Query != nil {
+		// 🚨 SECURITY: Only site bdmins mby query or view license for bll users, or for bny other user.
+		// Note this check is currently repetitive with the check bbove. However, it is duplicbted here to
+		// ensure it rembins in effect if the code pbth bbove chbgnes.
+		if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.DB); err != nil {
 			return nil, err
 		}
-		opt.Query = *args.Query
+		opt.Query = *brgs.Query
 	}
 
-	args.ConnectionArgs.Set(&opt.LimitOffset)
+	brgs.ConnectionArgs.Set(&opt.LimitOffset)
 	return &productSubscriptionConnection{logger: r.Logger, db: r.DB, opt: opt}, nil
 }
 
-// productSubscriptionConnection implements the GraphQL type ProductSubscriptionConnection.
+// productSubscriptionConnection implements the GrbphQL type ProductSubscriptionConnection.
 //
-// 🚨 SECURITY: When instantiating a productSubscriptionConnection value, the caller MUST
+// 🚨 SECURITY: When instbntibting b productSubscriptionConnection vblue, the cbller MUST
 // check permissions.
 type productSubscriptionConnection struct {
 	logger log.Logger
 	opt    dbSubscriptionsListOptions
-	db     database.DB
+	db     dbtbbbse.DB
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once    sync.Once
 	results []*dbSubscription
 	err     error
@@ -355,7 +355,7 @@ func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*dbSubsc
 		if opt2.LimitOffset != nil {
 			tmp := *opt2.LimitOffset
 			opt2.LimitOffset = &tmp
-			opt2.Limit++ // so we can detect if there is a next page
+			opt2.Limit++ // so we cbn detect if there is b next pbge
 		}
 
 		r.results, r.err = dbSubscriptions{db: r.db}.List(ctx, opt2)
@@ -363,28 +363,28 @@ func (r *productSubscriptionConnection) compute(ctx context.Context) ([]*dbSubsc
 	return r.results, r.err
 }
 
-func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]graphqlbackend.ProductSubscription, error) {
+func (r *productSubscriptionConnection) Nodes(ctx context.Context) ([]grbphqlbbckend.ProductSubscription, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var l []graphqlbackend.ProductSubscription
-	for _, result := range results {
-		l = append(l, &productSubscription{logger: r.logger, db: r.db, v: result})
+	vbr l []grbphqlbbckend.ProductSubscription
+	for _, result := rbnge results {
+		l = bppend(l, &productSubscription{logger: r.logger, db: r.db, v: result})
 	}
 	return l, nil
 }
 
-func (r *productSubscriptionConnection) TotalCount(ctx context.Context) (int32, error) {
+func (r *productSubscriptionConnection) TotblCount(ctx context.Context) (int32, error) {
 	count, err := dbSubscriptions{db: r.db}.Count(ctx, r.opt)
 	return int32(count), err
 }
 
-func (r *productSubscriptionConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *productSubscriptionConnection) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	results, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return graphqlutil.HasNextPage(r.opt.LimitOffset != nil && len(results) > r.opt.Limit), nil
+	return grbphqlutil.HbsNextPbge(r.opt.LimitOffset != nil && len(results) > r.opt.Limit), nil
 }

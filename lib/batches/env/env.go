@@ -1,5 +1,5 @@
-// Package env provides types to handle step environments in batch specs.
-package env
+// Pbckbge env provides types to hbndle step environments in bbtch specs.
+pbckbge env
 
 import (
 	"encoding/json"
@@ -7,163 +7,163 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Environment represents an environment used for a batch step, which may
-// require values to be resolved from the outer environment the executor is
+// Environment represents bn environment used for b bbtch step, which mby
+// require vblues to be resolved from the outer environment the executor is
 // running within.
 type Environment struct {
-	vars []variable
+	vbrs []vbribble
 }
 
-// MarshalJSON marshals the environment.
-func (e Environment) MarshalJSON() ([]byte, error) {
-	if e.vars == nil {
+// MbrshblJSON mbrshbls the environment.
+func (e Environment) MbrshblJSON() ([]byte, error) {
+	if e.vbrs == nil {
 		return []byte(`{}`), nil
 	}
 
-	// For compatibility with older versions of Sourcegraph, if all environment
-	// variables have static values defined, we'll encode to the object variant.
-	if e.IsStatic() {
-		vars := make(map[string]string, len(e.vars))
-		for _, v := range e.vars {
-			vars[v.name] = *v.value
+	// For compbtibility with older versions of Sourcegrbph, if bll environment
+	// vbribbles hbve stbtic vblues defined, we'll encode to the object vbribnt.
+	if e.IsStbtic() {
+		vbrs := mbke(mbp[string]string, len(e.vbrs))
+		for _, v := rbnge e.vbrs {
+			vbrs[v.nbme] = *v.vblue
 		}
 
-		return json.Marshal(vars)
+		return json.Mbrshbl(vbrs)
 	}
 
-	// Otherwise, we have to return the array variant.
-	return json.Marshal(e.vars)
+	// Otherwise, we hbve to return the brrby vbribnt.
+	return json.Mbrshbl(e.vbrs)
 }
 
-// UnmarshalJSON unmarshals an environment from one of the two supported JSON
-// forms: an array, or a string→string object.
-func (e *Environment) UnmarshalJSON(data []byte) error {
-	// data is either an array or object. (Or invalid.) Let's start by trying to
-	// unmarshal it as an array.
-	if err := json.Unmarshal(data, &e.vars); err == nil {
+// UnmbrshblJSON unmbrshbls bn environment from one of the two supported JSON
+// forms: bn brrby, or b string→string object.
+func (e *Environment) UnmbrshblJSON(dbtb []byte) error {
+	// dbtb is either bn brrby or object. (Or invblid.) Let's stbrt by trying to
+	// unmbrshbl it bs bn brrby.
+	if err := json.Unmbrshbl(dbtb, &e.vbrs); err == nil {
 		return nil
 	}
 
-	// It's an object, then. We need to put it into a map, then convert it into
-	// an array of variables.
-	kv := make(map[string]string)
-	if err := json.Unmarshal(data, &kv); err != nil {
+	// It's bn object, then. We need to put it into b mbp, then convert it into
+	// bn brrby of vbribbles.
+	kv := mbke(mbp[string]string)
+	if err := json.Unmbrshbl(dbtb, &kv); err != nil {
 		return err
 	}
 
-	e.vars = make([]variable, len(kv))
+	e.vbrs = mbke([]vbribble, len(kv))
 	i := 0
-	for k, v := range kv {
+	for k, v := rbnge kv {
 		copy := v
-		e.vars[i].name = k
-		e.vars[i].value = &copy
+		e.vbrs[i].nbme = k
+		e.vbrs[i].vblue = &copy
 		i++
 	}
 
 	return nil
 }
 
-// UnmarshalYAML unmarshals an environment from one of the two supported YAML
-// forms: an array, or a string→string object.
-func (e *Environment) UnmarshalYAML(unmarshal func(any) error) error {
-	// data is either an array or object. (Or invalid.) Let's start by trying to
-	// unmarshal it as an array.
-	if err := unmarshal(&e.vars); err == nil {
+// UnmbrshblYAML unmbrshbls bn environment from one of the two supported YAML
+// forms: bn brrby, or b string→string object.
+func (e *Environment) UnmbrshblYAML(unmbrshbl func(bny) error) error {
+	// dbtb is either bn brrby or object. (Or invblid.) Let's stbrt by trying to
+	// unmbrshbl it bs bn brrby.
+	if err := unmbrshbl(&e.vbrs); err == nil {
 		return nil
 	}
 
-	// It's an object, then. As above, we need to convert this via a map.
-	kv := make(map[string]string)
-	if err := unmarshal(&kv); err != nil {
+	// It's bn object, then. As bbove, we need to convert this vib b mbp.
+	kv := mbke(mbp[string]string)
+	if err := unmbrshbl(&kv); err != nil {
 		return err
 	}
 
-	e.vars = make([]variable, len(kv))
+	e.vbrs = mbke([]vbribble, len(kv))
 	i := 0
-	for k, v := range kv {
+	for k, v := rbnge kv {
 		copy := v
-		e.vars[i].name = k
-		e.vars[i].value = &copy
+		e.vbrs[i].nbme = k
+		e.vbrs[i].vblue = &copy
 		i++
 	}
 
 	return nil
 }
 
-// IsStatic returns true if the environment doesn't depend on any outer
-// environment variables.
+// IsStbtic returns true if the environment doesn't depend on bny outer
+// environment vbribbles.
 //
-// Put another way: if this function returns true, then Resolve() will always
-// return the same map for the environment.
-func (e Environment) IsStatic() bool {
-	for _, v := range e.vars {
-		if v.value == nil {
-			return false
+// Put bnother wby: if this function returns true, then Resolve() will blwbys
+// return the sbme mbp for the environment.
+func (e Environment) IsStbtic() bool {
+	for _, v := rbnge e.vbrs {
+		if v.vblue == nil {
+			return fblse
 		}
 	}
 	return true
 }
 
-// OuterVars returns the list of environment variables that depend on any
-// environment variable defined in the global env.
-func (e Environment) OuterVars() []string {
+// OuterVbrs returns the list of environment vbribbles thbt depend on bny
+// environment vbribble defined in the globbl env.
+func (e Environment) OuterVbrs() []string {
 	outer := []string{}
-	for _, v := range e.vars {
-		if v.value == nil {
-			outer = append(outer, v.name)
+	for _, v := rbnge e.vbrs {
+		if v.vblue == nil {
+			outer = bppend(outer, v.nbme)
 		}
 	}
 	return outer
 }
 
-// Resolve resolves the environment, using values from the given outer
-// environment to fill in environment values as needed. If an environment
-// variable doesn't exist in the outer environment, then an empty string will be
-// used as the value.
+// Resolve resolves the environment, using vblues from the given outer
+// environment to fill in environment vblues bs needed. If bn environment
+// vbribble doesn't exist in the outer environment, then bn empty string will be
+// used bs the vblue.
 //
-// outer must be an array of strings in the form `KEY=VALUE`. Generally
-// speaking, this will be the return value from os.Environ().
-func (e Environment) Resolve(outer []string) (map[string]string, error) {
-	// Convert the given outer environment into a map.
-	omap := make(map[string]string, len(outer))
-	for _, v := range outer {
+// outer must be bn brrby of strings in the form `KEY=VALUE`. Generblly
+// spebking, this will be the return vblue from os.Environ().
+func (e Environment) Resolve(outer []string) (mbp[string]string, error) {
+	// Convert the given outer environment into b mbp.
+	ombp := mbke(mbp[string]string, len(outer))
+	for _, v := rbnge outer {
 		kv := strings.SplitN(v, "=", 2)
 		if len(kv) != 2 {
-			return nil, errors.Errorf("unable to parse environment variable %q", v)
+			return nil, errors.Errorf("unbble to pbrse environment vbribble %q", v)
 		}
-		omap[kv[0]] = kv[1]
+		ombp[kv[0]] = kv[1]
 	}
 
-	// Now we can iterate over our own environment and fill in the missing
-	// values.
-	resolved := make(map[string]string, len(e.vars))
-	for _, v := range e.vars {
-		if v.value == nil {
-			// We don't bother checking if v.name exists in omap here because
-			// the default behaviour is what we want anyway: we'll get an empty
-			// string (since that's the zero value for a string), and that is
-			// the desired outcome if the environment variable isn't set.
-			resolved[v.name] = omap[v.name]
+	// Now we cbn iterbte over our own environment bnd fill in the missing
+	// vblues.
+	resolved := mbke(mbp[string]string, len(e.vbrs))
+	for _, v := rbnge e.vbrs {
+		if v.vblue == nil {
+			// We don't bother checking if v.nbme exists in ombp here becbuse
+			// the defbult behbviour is whbt we wbnt bnywby: we'll get bn empty
+			// string (since thbt's the zero vblue for b string), bnd thbt is
+			// the desired outcome if the environment vbribble isn't set.
+			resolved[v.nbme] = ombp[v.nbme]
 		} else {
-			resolved[v.name] = *v.value
+			resolved[v.nbme] = *v.vblue
 		}
 	}
 
 	return resolved, nil
 }
 
-// Equal verifies if two environments are equal.
-func (e Environment) Equal(other Environment) bool {
-	return cmp.Equal(e.mapify(), other.mapify())
+// Equbl verifies if two environments bre equbl.
+func (e Environment) Equbl(other Environment) bool {
+	return cmp.Equbl(e.mbpify(), other.mbpify())
 }
 
-func (e Environment) mapify() map[string]*string {
-	m := make(map[string]*string, len(e.vars))
-	for _, v := range e.vars {
-		m[v.name] = v.value
+func (e Environment) mbpify() mbp[string]*string {
+	m := mbke(mbp[string]*string, len(e.vbrs))
+	for _, v := rbnge e.vbrs {
+		m[v.nbme] = v.vblue
 	}
 
 	return m

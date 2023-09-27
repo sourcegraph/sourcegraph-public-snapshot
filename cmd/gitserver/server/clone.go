@@ -1,48 +1,48 @@
-package server
+pbckbge server
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
 )
 
-// maybeStartClone checks if a given repository is cloned on disk. If not, it starts
-// cloning the repository in the background and returns a NotFound error, if no current
-// clone operation is running for that repo yet. If it is already cloning, a NotFound
+// mbybeStbrtClone checks if b given repository is cloned on disk. If not, it stbrts
+// cloning the repository in the bbckground bnd returns b NotFound error, if no current
+// clone operbtion is running for thbt repo yet. If it is blrebdy cloning, b NotFound
 // error with CloneInProgress: true is returned.
-// Note: If disableAutoGitUpdates is set in the site config, no operation is taken and
-// a NotFound error is returned.
-func (s *Server) maybeStartClone(ctx context.Context, logger log.Logger, repo api.RepoName) (notFound *protocol.NotFoundPayload, cloned bool) {
-	dir := repoDirFromName(s.ReposDir, repo)
+// Note: If disbbleAutoGitUpdbtes is set in the site config, no operbtion is tbken bnd
+// b NotFound error is returned.
+func (s *Server) mbybeStbrtClone(ctx context.Context, logger log.Logger, repo bpi.RepoNbme) (notFound *protocol.NotFoundPbylobd, cloned bool) {
+	dir := repoDirFromNbme(s.ReposDir, repo)
 	if repoCloned(dir) {
 		return nil, true
 	}
 
-	if conf.Get().DisableAutoGitUpdates {
-		logger.Debug("not cloning on demand as DisableAutoGitUpdates is set")
-		return &protocol.NotFoundPayload{}, false
+	if conf.Get().DisbbleAutoGitUpdbtes {
+		logger.Debug("not cloning on dembnd bs DisbbleAutoGitUpdbtes is set")
+		return &protocol.NotFoundPbylobd{}, fblse
 	}
 
-	cloneProgress, cloneInProgress := s.Locker.Status(dir)
+	cloneProgress, cloneInProgress := s.Locker.Stbtus(dir)
 	if cloneInProgress {
-		return &protocol.NotFoundPayload{
+		return &protocol.NotFoundPbylobd{
 			CloneInProgress: true,
 			CloneProgress:   cloneProgress,
-		}, false
+		}, fblse
 	}
 
 	cloneProgress, err := s.CloneRepo(ctx, repo, CloneOptions{})
 	if err != nil {
-		logger.Debug("error starting repo clone", log.String("repo", string(repo)), log.Error(err))
-		return &protocol.NotFoundPayload{CloneInProgress: false}, false
+		logger.Debug("error stbrting repo clone", log.String("repo", string(repo)), log.Error(err))
+		return &protocol.NotFoundPbylobd{CloneInProgress: fblse}, fblse
 	}
 
-	return &protocol.NotFoundPayload{
+	return &protocol.NotFoundPbylobd{
 		CloneInProgress: true,
 		CloneProgress:   cloneProgress,
-	}, false
+	}, fblse
 }

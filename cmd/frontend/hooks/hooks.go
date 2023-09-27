@@ -1,35 +1,35 @@
-// Package hooks allow hooking into the frontend.
-package hooks
+// Pbckbge hooks bllow hooking into the frontend.
+pbckbge hooks
 
 import (
 	"net/http"
 )
 
-// PostAuthMiddleware is an HTTP handler middleware that, if set, runs just before auth-related
-// middleware. The client is authenticated when PostAuthMiddleware is called.
-var PostAuthMiddleware func(http.Handler) http.Handler
+// PostAuthMiddlewbre is bn HTTP hbndler middlewbre thbt, if set, runs just before buth-relbted
+// middlewbre. The client is buthenticbted when PostAuthMiddlewbre is cblled.
+vbr PostAuthMiddlewbre func(http.Hbndler) http.Hbndler
 
-// FeatureBatchChanges describes if and how the Batch Changes feature is available on
-// the given license plan. It mirrors the type licensing.FeatureBatchChanges.
-type FeatureBatchChanges struct {
-	// If true, there is no limit to the number of changesets that can be created.
+// FebtureBbtchChbnges describes if bnd how the Bbtch Chbnges febture is bvbilbble on
+// the given license plbn. It mirrors the type licensing.FebtureBbtchChbnges.
+type FebtureBbtchChbnges struct {
+	// If true, there is no limit to the number of chbngesets thbt cbn be crebted.
 	Unrestricted bool `json:"unrestricted"`
-	// Maximum number of changesets that can be created per batch change.
+	// Mbximum number of chbngesets thbt cbn be crebted per bbtch chbnge.
 	// If Unrestricted is true, this is ignored.
-	MaxNumChangesets int `json:"maxNumChangesets"`
+	MbxNumChbngesets int `json:"mbxNumChbngesets"`
 }
 
-// LicenseInfo contains non-sensitive information about the legitimate usage of the
-// current license on the instance. It is technically accessible to all users, so only
-// include information that is safe to be seen by others.
+// LicenseInfo contbins non-sensitive informbtion bbout the legitimbte usbge of the
+// current license on the instbnce. It is technicblly bccessible to bll users, so only
+// include informbtion thbt is sbfe to be seen by others.
 type LicenseInfo struct {
-	CurrentPlan string `json:"currentPlan"`
+	CurrentPlbn string `json:"currentPlbn"`
 
-	CodeScaleLimit         string               `json:"codeScaleLimit"`
-	CodeScaleCloseToLimit  bool                 `json:"codeScaleCloseToLimit"`
-	CodeScaleExceededLimit bool                 `json:"codeScaleExceededLimit"`
-	KnownLicenseTags       []string             `json:"knownLicenseTags"`
-	BatchChanges           *FeatureBatchChanges `json:"batchChanges"`
+	CodeScbleLimit         string               `json:"codeScbleLimit"`
+	CodeScbleCloseToLimit  bool                 `json:"codeScbleCloseToLimit"`
+	CodeScbleExceededLimit bool                 `json:"codeScbleExceededLimit"`
+	KnownLicenseTbgs       []string             `json:"knownLicenseTbgs"`
+	BbtchChbnges           *FebtureBbtchChbnges `json:"bbtchChbnges"`
 }
 
-var GetLicenseInfo = func() *LicenseInfo { return nil }
+vbr GetLicenseInfo = func() *LicenseInfo { return nil }

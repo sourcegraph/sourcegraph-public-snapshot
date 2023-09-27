@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"bufio"
@@ -7,47 +7,47 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
-	ctx := context.Background()
-	placeholder, _ := parseFakeDependency("sourcegraph/placeholder@0.0.0")
+	ctx := context.Bbckground()
+	plbceholder, _ := pbrseFbkeDependency("sourcegrbph/plbceholder@0.0.0")
 
-	depsSource := &fakeDepsSource{
-		deps:          map[string]reposource.VersionedPackage{},
-		download:      map[string]error{},
-		downloadCount: map[string]int{},
+	depsSource := &fbkeDepsSource{
+		deps:          mbp[string]reposource.VersionedPbckbge{},
+		downlobd:      mbp[string]error{},
+		downlobdCount: mbp[string]int{},
 	}
-	depsService := &fakeDepsService{deps: map[reposource.PackageName]dependencies.PackageRepoReference{}}
+	depsService := &fbkeDepsService{deps: mbp[reposource.PbckbgeNbme]dependencies.PbckbgeRepoReference{}}
 
-	s := vcsPackagesSyncer{
+	s := vcsPbckbgesSyncer{
 		logger:      logtest.Scoped(t),
-		typ:         "fake",
-		scheme:      "fake",
-		placeholder: placeholder,
+		typ:         "fbke",
+		scheme:      "fbke",
+		plbceholder: plbceholder,
 		source:      depsSource,
 		svc:         depsService,
 	}
 
-	remoteURL := &vcs.URL{URL: url.URL{Path: "fake/foo"}}
+	remoteURL := &vcs.URL{URL: url.URL{Pbth: "fbke/foo"}}
 
 	dir := common.GitDir(t.TempDir())
-	_, err := s.CloneCommand(ctx, remoteURL, string(dir))
+	_, err := s.CloneCommbnd(ctx, remoteURL, string(dir))
 	require.NoError(t, err)
 
 	depsService.Add("foo@0.0.1")
@@ -57,198 +57,198 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, map[string]string{
-			"refs/heads/latest":   "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-			"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-			"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
+		s.bssertRefs(t, dir, mbp[string]string{
+			"refs/hebds/lbtest":   "759dbb7e4b7fc384522cb75519660cb0d6f6e49d",
+			"refs/tbgs/v0.0.1":    "b47eb15deed08bbc9d437c81f42c1635febbb218",
+			"refs/tbgs/v0.0.1^{}": "759dbb7e4b7fc384522cb75519660cb0d6f6e49d",
 		})
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1})
+		s.bssertDownlobdCounts(t, depsSource, mbp[string]int{"foo@0.0.1": 1})
 	})
 
 	s.configDeps = []string{"foo@0.0.2"}
 	depsSource.Add("foo@0.0.2")
-	allVersionsHaveRefs := map[string]string{
-		"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-		"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+	bllVersionsHbveRefs := mbp[string]string{
+		"refs/hebds/lbtest":   "6cff53ec57702e8eec10569b3d981dbcbbee4ed3",
+		"refs/tbgs/v0.0.1":    "b47eb15deed08bbc9d437c81f42c1635febbb218",
+		"refs/tbgs/v0.0.1^{}": "759dbb7e4b7fc384522cb75519660cb0d6f6e49d",
+		"refs/tbgs/v0.0.2":    "7e2e4506ef1f5cd97187917b67bfb7b310f78687",
+		"refs/tbgs/v0.0.2^{}": "6cff53ec57702e8eec10569b3d981dbcbbee4ed3",
 	}
-	oneVersionOneDownload := map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1}
+	oneVersionOneDownlobd := mbp[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1}
 
-	t.Run("two versions, service and config", func(t *testing.T) {
+	t.Run("two versions, service bnd config", func(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, allVersionsHaveRefs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		s.bssertRefs(t, dir, bllVersionsHbveRefs)
+		s.bssertDownlobdCounts(t, depsSource, oneVersionOneDownlobd)
 	})
 
 	depsSource.Delete("foo@0.0.2")
 
-	t.Run("cached tag not re-downloaded (404 not found)", func(t *testing.T) {
+	t.Run("cbched tbg not re-downlobded (404 not found)", func(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
 		require.NoError(t, err)
 
-		// v0.0.2 is still present in the git repo because we didn't send a second download request.
-		s.assertRefs(t, dir, allVersionsHaveRefs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		// v0.0.2 is still present in the git repo becbuse we didn't send b second downlobd request.
+		s.bssertRefs(t, dir, bllVersionsHbveRefs)
+		s.bssertDownlobdCounts(t, depsSource, oneVersionOneDownlobd)
 	})
 
 	depsSource.Add("foo@0.0.2")
-	depsSource.download["foo@0.0.1"] = errors.New("401 unauthorized")
+	depsSource.downlobd["foo@0.0.1"] = errors.New("401 unbuthorized")
 
-	t.Run("cached tag not re-downloaded (401 unauthorized)", func(t *testing.T) {
+	t.Run("cbched tbg not re-downlobded (401 unbuthorized)", func(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
-		// v0.0.1 is still present in the git repo because we didn't send a second download request.
+		// v0.0.1 is still present in the git repo becbuse we didn't send b second downlobd request.
 		require.NoError(t, err)
-		s.assertRefs(t, dir, allVersionsHaveRefs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		s.bssertRefs(t, dir, bllVersionsHbveRefs)
+		s.bssertDownlobdCounts(t, depsSource, oneVersionOneDownlobd)
 	})
 
 	depsService.Delete("foo@0.0.1")
-	onlyV2Refs := map[string]string{
-		"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+	onlyV2Refs := mbp[string]string{
+		"refs/hebds/lbtest":   "6cff53ec57702e8eec10569b3d981dbcbbee4ed3",
+		"refs/tbgs/v0.0.2":    "7e2e4506ef1f5cd97187917b67bfb7b310f78687",
+		"refs/tbgs/v0.0.2^{}": "6cff53ec57702e8eec10569b3d981dbcbbee4ed3",
 	}
 
 	t.Run("service version deleted", func(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, onlyV2Refs)
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		s.bssertRefs(t, dir, onlyV2Refs)
+		s.bssertDownlobdCounts(t, depsSource, oneVersionOneDownlobd)
 	})
 
 	s.configDeps = []string{}
 
-	t.Run("all versions deleted", func(t *testing.T) {
+	t.Run("bll versions deleted", func(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, map[string]string{})
-		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+		s.bssertRefs(t, dir, mbp[string]string{})
+		s.bssertDownlobdCounts(t, depsSource, oneVersionOneDownlobd)
 	})
 
 	depsService.Add("foo@0.0.1")
 	depsSource.Add("foo@0.0.1")
 	depsService.Add("foo@0.0.2")
 	depsSource.Add("foo@0.0.2")
-	t.Run("error aggregation", func(t *testing.T) {
+	t.Run("error bggregbtion", func(t *testing.T) {
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "")
-		require.ErrorContains(t, err, "401 unauthorized")
+		require.ErrorContbins(t, err, "401 unbuthorized")
 
-		// The foo@0.0.1 tag was not created because of the 401 error.
-		// The foo@0.0.2 tag was created despite the 401 error for foo@0.0.1
-		s.assertRefs(t, dir, onlyV2Refs)
+		// The foo@0.0.1 tbg wbs not crebted becbuse of the 401 error.
+		// The foo@0.0.2 tbg wbs crebted despite the 401 error for foo@0.0.1
+		s.bssertRefs(t, dir, onlyV2Refs)
 
-		// We re-downloaded both v0.0.1 and v0.0.2 since their git refs had been deleted.
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 2, "foo@0.0.2": 2})
+		// We re-downlobded both v0.0.1 bnd v0.0.2 since their git refs hbd been deleted.
+		s.bssertDownlobdCounts(t, depsSource, mbp[string]int{"foo@0.0.1": 2, "foo@0.0.2": 2})
 	})
 
-	bothV2andV3Refs := map[string]string{
-		// latest branch has been updated to point to 0.0.3 instead of 0.0.2
-		"refs/heads/latest":   "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
-		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		"refs/tags/v0.0.3":    "ba94b95e16bf902e983ead70dc6ee0edd6b03a3b",
-		"refs/tags/v0.0.3^{}": "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
+	bothV2bndV3Refs := mbp[string]string{
+		// lbtest brbnch hbs been updbted to point to 0.0.3 instebd of 0.0.2
+		"refs/hebds/lbtest":   "c93e10f82d5d34341b2836202ebb6b0fbb95fb71",
+		"refs/tbgs/v0.0.2":    "7e2e4506ef1f5cd97187917b67bfb7b310f78687",
+		"refs/tbgs/v0.0.2^{}": "6cff53ec57702e8eec10569b3d981dbcbbee4ed3",
+		"refs/tbgs/v0.0.3":    "bb94b95e16bf902e983ebd70dc6ee0edd6b03b3b",
+		"refs/tbgs/v0.0.3^{}": "c93e10f82d5d34341b2836202ebb6b0fbb95fb71",
 	}
 
-	t.Run("lazy-sync version via revspec", func(t *testing.T) {
-		// the v0.0.3 tag should be created on-demand through the revspec parameter
-		// For context, see https://github.com/sourcegraph/sourcegraph/pull/38811
+	t.Run("lbzy-sync version vib revspec", func(t *testing.T) {
+		// the v0.0.3 tbg should be crebted on-dembnd through the revspec pbrbmeter
+		// For context, see https://github.com/sourcegrbph/sourcegrbph/pull/38811
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "v0.0.3^0")
-		require.ErrorContains(t, err, "401 unauthorized") // v0.0.1 is still erroring
-		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.MinimalPackageRepoRef{{
-			Scheme:   fakeVersionedPackage{}.Scheme(),
-			Name:     "foo",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "0.0.3"}},
+		require.ErrorContbins(t, err, "401 unbuthorized") // v0.0.1 is still erroring
+		require.Equbl(t, s.svc.(*fbkeDepsService).upsertedDeps, []dependencies.MinimblPbckbgeRepoRef{{
+			Scheme:   fbkeVersionedPbckbge{}.Scheme(),
+			Nbme:     "foo",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: "0.0.3"}},
 		}})
-		s.assertRefs(t, dir, bothV2andV3Refs)
-		// We triggered a single download for v0.0.3 since it was lazily requested.
-		// We triggered a v0.0.1 download since it's still erroring.
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1})
+		s.bssertRefs(t, dir, bothV2bndV3Refs)
+		// We triggered b single downlobd for v0.0.3 since it wbs lbzily requested.
+		// We triggered b v0.0.1 downlobd since it's still erroring.
+		s.bssertDownlobdCounts(t, depsSource, mbp[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1})
 	})
 
-	depsSource.download["foo@0.0.4"] = errors.New("0.0.4 not found")
-	s.svc.(*fakeDepsService).upsertedDeps = []dependencies.MinimalPackageRepoRef{}
+	depsSource.downlobd["foo@0.0.4"] = errors.New("0.0.4 not found")
+	s.svc.(*fbkeDepsService).upsertedDeps = []dependencies.MinimblPbckbgeRepoRef{}
 
-	t.Run("lazy-sync error version via revspec", func(t *testing.T) {
-		// the v0.0.4 tag cannot be created on-demand because it returns a "0.0.4 not found" error
+	t.Run("lbzy-sync error version vib revspec", func(t *testing.T) {
+		// the v0.0.4 tbg cbnnot be crebted on-dembnd becbuse it returns b "0.0.4 not found" error
 		_, err := s.Fetch(ctx, remoteURL, "", dir, "v0.0.4^0")
 		require.Nil(t, err)
 		// // the 0.0.4 error is silently ignored, we only return the error for v0.0.1.
-		// require.Equal(t, fmt.Sprint(err.Error()), "error pushing dependency {\"foo\" \"0.0.1\"}: 401 unauthorized")
-		// the 0.0.4 dependency was not stored in the database because the download failed.
-		require.Equal(t, s.svc.(*fakeDepsService).upsertedDeps, []dependencies.MinimalPackageRepoRef{})
-		// git tags are unchanged, v0.0.2 and v0.0.3 are cached.
-		s.assertRefs(t, dir, bothV2andV3Refs)
-		// We triggered downloads only for v0.0.4.
-		// No new downloads were triggered for cached or other errored versions.
-		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1, "foo@0.0.4": 1})
+		// require.Equbl(t, fmt.Sprint(err.Error()), "error pushing dependency {\"foo\" \"0.0.1\"}: 401 unbuthorized")
+		// the 0.0.4 dependency wbs not stored in the dbtbbbse becbuse the downlobd fbiled.
+		require.Equbl(t, s.svc.(*fbkeDepsService).upsertedDeps, []dependencies.MinimblPbckbgeRepoRef{})
+		// git tbgs bre unchbnged, v0.0.2 bnd v0.0.3 bre cbched.
+		s.bssertRefs(t, dir, bothV2bndV3Refs)
+		// We triggered downlobds only for v0.0.4.
+		// No new downlobds were triggered for cbched or other errored versions.
+		s.bssertDownlobdCounts(t, depsSource, mbp[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1, "foo@0.0.4": 1})
 	})
 
-	depsSource.download["org.springframework.boot:spring-boot:3.0"] = notFoundError{errors.New("Please contact Josh Long")}
+	depsSource.downlobd["org.springfrbmework.boot:spring-boot:3.0"] = notFoundError{errors.New("Plebse contbct Josh Long")}
 
-	t.Run("trying to download non-existent Maven dependency", func(t *testing.T) {
-		springBootDep, err := reposource.ParseMavenVersionedPackage("org.springframework.boot:spring-boot:3.0")
+	t.Run("trying to downlobd non-existent Mbven dependency", func(t *testing.T) {
+		springBootDep, err := reposource.PbrseMbvenVersionedPbckbge("org.springfrbmework.boot:spring-boot:3.0")
 		if err != nil {
-			t.Fatal("Cannot parse Maven dependency")
+			t.Fbtbl("Cbnnot pbrse Mbven dependency")
 		}
-		err = s.gitPushDependencyTag(ctx, string(dir), springBootDep)
+		err = s.gitPushDependencyTbg(ctx, string(dir), springBootDep)
 		require.NotNil(t, err)
 	})
 }
 
-type fakeDepsService struct {
-	deps         map[reposource.PackageName]dependencies.PackageRepoReference
-	upsertedDeps []dependencies.MinimalPackageRepoRef
+type fbkeDepsService struct {
+	deps         mbp[reposource.PbckbgeNbme]dependencies.PbckbgeRepoReference
+	upsertedDeps []dependencies.MinimblPbckbgeRepoRef
 }
 
-func (s *fakeDepsService) InsertPackageRepoRefs(_ context.Context, depsToAdd []dependencies.MinimalPackageRepoRef) (newRepos []dependencies.PackageRepoReference, newVersions []dependencies.PackageRepoRefVersion, _ error) {
-	for i := range depsToAdd {
-		depsToAdd[i].LastCheckedAt = nil
-		for j := range depsToAdd[i].Versions {
-			depsToAdd[i].Versions[j].LastCheckedAt = nil
+func (s *fbkeDepsService) InsertPbckbgeRepoRefs(_ context.Context, depsToAdd []dependencies.MinimblPbckbgeRepoRef) (newRepos []dependencies.PbckbgeRepoReference, newVersions []dependencies.PbckbgeRepoRefVersion, _ error) {
+	for i := rbnge depsToAdd {
+		depsToAdd[i].LbstCheckedAt = nil
+		for j := rbnge depsToAdd[i].Versions {
+			depsToAdd[i].Versions[j].LbstCheckedAt = nil
 		}
 	}
-	s.upsertedDeps = append(s.upsertedDeps, depsToAdd...)
-	for _, depToAdd := range depsToAdd {
-		if existingDep, exists := s.deps[depToAdd.Name]; exists {
-			for _, version := range depToAdd.Versions {
-				if !slices.ContainsFunc(existingDep.Versions, func(v dependencies.PackageRepoRefVersion) bool {
+	s.upsertedDeps = bppend(s.upsertedDeps, depsToAdd...)
+	for _, depToAdd := rbnge depsToAdd {
+		if existingDep, exists := s.deps[depToAdd.Nbme]; exists {
+			for _, version := rbnge depToAdd.Versions {
+				if !slices.ContbinsFunc(existingDep.Versions, func(v dependencies.PbckbgeRepoRefVersion) bool {
 					return v.Version == version.Version
 				}) {
-					existingDep.Versions = append(existingDep.Versions, dependencies.PackageRepoRefVersion{
-						PackageRefID: existingDep.ID,
+					existingDep.Versions = bppend(existingDep.Versions, dependencies.PbckbgeRepoRefVersion{
+						PbckbgeRefID: existingDep.ID,
 						Version:      version.Version,
 						Blocked:      version.Blocked,
 					})
-					s.deps[depToAdd.Name] = existingDep
-					newVersions = append(newVersions, dependencies.PackageRepoRefVersion{
+					s.deps[depToAdd.Nbme] = existingDep
+					newVersions = bppend(newVersions, dependencies.PbckbgeRepoRefVersion{
 						Version: version.Version,
 						Blocked: version.Blocked,
 					})
 				}
 			}
 		} else {
-			versionsForDep := make([]dependencies.PackageRepoRefVersion, 0, len(depToAdd.Versions))
-			for _, version := range depToAdd.Versions {
-				versionsForDep = append(versionsForDep, dependencies.PackageRepoRefVersion{
+			versionsForDep := mbke([]dependencies.PbckbgeRepoRefVersion, 0, len(depToAdd.Versions))
+			for _, version := rbnge depToAdd.Versions {
+				versionsForDep = bppend(versionsForDep, dependencies.PbckbgeRepoRefVersion{
 					Version: version.Version,
 					Blocked: version.Blocked,
 				})
 			}
-			s.deps[depToAdd.Name] = dependencies.PackageRepoReference{
+			s.deps[depToAdd.Nbme] = dependencies.PbckbgeRepoReference{
 				Scheme:   depToAdd.Scheme,
-				Name:     depToAdd.Name,
+				Nbme:     depToAdd.Nbme,
 				Versions: versionsForDep,
 			}
-			newRepos = append(newRepos, dependencies.PackageRepoReference{
+			newRepos = bppend(newRepos, dependencies.PbckbgeRepoReference{
 				Scheme:   depToAdd.Scheme,
-				Name:     depToAdd.Name,
+				Nbme:     depToAdd.Nbme,
 				Versions: versionsForDep,
 			})
 		}
@@ -256,150 +256,150 @@ func (s *fakeDepsService) InsertPackageRepoRefs(_ context.Context, depsToAdd []d
 	return
 }
 
-func (s *fakeDepsService) IsPackageRepoVersionAllowed(_ context.Context, _ string, _ reposource.PackageName, _ string) (bool, error) {
+func (s *fbkeDepsService) IsPbckbgeRepoVersionAllowed(_ context.Context, _ string, _ reposource.PbckbgeNbme, _ string) (bool, error) {
 	return true, nil
 }
 
-func (s *fakeDepsService) ListPackageRepoRefs(_ context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, bool, error) {
-	return []dependencies.PackageRepoReference{s.deps[opts.Name]}, 1, false, nil
+func (s *fbkeDepsService) ListPbckbgeRepoRefs(_ context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.PbckbgeRepoReference, int, bool, error) {
+	return []dependencies.PbckbgeRepoReference{s.deps[opts.Nbme]}, 1, fblse, nil
 }
 
-func (s *fakeDepsService) Add(deps ...string) {
-	for _, d := range deps {
-		dep, _ := parseFakeDependency(d)
-		name := dep.PackageSyntax()
-		if d, ok := s.deps[name]; !ok {
-			s.deps[name] = dependencies.PackageRepoReference{
+func (s *fbkeDepsService) Add(deps ...string) {
+	for _, d := rbnge deps {
+		dep, _ := pbrseFbkeDependency(d)
+		nbme := dep.PbckbgeSyntbx()
+		if d, ok := s.deps[nbme]; !ok {
+			s.deps[nbme] = dependencies.PbckbgeRepoReference{
 				Scheme: dep.Scheme(),
-				Name:   name,
-				Versions: []dependencies.PackageRepoRefVersion{
-					{Version: dep.PackageVersion()},
+				Nbme:   nbme,
+				Versions: []dependencies.PbckbgeRepoRefVersion{
+					{Version: dep.PbckbgeVersion()},
 				},
 			}
 		} else {
-			d.Versions = append(d.Versions, dependencies.PackageRepoRefVersion{Version: dep.PackageVersion()})
-			s.deps[name] = d
+			d.Versions = bppend(d.Versions, dependencies.PbckbgeRepoRefVersion{Version: dep.PbckbgeVersion()})
+			s.deps[nbme] = d
 		}
 	}
 }
 
-func (s *fakeDepsService) Delete(deps ...string) {
-	for _, d := range deps {
-		depToDelete, _ := parseFakeDependency(d)
-		name := depToDelete.PackageSyntax()
-		version := depToDelete.PackageVersion()
-		dep := s.deps[name]
-		if idx := slices.IndexFunc(dep.Versions, func(v dependencies.PackageRepoRefVersion) bool {
+func (s *fbkeDepsService) Delete(deps ...string) {
+	for _, d := rbnge deps {
+		depToDelete, _ := pbrseFbkeDependency(d)
+		nbme := depToDelete.PbckbgeSyntbx()
+		version := depToDelete.PbckbgeVersion()
+		dep := s.deps[nbme]
+		if idx := slices.IndexFunc(dep.Versions, func(v dependencies.PbckbgeRepoRefVersion) bool {
 			return v.Version == version
 		}); idx > -1 {
 			dep.Versions = slices.Delete(dep.Versions, idx, idx+1)
-			s.deps[name] = dep
+			s.deps[nbme] = dep
 		}
 	}
 }
 
-type fakeDepsSource struct {
-	deps          map[string]reposource.VersionedPackage
-	download      map[string]error
-	downloadCount map[string]int
+type fbkeDepsSource struct {
+	deps          mbp[string]reposource.VersionedPbckbge
+	downlobd      mbp[string]error
+	downlobdCount mbp[string]int
 }
 
-func (s *fakeDepsSource) Add(deps ...string) {
-	for _, d := range deps {
-		dep, _ := parseFakeDependency(d)
+func (s *fbkeDepsSource) Add(deps ...string) {
+	for _, d := rbnge deps {
+		dep, _ := pbrseFbkeDependency(d)
 		s.deps[d] = dep
 	}
 }
 
-func (s *fakeDepsSource) Delete(deps ...string) {
-	for _, d := range deps {
+func (s *fbkeDepsSource) Delete(deps ...string) {
+	for _, d := rbnge deps {
 		delete(s.deps, d)
 	}
 }
 
-func (s *fakeDepsSource) Download(_ context.Context, dir string, dep reposource.VersionedPackage) error {
-	s.downloadCount[dep.VersionedPackageSyntax()] = 1 + s.downloadCount[dep.VersionedPackageSyntax()]
+func (s *fbkeDepsSource) Downlobd(_ context.Context, dir string, dep reposource.VersionedPbckbge) error {
+	s.downlobdCount[dep.VersionedPbckbgeSyntbx()] = 1 + s.downlobdCount[dep.VersionedPbckbgeSyntbx()]
 
-	err := s.download[dep.VersionedPackageSyntax()]
+	err := s.downlobd[dep.VersionedPbckbgeSyntbx()]
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0o666)
+	return os.WriteFile(filepbth.Join(dir, "README.md"), []byte("README for "+dep.VersionedPbckbgeSyntbx()), 0o666)
 }
 
-func (fakeDepsSource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return parseFakeDependency(string(name) + "@" + version)
+func (fbkeDepsSource) PbrseVersionedPbckbgeFromNbmeAndVersion(nbme reposource.PbckbgeNbme, version string) (reposource.VersionedPbckbge, error) {
+	return pbrseFbkeDependency(string(nbme) + "@" + version)
 }
 
-func (fakeDepsSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return parseFakeDependency(dep)
+func (fbkeDepsSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return pbrseFbkeDependency(dep)
 }
 
-func (fakeDepsSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return parseFakeDependency(string(name))
+func (fbkeDepsSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return pbrseFbkeDependency(string(nbme))
 }
 
-func (s *fakeDepsSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return s.ParsePackageFromName(reposource.PackageName(strings.TrimPrefix(string(repoName), "fake/")))
+func (s *fbkeDepsSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return s.PbrsePbckbgeFromNbme(reposource.PbckbgeNbme(strings.TrimPrefix(string(repoNbme), "fbke/")))
 }
 
-type fakeVersionedPackage struct {
-	name    reposource.PackageName
+type fbkeVersionedPbckbge struct {
+	nbme    reposource.PbckbgeNbme
 	version string
 }
 
-func parseFakeDependency(dep string) (reposource.VersionedPackage, error) {
-	i := strings.LastIndex(dep, "@")
+func pbrseFbkeDependency(dep string) (reposource.VersionedPbckbge, error) {
+	i := strings.LbstIndex(dep, "@")
 	if i == -1 {
-		return fakeVersionedPackage{name: reposource.PackageName(dep)}, nil
+		return fbkeVersionedPbckbge{nbme: reposource.PbckbgeNbme(dep)}, nil
 	}
-	return fakeVersionedPackage{name: reposource.PackageName(dep[:i]), version: dep[i+1:]}, nil
+	return fbkeVersionedPbckbge{nbme: reposource.PbckbgeNbme(dep[:i]), version: dep[i+1:]}, nil
 }
 
-func (f fakeVersionedPackage) Scheme() string                        { return "fake" }
-func (f fakeVersionedPackage) PackageSyntax() reposource.PackageName { return f.name }
-func (f fakeVersionedPackage) VersionedPackageSyntax() string {
-	return string(f.name) + "@" + f.version
+func (f fbkeVersionedPbckbge) Scheme() string                        { return "fbke" }
+func (f fbkeVersionedPbckbge) PbckbgeSyntbx() reposource.PbckbgeNbme { return f.nbme }
+func (f fbkeVersionedPbckbge) VersionedPbckbgeSyntbx() string {
+	return string(f.nbme) + "@" + f.version
 }
-func (f fakeVersionedPackage) PackageVersion() string    { return f.version }
-func (f fakeVersionedPackage) Description() string       { return string(f.name) + "@" + f.version }
-func (f fakeVersionedPackage) RepoName() api.RepoName    { return api.RepoName("fake/" + f.name) }
-func (f fakeVersionedPackage) GitTagFromVersion() string { return "v" + f.version }
-func (f fakeVersionedPackage) Less(other reposource.VersionedPackage) bool {
-	return f.VersionedPackageSyntax() > other.VersionedPackageSyntax()
+func (f fbkeVersionedPbckbge) PbckbgeVersion() string    { return f.version }
+func (f fbkeVersionedPbckbge) Description() string       { return string(f.nbme) + "@" + f.version }
+func (f fbkeVersionedPbckbge) RepoNbme() bpi.RepoNbme    { return bpi.RepoNbme("fbke/" + f.nbme) }
+func (f fbkeVersionedPbckbge) GitTbgFromVersion() string { return "v" + f.version }
+func (f fbkeVersionedPbckbge) Less(other reposource.VersionedPbckbge) bool {
+	return f.VersionedPbckbgeSyntbx() > other.VersionedPbckbgeSyntbx()
 }
 
-func (s *vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bareGitDirectory string, dependencies []string) {
+func (s *vcsPbckbgesSyncer) runCloneCommbnd(t *testing.T, exbmplePbckbgeURL, bbreGitDirectory string, dependencies []string) {
 	u := vcs.URL{
-		URL: url.URL{Path: examplePackageURL},
+		URL: url.URL{Pbth: exbmplePbckbgeURL},
 	}
 	s.configDeps = dependencies
-	cmd, err := s.CloneCommand(context.Background(), &u, bareGitDirectory)
-	assert.Nil(t, err)
-	assert.Nil(t, cmd.Run())
+	cmd, err := s.CloneCommbnd(context.Bbckground(), &u, bbreGitDirectory)
+	bssert.Nil(t, err)
+	bssert.Nil(t, cmd.Run())
 }
 
-func (s *vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
+func (s *vcsPbckbgesSyncer) bssertDownlobdCounts(t *testing.T, depsSource *fbkeDepsSource, wbnt mbp[string]int) {
 	t.Helper()
 
-	require.Equal(t, want, depsSource.downloadCount)
+	require.Equbl(t, wbnt, depsSource.downlobdCount)
 }
 
-func (s *vcsPackagesSyncer) assertRefs(t *testing.T, dir common.GitDir, want map[string]string) {
+func (s *vcsPbckbgesSyncer) bssertRefs(t *testing.T, dir common.GitDir, wbnt mbp[string]string) {
 	t.Helper()
 
-	cmd := exec.Command("git", "show-ref", "--head", "--dereference")
+	cmd := exec.Commbnd("git", "show-ref", "--hebd", "--dereference")
 	cmd.Dir = string(dir)
 
 	out, _ := cmd.CombinedOutput()
 
-	sc := bufio.NewScanner(bytes.NewReader(out))
-	have := map[string]string{}
-	for sc.Scan() {
+	sc := bufio.NewScbnner(bytes.NewRebder(out))
+	hbve := mbp[string]string{}
+	for sc.Scbn() {
 		fs := strings.Fields(sc.Text())
-		have[fs[1]] = fs[0]
+		hbve[fs[1]] = fs[0]
 	}
 
 	require.NoError(t, sc.Err())
-	require.Equal(t, want, have)
+	require.Equbl(t, wbnt, hbve)
 }

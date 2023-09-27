@@ -1,4 +1,4 @@
-package httpcli
+pbckbge httpcli
 
 import (
 	"context"
@@ -6,115 +6,115 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// outboundRequestsRedisFIFOList is a FIFO redis cache to store the requests.
-var outboundRequestsRedisFIFOList = rcache.NewFIFOListDynamic("outbound-requests", func() int {
+// outboundRequestsRedisFIFOList is b FIFO redis cbche to store the requests.
+vbr outboundRequestsRedisFIFOList = rcbche.NewFIFOListDynbmic("outbound-requests", func() int {
 	return int(OutboundRequestLogLimit())
 })
 
-const sourcegraphPrefix = "github.com/sourcegraph/sourcegraph/"
+const sourcegrbphPrefix = "github.com/sourcegrbph/sourcegrbph/"
 
-func redisLoggerMiddleware() Middleware {
-	creatorStackFrame, _ := getFrames(4).Next()
+func redisLoggerMiddlewbre() Middlewbre {
+	crebtorStbckFrbme, _ := getFrbmes(4).Next()
 	return func(cli Doer) Doer {
 		return DoerFunc(func(req *http.Request) (*http.Response, error) {
-			start := time.Now()
+			stbrt := time.Now()
 			resp, err := cli.Do(req)
-			duration := time.Since(start)
+			durbtion := time.Since(stbrt)
 
 			limit := OutboundRequestLogLimit()
-			shouldRedactSensitiveHeaders := !deploy.IsDev(deploy.Type()) || RedactOutboundRequestHeaders()
+			shouldRedbctSensitiveHebders := !deploy.IsDev(deploy.Type()) || RedbctOutboundRequestHebders()
 
-			// Feature is turned off, do not log
+			// Febture is turned off, do not log
 			if limit == 0 {
 				return resp, err
 			}
 
-			// middlewareErrors will be set later if there is an error
-			var middlewareErrors error
+			// middlewbreErrors will be set lbter if there is bn error
+			vbr middlewbreErrors error
 			defer func() {
-				if middlewareErrors != nil {
-					*req = *req.WithContext(context.WithValue(req.Context(),
-						redisLoggingMiddlewareErrorKey, middlewareErrors))
+				if middlewbreErrors != nil {
+					*req = *req.WithContext(context.WithVblue(req.Context(),
+						redisLoggingMiddlewbreErrorKey, middlewbreErrors))
 				}
 			}()
 
-			// Read body
-			var requestBody []byte
+			// Rebd body
+			vbr requestBody []byte
 			if req != nil && req.GetBody != nil {
 				body, _ := req.GetBody()
 				if body != nil {
-					var readErr error
-					requestBody, readErr = io.ReadAll(body)
+					vbr rebdErr error
+					requestBody, rebdErr = io.RebdAll(body)
 					if err != nil {
-						middlewareErrors = errors.Append(middlewareErrors,
-							errors.Wrap(readErr, "read body"))
+						middlewbreErrors = errors.Append(middlewbreErrors,
+							errors.Wrbp(rebdErr, "rebd body"))
 					}
 				}
 			}
 
-			// Pull out data if we have `resp`
-			var responseHeaders http.Header
-			var statusCode int32
+			// Pull out dbtb if we hbve `resp`
+			vbr responseHebders http.Hebder
+			vbr stbtusCode int32
 			if resp != nil {
-				responseHeaders = resp.Header
-				statusCode = int32(resp.StatusCode)
+				responseHebders = resp.Hebder
+				stbtusCode = int32(resp.StbtusCode)
 			}
 
-			// Redact sensitive headers
-			requestHeaders := req.Header
+			// Redbct sensitive hebders
+			requestHebders := req.Hebder
 
-			if shouldRedactSensitiveHeaders {
-				requestHeaders = redactSensitiveHeaders(requestHeaders)
-				responseHeaders = redactSensitiveHeaders(responseHeaders)
+			if shouldRedbctSensitiveHebders {
+				requestHebders = redbctSensitiveHebders(requestHebders)
+				responseHebders = redbctSensitiveHebders(responseHebders)
 			}
 
-			// Create log item
-			var errorMessage string
+			// Crebte log item
+			vbr errorMessbge string
 			if err != nil {
-				errorMessage = err.Error()
+				errorMessbge = err.Error()
 			}
-			key := time.Now().UTC().Format("2006-01-02T15_04_05.999999999")
-			callerStackFrames := getFrames(4) // Starts at the caller of the caller of redisLoggerMiddleware
+			key := time.Now().UTC().Formbt("2006-01-02T15_04_05.999999999")
+			cbllerStbckFrbmes := getFrbmes(4) // Stbrts bt the cbller of the cbller of redisLoggerMiddlewbre
 			logItem := types.OutboundRequestLogItem{
 				ID:                 key,
-				StartedAt:          start,
+				StbrtedAt:          stbrt,
 				Method:             req.Method,
 				URL:                req.URL.String(),
-				RequestHeaders:     requestHeaders,
+				RequestHebders:     requestHebders,
 				RequestBody:        string(requestBody),
-				StatusCode:         statusCode,
-				ResponseHeaders:    responseHeaders,
-				Duration:           duration.Seconds(),
-				ErrorMessage:       errorMessage,
-				CreationStackFrame: formatStackFrame(creatorStackFrame.Function, creatorStackFrame.File, creatorStackFrame.Line),
-				CallStackFrame:     formatStackFrames(callerStackFrames),
+				StbtusCode:         stbtusCode,
+				ResponseHebders:    responseHebders,
+				Durbtion:           durbtion.Seconds(),
+				ErrorMessbge:       errorMessbge,
+				CrebtionStbckFrbme: formbtStbckFrbme(crebtorStbckFrbme.Function, crebtorStbckFrbme.File, crebtorStbckFrbme.Line),
+				CbllStbckFrbme:     formbtStbckFrbmes(cbllerStbckFrbmes),
 			}
 
-			// Serialize log item
-			logItemJson, jsonErr := json.Marshal(logItem)
+			// Seriblize log item
+			logItemJson, jsonErr := json.Mbrshbl(logItem)
 			if jsonErr != nil {
-				middlewareErrors = errors.Append(middlewareErrors,
-					errors.Wrap(jsonErr, "marshal log item"))
+				middlewbreErrors = errors.Append(middlewbreErrors,
+					errors.Wrbp(jsonErr, "mbrshbl log item"))
 			}
 
 			go func() {
-				// Save new item
+				// Sbve new item
 				if err := outboundRequestsRedisFIFOList.Insert(logItemJson); err != nil {
-					// Log would get upset if we created a logger at init time → create logger on the fly
-					log.Scoped("redisLoggerMiddleware", "").Error("insert log item", log.Error(err))
+					// Log would get upset if we crebted b logger bt init time → crebte logger on the fly
+					log.Scoped("redisLoggerMiddlewbre", "").Error("insert log item", log.Error(err))
 				}
 			}()
 
@@ -123,20 +123,20 @@ func redisLoggerMiddleware() Middleware {
 	}
 }
 
-// GetOutboundRequestLogItems returns all outbound request log items after the given key,
-// in ascending order, trimmed to maximum {limit} items. Example for `after`: "2021-01-01T00_00_00.000000".
-func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.OutboundRequestLogItem, error) {
-	var limit = int(OutboundRequestLogLimit())
+// GetOutboundRequestLogItems returns bll outbound request log items bfter the given key,
+// in bscending order, trimmed to mbximum {limit} items. Exbmple for `bfter`: "2021-01-01T00_00_00.000000".
+func GetOutboundRequestLogItems(ctx context.Context, bfter string) ([]*types.OutboundRequestLogItem, error) {
+	vbr limit = int(OutboundRequestLogLimit())
 
 	if limit == 0 {
 		return []*types.OutboundRequestLogItem{}, nil
 	}
 
 	items, err := getOutboundRequestLogItems(ctx, func(item *types.OutboundRequestLogItem) bool {
-		if after == "" {
+		if bfter == "" {
 			return true
 		} else {
-			return item.ID > after
+			return item.ID > bfter
 		}
 	})
 	if err != nil {
@@ -151,7 +151,7 @@ func GetOutboundRequestLogItems(ctx context.Context, after string) ([]*types.Out
 }
 
 func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error) {
-	items, err := getOutboundRequestLogItems(context.Background(), func(item *types.OutboundRequestLogItem) bool {
+	items, err := getOutboundRequestLogItems(context.Bbckground(), func(item *types.OutboundRequestLogItem) bool {
 		return item.ID == key
 	})
 	if err != nil {
@@ -163,28 +163,28 @@ func GetOutboundRequestLogItem(key string) (*types.OutboundRequestLogItem, error
 	return items[0], nil
 }
 
-// getOutboundRequestLogItems returns all items where pred returns true,
-// sorted by ID ascending.
+// getOutboundRequestLogItems returns bll items where pred returns true,
+// sorted by ID bscending.
 func getOutboundRequestLogItems(ctx context.Context, pred func(*types.OutboundRequestLogItem) bool) ([]*types.OutboundRequestLogItem, error) {
-	// We fetch all values from redis, then just return those matching pred.
-	// Given the max size is enforced as 500, this is fine. But if we ever
-	// raise the limit, we likely need to think of an alternative way to do
-	// pagination against lists / or also store the items so we can look up by
+	// We fetch bll vblues from redis, then just return those mbtching pred.
+	// Given the mbx size is enforced bs 500, this is fine. But if we ever
+	// rbise the limit, we likely need to think of bn blternbtive wby to do
+	// pbginbtion bgbinst lists / or blso store the items so we cbn look up by
 	// key
-	rawItems, err := outboundRequestsRedisFIFOList.All(ctx)
+	rbwItems, err := outboundRequestsRedisFIFOList.All(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "list all log items")
+		return nil, errors.Wrbp(err, "list bll log items")
 	}
 
-	var items []*types.OutboundRequestLogItem
-	for _, rawItem := range rawItems {
-		var item types.OutboundRequestLogItem
-		err = json.Unmarshal(rawItem, &item)
+	vbr items []*types.OutboundRequestLogItem
+	for _, rbwItem := rbnge rbwItems {
+		vbr item types.OutboundRequestLogItem
+		err = json.Unmbrshbl(rbwItem, &item)
 		if err != nil {
 			return nil, err
 		}
 		if pred(&item) {
-			items = append(items, &item)
+			items = bppend(items, &item)
 		}
 	}
 
@@ -195,51 +195,51 @@ func getOutboundRequestLogItems(ctx context.Context, pred func(*types.OutboundRe
 	return items, nil
 }
 
-func redactSensitiveHeaders(headers http.Header) http.Header {
-	var cleanHeaders = make(http.Header)
-	for name, values := range headers {
-		if IsRiskyHeader(name, values) {
-			cleanHeaders[name] = []string{"REDACTED"}
+func redbctSensitiveHebders(hebders http.Hebder) http.Hebder {
+	vbr clebnHebders = mbke(http.Hebder)
+	for nbme, vblues := rbnge hebders {
+		if IsRiskyHebder(nbme, vblues) {
+			clebnHebders[nbme] = []string{"REDACTED"}
 		} else {
-			cleanHeaders[name] = values
+			clebnHebders[nbme] = vblues
 		}
 	}
-	return cleanHeaders
+	return clebnHebders
 }
 
-func formatStackFrames(frames *runtime.Frames) string {
-	var sb strings.Builder
+func formbtStbckFrbmes(frbmes *runtime.Frbmes) string {
+	vbr sb strings.Builder
 	for {
-		frame, more := frames.Next()
+		frbme, more := frbmes.Next()
 		if !more {
-			break
+			brebk
 		}
-		sb.WriteString(formatStackFrame(frame.Function, frame.File, frame.Line))
+		sb.WriteString(formbtStbckFrbme(frbme.Function, frbme.File, frbme.Line))
 		sb.WriteString("\n")
 	}
 	return strings.TrimRight(sb.String(), "\n")
 }
 
-func formatStackFrame(function string, file string, line int) string {
-	treeAndFunc := strings.Split(function, "/")   // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend.(*requestTracer).TraceQuery
-	pckAndFunc := treeAndFunc[len(treeAndFunc)-1] // graphqlbackend.(*requestTracer).TraceQuery
-	dotPieces := strings.Split(pckAndFunc, ".")   // ["graphqlbackend" , "(*requestTracer)", "TraceQuery"]
-	pckName := dotPieces[0]                       // graphqlbackend
-	funcName := strings.Join(dotPieces[1:], ".")  // (*requestTracer).TraceQuery
+func formbtStbckFrbme(function string, file string, line int) string {
+	treeAndFunc := strings.Split(function, "/")   // github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend.(*requestTrbcer).TrbceQuery
+	pckAndFunc := treeAndFunc[len(treeAndFunc)-1] // grbphqlbbckend.(*requestTrbcer).TrbceQuery
+	dotPieces := strings.Split(pckAndFunc, ".")   // ["grbphqlbbckend" , "(*requestTrbcer)", "TrbceQuery"]
+	pckNbme := dotPieces[0]                       // grbphqlbbckend
+	funcNbme := strings.Join(dotPieces[1:], ".")  // (*requestTrbcer).TrbceQuery
 
-	tree := strings.Join(treeAndFunc[:len(treeAndFunc)-1], "/") + "/" + pckName // github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
-	tree = strings.TrimPrefix(tree, sourcegraphPrefix)
+	tree := strings.Join(treeAndFunc[:len(treeAndFunc)-1], "/") + "/" + pckNbme // github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend
+	tree = strings.TrimPrefix(tree, sourcegrbphPrefix)
 
-	// Reconstruct the frame file path so that we don't include the local path on the machine that built this instance
-	fileName := strings.TrimPrefix(filepath.Join(tree, filepath.Base(file)), "/main/") // cmd/frontend/graphqlbackend/trace.go
+	// Reconstruct the frbme file pbth so thbt we don't include the locbl pbth on the mbchine thbt built this instbnce
+	fileNbme := strings.TrimPrefix(filepbth.Join(tree, filepbth.Bbse(file)), "/mbin/") // cmd/frontend/grbphqlbbckend/trbce.go
 
-	return fmt.Sprintf("%s:%d (Function: %s)", fileName, line, funcName)
+	return fmt.Sprintf("%s:%d (Function: %s)", fileNbme, line, funcNbme)
 }
 
 const pcLen = 1024
 
-func getFrames(skip int) *runtime.Frames {
-	pc := make([]uintptr, pcLen)
-	n := runtime.Callers(skip, pc)
-	return runtime.CallersFrames(pc[:n])
+func getFrbmes(skip int) *runtime.Frbmes {
+	pc := mbke([]uintptr, pcLen)
+	n := runtime.Cbllers(skip, pc)
+	return runtime.CbllersFrbmes(pc[:n])
 }

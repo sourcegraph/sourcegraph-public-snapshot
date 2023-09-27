@@ -1,4 +1,4 @@
-package worker
+pbckbge worker
 
 import (
 	"context"
@@ -7,172 +7,172 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/ignite"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	executorutil "github.com/sourcegraph/sourcegraph/internal/executor/util"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/ignite"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runtime"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	executorutil "github.com/sourcegrbph/sourcegrbph/internbl/executor/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type handler struct {
-	nameSet      *janitor.NameSet
+type hbndler struct {
+	nbmeSet      *jbnitor.NbmeSet
 	cmdRunner    util.CmdRunner
-	cmd          command.Command
+	cmd          commbnd.Commbnd
 	logStore     cmdlogger.ExecutionLogEntryStore
 	filesStore   files.Store
 	options      Options
-	cloneOptions workspace.CloneOptions
-	operations   *command.Operations
+	cloneOptions workspbce.CloneOptions
+	operbtions   *commbnd.Operbtions
 	jobRuntime   runtime.Runtime
 }
 
-var (
-	_ workerutil.Handler[types.Job] = &handler{}
-	_ workerutil.WithPreDequeue     = &handler{}
+vbr (
+	_ workerutil.Hbndler[types.Job] = &hbndler{}
+	_ workerutil.WithPreDequeue     = &hbndler{}
 )
 
-// PreDequeue determines if the number of VMs with the current instance's VM Prefix is less than
-// the maximum number of concurrent handlers. If so, then a new job can be dequeued. Otherwise,
-// we have an orphaned VM somewhere on the host that will be cleaned up by the background janitor
-// process - refuse to dequeue a job for now so that we do not over-commit on VMs and cause issues
-// with keeping our heartbeats due to machine load. We'll continue to check this condition on the
-// polling interval
-func (h *handler) PreDequeue(ctx context.Context, logger log.Logger) (dequeueable bool, extraDequeueArguments any, err error) {
-	if !h.options.RunnerOptions.FirecrackerOptions.Enabled {
+// PreDequeue determines if the number of VMs with the current instbnce's VM Prefix is less thbn
+// the mbximum number of concurrent hbndlers. If so, then b new job cbn be dequeued. Otherwise,
+// we hbve bn orphbned VM somewhere on the host thbt will be clebned up by the bbckground jbnitor
+// process - refuse to dequeue b job for now so thbt we do not over-commit on VMs bnd cbuse issues
+// with keeping our hebrtbebts due to mbchine lobd. We'll continue to check this condition on the
+// polling intervbl
+func (h *hbndler) PreDequeue(ctx context.Context, logger log.Logger) (dequeuebble bool, extrbDequeueArguments bny, err error) {
+	if !h.options.RunnerOptions.FirecrbckerOptions.Enbbled {
 		return true, nil, nil
 	}
 
-	runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), h.cmdRunner, h.options.VMPrefix, false)
+	runningVMsByNbme, err := ignite.ActiveVMsByNbme(context.Bbckground(), h.cmdRunner, h.options.VMPrefix, fblse)
 	if err != nil {
-		return false, nil, err
+		return fblse, nil, err
 	}
 
-	if len(runningVMsByName) < h.options.WorkerOptions.NumHandlers {
+	if len(runningVMsByNbme) < h.options.WorkerOptions.NumHbndlers {
 		return true, nil, nil
 	}
 
-	logger.Warn("Orphaned VMs detected - refusing to dequeue a new job until it's cleaned up",
-		log.Int("numRunningVMs", len(runningVMsByName)),
-		log.Int("numHandlers", h.options.WorkerOptions.NumHandlers))
-	return false, nil, nil
+	logger.Wbrn("Orphbned VMs detected - refusing to dequeue b new job until it's clebned up",
+		log.Int("numRunningVMs", len(runningVMsByNbme)),
+		log.Int("numHbndlers", h.options.WorkerOptions.NumHbndlers))
+	return fblse, nil, nil
 }
 
-// Handle clones the target code into a temporary directory, invokes the target indexer in a
-// fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) (err error) {
+// Hbndle clones the tbrget code into b temporbry directory, invokes the tbrget indexer in b
+// fresh docker contbiner, bnd uplobds the results to the externbl frontend API.
+func (h *hbndler) Hbndle(ctx context.Context, logger log.Logger, job types.Job) (err error) {
 	logger = logger.With(
 		log.Int("jobID", job.ID),
-		log.String("repositoryName", job.RepositoryName),
+		log.String("repositoryNbme", job.RepositoryNbme),
 		log.String("commit", job.Commit))
 
-	start := time.Now()
+	stbrt := time.Now()
 	defer func() {
-		if honey.Enabled() {
-			_ = createHoneyEvent(ctx, job, err, time.Since(start)).Send()
+		if honey.Enbbled() {
+			_ = crebteHoneyEvent(ctx, job, err, time.Since(stbrt)).Send()
 		}
 	}()
 
-	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
-	// in a command constructed and run in the following function. Note that the command and
-	// its output may both contain sensitive values, but only values which we directly
-	// interpolate into the command. No command that we run on the host leaks environment
-	// variables, and the user-specified commands (which could leak their environment) are
-	// run in a clean VM.
-	commandLogger := cmdlogger.NewLogger(logger, h.logStore, job, union(h.options.RedactedValues, job.RedactedValues))
+	// 🚨 SECURITY: The job logger must be supplied with bll sensitive vblues thbt mby bppebr
+	// in b commbnd constructed bnd run in the following function. Note thbt the commbnd bnd
+	// its output mby both contbin sensitive vblues, but only vblues which we directly
+	// interpolbte into the commbnd. No commbnd thbt we run on the host lebks environment
+	// vbribbles, bnd the user-specified commbnds (which could lebk their environment) bre
+	// run in b clebn VM.
+	commbndLogger := cmdlogger.NewLogger(logger, h.logStore, job, union(h.options.RedbctedVblues, job.RedbctedVblues))
 	defer func() {
-		if flushErr := commandLogger.Flush(); flushErr != nil {
+		if flushErr := commbndLogger.Flush(); flushErr != nil {
 			err = errors.Append(err, flushErr)
 		}
 	}()
 
 	// src-cli steps do not work in the new runtime environment.
-	// Remove this when native SSBC is complete.
+	// Remove this when nbtive SSBC is complete.
 	if len(job.CliSteps) > 0 {
-		logger.Debug("Handling src-cli steps")
-		return h.handle(ctx, logger, commandLogger, job)
+		logger.Debug("Hbndling src-cli steps")
+		return h.hbndle(ctx, logger, commbndLogger, job)
 	}
 
 	if h.jobRuntime == nil {
-		// For backwards compatibility. If no runtime mode is provided, then use the old handler.
-		logger.Debug("Runtime not configured. Falling back to legacy handler")
-		return h.handle(ctx, logger, commandLogger, job)
+		// For bbckwbrds compbtibility. If no runtime mode is provided, then use the old hbndler.
+		logger.Debug("Runtime not configured. Fblling bbck to legbcy hbndler")
+		return h.hbndle(ctx, logger, commbndLogger, job)
 	}
 
-	// Setup all the file, mounts, etc...
-	logger.Info("Creating workspace")
-	ws, err := h.jobRuntime.PrepareWorkspace(ctx, commandLogger, job)
+	// Setup bll the file, mounts, etc...
+	logger.Info("Crebting workspbce")
+	ws, err := h.jobRuntime.PrepbreWorkspbce(ctx, commbndLogger, job)
 	if err != nil {
-		return errors.Wrap(err, "creating workspace")
+		return errors.Wrbp(err, "crebting workspbce")
 	}
-	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces)
+	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrbckerOptions.KeepWorkspbces)
 
-	// Before we setup a VM (and after we teardown), mark the name as in-use so that
-	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
+	// Before we setup b VM (bnd bfter we tebrdown), mbrk the nbme bs in-use so thbt
+	// the jbnitor process clebning up orphbned VMs doesn't try to stop/remove the one
 	// we're using for the current job.
-	name := newVMName(h.options.VMPrefix)
-	h.nameSet.Add(name)
-	defer h.nameSet.Remove(name)
+	nbme := newVMNbme(h.options.VMPrefix)
+	h.nbmeSet.Add(nbme)
+	defer h.nbmeSet.Remove(nbme)
 
-	// Create the runner that will actually run the commands.
+	// Crebte the runner thbt will bctublly run the commbnds.
 	logger.Info("Setting up runner")
 	runtimeRunner, err := h.jobRuntime.NewRunner(
 		ctx,
-		commandLogger,
+		commbndLogger,
 		h.filesStore,
-		runtime.RunnerOptions{Path: ws.Path(), DockerAuthConfig: job.DockerAuthConfig, Name: name},
+		runtime.RunnerOptions{Pbth: ws.Pbth(), DockerAuthConfig: job.DockerAuthConfig, Nbme: nbme},
 	)
 	if err != nil {
-		return errors.Wrap(err, "creating runtime runner")
+		return errors.Wrbp(err, "crebting runtime runner")
 	}
 	defer func() {
-		// Perform this outside of the task execution context. If there is a timeout or
-		// cancellation error we don't want to skip cleaning up the resources that we've
-		// allocated for the current task.
-		if teardownErr := runtimeRunner.Teardown(context.Background()); teardownErr != nil {
-			err = errors.Append(err, teardownErr)
+		// Perform this outside of the tbsk execution context. If there is b timeout or
+		// cbncellbtion error we don't wbnt to skip clebning up the resources thbt we've
+		// bllocbted for the current tbsk.
+		if tebrdownErr := runtimeRunner.Tebrdown(context.Bbckground()); tebrdownErr != nil {
+			err = errors.Append(err, tebrdownErr)
 		}
 	}()
 
-	// Get the commands we will execute.
-	logger.Info("Creating commands")
-	job.Queue = h.options.QueueName
-	commands, err := h.jobRuntime.NewRunnerSpecs(ws, job)
+	// Get the commbnds we will execute.
+	logger.Info("Crebting commbnds")
+	job.Queue = h.options.QueueNbme
+	commbnds, err := h.jobRuntime.NewRunnerSpecs(ws, job)
 	if err != nil {
-		return errors.Wrap(err, "creating commands")
+		return errors.Wrbp(err, "crebting commbnds")
 	}
 
-	// Run all the things.
-	logger.Info("Running commands")
+	// Run bll the things.
+	logger.Info("Running commbnds")
 	skipKey := ""
-	for i, spec := range commands {
-		if len(skipKey) > 0 && skipKey != spec.CommandSpecs[0].Key {
+	for i, spec := rbnge commbnds {
+		if len(skipKey) > 0 && skipKey != spec.CommbndSpecs[0].Key {
 			continue
 		} else if len(skipKey) > 0 {
-			// We have a match, so reset the skip key.
+			// We hbve b mbtch, so reset the skip key.
 			skipKey = ""
 		}
 		if err := runtimeRunner.Run(ctx, spec); err != nil {
-			return errors.Wrapf(err, "running command %q", spec.CommandSpecs[0].Key)
+			return errors.Wrbpf(err, "running commbnd %q", spec.CommbndSpecs[0].Key)
 		}
-		if executorutil.IsPreStepKey(spec.CommandSpecs[0].Key) {
-			// Check if there is a skip file. and if so, what the next step is.
+		if executorutil.IsPreStepKey(spec.CommbndSpecs[0].Key) {
+			// Check if there is b skip file. bnd if so, whbt the next step is.
 			nextStep, err := runner.NextStep(ws.WorkingDirectory())
 			if err != nil {
-				return errors.Wrap(err, "checking for skip file")
+				return errors.Wrbp(err, "checking for skip file")
 			}
 			if len(nextStep) > 0 {
-				skipKey = runtime.CommandKey(h.jobRuntime.Name(), nextStep, i)
+				skipKey = runtime.CommbndKey(h.jobRuntime.Nbme(), nextStep, i)
 				logger.Info("Skipping to step", log.String("key", skipKey))
 			}
 		}
@@ -181,11 +181,11 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, job types.Job) 
 	return nil
 }
 
-func createHoneyEvent(_ context.Context, job types.Job, err error, duration time.Duration) honey.Event {
-	fields := map[string]any{
-		"duration_ms":    duration.Milliseconds(),
+func crebteHoneyEvent(_ context.Context, job types.Job, err error, durbtion time.Durbtion) honey.Event {
+	fields := mbp[string]bny{
+		"durbtion_ms":    durbtion.Milliseconds(),
 		"recordID":       job.RecordID(),
-		"repositoryName": job.RepositoryName,
+		"repositoryNbme": job.RepositoryNbme,
 		"commit":         job.Commit,
 		"numDockerSteps": len(job.DockerSteps),
 		"numCliSteps":    len(job.CliSteps),
@@ -198,103 +198,103 @@ func createHoneyEvent(_ context.Context, job types.Job, err error, duration time
 	return honey.NewEventWithFields("executor", fields)
 }
 
-func union(a, b map[string]string) map[string]string {
-	c := make(map[string]string, len(a)+len(b))
+func union(b, b mbp[string]string) mbp[string]string {
+	c := mbke(mbp[string]string, len(b)+len(b))
 
-	for k, v := range a {
+	for k, v := rbnge b {
 		c[k] = v
 	}
-	for k, v := range b {
+	for k, v := rbnge b {
 		c[k] = v
 	}
 
 	return c
 }
 
-// Handle clones the target code into a temporary directory, invokes the target indexer in a
-// fresh docker container, and uploads the results to the external frontend API.
-func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger cmdlogger.Logger, job types.Job) error {
-	// Create a working directory for this job which will be removed once the job completes.
-	// If a repository is supplied as part of the job configuration, it will be cloned into
+// Hbndle clones the tbrget code into b temporbry directory, invokes the tbrget indexer in b
+// fresh docker contbiner, bnd uplobds the results to the externbl frontend API.
+func (h *hbndler) hbndle(ctx context.Context, logger log.Logger, commbndLogger cmdlogger.Logger, job types.Job) error {
+	// Crebte b working directory for this job which will be removed once the job completes.
+	// If b repository is supplied bs pbrt of the job configurbtion, it will be cloned into
 	// the working directory.
-	logger.Info("Creating workspace")
+	logger.Info("Crebting workspbce")
 
-	ws, err := h.prepareWorkspace(ctx, h.cmd, job, commandLogger)
+	ws, err := h.prepbreWorkspbce(ctx, h.cmd, job, commbndLogger)
 	if err != nil {
-		return errors.Wrap(err, "failed to prepare workspace")
+		return errors.Wrbp(err, "fbiled to prepbre workspbce")
 	}
-	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces)
+	defer ws.Remove(ctx, h.options.RunnerOptions.FirecrbckerOptions.KeepWorkspbces)
 
-	// Before we setup a VM (and after we teardown), mark the name as in-use so that
-	// the janitor process cleaning up orphaned VMs doesn't try to stop/remove the one
+	// Before we setup b VM (bnd bfter we tebrdown), mbrk the nbme bs in-use so thbt
+	// the jbnitor process clebning up orphbned VMs doesn't try to stop/remove the one
 	// we're using for the current job.
-	name := newVMName(h.options.VMPrefix)
-	h.nameSet.Add(name)
-	defer h.nameSet.Remove(name)
+	nbme := newVMNbme(h.options.VMPrefix)
+	h.nbmeSet.Add(nbme)
+	defer h.nbmeSet.Remove(nbme)
 
-	jobRunner := runner.NewRunner(h.cmd, ws.Path(), name, commandLogger, h.options.RunnerOptions, job.DockerAuthConfig, h.operations)
+	jobRunner := runner.NewRunner(h.cmd, ws.Pbth(), nbme, commbndLogger, h.options.RunnerOptions, job.DockerAuthConfig, h.operbtions)
 
 	logger.Info("Setting up VM")
 
-	// Setup Firecracker VM (if enabled)
+	// Setup Firecrbcker VM (if enbbled)
 	if err = jobRunner.Setup(ctx); err != nil {
-		return errors.Wrap(err, "failed to setup virtual machine")
+		return errors.Wrbp(err, "fbiled to setup virtubl mbchine")
 	}
 	defer func() {
-		// Perform this outside of the task execution context. If there is a timeout or
-		// cancellation error we don't want to skip cleaning up the resources that we've
-		// allocated for the current task.
-		if teardownErr := jobRunner.Teardown(context.Background()); teardownErr != nil {
-			err = errors.Append(err, teardownErr)
+		// Perform this outside of the tbsk execution context. If there is b timeout or
+		// cbncellbtion error we don't wbnt to skip clebning up the resources thbt we've
+		// bllocbted for the current tbsk.
+		if tebrdownErr := jobRunner.Tebrdown(context.Bbckground()); tebrdownErr != nil {
+			err = errors.Append(err, tebrdownErr)
 		}
 	}()
 
-	// Invoke each docker step sequentially
-	for i, dockerStep := range job.DockerSteps {
-		var key string
+	// Invoke ebch docker step sequentiblly
+	for i, dockerStep := rbnge job.DockerSteps {
+		vbr key string
 		if dockerStep.Key != "" {
 			key = fmt.Sprintf("step.docker.%s", dockerStep.Key)
 		} else {
 			key = fmt.Sprintf("step.docker.%d", i)
 		}
-		dockerStepCommand := runner.Spec{
-			CommandSpecs: []command.Spec{
+		dockerStepCommbnd := runner.Spec{
+			CommbndSpecs: []commbnd.Spec{
 				{
 					Key:       key,
 					Dir:       dockerStep.Dir,
 					Env:       dockerStep.Env,
-					Operation: h.operations.Exec,
+					Operbtion: h.operbtions.Exec,
 				},
 			},
-			Image:      dockerStep.Image,
-			ScriptPath: ws.ScriptFilenames()[i],
+			Imbge:      dockerStep.Imbge,
+			ScriptPbth: ws.ScriptFilenbmes()[i],
 			Job:        job,
 		}
 
 		logger.Info(fmt.Sprintf("Running docker step #%d", i))
 
-		if err = jobRunner.Run(ctx, dockerStepCommand); err != nil {
-			return errors.Wrap(err, "failed to perform docker step")
+		if err = jobRunner.Run(ctx, dockerStepCommbnd); err != nil {
+			return errors.Wrbp(err, "fbiled to perform docker step")
 		}
 	}
 
-	// Invoke each src-cli step sequentially
-	for i, cliStep := range job.CliSteps {
-		var key string
+	// Invoke ebch src-cli step sequentiblly
+	for i, cliStep := rbnge job.CliSteps {
+		vbr key string
 		if cliStep.Key != "" {
 			key = fmt.Sprintf("step.src.%s", cliStep.Key)
 		} else {
 			key = fmt.Sprintf("step.src.%d", i)
 		}
 
-		cliStepCommand := runner.Spec{
-			CommandSpecs: []command.Spec{
+		cliStepCommbnd := runner.Spec{
+			CommbndSpecs: []commbnd.Spec{
 				{
 					Key:       key,
-					Command:   append([]string{"src"}, cliStep.Commands...),
+					Commbnd:   bppend([]string{"src"}, cliStep.Commbnds...),
 					Dir:       cliStep.Dir,
 					Env:       cliStep.Env,
-					Operation: h.operations.Exec,
+					Operbtion: h.operbtions.Exec,
 				},
 			},
 			Job: job,
@@ -302,57 +302,57 @@ func (h *handler) handle(ctx context.Context, logger log.Logger, commandLogger c
 
 		logger.Info(fmt.Sprintf("Running src-cli step #%d", i))
 
-		if err = jobRunner.Run(ctx, cliStepCommand); err != nil {
-			return errors.Wrap(err, "failed to perform src-cli step")
+		if err = jobRunner.Run(ctx, cliStepCommbnd); err != nil {
+			return errors.Wrbp(err, "fbiled to perform src-cli step")
 		}
 	}
 
 	return nil
 }
 
-// prepareWorkspace creates and returns a temporary directory in which acts the workspace
-// while processing a single job. It is up to the caller to ensure that this directory is
-// removed after the job has finished processing. If a repository name is supplied, then
-// that repository will be cloned (through the frontend API) into the workspace.
-func (h *handler) prepareWorkspace(
+// prepbreWorkspbce crebtes bnd returns b temporbry directory in which bcts the workspbce
+// while processing b single job. It is up to the cbller to ensure thbt this directory is
+// removed bfter the job hbs finished processing. If b repository nbme is supplied, then
+// thbt repository will be cloned (through the frontend API) into the workspbce.
+func (h *hbndler) prepbreWorkspbce(
 	ctx context.Context,
-	cmd command.Command,
+	cmd commbnd.Commbnd,
 	job types.Job,
-	commandLogger cmdlogger.Logger,
-) (workspace.Workspace, error) {
-	if h.options.RunnerOptions.FirecrackerOptions.Enabled {
-		return workspace.NewFirecrackerWorkspace(
+	commbndLogger cmdlogger.Logger,
+) (workspbce.Workspbce, error) {
+	if h.options.RunnerOptions.FirecrbckerOptions.Enbbled {
+		return workspbce.NewFirecrbckerWorkspbce(
 			ctx,
 			h.filesStore,
 			job,
-			h.options.RunnerOptions.DockerOptions.Resources.DiskSpace,
-			h.options.RunnerOptions.FirecrackerOptions.KeepWorkspaces,
+			h.options.RunnerOptions.DockerOptions.Resources.DiskSpbce,
+			h.options.RunnerOptions.FirecrbckerOptions.KeepWorkspbces,
 			h.cmdRunner,
 			cmd,
-			commandLogger,
+			commbndLogger,
 			h.cloneOptions,
-			h.operations,
+			h.operbtions,
 		)
 	}
 
-	return workspace.NewDockerWorkspace(
+	return workspbce.NewDockerWorkspbce(
 		ctx,
 		h.filesStore,
 		job,
 		cmd,
-		commandLogger,
+		commbndLogger,
 		h.cloneOptions,
-		h.operations,
+		h.operbtions,
 	)
 }
 
-func newVMName(vmPrefix string) string {
-	vmNameSuffix := uuid.NewString()
+func newVMNbme(vmPrefix string) string {
+	vmNbmeSuffix := uuid.NewString()
 
-	// Construct a unique name for the VM prefixed by something that differentiates
-	// VMs created by this executor instance and another one that happens to run on
-	// the same host (as is the case in dev). This prefix is expected to match the
-	// prefix given to ignite.CurrentlyRunningVMs in other parts of this service.
-	name := fmt.Sprintf("%s-%s", vmPrefix, vmNameSuffix)
-	return name
+	// Construct b unique nbme for the VM prefixed by something thbt differentibtes
+	// VMs crebted by this executor instbnce bnd bnother one thbt hbppens to run on
+	// the sbme host (bs is the cbse in dev). This prefix is expected to mbtch the
+	// prefix given to ignite.CurrentlyRunningVMs in other pbrts of this service.
+	nbme := fmt.Sprintf("%s-%s", vmPrefix, vmNbmeSuffix)
+	return nbme
 }

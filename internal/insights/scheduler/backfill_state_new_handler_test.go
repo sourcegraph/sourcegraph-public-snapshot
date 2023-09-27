@@ -1,4 +1,4 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
@@ -8,169 +8,169 @@ import (
 	"github.com/derision-test/glock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/discovery"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/priority"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func Test_MovesBackfillFromNewToProcessing(t *testing.T) {
+func Test_MovesBbckfillFromNewToProcessing(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{{ID: 1, Name: "repo1"}, {ID: 2, Name: "repo2"}}, nil)
-	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	repos.ListFunc.SetDefbultReturn([]*itypes.Repo{{ID: 1, Nbme: "repo1"}, {ID: 2, Nbme: "repo2"}}, nil)
+	now := time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
-	bfs := newBackfillStoreWithClock(insightsDB, clock)
+	bfs := newBbckfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
 	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
 	seriesStore := store.New(insightsDB, permStore)
 	repoQueryExecutor := NewMockRepoQueryExecutor()
-	repoQueryExecutor.ExecuteRepoListFunc.SetDefaultReturn(nil, errors.New("repo query executor should not be called"))
+	repoQueryExecutor.ExecuteRepoListFunc.SetDefbultReturn(nil, errors.New("repo query executor should not be cblled"))
 
 	config := JobMonitorConfig{
 		InsightsDB:        insightsDB,
 		RepoStore:         repos,
-		ObservationCtx:    &observation.TestContext,
-		CostAnalyzer:      priority.NewQueryAnalyzer(),
+		ObservbtionCtx:    &observbtion.TestContext,
+		CostAnblyzer:      priority.NewQueryAnblyzer(),
 		InsightStore:      seriesStore,
 		RepoQueryExecutor: repoQueryExecutor,
 	}
-	var err error
-	monitor := NewBackgroundJobMonitor(ctx, config)
+	vbr err error
+	monitor := NewBbckgroundJobMonitor(ctx, config)
 
-	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+	series, err := insightsStore.CrebteSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",
-		Query:               "asdf",
-		SampleIntervalUnit:  string(types.Month),
+		Query:               "bsdf",
+		SbmpleIntervblUnit:  string(types.Month),
 		Repositories:        []string{"repo1", "repo2"},
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	require.NoError(t, err)
 
-	backfill, err := bfs.NewBackfill(ctx, series)
+	bbckfill, err := bfs.NewBbckfill(ctx, series)
 	require.NoError(t, err)
 
-	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
+	err = enqueueBbckfill(ctx, bfs.Hbndle(), bbckfill)
 	require.NoError(t, err)
 
-	newDequeue, _, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	newDequeue, _, err := monitor.newBbckfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
-	handler := newBackfillHandler{
-		workerStore:     monitor.newBackfillStore,
-		backfillStore:   bfs,
-		seriesReader:    store.NewInsightStore(insightsDB),
-		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos, repoQueryExecutor),
-		costAnalyzer:    *config.CostAnalyzer,
+	hbndler := newBbckfillHbndler{
+		workerStore:     monitor.newBbckfillStore,
+		bbckfillStore:   bfs,
+		seriesRebder:    store.NewInsightStore(insightsDB),
+		repoIterbtor:    discovery.NewSeriesRepoIterbtor(nil, repos, repoQueryExecutor),
+		costAnblyzer:    *config.CostAnblyzer,
 		timeseriesStore: seriesStore,
 	}
-	err = handler.Handle(ctx, logger, newDequeue)
+	err = hbndler.Hbndle(ctx, logger, newDequeue)
 	require.NoError(t, err)
 
-	_, dupFound, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	_, dupFound, err := monitor.newBbckfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	if dupFound {
-		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
+		t.Fbtbl(errors.New("found record thbt should not be visible to the new bbckfill store"))
 	}
 
-	// now ensure the in progress handler _can_ pick it up
+	// now ensure the in progress hbndler _cbn_ pick it up
 	inProgressDequeue, inProgressFound, err := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	if !inProgressFound {
-		t.Fatal(errors.New("no queued record found"))
+		t.Fbtbl(errors.New("no queued record found"))
 	}
-	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
+	require.Equbl(t, bbckfill.Id, inProgressDequeue.bbckfillId)
 
 	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, store.SeriesPointsOpts{})
 	require.NoError(t, err)
 	if len(recordingTimes.RecordingTimes) == 0 {
-		t.Fatal(errors.New("recording times should have been saved after success"))
+		t.Fbtbl(errors.New("recording times should hbve been sbved bfter success"))
 	}
 }
 
-func Test_MovesBackfillFromNewToProcessing_ScopedInsight(t *testing.T) {
+func Test_MovesBbckfillFromNewToProcessing_ScopedInsight(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListFunc.SetDefaultReturn([]*itypes.Repo{}, errors.New("the repo store should not be called"))
-	now := time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC)
+	repos.ListFunc.SetDefbultReturn([]*itypes.Repo{}, errors.New("the repo store should not be cblled"))
+	now := time.Dbte(2021, 1, 1, 0, 0, 0, 0, time.UTC)
 	clock := glock.NewMockClockAt(now)
-	bfs := newBackfillStoreWithClock(insightsDB, clock)
+	bfs := newBbckfillStoreWithClock(insightsDB, clock)
 	insightsStore := store.NewInsightStore(insightsDB)
 	permStore := store.NewInsightPermissionStore(dbmocks.NewMockDB())
 	seriesStore := store.New(insightsDB, permStore)
 	repoQueryExecutor := NewMockRepoQueryExecutor()
-	repoQueryExecutor.ExecuteRepoListFunc.SetDefaultReturn([]itypes.MinimalRepo{{Name: "sourcegraph/sourcegraph", ID: 1}}, nil)
+	repoQueryExecutor.ExecuteRepoListFunc.SetDefbultReturn([]itypes.MinimblRepo{{Nbme: "sourcegrbph/sourcegrbph", ID: 1}}, nil)
 
 	config := JobMonitorConfig{
 		InsightsDB:        insightsDB,
 		RepoStore:         repos,
-		ObservationCtx:    &observation.TestContext,
-		CostAnalyzer:      priority.NewQueryAnalyzer(),
+		ObservbtionCtx:    &observbtion.TestContext,
+		CostAnblyzer:      priority.NewQueryAnblyzer(),
 		InsightStore:      seriesStore,
 		RepoQueryExecutor: repoQueryExecutor,
 	}
-	var err error
-	monitor := NewBackgroundJobMonitor(ctx, config)
+	vbr err error
+	monitor := NewBbckgroundJobMonitor(ctx, config)
 
-	repoCriteria := "repo:sourcegraph"
-	series, err := insightsStore.CreateSeries(ctx, types.InsightSeries{
+	repoCriterib := "repo:sourcegrbph"
+	series, err := insightsStore.CrebteSeries(ctx, types.InsightSeries{
 		SeriesID:            "series1",
-		Query:               "asdf",
-		SampleIntervalUnit:  string(types.Month),
-		RepositoryCriteria:  &repoCriteria,
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+		Query:               "bsdf",
+		SbmpleIntervblUnit:  string(types.Month),
+		RepositoryCriterib:  &repoCriterib,
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	require.NoError(t, err)
 
-	backfill, err := bfs.NewBackfill(ctx, series)
+	bbckfill, err := bfs.NewBbckfill(ctx, series)
 	require.NoError(t, err)
 
-	err = enqueueBackfill(ctx, bfs.Handle(), backfill)
+	err = enqueueBbckfill(ctx, bfs.Hbndle(), bbckfill)
 	require.NoError(t, err)
 
-	newDequeue, _, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	newDequeue, _, err := monitor.newBbckfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
-	handler := newBackfillHandler{
-		workerStore:     monitor.newBackfillStore,
-		backfillStore:   bfs,
-		seriesReader:    store.NewInsightStore(insightsDB),
-		repoIterator:    discovery.NewSeriesRepoIterator(nil, repos, repoQueryExecutor),
-		costAnalyzer:    *config.CostAnalyzer,
+	hbndler := newBbckfillHbndler{
+		workerStore:     monitor.newBbckfillStore,
+		bbckfillStore:   bfs,
+		seriesRebder:    store.NewInsightStore(insightsDB),
+		repoIterbtor:    discovery.NewSeriesRepoIterbtor(nil, repos, repoQueryExecutor),
+		costAnblyzer:    *config.CostAnblyzer,
 		timeseriesStore: seriesStore,
 	}
-	err = handler.Handle(ctx, logger, newDequeue)
+	err = hbndler.Hbndle(ctx, logger, newDequeue)
 	require.NoError(t, err)
 
-	_, dupFound, err := monitor.newBackfillStore.Dequeue(ctx, "test", nil)
+	_, dupFound, err := monitor.newBbckfillStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	if dupFound {
-		t.Fatal(errors.New("found record that should not be visible to the new backfill store"))
+		t.Fbtbl(errors.New("found record thbt should not be visible to the new bbckfill store"))
 	}
 
-	// now ensure the in progress handler _can_ pick it up
+	// now ensure the in progress hbndler _cbn_ pick it up
 	inProgressDequeue, inProgressFound, err := monitor.inProgressStore.Dequeue(ctx, "test", nil)
 	require.NoError(t, err)
 	if !inProgressFound {
-		t.Fatal(errors.New("no queued record found"))
+		t.Fbtbl(errors.New("no queued record found"))
 	}
-	require.Equal(t, backfill.Id, inProgressDequeue.backfillId)
+	require.Equbl(t, bbckfill.Id, inProgressDequeue.bbckfillId)
 
 	recordingTimes, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, series.ID, store.SeriesPointsOpts{})
 	require.NoError(t, err)
 	if len(recordingTimes.RecordingTimes) == 0 {
-		t.Fatal(errors.New("recording times should have been saved after success"))
+		t.Fbtbl(errors.New("recording times should hbve been sbved bfter success"))
 	}
 }

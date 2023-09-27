@@ -1,6 +1,6 @@
-// Package jscontext contains functionality for information we pass down into
-// the JS webapp.
-package jscontext
+// Pbckbge jscontext contbins functionblity for informbtion we pbss down into
+// the JS webbpp.
+pbckbge jscontext
 
 import (
 	"context"
@@ -8,330 +8,330 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	logger "github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	logger "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/cody"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/bssetsutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cody"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/siteid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// BillingPublishableKey is the publishable (non-secret) API key for the billing system, if any.
-var BillingPublishableKey string
+// BillingPublishbbleKey is the publishbble (non-secret) API key for the billing system, if bny.
+vbr BillingPublishbbleKey string
 
-type authProviderInfo struct {
+type buthProviderInfo struct {
 	IsBuiltin         bool    `json:"isBuiltin"`
-	DisplayName       string  `json:"displayName"`
-	DisplayPrefix     *string `json:"displayPrefix"`
+	DisplbyNbme       string  `json:"displbyNbme"`
+	DisplbyPrefix     *string `json:"displbyPrefix"`
 	ServiceType       string  `json:"serviceType"`
-	AuthenticationURL string  `json:"authenticationURL"`
+	AuthenticbtionURL string  `json:"buthenticbtionURL"`
 	ServiceID         string  `json:"serviceID"`
 	ClientID          string  `json:"clientID"`
 }
 
-// GenericPasswordPolicy a generic password policy that holds password requirements
-type authPasswordPolicy struct {
-	Enabled                   bool `json:"enabled"`
-	NumberOfSpecialCharacters int  `json:"numberOfSpecialCharacters"`
-	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
-	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
+// GenericPbsswordPolicy b generic pbssword policy thbt holds pbssword requirements
+type buthPbsswordPolicy struct {
+	Enbbled                   bool `json:"enbbled"`
+	NumberOfSpeciblChbrbcters int  `json:"numberOfSpeciblChbrbcters"`
+	RequireAtLebstOneNumber   bool `json:"requireAtLebstOneNumber"`
+	RequireUpperAndLowerCbse  bool `json:"requireUpperAndLowerCbse"`
 }
-type UserLatestSettings struct {
-	ID       int32                      `json:"id"`       // the unique ID of this settings value
-	Contents graphqlbackend.JSONCString `json:"contents"` // the raw JSON (with comments and trailing commas allowed)
+type UserLbtestSettings struct {
+	ID       int32                      `json:"id"`       // the unique ID of this settings vblue
+	Contents grbphqlbbckend.JSONCString `json:"contents"` // the rbw JSON (with comments bnd trbiling commbs bllowed)
 }
-type UserOrganization struct {
-	Typename    string     `json:"__typename"`
-	ID          graphql.ID `json:"id"`
-	Name        string     `json:"name"`
-	DisplayName *string    `json:"displayName"`
+type UserOrgbnizbtion struct {
+	Typenbme    string     `json:"__typenbme"`
+	ID          grbphql.ID `json:"id"`
+	Nbme        string     `json:"nbme"`
+	DisplbyNbme *string    `json:"displbyNbme"`
 	URL         string     `json:"url"`
 	SettingsURL *string    `json:"settingsURL"`
 }
-type UserOrganizationsConnection struct {
-	Typename string             `json:"__typename"`
-	Nodes    []UserOrganization `json:"nodes"`
+type UserOrgbnizbtionsConnection struct {
+	Typenbme string             `json:"__typenbme"`
+	Nodes    []UserOrgbnizbtion `json:"nodes"`
 }
-type UserEmail struct {
-	Email     string `json:"email"`
-	IsPrimary bool   `json:"isPrimary"`
+type UserEmbil struct {
+	Embil     string `json:"embil"`
+	IsPrimbry bool   `json:"isPrimbry"`
 	Verified  bool   `json:"verified"`
 }
 type UserSession struct {
-	CanSignOut bool `json:"canSignOut"`
+	CbnSignOut bool `json:"cbnSignOut"`
 }
 
-type TemporarySettings struct {
-	GraphQLTypename string `json:"__typename"`
+type TemporbrySettings struct {
+	GrbphQLTypenbme string `json:"__typenbme"`
 	Contents        string `json:"contents"`
 }
 
 type Permission struct {
-	GraphQLTypename string     `json:"__typename"`
-	ID              graphql.ID `json:"id"`
-	DisplayName     string     `json:"displayName"`
+	GrbphQLTypenbme string     `json:"__typenbme"`
+	ID              grbphql.ID `json:"id"`
+	DisplbyNbme     string     `json:"displbyNbme"`
 }
 
 type PermissionsConnection struct {
-	GraphQLTypename string       `json:"__typename"`
+	GrbphQLTypenbme string       `json:"__typenbme"`
 	Nodes           []Permission `json:"nodes"`
 }
 type CurrentUser struct {
-	GraphQLTypename     string     `json:"__typename"`
-	ID                  graphql.ID `json:"id"`
-	DatabaseID          int32      `json:"databaseID"`
-	Username            string     `json:"username"`
-	AvatarURL           *string    `json:"avatarURL"`
-	DisplayName         string     `json:"displayName"`
+	GrbphQLTypenbme     string     `json:"__typenbme"`
+	ID                  grbphql.ID `json:"id"`
+	DbtbbbseID          int32      `json:"dbtbbbseID"`
+	Usernbme            string     `json:"usernbme"`
+	AvbtbrURL           *string    `json:"bvbtbrURL"`
+	DisplbyNbme         string     `json:"displbyNbme"`
 	SiteAdmin           bool       `json:"siteAdmin"`
 	URL                 string     `json:"url"`
 	SettingsURL         string     `json:"settingsURL"`
-	ViewerCanAdminister bool       `json:"viewerCanAdminister"`
+	ViewerCbnAdminister bool       `json:"viewerCbnAdminister"`
 	TosAccepted         bool       `json:"tosAccepted"`
-	Searchable          bool       `json:"searchable"`
-	HasVerifiedEmail    bool       `json:"hasVerifiedEmail"`
+	Sebrchbble          bool       `json:"sebrchbble"`
+	HbsVerifiedEmbil    bool       `json:"hbsVerifiedEmbil"`
 	CompletedPostSignUp bool       `json:"completedPostSignup"`
 
-	Organizations  *UserOrganizationsConnection `json:"organizations"`
+	Orgbnizbtions  *UserOrgbnizbtionsConnection `json:"orgbnizbtions"`
 	Session        *UserSession                 `json:"session"`
-	Emails         []UserEmail                  `json:"emails"`
-	LatestSettings *UserLatestSettings          `json:"latestSettings"`
+	Embils         []UserEmbil                  `json:"embils"`
+	LbtestSettings *UserLbtestSettings          `json:"lbtestSettings"`
 	Permissions    PermissionsConnection        `json:"permissions"`
 }
 
-// JSContext is made available to JavaScript code via the
-// "sourcegraph/app/context" module.
+// JSContext is mbde bvbilbble to JbvbScript code vib the
+// "sourcegrbph/bpp/context" module.
 //
-// 🚨 SECURITY: This struct is sent to all users regardless of whether or
-// not they are logged in, for example on an auth.public=false private
-// server. Including secret fields here is OK if it is based on the user's
-// authentication above, but do not include e.g. hard-coded secrets about
-// the server instance here as they would be sent to anonymous users.
+// 🚨 SECURITY: This struct is sent to bll users regbrdless of whether or
+// not they bre logged in, for exbmple on bn buth.public=fblse privbte
+// server. Including secret fields here is OK if it is bbsed on the user's
+// buthenticbtion bbove, but do not include e.g. hbrd-coded secrets bbout
+// the server instbnce here bs they would be sent to bnonymous users.
 type JSContext struct {
-	AppRoot        string            `json:"appRoot,omitempty"`
-	ExternalURL    string            `json:"externalURL,omitempty"`
-	XHRHeaders     map[string]string `json:"xhrHeaders"`
+	AppRoot        string            `json:"bppRoot,omitempty"`
+	ExternblURL    string            `json:"externblURL,omitempty"`
+	XHRHebders     mbp[string]string `json:"xhrHebders"`
 	UserAgentIsBot bool              `json:"userAgentIsBot"`
-	AssetsRoot     string            `json:"assetsRoot"`
+	AssetsRoot     string            `json:"bssetsRoot"`
 	Version        string            `json:"version"`
 
-	IsAuthenticatedUser bool               `json:"isAuthenticatedUser"`
+	IsAuthenticbtedUser bool               `json:"isAuthenticbtedUser"`
 	CurrentUser         *CurrentUser       `json:"currentUser"`
-	TemporarySettings   *TemporarySettings `json:"temporarySettings"`
+	TemporbrySettings   *TemporbrySettings `json:"temporbrySettings"`
 
 	SentryDSN     *string               `json:"sentryDSN"`
-	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
+	OpenTelemetry *schemb.OpenTelemetry `json:"openTelemetry"`
 
 	SiteID        string `json:"siteID"`
 	SiteGQLID     string `json:"siteGQLID"`
 	Debug         bool   `json:"debug"`
 	NeedsSiteInit bool   `json:"needsSiteInit"`
-	EmailEnabled  bool   `json:"emailEnabled"`
+	EmbilEnbbled  bool   `json:"embilEnbbled"`
 
-	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
-	NeedServerRestart bool                     `json:"needServerRestart"`
+	Site              schemb.SiteConfigurbtion `json:"site"` // public subset of site configurbtion
+	NeedServerRestbrt bool                     `json:"needServerRestbrt"`
 	DeployType        string                   `json:"deployType"`
 
-	SourcegraphDotComMode bool `json:"sourcegraphDotComMode"`
+	SourcegrbphDotComMode bool `json:"sourcegrbphDotComMode"`
 
 	CodyAppMode bool `json:"codyAppMode"`
 
-	BillingPublishableKey string `json:"billingPublishableKey,omitempty"`
+	BillingPublishbbleKey string `json:"billingPublishbbleKey,omitempty"`
 
-	AccessTokensAllow conf.AccessTokenAllow `json:"accessTokensAllow"`
+	AccessTokensAllow conf.AccessTokenAllow `json:"bccessTokensAllow"`
 
-	AllowSignup bool `json:"allowSignup"`
+	AllowSignup bool `json:"bllowSignup"`
 
-	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
+	ResetPbsswordEnbbled bool `json:"resetPbsswordEnbbled"`
 
-	ExternalServicesUserMode string `json:"externalServicesUserMode"`
+	ExternblServicesUserMode string `json:"externblServicesUserMode"`
 
-	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
-	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
+	AuthMinPbsswordLength int                `json:"buthMinPbsswordLength"`
+	AuthPbsswordPolicy    buthPbsswordPolicy `json:"buthPbsswordPolicy"`
 
-	AuthProviders                  []authProviderInfo `json:"authProviders"`
-	AuthPrimaryLoginProvidersCount int                `json:"primaryLoginProvidersCount"`
+	AuthProviders                  []buthProviderInfo `json:"buthProviders"`
+	AuthPrimbryLoginProvidersCount int                `json:"primbryLoginProvidersCount"`
 
-	AuthAccessRequest *schema.AuthAccessRequest `json:"authAccessRequest"`
+	AuthAccessRequest *schemb.AuthAccessRequest `json:"buthAccessRequest"`
 
-	Branding *schema.Branding `json:"branding"`
+	Brbnding *schemb.Brbnding `json:"brbnding"`
 
-	// BatchChangesEnabled is true if:
-	// * Batch Changes is NOT disabled by a flag in the site config
-	// * Batch Changes is NOT limited to admins-only, or it is, but the user issuing
-	//   the request is an admin and thus can access batch changes
-	// It does NOT reflect whether or not the site license has batch changes available.
-	// Use LicenseInfo for that.
-	BatchChangesEnabled                bool `json:"batchChangesEnabled"`
-	BatchChangesDisableWebhooksWarning bool `json:"batchChangesDisableWebhooksWarning"`
-	BatchChangesWebhookLogsEnabled     bool `json:"batchChangesWebhookLogsEnabled"`
+	// BbtchChbngesEnbbled is true if:
+	// * Bbtch Chbnges is NOT disbbled by b flbg in the site config
+	// * Bbtch Chbnges is NOT limited to bdmins-only, or it is, but the user issuing
+	//   the request is bn bdmin bnd thus cbn bccess bbtch chbnges
+	// It does NOT reflect whether or not the site license hbs bbtch chbnges bvbilbble.
+	// Use LicenseInfo for thbt.
+	BbtchChbngesEnbbled                bool `json:"bbtchChbngesEnbbled"`
+	BbtchChbngesDisbbleWebhooksWbrning bool `json:"bbtchChbngesDisbbleWebhooksWbrning"`
+	BbtchChbngesWebhookLogsEnbbled     bool `json:"bbtchChbngesWebhookLogsEnbbled"`
 
-	// CodyEnabled is true `cody.enabled` is not false in site-config
-	CodyEnabled bool `json:"codyEnabled"`
-	// CodyEnabledForCurrentUser is true if CodyEnabled is true and current
-	// user has access to Cody.
-	CodyEnabledForCurrentUser bool `json:"codyEnabledForCurrentUser"`
-	// CodyRequiresVerifiedEmail is true if usage of Cody requires the current
-	// user to have a verified email.
-	CodyRequiresVerifiedEmail bool `json:"codyRequiresVerifiedEmail"`
+	// CodyEnbbled is true `cody.enbbled` is not fblse in site-config
+	CodyEnbbled bool `json:"codyEnbbled"`
+	// CodyEnbbledForCurrentUser is true if CodyEnbbled is true bnd current
+	// user hbs bccess to Cody.
+	CodyEnbbledForCurrentUser bool `json:"codyEnbbledForCurrentUser"`
+	// CodyRequiresVerifiedEmbil is true if usbge of Cody requires the current
+	// user to hbve b verified embil.
+	CodyRequiresVerifiedEmbil bool `json:"codyRequiresVerifiedEmbil"`
 
-	ExecutorsEnabled                         bool `json:"executorsEnabled"`
-	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
-	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
+	ExecutorsEnbbled                         bool `json:"executorsEnbbled"`
+	CodeIntelAutoIndexingEnbbled             bool `json:"codeIntelAutoIndexingEnbbled"`
+	CodeIntelAutoIndexingAllowGlobblPolicies bool `json:"codeIntelAutoIndexingAllowGlobblPolicies"`
 
-	CodeInsightsEnabled bool `json:"codeInsightsEnabled"`
+	CodeInsightsEnbbled bool `json:"codeInsightsEnbbled"`
 
-	EmbeddingsEnabled bool `json:"embeddingsEnabled"`
+	EmbeddingsEnbbled bool `json:"embeddingsEnbbled"`
 
 	RedirectUnsupportedBrowser bool `json:"RedirectUnsupportedBrowser"`
 
-	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
+	ProductResebrchPbgeEnbbled bool `json:"productResebrchPbgeEnbbled"`
 
-	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+	ExperimentblFebtures schemb.ExperimentblFebtures `json:"experimentblFebtures"`
 
 	LicenseInfo *hooks.LicenseInfo `json:"licenseInfo"`
 
-	HashedLicenseKey string `json:"hashedLicenseKey"`
+	HbshedLicenseKey string `json:"hbshedLicenseKey"`
 
 	OutboundRequestLogLimit int `json:"outboundRequestLogLimit"`
 
-	DisableFeedbackSurvey bool `json:"disableFeedbackSurvey"`
+	DisbbleFeedbbckSurvey bool `json:"disbbleFeedbbckSurvey"`
 
-	NeedsRepositoryConfiguration bool `json:"needsRepositoryConfiguration"`
+	NeedsRepositoryConfigurbtion bool `json:"needsRepositoryConfigurbtion"`
 
 	ExtsvcConfigFileExists bool `json:"extsvcConfigFileExists"`
 
 	ExtsvcConfigAllowEdits bool `json:"extsvcConfigAllowEdits"`
 
-	RunningOnMacOS bool `json:"runningOnMacOS"`
+	RunningOnMbcOS bool `json:"runningOnMbcOS"`
 
 	SrcServeGitUrl string `json:"srcServeGitUrl"`
 }
 
-// NewJSContextFromRequest populates a JSContext struct from the HTTP
+// NewJSContextFromRequest populbtes b JSContext struct from the HTTP
 // request.
-func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
+func NewJSContextFromRequest(req *http.Request, db dbtbbbse.DB) JSContext {
 	ctx := req.Context()
-	a := sgactor.FromContext(ctx)
+	b := sgbctor.FromContext(ctx)
 
-	headers := make(map[string]string)
-	headers["x-sourcegraph-client"] = globals.ExternalURL().String()
-	headers["X-Requested-With"] = "Sourcegraph" // required for httpapi to use cookie auth
+	hebders := mbke(mbp[string]string)
+	hebders["x-sourcegrbph-client"] = globbls.ExternblURL().String()
+	hebders["X-Requested-With"] = "Sourcegrbph" // required for httpbpi to use cookie buth
 
-	// Propagate Cache-Control no-cache and max-age=0 directives
-	// to the requests made by our client-side JavaScript. This is
-	// not a perfect parser, but it catches the important cases.
-	if cc := req.Header.Get("cache-control"); strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age=0") {
-		headers["Cache-Control"] = "no-cache"
+	// Propbgbte Cbche-Control no-cbche bnd mbx-bge=0 directives
+	// to the requests mbde by our client-side JbvbScript. This is
+	// not b perfect pbrser, but it cbtches the importbnt cbses.
+	if cc := req.Hebder.Get("cbche-control"); strings.Contbins(cc, "no-cbche") || strings.Contbins(cc, "mbx-bge=0") {
+		hebders["Cbche-Control"] = "no-cbche"
 	}
 
 	siteID := siteid.Get(db)
 
 	// Show the site init screen?
-	siteInitialized, err := db.GlobalState().SiteInitialized(ctx)
-	needsSiteInit := err == nil && !siteInitialized
+	siteInitiblized, err := db.GlobblStbte().SiteInitiblized(ctx)
+	needsSiteInit := err == nil && !siteInitiblized
 
 	// Auth providers
-	var authProviders []authProviderInfo
-	for _, p := range providers.SortedProviders() {
+	vbr buthProviders []buthProviderInfo
+	for _, p := rbnge providers.SortedProviders() {
 		commonConfig := providers.GetAuthProviderCommon(p)
 		if commonConfig.Hidden {
 			continue
 		}
-		info := p.CachedInfo()
+		info := p.CbchedInfo()
 		if info != nil {
-			authProviders = append(authProviders, authProviderInfo{
+			buthProviders = bppend(buthProviders, buthProviderInfo{
 				IsBuiltin:         p.Config().Builtin != nil,
-				DisplayName:       commonConfig.DisplayName,
-				DisplayPrefix:     commonConfig.DisplayPrefix,
+				DisplbyNbme:       commonConfig.DisplbyNbme,
+				DisplbyPrefix:     commonConfig.DisplbyPrefix,
 				ServiceType:       p.ConfigID().Type,
-				AuthenticationURL: info.AuthenticationURL,
+				AuthenticbtionURL: info.AuthenticbtionURL,
 				ServiceID:         info.ServiceID,
 				ClientID:          info.ClientID,
 			})
 		}
 	}
 
-	pp := conf.AuthPasswordPolicy()
+	pp := conf.AuthPbsswordPolicy()
 
-	var authPasswordPolicy authPasswordPolicy
-	authPasswordPolicy.Enabled = pp.Enabled
-	authPasswordPolicy.NumberOfSpecialCharacters = pp.NumberOfSpecialCharacters
-	authPasswordPolicy.RequireAtLeastOneNumber = pp.RequireAtLeastOneNumber
-	authPasswordPolicy.RequireUpperAndLowerCase = pp.RequireUpperandLowerCase
+	vbr buthPbsswordPolicy buthPbsswordPolicy
+	buthPbsswordPolicy.Enbbled = pp.Enbbled
+	buthPbsswordPolicy.NumberOfSpeciblChbrbcters = pp.NumberOfSpeciblChbrbcters
+	buthPbsswordPolicy.RequireAtLebstOneNumber = pp.RequireAtLebstOneNumber
+	buthPbsswordPolicy.RequireUpperAndLowerCbse = pp.RequireUpperbndLowerCbse
 
-	var sentryDSN *string
-	siteConfig := conf.Get().SiteConfiguration
+	vbr sentryDSN *string
+	siteConfig := conf.Get().SiteConfigurbtion
 
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
 	}
 
-	var openTelemetry *schema.OpenTelemetry
-	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
-		openTelemetry = clientObservability.OpenTelemetry
+	vbr openTelemetry *schemb.OpenTelemetry
+	if clientObservbbility := siteConfig.ObservbbilityClient; clientObservbbility != nil {
+		openTelemetry = clientObservbbility.OpenTelemetry
 	}
 
-	// License info contains basic, non-sensitive information about the license type. Some
-	// properties are only set for certain license types. This information can be used to
-	// soft-gate features from the UI, and to provide info to admins from site admin
-	// settings pages in the UI.
+	// License info contbins bbsic, non-sensitive informbtion bbout the license type. Some
+	// properties bre only set for certbin license types. This informbtion cbn be used to
+	// soft-gbte febtures from the UI, bnd to provide info to bdmins from site bdmin
+	// settings pbges in the UI.
 	licenseInfo := hooks.GetLicenseInfo()
 
-	var user *types.User
-	temporarySettings := "{}"
-	if a.IsAuthenticated() {
-		// Ignore err as we don't care if user does not exist
-		user, _ = a.User(ctx, db.Users())
+	vbr user *types.User
+	temporbrySettings := "{}"
+	if b.IsAuthenticbted() {
+		// Ignore err bs we don't cbre if user does not exist
+		user, _ = b.User(ctx, db.Users())
 		if user != nil {
-			if settings, err := db.TemporarySettings().GetTemporarySettings(ctx, user.ID); err == nil {
-				temporarySettings = settings.Contents
+			if settings, err := db.TemporbrySettings().GetTemporbrySettings(ctx, user.ID); err == nil {
+				temporbrySettings = settings.Contents
 			}
 		}
 	}
 
-	siteResolver := graphqlbackend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
-	needsRepositoryConfiguration, err := siteResolver.NeedsRepositoryConfiguration(ctx)
+	siteResolver := grbphqlbbckend.NewSiteResolver(logger.Scoped("jscontext", "constructing jscontext"), db)
+	needsRepositoryConfigurbtion, err := siteResolver.NeedsRepositoryConfigurbtion(ctx)
 	if err != nil {
-		needsRepositoryConfiguration = false
+		needsRepositoryConfigurbtion = fblse
 	}
 
-	extsvcConfigFileExists := envvar.ExtsvcConfigFile() != ""
-	runningOnMacOS := runtime.GOOS == "darwin"
-	srcServeGitUrl := envvar.SrcServeGitUrl()
+	extsvcConfigFileExists := envvbr.ExtsvcConfigFile() != ""
+	runningOnMbcOS := runtime.GOOS == "dbrwin"
+	srcServeGitUrl := envvbr.SrcServeGitUrl()
 
-	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
-	// not they are logged in, for example on an auth.public=false private
-	// server. Including secret fields here is OK if it is based on the user's
-	// authentication above, but do not include e.g. hard-coded secrets about
-	// the server instance here as they would be sent to anonymous users.
+	// 🚨 SECURITY: This struct is sent to bll users regbrdless of whether or
+	// not they bre logged in, for exbmple on bn buth.public=fblse privbte
+	// server. Including secret fields here is OK if it is bbsed on the user's
+	// buthenticbtion bbove, but do not include e.g. hbrd-coded secrets bbout
+	// the server instbnce here bs they would be sent to bnonymous users.
 	return JSContext{
-		ExternalURL:         globals.ExternalURL().String(),
-		XHRHeaders:          headers,
+		ExternblURL:         globbls.ExternblURL().String(),
+		XHRHebders:          hebders,
 		UserAgentIsBot:      isBot(req.UserAgent()),
-		AssetsRoot:          assetsutil.URL("").String(),
+		AssetsRoot:          bssetsutil.URL("").String(),
 		Version:             version.Version(),
-		IsAuthenticatedUser: a.IsAuthenticated(),
-		CurrentUser:         createCurrentUser(ctx, user, db),
-		TemporarySettings:   &TemporarySettings{GraphQLTypename: "TemporarySettings", Contents: temporarySettings},
+		IsAuthenticbtedUser: b.IsAuthenticbted(),
+		CurrentUser:         crebteCurrentUser(ctx, user, db),
+		TemporbrySettings:   &TemporbrySettings{GrbphQLTypenbme: "TemporbrySettings", Contents: temporbrySettings},
 
 		SentryDSN:                  sentryDSN,
 		OpenTelemetry:              openTelemetry,
@@ -339,96 +339,96 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		Debug:                      env.InsecureDev,
 		SiteID:                     siteID,
 
-		SiteGQLID: string(graphqlbackend.SiteGQLID()),
+		SiteGQLID: string(grbphqlbbckend.SiteGQLID()),
 
 		NeedsSiteInit:     needsSiteInit,
-		EmailEnabled:      conf.CanSendEmail(),
-		Site:              publicSiteConfiguration(),
-		NeedServerRestart: globals.ConfigurationServerFrontendOnly.NeedServerRestart(),
+		EmbilEnbbled:      conf.CbnSendEmbil(),
+		Site:              publicSiteConfigurbtion(),
+		NeedServerRestbrt: globbls.ConfigurbtionServerFrontendOnly.NeedServerRestbrt(),
 		DeployType:        deploy.Type(),
 
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		SourcegrbphDotComMode: envvbr.SourcegrbphDotComMode(),
 		CodyAppMode:           deploy.IsApp(),
 
-		BillingPublishableKey: BillingPublishableKey,
+		BillingPublishbbleKey: BillingPublishbbleKey,
 
-		// Experiments. We pass these through explicitly, so we can
-		// do the default behavior only in Go land.
+		// Experiments. We pbss these through explicitly, so we cbn
+		// do the defbult behbvior only in Go lbnd.
 		AccessTokensAllow: conf.AccessTokensAllow(),
 
-		ResetPasswordEnabled: userpasswd.ResetPasswordEnabled(),
+		ResetPbsswordEnbbled: userpbsswd.ResetPbsswordEnbbled(),
 
-		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
+		ExternblServicesUserMode: conf.ExternblServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
 
-		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
-		AuthPasswordPolicy:    authPasswordPolicy,
+		AuthMinPbsswordLength: conf.AuthMinPbsswordLength(),
+		AuthPbsswordPolicy:    buthPbsswordPolicy,
 
-		AuthProviders:                  authProviders,
-		AuthPrimaryLoginProvidersCount: conf.AuthPrimaryLoginProvidersCount(),
+		AuthProviders:                  buthProviders,
+		AuthPrimbryLoginProvidersCount: conf.AuthPrimbryLoginProvidersCount(),
 
 		AuthAccessRequest: conf.Get().AuthAccessRequest,
 
-		Branding: globals.Branding(),
+		Brbnding: globbls.Brbnding(),
 
-		BatchChangesEnabled:                enterprise.BatchChangesEnabledForUser(ctx, db) == nil,
-		BatchChangesDisableWebhooksWarning: conf.Get().BatchChangesDisableWebhooksWarning,
-		BatchChangesWebhookLogsEnabled:     webhooks.LoggingEnabled(conf.Get()),
+		BbtchChbngesEnbbled:                enterprise.BbtchChbngesEnbbledForUser(ctx, db) == nil,
+		BbtchChbngesDisbbleWebhooksWbrning: conf.Get().BbtchChbngesDisbbleWebhooksWbrning,
+		BbtchChbngesWebhookLogsEnbbled:     webhooks.LoggingEnbbled(conf.Get()),
 
-		CodyEnabled:               conf.CodyEnabled(),
-		CodyEnabledForCurrentUser: cody.IsCodyEnabled(ctx),
-		CodyRequiresVerifiedEmail: siteResolver.RequiresVerifiedEmailForCody(ctx),
+		CodyEnbbled:               conf.CodyEnbbled(),
+		CodyEnbbledForCurrentUser: cody.IsCodyEnbbled(ctx),
+		CodyRequiresVerifiedEmbil: siteResolver.RequiresVerifiedEmbilForCody(ctx),
 
-		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
-		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
-		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
+		ExecutorsEnbbled:                         conf.ExecutorsEnbbled(),
+		CodeIntelAutoIndexingEnbbled:             conf.CodeIntelAutoIndexingEnbbled(),
+		CodeIntelAutoIndexingAllowGlobblPolicies: conf.CodeIntelAutoIndexingAllowGlobblPolicies(),
 
-		CodeInsightsEnabled: insights.IsEnabled(),
+		CodeInsightsEnbbled: insights.IsEnbbled(),
 
-		EmbeddingsEnabled: conf.EmbeddingsEnabled(),
+		EmbeddingsEnbbled: conf.EmbeddingsEnbbled(),
 
-		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
+		ProductResebrchPbgeEnbbled: conf.ProductResebrchPbgeEnbbled(),
 
-		ExperimentalFeatures: conf.ExperimentalFeatures(),
+		ExperimentblFebtures: conf.ExperimentblFebtures(),
 
 		LicenseInfo: licenseInfo,
 
-		HashedLicenseKey: conf.HashedCurrentLicenseKeyForAnalytics(),
+		HbshedLicenseKey: conf.HbshedCurrentLicenseKeyForAnblytics(),
 
 		OutboundRequestLogLimit: conf.Get().OutboundRequestLogLimit,
 
-		DisableFeedbackSurvey: conf.Get().DisableFeedbackSurvey,
+		DisbbleFeedbbckSurvey: conf.Get().DisbbleFeedbbckSurvey,
 
-		NeedsRepositoryConfiguration: needsRepositoryConfiguration,
+		NeedsRepositoryConfigurbtion: needsRepositoryConfigurbtion,
 
 		ExtsvcConfigFileExists: extsvcConfigFileExists,
 
-		ExtsvcConfigAllowEdits: envvar.ExtsvcConfigAllowEdits(),
+		ExtsvcConfigAllowEdits: envvbr.ExtsvcConfigAllowEdits(),
 
-		RunningOnMacOS: runningOnMacOS,
+		RunningOnMbcOS: runningOnMbcOS,
 
 		SrcServeGitUrl: srcServeGitUrl,
 	}
 }
 
-// createCurrentUser creates CurrentUser object which contains of types.User
-// properties along with some extra data such as user emails, organisations,
-// session information, etc.
+// crebteCurrentUser crebtes CurrentUser object which contbins of types.User
+// properties blong with some extrb dbtb such bs user embils, orgbnisbtions,
+// session informbtion, etc.
 //
-// We return a nil CurrentUser object on any error.
-func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *CurrentUser {
+// We return b nil CurrentUser object on bny error.
+func crebteCurrentUser(ctx context.Context, user *types.User, db dbtbbbse.DB) *CurrentUser {
 	if user == nil {
 		return nil
 	}
 
-	userResolver := graphqlbackend.NewUserResolver(ctx, db, user)
+	userResolver := grbphqlbbckend.NewUserResolver(ctx, db, user)
 
 	siteAdmin, err := userResolver.SiteAdmin()
 	if err != nil {
 		return nil
 	}
-	canAdminister, err := userResolver.ViewerCanAdminister()
+	cbnAdminister, err := userResolver.ViewerCbnAdminister()
 	if err != nil {
 		return nil
 	}
@@ -438,7 +438,7 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 		return nil
 	}
 
-	hasVerifiedEmail, err := userResolver.HasVerifiedEmail(ctx)
+	hbsVerifiedEmbil, err := userResolver.HbsVerifiedEmbil(ctx)
 	if err != nil {
 		return nil
 	}
@@ -449,24 +449,24 @@ func createCurrentUser(ctx context.Context, user *types.User, db database.DB) *C
 	}
 
 	return &CurrentUser{
-		GraphQLTypename:     "User",
-		AvatarURL:           userResolver.AvatarURL(),
-		Session:             &UserSession{session.CanSignOut()},
-		DatabaseID:          userResolver.DatabaseID(),
-		DisplayName:         derefString(userResolver.DisplayName()),
-		Emails:              resolveUserEmails(ctx, userResolver),
+		GrbphQLTypenbme:     "User",
+		AvbtbrURL:           userResolver.AvbtbrURL(),
+		Session:             &UserSession{session.CbnSignOut()},
+		DbtbbbseID:          userResolver.DbtbbbseID(),
+		DisplbyNbme:         derefString(userResolver.DisplbyNbme()),
+		Embils:              resolveUserEmbils(ctx, userResolver),
 		ID:                  userResolver.ID(),
-		LatestSettings:      resolveLatestSettings(ctx, userResolver),
-		Organizations:       resolveUserOrganizations(ctx, userResolver),
-		Searchable:          userResolver.Searchable(ctx),
+		LbtestSettings:      resolveLbtestSettings(ctx, userResolver),
+		Orgbnizbtions:       resolveUserOrgbnizbtions(ctx, userResolver),
+		Sebrchbble:          userResolver.Sebrchbble(ctx),
 		SettingsURL:         derefString(userResolver.SettingsURL()),
 		SiteAdmin:           siteAdmin,
 		TosAccepted:         userResolver.TosAccepted(ctx),
 		URL:                 userResolver.URL(),
-		Username:            userResolver.Username(),
-		ViewerCanAdminister: canAdminister,
+		Usernbme:            userResolver.Usernbme(),
+		ViewerCbnAdminister: cbnAdminister,
 		Permissions:         resolveUserPermissions(ctx, userResolver),
-		HasVerifiedEmail:    hasVerifiedEmail,
+		HbsVerifiedEmbil:    hbsVerifiedEmbil,
 		CompletedPostSignUp: completedPostSignup,
 	}
 }
@@ -478,9 +478,9 @@ func derefString(s *string) string {
 	return *s
 }
 
-func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.UserResolver) PermissionsConnection {
+func resolveUserPermissions(ctx context.Context, userResolver *grbphqlbbckend.UserResolver) PermissionsConnection {
 	connection := PermissionsConnection{
-		GraphQLTypename: "PermissionConnection",
+		GrbphQLTypenbme: "PermissionConnection",
 		Nodes:           []Permission{},
 	}
 
@@ -494,87 +494,87 @@ func resolveUserPermissions(ctx context.Context, userResolver *graphqlbackend.Us
 		return connection
 	}
 
-	for _, node := range nodes {
-		connection.Nodes = append(connection.Nodes, Permission{
-			GraphQLTypename: "Permission",
+	for _, node := rbnge nodes {
+		connection.Nodes = bppend(connection.Nodes, Permission{
+			GrbphQLTypenbme: "Permission",
 			ID:              node.ID(),
-			DisplayName:     node.DisplayName(),
+			DisplbyNbme:     node.DisplbyNbme(),
 		})
 	}
 
 	return connection
 }
 
-func resolveUserOrganizations(ctx context.Context, user *graphqlbackend.UserResolver) *UserOrganizationsConnection {
-	orgs, err := user.Organizations(ctx)
+func resolveUserOrgbnizbtions(ctx context.Context, user *grbphqlbbckend.UserResolver) *UserOrgbnizbtionsConnection {
+	orgs, err := user.Orgbnizbtions(ctx)
 	if err != nil {
 		return nil
 	}
-	userOrganizations := make([]UserOrganization, 0, len(orgs.Nodes()))
-	for _, org := range orgs.Nodes() {
-		userOrganizations = append(userOrganizations, UserOrganization{
-			Typename:    "Org",
+	userOrgbnizbtions := mbke([]UserOrgbnizbtion, 0, len(orgs.Nodes()))
+	for _, org := rbnge orgs.Nodes() {
+		userOrgbnizbtions = bppend(userOrgbnizbtions, UserOrgbnizbtion{
+			Typenbme:    "Org",
 			ID:          org.ID(),
-			Name:        org.Name(),
-			DisplayName: org.DisplayName(),
+			Nbme:        org.Nbme(),
+			DisplbyNbme: org.DisplbyNbme(),
 			URL:         org.URL(),
 			SettingsURL: org.SettingsURL(),
 		})
 	}
-	return &UserOrganizationsConnection{
-		Typename: "OrgConnection",
-		Nodes:    userOrganizations,
+	return &UserOrgbnizbtionsConnection{
+		Typenbme: "OrgConnection",
+		Nodes:    userOrgbnizbtions,
 	}
 }
 
-func resolveUserEmails(ctx context.Context, user *graphqlbackend.UserResolver) []UserEmail {
-	emails, err := user.Emails(ctx)
+func resolveUserEmbils(ctx context.Context, user *grbphqlbbckend.UserResolver) []UserEmbil {
+	embils, err := user.Embils(ctx)
 	if err != nil {
 		return nil
 	}
 
-	userEmails := make([]UserEmail, 0, len(emails))
+	userEmbils := mbke([]UserEmbil, 0, len(embils))
 
-	for _, emailResolver := range emails {
-		userEmail := UserEmail{
-			Email:     emailResolver.Email(),
-			IsPrimary: emailResolver.IsPrimary(),
-			Verified:  emailResolver.Verified(),
+	for _, embilResolver := rbnge embils {
+		userEmbil := UserEmbil{
+			Embil:     embilResolver.Embil(),
+			IsPrimbry: embilResolver.IsPrimbry(),
+			Verified:  embilResolver.Verified(),
 		}
-		userEmails = append(userEmails, userEmail)
+		userEmbils = bppend(userEmbils, userEmbil)
 	}
 
-	return userEmails
+	return userEmbils
 }
 
-func resolveLatestSettings(ctx context.Context, user *graphqlbackend.UserResolver) *UserLatestSettings {
-	settings, err := user.LatestSettings(ctx)
+func resolveLbtestSettings(ctx context.Context, user *grbphqlbbckend.UserResolver) *UserLbtestSettings {
+	settings, err := user.LbtestSettings(ctx)
 	if err != nil {
 		return nil
 	}
 	if settings == nil {
 		return nil
 	}
-	return &UserLatestSettings{
+	return &UserLbtestSettings{
 		ID:       settings.ID(),
 		Contents: settings.Contents(),
 	}
 }
 
-// publicSiteConfiguration is the subset of the site.schema.json site
-// configuration that is necessary for the web app and is not sensitive/secret.
-func publicSiteConfiguration() schema.SiteConfiguration {
+// publicSiteConfigurbtion is the subset of the site.schemb.json site
+// configurbtion thbt is necessbry for the web bpp bnd is not sensitive/secret.
+func publicSiteConfigurbtion() schemb.SiteConfigurbtion {
 	c := conf.Get()
-	return schema.SiteConfiguration{
+	return schemb.SiteConfigurbtion{
 		AuthPublic:                  c.AuthPublic,
-		UpdateChannel:               conf.UpdateChannel(),
+		UpdbteChbnnel:               conf.UpdbteChbnnel(),
 		AuthzEnforceForSiteAdmins:   c.AuthzEnforceForSiteAdmins,
-		DisableNonCriticalTelemetry: c.DisableNonCriticalTelemetry,
+		DisbbleNonCriticblTelemetry: c.DisbbleNonCriticblTelemetry,
 	}
 }
 
-var isBotPat = lazyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* package http|sourcegraph e2etest|bot|crawl|slurp|spider|feed|rss|camo asset proxy|http-client|sourcegraph-client)`)
+vbr isBotPbt = lbzyregexp.New(`(?i:googlecloudmonitoring|pingdom.com|go .* pbckbge http|sourcegrbph e2etest|bot|crbwl|slurp|spider|feed|rss|cbmo bsset proxy|http-client|sourcegrbph-client)`)
 
 func isBot(userAgent string) bool {
-	return isBotPat.MatchString(userAgent)
+	return isBotPbt.MbtchString(userAgent)
 }

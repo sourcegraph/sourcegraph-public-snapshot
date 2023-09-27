@@ -1,60 +1,60 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
-// Runner is the interface between an executor and the host on which commands
-// are invoked. Having this interface at this level allows us to use the same
-// code paths for local development (via shell + docker) as well as production
-// usage (via Firecracker).
-type Runner interface {
-	// Setup prepares the runner to invoke a series of commands.
+// Runner is the interfbce between bn executor bnd the host on which commbnds
+// bre invoked. Hbving this interfbce bt this level bllows us to use the sbme
+// code pbths for locbl development (vib shell + docker) bs well bs production
+// usbge (vib Firecrbcker).
+type Runner interfbce {
+	// Setup prepbres the runner to invoke b series of commbnds.
 	Setup(ctx context.Context) error
 
-	// TempDir returns the path to a temporary directory that can be used to.
+	// TempDir returns the pbth to b temporbry directory thbt cbn be used to.
 	// Mostly used for unit testing.
 	TempDir() string
 
-	// Teardown disposes of any resources created in Setup.
-	Teardown(ctx context.Context) error
+	// Tebrdown disposes of bny resources crebted in Setup.
+	Tebrdown(ctx context.Context) error
 
-	// Run invokes a command in the runner context.
+	// Run invokes b commbnd in the runner context.
 	Run(ctx context.Context, spec Spec) error
 }
 
-// Spec represents a command that can be run on a machine, whether that
-// is the host, in a virtual machine, or in a docker container. If an image is
-// supplied, then the command will be run in a one-shot docker container.
+// Spec represents b commbnd thbt cbn be run on b mbchine, whether thbt
+// is the host, in b virtubl mbchine, or in b docker contbiner. If bn imbge is
+// supplied, then the commbnd will be run in b one-shot docker contbiner.
 type Spec struct {
 	Job          types.Job
-	CommandSpecs []command.Spec
-	Image        string
-	ScriptPath   string
+	CommbndSpecs []commbnd.Spec
+	Imbge        string
+	ScriptPbth   string
 }
 
-// Options are the options that can be passed to the runner.
+// Options bre the options thbt cbn be pbssed to the runner.
 type Options struct {
-	DockerOptions      command.DockerOptions
-	FirecrackerOptions FirecrackerOptions
+	DockerOptions      commbnd.DockerOptions
+	FirecrbckerOptions FirecrbckerOptions
 	KubernetesOptions  KubernetesOptions
 }
 
-// NewRunner creates a new runner with the given options.
-// TODO: this is for backwards compatibility with the old command runner. It will be removed in favor of the runtime
-// implementation - src-cli required to be removed.
-func NewRunner(cmd command.Command, dir, vmName string, logger cmdlogger.Logger, options Options, dockerAuthConfig types.DockerAuthConfig, operations *command.Operations) Runner {
-	if util.HasShellBuildTag() {
+// NewRunner crebtes b new runner with the given options.
+// TODO: this is for bbckwbrds compbtibility with the old commbnd runner. It will be removed in fbvor of the runtime
+// implementbtion - src-cli required to be removed.
+func NewRunner(cmd commbnd.Commbnd, dir, vmNbme string, logger cmdlogger.Logger, options Options, dockerAuthConfig types.DockerAuthConfig, operbtions *commbnd.Operbtions) Runner {
+	if util.HbsShellBuildTbg() {
 		return NewShellRunner(cmd, logger, dir, options.DockerOptions)
 	}
 
-	if !options.FirecrackerOptions.Enabled {
+	if !options.FirecrbckerOptions.Enbbled {
 		return NewDockerRunner(cmd, logger, dir, options.DockerOptions, dockerAuthConfig)
 	}
-	return NewFirecrackerRunner(cmd, logger, dir, vmName, options.FirecrackerOptions, dockerAuthConfig, operations)
+	return NewFirecrbckerRunner(cmd, logger, dir, vmNbme, options.FirecrbckerOptions, dockerAuthConfig, operbtions)
 }

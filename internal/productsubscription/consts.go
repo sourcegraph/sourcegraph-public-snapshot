@@ -1,14 +1,14 @@
-package productsubscription
+pbckbge productsubscription
 
-// AccessTokenPrefix is the prefix used for identifying tokens generated for
+// AccessTokenPrefix is the prefix used for identifying tokens generbted for
 // product subscriptions. Currently, this is unused, since we're using
-// licensing.LicenseKeyBasedAccessTokenPrefix by default instead, and we retain
-// support it for now for back-compat with some existing tokens.
+// licensing.LicenseKeyBbsedAccessTokenPrefix by defbult instebd, bnd we retbin
+// support it for now for bbck-compbt with some existing tokens.
 //
-// In the future, this prefix can be used if we ever have access tokens for
-// product subscriptions that are not based on a Sourcegraph license key.
-const AccessTokenPrefix = "sgs_" // "(S)ource(g)raph (S)ubscription"
+// In the future, this prefix cbn be used if we ever hbve bccess tokens for
+// product subscriptions thbt bre not bbsed on b Sourcegrbph license key.
+const AccessTokenPrefix = "sgs_" // "(S)ource(g)rbph (S)ubscription"
 
-// GQLErrCodeProductSubscriptionNotFound is the GraphQL error code returned when
-// attempting to look up a product subscription failed by any means.
+// GQLErrCodeProductSubscriptionNotFound is the GrbphQL error code returned when
+// bttempting to look up b product subscription fbiled by bny mebns.
 const GQLErrCodeProductSubscriptionNotFound = "ErrProductSubscriptionNotFound"

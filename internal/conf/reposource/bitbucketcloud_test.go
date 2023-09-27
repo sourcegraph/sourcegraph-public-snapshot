@@ -1,103 +1,103 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestBitbucketCloud_cloneURLToRepoName(t *testing.T) {
+func TestBitbucketCloud_cloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
-		conn schema.BitbucketCloudConnection
-		urls []urlToRepoName
+		conn schemb.BitbucketCloudConnection
+		urls []urlToRepoNbme
 	}{
 		{
-			conn: schema.BitbucketCloudConnection{
+			conn: schemb.BitbucketCloudConnection{
 				Url: "https://bitbucket.org",
 			},
-			urls: []urlToRepoName{
-				{"git@bitbucket.org:gorilla/mux.git", "bitbucket.org/gorilla/mux"},
-				{"git@bitbucket.org:/gorilla/mux.git", "bitbucket.org/gorilla/mux"},
-				{"git+https://bitbucket.org/gorilla/mux.git", "bitbucket.org/gorilla/mux"},
-				{"https://bitbucket.org/gorilla/mux.git", "bitbucket.org/gorilla/mux"},
-				{"https://www.bitbucket.org/gorilla/mux.git", "bitbucket.org/gorilla/mux"},
-				{"https://oauth2:ACCESS_TOKEN@bitbucket.org/gorilla/mux.git", "bitbucket.org/gorilla/mux"},
+			urls: []urlToRepoNbme{
+				{"git@bitbucket.org:gorillb/mux.git", "bitbucket.org/gorillb/mux"},
+				{"git@bitbucket.org:/gorillb/mux.git", "bitbucket.org/gorillb/mux"},
+				{"git+https://bitbucket.org/gorillb/mux.git", "bitbucket.org/gorillb/mux"},
+				{"https://bitbucket.org/gorillb/mux.git", "bitbucket.org/gorillb/mux"},
+				{"https://www.bitbucket.org/gorillb/mux.git", "bitbucket.org/gorillb/mux"},
+				{"https://obuth2:ACCESS_TOKEN@bitbucket.org/gorillb/mux.git", "bitbucket.org/gorillb/mux"},
 
-				{"git@asdf.com:gorilla/mux.git", ""},
-				{"https://asdf.com/gorilla/mux.git", ""},
-				{"https://oauth2:ACCESS_TOKEN@asdf.com/gorilla/mux.git", ""},
+				{"git@bsdf.com:gorillb/mux.git", ""},
+				{"https://bsdf.com/gorillb/mux.git", ""},
+				{"https://obuth2:ACCESS_TOKEN@bsdf.com/gorillb/mux.git", ""},
 			},
 		},
 		{
-			conn: schema.BitbucketCloudConnection{
-				Url: "https://staging.bitbucket.org",
+			conn: schemb.BitbucketCloudConnection{
+				Url: "https://stbging.bitbucket.org",
 			},
-			urls: []urlToRepoName{
-				{"git@staging.bitbucket.org:gorilla/mux.git", "staging.bitbucket.org/gorilla/mux"},
-				{"git@staging.bitbucket.org:/gorilla/mux.git", "staging.bitbucket.org/gorilla/mux"},
-				{"git+https://staging.bitbucket.org/gorilla/mux.git", "staging.bitbucket.org/gorilla/mux"},
-				{"https://staging.bitbucket.org/gorilla/mux.git", "staging.bitbucket.org/gorilla/mux"},
-				{"https://www.staging.bitbucket.org/gorilla/mux.git", "staging.bitbucket.org/gorilla/mux"},
-				{"https://oauth2:ACCESS_TOKEN@staging.bitbucket.org/gorilla/mux.git", "staging.bitbucket.org/gorilla/mux"},
+			urls: []urlToRepoNbme{
+				{"git@stbging.bitbucket.org:gorillb/mux.git", "stbging.bitbucket.org/gorillb/mux"},
+				{"git@stbging.bitbucket.org:/gorillb/mux.git", "stbging.bitbucket.org/gorillb/mux"},
+				{"git+https://stbging.bitbucket.org/gorillb/mux.git", "stbging.bitbucket.org/gorillb/mux"},
+				{"https://stbging.bitbucket.org/gorillb/mux.git", "stbging.bitbucket.org/gorillb/mux"},
+				{"https://www.stbging.bitbucket.org/gorillb/mux.git", "stbging.bitbucket.org/gorillb/mux"},
+				{"https://obuth2:ACCESS_TOKEN@stbging.bitbucket.org/gorillb/mux.git", "stbging.bitbucket.org/gorillb/mux"},
 
-				{"git@asdf.com:gorilla/mux.git", ""},
-				{"https://asdf.com/gorilla/mux.git", ""},
-				{"https://oauth2:ACCESS_TOKEN@asdf.com/gorilla/mux.git", ""},
+				{"git@bsdf.com:gorillb/mux.git", ""},
+				{"https://bsdf.com/gorillb/mux.git", ""},
+				{"https://obuth2:ACCESS_TOKEN@bsdf.com/gorillb/mux.git", ""},
 			},
 		},
 	}
 
-	for _, test := range tests {
-		for _, u := range test.urls {
-			repoName, err := BitbucketCloud{&test.conn}.CloneURLToRepoName(u.cloneURL)
+	for _, test := rbnge tests {
+		for _, u := rbnge test.urls {
+			repoNbme, err := BitbucketCloud{&test.conn}.CloneURLToRepoNbme(u.cloneURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoNbme != string(repoNbme) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoNbme, repoNbme, u.cloneURL, test.conn)
 			}
 		}
 	}
 }
 
-func TestBitbucketCloudRepoName(t *testing.T) {
-	testCases := []struct {
-		name                  string
-		repositoryPathPattern string
+func TestBitbucketCloudRepoNbme(t *testing.T) {
+	testCbses := []struct {
+		nbme                  string
+		repositoryPbthPbttern string
 		host                  string
-		nameWithOwner         string
-		expected              api.RepoName
+		nbmeWithOwner         string
+		expected              bpi.RepoNbme
 	}{
 		{
-			name:                  "empty repositoryPathPattern: repositoryPathPattern='', host='bitbucket.org', nameWithOwner='sourcegraph/sourcegraph'",
-			repositoryPathPattern: "",
+			nbme:                  "empty repositoryPbthPbttern: repositoryPbthPbttern='', host='bitbucket.org', nbmeWithOwner='sourcegrbph/sourcegrbph'",
+			repositoryPbthPbttern: "",
 			host:                  "bitbucket.org",
-			nameWithOwner:         "sourcegraph/sourcegraph",
-			expected:              "bitbucket.org/sourcegraph/sourcegraph",
+			nbmeWithOwner:         "sourcegrbph/sourcegrbph",
+			expected:              "bitbucket.org/sourcegrbph/sourcegrbph",
 		},
 		{
-			name:                  "not empty repositoryPathPattern: repositoryPathPattern='{host}/{nameWithOwner}', host='bitbucket.org', nameWithOwner='sourcegraph/sourcegraph'",
-			repositoryPathPattern: "{host}/{nameWithOwner}",
+			nbme:                  "not empty repositoryPbthPbttern: repositoryPbthPbttern='{host}/{nbmeWithOwner}', host='bitbucket.org', nbmeWithOwner='sourcegrbph/sourcegrbph'",
+			repositoryPbthPbttern: "{host}/{nbmeWithOwner}",
 			host:                  "bitbucket.org",
-			nameWithOwner:         "sourcegraph/sourcegraph",
-			expected:              "bitbucket.org/sourcegraph/sourcegraph",
+			nbmeWithOwner:         "sourcegrbph/sourcegrbph",
+			expected:              "bitbucket.org/sourcegrbph/sourcegrbph",
 		},
 		{
-			name:                  "repositoryPathPattern with https: repositoryPathPattern='https://{host}/{nameWithOwner}', host='bitbucket.org', nameWithOwner='sourcegraph/sourcegraph'",
-			repositoryPathPattern: "https://{host}/{nameWithOwner}",
+			nbme:                  "repositoryPbthPbttern with https: repositoryPbthPbttern='https://{host}/{nbmeWithOwner}', host='bitbucket.org', nbmeWithOwner='sourcegrbph/sourcegrbph'",
+			repositoryPbthPbttern: "https://{host}/{nbmeWithOwner}",
 			host:                  "bitbucket.org",
-			nameWithOwner:         "sourcegraph/sourcegraph",
-			expected:              "https://bitbucket.org/sourcegraph/sourcegraph",
+			nbmeWithOwner:         "sourcegrbph/sourcegrbph",
+			expected:              "https://bitbucket.org/sourcegrbph/sourcegrbph",
 		},
 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			repoName := BitbucketCloudRepoName(testCase.repositoryPathPattern, testCase.host, testCase.nameWithOwner)
-			assert.Equal(t, testCase.expected, repoName)
+	for _, testCbse := rbnge testCbses {
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			repoNbme := BitbucketCloudRepoNbme(testCbse.repositoryPbthPbttern, testCbse.host, testCbse.nbmeWithOwner)
+			bssert.Equbl(t, testCbse.expected, repoNbme)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
@@ -7,175 +7,175 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
 )
 
-func SendResetPasswordURLEmail(ctx context.Context, email, username string, resetURL *url.URL) error {
-	// Configure the template
-	emailTemplate := defaultResetPasswordEmailTemplates
-	if customTemplates := conf.SiteConfig().EmailTemplates; customTemplates != nil {
-		emailTemplate = txemail.FromSiteConfigTemplateWithDefault(customTemplates.ResetPassword, emailTemplate)
+func SendResetPbsswordURLEmbil(ctx context.Context, embil, usernbme string, resetURL *url.URL) error {
+	// Configure the templbte
+	embilTemplbte := defbultResetPbsswordEmbilTemplbtes
+	if customTemplbtes := conf.SiteConfig().EmbilTemplbtes; customTemplbtes != nil {
+		embilTemplbte = txembil.FromSiteConfigTemplbteWithDefbult(customTemplbtes.ResetPbssword, embilTemplbte)
 	}
 
-	return txemail.Send(ctx, "password_reset", txemail.Message{
-		To:       []string{email},
-		Template: emailTemplate,
-		Data: SetPasswordEmailTemplateData{
-			Username: username,
-			URL:      globals.ExternalURL().ResolveReference(resetURL).String(),
-			Host:     globals.ExternalURL().Host,
+	return txembil.Send(ctx, "pbssword_reset", txembil.Messbge{
+		To:       []string{embil},
+		Templbte: embilTemplbte,
+		Dbtb: SetPbsswordEmbilTemplbteDbtb{
+			Usernbme: usernbme,
+			URL:      globbls.ExternblURL().ResolveReference(resetURL).String(),
+			Host:     globbls.ExternblURL().Host,
 		},
 	})
 }
 
-// HandleResetPasswordInit initiates the builtin-auth password reset flow by sending a password-reset email.
-func HandleResetPasswordInit(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleResetPasswordInit", "password reset initialization flow handler")
+// HbndleResetPbsswordInit initibtes the builtin-buth pbssword reset flow by sending b pbssword-reset embil.
+func HbndleResetPbsswordInit(logger log.Logger, db dbtbbbse.DB) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleResetPbsswordInit", "pbssword reset initiblizbtion flow hbndler")
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(logger, w) {
+		if hbndleEnbbledCheck(logger, w) {
 			return
 		}
-		if handleNotAuthenticatedCheck(w, r) {
+		if hbndleNotAuthenticbtedCheck(w, r) {
 			return
 		}
-		if !conf.CanSendEmail() {
-			httpLogError(logger.Error, w, "Unable to reset password because email sending is not configured on this site", http.StatusNotFound)
+		if !conf.CbnSendEmbil() {
+			httpLogError(logger.Error, w, "Unbble to reset pbssword becbuse embil sending is not configured on this site", http.StbtusNotFound)
 			return
 		}
 
 		ctx := r.Context()
-		var formData struct {
-			Email string `json:"email"`
+		vbr formDbtb struct {
+			Embil string `json:"embil"`
 		}
-		if err := json.NewDecoder(r.Body).Decode(&formData); err != nil {
-			httpLogError(logger.Error, w, "Could not decode password reset request body", http.StatusBadRequest, log.Error(err))
+		if err := json.NewDecoder(r.Body).Decode(&formDbtb); err != nil {
+			httpLogError(logger.Error, w, "Could not decode pbssword reset request body", http.StbtusBbdRequest, log.Error(err))
 			return
 		}
 
-		if formData.Email == "" {
-			httpLogError(logger.Warn, w, "No email specified in password reset request", http.StatusBadRequest)
+		if formDbtb.Embil == "" {
+			httpLogError(logger.Wbrn, w, "No embil specified in pbssword reset request", http.StbtusBbdRequest)
 			return
 		}
 
-		usr, err := db.Users().GetByVerifiedEmail(ctx, formData.Email)
+		usr, err := db.Users().GetByVerifiedEmbil(ctx, formDbtb.Embil)
 		if err != nil {
-			// 🚨 SECURITY: We don't show an error message when the user is not found
-			// as to not leak the existence of a given e-mail address in the database.
+			// 🚨 SECURITY: We don't show bn error messbge when the user is not found
+			// bs to not lebk the existence of b given e-mbil bddress in the dbtbbbse.
 			if !errcode.IsNotFound(err) {
-				httpLogError(logger.Warn, w, "Failed to lookup user", http.StatusInternalServerError)
+				httpLogError(logger.Wbrn, w, "Fbiled to lookup user", http.StbtusInternblServerError)
 			}
 			return
 		}
 
-		resetURL, err := backend.MakePasswordResetURL(ctx, db, usr.ID)
-		if err == database.ErrPasswordResetRateLimit {
-			httpLogError(logger.Warn, w, "Too many password reset requests. Try again in a few minutes.", http.StatusTooManyRequests, log.Error(err))
+		resetURL, err := bbckend.MbkePbsswordResetURL(ctx, db, usr.ID)
+		if err == dbtbbbse.ErrPbsswordResetRbteLimit {
+			httpLogError(logger.Wbrn, w, "Too mbny pbssword reset requests. Try bgbin in b few minutes.", http.StbtusTooMbnyRequests, log.Error(err))
 			return
 		} else if err != nil {
-			httpLogError(logger.Error, w, "Could not reset password", http.StatusBadRequest, log.Error(err))
+			httpLogError(logger.Error, w, "Could not reset pbssword", http.StbtusBbdRequest, log.Error(err))
 			return
 		}
 
-		if err := SendResetPasswordURLEmail(r.Context(), formData.Email, usr.Username, resetURL); err != nil {
-			httpLogError(logger.Error, w, "Could not send reset password email", http.StatusInternalServerError, log.Error(err))
+		if err := SendResetPbsswordURLEmbil(r.Context(), formDbtb.Embil, usr.Usernbme, resetURL); err != nil {
+			httpLogError(logger.Error, w, "Could not send reset pbssword embil", http.StbtusInternblServerError, log.Error(err))
 			return
 		}
-		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamPasswordResetRequested, usr.ID)
+		dbtbbbse.LogPbsswordEvent(ctx, db, r, dbtbbbse.SecurityEventNbmPbsswordResetRequested, usr.ID)
 	}
 }
 
-// HandleResetPasswordCode resets the password if the correct code is provided, and also
-// verifies emails if the appropriate parameters are found.
-func HandleResetPasswordCode(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("HandleResetPasswordCode", "verifies password reset code requests handler")
+// HbndleResetPbsswordCode resets the pbssword if the correct code is provided, bnd blso
+// verifies embils if the bppropribte pbrbmeters bre found.
+func HbndleResetPbsswordCode(logger log.Logger, db dbtbbbse.DB) http.HbndlerFunc {
+	logger = logger.Scoped("HbndleResetPbsswordCode", "verifies pbssword reset code requests hbndler")
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		if handleEnabledCheck(logger, w) {
+		if hbndleEnbbledCheck(logger, w) {
 			return
 		}
-		if handleNotAuthenticatedCheck(w, r) {
+		if hbndleNotAuthenticbtedCheck(w, r) {
 			return
 		}
 
 		ctx := r.Context()
-		var params struct {
+		vbr pbrbms struct {
 			UserID          int32  `json:"userID"`
 			Code            string `json:"code"`
-			Email           string `json:"email"`
-			EmailVerifyCode string `json:"emailVerifyCode"`
-			Password        string `json:"password"` // new password
+			Embil           string `json:"embil"`
+			EmbilVerifyCode string `json:"embilVerifyCode"`
+			Pbssword        string `json:"pbssword"` // new pbssword
 		}
-		if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
-			httpLogError(logger.Error, w, "Password reset with code: could not decode request body", http.StatusBadGateway, log.Error(err))
+		if err := json.NewDecoder(r.Body).Decode(&pbrbms); err != nil {
+			httpLogError(logger.Error, w, "Pbssword reset with code: could not decode request body", http.StbtusBbdGbtewby, log.Error(err))
 			return
 		}
-		verifyEmail := params.Email != "" && params.EmailVerifyCode != ""
+		verifyEmbil := pbrbms.Embil != "" && pbrbms.EmbilVerifyCode != ""
 		logger = logger.With(
-			log.Int32("userID", params.UserID),
-			log.Bool("verifyEmail", verifyEmail))
+			log.Int32("userID", pbrbms.UserID),
+			log.Bool("verifyEmbil", verifyEmbil))
 
-		if err := database.CheckPassword(params.Password); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+		if err := dbtbbbse.CheckPbssword(pbrbms.Pbssword); err != nil {
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 
-		logger.Info("handling password reset")
+		logger.Info("hbndling pbssword reset")
 
-		success, err := db.Users().SetPassword(ctx, params.UserID, params.Code, params.Password)
+		success, err := db.Users().SetPbssword(ctx, pbrbms.UserID, pbrbms.Code, pbrbms.Pbssword)
 		if err != nil {
-			httpLogError(logger.Error, w, "Unexpected error", http.StatusInternalServerError, log.Error(err))
+			httpLogError(logger.Error, w, "Unexpected error", http.StbtusInternblServerError, log.Error(err))
 			return
 		}
 
 		if !success {
-			http.Error(w, "Password reset code was invalid or expired.", http.StatusUnauthorized)
+			http.Error(w, "Pbssword reset code wbs invblid or expired.", http.StbtusUnbuthorized)
 			return
 		}
 
-		database.LogPasswordEvent(ctx, db, r, database.SecurityEventNamePasswordChanged, params.UserID)
+		dbtbbbse.LogPbsswordEvent(ctx, db, r, dbtbbbse.SecurityEventNbmePbsswordChbnged, pbrbms.UserID)
 
-		if verifyEmail {
-			ok, err := db.UserEmails().Verify(ctx, params.UserID, params.Email, params.EmailVerifyCode)
+		if verifyEmbil {
+			ok, err := db.UserEmbils().Verify(ctx, pbrbms.UserID, pbrbms.Embil, pbrbms.EmbilVerifyCode)
 			if err != nil {
-				logger.Error("failed to verify email", log.Error(err))
+				logger.Error("fbiled to verify embil", log.Error(err))
 			} else if !ok {
-				logger.Warn("got invalid email verification code")
+				logger.Wbrn("got invblid embil verificbtion code")
 			} else {
-				// copy-pasta from logEmailVerified
-				event := &database.SecurityEvent{
-					Name:      database.SecurityEventNameEmailVerified,
-					URL:       r.URL.Path,
-					UserID:    uint32(params.UserID),
+				// copy-pbstb from logEmbilVerified
+				event := &dbtbbbse.SecurityEvent{
+					Nbme:      dbtbbbse.SecurityEventNbmeEmbilVerified,
+					URL:       r.URL.Pbth,
+					UserID:    uint32(pbrbms.UserID),
 					Argument:  nil,
 					Source:    "BACKEND",
-					Timestamp: time.Now(),
+					Timestbmp: time.Now(),
 				}
 				event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 				db.SecurityEventLogs().LogEvent(ctx, event)
 			}
 		}
 
-		if conf.CanSendEmail() {
-			if err := backend.NewUserEmailsService(db, logger).SendUserEmailOnFieldUpdate(ctx, params.UserID, "reset the password"); err != nil {
-				logger.Warn("Failed to send email to inform user of password reset", log.Error(err))
+		if conf.CbnSendEmbil() {
+			if err := bbckend.NewUserEmbilsService(db, logger).SendUserEmbilOnFieldUpdbte(ctx, pbrbms.UserID, "reset the pbssword"); err != nil {
+				logger.Wbrn("Fbiled to send embil to inform user of pbssword reset", log.Error(err))
 			}
 		}
 	}
 }
 
-func handleNotAuthenticatedCheck(w http.ResponseWriter, r *http.Request) (handled bool) {
-	if actor.FromContext(r.Context()).IsAuthenticated() {
-		http.Error(w, "Authenticated users may not perform password reset.", http.StatusInternalServerError)
+func hbndleNotAuthenticbtedCheck(w http.ResponseWriter, r *http.Request) (hbndled bool) {
+	if bctor.FromContext(r.Context()).IsAuthenticbted() {
+		http.Error(w, "Authenticbted users mby not perform pbssword reset.", http.StbtusInternblServerError)
 		return true
 	}
-	return false
+	return fblse
 }

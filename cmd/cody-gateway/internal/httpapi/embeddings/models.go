@@ -1,57 +1,57 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 
-	"golang.org/x/exp/slices"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
 )
 
-type ModelName string
+type ModelNbme string
 
 const (
-	ModelNameOpenAIAda ModelName = "openai/text-embedding-ada-002"
+	ModelNbmeOpenAIAdb ModelNbme = "openbi/text-embedding-bdb-002"
 )
 
-type EmbeddingsClient interface {
-	ProviderName() string
-	GenerateEmbeddings(context.Context, codygateway.EmbeddingsRequest) (_ *codygateway.EmbeddingsResponse, consumedTokens int, _ error)
+type EmbeddingsClient interfbce {
+	ProviderNbme() string
+	GenerbteEmbeddings(context.Context, codygbtewby.EmbeddingsRequest) (_ *codygbtewby.EmbeddingsResponse, consumedTokens int, _ error)
 }
 
-type ModelFactory interface {
+type ModelFbctory interfbce {
 	ForModel(model string) (_ EmbeddingsClient, ok bool)
 }
 
-type ModelFactoryMap map[ModelName]EmbeddingsClient
+type ModelFbctoryMbp mbp[ModelNbme]EmbeddingsClient
 
-func (mf ModelFactoryMap) ForModel(model string) (EmbeddingsClient, bool) {
-	c, ok := mf[ModelName(model)]
+func (mf ModelFbctoryMbp) ForModel(model string) (EmbeddingsClient, bool) {
+	c, ok := mf[ModelNbme(model)]
 	return c, ok
 }
 
-func NewListHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		act := actor.FromContext(r.Context())
+func NewListHbndler() http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		bct := bctor.FromContext(r.Context())
 
-		modelEnabled := func(model ModelName) bool {
-			rl, ok := act.RateLimits[codygateway.FeatureEmbeddings]
-			if !act.AccessEnabled || !ok || !rl.IsValid() {
-				return false
+		modelEnbbled := func(model ModelNbme) bool {
+			rl, ok := bct.RbteLimits[codygbtewby.FebtureEmbeddings]
+			if !bct.AccessEnbbled || !ok || !rl.IsVblid() {
+				return fblse
 			}
-			return slices.Contains(rl.AllowedModels, string(model))
+			return slices.Contbins(rl.AllowedModels, string(model))
 		}
 
 		models := modelsResponse{
-			// Just a hardcoded list for now.
+			// Just b hbrdcoded list for now.
 			{
-				Enabled:    modelEnabled(ModelNameOpenAIAda),
-				Name:       string(ModelNameOpenAIAda),
+				Enbbled:    modelEnbbled(ModelNbmeOpenAIAdb),
+				Nbme:       string(ModelNbmeOpenAIAdb),
 				Dimensions: 1536,
-				Deprecated: false,
+				Deprecbted: fblse,
 			},
 		}
 		_ = json.NewEncoder(w).Encode(models)
@@ -59,10 +59,10 @@ func NewListHandler() http.Handler {
 }
 
 type model struct {
-	Name       string `json:"name"`
+	Nbme       string `json:"nbme"`
 	Dimensions int    `json:"dimensions"`
-	Enabled    bool   `json:"enabled"`
-	Deprecated bool   `json:"deprecated"`
+	Enbbled    bool   `json:"enbbled"`
+	Deprecbted bool   `json:"deprecbted"`
 }
 
 type modelsResponse []model

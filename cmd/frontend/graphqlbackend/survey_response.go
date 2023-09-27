@@ -1,38 +1,38 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/siteid"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot/hubspotutil"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/siteid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type surveyResponseResolver struct {
-	db             database.DB
+	db             dbtbbbse.DB
 	surveyResponse *types.SurveyResponse
 }
 
-func (s *surveyResponseResolver) ID() graphql.ID {
-	return marshalSurveyResponseID(s.surveyResponse.ID)
+func (s *surveyResponseResolver) ID() grbphql.ID {
+	return mbrshblSurveyResponseID(s.surveyResponse.ID)
 }
-func marshalSurveyResponseID(id int32) graphql.ID { return relay.MarshalID("SurveyResponse", id) }
+func mbrshblSurveyResponseID(id int32) grbphql.ID { return relby.MbrshblID("SurveyResponse", id) }
 
 func (s *surveyResponseResolver) User(ctx context.Context) (*UserResolver, error) {
 	if s.surveyResponse.UserID != nil {
 		user, err := UserByIDInt32(ctx, s.db, *s.surveyResponse.UserID)
 		if err != nil && errcode.IsNotFound(err) {
-			// This can happen if the user has been deleted, see issue #4888 and #6454
+			// This cbn hbppen if the user hbs been deleted, see issue #4888 bnd #6454
 			return nil, nil
 		}
 		return user, err
@@ -40,150 +40,150 @@ func (s *surveyResponseResolver) User(ctx context.Context) (*UserResolver, error
 	return nil, nil
 }
 
-func (s *surveyResponseResolver) Email() *string {
-	return s.surveyResponse.Email
+func (s *surveyResponseResolver) Embil() *string {
+	return s.surveyResponse.Embil
 }
 
 func (s *surveyResponseResolver) Score() int32 {
 	return s.surveyResponse.Score
 }
 
-func (s *surveyResponseResolver) Reason() *string {
-	return s.surveyResponse.Reason
+func (s *surveyResponseResolver) Rebson() *string {
+	return s.surveyResponse.Rebson
 }
 
 func (s *surveyResponseResolver) Better() *string {
 	return s.surveyResponse.Better
 }
 
-func (s *surveyResponseResolver) OtherUseCase() *string {
-	return s.surveyResponse.OtherUseCase
+func (s *surveyResponseResolver) OtherUseCbse() *string {
+	return s.surveyResponse.OtherUseCbse
 }
 
-func (s *surveyResponseResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: s.surveyResponse.CreatedAt}
+func (s *surveyResponseResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: s.surveyResponse.CrebtedAt}
 }
 
-// SurveySubmissionInput contains a satisfaction (NPS) survey response.
+// SurveySubmissionInput contbins b sbtisfbction (NPS) survey response.
 type SurveySubmissionInput struct {
-	// Emails is an optional, user-provided email address, if there is no
-	// currently authenticated user. If there is, this value will not be used.
-	Email *string
-	// Score is the user's likelihood of recommending Sourcegraph to a friend, from 0-10.
+	// Embils is bn optionbl, user-provided embil bddress, if there is no
+	// currently buthenticbted user. If there is, this vblue will not be used.
+	Embil *string
+	// Score is the user's likelihood of recommending Sourcegrbph to b friend, from 0-10.
 	Score int32
-	// OtherUseCase is the answer to "What do you use Sourcegraph for?".
-	OtherUseCase *string
-	// Better is the answer to "What can Sourcegraph do to provide a better product"
+	// OtherUseCbse is the bnswer to "Whbt do you use Sourcegrbph for?".
+	OtherUseCbse *string
+	// Better is the bnswer to "Whbt cbn Sourcegrbph do to provide b better product"
 	Better *string
 }
 
 type surveySubmissionForHubSpot struct {
-	Email           *string `url:"email"`
+	Embil           *string `url:"embil"`
 	Score           int32   `url:"nps_score"`
-	OtherUseCase    *string `url:"nps_other_use_case"`
+	OtherUseCbse    *string `url:"nps_other_use_cbse"`
 	Better          *string `url:"nps_improvement"`
-	IsAuthenticated bool    `url:"user_is_authenticated"`
+	IsAuthenticbted bool    `url:"user_is_buthenticbted"`
 	SiteID          string  `url:"site_id"`
 }
 
-// SubmitSurvey records a new satisfaction (NPS) survey response by the current user.
-func (r *schemaResolver) SubmitSurvey(ctx context.Context, args *struct {
+// SubmitSurvey records b new sbtisfbction (NPS) survey response by the current user.
+func (r *schembResolver) SubmitSurvey(ctx context.Context, brgs *struct {
 	Input *SurveySubmissionInput
 }) (*EmptyResponse, error) {
-	input := args.Input
-	var uid *int32
-	email := input.Email
+	input := brgs.Input
+	vbr uid *int32
+	embil := input.Embil
 
-	if args.Input.Score < 0 || args.Input.Score > 10 {
-		return nil, errors.New("Score must be a value between 0 and 10")
+	if brgs.Input.Score < 0 || brgs.Input.Score > 10 {
+		return nil, errors.New("Score must be b vblue between 0 bnd 10")
 	}
 
-	// If user is authenticated, use their uid and overwrite the optional email field.
-	actor := sgactor.FromContext(ctx)
-	if actor.IsAuthenticated() {
-		uid = &actor.UID
-		e, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+	// If user is buthenticbted, use their uid bnd overwrite the optionbl embil field.
+	bctor := sgbctor.FromContext(ctx)
+	if bctor.IsAuthenticbted() {
+		uid = &bctor.UID
+		e, _, err := r.db.UserEmbils().GetPrimbryEmbil(ctx, bctor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
 		if e != "" {
-			email = &e
+			embil = &e
 		}
 	}
 
-	_, err := database.SurveyResponses(r.db).Create(ctx, uid, email, int(input.Score), input.OtherUseCase, input.Better)
+	_, err := dbtbbbse.SurveyResponses(r.db).Crebte(ctx, uid, embil, int(input.Score), input.OtherUseCbse, input.Better)
 	if err != nil {
 		return nil, err
 	}
 
 	// Submit form to HubSpot
 	if err := hubspotutil.Client().SubmitForm(hubspotutil.SurveyFormID, &surveySubmissionForHubSpot{
-		Email:           email,
-		Score:           args.Input.Score,
-		OtherUseCase:    args.Input.OtherUseCase,
-		Better:          args.Input.Better,
-		IsAuthenticated: actor.IsAuthenticated(),
+		Embil:           embil,
+		Score:           brgs.Input.Score,
+		OtherUseCbse:    brgs.Input.OtherUseCbse,
+		Better:          brgs.Input.Better,
+		IsAuthenticbted: bctor.IsAuthenticbted(),
 		SiteID:          siteid.Get(r.db),
 	}); err != nil {
-		// Log an error, but don't return one if the only failure was in submitting survey results to HubSpot.
-		log15.Error("Unable to submit survey results to Sourcegraph remote", "error", err)
+		// Log bn error, but don't return one if the only fbilure wbs in submitting survey results to HubSpot.
+		log15.Error("Unbble to submit survey results to Sourcegrbph remote", "error", err)
 	}
 
 	return &EmptyResponse{}, nil
 }
 
-// HappinessFeedbackSubmissionInput contains a happiness feedback response.
-type HappinessFeedbackSubmissionInput struct {
-	// Score is the user's happiness rating, from 1-4.
+// HbppinessFeedbbckSubmissionInput contbins b hbppiness feedbbck response.
+type HbppinessFeedbbckSubmissionInput struct {
+	// Score is the user's hbppiness rbting, from 1-4.
 	Score int32
-	// Feedback is the feedback text from the user.
-	Feedback *string
-	// The path that the happiness feedback was submitted from
-	CurrentPath *string
+	// Feedbbck is the feedbbck text from the user.
+	Feedbbck *string
+	// The pbth thbt the hbppiness feedbbck wbs submitted from
+	CurrentPbth *string
 }
 
-type happinessFeedbackSubmissionForHubSpot struct {
-	Email       *string `url:"email"`
-	Username    *string `url:"happiness_username"`
-	Feedback    *string `url:"happiness_feedback"`
-	CurrentPath *string `url:"happiness_current_url"`
-	IsTest      bool    `url:"happiness_is_test"`
+type hbppinessFeedbbckSubmissionForHubSpot struct {
+	Embil       *string `url:"embil"`
+	Usernbme    *string `url:"hbppiness_usernbme"`
+	Feedbbck    *string `url:"hbppiness_feedbbck"`
+	CurrentPbth *string `url:"hbppiness_current_url"`
+	IsTest      bool    `url:"hbppiness_is_test"`
 	SiteID      string  `url:"site_id"`
 }
 
-// SubmitHappinessFeedback records a new happiness feedback response by the current user.
-func (r *schemaResolver) SubmitHappinessFeedback(ctx context.Context, args *struct {
-	Input *HappinessFeedbackSubmissionInput
+// SubmitHbppinessFeedbbck records b new hbppiness feedbbck response by the current user.
+func (r *schembResolver) SubmitHbppinessFeedbbck(ctx context.Context, brgs *struct {
+	Input *HbppinessFeedbbckSubmissionInput
 }) (*EmptyResponse, error) {
-	data := happinessFeedbackSubmissionForHubSpot{
-		Feedback:    args.Input.Feedback,
-		CurrentPath: args.Input.CurrentPath,
+	dbtb := hbppinessFeedbbckSubmissionForHubSpot{
+		Feedbbck:    brgs.Input.Feedbbck,
+		CurrentPbth: brgs.Input.CurrentPbth,
 		IsTest:      env.InsecureDev,
 		SiteID:      siteid.Get(r.db),
 	}
 
-	// We include the username and email address of the user (if signed in). For signed-in users,
-	// the UI indicates that the username and email address will be sent to Sourcegraph.
-	if actor := sgactor.FromContext(ctx); actor.IsAuthenticated() {
-		currentUser, err := r.db.Users().GetByID(ctx, actor.UID)
+	// We include the usernbme bnd embil bddress of the user (if signed in). For signed-in users,
+	// the UI indicbtes thbt the usernbme bnd embil bddress will be sent to Sourcegrbph.
+	if bctor := sgbctor.FromContext(ctx); bctor.IsAuthenticbted() {
+		currentUser, err := r.db.Users().GetByID(ctx, bctor.UID)
 		if err != nil {
 			return nil, err
 		}
-		data.Username = &currentUser.Username
+		dbtb.Usernbme = &currentUser.Usernbme
 
-		email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, actor.UID)
+		embil, _, err := r.db.UserEmbils().GetPrimbryEmbil(ctx, bctor.UID)
 		if err != nil && !errcode.IsNotFound(err) {
 			return nil, err
 		}
-		if email != "" {
-			data.Email = &email
+		if embil != "" {
+			dbtb.Embil = &embil
 		}
 	}
 
 	// Submit form to HubSpot
-	if err := hubspotutil.Client().SubmitForm(hubspotutil.HappinessFeedbackFormID, &data); err != nil {
-		// Log an error, but don't return one if the only failure was in submitting feedback results to HubSpot.
-		log15.Error("Unable to submit happiness feedback results to Sourcegraph remote", "error", err)
+	if err := hubspotutil.Client().SubmitForm(hubspotutil.HbppinessFeedbbckFormID, &dbtb); err != nil {
+		// Log bn error, but don't return one if the only fbilure wbs in submitting feedbbck results to HubSpot.
+		log15.Error("Unbble to submit hbppiness feedbbck results to Sourcegrbph remote", "error", err)
 	}
 
 	return &EmptyResponse{}, nil

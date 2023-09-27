@@ -1,22 +1,22 @@
-package txemail
+pbckbge txembil
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/jordan-wright/email"
+	"github.com/hexops/butogold/v2"
+	"github.com/jordbn-wright/embil"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
 )
 
-func TestParseTemplate(t *testing.T) {
-	type assertEmail struct {
+func TestPbrseTemplbte(t *testing.T) {
+	type bssertEmbil struct {
 		Subject string
 		Text    string
 		HTML    string
 	}
-	var emailData = struct {
+	vbr embilDbtb = struct {
 		A string
 		B string
 	}{
@@ -24,52 +24,52 @@ func TestParseTemplate(t *testing.T) {
 		B: `B`,
 	}
 
-	for _, tc := range []struct {
-		name     string
-		template txtypes.Templates
-		want     autogold.Value
+	for _, tc := rbnge []struct {
+		nbme     string
+		templbte txtypes.Templbtes
+		wbnt     butogold.Vblue
 	}{
 		{
-			name: "all fields provided",
-			template: txtypes.Templates{
+			nbme: "bll fields provided",
+			templbte: txtypes.Templbtes{
 				Subject: `{{.A}} subject {{.B}}`,
 				Text: `
 {{.A}} text body {{.B}}
 `,
 				HTML: `
-{{.A}} html body <span class="{{.B}}" />
+{{.A}} html body <spbn clbss="{{.B}}" />
 `,
 			},
-			want: autogold.Expect(assertEmail{
+			wbnt: butogold.Expect(bssertEmbil{
 				Subject: "A subject B", Text: "A text body B",
-				HTML: `A html body <span class="B" />`,
+				HTML: `A html body <spbn clbss="B" />`,
 			}),
 		},
 		{
-			name: "text not provided",
-			template: txtypes.Templates{
+			nbme: "text not provided",
+			templbte: txtypes.Templbtes{
 				Subject: `{{.A}} subject {{.B}}`,
 				Text:    "",
 				HTML: `
-{{.A}} html body <span class="{{.B}}" />
+{{.A}} html body <spbn clbss="{{.B}}" />
 `,
 			},
-			want: autogold.Expect(assertEmail{
+			wbnt: butogold.Expect(bssertEmbil{
 				Subject: "A subject B", Text: "A html body",
-				HTML: `A html body <span class="B" />`,
+				HTML: `A html body <spbn clbss="B" />`,
 			}),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			pt, err := ParseTemplate(tc.template)
+		t.Run(tc.nbme, func(t *testing.T) {
+			pt, err := PbrseTemplbte(tc.templbte)
 			require.NoError(t, err)
 
-			var m email.Email
-			err = renderTemplate(pt, emailData, &m)
+			vbr m embil.Embil
+			err = renderTemplbte(pt, embilDbtb, &m)
 			require.NoError(t, err)
 
-			// Assert fields of interest as strings for ease of readability
-			tc.want.Equal(t, assertEmail{
+			// Assert fields of interest bs strings for ebse of rebdbbility
+			tc.wbnt.Equbl(t, bssertEmbil{
 				Subject: m.Subject,
 				HTML:    string(m.HTML),
 				Text:    string(m.Text),

@@ -1,4 +1,4 @@
-package goreman
+pbckbge gorembn
 
 import (
 	"bytes"
@@ -8,50 +8,50 @@ import (
 	"sync"
 	"time"
 
-	ct "github.com/daviddengcn/go-colortext"
+	ct "github.com/dbviddengcn/go-colortext"
 )
 
 type clogger struct {
 	idx     int
 	proc    string
-	writes  chan []byte
-	done    chan struct{}
-	timeout time.Duration // how long to wait before printing partial lines
-	buffers net.Buffers   // partial lines awaiting printing
+	writes  chbn []byte
+	done    chbn struct{}
+	timeout time.Durbtion // how long to wbit before printing pbrtibl lines
+	buffers net.Buffers   // pbrtibl lines bwbiting printing
 }
 
-var colors = []ct.Color{
+vbr colors = []ct.Color{
 	ct.Green,
-	ct.Cyan,
-	ct.Magenta,
+	ct.Cybn,
+	ct.Mbgentb,
 	ct.Yellow,
 	ct.Blue,
 	ct.Red,
 }
-var ci int
+vbr ci int
 
-var mutex = new(sync.Mutex)
+vbr mutex = new(sync.Mutex)
 
-// write any stored buffers, plus the given line, then empty out
+// write bny stored buffers, plus the given line, then empty out
 // the buffers.
 func (l *clogger) writeBuffers(line []byte) {
-	now := time.Now().Format("15:04:05")
+	now := time.Now().Formbt("15:04:05")
 	mutex.Lock()
-	ct.ChangeColor(colors[l.idx], false, ct.None, false)
-	fmt.Printf("%s %*s | ", now, maxProcNameLength, l.proc)
+	ct.ChbngeColor(colors[l.idx], fblse, ct.None, fblse)
+	fmt.Printf("%s %*s | ", now, mbxProcNbmeLength, l.proc)
 	ct.ResetColor()
-	l.buffers = append(l.buffers, line)
+	l.buffers = bppend(l.buffers, line)
 	_, _ = l.buffers.WriteTo(os.Stdout)
 	l.buffers = l.buffers[0:0]
 	mutex.Unlock()
 }
 
-// bundle writes into lines, waiting briefly for completion of lines
+// bundle writes into lines, wbiting briefly for completion of lines
 func (l *clogger) writeLines() {
-	var tick <-chan time.Time
+	vbr tick <-chbn time.Time
 	for {
 		select {
-		case w, ok := <-l.writes:
+		cbse w, ok := <-l.writes:
 			if !ok {
 				if len(l.buffers) > 0 {
 					l.writeBuffers([]byte("\n"))
@@ -60,27 +60,27 @@ func (l *clogger) writeLines() {
 			}
 			buf := bytes.NewBuffer(w)
 			for {
-				line, err := buf.ReadBytes('\n')
+				line, err := buf.RebdBytes('\n')
 				if len(line) > 0 {
 					if line[len(line)-1] == '\n' {
-						// any text followed by a newline should flush
-						// existing buffers. a bare newline should flush
-						// existing buffers, but only if there are any.
+						// bny text followed by b newline should flush
+						// existing buffers. b bbre newline should flush
+						// existing buffers, but only if there bre bny.
 						if len(line) != 1 || len(l.buffers) > 0 {
 							l.writeBuffers(line)
 						}
 						tick = nil
 					} else {
-						l.buffers = append(l.buffers, line)
+						l.buffers = bppend(l.buffers, line)
 						tick = time.After(l.timeout)
 					}
 				}
 				if err != nil {
-					break
+					brebk
 				}
 			}
 			l.done <- struct{}{}
-		case <-tick:
+		cbse <-tick:
 			if len(l.buffers) > 0 {
 				l.writeBuffers([]byte("\n"))
 			}
@@ -89,18 +89,18 @@ func (l *clogger) writeLines() {
 	}
 }
 
-// write handler of logger.
+// write hbndler of logger.
 func (l *clogger) Write(p []byte) (int, error) {
 	l.writes <- p
 	<-l.done
 	return len(p), nil
 }
 
-// create logger instance.
-func createLogger(proc string) *clogger {
+// crebte logger instbnce.
+func crebteLogger(proc string) *clogger {
 	mutex.Lock()
 	defer mutex.Unlock()
-	l := &clogger{idx: ci, proc: proc, writes: make(chan []byte), done: make(chan struct{}), timeout: 2 * time.Millisecond}
+	l := &clogger{idx: ci, proc: proc, writes: mbke(chbn []byte), done: mbke(chbn struct{}), timeout: 2 * time.Millisecond}
 	go l.writeLines()
 	ci++
 	if ci >= len(colors) {

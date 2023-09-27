@@ -1,62 +1,62 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import "context"
 
-type InsightsAggregationResolver interface {
-	SearchQueryAggregate(ctx context.Context, args SearchQueryArgs) (SearchQueryAggregateResolver, error)
+type InsightsAggregbtionResolver interfbce {
+	SebrchQueryAggregbte(ctx context.Context, brgs SebrchQueryArgs) (SebrchQueryAggregbteResolver, error)
 }
 
-type SearchQueryArgs struct {
+type SebrchQueryArgs struct {
 	Query       string `json:"query"`
-	PatternType string `json:"patternType"`
+	PbtternType string `json:"pbtternType"`
 }
 
-type SearchQueryAggregateResolver interface {
-	ModeAvailability(ctx context.Context) []AggregationModeAvailabilityResolver
-	Aggregations(ctx context.Context, args AggregationsArgs) (SearchAggregationResultResolver, error)
+type SebrchQueryAggregbteResolver interfbce {
+	ModeAvbilbbility(ctx context.Context) []AggregbtionModeAvbilbbilityResolver
+	Aggregbtions(ctx context.Context, brgs AggregbtionsArgs) (SebrchAggregbtionResultResolver, error)
 }
 
-type AggregationModeAvailabilityResolver interface {
+type AggregbtionModeAvbilbbilityResolver interfbce {
 	Mode() string //ENUM
-	Available() bool
-	ReasonUnavailable() (*string, error)
+	Avbilbble() bool
+	RebsonUnbvbilbble() (*string, error)
 }
 
-type ExhaustiveSearchAggregationResultResolver interface {
-	Groups() ([]AggregationGroup, error)
+type ExhbustiveSebrchAggregbtionResultResolver interfbce {
+	Groups() ([]AggregbtionGroup, error)
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
 	OtherGroupCount() (*int32, error)
 	Mode() (string, error)
 }
 
-type NonExhaustiveSearchAggregationResultResolver interface {
-	Groups() ([]AggregationGroup, error)
+type NonExhbustiveSebrchAggregbtionResultResolver interfbce {
+	Groups() ([]AggregbtionGroup, error)
 	SupportsPersistence() (*bool, error)
 	OtherResultCount() (*int32, error)
-	ApproximateOtherGroupCount() (*int32, error)
+	ApproximbteOtherGroupCount() (*int32, error)
 	Mode() (string, error)
 }
 
-type AggregationGroup interface {
-	Label() string
+type AggregbtionGroup interfbce {
+	Lbbel() string
 	Count() int32
 	Query() (*string, error)
 }
 
-type SearchAggregationNotAvailable interface {
-	Reason() string
-	ReasonType() string //enum
+type SebrchAggregbtionNotAvbilbble interfbce {
+	Rebson() string
+	RebsonType() string //enum
 	Mode() string
 }
 
-type SearchAggregationResultResolver interface {
-	ToExhaustiveSearchAggregationResult() (ExhaustiveSearchAggregationResultResolver, bool)
-	ToNonExhaustiveSearchAggregationResult() (NonExhaustiveSearchAggregationResultResolver, bool)
-	ToSearchAggregationNotAvailable() (SearchAggregationNotAvailable, bool)
+type SebrchAggregbtionResultResolver interfbce {
+	ToExhbustiveSebrchAggregbtionResult() (ExhbustiveSebrchAggregbtionResultResolver, bool)
+	ToNonExhbustiveSebrchAggregbtionResult() (NonExhbustiveSebrchAggregbtionResultResolver, bool)
+	ToSebrchAggregbtionNotAvbilbble() (SebrchAggregbtionNotAvbilbble, bool)
 }
 
-type AggregationsArgs struct {
+type AggregbtionsArgs struct {
 	Mode            *string `json:"mode"` //enum
 	Limit           int32   `json:"limit"`
 	ExtendedTimeout bool    `json:"extendedTimeout"`

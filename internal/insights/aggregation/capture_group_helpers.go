@@ -1,91 +1,91 @@
-package aggregation
+pbckbge bggregbtion
 
-// This logic is pulled from the compute package, with slight modifications.
-// The intention is to not take a dependency on the compute package itself.
+// This logic is pulled from the compute pbckbge, with slight modificbtions.
+// The intention is to not tbke b dependency on the compute pbckbge itself.
 
 import (
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type MatchPattern interface {
-	pattern()
+type MbtchPbttern interfbce {
+	pbttern()
 	String() string
 }
 
-func (Regexp) pattern() {}
-func (Comby) pattern()  {}
+func (Regexp) pbttern() {}
+func (Comby) pbttern()  {}
 
 type Regexp struct {
-	Value *regexp.Regexp
+	Vblue *regexp.Regexp
 }
 
 type Comby struct {
-	Value string
+	Vblue string
 }
 
 func (p Regexp) String() string {
-	return p.Value.String()
+	return p.Vblue.String()
 }
 
 func (p Comby) String() string {
-	return p.Value
+	return p.Vblue
 }
 
-func chunkContent(c result.ChunkMatch, r result.Range) string {
-	// Set range relative to the start of the content.
-	rr := r.Sub(c.ContentStart)
-	return c.Content[rr.Start.Offset:rr.End.Offset]
+func chunkContent(c result.ChunkMbtch, r result.Rbnge) string {
+	// Set rbnge relbtive to the stbrt of the content.
+	rr := r.Sub(c.ContentStbrt)
+	return c.Content[rr.Stbrt.Offset:rr.End.Offset]
 }
 
-func toRegexpPattern(value string) (MatchPattern, error) {
-	rp, err := regexp.Compile(value)
+func toRegexpPbttern(vblue string) (MbtchPbttern, error) {
+	rp, err := regexp.Compile(vblue)
 	if err != nil {
-		return nil, errors.Wrap(err, "compute endpoint")
+		return nil, errors.Wrbp(err, "compute endpoint")
 	}
-	return &Regexp{Value: rp}, nil
+	return &Regexp{Vblue: rp}, nil
 }
 
-func extractPattern(basic *query.Basic) (*query.Pattern, error) {
-	if basic.Pattern == nil {
-		return nil, errors.New("compute endpoint expects nonempty pattern")
+func extrbctPbttern(bbsic *query.Bbsic) (*query.Pbttern, error) {
+	if bbsic.Pbttern == nil {
+		return nil, errors.New("compute endpoint expects nonempty pbttern")
 	}
-	var err error
-	var pattern *query.Pattern
-	seen := false
-	query.VisitPattern([]query.Node{basic.Pattern}, func(value string, negated bool, annotation query.Annotation) {
+	vbr err error
+	vbr pbttern *query.Pbttern
+	seen := fblse
+	query.VisitPbttern([]query.Node{bbsic.Pbttern}, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) {
 		if err != nil {
 			return
 		}
-		if negated {
-			err = errors.New("compute endpoint expects a nonnegated pattern")
+		if negbted {
+			err = errors.New("compute endpoint expects b nonnegbted pbttern")
 			return
 		}
 		if seen {
-			err = errors.New("compute endpoint only supports one search pattern currently ('and' or 'or' operators are not supported yet)")
+			err = errors.New("compute endpoint only supports one sebrch pbttern currently ('bnd' or 'or' operbtors bre not supported yet)")
 			return
 		}
-		pattern = &query.Pattern{Value: value, Annotation: annotation}
+		pbttern = &query.Pbttern{Vblue: vblue, Annotbtion: bnnotbtion}
 		seen = true
 	})
 	if err != nil {
 		return nil, err
 	}
-	return pattern, nil
+	return pbttern, nil
 }
 
-func fromRegexpMatches(submatches []int, content string) map[string]int {
-	counts := map[string]int{}
+func fromRegexpMbtches(submbtches []int, content string) mbp[string]int {
+	counts := mbp[string]int{}
 
-	if len(submatches) >= 4 {
-		start := submatches[2]
-		end := submatches[3]
-		if start != -1 && end != -1 {
-			value := content[start:end]
-			counts[value] = 1
+	if len(submbtches) >= 4 {
+		stbrt := submbtches[2]
+		end := submbtches[3]
+		if stbrt != -1 && end != -1 {
+			vblue := content[stbrt:end]
+			counts[vblue] = 1
 		}
 
 	}

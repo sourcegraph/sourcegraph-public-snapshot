@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
@@ -7,235 +7,235 @@ import (
 	"strings"
 	"time"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/extsvc/github/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	ghbuth "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type GitHubSource struct {
 	client *github.V4Client
-	au     auth.Authenticator
+	bu     buth.Authenticbtor
 }
 
-var _ ForkableChangesetSource = GitHubSource{}
+vbr _ ForkbbleChbngesetSource = GitHubSource{}
 
-func NewGitHubSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+func NewGitHubSource(ctx context.Context, db dbtbbbse.DB, svc *types.ExternblService, cf *httpcli.Fbctory) (*GitHubSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.GitHubConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.GitHubConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 	return newGitHubSource(ctx, db, svc.URN(), &c, cf)
 }
 
-func newGitHubSource(ctx context.Context, db database.DB, urn string, c *schema.GitHubConnection, cf *httpcli.Factory) (*GitHubSource, error) {
-	baseURL, err := url.Parse(c.Url)
+func newGitHubSource(ctx context.Context, db dbtbbbse.DB, urn string, c *schemb.GitHubConnection, cf *httpcli.Fbctory) (*GitHubSource, error) {
+	bbseURL, err := url.Pbrse(c.Url)
 	if err != nil {
 		return nil, err
 	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
+	bbseURL = extsvc.NormblizeBbseURL(bbseURL)
 
-	apiURL, _ := github.APIRoot(baseURL)
+	bpiURL, _ := github.APIRoot(bbseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternblClientFbctory
 	}
 
-	opts := httpClientCertificateOptions([]httpcli.Opt{
-		// Use a 30s timeout to avoid running into EOF errors, because GitHub
-		// closes idle connections after 60s
+	opts := httpClientCertificbteOptions([]httpcli.Opt{
+		// Use b 30s timeout to bvoid running into EOF errors, becbuse GitHub
+		// closes idle connections bfter 60s
 		httpcli.NewIdleConnTimeoutOpt(30 * time.Second),
-	}, c.Certificate)
+	}, c.Certificbte)
 
 	cli, err := cf.Doer(opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	auther, err := ghauth.FromConnection(ctx, c, db.GitHubApps(), keyring.Default().GitHubAppKey)
+	buther, err := ghbuth.FromConnection(ctx, c, db.GitHubApps(), keyring.Defbult().GitHubAppKey)
 	if err != nil {
 		return nil, err
 	}
 
 	return &GitHubSource{
-		au:     auther,
-		client: github.NewV4Client(urn, apiURL, auther, cli),
+		bu:     buther,
+		client: github.NewV4Client(urn, bpiURL, buther, cli),
 	}, nil
 }
 
 func (s GitHubSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.au)
+	return GitserverPushConfig(repo, s.bu)
 }
 
-func (s GitHubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
+func (s GitHubSource) WithAuthenticbtor(b buth.Authenticbtor) (ChbngesetSource, error) {
 	sc := s
-	sc.au = a
-	sc.client = sc.client.WithAuthenticator(a)
+	sc.bu = b
+	sc.client = sc.client.WithAuthenticbtor(b)
 
 	return &sc, nil
 }
 
-func (s GitHubSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.client.GetAuthenticatedUser(ctx)
+func (s GitHubSource) VblidbteAuthenticbtor(ctx context.Context) error {
+	_, err := s.client.GetAuthenticbtedUser(ctx)
 	return err
 }
 
-// DuplicateCommit creates a new commit on the code host using the details of an existing
-// one at the given revision ref. It should be used for the purposes of creating a signed
-// version of an unsigned commit. Signing commits is only possible over the GitHub web
-// APIs when using a GitHub App to authenticate. Thus, this method only makes sense to
-// invoke in the context of a `ChangesetSource` authenticated via a GitHub App.
+// DuplicbteCommit crebtes b new commit on the code host using the detbils of bn existing
+// one bt the given revision ref. It should be used for the purposes of crebting b signed
+// version of bn unsigned commit. Signing commits is only possible over the GitHub web
+// APIs when using b GitHub App to buthenticbte. Thus, this method only mbkes sense to
+// invoke in the context of b `ChbngesetSource` buthenticbted vib b GitHub App.
 //
-// Due to limitations and feature-incompleteness of both the REST and GraphQL APIs today
-// (2023-05-26), we still take advantage of gitserver to push an initial commit based on
-// the changeset patch. We then look up the commit on the code host and duplicate it using
-// a REST endpoint in order to create a signed version of it. Lastly, we update the branch
-// ref, orphaning the original commit (it will be trash-collected in time).
+// Due to limitbtions bnd febture-incompleteness of both the REST bnd GrbphQL APIs todby
+// (2023-05-26), we still tbke bdvbntbge of gitserver to push bn initibl commit bbsed on
+// the chbngeset pbtch. We then look up the commit on the code host bnd duplicbte it using
+// b REST endpoint in order to crebte b signed version of it. Lbstly, we updbte the brbnch
+// ref, orphbning the originbl commit (it will be trbsh-collected in time).
 //
-// Using the REST API is necessary because the GraphQL API does not expose any mutations
-// for creating commits other than one which requires sending the entire file contents for
-// any files changed by the commit, which is not feasible for duplicating large commits.
-// The REST API allows us to create a commit based on a tree SHA, which we can easily get
-// from the existing commit. However, it will only sign the commit if it's authenticated
-// as a GitHub App installation, meaning the commit will be authored by a bot account
-// representing the installation, rather than by the user who authored the batch change.
+// Using the REST API is necessbry becbuse the GrbphQL API does not expose bny mutbtions
+// for crebting commits other thbn one which requires sending the entire file contents for
+// bny files chbnged by the commit, which is not febsible for duplicbting lbrge commits.
+// The REST API bllows us to crebte b commit bbsed on b tree SHA, which we cbn ebsily get
+// from the existing commit. However, it will only sign the commit if it's buthenticbted
+// bs b GitHub App instbllbtion, mebning the commit will be buthored by b bot bccount
+// representing the instbllbtion, rbther thbn by the user who buthored the bbtch chbnge.
 //
-// If GitHub ever achieves parity between the REST and GraphQL APIs for creating commits,
-// we should update this method and use the GraphQL API instead, because it would allow us
-// to sign commits with the GitHub App authenticating on behalf of the user, rather than
-// authenticating as the installation. See here for more details:
-// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
-func (s GitHubSource) DuplicateCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest, repo *types.Repo, rev string) (*github.RestCommit, error) {
-	message := strings.Join(opts.CommitInfo.Messages, "\n")
-	repoMetadata := repo.Metadata.(*github.Repository)
-	owner, repoName, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+// If GitHub ever bchieves pbrity between the REST bnd GrbphQL APIs for crebting commits,
+// we should updbte this method bnd use the GrbphQL API instebd, becbuse it would bllow us
+// to sign commits with the GitHub App buthenticbting on behblf of the user, rbther thbn
+// buthenticbting bs the instbllbtion. See here for more detbils:
+// https://docs.github.com/en/bpps/crebting-github-bpps/buthenticbting-with-b-github-bpp/bbout-buthenticbtion-with-b-github-bpp
+func (s GitHubSource) DuplicbteCommit(ctx context.Context, opts protocol.CrebteCommitFromPbtchRequest, repo *types.Repo, rev string) (*github.RestCommit, error) {
+	messbge := strings.Join(opts.CommitInfo.Messbges, "\n")
+	repoMetbdbtb := repo.Metbdbtb.(*github.Repository)
+	owner, repoNbme, err := github.SplitRepositoryNbmeWithOwner(repoMetbdbtb.NbmeWithOwner)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting owner and repo name to duplicate commit")
+		return nil, errors.Wrbp(err, "getting owner bnd repo nbme to duplicbte commit")
 	}
 
-	// Get the original, unsigned commit.
-	commit, err := s.client.GetRef(ctx, owner, repoName, rev)
+	// Get the originbl, unsigned commit.
+	commit, err := s.client.GetRef(ctx, owner, repoNbme, rev)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting commit to duplicate")
+		return nil, errors.Wrbp(err, "getting commit to duplicbte")
 	}
 
-	// Our new signed commit should have the same parents as the original commit.
-	parents := []string{}
-	for _, parent := range commit.Parents {
-		parents = append(parents, parent.SHA)
+	// Our new signed commit should hbve the sbme pbrents bs the originbl commit.
+	pbrents := []string{}
+	for _, pbrent := rbnge commit.Pbrents {
+		pbrents = bppend(pbrents, pbrent.SHA)
 	}
-	// Create the new commit using the tree SHA of the original and its parents. Author
-	// and committer will not be respected since we are authenticating as a GitHub App
-	// installation, so we just omit them.
-	newCommit, err := s.client.CreateCommit(ctx, owner, repoName, message, commit.Commit.Tree.SHA, parents, nil, nil)
+	// Crebte the new commit using the tree SHA of the originbl bnd its pbrents. Author
+	// bnd committer will not be respected since we bre buthenticbting bs b GitHub App
+	// instbllbtion, so we just omit them.
+	newCommit, err := s.client.CrebteCommit(ctx, owner, repoNbme, messbge, commit.Commit.Tree.SHA, pbrents, nil, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating new commit")
+		return nil, errors.Wrbp(err, "crebting new commit")
 	}
 
-	// Update the branch ref to point to the new commit, orphaning the original. There's
-	// no way to delete a commit over the API, but the orphaned commit will be garbage
-	// collected automatically by GitHub so it's okay to leave it.
-	_, err = s.client.UpdateRef(ctx, owner, repoName, rev, newCommit.SHA)
+	// Updbte the brbnch ref to point to the new commit, orphbning the originbl. There's
+	// no wby to delete b commit over the API, but the orphbned commit will be gbrbbge
+	// collected butombticblly by GitHub so it's okby to lebve it.
+	_, err = s.client.UpdbteRef(ctx, owner, repoNbme, rev, newCommit.SHA)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating ref to point to new commit")
+		return nil, errors.Wrbp(err, "updbting ref to point to new commit")
 	}
 
 	return newCommit, nil
 }
 
-// CreateChangeset creates the given changeset on the code host.
-func (s GitHubSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	input, err := buildCreatePullRequestInput(c)
+// CrebteChbngeset crebtes the given chbngeset on the code host.
+func (s GitHubSource) CrebteChbngeset(ctx context.Context, c *Chbngeset) (bool, error) {
+	input, err := buildCrebtePullRequestInput(c)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	return s.createChangeset(ctx, c, input)
+	return s.crebteChbngeset(ctx, c, input)
 }
 
-// CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GitHubSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	input, err := buildCreatePullRequestInput(c)
+// CrebteDrbftChbngeset crebtes the given chbngeset on the code host in drbft mode.
+func (s GitHubSource) CrebteDrbftChbngeset(ctx context.Context, c *Chbngeset) (bool, error) {
+	input, err := buildCrebtePullRequestInput(c)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	input.Draft = true
-	return s.createChangeset(ctx, c, input)
+	input.Drbft = true
+	return s.crebteChbngeset(ctx, c, input)
 }
 
-func buildCreatePullRequestInput(c *Changeset) (*github.CreatePullRequestInput, error) {
-	headRef := gitdomain.AbbreviateRef(c.HeadRef)
-	if c.RemoteRepo != c.TargetRepo {
-		owner, err := c.RemoteRepo.Metadata.(*github.Repository).Owner()
+func buildCrebtePullRequestInput(c *Chbngeset) (*github.CrebtePullRequestInput, error) {
+	hebdRef := gitdombin.AbbrevibteRef(c.HebdRef)
+	if c.RemoteRepo != c.TbrgetRepo {
+		owner, err := c.RemoteRepo.Metbdbtb.(*github.Repository).Owner()
 		if err != nil {
 			return nil, err
 		}
 
-		headRef = owner + ":" + headRef
+		hebdRef = owner + ":" + hebdRef
 	}
 
-	return &github.CreatePullRequestInput{
-		RepositoryID: c.TargetRepo.Metadata.(*github.Repository).ID,
+	return &github.CrebtePullRequestInput{
+		RepositoryID: c.TbrgetRepo.Metbdbtb.(*github.Repository).ID,
 		Title:        c.Title,
 		Body:         c.Body,
-		HeadRefName:  headRef,
-		BaseRefName:  gitdomain.AbbreviateRef(c.BaseRef),
+		HebdRefNbme:  hebdRef,
+		BbseRefNbme:  gitdombin.AbbrevibteRef(c.BbseRef),
 	}, nil
 }
 
-func (s GitHubSource) createChangeset(ctx context.Context, c *Changeset, prInput *github.CreatePullRequestInput) (bool, error) {
-	var exists bool
-	pr, err := s.client.CreatePullRequest(ctx, prInput)
+func (s GitHubSource) crebteChbngeset(ctx context.Context, c *Chbngeset, prInput *github.CrebtePullRequestInput) (bool, error) {
+	vbr exists bool
+	pr, err := s.client.CrebtePullRequest(ctx, prInput)
 	if err != nil {
-		if err != github.ErrPullRequestAlreadyExists {
-			// There is a creation limit (undocumented) in GitHub. When reached, GitHub provides an unclear error
-			// message to users. See https://github.com/cli/cli/issues/4801.
-			if strings.Contains(err.Error(), "was submitted too quickly") {
-				return exists, errors.Wrap(err, "reached GitHub's internal creation limit: see https://docs.sourcegraph.com/admin/config/batch_changes#avoiding-hitting-rate-limits")
+		if err != github.ErrPullRequestAlrebdyExists {
+			// There is b crebtion limit (undocumented) in GitHub. When rebched, GitHub provides bn unclebr error
+			// messbge to users. See https://github.com/cli/cli/issues/4801.
+			if strings.Contbins(err.Error(), "wbs submitted too quickly") {
+				return exists, errors.Wrbp(err, "rebched GitHub's internbl crebtion limit: see https://docs.sourcegrbph.com/bdmin/config/bbtch_chbnges#bvoiding-hitting-rbte-limits")
 			}
 			return exists, err
 		}
-		repo := c.TargetRepo.Metadata.(*github.Repository)
-		owner, name, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+		repo := c.TbrgetRepo.Metbdbtb.(*github.Repository)
+		owner, nbme, err := github.SplitRepositoryNbmeWithOwner(repo.NbmeWithOwner)
 		if err != nil {
-			return exists, errors.Wrap(err, "getting repo owner and name")
+			return exists, errors.Wrbp(err, "getting repo owner bnd nbme")
 		}
-		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, name, c.BaseRef, c.HeadRef)
+		pr, err = s.client.GetOpenPullRequestByRefs(ctx, owner, nbme, c.BbseRef, c.HebdRef)
 		if err != nil {
-			return exists, errors.Wrap(err, "fetching existing PR")
+			return exists, errors.Wrbp(err, "fetching existing PR")
 		}
 		exists = true
 	}
 
-	if err := c.SetMetadata(pr); err != nil {
-		return false, errors.Wrap(err, "setting changeset metadata")
+	if err := c.SetMetbdbtb(pr); err != nil {
+		return fblse, errors.Wrbp(err, "setting chbngeset metbdbtb")
 	}
 
 	return exists, nil
 }
 
-// CloseChangeset closes the given *Changeset on the code host and updates the
-// Metadata column in the *batches.Changeset to the newly closed pull request.
-func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+// CloseChbngeset closes the given *Chbngeset on the code host bnd updbtes the
+// Metbdbtb column in the *bbtches.Chbngeset to the newly closed pull request.
+func (s GitHubSource) CloseChbngeset(ctx context.Context, c *Chbngeset) error {
+	pr, ok := c.Chbngeset.Metbdbtb.(*github.PullRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
+		return errors.New("Chbngeset is not b GitHub pull request")
 	}
 
 	err := s.client.ClosePullRequest(ctx, pr)
@@ -243,87 +243,87 @@ func (s GitHubSource) CloseChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		repo := c.TargetRepo.Metadata.(*github.Repository)
-		owner, repoName, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+	if conf.Get().BbtchChbngesAutoDeleteBrbnch {
+		repo := c.TbrgetRepo.Metbdbtb.(*github.Repository)
+		owner, repoNbme, err := github.SplitRepositoryNbmeWithOwner(repo.NbmeWithOwner)
 		if err != nil {
-			return errors.Wrap(err, "getting owner and repo name to delete source branch")
+			return errors.Wrbp(err, "getting owner bnd repo nbme to delete source brbnch")
 		}
 
-		if err := s.client.DeleteBranch(ctx, owner, repoName, pr.HeadRefName); err != nil {
-			return errors.Wrap(err, "deleting source branch")
+		if err := s.client.DeleteBrbnch(ctx, owner, repoNbme, pr.HebdRefNbme); err != nil {
+			return errors.Wrbp(err, "deleting source brbnch")
 		}
 	}
-	return c.Changeset.SetMetadata(pr)
+	return c.Chbngeset.SetMetbdbtb(pr)
 }
 
-// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s GitHubSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+// UndrbftChbngeset will updbte the Chbngeset on the source to be not in drbft mode bnymore.
+func (s GitHubSource) UndrbftChbngeset(ctx context.Context, c *Chbngeset) error {
+	pr, ok := c.Chbngeset.Metbdbtb.(*github.PullRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
+		return errors.New("Chbngeset is not b GitHub pull request")
 	}
 
-	err := s.client.MarkPullRequestReadyForReview(ctx, pr)
+	err := s.client.MbrkPullRequestRebdyForReview(ctx, pr)
 	if err != nil {
 		return err
 	}
 
-	return c.Changeset.SetMetadata(pr)
+	return c.Chbngeset.SetMetbdbtb(pr)
 }
 
-// LoadChangeset loads the latest state of the given Changeset from the codehost.
-func (s GitHubSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	repo := cs.TargetRepo.Metadata.(*github.Repository)
-	number, err := strconv.ParseInt(cs.ExternalID, 10, 64)
+// LobdChbngeset lobds the lbtest stbte of the given Chbngeset from the codehost.
+func (s GitHubSource) LobdChbngeset(ctx context.Context, cs *Chbngeset) error {
+	repo := cs.TbrgetRepo.Metbdbtb.(*github.Repository)
+	number, err := strconv.PbrseInt(cs.ExternblID, 10, 64)
 	if err != nil {
-		return errors.Wrap(err, "parsing changeset external id")
+		return errors.Wrbp(err, "pbrsing chbngeset externbl id")
 	}
 
 	pr := &github.PullRequest{
-		RepoWithOwner: repo.NameWithOwner,
+		RepoWithOwner: repo.NbmeWithOwner,
 		Number:        number,
 	}
 
-	if err := s.client.LoadPullRequest(ctx, pr); err != nil {
+	if err := s.client.LobdPullRequest(ctx, pr); err != nil {
 		if github.IsNotFound(err) {
-			return ChangesetNotFoundError{Changeset: cs}
+			return ChbngesetNotFoundError{Chbngeset: cs}
 		}
 		return err
 	}
 
-	if err := cs.SetMetadata(pr); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
+	if err := cs.SetMetbdbtb(pr); err != nil {
+		return errors.Wrbp(err, "setting chbngeset metbdbtb")
 	}
 
 	return nil
 }
 
-// UpdateChangeset updates the given *Changeset in the code host.
-func (s GitHubSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+// UpdbteChbngeset updbtes the given *Chbngeset in the code host.
+func (s GitHubSource) UpdbteChbngeset(ctx context.Context, c *Chbngeset) error {
+	pr, ok := c.Chbngeset.Metbdbtb.(*github.PullRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
+		return errors.New("Chbngeset is not b GitHub pull request")
 	}
 
-	updated, err := s.client.UpdatePullRequest(ctx, &github.UpdatePullRequestInput{
+	updbted, err := s.client.UpdbtePullRequest(ctx, &github.UpdbtePullRequestInput{
 		PullRequestID: pr.ID,
 		Title:         c.Title,
 		Body:          c.Body,
-		BaseRefName:   gitdomain.AbbreviateRef(c.BaseRef),
+		BbseRefNbme:   gitdombin.AbbrevibteRef(c.BbseRef),
 	})
 	if err != nil {
 		return err
 	}
 
-	return c.Changeset.SetMetadata(updated)
+	return c.Chbngeset.SetMetbdbtb(updbted)
 }
 
-// ReopenChangeset reopens the given *Changeset on the code host.
-func (s GitHubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+// ReopenChbngeset reopens the given *Chbngeset on the code host.
+func (s GitHubSource) ReopenChbngeset(ctx context.Context, c *Chbngeset) error {
+	pr, ok := c.Chbngeset.Metbdbtb.(*github.PullRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
+		return errors.New("Chbngeset is not b GitHub pull request")
 	}
 
 	err := s.client.ReopenPullRequest(ctx, pr)
@@ -331,114 +331,114 @@ func (s GitHubSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
 		return err
 	}
 
-	return c.Changeset.SetMetadata(pr)
+	return c.Chbngeset.SetMetbdbtb(pr)
 }
 
-// CreateComment posts a comment on the Changeset.
-func (s GitHubSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+// CrebteComment posts b comment on the Chbngeset.
+func (s GitHubSource) CrebteComment(ctx context.Context, c *Chbngeset, text string) error {
+	pr, ok := c.Chbngeset.Metbdbtb.(*github.PullRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
+		return errors.New("Chbngeset is not b GitHub pull request")
 	}
 
-	return s.client.CreatePullRequestComment(ctx, pr, text)
+	return s.client.CrebtePullRequestComment(ctx, pr, text)
 }
 
-// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-// If squash is true, a squash-then-merge merge will be performed.
-func (s GitHubSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
-	pr, ok := c.Changeset.Metadata.(*github.PullRequest)
+// MergeChbngeset merges b Chbngeset on the code host, if in b mergebble stbte.
+// If squbsh is true, b squbsh-then-merge merge will be performed.
+func (s GitHubSource) MergeChbngeset(ctx context.Context, c *Chbngeset, squbsh bool) error {
+	pr, ok := c.Chbngeset.Metbdbtb.(*github.PullRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitHub pull request")
+		return errors.New("Chbngeset is not b GitHub pull request")
 	}
 
-	if err := s.client.MergePullRequest(ctx, pr, squash); err != nil {
-		if github.IsNotMergeable(err) {
-			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+	if err := s.client.MergePullRequest(ctx, pr, squbsh); err != nil {
+		if github.IsNotMergebble(err) {
+			return ChbngesetNotMergebbleError{ErrorMsg: err.Error()}
 		}
 		return err
 	}
 
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		repo := c.TargetRepo.Metadata.(*github.Repository)
-		owner, repoName, err := github.SplitRepositoryNameWithOwner(repo.NameWithOwner)
+	if conf.Get().BbtchChbngesAutoDeleteBrbnch {
+		repo := c.TbrgetRepo.Metbdbtb.(*github.Repository)
+		owner, repoNbme, err := github.SplitRepositoryNbmeWithOwner(repo.NbmeWithOwner)
 		if err != nil {
-			return errors.Wrap(err, "getting owner and repo name to delete source branch")
+			return errors.Wrbp(err, "getting owner bnd repo nbme to delete source brbnch")
 		}
 
-		if err := s.client.DeleteBranch(ctx, owner, repoName, pr.HeadRefName); err != nil {
-			return errors.Wrap(err, "deleting source branch")
+		if err := s.client.DeleteBrbnch(ctx, owner, repoNbme, pr.HebdRefNbme); err != nil {
+			return errors.Wrbp(err, "deleting source brbnch")
 		}
 	}
-	return c.Changeset.SetMetadata(pr)
+	return c.Chbngeset.SetMetbdbtb(pr)
 }
 
 func (GitHubSource) IsPushResponseArchived(s string) bool {
-	return strings.Contains(s, "This repository was archived so it is read-only.")
+	return strings.Contbins(s, "This repository wbs brchived so it is rebd-only.")
 }
 
-func (s GitHubSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
-	return getGitHubForkInternal(ctx, targetRepo, s.client, namespace, n)
+func (s GitHubSource) GetFork(ctx context.Context, tbrgetRepo *types.Repo, nbmespbce, n *string) (*types.Repo, error) {
+	return getGitHubForkInternbl(ctx, tbrgetRepo, s.client, nbmespbce, n)
 }
 
-func (s GitHubSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s GitHubSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Chbngeset, spec *btypes.ChbngesetSpec, pushOpts *protocol.PushConfig) protocol.CrebteCommitFromPbtchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
-type githubClientFork interface {
+type githubClientFork interfbce {
 	Fork(context.Context, string, string, *string, string) (*github.Repository, error)
 	GetRepo(context.Context, string, string) (*github.Repository, error)
 }
 
-func getGitHubForkInternal(ctx context.Context, targetRepo *types.Repo, client githubClientFork, namespace, n *string) (*types.Repo, error) {
-	if namespace != nil && n != nil {
-		// Even though we can technically use a single call to `client.Fork` to get or
-		// create the fork, it only succeeds if the fork belongs in the currently
-		// authenticated user's namespace or if the fork belongs to an organization
-		// namespace. So in case the PAT we're using has changed since the last time we
-		// tried to get a fork for this repo and it was previously created under a
-		// different user's namespace, we'll first separately check if the fork exists.
-		if fork, err := client.GetRepo(ctx, *namespace, *n); err == nil && fork != nil {
-			return checkAndCopyGitHubRepo(targetRepo, fork)
+func getGitHubForkInternbl(ctx context.Context, tbrgetRepo *types.Repo, client githubClientFork, nbmespbce, n *string) (*types.Repo, error) {
+	if nbmespbce != nil && n != nil {
+		// Even though we cbn technicblly use b single cbll to `client.Fork` to get or
+		// crebte the fork, it only succeeds if the fork belongs in the currently
+		// buthenticbted user's nbmespbce or if the fork belongs to bn orgbnizbtion
+		// nbmespbce. So in cbse the PAT we're using hbs chbnged since the lbst time we
+		// tried to get b fork for this repo bnd it wbs previously crebted under b
+		// different user's nbmespbce, we'll first sepbrbtely check if the fork exists.
+		if fork, err := client.GetRepo(ctx, *nbmespbce, *n); err == nil && fork != nil {
+			return checkAndCopyGitHubRepo(tbrgetRepo, fork)
 		}
 	}
 
-	tr := targetRepo.Metadata.(*github.Repository)
+	tr := tbrgetRepo.Metbdbtb.(*github.Repository)
 
-	targetNamespace, targetName, err := github.SplitRepositoryNameWithOwner(tr.NameWithOwner)
+	tbrgetNbmespbce, tbrgetNbme, err := github.SplitRepositoryNbmeWithOwner(tr.NbmeWithOwner)
 	if err != nil {
-		return nil, errors.New("getting target repo namespace")
+		return nil, errors.New("getting tbrget repo nbmespbce")
 	}
 
-	var name string
+	vbr nbme string
 	if n != nil {
-		name = *n
+		nbme = *n
 	} else {
-		name = DefaultForkName(targetNamespace, targetName)
+		nbme = DefbultForkNbme(tbrgetNbmespbce, tbrgetNbme)
 	}
 
-	// `client.Fork` automatically uses the currently authenticated user's namespace if
+	// `client.Fork` butombticblly uses the currently buthenticbted user's nbmespbce if
 	// none is provided.
-	fork, err := client.Fork(ctx, targetNamespace, targetName, namespace, name)
+	fork, err := client.Fork(ctx, tbrgetNbmespbce, tbrgetNbme, nbmespbce, nbme)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching fork or forking repository")
+		return nil, errors.Wrbp(err, "fetching fork or forking repository")
 	}
 
-	return checkAndCopyGitHubRepo(targetRepo, fork)
+	return checkAndCopyGitHubRepo(tbrgetRepo, fork)
 }
 
-func checkAndCopyGitHubRepo(targetRepo *types.Repo, fork *github.Repository) (*types.Repo, error) {
-	tr := targetRepo.Metadata.(*github.Repository)
+func checkAndCopyGitHubRepo(tbrgetRepo *types.Repo, fork *github.Repository) (*types.Repo, error) {
+	tr := tbrgetRepo.Metbdbtb.(*github.Repository)
 
 	if !fork.IsFork {
-		return nil, errors.New("repo is not a fork")
+		return nil, errors.New("repo is not b fork")
 	}
 
-	// Now we make a copy of targetRepo, but with its sources and metadata updated to
+	// Now we mbke b copy of tbrgetRepo, but with its sources bnd metbdbtb updbted to
 	// point to the fork
-	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.NameWithOwner, fork.NameWithOwner)
+	forkRepo, err := CopyRepoAsFork(tbrgetRepo, fork, tr.NbmeWithOwner, fork.NbmeWithOwner)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating target repo sources and metadata")
+		return nil, errors.Wrbp(err, "updbting tbrget repo sources bnd metbdbtb")
 	}
 
 	return forkRepo, nil

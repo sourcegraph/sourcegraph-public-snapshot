@@ -1,109 +1,109 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Searcher() *monitoring.Dashboard {
+func Sebrcher() *monitoring.Dbshbobrd {
 	const (
-		containerName   = "searcher"
-		grpcServiceName = "searcher.v1.SearcherService"
+		contbinerNbme   = "sebrcher"
+		grpcServiceNbme = "sebrcher.v1.SebrcherService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable("searcher", grpcServiceName)
+	grpcMethodVbribble := shbred.GRPCMethodVbribble("sebrcher", grpcServiceNbme)
 
-	// instanceSelector is a helper for inserting the instance selector.
-	// Should be used on strings created via `` since you can't escape in
+	// instbnceSelector is b helper for inserting the instbnce selector.
+	// Should be used on strings crebted vib `` since you cbn't escbpe in
 	// those.
-	instanceSelector := func(s string) string {
-		return strings.ReplaceAll(s, "$$INSTANCE$$", "instance=~`${instance:regex}`")
+	instbnceSelector := func(s string) string {
+		return strings.ReplbceAll(s, "$$INSTANCE$$", "instbnce=~`${instbnce:regex}`")
 	}
 
-	return &monitoring.Dashboard{
-		Name:        "searcher",
-		Title:       "Searcher",
-		Description: "Performs unindexed searches (diff and commit search, text search for unindexed branches).",
-		Variables: []monitoring.ContainerVariable{
+	return &monitoring.Dbshbobrd{
+		Nbme:        "sebrcher",
+		Title:       "Sebrcher",
+		Description: "Performs unindexed sebrches (diff bnd commit sebrch, text sebrch for unindexed brbnches).",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "Instance",
-				Name:  "instance",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
-					Query:         "searcher_service_request_total",
-					LabelName:     "instance",
-					ExampleOption: "searcher-7dd95df88c-5bjt9:3181",
+				Lbbel: "Instbnce",
+				Nbme:  "instbnce",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
+					Query:         "sebrcher_service_request_totbl",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "sebrcher-7dd95df88c-5bjt9:3181",
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVbribble,
 		},
 		Groups: []monitoring.Group{
 			{
-				Title: "General",
+				Title: "Generbl",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "traffic",
+							Nbme:        "trbffic",
 							Description: "requests per second by code over 10m",
-							Query:       "sum by (code) (rate(searcher_service_request_total{instance=~`${instance:regex}`}[10m]))",
-							Panel:       monitoring.Panel().LegendFormat("{{code}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Query:       "sum by (code) (rbte(sebrcher_service_request_totbl{instbnce=~`${instbnce:regex}`}[10m]))",
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{code}}"),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert:     true,
-							Interpretation: `
-This graph is the average number of requests per second searcher is
-experiencing over the last 10 minutes.
+							Interpretbtion: `
+This grbph is the bverbge number of requests per second sebrcher is
+experiencing over the lbst 10 minutes.
 
-The code is the HTTP Status code. 200 is success. We have a special code
-"canceled" which is common when doing a large search request and we find
-enough results before searching all possible repos.
+The code is the HTTP Stbtus code. 200 is success. We hbve b specibl code
+"cbnceled" which is common when doing b lbrge sebrch request bnd we find
+enough results before sebrching bll possible repos.
 
-Note: A search query is translated into an unindexed search query per unique
-(repo, commit). This means a single user query may result in thousands of
-requests to searcher.`,
+Note: A sebrch query is trbnslbted into bn unindexed sebrch query per unique
+(repo, commit). This mebns b single user query mby result in thousbnds of
+requests to sebrcher.`,
 						},
 						{
-							Name:        "replica_traffic",
-							Description: "requests per second per replica over 10m",
-							Query:       "sum by (instance) (rate(searcher_service_request_total{instance=~`${instance:regex}`}[10m]))",
-							Warning:     monitoring.Alert().GreaterOrEqual(5),
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "replicb_trbffic",
+							Description: "requests per second per replicb over 10m",
+							Query:       "sum by (instbnce) (rbte(sebrcher_service_request_totbl{instbnce=~`${instbnce:regex}`}[10m]))",
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}"),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NextSteps:   "none",
-							Interpretation: `
-This graph is the average number of requests per second searcher is
-experiencing over the last 10 minutes broken down per replica.
+							Interpretbtion: `
+This grbph is the bverbge number of requests per second sebrcher is
+experiencing over the lbst 10 minutes broken down per replicb.
 
-The code is the HTTP Status code. 200 is success. We have a special code
-"canceled" which is common when doing a large search request and we find
-enough results before searching all possible repos.
+The code is the HTTP Stbtus code. 200 is success. We hbve b specibl code
+"cbnceled" which is common when doing b lbrge sebrch request bnd we find
+enough results before sebrching bll possible repos.
 
-Note: A search query is translated into an unindexed search query per unique
-(repo, commit). This means a single user query may result in thousands of
-requests to searcher.`,
+Note: A sebrch query is trbnslbted into bn unindexed sebrch query per unique
+(repo, commit). This mebns b single user query mby result in thousbnds of
+requests to sebrcher.`,
 						},
 					}, {
 						{
-							Name:        "concurrent_requests",
-							Description: "amount of in-flight unindexed search requests (per instance)",
-							Query:       "sum by (instance) (searcher_service_running{instance=~`${instance:regex}`})",
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "concurrent_requests",
+							Description: "bmount of in-flight unindexed sebrch requests (per instbnce)",
+							Query:       "sum by (instbnce) (sebrcher_service_running{instbnce=~`${instbnce:regex}`})",
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}"),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert:     true,
-							Interpretation: `
-This graph is the amount of in-flight unindexed search requests per instance.
-Consistently high numbers here indicate you may need to scale out searcher.`,
+							Interpretbtion: `
+This grbph is the bmount of in-flight unindexed sebrch requests per instbnce.
+Consistently high numbers here indicbte you mby need to scble out sebrcher.`,
 						},
 						{
-							Name:        "unindexed_search_request_errors",
-							Description: "unindexed search request errors every 5m by code",
-							Query:       instanceSelector(`sum by (code)(increase(searcher_service_request_total{code!="200",code!="canceled",$$INSTANCE$$}[5m])) / ignoring(code) group_left sum(increase(searcher_service_request_total{$$INSTANCE$$}[5m])) * 100`),
-							Warning:     monitoring.Alert().GreaterOrEqual(5).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("{{code}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "unindexed_sebrch_request_errors",
+							Description: "unindexed sebrch request errors every 5m by code",
+							Query:       instbnceSelector(`sum by (code)(increbse(sebrcher_service_request_totbl{code!="200",code!="cbnceled",$$INSTANCE$$}[5m])) / ignoring(code) group_left sum(increbse(sebrcher_service_request_totbl{$$INSTANCE$$}[5m])) * 100`),
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(5).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{code}}").Unit(monitoring.Percentbge),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NextSteps:   "none",
 						},
 					},
@@ -111,51 +111,51 @@ Consistently high numbers here indicate you may need to scale out searcher.`,
 			},
 
 			{
-				Title:  "Cache store",
+				Title:  "Cbche store",
 				Hidden: true,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "store_fetching",
-							Description: "amount of in-flight unindexed search requests fetching code from gitserver (per instance)",
-							Query:       "sum by (instance) (searcher_store_fetching{instance=~`${instance:regex}`})",
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "store_fetching",
+							Description: "bmount of in-flight unindexed sebrch requests fetching code from gitserver (per instbnce)",
+							Query:       "sum by (instbnce) (sebrcher_store_fetching{instbnce=~`${instbnce:regex}`})",
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}"),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert:     true,
-							Interpretation: `
-Before we can search a commit we fetch the code from gitserver then cache it
-for future search requests. This graph is the current number of search
-requests which are in the state of fetching code from gitserver.
+							Interpretbtion: `
+Before we cbn sebrch b commit we fetch the code from gitserver then cbche it
+for future sebrch requests. This grbph is the current number of sebrch
+requests which bre in the stbte of fetching code from gitserver.
 
-Generally this number should remain low since fetching code is fast, but
-expect bursts. In the case of instances with a monorepo you would expect this
-number to stay low for the duration of fetching the code (which in some cases
-can take many minutes).`,
+Generblly this number should rembin low since fetching code is fbst, but
+expect bursts. In the cbse of instbnces with b monorepo you would expect this
+number to stby low for the durbtion of fetching the code (which in some cbses
+cbn tbke mbny minutes).`,
 						},
 						{
-							Name:        "store_fetching_waiting",
-							Description: "amount of in-flight unindexed search requests waiting to fetch code from gitserver (per instance)",
-							Query:       "sum by (instance) (searcher_store_fetch_queue_size{instance=~`${instance:regex}`})",
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "store_fetching_wbiting",
+							Description: "bmount of in-flight unindexed sebrch requests wbiting to fetch code from gitserver (per instbnce)",
+							Query:       "sum by (instbnce) (sebrcher_store_fetch_queue_size{instbnce=~`${instbnce:regex}`})",
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}"),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert:     true,
-							Interpretation: `
-We limit the number of requests which can fetch code to prevent overwhelming
-gitserver. This gauge is the number of requests waiting to be allowed to speak
+							Interpretbtion: `
+We limit the number of requests which cbn fetch code to prevent overwhelming
+gitserver. This gbuge is the number of requests wbiting to be bllowed to spebk
 to gitserver.`,
 						},
 						{
-							Name:        "store_fetching_fail",
-							Description: "amount of unindexed search requests that failed while fetching code from gitserver over 10m (per instance)",
-							Query:       "sum by (instance) (rate(searcher_store_fetch_failed{instance=~`${instance:regex}`}[10m]))",
-							Panel:       monitoring.Panel().LegendFormat("{{instance}}"),
-							Owner:       monitoring.ObservableOwnerSearchCore,
+							Nbme:        "store_fetching_fbil",
+							Description: "bmount of unindexed sebrch requests thbt fbiled while fetching code from gitserver over 10m (per instbnce)",
+							Query:       "sum by (instbnce) (rbte(sebrcher_store_fetch_fbiled{instbnce=~`${instbnce:regex}`}[10m]))",
+							Pbnel:       monitoring.Pbnel().LegendFormbt("{{instbnce}}"),
+							Owner:       monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert:     true,
-							Interpretation: `
-This graph should be zero since fetching happens in the background and will
-not be influenced by user timeouts/etc. Expected upticks in this graph are
-during gitserver rollouts. If you regularly see this graph have non-zero
-values please reach out to support.`,
+							Interpretbtion: `
+This grbph should be zero since fetching hbppens in the bbckground bnd will
+not be influenced by user timeouts/etc. Expected upticks in this grbph bre
+during gitserver rollouts. If you regulbrly see this grbph hbve non-zero
+vblues plebse rebch out to support.`,
 						},
 					},
 				},
@@ -167,85 +167,85 @@ values please reach out to support.`,
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "searcher_hybrid_final_state_total",
-							Description: "hybrid search final state over 10m",
-							Interpretation: `
-This graph is about our interactions with the search index (zoekt) to help
-complete unindexed search requests. Searcher will use indexed search for the
-files that have not changed between the unindexed commit and the index.
+							Nbme:        "sebrcher_hybrid_finbl_stbte_totbl",
+							Description: "hybrid sebrch finbl stbte over 10m",
+							Interpretbtion: `
+This grbph is bbout our interbctions with the sebrch index (zoekt) to help
+complete unindexed sebrch requests. Sebrcher will use indexed sebrch for the
+files thbt hbve not chbnged between the unindexed commit bnd the index.
 
-This graph should mostly be "success". The next most common state should be
-"search-canceled" which happens when result limits are hit or the user starts
-a new search. Finally the next most common should be "diff-too-large", which
-happens if the commit is too far from the indexed commit. Otherwise other
-state should be rare and likely are a sign for further investigation.
+This grbph should mostly be "success". The next most common stbte should be
+"sebrch-cbnceled" which hbppens when result limits bre hit or the user stbrts
+b new sebrch. Finblly the next most common should be "diff-too-lbrge", which
+hbppens if the commit is too fbr from the indexed commit. Otherwise other
+stbte should be rbre bnd likely bre b sign for further investigbtion.
 
-Note: On sourcegraph.com "zoekt-list-missing" is also common due to it
-indexing a subset of repositories. Otherwise every other state should occur
-rarely.
+Note: On sourcegrbph.com "zoekt-list-missing" is blso common due to it
+indexing b subset of repositories. Otherwise every other stbte should occur
+rbrely.
 
-For a full list of possible state see
-[recordHybridFinalState](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+f:cmd/searcher+recordHybridFinalState).`,
-							Query:   "sum by (state)(increase(searcher_hybrid_final_state_total{instance=~`${instance:regex}`}[10m]))",
-							Panel:   monitoring.Panel().LegendFormat("{{state}}"),
-							Owner:   monitoring.ObservableOwnerSearchCore,
+For b full list of possible stbte see
+[recordHybridFinblStbte](https://sourcegrbph.com/sebrch?q=context:globbl+repo:%5Egithub%5C.com/sourcegrbph/sourcegrbph%24+f:cmd/sebrcher+recordHybridFinblStbte).`,
+							Query:   "sum by (stbte)(increbse(sebrcher_hybrid_finbl_stbte_totbl{instbnce=~`${instbnce:regex}`}[10m]))",
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{stbte}}"),
+							Owner:   monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert: true,
 						},
 						{
-							Name:        "searcher_hybrid_retry_total",
-							Description: "hybrid search retrying over 10m",
-							Interpretation: `
-Expectation is that this graph should mostly be 0. It will trigger if a user
-manages to do a search and the underlying index changes while searching or
-Zoekt goes down. So occasional bursts can be expected, but if this graph is
-regularly above 0 it is a sign for further investigation.`,
-							Query:   "sum by (reason)(increase(searcher_hybrid_retry_total{instance=~`${instance:regex}`}[10m]))",
-							Panel:   monitoring.Panel().LegendFormat("{{reason}}"),
-							Owner:   monitoring.ObservableOwnerSearchCore,
+							Nbme:        "sebrcher_hybrid_retry_totbl",
+							Description: "hybrid sebrch retrying over 10m",
+							Interpretbtion: `
+Expectbtion is thbt this grbph should mostly be 0. It will trigger if b user
+mbnbges to do b sebrch bnd the underlying index chbnges while sebrching or
+Zoekt goes down. So occbsionbl bursts cbn be expected, but if this grbph is
+regulbrly bbove 0 it is b sign for further investigbtion.`,
+							Query:   "sum by (rebson)(increbse(sebrcher_hybrid_retry_totbl{instbnce=~`${instbnce:regex}`}[10m]))",
+							Pbnel:   monitoring.Pbnel().LegendFormbt("{{rebson}}"),
+							Owner:   monitoring.ObservbbleOwnerSebrchCore,
 							NoAlert: true,
 						},
 					},
 				},
 			},
 
-			shared.NewDiskMetricsGroup(
-				shared.DiskMetricsGroupOptions{
-					DiskTitle: "cache",
+			shbred.NewDiskMetricsGroup(
+				shbred.DiskMetricsGroupOptions{
+					DiskTitle: "cbche",
 
-					MetricMountNameLabel: "cacheDir",
-					MetricNamespace:      "searcher",
+					MetricMountNbmeLbbel: "cbcheDir",
+					MetricNbmespbce:      "sebrcher",
 
-					ServiceName:         "searcher",
-					InstanceFilterRegex: `${instance:regex}`,
+					ServiceNbme:         "sebrcher",
+					InstbnceFilterRegex: `${instbnce:regex}`,
 				},
-				monitoring.ObservableOwnerSearchCore,
+				monitoring.ObservbbleOwnerSebrchCore,
 			),
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   "searcher",
-					RawGRPCServiceName: grpcServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   "sebrcher",
+					RbwGRPCServiceNbme: grpcServiceNbme,
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
 
-					InstanceFilterRegex:  `${instance:regex}`,
-					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerSearchCore),
+					InstbnceFilterRegex:  `${instbnce:regex}`,
+					MessbgeSizeNbmespbce: "src",
+				}, monitoring.ObservbbleOwnerSebrchCore),
 
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   "searcher",
-					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "src",
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   "sebrcher",
+					RbwGRPCServiceNbme: grpcServiceNbme,
+					Nbmespbce:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-				}, monitoring.ObservableOwnerSearchCore),
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerSearchCore, nil),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+				}, monitoring.ObservbbleOwnerSebrchCore),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme),
+			shbred.NewFrontendInternblAPIErrorResponseMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSebrchCore, nil),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSebrchCore, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerSebrchCore, nil),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSebrchCore, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerSebrchCore, nil),
 		},
 	}
 }

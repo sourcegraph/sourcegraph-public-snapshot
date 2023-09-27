@@ -1,17 +1,17 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
-	"math"
+	"mbth"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type outboundRequestsArgs struct {
@@ -23,56 +23,56 @@ type OutboundRequestResolver struct {
 	req *types.OutboundRequestLogItem
 }
 
-type HttpHeaders struct {
-	name   string
-	values []string
+type HttpHebders struct {
+	nbme   string
+	vblues []string
 }
 
-// outboundRequestConnectionResolver resolves a list of access tokens.
+// outboundRequestConnectionResolver resolves b list of bccess tokens.
 //
-// 🚨 SECURITY: When instantiating an outboundRequestConnectionResolver value, the caller MUST check
+// 🚨 SECURITY: When instbntibting bn outboundRequestConnectionResolver vblue, the cbller MUST check
 // permissions.
 type outboundRequestConnectionResolver struct {
 	first *int32
-	after string
+	bfter string
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once      sync.Once
 	resolvers []*OutboundRequestResolver
 	err       error
 }
 
-func (r *schemaResolver) OutboundRequests(ctx context.Context, args *outboundRequestsArgs) (*outboundRequestConnectionResolver, error) {
-	// 🚨 SECURITY: Only site admins may list outbound requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) OutboundRequests(ctx context.Context, brgs *outboundRequestsArgs) (*outboundRequestConnectionResolver, error) {
+	// 🚨 SECURITY: Only site bdmins mby list outbound requests.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	// Parse `after` argument
-	var after string
-	if args.After != nil {
-		err := relay.UnmarshalSpec(graphql.ID(*args.After), &after)
+	// Pbrse `bfter` brgument
+	vbr bfter string
+	if brgs.After != nil {
+		err := relby.UnmbrshblSpec(grbphql.ID(*brgs.After), &bfter)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		after = ""
+		bfter = ""
 	}
 
 	return &outboundRequestConnectionResolver{
-		first: args.First,
-		after: after,
+		first: brgs.First,
+		bfter: bfter,
 	}, nil
 }
 
-func (r *schemaResolver) outboundRequestByID(ctx context.Context, id graphql.ID) (*OutboundRequestResolver, error) {
-	// 🚨 SECURITY: Only site admins may view outbound requests.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) outboundRequestByID(ctx context.Context, id grbphql.ID) (*OutboundRequestResolver, error) {
+	// 🚨 SECURITY: Only site bdmins mby view outbound requests.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	var key string
-	err := relay.UnmarshalSpec(id, &key)
+	vbr key string
+	err := relby.UnmbrshblSpec(id, &key)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (r *outboundRequestConnectionResolver) Nodes(ctx context.Context) ([]*Outbo
 	return resolvers, nil
 }
 
-func (r *outboundRequestConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *outboundRequestConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
 	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
@@ -102,28 +102,28 @@ func (r *outboundRequestConnectionResolver) TotalCount(ctx context.Context) (int
 	return int32(len(resolvers)), nil
 }
 
-func (r *outboundRequestConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *outboundRequestConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	resolvers, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if r.first != nil && *r.first > -1 && len(resolvers) > int(*r.first) {
-		return graphqlutil.NextPageCursor(string(resolvers[*r.first-1].ID())), nil
+		return grbphqlutil.NextPbgeCursor(string(resolvers[*r.first-1].ID())), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
 func (r *outboundRequestConnectionResolver) compute(ctx context.Context) ([]*OutboundRequestResolver, error) {
 	r.once.Do(func() {
-		requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.after)
+		requests, err := httpcli.GetOutboundRequestLogItems(ctx, r.bfter)
 		if err != nil {
 			r.resolvers, r.err = nil, err
 		}
 
-		resolvers := make([]*OutboundRequestResolver, 0, len(requests))
-		for _, item := range requests {
-			resolvers = append(resolvers, &OutboundRequestResolver{req: item})
+		resolvers := mbke([]*OutboundRequestResolver, 0, len(requests))
+		for _, item := rbnge requests {
+			resolvers = bppend(resolvers, &OutboundRequestResolver{req: item})
 		}
 
 		r.resolvers, r.err = resolvers, nil
@@ -131,51 +131,51 @@ func (r *outboundRequestConnectionResolver) compute(ctx context.Context) ([]*Out
 	return r.resolvers, r.err
 }
 
-func (r *OutboundRequestResolver) ID() graphql.ID {
-	return relay.MarshalID("OutboundRequest", r.req.ID)
+func (r *OutboundRequestResolver) ID() grbphql.ID {
+	return relby.MbrshblID("OutboundRequest", r.req.ID)
 }
 
-func (r *OutboundRequestResolver) StartedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.req.StartedAt}
+func (r *OutboundRequestResolver) StbrtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.req.StbrtedAt}
 }
 
 func (r *OutboundRequestResolver) Method() string { return r.req.Method }
 
 func (r *OutboundRequestResolver) URL() string { return r.req.URL }
 
-func (r *OutboundRequestResolver) RequestHeaders() ([]*HttpHeaders, error) {
-	return newHttpHeaders(r.req.RequestHeaders)
+func (r *OutboundRequestResolver) RequestHebders() ([]*HttpHebders, error) {
+	return newHttpHebders(r.req.RequestHebders)
 }
 
 func (r *OutboundRequestResolver) RequestBody() string { return r.req.RequestBody }
 
-func (r *OutboundRequestResolver) StatusCode() int32 { return r.req.StatusCode }
+func (r *OutboundRequestResolver) StbtusCode() int32 { return r.req.StbtusCode }
 
-func (r *OutboundRequestResolver) ResponseHeaders() ([]*HttpHeaders, error) {
-	return newHttpHeaders(r.req.ResponseHeaders)
+func (r *OutboundRequestResolver) ResponseHebders() ([]*HttpHebders, error) {
+	return newHttpHebders(r.req.ResponseHebders)
 }
 
-func (r *OutboundRequestResolver) DurationMs() int32 { return int32(math.Round(r.req.Duration * 1000)) }
+func (r *OutboundRequestResolver) DurbtionMs() int32 { return int32(mbth.Round(r.req.Durbtion * 1000)) }
 
-func (r *OutboundRequestResolver) ErrorMessage() string { return r.req.ErrorMessage }
+func (r *OutboundRequestResolver) ErrorMessbge() string { return r.req.ErrorMessbge }
 
-func (r *OutboundRequestResolver) CreationStackFrame() string { return r.req.CreationStackFrame }
+func (r *OutboundRequestResolver) CrebtionStbckFrbme() string { return r.req.CrebtionStbckFrbme }
 
-func (r *OutboundRequestResolver) CallStack() string { return r.req.CallStackFrame }
+func (r *OutboundRequestResolver) CbllStbck() string { return r.req.CbllStbckFrbme }
 
-func newHttpHeaders(headers map[string][]string) ([]*HttpHeaders, error) {
-	result := make([]*HttpHeaders, 0, len(headers))
-	for key, values := range headers {
-		result = append(result, &HttpHeaders{name: key, values: values})
+func newHttpHebders(hebders mbp[string][]string) ([]*HttpHebders, error) {
+	result := mbke([]*HttpHebders, 0, len(hebders))
+	for key, vblues := rbnge hebders {
+		result = bppend(result, &HttpHebders{nbme: key, vblues: vblues})
 	}
 
 	return result, nil
 }
 
-func (h HttpHeaders) Name() string {
-	return h.name
+func (h HttpHebders) Nbme() string {
+	return h.nbme
 }
 
-func (h HttpHeaders) Values() []string {
-	return h.values
+func (h HttpHebders) Vblues() []string {
+	return h.vblues
 }

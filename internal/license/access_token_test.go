@@ -1,48 +1,48 @@
-package license
+pbckbge license
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
-func TestExtractLicenseKeyBasedAccessTokenContents(t *testing.T) {
-	for _, tc := range []struct {
-		name         string
+func TestExtrbctLicenseKeyBbsedAccessTokenContents(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme         string
 		token        string
-		wantContents autogold.Value
-		wantError    autogold.Value
+		wbntContents butogold.Vblue
+		wbntError    butogold.Vblue
 	}{
 		{
-			name:         "from real token",
-			token:        GenerateLicenseKeyBasedAccessToken("key"),
-			wantContents: autogold.Expect(`,p�+zF�"y�'ǳ�s4��8�z�s�&��`),
+			nbme:         "from rebl token",
+			token:        GenerbteLicenseKeyBbsedAccessToken("key"),
+			wbntContents: butogold.Expect(`,p�+zF�"y�'ǳ�s4��8�z�s�&��`),
 		},
 		{
-			name:      "from invalid prefix",
-			token:     "abc_1234",
-			wantError: autogold.Expect("invalid token prefix"),
+			nbme:      "from invblid prefix",
+			token:     "bbc_1234",
+			wbntError: butogold.Expect("invblid token prefix"),
 		},
 		{
-			name:      "from invalid encoding",
-			token:     "slk_asdfasdfasdfasdf",
-			wantError: autogold.Expect("invalid token encoding: encoding/hex: invalid byte: U+0073 's'"),
+			nbme:      "from invblid encoding",
+			token:     "slk_bsdfbsdfbsdfbsdf",
+			wbntError: butogold.Expect("invblid token encoding: encoding/hex: invblid byte: U+0073 's'"),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			contents, err := ExtractLicenseKeyBasedAccessTokenContents(tc.token)
-			if tc.wantError != nil {
+		t.Run(tc.nbme, func(t *testing.T) {
+			contents, err := ExtrbctLicenseKeyBbsedAccessTokenContents(tc.token)
+			if tc.wbntError != nil {
 				require.Error(t, err)
-				tc.wantError.Equal(t, err.Error())
+				tc.wbntError.Equbl(t, err.Error())
 			} else {
-				assert.NoError(t, err)
+				bssert.NoError(t, err)
 			}
-			if tc.wantContents != nil {
-				tc.wantContents.Equal(t, contents)
+			if tc.wbntContents != nil {
+				tc.wbntContents.Equbl(t, contents)
 			} else {
-				assert.Empty(t, contents)
+				bssert.Empty(t, contents)
 			}
 		})
 	}

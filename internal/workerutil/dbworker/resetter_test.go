@@ -1,4 +1,4 @@
-package dbworker
+pbckbge dbworker
 
 import (
 	"strconv"
@@ -6,12 +6,12 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	storemocks "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store/mocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	storemocks "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store/mocks"
 )
 
 type TestRecord struct {
@@ -23,7 +23,7 @@ func (v TestRecord) RecordID() int {
 }
 
 func (v TestRecord) RecordUID() string {
-	return strconv.Itoa(v.ID)
+	return strconv.Itob(v.ID)
 }
 
 func TestResetter(t *testing.T) {
@@ -31,21 +31,21 @@ func TestResetter(t *testing.T) {
 	s := storemocks.NewMockStore[*TestRecord]()
 	clock := glock.NewMockClock()
 	options := ResetterOptions{
-		Name:     "test",
-		Interval: time.Second,
+		Nbme:     "test",
+		Intervbl: time.Second,
 		Metrics: ResetterMetrics{
 			RecordResets:        prometheus.NewCounter(prometheus.CounterOpts{}),
-			RecordResetFailures: prometheus.NewCounter(prometheus.CounterOpts{}),
+			RecordResetFbilures: prometheus.NewCounter(prometheus.CounterOpts{}),
 			Errors:              prometheus.NewCounter(prometheus.CounterOpts{}),
 		},
 	}
 
 	resetter := newResetter(logger, store.Store[*TestRecord](s), options, clock)
-	go func() { resetter.Start() }()
-	clock.BlockingAdvance(time.Second)
+	go func() { resetter.Stbrt() }()
+	clock.BlockingAdvbnce(time.Second)
 	resetter.Stop()
 
-	if callCount := len(s.ResetStalledFunc.History()); callCount < 1 {
-		t.Errorf("unexpected reset stalled call count. want>=%d have=%d", 1, callCount)
+	if cbllCount := len(s.ResetStblledFunc.History()); cbllCount < 1 {
+		t.Errorf("unexpected reset stblled cbll count. wbnt>=%d hbve=%d", 1, cbllCount)
 	}
 }

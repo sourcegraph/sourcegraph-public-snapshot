@@ -1,4 +1,4 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
@@ -7,189 +7,189 @@ import (
 
 	"github.com/lib/pq"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/internal/insights/pipeline"
-	"github.com/sourcegraph/sourcegraph/internal/insights/priority"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/discovery"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/pipeline"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/priority"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type BaseJob struct {
+type BbseJob struct {
 	ID              int
-	State           string
-	FailureMessage  *string
+	Stbte           string
+	FbilureMessbge  *string
 	QueuedAt        time.Time
-	StartedAt       *time.Time
+	StbrtedAt       *time.Time
 	FinishedAt      *time.Time
 	ProcessAfter    *time.Time
 	NumResets       int
-	NumFailures     int
-	LastHeartbeatAt time.Time
+	NumFbilures     int
+	LbstHebrtbebtAt time.Time
 	ExecutionLogs   []executor.ExecutionLogEntry
-	WorkerHostname  string
-	Cancel          bool
-	backfillId      int
+	WorkerHostnbme  string
+	Cbncel          bool
+	bbckfillId      int
 }
 
-func (b *BaseJob) RecordID() int {
+func (b *BbseJob) RecordID() int {
 	return b.ID
 }
 
-func (b *BaseJob) RecordUID() string {
-	return strconv.Itoa(b.ID)
+func (b *BbseJob) RecordUID() string {
+	return strconv.Itob(b.ID)
 }
 
-var baseJobColumns = []*sqlf.Query{
+vbr bbseJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
-	sqlf.Sprintf("state"),
-	sqlf.Sprintf("failure_message"),
-	sqlf.Sprintf("queued_at"),
-	sqlf.Sprintf("started_at"),
-	sqlf.Sprintf("finished_at"),
-	sqlf.Sprintf("process_after"),
+	sqlf.Sprintf("stbte"),
+	sqlf.Sprintf("fbilure_messbge"),
+	sqlf.Sprintf("queued_bt"),
+	sqlf.Sprintf("stbrted_bt"),
+	sqlf.Sprintf("finished_bt"),
+	sqlf.Sprintf("process_bfter"),
 	sqlf.Sprintf("num_resets"),
-	sqlf.Sprintf("num_failures"),
-	sqlf.Sprintf("last_heartbeat_at"),
+	sqlf.Sprintf("num_fbilures"),
+	sqlf.Sprintf("lbst_hebrtbebt_bt"),
 	sqlf.Sprintf("execution_logs"),
-	sqlf.Sprintf("worker_hostname"),
-	sqlf.Sprintf("cancel"),
-	sqlf.Sprintf("backfill_id"),
+	sqlf.Sprintf("worker_hostnbme"),
+	sqlf.Sprintf("cbncel"),
+	sqlf.Sprintf("bbckfill_id"),
 }
 
-func scanBaseJob(s dbutil.Scanner) (*BaseJob, error) {
-	var job BaseJob
-	var executionLogs []executor.ExecutionLogEntry
+func scbnBbseJob(s dbutil.Scbnner) (*BbseJob, error) {
+	vbr job BbseJob
+	vbr executionLogs []executor.ExecutionLogEntry
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&job.ID,
-		&job.State,
-		&job.FailureMessage,
+		&job.Stbte,
+		&job.FbilureMessbge,
 		&job.QueuedAt,
-		&job.StartedAt,
+		&job.StbrtedAt,
 		&job.FinishedAt,
 		&job.ProcessAfter,
 		&job.NumResets,
-		&job.NumFailures,
-		&job.LastHeartbeatAt,
-		pq.Array(&executionLogs),
-		&job.WorkerHostname,
-		&job.Cancel,
-		&dbutil.NullInt{N: &job.backfillId},
+		&job.NumFbilures,
+		&job.LbstHebrtbebtAt,
+		pq.Arrby(&executionLogs),
+		&job.WorkerHostnbme,
+		&job.Cbncel,
+		&dbutil.NullInt{N: &job.bbckfillId},
 	); err != nil {
 		return nil, err
 	}
 
-	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
+	job.ExecutionLogs = bppend(job.ExecutionLogs, executionLogs...)
 
 	return &job, nil
 }
 
-type BackgroundJobMonitor struct {
-	inProgressWorker   *workerutil.Worker[*BaseJob]
-	inProgressResetter *dbworker.Resetter[*BaseJob]
-	inProgressStore    dbworkerstore.Store[*BaseJob]
+type BbckgroundJobMonitor struct {
+	inProgressWorker   *workerutil.Worker[*BbseJob]
+	inProgressResetter *dbworker.Resetter[*BbseJob]
+	inProgressStore    dbworkerstore.Store[*BbseJob]
 
-	newBackfillWorker   *workerutil.Worker[*BaseJob]
-	newBackfillResetter *dbworker.Resetter[*BaseJob]
-	newBackfillStore    dbworkerstore.Store[*BaseJob]
+	newBbckfillWorker   *workerutil.Worker[*BbseJob]
+	newBbckfillResetter *dbworker.Resetter[*BbseJob]
+	newBbckfillStore    dbworkerstore.Store[*BbseJob]
 }
 
 type JobMonitorConfig struct {
 	InsightsDB        edb.InsightsDB
-	InsightStore      store.Interface
-	RepoStore         database.RepoStore
-	BackfillRunner    pipeline.Backfiller
-	ObservationCtx    *observation.Context
-	AllRepoIterator   *discovery.AllReposIterator
-	CostAnalyzer      *priority.QueryAnalyzer
+	InsightStore      store.Interfbce
+	RepoStore         dbtbbbse.RepoStore
+	BbckfillRunner    pipeline.Bbckfiller
+	ObservbtionCtx    *observbtion.Context
+	AllRepoIterbtor   *discovery.AllReposIterbtor
+	CostAnblyzer      *priority.QueryAnblyzer
 	RepoQueryExecutor query.RepoQueryExecutor
 }
 
-func NewBackgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BackgroundJobMonitor {
-	monitor := &BackgroundJobMonitor{}
+func NewBbckgroundJobMonitor(ctx context.Context, config JobMonitorConfig) *BbckgroundJobMonitor {
+	monitor := &BbckgroundJobMonitor{}
 
-	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = makeInProgressWorker(ctx, config)
-	monitor.newBackfillWorker, monitor.newBackfillResetter, monitor.newBackfillStore = makeNewBackfillWorker(ctx, config)
+	monitor.inProgressWorker, monitor.inProgressResetter, monitor.inProgressStore = mbkeInProgressWorker(ctx, config)
+	monitor.newBbckfillWorker, monitor.newBbckfillResetter, monitor.newBbckfillStore = mbkeNewBbckfillWorker(ctx, config)
 
 	return monitor
 }
 
-func (s *BackgroundJobMonitor) Routines() []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
+func (s *BbckgroundJobMonitor) Routines() []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
 		s.inProgressWorker,
 		s.inProgressResetter,
-		s.newBackfillWorker,
-		s.newBackfillResetter,
+		s.newBbckfillWorker,
+		s.newBbckfillResetter,
 	}
 }
 
-type SeriesReader interface {
-	GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
+type SeriesRebder interfbce {
+	GetDbtbSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error)
 }
 
-type SeriesBackfillComplete interface {
-	SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error
+type SeriesBbckfillComplete interfbce {
+	SetSeriesBbckfillComplete(ctx context.Context, seriesId string, timestbmp time.Time) error
 }
 
-type SeriesReadBackfillComplete interface {
-	SeriesReader
-	SeriesBackfillComplete
+type SeriesRebdBbckfillComplete interfbce {
+	SeriesRebder
+	SeriesBbckfillComplete
 }
 
 type Scheduler struct {
-	backfillStore *BackfillStore
+	bbckfillStore *BbckfillStore
 }
 
 func NewScheduler(db edb.InsightsDB) *Scheduler {
-	return &Scheduler{backfillStore: NewBackfillStore(db)}
+	return &Scheduler{bbckfillStore: NewBbckfillStore(db)}
 }
 
-func enqueueBackfill(ctx context.Context, handle basestore.TransactableHandle, backfill *SeriesBackfill) error {
-	if backfill == nil || backfill.Id == 0 {
-		return errors.New("invalid series backfill")
+func enqueueBbckfill(ctx context.Context, hbndle bbsestore.TrbnsbctbbleHbndle, bbckfill *SeriesBbckfill) error {
+	if bbckfill == nil || bbckfill.Id == 0 {
+		return errors.New("invblid series bbckfill")
 	}
-	return basestore.NewWithHandle(handle).Exec(ctx, sqlf.Sprintf("insert into insights_background_jobs (backfill_id) VALUES (%s)", backfill.Id))
+	return bbsestore.NewWithHbndle(hbndle).Exec(ctx, sqlf.Sprintf("insert into insights_bbckground_jobs (bbckfill_id) VALUES (%s)", bbckfill.Id))
 }
 
-func (s *Scheduler) With(other basestore.ShareableStore) *Scheduler {
-	return &Scheduler{backfillStore: s.backfillStore.With(other)}
+func (s *Scheduler) With(other bbsestore.ShbrebbleStore) *Scheduler {
+	return &Scheduler{bbckfillStore: s.bbckfillStore.With(other)}
 }
 
-func (s *Scheduler) InitialBackfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBackfill, err error) {
-	tx, err := s.backfillStore.Transact(ctx)
+func (s *Scheduler) InitiblBbckfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBbckfill, err error) {
+	tx, err := s.bbckfillStore.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	bf, err := tx.NewBackfill(ctx, series)
+	bf, err := tx.NewBbckfill(ctx, series)
 	if err != nil {
-		return nil, errors.Wrap(err, "NewBackfill")
+		return nil, errors.Wrbp(err, "NewBbckfill")
 	}
 
-	err = enqueueBackfill(ctx, tx.Handle(), bf)
+	err = enqueueBbckfill(ctx, tx.Hbndle(), bf)
 	if err != nil {
-		return nil, errors.Wrap(err, "enqueueBackfill")
+		return nil, errors.Wrbp(err, "enqueueBbckfill")
 	}
 	return bf, nil
 }
 
-// RepoQueryExecutor is the consumer interface for query.RepoQueryExecutor, used for tests.
-type RepoQueryExecutor interface {
-	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimalRepo, error)
+// RepoQueryExecutor is the consumer interfbce for query.RepoQueryExecutor, used for tests.
+type RepoQueryExecutor interfbce {
+	ExecuteRepoList(ctx context.Context, query string) ([]itypes.MinimblRepo, error)
 }

@@ -1,4 +1,4 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"bytes"
@@ -8,25 +8,25 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// AbandonPullRequest abandons (closes) the specified PR, returns the updated PR.
-func (c *client) AbandonPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
+// AbbndonPullRequest bbbndons (closes) the specified PR, returns the updbted PR.
+func (c *client) AbbndonPullRequest(ctx context.Context, brgs PullRequestCommonArgs) (PullRequest, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests/%s", brgs.Org, brgs.Project, brgs.RepoNbmeOrID, brgs.PullRequestID)}
 
-	abandoned := PullRequestStatusAbandoned
-	data, err := json.Marshal(PullRequestUpdateInput{Status: &abandoned})
+	bbbndoned := PullRequestStbtusAbbndoned
+	dbtb, err := json.Mbrshbl(PullRequestUpdbteInput{Stbtus: &bbbndoned})
 	if err != nil {
-		return PullRequest{}, errors.Wrap(err, "marshalling request")
+		return PullRequest{}, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(dbtb))
 	if err != nil {
 		return PullRequest{}, err
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return PullRequest{}, err
 	}
@@ -34,22 +34,22 @@ func (c *client) AbandonPullRequest(ctx context.Context, args PullRequestCommonA
 	return pr, nil
 }
 
-// CreatePullRequest creates a new PR with the specified properties, returns the newly created PR.
-// NOTE: this API needs repository ID specified not repository Name in OrgProjectRepoArgs.
-func (c *client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error) {
-	data, err := json.Marshal(&input)
+// CrebtePullRequest crebtes b new PR with the specified properties, returns the newly crebted PR.
+// NOTE: this API needs repository ID specified not repository Nbme in OrgProjectRepoArgs.
+func (c *client) CrebtePullRequest(ctx context.Context, brgs OrgProjectRepoArgs, input CrebtePullRequestInput) (PullRequest, error) {
+	dbtb, err := json.Mbrshbl(&input)
 	if err != nil {
-		return PullRequest{}, errors.Wrap(err, "marshalling request")
+		return PullRequest{}, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests", args.Org, args.Project, args.RepoNameOrID)}
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests", brgs.Org, brgs.Project, brgs.RepoNbmeOrID)}
 
-	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(dbtb))
 	if err != nil {
 		return PullRequest{}, err
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return PullRequest{}, err
 	}
@@ -58,15 +58,15 @@ func (c *client) CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs,
 }
 
 // GetPullRequest gets the specified PR.
-func (c *client) GetPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
+func (c *client) GetPullRequest(ctx context.Context, brgs PullRequestCommonArgs) (PullRequest, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests/%s", brgs.Org, brgs.Project, brgs.RepoNbmeOrID, brgs.PullRequestID)}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return PullRequest{}, err
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return PullRequest{}, err
 	}
@@ -74,40 +74,40 @@ func (c *client) GetPullRequest(ctx context.Context, args PullRequestCommonArgs)
 	return pr, nil
 }
 
-// GetPullRequestStatuses returns the build statuses associated with the specified PR.
-func (c *client) GetPullRequestStatuses(ctx context.Context, args PullRequestCommonArgs) ([]PullRequestBuildStatus, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s/statuses", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
+// GetPullRequestStbtuses returns the build stbtuses bssocibted with the specified PR.
+func (c *client) GetPullRequestStbtuses(ctx context.Context, brgs PullRequestCommonArgs) ([]PullRequestBuildStbtus, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests/%s/stbtuses", brgs.Org, brgs.Project, brgs.RepoNbmeOrID, brgs.PullRequestID)}
 
 	req, err := http.NewRequest("GET", reqURL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var pr PullRequestStatuses
+	vbr pr PullRequestStbtuses
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return nil, err
 	}
 
-	return pr.Value, nil
+	return pr.Vblue, nil
 }
 
-// UpdatePullRequest updates the specified PR, returns the updated PR.
+// UpdbtePullRequest updbtes the specified PR, returns the updbted PR.
 //
-// Warning: If you are setting the TargetRefName in the PullRequestUpdateInput, it will be the only thing to get updated (bug in the ADO API).
-func (c *client) UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
+// Wbrning: If you bre setting the TbrgetRefNbme in the PullRequestUpdbteInput, it will be the only thing to get updbted (bug in the ADO API).
+func (c *client) UpdbtePullRequest(ctx context.Context, brgs PullRequestCommonArgs, input PullRequestUpdbteInput) (PullRequest, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests/%s", brgs.Org, brgs.Project, brgs.RepoNbmeOrID, brgs.PullRequestID)}
 
-	data, err := json.Marshal(input)
+	dbtb, err := json.Mbrshbl(input)
 	if err != nil {
-		return PullRequest{}, errors.Wrap(err, "marshalling request")
+		return PullRequest{}, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(dbtb))
 	if err != nil {
 		return PullRequest{}, err
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return PullRequest{}, err
 	}
@@ -115,21 +115,21 @@ func (c *client) UpdatePullRequest(ctx context.Context, args PullRequestCommonAr
 	return pr, nil
 }
 
-// CreatePullRequestCommentThread creates a new comment Thread specified PR, returns the updated PR.
-func (c *client) CreatePullRequestCommentThread(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s/threads", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
+// CrebtePullRequestCommentThrebd crebtes b new comment Threbd specified PR, returns the updbted PR.
+func (c *client) CrebtePullRequestCommentThrebd(ctx context.Context, brgs PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests/%s/threbds", brgs.Org, brgs.Project, brgs.RepoNbmeOrID, brgs.PullRequestID)}
 
-	data, err := json.Marshal(input)
+	dbtb, err := json.Mbrshbl(input)
 	if err != nil {
-		return PullRequestCommentResponse{}, errors.Wrap(err, "marshalling request")
+		return PullRequestCommentResponse{}, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", reqURL.String(), bytes.NewBuffer(dbtb))
 	if err != nil {
 		return PullRequestCommentResponse{}, err
 	}
 
-	var pr PullRequestCommentResponse
+	vbr pr PullRequestCommentResponse
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return PullRequestCommentResponse{}, err
 	}
@@ -137,30 +137,30 @@ func (c *client) CreatePullRequestCommentThread(ctx context.Context, args PullRe
 	return pr, nil
 }
 
-// CompletePullRequest completes(merges) the specified PR, returns the updated PR.
-func (c *client) CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error) {
-	reqURL := url.URL{Path: fmt.Sprintf("%s/%s/_apis/git/repositories/%s/pullrequests/%s", args.Org, args.Project, args.RepoNameOrID, args.PullRequestID)}
-	completed := PullRequestStatusCompleted
-	pri := PullRequestUpdateInput{
-		Status:                &completed,
-		LastMergeSourceCommit: &PullRequestCommit{CommitID: input.CommitID},
-		CompletionOptions:     &PullRequestCompletionOptions{DeleteSourceBranch: input.DeleteSourceBranch},
+// CompletePullRequest completes(merges) the specified PR, returns the updbted PR.
+func (c *client) CompletePullRequest(ctx context.Context, brgs PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error) {
+	reqURL := url.URL{Pbth: fmt.Sprintf("%s/%s/_bpis/git/repositories/%s/pullrequests/%s", brgs.Org, brgs.Project, brgs.RepoNbmeOrID, brgs.PullRequestID)}
+	completed := PullRequestStbtusCompleted
+	pri := PullRequestUpdbteInput{
+		Stbtus:                &completed,
+		LbstMergeSourceCommit: &PullRequestCommit{CommitID: input.CommitID},
+		CompletionOptions:     &PullRequestCompletionOptions{DeleteSourceBrbnch: input.DeleteSourceBrbnch},
 	}
-	if input.MergeStrategy != nil {
-		pri.CompletionOptions.MergeStrategy = *input.MergeStrategy
+	if input.MergeStrbtegy != nil {
+		pri.CompletionOptions.MergeStrbtegy = *input.MergeStrbtegy
 	}
 
-	data, err := json.Marshal(pri)
+	dbtb, err := json.Mbrshbl(pri)
 	if err != nil {
-		return PullRequest{}, errors.Wrap(err, "marshalling request")
+		return PullRequest{}, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PATCH", reqURL.String(), bytes.NewBuffer(dbtb))
 	if err != nil {
 		return PullRequest{}, err
 	}
 
-	var pr PullRequest
+	vbr pr PullRequest
 	if _, err = c.do(ctx, req, "", &pr); err != nil {
 		return PullRequest{}, err
 	}

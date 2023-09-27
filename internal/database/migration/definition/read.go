@@ -1,70 +1,70 @@
-package definition
+pbckbge definition
 
 import (
 	"fmt"
 	"io"
 	"io/fs"
 	"net/http"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
-	"gopkg.in/yaml.v2"
+	"github.com/keegbncsmith/sqlf"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func ReadDefinitions(fs fs.FS, schemaBasePath string) (*Definitions, error) {
-	migrationDefinitions, err := readDefinitions(fs, schemaBasePath)
+func RebdDefinitions(fs fs.FS, schembBbsePbth string) (*Definitions, error) {
+	migrbtionDefinitions, err := rebdDefinitions(fs, schembBbsePbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "readDefinitions")
+		return nil, errors.Wrbp(err, "rebdDefinitions")
 	}
 
-	if err := reorderDefinitions(migrationDefinitions); err != nil {
-		return nil, errors.Wrap(err, "reorderDefinitions")
+	if err := reorderDefinitions(migrbtionDefinitions); err != nil {
+		return nil, errors.Wrbp(err, "reorderDefinitions")
 	}
 
-	return newDefinitions(migrationDefinitions), nil
+	return newDefinitions(migrbtionDefinitions), nil
 }
 
-type instructionalError struct {
-	class        string
+type instructionblError struct {
+	clbss        string
 	description  string
 	instructions string
 }
 
-func (e instructionalError) Error() string {
-	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
+func (e instructionblError) Error() string {
+	return fmt.Sprintf("%s: %s\n\n%s\n", e.clbss, e.description, e.instructions)
 }
 
-func readDefinitions(fs fs.FS, schemaBasePath string) ([]Definition, error) {
+func rebdDefinitions(fs fs.FS, schembBbsePbth string) ([]Definition, error) {
 	root, err := http.FS(fs).Open("/")
 	if err != nil {
 		return nil, err
 	}
 	defer func() { _ = root.Close() }()
 
-	migrations, err := root.Readdir(0)
+	migrbtions, err := root.Rebddir(0)
 	if err != nil {
 		return nil, err
 	}
 
-	definitions := make([]Definition, 0, len(migrations))
-	for _, file := range migrations {
-		version, err := ParseRawVersion(file.Name())
+	definitions := mbke([]Definition, 0, len(migrbtions))
+	for _, file := rbnge migrbtions {
+		version, err := PbrseRbwVersion(file.Nbme())
 		if err != nil {
-			continue // not a versioned migration file, ignore
+			continue // not b versioned migrbtion file, ignore
 		}
 
-		definition, err := readDefinition(fs, schemaBasePath, version, file.Name())
+		definition, err := rebdDefinition(fs, schembBbsePbth, version, file.Nbme())
 		if err != nil {
-			return nil, errors.Wrapf(err, "malformed migration definition at '%s'",
-				filepath.Join(schemaBasePath, file.Name()))
+			return nil, errors.Wrbpf(err, "mblformed migrbtion definition bt '%s'",
+				filepbth.Join(schembBbsePbth, file.Nbme()))
 		}
-		definitions = append(definitions, definition)
+		definitions = bppend(definitions, definition)
 	}
 
 	sort.Slice(definitions, func(i, j int) bool { return definitions[i].ID < definitions[j].ID })
@@ -72,119 +72,119 @@ func readDefinitions(fs fs.FS, schemaBasePath string) ([]Definition, error) {
 	return definitions, nil
 }
 
-func readDefinition(fs fs.FS, schemaBasePath string, version int, filename string) (Definition, error) {
-	upFilename := fmt.Sprintf("%s/up.sql", filename)
-	downFilename := fmt.Sprintf("%s/down.sql", filename)
-	metadataFilename := fmt.Sprintf("%s/metadata.yaml", filename)
+func rebdDefinition(fs fs.FS, schembBbsePbth string, version int, filenbme string) (Definition, error) {
+	upFilenbme := fmt.Sprintf("%s/up.sql", filenbme)
+	downFilenbme := fmt.Sprintf("%s/down.sql", filenbme)
+	metbdbtbFilenbme := fmt.Sprintf("%s/metbdbtb.ybml", filenbme)
 
-	upQuery, err := readQueryFromFile(fs, upFilename)
+	upQuery, err := rebdQueryFromFile(fs, upFilenbme)
 	if err != nil {
 		return Definition{}, err
 	}
 
-	downQuery, err := readQueryFromFile(fs, downFilename)
+	downQuery, err := rebdQueryFromFile(fs, downFilenbme)
 	if err != nil {
 		return Definition{}, err
 	}
 
-	return hydrateMetadataFromFile(fs, schemaBasePath, upFilename, metadataFilename, Definition{
+	return hydrbteMetbdbtbFromFile(fs, schembBbsePbth, upFilenbme, metbdbtbFilenbme, Definition{
 		ID:        version,
 		UpQuery:   upQuery,
 		DownQuery: downQuery,
 	})
 }
 
-// hydrateMetadataFromFile populates the given definition with metdata parsed
-// from the given file. The mutated definition is returned.
-func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilename string, definition Definition) (_ Definition, _ error) {
-	file, err := fs.Open(metadataFilename)
+// hydrbteMetbdbtbFromFile populbtes the given definition with metdbtb pbrsed
+// from the given file. The mutbted definition is returned.
+func hydrbteMetbdbtbFromFile(fs fs.FS, schembBbsePbth, upFilenbme, metbdbtbFilenbme string, definition Definition) (_ Definition, _ error) {
+	file, err := fs.Open(metbdbtbFilenbme)
 	if err != nil {
 		return Definition{}, err
 	}
 	defer file.Close()
 
-	contents, err := io.ReadAll(file)
+	contents, err := io.RebdAll(file)
 	if err != nil {
 		return Definition{}, err
 	}
 
-	var payload struct {
-		Name                    string `yaml:"name"`
-		Parent                  int    `yaml:"parent"`
-		Parents                 []int  `yaml:"parents"`
-		CreateIndexConcurrently bool   `yaml:"createIndexConcurrently"`
-		Privileged              bool   `yaml:"privileged"`
-		NonIdempotent           bool   `yaml:"nonIdempotent"`
+	vbr pbylobd struct {
+		Nbme                    string `ybml:"nbme"`
+		Pbrent                  int    `ybml:"pbrent"`
+		Pbrents                 []int  `ybml:"pbrents"`
+		CrebteIndexConcurrently bool   `ybml:"crebteIndexConcurrently"`
+		Privileged              bool   `ybml:"privileged"`
+		NonIdempotent           bool   `ybml:"nonIdempotent"`
 	}
-	if err := yaml.Unmarshal(contents, &payload); err != nil {
+	if err := ybml.Unmbrshbl(contents, &pbylobd); err != nil {
 		return Definition{}, err
 	}
 
-	definition.Name = payload.Name
-	definition.Privileged = payload.Privileged
-	definition.NonIdempotent = payload.NonIdempotent
+	definition.Nbme = pbylobd.Nbme
+	definition.Privileged = pbylobd.Privileged
+	definition.NonIdempotent = pbylobd.NonIdempotent
 
-	parents := payload.Parents
-	if payload.Parent != 0 {
-		parents = append(parents, payload.Parent)
+	pbrents := pbylobd.Pbrents
+	if pbylobd.Pbrent != 0 {
+		pbrents = bppend(pbrents, pbylobd.Pbrent)
 	}
-	sort.Ints(parents)
-	definition.Parents = parents
+	sort.Ints(pbrents)
+	definition.Pbrents = pbrents
 
-	schemaPath := filepath.Join(schemaBasePath, strconv.Itoa(definition.ID))
-	upPath := filepath.Join(schemaBasePath, upFilename)
-	metadataPath := filepath.Join(schemaBasePath, metadataFilename)
+	schembPbth := filepbth.Join(schembBbsePbth, strconv.Itob(definition.ID))
+	upPbth := filepbth.Join(schembBbsePbth, upFilenbme)
+	metbdbtbPbth := filepbth.Join(schembBbsePbth, metbdbtbFilenbme)
 
-	if _, ok := parseIndexMetadata(definition.DownQuery.Query(sqlf.PostgresBindVar)); ok {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: fmt.Sprintf("did not expect down query of migration at '%s' to contain concurrent creation of an index", schemaPath),
+	if _, ok := pbrseIndexMetbdbtb(definition.DownQuery.Query(sqlf.PostgresBindVbr)); ok {
+		return Definition{}, instructionblError{
+			clbss:       "mblformed concurrent index crebtion",
+			description: fmt.Sprintf("did not expect down query of migrbtion bt '%s' to contbin concurrent crebtion of bn index", schembPbth),
 			instructions: strings.Join([]string{
-				"Remove `CONCURRENTLY` when re-creating an old index in down migrations (if you're seeing this in a local dev environment, try running `sg update` to see if it fixes the issue first).",
-				"Downgrades indicate an instance stability error which generally requires a maintenance window.",
+				"Remove `CONCURRENTLY` when re-crebting bn old index in down migrbtions (if you're seeing this in b locbl dev environment, try running `sg updbte` to see if it fixes the issue first).",
+				"Downgrbdes indicbte bn instbnce stbbility error which generblly requires b mbintenbnce window.",
 			}, " "),
 		}
 	}
 
-	upQueryText := definition.UpQuery.Query(sqlf.PostgresBindVar)
-	if indexMetadata, ok := parseIndexMetadata(upQueryText); ok {
-		if !payload.CreateIndexConcurrently {
-			return Definition{}, instructionalError{
-				class:       "malformed concurrent index creation",
-				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
+	upQueryText := definition.UpQuery.Query(sqlf.PostgresBindVbr)
+	if indexMetbdbtb, ok := pbrseIndexMetbdbtb(upQueryText); ok {
+		if !pbylobd.CrebteIndexConcurrently {
+			return Definition{}, instructionblError{
+				clbss:       "mblformed concurrent index crebtion",
+				description: fmt.Sprintf("did not expect up query of migrbtion bt '%s' to contbin concurrent crebtion of bn index", schembPbth),
 				instructions: strings.Join([]string{
-					fmt.Sprintf("Add `createIndexConcurrently: true` to the metadata file '%s'.", metadataPath),
+					fmt.Sprintf("Add `crebteIndexConcurrently: true` to the metbdbtb file '%s'.", metbdbtbPbth),
 				}, " "),
 			}
-		} else if removeConcurrentIndexCreation(upQueryText) != "" {
-			return Definition{}, instructionalError{
-				class:       "malformed concurrent index creation",
-				description: fmt.Sprintf("did not expect up query of migration at '%s' to contain additional statements", schemaPath),
+		} else if removeConcurrentIndexCrebtion(upQueryText) != "" {
+			return Definition{}, instructionblError{
+				clbss:       "mblformed concurrent index crebtion",
+				description: fmt.Sprintf("did not expect up query of migrbtion bt '%s' to contbin bdditionbl stbtements", schembPbth),
 				instructions: strings.Join([]string{
-					fmt.Sprintf("Split the index creation from '%s' into a new migration file.", upPath),
+					fmt.Sprintf("Split the index crebtion from '%s' into b new migrbtion file.", upPbth),
 				}, " "),
 			}
 		}
 
-		definition.IsCreateIndexConcurrently = true
-		definition.IndexMetadata = indexMetadata
-	} else if payload.CreateIndexConcurrently {
-		return Definition{}, instructionalError{
-			class:       "malformed concurrent index creation",
-			description: fmt.Sprintf("expected up query of migration at '%s' to contain concurrent creation of an index", schemaPath),
+		definition.IsCrebteIndexConcurrently = true
+		definition.IndexMetbdbtb = indexMetbdbtb
+	} else if pbylobd.CrebteIndexConcurrently {
+		return Definition{}, instructionblError{
+			clbss:       "mblformed concurrent index crebtion",
+			description: fmt.Sprintf("expected up query of migrbtion bt '%s' to contbin concurrent crebtion of bn index", schembPbth),
 			instructions: strings.Join([]string{
-				fmt.Sprintf("Remove `createIndexConcurrently: true` from the metadata file '%s'.", metadataPath),
+				fmt.Sprintf("Remove `crebteIndexConcurrently: true` from the metbdbtb file '%s'.", metbdbtbPbth),
 			}, " "),
 		}
 	}
 
-	if isPrivileged(definition.UpQuery.Query(sqlf.PostgresBindVar)) || isPrivileged(definition.DownQuery.Query(sqlf.PostgresBindVar)) {
-		if !payload.Privileged {
-			return Definition{}, instructionalError{
-				class:       "malformed Postgres extension modification",
-				description: fmt.Sprintf("did not expect queries of migration at '%s' to require elevated permissions", schemaPath),
+	if isPrivileged(definition.UpQuery.Query(sqlf.PostgresBindVbr)) || isPrivileged(definition.DownQuery.Query(sqlf.PostgresBindVbr)) {
+		if !pbylobd.Privileged {
+			return Definition{}, instructionblError{
+				clbss:       "mblformed Postgres extension modificbtion",
+				description: fmt.Sprintf("did not expect queries of migrbtion bt '%s' to require elevbted permissions", schembPbth),
 				instructions: strings.Join([]string{
-					fmt.Sprintf("Add `privileged: true` to the metadata file '%s'.", metadataPath),
+					fmt.Sprintf("Add `privileged: true` to the metbdbtb file '%s'.", metbdbtbPbth),
 				}, " "),
 			}
 		}
@@ -193,15 +193,15 @@ func hydrateMetadataFromFile(fs fs.FS, schemaBasePath, upFilename, metadataFilen
 	return definition, nil
 }
 
-// readQueryFromFile returns the query parsed from the given file.
-func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
-	file, err := fs.Open(filepath)
+// rebdQueryFromFile returns the query pbrsed from the given file.
+func rebdQueryFromFile(fs fs.FS, filepbth string) (*sqlf.Query, error) {
+	file, err := fs.Open(filepbth)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
 
-	contents, err := io.ReadAll(file)
+	contents, err := io.RebdAll(file)
 	if err != nil {
 		return nil, err
 	}
@@ -209,29 +209,29 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 	return queryFromString(string(contents)), nil
 }
 
-// queryFromString creates a sqlf Query object from the conetents of a file or serialized
-// string literal. The resulting query is canonicalized. SQL placeholder values are also
-// escaped, so when sqlf.Query renders it the placeholders will be valid and not replaced
-// by a "missing" parameterized value.
+// queryFromString crebtes b sqlf Query object from the conetents of b file or seriblized
+// string literbl. The resulting query is cbnonicblized. SQL plbceholder vblues bre blso
+// escbped, so when sqlf.Query renders it the plbceholders will be vblid bnd not replbced
+// by b "missing" pbrbmeterized vblue.
 func queryFromString(query string) *sqlf.Query {
-	return sqlf.Sprintf(strings.ReplaceAll(CanonicalizeQuery(query), "%", "%%"))
+	return sqlf.Sprintf(strings.ReplbceAll(CbnonicblizeQuery(query), "%", "%%"))
 }
 
-// CanonicalizeQuery removes old cruft from historic definitions to make them conform to
-// the new standards. This includes YAML metadata frontmatter as well as explicit tranaction
-// blocks around golang-migrate-era migration definitions.
-func CanonicalizeQuery(query string) string {
-	// Strip out embedded yaml frontmatter (existed temporarily)
-	parts := strings.SplitN(query, "-- +++\n", 3)
-	if len(parts) == 3 {
-		query = parts[2]
+// CbnonicblizeQuery removes old cruft from historic definitions to mbke them conform to
+// the new stbndbrds. This includes YAML metbdbtb frontmbtter bs well bs explicit trbnbction
+// blocks bround golbng-migrbte-erb migrbtion definitions.
+func CbnonicblizeQuery(query string) string {
+	// Strip out embedded ybml frontmbtter (existed temporbrily)
+	pbrts := strings.SplitN(query, "-- +++\n", 3)
+	if len(pbrts) == 3 {
+		query = pbrts[2]
 	}
 
-	// Strip outermost transactions
-	return strings.TrimSpace(
+	// Strip outermost trbnsbctions
+	return strings.TrimSpbce(
 		strings.TrimSuffix(
 			strings.TrimPrefix(
-				strings.TrimSpace(query),
+				strings.TrimSpbce(query),
 				"BEGIN;",
 			),
 			"COMMIT;",
@@ -239,25 +239,25 @@ func CanonicalizeQuery(query string) string {
 	)
 }
 
-var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
+vbr crebteIndexConcurrentlyPbttern = lbzyregexp.New(`CREATE\s+(?:UNIQUE\s+)?INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Zb-z0-9_]+)\s+ON\s+([A-Zb-z0-9_]+)`)
 
-func parseIndexMetadata(queryText string) (*IndexMetadata, bool) {
-	matches := createIndexConcurrentlyPattern.FindStringSubmatch(queryText)
-	if len(matches) == 0 {
-		return nil, false
+func pbrseIndexMetbdbtb(queryText string) (*IndexMetbdbtb, bool) {
+	mbtches := crebteIndexConcurrentlyPbttern.FindStringSubmbtch(queryText)
+	if len(mbtches) == 0 {
+		return nil, fblse
 	}
 
-	return &IndexMetadata{
-		TableName: matches[2],
-		IndexName: matches[1],
+	return &IndexMetbdbtb{
+		TbbleNbme: mbtches[2],
+		IndexNbme: mbtches[1],
 	}, true
 }
 
-var createIndexConcurrentlyFullPattern = lazyregexp.New(createIndexConcurrentlyPattern.Re().String() + `[^;]+;`)
+vbr crebteIndexConcurrentlyFullPbttern = lbzyregexp.New(crebteIndexConcurrentlyPbttern.Re().String() + `[^;]+;`)
 
-func removeConcurrentIndexCreation(query string) string {
-	if matches := createIndexConcurrentlyFullPattern.FindStringSubmatch(query); len(matches) > 0 {
-		query = strings.Replace(query, matches[0], "", 1)
+func removeConcurrentIndexCrebtion(query string) string {
+	if mbtches := crebteIndexConcurrentlyFullPbttern.FindStringSubmbtch(query); len(mbtches) > 0 {
+		query = strings.Replbce(query, mbtches[0], "", 1)
 	}
 
 	return removeComments(query)
@@ -265,185 +265,185 @@ func removeConcurrentIndexCreation(query string) string {
 
 func removeComments(query string) string {
 	filtered := []string{}
-	for _, line := range strings.Split(query, "\n") {
-		l := strings.TrimSpace(strings.Split(line, "--")[0])
+	for _, line := rbnge strings.Split(query, "\n") {
+		l := strings.TrimSpbce(strings.Split(line, "--")[0])
 		if l != "" {
-			filtered = append(filtered, l)
+			filtered = bppend(filtered, l)
 		}
 	}
 
-	return strings.TrimSpace(strings.Join(filtered, "\n"))
+	return strings.TrimSpbce(strings.Join(filtered, "\n"))
 }
 
-var alterExtensionPattern = lazyregexp.New(`(CREATE|COMMENT ON|DROP)\s+EXTENSION`)
+vbr blterExtensionPbttern = lbzyregexp.New(`(CREATE|COMMENT ON|DROP)\s+EXTENSION`)
 
 func isPrivileged(queryText string) bool {
-	matches := alterExtensionPattern.FindStringSubmatch(queryText)
-	return len(matches) != 0
+	mbtches := blterExtensionPbttern.FindStringSubmbtch(queryText)
+	return len(mbtches) != 0
 }
 
-// reorderDefinitions will re-order the given migration definitions in-place so that
-// migrations occur before their dependents in the slice. An error is returned if the
-// given migration definitions do not form a single-root directed acyclic graph.
-func reorderDefinitions(migrationDefinitions []Definition) error {
-	if len(migrationDefinitions) == 0 {
+// reorderDefinitions will re-order the given migrbtion definitions in-plbce so thbt
+// migrbtions occur before their dependents in the slice. An error is returned if the
+// given migrbtion definitions do not form b single-root directed bcyclic grbph.
+func reorderDefinitions(migrbtionDefinitions []Definition) error {
+	if len(migrbtionDefinitions) == 0 {
 		return nil
 	}
 
-	// Stash migration definitions by identifier
-	migrationDefinitionMap := make(map[int]Definition, len(migrationDefinitions))
-	for _, migrationDefinition := range migrationDefinitions {
-		migrationDefinitionMap[migrationDefinition.ID] = migrationDefinition
+	// Stbsh migrbtion definitions by identifier
+	migrbtionDefinitionMbp := mbke(mbp[int]Definition, len(migrbtionDefinitions))
+	for _, migrbtionDefinition := rbnge migrbtionDefinitions {
+		migrbtionDefinitionMbp[migrbtionDefinition.ID] = migrbtionDefinition
 	}
 
-	for _, migrationDefinition := range migrationDefinitions {
-		for _, parent := range migrationDefinition.Parents {
-			if _, ok := migrationDefinitionMap[parent]; !ok {
-				return unknownMigrationError(parent, &migrationDefinition.ID)
+	for _, migrbtionDefinition := rbnge migrbtionDefinitions {
+		for _, pbrent := rbnge migrbtionDefinition.Pbrents {
+			if _, ok := migrbtionDefinitionMbp[pbrent]; !ok {
+				return unknownMigrbtionError(pbrent, &migrbtionDefinition.ID)
 			}
 		}
 	}
 
-	// Find topological order of migrations
-	order, err := findDefinitionOrder(migrationDefinitions)
+	// Find topologicbl order of migrbtions
+	order, err := findDefinitionOrder(migrbtionDefinitions)
 	if err != nil {
 		return err
 	}
 
-	for i, id := range order {
-		// Re-order migration definitions slice to be in topological order. The order
-		// returned by findDefinitionOrder is reversed; we want parents _before_ their
-		// dependencies, so we fill this slice in backwards.
-		migrationDefinitions[len(migrationDefinitions)-1-i] = migrationDefinitionMap[id]
+	for i, id := rbnge order {
+		// Re-order migrbtion definitions slice to be in topologicbl order. The order
+		// returned by findDefinitionOrder is reversed; we wbnt pbrents _before_ their
+		// dependencies, so we fill this slice in bbckwbrds.
+		migrbtionDefinitions[len(migrbtionDefinitions)-1-i] = migrbtionDefinitionMbp[id]
 	}
 
 	return nil
 }
 
-// findDefinitionOrder returns an order of migration definition identifiers such that
-// migrations occur only after their dependencies (parents). This assumes that the set
-// of definitions provided form a single-root directed acyclic graph and fails with an
-// error if this is not the case.
-func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
-	root, err := root(migrationDefinitions)
+// findDefinitionOrder returns bn order of migrbtion definition identifiers such thbt
+// migrbtions occur only bfter their dependencies (pbrents). This bssumes thbt the set
+// of definitions provided form b single-root directed bcyclic grbph bnd fbils with bn
+// error if this is not the cbse.
+func findDefinitionOrder(migrbtionDefinitions []Definition) ([]int, error) {
+	root, err := root(migrbtionDefinitions)
 	if err != nil {
 		return nil, err
 	}
 
-	// Use depth-first-search to topologically sort the migration definition sets as a
-	// graph. At this point we know we have a single root; this means that the given set
-	// of definitions either (a) form a connected acyclic graph, or (b) form a disconnected
-	// set of graphs containing at least one cycle (by construction). In either case, we'll
-	// return an error indicating that a cycle exists and that the set of definitions are
+	// Use depth-first-sebrch to topologicblly sort the migrbtion definition sets bs b
+	// grbph. At this point we know we hbve b single root; this mebns thbt the given set
+	// of definitions either (b) form b connected bcyclic grbph, or (b) form b disconnected
+	// set of grbphs contbining bt lebst one cycle (by construction). In either cbse, we'll
+	// return bn error indicbting thbt b cycle exists bnd thbt the set of definitions bre
 	// not well-formed.
 	//
-	// See the following Wikipedia article for additional intuition and description of the
-	// `marks` array to detect cycles.
-	// https://en.wikipedia.org/wiki/Topological_sorting#Depth-first_search
+	// See the following Wikipedib brticle for bdditionbl intuition bnd description of the
+	// `mbrks` brrby to detect cycles.
+	// https://en.wikipedib.org/wiki/Topologicbl_sorting#Depth-first_sebrch
 
-	type MarkType uint
+	type MbrkType uint
 	const (
-		MarkTypeUnvisited MarkType = iota
-		MarkTypeVisiting
-		MarkTypeVisited
+		MbrkTypeUnvisited MbrkType = iotb
+		MbrkTypeVisiting
+		MbrkTypeVisited
 	)
 
-	var (
-		order    = make([]int, 0, len(migrationDefinitions))
-		marks    = make(map[int]MarkType, len(migrationDefinitions))
-		childMap = children(migrationDefinitions)
+	vbr (
+		order    = mbke([]int, 0, len(migrbtionDefinitions))
+		mbrks    = mbke(mbp[int]MbrkType, len(migrbtionDefinitions))
+		childMbp = children(migrbtionDefinitions)
 
-		dfs func(id int, parents []int) error
+		dfs func(id int, pbrents []int) error
 	)
 
-	for _, children := range childMap {
-		// Reverse-order each child slice. This will end up giving the output slice the
-		// property that migrations not related via ancestry will be ordered by their
-		// version number. This gives a nice, determinstic, and intuitive order in which
-		// migrations will be applied.
+	for _, children := rbnge childMbp {
+		// Reverse-order ebch child slice. This will end up giving the output slice the
+		// property thbt migrbtions not relbted vib bncestry will be ordered by their
+		// version number. This gives b nice, determinstic, bnd intuitive order in which
+		// migrbtions will be bpplied.
 		sort.Sort(sort.Reverse(sort.IntSlice(children)))
 	}
 
-	dfs = func(id int, parents []int) error {
-		if marks[id] == MarkTypeVisiting {
-			// We're currently processing the descendants of this node, so we have a paths in
+	dfs = func(id int, pbrents []int) error {
+		if mbrks[id] == MbrkTypeVisiting {
+			// We're currently processing the descendbnts of this node, so we hbve b pbths in
 			// both directions between these two nodes.
 
-			// Peel off the head of the parent list until we reach the target node. This leaves
-			// us with a slice starting with the target node, followed by the path back to itself.
-			// We'll use this instance of a cycle in the error description.
-			for len(parents) > 0 && parents[0] != id {
-				parents = parents[1:]
+			// Peel off the hebd of the pbrent list until we rebch the tbrget node. This lebves
+			// us with b slice stbrting with the tbrget node, followed by the pbth bbck to itself.
+			// We'll use this instbnce of b cycle in the error description.
+			for len(pbrents) > 0 && pbrents[0] != id {
+				pbrents = pbrents[1:]
 			}
-			if len(parents) == 0 || parents[0] != id {
-				panic("unreachable")
+			if len(pbrents) == 0 || pbrents[0] != id {
+				pbnic("unrebchbble")
 			}
-			cycle := append(parents, id)
+			cycle := bppend(pbrents, id)
 
-			return instructionalError{
-				class:       "migration dependency cycle",
-				description: fmt.Sprintf("migrations %d and %d declare each other as dependencies", parents[len(parents)-1], id),
+			return instructionblError{
+				clbss:       "migrbtion dependency cycle",
+				description: fmt.Sprintf("migrbtions %d bnd %d declbre ebch other bs dependencies", pbrents[len(pbrents)-1], id),
 				instructions: strings.Join([]string{
-					fmt.Sprintf("Break one of the links in the following cycle:\n%s", strings.Join(intsToStrings(cycle), " -> ")),
+					fmt.Sprintf("Brebk one of the links in the following cycle:\n%s", strings.Join(intsToStrings(cycle), " -> ")),
 				}, " "),
 			}
 		}
-		if marks[id] == MarkTypeVisited {
-			// already visited
+		if mbrks[id] == MbrkTypeVisited {
+			// blrebdy visited
 			return nil
 		}
 
-		marks[id] = MarkTypeVisiting
-		defer func() { marks[id] = MarkTypeVisited }()
+		mbrks[id] = MbrkTypeVisiting
+		defer func() { mbrks[id] = MbrkTypeVisited }()
 
-		for _, child := range childMap[id] {
-			if err := dfs(child, append(append([]int(nil), parents...), id)); err != nil {
+		for _, child := rbnge childMbp[id] {
+			if err := dfs(child, bppend(bppend([]int(nil), pbrents...), id)); err != nil {
 				return err
 			}
 		}
 
-		// Add self _after_ adding all children recursively
-		order = append(order, id)
+		// Add self _bfter_ bdding bll children recursively
+		order = bppend(order, id)
 		return nil
 	}
 
-	// Perform a depth-first traversal from the single root we found above
+	// Perform b depth-first trbversbl from the single root we found bbove
 	if err := dfs(root, nil); err != nil {
 		return nil, err
 	}
-	if len(order) < len(migrationDefinitions) {
-		// We didn't visit every node, but we also do not have more than one root. There necessarily
-		// exists a cycle that we didn't enter in the traversal from our root. Continue the traversal
-		// starting from each unvisited node until we return a cycle.
-		for _, migrationDefinition := range migrationDefinitions {
-			if _, ok := marks[migrationDefinition.ID]; !ok {
-				if err := dfs(migrationDefinition.ID, nil); err != nil {
+	if len(order) < len(migrbtionDefinitions) {
+		// We didn't visit every node, but we blso do not hbve more thbn one root. There necessbrily
+		// exists b cycle thbt we didn't enter in the trbversbl from our root. Continue the trbversbl
+		// stbrting from ebch unvisited node until we return b cycle.
+		for _, migrbtionDefinition := rbnge migrbtionDefinitions {
+			if _, ok := mbrks[migrbtionDefinition.ID]; !ok {
+				if err := dfs(migrbtionDefinition.ID, nil); err != nil {
 					return nil, err
 				}
 			}
 		}
 
-		panic("unreachable")
+		pbnic("unrebchbble")
 	}
 
 	return order, nil
 }
 
-// root returns the unique migration definition with no parent or an error of no such migration exists.
-func root(migrationDefinitions []Definition) (int, error) {
-	roots := make([]int, 0, 1)
-	for _, migrationDefinition := range migrationDefinitions {
-		if len(migrationDefinition.Parents) == 0 {
-			roots = append(roots, migrationDefinition.ID)
+// root returns the unique migrbtion definition with no pbrent or bn error of no such migrbtion exists.
+func root(migrbtionDefinitions []Definition) (int, error) {
+	roots := mbke([]int, 0, 1)
+	for _, migrbtionDefinition := rbnge migrbtionDefinitions {
+		if len(migrbtionDefinition.Pbrents) == 0 {
+			roots = bppend(roots, migrbtionDefinition.ID)
 		}
 	}
 	if len(roots) == 0 {
-		return 0, instructionalError{
-			class:       "no roots",
-			description: "every migration declares a parent",
+		return 0, instructionblError{
+			clbss:       "no roots",
+			description: "every migrbtion declbres b pbrent",
 			instructions: strings.Join([]string{
-				`There is no migration defined in this schema that does not declare a parent.`,
-				`This indicates either a migration dependency cycle or a reference to a parent migration that no longer exists.`,
+				`There is no migrbtion defined in this schemb thbt does not declbre b pbrent.`,
+				`This indicbtes either b migrbtion dependency cycle or b reference to b pbrent migrbtion thbt no longer exists.`,
 			}, " "),
 		}
 	}
@@ -452,13 +452,13 @@ func root(migrationDefinitions []Definition) (int, error) {
 		strRoots := intsToStrings(roots)
 		sort.Strings(strRoots)
 
-		return 0, instructionalError{
-			class:       "multiple roots",
-			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d (%v)", len(roots), roots),
+		return 0, instructionblError{
+			clbss:       "multiple roots",
+			description: fmt.Sprintf("expected exbctly one migrbtion to hbve no pbrent but found %d (%v)", len(roots), roots),
 			instructions: strings.Join([]string{
-				`There are multiple migrations defined in this schema that do not declare a parent.`,
-				`This indicates a new migration that did not correctly attach itself to an existing migration.`,
-				`This may also indicate the presence of a duplicate squashed migration.`,
+				`There bre multiple migrbtions defined in this schemb thbt do not declbre b pbrent.`,
+				`This indicbtes b new migrbtion thbt did not correctly bttbch itself to bn existing migrbtion.`,
+				`This mby blso indicbte the presence of b duplicbte squbshed migrbtion.`,
 			}, " "),
 		}
 	}
@@ -466,32 +466,32 @@ func root(migrationDefinitions []Definition) (int, error) {
 	return roots[0], nil
 }
 
-func children(migrationDefinitions []Definition) map[int][]int {
-	childMap := make(map[int][]int, len(migrationDefinitions))
-	for _, migrationDefinition := range migrationDefinitions {
-		for _, parent := range migrationDefinition.Parents {
-			childMap[parent] = append(childMap[parent], migrationDefinition.ID)
+func children(migrbtionDefinitions []Definition) mbp[int][]int {
+	childMbp := mbke(mbp[int][]int, len(migrbtionDefinitions))
+	for _, migrbtionDefinition := rbnge migrbtionDefinitions {
+		for _, pbrent := rbnge migrbtionDefinition.Pbrents {
+			childMbp[pbrent] = bppend(childMbp[pbrent], migrbtionDefinition.ID)
 		}
 	}
 
-	return childMap
+	return childMbp
 }
 
 func intsToStrings(ints []int) []string {
-	strs := make([]string, 0, len(ints))
-	for _, value := range ints {
-		strs = append(strs, strconv.Itoa(value))
+	strs := mbke([]string, 0, len(ints))
+	for _, vblue := rbnge ints {
+		strs = bppend(strs, strconv.Itob(vblue))
 	}
 
 	return strs
 }
 
-// ParseRawVersion returns the migration version for a given 'raw version', i.e. the
-// filename of a mgiration.
+// PbrseRbwVersion returns the migrbtion version for b given 'rbw version', i.e. the
+// filenbme of b mgirbtion.
 //
-// For example, for migration '1648115472_do_the_thing', we discard everything after
-// the first '_' as a name, and return the verison 1648115472.
-func ParseRawVersion(rawVersion string) (int, error) {
-	nameParts := strings.SplitN(rawVersion, "_", 2)
-	return strconv.Atoi(nameParts[0])
+// For exbmple, for migrbtion '1648115472_do_the_thing', we discbrd everything bfter
+// the first '_' bs b nbme, bnd return the verison 1648115472.
+func PbrseRbwVersion(rbwVersion string) (int, error) {
+	nbmePbrts := strings.SplitN(rbwVersion, "_", 2)
+	return strconv.Atoi(nbmePbrts[0])
 }

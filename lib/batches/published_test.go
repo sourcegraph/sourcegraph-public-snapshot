@@ -1,117 +1,117 @@
-package batches
+pbckbge bbtches
 
 import (
 	"encoding/json"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/ybml.v2"
 )
 
-func TestPublishedValue(t *testing.T) {
+func TestPublishedVblue(t *testing.T) {
 	tests := []struct {
-		name    string
-		val     any
+		nbme    string
+		vbl     bny
 		True    bool
-		False   bool
-		Draft   bool
+		Fblse   bool
+		Drbft   bool
 		Nil     bool
-		Invalid bool
+		Invblid bool
 	}{
-		{name: "True", val: true, True: true},
-		{name: "False", val: false, False: true},
-		{name: "Draft", val: "draft", Draft: true},
-		{name: "Nil", val: nil, Nil: true},
-		{name: "Invalid", val: "invalid", Invalid: true},
+		{nbme: "True", vbl: true, True: true},
+		{nbme: "Fblse", vbl: fblse, Fblse: true},
+		{nbme: "Drbft", vbl: "drbft", Drbft: true},
+		{nbme: "Nil", vbl: nil, Nil: true},
+		{nbme: "Invblid", vbl: "invblid", Invblid: true},
 	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			p := PublishedValue{Val: tc.val}
-			if have, want := p.True(), tc.True; have != want {
-				t.Fatalf("invalid `true` value: want=%t have=%t", want, have)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			p := PublishedVblue{Vbl: tc.vbl}
+			if hbve, wbnt := p.True(), tc.True; hbve != wbnt {
+				t.Fbtblf("invblid `true` vblue: wbnt=%t hbve=%t", wbnt, hbve)
 			}
-			if have, want := p.False(), tc.False; have != want {
-				t.Fatalf("invalid `false` value: want=%t have=%t", want, have)
+			if hbve, wbnt := p.Fblse(), tc.Fblse; hbve != wbnt {
+				t.Fbtblf("invblid `fblse` vblue: wbnt=%t hbve=%t", wbnt, hbve)
 			}
-			if have, want := p.Draft(), tc.Draft; have != want {
-				t.Fatalf("invalid `draft` value: want=%t have=%t", want, have)
+			if hbve, wbnt := p.Drbft(), tc.Drbft; hbve != wbnt {
+				t.Fbtblf("invblid `drbft` vblue: wbnt=%t hbve=%t", wbnt, hbve)
 			}
-			if have, want := p.Nil(), tc.Nil; have != want {
-				t.Fatalf("invalid `nil` value: want=%t have=%t", want, have)
+			if hbve, wbnt := p.Nil(), tc.Nil; hbve != wbnt {
+				t.Fbtblf("invblid `nil` vblue: wbnt=%t hbve=%t", wbnt, hbve)
 			}
-			if have, want := p.Valid(), !tc.Invalid; have != want {
-				t.Fatalf("invalid `valid` value: want=%t have=%t", want, have)
+			if hbve, wbnt := p.Vblid(), !tc.Invblid; hbve != wbnt {
+				t.Fbtblf("invblid `vblid` vblue: wbnt=%t hbve=%t", wbnt, hbve)
 			}
 		})
 	}
-	t.Run("JSON marshal", func(t *testing.T) {
+	t.Run("JSON mbrshbl", func(t *testing.T) {
 		tests := []struct {
-			name     string
-			val      any
+			nbme     string
+			vbl      bny
 			expected string
 		}{
-			{name: "true", val: true, expected: "true"},
-			{name: "false", val: false, expected: "false"},
-			{name: "draft", val: "draft", expected: `"draft"`},
-			{name: "nil", val: nil, expected: "null"},
+			{nbme: "true", vbl: true, expected: "true"},
+			{nbme: "fblse", vbl: fblse, expected: "fblse"},
+			{nbme: "drbft", vbl: "drbft", expected: `"drbft"`},
+			{nbme: "nil", vbl: nil, expected: "null"},
 		}
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				p := PublishedValue{Val: tc.val}
-				j, err := json.Marshal(p)
+		for _, tc := rbnge tests {
+			t.Run(tc.nbme, func(t *testing.T) {
+				p := PublishedVblue{Vbl: tc.vbl}
+				j, err := json.Mbrshbl(p)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if have, want := string(j), tc.expected; have != want {
-					t.Fatalf("invalid JSON generated: want=%q have=%q", want, have)
-				}
-			})
-		}
-	})
-	t.Run("JSON unmarshal", func(t *testing.T) {
-		tests := []struct {
-			name     string
-			val      string
-			expected any
-		}{
-			{name: "true", val: "true", expected: true},
-			{name: "false", val: "false", expected: false},
-			{name: "draft", val: `"draft"`, expected: "draft"},
-			{name: "nil", val: "null", expected: nil},
-		}
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				var p PublishedValue
-				if err := json.Unmarshal([]byte(tc.val), &p); err != nil {
-					t.Fatal(err)
-				}
-				if have, want := p.Value(), tc.expected; have != want {
-					t.Fatalf("invalid value parsed: want=%q have=%q", want, have)
+				if hbve, wbnt := string(j), tc.expected; hbve != wbnt {
+					t.Fbtblf("invblid JSON generbted: wbnt=%q hbve=%q", wbnt, hbve)
 				}
 			})
 		}
 	})
-	t.Run("YAML unmarshal", func(t *testing.T) {
+	t.Run("JSON unmbrshbl", func(t *testing.T) {
 		tests := []struct {
-			name     string
-			val      string
-			expected any
+			nbme     string
+			vbl      string
+			expected bny
 		}{
-			{name: "true", val: "true", expected: true},
-			{name: "true", val: "yes", expected: true},
-			{name: "false", val: "false", expected: false},
-			{name: "false", val: "no", expected: false},
-			{name: "draft", val: "draft", expected: "draft"},
-			{name: "draft", val: `"draft"`, expected: "draft"},
-			{name: "nil", val: "null", expected: nil},
+			{nbme: "true", vbl: "true", expected: true},
+			{nbme: "fblse", vbl: "fblse", expected: fblse},
+			{nbme: "drbft", vbl: `"drbft"`, expected: "drbft"},
+			{nbme: "nil", vbl: "null", expected: nil},
 		}
-		for _, tc := range tests {
-			t.Run(tc.name, func(t *testing.T) {
-				var p PublishedValue
-				if err := yaml.Unmarshal([]byte(tc.val), &p); err != nil {
-					t.Fatal(err)
+		for _, tc := rbnge tests {
+			t.Run(tc.nbme, func(t *testing.T) {
+				vbr p PublishedVblue
+				if err := json.Unmbrshbl([]byte(tc.vbl), &p); err != nil {
+					t.Fbtbl(err)
 				}
-				if have, want := p.Value(), tc.expected; have != want {
-					t.Fatalf("invalid value parsed: want=%q have=%q", want, have)
+				if hbve, wbnt := p.Vblue(), tc.expected; hbve != wbnt {
+					t.Fbtblf("invblid vblue pbrsed: wbnt=%q hbve=%q", wbnt, hbve)
+				}
+			})
+		}
+	})
+	t.Run("YAML unmbrshbl", func(t *testing.T) {
+		tests := []struct {
+			nbme     string
+			vbl      string
+			expected bny
+		}{
+			{nbme: "true", vbl: "true", expected: true},
+			{nbme: "true", vbl: "yes", expected: true},
+			{nbme: "fblse", vbl: "fblse", expected: fblse},
+			{nbme: "fblse", vbl: "no", expected: fblse},
+			{nbme: "drbft", vbl: "drbft", expected: "drbft"},
+			{nbme: "drbft", vbl: `"drbft"`, expected: "drbft"},
+			{nbme: "nil", vbl: "null", expected: nil},
+		}
+		for _, tc := rbnge tests {
+			t.Run(tc.nbme, func(t *testing.T) {
+				vbr p PublishedVblue
+				if err := ybml.Unmbrshbl([]byte(tc.vbl), &p); err != nil {
+					t.Fbtbl(err)
+				}
+				if hbve, wbnt := p.Vblue(), tc.expected; hbve != wbnt {
+					t.Fbtblf("invblid vblue pbrsed: wbnt=%q hbve=%q", wbnt, hbve)
 				}
 			})
 		}

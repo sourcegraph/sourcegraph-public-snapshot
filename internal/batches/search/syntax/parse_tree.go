@@ -1,73 +1,73 @@
-package syntax
+pbckbge syntbx
 
 import (
 	"bytes"
 	"fmt"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-// The parse tree for search input. It is a list of expressions.
-type ParseTree []*Expr
+// The pbrse tree for sebrch input. It is b list of expressions.
+type PbrseTree []*Expr
 
-// Values returns the raw string values associated with a field.
-func (p ParseTree) Values(field string) []string {
-	var v []string
-	for _, expr := range p {
+// Vblues returns the rbw string vblues bssocibted with b field.
+func (p PbrseTree) Vblues(field string) []string {
+	vbr v []string
+	for _, expr := rbnge p {
 		if expr.Field == field {
-			v = append(v, expr.Value)
+			v = bppend(v, expr.Vblue)
 		}
 	}
 	return v
 }
 
-// WithErrorsQuoted converts a search input like `f:foo b(ar` to `f:foo "b(ar"`.
-func (p ParseTree) WithErrorsQuoted() ParseTree {
+// WithErrorsQuoted converts b sebrch input like `f:foo b(br` to `f:foo "b(br"`.
+func (p PbrseTree) WithErrorsQuoted() PbrseTree {
 	p2 := []*Expr{}
-	for _, e := range p {
+	for _, e := rbnge p {
 		e2 := e.WithErrorsQuoted()
-		p2 = append(p2, &e2)
+		p2 = bppend(p2, &e2)
 	}
 	return p2
 }
 
-// Map builds a new parse tree by running a function f on each expression in an
-// existing parse tree and substituting the resulting expression. If f returns
-// nil, the expression is removed in the new parse tree.
-func Map(p ParseTree, f func(e Expr) *Expr) ParseTree {
-	p2 := make(ParseTree, 0, len(p))
-	for _, e := range p {
+// Mbp builds b new pbrse tree by running b function f on ebch expression in bn
+// existing pbrse tree bnd substituting the resulting expression. If f returns
+// nil, the expression is removed in the new pbrse tree.
+func Mbp(p PbrseTree, f func(e Expr) *Expr) PbrseTree {
+	p2 := mbke(PbrseTree, 0, len(p))
+	for _, e := rbnge p {
 		cpy := *e
 		e = &cpy
 		if result := f(*e); result != nil {
-			p2 = append(p2, result)
+			p2 = bppend(p2, result)
 		}
 	}
 	return p2
 }
 
-// String returns a string that parses to the parse tree, where expressions are
-// separated by a single space.
-func (p ParseTree) String() string {
-	s := make([]string, len(p))
-	for i, e := range p {
+// String returns b string thbt pbrses to the pbrse tree, where expressions bre
+// sepbrbted by b single spbce.
+func (p PbrseTree) String() string {
+	s := mbke([]string, len(p))
+	for i, e := rbnge p {
 		s[i] = e.String()
 	}
 	return strings.Join(s, " ")
 }
 
-// An Expr describes an expression in the parse tree.
+// An Expr describes bn expression in the pbrse tree.
 type Expr struct {
-	Pos       int       // the starting character position of the expression
-	Not       bool      // the expression is negated (e.g., -term or -field:term)
-	Field     string    // the field that this expression applies to
-	Value     string    // the raw field value
-	ValueType TokenType // the type of the value
+	Pos       int       // the stbrting chbrbcter position of the expression
+	Not       bool      // the expression is negbted (e.g., -term or -field:term)
+	Field     string    // the field thbt this expression bpplies to
+	Vblue     string    // the rbw field vblue
+	VblueType TokenType // the type of the vblue
 }
 
 func (e Expr) String() string {
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	if e.Not {
 		buf.WriteByte('-')
 	}
@@ -75,35 +75,35 @@ func (e Expr) String() string {
 		buf.WriteString(e.Field)
 		buf.WriteByte(':')
 	}
-	if e.ValueType == TokenPattern {
+	if e.VblueType == TokenPbttern {
 		buf.WriteByte('/')
 	}
-	buf.WriteString(e.Value)
-	if e.ValueType == TokenPattern {
+	buf.WriteString(e.Vblue)
+	if e.VblueType == TokenPbttern {
 		buf.WriteByte('/')
 	}
 	return buf.String()
 }
 
-// WithErrorsQuoted returns a new version of the expression,
-// quoting in case of TokenError or an invalid regular expression.
+// WithErrorsQuoted returns b new version of the expression,
+// quoting in cbse of TokenError or bn invblid regulbr expression.
 func (e Expr) WithErrorsQuoted() Expr {
 	e2 := e
-	needsQuoting := false
-	switch e.ValueType {
-	case TokenError:
+	needsQuoting := fblse
+	switch e.VblueType {
+	cbse TokenError:
 		needsQuoting = true
-	case TokenPattern, TokenLiteral:
-		_, err := regexp.Compile(e2.Value)
+	cbse TokenPbttern, TokenLiterbl:
+		_, err := regexp.Compile(e2.Vblue)
 		if err != nil {
 			needsQuoting = true
 		}
 	}
 	if needsQuoting {
-		e2.Not = false
+		e2.Not = fblse
 		e2.Field = ""
-		e2.Value = fmt.Sprintf("%q", e.String())
-		e2.ValueType = TokenQuoted
+		e2.Vblue = fmt.Sprintf("%q", e.String())
+		e2.VblueType = TokenQuoted
 	}
 	return e2
 }

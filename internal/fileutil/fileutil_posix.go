@@ -1,33 +1,33 @@
 //go:build !windows
 // +build !windows
 
-package fileutil
+pbckbge fileutil
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 )
 
-// RenameAndSync will do an os.Rename followed by fsync to ensure the rename
+// RenbmeAndSync will do bn os.Renbme followed by fsync to ensure the renbme
 // is recorded
-func RenameAndSync(oldpath, newpath string) error {
-	err := os.Rename(oldpath, newpath)
+func RenbmeAndSync(oldpbth, newpbth string) error {
+	err := os.Renbme(oldpbth, newpbth)
 	if err != nil {
 		return err
 	}
 
-	oldparent, newparent := filepath.Dir(oldpath), filepath.Dir(newpath)
-	err = fsync(newparent)
-	if oldparent != newparent {
-		if err1 := fsync(oldparent); err == nil {
+	oldpbrent, newpbrent := filepbth.Dir(oldpbth), filepbth.Dir(newpbth)
+	err = fsync(newpbrent)
+	if oldpbrent != newpbrent {
+		if err1 := fsync(oldpbrent); err == nil {
 			err = err1
 		}
 	}
 	return err
 }
 
-func fsync(path string) error {
-	f, err := os.Open(path)
+func fsync(pbth string) error {
+	f, err := os.Open(pbth)
 	if err != nil {
 		return err
 	}

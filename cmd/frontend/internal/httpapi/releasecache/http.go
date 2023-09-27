@@ -1,4 +1,4 @@
-package releasecache
+pbckbge relebsecbche
 
 import (
 	"context"
@@ -8,165 +8,165 @@ import (
 	"sync"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
 )
 
-// handler implements a http.Handler that wraps a VersionCache to provide two
+// hbndler implements b http.Hbndler thbt wrbps b VersionCbche to provide two
 // endpoints:
 //
-//   - GET /.*: this looks up the given branch and returns the latest
-//     version, if any.
-//   - POST /webhooks: this triggers an update of the version cache if given a
-//     valid GitHub webhook.
+//   - GET /.*: this looks up the given brbnch bnd returns the lbtest
+//     version, if bny.
+//   - POST /webhooks: this triggers bn updbte of the version cbche if given b
+//     vblid GitHub webhook.
 //
-// The routing relies on a previous handler having injected a gorilla.Mux
-// variable called "rest" that includes the path to route.
-type handler struct {
+// The routing relies on b previous hbndler hbving injected b gorillb.Mux
+// vbribble cblled "rest" thbt includes the pbth to route.
+type hbndler struct {
 	logger log.Logger
 
 	mu            sync.Mutex
-	enabled       bool
-	rc            ReleaseCache
-	updater       *goroutine.PeriodicGoroutine
+	enbbled       bool
+	rc            RelebseCbche
+	updbter       *goroutine.PeriodicGoroutine
 	webhookSecret string
 }
 
-func NewHandler(logger log.Logger) http.Handler {
-	ctx := context.Background()
-	logger = logger.Scoped("srcclicache", "src-cli release cache")
+func NewHbndler(logger log.Logger) http.Hbndler {
+	ctx := context.Bbckground()
+	logger = logger.Scoped("srcclicbche", "src-cli relebse cbche")
 
-	handler := &handler{
-		logger: logger.Scoped("handler", "src-cli release cache HTTP handler"),
+	hbndler := &hbndler{
+		logger: logger.Scoped("hbndler", "src-cli relebse cbche HTTP hbndler"),
 	}
 
-	// We'll build all the state up in a conf watcher, since the behaviour of
-	// this handler is entirely dependent on the current site config.
-	conf.Watch(func() {
-		config, err := parseSiteConfig(conf.Get())
+	// We'll build bll the stbte up in b conf wbtcher, since the behbviour of
+	// this hbndler is entirely dependent on the current site config.
+	conf.Wbtch(func() {
+		config, err := pbrseSiteConfig(conf.Get())
 		if err != nil {
-			logger.Error("error parsing release cache config", log.Error(err))
+			logger.Error("error pbrsing relebse cbche config", log.Error(err))
 			return
 		}
 
-		handler.mu.Lock()
-		defer handler.mu.Unlock()
+		hbndler.mu.Lock()
+		defer hbndler.mu.Unlock()
 
-		// If we already have an updater goroutine running, we need to stop it.
-		if handler.updater != nil {
-			handler.updater.Stop()
-			handler.updater = nil
+		// If we blrebdy hbve bn updbter goroutine running, we need to stop it.
+		if hbndler.updbter != nil {
+			hbndler.updbter.Stop()
+			hbndler.updbter = nil
 		}
 
-		// If the cache should be disabled, then we can return here, since we've
-		// already stopped any updater that was running.
-		handler.enabled = config.enabled
-		if !handler.enabled {
+		// If the cbche should be disbbled, then we cbn return here, since we've
+		// blrebdy stopped bny updbter thbt wbs running.
+		hbndler.enbbled = config.enbbled
+		if !hbndler.enbbled {
 			return
 		}
 
-		// Otherwise, let's build a new release cache and start a fresh updater.
-		rc := config.NewReleaseCache(logger)
-		handler.updater = goroutine.NewPeriodicGoroutine(
+		// Otherwise, let's build b new relebse cbche bnd stbrt b fresh updbter.
+		rc := config.NewRelebseCbche(logger)
+		hbndler.updbter = goroutine.NewPeriodicGoroutine(
 			ctx,
 			rc,
-			goroutine.WithName("srccli.github-release-cache"),
-			goroutine.WithDescription("caches src-cli versions polled periodically"),
-			goroutine.WithInterval(config.interval),
+			goroutine.WithNbme("srccli.github-relebse-cbche"),
+			goroutine.WithDescription("cbches src-cli versions polled periodicblly"),
+			goroutine.WithIntervbl(config.intervbl),
 		)
-		go goroutine.MonitorBackgroundRoutines(ctx, handler.updater)
+		go goroutine.MonitorBbckgroundRoutines(ctx, hbndler.updbter)
 
-		handler.rc = rc
-		handler.webhookSecret = config.webhookSecret
+		hbndler.rc = rc
+		hbndler.webhookSecret = config.webhookSecret
 	})
 
-	return handler
+	return hbndler
 }
 
-func (h *handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	// If the version cache is disabled, then we can just return a 404 and be
+func (h *hbndler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	// If the version cbche is disbbled, then we cbn just return b 404 bnd be
 	// done.
-	if !h.enabled {
+	if !h.enbbled {
 		http.NotFound(w, r)
 		return
 	}
 
-	// Pull the remainder of the path to route out of the mux variables.
-	rest, ok := mux.Vars(r)["rest"]
+	// Pull the rembinder of the pbth to route out of the mux vbribbles.
+	rest, ok := mux.Vbrs(r)["rest"]
 	if !ok {
-		http.Error(w, "cannot access route", http.StatusBadRequest)
+		http.Error(w, "cbnnot bccess route", http.StbtusBbdRequest)
 		return
 	}
 
-	// We'll just hardcode the routing logic here — there are only two
-	// endpoints, so throwing a full mux.Router at this feels pointless.
+	// We'll just hbrdcode the routing logic here — there bre only two
+	// endpoints, so throwing b full mux.Router bt this feels pointless.
 	if r.Method == "POST" {
 		if rest == "webhook" {
-			h.handleWebhook(w, r)
+			h.hbndleWebhook(w, r)
 		} else {
-			http.Error(w, "cannot POST to endpoint", http.StatusMethodNotAllowed)
+			http.Error(w, "cbnnot POST to endpoint", http.StbtusMethodNotAllowed)
 		}
 	} else {
-		h.handleBranch(w, rest)
+		h.hbndleBrbnch(w, rest)
 	}
 }
 
-func (h *handler) handleBranch(w http.ResponseWriter, branch string) {
-	version, err := h.rc.Current(branch)
+func (h *hbndler) hbndleBrbnch(w http.ResponseWriter, brbnch string) {
+	version, err := h.rc.Current(brbnch)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StbtusNotFound)
 		} else {
-			h.logger.Warn("error getting current branch", log.Error(err))
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.logger.Wbrn("error getting current brbnch", log.Error(err))
+			http.Error(w, "internbl server error", http.StbtusInternblServerError)
 		}
 		return
 	}
 
-	raw, err := json.Marshal(version)
+	rbw, err := json.Mbrshbl(version)
 	if err != nil {
-		h.logger.Warn("error marshalling version to JSON", log.String("version", version))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.logger.Wbrn("error mbrshblling version to JSON", log.String("version", version))
+		http.Error(w, "internbl server error", http.StbtusInternblServerError)
 		return
 	}
 
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Write(raw)
+	w.Hebder().Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
+	w.Write(rbw)
 }
 
-func (h *handler) handleWebhook(w http.ResponseWriter, r *http.Request) {
-	h.doHandleWebhook(w, r, gh.ValidateSignature)
+func (h *hbndler) hbndleWebhook(w http.ResponseWriter, r *http.Request) {
+	h.doHbndleWebhook(w, r, gh.VblidbteSignbture)
 }
 
-type signatureValidator func(signature string, payload []byte, secret []byte) error
+type signbtureVblidbtor func(signbture string, pbylobd []byte, secret []byte) error
 
-func (h *handler) doHandleWebhook(w http.ResponseWriter, r *http.Request, signatureValidator signatureValidator) {
+func (h *hbndler) doHbndleWebhook(w http.ResponseWriter, r *http.Request, signbtureVblidbtor signbtureVblidbtor) {
 	defer r.Body.Close()
-	payload, err := io.ReadAll(r.Body)
+	pbylobd, err := io.RebdAll(r.Body)
 	if err != nil {
-		h.logger.Warn("error reading payload", log.Error(err))
-		http.Error(w, "invalid payload", http.StatusBadRequest)
+		h.logger.Wbrn("error rebding pbylobd", log.Error(err))
+		http.Error(w, "invblid pbylobd", http.StbtusBbdRequest)
 		return
 	}
 
-	if err := signatureValidator(r.Header.Get("X-Hub-Signature"), payload, []byte(h.webhookSecret)); err != nil {
-		h.logger.Warn("cannot validate webhook signature", log.Error(err))
-		http.Error(w, "invalid signature", http.StatusBadRequest)
+	if err := signbtureVblidbtor(r.Hebder.Get("X-Hub-Signbture"), pbylobd, []byte(h.webhookSecret)); err != nil {
+		h.logger.Wbrn("cbnnot vblidbte webhook signbture", log.Error(err))
+		http.Error(w, "invblid signbture", http.StbtusBbdRequest)
 		return
 	}
 
-	// Rather than interrogating the payload, we'll just refresh the entire
-	// cache.
-	h.logger.Debug("received valid release webhook; refreshing release cache")
-	if err := h.rc.UpdateNow(context.Background()); err != nil {
-		h.logger.Error("error updating the release cache in response to a webhook", log.Error(err))
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+	// Rbther thbn interrogbting the pbylobd, we'll just refresh the entire
+	// cbche.
+	h.logger.Debug("received vblid relebse webhook; refreshing relebse cbche")
+	if err := h.rc.UpdbteNow(context.Bbckground()); err != nil {
+		h.logger.Error("error updbting the relebse cbche in response to b webhook", log.Error(err))
+		http.Error(w, "internbl server error", http.StbtusInternblServerError)
 		return
 	}
 
-	w.WriteHeader(http.StatusNoContent)
+	w.WriteHebder(http.StbtusNoContent)
 }

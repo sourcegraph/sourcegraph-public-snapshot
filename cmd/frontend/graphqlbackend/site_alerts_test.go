@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"strings"
@@ -6,173 +6,173 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
-	"github.com/sourcegraph/sourcegraph/schema"
+	srcprometheus "github.com/sourcegrbph/sourcegrbph/internbl/src-prometheus"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func Test_determineOutOfDateAlert(t *testing.T) {
+func Test_determineOutOfDbteAlert(t *testing.T) {
 	tests := []struct {
-		name                              string
-		offline, admin                    bool
-		monthsOutOfDate                   int
-		wantOffline, wantOnline           *Alert
-		wantOfflineAdmin, wantOnlineAdmin *Alert
+		nbme                              string
+		offline, bdmin                    bool
+		monthsOutOfDbte                   int
+		wbntOffline, wbntOnline           *Alert
+		wbntOfflineAdmin, wbntOnlineAdmin *Alert
 	}{
 		{
-			name:            "0_months",
-			monthsOutOfDate: 0,
+			nbme:            "0_months",
+			monthsOutOfDbte: 0,
 		},
 		{
-			name:             "1_months",
-			monthsOutOfDate:  1,
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeInfo, MessageValue: "Sourcegraph is 1+ months out of date, for the latest features and bug fixes please upgrade ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-1"},
+			nbme:             "1_months",
+			monthsOutOfDbte:  1,
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeInfo, MessbgeVblue: "Sourcegrbph is 1+ months out of dbte, for the lbtest febtures bnd bug fixes plebse upgrbde ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-1"},
 		},
 		{
-			name:             "2_months",
-			monthsOutOfDate:  2,
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeInfo, MessageValue: "Sourcegraph is 2+ months out of date, for the latest features and bug fixes please upgrade ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-2"},
+			nbme:             "2_months",
+			monthsOutOfDbte:  2,
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeInfo, MessbgeVblue: "Sourcegrbph is 2+ months out of dbte, for the lbtest febtures bnd bug fixes plebse upgrbde ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-2"},
 		},
 		{
-			name:             "3_months",
-			monthsOutOfDate:  3,
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 3+ months out of date, you may be missing important security or bug fixes. Users will be notified at 4+ months. ([changelog](http://about.sourcegraph.com/changelog))"},
-			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 3+ months out of date, you may be missing important security or bug fixes. Users will be notified at 4+ months. ([changelog](http://about.sourcegraph.com/changelog))"},
+			nbme:             "3_months",
+			monthsOutOfDbte:  3,
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 3+ months out of dbte, you mby be missing importbnt security or bug fixes. Users will be notified bt 4+ months. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
+			wbntOnlineAdmin:  &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 3+ months out of dbte, you mby be missing importbnt security or bug fixes. Users will be notified bt 4+ months. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
 		},
 		{
-			name:             "4_months",
-			monthsOutOfDate:  4,
-			wantOffline:      &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 4+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-4"},
-			wantOnline:       &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 4+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-4"},
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 4+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
-			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 4+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
+			nbme:             "4_months",
+			monthsOutOfDbte:  4,
+			wbntOffline:      &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 4+ months out of dbte, bsk your site bdministrbtor to upgrbde for the lbtest febtures bnd bug fixes. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-4"},
+			wbntOnline:       &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 4+ months out of dbte, bsk your site bdministrbtor to upgrbde for the lbtest febtures bnd bug fixes. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-4"},
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 4+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
+			wbntOnlineAdmin:  &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 4+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
 		},
 		{
-			name:             "5_months",
-			monthsOutOfDate:  5,
-			wantOffline:      &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 5+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-5"},
-			wantOnline:       &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 5+ months out of date, ask your site administrator to upgrade for the latest features and bug fixes. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-5"},
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 5+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
-			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 5+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
+			nbme:             "5_months",
+			monthsOutOfDbte:  5,
+			wbntOffline:      &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 5+ months out of dbte, bsk your site bdministrbtor to upgrbde for the lbtest febtures bnd bug fixes. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-5"},
+			wbntOnline:       &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 5+ months out of dbte, bsk your site bdministrbtor to upgrbde for the lbtest febtures bnd bug fixes. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-5"},
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 5+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
+			wbntOnlineAdmin:  &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 5+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
 		},
 		{
-			name:             "6_months",
-			monthsOutOfDate:  6,
-			wantOffline:      &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 6+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-6"},
-			wantOnline:       &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 6+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-6"},
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
-			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 6+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
+			nbme:             "6_months",
+			monthsOutOfDbte:  6,
+			wbntOffline:      &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 6+ months out of dbte, you mby be missing importbnt security or bug fixes. Ask your site bdministrbtor to upgrbde. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-6"},
+			wbntOnline:       &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 6+ months out of dbte, you mby be missing importbnt security or bug fixes. Ask your site bdministrbtor to upgrbde. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-6"},
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 6+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
+			wbntOnlineAdmin:  &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 6+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
 		},
 		{
-			name:             "7_months",
-			monthsOutOfDate:  7,
-			wantOffline:      &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 7+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-7"},
-			wantOnline:       &Alert{TypeValue: AlertTypeWarning, MessageValue: "Sourcegraph is 7+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-7"},
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
-			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 7+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
+			nbme:             "7_months",
+			monthsOutOfDbte:  7,
+			wbntOffline:      &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 7+ months out of dbte, you mby be missing importbnt security or bug fixes. Ask your site bdministrbtor to upgrbde. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-7"},
+			wbntOnline:       &Alert{TypeVblue: AlertTypeWbrning, MessbgeVblue: "Sourcegrbph is 7+ months out of dbte, you mby be missing importbnt security or bug fixes. Ask your site bdministrbtor to upgrbde. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-7"},
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 7+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
+			wbntOnlineAdmin:  &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 7+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
 		},
 		{
-			name:             "13_months",
-			monthsOutOfDate:  13,
-			wantOffline:      &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-13"},
-			wantOnline:       &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, you may be missing important security or bug fixes. Ask your site administrator to upgrade. ([changelog](http://about.sourcegraph.com/changelog))", IsDismissibleWithKeyValue: "months-out-of-date-13"},
-			wantOfflineAdmin: &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
-			wantOnlineAdmin:  &Alert{TypeValue: AlertTypeError, MessageValue: "Sourcegraph is 13+ months out of date, you may be missing important security or bug fixes. A notice is shown to users. ([changelog](http://about.sourcegraph.com/changelog))"},
+			nbme:             "13_months",
+			monthsOutOfDbte:  13,
+			wbntOffline:      &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 13+ months out of dbte, you mby be missing importbnt security or bug fixes. Ask your site bdministrbtor to upgrbde. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-13"},
+			wbntOnline:       &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 13+ months out of dbte, you mby be missing importbnt security or bug fixes. Ask your site bdministrbtor to upgrbde. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))", IsDismissibleWithKeyVblue: "months-out-of-dbte-13"},
+			wbntOfflineAdmin: &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 13+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
+			wbntOnlineAdmin:  &Alert{TypeVblue: AlertTypeError, MessbgeVblue: "Sourcegrbph is 13+ months out of dbte, you mby be missing importbnt security or bug fixes. A notice is shown to users. ([chbngelog](http://bbout.sourcegrbph.com/chbngelog))"},
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			gotOffline := determineOutOfDateAlert(false, tst.monthsOutOfDate, true)
-			if diff := cmp.Diff(tst.wantOffline, gotOffline); diff != "" {
-				t.Fatalf("offline:\n%s", diff)
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			gotOffline := determineOutOfDbteAlert(fblse, tst.monthsOutOfDbte, true)
+			if diff := cmp.Diff(tst.wbntOffline, gotOffline); diff != "" {
+				t.Fbtblf("offline:\n%s", diff)
 			}
 
-			gotOnline := determineOutOfDateAlert(false, tst.monthsOutOfDate, false)
-			if diff := cmp.Diff(tst.wantOnline, gotOnline); diff != "" {
-				t.Fatalf("online:\n%s", diff)
+			gotOnline := determineOutOfDbteAlert(fblse, tst.monthsOutOfDbte, fblse)
+			if diff := cmp.Diff(tst.wbntOnline, gotOnline); diff != "" {
+				t.Fbtblf("online:\n%s", diff)
 			}
 
-			gotOfflineAdmin := determineOutOfDateAlert(true, tst.monthsOutOfDate, true)
-			if diff := cmp.Diff(tst.wantOfflineAdmin, gotOfflineAdmin); diff != "" {
-				t.Fatalf("offline admin:\n%s", diff)
+			gotOfflineAdmin := determineOutOfDbteAlert(true, tst.monthsOutOfDbte, true)
+			if diff := cmp.Diff(tst.wbntOfflineAdmin, gotOfflineAdmin); diff != "" {
+				t.Fbtblf("offline bdmin:\n%s", diff)
 			}
 
-			gotOnlineAdmin := determineOutOfDateAlert(true, tst.monthsOutOfDate, false)
-			if diff := cmp.Diff(tst.wantOnlineAdmin, gotOnlineAdmin); diff != "" {
-				t.Fatalf("online admin:\n%s", diff)
+			gotOnlineAdmin := determineOutOfDbteAlert(true, tst.monthsOutOfDbte, fblse)
+			if diff := cmp.Diff(tst.wbntOnlineAdmin, gotOnlineAdmin); diff != "" {
+				t.Fbtblf("online bdmin:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestObservabilityActiveAlertsAlert(t *testing.T) {
-	f := false
-	type args struct {
-		args AlertFuncArgs
+func TestObservbbilityActiveAlertsAlert(t *testing.T) {
+	f := fblse
+	type brgs struct {
+		brgs AlertFuncArgs
 	}
 	tests := []struct {
-		name string
-		args args
-		want []*Alert
+		nbme string
+		brgs brgs
+		wbnt []*Alert
 	}{
 		{
-			name: "do not show anything for non-admin",
-			args: args{
-				args: AlertFuncArgs{
-					IsSiteAdmin: false,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: &f,
+			nbme: "do not show bnything for non-bdmin",
+			brgs: brgs{
+				brgs: AlertFuncArgs{
+					IsSiteAdmin: fblse,
+					ViewerFinblSettings: &schemb.Settings{
+						AlertsHideObservbbilitySiteAlerts: &f,
 					},
 				},
 			},
-			want: nil,
+			wbnt: nil,
 		},
 		{
-			name: "prometheus unreachable for admin",
-			args: args{
-				args: AlertFuncArgs{
+			nbme: "prometheus unrebchbble for bdmin",
+			brgs: brgs{
+				brgs: AlertFuncArgs{
 					IsSiteAdmin: true,
-					ViewerFinalSettings: &schema.Settings{
-						AlertsHideObservabilitySiteAlerts: &f,
+					ViewerFinblSettings: &schemb.Settings{
+						AlertsHideObservbbilitySiteAlerts: &f,
 					},
 				},
 			},
-			want: []*Alert{{
-				TypeValue:    AlertTypeWarning,
-				MessageValue: "Failed to fetch alerts status",
+			wbnt: []*Alert{{
+				TypeVblue:    AlertTypeWbrning,
+				MessbgeVblue: "Fbiled to fetch blerts stbtus",
 			}},
 		},
 		{
-			// blocked by https://github.com/sourcegraph/sourcegraph/issues/12190
-			// see observabilityActiveAlertsAlert docstrings
-			name: "alerts disabled by default for admin",
-			args: args{
-				args: AlertFuncArgs{
+			// blocked by https://github.com/sourcegrbph/sourcegrbph/issues/12190
+			// see observbbilityActiveAlertsAlert docstrings
+			nbme: "blerts disbbled by defbult for bdmin",
+			brgs: brgs{
+				brgs: AlertFuncArgs{
 					IsSiteAdmin: true,
 				},
 			},
-			want: nil,
+			wbnt: nil,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			// observabilityActiveAlertsAlert does not report NewClient errors,
-			// the prometheus validator does
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			// observbbilityActiveAlertsAlert does not report NewClient errors,
+			// the prometheus vblidbtor does
 			prom, err := srcprometheus.NewClient("http://no-prometheus:9090")
 			if err != nil {
 				t.Errorf("unexpected error: %v", err)
 				return
 			}
-			fn := observabilityActiveAlertsAlert(prom)
-			gotAlerts := fn(tt.args.args)
-			if len(gotAlerts) != len(tt.want) {
-				t.Errorf("expected %+v, got %+v", tt.want, gotAlerts)
+			fn := observbbilityActiveAlertsAlert(prom)
+			gotAlerts := fn(tt.brgs.brgs)
+			if len(gotAlerts) != len(tt.wbnt) {
+				t.Errorf("expected %+v, got %+v", tt.wbnt, gotAlerts)
 				return
 			}
-			// test for message substring equality
-			for i, got := range gotAlerts {
-				want := tt.want[i]
-				if got.TypeValue != want.TypeValue || got.IsDismissibleWithKeyValue != want.IsDismissibleWithKeyValue || !strings.Contains(got.MessageValue, want.MessageValue) {
-					t.Errorf("expected %+v, got %+v", want, got)
+			// test for messbge substring equblity
+			for i, got := rbnge gotAlerts {
+				wbnt := tt.wbnt[i]
+				if got.TypeVblue != wbnt.TypeVblue || got.IsDismissibleWithKeyVblue != wbnt.IsDismissibleWithKeyVblue || !strings.Contbins(got.MessbgeVblue, wbnt.MessbgeVblue) {
+					t.Errorf("expected %+v, got %+v", wbnt, got)
 				}
 			}
 		})

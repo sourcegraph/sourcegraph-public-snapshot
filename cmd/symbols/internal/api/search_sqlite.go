@@ -1,94 +1,94 @@
-package api
+pbckbge bpi
 
 import (
 	"context"
 	"strings"
 	"time"
 
-	"github.com/dustin/go-humanize"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/dustin/go-humbnize"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api/observability"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/store"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database/writer"
-	sharedobservability "github.com/sourcegraph/sourcegraph/cmd/symbols/observability"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/internbl/bpi/observbbility"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/internbl/dbtbbbse/store"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/internbl/dbtbbbse/writer"
+	shbredobservbbility "github.com/sourcegrbph/sourcegrbph/cmd/symbols/observbbility"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-const searchTimeout = 60 * time.Second
+const sebrchTimeout = 60 * time.Second
 
-func MakeSqliteSearchFunc(observationCtx *observation.Context, cachedDatabaseWriter writer.CachedDatabaseWriter, db database.DB) types.SearchFunc {
-	operations := sharedobservability.NewOperations(observationCtx)
+func MbkeSqliteSebrchFunc(observbtionCtx *observbtion.Context, cbchedDbtbbbseWriter writer.CbchedDbtbbbseWriter, db dbtbbbse.DB) types.SebrchFunc {
+	operbtions := shbredobservbbility.NewOperbtions(observbtionCtx)
 
-	return func(ctx context.Context, args search.SymbolsParameters) (results []result.Symbol, err error) {
-		ctx, trace, endObservation := operations.Search.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-			args.Repo.Attr(),
-			args.CommitID.Attr(),
-			attribute.String("query", args.Query),
-			attribute.Bool("isRegExp", args.IsRegExp),
-			attribute.Bool("isCaseSensitive", args.IsCaseSensitive),
-			attribute.Int("numIncludePatterns", len(args.IncludePatterns)),
-			attribute.String("includePatterns", strings.Join(args.IncludePatterns, ":")),
-			attribute.String("excludePattern", args.ExcludePattern),
-			attribute.Int("first", args.First),
-			attribute.Float64("timeoutSeconds", args.Timeout.Seconds()),
+	return func(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (results []result.Symbol, err error) {
+		ctx, trbce, endObservbtion := operbtions.Sebrch.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			brgs.Repo.Attr(),
+			brgs.CommitID.Attr(),
+			bttribute.String("query", brgs.Query),
+			bttribute.Bool("isRegExp", brgs.IsRegExp),
+			bttribute.Bool("isCbseSensitive", brgs.IsCbseSensitive),
+			bttribute.Int("numIncludePbtterns", len(brgs.IncludePbtterns)),
+			bttribute.String("includePbtterns", strings.Join(brgs.IncludePbtterns, ":")),
+			bttribute.String("excludePbttern", brgs.ExcludePbttern),
+			bttribute.Int("first", brgs.First),
+			bttribute.Flobt64("timeoutSeconds", brgs.Timeout.Seconds()),
 		}})
 		defer func() {
-			endObservation(1, observation.Args{
-				MetricLabelValues: []string{observability.GetParseAmount(ctx)},
-				Attrs:             []attribute.KeyValue{attribute.String("parseAmount", observability.GetParseAmount(ctx))},
+			endObservbtion(1, observbtion.Args{
+				MetricLbbelVblues: []string{observbbility.GetPbrseAmount(ctx)},
+				Attrs:             []bttribute.KeyVblue{bttribute.String("pbrseAmount", observbbility.GetPbrseAmount(ctx))},
 			})
 		}()
-		ctx = observability.SeedParseAmount(ctx)
+		ctx = observbbility.SeedPbrseAmount(ctx)
 
-		timeout := searchTimeout
-		if args.Timeout > 0 && args.Timeout < timeout {
-			timeout = args.Timeout
+		timeout := sebrchTimeout
+		if brgs.Timeout > 0 && brgs.Timeout < timeout {
+			timeout = brgs.Timeout
 		}
-		ctx, cancel := context.WithTimeout(ctx, timeout)
-		defer cancel()
+		ctx, cbncel := context.WithTimeout(ctx, timeout)
+		defer cbncel()
 		defer func() {
-			if ctx.Err() == nil || !errors.Is(ctx.Err(), context.DeadlineExceeded) {
+			if ctx.Err() == nil || !errors.Is(ctx.Err(), context.DebdlineExceeded) {
 				return
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-			info, err2 := db.GitserverRepos().GetByName(ctx, args.Repo)
+			ctx, cbncel := context.WithTimeout(context.Bbckground(), 5*time.Second)
+			defer cbncel()
+			info, err2 := db.GitserverRepos().GetByNbme(ctx, brgs.Repo)
 			if err2 != nil {
-				err = errors.New("Processing symbols using the SQLite backend is taking a while. If this repository is ~1GB+, enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip).")
+				err = errors.New("Processing symbols using the SQLite bbckend is tbking b while. If this repository is ~1GB+, enbble [Rockskip](https://docs.sourcegrbph.com/code_nbvigbtion/explbnbtions/rockskip).")
 				return
 			}
 			size := info.RepoSizeBytes
 
 			help := ""
 			if size > 1_000_000_000 {
-				help = "Enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)."
+				help = "Enbble [Rockskip](https://docs.sourcegrbph.com/code_nbvigbtion/explbnbtions/rockskip)."
 			} else if size > 100_000_000 {
-				help = "If this persists, enable [Rockskip](https://docs.sourcegraph.com/code_navigation/explanations/rockskip)."
+				help = "If this persists, enbble [Rockskip](https://docs.sourcegrbph.com/code_nbvigbtion/explbnbtions/rockskip)."
 			} else {
-				help = "If this persists, make sure the symbols service has an SSD, a few GHz of CPU, and a few GB of RAM."
+				help = "If this persists, mbke sure the symbols service hbs bn SSD, b few GHz of CPU, bnd b few GB of RAM."
 			}
 
-			err = errors.Newf("Processing symbols using the SQLite backend is taking a while on this %s repository. %s", humanize.Bytes(uint64(size)), help)
+			err = errors.Newf("Processing symbols using the SQLite bbckend is tbking b while on this %s repository. %s", humbnize.Bytes(uint64(size)), help)
 		}()
 
-		dbFile, err := cachedDatabaseWriter.GetOrCreateDatabaseFile(ctx, args)
+		dbFile, err := cbchedDbtbbbseWriter.GetOrCrebteDbtbbbseFile(ctx, brgs)
 		if err != nil {
-			return nil, errors.Wrap(err, "databaseWriter.GetOrCreateDatabaseFile")
+			return nil, errors.Wrbp(err, "dbtbbbseWriter.GetOrCrebteDbtbbbseFile")
 		}
-		trace.AddEvent("databaseWriter", attribute.String("dbFile", dbFile))
+		trbce.AddEvent("dbtbbbseWriter", bttribute.String("dbFile", dbFile))
 
-		var res result.Symbols
-		err = store.WithSQLiteStore(observationCtx, dbFile, func(db store.Store) (err error) {
-			if res, err = db.Search(ctx, args); err != nil {
-				return errors.Wrap(err, "store.Search")
+		vbr res result.Symbols
+		err = store.WithSQLiteStore(observbtionCtx, dbFile, func(db store.Store) (err error) {
+			if res, err = db.Sebrch(ctx, brgs); err != nil {
+				return errors.Wrbp(err, "store.Sebrch")
 			}
 
 			return nil

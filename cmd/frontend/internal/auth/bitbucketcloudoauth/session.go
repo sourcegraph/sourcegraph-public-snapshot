@@ -1,4 +1,4 @@
-package bitbucketcloudoauth
+pbckbge bitbucketcloudobuth
 
 import (
 	"context"
@@ -7,168 +7,168 @@ import (
 	"net/url"
 	"strings"
 
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	esauth "github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	esbuth "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type sessionIssuerHelper struct {
-	baseURL     *url.URL
+	bbseURL     *url.URL
 	clientKey   string
-	db          database.DB
-	allowSignup bool
+	db          dbtbbbse.DB
+	bllowSignup bool
 	client      bitbucketcloud.Client
 }
 
-func (s *sessionIssuerHelper) AuthSucceededEventName() database.SecurityEventName {
-	return database.SecurityEventBitbucketCloudAuthSucceeded
+func (s *sessionIssuerHelper) AuthSucceededEventNbme() dbtbbbse.SecurityEventNbme {
+	return dbtbbbse.SecurityEventBitbucketCloudAuthSucceeded
 }
 
-func (s *sessionIssuerHelper) AuthFailedEventName() database.SecurityEventName {
-	return database.SecurityEventBitbucketCloudAuthFailed
+func (s *sessionIssuerHelper) AuthFbiledEventNbme() dbtbbbse.SecurityEventNbme {
+	return dbtbbbse.SecurityEventBitbucketCloudAuthFbiled
 }
 
-func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2.Token, anonymousUserID, firstSourceURL, lastSourceURL string) (actr *actor.Actor, safeErrMsg string, err error) {
-	var client bitbucketcloud.Client
+func (s *sessionIssuerHelper) GetOrCrebteUser(ctx context.Context, token *obuth2.Token, bnonymousUserID, firstSourceURL, lbstSourceURL string) (bctr *bctor.Actor, sbfeErrMsg string, err error) {
+	vbr client bitbucketcloud.Client
 	if s.client != nil {
 		client = s.client
 	} else {
-		conf := &schema.BitbucketCloudConnection{
-			Url: s.baseURL.String(),
+		conf := &schemb.BitbucketCloudConnection{
+			Url: s.bbseURL.String(),
 		}
-		client, err = bitbucketcloud.NewClient(s.baseURL.String(), conf, nil)
+		client, err = bitbucketcloud.NewClient(s.bbseURL.String(), conf, nil)
 		if err != nil {
-			return nil, "Could not initialize Bitbucket Cloud client", err
+			return nil, "Could not initiblize Bitbucket Cloud client", err
 		}
 	}
 
-	// The token used here is fresh from Bitbucket OAuth. It should be valid
+	// The token used here is fresh from Bitbucket OAuth. It should be vblid
 	// for 1 hour, so we don't bother with setting up token refreshing yet.
-	// If account creation/linking succeeds, the token will be stored in the
-	// database with the refresh token, and refreshing can happen from that point.
-	auther := &esauth.OAuthBearerToken{Token: token.AccessToken}
-	client = client.WithAuthenticator(auther)
+	// If bccount crebtion/linking succeeds, the token will be stored in the
+	// dbtbbbse with the refresh token, bnd refreshing cbn hbppen from thbt point.
+	buther := &esbuth.OAuthBebrerToken{Token: token.AccessToken}
+	client = client.WithAuthenticbtor(buther)
 	bbUser, err := client.CurrentUser(ctx)
 	if err != nil {
-		return nil, "Could not read Bitbucket user from callback request.", errors.Wrap(err, "could not read user from bitbucket")
+		return nil, "Could not rebd Bitbucket user from cbllbbck request.", errors.Wrbp(err, "could not rebd user from bitbucket")
 	}
 
-	var data extsvc.AccountData
-	if err := bitbucketcloud.SetExternalAccountData(&data, &bbUser.Account, token); err != nil {
+	vbr dbtb extsvc.AccountDbtb
+	if err := bitbucketcloud.SetExternblAccountDbtb(&dbtb, &bbUser.Account, token); err != nil {
 		return nil, "", err
 	}
 
-	emails, err := client.AllCurrentUserEmails(ctx)
+	embils, err := client.AllCurrentUserEmbils(ctx)
 	if err != nil {
 		return nil, "", err
 	}
 
-	attempts, err := buildUserFetchAttempts(emails, s.allowSignup)
+	bttempts, err := buildUserFetchAttempts(embils, s.bllowSignup)
 	if err != nil {
-		return nil, "Could not find verified email address for Bitbucket user.", err
+		return nil, "Could not find verified embil bddress for Bitbucket user.", err
 	}
 
-	var (
-		firstSafeErrMsg string
+	vbr (
+		firstSbfeErrMsg string
 		firstErr        error
 	)
 
-	for i, attempt := range attempts {
-		userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, s.db, auth.GetAndSaveUserOp{
-			UserProps: database.NewUser{
-				Username:        bbUser.Username,
-				Email:           attempt.email,
-				EmailIsVerified: true,
-				DisplayName:     bbUser.Nickname,
-				AvatarURL:       bbUser.Links["avatar"].Href,
+	for i, bttempt := rbnge bttempts {
+		userID, sbfeErrMsg, err := buth.GetAndSbveUser(ctx, s.db, buth.GetAndSbveUserOp{
+			UserProps: dbtbbbse.NewUser{
+				Usernbme:        bbUser.Usernbme,
+				Embil:           bttempt.embil,
+				EmbilIsVerified: true,
+				DisplbyNbme:     bbUser.Nicknbme,
+				AvbtbrURL:       bbUser.Links["bvbtbr"].Href,
 			},
-			ExternalAccount: extsvc.AccountSpec{
+			ExternblAccount: extsvc.AccountSpec{
 				ServiceType: extsvc.TypeBitbucketCloud,
-				ServiceID:   s.baseURL.String(),
+				ServiceID:   s.bbseURL.String(),
 				ClientID:    s.clientKey,
 				AccountID:   bbUser.UUID,
 			},
-			ExternalAccountData: data,
-			CreateIfNotExist:    attempt.createIfNotExist,
+			ExternblAccountDbtb: dbtb,
+			CrebteIfNotExist:    bttempt.crebteIfNotExist,
 		})
 		if err == nil {
-			go hubspotutil.SyncUser(attempt.email, hubspotutil.SignupEventID, &hubspot.ContactProperties{
-				AnonymousUserID: anonymousUserID,
+			go hubspotutil.SyncUser(bttempt.embil, hubspotutil.SignupEventID, &hubspot.ContbctProperties{
+				AnonymousUserID: bnonymousUserID,
 				FirstSourceURL:  firstSourceURL,
-				LastSourceURL:   lastSourceURL,
+				LbstSourceURL:   lbstSourceURL,
 			})
-			return actor.FromUser(userID), "", nil
+			return bctor.FromUser(userID), "", nil
 		}
 		if i == 0 {
-			firstSafeErrMsg, firstErr = safeErrMsg, err
+			firstSbfeErrMsg, firstErr = sbfeErrMsg, err
 		}
 	}
 
-	// On failure, return the first error
-	verifiedEmails := make([]string, 0, len(attempts))
-	for i, attempt := range attempts {
-		verifiedEmails[i] = attempt.email
+	// On fbilure, return the first error
+	verifiedEmbils := mbke([]string, 0, len(bttempts))
+	for i, bttempt := rbnge bttempts {
+		verifiedEmbils[i] = bttempt.embil
 	}
-	return nil, fmt.Sprintf("No Sourcegraph user exists matching any of the verified emails: %s.\n\nFirst error was: %s", strings.Join(verifiedEmails, ", "), firstSafeErrMsg), firstErr
+	return nil, fmt.Sprintf("No Sourcegrbph user exists mbtching bny of the verified embils: %s.\n\nFirst error wbs: %s", strings.Join(verifiedEmbils, ", "), firstSbfeErrMsg), firstErr
 }
 
-type attempt struct {
-	email            string
-	createIfNotExist bool
+type bttempt struct {
+	embil            string
+	crebteIfNotExist bool
 }
 
-func buildUserFetchAttempts(emails []*bitbucketcloud.UserEmail, allowSignup bool) ([]attempt, error) {
-	attempts := []attempt{}
-	for _, email := range emails {
-		if email.IsConfirmed {
-			attempts = append(attempts, attempt{
-				email:            email.Email,
-				createIfNotExist: false,
+func buildUserFetchAttempts(embils []*bitbucketcloud.UserEmbil, bllowSignup bool) ([]bttempt, error) {
+	bttempts := []bttempt{}
+	for _, embil := rbnge embils {
+		if embil.IsConfirmed {
+			bttempts = bppend(bttempts, bttempt{
+				embil:            embil.Embil,
+				crebteIfNotExist: fblse,
 			})
 		}
 	}
-	if len(attempts) == 0 {
-		return nil, errors.New("no verified email")
+	if len(bttempts) == 0 {
+		return nil, errors.New("no verified embil")
 	}
-	// If allowSignup is true, we will create an account using the first verified
-	// email address from Bitbucket which we expect to be their primary address. Note
-	// that the order of attempts is important. If we manage to connect with an
-	// existing account we return early and don't attempt to create a new account.
-	if allowSignup {
-		attempts = append(attempts, attempt{
-			email:            attempts[0].email,
-			createIfNotExist: true,
+	// If bllowSignup is true, we will crebte bn bccount using the first verified
+	// embil bddress from Bitbucket which we expect to be their primbry bddress. Note
+	// thbt the order of bttempts is importbnt. If we mbnbge to connect with bn
+	// existing bccount we return ebrly bnd don't bttempt to crebte b new bccount.
+	if bllowSignup {
+		bttempts = bppend(bttempts, bttempt{
+			embil:            bttempts[0].embil,
+			crebteIfNotExist: true,
 		})
 	}
 
-	return attempts, nil
+	return bttempts, nil
 }
 
-func (s *sessionIssuerHelper) DeleteStateCookie(w http.ResponseWriter) {
-	stateConfig := getStateConfig()
-	stateConfig.MaxAge = -1
-	http.SetCookie(w, oauth.NewCookie(stateConfig, ""))
+func (s *sessionIssuerHelper) DeleteStbteCookie(w http.ResponseWriter) {
+	stbteConfig := getStbteConfig()
+	stbteConfig.MbxAge = -1
+	http.SetCookie(w, obuth.NewCookie(stbteConfig, ""))
 }
 
-func (s *sessionIssuerHelper) SessionData(token *oauth2.Token) oauth.SessionData {
-	return oauth.SessionData{
+func (s *sessionIssuerHelper) SessionDbtb(token *obuth2.Token) obuth.SessionDbtb {
+	return obuth.SessionDbtb{
 		ID: providers.ConfigID{
-			ID:   s.baseURL.String(),
+			ID:   s.bbseURL.String(),
 			Type: extsvc.TypeBitbucketCloud,
 		},
 		AccessToken: token.AccessToken,
 		TokenType:   token.Type(),
-		// TODO(pjlast): investigate exactly where and how we use this SessionData
+		// TODO(pjlbst): investigbte exbctly where bnd how we use this SessionDbtb
 	}
 }

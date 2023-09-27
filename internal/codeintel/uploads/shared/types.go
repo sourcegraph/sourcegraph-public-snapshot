@@ -1,124 +1,124 @@
-package shared
+pbckbge shbred
 
 import (
-	"database/sql/driver"
+	"dbtbbbse/sql/driver"
 	"encoding/json"
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Upload struct {
+type Uplobd struct {
 	ID                int
 	Commit            string
 	Root              string
 	VisibleAtTip      bool
-	UploadedAt        time.Time
-	State             string
-	FailureMessage    *string
-	StartedAt         *time.Time
+	UplobdedAt        time.Time
+	Stbte             string
+	FbilureMessbge    *string
+	StbrtedAt         *time.Time
 	FinishedAt        *time.Time
 	ProcessAfter      *time.Time
 	NumResets         int
-	NumFailures       int
+	NumFbilures       int
 	RepositoryID      int
-	RepositoryName    string
+	RepositoryNbme    string
 	Indexer           string
 	IndexerVersion    string
-	NumParts          int
-	UploadedParts     []int
-	UploadSize        *int64
+	NumPbrts          int
+	UplobdedPbrts     []int
+	UplobdSize        *int64
 	UncompressedSize  *int64
-	Rank              *int
-	AssociatedIndexID *int
+	Rbnk              *int
+	AssocibtedIndexID *int
 	ContentType       string
 	ShouldReindex     bool
 }
 
-func (u Upload) RecordID() int {
+func (u Uplobd) RecordID() int {
 	return u.ID
 }
 
-func (u Upload) RecordUID() string {
-	return strconv.Itoa(u.ID)
+func (u Uplobd) RecordUID() string {
+	return strconv.Itob(u.ID)
 }
 
-type UploadSizeStats struct {
+type UplobdSizeStbts struct {
 	ID               int
-	UploadSize       *int64
+	UplobdSize       *int64
 	UncompressedSize *int64
 }
 
-func (u Upload) SizeStats() UploadSizeStats {
-	return UploadSizeStats{u.ID, u.UploadSize, u.UncompressedSize}
+func (u Uplobd) SizeStbts() UplobdSizeStbts {
+	return UplobdSizeStbts{u.ID, u.UplobdSize, u.UncompressedSize}
 }
 
-// TODO - unify with Upload
-// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
-// and stores only processed records.
+// TODO - unify with Uplobd
+// Dump is b subset of the lsif_uplobds tbble (queried vib the lsif_dumps_with_repository_nbme view)
+// bnd stores only processed records.
 type Dump struct {
 	ID                int        `json:"id"`
 	Commit            string     `json:"commit"`
 	Root              string     `json:"root"`
 	VisibleAtTip      bool       `json:"visibleAtTip"`
-	UploadedAt        time.Time  `json:"uploadedAt"`
-	State             string     `json:"state"`
-	FailureMessage    *string    `json:"failureMessage"`
-	StartedAt         *time.Time `json:"startedAt"`
+	UplobdedAt        time.Time  `json:"uplobdedAt"`
+	Stbte             string     `json:"stbte"`
+	FbilureMessbge    *string    `json:"fbilureMessbge"`
+	StbrtedAt         *time.Time `json:"stbrtedAt"`
 	FinishedAt        *time.Time `json:"finishedAt"`
 	ProcessAfter      *time.Time `json:"processAfter"`
 	NumResets         int        `json:"numResets"`
-	NumFailures       int        `json:"numFailures"`
+	NumFbilures       int        `json:"numFbilures"`
 	RepositoryID      int        `json:"repositoryId"`
-	RepositoryName    string     `json:"repositoryName"`
+	RepositoryNbme    string     `json:"repositoryNbme"`
 	Indexer           string     `json:"indexer"`
 	IndexerVersion    string     `json:"indexerVersion"`
-	AssociatedIndexID *int       `json:"associatedIndex"`
+	AssocibtedIndexID *int       `json:"bssocibtedIndex"`
 }
 
-type UploadLog struct {
-	LogTimestamp      time.Time
+type UplobdLog struct {
+	LogTimestbmp      time.Time
 	RecordDeletedAt   *time.Time
-	UploadID          int
+	UplobdID          int
 	Commit            string
 	Root              string
 	RepositoryID      int
-	UploadedAt        time.Time
+	UplobdedAt        time.Time
 	Indexer           string
 	IndexerVersion    *string
-	UploadSize        *int
-	AssociatedIndexID *int
-	TransitionColumns []map[string]*string
-	Reason            *string
-	Operation         string
+	UplobdSize        *int
+	AssocibtedIndexID *int
+	TrbnsitionColumns []mbp[string]*string
+	Rebson            *string
+	Operbtion         string
 }
 
 type Index struct {
 	ID                 int                          `json:"id"`
 	Commit             string                       `json:"commit"`
 	QueuedAt           time.Time                    `json:"queuedAt"`
-	State              string                       `json:"state"`
-	FailureMessage     *string                      `json:"failureMessage"`
-	StartedAt          *time.Time                   `json:"startedAt"`
+	Stbte              string                       `json:"stbte"`
+	FbilureMessbge     *string                      `json:"fbilureMessbge"`
+	StbrtedAt          *time.Time                   `json:"stbrtedAt"`
 	FinishedAt         *time.Time                   `json:"finishedAt"`
 	ProcessAfter       *time.Time                   `json:"processAfter"`
 	NumResets          int                          `json:"numResets"`
-	NumFailures        int                          `json:"numFailures"`
+	NumFbilures        int                          `json:"numFbilures"`
 	RepositoryID       int                          `json:"repositoryId"`
-	LocalSteps         []string                     `json:"local_steps"`
-	RepositoryName     string                       `json:"repositoryName"`
+	LocblSteps         []string                     `json:"locbl_steps"`
+	RepositoryNbme     string                       `json:"repositoryNbme"`
 	DockerSteps        []DockerStep                 `json:"docker_steps"`
 	Root               string                       `json:"root"`
 	Indexer            string                       `json:"indexer"`
-	IndexerArgs        []string                     `json:"indexer_args"` // TODO - convert this to `IndexCommand string`
+	IndexerArgs        []string                     `json:"indexer_brgs"` // TODO - convert this to `IndexCommbnd string`
 	Outfile            string                       `json:"outfile"`
 	ExecutionLogs      []executor.ExecutionLogEntry `json:"execution_logs"`
-	Rank               *int                         `json:"placeInQueue"`
-	AssociatedUploadID *int                         `json:"associatedUpload"`
+	Rbnk               *int                         `json:"plbceInQueue"`
+	AssocibtedUplobdID *int                         `json:"bssocibtedUplobd"`
 	ShouldReindex      bool                         `json:"shouldReindex"`
-	RequestedEnvVars   []string                     `json:"requestedEnvVars"`
+	RequestedEnvVbrs   []string                     `json:"requestedEnvVbrs"`
 	EnqueuerUserID     int32                        `json:"enqueuerUserID"`
 }
 
@@ -127,31 +127,31 @@ func (i Index) RecordID() int {
 }
 
 func (i Index) RecordUID() string {
-	return strconv.Itoa(i.ID)
+	return strconv.Itob(i.ID)
 }
 
 type DockerStep struct {
 	Root     string   `json:"root"`
-	Image    string   `json:"image"`
-	Commands []string `json:"commands"`
+	Imbge    string   `json:"imbge"`
+	Commbnds []string `json:"commbnds"`
 }
 
-func (s *DockerStep) Scan(value any) error {
-	b, ok := value.([]byte)
+func (s *DockerStep) Scbn(vblue bny) error {
+	b, ok := vblue.([]byte)
 	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
-	return json.Unmarshal(b, &s)
+	return json.Unmbrshbl(b, &s)
 }
 
-func (s DockerStep) Value() (driver.Value, error) {
-	return json.Marshal(s)
+func (s DockerStep) Vblue() (driver.Vblue, error) {
+	return json.Mbrshbl(s)
 }
 
 type DirtyRepository struct {
 	RepositoryID   int
-	RepositoryName string
+	RepositoryNbme string
 	DirtyToken     int
 }
 
@@ -159,70 +159,70 @@ type GetIndexersOptions struct {
 	RepositoryID int
 }
 
-type GetUploadsOptions struct {
+type GetUplobdsOptions struct {
 	RepositoryID            int
-	State                   string
-	States                  []string
+	Stbte                   string
+	Stbtes                  []string
 	Term                    string
 	VisibleAtTip            bool
 	DependencyOf            int
 	DependentOf             int
-	IndexerNames            []string
-	UploadedBefore          *time.Time
-	UploadedAfter           *time.Time
-	LastRetentionScanBefore *time.Time
+	IndexerNbmes            []string
+	UplobdedBefore          *time.Time
+	UplobdedAfter           *time.Time
+	LbstRetentionScbnBefore *time.Time
 	AllowExpired            bool
 	AllowDeletedRepo        bool
-	AllowDeletedUpload      bool
+	AllowDeletedUplobd      bool
 	OldestFirst             bool
 	Limit                   int
 	Offset                  int
 
-	// InCommitGraph ensures that the repository commit graph was updated strictly
-	// after this upload was processed. This condition helps us filter out new uploads
-	// that we might later mistake for unreachable.
-	InCommitGraph bool
+	// InCommitGrbph ensures thbt the repository commit grbph wbs updbted strictly
+	// bfter this uplobd wbs processed. This condition helps us filter out new uplobds
+	// thbt we might lbter mistbke for unrebchbble.
+	InCommitGrbph bool
 }
 
-type ReindexUploadsOptions struct {
-	States       []string
-	IndexerNames []string
+type ReindexUplobdsOptions struct {
+	Stbtes       []string
+	IndexerNbmes []string
 	Term         string
 	RepositoryID int
 	VisibleAtTip bool
 }
 
-type DeleteUploadsOptions struct {
+type DeleteUplobdsOptions struct {
 	RepositoryID int
-	States       []string
-	IndexerNames []string
+	Stbtes       []string
+	IndexerNbmes []string
 	Term         string
 	VisibleAtTip bool
 }
 
-// Package pairs a package scheme+manager+name+version with the dump that provides it.
-type Package struct {
+// Pbckbge pbirs b pbckbge scheme+mbnbger+nbme+version with the dump thbt provides it.
+type Pbckbge struct {
 	DumpID  int
 	Scheme  string
-	Manager string
-	Name    string
+	Mbnbger string
+	Nbme    string
 	Version string
 }
 
-// PackageReference is a package scheme+name+version
-type PackageReference struct {
-	Package
+// PbckbgeReference is b pbckbge scheme+nbme+version
+type PbckbgeReference struct {
+	Pbckbge
 }
 
-// PackageReferenceScanner allows for on-demand scanning of PackageReference values.
+// PbckbgeReferenceScbnner bllows for on-dembnd scbnning of PbckbgeReference vblues.
 //
-// A scanner for this type was introduced as a memory optimization. Instead of reading a
-// large number of large byte arrays into memory at once, we allow the user to request
-// the next filter value when they are ready to process it. This allows us to hold only
-// a single bloom filter in memory at any give time during reference requests.
-type PackageReferenceScanner interface {
-	// Next reads the next package reference value from the database cursor.
-	Next() (PackageReference, bool, error)
+// A scbnner for this type wbs introduced bs b memory optimizbtion. Instebd of rebding b
+// lbrge number of lbrge byte brrbys into memory bt once, we bllow the user to request
+// the next filter vblue when they bre rebdy to process it. This bllows us to hold only
+// b single bloom filter in memory bt bny give time during reference requests.
+type PbckbgeReferenceScbnner interfbce {
+	// Next rebds the next pbckbge reference vblue from the dbtbbbse cursor.
+	Next() (PbckbgeReference, bool, error)
 
 	// Close the underlying row object.
 	Close() error
@@ -230,40 +230,40 @@ type PackageReferenceScanner interface {
 
 type GetIndexesOptions struct {
 	RepositoryID  int
-	State         string
-	States        []string
+	Stbte         string
+	Stbtes        []string
 	Term          string
-	IndexerNames  []string
-	WithoutUpload bool
+	IndexerNbmes  []string
+	WithoutUplobd bool
 	Limit         int
 	Offset        int
 }
 
 type DeleteIndexesOptions struct {
-	States        []string
-	IndexerNames  []string
+	Stbtes        []string
+	IndexerNbmes  []string
 	Term          string
 	RepositoryID  int
-	WithoutUpload bool
+	WithoutUplobd bool
 }
 
 type ReindexIndexesOptions struct {
-	States        []string
-	IndexerNames  []string
+	Stbtes        []string
+	IndexerNbmes  []string
 	Term          string
 	RepositoryID  int
-	WithoutUpload bool
+	WithoutUplobd bool
 }
 
-type ExportedUpload struct {
-	UploadID         int
-	ExportedUploadID int
+type ExportedUplobd struct {
+	UplobdID         int
+	ExportedUplobdID int
 	Repo             string
 	RepoID           int
 	Root             string
 }
 
-type IndexesWithRepositoryNamespace struct {
+type IndexesWithRepositoryNbmespbce struct {
 	Root    string
 	Indexer string
 	Indexes []Index
@@ -274,13 +274,13 @@ type RepositoryWithCount struct {
 	Count        int
 }
 
-type RepositoryWithAvailableIndexers struct {
+type RepositoryWithAvbilbbleIndexers struct {
 	RepositoryID      int
-	AvailableIndexers map[string]AvailableIndexer
+	AvbilbbleIndexers mbp[string]AvbilbbleIndexer
 }
 
-type UploadsWithRepositoryNamespace struct {
+type UplobdsWithRepositoryNbmespbce struct {
 	Root    string
 	Indexer string
-	Uploads []Upload
+	Uplobds []Uplobd
 }

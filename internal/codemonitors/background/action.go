@@ -1,21 +1,21 @@
-package background
+pbckbge bbckground
 
 import (
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-// actionArgs is the shared set of arguments needed to execute any
-// action for code monitors.
-type actionArgs struct {
+// bctionArgs is the shbred set of brguments needed to execute bny
+// bction for code monitors.
+type bctionArgs struct {
 	MonitorDescription string
-	ExternalURL        *url.URL
+	ExternblURL        *url.URL
 	MonitorID          int64
 	UTMSource          string
-	MonitorOwnerName   string
+	MonitorOwnerNbme   string
 
 	Query          string
-	Results        []*result.CommitMatch
+	Results        []*result.CommitMbtch
 	IncludeResults bool
 }

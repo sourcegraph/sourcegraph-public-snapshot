@@ -1,9 +1,9 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
-	"html/template"
+	"html/templbte"
 	"io"
 	"strings"
 	"testing"
@@ -12,439 +12,439 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/log/logtest"
+	godiff "github.com/sourcegrbph/go-diff/diff"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/highlight"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+func TestRepositoryCompbrisonNoMergeBbse(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, nil)
 
-	wantBaseRevision := "ba5e"
-	wantHeadRevision := "1ead"
+	wbntBbseRevision := "bb5e"
+	wbntHebdRevision := "1ebd"
 
 	repo := &types.Repo{
-		ID:        api.RepoID(1),
-		Name:      api.RepoName("test"),
-		CreatedAt: time.Now(),
+		ID:        bpi.RepoID(1),
+		Nbme:      bpi.RepoNbme("test"),
+		CrebtedAt: time.Now(),
 	}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.MergeBaseFunc.SetDefaultReturn("", errors.Errorf("merge base doesn't exist!"))
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != wantBaseRevision && spec != wantHeadRevision {
-			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+	gsClient.MergeBbseFunc.SetDefbultReturn("", errors.Errorf("merge bbse doesn't exist!"))
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if spec != wbntBbseRevision && spec != wbntHebdRevision {
+			t.Fbtblf("ResolveRevision received wrong spec: %s", spec)
 		}
-		return api.CommitID(spec), nil
+		return bpi.CommitID(spec), nil
 	})
 
-	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
+	input := &RepositoryCompbrisonInput{Bbse: &wbntBbseRevision, Hebd: &wbntHebdRevision}
 	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
-	// There shouldn't be any error even when there is no merge base.
-	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
+	// There shouldn't be bny error even when there is no merge bbse.
+	comp, err := NewRepositoryCompbrison(ctx, db, gsClient, repoResolver, input)
 	require.Nil(t, err)
-	require.Equal(t, wantBaseRevision, comp.baseRevspec)
-	require.Equal(t, wantHeadRevision, comp.headRevspec)
-	require.Equal(t, "..", comp.rangeType)
+	require.Equbl(t, wbntBbseRevision, comp.bbseRevspec)
+	require.Equbl(t, wbntHebdRevision, comp.hebdRevspec)
+	require.Equbl(t, "..", comp.rbngeType)
 }
 
-func TestRepositoryComparison(t *testing.T) {
+func TestRepositoryCompbrison(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, nil)
 
-	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
-	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
-	wantHeadRevision := "b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec"
+	wbntBbseRevision := "24f7cb7c1190835519e261d7eefb09df55ceeb4f"
+	wbntMergeBbseRevision := "b7985dde7f92bd3490ec513be78fb2b365c7534c"
+	wbntHebdRevision := "b69072d5f687b31b9f6be3cebfdc24c259c4b9ec"
 
 	repo := &types.Repo{
-		ID:        api.RepoID(1),
-		Name:      api.RepoName("github.com/sourcegraph/sourcegraph"),
-		CreatedAt: time.Now(),
+		ID:        bpi.RepoID(1),
+		Nbme:      bpi.RepoNbme("github.com/sourcegrbph/sourcegrbph"),
+		CrebtedAt: time.Now(),
 	}
 
-	gsClient := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-		if len(args) < 1 && args[0] != "diff" {
-			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
+	gsClient := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+		if len(brgs) < 1 && brgs[0] != "diff" {
+			t.Fbtblf("gitserver.ExecRebder received wrong brgs: %v", brgs)
 		}
-		if args[len(args)-1] == "JOKES.md" {
-			return io.NopCloser(strings.NewReader(testDiffJokesOnly)), nil
+		if brgs[len(brgs)-1] == "JOKES.md" {
+			return io.NopCloser(strings.NewRebder(testDiffJokesOnly)), nil
 		}
-		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
+		return io.NopCloser(strings.NewRebder(testDiff + testCopyDiff)), nil
 	})
 
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != wantMergeBaseRevision && spec != wantHeadRevision {
-			t.Fatalf("ResolveRevision received wrong spec: %s", spec)
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if spec != wbntMergeBbseRevision && spec != wbntHebdRevision {
+			t.Fbtblf("ResolveRevision received wrong spec: %s", spec)
 		}
-		return api.CommitID(spec), nil
+		return bpi.CommitID(spec), nil
 	})
 
-	gsClient.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a, b api.CommitID) (api.CommitID, error) {
-		if string(a) != wantBaseRevision || string(b) != wantHeadRevision {
-			t.Fatalf("gitserver.MergeBase received wrong args: %s %s", a, b)
+	gsClient.MergeBbseFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, b, b bpi.CommitID) (bpi.CommitID, error) {
+		if string(b) != wbntBbseRevision || string(b) != wbntHebdRevision {
+			t.Fbtblf("gitserver.MergeBbse received wrong brgs: %s %s", b, b)
 		}
-		return api.CommitID(wantMergeBaseRevision), nil
+		return bpi.CommitID(wbntMergeBbseRevision), nil
 	})
 
-	input := &RepositoryComparisonInput{Base: &wantBaseRevision, Head: &wantHeadRevision}
+	input := &RepositoryCompbrisonInput{Bbse: &wbntBbseRevision, Hebd: &wbntHebdRevision}
 	repoResolver := NewRepositoryResolver(db, gsClient, repo)
 
-	comp, err := NewRepositoryComparison(ctx, db, gsClient, repoResolver, input)
+	comp, err := NewRepositoryCompbrison(ctx, db, gsClient, repoResolver, input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("BaseRepository", func(t *testing.T) {
-		if have, want := comp.BaseRepository(), repoResolver; have != want {
-			t.Fatalf("BaseRepository wrong. want=%+v, have=%+v", want, have)
+	t.Run("BbseRepository", func(t *testing.T) {
+		if hbve, wbnt := comp.BbseRepository(), repoResolver; hbve != wbnt {
+			t.Fbtblf("BbseRepository wrong. wbnt=%+v, hbve=%+v", wbnt, hbve)
 		}
 	})
 
-	t.Run("HeadRepository", func(t *testing.T) {
-		if have, want := comp.HeadRepository(), repoResolver; have != want {
-			t.Fatalf("headRepository wrong. want=%+v, have=%+v", want, have)
+	t.Run("HebdRepository", func(t *testing.T) {
+		if hbve, wbnt := comp.HebdRepository(), repoResolver; hbve != wbnt {
+			t.Fbtblf("hebdRepository wrong. wbnt=%+v, hbve=%+v", wbnt, hbve)
 		}
 	})
 
-	t.Run("Range", func(t *testing.T) {
-		gitRange := comp.Range()
+	t.Run("Rbnge", func(t *testing.T) {
+		gitRbnge := comp.Rbnge()
 
-		wantRangeExpr := fmt.Sprintf("%s...%s", wantBaseRevision, wantHeadRevision)
-		if have, want := gitRange.Expr(), wantRangeExpr; have != want {
-			t.Fatalf("range expression. want=%s, have=%s", want, have)
+		wbntRbngeExpr := fmt.Sprintf("%s...%s", wbntBbseRevision, wbntHebdRevision)
+		if hbve, wbnt := gitRbnge.Expr(), wbntRbngeExpr; hbve != wbnt {
+			t.Fbtblf("rbnge expression. wbnt=%s, hbve=%s", wbnt, hbve)
 		}
 	})
 
 	t.Run("Commits", func(t *testing.T) {
-		commits := []*gitdomain.Commit{
-			{ID: api.CommitID(wantBaseRevision)},
-			{ID: api.CommitID(wantHeadRevision)},
+		commits := []*gitdombin.Commit{
+			{ID: bpi.CommitID(wbntBbseRevision)},
+			{ID: bpi.CommitID(wbntHebdRevision)},
 		}
 
 		mockGSClient := gitserver.NewMockClient()
-		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
-			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
+		mockGSClient.CommitsFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, opts gitserver.CommitsOptions) ([]*gitdombin.Commit, error) {
+			wbntRbnge := fmt.Sprintf("%s..%s", wbntBbseRevision, wbntHebdRevision)
 
-			if have, want := opts.Range, wantRange; have != want {
-				t.Fatalf("git.Commits received wrong range. want=%s, have=%s", want, have)
+			if hbve, wbnt := opts.Rbnge, wbntRbnge; hbve != wbnt {
+				t.Fbtblf("git.Commits received wrong rbnge. wbnt=%s, hbve=%s", wbnt, hbve)
 			}
 
 			return commits, nil
 		})
 
-		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		newComp, err := NewRepositoryCompbrison(ctx, db, mockGSClient, repoResolver, input)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{})
+		commitConnection := newComp.Commits(&RepositoryCompbrisonCommitsArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if len(nodes) != len(commits) {
-			t.Fatalf("wrong length of nodes: %d", len(nodes))
+			t.Fbtblf("wrong length of nodes: %d", len(nodes))
 		}
 
-		for i, n := range nodes {
-			if have, want := string(n.OID()), string(commits[i].ID); have != want {
-				t.Fatalf("nodes[%d] has wrong commit ID. want=%s, have=%s", i, want, have)
+		for i, n := rbnge nodes {
+			if hbve, wbnt := string(n.OID()), string(commits[i].ID); hbve != wbnt {
+				t.Fbtblf("nodes[%d] hbs wrong commit ID. wbnt=%s, hbve=%s", i, wbnt, hbve)
 			}
 		}
 
-		totalCount, err := commitConnection.TotalCount(ctx)
+		totblCount, err := commitConnection.TotblCount(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if totalCount == nil {
-			t.Fatalf("no TotalCount returned")
+		if totblCount == nil {
+			t.Fbtblf("no TotblCount returned")
 		}
-		if have, want := *totalCount, int32(len(commits)); have != want {
-			t.Fatalf("totalCount wrong. want=%d, have=%d", want, have)
+		if hbve, wbnt := *totblCount, int32(len(commits)); hbve != wbnt {
+			t.Fbtblf("totblCount wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 		}
 	})
 
-	t.Run("Commits with Path", func(t *testing.T) {
-		commits := []*gitdomain.Commit{
-			{ID: api.CommitID(wantBaseRevision)},
+	t.Run("Commits with Pbth", func(t *testing.T) {
+		commits := []*gitdombin.Commit{
+			{ID: bpi.CommitID(wbntBbseRevision)},
 		}
 
 		mockGSClient := gitserver.NewMockClient()
-		mockGSClient.CommitsFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
-			if opts.Path == "" {
-				t.Fatalf("expected a path as part of commits args")
+		mockGSClient.CommitsFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, opts gitserver.CommitsOptions) ([]*gitdombin.Commit, error) {
+			if opts.Pbth == "" {
+				t.Fbtblf("expected b pbth bs pbrt of commits brgs")
 			}
 			return commits, nil
 		})
 
-		newComp, err := NewRepositoryComparison(ctx, db, mockGSClient, repoResolver, input)
+		newComp, err := NewRepositoryCompbrison(ctx, db, mockGSClient, repoResolver, input)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		testPath := "testpath"
-		commitConnection := newComp.Commits(&RepositoryComparisonCommitsArgs{Path: &testPath})
+		testPbth := "testpbth"
+		commitConnection := newComp.Commits(&RepositoryCompbrisonCommitsArgs{Pbth: &testPbth})
 
 		nodes, err := commitConnection.Nodes(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if len(nodes) != len(commits) {
-			t.Fatalf("wrong length of nodes: %d", len(nodes))
+			t.Fbtblf("wrong length of nodes: %d", len(nodes))
 		}
 	})
 	t.Run("FileDiffs", func(t *testing.T) {
-		t.Run("RawDiff", func(t *testing.T) {
+		t.Run("RbwDiff", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			rawDiff, err := diffConnection.RawDiff(ctx)
+			rbwDiff, err := diffConnection.RbwDiff(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := rawDiff, testDiff+testCopyDiff; have != want {
-				t.Fatalf("rawDiff wrong. want=%q, have=%q", want, have)
+			if hbve, wbnt := rbwDiff, testDiff+testCopyDiff; hbve != wbnt {
+				t.Fbtblf("rbwDiff wrong. wbnt=%q, hbve=%q", wbnt, hbve)
 			}
 		})
 
-		t.Run("DiffStat", func(t *testing.T) {
+		t.Run("DiffStbt", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			diffStat, err := diffConnection.DiffStat(ctx)
+			diffStbt, err := diffConnection.DiffStbt(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			want := "9 added, 8 deleted"
-			if have := fmt.Sprintf("%d added, %d deleted", diffStat.Added(), diffStat.Deleted()); have != want {
-				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
+			wbnt := "9 bdded, 8 deleted"
+			if hbve := fmt.Sprintf("%d bdded, %d deleted", diffStbt.Added(), diffStbt.Deleted()); hbve != wbnt {
+				t.Fbtblf("wrong diffstbt. wbnt=%q, hbve=%q", wbnt, hbve)
 			}
 		})
 
-		t.Run("LimitedPaths", func(t *testing.T) {
-			paths := []string{"JOKES.md"}
-			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{Paths: &paths})
+		t.Run("LimitedPbths", func(t *testing.T) {
+			pbths := []string{"JOKES.md"}
+			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{Pbths: &pbths})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			nodes, err := diffConnection.Nodes(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(nodes) != 1 {
-				t.Fatalf("expected 1 file node, got %d", len(nodes))
+				t.Fbtblf("expected 1 file node, got %d", len(nodes))
 			}
 
-			oldPath := nodes[0].OldPath()
-			if oldPath == nil {
-				t.Fatalf("expected non-nil oldPath")
+			oldPbth := nodes[0].OldPbth()
+			if oldPbth == nil {
+				t.Fbtblf("expected non-nil oldPbth")
 			}
 
-			if *oldPath != "JOKES.md" {
-				t.Fatalf("expected JOKES.md, got %s", *oldPath)
+			if *oldPbth != "JOKES.md" {
+				t.Fbtblf("expected JOKES.md, got %s", *oldPbth)
 			}
 		})
 
 		t.Run("FileDiff", func(t *testing.T) {
 			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			nodes, err := diffConnection.Nodes(ctx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			// +1 for the copyDiffFile
 			if len(nodes) != testDiffFiles+1 {
-				t.Fatalf("wrong length of nodes. want=%d, have=%d", testDiffFiles, len(nodes))
+				t.Fbtblf("wrong length of nodes. wbnt=%d, hbve=%d", testDiffFiles, len(nodes))
 			}
 
 			n := nodes[0]
-			wantOldPath := "INSTALL.md"
-			if diff := cmp.Diff(&wantOldPath, n.OldPath()); diff != "" {
-				t.Fatalf("wrong OldPath: %s", diff)
+			wbntOldPbth := "INSTALL.md"
+			if diff := cmp.Diff(&wbntOldPbth, n.OldPbth()); diff != "" {
+				t.Fbtblf("wrong OldPbth: %s", diff)
 			}
 
-			wantNewPath := "INSTALL.md"
-			if diff := cmp.Diff(&wantNewPath, n.NewPath()); diff != "" {
-				t.Fatalf("wrong NewPath: %s", diff)
+			wbntNewPbth := "INSTALL.md"
+			if diff := cmp.Diff(&wbntNewPbth, n.NewPbth()); diff != "" {
+				t.Fbtblf("wrong NewPbth: %s", diff)
 			}
 
-			wantStat := "3 added, 3 deleted"
-			haveStat := n.Stat()
-			if haveStat == nil {
-				t.Fatalf("no diff stat")
+			wbntStbt := "3 bdded, 3 deleted"
+			hbveStbt := n.Stbt()
+			if hbveStbt == nil {
+				t.Fbtblf("no diff stbt")
 			}
-			if have := fmt.Sprintf("%d added, %d deleted", haveStat.Added(), haveStat.Deleted()); have != wantStat {
-				t.Fatalf("wrong diffstat. want=%q, have=%q", wantStat, have)
+			if hbve := fmt.Sprintf("%d bdded, %d deleted", hbveStbt.Added(), hbveStbt.Deleted()); hbve != wbntStbt {
+				t.Fbtblf("wrong diffstbt. wbnt=%q, hbve=%q", wbntStbt, hbve)
 			}
 
 			oldFile := n.OldFile()
 			if oldFile == nil {
-				t.Fatalf("OldFile() is nil")
+				t.Fbtblf("OldFile() is nil")
 			}
 			gitBlob, ok := oldFile.ToGitBlob()
 			if !ok {
-				t.Fatalf("OldFile() is no GitBlob")
+				t.Fbtblf("OldFile() is no GitBlob")
 			}
-			if have, want := string(gitBlob.Commit().OID()), wantMergeBaseRevision; have != want {
-				t.Fatalf("Got wrong commit ID for OldFile(): want=%s have=%s", want, have)
+			if hbve, wbnt := string(gitBlob.Commit().OID()), wbntMergeBbseRevision; hbve != wbnt {
+				t.Fbtblf("Got wrong commit ID for OldFile(): wbnt=%s hbve=%s", wbnt, hbve)
 			}
 			newFile := n.NewFile()
 			if newFile == nil {
-				t.Fatalf("NewFile() is nil")
+				t.Fbtblf("NewFile() is nil")
 			}
 
-			mostRelevant := n.MostRelevantFile()
-			if mostRelevant == nil {
-				t.Fatalf("MostRelevantFile is nil")
+			mostRelevbnt := n.MostRelevbntFile()
+			if mostRelevbnt == nil {
+				t.Fbtblf("MostRelevbntFile is nil")
 			}
-			relevantURL := mostRelevant.CanonicalURL()
+			relevbntURL := mostRelevbnt.CbnonicblURL()
 
-			wantRelevantURL := fmt.Sprintf("/%s@%s/-/blob/%s", repo.Name, wantHeadRevision, "INSTALL.md")
-			if relevantURL != wantRelevantURL {
-				t.Fatalf("MostRelevantFile.CanonicalURL() is wrong. have=%q, want=%q", relevantURL, wantRelevantURL)
+			wbntRelevbntURL := fmt.Sprintf("/%s@%s/-/blob/%s", repo.Nbme, wbntHebdRevision, "INSTALL.md")
+			if relevbntURL != wbntRelevbntURL {
+				t.Fbtblf("MostRelevbntFile.CbnonicblURL() is wrong. hbve=%q, wbnt=%q", relevbntURL, wbntRelevbntURL)
 			}
 
-			newFileURL := newFile.CanonicalURL()
-			// NewFile should be the most relevant file
-			if newFileURL != wantRelevantURL {
-				t.Fatalf(
-					"NewFile.CanonicalURL() is not MostRelevantFile.CanonicalURL(). have=%q, want=%q",
-					relevantURL, wantRelevantURL,
+			newFileURL := newFile.CbnonicblURL()
+			// NewFile should be the most relevbnt file
+			if newFileURL != wbntRelevbntURL {
+				t.Fbtblf(
+					"NewFile.CbnonicblURL() is not MostRelevbntFile.CbnonicblURL(). hbve=%q, wbnt=%q",
+					relevbntURL, wbntRelevbntURL,
 				)
 			}
 
 			t.Run("DiffHunks", func(t *testing.T) {
 				hunks := nodes[0].Hunks()
-				wantHunkCount := 1
-				if have := len(hunks); have != wantHunkCount {
-					t.Fatalf("len(hunks) wrong. want=%d, have=%d", wantHunkCount, have)
+				wbntHunkCount := 1
+				if hbve := len(hunks); hbve != wbntHunkCount {
+					t.Fbtblf("len(hunks) wrong. wbnt=%d, hbve=%d", wbntHunkCount, hbve)
 				}
 			})
 		})
 
-		t.Run("Pagination", func(t *testing.T) {
+		t.Run("Pbginbtion", func(t *testing.T) {
 			endCursors := []string{"1", "2", "3"}
-			totalCount := int32(testDiffFiles) + 1
+			totblCount := int32(testDiffFiles) + 1
 
 			tests := []struct {
 				first int32
-				after string
+				bfter string
 
-				wantNodeCount int
+				wbntNodeCount int
 
-				wantTotalCount *int32
+				wbntTotblCount *int32
 
-				wantHasNextPage bool
-				wantEndCursor   *string
+				wbntHbsNextPbge bool
+				wbntEndCursor   *string
 			}{
 				{
 					first:           1,
-					after:           "",
-					wantNodeCount:   1,
-					wantHasNextPage: true,
-					wantEndCursor:   &endCursors[0],
-					wantTotalCount:  nil,
+					bfter:           "",
+					wbntNodeCount:   1,
+					wbntHbsNextPbge: true,
+					wbntEndCursor:   &endCursors[0],
+					wbntTotblCount:  nil,
 				},
 				{
 					first:           1,
-					after:           endCursors[0],
-					wantNodeCount:   1,
-					wantHasNextPage: true,
-					wantEndCursor:   &endCursors[1],
-					wantTotalCount:  nil,
+					bfter:           endCursors[0],
+					wbntNodeCount:   1,
+					wbntHbsNextPbge: true,
+					wbntEndCursor:   &endCursors[1],
+					wbntTotblCount:  nil,
 				},
 				{
 					first:           1,
-					after:           endCursors[1],
-					wantNodeCount:   1,
-					wantHasNextPage: true,
-					wantEndCursor:   &endCursors[2],
-					wantTotalCount:  nil,
+					bfter:           endCursors[1],
+					wbntNodeCount:   1,
+					wbntHbsNextPbge: true,
+					wbntEndCursor:   &endCursors[2],
+					wbntTotblCount:  nil,
 				},
 				{
 					first:           1,
-					after:           endCursors[2],
-					wantNodeCount:   1,
-					wantHasNextPage: false,
-					wantEndCursor:   nil,
-					wantTotalCount:  &totalCount,
+					bfter:           endCursors[2],
+					wbntNodeCount:   1,
+					wbntHbsNextPbge: fblse,
+					wbntEndCursor:   nil,
+					wbntTotblCount:  &totblCount,
 				},
 				{
 					first:           testDiffFiles + 1,
-					after:           "",
-					wantNodeCount:   testDiffFiles + 1,
-					wantHasNextPage: false,
-					wantEndCursor:   nil,
-					wantTotalCount:  &totalCount,
+					bfter:           "",
+					wbntNodeCount:   testDiffFiles + 1,
+					wbntHbsNextPbge: fblse,
+					wbntEndCursor:   nil,
+					wbntTotblCount:  &totblCount,
 				},
 			}
 
-			for _, tc := range tests {
-				args := &FileDiffsConnectionArgs{First: &tc.first}
-				if tc.after != "" {
-					args.After = &tc.after
+			for _, tc := rbnge tests {
+				brgs := &FileDiffsConnectionArgs{First: &tc.first}
+				if tc.bfter != "" {
+					brgs.After = &tc.bfter
 				}
 
-				conn, err := comp.FileDiffs(ctx, args)
+				conn, err := comp.FileDiffs(ctx, brgs)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				nodes, err := conn.Nodes(ctx)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if len(nodes) != tc.wantNodeCount {
-					t.Fatalf("wrong length of nodes. want=%d, have=%d", tc.wantNodeCount, len(nodes))
+				if len(nodes) != tc.wbntNodeCount {
+					t.Fbtblf("wrong length of nodes. wbnt=%d, hbve=%d", tc.wbntNodeCount, len(nodes))
 				}
 
-				pageInfo, err := conn.PageInfo(ctx)
+				pbgeInfo, err := conn.PbgeInfo(ctx)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if pageInfo.HasNextPage() != tc.wantHasNextPage {
-					t.Fatalf("pageInfo HasNextPage wrong. want=%t, have=%t", tc.wantHasNextPage, pageInfo.HasNextPage())
+				if pbgeInfo.HbsNextPbge() != tc.wbntHbsNextPbge {
+					t.Fbtblf("pbgeInfo HbsNextPbge wrong. wbnt=%t, hbve=%t", tc.wbntHbsNextPbge, pbgeInfo.HbsNextPbge())
 				}
 
-				if diff := cmp.Diff(tc.wantEndCursor, pageInfo.EndCursor()); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(tc.wbntEndCursor, pbgeInfo.EndCursor()); diff != "" {
+					t.Fbtbl(diff)
 				}
 
-				totalCount, err := conn.TotalCount(ctx)
+				totblCount, err := conn.TotblCount(ctx)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff := cmp.Diff(tc.wantTotalCount, totalCount); diff != "" {
-					t.Fatalf("wrong totalCount: %s", diff)
+				if diff := cmp.Diff(tc.wbntTotblCount, totblCount); diff != "" {
+					t.Fbtblf("wrong totblCount: %s", diff)
 				}
 			}
 		})
@@ -452,66 +452,66 @@ func TestRepositoryComparison(t *testing.T) {
 }
 
 func TestDiffHunk(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	dr := godiff.NewMultiFileDiffReader(strings.NewReader(testDiff))
-	// We only read the first file diff from testDiff
-	fileDiff, err := dr.ReadFile()
+	dr := godiff.NewMultiFileDiffRebder(strings.NewRebder(testDiff))
+	// We only rebd the first file diff from testDiff
+	fileDiff, err := dr.RebdFile()
 	if err != nil && err != io.EOF {
-		t.Fatalf("parsing diff failed: %s", err)
+		t.Fbtblf("pbrsing diff fbiled: %s", err)
 	}
 
 	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
 
 	t.Run("OldNoNewlineAt", func(t *testing.T) {
-		if have, want := hunk.OldNoNewlineAt(), false; have != want {
-			t.Fatalf("Lines wrong. want=%t, have=%t", want, have)
+		if hbve, wbnt := hunk.OldNoNewlineAt(), fblse; hbve != wbnt {
+			t.Fbtblf("Lines wrong. wbnt=%t, hbve=%t", wbnt, hbve)
 		}
 	})
 
-	t.Run("Ranges", func(t *testing.T) {
-		testRange := func(r *DiffHunkRange, wantStartLine, wantLines int32) {
-			if have := r.StartLine(); have != wantStartLine {
-				t.Fatalf("StartLine wrong. want=%d, have=%d", wantStartLine, have)
+	t.Run("Rbnges", func(t *testing.T) {
+		testRbnge := func(r *DiffHunkRbnge, wbntStbrtLine, wbntLines int32) {
+			if hbve := r.StbrtLine(); hbve != wbntStbrtLine {
+				t.Fbtblf("StbrtLine wrong. wbnt=%d, hbve=%d", wbntStbrtLine, hbve)
 			}
-			if have := r.Lines(); have != wantLines {
-				t.Fatalf("Lines wrong. want=%d, have=%d", wantLines, have)
+			if hbve := r.Lines(); hbve != wbntLines {
+				t.Fbtblf("Lines wrong. wbnt=%d, hbve=%d", wbntLines, hbve)
 			}
 		}
-		testRange(hunk.OldRange(), 3, 10)
-		testRange(hunk.NewRange(), 3, 10)
+		testRbnge(hunk.OldRbnge(), 3, 10)
+		testRbnge(hunk.NewRbnge(), 3, 10)
 	})
 
 	t.Run("Section", func(t *testing.T) {
 		if hunk.Section() != nil {
-			t.Fatalf("hunk.Section is not nil: %+v\n", hunk.Section())
+			t.Fbtblf("hunk.Section is not nil: %+v\n", hunk.Section())
 		}
 	})
 
 	t.Run("Body", func(t *testing.T) {
 		if diff := cmp.Diff(testDiffFirstHunk, hunk.Body()); diff != "" {
-			t.Fatal(diff)
+			t.Fbtbl(diff)
 		}
 	})
 
 	t.Run("Highlight", func(t *testing.T) {
 		hunk.highlighter = &dummyFileHighlighter{
-			highlightedBase: []template.HTML{"B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12"},
-			highlightedHead: []template.HTML{"H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12"},
+			highlightedBbse: []templbte.HTML{"B1", "B2", "B3", "B4", "B5", "B6", "B7", "B8", "B9", "B10", "B11", "B12"},
+			highlightedHebd: []templbte.HTML{"H1", "H2", "H3", "H4", "H5", "H6", "H7", "H8", "H9", "H10", "H11", "H12"},
 		}
 
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
-			DisableTimeout:     false,
-			HighlightLongLines: false,
+			DisbbleTimeout:     fblse,
+			HighlightLongLines: fblse,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if body.Aborted() {
-			t.Fatal("highlighting is aborted")
+			t.Fbtbl("highlighting is bborted")
 		}
 
-		wantLines := []struct {
+		wbntLines := []struct {
 			kind, html string
 		}{
 			{kind: "UNCHANGED", html: "B3"},
@@ -530,297 +530,297 @@ func TestDiffHunk(t *testing.T) {
 		}
 
 		lines := body.Lines()
-		if have, want := len(lines), len(wantLines); have != want {
-			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		if hbve, wbnt := len(lines), len(wbntLines); hbve != wbnt {
+			t.Fbtblf("len(Highlight.Lines) is wrong. wbnt = %d, hbve = %d", wbnt, hbve)
 		}
-		for i, n := range lines {
-			wantedLine := wantLines[i]
-			if n.Kind() != wantedLine.kind {
-				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+		for i, n := rbnge lines {
+			wbntedLine := wbntLines[i]
+			if n.Kind() != wbntedLine.kind {
+				t.Fbtblf("Kind is wrong. wbnt = %q, hbve = %q", wbntedLine.kind, n.Kind())
 			}
-			if n.HTML() != wantedLine.html {
-				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			if n.HTML() != wbntedLine.html {
+				t.Fbtblf("HTML is wrong. wbnt = %q, hbve = %q", wbntedLine.html, n.HTML())
 			}
 		}
 	})
 }
 
 func TestDiffHunk2(t *testing.T) {
-	// This test exists to protect against panics related to
-	// https://github.com/sourcegraph/sourcegraph/pull/21068
+	// This test exists to protect bgbinst pbnics relbted to
+	// https://github.com/sourcegrbph/sourcegrbph/pull/21068
 
-	ctx := context.Background()
-	// https://sourcegraph.com/github.com/dominikh/go-tools/-/blob/cmd/staticcheck/README.md
-	// was used to produce this test diff.
-	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
+	ctx := context.Bbckground()
+	// https://sourcegrbph.com/github.com/dominikh/go-tools/-/blob/cmd/stbticcheck/README.md
+	// wbs used to produce this test diff.
+	filediff := `diff --git cmd/stbticcheck/README.md cmd/stbticcheck/README.md
 index 4d14577..10ef458 100644
---- cmd/staticcheck/README.md
-+++ cmd/staticcheck/README.md
-@@ -13,3 +13,5 @@ See [the main README](https://github.com/dominikh/go-tools#installation) for ins
- Detailed documentation can be found on
- [staticcheck.io](https://staticcheck.io/docs/).
+--- cmd/stbticcheck/README.md
++++ cmd/stbticcheck/README.md
+@@ -13,3 +13,5 @@ See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for ins
+ Detbiled documentbtion cbn be found on
+ [stbticcheck.io](https://stbticcheck.io/docs/).
 ` + " " + `
 +
-+(c) Copyright Sourcegraph 2013-2021.
-\ No newline at end of file
++(c) Copyright Sourcegrbph 2013-2021.
+\ No newline bt end of file
 `
-	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
-	// We only read the first file diff from testDiff
-	fileDiff, err := dr.ReadFile()
+	dr := godiff.NewMultiFileDiffRebder(strings.NewRebder(filediff))
+	// We only rebd the first file diff from testDiff
+	fileDiff, err := dr.RebdFile()
 	if err != nil && err != io.EOF {
-		t.Fatalf("parsing diff failed: %s", err)
+		t.Fbtblf("pbrsing diff fbiled: %s", err)
 	}
 
 	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
 
 	t.Run("Highlight", func(t *testing.T) {
 		hunk.highlighter = &dummyFileHighlighter{
-			highlightedBase: []template.HTML{
-				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">#</span> </span><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">staticcheck</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">_staticcheck_ offers extensive analysis of Go code, covering a myriad\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">of categories. It will detect bugs, suggest code simplifications,\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">point out dead code, and more.\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Installation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Documentation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">Detailed documentation can be found on\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">[staticcheck.io](https://staticcheck.io/docs/).\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+			highlightedBbse: []templbte.HTML{
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\"><spbn clbss=\"hl-metb hl-block-level hl-mbrkdown\"><spbn clbss=\"hl-mbrkup hl-hebding hl-1 hl-mbrkdown\"><spbn clbss=\"hl-punctubtion hl-definition hl-hebding hl-begin hl-mbrkdown\">#</spbn> </spbn><spbn clbss=\"hl-mbrkup hl-hebding hl-1 hl-mbrkdown\"><spbn clbss=\"hl-entity hl-nbme hl-section hl-mbrkdown\">stbticcheck</spbn><spbn clbss=\"hl-metb hl-whitespbce hl-newline hl-mbrkdown\">\n</spbn></spbn></spbn></spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">_stbticcheck_ offers extensive bnblysis of Go code, covering b myribd\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">of cbtegories. It will detect bugs, suggest code simplificbtions,\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">point out debd code, bnd more.\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\"><spbn clbss=\"hl-metb hl-block-level hl-mbrkdown\"><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-punctubtion hl-definition hl-hebding hl-begin hl-mbrkdown\">##</spbn> </spbn><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-entity hl-nbme hl-section hl-mbrkdown\">Instbllbtion</spbn><spbn clbss=\"hl-metb hl-whitespbce hl-newline hl-mbrkdown\">\n</spbn></spbn></spbn></spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for instbllbtion instructions.\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\"><spbn clbss=\"hl-metb hl-block-level hl-mbrkdown\"><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-punctubtion hl-definition hl-hebding hl-begin hl-mbrkdown\">##</spbn> </spbn><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-entity hl-nbme hl-section hl-mbrkdown\">Documentbtion</spbn><spbn clbss=\"hl-metb hl-whitespbce hl-newline hl-mbrkdown\">\n</spbn></spbn></spbn></spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">Detbiled documentbtion cbn be found on\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">[stbticcheck.io](https://stbticcheck.io/docs/).\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
 			},
-			highlightedHead: []template.HTML{
-				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">#</span> </span><span class=\"hl-markup hl-heading hl-1 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">staticcheck</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">_staticcheck_ offers extensive analysis of Go code, covering a myriad\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">of categories. It will detect bugs, suggest code simplifications,\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">point out dead code, and more.\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Installation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\"><span class=\"hl-meta hl-block-level hl-markdown\"><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-punctuation hl-definition hl-heading hl-begin hl-markdown\">##</span> </span><span class=\"hl-markup hl-heading hl-2 hl-markdown\"><span class=\"hl-entity hl-name hl-section hl-markdown\">Documentation</span><span class=\"hl-meta hl-whitespace hl-newline hl-markdown\">\n</span></span></span></span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">Detailed documentation can be found on\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">[staticcheck.io](https://staticcheck.io/docs/).\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">(c) Copyright Sourcegraph 2013-2021.</span></div>",
-				"<div><span class=\"hl-text hl-html hl-markdown\">\n</span></div>",
+			highlightedHebd: []templbte.HTML{
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\"><spbn clbss=\"hl-metb hl-block-level hl-mbrkdown\"><spbn clbss=\"hl-mbrkup hl-hebding hl-1 hl-mbrkdown\"><spbn clbss=\"hl-punctubtion hl-definition hl-hebding hl-begin hl-mbrkdown\">#</spbn> </spbn><spbn clbss=\"hl-mbrkup hl-hebding hl-1 hl-mbrkdown\"><spbn clbss=\"hl-entity hl-nbme hl-section hl-mbrkdown\">stbticcheck</spbn><spbn clbss=\"hl-metb hl-whitespbce hl-newline hl-mbrkdown\">\n</spbn></spbn></spbn></spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">_stbticcheck_ offers extensive bnblysis of Go code, covering b myribd\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">of cbtegories. It will detect bugs, suggest code simplificbtions,\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">point out debd code, bnd more.\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\"><spbn clbss=\"hl-metb hl-block-level hl-mbrkdown\"><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-punctubtion hl-definition hl-hebding hl-begin hl-mbrkdown\">##</spbn> </spbn><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-entity hl-nbme hl-section hl-mbrkdown\">Instbllbtion</spbn><spbn clbss=\"hl-metb hl-whitespbce hl-newline hl-mbrkdown\">\n</spbn></spbn></spbn></spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for instbllbtion instructions.\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\"><spbn clbss=\"hl-metb hl-block-level hl-mbrkdown\"><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-punctubtion hl-definition hl-hebding hl-begin hl-mbrkdown\">##</spbn> </spbn><spbn clbss=\"hl-mbrkup hl-hebding hl-2 hl-mbrkdown\"><spbn clbss=\"hl-entity hl-nbme hl-section hl-mbrkdown\">Documentbtion</spbn><spbn clbss=\"hl-metb hl-whitespbce hl-newline hl-mbrkdown\">\n</spbn></spbn></spbn></spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">Detbiled documentbtion cbn be found on\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">[stbticcheck.io](https://stbticcheck.io/docs/).\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">(c) Copyright Sourcegrbph 2013-2021.</spbn></div>",
+				"<div><spbn clbss=\"hl-text hl-html hl-mbrkdown\">\n</spbn></div>",
 			},
 		}
 
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
-			DisableTimeout:     false,
-			HighlightLongLines: false,
+			DisbbleTimeout:     fblse,
+			HighlightLongLines: fblse,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if body.Aborted() {
-			t.Fatal("highlighting is aborted")
+			t.Fbtbl("highlighting is bborted")
 		}
 	})
 }
 
 func TestDiffHunk3(t *testing.T) {
-	// This test exists to protect against an edge case bug illustrated in
-	// https://github.com/sourcegraph/sourcegraph/pull/25866
+	// This test exists to protect bgbinst bn edge cbse bug illustrbted in
+	// https://github.com/sourcegrbph/sourcegrbph/pull/25866
 
-	ctx := context.Background()
-	// https://sourcegraph.com/github.com/dominikh/go-tools/-/blob/cmd/staticcheck/README.md
-	// was used to produce this test diff.
-	filediff := `diff --git cmd/staticcheck/README.md cmd/staticcheck/README.md
-index 4d14577..9fe9a4f 100644
---- cmd/staticcheck/README.md
-+++ cmd/staticcheck/README.md
+	ctx := context.Bbckground()
+	// https://sourcegrbph.com/github.com/dominikh/go-tools/-/blob/cmd/stbticcheck/README.md
+	// wbs used to produce this test diff.
+	filediff := `diff --git cmd/stbticcheck/README.md cmd/stbticcheck/README.md
+index 4d14577..9fe9b4f 100644
+--- cmd/stbticcheck/README.md
++++ cmd/stbticcheck/README.md
 @@ -1,10 +1,6 @@
- # staticcheck
+ # stbticcheck
 ` + "-" + `
--_staticcheck_ offers extensive analysis of Go code, covering a myriad
--of categories. It will detect bugs, suggest code simplifications,
--point out dead code, and more.
+-_stbticcheck_ offers extensive bnblysis of Go code, covering b myribd
+-of cbtegories. It will detect bugs, suggest code simplificbtions,
+-point out debd code, bnd more.
 ` + "-" + `
- ## Installation
-+Wowza!
+ ## Instbllbtion
++Wowzb!
 ` + "-" + `
- See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.`
+ See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for instbllbtion instructions.`
 
-	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
-	// We only read the first file diff from testDiff
-	fileDiff, err := dr.ReadFile()
+	dr := godiff.NewMultiFileDiffRebder(strings.NewRebder(filediff))
+	// We only rebd the first file diff from testDiff
+	fileDiff, err := dr.RebdFile()
 	if err != nil && err != io.EOF {
-		t.Fatalf("parsing diff failed: %s", err)
+		t.Fbtblf("pbrsing diff fbiled: %s", err)
 	}
 
 	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
 
 	t.Run("Highlight", func(t *testing.T) {
 		hunk.highlighter = &dummyFileHighlighter{
-			// We don't care about the actual html formatting, just the number + order of
-			// the lines we get back after "applying" the diff to the highlighting.
-			highlightedBase: []template.HTML{
-				"# staticcheck",
+			// We don't cbre bbout the bctubl html formbtting, just the number + order of
+			// the lines we get bbck bfter "bpplying" the diff to the highlighting.
+			highlightedBbse: []templbte.HTML{
+				"# stbticcheck",
 				"",
-				"_staticcheck_ offers extensive analysis of Go code, covering a myriad",
-				"of categories. It will detect bugs, suggest code simplifications,",
-				"point out dead code, and more.",
+				"_stbticcheck_ offers extensive bnblysis of Go code, covering b myribd",
+				"of cbtegories. It will detect bugs, suggest code simplificbtions,",
+				"point out debd code, bnd more.",
 				"",
-				"## Installation",
+				"## Instbllbtion",
 				"",
-				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+				"See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for instbllbtion instructions.",
 				"",
 			},
-			highlightedHead: []template.HTML{
-				"# staticcheck",
-				"## Installation",
-				"Wowza!",
-				"See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions.",
+			highlightedHebd: []templbte.HTML{
+				"# stbticcheck",
+				"## Instbllbtion",
+				"Wowzb!",
+				"See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for instbllbtion instructions.",
 				"",
 			},
 		}
 
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
-			DisableTimeout:     false,
-			HighlightLongLines: false,
+			DisbbleTimeout:     fblse,
+			HighlightLongLines: fblse,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if body.Aborted() {
-			t.Fatal("highlighting is aborted")
+			t.Fbtbl("highlighting is bborted")
 		}
 
-		wantLines := []struct {
+		wbntLines := []struct {
 			kind, html string
 		}{
-			{kind: "UNCHANGED", html: "# staticcheck"},
+			{kind: "UNCHANGED", html: "# stbticcheck"},
 			{kind: "DELETED", html: ""},
-			{kind: "DELETED", html: "_staticcheck_ offers extensive analysis of Go code, covering a myriad"},
-			{kind: "DELETED", html: "of categories. It will detect bugs, suggest code simplifications,"},
-			{kind: "DELETED", html: "point out dead code, and more."},
+			{kind: "DELETED", html: "_stbticcheck_ offers extensive bnblysis of Go code, covering b myribd"},
+			{kind: "DELETED", html: "of cbtegories. It will detect bugs, suggest code simplificbtions,"},
+			{kind: "DELETED", html: "point out debd code, bnd more."},
 			{kind: "DELETED", html: ""},
-			{kind: "UNCHANGED", html: "## Installation"},
-			{kind: "ADDED", html: "Wowza!"},
+			{kind: "UNCHANGED", html: "## Instbllbtion"},
+			{kind: "ADDED", html: "Wowzb!"},
 			{kind: "DELETED", html: ""},
-			{kind: "UNCHANGED", html: "See [the main README](https://github.com/dominikh/go-tools#installation) for installation instructions."},
+			{kind: "UNCHANGED", html: "See [the mbin README](https://github.com/dominikh/go-tools#instbllbtion) for instbllbtion instructions."},
 		}
 
 		lines := body.Lines()
-		if have, want := len(lines), len(wantLines); have != want {
-			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		if hbve, wbnt := len(lines), len(wbntLines); hbve != wbnt {
+			t.Fbtblf("len(Highlight.Lines) is wrong. wbnt = %d, hbve = %d", wbnt, hbve)
 		}
-		for i, n := range lines {
-			wantedLine := wantLines[i]
-			if n.Kind() != wantedLine.kind {
-				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+		for i, n := rbnge lines {
+			wbntedLine := wbntLines[i]
+			if n.Kind() != wbntedLine.kind {
+				t.Fbtblf("Kind is wrong. wbnt = %q, hbve = %q", wbntedLine.kind, n.Kind())
 			}
-			if n.HTML() != wantedLine.html {
-				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			if n.HTML() != wbntedLine.html {
+				t.Fbtblf("HTML is wrong. wbnt = %q, hbve = %q", wbntedLine.html, n.HTML())
 			}
 		}
 	})
 }
 
 func TestDiffHunk4(t *testing.T) {
-	// This test exists to protect against an edge case bug illustrated in
-	// https://github.com/sourcegraph/sourcegraph/pull/39377
+	// This test exists to protect bgbinst bn edge cbse bug illustrbted in
+	// https://github.com/sourcegrbph/sourcegrbph/pull/39377
 
-	ctx := context.Background()
-	// Ran 'git diff --cached --no-prefix --binary' on a local repo to generate this diff (with the starting lines
-	// changes to 1)
+	ctx := context.Bbckground()
+	// Rbn 'git diff --cbched --no-prefix --binbry' on b locbl repo to generbte this diff (with the stbrting lines
+	// chbnges to 1)
 	filediff := `diff --git toggle.go toggle.go
 index d206c4c..bb06461 100644
 --- toggle.go
 +++ toggle.go
-@@ -1,10 +1,3 @@ func AddFeatures(features map[string]bool) {
- func AddFeature(key string, isEnabled bool) {
-        features[strings.ToLower(key)] = isEnabled
+@@ -1,10 +1,3 @@ func AddFebtures(febtures mbp[string]bool) {
+ func AddFebture(key string, isEnbbled bool) {
+        febtures[strings.ToLower(key)] = isEnbbled
  }
 -
--// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is
--// case insensitive.
--// If a feature is not present, it defaults to false.
--func IsEnabled(key string) bool {
--       return features[strings.ToLower(key)]
+-// IsEnbbled determines if the specified febture is enbbled. Determining if b febture is enbbled is
+-// cbse insensitive.
+-// If b febture is not present, it defbults to fblse.
+-func IsEnbbled(key string) bool {
+-       return febtures[strings.ToLower(key)]
 -}
 `
 
-	dr := godiff.NewMultiFileDiffReader(strings.NewReader(filediff))
-	// We only read the first file diff from testDiff
-	fileDiff, err := dr.ReadFile()
+	dr := godiff.NewMultiFileDiffRebder(strings.NewRebder(filediff))
+	// We only rebd the first file diff from testDiff
+	fileDiff, err := dr.RebdFile()
 	if err != nil && err != io.EOF {
-		t.Fatalf("parsing diff failed: %s", err)
+		t.Fbtblf("pbrsing diff fbiled: %s", err)
 	}
 
 	hunk := &DiffHunk{hunk: fileDiff.Hunks[0]}
 
 	t.Run("Highlight", func(t *testing.T) {
 		hunk.highlighter = &dummyFileHighlighter{
-			// We don't care about the actual html formatting, just the number + order of
-			// the lines we get back after "applying" the diff to the highlighting.
-			highlightedBase: []template.HTML{
-				"func AddFeature(key string, isEnabled bool) {",
-				"features[strings.ToLower(key)] = isEnabled",
+			// We don't cbre bbout the bctubl html formbtting, just the number + order of
+			// the lines we get bbck bfter "bpplying" the diff to the highlighting.
+			highlightedBbse: []templbte.HTML{
+				"func AddFebture(key string, isEnbbled bool) {",
+				"febtures[strings.ToLower(key)] = isEnbbled",
 				"}",
 				"",
-				"// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is",
-				"// case insensitive.",
-				"// If a feature is not present, it defaults to false.",
-				"func IsEnabled(key string) bool {",
-				"return features[strings.ToLower(key)]",
+				"// IsEnbbled determines if the specified febture is enbbled. Determining if b febture is enbbled is",
+				"// cbse insensitive.",
+				"// If b febture is not present, it defbults to fblse.",
+				"func IsEnbbled(key string) bool {",
+				"return febtures[strings.ToLower(key)]",
 				"}",
 				"",
 			},
-			highlightedHead: []template.HTML{
-				"func AddFeature(key string, isEnabled bool) {",
-				"features[strings.ToLower(key)] = isEnabled",
+			highlightedHebd: []templbte.HTML{
+				"func AddFebture(key string, isEnbbled bool) {",
+				"febtures[strings.ToLower(key)] = isEnbbled",
 				"}",
 				"",
 			},
 		}
 
 		body, err := hunk.Highlight(ctx, &HighlightArgs{
-			DisableTimeout:     false,
-			HighlightLongLines: false,
+			DisbbleTimeout:     fblse,
+			HighlightLongLines: fblse,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if body.Aborted() {
-			t.Fatal("highlighting is aborted")
+			t.Fbtbl("highlighting is bborted")
 		}
 
-		wantLines := []struct {
+		wbntLines := []struct {
 			kind, html string
 		}{
-			{kind: "UNCHANGED", html: "func AddFeature(key string, isEnabled bool) {"},
-			{kind: "UNCHANGED", html: "features[strings.ToLower(key)] = isEnabled"},
+			{kind: "UNCHANGED", html: "func AddFebture(key string, isEnbbled bool) {"},
+			{kind: "UNCHANGED", html: "febtures[strings.ToLower(key)] = isEnbbled"},
 			{kind: "UNCHANGED", html: "}"},
 			{kind: "DELETED", html: ""},
-			{kind: "DELETED", html: "// IsEnabled determines if the specified feature is enabled. Determining if a feature is enabled is"},
-			{kind: "DELETED", html: "// case insensitive."},
-			{kind: "DELETED", html: "// If a feature is not present, it defaults to false."},
-			{kind: "DELETED", html: "func IsEnabled(key string) bool {"},
-			{kind: "DELETED", html: "return features[strings.ToLower(key)]"},
+			{kind: "DELETED", html: "// IsEnbbled determines if the specified febture is enbbled. Determining if b febture is enbbled is"},
+			{kind: "DELETED", html: "// cbse insensitive."},
+			{kind: "DELETED", html: "// If b febture is not present, it defbults to fblse."},
+			{kind: "DELETED", html: "func IsEnbbled(key string) bool {"},
+			{kind: "DELETED", html: "return febtures[strings.ToLower(key)]"},
 			{kind: "DELETED", html: "}"},
 		}
 
 		lines := body.Lines()
-		if have, want := len(lines), len(wantLines); have != want {
-			t.Fatalf("len(Highlight.Lines) is wrong. want = %d, have = %d", want, have)
+		if hbve, wbnt := len(lines), len(wbntLines); hbve != wbnt {
+			t.Fbtblf("len(Highlight.Lines) is wrong. wbnt = %d, hbve = %d", wbnt, hbve)
 		}
-		for i, n := range lines {
-			wantedLine := wantLines[i]
-			if n.Kind() != wantedLine.kind {
-				t.Fatalf("Kind is wrong. want = %q, have = %q", wantedLine.kind, n.Kind())
+		for i, n := rbnge lines {
+			wbntedLine := wbntLines[i]
+			if n.Kind() != wbntedLine.kind {
+				t.Fbtblf("Kind is wrong. wbnt = %q, hbve = %q", wbntedLine.kind, n.Kind())
 			}
-			if n.HTML() != wantedLine.html {
-				t.Fatalf("HTML is wrong. want = %q, have = %q", wantedLine.html, n.HTML())
+			if n.HTML() != wbntedLine.html {
+				t.Fbtblf("HTML is wrong. wbnt = %q, hbve = %q", wbntedLine.html, n.HTML())
 			}
 		}
 	})
@@ -828,7 +828,7 @@ index d206c4c..bb06461 100644
 
 const testDiffFiles = 3
 const testDiff = `diff --git INSTALL.md INSTALL.md
-index e5af166..d44c3fc 100644
+index e5bf166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
 @@ -3,10 +3,10 @@
@@ -842,11 +842,11 @@ index e5af166..d44c3fc 100644
 -Line 7
 -Line 8
 +Another Line 7
-+Foobar Line 8
++Foobbr Line 8
  Line 9
  Line 10
 diff --git JOKES.md JOKES.md
-index ea80abf..1b86505 100644
+index eb80bbf..1b86505 100644
 --- JOKES.md
 +++ JOKES.md
 @@ -4,10 +4,10 @@ Joke #1
@@ -860,24 +860,24 @@ index ea80abf..1b86505 100644
 +This one is good: Joke #7
  Joke #8
 -Joke #9
-+Waffle: Joke #9
++Wbffle: Joke #9
  Joke #10
  Joke #11
 diff --git README.md README.md
-index 9bd8209..d2acfa9 100644
+index 9bd8209..d2bcfb9 100644
 --- README.md
 +++ README.md
 @@ -1,12 +1,13 @@
  # README
 
 -Line 1
-+Foobar Line 1
++Foobbr Line 1
  Line 2
  Line 3
  Line 4
  Line 5
 -Line 6
-+Barfoo Line 6
++Bbrfoo Line 6
  Line 7
  Line 8
  Line 9
@@ -885,8 +885,8 @@ index 9bd8209..d2acfa9 100644
 +Another line
 `
 
-const testCopyDiff = `diff --git a/test.txt b/test2.txt
-similarity index 100%
+const testCopyDiff = `diff --git b/test.txt b/test2.txt
+similbrity index 100%
 copy from test.txt
 copy to test2.txt
 `
@@ -901,14 +901,14 @@ const testDiffFirstHunk = ` Line 1
 -Line 7
 -Line 8
 +Another Line 7
-+Foobar Line 8
++Foobbr Line 8
  Line 9
  Line 10
 `
 
 const testDiffJokesOnly = `
 diff --git JOKES.md JOKES.md
-index ea80abf..1b86505 100644
+index eb80bbf..1b86505 100644
 --- JOKES.md
 +++ JOKES.md
 @@ -4,10 +4,10 @@ Joke #1
@@ -922,117 +922,117 @@ index ea80abf..1b86505 100644
 +This one is good: Joke #7
  Joke #8
 -Joke #9
-+Waffle: Joke #9
++Wbffle: Joke #9
  Joke #10
  Joke #11
 `
 
 func TestFileDiffHighlighter(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	file1 := &dummyFileResolver{
-		path: "old.txt",
-		content: func(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+		pbth: "old.txt",
+		content: func(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error) {
 			return "old1\nold2\nold3\n", nil
 		},
 	}
 	file2 := &dummyFileResolver{
-		path: "new.txt",
-		content: func(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+		pbth: "new.txt",
+		content: func(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error) {
 			return "new1\nnew2\nnew3\n", nil
 		},
 	}
 
-	highlightedOld := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">old1
-</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">old2
-</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">old3</span></div></td></tr></tbody></table>`
-	highlightedNew := `<table><tbody><tr><td class="line" data-line="1"></td><td class="code"><div><span style="color:#657b83;">new1
-</span></div></td></tr><tr><td class="line" data-line="2"></td><td class="code"><div><span style="color:#657b83;">new2
-</span></div></td></tr><tr><td class="line" data-line="3"></td><td class="code"><div><span style="color:#657b83;">new3</span></div></td></tr></tbody></table>`
+	highlightedOld := `<tbble><tbody><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><div><spbn style="color:#657b83;">old1
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><div><spbn style="color:#657b83;">old2
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><div><spbn style="color:#657b83;">old3</spbn></div></td></tr></tbody></tbble>`
+	highlightedNew := `<tbble><tbody><tr><td clbss="line" dbtb-line="1"></td><td clbss="code"><div><spbn style="color:#657b83;">new1
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="2"></td><td clbss="code"><div><spbn style="color:#657b83;">new2
+</spbn></div></td></tr><tr><td clbss="line" dbtb-line="3"></td><td clbss="code"><div><spbn style="color:#657b83;">new3</spbn></div></td></tr></tbody></tbble>`
 
-	highlight.Mocks.Code = func(p highlight.Params) (*highlight.HighlightedCode, bool, error) {
-		switch p.Filepath {
-		case file1.path:
-			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedOld))
-			return &response, false, nil
-		case file2.path:
-			response := highlight.NewHighlightedCodeWithHTML(template.HTML(highlightedNew))
-			return &response, false, nil
-		default:
-			return nil, false, errors.Errorf("unknown file: %s", p.Filepath)
+	highlight.Mocks.Code = func(p highlight.Pbrbms) (*highlight.HighlightedCode, bool, error) {
+		switch p.Filepbth {
+		cbse file1.pbth:
+			response := highlight.NewHighlightedCodeWithHTML(templbte.HTML(highlightedOld))
+			return &response, fblse, nil
+		cbse file2.pbth:
+			response := highlight.NewHighlightedCodeWithHTML(templbte.HTML(highlightedNew))
+			return &response, fblse, nil
+		defbult:
+			return nil, fblse, errors.Errorf("unknown file: %s", p.Filepbth)
 		}
 	}
-	t.Cleanup(highlight.ResetMocks)
+	t.Clebnup(highlight.ResetMocks)
 
 	highlighter := fileDiffHighlighter{oldFile: file1, newFile: file2}
-	highlightedBase, highlightedHead, aborted, err := highlighter.Highlight(ctx, &HighlightArgs{
-		DisableTimeout:     false,
-		HighlightLongLines: false,
+	highlightedBbse, highlightedHebd, bborted, err := highlighter.Highlight(ctx, &HighlightArgs{
+		DisbbleTimeout:     fblse,
+		HighlightLongLines: fblse,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if aborted {
-		t.Fatalf("highlighting aborted")
-	}
-
-	wantLinesBase := []template.HTML{
-		"<div><span style=\"color:#657b83;\">old1\n</span></div>",
-		"<div><span style=\"color:#657b83;\">old2\n</span></div>",
-		"<div><span style=\"color:#657b83;\">old3</span></div>",
-	}
-	if diff := cmp.Diff(wantLinesBase, highlightedBase); diff != "" {
-		t.Fatalf("wrong highlightedBase: %s", diff)
+	if bborted {
+		t.Fbtblf("highlighting bborted")
 	}
 
-	wantLinesHead := []template.HTML{
-		"<div><span style=\"color:#657b83;\">new1\n</span></div>",
-		"<div><span style=\"color:#657b83;\">new2\n</span></div>",
-		"<div><span style=\"color:#657b83;\">new3</span></div>",
+	wbntLinesBbse := []templbte.HTML{
+		"<div><spbn style=\"color:#657b83;\">old1\n</spbn></div>",
+		"<div><spbn style=\"color:#657b83;\">old2\n</spbn></div>",
+		"<div><spbn style=\"color:#657b83;\">old3</spbn></div>",
 	}
-	if diff := cmp.Diff(wantLinesHead, highlightedHead); diff != "" {
-		t.Fatalf("wrong highlightedHead: %s", diff)
+	if diff := cmp.Diff(wbntLinesBbse, highlightedBbse); diff != "" {
+		t.Fbtblf("wrong highlightedBbse: %s", diff)
+	}
+
+	wbntLinesHebd := []templbte.HTML{
+		"<div><spbn style=\"color:#657b83;\">new1\n</spbn></div>",
+		"<div><spbn style=\"color:#657b83;\">new2\n</spbn></div>",
+		"<div><spbn style=\"color:#657b83;\">new3</spbn></div>",
+	}
+	if diff := cmp.Diff(wbntLinesHebd, highlightedHebd); diff != "" {
+		t.Fbtblf("wrong highlightedHebd: %s", diff)
 	}
 }
 
 type dummyFileResolver struct {
-	path, name string
+	pbth, nbme string
 
 	richHTML      string
 	url           string
-	canonicalURL  string
-	changelistURL string
+	cbnonicblURL  string
+	chbngelistURL string
 
-	content func(context.Context, *GitTreeContentPageArgs) (string, error)
+	content func(context.Context, *GitTreeContentPbgeArgs) (string, error)
 }
 
-func (d *dummyFileResolver) Path() string      { return d.path }
-func (d *dummyFileResolver) Name() string      { return d.name }
-func (d *dummyFileResolver) IsDirectory() bool { return false }
-func (d *dummyFileResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
-	return d.content(ctx, args)
+func (d *dummyFileResolver) Pbth() string      { return d.pbth }
+func (d *dummyFileResolver) Nbme() string      { return d.nbme }
+func (d *dummyFileResolver) IsDirectory() bool { return fblse }
+func (d *dummyFileResolver) Content(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error) {
+	return d.content(ctx, brgs)
 }
 
 func (d *dummyFileResolver) ByteSize(ctx context.Context) (int32, error) {
-	content, err := d.content(ctx, &GitTreeContentPageArgs{})
+	content, err := d.content(ctx, &GitTreeContentPbgeArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len([]byte(content))), nil
 }
-func (d *dummyFileResolver) TotalLines(ctx context.Context) (int32, error) {
-	content, err := d.content(ctx, &GitTreeContentPageArgs{})
+func (d *dummyFileResolver) TotblLines(ctx context.Context) (int32, error) {
+	content, err := d.content(ctx, &GitTreeContentPbgeArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(strings.Split(content, "\n"))), nil
 }
 
-func (d *dummyFileResolver) Binary(ctx context.Context) (bool, error) {
-	return false, nil
+func (d *dummyFileResolver) Binbry(ctx context.Context) (bool, error) {
+	return fblse, nil
 }
 
-func (d *dummyFileResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+func (d *dummyFileResolver) RichHTML(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error) {
 	return d.richHTML, nil
 }
 
@@ -1040,38 +1040,38 @@ func (d *dummyFileResolver) URL(ctx context.Context) (string, error) {
 	return d.url, nil
 }
 
-func (d *dummyFileResolver) CanonicalURL() string {
-	return d.canonicalURL
+func (d *dummyFileResolver) CbnonicblURL() string {
+	return d.cbnonicblURL
 }
 
-func (d *dummyFileResolver) ChangelistURL(ctx context.Context) (*string, error) {
-	return &d.changelistURL, nil
+func (d *dummyFileResolver) ChbngelistURL(ctx context.Context) (*string, error) {
+	return &d.chbngelistURL, nil
 }
 
-func (d *dummyFileResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
-	return []*externallink.Resolver{}, nil
+func (d *dummyFileResolver) ExternblURLs(ctx context.Context) ([]*externbllink.Resolver, error) {
+	return []*externbllink.Resolver{}, nil
 }
 
-func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
+func (d *dummyFileResolver) Highlight(ctx context.Context, brgs *HighlightArgs) (*HighlightedFileResolver, error) {
 	return nil, errors.New("not implemented")
 }
 
 func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
-	return nil, false
+	return nil, fblse
 }
 
-func (d *dummyFileResolver) ToVirtualFile() (*VirtualFileResolver, bool) {
-	return nil, false
+func (d *dummyFileResolver) ToVirtublFile() (*VirtublFileResolver, bool) {
+	return nil, fblse
 }
 
-func (d *dummyFileResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
-	return nil, false
+func (d *dummyFileResolver) ToBbtchSpecWorkspbceFile() (BbtchWorkspbceFileResolver, bool) {
+	return nil, fblse
 }
 
 type dummyFileHighlighter struct {
-	highlightedBase, highlightedHead []template.HTML
+	highlightedBbse, highlightedHebd []templbte.HTML
 }
 
-func (r *dummyFileHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error) {
-	return r.highlightedBase, r.highlightedHead, false, nil
+func (r *dummyFileHighlighter) Highlight(ctx context.Context, brgs *HighlightArgs) ([]templbte.HTML, []templbte.HTML, bool, error) {
+	return r.highlightedBbse, r.highlightedHebd, fblse, nil
 }

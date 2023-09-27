@@ -1,59 +1,59 @@
-package protocol
+pbckbge protocol
 
 import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 	"github.com/stretchr/testify/require"
 )
 
-func TestSearchRequestProtoRoundtrip(t *testing.T) {
-	req := &SearchRequest{
+func TestSebrchRequestProtoRoundtrip(t *testing.T) {
+	req := &SebrchRequest{
 		Repo:      "test1",
-		Revisions: []RevisionSpecifier{{RevSpec: "ABC"}, {RefGlob: "refs/heads/*"}},
-		Query: &Operator{
+		Revisions: []RevisionSpecifier{{RevSpec: "ABC"}, {RefGlob: "refs/hebds/*"}},
+		Query: &Operbtor{
 			Kind: And,
-			Operands: []Node{
-				&AuthorMatches{Expr: "abc", IgnoreCase: true},
-				&CommitAfter{Time: time.Date(2021, 12, 3, 12, 3, 45, 0, time.UTC)},
+			Operbnds: []Node{
+				&AuthorMbtches{Expr: "bbc", IgnoreCbse: true},
+				&CommitAfter{Time: time.Dbte(2021, 12, 3, 12, 3, 45, 0, time.UTC)},
 			},
 		},
 		Limit: 42,
 	}
 
 	protoReq := req.ToProto()
-	roundtripped, err := SearchRequestFromProto(protoReq)
+	roundtripped, err := SebrchRequestFromProto(protoReq)
 	require.NoError(t, err)
-	require.Equal(t, req, roundtripped)
+	require.Equbl(t, req, roundtripped)
 }
 
-func TestCommitMatchProtoRoundtrip(t *testing.T) {
-	req := CommitMatch{
-		Oid:        "8a8a8a88aa",
-		Author:     Signature{Name: "sasha", Email: "cap@map.com", Date: time.Date(2022, 3, 4, 2, 3, 4, 0, time.UTC)},
-		Committer:  Signature{Name: "mushu", Email: "lop@cop.com", Date: time.Date(2022, 3, 4, 2, 3, 4, 0, time.UTC)},
-		Parents:    []api.CommitID{"9b9b9b", "2c22c2c"},
-		Refs:       []string{"pale", "blue", "dot"},
-		SourceRefs: []string{"giant", "red", "spot"},
-		Message: result.MatchedString{
+func TestCommitMbtchProtoRoundtrip(t *testing.T) {
+	req := CommitMbtch{
+		Oid:        "8b8b8b88bb",
+		Author:     Signbture{Nbme: "sbshb", Embil: "cbp@mbp.com", Dbte: time.Dbte(2022, 3, 4, 2, 3, 4, 0, time.UTC)},
+		Committer:  Signbture{Nbme: "mushu", Embil: "lop@cop.com", Dbte: time.Dbte(2022, 3, 4, 2, 3, 4, 0, time.UTC)},
+		Pbrents:    []bpi.CommitID{"9b9b9b", "2c22c2c"},
+		Refs:       []string{"pble", "blue", "dot"},
+		SourceRefs: []string{"gibnt", "red", "spot"},
+		Messbge: result.MbtchedString{
 			Content: "lorem ipsum",
-			MatchedRanges: result.Ranges{{
-				Start: result.Location{Offset: 10, Line: 4, Column: 2},
-				End:   result.Location{Offset: 11, Line: 5, Column: 3},
+			MbtchedRbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Offset: 10, Line: 4, Column: 2},
+				End:   result.Locbtion{Offset: 11, Line: 5, Column: 3},
 			}},
 		},
-		Diff: result.MatchedString{
+		Diff: result.MbtchedString{
 			Content: "dolor",
-			MatchedRanges: result.Ranges{{
-				Start: result.Location{Offset: 888, Line: 999, Column: 444},
-				End:   result.Location{Offset: 111, Line: 222, Column: 333},
+			MbtchedRbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Offset: 888, Line: 999, Column: 444},
+				End:   result.Locbtion{Offset: 111, Line: 222, Column: 333},
 			}},
 		},
 	}
 
 	protoReq := req.ToProto()
-	roundtripped := CommitMatchFromProto(protoReq)
-	require.Equal(t, req, roundtripped)
+	roundtripped := CommitMbtchFromProto(protoReq)
+	require.Equbl(t, req, roundtripped)
 }

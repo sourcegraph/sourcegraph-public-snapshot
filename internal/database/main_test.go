@@ -1,16 +1,16 @@
-package database
+pbckbge dbtbbbse
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
 		logtest.InitWithLevel(m, log.LevelNone)
 	} else {

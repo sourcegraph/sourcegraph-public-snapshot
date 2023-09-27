@@ -1,789 +1,789 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	ff "github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	ff "github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestFeatureFlagStore(t *testing.T) {
-	t.Parallel()
-	t.Run("NewFeatureFlag", testNewFeatureFlagRoundtrip)
-	t.Run("ListFeatureFlags", testListFeatureFlags)
+func TestFebtureFlbgStore(t *testing.T) {
+	t.Pbrbllel()
+	t.Run("NewFebtureFlbg", testNewFebtureFlbgRoundtrip)
+	t.Run("ListFebtureFlbgs", testListFebtureFlbgs)
 	t.Run("Overrides", func(t *testing.T) {
 		t.Run("NewOverride", testNewOverrideRoundtrip)
 		t.Run("ListUserOverrides", testListUserOverrides)
 		t.Run("ListOrgOverrides", testListOrgOverrides)
 	})
-	t.Run("UserFlags", testUserFlags)
-	t.Run("AnonymousUserFlags", testAnonymousUserFlags)
-	t.Run("UserlessFeatureFlags", testUserlessFeatureFlags)
-	t.Run("OrganizationFeatureFlag", testOrgFeatureFlag)
-	t.Run("GetFeatureFlag", testGetFeatureFlag)
-	t.Run("UpdateFeatureFlag", testUpdateFeatureFlag)
+	t.Run("UserFlbgs", testUserFlbgs)
+	t.Run("AnonymousUserFlbgs", testAnonymousUserFlbgs)
+	t.Run("UserlessFebtureFlbgs", testUserlessFebtureFlbgs)
+	t.Run("OrgbnizbtionFebtureFlbg", testOrgFebtureFlbg)
+	t.Run("GetFebtureFlbg", testGetFebtureFlbg)
+	t.Run("UpdbteFebtureFlbg", testUpdbteFebtureFlbg)
 }
 
-func errorContains(s string) require.ErrorAssertionFunc {
-	return func(t require.TestingT, err error, msg ...any) {
+func errorContbins(s string) require.ErrorAssertionFunc {
+	return func(t require.TestingT, err error, msg ...bny) {
 		require.Error(t, err)
-		require.Contains(t, err.Error(), s, msg)
+		require.Contbins(t, err.Error(), s, msg)
 	}
 }
 
-func cleanup(t *testing.T, db DB) func() {
+func clebnup(t *testing.T, db DB) func() {
 	return func() {
-		if t.Failed() {
-			// Retain content on failed tests
+		if t.Fbiled() {
+			// Retbin content on fbiled tests
 			return
 		}
-		_, err := db.Handle().ExecContext(
-			context.Background(),
-			`truncate feature_flags, feature_flag_overrides, users, orgs, org_members cascade;`,
+		_, err := db.Hbndle().ExecContext(
+			context.Bbckground(),
+			`truncbte febture_flbgs, febture_flbg_overrides, users, orgs, org_members cbscbde;`,
 		)
 		require.NoError(t, err)
 	}
 }
 
-func setupClearRedisCacheTest(t *testing.T, expectedFlagName string) *bool {
-	clearRedisCacheCalled := false
-	oldClearRedisCache := clearRedisCache
-	clearRedisCache = func(flagName string) {
-		if flagName == expectedFlagName {
-			clearRedisCacheCalled = true
+func setupClebrRedisCbcheTest(t *testing.T, expectedFlbgNbme string) *bool {
+	clebrRedisCbcheCblled := fblse
+	oldClebrRedisCbche := clebrRedisCbche
+	clebrRedisCbche = func(flbgNbme string) {
+		if flbgNbme == expectedFlbgNbme {
+			clebrRedisCbcheCblled = true
 		}
 	}
-	t.Cleanup(func() { clearRedisCache = oldClearRedisCache })
-	return &clearRedisCacheCalled
+	t.Clebnup(func() { clebrRedisCbche = oldClebrRedisCbche })
+	return &clebrRedisCbcheCblled
 }
 
-func testNewFeatureFlagRoundtrip(t *testing.T) {
-	t.Parallel()
+func testNewFebtureFlbgRoundtrip(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
-	flagStore := NewDB(logger, dbtest.NewDB(logger, t)).FeatureFlags()
-	ctx := actor.WithInternalActor(context.Background())
+	flbgStore := NewDB(logger, dbtest.NewDB(logger, t)).FebtureFlbgs()
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	cases := []struct {
-		flag      *ff.FeatureFlag
-		assertErr require.ErrorAssertionFunc
+	cbses := []struct {
+		flbg      *ff.FebtureFlbg
+		bssertErr require.ErrorAssertionFunc
 	}{
 		{
-			flag: &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}},
+			flbg: &ff.FebtureFlbg{Nbme: "bool_true", Bool: &ff.FebtureFlbgBool{Vblue: true}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "bool_false", Bool: &ff.FeatureFlagBool{Value: false}},
+			flbg: &ff.FebtureFlbg{Nbme: "bool_fblse", Bool: &ff.FebtureFlbgBool{Vblue: fblse}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "min_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 0}},
+			flbg: &ff.FebtureFlbg{Nbme: "min_rollout", Rollout: &ff.FebtureFlbgRollout{Rollout: 0}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "mid_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 3124}},
+			flbg: &ff.FebtureFlbg{Nbme: "mid_rollout", Rollout: &ff.FebtureFlbgRollout{Rollout: 3124}},
 		},
 		{
-			flag: &ff.FeatureFlag{Name: "max_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 10000}},
+			flbg: &ff.FebtureFlbg{Nbme: "mbx_rollout", Rollout: &ff.FebtureFlbgRollout{Rollout: 10000}},
 		},
 		{
-			flag:      &ff.FeatureFlag{Name: "err_too_high_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 10001}},
-			assertErr: errorContains(`violates check constraint "feature_flags_rollout_check"`),
+			flbg:      &ff.FebtureFlbg{Nbme: "err_too_high_rollout", Rollout: &ff.FebtureFlbgRollout{Rollout: 10001}},
+			bssertErr: errorContbins(`violbtes check constrbint "febture_flbgs_rollout_check"`),
 		},
 		{
-			flag:      &ff.FeatureFlag{Name: "err_too_low_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: -1}},
-			assertErr: errorContains(`violates check constraint "feature_flags_rollout_check"`),
+			flbg:      &ff.FebtureFlbg{Nbme: "err_too_low_rollout", Rollout: &ff.FebtureFlbgRollout{Rollout: -1}},
+			bssertErr: errorContbins(`violbtes check constrbint "febture_flbgs_rollout_check"`),
 		},
 		{
-			flag:      &ff.FeatureFlag{Name: "err_no_types"},
-			assertErr: errorContains(`feature flag must have exactly one type`),
+			flbg:      &ff.FebtureFlbg{Nbme: "err_no_types"},
+			bssertErr: errorContbins(`febture flbg must hbve exbctly one type`),
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.flag.Name, func(t *testing.T) {
-			res, err := flagStore.CreateFeatureFlag(ctx, tc.flag)
-			if tc.assertErr != nil {
-				tc.assertErr(t, err)
+	for _, tc := rbnge cbses {
+		t.Run(tc.flbg.Nbme, func(t *testing.T) {
+			res, err := flbgStore.CrebteFebtureFlbg(ctx, tc.flbg)
+			if tc.bssertErr != nil {
+				tc.bssertErr(t, err)
 				return
 			}
 			require.NoError(t, err)
 
-			// Only assert that the values it is created with are equal.
-			// Don't bother with the timestamps
-			require.Equal(t, tc.flag.Name, res.Name)
-			require.Equal(t, tc.flag.Bool, res.Bool)
-			require.Equal(t, tc.flag.Rollout, res.Rollout)
+			// Only bssert thbt the vblues it is crebted with bre equbl.
+			// Don't bother with the timestbmps
+			require.Equbl(t, tc.flbg.Nbme, res.Nbme)
+			require.Equbl(t, tc.flbg.Bool, res.Bool)
+			require.Equbl(t, tc.flbg.Rollout, res.Rollout)
 		})
 	}
 }
 
-func testListFeatureFlags(t *testing.T) {
-	t.Parallel()
+func testListFebtureFlbgs(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
-	ctx := actor.WithInternalActor(context.Background())
+	flbgStore := &febtureFlbgStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	flag1 := &ff.FeatureFlag{Name: "bool_true", Bool: &ff.FeatureFlagBool{Value: true}}
-	flag2 := &ff.FeatureFlag{Name: "bool_false", Bool: &ff.FeatureFlagBool{Value: false}}
-	flag3 := &ff.FeatureFlag{Name: "mid_rollout", Rollout: &ff.FeatureFlagRollout{Rollout: 3124}}
-	flag4 := &ff.FeatureFlag{Name: "deletable", Rollout: &ff.FeatureFlagRollout{Rollout: 3125}}
-	flags := []*ff.FeatureFlag{flag1, flag2, flag3, flag4}
+	flbg1 := &ff.FebtureFlbg{Nbme: "bool_true", Bool: &ff.FebtureFlbgBool{Vblue: true}}
+	flbg2 := &ff.FebtureFlbg{Nbme: "bool_fblse", Bool: &ff.FebtureFlbgBool{Vblue: fblse}}
+	flbg3 := &ff.FebtureFlbg{Nbme: "mid_rollout", Rollout: &ff.FebtureFlbgRollout{Rollout: 3124}}
+	flbg4 := &ff.FebtureFlbg{Nbme: "deletbble", Rollout: &ff.FebtureFlbgRollout{Rollout: 3125}}
+	flbgs := []*ff.FebtureFlbg{flbg1, flbg2, flbg3, flbg4}
 
-	for _, flag := range flags {
-		_, err := flagStore.CreateFeatureFlag(ctx, flag)
+	for _, flbg := rbnge flbgs {
+		_, err := flbgStore.CrebteFebtureFlbg(ctx, flbg)
 		require.NoError(t, err)
 	}
 
-	// Deleted flag4
-	err := flagStore.Exec(ctx, sqlf.Sprintf("DELETE FROM feature_flags WHERE flag_name = 'deletable';"))
+	// Deleted flbg4
+	err := flbgStore.Exec(ctx, sqlf.Sprintf("DELETE FROM febture_flbgs WHERE flbg_nbme = 'deletbble';"))
 	require.NoError(t, err)
 
-	expected := []*ff.FeatureFlag{flag1, flag2, flag3}
+	expected := []*ff.FebtureFlbg{flbg1, flbg2, flbg3}
 
-	res, err := flagStore.GetFeatureFlags(ctx)
+	res, err := flbgStore.GetFebtureFlbgs(ctx)
 	require.NoError(t, err)
-	for _, flag := range res {
-		// Unset any timestamps
-		flag.CreatedAt = time.Time{}
-		flag.UpdatedAt = time.Time{}
-		flag.DeletedAt = nil
+	for _, flbg := rbnge res {
+		// Unset bny timestbmps
+		flbg.CrebtedAt = time.Time{}
+		flbg.UpdbtedAt = time.Time{}
+		flbg.DeletedAt = nil
 	}
 
-	require.EqualValues(t, res, expected)
+	require.EqublVblues(t, res, expected)
 }
 
 func testNewOverrideRoundtrip(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
+	flbgStore := db.FebtureFlbgs()
 	users := db.Users()
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	ff1, err := flagStore.CreateBool(ctx, "t", true)
+	ff1, err := flbgStore.CrebteBool(ctx, "t", true)
 	require.NoError(t, err)
 
-	u1, err := users.Create(ctx, NewUser{Username: "u", Password: "p"})
+	u1, err := users.Crebte(ctx, NewUser{Usernbme: "u", Pbssword: "p"})
 	require.NoError(t, err)
 
-	invalidUserID := int32(38535)
+	invblidUserID := int32(38535)
 
-	cases := []struct {
+	cbses := []struct {
 		override  *ff.Override
-		assertErr require.ErrorAssertionFunc
+		bssertErr require.ErrorAssertionFunc
 	}{
 		{
-			override: &ff.Override{UserID: &u1.ID, FlagName: ff1.Name, Value: false},
+			override: &ff.Override{UserID: &u1.ID, FlbgNbme: ff1.Nbme, Vblue: fblse},
 		},
 		{
-			override:  &ff.Override{UserID: &invalidUserID, FlagName: ff1.Name, Value: false},
-			assertErr: errorContains(`violates foreign key constraint "feature_flag_overrides_namespace_user_id_fkey"`),
+			override:  &ff.Override{UserID: &invblidUserID, FlbgNbme: ff1.Nbme, Vblue: fblse},
+			bssertErr: errorContbins(`violbtes foreign key constrbint "febture_flbg_overrides_nbmespbce_user_id_fkey"`),
 		},
 		{
-			override:  &ff.Override{UserID: &u1.ID, FlagName: "invalid-flag-name", Value: false},
-			assertErr: errorContains(`violates foreign key constraint "feature_flag_overrides_flag_name_fkey"`),
+			override:  &ff.Override{UserID: &u1.ID, FlbgNbme: "invblid-flbg-nbme", Vblue: fblse},
+			bssertErr: errorContbins(`violbtes foreign key constrbint "febture_flbg_overrides_flbg_nbme_fkey"`),
 		},
 		{
-			override:  &ff.Override{FlagName: ff1.Name, Value: false},
-			assertErr: errorContains(`violates check constraint "feature_flag_overrides_has_org_or_user_id"`),
+			override:  &ff.Override{FlbgNbme: ff1.Nbme, Vblue: fblse},
+			bssertErr: errorContbins(`violbtes check constrbint "febture_flbg_overrides_hbs_org_or_user_id"`),
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run("case", func(t *testing.T) {
-			res, err := flagStore.CreateOverride(ctx, tc.override)
-			if tc.assertErr != nil {
-				tc.assertErr(t, err)
+	for _, tc := rbnge cbses {
+		t.Run("cbse", func(t *testing.T) {
+			res, err := flbgStore.CrebteOverride(ctx, tc.override)
+			if tc.bssertErr != nil {
+				tc.bssertErr(t, err)
 				return
 			}
 			require.NoError(t, err)
-			require.Equal(t, tc.override, res)
+			require.Equbl(t, tc.override, res)
 		})
 	}
 }
 
 func testListUserOverrides(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+	flbgStore := &febtureFlbgStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 	users := db.Users()
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	mkUser := func(name string) *types.User {
-		u, err := users.Create(ctx, NewUser{Username: name, Password: "p"})
+	mkUser := func(nbme string) *types.User {
+		u, err := users.Crebte(ctx, NewUser{Usernbme: nbme, Pbssword: "p"})
 		require.NoError(t, err)
 		return u
 	}
 
-	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.CreateBool(ctx, name, val)
+	mkFFBool := func(nbme string, vbl bool) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteBool(ctx, nbme, vbl)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkOverride := func(user int32, flag string, val bool) *ff.Override {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{UserID: &user, FlagName: flag, Value: val})
+	mkOverride := func(user int32, flbg string, vbl bool) *ff.Override {
+		ffo, err := flbgStore.CrebteOverride(ctx, &ff.Override{UserID: &user, FlbgNbme: flbg, Vblue: vbl})
 		require.NoError(t, err)
 		return ffo
 	}
 
 	t.Run("no overrides", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f", true)
-		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
+		got, err := flbgStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
 		require.Empty(t, got)
 	})
 
 	t.Run("some overrides", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
 		f1 := mkFFBool("f", true)
-		o1 := mkOverride(u1.ID, f1.Name, false)
-		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
+		o1 := mkOverride(u1.ID, f1.Nbme, fblse)
+		got, err := flbgStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
-		require.Equal(t, got, []*ff.Override{o1})
+		require.Equbl(t, got, []*ff.Override{o1})
 	})
 
 	t.Run("overrides for other users", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u1")
 		u2 := mkUser("u2")
 		f1 := mkFFBool("f", true)
-		o1 := mkOverride(u1.ID, f1.Name, false)
-		mkOverride(u2.ID, f1.Name, true)
-		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
+		o1 := mkOverride(u1.ID, f1.Nbme, fblse)
+		mkOverride(u2.ID, f1.Nbme, true)
+		got, err := flbgStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
-		require.Equal(t, got, []*ff.Override{o1})
+		require.Equbl(t, got, []*ff.Override{o1})
 	})
 
 	t.Run("deleted override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u1")
 		f1 := mkFFBool("f", true)
-		mkOverride(u1.ID, f1.Name, false)
-		err := flagStore.Exec(ctx, sqlf.Sprintf("UPDATE feature_flag_overrides SET deleted_at = now()"))
+		mkOverride(u1.ID, f1.Nbme, fblse)
+		err := flbgStore.Exec(ctx, sqlf.Sprintf("UPDATE febture_flbg_overrides SET deleted_bt = now()"))
 		require.NoError(t, err)
-		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
+		got, err := flbgStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
 		require.Empty(t, got)
 	})
 
 	t.Run("non-unique override errors", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u1")
 		f1 := mkFFBool("f", true)
-		_, err := flagStore.CreateOverride(ctx, &ff.Override{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		_, err := flbgStore.CrebteOverride(ctx, &ff.Override{UserID: &u1.ID, FlbgNbme: f1.Nbme, Vblue: true})
 		require.NoError(t, err)
-		_, err = flagStore.CreateOverride(ctx, &ff.Override{UserID: &u1.ID, FlagName: f1.Name, Value: true})
+		_, err = flbgStore.CrebteOverride(ctx, &ff.Override{UserID: &u1.ID, FlbgNbme: f1.Nbme, Vblue: true})
 		require.Error(t, err)
 	})
 }
 
 func testListOrgOverrides(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := &featureFlagStore{Store: basestore.NewWithHandle(db.Handle())}
+	flbgStore := &febtureFlbgStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	mkUser := func(name string, orgIDs ...int32) *types.User {
-		u, err := users.Create(ctx, NewUser{Username: name, Password: "p"})
+	mkUser := func(nbme string, orgIDs ...int32) *types.User {
+		u, err := users.Crebte(ctx, NewUser{Usernbme: nbme, Pbssword: "p"})
 		require.NoError(t, err)
-		for _, id := range orgIDs {
-			_, err := orgMembers.Create(ctx, id, u.ID)
+		for _, id := rbnge orgIDs {
+			_, err := orgMembers.Crebte(ctx, id, u.ID)
 			require.NoError(t, err)
 		}
 		return u
 	}
 
-	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.CreateBool(ctx, name, val)
+	mkFFBool := func(nbme string, vbl bool) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteBool(ctx, nbme, vbl)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkOverride := func(org int32, flag string, val bool) *ff.Override {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org, FlagName: flag, Value: val})
+	mkOverride := func(org int32, flbg string, vbl bool) *ff.Override {
+		ffo, err := flbgStore.CrebteOverride(ctx, &ff.Override{OrgID: &org, FlbgNbme: flbg, Vblue: vbl})
 		require.NoError(t, err)
 		return ffo
 	}
 
-	mkOrg := func(name string) *types.Org {
-		o, err := orgs.Create(ctx, name, nil)
+	mkOrg := func(nbme string) *types.Org {
+		o, err := orgs.Crebte(ctx, nbme, nil)
 		require.NoError(t, err)
 		return o
 	}
 
 	t.Run("no overrides", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f", true)
 
-		got, err := flagStore.GetUserOverrides(ctx, u1.ID)
+		got, err := flbgStore.GetUserOverrides(ctx, u1.ID)
 		require.NoError(t, err)
 		require.Empty(t, got)
 	})
 
 	t.Run("some overrides", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		org1 := mkOrg("org1")
 		u1 := mkUser("u", org1.ID)
 		f1 := mkFFBool("f", true)
-		o1 := mkOverride(org1.ID, f1.Name, false)
+		o1 := mkOverride(org1.ID, f1.Nbme, fblse)
 
-		got, err := flagStore.GetOrgOverridesForUser(ctx, u1.ID)
+		got, err := flbgStore.GetOrgOverridesForUser(ctx, u1.ID)
 		require.NoError(t, err)
-		require.Equal(t, got, []*ff.Override{o1})
+		require.Equbl(t, got, []*ff.Override{o1})
 	})
 
 	t.Run("deleted overrides", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		org1 := mkOrg("org1")
 		u1 := mkUser("u", org1.ID)
 		f1 := mkFFBool("f", true)
-		mkOverride(org1.ID, f1.Name, false)
-		err := flagStore.Exec(ctx, sqlf.Sprintf("UPDATE feature_flag_overrides SET deleted_at = now();"))
+		mkOverride(org1.ID, f1.Nbme, fblse)
+		err := flbgStore.Exec(ctx, sqlf.Sprintf("UPDATE febture_flbg_overrides SET deleted_bt = now();"))
 		require.NoError(t, err)
 
-		got, err := flagStore.GetOrgOverridesForUser(ctx, u1.ID)
+		got, err := flbgStore.GetOrgOverridesForUser(ctx, u1.ID)
 		require.NoError(t, err)
 		require.Empty(t, got)
 	})
 
 	t.Run("non-unique override errors", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+		t.Clebnup(clebnup(t, db))
 		org1 := mkOrg("org1")
 		f1 := mkFFBool("f", true)
 
-		_, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org1.ID, FlagName: f1.Name, Value: true})
+		_, err := flbgStore.CrebteOverride(ctx, &ff.Override{OrgID: &org1.ID, FlbgNbme: f1.Nbme, Vblue: true})
 		require.NoError(t, err)
-		_, err = flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org1.ID, FlagName: f1.Name, Value: false})
+		_, err = flbgStore.CrebteOverride(ctx, &ff.Override{OrgID: &org1.ID, FlbgNbme: f1.Nbme, Vblue: fblse})
 		require.Error(t, err)
 	})
 }
 
-func testUserFlags(t *testing.T) {
-	t.Parallel()
+func testUserFlbgs(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
+	flbgStore := db.FebtureFlbgs()
 	users := db.Users()
 	orgs := db.Orgs()
 	orgMembers := db.OrgMembers()
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	mkUser := func(name string, orgIDs ...int32) *types.User {
-		u, err := users.Create(ctx, NewUser{Username: name, Password: "p"})
+	mkUser := func(nbme string, orgIDs ...int32) *types.User {
+		u, err := users.Crebte(ctx, NewUser{Usernbme: nbme, Pbssword: "p"})
 		require.NoError(t, err)
-		for _, id := range orgIDs {
-			_, err := orgMembers.Create(ctx, id, u.ID)
+		for _, id := rbnge orgIDs {
+			_, err := orgMembers.Crebte(ctx, id, u.ID)
 			require.NoError(t, err)
 		}
 		return u
 	}
 
-	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.CreateBool(ctx, name, val)
+	mkFFBool := func(nbme string, vbl bool) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteBool(ctx, nbme, vbl)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
-		res, err := flagStore.CreateRollout(ctx, name, rollout)
+	mkFFBoolVbr := func(nbme string, rollout int32) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteRollout(ctx, nbme, rollout)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkUserOverride := func(user int32, flag string, val bool) *ff.Override {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{UserID: &user, FlagName: flag, Value: val})
+	mkUserOverride := func(user int32, flbg string, vbl bool) *ff.Override {
+		ffo, err := flbgStore.CrebteOverride(ctx, &ff.Override{UserID: &user, FlbgNbme: flbg, Vblue: vbl})
 		require.NoError(t, err)
 		return ffo
 	}
 
-	mkOrgOverride := func(org int32, flag string, val bool) *ff.Override {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org, FlagName: flag, Value: val})
+	mkOrgOverride := func(org int32, flbg string, vbl bool) *ff.Override {
+		ffo, err := flbgStore.CrebteOverride(ctx, &ff.Override{OrgID: &org, FlbgNbme: flbg, Vblue: vbl})
 		require.NoError(t, err)
 		return ffo
 	}
 
-	mkOrg := func(name string) *types.Org {
-		o, err := orgs.Create(ctx, name, nil)
+	mkOrg := func(nbme string) *types.Org {
+		o, err := orgs.Crebte(ctx, nbme, nil)
 		require.NoError(t, err)
 		return o
 	}
 
-	t.Run("bool vals", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
+		mkFFBool("f2", fblse)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vars", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbrs", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vals with user override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls with user override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
+		mkFFBool("f2", fblse)
 		mkUserOverride(u1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": true}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vars with user override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbrs with user override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		u1 := mkUser("u")
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 		mkUserOverride(u1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": true}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vals with org override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls with org override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
+		mkFFBool("f2", fblse)
 		mkOrgOverride(o1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": true}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vars with org override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbrs with org override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 		mkOrgOverride(o1.ID, "f2", true)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": true}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": true}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("user override beats org override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("user override bebts org override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 		mkOrgOverride(o1.ID, "f2", true)
-		mkUserOverride(u1.ID, "f2", false)
+		mkUserOverride(u1.ID, "f2", fblse)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("newer org override beats older org override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("newer org override bebts older org override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		o1 := mkOrg("o1")
 		o2 := mkOrg("o2")
 		u1 := mkUser("u", o1.ID, o2.ID)
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 		mkOrgOverride(o1.ID, "f2", true)
-		mkOrgOverride(o2.ID, "f2", false)
+		mkOrgOverride(o2.ID, "f2", fblse)
 
-		got, err := flagStore.GetUserFlags(ctx, u1.ID)
+		got, err := flbgStore.GetUserFlbgs(ctx, u1.ID)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("delete flag with override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("delete flbg with override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		o1 := mkOrg("o1")
 		u1 := mkUser("u", o1.ID)
 		f1 := mkFFBool("f1", true)
-		mkUserOverride(u1.ID, "f1", false)
-		clearRedisCacheCalled := setupClearRedisCacheTest(t, f1.Name)
+		mkUserOverride(u1.ID, "f1", fblse)
+		clebrRedisCbcheCblled := setupClebrRedisCbcheTest(t, f1.Nbme)
 
-		err := flagStore.DeleteFeatureFlag(ctx, f1.Name)
+		err := flbgStore.DeleteFebtureFlbg(ctx, f1.Nbme)
 		require.NoError(t, err)
-		require.True(t, *clearRedisCacheCalled)
+		require.True(t, *clebrRedisCbcheCblled)
 
-		flags, err := flagStore.GetFeatureFlags(ctx)
+		flbgs, err := flbgStore.GetFebtureFlbgs(ctx)
 		require.NoError(t, err)
-		require.Len(t, flags, 0)
+		require.Len(t, flbgs, 0)
 	})
 }
 
-func testAnonymousUserFlags(t *testing.T) {
-	t.Parallel()
+func testAnonymousUserFlbgs(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
-	ctx := actor.WithInternalActor(context.Background())
+	flbgStore := db.FebtureFlbgs()
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.CreateBool(ctx, name, val)
+	mkFFBool := func(nbme string, vbl bool) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteBool(ctx, nbme, vbl)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
-		res, err := flagStore.CreateRollout(ctx, name, rollout)
+	mkFFBoolVbr := func(nbme string, rollout int32) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteRollout(ctx, nbme, rollout)
 		require.NoError(t, err)
 		return res
 	}
 
-	t.Run("bool vals", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
+		mkFFBool("f2", fblse)
 
-		got, err := flagStore.GetAnonymousUserFlags(ctx, "testuser")
+		got, err := flbgStore.GetAnonymousUserFlbgs(ctx, "testuser")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vars", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+	t.Run("bool vbrs", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 
-		got, err := flagStore.GetAnonymousUserFlags(ctx, "testuser")
+		got, err := flbgStore.GetAnonymousUserFlbgs(ctx, "testuser")
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	// No override tests for AnonymousUserFlags because no override
-	// can be defined for an anonymous user.
+	// No override tests for AnonymousUserFlbgs becbuse no override
+	// cbn be defined for bn bnonymous user.
 }
 
-func testUserlessFeatureFlags(t *testing.T) {
-	t.Parallel()
+func testUserlessFebtureFlbgs(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
-	ctx := actor.WithInternalActor(context.Background())
+	flbgStore := db.FebtureFlbgs()
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.CreateBool(ctx, name, val)
+	mkFFBool := func(nbme string, vbl bool) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteBool(ctx, nbme, vbl)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkFFBoolVar := func(name string, rollout int32) *ff.FeatureFlag {
-		res, err := flagStore.CreateRollout(ctx, name, rollout)
+	mkFFBoolVbr := func(nbme string, rollout int32) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteRollout(ctx, nbme, rollout)
 		require.NoError(t, err)
 		return res
 	}
 
-	t.Run("bool vals", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
+		mkFFBool("f2", fblse)
 
-		got, err := flagStore.GetGlobalFeatureFlags(ctx)
+		got, err := flbgStore.GetGlobblFebtureFlbgs(ctx)
 		require.NoError(t, err)
-		expected := map[string]bool{"f1": true, "f2": false}
-		require.Equal(t, expected, got)
+		expected := mbp[string]bool{"f1": true, "f2": fblse}
+		require.Equbl(t, expected, got)
 	})
 
-	t.Run("bool vars", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
-		mkFFBoolVar("f1", 10000)
-		mkFFBoolVar("f2", 0)
+	t.Run("bool vbrs", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
+		mkFFBoolVbr("f1", 10000)
+		mkFFBoolVbr("f2", 0)
 
-		got, err := flagStore.GetGlobalFeatureFlags(ctx)
+		got, err := flbgStore.GetGlobblFebtureFlbgs(ctx)
 		require.NoError(t, err)
 
-		// Userless requests don't have a stable user to evaluate
-		// bool variable flags, so none should be defined.
+		// Userless requests don't hbve b stbble user to evblubte
+		// bool vbribble flbgs, so none should be defined.
 		//
-		// TODO(camdencheek): consider evaluating rollout feature
-		// flags with a static string so they are defined and stable,
-		// but effectively statically random.
-		expected := map[string]bool{}
-		require.Equal(t, expected, got)
+		// TODO(cbmdencheek): consider evblubting rollout febture
+		// flbgs with b stbtic string so they bre defined bnd stbble,
+		// but effectively stbticblly rbndom.
+		expected := mbp[string]bool{}
+		require.Equbl(t, expected, got)
 	})
 }
 
-func testOrgFeatureFlag(t *testing.T) {
-	t.Parallel()
+func testOrgFebtureFlbg(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
+	flbgStore := db.FebtureFlbgs()
 	orgs := db.Orgs()
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	mkFFBool := func(name string, val bool) *ff.FeatureFlag {
-		res, err := flagStore.CreateBool(ctx, name, val)
+	mkFFBool := func(nbme string, vbl bool) *ff.FebtureFlbg {
+		res, err := flbgStore.CrebteBool(ctx, nbme, vbl)
 		require.NoError(t, err)
 		return res
 	}
 
-	mkOrgOverride := func(org int32, flag string, val bool) *ff.Override {
-		ffo, err := flagStore.CreateOverride(ctx, &ff.Override{OrgID: &org, FlagName: flag, Value: val})
+	mkOrgOverride := func(org int32, flbg string, vbl bool) *ff.Override {
+		ffo, err := flbgStore.CrebteOverride(ctx, &ff.Override{OrgID: &org, FlbgNbme: flbg, Vblue: vbl})
 		require.NoError(t, err)
 		return ffo
 	}
 
-	mkOrg := func(name string) *types.Org {
-		o, err := orgs.Create(ctx, name, nil)
+	mkOrg := func(nbme string) *types.Org {
+		o, err := orgs.Crebte(ctx, nbme, nil)
 		require.NoError(t, err)
 		return o
 	}
 
-	t.Run("bool vals", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		org := mkOrg("o")
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
+		mkFFBool("f2", fblse)
 
-		got1, err1 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
-		got2, err2 := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f2")
+		got1, err1 := flbgStore.GetOrgFebtureFlbg(ctx, org.ID, "f1")
+		got2, err2 := flbgStore.GetOrgFebtureFlbg(ctx, org.ID, "f2")
 		require.NoError(t, err1)
 		require.NoError(t, err2)
 		require.True(t, got1)
-		require.False(t, got2)
+		require.Fblse(t, got2)
 	})
 
-	t.Run("bool vals with org override", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls with org override", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		org1 := mkOrg("o1")
 		org2 := mkOrg("o2")
 		mkFFBool("f1", true)
-		mkFFBool("f2", false)
-		mkOrgOverride(org1.ID, "f1", false)
+		mkFFBool("f2", fblse)
+		mkOrgOverride(org1.ID, "f1", fblse)
 		mkOrgOverride(org1.ID, "f2", true)
 
-		got, err := flagStore.GetOrgFeatureFlag(ctx, org1.ID, "f1")
+		got, err := flbgStore.GetOrgFebtureFlbg(ctx, org1.ID, "f1")
 		require.NoError(t, err)
-		require.Equal(t, false, got)
+		require.Equbl(t, fblse, got)
 
-		got, err = flagStore.GetOrgFeatureFlag(ctx, org1.ID, "f2")
+		got, err = flbgStore.GetOrgFebtureFlbg(ctx, org1.ID, "f2")
 		require.NoError(t, err)
-		require.Equal(t, true, got)
+		require.Equbl(t, true, got)
 
-		got, err = flagStore.GetOrgFeatureFlag(ctx, org2.ID, "f1")
+		got, err = flbgStore.GetOrgFebtureFlbg(ctx, org2.ID, "f1")
 		require.NoError(t, err)
-		require.Equal(t, true, got)
+		require.Equbl(t, true, got)
 
-		got, err = flagStore.GetOrgFeatureFlag(ctx, org2.ID, "f2")
+		got, err = flbgStore.GetOrgFebtureFlbg(ctx, org2.ID, "f2")
 		require.NoError(t, err)
-		require.Equal(t, false, got)
+		require.Equbl(t, fblse, got)
 	})
 
-	t.Run("bool vals without flag defined", func(t *testing.T) {
-		t.Cleanup(cleanup(t, db))
+	t.Run("bool vbls without flbg defined", func(t *testing.T) {
+		t.Clebnup(clebnup(t, db))
 		org := mkOrg("o")
 
-		got, err := flagStore.GetOrgFeatureFlag(ctx, org.ID, "f1")
+		got, err := flbgStore.GetOrgFebtureFlbg(ctx, org.ID, "f1")
 		require.NoError(t, err)
-		require.Equal(t, false, got)
+		require.Equbl(t, fblse, got)
 	})
 }
 
-func testGetFeatureFlag(t *testing.T) {
-	t.Parallel()
+func testGetFebtureFlbg(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
-	ctx := context.Background()
-	t.Run("no value", func(t *testing.T) {
-		flag, err := flagStore.GetFeatureFlag(ctx, "does-not-exist")
-		require.Equal(t, err, sql.ErrNoRows)
-		require.Nil(t, flag)
+	flbgStore := db.FebtureFlbgs()
+	ctx := context.Bbckground()
+	t.Run("no vblue", func(t *testing.T) {
+		flbg, err := flbgStore.GetFebtureFlbg(ctx, "does-not-exist")
+		require.Equbl(t, err, sql.ErrNoRows)
+		require.Nil(t, flbg)
 	})
-	t.Run("true value", func(t *testing.T) {
-		_, err := flagStore.CreateBool(ctx, "is-true", true)
+	t.Run("true vblue", func(t *testing.T) {
+		_, err := flbgStore.CrebteBool(ctx, "is-true", true)
 		require.NoError(t, err)
-		flag, err := flagStore.GetFeatureFlag(ctx, "is-true")
+		flbg, err := flbgStore.GetFebtureFlbg(ctx, "is-true")
 		require.NoError(t, err)
-		require.True(t, flag.Bool.Value)
+		require.True(t, flbg.Bool.Vblue)
 	})
-	t.Run("false value", func(t *testing.T) {
-		_, err := flagStore.CreateBool(ctx, "is-false", true)
+	t.Run("fblse vblue", func(t *testing.T) {
+		_, err := flbgStore.CrebteBool(ctx, "is-fblse", true)
 		require.NoError(t, err)
-		flag, err := flagStore.GetFeatureFlag(ctx, "is-false")
+		flbg, err := flbgStore.GetFebtureFlbg(ctx, "is-fblse")
 		require.NoError(t, err)
-		require.True(t, flag.Bool.Value)
+		require.True(t, flbg.Bool.Vblue)
 	})
 }
 
-func testUpdateFeatureFlag(t *testing.T) {
-	t.Parallel()
+func testUpdbteFebtureFlbg(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	flagStore := db.FeatureFlags()
-	ctx := context.Background()
-	t.Run("invalid input", func(t *testing.T) {
-		updatedFf, err := flagStore.UpdateFeatureFlag(ctx, &ff.FeatureFlag{Name: "invalid"})
-		require.EqualError(t, err, "feature flag must have exactly one type")
-		require.Nil(t, updatedFf)
+	flbgStore := db.FebtureFlbgs()
+	ctx := context.Bbckground()
+	t.Run("invblid input", func(t *testing.T) {
+		updbtedFf, err := flbgStore.UpdbteFebtureFlbg(ctx, &ff.FebtureFlbg{Nbme: "invblid"})
+		require.EqublError(t, err, "febture flbg must hbve exbctly one type")
+		require.Nil(t, updbtedFf)
 	})
-	t.Run("boolean flag successful update", func(t *testing.T) {
-		boolFlag, err := flagStore.CreateBool(ctx, "update-test-true-flag", true)
+	t.Run("boolebn flbg successful updbte", func(t *testing.T) {
+		boolFlbg, err := flbgStore.CrebteBool(ctx, "updbte-test-true-flbg", true)
 		require.NoError(t, err)
-		boolFlag.Bool.Value = false
-		clearRedisCacheCalled := setupClearRedisCacheTest(t, boolFlag.Name)
-		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, boolFlag)
+		boolFlbg.Bool.Vblue = fblse
+		clebrRedisCbcheCblled := setupClebrRedisCbcheTest(t, boolFlbg.Nbme)
+		updbtedFlbg, err := flbgStore.UpdbteFebtureFlbg(ctx, boolFlbg)
 		require.NoError(t, err)
-		require.True(t, *clearRedisCacheCalled)
-		assert.False(t, updatedFlag.Bool.Value)
-		assert.Greater(t, updatedFlag.UpdatedAt, boolFlag.UpdatedAt)
+		require.True(t, *clebrRedisCbcheCblled)
+		bssert.Fblse(t, updbtedFlbg.Bool.Vblue)
+		bssert.Grebter(t, updbtedFlbg.UpdbtedAt, boolFlbg.UpdbtedAt)
 	})
-	t.Run("rollout flag successful update", func(t *testing.T) {
-		rolloutFlag, err := flagStore.CreateRollout(ctx, "update-test-rollout-flag", 42)
+	t.Run("rollout flbg successful updbte", func(t *testing.T) {
+		rolloutFlbg, err := flbgStore.CrebteRollout(ctx, "updbte-test-rollout-flbg", 42)
 		require.NoError(t, err)
-		const expectedValue = int32(1337)
-		rolloutFlag.Rollout.Rollout = expectedValue
-		clearRedisCacheCalled := setupClearRedisCacheTest(t, rolloutFlag.Name)
-		updatedFlag, err := flagStore.UpdateFeatureFlag(ctx, rolloutFlag)
+		const expectedVblue = int32(1337)
+		rolloutFlbg.Rollout.Rollout = expectedVblue
+		clebrRedisCbcheCblled := setupClebrRedisCbcheTest(t, rolloutFlbg.Nbme)
+		updbtedFlbg, err := flbgStore.UpdbteFebtureFlbg(ctx, rolloutFlbg)
 		require.NoError(t, err)
-		require.True(t, *clearRedisCacheCalled)
-		assert.Equal(t, expectedValue, updatedFlag.Rollout.Rollout)
-		assert.Greater(t, updatedFlag.UpdatedAt, rolloutFlag.UpdatedAt)
+		require.True(t, *clebrRedisCbcheCblled)
+		bssert.Equbl(t, expectedVblue, updbtedFlbg.Rollout.Rollout)
+		bssert.Grebter(t, updbtedFlbg.UpdbtedAt, rolloutFlbg.UpdbtedAt)
 	})
 }

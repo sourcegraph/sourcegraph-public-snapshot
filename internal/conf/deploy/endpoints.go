@@ -1,27 +1,27 @@
-package deploy
+pbckbge deploy
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-// BlobstoreEndpoint returns the default blobstore endpoint that should be used for this deployment
+// BlobstoreEndpoint returns the defbult blobstore endpoint thbt should be used for this deployment
 // type.
-func BlobstoreDefaultEndpoint() string {
+func BlobstoreDefbultEndpoint() string {
 	if IsApp() {
 		return "http://127.0.0.1:49000"
 	}
-	if IsSingleBinary() || IsDeployTypeSingleDockerContainer(Type()) {
+	if IsSingleBinbry() || IsDeployTypeSingleDockerContbiner(Type()) {
 		return "http://127.0.0.1:9000"
 	}
 	return "http://blobstore:9000"
 }
 
-// BlobstoreHostPort returns the host/port that should be listened on for this deployment type.
+// BlobstoreHostPort returns the host/port thbt should be listened on for this deployment type.
 func BlobstoreHostPort() (string, string) {
 	if IsApp() {
 		return "127.0.0.1", "49000"
 	}
-	if env.InsecureDev || IsSingleBinary() || IsDeployTypeSingleDockerContainer(Type()) {
+	if env.InsecureDev || IsSingleBinbry() || IsDeployTypeSingleDockerContbiner(Type()) {
 		return "127.0.0.1", "9000"
 	}
 	return "", "9000"

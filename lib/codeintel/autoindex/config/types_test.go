@@ -1,40 +1,40 @@
-package config
+pbckbge config
 
 import "testing"
 
-func TestExtractIndexerName(t *testing.T) {
+func TestExtrbctIndexerNbme(t *testing.T) {
 	tests := []struct {
-		explanation string
+		explbnbtion string
 		input       string
 		expected    string
 	}{
 		{
-			explanation: "no prefix",
+			explbnbtion: "no prefix",
 			input:       "lsif-go",
 			expected:    "lsif-go",
 		},
 		{
-			explanation: "prefix",
-			input:       "sourcegraph/lsif-go",
+			explbnbtion: "prefix",
+			input:       "sourcegrbph/lsif-go",
 			expected:    "lsif-go",
 		},
 		{
-			explanation: "prefix and suffix",
-			input:       "sourcegraph/lsif-go@sha256:...",
+			explbnbtion: "prefix bnd suffix",
+			input:       "sourcegrbph/lsif-go@shb256:...",
 			expected:    "lsif-go",
 		},
 		{
-			explanation: "different name",
+			explbnbtion: "different nbme",
 			input:       "myownlsif-go",
 			expected:    "myownlsif-go",
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.explanation, func(t *testing.T) {
-			actual := extractIndexerName(test.input)
-			if actual != test.expected {
-				t.Errorf("unexpected indexer name. want=%q have=%q", test.expected, actual)
+	for _, test := rbnge tests {
+		t.Run(test.explbnbtion, func(t *testing.T) {
+			bctubl := extrbctIndexerNbme(test.input)
+			if bctubl != test.expected {
+				t.Errorf("unexpected indexer nbme. wbnt=%q hbve=%q", test.expected, bctubl)
 			}
 		})
 	}

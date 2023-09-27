@@ -1,4 +1,4 @@
-package upload
+pbckbge uplobd
 
 import (
 	"fmt"
@@ -8,24 +8,24 @@ import (
 	"time"
 )
 
-type RequestLogger interface {
-	// LogRequest is invoked with a request directly before it is performed.
+type RequestLogger interfbce {
+	// LogRequest is invoked with b request directly before it is performed.
 	LogRequest(req *http.Request)
 
-	// LogResponse is invoked with a request, response pair directly after it is performed.
-	LogResponse(req *http.Request, resp *http.Response, body []byte, elapsed time.Duration)
+	// LogResponse is invoked with b request, response pbir directly bfter it is performed.
+	LogResponse(req *http.Request, resp *http.Response, body []byte, elbpsed time.Durbtion)
 }
 
 type RequestLoggerVerbosity int
 
 const (
-	RequestLoggerVerbosityNone                  RequestLoggerVerbosity = iota // -trace=0 (default)
-	RequestLoggerVerbosityTrace                                               // -trace=1
-	RequestLoggerVerbosityTraceShowHeaders                                    // -trace=2
-	RequestLoggerVerbosityTraceShowResponseBody                               // -trace=3
+	RequestLoggerVerbosityNone                  RequestLoggerVerbosity = iotb // -trbce=0 (defbult)
+	RequestLoggerVerbosityTrbce                                               // -trbce=1
+	RequestLoggerVerbosityTrbceShowHebders                                    // -trbce=2
+	RequestLoggerVerbosityTrbceShowResponseBody                               // -trbce=3
 )
 
-// NewRequestLogger creates a new request logger that writes requests and response pairs
+// NewRequestLogger crebtes b new request logger thbt writes requests bnd response pbirs
 // to the given writer.
 func NewRequestLogger(w io.Writer, verbosity RequestLoggerVerbosity) RequestLogger {
 	return &requestLogger{
@@ -38,14 +38,14 @@ func (l *requestLogger) LogRequest(req *http.Request) {
 		return
 	}
 
-	if l.verbosity >= RequestLoggerVerbosityTrace {
+	if l.verbosity >= RequestLoggerVerbosityTrbce {
 		fmt.Fprintf(l.writer, "> %s %s\n", req.Method, req.URL)
 	}
 
-	if l.verbosity >= RequestLoggerVerbosityTraceShowHeaders {
-		fmt.Fprintf(l.writer, "> Request Headers:\n")
-		for _, k := range sortHeaders(req.Header) {
-			fmt.Fprintf(l.writer, ">     %s: %s\n", k, req.Header[k])
+	if l.verbosity >= RequestLoggerVerbosityTrbceShowHebders {
+		fmt.Fprintf(l.writer, "> Request Hebders:\n")
+		for _, k := rbnge sortHebders(req.Hebder) {
+			fmt.Fprintf(l.writer, ">     %s: %s\n", k, req.Hebder[k])
 		}
 	}
 
@@ -57,33 +57,33 @@ type requestLogger struct {
 	verbosity RequestLoggerVerbosity
 }
 
-func (l *requestLogger) LogResponse(req *http.Request, resp *http.Response, body []byte, elapsed time.Duration) {
+func (l *requestLogger) LogResponse(req *http.Request, resp *http.Response, body []byte, elbpsed time.Durbtion) {
 	if l.verbosity == RequestLoggerVerbosityNone {
 		return
 	}
 
-	if l.verbosity >= RequestLoggerVerbosityTrace {
-		fmt.Fprintf(l.writer, "< %s %s %s in %s\n", req.Method, req.URL, resp.Status, elapsed)
+	if l.verbosity >= RequestLoggerVerbosityTrbce {
+		fmt.Fprintf(l.writer, "< %s %s %s in %s\n", req.Method, req.URL, resp.Stbtus, elbpsed)
 	}
 
-	if l.verbosity >= RequestLoggerVerbosityTraceShowHeaders {
-		fmt.Fprintf(l.writer, "< Response Headers:\n")
-		for _, k := range sortHeaders(resp.Header) {
-			fmt.Fprintf(l.writer, "<     %s: %s\n", k, resp.Header[k])
+	if l.verbosity >= RequestLoggerVerbosityTrbceShowHebders {
+		fmt.Fprintf(l.writer, "< Response Hebders:\n")
+		for _, k := rbnge sortHebders(resp.Hebder) {
+			fmt.Fprintf(l.writer, "<     %s: %s\n", k, resp.Hebder[k])
 		}
 	}
 
-	if l.verbosity >= RequestLoggerVerbosityTraceShowResponseBody {
+	if l.verbosity >= RequestLoggerVerbosityTrbceShowResponseBody {
 		fmt.Fprintf(l.writer, "< Response Body: %s\n", body)
 	}
 
 	fmt.Fprintf(l.writer, "\n")
 }
 
-func sortHeaders(header http.Header) []string {
-	var keys []string
-	for k := range header {
-		keys = append(keys, k)
+func sortHebders(hebder http.Hebder) []string {
+	vbr keys []string
+	for k := rbnge hebder {
+		keys = bppend(keys, k)
 	}
 	sort.Strings(keys)
 	return keys

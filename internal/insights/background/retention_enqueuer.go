@@ -1,37 +1,37 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/retention"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/retention"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func newRetentionEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, insightStore store.DataSeriesStore) goroutine.BackgroundRoutine {
+func newRetentionEnqueuer(ctx context.Context, workerBbseStore *bbsestore.Store, insightStore store.DbtbSeriesStore) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(
+		goroutine.HbndlerFunc(
 			func(ctx context.Context) error {
-				seriesArgs := store.GetDataSeriesArgs{ExcludeJustInTime: true}
-				allSeries, err := insightStore.GetDataSeries(ctx, seriesArgs)
+				seriesArgs := store.GetDbtbSeriesArgs{ExcludeJustInTime: true}
+				bllSeries, err := insightStore.GetDbtbSeries(ctx, seriesArgs)
 				if err != nil {
-					return errors.Wrap(err, "unable to fetch series for retention")
+					return errors.Wrbp(err, "unbble to fetch series for retention")
 				}
-				var multi error
-				for _, series := range allSeries {
-					_, err = retention.EnqueueJob(ctx, workerBaseStore, &retention.DataRetentionJob{InsightSeriesID: series.ID, SeriesID: series.SeriesID})
+				vbr multi error
+				for _, series := rbnge bllSeries {
+					_, err = retention.EnqueueJob(ctx, workerBbseStore, &retention.DbtbRetentionJob{InsightSeriesID: series.ID, SeriesID: series.SeriesID})
 					if err != nil {
-						multi = errors.Append(multi, errors.Wrapf(err, "seriesID: %d", series.ID))
+						multi = errors.Append(multi, errors.Wrbpf(err, "seriesID: %d", series.ID))
 					}
 				}
 				return multi
 			}),
-		goroutine.WithName("insights.retention.enqueuer"),
+		goroutine.WithNbme("insights.retention.enqueuer"),
 		goroutine.WithDescription("enqueues series retention jobs"),
-		goroutine.WithInterval(12*time.Hour),
+		goroutine.WithIntervbl(12*time.Hour),
 	)
 }

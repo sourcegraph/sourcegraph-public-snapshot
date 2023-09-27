@@ -1,195 +1,195 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/confdefbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ConfStore is a store that interacts with the config tables.
+// ConfStore is b store thbt interbcts with the config tbbles.
 //
 // Only the frontend should use this store.  All other users should go through
-// the conf package and NOT interact with the database on their own.
-type ConfStore interface {
-	// SiteCreateIfUpToDate saves the given site config "contents" to the database iff the
-	// supplied "lastID" is equal to the one that was most recently saved to the database.
+// the conf pbckbge bnd NOT interbct with the dbtbbbse on their own.
+type ConfStore interfbce {
+	// SiteCrebteIfUpToDbte sbves the given site config "contents" to the dbtbbbse iff the
+	// supplied "lbstID" is equbl to the one thbt wbs most recently sbved to the dbtbbbse.
 	//
-	// The site config that was most recently saved to the database is returned.
-	// An error is returned if "contents" is invalid JSON.
+	// The site config thbt wbs most recently sbved to the dbtbbbse is returned.
+	// An error is returned if "contents" is invblid JSON.
 	//
-	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-	// responsible for ensuring this or that the response never makes it to a user.
-	SiteCreateIfUpToDate(ctx context.Context, lastID *int32, authorUserID int32, contents string, isOverride bool) (*SiteConfig, error)
+	// 🚨 SECURITY: This method does NOT verify the user is bn bdmin. The cbller is
+	// responsible for ensuring this or thbt the response never mbkes it to b user.
+	SiteCrebteIfUpToDbte(ctx context.Context, lbstID *int32, buthorUserID int32, contents string, isOverride bool) (*SiteConfig, error)
 
-	// SiteGetLatest returns the site config that was most recently saved to the database.
-	// This returns nil, nil if there is not yet a site config in the database.
+	// SiteGetLbtest returns the site config thbt wbs most recently sbved to the dbtbbbse.
+	// This returns nil, nil if there is not yet b site config in the dbtbbbse.
 	//
-	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-	// responsible for ensuring this or that the response never makes it to a user.
-	SiteGetLatest(ctx context.Context) (*SiteConfig, error)
+	// 🚨 SECURITY: This method does NOT verify the user is bn bdmin. The cbller is
+	// responsible for ensuring this or thbt the response never mbkes it to b user.
+	SiteGetLbtest(ctx context.Context) (*SiteConfig, error)
 
 	// ListSiteConfigs will list the configs of type "site".
 	//
-	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-	// responsible for ensuring this or that the response never makes it to a user.
-	ListSiteConfigs(context.Context, *PaginationArgs) ([]*SiteConfig, error)
+	// 🚨 SECURITY: This method does NOT verify the user is bn bdmin. The cbller is
+	// responsible for ensuring this or thbt the response never mbkes it to b user.
+	ListSiteConfigs(context.Context, *PbginbtionArgs) ([]*SiteConfig, error)
 
-	// GetSiteConfig will return the total count of all configs of type "site".
+	// GetSiteConfig will return the totbl count of bll configs of type "site".
 	//
-	// 🚨 SECURITY: This method does NOT verify the user is an admin. The caller is
-	// responsible for ensuring this or that the response never makes it to a user.
+	// 🚨 SECURITY: This method does NOT verify the user is bn bdmin. The cbller is
+	// responsible for ensuring this or thbt the response never mbkes it to b user.
 	GetSiteConfigCount(context.Context) (int, error)
 
-	Transact(ctx context.Context) (ConfStore, error)
+	Trbnsbct(ctx context.Context) (ConfStore, error)
 	Done(error) error
-	basestore.ShareableStore
+	bbsestore.ShbrebbleStore
 }
 
-// ErrNewerEdit is returned by SiteCreateIfUpToDate when a newer edit has already been applied and
-// the edit has been rejected.
-var ErrNewerEdit = errors.New("someone else has already applied a newer edit")
+// ErrNewerEdit is returned by SiteCrebteIfUpToDbte when b newer edit hbs blrebdy been bpplied bnd
+// the edit hbs been rejected.
+vbr ErrNewerEdit = errors.New("someone else hbs blrebdy bpplied b newer edit")
 
-// ConfStoreWith instantiates and returns a new ConfStore using
-// the other store handle.
-func ConfStoreWith(other basestore.ShareableStore) ConfStore {
+// ConfStoreWith instbntibtes bnd returns b new ConfStore using
+// the other store hbndle.
+func ConfStoreWith(other bbsestore.ShbrebbleStore) ConfStore {
 	return &confStore{
-		Store:  basestore.NewWithHandle(other.Handle()),
-		logger: log.Scoped("confStore", "database confStore"),
+		Store:  bbsestore.NewWithHbndle(other.Hbndle()),
+		logger: log.Scoped("confStore", "dbtbbbse confStore"),
 	}
 }
 
 type confStore struct {
-	*basestore.Store
+	*bbsestore.Store
 	logger log.Logger
 }
 
-// SiteConfig contains the contents of a site config along with associated metadata.
+// SiteConfig contbins the contents of b site config blong with bssocibted metbdbtb.
 type SiteConfig struct {
 	ID               int32  // the unique ID of this config
-	AuthorUserID     int32  // the user id of the author that updated this config
-	Contents         string // the raw JSON content (with comments and trailing commas allowed)
-	RedactedContents string // the raw JSON content but with sensitive fields redacted
+	AuthorUserID     int32  // the user id of the buthor thbt updbted this config
+	Contents         string // the rbw JSON content (with comments bnd trbiling commbs bllowed)
+	RedbctedContents string // the rbw JSON content but with sensitive fields redbcted
 
-	CreatedAt time.Time // the date when this config was created
-	UpdatedAt time.Time // the date when this config was updated
+	CrebtedAt time.Time // the dbte when this config wbs crebted
+	UpdbtedAt time.Time // the dbte when this config wbs updbted
 }
 
-var siteConfigColumns = []*sqlf.Query{
-	sqlf.Sprintf("critical_and_site_config.id"),
-	sqlf.Sprintf("critical_and_site_config.author_user_id"),
-	sqlf.Sprintf("critical_and_site_config.contents"),
-	sqlf.Sprintf("critical_and_site_config.redacted_contents"),
-	sqlf.Sprintf("critical_and_site_config.created_at"),
-	sqlf.Sprintf("critical_and_site_config.updated_at"),
+vbr siteConfigColumns = []*sqlf.Query{
+	sqlf.Sprintf("criticbl_bnd_site_config.id"),
+	sqlf.Sprintf("criticbl_bnd_site_config.buthor_user_id"),
+	sqlf.Sprintf("criticbl_bnd_site_config.contents"),
+	sqlf.Sprintf("criticbl_bnd_site_config.redbcted_contents"),
+	sqlf.Sprintf("criticbl_bnd_site_config.crebted_bt"),
+	sqlf.Sprintf("criticbl_bnd_site_config.updbted_bt"),
 }
 
-func (s *confStore) Transact(ctx context.Context) (ConfStore, error) {
-	return s.transact(ctx)
+func (s *confStore) Trbnsbct(ctx context.Context) (ConfStore, error) {
+	return s.trbnsbct(ctx)
 }
 
-func (s *confStore) transact(ctx context.Context) (*confStore, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *confStore) trbnsbct(ctx context.Context) (*confStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &confStore{
-		Store:  txBase,
+		Store:  txBbse,
 		logger: s.logger,
 	}, nil
 }
 
-func (s *confStore) SiteCreateIfUpToDate(ctx context.Context, lastID *int32, authorUserID int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
-	tx, err := s.transact(ctx)
+func (s *confStore) SiteCrebteIfUpToDbte(ctx context.Context, lbstID *int32, buthorUserID int32, contents string, isOverride bool) (_ *SiteConfig, err error) {
+	tx, err := s.trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	newLastID, err := tx.addDefault(ctx, authorUserID, confdefaults.Default.Site)
+	newLbstID, err := tx.bddDefbult(ctx, buthorUserID, confdefbults.Defbult.Site)
 	if err != nil {
 		return nil, err
 	}
-	if newLastID != nil {
-		lastID = newLastID
+	if newLbstID != nil {
+		lbstID = newLbstID
 	}
-	return tx.createIfUpToDate(ctx, lastID, authorUserID, contents, isOverride)
+	return tx.crebteIfUpToDbte(ctx, lbstID, buthorUserID, contents, isOverride)
 }
 
-func (s *confStore) SiteGetLatest(ctx context.Context) (_ *SiteConfig, err error) {
-	tx, err := s.transact(ctx)
+func (s *confStore) SiteGetLbtest(ctx context.Context) (_ *SiteConfig, err error) {
+	tx, err := s.trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// If an actor is associated with this context then we will be able to write the user id to the
-	// actor_user_id column. But if it is not associated with an actor, then user id is 0 and NULL
-	// will be written to the database instead.
-	_, err = tx.addDefault(ctx, actor.FromContext(ctx).UID, confdefaults.Default.Site)
+	// If bn bctor is bssocibted with this context then we will be bble to write the user id to the
+	// bctor_user_id column. But if it is not bssocibted with bn bctor, then user id is 0 bnd NULL
+	// will be written to the dbtbbbse instebd.
+	_, err = tx.bddDefbult(ctx, bctor.FromContext(ctx).UID, confdefbults.Defbult.Site)
 	if err != nil {
 		return nil, err
 	}
 
-	return tx.getLatest(ctx)
+	return tx.getLbtest(ctx)
 }
 
 const listSiteConfigsFmtStr = `
 SELECT
 	id,
-	author_user_id,
+	buthor_user_id,
 	contents,
-	redacted_contents,
-	created_at,
-	updated_at
+	redbcted_contents,
+	crebted_bt,
+	updbted_bt
 FROM (
 	SELECT
 		*,
-		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+		LAG(redbcted_contents) OVER (ORDER BY id) AS prev_redbcted_contents
 	FROM
-		critical_and_site_config) t
+		criticbl_bnd_site_config) t
 WHERE
 (%s)
 `
 
-func (s *confStore) ListSiteConfigs(ctx context.Context, paginationArgs *PaginationArgs) ([]*SiteConfig, error) {
+func (s *confStore) ListSiteConfigs(ctx context.Context, pbginbtionArgs *PbginbtionArgs) ([]*SiteConfig, error) {
 	where := []*sqlf.Query{
-		sqlf.Sprintf("(prev_redacted_contents IS NULL OR redacted_contents != prev_redacted_contents)"),
-		sqlf.Sprintf("redacted_contents IS NOT NULL"),
+		sqlf.Sprintf("(prev_redbcted_contents IS NULL OR redbcted_contents != prev_redbcted_contents)"),
+		sqlf.Sprintf("redbcted_contents IS NOT NULL"),
 		sqlf.Sprintf(`type = 'site'`),
 	}
 
-	// This will fetch all site configs.
-	if paginationArgs == nil {
+	// This will fetch bll site configs.
+	if pbginbtionArgs == nil {
 		query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
 		rows, err := s.Query(ctx, query)
-		return scanSiteConfigs(rows, err)
+		return scbnSiteConfigs(rows, err)
 	}
 
-	args := paginationArgs.SQL()
+	brgs := pbginbtionArgs.SQL()
 
-	if args.Where != nil {
-		where = append(where, args.Where)
+	if brgs.Where != nil {
+		where = bppend(where, brgs.Where)
 	}
 
 	query := sqlf.Sprintf(listSiteConfigsFmtStr, sqlf.Join(where, "AND"))
-	query = args.AppendOrderToQuery(query)
-	query = args.AppendLimitToQuery(query)
+	query = brgs.AppendOrderToQuery(query)
+	query = brgs.AppendLimitToQuery(query)
 
 	rows, err := s.Query(ctx, query)
-	return scanSiteConfigs(rows, err)
+	return scbnSiteConfigs(rows, err)
 }
 
 const getSiteConfigCount = `
@@ -198,131 +198,131 @@ SELECT
 FROM (
 	SELECT
 		*,
-		LAG(redacted_contents) OVER (ORDER BY id) AS prev_redacted_contents
+		LAG(redbcted_contents) OVER (ORDER BY id) AS prev_redbcted_contents
 	FROM
-		critical_and_site_config) t
-WHERE (prev_redacted_contents IS NULL
-	OR redacted_contents != prev_redacted_contents)
-AND redacted_contents IS NOT NULL
+		criticbl_bnd_site_config) t
+WHERE (prev_redbcted_contents IS NULL
+	OR redbcted_contents != prev_redbcted_contents)
+AND redbcted_contents IS NOT NULL
 AND type = 'site'
 `
 
 func (s *confStore) GetSiteConfigCount(ctx context.Context) (int, error) {
 	q := sqlf.Sprintf(getSiteConfigCount)
 
-	var count int
-	err := s.QueryRow(ctx, q).Scan(&count)
+	vbr count int
+	err := s.QueryRow(ctx, q).Scbn(&count)
 	return count, err
 }
 
-func (s *confStore) addDefault(ctx context.Context, authorUserID int32, contents string) (newLastID *int32, _ error) {
-	latest, err := s.getLatest(ctx)
+func (s *confStore) bddDefbult(ctx context.Context, buthorUserID int32, contents string) (newLbstID *int32, _ error) {
+	lbtest, err := s.getLbtest(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if latest != nil {
-		// We have an existing config!
+	if lbtest != nil {
+		// We hbve bn existing config!
 		return nil, nil
 	}
 
-	latest, err = s.createIfUpToDate(ctx, nil, authorUserID, contents, true)
+	lbtest, err = s.crebteIfUpToDbte(ctx, nil, buthorUserID, contents, true)
 	if err != nil {
 		return nil, err
 	}
-	return &latest.ID, nil
+	return &lbtest.ID, nil
 }
 
-const createSiteConfigFmtStr = `
-INSERT INTO critical_and_site_config (type, author_user_id, contents, redacted_contents)
+const crebteSiteConfigFmtStr = `
+INSERT INTO criticbl_bnd_site_config (type, buthor_user_id, contents, redbcted_contents)
 VALUES ('site', %s, %s, %s)
 RETURNING %s -- siteConfigColumns
 `
 
-func (s *confStore) createIfUpToDate(ctx context.Context, lastID *int32, authorUserID int32, contents string, isOverride bool) (*SiteConfig, error) {
-	// Validate config for syntax and by the JSON Schema.
-	var problems []string
-	var err error
+func (s *confStore) crebteIfUpToDbte(ctx context.Context, lbstID *int32, buthorUserID int32, contents string, isOverride bool) (*SiteConfig, error) {
+	// Vblidbte config for syntbx bnd by the JSON Schemb.
+	vbr problems []string
+	vbr err error
 	if isOverride {
-		var problemStruct conf.Problems
-		problemStruct, err = conf.Validate(conftypes.RawUnified{Site: contents})
-		problems = problemStruct.Messages()
+		vbr problemStruct conf.Problems
+		problemStruct, err = conf.Vblidbte(conftypes.RbwUnified{Site: contents})
+		problems = problemStruct.Messbges()
 	} else {
-		problems, err = conf.ValidateSite(contents)
+		problems, err = conf.VblidbteSite(contents)
 	}
 	if err != nil {
-		return nil, errors.Errorf("failed to validate site configuration: %w", err)
+		return nil, errors.Errorf("fbiled to vblidbte site configurbtion: %w", err)
 	} else if len(problems) > 0 {
-		return nil, errors.Errorf("site configuration is invalid: %s", strings.Join(problems, ","))
+		return nil, errors.Errorf("site configurbtion is invblid: %s", strings.Join(problems, ","))
 	}
 
-	latest, err := s.getLatest(ctx)
+	lbtest, err := s.getLbtest(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if latest != nil && lastID != nil && latest.ID != *lastID {
+	if lbtest != nil && lbstID != nil && lbtest.ID != *lbstID {
 		return nil, ErrNewerEdit
 	}
 
-	redactedConf, err := conf.RedactAndHashSecrets(conftypes.RawUnified{Site: contents})
-	var redactedContents string
+	redbctedConf, err := conf.RedbctAndHbshSecrets(conftypes.RbwUnified{Site: contents})
+	vbr redbctedContents string
 	if err != nil {
-		// Do not fail here. Instead continue writing to DB with an empty value for
-		// "redacted_contents".
-		s.logger.Warn(
-			"failed to redact secrets during site config creation (secrets are safely stored but diff generation in site config history will not work)",
+		// Do not fbil here. Instebd continue writing to DB with bn empty vblue for
+		// "redbcted_contents".
+		s.logger.Wbrn(
+			"fbiled to redbct secrets during site config crebtion (secrets bre sbfely stored but diff generbtion in site config history will not work)",
 			log.Error(err),
 		)
 	} else {
-		redactedContents = redactedConf.Site
+		redbctedContents = redbctedConf.Site
 	}
 
 	q := sqlf.Sprintf(
-		createSiteConfigFmtStr,
-		dbutil.NullInt32Column(authorUserID),
+		crebteSiteConfigFmtStr,
+		dbutil.NullInt32Column(buthorUserID),
 		contents,
-		redactedContents,
+		redbctedContents,
 		sqlf.Join(siteConfigColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanSiteConfigRow(row)
+	return scbnSiteConfigRow(row)
 }
 
-const getLatestFmtStr = `
+const getLbtestFmtStr = `
 SELECT %s -- siteConfigRows
-FROM critical_and_site_config
+FROM criticbl_bnd_site_config
 WHERE type='site'
 ORDER BY id DESC
 LIMIT 1
 `
 
-func (s *confStore) getLatest(ctx context.Context) (*SiteConfig, error) {
+func (s *confStore) getLbtest(ctx context.Context) (*SiteConfig, error) {
 	q := sqlf.Sprintf(
-		getLatestFmtStr,
+		getLbtestFmtStr,
 		sqlf.Join(siteConfigColumns, ","),
 	)
 	row := s.QueryRow(ctx, q)
-	config, err := scanSiteConfigRow(row)
+	config, err := scbnSiteConfigRow(row)
 	if err != nil && errors.Is(err, sql.ErrNoRows) {
-		// No config has been written yet
+		// No config hbs been written yet
 		return nil, nil
 	}
 	return config, err
 }
 
-// scanSiteConfigRow scans a single row from a *sql.Row or *sql.Rows.
+// scbnSiteConfigRow scbns b single row from b *sql.Row or *sql.Rows.
 // It must be kept in sync with siteConfigColumns
-func scanSiteConfigRow(scanner dbutil.Scanner) (*SiteConfig, error) {
-	var s SiteConfig
-	err := scanner.Scan(
+func scbnSiteConfigRow(scbnner dbutil.Scbnner) (*SiteConfig, error) {
+	vbr s SiteConfig
+	err := scbnner.Scbn(
 		&s.ID,
 		&dbutil.NullInt32{N: &s.AuthorUserID},
 		&s.Contents,
-		&dbutil.NullString{S: &s.RedactedContents},
-		&s.CreatedAt,
-		&s.UpdatedAt,
+		&dbutil.NullString{S: &s.RedbctedContents},
+		&s.CrebtedAt,
+		&s.UpdbtedAt,
 	)
 	return &s, err
 }
 
-var scanSiteConfigs = basestore.NewSliceScanner(scanSiteConfigRow)
+vbr scbnSiteConfigs = bbsestore.NewSliceScbnner(scbnSiteConfigRow)

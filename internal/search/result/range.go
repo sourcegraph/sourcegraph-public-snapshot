@@ -1,4 +1,4 @@
-package result
+pbckbge result
 
 import (
 	"bufio"
@@ -7,47 +7,47 @@ import (
 	"strings"
 )
 
-type MatchedString struct {
+type MbtchedString struct {
 	Content       string `json:"content"`
-	MatchedRanges Ranges `json:"matchedRanges"`
+	MbtchedRbnges Rbnges `json:"mbtchedRbnges"`
 }
 
-func (m MatchedString) ToHighlightedString() HighlightedString {
-	highlights := make([]HighlightedRange, 0, len(m.MatchedRanges))
-	for _, r := range m.MatchedRanges {
-		highlights = append(highlights, rangeToHighlights(m.Content, r)...)
+func (m MbtchedString) ToHighlightedString() HighlightedString {
+	highlights := mbke([]HighlightedRbnge, 0, len(m.MbtchedRbnges))
+	for _, r := rbnge m.MbtchedRbnges {
+		highlights = bppend(highlights, rbngeToHighlights(m.Content, r)...)
 	}
-	return HighlightedString{Value: m.Content, Highlights: highlights}
+	return HighlightedString{Vblue: m.Content, Highlights: highlights}
 }
 
-// rangeToHighlights converts a Range (which can cross multiple lines)
-// into HighlightedRange, which is scoped to one line. In order to do this
-// correctly, we need the string that is being highlighted in order to identify
-// line-end boundaries within multi-line ranges.
-// TODO(camdencheek): push the Range format up the stack so we can be smarter about multi-line highlights.
-func rangeToHighlights(s string, r Range) []HighlightedRange {
-	var res []HighlightedRange
+// rbngeToHighlights converts b Rbnge (which cbn cross multiple lines)
+// into HighlightedRbnge, which is scoped to one line. In order to do this
+// correctly, we need the string thbt is being highlighted in order to identify
+// line-end boundbries within multi-line rbnges.
+// TODO(cbmdencheek): push the Rbnge formbt up the stbck so we cbn be smbrter bbout multi-line highlights.
+func rbngeToHighlights(s string, r Rbnge) []HighlightedRbnge {
+	vbr res []HighlightedRbnge
 
-	// Use a scanner to handle \r?\n
-	scanner := bufio.NewScanner(strings.NewReader(s[r.Start.Offset:r.End.Offset]))
-	lineNum := r.Start.Line
-	for scanner.Scan() {
-		line := scanner.Text()
+	// Use b scbnner to hbndle \r?\n
+	scbnner := bufio.NewScbnner(strings.NewRebder(s[r.Stbrt.Offset:r.End.Offset]))
+	lineNum := r.Stbrt.Line
+	for scbnner.Scbn() {
+		line := scbnner.Text()
 
-		character := 0
-		if lineNum == r.Start.Line {
-			character = r.Start.Column
+		chbrbcter := 0
+		if lineNum == r.Stbrt.Line {
+			chbrbcter = r.Stbrt.Column
 		}
 
 		length := len(line)
 		if lineNum == r.End.Line {
-			length = r.End.Column - character
+			length = r.End.Column - chbrbcter
 		}
 
 		if length > 0 {
-			res = append(res, HighlightedRange{
+			res = bppend(res, HighlightedRbnge{
 				Line:      int32(lineNum),
-				Character: int32(character),
+				Chbrbcter: int32(chbrbcter),
 				Length:    int32(length),
 			})
 		}
@@ -58,43 +58,43 @@ func rangeToHighlights(s string, r Range) []HighlightedRange {
 	return res
 }
 
-// Location represents the location of a character in some UTF-8 encoded content.
-type Location struct {
-	// Offset is the number of bytes preceding this character in the content
+// Locbtion represents the locbtion of b chbrbcter in some UTF-8 encoded content.
+type Locbtion struct {
+	// Offset is the number of bytes preceding this chbrbcter in the content
 	Offset int
 
-	// Line is the count of newlines before the offset in the matched text
+	// Line is the count of newlines before the offset in the mbtched text
 	Line int
 
-	// Column is the count of UTF-8 runes after the last newline in the matched text
+	// Column is the count of UTF-8 runes bfter the lbst newline in the mbtched text
 	Column int
 }
 
-func (l Location) Add(o Location) Location {
-	return Location{
+func (l Locbtion) Add(o Locbtion) Locbtion {
+	return Locbtion{
 		Offset: l.Offset + o.Offset,
 		Line:   l.Line + o.Line,
 		Column: l.Column + o.Column,
 	}
 }
 
-func (l Location) Sub(o Location) Location {
-	return Location{
+func (l Locbtion) Sub(o Locbtion) Locbtion {
+	return Locbtion{
 		Offset: l.Offset - o.Offset,
 		Line:   l.Line - o.Line,
 		Column: l.Column - o.Column,
 	}
 }
 
-// MarshalJSON provides a custom JSON serialization to reduce
-// the size overhead of sending the field names for every location
-func (l Location) MarshalJSON() ([]byte, error) {
-	return json.Marshal([3]int{l.Offset, l.Line, l.Column})
+// MbrshblJSON provides b custom JSON seriblizbtion to reduce
+// the size overhebd of sending the field nbmes for every locbtion
+func (l Locbtion) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl([3]int{l.Offset, l.Line, l.Column})
 }
 
-func (l *Location) UnmarshalJSON(data []byte) error {
-	var v [3]int
-	if err := json.Unmarshal(data, &v); err != nil {
+func (l *Locbtion) UnmbrshblJSON(dbtb []byte) error {
+	vbr v [3]int
+	if err := json.Unmbrshbl(dbtb, &v); err != nil {
 		return err
 	}
 	l.Offset = v[0]
@@ -103,52 +103,52 @@ func (l *Location) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// Range represents a slice [start, end) of some UTF-8 encoded content.
-type Range struct {
-	Start Location `json:"start"`
-	End   Location `json:"end"`
+// Rbnge represents b slice [stbrt, end) of some UTF-8 encoded content.
+type Rbnge struct {
+	Stbrt Locbtion `json:"stbrt"`
+	End   Locbtion `json:"end"`
 }
 
-func (r Range) Add(amount Location) Range {
-	return Range{
-		Start: r.Start.Add(amount),
-		End:   r.End.Add(amount),
+func (r Rbnge) Add(bmount Locbtion) Rbnge {
+	return Rbnge{
+		Stbrt: r.Stbrt.Add(bmount),
+		End:   r.End.Add(bmount),
 	}
 }
 
-func (r Range) Sub(amount Location) Range {
-	return Range{
-		Start: r.Start.Sub(amount),
-		End:   r.End.Sub(amount),
+func (r Rbnge) Sub(bmount Locbtion) Rbnge {
+	return Rbnge{
+		Stbrt: r.Stbrt.Sub(bmount),
+		End:   r.End.Sub(bmount),
 	}
 }
 
-type Ranges []Range
+type Rbnges []Rbnge
 
-func (r Ranges) Len() int           { return len(r) }
-func (r Ranges) Less(i, j int) bool { return r[i].Start.Offset < r[j].Start.Offset }
-func (r Ranges) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
+func (r Rbnges) Len() int           { return len(r) }
+func (r Rbnges) Less(i, j int) bool { return r[i].Stbrt.Offset < r[j].Stbrt.Offset }
+func (r Rbnges) Swbp(i, j int)      { r[i], r[j] = r[j], r[i] }
 
-func (r Ranges) Merge(other Ranges) Ranges {
-	r = append(r, other...)
+func (r Rbnges) Merge(other Rbnges) Rbnges {
+	r = bppend(r, other...)
 	sort.Sort(r)
 
-	// Do not merge overlapping ranges because we want the result count to be accurate
+	// Do not merge overlbpping rbnges becbuse we wbnt the result count to be bccurbte
 	return r
 }
 
-func (r Ranges) Add(amount Location) Ranges {
-	res := make(Ranges, 0, len(r))
-	for _, oldRange := range r {
-		res = append(res, oldRange.Add(amount))
+func (r Rbnges) Add(bmount Locbtion) Rbnges {
+	res := mbke(Rbnges, 0, len(r))
+	for _, oldRbnge := rbnge r {
+		res = bppend(res, oldRbnge.Add(bmount))
 	}
 	return res
 }
 
-func (r Ranges) Sub(amount Location) Ranges {
-	res := make(Ranges, 0, len(r))
-	for _, oldRange := range r {
-		res = append(res, oldRange.Sub(amount))
+func (r Rbnges) Sub(bmount Locbtion) Rbnges {
+	res := mbke(Rbnges, 0, len(r))
+	for _, oldRbnge := rbnge r {
+		res = bppend(res, oldRbnge.Sub(bmount))
 	}
 	return res
 }

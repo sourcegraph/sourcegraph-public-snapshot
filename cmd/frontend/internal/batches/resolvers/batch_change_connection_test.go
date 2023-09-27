@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -8,164 +8,164 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	bstore "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestBatchChangeConnectionResolver(t *testing.T) {
+func TestBbtchChbngeConnectionResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CrebteTestUser(t, db, true).ID
 
-	bstore := bstore.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := bstore.New(db, &observbtion.TestContext, nil)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/batch-change-connection-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/bbtch-chbnge-connection-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	spec1 := &btypes.BatchSpec{
-		NamespaceUserID: userID,
+	spec1 := &btypes.BbtchSpec{
+		NbmespbceUserID: userID,
 		UserID:          userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec1); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec1); err != nil {
+		t.Fbtbl(err)
 	}
-	spec2 := &btypes.BatchSpec{
-		NamespaceUserID: userID,
+	spec2 := &btypes.BbtchSpec{
+		NbmespbceUserID: userID,
 		UserID:          userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec2); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec2); err != nil {
+		t.Fbtbl(err)
 	}
 
-	batchChange1 := &btypes.BatchChange{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-		BatchSpecID:     spec1.ID,
+	bbtchChbnge1 := &btypes.BbtchChbnge{
+		Nbme:            "my-unique-nbme",
+		NbmespbceUserID: userID,
+		CrebtorID:       userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+		BbtchSpecID:     spec1.ID,
 	}
-	if err := bstore.CreateBatchChange(ctx, batchChange1); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge1); err != nil {
+		t.Fbtbl(err)
 	}
-	batchChange2 := &btypes.BatchChange{
-		Name:            "my-other-unique-name",
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-		BatchSpecID:     spec2.ID,
+	bbtchChbnge2 := &btypes.BbtchChbnge{
+		Nbme:            "my-other-unique-nbme",
+		NbmespbceUserID: userID,
+		CrebtorID:       userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+		BbtchSpecID:     spec2.ID,
 	}
-	if err := bstore.CreateBatchChange(ctx, batchChange2); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge2); err != nil {
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Batch changes are returned in reverse order.
-	nodes := []apitest.BatchChange{
+	// Bbtch chbnges bre returned in reverse order.
+	nodes := []bpitest.BbtchChbnge{
 		{
-			ID: string(bgql.MarshalBatchChangeID(batchChange2.ID)),
+			ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge2.ID)),
 		},
 		{
-			ID: string(bgql.MarshalBatchChangeID(batchChange1.ID)),
+			ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge1.ID)),
 		},
 	}
 
 	tests := []struct {
-		firstParam      int
-		wantHasNextPage bool
-		wantTotalCount  int
-		wantNodes       []apitest.BatchChange
+		firstPbrbm      int
+		wbntHbsNextPbge bool
+		wbntTotblCount  int
+		wbntNodes       []bpitest.BbtchChbnge
 	}{
-		{firstParam: 1, wantHasNextPage: true, wantTotalCount: 2, wantNodes: nodes[:1]},
-		{firstParam: 2, wantHasNextPage: false, wantTotalCount: 2, wantNodes: nodes},
-		{firstParam: 3, wantHasNextPage: false, wantTotalCount: 2, wantNodes: nodes},
+		{firstPbrbm: 1, wbntHbsNextPbge: true, wbntTotblCount: 2, wbntNodes: nodes[:1]},
+		{firstPbrbm: 2, wbntHbsNextPbge: fblse, wbntTotblCount: 2, wbntNodes: nodes},
+		{firstPbrbm: 3, wbntHbsNextPbge: fblse, wbntTotblCount: 2, wbntNodes: nodes},
 	}
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
-			input := map[string]any{"first": int64(tc.firstParam)}
-			var response struct{ BatchChanges apitest.BatchChangeConnection }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchChangesConnection)
+	for _, tc := rbnge tests {
+		t.Run(fmt.Sprintf("first=%d", tc.firstPbrbm), func(t *testing.T) {
+			input := mbp[string]bny{"first": int64(tc.firstPbrbm)}
+			vbr response struct{ BbtchChbnges bpitest.BbtchChbngeConnection }
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryBbtchChbngesConnection)
 
-			wantConnection := apitest.BatchChangeConnection{
-				TotalCount: tc.wantTotalCount,
-				PageInfo: apitest.PageInfo{
-					HasNextPage: tc.wantHasNextPage,
+			wbntConnection := bpitest.BbtchChbngeConnection{
+				TotblCount: tc.wbntTotblCount,
+				PbgeInfo: bpitest.PbgeInfo{
+					HbsNextPbge: tc.wbntHbsNextPbge,
 					// We don't test on the cursor here.
-					EndCursor: response.BatchChanges.PageInfo.EndCursor,
+					EndCursor: response.BbtchChbnges.PbgeInfo.EndCursor,
 				},
-				Nodes: tc.wantNodes,
+				Nodes: tc.wbntNodes,
 			}
 
-			if diff := cmp.Diff(wantConnection, response.BatchChanges); diff != "" {
-				t.Fatalf("wrong batchChanges response (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntConnection, response.BbtchChbnges); diff != "" {
+				t.Fbtblf("wrong bbtchChbnges response (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 
-	t.Run("Cursor based pagination", func(t *testing.T) {
-		var endCursor *string
-		for i := range nodes {
-			input := map[string]any{"first": 1}
+	t.Run("Cursor bbsed pbginbtion", func(t *testing.T) {
+		vbr endCursor *string
+		for i := rbnge nodes {
+			input := mbp[string]bny{"first": 1}
 			if endCursor != nil {
-				input["after"] = *endCursor
+				input["bfter"] = *endCursor
 			}
-			wantHasNextPage := i != len(nodes)-1
+			wbntHbsNextPbge := i != len(nodes)-1
 
-			var response struct{ BatchChanges apitest.BatchChangeConnection }
-			apitest.MustExec(ctx, t, s, input, &response, queryBatchChangesConnection)
+			vbr response struct{ BbtchChbnges bpitest.BbtchChbngeConnection }
+			bpitest.MustExec(ctx, t, s, input, &response, queryBbtchChbngesConnection)
 
-			if diff := cmp.Diff(1, len(response.BatchChanges.Nodes)); diff != "" {
-				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
-			}
-
-			if diff := cmp.Diff(len(nodes), response.BatchChanges.TotalCount); diff != "" {
-				t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+			if diff := cmp.Diff(1, len(response.BbtchChbnges.Nodes)); diff != "" {
+				t.Fbtblf("unexpected number of nodes (-wbnt +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(wantHasNextPage, response.BatchChanges.PageInfo.HasNextPage); diff != "" {
-				t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+			if diff := cmp.Diff(len(nodes), response.BbtchChbnges.TotblCount); diff != "" {
+				t.Fbtblf("unexpected totbl count (-wbnt +got):\n%s", diff)
 			}
 
-			endCursor = response.BatchChanges.PageInfo.EndCursor
-			if want, have := wantHasNextPage, endCursor != nil; have != want {
-				t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+			if diff := cmp.Diff(wbntHbsNextPbge, response.BbtchChbnges.PbgeInfo.HbsNextPbge); diff != "" {
+				t.Fbtblf("unexpected hbsNextPbge (-wbnt +got):\n%s", diff)
+			}
+
+			endCursor = response.BbtchChbnges.PbgeInfo.EndCursor
+			if wbnt, hbve := wbntHbsNextPbge, endCursor != nil; hbve != wbnt {
+				t.Fbtblf("unexpected endCursor existence. wbnt=%t, hbve=%t", wbnt, hbve)
 			}
 		}
 	})
 }
 
-const queryBatchChangesConnection = `
-query($first: Int, $after: String) {
-  batchChanges(first: $first, after: $after) {
-    totalCount
-    pageInfo {
-	  hasNextPage
+const queryBbtchChbngesConnection = `
+query($first: Int, $bfter: String) {
+  bbtchChbnges(first: $first, bfter: $bfter) {
+    totblCount
+    pbgeInfo {
+	  hbsNextPbge
 	  endCursor
     }
     nodes {
@@ -175,222 +175,222 @@ query($first: Int, $after: String) {
 }
 `
 
-func TestBatchChangesListing(t *testing.T) {
+func TestBbtchChbngesListing(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	userID := bt.CrebteTestUser(t, db, fblse).ID
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	orgID := bt.CreateTestOrg(t, db, "org").ID
+	orgID := bt.CrebteTestOrg(t, db, "org").ID
 
-	store := bstore.New(db, &observation.TestContext, nil)
+	store := bstore.New(db, &observbtion.TestContext, nil)
 
 	r := &Resolver{store: store}
-	s, err := newSchema(db, r)
+	s, err := newSchemb(db, r)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	createBatchSpec := func(t *testing.T, spec *btypes.BatchSpec) {
+	crebteBbtchSpec := func(t *testing.T, spec *btypes.BbtchSpec) {
 		t.Helper()
 
 		spec.UserID = userID
-		spec.NamespaceUserID = userID
-		if err := store.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
+		spec.NbmespbceUserID = userID
+		if err := store.CrebteBbtchSpec(ctx, spec); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	createBatchChange := func(t *testing.T, c *btypes.BatchChange) {
+	crebteBbtchChbnge := func(t *testing.T, c *btypes.BbtchChbnge) {
 		t.Helper()
 
-		if err := store.CreateBatchChange(ctx, c); err != nil {
-			t.Fatal(err)
+		if err := store.CrebteBbtchChbnge(ctx, c); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	t.Run("listing a user's batch changes", func(t *testing.T) {
-		spec := &btypes.BatchSpec{}
-		createBatchSpec(t, spec)
+	t.Run("listing b user's bbtch chbnges", func(t *testing.T) {
+		spec := &btypes.BbtchSpec{}
+		crebteBbtchSpec(t, spec)
 
-		batchChange := &btypes.BatchChange{
-			Name:            "batch-change-1",
-			NamespaceUserID: userID,
-			BatchSpecID:     spec.ID,
-			CreatorID:       userID,
-			LastApplierID:   userID,
-			LastAppliedAt:   time.Now(),
+		bbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:            "bbtch-chbnge-1",
+			NbmespbceUserID: userID,
+			BbtchSpecID:     spec.ID,
+			CrebtorID:       userID,
+			LbstApplierID:   userID,
+			LbstAppliedAt:   time.Now(),
 		}
-		createBatchChange(t, batchChange)
+		crebteBbtchChbnge(t, bbtchChbnge)
 
-		userAPIID := string(graphqlbackend.MarshalUserID(userID))
-		input := map[string]any{"node": userAPIID}
+		userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		vbr response struct{ Node bpitest.User }
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		wantOne := apitest.User{
+		wbntOne := bpitest.User{
 			ID: userAPIID,
-			BatchChanges: apitest.BatchChangeConnection{
-				TotalCount: 1,
-				Nodes: []apitest.BatchChange{
-					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
+			BbtchChbnges: bpitest.BbtchChbngeConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.BbtchChbnge{
+					{ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))},
 				},
 			},
 		}
 
-		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntOne, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 
-		spec2 := &btypes.BatchSpec{}
-		createBatchSpec(t, spec2)
+		spec2 := &btypes.BbtchSpec{}
+		crebteBbtchSpec(t, spec2)
 
-		// This batch change has never been applied -- it is a draft.
-		batchChange2 := &btypes.BatchChange{
-			Name:            "batch-change-2",
-			NamespaceUserID: userID,
-			BatchSpecID:     spec2.ID,
+		// This bbtch chbnge hbs never been bpplied -- it is b drbft.
+		bbtchChbnge2 := &btypes.BbtchChbnge{
+			Nbme:            "bbtch-chbnge-2",
+			NbmespbceUserID: userID,
+			BbtchSpecID:     spec2.ID,
 		}
-		createBatchChange(t, batchChange2)
+		crebteBbtchChbnge(t, bbtchChbnge2)
 
 		// DRAFTS CASE 1: USERS CAN VIEW THEIR OWN DRAFTS.
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		wantBoth := apitest.User{
+		wbntBoth := bpitest.User{
 			ID: userAPIID,
-			BatchChanges: apitest.BatchChangeConnection{
-				TotalCount: 2,
-				Nodes: []apitest.BatchChange{
-					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID))},
-					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
+			BbtchChbnges: bpitest.BbtchChbngeConnection{
+				TotblCount: 2,
+				Nodes: []bpitest.BbtchChbnge{
+					{ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge2.ID))},
+					{ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))},
 				},
 			},
 		}
 
-		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBoth, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 
 		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
-		adminUserID := bt.CreateTestUser(t, db, true).ID
-		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+		bdminUserID := bt.CrebteTestUser(t, db, true).ID
+		bdminActorCtx := bctor.WithActor(ctx, bctor.FromUser(bdminUserID))
 
-		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		bpitest.MustExec(bdminActorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBoth, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 
 		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
-		otherUserID := bt.CreateTestUser(t, db, false).ID
-		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
+		otherUserID := bt.CrebteTestUser(t, db, fblse).ID
+		otherActorCtx := bctor.WithActor(ctx, bctor.FromUser(otherUserID))
 
-		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		bpitest.MustExec(otherActorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntOne, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("listing an orgs batch changes", func(t *testing.T) {
-		spec := &btypes.BatchSpec{}
-		createBatchSpec(t, spec)
+	t.Run("listing bn orgs bbtch chbnges", func(t *testing.T) {
+		spec := &btypes.BbtchSpec{}
+		crebteBbtchSpec(t, spec)
 
-		batchChange := &btypes.BatchChange{
-			Name:           "batch-change-1",
-			NamespaceOrgID: orgID,
-			BatchSpecID:    spec.ID,
-			CreatorID:      userID,
-			LastApplierID:  userID,
-			LastAppliedAt:  time.Now(),
+		bbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:           "bbtch-chbnge-1",
+			NbmespbceOrgID: orgID,
+			BbtchSpecID:    spec.ID,
+			CrebtorID:      userID,
+			LbstApplierID:  userID,
+			LbstAppliedAt:  time.Now(),
 		}
-		createBatchChange(t, batchChange)
+		crebteBbtchChbnge(t, bbtchChbnge)
 
-		orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
-		input := map[string]any{"node": orgAPIID}
+		orgAPIID := string(grbphqlbbckend.MbrshblOrgID(orgID))
+		input := mbp[string]bny{"node": orgAPIID}
 
-		var response struct{ Node apitest.Org }
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		vbr response struct{ Node bpitest.Org }
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		wantOne := apitest.Org{
+		wbntOne := bpitest.Org{
 			ID: orgAPIID,
-			BatchChanges: apitest.BatchChangeConnection{
-				TotalCount: 1,
-				Nodes: []apitest.BatchChange{
-					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
+			BbtchChbnges: bpitest.BbtchChbngeConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.BbtchChbnge{
+					{ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))},
 				},
 			},
 		}
 
-		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntOne, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 
-		spec2 := &btypes.BatchSpec{UserID: userID}
-		createBatchSpec(t, spec2)
+		spec2 := &btypes.BbtchSpec{UserID: userID}
+		crebteBbtchSpec(t, spec2)
 
-		// This batch change has never been applied -- it is a draft.
-		batchChange2 := &btypes.BatchChange{
-			Name:           "batch-change-2",
-			NamespaceOrgID: orgID,
-			BatchSpecID:    spec2.ID,
+		// This bbtch chbnge hbs never been bpplied -- it is b drbft.
+		bbtchChbnge2 := &btypes.BbtchChbnge{
+			Nbme:           "bbtch-chbnge-2",
+			NbmespbceOrgID: orgID,
+			BbtchSpecID:    spec2.ID,
 		}
-		createBatchChange(t, batchChange2)
+		crebteBbtchChbnge(t, bbtchChbnge2)
 
 		// DRAFTS CASE 1: USERS CAN VIEW THEIR OWN DRAFTS.
-		apitest.MustExec(actorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		wantBoth := apitest.Org{
+		wbntBoth := bpitest.Org{
 			ID: orgAPIID,
-			BatchChanges: apitest.BatchChangeConnection{
-				TotalCount: 2,
-				Nodes: []apitest.BatchChange{
-					{ID: string(bgql.MarshalBatchChangeID(batchChange2.ID))},
-					{ID: string(bgql.MarshalBatchChangeID(batchChange.ID))},
+			BbtchChbnges: bpitest.BbtchChbngeConnection{
+				TotblCount: 2,
+				Nodes: []bpitest.BbtchChbnge{
+					{ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge2.ID))},
+					{ID: string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))},
 				},
 			},
 		}
 
-		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBoth, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 
 		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
-		adminUserID := bt.CreateTestUser(t, db, true).ID
-		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+		bdminUserID := bt.CrebteTestUser(t, db, true).ID
+		bdminActorCtx := bctor.WithActor(ctx, bctor.FromUser(bdminUserID))
 
-		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		bpitest.MustExec(bdminActorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		if diff := cmp.Diff(wantBoth, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntBoth, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 
 		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
-		otherUserID := bt.CreateTestUser(t, db, false).ID
-		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
+		otherUserID := bt.CrebteTestUser(t, db, fblse).ID
+		otherActorCtx := bctor.WithActor(ctx, bctor.FromUser(otherUserID))
 
-		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)
+		bpitest.MustExec(otherActorCtx, t, s, input, &response, listNbmespbcesBbtchChbnges)
 
-		if diff := cmp.Diff(wantOne, response.Node); diff != "" {
-			t.Fatalf("wrong batch change response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbntOne, response.Node); diff != "" {
+			t.Fbtblf("wrong bbtch chbnge response (-wbnt +got):\n%s", diff)
 		}
 	})
 }
 
-const listNamespacesBatchChanges = `
+const listNbmespbcesBbtchChbnges = `
 query($node: ID!) {
   node(id: $node) {
     ... on User {
       id
-      batchChanges {
-        totalCount
+      bbtchChbnges {
+        totblCount
         nodes {
           id
         }
@@ -399,8 +399,8 @@ query($node: ID!) {
 
     ... on Org {
       id
-      batchChanges {
-        totalCount
+      bbtchChbnges {
+        totblCount
         nodes {
           id
         }

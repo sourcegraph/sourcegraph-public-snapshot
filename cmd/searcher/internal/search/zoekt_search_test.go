@@ -1,61 +1,61 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/query"
+	"github.com/RobringBitmbp/robring"
+	"github.com/sourcegrbph/zoekt"
+	"github.com/sourcegrbph/zoekt/query"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type mockClient struct {
-	zoekt.Streamer
-	mockStreamSearch func(context.Context, query.Q, *zoekt.SearchOptions, zoekt.Sender) error
+	zoekt.Strebmer
+	mockStrebmSebrch func(context.Context, query.Q, *zoekt.SebrchOptions, zoekt.Sender) error
 }
 
-func (mc *mockClient) StreamSearch(ctx context.Context, q query.Q, opts *zoekt.SearchOptions, sender zoekt.Sender) (err error) {
-	return mc.mockStreamSearch(ctx, q, opts, sender)
+func (mc *mockClient) StrebmSebrch(ctx context.Context, q query.Q, opts *zoekt.SebrchOptions, sender zoekt.Sender) (err error) {
+	return mc.mockStrebmSebrch(ctx, q, opts, sender)
 }
 
-func Test_zoektSearch(t *testing.T) {
-	ctx := context.Background()
+func Test_zoektSebrch(t *testing.T) {
+	ctx := context.Bbckground()
 
-	// Create a mock client that will send a few files worth of matches
+	// Crebte b mock client thbt will send b few files worth of mbtches
 	client := &mockClient{
-		mockStreamSearch: func(ctx context.Context, q query.Q, so *zoekt.SearchOptions, s zoekt.Sender) error {
+		mockStrebmSebrch: func(ctx context.Context, q query.Q, so *zoekt.SebrchOptions, s zoekt.Sender) error {
 			for i := 0; i < 10; i++ {
-				s.Send(&zoekt.SearchResult{
-					Files: []zoekt.FileMatch{{}, {}},
+				s.Send(&zoekt.SebrchResult{
+					Files: []zoekt.FileMbtch{{}, {}},
 				})
 			}
 			return nil
 		},
 	}
 
-	// Structural search fails immediately, so can't consume the events from the zoekt stream
-	mockStructuralSearch = func(ctx context.Context, inputType comby.Input, paths filePatterns, extensionHint, pattern, rule string, languages []string, repo api.RepoName, sender matchSender) error {
+	// Structurbl sebrch fbils immedibtely, so cbn't consume the events from the zoekt strebm
+	mockStructurblSebrch = func(ctx context.Context, inputType comby.Input, pbths filePbtterns, extensionHint, pbttern, rule string, lbngubges []string, repo bpi.RepoNbme, sender mbtchSender) error {
 		return errors.New("oops")
 	}
-	t.Cleanup(func() { mockStructuralSearch = nil })
+	t.Clebnup(func() { mockStructurblSebrch = nil })
 
-	// Ensure that this returns an error from structuralSearch, and does not block
-	// indefinitely because the reader returns early.
-	err := zoektSearch(
+	// Ensure thbt this returns bn error from structurblSebrch, bnd does not block
+	// indefinitely becbuse the rebder returns ebrly.
+	err := zoektSebrch(
 		ctx,
 		client,
-		&search.TextPatternInfo{},
-		[]query.BranchRepos{{Branch: "test", Repos: roaring.BitmapOf(1, 2, 3)}},
+		&sebrch.TextPbtternInfo{},
+		[]query.BrbnchRepos{{Brbnch: "test", Repos: robring.BitmbpOf(1, 2, 3)}},
 		time.Since,
 		"",
-		matchSender(nil),
+		mbtchSender(nil),
 	)
 	require.Error(t, err)
 }

@@ -1,6 +1,6 @@
-// Package versions provides functions for fetching, storing and retrieving the
-// versions of code host instances configured in the external services.
+// Pbckbge versions provides functions for fetching, storing bnd retrieving the
+// versions of code host instbnces configured in the externbl services.
 //
-// The main consumer of this package is the updatecheck package that includes
-// the code host versions in ping data requests.
-package versions
+// The mbin consumer of this pbckbge is the updbtecheck pbckbge thbt includes
+// the code host versions in ping dbtb requests.
+pbckbge versions

@@ -1,40 +1,40 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func bifurcateStates(states []string) (uploadStates, indexStates []string, _ error) {
-	for _, state := range states {
-		switch strings.ToUpper(state) {
-		case "QUEUED_FOR_INDEXING":
-			indexStates = append(indexStates, "queued")
-		case "INDEXING":
-			indexStates = append(indexStates, "processing")
-		case "INDEXING_ERRORED":
-			indexStates = append(indexStates, "errored")
+func bifurcbteStbtes(stbtes []string) (uplobdStbtes, indexStbtes []string, _ error) {
+	for _, stbte := rbnge stbtes {
+		switch strings.ToUpper(stbte) {
+		cbse "QUEUED_FOR_INDEXING":
+			indexStbtes = bppend(indexStbtes, "queued")
+		cbse "INDEXING":
+			indexStbtes = bppend(indexStbtes, "processing")
+		cbse "INDEXING_ERRORED":
+			indexStbtes = bppend(indexStbtes, "errored")
 
-		case "UPLOADING_INDEX":
-			uploadStates = append(uploadStates, "uploading")
-		case "QUEUED_FOR_PROCESSING":
-			uploadStates = append(uploadStates, "queued")
-		case "PROCESSING":
-			uploadStates = append(uploadStates, "processing")
-		case "PROCESSING_ERRORED":
-			uploadStates = append(uploadStates, "errored")
-		case "COMPLETED":
-			uploadStates = append(uploadStates, "completed")
-		case "DELETING":
-			uploadStates = append(uploadStates, "deleting")
-		case "DELETED":
-			uploadStates = append(uploadStates, "deleted")
+		cbse "UPLOADING_INDEX":
+			uplobdStbtes = bppend(uplobdStbtes, "uplobding")
+		cbse "QUEUED_FOR_PROCESSING":
+			uplobdStbtes = bppend(uplobdStbtes, "queued")
+		cbse "PROCESSING":
+			uplobdStbtes = bppend(uplobdStbtes, "processing")
+		cbse "PROCESSING_ERRORED":
+			uplobdStbtes = bppend(uplobdStbtes, "errored")
+		cbse "COMPLETED":
+			uplobdStbtes = bppend(uplobdStbtes, "completed")
+		cbse "DELETING":
+			uplobdStbtes = bppend(uplobdStbtes, "deleting")
+		cbse "DELETED":
+			uplobdStbtes = bppend(uplobdStbtes, "deleted")
 
-		default:
-			return nil, nil, errors.Newf("filtering by state %q is unsupported", state)
+		defbult:
+			return nil, nil, errors.Newf("filtering by stbte %q is unsupported", stbte)
 		}
 	}
 
-	return uploadStates, indexStates, nil
+	return uplobdStbtes, indexStbtes, nil
 }

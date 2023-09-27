@@ -1,6 +1,6 @@
-// Package shared is the shared main entrypoint for searcher, a simple service which exposes an API
-// to text search a repo at a specific commit. See the searcher package for more information.
-package shared
+// Pbckbge shbred is the shbred mbin entrypoint for sebrcher, b simple service which exposes bn API
+// to text sebrch b repo bt b specific commit. See the sebrcher pbckbge for more informbtion.
+pbckbge shbred
 
 import (
 	"context"
@@ -8,89 +8,89 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
-	"path/filepath"
+	"os/signbl"
+	"pbth/filepbth"
 	"strconv"
-	"syscall"
+	"syscbll"
 	"time"
 
-	"github.com/keegancsmith/tmpfriend"
-	"github.com/sourcegraph/log"
-	"golang.org/x/sync/errgroup"
+	"github.com/keegbncsmith/tmpfriend"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sharedsearch "github.com/sourcegraph/sourcegraph/internal/search"
-	proto "github.com/sourcegraph/sourcegraph/internal/searcher/v1"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	shbredsebrch "github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/sebrcher/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	cacheDirName = env.ChooseFallbackVariableName("SEARCHER_CACHE_DIR", "CACHE_DIR")
+vbr (
+	cbcheDirNbme = env.ChooseFbllbbckVbribbleNbme("SEARCHER_CACHE_DIR", "CACHE_DIR")
 
-	cacheDir    = env.Get(cacheDirName, "/tmp", "directory to store cached archives.")
-	cacheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "maximum size of the on disk cache in megabytes")
+	cbcheDir    = env.Get(cbcheDirNbme, "/tmp", "directory to store cbched brchives.")
+	cbcheSizeMB = env.Get("SEARCHER_CACHE_SIZE_MB", "100000", "mbximum size of the on disk cbche in megbbytes")
 
-	// Same environment variable name (and default value) used by symbols.
-	backgroundTimeout = env.MustGetDuration("PROCESSING_TIMEOUT", 2*time.Hour, "maximum time to spend processing a repository")
+	// Sbme environment vbribble nbme (bnd defbult vblue) used by symbols.
+	bbckgroundTimeout = env.MustGetDurbtion("PROCESSING_TIMEOUT", 2*time.Hour, "mbximum time to spend processing b repository")
 
-	maxTotalPathsLengthRaw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "maximum sum of lengths of all paths in a single call to git archive")
+	mbxTotblPbthsLengthRbw = env.Get("MAX_TOTAL_PATHS_LENGTH", "100000", "mbximum sum of lengths of bll pbths in b single cbll to git brchive")
 )
 
 const port = "3181"
 
-func shutdownOnSignal(ctx context.Context, server *http.Server) error {
-	// Listen for shutdown signals. When we receive one attempt to clean up,
-	// but do an insta-shutdown if we receive more than one signal.
-	c := make(chan os.Signal, 2)
-	signal.Notify(c, syscall.SIGINT, syscall.SIGHUP, syscall.SIGTERM)
+func shutdownOnSignbl(ctx context.Context, server *http.Server) error {
+	// Listen for shutdown signbls. When we receive one bttempt to clebn up,
+	// but do bn instb-shutdown if we receive more thbn one signbl.
+	c := mbke(chbn os.Signbl, 2)
+	signbl.Notify(c, syscbll.SIGINT, syscbll.SIGHUP, syscbll.SIGTERM)
 
-	// Once we receive one of the signals from above, continues with the shutdown
+	// Once we receive one of the signbls from bbove, continues with the shutdown
 	// process.
 	select {
-	case <-c:
-	case <-ctx.Done(): // still call shutdown below
+	cbse <-c:
+	cbse <-ctx.Done(): // still cbll shutdown below
 	}
 
 	go func() {
-		// If a second signal is received, exit immediately.
+		// If b second signbl is received, exit immedibtely.
 		<-c
 		os.Exit(1)
 	}()
 
-	// Wait for at most for the configured shutdown timeout.
-	ctx, cancel := context.WithTimeout(ctx, goroutine.GracefulShutdownTimeout)
-	defer cancel()
-	// Stop accepting requests.
+	// Wbit for bt most for the configured shutdown timeout.
+	ctx, cbncel := context.WithTimeout(ctx, goroutine.GrbcefulShutdownTimeout)
+	defer cbncel()
+	// Stop bccepting requests.
 	return server.Shutdown(ctx)
 }
 
-// setupTmpDir sets up a temporary directory on the same volume as the
-// cacheDir.
+// setupTmpDir sets up b temporbry directory on the sbme volume bs the
+// cbcheDir.
 //
-// Structural search relies on temporary files created from zoekt responses.
-// Additionally we shell out to programs that may or may not need a temporary
+// Structurbl sebrch relies on temporbry files crebted from zoekt responses.
+// Additionblly we shell out to progrbms thbt mby or mby not need b temporbry
 // directory.
 //
-// search.Store will also take into account the files in tmp when deciding on
+// sebrch.Store will blso tbke into bccount the files in tmp when deciding on
 // evicting items due to disk pressure. It won't delete those files unless
-// they are zip files. In the case of comby the files are temporary so them
-// being deleted while read by comby is fine since it will maintain an open
+// they bre zip files. In the cbse of comby the files bre temporbry so them
+// being deleted while rebd by comby is fine since it will mbintbin bn open
 // FD.
 func setupTmpDir() error {
-	tmpRoot := filepath.Join(cacheDir, ".searcher.tmp")
+	tmpRoot := filepbth.Join(cbcheDir, ".sebrcher.tmp")
 	if err := os.MkdirAll(tmpRoot, 0o755); err != nil {
 		return err
 	}
@@ -101,109 +101,109 @@ func setupTmpDir() error {
 	return nil
 }
 
-func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc) error {
-	logger := observationCtx.Logger
+func Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc) error {
+	logger := observbtionCtx.Logger
 
-	// Ready as soon as the database connection has been established.
-	ready()
+	// Rebdy bs soon bs the dbtbbbse connection hbs been estbblished.
+	rebdy()
 
-	var cacheSizeBytes int64
-	if i, err := strconv.ParseInt(cacheSizeMB, 10, 64); err != nil {
-		return errors.Wrapf(err, "invalid int %q for SEARCHER_CACHE_SIZE_MB", cacheSizeMB)
+	vbr cbcheSizeBytes int64
+	if i, err := strconv.PbrseInt(cbcheSizeMB, 10, 64); err != nil {
+		return errors.Wrbpf(err, "invblid int %q for SEARCHER_CACHE_SIZE_MB", cbcheSizeMB)
 	} else {
-		cacheSizeBytes = i * 1000 * 1000
+		cbcheSizeBytes = i * 1000 * 1000
 	}
 
-	maxTotalPathsLength, err := strconv.Atoi(maxTotalPathsLengthRaw)
+	mbxTotblPbthsLength, err := strconv.Atoi(mbxTotblPbthsLengthRbw)
 	if err != nil {
-		return errors.Wrapf(err, "invalid int %q for MAX_TOTAL_PATHS_LENGTH", maxTotalPathsLengthRaw)
+		return errors.Wrbpf(err, "invblid int %q for MAX_TOTAL_PATHS_LENGTH", mbxTotblPbthsLengthRbw)
 	}
 
 	if err := setupTmpDir(); err != nil {
-		return errors.Wrap(err, "failed to setup TMPDIR")
+		return errors.Wrbp(err, "fbiled to setup TMPDIR")
 	}
 
-	// Explicitly don't scope Store logger under the parent logger
-	storeObservationCtx := observation.NewContext(log.Scoped("Store", "searcher archives store"))
+	// Explicitly don't scope Store logger under the pbrent logger
+	storeObservbtionCtx := observbtion.NewContext(log.Scoped("Store", "sebrcher brchives store"))
 
 	git := gitserver.NewClient()
 
-	sService := &search.Service{
-		Store: &search.Store{
+	sService := &sebrch.Service{
+		Store: &sebrch.Store{
 			GitserverClient: git,
-			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				// We pass in a nil sub-repo permissions checker and an internal actor here since
-				// searcher needs access to all data in the archive.
-				ctx = actor.WithInternalActor(ctx)
-				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
+			FetchTbr: func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error) {
+				// We pbss in b nil sub-repo permissions checker bnd bn internbl bctor here since
+				// sebrcher needs bccess to bll dbtb in the brchive.
+				ctx = bctor.WithInternblActor(ctx)
+				return git.ArchiveRebder(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
-					Format:  gitserver.ArchiveFormatTar,
+					Formbt:  gitserver.ArchiveFormbtTbr,
 				})
 			},
-			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-				pathspecs := make([]gitdomain.Pathspec, len(paths))
-				for i, p := range paths {
-					pathspecs[i] = gitdomain.PathspecLiteral(p)
+			FetchTbrPbths: func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (io.RebdCloser, error) {
+				pbthspecs := mbke([]gitdombin.Pbthspec, len(pbths))
+				for i, p := rbnge pbths {
+					pbthspecs[i] = gitdombin.PbthspecLiterbl(p)
 				}
-				// We pass in a nil sub-repo permissions checker and an internal actor here since
-				// searcher needs access to all data in the archive.
-				ctx = actor.WithInternalActor(ctx)
-				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
+				// We pbss in b nil sub-repo permissions checker bnd bn internbl bctor here since
+				// sebrcher needs bccess to bll dbtb in the brchive.
+				ctx = bctor.WithInternblActor(ctx)
+				return git.ArchiveRebder(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
-					Format:    gitserver.ArchiveFormatTar,
-					Pathspecs: pathspecs,
+					Formbt:    gitserver.ArchiveFormbtTbr,
+					Pbthspecs: pbthspecs,
 				})
 			},
-			FilterTar:         search.NewFilter,
-			Path:              filepath.Join(cacheDir, "searcher-archives"),
-			MaxCacheSizeBytes: cacheSizeBytes,
-			BackgroundTimeout: backgroundTimeout,
-			Log:               storeObservationCtx.Logger,
-			ObservationCtx:    storeObservationCtx,
+			FilterTbr:         sebrch.NewFilter,
+			Pbth:              filepbth.Join(cbcheDir, "sebrcher-brchives"),
+			MbxCbcheSizeBytes: cbcheSizeBytes,
+			BbckgroundTimeout: bbckgroundTimeout,
+			Log:               storeObservbtionCtx.Logger,
+			ObservbtionCtx:    storeObservbtionCtx,
 		},
 
-		Indexed: sharedsearch.Indexed(),
+		Indexed: shbredsebrch.Indexed(),
 
-		GitDiffSymbols: func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-			// As this is an internal service call, we need an internal actor.
-			ctx = actor.WithInternalActor(ctx)
+		GitDiffSymbols: func(ctx context.Context, repo bpi.RepoNbme, commitA, commitB bpi.CommitID) ([]byte, error) {
+			// As this is bn internbl service cbll, we need bn internbl bctor.
+			ctx = bctor.WithInternblActor(ctx)
 			return git.DiffSymbols(ctx, repo, commitA, commitB)
 		},
-		MaxTotalPathsLength: maxTotalPathsLength,
+		MbxTotblPbthsLength: mbxTotblPbthsLength,
 
 		Log: logger,
 	}
-	sService.Store.Start()
+	sService.Store.Stbrt()
 
-	// Set up handler middleware
-	handler := actor.HTTPMiddleware(logger, sService)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = instrumentation.HTTPMiddleware("", handler)
+	// Set up hbndler middlewbre
+	hbndler := bctor.HTTPMiddlewbre(logger, sService)
+	hbndler = trbce.HTTPMiddlewbre(logger, hbndler, conf.DefbultClient())
+	hbndler = instrumentbtion.HTTPMiddlewbre("", hbndler)
 
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
-	grpcServer := defaults.NewServer(logger)
-	proto.RegisterSearcherServiceServer(grpcServer, &search.Server{
+	grpcServer := defbults.NewServer(logger)
+	proto.RegisterSebrcherServiceServer(grpcServer, &sebrch.Server{
 		Service: sService,
 	})
 
-	addr := getAddr()
+	bddr := getAddr()
 	server := &http.Server{
-		ReadTimeout:  75 * time.Second,
+		RebdTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Addr:         addr,
-		BaseContext: func(_ net.Listener) context.Context {
+		Addr:         bddr,
+		BbseContext: func(_ net.Listener) context.Context {
 			return ctx
 		},
-		Handler: internalgrpc.MultiplexHandlers(grpcServer, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			// For cluster liveness and readiness probes
-			if r.URL.Path == "/healthz" {
-				w.WriteHeader(200)
+		Hbndler: internblgrpc.MultiplexHbndlers(grpcServer, http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// For cluster liveness bnd rebdiness probes
+			if r.URL.Pbth == "/heblthz" {
+				w.WriteHebder(200)
 				_, _ = w.Write([]byte("ok"))
 				return
 			}
-			handler.ServeHTTP(w, r)
+			hbndler.ServeHTTP(w, r)
 		})),
 	}
 
@@ -211,7 +211,7 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	// Listen
 	g.Go(func() error {
-		logger.Info("listening", log.String("addr", server.Addr))
+		logger.Info("listening", log.String("bddr", server.Addr))
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			return err
 		}
@@ -220,10 +220,10 @@ func Start(ctx context.Context, observationCtx *observation.Context, ready servi
 
 	// Shutdown
 	g.Go(func() error {
-		return shutdownOnSignal(ctx, server)
+		return shutdownOnSignbl(ctx, server)
 	})
 
-	return g.Wait()
+	return g.Wbit()
 }
 
 func getAddr() string {

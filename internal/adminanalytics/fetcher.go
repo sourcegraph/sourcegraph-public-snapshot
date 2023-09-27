@@ -1,54 +1,54 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-type AnalyticsFetcher struct {
-	db           database.DB
+type AnblyticsFetcher struct {
+	db           dbtbbbse.DB
 	group        string
-	dateRange    string
+	dbteRbnge    string
 	grouping     string
 	nodesQuery   *sqlf.Query
-	summaryQuery *sqlf.Query
-	cache        bool
+	summbryQuery *sqlf.Query
+	cbche        bool
 }
 
-type AnalyticsNodeData struct {
-	Date            time.Time
-	Count           float64
-	UniqueUsers     float64
-	RegisteredUsers float64
+type AnblyticsNodeDbtb struct {
+	Dbte            time.Time
+	Count           flobt64
+	UniqueUsers     flobt64
+	RegisteredUsers flobt64
 }
 
-type AnalyticsNode struct {
-	Data AnalyticsNodeData
+type AnblyticsNode struct {
+	Dbtb AnblyticsNodeDbtb
 }
 
-func (n *AnalyticsNode) Date() string { return n.Data.Date.Format(time.RFC3339) }
+func (n *AnblyticsNode) Dbte() string { return n.Dbtb.Dbte.Formbt(time.RFC3339) }
 
-func (n *AnalyticsNode) Count() float64 { return n.Data.Count }
+func (n *AnblyticsNode) Count() flobt64 { return n.Dbtb.Count }
 
-func (n *AnalyticsNode) UniqueUsers() float64 { return n.Data.UniqueUsers }
+func (n *AnblyticsNode) UniqueUsers() flobt64 { return n.Dbtb.UniqueUsers }
 
-func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUsers }
+func (n *AnblyticsNode) RegisteredUsers() flobt64 { return n.Dbtb.RegisteredUsers }
 
-func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
-	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "nodes")
+func (f *AnblyticsFetcher) Nodes(ctx context.Context) ([]*AnblyticsNode, error) {
+	cbcheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dbteRbnge, f.grouping, "nodes")
 
-	if f.cache {
-		if nodes, err := getArrayFromCache[AnalyticsNode](cacheKey); err == nil {
+	if f.cbche {
+		if nodes, err := getArrbyFromCbche[AnblyticsNode](cbcheKey); err == nil {
 			return nodes, nil
 		}
 	}
 
-	rows, err := f.db.QueryContext(ctx, f.nodesQuery.Query(sqlf.PostgresBindVar), f.nodesQuery.Args()...)
+	rows, err := f.db.QueryContext(ctx, f.nodesQuery.Query(sqlf.PostgresBindVbr), f.nodesQuery.Args()...)
 
 	if err != nil {
 		return nil, err
@@ -56,46 +56,46 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 
 	defer rows.Close()
 
-	nodes := make([]*AnalyticsNode, 0)
+	nodes := mbke([]*AnblyticsNode, 0)
 	for rows.Next() {
-		var data AnalyticsNodeData
+		vbr dbtb AnblyticsNodeDbtb
 
-		if err := rows.Scan(&data.Date, &data.Count, &data.UniqueUsers, &data.RegisteredUsers); err != nil {
+		if err := rows.Scbn(&dbtb.Dbte, &dbtb.Count, &dbtb.UniqueUsers, &dbtb.RegisteredUsers); err != nil {
 			return nil, err
 		}
 
-		nodes = append(nodes, &AnalyticsNode{data})
+		nodes = bppend(nodes, &AnblyticsNode{dbtb})
 	}
 
 	now := time.Now()
 	to := now
-	daysOffset := 1
-	from, err := getFromDate(f.dateRange, now)
+	dbysOffset := 1
+	from, err := getFromDbte(f.dbteRbnge, now)
 	if err != nil {
 		return nil, err
 	}
 
 	if f.grouping == Weekly {
-		to = now.AddDate(0, 0, -int(now.Weekday())+1) // monday of current week
-		daysOffset = 7
+		to = now.AddDbte(0, 0, -int(now.Weekdby())+1) // mondby of current week
+		dbysOffset = 7
 	}
 
-	allNodes := make([]*AnalyticsNode, 0)
+	bllNodes := mbke([]*AnblyticsNode, 0)
 
-	for date := to; date.After(from) || date.Equal(from); date = date.AddDate(0, 0, -daysOffset) {
-		var node *AnalyticsNode
+	for dbte := to; dbte.After(from) || dbte.Equbl(from); dbte = dbte.AddDbte(0, 0, -dbysOffset) {
+		vbr node *AnblyticsNode
 
-		for _, n := range nodes {
-			if bod(date).Equal(bod(n.Data.Date)) {
+		for _, n := rbnge nodes {
+			if bod(dbte).Equbl(bod(n.Dbtb.Dbte)) {
 				node = n
-				break
+				brebk
 			}
 		}
 
 		if node == nil {
-			node = &AnalyticsNode{
-				Data: AnalyticsNodeData{
-					Date:            bod(date),
+			node = &AnblyticsNode{
+				Dbtb: AnblyticsNodeDbtb{
+					Dbte:            bod(dbte),
 					Count:           0,
 					UniqueUsers:     0,
 					RegisteredUsers: 0,
@@ -103,57 +103,57 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 			}
 		}
 
-		allNodes = append(allNodes, node)
+		bllNodes = bppend(bllNodes, node)
 	}
 
-	if err := setArrayToCache(cacheKey, allNodes); err != nil {
+	if err := setArrbyToCbche(cbcheKey, bllNodes); err != nil {
 		return nil, err
 	}
 
-	return allNodes, nil
+	return bllNodes, nil
 
 }
 
 func bod(t time.Time) time.Time {
-	year, month, day := t.Date()
-	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
+	yebr, month, dby := t.Dbte()
+	return time.Dbte(yebr, month, dby, 0, 0, 0, 0, t.Locbtion())
 }
 
-type AnalyticsSummaryData struct {
-	TotalCount           float64
-	TotalUniqueUsers     float64
-	TotalRegisteredUsers float64
+type AnblyticsSummbryDbtb struct {
+	TotblCount           flobt64
+	TotblUniqueUsers     flobt64
+	TotblRegisteredUsers flobt64
 }
 
-type AnalyticsSummary struct {
-	Data AnalyticsSummaryData
+type AnblyticsSummbry struct {
+	Dbtb AnblyticsSummbryDbtb
 }
 
-func (s *AnalyticsSummary) TotalCount() float64 { return s.Data.TotalCount }
+func (s *AnblyticsSummbry) TotblCount() flobt64 { return s.Dbtb.TotblCount }
 
-func (s *AnalyticsSummary) TotalUniqueUsers() float64 { return s.Data.TotalUniqueUsers }
+func (s *AnblyticsSummbry) TotblUniqueUsers() flobt64 { return s.Dbtb.TotblUniqueUsers }
 
-func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalRegisteredUsers }
+func (s *AnblyticsSummbry) TotblRegisteredUsers() flobt64 { return s.Dbtb.TotblRegisteredUsers }
 
-func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
-	cacheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dateRange, f.grouping, "summary")
-	if f.cache {
-		if summary, err := getItemFromCache[AnalyticsSummary](cacheKey); err == nil {
-			return summary, nil
+func (f *AnblyticsFetcher) Summbry(ctx context.Context) (*AnblyticsSummbry, error) {
+	cbcheKey := fmt.Sprintf(`%s:%s:%s:%s`, f.group, f.dbteRbnge, f.grouping, "summbry")
+	if f.cbche {
+		if summbry, err := getItemFromCbche[AnblyticsSummbry](cbcheKey); err == nil {
+			return summbry, nil
 		}
 	}
 
-	var data AnalyticsSummaryData
+	vbr dbtb AnblyticsSummbryDbtb
 
-	if err := f.db.QueryRowContext(ctx, f.summaryQuery.Query(sqlf.PostgresBindVar), f.summaryQuery.Args()...).Scan(&data.TotalCount, &data.TotalUniqueUsers, &data.TotalRegisteredUsers); err != nil {
+	if err := f.db.QueryRowContext(ctx, f.summbryQuery.Query(sqlf.PostgresBindVbr), f.summbryQuery.Args()...).Scbn(&dbtb.TotblCount, &dbtb.TotblUniqueUsers, &dbtb.TotblRegisteredUsers); err != nil {
 		return nil, err
 	}
 
-	summary := &AnalyticsSummary{data}
+	summbry := &AnblyticsSummbry{dbtb}
 
-	if err := setItemToCache(cacheKey, summary); err != nil {
+	if err := setItemToCbche(cbcheKey, summbry); err != nil {
 		return nil, err
 	}
 
-	return summary, nil
+	return summbry, nil
 }

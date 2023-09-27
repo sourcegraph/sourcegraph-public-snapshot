@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,96 +6,96 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	rankingshared "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/internal/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	rbnkingshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/internbl/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestCoordinateAndSummaries(t *testing.T) {
+func TestCoordinbteAndSummbries(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	db := dbtest.NewDB(logger, t)
-	store := New(&observation.TestContext, database.NewDB(logger, db))
+	store := New(&observbtion.TestContext, dbtbbbse.NewDB(logger, db))
 
 	now1 := timeutil.Now().UTC()
 	now2 := now1.Add(time.Hour * 2)
 	now3 := now2.Add(time.Hour * 5)
 	now4 := now2.Add(time.Hour * 7)
 
-	key1 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "123")
-	key2 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "234")
-	key3 := rankingshared.NewDerivativeGraphKey(mockRankingGraphKey, "345")
+	key1 := rbnkingshbred.NewDerivbtiveGrbphKey(mockRbnkingGrbphKey, "123")
+	key2 := rbnkingshbred.NewDerivbtiveGrbphKey(mockRbnkingGrbphKey, "234")
+	key3 := rbnkingshbred.NewDerivbtiveGrbphKey(mockRbnkingGrbphKey, "345")
 
 	//
-	// Insert data
+	// Insert dbtb
 
 	testNow = func() time.Time { return now1 }
-	if err := store.Coordinate(ctx, key1); err != nil {
-		t.Fatalf("unexpected error running coordinate: %s", err)
+	if err := store.Coordinbte(ctx, key1); err != nil {
+		t.Fbtblf("unexpected error running coordinbte: %s", err)
 	}
 
-	if _, err := db.ExecContext(ctx, `UPDATE codeintel_ranking_progress SET mapper_completed_at = $1, seed_mapper_completed_at = $1`, now2); err != nil {
-		t.Fatalf("unexpected error modifying progress: %s", err)
+	if _, err := db.ExecContext(ctx, `UPDATE codeintel_rbnking_progress SET mbpper_completed_bt = $1, seed_mbpper_completed_bt = $1`, now2); err != nil {
+		t.Fbtblf("unexpected error modifying progress: %s", err)
 	}
 
 	testNow = func() time.Time { return now2 }
-	if err := store.Coordinate(ctx, key1); err != nil {
-		t.Fatalf("unexpected error running coordinate: %s", err)
+	if err := store.Coordinbte(ctx, key1); err != nil {
+		t.Fbtblf("unexpected error running coordinbte: %s", err)
 	}
 
-	if _, err := db.ExecContext(ctx, `UPDATE codeintel_ranking_progress SET reducer_completed_at = $1`, now3); err != nil {
-		t.Fatalf("unexpected error modifying progress: %s", err)
+	if _, err := db.ExecContext(ctx, `UPDATE codeintel_rbnking_progress SET reducer_completed_bt = $1`, now3); err != nil {
+		t.Fbtblf("unexpected error modifying progress: %s", err)
 	}
 
 	testNow = func() time.Time { return now3 }
-	if err := store.Coordinate(ctx, key2); err != nil {
-		t.Fatalf("unexpected error running coordinate: %s", err)
+	if err := store.Coordinbte(ctx, key2); err != nil {
+		t.Fbtblf("unexpected error running coordinbte: %s", err)
 	}
 
 	testNow = func() time.Time { return now4 }
-	if err := store.Coordinate(ctx, key3); err != nil {
-		t.Fatalf("unexpected error running coordinate: %s", err)
+	if err := store.Coordinbte(ctx, key3); err != nil {
+		t.Fbtblf("unexpected error running coordinbte: %s", err)
 	}
 
 	//
-	// Gather summaries
+	// Gbther summbries
 
-	summaries, err := store.Summaries(ctx)
+	summbries, err := store.Summbries(ctx)
 	if err != nil {
-		t.Fatalf("unexpected error fetching summaries: %s", err)
+		t.Fbtblf("unexpected error fetching summbries: %s", err)
 	}
 
-	expectedSummaries := []shared.Summary{
+	expectedSummbries := []shbred.Summbry{
 		{
-			GraphKey:                key3,
-			VisibleToZoekt:          false,
-			PathMapperProgress:      shared.Progress{StartedAt: now4},
-			ReferenceMapperProgress: shared.Progress{StartedAt: now4},
+			GrbphKey:                key3,
+			VisibleToZoekt:          fblse,
+			PbthMbpperProgress:      shbred.Progress{StbrtedAt: now4},
+			ReferenceMbpperProgress: shbred.Progress{StbrtedAt: now4},
 		},
 		{
-			GraphKey:                key2,
-			VisibleToZoekt:          false,
-			PathMapperProgress:      shared.Progress{StartedAt: now3},
-			ReferenceMapperProgress: shared.Progress{StartedAt: now3},
+			GrbphKey:                key2,
+			VisibleToZoekt:          fblse,
+			PbthMbpperProgress:      shbred.Progress{StbrtedAt: now3},
+			ReferenceMbpperProgress: shbred.Progress{StbrtedAt: now3},
 		},
 		{
-			GraphKey:                key1,
+			GrbphKey:                key1,
 			VisibleToZoekt:          true,
-			PathMapperProgress:      shared.Progress{StartedAt: now1, CompletedAt: &now2},
-			ReferenceMapperProgress: shared.Progress{StartedAt: now1, CompletedAt: &now2},
-			ReducerProgress:         &shared.Progress{StartedAt: now2, CompletedAt: &now3},
+			PbthMbpperProgress:      shbred.Progress{StbrtedAt: now1, CompletedAt: &now2},
+			ReferenceMbpperProgress: shbred.Progress{StbrtedAt: now1, CompletedAt: &now2},
+			ReducerProgress:         &shbred.Progress{StbrtedAt: now2, CompletedAt: &now3},
 		},
 	}
-	if diff := cmp.Diff(expectedSummaries, summaries); diff != "" {
-		t.Errorf("unexpected summaries (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedSummbries, summbries); diff != "" {
+		t.Errorf("unexpected summbries (-wbnt +got):\n%s", diff)
 	}
 }

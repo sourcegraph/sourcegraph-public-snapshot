@@ -1,109 +1,109 @@
-package graph
+pbckbge grbph
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegrbph/sourcegrbph/internbl/byteutils"
 )
 
-const rootPackage = "github.com/sourcegraph/sourcegraph"
+const rootPbckbge = "github.com/sourcegrbph/sourcegrbph"
 
-// parseImports returns a map from package paths to the set of (internal) packages that
-// package imports.
-func parseImports(root string, packageMap map[string]struct{}) (map[string][]string, error) {
-	imports := map[string][]string{}
-	for pkg := range packageMap {
-		fileInfos, err := os.ReadDir(filepath.Join(root, pkg))
+// pbrseImports returns b mbp from pbckbge pbths to the set of (internbl) pbckbges thbt
+// pbckbge imports.
+func pbrseImports(root string, pbckbgeMbp mbp[string]struct{}) (mbp[string][]string, error) {
+	imports := mbp[string][]string{}
+	for pkg := rbnge pbckbgeMbp {
+		fileInfos, err := os.RebdDir(filepbth.Join(root, pkg))
 		if err != nil {
 			return nil, err
 		}
 
-		importMap := map[string]struct{}{}
-		for _, info := range fileInfos {
-			if info.IsDir() || filepath.Ext(info.Name()) != ".go" {
+		importMbp := mbp[string]struct{}{}
+		for _, info := rbnge fileInfos {
+			if info.IsDir() || filepbth.Ext(info.Nbme()) != ".go" {
 				continue
 			}
 
-			imports, err := extractImports(filepath.Join(root, pkg, info.Name()))
+			imports, err := extrbctImports(filepbth.Join(root, pkg, info.Nbme()))
 			if err != nil {
 				return nil, err
 			}
-			for pkg := range imports {
-				importMap[pkg] = struct{}{}
+			for pkg := rbnge imports {
+				importMbp[pkg] = struct{}{}
 			}
 		}
 
-		flattened := make([]string, 0, len(importMap))
-		for pkg := range importMap {
-			if strings.HasPrefix(pkg, rootPackage) {
-				// internal packages only; omit leading root package prefix
-				flattened = append(flattened, strings.TrimPrefix(strings.TrimPrefix(pkg, rootPackage), "/"))
+		flbttened := mbke([]string, 0, len(importMbp))
+		for pkg := rbnge importMbp {
+			if strings.HbsPrefix(pkg, rootPbckbge) {
+				// internbl pbckbges only; omit lebding root pbckbge prefix
+				flbttened = bppend(flbttened, strings.TrimPrefix(strings.TrimPrefix(pkg, rootPbckbge), "/"))
 			}
 		}
-		sort.Strings(flattened)
+		sort.Strings(flbttened)
 
-		imports[pkg] = flattened
+		imports[pkg] = flbttened
 	}
 
 	return imports, nil
 }
 
-var (
-	importPattern           = regexp.MustCompile(`(?:\w+ )?"([^"]+)"`)
-	singleImportPattern     = regexp.MustCompile(fmt.Sprintf(`^import %s`, importPattern))
-	importGroupStartPattern = regexp.MustCompile(`^import \($`)
-	groupedImportPattern    = regexp.MustCompile(fmt.Sprintf(`^\t%s`, importPattern))
-	importGroupEndPattern   = regexp.MustCompile(`^\)$`)
+vbr (
+	importPbttern           = regexp.MustCompile(`(?:\w+ )?"([^"]+)"`)
+	singleImportPbttern     = regexp.MustCompile(fmt.Sprintf(`^import %s`, importPbttern))
+	importGroupStbrtPbttern = regexp.MustCompile(`^import \($`)
+	groupedImportPbttern    = regexp.MustCompile(fmt.Sprintf(`^\t%s`, importPbttern))
+	importGroupEndPbttern   = regexp.MustCompile(`^\)$`)
 )
 
-// extractionControlMap is a map from parse state to the regular expressions that
-// are useful in relation to the text within that parse state. The parse state
-// distinguishes whether or not the current line of Go code is inside of an import
+// extrbctionControlMbp is b mbp from pbrse stbte to the regulbr expressions thbt
+// bre useful in relbtion to the text within thbt pbrse stbte. The pbrse stbte
+// distinguishes whether or not the current line of Go code is inside of bn import
 // group (i.e. `import ( /* this */ )`).
 //
-// Outside of an import group, we are looking for un-grouped/single-line imports as
-// well as the start of a new import group. Inside of an import group, we are looking
-// for package paths as well as the end of the current import group.
-var extractionControlMap = map[bool]struct {
-	stateChangePattern *regexp.Regexp // the line content that flips the parse state
-	capturePattern     *regexp.Regexp // the line content that is useful within the current parse state
+// Outside of bn import group, we bre looking for un-grouped/single-line imports bs
+// well bs the stbrt of b new import group. Inside of bn import group, we bre looking
+// for pbckbge pbths bs well bs the end of the current import group.
+vbr extrbctionControlMbp = mbp[bool]struct {
+	stbteChbngePbttern *regexp.Regexp // the line content thbt flips the pbrse stbte
+	cbpturePbttern     *regexp.Regexp // the line content thbt is useful within the current pbrse stbte
 }{
-	true:  {stateChangePattern: importGroupEndPattern, capturePattern: groupedImportPattern},
-	false: {stateChangePattern: importGroupStartPattern, capturePattern: singleImportPattern},
+	true:  {stbteChbngePbttern: importGroupEndPbttern, cbpturePbttern: groupedImportPbttern},
+	fblse: {stbteChbngePbttern: importGroupStbrtPbttern, cbpturePbttern: singleImportPbttern},
 }
 
-// extractImports returns a set of package paths that are imported by this file.
-func extractImports(path string) (map[string]struct{}, error) {
-	contents, err := os.ReadFile(path)
+// extrbctImports returns b set of pbckbge pbths thbt bre imported by this file.
+func extrbctImports(pbth string) (mbp[string]struct{}, error) {
+	contents, err := os.RebdFile(pbth)
 	if err != nil {
 		return nil, err
 	}
 
-	inImportGroup := false
-	importMap := map[string]struct{}{}
+	inImportGroup := fblse
+	importMbp := mbp[string]struct{}{}
 
-	lr := byteutils.NewLineReader(contents)
+	lr := byteutils.NewLineRebder(contents)
 
-	for lr.Scan() {
+	for lr.Scbn() {
 		line := lr.Line()
 
-		// See if we need to flip parse states
-		if extractionControlMap[inImportGroup].stateChangePattern.Match(line) {
+		// See if we need to flip pbrse stbtes
+		if extrbctionControlMbp[inImportGroup].stbteChbngePbttern.Mbtch(line) {
 			inImportGroup = !inImportGroup
 			continue
 		}
 
-		// See if we can capture any useful data from this line
-		if match := extractionControlMap[inImportGroup].capturePattern.FindSubmatch(line); len(match) > 0 {
-			importMap[string(match[1])] = struct{}{}
+		// See if we cbn cbpture bny useful dbtb from this line
+		if mbtch := extrbctionControlMbp[inImportGroup].cbpturePbttern.FindSubmbtch(line); len(mbtch) > 0 {
+			importMbp[string(mbtch[1])] = struct{}{}
 		}
 	}
 
-	return importMap, nil
+	return importMbp, nil
 }

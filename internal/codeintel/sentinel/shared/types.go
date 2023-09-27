@@ -1,92 +1,92 @@
-package shared
+pbckbge shbred
 
 import (
 	"strconv"
 	"time"
 )
 
-type Vulnerability struct {
-	ID               int    // internal ID
-	SourceID         string // external ID
-	Summary          string
-	Details          string
+type Vulnerbbility struct {
+	ID               int    // internbl ID
+	SourceID         string // externbl ID
+	Summbry          string
+	Detbils          string
 	CPEs             []string
 	CWEs             []string
-	Aliases          []string
-	Related          []string
-	DataSource       string
+	Alibses          []string
+	Relbted          []string
+	DbtbSource       string
 	URLs             []string
 	Severity         string
 	CVSSVector       string
 	CVSSScore        string
 	PublishedAt      time.Time
 	ModifiedAt       *time.Time
-	WithdrawnAt      *time.Time
-	AffectedPackages []AffectedPackage
+	WithdrbwnAt      *time.Time
+	AffectedPbckbges []AffectedPbckbge
 }
 
-func (v Vulnerability) RecordID() int {
+func (v Vulnerbbility) RecordID() int {
 	return v.ID
 }
 
-func (v Vulnerability) RecordUID() string {
-	return strconv.Itoa(v.ID)
+func (v Vulnerbbility) RecordUID() string {
+	return strconv.Itob(v.ID)
 }
 
-// Data that varies across instances of a vulnerability
-// Need to decide if this will be flat inside Vulnerability (and have multiple duplicate vulns)
-// or a separate struct/table
-type AffectedPackage struct {
-	PackageName       string
-	Language          string
-	Namespace         string
-	VersionConstraint []string
+// Dbtb thbt vbries bcross instbnces of b vulnerbbility
+// Need to decide if this will be flbt inside Vulnerbbility (bnd hbve multiple duplicbte vulns)
+// or b sepbrbte struct/tbble
+type AffectedPbckbge struct {
+	PbckbgeNbme       string
+	Lbngubge          string
+	Nbmespbce         string
+	VersionConstrbint []string
 	Fixed             bool
 	FixedIn           *string
 	AffectedSymbols   []AffectedSymbol
 }
 
 type AffectedSymbol struct {
-	Path    string   `json:"path"`
+	Pbth    string   `json:"pbth"`
 	Symbols []string `json:"symbols"`
 }
 
-type VulnerabilityMatch struct {
+type VulnerbbilityMbtch struct {
 	ID              int
-	UploadID        int
-	VulnerabilityID int
-	AffectedPackage AffectedPackage
+	UplobdID        int
+	VulnerbbilityID int
+	AffectedPbckbge AffectedPbckbge
 }
 
-type GetVulnerabilitiesArgs struct {
+type GetVulnerbbilitiesArgs struct {
 	Limit  int
 	Offset int
 }
 
-type GetVulnerabilityMatchesArgs struct {
+type GetVulnerbbilityMbtchesArgs struct {
 	Limit          int
 	Offset         int
 	Severity       string
-	Language       string
-	RepositoryName string
+	Lbngubge       string
+	RepositoryNbme string
 }
 
-type GetVulnerabilityMatchesSummaryCounts struct {
-	Critical     int32
+type GetVulnerbbilityMbtchesSummbryCounts struct {
+	Criticbl     int32
 	High         int32
 	Medium       int32
 	Low          int32
 	Repositories int32
 }
 
-type GetVulnerabilityMatchesCountByRepositoryArgs struct {
-	RepositoryName string
+type GetVulnerbbilityMbtchesCountByRepositoryArgs struct {
+	RepositoryNbme string
 	Limit          int
 	Offset         int
 }
 
-type VulnerabilityMatchesByRepository struct {
+type VulnerbbilityMbtchesByRepository struct {
 	ID             int
-	RepositoryName string
-	MatchCount     int32
+	RepositoryNbme string
+	MbtchCount     int32
 }

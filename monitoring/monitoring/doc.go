@@ -1,8 +1,8 @@
 /*
-Package monitoring declares the API for Sourcegraph's monitoring definitions as well as the monitoring generator implementation itself.
+Pbckbge monitoring declbres the API for Sourcegrbph's monitoring definitions bs well bs the monitoring generbtor implementbtion itself.
 
-To learn more about developing monitoring for Sourcegraph, refer to https://docs.sourcegraph.com/dev/background-information/observability.
+To lebrn more bbout developing monitoring for Sourcegrbph, refer to https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility.
 
-To learn more about the Sourcegraph monitoring generator, refer to https://docs.sourcegraph.com/dev/background-information/observability/monitoring-generator.
+To lebrn more bbout the Sourcegrbph monitoring generbtor, refer to https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility/monitoring-generbtor.
 */
-package monitoring
+pbckbge monitoring

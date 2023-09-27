@@ -1,102 +1,102 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func DerivativeGraphKey(ctx context.Context, store Store) (string, time.Time, error) {
-	if key, createdAt, ok, err := store.DerivativeGraphKey(ctx); err != nil {
+func DerivbtiveGrbphKey(ctx context.Context, store Store) (string, time.Time, error) {
+	if key, crebtedAt, ok, err := store.DerivbtiveGrbphKey(ctx); err != nil {
 		return "", time.Time{}, err
 	} else if ok {
-		return key, createdAt, nil
+		return key, crebtedAt, nil
 	}
 
-	if err := store.BumpDerivativeGraphKey(ctx); err != nil {
+	if err := store.BumpDerivbtiveGrbphKey(ctx); err != nil {
 		return "", time.Time{}, err
 	}
 
-	return DerivativeGraphKey(ctx, store)
+	return DerivbtiveGrbphKey(ctx, store)
 }
 
-func (s *store) DerivativeGraphKey(ctx context.Context) (graphKey string, createdAt time.Time, _ bool, err error) {
-	ctx, _, endObservation := s.operations.derivativeGraphKey.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) DerivbtiveGrbphKey(ctx context.Context) (grbphKey string, crebtedAt time.Time, _ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.derivbtiveGrbphKey.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(derivativeGraphKeyQuery))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(derivbtiveGrbphKeyQuery))
 	if err != nil {
-		return "", time.Time{}, false, err
+		return "", time.Time{}, fblse, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		if err := rows.Scan(&graphKey, &createdAt); err != nil {
-			return "", time.Time{}, false, err
+		if err := rows.Scbn(&grbphKey, &crebtedAt); err != nil {
+			return "", time.Time{}, fblse, err
 		}
 
-		return graphKey, createdAt, true, nil
+		return grbphKey, crebtedAt, true, nil
 	}
 
-	return "", time.Time{}, false, nil
+	return "", time.Time{}, fblse, nil
 }
 
-const derivativeGraphKeyQuery = `
-SELECT graph_key, created_at
-FROM codeintel_ranking_graph_keys
-ORDER BY created_at DESC
+const derivbtiveGrbphKeyQuery = `
+SELECT grbph_key, crebted_bt
+FROM codeintel_rbnking_grbph_keys
+ORDER BY crebted_bt DESC
 LIMIT 1
 `
 
-// MaxGraphKeyRecords is the maximum number of graph key records we'll track before pruning older entries.
-const MaxGraphKeyRecords = 10
+// MbxGrbphKeyRecords is the mbximum number of grbph key records we'll trbck before pruning older entries.
+const MbxGrbphKeyRecords = 10
 
-func (s *store) BumpDerivativeGraphKey(ctx context.Context) (err error) {
-	ctx, _, endObservation := s.operations.bumpDerivativeGraphKey.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) BumpDerivbtiveGrbphKey(ctx context.Context) (err error) {
+	ctx, _, endObservbtion := s.operbtions.bumpDerivbtiveGrbphKey.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	tx, err := s.db.Transact(ctx)
+	tx, err := s.db.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(bumpDerivativeGraphKeyQuery, uuid.NewString())); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(bumpDerivbtiveGrbphKeyQuery, uuid.NewString())); err != nil {
 		return err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(bumpDerivativeGraphKeyPruneQuery, MaxGraphKeyRecords)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(bumpDerivbtiveGrbphKeyPruneQuery, MbxGrbphKeyRecords)); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const bumpDerivativeGraphKeyQuery = `
-INSERT INTO codeintel_ranking_graph_keys (graph_key) VALUES (%s)
+const bumpDerivbtiveGrbphKeyQuery = `
+INSERT INTO codeintel_rbnking_grbph_keys (grbph_key) VALUES (%s)
 `
 
-const bumpDerivativeGraphKeyPruneQuery = `
-DELETE FROM codeintel_ranking_graph_keys WHERE id IN (
+const bumpDerivbtiveGrbphKeyPruneQuery = `
+DELETE FROM codeintel_rbnking_grbph_keys WHERE id IN (
 	SELECT id
-	FROM codeintel_ranking_graph_keys
-	ORDER BY created_at DESC
+	FROM codeintel_rbnking_grbph_keys
+	ORDER BY crebted_bt DESC
 	OFFSET %s
 )
 `
 
-func (s *store) DeleteRankingProgress(ctx context.Context, graphKey string) (err error) {
-	ctx, _, endObservation := s.operations.deleteRankingProgress.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) DeleteRbnkingProgress(ctx context.Context, grbphKey string) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteRbnkingProgress.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(deleteRankingProgress, graphKey))
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteRbnkingProgress, grbphKey))
 }
 
-const deleteRankingProgress = `
-DELETE FROM codeintel_ranking_progress WHERE graph_key = %s
+const deleteRbnkingProgress = `
+DELETE FROM codeintel_rbnking_progress WHERE grbph_key = %s
 `

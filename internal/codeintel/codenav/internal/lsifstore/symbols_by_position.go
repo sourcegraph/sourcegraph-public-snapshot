@@ -1,167 +1,167 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GetMonikersByPosition returns all monikers attached ranges containing the given position. If multiple
-// ranges contain the position, then this method will return multiple sets of monikers. Each slice
-// of monikers are attached to a single range. The order of the output slice is "outside-in", so that
-// the range attached to earlier monikers enclose the range attached to later monikers.
-func (s *store) GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {
-	ctx, trace, endObservation := s.operations.getMonikersByPosition.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("uploadID", uploadID),
-		attribute.String("path", path),
-		attribute.Int("line", line),
-		attribute.Int("character", character),
+// GetMonikersByPosition returns bll monikers bttbched rbnges contbining the given position. If multiple
+// rbnges contbin the position, then this method will return multiple sets of monikers. Ebch slice
+// of monikers bre bttbched to b single rbnge. The order of the output slice is "outside-in", so thbt
+// the rbnge bttbched to ebrlier monikers enclose the rbnge bttbched to lbter monikers.
+func (s *store) GetMonikersByPosition(ctx context.Context, uplobdID int, pbth string, line, chbrbcter int) (_ [][]precise.MonikerDbtb, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getMonikersByPosition.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobdID),
+		bttribute.String("pbth", pbth),
+		bttribute.Int("line", line),
+		bttribute.Int("chbrbcter", chbrbcter),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+	documentDbtb, exists, err := s.scbnFirstDocumentDbtb(s.db.Query(ctx, sqlf.Sprintf(
 		monikersDocumentQuery,
-		uploadID,
-		path,
+		uplobdID,
+		pbth,
 	)))
 	if err != nil || !exists {
 		return nil, err
 	}
 
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numOccurrences", len(documentDbtb.SCIPDbtb.Occurrences)))
+	occurrences := scip.FindOccurrences(documentDbtb.SCIPDbtb.Occurrences, int32(line), int32(chbrbcter))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numIntersectingOccurrences", len(occurrences)))
 
-	// Make lookup map of symbol information by name
-	symbolMap := map[string]*scip.SymbolInformation{}
-	for _, symbol := range documentData.SCIPData.Symbols {
-		symbolMap[symbol.Symbol] = symbol
+	// Mbke lookup mbp of symbol informbtion by nbme
+	symbolMbp := mbp[string]*scip.SymbolInformbtion{}
+	for _, symbol := rbnge documentDbtb.SCIPDbtb.Symbols {
+		symbolMbp[symbol.Symbol] = symbol
 	}
 
-	monikerData := make([][]precise.MonikerData, 0, len(occurrences))
-	for _, occurrence := range occurrences {
-		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+	monikerDbtb := mbke([][]precise.MonikerDbtb, 0, len(occurrences))
+	for _, occurrence := rbnge occurrences {
+		if occurrence.Symbol == "" || scip.IsLocblSymbol(occurrence.Symbol) {
 			continue
 		}
-		symbol, hasSymbol := symbolMap[occurrence.Symbol]
+		symbol, hbsSymbol := symbolMbp[occurrence.Symbol]
 
 		kind := precise.Import
-		if hasSymbol {
-			for _, o := range documentData.SCIPData.Occurrences {
+		if hbsSymbol {
+			for _, o := rbnge documentDbtb.SCIPDbtb.Occurrences {
 				if o.Symbol == occurrence.Symbol {
-					// TODO - do we need to check additional documents here?
-					if isDefinition := scip.SymbolRole_Definition.Matches(o); isDefinition {
+					// TODO - do we need to check bdditionbl documents here?
+					if isDefinition := scip.SymbolRole_Definition.Mbtches(o); isDefinition {
 						kind = precise.Export
 					}
 
-					break
+					brebk
 				}
 			}
 		}
 
-		moniker, err := symbolNameToQualifiedMoniker(occurrence.Symbol, kind)
+		moniker, err := symbolNbmeToQublifiedMoniker(occurrence.Symbol, kind)
 		if err != nil {
 			return nil, err
 		}
-		occurrenceMonikers := []precise.MonikerData{moniker}
+		occurrenceMonikers := []precise.MonikerDbtb{moniker}
 
-		if hasSymbol {
-			for _, rel := range symbol.Relationships {
-				if rel.IsImplementation {
-					relatedMoniker, err := symbolNameToQualifiedMoniker(rel.Symbol, precise.Implementation)
+		if hbsSymbol {
+			for _, rel := rbnge symbol.Relbtionships {
+				if rel.IsImplementbtion {
+					relbtedMoniker, err := symbolNbmeToQublifiedMoniker(rel.Symbol, precise.Implementbtion)
 					if err != nil {
 						return nil, err
 					}
 
-					occurrenceMonikers = append(occurrenceMonikers, relatedMoniker)
+					occurrenceMonikers = bppend(occurrenceMonikers, relbtedMoniker)
 				}
 			}
 		}
 
-		monikerData = append(monikerData, occurrenceMonikers)
+		monikerDbtb = bppend(monikerDbtb, occurrenceMonikers)
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numMonikers", len(monikerData)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numMonikers", len(monikerDbtb)))
 
-	return monikerData, nil
+	return monikerDbtb, nil
 }
 
 const monikersDocumentQuery = `
 SELECT
 	sd.id,
-	sid.document_path,
-	sd.raw_scip_payload
+	sid.document_pbth,
+	sd.rbw_scip_pbylobd
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
-	sid.upload_id = %s AND
-	sid.document_path = %s
+	sid.uplobd_id = %s AND
+	sid.document_pbth = %s
 LIMIT 1
 `
 
-// GetPackageInformation returns package information data by identifier.
-func (s *store) GetPackageInformation(ctx context.Context, bundleID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error) {
-	_, _, endObservation := s.operations.getPackageInformation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
-		attribute.String("packageInformationID", packageInformationID),
+// GetPbckbgeInformbtion returns pbckbge informbtion dbtb by identifier.
+func (s *store) GetPbckbgeInformbtion(ctx context.Context, bundleID int, pbth, pbckbgeInformbtionID string) (_ precise.PbckbgeInformbtionDbtb, _ bool, err error) {
+	_, _, endObservbtion := s.operbtions.getPbckbgeInformbtion.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bundleID", bundleID),
+		bttribute.String("pbth", pbth),
+		bttribute.String("pbckbgeInformbtionID", pbckbgeInformbtionID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if strings.HasPrefix(packageInformationID, "scip:") {
-		packageInfo := strings.Split(packageInformationID, ":")
-		if len(packageInfo) != 4 {
-			return precise.PackageInformationData{}, false, errors.Newf("invalid package information ID %q", packageInformationID)
-		}
-
-		manager, err := base64.RawStdEncoding.DecodeString(packageInfo[1])
-		if err != nil {
-			return precise.PackageInformationData{}, false, err
-		}
-		name, err := base64.RawStdEncoding.DecodeString(packageInfo[2])
-		if err != nil {
-			return precise.PackageInformationData{}, false, err
-		}
-		version, err := base64.RawStdEncoding.DecodeString(packageInfo[3])
-		if err != nil {
-			return precise.PackageInformationData{}, false, err
+	if strings.HbsPrefix(pbckbgeInformbtionID, "scip:") {
+		pbckbgeInfo := strings.Split(pbckbgeInformbtionID, ":")
+		if len(pbckbgeInfo) != 4 {
+			return precise.PbckbgeInformbtionDbtb{}, fblse, errors.Newf("invblid pbckbge informbtion ID %q", pbckbgeInformbtionID)
 		}
 
-		return precise.PackageInformationData{
-			Manager: string(manager),
-			Name:    string(name),
+		mbnbger, err := bbse64.RbwStdEncoding.DecodeString(pbckbgeInfo[1])
+		if err != nil {
+			return precise.PbckbgeInformbtionDbtb{}, fblse, err
+		}
+		nbme, err := bbse64.RbwStdEncoding.DecodeString(pbckbgeInfo[2])
+		if err != nil {
+			return precise.PbckbgeInformbtionDbtb{}, fblse, err
+		}
+		version, err := bbse64.RbwStdEncoding.DecodeString(pbckbgeInfo[3])
+		if err != nil {
+			return precise.PbckbgeInformbtionDbtb{}, fblse, err
+		}
+
+		return precise.PbckbgeInformbtionDbtb{
+			Mbnbger: string(mbnbger),
+			Nbme:    string(nbme),
 			Version: string(version),
 		}, true, nil
 	}
 
-	return precise.PackageInformationData{}, false, nil
+	return precise.PbckbgeInformbtionDbtb{}, fblse, nil
 }
 
-func symbolNameToQualifiedMoniker(symbolName, kind string) (precise.MonikerData, error) {
-	parsedSymbol, err := scip.ParseSymbol(symbolName)
+func symbolNbmeToQublifiedMoniker(symbolNbme, kind string) (precise.MonikerDbtb, error) {
+	pbrsedSymbol, err := scip.PbrseSymbol(symbolNbme)
 	if err != nil {
-		return precise.MonikerData{}, err
+		return precise.MonikerDbtb{}, err
 	}
 
-	return precise.MonikerData{
-		Scheme:     parsedSymbol.Scheme,
+	return precise.MonikerDbtb{
+		Scheme:     pbrsedSymbol.Scheme,
 		Kind:       kind,
-		Identifier: symbolName,
-		PackageInformationID: precise.ID(strings.Join([]string{
+		Identifier: symbolNbme,
+		PbckbgeInformbtionID: precise.ID(strings.Join([]string{
 			"scip",
-			// Base64 encoding these components as names converted from LSIF contain colons as part of the
-			// general moniker scheme. It's reasonable for manager and names in SCIP-land to also have colons,
-			// so we'll just remove the ambiguity from the generated string here.
-			base64.RawStdEncoding.EncodeToString([]byte(parsedSymbol.Package.Manager)),
-			base64.RawStdEncoding.EncodeToString([]byte(parsedSymbol.Package.Name)),
-			base64.RawStdEncoding.EncodeToString([]byte(parsedSymbol.Package.Version)),
+			// Bbse64 encoding these components bs nbmes converted from LSIF contbin colons bs pbrt of the
+			// generbl moniker scheme. It's rebsonbble for mbnbger bnd nbmes in SCIP-lbnd to blso hbve colons,
+			// so we'll just remove the bmbiguity from the generbted string here.
+			bbse64.RbwStdEncoding.EncodeToString([]byte(pbrsedSymbol.Pbckbge.Mbnbger)),
+			bbse64.RbwStdEncoding.EncodeToString([]byte(pbrsedSymbol.Pbckbge.Nbme)),
+			bbse64.RbwStdEncoding.EncodeToString([]byte(pbrsedSymbol.Pbckbge.Version)),
 		}, ":")),
 	}, nil
 }

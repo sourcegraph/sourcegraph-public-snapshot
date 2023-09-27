@@ -1,94 +1,94 @@
-package cli
+pbckbge cli
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"net/http"
 	"time"
 
-	gcontext "github.com/gorilla/context"
-	"github.com/gorilla/mux"
+	gcontext "github.com/gorillb/context"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	apirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/bssetsutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi"
+	bpirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func serveInternalServer(obsvCtx *observation.Context) (context.CancelFunc, error) {
-	middleware := httpapi.JsonMiddleware(&httpapi.ErrorHandler{
+func serveInternblServer(obsvCtx *observbtion.Context) (context.CbncelFunc, error) {
+	middlewbre := httpbpi.JsonMiddlewbre(&httpbpi.ErrorHbndler{
 		Logger:       obsvCtx.Logger,
 		WriteErrBody: true,
 	})
 
 	serveMux := http.NewServeMux()
 
-	internalRouter := mux.NewRouter().PathPrefix("/.internal").Subrouter()
-	internalRouter.StrictSlash(true)
-	internalRouter.Path("/configuration").Methods("POST").Name(apirouter.Configuration)
-	internalRouter.Get(apirouter.Configuration).Handler(middleware(func(w http.ResponseWriter, r *http.Request) error {
-		configuration := conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{},
+	internblRouter := mux.NewRouter().PbthPrefix("/.internbl").Subrouter()
+	internblRouter.StrictSlbsh(true)
+	internblRouter.Pbth("/configurbtion").Methods("POST").Nbme(bpirouter.Configurbtion)
+	internblRouter.Get(bpirouter.Configurbtion).Hbndler(middlewbre(func(w http.ResponseWriter, r *http.Request) error {
+		configurbtion := conf.Unified{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{},
 			ServiceConnectionConfig: conftypes.ServiceConnections{
-				PostgresDSN:          dbconn.MigrationInProgressSentinelDSN,
-				CodeIntelPostgresDSN: dbconn.MigrationInProgressSentinelDSN,
-				CodeInsightsDSN:      dbconn.MigrationInProgressSentinelDSN,
+				PostgresDSN:          dbconn.MigrbtionInProgressSentinelDSN,
+				CodeIntelPostgresDSN: dbconn.MigrbtionInProgressSentinelDSN,
+				CodeInsightsDSN:      dbconn.MigrbtionInProgressSentinelDSN,
 			},
 		}
-		b, _ := json.Marshal(configuration.SiteConfiguration)
-		raw := conftypes.RawUnified{
+		b, _ := json.Mbrshbl(configurbtion.SiteConfigurbtion)
+		rbw := conftypes.RbwUnified{
 			Site:               string(b),
-			ServiceConnections: configuration.ServiceConnections(),
+			ServiceConnections: configurbtion.ServiceConnections(),
 		}
-		return json.NewEncoder(w).Encode(raw)
+		return json.NewEncoder(w).Encode(rbw)
 	}))
 
-	serveMux.Handle("/.internal/", internalRouter)
+	serveMux.Hbndle("/.internbl/", internblRouter)
 
-	h := gcontext.ClearHandler(serveMux)
-	h = healthCheckMiddleware(h)
+	h := gcontext.ClebrHbndler(serveMux)
+	h = heblthCheckMiddlewbre(h)
 
 	server := &http.Server{
-		Handler:      h,
-		ReadTimeout:  30 * time.Second,
+		Hbndler:      h,
+		RebdTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	listener, err := httpserver.NewListener(httpAddrInternal)
+	listener, err := httpserver.NewListener(httpAddrInternbl)
 	if err != nil {
 		return nil, err
 	}
 	confServer := httpserver.New(listener, server)
 
 	goroutine.Go(func() {
-		confServer.Start()
+		confServer.Stbrt()
 	})
 
 	return confServer.Stop, nil
 }
 
-func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db database.DB) (context.CancelFunc, error) {
-	progressHandler, err := makeUpgradeProgressHandler(obsvCtx, sqlDB, db)
+func serveExternblServer(obsvCtx *observbtion.Context, sqlDB *sql.DB, db dbtbbbse.DB) (context.CbncelFunc, error) {
+	progressHbndler, err := mbkeUpgrbdeProgressHbndler(obsvCtx, sqlDB, db)
 	if err != nil {
 		return nil, err
 	}
 
 	serveMux := http.NewServeMux()
-	serveMux.Handle("/.assets/", http.StripPrefix("/.assets", secureHeadersMiddleware(assetsutil.NewAssetHandler(serveMux), crossOriginPolicyAssets)))
-	serveMux.HandleFunc("/", progressHandler)
-	h := gcontext.ClearHandler(serveMux)
-	h = healthCheckMiddleware(h)
+	serveMux.Hbndle("/.bssets/", http.StripPrefix("/.bssets", secureHebdersMiddlewbre(bssetsutil.NewAssetHbndler(serveMux), crossOriginPolicyAssets)))
+	serveMux.HbndleFunc("/", progressHbndler)
+	h := gcontext.ClebrHbndler(serveMux)
+	h = heblthCheckMiddlewbre(h)
 
 	server := &http.Server{
-		Handler:      h,
-		ReadTimeout:  30 * time.Second,
+		Hbndler:      h,
+		RebdTimeout:  30 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
 	listener, err := httpserver.NewListener(httpAddr)
@@ -98,7 +98,7 @@ func serveExternalServer(obsvCtx *observation.Context, sqlDB *sql.DB, db databas
 	progressServer := httpserver.New(listener, server)
 
 	goroutine.Go(func() {
-		progressServer.Start()
+		progressServer.Stbrt()
 	})
 
 	return progressServer.Stop, nil

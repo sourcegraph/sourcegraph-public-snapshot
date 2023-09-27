@@ -1,53 +1,53 @@
-package auth
+pbckbge buth
 
 import (
 	"net/http"
 	"testing"
 )
 
-func TestBasicAuth(t *testing.T) {
-	t.Run("Authenticate", func(t *testing.T) {
-		basic := &BasicAuth{
-			Username: "user",
-			Password: "pass",
+func TestBbsicAuth(t *testing.T) {
+	t.Run("Authenticbte", func(t *testing.T) {
+		bbsic := &BbsicAuth{
+			Usernbme: "user",
+			Pbssword: "pbss",
 		}
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := basic.Authenticate(req); err != nil {
+		if err := bbsic.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		username, password, ok := req.BasicAuth()
+		usernbme, pbssword, ok := req.BbsicAuth()
 		if !ok {
-			t.Errorf("unexpected ok value: %v", ok)
+			t.Errorf("unexpected ok vblue: %v", ok)
 		}
-		if username != basic.Username {
-			t.Errorf("unexpected username: have=%q want=%q", username, basic.Username)
+		if usernbme != bbsic.Usernbme {
+			t.Errorf("unexpected usernbme: hbve=%q wbnt=%q", usernbme, bbsic.Usernbme)
 		}
-		if password != basic.Password {
-			t.Errorf("unexpected password: have=%q want=%q", password, basic.Password)
+		if pbssword != bbsic.Pbssword {
+			t.Errorf("unexpected pbssword: hbve=%q wbnt=%q", pbssword, bbsic.Pbssword)
 		}
 	})
 
-	t.Run("Hash", func(t *testing.T) {
-		hashes := []string{
-			(&BasicAuth{}).Hash(),
-			(&BasicAuth{"foo", "bar"}).Hash(),
-			(&BasicAuth{"foo", "bar\x00"}).Hash(),
-			(&BasicAuth{"foo:bar:", ""}).Hash(),
-			(&BasicAuth{"foo:bar", ":"}).Hash(),
+	t.Run("Hbsh", func(t *testing.T) {
+		hbshes := []string{
+			(&BbsicAuth{}).Hbsh(),
+			(&BbsicAuth{"foo", "bbr"}).Hbsh(),
+			(&BbsicAuth{"foo", "bbr\x00"}).Hbsh(),
+			(&BbsicAuth{"foo:bbr:", ""}).Hbsh(),
+			(&BbsicAuth{"foo:bbr", ":"}).Hbsh(),
 		}
 
-		seen := make(map[string]struct{})
-		for _, hash := range hashes {
-			if _, ok := seen[hash]; ok {
-				t.Errorf("non-unique hash: %q", hash)
+		seen := mbke(mbp[string]struct{})
+		for _, hbsh := rbnge hbshes {
+			if _, ok := seen[hbsh]; ok {
+				t.Errorf("non-unique hbsh: %q", hbsh)
 			}
-			seen[hash] = struct{}{}
+			seen[hbsh] = struct{}{}
 		}
 	})
 }

@@ -1,101 +1,101 @@
-package env
+pbckbge env
 
 import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// variable is an individual environment variable within an Environment
-// instance. If the value is nil, then it needs to be resolved before being
+// vbribble is bn individubl environment vbribble within bn Environment
+// instbnce. If the vblue is nil, then it needs to be resolved before being
 // used, which occurs in Environment.Resolve().
-type variable struct {
-	name  string
-	value *string
+type vbribble struct {
+	nbme  string
+	vblue *string
 }
 
-var errInvalidVariableType = errors.New("invalid environment variable: unknown type")
+vbr errInvblidVbribbleType = errors.New("invblid environment vbribble: unknown type")
 
-type errInvalidVariableObject struct{ n int }
+type errInvblidVbribbleObject struct{ n int }
 
-func (e errInvalidVariableObject) Error() string {
-	return fmt.Sprintf("invalid environment variable: incorrect number of object elements (expected 1, got %d)", e.n)
+func (e errInvblidVbribbleObject) Error() string {
+	return fmt.Sprintf("invblid environment vbribble: incorrect number of object elements (expected 1, got %d)", e.n)
 }
 
-func (v variable) MarshalJSON() ([]byte, error) {
-	if v.value != nil {
-		return json.Marshal(map[string]string{v.name: *v.value})
+func (v vbribble) MbrshblJSON() ([]byte, error) {
+	if v.vblue != nil {
+		return json.Mbrshbl(mbp[string]string{v.nbme: *v.vblue})
 	}
 
-	return json.Marshal(v.name)
+	return json.Mbrshbl(v.nbme)
 }
 
-func (v *variable) UnmarshalJSON(data []byte) error {
-	// This can be a string or an object with one property. Let's try the string
-	// case first.
-	var k string
-	if err := json.Unmarshal(data, &k); err == nil {
-		v.name = k
-		v.value = nil
+func (v *vbribble) UnmbrshblJSON(dbtb []byte) error {
+	// This cbn be b string or bn object with one property. Let's try the string
+	// cbse first.
+	vbr k string
+	if err := json.Unmbrshbl(dbtb, &k); err == nil {
+		v.nbme = k
+		v.vblue = nil
 		return nil
 	}
 
-	// We should have a bouncing baby object, then.
-	var kv map[string]string
-	if err := json.Unmarshal(data, &kv); err != nil {
-		return errInvalidVariableType
+	// We should hbve b bouncing bbby object, then.
+	vbr kv mbp[string]string
+	if err := json.Unmbrshbl(dbtb, &kv); err != nil {
+		return errInvblidVbribbleType
 	} else if len(kv) != 1 {
-		return errInvalidVariableObject{n: len(kv)}
+		return errInvblidVbribbleObject{n: len(kv)}
 	}
 
-	for k, value := range kv {
-		v.name = k
-		//nolint:exportloopref // There should only be one iteration, so the value of `value` should not change
-		v.value = &value
+	for k, vblue := rbnge kv {
+		v.nbme = k
+		//nolint:exportloopref // There should only be one iterbtion, so the vblue of `vblue` should not chbnge
+		v.vblue = &vblue
 	}
 
 	return nil
 }
 
-func (v *variable) UnmarshalYAML(unmarshal func(any) error) error {
-	// This can be a string or an object with one property. Let's try the string
-	// case first.
-	var k string
-	if err := unmarshal(&k); err == nil {
-		v.name = k
-		v.value = nil
+func (v *vbribble) UnmbrshblYAML(unmbrshbl func(bny) error) error {
+	// This cbn be b string or bn object with one property. Let's try the string
+	// cbse first.
+	vbr k string
+	if err := unmbrshbl(&k); err == nil {
+		v.nbme = k
+		v.vblue = nil
 		return nil
 	}
 
 	// Object time.
-	var kv map[string]string
-	if err := unmarshal(&kv); err != nil {
-		return errInvalidVariableType
+	vbr kv mbp[string]string
+	if err := unmbrshbl(&kv); err != nil {
+		return errInvblidVbribbleType
 	} else if len(kv) != 1 {
-		return errInvalidVariableObject{n: len(kv)}
+		return errInvblidVbribbleObject{n: len(kv)}
 	}
 
-	for k, value := range kv {
-		v.name = k
-		//nolint:exportloopref // There should only be one iteration, so the value of `value` should not change
-		v.value = &value
+	for k, vblue := rbnge kv {
+		v.nbme = k
+		//nolint:exportloopref // There should only be one iterbtion, so the vblue of `vblue` should not chbnge
+		v.vblue = &vblue
 	}
 
 	return nil
 }
 
-// Equal checks if two environment variables are equal.
-func (a variable) Equal(b variable) bool {
-	if a.name != b.name {
-		return false
+// Equbl checks if two environment vbribbles bre equbl.
+func (b vbribble) Equbl(b vbribble) bool {
+	if b.nbme != b.nbme {
+		return fblse
 	}
 
-	if a.value == nil && b.value == nil {
+	if b.vblue == nil && b.vblue == nil {
 		return true
 	}
-	if a.value == nil || b.value == nil {
-		return false
+	if b.vblue == nil || b.vblue == nil {
+		return fblse
 	}
-	return *a.value == *b.value
+	return *b.vblue == *b.vblue
 }

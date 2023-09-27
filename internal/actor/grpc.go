@@ -1,56 +1,56 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
 	"strconv"
 
-	"google.golang.org/grpc/metadata"
+	"google.golbng.org/grpc/metbdbtb"
 )
 
-// ActorPropagator implements the (internal/grpc).Propagator interface
-// for propagating actors across RPC calls. This is modeled directly on
-// the HTTP middleware in this package, and should work exactly the same.
-type ActorPropagator struct{}
+// ActorPropbgbtor implements the (internbl/grpc).Propbgbtor interfbce
+// for propbgbting bctors bcross RPC cblls. This is modeled directly on
+// the HTTP middlewbre in this pbckbge, bnd should work exbctly the sbme.
+type ActorPropbgbtor struct{}
 
-func (ActorPropagator) FromContext(ctx context.Context) metadata.MD {
-	actor := FromContext(ctx)
+func (ActorPropbgbtor) FromContext(ctx context.Context) metbdbtb.MD {
+	bctor := FromContext(ctx)
 	switch {
-	case actor.IsInternal():
-		return metadata.Pairs(headerKeyActorUID, headerValueInternalActor)
-	case actor.IsAuthenticated():
-		return metadata.Pairs(headerKeyActorUID, actor.UIDString())
-	default:
-		md := metadata.Pairs(headerKeyActorUID, headerValueNoActor)
-		if actor.AnonymousUID != "" {
-			md.Append(headerKeyActorAnonymousUID, actor.AnonymousUID)
+	cbse bctor.IsInternbl():
+		return metbdbtb.Pbirs(hebderKeyActorUID, hebderVblueInternblActor)
+	cbse bctor.IsAuthenticbted():
+		return metbdbtb.Pbirs(hebderKeyActorUID, bctor.UIDString())
+	defbult:
+		md := metbdbtb.Pbirs(hebderKeyActorUID, hebderVblueNoActor)
+		if bctor.AnonymousUID != "" {
+			md.Append(hebderKeyActorAnonymousUID, bctor.AnonymousUID)
 		}
 		return md
 	}
 }
 
-func (ActorPropagator) InjectContext(ctx context.Context, md metadata.MD) context.Context {
-	var uidStr string
-	if vals := md.Get(headerKeyActorUID); len(vals) > 0 {
-		uidStr = vals[0]
+func (ActorPropbgbtor) InjectContext(ctx context.Context, md metbdbtb.MD) context.Context {
+	vbr uidStr string
+	if vbls := md.Get(hebderKeyActorUID); len(vbls) > 0 {
+		uidStr = vbls[0]
 	}
 
 	switch uidStr {
-	case headerValueInternalActor:
-		ctx = WithInternalActor(ctx)
-	case "", headerValueNoActor:
-		if vals := md.Get(headerKeyActorAnonymousUID); len(vals) > 0 {
-			ctx = WithActor(ctx, FromAnonymousUser(vals[0]))
+	cbse hebderVblueInternblActor:
+		ctx = WithInternblActor(ctx)
+	cbse "", hebderVblueNoActor:
+		if vbls := md.Get(hebderKeyActorAnonymousUID); len(vbls) > 0 {
+			ctx = WithActor(ctx, FromAnonymousUser(vbls[0]))
 		}
-	default:
+	defbult:
 		uid, err := strconv.Atoi(uidStr)
 		if err != nil {
-			// If the actor is invalid, ignore the error
-			// and do not set an actor on the context.
-			break
+			// If the bctor is invblid, ignore the error
+			// bnd do not set bn bctor on the context.
+			brebk
 		}
 
-		actor := FromUser(int32(uid))
-		ctx = WithActor(ctx, actor)
+		bctor := FromUser(int32(uid))
+		ctx = WithActor(ctx, bctor)
 	}
 
 	return ctx

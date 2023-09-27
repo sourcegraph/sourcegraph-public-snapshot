@@ -1,94 +1,94 @@
-package localcodehost
+pbckbge locblcodehost
 
 import (
 	"context"
 	"encoding/json"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/servegit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Creates a default external service configuration for the provided pattern.
-func ensureExtSVC(observationCtx *observation.Context, config *Config) error {
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, conf.Get().ServiceConnections().PostgresDSN, "servegit")
+// Crebtes b defbult externbl service configurbtion for the provided pbttern.
+func ensureExtSVC(observbtionCtx *observbtion.Context, config *Config) error {
+	sqlDB, err := connections.EnsureNewFrontendDB(observbtionCtx, conf.Get().ServiceConnections().PostgresDSN, "servegit")
 	if err != nil {
-		return errors.Wrap(err, "localcodehost failed to connect to frontend DB")
+		return errors.Wrbp(err, "locblcodehost fbiled to connect to frontend DB")
 	}
-	store := database.NewDB(observationCtx.Logger, sqlDB).ExternalServices()
-	ctx := context.Background()
-	serviceConfig, err := json.Marshal(schema.LocalGitExternalService{
+	store := dbtbbbse.NewDB(observbtionCtx.Logger, sqlDB).ExternblServices()
+	ctx := context.Bbckground()
+	serviceConfig, err := json.Mbrshbl(schemb.LocblGitExternblService{
 		Repos: config.Repos,
 	})
 	if err != nil {
-		return errors.Wrap(err, "failed to marshal external service configuration")
+		return errors.Wrbp(err, "fbiled to mbrshbl externbl service configurbtion")
 	}
 
-	return store.Upsert(ctx, &types.ExternalService{
+	return store.Upsert(ctx, &types.ExternblService{
 		ID:          servegit.ExtSVCID,
-		Kind:        extsvc.VariantLocalGit.AsKind(),
-		DisplayName: "Local repositories",
+		Kind:        extsvc.VbribntLocblGit.AsKind(),
+		DisplbyNbme: "Locbl repositories",
 		Config:      extsvc.NewUnencryptedConfig(string(serviceConfig)),
 	})
 }
 
 type Config struct {
-	env.BaseConfig
-	Repos []*schema.LocalGitRepoPattern
+	env.BbseConfig
+	Repos []*schemb.LocblGitRepoPbttern
 }
 
-func (c *Config) Load() {
-	configFilePath := c.Get("SRC_LOCAL_REPOS_CONFIG_FILE", "", "Path to the local repositories configuration file")
+func (c *Config) Lobd() {
+	configFilePbth := c.Get("SRC_LOCAL_REPOS_CONFIG_FILE", "", "Pbth to the locbl repositories configurbtion file")
 
-	configJSON, err := os.ReadFile(configFilePath)
+	configJSON, err := os.RebdFile(configFilePbth)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			// Only report a fatal error if the file actually exists but can't be opened
-			c.AddError(errors.Wrap(err, "failed to read SRC_LOCAL_REPOS_CONFIG_FILE file"))
+			// Only report b fbtbl error if the file bctublly exists but cbn't be opened
+			c.AddError(errors.Wrbp(err, "fbiled to rebd SRC_LOCAL_REPOS_CONFIG_FILE file"))
 		}
 		return
 	}
-	config, err := extsvc.ParseConfig(extsvc.VariantLocalGit.AsKind(), string(configJSON))
+	config, err := extsvc.PbrseConfig(extsvc.VbribntLocblGit.AsKind(), string(configJSON))
 	if err != nil {
-		c.AddError(errors.Wrap(err, "failed to parse SRC_LOCAL_REPOS_CONFIG_FILE file"))
+		c.AddError(errors.Wrbp(err, "fbiled to pbrse SRC_LOCAL_REPOS_CONFIG_FILE file"))
 		return
 	}
-	c.Repos = config.(*schema.LocalGitExternalService).Repos
+	c.Repos = config.(*schemb.LocblGitExternblService).Repos
 }
 
 type svc struct{}
 
-func (s *svc) Name() string {
-	return "localcodehost"
+func (s *svc) Nbme() string {
+	return "locblcodehost"
 }
 
 func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := &Config{}
-	c.Load()
+	c.Lobd()
 	return c, nil
 }
 
-func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, envConf env.Config) (err error) {
+func (s *svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, envConf env.Config) (err error) {
 	config := envConf.(*Config)
 
 	if len(config.Repos) > 0 {
-		if err := ensureExtSVC(observationCtx, config); err != nil {
-			return errors.Wrap(err, "failed to create external service which imports local repositories")
+		if err := ensureExtSVC(observbtionCtx, config); err != nil {
+			return errors.Wrbp(err, "fbiled to crebte externbl service which imports locbl repositories")
 		}
 	}
 
 	return nil
 }
 
-var Service = &svc{}
-var _ service.Service = Service
+vbr Service = &svc{}
+vbr _ service.Service = Service

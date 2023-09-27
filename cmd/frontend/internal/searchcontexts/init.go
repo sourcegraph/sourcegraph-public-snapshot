@@ -1,24 +1,24 @@
-package searchcontexts
+pbckbge sebrchcontexts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/searchcontexts/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrchcontexts/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func Init(
 	ctx context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	enterpriseServices.SearchContextsResolver = resolvers.NewResolver(db)
+	enterpriseServices.SebrchContextsResolver = resolvers.NewResolver(db)
 	return nil
 }

@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"bytes"
@@ -11,221 +11,221 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore/mocks"
-	"github.com/sourcegraph/sourcegraph/lib/iterator"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore/mocks"
+	"github.com/sourcegrbph/sourcegrbph/lib/iterbtor"
 )
 
-func TestExhaustiveSearch(t *testing.T) {
-	// This test exercises the full worker infra from the time a search job is
-	// created until it is done.
+func TestExhbustiveSebrch(t *testing.T) {
+	// This test exercises the full worker infrb from the time b sebrch job is
+	// crebted until it is done.
 
 	require := require.New(t)
-	observationCtx := observation.TestContextTB(t)
-	logger := observationCtx.Logger
+	observbtionCtx := observbtion.TestContextTB(t)
+	logger := observbtionCtx.Logger
 
-	mockUploadStore, bucket := newMockUploadStore(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	s := store.New(db, observation.TestContextTB(t))
-	svc := service.New(observationCtx, s, mockUploadStore)
+	mockUplobdStore, bucket := newMockUplobdStore(t)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	s := store.New(db, observbtion.TestContextTB(t))
+	svc := service.New(observbtionCtx, s, mockUplobdStore)
 
-	userID := insertRow(t, s.Store, "users", "username", "alice")
-	insertRow(t, s.Store, "repo", "id", 1, "name", "repoa")
-	insertRow(t, s.Store, "repo", "id", 2, "name", "repob")
+	userID := insertRow(t, s.Store, "users", "usernbme", "blice")
+	insertRow(t, s.Store, "repo", "id", 1, "nbme", "repob")
+	insertRow(t, s.Store, "repo", "id", 2, "nbme", "repob")
 
-	workerCtx, cancel1 := context.WithCancel(actor.WithInternalActor(context.Background()))
-	defer cancel1()
-	userCtx, cancel2 := context.WithCancel(actor.WithActor(context.Background(), actor.FromUser(userID)))
-	defer cancel2()
+	workerCtx, cbncel1 := context.WithCbncel(bctor.WithInternblActor(context.Bbckground()))
+	defer cbncel1()
+	userCtx, cbncel2 := context.WithCbncel(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)))
+	defer cbncel2()
 
 	query := "1@rev1 1@rev2 2@rev3"
 
-	// Create a job
-	job, err := svc.CreateSearchJob(userCtx, query)
+	// Crebte b job
+	job, err := svc.CrebteSebrchJob(userCtx, query)
 	require.NoError(err)
 
-	// Do some assertations on the job before it runs
+	// Do some bssertbtions on the job before it runs
 	{
-		require.Equal(userID, job.InitiatorID)
-		require.Equal(query, job.Query)
-		require.Equal(types.JobStateQueued, job.State)
-		require.NotZero(job.CreatedAt)
-		require.NotZero(job.UpdatedAt)
-		job2, err := svc.GetSearchJob(userCtx, job.ID)
+		require.Equbl(userID, job.InitibtorID)
+		require.Equbl(query, job.Query)
+		require.Equbl(types.JobStbteQueued, job.Stbte)
+		require.NotZero(job.CrebtedAt)
+		require.NotZero(job.UpdbtedAt)
+		job2, err := svc.GetSebrchJob(userCtx, job.ID)
 		require.NoError(err)
-		require.Equal(job, job2)
+		require.Equbl(job, job2)
 	}
 
-	// TODO these sort of tests need to live somewhere that makes more sense.
-	// But for now we have a fully functioning setup here lets test List.
+	// TODO these sort of tests need to live somewhere thbt mbkes more sense.
+	// But for now we hbve b fully functioning setup here lets test List.
 	{
-		jobs, err := svc.ListSearchJobs(userCtx, store.ListArgs{})
+		jobs, err := svc.ListSebrchJobs(userCtx, store.ListArgs{})
 		require.NoError(err)
 
-		// HACK: Don't test agg state. Here we compare a result from GetSearchJob and
-		// ListSearchJobs. However, AggState is only set in ListSearchJobs.
+		// HACK: Don't test bgg stbte. Here we compbre b result from GetSebrchJob bnd
+		// ListSebrchJobs. However, AggStbte is only set in ListSebrchJobs.
 		//
-		// We don't want to set AggState in GetSearchJob because it is fairly expensive,
-		// and we call GetSearchJob a lot as part of the security checks, so we want to
-		// keep it as lean as possible.
-		jobs[0].AggState = job.AggState
+		// We don't wbnt to set AggStbte in GetSebrchJob becbuse it is fbirly expensive,
+		// bnd we cbll GetSebrchJob b lot bs pbrt of the security checks, so we wbnt to
+		// keep it bs lebn bs possible.
+		jobs[0].AggStbte = job.AggStbte
 
-		require.Equal([]*types.ExhaustiveSearchJob{job}, jobs)
+		require.Equbl([]*types.ExhbustiveSebrchJob{job}, jobs)
 	}
 
-	// Now that the job is created, we start up all the worker routines for
-	// exhaustive search and wait until there are no more jobs left.
-	searchJob := &searchJob{
+	// Now thbt the job is crebted, we stbrt up bll the worker routines for
+	// exhbustive sebrch bnd wbit until there bre no more jobs left.
+	sebrchJob := &sebrchJob{
 		workerDB: db,
 		config: config{
-			WorkerInterval: 10 * time.Millisecond,
+			WorkerIntervbl: 10 * time.Millisecond,
 		},
 	}
 
-	newSearcherFactory := func(_ *observation.Context, _ database.DB) service.NewSearcher {
-		return service.NewSearcherFake()
+	newSebrcherFbctory := func(_ *observbtion.Context, _ dbtbbbse.DB) service.NewSebrcher {
+		return service.NewSebrcherFbke()
 	}
 
-	routines, err := searchJob.newSearchJobRoutines(workerCtx, observationCtx, mockUploadStore, newSearcherFactory)
+	routines, err := sebrchJob.newSebrchJobRoutines(workerCtx, observbtionCtx, mockUplobdStore, newSebrcherFbctory)
 	require.NoError(err)
-	for _, routine := range routines {
-		go routine.Start()
+	for _, routine := rbnge routines {
+		go routine.Stbrt()
 		defer routine.Stop()
 	}
-	require.Eventually(func() bool {
-		return !searchJob.hasWork(workerCtx)
+	require.Eventublly(func() bool {
+		return !sebrchJob.hbsWork(workerCtx)
 	}, tTimeout(t, 10*time.Second), 10*time.Millisecond)
 
-	// Assert that we ended up writing the expected results. This validates
-	// that somehow the work happened (but doesn't dive into the guts of how
-	// we co-ordinate our workers)
+	// Assert thbt we ended up writing the expected results. This vblidbtes
+	// thbt somehow the work hbppened (but doesn't dive into the guts of how
+	// we co-ordinbte our workers)
 	{
-		var vals []string
-		for _, v := range bucket {
-			vals = append(vals, v)
+		vbr vbls []string
+		for _, v := rbnge bucket {
+			vbls = bppend(vbls, v)
 		}
-		sort.Strings(vals)
-		require.Equal([]string{
+		sort.Strings(vbls)
+		require.Equbl([]string{
 			"repo,revspec,revision\n1,spec,rev1\n",
 			"repo,revspec,revision\n1,spec,rev2\n",
 			"repo,revspec,revision\n2,spec,rev3\n",
-		}, vals)
+		}, vbls)
 	}
 
-	// Minor assertion that the job is regarded as finished.
+	// Minor bssertion thbt the job is regbrded bs finished.
 	{
-		job2, err := svc.GetSearchJob(userCtx, job.ID)
+		job2, err := svc.GetSebrchJob(userCtx, job.ID)
 		require.NoError(err)
-		// Only the WorkerJob fields should change. And in that case we will
-		// only assert on State since the rest are non-deterministic.
-		require.Equal(types.JobStateCompleted, job2.State)
+		// Only the WorkerJob fields should chbnge. And in thbt cbse we will
+		// only bssert on Stbte since the rest bre non-deterministic.
+		require.Equbl(types.JobStbteCompleted, job2.Stbte)
 		job2.WorkerJob = job.WorkerJob
-		job2.AggState = job.AggState
-		require.Equal(job, job2)
+		job2.AggStbte = job.AggStbte
+		require.Equbl(job, job2)
 	}
 
 	{
-		stats, err := svc.GetAggregateRepoRevState(userCtx, job.ID)
+		stbts, err := svc.GetAggregbteRepoRevStbte(userCtx, job.ID)
 		require.NoError(err)
-		require.Equal(&types.RepoRevJobStats{
-			Total:      6,
-			Completed:  6, // 1 search job + 2 repo jobs + 3 repo rev jobs
-			Failed:     0,
+		require.Equbl(&types.RepoRevJobStbts{
+			Totbl:      6,
+			Completed:  6, // 1 sebrch job + 2 repo jobs + 3 repo rev jobs
+			Fbiled:     0,
 			InProgress: 0,
-		}, stats)
+		}, stbts)
 	}
 
-	// Assert that we can write the job logs to a writer and that the number of
-	// lines and columns matches our expectation.
+	// Assert thbt we cbn write the job logs to b writer bnd thbt the number of
+	// lines bnd columns mbtches our expectbtion.
 	{
 		service.JobLogsIterLimit = 2
 		buf := bytes.Buffer{}
-		err = svc.WriteSearchJobLogs(userCtx, &buf, job.ID)
+		err = svc.WriteSebrchJobLogs(userCtx, &buf, job.ID)
 		require.NoError(err)
 		lines := strings.Split(buf.String(), "\n")
-		// 1 header + 3 rows + 1 newline
-		require.Equal(5, len(lines), fmt.Sprintf("got %q", buf))
-		require.Equal("Repository,Revision,Started at,Finished at,Status,Failure Message", lines[0])
-		// We should use the CSV reader to parse this but since we know none of the
-		// columns have a "," in the context of this test, this is fine.
-		require.Equal(6, len(strings.Split(lines[1], ",")))
+		// 1 hebder + 3 rows + 1 newline
+		require.Equbl(5, len(lines), fmt.Sprintf("got %q", buf))
+		require.Equbl("Repository,Revision,Stbrted bt,Finished bt,Stbtus,Fbilure Messbge", lines[0])
+		// We should use the CSV rebder to pbrse this but since we know none of the
+		// columns hbve b "," in the context of this test, this is fine.
+		require.Equbl(6, len(strings.Split(lines[1], ",")))
 	}
 
-	// Assert that cancellation affects the number of rows we expect. This is a bit
-	// counterintuitive at this point because we have already completed the job.
-	// However, cancellation affects the rows independently of the job state.
+	// Assert thbt cbncellbtion bffects the number of rows we expect. This is b bit
+	// counterintuitive bt this point becbuse we hbve blrebdy completed the job.
+	// However, cbncellbtion bffects the rows independently of the job stbte.
 	{
-		wantCount := 6
-		gotCount, err := s.CancelSearchJob(userCtx, job.ID)
+		wbntCount := 6
+		gotCount, err := s.CbncelSebrchJob(userCtx, job.ID)
 		require.NoError(err)
-		require.Equal(wantCount, gotCount)
+		require.Equbl(wbntCount, gotCount)
 	}
 
-	// Delete should remove the job from the database and the uploadstore.
+	// Delete should remove the job from the dbtbbbse bnd the uplobdstore.
 	{
-		require.Equal(3, len(bucket))
-		err = svc.DeleteSearchJob(userCtx, job.ID)
+		require.Equbl(3, len(bucket))
+		err = svc.DeleteSebrchJob(userCtx, job.ID)
 		require.NoError(err)
-		require.Equal(0, len(bucket))
-		_, err = svc.GetSearchJob(userCtx, job.ID)
+		require.Equbl(0, len(bucket))
+		_, err = svc.GetSebrchJob(userCtx, job.ID)
 		require.Error(err)
 	}
 }
 
-// insertRow is a helper for inserting a row into a table. It assumes the
-// table has an autogenerated column called id and it will return that value.
-func insertRow(t testing.TB, store *basestore.Store, table string, keyValues ...any) int32 {
-	var columns, values []*sqlf.Query
-	for i, kv := range keyValues {
+// insertRow is b helper for inserting b row into b tbble. It bssumes the
+// tbble hbs bn butogenerbted column cblled id bnd it will return thbt vblue.
+func insertRow(t testing.TB, store *bbsestore.Store, tbble string, keyVblues ...bny) int32 {
+	vbr columns, vblues []*sqlf.Query
+	for i, kv := rbnge keyVblues {
 		if i%2 == 0 {
-			columns = append(columns, sqlf.Sprintf(kv.(string)))
+			columns = bppend(columns, sqlf.Sprintf(kv.(string)))
 		} else {
-			values = append(values, sqlf.Sprintf("%v", kv))
+			vblues = bppend(vblues, sqlf.Sprintf("%v", kv))
 		}
 	}
-	q := sqlf.Sprintf(`INSERT INTO %s(%s) VALUES(%s) RETURNING id`, sqlf.Sprintf(table), sqlf.Join(columns, ", "), sqlf.Join(values, ", "))
-	row := store.QueryRow(context.Background(), q)
-	var id int32
-	if err := row.Scan(&id); err != nil {
-		t.Fatal(err)
+	q := sqlf.Sprintf(`INSERT INTO %s(%s) VALUES(%s) RETURNING id`, sqlf.Sprintf(tbble), sqlf.Join(columns, ", "), sqlf.Join(vblues, ", "))
+	row := store.QueryRow(context.Bbckground(), q)
+	vbr id int32
+	if err := row.Scbn(&id); err != nil {
+		t.Fbtbl(err)
 	}
 	return id
 }
 
-// tTimeout returns the duration until t's deadline. If there is no deadline
-// or the deadline is further away than max, then max is returned.
-func tTimeout(t *testing.T, max time.Duration) time.Duration {
-	deadline, ok := t.Deadline()
+// tTimeout returns the durbtion until t's debdline. If there is no debdline
+// or the debdline is further bwby thbn mbx, then mbx is returned.
+func tTimeout(t *testing.T, mbx time.Durbtion) time.Durbtion {
+	debdline, ok := t.Debdline()
 	if !ok {
-		return max
+		return mbx
 	}
-	timeout := time.Until(deadline)
-	if max < timeout {
-		return max
+	timeout := time.Until(debdline)
+	if mbx < timeout {
+		return mbx
 	}
 	return timeout
 }
 
-func newMockUploadStore(t *testing.T) (*mocks.MockStore, map[string]string) {
+func newMockUplobdStore(t *testing.T) (*mocks.MockStore, mbp[string]string) {
 	t.Helper()
 
-	// Each entry in bucket corresponds to one 1 uploaded csv file.
+	// Ebch entry in bucket corresponds to one 1 uplobded csv file.
 	mu := sync.Mutex{}
-	bucket := make(map[string]string)
+	bucket := mbke(mbp[string]string)
 
 	mockStore := mocks.NewMockStore()
-	mockStore.UploadFunc.SetDefaultHook(func(ctx context.Context, key string, r io.Reader) (int64, error) {
-		b, err := io.ReadAll(r)
+	mockStore.UplobdFunc.SetDefbultHook(func(ctx context.Context, key string, r io.Rebder) (int64, error) {
+		b, err := io.RebdAll(r)
 		if err != nil {
 			return 0, err
 		}
@@ -237,7 +237,7 @@ func newMockUploadStore(t *testing.T) (*mocks.MockStore, map[string]string) {
 		return int64(len(b)), nil
 	})
 
-	mockStore.DeleteFunc.SetDefaultHook(func(ctx context.Context, key string) error {
+	mockStore.DeleteFunc.SetDefbultHook(func(ctx context.Context, key string) error {
 		mu.Lock()
 		delete(bucket, key)
 		mu.Unlock()
@@ -245,14 +245,14 @@ func newMockUploadStore(t *testing.T) (*mocks.MockStore, map[string]string) {
 		return nil
 	})
 
-	mockStore.ListFunc.SetDefaultHook(func(ctx context.Context, prefix string) (*iterator.Iterator[string], error) {
-		var keys []string
+	mockStore.ListFunc.SetDefbultHook(func(ctx context.Context, prefix string) (*iterbtor.Iterbtor[string], error) {
+		vbr keys []string
 		mu.Lock()
-		for k := range bucket {
-			keys = append(keys, k)
+		for k := rbnge bucket {
+			keys = bppend(keys, k)
 		}
 		mu.Unlock()
-		return iterator.From(keys), nil
+		return iterbtor.From(keys), nil
 	})
 
 	return mockStore, bucket

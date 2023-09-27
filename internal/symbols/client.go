@@ -1,4 +1,4 @@
-package symbols
+pbckbge symbols
 
 import (
 	"bytes"
@@ -9,452 +9,452 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobwas/glob"
-	"github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/gobwbs/glob"
+	"github.com/sourcegrbph/go-ctbgs"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/resetonce"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	proto "github.com/sourcegraph/sourcegraph/internal/symbols/v1"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/resetonce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/symbols/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func defaultEndpoints() *endpoint.Map {
-	return endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+func defbultEndpoints() *endpoint.Mbp {
+	return endpoint.ConfBbsed(func(conns conftypes.ServiceConnections) []string {
 		return conns.Symbols
 	})
 }
 
-func LoadConfig() {
-	DefaultClient = &Client{
-		Endpoints:           defaultEndpoints(),
-		GRPCConnectionCache: defaults.NewConnectionCache(log.Scoped("symbolsConnectionCache", "grpc connection cache for clients of the symbols service")),
-		HTTPClient:          defaultDoer,
+func LobdConfig() {
+	DefbultClient = &Client{
+		Endpoints:           defbultEndpoints(),
+		GRPCConnectionCbche: defbults.NewConnectionCbche(log.Scoped("symbolsConnectionCbche", "grpc connection cbche for clients of the symbols service")),
+		HTTPClient:          defbultDoer,
 		HTTPLimiter:         limiter.New(500),
-		SubRepoPermsChecker: func() authz.SubRepoPermissionChecker { return authz.DefaultSubRepoPermsChecker },
+		SubRepoPermsChecker: func() buthz.SubRepoPermissionChecker { return buthz.DefbultSubRepoPermsChecker },
 	}
 }
 
-// DefaultClient is the default Client. Unless overwritten, it is connected to the server specified by the
-// SYMBOLS_URL environment variable.
-var DefaultClient *Client
+// DefbultClient is the defbult Client. Unless overwritten, it is connected to the server specified by the
+// SYMBOLS_URL environment vbribble.
+vbr DefbultClient *Client
 
-var defaultDoer = func() httpcli.Doer {
-	d, err := httpcli.NewInternalClientFactory("symbols").Doer()
+vbr defbultDoer = func() httpcli.Doer {
+	d, err := httpcli.NewInternblClientFbctory("symbols").Doer()
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return d
 }()
 
-// Client is a symbols service client.
+// Client is b symbols service client.
 type Client struct {
 	// Endpoints to symbols service.
-	Endpoints *endpoint.Map
+	Endpoints *endpoint.Mbp
 
-	GRPCConnectionCache *defaults.ConnectionCache
+	GRPCConnectionCbche *defbults.ConnectionCbche
 
 	// HTTP client to use
 	HTTPClient httpcli.Doer
 
-	// Limits concurrency of outstanding HTTP posts
+	// Limits concurrency of outstbnding HTTP posts
 	HTTPLimiter limiter.Limiter
 
-	// SubRepoPermsChecker is function to return the checker to use. It needs to be a
-	// function since we expect the client to be set at runtime once we have a
-	// database connection.
-	SubRepoPermsChecker func() authz.SubRepoPermissionChecker
+	// SubRepoPermsChecker is function to return the checker to use. It needs to be b
+	// function since we expect the client to be set bt runtime once we hbve b
+	// dbtbbbse connection.
+	SubRepoPermsChecker func() buthz.SubRepoPermissionChecker
 
-	langMappingOnce  resetonce.Once
-	langMappingCache map[string][]glob.Glob
+	lbngMbppingOnce  resetonce.Once
+	lbngMbppingCbche mbp[string][]glob.Glob
 }
 
-func (c *Client) ListLanguageMappings(ctx context.Context, repo api.RepoName) (_ map[string][]glob.Glob, err error) {
-	c.langMappingOnce.Do(func() {
-		var mappings map[string][]string
+func (c *Client) ListLbngubgeMbppings(ctx context.Context, repo bpi.RepoNbme) (_ mbp[string][]glob.Glob, err error) {
+	c.lbngMbppingOnce.Do(func() {
+		vbr mbppings mbp[string][]string
 
-		if conf.IsGRPCEnabled(ctx) {
-			mappings, err = c.listLanguageMappingsGRPC(ctx, repo)
+		if conf.IsGRPCEnbbled(ctx) {
+			mbppings, err = c.listLbngubgeMbppingsGRPC(ctx, repo)
 		} else {
-			mappings, err = c.listLanguageMappingsJSON(ctx, repo)
+			mbppings, err = c.listLbngubgeMbppingsJSON(ctx, repo)
 		}
 
 		if err != nil {
-			err = errors.Wrap(err, "fetching language mappings")
+			err = errors.Wrbp(err, "fetching lbngubge mbppings")
 			return
 		}
 
-		globs := make(map[string][]glob.Glob, len(ctags.SupportedLanguages))
+		globs := mbke(mbp[string][]glob.Glob, len(ctbgs.SupportedLbngubges))
 
-		for _, allowedLanguage := range ctags.SupportedLanguages {
-			for _, pattern := range mappings[allowedLanguage] {
-				var compiled glob.Glob
-				compiled, err = glob.Compile(pattern)
+		for _, bllowedLbngubge := rbnge ctbgs.SupportedLbngubges {
+			for _, pbttern := rbnge mbppings[bllowedLbngubge] {
+				vbr compiled glob.Glob
+				compiled, err = glob.Compile(pbttern)
 				if err != nil {
 					return
 				}
 
-				globs[allowedLanguage] = append(globs[allowedLanguage], compiled)
+				globs[bllowedLbngubge] = bppend(globs[bllowedLbngubge], compiled)
 			}
 		}
 
-		c.langMappingCache = globs
-		time.AfterFunc(time.Minute*10, c.langMappingOnce.Reset)
+		c.lbngMbppingCbche = globs
+		time.AfterFunc(time.Minute*10, c.lbngMbppingOnce.Reset)
 	})
 
-	return c.langMappingCache, nil
+	return c.lbngMbppingCbche, nil
 }
 
-func (c *Client) listLanguageMappingsGRPC(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
-	// an arbitrary symbols host. We should remove this requirement from this method.
+func (c *Client) listLbngubgeMbppingsGRPC(ctx context.Context, repository bpi.RepoNbme) (mbp[string][]string, error) {
+	// TODO@ggilmore: This bddress doesn't need the repository nbme for bnything order thbn dibling
+	// bn brbitrbry symbols host. We should remove this requirement from this method.
 	conn, err := c.getGRPCConn(string(repository))
 	if err != nil {
-		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return nil, errors.Wrbp(err, "getting gRPC connection to symbols server")
 	}
 
 	client := proto.NewSymbolsServiceClient(conn)
-	resp, err := client.ListLanguages(ctx, &proto.ListLanguagesRequest{})
+	resp, err := client.ListLbngubges(ctx, &proto.ListLbngubgesRequest{})
 	if err != nil {
-		return nil, translateGRPCError(err)
+		return nil, trbnslbteGRPCError(err)
 	}
 
-	mappings := make(map[string][]string, len(resp.LanguageFileNameMap))
-	for language, fp := range resp.LanguageFileNameMap {
-		mappings[language] = fp.Patterns
+	mbppings := mbke(mbp[string][]string, len(resp.LbngubgeFileNbmeMbp))
+	for lbngubge, fp := rbnge resp.LbngubgeFileNbmeMbp {
+		mbppings[lbngubge] = fp.Pbtterns
 	}
 
-	return mappings, nil
+	return mbppings, nil
 }
 
-func (c *Client) listLanguageMappingsJSON(ctx context.Context, repository api.RepoName) (map[string][]string, error) {
-	// TODO@ggilmore: This address doesn't need the repository name for anything order than dialing
-	// an arbitrary symbols host. We should remove this requirement from this method.
+func (c *Client) listLbngubgeMbppingsJSON(ctx context.Context, repository bpi.RepoNbme) (mbp[string][]string, error) {
+	// TODO@ggilmore: This bddress doesn't need the repository nbme for bnything order thbn dibling
+	// bn brbitrbry symbols host. We should remove this requirement from this method.
 
-	var resp *http.Response
-	resp, err := c.httpPost(ctx, "list-languages", repository, nil)
+	vbr resp *http.Response
+	resp, err := c.httpPost(ctx, "list-lbngubges", repository, nil)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	if resp.StbtusCode != http.StbtusOK {
+		// best-effort inclusion of body in error messbge
+		body, _ := io.RebdAll(io.LimitRebder(resp.Body, 200))
 		err = errors.Errorf(
-			"Symbol.ListLanguageMappings http status %d: %s",
-			resp.StatusCode,
+			"Symbol.ListLbngubgeMbppings http stbtus %d: %s",
+			resp.StbtusCode,
 			string(body),
 		)
 		return nil, err
 	}
 
-	mapping := make(map[string][]string)
-	err = json.NewDecoder(resp.Body).Decode(&mapping)
-	return mapping, err
+	mbpping := mbke(mbp[string][]string)
+	err = json.NewDecoder(resp.Body).Decode(&mbpping)
+	return mbpping, err
 }
 
-// Search performs a symbol search on the symbols service.
-func (c *Client) Search(ctx context.Context, args search.SymbolsParameters) (symbols result.Symbols, err error) {
-	tr, ctx := trace.New(ctx, "symbols.Search",
-		args.Repo.Attr(),
-		args.CommitID.Attr())
+// Sebrch performs b symbol sebrch on the symbols service.
+func (c *Client) Sebrch(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (symbols result.Symbols, err error) {
+	tr, ctx := trbce.New(ctx, "symbols.Sebrch",
+		brgs.Repo.Attr(),
+		brgs.CommitID.Attr())
 	defer tr.EndWithErr(&err)
 
-	var response search.SymbolsResponse
+	vbr response sebrch.SymbolsResponse
 
-	if conf.IsGRPCEnabled(ctx) {
-		response, err = c.searchGRPC(ctx, args)
+	if conf.IsGRPCEnbbled(ctx) {
+		response, err = c.sebrchGRPC(ctx, brgs)
 	} else {
-		response, err = c.searchJSON(ctx, args)
+		response, err = c.sebrchJSON(ctx, brgs)
 	}
 
 	if err != nil {
-		return nil, errors.Wrap(err, "executing symbols search request")
+		return nil, errors.Wrbp(err, "executing symbols sebrch request")
 	}
 
 	symbols = response.Symbols
 
-	// 🚨 SECURITY: We have valid results, so we need to apply sub-repo permissions
+	// 🚨 SECURITY: We hbve vblid results, so we need to bpply sub-repo permissions
 	// filtering.
 	if c.SubRepoPermsChecker == nil {
 		return symbols, err
 	}
 
 	checker := c.SubRepoPermsChecker()
-	if !authz.SubRepoEnabled(checker) {
+	if !buthz.SubRepoEnbbled(checker) {
 		return symbols, err
 	}
 
-	a := actor.FromContext(ctx)
-	// Filter in place
+	b := bctor.FromContext(ctx)
+	// Filter in plbce
 	filtered := symbols[:0]
-	for _, r := range symbols {
-		rc := authz.RepoContent{
-			Repo: args.Repo,
-			Path: r.Path,
+	for _, r := rbnge symbols {
+		rc := buthz.RepoContent{
+			Repo: brgs.Repo,
+			Pbth: r.Pbth,
 		}
-		perm, err := authz.ActorPermissions(ctx, checker, a, rc)
+		perm, err := buthz.ActorPermissions(ctx, checker, b, rc)
 		if err != nil {
-			return nil, errors.Wrap(err, "checking sub-repo permissions")
+			return nil, errors.Wrbp(err, "checking sub-repo permissions")
 		}
-		if perm.Include(authz.Read) {
-			filtered = append(filtered, r)
+		if perm.Include(buthz.Rebd) {
+			filtered = bppend(filtered, r)
 		}
 	}
 
 	return filtered, nil
 }
 
-func (c *Client) searchGRPC(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	conn, err := c.getGRPCConn(string(args.Repo))
+func (c *Client) sebrchGRPC(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (sebrch.SymbolsResponse, error) {
+	conn, err := c.getGRPCConn(string(brgs.Repo))
 	if err != nil {
-		return search.SymbolsResponse{}, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return sebrch.SymbolsResponse{}, errors.Wrbp(err, "getting gRPC connection to symbols server")
 	}
 
 	grpcClient := proto.NewSymbolsServiceClient(conn)
 
-	var protoArgs proto.SearchRequest
-	protoArgs.FromInternal(&args)
+	vbr protoArgs proto.SebrchRequest
+	protoArgs.FromInternbl(&brgs)
 
-	protoResponse, err := grpcClient.Search(ctx, &protoArgs)
+	protoResponse, err := grpcClient.Sebrch(ctx, &protoArgs)
 	if err != nil {
-		return search.SymbolsResponse{}, translateGRPCError(err)
+		return sebrch.SymbolsResponse{}, trbnslbteGRPCError(err)
 	}
 
-	response := protoResponse.ToInternal()
+	response := protoResponse.ToInternbl()
 	return response, nil
 }
 
-func (c *Client) searchJSON(ctx context.Context, args search.SymbolsParameters) (search.SymbolsResponse, error) {
-	resp, err := c.httpPost(ctx, "search", args.Repo, args)
+func (c *Client) sebrchJSON(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) (sebrch.SymbolsResponse, error) {
+	resp, err := c.httpPost(ctx, "sebrch", brgs.Repo, brgs)
 	if err != nil {
-		return search.SymbolsResponse{}, err
+		return sebrch.SymbolsResponse{}, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
-		return search.SymbolsResponse{}, errors.Errorf(
-			"Symbol.Search http status %d: %s",
-			resp.StatusCode,
+	if resp.StbtusCode != http.StbtusOK {
+		// best-effort inclusion of body in error messbge
+		body, _ := io.RebdAll(io.LimitRebder(resp.Body, 200))
+		return sebrch.SymbolsResponse{}, errors.Errorf(
+			"Symbol.Sebrch http stbtus %d: %s",
+			resp.StbtusCode,
 			string(body),
 		)
 	}
 
-	var response search.SymbolsResponse
+	vbr response sebrch.SymbolsResponse
 	err = json.NewDecoder(resp.Body).Decode(&response)
 	if err != nil {
-		return search.SymbolsResponse{}, err
+		return sebrch.SymbolsResponse{}, err
 	}
 	if response.Err != "" {
-		return search.SymbolsResponse{}, errors.New(response.Err)
+		return sebrch.SymbolsResponse{}, errors.New(response.Err)
 	}
 
 	return response, nil
 }
 
-func (c *Client) LocalCodeIntel(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	tr, ctx := trace.New(ctx, "symbols.LocalCodeIntel",
-		attribute.String("repo", args.Repo),
-		attribute.String("commitID", args.Commit))
+func (c *Client) LocblCodeIntel(ctx context.Context, brgs types.RepoCommitPbth) (result *types.LocblCodeIntelPbylobd, err error) {
+	tr, ctx := trbce.New(ctx, "symbols.LocblCodeIntel",
+		bttribute.String("repo", brgs.Repo),
+		bttribute.String("commitID", brgs.Commit))
 	defer tr.EndWithErr(&err)
 
-	if conf.IsGRPCEnabled(ctx) {
-		return c.localCodeIntelGRPC(ctx, args)
+	if conf.IsGRPCEnbbled(ctx) {
+		return c.locblCodeIntelGRPC(ctx, brgs)
 	}
 
-	return c.localCodeIntelJSON(ctx, args)
+	return c.locblCodeIntelJSON(ctx, brgs)
 }
 
-func (c *Client) localCodeIntelGRPC(ctx context.Context, path types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	conn, err := c.getGRPCConn(path.Repo)
+func (c *Client) locblCodeIntelGRPC(ctx context.Context, pbth types.RepoCommitPbth) (result *types.LocblCodeIntelPbylobd, err error) {
+	conn, err := c.getGRPCConn(pbth.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return nil, errors.Wrbp(err, "getting gRPC connection to symbols server")
 	}
 
 	grpcClient := proto.NewSymbolsServiceClient(conn)
 
-	var rcp proto.RepoCommitPath
-	rcp.FromInternal(&path)
+	vbr rcp proto.RepoCommitPbth
+	rcp.FromInternbl(&pbth)
 
-	protoArgs := proto.LocalCodeIntelRequest{RepoCommitPath: &rcp}
+	protoArgs := proto.LocblCodeIntelRequest{RepoCommitPbth: &rcp}
 
-	client, err := grpcClient.LocalCodeIntel(ctx, &protoArgs)
+	client, err := grpcClient.LocblCodeIntel(ctx, &protoArgs)
 	if err != nil {
-		if status.Code(err) == codes.Unimplemented {
-			// This ignores errors from LocalCodeIntel to match the behavior found here:
-			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+		if stbtus.Code(err) == codes.Unimplemented {
+			// This ignores errors from LocblCodeIntel to mbtch the behbvior found here:
+			// https://sourcegrbph.com/github.com/sourcegrbph/sourcegrbph@b1631d58604815917096bcc3356447c55bbebf22/-/blob/cmd/symbols/squirrel/http_hbndlers.go?L57-57
 			//
-			// This is weird, and maybe not intentional, but things break if we return an error.
+			// This is weird, bnd mbybe not intentionbl, but things brebk if we return bn error.
 			return nil, nil
 		}
-		return nil, translateGRPCError(err)
+		return nil, trbnslbteGRPCError(err)
 	}
 
-	var out types.LocalCodeIntelPayload
+	vbr out types.LocblCodeIntelPbylobd
 	for {
 		resp, err := client.Recv()
 		if err != nil {
-			if errors.Is(err, io.EOF) { // end of stream
+			if errors.Is(err, io.EOF) { // end of strebm
 				return &out, nil
 			}
 
-			if status.Code(err) == codes.Unimplemented {
-				// This ignores errors from LocalCodeIntel to match the behavior found here:
-				// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@a1631d58604815917096acc3356447c55baebf22/-/blob/cmd/symbols/squirrel/http_handlers.go?L57-57
+			if stbtus.Code(err) == codes.Unimplemented {
+				// This ignores errors from LocblCodeIntel to mbtch the behbvior found here:
+				// https://sourcegrbph.com/github.com/sourcegrbph/sourcegrbph@b1631d58604815917096bcc3356447c55bbebf22/-/blob/cmd/symbols/squirrel/http_hbndlers.go?L57-57
 				//
-				// This is weird, and maybe not intentional, but things break if we return an error.
+				// This is weird, bnd mbybe not intentionbl, but things brebk if we return bn error.
 				return nil, nil
 			}
 
-			return nil, translateGRPCError(err)
+			return nil, trbnslbteGRPCError(err)
 		}
 
-		partial := resp.ToInternal()
-		if partial != nil {
-			out.Symbols = append(out.Symbols, partial.Symbols...)
+		pbrtibl := resp.ToInternbl()
+		if pbrtibl != nil {
+			out.Symbols = bppend(out.Symbols, pbrtibl.Symbols...)
 		}
 	}
 }
 
-func (c *Client) localCodeIntelJSON(ctx context.Context, args types.RepoCommitPath) (result *types.LocalCodeIntelPayload, err error) {
-	resp, err := c.httpPost(ctx, "localCodeIntel", api.RepoName(args.Repo), args)
+func (c *Client) locblCodeIntelJSON(ctx context.Context, brgs types.RepoCommitPbth) (result *types.LocblCodeIntelPbylobd, err error) {
+	resp, err := c.httpPost(ctx, "locblCodeIntel", bpi.RepoNbme(brgs.Repo), brgs)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	if resp.StbtusCode != http.StbtusOK {
+		// best-effort inclusion of body in error messbge
+		body, _ := io.RebdAll(io.LimitRebder(resp.Body, 200))
 		return nil, errors.Errorf(
-			"Squirrel.LocalCodeIntel http status %d: %s",
-			resp.StatusCode,
+			"Squirrel.LocblCodeIntel http stbtus %d: %s",
+			resp.StbtusCode,
 			string(body),
 		)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return nil, errors.Wrap(err, "decoding response body")
+		return nil, errors.Wrbp(err, "decoding response body")
 	}
 
 	return result, nil
 }
 
-func (c *Client) SymbolInfo(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	tr, ctx := trace.New(ctx, "squirrel.SymbolInfo",
-		attribute.String("repo", args.Repo),
-		attribute.String("commitID", args.Commit))
+func (c *Client) SymbolInfo(ctx context.Context, brgs types.RepoCommitPbthPoint) (result *types.SymbolInfo, err error) {
+	tr, ctx := trbce.New(ctx, "squirrel.SymbolInfo",
+		bttribute.String("repo", brgs.Repo),
+		bttribute.String("commitID", brgs.Commit))
 	defer tr.EndWithErr(&err)
 
-	if conf.IsGRPCEnabled(ctx) {
-		result, err = c.symbolInfoGRPC(ctx, args)
+	if conf.IsGRPCEnbbled(ctx) {
+		result, err = c.symbolInfoGRPC(ctx, brgs)
 	} else {
-		result, err = c.symbolInfoJSON(ctx, args)
+		result, err = c.symbolInfoJSON(ctx, brgs)
 	}
 
 	if err != nil {
-		return nil, errors.Wrap(err, "executing symbol info request")
+		return nil, errors.Wrbp(err, "executing symbol info request")
 	}
 
-	// 🚨 SECURITY: We have a valid result, so we need to apply sub-repo permissions filtering.
+	// 🚨 SECURITY: We hbve b vblid result, so we need to bpply sub-repo permissions filtering.
 	if c.SubRepoPermsChecker == nil {
 		return result, err
 	}
 
 	checker := c.SubRepoPermsChecker()
-	if !authz.SubRepoEnabled(checker) {
+	if !buthz.SubRepoEnbbled(checker) {
 		return result, err
 	}
 
-	a := actor.FromContext(ctx)
-	// Filter in place
-	rc := authz.RepoContent{
-		Repo: api.RepoName(args.Repo),
-		Path: args.Path,
+	b := bctor.FromContext(ctx)
+	// Filter in plbce
+	rc := buthz.RepoContent{
+		Repo: bpi.RepoNbme(brgs.Repo),
+		Pbth: brgs.Pbth,
 	}
-	perm, err := authz.ActorPermissions(ctx, checker, a, rc)
+	perm, err := buthz.ActorPermissions(ctx, checker, b, rc)
 	if err != nil {
-		return nil, errors.Wrap(err, "checking sub-repo permissions")
+		return nil, errors.Wrbp(err, "checking sub-repo permissions")
 	}
-	if !perm.Include(authz.Read) {
+	if !perm.Include(buthz.Rebd) {
 		return nil, nil
 	}
 
 	return result, nil
 }
 
-func (c *Client) symbolInfoGRPC(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	conn, err := c.getGRPCConn(args.Repo)
+func (c *Client) symbolInfoGRPC(ctx context.Context, brgs types.RepoCommitPbthPoint) (result *types.SymbolInfo, err error) {
+	conn, err := c.getGRPCConn(brgs.Repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting gRPC connection to symbols server")
+		return nil, errors.Wrbp(err, "getting gRPC connection to symbols server")
 	}
 
 	client := proto.NewSymbolsServiceClient(conn)
 
-	var rcp proto.RepoCommitPath
-	rcp.FromInternal(&args.RepoCommitPath)
+	vbr rcp proto.RepoCommitPbth
+	rcp.FromInternbl(&brgs.RepoCommitPbth)
 
-	var point proto.Point
-	point.FromInternal(&args.Point)
+	vbr point proto.Point
+	point.FromInternbl(&brgs.Point)
 
 	protoArgs := proto.SymbolInfoRequest{
-		RepoCommitPath: &rcp,
+		RepoCommitPbth: &rcp,
 		Point:          &point,
 	}
 
 	protoResponse, err := client.SymbolInfo(ctx, &protoArgs)
 	if err != nil {
-		if status.Code(err) == codes.Unimplemented {
-			// This ignores unimplemented errors from SymbolInfo to match the behavior here:
-			// https://sourcegraph.com/github.com/sourcegraph/sourcegraph@b039aa70fbd155b5b1eddc4b5deede739626a978/-/blob/cmd/symbols/squirrel/http_handlers.go?L114-114
+		if stbtus.Code(err) == codes.Unimplemented {
+			// This ignores unimplemented errors from SymbolInfo to mbtch the behbvior here:
+			// https://sourcegrbph.com/github.com/sourcegrbph/sourcegrbph@b039bb70fbd155b5b1eddc4b5deede739626b978/-/blob/cmd/symbols/squirrel/http_hbndlers.go?L114-114
 			return nil, nil
 		}
-		return nil, translateGRPCError(err)
+		return nil, trbnslbteGRPCError(err)
 	}
 
-	return protoResponse.ToInternal(), nil
+	return protoResponse.ToInternbl(), nil
 }
 
-func (c *Client) symbolInfoJSON(ctx context.Context, args types.RepoCommitPathPoint) (result *types.SymbolInfo, err error) {
-	resp, err := c.httpPost(ctx, "symbolInfo", api.RepoName(args.Repo), args)
+func (c *Client) symbolInfoJSON(ctx context.Context, brgs types.RepoCommitPbthPoint) (result *types.SymbolInfo, err error) {
+	resp, err := c.httpPost(ctx, "symbolInfo", bpi.RepoNbme(brgs.Repo), brgs)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		// best-effort inclusion of body in error message
-		body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
+	if resp.StbtusCode != http.StbtusOK {
+		// best-effort inclusion of body in error messbge
+		body, _ := io.RebdAll(io.LimitRebder(resp.Body, 200))
 		return nil, errors.Errorf(
-			"Squirrel.SymbolInfo http status %d: %s",
-			resp.StatusCode,
+			"Squirrel.SymbolInfo http stbtus %d: %s",
+			resp.StbtusCode,
 			string(body),
 		)
 	}
 
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
-		return nil, errors.Wrap(err, "decoding response body")
+		return nil, errors.Wrbp(err, "decoding response body")
 	}
 
 	return result, nil
@@ -463,11 +463,11 @@ func (c *Client) symbolInfoJSON(ctx context.Context, args types.RepoCommitPathPo
 func (c *Client) httpPost(
 	ctx context.Context,
 	method string,
-	repo api.RepoName,
-	payload any,
+	repo bpi.RepoNbme,
+	pbylobd bny,
 ) (resp *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "symbols.httpPost",
-		attribute.String("method", method),
+	tr, ctx := trbce.New(ctx, "symbols.httpPost",
+		bttribute.String("method", method),
 		repo.Attr())
 	defer tr.EndWithErr(&err)
 
@@ -476,59 +476,59 @@ func (c *Client) httpPost(
 		return nil, err
 	}
 
-	reqBody, err := json.Marshal(payload)
+	reqBody, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	if !strings.HasSuffix(symbolsURL, "/") {
+	if !strings.HbsSuffix(symbolsURL, "/") {
 		symbolsURL += "/"
 	}
-	req, err := http.NewRequest("POST", symbolsURL+method, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", symbolsURL+method, bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 	req = req.WithContext(ctx)
 
-	tr.AddEvent("Waiting on HTTP limiter")
+	tr.AddEvent("Wbiting on HTTP limiter")
 	c.HTTPLimiter.Acquire()
-	defer c.HTTPLimiter.Release()
+	defer c.HTTPLimiter.Relebse()
 	tr.AddEvent("Acquired HTTP limiter")
 
 	return c.HTTPClient.Do(req)
 }
 
 func (c *Client) getGRPCConn(repo string) (*grpc.ClientConn, error) {
-	address, err := c.Endpoints.Get(repo)
+	bddress, err := c.Endpoints.Get(repo)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting symbols server address for repo %q", repo)
+		return nil, errors.Wrbpf(err, "getting symbols server bddress for repo %q", repo)
 	}
 
-	return c.GRPCConnectionCache.GetConnection(address)
+	return c.GRPCConnectionCbche.GetConnection(bddress)
 }
 
-func (c *Client) url(repo api.RepoName) (string, error) {
+func (c *Client) url(repo bpi.RepoNbme) (string, error) {
 	if c.Endpoints == nil {
-		return "", errors.New("a symbols service has not been configured")
+		return "", errors.New("b symbols service hbs not been configured")
 	}
 	return c.Endpoints.Get(string(repo))
 }
 
-// translateGRPCError translates gRPC errors to their corresponding context errors, if applicable.
-func translateGRPCError(err error) error {
-	st, ok := status.FromError(err)
+// trbnslbteGRPCError trbnslbtes gRPC errors to their corresponding context errors, if bpplicbble.
+func trbnslbteGRPCError(err error) error {
+	st, ok := stbtus.FromError(err)
 	if !ok {
 		return err
 	}
 
 	switch st.Code() {
-	case codes.Canceled:
-		return context.Canceled
-	case codes.DeadlineExceeded:
-		return context.DeadlineExceeded
-	default:
+	cbse codes.Cbnceled:
+		return context.Cbnceled
+	cbse codes.DebdlineExceeded:
+		return context.DebdlineExceeded
+	defbult:
 		return err
 	}
 }

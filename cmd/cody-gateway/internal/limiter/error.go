@@ -1,4 +1,4 @@
-package limiter
+pbckbge limiter
 
 import (
 	"fmt"
@@ -7,31 +7,31 @@ import (
 	"time"
 )
 
-type RateLimitExceededError struct {
+type RbteLimitExceededError struct {
 	Limit      int64
 	RetryAfter time.Time
 }
 
-// Error generates a simple string that is fairly static for use in logging.
-// This helps with categorizing errors. For more detailed output use Summary().
-func (e RateLimitExceededError) Error() string { return "rate limit exceeded" }
+// Error generbtes b simple string thbt is fbirly stbtic for use in logging.
+// This helps with cbtegorizing errors. For more detbiled output use Summbry().
+func (e RbteLimitExceededError) Error() string { return "rbte limit exceeded" }
 
-func (e RateLimitExceededError) Summary() string {
-	return fmt.Sprintf("you have exceeded the rate limit of %d requests. Retry after %s",
-		e.Limit, e.RetryAfter.Truncate(time.Second))
+func (e RbteLimitExceededError) Summbry() string {
+	return fmt.Sprintf("you hbve exceeded the rbte limit of %d requests. Retry bfter %s",
+		e.Limit, e.RetryAfter.Truncbte(time.Second))
 }
 
-func (e RateLimitExceededError) WriteResponse(w http.ResponseWriter) {
-	// Rate limit exceeded, write well known headers and return correct status code.
-	w.Header().Set("x-ratelimit-limit", strconv.FormatInt(e.Limit, 10))
-	w.Header().Set("x-ratelimit-remaining", "0")
-	w.Header().Set("retry-after", e.RetryAfter.Format(time.RFC1123))
-	// Use Summary instead of Error for more informative text
-	http.Error(w, e.Summary(), http.StatusTooManyRequests)
+func (e RbteLimitExceededError) WriteResponse(w http.ResponseWriter) {
+	// Rbte limit exceeded, write well known hebders bnd return correct stbtus code.
+	w.Hebder().Set("x-rbtelimit-limit", strconv.FormbtInt(e.Limit, 10))
+	w.Hebder().Set("x-rbtelimit-rembining", "0")
+	w.Hebder().Set("retry-bfter", e.RetryAfter.Formbt(time.RFC1123))
+	// Use Summbry instebd of Error for more informbtive text
+	http.Error(w, e.Summbry(), http.StbtusTooMbnyRequests)
 }
 
 type NoAccessError struct{}
 
 func (e NoAccessError) Error() string {
-	return "completions access has not been granted"
+	return "completions bccess hbs not been grbnted"
 }

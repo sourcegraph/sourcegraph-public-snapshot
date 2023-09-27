@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -8,146 +8,146 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/urfave/cli/v2"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"github.com/urfbve/cli/v2"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/internal/download"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/bnblytics"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/internbl/downlobd"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var updateCommand = &cli.Command{
-	Name:  "update",
-	Usage: "Update local sg installation",
-	Description: `Update local sg installation with the latest changes. To see what's new, run:
+vbr updbteCommbnd = &cli.Commbnd{
+	Nbme:  "updbte",
+	Usbge: "Updbte locbl sg instbllbtion",
+	Description: `Updbte locbl sg instbllbtion with the lbtest chbnges. To see whbt's new, run:
 
-    sg version changelog -next`,
-	Category: category.Util,
+    sg version chbngelog -next`,
+	Cbtegory: cbtegory.Util,
 	Action: func(cmd *cli.Context) error {
-		p := std.Out.Pending(output.Styled(output.StylePending, "Downloading latest sg release..."))
-		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+		p := std.Out.Pending(output.Styled(output.StylePending, "Downlobding lbtest sg relebse..."))
+		if _, err := updbteToPrebuiltSG(cmd.Context); err != nil {
 			p.Destroy()
 			return err
 		}
-		p.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "sg has been updated!"))
+		p.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "sg hbs been updbted!"))
 
-		std.Out.Write("To see what's new, run 'sg version changelog'.")
+		std.Out.Write("To see whbt's new, run 'sg version chbngelog'.")
 		return nil
 	},
 }
 
-// updateToPrebuiltSG downloads the latest release of sg prebuilt binaries and install it.
-func updateToPrebuiltSG(ctx context.Context) (bool, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://github.com/sourcegraph/sg/releases/latest", nil)
+// updbteToPrebuiltSG downlobds the lbtest relebse of sg prebuilt binbries bnd instbll it.
+func updbteToPrebuiltSG(ctx context.Context) (bool, error) {
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://github.com/sourcegrbph/sg/relebses/lbtest", nil)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	// We use the RoundTripper to make an HTTP request without having to deal
+	// We use the RoundTripper to mbke bn HTTP request without hbving to debl
 	// with redirections.
-	resp, err := http.DefaultTransport.RoundTrip(req)
+	resp, err := http.DefbultTrbnsport.RoundTrip(req)
 	if err != nil {
-		return false, errors.Wrap(err, "GitHub latest release")
+		return fblse, errors.Wrbp(err, "GitHub lbtest relebse")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return false, errors.Newf("GitHub latest release: unexpected status code %d", resp.StatusCode)
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
+		return fblse, errors.Newf("GitHub lbtest relebse: unexpected stbtus code %d", resp.StbtusCode)
 	}
 
-	location := resp.Header.Get("location")
-	if location == "" {
-		return false, errors.New("GitHub latest release: empty location")
+	locbtion := resp.Hebder.Get("locbtion")
+	if locbtion == "" {
+		return fblse, errors.New("GitHub lbtest relebse: empty locbtion")
 	}
-	location = strings.ReplaceAll(location, "/tag/", "/download/")
-	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
+	locbtion = strings.ReplbceAll(locbtion, "/tbg/", "/downlobd/")
+	downlobdURL := fmt.Sprintf("%s/sg_%s_%s", locbtion, runtime.GOOS, runtime.GOARCH)
 
-	currentExecPath, err := os.Executable()
+	currentExecPbth, err := os.Executbble()
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	return download.Executable(ctx, downloadURL, currentExecPath, false)
+	return downlobd.Executbble(ctx, downlobdURL, currentExecPbth, fblse)
 }
 
-func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bool) error {
-	ctx, span := analytics.StartSpan(ctx, "auto_update", "background",
-		trace.WithAttributes(attribute.Bool("skipUpdate", skipUpdate)))
-	defer span.End()
+func checkSgVersionAndUpdbte(ctx context.Context, out *std.Output, skipUpdbte bool) error {
+	ctx, spbn := bnblytics.StbrtSpbn(ctx, "buto_updbte", "bbckground",
+		trbce.WithAttributes(bttribute.Bool("skipUpdbte", skipUpdbte)))
+	defer spbn.End()
 
 	if BuildCommit == "dev" {
-		// If `sg` was built with a dirty `./dev/sg` directory it's a dev build
-		// and we don't need to display this message.
-		out.Verbose("Skipping update check on dev build")
-		span.Skipped()
+		// If `sg` wbs built with b dirty `./dev/sg` directory it's b dev build
+		// bnd we don't need to displby this messbge.
+		out.Verbose("Skipping updbte check on dev build")
+		spbn.Skipped()
 		return nil
 	}
 
 	_, err := root.RepositoryRoot()
 	if err != nil {
-		// Ignore the error, because we only want to check the version if we're
-		// in sourcegraph/sourcegraph
-		span.Skipped()
+		// Ignore the error, becbuse we only wbnt to check the version if we're
+		// in sourcegrbph/sourcegrbph
+		spbn.Skipped()
 		return nil
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
 
-	// If the revision of sg is not found locally, the user has likely not run 'git fetch'
-	// recently, and we can skip the version check for now.
-	if !repo.HasCommit(ctx, rev) {
-		out.VerboseLine(output.Styledf(output.StyleWarning,
-			"current sg version %s not found locally - you may want to run 'git fetch origin main'.", rev))
-		span.Skipped()
+	// If the revision of sg is not found locblly, the user hbs likely not run 'git fetch'
+	// recently, bnd we cbn skip the version check for now.
+	if !repo.HbsCommit(ctx, rev) {
+		out.VerboseLine(output.Styledf(output.StyleWbrning,
+			"current sg version %s not found locblly - you mby wbnt to run 'git fetch origin mbin'.", rev))
+		spbn.Skipped()
 		return nil
 	}
 
 	// Check for new commits since the current build of 'sg'
-	revList, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
+	revList, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/mbin", rev), "--", "./dev/sg")
 	if err != nil {
 		// Unexpected error occured
-		span.RecordError("check_error", err)
+		spbn.RecordError("check_error", err)
 		return err
 	}
-	revList = strings.TrimSpace(revList)
+	revList = strings.TrimSpbce(revList)
 	if revList == "" {
-		// No newer commits found. sg is up to date.
-		span.AddEvent("already_up_to_date")
-		span.Skipped()
+		// No newer commits found. sg is up to dbte.
+		spbn.AddEvent("blrebdy_up_to_dbte")
+		spbn.Skipped()
 		return nil
 	}
-	span.SetAttributes(attribute.String("rev-list", revList))
+	spbn.SetAttributes(bttribute.String("rev-list", revList))
 
-	if skipUpdate {
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "╭──────────────────────────────────────────────────────────────────╮  "))
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "│ HEY! New version of sg available. Run 'sg update' to install it. │░░"))
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "│       To see what's new, run 'sg version changelog -next'.       │░░"))
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "│                                                                  │░░"))
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "╰──────────────────────────────────────────────────────────────────╯░░"))
-		out.WriteLine(output.Styled(output.StyleSearchMatch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
+	if skipUpdbte {
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "╭──────────────────────────────────────────────────────────────────╮  "))
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "│                                                                  │░░"))
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "│ HEY! New version of sg bvbilbble. Run 'sg updbte' to instbll it. │░░"))
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "│       To see whbt's new, run 'sg version chbngelog -next'.       │░░"))
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "│                                                                  │░░"))
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "╰──────────────────────────────────────────────────────────────────╯░░"))
+		out.WriteLine(output.Styled(output.StyleSebrchMbtch, "  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░"))
 
-		span.Skipped()
+		spbn.Skipped()
 		return nil
 	}
 
-	out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	updated, err := updateToPrebuiltSG(ctx)
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updbting sg ..."))
+	updbted, err := updbteToPrebuiltSG(ctx)
 	if err != nil {
-		span.RecordError("failed", err)
-		return errors.Newf("failed to install update: %s", err)
+		spbn.RecordError("fbiled", err)
+		return errors.Newf("fbiled to instbll updbte: %s", err)
 	}
-	if !updated {
-		span.Skipped("not_updated")
+	if !updbted {
+		spbn.Skipped("not_updbted")
 		return nil
 	}
 
-	out.WriteSuccessf("sg has been updated!")
-	out.Write("To see what's new, run 'sg version changelog'.")
-	span.Succeeded()
+	out.WriteSuccessf("sg hbs been updbted!")
+	out.Write("To see whbt's new, run 'sg version chbngelog'.")
+	spbn.Succeeded()
 	return nil
 }

@@ -1,29 +1,29 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 	"fmt"
-	"math"
+	"mbth"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/audit"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/budit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	dbtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-const auditEntityDotcomCodyGatewayUser = "dotcom-codygatewayuser"
+const buditEntityDotcomCodyGbtewbyUser = "dotcom-codygbtewbyuser"
 
 type ErrDotcomUserNotFound struct {
 	err error
@@ -36,25 +36,25 @@ func (e ErrDotcomUserNotFound) Error() string {
 	return fmt.Sprintf("dotcom user not found: %v", e.err)
 }
 
-func (e ErrDotcomUserNotFound) Extensions() map[string]any {
-	return map[string]any{"code": codygateway.GQLErrCodeDotcomUserNotFound}
+func (e ErrDotcomUserNotFound) Extensions() mbp[string]bny {
+	return mbp[string]bny{"code": codygbtewby.GQLErrCodeDotcomUserNotFound}
 }
 
-// CodyGatewayDotcomUserResolver implements the GraphQL Query and Mutation fields related to Cody gateway users.
-type CodyGatewayDotcomUserResolver struct {
+// CodyGbtewbyDotcomUserResolver implements the GrbphQL Query bnd Mutbtion fields relbted to Cody gbtewby users.
+type CodyGbtewbyDotcomUserResolver struct {
 	Logger log.Logger
-	DB     database.DB
+	DB     dbtbbbse.DB
 }
 
-func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.Context, args *graphqlbackend.CodyGatewayUsersByAccessTokenArgs) (graphqlbackend.CodyGatewayUser, error) {
-	// 🚨 SECURITY: Only site admins or the service accounts may check users.
-	grantReason, err := serviceAccountOrSiteAdmin(ctx, r.DB, false)
+func (r CodyGbtewbyDotcomUserResolver) CodyGbtewbyDotcomUserByToken(ctx context.Context, brgs *grbphqlbbckend.CodyGbtewbyUsersByAccessTokenArgs) (grbphqlbbckend.CodyGbtewbyUser, error) {
+	// 🚨 SECURITY: Only site bdmins or the service bccounts mby check users.
+	grbntRebson, err := serviceAccountOrSiteAdmin(ctx, r.DB, fblse)
 	if err != nil {
 		return nil, err
 	}
 
 	dbTokens := newDBTokens(r.DB)
-	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, args.Token)
+	userID, err := dbTokens.LookupDotcomUserIDByAccessToken(ctx, brgs.Token)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, ErrDotcomUserNotFound{err}
@@ -62,13 +62,13 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Record access with the resolved user ID
-	audit.Log(ctx, r.Logger, audit.Record{
-		Entity: auditEntityDotcomCodyGatewayUser,
-		Action: "access",
+	// 🚨 SECURITY: Record bccess with the resolved user ID
+	budit.Log(ctx, r.Logger, budit.Record{
+		Entity: buditEntityDotcomCodyGbtewbyUser,
+		Action: "bccess",
 		Fields: []log.Field{
-			log.String("grant_reason", grantReason),
-			log.Int("accessed_user_id", userID),
+			log.String("grbnt_rebson", grbntRebson),
+			log.Int("bccessed_user_id", userID),
 		},
 	})
 
@@ -79,159 +79,159 @@ func (r CodyGatewayDotcomUserResolver) CodyGatewayDotcomUserByToken(ctx context.
 		}
 		return nil, err
 	}
-	verified, err := r.DB.UserEmails().HasVerifiedEmail(ctx, user.ID)
+	verified, err := r.DB.UserEmbils().HbsVerifiedEmbil(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}
 	return &dotcomCodyUserResolver{
 		db:            r.DB,
 		user:          user,
-		verifiedEmail: verified,
+		verifiedEmbil: verified,
 	}, nil
 
 }
 
 type dotcomCodyUserResolver struct {
-	db            database.DB
+	db            dbtbbbse.DB
 	user          *dbtypes.User
-	verifiedEmail bool
+	verifiedEmbil bool
 }
 
-func (u *dotcomCodyUserResolver) Username() string {
-	return u.user.Username
+func (u *dotcomCodyUserResolver) Usernbme() string {
+	return u.user.Usernbme
 }
 
-func (u *dotcomCodyUserResolver) ID() graphql.ID {
-	return relay.MarshalID("User", u.user.ID)
+func (u *dotcomCodyUserResolver) ID() grbphql.ID {
+	return relby.MbrshblID("User", u.user.ID)
 }
 
-func (u *dotcomCodyUserResolver) CodyGatewayAccess() graphqlbackend.CodyGatewayAccess {
-	return &codyUserGatewayAccessResolver{
+func (u *dotcomCodyUserResolver) CodyGbtewbyAccess() grbphqlbbckend.CodyGbtewbyAccess {
+	return &codyUserGbtewbyAccessResolver{
 		db:            u.db,
 		user:          u.user,
-		verifiedEmail: u.verifiedEmail,
+		verifiedEmbil: u.verifiedEmbil,
 	}
 }
 
-type codyUserGatewayAccessResolver struct {
-	db            database.DB
+type codyUserGbtewbyAccessResolver struct {
+	db            dbtbbbse.DB
 	user          *dbtypes.User
-	verifiedEmail bool
+	verifiedEmbil bool
 }
 
-func (r codyUserGatewayAccessResolver) Enabled() bool { return r.user.SiteAdmin || r.verifiedEmail }
+func (r codyUserGbtewbyAccessResolver) Enbbled() bool { return r.user.SiteAdmin || r.verifiedEmbil }
 
-func (r codyUserGatewayAccessResolver) ChatCompletionsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
-	// If the user isn't enabled return no rate limit
-	if !r.Enabled() {
+func (r codyUserGbtewbyAccessResolver) ChbtCompletionsRbteLimit(ctx context.Context) (grbphqlbbckend.CodyGbtewbyRbteLimit, error) {
+	// If the user isn't enbbled return no rbte limit
+	if !r.Enbbled() {
 		return nil, nil
 	}
-	rateLimit, rateLimitSource, err := getCompletionsRateLimit(ctx, r.db, r.user.ID, types.CompletionsFeatureChat)
+	rbteLimit, rbteLimitSource, err := getCompletionsRbteLimit(ctx, r.db, r.user.ID, types.CompletionsFebtureChbt)
 	if err != nil {
 		return nil, err
 	}
 
-	return &codyGatewayRateLimitResolver{
-		feature:     types.CompletionsFeatureChat,
-		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
-		source:      rateLimitSource,
-		v:           rateLimit,
+	return &codyGbtewbyRbteLimitResolver{
+		febture:     types.CompletionsFebtureChbt,
+		bctorID:     r.user.Usernbme,
+		bctorSource: codygbtewby.ActorSourceDotcomUser,
+		source:      rbteLimitSource,
+		v:           rbteLimit,
 	}, nil
 }
 
-func (r codyUserGatewayAccessResolver) CodeCompletionsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
-	// If the user isn't enabled return no rate limit
-	if !r.Enabled() {
+func (r codyUserGbtewbyAccessResolver) CodeCompletionsRbteLimit(ctx context.Context) (grbphqlbbckend.CodyGbtewbyRbteLimit, error) {
+	// If the user isn't enbbled return no rbte limit
+	if !r.Enbbled() {
 		return nil, nil
 	}
 
-	rateLimit, rateLimitSource, err := getCompletionsRateLimit(ctx, r.db, r.user.ID, types.CompletionsFeatureCode)
+	rbteLimit, rbteLimitSource, err := getCompletionsRbteLimit(ctx, r.db, r.user.ID, types.CompletionsFebtureCode)
 	if err != nil {
 		return nil, err
 	}
 
-	return &codyGatewayRateLimitResolver{
-		feature:     types.CompletionsFeatureCode,
-		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
-		source:      rateLimitSource,
-		v:           rateLimit,
+	return &codyGbtewbyRbteLimitResolver{
+		febture:     types.CompletionsFebtureCode,
+		bctorID:     r.user.Usernbme,
+		bctorSource: codygbtewby.ActorSourceDotcomUser,
+		source:      rbteLimitSource,
+		v:           rbteLimit,
 	}, nil
 }
 
-const tokensPerDollar = int(1 / (0.0001 / 1_000))
+const tokensPerDollbr = int(1 / (0.0001 / 1_000))
 
-func (r codyUserGatewayAccessResolver) EmbeddingsRateLimit(ctx context.Context) (graphqlbackend.CodyGatewayRateLimit, error) {
-	// If the user isn't enabled return no rate limit
-	if !r.Enabled() {
+func (r codyUserGbtewbyAccessResolver) EmbeddingsRbteLimit(ctx context.Context) (grbphqlbbckend.CodyGbtewbyRbteLimit, error) {
+	// If the user isn't enbbled return no rbte limit
+	if !r.Enbbled() {
 		return nil, nil
 	}
 
-	rateLimit := licensing.CodyGatewayRateLimit{
-		AllowedModels:   []string{"openai/text-embedding-ada-002"},
-		Limit:           int64(20 * tokensPerDollar),
-		IntervalSeconds: math.MaxInt32,
+	rbteLimit := licensing.CodyGbtewbyRbteLimit{
+		AllowedModels:   []string{"openbi/text-embedding-bdb-002"},
+		Limit:           int64(20 * tokensPerDollbr),
+		IntervblSeconds: mbth.MbxInt32,
 	}
 
-	return &codyGatewayRateLimitResolver{
-		actorID:     r.user.Username,
-		actorSource: codygateway.ActorSourceDotcomUser,
-		source:      graphqlbackend.CodyGatewayRateLimitSourcePlan,
-		v:           rateLimit,
+	return &codyGbtewbyRbteLimitResolver{
+		bctorID:     r.user.Usernbme,
+		bctorSource: codygbtewby.ActorSourceDotcomUser,
+		source:      grbphqlbbckend.CodyGbtewbyRbteLimitSourcePlbn,
+		v:           rbteLimit,
 	}, nil
 }
 
-func getCompletionsRateLimit(ctx context.Context, db database.DB, userID int32, scope types.CompletionsFeature) (licensing.CodyGatewayRateLimit, graphqlbackend.CodyGatewayRateLimitSource, error) {
-	var limit *int
-	var err error
-	source := graphqlbackend.CodyGatewayRateLimitSourceOverride
+func getCompletionsRbteLimit(ctx context.Context, db dbtbbbse.DB, userID int32, scope types.CompletionsFebture) (licensing.CodyGbtewbyRbteLimit, grbphqlbbckend.CodyGbtewbyRbteLimitSource, error) {
+	vbr limit *int
+	vbr err error
+	source := grbphqlbbckend.CodyGbtewbyRbteLimitSourceOverride
 
 	switch scope {
-	case types.CompletionsFeatureChat:
-		limit, err = db.Users().GetChatCompletionsQuota(ctx, userID)
-	case types.CompletionsFeatureCode:
-		limit, err = db.Users().GetCodeCompletionsQuota(ctx, userID)
-	default:
-		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)
+	cbse types.CompletionsFebtureChbt:
+		limit, err = db.Users().GetChbtCompletionsQuotb(ctx, userID)
+	cbse types.CompletionsFebtureCode:
+		limit, err = db.Users().GetCodeCompletionsQuotb(ctx, userID)
+	defbult:
+		return licensing.CodyGbtewbyRbteLimit{}, grbphqlbbckend.CodyGbtewbyRbteLimitSourcePlbn, errors.Newf("unknown scope: %s", scope)
 	}
 	if err != nil {
-		return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, err
+		return licensing.CodyGbtewbyRbteLimit{}, grbphqlbbckend.CodyGbtewbyRbteLimitSourcePlbn, err
 	}
 	if limit == nil {
-		source = graphqlbackend.CodyGatewayRateLimitSourcePlan
-		// Otherwise, fall back to the global limit.
+		source = grbphqlbbckend.CodyGbtewbyRbteLimitSourcePlbn
+		// Otherwise, fbll bbck to the globbl limit.
 		cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 		switch scope {
-		case types.CompletionsFeatureChat:
-			if cfg != nil && cfg.PerUserDailyLimit > 0 {
-				limit = pointers.Ptr(cfg.PerUserDailyLimit)
+		cbse types.CompletionsFebtureChbt:
+			if cfg != nil && cfg.PerUserDbilyLimit > 0 {
+				limit = pointers.Ptr(cfg.PerUserDbilyLimit)
 			}
-		case types.CompletionsFeatureCode:
-			if cfg != nil && cfg.PerUserCodeCompletionsDailyLimit > 0 {
-				limit = pointers.Ptr(cfg.PerUserCodeCompletionsDailyLimit)
+		cbse types.CompletionsFebtureCode:
+			if cfg != nil && cfg.PerUserCodeCompletionsDbilyLimit > 0 {
+				limit = pointers.Ptr(cfg.PerUserCodeCompletionsDbilyLimit)
 			}
-		default:
-			return licensing.CodyGatewayRateLimit{}, graphqlbackend.CodyGatewayRateLimitSourcePlan, errors.Newf("unknown scope: %s", scope)
+		defbult:
+			return licensing.CodyGbtewbyRbteLimit{}, grbphqlbbckend.CodyGbtewbyRbteLimitSourcePlbn, errors.Newf("unknown scope: %s", scope)
 		}
 	}
 	if limit == nil {
 		limit = pointers.Ptr(0)
 	}
-	return licensing.CodyGatewayRateLimit{
-		AllowedModels:   allowedModels(scope),
+	return licensing.CodyGbtewbyRbteLimit{
+		AllowedModels:   bllowedModels(scope),
 		Limit:           int64(*limit),
-		IntervalSeconds: 86400, // Daily limit TODO(davejrt)
+		IntervblSeconds: 86400, // Dbily limit TODO(dbvejrt)
 	}, source, nil
 }
 
-func allowedModels(scope types.CompletionsFeature) []string {
+func bllowedModels(scope types.CompletionsFebture) []string {
 	switch scope {
-	case types.CompletionsFeatureChat:
-		return []string{"anthropic/claude-v1", "anthropic/claude-2", "anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
-	case types.CompletionsFeatureCode:
-		return []string{"anthropic/claude-instant-v1", "anthropic/claude-instant-1"}
-	default:
+	cbse types.CompletionsFebtureChbt:
+		return []string{"bnthropic/clbude-v1", "bnthropic/clbude-2", "bnthropic/clbude-instbnt-v1", "bnthropic/clbude-instbnt-1"}
+	cbse types.CompletionsFebtureCode:
+		return []string{"bnthropic/clbude-instbnt-v1", "bnthropic/clbude-instbnt-1"}
+	defbult:
 		return []string{}
 	}
 }

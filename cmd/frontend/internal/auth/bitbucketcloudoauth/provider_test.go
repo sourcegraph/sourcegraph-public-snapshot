@@ -1,4 +1,4 @@
-package bitbucketcloudoauth
+pbckbge bitbucketcloudobuth
 
 import (
 	"sort"
@@ -6,30 +6,30 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestRequestedScopes(t *testing.T) {
-	defer envvar.MockSourcegraphDotComMode(false)
+	defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 	tests := []struct {
-		schema    *schema.BitbucketCloudAuthProvider
+		schemb    *schemb.BitbucketCloudAuthProvider
 		expScopes []string
 	}{
 		{
-			schema: &schema.BitbucketCloudAuthProvider{
-				ApiScope: "account,email,repository",
+			schemb: &schemb.BitbucketCloudAuthProvider{
+				ApiScope: "bccount,embil,repository",
 			},
-			expScopes: []string{"account", "email", "repository"},
+			expScopes: []string{"bccount", "embil", "repository"},
 		},
 	}
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run("", func(t *testing.T) {
-			scopes := requestedScopes(test.schema.ApiScope)
+			scopes := requestedScopes(test.schemb.ApiScope)
 			sort.Strings(scopes)
 			if diff := cmp.Diff(test.expScopes, scopes); diff != "" {
-				t.Fatalf("scopes: %s", diff)
+				t.Fbtblf("scopes: %s", diff)
 			}
 		})
 	}

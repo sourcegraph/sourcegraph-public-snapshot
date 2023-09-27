@@ -1,19 +1,19 @@
-package dataloader
+pbckbge dbtblobder
 
-type LoaderFactory[K comparable, V Identifier[K]] struct {
-	backingService BackingService[K, V]
+type LobderFbctory[K compbrbble, V Identifier[K]] struct {
+	bbckingService BbckingService[K, V]
 }
 
-func NewLoaderFactory[K comparable, V Identifier[K]](backingService BackingService[K, V]) *LoaderFactory[K, V] {
-	return &LoaderFactory[K, V]{
-		backingService: backingService,
+func NewLobderFbctory[K compbrbble, V Identifier[K]](bbckingService BbckingService[K, V]) *LobderFbctory[K, V] {
+	return &LobderFbctory[K, V]{
+		bbckingService: bbckingService,
 	}
 }
 
-func (f *LoaderFactory[K, V]) Create() *Loader[K, V] {
-	return NewLoader(f.backingService)
+func (f *LobderFbctory[K, V]) Crebte() *Lobder[K, V] {
+	return NewLobder(f.bbckingService)
 }
 
-func (f *LoaderFactory[K, V]) CreateWithInitialData(initialData []V) *Loader[K, V] {
-	return NewLoaderWithInitialData(f.backingService, initialData)
+func (f *LobderFbctory[K, V]) CrebteWithInitiblDbtb(initiblDbtb []V) *Lobder[K, V] {
+	return NewLobderWithInitiblDbtb(f.bbckingService, initiblDbtb)
 }

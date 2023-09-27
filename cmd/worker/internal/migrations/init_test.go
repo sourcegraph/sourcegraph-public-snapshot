@@ -1,29 +1,29 @@
-package migrations
+pbckbge migrbtions
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
 )
 
-func TestParseVersion(t *testing.T) {
-	testCases := []struct {
+func TestPbrseVersion(t *testing.T) {
+	testCbses := []struct {
 		input    string
-		expected oobmigration.Version
+		expected oobmigrbtion.Version
 	}{
-		{"v4.5.3", oobmigration.NewVersion(4, 5)},
-		{"201149_2023-02-23_4.5-dc8d16268c06", oobmigration.NewVersion(4, 5)},
-		{"201149_2023-02-23_4.5-dc8d16268c06_patch", oobmigration.NewVersion(4, 5)},
-		{"main-dry-run-ef-un-revert_201149_2023-02-23_4.5-dc8d16268c06", oobmigration.NewVersion(4, 5)},
-		{"main-dry-run-ef-un-revert_201149_2023-02-23_4.5-dc8d16268c06_patch", oobmigration.NewVersion(4, 5)},
+		{"v4.5.3", oobmigrbtion.NewVersion(4, 5)},
+		{"201149_2023-02-23_4.5-dc8d16268c06", oobmigrbtion.NewVersion(4, 5)},
+		{"201149_2023-02-23_4.5-dc8d16268c06_pbtch", oobmigrbtion.NewVersion(4, 5)},
+		{"mbin-dry-run-ef-un-revert_201149_2023-02-23_4.5-dc8d16268c06", oobmigrbtion.NewVersion(4, 5)},
+		{"mbin-dry-run-ef-un-revert_201149_2023-02-23_4.5-dc8d16268c06_pbtch", oobmigrbtion.NewVersion(4, 5)},
 	}
 
-	for _, testCase := range testCases {
-		version, ok := parseVersion(testCase.input)
+	for _, testCbse := rbnge testCbses {
+		version, ok := pbrseVersion(testCbse.input)
 		if !ok {
-			t.Errorf("unexpected unparseable version %q", testCase.input)
-		} else if version.String() != testCase.expected.String() {
-			t.Errorf("unexpected version for %q. want=%q have=%q", testCase.input, testCase.expected, version)
+			t.Errorf("unexpected unpbrsebble version %q", testCbse.input)
+		} else if version.String() != testCbse.expected.String() {
+			t.Errorf("unexpected version for %q. wbnt=%q hbve=%q", testCbse.input, testCbse.expected, version)
 		}
 	}
 }

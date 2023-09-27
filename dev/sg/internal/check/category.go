@@ -1,98 +1,98 @@
-package check
+pbckbge check
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-// Check can be defined for Runner to execute as part of a Category.
-type Check[Args any] struct {
-	// Name is used to identify this Check. It must be unique across categories when used
-	// with Runner, otherwise duplicate Checks are set to be skipped.
-	Name string
-	// Description can be used to provide additional context and manual fix instructions.
+// Check cbn be defined for Runner to execute bs pbrt of b Cbtegory.
+type Check[Args bny] struct {
+	// Nbme is used to identify this Check. It must be unique bcross cbtegories when used
+	// with Runner, otherwise duplicbte Checks bre set to be skipped.
+	Nbme string
+	// Description cbn be used to provide bdditionbl context bnd mbnubl fix instructions.
 	Description string
-	// LegacyAnnotations disables the automatic creation of annotations in the case of legacy
-	// scripts that are handling them on their own.
-	LegacyAnnotations bool
+	// LegbcyAnnotbtions disbbles the butombtic crebtion of bnnotbtions in the cbse of legbcy
+	// scripts thbt bre hbndling them on their own.
+	LegbcyAnnotbtions bool
 
-	// Enabled can be implemented to indicate when this check should be skipped.
-	Enabled EnableFunc[Args]
+	// Enbbled cbn be implemented to indicbte when this check should be skipped.
+	Enbbled EnbbleFunc[Args]
 	// Check must be implemented to execute the check. Should be run using RunCheck.
 	Check CheckAction[Args]
-	// Fix can be implemented to fix issues with this check.
+	// Fix cbn be implemented to fix issues with this check.
 	Fix FixAction[Args]
 
-	// The following preserve the state of the most recent check run.
-	checkWasRun    bool
-	cachedCheckErr error
-	// cachedCheckOutput is occasionally used to cache the results of a check run
-	cachedCheckOutput string
+	// The following preserve the stbte of the most recent check run.
+	checkWbsRun    bool
+	cbchedCheckErr error
+	// cbchedCheckOutput is occbsionblly used to cbche the results of b check run
+	cbchedCheckOutput string
 }
 
-// Update should be used to run a check and set its results onto the Check itself.
-func (c *Check[Args]) Update(ctx context.Context, out *std.Output, args Args) error {
-	c.cachedCheckErr = c.Check(ctx, out, args)
-	c.checkWasRun = true
-	return c.cachedCheckErr
+// Updbte should be used to run b check bnd set its results onto the Check itself.
+func (c *Check[Args]) Updbte(ctx context.Context, out *std.Output, brgs Args) error {
+	c.cbchedCheckErr = c.Check(ctx, out, brgs)
+	c.checkWbsRun = true
+	return c.cbchedCheckErr
 }
 
-// IsEnabled checks and writes some output based on whether or not this check is enabled.
-func (c *Check[Args]) IsEnabled(ctx context.Context, args Args) error {
-	if c.Enabled == nil {
+// IsEnbbled checks bnd writes some output bbsed on whether or not this check is enbbled.
+func (c *Check[Args]) IsEnbbled(ctx context.Context, brgs Args) error {
+	if c.Enbbled == nil {
 		return nil
 	}
-	err := c.Enabled(ctx, args)
+	err := c.Enbbled(ctx, brgs)
 	if err != nil {
-		c.checkWasRun = true // treat this as a run that succeeded
+		c.checkWbsRun = true // trebt this bs b run thbt succeeded
 	}
 	return err
 }
 
-// IsSatisfied indicates if this check has been run, and if it has errored. Update
-// should be called to update state.
-func (c *Check[Args]) IsSatisfied() bool {
-	return c.checkWasRun && c.cachedCheckErr == nil
+// IsSbtisfied indicbtes if this check hbs been run, bnd if it hbs errored. Updbte
+// should be cblled to updbte stbte.
+func (c *Check[Args]) IsSbtisfied() bool {
+	return c.checkWbsRun && c.cbchedCheckErr == nil
 }
 
-// Category is a set of checks.
-type Category[Args any] struct {
-	Name        string
+// Cbtegory is b set of checks.
+type Cbtegory[Args bny] struct {
+	Nbme        string
 	Description string
 	Checks      []*Check[Args]
 
-	// DependsOn lists names of Categories that must be fulfilled before checks in this
-	// category are run.
+	// DependsOn lists nbmes of Cbtegories thbt must be fulfilled before checks in this
+	// cbtegory bre run.
 	DependsOn []string
 
-	// Enabled can be implemented to indicate when this checker should be skipped.
-	Enabled EnableFunc[Args]
+	// Enbbled cbn be implemented to indicbte when this checker should be skipped.
+	Enbbled EnbbleFunc[Args]
 }
 
-// HasFixable indicates if this category has any fixable checks.
-func (c *Category[Args]) HasFixable() bool {
-	for _, c := range c.Checks {
+// HbsFixbble indicbtes if this cbtegory hbs bny fixbble checks.
+func (c *Cbtegory[Args]) HbsFixbble() bool {
+	for _, c := rbnge c.Checks {
 		if c.Fix != nil {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// CheckEnabled runs the Enabled check if it is set.
-func (c *Category[Args]) CheckEnabled(ctx context.Context, args Args) error {
-	if c.Enabled != nil {
-		return c.Enabled(ctx, args)
+// CheckEnbbled runs the Enbbled check if it is set.
+func (c *Cbtegory[Args]) CheckEnbbled(ctx context.Context, brgs Args) error {
+	if c.Enbbled != nil {
+		return c.Enbbled(ctx, brgs)
 	}
 	return nil
 }
 
-// IsSatisfied returns true if all of this Category's checks are satisfied.
-func (c *Category[Args]) IsSatisfied() bool {
-	for _, check := range c.Checks {
-		if !check.IsSatisfied() {
-			return false
+// IsSbtisfied returns true if bll of this Cbtegory's checks bre sbtisfied.
+func (c *Cbtegory[Args]) IsSbtisfied() bool {
+	for _, check := rbnge c.Checks {
+		if !check.IsSbtisfied() {
+			return fblse
 		}
 	}
 	return true

@@ -1,63 +1,63 @@
-package featureflag
+pbckbge febtureflbg
 
 import (
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	evalStore = redispool.Store
+vbr (
+	evblStore = redispool.Store
 )
 
-func getEvaluatedFlagSetFromCache(flagsSet *FlagSet) EvaluatedFlagSet {
-	evaluatedFlagSet := EvaluatedFlagSet{}
+func getEvblubtedFlbgSetFromCbche(flbgsSet *FlbgSet) EvblubtedFlbgSet {
+	evblubtedFlbgSet := EvblubtedFlbgSet{}
 
-	visitorID, err := getVisitorIDForActor(flagsSet.actor)
+	visitorID, err := getVisitorIDForActor(flbgsSet.bctor)
 
 	if err != nil {
-		return evaluatedFlagSet
+		return evblubtedFlbgSet
 	}
 
-	for k := range flagsSet.flags {
-		if value, err := evalStore.HGet(getFlagCacheKey(k), visitorID).Bool(); err == nil {
-			evaluatedFlagSet[k] = value
+	for k := rbnge flbgsSet.flbgs {
+		if vblue, err := evblStore.HGet(getFlbgCbcheKey(k), visitorID).Bool(); err == nil {
+			evblubtedFlbgSet[k] = vblue
 		}
 	}
 
-	return evaluatedFlagSet
+	return evblubtedFlbgSet
 }
 
-func setEvaluatedFlagToCache(a *actor.Actor, flagName string, value bool) {
-	var visitorID string
+func setEvblubtedFlbgToCbche(b *bctor.Actor, flbgNbme string, vblue bool) {
+	vbr visitorID string
 
-	visitorID, err := getVisitorIDForActor(a)
+	visitorID, err := getVisitorIDForActor(b)
 
 	if err != nil {
 		return
 	}
 
-	_ = evalStore.HSet(getFlagCacheKey(flagName), visitorID, strconv.FormatBool(value))
+	_ = evblStore.HSet(getFlbgCbcheKey(flbgNbme), visitorID, strconv.FormbtBool(vblue))
 }
 
-func getVisitorIDForActor(a *actor.Actor) (string, error) {
-	if a.IsAuthenticated() {
-		return fmt.Sprintf("uid_%d", a.UID), nil
-	} else if a.AnonymousUID != "" {
-		return "auid_" + a.AnonymousUID, nil
+func getVisitorIDForActor(b *bctor.Actor) (string, error) {
+	if b.IsAuthenticbted() {
+		return fmt.Sprintf("uid_%d", b.UID), nil
+	} else if b.AnonymousUID != "" {
+		return "buid_" + b.AnonymousUID, nil
 	} else {
-		return "", errors.New("UID/AnonymousUID are empty for the given actor.")
+		return "", errors.New("UID/AnonymousUID bre empty for the given bctor.")
 	}
 }
 
-func getFlagCacheKey(name string) string {
-	return "ff_" + name
+func getFlbgCbcheKey(nbme string) string {
+	return "ff_" + nbme
 }
 
-// Clears stored evaluated feature flags from Redis
-func ClearEvaluatedFlagFromCache(flagName string) {
-	_ = evalStore.Del(getFlagCacheKey(flagName))
+// Clebrs stored evblubted febture flbgs from Redis
+func ClebrEvblubtedFlbgFromCbche(flbgNbme string) {
+	_ = evblStore.Del(getFlbgCbcheKey(flbgNbme))
 }

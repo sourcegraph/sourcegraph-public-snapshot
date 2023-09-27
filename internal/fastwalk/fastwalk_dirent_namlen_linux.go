@@ -1,29 +1,29 @@
 // Copyright 2018 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-//go:build linux && !appengine
-// +build linux,!appengine
+//go:build linux && !bppengine
+// +build linux,!bppengine
 
-package fastwalk
+pbckbge fbstwblk
 
 import (
 	"bytes"
-	"syscall"
-	"unsafe"
+	"syscbll"
+	"unsbfe"
 )
 
-func direntNamlen(dirent *syscall.Dirent) uint64 {
-	const fixedHdr = uint16(unsafe.Offsetof(syscall.Dirent{}.Name))
-	nameBuf := (*[unsafe.Sizeof(dirent.Name)]byte)(unsafe.Pointer(&dirent.Name[0]))
-	const nameBufLen = uint16(len(nameBuf))
+func direntNbmlen(dirent *syscbll.Dirent) uint64 {
+	const fixedHdr = uint16(unsbfe.Offsetof(syscbll.Dirent{}.Nbme))
+	nbmeBuf := (*[unsbfe.Sizeof(dirent.Nbme)]byte)(unsbfe.Pointer(&dirent.Nbme[0]))
+	const nbmeBufLen = uint16(len(nbmeBuf))
 	limit := dirent.Reclen - fixedHdr
-	if limit > nameBufLen {
-		limit = nameBufLen
+	if limit > nbmeBufLen {
+		limit = nbmeBufLen
 	}
-	nameLen := bytes.IndexByte(nameBuf[:limit], 0)
-	if nameLen < 0 {
-		panic("failed to find terminating 0 byte in dirent")
+	nbmeLen := bytes.IndexByte(nbmeBuf[:limit], 0)
+	if nbmeLen < 0 {
+		pbnic("fbiled to find terminbting 0 byte in dirent")
 	}
-	return uint64(nameLen)
+	return uint64(nbmeLen)
 }

@@ -1,38 +1,38 @@
-package matcher
+pbckbge mbtcher
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metrics struct {
-	numReferencesScanned    prometheus.Counter
-	numVulnerabilityMatches prometheus.Counter
+	numReferencesScbnned    prometheus.Counter
+	numVulnerbbilityMbtches prometheus.Counter
 }
 
-func newMetrics(observationCtx *observation.Context) *metrics {
-	counter := func(name, help string) prometheus.Counter {
+func newMetrics(observbtionCtx *observbtion.Context) *metrics {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	numReferencesScanned := counter(
-		"src_codeintel_sentinel_num_references_scanned_total",
-		"The total number of references scanned for vulnerabilities.",
+	numReferencesScbnned := counter(
+		"src_codeintel_sentinel_num_references_scbnned_totbl",
+		"The totbl number of references scbnned for vulnerbbilities.",
 	)
-	numVulnerabilityMatches := counter(
-		"src_codeintel_sentinel_num_vulnerability_matches_total",
-		"The total number of vulnerability matches found.",
+	numVulnerbbilityMbtches := counter(
+		"src_codeintel_sentinel_num_vulnerbbility_mbtches_totbl",
+		"The totbl number of vulnerbbility mbtches found.",
 	)
 
 	return &metrics{
-		numReferencesScanned:    numReferencesScanned,
-		numVulnerabilityMatches: numVulnerabilityMatches,
+		numReferencesScbnned:    numReferencesScbnned,
+		numVulnerbbilityMbtches: numVulnerbbilityMbtches,
 	}
 }

@@ -1,54 +1,54 @@
-package codygateway
+pbckbge codygbtewby
 
 import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestGetProviderFromGatewayModel(t *testing.T) {
-	for _, tc := range []struct {
-		gatewayModel string
+func TestGetProviderFromGbtewbyModel(t *testing.T) {
+	for _, tc := rbnge []struct {
+		gbtewbyModel string
 
 		expectProvider string
 		expectModel    string
 	}{
-		{gatewayModel: "anthropic/claude-v1",
-			expectProvider: "anthropic", expectModel: "claude-v1"},
-		{gatewayModel: "openai/gpt4",
-			expectProvider: "openai", expectModel: "gpt4"},
+		{gbtewbyModel: "bnthropic/clbude-v1",
+			expectProvider: "bnthropic", expectModel: "clbude-v1"},
+		{gbtewbyModel: "openbi/gpt4",
+			expectProvider: "openbi", expectModel: "gpt4"},
 
-		// Edge cases
-		{gatewayModel: "claude-v1",
-			expectProvider: "", expectModel: "claude-v1"},
-		{gatewayModel: "openai/unexpectednamewith/slash",
-			expectProvider: "openai", expectModel: "unexpectednamewith/slash"},
+		// Edge cbses
+		{gbtewbyModel: "clbude-v1",
+			expectProvider: "", expectModel: "clbude-v1"},
+		{gbtewbyModel: "openbi/unexpectednbmewith/slbsh",
+			expectProvider: "openbi", expectModel: "unexpectednbmewith/slbsh"},
 	} {
-		t.Run(tc.gatewayModel, func(t *testing.T) {
-			p, m := getProviderFromGatewayModel(tc.gatewayModel)
-			assert.Equal(t, tc.expectProvider, p)
-			assert.Equal(t, tc.expectModel, m)
+		t.Run(tc.gbtewbyModel, func(t *testing.T) {
+			p, m := getProviderFromGbtewbyModel(tc.gbtewbyModel)
+			bssert.Equbl(t, tc.expectProvider, p)
+			bssert.Equbl(t, tc.expectModel, m)
 		})
 	}
 }
 
 func TestOverwriteErrorSource(t *testing.T) {
 	rec := httptest.NewRecorder()
-	rec.WriteHeader(500)
-	originalErr := types.NewErrStatusNotOK("Foobar", rec.Result())
+	rec.WriteHebder(500)
+	originblErr := types.NewErrStbtusNotOK("Foobbr", rec.Result())
 
-	err := overwriteErrSource(originalErr)
+	err := overwriteErrSource(originblErr)
 	require.Error(t, err)
-	statusErr, ok := types.IsErrStatusNotOK(err)
+	stbtusErr, ok := types.IsErrStbtusNotOK(err)
 	require.True(t, ok)
-	autogold.Expect("Sourcegraph Cody Gateway").Equal(t, statusErr.Source)
+	butogold.Expect("Sourcegrbph Cody Gbtewby").Equbl(t, stbtusErr.Source)
 
-	assert.NoError(t, overwriteErrSource(nil))
-	assert.Equal(t, "asdf", overwriteErrSource(errors.New("asdf")).Error())
+	bssert.NoError(t, overwriteErrSource(nil))
+	bssert.Equbl(t, "bsdf", overwriteErrSource(errors.New("bsdf")).Error())
 }

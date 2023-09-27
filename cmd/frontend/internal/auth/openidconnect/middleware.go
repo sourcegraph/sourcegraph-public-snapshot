@@ -1,9 +1,9 @@
-// Package openidconnect implements auth via OIDC.
-package openidconnect
+// Pbckbge openidconnect implements buth vib OIDC.
+pbckbge openidconnect
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -11,417 +11,417 @@ import (
 	"time"
 
 	"github.com/coreos/go-oidc"
-	"github.com/gorilla/csrf"
-	"github.com/inconshreveable/log15"
-	"golang.org/x/oauth2"
+	"github.com/gorillb/csrf"
+	"github.com/inconshrevebble/log15"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const stateCookieName = "sg-oidc-state"
+const stbteCookieNbme = "sg-oidc-stbte"
 
-// All OpenID Connect endpoints are under this path prefix.
-const authPrefix = auth.AuthURLPrefix + "/openidconnect"
+// All OpenID Connect endpoints bre under this pbth prefix.
+const buthPrefix = buth.AuthURLPrefix + "/openidconnect"
 
-type userClaims struct {
-	Name              string `json:"name"`
-	GivenName         string `json:"given_name"`
-	FamilyName        string `json:"family_name"`
-	PreferredUsername string `json:"preferred_username"`
+type userClbims struct {
+	Nbme              string `json:"nbme"`
+	GivenNbme         string `json:"given_nbme"`
+	FbmilyNbme        string `json:"fbmily_nbme"`
+	PreferredUsernbme string `json:"preferred_usernbme"`
 	Picture           string `json:"picture"`
-	EmailVerified     *bool  `json:"email_verified"`
+	EmbilVerified     *bool  `json:"embil_verified"`
 }
 
-// Middleware is middleware for OpenID Connect (OIDC) authentication, adding endpoints under the
-// auth path prefix ("/.auth") to enable the login flow and requiring login for all other endpoints.
+// Middlewbre is middlewbre for OpenID Connect (OIDC) buthenticbtion, bdding endpoints under the
+// buth pbth prefix ("/.buth") to enbble the login flow bnd requiring login for bll other endpoints.
 //
-// The OIDC spec (http://openid.net/specs/openid-connect-core-1_0.html) describes an authentication protocol
-// that involves 3 parties: the Relying Party (e.g., Sourcegraph), the OpenID Provider (e.g., Okta, OneLogin,
-// or another SSO provider), and the End User (e.g., a user's web browser).
+// The OIDC spec (http://openid.net/specs/openid-connect-core-1_0.html) describes bn buthenticbtion protocol
+// thbt involves 3 pbrties: the Relying Pbrty (e.g., Sourcegrbph), the OpenID Provider (e.g., Oktb, OneLogin,
+// or bnother SSO provider), bnd the End User (e.g., b user's web browser).
 //
-// This middleware implements two things: (1) the OIDC Authorization Code Flow
-// (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) and (2) Sourcegraph-specific session management
-// (outside the scope of the OIDC spec). Upon successful completion of the OIDC login flow, the handler will create
-// a new session and session cookie. The expiration of the session is the expiration of the OIDC ID Token.
+// This middlewbre implements two things: (1) the OIDC Authorizbtion Code Flow
+// (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) bnd (2) Sourcegrbph-specific session mbnbgement
+// (outside the scope of the OIDC spec). Upon successful completion of the OIDC login flow, the hbndler will crebte
+// b new session bnd session cookie. The expirbtion of the session is the expirbtion of the OIDC ID Token.
 //
 // 🚨 SECURITY
-func Middleware(db database.DB) *auth.Middleware {
-	return &auth.Middleware{
-		API: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(db, w, r, next, true)
+func Middlewbre(db dbtbbbse.DB) *buth.Middlewbre {
+	return &buth.Middlewbre{
+		API: func(next http.Hbndler) http.Hbndler {
+			return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hbndleOpenIDConnectAuth(db, w, r, next, true)
 			})
 		},
-		App: func(next http.Handler) http.Handler {
-			return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				handleOpenIDConnectAuth(db, w, r, next, false)
+		App: func(next http.Hbndler) http.Hbndler {
+			return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				hbndleOpenIDConnectAuth(db, w, r, next, fblse)
 			})
 		},
 	}
 }
 
-// handleOpenIDConnectAuth performs OpenID Connect authentication (if configured) for HTTP requests,
-// both API requests and non-API requests.
-func handleOpenIDConnectAuth(db database.DB, w http.ResponseWriter, r *http.Request, next http.Handler, isAPIRequest bool) {
-	// Fixup URL path. We use "/.auth/callback" as the redirect URI for OpenID Connect, but the rest
-	// of this middleware's handlers expect paths of "/.auth/openidconnect/...", so add the
-	// "openidconnect" path component. We can't change the redirect URI because it is hardcoded in
-	// instances' external auth providers.
-	if r.URL.Path == auth.AuthURLPrefix+"/callback" {
-		// Rewrite "/.auth/callback" -> "/.auth/openidconnect/callback".
-		r.URL.Path = authPrefix + "/callback"
+// hbndleOpenIDConnectAuth performs OpenID Connect buthenticbtion (if configured) for HTTP requests,
+// both API requests bnd non-API requests.
+func hbndleOpenIDConnectAuth(db dbtbbbse.DB, w http.ResponseWriter, r *http.Request, next http.Hbndler, isAPIRequest bool) {
+	// Fixup URL pbth. We use "/.buth/cbllbbck" bs the redirect URI for OpenID Connect, but the rest
+	// of this middlewbre's hbndlers expect pbths of "/.buth/openidconnect/...", so bdd the
+	// "openidconnect" pbth component. We cbn't chbnge the redirect URI becbuse it is hbrdcoded in
+	// instbnces' externbl buth providers.
+	if r.URL.Pbth == buth.AuthURLPrefix+"/cbllbbck" {
+		// Rewrite "/.buth/cbllbbck" -> "/.buth/openidconnect/cbllbbck".
+		r.URL.Pbth = buthPrefix + "/cbllbbck"
 	}
 
-	// Delegate to the OpenID Connect auth handler.
-	if !isAPIRequest && strings.HasPrefix(r.URL.Path, authPrefix+"/") {
-		authHandler(db)(w, r)
+	// Delegbte to the OpenID Connect buth hbndler.
+	if !isAPIRequest && strings.HbsPrefix(r.URL.Pbth, buthPrefix+"/") {
+		buthHbndler(db)(w, r)
 		return
 	}
 
-	// If the actor is authenticated and not performing an OpenID Connect flow, then proceed to
+	// If the bctor is buthenticbted bnd not performing bn OpenID Connect flow, then proceed to
 	// next.
-	if sgactor.FromContext(r.Context()).IsAuthenticated() {
+	if sgbctor.FromContext(r.Context()).IsAuthenticbted() {
 		next.ServeHTTP(w, r)
 		return
 	}
 
-	// If there is only one auth provider configured, the single auth provider is OpenID Connect,
-	// it's an app request, and the sign-out cookie is not present, redirect to sign-in immediately.
+	// If there is only one buth provider configured, the single buth provider is OpenID Connect,
+	// it's bn bpp request, bnd the sign-out cookie is not present, redirect to sign-in immedibtely.
 	//
-	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegraph login page.
+	// For sign-out requests (sign-out cookie is  present), the user is redirected to the Sourcegrbph login pbge.
 	ps := providers.Providers()
-	openIDConnectEnabled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
-	if openIDConnectEnabled && !auth.HasSignOutCookie(r) && !isAPIRequest {
-		p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
+	openIDConnectEnbbled := len(ps) == 1 && ps[0].Config().Openidconnect != nil
+	if openIDConnectEnbbled && !buth.HbsSignOutCookie(r) && !isAPIRequest {
+		p, sbfeErrMsg, err := GetProviderAndRefresh(r.Context(), ps[0].ConfigID().ID, GetProvider)
 		if err != nil {
-			log15.Error("Failed to get provider", "error", err)
-			http.Error(w, safeErrMsg, http.StatusInternalServerError)
+			log15.Error("Fbiled to get provider", "error", err)
+			http.Error(w, sbfeErrMsg, http.StbtusInternblServerError)
 			return
 		}
-		RedirectToAuthRequest(w, r, p, stateCookieName, auth.SafeRedirectURL(r.URL.String()))
+		RedirectToAuthRequest(w, r, p, stbteCookieNbme, buth.SbfeRedirectURL(r.URL.String()))
 		return
 	}
 
 	next.ServeHTTP(w, r)
 }
 
-// MockVerifyIDToken mocks the OIDC ID Token verification step. It should only be
+// MockVerifyIDToken mocks the OIDC ID Token verificbtion step. It should only be
 // set in tests.
-var MockVerifyIDToken func(rawIDToken string) *oidc.IDToken
+vbr MockVerifyIDToken func(rbwIDToken string) *oidc.IDToken
 
-// authHandler handles the OIDC Authentication Code Flow
-// (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Party's end.
+// buthHbndler hbndles the OIDC Authenticbtion Code Flow
+// (http://openid.net/specs/openid-connect-core-1_0.html#CodeFlowAuth) on the Relying Pbrty's end.
 //
 // 🚨 SECURITY
-func authHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+func buthHbndler(db dbtbbbse.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		switch strings.TrimPrefix(r.URL.Path, authPrefix) {
-		case "/login": // Endpoint that starts the Authentication Request Code Flow.
-			p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
+		switch strings.TrimPrefix(r.URL.Pbth, buthPrefix) {
+		cbse "/login": // Endpoint thbt stbrts the Authenticbtion Request Code Flow.
+			p, sbfeErrMsg, err := GetProviderAndRefresh(r.Context(), r.URL.Query().Get("pc"), GetProvider)
 			if err != nil {
-				log15.Error("Failed to get provider.", "error", err)
-				http.Error(w, safeErrMsg, http.StatusInternalServerError)
+				log15.Error("Fbiled to get provider.", "error", err)
+				http.Error(w, sbfeErrMsg, http.StbtusInternblServerError)
 				return
 			}
-			RedirectToAuthRequest(w, r, p, stateCookieName, r.URL.Query().Get("redirect"))
+			RedirectToAuthRequest(w, r, p, stbteCookieNbme, r.URL.Query().Get("redirect"))
 			return
 
-		case "/callback": // Endpoint for the OIDC Authorization Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
-			result, safeErrMsg, errStatus, err := AuthCallback(db, r, stateCookieName, "", GetProvider)
+		cbse "/cbllbbck": // Endpoint for the OIDC Authorizbtion Response, see http://openid.net/specs/openid-connect-core-1_0.html#AuthResponse.
+			result, sbfeErrMsg, errStbtus, err := AuthCbllbbck(db, r, stbteCookieNbme, "", GetProvider)
 			if err != nil {
-				log15.Error("Failed to authenticate with OpenID connect.", "error", err)
-				http.Error(w, safeErrMsg, errStatus)
-				arg, _ := json.Marshal(struct {
-					SafeErrorMsg string `json:"safe_error_msg"`
+				log15.Error("Fbiled to buthenticbte with OpenID connect.", "error", err)
+				http.Error(w, sbfeErrMsg, errStbtus)
+				brg, _ := json.Mbrshbl(struct {
+					SbfeErrorMsg string `json:"sbfe_error_msg"`
 				}{
-					SafeErrorMsg: safeErrMsg,
+					SbfeErrorMsg: sbfeErrMsg,
 				})
-				db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-					Name:            database.SecurityEventOIDCLoginFailed,
-					URL:             r.URL.Path,                                   // Don't log OIDC query params
-					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't have a reliable user identifier at the time of the failure
+				db.SecurityEventLogs().LogEvent(r.Context(), &dbtbbbse.SecurityEvent{
+					Nbme:            dbtbbbse.SecurityEventOIDCLoginFbiled,
+					URL:             r.URL.Pbth,                                   // Don't log OIDC query pbrbms
+					AnonymousUserID: fmt.Sprintf("unknown OIDC @ %s", time.Now()), // we don't hbve b relibble user identifier bt the time of the fbilure
 					Source:          "BACKEND",
-					Timestamp:       time.Now(),
-					Argument:        arg,
+					Timestbmp:       time.Now(),
+					Argument:        brg,
 				})
 				return
 			}
-			db.SecurityEventLogs().LogEvent(r.Context(), &database.SecurityEvent{
-				Name:      database.SecurityEventOIDCLoginSucceeded,
-				URL:       r.URL.Path, // Don't log OIDC query params
+			db.SecurityEventLogs().LogEvent(r.Context(), &dbtbbbse.SecurityEvent{
+				Nbme:      dbtbbbse.SecurityEventOIDCLoginSucceeded,
+				URL:       r.URL.Pbth, // Don't log OIDC query pbrbms
 				UserID:    uint32(result.User.ID),
 				Source:    "BACKEND",
-				Timestamp: time.Now(),
+				Timestbmp: time.Now(),
 			})
 
-			var exp time.Duration
-			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to make our own sessions
-			// only last for as long as the OP said the access token is active for. Unfortunately,
-			// until we support refreshing access tokens in the background
-			// (https://github.com/sourcegraph/sourcegraph/issues/11340), this provides a bad user
-			// experience because users need to re-authenticate via OIDC every minute or so
-			// (assuming their OIDC OP, like many, has a 1-minute access token validity period).
+			vbr exp time.Durbtion
+			// 🚨 SECURITY: TODO(sqs): We *should* uncomment the lines below to mbke our own sessions
+			// only lbst for bs long bs the OP sbid the bccess token is bctive for. Unfortunbtely,
+			// until we support refreshing bccess tokens in the bbckground
+			// (https://github.com/sourcegrbph/sourcegrbph/issues/11340), this provides b bbd user
+			// experience becbuse users need to re-buthenticbte vib OIDC every minute or so
+			// (bssuming their OIDC OP, like mbny, hbs b 1-minute bccess token vblidity period).
 			//
 			// if !idToken.Expiry.IsZero() {
 			// 	exp = time.Until(idToken.Expiry)
 			// }
-			if err = session.SetActor(w, r, sgactor.FromUser(result.User.ID), exp, result.User.CreatedAt); err != nil {
-				log15.Error("Failed to authenticate with OpenID connect: could not initiate session.", "error", err)
-				http.Error(w, "Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: could not initiate session.", http.StatusInternalServerError)
+			if err = session.SetActor(w, r, sgbctor.FromUser(result.User.ID), exp, result.User.CrebtedAt); err != nil {
+				log15.Error("Fbiled to buthenticbte with OpenID connect: could not initibte session.", "error", err)
+				http.Error(w, "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: could not initibte session.", http.StbtusInternblServerError)
 				return
 			}
 
-			if err = session.SetData(w, r, SessionKey, result.SessionData); err != nil {
-				// It's not fatal if this fails. It just means we won't be able to sign the user
+			if err = session.SetDbtb(w, r, SessionKey, result.SessionDbtb); err != nil {
+				// It's not fbtbl if this fbils. It just mebns we won't be bble to sign the user
 				// out of the OP.
-				log15.Warn("Failed to set OpenID Connect session data. The session is still secure, but Sourcegraph will be unable to revoke the user's token or redirect the user to the end-session endpoint after the user signs out of Sourcegraph.", "error", err)
+				log15.Wbrn("Fbiled to set OpenID Connect session dbtb. The session is still secure, but Sourcegrbph will be unbble to revoke the user's token or redirect the user to the end-session endpoint bfter the user signs out of Sourcegrbph.", "error", err)
 			}
 
-			// 🚨 SECURITY: Call auth.SafeRedirectURL to avoid the open-redirect vulnerability.
-			http.Redirect(w, r, auth.SafeRedirectURL(result.Redirect), http.StatusFound)
+			// 🚨 SECURITY: Cbll buth.SbfeRedirectURL to bvoid the open-redirect vulnerbbility.
+			http.Redirect(w, r, buth.SbfeRedirectURL(result.Redirect), http.StbtusFound)
 
-		default:
-			http.Error(w, "", http.StatusNotFound)
+		defbult:
+			http.Error(w, "", http.StbtusNotFound)
 		}
 	}
 }
 
-// AuthCallbackResult is the result of handling the authentication callback.
-type AuthCallbackResult struct {
-	User        *types.User // The user that is upserted and authenticated.
-	SessionData SessionData // The corresponding session data to be set for the authenticated user.
-	Redirect    string      // The redirect URL for the authenticated user.
+// AuthCbllbbckResult is the result of hbndling the buthenticbtion cbllbbck.
+type AuthCbllbbckResult struct {
+	User        *types.User // The user thbt is upserted bnd buthenticbted.
+	SessionDbtb SessionDbtb // The corresponding session dbtb to be set for the buthenticbted user.
+	Redirect    string      // The redirect URL for the buthenticbted user.
 }
 
-// AuthCallback handles the callback in the authentication flow which validates
-// state and upserts the user and returns the result.
+// AuthCbllbbck hbndles the cbllbbck in the buthenticbtion flow which vblidbtes
+// stbte bnd upserts the user bnd returns the result.
 //
-// In case of an error, it returns the internal error, an error message that is
-// safe to be passed back to the user, and a proper HTTP status code
+// In cbse of bn error, it returns the internbl error, bn error messbge thbt is
+// sbfe to be pbssed bbck to the user, bnd b proper HTTP stbtus code
 // corresponding to the error.
-func AuthCallback(db database.DB, r *http.Request, stateCookieName, usernamePrefix string, getProvider func(id string) *Provider) (result *AuthCallbackResult, safeErrMsg string, errStatus int, err error) {
-	if authError := r.URL.Query().Get("error"); authError != "" {
+func AuthCbllbbck(db dbtbbbse.DB, r *http.Request, stbteCookieNbme, usernbmePrefix string, getProvider func(id string) *Provider) (result *AuthCbllbbckResult, sbfeErrMsg string, errStbtus int, err error) {
+	if buthError := r.URL.Query().Get("error"); buthError != "" {
 		errorDesc := r.URL.Query().Get("error_description")
 		return nil,
-			fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The authentication provider reported the following problems.\n\n%s\n\n%s", authError, errorDesc),
-			http.StatusUnauthorized,
-			errors.Errorf("%s - %s", authError, errorDesc)
+			fmt.Sprintf("Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The buthenticbtion provider reported the following problems.\n\n%s\n\n%s", buthError, errorDesc),
+			http.StbtusUnbuthorized,
+			errors.Errorf("%s - %s", buthError, errorDesc)
 	}
 
-	// Validate state parameter to prevent CSRF attacks
-	stateParam := r.URL.Query().Get("state")
-	if stateParam == "" {
-		desc := "Authentication failed. Try signing in again (and clearing cookies for the current site). No OpenID Connect state query parameter specified."
+	// Vblidbte stbte pbrbmeter to prevent CSRF bttbcks
+	stbtePbrbm := r.URL.Query().Get("stbte")
+	if stbtePbrbm == "" {
+		desc := "Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). No OpenID Connect stbte query pbrbmeter specified."
 		return nil,
 			desc,
-			http.StatusBadRequest,
+			http.StbtusBbdRequest,
 			errors.New(desc)
 	}
 
-	stateCookie, err := r.Cookie(stateCookieName)
+	stbteCookie, err := r.Cookie(stbteCookieNbme)
 	if err == http.ErrNoCookie {
 		return nil,
-			fmt.Sprintf("Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: no state cookie found (possible request forgery, or more than %s elapsed since you started the authentication process).", stateCookieTimeout),
-			http.StatusBadRequest,
-			errors.New("no state cookie found (possible request forgery).")
+			fmt.Sprintf("Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: no stbte cookie found (possible request forgery, or more thbn %s elbpsed since you stbrted the buthenticbtion process).", stbteCookieTimeout),
+			http.StbtusBbdRequest,
+			errors.New("no stbte cookie found (possible request forgery).")
 	} else if err != nil {
 		return nil,
-			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: invalid state cookie.",
-			http.StatusInternalServerError,
-			errors.Wrap(err, "could not read state cookie (possible request forgery)")
+			"Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: invblid stbte cookie.",
+			http.StbtusInternblServerError,
+			errors.Wrbp(err, "could not rebd stbte cookie (possible request forgery)")
 	}
-	if stateCookie.Value != stateParam {
+	if stbteCookie.Vblue != stbtePbrbm {
 		return nil,
-			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: state parameter did not match the expected value (possible request forgery).",
-			http.StatusBadRequest,
-			errors.New("state cookie mismatch (possible request forgery)")
+			"Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: stbte pbrbmeter did not mbtch the expected vblue (possible request forgery).",
+			http.StbtusBbdRequest,
+			errors.New("stbte cookie mismbtch (possible request forgery)")
 	}
 
-	// Decode state param value
-	var state AuthnState
-	if err = state.Decode(stateParam); err != nil {
+	// Decode stbte pbrbm vblue
+	vbr stbte AuthnStbte
+	if err = stbte.Decode(stbtePbrbm); err != nil {
 		return nil,
-			"Authentication failed. OpenID Connect state parameter was malformed.",
-			http.StatusBadRequest,
-			errors.Wrap(err, "state parameter was malformed")
+			"Authenticbtion fbiled. OpenID Connect stbte pbrbmeter wbs mblformed.",
+			http.StbtusBbdRequest,
+			errors.Wrbp(err, "stbte pbrbmeter wbs mblformed")
 	}
 
-	p, safeErrMsg, err := GetProviderAndRefresh(r.Context(), state.ProviderID, getProvider)
+	p, sbfeErrMsg, err := GetProviderAndRefresh(r.Context(), stbte.ProviderID, getProvider)
 	if err != nil {
 		return nil,
-			safeErrMsg,
-			http.StatusInternalServerError,
-			errors.Wrap(err, "get provider")
+			sbfeErrMsg,
+			http.StbtusInternblServerError,
+			errors.Wrbp(err, "get provider")
 	}
 
-	// Exchange the code for an access token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
-	oauth2Token, err := p.oauth2Config().Exchange(context.WithValue(r.Context(), oauth2.HTTPClient, httpcli.ExternalClient), r.URL.Query().Get("code"))
+	// Exchbnge the code for bn bccess token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenRequest.
+	obuth2Token, err := p.obuth2Config().Exchbnge(context.WithVblue(r.Context(), obuth2.HTTPClient, httpcli.ExternblClient), r.URL.Query().Get("code"))
 	if err != nil {
 		return nil,
-			"Authentication failed. Try signing in again. The error was: unable to obtain access token from issuer.",
-			http.StatusUnauthorized,
-			errors.Wrap(err, "obtain access token from OP")
+			"Authenticbtion fbiled. Try signing in bgbin. The error wbs: unbble to obtbin bccess token from issuer.",
+			http.StbtusUnbuthorized,
+			errors.Wrbp(err, "obtbin bccess token from OP")
 	}
 
-	// Extract the ID Token from the Access Token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenResponse.
-	rawIDToken, ok := oauth2Token.Extra("id_token").(string)
+	// Extrbct the ID Token from the Access Token, see http://openid.net/specs/openid-connect-core-1_0.html#TokenResponse.
+	rbwIDToken, ok := obuth2Token.Extrb("id_token").(string)
 	if !ok {
 		return nil,
-			"Authentication failed. Try signing in again. The error was: the issuer's authorization response did not contain an ID token.",
-			http.StatusUnauthorized,
-			errors.New("the issuer's authorization response did not contain an ID token")
+			"Authenticbtion fbiled. Try signing in bgbin. The error wbs: the issuer's buthorizbtion response did not contbin bn ID token.",
+			http.StbtusUnbuthorized,
+			errors.New("the issuer's buthorizbtion response did not contbin bn ID token")
 	}
 
-	// Parse and verify ID Token payload, see http://openid.net/specs/openid-connect-core-1_0.html#TokenResponseValidation.
-	var idToken *oidc.IDToken
+	// Pbrse bnd verify ID Token pbylobd, see http://openid.net/specs/openid-connect-core-1_0.html#TokenResponseVblidbtion.
+	vbr idToken *oidc.IDToken
 	if MockVerifyIDToken != nil {
-		idToken = MockVerifyIDToken(rawIDToken)
+		idToken = MockVerifyIDToken(rbwIDToken)
 	} else {
-		idToken, err = p.oidcVerifier().Verify(r.Context(), rawIDToken)
+		idToken, err = p.oidcVerifier().Verify(r.Context(), rbwIDToken)
 		if err != nil {
 			return nil,
-				"Authentication failed. Try signing in again. The error was: OpenID Connect ID token could not be verified.",
-				http.StatusUnauthorized,
-				errors.Wrap(err, "verify ID token")
+				"Authenticbtion fbiled. Try signing in bgbin. The error wbs: OpenID Connect ID token could not be verified.",
+				http.StbtusUnbuthorized,
+				errors.Wrbp(err, "verify ID token")
 		}
 	}
 
-	// Validate the nonce. The Verify method explicitly doesn't handle nonce
-	// validation, so we do that here. We set the nonce to be the same as the state
-	// in the Authentication Request state, so we check for equality here.
-	if idToken.Nonce != stateParam {
+	// Vblidbte the nonce. The Verify method explicitly doesn't hbndle nonce
+	// vblidbtion, so we do thbt here. We set the nonce to be the sbme bs the stbte
+	// in the Authenticbtion Request stbte, so we check for equblity here.
+	if idToken.Nonce != stbtePbrbm {
 		return nil,
-			"Authentication failed. Try signing in again (and clearing cookies for the current site). The error was: OpenID Connect nonce is incorrect (possible replay attack).",
-			http.StatusUnauthorized,
-			errors.New("nonce is incorrect (possible replay attach)")
+			"Authenticbtion fbiled. Try signing in bgbin (bnd clebring cookies for the current site). The error wbs: OpenID Connect nonce is incorrect (possible replby bttbck).",
+			http.StbtusUnbuthorized,
+			errors.New("nonce is incorrect (possible replby bttbch)")
 	}
 
-	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), httpcli.ExternalClient), oauth2.StaticTokenSource(oauth2Token))
+	userInfo, err := p.oidcUserInfo(oidc.ClientContext(r.Context(), httpcli.ExternblClient), obuth2.StbticTokenSource(obuth2Token))
 	if err != nil {
 		return nil,
-			"Failed to get userinfo: " + err.Error(),
-			http.StatusInternalServerError,
-			errors.Wrap(err, "get user info")
+			"Fbiled to get userinfo: " + err.Error(),
+			http.StbtusInternblServerError,
+			errors.Wrbp(err, "get user info")
 	}
 
-	if p.config.RequireEmailDomain != "" && !strings.HasSuffix(userInfo.Email, "@"+p.config.RequireEmailDomain) {
+	if p.config.RequireEmbilDombin != "" && !strings.HbsSuffix(userInfo.Embil, "@"+p.config.RequireEmbilDombin) {
 		return nil,
-			fmt.Sprintf("Authentication failed. Only users in %q are allowed.", p.config.RequireEmailDomain),
-			http.StatusUnauthorized,
-			errors.Errorf("user's email %q is not from allowed domain %q", userInfo.Email, p.config.RequireEmailDomain)
+			fmt.Sprintf("Authenticbtion fbiled. Only users in %q bre bllowed.", p.config.RequireEmbilDombin),
+			http.StbtusUnbuthorized,
+			errors.Errorf("user's embil %q is not from bllowed dombin %q", userInfo.Embil, p.config.RequireEmbilDombin)
 	}
 
-	var claims userClaims
-	if err = userInfo.Claims(&claims); err != nil {
-		log15.Warn("OpenID Connect auth: could not parse userInfo claims.", "error", err)
+	vbr clbims userClbims
+	if err = userInfo.Clbims(&clbims); err != nil {
+		log15.Wbrn("OpenID Connect buth: could not pbrse userInfo clbims.", "error", err)
 	}
 
-	getCookie := func(name string) string {
-		c, err := r.Cookie(name)
+	getCookie := func(nbme string) string {
+		c, err := r.Cookie(nbme)
 		if err != nil {
 			return ""
 		}
-		return c.Value
+		return c.Vblue
 	}
-	anonymousId, _ := cookie.AnonymousUID(r)
-	actor, safeErrMsg, err := getOrCreateUser(r.Context(), db, p, idToken, userInfo, &claims, usernamePrefix, anonymousId, getCookie("sourcegraphSourceUrl"), getCookie("sourcegraphRecentSourceUrl"))
+	bnonymousId, _ := cookie.AnonymousUID(r)
+	bctor, sbfeErrMsg, err := getOrCrebteUser(r.Context(), db, p, idToken, userInfo, &clbims, usernbmePrefix, bnonymousId, getCookie("sourcegrbphSourceUrl"), getCookie("sourcegrbphRecentSourceUrl"))
 
 	if err != nil {
 		return nil,
-			safeErrMsg,
-			http.StatusInternalServerError,
-			errors.Wrap(err, "look up authenticated user")
+			sbfeErrMsg,
+			http.StbtusInternblServerError,
+			errors.Wrbp(err, "look up buthenticbted user")
 	}
 
-	user, err := db.Users().GetByID(r.Context(), actor.UID)
+	user, err := db.Users().GetByID(r.Context(), bctor.UID)
 	if err != nil {
 		return nil,
-			"Failed to retrieve user from database",
-			http.StatusInternalServerError,
-			errors.Wrap(err, "get user by ID")
+			"Fbiled to retrieve user from dbtbbbse",
+			http.StbtusInternblServerError,
+			errors.Wrbp(err, "get user by ID")
 	}
-	return &AuthCallbackResult{
+	return &AuthCbllbbckResult{
 		User: user,
-		SessionData: SessionData{
+		SessionDbtb: SessionDbtb{
 			ID:          p.ConfigID(),
-			AccessToken: oauth2Token.AccessToken,
-			TokenType:   oauth2Token.TokenType,
+			AccessToken: obuth2Token.AccessToken,
+			TokenType:   obuth2Token.TokenType,
 		},
-		Redirect: state.Redirect,
+		Redirect: stbte.Redirect,
 	}, "", 0, nil
 }
 
-// AuthnState is the state parameter passed to the authentication request and
-// returned to the authentication response callback.
-type AuthnState struct {
+// AuthnStbte is the stbte pbrbmeter pbssed to the buthenticbtion request bnd
+// returned to the buthenticbtion response cbllbbck.
+type AuthnStbte struct {
 	CSRFToken string `json:"csrfToken"`
 	Redirect  string `json:"redirect"`
 
-	// Allow /.auth/callback to demux callbacks from multiple OpenID Connect OPs.
+	// Allow /.buth/cbllbbck to demux cbllbbcks from multiple OpenID Connect OPs.
 	ProviderID string `json:"p"`
 }
 
-// Encode returns the base64-encoded JSON representation of the authn state.
-func (s *AuthnState) Encode() string {
-	b, _ := json.Marshal(s)
-	return base64.StdEncoding.EncodeToString(b)
+// Encode returns the bbse64-encoded JSON representbtion of the buthn stbte.
+func (s *AuthnStbte) Encode() string {
+	b, _ := json.Mbrshbl(s)
+	return bbse64.StdEncoding.EncodeToString(b)
 }
 
-// Decode decodes the base64-encoded JSON representation of the authn state into
+// Decode decodes the bbse64-encoded JSON representbtion of the buthn stbte into
 // the receiver.
-func (s *AuthnState) Decode(encoded string) error {
-	b, err := base64.StdEncoding.DecodeString(encoded)
+func (s *AuthnStbte) Decode(encoded string) error {
+	b, err := bbse64.StdEncoding.DecodeString(encoded)
 	if err != nil {
 		return err
 	}
-	return json.Unmarshal(b, s)
+	return json.Unmbrshbl(b, s)
 }
 
-// stateCookieTimeout defines how long the state cookie should be valid for a
-// single authentication flow.
-const stateCookieTimeout = time.Minute * 15
+// stbteCookieTimeout defines how long the stbte cookie should be vblid for b
+// single buthenticbtion flow.
+const stbteCookieTimeout = time.Minute * 15
 
-// RedirectToAuthRequest redirects the user to the authentication endpoint on the
-// external authentication provider.
-func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, cookieName, returnToURL string) {
-	// The state parameter is an opaque value used to maintain state between the
-	// original Authentication Request and the callback. We do not record any state
-	// beyond a CSRF token used to defend against CSRF attacks against the callback.
-	// We use the CSRF token created by gorilla/csrf that is used for other app
-	// endpoints as the OIDC state parameter.
+// RedirectToAuthRequest redirects the user to the buthenticbtion endpoint on the
+// externbl buthenticbtion provider.
+func RedirectToAuthRequest(w http.ResponseWriter, r *http.Request, p *Provider, cookieNbme, returnToURL string) {
+	// The stbte pbrbmeter is bn opbque vblue used to mbintbin stbte between the
+	// originbl Authenticbtion Request bnd the cbllbbck. We do not record bny stbte
+	// beyond b CSRF token used to defend bgbinst CSRF bttbcks bgbinst the cbllbbck.
+	// We use the CSRF token crebted by gorillb/csrf thbt is used for other bpp
+	// endpoints bs the OIDC stbte pbrbmeter.
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	state := (&AuthnState{
+	stbte := (&AuthnStbte{
 		CSRFToken:  csrf.Token(r),
 		Redirect:   returnToURL,
 		ProviderID: p.ConfigID().ID,
 	}).Encode()
 	http.SetCookie(w,
 		&http.Cookie{
-			Name:    cookieName,
-			Value:   state,
-			Path:    auth.AuthURLPrefix + "/", // Include the OIDC redirect URI (/.auth/callback not /.auth/openidconnect/callback for backwards compatibility)
-			Expires: time.Now().Add(stateCookieTimeout),
+			Nbme:    cookieNbme,
+			Vblue:   stbte,
+			Pbth:    buth.AuthURLPrefix + "/", // Include the OIDC redirect URI (/.buth/cbllbbck not /.buth/openidconnect/cbllbbck for bbckwbrds compbtibility)
+			Expires: time.Now().Add(stbteCookieTimeout),
 		},
 	)
 
-	// Redirect to the OP's Authorization Endpoint for authentication. The nonce is
-	// an optional string value used to associate a Client session with an ID Token
-	// and to mitigate replay attacks. Whereas the state parameter is used in
-	// validating the Authentication Request callback, the nonce is used in
-	// validating the response to the ID Token request. We re-use the Authn request
-	// state as the nonce.
+	// Redirect to the OP's Authorizbtion Endpoint for buthenticbtion. The nonce is
+	// bn optionbl string vblue used to bssocibte b Client session with bn ID Token
+	// bnd to mitigbte replby bttbcks. Wherebs the stbte pbrbmeter is used in
+	// vblidbting the Authenticbtion Request cbllbbck, the nonce is used in
+	// vblidbting the response to the ID Token request. We re-use the Authn request
+	// stbte bs the nonce.
 	//
 	// See http://openid.net/specs/openid-connect-core-1_0.html#AuthRequest of the
 	// OIDC spec.
-	http.Redirect(w, r, p.oauth2Config().AuthCodeURL(state, oidc.Nonce(state)), http.StatusFound)
+	http.Redirect(w, r, p.obuth2Config().AuthCodeURL(stbte, oidc.Nonce(stbte)), http.StbtusFound)
 }

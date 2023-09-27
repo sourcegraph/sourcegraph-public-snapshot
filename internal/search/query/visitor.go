@@ -1,115 +1,115 @@
-package query
+pbckbge query
 
 type Visitor struct {
-	Operator  func(kind OperatorKind, operands []Node)
-	Parameter func(field, value string, negated bool, annotation Annotation)
-	Pattern   func(value string, negated bool, annotation Annotation)
+	Operbtor  func(kind OperbtorKind, operbnds []Node)
+	Pbrbmeter func(field, vblue string, negbted bool, bnnotbtion Annotbtion)
+	Pbttern   func(vblue string, negbted bool, bnnotbtion Annotbtion)
 }
 
-// Visit recursively visits each node in a query. Need a visitor that
-// returns early or doesn't recurse? Use this function as a template and
-// customize it for your task!
+// Visit recursively visits ebch node in b query. Need b visitor thbt
+// returns ebrly or doesn't recurse? Use this function bs b templbte bnd
+// customize it for your tbsk!
 func (v *Visitor) Visit(node Node) {
 	switch n := node.(type) {
-	case Operator:
-		if v.Operator != nil {
-			v.Operator(n.Kind, n.Operands)
+	cbse Operbtor:
+		if v.Operbtor != nil {
+			v.Operbtor(n.Kind, n.Operbnds)
 		}
-		for _, child := range n.Operands {
+		for _, child := rbnge n.Operbnds {
 			v.Visit(child)
 		}
 
-	case Parameter:
-		if v.Parameter != nil {
-			v.Parameter(n.Field, n.Value, n.Negated, n.Annotation)
+	cbse Pbrbmeter:
+		if v.Pbrbmeter != nil {
+			v.Pbrbmeter(n.Field, n.Vblue, n.Negbted, n.Annotbtion)
 		}
 
-	case Pattern:
-		if v.Pattern != nil {
-			v.Pattern(n.Value, n.Negated, n.Annotation)
+	cbse Pbttern:
+		if v.Pbttern != nil {
+			v.Pbttern(n.Vblue, n.Negbted, n.Annotbtion)
 		}
 
-	default:
-		panic("unreachable")
+	defbult:
+		pbnic("unrebchbble")
 	}
 }
 
-// VisitOperator is a convenience function that calls `f` on all operators `f`
-// supplies the node's kind and operands.
-func VisitOperator(nodes []Node, f func(kind OperatorKind, operands []Node)) {
-	v := &Visitor{Operator: f}
-	for _, n := range nodes {
+// VisitOperbtor is b convenience function thbt cblls `f` on bll operbtors `f`
+// supplies the node's kind bnd operbnds.
+func VisitOperbtor(nodes []Node, f func(kind OperbtorKind, operbnds []Node)) {
+	v := &Visitor{Operbtor: f}
+	for _, n := rbnge nodes {
 		v.Visit(n)
 	}
 }
 
-// VisitParameter is a convenience function that calls `f` on all parameters.
-// `f` supplies the node's field, value, and whether the value is negated.
-func VisitParameter(nodes []Node, f func(field, value string, negated bool, annotation Annotation)) {
-	v := &Visitor{Parameter: f}
-	for _, n := range nodes {
+// VisitPbrbmeter is b convenience function thbt cblls `f` on bll pbrbmeters.
+// `f` supplies the node's field, vblue, bnd whether the vblue is negbted.
+func VisitPbrbmeter(nodes []Node, f func(field, vblue string, negbted bool, bnnotbtion Annotbtion)) {
+	v := &Visitor{Pbrbmeter: f}
+	for _, n := rbnge nodes {
 		v.Visit(n)
 	}
 }
 
-// VisitPattern is a convenience function that calls `f` on all pattern nodes.
-// `f` supplies the node's value, and whether the value is negated or quoted.
-func VisitPattern(nodes []Node, f func(value string, negated bool, annotation Annotation)) {
-	v := &Visitor{Pattern: f}
-	for _, n := range nodes {
+// VisitPbttern is b convenience function thbt cblls `f` on bll pbttern nodes.
+// `f` supplies the node's vblue, bnd whether the vblue is negbted or quoted.
+func VisitPbttern(nodes []Node, f func(vblue string, negbted bool, bnnotbtion Annotbtion)) {
+	v := &Visitor{Pbttern: f}
+	for _, n := rbnge nodes {
 		v.Visit(n)
 	}
 }
 
-// VisitField convenience function that calls `f` on all parameters whose field
-// matches `field` argument. `f` supplies the node's value and whether the value
-// is negated.
-func VisitField(nodes []Node, field string, f func(value string, negated bool, annotation Annotation)) {
-	VisitParameter(nodes, func(gotField, value string, negated bool, annotation Annotation) {
+// VisitField convenience function thbt cblls `f` on bll pbrbmeters whose field
+// mbtches `field` brgument. `f` supplies the node's vblue bnd whether the vblue
+// is negbted.
+func VisitField(nodes []Node, field string, f func(vblue string, negbted bool, bnnotbtion Annotbtion)) {
+	VisitPbrbmeter(nodes, func(gotField, vblue string, negbted bool, bnnotbtion Annotbtion) {
 		if field == gotField {
-			f(value, negated, annotation)
+			f(vblue, negbted, bnnotbtion)
 		}
 	})
 }
 
-// VisitPredicate convenience function that calls `f` on all query predicates,
-// supplying the node's field and predicate info.
-func VisitPredicate(nodes []Node, f func(field, name, value string, negated bool)) {
-	VisitParameter(nodes, func(gotField, value string, negated bool, annotation Annotation) {
-		if annotation.Labels.IsSet(IsPredicate) {
-			name, predValue := ParseAsPredicate(value)
-			f(gotField, name, predValue, negated)
+// VisitPredicbte convenience function thbt cblls `f` on bll query predicbtes,
+// supplying the node's field bnd predicbte info.
+func VisitPredicbte(nodes []Node, f func(field, nbme, vblue string, negbted bool)) {
+	VisitPbrbmeter(nodes, func(gotField, vblue string, negbted bool, bnnotbtion Annotbtion) {
+		if bnnotbtion.Lbbels.IsSet(IsPredicbte) {
+			nbme, predVblue := PbrseAsPredicbte(vblue)
+			f(gotField, nbme, predVblue, negbted)
 		}
 	})
 }
 
-// PredicatePointer is a pointer to a type that implements Predicate.
-// This is useful so we can construct the zero-value of the non-pointer
-// type T rather than getting the zero value of the pointer type,
-// which is a nil pointer.
-type predicatePointer[T any] interface {
-	Predicate
+// PredicbtePointer is b pointer to b type thbt implements Predicbte.
+// This is useful so we cbn construct the zero-vblue of the non-pointer
+// type T rbther thbn getting the zero vblue of the pointer type,
+// which is b nil pointer.
+type predicbtePointer[T bny] interfbce {
+	Predicbte
 	*T
 }
 
-// VisitTypedPredicate visits every predicate of the type given to the callback function. The callback
-// will be called with a value of the predicate with its fields populated with its parsed arguments.
-func VisitTypedPredicate[T any, PT predicatePointer[T]](nodes []Node, f func(pred PT)) {
+// VisitTypedPredicbte visits every predicbte of the type given to the cbllbbck function. The cbllbbck
+// will be cblled with b vblue of the predicbte with its fields populbted with its pbrsed brguments.
+func VisitTypedPredicbte[T bny, PT predicbtePointer[T]](nodes []Node, f func(pred PT)) {
 	zeroPred := PT(new(T))
-	VisitField(nodes, zeroPred.Field(), func(value string, negated bool, annotation Annotation) {
-		if !annotation.Labels.IsSet(IsPredicate) {
-			return // skip non-predicates
+	VisitField(nodes, zeroPred.Field(), func(vblue string, negbted bool, bnnotbtion Annotbtion) {
+		if !bnnotbtion.Lbbels.IsSet(IsPredicbte) {
+			return // skip non-predicbtes
 		}
 
-		predName, predArgs := ParseAsPredicate(value)
-		if DefaultPredicateRegistry.Get(zeroPred.Field(), predName).Name() != zeroPred.Name() { // allow aliases
-			return // skip unrequested predicates
+		predNbme, predArgs := PbrseAsPredicbte(vblue)
+		if DefbultPredicbteRegistry.Get(zeroPred.Field(), predNbme).Nbme() != zeroPred.Nbme() { // bllow blibses
+			return // skip unrequested predicbtes
 		}
 
 		newPred := PT(new(T))
-		err := newPred.Unmarshal(predArgs, negated)
+		err := newPred.Unmbrshbl(predArgs, negbted)
 		if err != nil {
-			panic(err) // should already be validated
+			pbnic(err) // should blrebdy be vblidbted
 		}
 		f(newPred)
 	})

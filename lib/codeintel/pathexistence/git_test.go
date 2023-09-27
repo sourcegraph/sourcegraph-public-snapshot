@@ -1,4 +1,4 @@
-package pathexistence
+pbckbge pbthexistence
 
 import (
 	"testing"
@@ -6,9 +6,9 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestParseDirectoryChildrenRoot(t *testing.T) {
-	dirnames := []string{""}
-	paths := []string{
+func TestPbrseDirectoryChildrenRoot(t *testing.T) {
+	dirnbmes := []string{""}
+	pbths := []string{
 		".github",
 		".gitignore",
 		"LICENSE",
@@ -16,64 +16,64 @@ func TestParseDirectoryChildrenRoot(t *testing.T) {
 		"cmd",
 		"go.mod",
 		"go.sum",
-		"internal",
+		"internbl",
 		"protocol",
 	}
 
-	expected := map[string][]string{
-		"": paths,
+	expected := mbp[string][]string{
+		"": pbths,
 	}
 
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, pbrseDirectoryChildren(dirnbmes, pbths)); diff != "" {
+		t.Errorf("unexpected directory children result (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseDirectoryChildrenNonRoot(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
-	paths := []string{
+func TestPbrseDirectoryChildrenNonRoot(t *testing.T) {
+	dirnbmes := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	pbths := []string{
 		"cmd/lsif-go",
 		"protocol/protocol.go",
 		"protocol/writer.go",
 	}
 
-	expected := map[string][]string{
+	expected := mbp[string][]string{
 		"cmd/":          {"cmd/lsif-go"},
 		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
 		"cmd/protocol/": nil,
 	}
 
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, pbrseDirectoryChildren(dirnbmes, pbths)); diff != "" {
+		t.Errorf("unexpected directory children result (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestParseDirectoryChildrenDifferentDepths(t *testing.T) {
-	dirnames := []string{"cmd/", "protocol/", "cmd/protocol/"}
-	paths := []string{
+func TestPbrseDirectoryChildrenDifferentDepths(t *testing.T) {
+	dirnbmes := []string{"cmd/", "protocol/", "cmd/protocol/"}
+	pbths := []string{
 		"cmd/lsif-go",
 		"protocol/protocol.go",
 		"protocol/writer.go",
-		"cmd/protocol/main.go",
+		"cmd/protocol/mbin.go",
 	}
 
-	expected := map[string][]string{
+	expected := mbp[string][]string{
 		"cmd/":          {"cmd/lsif-go"},
 		"protocol/":     {"protocol/protocol.go", "protocol/writer.go"},
-		"cmd/protocol/": {"cmd/protocol/main.go"},
+		"cmd/protocol/": {"cmd/protocol/mbin.go"},
 	}
 
-	if diff := cmp.Diff(expected, parseDirectoryChildren(dirnames, paths)); diff != "" {
-		t.Errorf("unexpected directory children result (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, pbrseDirectoryChildren(dirnbmes, pbths)); diff != "" {
+		t.Errorf("unexpected directory children result (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestCleanDirectoriesForLsTree(t *testing.T) {
-	args := []string{"", "foo", "bar/", "baz"}
-	actual := cleanDirectoriesForLsTree(args)
-	expected := []string{".", "foo/", "bar/", "baz/"}
+func TestClebnDirectoriesForLsTree(t *testing.T) {
+	brgs := []string{"", "foo", "bbr/", "bbz"}
+	bctubl := clebnDirectoriesForLsTree(brgs)
+	expected := []string{".", "foo/", "bbr/", "bbz/"}
 
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected ls-tree args (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, bctubl); diff != "" {
+		t.Errorf("unexpected ls-tree brgs (-wbnt +got):\n%s", diff)
 	}
 }

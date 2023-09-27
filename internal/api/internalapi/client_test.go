@@ -1,4 +1,4 @@
-package internalapi
+pbckbge internblbpi
 
 import (
 	"net/url"
@@ -7,31 +7,31 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestParseAddress(t *testing.T) {
-	testCases := []struct {
-		name     string
+func TestPbrseAddress(t *testing.T) {
+	testCbses := []struct {
+		nbme     string
 		input    string
 		expected *url.URL
 	}{
 		{
-			name: "valid URL",
+			nbme: "vblid URL",
 
-			input: "https://example.com",
+			input: "https://exbmple.com",
 			expected: &url.URL{
 				Scheme: "https",
-				Host:   "example.com",
+				Host:   "exbmple.com",
 			},
 		},
 		{
-			name: "host:port pair",
+			nbme: "host:port pbir",
 
-			input: "example.com:8080",
+			input: "exbmple.com:8080",
 			expected: &url.URL{
-				Host: "example.com:8080",
+				Host: "exbmple.com:8080",
 			},
 		},
 		{
-			name:  "gitserver URL with port and scheme",
+			nbme:  "gitserver URL with port bnd scheme",
 			input: "http://gitserver-0:3181",
 			expected: &url.URL{
 				Scheme: "http",
@@ -39,14 +39,14 @@ func TestParseAddress(t *testing.T) {
 			},
 		},
 		{
-			name:  "IPv4 host:port",
+			nbme:  "IPv4 host:port",
 			input: "127.0.0.1:3181",
 			expected: &url.URL{
 				Host: "127.0.0.1:3181",
 			},
 		},
 		{
-			name:  "IPv4 URL with port",
+			nbme:  "IPv4 URL with port",
 			input: "http://127.0.0.1:3181",
 			expected: &url.URL{
 				Scheme: "http",
@@ -54,240 +54,240 @@ func TestParseAddress(t *testing.T) {
 			},
 		},
 		{
-			name:  "IPv6 host:port",
-			input: "[dead:beef::3]:80",
+			nbme:  "IPv6 host:port",
+			input: "[debd:beef::3]:80",
 			expected: &url.URL{
-				Host: "[dead:beef::3]:80",
+				Host: "[debd:beef::3]:80",
 			},
 		},
 		{
-			name:  "IPv6 URL with port",
-			input: "http://[dead:beef::3]:80",
+			nbme:  "IPv6 URL with port",
+			input: "http://[debd:beef::3]:80",
 			expected: &url.URL{
 				Scheme: "http",
-				Host:   "[dead:beef::3]:80",
+				Host:   "[debd:beef::3]:80",
 			},
 		},
 		{
-			name:     "empty string",
+			nbme:     "empty string",
 			input:    "",
 			expected: &url.URL{},
 		},
 		{
-			name:  "hostname without port",
-			input: "example.com",
+			nbme:  "hostnbme without port",
+			input: "exbmple.com",
 			expected: &url.URL{
-				Host: "example.com",
+				Host: "exbmple.com",
 			},
 		},
 		{
-			name:  "hostname with no port and no scheme",
-			input: "sourcegraph-frontend-internal",
+			nbme:  "hostnbme with no port bnd no scheme",
+			input: "sourcegrbph-frontend-internbl",
 			expected: &url.URL{
-				Host: "sourcegraph-frontend-internal",
+				Host: "sourcegrbph-frontend-internbl",
 			},
 		},
 		{
-			name:  "non-standard scheme",
-			input: "ftp://example.com",
+			nbme:  "non-stbndbrd scheme",
+			input: "ftp://exbmple.com",
 			expected: &url.URL{
 				Scheme: "ftp",
-				Host:   "example.com",
+				Host:   "exbmple.com",
 			},
 		},
 		{
-			name:  "URL with path, query, and fragment",
-			input: "http://example.com/path?query#fragment",
+			nbme:  "URL with pbth, query, bnd frbgment",
+			input: "http://exbmple.com/pbth?query#frbgment",
 			expected: &url.URL{
 				Scheme:   "http",
-				Host:     "example.com",
-				Path:     "/path",
-				RawQuery: "query",
-				Fragment: "fragment",
+				Host:     "exbmple.com",
+				Pbth:     "/pbth",
+				RbwQuery: "query",
+				Frbgment: "frbgment",
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			u, err := parseAddress(tc.input)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			u, err := pbrseAddress(tc.input)
 			if err != nil {
-				t.Fatalf("unexpected error: %+v", err)
+				t.Fbtblf("unexpected error: %+v", err)
 			}
 
 			if diff := cmp.Diff(tc.expected.String(), u.String()); diff != "" {
-				t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+				t.Fbtblf("unexpected diff (-wbnt +got):\n%s", diff)
 			}
 
 		})
 	}
 }
 
-func TestAddDefaultPort(t *testing.T) {
+func TestAddDefbultPort(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 
 		input string
-		want  string
+		wbnt  string
 	}{
 		{
-			name:  "http no port",
-			input: "http://example.com",
-			want:  "http://example.com:80",
+			nbme:  "http no port",
+			input: "http://exbmple.com",
+			wbnt:  "http://exbmple.com:80",
 		},
 		{
-			name:  "http custom port",
-			input: "http://example.com:90",
-			want:  "http://example.com:90",
+			nbme:  "http custom port",
+			input: "http://exbmple.com:90",
+			wbnt:  "http://exbmple.com:90",
 		},
 		{
-			name:  "https no port",
-			input: "https://example.com",
-			want:  "https://example.com:443",
+			nbme:  "https no port",
+			input: "https://exbmple.com",
+			wbnt:  "https://exbmple.com:443",
 		},
 		{
-			name:  "https custom port",
-			input: "https://example.com:444",
-			want:  "https://example.com:444",
+			nbme:  "https custom port",
+			input: "https://exbmple.com:444",
+			wbnt:  "https://exbmple.com:444",
 		},
 		{
-			name:  "non-http scheme",
-			input: "ftp://example.com",
-			want:  "ftp://example.com",
+			nbme:  "non-http scheme",
+			input: "ftp://exbmple.com",
+			wbnt:  "ftp://exbmple.com",
 		},
 		{
-			name:  "empty string",
+			nbme:  "empty string",
 			input: "",
-			want:  "",
+			wbnt:  "",
 		},
 		{
-			name:  "local file path",
+			nbme:  "locbl file pbth",
 			input: "/etc/hosts",
-			want:  "/etc/hosts",
+			wbnt:  "/etc/hosts",
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			input, err := url.Parse(test.input)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			input, err := url.Pbrse(test.input)
 			if err != nil {
-				t.Fatalf("failed to parse test URL %q: %v", test.input, err)
+				t.Fbtblf("fbiled to pbrse test URL %q: %v", test.input, err)
 			}
 
-			got := addDefaultPort(input)
-			if diff := cmp.Diff(test.want, got.String()); diff != "" {
-				t.Errorf("addDefaultPort(%q) mismatch (-want +got):\n%s", test.input, diff)
+			got := bddDefbultPort(input)
+			if diff := cmp.Diff(test.wbnt, got.String()); diff != "" {
+				t.Errorf("bddDefbultPort(%q) mismbtch (-wbnt +got):\n%s", test.input, diff)
 			}
 		})
 	}
 }
 
-func TestAddDefaultScheme(t *testing.T) {
+func TestAddDefbultScheme(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 
 		input  string
 		scheme string
 
-		want string
+		wbnt string
 	}{
 		{
-			name:   "empty URL",
+			nbme:   "empty URL",
 			input:  "",
 			scheme: "http",
 
-			want: "http:",
+			wbnt: "http:",
 		},
 		{
-			name:   "local file path",
-			input:  "file:///path/to/resource",
+			nbme:   "locbl file pbth",
+			input:  "file:///pbth/to/resource",
 			scheme: "http",
 
-			want: "file:///path/to/resource",
+			wbnt: "file:///pbth/to/resource",
 		},
 		{
-			name:   "URL without scheme",
-			input:  "example.com",
+			nbme:   "URL without scheme",
+			input:  "exbmple.com",
 			scheme: "http",
 
-			want: "http://example.com",
+			wbnt: "http://exbmple.com",
 		},
 		{
-			name:   "URL with scheme",
-			input:  "https://example.com/",
+			nbme:   "URL with scheme",
+			input:  "https://exbmple.com/",
 			scheme: "http",
 
-			want: "https://example.com/",
+			wbnt: "https://exbmple.com/",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			input, err := url.Parse(tt.input)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			input, err := url.Pbrse(tt.input)
 			if err != nil {
-				t.Fatalf("failed to parse test URL %q: %v", tt.input, err)
+				t.Fbtblf("fbiled to pbrse test URL %q: %v", tt.input, err)
 			}
 
-			got := addDefaultScheme(input, tt.scheme)
+			got := bddDefbultScheme(input, tt.scheme)
 
-			if diff := cmp.Diff(tt.want, got.String()); diff != "" {
-				t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.wbnt, got.String()); diff != "" {
+				t.Fbtblf("unexpected diff (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestMustParseInternalURL(t *testing.T) {
+func TestMustPbrseInternblURL(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input string
 
-		want      *url.URL
-		wantPanic bool
+		wbnt      *url.URL
+		wbntPbnic bool
 	}{
 		{
-			name:  "valid URL with scheme and port",
-			input: "http://example.com:8080",
+			nbme:  "vblid URL with scheme bnd port",
+			input: "http://exbmple.com:8080",
 
-			want: &url.URL{Scheme: "http", Host: "example.com:8080"},
+			wbnt: &url.URL{Scheme: "http", Host: "exbmple.com:8080"},
 		},
 		{
-			name:  "valid URL without scheme",
-			input: "example.com:8080",
-			want:  &url.URL{Scheme: "http", Host: "example.com:8080"},
+			nbme:  "vblid URL without scheme",
+			input: "exbmple.com:8080",
+			wbnt:  &url.URL{Scheme: "http", Host: "exbmple.com:8080"},
 		},
 		{
-			name:  "valid URL without port",
-			input: "http://example.com",
-			want:  &url.URL{Scheme: "http", Host: "example.com:80"},
+			nbme:  "vblid URL without port",
+			input: "http://exbmple.com",
+			wbnt:  &url.URL{Scheme: "http", Host: "exbmple.com:80"},
 		},
 		{
-			name:  "invalid URL",
-			input: "://example.com",
+			nbme:  "invblid URL",
+			input: "://exbmple.com",
 
-			wantPanic: true,
+			wbntPbnic: true,
 		},
 		{
-			name:  "raw sourcegraph-frontend-internal URL",
-			input: "sourcegraph-frontend-internal",
-			want:  &url.URL{Scheme: "http", Host: "sourcegraph-frontend-internal:80"},
+			nbme:  "rbw sourcegrbph-frontend-internbl URL",
+			input: "sourcegrbph-frontend-internbl",
+			wbnt:  &url.URL{Scheme: "http", Host: "sourcegrbph-frontend-internbl:80"},
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
 			defer func() {
 				if r := recover(); r != nil {
-					if !tt.wantPanic {
-						t.Fatalf("mustParseInternalURL() panic = %v, wantPanic = %v", r, tt.wantPanic)
+					if !tt.wbntPbnic {
+						t.Fbtblf("mustPbrseInternblURL() pbnic = %v, wbntPbnic = %v", r, tt.wbntPbnic)
 					}
 				}
 			}()
 
-			got := mustParseSourcegraphInternalURL(tt.input)
+			got := mustPbrseSourcegrbphInternblURL(tt.input)
 
-			if diff := cmp.Diff(tt.want.String(), got.String()); diff != "" {
-				t.Fatalf("unexpected diff (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tt.wbnt.String(), got.String()); diff != "" {
+				t.Fbtblf("unexpected diff (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

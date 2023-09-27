@@ -1,88 +1,88 @@
-package server
+pbckbge server
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"context"
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"reflect"
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/jvmpbckbges/coursier"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	exampleJar               = "sources.jar"
-	exampleByteCodeJar       = "bytes.jar"
-	exampleJar2              = "sources2.jar"
-	exampleByteCodeJar2      = "bytes2.jar"
-	exampleFilePath          = "Example.java"
-	exampleClassfilePath     = "Example.class"
-	exampleFileContents      = "package example;\npublic class Example {}\n"
-	exampleFileContents2     = "package example;\npublic class Example { public static final int x = 42; }\n"
-	exampleVersion           = "1.0.0"
-	exampleVersion2          = "2.0.0"
-	exampleVersionedPackage  = "org.example:example:1.0.0"
-	exampleVersionedPackage2 = "org.example:example:2.0.0"
-	examplePackageUrl        = "maven/org.example/example"
+	exbmpleJbr               = "sources.jbr"
+	exbmpleByteCodeJbr       = "bytes.jbr"
+	exbmpleJbr2              = "sources2.jbr"
+	exbmpleByteCodeJbr2      = "bytes2.jbr"
+	exbmpleFilePbth          = "Exbmple.jbvb"
+	exbmpleClbssfilePbth     = "Exbmple.clbss"
+	exbmpleFileContents      = "pbckbge exbmple;\npublic clbss Exbmple {}\n"
+	exbmpleFileContents2     = "pbckbge exbmple;\npublic clbss Exbmple { public stbtic finbl int x = 42; }\n"
+	exbmpleVersion           = "1.0.0"
+	exbmpleVersion2          = "2.0.0"
+	exbmpleVersionedPbckbge  = "org.exbmple:exbmple:1.0.0"
+	exbmpleVersionedPbckbge2 = "org.exbmple:exbmple:2.0.0"
+	exbmplePbckbgeUrl        = "mbven/org.exbmple/exbmple"
 
-	// These magic numbers come from the table here https://en.wikipedia.org/wiki/Java_class_file#General_layout
-	java5MajorVersion  = 49
-	java11MajorVersion = 53
+	// These mbgic numbers come from the tbble here https://en.wikipedib.org/wiki/Jbvb_clbss_file#Generbl_lbyout
+	jbvb5MbjorVersion  = 49
+	jbvb11MbjorVersion = 53
 )
 
-func createPlaceholderJar(t *testing.T, dir string, contents []byte, jarName, contentPath string) {
+func crebtePlbceholderJbr(t *testing.T, dir string, contents []byte, jbrNbme, contentPbth string) {
 	t.Helper()
-	jarPath, err := os.Create(path.Join(dir, jarName))
-	assert.Nil(t, err)
-	zipWriter := zip.NewWriter(jarPath)
-	exampleWriter, err := zipWriter.Create(contentPath)
-	assert.Nil(t, err)
-	_, err = exampleWriter.Write(contents)
-	assert.Nil(t, err)
-	assert.Nil(t, zipWriter.Close())
-	assert.Nil(t, jarPath.Close())
+	jbrPbth, err := os.Crebte(pbth.Join(dir, jbrNbme))
+	bssert.Nil(t, err)
+	zipWriter := zip.NewWriter(jbrPbth)
+	exbmpleWriter, err := zipWriter.Crebte(contentPbth)
+	bssert.Nil(t, err)
+	_, err = exbmpleWriter.Write(contents)
+	bssert.Nil(t, err)
+	bssert.Nil(t, zipWriter.Close())
+	bssert.Nil(t, jbrPbth.Close())
 }
 
-func createPlaceholderSourcesJar(t *testing.T, dir, contents, jarName string) {
+func crebtePlbceholderSourcesJbr(t *testing.T, dir, contents, jbrNbme string) {
 	t.Helper()
-	createPlaceholderJar(t, dir, []byte(contents), jarName, exampleFilePath)
+	crebtePlbceholderJbr(t, dir, []byte(contents), jbrNbme, exbmpleFilePbth)
 }
 
-func createPlaceholderByteCodeJar(t *testing.T, contents []byte, dir, jarName string) {
+func crebtePlbceholderByteCodeJbr(t *testing.T, contents []byte, dir, jbrNbme string) {
 	t.Helper()
-	createPlaceholderJar(t, dir, contents, jarName, exampleClassfilePath)
+	crebtePlbceholderJbr(t, dir, contents, jbrNbme, exbmpleClbssfilePbth)
 }
 
-func assertCommandOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
+func bssertCommbndOutput(t *testing.T, cmd *exec.Cmd, workingDir, expectedOut string) {
 	t.Helper()
 	cmd.Dir = workingDir
 	showOut, err := cmd.Output()
-	assert.Nil(t, errors.Wrapf(err, "cmd=%q", cmd))
+	bssert.Nil(t, errors.Wrbpf(err, "cmd=%q", cmd))
 	if string(showOut) != expectedOut {
-		t.Fatalf("got %q, want %q", showOut, expectedOut)
+		t.Fbtblf("got %q, wbnt %q", showOut, expectedOut)
 	}
 }
 
 func coursierScript(t *testing.T, dir string) string {
-	coursierPath, err := os.OpenFile(path.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 0o7777)
-	assert.Nil(t, err)
-	defer coursierPath.Close()
-	script := fmt.Sprintf(`#!/usr/bin/env bash
+	coursierPbth, err := os.OpenFile(pbth.Join(dir, "coursier"), os.O_CREATE|os.O_RDWR, 0o7777)
+	bssert.Nil(t, err)
+	defer coursierPbth.Close()
+	script := fmt.Sprintf(`#!/usr/bin/env bbsh
 ARG="$5"
 CLASSIFIER="$7"
 if [[ "$ARG" =~ "%s" ]]; then
@@ -98,166 +98,166 @@ elif [[ "$ARG" =~ "%s" ]]; then
     echo "%s"
   fi
 else
-  echo "Invalid argument $1"
+  echo "Invblid brgument $1"
   exit 1
 fi
 `,
-		exampleVersion, path.Join(dir, exampleJar), path.Join(dir, exampleByteCodeJar),
-		exampleVersion2, path.Join(dir, exampleJar2), path.Join(dir, exampleByteCodeJar2),
+		exbmpleVersion, pbth.Join(dir, exbmpleJbr), pbth.Join(dir, exbmpleByteCodeJbr),
+		exbmpleVersion2, pbth.Join(dir, exbmpleJbr2), pbth.Join(dir, exbmpleByteCodeJbr2),
 	)
-	_, err = coursierPath.WriteString(script)
-	assert.Nil(t, err)
-	return coursierPath.Name()
+	_, err = coursierPbth.WriteString(script)
+	bssert.Nil(t, err)
+	return coursierPbth.Nbme()
 }
 
-var maliciousPaths = []string{
-	// Absolute paths
+vbr mbliciousPbths = []string{
+	// Absolute pbths
 	"/sh", "/usr/bin/sh",
-	// Paths into .git which may trigger when git runs a hook
-	".git/blah", ".git/hooks/pre-commit",
-	// Paths into a nested .git which may trigger when git runs a hook
-	"src/.git/blah", "src/.git/hooks/pre-commit",
-	// Relative paths which stray outside
-	"../foo/../bar", "../../../usr/bin/sh",
+	// Pbths into .git which mby trigger when git runs b hook
+	".git/blbh", ".git/hooks/pre-commit",
+	// Pbths into b nested .git which mby trigger when git runs b hook
+	"src/.git/blbh", "src/.git/hooks/pre-commit",
+	// Relbtive pbths which strby outside
+	"../foo/../bbr", "../../../usr/bin/sh",
 }
 
-const harmlessPath = "src/harmless.java"
+const hbrmlessPbth = "src/hbrmless.jbvb"
 
-func TestNoMaliciousFiles(t *testing.T) {
+func TestNoMbliciousFiles(t *testing.T) {
 	dir := t.TempDir()
 
-	extractPath := path.Join(dir, "extracted")
-	assert.Nil(t, os.Mkdir(extractPath, os.ModePerm))
+	extrbctPbth := pbth.Join(dir, "extrbcted")
+	bssert.Nil(t, os.Mkdir(extrbctPbth, os.ModePerm))
 
-	cacheDir := filepath.Join(dir, "cache")
-	s := jvmPackagesSyncer{
-		coursier: coursier.NewCoursierHandle(&observation.TestContext, cacheDir),
-		config:   &schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}},
-		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
-			jarPath := path.Join(dir, "sampletext.zip")
-			createMaliciousJar(t, jarPath)
-			return jarPath, nil
+	cbcheDir := filepbth.Join(dir, "cbche")
+	s := jvmPbckbgesSyncer{
+		coursier: coursier.NewCoursierHbndle(&observbtion.TestContext, cbcheDir),
+		config:   &schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Dependencies: []string{}}},
+		fetch: func(ctx context.Context, config *schemb.JVMPbckbgesConnection, dependency *reposource.MbvenVersionedPbckbge) (sourceCodeJbrPbth string, err error) {
+			jbrPbth := pbth.Join(dir, "sbmpletext.zip")
+			crebteMbliciousJbr(t, jbrPbth)
+			return jbrPbth, nil
 		},
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	cancel() // cancel now  to prevent any network IO
-	dep := &reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{}}
-	err := s.Download(ctx, extractPath, dep)
-	assert.NotNil(t, err)
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel() // cbncel now  to prevent bny network IO
+	dep := &reposource.MbvenVersionedPbckbge{MbvenModule: &reposource.MbvenModule{}}
+	err := s.Downlobd(ctx, extrbctPbth, dep)
+	bssert.NotNil(t, err)
 
-	dirEntries, err := os.ReadDir(extractPath)
-	assert.Nil(t, err)
+	dirEntries, err := os.RebdDir(extrbctPbth)
+	bssert.Nil(t, err)
 
-	_, err = filepath.EvalSymlinks(filepath.Join(extractPath, "symlink"))
-	assert.Error(t, err)
+	_, err = filepbth.EvblSymlinks(filepbth.Join(extrbctPbth, "symlink"))
+	bssert.Error(t, err)
 
-	baseline := map[string]int{"lsif-java.json": 0, strings.Split(harmlessPath, string(os.PathSeparator))[0]: 0}
-	paths := map[string]int{}
-	for _, dirEntry := range dirEntries {
-		paths[dirEntry.Name()] = 0
+	bbseline := mbp[string]int{"lsif-jbvb.json": 0, strings.Split(hbrmlessPbth, string(os.PbthSepbrbtor))[0]: 0}
+	pbths := mbp[string]int{}
+	for _, dirEntry := rbnge dirEntries {
+		pbths[dirEntry.Nbme()] = 0
 	}
-	if !reflect.DeepEqual(baseline, paths) {
-		t.Errorf("expected paths: %v\n   found paths:%v", baseline, paths)
+	if !reflect.DeepEqubl(bbseline, pbths) {
+		t.Errorf("expected pbths: %v\n   found pbths:%v", bbseline, pbths)
 	}
 }
 
-func createMaliciousJar(t *testing.T, name string) {
-	f, err := os.Create(name)
-	assert.Nil(t, err)
+func crebteMbliciousJbr(t *testing.T, nbme string) {
+	f, err := os.Crebte(nbme)
+	bssert.Nil(t, err)
 	defer f.Close()
 	writer := zip.NewWriter(f)
 	defer writer.Close()
 
-	for _, filePath := range maliciousPaths {
-		_, err = writer.Create(filePath)
-		assert.Nil(t, err)
+	for _, filePbth := rbnge mbliciousPbths {
+		_, err = writer.Crebte(filePbth)
+		bssert.Nil(t, err)
 	}
 
-	os.Symlink("/etc/passwd", "symlink")
+	os.Symlink("/etc/pbsswd", "symlink")
 	defer os.Remove("symlink")
 
-	fi, _ := os.Lstat("symlink")
-	header, _ := zip.FileInfoHeader(fi)
-	_, err = writer.CreateRaw(header)
+	fi, _ := os.Lstbt("symlink")
+	hebder, _ := zip.FileInfoHebder(fi)
+	_, err = writer.CrebteRbw(hebder)
 
-	assert.Nil(t, err)
+	bssert.Nil(t, err)
 
-	_, err = writer.Create(harmlessPath)
-	assert.Nil(t, err)
+	_, err = writer.Crebte(hbrmlessPbth)
+	bssert.Nil(t, err)
 }
 
-func TestJVMCloneCommand(t *testing.T) {
+func TestJVMCloneCommbnd(t *testing.T) {
 	logger := logtest.Scoped(t)
 	dir := t.TempDir()
 
-	createPlaceholderSourcesJar(t, dir, exampleFileContents, exampleJar)
-	createPlaceholderByteCodeJar(t,
-		[]byte{0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, java5MajorVersion, 0xab}, dir, exampleByteCodeJar)
-	createPlaceholderSourcesJar(t, dir, exampleFileContents2, exampleJar2)
-	createPlaceholderByteCodeJar(t,
-		[]byte{0xca, 0xfe, 0xba, 0xbe, 0x00, 0x00, 0x00, java11MajorVersion, 0xab}, dir, exampleByteCodeJar2)
+	crebtePlbceholderSourcesJbr(t, dir, exbmpleFileContents, exbmpleJbr)
+	crebtePlbceholderByteCodeJbr(t,
+		[]byte{0xcb, 0xfe, 0xbb, 0xbe, 0x00, 0x00, 0x00, jbvb5MbjorVersion, 0xbb}, dir, exbmpleByteCodeJbr)
+	crebtePlbceholderSourcesJbr(t, dir, exbmpleFileContents2, exbmpleJbr2)
+	crebtePlbceholderByteCodeJbr(t,
+		[]byte{0xcb, 0xfe, 0xbb, 0xbe, 0x00, 0x00, 0x00, jbvb11MbjorVersion, 0xbb}, dir, exbmpleByteCodeJbr2)
 
-	coursier.CoursierBinary = coursierScript(t, dir)
+	coursier.CoursierBinbry = coursierScript(t, dir)
 
-	depsSvc := dependencies.TestService(database.NewDB(logger, dbtest.NewDB(logger, t)))
-	cacheDir := filepath.Join(dir, "cache")
-	s := NewJVMPackagesSyncer(&schema.JVMPackagesConnection{Maven: schema.Maven{Dependencies: []string{}}}, depsSvc, cacheDir).(*vcsPackagesSyncer)
-	bareGitDirectory := path.Join(dir, "git")
+	depsSvc := dependencies.TestService(dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t)))
+	cbcheDir := filepbth.Join(dir, "cbche")
+	s := NewJVMPbckbgesSyncer(&schemb.JVMPbckbgesConnection{Mbven: schemb.Mbven{Dependencies: []string{}}}, depsSvc, cbcheDir).(*vcsPbckbgesSyncer)
+	bbreGitDirectory := pbth.Join(dir, "git")
 
-	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
+	s.runCloneCommbnd(t, exbmplePbckbgeUrl, bbreGitDirectory, []string{exbmpleVersionedPbckbge})
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "tbg", "--list"),
+		bbreGitDirectory,
 		"v1.0.0\n",
 	)
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
-		bareGitDirectory,
-		exampleFileContents,
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "show", fmt.Sprintf("v%s:%s", exbmpleVersion, exbmpleFilePbth)),
+		bbreGitDirectory,
+		exbmpleFileContents,
 	)
 
-	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage, exampleVersionedPackage2})
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\nv2.0.0\n", // verify that the v2.0.0 tag got added
+	s.runCloneCommbnd(t, exbmplePbckbgeUrl, bbreGitDirectory, []string{exbmpleVersionedPbckbge, exbmpleVersionedPbckbge2})
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "tbg", "--list"),
+		bbreGitDirectory,
+		"v1.0.0\nv2.0.0\n", // verify thbt the v2.0.0 tbg got bdded
 	)
 
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, "lsif-java.json")),
-		bareGitDirectory,
-		// Assert that Java 8 is used for a library compiled with Java 5.
-		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "8", exampleVersionedPackage),
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "show", fmt.Sprintf("v%s:%s", exbmpleVersion, "lsif-jbvb.json")),
+		bbreGitDirectory,
+		// Assert thbt Jbvb 8 is used for b librbry compiled with Jbvb 5.
+		fmt.Sprintf(`{"kind":"mbven","jvm":"%s","dependencies":["%s"]}`, "8", exbmpleVersionedPbckbge),
 	)
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion2, "lsif-java.json")),
-		bareGitDirectory,
-		// Assert that Java 11 is used for a library compiled with Java 11.
-		fmt.Sprintf(`{"kind":"maven","jvm":"%s","dependencies":["%s"]}`, "11", exampleVersionedPackage2),
-	)
-
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
-		bareGitDirectory,
-		exampleFileContents,
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "show", fmt.Sprintf("v%s:%s", exbmpleVersion2, "lsif-jbvb.json")),
+		bbreGitDirectory,
+		// Assert thbt Jbvb 11 is used for b librbry compiled with Jbvb 11.
+		fmt.Sprintf(`{"kind":"mbven","jvm":"%s","dependencies":["%s"]}`, "11", exbmpleVersionedPbckbge2),
 	)
 
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion2, exampleFilePath)),
-		bareGitDirectory,
-		exampleFileContents2,
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "show", fmt.Sprintf("v%s:%s", exbmpleVersion, exbmpleFilePbth)),
+		bbreGitDirectory,
+		exbmpleFileContents,
 	)
 
-	s.runCloneCommand(t, examplePackageUrl, bareGitDirectory, []string{exampleVersionedPackage})
-	assertCommandOutput(t,
-		exec.Command("git", "show", fmt.Sprintf("v%s:%s", exampleVersion, exampleFilePath)),
-		bareGitDirectory,
-		exampleFileContents,
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "show", fmt.Sprintf("v%s:%s", exbmpleVersion2, exbmpleFilePbth)),
+		bbreGitDirectory,
+		exbmpleFileContents2,
 	)
-	assertCommandOutput(t,
-		exec.Command("git", "tag", "--list"),
-		bareGitDirectory,
-		"v1.0.0\n", // verify that the v2.0.0 tag has been removed.
+
+	s.runCloneCommbnd(t, exbmplePbckbgeUrl, bbreGitDirectory, []string{exbmpleVersionedPbckbge})
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "show", fmt.Sprintf("v%s:%s", exbmpleVersion, exbmpleFilePbth)),
+		bbreGitDirectory,
+		exbmpleFileContents,
+	)
+	bssertCommbndOutput(t,
+		exec.Commbnd("git", "tbg", "--list"),
+		bbreGitDirectory,
+		"v1.0.0\n", // verify thbt the v2.0.0 tbg hbs been removed.
 	)
 }

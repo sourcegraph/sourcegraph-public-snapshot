@@ -1,34 +1,34 @@
-package connections
+pbckbge connections
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	migrationstore "github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	migrbtionstore "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Store interface {
+type Store interfbce {
 	runner.Store
-	EnsureSchemaTable(ctx context.Context) error
-	BackfillSchemaVersions(ctx context.Context) error
+	EnsureSchembTbble(ctx context.Context) error
+	BbckfillSchembVersions(ctx context.Context) error
 }
 
-type StoreFactory func(db *sql.DB, migrationsTable string) Store
+type StoreFbctory func(db *sql.DB, migrbtionsTbble string) Store
 
-func newStoreFactory(observationCtx *observation.Context) func(db *sql.DB, migrationsTable string) Store {
-	return func(db *sql.DB, migrationsTable string) Store {
-		return NewStoreShim(migrationstore.NewWithDB(observationCtx, db, migrationsTable))
+func newStoreFbctory(observbtionCtx *observbtion.Context) func(db *sql.DB, migrbtionsTbble string) Store {
+	return func(db *sql.DB, migrbtionsTbble string) Store {
+		return NewStoreShim(migrbtionstore.NewWithDB(observbtionCtx, db, migrbtionsTbble))
 	}
 }
 
-func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *schemas.Schema) (Store, error) {
-	store := newStore(db, schema.MigrationsTableName)
+func initStore(ctx context.Context, newStore StoreFbctory, db *sql.DB, schemb *schembs.Schemb) (Store, error) {
+	store := newStore(db, schemb.MigrbtionsTbbleNbme)
 
-	if err := store.EnsureSchemaTable(ctx); err != nil {
+	if err := store.EnsureSchembTbble(ctx); err != nil {
 		if closeErr := db.Close(); closeErr != nil {
 			err = errors.Append(err, closeErr)
 		}
@@ -36,7 +36,7 @@ func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *s
 		return nil, err
 	}
 
-	if err := store.BackfillSchemaVersions(ctx); err != nil {
+	if err := store.BbckfillSchembVersions(ctx); err != nil {
 		if closeErr := db.Close(); closeErr != nil {
 			err = errors.Append(err, closeErr)
 		}
@@ -48,15 +48,15 @@ func initStore(ctx context.Context, newStore StoreFactory, db *sql.DB, schema *s
 }
 
 type storeShim struct {
-	*migrationstore.Store
+	*migrbtionstore.Store
 }
 
-func NewStoreShim(s *migrationstore.Store) Store {
+func NewStoreShim(s *migrbtionstore.Store) Store {
 	return &storeShim{s}
 }
 
-func (s *storeShim) Transact(ctx context.Context) (runner.Store, error) {
-	tx, err := s.Store.Transact(ctx)
+func (s *storeShim) Trbnsbct(ctx context.Context) (runner.Store, error) {
+	tx, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}

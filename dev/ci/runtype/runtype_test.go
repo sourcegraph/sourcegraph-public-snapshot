@@ -1,230 +1,230 @@
-package runtype
+pbckbge runtype
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-// TestComputeRunType should be used for high-level testing of critical run types.
+// TestComputeRunType should be used for high-level testing of criticbl run types.
 func TestComputeRunType(t *testing.T) {
-	type args struct {
-		tag    string
-		branch string
-		env    map[string]string
+	type brgs struct {
+		tbg    string
+		brbnch string
+		env    mbp[string]string
 	}
 	tests := []struct {
-		name string
-		args args
-		want RunType
+		nbme string
+		brgs brgs
+		wbnt RunType
 	}{{
-		name: "pull request by default",
-		args: args{
-			branch: "some-random-feature-branch",
+		nbme: "pull request by defbult",
+		brgs: brgs{
+			brbnch: "some-rbndom-febture-brbnch",
 		},
-		want: PullRequest,
+		wbnt: PullRequest,
 	}, {
-		name: "main",
-		args: args{
-			branch: "main",
+		nbme: "mbin",
+		brgs: brgs{
+			brbnch: "mbin",
 		},
-		want: MainBranch,
+		wbnt: MbinBrbnch,
 	}, {
-		name: "tagged release",
-		args: args{
-			branch: "1.3",
-			tag:    "v1.2.3",
+		nbme: "tbgged relebse",
+		brgs: brgs{
+			brbnch: "1.3",
+			tbg:    "v1.2.3",
 		},
-		want: TaggedRelease,
+		wbnt: TbggedRelebse,
 	}, {
-		name: "bext release",
-		args: args{
-			branch: "bext/release",
+		nbme: "bext relebse",
+		brgs: brgs{
+			brbnch: "bext/relebse",
 		},
-		want: BextReleaseBranch,
+		wbnt: BextRelebseBrbnch,
 	}, {
-		name: "bext nightly",
-		args: args{
-			branch: "main",
-			env: map[string]string{
+		nbme: "bext nightly",
+		brgs: brgs{
+			brbnch: "mbin",
+			env: mbp[string]string{
 				"BEXT_NIGHTLY": "true",
 			},
 		},
-		want: BextNightly,
+		wbnt: BextNightly,
 	}, {
-		name: "vsce nightly",
-		args: args{
-			branch: "main",
-			env: map[string]string{
+		nbme: "vsce nightly",
+		brgs: brgs{
+			brbnch: "mbin",
+			env: mbp[string]string{
 				"VSCE_NIGHTLY": "true",
 			},
 		},
-		want: VsceNightly,
+		wbnt: VsceNightly,
 	}, {
-		name: "vsce release",
-		args: args{
-			branch: "vsce/release",
+		nbme: "vsce relebse",
+		brgs: brgs{
+			brbnch: "vsce/relebse",
 		},
-		want: VsceReleaseBranch,
+		wbnt: VsceRelebseBrbnch,
 	}, {
-		name: "app release",
-		args: args{
-			branch: "app/release",
+		nbme: "bpp relebse",
+		brgs: brgs{
+			brbnch: "bpp/relebse",
 		},
-		want: AppRelease,
+		wbnt: AppRelebse,
 	}, {
-		name: "app release insiders",
-		args: args{
-			branch: "app/insiders",
+		nbme: "bpp relebse insiders",
+		brgs: brgs{
+			brbnch: "bpp/insiders",
 		},
-		want: AppInsiders,
+		wbnt: AppInsiders,
 	}, {
-		name: "release nightly",
-		args: args{
-			branch: "main",
-			env: map[string]string{
+		nbme: "relebse nightly",
+		brgs: brgs{
+			brbnch: "mbin",
+			env: mbp[string]string{
 				"RELEASE_NIGHTLY": "true",
 			},
 		},
-		want: ReleaseNightly,
+		wbnt: RelebseNightly,
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := Compute(tt.args.tag, tt.args.branch, tt.args.env)
-			assert.Equal(t, tt.want.String(), got.String())
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got := Compute(tt.brgs.tbg, tt.brgs.brbnch, tt.brgs.env)
+			bssert.Equbl(t, tt.wbnt.String(), got.String())
 		})
 	}
 }
 
 func TestRunTypeString(t *testing.T) {
-	// Check all individual types have a name defined at least
-	var tested int
+	// Check bll individubl types hbve b nbme defined bt lebst
+	vbr tested int
 	for rt := PullRequest; rt < None; rt += 1 {
 		tested += 1
-		assert.NotEmpty(t, rt.String(), "RunType: %d with matcher %+v", rt, rt.Matcher())
+		bssert.NotEmpty(t, rt.String(), "RunType: %d with mbtcher %+v", rt, rt.Mbtcher())
 	}
-	assert.Equal(t, int(None), tested)
+	bssert.Equbl(t, int(None), tested)
 }
 
-func TestRunTypeMatcher(t *testing.T) {
-	// Check all individual types have a matcher defined at least
-	// Start a PullRequest+1 because PullRequest is the default RunType, and does not have
-	// a matcher.
-	var tested int
+func TestRunTypeMbtcher(t *testing.T) {
+	// Check bll individubl types hbve b mbtcher defined bt lebst
+	// Stbrt b PullRequest+1 becbuse PullRequest is the defbult RunType, bnd does not hbve
+	// b mbtcher.
+	vbr tested int
 	for rt := PullRequest + 1; rt < None; rt += 1 {
 		tested += 1
-		assert.NotNil(t, rt.Matcher(), "RunType: %d with name %q", rt, rt.String())
+		bssert.NotNil(t, rt.Mbtcher(), "RunType: %d with nbme %q", rt, rt.String())
 	}
-	assert.Equal(t, int(None)-1, tested)
+	bssert.Equbl(t, int(None)-1, tested)
 }
 
-func TestRunTypeMatcherMatches(t *testing.T) {
-	type args struct {
-		tag    string
-		branch string
+func TestRunTypeMbtcherMbtches(t *testing.T) {
+	type brgs struct {
+		tbg    string
+		brbnch string
 	}
 	tests := []struct {
-		name    string
-		matcher RunTypeMatcher
-		args    args
-		want    bool
+		nbme    string
+		mbtcher RunTypeMbtcher
+		brgs    brgs
+		wbnt    bool
 	}{{
-		name: "branch prefix",
-		matcher: RunTypeMatcher{
-			Branch: "main-dry-run/",
+		nbme: "brbnch prefix",
+		mbtcher: RunTypeMbtcher{
+			Brbnch: "mbin-dry-run/",
 		},
-		args: args{branch: "main-dry-run/asdf"},
-		want: true,
+		brgs: brgs{brbnch: "mbin-dry-run/bsdf"},
+		wbnt: true,
 	}, {
-		name: "branch regexp",
-		matcher: RunTypeMatcher{
-			Branch:       `^[0-9]+\.[0-9]+$`,
-			BranchRegexp: true,
+		nbme: "brbnch regexp",
+		mbtcher: RunTypeMbtcher{
+			Brbnch:       `^[0-9]+\.[0-9]+$`,
+			BrbnchRegexp: true,
 		},
-		args: args{branch: "1.2"},
-		want: true,
+		brgs: brgs{brbnch: "1.2"},
+		wbnt: true,
 	}, {
-		name: "branch exact",
-		matcher: RunTypeMatcher{
-			Branch:      "main",
-			BranchExact: true,
+		nbme: "brbnch exbct",
+		mbtcher: RunTypeMbtcher{
+			Brbnch:      "mbin",
+			BrbnchExbct: true,
 		},
-		args: args{branch: "main"},
-		want: true,
+		brgs: brgs{brbnch: "mbin"},
+		wbnt: true,
 	}, {
-		name: "tag prefix",
-		matcher: RunTypeMatcher{
-			TagPrefix: "v",
+		nbme: "tbg prefix",
+		mbtcher: RunTypeMbtcher{
+			TbgPrefix: "v",
 		},
-		args: args{branch: "main", tag: "v1.2.3"},
-		want: true,
+		brgs: brgs{brbnch: "mbin", tbg: "v1.2.3"},
+		wbnt: true,
 	}, {
-		name: "env includes",
-		matcher: RunTypeMatcher{
-			EnvIncludes: map[string]string{
+		nbme: "env includes",
+		mbtcher: RunTypeMbtcher{
+			EnvIncludes: mbp[string]string{
 				"KEY": "VALUE",
 			},
 		},
-		args: args{branch: "main"},
-		want: true,
+		brgs: brgs{brbnch: "mbin"},
+		wbnt: true,
 	}, {
-		name: "env not includes",
-		matcher: RunTypeMatcher{
-			EnvIncludes: map[string]string{
+		nbme: "env not includes",
+		mbtcher: RunTypeMbtcher{
+			EnvIncludes: mbp[string]string{
 				"KEY": "NOT_VALUE",
 			},
 		},
-		args: args{branch: "main"},
-		want: false,
+		brgs: brgs{brbnch: "mbin"},
+		wbnt: fblse,
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := tt.matcher.Matches(tt.args.tag, tt.args.branch, map[string]string{
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got := tt.mbtcher.Mbtches(tt.brgs.tbg, tt.brgs.brbnch, mbp[string]string{
 				"KEY": "VALUE",
 			})
-			assert.Equal(t, tt.want, got)
+			bssert.Equbl(t, tt.wbnt, got)
 		})
 	}
 }
 
-func TestRunTypeMatcherExtractBranchArgument(t *testing.T) {
+func TestRunTypeMbtcherExtrbctBrbnchArgument(t *testing.T) {
 	tests := []struct {
-		name            string
-		matcher         *RunTypeMatcher
-		branch          string
-		want            string
-		wantErrContains string
+		nbme            string
+		mbtcher         *RunTypeMbtcher
+		brbnch          string
+		wbnt            string
+		wbntErrContbins string
 	}{{
-		name:    "gets 1 segment argument",
-		matcher: &RunTypeMatcher{Branch: "prefix/"},
-		branch:  "prefix/argument",
-		want:    "argument",
+		nbme:    "gets 1 segment brgument",
+		mbtcher: &RunTypeMbtcher{Brbnch: "prefix/"},
+		brbnch:  "prefix/brgument",
+		wbnt:    "brgument",
 	}, {
-		name:    "gets 2 segment argument",
-		matcher: &RunTypeMatcher{Branch: "prefix/"},
-		branch:  "prefix/argument/name",
-		want:    "argument",
+		nbme:    "gets 2 segment brgument",
+		mbtcher: &RunTypeMbtcher{Brbnch: "prefix/"},
+		brbnch:  "prefix/brgument/nbme",
+		wbnt:    "brgument",
 	}, {
-		name:    "missing unrequired argument",
-		matcher: &RunTypeMatcher{Branch: "prefix/"},
-		branch:  "prefix/",
+		nbme:    "missing unrequired brgument",
+		mbtcher: &RunTypeMbtcher{Brbnch: "prefix/"},
+		brbnch:  "prefix/",
 	}, {
-		name: "missing required argument",
-		matcher: &RunTypeMatcher{
-			Branch:                 "prefix/",
-			BranchArgumentRequired: true,
+		nbme: "missing required brgument",
+		mbtcher: &RunTypeMbtcher{
+			Brbnch:                 "prefix/",
+			BrbnchArgumentRequired: true,
 		},
-		branch:          "prefix/",
-		wantErrContains: "branch argument expected",
+		brbnch:          "prefix/",
+		wbntErrContbins: "brbnch brgument expected",
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := tt.matcher.ExtractBranchArgument(tt.branch)
-			if tt.wantErrContains != "" {
-				assert.Error(t, err)
-				assert.Contains(t, err.Error(), tt.wantErrContains)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got, err := tt.mbtcher.ExtrbctBrbnchArgument(tt.brbnch)
+			if tt.wbntErrContbins != "" {
+				bssert.Error(t, err)
+				bssert.Contbins(t, err.Error(), tt.wbntErrContbins)
 			}
-			assert.Equal(t, tt.want, got)
+			bssert.Equbl(t, tt.wbnt, got)
 		})
 	}
 }

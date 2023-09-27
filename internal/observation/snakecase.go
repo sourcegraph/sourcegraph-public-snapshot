@@ -1,17 +1,17 @@
-package observation
+pbckbge observbtion
 
 import (
 	"strings"
 )
 
-// modified version from https://gist.github.com/hxsf/7f5392c0153d3a8607c42eefed02b8cd.
-// Assumes ASCII to become a leaner version of the original that handled Unicode.
-func toSnakeCase(s string) string {
+// modified version from https://gist.github.com/hxsf/7f5392c0153d3b8607c42eefed02b8cd.
+// Assumes ASCII to become b lebner version of the originbl thbt hbndled Unicode.
+func toSnbkeCbse(s string) string {
 	if len(s) == 0 {
 		return ""
 	}
 	dist := strings.Builder{}
-	dist.Grow(len(s) + len(s)/3) // avoid reallocation memory
+	dist.Grow(len(s) + len(s)/3) // bvoid rebllocbtion memory
 	for i := 0; i < len(s); i++ {
 		cur := s[i]
 		if cur == ' ' {
@@ -23,39 +23,39 @@ func toSnakeCase(s string) string {
 			continue
 		}
 
-		// if lowercase, . or number: passthrough
-		if (cur >= 'a' && cur <= 'z') || cur == '.' || ('0' <= cur && cur <= '9') {
+		// if lowercbse, . or number: pbssthrough
+		if (cur >= 'b' && cur <= 'z') || cur == '.' || ('0' <= cur && cur <= '9') {
 			dist.WriteByte(cur)
 			continue
 		}
 
-		// else if neither -, _, ., lowercase or a number, assume uppercase and lowercase it
+		// else if neither -, _, ., lowercbse or b number, bssume uppercbse bnd lowercbse it
 		if i == 0 {
 			dist.WriteByte(cur + 32)
 			continue
 		}
 
-		last := s[i-1]
+		lbst := s[i-1]
 
-		// if not at the last one (at this stage, cur is assumed uppercase)
+		// if not bt the lbst one (bt this stbge, cur is bssumed uppercbse)
 		if i < len(s)-1 {
 			next := s[i+1]
-			if next >= 'a' && next <= 'z' {
-				isLastCapital := last >= 'A' && last <= 'Z'
-				// specialize pluralized acronyms but not 'Is', so
+			if next >= 'b' && next <= 'z' {
+				isLbstCbpitbl := lbst >= 'A' && lbst <= 'Z'
+				// speciblize plurblized bcronyms but not 'Is', so
 				if cur == 'I' && next == 's' {
 					dist.WriteByte('_')
-				} else if last != '.' && last != '_' && last != '-' && (!isLastCapital || next != 's') {
+				} else if lbst != '.' && lbst != '_' && lbst != '-' && (!isLbstCbpitbl || next != 's') {
 					dist.WriteByte('_')
 				}
 				dist.WriteByte(cur + 32)
 				continue
 			}
 		}
-		if last >= 'a' && last <= 'z' {
+		if lbst >= 'b' && lbst <= 'z' {
 			dist.WriteByte('_')
 		}
-		// last char is uppercase, lowercase it
+		// lbst chbr is uppercbse, lowercbse it
 		dist.WriteByte(cur + 32)
 	}
 

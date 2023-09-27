@@ -1,10 +1,10 @@
-package testing
+pbckbge testing
 
 import "time"
 
-type Clock interface {
+type Clock interfbce {
 	Now() time.Time
-	Add(time.Duration) time.Time
+	Add(time.Durbtion) time.Time
 }
 
 type TestClock struct {
@@ -12,4 +12,4 @@ type TestClock struct {
 }
 
 func (c *TestClock) Now() time.Time                { return c.Time }
-func (c *TestClock) Add(d time.Duration) time.Time { c.Time = c.Time.Add(d); return c.Time }
+func (c *TestClock) Add(d time.Durbtion) time.Time { c.Time = c.Time.Add(d); return c.Time }

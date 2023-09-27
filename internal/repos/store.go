@@ -1,130 +1,130 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"sort"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Store interface {
-	// RepoStore returns a database.RepoStore using the same database handle.
-	RepoStore() database.RepoStore
-	// GitserverReposStore returns a database.GitserverReposStore using the same
-	// database handle.
-	GitserverReposStore() database.GitserverRepoStore
-	// ExternalServiceStore returns a database.ExternalServiceStore using the same
-	// database handle.
-	ExternalServiceStore() database.ExternalServiceStore
+type Store interfbce {
+	// RepoStore returns b dbtbbbse.RepoStore using the sbme dbtbbbse hbndle.
+	RepoStore() dbtbbbse.RepoStore
+	// GitserverReposStore returns b dbtbbbse.GitserverReposStore using the sbme
+	// dbtbbbse hbndle.
+	GitserverReposStore() dbtbbbse.GitserverRepoStore
+	// ExternblServiceStore returns b dbtbbbse.ExternblServiceStore using the sbme
+	// dbtbbbse hbndle.
+	ExternblServiceStore() dbtbbbse.ExternblServiceStore
 
-	// SetMetrics updates metrics for the store in place.
+	// SetMetrics updbtes metrics for the store in plbce.
 	SetMetrics(m StoreMetrics)
 
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) Store
-	// Transact begins a new transaction and make a new Store over it.
-	Transact(ctx context.Context) (Store, error)
+	bbsestore.ShbrebbleStore
+	With(other bbsestore.ShbrebbleStore) Store
+	// Trbnsbct begins b new trbnsbction bnd mbke b new Store over it.
+	Trbnsbct(ctx context.Context) (Store, error)
 	Done(err error) error
 
-	// DeleteExternalServiceReposNotIn calls DeleteExternalServiceRepo for every repo
-	// not in the given ids that is owned by the given external service. We run one
-	// query per repo rather than one batch query in order to reduce the chances of
-	// this whole operation blocking on locks other queries acquire when referencing
-	// external_service_repos or repo. Since the syncer runs periodically, it's
-	// better to fail to delete some repos and try to delete them again in the next
-	// run, than to have one failure prevent all deletes from happening.
-	DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error)
-	// DeleteExternalServiceRepo deletes a repo's association to an external service
-	// and the repo itself if there are no more associations to that repo by any
-	// other external service.
-	DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error)
-	// CreateExternalServiceRepo inserts a single repo and its association to an
-	// external service, respectively in the repo and "external_service_repos" table.
-	// The associated external service must already exist.
-	CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
-	// UpdateExternalServiceRepo updates a single repo and its association to an
-	// external service, respectively in the repo and external_service_repos table.
-	// The associated external service must already exist.
-	UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
-	// UpdateRepo updates a single repo without updating its association to an
-	// external service. This must only be used when updating metadata on a repo
-	// that cannot affect its associations.
-	UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error)
-	// EnqueueSingleSyncJob enqueues a single sync job for the given external
-	// service if the external service is not deleted and no other job is
-	// already queued or processing.
+	// DeleteExternblServiceReposNotIn cblls DeleteExternblServiceRepo for every repo
+	// not in the given ids thbt is owned by the given externbl service. We run one
+	// query per repo rbther thbn one bbtch query in order to reduce the chbnces of
+	// this whole operbtion blocking on locks other queries bcquire when referencing
+	// externbl_service_repos or repo. Since the syncer runs periodicblly, it's
+	// better to fbil to delete some repos bnd try to delete them bgbin in the next
+	// run, thbn to hbve one fbilure prevent bll deletes from hbppening.
+	DeleteExternblServiceReposNotIn(ctx context.Context, svc *types.ExternblService, ids mbp[bpi.RepoID]struct{}) (deleted []bpi.RepoID, err error)
+	// DeleteExternblServiceRepo deletes b repo's bssocibtion to bn externbl service
+	// bnd the repo itself if there bre no more bssocibtions to thbt repo by bny
+	// other externbl service.
+	DeleteExternblServiceRepo(ctx context.Context, svc *types.ExternblService, id bpi.RepoID) (err error)
+	// CrebteExternblServiceRepo inserts b single repo bnd its bssocibtion to bn
+	// externbl service, respectively in the repo bnd "externbl_service_repos" tbble.
+	// The bssocibted externbl service must blrebdy exist.
+	CrebteExternblServiceRepo(ctx context.Context, svc *types.ExternblService, r *types.Repo) (err error)
+	// UpdbteExternblServiceRepo updbtes b single repo bnd its bssocibtion to bn
+	// externbl service, respectively in the repo bnd externbl_service_repos tbble.
+	// The bssocibted externbl service must blrebdy exist.
+	UpdbteExternblServiceRepo(ctx context.Context, svc *types.ExternblService, r *types.Repo) (err error)
+	// UpdbteRepo updbtes b single repo without updbting its bssocibtion to bn
+	// externbl service. This must only be used when updbting metbdbtb on b repo
+	// thbt cbnnot bffect its bssocibtions.
+	UpdbteRepo(ctx context.Context, r *types.Repo) (sbved *types.Repo, err error)
+	// EnqueueSingleSyncJob enqueues b single sync job for the given externbl
+	// service if the externbl service is not deleted bnd no other job is
+	// blrebdy queued or processing.
 	//
-	// Additionally, it also skips queueing up a sync job for cloud_default
-	// external services. This is done to avoid the sync job for the
-	// cloud_default triggering a deletion of repos because:
-	//  1. cloud_default does not define any repos in its config
-	//  2. repos under the cloud_default are lazily synced the first time a user accesses them
+	// Additionblly, it blso skips queueing up b sync job for cloud_defbult
+	// externbl services. This is done to bvoid the sync job for the
+	// cloud_defbult triggering b deletion of repos becbuse:
+	//  1. cloud_defbult does not define bny repos in its config
+	//  2. repos under the cloud_defbult bre lbzily synced the first time b user bccesses them
 	//
-	// This is a limitation of our current repo syncing architecture. The
-	// cloud_default flag is only set on sourcegraph.com and manages public GitHub
-	// and GitLab repositories that have been lazily synced.
+	// This is b limitbtion of our current repo syncing brchitecture. The
+	// cloud_defbult flbg is only set on sourcegrbph.com bnd mbnbges public GitHub
+	// bnd GitLbb repositories thbt hbve been lbzily synced.
 	//
-	// It can block if a row-level lock is held on the given external service,
-	// for example if it's being deleted.
+	// It cbn block if b row-level lock is held on the given externbl service,
+	// for exbmple if it's being deleted.
 	EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error)
-	// EnqueueSyncJobs enqueues sync jobs for all external services that are due.
+	// EnqueueSyncJobs enqueues sync jobs for bll externbl services thbt bre due.
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
-	// ListSyncJobs returns all sync jobs.
+	// ListSyncJobs returns bll sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
 }
 
-// A Store exposes methods to read and write repos and external services.
+// A Store exposes methods to rebd bnd write repos bnd externbl services.
 type store struct {
-	*basestore.Store
+	*bbsestore.Store
 
-	// Logger used by the store. Does not have a default - it must be provided.
+	// Logger used by the store. Does not hbve b defbult - it must be provided.
 	Logger log.Logger
-	// Metrics are sent to Prometheus by default.
+	// Metrics bre sent to Prometheus by defbult.
 	Metrics StoreMetrics
 
-	txtrace *trace.Trace
+	txtrbce *trbce.Trbce
 	txctx   context.Context
 }
 
-// NewStore instantiates and returns a new Store with given database handle.
-func NewStore(logger log.Logger, db database.DB) Store {
-	s := basestore.NewWithHandle(db.Handle())
+// NewStore instbntibtes bnd returns b new Store with given dbtbbbse hbndle.
+func NewStore(logger log.Logger, db dbtbbbse.DB) Store {
+	s := bbsestore.NewWithHbndle(db.Hbndle())
 	return &store{
 		Store:  s,
 		Logger: logger,
 	}
 }
 
-func (s *store) RepoStore() database.RepoStore {
-	return database.ReposWith(s.Logger, s)
+func (s *store) RepoStore() dbtbbbse.RepoStore {
+	return dbtbbbse.ReposWith(s.Logger, s)
 }
 
-func (s *store) GitserverReposStore() database.GitserverRepoStore {
-	return database.GitserverReposWith(s)
+func (s *store) GitserverReposStore() dbtbbbse.GitserverRepoStore {
+	return dbtbbbse.GitserverReposWith(s)
 }
 
-func (s *store) ExternalServiceStore() database.ExternalServiceStore {
-	return database.ExternalServicesWith(s.Logger, s)
+func (s *store) ExternblServiceStore() dbtbbbse.ExternblServiceStore {
+	return dbtbbbse.ExternblServicesWith(s.Logger, s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
 
-func (s *store) With(other basestore.ShareableStore) Store {
+func (s *store) With(other bbsestore.ShbrebbleStore) Store {
 	return &store{
 		Store:   s.Store.With(other),
 		Logger:  s.Logger,
@@ -132,49 +132,49 @@ func (s *store) With(other basestore.ShareableStore) Store {
 	}
 }
 
-func (s *store) Transact(ctx context.Context) (Store, error) {
-	return s.transact(ctx)
+func (s *store) Trbnsbct(ctx context.Context) (Store, error) {
+	return s.trbnsbct(ctx)
 }
 
-func (s *store) transact(ctx context.Context) (stx *store, err error) {
-	tr, ctx := s.trace(ctx, "Store.Transact")
-	logger := trace.Logger(ctx, s.Logger)
+func (s *store) trbnsbct(ctx context.Context) (stx *store, err error) {
+	tr, ctx := s.trbce(ctx, "Store.Trbnsbct")
+	logger := trbce.Logger(ctx, s.Logger)
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		s.Metrics.Transact.Observe(secs, 1, &err)
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
+		s.Metrics.Trbnsbct.Observe(secs, 1, &err)
 
 		if err != nil {
-			logger.Error("store.transact", log.Error(err))
+			logger.Error("store.trbnsbct", log.Error(err))
 
 			tr.SetError(err)
-			// Finish is called in Done in the non-error case
+			// Finish is cblled in Done in the non-error cbse
 			tr.End()
 		}
 	}(time.Now())
 
-	txBase, err := s.Store.Transact(ctx)
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "starting transaction")
+		return nil, errors.Wrbp(err, "stbrting trbnsbction")
 	}
 	return &store{
-		Store:   txBase,
+		Store:   txBbse,
 		Logger:  s.Logger,
 		Metrics: s.Metrics,
-		txtrace: tr,
+		txtrbce: tr,
 		txctx:   ctx,
 	}, nil
 }
 
-// Done calls into the inner Store Done method.
+// Done cblls into the inner Store Done method.
 func (s *store) Done(err error) error {
-	tr := s.txtrace
-	tr.SetAttributes(attribute.String("event", "Store.Done"))
-	logger := trace.Logger(s.txctx, s.Logger)
+	tr := s.txtrbce
+	tr.SetAttributes(bttribute.String("event", "Store.Done"))
+	logger := trbce.Logger(s.txctx, s.Logger)
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		done := false
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
+		done := fblse
 
 		if err != nil {
 			done = true
@@ -194,254 +194,254 @@ func (s *store) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *store) trace(ctx context.Context, family string) (*trace.Trace, context.Context) {
+func (s *store) trbce(ctx context.Context, fbmily string) (*trbce.Trbce, context.Context) {
 	txctx := s.txctx
 	if txctx == nil {
 		txctx = ctx
 	}
-	tr, txctx := trace.New(txctx, family)
-	ctx = trace.CopyContext(ctx, txctx)
+	tr, txctx := trbce.New(txctx, fbmily)
+	ctx = trbce.CopyContext(ctx, txctx)
 	return &tr, ctx
 }
 
-func (s *store) DeleteExternalServiceReposNotIn(ctx context.Context, svc *types.ExternalService, ids map[api.RepoID]struct{}) (deleted []api.RepoID, err error) {
-	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceReposNotIn")
+func (s *store) DeleteExternblServiceReposNotIn(ctx context.Context, svc *types.ExternblService, ids mbp[bpi.RepoID]struct{}) (deleted []bpi.RepoID, err error) {
+	tr, ctx := s.trbce(ctx, "Store.DeleteExternblServiceReposNotIn")
 	tr.SetAttributes(
-		attribute.Int("len(ids)", len(ids)),
-		attribute.Int64("external_service_id", svc.ID),
+		bttribute.Int("len(ids)", len(ids)),
+		bttribute.Int64("externbl_service_id", svc.ID),
 	)
-	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("len(ids)", len(ids)))
+	logger := trbce.Logger(ctx, s.Logger).With(log.Int64("externblServiceID", svc.ID), log.Int("len(ids)", len(ids)))
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 
-		s.Metrics.DeleteExternalServiceReposNotIn.Observe(secs, 1, &err)
+		s.Metrics.DeleteExternblServiceReposNotIn.Observe(secs, 1, &err)
 
 		if err != nil {
-			logger.Error("store.delete-external-service-repos-not-in", log.Error(err))
+			logger.Error("store.delete-externbl-service-repos-not-in", log.Error(err))
 		}
 
 		tr.SetError(err)
 		tr.End()
 	}(time.Now())
 
-	set := make(pq.Int64Array, 0, len(ids))
-	for id := range ids {
-		set = append(set, int64(id))
+	set := mbke(pq.Int64Arrby, 0, len(ids))
+	for id := rbnge ids {
+		set = bppend(set, int64(id))
 	}
 
-	sort.Slice(set, func(a, b int) bool { return set[a] < set[b] })
+	sort.Slice(set, func(b, b int) bool { return set[b] < set[b] })
 
-	var toDelete pq.Int64Array
-	if err = s.QueryRow(ctx, sqlf.Sprintf(listExternalServiceReposNotInQuery, svc.ID, set)).Scan(&toDelete); err != nil {
-		return nil, errors.Wrap(err, "failed to list external service repo ids")
+	vbr toDelete pq.Int64Arrby
+	if err = s.QueryRow(ctx, sqlf.Sprintf(listExternblServiceReposNotInQuery, svc.ID, set)).Scbn(&toDelete); err != nil {
+		return nil, errors.Wrbp(err, "fbiled to list externbl service repo ids")
 	}
 
-	var errs error
-	for _, id := range toDelete {
-		if err = s.DeleteExternalServiceRepo(ctx, svc, api.RepoID(id)); err != nil {
-			errs = errors.Append(errs, errors.Wrapf(err, "failed to delete external service repo (%d, %d)", svc.ID, id))
+	vbr errs error
+	for _, id := rbnge toDelete {
+		if err = s.DeleteExternblServiceRepo(ctx, svc, bpi.RepoID(id)); err != nil {
+			errs = errors.Append(errs, errors.Wrbpf(err, "fbiled to delete externbl service repo (%d, %d)", svc.ID, id))
 		} else {
-			deleted = append(deleted, api.RepoID(id))
+			deleted = bppend(deleted, bpi.RepoID(id))
 		}
 	}
 
 	return deleted, errs
 }
 
-const listExternalServiceReposNotInQuery = `
-SELECT array_agg(repo_id)
-FROM external_service_repos
-WHERE external_service_id = %s AND repo_id != ALL(%s)
+const listExternblServiceReposNotInQuery = `
+SELECT brrby_bgg(repo_id)
+FROM externbl_service_repos
+WHERE externbl_service_id = %s AND repo_id != ALL(%s)
 `
 
-func (s *store) DeleteExternalServiceRepo(ctx context.Context, svc *types.ExternalService, id api.RepoID) (err error) {
-	tr, ctx := s.trace(ctx, "Store.DeleteExternalServiceRepo")
+func (s *store) DeleteExternblServiceRepo(ctx context.Context, svc *types.ExternblService, id bpi.RepoID) (err error) {
+	tr, ctx := s.trbce(ctx, "Store.DeleteExternblServiceRepo")
 	tr.SetAttributes(
-		attribute.Int64("id", int64(id)),
-		attribute.Int64("external_service_id", svc.ID),
+		bttribute.Int64("id", int64(id)),
+		bttribute.Int64("externbl_service_id", svc.ID),
 	)
-	logger := trace.Logger(ctx, s.Logger).With(log.Int64("externalServiceID", svc.ID), log.Int("repoID", int(id)))
+	logger := trbce.Logger(ctx, s.Logger).With(log.Int64("externblServiceID", svc.ID), log.Int("repoID", int(id)))
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 
-		s.Metrics.DeleteExternalServiceRepo.Observe(secs, 1, &err)
+		s.Metrics.DeleteExternblServiceRepo.Observe(secs, 1, &err)
 
 		if err != nil {
-			logger.Error("store.delete-external-service-repo", log.Error(err))
+			logger.Error("store.delete-externbl-service-repo", log.Error(err))
 		}
 
 		tr.SetError(err)
 		tr.End()
 	}(time.Now())
 
-	if !s.InTransaction() {
-		tx, err := s.transact(ctx)
+	if !s.InTrbnsbction() {
+		tx, err := s.trbnsbct(ctx)
 		if err != nil {
-			return errors.Wrap(err, "DeleteExternalServiceRepo")
+			return errors.Wrbp(err, "DeleteExternblServiceRepo")
 		}
 
-		// We replace the current store with the transactional store for the rest of the method.
-		// We don't assign the store return value from `s.transact` so as to avoid nil panics when
-		// executing the deferred functions that utilize the store since `s.transact` returns a nil
-		// store when there's an error.
+		// We replbce the current store with the trbnsbctionbl store for the rest of the method.
+		// We don't bssign the store return vblue from `s.trbnsbct` so bs to bvoid nil pbnics when
+		// executing the deferred functions thbt utilize the store since `s.trbnsbct` returns b nil
+		// store when there's bn error.
 		s = tx
 		defer func() { err = s.Done(err) }()
 	}
 
-	err = s.Exec(ctx, sqlf.Sprintf(deleteExternalServiceRepoQuery, svc.ID, id))
+	err = s.Exec(ctx, sqlf.Sprintf(deleteExternblServiceRepoQuery, svc.ID, id))
 	if err != nil {
-		return errors.Wrap(err, "failed to delete external service repo")
+		return errors.Wrbp(err, "fbiled to delete externbl service repo")
 	}
 
-	err = s.Exec(ctx, sqlf.Sprintf(deleteRepoIfOrphanQuery, id, id))
+	err = s.Exec(ctx, sqlf.Sprintf(deleteRepoIfOrphbnQuery, id, id))
 	if err != nil {
-		return errors.Wrap(err, "failed to delete orphaned repo")
+		return errors.Wrbp(err, "fbiled to delete orphbned repo")
 	}
 
 	return nil
 }
 
-const deleteExternalServiceRepoQuery = `
-DELETE FROM external_service_repos
-WHERE external_service_id = %s AND repo_id = %s
+const deleteExternblServiceRepoQuery = `
+DELETE FROM externbl_service_repos
+WHERE externbl_service_id = %s AND repo_id = %s
 `
 
-const deleteRepoIfOrphanQuery = `
+const deleteRepoIfOrphbnQuery = `
 UPDATE repo
-SET name = soft_deleted_repository_name(name), deleted_at = now()
+SET nbme = soft_deleted_repository_nbme(nbme), deleted_bt = now()
 WHERE id = %s AND NOT EXISTS (
-	SELECT FROM external_service_repos
+	SELECT FROM externbl_service_repos
 	WHERE repo_id = %s LIMIT 1
 )
 `
 
-func (s *store) CreateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
-	tr, ctx := s.trace(ctx, "Store.CreateExternalServiceRepo")
+func (s *store) CrebteExternblServiceRepo(ctx context.Context, svc *types.ExternblService, r *types.Repo) (err error) {
+	tr, ctx := s.trbce(ctx, "Store.CrebteExternblServiceRepo")
 	tr.SetAttributes(
-		attribute.String("name", string(r.Name)),
-		attribute.Int64("external_service_id", svc.ID),
-		attribute.String("external_repo_spec", r.ExternalRepo.String()),
+		bttribute.String("nbme", string(r.Nbme)),
+		bttribute.Int64("externbl_service_id", svc.ID),
+		bttribute.String("externbl_repo_spec", r.ExternblRepo.String()),
 	)
-	logger := trace.Logger(ctx, s.Logger).With(
-		log.Int("externalServiceID", int(svc.ID)),
-		log.String("Name", string(r.Name)),
-		log.Object("ExternalRepo",
-			log.String("ID", r.ExternalRepo.ID),
-			log.String("ServiceID", r.ExternalRepo.ServiceID),
-			log.String("ServiceType", r.ExternalRepo.ServiceType),
+	logger := trbce.Logger(ctx, s.Logger).With(
+		log.Int("externblServiceID", int(svc.ID)),
+		log.String("Nbme", string(r.Nbme)),
+		log.Object("ExternblRepo",
+			log.String("ID", r.ExternblRepo.ID),
+			log.String("ServiceID", r.ExternblRepo.ServiceID),
+			log.String("ServiceType", r.ExternblRepo.ServiceType),
 		),
 	)
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 
-		s.Metrics.CreateExternalServiceRepo.Observe(secs, 1, &err)
+		s.Metrics.CrebteExternblServiceRepo.Observe(secs, 1, &err)
 
 		if err != nil {
-			logger.Error("store.create-external-service-repo", log.Error(err))
+			logger.Error("store.crebte-externbl-service-repo", log.Error(err))
 		}
 
 		tr.SetError(err)
 		tr.End()
 	}(time.Now())
 
-	metadata, err := json.Marshal(r.Metadata)
+	metbdbtb, err := json.Mbrshbl(r.Metbdbtb)
 	if err != nil {
 		return err
 	}
 
-	q := sqlf.Sprintf(createRepoQuery,
-		r.Name,
+	q := sqlf.Sprintf(crebteRepoQuery,
+		r.Nbme,
 		r.URI,
 		r.Description,
-		r.ExternalRepo.ServiceType,
-		r.ExternalRepo.ServiceID,
-		r.ExternalRepo.ID,
+		r.ExternblRepo.ServiceType,
+		r.ExternblRepo.ServiceID,
+		r.ExternblRepo.ID,
 		r.Archived,
 		r.Fork,
-		r.Stars,
-		r.Private,
-		metadata,
+		r.Stbrs,
+		r.Privbte,
+		metbdbtb,
 	)
 
 	src := r.Sources[svc.URN()]
 	if src == nil {
-		return errors.Newf("CreateExternalServiceRepo: repo %q missing source info for external service", r.Name)
+		return errors.Newf("CrebteExternblServiceRepo: repo %q missing source info for externbl service", r.Nbme)
 	} else if src.CloneURL == "" {
-		return errors.Newf("CreateExternalServiceRepo: repo (ID=%q) missing CloneURL for external service", src.ID)
+		return errors.Newf("CrebteExternblServiceRepo: repo (ID=%q) missing CloneURL for externbl service", src.ID)
 	}
 
-	if !s.InTransaction() {
-		s, err = s.transact(ctx)
+	if !s.InTrbnsbction() {
+		s, err = s.trbnsbct(ctx)
 		if err != nil {
-			return errors.Wrap(err, "CreateExternalServiceRepo")
+			return errors.Wrbp(err, "CrebteExternblServiceRepo")
 		}
 		defer func() { err = s.Done(err) }()
 	}
 
-	if err = s.QueryRow(ctx, q).Scan(&r.ID, &r.CreatedAt); err != nil {
+	if err = s.QueryRow(ctx, q).Scbn(&r.ID, &r.CrebtedAt); err != nil {
 		return err
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
+	return s.Exec(ctx, sqlf.Sprintf(upsertExternblServiceRepoQuery,
 		svc.ID,
 		r.ID,
 		src.CloneURL,
 	))
 }
 
-const createRepoQuery = `
+const crebteRepoQuery = `
 INSERT INTO repo (
-	name,
+	nbme,
 	uri,
 	description,
-	external_service_type,
-	external_service_id,
-	external_id,
-	archived,
+	externbl_service_type,
+	externbl_service_id,
+	externbl_id,
+	brchived,
 	fork,
-	stars,
-	private,
-	metadata,
-	created_at
+	stbrs,
+	privbte,
+	metbdbtb,
+	crebted_bt
 )
 VALUES (%s, NULLIF(%s, ''), %s, %s, %s, %s, %s, %s, %s, %s, %s, now())
-RETURNING id, created_at
+RETURNING id, crebted_bt
 `
 
-const upsertExternalServiceRepoQuery = `
-INSERT INTO external_service_repos (
-	external_service_id,
+const upsertExternblServiceRepoQuery = `
+INSERT INTO externbl_service_repos (
+	externbl_service_id,
 	repo_id,
 	clone_url
 )
 VALUES (%s, %s, %s)
-ON CONFLICT (external_service_id, repo_id)
+ON CONFLICT (externbl_service_id, repo_id)
 DO UPDATE SET
 	clone_url = excluded.clone_url
 WHERE
-	external_service_repos.clone_url != excluded.clone_url
+	externbl_service_repos.clone_url != excluded.clone_url
 `
 
-func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
-	tr, ctx := s.trace(ctx, "Store.UpdateRepo")
+func (s *store) UpdbteRepo(ctx context.Context, r *types.Repo) (sbved *types.Repo, err error) {
+	tr, ctx := s.trbce(ctx, "Store.UpdbteRepo")
 	tr.SetAttributes(
-		attribute.String("name", string(r.Name)),
-		attribute.Int64("id", int64(r.ID)),
+		bttribute.String("nbme", string(r.Nbme)),
+		bttribute.Int64("id", int64(r.ID)),
 	)
-	logger := trace.Logger(ctx, s.Logger).With(
+	logger := trbce.Logger(ctx, s.Logger).With(
 		log.Int32("id", int32(r.ID)),
-		log.String("name", string(r.Name)),
+		log.String("nbme", string(r.Nbme)),
 	)
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 
-		s.Metrics.UpdateRepo.Observe(secs, 1, &err)
+		s.Metrics.UpdbteRepo.Observe(secs, 1, &err)
 		if err != nil {
-			logger.Error("store.update-repo", log.Error(err))
+			logger.Error("store.updbte-repo", log.Error(err))
 		}
 
 		tr.SetError(err)
@@ -449,58 +449,58 @@ func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Rep
 	}(time.Now())
 
 	if r.ID == 0 {
-		return nil, errors.New("empty repo id in update")
+		return nil, errors.New("empty repo id in updbte")
 	}
 
-	metadata, err := metadataColumn(r.Metadata)
+	metbdbtb, err := metbdbtbColumn(r.Metbdbtb)
 	if err != nil {
-		return nil, errors.Wrap(err, "metadata marshalling failed")
+		return nil, errors.Wrbp(err, "metbdbtb mbrshblling fbiled")
 	}
 
-	q := sqlf.Sprintf(updateRepoQuery,
-		r.Name,
+	q := sqlf.Sprintf(updbteRepoQuery,
+		r.Nbme,
 		r.URI,
 		r.Description,
-		r.ExternalRepo.ServiceType,
-		r.ExternalRepo.ServiceID,
-		r.ExternalRepo.ID,
+		r.ExternblRepo.ServiceType,
+		r.ExternblRepo.ServiceID,
+		r.ExternblRepo.ID,
 		r.Archived,
 		r.Fork,
-		r.Stars,
-		r.Private,
-		metadata,
+		r.Stbrs,
+		r.Privbte,
+		metbdbtb,
 		r.ID,
 	)
 
-	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
+	if err = s.QueryRow(ctx, q).Scbn(&r.UpdbtedAt); err != nil {
 		return nil, err
 	}
 	return r, nil
 }
 
-func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
-	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")
+func (s *store) UpdbteExternblServiceRepo(ctx context.Context, svc *types.ExternblService, r *types.Repo) (err error) {
+	tr, ctx := s.trbce(ctx, "Store.UpdbteExternblServiceRepo")
 	tr.SetAttributes(
-		attribute.String("name", string(r.Name)),
-		attribute.Int64("external_service_id", svc.ID),
-		attribute.String("external_repo_spec", r.ExternalRepo.String()),
+		bttribute.String("nbme", string(r.Nbme)),
+		bttribute.Int64("externbl_service_id", svc.ID),
+		bttribute.String("externbl_repo_spec", r.ExternblRepo.String()),
 	)
-	logger := trace.Logger(ctx, s.Logger).With(
-		log.Int("externalServiceID", int(svc.ID)),
-		log.String("Name", string(r.Name)),
-		log.Object("ExternalRepo",
-			log.String("ID", r.ExternalRepo.ID),
-			log.String("ServiceID", r.ExternalRepo.ServiceID),
-			log.String("ServiceType", r.ExternalRepo.ServiceType),
+	logger := trbce.Logger(ctx, s.Logger).With(
+		log.Int("externblServiceID", int(svc.ID)),
+		log.String("Nbme", string(r.Nbme)),
+		log.Object("ExternblRepo",
+			log.String("ID", r.ExternblRepo.ID),
+			log.String("ServiceID", r.ExternblRepo.ServiceID),
+			log.String("ServiceType", r.ExternblRepo.ServiceType),
 		),
 	)
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 
-		s.Metrics.UpdateExternalServiceRepo.Observe(secs, 1, &err)
+		s.Metrics.UpdbteExternblServiceRepo.Observe(secs, 1, &err)
 		if err != nil {
-			logger.Error("store.update-external-service-repo", log.Error(err))
+			logger.Error("store.updbte-externbl-service-repo", log.Error(err))
 		}
 
 		tr.SetError(err)
@@ -508,137 +508,137 @@ func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.Extern
 	}(time.Now())
 
 	if r.ID == 0 {
-		return errors.New("empty repo id in update")
+		return errors.New("empty repo id in updbte")
 	}
 
-	metadata, err := metadataColumn(r.Metadata)
+	metbdbtb, err := metbdbtbColumn(r.Metbdbtb)
 	if err != nil {
-		return errors.Wrapf(err, "metadata marshalling failed")
+		return errors.Wrbpf(err, "metbdbtb mbrshblling fbiled")
 	}
 
-	q := sqlf.Sprintf(updateRepoQuery,
-		r.Name,
+	q := sqlf.Sprintf(updbteRepoQuery,
+		r.Nbme,
 		r.URI,
 		r.Description,
-		r.ExternalRepo.ServiceType,
-		r.ExternalRepo.ServiceID,
-		r.ExternalRepo.ID,
+		r.ExternblRepo.ServiceType,
+		r.ExternblRepo.ServiceID,
+		r.ExternblRepo.ID,
 		r.Archived,
 		r.Fork,
-		r.Stars,
-		r.Private,
-		metadata,
+		r.Stbrs,
+		r.Privbte,
+		metbdbtb,
 		r.ID,
 	)
 
 	src := r.Sources[svc.URN()]
 	if src == nil || src.CloneURL == "" {
-		return errors.Newf("UpdateExternalServiceRepo: repo %q missing source info for external service", r.Name)
+		return errors.Newf("UpdbteExternblServiceRepo: repo %q missing source info for externbl service", r.Nbme)
 	}
 
-	if !s.InTransaction() {
-		s, err = s.transact(ctx)
+	if !s.InTrbnsbction() {
+		s, err = s.trbnsbct(ctx)
 		if err != nil {
-			return errors.Wrap(err, "UpdateExternalServiceRepo")
+			return errors.Wrbp(err, "UpdbteExternblServiceRepo")
 		}
 		defer func() { err = s.Done(err) }()
 	}
 
-	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
+	if err = s.QueryRow(ctx, q).Scbn(&r.UpdbtedAt); err != nil {
 		return err
 	}
 
-	return s.Exec(ctx, sqlf.Sprintf(upsertExternalServiceRepoQuery,
+	return s.Exec(ctx, sqlf.Sprintf(upsertExternblServiceRepoQuery,
 		svc.ID,
 		r.ID,
 		src.CloneURL,
 	))
 }
 
-const updateRepoQuery = `
+const updbteRepoQuery = `
 UPDATE repo
 SET
-	name                  = %s,
+	nbme                  = %s,
 	uri                   = NULLIF(%s, ''),
 	description           = %s,
-	external_service_type = %s,
-	external_service_id   = %s,
-	external_id           = %s,
-	archived              = %s,
+	externbl_service_type = %s,
+	externbl_service_id   = %s,
+	externbl_id           = %s,
+	brchived              = %s,
 	fork                  = %s,
-	stars                 = %s,
-	private               = %s,
-	metadata              = %s,
-	updated_at            = now(),
-	deleted_at            = NULL
+	stbrs                 = %s,
+	privbte               = %s,
+	metbdbtb              = %s,
+	updbted_bt            = now(),
+	deleted_bt            = NULL
 WHERE id = %s
-RETURNING updated_at
+RETURNING updbted_bt
 `
 
 func (s *store) EnqueueSingleSyncJob(ctx context.Context, extSvcID int64) (err error) {
 	q := sqlf.Sprintf(`
 WITH es AS (
 	SELECT id
-	FROM external_services es
+	FROM externbl_services es
 	WHERE
 		id = %s
-		AND NOT cloud_default
-		AND deleted_at IS NULL
+		AND NOT cloud_defbult
+		AND deleted_bt IS NULL
 	FOR UPDATE
 )
-INSERT INTO external_service_sync_jobs (external_service_id)
+INSERT INTO externbl_service_sync_jobs (externbl_service_id)
 SELECT es.id
 FROM es
 WHERE NOT EXISTS (
 	SELECT 1
-	FROM external_service_sync_jobs j
+	FROM externbl_service_sync_jobs j
 	WHERE
-		es.id = j.external_service_id
-		AND j.state IN ('queued', 'processing')
+		es.id = j.externbl_service_id
+		AND j.stbte IN ('queued', 'processing')
 )
 `, extSvcID)
 	return s.Exec(ctx, q)
 }
 
 func (s *store) EnqueueSyncJobs(ctx context.Context, isDotCom bool) (err error) {
-	tr, ctx := s.trace(ctx, "Store.EnqueueSyncJobs")
+	tr, ctx := s.trbce(ctx, "Store.EnqueueSyncJobs")
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 		s.Metrics.EnqueueSyncJobs.Observe(secs, 0, &err)
 		tr.SetError(err)
 		tr.End()
 	}(time.Now())
 
 	filter := "TRUE"
-	// On Sourcegraph.com we don't sync our default sources in the background, they are synced
-	// on demand instead.
+	// On Sourcegrbph.com we don't sync our defbult sources in the bbckground, they bre synced
+	// on dembnd instebd.
 	if isDotCom {
-		filter = "cloud_default = false"
+		filter = "cloud_defbult = fblse"
 	}
 	q := sqlf.Sprintf(enqueueSyncJobsQueryFmtstr, sqlf.Sprintf(filter))
 	return s.Exec(ctx, q)
 }
 
-// We ignore Phabricator repos here as they are currently synced using
-// RunPhabricatorRepositorySyncWorker
+// We ignore Phbbricbtor repos here bs they bre currently synced using
+// RunPhbbricbtorRepositorySyncWorker
 const enqueueSyncJobsQueryFmtstr = `
 WITH due AS (
     SELECT id
-    FROM external_services
-    WHERE (next_sync_at <= clock_timestamp() OR next_sync_at IS NULL)
-    AND deleted_at IS NULL
-    AND LOWER(kind) != 'phabricator'
+    FROM externbl_services
+    WHERE (next_sync_bt <= clock_timestbmp() OR next_sync_bt IS NULL)
+    AND deleted_bt IS NULL
+    AND LOWER(kind) != 'phbbricbtor'
     AND %s
-    FOR UPDATE OF external_services -- We query 'FOR UPDATE' so we don't enqueue
-                                    -- sync jobs while an external service is being deleted.
+    FOR UPDATE OF externbl_services -- We query 'FOR UPDATE' so we don't enqueue
+                                    -- sync jobs while bn externbl service is being deleted.
 ),
 busy AS (
-    SELECT DISTINCT external_service_id id FROM external_service_sync_jobs
-    WHERE state = 'queued'
-    OR state = 'processing'
+    SELECT DISTINCT externbl_service_id id FROM externbl_service_sync_jobs
+    WHERE stbte = 'queued'
+    OR stbte = 'processing'
 )
-INSERT INTO external_service_sync_jobs (external_service_id)
+INSERT INTO externbl_service_sync_jobs (externbl_service_id)
 SELECT id from due EXCEPT SELECT id from busy
 `
 
@@ -646,35 +646,35 @@ func (s *store) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 	q := sqlf.Sprintf(`
 		SELECT
 			id,
-			state,
-			failure_message,
-			started_at,
-			finished_at,
-			process_after,
+			stbte,
+			fbilure_messbge,
+			stbrted_bt,
+			finished_bt,
+			process_bfter,
 			num_resets,
-			num_failures,
+			num_fbilures,
 			execution_logs,
-			external_service_id,
-			next_sync_at
-		FROM external_service_sync_jobs_with_next_sync_at
+			externbl_service_id,
+			next_sync_bt
+		FROM externbl_service_sync_jobs_with_next_sync_bt
 	`)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	return scanJobs(rows)
+	return scbnJobs(rows)
 }
 
-func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
-	var jobs []SyncJob
+func scbnJobs(rows *sql.Rows) ([]SyncJob, error) {
+	vbr jobs []SyncJob
 
 	for rows.Next() {
-		job, err := scanJob(rows)
+		job, err := scbnJob(rows)
 		if err != nil {
 			return nil, err
 		}
-		jobs = append(jobs, *job)
+		jobs = bppend(jobs, *job)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -683,39 +683,39 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	return jobs, nil
 }
 
-func scanJob(sc dbutil.Scanner) (*SyncJob, error) {
+func scbnJob(sc dbutil.Scbnner) (*SyncJob, error) {
 	// required field for the sync worker, but
-	// the value is thrown out here
-	var executionLogs *[]any
+	// the vblue is thrown out here
+	vbr executionLogs *[]bny
 
-	var job SyncJob
-	return &job, sc.Scan(
+	vbr job SyncJob
+	return &job, sc.Scbn(
 		&job.ID,
-		&job.State,
-		&job.FailureMessage,
-		&job.StartedAt,
+		&job.Stbte,
+		&job.FbilureMessbge,
+		&job.StbrtedAt,
 		&job.FinishedAt,
 		&job.ProcessAfter,
 		&job.NumResets,
-		&job.NumFailures,
+		&job.NumFbilures,
 		&executionLogs,
-		&job.ExternalServiceID,
+		&job.ExternblServiceID,
 		&job.NextSyncAt,
 	)
 }
 
-func metadataColumn(metadata any) (msg json.RawMessage, err error) {
-	switch m := metadata.(type) {
-	case nil:
-		msg = json.RawMessage("{}")
-	case string:
-		msg = json.RawMessage(m)
-	case []byte:
+func metbdbtbColumn(metbdbtb bny) (msg json.RbwMessbge, err error) {
+	switch m := metbdbtb.(type) {
+	cbse nil:
+		msg = json.RbwMessbge("{}")
+	cbse string:
+		msg = json.RbwMessbge(m)
+	cbse []byte:
 		msg = m
-	case json.RawMessage:
+	cbse json.RbwMessbge:
 		msg = m
-	default:
-		msg, err = json.MarshalIndent(m, "        ", "    ")
+	defbult:
+		msg, err = json.MbrshblIndent(m, "        ", "    ")
 	}
 	return
 }

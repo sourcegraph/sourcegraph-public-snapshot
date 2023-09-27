@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -7,760 +7,760 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	jobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, 3)
-	for i := 0; i < cap(jobs); i++ {
-		job := &btypes.BatchSpecWorkspaceExecutionJob{
-			BatchSpecWorkspaceID: int64(i + 456),
+func testStoreBbtchSpecWorkspbceExecutionJobs(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	jobs := mbke([]*btypes.BbtchSpecWorkspbceExecutionJob, 0, 3)
+	for i := 0; i < cbp(jobs); i++ {
+		job := &btypes.BbtchSpecWorkspbceExecutionJob{
+			BbtchSpecWorkspbceID: int64(i + 456),
 			UserID:               int32(i + 1),
 		}
 
-		jobs = append(jobs, job)
+		jobs = bppend(jobs, job)
 	}
 
-	t.Run("Create", func(t *testing.T) {
-		for idx, job := range jobs {
-			if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
-				t.Fatal(err)
+	t.Run("Crebte", func(t *testing.T) {
+		for idx, job := rbnge jobs {
+			if err := bt.CrebteBbtchSpecWorkspbceExecutionJob(ctx, s, ScbnBbtchSpecWorkspbceExecutionJob, job); err != nil {
+				t.Fbtbl(err)
 			}
 
-			have := job
-			if have.ID == 0 {
-				t.Fatal("ID should not be zero")
+			hbve := job
+			if hbve.ID == 0 {
+				t.Fbtbl("ID should not be zero")
 			}
 
-			want := have
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
+			wbnt := hbve
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 
-			// Always one, since every job is in a separate user queue (see l.23).
-			job.PlaceInUserQueue = 1
-			job.PlaceInGlobalQueue = int64(idx + 1)
+			// Alwbys one, since every job is in b sepbrbte user queue (see l.23).
+			job.PlbceInUserQueue = 1
+			job.PlbceInGlobblQueue = int64(idx + 1)
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("GetByID", func(t *testing.T) {
-			for i, job := range jobs {
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					have, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: job.ID})
+			for i, job := rbnge jobs {
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					hbve, err := s.GetBbtchSpecWorkspbceExecutionJob(ctx, GetBbtchSpecWorkspbceExecutionJobOpts{ID: job.ID})
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					if diff := cmp.Diff(have, job); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, job); diff != "" {
+						t.Fbtbl(diff)
 					}
 				})
 			}
 		})
 
-		t.Run("GetByBatchSpecWorkspaceID", func(t *testing.T) {
-			for i, job := range jobs {
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					have, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{BatchSpecWorkspaceID: job.BatchSpecWorkspaceID})
+		t.Run("GetByBbtchSpecWorkspbceID", func(t *testing.T) {
+			for i, job := rbnge jobs {
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					hbve, err := s.GetBbtchSpecWorkspbceExecutionJob(ctx, GetBbtchSpecWorkspbceExecutionJobOpts{BbtchSpecWorkspbceID: job.BbtchSpecWorkspbceID})
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					if diff := cmp.Diff(have, job); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, job); diff != "" {
+						t.Fbtbl(diff)
 					}
 				})
 			}
 		})
 
-		t.Run("GetWithoutRank", func(t *testing.T) {
-			for i, job := range jobs {
-				// Copy job so we can modify it
+		t.Run("GetWithoutRbnk", func(t *testing.T) {
+			for i, job := rbnge jobs {
+				// Copy job so we cbn modify it
 				job := *job
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					have, err := s.GetBatchSpecWorkspaceExecutionJob(ctx, GetBatchSpecWorkspaceExecutionJobOpts{ID: job.ID, ExcludeRank: true})
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					hbve, err := s.GetBbtchSpecWorkspbceExecutionJob(ctx, GetBbtchSpecWorkspbceExecutionJobOpts{ID: job.ID, ExcludeRbnk: true})
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					job.PlaceInGlobalQueue = 0
-					job.PlaceInUserQueue = 0
+					job.PlbceInGlobblQueue = 0
+					job.PlbceInUserQueue = 0
 
-					if diff := cmp.Diff(have, &job); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, &job); diff != "" {
+						t.Fbtbl(diff)
 					}
 				})
 			}
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetBatchSpecWorkspaceExecutionJobOpts{ID: 0xdeadbeef}
+			opts := GetBbtchSpecWorkspbceExecutionJobOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetBatchSpecWorkspaceExecutionJob(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetBbtchSpecWorkspbceExecutionJob(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
-		for i, job := range jobs {
-			job.WorkerHostname = fmt.Sprintf("worker-hostname-%d", i)
+		for i, job := rbnge jobs {
+			job.WorkerHostnbme = fmt.Sprintf("worker-hostnbme-%d", i)
 			switch i {
-			case 0:
-				job.State = btypes.BatchSpecWorkspaceExecutionJobStateQueued
-				job.Cancel = true
-				job.PlaceInGlobalQueue = 1
-				job.PlaceInUserQueue = 1
-			case 1:
-				job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-				job.PlaceInUserQueue = 0
-				job.PlaceInGlobalQueue = 0
-			case 2:
-				job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-				job.PlaceInUserQueue = 0
-				job.PlaceInGlobalQueue = 0
+			cbse 0:
+				job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteQueued
+				job.Cbncel = true
+				job.PlbceInGlobblQueue = 1
+				job.PlbceInUserQueue = 1
+			cbse 1:
+				job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing
+				job.PlbceInUserQueue = 0
+				job.PlbceInGlobblQueue = 0
+			cbse 2:
+				job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteFbiled
+				job.PlbceInUserQueue = 0
+				job.PlbceInGlobblQueue = 0
 			}
 
-			bt.UpdateJobState(t, ctx, s, job)
+			bt.UpdbteJobStbte(t, ctx, s, job)
 		}
 
 		t.Run("All", func(t *testing.T) {
-			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{})
+			hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(have, jobs); diff != "" {
-				t.Fatalf("invalid jobs returned: %s", diff)
-			}
-		})
-
-		t.Run("WorkerHostname", func(t *testing.T) {
-			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-					WorkerHostname: job.WorkerHostname,
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceExecutionJob{job}); diff != "" {
-					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
-				}
+			if diff := cmp.Diff(hbve, jobs); diff != "" {
+				t.Fbtblf("invblid jobs returned: %s", diff)
 			}
 		})
 
-		t.Run("State", func(t *testing.T) {
-			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-					State: job.State,
+		t.Run("WorkerHostnbme", func(t *testing.T) {
+			for _, job := rbnge jobs {
+				hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+					WorkerHostnbme: job.WorkerHostnbme,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceExecutionJob{job}); diff != "" {
-					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
+				if diff := cmp.Diff(hbve, []*btypes.BbtchSpecWorkspbceExecutionJob{job}); diff != "" {
+					t.Fbtblf("invblid bbtch spec workspbce jobs returned: %s", diff)
+				}
+			}
+		})
+
+		t.Run("Stbte", func(t *testing.T) {
+			for _, job := rbnge jobs {
+				hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+					Stbte: job.Stbte,
+				})
+				if err != nil {
+					t.Fbtbl(err)
+				}
+				if diff := cmp.Diff(hbve, []*btypes.BbtchSpecWorkspbceExecutionJob{job}); diff != "" {
+					t.Fbtblf("invblid bbtch spec workspbce jobs returned: %s", diff)
 				}
 			}
 		})
 
 		t.Run("IDs", func(t *testing.T) {
-			for _, job := range jobs {
-				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+			for _, job := rbnge jobs {
+				hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
 					IDs: []int64{job.ID},
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff := cmp.Diff(have, []*btypes.BatchSpecWorkspaceExecutionJob{job}); diff != "" {
-					t.Fatalf("invalid batch spec workspace jobs returned: %s", diff)
+				if diff := cmp.Diff(hbve, []*btypes.BbtchSpecWorkspbceExecutionJob{job}); diff != "" {
+					t.Fbtblf("invblid bbtch spec workspbce jobs returned: %s", diff)
 				}
 			}
 		})
 
-		t.Run("WithFailureMessage", func(t *testing.T) {
-			message1 := "failure message 1"
-			message2 := "failure message 2"
-			message3 := "failure message 3"
+		t.Run("WithFbilureMessbge", func(t *testing.T) {
+			messbge1 := "fbilure messbge 1"
+			messbge2 := "fbilure messbge 2"
+			messbge3 := "fbilure messbge 3"
 
-			jobs[0].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-			jobs[0].FailureMessage = &message1
-			bt.UpdateJobState(t, ctx, s, jobs[0])
+			jobs[0].Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteFbiled
+			jobs[0].FbilureMessbge = &messbge1
+			bt.UpdbteJobStbte(t, ctx, s, jobs[0])
 
-			// has a failure message, but it's outdated, because job is processing
-			jobs[1].State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-			jobs[1].FailureMessage = &message2
-			bt.UpdateJobState(t, ctx, s, jobs[1])
+			// hbs b fbilure messbge, but it's outdbted, becbuse job is processing
+			jobs[1].Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing
+			jobs[1].FbilureMessbge = &messbge2
+			bt.UpdbteJobStbte(t, ctx, s, jobs[1])
 
-			jobs[2].State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-			jobs[2].FailureMessage = &message3
-			bt.UpdateJobState(t, ctx, s, jobs[2])
+			jobs[2].Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteFbiled
+			jobs[2].FbilureMessbge = &messbge3
+			bt.UpdbteJobStbte(t, ctx, s, jobs[2])
 
-			wantIDs := []int64{jobs[0].ID, jobs[2].ID}
+			wbntIDs := []int64{jobs[0].ID, jobs[2].ID}
 
-			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				OnlyWithFailureMessage: true,
+			hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+				OnlyWithFbilureMessbge: true,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if len(have) != 2 {
-				t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 2, len(have))
+			if len(hbve) != 2 {
+				t.Fbtblf("wrong number of jobs returned. wbnt=%d, hbve=%d", 2, len(hbve))
 			}
-			haveIDs := []int64{have[0].ID, have[1].ID}
+			hbveIDs := []int64{hbve[0].ID, hbve[1].ID}
 
-			if diff := cmp.Diff(haveIDs, wantIDs); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbveIDs, wbntIDs); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("ExcludeRank", func(t *testing.T) {
-			ranklessJobs := make([]*btypes.BatchSpecWorkspaceExecutionJob, 0, len(jobs))
-			for _, job := range jobs {
-				// Copy job so we can modify it
+		t.Run("ExcludeRbnk", func(t *testing.T) {
+			rbnklessJobs := mbke([]*btypes.BbtchSpecWorkspbceExecutionJob, 0, len(jobs))
+			for _, job := rbnge jobs {
+				// Copy job so we cbn modify it
 				job := *job
-				job.PlaceInGlobalQueue = 0
-				job.PlaceInUserQueue = 0
-				ranklessJobs = append(ranklessJobs, &job)
+				job.PlbceInGlobblQueue = 0
+				job.PlbceInUserQueue = 0
+				rbnklessJobs = bppend(rbnklessJobs, &job)
 			}
-			have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{ExcludeRank: true})
+			hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{ExcludeRbnk: true})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, ranklessJobs); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, rbnklessJobs); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("BatchSpecID", func(t *testing.T) {
-			workspaceIDByBatchSpecID := map[int64]int64{}
+		t.Run("BbtchSpecID", func(t *testing.T) {
+			workspbceIDByBbtchSpecID := mbp[int64]int64{}
 			for i := 0; i < 3; i++ {
-				batchSpec := &btypes.BatchSpec{UserID: 500, NamespaceUserID: 500}
-				if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-					t.Fatal(err)
+				bbtchSpec := &btypes.BbtchSpec{UserID: 500, NbmespbceUserID: 500}
+				if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+					t.Fbtbl(err)
 				}
 
-				ws := &btypes.BatchSpecWorkspace{
-					BatchSpecID: batchSpec.ID,
+				ws := &btypes.BbtchSpecWorkspbce{
+					BbtchSpecID: bbtchSpec.ID,
 				}
-				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+					t.Fbtbl(err)
 				}
 
-				if err := s.CreateBatchSpecWorkspaceExecutionJobs(ctx, ws.BatchSpecID); err != nil {
-					t.Fatal(err)
+				if err := s.CrebteBbtchSpecWorkspbceExecutionJobs(ctx, ws.BbtchSpecID); err != nil {
+					t.Fbtbl(err)
 				}
-				workspaceIDByBatchSpecID[batchSpec.ID] = ws.ID
+				workspbceIDByBbtchSpecID[bbtchSpec.ID] = ws.ID
 			}
 
-			for batchSpecID, workspaceID := range workspaceIDByBatchSpecID {
-				have, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-					BatchSpecID: batchSpecID,
+			for bbtchSpecID, workspbceID := rbnge workspbceIDByBbtchSpecID {
+				hbve, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+					BbtchSpecID: bbtchSpecID,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if len(have) != 1 {
-					t.Fatalf("wrong number of jobs returned. want=%d, have=%d", 1, len(have))
+				if len(hbve) != 1 {
+					t.Fbtblf("wrong number of jobs returned. wbnt=%d, hbve=%d", 1, len(hbve))
 				}
 
-				if have[0].BatchSpecWorkspaceID != workspaceID {
-					t.Fatalf("wrong job returned. want=%d, have=%d", workspaceID, have[0].BatchSpecWorkspaceID)
+				if hbve[0].BbtchSpecWorkspbceID != workspbceID {
+					t.Fbtblf("wrong job returned. wbnt=%d, hbve=%d", workspbceID, hbve[0].BbtchSpecWorkspbceID)
 				}
 			}
 
 		})
 	})
 
-	t.Run("CancelBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
+	t.Run("CbncelBbtchSpecWorkspbceExecutionJobs", func(t *testing.T) {
 		t.Run("single job by ID", func(t *testing.T) {
-			opts := CancelBatchSpecWorkspaceExecutionJobsOpts{IDs: []int64{jobs[0].ID}}
+			opts := CbncelBbtchSpecWorkspbceExecutionJobsOpts{IDs: []int64{jobs[0].ID}}
 
 			t.Run("Queued", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued', started_at = NULL, finished_at = NULL WHERE id = %s", jobs[0].ID)); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'queued', stbrted_bt = NULL, finished_bt = NULL WHERE id = %s", jobs[0].ID)); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateCanceled; have != want {
-					t.Errorf("invalid state: have=%q want=%q", have, want)
+				if hbve, wbnt := record.Stbte, btypes.BbtchSpecWorkspbceExecutionJobStbteCbnceled; hbve != wbnt {
+					t.Errorf("invblid stbte: hbve=%q wbnt=%q", hbve, wbnt)
 				}
-				if have, want := record.Cancel, true; have != want {
-					t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+				if hbve, wbnt := record.Cbncel, true; hbve != wbnt {
+					t.Errorf("invblid cbncel vblue: hbve=%t wbnt=%t", hbve, wbnt)
 				}
 				if record.FinishedAt.IsZero() {
-					t.Error("finished_at not set")
-				} else if have, want := record.FinishedAt, s.now(); !have.Equal(want) {
-					t.Errorf("invalid finished_at: have=%s want=%s", have, want)
+					t.Error("finished_bt not set")
+				} else if hbve, wbnt := record.FinishedAt, s.now(); !hbve.Equbl(wbnt) {
+					t.Errorf("invblid finished_bt: hbve=%s wbnt=%s", hbve, wbnt)
 				}
-				if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
-					t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+				if hbve, wbnt := record.UpdbtedAt, s.now(); !hbve.Equbl(wbnt) {
+					t.Errorf("invblid updbted_bt: hbve=%s wbnt=%s", hbve, wbnt)
 				}
 			})
 
 			t.Run("Processing", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = %s", jobs[0].ID)); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'processing', stbrted_bt = now(), finished_bt = NULL WHERE id = %s", jobs[0].ID)); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateProcessing; have != want {
-					t.Errorf("invalid state: have=%q want=%q", have, want)
+				if hbve, wbnt := record.Stbte, btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing; hbve != wbnt {
+					t.Errorf("invblid stbte: hbve=%q wbnt=%q", hbve, wbnt)
 				}
-				if have, want := record.Cancel, true; have != want {
-					t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+				if hbve, wbnt := record.Cbncel, true; hbve != wbnt {
+					t.Errorf("invblid cbncel vblue: hbve=%t wbnt=%t", hbve, wbnt)
 				}
 				if !record.FinishedAt.IsZero() {
-					t.Error("finished_at set")
+					t.Error("finished_bt set")
 				}
-				if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
-					t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+				if hbve, wbnt := record.UpdbtedAt, s.now(); !hbve.Equbl(wbnt) {
+					t.Errorf("invblid updbted_bt: hbve=%s wbnt=%s", hbve, wbnt)
 				}
 			})
 
-			t.Run("already completed", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = %s", jobs[0].ID)); err != nil {
-					t.Fatal(err)
+			t.Run("blrebdy completed", func(t *testing.T) {
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'completed' WHERE id = %s", jobs[0].ID)); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				if len(records) != 0 {
-					t.Fatalf("unexpected records returned: %d", len(records))
+					t.Fbtblf("unexpected records returned: %d", len(records))
 				}
 			})
 
 			t.Run("still queued", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued' WHERE id = %s", jobs[0].ID)); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'queued' WHERE id = %s", jobs[0].ID)); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				if len(records) != 1 {
-					t.Fatalf("unexpected records returned: %d", len(records))
+					t.Fbtblf("unexpected records returned: %d", len(records))
 				}
 			})
 		})
 
-		t.Run("multiple jobs by BatchSpecID", func(t *testing.T) {
-			spec := &btypes.BatchSpec{UserID: 1234, NamespaceUserID: 4567}
-			if err := s.CreateBatchSpec(ctx, spec); err != nil {
-				t.Fatal(err)
+		t.Run("multiple jobs by BbtchSpecID", func(t *testing.T) {
+			spec := &btypes.BbtchSpec{UserID: 1234, NbmespbceUserID: 4567}
+			if err := s.CrebteBbtchSpec(ctx, spec); err != nil {
+				t.Fbtbl(err)
 			}
 
-			var specJobIDs []int64
+			vbr specJobIDs []int64
 			for i := 0; i < 3; i++ {
-				ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: api.RepoID(i)}
-				if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-					t.Fatal(err)
+				ws := &btypes.BbtchSpecWorkspbce{BbtchSpecID: spec.ID, RepoID: bpi.RepoID(i)}
+				if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+					t.Fbtbl(err)
 				}
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: spec.UserID}
-				if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
-					t.Fatal(err)
+				job := &btypes.BbtchSpecWorkspbceExecutionJob{BbtchSpecWorkspbceID: ws.ID, UserID: spec.UserID}
+				if err := bt.CrebteBbtchSpecWorkspbceExecutionJob(ctx, s, ScbnBbtchSpecWorkspbceExecutionJob, job); err != nil {
+					t.Fbtbl(err)
 				}
-				specJobIDs = append(specJobIDs, job.ID)
+				specJobIDs = bppend(specJobIDs, job.ID)
 			}
 
-			opts := CancelBatchSpecWorkspaceExecutionJobsOpts{BatchSpecID: spec.ID}
+			opts := CbncelBbtchSpecWorkspbceExecutionJobsOpts{BbtchSpecID: spec.ID}
 
 			t.Run("Queued", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'queued', started_at = NULL, finished_at = NULL WHERE id = ANY(%s)", pq.Array(specJobIDs))); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'queued', stbrted_bt = NULL, finished_bt = NULL WHERE id = ANY(%s)", pq.Arrby(specJobIDs))); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateCanceled; have != want {
-					t.Errorf("invalid state: have=%q want=%q", have, want)
+				if hbve, wbnt := record.Stbte, btypes.BbtchSpecWorkspbceExecutionJobStbteCbnceled; hbve != wbnt {
+					t.Errorf("invblid stbte: hbve=%q wbnt=%q", hbve, wbnt)
 				}
-				if have, want := record.Cancel, true; have != want {
-					t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+				if hbve, wbnt := record.Cbncel, true; hbve != wbnt {
+					t.Errorf("invblid cbncel vblue: hbve=%t wbnt=%t", hbve, wbnt)
 				}
 				if record.FinishedAt.IsZero() {
-					t.Error("finished_at not set")
-				} else if have, want := record.FinishedAt, s.now(); !have.Equal(want) {
-					t.Errorf("invalid finished_at: have=%s want=%s", have, want)
+					t.Error("finished_bt not set")
+				} else if hbve, wbnt := record.FinishedAt, s.now(); !hbve.Equbl(wbnt) {
+					t.Errorf("invblid finished_bt: hbve=%s wbnt=%s", hbve, wbnt)
 				}
-				if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
-					t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+				if hbve, wbnt := record.UpdbtedAt, s.now(); !hbve.Equbl(wbnt) {
+					t.Errorf("invblid updbted_bt: hbve=%s wbnt=%s", hbve, wbnt)
 				}
 			})
 
 			t.Run("Processing", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = ANY(%s)", pq.Array(specJobIDs))); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'processing', stbrted_bt = now(), finished_bt = NULL WHERE id = ANY(%s)", pq.Arrby(specJobIDs))); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateProcessing; have != want {
-					t.Errorf("invalid state: have=%q want=%q", have, want)
+				if hbve, wbnt := record.Stbte, btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing; hbve != wbnt {
+					t.Errorf("invblid stbte: hbve=%q wbnt=%q", hbve, wbnt)
 				}
-				if have, want := record.Cancel, true; have != want {
-					t.Errorf("invalid cancel value: have=%t want=%t", have, want)
+				if hbve, wbnt := record.Cbncel, true; hbve != wbnt {
+					t.Errorf("invblid cbncel vblue: hbve=%t wbnt=%t", hbve, wbnt)
 				}
 				if !record.FinishedAt.IsZero() {
-					t.Error("finished_at set")
+					t.Error("finished_bt set")
 				}
-				if have, want := record.UpdatedAt, s.now(); !have.Equal(want) {
-					t.Errorf("invalid updated_at: have=%s want=%s", have, want)
+				if hbve, wbnt := record.UpdbtedAt, s.now(); !hbve.Equbl(wbnt) {
+					t.Errorf("invblid updbted_bt: hbve=%s wbnt=%s", hbve, wbnt)
 				}
 			})
 
-			t.Run("Already completed", func(t *testing.T) {
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = ANY(%s)", pq.Array(specJobIDs))); err != nil {
-					t.Fatal(err)
+			t.Run("Alrebdy completed", func(t *testing.T) {
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'completed' WHERE id = ANY(%s)", pq.Arrby(specJobIDs))); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				if len(records) != 0 {
-					t.Fatalf("unexpected records returned: %d", len(records))
+					t.Fbtblf("unexpected records returned: %d", len(records))
 				}
 			})
 
 			t.Run("subset processing, subset completed", func(t *testing.T) {
 				completed := specJobIDs[1:]
 				processing := specJobIDs[0:1]
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'processing', started_at = now(), finished_at = NULL WHERE id = ANY(%s)", pq.Array(processing))); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'processing', stbrted_bt = now(), finished_bt = NULL WHERE id = ANY(%s)", pq.Arrby(processing))); err != nil {
+					t.Fbtbl(err)
 				}
-				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_workspace_execution_jobs SET state = 'completed' WHERE id = ANY(%s)", pq.Array(completed))); err != nil {
-					t.Fatal(err)
+				if err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_workspbce_execution_jobs SET stbte = 'completed' WHERE id = ANY(%s)", pq.Arrby(completed))); err != nil {
+					t.Fbtbl(err)
 				}
-				records, err := s.CancelBatchSpecWorkspaceExecutionJobs(ctx, opts)
+				records, err := s.CbncelBbtchSpecWorkspbceExecutionJobs(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if have, want := len(records), len(processing); have != want {
-					t.Fatalf("wrong number of canceled records. have=%d, want=%d", have, want)
+				if hbve, wbnt := len(records), len(processing); hbve != wbnt {
+					t.Fbtblf("wrong number of cbnceled records. hbve=%d, wbnt=%d", hbve, wbnt)
 				}
 			})
 		})
 	})
 
-	t.Run("CreateBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
-		cacheEntry := &btypes.BatchSpecExecutionCacheEntry{Key: "one", Value: "two"}
-		if err := s.CreateBatchSpecExecutionCacheEntry(ctx, cacheEntry); err != nil {
-			t.Fatal(err)
+	t.Run("CrebteBbtchSpecWorkspbceExecutionJobs", func(t *testing.T) {
+		cbcheEntry := &btypes.BbtchSpecExecutionCbcheEntry{Key: "one", Vblue: "two"}
+		if err := s.CrebteBbtchSpecExecutionCbcheEntry(ctx, cbcheEntry); err != nil {
+			t.Fbtbl(err)
 		}
 
-		createWorkspaces := func(t *testing.T, batchSpec *btypes.BatchSpec, workspaces ...*btypes.BatchSpecWorkspace) {
+		crebteWorkspbces := func(t *testing.T, bbtchSpec *btypes.BbtchSpec, workspbces ...*btypes.BbtchSpecWorkspbce) {
 			t.Helper()
 
-			for i, workspace := range workspaces {
-				workspace.BatchSpecID = batchSpec.ID
-				workspace.RepoID = 1
-				workspace.Branch = fmt.Sprintf("refs/heads/main-%d", i)
-				workspace.Commit = fmt.Sprintf("commit-%d", i)
+			for i, workspbce := rbnge workspbces {
+				workspbce.BbtchSpecID = bbtchSpec.ID
+				workspbce.RepoID = 1
+				workspbce.Brbnch = fmt.Sprintf("refs/hebds/mbin-%d", i)
+				workspbce.Commit = fmt.Sprintf("commit-%d", i)
 			}
 
-			if err := s.CreateBatchSpecWorkspace(ctx, workspaces...); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteBbtchSpecWorkspbce(ctx, workspbces...); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
-		createJobsAndAssert := func(t *testing.T, batchSpec *btypes.BatchSpec, wantJobsForWorkspaces []int64) {
+		crebteJobsAndAssert := func(t *testing.T, bbtchSpec *btypes.BbtchSpec, wbntJobsForWorkspbces []int64) {
 			t.Helper()
 
-			err := s.CreateBatchSpecWorkspaceExecutionJobs(ctx, batchSpec.ID)
+			err := s.CrebteBbtchSpecWorkspbceExecutionJobs(ctx, bbtchSpec.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				BatchSpecWorkspaceIDs: wantJobsForWorkspaces,
+			jobs, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+				BbtchSpecWorkspbceIDs: wbntJobsForWorkspbces,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := len(jobs), len(wantJobsForWorkspaces); have != want {
-				t.Fatalf("wrong number of execution jobs created. want=%d, have=%d", want, have)
+			if hbve, wbnt := len(jobs), len(wbntJobsForWorkspbces); hbve != wbnt {
+				t.Fbtblf("wrong number of execution jobs crebted. wbnt=%d, hbve=%d", wbnt, hbve)
 			}
 		}
 
-		createBatchSpec := func(t *testing.T, batchSpec *btypes.BatchSpec) {
+		crebteBbtchSpec := func(t *testing.T, bbtchSpec *btypes.BbtchSpec) {
 			t.Helper()
-			batchSpec.UserID = 1
-			batchSpec.NamespaceUserID = 1
-			if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-				t.Fatal(err)
+			bbtchSpec.UserID = 1
+			bbtchSpec.NbmespbceUserID = 1
+			if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
 		t.Run("success", func(t *testing.T) {
 			// TODO: Test we skip jobs where nothing needs to be executed.
 
-			normalWorkspace := &btypes.BatchSpecWorkspace{}
-			ignoredWorkspace := &btypes.BatchSpecWorkspace{Ignored: true}
-			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Unsupported: true}
-			cachedResultWorkspace := &btypes.BatchSpecWorkspace{CachedResultFound: true}
+			normblWorkspbce := &btypes.BbtchSpecWorkspbce{}
+			ignoredWorkspbce := &btypes.BbtchSpecWorkspbce{Ignored: true}
+			unsupportedWorkspbce := &btypes.BbtchSpecWorkspbce{Unsupported: true}
+			cbchedResultWorkspbce := &btypes.BbtchSpecWorkspbce{CbchedResultFound: true}
 
-			batchSpec := &btypes.BatchSpec{}
+			bbtchSpec := &btypes.BbtchSpec{}
 
-			createBatchSpec(t, batchSpec)
-			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace, cachedResultWorkspace)
-			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID})
+			crebteBbtchSpec(t, bbtchSpec)
+			crebteWorkspbces(t, bbtchSpec, normblWorkspbce, ignoredWorkspbce, unsupportedWorkspbce, cbchedResultWorkspbce)
+			crebteJobsAndAssert(t, bbtchSpec, []int64{normblWorkspbce.ID})
 		})
 
-		t.Run("allowIgnored", func(t *testing.T) {
-			normalWorkspace := &btypes.BatchSpecWorkspace{}
-			ignoredWorkspace := &btypes.BatchSpecWorkspace{Ignored: true}
+		t.Run("bllowIgnored", func(t *testing.T) {
+			normblWorkspbce := &btypes.BbtchSpecWorkspbce{}
+			ignoredWorkspbce := &btypes.BbtchSpecWorkspbce{Ignored: true}
 
-			batchSpec := &btypes.BatchSpec{AllowIgnored: true}
+			bbtchSpec := &btypes.BbtchSpec{AllowIgnored: true}
 
-			createBatchSpec(t, batchSpec)
-			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace)
-			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID})
+			crebteBbtchSpec(t, bbtchSpec)
+			crebteWorkspbces(t, bbtchSpec, normblWorkspbce, ignoredWorkspbce)
+			crebteJobsAndAssert(t, bbtchSpec, []int64{normblWorkspbce.ID, ignoredWorkspbce.ID})
 		})
 
-		t.Run("allowUnsupported", func(t *testing.T) {
-			normalWorkspace := &btypes.BatchSpecWorkspace{}
-			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Unsupported: true}
+		t.Run("bllowUnsupported", func(t *testing.T) {
+			normblWorkspbce := &btypes.BbtchSpecWorkspbce{}
+			unsupportedWorkspbce := &btypes.BbtchSpecWorkspbce{Unsupported: true}
 
-			batchSpec := &btypes.BatchSpec{AllowUnsupported: true}
+			bbtchSpec := &btypes.BbtchSpec{AllowUnsupported: true}
 
-			createBatchSpec(t, batchSpec)
-			createWorkspaces(t, batchSpec, normalWorkspace, unsupportedWorkspace)
-			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, unsupportedWorkspace.ID})
+			crebteBbtchSpec(t, bbtchSpec)
+			crebteWorkspbces(t, bbtchSpec, normblWorkspbce, unsupportedWorkspbce)
+			crebteJobsAndAssert(t, bbtchSpec, []int64{normblWorkspbce.ID, unsupportedWorkspbce.ID})
 		})
 
-		t.Run("allowUnsupported and allowIgnored", func(t *testing.T) {
-			normalWorkspace := &btypes.BatchSpecWorkspace{}
-			ignoredWorkspace := &btypes.BatchSpecWorkspace{Ignored: true}
-			unsupportedWorkspace := &btypes.BatchSpecWorkspace{Unsupported: true}
+		t.Run("bllowUnsupported bnd bllowIgnored", func(t *testing.T) {
+			normblWorkspbce := &btypes.BbtchSpecWorkspbce{}
+			ignoredWorkspbce := &btypes.BbtchSpecWorkspbce{Ignored: true}
+			unsupportedWorkspbce := &btypes.BbtchSpecWorkspbce{Unsupported: true}
 
-			batchSpec := &btypes.BatchSpec{AllowUnsupported: true, AllowIgnored: true}
+			bbtchSpec := &btypes.BbtchSpec{AllowUnsupported: true, AllowIgnored: true}
 
-			createBatchSpec(t, batchSpec)
-			createWorkspaces(t, batchSpec, normalWorkspace, ignoredWorkspace, unsupportedWorkspace)
-			createJobsAndAssert(t, batchSpec, []int64{normalWorkspace.ID, ignoredWorkspace.ID, unsupportedWorkspace.ID})
-		})
-	})
-
-	t.Run("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces", func(t *testing.T) {
-		t.Run("success", func(t *testing.T) {
-			workspaces := createWorkspaces(t, ctx, s)
-			ids := workspacesIDs(t, workspaces)
-
-			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				BatchSpecWorkspaceIDs: ids,
-			})
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			if have, want := len(jobs), len(workspaces); have != want {
-				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
-			}
+			crebteBbtchSpec(t, bbtchSpec)
+			crebteWorkspbces(t, bbtchSpec, normblWorkspbce, ignoredWorkspbce, unsupportedWorkspbce)
+			crebteJobsAndAssert(t, bbtchSpec, []int64{normblWorkspbce.ID, ignoredWorkspbce.ID, unsupportedWorkspbce.ID})
 		})
 	})
 
-	t.Run("DeleteBatchSpecWorkspaceExecutionJobs", func(t *testing.T) {
+	t.Run("CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces", func(t *testing.T) {
 		t.Run("success", func(t *testing.T) {
-			workspaces := createWorkspaces(t, ctx, s)
-			ids := workspacesIDs(t, workspaces)
+			workspbces := crebteWorkspbces(t, ctx, s)
+			ids := workspbcesIDs(t, workspbces)
 
-			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			err := s.CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces(ctx, ids)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				BatchSpecWorkspaceIDs: ids,
+			jobs, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+				BbtchSpecWorkspbceIDs: ids,
 			})
 			if err != nil {
-				t.Fatal(err)
-			}
-			if have, want := len(jobs), len(workspaces); have != want {
-				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+				t.Fbtbl(err)
 			}
 
-			jobIDs := make([]int64, len(jobs))
-			for i, j := range jobs {
+			if hbve, wbnt := len(jobs), len(workspbces); hbve != wbnt {
+				t.Fbtblf("wrong number of jobs crebted. wbnt=%d, hbve=%d", wbnt, hbve)
+			}
+		})
+	})
+
+	t.Run("DeleteBbtchSpecWorkspbceExecutionJobs", func(t *testing.T) {
+		t.Run("success", func(t *testing.T) {
+			workspbces := crebteWorkspbces(t, ctx, s)
+			ids := workspbcesIDs(t, workspbces)
+
+			err := s.CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces(ctx, ids)
+			if err != nil {
+				t.Fbtbl(err)
+			}
+
+			jobs, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+				BbtchSpecWorkspbceIDs: ids,
+			})
+			if err != nil {
+				t.Fbtbl(err)
+			}
+			if hbve, wbnt := len(jobs), len(workspbces); hbve != wbnt {
+				t.Fbtblf("wrong number of jobs crebted. wbnt=%d, hbve=%d", wbnt, hbve)
+			}
+
+			jobIDs := mbke([]int64, len(jobs))
+			for i, j := rbnge jobs {
 				jobIDs[i] = j.ID
 			}
 
-			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs}); err != nil {
-				t.Fatal(err)
+			if err := s.DeleteBbtchSpecWorkspbceExecutionJobs(ctx, DeleteBbtchSpecWorkspbceExecutionJobsOpts{IDs: jobIDs}); err != nil {
+				t.Fbtbl(err)
 			}
 
-			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+			jobs, err = s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
 				IDs: jobIDs,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := len(jobs), 0; have != want {
-				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			if hbve, wbnt := len(jobs), 0; hbve != wbnt {
+				t.Fbtblf("wrong number of jobs still exists. wbnt=%d, hbve=%d", wbnt, hbve)
 			}
 		})
 
 		t.Run("with wrong IDs", func(t *testing.T) {
-			workspaces := createWorkspaces(t, ctx, s)
-			ids := workspacesIDs(t, workspaces)
+			workspbces := crebteWorkspbces(t, ctx, s)
+			ids := workspbcesIDs(t, workspbces)
 
-			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			err := s.CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces(ctx, ids)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				BatchSpecWorkspaceIDs: ids,
+			jobs, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+				BbtchSpecWorkspbceIDs: ids,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := len(jobs), len(workspaces); have != want {
-				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			if hbve, wbnt := len(jobs), len(workspbces); hbve != wbnt {
+				t.Fbtblf("wrong number of jobs crebted. wbnt=%d, hbve=%d", wbnt, hbve)
 			}
 
-			jobIDs := make([]int64, len(jobs))
-			for i, j := range jobs {
+			jobIDs := mbke([]int64, len(jobs))
+			for i, j := rbnge jobs {
 				jobIDs[i] = j.ID
 			}
 
-			jobIDs = append(jobIDs, 999, 888, 777)
+			jobIDs = bppend(jobIDs, 999, 888, 777)
 
-			err = s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs})
+			err = s.DeleteBbtchSpecWorkspbceExecutionJobs(ctx, DeleteBbtchSpecWorkspbceExecutionJobsOpts{IDs: jobIDs})
 			if err == nil {
-				t.Fatal("error is nil")
+				t.Fbtbl("error is nil")
 			}
 
-			want := fmt.Sprintf("wrong number of jobs deleted: %d instead of %d", len(workspaces), len(workspaces)+3)
-			if err.Error() != want {
-				t.Fatalf("wrong error message. want=%q, have=%q", want, err.Error())
+			wbnt := fmt.Sprintf("wrong number of jobs deleted: %d instebd of %d", len(workspbces), len(workspbces)+3)
+			if err.Error() != wbnt {
+				t.Fbtblf("wrong error messbge. wbnt=%q, hbve=%q", wbnt, err.Error())
 			}
 
-			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+			jobs, err = s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
 				IDs: jobIDs,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := len(jobs), 0; have != want {
-				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			if hbve, wbnt := len(jobs), 0; hbve != wbnt {
+				t.Fbtblf("wrong number of jobs still exists. wbnt=%d, hbve=%d", wbnt, hbve)
 			}
 		})
 
-		t.Run("by workspace IDs", func(t *testing.T) {
-			workspaces := createWorkspaces(t, ctx, s)
-			ids := workspacesIDs(t, workspaces)
+		t.Run("by workspbce IDs", func(t *testing.T) {
+			workspbces := crebteWorkspbces(t, ctx, s)
+			ids := workspbcesIDs(t, workspbces)
 
-			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			err := s.CrebteBbtchSpecWorkspbceExecutionJobsForWorkspbces(ctx, ids)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-				BatchSpecWorkspaceIDs: ids,
+			jobs, err := s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
+				BbtchSpecWorkspbceIDs: ids,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := len(jobs), len(workspaces); have != want {
-				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			if hbve, wbnt := len(jobs), len(workspbces); hbve != wbnt {
+				t.Fbtblf("wrong number of jobs crebted. wbnt=%d, hbve=%d", wbnt, hbve)
 			}
 
-			jobIDs := make([]int64, len(jobs))
-			for i, j := range jobs {
+			jobIDs := mbke([]int64, len(jobs))
+			for i, j := rbnge jobs {
 				jobIDs[i] = j.ID
 			}
 
-			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{WorkspaceIDs: ids}); err != nil {
-				t.Fatal(err)
+			if err := s.DeleteBbtchSpecWorkspbceExecutionJobs(ctx, DeleteBbtchSpecWorkspbceExecutionJobsOpts{WorkspbceIDs: ids}); err != nil {
+				t.Fbtbl(err)
 			}
 
-			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+			jobs, err = s.ListBbtchSpecWorkspbceExecutionJobs(ctx, ListBbtchSpecWorkspbceExecutionJobsOpts{
 				IDs: jobIDs,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if have, want := len(jobs), 0; have != want {
-				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			if hbve, wbnt := len(jobs), 0; hbve != wbnt {
+				t.Fbtblf("wrong number of jobs still exists. wbnt=%d, hbve=%d", wbnt, hbve)
 			}
 		})
 
-		t.Run("invalid option", func(t *testing.T) {
-			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{})
-			assert.Equal(t, "invalid options: would delete all jobs", err.Error())
+		t.Run("invblid option", func(t *testing.T) {
+			err := s.DeleteBbtchSpecWorkspbceExecutionJobs(ctx, DeleteBbtchSpecWorkspbceExecutionJobsOpts{})
+			bssert.Equbl(t, "invblid options: would delete bll jobs", err.Error())
 		})
 
-		t.Run("too many options", func(t *testing.T) {
-			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{
+		t.Run("too mbny options", func(t *testing.T) {
+			err := s.DeleteBbtchSpecWorkspbceExecutionJobs(ctx, DeleteBbtchSpecWorkspbceExecutionJobsOpts{
 				IDs:          []int64{1, 2},
-				WorkspaceIDs: []int64{3, 4},
+				WorkspbceIDs: []int64{3, 4},
 			})
-			assert.Equal(t, "invalid options: multiple options not supported", err.Error())
+			bssert.Equbl(t, "invblid options: multiple options not supported", err.Error())
 		})
 	})
 }
 
-func createWorkspaces(t *testing.T, ctx context.Context, s *Store) []*btypes.BatchSpecWorkspace {
+func crebteWorkspbces(t *testing.T, ctx context.Context, s *Store) []*btypes.BbtchSpecWorkspbce {
 	t.Helper()
 
-	batchSpec := &btypes.BatchSpec{NamespaceUserID: 1, UserID: 1}
-	if err := s.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	bbtchSpec := &btypes.BbtchSpec{NbmespbceUserID: 1, UserID: 1}
+	if err := s.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	workspaces := []*btypes.BatchSpecWorkspace{
+	workspbces := []*btypes.BbtchSpecWorkspbce{
 		{},
 		{Ignored: true},
 		{Unsupported: true},
 	}
-	for i, workspace := range workspaces {
-		workspace.BatchSpecID = batchSpec.ID
-		workspace.RepoID = 1
-		workspace.Branch = fmt.Sprintf("refs/heads/main-%d", i)
-		workspace.Commit = fmt.Sprintf("commit-%d", i)
+	for i, workspbce := rbnge workspbces {
+		workspbce.BbtchSpecID = bbtchSpec.ID
+		workspbce.RepoID = 1
+		workspbce.Brbnch = fmt.Sprintf("refs/hebds/mbin-%d", i)
+		workspbce.Commit = fmt.Sprintf("commit-%d", i)
 	}
 
-	if err := s.CreateBatchSpecWorkspace(ctx, workspaces...); err != nil {
-		t.Fatal(err)
+	if err := s.CrebteBbtchSpecWorkspbce(ctx, workspbces...); err != nil {
+		t.Fbtbl(err)
 	}
 
-	return workspaces
+	return workspbces
 }
 
-func workspacesIDs(t *testing.T, workspaces []*btypes.BatchSpecWorkspace) []int64 {
+func workspbcesIDs(t *testing.T, workspbces []*btypes.BbtchSpecWorkspbce) []int64 {
 	t.Helper()
-	ids := make([]int64, len(workspaces))
-	for i, w := range workspaces {
+	ids := mbke([]int64, len(workspbces))
+	for i, w := rbnge workspbces {
 		ids[i] = w.ID
 	}
 	return ids

@@ -1,4 +1,4 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"bytes"
@@ -6,360 +6,360 @@ import (
 	"sort"
 	"strings"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var operationPrecedence = map[btypes.ReconcilerOperation]int{
-	btypes.ReconcilerOperationPush:         0,
-	btypes.ReconcilerOperationDetach:       0,
-	btypes.ReconcilerOperationArchive:      0,
-	btypes.ReconcilerOperationReattach:     0,
-	btypes.ReconcilerOperationImport:       1,
-	btypes.ReconcilerOperationPublish:      1,
-	btypes.ReconcilerOperationPublishDraft: 1,
-	btypes.ReconcilerOperationClose:        1,
-	btypes.ReconcilerOperationReopen:       2,
-	btypes.ReconcilerOperationUndraft:      3,
-	btypes.ReconcilerOperationUpdate:       4,
-	btypes.ReconcilerOperationSleep:        5,
-	btypes.ReconcilerOperationSync:         6,
+vbr operbtionPrecedence = mbp[btypes.ReconcilerOperbtion]int{
+	btypes.ReconcilerOperbtionPush:         0,
+	btypes.ReconcilerOperbtionDetbch:       0,
+	btypes.ReconcilerOperbtionArchive:      0,
+	btypes.ReconcilerOperbtionRebttbch:     0,
+	btypes.ReconcilerOperbtionImport:       1,
+	btypes.ReconcilerOperbtionPublish:      1,
+	btypes.ReconcilerOperbtionPublishDrbft: 1,
+	btypes.ReconcilerOperbtionClose:        1,
+	btypes.ReconcilerOperbtionReopen:       2,
+	btypes.ReconcilerOperbtionUndrbft:      3,
+	btypes.ReconcilerOperbtionUpdbte:       4,
+	btypes.ReconcilerOperbtionSleep:        5,
+	btypes.ReconcilerOperbtionSync:         6,
 }
 
-type Operations []btypes.ReconcilerOperation
+type Operbtions []btypes.ReconcilerOperbtion
 
-func (ops Operations) IsNone() bool {
+func (ops Operbtions) IsNone() bool {
 	return len(ops) == 0
 }
 
-func (ops Operations) Equal(b Operations) bool {
+func (ops Operbtions) Equbl(b Operbtions) bool {
 	if len(ops) != len(b) {
-		return false
+		return fblse
 	}
-	bEntries := make(map[btypes.ReconcilerOperation]struct{})
-	for _, e := range b {
+	bEntries := mbke(mbp[btypes.ReconcilerOperbtion]struct{})
+	for _, e := rbnge b {
 		bEntries[e] = struct{}{}
 	}
 
-	for _, op := range ops {
+	for _, op := rbnge ops {
 		if _, ok := bEntries[op]; !ok {
-			return false
+			return fblse
 		}
 	}
 
 	return true
 }
 
-func (ops Operations) String() string {
+func (ops Operbtions) String() string {
 	if ops.IsNone() {
-		return "No operations required"
+		return "No operbtions required"
 	}
 	eo := ops.ExecutionOrder()
-	ss := make([]string, len(eo))
-	for i, val := range eo {
-		ss[i] = strings.ToLower(string(val))
+	ss := mbke([]string, len(eo))
+	for i, vbl := rbnge eo {
+		ss[i] = strings.ToLower(string(vbl))
 	}
 	return strings.Join(ss, " => ")
 }
 
-func (ops Operations) ExecutionOrder() []btypes.ReconcilerOperation {
-	uniqueOps := []btypes.ReconcilerOperation{}
+func (ops Operbtions) ExecutionOrder() []btypes.ReconcilerOperbtion {
+	uniqueOps := []btypes.ReconcilerOperbtion{}
 
-	// Make sure ops are unique.
-	seenOps := make(map[btypes.ReconcilerOperation]struct{})
-	for _, op := range ops {
+	// Mbke sure ops bre unique.
+	seenOps := mbke(mbp[btypes.ReconcilerOperbtion]struct{})
+	for _, op := rbnge ops {
 		if _, ok := seenOps[op]; ok {
 			continue
 		}
 
 		seenOps[op] = struct{}{}
-		uniqueOps = append(uniqueOps, op)
+		uniqueOps = bppend(uniqueOps, op)
 	}
 
 	sort.Slice(uniqueOps, func(i, j int) bool {
-		return operationPrecedence[uniqueOps[i]] < operationPrecedence[uniqueOps[j]]
+		return operbtionPrecedence[uniqueOps[i]] < operbtionPrecedence[uniqueOps[j]]
 	})
 
 	return uniqueOps
 }
 
-func (ops Operations) Contains(op btypes.ReconcilerOperation) bool {
-	for _, o := range ops {
+func (ops Operbtions) Contbins(op btypes.ReconcilerOperbtion) bool {
+	for _, o := rbnge ops {
 		if o == op {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Plan represents the possible operations the reconciler needs to do
-// to reconcile the current and the desired state of a changeset.
-type Plan struct {
-	// The changeset that is targeted in this plan.
-	Changeset *btypes.Changeset
+// Plbn represents the possible operbtions the reconciler needs to do
+// to reconcile the current bnd the desired stbte of b chbngeset.
+type Plbn struct {
+	// The chbngeset thbt is tbrgeted in this plbn.
+	Chbngeset *btypes.Chbngeset
 
-	// The changeset spec that is used in this plan.
-	ChangesetSpec *btypes.ChangesetSpec
+	// The chbngeset spec thbt is used in this plbn.
+	ChbngesetSpec *btypes.ChbngesetSpec
 
-	// The operations that need to be done to reconcile the changeset.
-	Ops Operations
+	// The operbtions thbt need to be done to reconcile the chbngeset.
+	Ops Operbtions
 
-	// The Delta between a possible previous ChangesetSpec and the current
-	// ChangesetSpec.
-	Delta *ChangesetSpecDelta
+	// The Deltb between b possible previous ChbngesetSpec bnd the current
+	// ChbngesetSpec.
+	Deltb *ChbngesetSpecDeltb
 }
 
-func (p *Plan) AddOp(op btypes.ReconcilerOperation) { p.Ops = append(p.Ops, op) }
-func (p *Plan) SetOp(op btypes.ReconcilerOperation) { p.Ops = Operations{op} }
+func (p *Plbn) AddOp(op btypes.ReconcilerOperbtion) { p.Ops = bppend(p.Ops, op) }
+func (p *Plbn) SetOp(op btypes.ReconcilerOperbtion) { p.Ops = Operbtions{op} }
 
-// DeterminePlan looks at the given changeset to determine what action the
-// reconciler should take.
-// It consumes the current and the previous changeset spec, if they exist. If
-// the current ChangesetSpec is not applied to a batch change, it returns an
+// DeterminePlbn looks bt the given chbngeset to determine whbt bction the
+// reconciler should tbke.
+// It consumes the current bnd the previous chbngeset spec, if they exist. If
+// the current ChbngesetSpec is not bpplied to b bbtch chbnge, it returns bn
 // error.
-func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChangeset, wantedChangeset *btypes.Changeset) (*Plan, error) {
-	pl := &Plan{
-		Changeset:     wantedChangeset,
-		ChangesetSpec: currentSpec,
+func DeterminePlbn(previousSpec, currentSpec *btypes.ChbngesetSpec, currentChbngeset, wbntedChbngeset *btypes.Chbngeset) (*Plbn, error) {
+	pl := &Plbn{
+		Chbngeset:     wbntedChbngeset,
+		ChbngesetSpec: currentSpec,
 	}
 
-	wantDetach := false
-	wantArchive := false
-	isArchived := false
-	isStillAttached := false
-	isReattach := false
-	wantDetachFromOwnerBatchChange := false
-	for _, assoc := range wantedChangeset.BatchChanges {
-		if assoc.Detach {
-			wantDetach = true
-			if assoc.BatchChangeID == wantedChangeset.OwnedByBatchChangeID {
-				wantDetachFromOwnerBatchChange = true
+	wbntDetbch := fblse
+	wbntArchive := fblse
+	isArchived := fblse
+	isStillAttbched := fblse
+	isRebttbch := fblse
+	wbntDetbchFromOwnerBbtchChbnge := fblse
+	for _, bssoc := rbnge wbntedChbngeset.BbtchChbnges {
+		if bssoc.Detbch {
+			wbntDetbch = true
+			if bssoc.BbtchChbngeID == wbntedChbngeset.OwnedByBbtchChbngeID {
+				wbntDetbchFromOwnerBbtchChbnge = true
 			}
-		} else if assoc.Archive && assoc.BatchChangeID == wantedChangeset.OwnedByBatchChangeID && wantedChangeset.Published() {
-			wantArchive = !assoc.IsArchived
-			isArchived = assoc.IsArchived
-		} else if currentChangeset != nil && len(currentChangeset.BatchChanges) == 0 {
-			isReattach = true
+		} else if bssoc.Archive && bssoc.BbtchChbngeID == wbntedChbngeset.OwnedByBbtchChbngeID && wbntedChbngeset.Published() {
+			wbntArchive = !bssoc.IsArchived
+			isArchived = bssoc.IsArchived
+		} else if currentChbngeset != nil && len(currentChbngeset.BbtchChbnges) == 0 {
+			isRebttbch = true
 		} else {
-			isStillAttached = true
+			isStillAttbched = true
 		}
 	}
-	if wantDetach {
-		pl.SetOp(btypes.ReconcilerOperationDetach)
+	if wbntDetbch {
+		pl.SetOp(btypes.ReconcilerOperbtionDetbch)
 	}
 
-	if wantArchive {
-		pl.SetOp(btypes.ReconcilerOperationArchive)
+	if wbntArchive {
+		pl.SetOp(btypes.ReconcilerOperbtionArchive)
 	}
 
-	if wantedChangeset.Closing {
-		if wantedChangeset.ExternalState != btypes.ChangesetExternalStateReadOnly {
-			pl.AddOp(btypes.ReconcilerOperationClose)
+	if wbntedChbngeset.Closing {
+		if wbntedChbngeset.ExternblStbte != btypes.ChbngesetExternblStbteRebdOnly {
+			pl.AddOp(btypes.ReconcilerOperbtionClose)
 		}
-		// Close is a final operation, nothing else should overwrite it.
+		// Close is b finbl operbtion, nothing else should overwrite it.
 		return pl, nil
-	} else if wantDetachFromOwnerBatchChange || wantArchive || isArchived {
-		// If the owner batch change detaches the changeset, we don't need to do
-		// any additional writing operations, we can just return operation
-		// "detach".
-		// If some other batch change detached, but the owner batch change
-		// didn't, detach, update is a valid combination, since we'll detach
-		// from one batch change but still update the changeset because the
-		// owning batch change changed the spec.
+	} else if wbntDetbchFromOwnerBbtchChbnge || wbntArchive || isArchived {
+		// If the owner bbtch chbnge detbches the chbngeset, we don't need to do
+		// bny bdditionbl writing operbtions, we cbn just return operbtion
+		// "detbch".
+		// If some other bbtch chbnge detbched, but the owner bbtch chbnge
+		// didn't, detbch, updbte is b vblid combinbtion, since we'll detbch
+		// from one bbtch chbnge but still updbte the chbngeset becbuse the
+		// owning bbtch chbnge chbnged the spec.
 		return pl, nil
 	}
 
-	// If it doesn't have a spec, it's an imported changeset and we can't do
-	// anything.
+	// If it doesn't hbve b spec, it's bn imported chbngeset bnd we cbn't do
+	// bnything.
 	if currentSpec == nil {
-		// If still more than one remains attached, we still want to import the changeset.
-		if wantedChangeset.Unpublished() && isStillAttached {
-			pl.AddOp(btypes.ReconcilerOperationImport)
-		} else if isReattach && !wantDetach {
-			pl.AddOp(btypes.ReconcilerOperationReattach)
+		// If still more thbn one rembins bttbched, we still wbnt to import the chbngeset.
+		if wbntedChbngeset.Unpublished() && isStillAttbched {
+			pl.AddOp(btypes.ReconcilerOperbtionImport)
+		} else if isRebttbch && !wbntDetbch {
+			pl.AddOp(btypes.ReconcilerOperbtionRebttbch)
 		}
 		return pl, nil
 	}
 
-	if currentSpec != nil && previousSpec != nil && isReattach && !wantDetach {
-		pl.AddOp(btypes.ReconcilerOperationReattach)
+	if currentSpec != nil && previousSpec != nil && isRebttbch && !wbntDetbch {
+		pl.AddOp(btypes.ReconcilerOperbtionRebttbch)
 	}
 
-	delta := compareChangesetSpecs(previousSpec, currentSpec, wantedChangeset.UiPublicationState)
-	pl.Delta = delta
+	deltb := compbreChbngesetSpecs(previousSpec, currentSpec, wbntedChbngeset.UiPublicbtionStbte)
+	pl.Deltb = deltb
 
-	switch wantedChangeset.PublicationState {
-	case btypes.ChangesetPublicationStateUnpublished:
-		calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState)
-		if calc.IsPublished() {
-			pl.SetOp(btypes.ReconcilerOperationPublish)
-			pl.AddOp(btypes.ReconcilerOperationPush)
-		} else if calc.IsDraft() && wantedChangeset.SupportsDraft() {
-			// If configured to be opened as draft, and the changeset supports
-			// draft mode, publish as draft. Otherwise, take no action.
-			pl.SetOp(btypes.ReconcilerOperationPublishDraft)
-			pl.AddOp(btypes.ReconcilerOperationPush)
+	switch wbntedChbngeset.PublicbtionStbte {
+	cbse btypes.ChbngesetPublicbtionStbteUnpublished:
+		cblc := cblculbtePublicbtionStbte(currentSpec.Published, wbntedChbngeset.UiPublicbtionStbte)
+		if cblc.IsPublished() {
+			pl.SetOp(btypes.ReconcilerOperbtionPublish)
+			pl.AddOp(btypes.ReconcilerOperbtionPush)
+		} else if cblc.IsDrbft() && wbntedChbngeset.SupportsDrbft() {
+			// If configured to be opened bs drbft, bnd the chbngeset supports
+			// drbft mode, publish bs drbft. Otherwise, tbke no bction.
+			pl.SetOp(btypes.ReconcilerOperbtionPublishDrbft)
+			pl.AddOp(btypes.ReconcilerOperbtionPush)
 		}
-		// TODO: test for Published.Nil() and then plan based on the UI
-		// publication state. For now, we'll let it fall through and treat it
-		// the same as being unpublished.
+		// TODO: test for Published.Nil() bnd then plbn bbsed on the UI
+		// publicbtion stbte. For now, we'll let it fbll through bnd trebt it
+		// the sbme bs being unpublished.
 
-	case btypes.ChangesetPublicationStatePublished:
-		// Don't take any actions for merged or read-only changesets.
-		if wantedChangeset.ExternalState == btypes.ChangesetExternalStateMerged ||
-			wantedChangeset.ExternalState == btypes.ChangesetExternalStateReadOnly {
+	cbse btypes.ChbngesetPublicbtionStbtePublished:
+		// Don't tbke bny bctions for merged or rebd-only chbngesets.
+		if wbntedChbngeset.ExternblStbte == btypes.ChbngesetExternblStbteMerged ||
+			wbntedChbngeset.ExternblStbte == btypes.ChbngesetExternblStbteRebdOnly {
 			return pl, nil
 		}
-		if reopenAfterDetach(wantedChangeset) {
-			pl.SetOp(btypes.ReconcilerOperationReopen)
+		if reopenAfterDetbch(wbntedChbngeset) {
+			pl.SetOp(btypes.ReconcilerOperbtionReopen)
 		}
 
-		// Figure out if we need to do an undraft, assuming the code host
-		// supports draft changesets. This may be due to a new spec being
-		// applied, which would mean delta.Undraft is set, or because the UI
-		// publication state has been changed, for which we need to compare the
-		// current changeset state against the desired state.
-		if btypes.ExternalServiceSupports(wantedChangeset.ExternalServiceType, btypes.CodehostCapabilityDraftChangesets) {
-			if delta.Undraft {
-				pl.AddOp(btypes.ReconcilerOperationUndraft)
-			} else if calc := calculatePublicationState(currentSpec.Published, wantedChangeset.UiPublicationState); calc.IsPublished() && wantedChangeset.ExternalState == btypes.ChangesetExternalStateDraft {
-				pl.AddOp(btypes.ReconcilerOperationUndraft)
+		// Figure out if we need to do bn undrbft, bssuming the code host
+		// supports drbft chbngesets. This mby be due to b new spec being
+		// bpplied, which would mebn deltb.Undrbft is set, or becbuse the UI
+		// publicbtion stbte hbs been chbnged, for which we need to compbre the
+		// current chbngeset stbte bgbinst the desired stbte.
+		if btypes.ExternblServiceSupports(wbntedChbngeset.ExternblServiceType, btypes.CodehostCbpbbilityDrbftChbngesets) {
+			if deltb.Undrbft {
+				pl.AddOp(btypes.ReconcilerOperbtionUndrbft)
+			} else if cblc := cblculbtePublicbtionStbte(currentSpec.Published, wbntedChbngeset.UiPublicbtionStbte); cblc.IsPublished() && wbntedChbngeset.ExternblStbte == btypes.ChbngesetExternblStbteDrbft {
+				pl.AddOp(btypes.ReconcilerOperbtionUndrbft)
 			}
 		}
 
-		if delta.AttributesChanged() {
-			if delta.NeedCommitUpdate() {
-				pl.AddOp(btypes.ReconcilerOperationPush)
+		if deltb.AttributesChbnged() {
+			if deltb.NeedCommitUpdbte() {
+				pl.AddOp(btypes.ReconcilerOperbtionPush)
 			}
 
-			// If we only need to update the diff and we didn't change the state of the changeset,
-			// we're done, because we already pushed the commit. We don't need to
-			// update anything on the codehost.
-			if !delta.NeedCodeHostUpdate() {
-				// But we need to sync the changeset so that it has the new commit.
+			// If we only need to updbte the diff bnd we didn't chbnge the stbte of the chbngeset,
+			// we're done, becbuse we blrebdy pushed the commit. We don't need to
+			// updbte bnything on the codehost.
+			if !deltb.NeedCodeHostUpdbte() {
+				// But we need to sync the chbngeset so thbt it hbs the new commit.
 				//
-				// The problem: the code host might not have updated the changeset to
-				// have the new commit SHA as its head ref oid (and the check states,
+				// The problem: the code host might not hbve updbted the chbngeset to
+				// hbve the new commit SHA bs its hebd ref oid (bnd the check stbtes,
 				// ...).
 				//
-				// That's why we give them 3 seconds to update the changesets.
+				// Thbt's why we give them 3 seconds to updbte the chbngesets.
 				//
-				// Why 3 seconds? Well... 1 or 2 seem to be too short and 4 too long?
-				pl.AddOp(btypes.ReconcilerOperationSleep)
-				pl.AddOp(btypes.ReconcilerOperationSync)
+				// Why 3 seconds? Well... 1 or 2 seem to be too short bnd 4 too long?
+				pl.AddOp(btypes.ReconcilerOperbtionSleep)
+				pl.AddOp(btypes.ReconcilerOperbtionSync)
 			} else {
-				// Otherwise, we need to update the pull request on the code host or, if we
-				// need to reopen it, update it to make sure it has the newest state.
-				pl.AddOp(btypes.ReconcilerOperationUpdate)
+				// Otherwise, we need to updbte the pull request on the code host or, if we
+				// need to reopen it, updbte it to mbke sure it hbs the newest stbte.
+				pl.AddOp(btypes.ReconcilerOperbtionUpdbte)
 			}
 		}
 
-	default:
-		return pl, errors.Errorf("unknown changeset publication state: %s", wantedChangeset.PublicationState)
+	defbult:
+		return pl, errors.Errorf("unknown chbngeset publicbtion stbte: %s", wbntedChbngeset.PublicbtionStbte)
 	}
 
 	return pl, nil
 }
 
-func reopenAfterDetach(ch *btypes.Changeset) bool {
-	closed := ch.ExternalState == btypes.ChangesetExternalStateClosed ||
-		ch.ExternalState == btypes.ChangesetExternalStateReadOnly
+func reopenAfterDetbch(ch *btypes.Chbngeset) bool {
+	closed := ch.ExternblStbte == btypes.ChbngesetExternblStbteClosed ||
+		ch.ExternblStbte == btypes.ChbngesetExternblStbteRebdOnly
 	if !closed {
-		return false
+		return fblse
 	}
 
-	// Sanity check: if it's not owned by a batch change, it's simply being tracked.
-	if ch.OwnedByBatchChangeID == 0 {
-		return false
+	// Sbnity check: if it's not owned by b bbtch chbnge, it's simply being trbcked.
+	if ch.OwnedByBbtchChbngeID == 0 {
+		return fblse
 	}
-	// Sanity check 2: if it's marked as to-be-closed, then we don't reopen it.
+	// Sbnity check 2: if it's mbrked bs to-be-closed, then we don't reopen it.
 	if ch.Closing {
-		return false
+		return fblse
 	}
 
-	// At this point the changeset is closed and not marked as to-be-closed.
+	// At this point the chbngeset is closed bnd not mbrked bs to-be-closed.
 
-	// TODO: What if somebody closed the changeset on purpose on the codehost?
-	return ch.AttachedTo(ch.OwnedByBatchChangeID)
+	// TODO: Whbt if somebody closed the chbngeset on purpose on the codehost?
+	return ch.AttbchedTo(ch.OwnedByBbtchChbngeID)
 }
 
-func compareChangesetSpecs(previous, current *btypes.ChangesetSpec, uiPublicationState *btypes.ChangesetUiPublicationState) *ChangesetSpecDelta {
-	delta := &ChangesetSpecDelta{}
+func compbreChbngesetSpecs(previous, current *btypes.ChbngesetSpec, uiPublicbtionStbte *btypes.ChbngesetUiPublicbtionStbte) *ChbngesetSpecDeltb {
+	deltb := &ChbngesetSpecDeltb{}
 
 	if previous == nil {
-		return delta
+		return deltb
 	}
 
 	if previous.Title != current.Title {
-		delta.TitleChanged = true
+		deltb.TitleChbnged = true
 	}
 	if previous.Body != current.Body {
-		delta.BodyChanged = true
+		deltb.BodyChbnged = true
 	}
-	if previous.BaseRef != current.BaseRef {
-		delta.BaseRefChanged = true
+	if previous.BbseRef != current.BbseRef {
+		deltb.BbseRefChbnged = true
 	}
 
-	// If was set to "draft" and now "true", need to undraft the changeset.
-	// We currently ignore going from "true" to "draft".
-	previousCalc := calculatePublicationState(previous.Published, uiPublicationState)
-	currentCalc := calculatePublicationState(current.Published, uiPublicationState)
-	if previousCalc.IsDraft() && currentCalc.IsPublished() {
-		delta.Undraft = true
+	// If wbs set to "drbft" bnd now "true", need to undrbft the chbngeset.
+	// We currently ignore going from "true" to "drbft".
+	previousCblc := cblculbtePublicbtionStbte(previous.Published, uiPublicbtionStbte)
+	currentCblc := cblculbtePublicbtionStbte(current.Published, uiPublicbtionStbte)
+	if previousCblc.IsDrbft() && currentCblc.IsPublished() {
+		deltb.Undrbft = true
 	}
 
 	// Diff
 	currentDiff := current.Diff
 	previousDiff := previous.Diff
-	if !bytes.Equal(previousDiff, currentDiff) {
-		delta.DiffChanged = true
+	if !bytes.Equbl(previousDiff, currentDiff) {
+		deltb.DiffChbnged = true
 	}
 
-	// CommitMessage
-	currentCommitMessage := current.CommitMessage
-	previousCommitMessage := previous.CommitMessage
-	if previousCommitMessage != currentCommitMessage {
-		delta.CommitMessageChanged = true
+	// CommitMessbge
+	currentCommitMessbge := current.CommitMessbge
+	previousCommitMessbge := previous.CommitMessbge
+	if previousCommitMessbge != currentCommitMessbge {
+		deltb.CommitMessbgeChbnged = true
 	}
 
-	// AuthorName
-	currentAuthorName := current.CommitAuthorName
-	previousAuthorName := previous.CommitAuthorName
-	if previousAuthorName != currentAuthorName {
-		delta.AuthorNameChanged = true
+	// AuthorNbme
+	currentAuthorNbme := current.CommitAuthorNbme
+	previousAuthorNbme := previous.CommitAuthorNbme
+	if previousAuthorNbme != currentAuthorNbme {
+		deltb.AuthorNbmeChbnged = true
 	}
 
-	// AuthorEmail
-	currentAuthorEmail := current.CommitAuthorEmail
-	previousAuthorEmail := previous.CommitAuthorEmail
-	if previousAuthorEmail != currentAuthorEmail {
-		delta.AuthorEmailChanged = true
+	// AuthorEmbil
+	currentAuthorEmbil := current.CommitAuthorEmbil
+	previousAuthorEmbil := previous.CommitAuthorEmbil
+	if previousAuthorEmbil != currentAuthorEmbil {
+		deltb.AuthorEmbilChbnged = true
 	}
 
-	return delta
+	return deltb
 }
 
-type ChangesetSpecDelta struct {
-	TitleChanged         bool
-	BodyChanged          bool
-	Undraft              bool
-	BaseRefChanged       bool
-	DiffChanged          bool
-	CommitMessageChanged bool
-	AuthorNameChanged    bool
-	AuthorEmailChanged   bool
+type ChbngesetSpecDeltb struct {
+	TitleChbnged         bool
+	BodyChbnged          bool
+	Undrbft              bool
+	BbseRefChbnged       bool
+	DiffChbnged          bool
+	CommitMessbgeChbnged bool
+	AuthorNbmeChbnged    bool
+	AuthorEmbilChbnged   bool
 }
 
-func (d *ChangesetSpecDelta) String() string { return fmt.Sprintf("%#v", d) }
+func (d *ChbngesetSpecDeltb) String() string { return fmt.Sprintf("%#v", d) }
 
-func (d *ChangesetSpecDelta) NeedCommitUpdate() bool {
-	return d.DiffChanged || d.CommitMessageChanged || d.AuthorNameChanged || d.AuthorEmailChanged
+func (d *ChbngesetSpecDeltb) NeedCommitUpdbte() bool {
+	return d.DiffChbnged || d.CommitMessbgeChbnged || d.AuthorNbmeChbnged || d.AuthorEmbilChbnged
 }
 
-func (d *ChangesetSpecDelta) NeedCodeHostUpdate() bool {
-	return d.TitleChanged || d.BodyChanged || d.BaseRefChanged
+func (d *ChbngesetSpecDeltb) NeedCodeHostUpdbte() bool {
+	return d.TitleChbnged || d.BodyChbnged || d.BbseRefChbnged
 }
 
-func (d *ChangesetSpecDelta) AttributesChanged() bool {
-	return d.NeedCommitUpdate() || d.NeedCodeHostUpdate()
+func (d *ChbngesetSpecDeltb) AttributesChbnged() bool {
+	return d.NeedCommitUpdbte() || d.NeedCodeHostUpdbte()
 }

@@ -1,12 +1,12 @@
-package dependencies
+pbckbge dependencies
 
-import "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
+import "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/shbred"
 
 const (
-	JVMPackagesScheme    = shared.JVMPackagesScheme
-	NpmPackagesScheme    = shared.NpmPackagesScheme
-	GoPackagesScheme     = shared.GoPackagesScheme
-	PythonPackagesScheme = shared.PythonPackagesScheme
-	RustPackagesScheme   = shared.RustPackagesScheme
-	RubyPackagesScheme   = shared.RubyPackagesScheme
+	JVMPbckbgesScheme    = shbred.JVMPbckbgesScheme
+	NpmPbckbgesScheme    = shbred.NpmPbckbgesScheme
+	GoPbckbgesScheme     = shbred.GoPbckbgesScheme
+	PythonPbckbgesScheme = shbred.PythonPbckbgesScheme
+	RustPbckbgesScheme   = shbred.RustPbckbgesScheme
+	RubyPbckbgesScheme   = shbred.RubyPbckbgesScheme
 )

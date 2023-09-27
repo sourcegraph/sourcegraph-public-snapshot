@@ -1,45 +1,45 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func Test_IsEmptyRepoError(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	testCases := []struct {
+	testCbses := []struct {
 		err  error
-		want autogold.Value
+		wbnt butogold.Vblue
 	}{
 		{
-			err:  errors.New(emptyRepoErrMessage),
-			want: autogold.Expect(true),
+			err:  errors.New(emptyRepoErrMessbge),
+			wbnt: butogold.Expect(true),
 		},
 		{
-			err:  errors.Newf("Another message: %w", errors.New(emptyRepoErrMessage)),
-			want: autogold.Expect(true),
+			err:  errors.Newf("Another messbge: %w", errors.New(emptyRepoErrMessbge)),
+			wbnt: butogold.Expect(true),
 		},
 		{
-			err:  errors.Newf("Another message: %w", errors.Newf("Deep nested: %w", errors.New(emptyRepoErrMessage))),
-			want: autogold.Expect(true),
+			err:  errors.Newf("Another messbge: %w", errors.Newf("Deep nested: %w", errors.New(emptyRepoErrMessbge))),
+			wbnt: butogold.Expect(true),
 		},
 		{
-			err:  errors.Newf("Another message: %w", errors.New("Not an empty repo")),
-			want: autogold.Expect(false),
+			err:  errors.Newf("Another messbge: %w", errors.New("Not bn empty repo")),
+			wbnt: butogold.Expect(fblse),
 		},
 		{
 			err:  errors.New("A different error"),
-			want: autogold.Expect(false),
+			wbnt: butogold.Expect(fblse),
 		},
 	}
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		t.Run(tc.err.Error(), func(t *testing.T) {
 			got := isFirstCommitEmptyRepoError(tc.err)
-			tc.want.Equal(t, got)
+			tc.wbnt.Equbl(t, got)
 		})
 	}
 }

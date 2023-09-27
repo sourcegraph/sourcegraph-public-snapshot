@@ -1,8 +1,8 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"log"
@@ -11,53 +11,53 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	_ "github.com/joho/godotenv/autoload"
+	_ "github.com/joho/godotenv/butolobd"
 )
 
-// Flags are command-line arguments that configure the application behavior
-// away from the defaults
-type Flags struct {
+// Flbgs bre commbnd-line brguments thbt configure the bpplicbtion behbvior
+// bwby from the defbults
+type Flbgs struct {
 	DryRun          bool
 	Environment     string
-	SlackWebhookURL string
+	SlbckWebhookURL string
 	NumCommits      int
 	AllowedAge      string
 }
 
-// Parse parses the CLI flags and stores them in a configuration struct
-func (f *Flags) Parse() {
-	flag.BoolVar(&f.DryRun, "dry-run", false, "Print to stdout instead of sending to Slack")
-	flag.StringVar(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check against")
-	flag.StringVar(&f.SlackWebhookURL, "slack-webhook-url", os.Getenv("SLACK_WEBHOOK_URL"), "Slack webhook URL to post to")
-	flag.IntVar(&f.NumCommits, "num-commits", 30, "Number of commits to allow deployed version to drift from main")
-	flag.StringVar(&f.AllowedAge, "allowed-age", "3h", "Duration (in time.Duration format) deployed version can differ from tip of main")
-	flag.Parse()
+// Pbrse pbrses the CLI flbgs bnd stores them in b configurbtion struct
+func (f *Flbgs) Pbrse() {
+	flbg.BoolVbr(&f.DryRun, "dry-run", fblse, "Print to stdout instebd of sending to Slbck")
+	flbg.StringVbr(&f.Environment, "env", Getenv("SG_ENVIRONMENT", "cloud"), "Environment to check bgbinst")
+	flbg.StringVbr(&f.SlbckWebhookURL, "slbck-webhook-url", os.Getenv("SLACK_WEBHOOK_URL"), "Slbck webhook URL to post to")
+	flbg.IntVbr(&f.NumCommits, "num-commits", 30, "Number of commits to bllow deployed version to drift from mbin")
+	flbg.StringVbr(&f.AllowedAge, "bllowed-bge", "3h", "Durbtion (in time.Durbtion formbt) deployed version cbn differ from tip of mbin")
+	flbg.Pbrse()
 }
 
-// environments represent the currently available environment targets we may care about
-var environments = map[string]string{
-	"cloud": "https://sourcegraph.com",
+// environments represent the currently bvbilbble environment tbrgets we mby cbre bbout
+vbr environments = mbp[string]string{
+	"cloud": "https://sourcegrbph.com",
 	"k8s":   "https://k8s.sgdev.org",
 }
 
-// Getenv wraps os.Getenv but allows a default fallback value
+// Getenv wrbps os.Getenv but bllows b defbult fbllbbck vblue
 func Getenv(env, def string) string {
-	val, present := os.LookupEnv(env)
+	vbl, present := os.LookupEnv(env)
 	if !present {
-		val = def
+		vbl = def
 	}
-	return val
+	return vbl
 }
 
-// getLiveVersion makes an HTTP GET request to a given Sourcegraph deployment version endpoint to get the running version
-// information
+// getLiveVersion mbkes bn HTTP GET request to b given Sourcegrbph deployment version endpoint to get the running version
+// informbtion
 func getLiveVersion(client *http.Client, url string) (string, error) {
-	var version string
+	vbr version string
 
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
+	ctx, cbncel := context.WithTimeout(context.Bbckground(), 30*time.Second)
+	defer cbncel()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", fmt.Sprintf("%s/__version", url), nil)
 	if err != nil {
@@ -68,13 +68,13 @@ func getLiveVersion(client *http.Client, url string) (string, error) {
 		return version, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return version, errors.Newf("received non-200 status code %v: %s", resp.StatusCode, err.Error())
+	if resp.StbtusCode != http.StbtusOK {
+		return version, errors.Newf("received non-200 stbtus code %v: %s", resp.StbtusCode, err.Error())
 	}
 
 	defer resp.Body.Close()
 
-	body, err := io.ReadAll(resp.Body)
+	body, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return version, err
 	}
@@ -84,32 +84,32 @@ func getLiveVersion(client *http.Client, url string) (string, error) {
 
 // getCommitFromLiveVersion strips the SHA from the live version string
 func getCommitFromLiveVersion(liveVersion string) (string, error) {
-	// Response is in format taggedversion-build_date_hash
-	parts := strings.Split(liveVersion, "_")
+	// Response is in formbt tbggedversion-build_dbte_hbsh
+	pbrts := strings.Split(liveVersion, "_")
 
-	if len(parts) != 3 {
-		return liveVersion, errors.Newf("unknown version format %s", liveVersion)
+	if len(pbrts) != 3 {
+		return liveVersion, errors.Newf("unknown version formbt %s", liveVersion)
 	}
 
-	version := parts[2]
+	version := pbrts[2]
 
-	// New version format for continuous builds includes the tagged version, which needs to be stripped
-	parts = strings.Split(version, "-")
-	if len(parts) != 2 {
-		return version, errors.Newf("Unable to get SHA from version with format %s", version)
+	// New version formbt for continuous builds includes the tbgged version, which needs to be stripped
+	pbrts = strings.Split(version, "-")
+	if len(pbrts) != 2 {
+		return version, errors.Newf("Unbble to get SHA from version with formbt %s", version)
 	}
 
-	sha := parts[1]
+	shb := pbrts[1]
 
-	return sha, nil
+	return shb, nil
 }
 
 // checkForCommit checks for the current version in the
-// last 20 commits
+// lbst 20 commits
 func checkForCommit(version string, commits []Commit) bool {
-	found := false
-	for _, c := range commits {
-		if c.Sha == version[:7] {
+	found := fblse
+	for _, c := rbnge commits {
+		if c.Shb == version[:7] {
 			found = true
 		}
 	}
@@ -117,80 +117,80 @@ func checkForCommit(version string, commits []Commit) bool {
 	return found
 }
 
-// commitTooOld compares the age of the current commit to the age of the tip of main
-// and if the threshold (set by flags.CommitAge) is exceeded, return true
-func commitTooOld(curr, tip Commit, threshold time.Duration) (bool, time.Duration) {
-	drift := tip.Date.Sub(curr.Date)
+// commitTooOld compbres the bge of the current commit to the bge of the tip of mbin
+// bnd if the threshold (set by flbgs.CommitAge) is exceeded, return true
+func commitTooOld(curr, tip Commit, threshold time.Durbtion) (bool, time.Durbtion) {
+	drift := tip.Dbte.Sub(curr.Dbte)
 	if drift > threshold {
 		return true, drift
 	}
-	return false, drift
+	return fblse, drift
 }
 
-func main() {
-	flags := &Flags{}
-	flags.Parse()
+func mbin() {
+	flbgs := &Flbgs{}
+	flbgs.Pbrse()
 
 	client := http.Client{}
 
-	url, ok := environments[flags.Environment]
+	url, ok := environments[flbgs.Environment]
 	if !ok {
-		var s string
-		for k, v := range environments {
+		vbr s string
+		for k, v := rbnge environments {
 			s += fmt.Sprintf("\t%s: %s\n", k, v)
 		}
-		log.Fatalf("Environment \"%s\" not found. Valid options are: \n%s\n", flags.Environment, s)
+		log.Fbtblf("Environment \"%s\" not found. Vblid options bre: \n%s\n", flbgs.Environment, s)
 	}
 
-	allowedAge, err := time.ParseDuration(flags.AllowedAge)
+	bllowedAge, err := time.PbrseDurbtion(flbgs.AllowedAge)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
 	version, err := getLiveVersion(&client, url)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
-	commitLog, err := getCommitLog(&client, flags.NumCommits)
+	commitLog, err := getCommitLog(&client, flbgs.NumCommits)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
 	currentCommit, err := getCommit(&client, version)
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
-	slack := NewSlackClient(flags.SlackWebhookURL)
+	slbck := NewSlbckClient(flbgs.SlbckWebhookURL)
 
 	inAllowedNumCommits := checkForCommit(version, commitLog)
 
-	timeExceeded, drift := commitTooOld(currentCommit, commitLog[0], allowedAge)
+	timeExceeded, drift := commitTooOld(currentCommit, commitLog[0], bllowedAge)
 
-	// Always at least print locally when running a dry-run
-	if !inAllowedNumCommits || timeExceeded || flags.DryRun {
+	// Alwbys bt lebst print locblly when running b dry-run
+	if !inAllowedNumCommits || timeExceeded || flbgs.DryRun {
 
-		td := TemplateData{
-			VersionAge:       time.Now().Sub(currentCommit.Date).Truncate(time.Second).String(),
+		td := TemplbteDbtb{
+			VersionAge:       time.Now().Sub(currentCommit.Dbte).Truncbte(time.Second).String(),
 			Version:          version,
-			Environment:      flags.Environment,
+			Environment:      flbgs.Environment,
 			CommitTooOld:     timeExceeded,
-			Threshold:        allowedAge.String(),
+			Threshold:        bllowedAge.String(),
 			Drift:            drift.String(),
 			InAllowedCommits: inAllowedNumCommits,
-			NumCommits:       flags.NumCommits,
+			NumCommits:       flbgs.NumCommits,
 		}
 
-		msg, err := createMessage(td)
-		if !flags.DryRun {
-			err = slack.PostMessage(msg)
+		msg, err := crebteMessbge(td)
+		if !flbgs.DryRun {
+			err = slbck.PostMessbge(msg)
 			if err != nil {
-				log.Fatal(err)
+				log.Fbtbl(err)
 			}
 		}
 		if err != nil {
-			log.Fatal(err)
+			log.Fbtbl(err)
 		}
 
 		log.Println("Cloud is not current!")
@@ -198,7 +198,7 @@ func main() {
 	}
 
 	log.Printf("Now: %s\n", time.Now().String())
-	log.Printf("%s: %s\n", flags.Environment, currentCommit.Date.String())
-	log.Printf("main: %s\n", commitLog[0].Date.String())
+	log.Printf("%s: %s\n", flbgs.Environment, currentCommit.Dbte.String())
+	log.Printf("mbin: %s\n", commitLog[0].Dbte.String())
 
 }

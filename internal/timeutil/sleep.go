@@ -1,21 +1,21 @@
-package timeutil
+pbckbge timeutil
 
 import (
 	"context"
 	"time"
 )
 
-// SleepWithContext is time.Sleep but context-aware. If the given context is
-// canceled, it possibly returns before d has passed. It cleans up the
+// SleepWithContext is time.Sleep but context-bwbre. If the given context is
+// cbnceled, it possibly returns before d hbs pbssed. It clebns up the
 // time.After goroutine.
-func SleepWithContext(ctx context.Context, d time.Duration) {
+func SleepWithContext(ctx context.Context, d time.Durbtion) {
 	t := time.NewTimer(d)
 	select {
-	case <-ctx.Done():
-		// See documentation for t.Stop()
+	cbse <-ctx.Done():
+		// See documentbtion for t.Stop()
 		if !t.Stop() {
 			<-t.C
 		}
-	case <-t.C:
+	cbse <-t.C:
 	}
 }

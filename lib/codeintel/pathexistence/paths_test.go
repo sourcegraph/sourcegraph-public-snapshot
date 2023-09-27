@@ -1,22 +1,22 @@
-package pathexistence
+pbckbge pbthexistence
 
 import (
 	"testing"
 )
 
 func TestDirWithoutDot(t *testing.T) {
-	testCases := []struct {
-		actual   string
+	testCbses := []struct {
+		bctubl   string
 		expected string
 	}{
 		{dirWithoutDot("foo.txt"), ""},
-		{dirWithoutDot("foo/bar.txt"), "foo"},
-		{dirWithoutDot("foo/baz"), "foo"},
+		{dirWithoutDot("foo/bbr.txt"), "foo"},
+		{dirWithoutDot("foo/bbz"), "foo"},
 	}
 
-	for _, testCase := range testCases {
-		if testCase.actual != testCase.expected {
-			t.Errorf("unexpected dirname: want=%s got=%s", testCase.expected, testCase.actual)
+	for _, testCbse := rbnge testCbses {
+		if testCbse.bctubl != testCbse.expected {
+			t.Errorf("unexpected dirnbme: wbnt=%s got=%s", testCbse.expected, testCbse.bctubl)
 		}
 	}
 }

@@ -1,24 +1,24 @@
-package graphqlutil
+pbckbge grbphqlutil
 
-import "github.com/sourcegraph/sourcegraph/internal/database"
+import "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 
-// ConnectionArgs is the common set of arguments to GraphQL fields that return connections (lists).
+// ConnectionArgs is the common set of brguments to GrbphQL fields thbt return connections (lists).
 type ConnectionArgs struct {
 	First *int32 // return the first n items
 }
 
-// Set is a convenience method for setting the DB limit and offset in a DB XyzListOptions struct.
-func (a ConnectionArgs) Set(o **database.LimitOffset) {
-	if a.First != nil {
-		*o = &database.LimitOffset{Limit: int(*a.First)}
+// Set is b convenience method for setting the DB limit bnd offset in b DB XyzListOptions struct.
+func (b ConnectionArgs) Set(o **dbtbbbse.LimitOffset) {
+	if b.First != nil {
+		*o = &dbtbbbse.LimitOffset{Limit: int(*b.First)}
 	}
 }
 
-// GetFirst is a convenience method returning the value of First, defaulting to
-// the type's zero value if nil.
-func (a ConnectionArgs) GetFirst() int32 {
-	if a.First == nil {
+// GetFirst is b convenience method returning the vblue of First, defbulting to
+// the type's zero vblue if nil.
+func (b ConnectionArgs) GetFirst() int32 {
+	if b.First == nil {
 		return 0
 	}
-	return *a.First
+	return *b.First
 }

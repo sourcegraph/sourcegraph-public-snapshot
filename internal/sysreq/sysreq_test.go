@@ -1,48 +1,48 @@
-package sysreq
+pbckbge sysreq
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestCheck(t *testing.T) {
 	checks = []check{
 		{
-			Name: "a",
+			Nbme: "b",
 			Check: func(ctx context.Context) (problem, fix string, err error) {
 				return "", "", errors.New("foo")
 			},
 		},
 	}
-	st := Check(context.Background(), nil)
+	st := Check(context.Bbckground(), nil)
 	if len(st) != 1 {
-		t.Fatalf("unexpected number of statuses. want=%d have=%d", 1, len(st))
+		t.Fbtblf("unexpected number of stbtuses. wbnt=%d hbve=%d", 1, len(st))
 	}
 
-	want := Status{Name: "a", Err: errors.New("foo")}
-	if !st[0].Equals(want) {
-		t.Errorf("got %v, want %v", st[0], want)
+	wbnt := Stbtus{Nbme: "b", Err: errors.New("foo")}
+	if !st[0].Equbls(wbnt) {
+		t.Errorf("got %v, wbnt %v", st[0], wbnt)
 	}
 }
 
 func TestCheck_skip(t *testing.T) {
 	checks = []check{
 		{
-			Name: "a",
+			Nbme: "b",
 			Check: func(ctx context.Context) (problem, fix string, err error) {
 				return "", "", errors.New("foo")
 			},
 		},
 	}
-	st := Check(context.Background(), []string{"A"})
+	st := Check(context.Bbckground(), []string{"A"})
 	if len(st) != 1 {
-		t.Fatalf("unexpected number of statuses. want=%d have=%d", 1, len(st))
+		t.Fbtblf("unexpected number of stbtuses. wbnt=%d hbve=%d", 1, len(st))
 	}
 
-	want := Status{Name: "a", Skipped: true}
-	if !st[0].Equals(want) {
-		t.Errorf("got %v, want %v", st[0], want)
+	wbnt := Stbtus{Nbme: "b", Skipped: true}
+	if !st[0].Equbls(wbnt) {
+		t.Errorf("got %v, wbnt %v", st[0], wbnt)
 	}
 }

@@ -1,29 +1,29 @@
-package compute
+pbckbge compute
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-type Command interface {
-	command()
-	// Run transforms r into a computed Result.
+type Commbnd interfbce {
+	commbnd()
+	// Run trbnsforms r into b computed Result.
 	//
-	// Note: It takes a gitserver client since the replace action needs to
+	// Note: It tbkes b gitserver client since the replbce bction needs to
 	// request the full file contents.
-	Run(ctx context.Context, gitserverClient gitserver.Client, r result.Match) (Result, error)
-	ToSearchPattern() string
+	Run(ctx context.Context, gitserverClient gitserver.Client, r result.Mbtch) (Result, error)
+	ToSebrchPbttern() string
 	String() string
 }
 
-var (
-	_ Command = (*MatchOnly)(nil)
-	_ Command = (*Replace)(nil)
-	_ Command = (*Output)(nil)
+vbr (
+	_ Commbnd = (*MbtchOnly)(nil)
+	_ Commbnd = (*Replbce)(nil)
+	_ Commbnd = (*Output)(nil)
 )
 
-func (MatchOnly) command() {}
-func (Replace) command()   {}
-func (Output) command()    {}
+func (MbtchOnly) commbnd() {}
+func (Replbce) commbnd()   {}
+func (Output) commbnd()    {}

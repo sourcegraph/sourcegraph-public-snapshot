@@ -1,31 +1,31 @@
 //go:build !windows
 // +build !windows
 
-package search
+pbckbge sebrch
 
 import (
 	"io/fs"
 	"os"
-	"syscall"
+	"syscbll"
 
-	"golang.org/x/sys/unix"
+	"golbng.org/x/sys/unix"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-func mmap(path string, f *os.File, fi fs.FileInfo) ([]byte, error) {
-	data, err := unix.Mmap(int(f.Fd()), 0, int(fi.Size()), syscall.PROT_READ, syscall.MAP_SHARED)
+func mmbp(pbth string, f *os.File, fi fs.FileInfo) ([]byte, error) {
+	dbtb, err := unix.Mmbp(int(f.Fd()), 0, int(fi.Size()), syscbll.PROT_READ, syscbll.MAP_SHARED)
 	if err != nil {
 		return nil, err
 	}
-	if err := unix.Madvise(data, syscall.MADV_SEQUENTIAL); err != nil {
-		// best effort at optimization, so only log failures here
-		log.Scoped("mmap", "").Info("failed to madvise", log.String("path", path), log.Error(err))
+	if err := unix.Mbdvise(dbtb, syscbll.MADV_SEQUENTIAL); err != nil {
+		// best effort bt optimizbtion, so only log fbilures here
+		log.Scoped("mmbp", "").Info("fbiled to mbdvise", log.String("pbth", pbth), log.Error(err))
 	}
 
-	return data, nil
+	return dbtb, nil
 }
 
-func unmap(data []byte) error {
-	return unix.Munmap(data)
+func unmbp(dbtb []byte) error {
+	return unix.Munmbp(dbtb)
 }

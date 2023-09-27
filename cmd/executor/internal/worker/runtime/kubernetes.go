@@ -1,104 +1,104 @@
-package runtime
+pbckbge runtime
 
 import (
 	"context"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
 type kubernetesRuntime struct {
-	cmd          command.Command
-	kubeCmd      *command.KubernetesCommand
+	cmd          commbnd.Commbnd
+	kubeCmd      *commbnd.KubernetesCommbnd
 	filesStore   files.Store
-	cloneOptions workspace.CloneOptions
-	operations   *command.Operations
-	options      command.KubernetesContainerOptions
+	cloneOptions workspbce.CloneOptions
+	operbtions   *commbnd.Operbtions
+	options      commbnd.KubernetesContbinerOptions
 }
 
-var _ Runtime = &kubernetesRuntime{}
+vbr _ Runtime = &kubernetesRuntime{}
 
-func (r *kubernetesRuntime) Name() Name {
-	return NameKubernetes
+func (r *kubernetesRuntime) Nbme() Nbme {
+	return NbmeKubernetes
 }
 
-func (r *kubernetesRuntime) PrepareWorkspace(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspace.Workspace, error) {
-	return workspace.NewKubernetesWorkspace(
+func (r *kubernetesRuntime) PrepbreWorkspbce(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspbce.Workspbce, error) {
+	return workspbce.NewKubernetesWorkspbce(
 		ctx,
 		r.filesStore,
 		job,
 		r.cmd,
 		logger,
 		r.cloneOptions,
-		command.KubernetesExecutorMountPath,
+		commbnd.KubernetesExecutorMountPbth,
 		r.options.SingleJobPod,
-		r.operations,
+		r.operbtions,
 	)
 }
 
 func (r *kubernetesRuntime) NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
-	jobRunner := runner.NewKubernetesRunner(r.kubeCmd, logger, options.Path, filesStore, r.options)
+	jobRunner := runner.NewKubernetesRunner(r.kubeCmd, logger, options.Pbth, filesStore, r.options)
 	if err := jobRunner.Setup(ctx); err != nil {
 		return nil, err
 	}
 	return jobRunner, nil
 }
 
-func (r *kubernetesRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error) {
+func (r *kubernetesRuntime) NewRunnerSpecs(ws workspbce.Workspbce, job types.Job) ([]runner.Spec, error) {
 	// TODO switch to the single job in 5.2
 	if r.options.SingleJobPod {
 		spec := runner.Spec{
 			Job: job,
 		}
 
-		specs := make([]command.Spec, len(job.DockerSteps))
-		for i, step := range job.DockerSteps {
-			scriptName := files.ScriptNameFromJobStep(job, i)
+		specs := mbke([]commbnd.Spec, len(job.DockerSteps))
+		for i, step := rbnge job.DockerSteps {
+			scriptNbme := files.ScriptNbmeFromJobStep(job, i)
 
 			key := kubernetesKey(step.Key, i)
-			specs[i] = command.Spec{
+			specs[i] = commbnd.Spec{
 				Key:  key,
-				Name: strings.ReplaceAll(key, ".", "-"),
-				Command: []string{
+				Nbme: strings.ReplbceAll(key, ".", "-"),
+				Commbnd: []string{
 					"/bin/sh -c " +
-						filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, scriptName),
+						filepbth.Join(commbnd.KubernetesJobMountPbth, files.ScriptsPbth, scriptNbme),
 				},
 				Dir:   step.Dir,
 				Env:   step.Env,
-				Image: step.Image,
+				Imbge: step.Imbge,
 			}
 		}
-		spec.CommandSpecs = specs
+		spec.CommbndSpecs = specs
 
 		return []runner.Spec{spec}, nil
 	} else {
-		runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
-		for i, step := range job.DockerSteps {
+		runnerSpecs := mbke([]runner.Spec, len(job.DockerSteps))
+		for i, step := rbnge job.DockerSteps {
 			key := kubernetesKey(step.Key, i)
 			runnerSpecs[i] = runner.Spec{
 				Job: job,
-				CommandSpecs: []command.Spec{
+				CommbndSpecs: []commbnd.Spec{
 					{
 						Key:  key,
-						Name: strings.ReplaceAll(key, ".", "-"),
-						Command: []string{
+						Nbme: strings.ReplbceAll(key, ".", "-"),
+						Commbnd: []string{
 							"/bin/sh",
 							"-c",
-							filepath.Join(command.KubernetesJobMountPath, files.ScriptsPath, ws.ScriptFilenames()[i]),
+							filepbth.Join(commbnd.KubernetesJobMountPbth, files.ScriptsPbth, ws.ScriptFilenbmes()[i]),
 						},
 						Dir:       step.Dir,
 						Env:       step.Env,
-						Operation: r.operations.Exec,
+						Operbtion: r.operbtions.Exec,
 					},
 				},
-				Image: step.Image,
+				Imbge: step.Imbge,
 			}
 		}
 		return runnerSpecs, nil

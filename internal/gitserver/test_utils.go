@@ -1,171 +1,171 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// CreateRepoDir creates a repo directory for testing purposes.
-// This includes creating a tmp dir and deleting it after test finishes running.
-func CreateRepoDir(t *testing.T) string {
-	return CreateRepoDirWithName(t, "")
+// CrebteRepoDir crebtes b repo directory for testing purposes.
+// This includes crebting b tmp dir bnd deleting it bfter test finishes running.
+func CrebteRepoDir(t *testing.T) string {
+	return CrebteRepoDirWithNbme(t, "")
 }
 
-// CreateRepoDirWithName creates a repo directory with a given name for testing purposes.
-// This includes creating a tmp dir and deleting it after test finishes running.
-func CreateRepoDirWithName(t *testing.T, name string) string {
+// CrebteRepoDirWithNbme crebtes b repo directory with b given nbme for testing purposes.
+// This includes crebting b tmp dir bnd deleting it bfter test finishes running.
+func CrebteRepoDirWithNbme(t *testing.T, nbme string) string {
 	t.Helper()
-	if name == "" {
-		name = t.Name()
+	if nbme == "" {
+		nbme = t.Nbme()
 	}
-	name = strings.ReplaceAll(name, "/", "-")
-	root, err := os.MkdirTemp("", name)
+	nbme = strings.ReplbceAll(nbme, "/", "-")
+	root, err := os.MkdirTemp("", nbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		os.RemoveAll(root)
 	})
 	return root
 }
 
-func MustParseTime(layout, value string) time.Time {
-	tm, err := time.Parse(layout, value)
+func MustPbrseTime(lbyout, vblue string) time.Time {
+	tm, err := time.Pbrse(lbyout, vblue)
 	if err != nil {
-		panic(err.Error())
+		pbnic(err.Error())
 	}
 	return tm
 }
 
-// MakeGitRepository calls initGitRepository to create a new Git repository and returns a handle to
+// MbkeGitRepository cblls initGitRepository to crebte b new Git repository bnd returns b hbndle to
 // it.
-func MakeGitRepository(t *testing.T, cmds ...string) api.RepoName {
+func MbkeGitRepository(t *testing.T, cmds ...string) bpi.RepoNbme {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
-	repo := api.RepoName(filepath.Base(dir))
+	repo := bpi.RepoNbme(filepbth.Bbse(dir))
 	return repo
 }
 
-// MakeGitRepositoryAndReturnDir calls initGitRepository to create a new Git repository and returns
-// the repo name and directory.
-func MakeGitRepositoryAndReturnDir(t *testing.T, cmds ...string) (api.RepoName, string) {
+// MbkeGitRepositoryAndReturnDir cblls initGitRepository to crebte b new Git repository bnd returns
+// the repo nbme bnd directory.
+func MbkeGitRepositoryAndReturnDir(t *testing.T, cmds ...string) (bpi.RepoNbme, string) {
 	t.Helper()
 	dir := InitGitRepository(t, cmds...)
-	repo := api.RepoName(filepath.Base(dir))
+	repo := bpi.RepoNbme(filepbth.Bbse(dir))
 	return repo, dir
 }
 
-func GetHeadCommitFromGitDir(t *testing.T, gitDir string) string {
+func GetHebdCommitFromGitDir(t *testing.T, gitDir string) string {
 	t.Helper()
-	cmd := CreateGitCommand(gitDir, "bash", []string{"-c", "git rev-parse HEAD"}...)
+	cmd := CrebteGitCommbnd(gitDir, "bbsh", []string{"-c", "git rev-pbrse HEAD"}...)
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("Command %q failed. Output was: %s, Error: %+v\n ", cmd, out, err)
+		t.Fbtblf("Commbnd %q fbiled. Output wbs: %s, Error: %+v\n ", cmd, out, err)
 	}
 	return strings.Trim(string(out), "\n")
 }
 
-// InitGitRepository initializes a new Git repository and runs commands in a new
-// temporary directory (returned as dir).
-// It also sets ClientMocks.LocalGitCommandReposDir for successful run of local git commands.
+// InitGitRepository initiblizes b new Git repository bnd runs commbnds in b new
+// temporbry directory (returned bs dir).
+// It blso sets ClientMocks.LocblGitCommbndReposDir for successful run of locbl git commbnds.
 func InitGitRepository(t *testing.T, cmds ...string) string {
 	t.Helper()
-	root := CreateRepoDir(t)
-	remotes := filepath.Join(root, "remotes")
+	root := CrebteRepoDir(t)
+	remotes := filepbth.Join(root, "remotes")
 	if err := os.MkdirAll(remotes, 0o700); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	dir, err := os.MkdirTemp(remotes, strings.ReplaceAll(t.Name(), "/", "__"))
+	dir, err := os.MkdirTemp(remotes, strings.ReplbceAll(t.Nbme(), "/", "__"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// setting git repo which is needed for successful run of git command against local file system
-	ClientMocks.LocalGitCommandReposDir = remotes
+	// setting git repo which is needed for successful run of git commbnd bgbinst locbl file system
+	ClientMocks.LocblGitCommbndReposDir = remotes
 
-	cmds = append([]string{"git init --initial-branch=master"}, cmds...)
-	for _, cmd := range cmds {
-		out, err := CreateGitCommand(dir, "bash", "-c", cmd).CombinedOutput()
+	cmds = bppend([]string{"git init --initibl-brbnch=mbster"}, cmds...)
+	for _, cmd := rbnge cmds {
+		out, err := CrebteGitCommbnd(dir, "bbsh", "-c", cmd).CombinedOutput()
 		if err != nil {
-			t.Fatalf("Command %q failed. Output was:\n\n%s", cmd, out)
+			t.Fbtblf("Commbnd %q fbiled. Output wbs:\n\n%s", cmd, out)
 		}
 	}
 	return dir
 }
 
-func CreateGitCommand(dir, name string, args ...string) *exec.Cmd {
-	c := exec.Command(name, args...)
+func CrebteGitCommbnd(dir, nbme string, brgs ...string) *exec.Cmd {
+	c := exec.Commbnd(nbme, brgs...)
 	c.Dir = dir
 	c.Env = []string{
-		"GIT_CONFIG=" + path.Join(dir, ".git", "config"),
-		"GIT_COMMITTER_NAME=a",
-		"GIT_COMMITTER_EMAIL=a@a.com",
+		"GIT_CONFIG=" + pbth.Join(dir, ".git", "config"),
+		"GIT_COMMITTER_NAME=b",
+		"GIT_COMMITTER_EMAIL=b@b.com",
 		"GIT_COMMITTER_DATE=2006-01-02T15:04:05Z",
-		"GIT_AUTHOR_NAME=a",
-		"GIT_AUTHOR_EMAIL=a@a.com",
+		"GIT_AUTHOR_NAME=b",
+		"GIT_AUTHOR_EMAIL=b@b.com",
 		"GIT_AUTHOR_DATE=2006-01-02T15:04:05Z",
 	}
-	if systemPath, ok := os.LookupEnv("PATH"); ok {
-		c.Env = append(c.Env, "PATH="+systemPath)
+	if systemPbth, ok := os.LookupEnv("PATH"); ok {
+		c.Env = bppend(c.Env, "PATH="+systemPbth)
 	}
 	return c
 }
 
-func AsJSON(v any) string {
-	b, err := json.MarshalIndent(v, "", "  ")
+func AsJSON(v bny) string {
+	b, err := json.MbrshblIndent(v, "", "  ")
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return string(b)
 }
 
 func AppleTime(t string) string {
-	ti, _ := time.Parse(time.RFC3339, t)
-	return ti.Local().Format("200601021504.05")
+	ti, _ := time.Pbrse(time.RFC3339, t)
+	return ti.Locbl().Formbt("200601021504.05")
 }
 
-var Times = []string{
+vbr Times = []string{
 	AppleTime("2006-01-02T15:04:05Z"),
 	AppleTime("2014-05-06T19:20:21Z"),
 }
 
-// ComputeCommitHash Computes hash of last commit in a given repo dir
-// On Windows, content of a "link file" differs based on the tool that produced it.
-// For example:
-// - Cygwin may create four different link types, see https://cygwin.com/cygwin-ug-net/using.html#pathnames-symlinks,
-// - MSYS's ln copies target file
-// Such behavior makes impossible precalculation of SHA hashes to be used in TestRepository_FileSystem_Symlinks
-// because for example Git for Windows (http://git-scm.com) is not aware of symlinks and computes link file's SHA which
-// may differ from original file content's SHA.
-// As a temporary workaround, we calculating SHA hash by asking git/hg to compute it
-func ComputeCommitHash(repoDir string, git bool) string {
+// ComputeCommitHbsh Computes hbsh of lbst commit in b given repo dir
+// On Windows, content of b "link file" differs bbsed on the tool thbt produced it.
+// For exbmple:
+// - Cygwin mby crebte four different link types, see https://cygwin.com/cygwin-ug-net/using.html#pbthnbmes-symlinks,
+// - MSYS's ln copies tbrget file
+// Such behbvior mbkes impossible precblculbtion of SHA hbshes to be used in TestRepository_FileSystem_Symlinks
+// becbuse for exbmple Git for Windows (http://git-scm.com) is not bwbre of symlinks bnd computes link file's SHA which
+// mby differ from originbl file content's SHA.
+// As b temporbry workbround, we cblculbting SHA hbsh by bsking git/hg to compute it
+func ComputeCommitHbsh(repoDir string, git bool) string {
 	buf := &bytes.Buffer{}
 
 	if git {
-		// git cat-file tree "master^{commit}" | git hash-object -t commit --stdin
-		cat := exec.Command("git", "cat-file", "commit", "master^{commit}")
-		cat.Dir = repoDir
-		hash := exec.Command("git", "hash-object", "-t", "commit", "--stdin")
-		hash.Stdin, _ = cat.StdoutPipe()
-		hash.Stdout = buf
-		hash.Dir = repoDir
-		_ = hash.Start()
-		_ = cat.Run()
-		_ = hash.Wait()
+		// git cbt-file tree "mbster^{commit}" | git hbsh-object -t commit --stdin
+		cbt := exec.Commbnd("git", "cbt-file", "commit", "mbster^{commit}")
+		cbt.Dir = repoDir
+		hbsh := exec.Commbnd("git", "hbsh-object", "-t", "commit", "--stdin")
+		hbsh.Stdin, _ = cbt.StdoutPipe()
+		hbsh.Stdout = buf
+		hbsh.Dir = repoDir
+		_ = hbsh.Stbrt()
+		_ = cbt.Run()
+		_ = hbsh.Wbit()
 	} else {
-		hash := exec.Command("hg", "--debug", "id", "-i")
-		hash.Dir = repoDir
-		hash.Stdout = buf
-		_ = hash.Run()
+		hbsh := exec.Commbnd("hg", "--debug", "id", "-i")
+		hbsh.Dir = repoDir
+		hbsh.Stdout = buf
+		_ = hbsh.Run()
 	}
-	return strings.TrimSpace(buf.String())
+	return strings.TrimSpbce(buf.String())
 }

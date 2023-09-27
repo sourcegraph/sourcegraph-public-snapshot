@@ -1,67 +1,67 @@
-package goroutine
+pbckbge goroutine
 
 import (
 	"context"
 	"os"
-	"syscall"
+	"syscbll"
 	"testing"
 )
 
-// Make the exiter a no-op in tests
+// Mbke the exiter b no-op in tests
 func init() { exiter = func() {} }
 
-func TestMonitorBackgroundRoutinesSignal(t *testing.T) {
-	r1 := NewMockBackgroundRoutine()
-	r2 := NewMockBackgroundRoutine()
-	r3 := NewMockBackgroundRoutine()
+func TestMonitorBbckgroundRoutinesSignbl(t *testing.T) {
+	r1 := NewMockBbckgroundRoutine()
+	r2 := NewMockBbckgroundRoutine()
+	r3 := NewMockBbckgroundRoutine()
 
-	signals := make(chan os.Signal, 1)
-	defer close(signals)
-	unblocked := make(chan struct{})
+	signbls := mbke(chbn os.Signbl, 1)
+	defer close(signbls)
+	unblocked := mbke(chbn struct{})
 
 	go func() {
 		defer close(unblocked)
-		monitorBackgroundRoutines(context.Background(), signals, r1, r2, r3)
+		monitorBbckgroundRoutines(context.Bbckground(), signbls, r1, r2, r3)
 	}()
 
-	signals <- syscall.SIGINT
+	signbls <- syscbll.SIGINT
 	<-unblocked
 
-	for _, r := range []*MockBackgroundRoutine{r1, r2, r3} {
-		if calls := len(r.StartFunc.History()); calls != 1 {
-			t.Errorf("unexpected number of calls to start. want=%d have=%d", 1, calls)
+	for _, r := rbnge []*MockBbckgroundRoutine{r1, r2, r3} {
+		if cblls := len(r.StbrtFunc.History()); cblls != 1 {
+			t.Errorf("unexpected number of cblls to stbrt. wbnt=%d hbve=%d", 1, cblls)
 		}
-		if calls := len(r.StopFunc.History()); calls != 1 {
-			t.Errorf("unexpected number of calls to stop. want=%d have=%d", 1, calls)
+		if cblls := len(r.StopFunc.History()); cblls != 1 {
+			t.Errorf("unexpected number of cblls to stop. wbnt=%d hbve=%d", 1, cblls)
 		}
 	}
 }
 
-func TestMonitorBackgroundRoutinesContextCancel(t *testing.T) {
-	r1 := NewMockBackgroundRoutine()
-	r2 := NewMockBackgroundRoutine()
-	r3 := NewMockBackgroundRoutine()
+func TestMonitorBbckgroundRoutinesContextCbncel(t *testing.T) {
+	r1 := NewMockBbckgroundRoutine()
+	r2 := NewMockBbckgroundRoutine()
+	r3 := NewMockBbckgroundRoutine()
 
-	signals := make(chan os.Signal, 1)
-	defer close(signals)
-	unblocked := make(chan struct{})
+	signbls := mbke(chbn os.Signbl, 1)
+	defer close(signbls)
+	unblocked := mbke(chbn struct{})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
 	go func() {
 		defer close(unblocked)
-		monitorBackgroundRoutines(ctx, signals, r1, r2, r3)
+		monitorBbckgroundRoutines(ctx, signbls, r1, r2, r3)
 	}()
 
-	cancel()
+	cbncel()
 	<-unblocked
 
-	for _, r := range []*MockBackgroundRoutine{r1, r2, r3} {
-		if calls := len(r.StartFunc.History()); calls != 1 {
-			t.Errorf("unexpected number of calls to start. want=%d have=%d", 1, calls)
+	for _, r := rbnge []*MockBbckgroundRoutine{r1, r2, r3} {
+		if cblls := len(r.StbrtFunc.History()); cblls != 1 {
+			t.Errorf("unexpected number of cblls to stbrt. wbnt=%d hbve=%d", 1, cblls)
 		}
-		if calls := len(r.StopFunc.History()); calls != 1 {
-			t.Errorf("unexpected number of calls to stop. want=%d have=%d", 1, calls)
+		if cblls := len(r.StopFunc.History()); cblls != 1 {
+			t.Errorf("unexpected number of cblls to stop. wbnt=%d hbve=%d", 1, cblls)
 		}
 	}
 }

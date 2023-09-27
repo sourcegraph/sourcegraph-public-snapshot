@@ -1,143 +1,143 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-// RepoStatistics represents the contents of the single row in the
-// repo_statistics table.
-type RepoStatistics struct {
-	Total       int
+// RepoStbtistics represents the contents of the single row in the
+// repo_stbtistics tbble.
+type RepoStbtistics struct {
+	Totbl       int
 	SoftDeleted int
 	NotCloned   int
 	Cloning     int
 	Cloned      int
-	FailedFetch int
+	FbiledFetch int
 	Corrupted   int
 }
 
-// gitserverRepoStatistics represents the contents of the
-// gitserver_repo_statistics table, where each gitserver shard should have a
-// separate row and gitserver_repos that haven't been assigned a shard yet have an empty ShardID.
-type GitserverReposStatistic struct {
-	ShardID     string
-	Total       int
+// gitserverRepoStbtistics represents the contents of the
+// gitserver_repo_stbtistics tbble, where ebch gitserver shbrd should hbve b
+// sepbrbte row bnd gitserver_repos thbt hbven't been bssigned b shbrd yet hbve bn empty ShbrdID.
+type GitserverReposStbtistic struct {
+	ShbrdID     string
+	Totbl       int
 	NotCloned   int
 	Cloning     int
 	Cloned      int
-	FailedFetch int
+	FbiledFetch int
 	Corrupted   int
 }
 
-type RepoStatisticsStore interface {
-	basestore.ShareableStore
-	WithTransact(context.Context, func(RepoStatisticsStore) error) error
-	With(basestore.ShareableStore) RepoStatisticsStore
+type RepoStbtisticsStore interfbce {
+	bbsestore.ShbrebbleStore
+	WithTrbnsbct(context.Context, func(RepoStbtisticsStore) error) error
+	With(bbsestore.ShbrebbleStore) RepoStbtisticsStore
 
-	GetRepoStatistics(ctx context.Context) (RepoStatistics, error)
-	CompactRepoStatistics(ctx context.Context) error
-	GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error)
+	GetRepoStbtistics(ctx context.Context) (RepoStbtistics, error)
+	CompbctRepoStbtistics(ctx context.Context) error
+	GetGitserverReposStbtistics(ctx context.Context) ([]GitserverReposStbtistic, error)
 }
 
-// repoStatisticsStore is responsible for data stored in the repo_statistics
-// and the gitserver_repos_statistics tables.
-type repoStatisticsStore struct {
-	*basestore.Store
+// repoStbtisticsStore is responsible for dbtb stored in the repo_stbtistics
+// bnd the gitserver_repos_stbtistics tbbles.
+type repoStbtisticsStore struct {
+	*bbsestore.Store
 }
 
-// RepoStatisticsWith instantiates and returns a new repoStatisticsStore using
-// the other store handle.
-func RepoStatisticsWith(other basestore.ShareableStore) RepoStatisticsStore {
-	return &repoStatisticsStore{Store: basestore.NewWithHandle(other.Handle())}
+// RepoStbtisticsWith instbntibtes bnd returns b new repoStbtisticsStore using
+// the other store hbndle.
+func RepoStbtisticsWith(other bbsestore.ShbrebbleStore) RepoStbtisticsStore {
+	return &repoStbtisticsStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *repoStatisticsStore) With(other basestore.ShareableStore) RepoStatisticsStore {
-	return &repoStatisticsStore{Store: s.Store.With(other)}
+func (s *repoStbtisticsStore) With(other bbsestore.ShbrebbleStore) RepoStbtisticsStore {
+	return &repoStbtisticsStore{Store: s.Store.With(other)}
 }
 
-func (s *repoStatisticsStore) WithTransact(ctx context.Context, f func(RepoStatisticsStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&repoStatisticsStore{Store: tx})
+func (s *repoStbtisticsStore) WithTrbnsbct(ctx context.Context, f func(RepoStbtisticsStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return f(&repoStbtisticsStore{Store: tx})
 	})
 }
 
-func (s *repoStatisticsStore) GetRepoStatistics(ctx context.Context) (RepoStatistics, error) {
-	var rs RepoStatistics
-	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoStatisticsQueryFmtstr))
-	err := row.Scan(&rs.Total, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FailedFetch, &rs.Corrupted)
+func (s *repoStbtisticsStore) GetRepoStbtistics(ctx context.Context) (RepoStbtistics, error) {
+	vbr rs RepoStbtistics
+	row := s.QueryRow(ctx, sqlf.Sprintf(getRepoStbtisticsQueryFmtstr))
+	err := row.Scbn(&rs.Totbl, &rs.SoftDeleted, &rs.NotCloned, &rs.Cloning, &rs.Cloned, &rs.FbiledFetch, &rs.Corrupted)
 	if err != nil {
 		return rs, err
 	}
 	return rs, nil
 }
 
-const getRepoStatisticsQueryFmtstr = `
+const getRepoStbtisticsQueryFmtstr = `
 SELECT
-	SUM(total),
+	SUM(totbl),
 	SUM(soft_deleted),
 	SUM(not_cloned),
 	SUM(cloning),
 	SUM(cloned),
-	SUM(failed_fetch),
+	SUM(fbiled_fetch),
 	SUM(corrupted)
-FROM repo_statistics
+FROM repo_stbtistics
 `
 
-func (s *repoStatisticsStore) CompactRepoStatistics(ctx context.Context) error {
-	return s.Exec(ctx, sqlf.Sprintf(compactRepoStatisticsQueryFmtstr))
+func (s *repoStbtisticsStore) CompbctRepoStbtistics(ctx context.Context) error {
+	return s.Exec(ctx, sqlf.Sprintf(compbctRepoStbtisticsQueryFmtstr))
 }
 
-const compactRepoStatisticsQueryFmtstr = `
+const compbctRepoStbtisticsQueryFmtstr = `
 WITH deleted AS (
-	DELETE FROM repo_statistics
+	DELETE FROM repo_stbtistics
 	RETURNING
-		total,
+		totbl,
 		soft_deleted,
 		not_cloned,
 		cloning,
 		cloned,
-		failed_fetch,
+		fbiled_fetch,
 		corrupted
 )
-INSERT INTO repo_statistics (total, soft_deleted, not_cloned, cloning, cloned, failed_fetch, corrupted)
+INSERT INTO repo_stbtistics (totbl, soft_deleted, not_cloned, cloning, cloned, fbiled_fetch, corrupted)
 SELECT
-	SUM(total),
+	SUM(totbl),
 	SUM(soft_deleted),
 	SUM(not_cloned),
 	SUM(cloning),
 	SUM(cloned),
-	SUM(failed_fetch),
+	SUM(fbiled_fetch),
 	SUM(corrupted)
 FROM deleted;
 `
 
-func (s *repoStatisticsStore) GetGitserverReposStatistics(ctx context.Context) ([]GitserverReposStatistic, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(getGitserverReposStatisticsQueryFmtStr))
-	return scanGitserverReposStatistics(rows, err)
+func (s *repoStbtisticsStore) GetGitserverReposStbtistics(ctx context.Context) ([]GitserverReposStbtistic, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(getGitserverReposStbtisticsQueryFmtStr))
+	return scbnGitserverReposStbtistics(rows, err)
 }
 
-const getGitserverReposStatisticsQueryFmtStr = `
+const getGitserverReposStbtisticsQueryFmtStr = `
 SELECT
-	shard_id,
-	total,
+	shbrd_id,
+	totbl,
 	not_cloned,
 	cloning,
 	cloned,
-	failed_fetch,
+	fbiled_fetch,
 	corrupted
-FROM gitserver_repos_statistics
+FROM gitserver_repos_stbtistics
 `
 
-var scanGitserverReposStatistics = basestore.NewSliceScanner(scanGitserverReposStatistic)
+vbr scbnGitserverReposStbtistics = bbsestore.NewSliceScbnner(scbnGitserverReposStbtistic)
 
-func scanGitserverReposStatistic(s dbutil.Scanner) (GitserverReposStatistic, error) {
-	var gs = GitserverReposStatistic{}
-	err := s.Scan(&gs.ShardID, &gs.Total, &gs.NotCloned, &gs.Cloning, &gs.Cloned, &gs.FailedFetch, &gs.Corrupted)
+func scbnGitserverReposStbtistic(s dbutil.Scbnner) (GitserverReposStbtistic, error) {
+	vbr gs = GitserverReposStbtistic{}
+	err := s.Scbn(&gs.ShbrdID, &gs.Totbl, &gs.NotCloned, &gs.Cloning, &gs.Cloned, &gs.FbiledFetch, &gs.Corrupted)
 	if err != nil {
 		return gs, err
 	}

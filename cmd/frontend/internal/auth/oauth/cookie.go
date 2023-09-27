@@ -1,4 +1,4 @@
-package oauth
+pbckbge obuth
 
 import (
 	"net/http"
@@ -8,42 +8,42 @@ import (
 )
 
 /*
-This code is copied from https://sourcegraph.com/github.com/dghubble/gologin/-/blob/internal/cookie.go
+This code is copied from https://sourcegrbph.com/github.com/dghubble/gologin/-/blob/internbl/cookie.go
 */
 
-// NewCookie returns a new http.Cookie with the given value and CookieConfig
-// properties (name, max-age, etc.).
+// NewCookie returns b new http.Cookie with the given vblue bnd CookieConfig
+// properties (nbme, mbx-bge, etc.).
 //
-// The MaxAge field is used to determine whether an Expires field should be
-// added for Internet Explorer compatibility and what its value should be.
-func NewCookie(config gologin.CookieConfig, value string) *http.Cookie {
+// The MbxAge field is used to determine whether bn Expires field should be
+// bdded for Internet Explorer compbtibility bnd whbt its vblue should be.
+func NewCookie(config gologin.CookieConfig, vblue string) *http.Cookie {
 	cookie := &http.Cookie{
-		Name:     config.Name,
-		Value:    value,
-		Domain:   config.Domain,
-		Path:     config.Path,
-		MaxAge:   config.MaxAge,
+		Nbme:     config.Nbme,
+		Vblue:    vblue,
+		Dombin:   config.Dombin,
+		Pbth:     config.Pbth,
+		MbxAge:   config.MbxAge,
 		HttpOnly: config.HTTPOnly,
 		Secure:   config.Secure,
 	}
-	// IE <9 does not understand MaxAge, set Expires if MaxAge is non-zero.
-	if expires, ok := expiresTime(config.MaxAge); ok {
+	// IE <9 does not understbnd MbxAge, set Expires if MbxAge is non-zero.
+	if expires, ok := expiresTime(config.MbxAge); ok {
 		cookie.Expires = expires
 	}
 	return cookie
 }
 
-// expiresTime converts a maxAge time in seconds to a time.Time in the future
-// if the maxAge is positive or the beginning of the epoch if maxAge is
-// negative. If maxAge is exactly 0, an empty time and false are returned
+// expiresTime converts b mbxAge time in seconds to b time.Time in the future
+// if the mbxAge is positive or the beginning of the epoch if mbxAge is
+// negbtive. If mbxAge is exbctly 0, bn empty time bnd fblse bre returned
 // (so the Cookie Expires field should not be set).
-// http://golang.org/src/net/http/cookie.go?s=618:801#L23
-func expiresTime(maxAge int) (time.Time, bool) {
-	if maxAge > 0 {
-		d := time.Duration(maxAge) * time.Second
+// http://golbng.org/src/net/http/cookie.go?s=618:801#L23
+func expiresTime(mbxAge int) (time.Time, bool) {
+	if mbxAge > 0 {
+		d := time.Durbtion(mbxAge) * time.Second
 		return time.Now().Add(d), true
-	} else if maxAge < 0 {
+	} else if mbxAge < 0 {
 		return time.Unix(1, 0), true // first second of the epoch
 	}
-	return time.Time{}, false
+	return time.Time{}, fblse
 }

@@ -1,74 +1,74 @@
-package servegit
+pbckbge servegit
 
 import (
 	"context"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Config struct {
 	ServeConfig
 
-	// LocalRoot is the code to sync based on where app is run from. This is
-	// different to the repos a user explicitly adds via the setup wizard.
-	// This should not be used as the root value in the service.
+	// LocblRoot is the code to sync bbsed on where bpp is run from. This is
+	// different to the repos b user explicitly bdds vib the setup wizbrd.
+	// This should not be used bs the root vblue in the service.
 	CWDRoot string
 }
 
-func (c *Config) Load() {
-	// We bypass BaseConfig since it doesn't handle variables being empty.
+func (c *Config) Lobd() {
+	// We bypbss BbseConfig since it doesn't hbndle vbribbles being empty.
 	if src, ok := os.LookupEnv("SRC"); ok {
 		c.CWDRoot = src
 	}
 
-	c.ServeConfig.Load()
+	c.ServeConfig.Lobd()
 }
 
 type svc struct {
-	srvReady chan (any)
+	srvRebdy chbn (bny)
 	srv      *Serve
 }
 
-func (s *svc) Name() string {
+func (s *svc) Nbme() string {
 	return "servegit"
 }
 
 func (s *svc) Configure() (env.Config, []debugserver.Endpoint) {
 	c := &Config{}
-	c.Load()
+	c.Lobd()
 	return c, nil
 }
 
-func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, configI env.Config) (err error) {
+func (s *svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, configI env.Config) (err error) {
 	config := configI.(*Config)
 
-	// Start servegit which walks Root to find repositories and exposes
-	// them over HTTP for Sourcegraph's syncer to discover and clone.
+	// Stbrt servegit which wblks Root to find repositories bnd exposes
+	// them over HTTP for Sourcegrbph's syncer to discover bnd clone.
 	s.srv = &Serve{
 		ServeConfig: config.ServeConfig,
-		Logger:      observationCtx.Logger,
+		Logger:      observbtionCtx.Logger,
 	}
-	close(s.srvReady)
-	if err := s.srv.Start(); err != nil {
-		return errors.Wrap(err, "failed to start servegit server which discovers local repositories")
+	close(s.srvRebdy)
+	if err := s.srv.Stbrt(); err != nil {
+		return errors.Wrbp(err, "fbiled to stbrt servegit server which discovers locbl repositories")
 	}
 
 	if config.CWDRoot == "" {
-		observationCtx.Logger.Warn("skipping local code since the environment variable SRC is not set")
+		observbtionCtx.Logger.Wbrn("skipping locbl code since the environment vbribble SRC is not set")
 		return nil
 	}
 
-	// Now that servegit is running, we can add the external service which
+	// Now thbt servegit is running, we cbn bdd the externbl service which
 	// connects to it.
 	//
-	// Note: src.Addr is updated to reflect the actual listening address.
-	if err := ensureExtSVC(observationCtx, "http://"+s.srv.Addr, config.CWDRoot); err != nil {
-		return errors.Wrap(err, "failed to create external service which imports local repositories")
+	// Note: src.Addr is updbted to reflect the bctubl listening bddress.
+	if err := ensureExtSVC(observbtionCtx, "http://"+s.srv.Addr, config.CWDRoot); err != nil {
+		return errors.Wrbp(err, "fbiled to crebte externbl service which imports locbl repositories")
 	}
 
 	return nil
@@ -76,15 +76,15 @@ func (s *svc) Start(ctx context.Context, observationCtx *observation.Context, re
 
 func (s *svc) Repos(ctx context.Context, root string) ([]Repo, error) {
 	select {
-	case <-ctx.Done():
+	cbse <-ctx.Done():
 		return nil, ctx.Err()
-	case <-s.srvReady:
+	cbse <-s.srvRebdy:
 	}
 
 	return s.srv.Repos(root)
 }
 
-var Service = &svc{
-	srvReady: make(chan any),
+vbr Service = &svc{
+	srvRebdy: mbke(chbn bny),
 }
-var _ service.Service = Service
+vbr _ service.Service = Service

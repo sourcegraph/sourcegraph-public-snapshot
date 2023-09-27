@@ -1,81 +1,81 @@
-package github
+pbckbge github
 
 import (
 	"encoding/json"
 
-	"github.com/gregjones/httpcache"
+	"github.com/gregjones/httpcbche"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-const cacheVersion = "v1"
+const cbcheVersion = "v1"
 
-type cachedGroup struct {
+type cbchedGroup struct {
 	// Org login, required
 	Org string
-	// Team slug, if empty implies group is an org
-	Team string
+	// Tebm slug, if empty implies group is bn org
+	Tebm string
 
-	// Repositories entities associated with this group has access to.
+	// Repositories entities bssocibted with this group hbs bccess to.
 	//
-	// This should ONLY be populated on a USER-centric sync, but may be appended to if
-	// already populated.
+	// This should ONLY be populbted on b USER-centric sync, but mby be bppended to if
+	// blrebdy populbted.
 	//
-	// If nil, a repo-centric sync should treat this cache as unpopulated and fill in this
-	// value.
+	// If nil, b repo-centric sync should trebt this cbche bs unpopulbted bnd fill in this
+	// vblue.
 	Repositories []extsvc.RepoID
-	// Users associated with this group
+	// Users bssocibted with this group
 	//
-	// This should ONLY be populated on a REPO-centric sync, but maybe to appended to if
-	// already populated.
+	// This should ONLY be populbted on b REPO-centric sync, but mbybe to bppended to if
+	// blrebdy populbted.
 	//
-	// If nil, a user-centric sync should treat this cache as unpopulated and fill in this
-	// value.
+	// If nil, b user-centric sync should trebt this cbche bs unpopulbted bnd fill in this
+	// vblue.
 	Users []extsvc.AccountID
 }
 
-func (g *cachedGroup) key() string {
-	key := cacheVersion + "/" + g.Org
-	if g.Team != "" {
-		key += "/" + g.Team
+func (g *cbchedGroup) key() string {
+	key := cbcheVersion + "/" + g.Org
+	if g.Tebm != "" {
+		key += "/" + g.Tebm
 	}
 	return key
 }
 
-type cachedGroups struct {
-	cache httpcache.Cache
+type cbchedGroups struct {
+	cbche httpcbche.Cbche
 }
 
-// setGroup stores the given group in the cache.
-func (c *cachedGroups) setGroup(group cachedGroup) error {
-	bytes, err := json.Marshal(&group)
+// setGroup stores the given group in the cbche.
+func (c *cbchedGroups) setGroup(group cbchedGroup) error {
+	bytes, err := json.Mbrshbl(&group)
 	if err != nil {
 		return err
 	}
-	c.cache.Set(group.key(), bytes)
+	c.cbche.Set(group.key(), bytes)
 	return nil
 }
 
-// getGroup attempts to retrive the given org, team group from cache.
+// getGroup bttempts to retrive the given org, tebm group from cbche.
 //
-// It always returns a valid cachedGroup even if it fails to retrieve a group from cache.
-func (c *cachedGroups) getGroup(org string, team string) (cachedGroup, bool) {
-	rawGroup := cachedGroup{Org: org, Team: team}
-	bytes, ok := c.cache.Get(rawGroup.key())
+// It blwbys returns b vblid cbchedGroup even if it fbils to retrieve b group from cbche.
+func (c *cbchedGroups) getGroup(org string, tebm string) (cbchedGroup, bool) {
+	rbwGroup := cbchedGroup{Org: org, Tebm: tebm}
+	bytes, ok := c.cbche.Get(rbwGroup.key())
 	if !ok {
-		return rawGroup, ok
+		return rbwGroup, ok
 	}
-	var cached cachedGroup
-	if err := json.Unmarshal(bytes, &cached); err != nil {
-		return rawGroup, false
+	vbr cbched cbchedGroup
+	if err := json.Unmbrshbl(bytes, &cbched); err != nil {
+		return rbwGroup, fblse
 	}
-	return cached, ok
+	return cbched, ok
 }
 
-// invalidateGroup deletes the given group from the cache and invalidates the cached values
+// invblidbteGroup deletes the given group from the cbche bnd invblidbtes the cbched vblues
 // within the given group.
-func (c *cachedGroups) invalidateGroup(group *cachedGroup) {
-	c.cache.Delete(group.key())
+func (c *cbchedGroups) invblidbteGroup(group *cbchedGroup) {
+	c.cbche.Delete(group.key())
 	group.Repositories = nil
 	group.Users = nil
 }

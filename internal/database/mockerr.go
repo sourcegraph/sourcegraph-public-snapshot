@@ -1,9 +1,9 @@
-package database
+pbckbge dbtbbbse
 
-var (
-	MockCannotCreateUserUsernameExistsErr = ErrCannotCreateUser{ErrorCodeUsernameExists}
-	MockCannotCreateUserEmailExistsErr    = ErrCannotCreateUser{ErrorCodeEmailExists}
+vbr (
+	MockCbnnotCrebteUserUsernbmeExistsErr = ErrCbnnotCrebteUser{ErrorCodeUsernbmeExists}
+	MockCbnnotCrebteUserEmbilExistsErr    = ErrCbnnotCrebteUser{ErrorCodeEmbilExists}
 	MockUserNotFoundErr                   = userNotFoundErr{}
-	MockUserEmailNotFoundErr              = userEmailNotFoundError{}
+	MockUserEmbilNotFoundErr              = userEmbilNotFoundError{}
 	MockPermissionsSyncJobNotFoundErr     = notFoundError{}
 )

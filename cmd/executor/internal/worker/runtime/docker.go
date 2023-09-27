@@ -1,68 +1,68 @@
-package runtime
+pbckbge runtime
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type dockerRuntime struct {
-	cmd          command.Command
-	operations   *command.Operations
+	cmd          commbnd.Commbnd
+	operbtions   *commbnd.Operbtions
 	filesStore   files.Store
-	cloneOptions workspace.CloneOptions
-	dockerOpts   command.DockerOptions
+	cloneOptions workspbce.CloneOptions
+	dockerOpts   commbnd.DockerOptions
 }
 
-var _ Runtime = &dockerRuntime{}
+vbr _ Runtime = &dockerRuntime{}
 
-func (r *dockerRuntime) Name() Name {
-	return NameDocker
+func (r *dockerRuntime) Nbme() Nbme {
+	return NbmeDocker
 }
 
-func (r *dockerRuntime) PrepareWorkspace(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspace.Workspace, error) {
-	return workspace.NewDockerWorkspace(
+func (r *dockerRuntime) PrepbreWorkspbce(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspbce.Workspbce, error) {
+	return workspbce.NewDockerWorkspbce(
 		ctx,
 		r.filesStore,
 		job,
 		r.cmd,
 		logger,
 		r.cloneOptions,
-		r.operations,
+		r.operbtions,
 	)
 }
 
 func (r *dockerRuntime) NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
-	run := runner.NewDockerRunner(r.cmd, logger, options.Path, r.dockerOpts, options.DockerAuthConfig)
+	run := runner.NewDockerRunner(r.cmd, logger, options.Pbth, r.dockerOpts, options.DockerAuthConfig)
 	if err := run.Setup(ctx); err != nil {
-		return nil, errors.Wrap(err, "failed to setup docker runner")
+		return nil, errors.Wrbp(err, "fbiled to setup docker runner")
 	}
 	return run, nil
 }
 
-func (r *dockerRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error) {
-	runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
-	for i, step := range job.DockerSteps {
+func (r *dockerRuntime) NewRunnerSpecs(ws workspbce.Workspbce, job types.Job) ([]runner.Spec, error) {
+	runnerSpecs := mbke([]runner.Spec, len(job.DockerSteps))
+	for i, step := rbnge job.DockerSteps {
 		runnerSpecs[i] = runner.Spec{
 			Job: job,
-			CommandSpecs: []command.Spec{
+			CommbndSpecs: []commbnd.Spec{
 				{
 					Key:       dockerKey(step.Key, i),
-					Command:   nil,
+					Commbnd:   nil,
 					Dir:       step.Dir,
 					Env:       step.Env,
-					Operation: r.operations.Exec,
+					Operbtion: r.operbtions.Exec,
 				},
 			},
-			Image:      step.Image,
-			ScriptPath: ws.ScriptFilenames()[i],
+			Imbge:      step.Imbge,
+			ScriptPbth: ws.ScriptFilenbmes()[i],
 		}
 	}
 

@@ -1,77 +1,77 @@
-package background
+pbckbge bbckground
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	handleCrateSyncer        *observation.Operation
-	packagesFilterApplicator *observation.Operation
+type operbtions struct {
+	hbndleCrbteSyncer        *observbtion.Operbtion
+	pbckbgesFilterApplicbtor *observbtion.Operbtion
 
-	packagesUpdated prometheus.Counter
-	versionsUpdated prometheus.Counter
+	pbckbgesUpdbted prometheus.Counter
+	versionsUpdbted prometheus.Counter
 }
 
-var (
+vbr (
 	m          = new(metrics.SingletonREDMetrics)
-	metricsMap = make(map[string]prometheus.Counter)
+	metricsMbp = mbke(mbp[string]prometheus.Counter)
 	metricsMu  sync.Mutex
 )
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_dependencies_background",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_dependencies_bbckground",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	counter := func(name, help string) prometheus.Counter {
+	counter := func(nbme, help string) prometheus.Counter {
 		metricsMu.Lock()
 		defer metricsMu.Unlock()
 
-		if c, ok := metricsMap[name]; ok {
+		if c, ok := metricsMbp[nbme]; ok {
 			return c
 		}
 
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 
-		metricsMap[name] = counter
+		metricsMbp[nbme] = counter
 
 		return counter
 	}
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.dependencies.background.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.dependencies.bbckground.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		handleCrateSyncer:        op("HandleCrateSyncer"),
-		packagesFilterApplicator: op("HandlePackagesFilterApplicator"),
+	return &operbtions{
+		hbndleCrbteSyncer:        op("HbndleCrbteSyncer"),
+		pbckbgesFilterApplicbtor: op("HbndlePbckbgesFilterApplicbtor"),
 
-		packagesUpdated: counter(
-			"src_codeintel_background_filtered_packages_updated",
-			"The number of package repo references who's blocked status was updated",
+		pbckbgesUpdbted: counter(
+			"src_codeintel_bbckground_filtered_pbckbges_updbted",
+			"The number of pbckbge repo references who's blocked stbtus wbs updbted",
 		),
-		versionsUpdated: counter(
-			"src_codeintel_background_filtered_package_versions_updated",
-			"The number of package repo versions who's blocked status was updated",
+		versionsUpdbted: counter(
+			"src_codeintel_bbckground_filtered_pbckbge_versions_updbted",
+			"The number of pbckbge repo versions who's blocked stbtus wbs updbted",
 		),
 	}
 }

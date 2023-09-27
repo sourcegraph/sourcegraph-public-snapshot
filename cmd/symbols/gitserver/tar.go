@@ -1,24 +1,24 @@
-package gitserver
+pbckbge gitserver
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"bytes"
 	"context"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func CreateTestFetchTarFunc(tarContents map[string]string) func(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error) {
-	return func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
-		var buffer bytes.Buffer
-		tarWriter := tar.NewWriter(&buffer)
+func CrebteTestFetchTbrFunc(tbrContents mbp[string]string) func(context.Context, bpi.RepoNbme, bpi.CommitID, []string) (io.RebdCloser, error) {
+	return func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (io.RebdCloser, error) {
+		vbr buffer bytes.Buffer
+		tbrWriter := tbr.NewWriter(&buffer)
 
-		for name, content := range tarContents {
-			if paths != nil {
-				found := false
-				for _, path := range paths {
-					if path == name {
+		for nbme, content := rbnge tbrContents {
+			if pbths != nil {
+				found := fblse
+				for _, pbth := rbnge pbths {
+					if pbth == nbme {
 						found = true
 					}
 				}
@@ -27,23 +27,23 @@ func CreateTestFetchTarFunc(tarContents map[string]string) func(context.Context,
 				}
 			}
 
-			tarHeader := &tar.Header{
-				Name: name,
+			tbrHebder := &tbr.Hebder{
+				Nbme: nbme,
 				Mode: 0o600,
 				Size: int64(len(content)),
 			}
-			if err := tarWriter.WriteHeader(tarHeader); err != nil {
+			if err := tbrWriter.WriteHebder(tbrHebder); err != nil {
 				return nil, err
 			}
-			if _, err := tarWriter.Write([]byte(content)); err != nil {
+			if _, err := tbrWriter.Write([]byte(content)); err != nil {
 				return nil, err
 			}
 		}
 
-		if err := tarWriter.Close(); err != nil {
+		if err := tbrWriter.Close(); err != nil {
 			return nil, err
 		}
 
-		return io.NopCloser(bytes.NewReader(buffer.Bytes())), nil
+		return io.NopCloser(bytes.NewRebder(buffer.Bytes())), nil
 	}
 }

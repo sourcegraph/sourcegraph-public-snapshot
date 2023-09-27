@@ -1,49 +1,49 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/service/localcodehost"
-	"github.com/sourcegraph/sourcegraph/internal/service/servegit"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sourcegrbph/osscmd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/locblcodehost"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/servegit"
 
-	blobstore_shared "github.com/sourcegraph/sourcegraph/cmd/blobstore/shared"
-	executor_singlebinary "github.com/sourcegraph/sourcegraph/cmd/executor/singlebinary"
-	frontend_shared "github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	gitserver_shared "github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
-	precise_code_intel_worker_shared "github.com/sourcegraph/sourcegraph/cmd/precise-code-intel-worker/shared"
-	repoupdater_shared "github.com/sourcegraph/sourcegraph/cmd/repo-updater/shared"
-	searcher_shared "github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
-	embeddings_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/embeddings/shared"
-	symbols_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
-	worker_shared "github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/shared"
+	blobstore_shbred "github.com/sourcegrbph/sourcegrbph/cmd/blobstore/shbred"
+	executor_singlebinbry "github.com/sourcegrbph/sourcegrbph/cmd/executor/singlebinbry"
+	frontend_shbred "github.com/sourcegrbph/sourcegrbph/cmd/frontend/shbred"
+	gitserver_shbred "github.com/sourcegrbph/sourcegrbph/cmd/gitserver/shbred"
+	precise_code_intel_worker_shbred "github.com/sourcegrbph/sourcegrbph/cmd/precise-code-intel-worker/shbred"
+	repoupdbter_shbred "github.com/sourcegrbph/sourcegrbph/cmd/repo-updbter/shbred"
+	sebrcher_shbred "github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/shbred"
+	embeddings_shbred "github.com/sourcegrbph/sourcegrbph/enterprise/cmd/embeddings/shbred"
+	symbols_shbred "github.com/sourcegrbph/sourcegrbph/enterprise/cmd/symbols/shbred"
+	worker_shbred "github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/shbred"
 
-	"github.com/sourcegraph/sourcegraph/ui/assets"
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+	"github.com/sourcegrbph/sourcegrbph/ui/bssets"
+	_ "github.com/sourcegrbph/sourcegrbph/ui/bssets/enterprise" // Select enterprise bssets
 )
 
-// services is a list of services to run.
-var services = []service.Service{
-	frontend_shared.Service,
-	gitserver_shared.Service,
-	repoupdater_shared.Service,
-	searcher_shared.Service,
-	blobstore_shared.Service,
-	symbols_shared.Service,
-	worker_shared.Service,
-	precise_code_intel_worker_shared.Service,
-	executor_singlebinary.Service,
+// services is b list of services to run.
+vbr services = []service.Service{
+	frontend_shbred.Service,
+	gitserver_shbred.Service,
+	repoupdbter_shbred.Service,
+	sebrcher_shbred.Service,
+	blobstore_shbred.Service,
+	symbols_shbred.Service,
+	worker_shbred.Service,
+	precise_code_intel_worker_shbred.Service,
+	executor_singlebinbry.Service,
 	servegit.Service,
-	localcodehost.Service,
-	embeddings_shared.Service,
+	locblcodehost.Service,
+	embeddings_shbred.Service,
 }
 
-func main() {
-	sanitycheck.Pass()
+func mbin() {
+	sbnitycheck.Pbss()
 	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
-		assets.UseDevAssetsProvider()
+		bssets.UseDevAssetsProvider()
 	}
-	osscmd.MainOSS(services, os.Args)
+	osscmd.MbinOSS(services, os.Args)
 }

@@ -1,55 +1,55 @@
-package repos
+pbckbge repos
 
 import (
 	"encoding/json"
 	"net/http"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/dnaeon/go-vcr/recorder"
+	"github.com/dnbeon/go-vcr/cbssette"
+	"github.com/dnbeon/go-vcr/recorder"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
 )
 
-func NewClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
-	mw, rec := TestClientFactorySetup(t, name, mws...)
-	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { Save(t, rec) }
+func NewClientFbctory(t testing.TB, nbme string, mws ...httpcli.Middlewbre) (*httpcli.Fbctory, func(testing.TB)) {
+	mw, rec := TestClientFbctorySetup(t, nbme, mws...)
+	return httpcli.NewFbctory(mw, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { Sbve(t, rec) }
 }
 
-func Save(t testing.TB, rec *recorder.Recorder) {
+func Sbve(t testing.TB, rec *recorder.Recorder) {
 	if err := rec.Stop(); err != nil {
-		t.Errorf("failed to update test data: %s", err)
+		t.Errorf("fbiled to updbte test dbtb: %s", err)
 	}
 }
 
-var updateRegex *string
+vbr updbteRegex *string
 
-func Update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+func Updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }
 
-func TestClientFactorySetup(t testing.TB, name string, mws ...httpcli.Middleware) (httpcli.Middleware, *recorder.Recorder) {
-	cassete := filepath.Join("testdata", "sources", strings.ReplaceAll(name, " ", "-"))
-	rec := NewRecorder(t, cassete, Update(name))
-	mws = append(mws, GitserverRedirectMiddleware)
-	mw := httpcli.NewMiddleware(mws...)
+func TestClientFbctorySetup(t testing.TB, nbme string, mws ...httpcli.Middlewbre) (httpcli.Middlewbre, *recorder.Recorder) {
+	cbssete := filepbth.Join("testdbtb", "sources", strings.ReplbceAll(nbme, " ", "-"))
+	rec := NewRecorder(t, cbssete, Updbte(nbme))
+	mws = bppend(mws, GitserverRedirectMiddlewbre)
+	mw := httpcli.NewMiddlewbre(mws...)
 	return mw, rec
 }
 
-func GitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
+func GitserverRedirectMiddlewbre(cli httpcli.Doer) httpcli.Doer {
 	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		if req.URL.Hostname() == "gitserver" {
-			// Start local git server first
+		if req.URL.Hostnbme() == "gitserver" {
+			// Stbrt locbl git server first
 			req.URL.Host = "127.0.0.1:3178"
 			req.URL.Scheme = "http"
 		}
@@ -58,28 +58,28 @@ func GitserverRedirectMiddleware(cli httpcli.Doer) httpcli.Doer {
 }
 
 func NewRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
-	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
-		// The ratelimit.Monitor type resets its internal timestamp if it's
-		// updated with a timestamp in the past. This makes tests ran with
-		// recorded interations just wait for a very long time. Removing
-		// these headers from the casseste effectively disables rate-limiting
-		// in tests which replay HTTP interactions, which is desired behaviour.
-		for _, name := range [...]string{
-			"RateLimit-Limit",
-			"RateLimit-Observed",
-			"RateLimit-Remaining",
-			"RateLimit-Reset",
-			"RateLimit-Resettime",
-			"X-RateLimit-Limit",
-			"X-RateLimit-Remaining",
-			"X-RateLimit-Reset",
+	rec, err := httptestutil.NewRecorder(file, record, func(i *cbssette.Interbction) error {
+		// The rbtelimit.Monitor type resets its internbl timestbmp if it's
+		// updbted with b timestbmp in the pbst. This mbkes tests rbn with
+		// recorded interbtions just wbit for b very long time. Removing
+		// these hebders from the cbsseste effectively disbbles rbte-limiting
+		// in tests which replby HTTP interbctions, which is desired behbviour.
+		for _, nbme := rbnge [...]string{
+			"RbteLimit-Limit",
+			"RbteLimit-Observed",
+			"RbteLimit-Rembining",
+			"RbteLimit-Reset",
+			"RbteLimit-Resettime",
+			"X-RbteLimit-Limit",
+			"X-RbteLimit-Rembining",
+			"X-RbteLimit-Reset",
 		} {
-			i.Response.Headers.Del(name)
+			i.Response.Hebders.Del(nbme)
 		}
 
-		// Phabricator requests include a token in the form and body.
-		ua := i.Request.Headers.Get("User-Agent")
-		if strings.Contains(strings.ToLower(ua), extsvc.TypePhabricator) {
+		// Phbbricbtor requests include b token in the form bnd body.
+		ub := i.Request.Hebders.Get("User-Agent")
+		if strings.Contbins(strings.ToLower(ub), extsvc.TypePhbbricbtor) {
 			i.Request.Body = ""
 			i.Request.Form = nil
 		}
@@ -87,18 +87,18 @@ func NewRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return rec
 }
 
-func MarshalJSON(t testing.TB, v any) string {
+func MbrshblJSON(t testing.TB, v bny) string {
 	t.Helper()
 
-	bs, err := json.Marshal(v)
+	bs, err := json.Mbrshbl(v)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return string(bs)

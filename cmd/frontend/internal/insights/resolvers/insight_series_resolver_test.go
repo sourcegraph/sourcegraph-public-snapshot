@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,312 +6,312 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TestResolver_InsightSeries tests that the InsightSeries GraphQL resolver works.
+// TestResolver_InsightSeries tests thbt the InsightSeries GrbphQL resolver works.
 func TestResolver_InsightSeries(t *testing.T) {
-	testSetup := func(t *testing.T) (context.Context, [][]graphqlbackend.InsightSeriesResolver) {
-		// Setup the GraphQL resolver.
-		ctx := actor.WithInternalActor(context.Background())
-		now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+	testSetup := func(t *testing.T) (context.Context, [][]grbphqlbbckend.InsightSeriesResolver) {
+		// Setup the GrbphQL resolver.
+		ctx := bctor.WithInternblActor(context.Bbckground())
+		now := time.Dbte(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncbte(time.Microsecond)
 		logger := logtest.Scoped(t)
 		clock := func() time.Time { return now }
 		insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-		postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+		postgres := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 		resolver := newWithClock(insightsDB, postgres, clock)
 		insightStore := store.NewInsightStore(insightsDB)
 
 		view := types.InsightView{
 			Title:            "title1",
 			Description:      "desc1",
-			PresentationType: types.Line,
+			PresentbtionType: types.Line,
 		}
 		insightSeries := types.InsightSeries{
 			SeriesID:            "1234567",
 			Query:               "query1",
-			CreatedAt:           now,
-			OldestHistoricalAt:  now,
-			LastRecordedAt:      now,
+			CrebtedAt:           now,
+			OldestHistoricblAt:  now,
+			LbstRecordedAt:      now,
 			NextRecordingAfter:  now,
-			SampleIntervalUnit:  string(types.Month),
-			SampleIntervalValue: 1,
+			SbmpleIntervblUnit:  string(types.Month),
+			SbmpleIntervblVblue: 1,
 		}
-		var err error
-		view, err = insightStore.CreateView(ctx, view, []store.InsightViewGrant{store.GlobalGrant()})
+		vbr err error
+		view, err = insightStore.CrebteView(ctx, view, []store.InsightViewGrbnt{store.GlobblGrbnt()})
 		require.NoError(t, err)
-		insightSeries, err = insightStore.CreateSeries(ctx, insightSeries)
+		insightSeries, err = insightStore.CrebteSeries(ctx, insightSeries)
 		require.NoError(t, err)
-		insightStore.AttachSeriesToView(ctx, insightSeries, view, types.InsightViewSeriesMetadata{
-			Label:  "",
+		insightStore.AttbchSeriesToView(ctx, insightSeries, view, types.InsightViewSeriesMetbdbtb{
+			Lbbel:  "",
 			Stroke: "",
 		})
 
-		insightMetadataStore := store.NewMockInsightMetadataStore()
+		insightMetbdbtbStore := store.NewMockInsightMetbdbtbStore()
 
-		resolver.insightMetadataStore = insightMetadataStore
+		resolver.insightMetbdbtbStore = insightMetbdbtbStore
 
-		// Create the insightview connection resolver and query series.
-		conn, err := resolver.InsightViews(ctx, &graphqlbackend.InsightViewQueryArgs{})
+		// Crebte the insightview connection resolver bnd query series.
+		conn, err := resolver.InsightViews(ctx, &grbphqlbbckend.InsightViewQueryArgs{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		nodes, err := conn.Nodes(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		var series [][]graphqlbackend.InsightSeriesResolver
-		for _, node := range nodes {
-			s, _ := node.DataSeries(ctx)
-			series = append(series, s)
+		vbr series [][]grbphqlbbckend.InsightSeriesResolver
+		for _, node := rbnge nodes {
+			s, _ := node.DbtbSeries(ctx)
+			series = bppend(series, s)
 		}
 		return ctx, series
 	}
 
 	t.Run("Points", func(t *testing.T) {
 		ctx, insights := testSetup(t)
-		autogold.Expect(1).Equal(t, len(insights))
+		butogold.Expect(1).Equbl(t, len(insights))
 
-		autogold.Expect(1).Equal(t, len(insights[0]))
+		butogold.Expect(1).Equbl(t, len(insights[0]))
 
-		// Issue a query against the actual DB.
+		// Issue b query bgbinst the bctubl DB.
 		points, err := insights[0][0].Points(ctx, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		autogold.Expect([]graphqlbackend.InsightsDataPointResolver{}).Equal(t, points)
+		butogold.Expect([]grbphqlbbckend.InsightsDbtbPointResolver{}).Equbl(t, points)
 	})
 }
 
-func fakeStatusGetter(status *queryrunner.JobsStatus, err error) GetSeriesQueueStatusFunc {
-	return func(ctx context.Context, seriesID string) (*queryrunner.JobsStatus, error) {
-		return status, err
+func fbkeStbtusGetter(stbtus *queryrunner.JobsStbtus, err error) GetSeriesQueueStbtusFunc {
+	return func(ctx context.Context, seriesID string) (*queryrunner.JobsStbtus, error) {
+		return stbtus, err
 	}
 }
 
-func fakeBackfillGetter(backfills []scheduler.SeriesBackfill, err error) GetSeriesBackfillsFunc {
-	return func(ctx context.Context, seriesID int) ([]scheduler.SeriesBackfill, error) {
-		return backfills, err
+func fbkeBbckfillGetter(bbckfills []scheduler.SeriesBbckfill, err error) GetSeriesBbckfillsFunc {
+	return func(ctx context.Context, seriesID int) ([]scheduler.SeriesBbckfill, error) {
+		return bbckfills, err
 	}
 }
 
-func fakeIncompleteGetter() GetIncompleteDatapointsFunc {
-	return func(ctx context.Context, seriesID int) ([]store.IncompleteDatapoint, error) {
+func fbkeIncompleteGetter() GetIncompleteDbtbpointsFunc {
+	return func(ctx context.Context, seriesID int) ([]store.IncompleteDbtbpoint, error) {
 		return nil, nil
 	}
 }
 
-func TestInsightSeriesStatusResolver_IsLoadingData(t *testing.T) {
-	type isLoadingTestCase struct {
-		name         string
-		backfills    []scheduler.SeriesBackfill
-		backfillsErr error
-		queueStatus  queryrunner.JobsStatus
+func TestInsightSeriesStbtusResolver_IsLobdingDbtb(t *testing.T) {
+	type isLobdingTestCbse struct {
+		nbme         string
+		bbckfills    []scheduler.SeriesBbckfill
+		bbckfillsErr error
+		queueStbtus  queryrunner.JobsStbtus
 		queueErr     error
 		series       types.InsightViewSeries
-		want         autogold.Value
+		wbnt         butogold.Vblue
 	}
 
-	recentTime := time.Date(2020, time.April, 1, 1, 0, 0, 0, time.UTC)
+	recentTime := time.Dbte(2020, time.April, 1, 1, 0, 0, 0, time.UTC)
 
-	cases := []isLoadingTestCase{
+	cbses := []isLobdingTestCbse{
 		{
-			name:      "completed backvillv2",
-			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateCompleted}},
-			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:      autogold.Expect("loading:false error:"),
+			nbme:      "completed bbckvillv2",
+			bbckfills: []scheduler.SeriesBbckfill{{Stbte: scheduler.BbckfillStbteCompleted}},
+			series:    types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:      butogold.Expect("lobding:fblse error:"),
 		},
 		{
-			name:      "completed backfillv1",
-			backfills: []scheduler.SeriesBackfill{},
-			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:      autogold.Expect("loading:false error:"),
+			nbme:      "completed bbckfillv1",
+			bbckfills: []scheduler.SeriesBbckfill{},
+			series:    types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:      butogold.Expect("lobding:fblse error:"),
 		},
 		{
-			name:      "new backfillv2",
-			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateNew}},
-			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:      autogold.Expect("loading:true error:"),
+			nbme:      "new bbckfillv2",
+			bbckfills: []scheduler.SeriesBbckfill{{Stbte: scheduler.BbckfillStbteNew}},
+			series:    types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:      butogold.Expect("lobding:true error:"),
 		},
 		{
-			name:      "in process backfillv2",
-			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateProcessing}},
-			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:      autogold.Expect("loading:true error:"),
+			nbme:      "in process bbckfillv2",
+			bbckfills: []scheduler.SeriesBbckfill{{Stbte: scheduler.BbckfillStbteProcessing}},
+			series:    types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:      butogold.Expect("lobding:true error:"),
 		},
 		{
-			name:      "in process backfillv1",
-			backfills: []scheduler.SeriesBackfill{},
-			queueStatus: queryrunner.JobsStatus{
+			nbme:      "in process bbckfillv1",
+			bbckfills: []scheduler.SeriesBbckfill{},
+			queueStbtus: queryrunner.JobsStbtus{
 				Queued:     10,
 				Processing: 2,
 				Errored:    1,
 			},
-			series: types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:   autogold.Expect("loading:true error:"),
+			series: types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:   butogold.Expect("lobding:true error:"),
 		},
 		{
-			name:      "failed backfillv2",
-			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateFailed}},
-			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:      autogold.Expect("loading:false error:"),
+			nbme:      "fbiled bbckfillv2",
+			bbckfills: []scheduler.SeriesBbckfill{{Stbte: scheduler.BbckfillStbteFbiled}},
+			series:    types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:      butogold.Expect("lobding:fblse error:"),
 		},
 		{
-			name:      "failed backfillv1",
-			backfills: []scheduler.SeriesBackfill{},
-			queueStatus: queryrunner.JobsStatus{
-				Failed: 10,
+			nbme:      "fbiled bbckfillv1",
+			bbckfills: []scheduler.SeriesBbckfill{},
+			queueStbtus: queryrunner.JobsStbtus{
+				Fbiled: 10,
 			},
-			series: types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:   autogold.Expect("loading:false error:"),
+			series: types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:   butogold.Expect("lobding:fblse error:"),
 		},
 		{
-			name:      "completed but snapshotting backfillv2",
-			backfills: []scheduler.SeriesBackfill{{State: scheduler.BackfillStateCompleted}},
-			queueStatus: queryrunner.JobsStatus{
+			nbme:      "completed but snbpshotting bbckfillv2",
+			bbckfills: []scheduler.SeriesBbckfill{{Stbte: scheduler.BbckfillStbteCompleted}},
+			queueStbtus: queryrunner.JobsStbtus{
 				Queued: 1,
 			},
-			series: types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:   autogold.Expect("loading:true error:"),
+			series: types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:   butogold.Expect("lobding:true error:"),
 		},
 		{
-			name:         "error loading backfill",
-			backfills:    []scheduler.SeriesBackfill{},
-			backfillsErr: errors.New("backfill error"),
-			series:       types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:         autogold.Expect("loading:false error:LoadSeriesBackfills: backfill error"),
+			nbme:         "error lobding bbckfill",
+			bbckfills:    []scheduler.SeriesBbckfill{},
+			bbckfillsErr: errors.New("bbckfill error"),
+			series:       types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:         butogold.Expect("lobding:fblse error:LobdSeriesBbckfills: bbckfill error"),
 		},
 		{
-			name:      "error loading queue status",
-			backfills: []scheduler.SeriesBackfill{},
-			queueErr:  errors.New("error loading queue status"),
-			series:    types.InsightViewSeries{BackfillQueuedAt: &recentTime},
-			want:      autogold.Expect("loading:false error:QueryJobsStatus: error loading queue status"),
+			nbme:      "error lobding queue stbtus",
+			bbckfills: []scheduler.SeriesBbckfill{},
+			queueErr:  errors.New("error lobding queue stbtus"),
+			series:    types.InsightViewSeries{BbckfillQueuedAt: &recentTime},
+			wbnt:      butogold.Expect("lobding:fblse error:QueryJobsStbtus: error lobding queue stbtus"),
 		},
 	}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
-			statusGetter := fakeStatusGetter(&tc.queueStatus, tc.queueErr)
-			backfillGetter := fakeBackfillGetter(tc.backfills, tc.backfillsErr)
-			statusResolver := newStatusResolver(statusGetter, backfillGetter, fakeIncompleteGetter(), tc.series)
-			loading, err := statusResolver.IsLoadingData(context.Background())
-			var loadingResult bool
-			if loading != nil {
-				loadingResult = *loading
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			stbtusGetter := fbkeStbtusGetter(&tc.queueStbtus, tc.queueErr)
+			bbckfillGetter := fbkeBbckfillGetter(tc.bbckfills, tc.bbckfillsErr)
+			stbtusResolver := newStbtusResolver(stbtusGetter, bbckfillGetter, fbkeIncompleteGetter(), tc.series)
+			lobding, err := stbtusResolver.IsLobdingDbtb(context.Bbckground())
+			vbr lobdingResult bool
+			if lobding != nil {
+				lobdingResult = *lobding
 			}
-			var errMsg string
+			vbr errMsg string
 			if err != nil {
 				errMsg = err.Error()
 			}
 
-			tc.want.Equal(t, fmt.Sprintf("loading:%t error:%s", loadingResult, errMsg))
+			tc.wbnt.Equbl(t, fmt.Sprintf("lobding:%t error:%s", lobdingResult, errMsg))
 		})
 	}
 }
 
-func TestInsightStatusResolver_IncompleteDatapoints(t *testing.T) {
-	// Setup the GraphQL resolver.
-	ctx := actor.WithInternalActor(context.Background())
-	now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+func TestInsightStbtusResolver_IncompleteDbtbpoints(t *testing.T) {
+	// Setup the GrbphQL resolver.
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	now := time.Dbte(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncbte(time.Microsecond)
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	insightStore := store.NewInsightStore(insightsDB)
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
 
-	base := baseInsightResolver{
+	bbse := bbseInsightResolver{
 		insightStore:    insightStore,
 		timeSeriesStore: tss,
 		insightsDB:      insightsDB,
 		postgresDB:      postgres,
 	}
 
-	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
-		SeriesID:            "asdf",
-		Query:               "asdf",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 1,
-		GenerationMethod:    types.Search,
+	series, err := insightStore.CrebteSeries(ctx, types.InsightSeries{
+		SeriesID:            "bsdf",
+		Query:               "bsdf",
+		SbmpleIntervblUnit:  string(types.Month),
+		SbmpleIntervblVblue: 1,
+		GenerbtionMethod:    types.Sebrch,
 	})
 	require.NoError(t, err)
 
 	repo := 5
-	addFakeIncomplete := func(in time.Time) {
-		err = tss.AddIncompleteDatapoint(ctx, store.AddIncompleteDatapointInput{
+	bddFbkeIncomplete := func(in time.Time) {
+		err = tss.AddIncompleteDbtbpoint(ctx, store.AddIncompleteDbtbpointInput{
 			SeriesID: series.ID,
 			RepoID:   &repo,
-			Reason:   store.ReasonTimeout,
+			Rebson:   store.RebsonTimeout,
 			Time:     in,
 		})
 		require.NoError(t, err)
 	}
 
-	resolver := NewStatusResolver(&base, types.InsightViewSeries{InsightSeriesID: series.ID})
+	resolver := NewStbtusResolver(&bbse, types.InsightViewSeries{InsightSeriesID: series.ID})
 
-	addFakeIncomplete(now)
-	addFakeIncomplete(now)
-	addFakeIncomplete(now.AddDate(0, 0, 1))
+	bddFbkeIncomplete(now)
+	bddFbkeIncomplete(now)
+	bddFbkeIncomplete(now.AddDbte(0, 0, 1))
 
-	stringify := func(input []graphqlbackend.IncompleteDatapointAlert) (res []string) {
-		for _, in := range input {
-			res = append(res, in.Time().String())
+	stringify := func(input []grbphqlbbckend.IncompleteDbtbpointAlert) (res []string) {
+		for _, in := rbnge input {
+			res = bppend(res, in.Time().String())
 		}
 		return res
 	}
 
-	t.Run("as timeout", func(t *testing.T) {
-		got, err := resolver.IncompleteDatapoints(ctx)
+	t.Run("bs timeout", func(t *testing.T) {
+		got, err := resolver.IncompleteDbtbpoints(ctx)
 		require.NoError(t, err)
-		autogold.Expect([]string{"2020-01-01 00:00:00 +0000 UTC", "2020-01-02 00:00:00 +0000 UTC"}).Equal(t, stringify(got))
+		butogold.Expect([]string{"2020-01-01 00:00:00 +0000 UTC", "2020-01-02 00:00:00 +0000 UTC"}).Equbl(t, stringify(got))
 	})
 }
 
-func Test_NumSamplesFiltering(t *testing.T) {
-	// Setup the GraphQL resolver.
-	ctx := actor.WithInternalActor(context.Background())
-	// now := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond)
+func Test_NumSbmplesFiltering(t *testing.T) {
+	// Setup the GrbphQL resolver.
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	// now := time.Dbte(2020, 1, 1, 0, 0, 0, 0, time.UTC).Truncbte(time.Microsecond)
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	postgres := database.NewDB(logger, dbtest.NewDB(logger, t))
+	postgres := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	insightStore := store.NewInsightStore(insightsDB)
 	tss := store.New(insightsDB, store.NewInsightPermissionStore(postgres))
 
-	series, err := insightStore.CreateSeries(ctx, types.InsightSeries{
+	series, err := insightStore.CrebteSeries(ctx, types.InsightSeries{
 		ID:                  0,
-		SeriesID:            "asdf",
-		Query:               "asdf",
-		SampleIntervalUnit:  string(types.Month),
-		SampleIntervalValue: 1,
+		SeriesID:            "bsdf",
+		Query:               "bsdf",
+		SbmpleIntervblUnit:  string(types.Month),
+		SbmpleIntervblVblue: 1,
 	})
 	require.NoError(t, err)
 
 	repo := "repo1"
-	repoId := api.RepoID(1)
+	repoId := bpi.RepoID(1)
 
 	times := []types.RecordingTime{
-		{Timestamp: time.Date(2023, 2, 2, 16, 25, 40, 0, time.UTC), Snapshot: true},
-		{Timestamp: time.Date(2023, 2, 2, 16, 25, 36, 0, time.UTC), Snapshot: false},
-		{Timestamp: time.Date(2023, 1, 30, 18, 12, 39, 0, time.UTC), Snapshot: false},
-		{Timestamp: time.Date(2023, 1, 25, 15, 34, 23, 0, time.UTC), Snapshot: false},
+		{Timestbmp: time.Dbte(2023, 2, 2, 16, 25, 40, 0, time.UTC), Snbpshot: true},
+		{Timestbmp: time.Dbte(2023, 2, 2, 16, 25, 36, 0, time.UTC), Snbpshot: fblse},
+		{Timestbmp: time.Dbte(2023, 1, 30, 18, 12, 39, 0, time.UTC), Snbpshot: fblse},
+		{Timestbmp: time.Dbte(2023, 1, 25, 15, 34, 23, 0, time.UTC), Snbpshot: fblse},
 	}
 
 	err = tss.RecordSeriesPointsAndRecordingTimes(ctx, []store.RecordSeriesPointArgs{
@@ -319,32 +319,21 @@ func Test_NumSamplesFiltering(t *testing.T) {
 			SeriesID: series.SeriesID,
 			Point: store.SeriesPoint{
 				SeriesID: series.SeriesID,
-				Time:     times[0].Timestamp,
-				Value:    10,
+				Time:     times[0].Timestbmp,
+				Vblue:    10,
 			},
-			RepoName:    &repo,
+			RepoNbme:    &repo,
 			RepoID:      &repoId,
-			PersistMode: store.SnapshotMode,
+			PersistMode: store.SnbpshotMode,
 		},
 		{
 			SeriesID: series.SeriesID,
 			Point: store.SeriesPoint{
 				SeriesID: series.SeriesID,
-				Time:     times[1].Timestamp,
-				Value:    10,
+				Time:     times[1].Timestbmp,
+				Vblue:    10,
 			},
-			RepoName:    &repo,
-			RepoID:      &repoId,
-			PersistMode: store.RecordMode,
-		},
-		{
-			SeriesID: series.SeriesID,
-			Point: store.SeriesPoint{
-				SeriesID: series.SeriesID,
-				Time:     times[2].Timestamp,
-				Value:    10,
-			},
-			RepoName:    &repo,
+			RepoNbme:    &repo,
 			RepoID:      &repoId,
 			PersistMode: store.RecordMode,
 		},
@@ -352,17 +341,28 @@ func Test_NumSamplesFiltering(t *testing.T) {
 			SeriesID: series.SeriesID,
 			Point: store.SeriesPoint{
 				SeriesID: series.SeriesID,
-				Time:     times[3].Timestamp,
-				Value:    10,
+				Time:     times[2].Timestbmp,
+				Vblue:    10,
 			},
-			RepoName:    &repo,
+			RepoNbme:    &repo,
+			RepoID:      &repoId,
+			PersistMode: store.RecordMode,
+		},
+		{
+			SeriesID: series.SeriesID,
+			Point: store.SeriesPoint{
+				SeriesID: series.SeriesID,
+				Time:     times[3].Timestbmp,
+				Vblue:    10,
+			},
+			RepoNbme:    &repo,
 			RepoID:      &repoId,
 			PersistMode: store.RecordMode,
 		},
 	}, types.InsightSeriesRecordingTimes{InsightSeriesID: series.ID, RecordingTimes: times})
 	require.NoError(t, err)
 
-	base := baseInsightResolver{
+	bbse := bbseInsightResolver{
 		insightStore:    insightStore,
 		timeSeriesStore: tss,
 		insightsDB:      insightsDB,
@@ -370,35 +370,35 @@ func Test_NumSamplesFiltering(t *testing.T) {
 	}
 
 	tests := []struct {
-		name       string
-		numSamples int32
+		nbme       string
+		numSbmples int32
 	}{
 		{
-			name:       "one",
-			numSamples: 1,
+			nbme:       "one",
+			numSbmples: 1,
 		},
 		{
-			name:       "two",
-			numSamples: 2,
+			nbme:       "two",
+			numSbmples: 2,
 		},
 		{
-			name:       "three",
-			numSamples: 3,
+			nbme:       "three",
+			numSbmples: 3,
 		},
 		{
-			name:       "four",
-			numSamples: 4,
+			nbme:       "four",
+			numSbmples: 4,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			points, err := fetchSeries(ctx, types.InsightViewSeries{SeriesID: series.SeriesID, InsightSeriesID: series.ID}, types.InsightViewFilters{}, types.SeriesDisplayOptions{NumSamples: &test.numSamples}, &base)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			points, err := fetchSeries(ctx, types.InsightViewSeries{SeriesID: series.SeriesID, InsightSeriesID: series.ID}, types.InsightViewFilters{}, types.SeriesDisplbyOptions{NumSbmples: &test.numSbmples}, &bbse)
 			require.NoError(t, err)
 
-			assert.Equal(t, int(test.numSamples), len(points))
+			bssert.Equbl(t, int(test.numSbmples), len(points))
 			t.Log(points)
-			for i := range points {
-				assert.Equal(t, times[len(points)-i-1].Timestamp, points[i].Time)
+			for i := rbnge points {
+				bssert.Equbl(t, times[len(points)-i-1].Timestbmp, points[i].Time)
 			}
 		})
 	}

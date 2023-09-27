@@ -1,24 +1,24 @@
-package types
+pbckbge types
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func TestBatchChange_URL(t *testing.T) {
-	ctx := context.Background()
-	bc := &BatchChange{Name: "bar", NamespaceOrgID: 123}
+func TestBbtchChbnge_URL(t *testing.T) {
+	ctx := context.Bbckground()
+	bc := &BbtchChbnge{Nbme: "bbr", NbmespbceOrgID: 123}
 
 	t.Run("errors", func(t *testing.T) {
-		for name, url := range map[string]string{
-			"invalid URL": "foo://:bar",
+		for nbme, url := rbnge mbp[string]string{
+			"invblid URL": "foo://:bbr",
 		} {
-			t.Run(name, func(t *testing.T) {
-				mockExternalURL(t, url)
-				if _, err := bc.URL(ctx, "namespace"); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				mockExternblURL(t, url)
+				if _, err := bc.URL(ctx, "nbmespbce"); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -26,7 +26,7 @@ func TestBatchChange_URL(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		mockExternalURL(t, "https://sourcegraph.test")
+		mockExternblURL(t, "https://sourcegrbph.test")
 		url, err := bc.URL(
 			ctx,
 			"foo",
@@ -34,44 +34,44 @@ func TestBatchChange_URL(t *testing.T) {
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
-		if want := "https://sourcegraph.test/organizations/foo/batch-changes/bar"; url != want {
-			t.Errorf("unexpected URL: have=%q want=%q", url, want)
+		if wbnt := "https://sourcegrbph.test/orgbnizbtions/foo/bbtch-chbnges/bbr"; url != wbnt {
+			t.Errorf("unexpected URL: hbve=%q wbnt=%q", url, wbnt)
 		}
 	})
 }
 
-func TestNamespaceURL(t *testing.T) {
-	t.Parallel()
+func TestNbmespbceURL(t *testing.T) {
+	t.Pbrbllel()
 
-	for name, tc := range map[string]struct {
-		ns   *database.Namespace
-		want string
+	for nbme, tc := rbnge mbp[string]struct {
+		ns   *dbtbbbse.Nbmespbce
+		wbnt string
 	}{
 		"user": {
-			ns:   &database.Namespace{User: 123, Name: "user"},
-			want: "/users/user",
+			ns:   &dbtbbbse.Nbmespbce{User: 123, Nbme: "user"},
+			wbnt: "/users/user",
 		},
 		"org": {
-			ns:   &database.Namespace{Organization: 123, Name: "org"},
-			want: "/organizations/org",
+			ns:   &dbtbbbse.Nbmespbce{Orgbnizbtion: 123, Nbme: "org"},
+			wbnt: "/orgbnizbtions/org",
 		},
 		"neither": {
-			ns:   &database.Namespace{Name: "user"},
-			want: "/users/user",
+			ns:   &dbtbbbse.Nbmespbce{Nbme: "user"},
+			wbnt: "/users/user",
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			if have := namespaceURL(tc.ns.Organization, tc.ns.Name); have != tc.want {
-				t.Errorf("unexpected URL: have=%q want=%q", have, tc.want)
+		t.Run(nbme, func(t *testing.T) {
+			if hbve := nbmespbceURL(tc.ns.Orgbnizbtion, tc.ns.Nbme); hbve != tc.wbnt {
+				t.Errorf("unexpected URL: hbve=%q wbnt=%q", hbve, tc.wbnt)
 			}
 		})
 	}
 }
 
-func mockExternalURL(t *testing.T, url string) {
+func mockExternblURL(t *testing.T, url string) {
 	oldConf := conf.Get()
 	newConf := *oldConf
-	newConf.ExternalURL = url
+	newConf.ExternblURL = url
 	conf.Mock(&newConf)
-	t.Cleanup(func() { conf.Mock(oldConf) })
+	t.Clebnup(func() { conf.Mock(oldConf) })
 }

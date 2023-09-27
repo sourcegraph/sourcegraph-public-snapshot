@@ -1,4 +1,4 @@
-package conf
+pbckbge conf
 
 import (
 	"encoding/hex"
@@ -6,48 +6,48 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hashicorp/cronexpr"
+	"github.com/hbshicorp/cronexpr"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/dotcomuser"
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	srccli "github.com/sourcegraph/sourcegraph/internal/src-cli"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/confdefbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dotcomuser"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hbshutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	srccli "github.com/sourcegrbph/sourcegrbph/internbl/src-cli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func init() {
 	deployType := deploy.Type()
-	if !deploy.IsValidDeployType(deployType) {
-		log.Fatalf("The 'DEPLOY_TYPE' environment variable is invalid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
+	if !deploy.IsVblidDeployType(deployType) {
+		log.Fbtblf("The 'DEPLOY_TYPE' environment vbribble is invblid. Expected one of: %q, %q, %q, %q, %q, %q, %q. Got: %q", deploy.Kubernetes, deploy.DockerCompose, deploy.PureDocker, deploy.SingleDocker, deploy.Dev, deploy.Helm, deploy.App, deployType)
 	}
 
-	confdefaults.Default = defaultConfigForDeployment()
+	confdefbults.Defbult = defbultConfigForDeployment()
 }
 
-func defaultConfigForDeployment() conftypes.RawUnified {
+func defbultConfigForDeployment() conftypes.RbwUnified {
 	deployType := deploy.Type()
 	switch {
-	case deploy.IsDev(deployType):
-		return confdefaults.DevAndTesting
-	case deploy.IsDeployTypeSingleDockerContainer(deployType):
-		return confdefaults.DockerContainer
-	case deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
-		return confdefaults.KubernetesOrDockerComposeOrPureDocker
-	case deploy.IsDeployTypeApp(deployType):
-		return confdefaults.App
-	default:
-		panic("deploy type did not register default configuration")
+	cbse deploy.IsDev(deployType):
+		return confdefbults.DevAndTesting
+	cbse deploy.IsDeployTypeSingleDockerContbiner(deployType):
+		return confdefbults.DockerContbiner
+	cbse deploy.IsDeployTypeKubernetes(deployType), deploy.IsDeployTypeDockerCompose(deployType), deploy.IsDeployTypePureDocker(deployType):
+		return confdefbults.KubernetesOrDockerComposeOrPureDocker
+	cbse deploy.IsDeployTypeApp(deployType):
+		return confdefbults.App
+	defbult:
+		pbnic("deploy type did not register defbult configurbtion")
 	}
 }
 
 func ExecutorsAccessToken() string {
 	if deploy.IsApp() {
-		return confdefaults.AppInMemoryExecutorPassword
+		return confdefbults.AppInMemoryExecutorPbssword
 	}
 	return Get().ExecutorsAccessToken
 }
@@ -56,12 +56,12 @@ type AccessTokenAllow string
 
 const (
 	AccessTokensNone  AccessTokenAllow = "none"
-	AccessTokensAll   AccessTokenAllow = "all-users-create"
-	AccessTokensAdmin AccessTokenAllow = "site-admin-create"
+	AccessTokensAll   AccessTokenAllow = "bll-users-crebte"
+	AccessTokensAdmin AccessTokenAllow = "site-bdmin-crebte"
 )
 
-// AccessTokensAllow returns whether access tokens are enabled, disabled, or
-// restricted creation to only site admins.
+// AccessTokensAllow returns whether bccess tokens bre enbbled, disbbled, or
+// restricted crebtion to only site bdmins.
 func AccessTokensAllow() AccessTokenAllow {
 	cfg := Get().AuthAccessTokens
 	if cfg == nil || cfg.Allow == "" {
@@ -69,110 +69,110 @@ func AccessTokensAllow() AccessTokenAllow {
 	}
 	v := AccessTokenAllow(cfg.Allow)
 	switch v {
-	case AccessTokensAll, AccessTokensAdmin:
+	cbse AccessTokensAll, AccessTokensAdmin:
 		return v
-	default:
+	defbult:
 		return AccessTokensNone
 	}
 }
 
-// EmailVerificationRequired returns whether users must verify an email address before they
-// can perform most actions on this site.
+// EmbilVerificbtionRequired returns whether users must verify bn embil bddress before they
+// cbn perform most bctions on this site.
 //
-// It's false for sites that do not have an email sending API key set up.
-func EmailVerificationRequired() bool {
-	return CanSendEmail()
+// It's fblse for sites thbt do not hbve bn embil sending API key set up.
+func EmbilVerificbtionRequired() bool {
+	return CbnSendEmbil()
 }
 
-// CanSendEmail returns whether the site can send emails (e.g., to reset a password or
-// invite a user to an org).
+// CbnSendEmbil returns whether the site cbn send embils (e.g., to reset b pbssword or
+// invite b user to bn org).
 //
-// It's false for sites that do not have an email sending API key set up.
-func CanSendEmail() bool {
-	return Get().EmailSmtp != nil
+// It's fblse for sites thbt do not hbve bn embil sending API key set up.
+func CbnSendEmbil() bool {
+	return Get().EmbilSmtp != nil
 }
 
-// EmailSenderName returns `email.senderName`. If that's not set, it returns
-// the default value "Sourcegraph".
-func EmailSenderName() string {
-	sender := Get().EmailSenderName
+// EmbilSenderNbme returns `embil.senderNbme`. If thbt's not set, it returns
+// the defbult vblue "Sourcegrbph".
+func EmbilSenderNbme() string {
+	sender := Get().EmbilSenderNbme
 	if sender != "" {
 		return sender
 	}
-	return "Sourcegraph"
+	return "Sourcegrbph"
 }
 
-// UpdateChannel tells the update channel. Default is "release".
-func UpdateChannel() string {
-	channel := Get().UpdateChannel
-	if channel == "" {
-		return "release"
+// UpdbteChbnnel tells the updbte chbnnel. Defbult is "relebse".
+func UpdbteChbnnel() string {
+	chbnnel := Get().UpdbteChbnnel
+	if chbnnel == "" {
+		return "relebse"
 	}
-	return channel
+	return chbnnel
 }
 
-func BatchChangesEnabled() bool {
-	if enabled := Get().BatchChangesEnabled; enabled != nil {
-		return *enabled
+func BbtchChbngesEnbbled() bool {
+	if enbbled := Get().BbtchChbngesEnbbled; enbbled != nil {
+		return *enbbled
 	}
 	return true
 }
 
-func BatchChangesRestrictedToAdmins() bool {
-	if restricted := Get().BatchChangesRestrictToAdmins; restricted != nil {
+func BbtchChbngesRestrictedToAdmins() bool {
+	if restricted := Get().BbtchChbngesRestrictToAdmins; restricted != nil {
 		return *restricted
 	}
-	return false
+	return fblse
 }
 
-// CodyEnabled returns whether Cody is enabled on this instance.
+// CodyEnbbled returns whether Cody is enbbled on this instbnce.
 //
-// If `cody.enabled` is not set or set to false, it's not enabled.
+// If `cody.enbbled` is not set or set to fblse, it's not enbbled.
 //
-// Legacy-support for `completions.enabled`:
-// If `cody.enabled` is NOT set, but `completions.enabled` is true, then cody is enabled.
-// If `cody.enabled` is set, and `completions.enabled` is set to false, cody is disabled.
-func CodyEnabled() bool {
-	return codyEnabled(Get().SiteConfig())
+// Legbcy-support for `completions.enbbled`:
+// If `cody.enbbled` is NOT set, but `completions.enbbled` is true, then cody is enbbled.
+// If `cody.enbbled` is set, bnd `completions.enbbled` is set to fblse, cody is disbbled.
+func CodyEnbbled() bool {
+	return codyEnbbled(Get().SiteConfig())
 }
 
-func codyEnabled(siteConfig schema.SiteConfiguration) bool {
-	enabled := siteConfig.CodyEnabled
+func codyEnbbled(siteConfig schemb.SiteConfigurbtion) bool {
+	enbbled := siteConfig.CodyEnbbled
 	completions := siteConfig.Completions
 
-	// If the cody.enabled flag is explicitly false, disable all cody features.
-	if enabled != nil && !*enabled {
-		return false
+	// If the cody.enbbled flbg is explicitly fblse, disbble bll cody febtures.
+	if enbbled != nil && !*enbbled {
+		return fblse
 	}
 
-	// Support for Legacy configurations in which `completions` is set to
-	// `enabled`, but `cody.enabled` is not set.
-	if enabled == nil && completions != nil {
-		// Unset means false.
-		return completions.Enabled != nil && *completions.Enabled
+	// Support for Legbcy configurbtions in which `completions` is set to
+	// `enbbled`, but `cody.enbbled` is not set.
+	if enbbled == nil && completions != nil {
+		// Unset mebns fblse.
+		return completions.Enbbled != nil && *completions.Enbbled
 	}
 
-	if enabled == nil {
-		return false
+	if enbbled == nil {
+		return fblse
 	}
 
-	return *enabled
+	return *enbbled
 }
 
-// newCodyEnabled checks only for the new CodyEnabled flag. If you need back
-// compat, use codyEnabled instead.
-func newCodyEnabled(siteConfig schema.SiteConfiguration) bool {
-	return siteConfig.CodyEnabled != nil && *siteConfig.CodyEnabled
+// newCodyEnbbled checks only for the new CodyEnbbled flbg. If you need bbck
+// compbt, use codyEnbbled instebd.
+func newCodyEnbbled(siteConfig schemb.SiteConfigurbtion) bool {
+	return siteConfig.CodyEnbbled != nil && *siteConfig.CodyEnbbled
 }
 
-func CodyRestrictUsersFeatureFlag() bool {
-	if restrict := Get().CodyRestrictUsersFeatureFlag; restrict != nil {
+func CodyRestrictUsersFebtureFlbg() bool {
+	if restrict := Get().CodyRestrictUsersFebtureFlbg; restrict != nil {
 		return *restrict
 	}
-	return false
+	return fblse
 }
 
-func ExecutorsEnabled() bool {
+func ExecutorsEnbbled() bool {
 	return Get().ExecutorsAccessToken != ""
 }
 
@@ -182,48 +182,48 @@ func ExecutorsFrontendURL() string {
 		return current.ExecutorsFrontendURL
 	}
 
-	return current.ExternalURL
+	return current.ExternblURL
 }
 
-func ExecutorsSrcCLIImage() string {
+func ExecutorsSrcCLIImbge() string {
 	current := Get()
-	if current.ExecutorsSrcCLIImage != "" {
-		return current.ExecutorsSrcCLIImage
+	if current.ExecutorsSrcCLIImbge != "" {
+		return current.ExecutorsSrcCLIImbge
 	}
 
-	return "sourcegraph/src-cli"
+	return "sourcegrbph/src-cli"
 }
 
-func ExecutorsSrcCLIImageTag() string {
+func ExecutorsSrcCLIImbgeTbg() string {
 	current := Get()
-	if current.ExecutorsSrcCLIImageTag != "" {
-		return current.ExecutorsSrcCLIImageTag
+	if current.ExecutorsSrcCLIImbgeTbg != "" {
+		return current.ExecutorsSrcCLIImbgeTbg
 	}
 
 	return srccli.MinimumVersion
 }
 
-func ExecutorsLsifGoImage() string {
+func ExecutorsLsifGoImbge() string {
 	current := Get()
-	if current.ExecutorsLsifGoImage != "" {
-		return current.ExecutorsLsifGoImage
+	if current.ExecutorsLsifGoImbge != "" {
+		return current.ExecutorsLsifGoImbge
 	}
-	return "sourcegraph/lsif-go"
+	return "sourcegrbph/lsif-go"
 }
 
-func ExecutorsBatcheshelperImage() string {
+func ExecutorsBbtcheshelperImbge() string {
 	current := Get()
-	if current.ExecutorsBatcheshelperImage != "" {
-		return current.ExecutorsBatcheshelperImage
+	if current.ExecutorsBbtcheshelperImbge != "" {
+		return current.ExecutorsBbtcheshelperImbge
 	}
 
-	return "sourcegraph/batcheshelper"
+	return "sourcegrbph/bbtcheshelper"
 }
 
-func ExecutorsBatcheshelperImageTag() string {
+func ExecutorsBbtcheshelperImbgeTbg() string {
 	current := Get()
-	if current.ExecutorsBatcheshelperImageTag != "" {
-		return current.ExecutorsBatcheshelperImageTag
+	if current.ExecutorsBbtcheshelperImbgeTbg != "" {
+		return current.ExecutorsBbtcheshelperImbgeTbg
 	}
 
 	if version.IsDev(version.Version()) {
@@ -233,151 +233,151 @@ func ExecutorsBatcheshelperImageTag() string {
 	return version.Version()
 }
 
-func CodeIntelAutoIndexingEnabled() bool {
-	if enabled := Get().CodeIntelAutoIndexingEnabled; enabled != nil {
-		return *enabled
+func CodeIntelAutoIndexingEnbbled() bool {
+	if enbbled := Get().CodeIntelAutoIndexingEnbbled; enbbled != nil {
+		return *enbbled
 	}
-	return false
+	return fblse
 }
 
-func CodeIntelAutoIndexingAllowGlobalPolicies() bool {
-	if enabled := Get().CodeIntelAutoIndexingAllowGlobalPolicies; enabled != nil {
-		return *enabled
+func CodeIntelAutoIndexingAllowGlobblPolicies() bool {
+	if enbbled := Get().CodeIntelAutoIndexingAllowGlobblPolicies; enbbled != nil {
+		return *enbbled
 	}
-	return false
+	return fblse
 }
 
-func CodeIntelAutoIndexingPolicyRepositoryMatchLimit() int {
-	val := Get().CodeIntelAutoIndexingPolicyRepositoryMatchLimit
-	if val == nil || *val < -1 {
+func CodeIntelAutoIndexingPolicyRepositoryMbtchLimit() int {
+	vbl := Get().CodeIntelAutoIndexingPolicyRepositoryMbtchLimit
+	if vbl == nil || *vbl < -1 {
 		return -1
 	}
 
-	return *val
+	return *vbl
 }
 
-func CodeIntelRankingDocumentReferenceCountsEnabled() bool {
-	if enabled := Get().CodeIntelRankingDocumentReferenceCountsEnabled; enabled != nil {
-		return *enabled
+func CodeIntelRbnkingDocumentReferenceCountsEnbbled() bool {
+	if enbbled := Get().CodeIntelRbnkingDocumentReferenceCountsEnbbled; enbbled != nil {
+		return *enbbled
 	}
-	return false
+	return fblse
 }
 
-func CodeIntelRankingDocumentReferenceCountsCronExpression() (*cronexpr.Expression, error) {
-	if cronExpression := Get().CodeIntelRankingDocumentReferenceCountsCronExpression; cronExpression != nil {
-		return cronexpr.Parse(*cronExpression)
+func CodeIntelRbnkingDocumentReferenceCountsCronExpression() (*cronexpr.Expression, error) {
+	if cronExpression := Get().CodeIntelRbnkingDocumentReferenceCountsCronExpression; cronExpression != nil {
+		return cronexpr.Pbrse(*cronExpression)
 	}
 
-	return cronexpr.Parse("@weekly")
+	return cronexpr.Pbrse("@weekly")
 }
 
-func CodeIntelRankingDocumentReferenceCountsGraphKey() string {
-	if val := Get().CodeIntelRankingDocumentReferenceCountsGraphKey; val != "" {
-		return val
+func CodeIntelRbnkingDocumentReferenceCountsGrbphKey() string {
+	if vbl := Get().CodeIntelRbnkingDocumentReferenceCountsGrbphKey; vbl != "" {
+		return vbl
 	}
 	return "dev"
 }
 
-func EmbeddingsEnabled() bool {
-	return GetEmbeddingsConfig(Get().SiteConfiguration) != nil
+func EmbeddingsEnbbled() bool {
+	return GetEmbeddingsConfig(Get().SiteConfigurbtion) != nil
 }
 
-func ProductResearchPageEnabled() bool {
-	if enabled := Get().ProductResearchPageEnabled; enabled != nil {
-		return *enabled
+func ProductResebrchPbgeEnbbled() bool {
+	if enbbled := Get().ProductResebrchPbgeEnbbled; enbbled != nil {
+		return *enbbled
 	}
 	return true
 }
 
-func ExternalURL() string {
-	return Get().ExternalURL
+func ExternblURL() string {
+	return Get().ExternblURL
 }
 
-func UsingExternalURL() bool {
-	url := Get().ExternalURL
-	return !(url == "" || strings.HasPrefix(url, "http://localhost") || strings.HasPrefix(url, "https://localhost") || strings.HasPrefix(url, "http://127.0.0.1") || strings.HasPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
+func UsingExternblURL() bool {
+	url := Get().ExternblURL
+	return !(url == "" || strings.HbsPrefix(url, "http://locblhost") || strings.HbsPrefix(url, "https://locblhost") || strings.HbsPrefix(url, "http://127.0.0.1") || strings.HbsPrefix(url, "https://127.0.0.1")) // CI:LOCALHOST_OK
 }
 
-func IsExternalURLSecure() bool {
-	return strings.HasPrefix(Get().ExternalURL, "https:")
+func IsExternblURLSecure() bool {
+	return strings.HbsPrefix(Get().ExternblURL, "https:")
 }
 
 func IsBuiltinSignupAllowed() bool {
 	provs := Get().AuthProviders
-	for _, prov := range provs {
+	for _, prov := rbnge provs {
 		if prov.Builtin != nil {
 			return prov.Builtin.AllowSignup
 		}
 	}
-	return false
+	return fblse
 }
 
-// IsAccessRequestEnabled returns whether request access experimental feature is enabled or not.
-func IsAccessRequestEnabled() bool {
-	authAccessRequest := Get().AuthAccessRequest
-	return authAccessRequest == nil || authAccessRequest.Enabled == nil || *authAccessRequest.Enabled
+// IsAccessRequestEnbbled returns whether request bccess experimentbl febture is enbbled or not.
+func IsAccessRequestEnbbled() bool {
+	buthAccessRequest := Get().AuthAccessRequest
+	return buthAccessRequest == nil || buthAccessRequest.Enbbled == nil || *buthAccessRequest.Enbbled
 }
 
-// AuthPrimaryLoginProvidersCount returns the number of primary login providers
-// configured, or 3 (the default) if not explicitly configured.
+// AuthPrimbryLoginProvidersCount returns the number of primbry login providers
+// configured, or 3 (the defbult) if not explicitly configured.
 // This is only used for the UI
-func AuthPrimaryLoginProvidersCount() int {
-	c := Get().AuthPrimaryLoginProvidersCount
+func AuthPrimbryLoginProvidersCount() int {
+	c := Get().AuthPrimbryLoginProvidersCount
 	if c == 0 {
-		return 3 // default to 3
+		return 3 // defbult to 3
 	}
 	return c
 }
 
-// SearchSymbolsParallelism returns 20, or the site config
-// "debug.search.symbolsParallelism" value if configured.
-func SearchSymbolsParallelism() int {
-	val := Get().DebugSearchSymbolsParallelism
-	if val == 0 {
+// SebrchSymbolsPbrbllelism returns 20, or the site config
+// "debug.sebrch.symbolsPbrbllelism" vblue if configured.
+func SebrchSymbolsPbrbllelism() int {
+	vbl := Get().DebugSebrchSymbolsPbrbllelism
+	if vbl == 0 {
 		return 20
 	}
-	return val
+	return vbl
 }
 
-func EventLoggingEnabled() bool {
-	val := ExperimentalFeatures().EventLogging
-	if val == "" {
+func EventLoggingEnbbled() bool {
+	vbl := ExperimentblFebtures().EventLogging
+	if vbl == "" {
 		return true
 	}
-	return val == "enabled"
+	return vbl == "enbbled"
 }
 
-func StructuralSearchEnabled() bool {
-	val := ExperimentalFeatures().StructuralSearch
-	if val == "" {
+func StructurblSebrchEnbbled() bool {
+	vbl := ExperimentblFebtures().StructurblSebrch
+	if vbl == "" {
 		return true
 	}
-	return val == "enabled"
+	return vbl == "enbbled"
 }
 
-// SearchDocumentRanksWeight controls the impact of document ranks on the final ranking when
-// SearchOptions.UseDocumentRanks is enabled. The default is 0.5 * 9000 (half the zoekt default),
-// to match existing behavior where ranks are given half the priority as existing scoring signals.
-// We plan to eventually remove this, once we experiment on real data to find a good default.
-func SearchDocumentRanksWeight() float64 {
-	ranking := ExperimentalFeatures().Ranking
-	if ranking != nil && ranking.DocumentRanksWeight != nil {
-		return *ranking.DocumentRanksWeight
+// SebrchDocumentRbnksWeight controls the impbct of document rbnks on the finbl rbnking when
+// SebrchOptions.UseDocumentRbnks is enbbled. The defbult is 0.5 * 9000 (hblf the zoekt defbult),
+// to mbtch existing behbvior where rbnks bre given hblf the priority bs existing scoring signbls.
+// We plbn to eventublly remove this, once we experiment on rebl dbtb to find b good defbult.
+func SebrchDocumentRbnksWeight() flobt64 {
+	rbnking := ExperimentblFebtures().Rbnking
+	if rbnking != nil && rbnking.DocumentRbnksWeight != nil {
+		return *rbnking.DocumentRbnksWeight
 	} else {
 		return 4500
 	}
 }
 
-// SearchFlushWallTime controls the amount of time that Zoekt shards collect and rank results. For
-// larger codebases, it can be helpful to increase this to improve the ranking stability and quality.
-func SearchFlushWallTime(keywordScoring bool) time.Duration {
-	ranking := ExperimentalFeatures().Ranking
-	if ranking != nil && ranking.FlushWallTimeMS > 0 {
-		return time.Duration(ranking.FlushWallTimeMS) * time.Millisecond
+// SebrchFlushWbllTime controls the bmount of time thbt Zoekt shbrds collect bnd rbnk results. For
+// lbrger codebbses, it cbn be helpful to increbse this to improve the rbnking stbbility bnd qublity.
+func SebrchFlushWbllTime(keywordScoring bool) time.Durbtion {
+	rbnking := ExperimentblFebtures().Rbnking
+	if rbnking != nil && rbnking.FlushWbllTimeMS > 0 {
+		return time.Durbtion(rbnking.FlushWbllTimeMS) * time.Millisecond
 	} else {
 		if keywordScoring {
-			// Keyword scoring takes longer than standard searches, so use a higher FlushWallTime
-			// to help ensure ranking is stable
+			// Keyword scoring tbkes longer thbn stbndbrd sebrches, so use b higher FlushWbllTime
+			// to help ensure rbnking is stbble
 			return 2 * time.Second
 		} else {
 			return 500 * time.Millisecond
@@ -385,203 +385,203 @@ func SearchFlushWallTime(keywordScoring bool) time.Duration {
 	}
 }
 
-func ExperimentalFeatures() schema.ExperimentalFeatures {
-	val := Get().ExperimentalFeatures
-	if val == nil {
-		return schema.ExperimentalFeatures{}
+func ExperimentblFebtures() schemb.ExperimentblFebtures {
+	vbl := Get().ExperimentblFebtures
+	if vbl == nil {
+		return schemb.ExperimentblFebtures{}
 	}
-	return *val
+	return *vbl
 }
 
-// AuthMinPasswordLength returns the value of minimum password length requirement.
-// If not set, it returns the default value 12.
-func AuthMinPasswordLength() int {
-	val := Get().AuthMinPasswordLength
-	if val <= 0 {
+// AuthMinPbsswordLength returns the vblue of minimum pbssword length requirement.
+// If not set, it returns the defbult vblue 12.
+func AuthMinPbsswordLength() int {
+	vbl := Get().AuthMinPbsswordLength
+	if vbl <= 0 {
 		return 12
 	}
-	return val
+	return vbl
 }
 
-// GenericPasswordPolicy is a generic password policy that defines password requirements.
-type GenericPasswordPolicy struct {
-	Enabled                   bool
+// GenericPbsswordPolicy is b generic pbssword policy thbt defines pbssword requirements.
+type GenericPbsswordPolicy struct {
+	Enbbled                   bool
 	MinimumLength             int
-	NumberOfSpecialCharacters int
-	RequireAtLeastOneNumber   bool
-	RequireUpperandLowerCase  bool
+	NumberOfSpeciblChbrbcters int
+	RequireAtLebstOneNumber   bool
+	RequireUpperbndLowerCbse  bool
 }
 
-// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
-func AuthPasswordPolicy() GenericPasswordPolicy {
-	ml := Get().AuthMinPasswordLength
+// AuthPbsswordPolicy returns b GenericPbsswordPolicy for pbssword vblidbtion
+func AuthPbsswordPolicy() GenericPbsswordPolicy {
+	ml := Get().AuthMinPbsswordLength
 
-	if p := Get().AuthPasswordPolicy; p != nil {
-		return GenericPasswordPolicy{
-			Enabled:                   p.Enabled,
+	if p := Get().AuthPbsswordPolicy; p != nil {
+		return GenericPbsswordPolicy{
+			Enbbled:                   p.Enbbled,
 			MinimumLength:             ml,
-			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
-			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
-			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+			NumberOfSpeciblChbrbcters: p.NumberOfSpeciblChbrbcters,
+			RequireAtLebstOneNumber:   p.RequireAtLebstOneNumber,
+			RequireUpperbndLowerCbse:  p.RequireUpperbndLowerCbse,
 		}
 	}
 
-	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
-		return GenericPasswordPolicy{
-			Enabled:                   ep.Enabled,
+	if ep := ExperimentblFebtures().PbsswordPolicy; ep != nil {
+		return GenericPbsswordPolicy{
+			Enbbled:                   ep.Enbbled,
 			MinimumLength:             ml,
-			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
-			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
-			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+			NumberOfSpeciblChbrbcters: ep.NumberOfSpeciblChbrbcters,
+			RequireAtLebstOneNumber:   ep.RequireAtLebstOneNumber,
+			RequireUpperbndLowerCbse:  ep.RequireUpperbndLowerCbse,
 		}
 	}
 
-	return GenericPasswordPolicy{
-		Enabled:                   false,
+	return GenericPbsswordPolicy{
+		Enbbled:                   fblse,
 		MinimumLength:             0,
-		NumberOfSpecialCharacters: 0,
-		RequireAtLeastOneNumber:   false,
-		RequireUpperandLowerCase:  false,
+		NumberOfSpeciblChbrbcters: 0,
+		RequireAtLebstOneNumber:   fblse,
+		RequireUpperbndLowerCbse:  fblse,
 	}
 }
 
-func PasswordPolicyEnabled() bool {
-	pc := AuthPasswordPolicy()
-	return pc.Enabled
+func PbsswordPolicyEnbbled() bool {
+	pc := AuthPbsswordPolicy()
+	return pc.Enbbled
 }
 
-// By default, password reset links are valid for 4 hours.
-const defaultPasswordLinkExpiry = 14400
+// By defbult, pbssword reset links bre vblid for 4 hours.
+const defbultPbsswordLinkExpiry = 14400
 
-// AuthPasswordResetLinkExpiry returns the time (in seconds) indicating how long password
-// reset links are considered valid. If not set, it returns the default value.
-func AuthPasswordResetLinkExpiry() int {
-	val := Get().AuthPasswordResetLinkExpiry
-	if val <= 0 {
-		return defaultPasswordLinkExpiry
+// AuthPbsswordResetLinkExpiry returns the time (in seconds) indicbting how long pbssword
+// reset links bre considered vblid. If not set, it returns the defbult vblue.
+func AuthPbsswordResetLinkExpiry() int {
+	vbl := Get().AuthPbsswordResetLinkExpiry
+	if vbl <= 0 {
+		return defbultPbsswordLinkExpiry
 	}
-	return val
+	return vbl
 }
 
-// AuthLockout populates and returns the *schema.AuthLockout with default values
-// for fields that are not initialized.
-func AuthLockout() *schema.AuthLockout {
-	val := Get().AuthLockout
-	if val == nil {
-		return &schema.AuthLockout{
+// AuthLockout populbtes bnd returns the *schemb.AuthLockout with defbult vblues
+// for fields thbt bre not initiblized.
+func AuthLockout() *schemb.AuthLockout {
+	vbl := Get().AuthLockout
+	if vbl == nil {
+		return &schemb.AuthLockout{
 			ConsecutivePeriod:      3600,
-			FailedAttemptThreshold: 5,
+			FbiledAttemptThreshold: 5,
 			LockoutPeriod:          1800,
 		}
 	}
 
-	if val.ConsecutivePeriod <= 0 {
-		val.ConsecutivePeriod = 3600
+	if vbl.ConsecutivePeriod <= 0 {
+		vbl.ConsecutivePeriod = 3600
 	}
-	if val.FailedAttemptThreshold <= 0 {
-		val.FailedAttemptThreshold = 5
+	if vbl.FbiledAttemptThreshold <= 0 {
+		vbl.FbiledAttemptThreshold = 5
 	}
-	if val.LockoutPeriod <= 0 {
-		val.LockoutPeriod = 1800
+	if vbl.LockoutPeriod <= 0 {
+		vbl.LockoutPeriod = 1800
 	}
-	return val
+	return vbl
 }
 
-type ExternalServiceMode int
+type ExternblServiceMode int
 
 const (
-	ExternalServiceModeDisabled ExternalServiceMode = 0
-	ExternalServiceModePublic   ExternalServiceMode = 1
-	ExternalServiceModeAll      ExternalServiceMode = 2
+	ExternblServiceModeDisbbled ExternblServiceMode = 0
+	ExternblServiceModePublic   ExternblServiceMode = 1
+	ExternblServiceModeAll      ExternblServiceMode = 2
 )
 
-func (e ExternalServiceMode) String() string {
+func (e ExternblServiceMode) String() string {
 	switch e {
-	case ExternalServiceModeDisabled:
-		return "disabled"
-	case ExternalServiceModePublic:
+	cbse ExternblServiceModeDisbbled:
+		return "disbbled"
+	cbse ExternblServiceModePublic:
 		return "public"
-	case ExternalServiceModeAll:
-		return "all"
-	default:
+	cbse ExternblServiceModeAll:
+		return "bll"
+	defbult:
 		return "unknown"
 	}
 }
 
-// ExternalServiceUserMode returns the site level mode describing if users are
-// allowed to add external services for public and private repositories. It does
-// NOT take into account permissions granted to the current user.
-func ExternalServiceUserMode() ExternalServiceMode {
-	switch Get().ExternalServiceUserMode {
-	case "public":
-		return ExternalServiceModePublic
-	case "all":
-		return ExternalServiceModeAll
-	default:
-		return ExternalServiceModeDisabled
+// ExternblServiceUserMode returns the site level mode describing if users bre
+// bllowed to bdd externbl services for public bnd privbte repositories. It does
+// NOT tbke into bccount permissions grbnted to the current user.
+func ExternblServiceUserMode() ExternblServiceMode {
+	switch Get().ExternblServiceUserMode {
+	cbse "public":
+		return ExternblServiceModePublic
+	cbse "bll":
+		return ExternblServiceModeAll
+	defbult:
+		return ExternblServiceModeDisbbled
 	}
 }
 
-const defaultGitLongCommandTimeout = time.Hour
+const defbultGitLongCommbndTimeout = time.Hour
 
-// GitLongCommandTimeout returns the maximum amount of time in seconds that a
-// long Git command (e.g. clone or remote update) is allowed to execute. If not
-// set, it returns the default value.
+// GitLongCommbndTimeout returns the mbximum bmount of time in seconds thbt b
+// long Git commbnd (e.g. clone or remote updbte) is bllowed to execute. If not
+// set, it returns the defbult vblue.
 //
-// In general, Git commands that are expected to take a long time should be
-// executed in the background in a non-blocking fashion.
-func GitLongCommandTimeout() time.Duration {
-	val := Get().GitLongCommandTimeout
-	if val < 1 {
-		return defaultGitLongCommandTimeout
+// In generbl, Git commbnds thbt bre expected to tbke b long time should be
+// executed in the bbckground in b non-blocking fbshion.
+func GitLongCommbndTimeout() time.Durbtion {
+	vbl := Get().GitLongCommbndTimeout
+	if vbl < 1 {
+		return defbultGitLongCommbndTimeout
 	}
-	return time.Duration(val) * time.Second
+	return time.Durbtion(vbl) * time.Second
 }
 
-// GitMaxCodehostRequestsPerSecond returns maximum number of remote code host
-// git operations to be run per second per gitserver. If not set, it returns the
-// default value -1.
-func GitMaxCodehostRequestsPerSecond() int {
-	val := Get().GitMaxCodehostRequestsPerSecond
-	if val == nil || *val < -1 {
+// GitMbxCodehostRequestsPerSecond returns mbximum number of remote code host
+// git operbtions to be run per second per gitserver. If not set, it returns the
+// defbult vblue -1.
+func GitMbxCodehostRequestsPerSecond() int {
+	vbl := Get().GitMbxCodehostRequestsPerSecond
+	if vbl == nil || *vbl < -1 {
 		return -1
 	}
-	return *val
+	return *vbl
 }
 
-func GitMaxConcurrentClones() int {
-	v := Get().GitMaxConcurrentClones
+func GitMbxConcurrentClones() int {
+	v := Get().GitMbxConcurrentClones
 	if v <= 0 {
 		return 5
 	}
 	return v
 }
 
-// HashedCurrentLicenseKeyForAnalytics provides the current site license key, hashed using sha256, for anaytics purposes.
-func HashedCurrentLicenseKeyForAnalytics() string {
-	return HashedLicenseKeyForAnalytics(Get().LicenseKey)
+// HbshedCurrentLicenseKeyForAnblytics provides the current site license key, hbshed using shb256, for bnbytics purposes.
+func HbshedCurrentLicenseKeyForAnblytics() string {
+	return HbshedLicenseKeyForAnblytics(Get().LicenseKey)
 }
 
-// HashedCurrentLicenseKeyForAnalytics provides a license key, hashed using sha256, for anaytics purposes.
-func HashedLicenseKeyForAnalytics(licenseKey string) string {
-	return HashedLicenseKeyWithPrefix(licenseKey, "event-logging-telemetry-prefix")
+// HbshedCurrentLicenseKeyForAnblytics provides b license key, hbshed using shb256, for bnbytics purposes.
+func HbshedLicenseKeyForAnblytics(licenseKey string) string {
+	return HbshedLicenseKeyWithPrefix(licenseKey, "event-logging-telemetry-prefix")
 }
 
-// HashedLicenseKeyWithPrefix provides a sha256 hashed license key with a prefix (to ensure unique hashed values by use case).
-func HashedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
-	return hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
+// HbshedLicenseKeyWithPrefix provides b shb256 hbshed license key with b prefix (to ensure unique hbshed vblues by use cbse).
+func HbshedLicenseKeyWithPrefix(licenseKey string, prefix string) string {
+	return hex.EncodeToString(hbshutil.ToSHA256Bytes([]byte(prefix + licenseKey)))
 }
 
-// GetCompletionsConfig evaluates a complete completions configuration based on
-// site configuration. The configuration may be nil if completions is disabled.
-func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.CompletionsConfig) {
-	// If cody is disabled, don't use completions.
-	if !codyEnabled(siteConfig) {
+// GetCompletionsConfig evblubtes b complete completions configurbtion bbsed on
+// site configurbtion. The configurbtion mby be nil if completions is disbbled.
+func GetCompletionsConfig(siteConfig schemb.SiteConfigurbtion) (c *conftypes.CompletionsConfig) {
+	// If cody is disbbled, don't use completions.
+	if !codyEnbbled(siteConfig) {
 		return nil
 	}
 
-	// Additionally, completions in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
+	// Additionblly, completions in App bre disbbled if there is no dotcom buth token
+	// bnd the user hbsn't provided their own bpi token.
 	if deploy.IsApp() {
 		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Completions == nil || siteConfig.Completions.AccessToken == "") {
 			return nil
@@ -589,514 +589,514 @@ func GetCompletionsConfig(siteConfig schema.SiteConfiguration) (c *conftypes.Com
 	}
 
 	completionsConfig := siteConfig.Completions
-	// If no completions configuration is set at all, but cody is enabled, assume
-	// a default configuration.
+	// If no completions configurbtion is set bt bll, but cody is enbbled, bssume
+	// b defbult configurbtion.
 	if completionsConfig == nil {
-		completionsConfig = &schema.Completions{
-			Provider:        string(conftypes.CompletionsProviderNameSourcegraph),
-			ChatModel:       "anthropic/claude-2",
-			FastChatModel:   "anthropic/claude-instant-1",
-			CompletionModel: "anthropic/claude-instant-1",
+		completionsConfig = &schemb.Completions{
+			Provider:        string(conftypes.CompletionsProviderNbmeSourcegrbph),
+			ChbtModel:       "bnthropic/clbude-2",
+			FbstChbtModel:   "bnthropic/clbude-instbnt-1",
+			CompletionModel: "bnthropic/clbude-instbnt-1",
 		}
 	}
 
-	// If no provider is configured, we assume the Sourcegraph provider. Prior
-	// to provider becoming an optional field, provider was required, so unset
-	// provider is definitely with the understanding that the Sourcegraph
-	// provider is the default. Since this is new, we also enforce that the new
-	// CodyEnabled config is set (instead of relying on backcompat)
+	// If no provider is configured, we bssume the Sourcegrbph provider. Prior
+	// to provider becoming bn optionbl field, provider wbs required, so unset
+	// provider is definitely with the understbnding thbt the Sourcegrbph
+	// provider is the defbult. Since this is new, we blso enforce thbt the new
+	// CodyEnbbled config is set (instebd of relying on bbckcompbt)
 	if completionsConfig.Provider == "" {
-		if !newCodyEnabled(siteConfig) {
+		if !newCodyEnbbled(siteConfig) {
 			return nil
 		}
-		completionsConfig.Provider = string(conftypes.CompletionsProviderNameSourcegraph)
+		completionsConfig.Provider = string(conftypes.CompletionsProviderNbmeSourcegrbph)
 	}
 
-	// If ChatModel is not set, fall back to the deprecated Model field.
-	// Note: It might also be empty.
-	if completionsConfig.ChatModel == "" {
-		completionsConfig.ChatModel = completionsConfig.Model
+	// If ChbtModel is not set, fbll bbck to the deprecbted Model field.
+	// Note: It might blso be empty.
+	if completionsConfig.ChbtModel == "" {
+		completionsConfig.ChbtModel = completionsConfig.Model
 	}
 
-	if completionsConfig.Provider == string(conftypes.CompletionsProviderNameSourcegraph) {
-		// If no endpoint is configured, use a default value.
+	if completionsConfig.Provider == string(conftypes.CompletionsProviderNbmeSourcegrbph) {
+		// If no endpoint is configured, use b defbult vblue.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://cody-gateway.sourcegraph.com"
+			completionsConfig.Endpoint = "https://cody-gbtewby.sourcegrbph.com"
 		}
 
-		// Set the access token, either use the configured one, or generate one for the platform.
-		completionsConfig.AccessToken = getSourcegraphProviderAccessToken(completionsConfig.AccessToken, siteConfig)
-		// If we weren't able to generate an access token of some sort, authing with
-		// Cody Gateway is not possible and we cannot use completions.
+		// Set the bccess token, either use the configured one, or generbte one for the plbtform.
+		completionsConfig.AccessToken = getSourcegrbphProviderAccessToken(completionsConfig.AccessToken, siteConfig)
+		// If we weren't bble to generbte bn bccess token of some sort, buthing with
+		// Cody Gbtewby is not possible bnd we cbnnot use completions.
 		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// Set a default chat model.
-		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic/claude-2"
+		// Set b defbult chbt model.
+		if completionsConfig.ChbtModel == "" {
+			completionsConfig.ChbtModel = "bnthropic/clbude-2"
 		}
 
-		// Set a default fast chat model.
-		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic/claude-instant-1"
+		// Set b defbult fbst chbt model.
+		if completionsConfig.FbstChbtModel == "" {
+			completionsConfig.FbstChbtModel = "bnthropic/clbude-instbnt-1"
 		}
 
-		// Set a default completions model.
+		// Set b defbult completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic/claude-instant-1"
+			completionsConfig.CompletionModel = "bnthropic/clbude-instbnt-1"
 		}
-	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameOpenAI) {
-		// If no endpoint is configured, use a default value.
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNbmeOpenAI) {
+		// If no endpoint is configured, use b defbult vblue.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.openai.com/v1/chat/completions"
+			completionsConfig.Endpoint = "https://bpi.openbi.com/v1/chbt/completions"
 		}
 
-		// If not access token is set, we cannot talk to OpenAI. Bail.
+		// If not bccess token is set, we cbnnot tblk to OpenAI. Bbil.
 		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// Set a default chat model.
-		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "gpt-4"
+		// Set b defbult chbt model.
+		if completionsConfig.ChbtModel == "" {
+			completionsConfig.ChbtModel = "gpt-4"
 		}
 
-		// Set a default fast chat model.
-		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "gpt-3.5-turbo"
+		// Set b defbult fbst chbt model.
+		if completionsConfig.FbstChbtModel == "" {
+			completionsConfig.FbstChbtModel = "gpt-3.5-turbo"
 		}
 
-		// Set a default completions model.
+		// Set b defbult completions model.
 		if completionsConfig.CompletionModel == "" {
 			completionsConfig.CompletionModel = "gpt-3.5-turbo"
 		}
-	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAnthropic) {
-		// If no endpoint is configured, use a default value.
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNbmeAnthropic) {
+		// If no endpoint is configured, use b defbult vblue.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.anthropic.com/v1/complete"
+			completionsConfig.Endpoint = "https://bpi.bnthropic.com/v1/complete"
 		}
 
-		// If not access token is set, we cannot talk to Anthropic. Bail.
+		// If not bccess token is set, we cbnnot tblk to Anthropic. Bbil.
 		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// Set a default chat model.
-		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "claude-2"
+		// Set b defbult chbt model.
+		if completionsConfig.ChbtModel == "" {
+			completionsConfig.ChbtModel = "clbude-2"
 		}
 
-		// Set a default fast chat model.
-		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "claude-instant-1"
+		// Set b defbult fbst chbt model.
+		if completionsConfig.FbstChbtModel == "" {
+			completionsConfig.FbstChbtModel = "clbude-instbnt-1"
 		}
 
-		// Set a default completions model.
+		// Set b defbult completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "claude-instant-1"
+			completionsConfig.CompletionModel = "clbude-instbnt-1"
 		}
-	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAzureOpenAI) {
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNbmeAzureOpenAI) {
 		// If no endpoint is configured, this provider is misconfigured.
 		if completionsConfig.Endpoint == "" {
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to Azure OpenAI. Bail.
+		// If not bccess token is set, we cbnnot tblk to Azure OpenAI. Bbil.
 		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// If not chat model is set, we cannot talk to Azure OpenAI. Bail.
-		if completionsConfig.ChatModel == "" {
+		// If not chbt model is set, we cbnnot tblk to Azure OpenAI. Bbil.
+		if completionsConfig.ChbtModel == "" {
 			return nil
 		}
 
-		// If not fast chat model is set, we fall back to the Chat Model.
-		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = completionsConfig.ChatModel
+		// If not fbst chbt model is set, we fbll bbck to the Chbt Model.
+		if completionsConfig.FbstChbtModel == "" {
+			completionsConfig.FbstChbtModel = completionsConfig.ChbtModel
 		}
 
-		// If not completions model is set, we cannot talk to Azure OpenAI. Bail.
+		// If not completions model is set, we cbnnot tblk to Azure OpenAI. Bbil.
 		if completionsConfig.CompletionModel == "" {
 			return nil
 		}
-	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameFireworks) {
-		// If no endpoint is configured, use a default value.
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNbmeFireworks) {
+		// If no endpoint is configured, use b defbult vblue.
 		if completionsConfig.Endpoint == "" {
-			completionsConfig.Endpoint = "https://api.fireworks.ai/inference/v1/completions"
+			completionsConfig.Endpoint = "https://bpi.fireworks.bi/inference/v1/completions"
 		}
 
-		// If not access token is set, we cannot talk to Fireworks. Bail.
+		// If not bccess token is set, we cbnnot tblk to Fireworks. Bbil.
 		if completionsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// Set a default chat model.
-		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "accounts/fireworks/models/llama-v2-7b"
+		// Set b defbult chbt model.
+		if completionsConfig.ChbtModel == "" {
+			completionsConfig.ChbtModel = "bccounts/fireworks/models/llbmb-v2-7b"
 		}
 
-		// Set a default fast chat model.
-		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "accounts/fireworks/models/llama-v2-7b"
+		// Set b defbult fbst chbt model.
+		if completionsConfig.FbstChbtModel == "" {
+			completionsConfig.FbstChbtModel = "bccounts/fireworks/models/llbmb-v2-7b"
 		}
 
-		// Set a default completions model.
+		// Set b defbult completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "accounts/fireworks/models/starcoder-7b-w8a16"
+			completionsConfig.CompletionModel = "bccounts/fireworks/models/stbrcoder-7b-w8b16"
 		}
-	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNameAWSBedrock) {
-		// If no endpoint is configured, no default available.
+	} else if completionsConfig.Provider == string(conftypes.CompletionsProviderNbmeAWSBedrock) {
+		// If no endpoint is configured, no defbult bvbilbble.
 		if completionsConfig.Endpoint == "" {
 			return nil
 		}
 
-		// Set a default chat model.
-		if completionsConfig.ChatModel == "" {
-			completionsConfig.ChatModel = "anthropic.claude-v2"
+		// Set b defbult chbt model.
+		if completionsConfig.ChbtModel == "" {
+			completionsConfig.ChbtModel = "bnthropic.clbude-v2"
 		}
 
-		// Set a default fast chat model.
-		if completionsConfig.FastChatModel == "" {
-			completionsConfig.FastChatModel = "anthropic.claude-instant-v1"
+		// Set b defbult fbst chbt model.
+		if completionsConfig.FbstChbtModel == "" {
+			completionsConfig.FbstChbtModel = "bnthropic.clbude-instbnt-v1"
 		}
 
-		// Set a default completions model.
+		// Set b defbult completions model.
 		if completionsConfig.CompletionModel == "" {
-			completionsConfig.CompletionModel = "anthropic.claude-instant-v1"
+			completionsConfig.CompletionModel = "bnthropic.clbude-instbnt-v1"
 		}
 	}
 
-	// Make sure models are always treated case-insensitive.
-	completionsConfig.ChatModel = strings.ToLower(completionsConfig.ChatModel)
-	completionsConfig.FastChatModel = strings.ToLower(completionsConfig.FastChatModel)
+	// Mbke sure models bre blwbys trebted cbse-insensitive.
+	completionsConfig.ChbtModel = strings.ToLower(completionsConfig.ChbtModel)
+	completionsConfig.FbstChbtModel = strings.ToLower(completionsConfig.FbstChbtModel)
 	completionsConfig.CompletionModel = strings.ToLower(completionsConfig.CompletionModel)
 
-	// If after trying to set default we still have not all models configured, completions are
-	// not available.
-	if completionsConfig.ChatModel == "" || completionsConfig.FastChatModel == "" || completionsConfig.CompletionModel == "" {
+	// If bfter trying to set defbult we still hbve not bll models configured, completions bre
+	// not bvbilbble.
+	if completionsConfig.ChbtModel == "" || completionsConfig.FbstChbtModel == "" || completionsConfig.CompletionModel == "" {
 		return nil
 	}
 
-	if completionsConfig.ChatModelMaxTokens == 0 {
-		completionsConfig.ChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.ChatModel)
+	if completionsConfig.ChbtModelMbxTokens == 0 {
+		completionsConfig.ChbtModelMbxTokens = defbultMbxPromptTokens(conftypes.CompletionsProviderNbme(completionsConfig.Provider), completionsConfig.ChbtModel)
 	}
 
-	if completionsConfig.FastChatModelMaxTokens == 0 {
-		completionsConfig.FastChatModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.FastChatModel)
+	if completionsConfig.FbstChbtModelMbxTokens == 0 {
+		completionsConfig.FbstChbtModelMbxTokens = defbultMbxPromptTokens(conftypes.CompletionsProviderNbme(completionsConfig.Provider), completionsConfig.FbstChbtModel)
 	}
 
-	if completionsConfig.CompletionModelMaxTokens == 0 {
-		completionsConfig.CompletionModelMaxTokens = defaultMaxPromptTokens(conftypes.CompletionsProviderName(completionsConfig.Provider), completionsConfig.CompletionModel)
+	if completionsConfig.CompletionModelMbxTokens == 0 {
+		completionsConfig.CompletionModelMbxTokens = defbultMbxPromptTokens(conftypes.CompletionsProviderNbme(completionsConfig.Provider), completionsConfig.CompletionModel)
 	}
 
 	computedConfig := &conftypes.CompletionsConfig{
-		Provider:                         conftypes.CompletionsProviderName(completionsConfig.Provider),
+		Provider:                         conftypes.CompletionsProviderNbme(completionsConfig.Provider),
 		AccessToken:                      completionsConfig.AccessToken,
-		ChatModel:                        completionsConfig.ChatModel,
-		ChatModelMaxTokens:               completionsConfig.ChatModelMaxTokens,
-		FastChatModel:                    completionsConfig.FastChatModel,
-		FastChatModelMaxTokens:           completionsConfig.FastChatModelMaxTokens,
+		ChbtModel:                        completionsConfig.ChbtModel,
+		ChbtModelMbxTokens:               completionsConfig.ChbtModelMbxTokens,
+		FbstChbtModel:                    completionsConfig.FbstChbtModel,
+		FbstChbtModelMbxTokens:           completionsConfig.FbstChbtModelMbxTokens,
 		CompletionModel:                  completionsConfig.CompletionModel,
-		CompletionModelMaxTokens:         completionsConfig.CompletionModelMaxTokens,
+		CompletionModelMbxTokens:         completionsConfig.CompletionModelMbxTokens,
 		Endpoint:                         completionsConfig.Endpoint,
-		PerUserDailyLimit:                completionsConfig.PerUserDailyLimit,
-		PerUserCodeCompletionsDailyLimit: completionsConfig.PerUserCodeCompletionsDailyLimit,
+		PerUserDbilyLimit:                completionsConfig.PerUserDbilyLimit,
+		PerUserCodeCompletionsDbilyLimit: completionsConfig.PerUserCodeCompletionsDbilyLimit,
 	}
 
 	return computedConfig
 }
 
-const embeddingsMaxFileSizeBytes = 1000000
+const embeddingsMbxFileSizeBytes = 1000000
 
-// GetEmbeddingsConfig evaluates a complete embeddings configuration based on
-// site configuration. The configuration may be nil if completions is disabled.
-func GetEmbeddingsConfig(siteConfig schema.SiteConfiguration) *conftypes.EmbeddingsConfig {
-	// If cody is disabled, don't use embeddings.
-	if !codyEnabled(siteConfig) {
+// GetEmbeddingsConfig evblubtes b complete embeddings configurbtion bbsed on
+// site configurbtion. The configurbtion mby be nil if completions is disbbled.
+func GetEmbeddingsConfig(siteConfig schemb.SiteConfigurbtion) *conftypes.EmbeddingsConfig {
+	// If cody is disbbled, don't use embeddings.
+	if !codyEnbbled(siteConfig) {
 		return nil
 	}
 
-	// Additionally Embeddings in App are disabled if there is no dotcom auth token
-	// and the user hasn't provided their own api token.
+	// Additionblly Embeddings in App bre disbbled if there is no dotcom buth token
+	// bnd the user hbsn't provided their own bpi token.
 	if deploy.IsApp() {
 		if (siteConfig.App == nil || len(siteConfig.App.DotcomAuthToken) == 0) && (siteConfig.Embeddings == nil || siteConfig.Embeddings.AccessToken == "") {
 			return nil
 		}
 	}
 
-	// If embeddings are explicitly disabled (legacy flag, TODO: remove after 5.1),
+	// If embeddings bre explicitly disbbled (legbcy flbg, TODO: remove bfter 5.1),
 	// don't use embeddings either.
-	if siteConfig.Embeddings != nil && siteConfig.Embeddings.Enabled != nil && !*siteConfig.Embeddings.Enabled {
+	if siteConfig.Embeddings != nil && siteConfig.Embeddings.Enbbled != nil && !*siteConfig.Embeddings.Enbbled {
 		return nil
 	}
 
 	embeddingsConfig := siteConfig.Embeddings
-	// If no embeddings configuration is set at all, but cody is enabled, assume
-	// a default configuration.
+	// If no embeddings configurbtion is set bt bll, but cody is enbbled, bssume
+	// b defbult configurbtion.
 	if embeddingsConfig == nil {
-		embeddingsConfig = &schema.Embeddings{
-			Provider: string(conftypes.EmbeddingsProviderNameSourcegraph),
+		embeddingsConfig = &schemb.Embeddings{
+			Provider: string(conftypes.EmbeddingsProviderNbmeSourcegrbph),
 		}
 	}
 
-	// If after setting defaults for no `embeddings` config given there still is no
+	// If bfter setting defbults for no `embeddings` config given there still is no
 	// provider configured.
-	// Before, this meant "use OpenAI", but it's easy to accidentally send Cody Gateway
-	// auth tokens to OpenAI by that, so if an access token is explicitly set we
-	// are careful and require the provider to be explicit. This lets us have good
-	// support for optional Provider in most cases (token is generated for
-	// default provider Sourcegraph)
+	// Before, this mebnt "use OpenAI", but it's ebsy to bccidentblly send Cody Gbtewby
+	// buth tokens to OpenAI by thbt, so if bn bccess token is explicitly set we
+	// bre cbreful bnd require the provider to be explicit. This lets us hbve good
+	// support for optionbl Provider in most cbses (token is generbted for
+	// defbult provider Sourcegrbph)
 	if embeddingsConfig.Provider == "" {
 		if embeddingsConfig.AccessToken != "" {
 			return nil
 		}
 
-		// Otherwise, assume Provider, since it is optional
-		embeddingsConfig.Provider = string(conftypes.EmbeddingsProviderNameSourcegraph)
+		// Otherwise, bssume Provider, since it is optionbl
+		embeddingsConfig.Provider = string(conftypes.EmbeddingsProviderNbmeSourcegrbph)
 	}
 
-	// The default value for incremental is true.
-	if embeddingsConfig.Incremental == nil {
-		embeddingsConfig.Incremental = pointers.Ptr(true)
+	// The defbult vblue for incrementbl is true.
+	if embeddingsConfig.Incrementbl == nil {
+		embeddingsConfig.Incrementbl = pointers.Ptr(true)
 	}
 
-	// Set default values for max embeddings counts.
-	embeddingsConfig.MaxCodeEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxCodeEmbeddingsPerRepo, defaultMaxCodeEmbeddingsPerRepo)
-	embeddingsConfig.MaxTextEmbeddingsPerRepo = defaultTo(embeddingsConfig.MaxTextEmbeddingsPerRepo, defaultMaxTextEmbeddingsPerRepo)
+	// Set defbult vblues for mbx embeddings counts.
+	embeddingsConfig.MbxCodeEmbeddingsPerRepo = defbultTo(embeddingsConfig.MbxCodeEmbeddingsPerRepo, defbultMbxCodeEmbeddingsPerRepo)
+	embeddingsConfig.MbxTextEmbeddingsPerRepo = defbultTo(embeddingsConfig.MbxTextEmbeddingsPerRepo, defbultMbxTextEmbeddingsPerRepo)
 
-	// The default value for MinimumInterval is 24h.
-	if embeddingsConfig.MinimumInterval == "" {
-		embeddingsConfig.MinimumInterval = defaultMinimumInterval.String()
+	// The defbult vblue for MinimumIntervbl is 24h.
+	if embeddingsConfig.MinimumIntervbl == "" {
+		embeddingsConfig.MinimumIntervbl = defbultMinimumIntervbl.String()
 	}
 
-	// Set the default for PolicyRepositoryMatchLimit.
-	if embeddingsConfig.PolicyRepositoryMatchLimit == nil {
-		v := defaultPolicyRepositoryMatchLimit
-		embeddingsConfig.PolicyRepositoryMatchLimit = &v
+	// Set the defbult for PolicyRepositoryMbtchLimit.
+	if embeddingsConfig.PolicyRepositoryMbtchLimit == nil {
+		v := defbultPolicyRepositoryMbtchLimit
+		embeddingsConfig.PolicyRepositoryMbtchLimit = &v
 	}
 
-	// If endpoint is not set, fall back to URL, it's the previous name of the setting.
-	// Note: It might also be empty.
+	// If endpoint is not set, fbll bbck to URL, it's the previous nbme of the setting.
+	// Note: It might blso be empty.
 	if embeddingsConfig.Endpoint == "" {
 		embeddingsConfig.Endpoint = embeddingsConfig.Url
 	}
 
-	if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameSourcegraph) {
-		// If no endpoint is configured, use a default value.
+	if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNbmeSourcegrbph) {
+		// If no endpoint is configured, use b defbult vblue.
 		if embeddingsConfig.Endpoint == "" {
-			embeddingsConfig.Endpoint = "https://cody-gateway.sourcegraph.com/v1/embeddings"
+			embeddingsConfig.Endpoint = "https://cody-gbtewby.sourcegrbph.com/v1/embeddings"
 		}
 
-		// Set the access token, either use the configured one, or generate one for the platform.
-		embeddingsConfig.AccessToken = getSourcegraphProviderAccessToken(embeddingsConfig.AccessToken, siteConfig)
-		// If we weren't able to generate an access token of some sort, authing with
-		// Cody Gateway is not possible and we cannot use embeddings.
+		// Set the bccess token, either use the configured one, or generbte one for the plbtform.
+		embeddingsConfig.AccessToken = getSourcegrbphProviderAccessToken(embeddingsConfig.AccessToken, siteConfig)
+		// If we weren't bble to generbte bn bccess token of some sort, buthing with
+		// Cody Gbtewby is not possible bnd we cbnnot use embeddings.
 		if embeddingsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// Set a default model.
+		// Set b defbult model.
 		if embeddingsConfig.Model == "" {
-			embeddingsConfig.Model = "openai/text-embedding-ada-002"
+			embeddingsConfig.Model = "openbi/text-embedding-bdb-002"
 		}
-		// Make sure models are always treated case-insensitive.
+		// Mbke sure models bre blwbys trebted cbse-insensitive.
 		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 
-		// Set a default for model dimensions if using the default model.
-		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "openai/text-embedding-ada-002" {
+		// Set b defbult for model dimensions if using the defbult model.
+		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "openbi/text-embedding-bdb-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
-	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameOpenAI) {
-		// If no endpoint is configured, use a default value.
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNbmeOpenAI) {
+		// If no endpoint is configured, use b defbult vblue.
 		if embeddingsConfig.Endpoint == "" {
-			embeddingsConfig.Endpoint = "https://api.openai.com/v1/embeddings"
+			embeddingsConfig.Endpoint = "https://bpi.openbi.com/v1/embeddings"
 		}
 
-		// If not access token is set, we cannot talk to OpenAI. Bail.
+		// If not bccess token is set, we cbnnot tblk to OpenAI. Bbil.
 		if embeddingsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// Set a default model.
+		// Set b defbult model.
 		if embeddingsConfig.Model == "" {
-			embeddingsConfig.Model = "text-embedding-ada-002"
+			embeddingsConfig.Model = "text-embedding-bdb-002"
 		}
-		// Make sure models are always treated case-insensitive.
+		// Mbke sure models bre blwbys trebted cbse-insensitive.
 		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 
-		// Set a default for model dimensions if using the default model.
-		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-ada-002" {
+		// Set b defbult for model dimensions if using the defbult model.
+		if embeddingsConfig.Dimensions <= 0 && embeddingsConfig.Model == "text-embedding-bdb-002" {
 			embeddingsConfig.Dimensions = 1536
 		}
-	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNameAzureOpenAI) {
-		// If no endpoint is configured, we cannot talk to Azure OpenAI.
+	} else if embeddingsConfig.Provider == string(conftypes.EmbeddingsProviderNbmeAzureOpenAI) {
+		// If no endpoint is configured, we cbnnot tblk to Azure OpenAI.
 		if embeddingsConfig.Endpoint == "" {
 			return nil
 		}
 
-		// If not access token is set, we cannot talk to OpenAI. Bail.
+		// If not bccess token is set, we cbnnot tblk to OpenAI. Bbil.
 		if embeddingsConfig.AccessToken == "" {
 			return nil
 		}
 
-		// If no model is set, we cannot do anything here.
+		// If no model is set, we cbnnot do bnything here.
 		if embeddingsConfig.Model == "" {
 			return nil
 		}
-		// Make sure models are always treated case-insensitive.
-		// TODO: Are model names on azure case insensitive?
+		// Mbke sure models bre blwbys trebted cbse-insensitive.
+		// TODO: Are model nbmes on bzure cbse insensitive?
 		embeddingsConfig.Model = strings.ToLower(embeddingsConfig.Model)
 	} else {
-		// Unknown provider value.
+		// Unknown provider vblue.
 		return nil
 	}
 
 	// While its not removed, use both options
-	var includedFilePathPatterns []string
-	excludedFilePathPatterns := embeddingsConfig.ExcludedFilePathPatterns
-	maxFileSizeLimit := embeddingsMaxFileSizeBytes
+	vbr includedFilePbthPbtterns []string
+	excludedFilePbthPbtterns := embeddingsConfig.ExcludedFilePbthPbtterns
+	mbxFileSizeLimit := embeddingsMbxFileSizeBytes
 	if embeddingsConfig.FileFilters != nil {
-		includedFilePathPatterns = embeddingsConfig.FileFilters.IncludedFilePathPatterns
-		excludedFilePathPatterns = append(excludedFilePathPatterns, embeddingsConfig.FileFilters.ExcludedFilePathPatterns...)
-		if embeddingsConfig.FileFilters.MaxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MaxFileSizeBytes <= embeddingsMaxFileSizeBytes {
-			maxFileSizeLimit = embeddingsConfig.FileFilters.MaxFileSizeBytes
+		includedFilePbthPbtterns = embeddingsConfig.FileFilters.IncludedFilePbthPbtterns
+		excludedFilePbthPbtterns = bppend(excludedFilePbthPbtterns, embeddingsConfig.FileFilters.ExcludedFilePbthPbtterns...)
+		if embeddingsConfig.FileFilters.MbxFileSizeBytes >= 0 && embeddingsConfig.FileFilters.MbxFileSizeBytes <= embeddingsMbxFileSizeBytes {
+			mbxFileSizeLimit = embeddingsConfig.FileFilters.MbxFileSizeBytes
 		}
 	}
 	fileFilters := conftypes.EmbeddingsFileFilters{
-		IncludedFilePathPatterns: includedFilePathPatterns,
-		ExcludedFilePathPatterns: excludedFilePathPatterns,
-		MaxFileSizeBytes:         maxFileSizeLimit,
+		IncludedFilePbthPbtterns: includedFilePbthPbtterns,
+		ExcludedFilePbthPbtterns: excludedFilePbthPbtterns,
+		MbxFileSizeBytes:         mbxFileSizeLimit,
 	}
 
 	computedConfig := &conftypes.EmbeddingsConfig{
-		Provider:    conftypes.EmbeddingsProviderName(embeddingsConfig.Provider),
+		Provider:    conftypes.EmbeddingsProviderNbme(embeddingsConfig.Provider),
 		AccessToken: embeddingsConfig.AccessToken,
 		Model:       embeddingsConfig.Model,
 		Endpoint:    embeddingsConfig.Endpoint,
 		Dimensions:  embeddingsConfig.Dimensions,
-		// This is definitely set at this point.
-		Incremental:                *embeddingsConfig.Incremental,
+		// This is definitely set bt this point.
+		Incrementbl:                *embeddingsConfig.Incrementbl,
 		FileFilters:                fileFilters,
-		MaxCodeEmbeddingsPerRepo:   embeddingsConfig.MaxCodeEmbeddingsPerRepo,
-		MaxTextEmbeddingsPerRepo:   embeddingsConfig.MaxTextEmbeddingsPerRepo,
-		PolicyRepositoryMatchLimit: embeddingsConfig.PolicyRepositoryMatchLimit,
+		MbxCodeEmbeddingsPerRepo:   embeddingsConfig.MbxCodeEmbeddingsPerRepo,
+		MbxTextEmbeddingsPerRepo:   embeddingsConfig.MbxTextEmbeddingsPerRepo,
+		PolicyRepositoryMbtchLimit: embeddingsConfig.PolicyRepositoryMbtchLimit,
 		ExcludeChunkOnError:        pointers.Deref(embeddingsConfig.ExcludeChunkOnError, true),
 	}
-	d, err := time.ParseDuration(embeddingsConfig.MinimumInterval)
+	d, err := time.PbrseDurbtion(embeddingsConfig.MinimumIntervbl)
 	if err != nil {
-		computedConfig.MinimumInterval = defaultMinimumInterval
+		computedConfig.MinimumIntervbl = defbultMinimumIntervbl
 	} else {
-		computedConfig.MinimumInterval = d
+		computedConfig.MinimumIntervbl = d
 	}
 
 	return computedConfig
 }
 
-func getSourcegraphProviderAccessToken(accessToken string, config schema.SiteConfiguration) string {
-	// If an access token is configured, use it.
-	if accessToken != "" {
-		return accessToken
+func getSourcegrbphProviderAccessToken(bccessToken string, config schemb.SiteConfigurbtion) string {
+	// If bn bccess token is configured, use it.
+	if bccessToken != "" {
+		return bccessToken
 	}
-	// App generates a token from the api token the user used to connect app to dotcom.
+	// App generbtes b token from the bpi token the user used to connect bpp to dotcom.
 	if deploy.IsApp() && config.App != nil {
 		if config.App.DotcomAuthToken == "" {
 			return ""
 		}
-		return dotcomuser.GenerateDotcomUserGatewayAccessToken(config.App.DotcomAuthToken)
+		return dotcomuser.GenerbteDotcomUserGbtewbyAccessToken(config.App.DotcomAuthToken)
 	}
-	// Otherwise, use the current license key to compute an access token.
+	// Otherwise, use the current license key to compute bn bccess token.
 	if config.LicenseKey == "" {
 		return ""
 	}
-	return license.GenerateLicenseKeyBasedAccessToken(config.LicenseKey)
+	return license.GenerbteLicenseKeyBbsedAccessToken(config.LicenseKey)
 }
 
 const (
-	defaultPolicyRepositoryMatchLimit = 5000
-	defaultMinimumInterval            = 24 * time.Hour
-	defaultMaxCodeEmbeddingsPerRepo   = 3_072_000
-	defaultMaxTextEmbeddingsPerRepo   = 512_000
+	defbultPolicyRepositoryMbtchLimit = 5000
+	defbultMinimumIntervbl            = 24 * time.Hour
+	defbultMbxCodeEmbeddingsPerRepo   = 3_072_000
+	defbultMbxTextEmbeddingsPerRepo   = 512_000
 )
 
-func defaultTo(val, def int) int {
-	if val == 0 {
+func defbultTo(vbl, def int) int {
+	if vbl == 0 {
 		return def
 	}
-	return val
+	return vbl
 }
 
-func defaultMaxPromptTokens(provider conftypes.CompletionsProviderName, model string) int {
+func defbultMbxPromptTokens(provider conftypes.CompletionsProviderNbme, model string) int {
 	switch provider {
-	case conftypes.CompletionsProviderNameSourcegraph:
-		if strings.HasPrefix(model, "openai/") {
-			return openaiDefaultMaxPromptTokens(strings.TrimPrefix(model, "openai/"))
+	cbse conftypes.CompletionsProviderNbmeSourcegrbph:
+		if strings.HbsPrefix(model, "openbi/") {
+			return openbiDefbultMbxPromptTokens(strings.TrimPrefix(model, "openbi/"))
 		}
-		if strings.HasPrefix(model, "anthropic/") {
-			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic/"))
+		if strings.HbsPrefix(model, "bnthropic/") {
+			return bnthropicDefbultMbxPromptTokens(strings.TrimPrefix(model, "bnthropic/"))
 		}
-		// Fallback for weird values.
+		// Fbllbbck for weird vblues.
 		return 9_000
-	case conftypes.CompletionsProviderNameAnthropic:
-		return anthropicDefaultMaxPromptTokens(model)
-	case conftypes.CompletionsProviderNameOpenAI:
-		return openaiDefaultMaxPromptTokens(model)
-	case conftypes.CompletionsProviderNameFireworks:
-		return fireworksDefaultMaxPromptTokens(model)
-	case conftypes.CompletionsProviderNameAzureOpenAI:
-		// We cannot know based on the model name what model is actually used,
-		// this is a sane default for GPT in general.
+	cbse conftypes.CompletionsProviderNbmeAnthropic:
+		return bnthropicDefbultMbxPromptTokens(model)
+	cbse conftypes.CompletionsProviderNbmeOpenAI:
+		return openbiDefbultMbxPromptTokens(model)
+	cbse conftypes.CompletionsProviderNbmeFireworks:
+		return fireworksDefbultMbxPromptTokens(model)
+	cbse conftypes.CompletionsProviderNbmeAzureOpenAI:
+		// We cbnnot know bbsed on the model nbme whbt model is bctublly used,
+		// this is b sbne defbult for GPT in generbl.
 		return 8_000
-	case conftypes.CompletionsProviderNameAWSBedrock:
-		if strings.HasPrefix(model, "anthropic.") {
-			return anthropicDefaultMaxPromptTokens(strings.TrimPrefix(model, "anthropic."))
+	cbse conftypes.CompletionsProviderNbmeAWSBedrock:
+		if strings.HbsPrefix(model, "bnthropic.") {
+			return bnthropicDefbultMbxPromptTokens(strings.TrimPrefix(model, "bnthropic."))
 		}
-		// Fallback for weird values.
+		// Fbllbbck for weird vblues.
 		return 9_000
 	}
 
-	// Should be unreachable.
+	// Should be unrebchbble.
 	return 9_000
 }
 
-func anthropicDefaultMaxPromptTokens(model string) int {
-	if strings.HasSuffix(model, "-100k") {
+func bnthropicDefbultMbxPromptTokens(model string) int {
+	if strings.HbsSuffix(model, "-100k") {
 		return 100_000
 
 	}
-	if model == "claude-2" || model == "claude-v2" {
-		// TODO: Technically, v2 also uses a 100k window, but we should validate
-		// that returning 100k here is the right thing to do.
+	if model == "clbude-2" || model == "clbude-v2" {
+		// TODO: Technicblly, v2 blso uses b 100k window, but we should vblidbte
+		// thbt returning 100k here is the right thing to do.
 		return 12_000
 	}
-	// For now, all other claude models have a 9k token window.
+	// For now, bll other clbude models hbve b 9k token window.
 	return 9_000
 }
 
-func openaiDefaultMaxPromptTokens(model string) int {
+func openbiDefbultMbxPromptTokens(model string) int {
 	switch model {
-	case "gpt-4":
+	cbse "gpt-4":
 		return 8_000
-	case "gpt-4-32k":
+	cbse "gpt-4-32k":
 		return 32_000
-	case "gpt-3.5-turbo":
+	cbse "gpt-3.5-turbo":
 		return 4_000
-	case "gpt-3.5-turbo-16k":
+	cbse "gpt-3.5-turbo-16k":
 		return 16_000
-	default:
+	defbult:
 		return 4_000
 	}
 }
 
-func fireworksDefaultMaxPromptTokens(model string) int {
-	if strings.HasPrefix(model, "accounts/fireworks/models/llama-v2") {
-		// Llama 2 has a context window of 4000 tokens
+func fireworksDefbultMbxPromptTokens(model string) int {
+	if strings.HbsPrefix(model, "bccounts/fireworks/models/llbmb-v2") {
+		// Llbmb 2 hbs b context window of 4000 tokens
 		return 3_000
 	}
 
-	if strings.HasPrefix(model, "accounts/fireworks/models/starcoder-") {
-		// StarCoder has a context window of 8192 tokens
+	if strings.HbsPrefix(model, "bccounts/fireworks/models/stbrcoder-") {
+		// StbrCoder hbs b context window of 8192 tokens
 		return 6_000
 	}
 

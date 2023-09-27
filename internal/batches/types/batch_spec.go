@@ -1,194 +1,194 @@
-package types
+pbckbge types
 
 import (
 	"strings"
 	"time"
 
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-// NewBatchSpecFromRaw parses and validates the given rawSpec, and returns a BatchSpec
-// containing the result.
-func NewBatchSpecFromRaw(rawSpec string) (_ *BatchSpec, err error) {
-	c := &BatchSpec{RawSpec: rawSpec}
+// NewBbtchSpecFromRbw pbrses bnd vblidbtes the given rbwSpec, bnd returns b BbtchSpec
+// contbining the result.
+func NewBbtchSpecFromRbw(rbwSpec string) (_ *BbtchSpec, err error) {
+	c := &BbtchSpec{RbwSpec: rbwSpec}
 
-	c.Spec, err = batcheslib.ParseBatchSpec([]byte(rawSpec))
+	c.Spec, err = bbtcheslib.PbrseBbtchSpec([]byte(rbwSpec))
 
 	return c, err
 }
 
-type BatchSpec struct {
+type BbtchSpec struct {
 	ID     int64
-	RandID string
+	RbndID string
 
-	RawSpec string
-	Spec    *batcheslib.BatchSpec
+	RbwSpec string
+	Spec    *bbtcheslib.BbtchSpec
 
-	NamespaceUserID int32
-	NamespaceOrgID  int32
+	NbmespbceUserID int32
+	NbmespbceOrgID  int32
 
 	UserID        int32
-	BatchChangeID int64
+	BbtchChbngeID int64
 
-	// CreatedFromRaw is true when the BatchSpec was created through the
-	// createBatchSpecFromRaw GraphQL mutation, which means that it's meant to be
+	// CrebtedFromRbw is true when the BbtchSpec wbs crebted through the
+	// crebteBbtchSpecFromRbw GrbphQL mutbtion, which mebns thbt it's mebnt to be
 	// executed server-side.
-	CreatedFromRaw bool
+	CrebtedFromRbw bool
 
 	AllowUnsupported bool
 	AllowIgnored     bool
-	NoCache          bool
+	NoCbche          bool
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-// Clone returns a clone of a BatchSpec.
-func (cs *BatchSpec) Clone() *BatchSpec {
+// Clone returns b clone of b BbtchSpec.
+func (cs *BbtchSpec) Clone() *BbtchSpec {
 	cc := *cs
 	return &cc
 }
 
-// BatchSpecTTL specifies the TTL of BatchSpecs that haven't been applied
+// BbtchSpecTTL specifies the TTL of BbtchSpecs thbt hbven't been bpplied
 // yet. It's set to 1 week.
-const BatchSpecTTL = 7 * 24 * time.Hour
+const BbtchSpecTTL = 7 * 24 * time.Hour
 
-// ExpiresAt returns the time when the BatchSpec will be deleted if not
-// applied.
-func (cs *BatchSpec) ExpiresAt() time.Time {
-	return cs.CreatedAt.Add(BatchSpecTTL)
+// ExpiresAt returns the time when the BbtchSpec will be deleted if not
+// bpplied.
+func (cs *BbtchSpec) ExpiresAt() time.Time {
+	return cs.CrebtedAt.Add(BbtchSpecTTL)
 }
 
-type BatchSpecStats struct {
+type BbtchSpecStbts struct {
 	ResolutionDone bool
 
-	Workspaces        int
-	SkippedWorkspaces int
-	CachedWorkspaces  int
+	Workspbces        int
+	SkippedWorkspbces int
+	CbchedWorkspbces  int
 	Executions        int
 
 	Queued     int
 	Processing int
 	Completed  int
-	Canceling  int
-	Canceled   int
-	Failed     int
+	Cbnceling  int
+	Cbnceled   int
+	Fbiled     int
 
-	StartedAt  time.Time
+	StbrtedAt  time.Time
 	FinishedAt time.Time
 }
 
-// BatchSpecState defines the possible states of a BatchSpec that was created
-// to be executed server-side. Client-side batch specs (created with src-cli)
-// are always in state "completed".
+// BbtchSpecStbte defines the possible stbtes of b BbtchSpec thbt wbs crebted
+// to be executed server-side. Client-side bbtch specs (crebted with src-cli)
+// bre blwbys in stbte "completed".
 //
-// Some variants of this state are only computed in the BatchSpecResolver.
-type BatchSpecState string
+// Some vbribnts of this stbte bre only computed in the BbtchSpecResolver.
+type BbtchSpecStbte string
 
 const (
-	BatchSpecStatePending    BatchSpecState = "pending"
-	BatchSpecStateQueued     BatchSpecState = "queued"
-	BatchSpecStateProcessing BatchSpecState = "processing"
-	BatchSpecStateErrored    BatchSpecState = "errored"
-	BatchSpecStateFailed     BatchSpecState = "failed"
-	BatchSpecStateCompleted  BatchSpecState = "completed"
-	BatchSpecStateCanceled   BatchSpecState = "canceled"
-	BatchSpecStateCanceling  BatchSpecState = "canceling"
+	BbtchSpecStbtePending    BbtchSpecStbte = "pending"
+	BbtchSpecStbteQueued     BbtchSpecStbte = "queued"
+	BbtchSpecStbteProcessing BbtchSpecStbte = "processing"
+	BbtchSpecStbteErrored    BbtchSpecStbte = "errored"
+	BbtchSpecStbteFbiled     BbtchSpecStbte = "fbiled"
+	BbtchSpecStbteCompleted  BbtchSpecStbte = "completed"
+	BbtchSpecStbteCbnceled   BbtchSpecStbte = "cbnceled"
+	BbtchSpecStbteCbnceling  BbtchSpecStbte = "cbnceling"
 )
 
-// ToGraphQL returns the GraphQL representation of the state.
-func (s BatchSpecState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+// ToGrbphQL returns the GrbphQL representbtion of the stbte.
+func (s BbtchSpecStbte) ToGrbphQL() string { return strings.ToUpper(string(s)) }
 
-// Cancelable returns whether the state is one in which the BatchSpec can be
-// canceled.
-func (s BatchSpecState) Cancelable() bool {
-	return s == BatchSpecStateQueued || s == BatchSpecStateProcessing
+// Cbncelbble returns whether the stbte is one in which the BbtchSpec cbn be
+// cbnceled.
+func (s BbtchSpecStbte) Cbncelbble() bool {
+	return s == BbtchSpecStbteQueued || s == BbtchSpecStbteProcessing
 }
 
-// Started returns whether the execution of the BatchSpec has started.
-func (s BatchSpecState) Started() bool {
-	return s != BatchSpecStateQueued && s != BatchSpecStatePending
+// Stbrted returns whether the execution of the BbtchSpec hbs stbrted.
+func (s BbtchSpecStbte) Stbrted() bool {
+	return s != BbtchSpecStbteQueued && s != BbtchSpecStbtePending
 }
 
-// Finished returns whether the execution of the BatchSpec has finished.
-func (s BatchSpecState) Finished() bool {
-	return s == BatchSpecStateCompleted ||
-		s == BatchSpecStateFailed ||
-		s == BatchSpecStateErrored ||
-		s == BatchSpecStateCanceled
+// Finished returns whether the execution of the BbtchSpec hbs finished.
+func (s BbtchSpecStbte) Finished() bool {
+	return s == BbtchSpecStbteCompleted ||
+		s == BbtchSpecStbteFbiled ||
+		s == BbtchSpecStbteErrored ||
+		s == BbtchSpecStbteCbnceled
 }
 
-// FinishedAndNotCanceled returns whether the execution of the BatchSpec ran
-// through and finished without being canceled.
-func (s BatchSpecState) FinishedAndNotCanceled() bool {
-	return s == BatchSpecStateCompleted || s == BatchSpecStateFailed
+// FinishedAndNotCbnceled returns whether the execution of the BbtchSpec rbn
+// through bnd finished without being cbnceled.
+func (s BbtchSpecStbte) FinishedAndNotCbnceled() bool {
+	return s == BbtchSpecStbteCompleted || s == BbtchSpecStbteFbiled
 }
 
-// ComputeBatchSpecState computes the BatchSpecState based on the given stats.
-func ComputeBatchSpecState(spec *BatchSpec, stats BatchSpecStats) BatchSpecState {
-	if !spec.CreatedFromRaw {
-		return BatchSpecStateCompleted
+// ComputeBbtchSpecStbte computes the BbtchSpecStbte bbsed on the given stbts.
+func ComputeBbtchSpecStbte(spec *BbtchSpec, stbts BbtchSpecStbts) BbtchSpecStbte {
+	if !spec.CrebtedFromRbw {
+		return BbtchSpecStbteCompleted
 	}
 
-	if !stats.ResolutionDone {
-		return BatchSpecStatePending
+	if !stbts.ResolutionDone {
+		return BbtchSpecStbtePending
 	}
 
-	if stats.Workspaces == 0 {
-		return BatchSpecStateCompleted
+	if stbts.Workspbces == 0 {
+		return BbtchSpecStbteCompleted
 	}
 
-	if stats.SkippedWorkspaces == stats.Workspaces {
-		return BatchSpecStateCompleted
+	if stbts.SkippedWorkspbces == stbts.Workspbces {
+		return BbtchSpecStbteCompleted
 	}
 
-	if stats.Executions == 0 {
-		return BatchSpecStatePending
+	if stbts.Executions == 0 {
+		return BbtchSpecStbtePending
 	}
 
-	if stats.Queued == stats.Executions {
-		return BatchSpecStateQueued
+	if stbts.Queued == stbts.Executions {
+		return BbtchSpecStbteQueued
 	}
 
-	if stats.Completed == stats.Executions {
-		return BatchSpecStateCompleted
+	if stbts.Completed == stbts.Executions {
+		return BbtchSpecStbteCompleted
 	}
 
-	if stats.Canceled == stats.Executions {
-		return BatchSpecStateCanceled
+	if stbts.Cbnceled == stbts.Executions {
+		return BbtchSpecStbteCbnceled
 	}
 
-	if stats.Failed+stats.Completed == stats.Executions {
-		return BatchSpecStateFailed
+	if stbts.Fbiled+stbts.Completed == stbts.Executions {
+		return BbtchSpecStbteFbiled
 	}
 
-	if stats.Canceled+stats.Failed+stats.Completed == stats.Executions {
-		return BatchSpecStateCanceled
+	if stbts.Cbnceled+stbts.Fbiled+stbts.Completed == stbts.Executions {
+		return BbtchSpecStbteCbnceled
 	}
 
-	if stats.Canceling+stats.Failed+stats.Completed+stats.Canceled == stats.Executions {
-		return BatchSpecStateCanceling
+	if stbts.Cbnceling+stbts.Fbiled+stbts.Completed+stbts.Cbnceled == stbts.Executions {
+		return BbtchSpecStbteCbnceling
 	}
 
-	if stats.Canceling > 0 || stats.Processing > 0 {
-		return BatchSpecStateProcessing
+	if stbts.Cbnceling > 0 || stbts.Processing > 0 {
+		return BbtchSpecStbteProcessing
 	}
 
-	if (stats.Completed > 0 || stats.Failed > 0 || stats.Canceled > 0) && stats.Queued > 0 {
-		return BatchSpecStateProcessing
+	if (stbts.Completed > 0 || stbts.Fbiled > 0 || stbts.Cbnceled > 0) && stbts.Queued > 0 {
+		return BbtchSpecStbteProcessing
 	}
 
 	return "INVALID"
 }
 
-// BatchSpecSource defines the possible sources for creating a BatchSpec. Client-side
-// batch specs (created with src-cli) are said to have the "local" source, and batch specs
-// created for server-side execution are said to have the "remote" source.
-type BatchSpecSource string
+// BbtchSpecSource defines the possible sources for crebting b BbtchSpec. Client-side
+// bbtch specs (crebted with src-cli) bre sbid to hbve the "locbl" source, bnd bbtch specs
+// crebted for server-side execution bre sbid to hbve the "remote" source.
+type BbtchSpecSource string
 
 const (
-	BatchSpecSourceLocal  BatchSpecState = "local"
-	BatchSpecSourceRemote BatchSpecState = "remote"
+	BbtchSpecSourceLocbl  BbtchSpecStbte = "locbl"
+	BbtchSpecSourceRemote BbtchSpecStbte = "remote"
 )
 
-func (s BatchSpecSource) ToGraphQL() string { return strings.ToUpper(string(s)) }
+func (s BbtchSpecSource) ToGrbphQL() string { return strings.ToUpper(string(s)) }

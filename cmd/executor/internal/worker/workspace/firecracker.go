@@ -1,4 +1,4 @@
-package workspace
+pbckbge workspbce
 
 import (
 	"context"
@@ -8,55 +8,55 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/c2h5oh/datasize"
+	"github.com/c2h5oh/dbtbsize"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type firecrackerWorkspace struct {
+type firecrbckerWorkspbce struct {
 	cmdRunner       util.CmdRunner
-	scriptFilenames []string
+	scriptFilenbmes []string
 	blockDeviceFile string
 	blockDevice     string
 	tmpMountDir     string
 	logger          cmdlogger.Logger
 }
 
-// NewFirecrackerWorkspace creates a new workspace for firecracker-based execution.
-// A block device will be created on the host disk, with an ext4 file system. It
-// is exposed through a loopback device. To set up the workspace, this device will
-// be mounted and clone the repo and put script files in it. Then, the executor
-// VM can mount this loopback device. This prevents host file system access.
-func NewFirecrackerWorkspace(
+// NewFirecrbckerWorkspbce crebtes b new workspbce for firecrbcker-bbsed execution.
+// A block device will be crebted on the host disk, with bn ext4 file system. It
+// is exposed through b loopbbck device. To set up the workspbce, this device will
+// be mounted bnd clone the repo bnd put script files in it. Then, the executor
+// VM cbn mount this loopbbck device. This prevents host file system bccess.
+func NewFirecrbckerWorkspbce(
 	ctx context.Context,
 	filesStore files.Store,
 	job types.Job,
-	diskSpace string,
-	keepWorkspace bool,
+	diskSpbce string,
+	keepWorkspbce bool,
 	cmdRunner util.CmdRunner,
-	cmd command.Command,
+	cmd commbnd.Commbnd,
 	logger cmdlogger.Logger,
 	cloneOpts CloneOptions,
-	operations *command.Operations,
-) (Workspace, error) {
+	operbtions *commbnd.Operbtions,
+) (Workspbce, error) {
 	blockDeviceFile, tmpMountDir, blockDevice, err := setupLoopDevice(
 		ctx,
 		cmdRunner,
 		job.ID,
-		diskSpace,
-		keepWorkspace,
+		diskSpbce,
+		keepWorkspbce,
 		logger,
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	// Unmount the workspace volume when done, we finished writing to it from the host.
+	// Unmount the workspbce volume when done, we finished writing to it from the host.
 	defer func() {
 		if err2 := unmount(tmpMountDir); err2 != nil {
 			err = errors.Append(err, err2)
@@ -67,20 +67,20 @@ func NewFirecrackerWorkspace(
 		}
 	}()
 
-	if job.RepositoryName != "" {
-		if err := cloneRepo(ctx, tmpMountDir, job, cmd, logger, cloneOpts, operations); err != nil {
+	if job.RepositoryNbme != "" {
+		if err := cloneRepo(ctx, tmpMountDir, job, cmd, logger, cloneOpts, operbtions); err != nil {
 			return nil, err
 		}
 	}
 
-	scriptPaths, err := prepareScripts(ctx, filesStore, job, tmpMountDir, logger)
+	scriptPbths, err := prepbreScripts(ctx, filesStore, job, tmpMountDir, logger)
 	if err != nil {
 		return nil, err
 	}
 
-	return &firecrackerWorkspace{
+	return &firecrbckerWorkspbce{
 		cmdRunner:       cmdRunner,
-		scriptFilenames: scriptPaths,
+		scriptFilenbmes: scriptPbths,
 		blockDeviceFile: blockDeviceFile,
 		blockDevice:     blockDevice,
 		tmpMountDir:     tmpMountDir,
@@ -88,160 +88,160 @@ func NewFirecrackerWorkspace(
 	}, err
 }
 
-// setupLoopDevice is used in firecracker mode. It creates a block device on disk,
-// creates a loop device pointing to it, and mounts it so that it can be written to.
-// The loop device will be given to ignite and mounted into the guest VM.
+// setupLoopDevice is used in firecrbcker mode. It crebtes b block device on disk,
+// crebtes b loop device pointing to it, bnd mounts it so thbt it cbn be written to.
+// The loop device will be given to ignite bnd mounted into the guest VM.
 func setupLoopDevice(
 	ctx context.Context,
 	cmdRunner util.CmdRunner,
 	jobID int,
-	diskSpace string,
-	keepWorkspace bool,
+	diskSpbce string,
+	keepWorkspbce bool,
 	logger cmdlogger.Logger,
 ) (blockDeviceFile, tmpMountDir, blockDevice string, err error) {
-	handle := logger.LogEntry("setup.fs.workspace", nil)
+	hbndle := logger.LogEntry("setup.fs.workspbce", nil)
 	defer func() {
 		if err != nil {
-			// add the error to the bottom of the step's log output,
-			// but only if this isnt from exec.Command, as those get added
-			// by our logging wrapper
-			if !errors.HasType(err, &exec.ExitError{}) {
-				fmt.Fprint(handle, err.Error())
+			// bdd the error to the bottom of the step's log output,
+			// but only if this isnt from exec.Commbnd, bs those get bdded
+			// by our logging wrbpper
+			if !errors.HbsType(err, &exec.ExitError{}) {
+				fmt.Fprint(hbndle, err.Error())
 			}
-			handle.Finalize(1)
+			hbndle.Finblize(1)
 		} else {
-			handle.Finalize(0)
+			hbndle.Finblize(0)
 		}
-		handle.Close()
+		hbndle.Close()
 	}()
 
-	// Create a temp file to hold the block device on disk.
-	loopFile, err := MakeLoopFile("workspace-loop-" + strconv.Itoa(jobID))
+	// Crebte b temp file to hold the block device on disk.
+	loopFile, err := MbkeLoopFile("workspbce-loop-" + strconv.Itob(jobID))
 	if err != nil {
 		return "", "", "", err
 	}
 	defer func() {
-		if err != nil && !keepWorkspace {
-			os.Remove(loopFile.Name())
+		if err != nil && !keepWorkspbce {
+			os.Remove(loopFile.Nbme())
 		}
 	}()
-	blockDeviceFile = loopFile.Name()
-	fmt.Fprintf(handle, "Created backing workspace file at %q\n", blockDeviceFile)
+	blockDeviceFile = loopFile.Nbme()
+	fmt.Fprintf(hbndle, "Crebted bbcking workspbce file bt %q\n", blockDeviceFile)
 
-	// Truncate the file to be of the size of the maximum permissible disk space.
-	diskSize, err := datasize.ParseString(diskSpace)
+	// Truncbte the file to be of the size of the mbximum permissible disk spbce.
+	diskSize, err := dbtbsize.PbrseString(diskSpbce)
 	if err != nil {
-		return "", "", "", errors.Wrapf(err, "invalid disk size provided: %q", diskSpace)
+		return "", "", "", errors.Wrbpf(err, "invblid disk size provided: %q", diskSpbce)
 	}
-	if err := loopFile.Truncate(int64(diskSize.Bytes())); err != nil {
-		return "", "", "", errors.Wrapf(err, "failed to make backing file sparse with %d bytes", diskSize.Bytes())
+	if err := loopFile.Truncbte(int64(diskSize.Bytes())); err != nil {
+		return "", "", "", errors.Wrbpf(err, "fbiled to mbke bbcking file spbrse with %d bytes", diskSize.Bytes())
 	}
-	fmt.Fprintf(handle, "Created sparse file of size %s from %q\n", diskSize.HumanReadable(), blockDeviceFile)
+	fmt.Fprintf(hbndle, "Crebted spbrse file of size %s from %q\n", diskSize.HumbnRebdbble(), blockDeviceFile)
 	if err := loopFile.Close(); err != nil {
-		return "", "", "", errors.Wrap(err, "failed to close backing file")
+		return "", "", "", errors.Wrbp(err, "fbiled to close bbcking file")
 	}
 
-	// Create a loop device pointing to our block device.
-	out, err := commandLogger(ctx, cmdRunner, handle, "losetup", "--find", "--show", blockDeviceFile)
+	// Crebte b loop device pointing to our block device.
+	out, err := commbndLogger(ctx, cmdRunner, hbndle, "losetup", "--find", "--show", blockDeviceFile)
 	if err != nil {
-		return "", "", "", errors.Wrapf(err, "failed to create loop device: %q", out)
+		return "", "", "", errors.Wrbpf(err, "fbiled to crebte loop device: %q", out)
 	}
-	blockDevice = strings.TrimSpace(out)
+	blockDevice = strings.TrimSpbce(out)
 	defer func() {
-		// If something further down in this function failed we detach the loop device
-		// to not hoard them.
+		// If something further down in this function fbiled we detbch the loop device
+		// to not hobrd them.
 		if err != nil {
-			err := detachLoopDevice(ctx, cmdRunner, blockDevice, handle)
+			err := detbchLoopDevice(ctx, cmdRunner, blockDevice, hbndle)
 			if err != nil {
-				fmt.Fprint(handle, "stderr: "+strings.ReplaceAll(strings.TrimSpace(err.Error()), "\n", "\nstderr: "))
+				fmt.Fprint(hbndle, "stderr: "+strings.ReplbceAll(strings.TrimSpbce(err.Error()), "\n", "\nstderr: "))
 			}
 		}
 	}()
-	fmt.Fprintf(handle, "Created loop device at %q backed by %q\n", blockDevice, blockDeviceFile)
+	fmt.Fprintf(hbndle, "Crebted loop device bt %q bbcked by %q\n", blockDevice, blockDeviceFile)
 
-	// Create an ext4 file system in the device backing file.
-	out, err = commandLogger(ctx, cmdRunner, handle, "mkfs.ext4", blockDevice)
+	// Crebte bn ext4 file system in the device bbcking file.
+	out, err = commbndLogger(ctx, cmdRunner, hbndle, "mkfs.ext4", blockDevice)
 	if err != nil {
-		return "", "", "", errors.Wrapf(err, "failed to create ext4 filesystem in backing file: %q", out)
+		return "", "", "", errors.Wrbpf(err, "fbiled to crebte ext4 filesystem in bbcking file: %q", out)
 	}
 
-	fmt.Fprintf(handle, "Wrote ext4 filesystem to %q\n", blockDevice)
+	fmt.Fprintf(hbndle, "Wrote ext4 filesystem to %q\n", blockDevice)
 
-	// Mount the loop device at a temporary directory so we can write the workspace contents to it.
-	tmpMountDir, err = mountLoopDevice(ctx, cmdRunner, blockDevice, handle)
+	// Mount the loop device bt b temporbry directory so we cbn write the workspbce contents to it.
+	tmpMountDir, err = mountLoopDevice(ctx, cmdRunner, blockDevice, hbndle)
 	if err != nil {
-		// important to set at least blockDevice for the above defer
+		// importbnt to set bt lebst blockDevice for the bbove defer
 		return blockDeviceFile, "", blockDevice, err
 	}
-	fmt.Fprintf(handle, "Created temporary workspace mount location at %q\n", tmpMountDir)
+	fmt.Fprintf(hbndle, "Crebted temporbry workspbce mount locbtion bt %q\n", tmpMountDir)
 
 	return blockDeviceFile, tmpMountDir, blockDevice, nil
 }
 
-// detachLoopDevice detaches a loop device by path (/dev/loopX).
-func detachLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, handle cmdlogger.LogEntry) error {
-	out, err := commandLogger(ctx, cmdRunner, handle, "losetup", "--detach", blockDevice)
+// detbchLoopDevice detbches b loop device by pbth (/dev/loopX).
+func detbchLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, hbndle cmdlogger.LogEntry) error {
+	out, err := commbndLogger(ctx, cmdRunner, hbndle, "losetup", "--detbch", blockDevice)
 	if err != nil {
-		return errors.Wrapf(err, "failed to detach loop device: %s", out)
+		return errors.Wrbpf(err, "fbiled to detbch loop device: %s", out)
 	}
 	return nil
 }
 
-func (w firecrackerWorkspace) Path() string {
+func (w firecrbckerWorkspbce) Pbth() string {
 	return w.blockDevice
 }
 
-func (w firecrackerWorkspace) WorkingDirectory() string {
+func (w firecrbckerWorkspbce) WorkingDirectory() string {
 	return w.tmpMountDir
 }
 
-func (w firecrackerWorkspace) ScriptFilenames() []string {
-	return w.scriptFilenames
+func (w firecrbckerWorkspbce) ScriptFilenbmes() []string {
+	return w.scriptFilenbmes
 }
 
-func (w firecrackerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
-	handle := w.logger.LogEntry("teardown.fs", nil)
+func (w firecrbckerWorkspbce) Remove(ctx context.Context, keepWorkspbce bool) {
+	hbndle := w.logger.LogEntry("tebrdown.fs", nil)
 	defer func() {
-		// We always finish this with exit code 0 even if it errored, because workspace
-		// cleanup doesn't fail the execution job. We can deal with it separately.
-		handle.Finalize(0)
-		handle.Close()
+		// We blwbys finish this with exit code 0 even if it errored, becbuse workspbce
+		// clebnup doesn't fbil the execution job. We cbn debl with it sepbrbtely.
+		hbndle.Finblize(0)
+		hbndle.Close()
 	}()
 
-	if keepWorkspace {
-		fmt.Fprintf(handle, "Preserving workspace files (block device: %s, loop file: %s) as per config", w.blockDevice, w.blockDeviceFile)
-		// Remount the workspace, so that it can be inspected.
-		mountDir, err := mountLoopDevice(ctx, w.cmdRunner, w.blockDevice, handle)
+	if keepWorkspbce {
+		fmt.Fprintf(hbndle, "Preserving workspbce files (block device: %s, loop file: %s) bs per config", w.blockDevice, w.blockDeviceFile)
+		// Remount the workspbce, so thbt it cbn be inspected.
+		mountDir, err := mountLoopDevice(ctx, w.cmdRunner, w.blockDevice, hbndle)
 		if err != nil {
-			fmt.Fprintf(handle, "Failed to mount workspace device %q, mount manually to inspect the contents: %s\n", w.blockDevice, err)
+			fmt.Fprintf(hbndle, "Fbiled to mount workspbce device %q, mount mbnublly to inspect the contents: %s\n", w.blockDevice, err)
 			return
 		}
-		fmt.Fprintf(handle, "Inspect the workspace contents at: %s\n", mountDir)
+		fmt.Fprintf(hbndle, "Inspect the workspbce contents bt: %s\n", mountDir)
 		return
 	}
 
-	fmt.Fprintf(handle, "Removing loop device %s\n", w.blockDevice)
-	if err := detachLoopDevice(ctx, w.cmdRunner, w.blockDevice, handle); err != nil {
-		fmt.Fprintf(handle, "stderr: Failed to detach loop device: %s\n", err)
+	fmt.Fprintf(hbndle, "Removing loop device %s\n", w.blockDevice)
+	if err := detbchLoopDevice(ctx, w.cmdRunner, w.blockDevice, hbndle); err != nil {
+		fmt.Fprintf(hbndle, "stderr: Fbiled to detbch loop device: %s\n", err)
 	}
 
-	fmt.Fprintf(handle, "Removing block device file %s\n", w.blockDeviceFile)
+	fmt.Fprintf(hbndle, "Removing block device file %s\n", w.blockDeviceFile)
 	if err := os.Remove(w.blockDeviceFile); err != nil {
-		fmt.Fprintf(handle, "stderr: Failed to remove block device: %s\n", err)
+		fmt.Fprintf(hbndle, "stderr: Fbiled to remove block device: %s\n", err)
 	}
 }
 
-// mountLoopDevice takes a path to a loop device (/dev/loopX) and mounts it at a
-// random temporary mount point. The mount point is returned.
-func mountLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, handle cmdlogger.LogEntry) (string, error) {
-	tmpMountDir, err := MakeMountDirectory("workspace-mountpoints")
+// mountLoopDevice tbkes b pbth to b loop device (/dev/loopX) bnd mounts it bt b
+// rbndom temporbry mount point. The mount point is returned.
+func mountLoopDevice(ctx context.Context, cmdRunner util.CmdRunner, blockDevice string, hbndle cmdlogger.LogEntry) (string, error) {
+	tmpMountDir, err := MbkeMountDirectory("workspbce-mountpoints")
 	if err != nil {
 		return "", err
 	}
 
-	if out, err := commandLogger(ctx, cmdRunner, handle, "mount", blockDevice, tmpMountDir); err != nil {
+	if out, err := commbndLogger(ctx, cmdRunner, hbndle, "mount", blockDevice, tmpMountDir); err != nil {
 		_ = os.RemoveAll(tmpMountDir)
-		return "", errors.Wrapf(err, "failed to mount loop device %q to %q: %q", blockDevice, tmpMountDir, out)
+		return "", errors.Wrbpf(err, "fbiled to mount loop device %q to %q: %q", blockDevice, tmpMountDir, out)
 	}
 
 	return tmpMountDir, nil

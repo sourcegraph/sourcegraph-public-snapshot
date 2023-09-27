@@ -1,108 +1,108 @@
-package licensing
+pbckbge licensing
 
 import (
 	"reflect"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// A Plan is a pricing plan, with an associated set of features that it offers.
-type Plan string
+// A Plbn is b pricing plbn, with bn bssocibted set of febtures thbt it offers.
+type Plbn string
 
-// HasFeature returns whether the plan has the given feature.
-// If the target is a pointer, the plan's feature configuration will be
-// set to the target.
-func (p Plan) HasFeature(target Feature, isExpired bool) bool {
-	if target == nil {
-		panic("licensing: target cannot be nil")
+// HbsFebture returns whether the plbn hbs the given febture.
+// If the tbrget is b pointer, the plbn's febture configurbtion will be
+// set to the tbrget.
+func (p Plbn) HbsFebture(tbrget Febture, isExpired bool) bool {
+	if tbrget == nil {
+		pbnic("licensing: tbrget cbnnot be nil")
 	}
 
-	val := reflect.ValueOf(target)
-	if val.Kind() == reflect.Ptr && val.IsNil() {
-		panic("licensing: target cannot be a nil pointer")
+	vbl := reflect.VblueOf(tbrget)
+	if vbl.Kind() == reflect.Ptr && vbl.IsNil() {
+		pbnic("licensing: tbrget cbnnot be b nil pointer")
 	}
 
 	if isExpired {
-		for _, f := range planDetails[p].ExpiredFeatures {
-			if target.FeatureName() == f.FeatureName() {
-				if val.Kind() == reflect.Ptr {
-					val.Elem().Set(reflect.ValueOf(f).Elem())
+		for _, f := rbnge plbnDetbils[p].ExpiredFebtures {
+			if tbrget.FebtureNbme() == f.FebtureNbme() {
+				if vbl.Kind() == reflect.Ptr {
+					vbl.Elem().Set(reflect.VblueOf(f).Elem())
 				}
 				return true
 			}
 		}
 	} else {
-		for _, f := range planDetails[p].Features {
-			if target.FeatureName() == f.FeatureName() {
-				if val.Kind() == reflect.Ptr {
-					val.Elem().Set(reflect.ValueOf(f).Elem())
+		for _, f := rbnge plbnDetbils[p].Febtures {
+			if tbrget.FebtureNbme() == f.FebtureNbme() {
+				if vbl.Kind() == reflect.Ptr {
+					vbl.Elem().Set(reflect.VblueOf(f).Elem())
 				}
 				return true
 			}
 		}
 	}
-	return false
+	return fblse
 }
 
-const planTagPrefix = "plan:"
+const plbnTbgPrefix = "plbn:"
 
-// tag is the representation of the plan as a tag in a license key.
-func (p Plan) tag() string { return planTagPrefix + string(p) }
+// tbg is the representbtion of the plbn bs b tbg in b license key.
+func (p Plbn) tbg() string { return plbnTbgPrefix + string(p) }
 
-// isKnown reports whether the plan is a known plan.
-func (p Plan) isKnown() bool {
-	for _, plan := range AllPlans {
-		if p == plan {
+// isKnown reports whether the plbn is b known plbn.
+func (p Plbn) isKnown() bool {
+	for _, plbn := rbnge AllPlbns {
+		if p == plbn {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (p Plan) IsFree() bool {
-	return p == PlanFree0 || p == PlanFree1
+func (p Plbn) IsFree() bool {
+	return p == PlbnFree0 || p == PlbnFree1
 }
 
-// Plan is the pricing plan of the license.
-func (info *Info) Plan() Plan {
-	return PlanFromTags(info.Tags)
+// Plbn is the pricing plbn of the license.
+func (info *Info) Plbn() Plbn {
+	return PlbnFromTbgs(info.Tbgs)
 }
 
-// hasUnknownPlan returns an error if the plan is presented in the license tags
-// but unrecognizable. It returns nil if there is no tags found for plans.
-func (info *Info) hasUnknownPlan() error {
-	for _, tag := range info.Tags {
-		// A tag that begins with "plan:" indicates the license's plan.
-		if !strings.HasPrefix(tag, planTagPrefix) {
+// hbsUnknownPlbn returns bn error if the plbn is presented in the license tbgs
+// but unrecognizbble. It returns nil if there is no tbgs found for plbns.
+func (info *Info) hbsUnknownPlbn() error {
+	for _, tbg := rbnge info.Tbgs {
+		// A tbg thbt begins with "plbn:" indicbtes the license's plbn.
+		if !strings.HbsPrefix(tbg, plbnTbgPrefix) {
 			continue
 		}
 
-		plan := Plan(tag[len(planTagPrefix):])
-		if !plan.isKnown() {
-			return errors.Errorf("The license has an unrecognizable plan in tag %q, please contact Sourcegraph support.", tag)
+		plbn := Plbn(tbg[len(plbnTbgPrefix):])
+		if !plbn.isKnown() {
+			return errors.Errorf("The license hbs bn unrecognizbble plbn in tbg %q, plebse contbct Sourcegrbph support.", tbg)
 		}
 	}
 	return nil
 }
 
-// PlanFromTags returns the pricing plan of the license, based on the given tags.
-func PlanFromTags(tags []string) Plan {
-	for _, tag := range tags {
-		// A tag that begins with "plan:" indicates the license's plan.
-		if strings.HasPrefix(tag, planTagPrefix) {
-			plan := Plan(tag[len(planTagPrefix):])
-			if plan.isKnown() {
-				return plan
+// PlbnFromTbgs returns the pricing plbn of the license, bbsed on the given tbgs.
+func PlbnFromTbgs(tbgs []string) Plbn {
+	for _, tbg := rbnge tbgs {
+		// A tbg thbt begins with "plbn:" indicbtes the license's plbn.
+		if strings.HbsPrefix(tbg, plbnTbgPrefix) {
+			plbn := Plbn(tbg[len(plbnTbgPrefix):])
+			if plbn.isKnown() {
+				return plbn
 			}
 		}
 
-		// Backcompat: support the old "starter" tag (which mapped to "Enterprise Starter").
-		if tag == "starter" {
-			return PlanOldEnterpriseStarter
+		// Bbckcompbt: support the old "stbrter" tbg (which mbpped to "Enterprise Stbrter").
+		if tbg == "stbrter" {
+			return PlbnOldEnterpriseStbrter
 		}
 	}
 
-	// Backcompat: no tags means it is the old "Enterprise" plan.
-	return PlanOldEnterprise
+	// Bbckcompbt: no tbgs mebns it is the old "Enterprise" plbn.
+	return PlbnOldEnterprise
 }

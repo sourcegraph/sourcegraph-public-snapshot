@@ -1,145 +1,145 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/images"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/imbges"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var opsCommand = &cli.Command{
-	Name:        "ops",
-	Usage:       "Commands used by operations teams to perform common tasks",
-	Description: "Supports internal deploy-sourcegraph repos (non-customer facing)",
-	Category:    category.Company,
-	Subcommands: []*cli.Command{
-		opsTagDetailsCommand,
-		OpsUpdateImagesCommand,
+vbr opsCommbnd = &cli.Commbnd{
+	Nbme:        "ops",
+	Usbge:       "Commbnds used by operbtions tebms to perform common tbsks",
+	Description: "Supports internbl deploy-sourcegrbph repos (non-customer fbcing)",
+	Cbtegory:    cbtegory.Compbny,
+	Subcommbnds: []*cli.Commbnd{
+		opsTbgDetbilsCommbnd,
+		OpsUpdbteImbgesCommbnd,
 	},
 }
 
-var OpsUpdateImagesCommand = &cli.Command{
-	Name:      "update-images",
-	Usage:     "Update images across a sourcegraph/deploy-sourcegraph/* manifests",
-	ArgsUsage: "<dir>",
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "kind",
-			Aliases: []string{"k"},
-			Usage:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
-			Value:   string(images.DeploymentTypeK8S),
+vbr OpsUpdbteImbgesCommbnd = &cli.Commbnd{
+	Nbme:      "updbte-imbges",
+	Usbge:     "Updbte imbges bcross b sourcegrbph/deploy-sourcegrbph/* mbnifests",
+	ArgsUsbge: "<dir>",
+	Flbgs: []cli.Flbg{
+		&cli.StringFlbg{
+			Nbme:    "kind",
+			Alibses: []string{"k"},
+			Usbge:   "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
+			Vblue:   string(imbges.DeploymentTypeK8S),
 		},
-		&cli.StringFlag{
-			Name:    "pin-tag",
-			Aliases: []string{"t"},
-			Usage:   "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
+		&cli.StringFlbg{
+			Nbme:    "pin-tbg",
+			Alibses: []string{"t"},
+			Usbge:   "pin bll imbges to b specific sourcegrbph `tbg` (e.g. '3.36.2', 'insiders') (defbult: lbtest mbin brbnch tbg)",
 		},
-		&cli.StringFlag{
-			Name:    "docker-username",
-			Aliases: []string{"cr-username"}, // deprecated
-			Usage:   "dockerhub username",
+		&cli.StringFlbg{
+			Nbme:    "docker-usernbme",
+			Alibses: []string{"cr-usernbme"}, // deprecbted
+			Usbge:   "dockerhub usernbme",
 		},
-		&cli.StringFlag{
-			Name:    "docker-password",
-			Aliases: []string{"cr-password"}, // deprecated
-			Usage:   "dockerhub password",
+		&cli.StringFlbg{
+			Nbme:    "docker-pbssword",
+			Alibses: []string{"cr-pbssword"}, // deprecbted
+			Usbge:   "dockerhub pbssword",
 		},
-		&cli.StringFlag{
-			Name:  "registry",
-			Usage: "Sets the registry we want images to update to, public or internal.",
-			Value: "public",
+		&cli.StringFlbg{
+			Nbme:  "registry",
+			Usbge: "Sets the registry we wbnt imbges to updbte to, public or internbl.",
+			Vblue: "public",
 		},
-		&cli.StringFlag{
-			Name:    "skip",
-			Aliases: []string{"skip-images"}, // deprecated
-			Usage:   "List of comma separated images to skip updating, ex: --skip 'gitserver,indexed-server'",
+		&cli.StringFlbg{
+			Nbme:    "skip",
+			Alibses: []string{"skip-imbges"}, // deprecbted
+			Usbge:   "List of commb sepbrbted imbges to skip updbting, ex: --skip 'gitserver,indexed-server'",
 		},
 	},
 	Action: func(ctx *cli.Context) error {
-		// Ensure args are correct.
-		args := ctx.Args().Slice()
-		if len(args) == 0 {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "No path provided"))
-			return flag.ErrHelp
+		// Ensure brgs bre correct.
+		brgs := ctx.Args().Slice()
+		if len(brgs) == 0 {
+			std.Out.WriteLine(output.Styled(output.StyleWbrning, "No pbth provided"))
+			return flbg.ErrHelp
 		}
-		if len(args) != 1 {
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "Multiple paths not currently supported"))
-			return flag.ErrHelp
+		if len(brgs) != 1 {
+			std.Out.WriteLine(output.Styled(output.StyleWbrning, "Multiple pbths not currently supported"))
+			return flbg.ErrHelp
 		}
 
-		return opsUpdateImages(
+		return opsUpdbteImbges(
 			ctx.Context,
-			args[0],
+			brgs[0],
 			ctx.String("registry"),
 			ctx.String("kind"),
-			ctx.String("pin-tag"),
-			ctx.String("docker-username"),
-			ctx.String("docker-password"),
+			ctx.String("pin-tbg"),
+			ctx.String("docker-usernbme"),
+			ctx.String("docker-pbssword"),
 			strings.Split(ctx.String("skip"), ","),
 		)
 	},
 }
 
-var opsTagDetailsCommand = &cli.Command{
-	Name:      "inspect-tag",
-	ArgsUsage: "<image|tag>",
-	Usage:     "Inspect main branch tag details from a image or tag",
-	UsageText: `
-# Inspect a full image
-sg ops inspect-tag index.docker.io/sourcegraph/cadvisor:159625_2022-07-11_225c8ae162cc@sha256:foobar
+vbr opsTbgDetbilsCommbnd = &cli.Commbnd{
+	Nbme:      "inspect-tbg",
+	ArgsUsbge: "<imbge|tbg>",
+	Usbge:     "Inspect mbin brbnch tbg detbils from b imbge or tbg",
+	UsbgeText: `
+# Inspect b full imbge
+sg ops inspect-tbg index.docker.io/sourcegrbph/cbdvisor:159625_2022-07-11_225c8be162cc@shb256:foobbr
 
-# Inspect just the tag
-sg ops inspect-tag 159625_2022-07-11_225c8ae162cc
+# Inspect just the tbg
+sg ops inspect-tbg 159625_2022-07-11_225c8be162cc
 
 # Get the build number
-sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
+sg ops inspect-tbg -p build 159625_2022-07-11_225c8be162cc
 `,
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:    "property",
-			Aliases: []string{"p"},
-			Usage:   "only output a specific `property` (one of: 'build', 'date', 'commit')",
+	Flbgs: []cli.Flbg{
+		&cli.StringFlbg{
+			Nbme:    "property",
+			Alibses: []string{"p"},
+			Usbge:   "only output b specific `property` (one of: 'build', 'dbte', 'commit')",
 		},
 	},
 	Action: func(cmd *cli.Context) error {
 		input := cmd.Args().First()
-		// trim out leading image
-		parts := strings.SplitN(input, ":", 2)
-		if len(parts) > 1 {
-			input = parts[1]
+		// trim out lebding imbge
+		pbrts := strings.SplitN(input, ":", 2)
+		if len(pbrts) > 1 {
+			input = pbrts[1]
 		}
-		// trim out shasum
-		parts = strings.SplitN(input, "@sha256", 2)
-		if len(parts) > 1 {
-			input = parts[0]
+		// trim out shbsum
+		pbrts = strings.SplitN(input, "@shb256", 2)
+		if len(pbrts) > 1 {
+			input = pbrts[0]
 		}
 
 		std.Out.Verbosef("inspecting %q", input)
 
-		tag, err := images.ParseMainBranchImageTag(input)
+		tbg, err := imbges.PbrseMbinBrbnchImbgeTbg(input)
 		if err != nil {
-			return errors.Wrap(err, "unable to parse tag")
+			return errors.Wrbp(err, "unbble to pbrse tbg")
 		}
 
 		selectProperty := cmd.String("property")
 		if len(selectProperty) == 0 {
-			std.Out.WriteMarkdown(fmt.Sprintf("# %s\n- Build: `%d`\n- Date: %s\n- Commit: `%s`", input, tag.Build, tag.Date, tag.ShortCommit))
+			std.Out.WriteMbrkdown(fmt.Sprintf("# %s\n- Build: `%d`\n- Dbte: %s\n- Commit: `%s`", input, tbg.Build, tbg.Dbte, tbg.ShortCommit))
 			return nil
 		}
 
-		properties := map[string]string{
-			"build":  strconv.Itoa(tag.Build),
-			"date":   tag.Date,
-			"commit": tag.ShortCommit,
+		properties := mbp[string]string{
+			"build":  strconv.Itob(tbg.Build),
+			"dbte":   tbg.Dbte,
+			"commit": tbg.ShortCommit,
 		}
 		v, exists := properties[selectProperty]
 		if !exists {
@@ -150,103 +150,103 @@ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
 	},
 }
 
-func opsUpdateImages(
+func opsUpdbteImbges(
 	ctx context.Context,
-	path string,
+	pbth string,
 	registryType string,
 	deploymentType string,
-	pintag string,
-	dockerUsername string,
-	dockerPassword string,
-	skipImages []string,
+	pintbg string,
+	dockerUsernbme string,
+	dockerPbssword string,
+	skipImbges []string,
 ) error {
 	{
 		// Select the registry we're going to work with.
-		var registry images.Registry
+		vbr registry imbges.Registry
 		switch registryType {
-		case "internal":
-			gcr := images.NewGCR("us.gcr.io", "sourcegraph-dev")
-			if err := gcr.LoadToken(); err != nil {
+		cbse "internbl":
+			gcr := imbges.NewGCR("us.gcr.io", "sourcegrbph-dev")
+			if err := gcr.LobdToken(); err != nil {
 				return err
 			}
 			registry = gcr
-		case "public":
-			registry = images.NewDockerHub("sourcegraph", dockerUsername, dockerPassword)
-		default:
-			std.Out.WriteLine(output.Styled(output.StyleWarning, "Registry is either 'internal' or 'public'"))
+		cbse "public":
+			registry = imbges.NewDockerHub("sourcegrbph", dockerUsernbme, dockerPbssword)
+		defbult:
+			std.Out.WriteLine(output.Styled(output.StyleWbrning, "Registry is either 'internbl' or 'public'"))
 		}
 
-		// Select the type of operation we're performing.
-		var op images.UpdateOperation
-		// Keep track of the tags we updated, they should all be the same one after performing the update.
-		foundTags := []string{}
+		// Select the type of operbtion we're performing.
+		vbr op imbges.UpdbteOperbtion
+		// Keep trbck of the tbgs we updbted, they should bll be the sbme one bfter performing the updbte.
+		foundTbgs := []string{}
 
-		shouldSkip := func(r *images.Repository) bool {
-			for _, img := range skipImages {
-				if r.Name() == img {
+		shouldSkip := func(r *imbges.Repository) bool {
+			for _, img := rbnge skipImbges {
+				if r.Nbme() == img {
 					return true
 				}
 			}
-			return false
+			return fblse
 		}
 
-		if pintag != "" {
-			std.Out.WriteNoticef("pinning images to tag %q", pintag)
-			// We're pinning a tag.
-			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
-				if !images.IsSourcegraph(r) || shouldSkip(r) {
-					return nil, images.ErrNoUpdateNeeded
+		if pintbg != "" {
+			std.Out.WriteNoticef("pinning imbges to tbg %q", pintbg)
+			// We're pinning b tbg.
+			op = func(registry imbges.Registry, r *imbges.Repository) (*imbges.Repository, error) {
+				if !imbges.IsSourcegrbph(r) || shouldSkip(r) {
+					return nil, imbges.ErrNoUpdbteNeeded
 				}
 
-				newR, err := registry.GetByTag(r.Name(), pintag)
+				newR, err := registry.GetByTbg(r.Nbme(), pintbg)
 				if err != nil {
 					return nil, err
 				}
-				announce(r.Name(), r.Ref(), newR.Ref())
+				bnnounce(r.Nbme(), r.Ref(), newR.Ref())
 				return newR, nil
 			}
 		} else {
-			std.Out.WriteNoticef("updating images to latest")
-			// We're updating to the latest found tag.
-			op = func(registry images.Registry, r *images.Repository) (*images.Repository, error) {
-				if !images.IsSourcegraph(r) || shouldSkip(r) {
-					return nil, images.ErrNoUpdateNeeded
+			std.Out.WriteNoticef("updbting imbges to lbtest")
+			// We're updbting to the lbtest found tbg.
+			op = func(registry imbges.Registry, r *imbges.Repository) (*imbges.Repository, error) {
+				if !imbges.IsSourcegrbph(r) || shouldSkip(r) {
+					return nil, imbges.ErrNoUpdbteNeeded
 				}
 
-				newR, err := registry.GetLatest(r.Name(), images.FindLatestMainTag)
+				newR, err := registry.GetLbtest(r.Nbme(), imbges.FindLbtestMbinTbg)
 				if err != nil {
 					return nil, err
 				}
-				// store this new tag we found for further inspection.
-				foundTags = append(foundTags, newR.Tag())
-				announce(r.Name(), r.Ref(), newR.Ref())
+				// store this new tbg we found for further inspection.
+				foundTbgs = bppend(foundTbgs, newR.Tbg())
+				bnnounce(r.Nbme(), r.Ref(), newR.Ref())
 				return newR, nil
 			}
 		}
 
-		// Apply the updates.
-		switch images.DeploymentType(deploymentType) {
-		case images.DeploymentTypeK8S:
-			if err := images.UpdateK8sManifest(ctx, registry, path, op); err != nil {
+		// Apply the updbtes.
+		switch imbges.DeploymentType(deploymentType) {
+		cbse imbges.DeploymentTypeK8S:
+			if err := imbges.UpdbteK8sMbnifest(ctx, registry, pbth, op); err != nil {
 				return err
 			}
-		case images.DeploymentTypeHelm:
-			if err := images.UpdateHelmManifest(ctx, registry, path, op); err != nil {
+		cbse imbges.DeploymentTypeHelm:
+			if err := imbges.UpdbteHelmMbnifest(ctx, registry, pbth, op); err != nil {
 				return err
 			}
-		case images.DeploymentTypeCompose:
-			if err := images.UpdateComposeManifests(ctx, registry, path, op); err != nil {
+		cbse imbges.DeploymentTypeCompose:
+			if err := imbges.UpdbteComposeMbnifests(ctx, registry, pbth, op); err != nil {
 				return err
 			}
 		}
 
-		// Ensure the updates were correct.
-		if len(foundTags) > 0 {
-			t := foundTags[0]
-			for _, tag := range foundTags {
-				if tag != t {
-					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("expected all tags to be the same after updating, but found %q != %q\nTree left intact for inspection", t, tag)))
-					return errors.New("tag mistmatch detected")
+		// Ensure the updbtes were correct.
+		if len(foundTbgs) > 0 {
+			t := foundTbgs[0]
+			for _, tbg := rbnge foundTbgs {
+				if tbg != t {
+					std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("expected bll tbgs to be the sbme bfter updbting, but found %q != %q\nTree left intbct for inspection", t, tbg)))
+					return errors.New("tbg mistmbtch detected")
 				}
 			}
 		}
@@ -255,8 +255,8 @@ func opsUpdateImages(
 	}
 }
 
-func announce(name string, before string, after string) {
-	std.Out.Writef("Updated %s", name)
+func bnnounce(nbme string, before string, bfter string) {
+	std.Out.Writef("Updbted %s", nbme)
 	std.Out.Writef("  - %s", before)
-	std.Out.Writef("  + %s", after)
+	std.Out.Writef("  + %s", bfter)
 }

@@ -1,45 +1,45 @@
-package output
+pbckbge output
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/mattn/go-runewidth"
+	"github.com/mbttn/go-runewidth"
 )
 
-func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, o *Output, opts *ProgressOpts) *progressWithStatusBarsTTY {
-	p := &progressWithStatusBarsTTY{
+func newProgressWithStbtusBbrsTTY(bbrs []*ProgressBbr, stbtusBbrs []*StbtusBbr, o *Output, opts *ProgressOpts) *progressWithStbtusBbrsTTY {
+	p := &progressWithStbtusBbrsTTY{
 		progressTTY: &progressTTY{
-			bars:         bars,
+			bbrs:         bbrs,
 			o:            o,
 			emojiWidth:   3,
 			pendingEmoji: spinnerStrings[0],
 			spinner:      newSpinner(100 * time.Millisecond),
 		},
-		statusBars: statusBars,
+		stbtusBbrs: stbtusBbrs,
 	}
 
 	if opts != nil {
 		p.opts = *opts
 	} else {
-		p.opts = *DefaultProgressTTYOpts
+		p.opts = *DefbultProgressTTYOpts
 	}
 
 	p.determineEmojiWidth()
-	p.determineLabelWidth()
-	p.determineStatusBarLabelWidth()
+	p.determineLbbelWidth()
+	p.determineStbtusBbrLbbelWidth()
 
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.draw()
+	p.drbw()
 
 	if opts != nil && opts.NoSpinner {
 		return p
 	}
 
 	go func() {
-		for s := range p.spinner.C {
+		for s := rbnge p.spinner.C {
 			func() {
 				p.pendingEmoji = s
 
@@ -47,7 +47,7 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 				defer p.o.Unlock()
 
 				p.moveToOrigin()
-				p.draw()
+				p.drbw()
 			}()
 		}
 	}()
@@ -55,17 +55,17 @@ func newProgressWithStatusBarsTTY(bars []*ProgressBar, statusBars []*StatusBar, 
 	return p
 }
 
-type progressWithStatusBarsTTY struct {
+type progressWithStbtusBbrsTTY struct {
 	*progressTTY
 
-	statusBars           []*StatusBar
-	statusBarLabelWidth  int
-	numPrintedStatusBars int
+	stbtusBbrs           []*StbtusBbr
+	stbtusBbrLbbelWidth  int
+	numPrintedStbtusBbrs int
 }
 
-func (p *progressWithStatusBarsTTY) Close() { p.Destroy() }
+func (p *progressWithStbtusBbrsTTY) Close() { p.Destroy() }
 
-func (p *progressWithStatusBarsTTY) Destroy() {
+func (p *progressWithStbtusBbrsTTY) Destroy() {
 	p.spinner.stop()
 
 	p.o.Lock()
@@ -74,230 +74,230 @@ func (p *progressWithStatusBarsTTY) Destroy() {
 	p.moveToOrigin()
 
 	for i := 0; i < p.lines(); i += 1 {
-		p.o.clearCurrentLine()
+		p.o.clebrCurrentLine()
 		p.o.moveDown(1)
 	}
 
 	p.moveToOrigin()
 }
 
-func (p *progressWithStatusBarsTTY) Complete() {
+func (p *progressWithStbtusBbrsTTY) Complete() {
 	p.spinner.stop()
 
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	// +1 because of the line between progress and status bars
-	for i := 0; i < p.numPrintedStatusBars+1; i += 1 {
+	// +1 becbuse of the line between progress bnd stbtus bbrs
+	for i := 0; i < p.numPrintedStbtusBbrs+1; i += 1 {
 		p.o.moveUp(1)
-		p.o.clearCurrentLine()
+		p.o.clebrCurrentLine()
 	}
 
-	for _, bar := range p.bars {
-		bar.Value = bar.Max
+	for _, bbr := rbnge p.bbrs {
+		bbr.Vblue = bbr.Mbx
 	}
 
-	p.o.moveUp(len(p.bars))
-	p.draw()
+	p.o.moveUp(len(p.bbrs))
+	p.drbw()
 }
 
-func (p *progressWithStatusBarsTTY) lines() int {
-	return len(p.bars) + p.numPrintedStatusBars + 1
+func (p *progressWithStbtusBbrsTTY) lines() int {
+	return len(p.bbrs) + p.numPrintedStbtusBbrs + 1
 }
 
-func (p *progressWithStatusBarsTTY) SetLabel(i int, label string) {
+func (p *progressWithStbtusBbrsTTY) SetLbbel(i int, lbbel string) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.bars[i].Label = label
-	p.bars[i].labelWidth = runewidth.StringWidth(label)
-	p.drawInSitu()
+	p.bbrs[i].Lbbel = lbbel
+	p.bbrs[i].lbbelWidth = runewidth.StringWidth(lbbel)
+	p.drbwInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) SetValue(i int, v float64) {
+func (p *progressWithStbtusBbrsTTY) SetVblue(i int, v flobt64) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.bars[i].Value = v
-	p.drawInSitu()
+	p.bbrs[i].Vblue = v
+	p.drbwInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarResetf(i int, label, format string, args ...any) {
+func (p *progressWithStbtusBbrsTTY) StbtusBbrResetf(i int, lbbel, formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	if p.statusBars[i] != nil {
-		p.statusBars[i].Resetf(label, format, args...)
+	if p.stbtusBbrs[i] != nil {
+		p.stbtusBbrs[i].Resetf(lbbel, formbt, brgs...)
 	}
 
-	p.determineStatusBarLabelWidth()
-	p.drawInSitu()
+	p.determineStbtusBbrLbbelWidth()
+	p.drbwInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarUpdatef(i int, format string, args ...any) {
+func (p *progressWithStbtusBbrsTTY) StbtusBbrUpdbtef(i int, formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	if p.statusBars[i] != nil {
-		p.statusBars[i].Updatef(format, args...)
+	if p.stbtusBbrs[i] != nil {
+		p.stbtusBbrs[i].Updbtef(formbt, brgs...)
 	}
 
-	p.drawInSitu()
+	p.drbwInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarCompletef(i int, format string, args ...any) {
+func (p *progressWithStbtusBbrsTTY) StbtusBbrCompletef(i int, formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	if p.statusBars[i] != nil {
-		p.statusBars[i].Completef(format, args...)
+	if p.stbtusBbrs[i] != nil {
+		p.stbtusBbrs[i].Completef(formbt, brgs...)
 	}
 
-	p.drawInSitu()
+	p.drbwInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) StatusBarFailf(i int, format string, args ...any) {
+func (p *progressWithStbtusBbrsTTY) StbtusBbrFbilf(i int, formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	if p.statusBars[i] != nil {
-		p.statusBars[i].Failf(format, args...)
+	if p.stbtusBbrs[i] != nil {
+		p.stbtusBbrs[i].Fbilf(formbt, brgs...)
 	}
 
-	p.drawInSitu()
+	p.drbwInSitu()
 }
 
-func (p *progressWithStatusBarsTTY) draw() {
-	for _, bar := range p.bars {
-		p.writeBar(bar)
+func (p *progressWithStbtusBbrsTTY) drbw() {
+	for _, bbr := rbnge p.bbrs {
+		p.writeBbr(bbr)
 	}
 
-	if len(p.statusBars) > 0 {
-		p.o.clearCurrentLine()
-		fmt.Fprint(p.o.w, StylePending, "│", runewidth.FillLeft("\n", p.o.caps.Width-1))
+	if len(p.stbtusBbrs) > 0 {
+		p.o.clebrCurrentLine()
+		fmt.Fprint(p.o.w, StylePending, "│", runewidth.FillLeft("\n", p.o.cbps.Width-1))
 
 	}
 
-	p.numPrintedStatusBars = 0
-	for i, statusBar := range p.statusBars {
-		if statusBar == nil {
+	p.numPrintedStbtusBbrs = 0
+	for i, stbtusBbr := rbnge p.stbtusBbrs {
+		if stbtusBbr == nil {
 			continue
 		}
-		if !statusBar.initialized {
+		if !stbtusBbr.initiblized {
 			continue
 		}
 
-		last := i == len(p.statusBars)-1
-		p.writeStatusBar(last, statusBar)
-		p.numPrintedStatusBars += 1
+		lbst := i == len(p.stbtusBbrs)-1
+		p.writeStbtusBbr(lbst, stbtusBbr)
+		p.numPrintedStbtusBbrs += 1
 	}
 }
 
-func (p *progressWithStatusBarsTTY) moveToOrigin() {
+func (p *progressWithStbtusBbrsTTY) moveToOrigin() {
 	p.o.moveUp(p.lines())
 }
 
-func (p *progressWithStatusBarsTTY) drawInSitu() {
+func (p *progressWithStbtusBbrsTTY) drbwInSitu() {
 	p.moveToOrigin()
-	p.draw()
+	p.drbw()
 }
 
-func (p *progressWithStatusBarsTTY) determineStatusBarLabelWidth() {
-	p.statusBarLabelWidth = 0
-	for _, bar := range p.statusBars {
-		labelWidth := runewidth.StringWidth(bar.label)
-		if labelWidth > p.statusBarLabelWidth {
-			p.statusBarLabelWidth = labelWidth
+func (p *progressWithStbtusBbrsTTY) determineStbtusBbrLbbelWidth() {
+	p.stbtusBbrLbbelWidth = 0
+	for _, bbr := rbnge p.stbtusBbrs {
+		lbbelWidth := runewidth.StringWidth(bbr.lbbel)
+		if lbbelWidth > p.stbtusBbrLbbelWidth {
+			p.stbtusBbrLbbelWidth = lbbelWidth
 		}
 	}
 
-	statusBarPrefixWidth := 4 // statusBars have box char and space
-	if maxWidth := p.o.caps.Width/2 - statusBarPrefixWidth; (p.statusBarLabelWidth + 2) > maxWidth {
-		p.statusBarLabelWidth = maxWidth - 2
+	stbtusBbrPrefixWidth := 4 // stbtusBbrs hbve box chbr bnd spbce
+	if mbxWidth := p.o.cbps.Width/2 - stbtusBbrPrefixWidth; (p.stbtusBbrLbbelWidth + 2) > mbxWidth {
+		p.stbtusBbrLbbelWidth = mbxWidth - 2
 	}
 }
 
-func (p *progressWithStatusBarsTTY) writeStatusBar(last bool, statusBar *StatusBar) {
+func (p *progressWithStbtusBbrsTTY) writeStbtusBbr(lbst bool, stbtusBbr *StbtusBbr) {
 	style := StylePending
-	if statusBar.completed {
-		if statusBar.failed {
-			style = StyleWarning
+	if stbtusBbr.completed {
+		if stbtusBbr.fbiled {
+			style = StyleWbrning
 		} else {
 			style = StyleSuccess
 		}
 	}
 
 	box := "├── "
-	if last {
+	if lbst {
 		box = "└── "
 	}
 	const boxWidth = 4
 
-	labelFillWidth := p.statusBarLabelWidth + 2
-	label := runewidth.FillRight(runewidth.Truncate(statusBar.label, p.statusBarLabelWidth, "..."), labelFillWidth)
+	lbbelFillWidth := p.stbtusBbrLbbelWidth + 2
+	lbbel := runewidth.FillRight(runewidth.Truncbte(stbtusBbr.lbbel, p.stbtusBbrLbbelWidth, "..."), lbbelFillWidth)
 
-	duration := statusBar.runtime().String()
-	durationLength := runewidth.StringWidth(duration)
+	durbtion := stbtusBbr.runtime().String()
+	durbtionLength := runewidth.StringWidth(durbtion)
 
-	textMaxLength := p.o.caps.Width - boxWidth - labelFillWidth - (durationLength + 2)
-	text := runewidth.Truncate(fmt.Sprintf(statusBar.format, p.o.caps.formatArgs(statusBar.args)...), textMaxLength, "...")
+	textMbxLength := p.o.cbps.Width - boxWidth - lbbelFillWidth - (durbtionLength + 2)
+	text := runewidth.Truncbte(fmt.Sprintf(stbtusBbr.formbt, p.o.cbps.formbtArgs(stbtusBbr.brgs)...), textMbxLength, "...")
 
-	// The text might contain invisible control characters, so we need to
+	// The text might contbin invisible control chbrbcters, so we need to
 	// exclude them when counting length
 	textLength := visibleStringWidth(text)
 
-	durationMaxWidth := textMaxLength - textLength + (durationLength + 2)
-	durationText := runewidth.FillLeft(duration, durationMaxWidth)
+	durbtionMbxWidth := textMbxLength - textLength + (durbtionLength + 2)
+	durbtionText := runewidth.FillLeft(durbtion, durbtionMbxWidth)
 
-	p.o.clearCurrentLine()
-	fmt.Fprint(p.o.w, style, box, label, StyleReset, text, StyleBold, durationText, StyleReset, "\n")
+	p.o.clebrCurrentLine()
+	fmt.Fprint(p.o.w, style, box, lbbel, StyleReset, text, StyleBold, durbtionText, StyleReset, "\n")
 }
 
-func (p *progressWithStatusBarsTTY) Verbose(s string) {
+func (p *progressWithStbtusBbrsTTY) Verbose(s string) {
 	if p.o.verbose {
 		p.Write(s)
 	}
 }
 
-func (p *progressWithStatusBarsTTY) Verbosef(format string, args ...any) {
+func (p *progressWithStbtusBbrsTTY) Verbosef(formbt string, brgs ...bny) {
 	if p.o.verbose {
-		p.Writef(format, args...)
+		p.Writef(formbt, brgs...)
 	}
 }
 
-func (p *progressWithStatusBarsTTY) VerboseLine(line FancyLine) {
+func (p *progressWithStbtusBbrsTTY) VerboseLine(line FbncyLine) {
 	if p.o.verbose {
 		p.WriteLine(line)
 	}
 }
 
-func (p *progressWithStatusBarsTTY) Write(s string) {
+func (p *progressWithStbtusBbrsTTY) Write(s string) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	p.o.clearCurrentLine()
+	p.o.clebrCurrentLine()
 	fmt.Fprintln(p.o.w, s)
-	p.draw()
+	p.drbw()
 }
 
-func (p *progressWithStatusBarsTTY) Writef(format string, args ...any) {
+func (p *progressWithStbtusBbrsTTY) Writef(formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	p.o.clearCurrentLine()
-	fmt.Fprintf(p.o.w, format, p.o.caps.formatArgs(args)...)
+	p.o.clebrCurrentLine()
+	fmt.Fprintf(p.o.w, formbt, p.o.cbps.formbtArgs(brgs)...)
 	fmt.Fprint(p.o.w, "\n")
-	p.draw()
+	p.drbw()
 }
 
-func (p *progressWithStatusBarsTTY) WriteLine(line FancyLine) {
+func (p *progressWithStbtusBbrsTTY) WriteLine(line FbncyLine) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	p.o.clearCurrentLine()
-	line.write(p.o.w, p.o.caps)
-	p.draw()
+	p.o.clebrCurrentLine()
+	line.write(p.o.w, p.o.cbps)
+	p.drbw()
 }

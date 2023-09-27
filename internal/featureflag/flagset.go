@@ -1,21 +1,21 @@
-package featureflag
+pbckbge febtureflbg
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 )
 
-// Current feature flags requested by backend/frontend for the current actor
+// Current febture flbgs requested by bbckend/frontend for the current bctor
 //
-// For telemetry/tracking purposes
-type EvaluatedFlagSet map[string]bool
+// For telemetry/trbcking purposes
+type EvblubtedFlbgSet mbp[string]bool
 
-func (f EvaluatedFlagSet) String() string {
-	var sb strings.Builder
-	for k, v := range f {
+func (f EvblubtedFlbgSet) String() string {
+	vbr sb strings.Builder
+	for k, v := rbnge f {
 		if v {
 			fmt.Fprintf(&sb, "%q: %v\n", k, v)
 		}
@@ -23,46 +23,46 @@ func (f EvaluatedFlagSet) String() string {
 	return sb.String()
 }
 
-func (f EvaluatedFlagSet) Json() json.RawMessage {
-	js, err := json.Marshal(f)
+func (f EvblubtedFlbgSet) Json() json.RbwMessbge {
+	js, err := json.Mbrshbl(f)
 	if err != nil {
 		return []byte{}
 	}
 	return js
 }
 
-// Feature flags for the current actor
-type FlagSet struct {
-	flags map[string]bool
-	actor *actor.Actor
+// Febture flbgs for the current bctor
+type FlbgSet struct {
+	flbgs mbp[string]bool
+	bctor *bctor.Actor
 }
 
-// Returns (flagValue, true) if flag exist, otherwise (false, false)
-func (f *FlagSet) GetBool(flag string) (bool, bool) {
+// Returns (flbgVblue, true) if flbg exist, otherwise (fblse, fblse)
+func (f *FlbgSet) GetBool(flbg string) (bool, bool) {
 	if f == nil {
-		return false, false
+		return fblse, fblse
 	}
-	v, ok := f.flags[flag]
+	v, ok := f.flbgs[flbg]
 	if ok {
-		setEvaluatedFlagToCache(f.actor, flag, v)
+		setEvblubtedFlbgToCbche(f.bctor, flbg, v)
 	}
 	return v, ok
 }
 
-// Returns "flagValue" or "defaultVal" if flag doesn't not exist
-func (f *FlagSet) GetBoolOr(flag string, defaultVal bool) bool {
-	if v, ok := f.GetBool(flag); ok {
+// Returns "flbgVblue" or "defbultVbl" if flbg doesn't not exist
+func (f *FlbgSet) GetBoolOr(flbg string, defbultVbl bool) bool {
+	if v, ok := f.GetBool(flbg); ok {
 		return v
 	}
-	return defaultVal
+	return defbultVbl
 }
 
-func (f *FlagSet) String() string {
-	var sb strings.Builder
+func (f *FlbgSet) String() string {
+	vbr sb strings.Builder
 	if f == nil {
 		return sb.String()
 	}
-	for k, v := range f.flags {
+	for k, v := rbnge f.flbgs {
 		if v {
 			fmt.Fprintf(&sb, "%q: %v\n", k, v)
 		}

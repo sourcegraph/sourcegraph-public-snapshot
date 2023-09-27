@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,78 +7,78 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestExternalAccountResolver_AccountData(t *testing.T) {
+func TestExternblAccountResolver_AccountDbtb(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+	users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		return &types.User{SiteAdmin: id == 1}, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	tests := []struct {
-		name        string
+		nbme        string
 		ctx         context.Context
 		serviceType string
-		wantErr     string
+		wbntErr     string
 	}{
 		{
-			name:        "github and site admin",
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			nbme:        "github bnd site bdmin",
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 			serviceType: extsvc.TypeGitHub,
-			wantErr:     "<nil>",
+			wbntErr:     "<nil>",
 		},
 		{
-			name:        "gitlab and site admin",
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			serviceType: extsvc.TypeGitLab,
-			wantErr:     "<nil>",
+			nbme:        "gitlbb bnd site bdmin",
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+			serviceType: extsvc.TypeGitLbb,
+			wbntErr:     "<nil>",
 		},
 		{
-			name:        "github and non-site admin",
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+			nbme:        "github bnd non-site bdmin",
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 			serviceType: extsvc.TypeGitHub,
-			wantErr:     "<nil>",
+			wbntErr:     "<nil>",
 		},
 		{
-			name:        "gitlab and non-site admin",
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-			serviceType: extsvc.TypeGitLab,
-			wantErr:     "<nil>",
+			nbme:        "gitlbb bnd non-site bdmin",
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
+			serviceType: extsvc.TypeGitLbb,
+			wbntErr:     "<nil>",
 		},
 		{
-			name:        "other and site admin",
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
+			nbme:        "other bnd site bdmin",
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
 			serviceType: extsvc.TypePerforce,
-			wantErr:     "<nil>",
+			wbntErr:     "<nil>",
 		},
 		{
-			name:        "other and non-site admin",
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+			nbme:        "other bnd non-site bdmin",
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 			serviceType: extsvc.TypePerforce,
-			wantErr:     "must be site admin",
+			wbntErr:     "must be site bdmin",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			r := &externalAccountResolver{
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			r := &externblAccountResolver{
 				db: db,
-				account: extsvc.Account{
+				bccount: extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: test.serviceType,
 					},
 				},
 			}
-			_, err := r.AccountData(test.ctx)
+			_, err := r.AccountDbtb(test.ctx)
 			got := fmt.Sprintf("%v", err)
-			if diff := cmp.Diff(test.wantErr, got); diff != "" {
-				t.Fatalf("Mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntErr, got); diff != "" {
+				t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-package ci
+pbckbge ci
 
 import (
 	"encoding/json"
@@ -13,128 +13,128 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 	"github.com/google/uuid"
-	sgrun "github.com/sourcegraph/run"
-	"github.com/urfave/cli/v2"
+	sgrun "github.com/sourcegrbph/run"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/exit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/ci/runtype"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/bk"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/loki"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/open"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/completions"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/exit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var previewCommand = &cli.Command{
-	Name:    "preview",
-	Aliases: []string{"plan"},
-	Usage:   "Preview the pipeline that would be run against the currently checked out branch",
-	Flags: []cli.Flag{
-		&ciBranchFlag,
-		&cli.StringFlag{
-			Name:  "format",
-			Usage: "Output format for the preview (one of 'markdown', 'json', or 'yaml')",
-			Value: "markdown",
+vbr previewCommbnd = &cli.Commbnd{
+	Nbme:    "preview",
+	Alibses: []string{"plbn"},
+	Usbge:   "Preview the pipeline thbt would be run bgbinst the currently checked out brbnch",
+	Flbgs: []cli.Flbg{
+		&ciBrbnchFlbg,
+		&cli.StringFlbg{
+			Nbme:  "formbt",
+			Usbge: "Output formbt for the preview (one of 'mbrkdown', 'json', or 'ybml')",
+			Vblue: "mbrkdown",
 		},
 	},
 	Action: func(cmd *cli.Context) error {
 		std.Out.WriteLine(output.Styled(output.StyleSuggestion,
-			"If the current branch were to be pushed, the following pipeline would be run:"))
+			"If the current brbnch were to be pushed, the following pipeline would be run:"))
 
-		target, err := getBuildTarget(cmd)
+		tbrget, err := getBuildTbrget(cmd)
 		if err != nil {
 			return err
 		}
-		if target.targetType != buildTargetTypeBranch {
-			// Should never happen because we only register the branch flag
-			return errors.New("target is not a branch")
+		if tbrget.tbrgetType != buildTbrgetTypeBrbnch {
+			// Should never hbppen becbuse we only register the brbnch flbg
+			return errors.New("tbrget is not b brbnch")
 		}
 
-		message, err := run.TrimResult(run.GitCmd("show", "--format=%B"))
+		messbge, err := run.TrimResult(run.GitCmd("show", "--formbt=%B"))
 		if err != nil {
 			return err
 		}
 
-		var previewCmd *sgrun.Command
-		env := map[string]string{
-			"BUILDKITE_BRANCH":  target.target, // this must be a branch
-			"BUILDKITE_MESSAGE": message,
+		vbr previewCmd *sgrun.Commbnd
+		env := mbp[string]string{
+			"BUILDKITE_BRANCH":  tbrget.tbrget, // this must be b brbnch
+			"BUILDKITE_MESSAGE": messbge,
 		}
-		switch cmd.String("format") {
-		case "markdown":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
+		switch cmd.String("formbt") {
+		cbse "mbrkdown":
+			previewCmd = usershell.Commbnd(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -preview").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
 				return err
 			}
-			return std.Out.WriteMarkdown(out)
-		case "json":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
+			return std.Out.WriteMbrkdown(out)
+		cbse "json":
+			previewCmd = usershell.Commbnd(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
 				return err
 			}
 			return std.Out.WriteCode("json", out)
-		case "yaml":
-			previewCmd = usershell.Command(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -yaml").
+		cbse "ybml":
+			previewCmd = usershell.Commbnd(cmd.Context, "go run ./enterprise/dev/ci/gen-pipeline.go -ybml").
 				Env(env)
 			out, err := root.Run(previewCmd).String()
 			if err != nil {
 				return err
 			}
-			return std.Out.WriteCode("yaml", out)
-		default:
-			return errors.Newf("unsupported format type: %q", cmd.String("format"))
+			return std.Out.WriteCode("ybml", out)
+		defbult:
+			return errors.Newf("unsupported formbt type: %q", cmd.String("formbt"))
 		}
 	},
 }
 
-var bazelCommand = &cli.Command{
-	Name:      "bazel",
-	Usage:     "Fires a CI build running a given bazel command",
-	ArgsUsage: "[--web|--wait] [test|build] <target1> <target2> ... <bazel flags>",
-	Flags: []cli.Flag{
-		&cli.BoolFlag{
-			Name:  "wait",
-			Usage: "Wait until build completion and then print logs for the Bazel command",
-			Value: false,
+vbr bbzelCommbnd = &cli.Commbnd{
+	Nbme:      "bbzel",
+	Usbge:     "Fires b CI build running b given bbzel commbnd",
+	ArgsUsbge: "[--web|--wbit] [test|build] <tbrget1> <tbrget2> ... <bbzel flbgs>",
+	Flbgs: []cli.Flbg{
+		&cli.BoolFlbg{
+			Nbme:  "wbit",
+			Usbge: "Wbit until build completion bnd then print logs for the Bbzel commbnd",
+			Vblue: fblse,
 		},
-		&cli.BoolFlag{
-			Name:  "web",
-			Usage: "Print the web URL for the build and return immediately",
-			Value: false,
+		&cli.BoolFlbg{
+			Nbme:  "web",
+			Usbge: "Print the web URL for the build bnd return immedibtely",
+			Vblue: fblse,
 		},
 	},
 	Action: func(cmd *cli.Context) error {
-		args := cmd.Args().Slice()
+		brgs := cmd.Args().Slice()
 
-		out, err := run.GitCmd("diff", "--cached")
+		out, err := run.GitCmd("diff", "--cbched")
 		if err != nil {
 			return err
 		}
 
 		if out != "" {
-			return errors.New("You have staged changes, aborting.")
+			return errors.New("You hbve stbged chbnges, bborting.")
 		}
 
-		branch := fmt.Sprintf("bazel-do/%s", uuid.NewString())
-		_, err = run.GitCmd("checkout", "-b", branch)
+		brbnch := fmt.Sprintf("bbzel-do/%s", uuid.NewString())
+		_, err = run.GitCmd("checkout", "-b", brbnch)
 		if err != nil {
 			return err
 		}
-		_, err = run.GitCmd("commit", "--allow-empty", "-m", fmt.Sprintf("!bazel %s", strings.Join(args, " ")))
+		_, err = run.GitCmd("commit", "--bllow-empty", "-m", fmt.Sprintf("!bbzel %s", strings.Join(brgs, " ")))
 		if err != nil {
 			return err
 		}
-		_, err = run.GitCmd("push", "origin", branch)
+		_, err = run.GitCmd("push", "origin", brbnch)
 		if err != nil {
 			return err
 		}
@@ -142,50 +142,50 @@ var bazelCommand = &cli.Command{
 		if err != nil {
 			return err
 		}
-		_, err = run.GitCmd("branch", "-D", branch)
+		_, err = run.GitCmd("brbnch", "-D", brbnch)
 		if err != nil {
 			return err
 		}
 
-		// give buildkite some time to kick off the build so that we can find it later on
+		// give buildkite some time to kick off the build so thbt we cbn find it lbter on
 		time.Sleep(10 * time.Second)
 		client, err := bk.NewClient(cmd.Context, std.Out)
 		if err != nil {
 			return err
 		}
-		build, err := client.GetMostRecentBuild(cmd.Context, "sourcegraph", branch)
+		build, err := client.GetMostRecentBuild(cmd.Context, "sourcegrbph", brbnch)
 		if err != nil {
 			return err
 		}
 
 		if cmd.Bool("web") {
 			if err := open.URL(*build.WebURL); err != nil {
-				std.Out.WriteWarningf("failed to open build in browser: %s", err)
+				std.Out.WriteWbrningf("fbiled to open build in browser: %s", err)
 			}
 		}
 
-		if cmd.Bool("wait") {
-			pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-			err = statusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
+		if cmd.Bool("wbit") {
+			pending := std.Out.Pending(output.Styledf(output.StylePending, "Wbiting for %d jobs...", len(build.Jobs)))
+			err = stbtusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
 			if err != nil {
 				return err
 			}
 
 			std.Out.WriteLine(output.Styledf(output.StylePending, "Fetching logs for %s ...", *build.WebURL))
 			options := bk.ExportLogsOpts{
-				JobStepKey: "bazel-do",
+				JobStepKey: "bbzel-do",
 			}
-			logs, err := client.ExportLogs(cmd.Context, "sourcegraph", *build.Number, options)
+			logs, err := client.ExportLogs(cmd.Context, "sourcegrbph", *build.Number, options)
 			if err != nil {
 				return err
 			}
 			if len(logs) == 0 {
 				std.Out.WriteLine(output.Line("", output.StyleSuggestion,
-					fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
+					fmt.Sprintf("No logs found mbtching the given pbrbmeters (job: %q, stbte: %q).", options.JobQuery, options.Stbte)))
 				return nil
 			}
 
-			for _, entry := range logs {
+			for _, entry := rbnge logs {
 				std.Out.Write(*entry.Content)
 			}
 
@@ -199,134 +199,134 @@ var bazelCommand = &cli.Command{
 	},
 }
 
-var statusCommand = &cli.Command{
-	Name:    "status",
-	Aliases: []string{"st"},
-	Usage:   "Get the status of the CI run associated with the currently checked out branch",
-	Flags: append(ciTargetFlags,
-		&cli.BoolFlag{
-			Name:  "wait",
-			Usage: "Wait by blocking until the build is finished",
+vbr stbtusCommbnd = &cli.Commbnd{
+	Nbme:    "stbtus",
+	Alibses: []string{"st"},
+	Usbge:   "Get the stbtus of the CI run bssocibted with the currently checked out brbnch",
+	Flbgs: bppend(ciTbrgetFlbgs,
+		&cli.BoolFlbg{
+			Nbme:  "wbit",
+			Usbge: "Wbit by blocking until the build is finished",
 		},
-		&cli.BoolFlag{
-			Name:    "web",
-			Aliases: []string{"view", "w"},
-			Usage:   "Open build page in web browser (--view is DEPRECATED and will be removed in the future)",
+		&cli.BoolFlbg{
+			Nbme:    "web",
+			Alibses: []string{"view", "w"},
+			Usbge:   "Open build pbge in web browser (--view is DEPRECATED bnd will be removed in the future)",
 		}),
 	Action: func(cmd *cli.Context) error {
 		client, err := bk.NewClient(cmd.Context, std.Out)
 		if err != nil {
 			return err
 		}
-		target, err := getBuildTarget(cmd)
+		tbrget, err := getBuildTbrget(cmd)
 		if err != nil {
 			return err
 		}
 
-		// Just support main pipeline for now
-		build, err := target.GetBuild(cmd.Context, client)
+		// Just support mbin pipeline for now
+		build, err := tbrget.GetBuild(cmd.Context, client)
 		if err != nil {
 			return err
 		}
 
-		// Print a high level overview, and jump into a browser
+		// Print b high level overview, bnd jump into b browser
 		printBuildOverview(build)
 		if cmd.Bool("view") {
 			if err := open.URL(*build.WebURL); err != nil {
-				std.Out.WriteWarningf("failed to open build in browser: %s", err)
+				std.Out.WriteWbrningf("fbiled to open build in browser: %s", err)
 			}
 		}
 
-		// If we are waiting and unfinished, poll for a build
-		if cmd.Bool("wait") && build.FinishedAt == nil {
-			if build.Branch == nil {
-				return errors.Newf("build %d not associated with a branch", *build.Number)
+		// If we bre wbiting bnd unfinished, poll for b build
+		if cmd.Bool("wbit") && build.FinishedAt == nil {
+			if build.Brbnch == nil {
+				return errors.Newf("build %d not bssocibted with b brbnch", *build.Number)
 			}
 
-			pending := std.Out.Pending(output.Styledf(output.StylePending, "Waiting for %d jobs...", len(build.Jobs)))
-			err := statusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
+			pending := std.Out.Pending(output.Styledf(output.StylePending, "Wbiting for %d jobs...", len(build.Jobs)))
+			err := stbtusTicker(cmd.Context, fetchJobs(cmd.Context, client, &build, pending))
 			pending.Destroy()
 			if err != nil {
 				return err
 			}
 		}
 
-		// lets get annotations (if any) for the build
-		var annotations bk.JobAnnotations
-		annotations, err = client.GetJobAnnotationsByBuildNumber(cmd.Context, "sourcegraph", strconv.Itoa(*build.Number))
+		// lets get bnnotbtions (if bny) for the build
+		vbr bnnotbtions bk.JobAnnotbtions
+		bnnotbtions, err = client.GetJobAnnotbtionsByBuildNumber(cmd.Context, "sourcegrbph", strconv.Itob(*build.Number))
 		if err != nil {
-			return errors.Newf("failed to get annotations for build %d: %w", *build.Number, err)
+			return errors.Newf("fbiled to get bnnotbtions for build %d: %w", *build.Number, err)
 		}
 
 		// render resutls
-		failed := printBuildResults(build, annotations, cmd.Bool("wait"))
+		fbiled := printBuildResults(build, bnnotbtions, cmd.Bool("wbit"))
 
-		// If we're not on a specific branch and not asking for a specific build,
-		// warn if build commit is not your local copy - we are building an
+		// If we're not on b specific brbnch bnd not bsking for b specific build,
+		// wbrn if build commit is not your locbl copy - we bre building bn
 		// unknown revision.
-		if !target.fromFlag && target.targetType == buildTargetTypeBranch {
-			commit, err := run.GitCmd("rev-parse", "HEAD")
+		if !tbrget.fromFlbg && tbrget.tbrgetType == buildTbrgetTypeBrbnch {
+			commit, err := run.GitCmd("rev-pbrse", "HEAD")
 			if err != nil {
 				return err
 			}
-			commit = strings.TrimSpace(commit)
+			commit = strings.TrimSpbce(commit)
 			if commit != *build.Commit {
 				std.Out.WriteLine(output.Linef("⚠️", output.StyleSuggestion,
-					"The currently checked out commit %q does not match the commit of the build found, %q.\nHave you pushed your most recent changes yet?",
+					"The currently checked out commit %q does not mbtch the commit of the build found, %q.\nHbve you pushed your most recent chbnges yet?",
 					commit, *build.Commit))
 			}
 		}
 
-		if failed {
+		if fbiled {
 			std.Out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion,
-				"Some jobs have failed - try using 'sg ci logs' to see what went wrong, or go to the build page: %s", *build.WebURL))
+				"Some jobs hbve fbiled - try using 'sg ci logs' to see whbt went wrong, or go to the build pbge: %s", *build.WebURL))
 		}
 
 		return nil
 	},
 }
 
-var buildCommand = &cli.Command{
-	Name:      "build",
-	ArgsUsage: "[runtype] <argument>",
-	Usage:     "Manually request a build for the currently checked out commit and branch (e.g. to trigger builds on forks or with special run types)",
+vbr buildCommbnd = &cli.Commbnd{
+	Nbme:      "build",
+	ArgsUsbge: "[runtype] <brgument>",
+	Usbge:     "Mbnublly request b build for the currently checked out commit bnd brbnch (e.g. to trigger builds on forks or with specibl run types)",
 	Description: fmt.Sprintf(`
-Reference to all pipeline run types can be found at: https://docs.sourcegraph.com/dev/background-information/ci/reference
+Reference to bll pipeline run types cbn be found bt: https://docs.sourcegrbph.com/dev/bbckground-informbtion/ci/reference
 
-Optionally provide a run type to build with.
+Optionblly provide b run type to build with.
 
-This command is useful when:
+This commbnd is useful when:
 
-- you want to trigger a build with a particular run type, such as 'main-dry-run'
-- triggering builds for PRs from forks (such as those from external contributors), which do not trigger Buildkite builds automatically for security reasons (we do not want to run insecure code on our infrastructure by default!)
+- you wbnt to trigger b build with b pbrticulbr run type, such bs 'mbin-dry-run'
+- triggering builds for PRs from forks (such bs those from externbl contributors), which do not trigger Buildkite builds butombticblly for security rebsons (we do not wbnt to run insecure code on our infrbstructure by defbult!)
 
-Supported run types when providing an argument for 'sg ci build [runtype]':
+Supported run types when providing bn brgument for 'sg ci build [runtype]':
 
 * %s
 
-For run types that require branch arguments, you will be prompted for an argument, or you
-can provide it directly (for example, 'sg ci build [runtype] <argument>').`,
+For run types thbt require brbnch brguments, you will be prompted for bn brgument, or you
+cbn provide it directly (for exbmple, 'sg ci build [runtype] <brgument>').`,
 		strings.Join(getAllowedBuildTypeArgs(), "\n* ")),
-	UsageText: `
-# Start a main-dry-run build
-sg ci build main-dry-run
+	UsbgeText: `
+# Stbrt b mbin-dry-run build
+sg ci build mbin-dry-run
 
-# Publish a custom image build
-sg ci build docker-images-patch
+# Publish b custom imbge build
+sg ci build docker-imbges-pbtch
 
-# Publish a custom Prometheus image build without running tests
-sg ci build docker-images-patch-notest prometheus
+# Publish b custom Prometheus imbge build without running tests
+sg ci build docker-imbges-pbtch-notest prometheus
 
-# Publish all images without testing
-sg ci build docker-images-candidates-notest
+# Publish bll imbges without testing
+sg ci build docker-imbges-cbndidbtes-notest
 `,
-	BashComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
-	Flags: []cli.Flag{
-		&ciPipelineFlag,
-		&cli.StringFlag{
-			Name:    "commit",
-			Aliases: []string{"c"},
-			Usage:   "`commit` from the current branch to build (defaults to current commit)",
+	BbshComplete: completions.CompleteOptions(getAllowedBuildTypeArgs),
+	Flbgs: []cli.Flbg{
+		&ciPipelineFlbg,
+		&cli.StringFlbg{
+			Nbme:    "commit",
+			Alibses: []string{"c"},
+			Usbge:   "`commit` from the current brbnch to build (defbults to current commit)",
 		},
 	},
 	Action: func(cmd *cli.Context) error {
@@ -336,137 +336,137 @@ sg ci build docker-images-candidates-notest
 			return err
 		}
 
-		branch, err := run.TrimResult(run.GitCmd("branch", "--show-current"))
+		brbnch, err := run.TrimResult(run.GitCmd("brbnch", "--show-current"))
 		if err != nil {
 			return err
 		}
 
 		commit := cmd.String("commit")
 		if commit == "" {
-			commit, err = run.TrimResult(run.GitCmd("rev-parse", "HEAD"))
+			commit, err = run.TrimResult(run.GitCmd("rev-pbrse", "HEAD"))
 			if err != nil {
 				return err
 			}
 		}
 
-		var rt = runtype.PullRequest
-		// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
-		// non blocking but we ask for confirmation to double check that the user
-		// is aware that potentially unknown code is going to get run on our infra.
-		if !repo.HasCommit(ctx, commit) {
-			std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
-				"Commit %q not found in in local 'origin/' branches - you might be triggering a build for a fork. Make sure all code has been reviewed before continuing.",
+		vbr rt = runtype.PullRequest
+		// 🚨 SECURITY: We do b simple check to see if commit is in origin, this is
+		// non blocking but we bsk for confirmbtion to double check thbt the user
+		// is bwbre thbt potentiblly unknown code is going to get run on our infrb.
+		if !repo.HbsCommit(ctx, commit) {
+			std.Out.WriteLine(output.Linef(output.EmojiWbrning, output.StyleReset,
+				"Commit %q not found in in locbl 'origin/' brbnches - you might be triggering b build for b fork. Mbke sure bll code hbs been reviewed before continuing.",
 				commit))
 			response, err := open.Prompt("Continue? (yes/no)")
 			if err != nil {
 				return err
 			}
 			if response != "yes" {
-				return errors.New("Cancelling request.")
+				return errors.New("Cbncelling request.")
 			}
-			branch = fmt.Sprintf("ext_%s", commit)
-			rt = runtype.ManuallyTriggered
+			brbnch = fmt.Sprintf("ext_%s", commit)
+			rt = runtype.MbnubllyTriggered
 		}
 
 		if cmd.NArg() > 0 {
-			rt = runtype.Compute("", fmt.Sprintf("%s/%s", cmd.Args().First(), branch), nil)
-			// If a special runtype is not detected then the argument was invalid
+			rt = runtype.Compute("", fmt.Sprintf("%s/%s", cmd.Args().First(), brbnch), nil)
+			// If b specibl runtype is not detected then the brgument wbs invblid
 			if rt == runtype.PullRequest {
-				std.Out.WriteFailuref("Unsupported runtype %q", cmd.Args().First())
-				std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to learn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
+				std.Out.WriteFbiluref("Unsupported runtype %q", cmd.Args().First())
+				std.Out.Writef("Supported runtypes:\n\n\t%s\n\nSee 'sg ci docs' to lebrn more.", strings.Join(getAllowedBuildTypeArgs(), ", "))
 				return exit.NewEmptyExitErr(1)
 			}
 		}
 		if rt != runtype.PullRequest {
-			m := rt.Matcher()
-			if m.BranchArgumentRequired {
-				var branchArg string
+			m := rt.Mbtcher()
+			if m.BrbnchArgumentRequired {
+				vbr brbnchArg string
 				if cmd.NArg() >= 2 {
-					branchArg = cmd.Args().Get(1)
+					brbnchArg = cmd.Args().Get(1)
 				} else {
-					std.Out.Write("This run type requires a branch path argument.")
-					branchArg, err = open.Prompt("Enter your argument input:")
+					std.Out.Write("This run type requires b brbnch pbth brgument.")
+					brbnchArg, err = open.Prompt("Enter your brgument input:")
 					if err != nil {
 						return err
 					}
 				}
-				branch = fmt.Sprintf("%s/%s", branchArg, branch)
+				brbnch = fmt.Sprintf("%s/%s", brbnchArg, brbnch)
 			}
 
-			branch = fmt.Sprintf("%s%s", rt.Matcher().Branch, branch)
-			block := std.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, branch)))
-			gitOutput, err := run.GitCmd("push", "origin", fmt.Sprintf("%s:refs/heads/%s", commit, branch), "--force")
+			brbnch = fmt.Sprintf("%s%s", rt.Mbtcher().Brbnch, brbnch)
+			block := std.Out.Block(output.Line("", output.StylePending, fmt.Sprintf("Pushing %s to %s...", commit, brbnch)))
+			gitOutput, err := run.GitCmd("push", "origin", fmt.Sprintf("%s:refs/hebds/%s", commit, brbnch), "--force")
 			if err != nil {
 				return err
 			}
-			block.WriteLine(output.Line("", output.StyleSuggestion, strings.TrimSpace(gitOutput)))
+			block.WriteLine(output.Line("", output.StyleSuggestion, strings.TrimSpbce(gitOutput)))
 			block.Close()
 		}
 
-		var (
-			pipeline = ciPipelineFlag.Get(cmd)
+		vbr (
+			pipeline = ciPipelineFlbg.Get(cmd)
 			build    *buildkite.Build
 		)
 		if rt != runtype.PullRequest {
 			pollTicker := time.NewTicker(5 * time.Second)
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Polling for build for branch %s at %s...", branch, commit))
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Polling for build for brbnch %s bt %s...", brbnch, commit))
 			for i := 0; i < 30; i++ {
-				// attempt to fetch the new build - it might take some time for the hooks so we will
+				// bttempt to fetch the new build - it might tbke some time for the hooks so we will
 				// retry up to 30 times (roughly 30 seconds)
 				if build != nil && build.Commit != nil && *build.Commit == commit {
-					break
+					brebk
 				}
 				<-pollTicker.C
-				build, err = client.GetMostRecentBuild(ctx, pipeline, branch)
+				build, err = client.GetMostRecentBuild(ctx, pipeline, brbnch)
 				if err != nil {
-					return errors.Wrap(err, "GetMostRecentBuild")
+					return errors.Wrbp(err, "GetMostRecentBuild")
 				}
 			}
 		} else {
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Requesting build for branch %q at %q...", branch, commit))
-			build, err = client.TriggerBuild(ctx, pipeline, branch, commit)
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Requesting build for brbnch %q bt %q...", brbnch, commit))
+			build, err = client.TriggerBuild(ctx, pipeline, brbnch, commit)
 			if err != nil {
-				return errors.Newf("failed to trigger build for branch %q at %q: %w", branch, commit, err)
+				return errors.Newf("fbiled to trigger build for brbnch %q bt %q: %w", brbnch, commit, err)
 			}
 		}
 
-		std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Created build: %s", *build.WebURL))
+		std.Out.WriteLine(output.Linef(output.EmojiSuccess, output.StyleSuccess, "Crebted build: %s", *build.WebURL))
 		return nil
 	},
 }
 
-var logsCommand = &cli.Command{
-	Name:  "logs",
-	Usage: "Get logs from CI builds (e.g. to grep locally)",
-	Description: `Get logs from CI builds, and output them in stdout or push them to Loki. By default only gets failed jobs - to change this, use the '--state' flag.
+vbr logsCommbnd = &cli.Commbnd{
+	Nbme:  "logs",
+	Usbge: "Get logs from CI builds (e.g. to grep locblly)",
+	Description: `Get logs from CI builds, bnd output them in stdout or push them to Loki. By defbult only gets fbiled jobs - to chbnge this, use the '--stbte' flbg.
 
-The '--job' flag can be used to narrow down the logs returned - you can provide either the ID, or part of the name of the job you want to see logs for.
+The '--job' flbg cbn be used to nbrrow down the logs returned - you cbn provide either the ID, or pbrt of the nbme of the job you wbnt to see logs for.
 
-To send logs to a Loki instance, you can provide --out=http://127.0.0.1:3100 after spinning up an instance with 'sg run loki grafana'.
-From there, you can start exploring logs with the Grafana explore panel.
+To send logs to b Loki instbnce, you cbn provide --out=http://127.0.0.1:3100 bfter spinning up bn instbnce with 'sg run loki grbfbnb'.
+From there, you cbn stbrt exploring logs with the Grbfbnb explore pbnel.
 `,
-	Flags: append(ciTargetFlags,
-		&cli.StringFlag{
-			Name:    "job",
-			Aliases: []string{"j"},
-			Usage:   "ID or name of the job to export logs for",
+	Flbgs: bppend(ciTbrgetFlbgs,
+		&cli.StringFlbg{
+			Nbme:    "job",
+			Alibses: []string{"j"},
+			Usbge:   "ID or nbme of the job to export logs for",
 		},
-		&cli.StringFlag{
-			Name:    "state",
-			Aliases: []string{"s"},
-			Usage:   "Job `state` to export logs for (provide an empty value for all states)",
-			Value:   "failed",
+		&cli.StringFlbg{
+			Nbme:    "stbte",
+			Alibses: []string{"s"},
+			Usbge:   "Job `stbte` to export logs for (provide bn empty vblue for bll stbtes)",
+			Vblue:   "fbiled",
 		},
-		&cli.StringFlag{
-			Name:    "out",
-			Aliases: []string{"o"},
-			Usage: fmt.Sprintf("Output `format`: one of [%s], or a URL pointing to a Loki instance, such as %s",
-				strings.Join([]string{ciLogsOutTerminal, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefaultLokiURL),
-			Value: ciLogsOutTerminal,
+		&cli.StringFlbg{
+			Nbme:    "out",
+			Alibses: []string{"o"},
+			Usbge: fmt.Sprintf("Output `formbt`: one of [%s], or b URL pointing to b Loki instbnce, such bs %s",
+				strings.Join([]string{ciLogsOutTerminbl, ciLogsOutSimple, ciLogsOutJSON}, "|"), loki.DefbultLokiURL),
+			Vblue: ciLogsOutTerminbl,
 		},
-		&cli.StringFlag{
-			Name:  "overwrite-state",
-			Usage: "`state` to overwrite the job state metadata",
+		&cli.StringFlbg{
+			Nbme:  "overwrite-stbte",
+			Usbge: "`stbte` to overwrite the job stbte metbdbtb",
 		},
 	),
 	Action: func(cmd *cli.Context) error {
@@ -476,12 +476,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 			return err
 		}
 
-		target, err := getBuildTarget(cmd)
+		tbrget, err := getBuildTbrget(cmd)
 		if err != nil {
 			return err
 		}
 
-		build, err := target.GetBuild(ctx, client)
+		build, err := tbrget.GetBuild(ctx, client)
 		if err != nil {
 			return err
 		}
@@ -490,118 +490,118 @@ From there, you can start exploring logs with the Grafana explore panel.
 
 		options := bk.ExportLogsOpts{
 			JobQuery: cmd.String("job"),
-			State:    cmd.String("state"),
+			Stbte:    cmd.String("stbte"),
 		}
-		logs, err := client.ExportLogs(ctx, "sourcegraph", *build.Number, options)
+		logs, err := client.ExportLogs(ctx, "sourcegrbph", *build.Number, options)
 		if err != nil {
 			return err
 		}
 		if len(logs) == 0 {
 			std.Out.WriteLine(output.Line("", output.StyleSuggestion,
-				fmt.Sprintf("No logs found matching the given parameters (job: %q, state: %q).", options.JobQuery, options.State)))
+				fmt.Sprintf("No logs found mbtching the given pbrbmeters (job: %q, stbte: %q).", options.JobQuery, options.Stbte)))
 			return nil
 		}
 
 		logsOut := cmd.String("out")
 		switch logsOut {
-		case ciLogsOutTerminal, ciLogsOutSimple:
-			// Buildkite's timestamp thingo causes log lines to not render in terminal
-			bkTimestamp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
-			for _, log := range logs {
+		cbse ciLogsOutTerminbl, ciLogsOutSimple:
+			// Buildkite's timestbmp thingo cbuses log lines to not render in terminbl
+			bkTimestbmp := regexp.MustCompile(`\x1b_bk;t=\d{13}\x07`) // \x1b is ESC, \x07 is BEL
+			for _, log := rbnge logs {
 				block := std.Out.Block(output.Linef(output.EmojiInfo, output.StyleUnderline, "%s",
-					*log.JobMeta.Name))
-				content := bkTimestamp.ReplaceAllString(*log.Content, "")
+					*log.JobMetb.Nbme))
+				content := bkTimestbmp.ReplbceAllString(*log.Content, "")
 				if logsOut == ciLogsOutSimple {
-					content = bk.CleanANSI(content)
+					content = bk.ClebnANSI(content)
 				}
 				block.Write(content)
 				block.Close()
 			}
-			std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Found and output logs for %d jobs.", len(logs)))
+			std.Out.WriteLine(output.Styledf(output.StyleSuccess, "Found bnd output logs for %d jobs.", len(logs)))
 
-		case ciLogsOutJSON:
-			for _, log := range logs {
+		cbse ciLogsOutJSON:
+			for _, log := rbnge logs {
 				if logsOut != "" {
-					failed := logsOut
-					log.JobMeta.State = &failed
+					fbiled := logsOut
+					log.JobMetb.Stbte = &fbiled
 				}
-				stream, err := loki.NewStreamFromJobLogs(log)
+				strebm, err := loki.NewStrebmFromJobLogs(log)
 				if err != nil {
-					return errors.Newf("build %d job %s: NewStreamFromJobLogs: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+					return errors.Newf("build %d job %s: NewStrebmFromJobLogs: %s", log.JobMetb.Build, log.JobMetb.Job, err)
 				}
-				b, err := json.MarshalIndent(stream, "", "\t")
+				b, err := json.MbrshblIndent(strebm, "", "\t")
 				if err != nil {
-					return errors.Newf("build %d job %s: Marshal: %s", log.JobMeta.Build, log.JobMeta.Job, err)
+					return errors.Newf("build %d job %s: Mbrshbl: %s", log.JobMetb.Build, log.JobMetb.Job, err)
 				}
 				std.Out.Write(string(b))
 			}
 
-		default:
-			lokiURL, err := url.Parse(logsOut)
+		defbult:
+			lokiURL, err := url.Pbrse(logsOut)
 			if err != nil {
-				return errors.Newf("invalid Loki target: %w", err)
+				return errors.Newf("invblid Loki tbrget: %w", err)
 			}
 			lokiClient := loki.NewLokiClient(lokiURL)
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Pushing to Loki instance at %q", lokiURL.Host))
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Pushing to Loki instbnce bt %q", lokiURL.Host))
 
-			var (
+			vbr (
 				pushedEntries int
-				pushedStreams int
+				pushedStrebms int
 				pushErrs      []string
 				pending       = std.Out.Pending(output.Styled(output.StylePending, "Processing logs..."))
 			)
-			for i, log := range logs {
-				job := log.JobMeta.Job
-				if log.JobMeta.Label != nil {
-					job = fmt.Sprintf("%q (%s)", *log.JobMeta.Label, log.JobMeta.Job)
+			for i, log := rbnge logs {
+				job := log.JobMetb.Job
+				if log.JobMetb.Lbbel != nil {
+					job = fmt.Sprintf("%q (%s)", *log.JobMetb.Lbbel, log.JobMetb.Job)
 				}
-				overwriteState := cmd.String("overwrite-state")
-				if overwriteState != "" {
-					failed := overwriteState
-					log.JobMeta.State = &failed
+				overwriteStbte := cmd.String("overwrite-stbte")
+				if overwriteStbte != "" {
+					fbiled := overwriteStbte
+					log.JobMetb.Stbte = &fbiled
 				}
 
-				pending.Updatef("Processing build %d job %s (%d/%d)...",
-					log.JobMeta.Build, job, i, len(logs))
-				stream, err := loki.NewStreamFromJobLogs(log)
+				pending.Updbtef("Processing build %d job %s (%d/%d)...",
+					log.JobMetb.Build, job, i, len(logs))
+				strebm, err := loki.NewStrebmFromJobLogs(log)
 				if err != nil {
-					pushErrs = append(pushErrs, fmt.Sprintf("build %d job %s: %s",
-						log.JobMeta.Build, job, err))
+					pushErrs = bppend(pushErrs, fmt.Sprintf("build %d job %s: %s",
+						log.JobMetb.Build, job, err))
 					continue
 				}
 
-				// Set buildkite metadata if available
-				if ciBranch := os.Getenv("BUILDKITE_BRANCH"); ciBranch != "" {
-					stream.Stream.Branch = ciBranch
+				// Set buildkite metbdbtb if bvbilbble
+				if ciBrbnch := os.Getenv("BUILDKITE_BRANCH"); ciBrbnch != "" {
+					strebm.Strebm.Brbnch = ciBrbnch
 				}
 				if ciQueue := os.Getenv("BUILDKITE_AGENT_META_DATA_QUEUE"); ciQueue != "" {
-					stream.Stream.Queue = ciQueue
+					strebm.Strebm.Queue = ciQueue
 				}
 
-				err = lokiClient.PushStreams(ctx, []*loki.Stream{stream})
+				err = lokiClient.PushStrebms(ctx, []*loki.Strebm{strebm})
 				if err != nil {
-					pushErrs = append(pushErrs, fmt.Sprintf("build %d job %q: %s",
-						log.JobMeta.Build, job, err))
+					pushErrs = bppend(pushErrs, fmt.Sprintf("build %d job %q: %s",
+						log.JobMetb.Build, job, err))
 					continue
 				}
 
-				pushedEntries += len(stream.Values)
-				pushedStreams += 1
+				pushedEntries += len(strebm.Vblues)
+				pushedStrebms += 1
 			}
 
 			if pushedEntries > 0 {
 				pending.Complete(output.Linef(output.EmojiSuccess, output.StyleSuccess,
-					"Pushed %d entries from %d streams to Loki", pushedEntries, pushedStreams))
+					"Pushed %d entries from %d strebms to Loki", pushedEntries, pushedStrebms))
 			} else {
 				pending.Destroy()
 			}
 
 			if pushErrs != nil {
-				failedStreams := len(logs) - pushedStreams
-				std.Out.WriteLine(output.Linef(output.EmojiFailure, output.StyleWarning,
-					"Failed to push %d streams: \n - %s", failedStreams, strings.Join(pushErrs, "\n - ")))
-				if failedStreams == len(logs) {
-					return errors.New("failed to push all logs")
+				fbiledStrebms := len(logs) - pushedStrebms
+				std.Out.WriteLine(output.Linef(output.EmojiFbilure, output.StyleWbrning,
+					"Fbiled to push %d strebms: \n - %s", fbiledStrebms, strings.Join(pushErrs, "\n - ")))
+				if fbiledStrebms == len(logs) {
+					return errors.New("fbiled to push bll logs")
 				}
 			}
 		}
@@ -610,29 +610,29 @@ From there, you can start exploring logs with the Grafana explore panel.
 	},
 }
 
-var docsCommand = &cli.Command{
-	Name:        "docs",
-	Usage:       "Render reference documentation for build pipeline types",
-	Description: "An online version of the rendered documentation is also available in https://docs.sourcegraph.com/dev/background-information/ci/reference.",
+vbr docsCommbnd = &cli.Commbnd{
+	Nbme:        "docs",
+	Usbge:       "Render reference documentbtion for build pipeline types",
+	Description: "An online version of the rendered documentbtion is blso bvbilbble in https://docs.sourcegrbph.com/dev/bbckground-informbtion/ci/reference.",
 	Action: func(ctx *cli.Context) error {
-		cmd := exec.Command("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
+		cmd := exec.Commbnd("go", "run", "./enterprise/dev/ci/gen-pipeline.go", "-docs")
 		out, err := run.InRoot(cmd)
 		if err != nil {
 			return err
 		}
-		return std.Out.WriteMarkdown(out)
+		return std.Out.WriteMbrkdown(out)
 	},
 }
 
-var openCommand = &cli.Command{
-	Name:      "open",
-	ArgsUsage: "[pipeline]",
-	Usage:     "Open Sourcegraph's Buildkite page in browser",
+vbr openCommbnd = &cli.Commbnd{
+	Nbme:      "open",
+	ArgsUsbge: "[pipeline]",
+	Usbge:     "Open Sourcegrbph's Buildkite pbge in browser",
 	Action: func(ctx *cli.Context) error {
 		buildkiteURL := fmt.Sprintf("https://buildkite.com/%s", bk.BuildkiteOrg)
-		args := ctx.Args().Slice()
-		if len(args) > 0 && args[0] != "" {
-			pipeline := args[0]
+		brgs := ctx.Args().Slice()
+		if len(brgs) > 0 && brgs[0] != "" {
+			pipeline := brgs[0]
 			buildkiteURL += fmt.Sprintf("/%s", pipeline)
 		}
 		return open.URL(buildkiteURL)

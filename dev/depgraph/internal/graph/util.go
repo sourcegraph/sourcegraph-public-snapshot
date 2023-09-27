@@ -1,8 +1,8 @@
-package graph
+pbckbge grbph
 
 import "strings"
 
-// relative trims the given root from the given path.
-func relative(path, root string) string {
-	return strings.TrimPrefix(strings.TrimPrefix(path, root), "/")
+// relbtive trims the given root from the given pbth.
+func relbtive(pbth, root string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(pbth, root), "/")
 }

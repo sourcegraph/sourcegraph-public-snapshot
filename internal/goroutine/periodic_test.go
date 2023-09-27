@@ -1,4 +1,4 @@
-package goroutine
+pbckbge goroutine
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 
 	"github.com/derision-test/glock"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func withClock(clock glock.Clock) Option {
@@ -20,208 +20,208 @@ func withConcurrencyClock(clock glock.Clock) Option {
 
 func TestPeriodicGoroutine(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandler()
-	called := make(chan struct{}, 1)
+	hbndler := NewMockHbndler()
+	cblled := mbke(chbn struct{}, 1)
 
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
 		return nil
 	})
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithInterval(time.Second),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervbl(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
+	go goroutine.Stbrt()
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 4 {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 4, cblls)
 	}
 }
 
 func TestPeriodicGoroutineReinvoke(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandler()
-	called := make(chan struct{}, 1)
+	hbndler := NewMockHbndler()
+	cblled := mbke(chbn struct{}, 1)
 
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
-		return ErrReinvokeImmediately
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
+		return ErrReinvokeImmedibtely
 	})
 
-	witnessHandler := func() {
-		for i := 0; i < maxConsecutiveReinvocations; i++ {
-			<-called
+	witnessHbndler := func() {
+		for i := 0; i < mbxConsecutiveReinvocbtions; i++ {
+			<-cblled
 		}
 	}
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithInterval(time.Second),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervbl(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	witnessHandler()
-	clock.BlockingAdvance(time.Second)
-	witnessHandler()
-	clock.BlockingAdvance(time.Second)
-	witnessHandler()
-	clock.BlockingAdvance(time.Second)
-	witnessHandler()
+	go goroutine.Stbrt()
+	witnessHbndler()
+	clock.BlockingAdvbnce(time.Second)
+	witnessHbndler()
+	clock.BlockingAdvbnce(time.Second)
+	witnessHbndler()
+	clock.BlockingAdvbnce(time.Second)
+	witnessHbndler()
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4*maxConsecutiveReinvocations {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4*maxConsecutiveReinvocations, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 4*mbxConsecutiveReinvocbtions {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 4*mbxConsecutiveReinvocbtions, cblls)
 	}
 }
 
-func TestPeriodicGoroutineWithDynamicInterval(t *testing.T) {
+func TestPeriodicGoroutineWithDynbmicIntervbl(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandler()
-	called := make(chan struct{}, 1)
+	hbndler := NewMockHbndler()
+	cblled := mbke(chbn struct{}, 1)
 
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
 		return nil
 	})
 
 	seconds := 1
 
-	// intervals: 1 -> 2 -> 3 ...
-	getInterval := func() time.Duration {
-		duration := time.Duration(seconds) * time.Second
+	// intervbls: 1 -> 2 -> 3 ...
+	getIntervbl := func() time.Durbtion {
+		durbtion := time.Durbtion(seconds) * time.Second
 		seconds += 1
-		return duration
+		return durbtion
 	}
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithIntervalFunc(getInterval),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervblFunc(getIntervbl),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(2 * time.Second)
-	<-called
-	clock.BlockingAdvance(3 * time.Second)
-	<-called
+	go goroutine.Stbrt()
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(2 * time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(3 * time.Second)
+	<-cblled
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 4 {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 4, cblls)
 	}
 }
 
-func TestPeriodicGoroutineWithInitialDelay(t *testing.T) {
+func TestPeriodicGoroutineWithInitiblDelby(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandler()
-	called := make(chan struct{}, 1)
+	hbndler := NewMockHbndler()
+	cblled := mbke(chbn struct{}, 1)
 
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
 		return nil
 	})
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithInterval(time.Second),
-		WithInitialDelay(2*time.Second),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervbl(time.Second),
+		WithInitiblDelby(2*time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	clock.BlockingAdvance(time.Second)
+	go goroutine.Stbrt()
+	clock.BlockingAdvbnce(time.Second)
 	select {
-	case <-called:
-		t.Error("unexpected handler invocation")
-	default:
+	cbse <-cblled:
+		t.Error("unexpected hbndler invocbtion")
+	defbult:
 	}
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 3 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 3, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 3 {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 3, cblls)
 	}
 }
 
 func TestPeriodicGoroutineConcurrency(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandler()
-	called := make(chan struct{})
+	hbndler := NewMockHbndler()
+	cblled := mbke(chbn struct{})
 	concurrency := 4
 
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
 		return nil
 	})
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
 		WithConcurrency(concurrency),
 		withClock(clock),
 	)
-	go goroutine.Start()
+	go goroutine.Stbrt()
 
 	for i := 0; i < concurrency; i++ {
-		<-called
-		clock.BlockingAdvance(time.Second)
+		<-cblled
+		clock.BlockingAdvbnce(time.Second)
 	}
 
 	for i := 0; i < concurrency; i++ {
-		<-called
-		clock.BlockingAdvance(time.Second)
+		<-cblled
+		clock.BlockingAdvbnce(time.Second)
 	}
 
 	for i := 0; i < concurrency; i++ {
-		<-called
+		<-cblled
 	}
 
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 3*concurrency {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 3*concurrency, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 3*concurrency {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 3*concurrency, cblls)
 	}
 }
 
-func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
+func TestPeriodicGoroutineWithDynbmicConcurrency(t *testing.T) {
 	clock := glock.NewMockClock()
 	concurrencyClock := glock.NewMockClock()
-	handler := NewMockHandler()
-	called := make(chan struct{})
-	exit := make(chan struct{})
+	hbndler := NewMockHbndler()
+	cblled := mbke(chbn struct{})
+	exit := mbke(chbn struct{})
 
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
 		select {
-		case called <- struct{}{}:
+		cbse cblled <- struct{}{}:
 			return nil
 
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			select {
-			case exit <- struct{}{}:
-			default:
+			cbse exit <- struct{}{}:
+			defbult:
 			}
 
 			return ctx.Err()
@@ -237,163 +237,163 @@ func TestPeriodicGoroutineWithDynamicConcurrency(t *testing.T) {
 	}
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
 		WithConcurrencyFunc(getConcurrency),
 		withClock(clock),
 		withConcurrencyClock(concurrencyClock),
 	)
-	go goroutine.Start()
+	go goroutine.Stbrt()
 
 	for poolSize := 1; poolSize < 3; poolSize++ {
-		// Ensure each of the handlers can be called independently.
-		// Adding an additional channel read would block as each of
-		// the monitor routines would be waiting on the clock tick.
+		// Ensure ebch of the hbndlers cbn be cblled independently.
+		// Adding bn bdditionbl chbnnel rebd would block bs ebch of
+		// the monitor routines would be wbiting on the clock tick.
 		for i := 0; i < poolSize; i++ {
-			<-called
+			<-cblled
 		}
 
 		// Resize the pool
-		clock.BlockingAdvance(time.Second)                           // invoke but block one handler
-		concurrencyClock.BlockingAdvance(concurrencyRecheckInterval) // trigger drain of the old pool
-		<-exit                                                       // wait for blocked handler to exit
+		clock.BlockingAdvbnce(time.Second)                           // invoke but block one hbndler
+		concurrencyClock.BlockingAdvbnce(concurrencyRecheckIntervbl) // trigger drbin of the old pool
+		<-exit                                                       // wbit for blocked hbndler to exit
 	}
 
 	goroutine.Stop()
 
-	// N.B.: no need for assertions here as getting through the test at all to this
-	// point without some permanent blockage shows that each of the pool sizes behave
-	// as expected.
+	// N.B.: no need for bssertions here bs getting through the test bt bll to this
+	// point without some permbnent blockbge shows thbt ebch of the pool sizes behbve
+	// bs expected.
 }
 
 func TestPeriodicGoroutineError(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandlerWithErrorHandler()
+	hbndler := NewMockHbndlerWithErrorHbndler()
 
-	calls := 0
-	called := make(chan struct{}, 1)
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) (err error) {
-		if calls == 0 {
+	cblls := 0
+	cblled := mbke(chbn struct{}, 1)
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) (err error) {
+		if cblls == 0 {
 			err = errors.New("oops")
 		}
 
-		calls++
-		called <- struct{}{}
+		cblls++
+		cblled <- struct{}{}
 		return err
 	})
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithInterval(time.Second),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervbl(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
+	go goroutine.Stbrt()
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 4 {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 4, cblls)
 	}
 
-	if calls := len(handler.HandleErrorFunc.History()); calls != 1 {
-		t.Errorf("unexpected number of error handler invocations. want=%d have=%d", 1, calls)
+	if cblls := len(hbndler.HbndleErrorFunc.History()); cblls != 1 {
+		t.Errorf("unexpected number of error hbndler invocbtions. wbnt=%d hbve=%d", 1, cblls)
 	}
 }
 
 func TestPeriodicGoroutineContextError(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandlerWithErrorHandler()
+	hbndler := NewMockHbndlerWithErrorHbndler()
 
-	called := make(chan struct{}, 1)
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
+	cblled := mbke(chbn struct{}, 1)
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
 		<-ctx.Done()
 		return ctx.Err()
 	})
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithInterval(time.Second),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervbl(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	<-called
+	go goroutine.Stbrt()
+	<-cblled
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 1 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 1, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 1 {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 1, cblls)
 	}
 
-	if calls := len(handler.HandleErrorFunc.History()); calls != 0 {
-		t.Errorf("unexpected number of error handler invocations. want=%d have=%d", 0, calls)
+	if cblls := len(hbndler.HbndleErrorFunc.History()); cblls != 0 {
+		t.Errorf("unexpected number of error hbndler invocbtions. wbnt=%d hbve=%d", 0, cblls)
 	}
 }
 
-func TestPeriodicGoroutineFinalizer(t *testing.T) {
+func TestPeriodicGoroutineFinblizer(t *testing.T) {
 	clock := glock.NewMockClock()
-	handler := NewMockHandlerWithFinalizer()
+	hbndler := NewMockHbndlerWithFinblizer()
 
-	called := make(chan struct{}, 1)
-	handler.HandleFunc.SetDefaultHook(func(ctx context.Context) error {
-		called <- struct{}{}
+	cblled := mbke(chbn struct{}, 1)
+	hbndler.HbndleFunc.SetDefbultHook(func(ctx context.Context) error {
+		cblled <- struct{}{}
 		return nil
 	})
 
 	goroutine := NewPeriodicGoroutine(
-		context.Background(),
-		handler,
-		WithName(t.Name()),
-		WithInterval(time.Second),
+		context.Bbckground(),
+		hbndler,
+		WithNbme(t.Nbme()),
+		WithIntervbl(time.Second),
 		withClock(clock),
 	)
-	go goroutine.Start()
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
-	clock.BlockingAdvance(time.Second)
-	<-called
+	go goroutine.Stbrt()
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
+	clock.BlockingAdvbnce(time.Second)
+	<-cblled
 	goroutine.Stop()
 
-	if calls := len(handler.HandleFunc.History()); calls != 4 {
-		t.Errorf("unexpected number of handler invocations. want=%d have=%d", 4, calls)
+	if cblls := len(hbndler.HbndleFunc.History()); cblls != 4 {
+		t.Errorf("unexpected number of hbndler invocbtions. wbnt=%d hbve=%d", 4, cblls)
 	}
 
-	if calls := len(handler.OnShutdownFunc.History()); calls != 1 {
-		t.Errorf("unexpected number of finalizer invocations. want=%d have=%d", 1, calls)
-	}
-}
-
-type MockHandlerWithErrorHandler struct {
-	*MockHandler
-	*MockErrorHandler
-}
-
-func NewMockHandlerWithErrorHandler() *MockHandlerWithErrorHandler {
-	return &MockHandlerWithErrorHandler{
-		MockHandler:      NewMockHandler(),
-		MockErrorHandler: NewMockErrorHandler(),
+	if cblls := len(hbndler.OnShutdownFunc.History()); cblls != 1 {
+		t.Errorf("unexpected number of finblizer invocbtions. wbnt=%d hbve=%d", 1, cblls)
 	}
 }
 
-type MockHandlerWithFinalizer struct {
-	*MockHandler
-	*MockFinalizer
+type MockHbndlerWithErrorHbndler struct {
+	*MockHbndler
+	*MockErrorHbndler
 }
 
-func NewMockHandlerWithFinalizer() *MockHandlerWithFinalizer {
-	return &MockHandlerWithFinalizer{
-		MockHandler:   NewMockHandler(),
-		MockFinalizer: NewMockFinalizer(),
+func NewMockHbndlerWithErrorHbndler() *MockHbndlerWithErrorHbndler {
+	return &MockHbndlerWithErrorHbndler{
+		MockHbndler:      NewMockHbndler(),
+		MockErrorHbndler: NewMockErrorHbndler(),
+	}
+}
+
+type MockHbndlerWithFinblizer struct {
+	*MockHbndler
+	*MockFinblizer
+}
+
+func NewMockHbndlerWithFinblizer() *MockHbndlerWithFinblizer {
+	return &MockHbndlerWithFinblizer{
+		MockHbndler:   NewMockHbndler(),
+		MockFinblizer: NewMockFinblizer(),
 	}
 }

@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,98 +7,98 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/stbte"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ graphqlbackend.BatchChangeResolver = &batchChangeResolver{}
+vbr _ grbphqlbbckend.BbtchChbngeResolver = &bbtchChbngeResolver{}
 
-type batchChangeResolver struct {
+type bbtchChbngeResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	batchChange *btypes.BatchChange
+	bbtchChbnge *btypes.BbtchChbnge
 
-	// Cache the namespace on the resolver, since it's accessed more than once.
-	namespaceOnce sync.Once
-	namespace     graphqlbackend.NamespaceResolver
-	namespaceErr  error
+	// Cbche the nbmespbce on the resolver, since it's bccessed more thbn once.
+	nbmespbceOnce sync.Once
+	nbmespbce     grbphqlbbckend.NbmespbceResolver
+	nbmespbceErr  error
 
-	batchSpecOnce sync.Once
-	batchSpec     *btypes.BatchSpec
-	batchSpecErr  error
+	bbtchSpecOnce sync.Once
+	bbtchSpec     *btypes.BbtchSpec
+	bbtchSpecErr  error
 
-	canAdministerOnce sync.Once
-	canAdminister     bool
-	canAdministerErr  error
+	cbnAdministerOnce sync.Once
+	cbnAdminister     bool
+	cbnAdministerErr  error
 }
 
-const batchChangeIDKind = "BatchChange"
+const bbtchChbngeIDKind = "BbtchChbnge"
 
-func unmarshalBatchChangeID(id graphql.ID) (batchChangeID int64, err error) {
-	err = relay.UnmarshalSpec(id, &batchChangeID)
+func unmbrshblBbtchChbngeID(id grbphql.ID) (bbtchChbngeID int64, err error) {
+	err = relby.UnmbrshblSpec(id, &bbtchChbngeID)
 	return
 }
 
-func (r *batchChangeResolver) ID() graphql.ID {
-	return bgql.MarshalBatchChangeID(r.batchChange.ID)
+func (r *bbtchChbngeResolver) ID() grbphql.ID {
+	return bgql.MbrshblBbtchChbngeID(r.bbtchChbnge.ID)
 }
 
-func (r *batchChangeResolver) Name() string {
-	return r.batchChange.Name
+func (r *bbtchChbngeResolver) Nbme() string {
+	return r.bbtchChbnge.Nbme
 }
 
-func (r *batchChangeResolver) Description() *string {
-	if r.batchChange.Description == "" {
+func (r *bbtchChbngeResolver) Description() *string {
+	if r.bbtchChbnge.Description == "" {
 		return nil
 	}
-	return &r.batchChange.Description
+	return &r.bbtchChbnge.Description
 }
 
-func (r *batchChangeResolver) State() string {
-	var batchChangeState btypes.BatchChangeState
-	if r.batchChange.Closed() {
-		batchChangeState = btypes.BatchChangeStateClosed
-	} else if r.batchChange.IsDraft() {
-		batchChangeState = btypes.BatchChangeStateDraft
+func (r *bbtchChbngeResolver) Stbte() string {
+	vbr bbtchChbngeStbte btypes.BbtchChbngeStbte
+	if r.bbtchChbnge.Closed() {
+		bbtchChbngeStbte = btypes.BbtchChbngeStbteClosed
+	} else if r.bbtchChbnge.IsDrbft() {
+		bbtchChbngeStbte = btypes.BbtchChbngeStbteDrbft
 	} else {
-		batchChangeState = btypes.BatchChangeStateOpen
+		bbtchChbngeStbte = btypes.BbtchChbngeStbteOpen
 	}
 
-	return batchChangeState.ToGraphQL()
+	return bbtchChbngeStbte.ToGrbphQL()
 }
 
-func (r *batchChangeResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.CreatorID)
+func (r *bbtchChbngeResolver) Crebtor(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.store.DbtbbbseDB(), r.bbtchChbnge.CrebtorID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
 	return user, err
 }
 
-func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	if r.batchChange.LastApplierID == 0 {
+func (r *bbtchChbngeResolver) LbstApplier(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	if r.bbtchChbnge.LbstApplierID == 0 {
 		return nil, nil
 	}
 
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchChange.LastApplierID)
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.store.DbtbbbseDB(), r.bbtchChbnge.LbstApplierID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
@@ -106,256 +106,256 @@ func (r *batchChangeResolver) LastApplier(ctx context.Context) (*graphqlbackend.
 	return user, err
 }
 
-func (r *batchChangeResolver) LastAppliedAt() *gqlutil.DateTime {
-	if r.batchChange.LastAppliedAt.IsZero() {
+func (r *bbtchChbngeResolver) LbstAppliedAt() *gqlutil.DbteTime {
+	if r.bbtchChbnge.LbstAppliedAt.IsZero() {
 		return nil
 	}
 
-	return &gqlutil.DateTime{Time: r.batchChange.LastAppliedAt}
+	return &gqlutil.DbteTime{Time: r.bbtchChbnge.LbstAppliedAt}
 }
 
-func (r *batchChangeResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	r.canAdministerOnce.Do(func() {
+func (r *bbtchChbngeResolver) ViewerCbnAdminister(ctx context.Context) (bool, error) {
+	r.cbnAdministerOnce.Do(func() {
 		svc := service.New(r.store)
-		r.canAdminister, r.canAdministerErr = svc.CheckViewerCanAdminister(ctx, r.batchChange.NamespaceUserID, r.batchChange.NamespaceOrgID)
+		r.cbnAdminister, r.cbnAdministerErr = svc.CheckViewerCbnAdminister(ctx, r.bbtchChbnge.NbmespbceUserID, r.bbtchChbnge.NbmespbceOrgID)
 	})
-	return r.canAdminister, r.canAdministerErr
+	return r.cbnAdminister, r.cbnAdministerErr
 }
 
-func (r *batchChangeResolver) URL(ctx context.Context) (string, error) {
-	n, err := r.Namespace(ctx)
+func (r *bbtchChbngeResolver) URL(ctx context.Context) (string, error) {
+	n, err := r.Nbmespbce(ctx)
 	if err != nil {
 		return "", err
 	}
-	return batchChangeURL(n, r), nil
+	return bbtchChbngeURL(n, r), nil
 }
 
-func (r *batchChangeResolver) Namespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
-	return r.computeNamespace(ctx)
+func (r *bbtchChbngeResolver) Nbmespbce(ctx context.Context) (grbphqlbbckend.NbmespbceResolver, error) {
+	return r.computeNbmespbce(ctx)
 }
 
-func (r *batchChangeResolver) computeNamespace(ctx context.Context) (graphqlbackend.NamespaceResolver, error) {
-	r.namespaceOnce.Do(func() {
-		if r.batchChange.NamespaceUserID != 0 {
-			r.namespace.Namespace, r.namespaceErr = graphqlbackend.UserByIDInt32(
+func (r *bbtchChbngeResolver) computeNbmespbce(ctx context.Context) (grbphqlbbckend.NbmespbceResolver, error) {
+	r.nbmespbceOnce.Do(func() {
+		if r.bbtchChbnge.NbmespbceUserID != 0 {
+			r.nbmespbce.Nbmespbce, r.nbmespbceErr = grbphqlbbckend.UserByIDInt32(
 				ctx,
-				r.store.DatabaseDB(),
-				r.batchChange.NamespaceUserID,
+				r.store.DbtbbbseDB(),
+				r.bbtchChbnge.NbmespbceUserID,
 			)
 		} else {
-			r.namespace.Namespace, r.namespaceErr = graphqlbackend.OrgByIDInt32(
+			r.nbmespbce.Nbmespbce, r.nbmespbceErr = grbphqlbbckend.OrgByIDInt32(
 				ctx,
-				r.store.DatabaseDB(),
-				r.batchChange.NamespaceOrgID,
+				r.store.DbtbbbseDB(),
+				r.bbtchChbnge.NbmespbceOrgID,
 			)
 		}
-		if errcode.IsNotFound(r.namespaceErr) {
-			r.namespace.Namespace = nil
-			r.namespaceErr = errors.New("namespace of batch change has been deleted")
+		if errcode.IsNotFound(r.nbmespbceErr) {
+			r.nbmespbce.Nbmespbce = nil
+			r.nbmespbceErr = errors.New("nbmespbce of bbtch chbnge hbs been deleted")
 		}
 	})
 
-	return r.namespace, r.namespaceErr
+	return r.nbmespbce, r.nbmespbceErr
 }
 
-func (r *batchChangeResolver) computeBatchSpec(ctx context.Context) (*btypes.BatchSpec, error) {
-	r.batchSpecOnce.Do(func() {
-		r.batchSpec, r.batchSpecErr = r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
-			ID: r.batchChange.BatchSpecID,
+func (r *bbtchChbngeResolver) computeBbtchSpec(ctx context.Context) (*btypes.BbtchSpec, error) {
+	r.bbtchSpecOnce.Do(func() {
+		r.bbtchSpec, r.bbtchSpecErr = r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{
+			ID: r.bbtchChbnge.BbtchSpecID,
 		})
 	})
 
-	return r.batchSpec, r.batchSpecErr
+	return r.bbtchSpec, r.bbtchSpecErr
 }
 
-func (r *batchChangeResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.batchChange.CreatedAt}
+func (r *bbtchChbngeResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bbtchChbnge.CrebtedAt}
 }
 
-func (r *batchChangeResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.batchChange.UpdatedAt}
+func (r *bbtchChbngeResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bbtchChbnge.UpdbtedAt}
 }
 
-func (r *batchChangeResolver) ClosedAt() *gqlutil.DateTime {
-	if !r.batchChange.Closed() {
+func (r *bbtchChbngeResolver) ClosedAt() *gqlutil.DbteTime {
+	if !r.bbtchChbnge.Closed() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.batchChange.ClosedAt}
+	return &gqlutil.DbteTime{Time: r.bbtchChbnge.ClosedAt}
 }
 
-func (r *batchChangeResolver) ChangesetsStats(ctx context.Context) (graphqlbackend.ChangesetsStatsResolver, error) {
-	stats, err := r.store.GetChangesetsStats(ctx, r.batchChange.ID)
+func (r *bbtchChbngeResolver) ChbngesetsStbts(ctx context.Context) (grbphqlbbckend.ChbngesetsStbtsResolver, error) {
+	stbts, err := r.store.GetChbngesetsStbts(ctx, r.bbtchChbnge.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &changesetsStatsResolver{stats: stats}, nil
+	return &chbngesetsStbtsResolver{stbts: stbts}, nil
 }
 
-func (r *batchChangeResolver) Changesets(
+func (r *bbtchChbngeResolver) Chbngesets(
 	ctx context.Context,
-	args *graphqlbackend.ListChangesetsArgs,
-) (graphqlbackend.ChangesetsConnectionResolver, error) {
-	opts, safe, err := listChangesetOptsFromArgs(args, r.batchChange.ID)
+	brgs *grbphqlbbckend.ListChbngesetsArgs,
+) (grbphqlbbckend.ChbngesetsConnectionResolver, error) {
+	opts, sbfe, err := listChbngesetOptsFromArgs(brgs, r.bbtchChbnge.ID)
 	if err != nil {
 		return nil, err
 	}
-	opts.BatchChangeID = r.batchChange.ID
-	return &changesetsConnectionResolver{
+	opts.BbtchChbngeID = r.bbtchChbnge.ID
+	return &chbngesetsConnectionResolver{
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
 		logger:          r.logger,
 		opts:            opts,
-		optsSafe:        safe,
+		optsSbfe:        sbfe,
 	}, nil
 }
 
-func (r *batchChangeResolver) ChangesetCountsOverTime(
+func (r *bbtchChbngeResolver) ChbngesetCountsOverTime(
 	ctx context.Context,
-	args *graphqlbackend.ChangesetCountsArgs,
-) ([]graphqlbackend.ChangesetCountsResolver, error) {
-	publishedState := btypes.ChangesetPublicationStatePublished
-	opts := store.ListChangesetsOpts{
-		BatchChangeID:   r.batchChange.ID,
-		IncludeArchived: args.IncludeArchived,
-		// Only load fully-synced changesets, so that the data we use for computing the changeset counts is complete.
-		PublicationState: &publishedState,
+	brgs *grbphqlbbckend.ChbngesetCountsArgs,
+) ([]grbphqlbbckend.ChbngesetCountsResolver, error) {
+	publishedStbte := btypes.ChbngesetPublicbtionStbtePublished
+	opts := store.ListChbngesetsOpts{
+		BbtchChbngeID:   r.bbtchChbnge.ID,
+		IncludeArchived: brgs.IncludeArchived,
+		// Only lobd fully-synced chbngesets, so thbt the dbtb we use for computing the chbngeset counts is complete.
+		PublicbtionStbte: &publishedStbte,
 	}
-	cs, _, err := r.store.ListChangesets(ctx, opts)
+	cs, _, err := r.store.ListChbngesets(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	var es []*btypes.ChangesetEvent
-	changesetIDs := cs.IDs()
-	if len(changesetIDs) > 0 {
-		eventsOpts := store.ListChangesetEventsOpts{ChangesetIDs: changesetIDs, Kinds: state.RequiredEventTypesForHistory}
-		es, _, err = r.store.ListChangesetEvents(ctx, eventsOpts)
+	vbr es []*btypes.ChbngesetEvent
+	chbngesetIDs := cs.IDs()
+	if len(chbngesetIDs) > 0 {
+		eventsOpts := store.ListChbngesetEventsOpts{ChbngesetIDs: chbngesetIDs, Kinds: stbte.RequiredEventTypesForHistory}
+		es, _, err = r.store.ListChbngesetEvents(ctx, eventsOpts)
 		if err != nil {
 			return nil, err
 		}
 	}
-	// Sort all events once by their timestamps, CalcCounts depends on it.
-	events := state.ChangesetEvents(es)
+	// Sort bll events once by their timestbmps, CblcCounts depends on it.
+	events := stbte.ChbngesetEvents(es)
 	sort.Sort(events)
 
-	// Determine timeframe.
+	// Determine timefrbme.
 	now := r.store.Clock()()
 	weekAgo := now.Add(-7 * 24 * time.Hour)
-	start := r.batchChange.CreatedAt.UTC()
+	stbrt := r.bbtchChbnge.CrebtedAt.UTC()
 	if len(events) > 0 {
-		start = events[0].Timestamp().UTC()
+		stbrt = events[0].Timestbmp().UTC()
 	}
-	// At least a week lookback, more if the batch change was created earlier.
-	if start.After(weekAgo) {
-		start = weekAgo
+	// At lebst b week lookbbck, more if the bbtch chbnge wbs crebted ebrlier.
+	if stbrt.After(weekAgo) {
+		stbrt = weekAgo
 	}
-	if args.From != nil {
-		start = args.From.Time.UTC()
+	if brgs.From != nil {
+		stbrt = brgs.From.Time.UTC()
 	}
 	end := now.UTC()
-	if args.To != nil && args.To.Time.Before(end) {
-		end = args.To.Time.UTC()
+	if brgs.To != nil && brgs.To.Time.Before(end) {
+		end = brgs.To.Time.UTC()
 	}
 
-	counts, err := state.CalcCounts(start, end, cs, es...)
+	counts, err := stbte.CblcCounts(stbrt, end, cs, es...)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetCountsResolver, 0, len(counts))
-	for _, c := range counts {
-		resolvers = append(resolvers, &changesetCountsResolver{counts: c})
+	resolvers := mbke([]grbphqlbbckend.ChbngesetCountsResolver, 0, len(counts))
+	for _, c := rbnge counts {
+		resolvers = bppend(resolvers, &chbngesetCountsResolver{counts: c})
 	}
 
 	return resolvers, nil
 }
 
-func (r *batchChangeResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	diffStat, err := r.store.GetBatchChangeDiffStat(ctx, store.GetBatchChangeDiffStatOpts{BatchChangeID: r.batchChange.ID})
+func (r *bbtchChbngeResolver) DiffStbt(ctx context.Context) (*grbphqlbbckend.DiffStbt, error) {
+	diffStbt, err := r.store.GetBbtchChbngeDiffStbt(ctx, store.GetBbtchChbngeDiffStbtOpts{BbtchChbngeID: r.bbtchChbnge.ID})
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewDiffStat(*diffStat), nil
+	return grbphqlbbckend.NewDiffStbt(*diffStbt), nil
 }
 
-func (r *batchChangeResolver) CurrentSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	batchSpec, err := r.computeBatchSpec(ctx)
+func (r *bbtchChbngeResolver) CurrentSpec(ctx context.Context) (grbphqlbbckend.BbtchSpecResolver, error) {
+	bbtchSpec, err := r.computeBbtchSpec(ctx)
 	if err != nil {
-		// This spec should always exist, so fail hard on not found errors as well.
+		// This spec should blwbys exist, so fbil hbrd on not found errors bs well.
 		return nil, err
 	}
 
-	return &batchSpecResolver{store: r.store, batchSpec: batchSpec, logger: r.logger}, nil
+	return &bbtchSpecResolver{store: r.store, bbtchSpec: bbtchSpec, logger: r.logger}, nil
 }
 
-func (r *batchChangeResolver) BulkOperations(
+func (r *bbtchChbngeResolver) BulkOperbtions(
 	ctx context.Context,
-	args *graphqlbackend.ListBatchChangeBulkOperationArgs,
-) (graphqlbackend.BulkOperationConnectionResolver, error) {
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	brgs *grbphqlbbckend.ListBbtchChbngeBulkOperbtionArgs,
+) (grbphqlbbckend.BulkOperbtionConnectionResolver, error) {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts := store.ListBulkOperationsOpts{
+	opts := store.ListBulkOperbtionsOpts{
 		LimitOpts: store.LimitOpts{
-			Limit: int(args.First),
+			Limit: int(brgs.First),
 		},
 	}
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	if args.CreatedAfter != nil {
-		opts.CreatedAfter = args.CreatedAfter.Time
+	if brgs.CrebtedAfter != nil {
+		opts.CrebtedAfter = brgs.CrebtedAfter.Time
 	}
 
-	return &bulkOperationConnectionResolver{
+	return &bulkOperbtionConnectionResolver{
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
-		batchChangeID:   r.batchChange.ID,
+		bbtchChbngeID:   r.bbtchChbnge.ID,
 		opts:            opts,
 		logger:          r.logger,
 	}, nil
 }
 
-func (r *batchChangeResolver) BatchSpecs(
+func (r *bbtchChbngeResolver) BbtchSpecs(
 	ctx context.Context,
-	args *graphqlbackend.ListBatchSpecArgs,
-) (graphqlbackend.BatchSpecConnectionResolver, error) {
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	brgs *grbphqlbbckend.ListBbtchSpecArgs,
+) (grbphqlbbckend.BbtchSpecConnectionResolver, error) {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts := store.ListBatchSpecsOpts{
-		BatchChangeID: r.batchChange.ID,
+	opts := store.ListBbtchSpecsOpts{
+		BbtchChbngeID: r.bbtchChbnge.ID,
 		LimitOpts: store.LimitOpts{
-			Limit: int(args.First),
+			Limit: int(brgs.First),
 		},
-		// We want the batch spec connection to always show the latest one first.
+		// We wbnt the bbtch spec connection to blwbys show the lbtest one first.
 		NewestFirst: true,
 	}
 
-	if args.IncludeLocallyExecutedSpecs != nil {
-		opts.IncludeLocallyExecutedSpecs = *args.IncludeLocallyExecutedSpecs
+	if brgs.IncludeLocbllyExecutedSpecs != nil {
+		opts.IncludeLocbllyExecutedSpecs = *brgs.IncludeLocbllyExecutedSpecs
 	}
 
-	if args.ExcludeEmptySpecs != nil {
-		opts.ExcludeEmptySpecs = *args.ExcludeEmptySpecs
+	if brgs.ExcludeEmptySpecs != nil {
+		opts.ExcludeEmptySpecs = *brgs.ExcludeEmptySpecs
 	}
 
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB()); err != nil {
-		opts.ExcludeCreatedFromRawNotOwnedByUser = actor.FromContext(ctx).UID
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB()); err != nil {
+		opts.ExcludeCrebtedFromRbwNotOwnedByUser = bctor.FromContext(ctx).UID
 	}
 
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	return &batchSpecConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
+	return &bbtchSpecConnectionResolver{store: r.store, logger: r.logger, opts: opts}, nil
 }

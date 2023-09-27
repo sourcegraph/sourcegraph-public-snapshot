@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,152 +6,152 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const batchChangesCredentialIDKind = "BatchChangesCredential"
+const bbtchChbngesCredentiblIDKind = "BbtchChbngesCredentibl"
 
 const (
-	siteCredentialPrefix = "site"
-	userCredentialPrefix = "user"
+	siteCredentiblPrefix = "site"
+	userCredentiblPrefix = "user"
 )
 
-func marshalBatchChangesCredentialID(id int64, isSiteCredential bool) graphql.ID {
-	var idStr string
-	if isSiteCredential {
-		idStr = fmt.Sprintf("%s:%d", siteCredentialPrefix, id)
+func mbrshblBbtchChbngesCredentiblID(id int64, isSiteCredentibl bool) grbphql.ID {
+	vbr idStr string
+	if isSiteCredentibl {
+		idStr = fmt.Sprintf("%s:%d", siteCredentiblPrefix, id)
 	} else {
-		idStr = fmt.Sprintf("%s:%d", userCredentialPrefix, id)
+		idStr = fmt.Sprintf("%s:%d", userCredentiblPrefix, id)
 	}
-	return relay.MarshalID(batchChangesCredentialIDKind, idStr)
+	return relby.MbrshblID(bbtchChbngesCredentiblIDKind, idStr)
 }
 
-func unmarshalBatchChangesCredentialID(id graphql.ID) (credentialID int64, isSiteCredential bool, err error) {
-	var strID string
-	if err := relay.UnmarshalSpec(id, &strID); err != nil {
-		return credentialID, isSiteCredential, err
+func unmbrshblBbtchChbngesCredentiblID(id grbphql.ID) (credentiblID int64, isSiteCredentibl bool, err error) {
+	vbr strID string
+	if err := relby.UnmbrshblSpec(id, &strID); err != nil {
+		return credentiblID, isSiteCredentibl, err
 	}
 
-	parts := strings.SplitN(strID, ":", 2)
-	if len(parts) != 2 {
-		return credentialID, isSiteCredential, errors.New("invalid id")
+	pbrts := strings.SplitN(strID, ":", 2)
+	if len(pbrts) != 2 {
+		return credentiblID, isSiteCredentibl, errors.New("invblid id")
 	}
 
-	kind := parts[0]
+	kind := pbrts[0]
 	switch strings.ToLower(kind) {
-	case siteCredentialPrefix:
-		isSiteCredential = true
-	case userCredentialPrefix:
-	default:
-		return credentialID, isSiteCredential, errors.Errorf("invalid id, unsupported credential kind %q", kind)
+	cbse siteCredentiblPrefix:
+		isSiteCredentibl = true
+	cbse userCredentiblPrefix:
+	defbult:
+		return credentiblID, isSiteCredentibl, errors.Errorf("invblid id, unsupported credentibl kind %q", kind)
 	}
 
-	parsedID, err := strconv.Atoi(parts[1])
-	return int64(parsedID), isSiteCredential, err
+	pbrsedID, err := strconv.Atoi(pbrts[1])
+	return int64(pbrsedID), isSiteCredentibl, err
 }
 
-func commentSSHKey(ssh auth.AuthenticatorWithSSH) string {
-	url := globals.ExternalURL()
+func commentSSHKey(ssh buth.AuthenticbtorWithSSH) string {
+	url := globbls.ExternblURL()
 	if url != nil && url.Host != "" {
-		return strings.TrimRight(ssh.SSHPublicKey(), "\n") + " Sourcegraph " + url.Host
+		return strings.TrimRight(ssh.SSHPublicKey(), "\n") + " Sourcegrbph " + url.Host
 	}
 	return ssh.SSHPublicKey()
 }
 
-type batchChangesUserCredentialResolver struct {
-	credential *database.UserCredential
+type bbtchChbngesUserCredentiblResolver struct {
+	credentibl *dbtbbbse.UserCredentibl
 }
 
-var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesUserCredentialResolver{}
+vbr _ grbphqlbbckend.BbtchChbngesCredentiblResolver = &bbtchChbngesUserCredentiblResolver{}
 
-func (c *batchChangesUserCredentialResolver) ID() graphql.ID {
-	return marshalBatchChangesCredentialID(c.credential.ID, false)
+func (c *bbtchChbngesUserCredentiblResolver) ID() grbphql.ID {
+	return mbrshblBbtchChbngesCredentiblID(c.credentibl.ID, fblse)
 }
 
-func (c *batchChangesUserCredentialResolver) ExternalServiceKind() string {
-	return extsvc.TypeToKind(c.credential.ExternalServiceType)
+func (c *bbtchChbngesUserCredentiblResolver) ExternblServiceKind() string {
+	return extsvc.TypeToKind(c.credentibl.ExternblServiceType)
 }
 
-func (c *batchChangesUserCredentialResolver) ExternalServiceURL() string {
-	// This is usually the code host URL.
-	return c.credential.ExternalServiceID
+func (c *bbtchChbngesUserCredentiblResolver) ExternblServiceURL() string {
+	// This is usublly the code host URL.
+	return c.credentibl.ExternblServiceID
 }
 
-func (c *batchChangesUserCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx)
+func (c *bbtchChbngesUserCredentiblResolver) SSHPublicKey(ctx context.Context) (*string, error) {
+	b, err := c.credentibl.Authenticbtor(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "retrieving authenticator")
+		return nil, errors.Wrbp(err, "retrieving buthenticbtor")
 	}
 
-	if ssh, ok := a.(auth.AuthenticatorWithSSH); ok {
+	if ssh, ok := b.(buth.AuthenticbtorWithSSH); ok {
 		publicKey := commentSSHKey(ssh)
 		return &publicKey, nil
 	}
 	return nil, nil
 }
 
-func (c *batchChangesUserCredentialResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: c.credential.CreatedAt}
+func (c *bbtchChbngesUserCredentiblResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: c.credentibl.CrebtedAt}
 }
 
-func (c *batchChangesUserCredentialResolver) IsSiteCredential() bool {
-	return false
+func (c *bbtchChbngesUserCredentiblResolver) IsSiteCredentibl() bool {
+	return fblse
 }
 
-func (c *batchChangesUserCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx)
+func (c *bbtchChbngesUserCredentiblResolver) buthenticbtor(ctx context.Context) (buth.Authenticbtor, error) {
+	return c.credentibl.Authenticbtor(ctx)
 }
 
-type batchChangesSiteCredentialResolver struct {
-	credential *btypes.SiteCredential
+type bbtchChbngesSiteCredentiblResolver struct {
+	credentibl *btypes.SiteCredentibl
 }
 
-var _ graphqlbackend.BatchChangesCredentialResolver = &batchChangesSiteCredentialResolver{}
+vbr _ grbphqlbbckend.BbtchChbngesCredentiblResolver = &bbtchChbngesSiteCredentiblResolver{}
 
-func (c *batchChangesSiteCredentialResolver) ID() graphql.ID {
-	return marshalBatchChangesCredentialID(c.credential.ID, true)
+func (c *bbtchChbngesSiteCredentiblResolver) ID() grbphql.ID {
+	return mbrshblBbtchChbngesCredentiblID(c.credentibl.ID, true)
 }
 
-func (c *batchChangesSiteCredentialResolver) ExternalServiceKind() string {
-	return extsvc.TypeToKind(c.credential.ExternalServiceType)
+func (c *bbtchChbngesSiteCredentiblResolver) ExternblServiceKind() string {
+	return extsvc.TypeToKind(c.credentibl.ExternblServiceType)
 }
 
-func (c *batchChangesSiteCredentialResolver) ExternalServiceURL() string {
-	// This is usually the code host URL.
-	return c.credential.ExternalServiceID
+func (c *bbtchChbngesSiteCredentiblResolver) ExternblServiceURL() string {
+	// This is usublly the code host URL.
+	return c.credentibl.ExternblServiceID
 }
 
-func (c *batchChangesSiteCredentialResolver) SSHPublicKey(ctx context.Context) (*string, error) {
-	a, err := c.credential.Authenticator(ctx)
+func (c *bbtchChbngesSiteCredentiblResolver) SSHPublicKey(ctx context.Context) (*string, error) {
+	b, err := c.credentibl.Authenticbtor(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "decrypting authenticator")
+		return nil, errors.Wrbp(err, "decrypting buthenticbtor")
 	}
 
-	if ssh, ok := a.(auth.AuthenticatorWithSSH); ok {
+	if ssh, ok := b.(buth.AuthenticbtorWithSSH); ok {
 		publicKey := commentSSHKey(ssh)
 		return &publicKey, nil
 	}
 	return nil, nil
 }
 
-func (c *batchChangesSiteCredentialResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: c.credential.CreatedAt}
+func (c *bbtchChbngesSiteCredentiblResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: c.credentibl.CrebtedAt}
 }
 
-func (c *batchChangesSiteCredentialResolver) IsSiteCredential() bool {
+func (c *bbtchChbngesSiteCredentiblResolver) IsSiteCredentibl() bool {
 	return true
 }
 
-func (c *batchChangesSiteCredentialResolver) authenticator(ctx context.Context) (auth.Authenticator, error) {
-	return c.credential.Authenticator(ctx)
+func (c *bbtchChbngesSiteCredentiblResolver) buthenticbtor(ctx context.Context) (buth.Authenticbtor, error) {
+	return c.credentibl.Authenticbtor(ctx)
 }

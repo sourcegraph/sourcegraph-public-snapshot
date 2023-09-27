@@ -1,79 +1,79 @@
-package scim
+pbckbge scim
 
 import (
 	"github.com/elimity-com/scim"
-	"github.com/elimity-com/scim/optional"
-	"github.com/elimity-com/scim/schema"
+	"github.com/elimity-com/scim/optionbl"
+	"github.com/elimity-com/scim/schemb"
 )
 
-// createCoreSchema creates a SCIM core schema for users.
-func (u *UserSCIMService) Schema() schema.Schema {
-	return schema.Schema{
-		ID:          "urn:ietf:params:scim:schemas:core:2.0:User",
-		Name:        optional.NewString("User"),
-		Description: optional.NewString("User Account"),
-		Attributes: []schema.CoreAttribute{
-			schema.SimpleCoreAttribute(schema.SimpleBooleanParams(schema.BooleanParams{
-				Description: optional.NewString("A Boolean value indicating the User's administrative status."),
-				Name:        "active",
+// crebteCoreSchemb crebtes b SCIM core schemb for users.
+func (u *UserSCIMService) Schemb() schemb.Schemb {
+	return schemb.Schemb{
+		ID:          "urn:ietf:pbrbms:scim:schembs:core:2.0:User",
+		Nbme:        optionbl.NewString("User"),
+		Description: optionbl.NewString("User Account"),
+		Attributes: []schemb.CoreAttribute{
+			schemb.SimpleCoreAttribute(schemb.SimpleBoolebnPbrbms(schemb.BoolebnPbrbms{
+				Description: optionbl.NewString("A Boolebn vblue indicbting the User's bdministrbtive stbtus."),
+				Nbme:        "bctive",
 			})),
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Description: optional.NewString("Unique identifier for the User, typically used by the user to directly authenticate to the service provider. Each User MUST include a non-empty userName value. This identifier MUST be unique across the service provider's entire set of Users. REQUIRED."),
-				Name:        "userName",
+			schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+				Description: optionbl.NewString("Unique identifier for the User, typicblly used by the user to directly buthenticbte to the service provider. Ebch User MUST include b non-empty userNbme vblue. This identifier MUST be unique bcross the service provider's entire set of Users. REQUIRED."),
+				Nbme:        "userNbme",
 				Required:    true,
-				Uniqueness:  schema.AttributeUniquenessServer(),
+				Uniqueness:  schemb.AttributeUniquenessServer(),
 			})),
-			schema.ComplexCoreAttribute(schema.ComplexParams{
-				Description: optional.NewString("The components of the user's real name. Providers MAY return just the full name as a single string in the formatted sub-attribute, or they MAY return just the individual component attributes using the other sub-attributes, or they MAY return both. If both variants are returned, they SHOULD be describing the same name, with the formatted name indicating how the component attributes should be combined."),
-				Name:        "name",
-				SubAttributes: []schema.SimpleParams{
-					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("The full name, including all middle names, titles, and suffixes as appropriate, formatted for display (e.g., 'Ms. Barbara J Jensen, III')."),
-						Name:        "formatted",
+			schemb.ComplexCoreAttribute(schemb.ComplexPbrbms{
+				Description: optionbl.NewString("The components of the user's rebl nbme. Providers MAY return just the full nbme bs b single string in the formbtted sub-bttribute, or they MAY return just the individubl component bttributes using the other sub-bttributes, or they MAY return both. If both vbribnts bre returned, they SHOULD be describing the sbme nbme, with the formbtted nbme indicbting how the component bttributes should be combined."),
+				Nbme:        "nbme",
+				SubAttributes: []schemb.SimplePbrbms{
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						Description: optionbl.NewString("The full nbme, including bll middle nbmes, titles, bnd suffixes bs bppropribte, formbtted for displby (e.g., 'Ms. Bbrbbrb J Jensen, III')."),
+						Nbme:        "formbtted",
 					}),
-					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("The family name of the User, or last name in most Western languages (e.g., 'Jensen' given the full name 'Ms. Barbara J Jensen, III')."),
-						Name:        "familyName",
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						Description: optionbl.NewString("The fbmily nbme of the User, or lbst nbme in most Western lbngubges (e.g., 'Jensen' given the full nbme 'Ms. Bbrbbrb J Jensen, III')."),
+						Nbme:        "fbmilyNbme",
 					}),
-					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("The given name of the User, or first name in most Western languages (e.g., 'Barbara' given the full name 'Ms. Barbara J Jensen, III')."),
-						Name:        "givenName",
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						Description: optionbl.NewString("The given nbme of the User, or first nbme in most Western lbngubges (e.g., 'Bbrbbrb' given the full nbme 'Ms. Bbrbbrb J Jensen, III')."),
+						Nbme:        "givenNbme",
 					}),
-					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("The middle name(s) of the User (e.g., 'Jane' given the full name 'Ms. Barbara J Jensen, III')."),
-						Name:        "middleName",
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						Description: optionbl.NewString("The middle nbme(s) of the User (e.g., 'Jbne' given the full nbme 'Ms. Bbrbbrb J Jensen, III')."),
+						Nbme:        "middleNbme",
 					}),
 				},
 			}),
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Description: optional.NewString("The name of the User, suitable for display to end-users. The name SHOULD be the full name of the User being described, if known."),
-				Name:        "displayName",
+			schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+				Description: optionbl.NewString("The nbme of the User, suitbble for displby to end-users. The nbme SHOULD be the full nbme of the User being described, if known."),
+				Nbme:        "displbyNbme",
 			})),
-			schema.SimpleCoreAttribute(schema.SimpleStringParams(schema.StringParams{
-				Description: optional.NewString("The casual way to address the user in real life, e.g., 'Bob' or 'Bobby' instead of 'Robert'. This attribute SHOULD NOT be used to represent a User's username (e.g., 'bjensen' or 'mpepperidge')."),
-				Name:        "nickName",
+			schemb.SimpleCoreAttribute(schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+				Description: optionbl.NewString("The cbsubl wby to bddress the user in rebl life, e.g., 'Bob' or 'Bobby' instebd of 'Robert'. This bttribute SHOULD NOT be used to represent b User's usernbme (e.g., 'bjensen' or 'mpepperidge')."),
+				Nbme:        "nickNbme",
 			})),
-			schema.ComplexCoreAttribute(schema.ComplexParams{
-				Description: optional.NewString("Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type values of 'work', 'home', and 'other'."),
-				MultiValued: true,
-				Name:        "emails",
-				SubAttributes: []schema.SimpleParams{
-					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("Email addresses for the user. The value SHOULD be canonicalized by the service provider, e.g., 'bjensen@example.com' instead of 'bjensen@EXAMPLE.COM'. Canonical type values of 'work', 'home', and 'other'."),
-						Name:        "value",
+			schemb.ComplexCoreAttribute(schemb.ComplexPbrbms{
+				Description: optionbl.NewString("Embil bddresses for the user. The vblue SHOULD be cbnonicblized by the service provider, e.g., 'bjensen@exbmple.com' instebd of 'bjensen@EXAMPLE.COM'. Cbnonicbl type vblues of 'work', 'home', bnd 'other'."),
+				MultiVblued: true,
+				Nbme:        "embils",
+				SubAttributes: []schemb.SimplePbrbms{
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						Description: optionbl.NewString("Embil bddresses for the user. The vblue SHOULD be cbnonicblized by the service provider, e.g., 'bjensen@exbmple.com' instebd of 'bjensen@EXAMPLE.COM'. Cbnonicbl type vblues of 'work', 'home', bnd 'other'."),
+						Nbme:        "vblue",
 					}),
-					schema.SimpleStringParams(schema.StringParams{
-						Description: optional.NewString("A human-readable name, primarily used for display purposes. READ-ONLY."),
-						Name:        "display",
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						Description: optionbl.NewString("A humbn-rebdbble nbme, primbrily used for displby purposes. READ-ONLY."),
+						Nbme:        "displby",
 					}),
-					schema.SimpleStringParams(schema.StringParams{
-						CanonicalValues: []string{"work", "home", "other"},
-						Description:     optional.NewString("A label indicating the attribute's function, e.g., 'work' or 'home'."),
-						Name:            "type",
+					schemb.SimpleStringPbrbms(schemb.StringPbrbms{
+						CbnonicblVblues: []string{"work", "home", "other"},
+						Description:     optionbl.NewString("A lbbel indicbting the bttribute's function, e.g., 'work' or 'home'."),
+						Nbme:            "type",
 					}),
-					schema.SimpleBooleanParams(schema.BooleanParams{
-						Description: optional.NewString("A Boolean value indicating the 'primary' or preferred attribute value for this attribute, e.g., the preferred mailing address or primary email address. The primary attribute value 'true' MUST appear no more than once."),
-						Name:        "primary",
+					schemb.SimpleBoolebnPbrbms(schemb.BoolebnPbrbms{
+						Description: optionbl.NewString("A Boolebn vblue indicbting the 'primbry' or preferred bttribute vblue for this bttribute, e.g., the preferred mbiling bddress or primbry embil bddress. The primbry bttribute vblue 'true' MUST bppebr no more thbn once."),
+						Nbme:        "primbry",
 					}),
 				},
 			}),
@@ -81,6 +81,6 @@ func (u *UserSCIMService) Schema() schema.Schema {
 	}
 }
 
-func (u *UserSCIMService) SchemaExtensions() []scim.SchemaExtension {
-	return []scim.SchemaExtension{}
+func (u *UserSCIMService) SchembExtensions() []scim.SchembExtension {
+	return []scim.SchembExtension{}
 }

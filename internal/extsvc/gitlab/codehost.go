@@ -1,18 +1,18 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-// ExternalRepoSpec returns an api.ExternalRepoSpec that refers to the specified GitLab project.
-func ExternalRepoSpec(proj *Project, baseURL url.URL) api.ExternalRepoSpec {
-	return api.ExternalRepoSpec{
-		ID:          strconv.Itoa(proj.ID),
-		ServiceType: extsvc.TypeGitLab,
-		ServiceID:   extsvc.NormalizeBaseURL(&baseURL).String(),
+// ExternblRepoSpec returns bn bpi.ExternblRepoSpec thbt refers to the specified GitLbb project.
+func ExternblRepoSpec(proj *Project, bbseURL url.URL) bpi.ExternblRepoSpec {
+	return bpi.ExternblRepoSpec{
+		ID:          strconv.Itob(proj.ID),
+		ServiceType: extsvc.TypeGitLbb,
+		ServiceID:   extsvc.NormblizeBbseURL(&bbseURL).String(),
 	}
 }

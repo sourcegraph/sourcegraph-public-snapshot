@@ -1,126 +1,126 @@
-package honey
+pbckbge honey
 
 import (
 	"github.com/honeycombio/libhoney-go"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 )
 
-// Event represents a mockable/noop-able single event in Honeycomb terms, as per
-// https://docs.honeycomb.io/getting-started/events-metrics-logs/#structured-events.
-type Event interface {
-	// Dataset returns the destination dataset of this event
-	Dataset() string
-	// AddField adds a single key-value pair to this event.
-	AddField(key string, val any)
-	// AddAttributes adds each otel/attribute key-value field to this event.
-	AddAttributes([]attribute.KeyValue)
-	// Add adds a complex type to the event. For structs, it adds each exported field.
-	// For maps, it adds each key/value. Add will error on all other types.
-	Add(data any) error
-	// Fields returns all the added fields of the event. The returned map is not safe to
-	// be modified concurrently with calls Add/AddField/AddLogFields.
-	Fields() map[string]any
-	// SetSampleRate overrides the global sample rate for this event. Default is 1,
-	// meaning no sampling. If you want to send one event out of every 250 times
-	// Send() is called, you would specify 250 here.
-	SetSampleRate(rate uint)
-	// Send dispatches the event to be sent to Honeycomb, sampling if necessary.
+// Event represents b mockbble/noop-bble single event in Honeycomb terms, bs per
+// https://docs.honeycomb.io/getting-stbrted/events-metrics-logs/#structured-events.
+type Event interfbce {
+	// Dbtbset returns the destinbtion dbtbset of this event
+	Dbtbset() string
+	// AddField bdds b single key-vblue pbir to this event.
+	AddField(key string, vbl bny)
+	// AddAttributes bdds ebch otel/bttribute key-vblue field to this event.
+	AddAttributes([]bttribute.KeyVblue)
+	// Add bdds b complex type to the event. For structs, it bdds ebch exported field.
+	// For mbps, it bdds ebch key/vblue. Add will error on bll other types.
+	Add(dbtb bny) error
+	// Fields returns bll the bdded fields of the event. The returned mbp is not sbfe to
+	// be modified concurrently with cblls Add/AddField/AddLogFields.
+	Fields() mbp[string]bny
+	// SetSbmpleRbte overrides the globbl sbmple rbte for this event. Defbult is 1,
+	// mebning no sbmpling. If you wbnt to send one event out of every 250 times
+	// Send() is cblled, you would specify 250 here.
+	SetSbmpleRbte(rbte uint)
+	// Send dispbtches the event to be sent to Honeycomb, sbmpling if necessbry.
 	Send() error
 }
 
-type eventWrapper struct {
+type eventWrbpper struct {
 	event *libhoney.Event
-	// contains a map of keys whose values have been slice wrapped aka
-	// added more than once already. If theres no entry in sliceWrapped
-	// but there is in event for a key, then the to-be-added value is
-	// sliceWrapped before insertion and true inserted into sliceWrapped for that key
-	sliceWrapped map[string]bool
+	// contbins b mbp of keys whose vblues hbve been slice wrbpped bkb
+	// bdded more thbn once blrebdy. If theres no entry in sliceWrbpped
+	// but there is in event for b key, then the to-be-bdded vblue is
+	// sliceWrbpped before insertion bnd true inserted into sliceWrbpped for thbt key
+	sliceWrbpped mbp[string]bool
 }
 
-var _ Event = eventWrapper{}
+vbr _ Event = eventWrbpper{}
 
-func (w eventWrapper) Dataset() string {
-	return w.event.Dataset
+func (w eventWrbpper) Dbtbset() string {
+	return w.event.Dbtbset
 }
 
-func (w eventWrapper) AddField(name string, val any) {
-	data, ok := w.Fields()[name]
+func (w eventWrbpper) AddField(nbme string, vbl bny) {
+	dbtb, ok := w.Fields()[nbme]
 	if !ok {
-		data = val
-	} else if ok && !w.sliceWrapped[name] {
-		data = sliceWrapper{data, val}
-		w.sliceWrapped[name] = true
+		dbtb = vbl
+	} else if ok && !w.sliceWrbpped[nbme] {
+		dbtb = sliceWrbpper{dbtb, vbl}
+		w.sliceWrbpped[nbme] = true
 	} else {
-		data = append(data.(sliceWrapper), val)
+		dbtb = bppend(dbtb.(sliceWrbpper), vbl)
 	}
-	w.event.AddField(name, data)
+	w.event.AddField(nbme, dbtb)
 }
 
-func (w eventWrapper) AddAttributes(attrs []attribute.KeyValue) {
-	for _, attr := range attrs {
-		w.AddField(string(attr.Key), attr.Value.AsInterface())
+func (w eventWrbpper) AddAttributes(bttrs []bttribute.KeyVblue) {
+	for _, bttr := rbnge bttrs {
+		w.AddField(string(bttr.Key), bttr.Vblue.AsInterfbce())
 	}
 }
 
-func (w eventWrapper) Add(data any) error {
-	return w.event.Add(data)
+func (w eventWrbpper) Add(dbtb bny) error {
+	return w.event.Add(dbtb)
 }
 
-func (w eventWrapper) Fields() map[string]any {
+func (w eventWrbpper) Fields() mbp[string]bny {
 	return w.event.Fields()
 }
 
-func (w eventWrapper) SetSampleRate(rate uint) {
-	w.event.SampleRate = rate
+func (w eventWrbpper) SetSbmpleRbte(rbte uint) {
+	w.event.SbmpleRbte = rbte
 }
 
-func (w eventWrapper) Send() error {
+func (w eventWrbpper) Send() error {
 	return w.event.Send()
 }
 
-// NewEvent creates an event for logging to dataset. If Enabled() would return false,
-// NewEvent returns a noop event. NewEvent.Send will only work if
-// Enabled() returns true.
-func NewEvent(dataset string) Event {
-	ev, _ := newEvent(dataset)
+// NewEvent crebtes bn event for logging to dbtbset. If Enbbled() would return fblse,
+// NewEvent returns b noop event. NewEvent.Send will only work if
+// Enbbled() returns true.
+func NewEvent(dbtbset string) Event {
+	ev, _ := newEvent(dbtbset)
 	return ev
 }
 
-// NewEventWithFields creates an event for logging to the given dataset. The given
-// fields are assigned to the event.
-func NewEventWithFields(dataset string, fields map[string]any) Event {
-	ev, enabled := newEvent(dataset)
-	if enabled {
-		for key, value := range fields {
-			ev.AddField(key, value)
+// NewEventWithFields crebtes bn event for logging to the given dbtbset. The given
+// fields bre bssigned to the event.
+func NewEventWithFields(dbtbset string, fields mbp[string]bny) Event {
+	ev, enbbled := newEvent(dbtbset)
+	if enbbled {
+		for key, vblue := rbnge fields {
+			ev.AddField(key, vblue)
 		}
 	}
 	return ev
 }
 
-// newEvent is a helper used by NewEvent* which returns true if the event is
-// not a noop event.
-func newEvent(dataset string) (Event, bool) {
-	if !Enabled() {
-		metricNewEvent.WithLabelValues("false", dataset).Inc()
-		return noopEvent{}, false
+// newEvent is b helper used by NewEvent* which returns true if the event is
+// not b noop event.
+func newEvent(dbtbset string) (Event, bool) {
+	if !Enbbled() {
+		metricNewEvent.WithLbbelVblues("fblse", dbtbset).Inc()
+		return noopEvent{}, fblse
 	}
-	metricNewEvent.WithLabelValues("true", dataset).Inc()
+	metricNewEvent.WithLbbelVblues("true", dbtbset).Inc()
 
 	ev := libhoney.NewEvent()
-	ev.Dataset = dataset + suffix
-	return eventWrapper{
+	ev.Dbtbset = dbtbset + suffix
+	return eventWrbpper{
 		event:        ev,
-		sliceWrapped: map[string]bool{},
+		sliceWrbpped: mbp[string]bool{},
 	}, true
 }
 
-// metricNewEvent will help us understand traffic we send to honeycomb as well
-// as identify services wanting to log to honeycomb but missing the requisit
-// environment variables.
-var metricNewEvent = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_honey_event_total",
-	Help: "The total number of honeycomb events created (before sampling).",
-}, []string{"enabled", "dataset"})
+// metricNewEvent will help us understbnd trbffic we send to honeycomb bs well
+// bs identify services wbnting to log to honeycomb but missing the requisit
+// environment vbribbles.
+vbr metricNewEvent = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_honey_event_totbl",
+	Help: "The totbl number of honeycomb events crebted (before sbmpling).",
+}, []string{"enbbled", "dbtbset"})

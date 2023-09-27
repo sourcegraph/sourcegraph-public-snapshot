@@ -1,100 +1,100 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestVariableToGrafanaTemplateVar(t *testing.T) {
-	t.Run("OptionsLabelValues", func(t *testing.T) {
-		templateVar, err := (&ContainerVariable{
-			OptionsLabelValues: ContainerVariableOptionsLabelValues{
+func TestVbribbleToGrbfbnbTemplbteVbr(t *testing.T) {
+	t.Run("OptionsLbbelVblues", func(t *testing.T) {
+		templbteVbr, err := (&ContbinerVbribble{
+			OptionsLbbelVblues: ContbinerVbribbleOptionsLbbelVblues{
 				Query:     "metric",
-				LabelName: "label",
+				LbbelNbme: "lbbel",
 			},
-		}).toGrafanaTemplateVar(nil)
+		}).toGrbfbnbTemplbteVbr(nil)
 
-		assert.Nil(t, err)
-		assert.Equal(t, templateVar.Query, "label_values(metric, label)")
+		bssert.Nil(t, err)
+		bssert.Equbl(t, templbteVbr.Query, "lbbel_vblues(metric, lbbel)")
 	})
 }
 
-func TestVariableExampleValue(t *testing.T) {
-	// Numbers get replaced with sentinel values - in getSentinelValue numbers are
-	// replaced with the value 60-len(name)
-	assert.Equal(t, "56m",
-		(&ContainerVariable{
-			Name: "name",
-			Options: ContainerVariableOptions{
+func TestVbribbleExbmpleVblue(t *testing.T) {
+	// Numbers get replbced with sentinel vblues - in getSentinelVblue numbers bre
+	// replbced with the vblue 60-len(nbme)
+	bssert.Equbl(t, "56m",
+		(&ContbinerVbribble{
+			Nbme: "nbme",
+			Options: ContbinerVbribbleOptions{
 				Options: []string{
 					"1m",
 					"5m",
 					"60m",
 				},
 			},
-		}).getSentinelValue())
+		}).getSentinelVblue())
 
 	// Strings do not
-	assert.Equal(t, "foobar",
-		(&ContainerVariable{
-			OptionsLabelValues: ContainerVariableOptionsLabelValues{
-				Query:         "bazbar",
-				LabelName:     "asdf",
-				ExampleOption: "foobar",
+	bssert.Equbl(t, "foobbr",
+		(&ContbinerVbribble{
+			OptionsLbbelVblues: ContbinerVbribbleOptionsLbbelVblues{
+				Query:         "bbzbbr",
+				LbbelNbme:     "bsdf",
+				ExbmpleOption: "foobbr",
 			},
-		}).getSentinelValue())
+		}).getSentinelVblue())
 }
 
-func TestVariableApplier(t *testing.T) {
-	t.Run("with intervals", func(t *testing.T) {
-		vars := newVariableApplier([]ContainerVariable{
+func TestVbribbleApplier(t *testing.T) {
+	t.Run("with intervbls", func(t *testing.T) {
+		vbrs := newVbribbleApplier([]ContbinerVbribble{
 			{
-				Name: "foo",
-				Options: ContainerVariableOptions{
+				Nbme: "foo",
+				Options: ContbinerVbribbleOptions{
 					Options: []string{"1m"},
 				},
 			},
 			{
-				Name: "bar",
-				OptionsLabelValues: ContainerVariableOptionsLabelValues{
-					ExampleOption: "hello-world",
+				Nbme: "bbr",
+				OptionsLbbelVblues: ContbinerVbribbleOptionsLbbelVblues{
+					ExbmpleOption: "hello-world",
 				},
 			},
 		})
 
-		var expression = `metric{bar="$bar"}[$foo]`
+		vbr expression = `metric{bbr="$bbr"}[$foo]`
 
-		applied := vars.ApplySentinelValues(expression)
-		assert.Equal(t, `metric{bar="$bar"}[57m]`, applied) // sentinel value is 60-len(name)
+		bpplied := vbrs.ApplySentinelVblues(expression)
+		bssert.Equbl(t, `metric{bbr="$bbr"}[57m]`, bpplied) // sentinel vblue is 60-len(nbme)
 
-		reverted := vars.RevertDefaults(expression, applied)
-		assert.Equal(t, `metric{bar="$bar"}[$foo]`, reverted)
+		reverted := vbrs.RevertDefbults(expression, bpplied)
+		bssert.Equbl(t, `metric{bbr="$bbr"}[$foo]`, reverted)
 	})
 
-	t.Run("without intervals", func(t *testing.T) {
-		vars := newVariableApplierWith([]ContainerVariable{
+	t.Run("without intervbls", func(t *testing.T) {
+		vbrs := newVbribbleApplierWith([]ContbinerVbribble{
 			{
-				Name: "foo",
-				Options: ContainerVariableOptions{
+				Nbme: "foo",
+				Options: ContbinerVbribbleOptions{
 					Options: []string{"1m"},
 				},
 			},
 			{
-				Name: "bar",
-				OptionsLabelValues: ContainerVariableOptionsLabelValues{
-					ExampleOption: "hello-world",
+				Nbme: "bbr",
+				OptionsLbbelVblues: ContbinerVbribbleOptionsLbbelVblues{
+					ExbmpleOption: "hello-world",
 				},
 			},
-		}, false)
+		}, fblse)
 
-		var expression = `metric{bar="$bar"}[$foo]`
+		vbr expression = `metric{bbr="$bbr"}[$foo]`
 
-		applied := vars.ApplySentinelValues(expression)
-		// no replacement for intervals
-		assert.Equal(t, `metric{bar="$bar"}[$foo]`, applied)
+		bpplied := vbrs.ApplySentinelVblues(expression)
+		// no replbcement for intervbls
+		bssert.Equbl(t, `metric{bbr="$bbr"}[$foo]`, bpplied)
 
-		reverted := vars.RevertDefaults(expression, applied)
-		assert.Equal(t, `metric{bar="$bar"}[$foo]`, reverted)
+		reverted := vbrs.RevertDefbults(expression, bpplied)
+		bssert.Equbl(t, `metric{bbr="$bbr"}[$foo]`, reverted)
 	})
 }

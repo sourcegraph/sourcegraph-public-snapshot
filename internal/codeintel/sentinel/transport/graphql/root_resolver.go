@@ -1,62 +1,62 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"go.opentelemetry.io/otel/bttribute"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	uplobdsgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type rootResolver struct {
 	sentinelSvc                 SentinelService
-	vulnerabilityLoaderFactory  VulnerabilityLoaderFactory
-	uploadLoaderFactory         uploadsgraphql.UploadLoaderFactory
-	indexLoaderFactory          uploadsgraphql.IndexLoaderFactory
-	locationResolverFactory     *gitresolvers.CachedLocationResolverFactory
-	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
-	operations                  *operations
+	vulnerbbilityLobderFbctory  VulnerbbilityLobderFbctory
+	uplobdLobderFbctory         uplobdsgrbphql.UplobdLobderFbctory
+	indexLobderFbctory          uplobdsgrbphql.IndexLobderFbctory
+	locbtionResolverFbctory     *gitresolvers.CbchedLocbtionResolverFbctory
+	preciseIndexResolverFbctory *uplobdsgrbphql.PreciseIndexResolverFbctory
+	operbtions                  *operbtions
 }
 
 func NewRootResolver(
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	sentinelSvc SentinelService,
-	uploadLoaderFactory uploadsgraphql.UploadLoaderFactory,
-	indexLoaderFactory uploadsgraphql.IndexLoaderFactory,
-	locationResolverFactory *gitresolvers.CachedLocationResolverFactory,
-	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory,
+	uplobdLobderFbctory uplobdsgrbphql.UplobdLobderFbctory,
+	indexLobderFbctory uplobdsgrbphql.IndexLobderFbctory,
+	locbtionResolverFbctory *gitresolvers.CbchedLocbtionResolverFbctory,
+	preciseIndexResolverFbctory *uplobdsgrbphql.PreciseIndexResolverFbctory,
 ) resolverstubs.SentinelServiceResolver {
 	return &rootResolver{
 		sentinelSvc:                 sentinelSvc,
-		vulnerabilityLoaderFactory:  NewVulnerabilityLoaderFactory(sentinelSvc),
-		uploadLoaderFactory:         uploadLoaderFactory,
-		indexLoaderFactory:          indexLoaderFactory,
-		locationResolverFactory:     locationResolverFactory,
-		preciseIndexResolverFactory: preciseIndexResolverFactory,
-		operations:                  newOperations(observationCtx),
+		vulnerbbilityLobderFbctory:  NewVulnerbbilityLobderFbctory(sentinelSvc),
+		uplobdLobderFbctory:         uplobdLobderFbctory,
+		indexLobderFbctory:          indexLobderFbctory,
+		locbtionResolverFbctory:     locbtionResolverFbctory,
+		preciseIndexResolverFbctory: preciseIndexResolverFbctory,
+		operbtions:                  newOperbtions(observbtionCtx),
 	}
 }
 
-func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.GetVulnerabilitiesArgs) (_ resolverstubs.VulnerabilityConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.getVulnerabilities.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(pointers.Deref(args.First, 0))),
-		attribute.String("after", pointers.Deref(args.After, "")),
+func (r *rootResolver) Vulnerbbilities(ctx context.Context, brgs resolverstubs.GetVulnerbbilitiesArgs) (_ resolverstubs.VulnerbbilityConnectionResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.getVulnerbbilities.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("first", int(pointers.Deref(brgs.First, 0))),
+		bttribute.String("bfter", pointers.Deref(brgs.After, "")),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	limit, offset, err := args.ParseLimitOffset(50)
+	limit, offset, err := brgs.PbrseLimitOffset(50)
 	if err != nil {
 		return nil, err
 	}
 
-	vulnerabilities, totalCount, err := r.sentinelSvc.GetVulnerabilities(ctx, shared.GetVulnerabilitiesArgs{
+	vulnerbbilities, totblCount, err := r.sentinelSvc.GetVulnerbbilities(ctx, shbred.GetVulnerbbilitiesArgs{
 		Limit:  int(limit),
 		Offset: int(offset),
 	})
@@ -64,174 +64,174 @@ func (r *rootResolver) Vulnerabilities(ctx context.Context, args resolverstubs.G
 		return nil, err
 	}
 
-	var resolvers []resolverstubs.VulnerabilityResolver
-	for _, v := range vulnerabilities {
-		resolvers = append(resolvers, &vulnerabilityResolver{v: v})
+	vbr resolvers []resolverstubs.VulnerbbilityResolver
+	for _, v := rbnge vulnerbbilities {
+		resolvers = bppend(resolvers, &vulnerbbilityResolver{v: v})
 	}
 
-	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
+	return resolverstubs.NewTotblCountConnectionResolver(resolvers, offset, int32(totblCount)), nil
 }
 
-func (r *rootResolver) VulnerabilityMatches(ctx context.Context, args resolverstubs.GetVulnerabilityMatchesArgs) (_ resolverstubs.VulnerabilityMatchConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.getMatches.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("first", int(pointers.Deref(args.First, 0))),
-		attribute.String("after", pointers.Deref(args.After, "")),
+func (r *rootResolver) VulnerbbilityMbtches(ctx context.Context, brgs resolverstubs.GetVulnerbbilityMbtchesArgs) (_ resolverstubs.VulnerbbilityMbtchConnectionResolver, err error) {
+	ctx, errTrbcer, endObservbtion := r.operbtions.getMbtches.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("first", int(pointers.Deref(brgs.First, 0))),
+		bttribute.String("bfter", pointers.Deref(brgs.After, "")),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	limit, offset, err := args.ParseLimitOffset(50)
+	limit, offset, err := brgs.PbrseLimitOffset(50)
 	if err != nil {
 		return nil, err
 	}
 
-	language := ""
-	if args.Language != nil {
-		language = *args.Language
+	lbngubge := ""
+	if brgs.Lbngubge != nil {
+		lbngubge = *brgs.Lbngubge
 	}
 
 	severity := ""
-	if args.Severity != nil {
-		severity = *args.Severity
+	if brgs.Severity != nil {
+		severity = *brgs.Severity
 	}
 
-	repositoryName := ""
-	if args.RepositoryName != nil {
-		repositoryName = *args.RepositoryName
+	repositoryNbme := ""
+	if brgs.RepositoryNbme != nil {
+		repositoryNbme = *brgs.RepositoryNbme
 	}
 
-	matches, totalCount, err := r.sentinelSvc.GetVulnerabilityMatches(ctx, shared.GetVulnerabilityMatchesArgs{
+	mbtches, totblCount, err := r.sentinelSvc.GetVulnerbbilityMbtches(ctx, shbred.GetVulnerbbilityMbtchesArgs{
 		Limit:          int(limit),
 		Offset:         int(offset),
-		Language:       language,
+		Lbngubge:       lbngubge,
 		Severity:       severity,
-		RepositoryName: repositoryName,
+		RepositoryNbme: repositoryNbme,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Pre-submit vulnerability and upload ids for loading
-	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
-	uploadLoader := r.uploadLoaderFactory.Create()
-	PresubmitMatches(vulnerabilityLoader, uploadLoader, matches...)
+	// Pre-submit vulnerbbility bnd uplobd ids for lobding
+	vulnerbbilityLobder := r.vulnerbbilityLobderFbctory.Crebte()
+	uplobdLobder := r.uplobdLobderFbctory.Crebte()
+	PresubmitMbtches(vulnerbbilityLobder, uplobdLobder, mbtches...)
 
-	// No data to load for associated indexes or git data (yet)
-	indexLoader := r.indexLoaderFactory.Create()
-	locationResolver := r.locationResolverFactory.Create()
+	// No dbtb to lobd for bssocibted indexes or git dbtb (yet)
+	indexLobder := r.indexLobderFbctory.Crebte()
+	locbtionResolver := r.locbtionResolverFbctory.Crebte()
 
-	var resolvers []resolverstubs.VulnerabilityMatchResolver
-	for _, m := range matches {
-		resolvers = append(resolvers, &vulnerabilityMatchResolver{
-			uploadLoader:        uploadLoader,
-			indexLoader:         indexLoader,
-			locationResolver:    locationResolver,
-			errTracer:           errTracer,
-			vulnerabilityLoader: vulnerabilityLoader,
+	vbr resolvers []resolverstubs.VulnerbbilityMbtchResolver
+	for _, m := rbnge mbtches {
+		resolvers = bppend(resolvers, &vulnerbbilityMbtchResolver{
+			uplobdLobder:        uplobdLobder,
+			indexLobder:         indexLobder,
+			locbtionResolver:    locbtionResolver,
+			errTrbcer:           errTrbcer,
+			vulnerbbilityLobder: vulnerbbilityLobder,
 			m:                   m,
 		})
 	}
 
-	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
+	return resolverstubs.NewTotblCountConnectionResolver(resolvers, offset, int32(totblCount)), nil
 }
 
-func (r *rootResolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args resolverstubs.GetVulnerabilityMatchCountByRepositoryArgs) (_ resolverstubs.VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchesCountByRepository.WithErrors(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+func (r *rootResolver) VulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs resolverstubs.GetVulnerbbilityMbtchCountByRepositoryArgs) (_ resolverstubs.VulnerbbilityMbtchCountByRepositoryConnectionResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.vulnerbbilityMbtchesCountByRepository.WithErrors(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	limit, offset, err := args.ParseLimitOffset(50)
+	limit, offset, err := brgs.PbrseLimitOffset(50)
 	if err != nil {
 		return nil, err
 	}
 
-	repositoryName := ""
-	if args.RepositoryName != nil {
-		repositoryName = *args.RepositoryName
+	repositoryNbme := ""
+	if brgs.RepositoryNbme != nil {
+		repositoryNbme = *brgs.RepositoryNbme
 	}
 
-	vulnerabilityCounts, totalCount, err := r.sentinelSvc.GetVulnerabilityMatchesCountByRepository(ctx, shared.GetVulnerabilityMatchesCountByRepositoryArgs{
+	vulnerbbilityCounts, totblCount, err := r.sentinelSvc.GetVulnerbbilityMbtchesCountByRepository(ctx, shbred.GetVulnerbbilityMbtchesCountByRepositoryArgs{
 		Limit:          int(limit),
 		Offset:         int(offset),
-		RepositoryName: repositoryName,
+		RepositoryNbme: repositoryNbme,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var resolvers []resolverstubs.VulnerabilityMatchCountByRepositoryResolver
-	for _, v := range vulnerabilityCounts {
-		resolvers = append(resolvers, &vulnerabilityMatchCountByRepositoryResolver{v: v})
+	vbr resolvers []resolverstubs.VulnerbbilityMbtchCountByRepositoryResolver
+	for _, v := rbnge vulnerbbilityCounts {
+		resolvers = bppend(resolvers, &vulnerbbilityMbtchCountByRepositoryResolver{v: v})
 	}
 
-	return resolverstubs.NewTotalCountConnectionResolver(resolvers, offset, int32(totalCount)), nil
+	return resolverstubs.NewTotblCountConnectionResolver(resolvers, offset, int32(totblCount)), nil
 }
 
-func (r *rootResolver) VulnerabilityByID(ctx context.Context, vulnerabilityID graphql.ID) (_ resolverstubs.VulnerabilityResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("vulnerabilityID", string(vulnerabilityID)),
+func (r *rootResolver) VulnerbbilityByID(ctx context.Context, vulnerbbilityID grbphql.ID) (_ resolverstubs.VulnerbbilityResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.vulnerbbilityByID.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("vulnerbbilityID", string(vulnerbbilityID)),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	id, err := resolverstubs.UnmarshalID[int](vulnerabilityID)
+	id, err := resolverstubs.UnmbrshblID[int](vulnerbbilityID)
 	if err != nil {
 		return nil, err
 	}
 
-	vulnerability, ok, err := r.sentinelSvc.VulnerabilityByID(ctx, id)
+	vulnerbbility, ok, err := r.sentinelSvc.VulnerbbilityByID(ctx, id)
 	if err != nil || !ok {
 		return nil, err
 	}
 
-	return &vulnerabilityResolver{vulnerability}, nil
+	return &vulnerbbilityResolver{vulnerbbility}, nil
 }
 
-func (r *rootResolver) VulnerabilityMatchByID(ctx context.Context, vulnerabilityMatchID graphql.ID) (_ resolverstubs.VulnerabilityMatchResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.vulnerabilityMatchByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("vulnerabilityMatchID", string(vulnerabilityMatchID)),
+func (r *rootResolver) VulnerbbilityMbtchByID(ctx context.Context, vulnerbbilityMbtchID grbphql.ID) (_ resolverstubs.VulnerbbilityMbtchResolver, err error) {
+	ctx, errTrbcer, endObservbtion := r.operbtions.vulnerbbilityMbtchByID.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("vulnerbbilityMbtchID", string(vulnerbbilityMbtchID)),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	id, err := resolverstubs.UnmarshalID[int](vulnerabilityMatchID)
+	id, err := resolverstubs.UnmbrshblID[int](vulnerbbilityMbtchID)
 	if err != nil {
 		return nil, err
 	}
 
-	match, ok, err := r.sentinelSvc.VulnerabilityMatchByID(ctx, id)
+	mbtch, ok, err := r.sentinelSvc.VulnerbbilityMbtchByID(ctx, id)
 	if err != nil || !ok {
 		return nil, err
 	}
 
-	// Pre-submit vulnerability and upload ids for loading
-	vulnerabilityLoader := r.vulnerabilityLoaderFactory.Create()
-	uploadLoader := r.uploadLoaderFactory.Create()
-	PresubmitMatches(vulnerabilityLoader, uploadLoader, match)
+	// Pre-submit vulnerbbility bnd uplobd ids for lobding
+	vulnerbbilityLobder := r.vulnerbbilityLobderFbctory.Crebte()
+	uplobdLobder := r.uplobdLobderFbctory.Crebte()
+	PresubmitMbtches(vulnerbbilityLobder, uplobdLobder, mbtch)
 
-	// No data to load for associated indexes or git data (yet)
-	indexLoader := r.indexLoaderFactory.Create()
-	locationResolver := r.locationResolverFactory.Create()
+	// No dbtb to lobd for bssocibted indexes or git dbtb (yet)
+	indexLobder := r.indexLobderFbctory.Crebte()
+	locbtionResolver := r.locbtionResolverFbctory.Crebte()
 
-	return &vulnerabilityMatchResolver{
-		uploadLoader:     uploadLoader,
-		indexLoader:      indexLoader,
-		locationResolver: locationResolver,
+	return &vulnerbbilityMbtchResolver{
+		uplobdLobder:     uplobdLobder,
+		indexLobder:      indexLobder,
+		locbtionResolver: locbtionResolver,
 
-		errTracer:                   errTracer,
-		vulnerabilityLoader:         vulnerabilityLoader,
-		m:                           match,
-		preciseIndexResolverFactory: r.preciseIndexResolverFactory,
+		errTrbcer:                   errTrbcer,
+		vulnerbbilityLobder:         vulnerbbilityLobder,
+		m:                           mbtch,
+		preciseIndexResolverFbctory: r.preciseIndexResolverFbctory,
 	}, nil
 }
 
-func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ resolverstubs.VulnerabilityMatchesSummaryCountResolver, err error) {
-	ctx, _, endObservation := r.operations.vulnerabilityMatchesSummaryCounts.WithErrors(ctx, &err, observation.Args{})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+func (r *rootResolver) VulnerbbilityMbtchesSummbryCounts(ctx context.Context) (_ resolverstubs.VulnerbbilityMbtchesSummbryCountResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.vulnerbbilityMbtchesSummbryCounts.WithErrors(ctx, &err, observbtion.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	counts, err := r.sentinelSvc.GetVulnerabilityMatchesSummaryCounts(ctx)
+	counts, err := r.sentinelSvc.GetVulnerbbilityMbtchesSummbryCounts(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &vulnerabilityMatchesSummaryCountResolver{
-		critical:   counts.Critical,
+	return &vulnerbbilityMbtchesSummbryCountResolver{
+		criticbl:   counts.Criticbl,
 		high:       counts.High,
 		medium:     counts.Medium,
 		low:        counts.Low,
@@ -242,42 +242,42 @@ func (r *rootResolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_
 //
 //
 
-type vulnerabilityResolver struct {
-	v shared.Vulnerability
+type vulnerbbilityResolver struct {
+	v shbred.Vulnerbbility
 }
 
-func (r *vulnerabilityResolver) ID() graphql.ID {
-	return resolverstubs.MarshalID("Vulnerability", r.v.ID)
+func (r *vulnerbbilityResolver) ID() grbphql.ID {
+	return resolverstubs.MbrshblID("Vulnerbbility", r.v.ID)
 }
-func (r *vulnerabilityResolver) SourceID() string   { return r.v.SourceID }
-func (r *vulnerabilityResolver) Summary() string    { return r.v.Summary }
-func (r *vulnerabilityResolver) Details() string    { return r.v.Details }
-func (r *vulnerabilityResolver) CPEs() []string     { return r.v.CPEs }
-func (r *vulnerabilityResolver) CWEs() []string     { return r.v.CWEs }
-func (r *vulnerabilityResolver) Aliases() []string  { return r.v.Aliases }
-func (r *vulnerabilityResolver) Related() []string  { return r.v.Related }
-func (r *vulnerabilityResolver) DataSource() string { return r.v.DataSource }
-func (r *vulnerabilityResolver) URLs() []string     { return r.v.URLs }
-func (r *vulnerabilityResolver) Severity() string   { return r.v.Severity }
-func (r *vulnerabilityResolver) CVSSVector() string { return r.v.CVSSVector }
-func (r *vulnerabilityResolver) CVSSScore() string  { return r.v.CVSSScore }
+func (r *vulnerbbilityResolver) SourceID() string   { return r.v.SourceID }
+func (r *vulnerbbilityResolver) Summbry() string    { return r.v.Summbry }
+func (r *vulnerbbilityResolver) Detbils() string    { return r.v.Detbils }
+func (r *vulnerbbilityResolver) CPEs() []string     { return r.v.CPEs }
+func (r *vulnerbbilityResolver) CWEs() []string     { return r.v.CWEs }
+func (r *vulnerbbilityResolver) Alibses() []string  { return r.v.Alibses }
+func (r *vulnerbbilityResolver) Relbted() []string  { return r.v.Relbted }
+func (r *vulnerbbilityResolver) DbtbSource() string { return r.v.DbtbSource }
+func (r *vulnerbbilityResolver) URLs() []string     { return r.v.URLs }
+func (r *vulnerbbilityResolver) Severity() string   { return r.v.Severity }
+func (r *vulnerbbilityResolver) CVSSVector() string { return r.v.CVSSVector }
+func (r *vulnerbbilityResolver) CVSSScore() string  { return r.v.CVSSScore }
 
-func (r *vulnerabilityResolver) Published() gqlutil.DateTime {
-	return *gqlutil.DateTimeOrNil(&r.v.PublishedAt)
-}
-
-func (r *vulnerabilityResolver) Modified() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.v.ModifiedAt)
+func (r *vulnerbbilityResolver) Published() gqlutil.DbteTime {
+	return *gqlutil.DbteTimeOrNil(&r.v.PublishedAt)
 }
 
-func (r *vulnerabilityResolver) Withdrawn() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.v.WithdrawnAt)
+func (r *vulnerbbilityResolver) Modified() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.v.ModifiedAt)
 }
 
-func (r *vulnerabilityResolver) AffectedPackages() []resolverstubs.VulnerabilityAffectedPackageResolver {
-	var resolvers []resolverstubs.VulnerabilityAffectedPackageResolver
-	for _, p := range r.v.AffectedPackages {
-		resolvers = append(resolvers, &vulnerabilityAffectedPackageResolver{
+func (r *vulnerbbilityResolver) Withdrbwn() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.v.WithdrbwnAt)
+}
+
+func (r *vulnerbbilityResolver) AffectedPbckbges() []resolverstubs.VulnerbbilityAffectedPbckbgeResolver {
+	vbr resolvers []resolverstubs.VulnerbbilityAffectedPbckbgeResolver
+	for _, p := rbnge r.v.AffectedPbckbges {
+		resolvers = bppend(resolvers, &vulnerbbilityAffectedPbckbgeResolver{
 			p: p,
 		})
 	}
@@ -285,23 +285,23 @@ func (r *vulnerabilityResolver) AffectedPackages() []resolverstubs.Vulnerability
 	return resolvers
 }
 
-type vulnerabilityAffectedPackageResolver struct {
-	p shared.AffectedPackage
+type vulnerbbilityAffectedPbckbgeResolver struct {
+	p shbred.AffectedPbckbge
 }
 
-func (r *vulnerabilityAffectedPackageResolver) PackageName() string { return r.p.PackageName }
-func (r *vulnerabilityAffectedPackageResolver) Language() string    { return r.p.Language }
-func (r *vulnerabilityAffectedPackageResolver) Namespace() string   { return r.p.Namespace }
-func (r *vulnerabilityAffectedPackageResolver) VersionConstraint() []string {
-	return r.p.VersionConstraint
+func (r *vulnerbbilityAffectedPbckbgeResolver) PbckbgeNbme() string { return r.p.PbckbgeNbme }
+func (r *vulnerbbilityAffectedPbckbgeResolver) Lbngubge() string    { return r.p.Lbngubge }
+func (r *vulnerbbilityAffectedPbckbgeResolver) Nbmespbce() string   { return r.p.Nbmespbce }
+func (r *vulnerbbilityAffectedPbckbgeResolver) VersionConstrbint() []string {
+	return r.p.VersionConstrbint
 }
-func (r *vulnerabilityAffectedPackageResolver) Fixed() bool      { return r.p.Fixed }
-func (r *vulnerabilityAffectedPackageResolver) FixedIn() *string { return r.p.FixedIn }
+func (r *vulnerbbilityAffectedPbckbgeResolver) Fixed() bool      { return r.p.Fixed }
+func (r *vulnerbbilityAffectedPbckbgeResolver) FixedIn() *string { return r.p.FixedIn }
 
-func (r *vulnerabilityAffectedPackageResolver) AffectedSymbols() []resolverstubs.VulnerabilityAffectedSymbolResolver {
-	var resolvers []resolverstubs.VulnerabilityAffectedSymbolResolver
-	for _, s := range r.p.AffectedSymbols {
-		resolvers = append(resolvers, &vulnerabilityAffectedSymbolResolver{
+func (r *vulnerbbilityAffectedPbckbgeResolver) AffectedSymbols() []resolverstubs.VulnerbbilityAffectedSymbolResolver {
+	vbr resolvers []resolverstubs.VulnerbbilityAffectedSymbolResolver
+	for _, s := rbnge r.p.AffectedSymbols {
+		resolvers = bppend(resolvers, &vulnerbbilityAffectedSymbolResolver{
 			s: s,
 		})
 	}
@@ -309,80 +309,80 @@ func (r *vulnerabilityAffectedPackageResolver) AffectedSymbols() []resolverstubs
 	return resolvers
 }
 
-type vulnerabilityAffectedSymbolResolver struct {
-	s shared.AffectedSymbol
+type vulnerbbilityAffectedSymbolResolver struct {
+	s shbred.AffectedSymbol
 }
 
-func (r *vulnerabilityAffectedSymbolResolver) Path() string      { return r.s.Path }
-func (r *vulnerabilityAffectedSymbolResolver) Symbols() []string { return r.s.Symbols }
+func (r *vulnerbbilityAffectedSymbolResolver) Pbth() string      { return r.s.Pbth }
+func (r *vulnerbbilityAffectedSymbolResolver) Symbols() []string { return r.s.Symbols }
 
-type vulnerabilityMatchResolver struct {
-	uploadLoader                uploadsgraphql.UploadLoader
-	indexLoader                 uploadsgraphql.IndexLoader
-	locationResolver            *gitresolvers.CachedLocationResolver
-	errTracer                   *observation.ErrCollector
-	vulnerabilityLoader         VulnerabilityLoader
-	m                           shared.VulnerabilityMatch
-	preciseIndexResolverFactory *uploadsgraphql.PreciseIndexResolverFactory
+type vulnerbbilityMbtchResolver struct {
+	uplobdLobder                uplobdsgrbphql.UplobdLobder
+	indexLobder                 uplobdsgrbphql.IndexLobder
+	locbtionResolver            *gitresolvers.CbchedLocbtionResolver
+	errTrbcer                   *observbtion.ErrCollector
+	vulnerbbilityLobder         VulnerbbilityLobder
+	m                           shbred.VulnerbbilityMbtch
+	preciseIndexResolverFbctory *uplobdsgrbphql.PreciseIndexResolverFbctory
 }
 
-func (r *vulnerabilityMatchResolver) ID() graphql.ID {
-	return resolverstubs.MarshalID("VulnerabilityMatch", r.m.ID)
+func (r *vulnerbbilityMbtchResolver) ID() grbphql.ID {
+	return resolverstubs.MbrshblID("VulnerbbilityMbtch", r.m.ID)
 }
 
-func (r *vulnerabilityMatchResolver) Vulnerability(ctx context.Context) (resolverstubs.VulnerabilityResolver, error) {
-	vulnerability, ok, err := r.vulnerabilityLoader.GetByID(ctx, r.m.VulnerabilityID)
+func (r *vulnerbbilityMbtchResolver) Vulnerbbility(ctx context.Context) (resolverstubs.VulnerbbilityResolver, error) {
+	vulnerbbility, ok, err := r.vulnerbbilityLobder.GetByID(ctx, r.m.VulnerbbilityID)
 	if err != nil || !ok {
 		return nil, err
 	}
 
-	return &vulnerabilityResolver{v: vulnerability}, nil
+	return &vulnerbbilityResolver{v: vulnerbbility}, nil
 }
 
-func (r *vulnerabilityMatchResolver) AffectedPackage(ctx context.Context) (resolverstubs.VulnerabilityAffectedPackageResolver, error) {
-	return &vulnerabilityAffectedPackageResolver{r.m.AffectedPackage}, nil
+func (r *vulnerbbilityMbtchResolver) AffectedPbckbge(ctx context.Context) (resolverstubs.VulnerbbilityAffectedPbckbgeResolver, error) {
+	return &vulnerbbilityAffectedPbckbgeResolver{r.m.AffectedPbckbge}, nil
 }
 
-func (r *vulnerabilityMatchResolver) PreciseIndex(ctx context.Context) (resolverstubs.PreciseIndexResolver, error) {
-	upload, ok, err := r.uploadLoader.GetByID(ctx, r.m.UploadID)
+func (r *vulnerbbilityMbtchResolver) PreciseIndex(ctx context.Context) (resolverstubs.PreciseIndexResolver, error) {
+	uplobd, ok, err := r.uplobdLobder.GetByID(ctx, r.m.UplobdID)
 	if err != nil || !ok {
 		return nil, err
 	}
 
-	return r.preciseIndexResolverFactory.Create(ctx, r.uploadLoader, r.indexLoader, r.locationResolver, r.errTracer, &upload, nil)
+	return r.preciseIndexResolverFbctory.Crebte(ctx, r.uplobdLobder, r.indexLobder, r.locbtionResolver, r.errTrbcer, &uplobd, nil)
 }
 
 //
 //
 
-type vulnerabilityMatchesSummaryCountResolver struct {
-	critical   int32
+type vulnerbbilityMbtchesSummbryCountResolver struct {
+	criticbl   int32
 	high       int32
 	medium     int32
 	low        int32
 	repository int32
 }
 
-func (v *vulnerabilityMatchesSummaryCountResolver) Critical() int32 { return v.critical }
-func (v *vulnerabilityMatchesSummaryCountResolver) High() int32     { return v.high }
-func (v *vulnerabilityMatchesSummaryCountResolver) Medium() int32   { return v.medium }
-func (v *vulnerabilityMatchesSummaryCountResolver) Low() int32      { return v.low }
-func (v *vulnerabilityMatchesSummaryCountResolver) Repository() int32 {
+func (v *vulnerbbilityMbtchesSummbryCountResolver) Criticbl() int32 { return v.criticbl }
+func (v *vulnerbbilityMbtchesSummbryCountResolver) High() int32     { return v.high }
+func (v *vulnerbbilityMbtchesSummbryCountResolver) Medium() int32   { return v.medium }
+func (v *vulnerbbilityMbtchesSummbryCountResolver) Low() int32      { return v.low }
+func (v *vulnerbbilityMbtchesSummbryCountResolver) Repository() int32 {
 	return v.repository
 }
 
-type vulnerabilityMatchCountByRepositoryResolver struct {
-	v shared.VulnerabilityMatchesByRepository
+type vulnerbbilityMbtchCountByRepositoryResolver struct {
+	v shbred.VulnerbbilityMbtchesByRepository
 }
 
-func (v vulnerabilityMatchCountByRepositoryResolver) ID() graphql.ID {
-	return resolverstubs.MarshalID("VulnerabilityMatchCountByRepository", v.v.ID)
+func (v vulnerbbilityMbtchCountByRepositoryResolver) ID() grbphql.ID {
+	return resolverstubs.MbrshblID("VulnerbbilityMbtchCountByRepository", v.v.ID)
 }
 
-func (v vulnerabilityMatchCountByRepositoryResolver) RepositoryName() string {
-	return v.v.RepositoryName
+func (v vulnerbbilityMbtchCountByRepositoryResolver) RepositoryNbme() string {
+	return v.v.RepositoryNbme
 }
 
-func (v vulnerabilityMatchCountByRepositoryResolver) MatchCount() int32 {
-	return v.v.MatchCount
+func (v vulnerbbilityMbtchCountByRepositoryResolver) MbtchCount() int32 {
+	return v.v.MbtchCount
 }

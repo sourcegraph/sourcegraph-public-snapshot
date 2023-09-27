@@ -1,83 +1,83 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/jobutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/printer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/settings"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Refer to SearchQueryOutputPhase in GQL definitions.
+// Refer to SebrchQueryOutputPhbse in GQL definitions.
 const (
-	ParseTree = "PARSE_TREE"
+	PbrseTree = "PARSE_TREE"
 	JobTree   = "JOB_TREE"
 )
 
-// Refer to SearchQueryOutputFormat in GQL definitions.
+// Refer to SebrchQueryOutputFormbt in GQL definitions.
 const (
 	Json    = "JSON"
 	Sexp    = "SEXP"
-	Mermaid = "MERMAID"
+	Mermbid = "MERMAID"
 )
 
-// Refer to SearchQueryOutputVerbosity in GQL definitions.
+// Refer to SebrchQueryOutputVerbosity in GQL definitions.
 const (
-	Minimal = "MINIMAL"
-	Basic   = "BASIC"
-	Maximal = "MAXIMAL"
+	Minimbl = "MINIMAL"
+	Bbsic   = "BASIC"
+	Mbximbl = "MAXIMAL"
 )
 
-type args struct {
+type brgs struct {
 	Query           string
-	PatternType     string
-	OutputPhase     string
-	OutputFormat    string
+	PbtternType     string
+	OutputPhbse     string
+	OutputFormbt    string
 	OutputVerbosity string
 }
 
-func (r *schemaResolver) ParseSearchQuery(ctx context.Context, args *args) (string, error) {
-	var searchType query.SearchType
-	switch args.PatternType {
-	case "literal":
-		searchType = query.SearchTypeLiteral
-	case "structural":
-		searchType = query.SearchTypeStructural
-	case "regexp", "regex":
-		searchType = query.SearchTypeRegex
-	default:
-		searchType = query.SearchTypeLiteral
+func (r *schembResolver) PbrseSebrchQuery(ctx context.Context, brgs *brgs) (string, error) {
+	vbr sebrchType query.SebrchType
+	switch brgs.PbtternType {
+	cbse "literbl":
+		sebrchType = query.SebrchTypeLiterbl
+	cbse "structurbl":
+		sebrchType = query.SebrchTypeStructurbl
+	cbse "regexp", "regex":
+		sebrchType = query.SebrchTypeRegex
+	defbult:
+		sebrchType = query.SebrchTypeLiterbl
 	}
 
-	switch args.OutputPhase {
-	case ParseTree:
-		return outputParseTree(searchType, args)
-	case JobTree:
-		return outputJobTree(ctx, searchType, args, r.db, r.logger)
+	switch brgs.OutputPhbse {
+	cbse PbrseTree:
+		return outputPbrseTree(sebrchType, brgs)
+	cbse JobTree:
+		return outputJobTree(ctx, sebrchType, brgs, r.db, r.logger)
 	}
 	return "", nil
 }
 
-func outputParseTree(searchType query.SearchType, args *args) (string, error) {
-	plan, err := query.Pipeline(query.Init(args.Query, searchType))
+func outputPbrseTree(sebrchType query.SebrchType, brgs *brgs) (string, error) {
+	plbn, err := query.Pipeline(query.Init(brgs.Query, sebrchType))
 	if err != nil {
 		return "", err
 	}
 
-	if args.OutputFormat != Json || args.OutputVerbosity != Basic {
+	if brgs.OutputFormbt != Json || brgs.OutputVerbosity != Bbsic {
 		return "", errors.New("unsupported output options for PARSE_TREE, only JSON output with BASIC verbosity is supported")
 	}
-	jsonString, err := query.ToJSON(plan.ToQ())
+	jsonString, err := query.ToJSON(plbn.ToQ())
 	if err != nil {
 		return "", err
 	}
@@ -86,53 +86,53 @@ func outputParseTree(searchType query.SearchType, args *args) (string, error) {
 
 func outputJobTree(
 	ctx context.Context,
-	searchType query.SearchType,
-	args *args,
-	db database.DB,
+	sebrchType query.SebrchType,
+	brgs *brgs,
+	db dbtbbbse.DB,
 	logger log.Logger,
 ) (string, error) {
-	plan, err := query.Pipeline(query.Init(args.Query, searchType))
+	plbn, err := query.Pipeline(query.Init(brgs.Query, sebrchType))
 	if err != nil {
 		return "", err
 	}
 
-	settings, err := settings.CurrentUserFinal(ctx, db)
+	settings, err := settings.CurrentUserFinbl(ctx, db)
 	if err != nil {
 		return "", err
 	}
 
-	inputs := &search.Inputs{
+	inputs := &sebrch.Inputs{
 		UserSettings:        settings,
-		PatternType:         searchType,
-		Protocol:            search.Streaming,
-		Features:            client.ToFeatures(featureflag.FromContext(ctx), logger),
-		OnSourcegraphDotCom: envvar.SourcegraphDotComMode(),
+		PbtternType:         sebrchType,
+		Protocol:            sebrch.Strebming,
+		Febtures:            client.ToFebtures(febtureflbg.FromContext(ctx), logger),
+		OnSourcegrbphDotCom: envvbr.SourcegrbphDotComMode(),
 	}
-	j, err := jobutil.NewPlanJob(inputs, plan)
+	j, err := jobutil.NewPlbnJob(inputs, plbn)
 	if err != nil {
 		return "", err
 	}
 
-	var verbosity job.Verbosity
-	switch args.OutputVerbosity {
-	case Minimal:
+	vbr verbosity job.Verbosity
+	switch brgs.OutputVerbosity {
+	cbse Minimbl:
 		verbosity = job.VerbosityNone
-	case Basic:
-		verbosity = job.VerbosityBasic
-	case Maximal:
-		verbosity = job.VerbosityMax
+	cbse Bbsic:
+		verbosity = job.VerbosityBbsic
+	cbse Mbximbl:
+		verbosity = job.VerbosityMbx
 	}
 
-	switch args.OutputFormat {
-	case Json:
+	switch brgs.OutputFormbt {
+	cbse Json:
 		jsonString := printer.JSONVerbose(j, verbosity)
 		return jsonString, nil
-	case Sexp:
+	cbse Sexp:
 		sexpString := printer.SexpVerbose(j, verbosity, true)
 		return sexpString, nil
-	case Mermaid:
-		mermaidString := printer.MermaidVerbose(j, verbosity)
-		return mermaidString, nil
+	cbse Mermbid:
+		mermbidString := printer.MermbidVerbose(j, verbosity)
+		return mermbidString, nil
 	}
 	return "", nil
 }

@@ -1,10 +1,10 @@
-package protocol
+pbckbge protocol
 
 const Version = "0.4.3"
 
 const PositionEncoding = "utf-16"
 
-type MetaData struct {
+type MetbDbtb struct {
 	Vertex
 	Version          string   `json:"version"`
 	ProjectRoot      string   `json:"projectRoot"`
@@ -13,19 +13,19 @@ type MetaData struct {
 }
 
 type ToolInfo struct {
-	Name    string   `json:"name"`
+	Nbme    string   `json:"nbme"`
 	Version string   `json:"version,omitempty"`
-	Args    []string `json:"args,omitempty"`
+	Args    []string `json:"brgs,omitempty"`
 }
 
-func NewMetaData(id uint64, root string, info ToolInfo) MetaData {
-	return MetaData{
+func NewMetbDbtb(id uint64, root string, info ToolInfo) MetbDbtb {
+	return MetbDbtb{
 		Vertex: Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexMetaData,
+			Lbbel: VertexMetbDbtb,
 		},
 		Version:          Version,
 		ProjectRoot:      root,

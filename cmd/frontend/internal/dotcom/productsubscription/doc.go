@@ -1,2 +1,2 @@
-// Package productsubscription handles product subscriptions and licensing.
-package productsubscription
+// Pbckbge productsubscription hbndles product subscriptions bnd licensing.
+pbckbge productsubscription

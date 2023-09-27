@@ -1,69 +1,69 @@
-package overridable
+pbckbge overridbble
 
 import "encoding/json"
 
-// Bool represents a bool value that can be modified on a per-repo basis.
+// Bool represents b bool vblue thbt cbn be modified on b per-repo bbsis.
 type Bool struct {
 	rules rules
 }
 
-// FromBool creates a Bool representing a static, scalar value.
+// FromBool crebtes b Bool representing b stbtic, scblbr vblue.
 func FromBool(b bool) Bool {
 	return Bool{
 		rules: rules{simpleRule(b)},
 	}
 }
 
-// Value returns the bool value for the given repository.
-func (b *Bool) Value(name string) bool {
-	v := b.rules.Match(name)
+// Vblue returns the bool vblue for the given repository.
+func (b *Bool) Vblue(nbme string) bool {
+	v := b.rules.Mbtch(nbme)
 	if v == nil {
-		return false
+		return fblse
 	}
 	return v.(bool)
 }
 
-// MarshalJSON encodes the Bool overridable to a json representation.
-func (b Bool) MarshalJSON() ([]byte, error) {
+// MbrshblJSON encodes the Bool overridbble to b json representbtion.
+func (b Bool) MbrshblJSON() ([]byte, error) {
 	if len(b.rules) == 0 {
-		return []byte("false"), nil
+		return []byte("fblse"), nil
 	}
-	return json.Marshal(b.rules)
+	return json.Mbrshbl(b.rules)
 }
 
-// UnmarshalJSON unmarshalls a JSON value into a Bool.
-func (b *Bool) UnmarshalJSON(data []byte) error {
-	var all bool
-	if err := json.Unmarshal(data, &all); err == nil {
-		*b = Bool{rules: rules{simpleRule(all)}}
+// UnmbrshblJSON unmbrshblls b JSON vblue into b Bool.
+func (b *Bool) UnmbrshblJSON(dbtb []byte) error {
+	vbr bll bool
+	if err := json.Unmbrshbl(dbtb, &bll); err == nil {
+		*b = Bool{rules: rules{simpleRule(bll)}}
 		return nil
 	}
 
-	var c complex
-	if err := json.Unmarshal(data, &c); err != nil {
+	vbr c complex
+	if err := json.Unmbrshbl(dbtb, &c); err != nil {
 		return err
 	}
 
-	return b.rules.hydrateFromComplex(c)
+	return b.rules.hydrbteFromComplex(c)
 }
 
-// UnmarshalYAML unmarshalls a YAML value into a Bool.
-func (b *Bool) UnmarshalYAML(unmarshal func(any) error) error {
-	var all bool
-	if err := unmarshal(&all); err == nil {
-		*b = Bool{rules: rules{simpleRule(all)}}
+// UnmbrshblYAML unmbrshblls b YAML vblue into b Bool.
+func (b *Bool) UnmbrshblYAML(unmbrshbl func(bny) error) error {
+	vbr bll bool
+	if err := unmbrshbl(&bll); err == nil {
+		*b = Bool{rules: rules{simpleRule(bll)}}
 		return nil
 	}
 
-	var c complex
-	if err := unmarshal(&c); err != nil {
+	vbr c complex
+	if err := unmbrshbl(&c); err != nil {
 		return err
 	}
 
-	return b.rules.hydrateFromComplex(c)
+	return b.rules.hydrbteFromComplex(c)
 }
 
-// Equal tests two Bools for equality, used in cmp.
-func (b Bool) Equal(other Bool) bool {
-	return b.rules.Equal(other.rules)
+// Equbl tests two Bools for equblity, used in cmp.
+func (b Bool) Equbl(other Bool) bool {
+	return b.rules.Equbl(other.rules)
 }

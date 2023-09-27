@@ -1,9 +1,9 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 	"reflect"
@@ -14,38 +14,38 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
-func TestProvider_ValidateConnection(t *testing.T) {
-	instanceURL := os.Getenv("BITBUCKET_SERVER_URL")
-	if instanceURL == "" {
-		instanceURL = "https://bitbucket.sgdev.org"
+func TestProvider_VblidbteConnection(t *testing.T) {
+	instbnceURL := os.Getenv("BITBUCKET_SERVER_URL")
+	if instbnceURL == "" {
+		instbnceURL = "https://bitbucket.sgdev.org"
 	}
 
-	for _, tc := range []struct {
-		name    string
+	for _, tc := rbnge []struct {
+		nbme    string
 		client  func(*bitbucketserver.Client)
-		wantErr string
+		wbntErr string
 	}{
 		{
-			name: "no-problems-when-authenticated-as-admin",
+			nbme: "no-problems-when-buthenticbted-bs-bdmin",
 		},
 		{
-			name:    "problems-when-authenticated-as-non-admin",
-			client:  func(c *bitbucketserver.Client) { c.Auth = &auth.BasicAuth{} },
-			wantErr: `Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/api/1.0/admin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"message\":\"You are not permitted to access this resource\",\"exceptionName\":\"com.atlassian.bitbucket.AuthorisationException\"}]}"`,
+			nbme:    "problems-when-buthenticbted-bs-non-bdmin",
+			client:  func(c *bitbucketserver.Client) { c.Auth = &buth.BbsicAuth{} },
+			wbntErr: `Bitbucket API HTTP error: code=401 url="${INSTANCEURL}/rest/bpi/1.0/bdmin/permissions/users?filter=" body="{\"errors\":[{\"context\":null,\"messbge\":\"You bre not permitted to bccess this resource\",\"exceptionNbme\":\"com.btlbssibn.bitbucket.AuthorisbtionException\"}]}"`,
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			cli := newClient(t, "Validate/"+tc.name)
+		t.Run(tc.nbme, func(t *testing.T) {
+			cli := newClient(t, "Vblidbte/"+tc.nbme)
 
 			p := newProvider(cli)
 
@@ -53,18 +53,18 @@ func TestProvider_ValidateConnection(t *testing.T) {
 				tc.client(p.client)
 			}
 
-			tc.wantErr = strings.ReplaceAll(tc.wantErr, "${INSTANCEURL}", instanceURL)
+			tc.wbntErr = strings.ReplbceAll(tc.wbntErr, "${INSTANCEURL}", instbnceURL)
 
-			err := p.ValidateConnection(context.Background())
-			if tc.wantErr == "" && err != nil {
-				t.Fatalf("unexpected error: %s", err)
+			err := p.VblidbteConnection(context.Bbckground())
+			if tc.wbntErr == "" && err != nil {
+				t.Fbtblf("unexpected error: %s", err)
 			}
-			if tc.wantErr != "" {
+			if tc.wbntErr != "" {
 				if err == nil {
-					t.Fatal("expected error, but got none")
+					t.Fbtbl("expected error, but got none")
 				}
-				if have, want := err.Error(), tc.wantErr; !reflect.DeepEqual(have, want) {
-					t.Error(cmp.Diff(have, want))
+				if hbve, wbnt := err.Error(), tc.wbntErr; !reflect.DeepEqubl(hbve, wbnt) {
+					t.Error(cmp.Diff(hbve, wbnt))
 				}
 			}
 		})
@@ -77,46 +77,46 @@ func testProviderFetchAccount(f *fixtures, cli *bitbucketserver.Client) func(*te
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		for _, tc := range []struct {
-			name string
+		for _, tc := rbnge []struct {
+			nbme string
 			ctx  context.Context
 			user *types.User
-			acct *extsvc.Account
+			bcct *extsvc.Account
 			err  string
 		}{
 			{
-				name: "no user given",
+				nbme: "no user given",
 				user: nil,
-				acct: nil,
+				bcct: nil,
 			},
 			{
-				name: "user not found",
-				user: &types.User{Username: "john"},
-				acct: nil,
+				nbme: "user not found",
+				user: &types.User{Usernbme: "john"},
+				bcct: nil,
 			},
 			{
-				name: "user found by exact username match",
-				user: &types.User{ID: 42, Username: "ceo"},
-				acct: h.externalAccount(42, f.users["ceo"]),
+				nbme: "user found by exbct usernbme mbtch",
+				user: &types.User{ID: 42, Usernbme: "ceo"},
+				bcct: h.externblAccount(42, f.users["ceo"]),
 			},
 		} {
-			t.Run(tc.name, func(t *testing.T) {
+			t.Run(tc.nbme, func(t *testing.T) {
 				if tc.ctx == nil {
-					tc.ctx = context.Background()
+					tc.ctx = context.Bbckground()
 				}
 
 				if tc.err == "" {
 					tc.err = "<nil>"
 				}
 
-				acct, err := p.FetchAccount(tc.ctx, tc.user, nil, nil)
+				bcct, err := p.FetchAccount(tc.ctx, tc.user, nil, nil)
 
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+					t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 				}
 
-				if have, want := acct, tc.acct; !reflect.DeepEqual(have, want) {
-					t.Error(cmp.Diff(have, want))
+				if hbve, wbnt := bcct, tc.bcct; !reflect.DeepEqubl(hbve, wbnt) {
+					t.Error(cmp.Diff(hbve, wbnt))
 				}
 			})
 		}
@@ -129,94 +129,94 @@ func testProviderFetchUserPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		repoIDs := func(names ...string) (ids []extsvc.RepoID) {
-			for _, name := range names {
-				if r, ok := f.repos[name]; ok {
-					ids = append(ids, extsvc.RepoID(strconv.FormatInt(int64(r.ID), 10)))
+		repoIDs := func(nbmes ...string) (ids []extsvc.RepoID) {
+			for _, nbme := rbnge nbmes {
+				if r, ok := f.repos[nbme]; ok {
+					ids = bppend(ids, extsvc.RepoID(strconv.FormbtInt(int64(r.ID), 10)))
 				}
 			}
 			return ids
 		}
 
-		for _, tc := range []struct {
-			name string
+		for _, tc := rbnge []struct {
+			nbme string
 			ctx  context.Context
-			acct *extsvc.Account
+			bcct *extsvc.Account
 			ids  []extsvc.RepoID
 			err  string
 		}{
 			{
-				name: "no account provided",
-				acct: nil,
-				err:  "no account provided",
+				nbme: "no bccount provided",
+				bcct: nil,
+				err:  "no bccount provided",
 			},
 			{
-				name: "no account data provided",
-				acct: &extsvc.Account{},
-				err:  "no account data provided",
+				nbme: "no bccount dbtb provided",
+				bcct: &extsvc.Account{},
+				err:  "no bccount dbtb provided",
 			},
 			{
-				name: "not a code host of the account",
-				acct: &extsvc.Account{
+				nbme: "not b code host of the bccount",
+				bcct: &extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 						AccountID:   "john",
 					},
-					AccountData: extsvc.AccountData{
-						Data: extsvc.NewUnencryptedData(nil),
+					AccountDbtb: extsvc.AccountDbtb{
+						Dbtb: extsvc.NewUnencryptedDbtb(nil),
 					},
 				},
-				err: `not a code host of the account: want "${INSTANCEURL}" but have "https://github.com"`,
+				err: `not b code host of the bccount: wbnt "${INSTANCEURL}" but hbve "https://github.com"`,
 			},
 			{
-				name: "bad account data",
-				acct: &extsvc.Account{
+				nbme: "bbd bccount dbtb",
+				bcct: &extsvc.Account{
 					AccountSpec: extsvc.AccountSpec{
 						ServiceType: h.ServiceType,
 						ServiceID:   h.ServiceID,
 						AccountID:   "john",
 					},
-					AccountData: extsvc.AccountData{
-						Data: extsvc.NewUnencryptedData(nil),
+					AccountDbtb: extsvc.AccountDbtb{
+						Dbtb: extsvc.NewUnencryptedDbtb(nil),
 					},
 				},
-				err: "unmarshaling account data: unexpected end of JSON input",
+				err: "unmbrshbling bccount dbtb: unexpected end of JSON input",
 			},
 			{
-				name: "private repo ids are retrieved",
-				acct: h.externalAccount(0, f.users["ceo"]),
-				ids:  repoIDs("private-repo", "secret-repo", "super-secret-repo"),
+				nbme: "privbte repo ids bre retrieved",
+				bcct: h.externblAccount(0, f.users["ceo"]),
+				ids:  repoIDs("privbte-repo", "secret-repo", "super-secret-repo"),
 			},
 		} {
-			t.Run(tc.name, func(t *testing.T) {
+			t.Run(tc.nbme, func(t *testing.T) {
 				if tc.ctx == nil {
-					tc.ctx = context.Background()
+					tc.ctx = context.Bbckground()
 				}
 
 				if tc.err == "" {
 					tc.err = "<nil>"
 				}
 
-				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
+				tc.err = strings.ReplbceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
 
-				got, err := p.FetchUserPerms(tc.ctx, tc.acct, authz.FetchPermsOptions{})
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				got, err := p.FetchUserPerms(tc.ctx, tc.bcct, buthz.FetchPermsOptions{})
+				if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+					t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 				}
 				if got != nil {
-					sort.Slice(got.Exacts, func(i, j int) bool { return got.Exacts[i] < got.Exacts[j] })
+					sort.Slice(got.Exbcts, func(i, j int) bool { return got.Exbcts[i] < got.Exbcts[j] })
 				}
 
-				var want *authz.ExternalUserPermissions
+				vbr wbnt *buthz.ExternblUserPermissions
 				if len(tc.ids) > 0 {
 					sort.Slice(tc.ids, func(i, j int) bool { return tc.ids[i] < tc.ids[j] })
-					want = &authz.ExternalUserPermissions{
-						Exacts: tc.ids,
+					wbnt = &buthz.ExternblUserPermissions{
+						Exbcts: tc.ids,
 					}
 				}
-				if diff := cmp.Diff(want, got); diff != "" {
-					t.Fatalf("Mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbnt, got); diff != "" {
+					t.Fbtblf("Mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
@@ -229,146 +229,146 @@ func testProviderFetchRepoPerms(f *fixtures, cli *bitbucketserver.Client) func(*
 
 		h := codeHost{CodeHost: p.codeHost}
 
-		userIDs := func(names ...string) (ids []extsvc.AccountID) {
-			for _, name := range names {
-				if r, ok := f.users[name]; ok {
-					ids = append(ids, extsvc.AccountID(strconv.FormatInt(int64(r.ID), 10)))
+		userIDs := func(nbmes ...string) (ids []extsvc.AccountID) {
+			for _, nbme := rbnge nbmes {
+				if r, ok := f.users[nbme]; ok {
+					ids = bppend(ids, extsvc.AccountID(strconv.FormbtInt(int64(r.ID), 10)))
 				}
 			}
 			return ids
 		}
 
-		for _, tc := range []struct {
-			name string
+		for _, tc := rbnge []struct {
+			nbme string
 			ctx  context.Context
 			repo *extsvc.Repository
 			ids  []extsvc.AccountID
 			err  string
 		}{
 			{
-				name: "no repo provided",
+				nbme: "no repo provided",
 				repo: nil,
 				err:  "no repo provided",
 			},
 			{
-				name: "not a code host of the repo",
+				nbme: "not b code host of the repo",
 				repo: &extsvc.Repository{
 					URI: "github.com/user/repo",
-					ExternalRepoSpec: api.ExternalRepoSpec{
+					ExternblRepoSpec: bpi.ExternblRepoSpec{
 						ServiceType: extsvc.TypeGitHub,
 						ServiceID:   "https://github.com",
 					},
 				},
-				err: `not a code host of the repo: want "${INSTANCEURL}" but have "https://github.com"`,
+				err: `not b code host of the repo: wbnt "${INSTANCEURL}" but hbve "https://github.com"`,
 			},
 			{
-				name: "private user ids are retrieved",
+				nbme: "privbte user ids bre retrieved",
 				repo: &extsvc.Repository{
 					URI: "${INSTANCEURL}/user/repo",
-					ExternalRepoSpec: api.ExternalRepoSpec{
-						ID:          strconv.Itoa(f.repos["super-secret-repo"].ID),
+					ExternblRepoSpec: bpi.ExternblRepoSpec{
+						ID:          strconv.Itob(f.repos["super-secret-repo"].ID),
 						ServiceType: h.ServiceType,
 						ServiceID:   h.ServiceID,
 					},
 				},
-				ids: append(userIDs("ceo"), "1"), // admin user
+				ids: bppend(userIDs("ceo"), "1"), // bdmin user
 			},
 		} {
-			t.Run(tc.name, func(t *testing.T) {
+			t.Run(tc.nbme, func(t *testing.T) {
 				if tc.ctx == nil {
-					tc.ctx = context.Background()
+					tc.ctx = context.Bbckground()
 				}
 
 				if tc.err == "" {
 					tc.err = "<nil>"
 				}
 
-				tc.err = strings.ReplaceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
+				tc.err = strings.ReplbceAll(tc.err, "${INSTANCEURL}", cli.URL.String())
 
-				ids, err := p.FetchRepoPerms(tc.ctx, tc.repo, authz.FetchPermsOptions{})
+				ids, err := p.FetchRepoPerms(tc.ctx, tc.repo, buthz.FetchPermsOptions{})
 
-				if have, want := fmt.Sprint(err), tc.err; have != want {
-					t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+				if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+					t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 				}
 
 				sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
 				sort.Slice(tc.ids, func(i, j int) bool { return tc.ids[i] < tc.ids[j] })
 
-				if have, want := ids, tc.ids; !reflect.DeepEqual(have, want) {
-					t.Error(cmp.Diff(have, want))
+				if hbve, wbnt := ids, tc.ids; !reflect.DeepEqubl(hbve, wbnt) {
+					t.Error(cmp.Diff(hbve, wbnt))
 				}
 			})
 		}
 	}
 }
 
-func marshalJSON(v any) []byte {
-	bs, err := json.Marshal(v)
+func mbrshblJSON(v bny) []byte {
+	bs, err := json.Mbrshbl(v)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return bs
 }
 
-// fixtures contains the data we need loaded in Bitbucket Server API
-// to run the Provider tests. Because we use VCR recordings, we don't
-// need a Bitbucket Server API up and running to run those tests. But if
-// you want to work on these tests / code, you need to start a new instance
-// of Bitbucket Server with docker, create an Application Link as per
-// https://docs.sourcegraph.com/admin/external_service/bitbucket_server, and
-// then run the tests with -update=true.
+// fixtures contbins the dbtb we need lobded in Bitbucket Server API
+// to run the Provider tests. Becbuse we use VCR recordings, we don't
+// need b Bitbucket Server API up bnd running to run those tests. But if
+// you wbnt to work on these tests / code, you need to stbrt b new instbnce
+// of Bitbucket Server with docker, crebte bn Applicbtion Link bs per
+// https://docs.sourcegrbph.com/bdmin/externbl_service/bitbucket_server, bnd
+// then run the tests with -updbte=true.
 type fixtures struct {
-	users             map[string]*bitbucketserver.User
-	groups            map[string]*bitbucketserver.Group
-	projects          map[string]*bitbucketserver.Project
-	repos             map[string]*bitbucketserver.Repo
+	users             mbp[string]*bitbucketserver.User
+	groups            mbp[string]*bitbucketserver.Group
+	projects          mbp[string]*bitbucketserver.Project
+	repos             mbp[string]*bitbucketserver.Repo
 	groupProjectPerms []*bitbucketserver.GroupProjectPermission
 	userRepoPerms     []*bitbucketserver.UserRepoPermission
 }
 
-func (f fixtures) load(t *testing.T, cli *bitbucketserver.Client) {
-	ctx := context.Background()
+func (f fixtures) lobd(t *testing.T, cli *bitbucketserver.Client) {
+	ctx := context.Bbckground()
 
-	for _, u := range f.users {
-		u.Password = "password"
-		u.Slug = u.Name
+	for _, u := rbnge f.users {
+		u.Pbssword = "pbssword"
+		u.Slug = u.Nbme
 
-		if err := cli.LoadUser(ctx, u); err != nil {
+		if err := cli.LobdUser(ctx, u); err != nil {
 			t.Log(err)
-			if err := cli.CreateUser(ctx, u); err != nil {
+			if err := cli.CrebteUser(ctx, u); err != nil {
 				t.Error(err)
 			}
 		}
 	}
 
-	for _, g := range f.groups {
-		if err := cli.LoadGroup(ctx, g); err != nil {
+	for _, g := rbnge f.groups {
+		if err := cli.LobdGroup(ctx, g); err != nil {
 			t.Log(err)
 
-			if err := cli.CreateGroup(ctx, g); err != nil {
+			if err := cli.CrebteGroup(ctx, g); err != nil {
 				t.Error(err)
 			}
 
-			if err := cli.CreateGroupMembership(ctx, g); err != nil {
+			if err := cli.CrebteGroupMembership(ctx, g); err != nil {
 				t.Error(err)
 			}
 		}
 	}
 
-	for _, p := range f.projects {
-		if err := cli.LoadProject(ctx, p); err != nil {
+	for _, p := rbnge f.projects {
+		if err := cli.LobdProject(ctx, p); err != nil {
 			t.Log(err)
-			if err := cli.CreateProject(ctx, p); err != nil {
+			if err := cli.CrebteProject(ctx, p); err != nil {
 				t.Error(err)
 			}
 		}
 	}
 
-	for _, r := range f.repos {
+	for _, r := rbnge f.repos {
 		repo, err := cli.Repo(ctx, r.Project.Key, r.Slug)
 		if err != nil {
 			t.Log(err)
-			if err := cli.CreateRepo(ctx, r); err != nil {
+			if err := cli.CrebteRepo(ctx, r); err != nil {
 				t.Error(err)
 			}
 		} else {
@@ -376,46 +376,46 @@ func (f fixtures) load(t *testing.T, cli *bitbucketserver.Client) {
 		}
 	}
 
-	for _, p := range f.groupProjectPerms {
-		if err := cli.CreateGroupProjectPermission(ctx, p); err != nil {
+	for _, p := rbnge f.groupProjectPerms {
+		if err := cli.CrebteGroupProjectPermission(ctx, p); err != nil {
 			t.Error(err)
 		}
 	}
 
-	for _, p := range f.userRepoPerms {
-		if err := cli.CreateUserRepoPermission(ctx, p); err != nil {
+	for _, p := rbnge f.userRepoPerms {
+		if err := cli.CrebteUserRepoPermission(ctx, p); err != nil {
 			t.Error(err)
 		}
 	}
 }
 
 func newFixtures() *fixtures {
-	users := map[string]*bitbucketserver.User{
-		"engineer1": {Name: "engineer1", DisplayName: "Mr. Engineer 1", EmailAddress: "engineer1@mycorp.com"},
-		"engineer2": {Name: "engineer2", DisplayName: "Mr. Engineer 2", EmailAddress: "engineer2@mycorp.com"},
-		"scientist": {Name: "scientist", DisplayName: "Ms. Scientist", EmailAddress: "scientist@mycorp.com"},
-		"ceo":       {Name: "ceo", DisplayName: "Mrs. CEO", EmailAddress: "ceo@mycorp.com"},
+	users := mbp[string]*bitbucketserver.User{
+		"engineer1": {Nbme: "engineer1", DisplbyNbme: "Mr. Engineer 1", EmbilAddress: "engineer1@mycorp.com"},
+		"engineer2": {Nbme: "engineer2", DisplbyNbme: "Mr. Engineer 2", EmbilAddress: "engineer2@mycorp.com"},
+		"scientist": {Nbme: "scientist", DisplbyNbme: "Ms. Scientist", EmbilAddress: "scientist@mycorp.com"},
+		"ceo":       {Nbme: "ceo", DisplbyNbme: "Mrs. CEO", EmbilAddress: "ceo@mycorp.com"},
 	}
 
-	groups := map[string]*bitbucketserver.Group{
-		"engineers":      {Name: "engineers", Users: []string{"engineer1", "engineer2"}},
-		"scientists":     {Name: "scientists", Users: []string{"scientist"}},
-		"secret-project": {Name: "secret-project", Users: []string{"engineer1", "scientist"}},
-		"management":     {Name: "management", Users: []string{"ceo"}},
+	groups := mbp[string]*bitbucketserver.Group{
+		"engineers":      {Nbme: "engineers", Users: []string{"engineer1", "engineer2"}},
+		"scientists":     {Nbme: "scientists", Users: []string{"scientist"}},
+		"secret-project": {Nbme: "secret-project", Users: []string{"engineer1", "scientist"}},
+		"mbnbgement":     {Nbme: "mbnbgement", Users: []string{"ceo"}},
 	}
 
-	projects := map[string]*bitbucketserver.Project{
-		"SECRET":      {Name: "Secret", Key: "SECRET", Public: false},
-		"SUPERSECRET": {Name: "Super Secret", Key: "SUPERSECRET", Public: false},
-		"PRIVATE":     {Name: "Private", Key: "PRIVATE", Public: false},
-		"PUBLIC":      {Name: "Public", Key: "PUBLIC", Public: true},
+	projects := mbp[string]*bitbucketserver.Project{
+		"SECRET":      {Nbme: "Secret", Key: "SECRET", Public: fblse},
+		"SUPERSECRET": {Nbme: "Super Secret", Key: "SUPERSECRET", Public: fblse},
+		"PRIVATE":     {Nbme: "Privbte", Key: "PRIVATE", Public: fblse},
+		"PUBLIC":      {Nbme: "Public", Key: "PUBLIC", Public: true},
 	}
 
-	repos := map[string]*bitbucketserver.Repo{
-		"secret-repo":       {Slug: "secret-repo", Name: "secret-repo", Project: projects["SECRET"]},
-		"super-secret-repo": {Slug: "super-secret-repo", Name: "super-secret-repo", Project: projects["SUPERSECRET"]},
-		"public-repo":       {Slug: "public-repo", Name: "public-repo", Project: projects["PUBLIC"], Public: true},
-		"private-repo":      {Slug: "private-repo", Name: "private-repo", Project: projects["PRIVATE"]},
+	repos := mbp[string]*bitbucketserver.Repo{
+		"secret-repo":       {Slug: "secret-repo", Nbme: "secret-repo", Project: projects["SECRET"]},
+		"super-secret-repo": {Slug: "super-secret-repo", Nbme: "super-secret-repo", Project: projects["SUPERSECRET"]},
+		"public-repo":       {Slug: "public-repo", Nbme: "public-repo", Project: projects["PUBLIC"], Public: true},
+		"privbte-repo":      {Slug: "privbte-repo", Nbme: "privbte-repo", Project: projects["PRIVATE"]},
 	}
 
 	groupProjectPerms := []*bitbucketserver.GroupProjectPermission{
@@ -431,7 +431,7 @@ func newFixtures() *fixtures {
 		},
 		{
 			Group:   groups["scientists"],
-			Perm:    bitbucketserver.PermProjectRead,
+			Perm:    bitbucketserver.PermProjectRebd,
 			Project: projects["PRIVATE"],
 		},
 		{
@@ -440,13 +440,13 @@ func newFixtures() *fixtures {
 			Project: projects["SECRET"],
 		},
 		{
-			Group:   groups["management"],
-			Perm:    bitbucketserver.PermProjectRead,
+			Group:   groups["mbnbgement"],
+			Perm:    bitbucketserver.PermProjectRebd,
 			Project: projects["SECRET"],
 		},
 		{
-			Group:   groups["management"],
-			Perm:    bitbucketserver.PermProjectRead,
+			Group:   groups["mbnbgement"],
+			Perm:    bitbucketserver.PermProjectRebd,
 			Project: projects["PRIVATE"],
 		},
 	}
@@ -473,44 +473,44 @@ type codeHost struct {
 	*extsvc.CodeHost
 }
 
-func (h codeHost) externalAccount(userID int32, u *bitbucketserver.User) *extsvc.Account {
-	bs := marshalJSON(u)
+func (h codeHost) externblAccount(userID int32, u *bitbucketserver.User) *extsvc.Account {
+	bs := mbrshblJSON(u)
 	return &extsvc.Account{
 		UserID: userID,
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: h.ServiceType,
 			ServiceID:   h.ServiceID,
-			AccountID:   strconv.Itoa(u.ID),
+			AccountID:   strconv.Itob(u.ID),
 		},
-		AccountData: extsvc.AccountData{
-			Data: extsvc.NewUnencryptedData(bs),
+		AccountDbtb: extsvc.AccountDbtb{
+			Dbtb: extsvc.NewUnencryptedDbtb(bs),
 		},
 	}
 }
 
-func newClient(t *testing.T, name string) *bitbucketserver.Client {
-	cli := bitbucketserver.NewTestClient(t, name, *update)
+func newClient(t *testing.T, nbme string) *bitbucketserver.Client {
+	cli := bitbucketserver.NewTestClient(t, nbme, *updbte)
 
 	signingKey := os.Getenv("BITBUCKET_SERVER_SIGNING_KEY")
 	if signingKey == "" {
 		// Bogus key
-		signingKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+		signingKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIbWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4blBESUZUN3dRZ0tbbXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3dbeS83RlYxUEFtdmlXeWlYVklETzJnNWJObUJlbmdKQ3hFb3Nib1VtUUloQVBOMlZbczN6UFFwCk1EVG9vTlJXcnl0RW1URERkbmdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZbDkKWDFBMlVnTDE3bWhsS1FJbEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovbXZFYkJybVJHblAyb3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 	}
 
 	consumerKey := os.Getenv("BITBUCKET_SERVER_CONSUMER_KEY")
 	if consumerKey == "" {
-		consumerKey = "sourcegraph"
+		consumerKey = "sourcegrbph"
 	}
 
 	if err := cli.SetOAuth(consumerKey, signingKey); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return cli
 }
 
 func newProvider(cli *bitbucketserver.Client) *Provider {
-	p := NewProvider(cli, "", false)
-	p.pageSize = 1 // Exercise pagination
+	p := NewProvider(cli, "", fblse)
+	p.pbgeSize = 1 // Exercise pbginbtion
 	return p
 }

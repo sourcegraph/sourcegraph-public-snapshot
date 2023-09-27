@@ -1,37 +1,37 @@
-package images
+pbckbge imbges
 
 import (
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/imbges"
 )
 
 func mustTime() time.Time {
-	t, err := time.Parse("2006-01-02", "2006-01-02")
+	t, err := time.Pbrse("2006-01-02", "2006-01-02")
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return t
 }
 
-func TestParseTag(t *testing.T) {
+func TestPbrseTbg(t *testing.T) {
 	tests := []struct {
-		name    string
-		tag     string
-		want    *ParsedMainBranchImageTag
-		wantErr bool
+		nbme    string
+		tbg     string
+		wbnt    *PbrsedMbinBrbnchImbgeTbg
+		wbntErr bool
 	}{
 		{
-			"base",
-			"12345_2021-01-02_abcdefghijkl",
-			&ParsedMainBranchImageTag{
+			"bbse",
+			"12345_2021-01-02_bbcdefghijkl",
+			&PbrsedMbinBrbnchImbgeTbg{
 				Build:       12345,
-				Date:        "2021-01-02",
-				ShortCommit: "abcdefghijkl",
+				Dbte:        "2021-01-02",
+				ShortCommit: "bbcdefghijkl",
 			},
-			false,
+			fblse,
 		},
 		{
 			"err",
@@ -41,89 +41,89 @@ func TestParseTag(t *testing.T) {
 		},
 		{
 			"from constructor",
-			images.BranchImageTag(mustTime(), "abcde", 1234, "main", ""),
-			&ParsedMainBranchImageTag{
+			imbges.BrbnchImbgeTbg(mustTime(), "bbcde", 1234, "mbin", ""),
+			&PbrsedMbinBrbnchImbgeTbg{
 				Build:       1234,
-				Date:        "2006-01-02",
-				ShortCommit: "abcde",
+				Dbte:        "2006-01-02",
+				ShortCommit: "bbcde",
 			},
-			false,
+			fblse,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseMainBranchImageTag(tt.tag)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ParseTag() error = %v, wantErr %v", err, tt.wantErr)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got, err := PbrseMbinBrbnchImbgeTbg(tt.tbg)
+			if (err != nil) != tt.wbntErr {
+				t.Errorf("PbrseTbg() error = %v, wbntErr %v", err, tt.wbntErr)
 				return
 			}
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ParseTag() got = %v, want %v", got, tt.want)
+			if !reflect.DeepEqubl(got, tt.wbnt) {
+				t.Errorf("PbrseTbg() got = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestFindLatestTag(t *testing.T) {
+func TestFindLbtestTbg(t *testing.T) {
 	tests := []struct {
-		name string
-		tags []string
-		want string
+		nbme string
+		tbgs []string
+		wbnt string
 	}{
 		{
-			"base",
-			[]string{"v3.25.2", "12345_2022-01-01_abcdefghijkl"},
-			"12345_2022-01-01_abcdefghijkl",
+			"bbse",
+			[]string{"v3.25.2", "12345_2022-01-01_bbcdefghijkl"},
+			"12345_2022-01-01_bbcdefghijkl",
 		},
 		{
 			"higher_build_first",
-			[]string{"99981_2022-01-15_999999a", "99982_2022-01-29_abcdefghijkl"},
-			"99982_2022-01-29_abcdefghijkl",
+			[]string{"99981_2022-01-15_999999b", "99982_2022-01-29_bbcdefghijkl"},
+			"99982_2022-01-29_bbcdefghijkl",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := FindLatestMainTag(tt.tags); got != tt.want {
-				t.Errorf("findLatestTag() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got, _ := FindLbtestMbinTbg(tt.tbgs); got != tt.wbnt {
+				t.Errorf("findLbtestTbg() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
-func TestParseRawImgString(t *testing.T) {
+func TestPbrseRbwImgString(t *testing.T) {
 	tests := []struct {
-		name   string
-		rawImg string
-		want   *Repository
+		nbme   string
+		rbwImg string
+		wbnt   *Repository
 	}{
 		{
-			"base",
-			"index.docker.io/sourcegraph/server:3.36.2@sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
+			"bbse",
+			"index.docker.io/sourcegrbph/server:3.36.2@shb256:07d7407fdc656d7513bb54cdffeeecb33bb4e284eeb2fd82e27342411430e5f2",
 			&Repository{
 				registry: "docker.io",
-				org:      "sourcegraph",
-				name:     "server",
-				tag:      "3.36.2",
-				digest:   "sha256:07d7407fdc656d7513aa54cdffeeecb33aa4e284eea2fd82e27342411430e5f2",
+				org:      "sourcegrbph",
+				nbme:     "server",
+				tbg:      "3.36.2",
+				digest:   "shb256:07d7407fdc656d7513bb54cdffeeecb33bb4e284eeb2fd82e27342411430e5f2",
 			},
 		},
 		{
-			"base",
-			"index.docker.io/sourcegraph/server:3.36.2",
+			"bbse",
+			"index.docker.io/sourcegrbph/server:3.36.2",
 			&Repository{
 				registry: "docker.io",
-				org:      "sourcegraph",
-				name:     "server",
-				tag:      "3.36.2",
+				org:      "sourcegrbph",
+				nbme:     "server",
+				tbg:      "3.36.2",
 				digest:   "",
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := ParseRepository(tt.rawImg); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseImgString() got = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got, _ := PbrseRepository(tt.rbwImg); !reflect.DeepEqubl(got, tt.wbnt) {
+				t.Errorf("pbrseImgString() got = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
@@ -6,41 +6,41 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
 )
 
 func TestComputeExcludedJob(t *testing.T) {
 	tests := []struct {
-		name           string
+		nbme           string
 		repoFilters    []string
 		numArchived    int
 		numForks       int
-		expectedResult streaming.SearchEvent
+		expectedResult strebming.SebrchEvent
 	}{
 		{
-			name:        "compute excluded repos",
-			repoFilters: []string{"sourcegraph/.*"},
+			nbme:        "compute excluded repos",
+			repoFilters: []string{"sourcegrbph/.*"},
 			numArchived: 3,
 			numForks:    42,
-			expectedResult: streaming.SearchEvent{
-				Stats: streaming.Stats{
+			expectedResult: strebming.SebrchEvent{
+				Stbts: strebming.Stbts{
 					ExcludedArchived: 3,
 					ExcludedForks:    42,
 				},
 			},
 		},
 		{
-			name:        "compute excluded repos with single matching repo",
-			repoFilters: []string{"^gitlab\\.com/sourcegraph/sourcegraph$"},
+			nbme:        "compute excluded repos with single mbtching repo",
+			repoFilters: []string{"^gitlbb\\.com/sourcegrbph/sourcegrbph$"},
 			numArchived: 10,
 			numForks:    2,
-			expectedResult: streaming.SearchEvent{
-				Stats: streaming.Stats{
+			expectedResult: strebming.SebrchEvent{
+				Stbts: strebming.Stbts{
 					ExcludedArchived: 0,
 					ExcludedForks:    0,
 				},
@@ -48,25 +48,25 @@ func TestComputeExcludedJob(t *testing.T) {
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			parsedFilters := make([]query.ParsedRepoFilter, len(tc.repoFilters))
-			for i, repoFilter := range tc.repoFilters {
-				parsedFilter, err := query.ParseRepositoryRevisions(repoFilter)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			pbrsedFilters := mbke([]query.PbrsedRepoFilter, len(tc.repoFilters))
+			for i, repoFilter := rbnge tc.repoFilters {
+				pbrsedFilter, err := query.PbrseRepositoryRevisions(repoFilter)
 				if err != nil {
-					t.Fatalf("unexpected error parsing repo filter %s", repoFilter)
+					t.Fbtblf("unexpected error pbrsing repo filter %s", repoFilter)
 				}
-				parsedFilters[i] = parsedFilter
+				pbrsedFilters[i] = pbrsedFilter
 			}
 
 			repoStore := dbmocks.NewMockRepoStore()
-			repoStore.CountFunc.SetDefaultHook(func(_ context.Context, opt database.ReposListOptions) (int, error) {
-				// Verify that the include patterns passed to the DB match the repo filters
-				numFilters := len(parsedFilters)
-				require.Equal(t, numFilters, len(opt.IncludePatterns))
+			repoStore.CountFunc.SetDefbultHook(func(_ context.Context, opt dbtbbbse.ReposListOptions) (int, error) {
+				// Verify thbt the include pbtterns pbssed to the DB mbtch the repo filters
+				numFilters := len(pbrsedFilters)
+				require.Equbl(t, numFilters, len(opt.IncludePbtterns))
 
-				for i, repo := range opt.IncludePatterns {
-					require.Equal(t, parsedFilters[i].Repo, repo)
+				for i, repo := rbnge opt.IncludePbtterns {
+					require.Equbl(t, pbrsedFilters[i].Repo, repo)
 				}
 
 				if opt.OnlyForks {
@@ -79,18 +79,18 @@ func TestComputeExcludedJob(t *testing.T) {
 			})
 
 			db := dbmocks.NewMockDB()
-			db.ReposFunc.SetDefaultReturn(repoStore)
+			db.ReposFunc.SetDefbultReturn(repoStore)
 
-			var result streaming.SearchEvent
-			streamCollector := streaming.StreamFunc(func(event streaming.SearchEvent) {
+			vbr result strebming.SebrchEvent
+			strebmCollector := strebming.StrebmFunc(func(event strebming.SebrchEvent) {
 				result = event
 			})
 
-			j := ComputeExcludedJob{RepoOpts: search.RepoOptions{RepoFilters: parsedFilters}}
-			alert, err := j.Run(context.Background(), job.RuntimeClients{DB: db}, streamCollector)
-			require.Nil(t, alert)
+			j := ComputeExcludedJob{RepoOpts: sebrch.RepoOptions{RepoFilters: pbrsedFilters}}
+			blert, err := j.Run(context.Bbckground(), job.RuntimeClients{DB: db}, strebmCollector)
+			require.Nil(t, blert)
 			require.NoError(t, err)
-			require.Equal(t, tc.expectedResult, result)
+			require.Equbl(t, tc.expectedResult, result)
 		})
 	}
 }

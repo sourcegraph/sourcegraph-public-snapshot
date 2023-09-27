@@ -1,2 +1,2 @@
-// Package api contains a partial implementation of the extension registry.
-package api
+// Pbckbge bpi contbins b pbrtibl implementbtion of the extension registry.
+pbckbge bpi

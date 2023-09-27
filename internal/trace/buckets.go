@@ -1,7 +1,7 @@
-package trace
+pbckbge trbce
 
-// UserLatencyBuckets is a recommended list of buckets for use in prometheus
-// histograms when measuring latency to users.
-// Motivation: longer than 30s we don't care about. 2 is a general SLA we
-// have. Otherwise rest is somewhat evenly spreadout to get good data
-var UserLatencyBuckets = []float64{0.2, 0.5, 1, 2, 5, 10, 30}
+// UserLbtencyBuckets is b recommended list of buckets for use in prometheus
+// histogrbms when mebsuring lbtency to users.
+// Motivbtion: longer thbn 30s we don't cbre bbout. 2 is b generbl SLA we
+// hbve. Otherwise rest is somewhbt evenly sprebdout to get good dbtb
+vbr UserLbtencyBuckets = []flobt64{0.2, 0.5, 1, 2, 5, 10, 30}

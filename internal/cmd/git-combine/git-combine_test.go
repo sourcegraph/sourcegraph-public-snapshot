@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
@@ -18,20 +18,20 @@ import (
 func TestCombine(t *testing.T) {
 	tmp := t.TempDir()
 
-	origin := filepath.Join(tmp, "origin")
-	dir := filepath.Join(tmp, "combined-repo.git")
+	origin := filepbth.Join(tmp, "origin")
+	dir := filepbth.Join(tmp, "combined-repo.git")
 
-	// If we are running inside of the sourcegraph repo, use that as the
-	// origin rather than using a small synthetic repo. In practice this means
-	// when using go test we use the sg repo, in bazel we use a tiny synthetic
+	// If we bre running inside of the sourcegrbph repo, use thbt bs the
+	// origin rbther thbn using b smbll synthetic repo. In prbctice this mebns
+	// when using go test we use the sg repo, in bbzel we use b tiny synthetic
 	// repo.
-	if out, err := exec.Command("git", "rev-parse", "--show-toplevel").Output(); err == nil {
-		origin = strings.TrimSpace(string(out))
-		t.Log("using local repository instead of synthetic repo", origin)
+	if out, err := exec.Commbnd("git", "rev-pbrse", "--show-toplevel").Output(); err == nil {
+		origin = strings.TrimSpbce(string(out))
+		t.Log("using locbl repository instebd of synthetic repo", origin)
 	}
 
-	setupPath := filepath.Join(tmp, "setup.sh")
-	if err := os.WriteFile(setupPath, []byte(`#!/usr/bin/env bash
+	setupPbth := filepbth.Join(tmp, "setup.sh")
+	if err := os.WriteFile(setupPbth, []byte(`#!/usr/bin/env bbsh
 
 set -ex
 
@@ -42,12 +42,12 @@ if [ ! -d "$ORIGIN" ]; then
   cd "$ORIGIN"
   git init
 
-  git config user.email test@sourcegraph.com
-  echo "foobar" > README.md
-  git add README.md
-  git commit -m "initial commit"
-  echo "foobar" >> README.md
-  git add README.md
+  git config user.embil test@sourcegrbph.com
+  echo "foobbr" > README.md
+  git bdd README.md
+  git commit -m "initibl commit"
+  echo "foobbr" >> README.md
+  git bdd README.md
   git commit -m "second commit"
 fi
 
@@ -55,20 +55,20 @@ fi
 
 mkdir -p "$DIR"
 cd "$DIR"
-git init --bare .
+git init --bbre .
 
-git config user.email test@sourcegraph.com
-git remote add --no-tags sourcegraph "$ORIGIN"
-git config --replace-all remote.origin.fetch '+HEAD:refs/remotes/sourcegraph/master'
+git config user.embil test@sourcegrbph.com
+git remote bdd --no-tbgs sourcegrbph "$ORIGIN"
+git config --replbce-bll remote.origin.fetch '+HEAD:refs/remotes/sourcegrbph/mbster'
 
-git fetch --depth 100 sourcegraph
+git fetch --depth 100 sourcegrbph
 `), 0700); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	cmd := exec.Command("sh", setupPath)
+	cmd := exec.Commbnd("sh", setupPbth)
 	cmd.Dir = tmp
-	cmd.Env = append(
+	cmd.Env = bppend(
 		os.Environ(),
 		"DIR="+dir,
 		"ORIGIN="+origin,
@@ -77,65 +77,65 @@ git fetch --depth 100 sourcegraph
 		cmd.Stderr = os.Stderr
 	}
 	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	opt := Options{
-		Logger: log.New(io.Discard, "", 0),
+		Logger: log.New(io.Discbrd, "", 0),
 	}
 	if testing.Verbose() {
-		opt.Logger = log.Default()
+		opt.Logger = log.Defbult()
 	}
 
 	if err := Combine(dir, opt); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We only test that we have commits now. If we don't, git show will fail.
-	cmd = exec.Command("git", "show")
+	// We only test thbt we hbve commits now. If we don't, git show will fbil.
+	cmd = exec.Commbnd("git", "show")
 	cmd.Dir = dir
 	if err := cmd.Run(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func TestSanitizeMessage(t *testing.T) {
-	cases := []struct {
-		message   string
-		wantTitle string
+func TestSbnitizeMessbge(t *testing.T) {
+	cbses := []struct {
+		messbge   string
+		wbntTitle string
 	}{{
-		message:   "",
-		wantTitle: "",
+		messbge:   "",
+		wbntTitle: "",
 	}, {
-		message:   "unchanged title\n\nbody",
-		wantTitle: "unchanged title",
+		messbge:   "unchbnged title\n\nbody",
+		wbntTitle: "unchbnged title",
 	}, {
-		message:   "foo\n\nbar\nbaz",
-		wantTitle: "foo",
+		messbge:   "foo\n\nbbr\nbbz",
+		wbntTitle: "foo",
 	}, {
-		message:   "foo\nbar\nbaz",
-		wantTitle: "foo",
+		messbge:   "foo\nbbr\nbbz",
+		wbntTitle: "foo",
 	}, {
-		message:   "use decoration for active inlay hints link, support cusor decoration fyi @hediet, https://github.com/microsoft/vscode/issues/129528",
-		wantTitle: "use decoration for active inlay hints link, support cusor decoration fyi",
+		messbge:   "use decorbtion for bctive inlby hints link, support cusor decorbtion fyi @hediet, https://github.com/microsoft/vscode/issues/129528",
+		wbntTitle: "use decorbtion for bctive inlby hints link, support cusor decorbtion fyi",
 	}, {
-		message:   "naively @strip at the first @",
-		wantTitle: "naively",
+		messbge:   "nbively @strip bt the first @",
+		wbntTitle: "nbively",
 	}, {
-		message:   "naively https://foo.com strip at the url",
-		wantTitle: "naively",
+		messbge:   "nbively https://foo.com strip bt the url",
+		wbntTitle: "nbively",
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		dir := "test"
 		commit := &object.Commit{
-			Message: tc.message,
-			Hash:    plumbing.ZeroHash,
+			Messbge: tc.messbge,
+			Hbsh:    plumbing.ZeroHbsh,
 		}
-		want := fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, tc.wantTitle, commit.Hash)
-		got := sanitizeMessage(dir, commit)
-		if d := cmp.Diff(want, got); d != "" {
-			t.Errorf("unexpected for %q:\n%s", tc.message, d)
+		wbnt := fmt.Sprintf("%s: %s\n\nCommit: %s\n", dir, tc.wbntTitle, commit.Hbsh)
+		got := sbnitizeMessbge(dir, commit)
+		if d := cmp.Diff(wbnt, got); d != "" {
+			t.Errorf("unexpected for %q:\n%s", tc.messbge, d)
 		}
 	}
 }

@@ -1,89 +1,89 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
 type Extensions struct {
 	Ctx       context.Context
-	DateRange string
+	DbteRbnge string
 	Grouping  string
-	DB        database.DB
-	Cache     bool
+	DB        dbtbbbse.DB
+	Cbche     bool
 }
 
-func (e *Extensions) Jetbrains() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		e.DateRange,
+func (e *Extensions) Jetbrbins() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(
+		e.DbteRbnge,
 		e.Grouping,
-		[]string{"IDESearchSubmitted", "VSCESearchSubmitted"},
+		[]string{"IDESebrchSubmitted", "VSCESebrchSubmitted"},
 		sqlf.Sprintf("source = 'IDEEXTENSION' AND referrer = 'JETBRAINS'"),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           e.DB,
-		dateRange:    e.DateRange,
+		dbteRbnge:    e.DbteRbnge,
 		grouping:     e.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Extensions:Jetbrains",
+		summbryQuery: summbryQuery,
+		group:        "Extensions:Jetbrbins",
 	}, nil
 }
 
-func (e *Extensions) Vscode() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		e.DateRange,
+func (e *Extensions) Vscode() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(
+		e.DbteRbnge,
 		e.Grouping,
-		[]string{"IDESearchSubmitted", "VSCESearchSubmitted"},
+		[]string{"IDESebrchSubmitted", "VSCESebrchSubmitted"},
 		sqlf.Sprintf("source = 'IDEEXTENSION' AND referrer = 'VSCE'"),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           e.DB,
-		dateRange:    e.DateRange,
+		dbteRbnge:    e.DbteRbnge,
 		grouping:     e.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
+		summbryQuery: summbryQuery,
 		group:        "Extensions:Vscode",
-		cache:        e.Cache,
+		cbche:        e.Cbche,
 	}, nil
 }
 
-func (e *Extensions) Browser() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		e.DateRange,
+func (e *Extensions) Browser() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(
+		e.DbteRbnge,
 		e.Grouping,
-		[]string{"goToDefinition.preloaded", "goToDefinition", "findReferences"},
+		[]string{"goToDefinition.prelobded", "goToDefinition", "findReferences"},
 		sqlf.Sprintf("source = 'CODEHOSTINTEGRATION'"),
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           e.DB,
-		dateRange:    e.DateRange,
+		dbteRbnge:    e.DbteRbnge,
 		grouping:     e.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
+		summbryQuery: summbryQuery,
 		group:        "Extensions:Browser",
-		cache:        e.Cache,
+		cbche:        e.Cbche,
 	}, nil
 }
 
-func (e *Extensions) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){e.Jetbrains, e.Vscode, e.Browser}
-	for _, buildFetcher := range fetcherBuilders {
+func (e *Extensions) CbcheAll(ctx context.Context) error {
+	fetcherBuilders := []func() (*AnblyticsFetcher, error){e.Jetbrbins, e.Vscode, e.Browser}
+	for _, buildFetcher := rbnge fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {
 			return err
@@ -93,7 +93,7 @@ func (e *Extensions) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.Summary(ctx); err != nil {
+		if _, err := fetcher.Summbry(ctx); err != nil {
 			return err
 		}
 	}

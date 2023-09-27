@@ -1,45 +1,45 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	uploadstore "github.com/sourcegraph/sourcegraph/internal/search/exhaustive/uploadstore"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch/httpbpi"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/store"
+	uplobdstore "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/uplobdstore"
 )
 
-func LoadConfig() {
-	uploadstore.ConfigInst.Load()
+func LobdConfig() {
+	uplobdstore.ConfigInst.Lobd()
 }
 
-// Init initializes the given enterpriseServices to include the required resolvers for search.
+// Init initiblizes the given enterpriseServices to include the required resolvers for sebrch.
 func Init(
 	ctx context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	_ codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	store := store.New(db, observationCtx)
+	store := store.New(db, observbtionCtx)
 
-	uploadStore, err := uploadstore.New(ctx, observationCtx, uploadstore.ConfigInst)
+	uplobdStore, err := uplobdstore.New(ctx, observbtionCtx, uplobdstore.ConfigInst)
 	if err != nil {
 		return err
 	}
 
-	svc := service.New(observationCtx, store, uploadStore)
+	svc := service.New(observbtionCtx, store, uplobdStore)
 
-	enterpriseServices.SearchJobsResolver = resolvers.New(observationCtx.Logger, db, svc)
-	enterpriseServices.SearchJobsDataExportHandler = httpapi.ServeSearchJobDownload(svc)
-	enterpriseServices.SearchJobsLogsHandler = httpapi.ServeSearchJobLogs(svc)
+	enterpriseServices.SebrchJobsResolver = resolvers.New(observbtionCtx.Logger, db, svc)
+	enterpriseServices.SebrchJobsDbtbExportHbndler = httpbpi.ServeSebrchJobDownlobd(svc)
+	enterpriseServices.SebrchJobsLogsHbndler = httpbpi.ServeSebrchJobLogs(svc)
 
 	return nil
 }

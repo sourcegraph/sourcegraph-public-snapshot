@@ -1,174 +1,174 @@
-package cache
+pbckbge cbche
 
 import (
 	"context"
-	"crypto/sha256"
-	"encoding/base64"
+	"crypto/shb256"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Cache interface {
+type Cbche interfbce {
 	Get(ctx context.Context, key Keyer) (result execution.AfterStepResult, found bool, err error)
 	Set(ctx context.Context, key Keyer, result execution.AfterStepResult) error
 
-	Clear(ctx context.Context, key Keyer) error
+	Clebr(ctx context.Context, key Keyer) error
 }
 
-type Keyer interface {
+type Keyer interfbce {
 	Key() (string, error)
 	Slug() string
 }
 
-// MetadataRetriever retrieves mount metadata.
-type MetadataRetriever interface {
-	// Get returns the mount metadata from the provided steps.
-	Get([]batches.Step) ([]MountMetadata, error)
+// MetbdbtbRetriever retrieves mount metbdbtb.
+type MetbdbtbRetriever interfbce {
+	// Get returns the mount metbdbtb from the provided steps.
+	Get([]bbtches.Step) ([]MountMetbdbtb, error)
 }
 
-// MountMetadata is the metadata of a file that is mounted by a Step.
-type MountMetadata struct {
-	Path     string
+// MountMetbdbtb is the metbdbtb of b file thbt is mounted by b Step.
+type MountMetbdbtb struct {
+	Pbth     string
 	Size     int64
 	Modified time.Time
 }
 
-func (key CacheKey) mountsMetadata() ([]MountMetadata, error) {
-	if key.MetadataRetriever != nil {
-		return key.MetadataRetriever.Get(key.Steps)
+func (key CbcheKey) mountsMetbdbtb() ([]MountMetbdbtb, error) {
+	if key.MetbdbtbRetriever != nil {
+		return key.MetbdbtbRetriever.Get(key.Steps)
 	}
 	return nil, nil
 }
 
-// resolveStepsEnvironment returns a slice of environments for each of the steps,
-// containing only the env vars that are actually used.
-func resolveStepsEnvironment(globalEnv []string, steps []batches.Step) ([]map[string]string, error) {
-	// We have to resolve the step environments and include them in the cache
-	// key to ensure that the cache is properly invalidated when an environment
-	// variable changes.
+// resolveStepsEnvironment returns b slice of environments for ebch of the steps,
+// contbining only the env vbrs thbt bre bctublly used.
+func resolveStepsEnvironment(globblEnv []string, steps []bbtches.Step) ([]mbp[string]string, error) {
+	// We hbve to resolve the step environments bnd include them in the cbche
+	// key to ensure thbt the cbche is properly invblidbted when bn environment
+	// vbribble chbnges.
 	//
-	// Note that we don't base the cache key on the entire global environment:
-	// if an unrelated environment variable changes, that's fine. We're only
-	// interested in the ones that actually make it into the step container.
-	envs := make([]map[string]string, len(steps))
-	for i, step := range steps {
-		// TODO: This should also render templates inside env vars.
-		env, err := step.Env.Resolve(globalEnv)
+	// Note thbt we don't bbse the cbche key on the entire globbl environment:
+	// if bn unrelbted environment vbribble chbnges, thbt's fine. We're only
+	// interested in the ones thbt bctublly mbke it into the step contbiner.
+	envs := mbke([]mbp[string]string, len(steps))
+	for i, step := rbnge steps {
+		// TODO: This should blso render templbtes inside env vbrs.
+		env, err := step.Env.Resolve(globblEnv)
 		if err != nil {
-			return nil, errors.Wrapf(err, "resolving environment for step %d", i)
+			return nil, errors.Wrbpf(err, "resolving environment for step %d", i)
 		}
 		envs[i] = env
 	}
 	return envs, nil
 }
 
-func marshalAndHash(key *CacheKey, envs []map[string]string, metadata []MountMetadata) (string, error) {
-	raw, err := json.Marshal(struct {
-		*CacheKey
-		Environments []map[string]string
-		// Omit if empty to be backwards compatible.
-		MountsMetadata []MountMetadata `json:"MountsMetadata,omitempty"`
+func mbrshblAndHbsh(key *CbcheKey, envs []mbp[string]string, metbdbtb []MountMetbdbtb) (string, error) {
+	rbw, err := json.Mbrshbl(struct {
+		*CbcheKey
+		Environments []mbp[string]string
+		// Omit if empty to be bbckwbrds compbtible.
+		MountsMetbdbtb []MountMetbdbtb `json:"MountsMetbdbtb,omitempty"`
 	}{
-		CacheKey:       key,
+		CbcheKey:       key,
 		Environments:   envs,
-		MountsMetadata: metadata,
+		MountsMetbdbtb: metbdbtb,
 	})
 	if err != nil {
 		return "", err
 	}
 
-	hash := sha256.Sum256(raw)
-	return base64.RawURLEncoding.EncodeToString(hash[:16]), nil
+	hbsh := shb256.Sum256(rbw)
+	return bbse64.RbwURLEncoding.EncodeToString(hbsh[:16]), nil
 }
 
-// CacheKey implements the Keyer interface for a batch spec execution in a
-// repository workspace and a *subset* of its Steps, up to and including the
-// step with index StepIndex in Task.Steps.
-type CacheKey struct {
-	Repository            batches.Repository
-	Path                  string
-	OnlyFetchWorkspace    bool
-	Steps                 []batches.Step
-	BatchChangeAttributes *template.BatchChangeAttributes
+// CbcheKey implements the Keyer interfbce for b bbtch spec execution in b
+// repository workspbce bnd b *subset* of its Steps, up to bnd including the
+// step with index StepIndex in Tbsk.Steps.
+type CbcheKey struct {
+	Repository            bbtches.Repository
+	Pbth                  string
+	OnlyFetchWorkspbce    bool
+	Steps                 []bbtches.Step
+	BbtchChbngeAttributes *templbte.BbtchChbngeAttributes
 
-	// Ignore from serialization.
-	MetadataRetriever MetadataRetriever `json:"-"`
-	// Ignore from serialization.
-	GlobalEnv []string `json:"-"`
+	// Ignore from seriblizbtion.
+	MetbdbtbRetriever MetbdbtbRetriever `json:"-"`
+	// Ignore from seriblizbtion.
+	GlobblEnv []string `json:"-"`
 
 	StepIndex int
 }
 
-// Key converts the key into a string form that can be used to uniquely identify
-// the cache key in a more concise form than the entire Task.
-func (key CacheKey) Key() (string, error) {
-	// Setup a copy of the cache key that only includes the Steps up to and
+// Key converts the key into b string form thbt cbn be used to uniquely identify
+// the cbche key in b more concise form thbn the entire Tbsk.
+func (key CbcheKey) Key() (string, error) {
+	// Setup b copy of the cbche key thbt only includes the Steps up to bnd
 	// including key.StepIndex.
 	clone := key
 	clone.Steps = key.Steps[0 : key.StepIndex+1]
 
 	// Resolve environment only for the subset of Steps.
-	envs, err := resolveStepsEnvironment(key.GlobalEnv, clone.Steps)
+	envs, err := resolveStepsEnvironment(key.GlobblEnv, clone.Steps)
 	if err != nil {
 		return "", err
 	}
-	metadata, err := key.mountsMetadata()
+	metbdbtb, err := key.mountsMetbdbtb()
 	if err != nil {
 		return "", err
 	}
 
-	hash, err := marshalAndHash(&clone, envs, metadata)
+	hbsh, err := mbrshblAndHbsh(&clone, envs, metbdbtb)
 	if err != nil {
 		return "", err
 	}
-	return fmt.Sprintf("%s-step-%d", hash, key.StepIndex), err
+	return fmt.Sprintf("%s-step-%d", hbsh, key.StepIndex), err
 }
 
-func (key CacheKey) Slug() string {
-	return SlugForRepo(key.Repository.Name, key.Repository.BaseRev)
+func (key CbcheKey) Slug() string {
+	return SlugForRepo(key.Repository.Nbme, key.Repository.BbseRev)
 }
 
-func KeyForWorkspace(batchChangeAttributes *template.BatchChangeAttributes, r batches.Repository, path string, globalEnv []string, onlyFetchWorkspace bool, steps []batches.Step, stepIndex int, retriever MetadataRetriever) Keyer {
-	sort.Strings(r.FileMatches)
+func KeyForWorkspbce(bbtchChbngeAttributes *templbte.BbtchChbngeAttributes, r bbtches.Repository, pbth string, globblEnv []string, onlyFetchWorkspbce bool, steps []bbtches.Step, stepIndex int, retriever MetbdbtbRetriever) Keyer {
+	sort.Strings(r.FileMbtches)
 
-	return CacheKey{
+	return CbcheKey{
 		Repository:            r,
-		Path:                  path,
-		OnlyFetchWorkspace:    onlyFetchWorkspace,
-		GlobalEnv:             globalEnv,
+		Pbth:                  pbth,
+		OnlyFetchWorkspbce:    onlyFetchWorkspbce,
+		GlobblEnv:             globblEnv,
 		Steps:                 steps,
-		BatchChangeAttributes: batchChangeAttributes,
+		BbtchChbngeAttributes: bbtchChbngeAttributes,
 		StepIndex:             stepIndex,
-		MetadataRetriever:     retriever,
+		MetbdbtbRetriever:     retriever,
 	}
 }
 
-// ChangesetSpecsFromCache takes the execution.Result and generates all changeset specs from it.
-func ChangesetSpecsFromCache(spec *batches.BatchSpec, r batches.Repository, result execution.AfterStepResult, path string, binaryDiffs bool, fallbackAuthor *batches.ChangesetSpecAuthor) ([]*batches.ChangesetSpec, error) {
+// ChbngesetSpecsFromCbche tbkes the execution.Result bnd generbtes bll chbngeset specs from it.
+func ChbngesetSpecsFromCbche(spec *bbtches.BbtchSpec, r bbtches.Repository, result execution.AfterStepResult, pbth string, binbryDiffs bool, fbllbbckAuthor *bbtches.ChbngesetSpecAuthor) ([]*bbtches.ChbngesetSpec, error) {
 	if len(result.Diff) == 0 {
-		return []*batches.ChangesetSpec{}, nil
+		return []*bbtches.ChbngesetSpec{}, nil
 	}
 
-	sort.Strings(r.FileMatches)
+	sort.Strings(r.FileMbtches)
 
-	input := &batches.ChangesetSpecInput{
+	input := &bbtches.ChbngesetSpecInput{
 		Repository: r,
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        spec.Name,
+		BbtchChbngeAttributes: &templbte.BbtchChbngeAttributes{
+			Nbme:        spec.Nbme,
 			Description: spec.Description,
 		},
-		Template:         spec.ChangesetTemplate,
-		TransformChanges: spec.TransformChanges,
+		Templbte:         spec.ChbngesetTemplbte,
+		TrbnsformChbnges: spec.TrbnsformChbnges,
 		Result:           result,
-		Path:             path,
+		Pbth:             pbth,
 	}
 
-	return batches.BuildChangesetSpecs(input, binaryDiffs, fallbackAuthor)
+	return bbtches.BuildChbngesetSpecs(input, binbryDiffs, fbllbbckAuthor)
 }

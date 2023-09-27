@@ -1,12 +1,12 @@
-package context
+pbckbge context
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
-func TestSplitIntoEmbeddableChunks(t *testing.T) {
+func TestSplitIntoEmbeddbbleChunks(t *testing.T) {
 	content := `Line
 Line
 Line
@@ -18,6 +18,6 @@ Line
 Line
 Line
 `
-	chunks := SplitIntoEmbeddableChunks(content, "", SplitOptions{ChunkTokensThreshold: 4, ChunkEarlySplitTokensThreshold: 1})
-	autogold.ExpectFile(t, chunks)
+	chunks := SplitIntoEmbeddbbleChunks(content, "", SplitOptions{ChunkTokensThreshold: 4, ChunkEbrlySplitTokensThreshold: 1})
+	butogold.ExpectFile(t, chunks)
 }

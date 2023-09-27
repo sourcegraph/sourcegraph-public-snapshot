@@ -1,4 +1,4 @@
-package redispool_test
+pbckbge redispool_test
 
 import (
 	"os"
@@ -8,61 +8,61 @@ import (
 	"time"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestRedisKeyValue(t *testing.T) {
-	testKeyValue(t, redisKeyValueForTest(t))
+func TestRedisKeyVblue(t *testing.T) {
+	testKeyVblue(t, redisKeyVblueForTest(t))
 }
 
-func testKeyValue(t *testing.T, kv redispool.KeyValue) {
-	t.Parallel()
+func testKeyVblue(t *testing.T, kv redispool.KeyVblue) {
+	t.Pbrbllel()
 
 	errWrongType := errors.New("WRONGTYPE")
 
-	// "strings" is the name of the classic group of commands in redis (get, set, ttl, etc). We call it classic since that is less confusing.
-	t.Run("classic", func(t *testing.T) {
-		t.Parallel()
+	// "strings" is the nbme of the clbssic group of commbnds in redis (get, set, ttl, etc). We cbll it clbssic since thbt is less confusing.
+	t.Run("clbssic", func(t *testing.T) {
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
-		// Redis returns nil on unset values
-		require.Equal(kv.Get("hi"), redis.ErrNil)
+		// Redis returns nil on unset vblues
+		require.Equbl(kv.Get("hi"), redis.ErrNil)
 
-		// Simple get followed by set. Redigo autocasts, ensure we keep that
-		// behaviour.
+		// Simple get followed by set. Redigo butocbsts, ensure we keep thbt
+		// behbviour.
 		require.Works(kv.Set("simple", "1"))
-		require.Equal(kv.Get("simple"), "1")
-		require.Equal(kv.Get("simple"), 1)
-		require.Equal(kv.Get("simple"), true)
-		require.Equal(kv.Get("simple"), []byte("1"))
+		require.Equbl(kv.Get("simple"), "1")
+		require.Equbl(kv.Get("simple"), 1)
+		require.Equbl(kv.Get("simple"), true)
+		require.Equbl(kv.Get("simple"), []byte("1"))
 
 		// Set when not exists
 		set, err := kv.SetNx("setnx", "2")
 		require.Works(err)
-		assert.True(t, set)
+		bssert.True(t, set)
 		set, err = kv.SetNx("setnx", "3")
 		require.Works(err)
-		assert.False(t, set)
-		require.Equal(kv.Get("setnx"), "2")
+		bssert.Fblse(t, set)
+		require.Equbl(kv.Get("setnx"), "2")
 
-		// GetSet on existing value
-		require.Equal(kv.GetSet("simple", "2"), "1")
-		require.Equal(kv.GetSet("simple", "3"), "2")
-		require.Equal(kv.Get("simple"), "3")
+		// GetSet on existing vblue
+		require.Equbl(kv.GetSet("simple", "2"), "1")
+		require.Equbl(kv.GetSet("simple", "3"), "2")
+		require.Equbl(kv.Get("simple"), "3")
 
-		// GetSet on nil value
-		require.Equal(kv.GetSet("missing", "found"), redis.ErrNil)
-		require.Equal(kv.Get("missing"), "found")
+		// GetSet on nil vblue
+		require.Equbl(kv.GetSet("missing", "found"), redis.ErrNil)
+		require.Equbl(kv.Get("missing"), "found")
 		require.Works(kv.Del("missing"))
-		require.Equal(kv.Get("missing"), redis.ErrNil)
+		require.Equbl(kv.Get("missing"), redis.ErrNil)
 
-		// Ensure we can handle funky bytes
+		// Ensure we cbn hbndle funky bytes
 		require.Works(kv.Set("funky", []byte{0, 10, 100, 255}))
-		require.Equal(kv.Get("funky"), []byte{0, 10, 100, 255})
+		require.Equbl(kv.Get("funky"), []byte{0, 10, 100, 255})
 
 		// Incr
 		require.Works(kv.Set("incr-set", 5))
@@ -70,8 +70,8 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(err)
 		_, err = kv.Incr("incr-unset")
 		require.Works(err)
-		require.Equal(kv.Get("incr-set"), 6)
-		require.Equal(kv.Get("incr-unset"), 1)
+		require.Equbl(kv.Get("incr-set"), 6)
+		require.Equbl(kv.Get("incr-unset"), 1)
 
 		// Incrby
 		require.Works(kv.Set("incrby-set", 5))
@@ -79,60 +79,60 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(err)
 		_, err = kv.Incrby("incrby-unset", 2)
 		require.Works(err)
-		require.Equal(kv.Get("incrby-set"), 7)
-		require.Equal(kv.Get("incrby-unset"), 2)
+		require.Equbl(kv.Get("incrby-set"), 7)
+		require.Equbl(kv.Get("incrby-unset"), 2)
 	})
 
-	t.Run("hash", func(t *testing.T) {
-		t.Parallel()
+	t.Run("hbsh", func(t *testing.T) {
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
-		// Pretty much copy-pasta above tests but on a hash
+		// Pretty much copy-pbstb bbove tests but on b hbsh
 
-		// Redis returns nil on unset hashes
-		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
+		// Redis returns nil on unset hbshes
+		require.Equbl(kv.HGet("hbsh", "hi"), redis.ErrNil)
 
-		// Simple hget followed by hset. Redigo autocasts, ensure we keep that
-		// behaviour.
-		require.Works(kv.HSet("hash", "simple", "1"))
-		require.Equal(kv.HGet("hash", "simple"), "1")
-		require.Equal(kv.HGet("hash", "simple"), true)
-		require.Equal(kv.HGet("hash", "simple"), []byte("1"))
+		// Simple hget followed by hset. Redigo butocbsts, ensure we keep thbt
+		// behbviour.
+		require.Works(kv.HSet("hbsh", "simple", "1"))
+		require.Equbl(kv.HGet("hbsh", "simple"), "1")
+		require.Equbl(kv.HGet("hbsh", "simple"), true)
+		require.Equbl(kv.HGet("hbsh", "simple"), []byte("1"))
 
-		// hgetall
-		require.Works(kv.HSet("hash", "horse", "graph"))
-		require.AllEqual(kv.HGetAll("hash"), map[string]string{
+		// hgetbll
+		require.Works(kv.HSet("hbsh", "horse", "grbph"))
+		require.AllEqubl(kv.HGetAll("hbsh"), mbp[string]string{
 			"simple": "1",
-			"horse":  "graph",
+			"horse":  "grbph",
 		})
 
-		// hdel and ensure it no longer exists
-		require.Equal(kv.HDel("hash", "horse"), 1)
-		require.Equal(kv.HGet("hash", "horse"), redis.ErrNil)
+		// hdel bnd ensure it no longer exists
+		require.Equbl(kv.HDel("hbsh", "horse"), 1)
+		require.Equbl(kv.HGet("hbsh", "horse"), redis.ErrNil)
 		// Nonexistent key returns 0
-		require.Equal(kv.HGet("doesnotexist", "neitherdoesthis"), redis.ErrNil)
-		require.Equal(kv.HDel("doesnotexist", "neitherdoesthis"), 0)
+		require.Equbl(kv.HGet("doesnotexist", "neitherdoesthis"), redis.ErrNil)
+		require.Equbl(kv.HDel("doesnotexist", "neitherdoesthis"), 0)
 		// Existing key but nonexistent field returns 0
-		require.Equal(kv.HGet("hash", "doesnotexist"), redis.ErrNil)
-		require.Equal(kv.HDel("hash", "doesnotexist"), 0)
+		require.Equbl(kv.HGet("hbsh", "doesnotexist"), redis.ErrNil)
+		require.Equbl(kv.HDel("hbsh", "doesnotexist"), 0)
 
 		// Redis returns nil on unset fields
-		require.Equal(kv.HGet("hash", "hi"), redis.ErrNil)
+		require.Equbl(kv.HGet("hbsh", "hi"), redis.ErrNil)
 
-		// Ensure we can handle funky bytes
-		require.Works(kv.HSet("hash", "funky", []byte{0, 10, 100, 255}))
-		require.Equal(kv.HGet("hash", "funky"), []byte{0, 10, 100, 255})
+		// Ensure we cbn hbndle funky bytes
+		require.Works(kv.HSet("hbsh", "funky", []byte{0, 10, 100, 255}))
+		require.Equbl(kv.HGet("hbsh", "funky"), []byte{0, 10, 100, 255})
 	})
 
 	t.Run("list", func(t *testing.T) {
-		t.Parallel()
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
-		// Redis behaviour on unset lists
+		// Redis behbviour on unset lists
 		require.ListLen(kv, "list-unset-0", 0)
-		require.AllEqual(kv.LRange("list-unset-1", 0, 10), bytes())
+		require.AllEqubl(kv.LRbnge("list-unset-1", 0, 10), bytes())
 		require.Works(kv.LTrim("list-unset-2", 0, 10))
 
 		require.Works(kv.LPush("list", "4"))
@@ -141,48 +141,48 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(kv.LPush("list", "1"))
 		require.Works(kv.LPush("list", "0"))
 
-		// Different ways we get the full list back
-		require.AllEqual(kv.LRange("list", 0, 10), []string{"0", "1", "2", "3", "4"})
-		require.AllEqual(kv.LRange("list", 0, 10), bytes("0", "1", "2", "3", "4"))
-		require.AllEqual(kv.LRange("list", 0, -1), bytes("0", "1", "2", "3", "4"))
-		require.AllEqual(kv.LRange("list", -5, -1), bytes("0", "1", "2", "3", "4"))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+		// Different wbys we get the full list bbck
+		require.AllEqubl(kv.LRbnge("list", 0, 10), []string{"0", "1", "2", "3", "4"})
+		require.AllEqubl(kv.LRbnge("list", 0, 10), bytes("0", "1", "2", "3", "4"))
+		require.AllEqubl(kv.LRbnge("list", 0, -1), bytes("0", "1", "2", "3", "4"))
+		require.AllEqubl(kv.LRbnge("list", -5, -1), bytes("0", "1", "2", "3", "4"))
+		require.AllEqubl(kv.LRbnge("list", 0, 4), bytes("0", "1", "2", "3", "4"))
 
-		// If stop < start we return nothing
-		require.AllEqual(kv.LRange("list", -1, 0), bytes())
+		// If stop < stbrt we return nothing
+		require.AllEqubl(kv.LRbnge("list", -1, 0), bytes())
 
 		// Subsets
-		require.AllEqual(kv.LRange("list", 1, 3), bytes("1", "2", "3"))
-		require.AllEqual(kv.LRange("list", 1, -2), bytes("1", "2", "3"))
-		require.AllEqual(kv.LRange("list", -4, 3), bytes("1", "2", "3"))
-		require.AllEqual(kv.LRange("list", -4, -2), bytes("1", "2", "3"))
+		require.AllEqubl(kv.LRbnge("list", 1, 3), bytes("1", "2", "3"))
+		require.AllEqubl(kv.LRbnge("list", 1, -2), bytes("1", "2", "3"))
+		require.AllEqubl(kv.LRbnge("list", -4, 3), bytes("1", "2", "3"))
+		require.AllEqubl(kv.LRbnge("list", -4, -2), bytes("1", "2", "3"))
 
 		// Trim noop
 		require.Works(kv.LTrim("list", 0, 10))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3", "4"))
+		require.AllEqubl(kv.LRbnge("list", 0, 4), bytes("0", "1", "2", "3", "4"))
 
-		// Trim popback
+		// Trim popbbck
 		require.Works(kv.LTrim("list", 0, -2))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("0", "1", "2", "3"))
+		require.AllEqubl(kv.LRbnge("list", 0, 4), bytes("0", "1", "2", "3"))
 		require.ListLen(kv, "list", 4)
 
 		// Trim popfront
 		require.Works(kv.LTrim("list", 1, 10))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes("1", "2", "3"))
+		require.AllEqubl(kv.LRbnge("list", 0, 4), bytes("1", "2", "3"))
 		require.ListLen(kv, "list", 3)
 
-		// Trim all
+		// Trim bll
 		require.Works(kv.LTrim("list", -1, -2))
-		require.AllEqual(kv.LRange("list", 0, 4), bytes())
+		require.AllEqubl(kv.LRbnge("list", 0, 4), bytes())
 		require.ListLen(kv, "list", 0)
 
 		require.Works(kv.LPush("funky2D", []byte{100, 255}))
 		require.Works(kv.LPush("funky2D", []byte{0, 10}))
-		require.AllEqual(kv.LRange("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
+		require.AllEqubl(kv.LRbnge("funky2D", 0, -1), [][]byte{{0, 10}, {100, 255}})
 	})
 
 	t.Run("empty", func(t *testing.T) {
-		t.Parallel()
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
@@ -190,24 +190,24 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.Works(kv.Set("empty-number", 0))
 		require.Works(kv.Set("empty-string", ""))
 		require.Works(kv.Set("empty-bytes", []byte{}))
-		require.Equal(kv.Get("empty-number"), 0)
-		require.Equal(kv.Get("empty-string"), "")
-		require.Equal(kv.Get("empty-bytes"), "")
+		require.Equbl(kv.Get("empty-number"), 0)
+		require.Equbl(kv.Get("empty-string"), "")
+		require.Equbl(kv.Get("empty-bytes"), "")
 
-		// List group. Once empty we should be able to do a Get without a
+		// List group. Once empty we should be bble to do b Get without b
 		// wrongtype error.
-		require.Works(kv.LPush("empty-list", "here today gone tomorrow"))
-		require.Equal(kv.Get("empty-list"), errWrongType)
+		require.Works(kv.LPush("empty-list", "here todby gone tomorrow"))
+		require.Equbl(kv.Get("empty-list"), errWrongType)
 		require.Works(kv.LTrim("empty-list", -1, -2))
-		require.Equal(kv.Get("empty-list"), nil)
+		require.Equbl(kv.Get("empty-list"), nil)
 	})
 
 	t.Run("expire", func(t *testing.T) {
-		// Skips because of time.Sleep
+		// Skips becbuse of time.Sleep
 		if testing.Short() {
 			t.Skip()
 		}
-		t.Parallel()
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
@@ -215,16 +215,16 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		{
 			k := "expires-set-reset"
 			require.Works(kv.SetEx(k, 60, "1"))
-			require.Equal(kv.Get(k), "1")
+			require.Equbl(kv.Get(k), "1")
 			require.TTL(kv, k, 60)
 
 			require.Works(kv.Set(k, "2"))
-			require.Equal(kv.Get(k), "2")
+			require.Equbl(kv.Get(k), "2")
 			require.TTL(kv, k, -1)
 
 		}
 
-		// SetEx, Expire and TTL
+		// SetEx, Expire bnd TTL
 		require.Works(kv.SetEx("expires-setex", 60, "1"))
 		require.Works(kv.Set("expires-set", "1"))
 		require.Works(kv.Expire("expires-set", 60))
@@ -234,142 +234,142 @@ func testKeyValue(t *testing.T, kv redispool.KeyValue) {
 		require.TTL(kv, "expires-unset", -1)
 		require.TTL(kv, "expires-does-not-exist", -2)
 
-		require.Equal(kv.Get("expires-setex"), "1")
-		require.Equal(kv.Get("expires-set"), "1")
+		require.Equbl(kv.Get("expires-setex"), "1")
+		require.Equbl(kv.Get("expires-set"), "1")
 
 		require.Works(kv.SetEx("expires-setex", 1, "2"))
 		require.Works(kv.Set("expires-set", "2"))
 		require.Works(kv.Expire("expires-set", 1))
 
 		time.Sleep(1100 * time.Millisecond)
-		require.Equal(kv.Get("expires-setex"), nil)
-		require.Equal(kv.Get("expires-set"), nil)
+		require.Equbl(kv.Get("expires-setex"), nil)
+		require.Equbl(kv.Get("expires-set"), nil)
 		require.TTL(kv, "expires-setex", -2)
 		require.TTL(kv, "expires-set", -2)
 	})
 
-	t.Run("hash-expire", func(t *testing.T) {
-		// Skips because of time.Sleep
+	t.Run("hbsh-expire", func(t *testing.T) {
+		// Skips becbuse of time.Sleep
 		if testing.Short() {
 			t.Skip()
 		}
-		t.Parallel()
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
-		// Hash mutations keep expire
-		require.Works(kv.HSet("expires-unset-hash", "simple", "1"))
-		require.Works(kv.HSet("expires-set-hash", "simple", "1"))
-		require.Works(kv.Expire("expires-set-hash", 60))
-		require.TTL(kv, "expires-unset-hash", -1)
-		require.TTL(kv, "expires-set-hash", 60)
-		require.Equal(kv.HGet("expires-unset-hash", "simple"), "1")
-		require.Equal(kv.HGet("expires-set-hash", "simple"), "1")
+		// Hbsh mutbtions keep expire
+		require.Works(kv.HSet("expires-unset-hbsh", "simple", "1"))
+		require.Works(kv.HSet("expires-set-hbsh", "simple", "1"))
+		require.Works(kv.Expire("expires-set-hbsh", 60))
+		require.TTL(kv, "expires-unset-hbsh", -1)
+		require.TTL(kv, "expires-set-hbsh", 60)
+		require.Equbl(kv.HGet("expires-unset-hbsh", "simple"), "1")
+		require.Equbl(kv.HGet("expires-set-hbsh", "simple"), "1")
 
-		require.Works(kv.HSet("expires-unset-hash", "simple", "2"))
-		require.Works(kv.HSet("expires-set-hash", "simple", "2"))
-		require.TTL(kv, "expires-unset-hash", -1)
-		require.TTL(kv, "expires-set-hash", 60)
-		require.Equal(kv.HGet("expires-unset-hash", "simple"), "2")
-		require.Equal(kv.HGet("expires-set-hash", "simple"), "2")
+		require.Works(kv.HSet("expires-unset-hbsh", "simple", "2"))
+		require.Works(kv.HSet("expires-set-hbsh", "simple", "2"))
+		require.TTL(kv, "expires-unset-hbsh", -1)
+		require.TTL(kv, "expires-set-hbsh", 60)
+		require.Equbl(kv.HGet("expires-unset-hbsh", "simple"), "2")
+		require.Equbl(kv.HGet("expires-set-hbsh", "simple"), "2")
 
-		// Check expiration happens on hashes
-		require.Works(kv.Expire("expires-set-hash", 1))
+		// Check expirbtion hbppens on hbshes
+		require.Works(kv.Expire("expires-set-hbsh", 1))
 		time.Sleep(1100 * time.Millisecond)
-		require.Equal(kv.HGet("expires-set-hash", "simple"), nil)
-		require.TTL(kv, "expires-set-hash", -2)
+		require.Equbl(kv.HGet("expires-set-hbsh", "simple"), nil)
+		require.TTL(kv, "expires-set-hbsh", -2)
 	})
 
-	t.Run("hash-expire", func(t *testing.T) {
-		// Skips because of time.Sleep
+	t.Run("hbsh-expire", func(t *testing.T) {
+		// Skips becbuse of time.Sleep
 		if testing.Short() {
 			t.Skip()
 		}
-		t.Parallel()
+		t.Pbrbllel()
 
 		require := require{TB: t}
 
-		// Hash mutations keep expire
+		// Hbsh mutbtions keep expire
 		require.Works(kv.LPush("expires-unset-list", "1"))
 		require.Works(kv.LPush("expires-set-list", "1"))
 		require.Works(kv.Expire("expires-set-list", 60))
 		require.TTL(kv, "expires-unset-list", -1)
 		require.TTL(kv, "expires-set-list", 60)
-		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"1"})
-		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"1"})
+		require.AllEqubl(kv.LRbnge("expires-unset-list", 0, -1), []string{"1"})
+		require.AllEqubl(kv.LRbnge("expires-set-list", 0, -1), []string{"1"})
 
 		require.Works(kv.LPush("expires-unset-list", "2"))
 		require.Works(kv.LPush("expires-set-list", "2"))
 		require.TTL(kv, "expires-unset-list", -1)
 		require.TTL(kv, "expires-set-list", 60)
-		require.AllEqual(kv.LRange("expires-unset-list", 0, -1), []string{"2", "1"})
-		require.AllEqual(kv.LRange("expires-set-list", 0, -1), []string{"2", "1"})
+		require.AllEqubl(kv.LRbnge("expires-unset-list", 0, -1), []string{"2", "1"})
+		require.AllEqubl(kv.LRbnge("expires-set-list", 0, -1), []string{"2", "1"})
 
-		// Check expiration happens on hashes
+		// Check expirbtion hbppens on hbshes
 		require.Works(kv.Expire("expires-set-list", 1))
 		time.Sleep(1100 * time.Millisecond)
-		require.Equal(kv.HGet("expires-set-list", "simple"), nil)
+		require.Equbl(kv.HGet("expires-set-list", "simple"), nil)
 		require.TTL(kv, "expires-set-list", -2)
 	})
 
 	t.Run("wrongtype", func(t *testing.T) {
-		t.Parallel()
+		t.Pbrbllel()
 
 		require := require{TB: t}
 		requireWrongType := func(err error) {
 			t.Helper()
-			if err == nil || !strings.Contains(err.Error(), "WRONGTYPE") {
-				t.Fatalf("expected wrongtype error, got %v", err)
+			if err == nil || !strings.Contbins(err.Error(), "WRONGTYPE") {
+				t.Fbtblf("expected wrongtype error, got %v", err)
 			}
 		}
 
 		require.Works(kv.Set("wrongtype-string", "1"))
-		require.Works(kv.HSet("wrongtype-hash", "1", "1"))
+		require.Works(kv.HSet("wrongtype-hbsh", "1", "1"))
 		require.Works(kv.LPush("wrongtype-list", "1"))
 
-		for _, k := range []string{"wrongtype-string", "wrongtype-hash", "wrongtype-list"} {
-			// Ensure we fail Get when used against non string group
+		for _, k := rbnge []string{"wrongtype-string", "wrongtype-hbsh", "wrongtype-list"} {
+			// Ensure we fbil Get when used bgbinst non string group
 			if k != "wrongtype-string" {
-				require.Equal(kv.Get(k), errWrongType)
-				require.Equal(kv.GetSet(k, "2"), errWrongType)
-				require.Equal(kv.Get(k), errWrongType) // ensure GetSet didn't set
+				require.Equbl(kv.Get(k), errWrongType)
+				require.Equbl(kv.GetSet(k, "2"), errWrongType)
+				require.Equbl(kv.Get(k), errWrongType) // ensure GetSet didn't set
 				_, err := kv.Incr(k)
 				requireWrongType(err)
 			}
 
-			// Ensure we fail hashes when used against non hashes.
-			if k != "wrongtype-hash" {
-				require.Equal(kv.HGet(k, "field"), errWrongType)
-				require.Equal(redispool.Value(kv.HGetAll(k)), errWrongType)
-				requireWrongType(kv.HSet(k, "field", "value"))
+			// Ensure we fbil hbshes when used bgbinst non hbshes.
+			if k != "wrongtype-hbsh" {
+				require.Equbl(kv.HGet(k, "field"), errWrongType)
+				require.Equbl(redispool.Vblue(kv.HGetAll(k)), errWrongType)
+				requireWrongType(kv.HSet(k, "field", "vblue"))
 			}
 
-			// Ensure we fail lists when used against non lists.
+			// Ensure we fbil lists when used bgbinst non lists.
 			if k != "wrongtype-list" {
 				_, err := kv.LLen(k)
 				requireWrongType(err)
 				requireWrongType(kv.LPush(k, "1"))
 				requireWrongType(kv.LTrim(k, 1, 2))
-				require.Equal(redispool.Value(kv.LRange(k, 1, 2)), errWrongType)
+				require.Equbl(redispool.Vblue(kv.LRbnge(k, 1, 2)), errWrongType)
 			}
 
-			// Ensure we can always override values with set
+			// Ensure we cbn blwbys override vblues with set
 			require.Works(kv.Set(k, "2"))
-			require.Equal(kv.Get(k), "2")
+			require.Equbl(kv.Get(k), "2")
 		}
 	})
 }
 
-// Mostly copy-pasta from rache. Will clean up later as the relationship
-// between the two packages becomes cleaner.
-func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
+// Mostly copy-pbstb from rbche. Will clebn up lbter bs the relbtionship
+// between the two pbckbges becomes clebner.
+func redisKeyVblueForTest(t *testing.T) redispool.KeyVblue {
 	t.Helper()
 
 	pool := &redis.Pool{
-		MaxIdle:     3,
+		MbxIdle:     3,
 		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", "127.0.0.1:6379")
+		Dibl: func() (redis.Conn, error) {
+			return redis.Dibl("tcp", "127.0.0.1:6379")
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
@@ -377,11 +377,11 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 		},
 	}
 
-	prefix := "__test__" + t.Name()
+	prefix := "__test__" + t.Nbme()
 	c := pool.Get()
 	defer c.Close()
 
-	// If we are not on CI, skip the test if our redis connection fails.
+	// If we bre not on CI, skip the test if our redis connection fbils.
 	if os.Getenv("CI") == "" {
 		_, err := c.Do("PING")
 		if err != nil {
@@ -390,134 +390,134 @@ func redisKeyValueForTest(t *testing.T) redispool.KeyValue {
 	}
 
 	if err := redispool.DeleteAllKeysWithPrefix(c, prefix); err != nil {
-		t.Logf("Could not clear test prefix name=%q prefix=%q error=%v", t.Name(), prefix, err)
+		t.Logf("Could not clebr test prefix nbme=%q prefix=%q error=%v", t.Nbme(), prefix, err)
 	}
 
-	kv := redispool.RedisKeyValue(pool).(interface {
-		WithPrefix(string) redispool.KeyValue
+	kv := redispool.RedisKeyVblue(pool).(interfbce {
+		WithPrefix(string) redispool.KeyVblue
 	})
 	return kv.WithPrefix(prefix)
 }
 
 func bytes(ss ...string) [][]byte {
-	bs := make([][]byte, 0, len(ss))
-	for _, s := range ss {
-		bs = append(bs, []byte(s))
+	bs := mbke([][]byte, 0, len(ss))
+	for _, s := rbnge ss {
+		bs = bppend(bs, []byte(s))
 	}
 	return bs
 }
 
-// require is redispool.Value helpers to make test readable
+// require is redispool.Vblue helpers to mbke test rebdbble
 type require struct {
 	testing.TB
 }
 
 func (t require) Works(err error) {
-	// Works is a weird name, but it makes the function name align with Equal.
+	// Works is b weird nbme, but it mbkes the function nbme blign with Equbl.
 	t.Helper()
 	if err != nil {
-		t.Fatal("unexpected error: ", err)
+		t.Fbtbl("unexpected error: ", err)
 	}
 }
 
-func (t require) Equal(got redispool.Value, want any) {
+func (t require) Equbl(got redispool.Vblue, wbnt bny) {
 	t.Helper()
-	switch wantV := want.(type) {
-	case bool:
+	switch wbntV := wbnt.(type) {
+	cbse bool:
 		gotV, err := got.Bool()
 		t.Works(err)
-		if gotV != wantV {
-			t.Fatalf("got %v, wanted %v", gotV, wantV)
+		if gotV != wbntV {
+			t.Fbtblf("got %v, wbnted %v", gotV, wbntV)
 		}
-	case []byte:
+	cbse []byte:
 		gotV, err := got.Bytes()
 		t.Works(err)
-		if !reflect.DeepEqual(gotV, wantV) {
-			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		if !reflect.DeepEqubl(gotV, wbntV) {
+			t.Fbtblf("got %q, wbnted %q", gotV, wbntV)
 		}
-	case int:
+	cbse int:
 		gotV, err := got.Int()
 		t.Works(err)
-		if gotV != wantV {
-			t.Fatalf("got %d, wanted %d", gotV, wantV)
+		if gotV != wbntV {
+			t.Fbtblf("got %d, wbnted %d", gotV, wbntV)
 		}
-	case string:
+	cbse string:
 		gotV, err := got.String()
 		t.Works(err)
-		if gotV != wantV {
-			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		if gotV != wbntV {
+			t.Fbtblf("got %q, wbnted %q", gotV, wbntV)
 		}
-	case nil:
+	cbse nil:
 		_, err := got.String()
 		if err != redis.ErrNil {
-			t.Fatalf("%v is not nil", got)
+			t.Fbtblf("%v is not nil", got)
 		}
-	case error:
+	cbse error:
 		gotV, err := got.String()
 		if err == nil {
-			t.Fatalf("want error, got %q", gotV)
+			t.Fbtblf("wbnt error, got %q", gotV)
 		}
-		if !strings.Contains(err.Error(), wantV.Error()) {
-			t.Fatalf("got error %v, wanted error %v", err, wantV)
+		if !strings.Contbins(err.Error(), wbntV.Error()) {
+			t.Fbtblf("got error %v, wbnted error %v", err, wbntV)
 		}
-	default:
-		t.Fatalf("unsupported want type for %q: %T", want, want)
+	defbult:
+		t.Fbtblf("unsupported wbnt type for %q: %T", wbnt, wbnt)
 	}
 }
-func (t require) AllEqual(got redispool.Values, want any) {
+func (t require) AllEqubl(got redispool.Vblues, wbnt bny) {
 	t.Helper()
-	switch wantV := want.(type) {
-	case [][]byte:
+	switch wbntV := wbnt.(type) {
+	cbse [][]byte:
 		gotV, err := got.ByteSlices()
 		t.Works(err)
-		if !reflect.DeepEqual(gotV, wantV) {
-			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		if !reflect.DeepEqubl(gotV, wbntV) {
+			t.Fbtblf("got %q, wbnted %q", gotV, wbntV)
 		}
-	case []string:
+	cbse []string:
 		gotV, err := got.Strings()
 		t.Works(err)
-		if !reflect.DeepEqual(gotV, wantV) {
-			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		if !reflect.DeepEqubl(gotV, wbntV) {
+			t.Fbtblf("got %q, wbnted %q", gotV, wbntV)
 		}
-	case map[string]string:
-		gotV, err := got.StringMap()
+	cbse mbp[string]string:
+		gotV, err := got.StringMbp()
 		t.Works(err)
-		if !reflect.DeepEqual(gotV, wantV) {
-			t.Fatalf("got %q, wanted %q", gotV, wantV)
+		if !reflect.DeepEqubl(gotV, wbntV) {
+			t.Fbtblf("got %q, wbnted %q", gotV, wbntV)
 		}
-	default:
-		t.Fatalf("unsupported want type for %q: %T", want, want)
+	defbult:
+		t.Fbtblf("unsupported wbnt type for %q: %T", wbnt, wbnt)
 	}
 }
-func (t require) ListLen(kv redispool.KeyValue, key string, want int) {
+func (t require) ListLen(kv redispool.KeyVblue, key string, wbnt int) {
 	t.Helper()
 	got, err := kv.LLen(key)
 	if err != nil {
-		t.Fatal("LLen returned error", err)
+		t.Fbtbl("LLen returned error", err)
 	}
-	if got != want {
-		t.Fatalf("unexpected list length got=%d want=%d", got, want)
+	if got != wbnt {
+		t.Fbtblf("unexpected list length got=%d wbnt=%d", got, wbnt)
 	}
 }
-func (t require) TTL(kv redispool.KeyValue, key string, want int) {
+func (t require) TTL(kv redispool.KeyVblue, key string, wbnt int) {
 	t.Helper()
 	got, err := kv.TTL(key)
 	if err != nil {
-		t.Fatal("TTL returned error", err)
+		t.Fbtbl("TTL returned error", err)
 	}
 
-	// TTL timing is tough in a test environment. So if we are expecting a
-	// positive TTL we give a 10s grace.
-	if want > 10 {
-		min := want - 10
-		if got < min || got > want {
-			t.Fatalf("unexpected TTL got=%d expected=[%d,%d]", got, min, want)
+	// TTL timing is tough in b test environment. So if we bre expecting b
+	// positive TTL we give b 10s grbce.
+	if wbnt > 10 {
+		min := wbnt - 10
+		if got < min || got > wbnt {
+			t.Fbtblf("unexpected TTL got=%d expected=[%d,%d]", got, min, wbnt)
 		}
-	} else if want < 0 {
-		if got != want {
-			t.Fatalf("unexpected TTL got=%d want=%d", got, want)
+	} else if wbnt < 0 {
+		if got != wbnt {
+			t.Fbtblf("unexpected TTL got=%d wbnt=%d", got, wbnt)
 		}
 	} else {
-		t.Fatalf("got bad want value %d", want)
+		t.Fbtblf("got bbd wbnt vblue %d", wbnt)
 	}
 }

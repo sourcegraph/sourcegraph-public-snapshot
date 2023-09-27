@@ -1,5 +1,5 @@
-// Package repoupdater implements the repo-updater service HTTP handler.
-package repoupdater
+// Pbckbge repoupdbter implements the repo-updbter service HTTP hbndler.
+pbckbge repoupdbter
 
 import (
 	"context"
@@ -8,162 +8,162 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Server is a repoupdater server.
+// Server is b repoupdbter server.
 type Server struct {
 	repos.Store
 	*repos.Syncer
 	Logger                log.Logger
-	ObservationCtx        *observation.Context
-	SourcegraphDotComMode bool
-	Scheduler             interface {
-		UpdateOnce(id api.RepoID, name api.RepoName)
-		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
+	ObservbtionCtx        *observbtion.Context
+	SourcegrbphDotComMode bool
+	Scheduler             interfbce {
+		UpdbteOnce(id bpi.RepoID, nbme bpi.RepoNbme)
+		ScheduleInfo(id bpi.RepoID) *protocol.RepoUpdbteSchedulerInfoResult
 	}
-	ChangesetSyncRegistry syncer.ChangesetSyncRegistry
+	ChbngesetSyncRegistry syncer.ChbngesetSyncRegistry
 }
 
-// Handler returns the http.Handler that should be used to serve requests.
-func (s *Server) Handler() http.Handler {
+// Hbndler returns the http.Hbndler thbt should be used to serve requests.
+func (s *Server) Hbndler() http.Hbndler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/healthz", trace.WithRouteName("healthz", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
+	mux.HbndleFunc("/heblthz", trbce.WithRouteNbme("heblthz", func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHebder(http.StbtusOK)
 	}))
-	mux.HandleFunc("/repo-update-scheduler-info", trace.WithRouteName("repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo))
-	mux.HandleFunc("/repo-lookup", trace.WithRouteName("repo-lookup", s.handleRepoLookup))
-	mux.HandleFunc("/enqueue-repo-update", trace.WithRouteName("enqueue-repo-update", s.handleEnqueueRepoUpdate))
-	mux.HandleFunc("/sync-external-service", trace.WithRouteName("sync-external-service", s.handleExternalServiceSync))
-	mux.HandleFunc("/enqueue-changeset-sync", trace.WithRouteName("enqueue-changeset-sync", s.handleEnqueueChangesetSync))
-	mux.HandleFunc("/external-service-namespaces", trace.WithRouteName("external-service-namespaces", s.handleExternalServiceNamespaces))
-	mux.HandleFunc("/external-service-repositories", trace.WithRouteName("external-service-repositories", s.handleExternalServiceRepositories))
+	mux.HbndleFunc("/repo-updbte-scheduler-info", trbce.WithRouteNbme("repo-updbte-scheduler-info", s.hbndleRepoUpdbteSchedulerInfo))
+	mux.HbndleFunc("/repo-lookup", trbce.WithRouteNbme("repo-lookup", s.hbndleRepoLookup))
+	mux.HbndleFunc("/enqueue-repo-updbte", trbce.WithRouteNbme("enqueue-repo-updbte", s.hbndleEnqueueRepoUpdbte))
+	mux.HbndleFunc("/sync-externbl-service", trbce.WithRouteNbme("sync-externbl-service", s.hbndleExternblServiceSync))
+	mux.HbndleFunc("/enqueue-chbngeset-sync", trbce.WithRouteNbme("enqueue-chbngeset-sync", s.hbndleEnqueueChbngesetSync))
+	mux.HbndleFunc("/externbl-service-nbmespbces", trbce.WithRouteNbme("externbl-service-nbmespbces", s.hbndleExternblServiceNbmespbces))
+	mux.HbndleFunc("/externbl-service-repositories", trbce.WithRouteNbme("externbl-service-repositories", s.hbndleExternblServiceRepositories))
 	return mux
 }
 
-func (s *Server) handleRepoUpdateSchedulerInfo(w http.ResponseWriter, r *http.Request) {
-	var args protocol.RepoUpdateSchedulerInfoArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
+func (s *Server) hbndleRepoUpdbteSchedulerInfo(w http.ResponseWriter, r *http.Request) {
+	vbr brgs protocol.RepoUpdbteSchedulerInfoArgs
+	if err := json.NewDecoder(r.Body).Decode(&brgs); err != nil {
+		s.respond(w, http.StbtusBbdRequest, err)
 		return
 	}
 
-	result := s.Scheduler.ScheduleInfo(args.ID)
-	s.respond(w, http.StatusOK, result)
+	result := s.Scheduler.ScheduleInfo(brgs.ID)
+	s.respond(w, http.StbtusOK, result)
 }
 
-func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
-	var args protocol.RepoLookupArgs
-	if err := json.NewDecoder(r.Body).Decode(&args); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+func (s *Server) hbndleRepoLookup(w http.ResponseWriter, r *http.Request) {
+	vbr brgs protocol.RepoLookupArgs
+	if err := json.NewDecoder(r.Body).Decode(&brgs); err != nil {
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	result, err := s.repoLookup(r.Context(), args)
+	result, err := s.repoLookup(r.Context(), brgs)
 	if err != nil {
 		if r.Context().Err() != nil {
-			http.Error(w, "request canceled", http.StatusGatewayTimeout)
+			http.Error(w, "request cbnceled", http.StbtusGbtewbyTimeout)
 			return
 		}
-		s.Logger.Error("repoLookup failed",
+		s.Logger.Error("repoLookup fbiled",
 			log.Object("repo",
-				log.String("name", string(args.Repo)),
-				log.Bool("update", args.Update),
+				log.String("nbme", string(brgs.Repo)),
+				log.Bool("updbte", brgs.Updbte),
 			),
 			log.Error(err))
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	s.respond(w, http.StatusOK, result)
+	s.respond(w, http.StbtusOK, result)
 }
 
-func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoUpdateRequest
+func (s *Server) hbndleEnqueueRepoUpdbte(w http.ResponseWriter, r *http.Request) {
+	vbr req protocol.RepoUpdbteRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
+		s.respond(w, http.StbtusBbdRequest, err)
 		return
 	}
-	result, status, err := s.enqueueRepoUpdate(r.Context(), &req)
+	result, stbtus, err := s.enqueueRepoUpdbte(r.Context(), &req)
 	if err != nil {
-		s.Logger.Warn("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
-		s.respond(w, status, err)
+		s.Logger.Wbrn("enqueueRepoUpdbte fbiled", log.String("req", fmt.Sprint(req)), log.Error(err))
+		s.respond(w, stbtus, err)
 		return
 	}
-	s.respond(w, status, result)
+	s.respond(w, stbtus, result)
 }
 
-func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
-	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", attribute.Stringer("req", req))
+func (s *Server) enqueueRepoUpdbte(ctx context.Context, req *protocol.RepoUpdbteRequest) (resp *protocol.RepoUpdbteResponse, httpStbtus int, err error) {
+	tr, ctx := trbce.New(ctx, "enqueueRepoUpdbte", bttribute.Stringer("req", req))
 	defer func() {
-		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
+		s.Logger.Debug("enqueueRepoUpdbte", log.Object("http", log.Int("stbtus", httpStbtus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
 		if resp != nil {
 			tr.SetAttributes(
-				attribute.Int("resp.id", int(resp.ID)),
-				attribute.String("resp.name", resp.Name),
+				bttribute.Int("resp.id", int(resp.ID)),
+				bttribute.String("resp.nbme", resp.Nbme),
 			)
 		}
 		tr.SetError(err)
 		tr.End()
 	}()
 
-	rs, err := s.Store.RepoStore().List(ctx, database.ReposListOptions{Names: []string{string(req.Repo)}})
+	rs, err := s.Store.RepoStore().List(ctx, dbtbbbse.ReposListOptions{Nbmes: []string{string(req.Repo)}})
 	if err != nil {
-		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
+		return nil, http.StbtusInternblServerError, errors.Wrbp(err, "store.list-repos")
 	}
 
 	if len(rs) != 1 {
-		return nil, http.StatusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
+		return nil, http.StbtusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
 	}
 
 	repo := rs[0]
 
-	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+	s.Scheduler.UpdbteOnce(repo.ID, repo.Nbme)
 
-	return &protocol.RepoUpdateResponse{
+	return &protocol.RepoUpdbteResponse{
 		ID:   repo.ID,
-		Name: string(repo.Name),
-	}, http.StatusOK, nil
+		Nbme: string(repo.Nbme),
+	}, http.StbtusOK, nil
 }
 
-func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithCancel(r.Context())
-	defer cancel()
+func (s *Server) hbndleExternblServiceSync(w http.ResponseWriter, r *http.Request) {
+	ctx, cbncel := context.WithCbncel(r.Context())
+	defer cbncel()
 
-	var req protocol.ExternalServiceSyncRequest
+	vbr req protocol.ExternblServiceSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
-	logger := s.Logger.With(log.Int64("ExternalServiceID", req.ExternalServiceID))
+	logger := s.Logger.With(log.Int64("ExternblServiceID", req.ExternblServiceID))
 
-	externalServiceID := req.ExternalServiceID
+	externblServiceID := req.ExternblServiceID
 
-	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
+	es, err := s.ExternblServiceStore().GetByID(ctx, externblServiceID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			s.respond(w, http.StatusNotFound, err)
+			s.respond(w, http.StbtusNotFound, err)
 		} else {
-			s.respond(w, http.StatusInternalServerError, err)
+			s.respond(w, http.StbtusInternblServerError, err)
 		}
 		return
 	}
@@ -171,96 +171,96 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	genericSourcer := s.NewGenericSourcer(logger)
 	genericSrc, err := genericSourcer(ctx, es)
 	if err != nil {
-		logger.Error("server.external-service-sync", log.Error(err))
+		logger.Error("server.externbl-service-sync", log.Error(err))
 		return
 	}
 
-	statusCode, resp := handleExternalServiceValidate(ctx, logger, es, genericSrc)
-	if statusCode > 0 {
-		s.respond(w, statusCode, resp)
+	stbtusCode, resp := hbndleExternblServiceVblidbte(ctx, logger, es, genericSrc)
+	if stbtusCode > 0 {
+		s.respond(w, stbtusCode, resp)
 		return
 	}
-	if statusCode == 0 {
+	if stbtusCode == 0 {
 		// client is gone
 		return
 	}
 
-	if err := s.Syncer.TriggerExternalServiceSync(ctx, req.ExternalServiceID); err != nil {
-		logger.Warn("Enqueueing external service sync job", log.Error(err))
+	if err := s.Syncer.TriggerExternblServiceSync(ctx, req.ExternblServiceID); err != nil {
+		logger.Wbrn("Enqueueing externbl service sync job", log.Error(err))
 	}
 
-	logger.Info("server.external-service-sync", log.Bool("synced", true))
-	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{})
+	logger.Info("server.externbl-service-sync", log.Bool("synced", true))
+	s.respond(w, http.StbtusOK, &protocol.ExternblServiceSyncResult{})
 }
 
-func (s *Server) respond(w http.ResponseWriter, code int, v any) {
-	switch val := v.(type) {
-	case error:
-		if val != nil {
-			s.Logger.Error("response value error", log.Error(val))
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(code)
-			fmt.Fprintf(w, "%v", val)
+func (s *Server) respond(w http.ResponseWriter, code int, v bny) {
+	switch vbl := v.(type) {
+	cbse error:
+		if vbl != nil {
+			s.Logger.Error("response vblue error", log.Error(vbl))
+			w.Hebder().Set("Content-Type", "text/plbin; chbrset=utf-8")
+			w.WriteHebder(code)
+			fmt.Fprintf(w, "%v", vbl)
 		}
-	default:
-		w.Header().Set("Content-Type", "application/json")
-		bs, err := json.Marshal(v)
+	defbult:
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
+		bs, err := json.Mbrshbl(v)
 		if err != nil {
-			s.respond(w, http.StatusInternalServerError, err)
+			s.respond(w, http.StbtusInternblServerError, err)
 			return
 		}
 
-		w.WriteHeader(code)
+		w.WriteHebder(code)
 		if _, err = w.Write(bs); err != nil {
-			s.Logger.Error("failed to write response", log.Error(err))
+			s.Logger.Error("fbiled to write response", log.Error(err))
 		}
 	}
 }
 
-func handleExternalServiceValidate(ctx context.Context, logger log.Logger, es *types.ExternalService, src repos.Source) (int, any) {
-	err := externalServiceValidate(ctx, es, src)
+func hbndleExternblServiceVblidbte(ctx context.Context, logger log.Logger, es *types.ExternblService, src repos.Source) (int, bny) {
+	err := externblServiceVblidbte(ctx, es, src)
 	if err == github.ErrIncompleteResults {
-		logger.Info("server.external-service-sync", log.Error(err))
-		syncResult := &protocol.ExternalServiceSyncResult{
+		logger.Info("server.externbl-service-sync", log.Error(err))
+		syncResult := &protocol.ExternblServiceSyncResult{
 			Error: err.Error(),
 		}
-		return http.StatusOK, syncResult
+		return http.StbtusOK, syncResult
 	}
 	if ctx.Err() != nil {
 		// client is gone
 		return 0, nil
 	}
 	if err != nil {
-		logger.Error("server.external-service-sync", log.Error(err))
-		if errcode.IsUnauthorized(err) {
-			return http.StatusUnauthorized, err
+		logger.Error("server.externbl-service-sync", log.Error(err))
+		if errcode.IsUnbuthorized(err) {
+			return http.StbtusUnbuthorized, err
 		}
 		if errcode.IsForbidden(err) {
-			return http.StatusForbidden, err
+			return http.StbtusForbidden, err
 		}
-		return http.StatusInternalServerError, err
+		return http.StbtusInternblServerError, err
 	}
 	return -1, nil
 }
 
-func externalServiceValidate(ctx context.Context, es *types.ExternalService, src repos.Source) error {
+func externblServiceVblidbte(ctx context.Context, es *types.ExternblService, src repos.Source) error {
 	if !es.DeletedAt.IsZero() {
 		// We don't need to check deleted services.
 		return nil
 	}
 
 	if v, ok := src.(repos.UserSource); ok {
-		return v.ValidateAuthenticator(ctx)
+		return v.VblidbteAuthenticbtor(ctx)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
-	results := make(chan repos.SourceResult)
+	ctx, cbncel := context.WithCbncel(ctx)
+	results := mbke(chbn repos.SourceResult)
 
 	defer func() {
-		cancel()
+		cbncel()
 
-		// We need to drain the rest of the results to not leak a blocked goroutine.
-		for range results {
+		// We need to drbin the rest of the results to not lebk b blocked goroutine.
+		for rbnge results {
 		}
 	}()
 
@@ -270,56 +270,56 @@ func externalServiceValidate(ctx context.Context, es *types.ExternalService, src
 	}()
 
 	select {
-	case res := <-results:
-		// As soon as we get the first result back, we've got what we need to validate the external service.
+	cbse res := <-results:
+		// As soon bs we get the first result bbck, we've got whbt we need to vblidbte the externbl service.
 		return res.Err
-	case <-ctx.Done():
+	cbse <-ctx.Done():
 		return ctx.Err()
 	}
 }
 
-var mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
+vbr mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 
-func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
-	// Sourcegraph.com: this is on the user path, do not block forever if codehost is
-	// being bad. Ideally block before cloudflare 504s the request (1min). Other: we
-	// only speak to our database, so response should be in a few ms.
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+func (s *Server) repoLookup(ctx context.Context, brgs protocol.RepoLookupArgs) (result *protocol.RepoLookupResult, err error) {
+	// Sourcegrbph.com: this is on the user pbth, do not block forever if codehost is
+	// being bbd. Ideblly block before cloudflbre 504s the request (1min). Other: we
+	// only spebk to our dbtbbbse, so response should be in b few ms.
+	ctx, cbncel := context.WithTimeout(ctx, 30*time.Second)
+	defer cbncel()
 
-	tr, ctx := trace.New(ctx, "repoLookup", attribute.Stringer("args", &args))
+	tr, ctx := trbce.New(ctx, "repoLookup", bttribute.Stringer("brgs", &brgs))
 	defer func() {
 		s.Logger.Debug("repoLookup", log.String("result", fmt.Sprint(result)), log.Error(err))
 		tr.SetError(err)
 		tr.End()
 	}()
 
-	if args.Repo == "" {
-		return nil, errors.New("Repo must be set (is blank)")
+	if brgs.Repo == "" {
+		return nil, errors.New("Repo must be set (is blbnk)")
 	}
 
 	if mockRepoLookup != nil {
-		return mockRepoLookup(args)
+		return mockRepoLookup(brgs)
 	}
 
-	repo, err := s.Syncer.SyncRepo(ctx, args.Repo, true)
+	repo, err := s.Syncer.SyncRepo(ctx, brgs.Repo, true)
 
 	switch {
-	case err == nil:
-		break
-	case errcode.IsNotFound(err):
+	cbse err == nil:
+		brebk
+	cbse errcode.IsNotFound(err):
 		return &protocol.RepoLookupResult{ErrorNotFound: true}, nil
-	case errcode.IsUnauthorized(err) || errcode.IsForbidden(err):
-		return &protocol.RepoLookupResult{ErrorUnauthorized: true}, nil
-	case errcode.IsTemporary(err):
-		return &protocol.RepoLookupResult{ErrorTemporarilyUnavailable: true}, nil
-	default:
+	cbse errcode.IsUnbuthorized(err) || errcode.IsForbidden(err):
+		return &protocol.RepoLookupResult{ErrorUnbuthorized: true}, nil
+	cbse errcode.IsTemporbry(err):
+		return &protocol.RepoLookupResult{ErrorTemporbrilyUnbvbilbble: true}, nil
+	defbult:
 		return nil, err
 	}
 
-	if s.Scheduler != nil && args.Update {
-		// Enqueue a high priority update for this repo.
-		s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+	if s.Scheduler != nil && brgs.Updbte {
+		// Enqueue b high priority updbte for this repo.
+		s.Scheduler.UpdbteOnce(repo.ID, repo.Nbme)
 	}
 
 	repoInfo := protocol.NewRepoInfo(repo)
@@ -327,166 +327,166 @@ func (s *Server) repoLookup(ctx context.Context, args protocol.RepoLookupArgs) (
 	return &protocol.RepoLookupResult{Repo: repoInfo}, nil
 }
 
-func (s *Server) handleEnqueueChangesetSync(w http.ResponseWriter, r *http.Request) {
-	if s.ChangesetSyncRegistry == nil {
-		s.Logger.Warn("ChangesetSyncer is nil")
-		s.respond(w, http.StatusForbidden, nil)
+func (s *Server) hbndleEnqueueChbngesetSync(w http.ResponseWriter, r *http.Request) {
+	if s.ChbngesetSyncRegistry == nil {
+		s.Logger.Wbrn("ChbngesetSyncer is nil")
+		s.respond(w, http.StbtusForbidden, nil)
 		return
 	}
 
-	var req protocol.ChangesetSyncRequest
+	vbr req protocol.ChbngesetSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		s.respond(w, http.StatusBadRequest, err)
+		s.respond(w, http.StbtusBbdRequest, err)
 		return
 	}
 	if len(req.IDs) == 0 {
-		s.respond(w, http.StatusBadRequest, errors.New("no ids provided"))
+		s.respond(w, http.StbtusBbdRequest, errors.New("no ids provided"))
 		return
 	}
-	err := s.ChangesetSyncRegistry.EnqueueChangesetSyncs(r.Context(), req.IDs)
+	err := s.ChbngesetSyncRegistry.EnqueueChbngesetSyncs(r.Context(), req.IDs)
 	if err != nil {
-		resp := protocol.ChangesetSyncResponse{Error: err.Error()}
-		s.respond(w, http.StatusInternalServerError, resp)
+		resp := protocol.ChbngesetSyncResponse{Error: err.Error()}
+		s.respond(w, http.StbtusInternblServerError, resp)
 		return
 	}
-	s.respond(w, http.StatusOK, nil)
+	s.respond(w, http.StbtusOK, nil)
 }
 
-func (s *Server) handleExternalServiceNamespaces(w http.ResponseWriter, r *http.Request) {
-	var req protocol.ExternalServiceNamespacesArgs
+func (s *Server) hbndleExternblServiceNbmespbces(w http.ResponseWriter, r *http.Request) {
+	vbr req protocol.ExternblServiceNbmespbcesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
+	logger := s.Logger.With(log.String("ExternblServiceKind", req.Kind))
 
-	result, err := s.externalServiceNamespaces(r.Context(), logger, req.ToProto())
+	result, err := s.externblServiceNbmespbces(r.Context(), logger, req.ToProto())
 	if err != nil {
-		logger.Error("server.query-external-service-namespaces", log.Error(err))
-		httpCode := grpcErrToStatus(err)
-		s.respond(w, httpCode, &protocol.ExternalServiceNamespacesResult{Error: err.Error()})
+		logger.Error("server.query-externbl-service-nbmespbces", log.Error(err))
+		httpCode := grpcErrToStbtus(err)
+		s.respond(w, httpCode, &protocol.ExternblServiceNbmespbcesResult{Error: err.Error()})
 		return
 	}
-	s.respond(w, http.StatusOK, protocol.ExternalServiceNamespacesResultFromProto(result))
+	s.respond(w, http.StbtusOK, protocol.ExternblServiceNbmespbcesResultFromProto(result))
 }
 
-func (s *Server) externalServiceNamespaces(ctx context.Context, logger log.Logger, req *proto.ExternalServiceNamespacesRequest) (*proto.ExternalServiceNamespacesResponse, error) {
-	var externalSvc *types.ExternalService
-	if req.ExternalServiceId != nil {
-		var err error
-		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceId)
+func (s *Server) externblServiceNbmespbces(ctx context.Context, logger log.Logger, req *proto.ExternblServiceNbmespbcesRequest) (*proto.ExternblServiceNbmespbcesResponse, error) {
+	vbr externblSvc *types.ExternblService
+	if req.ExternblServiceId != nil {
+		vbr err error
+		externblSvc, err = s.ExternblServiceStore().GetByID(ctx, *req.ExternblServiceId)
 		if err != nil {
 			if errcode.IsNotFound(err) {
-				return nil, status.Error(codes.NotFound, err.Error())
+				return nil, stbtus.Error(codes.NotFound, err.Error())
 			}
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, stbtus.Error(codes.Internbl, err.Error())
 		}
 	} else {
-		externalSvc = &types.ExternalService{
+		externblSvc = &types.ExternblService{
 			Kind:   req.Kind,
 			Config: extsvc.NewUnencryptedConfig(req.Config),
 		}
 	}
 
 	genericSourcer := s.NewGenericSourcer(logger)
-	genericSrc, err := genericSourcer(ctx, externalSvc)
+	genericSrc, err := genericSourcer(ctx, externblSvc)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, stbtus.Error(codes.InvblidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		if errcode.IsUnauthorized(err) {
-			return nil, status.Error(codes.PermissionDenied, err.Error())
+		if errcode.IsUnbuthorized(err) {
+			return nil, stbtus.Error(codes.PermissionDenied, err.Error())
 		}
-		return nil, status.Error(codes.Unavailable, err.Error())
+		return nil, stbtus.Error(codes.Unbvbilbble, err.Error())
 	}
 
-	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
+	discoverbbleSrc, ok := genericSrc.(repos.DiscoverbbleSource)
 	if !ok {
-		return nil, status.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
+		return nil, stbtus.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
 	}
 
-	results := make(chan repos.SourceNamespaceResult)
+	results := mbke(chbn repos.SourceNbmespbceResult)
 	go func() {
-		discoverableSrc.ListNamespaces(ctx, results)
+		discoverbbleSrc.ListNbmespbces(ctx, results)
 		close(results)
 	}()
 
-	var sourceErrs error
-	namespaces := make([]*proto.ExternalServiceNamespace, 0)
+	vbr sourceErrs error
+	nbmespbces := mbke([]*proto.ExternblServiceNbmespbce, 0)
 
-	for res := range results {
+	for res := rbnge results {
 		if res.Err != nil {
-			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
+			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externblSvc})
 			continue
 		}
-		namespaces = append(namespaces, &proto.ExternalServiceNamespace{
-			Id:         int64(res.Namespace.ID),
-			Name:       res.Namespace.Name,
-			ExternalId: res.Namespace.ExternalID,
+		nbmespbces = bppend(nbmespbces, &proto.ExternblServiceNbmespbce{
+			Id:         int64(res.Nbmespbce.ID),
+			Nbme:       res.Nbmespbce.Nbme,
+			ExternblId: res.Nbmespbce.ExternblID,
 		})
 	}
 
-	return &proto.ExternalServiceNamespacesResponse{Namespaces: namespaces}, sourceErrs
+	return &proto.ExternblServiceNbmespbcesResponse{Nbmespbces: nbmespbces}, sourceErrs
 }
 
-func (s *Server) handleExternalServiceRepositories(w http.ResponseWriter, r *http.Request) {
-	var req protocol.ExternalServiceRepositoriesArgs
+func (s *Server) hbndleExternblServiceRepositories(w http.ResponseWriter, r *http.Request) {
+	vbr req protocol.ExternblServiceRepositoriesArgs
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	logger := s.Logger.With(log.String("ExternalServiceKind", req.Kind))
+	logger := s.Logger.With(log.String("ExternblServiceKind", req.Kind))
 
-	result, err := s.externalServiceRepositories(r.Context(), logger, req.ToProto())
+	result, err := s.externblServiceRepositories(r.Context(), logger, req.ToProto())
 	if err != nil {
-		logger.Error("server.query-external-service-repositories", log.Error(err))
-		httpCode := grpcErrToStatus(err)
-		s.respond(w, httpCode, &protocol.ExternalServiceRepositoriesResult{Error: err.Error()})
+		logger.Error("server.query-externbl-service-repositories", log.Error(err))
+		httpCode := grpcErrToStbtus(err)
+		s.respond(w, httpCode, &protocol.ExternblServiceRepositoriesResult{Error: err.Error()})
 		return
 	}
-	s.respond(w, http.StatusOK, protocol.ExternalServiceRepositoriesResultFromProto(result))
+	s.respond(w, http.StbtusOK, protocol.ExternblServiceRepositoriesResultFromProto(result))
 }
 
-func (s *Server) externalServiceRepositories(ctx context.Context, logger log.Logger, req *proto.ExternalServiceRepositoriesRequest) (*proto.ExternalServiceRepositoriesResponse, error) {
-	var externalSvc *types.ExternalService
-	if req.ExternalServiceId != nil {
-		var err error
-		externalSvc, err = s.ExternalServiceStore().GetByID(ctx, *req.ExternalServiceId)
+func (s *Server) externblServiceRepositories(ctx context.Context, logger log.Logger, req *proto.ExternblServiceRepositoriesRequest) (*proto.ExternblServiceRepositoriesResponse, error) {
+	vbr externblSvc *types.ExternblService
+	if req.ExternblServiceId != nil {
+		vbr err error
+		externblSvc, err = s.ExternblServiceStore().GetByID(ctx, *req.ExternblServiceId)
 		if err != nil {
 			if errcode.IsNotFound(err) {
-				return nil, status.Error(codes.NotFound, err.Error())
+				return nil, stbtus.Error(codes.NotFound, err.Error())
 			}
-			return nil, status.Error(codes.Internal, err.Error())
+			return nil, stbtus.Error(codes.Internbl, err.Error())
 		}
 	} else {
-		externalSvc = &types.ExternalService{
+		externblSvc = &types.ExternblService{
 			Kind:   req.Kind,
 			Config: extsvc.NewUnencryptedConfig(req.Config),
 		}
 	}
 
 	genericSourcer := s.NewGenericSourcer(logger)
-	genericSrc, err := genericSourcer(ctx, externalSvc)
+	genericSrc, err := genericSourcer(ctx, externblSvc)
 	if err != nil {
-		return nil, status.Error(codes.InvalidArgument, err.Error())
+		return nil, stbtus.Error(codes.InvblidArgument, err.Error())
 	}
 
 	if err = genericSrc.CheckConnection(ctx); err != nil {
-		if errcode.IsUnauthorized(err) {
-			return nil, status.Error(codes.PermissionDenied, err.Error())
+		if errcode.IsUnbuthorized(err) {
+			return nil, stbtus.Error(codes.PermissionDenied, err.Error())
 		}
-		return nil, status.Error(codes.Unavailable, err.Error())
+		return nil, stbtus.Error(codes.Unbvbilbble, err.Error())
 	}
 
-	discoverableSrc, ok := genericSrc.(repos.DiscoverableSource)
+	discoverbbleSrc, ok := genericSrc.(repos.DiscoverbbleSource)
 	if !ok {
-		return nil, status.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
+		return nil, stbtus.Error(codes.Unimplemented, repos.UnimplementedDiscoverySource)
 	}
 
-	results := make(chan repos.SourceResult)
+	results := mbke(chbn repos.SourceResult)
 
 	first := int(req.First)
 	if first > 100 {
@@ -494,70 +494,70 @@ func (s *Server) externalServiceRepositories(ctx context.Context, logger log.Log
 	}
 
 	go func() {
-		discoverableSrc.SearchRepositories(ctx, req.Query, first, req.GetExcludeRepos(), results)
+		discoverbbleSrc.SebrchRepositories(ctx, req.Query, first, req.GetExcludeRepos(), results)
 		close(results)
 	}()
 
-	var sourceErrs error
-	repositories := make([]*proto.ExternalServiceRepository, 0)
+	vbr sourceErrs error
+	repositories := mbke([]*proto.ExternblServiceRepository, 0)
 
-	for res := range results {
+	for res := rbnge results {
 		if res.Err != nil {
-			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externalSvc})
+			sourceErrs = errors.Append(sourceErrs, &repos.SourceError{Err: res.Err, ExtSvc: externblSvc})
 			continue
 		}
-		repositories = append(repositories, &proto.ExternalServiceRepository{
+		repositories = bppend(repositories, &proto.ExternblServiceRepository{
 			Id:         int32(res.Repo.ID),
-			Name:       string(res.Repo.Name),
-			ExternalId: res.Repo.ExternalRepo.ID,
+			Nbme:       string(res.Repo.Nbme),
+			ExternblId: res.Repo.ExternblRepo.ID,
 		})
 	}
 
-	return &proto.ExternalServiceRepositoriesResponse{Repos: repositories}, sourceErrs
+	return &proto.ExternblServiceRepositoriesResponse{Repos: repositories}, sourceErrs
 }
 
-// grpcErrToStatus translates the grpc status codes used in this package to http status codes.
-func grpcErrToStatus(err error) int {
+// grpcErrToStbtus trbnslbtes the grpc stbtus codes used in this pbckbge to http stbtus codes.
+func grpcErrToStbtus(err error) int {
 	if err == nil {
-		return http.StatusOK
+		return http.StbtusOK
 	}
 
-	s, ok := status.FromError(err)
+	s, ok := stbtus.FromError(err)
 	if !ok {
-		// we deliberately make context.Canceled and context.DeadlineExceeded return 500
-		return http.StatusInternalServerError
+		// we deliberbtely mbke context.Cbnceled bnd context.DebdlineExceeded return 500
+		return http.StbtusInternblServerError
 	}
 
 	switch s.Code() {
-	case codes.NotFound:
-		return http.StatusNotFound
-	case codes.Internal:
-		return http.StatusInternalServerError
-	case codes.InvalidArgument:
-		return http.StatusBadRequest
-	case codes.PermissionDenied:
-		return http.StatusUnauthorized
-	case codes.Unavailable:
-		return http.StatusServiceUnavailable
-	case codes.Unimplemented:
-		return http.StatusNotImplemented
-	default:
-		return http.StatusInternalServerError
+	cbse codes.NotFound:
+		return http.StbtusNotFound
+	cbse codes.Internbl:
+		return http.StbtusInternblServerError
+	cbse codes.InvblidArgument:
+		return http.StbtusBbdRequest
+	cbse codes.PermissionDenied:
+		return http.StbtusUnbuthorized
+	cbse codes.Unbvbilbble:
+		return http.StbtusServiceUnbvbilbble
+	cbse codes.Unimplemented:
+		return http.StbtusNotImplemented
+	defbult:
+		return http.StbtusInternblServerError
 	}
 }
 
-var mockNewGenericSourcer func() repos.Sourcer
+vbr mockNewGenericSourcer func() repos.Sourcer
 
 func (s *Server) NewGenericSourcer(logger log.Logger) repos.Sourcer {
 	if mockNewGenericSourcer != nil {
 		return mockNewGenericSourcer()
 	}
 
-	// We use the generic sourcer that doesn't have observability attached to it here because the way externalServiceValidate is set up,
-	// using the regular sourcer will cause a large dump of errors to be logged when it exits ListRepos prematurely.
+	// We use the generic sourcer thbt doesn't hbve observbbility bttbched to it here becbuse the wby externblServiceVblidbte is set up,
+	// using the regulbr sourcer will cbuse b lbrge dump of errors to be logged when it exits ListRepos prembturely.
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	db := database.NewDBWith(sourcerLogger.Scoped("db", "sourcer database"), s)
-	dependenciesService := dependencies.NewService(s.ObservationCtx, db)
-	cf := httpcli.NewExternalClientFactory(httpcli.NewLoggingMiddleware(sourcerLogger))
+	db := dbtbbbse.NewDBWith(sourcerLogger.Scoped("db", "sourcer dbtbbbse"), s)
+	dependenciesService := dependencies.NewService(s.ObservbtionCtx, db)
+	cf := httpcli.NewExternblClientFbctory(httpcli.NewLoggingMiddlewbre(sourcerLogger))
 	return repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependenciesService))
 }

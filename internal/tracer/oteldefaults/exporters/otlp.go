@@ -1,72 +1,72 @@
-package exporters
+pbckbge exporters
 
 import (
 	"context"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrbce"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrbce/otlptrbcegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrbce/otlptrbcehttp"
+	oteltrbcesdk "go.opentelemetry.io/otel/sdk/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/otlpenv"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewOTLPTraceExporter exports trace spans to an OpenTelemetry collector via the
-// OpenTelemetry protocol (OTLP) based on environment configuration.
+// NewOTLPTrbceExporter exports trbce spbns to bn OpenTelemetry collector vib the
+// OpenTelemetry protocol (OTLP) bbsed on environment configurbtion.
 //
-// By default, prefer to use internal/tracer.Init to set up a global OpenTelemetry
-// tracer and use that instead.
-func NewOTLPTraceExporter(ctx context.Context, logger log.Logger) (oteltracesdk.SpanExporter, error) {
+// By defbult, prefer to use internbl/trbcer.Init to set up b globbl OpenTelemetry
+// trbcer bnd use thbt instebd.
+func NewOTLPTrbceExporter(ctx context.Context, logger log.Logger) (oteltrbcesdk.SpbnExporter, error) {
 	endpoint := otlpenv.GetEndpoint()
 	if endpoint == "" {
-		// OTEL_EXPORTER_OTLP_ENDPOINT has been explicitly set to ""
-		return nil, errors.Newf("please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT")
+		// OTEL_EXPORTER_OTLP_ENDPOINT hbs been explicitly set to ""
+		return nil, errors.Newf("plebse configure bn exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT")
 	}
 
-	// Set up client to otel-collector - we replicate some of the logic used internally in
-	// https://github.com/open-telemetry/opentelemetry-go/blob/21c1641831ca19e3acf341cc11459c87b9791f2f/exporters/otlp/internal/otlpconfig/envconfig.go
-	// based on our own inferred endpoint.
-	var (
-		client          otlptrace.Client
+	// Set up client to otel-collector - we replicbte some of the logic used internblly in
+	// https://github.com/open-telemetry/opentelemetry-go/blob/21c1641831cb19e3bcf341cc11459c87b9791f2f/exporters/otlp/internbl/otlpconfig/envconfig.go
+	// bbsed on our own inferred endpoint.
+	vbr (
+		client          otlptrbce.Client
 		protocol        = otlpenv.GetProtocol()
-		trimmedEndpoint = trimSchema(endpoint)
+		trimmedEndpoint = trimSchemb(endpoint)
 		insecure        = otlpenv.IsInsecure(endpoint)
 	)
 
 	// Work with different protocols
 	switch protocol {
-	case otlpenv.ProtocolGRPC:
-		opts := []otlptracegrpc.Option{
-			otlptracegrpc.WithEndpoint(trimmedEndpoint),
+	cbse otlpenv.ProtocolGRPC:
+		opts := []otlptrbcegrpc.Option{
+			otlptrbcegrpc.WithEndpoint(trimmedEndpoint),
 		}
 		if insecure {
-			opts = append(opts, otlptracegrpc.WithInsecure())
+			opts = bppend(opts, otlptrbcegrpc.WithInsecure())
 		}
-		client = otlptracegrpc.NewClient(opts...)
+		client = otlptrbcegrpc.NewClient(opts...)
 
-	case otlpenv.ProtocolHTTPJSON:
-		opts := []otlptracehttp.Option{
-			otlptracehttp.WithEndpoint(trimmedEndpoint),
+	cbse otlpenv.ProtocolHTTPJSON:
+		opts := []otlptrbcehttp.Option{
+			otlptrbcehttp.WithEndpoint(trimmedEndpoint),
 		}
 		if insecure {
-			opts = append(opts, otlptracehttp.WithInsecure())
+			opts = bppend(opts, otlptrbcehttp.WithInsecure())
 		}
-		client = otlptracehttp.NewClient(opts...)
+		client = otlptrbcehttp.NewClient(opts...)
 	}
 
-	// Initialize the exporter
-	traceExporter, err := otlptrace.New(ctx, client)
+	// Initiblize the exporter
+	trbceExporter, err := otlptrbce.New(ctx, client)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create trace exporter")
+		return nil, errors.Wrbp(err, "fbiled to crebte trbce exporter")
 	}
-	return traceExporter, nil
+	return trbceExporter, nil
 }
 
-var httpSchemeRegexp = regexp.MustCompile(`(?i)^http://|https://`)
+vbr httpSchemeRegexp = regexp.MustCompile(`(?i)^http://|https://`)
 
-func trimSchema(endpoint string) string {
-	return httpSchemeRegexp.ReplaceAllString(endpoint, "")
+func trimSchemb(endpoint string) string {
+	return httpSchemeRegexp.ReplbceAllString(endpoint, "")
 }

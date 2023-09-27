@@ -1,4 +1,4 @@
-package externallink
+pbckbge externbllink
 
 import (
 	"context"
@@ -7,196 +7,196 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestRepository(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
 	t.Run("repo", func(t *testing.T) {
 		repo := &types.Repo{
-			Name: api.RepoName("github.com/foo/bar"),
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme: bpi.RepoNbme("github.com/foo/bbr"),
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ServiceID:   extsvc.GitHubDotCom.ServiceID,
 				ServiceType: extsvc.GitHubDotCom.ServiceType,
 			},
-			Metadata: &github.Repository{
-				URL: "http://github.com/foo/bar",
+			Metbdbtb: &github.Repository{
+				URL: "http://github.com/foo/bbr",
 			},
 		}
 
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultReturn(nil, errors.New("x"))
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := Repository(context.Background(), db, repo)
+		links, err := Repository(context.Bbckground(), db, repo)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver{
+		if wbnt := []*Resolver{
 			{
-				url:         "http://github.com/foo/bar",
-				serviceKind: extsvc.TypeToKind(repo.ExternalRepo.ServiceType),
-				serviceType: repo.ExternalRepo.ServiceType,
+				url:         "http://github.com/foo/bbr",
+				serviceKind: extsvc.TypeToKind(repo.ExternblRepo.ServiceType),
+				serviceType: repo.ExternblRepo.ServiceType,
 			},
-		}; !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		}; !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 
-	t.Run("phabricator", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
-			if want := api.RepoName("myrepo"); repo != want {
-				t.Errorf("got %q, want %q", repo, want)
+	t.Run("phbbricbtor", func(t *testing.T) {
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultHook(func(_ context.Context, repo bpi.RepoNbme) (*types.PhbbricbtorRepo, error) {
+			if wbnt := bpi.RepoNbme("myrepo"); repo != wbnt {
+				t.Errorf("got %q, wbnt %q", repo, wbnt)
 			}
-			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
+			return &types.PhbbricbtorRepo{URL: "http://phbbricbtor.exbmple.com/", Cbllsign: "MYREPO"}, nil
 		})
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := Repository(context.Background(), db, &types.Repo{Name: "myrepo"})
+		links, err := Repository(context.Bbckground(), db, &types.Repo{Nbme: "myrepo"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver{
+		if wbnt := []*Resolver{
 			{
-				url:         "http://phabricator.example.com/diffusion/MYREPO",
-				serviceKind: extsvc.KindPhabricator,
-				serviceType: extsvc.TypePhabricator,
+				url:         "http://phbbricbtor.exbmple.com/diffusion/MYREPO",
+				serviceKind: extsvc.KindPhbbricbtor,
+				serviceType: extsvc.TypePhbbricbtor,
 			},
-		}; !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		}; !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultReturn(nil, errors.New("x"))
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := Repository(context.Background(), db, &types.Repo{Name: "myrepo"})
+		links, err := Repository(context.Bbckground(), db, &types.Repo{Nbme: "myrepo"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		if wbnt := []*Resolver(nil); !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 }
 
 func TestFileOrDir(t *testing.T) {
 	const (
 		rev  = "myrev"
-		path = "mydir/myfile"
+		pbth = "mydir/myfile"
 	)
 
 	repo := &types.Repo{
-		Name: api.RepoName("gitlab.com/foo/bar"),
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceID:   extsvc.GitLabDotCom.ServiceID,
-			ServiceType: extsvc.GitLabDotCom.ServiceType,
+		Nbme: bpi.RepoNbme("gitlbb.com/foo/bbr"),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ServiceID:   extsvc.GitLbbDotCom.ServiceID,
+			ServiceType: extsvc.GitLbbDotCom.ServiceType,
 		},
-		Metadata: &gitlab.Project{
-			ProjectCommon: gitlab.ProjectCommon{
-				WebURL: "http://gitlab.com/foo/bar",
+		Metbdbtb: &gitlbb.Project{
+			ProjectCommon: gitlbb.ProjectCommon{
+				WebURL: "http://gitlbb.com/foo/bbr",
 			},
 		},
 	}
 
-	for _, which := range []string{"file", "dir"} {
-		var (
+	for _, which := rbnge []string{"file", "dir"} {
+		vbr (
 			isDir   bool
-			wantURL string
+			wbntURL string
 		)
 		switch which {
-		case "file":
-			isDir = false
-			wantURL = "http://gitlab.com/foo/bar/blob/myrev/mydir/myfile"
-		case "dir":
+		cbse "file":
+			isDir = fblse
+			wbntURL = "http://gitlbb.com/foo/bbr/blob/myrev/mydir/myfile"
+		cbse "dir":
 			isDir = true
-			wantURL = "http://gitlab.com/foo/bar/tree/myrev/mydir/myfile"
+			wbntURL = "http://gitlbb.com/foo/bbr/tree/myrev/mydir/myfile"
 		}
 
 		t.Run(which, func(t *testing.T) {
-			phabricator := dbmocks.NewMockPhabricatorStore()
-			phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+			phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+			phbbricbtor.GetByNbmeFunc.SetDefbultReturn(nil, errors.New("x"))
 			db := dbmocks.NewMockDB()
-			db.PhabricatorFunc.SetDefaultReturn(phabricator)
+			db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-			links, err := FileOrDir(context.Background(), db, gitserver.NewClient(), repo, rev, path, isDir)
+			links, err := FileOrDir(context.Bbckground(), db, gitserver.NewClient(), repo, rev, pbth, isDir)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if want := []*Resolver{
+			if wbnt := []*Resolver{
 				{
-					url:         wantURL,
-					serviceKind: extsvc.TypeToKind(repo.ExternalRepo.ServiceType),
-					serviceType: repo.ExternalRepo.ServiceType,
+					url:         wbntURL,
+					serviceKind: extsvc.TypeToKind(repo.ExternblRepo.ServiceType),
+					serviceType: repo.ExternblRepo.ServiceType,
 				},
-			}; !reflect.DeepEqual(links, want) {
-				t.Errorf("got %+v, want %+v", links, want)
+			}; !reflect.DeepEqubl(links, wbnt) {
+				t.Errorf("got %+v, wbnt %+v", links, wbnt)
 			}
-			mockrequire.Called(t, phabricator.GetByNameFunc)
+			mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 		})
 	}
 
-	t.Run("phabricator", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
-			if want := api.RepoName("myrepo"); repo != want {
-				t.Errorf("got %q, want %q", repo, want)
+	t.Run("phbbricbtor", func(t *testing.T) {
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultHook(func(_ context.Context, repo bpi.RepoNbme) (*types.PhbbricbtorRepo, error) {
+			if wbnt := bpi.RepoNbme("myrepo"); repo != wbnt {
+				t.Errorf("got %q, wbnt %q", repo, wbnt)
 			}
-			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
+			return &types.PhbbricbtorRepo{URL: "http://phbbricbtor.exbmple.com/", Cbllsign: "MYREPO"}, nil
 		})
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
 		gsClient := gitserver.NewMockClient()
-		gsClient.GetDefaultBranchFunc.SetDefaultReturn("mybranch", "", nil)
+		gsClient.GetDefbultBrbnchFunc.SetDefbultReturn("mybrbnch", "", nil)
 
-		links, err := FileOrDir(context.Background(), db, gsClient, &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Bbckground(), db, gsClient, &types.Repo{Nbme: "myrepo"}, rev, pbth, true)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver{
+		if wbnt := []*Resolver{
 			{
-				url:         "http://phabricator.example.com/source/MYREPO/browse/mybranch/mydir/myfile;myrev",
-				serviceKind: extsvc.KindPhabricator,
-				serviceType: extsvc.TypePhabricator,
+				url:         "http://phbbricbtor.exbmple.com/source/MYREPO/browse/mybrbnch/mydir/myfile;myrev",
+				serviceKind: extsvc.KindPhbbricbtor,
+				serviceType: extsvc.TypePhbbricbtor,
 			},
-		}; !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		}; !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultReturn(nil, errors.New("x"))
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := FileOrDir(context.Background(), db, gitserver.NewClient(), &types.Repo{Name: "myrepo"}, rev, path, true)
+		links, err := FileOrDir(context.Bbckground(), db, gitserver.NewClient(), &types.Repo{Nbme: "myrepo"}, rev, pbth, true)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		if wbnt := []*Resolver(nil); !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 }
 
@@ -204,78 +204,78 @@ func TestCommit(t *testing.T) {
 	const commit = "mycommit"
 
 	repo := &types.Repo{
-		Name: api.RepoName("github.com/foo/bar"),
-		ExternalRepo: api.ExternalRepoSpec{
+		Nbme: bpi.RepoNbme("github.com/foo/bbr"),
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ServiceID:   extsvc.GitHubDotCom.ServiceID,
 			ServiceType: extsvc.GitHubDotCom.ServiceType,
 		},
-		Metadata: &github.Repository{
-			URL: "http://github.com/foo/bar",
+		Metbdbtb: &github.Repository{
+			URL: "http://github.com/foo/bbr",
 		},
 	}
 
 	t.Run("repo", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultReturn(nil, errors.New("x"))
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := Commit(context.Background(), db, repo, commit)
+		links, err := Commit(context.Bbckground(), db, repo, commit)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver{
+		if wbnt := []*Resolver{
 			{
-				url:         "http://github.com/foo/bar/commit/mycommit",
-				serviceKind: extsvc.TypeToKind(repo.ExternalRepo.ServiceType),
-				serviceType: repo.ExternalRepo.ServiceType,
+				url:         "http://github.com/foo/bbr/commit/mycommit",
+				serviceKind: extsvc.TypeToKind(repo.ExternblRepo.ServiceType),
+				serviceType: repo.ExternblRepo.ServiceType,
 			},
-		}; !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		}; !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 
-	t.Run("phabricator", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultHook(func(_ context.Context, repo api.RepoName) (*types.PhabricatorRepo, error) {
-			if want := api.RepoName("myrepo"); repo != want {
-				t.Errorf("got %q, want %q", repo, want)
+	t.Run("phbbricbtor", func(t *testing.T) {
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultHook(func(_ context.Context, repo bpi.RepoNbme) (*types.PhbbricbtorRepo, error) {
+			if wbnt := bpi.RepoNbme("myrepo"); repo != wbnt {
+				t.Errorf("got %q, wbnt %q", repo, wbnt)
 			}
-			return &types.PhabricatorRepo{URL: "http://phabricator.example.com/", Callsign: "MYREPO"}, nil
+			return &types.PhbbricbtorRepo{URL: "http://phbbricbtor.exbmple.com/", Cbllsign: "MYREPO"}, nil
 		})
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := Commit(context.Background(), db, &types.Repo{Name: "myrepo"}, commit)
+		links, err := Commit(context.Bbckground(), db, &types.Repo{Nbme: "myrepo"}, commit)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver{
+		if wbnt := []*Resolver{
 			{
-				url:         "http://phabricator.example.com/rMYREPOmycommit",
-				serviceKind: extsvc.KindPhabricator,
-				serviceType: extsvc.TypePhabricator,
+				url:         "http://phbbricbtor.exbmple.com/rMYREPOmycommit",
+				serviceKind: extsvc.KindPhbbricbtor,
+				serviceType: extsvc.TypePhbbricbtor,
 			},
-		}; !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		}; !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		phabricator := dbmocks.NewMockPhabricatorStore()
-		phabricator.GetByNameFunc.SetDefaultReturn(nil, errors.New("x"))
+		phbbricbtor := dbmocks.NewMockPhbbricbtorStore()
+		phbbricbtor.GetByNbmeFunc.SetDefbultReturn(nil, errors.New("x"))
 		db := dbmocks.NewMockDB()
-		db.PhabricatorFunc.SetDefaultReturn(phabricator)
+		db.PhbbricbtorFunc.SetDefbultReturn(phbbricbtor)
 
-		links, err := Commit(context.Background(), db, &types.Repo{Name: "myrepo"}, commit)
+		links, err := Commit(context.Bbckground(), db, &types.Repo{Nbme: "myrepo"}, commit)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := []*Resolver(nil); !reflect.DeepEqual(links, want) {
-			t.Errorf("got %+v, want %+v", links, want)
+		if wbnt := []*Resolver(nil); !reflect.DeepEqubl(links, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", links, wbnt)
 		}
-		mockrequire.Called(t, phabricator.GetByNameFunc)
+		mockrequire.Cblled(t, phbbricbtor.GetByNbmeFunc)
 	})
 }

@@ -1,38 +1,38 @@
-package oobmigration
+pbckbge oobmigrbtion
 
 import (
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	upForMigration   func(migrationID int) *observation.Operation
-	downForMigration func(migrationID int) *observation.Operation
+type operbtions struct {
+	upForMigrbtion   func(migrbtionID int) *observbtion.Operbtion
+	downForMigrbtion func(migrbtionID int) *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"oobmigration",
-		metrics.WithLabels("op", "migration"),
-		metrics.WithCountHelp("Total number of migrator invocations."),
+		observbtionCtx.Registerer,
+		"oobmigrbtion",
+		metrics.WithLbbels("op", "migrbtion"),
+		metrics.WithCountHelp("Totbl number of migrbtor invocbtions."),
 	)
 
-	opForMigration := func(name string) func(migrationID int) *observation.Operation {
-		return func(migrationID int) *observation.Operation {
-			return observationCtx.Operation(observation.Op{
-				Name:              fmt.Sprintf("oobmigration.%s", name),
-				MetricLabelValues: []string{name, strconv.Itoa(migrationID)},
+	opForMigrbtion := func(nbme string) func(migrbtionID int) *observbtion.Operbtion {
+		return func(migrbtionID int) *observbtion.Operbtion {
+			return observbtionCtx.Operbtion(observbtion.Op{
+				Nbme:              fmt.Sprintf("oobmigrbtion.%s", nbme),
+				MetricLbbelVblues: []string{nbme, strconv.Itob(migrbtionID)},
 				Metrics:           redMetrics,
 			})
 		}
 	}
 
-	return &operations{
-		upForMigration:   opForMigration("up"),
-		downForMigration: opForMigration("down"),
+	return &operbtions{
+		upForMigrbtion:   opForMigrbtion("up"),
+		downForMigrbtion: opForMigrbtion("down"),
 	}
 }

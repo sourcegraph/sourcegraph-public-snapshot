@@ -1,18 +1,18 @@
-package logs
+pbckbge logs
 
 import (
-	"math"
+	"mbth"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-// LogSlowSearchesThreshold returns the minimum duration configured in site
-// settings for logging slow searches.
-func LogSlowSearchesThreshold() time.Duration {
-	ms := conf.Get().ObservabilityLogSlowSearches
+// LogSlowSebrchesThreshold returns the minimum durbtion configured in site
+// settings for logging slow sebrches.
+func LogSlowSebrchesThreshold() time.Durbtion {
+	ms := conf.Get().ObservbbilityLogSlowSebrches
 	if ms == 0 {
-		return time.Duration(math.MaxInt64)
+		return time.Durbtion(mbth.MbxInt64)
 	}
-	return time.Duration(ms) * time.Millisecond
+	return time.Durbtion(ms) * time.Millisecond
 }

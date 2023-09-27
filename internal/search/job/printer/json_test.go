@@ -1,31 +1,31 @@
-package printer
+pbckbge printer
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
 )
 
 func TestPrettyJSON(t *testing.T) {
 	t.Run("nonverbose", func(t *testing.T) {
 		t.Run("simpleJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(JSON(simpleJob)))
+			butogold.ExpectFile(t, butogold.Rbw(JSON(simpleJob)))
 		})
 
 		t.Run("bigJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(JSON(bigJob)))
+			butogold.ExpectFile(t, butogold.Rbw(JSON(bigJob)))
 		})
 	})
 
 	t.Run("verbose", func(t *testing.T) {
 		t.Run("simpleJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(JSONVerbose(simpleJob, job.VerbosityMax)))
+			butogold.ExpectFile(t, butogold.Rbw(JSONVerbose(simpleJob, job.VerbosityMbx)))
 		})
 
 		t.Run("bigJob", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(JSONVerbose(bigJob, job.VerbosityMax)))
+			butogold.ExpectFile(t, butogold.Rbw(JSONVerbose(bigJob, job.VerbosityMbx)))
 		})
 	})
 }

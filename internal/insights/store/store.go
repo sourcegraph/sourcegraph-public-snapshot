@@ -1,219 +1,219 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/RoaringBitmap/roaring"
-	"github.com/keegancsmith/sqlf"
+	"github.com/RobringBitmbp/robring"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Interface is the interface describing a code insights store. See the Store struct
-// for actual API usage.
-type Interface interface {
-	WithOther(other basestore.ShareableStore) Interface
+// Interfbce is the interfbce describing b code insights store. See the Store struct
+// for bctubl API usbge.
+type Interfbce interfbce {
+	WithOther(other bbsestore.ShbrebbleStore) Interfbce
 	SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error)
-	CountData(ctx context.Context, opts CountDataOpts) (int, error)
+	CountDbtb(ctx context.Context, opts CountDbtbOpts) (int, error)
 	RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) error
 	RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error
 	SetInsightSeriesRecordingTimes(ctx context.Context, recordingTimes []types.InsightSeriesRecordingTimes) error
 	GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts SeriesPointsOpts) (types.InsightSeriesRecordingTimes, error)
-	LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error)
-	AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error
-	GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) ([]SeriesPointForExport, error)
+	LobdAggregbtedIncompleteDbtbpoints(ctx context.Context, seriesID int) (results []IncompleteDbtbpoint, err error)
+	AddIncompleteDbtbpoint(ctx context.Context, input AddIncompleteDbtbpointInput) error
+	GetAllDbtbForInsightViewID(ctx context.Context, opts ExportOpts) ([]SeriesPointForExport, error)
 }
 
-var _ Interface = &Store{}
+vbr _ Interfbce = &Store{}
 
-// Store exposes methods to read and write code insights domain models from
-// persistent storage.
+// Store exposes methods to rebd bnd write code insights dombin models from
+// persistent storbge.
 type Store struct {
-	*basestore.Store
+	*bbsestore.Store
 	now       func() time.Time
 	permStore InsightPermissionStore
 }
 
-func (s *Store) Transact(ctx context.Context) (*Store, error) {
-	txBase, err := s.Store.Transact(ctx)
+func (s *Store) Trbnsbct(ctx context.Context) (*Store, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return &Store{
-		Store:     txBase,
+		Store:     txBbse,
 		now:       s.now,
 		permStore: s.permStore,
 	}, nil
 }
 
-// New returns a new Store backed by the given Postgres db.
+// New returns b new Store bbcked by the given Postgres db.
 func New(db edb.InsightsDB, permStore InsightPermissionStore) *Store {
 	return NewWithClock(db, permStore, timeutil.Now)
 }
 
-// NewWithClock returns a new Store backed by the given db and
-// clock for timestamps.
+// NewWithClock returns b new Store bbcked by the given db bnd
+// clock for timestbmps.
 func NewWithClock(db edb.InsightsDB, permStore InsightPermissionStore, clock func() time.Time) *Store {
-	return &Store{Store: basestore.NewWithHandle(db.Handle()), now: clock, permStore: permStore}
+	return &Store{Store: bbsestore.NewWithHbndle(db.Hbndle()), now: clock, permStore: permStore}
 }
 
-var _ basestore.ShareableStore = &Store{}
+vbr _ bbsestore.ShbrebbleStore = &Store{}
 
-// With creates a new Store with the given basestore.Shareable store as the
-// underlying basestore.Store.
-// Needed to implement the basestore.Store interface
-func (s *Store) With(other basestore.ShareableStore) *Store {
+// With crebtes b new Store with the given bbsestore.Shbrebble store bs the
+// underlying bbsestore.Store.
+// Needed to implement the bbsestore.Store interfbce
+func (s *Store) With(other bbsestore.ShbrebbleStore) *Store {
 	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-// WithOther creates a new Store with the given basestore.Shareable store as the
-// underlying basestore.Store.
-// Needed to implement the basestore.Store interface
-func (s *Store) WithOther(other basestore.ShareableStore) Interface {
+// WithOther crebtes b new Store with the given bbsestore.Shbrebble store bs the
+// underlying bbsestore.Store.
+// Needed to implement the bbsestore.Store interfbce
+func (s *Store) WithOther(other bbsestore.ShbrebbleStore) Interfbce {
 	return &Store{Store: s.Store.With(other), now: s.now, permStore: s.permStore}
 }
 
-// SeriesPoint describes a single insights' series data point.
+// SeriesPoint describes b single insights' series dbtb point.
 //
-// Some fields that could be queried (series ID, repo ID/names) are omitted as they are primarily
-// only useful for filtering the data you get back, and would inflate the data size considerably
+// Some fields thbt could be queried (series ID, repo ID/nbmes) bre omitted bs they bre primbrily
+// only useful for filtering the dbtb you get bbck, bnd would inflbte the dbtb size considerbbly
 // otherwise.
 type SeriesPoint struct {
-	// Time (always UTC).
+	// Time (blwbys UTC).
 	SeriesID string
 	Time     time.Time
-	Value    float64
-	Capture  *string
+	Vblue    flobt64
+	Cbpture  *string
 }
 
 func (s *SeriesPoint) String() string {
-	if s.Capture != nil {
-		return fmt.Sprintf("SeriesPoint{Time: %q, Capture: %q, Value: %v}", s.Time, *s.Capture, s.Value)
+	if s.Cbpture != nil {
+		return fmt.Sprintf("SeriesPoint{Time: %q, Cbpture: %q, Vblue: %v}", s.Time, *s.Cbpture, s.Vblue)
 	}
-	return fmt.Sprintf("SeriesPoint{Time: %q, Value: %v}", s.Time, s.Value)
+	return fmt.Sprintf("SeriesPoint{Time: %q, Vblue: %v}", s.Time, s.Vblue)
 }
 
-// SeriesPointsOpts describes options for querying insights' series data points.
+// SeriesPointsOpts describes options for querying insights' series dbtb points.
 type SeriesPointsOpts struct {
 	// SeriesID is the unique series ID to query, if non-nil.
 	SeriesID *string
 	// ID is the unique integer series ID to query, if non-nil.
 	ID *int
 
-	// RepoID, if non-nil, indicates to filter results to only points recorded with this repo ID.
-	RepoID *api.RepoID
+	// RepoID, if non-nil, indicbtes to filter results to only points recorded with this repo ID.
+	RepoID *bpi.RepoID
 
-	Excluded []api.RepoID
-	Included []api.RepoID
+	Excluded []bpi.RepoID
+	Included []bpi.RepoID
 
-	// TODO(slimsag): Add ability to filter based on repo name, original name.
+	// TODO(slimsbg): Add bbility to filter bbsed on repo nbme, originbl nbme.
 
 	IncludeRepoRegex []string
 	ExcludeRepoRegex []string
 
-	// Time ranges to query from/to (inclusive) or after (exclusive), if non-nil, in UTC.
+	// Time rbnges to query from/to (inclusive) or bfter (exclusive), if non-nil, in UTC.
 	From, To, After *time.Time
 
-	// Whether to augment the series points data with zero values.
-	SupportsAugmentation bool
+	// Whether to bugment the series points dbtb with zero vblues.
+	SupportsAugmentbtion bool
 
-	// Limit is the number of data points to query, if non-zero.
+	// Limit is the number of dbtb points to query, if non-zero.
 	Limit int
 }
 
-// SeriesPoints queries data points over time for a specific insights' series.
+// SeriesPoints queries dbtb points over time for b specific insights' series.
 func (s *Store) SeriesPoints(ctx context.Context, opts SeriesPointsOpts) ([]SeriesPoint, error) {
-	points := make([]SeriesPoint, 0, opts.Limit)
-	// 🚨 SECURITY: This is a double-negative repo permission enforcement. The list of authorized repos is generally expected to be very large, and nearly the full
-	// set of repos installed on Sourcegraph. To make this faster, we query Postgres for a list of repos the current user cannot see, and then exclude those from the
+	points := mbke([]SeriesPoint, 0, opts.Limit)
+	// 🚨 SECURITY: This is b double-negbtive repo permission enforcement. The list of buthorized repos is generblly expected to be very lbrge, bnd nebrly the full
+	// set of repos instblled on Sourcegrbph. To mbke this fbster, we query Postgres for b list of repos the current user cbnnot see, bnd then exclude those from the
 	// time series results. 🚨
-	// We think this is faster for a few reasons:
+	// We think this is fbster for b few rebsons:
 	//
-	// 1. Any repos set 'public' show for everyone, and this is the default state without configuring otherwise
-	// 2. We have quite a bit of customer feedback that suggests they don't even use repo permissions - they just don't install their private repos onto that Sourcegraph instance.
-	// 3. Cloud will likely be one of best case scenarios for this - currently we have indexed 550k+ repos all of which are public. Even if we add 20,000 private repos that's only ~3.5% of the total set that needs to be fetched to do this authorization filter.
+	// 1. Any repos set 'public' show for everyone, bnd this is the defbult stbte without configuring otherwise
+	// 2. We hbve quite b bit of customer feedbbck thbt suggests they don't even use repo permissions - they just don't instbll their privbte repos onto thbt Sourcegrbph instbnce.
+	// 3. Cloud will likely be one of best cbse scenbrios for this - currently we hbve indexed 550k+ repos bll of which bre public. Even if we bdd 20,000 privbte repos thbt's only ~3.5% of the totbl set thbt needs to be fetched to do this buthorizbtion filter.
 	//
-	// Since Code Insights is in a different database, we can't trivially join the repo table directly, so this approach is preferred.
+	// Since Code Insights is in b different dbtbbbse, we cbn't triviblly join the repo tbble directly, so this bpprobch is preferred.
 
-	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+	denylist, err := s.permStore.GetUnbuthorizedRepoIDs(ctx)
 	if err != nil {
 		return []SeriesPoint{}, err
 	}
-	opts.Excluded = append(opts.Excluded, denylist...)
+	opts.Excluded = bppend(opts.Excluded, denylist...)
 
-	q := seriesPointsQuery(fullVectorSeriesAggregation, opts)
-	pointsMap := make(map[string]*SeriesPoint)
-	captureValues := make(map[string]struct{})
-	err = s.query(ctx, q, func(sc scanner) error {
-		var point SeriesPoint
-		err := sc.Scan(
+	q := seriesPointsQuery(fullVectorSeriesAggregbtion, opts)
+	pointsMbp := mbke(mbp[string]*SeriesPoint)
+	cbptureVblues := mbke(mbp[string]struct{})
+	err = s.query(ctx, q, func(sc scbnner) error {
+		vbr point SeriesPoint
+		err := sc.Scbn(
 			&point.SeriesID,
 			&point.Time,
-			&point.Value,
-			&point.Capture,
+			&point.Vblue,
+			&point.Cbpture,
 		)
 		if err != nil {
 			return err
 		}
-		points = append(points, point)
-		capture := ""
-		if point.Capture != nil {
-			capture = *point.Capture
+		points = bppend(points, point)
+		cbpture := ""
+		if point.Cbpture != nil {
+			cbpture = *point.Cbpture
 		}
-		captureValues[capture] = struct{}{}
-		pointsMap[point.Time.String()+capture] = &point
+		cbptureVblues[cbpture] = struct{}{}
+		pointsMbp[point.Time.String()+cbpture] = &point
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
+	bugmentedPoints, err := s.bugmentSeriesPoints(ctx, opts, pointsMbp, cbptureVblues)
 	if err != nil {
-		return nil, errors.Wrap(err, "augmentSeriesPoints")
+		return nil, errors.Wrbp(err, "bugmentSeriesPoints")
 	}
-	if len(augmentedPoints) > 0 {
-		points = augmentedPoints
+	if len(bugmentedPoints) > 0 {
+		points = bugmentedPoints
 	}
 
 	return points, nil
 }
 
-func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
-	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+func (s *Store) LobdSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (points []SeriesPoint, err error) {
+	denylist, err := s.permStore.GetUnbuthorizedRepoIDs(ctx)
 	if err != nil {
 		return nil, err
 	}
-	denyBitmap := roaring.New()
-	for _, id := range denylist {
-		denyBitmap.Add(uint32(id))
+	denyBitmbp := robring.New()
+	for _, id := rbnge denylist {
+		denyBitmbp.Add(uint32(id))
 	}
 
-	type loadStruct struct {
+	type lobdStruct struct {
 		Time    time.Time
-		Value   float64
+		Vblue   flobt64
 		RepoID  int
-		Capture *string
+		Cbpture *string
 	}
-	type captureMap map[string]*SeriesPoint
-	mapping := make(map[time.Time]captureMap)
+	type cbptureMbp mbp[string]*SeriesPoint
+	mbpping := mbke(mbp[time.Time]cbptureMbp)
 
 	getByKey := func(time time.Time, key *string) *SeriesPoint {
-		cm, ok := mapping[time]
+		cm, ok := mbpping[time]
 		if !ok {
-			cm = make(captureMap)
-			mapping[time] = cm
+			cm = mbke(cbptureMbp)
+			mbpping[time] = cm
 		}
 		k := ""
 		if key != nil {
@@ -228,26 +228,26 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 	}
 
 	filter := func(id int) bool {
-		return denyBitmap.Contains(uint32(id))
+		return denyBitmbp.Contbins(uint32(id))
 	}
 
-	q := `select date_trunc('seconds', sp.time) AS interval_time, max(value), repo_id, capture FROM (
+	q := `select dbte_trunc('seconds', sp.time) AS intervbl_time, mbx(vblue), repo_id, cbpture FROM (
 					select * from series_points
-					union all
-					select * from series_points_snapshots
-					) as sp
+					union bll
+					select * from series_points_snbpshots
+					) bs sp
 			  %s
 	          where %s
-			  GROUP BY sp.series_id, interval_time, sp.repo_id, capture
+			  GROUP BY sp.series_id, intervbl_time, sp.repo_id, cbpture
 	;`
 	fullQ := seriesPointsQuery(q, opts)
-	err = s.query(ctx, fullQ, func(sc scanner) (err error) {
-		var row loadStruct
-		err = sc.Scan(
+	err = s.query(ctx, fullQ, func(sc scbnner) (err error) {
+		vbr row lobdStruct
+		err = sc.Scbn(
 			&row.Time,
-			&row.Value,
+			&row.Vblue,
 			&row.RepoID,
-			&row.Capture,
+			&row.Cbpture,
 		)
 		if err != nil {
 			return err
@@ -256,9 +256,9 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 			return nil
 		}
 
-		sp := getByKey(row.Time, row.Capture)
-		sp.Capture = row.Capture
-		sp.Value += row.Value
+		sp := getByKey(row.Time, row.Cbpture)
+		sp.Cbpture = row.Cbpture
+		sp.Vblue += row.Vblue
 		sp.Time = row.Time
 
 		return nil
@@ -268,41 +268,41 @@ func (s *Store) LoadSeriesInMem(ctx context.Context, opts SeriesPointsOpts) (poi
 		return nil, err
 	}
 
-	pointsMap := make(map[string]*SeriesPoint)
-	captureValues := make(map[string]struct{})
+	pointsMbp := mbke(mbp[string]*SeriesPoint)
+	cbptureVblues := mbke(mbp[string]struct{})
 
-	for _, pointTime := range mapping {
-		for _, point := range pointTime {
+	for _, pointTime := rbnge mbpping {
+		for _, point := rbnge pointTime {
 			pt := SeriesPoint{
 				SeriesID: *opts.SeriesID,
 				Time:     point.Time,
-				Value:    point.Value,
-				Capture:  point.Capture,
+				Vblue:    point.Vblue,
+				Cbpture:  point.Cbpture,
 			}
-			points = append(points, pt)
-			capture := ""
-			if point.Capture != nil {
-				capture = *point.Capture
+			points = bppend(points, pt)
+			cbpture := ""
+			if point.Cbpture != nil {
+				cbpture = *point.Cbpture
 			}
-			captureValues[capture] = struct{}{}
-			pointsMap[point.Time.String()+capture] = &pt
+			cbptureVblues[cbpture] = struct{}{}
+			pointsMbp[point.Time.String()+cbpture] = &pt
 		}
 	}
 
-	augmentedPoints, err := s.augmentSeriesPoints(ctx, opts, pointsMap, captureValues)
+	bugmentedPoints, err := s.bugmentSeriesPoints(ctx, opts, pointsMbp, cbptureVblues)
 	if err != nil {
-		return nil, errors.Wrap(err, "augmentSeriesPoints")
+		return nil, errors.Wrbp(err, "bugmentSeriesPoints")
 	}
-	if len(augmentedPoints) > 0 {
-		points = augmentedPoints
+	if len(bugmentedPoints) > 0 {
+		points = bugmentedPoints
 	}
 
 	return points, err
 }
 
-// Delete will delete the time series data for a particular series_id. This will hard (permanently) delete the data.
+// Delete will delete the time series dbtb for b pbrticulbr series_id. This will hbrd (permbnently) delete the dbtb.
 func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -310,11 +310,11 @@ func (s *Store) Delete(ctx context.Context, seriesId string) (err error) {
 
 	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeries, seriesId))
 	if err != nil {
-		return errors.Wrap(err, "DeleteForSeries")
+		return errors.Wrbp(err, "DeleteForSeries")
 	}
-	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeriesSnapshots, seriesId))
+	err = tx.Exec(ctx, sqlf.Sprintf(deleteForSeriesSnbpshots, seriesId))
 	if err != nil {
-		return errors.Wrap(err, "DeleteForSeriesSnapshots")
+		return errors.Wrbp(err, "DeleteForSeriesSnbpshots")
 	}
 
 	return nil
@@ -324,305 +324,305 @@ const deleteForSeries = `
 DELETE FROM series_points where series_id = %s;
 `
 
-const deleteForSeriesSnapshots = `
-DELETE FROM series_points_snapshots where series_id = %s;
+const deleteForSeriesSnbpshots = `
+DELETE FROM series_points_snbpshots where series_id = %s;
 `
 
-// Note: the inner query could return duplicate points on its own if we merely did a SUM(value) over
-// all desired repositories. By using the sub-query, we select the per-repository maximum (thus
-// eliminating duplicate points that might have been recorded in a given interval for a given repository)
-// and then SUM the result for each repository, giving us our final total number.
-const fullVectorSeriesAggregation = `
-SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.capture FROM (
-	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, capture
+// Note: the inner query could return duplicbte points on its own if we merely did b SUM(vblue) over
+// bll desired repositories. By using the sub-query, we select the per-repository mbximum (thus
+// eliminbting duplicbte points thbt might hbve been recorded in b given intervbl for b given repository)
+// bnd then SUM the result for ebch repository, giving us our finbl totbl number.
+const fullVectorSeriesAggregbtion = `
+SELECT sub.series_id, sub.intervbl_time, SUM(sub.vblue) bs vblue, sub.cbpture FROM (
+	SELECT sp.repo_nbme_id, sp.series_id, dbte_trunc('seconds', sp.time) AS intervbl_time, MAX(vblue) bs vblue, cbpture
 	FROM (  select * from series_points
-			union all
-			select * from series_points_snapshots
+			union bll
+			select * from series_points_snbpshots
 	) AS sp
 	%s
 	WHERE %s
-	GROUP BY sp.series_id, interval_time, sp.repo_name_id, capture
-	ORDER BY sp.series_id, interval_time, sp.repo_name_id
+	GROUP BY sp.series_id, intervbl_time, sp.repo_nbme_id, cbpture
+	ORDER BY sp.series_id, intervbl_time, sp.repo_nbme_id
 ) sub
-GROUP BY sub.series_id, sub.interval_time, sub.capture
-ORDER BY sub.series_id, sub.interval_time ASC
+GROUP BY sub.series_id, sub.intervbl_time, sub.cbpture
+ORDER BY sub.series_id, sub.intervbl_time ASC
 `
 
-// Note that the series_points table may contain duplicate points, or points recorded at irregular
-// intervals. In specific:
+// Note thbt the series_points tbble mby contbin duplicbte points, or points recorded bt irregulbr
+// intervbls. In specific:
 //
-//  1. Multiple points recorded at the same time T for cardinality C will be considered part of the same vector.
-//     For example, series S and repos R1, R2 have a point at time T. The sum over R1,R2 at T will give the
-//     aggregated sum for that series at time T.
-//  2. Rarely, it may contain duplicate data points due to the at-least once semantics of query execution.
-//     This will cause some jitter in the aggregated series, and will skew the results slightly.
-//  3. Searches may not complete at the same exact time, so even in a perfect world if the interval
-//     should be 12h it may be off by a minute or so.
-func seriesPointsQuery(baseQuery string, opts SeriesPointsOpts) *sqlf.Query {
-	preds := seriesPointsPredicates(opts)
-	limitClause := ""
+//  1. Multiple points recorded bt the sbme time T for cbrdinblity C will be considered pbrt of the sbme vector.
+//     For exbmple, series S bnd repos R1, R2 hbve b point bt time T. The sum over R1,R2 bt T will give the
+//     bggregbted sum for thbt series bt time T.
+//  2. Rbrely, it mby contbin duplicbte dbtb points due to the bt-lebst once sembntics of query execution.
+//     This will cbuse some jitter in the bggregbted series, bnd will skew the results slightly.
+//  3. Sebrches mby not complete bt the sbme exbct time, so even in b perfect world if the intervbl
+//     should be 12h it mby be off by b minute or so.
+func seriesPointsQuery(bbseQuery string, opts SeriesPointsOpts) *sqlf.Query {
+	preds := seriesPointsPredicbtes(opts)
+	limitClbuse := ""
 	if opts.Limit > 0 {
-		limitClause = fmt.Sprintf("LIMIT %d", opts.Limit)
+		limitClbuse = fmt.Sprintf("LIMIT %d", opts.Limit)
 	}
-	joinClause := " "
+	joinClbuse := " "
 	if len(opts.IncludeRepoRegex) > 0 || len(opts.ExcludeRepoRegex) > 0 {
-		joinClause = ` JOIN repo_names rn ON sp.repo_name_id = rn.id `
+		joinClbuse = ` JOIN repo_nbmes rn ON sp.repo_nbme_id = rn.id `
 	}
 	if len(opts.Excluded) > 0 {
 		excludedStrings := []string{}
-		for _, id := range opts.Excluded {
-			excludedStrings = append(excludedStrings, strconv.Itoa(int(id)))
+		for _, id := rbnge opts.Excluded {
+			excludedStrings = bppend(excludedStrings, strconv.Itob(int(id)))
 		}
 
-		excludeReposJoin := ` LEFT JOIN ( select unnest('{%s}'::_int4) as excluded_repo ) perm
+		excludeReposJoin := ` LEFT JOIN ( select unnest('{%s}'::_int4) bs excluded_repo ) perm
 			ON sp.repo_id = perm.excluded_repo `
 
-		joinClause = joinClause + fmt.Sprintf(excludeReposJoin, strings.Join(excludedStrings, ","))
+		joinClbuse = joinClbuse + fmt.Sprintf(excludeReposJoin, strings.Join(excludedStrings, ","))
 	}
 
-	queryWithJoin := fmt.Sprintf(baseQuery, joinClause, `%s`) // this is a little janky
+	queryWithJoin := fmt.Sprintf(bbseQuery, joinClbuse, `%s`) // this is b little jbnky
 	return sqlf.Sprintf(
-		queryWithJoin+limitClause,
+		queryWithJoin+limitClbuse,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-func seriesPointsPredicates(opts SeriesPointsOpts) []*sqlf.Query {
+func seriesPointsPredicbtes(opts SeriesPointsOpts) []*sqlf.Query {
 	preds := []*sqlf.Query{}
 
 	if opts.SeriesID != nil {
-		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
+		preds = bppend(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
 	}
 	if opts.RepoID != nil {
-		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
+		preds = bppend(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
 	}
 	if opts.From != nil {
-		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
+		preds = bppend(preds, sqlf.Sprintf("time >= %s", *opts.From))
 	}
 	if opts.To != nil {
-		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
+		preds = bppend(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
 	if opts.After != nil {
-		preds = append(preds, sqlf.Sprintf("time > %s", *opts.After))
+		preds = bppend(preds, sqlf.Sprintf("time > %s", *opts.After))
 	}
 
 	if len(opts.Included) > 0 {
-		s := fmt.Sprintf("repo_id = any(%v)", values(opts.Included))
-		preds = append(preds, sqlf.Sprintf(s))
+		s := fmt.Sprintf("repo_id = bny(%v)", vblues(opts.Included))
+		preds = bppend(preds, sqlf.Sprintf(s))
 	}
 	if len(opts.Excluded) > 0 {
-		preds = append(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
+		preds = bppend(preds, sqlf.Sprintf("perm.excluded_repo IS NULL"))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
-		for _, regex := range opts.IncludeRepoRegex {
+		for _, regex := rbnge opts.IncludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
+			includePreds = bppend(includePreds, sqlf.Sprintf("rn.nbme ~ %s", regex))
 		}
 		if len(includePreds) > 0 {
 			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
-			preds = append(preds, includes)
+			preds = bppend(preds, includes)
 		}
 
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
-		for _, regex := range opts.ExcludeRepoRegex {
+		for _, regex := rbnge opts.ExcludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+			preds = bppend(preds, sqlf.Sprintf("rn.nbme !~ %s", regex))
 		}
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 	return preds
 }
 
-// values constructs a SQL values statement out of an array of repository ids
-func values(ids []api.RepoID) string {
+// vblues constructs b SQL vblues stbtement out of bn brrby of repository ids
+func vblues(ids []bpi.RepoID) string {
 	if len(ids) == 0 {
 		return ""
 	}
 
-	var b strings.Builder
+	vbr b strings.Builder
 	b.WriteString("VALUES ")
-	for _, repoID := range ids {
+	for _, repoID := rbnge ids {
 		_, err := fmt.Fprintf(&b, "(%v),", repoID)
 		if err != nil {
 			return ""
 		}
 	}
 	query := b.String()
-	query = query[:b.Len()-1] // remove the trailing comma
+	query = query[:b.Len()-1] // remove the trbiling commb
 	return query
 }
 
-type CountDataOpts struct {
-	// The time range to look for data, if non-nil.
+type CountDbtbOpts struct {
+	// The time rbnge to look for dbtb, if non-nil.
 	From, To *time.Time
 
-	// SeriesID, if non-nil, indicates to look for data with this series ID only.
+	// SeriesID, if non-nil, indicbtes to look for dbtb with this series ID only.
 	SeriesID *string
 
-	// RepoID, if non-nil, indicates to look for data with this repo ID only.
-	RepoID *api.RepoID
+	// RepoID, if non-nil, indicbtes to look for dbtb with this repo ID only.
+	RepoID *bpi.RepoID
 }
 
-// CountData counts the amount of data points in a given time range.
-func (s *Store) CountData(ctx context.Context, opts CountDataOpts) (int, error) {
-	count, ok, err := basestore.ScanFirstInt(s.Store.Query(ctx, countDataQuery(opts)))
+// CountDbtb counts the bmount of dbtb points in b given time rbnge.
+func (s *Store) CountDbtb(ctx context.Context, opts CountDbtbOpts) (int, error) {
+	count, ok, err := bbsestore.ScbnFirstInt(s.Store.Query(ctx, countDbtbQuery(opts)))
 	if err != nil {
-		return 0, errors.Wrap(err, "ScanFirstInt")
+		return 0, errors.Wrbp(err, "ScbnFirstInt")
 	}
 	if !ok {
-		return 0, errors.Wrap(err, "count row not found (this should never happen)")
+		return 0, errors.Wrbp(err, "count row not found (this should never hbppen)")
 	}
 	return count, nil
 }
 
-const countDataFmtstr = `
+const countDbtbFmtstr = `
 SELECT COUNT(*) FROM series_points WHERE %s
 `
 
-func countDataQuery(opts CountDataOpts) *sqlf.Query {
+func countDbtbQuery(opts CountDbtbOpts) *sqlf.Query {
 	preds := []*sqlf.Query{}
 	if opts.From != nil {
-		preds = append(preds, sqlf.Sprintf("time >= %s", *opts.From))
+		preds = bppend(preds, sqlf.Sprintf("time >= %s", *opts.From))
 	}
 	if opts.To != nil {
-		preds = append(preds, sqlf.Sprintf("time <= %s", *opts.To))
+		preds = bppend(preds, sqlf.Sprintf("time <= %s", *opts.To))
 	}
 	if opts.SeriesID != nil {
-		preds = append(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
+		preds = bppend(preds, sqlf.Sprintf("series_id = %s", *opts.SeriesID))
 	}
 	if opts.RepoID != nil {
-		preds = append(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
+		preds = bppend(preds, sqlf.Sprintf("repo_id = %d", int32(*opts.RepoID)))
 	}
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 	return sqlf.Sprintf(
-		countDataFmtstr,
+		countDbtbFmtstr,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-func (s *Store) DeleteSnapshots(ctx context.Context, series *types.InsightSeries) error {
+func (s *Store) DeleteSnbpshots(ctx context.Context, series *types.InsightSeries) error {
 	if series == nil {
-		return errors.New("invalid input for Delete Snapshots")
+		return errors.New("invblid input for Delete Snbpshots")
 	}
-	err := s.Exec(ctx, sqlf.Sprintf(deleteSnapshotsSql, sqlf.Sprintf(snapshotsTable), series.SeriesID))
+	err := s.Exec(ctx, sqlf.Sprintf(deleteSnbpshotsSql, sqlf.Sprintf(snbpshotsTbble), series.SeriesID))
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete insights snapshots for series_id: %s", series.SeriesID)
+		return errors.Wrbpf(err, "fbiled to delete insights snbpshots for series_id: %s", series.SeriesID)
 	}
-	err = s.Exec(ctx, sqlf.Sprintf(deleteSnapshotRecordingTimeSql, series.ID))
+	err = s.Exec(ctx, sqlf.Sprintf(deleteSnbpshotRecordingTimeSql, series.ID))
 	if err != nil {
-		return errors.Wrapf(err, "failed to delete snapshot recording time for series_id %d", series.ID)
+		return errors.Wrbpf(err, "fbiled to delete snbpshot recording time for series_id %d", series.ID)
 	}
 	return nil
 }
 
-const deleteSnapshotsSql = `
+const deleteSnbpshotsSql = `
 DELETE FROM %s WHERE series_id = %s;
 `
 
-const deleteSnapshotRecordingTimeSql = `
-DELETE FROM insight_series_recording_times WHERE insight_series_id = %s and snapshot = true;
+const deleteSnbpshotRecordingTimeSql = `
+DELETE FROM insight_series_recording_times WHERE insight_series_id = %s bnd snbpshot = true;
 `
 
 type PersistMode string
 
 const (
 	RecordMode          PersistMode = "record"
-	SnapshotMode        PersistMode = "snapshot"
-	recordingTable      string      = "series_points"
-	snapshotsTable      string      = "series_points_snapshots"
-	recordingTimesTable string      = "insight_series_recording_times"
+	SnbpshotMode        PersistMode = "snbpshot"
+	recordingTbble      string      = "series_points"
+	snbpshotsTbble      string      = "series_points_snbpshots"
+	recordingTimesTbble string      = "insight_series_recording_times"
 
-	recordingTableArchive      string = "archived_series_points"
-	recordingTimesTableArchive string = "archived_insight_series_recording_times"
+	recordingTbbleArchive      string = "brchived_series_points"
+	recordingTimesTbbleArchive string = "brchived_insight_series_recording_times"
 )
 
-// RecordSeriesPointArgs describes arguments for the RecordSeriesPoint method.
+// RecordSeriesPointArgs describes brguments for the RecordSeriesPoint method.
 type RecordSeriesPointArgs struct {
-	// SeriesID is the unique series ID to query. It should describe the series of data uniquely,
-	// but is not a DB table primary key ID.
+	// SeriesID is the unique series ID to query. It should describe the series of dbtb uniquely,
+	// but is not b DB tbble primbry key ID.
 	SeriesID string
 
-	// Point is the actual data point recorded and at what time.
+	// Point is the bctubl dbtb point recorded bnd bt whbt time.
 	Point SeriesPoint
 
-	// Repository name and DB ID to associate with this data point, if any.
+	// Repository nbme bnd DB ID to bssocibte with this dbtb point, if bny.
 	//
 	// Both must be specified if one is specified.
-	RepoName *string
-	RepoID   *api.RepoID
+	RepoNbme *string
+	RepoID   *bpi.RepoID
 
 	PersistMode PersistMode
 }
 
-// RecordSeriesPoints stores multiple data points atomically. Use this in favour of RecordSeriesPointsAndRecordingTimes
-// if recording times are not known.
+// RecordSeriesPoints stores multiple dbtb points btomicblly. Use this in fbvour of RecordSeriesPointsAndRecordingTimes
+// if recording times bre not known.
 func (s *Store) RecordSeriesPoints(ctx context.Context, pts []RecordSeriesPointArgs) (err error) {
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	tableColumns := []string{"series_id", "time", "value", "repo_id", "repo_name_id", "original_repo_name_id", "capture"}
+	tbbleColumns := []string{"series_id", "time", "vblue", "repo_id", "repo_nbme_id", "originbl_repo_nbme_id", "cbpture"}
 
-	// In our current use cases we should only ever use one of these for one function call, but this could change.
-	inserters := map[PersistMode]*batch.Inserter{
-		RecordMode:   batch.NewInserter(ctx, tx.Handle(), recordingTable, batch.MaxNumPostgresParameters, tableColumns...),
-		SnapshotMode: batch.NewInserter(ctx, tx.Handle(), snapshotsTable, batch.MaxNumPostgresParameters, tableColumns...),
+	// In our current use cbses we should only ever use one of these for one function cbll, but this could chbnge.
+	inserters := mbp[PersistMode]*bbtch.Inserter{
+		RecordMode:   bbtch.NewInserter(ctx, tx.Hbndle(), recordingTbble, bbtch.MbxNumPostgresPbrbmeters, tbbleColumns...),
+		SnbpshotMode: bbtch.NewInserter(ctx, tx.Hbndle(), snbpshotsTbble, bbtch.MbxNumPostgresPbrbmeters, tbbleColumns...),
 	}
 
-	for _, pt := range pts {
+	for _, pt := rbnge pts {
 		inserter, ok := inserters[pt.PersistMode]
 		if !ok {
 			return errors.Newf("unsupported insights series point persist mode: %v", pt.PersistMode)
 		}
 
-		if (pt.RepoName != nil && pt.RepoID == nil) || (pt.RepoID != nil && pt.RepoName == nil) {
-			return errors.New("RepoName and RepoID must be mutually specified")
+		if (pt.RepoNbme != nil && pt.RepoID == nil) || (pt.RepoID != nil && pt.RepoNbme == nil) {
+			return errors.New("RepoNbme bnd RepoID must be mutublly specified")
 		}
 
-		// Upsert the repository name into a separate table, so we get a small ID we can reference
-		// many times from the series_points table without storing the repo name multiple times.
-		var repoNameID *int
-		if pt.RepoName != nil {
-			repoNameIDValue, ok, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNameFmtStr, *pt.RepoName, *pt.RepoName)))
+		// Upsert the repository nbme into b sepbrbte tbble, so we get b smbll ID we cbn reference
+		// mbny times from the series_points tbble without storing the repo nbme multiple times.
+		vbr repoNbmeID *int
+		if pt.RepoNbme != nil {
+			repoNbmeIDVblue, ok, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(upsertRepoNbmeFmtStr, *pt.RepoNbme, *pt.RepoNbme)))
 			if err != nil {
-				return errors.Wrap(err, "upserting repo name ID")
+				return errors.Wrbp(err, "upserting repo nbme ID")
 			}
 			if !ok {
-				return errors.Wrap(err, "repo name ID not found (this should never happen)")
+				return errors.Wrbp(err, "repo nbme ID not found (this should never hbppen)")
 			}
-			repoNameID = &repoNameIDValue
+			repoNbmeID = &repoNbmeIDVblue
 		}
 
 		if err := inserter.Insert(
 			ctx,
 			pt.SeriesID,         // series_id
 			pt.Point.Time.UTC(), // time
-			pt.Point.Value,      // value
+			pt.Point.Vblue,      // vblue
 			pt.RepoID,           // repo_id
-			repoNameID,          // repo_name_id
-			repoNameID,          // original_repo_name_id
-			pt.Point.Capture,    // capture
+			repoNbmeID,          // repo_nbme_id
+			repoNbmeID,          // originbl_repo_nbme_id
+			pt.Point.Cbpture,    // cbpture
 		); err != nil {
-			return errors.Wrap(err, "Insert")
+			return errors.Wrbp(err, "Insert")
 		}
 	}
 
-	for _, inserter := range inserters {
+	for _, inserter := rbnge inserters {
 		if err := inserter.Flush(ctx); err != nil {
-			return errors.Wrap(err, "Flush")
+			return errors.Wrbp(err, "Flush")
 		}
 	}
 	return nil
@@ -632,25 +632,25 @@ func (s *Store) SetInsightSeriesRecordingTimes(ctx context.Context, seriesRecord
 	if len(seriesRecordingTimes) == 0 {
 		return nil
 	}
-	inserter := batch.NewInserterWithConflict(ctx, s.Handle(), "insight_series_recording_times", batch.MaxNumPostgresParameters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snapshot")
+	inserter := bbtch.NewInserterWithConflict(ctx, s.Hbndle(), "insight_series_recording_times", bbtch.MbxNumPostgresPbrbmeters, "ON CONFLICT DO NOTHING", "insight_series_id", "recording_time", "snbpshot")
 
-	for _, series := range seriesRecordingTimes {
+	for _, series := rbnge seriesRecordingTimes {
 		id := series.InsightSeriesID
-		for _, record := range series.RecordingTimes {
+		for _, record := rbnge series.RecordingTimes {
 			if err := inserter.Insert(
 				ctx,
 				id,                     // insight_series_id
-				record.Timestamp.UTC(), // recording_time
-				record.Snapshot,        // snapshot
+				record.Timestbmp.UTC(), // recording_time
+				record.Snbpshot,        // snbpshot
 
 			); err != nil {
-				return errors.Wrap(err, "Insert")
+				return errors.Wrbp(err, "Insert")
 			}
 		}
 	}
 
 	if err := inserter.Flush(ctx); err != nil {
-		return errors.Wrap(err, "Flush")
+		return errors.Wrbp(err, "Flush")
 	}
 	return nil
 }
@@ -662,27 +662,27 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts
 		sqlf.Sprintf("insight_series_id = %s", id),
 	}
 	if opts.From != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time >= %s", opts.From.UTC()))
+		preds = bppend(preds, sqlf.Sprintf("recording_time >= %s", opts.From.UTC()))
 	}
 	if opts.To != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time <= %s", opts.To.UTC()))
+		preds = bppend(preds, sqlf.Sprintf("recording_time <= %s", opts.To.UTC()))
 	}
 	if opts.After != nil {
-		preds = append(preds, sqlf.Sprintf("recording_time > %s", opts.After.UTC()))
+		preds = bppend(preds, sqlf.Sprintf("recording_time > %s", opts.After.UTC()))
 	}
 	timesQuery := sqlf.Sprintf(getInsightSeriesRecordingTimesStr, sqlf.Join(preds, "\n AND"))
 
 	recordingTimes := []types.RecordingTime{}
-	err = s.query(ctx, timesQuery, func(sc scanner) (err error) {
-		var recordingTime time.Time
-		err = sc.Scan(
+	err = s.query(ctx, timesQuery, func(sc scbnner) (err error) {
+		vbr recordingTime time.Time
+		err = sc.Scbn(
 			&recordingTime,
 		)
 		if err != nil {
 			return err
 		}
 
-		recordingTimes = append(recordingTimes, types.RecordingTime{Timestamp: recordingTime})
+		recordingTimes = bppend(recordingTimes, types.RecordingTime{Timestbmp: recordingTime})
 		return nil
 	})
 	if err != nil {
@@ -693,14 +693,14 @@ func (s *Store) GetInsightSeriesRecordingTimes(ctx context.Context, id int, opts
 	return series, nil
 }
 
-func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int, excludeSnapshot bool) (time.Time, error) {
+func (s *Store) GetOffsetNRecordingTime(ctx context.Context, seriesId, n int, excludeSnbpshot bool) (time.Time, error) {
 	preds := []*sqlf.Query{sqlf.Sprintf("insight_series_id = %s", seriesId)}
-	if excludeSnapshot {
-		preds = append(preds, sqlf.Sprintf("snapshot is false"))
+	if excludeSnbpshot {
+		preds = bppend(preds, sqlf.Sprintf("snbpshot is fblse"))
 	}
 
-	var tempTime time.Time
-	oldestTime, got, err := basestore.ScanFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, sqlf.Join(preds, "and"), n)))
+	vbr tempTime time.Time
+	oldestTime, got, err := bbsestore.ScbnFirstTime(s.Query(ctx, sqlf.Sprintf(getOffsetNRecordingTimeSql, sqlf.Join(preds, "bnd"), n)))
 	if err != nil {
 		return tempTime, err
 	}
@@ -714,11 +714,11 @@ const getOffsetNRecordingTimeSql = `
 select recording_time from insight_series_recording_times where %s order by recording_time desc offset %s limit 1
 `
 
-// RecordSeriesPointsAndRecordingTimes is a wrapper around the RecordSeriesPoints and SetInsightSeriesRecordingTimes
-// functions. It makes the assumption that this is called per-series, so all the points will share the same SeriesID.
-// Use this in favour of RecordSeriesPoints if recording times are known.
+// RecordSeriesPointsAndRecordingTimes is b wrbpper bround the RecordSeriesPoints bnd SetInsightSeriesRecordingTimes
+// functions. It mbkes the bssumption thbt this is cblled per-series, so bll the points will shbre the sbme SeriesID.
+// Use this in fbvour of RecordSeriesPoints if recording times bre known.
 func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []RecordSeriesPointArgs, recordingTimes types.InsightSeriesRecordingTimes) error {
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -737,157 +737,157 @@ func (s *Store) RecordSeriesPointsAndRecordingTimes(ctx context.Context, pts []R
 	return nil
 }
 
-func (s *Store) augmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}) ([]SeriesPoint, error) {
-	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentation {
+func (s *Store) bugmentSeriesPoints(ctx context.Context, opts SeriesPointsOpts, pointsMbp mbp[string]*SeriesPoint, cbptureVblues mbp[string]struct{}) ([]SeriesPoint, error) {
+	if opts.ID == nil || opts.SeriesID == nil || !opts.SupportsAugmentbtion {
 		return []SeriesPoint{}, nil
 	}
-	recordingsData, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts)
+	recordingsDbtb, err := s.GetInsightSeriesRecordingTimes(ctx, *opts.ID, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetInsightSeriesRecordingTimes")
+		return nil, errors.Wrbp(err, "GetInsightSeriesRecordingTimes")
 	}
-	var augmentedPoints []SeriesPoint
-	if len(recordingsData.RecordingTimes) > 0 {
-		augmentedPoints = coalesceZeroValues(*opts.SeriesID, pointsMap, captureValues, recordingsData.RecordingTimes)
+	vbr bugmentedPoints []SeriesPoint
+	if len(recordingsDbtb.RecordingTimes) > 0 {
+		bugmentedPoints = coblesceZeroVblues(*opts.SeriesID, pointsMbp, cbptureVblues, recordingsDbtb.RecordingTimes)
 	}
-	return augmentedPoints, nil
+	return bugmentedPoints, nil
 }
 
-func coalesceZeroValues(seriesID string, pointsMap map[string]*SeriesPoint, captureValues map[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
-	augmentedPoints := []SeriesPoint{}
-	for _, recordingTime := range recordingTimes {
-		timestamp := recordingTime.Timestamp
-		// We have to pivot on potential capture values as well. This is because for capture group data we need to know
-		// which capture group values to attach zero data to. Take points [{oct 20, "a"}, {oct 24 "a"}, {oct 24 "b"}]
-		// and recording times [oct 20, oct 24]. Without the capture value data we would not be able to know we have a
+func coblesceZeroVblues(seriesID string, pointsMbp mbp[string]*SeriesPoint, cbptureVblues mbp[string]struct{}, recordingTimes []types.RecordingTime) []SeriesPoint {
+	bugmentedPoints := []SeriesPoint{}
+	for _, recordingTime := rbnge recordingTimes {
+		timestbmp := recordingTime.Timestbmp
+		// We hbve to pivot on potentibl cbpture vblues bs well. This is becbuse for cbpture group dbtb we need to know
+		// which cbpture group vblues to bttbch zero dbtb to. Tbke points [{oct 20, "b"}, {oct 24 "b"}, {oct 24 "b"}]
+		// bnd recording times [oct 20, oct 24]. Without the cbpture vblue dbtb we would not be bble to know we hbve b
 		// missing {oct 20, "b"} entry.
-		for captureValue := range captureValues {
-			captureValue := captureValue
-			if point, ok := pointsMap[timestamp.String()+captureValue]; ok {
-				augmentedPoints = append(augmentedPoints, *point)
+		for cbptureVblue := rbnge cbptureVblues {
+			cbptureVblue := cbptureVblue
+			if point, ok := pointsMbp[timestbmp.String()+cbptureVblue]; ok {
+				bugmentedPoints = bppend(bugmentedPoints, *point)
 			} else {
-				var capture *string
-				if captureValue != "" {
-					capture = &captureValue
+				vbr cbpture *string
+				if cbptureVblue != "" {
+					cbpture = &cbptureVblue
 				}
-				augmentedPoints = append(augmentedPoints, SeriesPoint{
+				bugmentedPoints = bppend(bugmentedPoints, SeriesPoint{
 					SeriesID: seriesID,
-					Time:     timestamp,
-					Value:    0,
-					Capture:  capture,
+					Time:     timestbmp,
+					Vblue:    0,
+					Cbpture:  cbpture,
 				})
 			}
 		}
 	}
-	return augmentedPoints
+	return bugmentedPoints
 }
 
-const upsertRepoNameFmtStr = `
+const upsertRepoNbmeFmtStr = `
 WITH e AS(
-	INSERT INTO repo_names(name)
+	INSERT INTO repo_nbmes(nbme)
 	VALUES (%s)
 	ON CONFLICT DO NOTHING
 	RETURNING id
 )
 SELECT * FROM e
 UNION
-	SELECT id FROM repo_names WHERE name = %s;
+	SELECT id FROM repo_nbmes WHERE nbme = %s;
 `
 
 const getInsightSeriesRecordingTimesStr = `
-SELECT date_trunc('seconds', recording_time) FROM insight_series_recording_times
+SELECT dbte_trunc('seconds', recording_time) FROM insight_series_recording_times
 WHERE %s
 ORDER BY recording_time ASC;
 `
 
-func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
+func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scbnFunc) error {
 	rows, err := s.Store.Query(ctx, q)
 	if err != nil {
 		return err
 	}
-	return scanAll(rows, sc)
+	return scbnAll(rows, sc)
 }
 
-// scanner captures the Scan method of sql.Rows and sql.Row
-type scanner interface {
-	Scan(dst ...any) error
+// scbnner cbptures the Scbn method of sql.Rows bnd sql.Row
+type scbnner interfbce {
+	Scbn(dst ...bny) error
 }
 
-// a scanFunc scans one or more rows from a scanner, returning
-// the last id column scanned and the count of scanned rows.
-type scanFunc func(scanner) (err error)
+// b scbnFunc scbns one or more rows from b scbnner, returning
+// the lbst id column scbnned bnd the count of scbnned rows.
+type scbnFunc func(scbnner) (err error)
 
-func scanAll(rows *sql.Rows, scan scanFunc) (err error) {
-	defer func() { err = basestore.CloseRows(rows, err) }()
+func scbnAll(rows *sql.Rows, scbn scbnFunc) (err error) {
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 	for rows.Next() {
-		if err = scan(rows); err != nil {
+		if err = scbn(rows); err != nil {
 			return err
 		}
 	}
 	return rows.Err()
 }
 
-var quote = sqlf.Sprintf
+vbr quote = sqlf.Sprintf
 
-// LoadAggregatedIncompleteDatapoints returns incomplete datapoints for a given series aggregated for each reason and time. This will effectively
-// remove any repository granularity information from the result.
-func (s *Store) LoadAggregatedIncompleteDatapoints(ctx context.Context, seriesID int) (results []IncompleteDatapoint, err error) {
+// LobdAggregbtedIncompleteDbtbpoints returns incomplete dbtbpoints for b given series bggregbted for ebch rebson bnd time. This will effectively
+// remove bny repository grbnulbrity informbtion from the result.
+func (s *Store) LobdAggregbtedIncompleteDbtbpoints(ctx context.Context, seriesID int) (results []IncompleteDbtbpoint, err error) {
 	if seriesID == 0 {
-		return nil, errors.New("invalid seriesID")
+		return nil, errors.New("invblid seriesID")
 	}
 
-	q := "select reason, time from insight_series_incomplete_points where series_id = %s group by reason, time;"
+	q := "select rebson, time from insight_series_incomplete_points where series_id = %s group by rebson, time;"
 	rows, err := s.Query(ctx, sqlf.Sprintf(q, seriesID))
 	if err != nil {
 		return nil, err
 	}
-	return results, scanAll(rows, func(s scanner) (err error) {
-		var tmp IncompleteDatapoint
-		if err = rows.Scan(
-			&tmp.Reason,
+	return results, scbnAll(rows, func(s scbnner) (err error) {
+		vbr tmp IncompleteDbtbpoint
+		if err = rows.Scbn(
+			&tmp.Rebson,
 			&tmp.Time); err != nil {
 			return err
 		}
-		results = append(results, tmp)
+		results = bppend(results, tmp)
 		return nil
 	})
 }
 
-type AddIncompleteDatapointInput struct {
+type AddIncompleteDbtbpointInput struct {
 	SeriesID int
 	RepoID   *int
-	Reason   IncompleteReason
+	Rebson   IncompleteRebson
 	Time     time.Time
 }
 
-func (s *Store) AddIncompleteDatapoint(ctx context.Context, input AddIncompleteDatapointInput) error {
-	q := "insert into insight_series_incomplete_points (series_id, repo_id, reason, time) values (%s, %s, %s, %s) on conflict do nothing;"
-	return s.Exec(ctx, sqlf.Sprintf(q, input.SeriesID, input.RepoID, input.Reason, input.Time))
+func (s *Store) AddIncompleteDbtbpoint(ctx context.Context, input AddIncompleteDbtbpointInput) error {
+	q := "insert into insight_series_incomplete_points (series_id, repo_id, rebson, time) vblues (%s, %s, %s, %s) on conflict do nothing;"
+	return s.Exec(ctx, sqlf.Sprintf(q, input.SeriesID, input.RepoID, input.Rebson, input.Time))
 }
 
-type IncompleteDatapoint struct {
-	Reason IncompleteReason
+type IncompleteDbtbpoint struct {
+	Rebson IncompleteRebson
 	RepoId *int
 	Time   time.Time
 }
 
-type IncompleteReason string
+type IncompleteRebson string
 
 const (
-	ReasonTimeout           IncompleteReason = "timeout"
-	ReasonGeneric           IncompleteReason = "generic"
-	ReasonExceedsErrorLimit IncompleteReason = "exceeds-error-limit"
+	RebsonTimeout           IncompleteRebson = "timeout"
+	RebsonGeneric           IncompleteRebson = "generic"
+	RebsonExceedsErrorLimit IncompleteRebson = "exceeds-error-limit"
 )
 
-// SeriesPointForExport contains series points data that has additional metadata, like insight view title.
-// It should only be used for code insight data exporting.
+// SeriesPointForExport contbins series points dbtb thbt hbs bdditionbl metbdbtb, like insight view title.
+// It should only be used for code insight dbtb exporting.
 type SeriesPointForExport struct {
 	InsightViewTitle string
-	SeriesLabel      string
+	SeriesLbbel      string
 	SeriesQuery      string
 	RecordingTime    time.Time
-	RepoName         *string
-	Value            int
-	Capture          *string
+	RepoNbme         *string
+	Vblue            int
+	Cbpture          *string
 }
 
 type ExportOpts struct {
@@ -896,97 +896,97 @@ type ExportOpts struct {
 	ExcludeRepoRegex    []string
 }
 
-func (s *Store) GetAllDataForInsightViewID(ctx context.Context, opts ExportOpts) (_ []SeriesPointForExport, err error) {
-	// 🚨 SECURITY: this function will only be called if the insight with the given insightViewId is visible given
-	// this user context. This is similar to how `SeriesPoints` works.
-	// We enforce repo permissions here as we store repository data at this level.
-	denylist, err := s.permStore.GetUnauthorizedRepoIDs(ctx)
+func (s *Store) GetAllDbtbForInsightViewID(ctx context.Context, opts ExportOpts) (_ []SeriesPointForExport, err error) {
+	// 🚨 SECURITY: this function will only be cblled if the insight with the given insightViewId is visible given
+	// this user context. This is similbr to how `SeriesPoints` works.
+	// We enforce repo permissions here bs we store repository dbtb bt this level.
+	denylist, err := s.permStore.GetUnbuthorizedRepoIDs(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "GetUnauthorizedRepoIDs")
+		return nil, errors.Wrbp(err, "GetUnbuthorizedRepoIDs")
 	}
-	excludedRepoIDs := make([]*sqlf.Query, 0)
-	for _, repoID := range denylist {
-		excludedRepoIDs = append(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
+	excludedRepoIDs := mbke([]*sqlf.Query, 0)
+	for _, repoID := rbnge denylist {
+		excludedRepoIDs = bppend(excludedRepoIDs, sqlf.Sprintf("%d", repoID))
 	}
-	var preds []*sqlf.Query
+	vbr preds []*sqlf.Query
 	if len(excludedRepoIDs) > 0 {
-		preds = append(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
+		preds = bppend(preds, sqlf.Sprintf("sp.repo_id not in (%s)", sqlf.Join(excludedRepoIDs, ",")))
 	}
 	if len(opts.IncludeRepoRegex) > 0 {
 		includePreds := []*sqlf.Query{}
-		for _, regex := range opts.IncludeRepoRegex {
+		for _, regex := rbnge opts.IncludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			includePreds = append(includePreds, sqlf.Sprintf("rn.name ~ %s", regex))
+			includePreds = bppend(includePreds, sqlf.Sprintf("rn.nbme ~ %s", regex))
 		}
 		if len(includePreds) > 0 {
 			includes := sqlf.Sprintf("(%s)", sqlf.Join(includePreds, "OR"))
-			preds = append(preds, includes)
+			preds = bppend(preds, includes)
 		}
 	}
 	if len(opts.ExcludeRepoRegex) > 0 {
-		for _, regex := range opts.ExcludeRepoRegex {
+		for _, regex := rbnge opts.ExcludeRepoRegex {
 			if len(regex) == 0 {
 				continue
 			}
-			preds = append(preds, sqlf.Sprintf("rn.name !~ %s", regex))
+			preds = bppend(preds, sqlf.Sprintf("rn.nbme !~ %s", regex))
 		}
 	}
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("true"))
+		preds = bppend(preds, sqlf.Sprintf("true"))
 	}
 
-	tx, err := s.Transact(ctx)
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	var results []SeriesPointForExport
-	exportScanner := func(sc scanner) error {
-		var tmp SeriesPointForExport
-		if err = sc.Scan(
+	vbr results []SeriesPointForExport
+	exportScbnner := func(sc scbnner) error {
+		vbr tmp SeriesPointForExport
+		if err = sc.Scbn(
 			&tmp.InsightViewTitle,
-			&tmp.SeriesLabel,
+			&tmp.SeriesLbbel,
 			&tmp.SeriesQuery,
 			&tmp.RecordingTime,
-			&tmp.RepoName,
-			&tmp.Value,
-			&tmp.Capture,
+			&tmp.RepoNbme,
+			&tmp.Vblue,
+			&tmp.Cbpture,
 		); err != nil {
 			return err
 		}
-		// if this is a capture group insight the label will be the capture
-		if tmp.Capture != nil {
-			tmp.SeriesLabel = *tmp.Capture
+		// if this is b cbpture group insight the lbbel will be the cbpture
+		if tmp.Cbpture != nil {
+			tmp.SeriesLbbel = *tmp.Cbpture
 		}
-		results = append(results, tmp)
+		results = bppend(results, tmp)
 		return nil
 	}
 
-	formattedPreds := sqlf.Join(preds, "AND")
-	// start with the oldest archived points and add them to the results
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTableArchive), quote(recordingTableArchive), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
-		return nil, errors.Wrap(err, "fetching archived code insights data")
+	formbttedPreds := sqlf.Join(preds, "AND")
+	// stbrt with the oldest brchived points bnd bdd them to the results
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDbtbSql, quote(recordingTimesTbbleArchive), quote(recordingTbbleArchive), opts.InsightViewUniqueID, formbttedPreds), exportScbnner); err != nil {
+		return nil, errors.Wrbp(err, "fetching brchived code insights dbtb")
 	}
-	// then add live points
-	// we join both series points tables
-	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDataSql, quote(recordingTimesTable), quote("(select * from series_points union all select * from series_points_snapshots)"), opts.InsightViewUniqueID, formattedPreds), exportScanner); err != nil {
-		return nil, errors.Wrap(err, "fetching code insights data")
+	// then bdd live points
+	// we join both series points tbbles
+	if err := tx.query(ctx, sqlf.Sprintf(exportCodeInsightsDbtbSql, quote(recordingTimesTbble), quote("(select * from series_points union bll select * from series_points_snbpshots)"), opts.InsightViewUniqueID, formbttedPreds), exportScbnner); err != nil {
+		return nil, errors.Wrbp(err, "fetching code insights dbtb")
 	}
 
 	return results, nil
 }
 
-const exportCodeInsightsDataSql = `
-select iv.title, ivs.label, i.query, isrt.recording_time, rn.name, coalesce(sp.value, 0) as value, sp.capture
+const exportCodeInsightsDbtbSql = `
+select iv.title, ivs.lbbel, i.query, isrt.recording_time, rn.nbme, coblesce(sp.vblue, 0) bs vblue, sp.cbpture
 from %s isrt
     join insight_series i on i.id = isrt.insight_series_id
     join insight_view_series ivs ON i.id = ivs.insight_series_id
     join insight_view iv ON ivs.insight_view_id = iv.id
-    left outer join %s sp on sp.series_id = i.series_id and sp.time = isrt.recording_time
-    left outer join repo_names rn on sp.repo_name_id = rn.id
-	where iv.unique_id = %s and %s
-    order by iv.title, isrt.recording_time, ivs.label, sp.capture;
+    left outer join %s sp on sp.series_id = i.series_id bnd sp.time = isrt.recording_time
+    left outer join repo_nbmes rn on sp.repo_nbme_id = rn.id
+	where iv.unique_id = %s bnd %s
+    order by iv.title, isrt.recording_time, ivs.lbbel, sp.cbpture;
 `

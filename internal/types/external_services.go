@@ -1,46 +1,46 @@
-package types
+pbckbge types
 
 import (
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type AzureDevOpsConnection struct {
 	URN string
-	*schema.AzureDevOpsConnection
+	*schemb.AzureDevOpsConnection
 }
 
 type BitbucketCloudConnection struct {
-	// The unique resource identifier of the external service.
+	// The unique resource identifier of the externbl service.
 	URN string
-	*schema.BitbucketCloudConnection
+	*schemb.BitbucketCloudConnection
 }
 
 type BitbucketServerConnection struct {
-	// The unique resource identifier of the external service.
+	// The unique resource identifier of the externbl service.
 	URN string
-	*schema.BitbucketServerConnection
+	*schemb.BitbucketServerConnection
 }
 
 type GerritConnection struct {
-	// The unique resource identifier of the external service.
+	// The unique resource identifier of the externbl service.
 	URN string
-	*schema.GerritConnection
+	*schemb.GerritConnection
 }
 
 type GitHubConnection struct {
-	// The unique resource identifier of the external service.
+	// The unique resource identifier of the externbl service.
 	URN string
-	*schema.GitHubConnection
+	*schemb.GitHubConnection
 }
 
-type GitLabConnection struct {
-	// The unique resource identifier of the external service.
+type GitLbbConnection struct {
+	// The unique resource identifier of the externbl service.
 	URN string
-	*schema.GitLabConnection
+	*schemb.GitLbbConnection
 }
 
 type PerforceConnection struct {
-	// The unique resource identifier of the external service.
+	// The unique resource identifier of the externbl service.
 	URN string
-	*schema.PerforceConnection
+	*schemb.PerforceConnection
 }

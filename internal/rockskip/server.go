@@ -1,23 +1,23 @@
-package rockskip
+pbckbge rockskip
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"sync"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/go-ctags"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/go-ctbgs"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/fetcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Symbol struct {
-	Name   string `json:"name"`
-	Parent string `json:"parent"`
+	Nbme   string `json:"nbme"`
+	Pbrent string `json:"pbrent"`
 	Kind   string `json:"kind"`
 	Line   int    `json:"line"`
 }
@@ -29,35 +29,35 @@ type Service struct {
 	db                      *sql.DB
 	git                     GitserverClient
 	fetcher                 fetcher.RepositoryFetcher
-	createParser            func() (ctags.Parser, error)
-	status                  *ServiceStatus
-	repoUpdates             chan struct{}
-	maxRepos                int
+	crebtePbrser            func() (ctbgs.Pbrser, error)
+	stbtus                  *ServiceStbtus
+	repoUpdbtes             chbn struct{}
+	mbxRepos                int
 	logQueries              bool
-	repoCommitToDone        map[string]chan struct{}
+	repoCommitToDone        mbp[string]chbn struct{}
 	repoCommitToDoneMu      sync.Mutex
-	indexRequestQueues      []chan indexRequest
-	symbolsCacheSize        int
-	pathSymbolsCacheSize    int
-	searchLastIndexedCommit bool
+	indexRequestQueues      []chbn indexRequest
+	symbolsCbcheSize        int
+	pbthSymbolsCbcheSize    int
+	sebrchLbstIndexedCommit bool
 }
 
 func NewService(
 	db *sql.DB,
 	git GitserverClient,
 	fetcher fetcher.RepositoryFetcher,
-	createParser func() (ctags.Parser, error),
-	maxConcurrentlyIndexing int,
-	maxRepos int,
+	crebtePbrser func() (ctbgs.Pbrser, error),
+	mbxConcurrentlyIndexing int,
+	mbxRepos int,
 	logQueries bool,
 	indexRequestsQueueSize int,
-	symbolsCacheSize int,
-	pathSymbolsCacheSize int,
-	searchLastIndexedCommit bool,
+	symbolsCbcheSize int,
+	pbthSymbolsCbcheSize int,
+	sebrchLbstIndexedCommit bool,
 ) (*Service, error) {
-	indexRequestQueues := make([]chan indexRequest, maxConcurrentlyIndexing)
-	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		indexRequestQueues[i] = make(chan indexRequest, indexRequestsQueueSize)
+	indexRequestQueues := mbke([]chbn indexRequest, mbxConcurrentlyIndexing)
+	for i := 0; i < mbxConcurrentlyIndexing; i++ {
+		indexRequestQueues[i] = mbke(chbn indexRequest, indexRequestsQueueSize)
 	}
 
 	logger := log.Scoped("service", "")
@@ -67,32 +67,32 @@ func NewService(
 		db:                      db,
 		git:                     git,
 		fetcher:                 fetcher,
-		createParser:            createParser,
-		status:                  NewStatus(),
-		repoUpdates:             make(chan struct{}, 1),
-		maxRepos:                maxRepos,
+		crebtePbrser:            crebtePbrser,
+		stbtus:                  NewStbtus(),
+		repoUpdbtes:             mbke(chbn struct{}, 1),
+		mbxRepos:                mbxRepos,
 		logQueries:              logQueries,
-		repoCommitToDone:        map[string]chan struct{}{},
+		repoCommitToDone:        mbp[string]chbn struct{}{},
 		repoCommitToDoneMu:      sync.Mutex{},
 		indexRequestQueues:      indexRequestQueues,
-		symbolsCacheSize:        symbolsCacheSize,
-		pathSymbolsCacheSize:    pathSymbolsCacheSize,
-		searchLastIndexedCommit: searchLastIndexedCommit,
+		symbolsCbcheSize:        symbolsCbcheSize,
+		pbthSymbolsCbcheSize:    pbthSymbolsCbcheSize,
+		sebrchLbstIndexedCommit: sebrchLbstIndexedCommit,
 	}
 
-	go service.startCleanupLoop()
+	go service.stbrtClebnupLoop()
 
-	for i := 0; i < maxConcurrentlyIndexing; i++ {
-		go service.startIndexingLoop(service.indexRequestQueues[i])
+	for i := 0; i < mbxConcurrentlyIndexing; i++ {
+		go service.stbrtIndexingLoop(service.indexRequestQueues[i])
 	}
 
 	return service, nil
 }
 
-func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
-	// We should use an internal actor when doing cross service calls.
-	ctx := actor.WithInternalActor(context.Background())
-	for indexRequest := range indexRequestQueue {
+func (s *Service) stbrtIndexingLoop(indexRequestQueue chbn indexRequest) {
+	// We should use bn internbl bctor when doing cross service cblls.
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	for indexRequest := rbnge indexRequestQueue {
 		err := s.Index(ctx, indexRequest.repo, indexRequest.commit)
 		close(indexRequest.done)
 		if err != nil {
@@ -101,53 +101,53 @@ func (s *Service) startIndexingLoop(indexRequestQueue chan indexRequest) {
 	}
 }
 
-func (s *Service) startCleanupLoop() {
-	for range s.repoUpdates {
-		threadStatus := s.status.NewThreadStatus("cleanup")
-		err := DeleteOldRepos(context.Background(), s.db, s.maxRepos, threadStatus)
-		threadStatus.End()
+func (s *Service) stbrtClebnupLoop() {
+	for rbnge s.repoUpdbtes {
+		threbdStbtus := s.stbtus.NewThrebdStbtus("clebnup")
+		err := DeleteOldRepos(context.Bbckground(), s.db, s.mbxRepos, threbdStbtus)
+		threbdStbtus.End()
 		if err != nil {
-			log15.Error("Failed to delete old repos", "error", err)
+			log15.Error("Fbiled to delete old repos", "error", err)
 		}
 	}
 }
 
-func getHops(ctx context.Context, tx dbutil.DB, commit int, tasklog *TaskLog) ([]int, error) {
-	tasklog.Start("get hops")
+func getHops(ctx context.Context, tx dbutil.DB, commit int, tbsklog *TbskLog) ([]int, error) {
+	tbsklog.Stbrt("get hops")
 
 	current := commit
 	spine := []int{current}
 
 	for {
-		_, ancestor, _, present, err := GetCommitById(ctx, tx, current)
+		_, bncestor, _, present, err := GetCommitById(ctx, tx, current)
 		if err != nil {
-			return nil, errors.Wrap(err, "GetCommitById")
+			return nil, errors.Wrbp(err, "GetCommitById")
 		} else if !present {
-			break
+			brebk
 		} else {
 			if current == NULL {
-				break
+				brebk
 			}
-			current = ancestor
-			spine = append(spine, current)
+			current = bncestor
+			spine = bppend(spine, current)
 		}
 	}
 
 	return spine, nil
 }
 
-func DeleteOldRepos(ctx context.Context, db *sql.DB, maxRepos int, threadStatus *ThreadStatus) error {
-	// Get a fresh connection from the DB pool to get deterministic "lock stacking" behavior.
-	// See doc/dev/background-information/sql/locking_behavior.md for more details.
-	conn, err := db.Conn(context.Background())
+func DeleteOldRepos(ctx context.Context, db *sql.DB, mbxRepos int, threbdStbtus *ThrebdStbtus) error {
+	// Get b fresh connection from the DB pool to get deterministic "lock stbcking" behbvior.
+	// See doc/dev/bbckground-informbtion/sql/locking_behbvior.md for more detbils.
+	conn, err := db.Conn(context.Bbckground())
 	if err != nil {
-		return errors.Wrap(err, "failed to get connection for deleting old repos")
+		return errors.Wrbp(err, "fbiled to get connection for deleting old repos")
 	}
 	defer conn.Close()
 
-	// Keep deleting repos until we're back to at most maxRepos.
+	// Keep deleting repos until we're bbck to bt most mbxRepos.
 	for {
-		more, err := tryDeleteOldestRepo(ctx, conn, maxRepos, threadStatus)
+		more, err := tryDeleteOldestRepo(ctx, conn, mbxRepos, threbdStbtus)
 		if err != nil {
 			return err
 		}

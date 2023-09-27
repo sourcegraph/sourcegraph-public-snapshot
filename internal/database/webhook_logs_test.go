@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -7,350 +7,350 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func TestWebhookLogStore(t *testing.T) {
-	t.Parallel()
+	t.Pbrbllel()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	t.Run("Create", func(t *testing.T) {
-		t.Parallel()
+	t.Run("Crebte", func(t *testing.T) {
+		t.Pbrbllel()
 
 		t.Run("unencrypted", func(t *testing.T) {
-			t.Parallel()
+			t.Pbrbllel()
 
-			db.WithTransact(ctx, func(tx DB) error {
+			db.WithTrbnsbct(ctx, func(tx DB) error {
 				store := tx.WebhookLogs(nil)
 
-				log := createWebhookLog(0, 0, http.StatusCreated, time.Now())
-				err := store.Create(ctx, log)
-				assert.Nil(t, err)
+				log := crebteWebhookLog(0, 0, http.StbtusCrebted, time.Now())
+				err := store.Crebte(ctx, log)
+				bssert.Nil(t, err)
 
-				// Check that the calculated fields were correctly calculated.
-				assert.NotZero(t, log.ID)
-				assert.NotZero(t, log.ReceivedAt)
+				// Check thbt the cblculbted fields were correctly cblculbted.
+				bssert.NotZero(t, log.ID)
+				bssert.NotZero(t, log.ReceivedAt)
 
-				// Check that the database has bare JSON versions of the request and
+				// Check thbt the dbtbbbse hbs bbre JSON versions of the request bnd
 				// response.
 				row := tx.QueryRowContext(ctx, "SELECT request, response FROM webhook_logs")
-				var haveReq, haveResp []byte
-				err = row.Scan(&haveReq, &haveResp)
-				assert.Nil(t, err)
+				vbr hbveReq, hbveResp []byte
+				err = row.Scbn(&hbveReq, &hbveResp)
+				bssert.Nil(t, err)
 
 				logRequest, err := log.Request.Decrypt(ctx)
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 				logResponse, err := log.Response.Decrypt(ctx)
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 
-				wantReq, _ := json.Marshal(logRequest)
-				wantResp, _ := json.Marshal(logResponse)
+				wbntReq, _ := json.Mbrshbl(logRequest)
+				wbntResp, _ := json.Mbrshbl(logResponse)
 
-				assert.Equal(t, string(wantReq), string(haveReq))
-				assert.Equal(t, string(wantResp), string(haveResp))
+				bssert.Equbl(t, string(wbntReq), string(hbveReq))
+				bssert.Equbl(t, string(wbntResp), string(hbveResp))
 
-				return errors.New("rollback")
+				return errors.New("rollbbck")
 			})
 		})
 
 		t.Run("encrypted", func(t *testing.T) {
-			t.Parallel()
+			t.Pbrbllel()
 
-			db.WithTransact(ctx, func(tx DB) error {
-				store := tx.WebhookLogs(et.ByteaTestKey{})
+			db.WithTrbnsbct(ctx, func(tx DB) error {
+				store := tx.WebhookLogs(et.BytebTestKey{})
 
-				// Weirdly, Go doesn't have a HTTP constant for "418 I'm a Teapot".
-				log := createWebhookLog(0, 0, 418, time.Now())
-				err := store.Create(ctx, log)
-				assert.Nil(t, err)
+				// Weirdly, Go doesn't hbve b HTTP constbnt for "418 I'm b Tebpot".
+				log := crebteWebhookLog(0, 0, 418, time.Now())
+				err := store.Crebte(ctx, log)
+				bssert.Nil(t, err)
 
-				// Check that the calculated fields were correctly calculated.
-				assert.NotZero(t, log.ID)
-				assert.NotZero(t, log.ReceivedAt)
+				// Check thbt the cblculbted fields were correctly cblculbted.
+				bssert.NotZero(t, log.ID)
+				bssert.NotZero(t, log.ReceivedAt)
 
-				// Check that the database does not have bare JSON versions of the
-				// request and response.
+				// Check thbt the dbtbbbse does not hbve bbre JSON versions of the
+				// request bnd response.
 				row := tx.QueryRowContext(ctx, "SELECT request, response FROM webhook_logs")
-				var haveReq, haveResp []byte
-				err = row.Scan(&haveReq, &haveResp)
-				assert.Nil(t, err)
+				vbr hbveReq, hbveResp []byte
+				err = row.Scbn(&hbveReq, &hbveResp)
+				bssert.Nil(t, err)
 
 				logRequest, err := log.Request.Decrypt(ctx)
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 				logResponse, err := log.Response.Decrypt(ctx)
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 
-				wantReq, _ := json.Marshal(logRequest)
-				wantResp, _ := json.Marshal(logResponse)
+				wbntReq, _ := json.Mbrshbl(logRequest)
+				wbntResp, _ := json.Mbrshbl(logResponse)
 
-				assert.NotEqual(t, string(wantReq), string(haveReq))
-				assert.NotEqual(t, string(wantResp), string(haveResp))
+				bssert.NotEqubl(t, string(wbntReq), string(hbveReq))
+				bssert.NotEqubl(t, string(wbntResp), string(hbveResp))
 
-				return errors.New("rollback")
+				return errors.New("rollbbck")
 			})
 		})
 
-		t.Run("bad key", func(t *testing.T) {
-			t.Parallel()
+		t.Run("bbd key", func(t *testing.T) {
+			t.Pbrbllel()
 
-			db.WithTransact(ctx, func(tx DB) error {
-				store := tx.WebhookLogs(&et.BadKey{Err: errors.New("uh-oh")})
+			db.WithTrbnsbct(ctx, func(tx DB) error {
+				store := tx.WebhookLogs(&et.BbdKey{Err: errors.New("uh-oh")})
 
-				log := createWebhookLog(0, 0, http.StatusExpectationFailed, time.Now())
-				err := store.Create(ctx, log)
-				assert.NotNil(t, err)
+				log := crebteWebhookLog(0, 0, http.StbtusExpectbtionFbiled, time.Now())
+				err := store.Crebte(ctx, log)
+				bssert.NotNil(t, err)
 
-				return errors.New("rollback")
+				return errors.New("rollbbck")
 			})
 		})
 	})
 
 	t.Run("GetByID", func(t *testing.T) {
-		t.Parallel()
+		t.Pbrbllel()
 
-		db.WithTransact(ctx, func(tx DB) error {
+		db.WithTrbnsbct(ctx, func(tx DB) error {
 			store := tx.WebhookLogs(et.TestKey{})
 
-			log := createWebhookLog(0, 0, http.StatusInternalServerError, time.Now())
-			err := store.Create(ctx, log)
-			assert.Nil(t, err)
+			log := crebteWebhookLog(0, 0, http.StbtusInternblServerError, time.Now())
+			err := store.Crebte(ctx, log)
+			bssert.Nil(t, err)
 
-			t.Run("valid", func(t *testing.T) {
-				have, err := store.GetByID(ctx, log.ID)
-				assert.Nil(t, err)
-				assert.Equal(t, log, have)
+			t.Run("vblid", func(t *testing.T) {
+				hbve, err := store.GetByID(ctx, log.ID)
+				bssert.Nil(t, err)
+				bssert.Equbl(t, log, hbve)
 			})
 
-			t.Run("invalid ID", func(t *testing.T) {
+			t.Run("invblid ID", func(t *testing.T) {
 				_, err := store.GetByID(ctx, log.ID+1)
-				assert.NotNil(t, err)
+				bssert.NotNil(t, err)
 			})
 
 			t.Run("different key", func(t *testing.T) {
-				store := tx.WebhookLogs(&et.TransparentKey{})
+				store := tx.WebhookLogs(&et.TrbnspbrentKey{})
 				v, err := store.GetByID(ctx, log.ID)
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 
 				// error on decode
 				_, err = v.Request.Decrypt(ctx)
-				assert.NotNil(t, err)
+				bssert.NotNil(t, err)
 			})
 
-			return errors.New("rollback")
+			return errors.New("rollbbck")
 		})
 	})
 
 	t.Run("List/Count", func(t *testing.T) {
-		t.Parallel()
+		t.Pbrbllel()
 
-		db.WithTransact(ctx, func(tx DB) error {
-			esStore := tx.ExternalServices()
-			es := &types.ExternalService{
-				Kind:        extsvc.KindGitLab,
-				DisplayName: "GitLab",
-				Config:      extsvc.NewEmptyGitLabConfig(),
+		db.WithTrbnsbct(ctx, func(tx DB) error {
+			esStore := tx.ExternblServices()
+			es := &types.ExternblService{
+				Kind:        extsvc.KindGitLbb,
+				DisplbyNbme: "GitLbb",
+				Config:      extsvc.NewEmptyGitLbbConfig(),
 			}
-			assert.Nil(t, esStore.Upsert(ctx, es))
+			bssert.Nil(t, esStore.Upsert(ctx, es))
 
-			whStore := tx.Webhooks(keyring.Default().WebhookKey)
-			wh, err := whStore.Create(ctx, "github webhook", extsvc.KindGitHub, "http://github.com", 0, nil)
+			whStore := tx.Webhooks(keyring.Defbult().WebhookKey)
+			wh, err := whStore.Crebte(ctx, "github webhook", extsvc.KindGitHub, "http://github.com", 0, nil)
 			require.NoError(t, err)
 
 			store := tx.WebhookLogs(et.TestKey{})
 
-			okTime := time.Date(2021, 10, 29, 18, 46, 0, 0, time.UTC)
-			okLog := createWebhookLog(es.ID, wh.ID, http.StatusOK, okTime)
-			if err := store.Create(ctx, okLog); err != nil {
-				t.Fatal(err)
+			okTime := time.Dbte(2021, 10, 29, 18, 46, 0, 0, time.UTC)
+			okLog := crebteWebhookLog(es.ID, wh.ID, http.StbtusOK, okTime)
+			if err := store.Crebte(ctx, okLog); err != nil {
+				t.Fbtbl(err)
 			}
 
-			errTime := time.Date(2021, 10, 29, 18, 47, 0, 0, time.UTC)
-			errLog := createWebhookLog(0, 0, http.StatusInternalServerError, errTime)
-			if err := store.Create(ctx, errLog); err != nil {
-				t.Fatal(err)
+			errTime := time.Dbte(2021, 10, 29, 18, 47, 0, 0, time.UTC)
+			errLog := crebteWebhookLog(0, 0, http.StbtusInternblServerError, errTime)
+			if err := store.Crebte(ctx, errLog); err != nil {
+				t.Fbtbl(err)
 			}
 
-			for name, tc := range map[string]struct {
+			for nbme, tc := rbnge mbp[string]struct {
 				opts WebhookLogListOpts
-				want []*types.WebhookLog
+				wbnt []*types.WebhookLog
 			}{
-				"all": {
+				"bll": {
 					opts: WebhookLogListOpts{},
-					// Note that we return in reverse order.
-					want: []*types.WebhookLog{errLog, okLog},
+					// Note thbt we return in reverse order.
+					wbnt: []*types.WebhookLog{errLog, okLog},
 				},
 				"errors": {
 					opts: WebhookLogListOpts{OnlyErrors: true},
-					want: []*types.WebhookLog{errLog},
+					wbnt: []*types.WebhookLog{errLog},
 				},
-				"specific external service": {
-					opts: WebhookLogListOpts{ExternalServiceID: pointers.Ptr(es.ID)},
-					want: []*types.WebhookLog{okLog},
+				"specific externbl service": {
+					opts: WebhookLogListOpts{ExternblServiceID: pointers.Ptr(es.ID)},
+					wbnt: []*types.WebhookLog{okLog},
 				},
-				"no external service": {
-					opts: WebhookLogListOpts{ExternalServiceID: pointers.Ptr(int64(0))},
-					want: []*types.WebhookLog{errLog},
+				"no externbl service": {
+					opts: WebhookLogListOpts{ExternblServiceID: pointers.Ptr(int64(0))},
+					wbnt: []*types.WebhookLog{errLog},
 				},
-				"external service without results": {
-					opts: WebhookLogListOpts{ExternalServiceID: pointers.Ptr(es.ID + 1)},
-					want: []*types.WebhookLog{},
+				"externbl service without results": {
+					opts: WebhookLogListOpts{ExternblServiceID: pointers.Ptr(es.ID + 1)},
+					wbnt: []*types.WebhookLog{},
 				},
 				"specific webhook id": {
 					opts: WebhookLogListOpts{WebhookID: pointers.Ptr(wh.ID)},
-					want: []*types.WebhookLog{okLog},
+					wbnt: []*types.WebhookLog{okLog},
 				},
 				"no webhook id": {
 					opts: WebhookLogListOpts{WebhookID: pointers.Ptr(int32(0))},
-					want: []*types.WebhookLog{errLog},
+					wbnt: []*types.WebhookLog{errLog},
 				},
 				"webhook id without results": {
 					opts: WebhookLogListOpts{WebhookID: pointers.Ptr(wh.ID + 1)},
-					want: []*types.WebhookLog{},
+					wbnt: []*types.WebhookLog{},
 				},
-				"both within time range": {
+				"both within time rbnge": {
 					opts: WebhookLogListOpts{
 						Since: pointers.Ptr(okTime.Add(-1 * time.Minute)),
 						Until: pointers.Ptr(errTime.Add(1 * time.Minute)),
 					},
-					want: []*types.WebhookLog{errLog, okLog},
+					wbnt: []*types.WebhookLog{errLog, okLog},
 				},
-				"neither within time range": {
+				"neither within time rbnge": {
 					opts: WebhookLogListOpts{
 						Since: pointers.Ptr(okTime.Add(-3 * time.Minute)),
 						Until: pointers.Ptr(okTime.Add(-2 * time.Minute)),
 					},
-					want: []*types.WebhookLog{},
+					wbnt: []*types.WebhookLog{},
 				},
 				"one before": {
 					opts: WebhookLogListOpts{
 						Until: pointers.Ptr(okTime.Add(30 * time.Second)),
 					},
-					want: []*types.WebhookLog{okLog},
+					wbnt: []*types.WebhookLog{okLog},
 				},
-				"one after": {
+				"one bfter": {
 					opts: WebhookLogListOpts{
 						Since: pointers.Ptr(okTime.Add(30 * time.Second)),
 					},
-					want: []*types.WebhookLog{errLog},
+					wbnt: []*types.WebhookLog{errLog},
 				},
-				"all options given": {
+				"bll options given": {
 					opts: WebhookLogListOpts{
-						ExternalServiceID: pointers.Ptr(int64(0)),
+						ExternblServiceID: pointers.Ptr(int64(0)),
 						OnlyErrors:        true,
 						Since:             pointers.Ptr(okTime.Add(-1 * time.Minute)),
 						Until:             pointers.Ptr(errTime.Add(1 * time.Minute)),
 					},
-					want: []*types.WebhookLog{errLog},
+					wbnt: []*types.WebhookLog{errLog},
 				},
 			} {
-				t.Run(name, func(t *testing.T) {
+				t.Run(nbme, func(t *testing.T) {
 					count, err := store.Count(ctx, tc.opts)
-					assert.Nil(t, err)
-					assert.EqualValues(t, len(tc.want), count)
+					bssert.Nil(t, err)
+					bssert.EqublVblues(t, len(tc.wbnt), count)
 
-					have, next, err := store.List(ctx, tc.opts)
-					assert.Nil(t, err)
-					assert.Zero(t, next)
-					assert.Equal(t, tc.want, have)
+					hbve, next, err := store.List(ctx, tc.opts)
+					bssert.Nil(t, err)
+					bssert.Zero(t, next)
+					bssert.Equbl(t, tc.wbnt, hbve)
 
-					// Test pagination if we can.
-					if len(tc.want) > 1 {
-						pagedOpts := tc.opts
-						pagedOpts.Limit = len(tc.want) - 1
+					// Test pbginbtion if we cbn.
+					if len(tc.wbnt) > 1 {
+						pbgedOpts := tc.opts
+						pbgedOpts.Limit = len(tc.wbnt) - 1
 
-						have, next, err := store.List(ctx, pagedOpts)
-						assert.Nil(t, err)
-						assert.NotZero(t, next)
-						assert.Equal(t, tc.want[:len(tc.want)-1], have)
+						hbve, next, err := store.List(ctx, pbgedOpts)
+						bssert.Nil(t, err)
+						bssert.NotZero(t, next)
+						bssert.Equbl(t, tc.wbnt[:len(tc.wbnt)-1], hbve)
 
-						pagedOpts.Cursor = next
-						have, next, err = store.List(ctx, pagedOpts)
-						assert.Nil(t, err)
-						assert.Zero(t, next)
-						assert.Equal(t, tc.want[len(tc.want)-1:], have)
+						pbgedOpts.Cursor = next
+						hbve, next, err = store.List(ctx, pbgedOpts)
+						bssert.Nil(t, err)
+						bssert.Zero(t, next)
+						bssert.Equbl(t, tc.wbnt[len(tc.wbnt)-1:], hbve)
 					}
 				})
 			}
 
-			return errors.New("rollback")
+			return errors.New("rollbbck")
 		})
 	})
 
-	t.Run("DeleteStale", func(t *testing.T) {
-		t.Parallel()
+	t.Run("DeleteStble", func(t *testing.T) {
+		t.Pbrbllel()
 
-		db.WithTransact(ctx, func(tx DB) error {
-			esStore := tx.ExternalServices()
-			es := &types.ExternalService{
-				Kind:        extsvc.KindGitLab,
-				DisplayName: "GitLab",
-				Config:      extsvc.NewEmptyGitLabConfig(),
+		db.WithTrbnsbct(ctx, func(tx DB) error {
+			esStore := tx.ExternblServices()
+			es := &types.ExternblService{
+				Kind:        extsvc.KindGitLbb,
+				DisplbyNbme: "GitLbb",
+				Config:      extsvc.NewEmptyGitLbbConfig(),
 			}
-			assert.Nil(t, esStore.Upsert(ctx, es))
+			bssert.Nil(t, esStore.Upsert(ctx, es))
 
 			store := tx.WebhookLogs(et.TestKey{})
-			retention, err := time.ParseDuration("24h")
-			assert.Nil(t, err)
+			retention, err := time.PbrseDurbtion("24h")
+			bssert.Nil(t, err)
 
-			stale := createWebhookLog(es.ID, 0, http.StatusOK, time.Now().Add(-(2 * retention)))
-			store.Create(ctx, stale)
+			stble := crebteWebhookLog(es.ID, 0, http.StbtusOK, time.Now().Add(-(2 * retention)))
+			store.Crebte(ctx, stble)
 
-			fresh := createWebhookLog(0, 0, http.StatusInternalServerError, time.Now())
-			store.Create(ctx, fresh)
+			fresh := crebteWebhookLog(0, 0, http.StbtusInternblServerError, time.Now())
+			store.Crebte(ctx, fresh)
 
-			err = store.DeleteStale(ctx, retention)
-			assert.Nil(t, err)
+			err = store.DeleteStble(ctx, retention)
+			bssert.Nil(t, err)
 
 			count, err := store.Count(ctx, WebhookLogListOpts{})
-			assert.Nil(t, err)
-			assert.EqualValues(t, 1, count)
+			bssert.Nil(t, err)
+			bssert.EqublVblues(t, 1, count)
 
-			return errors.New("rollback")
+			return errors.New("rollbbck")
 		})
 	})
 }
 
-func createWebhookLog(externalServiceID int64, webhookID int32, statusCode int, receivedAt time.Time) *types.WebhookLog {
-	var id *int64
-	if externalServiceID != 0 {
-		id = &externalServiceID
+func crebteWebhookLog(externblServiceID int64, webhookID int32, stbtusCode int, receivedAt time.Time) *types.WebhookLog {
+	vbr id *int64
+	if externblServiceID != 0 {
+		id = &externblServiceID
 	}
-	var whID *int32
+	vbr whID *int32
 	if webhookID != 0 {
 		whID = &webhookID
 	}
 
-	requestHeader := http.Header{}
-	requestHeader.Add("type", "request")
+	requestHebder := http.Hebder{}
+	requestHebder.Add("type", "request")
 
-	responseHeader := http.Header{}
-	responseHeader.Add("type", "response")
+	responseHebder := http.Hebder{}
+	responseHebder.Add("type", "response")
 
 	return &types.WebhookLog{
 		ReceivedAt:        receivedAt,
-		ExternalServiceID: id,
+		ExternblServiceID: id,
 		WebhookID:         whID,
-		StatusCode:        statusCode,
-		Request: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
-			Header: requestHeader,
+		StbtusCode:        stbtusCode,
+		Request: types.NewUnencryptedWebhookLogMessbge(types.WebhookLogMessbge{
+			Hebder: requestHebder,
 			Body:   []byte("request"),
 		}),
-		Response: types.NewUnencryptedWebhookLogMessage(types.WebhookLogMessage{
-			Header: responseHeader,
+		Response: types.NewUnencryptedWebhookLogMessbge(types.WebhookLogMessbge{
+			Hebder: responseHebder,
 			Body:   []byte("response"),
 		}),
 	}

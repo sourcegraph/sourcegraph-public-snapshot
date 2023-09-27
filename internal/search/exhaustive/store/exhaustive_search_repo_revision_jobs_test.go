@@ -1,94 +1,94 @@
-package store_test
+pbckbge store_test
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/store"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestStore_CreateExhaustiveSearchRepoRevisionJob(t *testing.T) {
+func TestStore_CrebteExhbustiveSebrchRepoRevisionJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bs := basestore.NewWithHandle(db.Handle())
+	bs := bbsestore.NewWithHbndle(db.Hbndle())
 
-	userID, err := createUser(bs, "alice")
+	userID, err := crebteUser(bs, "blice")
 	require.NoError(t, err)
-	repoID, err := createRepo(db, "repo-test")
+	repoID, err := crebteRepo(db, "repo-test")
 	require.NoError(t, err)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{
 		UID: userID,
 	})
 
-	s := store.New(db, &observation.TestContext)
+	s := store.New(db, &observbtion.TestContext)
 
-	searchJobID, err := s.CreateExhaustiveSearchJob(
+	sebrchJobID, err := s.CrebteExhbustiveSebrchJob(
 		ctx,
-		types.ExhaustiveSearchJob{InitiatorID: userID, Query: "repo:^github\\.com/hashicorp/errwrap$ CreateExhaustiveSearchRepoRevisionJob"},
+		types.ExhbustiveSebrchJob{InitibtorID: userID, Query: "repo:^github\\.com/hbshicorp/errwrbp$ CrebteExhbustiveSebrchRepoRevisionJob"},
 	)
 	require.NoError(t, err)
 
-	repoJobID, err := s.CreateExhaustiveSearchRepoJob(
-		context.Background(),
-		types.ExhaustiveSearchRepoJob{SearchJobID: searchJobID, RepoID: repoID, RefSpec: "main"},
+	repoJobID, err := s.CrebteExhbustiveSebrchRepoJob(
+		context.Bbckground(),
+		types.ExhbustiveSebrchRepoJob{SebrchJobID: sebrchJobID, RepoID: repoID, RefSpec: "mbin"},
 	)
 	require.NoError(t, err)
 
 	tests := []struct {
-		name        string
-		job         types.ExhaustiveSearchRepoRevisionJob
+		nbme        string
+		job         types.ExhbustiveSebrchRepoRevisionJob
 		expectedErr error
 	}{
 		{
-			name: "New job",
-			job: types.ExhaustiveSearchRepoRevisionJob{
-				SearchRepoJobID: repoJobID,
-				Revision:        "main",
+			nbme: "New job",
+			job: types.ExhbustiveSebrchRepoRevisionJob{
+				SebrchRepoJobID: repoJobID,
+				Revision:        "mbin",
 			},
 			expectedErr: nil,
 		},
 		{
-			name: "Missing revision",
-			job: types.ExhaustiveSearchRepoRevisionJob{
-				SearchRepoJobID: repoJobID,
+			nbme: "Missing revision",
+			job: types.ExhbustiveSebrchRepoRevisionJob{
+				SebrchRepoJobID: repoJobID,
 			},
 			expectedErr: errors.New("missing revision"),
 		},
 		{
-			name: "Missing repo job ID",
-			job: types.ExhaustiveSearchRepoRevisionJob{
-				Revision: "main",
+			nbme: "Missing repo job ID",
+			job: types.ExhbustiveSebrchRepoRevisionJob{
+				Revision: "mbin",
 			},
-			expectedErr: errors.New("missing search repo job ID"),
+			expectedErr: errors.New("missing sebrch repo job ID"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			jobID, err := s.CreateExhaustiveSearchRepoRevisionJob(ctx, test.job)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			jobID, err := s.CrebteExhbustiveSebrchRepoRevisionJob(ctx, test.job)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				assert.NotZero(t, jobID)
+				bssert.NotZero(t, jobID)
 			}
 		})
 	}

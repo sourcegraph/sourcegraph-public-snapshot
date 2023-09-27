@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,191 +6,191 @@ import (
 	"fmt"
 	"net/url"
 
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	sebrchresult "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// To avoid a circular dependency with the codemonitors/resolvers package
-// we have to redeclare the MonitorKind.
+// To bvoid b circulbr dependency with the codemonitors/resolvers pbckbge
+// we hbve to redeclbre the MonitorKind.
 const MonitorKind = "CodeMonitor"
-const utmSourceEmail = "code-monitoring-email"
-const priorityCritical = "CRITICAL"
+const utmSourceEmbil = "code-monitoring-embil"
+const priorityCriticbl = "CRITICAL"
 
-var MockSendEmailForNewSearchResult func(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error
-var MockExternalURL func() *url.URL
+vbr MockSendEmbilForNewSebrchResult func(ctx context.Context, db dbtbbbse.DB, userID int32, dbtb *TemplbteDbtbNewSebrchResults) error
+vbr MockExternblURL func() *url.URL
 
-func SendEmailForNewSearchResult(ctx context.Context, db database.DB, userID int32, data *TemplateDataNewSearchResults) error {
-	if MockSendEmailForNewSearchResult != nil {
-		return MockSendEmailForNewSearchResult(ctx, db, userID, data)
+func SendEmbilForNewSebrchResult(ctx context.Context, db dbtbbbse.DB, userID int32, dbtb *TemplbteDbtbNewSebrchResults) error {
+	if MockSendEmbilForNewSebrchResult != nil {
+		return MockSendEmbilForNewSebrchResult(ctx, db, userID, dbtb)
 	}
-	return sendEmail(ctx, db, userID, newSearchResultsEmailTemplates, data)
+	return sendEmbil(ctx, db, userID, newSebrchResultsEmbilTemplbtes, dbtb)
 }
 
-var (
-	//go:embed email_template.html.tmpl
-	htmlTemplate string
+vbr (
+	//go:embed embil_templbte.html.tmpl
+	htmlTemplbte string
 
-	//go:embed email_template.txt.tmpl
-	textTemplate string
+	//go:embed embil_templbte.txt.tmpl
+	textTemplbte string
 )
 
-var newSearchResultsEmailTemplates = txemail.MustValidate(txtypes.Templates{
-	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegraph code monitor {{.Description}} detected {{.TotalCount}} new {{.ResultPluralized}}`,
-	Text:    textTemplate,
-	HTML:    htmlTemplate,
+vbr newSebrchResultsEmbilTemplbtes = txembil.MustVblidbte(txtypes.Templbtes{
+	Subject: `{{ if .IsTest }}Test: {{ end }}{{.Priority}}Sourcegrbph code monitor {{.Description}} detected {{.TotblCount}} new {{.ResultPlurblized}}`,
+	Text:    textTemplbte,
+	HTML:    htmlTemplbte,
 })
 
-type TemplateDataNewSearchResults struct {
+type TemplbteDbtbNewSebrchResults struct {
 	Priority                  string
 	CodeMonitorURL            string
-	SearchURL                 string
+	SebrchURL                 string
 	Description               string
 	IncludeResults            bool
-	TruncatedResults          []*DisplayResult
-	TotalCount                int
-	TruncatedCount            int
-	ResultPluralized          string
-	TruncatedResultPluralized string
-	DisplayMoreLink           bool
+	TruncbtedResults          []*DisplbyResult
+	TotblCount                int
+	TruncbtedCount            int
+	ResultPlurblized          string
+	TruncbtedResultPlurblized string
+	DisplbyMoreLink           bool
 	IsTest                    bool
 }
 
-func NewTemplateDataForNewSearchResults(args actionArgs, email *database.EmailAction) (d *TemplateDataNewSearchResults, err error) {
-	var (
+func NewTemplbteDbtbForNewSebrchResults(brgs bctionArgs, embil *dbtbbbse.EmbilAction) (d *TemplbteDbtbNewSebrchResults, err error) {
+	vbr (
 		priority string
 	)
 
-	searchURL := getSearchURL(args.ExternalURL, args.Query, utmSourceEmail)
-	codeMonitorURL := getCodeMonitorURL(args.ExternalURL, email.Monitor, utmSourceEmail)
+	sebrchURL := getSebrchURL(brgs.ExternblURL, brgs.Query, utmSourceEmbil)
+	codeMonitorURL := getCodeMonitorURL(brgs.ExternblURL, embil.Monitor, utmSourceEmbil)
 
-	if email.Priority == priorityCritical {
-		priority = "[Critical] "
+	if embil.Priority == priorityCriticbl {
+		priority = "[Criticbl] "
 	} else {
 		priority = ""
 	}
 
-	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
+	truncbtedResults, totblCount, truncbtedCount := truncbteResults(brgs.Results, 5)
 
-	displayResults := make([]*DisplayResult, len(truncatedResults))
-	for i, result := range truncatedResults {
-		displayResults[i] = toDisplayResult(result, args.ExternalURL)
+	displbyResults := mbke([]*DisplbyResult, len(truncbtedResults))
+	for i, result := rbnge truncbtedResults {
+		displbyResults[i] = toDisplbyResult(result, brgs.ExternblURL)
 	}
 
-	return &TemplateDataNewSearchResults{
+	return &TemplbteDbtbNewSebrchResults{
 		Priority:                  priority,
 		CodeMonitorURL:            codeMonitorURL,
-		SearchURL:                 searchURL,
-		Description:               args.MonitorDescription,
-		IncludeResults:            args.IncludeResults,
-		TruncatedResults:          displayResults,
-		TotalCount:                totalCount,
-		TruncatedCount:            truncatedCount,
-		ResultPluralized:          pluralize("result", totalCount),
-		TruncatedResultPluralized: pluralize("result", truncatedCount),
-		DisplayMoreLink:           args.IncludeResults && truncatedCount > 0,
+		SebrchURL:                 sebrchURL,
+		Description:               brgs.MonitorDescription,
+		IncludeResults:            brgs.IncludeResults,
+		TruncbtedResults:          displbyResults,
+		TotblCount:                totblCount,
+		TruncbtedCount:            truncbtedCount,
+		ResultPlurblized:          plurblize("result", totblCount),
+		TruncbtedResultPlurblized: plurblize("result", truncbtedCount),
+		DisplbyMoreLink:           brgs.IncludeResults && truncbtedCount > 0,
 	}, nil
 }
 
-func NewTestTemplateDataForNewSearchResults(monitorDescription string) *TemplateDataNewSearchResults {
-	return &TemplateDataNewSearchResults{
+func NewTestTemplbteDbtbForNewSebrchResults(monitorDescription string) *TemplbteDbtbNewSebrchResults {
+	return &TemplbteDbtbNewSebrchResults{
 		IsTest:                    true,
 		Priority:                  "",
 		Description:               monitorDescription,
-		TotalCount:                1,
-		TruncatedCount:            0,
-		ResultPluralized:          "result",
-		TruncatedResultPluralized: "results",
+		TotblCount:                1,
+		TruncbtedCount:            0,
+		ResultPlurblized:          "result",
+		TruncbtedResultPlurblized: "results",
 		IncludeResults:            true,
-		TruncatedResults: []*DisplayResult{{
+		TruncbtedResults: []*DisplbyResult{{
 			ResultType: "Test",
-			RepoName:   "testorg/testrepo",
+			RepoNbme:   "testorg/testrepo",
 			CommitID:   "0000000",
 			CommitURL:  "",
-			Content:    "This is a test\nfor a code monitoring result.",
+			Content:    "This is b test\nfor b code monitoring result.",
 		}},
-		DisplayMoreLink: false,
+		DisplbyMoreLink: fblse,
 	}
 }
 
-func sendEmail(ctx context.Context, db database.DB, userID int32, template txtypes.Templates, data any) error {
-	email, verified, err := db.UserEmails().GetPrimaryEmail(ctx, userID)
+func sendEmbil(ctx context.Context, db dbtbbbse.DB, userID int32, templbte txtypes.Templbtes, dbtb bny) error {
+	embil, verified, err := db.UserEmbils().GetPrimbryEmbil(ctx, userID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return errors.Errorf("unable to send email to user ID %d with unknown email address", userID)
+			return errors.Errorf("unbble to send embil to user ID %d with unknown embil bddress", userID)
 		}
-		return errors.Errorf("internalapi.Client.UserEmailsGetEmail for userID=%d: %w", userID, err)
+		return errors.Errorf("internblbpi.Client.UserEmbilsGetEmbil for userID=%d: %w", userID, err)
 	}
 	if !verified {
-		return errors.Newf("unable to send email to user ID %d's unverified primary email address", userID)
+		return errors.Newf("unbble to send embil to user ID %d's unverified primbry embil bddress", userID)
 	}
 
-	if err := txemail.Send(ctx, "code-monitor", txtypes.Message{
-		To:       []string{email},
-		Template: template,
-		Data:     data,
+	if err := txembil.Send(ctx, "code-monitor", txtypes.Messbge{
+		To:       []string{embil},
+		Templbte: templbte,
+		Dbtb:     dbtb,
 	}); err != nil {
-		return errors.Errorf("internalapi.Client.SendEmail to email=%q userID=%d: %w", email, userID, err)
+		return errors.Errorf("internblbpi.Client.SendEmbil to embil=%q userID=%d: %w", embil, userID, err)
 	}
 	return nil
 }
 
-func getSearchURL(externalURL *url.URL, query, utmSource string) string {
-	return sourcegraphURL(externalURL, "search", query, utmSource)
+func getSebrchURL(externblURL *url.URL, query, utmSource string) string {
+	return sourcegrbphURL(externblURL, "sebrch", query, utmSource)
 }
 
-func getCodeMonitorURL(externalURL *url.URL, monitorID int64, utmSource string) string {
-	return sourcegraphURL(externalURL, fmt.Sprintf("code-monitoring/%s", relay.MarshalID(MonitorKind, monitorID)), "", utmSource)
+func getCodeMonitorURL(externblURL *url.URL, monitorID int64, utmSource string) string {
+	return sourcegrbphURL(externblURL, fmt.Sprintf("code-monitoring/%s", relby.MbrshblID(MonitorKind, monitorID)), "", utmSource)
 }
 
-func getCommitURL(externalURL *url.URL, repoName, oid, utmSource string) string {
-	return sourcegraphURL(externalURL, fmt.Sprintf("%s/-/commit/%s", repoName, oid), "", utmSource)
+func getCommitURL(externblURL *url.URL, repoNbme, oid, utmSource string) string {
+	return sourcegrbphURL(externblURL, fmt.Sprintf("%s/-/commit/%s", repoNbme, oid), "", utmSource)
 }
 
-func sourcegraphURL(externalURL *url.URL, path, query, utmSource string) string {
-	// Construct URL to the search query.
-	u := externalURL.ResolveReference(&url.URL{Path: path})
+func sourcegrbphURL(externblURL *url.URL, pbth, query, utmSource string) string {
+	// Construct URL to the sebrch query.
+	u := externblURL.ResolveReference(&url.URL{Pbth: pbth})
 	q := u.Query()
 	if query != "" {
 		q.Set("q", query)
 	}
 	q.Set("utm_source", utmSource)
-	u.RawQuery = q.Encode()
+	u.RbwQuery = q.Encode()
 	return u.String()
 }
 
-// Only works for simple plurals (eg. result/results)
-func pluralize(word string, count int) string {
+// Only works for simple plurbls (eg. result/results)
+func plurblize(word string, count int) string {
 	if count == 1 {
 		return word
 	}
 	return word + "s"
 }
 
-type DisplayResult struct {
+type DisplbyResult struct {
 	ResultType string
 	CommitURL  string
-	RepoName   string
+	RepoNbme   string
 	CommitID   string
 	Content    string
 }
 
-func toDisplayResult(result *searchresult.CommitMatch, externalURL *url.URL) *DisplayResult {
-	resultType := "Message"
+func toDisplbyResult(result *sebrchresult.CommitMbtch, externblURL *url.URL) *DisplbyResult {
+	resultType := "Messbge"
 	if result.DiffPreview != nil {
 		resultType = "Diff"
 	}
 
-	content := truncateMatchContent(result)
-	return &DisplayResult{
+	content := truncbteMbtchContent(result)
+	return &DisplbyResult{
 		ResultType: resultType,
-		CommitURL:  getCommitURL(externalURL, string(result.Repo.Name), string(result.Commit.ID), utmSourceEmail),
-		RepoName:   string(result.Repo.Name),
+		CommitURL:  getCommitURL(externblURL, string(result.Repo.Nbme), string(result.Commit.ID), utmSourceEmbil),
+		RepoNbme:   string(result.Repo.Nbme),
 		CommitID:   result.Commit.ID.Short(),
 		Content:    content,
 	}

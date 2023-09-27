@@ -1,172 +1,172 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// GetHover returns the hover text of the symbol at the given position.
-func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ shared.Range, _ bool, err error) {
-	ctx, trace, endObservation := s.operations.getHover.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
-		attribute.Int("line", line),
-		attribute.Int("character", character),
+// GetHover returns the hover text of the symbol bt the given position.
+func (s *store) GetHover(ctx context.Context, bundleID int, pbth string, line, chbrbcter int) (_ string, _ shbred.Rbnge, _ bool, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getHover.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bundleID", bundleID),
+		bttribute.String("pbth", pbth),
+		bttribute.Int("line", line),
+		bttribute.Int("chbrbcter", chbrbcter),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+	documentDbtb, exists, err := s.scbnFirstDocumentDbtb(s.db.Query(ctx, sqlf.Sprintf(
 		hoverDocumentQuery,
 		bundleID,
-		path,
+		pbth,
 	)))
 	if err != nil || !exists {
-		return "", shared.Range{}, false, err
+		return "", shbred.Rbnge{}, fblse, err
 	}
 
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	trbce.AddEvent("SCIPDbtb", bttribute.Int("numOccurrences", len(documentDbtb.SCIPDbtb.Occurrences)))
+	occurrences := scip.FindOccurrences(documentDbtb.SCIPDbtb.Occurrences, int32(line), int32(chbrbcter))
+	trbce.AddEvent("FindOccurences", bttribute.Int("numIntersectingOccurrences", len(occurrences)))
 
-	for _, occurrence := range occurrences {
-		// Return the hover data we can extract from the most specific occurrence
-		if hoverText := extractHoverData(documentData.SCIPData, occurrence); len(hoverText) != 0 {
-			return strings.Join(hoverText, "\n"), translateRange(scip.NewRange(occurrence.Range)), true, nil
+	for _, occurrence := rbnge occurrences {
+		// Return the hover dbtb we cbn extrbct from the most specific occurrence
+		if hoverText := extrbctHoverDbtb(documentDbtb.SCIPDbtb, occurrence); len(hoverText) != 0 {
+			return strings.Join(hoverText, "\n"), trbnslbteRbnge(scip.NewRbnge(occurrence.Rbnge)), true, nil
 		}
 	}
 
-	// We don't have any in-document symbol information with hover data, so we'll now attempt to
-	// find the symbol information in the text document that defines a symbol attached to the target
+	// We don't hbve bny in-document symbol informbtion with hover dbtb, so we'll now bttempt to
+	// find the symbol informbtion in the text document thbt defines b symbol bttbched to the tbrget
 	// occurrence.
 
-	// First, we extract the symbol names and the range of the most specific occurrence associated
-	// with it. We construct a map and a slice in parallel as we want to retain the ordering of
+	// First, we extrbct the symbol nbmes bnd the rbnge of the most specific occurrence bssocibted
+	// with it. We construct b mbp bnd b slice in pbrbllel bs we wbnt to retbin the ordering of
 	// symbols when processing the documents below.
 
-	symbolNames := make([]string, 0, len(occurrences))
-	rangeBySymbol := make(map[string]shared.Range, len(occurrences))
+	symbolNbmes := mbke([]string, 0, len(occurrences))
+	rbngeBySymbol := mbke(mbp[string]shbred.Rbnge, len(occurrences))
 
-	for _, occurrence := range occurrences {
-		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+	for _, occurrence := rbnge occurrences {
+		if occurrence.Symbol == "" || scip.IsLocblSymbol(occurrence.Symbol) {
 			continue
 		}
 
-		if _, ok := rangeBySymbol[occurrence.Symbol]; !ok {
-			symbolNames = append(symbolNames, occurrence.Symbol)
-			rangeBySymbol[occurrence.Symbol] = translateRange(scip.NewRange(occurrence.Range))
+		if _, ok := rbngeBySymbol[occurrence.Symbol]; !ok {
+			symbolNbmes = bppend(symbolNbmes, occurrence.Symbol)
+			rbngeBySymbol[occurrence.Symbol] = trbnslbteRbnge(scip.NewRbnge(occurrence.Rbnge))
 		}
 	}
 
-	// Open documents from the same index that define one of the symbols. We return documents ordered
-	// by path, which is arbitrary but deterministic in the case that multiple files mark a defining
-	// occurrence of a symbol.
+	// Open documents from the sbme index thbt define one of the symbols. We return documents ordered
+	// by pbth, which is brbitrbry but deterministic in the cbse thbt multiple files mbrk b defining
+	// occurrence of b symbol.
 
-	documents, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
+	documents, err := s.scbnDocumentDbtb(s.db.Query(ctx, sqlf.Sprintf(
 		hoverSymbolsQuery,
-		pq.Array(symbolNames),
-		pq.Array([]int{bundleID}),
+		pq.Arrby(symbolNbmes),
+		pq.Arrby([]int{bundleID}),
 		bundleID,
 	)))
 	if err != nil {
-		return "", shared.Range{}, false, err
+		return "", shbred.Rbnge{}, fblse, err
 	}
 
-	// Re-perform the symbol information search. This loop is constructed to prefer matches for symbols
-	// associated with the most specific occurrences over less specific occurrences. We also make the
-	// observation that processing will inline equivalent symbol information nodes into multiple documents
-	// in the persistence layer, so we return the first match rather than aggregating and de-duplicating
-	// documentation over all matching documents.
+	// Re-perform the symbol informbtion sebrch. This loop is constructed to prefer mbtches for symbols
+	// bssocibted with the most specific occurrences over less specific occurrences. We blso mbke the
+	// observbtion thbt processing will inline equivblent symbol informbtion nodes into multiple documents
+	// in the persistence lbyer, so we return the first mbtch rbther thbn bggregbting bnd de-duplicbting
+	// documentbtion over bll mbtching documents.
 
-	for _, symbolName := range symbolNames {
-		for _, document := range documents {
-			for _, symbol := range document.SCIPData.Symbols {
-				if symbol.Symbol != symbolName {
+	for _, symbolNbme := rbnge symbolNbmes {
+		for _, document := rbnge documents {
+			for _, symbol := rbnge document.SCIPDbtb.Symbols {
+				if symbol.Symbol != symbolNbme {
 					continue
 				}
 
-				// Return first match
-				return strings.Join(symbol.Documentation, "\n"), rangeBySymbol[symbolName], true, nil
+				// Return first mbtch
+				return strings.Join(symbol.Documentbtion, "\n"), rbngeBySymbol[symbolNbme], true, nil
 			}
 		}
 	}
 
-	return "", shared.Range{}, false, nil
+	return "", shbred.Rbnge{}, fblse, nil
 }
 
 const hoverDocumentQuery = `
 SELECT
 	sd.id,
-	sid.document_path,
-	sd.raw_scip_payload
+	sid.document_pbth,
+	sd.rbw_scip_pbylobd
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
-	sid.upload_id = %s AND
-	sid.document_path = %s
+	sid.uplobd_id = %s AND
+	sid.document_pbth = %s
 LIMIT 1
 `
 
 const symbolIDsCTEs = `
--- Search for the set of trie paths that match one of the given search terms. We
--- do a recursive walk starting at the roots of the trie for a given set of uploads,
--- and only traverse down trie paths that continue to match our search text.
-matching_prefixes(upload_id, id, prefix, search) AS (
+-- Sebrch for the set of trie pbths thbt mbtch one of the given sebrch terms. We
+-- do b recursive wblk stbrting bt the roots of the trie for b given set of uplobds,
+-- bnd only trbverse down trie pbths thbt continue to mbtch our sebrch text.
+mbtching_prefixes(uplobd_id, id, prefix, sebrch) AS (
 	(
-		-- Base case: Select roots of the tries for this upload that are also a
-		-- prefix of the search term. We cut the prefix we matched from our search
-		-- term so that we only need to match the _next_ segment, not the entire
-		-- reconstructed prefix so far (which is computationally more expensive).
+		-- Bbse cbse: Select roots of the tries for this uplobd thbt bre blso b
+		-- prefix of the sebrch term. We cut the prefix we mbtched from our sebrch
+		-- term so thbt we only need to mbtch the _next_ segment, not the entire
+		-- reconstructed prefix so fbr (which is computbtionblly more expensive).
 
 		SELECT
-			ssn.upload_id,
+			ssn.uplobd_id,
 			ssn.id,
-			ssn.name_segment,
-			substring(t.name from length(ssn.name_segment) + 1) AS search
-		FROM codeintel_scip_symbol_names ssn
-		JOIN unnest(%s::text[]) AS t(name) ON t.name LIKE ssn.name_segment || '%%'
+			ssn.nbme_segment,
+			substring(t.nbme from length(ssn.nbme_segment) + 1) AS sebrch
+		FROM codeintel_scip_symbol_nbmes ssn
+		JOIN unnest(%s::text[]) AS t(nbme) ON t.nbme LIKE ssn.nbme_segment || '%%'
 		WHERE
-			ssn.upload_id = ANY(%s) AND
+			ssn.uplobd_id = ANY(%s) AND
 			ssn.prefix_id IS NULL AND
-			t.name LIKE ssn.name_segment || '%%'
+			t.nbme LIKE ssn.nbme_segment || '%%'
 	) UNION (
-		-- Iterative case: Follow the edges of the trie nodes in the worktable so far.
-		-- If our search term is empty, then any children will be a proper superstring
-		-- of our search term - exclude these. If our search term does not match the
-		-- name segment, then we share some proper prefix with the search term but
-		-- diverge - also exclude these. The remaining rows are all prefixes (or matches)
-		-- of the target search term.
+		-- Iterbtive cbse: Follow the edges of the trie nodes in the worktbble so fbr.
+		-- If our sebrch term is empty, then bny children will be b proper superstring
+		-- of our sebrch term - exclude these. If our sebrch term does not mbtch the
+		-- nbme segment, then we shbre some proper prefix with the sebrch term but
+		-- diverge - blso exclude these. The rembining rows bre bll prefixes (or mbtches)
+		-- of the tbrget sebrch term.
 
 		SELECT
-			ssn.upload_id,
+			ssn.uplobd_id,
 			ssn.id,
-			mp.prefix || ssn.name_segment,
-			substring(mp.search from length(ssn.name_segment) + 1) AS search
-		FROM matching_prefixes mp
-		JOIN codeintel_scip_symbol_names ssn ON
-			ssn.upload_id = mp.upload_id AND
+			mp.prefix || ssn.nbme_segment,
+			substring(mp.sebrch from length(ssn.nbme_segment) + 1) AS sebrch
+		FROM mbtching_prefixes mp
+		JOIN codeintel_scip_symbol_nbmes ssn ON
+			ssn.uplobd_id = mp.uplobd_id AND
 			ssn.prefix_id = mp.id
 		WHERE
-			mp.search != '' AND
-			mp.search LIKE ssn.name_segment || '%%'
+			mp.sebrch != '' AND
+			mp.sebrch LIKE ssn.nbme_segment || '%%'
 	)
 ),
 
--- Consume from the worktable results defined above. This will throw out any rows
--- that still have a non-empty search field, as this indicates a proper prefix and
--- therefore a non-match. The remaining rows will all be exact matches.
-matching_symbol_names AS (
-	SELECT mp.upload_id, mp.id, mp.prefix AS symbol_name
-	FROM matching_prefixes mp
-	WHERE mp.search = ''
+-- Consume from the worktbble results defined bbove. This will throw out bny rows
+-- thbt still hbve b non-empty sebrch field, bs this indicbtes b proper prefix bnd
+-- therefore b non-mbtch. The rembining rows will bll be exbct mbtches.
+mbtching_symbol_nbmes AS (
+	SELECT mp.uplobd_id, mp.id, mp.prefix AS symbol_nbme
+	FROM mbtching_prefixes mp
+	WHERE mp.sebrch = ''
 )
 `
 
@@ -175,97 +175,97 @@ WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
 	sd.id,
-	sid.document_path,
-	sd.raw_scip_payload
+	sid.document_pbth,
+	sd.rbw_scip_pbylobd
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE EXISTS (
 	SELECT 1
 	FROM codeintel_scip_symbols ss
 	WHERE
-		ss.upload_id = %s AND
-		ss.symbol_id IN (SELECT id FROM matching_symbol_names) AND
+		ss.uplobd_id = %s AND
+		ss.symbol_id IN (SELECT id FROM mbtching_symbol_nbmes) AND
 		ss.document_lookup_id = sid.id AND
-		ss.definition_ranges IS NOT NULL
+		ss.definition_rbnges IS NOT NULL
 )
 `
 
-// GetDiagnostics returns the diagnostics for the documents that have the given path prefix. This method
-// also returns the size of the complete result set to aid in pagination.
-func (s *store) GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error) {
-	ctx, trace, endObservation := s.operations.getDiagnostics.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("prefix", prefix),
-		attribute.Int("limit", limit),
-		attribute.Int("offset", offset),
+// GetDibgnostics returns the dibgnostics for the documents thbt hbve the given pbth prefix. This method
+// blso returns the size of the complete result set to bid in pbginbtion.
+func (s *store) GetDibgnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shbred.Dibgnostic, _ int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getDibgnostics.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bundleID", bundleID),
+		bttribute.String("prefix", prefix),
+		bttribute.Int("limit", limit),
+		bttribute.Int("offset", offset),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	documentData, err := s.scanDocumentData(s.db.Query(ctx, sqlf.Sprintf(
-		diagnosticsQuery,
+	documentDbtb, err := s.scbnDocumentDbtb(s.db.Query(ctx, sqlf.Sprintf(
+		dibgnosticsQuery,
 		bundleID,
 		prefix+"%",
 	)))
 	if err != nil {
 		return nil, 0, err
 	}
-	trace.AddEvent("scanDocumentData", attribute.Int("numDocuments", len(documentData)))
+	trbce.AddEvent("scbnDocumentDbtb", bttribute.Int("numDocuments", len(documentDbtb)))
 
-	totalCount := 0
-	for _, documentData := range documentData {
-		for _, occurrence := range documentData.SCIPData.Occurrences {
-			totalCount += len(occurrence.Diagnostics)
+	totblCount := 0
+	for _, documentDbtb := rbnge documentDbtb {
+		for _, occurrence := rbnge documentDbtb.SCIPDbtb.Occurrences {
+			totblCount += len(occurrence.Dibgnostics)
 		}
 	}
-	trace.AddEvent("found", attribute.Int("totalCount", totalCount))
+	trbce.AddEvent("found", bttribute.Int("totblCount", totblCount))
 
-	diagnostics := make([]shared.Diagnostic, 0, limit)
-	for _, documentData := range documentData {
+	dibgnostics := mbke([]shbred.Dibgnostic, 0, limit)
+	for _, documentDbtb := rbnge documentDbtb {
 	occurrenceLoop:
-		for _, occurrence := range documentData.SCIPData.Occurrences {
-			if len(occurrence.Diagnostics) == 0 {
+		for _, occurrence := rbnge documentDbtb.SCIPDbtb.Occurrences {
+			if len(occurrence.Dibgnostics) == 0 {
 				continue
 			}
 
-			r := scip.NewRange(occurrence.Range)
+			r := scip.NewRbnge(occurrence.Rbnge)
 
-			for _, diagnostic := range occurrence.Diagnostics {
+			for _, dibgnostic := rbnge occurrence.Dibgnostics {
 				offset--
 
-				if offset < 0 && len(diagnostics) < limit {
-					diagnostics = append(diagnostics, shared.Diagnostic{
+				if offset < 0 && len(dibgnostics) < limit {
+					dibgnostics = bppend(dibgnostics, shbred.Dibgnostic{
 						DumpID: bundleID,
-						Path:   documentData.Path,
-						DiagnosticData: precise.DiagnosticData{
-							Severity:       int(diagnostic.Severity),
-							Code:           diagnostic.Code,
-							Message:        diagnostic.Message,
-							Source:         diagnostic.Source,
-							StartLine:      int(r.Start.Line),
-							StartCharacter: int(r.Start.Character),
+						Pbth:   documentDbtb.Pbth,
+						DibgnosticDbtb: precise.DibgnosticDbtb{
+							Severity:       int(dibgnostic.Severity),
+							Code:           dibgnostic.Code,
+							Messbge:        dibgnostic.Messbge,
+							Source:         dibgnostic.Source,
+							StbrtLine:      int(r.Stbrt.Line),
+							StbrtChbrbcter: int(r.Stbrt.Chbrbcter),
 							EndLine:        int(r.End.Line),
-							EndCharacter:   int(r.End.Character),
+							EndChbrbcter:   int(r.End.Chbrbcter),
 						},
 					})
 				} else {
-					break occurrenceLoop
+					brebk occurrenceLoop
 				}
 			}
 		}
 	}
 
-	return diagnostics, totalCount, nil
+	return dibgnostics, totblCount, nil
 }
 
-const diagnosticsQuery = `
+const dibgnosticsQuery = `
 SELECT
 	sd.id,
-	sid.document_path,
-	sd.raw_scip_payload
+	sid.document_pbth,
+	sd.rbw_scip_pbylobd
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
-	sid.upload_id = %s AND
-	sid.document_path = %s
+	sid.uplobd_id = %s AND
+	sid.document_pbth = %s
 LIMIT 1
 `

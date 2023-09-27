@@ -1,41 +1,41 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	srcprometheus "github.com/sourcegrbph/sourcegrbph/internbl/src-prometheus"
 )
 
 type MonitoringAlert struct{}
 
-func (r *MonitoringAlert) Timestamp() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: time.Time{}}
+func (r *MonitoringAlert) Timestbmp() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: time.Time{}}
 }
-func (r *MonitoringAlert) Name() string        { return "" }
-func (r *MonitoringAlert) ServiceName() string { return "" }
+func (r *MonitoringAlert) Nbme() string        { return "" }
+func (r *MonitoringAlert) ServiceNbme() string { return "" }
 func (r *MonitoringAlert) Owner() string       { return "" }
-func (r *MonitoringAlert) Average() float64    { return 0 }
+func (r *MonitoringAlert) Averbge() flobt64    { return 0 }
 
-func (r *siteResolver) MonitoringStatistics(ctx context.Context, args *struct {
-	Days *int32
-}) (*siteMonitoringStatisticsResolver, error) {
+func (r *siteResolver) MonitoringStbtistics(ctx context.Context, brgs *struct {
+	Dbys *int32
+}) (*siteMonitoringStbtisticsResolver, error) {
 	prom, err := srcprometheus.NewClient(srcprometheus.PrometheusURL)
 	if err != nil {
-		return nil, err // clients should check for ErrPrometheusUnavailable
+		return nil, err // clients should check for ErrPrometheusUnbvbilbble
 	}
-	return &siteMonitoringStatisticsResolver{
+	return &siteMonitoringStbtisticsResolver{
 		prom:     prom,
-		timespan: time.Duration(*args.Days) * 24 * time.Hour,
+		timespbn: time.Durbtion(*brgs.Dbys) * 24 * time.Hour,
 	}, nil
 }
 
-type siteMonitoringStatisticsResolver struct {
+type siteMonitoringStbtisticsResolver struct {
 	prom     srcprometheus.Client
-	timespan time.Duration
+	timespbn time.Durbtion
 }
 
-func (r *siteMonitoringStatisticsResolver) Alerts(ctx context.Context) ([]*MonitoringAlert, error) {
+func (r *siteMonitoringStbtisticsResolver) Alerts(ctx context.Context) ([]*MonitoringAlert, error) {
 	return []*MonitoringAlert{}, nil
 }

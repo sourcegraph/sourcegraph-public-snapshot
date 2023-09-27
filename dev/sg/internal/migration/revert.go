@@ -1,101 +1,101 @@
-package migration
+pbckbge migrbtion
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// Revert creates a new migration that reverts the set of migrations from a target commit.
-func Revert(databases []db.Database, commit string) error {
-	versionsByDatabase := make(map[string][]int, len(databases))
-	for _, database := range databases {
-		versions, err := selectMigrationsDefinedInCommit(database, commit)
+// Revert crebtes b new migrbtion thbt reverts the set of migrbtions from b tbrget commit.
+func Revert(dbtbbbses []db.Dbtbbbse, commit string) error {
+	versionsByDbtbbbse := mbke(mbp[string][]int, len(dbtbbbses))
+	for _, dbtbbbse := rbnge dbtbbbses {
+		versions, err := selectMigrbtionsDefinedInCommit(dbtbbbse, commit)
 		if err != nil {
 			return err
 		}
 
-		versionsByDatabase[database.Name] = versions
+		versionsByDbtbbbse[dbtbbbse.Nbme] = versions
 	}
 
-	redacted := false
-	for dbName, versions := range versionsByDatabase {
+	redbcted := fblse
+	for dbNbme, versions := rbnge versionsByDbtbbbse {
 		if len(versions) == 0 {
 			continue
 		}
-		redacted = true
+		redbcted = true
 
-		var (
-			database, _ = db.DatabaseByName(dbName)
-			upPaths     = make([]string, 0, len(versions))
-			downQueries = make([]string, 0, len(versions))
+		vbr (
+			dbtbbbse, _ = db.DbtbbbseByNbme(dbNbme)
+			upPbths     = mbke([]string, 0, len(versions))
+			downQueries = mbke([]string, 0, len(versions))
 		)
 
-		defs, err := readDefinitions(database)
+		defs, err := rebdDefinitions(dbtbbbse)
 		if err != nil {
 			return err
 		}
 
-		for _, version := range versions {
+		for _, version := rbnge versions {
 			def, ok := defs.GetByID(version)
 			if !ok {
-				return errors.Newf("could not find migration %d in database %q", version, dbName)
+				return errors.Newf("could not find migrbtion %d in dbtbbbse %q", version, dbNbme)
 			}
 
-			files, err := makeMigrationFilenames(database, version, def.Name)
+			files, err := mbkeMigrbtionFilenbmes(dbtbbbse, version, def.Nbme)
 			if err != nil {
 				return err
 			}
 
-			downQuery, err := os.ReadFile(files.DownFile)
+			downQuery, err := os.RebdFile(files.DownFile)
 			if err != nil {
 				return err
 			}
-			upPaths = append(upPaths, files.UpFile)
-			downQueries = append(downQueries, string(downQuery))
+			upPbths = bppend(upPbths, files.UpFile)
+			downQueries = bppend(downQueries, string(downQuery))
 
-			contents := map[string]string{
+			contents := mbp[string]string{
 				files.UpFile: "-- REDACTED\n",
 			}
-			if err := writeMigrationFiles(contents); err != nil {
+			if err := writeMigrbtionFiles(contents); err != nil {
 				return err
 			}
 		}
 
-		block := std.Out.Block(output.Styled(output.StyleBold, "Migration files redacted"))
-		for _, path := range upPaths {
-			block.Writef("Up query file: %s", path)
+		block := std.Out.Block(output.Styled(output.StyleBold, "Migrbtion files redbcted"))
+		for _, pbth := rbnge upPbths {
+			block.Writef("Up query file: %s", pbth)
 		}
 		block.Close()
 
-		if err := AddWithTemplate(database, fmt.Sprintf("revert %s", commit), strings.Join(downQueries, "\n\n"), "-- No-op\n"); err != nil {
+		if err := AddWithTemplbte(dbtbbbse, fmt.Sprintf("revert %s", commit), strings.Join(downQueries, "\n\n"), "-- No-op\n"); err != nil {
 			return err
 		}
 	}
-	if !redacted {
-		return errors.Newf("No migrations defined on commit %q", commit)
+	if !redbcted {
+		return errors.Newf("No migrbtions defined on commit %q", commit)
 	}
 
 	return nil
 }
 
-// selectMigrationsDefinedInCommit returns the identifiers of migrations defined in the given
-// commit for the given schema.a
-func selectMigrationsDefinedInCommit(database db.Database, commit string) ([]int, error) {
-	migrationsDir := filepath.Join("migrations", database.Name)
+// selectMigrbtionsDefinedInCommit returns the identifiers of migrbtions defined in the given
+// commit for the given schemb.b
+func selectMigrbtionsDefinedInCommit(dbtbbbse db.Dbtbbbse, commit string) ([]int, error) {
+	migrbtionsDir := filepbth.Join("migrbtions", dbtbbbse.Nbme)
 
-	gitCmdOutput, err := run.GitCmd("diff", "--name-only", commit+".."+commit+"~1", migrationsDir)
+	gitCmdOutput, err := run.GitCmd("diff", "--nbme-only", commit+".."+commit+"~1", migrbtionsDir)
 	if err != nil {
 		return nil, err
 	}
 
-	versions := parseVersions(strings.Split(gitCmdOutput, "\n"), migrationsDir)
+	versions := pbrseVersions(strings.Split(gitCmdOutput, "\n"), migrbtionsDir)
 	return versions, nil
 }

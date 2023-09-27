@@ -1,12 +1,12 @@
-package result
+pbckbge result
 
-type HighlightedRange struct {
+type HighlightedRbnge struct {
 	Line      int32
-	Character int32
+	Chbrbcter int32
 	Length    int32
 }
 
 type HighlightedString struct {
-	Value      string
-	Highlights []HighlightedRange
+	Vblue      string
+	Highlights []HighlightedRbnge
 }

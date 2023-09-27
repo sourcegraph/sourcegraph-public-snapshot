@@ -1,19 +1,19 @@
-package syncer
+pbckbge syncer
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-type ChangesetSyncRegistry interface {
-	UnarchivedChangesetSyncRegistry
-	// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
-	EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
+type ChbngesetSyncRegistry interfbce {
+	UnbrchivedChbngesetSyncRegistry
+	// EnqueueChbngesetSyncs will queue the supplied chbngesets to sync ASAP.
+	EnqueueChbngesetSyncs(ctx context.Context, ids []int64) error
 }
 
-type UnarchivedChangesetSyncRegistry interface {
-	// EnqueueChangesetSyncsForRepos will queue a sync for every changeset in
+type UnbrchivedChbngesetSyncRegistry interfbce {
+	// EnqueueChbngesetSyncsForRepos will queue b sync for every chbngeset in
 	// every given repo ASAP.
-	EnqueueChangesetSyncsForRepos(ctx context.Context, repoIDs []api.RepoID) error
+	EnqueueChbngesetSyncsForRepos(ctx context.Context, repoIDs []bpi.RepoID) error
 }

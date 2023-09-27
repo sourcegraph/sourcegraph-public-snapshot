@@ -1,205 +1,205 @@
-package pointers
+pbckbge pointers
 
 import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
+	"gotest.tools/bssert"
 )
 
 func TestPtr(t *testing.T) {
 	tests := []struct {
-		name string
-		val  interface{}
+		nbme string
+		vbl  interfbce{}
 	}{
 		{
-			name: "int",
-			val:  1,
+			nbme: "int",
+			vbl:  1,
 		},
 		{
-			name: "string",
-			val:  "hello",
+			nbme: "string",
+			vbl:  "hello",
 		},
 		{
-			name: "bool",
-			val:  true,
+			nbme: "bool",
+			vbl:  true,
 		},
 		{
-			name: "struct",
-			val:  struct{ Foo int }{42},
+			nbme: "struct",
+			vbl:  struct{ Foo int }{42},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := Ptr(tt.val)
-			assert.Equal(t, tt.val, *got)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			got := Ptr(tt.vbl)
+			bssert.Equbl(t, tt.vbl, *got)
 		})
 	}
 }
 
-type nonZeroTestCase[T comparable] struct {
-	name    string
-	val     T
-	wantNil bool
+type nonZeroTestCbse[T compbrbble] struct {
+	nbme    string
+	vbl     T
+	wbntNil bool
 }
 
-func runNonZeroPtrTest[T comparable](t *testing.T, tc nonZeroTestCase[T]) {
+func runNonZeroPtrTest[T compbrbble](t *testing.T, tc nonZeroTestCbse[T]) {
 	t.Helper()
 
-	t.Run(tc.name, func(t *testing.T) {
-		got := NonZeroPtr(tc.val)
-		if tc.wantNil {
+	t.Run(tc.nbme, func(t *testing.T) {
+		got := NonZeroPtr(tc.vbl)
+		if tc.wbntNil {
 			require.Nil(t, got)
 		} else {
-			assert.Equal(t, tc.val, *got)
+			bssert.Equbl(t, tc.vbl, *got)
 		}
 	})
 }
 
 func TestNonZeroPtr(t *testing.T) {
-	intTests := []nonZeroTestCase[int]{
+	intTests := []nonZeroTestCbse[int]{
 		{
-			name: "int",
-			val:  1,
+			nbme: "int",
+			vbl:  1,
 		},
 		{
-			name:    "zero int",
-			val:     0,
-			wantNil: true,
-		},
-	}
-	stringTests := []nonZeroTestCase[string]{
-		{
-			name: "string",
-			val:  "hello",
-		},
-		{
-			name:    "zero string",
-			val:     "",
-			wantNil: true,
+			nbme:    "zero int",
+			vbl:     0,
+			wbntNil: true,
 		},
 	}
-	boolTests := []nonZeroTestCase[bool]{
+	stringTests := []nonZeroTestCbse[string]{
 		{
-			name: "bool",
-			val:  true,
+			nbme: "string",
+			vbl:  "hello",
 		},
 		{
-			name:    "zero bool",
-			val:     false,
-			wantNil: true,
+			nbme:    "zero string",
+			vbl:     "",
+			wbntNil: true,
 		},
 	}
-	structTests := []nonZeroTestCase[struct{ Foo int }]{
+	boolTests := []nonZeroTestCbse[bool]{
 		{
-			name: "struct",
-			val:  struct{ Foo int }{42},
+			nbme: "bool",
+			vbl:  true,
 		},
 		{
-			name:    "zero struct",
-			val:     struct{ Foo int }{},
-			wantNil: true,
+			nbme:    "zero bool",
+			vbl:     fblse,
+			wbntNil: true,
+		},
+	}
+	structTests := []nonZeroTestCbse[struct{ Foo int }]{
+		{
+			nbme: "struct",
+			vbl:  struct{ Foo int }{42},
+		},
+		{
+			nbme:    "zero struct",
+			vbl:     struct{ Foo int }{},
+			wbntNil: true,
 		},
 	}
 
-	for _, tc := range intTests {
+	for _, tc := rbnge intTests {
 		runNonZeroPtrTest(t, tc)
 	}
-	for _, tc := range stringTests {
+	for _, tc := rbnge stringTests {
 		runNonZeroPtrTest(t, tc)
 	}
-	for _, tc := range boolTests {
+	for _, tc := rbnge boolTests {
 		runNonZeroPtrTest(t, tc)
 	}
-	for _, tc := range structTests {
+	for _, tc := rbnge structTests {
 		runNonZeroPtrTest(t, tc)
 	}
 }
 
-type derefTestCase[T comparable] struct {
-	name       string
-	val        *T
-	defaultVal T
-	want       T
+type derefTestCbse[T compbrbble] struct {
+	nbme       string
+	vbl        *T
+	defbultVbl T
+	wbnt       T
 }
 
-func runDerefTest[T comparable](t *testing.T, tc derefTestCase[T]) {
+func runDerefTest[T compbrbble](t *testing.T, tc derefTestCbse[T]) {
 	t.Helper()
 
-	t.Run(tc.name, func(t *testing.T) {
-		got := Deref(tc.val, tc.defaultVal)
-		assert.Equal(t, tc.want, got)
+	t.Run(tc.nbme, func(t *testing.T) {
+		got := Deref(tc.vbl, tc.defbultVbl)
+		bssert.Equbl(t, tc.wbnt, got)
 	})
 }
 
 func TestDeref(t *testing.T) {
-	intTests := []derefTestCase[int]{
+	intTests := []derefTestCbse[int]{
 		{
-			name:       "int",
-			val:        Ptr(1),
-			defaultVal: 0,
-			want:       1,
+			nbme:       "int",
+			vbl:        Ptr(1),
+			defbultVbl: 0,
+			wbnt:       1,
 		},
 		{
-			name:       "zero int",
-			val:        nil,
-			defaultVal: 0,
-			want:       0,
-		},
-	}
-	stringTests := []derefTestCase[string]{
-		{
-			name:       "string",
-			val:        Ptr("hello"),
-			defaultVal: "",
-			want:       "hello",
-		},
-		{
-			name:       "zero string",
-			val:        nil,
-			defaultVal: "",
-			want:       "",
+			nbme:       "zero int",
+			vbl:        nil,
+			defbultVbl: 0,
+			wbnt:       0,
 		},
 	}
-	boolTests := []derefTestCase[bool]{
+	stringTests := []derefTestCbse[string]{
 		{
-			name:       "bool",
-			val:        Ptr(true),
-			defaultVal: false,
-			want:       true,
+			nbme:       "string",
+			vbl:        Ptr("hello"),
+			defbultVbl: "",
+			wbnt:       "hello",
 		},
 		{
-			name:       "zero bool",
-			val:        nil,
-			defaultVal: false,
-			want:       false,
+			nbme:       "zero string",
+			vbl:        nil,
+			defbultVbl: "",
+			wbnt:       "",
 		},
 	}
-	structTests := []derefTestCase[struct{ Foo int }]{
+	boolTests := []derefTestCbse[bool]{
 		{
-			name:       "struct",
-			val:        Ptr(struct{ Foo int }{42}),
-			defaultVal: struct{ Foo int }{},
-			want:       struct{ Foo int }{42},
+			nbme:       "bool",
+			vbl:        Ptr(true),
+			defbultVbl: fblse,
+			wbnt:       true,
 		},
 		{
-			name:       "zero struct",
-			val:        nil,
-			defaultVal: struct{ Foo int }{},
-			want:       struct{ Foo int }{},
+			nbme:       "zero bool",
+			vbl:        nil,
+			defbultVbl: fblse,
+			wbnt:       fblse,
+		},
+	}
+	structTests := []derefTestCbse[struct{ Foo int }]{
+		{
+			nbme:       "struct",
+			vbl:        Ptr(struct{ Foo int }{42}),
+			defbultVbl: struct{ Foo int }{},
+			wbnt:       struct{ Foo int }{42},
+		},
+		{
+			nbme:       "zero struct",
+			vbl:        nil,
+			defbultVbl: struct{ Foo int }{},
+			wbnt:       struct{ Foo int }{},
 		},
 	}
 
-	for _, tc := range intTests {
+	for _, tc := rbnge intTests {
 		runDerefTest(t, tc)
 	}
-	for _, tc := range stringTests {
+	for _, tc := rbnge stringTests {
 		runDerefTest(t, tc)
 	}
-	for _, tc := range boolTests {
+	for _, tc := rbnge boolTests {
 		runDerefTest(t, tc)
 	}
-	for _, tc := range structTests {
+	for _, tc := rbnge structTests {
 		runDerefTest(t, tc)
 	}
 }

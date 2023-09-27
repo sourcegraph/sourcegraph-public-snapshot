@@ -1,52 +1,52 @@
-package store
+pbckbge store
 
 import "time"
 
-// TODO - configure these via envvar
+// TODO - configure these vib envvbr
 const (
-	vacuumBatchSize = 100
-	threshold       = time.Duration(1) * time.Hour
+	vbcuumBbtchSize = 100
+	threshold       = time.Durbtion(1) * time.Hour
 )
 
-func batchChannel[T any](ch <-chan T, batchSize int) <-chan []T {
-	batches := make(chan []T)
+func bbtchChbnnel[T bny](ch <-chbn T, bbtchSize int) <-chbn []T {
+	bbtches := mbke(chbn []T)
 	go func() {
-		defer close(batches)
+		defer close(bbtches)
 
-		batch := make([]T, 0, batchSize)
-		for value := range ch {
-			batch = append(batch, value)
+		bbtch := mbke([]T, 0, bbtchSize)
+		for vblue := rbnge ch {
+			bbtch = bppend(bbtch, vblue)
 
-			if len(batch) == batchSize {
-				batches <- batch
-				batch = make([]T, 0, batchSize)
+			if len(bbtch) == bbtchSize {
+				bbtches <- bbtch
+				bbtch = mbke([]T, 0, bbtchSize)
 			}
 		}
 
-		if len(batch) > 0 {
-			batches <- batch
+		if len(bbtch) > 0 {
+			bbtches <- bbtch
 		}
 	}()
 
-	return batches
+	return bbtches
 }
 
-func batchSlice[T any](ch []T, batchSize int) [][]T {
-	batches := make([][]T, 0, len(ch)/batchSize+1)
+func bbtchSlice[T bny](ch []T, bbtchSize int) [][]T {
+	bbtches := mbke([][]T, 0, len(ch)/bbtchSize+1)
 
-	batch := make([]T, 0, batchSize)
-	for _, value := range ch {
-		batch = append(batch, value)
+	bbtch := mbke([]T, 0, bbtchSize)
+	for _, vblue := rbnge ch {
+		bbtch = bppend(bbtch, vblue)
 
-		if len(batch) == batchSize {
-			batches = append(batches, batch)
-			batch = make([]T, 0, batchSize)
+		if len(bbtch) == bbtchSize {
+			bbtches = bppend(bbtches, bbtch)
+			bbtch = mbke([]T, 0, bbtchSize)
 		}
 	}
 
-	if len(batch) > 0 {
-		batches = append(batches, batch)
+	if len(bbtch) > 0 {
+		bbtches = bppend(bbtches, bbtch)
 	}
 
-	return batches
+	return bbtches
 }

@@ -1,19 +1,19 @@
-package background
+pbckbge bbckground
 
 import (
-	repomatcher "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/background/repository_matcher"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	repombtcher "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/internbl/bbckground/repository_mbtcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func PolicyMatcherJobs(observationCtx *observation.Context, store store.Store, config *repomatcher.Config) []goroutine.BackgroundRoutine {
-	return []goroutine.BackgroundRoutine{
-		repomatcher.NewRepositoryMatcher(
+func PolicyMbtcherJobs(observbtionCtx *observbtion.Context, store store.Store, config *repombtcher.Config) []goroutine.BbckgroundRoutine {
+	return []goroutine.BbckgroundRoutine{
+		repombtcher.NewRepositoryMbtcher(
 			store,
-			observationCtx,
-			config.Interval,
-			config.ConfigurationPolicyMembershipBatchSize,
+			observbtionCtx,
+			config.Intervbl,
+			config.ConfigurbtionPolicyMembershipBbtchSize,
 		),
 	}
 }

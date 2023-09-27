@@ -1,4 +1,4 @@
-package executors
+pbckbge executors
 
 import (
 	"context"
@@ -6,112 +6,112 @@ import (
 	"testing"
 	"time"
 
-	executortypes "github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	executortypes "github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
-var defaultTime = time.Date(2000, 1, 1, 1, 1, 1, 1, time.UTC)
+vbr defbultTime = time.Dbte(2000, 1, 1, 1, 1, 1, 1, time.UTC)
 
-type cacheEntry struct {
-	timestamp       string
+type cbcheEntry struct {
+	timestbmp       string
 	jobId           string
 	shouldBeDeleted bool
 }
 
-func Test_multiqueueCacheCleaner_Handle(t *testing.T) {
+func Test_multiqueueCbcheClebner_Hbndle(t *testing.T) {
 	tests := []struct {
-		name         string
-		cacheEntries map[string][]cacheEntry
+		nbme         string
+		cbcheEntries mbp[string][]cbcheEntry
 	}{
 		{
-			name: "nothing deleted",
-			cacheEntries: map[string][]cacheEntry{
-				"batches": {{
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 2).UnixNano()),
-					jobId:           "batches-1",
-					shouldBeDeleted: false,
+			nbme: "nothing deleted",
+			cbcheEntries: mbp[string][]cbcheEntry{
+				"bbtches": {{
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 2).UnixNbno()),
+					jobId:           "bbtches-1",
+					shouldBeDeleted: fblse,
 				}, {
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 1).UnixNano()),
-					jobId:           "batches-2",
-					shouldBeDeleted: false,
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 1).UnixNbno()),
+					jobId:           "bbtches-2",
+					shouldBeDeleted: fblse,
 				}},
 				"codeintel": {{
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 2).UnixNano()),
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 2).UnixNbno()),
 					jobId:           "codeintel-1",
-					shouldBeDeleted: false,
+					shouldBeDeleted: fblse,
 				}, {
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 1).UnixNano()),
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 1).UnixNbno()),
 					jobId:           "codeintel-2",
-					shouldBeDeleted: false,
+					shouldBeDeleted: fblse,
 				}},
 			},
 		},
 		{
-			name: "one entry for each deleted",
-			cacheEntries: map[string][]cacheEntry{
-				"batches": {{
-					// past the 5 minute TTL
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 6).UnixNano()),
-					jobId:           "batches-1",
-					shouldBeDeleted: false,
+			nbme: "one entry for ebch deleted",
+			cbcheEntries: mbp[string][]cbcheEntry{
+				"bbtches": {{
+					// pbst the 5 minute TTL
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 6).UnixNbno()),
+					jobId:           "bbtches-1",
+					shouldBeDeleted: fblse,
 				}, {
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 1).UnixNano()),
-					jobId:           "batches-2",
-					shouldBeDeleted: false,
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 1).UnixNbno()),
+					jobId:           "bbtches-2",
+					shouldBeDeleted: fblse,
 				}},
 				"codeintel": {{
-					// past the 5 minute TTL
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 6).UnixNano()),
+					// pbst the 5 minute TTL
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 6).UnixNbno()),
 					jobId:           "codeintel-1",
-					shouldBeDeleted: false,
+					shouldBeDeleted: fblse,
 				}, {
-					timestamp:       fmt.Sprint(defaultTime.Add(-time.Minute * 1).UnixNano()),
+					timestbmp:       fmt.Sprint(defbultTime.Add(-time.Minute * 1).UnixNbno()),
 					jobId:           "codeintel-2",
-					shouldBeDeleted: false,
+					shouldBeDeleted: fblse,
 				}},
 			},
 		},
 	}
-	for _, tt := range tests {
+	for _, tt := rbnge tests {
 		ctx := context.TODO()
-		t.Run(tt.name, func(t *testing.T) {
-			rcache.SetupForTest(t)
-			m := &multiqueueCacheCleaner{
-				cache:      rcache.New(executortypes.DequeueCachePrefix),
+		t.Run(tt.nbme, func(t *testing.T) {
+			rcbche.SetupForTest(t)
+			m := &multiqueueCbcheClebner{
+				cbche:      rcbche.New(executortypes.DequeueCbchePrefix),
 				windowSize: executortypes.DequeueTtl,
 			}
 			timeNow = func() time.Time {
-				return defaultTime
+				return defbultTime
 			}
 
-			for queue, dequeues := range tt.cacheEntries {
-				for _, dequeue := range dequeues {
-					if err := m.cache.SetHashItem(queue, dequeue.timestamp, dequeue.jobId); err != nil {
-						t.Fatalf("unexpected error setting test cache data: %s", err)
+			for queue, dequeues := rbnge tt.cbcheEntries {
+				for _, dequeue := rbnge dequeues {
+					if err := m.cbche.SetHbshItem(queue, dequeue.timestbmp, dequeue.jobId); err != nil {
+						t.Fbtblf("unexpected error setting test cbche dbtb: %s", err)
 					}
 				}
 			}
 
-			expectedCacheSizePerQueue := make(map[string]int, len(tt.cacheEntries))
-			for queue, entries := range tt.cacheEntries {
-				for _, entry := range entries {
+			expectedCbcheSizePerQueue := mbke(mbp[string]int, len(tt.cbcheEntries))
+			for queue, entries := rbnge tt.cbcheEntries {
+				for _, entry := rbnge entries {
 					if !entry.shouldBeDeleted {
-						expectedCacheSizePerQueue[queue]++
+						expectedCbcheSizePerQueue[queue]++
 					}
 				}
 			}
 
-			if err := m.Handle(ctx); err != nil {
-				t.Fatalf("unexpected error cleaning the cache: %s", err)
+			if err := m.Hbndle(ctx); err != nil {
+				t.Fbtblf("unexpected error clebning the cbche: %s", err)
 			}
 
-			for queue, size := range expectedCacheSizePerQueue {
-				items, err := m.cache.GetHashAll(queue)
+			for queue, size := rbnge expectedCbcheSizePerQueue {
+				items, err := m.cbche.GetHbshAll(queue)
 				if err != nil {
-					t.Fatalf("unexpected error getting all cache items for queue %s: %s", queue, err)
+					t.Fbtblf("unexpected error getting bll cbche items for queue %s: %s", queue, err)
 				}
 				if len(items) != size {
-					t.Errorf("expected %d cache items for queue %s but found %d", size, queue, len(items))
+					t.Errorf("expected %d cbche items for queue %s but found %d", size, queue, len(items))
 				}
 			}
 		})

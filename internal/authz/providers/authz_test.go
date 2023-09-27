@@ -1,4 +1,4 @@
-package providers
+pbckbge providers
 
 import (
 	"context"
@@ -10,81 +10,81 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 	"github.com/kr/pretty"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+const bogusKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIbWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4blBESUZUN3dRZ0tbbXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3dbeS83RlYxUEFtdmlXeWlYVklETzJnNWJObUJlbmdKQ3hFb3Nib1VtUUloQVBOMlZbczN6UFFwCk1EVG9vTlJXcnl0RW1URERkbmdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZbDkKWDFBMlVnTDE3bWhsS1FJbEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovbXZFYkJybVJHblAyb3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 
-type gitlabAuthzProviderParams struct {
-	OAuthOp gitlab.OAuthProviderOp
-	SudoOp  gitlab.SudoProviderOp
+type gitlbbAuthzProviderPbrbms struct {
+	OAuthOp gitlbb.OAuthProviderOp
+	SudoOp  gitlbb.SudoProviderOp
 }
 
-func (m gitlabAuthzProviderParams) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) Repos(ctx context.Context, repos []*types.Repo) (mine []*types.Repo, others []*types.Repo) {
+	pbnic("should never be cblled")
 }
 
-func (m gitlabAuthzProviderParams) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmails []string) (mine *extsvc.Account, err error) {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) FetchAccount(ctx context.Context, user *types.User, current []*extsvc.Account, verifiedEmbils []string) (mine *extsvc.Account, err error) {
+	pbnic("should never be cblled")
 }
 
-func (m gitlabAuthzProviderParams) ServiceID() string {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) ServiceID() string {
+	pbnic("should never be cblled")
 }
 
-func (m gitlabAuthzProviderParams) ServiceType() string {
-	return extsvc.TypeGitLab
+func (m gitlbbAuthzProviderPbrbms) ServiceType() string {
+	return extsvc.TypeGitLbb
 }
 
-func (m gitlabAuthzProviderParams) URN() string {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) URN() string {
+	pbnic("should never be cblled")
 }
 
-func (m gitlabAuthzProviderParams) ValidateConnection(context.Context) error { return nil }
+func (m gitlbbAuthzProviderPbrbms) VblidbteConnection(context.Context) error { return nil }
 
-func (m gitlabAuthzProviderParams) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) FetchUserPerms(context.Context, *extsvc.Account, buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	pbnic("should never be cblled")
 }
 
-func (m gitlabAuthzProviderParams) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) FetchUserPermsByToken(context.Context, string, buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	pbnic("should never be cblled")
 }
 
-func (m gitlabAuthzProviderParams) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
-	panic("should never be called")
+func (m gitlbbAuthzProviderPbrbms) FetchRepoPerms(context.Context, *extsvc.Repository, buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+	pbnic("should never be cblled")
 }
 
-var errPermissionsUserMappingConflict = errors.New("The explicit permissions API (site configuration `permissions.userMapping`) cannot be enabled when bitbucketServer authorization provider is in use. Blocking access to all repositories until the conflict is resolved.")
+vbr errPermissionsUserMbppingConflict = errors.New("The explicit permissions API (site configurbtion `permissions.userMbpping`) cbnnot be enbbled when bitbucketServer buthorizbtion provider is in use. Blocking bccess to bll repositories until the conflict is resolved.")
 
 func TestAuthzProvidersFromConfig(t *testing.T) {
-	t.Cleanup(licensing.TestingSkipFeatureChecks())
-	gitlab.NewOAuthProvider = func(op gitlab.OAuthProviderOp) authz.Provider {
-		return gitlabAuthzProviderParams{OAuthOp: op}
+	t.Clebnup(licensing.TestingSkipFebtureChecks())
+	gitlbb.NewOAuthProvider = func(op gitlbb.OAuthProviderOp) buthz.Provider {
+		return gitlbbAuthzProviderPbrbms{OAuthOp: op}
 	}
-	gitlab.NewSudoProvider = func(op gitlab.SudoProviderOp) authz.Provider {
-		return gitlabAuthzProviderParams{SudoOp: op}
+	gitlbb.NewSudoProvider = func(op gitlbb.SudoProviderOp) buthz.Provider {
+		return gitlbbAuthzProviderPbrbms{SudoOp: op}
 	}
 
-	providersEqual := func(want ...authz.Provider) func(*testing.T, []authz.Provider) {
-		return func(t *testing.T, have []authz.Provider) {
-			if diff := cmp.Diff(want, have, cmpopts.IgnoreInterfaces(struct{ database.DB }{})); diff != "" {
-				t.Errorf("authzProviders mismatch (-want +got):\n%s", diff)
+	providersEqubl := func(wbnt ...buthz.Provider) func(*testing.T, []buthz.Provider) {
+		return func(t *testing.T, hbve []buthz.Provider) {
+			if diff := cmp.Diff(wbnt, hbve, cmpopts.IgnoreInterfbces(struct{ dbtbbbse.DB }{})); diff != "" {
+				t.Errorf("buthzProviders mismbtch (-wbnt +got):\n%s", diff)
 			}
 		}
 	}
@@ -92,634 +92,634 @@ func TestAuthzProvidersFromConfig(t *testing.T) {
 	tests := []struct {
 		description                  string
 		cfg                          conf.Unified
-		gitlabConnections            []*schema.GitLabConnection
-		bitbucketServerConnections   []*schema.BitbucketServerConnection
-		expAuthzAllowAccessByDefault bool
-		expAuthzProviders            func(*testing.T, []authz.Provider)
+		gitlbbConnections            []*schemb.GitLbbConnection
+		bitbucketServerConnections   []*schemb.BitbucketServerConnection
+		expAuthzAllowAccessByDefbult bool
+		expAuthzProviders            func(*testing.T, []buthz.Provider)
 		expSeriousProblems           []string
 	}{
 		{
-			description: "1 GitLab connection with authz enabled, 1 GitLab matching auth provider",
+			description: "1 GitLbb connection with buthz enbbled, 1 GitLbb mbtching buth provider",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Gitlbb: &schemb.GitLbbAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
+							DisplbyNbme:  "GitLbb",
+							Type:         extsvc.TypeGitLbb,
+							Url:          "https://gitlbb.mine",
 						},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders: providersEqubl(
+				gitlbbAuthzProviderPbrbms{
+					OAuthOp: gitlbb.OAuthProviderOp{
+						URN:     "extsvc:gitlbb:0",
+						BbseURL: mustURLPbrse(t, "https://gitlbb.mine"),
+						Token:   "bsdf",
 					},
 				},
 			),
 		},
 		{
-			description: "1 GitLab connection with authz enabled, 1 GitLab auth provider but doesn't match",
+			description: "1 GitLbb connection with buthz enbbled, 1 GitLbb buth provider but doesn't mbtch",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Gitlbb: &schemb.GitLbbAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.com",
+							DisplbyNbme:  "GitLbb",
+							Type:         extsvc.TypeGitLbb,
+							Url:          "https://gitlbb.com",
 						},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
+			expAuthzAllowAccessByDefbult: fblse,
+			expSeriousProblems:           []string{"Did not find buthenticbtion provider mbtching \"https://gitlbb.mine\". Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) exists for https://gitlbb.mine."},
 		},
 		{
-			description: "1 GitLab connection with authz enabled, no GitLab auth provider",
+			description: "1 GitLbb connection with buthz enbbled, no GitLbb buth provider",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Builtin: &schema.BuiltinAuthProvider{Type: "builtin"},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Builtin: &schemb.BuiltinAuthProvider{Type: "builtin"},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"Did not find authentication provider matching \"https://gitlab.mine\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.mine."},
+			expAuthzAllowAccessByDefbult: fblse,
+			expSeriousProblems:           []string{"Did not find buthenticbtion provider mbtching \"https://gitlbb.mine\". Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) exists for https://gitlbb.mine."},
 		},
 		{
-			description: "Two GitLab connections with authz enabled, two matching GitLab auth providers",
+			description: "Two GitLbb connections with buthz enbbled, two mbtching GitLbb buth providers",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{
 						{
-							Gitlab: &schema.GitLabAuthProvider{
+							Gitlbb: &schemb.GitLbbAuthProvider{
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
-								DisplayName:  "GitLab.com",
-								Type:         extsvc.TypeGitLab,
-								Url:          "https://gitlab.com",
+								DisplbyNbme:  "GitLbb.com",
+								Type:         extsvc.TypeGitLbb,
+								Url:          "https://gitlbb.com",
 							},
 						}, {
-							Gitlab: &schema.GitLabAuthProvider{
+							Gitlbb: &schemb.GitLbbAuthProvider{
 								ClientID:     "clientID",
 								ClientSecret: "clientSecret",
-								DisplayName:  "GitLab.mine",
-								Type:         extsvc.TypeGitLab,
-								Url:          "https://gitlab.mine",
+								DisplbyNbme:  "GitLbb.mine",
+								Type:         extsvc.TypeGitLbb,
+								Url:          "https://gitlbb.mine",
 							},
 						},
 					},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.com",
-					Token: "asdf",
+					Url:   "https://gitlbb.com",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders: providersEqubl(
+				gitlbbAuthzProviderPbrbms{
+					OAuthOp: gitlbb.OAuthProviderOp{
+						URN:     "extsvc:gitlbb:0",
+						BbseURL: mustURLPbrse(t, "https://gitlbb.mine"),
+						Token:   "bsdf",
 					},
 				},
-				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.com"),
-						Token:   "asdf",
+				gitlbbAuthzProviderPbrbms{
+					OAuthOp: gitlbb.OAuthProviderOp{
+						URN:     "extsvc:gitlbb:0",
+						BbseURL: mustURLPbrse(t, "https://gitlbb.com"),
+						Token:   "bsdf",
 					},
 				},
 			),
 		},
 		{
-			description: "1 GitLab connection with authz disabled",
+			description: "1 GitLbb connection with buthz disbbled",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Gitlbb: &schemb.GitLbbAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
+							DisplbyNbme:  "GitLbb",
+							Type:         extsvc.TypeGitLbb,
+							Url:          "https://gitlbb.mine",
 						},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: nil,
-					Url:           "https://gitlab.mine",
-					Token:         "asdf",
+					Authorizbtion: nil,
+					Url:           "https://gitlbb.mine",
+					Token:         "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
+			expAuthzAllowAccessByDefbult: true,
 			expAuthzProviders:            nil,
 		},
 		{
-			description: "external auth provider",
+			description: "externbl buth provider",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Saml: &schema.SAMLAuthProvider{
-							ConfigID: "okta",
-							Type:     "saml",
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Sbml: &schemb.SAMLAuthProvider{
+							ConfigID: "oktb",
+							Type:     "sbml",
 						},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{External: &schema.ExternalIdentity{
-							Type:             "external",
-							AuthProviderID:   "okta",
-							AuthProviderType: "saml",
-							GitlabProvider:   "my-external",
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Externbl: &schemb.ExternblIdentity{
+							Type:             "externbl",
+							AuthProviderID:   "oktb",
+							AuthProviderType: "sbml",
+							GitlbbProvider:   "my-externbl",
 						}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					SudoOp: gitlab.SudoProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders: providersEqubl(
+				gitlbbAuthzProviderPbrbms{
+					SudoOp: gitlbb.SudoProviderOp{
+						URN:     "extsvc:gitlbb:0",
+						BbseURL: mustURLPbrse(t, "https://gitlbb.mine"),
 						AuthnConfigID: providers.ConfigID{
-							Type: "saml",
-							ID:   "okta",
+							Type: "sbml",
+							ID:   "oktb",
 						},
-						GitLabProvider:    "my-external",
-						SudoToken:         "asdf",
-						UseNativeUsername: false,
+						GitLbbProvider:    "my-externbl",
+						SudoToken:         "bsdf",
+						UseNbtiveUsernbme: fblse,
 					},
 				},
 			),
 		},
 		{
-			description: "exact username matching",
+			description: "exbct usernbme mbtching",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Username: &schema.UsernameIdentity{Type: "username"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Usernbme: &schemb.UsernbmeIdentity{Type: "usernbme"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					SudoOp: gitlab.SudoProviderOp{
-						URN:               "extsvc:gitlab:0",
-						BaseURL:           mustURLParse(t, "https://gitlab.mine"),
-						SudoToken:         "asdf",
-						UseNativeUsername: true,
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders: providersEqubl(
+				gitlbbAuthzProviderPbrbms{
+					SudoOp: gitlbb.SudoProviderOp{
+						URN:               "extsvc:gitlbb:0",
+						BbseURL:           mustURLPbrse(t, "https://gitlbb.mine"),
+						SudoToken:         "bsdf",
+						UseNbtiveUsernbme: true,
 					},
 				},
 			),
 		},
 		{
-			description: "1 BitbucketServer connection with authz disabled",
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+			description: "1 BitbucketServer connection with buthz disbbled",
+			bitbucketServerConnections: []*schemb.BitbucketServerConnection{
 				{
-					Authorization: nil,
+					Authorizbtion: nil,
 					Url:           "https://bitbucket.mycorp.org",
-					Username:      "admin",
+					Usernbme:      "bdmin",
 					Token:         "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders:            providersEqual(),
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders:            providersEqubl(),
 		},
 		{
-			description: "Bitbucket Server Oauth config error",
+			description: "Bitbucket Server Obuth config error",
 			cfg:         conf.Unified{},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+			bitbucketServerConnections: []*schemb.BitbucketServerConnection{
 				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
+					Authorizbtion: &schemb.BitbucketServerAuthorizbtion{
+						IdentityProvider: schemb.BitbucketServerIdentityProvider{
+							Usernbme: &schemb.BitbucketServerUsernbmeIdentity{
+								Type: "usernbme",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
-							SigningKey:  "Invalid Key",
+						Obuth: schemb.BitbucketServerOAuth{
+							ConsumerKey: "sourcegrbph",
+							SigningKey:  "Invblid Key",
 						},
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
+					Usernbme: "bdmin",
 					Token:    "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: false,
-			expSeriousProblems:           []string{"authorization.oauth.signingKey: illegal base64 data at input byte 7"},
+			expAuthzAllowAccessByDefbult: fblse,
+			expSeriousProblems:           []string{"buthorizbtion.obuth.signingKey: illegbl bbse64 dbtb bt input byte 7"},
 		},
 		{
-			description: "Bitbucket Server exact username matching",
+			description: "Bitbucket Server exbct usernbme mbtching",
 			cfg:         conf.Unified{},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+			bitbucketServerConnections: []*schemb.BitbucketServerConnection{
 				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
+					Authorizbtion: &schemb.BitbucketServerAuthorizbtion{
+						IdentityProvider: schemb.BitbucketServerIdentityProvider{
+							Usernbme: &schemb.BitbucketServerUsernbmeIdentity{
+								Type: "usernbme",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
+						Obuth: schemb.BitbucketServerOAuth{
+							ConsumerKey: "sourcegrbph",
 							SigningKey:  bogusKey,
 						},
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
+					Usernbme: "bdmin",
 					Token:    "secret-token",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: func(t *testing.T, have []authz.Provider) {
-				if len(have) == 0 {
-					t.Fatalf("no providers")
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders: func(t *testing.T, hbve []buthz.Provider) {
+				if len(hbve) == 0 {
+					t.Fbtblf("no providers")
 				}
 
-				if have[0].ServiceType() != extsvc.TypeBitbucketServer {
-					t.Fatalf("no Bitbucket Server authz provider returned")
+				if hbve[0].ServiceType() != extsvc.TypeBitbucketServer {
+					t.Fbtblf("no Bitbucket Server buthz provider returned")
 				}
 			},
 		},
 
-		// For Sourcegraph authz provider
+		// For Sourcegrbph buthz provider
 		{
-			description: "Explicit permissions can be enabled alongside synced permissions",
+			description: "Explicit permissions cbn be enbbled blongside synced permissions",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					PermissionsUserMapping: &schema.PermissionsUserMapping{
-						Enabled: true,
-						BindID:  "email",
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					PermissionsUserMbpping: &schemb.PermissionsUserMbpping{
+						Enbbled: true,
+						BindID:  "embil",
 					},
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
+					AuthProviders: []schemb.AuthProviders{{
+						Gitlbb: &schemb.GitLbbAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
+							DisplbyNbme:  "GitLbb",
+							Type:         extsvc.TypeGitLbb,
+							Url:          "https://gitlbb.mine",
 						},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expAuthzAllowAccessByDefault: true,
-			expAuthzProviders: providersEqual(
-				gitlabAuthzProviderParams{
-					OAuthOp: gitlab.OAuthProviderOp{
-						URN:     "extsvc:gitlab:0",
-						BaseURL: mustURLParse(t, "https://gitlab.mine"),
-						Token:   "asdf",
+			expAuthzAllowAccessByDefbult: true,
+			expAuthzProviders: providersEqubl(
+				gitlbbAuthzProviderPbrbms{
+					OAuthOp: gitlbb.OAuthProviderOp{
+						URN:     "extsvc:gitlbb:0",
+						BbseURL: mustURLPbrse(t, "https://gitlbb.mine"),
+						Token:   "bsdf",
 					},
 				},
 			),
 		},
 	}
 
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(test.description, func(t *testing.T) {
-			externalServices := dbmocks.NewMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				mustMarshalJSONString := func(v any) string {
-					str, err := jsoniter.MarshalToString(v)
+			externblServices := dbmocks.NewMockExternblServiceStore()
+			externblServices.ListFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+				mustMbrshblJSONString := func(v bny) string {
+					str, err := jsoniter.MbrshblToString(v)
 					require.NoError(t, err)
 					return str
 				}
 
-				var svcs []*types.ExternalService
-				for _, kind := range opt.Kinds {
+				vbr svcs []*types.ExternblService
+				for _, kind := rbnge opt.Kinds {
 					switch kind {
-					case extsvc.KindGitLab:
-						for _, gl := range test.gitlabConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindGitLbb:
+						for _, gl := rbnge test.gitlbbConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gl)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(gl)),
 							})
 						}
-					case extsvc.KindBitbucketServer:
-						for _, bbs := range test.bitbucketServerConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindBitbucketServer:
+						for _, bbs := rbnge test.bitbucketServerConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit, extsvc.KindAzureDevOps:
-					default:
+					cbse extsvc.KindGitHub, extsvc.KindPerforce, extsvc.KindBitbucketCloud, extsvc.KindGerrit, extsvc.KindAzureDevOps:
+					defbult:
 						return nil, errors.Errorf("unexpected kind: %s", kind)
 					}
 				}
 				return svcs, nil
 			})
-			allowAccessByDefault, authzProviders, seriousProblems, _, _ := ProvidersFromConfig(
-				context.Background(),
-				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
+			bllowAccessByDefbult, buthzProviders, seriousProblems, _, _ := ProvidersFromConfig(
+				context.Bbckground(),
+				stbticConfig(test.cfg.SiteConfigurbtion),
+				externblServices,
 				dbmocks.NewMockDB(),
 			)
-			assert.Equal(t, test.expAuthzAllowAccessByDefault, allowAccessByDefault)
+			bssert.Equbl(t, test.expAuthzAllowAccessByDefbult, bllowAccessByDefbult)
 			if test.expAuthzProviders != nil {
-				test.expAuthzProviders(t, authzProviders)
+				test.expAuthzProviders(t, buthzProviders)
 			}
 
-			assert.Equal(t, test.expSeriousProblems, seriousProblems)
+			bssert.Equbl(t, test.expSeriousProblems, seriousProblems)
 		})
 	}
 }
 
-func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
-	t.Cleanup(licensing.MockCheckFeatureError("failed"))
+func TestAuthzProvidersEnbbledACLsDisbbled(t *testing.T) {
+	t.Clebnup(licensing.MockCheckFebtureError("fbiled"))
 	tests := []struct {
 		description                string
 		cfg                        conf.Unified
-		azureDevOpsConnections     []*schema.AzureDevOpsConnection
-		gitlabConnections          []*schema.GitLabConnection
-		bitbucketServerConnections []*schema.BitbucketServerConnection
-		githubConnections          []*schema.GitHubConnection
-		perforceConnections        []*schema.PerforceConnection
-		bitbucketCloudConnections  []*schema.BitbucketCloudConnection
-		gerritConnections          []*schema.GerritConnection
+		bzureDevOpsConnections     []*schemb.AzureDevOpsConnection
+		gitlbbConnections          []*schemb.GitLbbConnection
+		bitbucketServerConnections []*schemb.BitbucketServerConnection
+		githubConnections          []*schemb.GitHubConnection
+		perforceConnections        []*schemb.PerforceConnection
+		bitbucketCloudConnections  []*schemb.BitbucketCloudConnection
+		gerritConnections          []*schemb.GerritConnection
 
-		expInvalidConnections []string
+		expInvblidConnections []string
 		expSeriousProblems    []string
 	}{
 		{
-			description: "Azure DevOps connection with enforce permissions enabled but missing license for ACLs",
+			description: "Azure DevOps connection with enforce permissions enbbled but missing license for ACLs",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						AzureDevOps: &schema.AzureDevOpsAuthProvider{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						AzureDevOps: &schemb.AzureDevOpsAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "Azure DevOps",
+							DisplbyNbme:  "Azure DevOps",
 							Type:         extsvc.TypeAzureDevOps,
 						},
 					}},
 				},
 			},
-			azureDevOpsConnections: []*schema.AzureDevOpsConnection{
+			bzureDevOpsConnections: []*schemb.AzureDevOpsConnection{
 				{
 					EnforcePermissions: true,
-					Url:                "https://dev.azure.com",
+					Url:                "https://dev.bzure.com",
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"azuredevops"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"bzuredevops"},
 		},
 		{
-			description: "GitHub connection with authz enabled but missing license for ACLs",
+			description: "GitHub connection with buthz enbbled but missing license for ACLs",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Github: &schema.GitHubAuthProvider{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Github: &schemb.GitHubAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "GitHub",
+							DisplbyNbme:  "GitHub",
 							Type:         extsvc.TypeGitHub,
 							Url:          "https://github.mine",
 						},
 					}},
 				},
 			},
-			githubConnections: []*schema.GitHubConnection{
+			githubConnections: []*schemb.GitHubConnection{
 				{
-					Authorization: &schema.GitHubAuthorization{},
+					Authorizbtion: &schemb.GitHubAuthorizbtion{},
 					Url:           "https://github.com/my-org",
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"github"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"github"},
 		},
 		{
-			description: "GitLab connection with authz enabled but missing license for ACLs",
+			description: "GitLbb connection with buthz enbbled but missing license for ACLs",
 			cfg: conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthProviders: []schema.AuthProviders{{
-						Gitlab: &schema.GitLabAuthProvider{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthProviders: []schemb.AuthProviders{{
+						Gitlbb: &schemb.GitLbbAuthProvider{
 							ClientID:     "clientID",
 							ClientSecret: "clientSecret",
-							DisplayName:  "GitLab",
-							Type:         extsvc.TypeGitLab,
-							Url:          "https://gitlab.mine",
+							DisplbyNbme:  "GitLbb",
+							Type:         extsvc.TypeGitLbb,
+							Url:          "https://gitlbb.mine",
 						},
 					}},
 				},
 			},
-			gitlabConnections: []*schema.GitLabConnection{
+			gitlbbConnections: []*schemb.GitLbbConnection{
 				{
-					Authorization: &schema.GitLabAuthorization{
-						IdentityProvider: schema.IdentityProvider{Oauth: &schema.OAuthIdentity{Type: "oauth"}},
+					Authorizbtion: &schemb.GitLbbAuthorizbtion{
+						IdentityProvider: schemb.IdentityProvider{Obuth: &schemb.OAuthIdentity{Type: "obuth"}},
 					},
-					Url:   "https://gitlab.mine",
-					Token: "asdf",
+					Url:   "https://gitlbb.mine",
+					Token: "bsdf",
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"gitlab"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"gitlbb"},
 		},
 		{
-			description: "Bitbucket Server connection with authz enabled but missing license for ACLs",
+			description: "Bitbucket Server connection with buthz enbbled but missing license for ACLs",
 			cfg:         conf.Unified{},
-			bitbucketServerConnections: []*schema.BitbucketServerConnection{
+			bitbucketServerConnections: []*schemb.BitbucketServerConnection{
 				{
-					Authorization: &schema.BitbucketServerAuthorization{
-						IdentityProvider: schema.BitbucketServerIdentityProvider{
-							Username: &schema.BitbucketServerUsernameIdentity{
-								Type: "username",
+					Authorizbtion: &schemb.BitbucketServerAuthorizbtion{
+						IdentityProvider: schemb.BitbucketServerIdentityProvider{
+							Usernbme: &schemb.BitbucketServerUsernbmeIdentity{
+								Type: "usernbme",
 							},
 						},
-						Oauth: schema.BitbucketServerOAuth{
-							ConsumerKey: "sourcegraph",
+						Obuth: schemb.BitbucketServerOAuth{
+							ConsumerKey: "sourcegrbph",
 							SigningKey:  bogusKey,
 						},
 					},
 					Url:      "https://bitbucketserver.mycorp.org",
-					Username: "admin",
+					Usernbme: "bdmin",
 					Token:    "secret-token",
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"bitbucketServer"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"bitbucketServer"},
 		},
 		{
-			description: "Bitbucket Cloud connection with authz enabled but missing license for ACLs",
+			description: "Bitbucket Cloud connection with buthz enbbled but missing license for ACLs",
 			cfg:         conf.Unified{},
-			bitbucketCloudConnections: []*schema.BitbucketCloudConnection{
+			bitbucketCloudConnections: []*schemb.BitbucketCloudConnection{
 				{
-					Authorization: &schema.BitbucketCloudAuthorization{},
+					Authorizbtion: &schemb.BitbucketCloudAuthorizbtion{},
 					Url:           "https://bitbucket.org",
-					Username:      "admin",
-					AppPassword:   "secret-password",
+					Usernbme:      "bdmin",
+					AppPbssword:   "secret-pbssword",
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"bitbucketCloud"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"bitbucketCloud"},
 		},
 		{
-			description: "Gerrit connection with authz enabled but missing license for ACLs",
+			description: "Gerrit connection with buthz enbbled but missing license for ACLs",
 			cfg:         conf.Unified{},
-			gerritConnections: []*schema.GerritConnection{
+			gerritConnections: []*schemb.GerritConnection{
 				{
-					Authorization: &schema.GerritAuthorization{},
+					Authorizbtion: &schemb.GerritAuthorizbtion{},
 					Url:           "https://gerrit.sgdev.org",
-					Username:      "admin",
-					Password:      "secret-password",
+					Usernbme:      "bdmin",
+					Pbssword:      "secret-pbssword",
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"gerrit"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"gerrit"},
 		},
 		{
-			description: "Perforce connection with authz enabled but missing license for ACLs",
+			description: "Perforce connection with buthz enbbled but missing license for ACLs",
 			cfg:         conf.Unified{},
-			perforceConnections: []*schema.PerforceConnection{
+			perforceConnections: []*schemb.PerforceConnection{
 				{
-					Authorization: &schema.PerforceAuthorization{},
+					Authorizbtion: &schemb.PerforceAuthorizbtion{},
 					P4Port:        "ssl:111.222.333.444:1666",
-					P4User:        "admin",
-					P4Passwd:      "pa$$word",
+					P4User:        "bdmin",
+					P4Pbsswd:      "pb$$word",
 					Depots: []string{
-						"//Sourcegraph",
+						"//Sourcegrbph",
 						"//Engineering/Cloud",
 					},
 				},
 			},
-			expSeriousProblems:    []string{"failed"},
-			expInvalidConnections: []string{"perforce"},
+			expSeriousProblems:    []string{"fbiled"},
+			expInvblidConnections: []string{"perforce"},
 		},
 	}
 
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(test.description, func(t *testing.T) {
-			externalServices := dbmocks.NewMockExternalServiceStore()
-			externalServices.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ExternalServicesListOptions) ([]*types.ExternalService, error) {
-				mustMarshalJSONString := func(v any) string {
-					str, err := jsoniter.MarshalToString(v)
+			externblServices := dbmocks.NewMockExternblServiceStore()
+			externblServices.ListFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ExternblServicesListOptions) ([]*types.ExternblService, error) {
+				mustMbrshblJSONString := func(v bny) string {
+					str, err := jsoniter.MbrshblToString(v)
 					require.NoError(t, err)
 					return str
 				}
 
-				var svcs []*types.ExternalService
-				for _, kind := range opt.Kinds {
+				vbr svcs []*types.ExternblService
+				for _, kind := rbnge opt.Kinds {
 					switch kind {
-					case extsvc.KindAzureDevOps:
-						for _, ado := range test.azureDevOpsConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindAzureDevOps:
+						for _, bdo := rbnge test.bzureDevOpsConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(ado)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(bdo)),
 							})
 						}
-					case extsvc.KindGitLab:
-						for _, gl := range test.gitlabConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindGitLbb:
+						for _, gl := rbnge test.gitlbbConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gl)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(gl)),
 							})
 						}
-					case extsvc.KindBitbucketServer:
-						for _, bbs := range test.bitbucketServerConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindBitbucketServer:
+						for _, bbs := rbnge test.bitbucketServerConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbs)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(bbs)),
 							})
 						}
-					case extsvc.KindGitHub:
-						for _, gh := range test.githubConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindGitHub:
+						for _, gh := rbnge test.githubConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(gh)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(gh)),
 							})
 						}
-					case extsvc.KindBitbucketCloud:
-						for _, bbcloud := range test.bitbucketCloudConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindBitbucketCloud:
+						for _, bbcloud := rbnge test.bitbucketCloudConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(bbcloud)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(bbcloud)),
 							})
 						}
-					case extsvc.KindGerrit:
-						for _, g := range test.gerritConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindGerrit:
+						for _, g := rbnge test.gerritConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(g)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(g)),
 							})
 						}
-					case extsvc.KindPerforce:
-						for _, pf := range test.perforceConnections {
-							svcs = append(svcs, &types.ExternalService{
+					cbse extsvc.KindPerforce:
+						for _, pf := rbnge test.perforceConnections {
+							svcs = bppend(svcs, &types.ExternblService{
 								Kind:   kind,
-								Config: extsvc.NewUnencryptedConfig(mustMarshalJSONString(pf)),
+								Config: extsvc.NewUnencryptedConfig(mustMbrshblJSONString(pf)),
 							})
 						}
 					}
@@ -727,31 +727,31 @@ func TestAuthzProvidersEnabledACLsDisabled(t *testing.T) {
 				return svcs, nil
 			})
 
-			_, _, seriousProblems, _, invalidConnections := ProvidersFromConfig(
-				context.Background(),
-				staticConfig(test.cfg.SiteConfiguration),
-				externalServices,
+			_, _, seriousProblems, _, invblidConnections := ProvidersFromConfig(
+				context.Bbckground(),
+				stbticConfig(test.cfg.SiteConfigurbtion),
+				externblServices,
 				dbmocks.NewMockDB(),
 			)
 
-			assert.Equal(t, test.expSeriousProblems, seriousProblems)
-			assert.Equal(t, test.expInvalidConnections, invalidConnections)
+			bssert.Equbl(t, test.expSeriousProblems, seriousProblems)
+			bssert.Equbl(t, test.expInvblidConnections, invblidConnections)
 		})
 	}
 }
 
-type staticConfig schema.SiteConfiguration
+type stbticConfig schemb.SiteConfigurbtion
 
-func (s staticConfig) SiteConfig() schema.SiteConfiguration {
-	return schema.SiteConfiguration(s)
+func (s stbticConfig) SiteConfig() schemb.SiteConfigurbtion {
+	return schemb.SiteConfigurbtion(s)
 }
 
-func mustURLParse(t *testing.T, u string) *url.URL {
-	parsed, err := url.Parse(u)
+func mustURLPbrse(t *testing.T, u string) *url.URL {
+	pbrsed, err := url.Pbrse(u)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return parsed
+	return pbrsed
 }
 
 type mockProvider struct {
@@ -767,379 +767,379 @@ func (p *mockProvider) ServiceType() string { return p.codeHost.ServiceType }
 func (p *mockProvider) ServiceID() string   { return p.codeHost.ServiceID }
 func (p *mockProvider) URN() string         { return extsvc.URN(p.codeHost.ServiceType, 0) }
 
-func (p *mockProvider) ValidateConnection(context.Context) error { return nil }
+func (p *mockProvider) VblidbteConnection(context.Context) error { return nil }
 
-func (p *mockProvider) FetchUserPerms(context.Context, *extsvc.Account, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPerms(context.Context, *extsvc.Account, buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
 	return nil, nil
 }
 
-func (p *mockProvider) FetchUserPermsByToken(context.Context, string, authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
+func (p *mockProvider) FetchUserPermsByToken(context.Context, string, buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
 	return nil, nil
 }
 
-func (p *mockProvider) FetchRepoPerms(context.Context, *extsvc.Repository, authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+func (p *mockProvider) FetchRepoPerms(context.Context, *extsvc.Repository, buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	return nil, nil
 }
 
-func mockExplicitPermissions(enabled bool) func() {
-	orig := globals.PermissionsUserMapping()
-	globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: enabled})
+func mockExplicitPermissions(enbbled bool) func() {
+	orig := globbls.PermissionsUserMbpping()
+	globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: enbbled})
 	return func() {
-		globals.SetPermissionsUserMapping(orig)
+		globbls.SetPermissionsUserMbpping(orig)
 	}
 }
 
-func TestPermissionSyncingDisabled(t *testing.T) {
-	authz.SetProviders(true, []authz.Provider{&mockProvider{}})
-	cleanupLicense := licensing.MockCheckFeatureError("")
+func TestPermissionSyncingDisbbled(t *testing.T) {
+	buthz.SetProviders(true, []buthz.Provider{&mockProvider{}})
+	clebnupLicense := licensing.MockCheckFebtureError("")
 
-	t.Cleanup(func() {
-		authz.SetProviders(true, nil)
-		cleanupLicense()
+	t.Clebnup(func() {
+		buthz.SetProviders(true, nil)
+		clebnupLicense()
 	})
 
-	t.Run("no authz providers", func(t *testing.T) {
-		authz.SetProviders(true, nil)
-		t.Cleanup(func() {
-			authz.SetProviders(true, []authz.Provider{&mockProvider{}})
+	t.Run("no buthz providers", func(t *testing.T) {
+		buthz.SetProviders(true, nil)
+		t.Clebnup(func() {
+			buthz.SetProviders(true, []buthz.Provider{&mockProvider{}})
 		})
 
-		assert.True(t, PermissionSyncingDisabled())
+		bssert.True(t, PermissionSyncingDisbbled())
 	})
 
-	t.Run("permissions user mapping enabled", func(t *testing.T) {
-		cleanup := mockExplicitPermissions(true)
-		t.Cleanup(func() {
-			cleanup()
+	t.Run("permissions user mbpping enbbled", func(t *testing.T) {
+		clebnup := mockExplicitPermissions(true)
+		t.Clebnup(func() {
+			clebnup()
 			conf.Mock(nil)
 		})
 
-		assert.False(t, PermissionSyncingDisabled())
+		bssert.Fblse(t, PermissionSyncingDisbbled())
 	})
 
-	t.Run("license does not have acls feature", func(t *testing.T) {
-		licensing.MockCheckFeatureError("failed")
-		t.Cleanup(func() {
-			licensing.MockCheckFeatureError("")
+	t.Run("license does not hbve bcls febture", func(t *testing.T) {
+		licensing.MockCheckFebtureError("fbiled")
+		t.Clebnup(func() {
+			licensing.MockCheckFebtureError("")
 		})
-		assert.True(t, PermissionSyncingDisabled())
+		bssert.True(t, PermissionSyncingDisbbled())
 	})
 
-	t.Run("Auto code host syncs disabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: true}})
-		t.Cleanup(func() {
+	t.Run("Auto code host syncs disbbled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{DisbbleAutoCodeHostSyncs: true}})
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		assert.True(t, PermissionSyncingDisabled())
+		bssert.True(t, PermissionSyncingDisbbled())
 	})
 
-	t.Run("Auto code host syncs enabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{DisableAutoCodeHostSyncs: false}})
-		t.Cleanup(func() {
+	t.Run("Auto code host syncs enbbled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{DisbbleAutoCodeHostSyncs: fblse}})
+		t.Clebnup(func() {
 			conf.Mock(nil)
 		})
-		assert.False(t, PermissionSyncingDisabled())
+		bssert.Fblse(t, PermissionSyncingDisbbled())
 	})
 }
 
-// This test lives in cmd/enterprise because it tests a proprietary
-// super-set of the validation performed by the OSS version.
-func TestValidateExternalServiceConfig(t *testing.T) {
-	t.Parallel()
-	t.Cleanup(licensing.TestingSkipFeatureChecks())
+// This test lives in cmd/enterprise becbuse it tests b proprietbry
+// super-set of the vblidbtion performed by the OSS version.
+func TestVblidbteExternblServiceConfig(t *testing.T) {
+	t.Pbrbllel()
+	t.Clebnup(licensing.TestingSkipFebtureChecks())
 
 	// Assertion helpers
-	equals := func(want ...string) func(testing.TB, []string) {
-		sort.Strings(want)
-		return func(t testing.TB, have []string) {
+	equbls := func(wbnt ...string) func(testing.TB, []string) {
+		sort.Strings(wbnt)
+		return func(t testing.TB, hbve []string) {
 			t.Helper()
-			sort.Strings(have)
-			if !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			sort.Strings(hbve)
+			if !reflect.DeepEqubl(hbve, wbnt) {
+				t.Error(cmp.Diff(hbve, wbnt))
 			}
 		}
 	}
 
-	// Set difference: a - b
-	diff := func(a, b []string) (difference []string) {
-		set := make(map[string]struct{}, len(b))
-		for _, err := range b {
+	// Set difference: b - b
+	diff := func(b, b []string) (difference []string) {
+		set := mbke(mbp[string]struct{}, len(b))
+		for _, err := rbnge b {
 			set[err] = struct{}{}
 		}
-		for _, err := range a {
+		for _, err := rbnge b {
 			if _, ok := set[err]; !ok {
-				difference = append(difference, err)
+				difference = bppend(difference, err)
 			}
 		}
 		return
 	}
 
-	includes := func(want ...string) func(testing.TB, []string) {
-		return func(t testing.TB, have []string) {
+	includes := func(wbnt ...string) func(testing.TB, []string) {
+		return func(t testing.TB, hbve []string) {
 			t.Helper()
-			for _, err := range diff(want, have) {
-				t.Errorf("%q not found in set:\n%s", err, pretty.Sprint(have))
+			for _, err := rbnge diff(wbnt, hbve) {
+				t.Errorf("%q not found in set:\n%s", err, pretty.Sprint(hbve))
 			}
 		}
 	}
 
-	excludes := func(want ...string) func(testing.TB, []string) {
-		return func(t testing.TB, have []string) {
+	excludes := func(wbnt ...string) func(testing.TB, []string) {
+		return func(t testing.TB, hbve []string) {
 			t.Helper()
-			for _, err := range diff(want, diff(want, have)) {
-				t.Errorf("%q found in set:\n%s", err, pretty.Sprint(have))
+			for _, err := rbnge diff(wbnt, diff(wbnt, hbve)) {
+				t.Errorf("%q found in set:\n%s", err, pretty.Sprint(hbve))
 			}
 		}
 	}
 
-	const bogusPrivateKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIaWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4alBESUZUN3dRZ0tabXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3daeS83RlYxUEFtdmlXeWlYVklETzJnNWJOaUJlbmdKQ3hFa3Nia1VtUUloQVBOMlZaczN6UFFwCk1EVG9vTlJXcnl0RW1URERkamdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZaDkKWDFBMlVnTDE3bWhsS1FJaEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovaXZFYkJyaVJHalAya3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
+	const bogusPrivbteKey = `LS0tLS1CRUdJTiBSU0EgUFJJVkFURSBLRVktLS0tLQpNSUlCUEFJQkFBSkJBUEpIbWprdG1UMUlLYUd0YTVFZXAzQVo5Q2VPZUw4blBESUZUN3dRZ0tbbXQzRUZxRGhCCk93bitRVUhKdUs5Zm92UkROSmVWTDJvWTVCT0l6NHJ3L0cwQ0F3RUFBUUpCQU1BK0o5Mks0d2NQVllsbWMrM28KcHU5NmlKTkNwMmp5Nm5hK1pEQlQzK0VvSUo1VFJGdnN3R2kvTHUzZThYUWwxTDNTM21ub0xPSlZNcTF0bUxOMgpIY0VDSVFEK3dbeS83RlYxUEFtdmlXeWlYVklETzJnNWJObUJlbmdKQ3hFb3Nib1VtUUloQVBOMlZbczN6UFFwCk1EVG9vTlJXcnl0RW1URERkbmdiOFpzTldYL1JPRGIxQWlCZWNKblNVQ05TQllLMXJ5VTFmNURTbitoQU9ZbDkKWDFBMlVnTDE3bWhsS1FJbEFPK2JMNmRDWktpTGZORWxmVnRkTUtxQnFjNlBIK01heFU2VzlkVlFvR1dkQWlFQQptdGZ5cE9zYTFiS2hFTDg0blovbXZFYkJybVJHblAyb3lERHYzUlg0V0JrPQotLS0tLUVORCBSU0EgUFJJVkFURSBLRVktLS0tLQo=`
 
-	// Test table
-	for _, tc := range []struct {
+	// Test tbble
+	for _, tc := rbnge []struct {
 		kind   string
 		desc   string
 		config string
-		ps     []schema.AuthProviders
-		assert func(testing.TB, []string)
+		ps     []schemb.AuthProviders
+		bssert func(testing.TB, []string)
 	}{
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "without region, accessKeyID, secretAccessKey, gitCredentials",
+			desc:   "without region, bccessKeyID, secretAccessKey, gitCredentibls",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"region is required",
-				"accessKeyID is required",
+				"bccessKeyID is required",
 				"secretAccessKey is required",
-				"gitCredentials is required",
+				"gitCredentibls is required",
 			),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid region",
-			config: `{"region": "foo", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
-			assert: includes(
-				`region: region must be one of the following: "ap-northeast-1", "ap-northeast-2", "ap-south-1", "ap-southeast-1", "ap-southeast-2", "ca-central-1", "eu-central-1", "eu-west-1", "eu-west-2", "eu-west-3", "sa-east-1", "us-east-1", "us-east-2", "us-west-1", "us-west-2"`,
+			desc:   "invblid region",
+			config: `{"region": "foo", "bccessKeyID": "bbr", "secretAccessKey": "bbz", "gitCredentibls": {"usernbme": "user", "pbssword": "pw"}}`,
+			bssert: includes(
+				`region: region must be one of the following: "bp-northebst-1", "bp-northebst-2", "bp-south-1", "bp-southebst-1", "bp-southebst-2", "cb-centrbl-1", "eu-centrbl-1", "eu-west-1", "eu-west-2", "eu-west-3", "sb-ebst-1", "us-ebst-1", "us-ebst-2", "us-west-1", "us-west-2"`,
 			),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid gitCredentials",
-			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "", "password": ""}}`,
-			assert: includes(
-				`gitCredentials.username: String length must be greater than or equal to 1`,
-				`gitCredentials.password: String length must be greater than or equal to 1`,
+			desc:   "invblid gitCredentibls",
+			config: `{"region": "eu-west-2", "bccessKeyID": "bbr", "secretAccessKey": "bbz", "gitCredentibls": {"usernbme": "", "pbssword": ""}}`,
+			bssert: includes(
+				`gitCredentibls.usernbme: String length must be grebter thbn or equbl to 1`,
+				`gitCredentibls.pbssword: String length must be grebter thbn or equbl to 1`,
 			),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "valid",
-			config: `{"region": "eu-west-2", "accessKeyID": "bar", "secretAccessKey": "baz", "gitCredentials": {"username": "user", "password": "pw"}}`,
-			assert: equals("<nil>"),
+			desc:   "vblid",
+			config: `{"region": "eu-west-2", "bccessKeyID": "bbr", "secretAccessKey": "bbz", "gitCredentibls": {"usernbme": "user", "pbssword": "pw"}}`,
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
-			desc: "valid exclude",
+			desc: "vblid exclude",
 			config: `
 			{
 				"region": "eu-west-1",
-				"accessKeyID": "bar",
-				"secretAccessKey": "baz",
-				"gitCredentials": {"username": "user", "password": "pw"},
+				"bccessKeyID": "bbr",
+				"secretAccessKey": "bbz",
+				"gitCredentibls": {"usernbme": "user", "pbssword": "pw"},
 				"exclude": [
-					{"name": "foobar-barfoo_bazbar"},
-					{"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb"},
+					{"nbme": "foobbr-bbrfoo_bbzbbr"},
+					{"id": "d111bbff-3450-46fd-b7d2-b0be41f1c5bb"},
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid empty exclude",
+			desc:   "invblid empty exclude",
 			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
+			bssert: includes(`exclude: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid empty exclude item",
+			desc:   "invblid empty exclude item",
 			config: `{"exclude": [{}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid exclude item",
-			config: `{"exclude": [{"foo": "bar"}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			desc:   "invblid exclude item",
+			config: `{"exclude": [{"foo": "bbr"}]}`,
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": "f o o b a r"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+$'`),
+			desc:   "invblid exclude item nbme",
+			config: `{"exclude": [{"nbme": "f o o b b r"}]}`,
+			bssert: includes(`exclude.0.nbme: Does not mbtch pbttern '^[\w.-]+$'`),
 		},
 		{
 			kind:   extsvc.KindAWSCodeCommit,
-			desc:   "invalid exclude item id",
-			config: `{"exclude": [{"id": "b$a$r"}]}`,
-			assert: includes(`exclude.0.id: Does not match pattern '^[\w-]+$'`),
+			desc:   "invblid exclude item id",
+			config: `{"exclude": [{"id": "b$b$r"}]}`,
+			bssert: includes(`exclude.0.id: Does not mbtch pbttern '^[\w-]+$'`),
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
-			desc: "invalid additional exclude item properties",
+			desc: "invblid bdditionbl exclude item properties",
 			config: `{"exclude": [{
-				"id": "d111baff-3450-46fd-b7d2-a0ae41f1c5bb",
-				"bar": "baz"
+				"id": "d111bbff-3450-46fd-b7d2-b0be41f1c5bb",
+				"bbr": "bbz"
 			}]}`,
-			assert: includes(`exclude.0: Additional property bar is not allowed`),
+			bssert: includes(`exclude.0: Additionbl property bbr is not bllowed`),
 		},
 		{
 			kind: extsvc.KindAWSCodeCommit,
-			desc: "both name and id can be specified in exclude",
+			desc: "both nbme bnd id cbn be specified in exclude",
 			config: `
 			{
 				"region": "eu-west-1",
-				"accessKeyID": "bar",
-				"secretAccessKey": "baz",
-				"gitCredentials": {"username": "user", "password": "pw"},
+				"bccessKeyID": "bbr",
+				"secretAccessKey": "bbz",
+				"gitCredentibls": {"usernbme": "user", "pbssword": "pw"},
 				"exclude": [
 					{
-					  "name": "foobar",
-					  "id": "f000ba44-3450-46fd-b7d2-a0ae41f1c5bb"
+					  "nbme": "foobbr",
+					  "id": "f000bb44-3450-46fd-b7d2-b0be41f1c5bb"
 					},
 					{
-					  "name": "barfoo",
-					  "id": "13337a11-3450-46fd-b7d2-a0ae41f1c5bb"
+					  "nbme": "bbrfoo",
+					  "id": "13337b11-3450-46fd-b7d2-b0be41f1c5bb"
 					},
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind:   extsvc.KindGitolite,
 			desc:   "without prefix nor host",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"prefix is required",
 				"host is required",
 			),
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "with example.com defaults",
-			config: `{"prefix": "gitolite.example.com/", "host": "git@gitolite.example.com"}`,
-			assert: includes(
-				"prefix: Must not validate the schema (not)",
-				"host: Must not validate the schema (not)",
+			desc:   "with exbmple.com defbults",
+			config: `{"prefix": "gitolite.exbmple.com/", "host": "git@gitolite.exbmple.com"}`,
+			bssert: includes(
+				"prefix: Must not vblidbte the schemb (not)",
+				"host: Must not vblidbte the schemb (not)",
 			),
 		},
 		{
 			kind:   extsvc.KindGitolite,
 			desc:   "witout prefix nor host",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"prefix is required",
 				"host is required",
 			),
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "invalid empty exclude",
+			desc:   "invblid empty exclude",
 			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
+			bssert: includes(`exclude: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "invalid empty exclude item",
+			desc:   "invblid empty exclude item",
 			config: `{"exclude": [{}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "invalid exclude item",
-			config: `{"exclude": [{"foo": "bar"}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			desc:   "invblid exclude item",
+			config: `{"exclude": [{"foo": "bbr"}]}`,
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": ""}]}`,
-			assert: includes(`exclude.0.name: String length must be greater than or equal to 1`),
+			desc:   "invblid exclude item nbme",
+			config: `{"exclude": [{"nbme": ""}]}`,
+			bssert: includes(`exclude.0.nbme: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindGitolite,
-			desc:   "invalid additional exclude item properties",
-			config: `{"exclude": [{"name": "foo", "bar": "baz"}]}`,
-			assert: includes(`exclude.0: Additional property bar is not allowed`),
+			desc:   "invblid bdditionbl exclude item properties",
+			config: `{"exclude": [{"nbme": "foo", "bbr": "bbz"}]}`,
+			bssert: includes(`exclude.0: Additionbl property bbr is not bllowed`),
 		},
 		{
 			kind: extsvc.KindGitolite,
-			desc: "name can be specified in exclude",
+			desc: "nbme cbn be specified in exclude",
 			config: `
 			{
 				"prefix": "/",
 				"host": "gitolite.mycorp.com",
 				"exclude": [
-					{"name": "bar"},
+					{"nbme": "bbr"},
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			desc: "valid with url, username, appPassword",
+			desc: "vblid with url, usernbme, bppPbssword",
 			config: `
 			{
 				"url": "https://bitbucket.org/",
-				"username": "admin",
-				"appPassword": "app-password"
+				"usernbme": "bdmin",
+				"bppPbssword": "bpp-pbssword"
 			}`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			desc: "valid with url, username, appPassword, teams",
+			desc: "vblid with url, usernbme, bppPbssword, tebms",
 			config: `
 			{
 				"url": "https://bitbucket.org/",
-				"username": "admin",
-				"appPassword": "app-password",
-				"teams": ["sglocal", "sg_local", "--a-team----name-"]
+				"usernbme": "bdmin",
+				"bppPbssword": "bpp-pbssword",
+				"tebms": ["sglocbl", "sg_locbl", "--b-tebm----nbme-"]
 			}`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "without url, username nor appPassword",
+			desc:   "without url, usernbme nor bppPbssword",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"url is required",
-				"username is required",
-				"appPassword is required",
+				"usernbme is required",
+				"bppPbssword is required",
 			),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "bad url scheme",
-			config: `{"url": "badscheme://bitbucket.org"}`,
-			assert: includes("url: Does not match pattern '^https?://'"),
+			desc:   "bbd url scheme",
+			config: `{"url": "bbdscheme://bitbucket.org"}`,
+			bssert: includes("url: Does not mbtch pbttern '^https?://'"),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "bad apiURL scheme",
-			config: `{"apiURL": "badscheme://api.bitbucket.org"}`,
-			assert: includes("apiURL: Does not match pattern '^https?://'"),
+			desc:   "bbd bpiURL scheme",
+			config: `{"bpiURL": "bbdscheme://bpi.bitbucket.org"}`,
+			bssert: includes("bpiURL: Does not mbtch pbttern '^https?://'"),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid gitURLType",
-			config: `{"gitURLType": "bad"}`,
-			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
+			desc:   "invblid gitURLType",
+			config: `{"gitURLType": "bbd"}`,
+			bssert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid team name",
-			config: `{"teams": ["sg local"]}`,
-			assert: includes(
-				`teams.0: Does not match pattern '^[\w-]+$'`,
+			desc:   "invblid tebm nbme",
+			config: `{"tebms": ["sg locbl"]}`,
+			bssert: includes(
+				`tebms.0: Does not mbtch pbttern '^[\w-]+$'`,
 			),
 		},
 		{
@@ -1148,354 +1148,354 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			config: `
 			{
 				"url": "https://bitbucket.org/",
-				"username": "admin",
-				"appPassword": "app-password",
+				"usernbme": "bdmin",
+				"bppPbssword": "bpp-pbssword",
 				"exclude": []
 			}`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid empty exclude item",
+			desc:   "invblid empty exclude item",
 			config: `{"exclude": [{}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid exclude item",
-			config: `{"exclude": [{"foo": "bar"}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			desc:   "invblid exclude item",
+			config: `{"exclude": [{"foo": "bbr"}]}`,
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			desc:   "invblid exclude item nbme",
+			config: `{"exclude": [{"nbme": "bbr"}]}`,
+			bssert: includes(`exclude.0.nbme: Does not mbtch pbttern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid additional exclude item properties",
-			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`exclude.0: Additional property bar is not allowed`),
+			desc:   "invblid bdditionbl exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bbr": "bbz"}]}`,
+			bssert: includes(`exclude.0: Additionbl property bbr is not bllowed`),
 		},
 		{
 			kind: extsvc.KindBitbucketCloud,
-			desc: "both name and uuid can be specified in exclude",
+			desc: "both nbme bnd uuid cbn be specified in exclude",
 			config: `
 			{
 				"url": "https://bitbucket.org/",
-				"username": "admin",
-				"appPassword": "app-password",
+				"usernbme": "bdmin",
+				"bppPbssword": "bpp-pbssword",
 				"exclude": [
-					{"name": "foo/bar", "uuid": "{fceb73c7-cef6-4abe-956d-e471281126bc}"}
+					{"nbme": "foo/bbr", "uuid": "{fceb73c7-cef6-4bbe-956d-e471281126bc}"}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind:   extsvc.KindBitbucketCloud,
-			desc:   "invalid exclude pattern",
-			config: `{"exclude": [{"pattern": "["}]}`,
-			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
+			desc:   "invblid exclude pbttern",
+			config: `{"exclude": [{"pbttern": "["}]}`,
+			bssert: includes(`exclude.0.pbttern: Does not mbtch formbt 'regex'`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "valid with url, username, token, repositoryQuery",
+			desc: "vblid with url, usernbme, token, repositoryQuery",
 			config: `
 			{
 				"url": "https://bitbucket.org/",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "secret-token",
 				"repositoryQuery": ["none"]
 			}`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "valid with url, username, token, repos",
+			desc: "vblid with url, usernbme, token, repos",
 			config: `
 			{
 				"url": "https://bitbucket.org/",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "secret-token",
-				"repos": ["sourcegraph/sourcegraph"]
+				"repos": ["sourcegrbph/sourcegrbph"]
 			}`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "without url, username, repositoryQuery nor repos",
+			desc:   "without url, usernbme, repositoryQuery nor repos",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"url is required",
-				"username is required",
-				"at least one of: repositoryQuery, projectKeys, or repos must be set",
+				"usernbme is required",
+				"bt lebst one of: repositoryQuery, projectKeys, or repos must be set",
 			),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "without username",
+			desc:   "without usernbme",
 			config: `{}`,
-			assert: includes("username is required"),
+			bssert: includes("usernbme is required"),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "example url",
-			config: `{"url": "https://bitbucket.example.com"}`,
-			assert: includes("url: Must not validate the schema (not)"),
+			desc:   "exbmple url",
+			config: `{"url": "https://bitbucket.exbmple.com"}`,
+			bssert: includes("url: Must not vblidbte the schemb (not)"),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "bad url scheme",
-			config: `{"url": "badscheme://bitbucket.org"}`,
-			assert: includes("url: Does not match pattern '^https?://'"),
+			desc:   "bbd url scheme",
+			config: `{"url": "bbdscheme://bitbucket.org"}`,
+			bssert: includes("url: Does not mbtch pbttern '^https?://'"),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "with token AND password",
-			config: `{"token": "foo", "password": "bar"}`,
-			assert: includes(
-				"Must validate one and only one schema (oneOf)",
-				"password: Invalid type. Expected: null, given: string",
+			desc:   "with token AND pbssword",
+			config: `{"token": "foo", "pbssword": "bbr"}`,
+			bssert: includes(
+				"Must vblidbte one bnd only one schemb (oneOf)",
+				"pbssword: Invblid type. Expected: null, given: string",
 			),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid token",
+			desc:   "invblid token",
 			config: `{"token": ""}`,
-			assert: includes(`token: String length must be greater than or equal to 1`),
+			bssert: includes(`token: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid git url type",
-			config: `{"gitURLType": "bad"}`,
-			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
+			desc:   "invblid git url type",
+			config: `{"gitURLType": "bbd"}`,
+			bssert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid certificate",
-			config: `{"certificate": ""}`,
-			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
+			desc:   "invblid certificbte",
+			config: `{"certificbte": ""}`,
+			bssert: includes("certificbte: Does not mbtch pbttern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "empty repositoryQuery",
 			config: `{"repositoryQuery": []}`,
-			assert: includes(`repositoryQuery: Array must have at least 1 items`),
+			bssert: includes(`repositoryQuery: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
 			desc:   "empty repositoryQuery item",
 			config: `{"repositoryQuery": [""]}`,
-			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
+			bssert: includes(`repositoryQuery.0: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid empty exclude",
+			desc:   "invblid empty exclude",
 			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
+			bssert: includes(`exclude: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid empty exclude item",
+			desc:   "invblid empty exclude item",
 			config: `{"exclude": [{}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid exclude item",
-			config: `{"exclude": [{"foo": "bar"}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			desc:   "invblid exclude item",
+			config: `{"exclude": [{"foo": "bbr"}]}`,
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^~?[\w-]+/[\w.-]+$'`),
+			desc:   "invblid exclude item nbme",
+			config: `{"exclude": [{"nbme": "bbr"}]}`,
+			bssert: includes(`exclude.0.nbme: Does not mbtch pbttern '^~?[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid additional exclude item properties",
-			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`exclude.0: Additional property bar is not allowed`),
+			desc:   "invblid bdditionbl exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bbr": "bbz"}]}`,
+			bssert: includes(`exclude.0: Additionbl property bbr is not bllowed`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "both name and id can be specified in exclude",
+			desc: "both nbme bnd id cbn be specified in exclude",
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"exclude": [
-					{"name": "foo/bar", "id": 1234},
-					{"pattern": "^private/.*"}
+					{"nbme": "foo/bbr", "id": 1234},
+					{"pbttern": "^privbte/.*"}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "personal repos may be excluded",
+			desc: "personbl repos mby be excluded",
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"exclude": [
-					{"name": "~FOO/bar", "id": 1234},
-					{"pattern": "^private/.*"}
+					{"nbme": "~FOO/bbr", "id": 1234},
+					{"pbttern": "^privbte/.*"}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid empty repos",
+			desc:   "invblid empty repos",
 			config: `{"repos": []}`,
-			assert: includes(`repos: Array must have at least 1 items`),
+			bssert: includes(`repos: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindBitbucketServer,
-			desc:   "invalid empty repos item",
+			desc:   "invblid empty repos item",
 			config: `{"repos": [""]}`,
-			assert: includes(`repos.0: Does not match pattern '^~?[\w-]+/[\w.-]+$'`),
+			bssert: includes(`repos.0: Does not mbtch pbttern '^~?[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "invalid exclude pattern",
+			desc: "invblid exclude pbttern",
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"exclude": [
-					{"pattern": "["}
+					{"pbttern": "["}
 				]
 			}`,
-			assert: includes(`exclude.0.pattern: Does not match format 'regex'`),
+			bssert: includes(`exclude.0.pbttern: Does not mbtch formbt 'regex'`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "valid repos",
+			desc: "vblid repos",
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"repos": [
-					"foo/bar",
-					"bar/baz"
+					"foo/bbr",
+					"bbr/bbz"
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "valid personal repos",
+			desc: "vblid personbl repos",
 			config: `
 			{
 				"url": "https://bitbucketserver.corp.com",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"repos": [
-					"~FOO/bar",
-					"~FOO/baz"
+					"~FOO/bbr",
+					"~FOO/bbz"
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "missing oauth in authorization",
+			desc: "missing obuth in buthorizbtion",
 			config: `
 			{
-				"authorization": {}
+				"buthorizbtion": {}
 			}
 			`,
-			assert: includes("authorization: oauth is required"),
+			bssert: includes("buthorizbtion: obuth is required"),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "missing oauth fields",
+			desc: "missing obuth fields",
 			config: `
 			{
-				"authorization": {
-					"oauth": {},
+				"buthorizbtion": {
+					"obuth": {},
 				}
 			}
 			`,
-			assert: includes(
-				"authorization.oauth: consumerKey is required",
-				"authorization.oauth: signingKey is required",
+			bssert: includes(
+				"buthorizbtion.obuth: consumerKey is required",
+				"buthorizbtion.obuth: signingKey is required",
 			),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "invalid oauth fields",
+			desc: "invblid obuth fields",
 			config: `
 			{
-				"authorization": {
-					"oauth": {
+				"buthorizbtion": {
+					"obuth": {
 						"consumerKey": "",
 						"signingKey": ""
 					},
 				}
 			}
 			`,
-			assert: includes(
-				"authorization.oauth.consumerKey: String length must be greater than or equal to 1",
-				"authorization.oauth.signingKey: String length must be greater than or equal to 1",
+			bssert: includes(
+				"buthorizbtion.obuth.consumerKey: String length must be grebter thbn or equbl to 1",
+				"buthorizbtion.obuth.signingKey: String length must be grebter thbn or equbl to 1",
 			),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "invalid oauth signingKey",
+			desc: "invblid obuth signingKey",
 			config: `
 			{
-				"authorization": {
-					"oauth": {
-						"consumerKey": "sourcegraph",
-						"signingKey": "not-base-64-encoded"
+				"buthorizbtion": {
+					"obuth": {
+						"consumerKey": "sourcegrbph",
+						"signingKey": "not-bbse-64-encoded"
 					},
 				}
 			}
 			`,
-			assert: includes("authorization.oauth.signingKey: illegal base64 data at input byte 3"),
+			bssert: includes("buthorizbtion.obuth.signingKey: illegbl bbse64 dbtb bt input byte 3"),
 		},
 		{
 			kind: extsvc.KindBitbucketServer,
-			desc: "username identity provider",
+			desc: "usernbme identity provider",
 			config: fmt.Sprintf(`
 			{
 				"url": "https://bitbucketserver.corp.com",
-				"username": "admin",
+				"usernbme": "bdmin",
 				"token": "super-secret-token",
 				"repositoryQuery": ["none"],
-				"authorization": {
-					"identityProvider": { "type": "username" },
-					"oauth": {
-						"consumerKey": "sourcegraph",
+				"buthorizbtion": {
+					"identityProvider": { "type": "usernbme" },
+					"obuth": {
+						"consumerKey": "sourcegrbph",
 						"signingKey": %q,
 					},
 				}
 			}
-			`, bogusPrivateKey),
-			assert: equals("<nil>"),
+			`, bogusPrivbteKey),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind:   extsvc.KindGitHub,
 			desc:   "without url, token, repositoryQuery, repos nor orgs",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"url is required",
-				"either token or GitHub App Details must be set",
-				"at least one of repositoryQuery, repos, orgs, or gitHubAppDetails.cloneAllRepositories must be set",
+				"either token or GitHub App Detbils must be set",
+				"bt lebst one of repositoryQuery, repos, orgs, or gitHubAppDetbils.cloneAllRepositories must be set",
 			),
 		},
 		{
@@ -1507,7 +1507,7 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind: extsvc.KindGitHub,
@@ -1516,9 +1516,9 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			{
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
-				"repos": ["sourcegraph/sourcegraph"],
+				"repos": ["sourcegrbph/sourcegrbph"],
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind: extsvc.KindGitHub,
@@ -1527,610 +1527,610 @@ func TestValidateExternalServiceConfig(t *testing.T) {
 			{
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
-				"orgs": ["sourcegraph"],
+				"orgs": ["sourcegrbph"],
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "with example.com url and badscheme",
-			config: `{"url": "badscheme://github-enterprise.example.com"}`,
-			assert: includes(
-				"url: Must not validate the schema (not)",
-				"url: Does not match pattern '^https?://'",
+			desc:   "with exbmple.com url bnd bbdscheme",
+			config: `{"url": "bbdscheme://github-enterprise.exbmple.com"}`,
+			bssert: includes(
+				"url: Must not vblidbte the schemb (not)",
+				"url: Does not mbtch pbttern '^https?://'",
 			),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "with invalid gitURLType",
+			desc:   "with invblid gitURLType",
 			config: `{"gitURLType": "git"}`,
-			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
+			bssert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid token",
+			desc:   "invblid token",
 			config: `{"token": ""}`,
-			assert: includes(`token: String length must be greater than or equal to 1`),
+			bssert: includes(`token: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid certificate",
-			config: `{"certificate": ""}`,
-			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
+			desc:   "invblid certificbte",
+			config: `{"certificbte": ""}`,
+			bssert: includes("certificbte: Does not mbtch pbttern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
 			kind:   extsvc.KindGitHub,
 			desc:   "empty repositoryQuery",
 			config: `{"repositoryQuery": []}`,
-			assert: includes(`repositoryQuery: Array must have at least 1 items`),
+			bssert: includes(`repositoryQuery: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
 			desc:   "empty repositoryQuery item",
 			config: `{"repositoryQuery": [""]}`,
-			assert: includes(`repositoryQuery.0: String length must be greater than or equal to 1`),
+			bssert: includes(`repositoryQuery.0: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid repos",
+			desc:   "invblid repos",
 			config: `{"repos": [""]}`,
-			assert: includes(`repos.0: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			bssert: includes(`repos.0: Does not mbtch pbttern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid empty exclude",
+			desc:   "invblid empty exclude",
 			config: `{"exclude": []}`,
-			assert: includes(`exclude: Array must have at least 1 items`),
+			bssert: includes(`exclude: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid empty exclude item",
+			desc:   "invblid empty exclude item",
 			config: `{"exclude": [{}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid exclude item",
-			config: `{"exclude": [{"foo": "bar"}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			desc:   "invblid exclude item",
+			config: `{"exclude": [{"foo": "bbr"}]}`,
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w-]+/[\w.-]+$'`),
+			desc:   "invblid exclude item nbme",
+			config: `{"exclude": [{"nbme": "bbr"}]}`,
+			bssert: includes(`exclude.0.nbme: Does not mbtch pbttern '^[\w-]+/[\w.-]+$'`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid empty exclude item id",
+			desc:   "invblid empty exclude item id",
 			config: `{"exclude": [{"id": ""}]}`,
-			assert: includes(`exclude.0.id: String length must be greater than or equal to 1`),
+			bssert: includes(`exclude.0.id: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindGitHub,
-			desc:   "invalid additional exclude item properties",
-			config: `{"exclude": [{"id": "foo", "bar": "baz"}]}`,
-			assert: includes(`exclude.0: Additional property bar is not allowed`),
+			desc:   "invblid bdditionbl exclude item properties",
+			config: `{"exclude": [{"id": "foo", "bbr": "bbz"}]}`,
+			bssert: includes(`exclude.0: Additionbl property bbr is not bllowed`),
 		},
 		{
 			kind: extsvc.KindGitHub,
-			desc: "both name and id can be specified in exclude",
+			desc: "both nbme bnd id cbn be specified in exclude",
 			config: `
 			{
 				"url": "https://github.corp.com",
 				"token": "very-secret-token",
 				"repositoryQuery": ["none"],
 				"exclude": [
-					{"name": "foo/bar", "id": "AAAAA="}
+					{"nbme": "foo/bbr", "id": "AAAAA="}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
+			kind:   extsvc.KindGitLbb,
 			desc:   "empty projectQuery",
 			config: `{"projectQuery": []}`,
-			assert: includes(`projectQuery: Array must have at least 1 items`),
+			bssert: includes(`projectQuery: Arrby must hbve bt lebst 1 items`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
+			kind:   extsvc.KindGitLbb,
 			desc:   "empty projectQuery item",
 			config: `{"projectQuery": [""]}`,
-			assert: includes(`projectQuery.0: String length must be greater than or equal to 1`),
+			bssert: includes(`projectQuery.0: String length must be grebter thbn or equbl to 1`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid empty exclude item",
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid empty exclude item",
 			config: `{"exclude": [{}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid exclude item",
-			config: `{"exclude": [{"foo": "bar"}]}`,
-			assert: includes(`exclude.0: Must validate at least one schema (anyOf)`),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid exclude item",
+			config: `{"exclude": [{"foo": "bbr"}]}`,
+			bssert: includes(`exclude.0: Must vblidbte bt lebst one schemb (bnyOf)`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid exclude item name",
-			config: `{"exclude": [{"name": "bar"}]}`,
-			assert: includes(`exclude.0.name: Does not match pattern '^[\w.-]+(/[\w.-]+)+$'`),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid exclude item nbme",
+			config: `{"exclude": [{"nbme": "bbr"}]}`,
+			bssert: includes(`exclude.0.nbme: Does not mbtch pbttern '^[\w.-]+(/[\w.-]+)+$'`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid additional exclude item properties",
-			config: `{"exclude": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`exclude.0: Additional property bar is not allowed`),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid bdditionbl exclude item properties",
+			config: `{"exclude": [{"id": 1234, "bbr": "bbz"}]}`,
+			bssert: includes(`exclude.0: Additionbl property bbr is not bllowed`),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "both name and id can be specified in exclude",
+			kind: extsvc.KindGitLbb,
+			desc: "both nbme bnd id cbn be specified in exclude",
 			config: `
 			{
-				"url": "https://gitlab.corp.com",
+				"url": "https://gitlbb.corp.com",
 				"token": "very-secret-token",
 				"projectQuery": ["none"],
 				"exclude": [
-					{"name": "foo/bar", "id": 1234}
+					{"nbme": "foo/bbr", "id": 1234}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "subgroup paths are valid for exclude",
+			kind: extsvc.KindGitLbb,
+			desc: "subgroup pbths bre vblid for exclude",
 			config: `
 			{
-				"url": "https://gitlab.corp.com",
+				"url": "https://gitlbb.corp.com",
 				"token": "very-secret-token",
 				"projectQuery": ["none"],
 				"exclude": [
-					{"name": "foo/bar/baz", "id": 1234}
+					{"nbme": "foo/bbr/bbz", "id": 1234}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "paths containing . in the first part of the path are valid for exclude",
+			kind: extsvc.KindGitLbb,
+			desc: "pbths contbining . in the first pbrt of the pbth bre vblid for exclude",
 			config: `
 			{
-				"url": "https://gitlab.corp.com",
+				"url": "https://gitlbb.corp.com",
 				"token": "very-secret-token",
 				"projectQuery": ["none"],
 				"exclude": [
-					{"name": "foo.bar/baz", "id": 1234}
+					{"nbme": "foo.bbr/bbz", "id": 1234}
 				]
 			}`,
-			assert: equals(`<nil>`),
+			bssert: equbls(`<nil>`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid empty projects",
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid empty projects",
 			config: `{"projects": []}`,
-			assert: includes(`projects: Array must have at least 1 items`),
+			bssert: includes(`projects: Arrby must hbve bt lebst 1 items`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid empty projects item",
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid empty projects item",
 			config: `{"projects": [{}]}`,
-			assert: includes(`projects.0: Must validate one and only one schema (oneOf)`),
+			bssert: includes(`projects.0: Must vblidbte one bnd only one schemb (oneOf)`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid projects item",
-			config: `{"projects": [{"foo": "bar"}]}`,
-			assert: includes(`projects.0: Must validate one and only one schema (oneOf)`),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid projects item",
+			config: `{"projects": [{"foo": "bbr"}]}`,
+			bssert: includes(`projects.0: Must vblidbte one bnd only one schemb (oneOf)`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid projects item name",
-			config: `{"projects": [{"name": "bar"}]}`,
-			assert: includes(`projects.0.name: Does not match pattern '^[\w.-]+(/[\w.-]+)+$'`),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid projects item nbme",
+			config: `{"projects": [{"nbme": "bbr"}]}`,
+			bssert: includes(`projects.0.nbme: Does not mbtch pbttern '^[\w.-]+(/[\w.-]+)+$'`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid additional projects item properties",
-			config: `{"projects": [{"id": 1234, "bar": "baz"}]}`,
-			assert: includes(`projects.0: Additional property bar is not allowed`),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid bdditionbl projects item properties",
+			config: `{"projects": [{"id": 1234, "bbr": "bbz"}]}`,
+			bssert: includes(`projects.0: Additionbl property bbr is not bllowed`),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "both name and id cannot be specified in projects",
+			kind: extsvc.KindGitLbb,
+			desc: "both nbme bnd id cbnnot be specified in projects",
 			config: `
 			{
-				"url": "https://gitlab.corp.com",
+				"url": "https://gitlbb.corp.com",
 				"token": "very-secret-token",
 				"projectQuery": ["none"],
 				"projects": [
-					{"name": "foo/bar", "id": 1234}
+					{"nbme": "foo/bbr", "id": 1234}
 				]
 			}`,
-			assert: includes(`projects.0: Must validate one and only one schema (oneOf)`),
+			bssert: includes(`projects.0: Must vblidbte one bnd only one schemb (oneOf)`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
+			kind:   extsvc.KindGitLbb,
 			desc:   "without url, token nor projectQuery",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				"url is required",
 				"token is required",
 				"projectQuery is required",
 			),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "with example.com url and badscheme",
-			config: `{"url": "badscheme://github-enterprise.example.com"}`,
-			assert: includes(
-				"url: Must not validate the schema (not)",
-				"url: Does not match pattern '^https?://'",
+			kind:   extsvc.KindGitLbb,
+			desc:   "with exbmple.com url bnd bbdscheme",
+			config: `{"url": "bbdscheme://github-enterprise.exbmple.com"}`,
+			bssert: includes(
+				"url: Must not vblidbte the schemb (not)",
+				"url: Does not mbtch pbttern '^https?://'",
 			),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "with invalid gitURLType",
+			kind:   extsvc.KindGitLbb,
+			desc:   "with invblid gitURLType",
 			config: `{"gitURLType": "git"}`,
-			assert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
+			bssert: includes(`gitURLType: gitURLType must be one of the following: "http", "ssh"`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid token",
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid token",
 			config: `{"token": ""}`,
-			assert: includes(`token: String length must be greater than or equal to 1`),
+			bssert: includes(`token: String length must be grebter thbn or equbl to 1`),
 		},
 		{
-			kind:   extsvc.KindGitLab,
-			desc:   "invalid certificate",
-			config: `{"certificate": ""}`,
-			assert: includes("certificate: Does not match pattern '^-----BEGIN CERTIFICATE-----\n'"),
+			kind:   extsvc.KindGitLbb,
+			desc:   "invblid certificbte",
+			config: `{"certificbte": ""}`,
+			bssert: includes("certificbte: Does not mbtch pbttern '^-----BEGIN CERTIFICATE-----\n'"),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "missing oauth provider",
+			kind: extsvc.KindGitLbb,
+			desc: "missing obuth provider",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": { "identityProvider": { "type": "oauth" } }
+				"url": "https://gitlbb.foo.bbr",
+				"buthorizbtion": { "identityProvider": { "type": "obuth" } }
 			}
 			`,
-			assert: includes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
+			bssert: includes("Did not find buthenticbtion provider mbtching \"https://gitlbb.foo.bbr\". Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) exists for https://gitlbb.foo.bbr."),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "valid oauth provider",
+			kind: extsvc.KindGitLbb,
+			desc: "vblid obuth provider",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": { "identityProvider": { "type": "oauth" } }
+				"url": "https://gitlbb.foo.bbr",
+				"buthorizbtion": { "identityProvider": { "type": "obuth" } }
 			}
 			`,
-			ps: []schema.AuthProviders{
-				{Gitlab: &schema.GitLabAuthProvider{Url: "https://gitlab.foo.bar"}},
+			ps: []schemb.AuthProviders{
+				{Gitlbb: &schemb.GitLbbAuthProvider{Url: "https://gitlbb.foo.bbr"}},
 			},
-			assert: excludes("Did not find authentication provider matching \"https://gitlab.foo.bar\". Check the [**site configuration**](/site-admin/configuration) to verify an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) exists for https://gitlab.foo.bar."),
+			bssert: excludes("Did not find buthenticbtion provider mbtching \"https://gitlbb.foo.bbr\". Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) exists for https://gitlbb.foo.bbr."),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "missing external provider",
+			kind: extsvc.KindGitLbb,
+			desc: "missing externbl provider",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
+				"url": "https://gitlbb.foo.bbr",
+				"buthorizbtion": {
 					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
+						"type": "externbl",
+						"buthProviderID": "foo",
+						"buthProviderType": "bbr",
+						"gitlbbProvider": "bbz"
 					}
 				}
 			}
 			`,
-			assert: includes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			bssert: includes("Did not find buthenticbtion provider mbtching type bbr bnd configID foo. Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify thbt bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) mbtches the type bnd configID."),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "valid external provider with SAML",
+			kind: extsvc.KindGitLbb,
+			desc: "vblid externbl provider with SAML",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
+				"url": "https://gitlbb.foo.bbr",
+				"buthorizbtion": {
 					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
+						"type": "externbl",
+						"buthProviderID": "foo",
+						"buthProviderType": "bbr",
+						"gitlbbProvider": "bbz"
 					}
 				}
 			}
 			`,
-			ps: []schema.AuthProviders{
+			ps: []schemb.AuthProviders{
 				{
-					Saml: &schema.SAMLAuthProvider{
+					Sbml: &schemb.SAMLAuthProvider{
 						ConfigID: "foo",
-						Type:     "bar",
+						Type:     "bbr",
 					},
 				},
 			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			bssert: excludes("Did not find buthenticbtion provider mbtching type bbr bnd configID foo. Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify thbt bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) mbtches the type bnd configID."),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "valid external provider with OIDC",
+			kind: extsvc.KindGitLbb,
+			desc: "vblid externbl provider with OIDC",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
-				"authorization": {
+				"url": "https://gitlbb.foo.bbr",
+				"buthorizbtion": {
 					"identityProvider": {
-						"type": "external",
-						"authProviderID": "foo",
-						"authProviderType": "bar",
-						"gitlabProvider": "baz"
+						"type": "externbl",
+						"buthProviderID": "foo",
+						"buthProviderType": "bbr",
+						"gitlbbProvider": "bbz"
 					}
 				}
 			}
 			`,
-			ps: []schema.AuthProviders{
+			ps: []schemb.AuthProviders{
 				{
-					Openidconnect: &schema.OpenIDConnectAuthProvider{
+					Openidconnect: &schemb.OpenIDConnectAuthProvider{
 						ConfigID: "foo",
-						Type:     "bar",
+						Type:     "bbr",
 					},
 				},
 			},
-			assert: excludes("Did not find authentication provider matching type bar and configID foo. Check the [**site configuration**](/site-admin/configuration) to verify that an entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) matches the type and configID."),
+			bssert: excludes("Did not find buthenticbtion provider mbtching type bbr bnd configID foo. Check the [**site configurbtion**](/site-bdmin/configurbtion) to verify thbt bn entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) mbtches the type bnd configID."),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "username identity provider",
+			kind: extsvc.KindGitLbb,
+			desc: "usernbme identity provider",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
+				"url": "https://gitlbb.foo.bbr",
 				"token": "super-secret-token",
 				"projectQuery": ["none"],
-				"authorization": {
+				"buthorizbtion": {
 					"identityProvider": {
-						"type": "username",
+						"type": "usernbme",
 					}
 				}
 			}
 			`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "missing properties in name transformations",
+			kind: extsvc.KindGitLbb,
+			desc: "missing properties in nbme trbnsformbtions",
 			config: `
 			{
-				"nameTransformations": [
+				"nbmeTrbnsformbtions": [
 					{
 						"re": "regex",
-						"repl": "replacement"
+						"repl": "replbcement"
 					}
 				]
 			}
 			`,
-			assert: includes(
-				`nameTransformations.0: regex is required`,
-				`nameTransformations.0: replacement is required`,
+			bssert: includes(
+				`nbmeTrbnsformbtions.0: regex is required`,
+				`nbmeTrbnsformbtions.0: replbcement is required`,
 			),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "invalid properties in name transformations",
+			kind: extsvc.KindGitLbb,
+			desc: "invblid properties in nbme trbnsformbtions",
 			config: `
 			{
-				"nameTransformations": [
+				"nbmeTrbnsformbtions": [
 					{
 						"regex": "[",
-						"replacement": ""
+						"replbcement": ""
 					}
 				]
 			}
 			`,
-			assert: includes(`nameTransformations.0.regex: Does not match format 'regex'`),
+			bssert: includes(`nbmeTrbnsformbtions.0.regex: Does not mbtch formbt 'regex'`),
 		},
 		{
-			kind: extsvc.KindGitLab,
-			desc: "valid name transformations",
+			kind: extsvc.KindGitLbb,
+			desc: "vblid nbme trbnsformbtions",
 			config: `
 			{
-				"url": "https://gitlab.foo.bar",
+				"url": "https://gitlbb.foo.bbr",
 				"token": "super-secret-token",
 				"projectQuery": ["none"],
-				"nameTransformations": [
+				"nbmeTrbnsformbtions": [
 					{
 						"regex": "\\.d/",
-						"replacement": "/"
+						"replbcement": "/"
 					},
 					{
 						"regex": "-git$",
-						"replacement": ""
+						"replbcement": ""
 					}
 				]
 			}
 			`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind:   extsvc.KindPerforce,
-			desc:   "without p4.port, p4.user, p4.passwd",
+			desc:   "without p4.port, p4.user, p4.pbsswd",
 			config: `{}`,
-			assert: includes(
+			bssert: includes(
 				`p4.port is required`,
 				`p4.user is required`,
-				`p4.passwd is required`,
+				`p4.pbsswd is required`,
 			),
 		},
 		{
 			kind: extsvc.KindPerforce,
-			desc: "invalid depot path",
+			desc: "invblid depot pbth",
 			config: `
 			{
 				"p4.port": "ssl:111.222.333.444:1666",
-				"p4.user": "admin",
-				"p4.passwd": "<secure password>",
-				"depots": ["//abc", "abc/", "//abc/"]
+				"p4.user": "bdmin",
+				"p4.pbsswd": "<secure pbssword>",
+				"depots": ["//bbc", "bbc/", "//bbc/"]
 			}
 `,
-			assert: includes(
-				`depots.0: Does not match pattern '^\/[\/\S]+\/$'`,
-				`depots.1: Does not match pattern '^\/[\/\S]+\/$'`,
+			bssert: includes(
+				`depots.0: Does not mbtch pbttern '^\/[\/\S]+\/$'`,
+				`depots.1: Does not mbtch pbttern '^\/[\/\S]+\/$'`,
 			),
 		},
 		{
 			kind: extsvc.KindPerforce,
-			desc: "invalid ticket",
+			desc: "invblid ticket",
 			config: `
 			{
 				"p4.port": "ssl:111.222.333.444:1666",
-				"p4.user": "admin",
-				"p4.passwd": "perforce-server:1666=admin:6211C5E719EDE6925855039E8F5CC3D2",
+				"p4.user": "bdmin",
+				"p4.pbsswd": "perforce-server:1666=bdmin:6211C5E719EDE6925855039E8F5CC3D2",
 				"depots": []
 			}
 `,
-			assert: includes(
-				"p4.passwd must not contain a colon. It must be the ticket generated by `p4 login -p`, not a full ticket from the `.p4tickets` file.",
+			bssert: includes(
+				"p4.pbsswd must not contbin b colon. It must be the ticket generbted by `p4 login -p`, not b full ticket from the `.p4tickets` file.",
 			),
 		},
 		{
-			kind:   extsvc.KindPhabricator,
+			kind:   extsvc.KindPhbbricbtor,
 			desc:   "without repos nor token",
 			config: `{}`,
-			assert: includes(
-				`Must validate at least one schema (anyOf)`,
+			bssert: includes(
+				`Must vblidbte bt lebst one schemb (bnyOf)`,
 				`token is required`,
 			),
 		},
 		{
-			kind:   extsvc.KindPhabricator,
+			kind:   extsvc.KindPhbbricbtor,
 			desc:   "with empty repos",
 			config: `{"repos": []}`,
-			assert: includes(`repos: Array must have at least 1 items`),
+			bssert: includes(`repos: Arrby must hbve bt lebst 1 items`),
 		},
 		{
-			kind:   extsvc.KindPhabricator,
+			kind:   extsvc.KindPhbbricbtor,
 			desc:   "with repos",
-			config: `{"repos": [{"path": "gitolite/my/repo", "callsign": "MUX"}]}`,
-			assert: equals(`<nil>`),
+			config: `{"repos": [{"pbth": "gitolite/my/repo", "cbllsign": "MUX"}]}`,
+			bssert: equbls(`<nil>`),
 		},
 		{
-			kind:   extsvc.KindPhabricator,
-			desc:   "invalid token",
+			kind:   extsvc.KindPhbbricbtor,
+			desc:   "invblid token",
 			config: `{"token": ""}`,
-			assert: includes(`token: String length must be greater than or equal to 1`),
+			bssert: includes(`token: String length must be grebter thbn or equbl to 1`),
 		},
 		{
-			kind:   extsvc.KindPhabricator,
+			kind:   extsvc.KindPhbbricbtor,
 			desc:   "with token",
-			config: `{"token": "a given token"}`,
-			assert: equals(`<nil>`),
+			config: `{"token": "b given token"}`,
+			bssert: equbls(`<nil>`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without url nor repos array",
+			desc:   "without url nor repos brrby",
 			config: `{}`,
-			assert: includes(`repos is required`),
+			bssert: includes(`repos is required`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without URL but with null repos array",
+			desc:   "without URL but with null repos brrby",
 			config: `{"repos": null}`,
-			assert: includes(`repos: Invalid type. Expected: array, given: null`),
+			bssert: includes(`repos: Invblid type. Expected: brrby, given: null`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without URL but with empty repos array",
+			desc:   "without URL but with empty repos brrby",
 			config: `{"repos": []}`,
-			assert: excludes(`repos: Array must have at least 1 items`),
+			bssert: excludes(`repos: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without URL and empty repo array item",
+			desc:   "without URL bnd empty repo brrby item",
 			config: `{"repos": [""]}`,
-			assert: includes(`repos.0: String length must be greater than or equal to 1`),
+			bssert: includes(`repos.0: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without URL and invalid repo array item",
-			config: `{"repos": ["https://github.com/%%%%malformed"]}`,
-			assert: includes(`repos.0: Does not match format 'uri-reference'`),
+			desc:   "without URL bnd invblid repo brrby item",
+			config: `{"repos": ["https://github.com/%%%%mblformed"]}`,
+			bssert: includes(`repos.0: Does not mbtch formbt 'uri-reference'`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without URL and invalid scheme in repo array item",
-			config: `{"repos": ["badscheme://github.com/my/repo"]}`,
-			assert: includes(`repos.0: scheme "badscheme" not one of git, http, https or ssh`),
+			desc:   "without URL bnd invblid scheme in repo brrby item",
+			config: `{"repos": ["bbdscheme://github.com/my/repo"]}`,
+			bssert: includes(`repos.0: scheme "bbdscheme" not one of git, http, https or ssh`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "without URL and valid repos",
+			desc:   "without URL bnd vblid repos",
 			config: `{"repos": ["http://git.hub/repo", "https://git.hub/repo", "git://user@hub.com:3233/repo.git/", "ssh://user@hub.com/repo.git/"]}`,
-			assert: equals("<nil>"),
+			bssert: equbls("<nil>"),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "with URL but null repos array",
+			desc:   "with URL but null repos brrby",
 			config: `{"url": "http://github.com/", "repos": null}`,
-			assert: includes(`repos: Invalid type. Expected: array, given: null`),
+			bssert: includes(`repos: Invblid type. Expected: brrby, given: null`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "with URL but empty repos array",
+			desc:   "with URL but empty repos brrby",
 			config: `{"url": "http://github.com/", "repos": []}`,
-			assert: excludes(`repos: Array must have at least 1 items`),
+			bssert: excludes(`repos: Arrby must hbve bt lebst 1 items`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "with URL and empty repo array item",
+			desc:   "with URL bnd empty repo brrby item",
 			config: `{"url": "http://github.com/", "repos": [""]}`,
-			assert: includes(`repos.0: String length must be greater than or equal to 1`),
+			bssert: includes(`repos.0: String length must be grebter thbn or equbl to 1`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "with URL and invalid repo array item",
-			config: `{"url": "https://github.com/", "repos": ["foo/%%%%malformed"]}`,
-			assert: includes(`repos.0: Does not match format 'uri-reference'`),
+			desc:   "with URL bnd invblid repo brrby item",
+			config: `{"url": "https://github.com/", "repos": ["foo/%%%%mblformed"]}`,
+			bssert: includes(`repos.0: Does not mbtch formbt 'uri-reference'`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "with invalid scheme URL",
-			config: `{"url": "badscheme://github.com/", "repos": ["my/repo"]}`,
-			assert: includes(`url: Does not match pattern '^(git|ssh|https?)://'`),
+			desc:   "with invblid scheme URL",
+			config: `{"url": "bbdscheme://github.com/", "repos": ["my/repo"]}`,
+			bssert: includes(`url: Does not mbtch pbttern '^(git|ssh|https?)://'`),
 		},
 		{
 			kind:   extsvc.KindOther,
-			desc:   "with URL and valid repos",
-			config: `{"url": "https://github.com/", "repos": ["foo/", "bar", "/baz", "bam.git"]}`,
-			assert: equals("<nil>"),
+			desc:   "with URL bnd vblid repos",
+			config: `{"url": "https://github.com/", "repos": ["foo/", "bbr", "/bbz", "bbm.git"]}`,
+			bssert: equbls("<nil>"),
 		},
 	} {
 		tc := tc
 		t.Run(tc.kind+"/"+tc.desc, func(t *testing.T) {
-			var have []string
+			vbr hbve []string
 			if tc.ps == nil {
 				tc.ps = conf.Get().AuthProviders
 			}
 
-			_, err := ValidateExternalServiceConfig(context.Background(), dbmocks.NewMockDB(), database.ValidateExternalServiceConfigOptions{
+			_, err := VblidbteExternblServiceConfig(context.Bbckground(), dbmocks.NewMockDB(), dbtbbbse.VblidbteExternblServiceConfigOptions{
 				Kind:          tc.kind,
 				Config:        tc.config,
 				AuthProviders: tc.ps,
 			})
 			if err == nil {
-				have = append(have, "<nil>")
+				hbve = bppend(hbve, "<nil>")
 			} else {
-				var errs errors.MultiError
+				vbr errs errors.MultiError
 				if errors.As(err, &errs) {
-					for _, err := range errs.Errors() {
-						have = append(have, err.Error())
+					for _, err := rbnge errs.Errors() {
+						hbve = bppend(hbve, err.Error())
 					}
 				} else {
-					have = append(have, err.Error())
+					hbve = bppend(hbve, err.Error())
 				}
 			}
 
-			tc.assert(t, have)
+			tc.bssert(t, hbve)
 		})
 	}
 }

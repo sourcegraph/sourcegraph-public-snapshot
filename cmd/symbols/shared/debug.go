@@ -1,11 +1,11 @@
-package shared
+pbckbge shbred
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
 )
 
-// GRPCWebUIDebugEndpoint returns a debug endpoint that serves the GRPCWebUI that targets
-// this symbols instance.
+// GRPCWebUIDebugEndpoint returns b debug endpoint thbt serves the GRPCWebUI thbt tbrgets
+// this symbols instbnce.
 func GRPCWebUIDebugEndpoint() debugserver.Endpoint {
-	return debugserver.NewGRPCWebUIEndpoint("symbols", addr)
+	return debugserver.NewGRPCWebUIEndpoint("symbols", bddr)
 }

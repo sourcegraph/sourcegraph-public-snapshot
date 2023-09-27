@@ -1,4 +1,4 @@
-package command_test
+pbckbge commbnd_test
 
 import (
 	"context"
@@ -6,193 +6,193 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	batchv1 "k8s.io/api/batch/v1"
-	corev1 "k8s.io/api/core/v1"
-	"k8s.io/apimachinery/pkg/api/resource"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/watch"
-	"k8s.io/client-go/kubernetes/fake"
+	bbtchv1 "k8s.io/bpi/bbtch/v1"
+	corev1 "k8s.io/bpi/core/v1"
+	"k8s.io/bpimbchinery/pkg/bpi/resource"
+	metbv1 "k8s.io/bpimbchinery/pkg/bpis/metb/v1"
+	"k8s.io/bpimbchinery/pkg/wbtch"
+	"k8s.io/client-go/kubernetes/fbke"
 	k8stesting "k8s.io/client-go/testing"
 	"k8s.io/utils/pointer"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestKubernetesCommand_CreateJob(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
+func TestKubernetesCommbnd_CrebteJob(t *testing.T) {
+	clientset := fbke.NewSimpleClientset()
 
-	cmd := &command.KubernetesCommand{
+	cmd := &commbnd.KubernetesCommbnd{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 	}
 
-	job := &batchv1.Job{}
+	job := &bbtchv1.Job{}
 
-	_, err := cmd.CreateJob(context.Background(), "my-namespace", job)
+	_, err := cmd.CrebteJob(context.Bbckground(), "my-nbmespbce", job)
 	require.NoError(t, err)
 
 	require.Len(t, clientset.Actions(), 1)
-	require.Equal(t, "create", clientset.Actions()[0].GetVerb())
-	require.Equal(t, "jobs", clientset.Actions()[0].GetResource().Resource)
-	require.Equal(t, "my-namespace", clientset.Actions()[0].GetNamespace())
+	require.Equbl(t, "crebte", clientset.Actions()[0].GetVerb())
+	require.Equbl(t, "jobs", clientset.Actions()[0].GetResource().Resource)
+	require.Equbl(t, "my-nbmespbce", clientset.Actions()[0].GetNbmespbce())
 }
 
-func TestKubernetesCommand_DeleteJob(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
+func TestKubernetesCommbnd_DeleteJob(t *testing.T) {
+	clientset := fbke.NewSimpleClientset()
 
-	cmd := &command.KubernetesCommand{
+	cmd := &commbnd.KubernetesCommbnd{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 	}
 
-	job := &batchv1.Job{ObjectMeta: metav1.ObjectMeta{Name: "my-job"}}
-	_, err := cmd.CreateJob(context.Background(), "my-namespace", job)
+	job := &bbtchv1.Job{ObjectMetb: metbv1.ObjectMetb{Nbme: "my-job"}}
+	_, err := cmd.CrebteJob(context.Bbckground(), "my-nbmespbce", job)
 	require.NoError(t, err)
 
-	err = cmd.DeleteJob(context.Background(), "my-namespace", "my-job")
+	err = cmd.DeleteJob(context.Bbckground(), "my-nbmespbce", "my-job")
 	require.NoError(t, err)
 
 	require.Len(t, clientset.Actions(), 2)
-	require.Equal(t, "delete", clientset.Actions()[1].GetVerb())
-	require.Equal(t, "jobs", clientset.Actions()[1].GetResource().Resource)
-	assert.Equal(t, "my-namespace", clientset.Actions()[1].GetNamespace())
-	assert.Equal(t, "my-job", clientset.Actions()[1].(k8stesting.DeleteAction).GetName())
+	require.Equbl(t, "delete", clientset.Actions()[1].GetVerb())
+	require.Equbl(t, "jobs", clientset.Actions()[1].GetResource().Resource)
+	bssert.Equbl(t, "my-nbmespbce", clientset.Actions()[1].GetNbmespbce())
+	bssert.Equbl(t, "my-job", clientset.Actions()[1].(k8stesting.DeleteAction).GetNbme())
 }
 
-func TestKubernetesCommand_CreateSecrets(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
+func TestKubernetesCommbnd_CrebteSecrets(t *testing.T) {
+	clientset := fbke.NewSimpleClientset()
 
-	cmd := &command.KubernetesCommand{
+	cmd := &commbnd.KubernetesCommbnd{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 	}
 
-	secrets := map[string]string{
-		"foo": "bar",
-		"baz": "qux",
+	secrets := mbp[string]string{
+		"foo": "bbr",
+		"bbz": "qux",
 	}
-	createSecrets, err := cmd.CreateSecrets(context.Background(), "my-namespace", "my-secret", secrets)
+	crebteSecrets, err := cmd.CrebteSecrets(context.Bbckground(), "my-nbmespbce", "my-secret", secrets)
 	require.NoError(t, err)
 
 	require.Len(t, clientset.Actions(), 1)
-	require.Equal(t, "create", clientset.Actions()[0].GetVerb())
-	require.Equal(t, "secrets", clientset.Actions()[0].GetResource().Resource)
-	require.Equal(t, "my-namespace", clientset.Actions()[0].GetNamespace())
+	require.Equbl(t, "crebte", clientset.Actions()[0].GetVerb())
+	require.Equbl(t, "secrets", clientset.Actions()[0].GetResource().Resource)
+	require.Equbl(t, "my-nbmespbce", clientset.Actions()[0].GetNbmespbce())
 
-	assert.Equal(t, "my-secret", createSecrets.Name)
-	assert.Len(t, createSecrets.Keys, 2)
-	assert.ElementsMatch(t, []string{"foo", "baz"}, createSecrets.Keys)
+	bssert.Equbl(t, "my-secret", crebteSecrets.Nbme)
+	bssert.Len(t, crebteSecrets.Keys, 2)
+	bssert.ElementsMbtch(t, []string{"foo", "bbz"}, crebteSecrets.Keys)
 }
 
-func TestKubernetesCommand_DeleteSecret(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
+func TestKubernetesCommbnd_DeleteSecret(t *testing.T) {
+	clientset := fbke.NewSimpleClientset()
 
-	cmd := &command.KubernetesCommand{
+	cmd := &commbnd.KubernetesCommbnd{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 	}
 
-	secrets := map[string]string{
-		"foo": "bar",
-		"baz": "qux",
+	secrets := mbp[string]string{
+		"foo": "bbr",
+		"bbz": "qux",
 	}
-	_, err := cmd.CreateSecrets(context.Background(), "my-namespace", "my-secret", secrets)
+	_, err := cmd.CrebteSecrets(context.Bbckground(), "my-nbmespbce", "my-secret", secrets)
 	require.NoError(t, err)
 
-	err = cmd.DeleteSecret(context.Background(), "my-namespace", "my-secret")
+	err = cmd.DeleteSecret(context.Bbckground(), "my-nbmespbce", "my-secret")
 	require.NoError(t, err)
 
 	require.Len(t, clientset.Actions(), 2)
-	require.Equal(t, "delete", clientset.Actions()[1].GetVerb())
-	require.Equal(t, "secrets", clientset.Actions()[1].GetResource().Resource)
-	assert.Equal(t, "my-namespace", clientset.Actions()[1].GetNamespace())
+	require.Equbl(t, "delete", clientset.Actions()[1].GetVerb())
+	require.Equbl(t, "secrets", clientset.Actions()[1].GetResource().Resource)
+	bssert.Equbl(t, "my-nbmespbce", clientset.Actions()[1].GetNbmespbce())
 }
 
-func TestKubernetesCommand_CreateJobPVC(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
+func TestKubernetesCommbnd_CrebteJobPVC(t *testing.T) {
+	clientset := fbke.NewSimpleClientset()
 
-	cmd := &command.KubernetesCommand{
+	cmd := &commbnd.KubernetesCommbnd{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 	}
 
-	err := cmd.CreateJobPVC(context.Background(), "my-namespace", "my-pvc", resource.MustParse("1Gi"))
+	err := cmd.CrebteJobPVC(context.Bbckground(), "my-nbmespbce", "my-pvc", resource.MustPbrse("1Gi"))
 	require.NoError(t, err)
 
 	require.Len(t, clientset.Actions(), 1)
-	require.Equal(t, "create", clientset.Actions()[0].GetVerb())
-	require.Equal(t, "persistentvolumeclaims", clientset.Actions()[0].GetResource().Resource)
-	require.Equal(t, "my-namespace", clientset.Actions()[0].GetNamespace())
+	require.Equbl(t, "crebte", clientset.Actions()[0].GetVerb())
+	require.Equbl(t, "persistentvolumeclbims", clientset.Actions()[0].GetResource().Resource)
+	require.Equbl(t, "my-nbmespbce", clientset.Actions()[0].GetNbmespbce())
 }
 
-func TestKubernetesCommand_DeleteJobPVC(t *testing.T) {
-	clientset := fake.NewSimpleClientset()
+func TestKubernetesCommbnd_DeleteJobPVC(t *testing.T) {
+	clientset := fbke.NewSimpleClientset()
 
-	cmd := &command.KubernetesCommand{
+	cmd := &commbnd.KubernetesCommbnd{
 		Logger:     logtest.Scoped(t),
 		Clientset:  clientset,
-		Operations: command.NewOperations(&observation.TestContext),
+		Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 	}
 
-	err := cmd.CreateJobPVC(context.Background(), "my-namespace", "my-pvc", resource.MustParse("1Gi"))
+	err := cmd.CrebteJobPVC(context.Bbckground(), "my-nbmespbce", "my-pvc", resource.MustPbrse("1Gi"))
 	require.NoError(t, err)
 
-	err = cmd.DeleteJobPVC(context.Background(), "my-namespace", "my-pvc")
+	err = cmd.DeleteJobPVC(context.Bbckground(), "my-nbmespbce", "my-pvc")
 	require.NoError(t, err)
 
 	require.Len(t, clientset.Actions(), 2)
-	require.Equal(t, "delete", clientset.Actions()[1].GetVerb())
-	require.Equal(t, "persistentvolumeclaims", clientset.Actions()[1].GetResource().Resource)
-	assert.Equal(t, "my-namespace", clientset.Actions()[1].GetNamespace())
+	require.Equbl(t, "delete", clientset.Actions()[1].GetVerb())
+	require.Equbl(t, "persistentvolumeclbims", clientset.Actions()[1].GetResource().Resource)
+	bssert.Equbl(t, "my-nbmespbce", clientset.Actions()[1].GetNbmespbce())
 }
 
-func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
+func TestKubernetesCommbnd_WbitForPodToSucceed(t *testing.T) {
 	tests := []struct {
-		name           string
-		specs          []command.Spec
-		mockFunc       func(clientset *fake.Clientset)
-		mockAssertFunc func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger)
+		nbme           string
+		specs          []commbnd.Spec
+		mockFunc       func(clientset *fbke.Clientset)
+		mockAssertFunc func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger)
 		expectedErr    error
 	}{
 		{
-			name: "Pod succeeded",
-			specs: []command.Spec{
+			nbme: "Pod succeeded",
+			specs: []commbnd.Spec{
 				{
-					Key:  "my.container",
-					Name: "my-container",
-					Command: []string{
+					Key:  "my.contbiner",
+					Nbme: "my-contbiner",
+					Commbnd: []string{
 						"echo",
 						"hello world",
 					},
 				},
 			},
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodSucceeded,
-						ContainerStatuses: []corev1.ContainerStatus{
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodSucceeded,
+						ContbinerStbtuses: []corev1.ContbinerStbtus{
 							{
-								Name: "my-container",
-								State: corev1.ContainerState{
-									Terminated: &corev1.ContainerStateTerminated{
+								Nbme: "my-contbiner",
+								Stbte: corev1.ContbinerStbte{
+									Terminbted: &corev1.ContbinerStbteTerminbted{
 										ExitCode: 0,
 									},
 								},
@@ -200,82 +200,82 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 						},
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 2)
-				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
-				assert.Equal(t, "get", actions[1].GetVerb())
-				assert.Equal(t, "pods", actions[1].GetResource().Resource)
-				assert.Equal(t, "log", actions[1].GetSubresource())
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 2)
+				bssert.Equbl(t, "wbtch", bctions[0].GetVerb())
+				bssert.Equbl(t, "pods", bctions[0].GetResource().Resource)
+				bssert.Equbl(t, "job-nbme=my-job", bctions[0].(k8stesting.WbtchActionImpl).GetWbtchRestrictions().Lbbels.String())
+				bssert.Equbl(t, "get", bctions[1].GetVerb())
+				bssert.Equbl(t, "pods", bctions[1].GetResource().Resource)
+				bssert.Equbl(t, "log", bctions[1].GetSubresource())
 
 				require.Len(t, logger.LogEntryFunc.History(), 1)
-				assert.Equal(t, "my.container", logger.LogEntryFunc.History()[0].Arg0)
-				assert.Equal(t, []string{"echo", "hello world"}, logger.LogEntryFunc.History()[0].Arg1)
-				logEntry := logger.LogEntryFunc.History()[0].Result0.(*command.MockLogEntry)
+				bssert.Equbl(t, "my.contbiner", logger.LogEntryFunc.History()[0].Arg0)
+				bssert.Equbl(t, []string{"echo", "hello world"}, logger.LogEntryFunc.History()[0].Arg1)
+				logEntry := logger.LogEntryFunc.History()[0].Result0.(*commbnd.MockLogEntry)
 				require.Len(t, logEntry.WriteFunc.History(), 1)
-				assert.Equal(t, "stdout: fake logs\n", string(logEntry.WriteFunc.History()[0].Arg0))
-				require.Len(t, logEntry.FinalizeFunc.History(), 1)
-				assert.Equal(t, 0, logEntry.FinalizeFunc.History()[0].Arg0)
+				bssert.Equbl(t, "stdout: fbke logs\n", string(logEntry.WriteFunc.History()[0].Arg0))
+				require.Len(t, logEntry.FinblizeFunc.History(), 1)
+				bssert.Equbl(t, 0, logEntry.FinblizeFunc.History()[0].Arg0)
 				require.Len(t, logEntry.CloseFunc.History(), 1)
 			},
 		},
 		{
-			name: "Pod succeeded single job",
-			specs: []command.Spec{
+			nbme: "Pod succeeded single job",
+			specs: []commbnd.Spec{
 				{
 					Key:  "setup.0",
-					Name: "setup-0",
-					Command: []string{
+					Nbme: "setup-0",
+					Commbnd: []string{
 						"echo",
 						"hello",
 					},
 				},
 				{
 					Key:  "setup.1",
-					Name: "setup-1",
-					Command: []string{
+					Nbme: "setup-1",
+					Commbnd: []string{
 						"echo",
 						"world",
 					},
 				},
 			},
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodSucceeded,
-						InitContainerStatuses: []corev1.ContainerStatus{
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodSucceeded,
+						InitContbinerStbtuses: []corev1.ContbinerStbtus{
 							{
-								Name: "setup.0",
-								State: corev1.ContainerState{
-									Terminated: &corev1.ContainerStateTerminated{
+								Nbme: "setup.0",
+								Stbte: corev1.ContbinerStbte{
+									Terminbted: &corev1.ContbinerStbteTerminbted{
 										ExitCode: 0,
 									},
 								},
 							},
 							{
-								Name: "setup.1",
-								State: corev1.ContainerState{
-									Terminated: &corev1.ContainerStateTerminated{
+								Nbme: "setup.1",
+								Stbte: corev1.ContbinerStbte{
+									Terminbted: &corev1.ContbinerStbteTerminbted{
 										ExitCode: 0,
 									},
 								},
 							},
 						},
-						ContainerStatuses: []corev1.ContainerStatus{
+						ContbinerStbtuses: []corev1.ContbinerStbtus{
 							{
-								Name: "my-container",
-								State: corev1.ContainerState{
-									Terminated: &corev1.ContainerStateTerminated{
+								Nbme: "my-contbiner",
+								Stbte: corev1.ContbinerStbte{
+									Terminbted: &corev1.ContbinerStbteTerminbted{
 										ExitCode: 0,
 									},
 								},
@@ -283,44 +283,44 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 						},
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 4)
-				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
-				assert.Equal(t, "get", actions[1].GetVerb())
-				assert.Equal(t, "pods", actions[1].GetResource().Resource)
-				assert.Equal(t, "log", actions[1].GetSubresource())
-				assert.Equal(t, "get", actions[2].GetVerb())
-				assert.Equal(t, "pods", actions[2].GetResource().Resource)
-				assert.Equal(t, "log", actions[2].GetSubresource())
-				assert.Equal(t, "get", actions[3].GetVerb())
-				assert.Equal(t, "pods", actions[3].GetResource().Resource)
-				assert.Equal(t, "log", actions[3].GetSubresource())
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 4)
+				bssert.Equbl(t, "wbtch", bctions[0].GetVerb())
+				bssert.Equbl(t, "pods", bctions[0].GetResource().Resource)
+				bssert.Equbl(t, "job-nbme=my-job", bctions[0].(k8stesting.WbtchActionImpl).GetWbtchRestrictions().Lbbels.String())
+				bssert.Equbl(t, "get", bctions[1].GetVerb())
+				bssert.Equbl(t, "pods", bctions[1].GetResource().Resource)
+				bssert.Equbl(t, "log", bctions[1].GetSubresource())
+				bssert.Equbl(t, "get", bctions[2].GetVerb())
+				bssert.Equbl(t, "pods", bctions[2].GetResource().Resource)
+				bssert.Equbl(t, "log", bctions[2].GetSubresource())
+				bssert.Equbl(t, "get", bctions[3].GetVerb())
+				bssert.Equbl(t, "pods", bctions[3].GetResource().Resource)
+				bssert.Equbl(t, "log", bctions[3].GetSubresource())
 
 				require.Len(t, logger.LogEntryFunc.History(), 3)
 			},
 		},
 		{
-			name: "Pod failed",
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+			nbme: "Pod fbiled",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodFailed,
-						ContainerStatuses: []corev1.ContainerStatus{
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodFbiled,
+						ContbinerStbtuses: []corev1.ContbinerStbtus{
 							{
-								Name: "my-container",
-								State: corev1.ContainerState{
-									Terminated: &corev1.ContainerStateTerminated{
+								Nbme: "my-contbiner",
+								Stbte: corev1.ContbinerStbte{
+									Terminbted: &corev1.ContbinerStbteTerminbted{
 										ExitCode: 1,
 									},
 								},
@@ -328,200 +328,200 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 						},
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
 				require.Len(t, logger.LogEntryFunc.History(), 1)
-				logEntry := logger.LogEntryFunc.History()[0].Result0.(*command.MockLogEntry)
-				require.Len(t, logEntry.FinalizeFunc.History(), 1)
+				logEntry := logger.LogEntryFunc.History()[0].Result0.(*commbnd.MockLogEntry)
+				require.Len(t, logEntry.FinblizeFunc.History(), 1)
 			},
-			expectedErr: errors.New("pod failed"),
+			expectedErr: errors.New("pod fbiled"),
 		},
 		{
-			name: "Error occurred",
-			mockFunc: func(clientset *fake.Clientset) {
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(nil, errors.New("failed")))
+			nbme: "Error occurred",
+			mockFunc: func(clientset *fbke.Clientset) {
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(nil, errors.New("fbiled")))
 			},
-			expectedErr: errors.New("watching pod: failed"),
+			expectedErr: errors.New("wbtching pod: fbiled"),
 		},
 		{
-			name: "Pod succeeded second try",
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+			nbme: "Pod succeeded second try",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodRunning,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodRunning,
 					},
 				})
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodSucceeded,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 1)
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 1)
 			},
 		},
 		{
-			name: "Pod deleted by scheduler",
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+			nbme: "Pod deleted by scheduler",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodPending,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodPending,
 					},
 				})
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
-						DeletionTimestamp: &metav1.Time{Time: time.Now()},
+						DeletionTimestbmp: &metbv1.Time{Time: time.Now()},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodPending,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodPending,
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 1)
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 1)
 			},
 			expectedErr: errors.New("deleted by scheduler: pod could not be scheduled"),
 		},
 		{
-			name: "Watch Error",
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Error(&metav1.Status{
-					Status:  metav1.StatusFailure,
-					Message: "failed",
-					Reason:  "InternalError",
+			nbme: "Wbtch Error",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Error(&metbv1.Stbtus{
+					Stbtus:  metbv1.StbtusFbilure,
+					Messbge: "fbiled",
+					Rebson:  "InternblError",
 					Code:    1,
 				})
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodSucceeded,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 1)
-				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 1)
+				bssert.Equbl(t, "wbtch", bctions[0].GetVerb())
+				bssert.Equbl(t, "pods", bctions[0].GetResource().Resource)
+				bssert.Equbl(t, "job-nbme=my-job", bctions[0].(k8stesting.WbtchActionImpl).GetWbtchRestrictions().Lbbels.String())
 			},
 		},
 		{
-			name: "Unexpected Watch Error",
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Error(&corev1.Pod{})
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+			nbme: "Unexpected Wbtch Error",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Error(&corev1.Pod{})
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodSucceeded,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 1)
-				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 1)
+				bssert.Equbl(t, "wbtch", bctions[0].GetVerb())
+				bssert.Equbl(t, "pods", bctions[0].GetResource().Resource)
+				bssert.Equbl(t, "job-nbme=my-job", bctions[0].(k8stesting.WbtchActionImpl).GetWbtchRestrictions().Lbbels.String())
 			},
 		},
 		{
-			name: "Unexpected Watch Object",
-			mockFunc: func(clientset *fake.Clientset) {
-				watcher := watch.NewFakeWithChanSize(10, false)
-				watcher.Add(&metav1.Status{
-					Status:  metav1.StatusFailure,
-					Message: "failed",
-					Reason:  "InternalError",
+			nbme: "Unexpected Wbtch Object",
+			mockFunc: func(clientset *fbke.Clientset) {
+				wbtcher := wbtch.NewFbkeWithChbnSize(10, fblse)
+				wbtcher.Add(&metbv1.Stbtus{
+					Stbtus:  metbv1.StbtusFbilure,
+					Messbge: "fbiled",
+					Rebson:  "InternblError",
 					Code:    1,
 				})
-				watcher.Add(&corev1.Pod{
-					ObjectMeta: metav1.ObjectMeta{
-						Name: "my-pod",
-						Labels: map[string]string{
-							"job-name": "my-job",
+				wbtcher.Add(&corev1.Pod{
+					ObjectMetb: metbv1.ObjectMetb{
+						Nbme: "my-pod",
+						Lbbels: mbp[string]string{
+							"job-nbme": "my-job",
 						},
 					},
-					Status: corev1.PodStatus{
-						Phase: corev1.PodSucceeded,
+					Stbtus: corev1.PodStbtus{
+						Phbse: corev1.PodSucceeded,
 					},
 				})
-				clientset.PrependWatchReactor("pods", k8stesting.DefaultWatchReactor(watcher, nil))
+				clientset.PrependWbtchRebctor("pods", k8stesting.DefbultWbtchRebctor(wbtcher, nil))
 			},
-			mockAssertFunc: func(t *testing.T, actions []k8stesting.Action, logger *command.MockLogger) {
-				require.Len(t, actions, 1)
-				assert.Equal(t, "watch", actions[0].GetVerb())
-				assert.Equal(t, "pods", actions[0].GetResource().Resource)
-				assert.Equal(t, "job-name=my-job", actions[0].(k8stesting.WatchActionImpl).GetWatchRestrictions().Labels.String())
+			mockAssertFunc: func(t *testing.T, bctions []k8stesting.Action, logger *commbnd.MockLogger) {
+				require.Len(t, bctions, 1)
+				bssert.Equbl(t, "wbtch", bctions[0].GetVerb())
+				bssert.Equbl(t, "pods", bctions[0].GetResource().Resource)
+				bssert.Equbl(t, "job-nbme=my-job", bctions[0].(k8stesting.WbtchActionImpl).GetWbtchRestrictions().Lbbels.String())
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			clientset := fake.NewSimpleClientset()
-			logger := command.NewMockLogger()
-			logger.LogEntryFunc.SetDefaultReturn(command.NewMockLogEntry())
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			clientset := fbke.NewSimpleClientset()
+			logger := commbnd.NewMockLogger()
+			logger.LogEntryFunc.SetDefbultReturn(commbnd.NewMockLogEntry())
 
 			if test.mockFunc != nil {
 				test.mockFunc(clientset)
 			}
 
-			cmd := &command.KubernetesCommand{
+			cmd := &commbnd.KubernetesCommbnd{
 				Logger:     logtest.Scoped(t),
 				Clientset:  clientset,
-				Operations: command.NewOperations(&observation.TestContext),
+				Operbtions: commbnd.NewOperbtions(&observbtion.TestContext),
 			}
 
-			pod, err := cmd.WaitForPodToSucceed(
-				context.Background(),
+			pod, err := cmd.WbitForPodToSucceed(
+				context.Bbckground(),
 				logger,
-				"my-namespace",
+				"my-nbmespbce",
 				"my-job",
 				test.specs,
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, pod)
@@ -535,259 +535,259 @@ func TestKubernetesCommand_WaitForPodToSucceed(t *testing.T) {
 }
 
 func TestNewKubernetesJob(t *testing.T) {
-	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://localhost")
+	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://locblhost")
 	require.NoError(t, err)
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		os.Unsetenv("KUBERNETES_SERVICE_HOST")
 	})
 
-	spec := command.Spec{
-		Key:     "my.container",
-		Name:    "my-container",
-		Command: []string{"echo", "hello"},
-		Env:     []string{"FOO=bar"},
+	spec := commbnd.Spec{
+		Key:     "my.contbiner",
+		Nbme:    "my-contbiner",
+		Commbnd: []string{"echo", "hello"},
+		Env:     []string{"FOO=bbr"},
 	}
-	options := command.KubernetesContainerOptions{
-		Namespace:      "default",
-		NodeName:       "my-node",
-		JobAnnotations: map[string]string{"foo": "bar"},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: "my-secret"},
+	options := commbnd.KubernetesContbinerOptions{
+		Nbmespbce:      "defbult",
+		NodeNbme:       "my-node",
+		JobAnnotbtions: mbp[string]string{"foo": "bbr"},
+		ImbgePullSecrets: []corev1.LocblObjectReference{
+			{Nbme: "my-secret"},
 		},
-		PersistenceVolumeName: "my-pvc",
-		ResourceLimit: command.KubernetesResource{
-			CPU:    resource.MustParse("10"),
-			Memory: resource.MustParse("10Gi"),
+		PersistenceVolumeNbme: "my-pvc",
+		ResourceLimit: commbnd.KubernetesResource{
+			CPU:    resource.MustPbrse("10"),
+			Memory: resource.MustPbrse("10Gi"),
 		},
-		ResourceRequest: command.KubernetesResource{
-			CPU:    resource.MustParse("1"),
-			Memory: resource.MustParse("1Gi"),
+		ResourceRequest: commbnd.KubernetesResource{
+			CPU:    resource.MustPbrse("1"),
+			Memory: resource.MustPbrse("1Gi"),
 		},
-		SecurityContext: command.KubernetesSecurityContext{
+		SecurityContext: commbnd.KubernetesSecurityContext{
 			FSGroup: pointer.Int64(1000),
 		},
 	}
-	job := command.NewKubernetesJob("my-job", "my-image:latest", spec, "/my/path", options)
+	job := commbnd.NewKubernetesJob("my-job", "my-imbge:lbtest", spec, "/my/pbth", options)
 
-	assert.Equal(t, "my-job", job.Name)
-	assert.Equal(t, map[string]string{"foo": "bar"}, job.Annotations)
-	assert.Equal(t, int32(0), *job.Spec.BackoffLimit)
+	bssert.Equbl(t, "my-job", job.Nbme)
+	bssert.Equbl(t, mbp[string]string{"foo": "bbr"}, job.Annotbtions)
+	bssert.Equbl(t, int32(0), *job.Spec.BbckoffLimit)
 
-	assert.Equal(t, "my-node", job.Spec.Template.Spec.NodeName)
-	assert.Equal(t, corev1.RestartPolicyNever, job.Spec.Template.Spec.RestartPolicy)
-	assert.Equal(t, "my-secret", job.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	bssert.Equbl(t, "my-node", job.Spec.Templbte.Spec.NodeNbme)
+	bssert.Equbl(t, corev1.RestbrtPolicyNever, job.Spec.Templbte.Spec.RestbrtPolicy)
+	bssert.Equbl(t, "my-secret", job.Spec.Templbte.Spec.ImbgePullSecrets[0].Nbme)
 
-	require.Len(t, job.Spec.Template.Spec.Containers, 1)
-	assert.Equal(t, "my-container", job.Spec.Template.Spec.Containers[0].Name)
-	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.Containers[0].Image)
-	assert.Equal(t, []string{"echo", "hello"}, job.Spec.Template.Spec.Containers[0].Command)
-	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].WorkingDir)
+	require.Len(t, job.Spec.Templbte.Spec.Contbiners, 1)
+	bssert.Equbl(t, "my-contbiner", job.Spec.Templbte.Spec.Contbiners[0].Nbme)
+	bssert.Equbl(t, "my-imbge:lbtest", job.Spec.Templbte.Spec.Contbiners[0].Imbge)
+	bssert.Equbl(t, []string{"echo", "hello"}, job.Spec.Templbte.Spec.Contbiners[0].Commbnd)
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.Contbiners[0].WorkingDir)
 
-	require.Len(t, job.Spec.Template.Spec.Containers[0].Env, 1)
-	assert.Equal(t, "FOO", job.Spec.Template.Spec.Containers[0].Env[0].Name)
-	assert.Equal(t, "bar", job.Spec.Template.Spec.Containers[0].Env[0].Value)
+	require.Len(t, job.Spec.Templbte.Spec.Contbiners[0].Env, 1)
+	bssert.Equbl(t, "FOO", job.Spec.Templbte.Spec.Contbiners[0].Env[0].Nbme)
+	bssert.Equbl(t, "bbr", job.Spec.Templbte.Spec.Contbiners[0].Env[0].Vblue)
 
-	assert.Equal(t, resource.MustParse("10"), *job.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu())
-	assert.Equal(t, resource.MustParse("10Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Limits.Memory())
-	assert.Equal(t, resource.MustParse("1"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu())
-	assert.Equal(t, resource.MustParse("1Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
+	bssert.Equbl(t, resource.MustPbrse("10"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Limits.Cpu())
+	bssert.Equbl(t, resource.MustPbrse("10Gi"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Limits.Memory())
+	bssert.Equbl(t, resource.MustPbrse("1"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Requests.Cpu())
+	bssert.Equbl(t, resource.MustPbrse("1Gi"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Requests.Memory())
 
-	require.Len(t, job.Spec.Template.Spec.Containers[0].VolumeMounts, 1)
-	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].Name)
-	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].MountPath)
-	assert.Equal(t, "/my/path", job.Spec.Template.Spec.Containers[0].VolumeMounts[0].SubPath)
+	require.Len(t, job.Spec.Templbte.Spec.Contbiners[0].VolumeMounts, 1)
+	bssert.Equbl(t, "sg-executor-job-volume", job.Spec.Templbte.Spec.Contbiners[0].VolumeMounts[0].Nbme)
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.Contbiners[0].VolumeMounts[0].MountPbth)
+	bssert.Equbl(t, "/my/pbth", job.Spec.Templbte.Spec.Contbiners[0].VolumeMounts[0].SubPbth)
 
-	require.Len(t, job.Spec.Template.Spec.Volumes, 1)
-	assert.Equal(t, "sg-executor-job-volume", job.Spec.Template.Spec.Volumes[0].Name)
-	assert.Equal(t, "my-pvc", job.Spec.Template.Spec.Volumes[0].PersistentVolumeClaim.ClaimName)
+	require.Len(t, job.Spec.Templbte.Spec.Volumes, 1)
+	bssert.Equbl(t, "sg-executor-job-volume", job.Spec.Templbte.Spec.Volumes[0].Nbme)
+	bssert.Equbl(t, "my-pvc", job.Spec.Templbte.Spec.Volumes[0].PersistentVolumeClbim.ClbimNbme)
 
-	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsUser)
-	assert.Nil(t, job.Spec.Template.Spec.SecurityContext.RunAsGroup)
-	assert.Equal(t, int64(1000), *job.Spec.Template.Spec.SecurityContext.FSGroup)
+	bssert.Nil(t, job.Spec.Templbte.Spec.SecurityContext.RunAsUser)
+	bssert.Nil(t, job.Spec.Templbte.Spec.SecurityContext.RunAsGroup)
+	bssert.Equbl(t, int64(1000), *job.Spec.Templbte.Spec.SecurityContext.FSGroup)
 }
 
 func TestNewKubernetesSingleJob(t *testing.T) {
-	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://localhost")
+	err := os.Setenv("KUBERNETES_SERVICE_HOST", "http://locblhost")
 	require.NoError(t, err)
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		os.Unsetenv("KUBERNETES_SERVICE_HOST")
 	})
 
-	specs := []command.Spec{
+	specs := []commbnd.Spec{
 		{
-			Key:     "my.container.0",
-			Name:    "my-container-0",
-			Command: []string{"echo", "hello"},
-			Env:     []string{"FOO=bar"},
+			Key:     "my.contbiner.0",
+			Nbme:    "my-contbiner-0",
+			Commbnd: []string{"echo", "hello"},
+			Env:     []string{"FOO=bbr"},
 			Dir:     "repository",
-			Image:   "my-image:latest",
+			Imbge:   "my-imbge:lbtest",
 		},
 		{
-			Key:     "my.container.1",
-			Name:    "my-container-1",
-			Command: []string{"echo", "world"},
-			Env:     []string{"FOO=baz"},
+			Key:     "my.contbiner.1",
+			Nbme:    "my-contbiner-1",
+			Commbnd: []string{"echo", "world"},
+			Env:     []string{"FOO=bbz"},
 			Dir:     "repository",
-			Image:   "my-image:latest",
+			Imbge:   "my-imbge:lbtest",
 		},
 	}
-	workspaceFiles := []files.WorkspaceFile{
+	workspbceFiles := []files.WorkspbceFile{
 		{
-			Path:    "/my/path/script1.sh",
+			Pbth:    "/my/pbth/script1.sh",
 			Content: []byte("echo hello"),
 		},
 		{
-			Path:    "/my/path/script2.sh",
+			Pbth:    "/my/pbth/script2.sh",
 			Content: []byte("echo world"),
 		},
 	}
-	secret := command.JobSecret{
-		Name: "my-secret",
+	secret := commbnd.JobSecret{
+		Nbme: "my-secret",
 		Keys: []string{"TOKEN"},
 	}
-	repoOptions := command.RepositoryOptions{
+	repoOptions := commbnd.RepositoryOptions{
 		JobID:               42,
 		CloneURL:            "http://my-frontend/.executor/git/my-repo",
 		RepositoryDirectory: "repository",
-		Commit:              "deadbeef",
+		Commit:              "debdbeef",
 	}
-	options := command.KubernetesContainerOptions{
-		CloneOptions: command.KubernetesCloneOptions{
-			ExecutorName: "my-executor",
+	options := commbnd.KubernetesContbinerOptions{
+		CloneOptions: commbnd.KubernetesCloneOptions{
+			ExecutorNbme: "my-executor",
 		},
-		Namespace:      "default",
-		NodeName:       "my-node",
-		JobAnnotations: map[string]string{"foo": "bar"},
-		ImagePullSecrets: []corev1.LocalObjectReference{
-			{Name: "my-secret"},
+		Nbmespbce:      "defbult",
+		NodeNbme:       "my-node",
+		JobAnnotbtions: mbp[string]string{"foo": "bbr"},
+		ImbgePullSecrets: []corev1.LocblObjectReference{
+			{Nbme: "my-secret"},
 		},
-		PersistenceVolumeName: "my-pvc",
-		ResourceLimit: command.KubernetesResource{
-			CPU:    resource.MustParse("10"),
-			Memory: resource.MustParse("10Gi"),
+		PersistenceVolumeNbme: "my-pvc",
+		ResourceLimit: commbnd.KubernetesResource{
+			CPU:    resource.MustPbrse("10"),
+			Memory: resource.MustPbrse("10Gi"),
 		},
-		ResourceRequest: command.KubernetesResource{
-			CPU:    resource.MustParse("1"),
-			Memory: resource.MustParse("1Gi"),
+		ResourceRequest: commbnd.KubernetesResource{
+			CPU:    resource.MustPbrse("1"),
+			Memory: resource.MustPbrse("1Gi"),
 		},
-		SecurityContext: command.KubernetesSecurityContext{
+		SecurityContext: commbnd.KubernetesSecurityContext{
 			FSGroup: pointer.Int64(1000),
 		},
-		StepImage: "step-image:latest",
+		StepImbge: "step-imbge:lbtest",
 	}
-	job := command.NewKubernetesSingleJob(
+	job := commbnd.NewKubernetesSingleJob(
 		"my-job",
 		specs,
-		workspaceFiles,
+		workspbceFiles,
 		secret,
 		"my-volume",
 		repoOptions,
 		options,
 	)
 
-	assert.Equal(t, "my-job", job.Name)
-	assert.Equal(t, map[string]string{"foo": "bar"}, job.Annotations)
-	assert.Equal(t, int32(0), *job.Spec.BackoffLimit)
+	bssert.Equbl(t, "my-job", job.Nbme)
+	bssert.Equbl(t, mbp[string]string{"foo": "bbr"}, job.Annotbtions)
+	bssert.Equbl(t, int32(0), *job.Spec.BbckoffLimit)
 
-	assert.Equal(t, "my-node", job.Spec.Template.Spec.NodeName)
-	assert.Equal(t, corev1.RestartPolicyNever, job.Spec.Template.Spec.RestartPolicy)
+	bssert.Equbl(t, "my-node", job.Spec.Templbte.Spec.NodeNbme)
+	bssert.Equbl(t, corev1.RestbrtPolicyNever, job.Spec.Templbte.Spec.RestbrtPolicy)
 
-	require.Len(t, job.Spec.Template.Spec.InitContainers, 3)
-	assert.Equal(t, "my-secret", job.Spec.Template.Spec.ImagePullSecrets[0].Name)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners, 3)
+	bssert.Equbl(t, "my-secret", job.Spec.Templbte.Spec.ImbgePullSecrets[0].Nbme)
 
-	assert.Equal(t, "setup-workspace", job.Spec.Template.Spec.InitContainers[0].Name)
-	assert.Equal(t, "step-image:latest", job.Spec.Template.Spec.InitContainers[0].Image)
-	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[0].WorkingDir)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Command, 2)
-	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.InitContainers[0].Command)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Args, 1)
-	assert.Equal(
+	bssert.Equbl(t, "setup-workspbce", job.Spec.Templbte.Spec.InitContbiners[0].Nbme)
+	bssert.Equbl(t, "step-imbge:lbtest", job.Spec.Templbte.Spec.InitContbiners[0].Imbge)
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.InitContbiners[0].WorkingDir)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[0].Commbnd, 2)
+	bssert.Equbl(t, []string{"sh", "-c"}, job.Spec.Templbte.Spec.InitContbiners[0].Commbnd)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[0].Args, 1)
+	bssert.Equbl(
 		t,
 		"set -e; "+
 			"mkdir -p repository; "+
 			"git -C repository init; "+
-			"git -C repository remote add origin http://my-frontend/.executor/git/my-repo; "+
-			"git -C repository config --local gc.auto 0; "+
+			"git -C repository remote bdd origin http://my-frontend/.executor/git/my-repo; "+
+			"git -C repository config --locbl gc.buto 0; "+
 			"git -C repository "+
-			"-c http.extraHeader=\"Authorization:Bearer $TOKEN\" "+
-			"-c http.extraHeader=X-Sourcegraph-Actor-UID:internal "+
-			"-c http.extraHeader=X-Sourcegraph-Job-ID:42 "+
-			"-c http.extraHeader=X-Sourcegraph-Executor-Name:my-executor "+
-			"-c protocol.version=2 fetch --progress --no-recurse-submodules --no-tags --depth=1 origin deadbeef; "+
-			"git -C repository checkout --progress --force deadbeef; "+
-			"mkdir -p .sourcegraph-executor; "+
-			"echo '#!/bin/sh\n\nfile=\"$1\"\n\nif [ ! -f \"$file\" ]; then\n  exit 0\nfi\n\nnextStep=$(grep -o '\"'\"'\"nextStep\":[^,]*'\"'\"' $file | sed '\"'\"'s/\"nextStep\"://'\"'\"' | sed -e '\"'\"'s/^[[:space:]]*//'\"'\"' -e '\"'\"'s/[[:space:]]*$//'\"'\"' -e '\"'\"'s/\"//g'\"'\"' -e '\"'\"'s/}//g'\"'\"')\n\nif [ \"${2%$nextStep}\" = \"$2\" ]; then\n  echo \"skip\"\n  exit 0\nfi\n' > nextIndex.sh; "+
+			"-c http.extrbHebder=\"Authorizbtion:Bebrer $TOKEN\" "+
+			"-c http.extrbHebder=X-Sourcegrbph-Actor-UID:internbl "+
+			"-c http.extrbHebder=X-Sourcegrbph-Job-ID:42 "+
+			"-c http.extrbHebder=X-Sourcegrbph-Executor-Nbme:my-executor "+
+			"-c protocol.version=2 fetch --progress --no-recurse-submodules --no-tbgs --depth=1 origin debdbeef; "+
+			"git -C repository checkout --progress --force debdbeef; "+
+			"mkdir -p .sourcegrbph-executor; "+
+			"echo '#!/bin/sh\n\nfile=\"$1\"\n\nif [ ! -f \"$file\" ]; then\n  exit 0\nfi\n\nnextStep=$(grep -o '\"'\"'\"nextStep\":[^,]*'\"'\"' $file | sed '\"'\"'s/\"nextStep\"://'\"'\"' | sed -e '\"'\"'s/^[[:spbce:]]*//'\"'\"' -e '\"'\"'s/[[:spbce:]]*$//'\"'\"' -e '\"'\"'s/\"//g'\"'\"' -e '\"'\"'s/}//g'\"'\"')\n\nif [ \"${2%$nextStep}\" = \"$2\" ]; then\n  echo \"skip\"\n  exit 0\nfi\n' > nextIndex.sh; "+
 			"chmod +x nextIndex.sh; "+
-			"mkdir -p /my/path; "+
-			"echo -E 'echo hello' > /my/path/script1.sh; "+
-			"chmod +x /my/path/script1.sh; "+
-			"mkdir -p /my/path; "+
-			"echo -E 'echo world' > /my/path/script2.sh; "+
-			"chmod +x /my/path/script2.sh; ",
-		job.Spec.Template.Spec.InitContainers[0].Args[0],
+			"mkdir -p /my/pbth; "+
+			"echo -E 'echo hello' > /my/pbth/script1.sh; "+
+			"chmod +x /my/pbth/script1.sh; "+
+			"mkdir -p /my/pbth; "+
+			"echo -E 'echo world' > /my/pbth/script2.sh; "+
+			"chmod +x /my/pbth/script2.sh; ",
+		job.Spec.Templbte.Spec.InitContbiners[0].Args[0],
 	)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[0].Env, 1)
-	assert.Equal(t, "TOKEN", job.Spec.Template.Spec.InitContainers[0].Env[0].Name)
-	assert.Equal(t, &corev1.EnvVarSource{
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[0].Env, 1)
+	bssert.Equbl(t, "TOKEN", job.Spec.Templbte.Spec.InitContbiners[0].Env[0].Nbme)
+	bssert.Equbl(t, &corev1.EnvVbrSource{
 		SecretKeyRef: &corev1.SecretKeySelector{
 			Key:                  "TOKEN",
-			LocalObjectReference: corev1.LocalObjectReference{Name: "my-secret"},
+			LocblObjectReference: corev1.LocblObjectReference{Nbme: "my-secret"},
 		},
-	}, job.Spec.Template.Spec.InitContainers[0].Env[0].ValueFrom)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[0].VolumeMounts, 1)
-	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[0].VolumeMounts[0].Name)
-	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[0].VolumeMounts[0].MountPath)
+	}, job.Spec.Templbte.Spec.InitContbiners[0].Env[0].VblueFrom)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[0].VolumeMounts, 1)
+	bssert.Equbl(t, "job-dbtb", job.Spec.Templbte.Spec.InitContbiners[0].VolumeMounts[0].Nbme)
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.InitContbiners[0].VolumeMounts[0].MountPbth)
 
-	assert.Equal(t, "my-container-0", job.Spec.Template.Spec.InitContainers[1].Name)
-	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.InitContainers[1].Image)
-	assert.Equal(t, "/job/repository", job.Spec.Template.Spec.InitContainers[1].WorkingDir)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Command, 2)
-	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.InitContainers[1].Command)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Args, 1)
-	assert.Equal(
+	bssert.Equbl(t, "my-contbiner-0", job.Spec.Templbte.Spec.InitContbiners[1].Nbme)
+	bssert.Equbl(t, "my-imbge:lbtest", job.Spec.Templbte.Spec.InitContbiners[1].Imbge)
+	bssert.Equbl(t, "/job/repository", job.Spec.Templbte.Spec.InitContbiners[1].WorkingDir)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[1].Commbnd, 2)
+	bssert.Equbl(t, []string{"sh", "-c"}, job.Spec.Templbte.Spec.InitContbiners[1].Commbnd)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[1].Args, 1)
+	bssert.Equbl(
 		t,
-		"if [ \"$(/job/nextIndex.sh /job/skip.json my.container.0)\" != \"skip\" ]; then echo; hello;  fi",
-		job.Spec.Template.Spec.InitContainers[1].Args[0],
+		"if [ \"$(/job/nextIndex.sh /job/skip.json my.contbiner.0)\" != \"skip\" ]; then echo; hello;  fi",
+		job.Spec.Templbte.Spec.InitContbiners[1].Args[0],
 	)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[1].Env, 2)
-	assert.Equal(t, "FOO", job.Spec.Template.Spec.InitContainers[1].Env[0].Name)
-	assert.Equal(t, "bar", job.Spec.Template.Spec.InitContainers[1].Env[0].Value)
-	assert.Equal(t, "EXECUTOR_ADD_SAFE", job.Spec.Template.Spec.InitContainers[1].Env[1].Name)
-	assert.Equal(t, "false", job.Spec.Template.Spec.InitContainers[1].Env[1].Value)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[1].VolumeMounts, 1)
-	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[1].VolumeMounts[0].Name)
-	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[1].VolumeMounts[0].MountPath)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[1].Env, 2)
+	bssert.Equbl(t, "FOO", job.Spec.Templbte.Spec.InitContbiners[1].Env[0].Nbme)
+	bssert.Equbl(t, "bbr", job.Spec.Templbte.Spec.InitContbiners[1].Env[0].Vblue)
+	bssert.Equbl(t, "EXECUTOR_ADD_SAFE", job.Spec.Templbte.Spec.InitContbiners[1].Env[1].Nbme)
+	bssert.Equbl(t, "fblse", job.Spec.Templbte.Spec.InitContbiners[1].Env[1].Vblue)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[1].VolumeMounts, 1)
+	bssert.Equbl(t, "job-dbtb", job.Spec.Templbte.Spec.InitContbiners[1].VolumeMounts[0].Nbme)
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.InitContbiners[1].VolumeMounts[0].MountPbth)
 
-	assert.Equal(t, "my-container-1", job.Spec.Template.Spec.InitContainers[2].Name)
-	assert.Equal(t, "my-image:latest", job.Spec.Template.Spec.InitContainers[2].Image)
-	assert.Equal(t, "/job/repository", job.Spec.Template.Spec.InitContainers[2].WorkingDir)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Command, 2)
-	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.InitContainers[2].Command)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Args, 1)
-	assert.Equal(
+	bssert.Equbl(t, "my-contbiner-1", job.Spec.Templbte.Spec.InitContbiners[2].Nbme)
+	bssert.Equbl(t, "my-imbge:lbtest", job.Spec.Templbte.Spec.InitContbiners[2].Imbge)
+	bssert.Equbl(t, "/job/repository", job.Spec.Templbte.Spec.InitContbiners[2].WorkingDir)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[2].Commbnd, 2)
+	bssert.Equbl(t, []string{"sh", "-c"}, job.Spec.Templbte.Spec.InitContbiners[2].Commbnd)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[2].Args, 1)
+	bssert.Equbl(
 		t,
-		"if [ \"$(/job/nextIndex.sh /job/skip.json my.container.1)\" != \"skip\" ]; then echo; world;  fi",
-		job.Spec.Template.Spec.InitContainers[2].Args[0],
+		"if [ \"$(/job/nextIndex.sh /job/skip.json my.contbiner.1)\" != \"skip\" ]; then echo; world;  fi",
+		job.Spec.Templbte.Spec.InitContbiners[2].Args[0],
 	)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[2].Env, 2)
-	assert.Equal(t, "FOO", job.Spec.Template.Spec.InitContainers[2].Env[0].Name)
-	assert.Equal(t, "baz", job.Spec.Template.Spec.InitContainers[2].Env[0].Value)
-	assert.Equal(t, "EXECUTOR_ADD_SAFE", job.Spec.Template.Spec.InitContainers[1].Env[1].Name)
-	assert.Equal(t, "false", job.Spec.Template.Spec.InitContainers[1].Env[1].Value)
-	require.Len(t, job.Spec.Template.Spec.InitContainers[2].VolumeMounts, 1)
-	assert.Equal(t, "job-data", job.Spec.Template.Spec.InitContainers[2].VolumeMounts[0].Name)
-	assert.Equal(t, "/job", job.Spec.Template.Spec.InitContainers[2].VolumeMounts[0].MountPath)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[2].Env, 2)
+	bssert.Equbl(t, "FOO", job.Spec.Templbte.Spec.InitContbiners[2].Env[0].Nbme)
+	bssert.Equbl(t, "bbz", job.Spec.Templbte.Spec.InitContbiners[2].Env[0].Vblue)
+	bssert.Equbl(t, "EXECUTOR_ADD_SAFE", job.Spec.Templbte.Spec.InitContbiners[1].Env[1].Nbme)
+	bssert.Equbl(t, "fblse", job.Spec.Templbte.Spec.InitContbiners[1].Env[1].Vblue)
+	require.Len(t, job.Spec.Templbte.Spec.InitContbiners[2].VolumeMounts, 1)
+	bssert.Equbl(t, "job-dbtb", job.Spec.Templbte.Spec.InitContbiners[2].VolumeMounts[0].Nbme)
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.InitContbiners[2].VolumeMounts[0].MountPbth)
 
-	require.Len(t, job.Spec.Template.Spec.Containers, 1)
-	assert.Equal(t, "main", job.Spec.Template.Spec.Containers[0].Name)
-	assert.Equal(t, "step-image:latest", job.Spec.Template.Spec.Containers[0].Image)
-	assert.Equal(t, []string{"sh", "-c"}, job.Spec.Template.Spec.Containers[0].Command)
-	require.Len(t, job.Spec.Template.Spec.Containers[0].Args, 1)
-	assert.Equal(t, "echo 'complete'", job.Spec.Template.Spec.Containers[0].Args[0])
-	assert.Equal(t, "/job", job.Spec.Template.Spec.Containers[0].WorkingDir)
+	require.Len(t, job.Spec.Templbte.Spec.Contbiners, 1)
+	bssert.Equbl(t, "mbin", job.Spec.Templbte.Spec.Contbiners[0].Nbme)
+	bssert.Equbl(t, "step-imbge:lbtest", job.Spec.Templbte.Spec.Contbiners[0].Imbge)
+	bssert.Equbl(t, []string{"sh", "-c"}, job.Spec.Templbte.Spec.Contbiners[0].Commbnd)
+	require.Len(t, job.Spec.Templbte.Spec.Contbiners[0].Args, 1)
+	bssert.Equbl(t, "echo 'complete'", job.Spec.Templbte.Spec.Contbiners[0].Args[0])
+	bssert.Equbl(t, "/job", job.Spec.Templbte.Spec.Contbiners[0].WorkingDir)
 
-	assert.Equal(t, resource.MustParse("10"), *job.Spec.Template.Spec.Containers[0].Resources.Limits.Cpu())
-	assert.Equal(t, resource.MustParse("10Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Limits.Memory())
-	assert.Equal(t, resource.MustParse("1"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Cpu())
-	assert.Equal(t, resource.MustParse("1Gi"), *job.Spec.Template.Spec.Containers[0].Resources.Requests.Memory())
+	bssert.Equbl(t, resource.MustPbrse("10"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Limits.Cpu())
+	bssert.Equbl(t, resource.MustPbrse("10Gi"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Limits.Memory())
+	bssert.Equbl(t, resource.MustPbrse("1"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Requests.Cpu())
+	bssert.Equbl(t, resource.MustPbrse("1Gi"), *job.Spec.Templbte.Spec.Contbiners[0].Resources.Requests.Memory())
 }

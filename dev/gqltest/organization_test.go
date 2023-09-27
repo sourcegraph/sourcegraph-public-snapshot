@@ -1,180 +1,180 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestOrganization(t *testing.T) {
-	const testOrgName = "gqltest-org"
-	orgID, err := client.CreateOrganization(testOrgName, testOrgName)
+func TestOrgbnizbtion(t *testing.T) {
+	const testOrgNbme = "gqltest-org"
+	orgID, err := client.CrebteOrgbnizbtion(testOrgNbme, testOrgNbme)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer func() {
-		err := client.DeleteOrganization(orgID)
+		err := client.DeleteOrgbnizbtion(orgID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
-	t.Run("settings cascade", func(t *testing.T) {
-		err := client.OverwriteSettings(orgID, `{"quicklinks":[{"name":"Test quicklink","url":"http://test-quicklink.local"}]}`)
+	t.Run("settings cbscbde", func(t *testing.T) {
+		err := client.OverwriteSettings(orgID, `{"quicklinks":[{"nbme":"Test quicklink","url":"http://test-quicklink.locbl"}]}`)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() {
 			err := client.OverwriteSettings(orgID, `{}`)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}()
 
 		{
 			contents, err := client.ViewerSettings()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			var got struct {
-				QuickLinks []schema.QuickLink `json:"quicklinks"`
+			vbr got struct {
+				QuickLinks []schemb.QuickLink `json:"quicklinks"`
 			}
-			err = jsoniter.UnmarshalFromString(contents, &got)
+			err = jsoniter.UnmbrshblFromString(contents, &got)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			wantQuickLinks := []schema.QuickLink{
+			wbntQuickLinks := []schemb.QuickLink{
 				{
-					Name: "Test quicklink",
-					Url:  "http://test-quicklink.local",
+					Nbme: "Test quicklink",
+					Url:  "http://test-quicklink.locbl",
 				},
 			}
-			if diff := cmp.Diff(wantQuickLinks, got.QuickLinks); diff != "" {
-				t.Fatalf("QuickLinks mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntQuickLinks, got.QuickLinks); diff != "" {
+				t.Fbtblf("QuickLinks mismbtch (-wbnt +got):\n%s", diff)
 			}
 		}
-		// Removing all members from an organization is not allowed - add a new user to the organization to verify cascading settings below
-		testUserID, err := createOrganizationUser(orgID)
+		// Removing bll members from bn orgbnizbtion is not bllowed - bdd b new user to the orgbnizbtion to verify cbscbding settings below
+		testUserID, err := crebteOrgbnizbtionUser(orgID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		removeTestUserAfterTest(t, testUserID)
-		// Remove authenticate user (gqltest-admin) from organization (gqltest-org) should
-		// no longer get cascaded settings from this organization.
-		err = client.RemoveUserFromOrganization(client.AuthenticatedUserID(), orgID)
+		// Remove buthenticbte user (gqltest-bdmin) from orgbnizbtion (gqltest-org) should
+		// no longer get cbscbded settings from this orgbnizbtion.
+		err = client.RemoveUserFromOrgbnizbtion(client.AuthenticbtedUserID(), orgID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		{
 			contents, err := client.ViewerSettings()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			var got struct {
-				QuickLinks []schema.QuickLink `json:"quicklinks"`
+			vbr got struct {
+				QuickLinks []schemb.QuickLink `json:"quicklinks"`
 			}
-			err = jsoniter.UnmarshalFromString(contents, &got)
+			err = jsoniter.UnmbrshblFromString(contents, &got)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff([]schema.QuickLink(nil), got.QuickLinks); diff != "" {
-				t.Fatalf("QuickLinks mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff([]schemb.QuickLink(nil), got.QuickLinks); diff != "" {
+				t.Fbtblf("QuickLinks mismbtch (-wbnt +got):\n%s", diff)
 			}
 		}
 	})
 
-	// Docs: https://docs.sourcegraph.com/user/organizations
-	t.Run("auth.userOrgMap", func(t *testing.T) {
-		// Create a test user (gqltest-org-user-1) without settings "auth.userOrgMap",
-		// the user should not be added to the organization (gqltest-org) automatically.
-		const testUsername1 = "gqltest-org-user-1"
-		testUserID1, err := client.CreateUser(testUsername1, testUsername1+"@sourcegraph.com")
+	// Docs: https://docs.sourcegrbph.com/user/orgbnizbtions
+	t.Run("buth.userOrgMbp", func(t *testing.T) {
+		// Crebte b test user (gqltest-org-user-1) without settings "buth.userOrgMbp",
+		// the user should not be bdded to the orgbnizbtion (gqltest-org) butombticblly.
+		const testUsernbme1 = "gqltest-org-user-1"
+		testUserID1, err := client.CrebteUser(testUsernbme1, testUsernbme1+"@sourcegrbph.com")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		removeTestUserAfterTest(t, testUserID1)
 
-		orgs, err := client.UserOrganizations(testUsername1)
+		orgs, err := client.UserOrgbnizbtions(testUsernbme1)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if diff := cmp.Diff([]string{}, orgs); diff != "" {
-			t.Fatalf("Organizations mismatch (-want +got):\n%s", diff)
+			t.Fbtblf("Orgbnizbtions mismbtch (-wbnt +got):\n%s", diff)
 		}
 
-		// Update site configuration to set "auth.userOrgMap" which makes the new user join
-		// the organization (gqltest-org) automatically.
-		siteConfig, lastID, err := client.SiteConfiguration()
+		// Updbte site configurbtion to set "buth.userOrgMbp" which mbkes the new user join
+		// the orgbnizbtion (gqltest-org) butombticblly.
+		siteConfig, lbstID, err := client.SiteConfigurbtion()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		oldSiteConfig := new(schema.SiteConfiguration)
+		oldSiteConfig := new(schemb.SiteConfigurbtion)
 		*oldSiteConfig = *siteConfig
 		defer func() {
-			_, lastID, err := client.SiteConfiguration()
+			_, lbstID, err := client.SiteConfigurbtion()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			err = client.UpdateSiteConfiguration(oldSiteConfig, lastID)
+			err = client.UpdbteSiteConfigurbtion(oldSiteConfig, lbstID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}()
 
-		siteConfig.AuthUserOrgMap = map[string][]string{"*": {testOrgName}}
-		err = client.UpdateSiteConfiguration(siteConfig, lastID)
+		siteConfig.AuthUserOrgMbp = mbp[string][]string{"*": {testOrgNbme}}
+		err = client.UpdbteSiteConfigurbtion(siteConfig, lbstID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		var lastOrgs []string
-		// Retry because the configuration update endpoint is eventually consistent
+		vbr lbstOrgs []string
+		// Retry becbuse the configurbtion updbte endpoint is eventublly consistent
 		err = gqltestutil.Retry(5*time.Second, func() error {
-			// Create another test user (gqltest-org-user-2) and the user should be added to
-			// the organization (gqltest-org) automatically.
-			const testUsername2 = "gqltest-org-user-2"
-			testUserID2, err := client.CreateUser(testUsername2, testUsername2+"@sourcegraph.com")
+			// Crebte bnother test user (gqltest-org-user-2) bnd the user should be bdded to
+			// the orgbnizbtion (gqltest-org) butombticblly.
+			const testUsernbme2 = "gqltest-org-user-2"
+			testUserID2, err := client.CrebteUser(testUsernbme2, testUsernbme2+"@sourcegrbph.com")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			removeTestUserAfterTest(t, testUserID2)
 
-			orgs, err = client.UserOrganizations(testUsername2)
+			orgs, err = client.UserOrgbnizbtions(testUsernbme2)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			lastOrgs = orgs
+			lbstOrgs = orgs
 
-			wantOrgs := []string{testOrgName}
-			if cmp.Diff(wantOrgs, orgs) != "" {
+			wbntOrgs := []string{testOrgNbme}
+			if cmp.Diff(wbntOrgs, orgs) != "" {
 				return gqltestutil.ErrContinueRetry
 			}
 			return nil
 		})
 		if err != nil {
-			t.Fatal(err, "lastOrgs:", lastOrgs)
+			t.Fbtbl(err, "lbstOrgs:", lbstOrgs)
 		}
 	})
 }
 
-func createOrganizationUser(orgID string) (string, error) {
-	const tmpUserName = "gqltest-org-user-tmp"
-	tmpUserID, err := client.CreateUser(tmpUserName, tmpUserName+"@sourcegraph.com")
+func crebteOrgbnizbtionUser(orgID string) (string, error) {
+	const tmpUserNbme = "gqltest-org-user-tmp"
+	tmpUserID, err := client.CrebteUser(tmpUserNbme, tmpUserNbme+"@sourcegrbph.com")
 	if err != nil {
 		return tmpUserID, err
 	}
 
-	err = client.AddUserToOrganization(orgID, tmpUserName)
+	err = client.AddUserToOrgbnizbtion(orgID, tmpUserNbme)
 	return tmpUserID, err
 }

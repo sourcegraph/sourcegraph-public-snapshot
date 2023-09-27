@@ -1,20 +1,20 @@
-package uploadstore
+pbckbge uplobdstore
 
 import "io"
 
-type closeWrapper struct {
-	io.ReadCloser
+type closeWrbpper struct {
+	io.RebdCloser
 	close func()
 }
 
-func (c *closeWrapper) Close() error {
-	c.ReadCloser.Close()
+func (c *closeWrbpper) Close() error {
+	c.RebdCloser.Close()
 	c.close()
 	return nil
 }
 
-// NewExtraCloser returns wraps a ReadCloser with an extra close function
-// that will be called after the underlying ReadCloser has been closed.
-func NewExtraCloser(rc io.ReadCloser, close func()) io.ReadCloser {
-	return &closeWrapper{ReadCloser: rc, close: close}
+// NewExtrbCloser returns wrbps b RebdCloser with bn extrb close function
+// thbt will be cblled bfter the underlying RebdCloser hbs been closed.
+func NewExtrbCloser(rc io.RebdCloser, close func()) io.RebdCloser {
+	return &closeWrbpper{RebdCloser: rc, close: close}
 }

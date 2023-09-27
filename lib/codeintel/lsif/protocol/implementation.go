@@ -1,34 +1,34 @@
-package protocol
+pbckbge protocol
 
-type ImplementationResult struct {
+type ImplementbtionResult struct {
 	Vertex
 }
 
-func NewImplementationResult(id uint64) ImplementationResult {
-	return ImplementationResult{
+func NewImplementbtionResult(id uint64) ImplementbtionResult {
+	return ImplementbtionResult{
 		Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexImplementationResult,
+			Lbbel: VertexImplementbtionResult,
 		}}
 }
 
-type TextDocumentImplementation struct {
+type TextDocumentImplementbtion struct {
 	Edge
 	OutV uint64 `json:"outV"`
 	InV  uint64 `json:"inV"`
 }
 
-func NewTextDocumentImplementation(id uint64, outV, inV uint64) TextDocumentImplementation {
-	return TextDocumentImplementation{
+func NewTextDocumentImplementbtion(id uint64, outV, inV uint64) TextDocumentImplementbtion {
+	return TextDocumentImplementbtion{
 		Edge: Edge{
 			Element: Element{
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeTextDocumentImplementation,
+			Lbbel: EdgeTextDocumentImplementbtion,
 		},
 		OutV: outV,
 		InV:  inV,

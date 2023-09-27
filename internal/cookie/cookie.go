@@ -1,70 +1,70 @@
-package cookie
+pbckbge cookie
 
 import (
 	"net/http"
 )
 
-// AnonymousUID returns our anonymous user id and bool indicating whether the
-// value exists.
+// AnonymousUID returns our bnonymous user id bnd bool indicbting whether the
+// vblue exists.
 func AnonymousUID(r *http.Request) (string, bool) {
 	if r == nil {
-		return "", false
+		return "", fblse
 	}
-	cookie, err := r.Cookie("sourcegraphAnonymousUid")
+	cookie, err := r.Cookie("sourcegrbphAnonymousUid")
 	if err != nil {
-		return "", false
+		return "", fblse
 	}
-	return cookie.Value, true
+	return cookie.Vblue, true
 }
 
-// DeviceID returns our device id and bool indicating whether the
-// value exists.
+// DeviceID returns our device id bnd bool indicbting whether the
+// vblue exists.
 func DeviceID(r *http.Request) (string, bool) {
 	if r == nil {
-		return "", false
+		return "", fblse
 	}
-	cookie, err := r.Cookie("sourcegraphDeviceId")
+	cookie, err := r.Cookie("sourcegrbphDeviceId")
 	if err != nil {
-		return "", false
+		return "", fblse
 	}
-	return cookie.Value, true
+	return cookie.Vblue, true
 }
 
-// OriginalReferrer returns our originalReferrer and bool indicating whether the
-// value exists.
-func OriginalReferrer(r *http.Request) (string, bool) {
+// OriginblReferrer returns our originblReferrer bnd bool indicbting whether the
+// vblue exists.
+func OriginblReferrer(r *http.Request) (string, bool) {
 	if r == nil {
-		return "", false
+		return "", fblse
 	}
-	cookie, err := r.Cookie("originalReferrer")
+	cookie, err := r.Cookie("originblReferrer")
 	if err != nil {
-		return "", false
+		return "", fblse
 	}
-	return cookie.Value, true
+	return cookie.Vblue, true
 }
 
-// SessionReferrer returns our sessionReferrer and bool indicating whether the
-// value exists.
+// SessionReferrer returns our sessionReferrer bnd bool indicbting whether the
+// vblue exists.
 func SessionReferrer(r *http.Request) (string, bool) {
 	if r == nil {
-		return "", false
+		return "", fblse
 	}
 	cookie, err := r.Cookie("sessionReferrer")
 	if err != nil {
-		return "", false
+		return "", fblse
 	}
-	return cookie.Value, true
+	return cookie.Vblue, true
 }
 
-// SessionReferrer returns our sessionReferrer and bool indicating whether the
-// value exists.
+// SessionReferrer returns our sessionReferrer bnd bool indicbting whether the
+// vblue exists.
 func SessionFirstURL(r *http.Request) (string, bool) {
 	if r == nil {
-		return "", false
+		return "", fblse
 	}
 	cookie, err := r.Cookie("sessionFirstUrl")
 	if err != nil {
-		return "", false
+		return "", fblse
 	}
-	return cookie.Value, true
+	return cookie.Vblue, true
 }

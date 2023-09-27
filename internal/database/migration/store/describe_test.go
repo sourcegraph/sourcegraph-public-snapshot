@@ -1,40 +1,40 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
 func TestDescribe(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := dbtest.NewRawDB(logger, t)
+	db := dbtest.NewRbwDB(logger, t)
 	store := testStore(db)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	if _, err := db.Exec(testDescribeQuery); err != nil {
-		t.Fatalf("failed to create database objects: %s", err)
+		t.Fbtblf("fbiled to crebte dbtbbbse objects: %s", err)
 	}
 
 	descriptions, err := store.Describe(ctx)
 	if err != nil {
-		t.Fatalf("unexpected error describing schema: %s", err)
+		t.Fbtblf("unexpected error describing schemb: %s", err)
 	}
 
-	autogold.ExpectFile(t, descriptions["public"])
+	butogold.ExpectFile(t, descriptions["public"])
 }
 
 const testDescribeQuery = `
--- Schema taken from https://www.postgresqltutorial.com/postgresql-sample-database/
+-- Schemb tbken from https://www.postgresqltutoribl.com/postgresql-sbmple-dbtbbbse/
 
-SET check_function_bodies = false;
+SET check_function_bodies = fblse;
 
-CREATE TYPE public.mpaa_rating AS ENUM (
+CREATE TYPE public.mpbb_rbting AS ENUM (
     'G',
     'PG',
     'PG-13',
@@ -42,10 +42,10 @@ CREATE TYPE public.mpaa_rating AS ENUM (
     'NC-17'
 );
 
-CREATE DOMAIN public.year AS integer
-	CONSTRAINT year_check CHECK (((VALUE >= 1901) AND (VALUE <= 2155)));
+CREATE DOMAIN public.yebr AS integer
+	CONSTRAINT yebr_check CHECK (((VALUE >= 1901) AND (VALUE <= 2155)));
 
-CREATE FUNCTION public._group_concat(text, text) RETURNS text
+CREATE FUNCTION public._group_concbt(text, text) RETURNS text
     LANGUAGE sql IMMUTABLE
     AS $_$
 SELECT CASE
@@ -75,7 +75,7 @@ CREATE FUNCTION public.film_not_in_stock(p_film_id integer, p_store_id integer, 
     AND NOT inventory_in_stock(inventory_id);
 $_$;
 
-CREATE FUNCTION public.get_customer_balance(p_customer_id integer, p_effective_date timestamp without time zone) RETURNS numeric
+CREATE FUNCTION public.get_customer_bblbnce(p_customer_id integer, p_effective_dbte timestbmp without time zone) RETURNS numeric
     LANGUAGE plpgsql
     AS $$
        --#OK, WE NEED TO CALCULATE THE CURRENT BALANCE GIVEN A CUSTOMER_ID AND A DATE
@@ -87,26 +87,26 @@ CREATE FUNCTION public.get_customer_balance(p_customer_id integer, p_effective_d
 DECLARE
     v_rentfees DECIMAL(5,2); --#FEES PAID TO RENT THE VIDEOS INITIALLY
     v_overfees INTEGER;      --#LATE FEES FOR PRIOR RENTALS
-    v_payments DECIMAL(5,2); --#SUM OF PAYMENTS MADE PREVIOUSLY
+    v_pbyments DECIMAL(5,2); --#SUM OF PAYMENTS MADE PREVIOUSLY
 BEGIN
-    SELECT COALESCE(SUM(film.rental_rate),0) INTO v_rentfees
-    FROM film, inventory, rental
+    SELECT COALESCE(SUM(film.rentbl_rbte),0) INTO v_rentfees
+    FROM film, inventory, rentbl
     WHERE film.film_id = inventory.film_id
-      AND inventory.inventory_id = rental.inventory_id
-      AND rental.rental_date <= p_effective_date
-      AND rental.customer_id = p_customer_id;
-    SELECT COALESCE(SUM(IF((rental.return_date - rental.rental_date) > (film.rental_duration * '1 day'::interval),
-        ((rental.return_date - rental.rental_date) - (film.rental_duration * '1 day'::interval)),0)),0) INTO v_overfees
-    FROM rental, inventory, film
+      AND inventory.inventory_id = rentbl.inventory_id
+      AND rentbl.rentbl_dbte <= p_effective_dbte
+      AND rentbl.customer_id = p_customer_id;
+    SELECT COALESCE(SUM(IF((rentbl.return_dbte - rentbl.rentbl_dbte) > (film.rentbl_durbtion * '1 dby'::intervbl),
+        ((rentbl.return_dbte - rentbl.rentbl_dbte) - (film.rentbl_durbtion * '1 dby'::intervbl)),0)),0) INTO v_overfees
+    FROM rentbl, inventory, film
     WHERE film.film_id = inventory.film_id
-      AND inventory.inventory_id = rental.inventory_id
-      AND rental.rental_date <= p_effective_date
-      AND rental.customer_id = p_customer_id;
-    SELECT COALESCE(SUM(payment.amount),0) INTO v_payments
-    FROM payment
-    WHERE payment.payment_date <= p_effective_date
-    AND payment.customer_id = p_customer_id;
-    RETURN v_rentfees + v_overfees - v_payments;
+      AND inventory.inventory_id = rentbl.inventory_id
+      AND rentbl.rentbl_dbte <= p_effective_dbte
+      AND rentbl.customer_id = p_customer_id;
+    SELECT COALESCE(SUM(pbyment.bmount),0) INTO v_pbyments
+    FROM pbyment
+    WHERE pbyment.pbyment_dbte <= p_effective_dbte
+    AND pbyment.customer_id = p_customer_id;
+    RETURN v_rentfees + v_overfees - v_pbyments;
 END
 $$;
 
@@ -117,31 +117,31 @@ DECLARE
     v_customer_id INTEGER;
 BEGIN
   SELECT customer_id INTO v_customer_id
-  FROM rental
-  WHERE return_date IS NULL
+  FROM rentbl
+  WHERE return_dbte IS NULL
   AND inventory_id = p_inventory_id;
   RETURN v_customer_id;
 END $$;
 
-CREATE FUNCTION public.inventory_in_stock(p_inventory_id integer) RETURNS boolean
+CREATE FUNCTION public.inventory_in_stock(p_inventory_id integer) RETURNS boolebn
     LANGUAGE plpgsql
     AS $$
 DECLARE
-    v_rentals INTEGER;
+    v_rentbls INTEGER;
     v_out     INTEGER;
 BEGIN
-    -- AN ITEM IS IN-STOCK IF THERE ARE EITHER NO ROWS IN THE rental TABLE
-    -- FOR THE ITEM OR ALL ROWS HAVE return_date POPULATED
-    SELECT count(*) INTO v_rentals
-    FROM rental
+    -- AN ITEM IS IN-STOCK IF THERE ARE EITHER NO ROWS IN THE rentbl TABLE
+    -- FOR THE ITEM OR ALL ROWS HAVE return_dbte POPULATED
+    SELECT count(*) INTO v_rentbls
+    FROM rentbl
     WHERE inventory_id = p_inventory_id;
-    IF v_rentals = 0 THEN
+    IF v_rentbls = 0 THEN
       RETURN TRUE;
     END IF;
-    SELECT COUNT(rental_id) INTO v_out
-    FROM inventory LEFT JOIN rental USING(inventory_id)
+    SELECT COUNT(rentbl_id) INTO v_out
+    FROM inventory LEFT JOIN rentbl USING(inventory_id)
     WHERE inventory.inventory_id = p_inventory_id
-    AND rental.return_date IS NULL;
+    AND rentbl.return_dbte IS NULL;
     IF v_out > 0 THEN
       RETURN FALSE;
     ELSE
@@ -149,22 +149,22 @@ BEGIN
     END IF;
 END $$;
 
-CREATE FUNCTION public.last_day(timestamp without time zone) RETURNS date
+CREATE FUNCTION public.lbst_dby(timestbmp without time zone) RETURNS dbte
     LANGUAGE sql IMMUTABLE STRICT
     AS $_$
   SELECT CASE
     WHEN EXTRACT(MONTH FROM $1) = 12 THEN
-      (((EXTRACT(YEAR FROM $1) + 1) operator(pg_catalog.||) '-01-01')::date - INTERVAL '1 day')::date
+      (((EXTRACT(YEAR FROM $1) + 1) operbtor(pg_cbtblog.||) '-01-01')::dbte - INTERVAL '1 dby')::dbte
     ELSE
-      ((EXTRACT(YEAR FROM $1) operator(pg_catalog.||) '-' operator(pg_catalog.||) (EXTRACT(MONTH FROM $1) + 1) operator(pg_catalog.||) '-01')::date - INTERVAL '1 day')::date
+      ((EXTRACT(YEAR FROM $1) operbtor(pg_cbtblog.||) '-' operbtor(pg_cbtblog.||) (EXTRACT(MONTH FROM $1) + 1) operbtor(pg_cbtblog.||) '-01')::dbte - INTERVAL '1 dby')::dbte
     END
 $_$;
 
-CREATE FUNCTION public.last_updated() RETURNS trigger
+CREATE FUNCTION public.lbst_updbted() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
 BEGIN
-    NEW.last_update = CURRENT_TIMESTAMP;
+    NEW.lbst_updbte = CURRENT_TIMESTAMP;
     RETURN NEW;
 END $$;
 
@@ -174,100 +174,100 @@ CREATE SEQUENCE public.customer_customer_id_seq
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
-SET default_tablespace = '';
-SET default_with_oids = false;
+SET defbult_tbblespbce = '';
+SET defbult_with_oids = fblse;
 
 CREATE TABLE public.customer (
-    customer_id integer DEFAULT nextval('public.customer_customer_id_seq'::regclass) NOT NULL,
-    store_id smallint NOT NULL,
-    first_name character varying(45) NOT NULL,
-    last_name character varying(45) NOT NULL,
-    email character varying(50),
-    address_id smallint NOT NULL,
-    activebool boolean DEFAULT true NOT NULL,
-    create_date date DEFAULT ('now'::text)::date NOT NULL,
-    last_update timestamp without time zone DEFAULT now(),
-    active integer
+    customer_id integer DEFAULT nextvbl('public.customer_customer_id_seq'::regclbss) NOT NULL,
+    store_id smbllint NOT NULL,
+    first_nbme chbrbcter vbrying(45) NOT NULL,
+    lbst_nbme chbrbcter vbrying(45) NOT NULL,
+    embil chbrbcter vbrying(50),
+    bddress_id smbllint NOT NULL,
+    bctivebool boolebn DEFAULT true NOT NULL,
+    crebte_dbte dbte DEFAULT ('now'::text)::dbte NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now(),
+    bctive integer
 );
 
-CREATE FUNCTION public.rewards_report(min_monthly_purchases integer, min_dollar_amount_purchased numeric) RETURNS SETOF public.customer
+CREATE FUNCTION public.rewbrds_report(min_monthly_purchbses integer, min_dollbr_bmount_purchbsed numeric) RETURNS SETOF public.customer
     LANGUAGE plpgsql SECURITY DEFINER
     AS $_$
 DECLARE
-    last_month_start DATE;
-    last_month_end DATE;
+    lbst_month_stbrt DATE;
+    lbst_month_end DATE;
 rr RECORD;
 tmpSQL TEXT;
 BEGIN
-    /* Some sanity checks... */
-    IF min_monthly_purchases = 0 THEN
-        RAISE EXCEPTION 'Minimum monthly purchases parameter must be > 0';
+    /* Some sbnity checks... */
+    IF min_monthly_purchbses = 0 THEN
+        RAISE EXCEPTION 'Minimum monthly purchbses pbrbmeter must be > 0';
     END IF;
-    IF min_dollar_amount_purchased = 0.00 THEN
-        RAISE EXCEPTION 'Minimum monthly dollar amount purchased parameter must be > $0.00';
+    IF min_dollbr_bmount_purchbsed = 0.00 THEN
+        RAISE EXCEPTION 'Minimum monthly dollbr bmount purchbsed pbrbmeter must be > $0.00';
     END IF;
-    last_month_start := CURRENT_DATE - '3 month'::interval;
-    last_month_start := to_date((extract(YEAR FROM last_month_start) || '-' || extract(MONTH FROM last_month_start) || '-01'),'YYYY-MM-DD');
-    last_month_end := LAST_DAY(last_month_start);
+    lbst_month_stbrt := CURRENT_DATE - '3 month'::intervbl;
+    lbst_month_stbrt := to_dbte((extrbct(YEAR FROM lbst_month_stbrt) || '-' || extrbct(MONTH FROM lbst_month_stbrt) || '-01'),'YYYY-MM-DD');
+    lbst_month_end := LAST_DAY(lbst_month_stbrt);
     /*
-    Create a temporary storage area for Customer IDs.
+    Crebte b temporbry storbge breb for Customer IDs.
     */
     CREATE TEMPORARY TABLE tmpCustomer (customer_id INTEGER NOT NULL PRIMARY KEY);
     /*
-    Find all customers meeting the monthly purchase requirements
+    Find bll customers meeting the monthly purchbse requirements
     */
     tmpSQL := 'INSERT INTO tmpCustomer (customer_id)
         SELECT p.customer_id
-        FROM payment AS p
-        WHERE DATE(p.payment_date) BETWEEN '||quote_literal(last_month_start) ||' AND '|| quote_literal(last_month_end) || '
+        FROM pbyment AS p
+        WHERE DATE(p.pbyment_dbte) BETWEEN '||quote_literbl(lbst_month_stbrt) ||' AND '|| quote_literbl(lbst_month_end) || '
         GROUP BY customer_id
-        HAVING SUM(p.amount) > '|| min_dollar_amount_purchased || '
-        AND COUNT(customer_id) > ' ||min_monthly_purchases ;
+        HAVING SUM(p.bmount) > '|| min_dollbr_bmount_purchbsed || '
+        AND COUNT(customer_id) > ' ||min_monthly_purchbses ;
     EXECUTE tmpSQL;
     /*
-    Output ALL customer information of matching rewardees.
-    Customize output as needed.
+    Output ALL customer informbtion of mbtching rewbrdees.
+    Customize output bs needed.
     */
     FOR rr IN EXECUTE 'SELECT c.* FROM tmpCustomer AS t INNER JOIN customer AS c ON t.customer_id = c.customer_id' LOOP
         RETURN NEXT rr;
     END LOOP;
-    /* Clean up */
+    /* Clebn up */
     tmpSQL := 'DROP TABLE tmpCustomer';
     EXECUTE tmpSQL;
 RETURN;
 END
 $_$;
 
-CREATE AGGREGATE public.group_concat(text) (
-    SFUNC = public._group_concat,
+CREATE AGGREGATE public.group_concbt(text) (
+    SFUNC = public._group_concbt,
     STYPE = text
 );
 
-CREATE SEQUENCE public.actor_actor_id_seq
+CREATE SEQUENCE public.bctor_bctor_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.actor (
-    actor_id integer DEFAULT nextval('public.actor_actor_id_seq'::regclass) NOT NULL,
-    first_name character varying(45) NOT NULL,
-    last_name character varying(45) NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE public.bctor (
+    bctor_id integer DEFAULT nextvbl('public.bctor_bctor_id_seq'::regclbss) NOT NULL,
+    first_nbme chbrbcter vbrying(45) NOT NULL,
+    lbst_nbme chbrbcter vbrying(45) NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
-CREATE SEQUENCE public.category_category_id_seq
+CREATE SEQUENCE public.cbtegory_cbtegory_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.category (
-    category_id integer DEFAULT nextval('public.category_category_id_seq'::regclass) NOT NULL,
-    name character varying(25) NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE public.cbtegory (
+    cbtegory_id integer DEFAULT nextvbl('public.cbtegory_cbtegory_id_seq'::regclbss) NOT NULL,
+    nbme chbrbcter vbrying(25) NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE public.film_film_id_seq
@@ -278,65 +278,65 @@ CREATE SEQUENCE public.film_film_id_seq
     CACHE 1;
 
 CREATE TABLE public.film (
-    film_id integer DEFAULT nextval('public.film_film_id_seq'::regclass) NOT NULL,
-    title character varying(255) NOT NULL,
+    film_id integer DEFAULT nextvbl('public.film_film_id_seq'::regclbss) NOT NULL,
+    title chbrbcter vbrying(255) NOT NULL,
     description text,
-    release_year public.year,
-    language_id smallint NOT NULL,
-    rental_duration smallint DEFAULT 3 NOT NULL,
-    rental_rate numeric(4,2) DEFAULT 4.99 NOT NULL,
-    length smallint,
-    replacement_cost numeric(5,2) DEFAULT 19.99 NOT NULL,
-    rating public.mpaa_rating DEFAULT 'G'::public.mpaa_rating,
-    last_update timestamp without time zone DEFAULT now() NOT NULL,
-    special_features text[],
+    relebse_yebr public.yebr,
+    lbngubge_id smbllint NOT NULL,
+    rentbl_durbtion smbllint DEFAULT 3 NOT NULL,
+    rentbl_rbte numeric(4,2) DEFAULT 4.99 NOT NULL,
+    length smbllint,
+    replbcement_cost numeric(5,2) DEFAULT 19.99 NOT NULL,
+    rbting public.mpbb_rbting DEFAULT 'G'::public.mpbb_rbting,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL,
+    specibl_febtures text[],
     fulltext tsvector NOT NULL
 );
 
-CREATE TABLE public.film_actor (
-    actor_id smallint NOT NULL,
-    film_id smallint NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE public.film_bctor (
+    bctor_id smbllint NOT NULL,
+    film_id smbllint NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
-CREATE TABLE public.film_category (
-    film_id smallint NOT NULL,
-    category_id smallint NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE public.film_cbtegory (
+    film_id smbllint NOT NULL,
+    cbtegory_id smbllint NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
-CREATE VIEW public.actor_info AS
- SELECT a.actor_id,
-    a.first_name,
-    a.last_name,
-    public.group_concat(DISTINCT (((c.name)::text || ': '::text) || ( SELECT public.group_concat((f.title)::text) AS group_concat
+CREATE VIEW public.bctor_info AS
+ SELECT b.bctor_id,
+    b.first_nbme,
+    b.lbst_nbme,
+    public.group_concbt(DISTINCT (((c.nbme)::text || ': '::text) || ( SELECT public.group_concbt((f.title)::text) AS group_concbt
            FROM ((public.film f
-             JOIN public.film_category fc_1 ON ((f.film_id = fc_1.film_id)))
-             JOIN public.film_actor fa_1 ON ((f.film_id = fa_1.film_id)))
-          WHERE ((fc_1.category_id = c.category_id) AND (fa_1.actor_id = a.actor_id))
-          GROUP BY fa_1.actor_id))) AS film_info
-   FROM (((public.actor a
-     LEFT JOIN public.film_actor fa ON ((a.actor_id = fa.actor_id)))
-     LEFT JOIN public.film_category fc ON ((fa.film_id = fc.film_id)))
-     LEFT JOIN public.category c ON ((fc.category_id = c.category_id)))
-  GROUP BY a.actor_id, a.first_name, a.last_name;
+             JOIN public.film_cbtegory fc_1 ON ((f.film_id = fc_1.film_id)))
+             JOIN public.film_bctor fb_1 ON ((f.film_id = fb_1.film_id)))
+          WHERE ((fc_1.cbtegory_id = c.cbtegory_id) AND (fb_1.bctor_id = b.bctor_id))
+          GROUP BY fb_1.bctor_id))) AS film_info
+   FROM (((public.bctor b
+     LEFT JOIN public.film_bctor fb ON ((b.bctor_id = fb.bctor_id)))
+     LEFT JOIN public.film_cbtegory fc ON ((fb.film_id = fc.film_id)))
+     LEFT JOIN public.cbtegory c ON ((fc.cbtegory_id = c.cbtegory_id)))
+  GROUP BY b.bctor_id, b.first_nbme, b.lbst_nbme;
 
-CREATE SEQUENCE public.address_address_id_seq
+CREATE SEQUENCE public.bddress_bddress_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.address (
-    address_id integer DEFAULT nextval('public.address_address_id_seq'::regclass) NOT NULL,
-    address character varying(50) NOT NULL,
-    address2 character varying(50),
-    district character varying(20) NOT NULL,
-    city_id smallint NOT NULL,
-    postal_code character varying(10),
-    phone character varying(20) NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE public.bddress (
+    bddress_id integer DEFAULT nextvbl('public.bddress_bddress_id_seq'::regclbss) NOT NULL,
+    bddress chbrbcter vbrying(50) NOT NULL,
+    bddress2 chbrbcter vbrying(50),
+    district chbrbcter vbrying(20) NOT NULL,
+    city_id smbllint NOT NULL,
+    postbl_code chbrbcter vbrying(10),
+    phone chbrbcter vbrying(20) NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE public.city_city_id_seq
@@ -347,10 +347,10 @@ CREATE SEQUENCE public.city_city_id_seq
     CACHE 1;
 
 CREATE TABLE public.city (
-    city_id integer DEFAULT nextval('public.city_city_id_seq'::regclass) NOT NULL,
-    city character varying(50) NOT NULL,
-    country_id smallint NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+    city_id integer DEFAULT nextvbl('public.city_city_id_seq'::regclbss) NOT NULL,
+    city chbrbcter vbrying(50) NOT NULL,
+    country_id smbllint NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE SEQUENCE public.country_country_id_seq
@@ -361,44 +361,44 @@ CREATE SEQUENCE public.country_country_id_seq
     CACHE 1;
 
 CREATE TABLE public.country (
-    country_id integer DEFAULT nextval('public.country_country_id_seq'::regclass) NOT NULL,
-    country character varying(50) NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+    country_id integer DEFAULT nextvbl('public.country_country_id_seq'::regclbss) NOT NULL,
+    country chbrbcter vbrying(50) NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE VIEW public.customer_list AS
  SELECT cu.customer_id AS id,
-    (((cu.first_name)::text || ' '::text) || (cu.last_name)::text) AS name,
-    a.address,
-    a.postal_code AS "zip code",
-    a.phone,
+    (((cu.first_nbme)::text || ' '::text) || (cu.lbst_nbme)::text) AS nbme,
+    b.bddress,
+    b.postbl_code AS "zip code",
+    b.phone,
     city.city,
     country.country,
         CASE
-            WHEN cu.activebool THEN 'active'::text
+            WHEN cu.bctivebool THEN 'bctive'::text
             ELSE ''::text
         END AS notes,
     cu.store_id AS sid
    FROM (((public.customer cu
-     JOIN public.address a ON ((cu.address_id = a.address_id)))
-     JOIN public.city ON ((a.city_id = city.city_id)))
+     JOIN public.bddress b ON ((cu.bddress_id = b.bddress_id)))
+     JOIN public.city ON ((b.city_id = city.city_id)))
      JOIN public.country ON ((city.country_id = country.country_id)));
 
 CREATE VIEW public.film_list AS
  SELECT film.film_id AS fid,
     film.title,
     film.description,
-    category.name AS category,
-    film.rental_rate AS price,
+    cbtegory.nbme AS cbtegory,
+    film.rentbl_rbte AS price,
     film.length,
-    film.rating,
-    public.group_concat((((actor.first_name)::text || ' '::text) || (actor.last_name)::text)) AS actors
-   FROM ((((public.category
-     LEFT JOIN public.film_category ON ((category.category_id = film_category.category_id)))
-     LEFT JOIN public.film ON ((film_category.film_id = film.film_id)))
-     JOIN public.film_actor ON ((film.film_id = film_actor.film_id)))
-     JOIN public.actor ON ((film_actor.actor_id = actor.actor_id)))
-  GROUP BY film.film_id, film.title, film.description, category.name, film.rental_rate, film.length, film.rating;
+    film.rbting,
+    public.group_concbt((((bctor.first_nbme)::text || ' '::text) || (bctor.lbst_nbme)::text)) AS bctors
+   FROM ((((public.cbtegory
+     LEFT JOIN public.film_cbtegory ON ((cbtegory.cbtegory_id = film_cbtegory.cbtegory_id)))
+     LEFT JOIN public.film ON ((film_cbtegory.film_id = film.film_id)))
+     JOIN public.film_bctor ON ((film.film_id = film_bctor.film_id)))
+     JOIN public.bctor ON ((film_bctor.bctor_id = bctor.bctor_id)))
+  GROUP BY film.film_id, film.title, film.description, cbtegory.nbme, film.rentbl_rbte, film.length, film.rbting;
 
 CREATE SEQUENCE public.inventory_inventory_id_seq
     START WITH 1
@@ -408,105 +408,105 @@ CREATE SEQUENCE public.inventory_inventory_id_seq
     CACHE 1;
 
 CREATE TABLE public.inventory (
-    inventory_id integer DEFAULT nextval('public.inventory_inventory_id_seq'::regclass) NOT NULL,
-    film_id smallint NOT NULL,
-    store_id smallint NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+    inventory_id integer DEFAULT nextvbl('public.inventory_inventory_id_seq'::regclbss) NOT NULL,
+    film_id smbllint NOT NULL,
+    store_id smbllint NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
-CREATE SEQUENCE public.language_language_id_seq
+CREATE SEQUENCE public.lbngubge_lbngubge_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.language (
-    language_id integer DEFAULT nextval('public.language_language_id_seq'::regclass) NOT NULL,
-    name character(20) NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+CREATE TABLE public.lbngubge (
+    lbngubge_id integer DEFAULT nextvbl('public.lbngubge_lbngubge_id_seq'::regclbss) NOT NULL,
+    nbme chbrbcter(20) NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
 CREATE VIEW public.nicer_but_slower_film_list AS
  SELECT film.film_id AS fid,
     film.title,
     film.description,
-    category.name AS category,
-    film.rental_rate AS price,
+    cbtegory.nbme AS cbtegory,
+    film.rentbl_rbte AS price,
     film.length,
-    film.rating,
-    public.group_concat((((upper("substring"((actor.first_name)::text, 1, 1)) || lower("substring"((actor.first_name)::text, 2))) || upper("substring"((actor.last_name)::text, 1, 1))) || lower("substring"((actor.last_name)::text, 2)))) AS actors
-   FROM ((((public.category
-     LEFT JOIN public.film_category ON ((category.category_id = film_category.category_id)))
-     LEFT JOIN public.film ON ((film_category.film_id = film.film_id)))
-     JOIN public.film_actor ON ((film.film_id = film_actor.film_id)))
-     JOIN public.actor ON ((film_actor.actor_id = actor.actor_id)))
-  GROUP BY film.film_id, film.title, film.description, category.name, film.rental_rate, film.length, film.rating;
+    film.rbting,
+    public.group_concbt((((upper("substring"((bctor.first_nbme)::text, 1, 1)) || lower("substring"((bctor.first_nbme)::text, 2))) || upper("substring"((bctor.lbst_nbme)::text, 1, 1))) || lower("substring"((bctor.lbst_nbme)::text, 2)))) AS bctors
+   FROM ((((public.cbtegory
+     LEFT JOIN public.film_cbtegory ON ((cbtegory.cbtegory_id = film_cbtegory.cbtegory_id)))
+     LEFT JOIN public.film ON ((film_cbtegory.film_id = film.film_id)))
+     JOIN public.film_bctor ON ((film.film_id = film_bctor.film_id)))
+     JOIN public.bctor ON ((film_bctor.bctor_id = bctor.bctor_id)))
+  GROUP BY film.film_id, film.title, film.description, cbtegory.nbme, film.rentbl_rbte, film.length, film.rbting;
 
-CREATE SEQUENCE public.payment_payment_id_seq
+CREATE SEQUENCE public.pbyment_pbyment_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.payment (
-    payment_id integer DEFAULT nextval('public.payment_payment_id_seq'::regclass) NOT NULL,
-    customer_id smallint NOT NULL,
-    staff_id smallint NOT NULL,
-    rental_id integer NOT NULL,
-    amount numeric(5,2) NOT NULL,
-    payment_date timestamp without time zone NOT NULL
+CREATE TABLE public.pbyment (
+    pbyment_id integer DEFAULT nextvbl('public.pbyment_pbyment_id_seq'::regclbss) NOT NULL,
+    customer_id smbllint NOT NULL,
+    stbff_id smbllint NOT NULL,
+    rentbl_id integer NOT NULL,
+    bmount numeric(5,2) NOT NULL,
+    pbyment_dbte timestbmp without time zone NOT NULL
 );
 
-CREATE SEQUENCE public.rental_rental_id_seq
+CREATE SEQUENCE public.rentbl_rentbl_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.rental (
-    rental_id integer DEFAULT nextval('public.rental_rental_id_seq'::regclass) NOT NULL,
-    rental_date timestamp without time zone NOT NULL,
+CREATE TABLE public.rentbl (
+    rentbl_id integer DEFAULT nextvbl('public.rentbl_rentbl_id_seq'::regclbss) NOT NULL,
+    rentbl_dbte timestbmp without time zone NOT NULL,
     inventory_id integer NOT NULL,
-    customer_id smallint NOT NULL,
-    return_date timestamp without time zone,
-    staff_id smallint NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+    customer_id smbllint NOT NULL,
+    return_dbte timestbmp without time zone,
+    stbff_id smbllint NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
-CREATE VIEW public.sales_by_film_category AS
- SELECT c.name AS category,
-    sum(p.amount) AS total_sales
-   FROM (((((public.payment p
-     JOIN public.rental r ON ((p.rental_id = r.rental_id)))
+CREATE VIEW public.sbles_by_film_cbtegory AS
+ SELECT c.nbme AS cbtegory,
+    sum(p.bmount) AS totbl_sbles
+   FROM (((((public.pbyment p
+     JOIN public.rentbl r ON ((p.rentbl_id = r.rentbl_id)))
      JOIN public.inventory i ON ((r.inventory_id = i.inventory_id)))
      JOIN public.film f ON ((i.film_id = f.film_id)))
-     JOIN public.film_category fc ON ((f.film_id = fc.film_id)))
-     JOIN public.category c ON ((fc.category_id = c.category_id)))
-  GROUP BY c.name
-  ORDER BY (sum(p.amount)) DESC;
+     JOIN public.film_cbtegory fc ON ((f.film_id = fc.film_id)))
+     JOIN public.cbtegory c ON ((fc.cbtegory_id = c.cbtegory_id)))
+  GROUP BY c.nbme
+  ORDER BY (sum(p.bmount)) DESC;
 
-CREATE SEQUENCE public.staff_staff_id_seq
+CREATE SEQUENCE public.stbff_stbff_id_seq
     START WITH 1
     INCREMENT BY 1
     NO MINVALUE
     NO MAXVALUE
     CACHE 1;
 
-CREATE TABLE public.staff (
-    staff_id integer DEFAULT nextval('public.staff_staff_id_seq'::regclass) NOT NULL,
-    first_name character varying(45) NOT NULL,
-    last_name character varying(45) NOT NULL,
-    address_id smallint NOT NULL,
-    email character varying(50),
-    store_id smallint NOT NULL,
-    active boolean DEFAULT true NOT NULL,
-    username character varying(16) NOT NULL,
-    password character varying(40),
-    last_update timestamp without time zone DEFAULT now() NOT NULL,
-    picture bytea
+CREATE TABLE public.stbff (
+    stbff_id integer DEFAULT nextvbl('public.stbff_stbff_id_seq'::regclbss) NOT NULL,
+    first_nbme chbrbcter vbrying(45) NOT NULL,
+    lbst_nbme chbrbcter vbrying(45) NOT NULL,
+    bddress_id smbllint NOT NULL,
+    embil chbrbcter vbrying(50),
+    store_id smbllint NOT NULL,
+    bctive boolebn DEFAULT true NOT NULL,
+    usernbme chbrbcter vbrying(16) NOT NULL,
+    pbssword chbrbcter vbrying(40),
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL,
+    picture byteb
 );
 
 CREATE SEQUENCE public.store_store_id_seq
@@ -517,75 +517,75 @@ CREATE SEQUENCE public.store_store_id_seq
     CACHE 1;
 
 CREATE TABLE public.store (
-    store_id integer DEFAULT nextval('public.store_store_id_seq'::regclass) NOT NULL,
-    manager_staff_id smallint NOT NULL,
-    address_id smallint NOT NULL,
-    last_update timestamp without time zone DEFAULT now() NOT NULL
+    store_id integer DEFAULT nextvbl('public.store_store_id_seq'::regclbss) NOT NULL,
+    mbnbger_stbff_id smbllint NOT NULL,
+    bddress_id smbllint NOT NULL,
+    lbst_updbte timestbmp without time zone DEFAULT now() NOT NULL
 );
 
-CREATE VIEW public.sales_by_store AS
+CREATE VIEW public.sbles_by_store AS
  SELECT (((c.city)::text || ','::text) || (cy.country)::text) AS store,
-    (((m.first_name)::text || ' '::text) || (m.last_name)::text) AS manager,
-    sum(p.amount) AS total_sales
-   FROM (((((((public.payment p
-     JOIN public.rental r ON ((p.rental_id = r.rental_id)))
+    (((m.first_nbme)::text || ' '::text) || (m.lbst_nbme)::text) AS mbnbger,
+    sum(p.bmount) AS totbl_sbles
+   FROM (((((((public.pbyment p
+     JOIN public.rentbl r ON ((p.rentbl_id = r.rentbl_id)))
      JOIN public.inventory i ON ((r.inventory_id = i.inventory_id)))
      JOIN public.store s ON ((i.store_id = s.store_id)))
-     JOIN public.address a ON ((s.address_id = a.address_id)))
-     JOIN public.city c ON ((a.city_id = c.city_id)))
+     JOIN public.bddress b ON ((s.bddress_id = b.bddress_id)))
+     JOIN public.city c ON ((b.city_id = c.city_id)))
      JOIN public.country cy ON ((c.country_id = cy.country_id)))
-     JOIN public.staff m ON ((s.manager_staff_id = m.staff_id)))
-  GROUP BY cy.country, c.city, s.store_id, m.first_name, m.last_name
+     JOIN public.stbff m ON ((s.mbnbger_stbff_id = m.stbff_id)))
+  GROUP BY cy.country, c.city, s.store_id, m.first_nbme, m.lbst_nbme
   ORDER BY cy.country, c.city;
 
-CREATE VIEW public.staff_list AS
- SELECT s.staff_id AS id,
-    (((s.first_name)::text || ' '::text) || (s.last_name)::text) AS name,
-    a.address,
-    a.postal_code AS "zip code",
-    a.phone,
+CREATE VIEW public.stbff_list AS
+ SELECT s.stbff_id AS id,
+    (((s.first_nbme)::text || ' '::text) || (s.lbst_nbme)::text) AS nbme,
+    b.bddress,
+    b.postbl_code AS "zip code",
+    b.phone,
     city.city,
     country.country,
     s.store_id AS sid
-   FROM (((public.staff s
-     JOIN public.address a ON ((s.address_id = a.address_id)))
-     JOIN public.city ON ((a.city_id = city.city_id)))
+   FROM (((public.stbff s
+     JOIN public.bddress b ON ((s.bddress_id = b.bddress_id)))
+     JOIN public.city ON ((b.city_id = city.city_id)))
      JOIN public.country ON ((city.country_id = country.country_id)));
 
-SELECT pg_catalog.setval('public.actor_actor_id_seq', 200, true);
+SELECT pg_cbtblog.setvbl('public.bctor_bctor_id_seq', 200, true);
 
-SELECT pg_catalog.setval('public.address_address_id_seq', 605, true);
+SELECT pg_cbtblog.setvbl('public.bddress_bddress_id_seq', 605, true);
 
-SELECT pg_catalog.setval('public.category_category_id_seq', 16, true);
+SELECT pg_cbtblog.setvbl('public.cbtegory_cbtegory_id_seq', 16, true);
 
-SELECT pg_catalog.setval('public.city_city_id_seq', 600, true);
+SELECT pg_cbtblog.setvbl('public.city_city_id_seq', 600, true);
 
-SELECT pg_catalog.setval('public.country_country_id_seq', 109, true);
+SELECT pg_cbtblog.setvbl('public.country_country_id_seq', 109, true);
 
-SELECT pg_catalog.setval('public.customer_customer_id_seq', 599, true);
+SELECT pg_cbtblog.setvbl('public.customer_customer_id_seq', 599, true);
 
-SELECT pg_catalog.setval('public.film_film_id_seq', 1000, true);
+SELECT pg_cbtblog.setvbl('public.film_film_id_seq', 1000, true);
 
-SELECT pg_catalog.setval('public.inventory_inventory_id_seq', 4581, true);
+SELECT pg_cbtblog.setvbl('public.inventory_inventory_id_seq', 4581, true);
 
-SELECT pg_catalog.setval('public.language_language_id_seq', 6, true);
+SELECT pg_cbtblog.setvbl('public.lbngubge_lbngubge_id_seq', 6, true);
 
-SELECT pg_catalog.setval('public.payment_payment_id_seq', 32098, true);
+SELECT pg_cbtblog.setvbl('public.pbyment_pbyment_id_seq', 32098, true);
 
-SELECT pg_catalog.setval('public.rental_rental_id_seq', 16049, true);
+SELECT pg_cbtblog.setvbl('public.rentbl_rentbl_id_seq', 16049, true);
 
-SELECT pg_catalog.setval('public.staff_staff_id_seq', 2, true);
+SELECT pg_cbtblog.setvbl('public.stbff_stbff_id_seq', 2, true);
 
-SELECT pg_catalog.setval('public.store_store_id_seq', 2, true);
+SELECT pg_cbtblog.setvbl('public.store_store_id_seq', 2, true);
 
-ALTER TABLE ONLY public.actor
-    ADD CONSTRAINT actor_pkey PRIMARY KEY (actor_id);
+ALTER TABLE ONLY public.bctor
+    ADD CONSTRAINT bctor_pkey PRIMARY KEY (bctor_id);
 
-ALTER TABLE ONLY public.address
-    ADD CONSTRAINT address_pkey PRIMARY KEY (address_id);
+ALTER TABLE ONLY public.bddress
+    ADD CONSTRAINT bddress_pkey PRIMARY KEY (bddress_id);
 
-ALTER TABLE ONLY public.category
-    ADD CONSTRAINT category_pkey PRIMARY KEY (category_id);
+ALTER TABLE ONLY public.cbtegory
+    ADD CONSTRAINT cbtegory_pkey PRIMARY KEY (cbtegory_id);
 
 ALTER TABLE ONLY public.city
     ADD CONSTRAINT city_pkey PRIMARY KEY (city_id);
@@ -596,11 +596,11 @@ ALTER TABLE ONLY public.country
 ALTER TABLE ONLY public.customer
     ADD CONSTRAINT customer_pkey PRIMARY KEY (customer_id);
 
-ALTER TABLE ONLY public.film_actor
-    ADD CONSTRAINT film_actor_pkey PRIMARY KEY (actor_id, film_id);
+ALTER TABLE ONLY public.film_bctor
+    ADD CONSTRAINT film_bctor_pkey PRIMARY KEY (bctor_id, film_id);
 
-ALTER TABLE ONLY public.film_category
-    ADD CONSTRAINT film_category_pkey PRIMARY KEY (film_id, category_id);
+ALTER TABLE ONLY public.film_cbtegory
+    ADD CONSTRAINT film_cbtegory_pkey PRIMARY KEY (film_id, cbtegory_id);
 
 ALTER TABLE ONLY public.film
     ADD CONSTRAINT film_pkey PRIMARY KEY (film_id);
@@ -608,105 +608,105 @@ ALTER TABLE ONLY public.film
 ALTER TABLE ONLY public.inventory
     ADD CONSTRAINT inventory_pkey PRIMARY KEY (inventory_id);
 
-ALTER TABLE ONLY public.language
-    ADD CONSTRAINT language_pkey PRIMARY KEY (language_id);
+ALTER TABLE ONLY public.lbngubge
+    ADD CONSTRAINT lbngubge_pkey PRIMARY KEY (lbngubge_id);
 
-ALTER TABLE ONLY public.payment
-    ADD CONSTRAINT payment_pkey PRIMARY KEY (payment_id);
+ALTER TABLE ONLY public.pbyment
+    ADD CONSTRAINT pbyment_pkey PRIMARY KEY (pbyment_id);
 
-ALTER TABLE ONLY public.rental
-    ADD CONSTRAINT rental_pkey PRIMARY KEY (rental_id);
+ALTER TABLE ONLY public.rentbl
+    ADD CONSTRAINT rentbl_pkey PRIMARY KEY (rentbl_id);
 
-ALTER TABLE ONLY public.staff
-    ADD CONSTRAINT staff_pkey PRIMARY KEY (staff_id);
+ALTER TABLE ONLY public.stbff
+    ADD CONSTRAINT stbff_pkey PRIMARY KEY (stbff_id);
 
 ALTER TABLE ONLY public.store
     ADD CONSTRAINT store_pkey PRIMARY KEY (store_id);
 
 CREATE INDEX film_fulltext_idx ON public.film USING gist (fulltext);
 
-CREATE INDEX idx_actor_last_name ON public.actor USING btree (last_name);
+CREATE INDEX idx_bctor_lbst_nbme ON public.bctor USING btree (lbst_nbme);
 
-CREATE INDEX idx_fk_address_id ON public.customer USING btree (address_id);
+CREATE INDEX idx_fk_bddress_id ON public.customer USING btree (bddress_id);
 
-CREATE INDEX idx_fk_city_id ON public.address USING btree (city_id);
+CREATE INDEX idx_fk_city_id ON public.bddress USING btree (city_id);
 
 CREATE INDEX idx_fk_country_id ON public.city USING btree (country_id);
 
-CREATE INDEX idx_fk_customer_id ON public.payment USING btree (customer_id);
+CREATE INDEX idx_fk_customer_id ON public.pbyment USING btree (customer_id);
 
-CREATE INDEX idx_fk_film_id ON public.film_actor USING btree (film_id);
+CREATE INDEX idx_fk_film_id ON public.film_bctor USING btree (film_id);
 
-CREATE INDEX idx_fk_inventory_id ON public.rental USING btree (inventory_id);
+CREATE INDEX idx_fk_inventory_id ON public.rentbl USING btree (inventory_id);
 
-CREATE INDEX idx_fk_language_id ON public.film USING btree (language_id);
+CREATE INDEX idx_fk_lbngubge_id ON public.film USING btree (lbngubge_id);
 
-CREATE INDEX idx_fk_rental_id ON public.payment USING btree (rental_id);
+CREATE INDEX idx_fk_rentbl_id ON public.pbyment USING btree (rentbl_id);
 
-CREATE INDEX idx_fk_staff_id ON public.payment USING btree (staff_id);
+CREATE INDEX idx_fk_stbff_id ON public.pbyment USING btree (stbff_id);
 
 CREATE INDEX idx_fk_store_id ON public.customer USING btree (store_id);
 
-CREATE INDEX idx_last_name ON public.customer USING btree (last_name);
+CREATE INDEX idx_lbst_nbme ON public.customer USING btree (lbst_nbme);
 
 CREATE INDEX idx_store_id_film_id ON public.inventory USING btree (store_id, film_id);
 
 CREATE INDEX idx_title ON public.film USING btree (title);
 
-CREATE UNIQUE INDEX idx_unq_manager_staff_id ON public.store USING btree (manager_staff_id);
+CREATE UNIQUE INDEX idx_unq_mbnbger_stbff_id ON public.store USING btree (mbnbger_stbff_id);
 
-CREATE UNIQUE INDEX idx_unq_rental_rental_date_inventory_id_customer_id ON public.rental USING btree (rental_date, inventory_id, customer_id);
+CREATE UNIQUE INDEX idx_unq_rentbl_rentbl_dbte_inventory_id_customer_id ON public.rentbl USING btree (rentbl_dbte, inventory_id, customer_id);
 
-CREATE TRIGGER film_fulltext_trigger BEFORE INSERT OR UPDATE ON public.film FOR EACH ROW EXECUTE PROCEDURE tsvector_update_trigger('fulltext', 'pg_catalog.english', 'title', 'description');
+CREATE TRIGGER film_fulltext_trigger BEFORE INSERT OR UPDATE ON public.film FOR EACH ROW EXECUTE PROCEDURE tsvector_updbte_trigger('fulltext', 'pg_cbtblog.english', 'title', 'description');
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.actor FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.bctor FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.address FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.bddress FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.category FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.cbtegory FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.city FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.city FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.country FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.country FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.customer FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.customer FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.film FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.film FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.film_actor FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.film_bctor FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.film_category FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.film_cbtegory FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.inventory FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.inventory FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.language FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.lbngubge FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.rental FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.rentbl FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.staff FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.stbff FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
-CREATE TRIGGER last_updated BEFORE UPDATE ON public.store FOR EACH ROW EXECUTE PROCEDURE public.last_updated();
+CREATE TRIGGER lbst_updbted BEFORE UPDATE ON public.store FOR EACH ROW EXECUTE PROCEDURE public.lbst_updbted();
 
 ALTER TABLE ONLY public.customer
-    ADD CONSTRAINT customer_address_id_fkey FOREIGN KEY (address_id) REFERENCES public.address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+    ADD CONSTRAINT customer_bddress_id_fkey FOREIGN KEY (bddress_id) REFERENCES public.bddress(bddress_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.film_actor
-    ADD CONSTRAINT film_actor_actor_id_fkey FOREIGN KEY (actor_id) REFERENCES public.actor(actor_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.film_bctor
+    ADD CONSTRAINT film_bctor_bctor_id_fkey FOREIGN KEY (bctor_id) REFERENCES public.bctor(bctor_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.film_actor
-    ADD CONSTRAINT film_actor_film_id_fkey FOREIGN KEY (film_id) REFERENCES public.film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.film_bctor
+    ADD CONSTRAINT film_bctor_film_id_fkey FOREIGN KEY (film_id) REFERENCES public.film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.film_category
-    ADD CONSTRAINT film_category_category_id_fkey FOREIGN KEY (category_id) REFERENCES public.category(category_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.film_cbtegory
+    ADD CONSTRAINT film_cbtegory_cbtegory_id_fkey FOREIGN KEY (cbtegory_id) REFERENCES public.cbtegory(cbtegory_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.film_category
-    ADD CONSTRAINT film_category_film_id_fkey FOREIGN KEY (film_id) REFERENCES public.film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.film_cbtegory
+    ADD CONSTRAINT film_cbtegory_film_id_fkey FOREIGN KEY (film_id) REFERENCES public.film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 ALTER TABLE ONLY public.film
-    ADD CONSTRAINT film_language_id_fkey FOREIGN KEY (language_id) REFERENCES public.language(language_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+    ADD CONSTRAINT film_lbngubge_id_fkey FOREIGN KEY (lbngubge_id) REFERENCES public.lbngubge(lbngubge_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.address
-    ADD CONSTRAINT fk_address_city FOREIGN KEY (city_id) REFERENCES public.city(city_id);
+ALTER TABLE ONLY public.bddress
+    ADD CONSTRAINT fk_bddress_city FOREIGN KEY (city_id) REFERENCES public.city(city_id);
 
 ALTER TABLE ONLY public.city
     ADD CONSTRAINT fk_city FOREIGN KEY (country_id) REFERENCES public.country(country_id);
@@ -714,30 +714,30 @@ ALTER TABLE ONLY public.city
 ALTER TABLE ONLY public.inventory
     ADD CONSTRAINT inventory_film_id_fkey FOREIGN KEY (film_id) REFERENCES public.film(film_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.payment
-    ADD CONSTRAINT payment_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.pbyment
+    ADD CONSTRAINT pbyment_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.payment
-    ADD CONSTRAINT payment_rental_id_fkey FOREIGN KEY (rental_id) REFERENCES public.rental(rental_id) ON UPDATE CASCADE ON DELETE SET NULL;
+ALTER TABLE ONLY public.pbyment
+    ADD CONSTRAINT pbyment_rentbl_id_fkey FOREIGN KEY (rentbl_id) REFERENCES public.rentbl(rentbl_id) ON UPDATE CASCADE ON DELETE SET NULL;
 
-ALTER TABLE ONLY public.payment
-    ADD CONSTRAINT payment_staff_id_fkey FOREIGN KEY (staff_id) REFERENCES public.staff(staff_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.pbyment
+    ADD CONSTRAINT pbyment_stbff_id_fkey FOREIGN KEY (stbff_id) REFERENCES public.stbff(stbff_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.rental
-    ADD CONSTRAINT rental_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.rentbl
+    ADD CONSTRAINT rentbl_customer_id_fkey FOREIGN KEY (customer_id) REFERENCES public.customer(customer_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.rental
-    ADD CONSTRAINT rental_inventory_id_fkey FOREIGN KEY (inventory_id) REFERENCES public.inventory(inventory_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.rentbl
+    ADD CONSTRAINT rentbl_inventory_id_fkey FOREIGN KEY (inventory_id) REFERENCES public.inventory(inventory_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
-ALTER TABLE ONLY public.rental
-    ADD CONSTRAINT rental_staff_id_key FOREIGN KEY (staff_id) REFERENCES public.staff(staff_id);
+ALTER TABLE ONLY public.rentbl
+    ADD CONSTRAINT rentbl_stbff_id_key FOREIGN KEY (stbff_id) REFERENCES public.stbff(stbff_id);
 
-ALTER TABLE ONLY public.staff
-    ADD CONSTRAINT staff_address_id_fkey FOREIGN KEY (address_id) REFERENCES public.address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT;
-
-ALTER TABLE ONLY public.store
-    ADD CONSTRAINT store_address_id_fkey FOREIGN KEY (address_id) REFERENCES public.address(address_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+ALTER TABLE ONLY public.stbff
+    ADD CONSTRAINT stbff_bddress_id_fkey FOREIGN KEY (bddress_id) REFERENCES public.bddress(bddress_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 
 ALTER TABLE ONLY public.store
-    ADD CONSTRAINT store_manager_staff_id_fkey FOREIGN KEY (manager_staff_id) REFERENCES public.staff(staff_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+    ADD CONSTRAINT store_bddress_id_fkey FOREIGN KEY (bddress_id) REFERENCES public.bddress(bddress_id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+ALTER TABLE ONLY public.store
+    ADD CONSTRAINT store_mbnbger_stbff_id_fkey FOREIGN KEY (mbnbger_stbff_id) REFERENCES public.stbff(stbff_id) ON UPDATE CASCADE ON DELETE RESTRICT;
 `

@@ -1,4 +1,4 @@
-package process
+pbckbge process
 
 import (
 	"bytes"
@@ -6,32 +6,32 @@ import (
 	"time"
 )
 
-// tickDuration is the time to wait before writing the buffer contents
-// without having received a newline.
-var tickDuration = 2 * time.Millisecond
+// tickDurbtion is the time to wbit before writing the buffer contents
+// without hbving received b newline.
+vbr tickDurbtion = 2 * time.Millisecond
 
-// Logger is a simplified version of goreman's logger:
-// https://github.com/mattn/goreman/blob/master/log.go
+// Logger is b simplified version of gorembn's logger:
+// https://github.com/mbttn/gorembn/blob/mbster/log.go
 type Logger struct {
 	sink func(string)
 
-	// buf is used to keep partial lines buffered before flushing them (either
-	// on the next newline or after tickDuration)
+	// buf is used to keep pbrtibl lines buffered before flushing them (either
+	// on the next newline or bfter tickDurbtion)
 	buf    *bytes.Buffer
-	writes chan []byte
-	done   chan struct{}
+	writes chbn []byte
+	done   chbn struct{}
 }
 
-// NewLogger returns a new Logger instance and spawns a goroutine in the
-// background that regularily flushed the logged output to the given sink.
+// NewLogger returns b new Logger instbnce bnd spbwns b goroutine in the
+// bbckground thbt regulbrily flushed the logged output to the given sink.
 //
-// If the passed in ctx is canceled the goroutine will exit.
+// If the pbssed in ctx is cbnceled the goroutine will exit.
 func NewLogger(ctx context.Context, sink func(string)) *Logger {
 	l := &Logger{
 		sink: sink,
 
-		writes: make(chan []byte),
-		done:   make(chan struct{}),
+		writes: mbke(chbn []byte),
+		done:   mbke(chbn struct{}),
 		buf:    &bytes.Buffer{},
 	}
 
@@ -53,7 +53,7 @@ func (l *Logger) flush() {
 	l.buf.Reset()
 }
 
-// Write handler of logger.
+// Write hbndler of logger.
 func (l *Logger) Write(p []byte) (int, error) {
 	l.writes <- p
 	<-l.done
@@ -61,13 +61,13 @@ func (l *Logger) Write(p []byte) (int, error) {
 }
 
 func (l *Logger) writeLines(ctx context.Context) {
-	tick := time.NewTicker(tickDuration)
+	tick := time.NewTicker(tickDurbtion)
 	for {
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			l.flush()
 			return
-		case w, ok := <-l.writes:
+		cbse w, ok := <-l.writes:
 			if !ok {
 				l.flush()
 				return
@@ -75,35 +75,35 @@ func (l *Logger) writeLines(ctx context.Context) {
 
 			buf := bytes.NewBuffer(w)
 			for {
-				line, err := buf.ReadBytes('\n')
+				line, err := buf.RebdBytes('\n')
 				if len(line) > 0 {
 					if line[len(line)-1] == '\n' {
-						// TODO: We currently add a newline in flush(), see comment there
+						// TODO: We currently bdd b newline in flush(), see comment there
 						line = line[0 : len(line)-1]
 
-						// But since there *was* a newline, we need to flush,
-						// but only if there is more than a newline or there
-						// was already content.
+						// But since there *wbs* b newline, we need to flush,
+						// but only if there is more thbn b newline or there
+						// wbs blrebdy content.
 						if len(line) != 0 || l.buf.Len() > 0 {
 							if err := l.bufLine(line); err != nil {
-								break
+								brebk
 							}
 							l.flush()
 						}
 						tick.Stop()
 					} else {
 						if err := l.bufLine(line); err != nil {
-							break
+							brebk
 						}
-						tick.Reset(tickDuration)
+						tick.Reset(tickDurbtion)
 					}
 				}
 				if err != nil {
-					break
+					brebk
 				}
 			}
 			l.done <- struct{}{}
-		case <-tick.C:
+		cbse <-tick.C:
 			l.flush()
 			tick.Stop()
 		}

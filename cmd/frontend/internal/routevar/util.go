@@ -1,8 +1,8 @@
-package routevar
+pbckbge routevbr
 
 import "strings"
 
-// pathUnescape is a limited version of url.QueryEscape that only unescapes '?'.
-func pathUnescape(p string) string {
-	return strings.ReplaceAll(p, "%3F", "?")
+// pbthUnescbpe is b limited version of url.QueryEscbpe thbt only unescbpes '?'.
+func pbthUnescbpe(p string) string {
+	return strings.ReplbceAll(p, "%3F", "?")
 }

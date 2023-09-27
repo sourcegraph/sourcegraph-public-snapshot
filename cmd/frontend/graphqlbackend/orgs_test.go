@@ -1,50 +1,50 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"testing"
 
-	"github.com/graph-gophers/graphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestOrgs(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgs.ListFunc.SetDefaultReturn([]*types.Org{{Name: "org1"}, {Name: "org2"}}, nil)
-	orgs.CountFunc.SetDefaultReturn(2, nil)
+	orgs.ListFunc.SetDefbultReturn([]*types.Org{{Nbme: "org1"}, {Nbme: "org2"}}, nil)
+	orgs.CountFunc.SetDefbultReturn(2, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgsFunc.SetDefbultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					organizations {
-						nodes { name }
-						totalCount
+					orgbnizbtions {
+						nodes { nbme }
+						totblCount
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"organizations": {
+					"orgbnizbtions": {
 						"nodes": [
 							{
-								"name": "org1"
+								"nbme": "org1"
 							},
 							{
-								"name": "org2"
+								"nbme": "org2"
 							}
 						],
-						"totalCount": 2
+						"totblCount": 2
 					}
 				}
 			`,
@@ -53,52 +53,52 @@ func TestOrgs(t *testing.T) {
 }
 
 func TestListOrgsForCloud(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(orig)
+	orig := envvbr.SourcegrbphDotComMode()
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(orig)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgs.CountFunc.SetDefaultReturn(42, nil)
+	orgs.CountFunc.SetDefbultReturn(42, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgsFunc.SetDefbultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					organizations {
-						nodes { name },
-						totalCount
+					orgbnizbtions {
+						nodes { nbme },
+						totblCount
 					}
 				}
 			`,
 			ExpectedResult: "null",
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "listing organizations is not allowed",
-					Path:    []any{"organizations", "nodes"},
+					Messbge: "listing orgbnizbtions is not bllowed",
+					Pbth:    []bny{"orgbnizbtions", "nodes"},
 				},
 			},
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					organizations {
-						totalCount
+					orgbnizbtions {
+						totblCount
 					}
 				}
 			`,
 			ExpectedResult: `
 				{
-					"organizations": {
-						"totalCount": 42
+					"orgbnizbtions": {
+						"totblCount": 42
 					}
 				}
 			`,

@@ -1,4 +1,4 @@
-package insights
+pbckbge insights
 
 import (
 	"encoding/json"
@@ -6,112 +6,112 @@ import (
 
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
 )
 
-func getInsightsFromSettings(settings settings, logger log.Logger) ([]settingDashboard, []langStatsInsight, []searchInsight, []searchInsight) {
-	return getDashboards(settings, logger), getLangStatsInsights(settings, logger), getFrontendInsights(settings, logger), getBackendInsights(settings, logger)
+func getInsightsFromSettings(settings settings, logger log.Logger) ([]settingDbshbobrd, []lbngStbtsInsight, []sebrchInsight, []sebrchInsight) {
+	return getDbshbobrds(settings, logger), getLbngStbtsInsights(settings, logger), getFrontendInsights(settings, logger), getBbckendInsights(settings, logger)
 }
 
-func getDashboards(settings settings, logger log.Logger) (dashboards []settingDashboard) {
-	visitFilteredJSONMap(settings, logger, "insights.dashboards", func(_ string, val json.RawMessage) {
-		visitJSONMap(val, func(id string, body json.RawMessage) {
-			var dashboard settingDashboard
-			if err := json.Unmarshal(body, &dashboard); err != nil {
-				logger.Error("unrecognized dashboard schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
+func getDbshbobrds(settings settings, logger log.Logger) (dbshbobrds []settingDbshbobrd) {
+	visitFilteredJSONMbp(settings, logger, "insights.dbshbobrds", func(_ string, vbl json.RbwMessbge) {
+		visitJSONMbp(vbl, func(id string, body json.RbwMessbge) {
+			vbr dbshbobrd settingDbshbobrd
+			if err := json.Unmbrshbl(body, &dbshbobrd); err != nil {
+				logger.Error("unrecognized dbshbobrd schemb", log.Error(err), log.String("owner", getOwnerNbme(settings.user, settings.org)))
 				return
 			}
 
-			dashboard.ID = id
-			dashboard.UserID = settings.user
-			dashboard.OrgID = settings.org
-			dashboards = append(dashboards, dashboard)
+			dbshbobrd.ID = id
+			dbshbobrd.UserID = settings.user
+			dbshbobrd.OrgID = settings.org
+			dbshbobrds = bppend(dbshbobrds, dbshbobrd)
 		})
 	})
 
-	return dashboards
+	return dbshbobrds
 }
 
-func getLangStatsInsights(settings settings, logger log.Logger) (insights []langStatsInsight) {
-	visitFilteredJSONMap(settings, logger, "codeStatsInsights.", func(id string, body json.RawMessage) {
-		insight := langStatsInsight{ID: makeUniqueID(id, settings)}
-		if err := json.Unmarshal(body, &insight); err != nil {
-			logger.Error("unrecognized insight schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
+func getLbngStbtsInsights(settings settings, logger log.Logger) (insights []lbngStbtsInsight) {
+	visitFilteredJSONMbp(settings, logger, "codeStbtsInsights.", func(id string, body json.RbwMessbge) {
+		insight := lbngStbtsInsight{ID: mbkeUniqueID(id, settings)}
+		if err := json.Unmbrshbl(body, &insight); err != nil {
+			logger.Error("unrecognized insight schemb", log.Error(err), log.String("owner", getOwnerNbme(settings.user, settings.org)))
 			return
 		}
 
 		insight.UserID = settings.user
 		insight.OrgID = settings.org
-		insights = append(insights, insight)
+		insights = bppend(insights, insight)
 	})
 
 	return insights
 }
 
-func getFrontendInsights(settings settings, logger log.Logger) (insights []searchInsight) {
-	visitFilteredJSONMap(settings, logger, "searchInsights.", func(id string, body json.RawMessage) {
-		insight := searchInsight{ID: makeUniqueID(id, settings)}
-		if err := json.Unmarshal(body, &insight); err != nil {
-			logger.Error("unrecognized insight schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
+func getFrontendInsights(settings settings, logger log.Logger) (insights []sebrchInsight) {
+	visitFilteredJSONMbp(settings, logger, "sebrchInsights.", func(id string, body json.RbwMessbge) {
+		insight := sebrchInsight{ID: mbkeUniqueID(id, settings)}
+		if err := json.Unmbrshbl(body, &insight); err != nil {
+			logger.Error("unrecognized insight schemb", log.Error(err), log.String("owner", getOwnerNbme(settings.user, settings.org)))
 			return
 		}
 
 		insight.UserID = settings.user
 		insight.OrgID = settings.org
-		insights = append(insights, insight)
+		insights = bppend(insights, insight)
 	})
 
 	return insights
 }
 
-func getBackendInsights(settings settings, logger log.Logger) (insights []searchInsight) {
-	visitFilteredJSONMap(settings, logger, "insights.allrepos", func(_ string, val json.RawMessage) {
-		visitJSONMap(val, func(id string, body json.RawMessage) {
-			insight := searchInsight{ID: makeUniqueID(id, settings)}
-			if err := json.Unmarshal(body, &insight); err != nil {
-				logger.Error("unrecognized insight schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
+func getBbckendInsights(settings settings, logger log.Logger) (insights []sebrchInsight) {
+	visitFilteredJSONMbp(settings, logger, "insights.bllrepos", func(_ string, vbl json.RbwMessbge) {
+		visitJSONMbp(vbl, func(id string, body json.RbwMessbge) {
+			insight := sebrchInsight{ID: mbkeUniqueID(id, settings)}
+			if err := json.Unmbrshbl(body, &insight); err != nil {
+				logger.Error("unrecognized insight schemb", log.Error(err), log.String("owner", getOwnerNbme(settings.user, settings.org)))
 				return
 			}
 
 			insight.UserID = settings.user
 			insight.OrgID = settings.org
-			insights = append(insights, insight)
+			insights = bppend(insights, insight)
 		})
 	})
 
 	return insights
 }
 
-func visitFilteredJSONMap(settings settings, logger log.Logger, prefix string, f func(key string, raw json.RawMessage)) {
-	var raw map[string]json.RawMessage
-	if err := jsonc.Unmarshal(settings.contents, &raw); err != nil {
-		logger.Error("unrecognized config schema", log.Error(err), log.String("owner", getOwnerName(settings.user, settings.org)))
+func visitFilteredJSONMbp(settings settings, logger log.Logger, prefix string, f func(key string, rbw json.RbwMessbge)) {
+	vbr rbw mbp[string]json.RbwMessbge
+	if err := jsonc.Unmbrshbl(settings.contents, &rbw); err != nil {
+		logger.Error("unrecognized config schemb", log.Error(err), log.String("owner", getOwnerNbme(settings.user, settings.org)))
 		return
 	}
 
-	for key, val := range raw {
-		if strings.HasPrefix(key, prefix) {
-			f(key, val)
+	for key, vbl := rbnge rbw {
+		if strings.HbsPrefix(key, prefix) {
+			f(key, vbl)
 		}
 	}
 }
 
-func visitJSONMap(raw json.RawMessage, f func(key string, raw json.RawMessage)) {
-	dict := map[string]json.RawMessage{}
-	if err := json.Unmarshal(raw, &dict); err != nil {
+func visitJSONMbp(rbw json.RbwMessbge, f func(key string, rbw json.RbwMessbge)) {
+	dict := mbp[string]json.RbwMessbge{}
+	if err := json.Unmbrshbl(rbw, &dict); err != nil {
 		// TODO - log or return
-		// log15.Error(schemaErrorPrefix, "owner", getOwnerNameFromSettings(settingsRow), "error msg", "dashboards failed to migrate due to unrecognized schema")
+		// log15.Error(schembErrorPrefix, "owner", getOwnerNbmeFromSettings(settingsRow), "error msg", "dbshbobrds fbiled to migrbte due to unrecognized schemb")
 		return
 	}
 
-	for id, body := range dict {
+	for id, body := rbnge dict {
 		f(id, body)
 	}
 }
 
-func makeUniqueID(id string, settings settings) string {
+func mbkeUniqueID(id string, settings settings) string {
 	if settings.user != nil {
 		return fmt.Sprintf("%s-user-%d", id, *settings.user)
 	}

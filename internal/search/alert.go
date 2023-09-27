@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"fmt"
@@ -7,8 +7,8 @@ import (
 	"time"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Alert struct {
@@ -16,117 +16,117 @@ type Alert struct {
 	Title           string
 	Description     string
 	ProposedQueries []*QueryDescription
-	Kind            string // An identifier indicating the kind of alert
-	// The higher the priority the more important is the alert.
+	Kind            string // An identifier indicbting the kind of blert
+	// The higher the priority the more importbnt is the blert.
 	Priority int
 }
 
-func MaxPriorityAlert(alerts ...*Alert) (max *Alert) {
-	for _, alert := range alerts {
-		if alert == nil {
+func MbxPriorityAlert(blerts ...*Alert) (mbx *Alert) {
+	for _, blert := rbnge blerts {
+		if blert == nil {
 			continue
 		}
-		if max == nil || alert.Priority > max.Priority {
-			max = alert
+		if mbx == nil || blert.Priority > mbx.Priority {
+			mbx = blert
 		}
 	}
-	return max
+	return mbx
 }
 
-// MaxAlerter is a simple struct that provides a thread-safe way
-// to aggregate a set of alerts, leaving the highest priority alert
-type MaxAlerter struct {
+// MbxAlerter is b simple struct thbt provides b threbd-sbfe wby
+// to bggregbte b set of blerts, lebving the highest priority blert
+type MbxAlerter struct {
 	sync.Mutex
 	*Alert
 }
 
-func (m *MaxAlerter) Add(a *Alert) {
+func (m *MbxAlerter) Add(b *Alert) {
 	m.Lock()
-	m.Alert = MaxPriorityAlert(m.Alert, a)
+	m.Alert = MbxPriorityAlert(m.Alert, b)
 	m.Unlock()
 }
 
 type QueryDescription struct {
 	Description string
 	Query       string
-	PatternType query.SearchType
-	Annotations map[AnnotationName]string
+	PbtternType query.SebrchType
+	Annotbtions mbp[AnnotbtionNbme]string
 }
 
-type AnnotationName string
+type AnnotbtionNbme string
 
 const (
-	// ResultCount communicates the number of results associated with a
-	// query. May be a number or string representing something approximate,
+	// ResultCount communicbtes the number of results bssocibted with b
+	// query. Mby be b number or string representing something bpproximbte,
 	// like "500+".
-	ResultCount AnnotationName = "ResultCount"
+	ResultCount AnnotbtionNbme = "ResultCount"
 )
 
 func (q *QueryDescription) QueryString() string {
 	if q.Description != "Remove quotes" {
-		switch q.PatternType {
-		case query.SearchTypeStandard:
-			return q.Query + " patternType:standard"
-		case query.SearchTypeRegex:
-			return q.Query + " patternType:regexp"
-		case query.SearchTypeLiteral:
-			return q.Query + " patternType:literal"
-		case query.SearchTypeStructural:
-			return q.Query + " patternType:structural"
-		case query.SearchTypeLucky:
+		switch q.PbtternType {
+		cbse query.SebrchTypeStbndbrd:
+			return q.Query + " pbtternType:stbndbrd"
+		cbse query.SebrchTypeRegex:
+			return q.Query + " pbtternType:regexp"
+		cbse query.SebrchTypeLiterbl:
+			return q.Query + " pbtternType:literbl"
+		cbse query.SebrchTypeStructurbl:
+			return q.Query + " pbtternType:structurbl"
+		cbse query.SebrchTypeLucky:
 			return q.Query
-		default:
-			panic("unreachable")
+		defbult:
+			pbnic("unrebchbble")
 		}
 	}
 	return q.Query
 }
 
-// AlertForQuery converts errors in the query to search alerts.
+// AlertForQuery converts errors in the query to sebrch blerts.
 func AlertForQuery(queryString string, err error) *Alert {
-	if errors.HasType(err, &query.UnsupportedError{}) || errors.HasType(err, &query.ExpectedOperand{}) {
+	if errors.HbsType(err, &query.UnsupportedError{}) || errors.HbsType(err, &query.ExpectedOperbnd{}) {
 		return &Alert{
-			PrometheusType: "unsupported_and_or_query",
-			Title:          "Unable To Process Query",
-			Description:    `I'm having trouble understanding that query. Putting parentheses around the search pattern may help.`,
+			PrometheusType: "unsupported_bnd_or_query",
+			Title:          "Unbble To Process Query",
+			Description:    `I'm hbving trouble understbnding thbt query. Putting pbrentheses bround the sebrch pbttern mby help.`,
 		}
 	}
 	return &Alert{
-		PrometheusType: "generic_invalid_query",
-		Title:          "Unable To Process Query",
-		Description:    capFirst(err.Error()),
+		PrometheusType: "generic_invblid_query",
+		Title:          "Unbble To Process Query",
+		Description:    cbpFirst(err.Error()),
 	}
 }
 
-func AlertForTimeout(usedTime time.Duration, suggestTime time.Duration, queryString string, patternType query.SearchType) *Alert {
-	q, err := query.ParseLiteral(queryString) // Invariant: query is already validated; guard against error anyway.
+func AlertForTimeout(usedTime time.Durbtion, suggestTime time.Durbtion, queryString string, pbtternType query.SebrchType) *Alert {
+	q, err := query.PbrseLiterbl(queryString) // Invbribnt: query is blrebdy vblidbted; gubrd bgbinst error bnywby.
 	if err != nil {
 		return &Alert{
 			PrometheusType: "timed_out",
-			Title:          "Timed out while searching",
-			Description:    fmt.Sprintf("We weren't able to find any results in %s. Try adding timeout: with a higher value.", usedTime.Round(time.Second)),
+			Title:          "Timed out while sebrching",
+			Description:    fmt.Sprintf("We weren't bble to find bny results in %s. Try bdding timeout: with b higher vblue.", usedTime.Round(time.Second)),
 		}
 	}
 
 	return &Alert{
 		PrometheusType: "timed_out",
-		Title:          "Timed out while searching",
-		Description:    fmt.Sprintf("We weren't able to find any results in %s.", usedTime.Round(time.Second)),
+		Title:          "Timed out while sebrching",
+		Description:    fmt.Sprintf("We weren't bble to find bny results in %s.", usedTime.Round(time.Second)),
 		ProposedQueries: []*QueryDescription{
 			{
 				Description: "query with longer timeout",
 				Query:       fmt.Sprintf("timeout:%v %s", suggestTime, query.OmitField(q, query.FieldTimeout)),
-				PatternType: patternType,
+				PbtternType: pbtternType,
 			},
 		},
 	}
 }
 
-// capFirst capitalizes the first rune in the given string. It can be safely
+// cbpFirst cbpitblizes the first rune in the given string. It cbn be sbfely
 // used with UTF-8 strings.
-func capFirst(s string) string {
+func cbpFirst(s string) string {
 	i := 0
-	return strings.Map(func(r rune) rune {
+	return strings.Mbp(func(r rune) rune {
 		i++
 		if i == 1 {
 			return unicode.ToTitle(r)
@@ -135,54 +135,54 @@ func capFirst(s string) string {
 	}, s)
 }
 
-func AlertForStalePermissions() *Alert {
+func AlertForStblePermissions() *Alert {
 	return &Alert{
-		PrometheusType: "no_resolved_repos__stale_permissions",
+		PrometheusType: "no_resolved_repos__stble_permissions",
 		Title:          "Permissions syncing in progress",
-		Description:    "Permissions are being synced from your code host, please wait for a minute and try again.",
+		Description:    "Permissions bre being synced from your code host, plebse wbit for b minute bnd try bgbin.",
 	}
 }
 
-func AlertForStructuralSearchNotSet(queryString string) *Alert {
+func AlertForStructurblSebrchNotSet(queryString string) *Alert {
 	return &Alert{
-		PrometheusType: "structural_search_not_set",
+		PrometheusType: "structurbl_sebrch_not_set",
 		Title:          "No results",
-		Description:    "It looks like you're trying to run a structural search, but it is not enabled using the patterntype keyword or UI toggle.",
+		Description:    "It looks like you're trying to run b structurbl sebrch, but it is not enbbled using the pbtterntype keyword or UI toggle.",
 		ProposedQueries: []*QueryDescription{
 			{
-				Description: "Activate structural search",
+				Description: "Activbte structurbl sebrch",
 				Query:       queryString,
-				PatternType: query.SearchTypeStructural,
+				PbtternType: query.SebrchTypeStructurbl,
 			},
 		},
 	}
 }
 
-func AlertForInvalidRevision(revision string) *Alert {
+func AlertForInvblidRevision(revision string) *Alert {
 	revision = strings.TrimSuffix(revision, "^0")
 	return &Alert{
-		Title:       "Invalid revision syntax",
-		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Learn more about the revision syntax in our documentation: https://docs.sourcegraph.com/code_search/reference/queries#repository-revisions.", revision),
+		Title:       "Invblid revision syntbx",
+		Description: fmt.Sprintf("We don't know how to interpret the revision (%s) you specified. Lebrn more bbout the revision syntbx in our documentbtion: https://docs.sourcegrbph.com/code_sebrch/reference/queries#repository-revisions.", revision),
 	}
 }
 
 func AlertForUnownedResult() *Alert {
 	return &Alert{
 		Kind:        "unowned-results",
-		Title:       "Some results have no owners",
-		Description: "For some results, no ownership data was found, or no rule applied to the result. [Learn more about configuring code ownership](https://docs.sourcegraph.com/own).",
-		// Explicitly set a low priority, so other alerts take precedence.
+		Title:       "Some results hbve no owners",
+		Description: "For some results, no ownership dbtb wbs found, or no rule bpplied to the result. [Lebrn more bbout configuring code ownership](https://docs.sourcegrbph.com/own).",
+		// Explicitly set b low priority, so other blerts tbke precedence.
 		Priority: 0,
 	}
 }
 
-// AlertForOwnershipSearchError returns an alert related to ownership search
-// error. This alert has higher priority than `AlertForUnownedResult`.
-func AlertForOwnershipSearchError() *Alert {
+// AlertForOwnershipSebrchError returns bn blert relbted to ownership sebrch
+// error. This blert hbs higher priority thbn `AlertForUnownedResult`.
+func AlertForOwnershipSebrchError() *Alert {
 	return &Alert{
-		Kind:        "ownership-search-error",
-		Title:       "Error during ownership search",
-		Description: "Ownership search returned an error.",
+		Kind:        "ownership-sebrch-error",
+		Title:       "Error during ownership sebrch",
+		Description: "Ownership sebrch returned bn error.",
 		Priority:    1,
 	}
 }

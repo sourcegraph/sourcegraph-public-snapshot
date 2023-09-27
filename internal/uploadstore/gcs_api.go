@@ -1,115 +1,115 @@
-package uploadstore
+pbckbge uplobdstore
 
 import (
 	"context"
 	"io"
 
-	"cloud.google.com/go/storage"
-	"google.golang.org/api/iterator"
+	"cloud.google.com/go/storbge"
+	"google.golbng.org/bpi/iterbtor"
 )
 
-type gcsAPI interface {
-	Bucket(name string) gcsBucketHandle
+type gcsAPI interfbce {
+	Bucket(nbme string) gcsBucketHbndle
 }
 
-type gcsBucketHandle interface {
-	Attrs(ctx context.Context) (*storage.BucketAttrs, error)
-	Create(ctx context.Context, projectID string, attrs *storage.BucketAttrs) error
-	Object(name string) gcsObjectHandle
-	Objects(ctx context.Context, q *storage.Query) gcsObjectIterator
+type gcsBucketHbndle interfbce {
+	Attrs(ctx context.Context) (*storbge.BucketAttrs, error)
+	Crebte(ctx context.Context, projectID string, bttrs *storbge.BucketAttrs) error
+	Object(nbme string) gcsObjectHbndle
+	Objects(ctx context.Context, q *storbge.Query) gcsObjectIterbtor
 }
 
-type gcsObjectHandle interface {
+type gcsObjectHbndle interfbce {
 	Delete(ctx context.Context) error
-	NewRangeReader(ctx context.Context, offset, length int64) (io.ReadCloser, error)
+	NewRbngeRebder(ctx context.Context, offset, length int64) (io.RebdCloser, error)
 	NewWriter(ctx context.Context) io.WriteCloser
-	ComposerFrom(sources ...gcsObjectHandle) gcsComposer
+	ComposerFrom(sources ...gcsObjectHbndle) gcsComposer
 }
 
-type gcsObjectIterator interface {
-	Next() (*storage.ObjectAttrs, error)
-	PageInfo() *iterator.PageInfo
+type gcsObjectIterbtor interfbce {
+	Next() (*storbge.ObjectAttrs, error)
+	PbgeInfo() *iterbtor.PbgeInfo
 }
 
-type gcsComposer interface {
-	Run(ctx context.Context) (*storage.ObjectAttrs, error)
+type gcsComposer interfbce {
+	Run(ctx context.Context) (*storbge.ObjectAttrs, error)
 }
 
-type gcsAPIShim struct{ client *storage.Client }
-type bucketHandleShim struct{ handle *storage.BucketHandle }
-type objectHandleShim struct{ handle *storage.ObjectHandle }
-type objectIteratorShim struct{ handle *storage.ObjectIterator }
+type gcsAPIShim struct{ client *storbge.Client }
+type bucketHbndleShim struct{ hbndle *storbge.BucketHbndle }
+type objectHbndleShim struct{ hbndle *storbge.ObjectHbndle }
+type objectIterbtorShim struct{ hbndle *storbge.ObjectIterbtor }
 
 type composerShim struct {
-	handle  *storage.ObjectHandle
-	sources []*storage.ObjectHandle
+	hbndle  *storbge.ObjectHbndle
+	sources []*storbge.ObjectHbndle
 }
 
-var _ gcsAPI = &gcsAPIShim{}
-var _ gcsBucketHandle = &bucketHandleShim{}
-var _ gcsObjectHandle = &objectHandleShim{}
-var _ gcsObjectIterator = &objectIteratorShim{}
-var _ gcsComposer = &composerShim{}
+vbr _ gcsAPI = &gcsAPIShim{}
+vbr _ gcsBucketHbndle = &bucketHbndleShim{}
+vbr _ gcsObjectHbndle = &objectHbndleShim{}
+vbr _ gcsObjectIterbtor = &objectIterbtorShim{}
+vbr _ gcsComposer = &composerShim{}
 
-func (s *gcsAPIShim) Bucket(name string) gcsBucketHandle {
-	return &bucketHandleShim{handle: s.client.Bucket(name)}
+func (s *gcsAPIShim) Bucket(nbme string) gcsBucketHbndle {
+	return &bucketHbndleShim{hbndle: s.client.Bucket(nbme)}
 }
 
-func (s *bucketHandleShim) Attrs(ctx context.Context) (*storage.BucketAttrs, error) {
-	return s.handle.Attrs(ctx)
+func (s *bucketHbndleShim) Attrs(ctx context.Context) (*storbge.BucketAttrs, error) {
+	return s.hbndle.Attrs(ctx)
 }
 
-func (s *bucketHandleShim) Create(ctx context.Context, projectID string, attrs *storage.BucketAttrs) error {
-	return s.handle.Create(ctx, projectID, attrs)
+func (s *bucketHbndleShim) Crebte(ctx context.Context, projectID string, bttrs *storbge.BucketAttrs) error {
+	return s.hbndle.Crebte(ctx, projectID, bttrs)
 }
 
-func (s *bucketHandleShim) Object(name string) gcsObjectHandle {
-	return &objectHandleShim{handle: s.handle.Object(name)}
+func (s *bucketHbndleShim) Object(nbme string) gcsObjectHbndle {
+	return &objectHbndleShim{hbndle: s.hbndle.Object(nbme)}
 }
 
-func (s *bucketHandleShim) Objects(ctx context.Context, q *storage.Query) gcsObjectIterator {
-	return &objectIteratorShim{handle: s.handle.Objects(ctx, q)}
+func (s *bucketHbndleShim) Objects(ctx context.Context, q *storbge.Query) gcsObjectIterbtor {
+	return &objectIterbtorShim{hbndle: s.hbndle.Objects(ctx, q)}
 }
 
-func (s *objectHandleShim) Delete(ctx context.Context) error {
-	return s.handle.Delete(ctx)
+func (s *objectHbndleShim) Delete(ctx context.Context) error {
+	return s.hbndle.Delete(ctx)
 }
 
-func (s *objectHandleShim) NewRangeReader(ctx context.Context, offset, length int64) (io.ReadCloser, error) {
-	return s.handle.NewRangeReader(ctx, offset, length)
+func (s *objectHbndleShim) NewRbngeRebder(ctx context.Context, offset, length int64) (io.RebdCloser, error) {
+	return s.hbndle.NewRbngeRebder(ctx, offset, length)
 }
 
-func (s *objectHandleShim) NewWriter(ctx context.Context) io.WriteCloser {
-	return s.handle.NewWriter(ctx)
+func (s *objectHbndleShim) NewWriter(ctx context.Context) io.WriteCloser {
+	return s.hbndle.NewWriter(ctx)
 }
 
-func (s *objectHandleShim) ComposerFrom(sources ...gcsObjectHandle) gcsComposer {
-	var handles []*storage.ObjectHandle
-	for _, source := range sources {
-		if shim, ok := source.(*objectHandleShim); ok {
-			handles = append(handles, shim.handle)
+func (s *objectHbndleShim) ComposerFrom(sources ...gcsObjectHbndle) gcsComposer {
+	vbr hbndles []*storbge.ObjectHbndle
+	for _, source := rbnge sources {
+		if shim, ok := source.(*objectHbndleShim); ok {
+			hbndles = bppend(hbndles, shim.hbndle)
 		}
 	}
 
-	return &composerShim{handle: s.handle, sources: handles}
+	return &composerShim{hbndle: s.hbndle, sources: hbndles}
 }
 
-func (s *objectIteratorShim) Next() (*storage.ObjectAttrs, error) {
-	return s.handle.Next()
+func (s *objectIterbtorShim) Next() (*storbge.ObjectAttrs, error) {
+	return s.hbndle.Next()
 }
 
-func (s *objectIteratorShim) PageInfo() *iterator.PageInfo {
-	return s.handle.PageInfo()
+func (s *objectIterbtorShim) PbgeInfo() *iterbtor.PbgeInfo {
+	return s.hbndle.PbgeInfo()
 }
 
-func (s *composerShim) Run(ctx context.Context) (*storage.ObjectAttrs, error) {
+func (s *composerShim) Run(ctx context.Context) (*storbge.ObjectAttrs, error) {
 	for len(s.sources) > 32 {
-		if _, err := s.handle.ComposerFrom(s.sources[:32]...).Run(ctx); err != nil {
+		if _, err := s.hbndle.ComposerFrom(s.sources[:32]...).Run(ctx); err != nil {
 			return nil, err
 		}
 
-		s.sources = append([]*storage.ObjectHandle{s.handle}, s.sources[32:]...)
+		s.sources = bppend([]*storbge.ObjectHbndle{s.hbndle}, s.sources[32:]...)
 	}
 
-	return s.handle.ComposerFrom(s.sources...).Run(ctx)
+	return s.hbndle.ComposerFrom(s.sources...).Run(ctx)
 }

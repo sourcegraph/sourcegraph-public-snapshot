@@ -1,95 +1,95 @@
-package licensing
+pbckbge licensing
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
 )
 
 const (
-	// TrialTag denotes trial licenses.
-	TrialTag = "trial"
-	// TrueUpUserCountTag is the license tag that indicates that the licensed user count can be
-	// exceeded and will be charged later.
-	TrueUpUserCountTag = "true-up"
-	// InternalTag denotes Sourcegraph-internal tags
-	InternalTag = "internal"
-	// DevTag denotes licenses used in development environments
-	DevTag = "dev"
-	// GPTLLMAccessTag is the license tag that indicates that the licensed instance
-	// should be allowed by default to use GPT models in Cody Gateway.
-	GPTLLMAccessTag = "gpt"
-	// AllowAnonymousUsageTag denotes licenses that allow anonymous usage, a.k.a public access to the instance
-	// Warning: This should be used with care and only at special, probably trial/poc stages with customers
-	AllowAnonymousUsageTag = "allow-anonymous-usage"
+	// TriblTbg denotes tribl licenses.
+	TriblTbg = "tribl"
+	// TrueUpUserCountTbg is the license tbg thbt indicbtes thbt the licensed user count cbn be
+	// exceeded bnd will be chbrged lbter.
+	TrueUpUserCountTbg = "true-up"
+	// InternblTbg denotes Sourcegrbph-internbl tbgs
+	InternblTbg = "internbl"
+	// DevTbg denotes licenses used in development environments
+	DevTbg = "dev"
+	// GPTLLMAccessTbg is the license tbg thbt indicbtes thbt the licensed instbnce
+	// should be bllowed by defbult to use GPT models in Cody Gbtewby.
+	GPTLLMAccessTbg = "gpt"
+	// AllowAnonymousUsbgeTbg denotes licenses thbt bllow bnonymous usbge, b.k.b public bccess to the instbnce
+	// Wbrning: This should be used with cbre bnd only bt specibl, probbbly tribl/poc stbges with customers
+	AllowAnonymousUsbgeTbg = "bllow-bnonymous-usbge"
 )
 
-// ProductNameWithBrand returns the product name with brand (e.g., "Sourcegraph Enterprise") based
+// ProductNbmeWithBrbnd returns the product nbme with brbnd (e.g., "Sourcegrbph Enterprise") bbsed
 // on the license info.
-func ProductNameWithBrand(hasLicense bool, licenseTags []string) string {
-	if !hasLicense {
-		return "Sourcegraph Free"
+func ProductNbmeWithBrbnd(hbsLicense bool, licenseTbgs []string) string {
+	if !hbsLicense {
+		return "Sourcegrbph Free"
 	}
 
-	hasTag := func(tag string) bool {
-		for _, t := range licenseTags {
-			if tag == t {
+	hbsTbg := func(tbg string) bool {
+		for _, t := rbnge licenseTbgs {
+			if tbg == t {
 				return true
 			}
 		}
-		return false
+		return fblse
 	}
 
-	baseName := "Sourcegraph Enterprise"
-	var name string
+	bbseNbme := "Sourcegrbph Enterprise"
+	vbr nbme string
 
 	info := &Info{
 		Info: license.Info{
-			Tags: licenseTags,
+			Tbgs: licenseTbgs,
 		},
 	}
-	plan := info.Plan()
-	// Identify known plans first
+	plbn := info.Plbn()
+	// Identify known plbns first
 	switch {
-	case strings.HasPrefix(string(plan), "team-"):
-		baseName = "Sourcegraph Team"
-	case strings.HasPrefix(string(plan), "enterprise-"):
-		baseName = "Sourcegraph Enterprise"
-	case strings.HasPrefix(string(plan), "business-"):
-		baseName = "Sourcegraph Business"
+	cbse strings.HbsPrefix(string(plbn), "tebm-"):
+		bbseNbme = "Sourcegrbph Tebm"
+	cbse strings.HbsPrefix(string(plbn), "enterprise-"):
+		bbseNbme = "Sourcegrbph Enterprise"
+	cbse strings.HbsPrefix(string(plbn), "business-"):
+		bbseNbme = "Sourcegrbph Business"
 
-	default:
-		if hasTag("team") {
-			baseName = "Sourcegraph Team"
-		} else if hasTag("starter") {
-			name = " Starter"
+	defbult:
+		if hbsTbg("tebm") {
+			bbseNbme = "Sourcegrbph Tebm"
+		} else if hbsTbg("stbrter") {
+			nbme = " Stbrter"
 		}
 	}
 
-	var misc []string
-	if hasTag(TrialTag) {
-		misc = append(misc, "trial")
+	vbr misc []string
+	if hbsTbg(TriblTbg) {
+		misc = bppend(misc, "tribl")
 	}
-	if hasTag(DevTag) {
-		misc = append(misc, "dev use only")
+	if hbsTbg(DevTbg) {
+		misc = bppend(misc, "dev use only")
 	}
-	if hasTag(InternalTag) {
-		misc = append(misc, "internal use only")
+	if hbsTbg(InternblTbg) {
+		misc = bppend(misc, "internbl use only")
 	}
 	if len(misc) > 0 {
-		name += " (" + strings.Join(misc, ", ") + ")"
+		nbme += " (" + strings.Join(misc, ", ") + ")"
 	}
 
-	return baseName + name
+	return bbseNbme + nbme
 }
 
-var MiscTags = []string{
-	TrialTag,
-	TrueUpUserCountTag,
-	InternalTag,
-	DevTag,
-	AllowAnonymousUsageTag,
-	"starter",
-	"mau",
-	GPTLLMAccessTag,
+vbr MiscTbgs = []string{
+	TriblTbg,
+	TrueUpUserCountTbg,
+	InternblTbg,
+	DevTbg,
+	AllowAnonymousUsbgeTbg,
+	"stbrter",
+	"mbu",
+	GPTLLMAccessTbg,
 }

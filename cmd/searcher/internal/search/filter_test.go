@@ -1,67 +1,67 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"context"
 	"testing"
 	"testing/quick"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestNewFilter(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ReadFileFunc.SetDefaultReturn([]byte("foo/"), nil)
+	gitserverClient.RebdFileFunc.SetDefbultReturn([]byte("foo/"), nil)
 
-	ig, err := NewFilter(context.Background(), gitserverClient, "", "")
+	ig, err := NewFilter(context.Bbckground(), gitserverClient, "", "")
 	if err != nil {
 		t.Error(err)
 	}
 
-	cases := []struct {
-		tar.Header
+	cbses := []struct {
+		tbr.Hebder
 		Ignore bool
 	}{{
 		Ignore: true,
-		Header: tar.Header{
-			Name: "foo/ignore-me.go",
+		Hebder: tbr.Hebder{
+			Nbme: "foo/ignore-me.go",
 		},
 	}, {
-		Ignore: false,
-		Header: tar.Header{
-			Name: "bar/dont-ignore-me.go",
+		Ignore: fblse,
+		Hebder: tbr.Hebder{
+			Nbme: "bbr/dont-ignore-me.go",
 		},
 	}, {
-		// https://github.com/sourcegraph/sourcegraph/issues/23841
+		// https://github.com/sourcegrbph/sourcegrbph/issues/23841
 		Ignore: true,
-		Header: tar.Header{
-			Name: "bar/large-file.go",
+		Hebder: tbr.Hebder{
+			Nbme: "bbr/lbrge-file.go",
 			Size: 2 << 21,
 		},
 	}}
 
-	for _, tc := range cases {
-		got := ig(&tc.Header)
+	for _, tc := rbnge cbses {
+		got := ig(&tc.Hebder)
 		if got != tc.Ignore {
-			t.Errorf("unexpected ignore want=%v got %v for %v", tc.Ignore, got, tc.Header.Name)
+			t.Errorf("unexpected ignore wbnt=%v got %v for %v", tc.Ignore, got, tc.Hebder.Nbme)
 		}
 	}
 }
 
 func TestMissingIgnoreFile(t *testing.T) {
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.ReadFileFunc.SetDefaultReturn(nil, errors.Errorf("err open .sourcegraph/ignore: file does not exist"))
+	gitserverClient.RebdFileFunc.SetDefbultReturn(nil, errors.Errorf("err open .sourcegrbph/ignore: file does not exist"))
 
-	ig, err := NewFilter(context.Background(), gitserverClient, "", "")
+	ig, err := NewFilter(context.Bbckground(), gitserverClient, "", "")
 	if err != nil {
 		t.Error(err)
 	}
 
-	// Quick check that we don't ignore.
-	f := func(name string) bool {
-		return !ig(&tar.Header{
-			Name: name,
+	// Quick check thbt we don't ignore.
+	f := func(nbme string) bool {
+		return !ig(&tbr.Hebder{
+			Nbme: nbme,
 		})
 	}
 	if err := quick.Check(f, nil); err != nil {

@@ -1,65 +1,65 @@
-package client
+pbckbge client
 
 import (
 	"strings"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
 )
 
-func TestComputeMatchContextStreamDecoder_ReadAll(t *testing.T) {
-	raw := `event: results
-data: [{"matches":[{"value":"go 1.17","range":{"start":{"offset":-1,"line":2,"column":0},"end":{"offset":-1,"line":2,"column":7}},"environment":{"1":{"value":"1.17","range":{"start":{"offset":-1,"line":2,"column":3},"end":{"offset":-1,"line":2,"column":7}}}}}],"path":"go.mod","repositoryID":11,"repository":"github.com/sourcegraph/sourcegraph"}]
+func TestComputeMbtchContextStrebmDecoder_RebdAll(t *testing.T) {
+	rbw := `event: results
+dbtb: [{"mbtches":[{"vblue":"go 1.17","rbnge":{"stbrt":{"offset":-1,"line":2,"column":0},"end":{"offset":-1,"line":2,"column":7}},"environment":{"1":{"vblue":"1.17","rbnge":{"stbrt":{"offset":-1,"line":2,"column":3},"end":{"offset":-1,"line":2,"column":7}}}}}],"pbth":"go.mod","repositoryID":11,"repository":"github.com/sourcegrbph/sourcegrbph"}]
 
 event: progress
-data: {"reason": "shard-timeout"}
+dbtb: {"rebson": "shbrd-timeout"}
 
 event: progress
-data: {"message": "progress"}
+dbtb: {"messbge": "progress"}
 
-event: alert
-data: {"title": "alert"}
+event: blert
+dbtb: {"title": "blert"}
 
 event: error
-data: {"message": "error"}
+dbtb: {"messbge": "error"}
 
 event: done
-data: {}`
+dbtb: {}`
 
 	resultCount := 0
 	progressCount := 0
-	alertCount := 0
+	blertCount := 0
 	errorCount := 0
 	unknownCount := 0
-	decoder := ComputeMatchContextStreamDecoder{
-		OnResult: func(results []compute.MatchContext) {
+	decoder := ComputeMbtchContextStrebmDecoder{
+		OnResult: func(results []compute.MbtchContext) {
 			resultCount += len(results)
 		},
-		OnProgress: func(p *api.Progress) {
+		OnProgress: func(p *bpi.Progress) {
 			progressCount++
 		},
 		OnAlert: func(event *http.EventAlert) {
-			alertCount++
+			blertCount++
 		},
 		OnError: func(event *http.EventError) {
 			errorCount++
 		},
-		OnUnknown: func(event, data []byte) {
+		OnUnknown: func(event, dbtb []byte) {
 			unknownCount++
 		},
 	}
 
-	err := decoder.ReadAll(strings.NewReader(raw))
+	err := decoder.RebdAll(strings.NewRebder(rbw))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	autogold.Expect(1).Equal(t, resultCount)
-	autogold.Expect(2).Equal(t, progressCount)
-	autogold.Expect(1).Equal(t, alertCount)
-	autogold.Expect(1).Equal(t, errorCount)
-	autogold.Expect(0).Equal(t, unknownCount)
+	butogold.Expect(1).Equbl(t, resultCount)
+	butogold.Expect(2).Equbl(t, progressCount)
+	butogold.Expect(1).Equbl(t, blertCount)
+	butogold.Expect(1).Equbl(t, errorCount)
+	butogold.Expect(0).Equbl(t, unknownCount)
 }

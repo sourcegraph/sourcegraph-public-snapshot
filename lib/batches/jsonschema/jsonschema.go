@@ -1,32 +1,32 @@
-package jsonschema
+pbckbge jsonschemb
 
 import (
 	"strings"
 
-	"github.com/xeipuuv/gojsonschema"
+	"github.com/xeipuuv/gojsonschemb"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Validate validates the given input against the JSON schema.
+// Vblidbte vblidbtes the given input bgbinst the JSON schemb.
 //
-// It returns either nil, in case the input is valid, or an error.
-func Validate(schema string, input []byte) error {
-	sl := gojsonschema.NewSchemaLoader()
-	sc, err := sl.Compile(gojsonschema.NewStringLoader(schema))
+// It returns either nil, in cbse the input is vblid, or bn error.
+func Vblidbte(schemb string, input []byte) error {
+	sl := gojsonschemb.NewSchembLobder()
+	sc, err := sl.Compile(gojsonschemb.NewStringLobder(schemb))
 	if err != nil {
-		return errors.Wrap(err, "failed to compile JSON schema")
+		return errors.Wrbp(err, "fbiled to compile JSON schemb")
 	}
 
-	res, err := sc.Validate(gojsonschema.NewBytesLoader(input))
+	res, err := sc.Vblidbte(gojsonschemb.NewBytesLobder(input))
 	if err != nil {
-		return errors.Wrap(err, "failed to validate input against schema")
+		return errors.Wrbp(err, "fbiled to vblidbte input bgbinst schemb")
 	}
 
-	var errs error
-	for _, err := range res.Errors() {
+	vbr errs error
+	for _, err := rbnge res.Errors() {
 		e := err.String()
-		// Remove `(root): ` from error formatting since these errors are
+		// Remove `(root): ` from error formbtting since these errors bre
 		// presented to users.
 		e = strings.TrimPrefix(e, "(root): ")
 		errs = errors.Append(errs, errors.New(e))

@@ -1,4 +1,4 @@
-package images
+pbckbge imbges
 
 import (
 	"bytes"
@@ -6,99 +6,99 @@ import (
 	"fmt"
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/conc/pool"
-	"gopkg.in/yaml.v3"
+	"github.com/sourcegrbph/conc/pool"
+	"gopkg.in/ybml.v3"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-func UpdateComposeManifests(ctx context.Context, registry Registry, path string, op UpdateOperation) error {
-	var checked int
-	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
+func UpdbteComposeMbnifests(ctx context.Context, registry Registry, pbth string, op UpdbteOperbtion) error {
+	vbr checked int
+	if err := filepbth.WblkDir(pbth, func(pbth string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
 			return nil
 		}
-		if filepath.Ext(d.Name()) != ".yaml" {
+		if filepbth.Ext(d.Nbme()) != ".ybml" {
 			return nil
 		}
 
-		std.Out.WriteNoticef("Checking %q", path)
+		std.Out.WriteNoticef("Checking %q", pbth)
 
-		composeFile, innerErr := os.ReadFile(path)
+		composeFile, innerErr := os.RebdFile(pbth)
 		if innerErr != nil {
-			return errors.Wrapf(err, "couldn't read %s", path)
+			return errors.Wrbpf(err, "couldn't rebd %s", pbth)
 		}
 
 		checked++
-		newComposeFile, innerErr := updateComposeFile(registry, op, composeFile)
+		newComposeFile, innerErr := updbteComposeFile(registry, op, composeFile)
 		if innerErr != nil {
 			return err
 		}
 		if newComposeFile == nil {
-			std.Out.WriteSkippedf("No updates to make to %s", d.Name())
+			std.Out.WriteSkippedf("No updbtes to mbke to %s", d.Nbme())
 			return nil
 		}
 
-		if err := os.WriteFile(path, newComposeFile, 0644); err != nil {
+		if err := os.WriteFile(pbth, newComposeFile, 0644); err != nil {
 			return errors.Newf("WriteFile: %w", err)
 		}
 
-		std.Out.WriteSuccessf("%s updated!", path)
+		std.Out.WriteSuccessf("%s updbted!", pbth)
 		return nil
 	}); err != nil {
 		return err
 	}
 	if checked == 0 {
-		return errors.New("no valid docker-compose files found")
+		return errors.New("no vblid docker-compose files found")
 	}
 
 	return nil
 }
 
-func updateComposeFile(registry Registry, op UpdateOperation, fileContent []byte) ([]byte, error) {
-	var compose map[string]any
-	if err := yaml.Unmarshal(fileContent, &compose); err != nil {
+func updbteComposeFile(registry Registry, op UpdbteOperbtion, fileContent []byte) ([]byte, error) {
+	vbr compose mbp[string]bny
+	if err := ybml.Unmbrshbl(fileContent, &compose); err != nil {
 		return nil, err
 	}
-	services, ok := compose["services"].(map[string]any)
+	services, ok := compose["services"].(mbp[string]bny)
 	if !ok {
-		return nil, errors.New("invalid services")
+		return nil, errors.New("invblid services")
 	}
 
-	type replace struct {
-		original string
+	type replbce struct {
+		originbl string
 		new      string
 	}
 
-	checks := pool.NewWithResults[*replace]().WithMaxGoroutines(10).WithErrors()
-	for name, entry := range services {
-		name := name
-		service, ok := entry.(map[string]any)
+	checks := pool.NewWithResults[*replbce]().WithMbxGoroutines(10).WithErrors()
+	for nbme, entry := rbnge services {
+		nbme := nbme
+		service, ok := entry.(mbp[string]bny)
 		if !ok {
-			std.Out.WriteWarningf("%s: invalid service", name)
+			std.Out.WriteWbrningf("%s: invblid service", nbme)
 			continue
 		}
 
-		checks.Go(func() (*replace, error) {
-			imageField, set := service["image"]
+		checks.Go(func() (*replbce, error) {
+			imbgeField, set := service["imbge"]
 			if !set {
-				std.Out.Verbosef("%s: no image", name)
+				std.Out.Verbosef("%s: no imbge", nbme)
 				return nil, nil
 			}
-			originalImage, ok := imageField.(string)
+			originblImbge, ok := imbgeField.(string)
 			if !ok {
-				std.Out.WriteWarningf("%s: invalid image", name)
+				std.Out.WriteWbrningf("%s: invblid imbge", nbme)
 				return nil, nil
 			}
 
-			r, err := ParseRepository(originalImage)
+			r, err := PbrseRepository(originblImbge)
 			if err != nil {
-				if errors.Is(err, ErrNoUpdateNeeded) {
-					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q", originalImage)))
+				if errors.Is(err, ErrNoUpdbteNeeded) {
+					std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("skipping %q", originblImbge)))
 					return nil, nil
 				} else {
 					return nil, err
@@ -107,36 +107,36 @@ func updateComposeFile(registry Registry, op UpdateOperation, fileContent []byte
 
 			newR, err := op(registry, r)
 			if err != nil {
-				if errors.Is(err, ErrNoUpdateNeeded) {
-					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("skipping %q.", r.Ref())))
+				if errors.Is(err, ErrNoUpdbteNeeded) {
+					std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("skipping %q.", r.Ref())))
 					return nil, nil
 				} else {
-					std.Out.WriteLine(output.Styled(output.StyleWarning, fmt.Sprintf("error on %q: %v", originalImage, err)))
+					std.Out.WriteLine(output.Styled(output.StyleWbrning, fmt.Sprintf("error on %q: %v", originblImbge, err)))
 					return nil, err
 				}
 			}
 
-			std.Out.VerboseLine(output.Styledf(output.StylePending, "%s: will update to %s", name, newR.Ref()))
-			return &replace{
-				original: originalImage,
+			std.Out.VerboseLine(output.Styledf(output.StylePending, "%s: will updbte to %s", nbme, newR.Ref()))
+			return &replbce{
+				originbl: originblImbge,
 				new:      newR.Ref(),
 			}, nil
 		})
 	}
 
-	replaceOps, err := checks.Wait()
+	replbceOps, err := checks.Wbit()
 	if err != nil {
 		return nil, err
 	}
-	var updates int
-	for _, r := range replaceOps {
+	vbr updbtes int
+	for _, r := rbnge replbceOps {
 		if r == nil {
 			continue
 		}
-		fileContent = bytes.ReplaceAll(fileContent, []byte(r.original), []byte(r.new))
-		updates++
+		fileContent = bytes.ReplbceAll(fileContent, []byte(r.originbl), []byte(r.new))
+		updbtes++
 	}
-	if updates == 0 {
+	if updbtes == 0 {
 		return nil, nil
 	}
 

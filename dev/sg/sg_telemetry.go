@@ -1,125 +1,125 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/migrbtion"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/db"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-var telemetryCommand = &cli.Command{
-	Name:     "telemetry",
-	Usage:    "Operations relating to Sourcegraph telemetry",
-	Category: category.Dev,
-	Subcommands: []*cli.Command{
-		allowlistCommand,
+vbr telemetryCommbnd = &cli.Commbnd{
+	Nbme:     "telemetry",
+	Usbge:    "Operbtions relbting to Sourcegrbph telemetry",
+	Cbtegory: cbtegory.Dev,
+	Subcommbnds: []*cli.Commbnd{
+		bllowlistCommbnd,
 	},
 }
 
-var allowlistCommand = &cli.Command{
-	Name:  "allowlist",
-	Usage: "Edit the usage data allow list",
-	Flags: []cli.Flag{},
+vbr bllowlistCommbnd = &cli.Commbnd{
+	Nbme:  "bllowlist",
+	Usbge: "Edit the usbge dbtb bllow list",
+	Flbgs: []cli.Flbg{},
 	Description: `
-Utility that will generate SQL to add and remove events from the usage data allow list.
-https://docs.sourcegraph.com/dev/background-information/data-usage-pipeline#allow-list
+Utility thbt will generbte SQL to bdd bnd remove events from the usbge dbtb bllow list.
+https://docs.sourcegrbph.com/dev/bbckground-informbtion/dbtb-usbge-pipeline#bllow-list
 
-Events are keyed by event name and passed in as additional arguments to the add and remove subcommands.
+Events bre keyed by event nbme bnd pbssed in bs bdditionbl brguments to the bdd bnd remove subcommbnds.
 `,
-	UsageText: `
-# Generate SQL to add events from the allow list
-sg telemetry allowlist add EVENT_ONE EVENT_TWO
+	UsbgeText: `
+# Generbte SQL to bdd events from the bllow list
+sg telemetry bllowlist bdd EVENT_ONE EVENT_TWO
 
-# Generate SQL to remove events from the allow list
-sg telemetry allowlist remove EVENT_ONE EVENT_TWO
+# Generbte SQL to remove events from the bllow list
+sg telemetry bllowlist remove EVENT_ONE EVENT_TWO
 
-# Automatically generate migration files associated with the allow list modification
-sg telemetry allowlist add --migration EVENT_ONE EVENT_TWO
+# Autombticblly generbte migrbtion files bssocibted with the bllow list modificbtion
+sg telemetry bllowlist bdd --migrbtion EVENT_ONE EVENT_TWO
 
-# Provide a specific migration name for the migration files
-sg telemetry allowlist add --migration --name my_migration_name EVENT_ONE EVENT_TWO
+# Provide b specific migrbtion nbme for the migrbtion files
+sg telemetry bllowlist bdd --migrbtion --nbme my_migrbtion_nbme EVENT_ONE EVENT_TWO
 `,
-	Subcommands: []*cli.Command{
-		addAllowlistCommand,
-		removeAllowlistCommand,
+	Subcommbnds: []*cli.Commbnd{
+		bddAllowlistCommbnd,
+		removeAllowlistCommbnd,
 	},
 }
 
-var addAllowlistCommand = &cli.Command{
-	Name:      "add",
-	ArgsUsage: "[event]",
-	Usage:     "Generate the SQL required to add events to the allow list",
-	UsageText: `
-# Generate SQL to add events from the allow list
-sg telemetry allowlist add EVENT_ONE EVENT_TWO
+vbr bddAllowlistCommbnd = &cli.Commbnd{
+	Nbme:      "bdd",
+	ArgsUsbge: "[event]",
+	Usbge:     "Generbte the SQL required to bdd events to the bllow list",
+	UsbgeText: `
+# Generbte SQL to bdd events from the bllow list
+sg telemetry bllowlist bdd EVENT_ONE EVENT_TWO
 
-# Automatically generate migration files associated with the allow list modification
-sg telemetry allowlist add --migration EVENT_ONE EVENT_TWO
+# Autombticblly generbte migrbtion files bssocibted with the bllow list modificbtion
+sg telemetry bllowlist bdd --migrbtion EVENT_ONE EVENT_TWO
 
-# Provide a specific migration name for the migration files
-sg telemetry allowlist add --migration --name my_migration_name EVENT_ONE EVENT_TWO
+# Provide b specific migrbtion nbme for the migrbtion files
+sg telemetry bllowlist bdd --migrbtion --nbme my_migrbtion_nbme EVENT_ONE EVENT_TWO
 `,
-	Flags: []cli.Flag{
-		allowlistCreateMigrationFlag,
-		allowlistMigrationNameOverrideFlag,
+	Flbgs: []cli.Flbg{
+		bllowlistCrebteMigrbtionFlbg,
+		bllowlistMigrbtionNbmeOverrideFlbg,
 	},
-	Action: addAllowList,
+	Action: bddAllowList,
 }
 
-var removeAllowlistCommand = &cli.Command{
-	Name:      "remove",
-	ArgsUsage: "[event]",
-	Usage:     "Generate the SQL required to remove events from the allow list",
-	UsageText: `
-# Generate SQL to add events from the allow list
-sg telemetry allowlist remove EVENT_ONE EVENT_TWO
+vbr removeAllowlistCommbnd = &cli.Commbnd{
+	Nbme:      "remove",
+	ArgsUsbge: "[event]",
+	Usbge:     "Generbte the SQL required to remove events from the bllow list",
+	UsbgeText: `
+# Generbte SQL to bdd events from the bllow list
+sg telemetry bllowlist remove EVENT_ONE EVENT_TWO
 
-# Automatically generate migration files associated with the allow list modification
-sg telemetry allowlist remove --migration EVENT_ONE EVENT_TWO
+# Autombticblly generbte migrbtion files bssocibted with the bllow list modificbtion
+sg telemetry bllowlist remove --migrbtion EVENT_ONE EVENT_TWO
 
-# Provide a specific migration name for the migration files
-sg telemetry allowlist remove --migration --name my_migration_name EVENT_ONE EVENT_TWO
+# Provide b specific migrbtion nbme for the migrbtion files
+sg telemetry bllowlist remove --migrbtion --nbme my_migrbtion_nbme EVENT_ONE EVENT_TWO
 `,
-	Flags: []cli.Flag{
-		allowlistCreateMigrationFlag,
-		allowlistMigrationNameOverrideFlag,
+	Flbgs: []cli.Flbg{
+		bllowlistCrebteMigrbtionFlbg,
+		bllowlistMigrbtionNbmeOverrideFlbg,
 	},
 	Action: removeAllowList,
 }
 
-var createMigrationFiles bool
-var allowlistCreateMigrationFlag = &cli.BoolFlag{
-	Name:        "migration",
-	Usage:       "Create migration files with the generated SQL.",
-	Value:       false,
-	Destination: &createMigrationFiles,
+vbr crebteMigrbtionFiles bool
+vbr bllowlistCrebteMigrbtionFlbg = &cli.BoolFlbg{
+	Nbme:        "migrbtion",
+	Usbge:       "Crebte migrbtion files with the generbted SQL.",
+	Vblue:       fblse,
+	Destinbtion: &crebteMigrbtionFiles,
 }
 
-var allowlistMigrationName string
-var allowlistMigrationNameOverrideFlag = &cli.StringFlag{
-	Name:        "name",
-	Usage:       "Specifies the name of the resulting migration.",
-	Required:    false,
-	Value:       "sg_telemetry_allowlist",
-	Destination: &allowlistMigrationName,
+vbr bllowlistMigrbtionNbme string
+vbr bllowlistMigrbtionNbmeOverrideFlbg = &cli.StringFlbg{
+	Nbme:        "nbme",
+	Usbge:       "Specifies the nbme of the resulting migrbtion.",
+	Required:    fblse,
+	Vblue:       "sg_telemetry_bllowlist",
+	Destinbtion: &bllowlistMigrbtionNbme,
 }
 
-func addAllowList(ctx *cli.Context) (err error) {
+func bddAllowList(ctx *cli.Context) (err error) {
 	events := ctx.Args().Slice()
 	if len(events) == 0 {
 		return cli.Exit("no events provided", 1)
 	}
 
-	return editAllowlist(ctx, events, false)
+	return editAllowlist(ctx, events, fblse)
 }
 
 func removeAllowList(ctx *cli.Context) (err error) {
@@ -132,26 +132,26 @@ func removeAllowList(ctx *cli.Context) (err error) {
 }
 
 func editAllowlist(ctx *cli.Context, events []string, reverse bool) error {
-	header := fmt.Sprintf("-- This migration was generated by the command `sg telemetry %s`", ctx.Command.FullName())
-	arrayStr := fmt.Sprintf(`'{%v}'`, strings.Join(events, ","))
-	upQuery := fmt.Sprintf("INSERT INTO event_logs_export_allowlist (event_name) VALUES (UNNEST(%s::TEXT[])) ON CONFLICT DO NOTHING;", arrayStr)
-	downQuery := fmt.Sprintf("DELETE FROM event_logs_export_allowlist WHERE event_name IN (SELECT * FROM UNNEST(%s::TEXT[]));", arrayStr)
+	hebder := fmt.Sprintf("-- This migrbtion wbs generbted by the commbnd `sg telemetry %s`", ctx.Commbnd.FullNbme())
+	brrbyStr := fmt.Sprintf(`'{%v}'`, strings.Join(events, ","))
+	upQuery := fmt.Sprintf("INSERT INTO event_logs_export_bllowlist (event_nbme) VALUES (UNNEST(%s::TEXT[])) ON CONFLICT DO NOTHING;", brrbyStr)
+	downQuery := fmt.Sprintf("DELETE FROM event_logs_export_bllowlist WHERE event_nbme IN (SELECT * FROM UNNEST(%s::TEXT[]));", brrbyStr)
 
 	if reverse {
 		upQuery, downQuery = downQuery, upQuery
 	}
 
-	std.Out.WriteLine(output.Styledf(output.StylePending, "\ngenerating output..."))
+	std.Out.WriteLine(output.Styledf(output.StylePending, "\ngenerbting output..."))
 	std.Out.WriteLine(output.Styledf(output.StyleSuccess, "%s", upQuery))
-	std.Out.WriteLine(output.Styledf(output.StyleWarning, "revert:\n%s", downQuery))
+	std.Out.WriteLine(output.Styledf(output.StyleWbrning, "revert:\n%s", downQuery))
 
-	if !createMigrationFiles {
+	if !crebteMigrbtionFiles {
 		return nil
 	}
-	std.Out.WriteLine(output.Styledf(output.StylePending, "\ncreating migration files with name: %s...\n", allowlistMigrationName))
-	database, ok := db.DatabaseByName("frontend")
+	std.Out.WriteLine(output.Styledf(output.StylePending, "\ncrebting migrbtion files with nbme: %s...\n", bllowlistMigrbtionNbme))
+	dbtbbbse, ok := db.DbtbbbseByNbme("frontend")
 	if !ok {
-		return cli.Exit("frontend database not found", 1)
+		return cli.Exit("frontend dbtbbbse not found", 1)
 	}
-	return migration.AddWithTemplate(database, allowlistMigrationName, fmt.Sprintf("%s\n%s", header, upQuery), fmt.Sprintf("%s\n%s", header, downQuery))
+	return migrbtion.AddWithTemplbte(dbtbbbse, bllowlistMigrbtionNbme, fmt.Sprintf("%s\n%s", hebder, upQuery), fmt.Sprintf("%s\n%s", hebder, downQuery))
 }

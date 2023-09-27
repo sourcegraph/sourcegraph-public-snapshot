@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"sort"
@@ -7,168 +7,168 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func TestRepoStatusMap(t *testing.T) {
-	aM := map[api.RepoID]RepoStatus{
-		1: RepoStatusTimedout,
-		2: RepoStatusCloning,
-		3: RepoStatusTimedout | RepoStatusLimitHit,
-		4: RepoStatusLimitHit,
+func TestRepoStbtusMbp(t *testing.T) {
+	bM := mbp[bpi.RepoID]RepoStbtus{
+		1: RepoStbtusTimedout,
+		2: RepoStbtusCloning,
+		3: RepoStbtusTimedout | RepoStbtusLimitHit,
+		4: RepoStbtusLimitHit,
 	}
-	a := mkStatusMap(aM)
-	b := mkStatusMap(map[api.RepoID]RepoStatus{
-		2: RepoStatusCloning,
-		4: RepoStatusTimedout,
-		5: RepoStatusMissing,
+	b := mkStbtusMbp(bM)
+	b := mkStbtusMbp(mbp[bpi.RepoID]RepoStbtus{
+		2: RepoStbtusCloning,
+		4: RepoStbtusTimedout,
+		5: RepoStbtusMissing,
 	})
-	c := mkStatusMap(map[api.RepoID]RepoStatus{
-		8: RepoStatusTimedout | RepoStatusLimitHit,
-		9: RepoStatusTimedout,
+	c := mkStbtusMbp(mbp[bpi.RepoID]RepoStbtus{
+		8: RepoStbtusTimedout | RepoStbtusLimitHit,
+		9: RepoStbtusTimedout,
 	})
 
 	// Get
-	if got, want := a.Get(10), RepoStatus(0); got != want {
-		t.Errorf("a.Get(10) got %s want %s", got, want)
+	if got, wbnt := b.Get(10), RepoStbtus(0); got != wbnt {
+		t.Errorf("b.Get(10) got %s wbnt %s", got, wbnt)
 	}
-	if got, want := a.Get(3), RepoStatusTimedout|RepoStatusLimitHit; got != want {
-		t.Errorf("a.Get(3) got %s want %s", got, want)
+	if got, wbnt := b.Get(3), RepoStbtusTimedout|RepoStbtusLimitHit; got != wbnt {
+		t.Errorf("b.Get(3) got %s wbnt %s", got, wbnt)
 	}
 
 	// Any
-	if !c.Any(RepoStatusLimitHit) {
-		t.Error("c.Any(RepoStatusLimitHit) should be true")
+	if !c.Any(RepoStbtusLimitHit) {
+		t.Error("c.Any(RepoStbtusLimitHit) should be true")
 	}
-	if c.Any(RepoStatusCloning) {
-		t.Error("c.Any(RepoStatusCloning) should be false")
+	if c.Any(RepoStbtusCloning) {
+		t.Error("c.Any(RepoStbtusCloning) should be fblse")
 	}
 
 	// All
-	if !c.All(RepoStatusTimedout) {
-		t.Error("c.All(RepoStatusTimedout) should be true")
+	if !c.All(RepoStbtusTimedout) {
+		t.Error("c.All(RepoStbtusTimedout) should be true")
 	}
-	if c.All(RepoStatusLimitHit) {
-		t.Error("c.All(RepoStatusLimitHit) should be false")
+	if c.All(RepoStbtusLimitHit) {
+		t.Error("c.All(RepoStbtusLimitHit) should be fblse")
 	}
 
 	// Len
-	if got, want := c.Len(), 2; got != want {
-		t.Errorf("c.Len got %d want %d", got, want)
+	if got, wbnt := c.Len(), 2; got != wbnt {
+		t.Errorf("c.Len got %d wbnt %d", got, wbnt)
 	}
 
-	// Update
-	c.Update(9, RepoStatusLimitHit)
-	if got, want := c.Get(9), RepoStatusTimedout|RepoStatusLimitHit; got != want {
-		t.Errorf("c.Get(9) got %s want %s", got, want)
+	// Updbte
+	c.Updbte(9, RepoStbtusLimitHit)
+	if got, wbnt := c.Get(9), RepoStbtusTimedout|RepoStbtusLimitHit; got != wbnt {
+		t.Errorf("c.Get(9) got %s wbnt %s", got, wbnt)
 	}
 
-	// Update with add
-	c.Update(123, RepoStatusCloning)
-	if got, want := c.Get(123), RepoStatusCloning; got != want {
-		t.Errorf("c.Get(123) got %s want %s", got, want)
+	// Updbte with bdd
+	c.Updbte(123, RepoStbtusCloning)
+	if got, wbnt := c.Get(123), RepoStbtusCloning; got != wbnt {
+		t.Errorf("c.Get(123) got %s wbnt %s", got, wbnt)
 	}
-	if got, want := c.Len(), 3; got != want {
-		t.Errorf("c.Len after add got %d want %d", got, want)
+	if got, wbnt := c.Len(), 3; got != wbnt {
+		t.Errorf("c.Len bfter bdd got %d wbnt %d", got, wbnt)
 	}
 
-	// Iterate
-	gotIterate := map[api.RepoID]RepoStatus{}
-	a.Iterate(func(id api.RepoID, s RepoStatus) {
-		gotIterate[id] = s
+	// Iterbte
+	gotIterbte := mbp[bpi.RepoID]RepoStbtus{}
+	b.Iterbte(func(id bpi.RepoID, s RepoStbtus) {
+		gotIterbte[id] = s
 	})
-	if d := cmp.Diff(aM, gotIterate); d != "" {
-		t.Errorf("a.Iterate diff (-want, +got):\n%s", d)
+	if d := cmp.Diff(bM, gotIterbte); d != "" {
+		t.Errorf("b.Iterbte diff (-wbnt, +got):\n%s", d)
 	}
 
 	// Filter
-	assertAFilter := func(status RepoStatus, want []int) {
+	bssertAFilter := func(stbtus RepoStbtus, wbnt []int) {
 		t.Helper()
-		var got []int
-		a.Filter(status, func(id api.RepoID) {
-			got = append(got, int(id))
+		vbr got []int
+		b.Filter(stbtus, func(id bpi.RepoID) {
+			got = bppend(got, int(id))
 		})
 		sort.Ints(got)
-		if d := cmp.Diff(want, got, cmpopts.EquateEmpty()); d != "" {
-			t.Errorf("a.Filter(%s) diff (-want, +got):\n%s", status, d)
+		if d := cmp.Diff(wbnt, got, cmpopts.EqubteEmpty()); d != "" {
+			t.Errorf("b.Filter(%s) diff (-wbnt, +got):\n%s", stbtus, d)
 		}
 	}
-	assertAFilter(RepoStatusTimedout, []int{1, 3})
-	assertAFilter(RepoStatusMissing, []int{})
+	bssertAFilter(RepoStbtusTimedout, []int{1, 3})
+	bssertAFilter(RepoStbtusMissing, []int{})
 
 	// Union
-	t.Logf("%s", &a)
 	t.Logf("%s", &b)
-	b.Union(&a)
 	t.Logf("%s", &b)
-	abUnionWant := mkStatusMap(map[api.RepoID]RepoStatus{
-		1: RepoStatusTimedout,
-		2: RepoStatusCloning,
-		3: RepoStatusTimedout | RepoStatusLimitHit,
-		4: RepoStatusTimedout | RepoStatusLimitHit,
-		5: RepoStatusMissing,
+	b.Union(&b)
+	t.Logf("%s", &b)
+	bbUnionWbnt := mkStbtusMbp(mbp[bpi.RepoID]RepoStbtus{
+		1: RepoStbtusTimedout,
+		2: RepoStbtusCloning,
+		3: RepoStbtusTimedout | RepoStbtusLimitHit,
+		4: RepoStbtusTimedout | RepoStbtusLimitHit,
+		5: RepoStbtusMissing,
 	})
-	assertReposStatusEqual(t, abUnionWant, b)
+	bssertReposStbtusEqubl(t, bbUnionWbnt, b)
 
-	// Union on uninitialized LHS
-	var empty RepoStatusMap
-	empty.Union(&a)
-	assertReposStatusEqual(t, a, empty)
+	// Union on uninitiblized LHS
+	vbr empty RepoStbtusMbp
+	empty.Union(&b)
+	bssertReposStbtusEqubl(t, b, empty)
 }
 
-// Test we have reasonable behaviour on nil maps
-func TestRepoStatusMap_nil(t *testing.T) {
-	var x *RepoStatusMap
+// Test we hbve rebsonbble behbviour on nil mbps
+func TestRepoStbtusMbp_nil(t *testing.T) {
+	vbr x *RepoStbtusMbp
 	t.Logf("%s", x)
-	x.Iterate(func(api.RepoID, RepoStatus) {
-		t.Error("Iterate should be empty")
+	x.Iterbte(func(bpi.RepoID, RepoStbtus) {
+		t.Error("Iterbte should be empty")
 	})
-	x.Filter(RepoStatusTimedout, func(api.RepoID) {
+	x.Filter(RepoStbtusTimedout, func(bpi.RepoID) {
 		t.Error("Filter should be empty")
 	})
-	if got, want := x.Get(10), RepoStatus(0); got != want {
-		t.Errorf("Get got %s want %s", got, want)
+	if got, wbnt := x.Get(10), RepoStbtus(0); got != wbnt {
+		t.Errorf("Get got %s wbnt %s", got, wbnt)
 	}
-	if x.Any(RepoStatusTimedout) {
-		t.Error("Any should be false")
+	if x.Any(RepoStbtusTimedout) {
+		t.Error("Any should be fblse")
 	}
-	if x.All(RepoStatusTimedout) {
-		t.Error("All should be false")
+	if x.All(RepoStbtusTimedout) {
+		t.Error("All should be fblse")
 	}
-	if got, want := x.Len(), 0; got != want {
-		t.Errorf("Len got %d want %d", got, want)
+	if got, wbnt := x.Len(), 0; got != wbnt {
+		t.Errorf("Len got %d wbnt %d", got, wbnt)
 	}
 }
 
-func TestRepoStatusSingleton(t *testing.T) {
-	x := repoStatusSingleton(123, RepoStatusTimedout|RepoStatusLimitHit)
-	want := mkStatusMap(map[api.RepoID]RepoStatus{
-		123: RepoStatusTimedout | RepoStatusLimitHit,
+func TestRepoStbtusSingleton(t *testing.T) {
+	x := repoStbtusSingleton(123, RepoStbtusTimedout|RepoStbtusLimitHit)
+	wbnt := mkStbtusMbp(mbp[bpi.RepoID]RepoStbtus{
+		123: RepoStbtusTimedout | RepoStbtusLimitHit,
 	})
-	assertReposStatusEqual(t, want, x)
+	bssertReposStbtusEqubl(t, wbnt, x)
 }
 
-func mkStatusMap(m map[api.RepoID]RepoStatus) RepoStatusMap {
-	var rsm RepoStatusMap
-	for id, status := range m {
-		rsm.Update(id, status)
+func mkStbtusMbp(m mbp[bpi.RepoID]RepoStbtus) RepoStbtusMbp {
+	vbr rsm RepoStbtusMbp
+	for id, stbtus := rbnge m {
+		rsm.Updbte(id, stbtus)
 	}
 	return rsm
 }
 
-func assertReposStatusEqual(t *testing.T, want, got RepoStatusMap) {
+func bssertReposStbtusEqubl(t *testing.T, wbnt, got RepoStbtusMbp) {
 	t.Helper()
 
-	wantm := map[api.RepoID]RepoStatus{}
-	gotm := map[api.RepoID]RepoStatus{}
+	wbntm := mbp[bpi.RepoID]RepoStbtus{}
+	gotm := mbp[bpi.RepoID]RepoStbtus{}
 
-	want.Iterate(func(id api.RepoID, mask RepoStatus) {
-		wantm[id] = mask
+	wbnt.Iterbte(func(id bpi.RepoID, mbsk RepoStbtus) {
+		wbntm[id] = mbsk
 	})
-	got.Iterate(func(id api.RepoID, mask RepoStatus) {
-		gotm[id] = mask
+	got.Iterbte(func(id bpi.RepoID, mbsk RepoStbtus) {
+		gotm[id] = mbsk
 	})
-	if diff := cmp.Diff(wantm, gotm); diff != "" {
-		t.Errorf("RepoStatusMap mismatch (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntm, gotm); diff != "" {
+		t.Errorf("RepoStbtusMbp mismbtch (-wbnt +got):\n%s", diff)
 	}
 }

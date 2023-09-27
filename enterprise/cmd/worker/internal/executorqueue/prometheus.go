@@ -1,12 +1,12 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-func initPrometheusMetric[T workerutil.Record](observationCtx *observation.Context, queueName string, store store.Store[T]) {
-	dbworker.InitPrometheusMetric(observationCtx, store, "", "executor", map[string]string{"queue": queueName})
+func initPrometheusMetric[T workerutil.Record](observbtionCtx *observbtion.Context, queueNbme string, store store.Store[T]) {
+	dbworker.InitPrometheusMetric(observbtionCtx, store, "", "executor", mbp[string]string{"queue": queueNbme})
 }

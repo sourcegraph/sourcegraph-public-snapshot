@@ -1,78 +1,78 @@
-package types
+pbckbge types
 
 import (
 	"fmt"
 	"time"
 )
 
-// CodeIntelAggregatedEvent represents the total events and unique users within
-// the current week for a single event. The events are split again by language id
-// code intel action (e.g. definitions, references, hovers), and the code intel
-// data source (e.g. precise, search).
-type CodeIntelAggregatedEvent struct {
-	Name        string
-	LanguageID  *string
+// CodeIntelAggregbtedEvent represents the totbl events bnd unique users within
+// the current week for b single event. The events bre split bgbin by lbngubge id
+// code intel bction (e.g. definitions, references, hovers), bnd the code intel
+// dbtb source (e.g. precise, sebrch).
+type CodeIntelAggregbtedEvent struct {
+	Nbme        string
+	LbngubgeID  *string
 	Week        time.Time
-	TotalWeek   int32
+	TotblWeek   int32
 	UniquesWeek int32
 }
 
-// CodeIntelAggregatedEvent represents the total events and unique users within
-// the current week for a single investigation event (user-CTAs on code intel badges).
-// data source (e.g. precise, search).
-type CodeIntelAggregatedInvestigationEvent struct {
-	Name        string
+// CodeIntelAggregbtedEvent represents the totbl events bnd unique users within
+// the current week for b single investigbtion event (user-CTAs on code intel bbdges).
+// dbtb source (e.g. precise, sebrch).
+type CodeIntelAggregbtedInvestigbtionEvent struct {
+	Nbme        string
 	Week        time.Time
-	TotalWeek   int32
+	TotblWeek   int32
 	UniquesWeek int32
 }
 
-// NewCodeIntelUsageStatistics is the type used within the updatecheck handler.
-// This is sent from private instances to the cloud frontends, where it is further
-// massaged and inserted into a BigQuery.
-type NewCodeIntelUsageStatistics struct {
-	StartOfWeek                                      time.Time
+// NewCodeIntelUsbgeStbtistics is the type used within the updbtecheck hbndler.
+// This is sent from privbte instbnces to the cloud frontends, where it is further
+// mbssbged bnd inserted into b BigQuery.
+type NewCodeIntelUsbgeStbtistics struct {
+	StbrtOfWeek                                      time.Time
 	WAUs                                             *int32
 	PreciseWAUs                                      *int32
-	SearchBasedWAUs                                  *int32
+	SebrchBbsedWAUs                                  *int32
 	CrossRepositoryWAUs                              *int32
 	PreciseCrossRepositoryWAUs                       *int32
-	SearchBasedCrossRepositoryWAUs                   *int32
-	EventSummaries                                   []CodeIntelEventSummary
+	SebrchBbsedCrossRepositoryWAUs                   *int32
+	EventSummbries                                   []CodeIntelEventSummbry
 	NumRepositories                                  *int32
-	NumRepositoriesWithUploadRecords                 *int32
-	NumRepositoriesWithoutUploadRecords              *int32 // Deprecated, no longer sent
-	NumRepositoriesWithFreshUploadRecords            *int32
+	NumRepositoriesWithUplobdRecords                 *int32
+	NumRepositoriesWithoutUplobdRecords              *int32 // Deprecbted, no longer sent
+	NumRepositoriesWithFreshUplobdRecords            *int32
 	NumRepositoriesWithIndexRecords                  *int32
 	NumRepositoriesWithFreshIndexRecords             *int32
-	NumRepositoriesWithAutoIndexConfigurationRecords *int32
-	CountsByLanguage                                 map[string]CodeIntelRepositoryCountsByLanguage
-	SettingsPageViewCount                            *int32
-	UsersWithRefPanelRedesignEnabled                 *int32
-	LanguageRequests                                 []LanguageRequest
-	InvestigationEvents                              []CodeIntelInvestigationEvent
+	NumRepositoriesWithAutoIndexConfigurbtionRecords *int32
+	CountsByLbngubge                                 mbp[string]CodeIntelRepositoryCountsByLbngubge
+	SettingsPbgeViewCount                            *int32
+	UsersWithRefPbnelRedesignEnbbled                 *int32
+	LbngubgeRequests                                 []LbngubgeRequest
+	InvestigbtionEvents                              []CodeIntelInvestigbtionEvent
 }
 
-type CodeIntelRepositoryCountsByLanguage struct {
-	NumRepositoriesWithUploadRecords      *int32
-	NumRepositoriesWithFreshUploadRecords *int32
+type CodeIntelRepositoryCountsByLbngubge struct {
+	NumRepositoriesWithUplobdRecords      *int32
+	NumRepositoriesWithFreshUplobdRecords *int32
 	NumRepositoriesWithIndexRecords       *int32
 	NumRepositoriesWithFreshIndexRecords  *int32
 }
 
-type CodeIntelEventSummary struct {
+type CodeIntelEventSummbry struct {
 	Action          CodeIntelAction
 	Source          CodeIntelSource
-	LanguageID      string
+	LbngubgeID      string
 	CrossRepository bool
 	WAUs            int32
-	TotalActions    int32
+	TotblActions    int32
 }
 
 type CodeIntelAction int
 
 const (
-	UnknownAction CodeIntelAction = iota
+	UnknownAction CodeIntelAction = iotb
 	HoverAction
 	DefinitionsAction
 	ReferencesAction
@@ -81,80 +81,80 @@ const (
 type CodeIntelSource int
 
 const (
-	UnknownSource CodeIntelSource = iota
+	UnknownSource CodeIntelSource = iotb
 	PreciseSource
-	SearchSource
+	SebrchSource
 )
 
-type LanguageRequest struct {
-	LanguageID  string
+type LbngubgeRequest struct {
+	LbngubgeID  string
 	NumRequests int32
 }
 
-type CodeIntelInvestigationEvent struct {
-	Type  CodeIntelInvestigationType
+type CodeIntelInvestigbtionEvent struct {
+	Type  CodeIntelInvestigbtionType
 	WAUs  int32
-	Total int32
+	Totbl int32
 }
 
-type CodeIntelInvestigationType int
+type CodeIntelInvestigbtionType int
 
 const (
-	CodeIntelUnknownInvestigationType CodeIntelInvestigationType = iota
-	CodeIntelIndexerSetupInvestigationType
-	CodeIntelUploadErrorInvestigationType
-	CodeIntelIndexErrorInvestigationType
+	CodeIntelUnknownInvestigbtionType CodeIntelInvestigbtionType = iotb
+	CodeIntelIndexerSetupInvestigbtionType
+	CodeIntelUplobdErrorInvestigbtionType
+	CodeIntelIndexErrorInvestigbtionType
 )
 
-// OldCodeIntelUsageStatistics is an old version the code intelligence
-// usage statics we can receive from a pre-3.22 Sourcegraph instance.
-type OldCodeIntelUsageStatistics struct {
-	Weekly []*OldCodeIntelUsagePeriod
+// OldCodeIntelUsbgeStbtistics is bn old version the code intelligence
+// usbge stbtics we cbn receive from b pre-3.22 Sourcegrbph instbnce.
+type OldCodeIntelUsbgeStbtistics struct {
+	Weekly []*OldCodeIntelUsbgePeriod
 }
 
-type OldCodeIntelUsagePeriod struct {
-	StartTime   time.Time
-	Hover       *OldCodeIntelEventCategoryStatistics
-	Definitions *OldCodeIntelEventCategoryStatistics
-	References  *OldCodeIntelEventCategoryStatistics
+type OldCodeIntelUsbgePeriod struct {
+	StbrtTime   time.Time
+	Hover       *OldCodeIntelEventCbtegoryStbtistics
+	Definitions *OldCodeIntelEventCbtegoryStbtistics
+	References  *OldCodeIntelEventCbtegoryStbtistics
 }
 
-type OldCodeIntelEventCategoryStatistics struct {
-	LSIF   *OldCodeIntelEventStatistics
-	Search *OldCodeIntelEventStatistics
+type OldCodeIntelEventCbtegoryStbtistics struct {
+	LSIF   *OldCodeIntelEventStbtistics
+	Sebrch *OldCodeIntelEventStbtistics
 }
 
-type OldCodeIntelEventStatistics struct {
+type OldCodeIntelEventStbtistics struct {
 	UsersCount  int32
 	EventsCount *int32
 }
 
-type RepoCommitPath struct {
+type RepoCommitPbth struct {
 	Repo   string `json:"repo"`
 	Commit string `json:"commit"`
-	Path   string `json:"path"`
+	Pbth   string `json:"pbth"`
 }
 
-func (r RepoCommitPath) String() string {
-	return fmt.Sprintf("%s %s %s", r.Repo, r.Commit, r.Path)
+func (r RepoCommitPbth) String() string {
+	return fmt.Sprintf("%s %s %s", r.Repo, r.Commit, r.Pbth)
 }
 
-type LocalCodeIntelPayload struct {
+type LocblCodeIntelPbylobd struct {
 	Symbols []Symbol `json:"symbols"`
 }
 
-type RepoCommitPathRange struct {
-	RepoCommitPath
-	Range
+type RepoCommitPbthRbnge struct {
+	RepoCommitPbth
+	Rbnge
 }
 
-type RepoCommitPathMaybeRange struct {
-	RepoCommitPath
-	*Range
+type RepoCommitPbthMbybeRbnge struct {
+	RepoCommitPbth
+	*Rbnge
 }
 
-type RepoCommitPathPoint struct {
-	RepoCommitPath
+type RepoCommitPbthPoint struct {
+	RepoCommitPbth
 	Point
 }
 
@@ -164,28 +164,28 @@ type Point struct {
 }
 
 type Symbol struct {
-	Name  string  `json:"name"`
+	Nbme  string  `json:"nbme"`
 	Hover string  `json:"hover,omitempty"`
-	Def   Range   `json:"def,omitempty"`
-	Refs  []Range `json:"refs,omitempty"`
+	Def   Rbnge   `json:"def,omitempty"`
+	Refs  []Rbnge `json:"refs,omitempty"`
 }
 
 func (s Symbol) String() string {
 	return fmt.Sprintf("Symbol{Hover: %q, Def: %s, Refs: %+v", s.Hover, s.Def, s.Refs)
 }
 
-type Range struct {
+type Rbnge struct {
 	Row    int `json:"row"`
 	Column int `json:"column"`
 	Length int `json:"length"`
 }
 
-func (r Range) String() string {
+func (r Rbnge) String() string {
 	return fmt.Sprintf("%d:%d:%d", r.Row, r.Column, r.Length)
 }
 
 type SymbolInfo struct {
-	Definition RepoCommitPathMaybeRange `json:"definition"`
+	Definition RepoCommitPbthMbybeRbnge `json:"definition"`
 	Hover      *string                  `json:"hover,omitempty"`
 }
 
@@ -195,8 +195,8 @@ func (s SymbolInfo) String() string {
 		hover = *s.Hover
 	}
 	rnge := "<nil>"
-	if s.Definition.Range != nil {
-		rnge = s.Definition.Range.String()
+	if s.Definition.Rbnge != nil {
+		rnge = s.Definition.Rbnge.String()
 	}
-	return fmt.Sprintf("SymbolInfo{Definition: %s %s, Hover: %q}", s.Definition.RepoCommitPath, rnge, hover)
+	return fmt.Sprintf("SymbolInfo{Definition: %s %s, Hover: %q}", s.Definition.RepoCommitPbth, rnge, hover)
 }

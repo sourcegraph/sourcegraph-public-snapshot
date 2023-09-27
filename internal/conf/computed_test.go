@@ -1,150 +1,150 @@
-package conf
+pbckbge conf
 
 import (
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestAuthPasswordResetLinkDuration(t *testing.T) {
+func TestAuthPbsswordResetLinkDurbtion(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 		sc   *Unified
-		want int
+		wbnt int
 	}{{
-		name: "password link expiry has a default value if null",
+		nbme: "pbssword link expiry hbs b defbult vblue if null",
 		sc:   &Unified{},
-		want: defaultPasswordLinkExpiry,
+		wbnt: defbultPbsswordLinkExpiry,
 	}, {
-		name: "password link expiry has a default value if blank",
-		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{AuthPasswordResetLinkExpiry: 0}},
-		want: defaultPasswordLinkExpiry,
+		nbme: "pbssword link expiry hbs b defbult vblue if blbnk",
+		sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthPbsswordResetLinkExpiry: 0}},
+		wbnt: defbultPbsswordLinkExpiry,
 	}, {
-		name: "password link expiry can be customized",
-		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{AuthPasswordResetLinkExpiry: 60}},
-		want: 60,
+		nbme: "pbssword link expiry cbn be customized",
+		sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthPbsswordResetLinkExpiry: 60}},
+		wbnt: 60,
 	}}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			Mock(test.sc)
-			if got, want := AuthPasswordResetLinkExpiry(), test.want; got != want {
-				t.Fatalf("AuthPasswordResetLinkExpiry() = %v, want %v", got, want)
+			if got, wbnt := AuthPbsswordResetLinkExpiry(), test.wbnt; got != wbnt {
+				t.Fbtblf("AuthPbsswordResetLinkExpiry() = %v, wbnt %v", got, wbnt)
 			}
 		})
 	}
 }
 
-func TestGitLongCommandTimeout(t *testing.T) {
+func TestGitLongCommbndTimeout(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 		sc   *Unified
-		want time.Duration
+		wbnt time.Durbtion
 	}{{
-		name: "Git long command timeout has a default value if null",
+		nbme: "Git long commbnd timeout hbs b defbult vblue if null",
 		sc:   &Unified{},
-		want: defaultGitLongCommandTimeout,
+		wbnt: defbultGitLongCommbndTimeout,
 	}, {
-		name: "Git long command timeout has a default value if blank",
-		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitLongCommandTimeout: 0}},
-		want: defaultGitLongCommandTimeout,
+		nbme: "Git long commbnd timeout hbs b defbult vblue if blbnk",
+		sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitLongCommbndTimeout: 0}},
+		wbnt: defbultGitLongCommbndTimeout,
 	}, {
-		name: "Git long command timeout can be customized",
-		sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitLongCommandTimeout: 60}},
-		want: time.Duration(60) * time.Second,
+		nbme: "Git long commbnd timeout cbn be customized",
+		sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitLongCommbndTimeout: 60}},
+		wbnt: time.Durbtion(60) * time.Second,
 	}}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			Mock(test.sc)
-			if got, want := GitLongCommandTimeout(), test.want; got != want {
-				t.Fatalf("GitLongCommandTimeout() = %v, want %v", got, want)
+			if got, wbnt := GitLongCommbndTimeout(), test.wbnt; got != wbnt {
+				t.Fbtblf("GitLongCommbndTimeout() = %v, wbnt %v", got, wbnt)
 			}
 		})
 	}
 }
 
-func TestGitMaxCodehostRequestsPerSecond(t *testing.T) {
+func TestGitMbxCodehostRequestsPerSecond(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 		sc   *Unified
-		want int
+		wbnt int
 	}{
 		{
-			name: "not set should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			want: -1,
+			nbme: "not set should return defbult",
+			sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}},
+			wbnt: -1,
 		},
 		{
-			name: "bad value should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
-			want: -1,
+			nbme: "bbd vblue should return defbult",
+			sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitMbxCodehostRequestsPerSecond: pointers.Ptr(-100)}},
+			wbnt: -1,
 		},
 		{
-			name: "set 0 should return 0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(0)}},
-			want: 0,
+			nbme: "set 0 should return 0",
+			sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitMbxCodehostRequestsPerSecond: pointers.Ptr(0)}},
+			wbnt: 0,
 		},
 		{
-			name: "set non-0 should return non-0",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{GitMaxCodehostRequestsPerSecond: pointers.Ptr(100)}},
-			want: 100,
+			nbme: "set non-0 should return non-0",
+			sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{GitMbxCodehostRequestsPerSecond: pointers.Ptr(100)}},
+			wbnt: 100,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			Mock(test.sc)
-			if got, want := GitMaxCodehostRequestsPerSecond(), test.want; got != want {
-				t.Fatalf("GitMaxCodehostRequestsPerSecond() = %v, want %v", got, want)
+			if got, wbnt := GitMbxCodehostRequestsPerSecond(), test.wbnt; got != wbnt {
+				t.Fbtblf("GitMbxCodehostRequestsPerSecond() = %v, wbnt %v", got, wbnt)
 			}
 		})
 	}
 }
 
-func TestGitMaxConcurrentClones(t *testing.T) {
+func TestGitMbxConcurrentClones(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 		sc   *Unified
-		want int
+		wbnt int
 	}{
 		{
-			name: "not set should return default",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			want: 5,
+			nbme: "not set should return defbult",
+			sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}},
+			wbnt: 5,
 		},
 		{
-			name: "bad value should return default",
+			nbme: "bbd vblue should return defbult",
 			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					GitMaxConcurrentClones: -100,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					GitMbxConcurrentClones: -100,
 				},
 			},
-			want: 5,
+			wbnt: 5,
 		},
 		{
-			name: "set non-zero should return non-zero",
+			nbme: "set non-zero should return non-zero",
 			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					GitMaxConcurrentClones: 100,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					GitMbxConcurrentClones: 100,
 				},
 			},
-			want: 100,
+			wbnt: 100,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			Mock(test.sc)
-			if got, want := GitMaxConcurrentClones(), test.want; got != want {
-				t.Fatalf("GitMaxConcurrentClones() = %v, want %v", got, want)
+			if got, wbnt := GitMbxConcurrentClones(), test.wbnt; got != wbnt {
+				t.Fbtblf("GitMbxConcurrentClones() = %v, wbnt %v", got, wbnt)
 			}
 		})
 	}
@@ -154,539 +154,539 @@ func TestAuthLockout(t *testing.T) {
 	defer Mock(nil)
 
 	tests := []struct {
-		name string
-		mock *schema.AuthLockout
-		want *schema.AuthLockout
+		nbme string
+		mock *schemb.AuthLockout
+		wbnt *schemb.AuthLockout
 	}{
 		{
-			name: "missing entire config",
+			nbme: "missing entire config",
 			mock: nil,
-			want: &schema.AuthLockout{
+			wbnt: &schemb.AuthLockout{
 				ConsecutivePeriod:      3600,
-				FailedAttemptThreshold: 5,
+				FbiledAttemptThreshold: 5,
 				LockoutPeriod:          1800,
 			},
 		},
 		{
-			name: "missing all fields",
-			mock: &schema.AuthLockout{},
-			want: &schema.AuthLockout{
+			nbme: "missing bll fields",
+			mock: &schemb.AuthLockout{},
+			wbnt: &schemb.AuthLockout{
 				ConsecutivePeriod:      3600,
-				FailedAttemptThreshold: 5,
+				FbiledAttemptThreshold: 5,
 				LockoutPeriod:          1800,
 			},
 		},
 		{
-			name: "missing some fields",
-			mock: &schema.AuthLockout{
+			nbme: "missing some fields",
+			mock: &schemb.AuthLockout{
 				ConsecutivePeriod: 7200,
 			},
-			want: &schema.AuthLockout{
+			wbnt: &schemb.AuthLockout{
 				ConsecutivePeriod:      7200,
-				FailedAttemptThreshold: 5,
+				FbiledAttemptThreshold: 5,
 				LockoutPeriod:          1800,
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			Mock(&Unified{
-				SiteConfiguration: schema.SiteConfiguration{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
 					AuthLockout: test.mock,
 				},
 			})
 
 			got := AuthLockout()
-			assert.Equal(t, test.want, got)
+			bssert.Equbl(t, test.wbnt, got)
 		})
 	}
 }
 
-func TestIsAccessRequestEnabled(t *testing.T) {
-	falseVal, trueVal := false, true
+func TestIsAccessRequestEnbbled(t *testing.T) {
+	fblseVbl, trueVbl := fblse, true
 	tests := []struct {
-		name string
+		nbme string
 		sc   *Unified
-		want bool
+		wbnt bool
 	}{
 		{
-			name: "not set should return default true",
-			sc:   &Unified{SiteConfiguration: schema.SiteConfiguration{}},
-			want: true,
+			nbme: "not set should return defbult true",
+			sc:   &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}},
+			wbnt: true,
 		},
 		{
-			name: "parent object set should return default true",
+			nbme: "pbrent object set should return defbult true",
 			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthAccessRequest: &schema.AuthAccessRequest{},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthAccessRequest: &schemb.AuthAccessRequest{},
 				},
 			},
-			want: true,
+			wbnt: true,
 		},
 		{
-			name: "explicitly set enabled=true should return true",
+			nbme: "explicitly set enbbled=true should return true",
 			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthAccessRequest: &schema.AuthAccessRequest{Enabled: &trueVal},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthAccessRequest: &schemb.AuthAccessRequest{Enbbled: &trueVbl},
 				},
 			},
-			want: true,
+			wbnt: true,
 		},
 		{
-			name: "explicitly set enabled=false should return false",
+			nbme: "explicitly set enbbled=fblse should return fblse",
 			sc: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					AuthAccessRequest: &schema.AuthAccessRequest{
-						Enabled: &falseVal,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					AuthAccessRequest: &schemb.AuthAccessRequest{
+						Enbbled: &fblseVbl,
 					},
 				},
 			},
-			want: false,
+			wbnt: fblse,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			Mock(test.sc)
-			have := IsAccessRequestEnabled()
-			assert.Equal(t, test.want, have)
+			hbve := IsAccessRequestEnbbled()
+			bssert.Equbl(t, test.wbnt, hbve)
 		})
 	}
 }
 
-func TestCodyEnabled(t *testing.T) {
+func TestCodyEnbbled(t *testing.T) {
 	tests := []struct {
-		name string
-		sc   schema.SiteConfiguration
-		want bool
+		nbme string
+		sc   schemb.SiteConfigurbtion
+		wbnt bool
 	}{
 		{
-			name: "nothing set",
-			sc:   schema.SiteConfiguration{},
-			want: false,
+			nbme: "nothing set",
+			sc:   schemb.SiteConfigurbtion{},
+			wbnt: fblse,
 		},
 		{
-			name: "cody enabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true)},
-			want: true,
+			nbme: "cody enbbled",
+			sc:   schemb.SiteConfigurbtion{CodyEnbbled: pointers.Ptr(true)},
+			wbnt: true,
 		},
 		{
-			name: "cody disabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false)},
-			want: false,
+			nbme: "cody disbbled",
+			sc:   schemb.SiteConfigurbtion{CodyEnbbled: pointers.Ptr(fblse)},
+			wbnt: fblse,
 		},
 		{
-			name: "cody enabled, completions configured",
-			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(true), Completions: &schema.Completions{Model: "foobar"}},
-			want: true,
+			nbme: "cody enbbled, completions configured",
+			sc:   schemb.SiteConfigurbtion{CodyEnbbled: pointers.Ptr(true), Completions: &schemb.Completions{Model: "foobbr"}},
+			wbnt: true,
 		},
 		{
-			name: "cody disabled, completions enabled",
-			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
-			want: false,
+			nbme: "cody disbbled, completions enbbled",
+			sc:   schemb.SiteConfigurbtion{CodyEnbbled: pointers.Ptr(fblse), Completions: &schemb.Completions{Enbbled: pointers.Ptr(true), Model: "foobbr"}},
+			wbnt: fblse,
 		},
 		{
-			name: "cody disabled, completions configured",
-			sc:   schema.SiteConfiguration{CodyEnabled: pointers.Ptr(false), Completions: &schema.Completions{Model: "foobar"}},
-			want: false,
+			nbme: "cody disbbled, completions configured",
+			sc:   schemb.SiteConfigurbtion{CodyEnbbled: pointers.Ptr(fblse), Completions: &schemb.Completions{Model: "foobbr"}},
+			wbnt: fblse,
 		},
 		{
-			// Legacy support: remove this once completions.enabled is removed
-			name: "cody.enabled not set, completions configured but not enabled",
-			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Model: "foobar"}},
-			want: false,
+			// Legbcy support: remove this once completions.enbbled is removed
+			nbme: "cody.enbbled not set, completions configured but not enbbled",
+			sc:   schemb.SiteConfigurbtion{Completions: &schemb.Completions{Model: "foobbr"}},
+			wbnt: fblse,
 		},
 		{
-			// Legacy support: remove this once completions.enabled is removed
-			name: "cody.enabled not set, completions configured and enabled",
-			sc:   schema.SiteConfiguration{Completions: &schema.Completions{Enabled: pointers.Ptr(true), Model: "foobar"}},
-			want: true,
+			// Legbcy support: remove this once completions.enbbled is removed
+			nbme: "cody.enbbled not set, completions configured bnd enbbled",
+			sc:   schemb.SiteConfigurbtion{Completions: &schemb.Completions{Enbbled: pointers.Ptr(true), Model: "foobbr"}},
+			wbnt: true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			Mock(&Unified{SiteConfiguration: test.sc})
-			have := CodyEnabled()
-			assert.Equal(t, test.want, have)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			Mock(&Unified{SiteConfigurbtion: test.sc})
+			hbve := CodyEnbbled()
+			bssert.Equbl(t, test.wbnt, hbve)
 		})
 	}
 }
 
 func TestGetCompletionsConfig(t *testing.T) {
-	licenseKey := "theasdfkey"
-	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
-	zeroConfigDefaultWithLicense := &conftypes.CompletionsConfig{
-		ChatModel:                "anthropic/claude-2",
-		ChatModelMaxTokens:       12000,
-		FastChatModel:            "anthropic/claude-instant-1",
-		FastChatModelMaxTokens:   9000,
-		CompletionModel:          "anthropic/claude-instant-1",
-		CompletionModelMaxTokens: 9000,
+	licenseKey := "thebsdfkey"
+	licenseAccessToken := license.GenerbteLicenseKeyBbsedAccessToken(licenseKey)
+	zeroConfigDefbultWithLicense := &conftypes.CompletionsConfig{
+		ChbtModel:                "bnthropic/clbude-2",
+		ChbtModelMbxTokens:       12000,
+		FbstChbtModel:            "bnthropic/clbude-instbnt-1",
+		FbstChbtModelMbxTokens:   9000,
+		CompletionModel:          "bnthropic/clbude-instbnt-1",
+		CompletionModelMbxTokens: 9000,
 		AccessToken:              licenseAccessToken,
-		Provider:                 "sourcegraph",
-		Endpoint:                 "https://cody-gateway.sourcegraph.com",
+		Provider:                 "sourcegrbph",
+		Endpoint:                 "https://cody-gbtewby.sourcegrbph.com",
 	}
 
-	testCases := []struct {
-		name         string
-		siteConfig   schema.SiteConfiguration
+	testCbses := []struct {
+		nbme         string
+		siteConfig   schemb.SiteConfigurbtion
 		deployType   string
-		wantConfig   *conftypes.CompletionsConfig
-		wantDisabled bool
+		wbntConfig   *conftypes.CompletionsConfig
+		wbntDisbbled bool
 	}{
 		{
-			name: "Completions disabled",
-			siteConfig: schema.SiteConfiguration{
+			nbme: "Completions disbbled",
+			siteConfig: schemb.SiteConfigurbtion{
 				LicenseKey: licenseKey,
-				Completions: &schema.Completions{
-					Enabled: pointers.Ptr(false),
+				Completions: &schemb.Completions{
+					Enbbled: pointers.Ptr(fblse),
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "Completions disabled, but Cody enabled",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Completions disbbled, but Cody enbbled",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Enabled: pointers.Ptr(false),
+				Completions: &schemb.Completions{
+					Enbbled: pointers.Ptr(fblse),
 				},
 			},
-			// cody.enabled=true and completions.enabled=false, the newer
-			// cody.enabled takes precedence and completions is enabled.
-			wantConfig: zeroConfigDefaultWithLicense,
+			// cody.enbbled=true bnd completions.enbbled=fblse, the newer
+			// cody.enbbled tbkes precedence bnd completions is enbbled.
+			wbntConfig: zeroConfigDefbultWithLicense,
 		},
 		{
-			name: "cody.enabled and empty completions object",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "cody.enbbled bnd empty completions object",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{},
+				Completions: &schemb.Completions{},
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wbntConfig: zeroConfigDefbultWithLicense,
 		},
 		{
-			name: "cody.enabled set false",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(false),
-				Completions: &schema.Completions{},
+			nbme: "cody.enbbled set fblse",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(fblse),
+				Completions: &schemb.Completions{},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "no cody config",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: nil,
+			nbme: "no cody config",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: nil,
 				Completions: nil,
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "Invalid provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Invblid provider",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Provider: "invalid",
+				Completions: &schemb.Completions{
+					Provider: "invblid",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "anthropic completions",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "bnthropic completions",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Enabled:     pointers.Ptr(true),
-					Provider:    "anthropic",
-					AccessToken: "asdf",
+				Completions: &schemb.Completions{
+					Enbbled:     pointers.Ptr(true),
+					Provider:    "bnthropic",
+					AccessToken: "bsdf",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-2",
-				ChatModelMaxTokens:       12000,
-				FastChatModel:            "claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
-				CompletionModelMaxTokens: 9000,
-				AccessToken:              "asdf",
-				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
-			},
-		},
-		{
-			name: "anthropic completions, with only completions.enabled",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Enabled:         pointers.Ptr(true),
-					Provider:        "anthropic",
-					AccessToken:     "asdf",
-					ChatModel:       "claude-v1",
-					CompletionModel: "claude-instant-1",
-				},
-			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "claude-v1",
-				ChatModelMaxTokens:       9000,
-				FastChatModel:            "claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "claude-instant-1",
-				CompletionModelMaxTokens: 9000,
-				AccessToken:              "asdf",
-				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "clbude-2",
+				ChbtModelMbxTokens:       12000,
+				FbstChbtModel:            "clbude-instbnt-1",
+				FbstChbtModelMbxTokens:   9000,
+				CompletionModel:          "clbude-instbnt-1",
+				CompletionModelMbxTokens: 9000,
+				AccessToken:              "bsdf",
+				Provider:                 "bnthropic",
+				Endpoint:                 "https://bpi.bnthropic.com/v1/complete",
 			},
 		},
 		{
-			name: "soucregraph completions defaults",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "bnthropic completions, with only completions.enbbled",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Provider: "sourcegraph",
+				Completions: &schemb.Completions{
+					Enbbled:         pointers.Ptr(true),
+					Provider:        "bnthropic",
+					AccessToken:     "bsdf",
+					ChbtModel:       "clbude-v1",
+					CompletionModel: "clbude-instbnt-1",
 				},
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "clbude-v1",
+				ChbtModelMbxTokens:       9000,
+				FbstChbtModel:            "clbude-instbnt-1",
+				FbstChbtModelMbxTokens:   9000,
+				CompletionModel:          "clbude-instbnt-1",
+				CompletionModelMbxTokens: 9000,
+				AccessToken:              "bsdf",
+				Provider:                 "bnthropic",
+				Endpoint:                 "https://bpi.bnthropic.com/v1/complete",
+			},
 		},
 		{
-			name: "OpenAI completions completions",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "soucregrbph completions defbults",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Provider:    "openai",
-					AccessToken: "asdf",
+				Completions: &schemb.Completions{
+					Provider: "sourcegrbph",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "gpt-4",
-				ChatModelMaxTokens:       8000,
-				FastChatModel:            "gpt-3.5-turbo",
-				FastChatModelMaxTokens:   4000,
+			wbntConfig: zeroConfigDefbultWithLicense,
+		},
+		{
+			nbme: "OpenAI completions completions",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				LicenseKey:  licenseKey,
+				Completions: &schemb.Completions{
+					Provider:    "openbi",
+					AccessToken: "bsdf",
+				},
+			},
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "gpt-4",
+				ChbtModelMbxTokens:       8000,
+				FbstChbtModel:            "gpt-3.5-turbo",
+				FbstChbtModelMbxTokens:   4000,
 				CompletionModel:          "gpt-3.5-turbo",
-				CompletionModelMaxTokens: 4000,
-				AccessToken:              "asdf",
-				Provider:                 "openai",
-				Endpoint:                 "https://api.openai.com/v1/chat/completions",
+				CompletionModelMbxTokens: 4000,
+				AccessToken:              "bsdf",
+				Provider:                 "openbi",
+				Endpoint:                 "https://bpi.openbi.com/v1/chbt/completions",
 			},
 		},
 		{
-			name: "Azure OpenAI completions completions",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Azure OpenAI completions completions",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Provider:        "azure-openai",
-					AccessToken:     "asdf",
-					Endpoint:        "https://acmecorp.openai.azure.com",
-					ChatModel:       "gpt4-deployment",
-					FastChatModel:   "gpt35-turbo-deployment",
+				Completions: &schemb.Completions{
+					Provider:        "bzure-openbi",
+					AccessToken:     "bsdf",
+					Endpoint:        "https://bcmecorp.openbi.bzure.com",
+					ChbtModel:       "gpt4-deployment",
+					FbstChbtModel:   "gpt35-turbo-deployment",
 					CompletionModel: "gpt35-turbo-deployment",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "gpt4-deployment",
-				ChatModelMaxTokens:       8000,
-				FastChatModel:            "gpt35-turbo-deployment",
-				FastChatModelMaxTokens:   8000,
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "gpt4-deployment",
+				ChbtModelMbxTokens:       8000,
+				FbstChbtModel:            "gpt35-turbo-deployment",
+				FbstChbtModelMbxTokens:   8000,
 				CompletionModel:          "gpt35-turbo-deployment",
-				CompletionModelMaxTokens: 8000,
-				AccessToken:              "asdf",
-				Provider:                 "azure-openai",
-				Endpoint:                 "https://acmecorp.openai.azure.com",
+				CompletionModelMbxTokens: 8000,
+				AccessToken:              "bsdf",
+				Provider:                 "bzure-openbi",
+				Endpoint:                 "https://bcmecorp.openbi.bzure.com",
 			},
 		},
 		{
-			name: "Fireworks completions completions",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Fireworks completions completions",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
+				Completions: &schemb.Completions{
 					Provider:    "fireworks",
-					AccessToken: "asdf",
+					AccessToken: "bsdf",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "accounts/fireworks/models/llama-v2-7b",
-				ChatModelMaxTokens:       3000,
-				FastChatModel:            "accounts/fireworks/models/llama-v2-7b",
-				FastChatModelMaxTokens:   3000,
-				CompletionModel:          "accounts/fireworks/models/starcoder-7b-w8a16",
-				CompletionModelMaxTokens: 6000,
-				AccessToken:              "asdf",
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "bccounts/fireworks/models/llbmb-v2-7b",
+				ChbtModelMbxTokens:       3000,
+				FbstChbtModel:            "bccounts/fireworks/models/llbmb-v2-7b",
+				FbstChbtModelMbxTokens:   3000,
+				CompletionModel:          "bccounts/fireworks/models/stbrcoder-7b-w8b16",
+				CompletionModelMbxTokens: 6000,
+				AccessToken:              "bsdf",
 				Provider:                 "fireworks",
-				Endpoint:                 "https://api.fireworks.ai/inference/v1/completions",
+				Endpoint:                 "https://bpi.fireworks.bi/inference/v1/completions",
 			},
 		},
 		{
-			name: "AWS Bedrock completions completions",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "AWS Bedrock completions completions",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					Provider: "aws-bedrock",
+				Completions: &schemb.Completions{
+					Provider: "bws-bedrock",
 					Endpoint: "us-west-2",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "anthropic.claude-v2",
-				ChatModelMaxTokens:       12000,
-				FastChatModel:            "anthropic.claude-instant-v1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic.claude-instant-v1",
-				CompletionModelMaxTokens: 9000,
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "bnthropic.clbude-v2",
+				ChbtModelMbxTokens:       12000,
+				FbstChbtModel:            "bnthropic.clbude-instbnt-v1",
+				FbstChbtModelMbxTokens:   9000,
+				CompletionModel:          "bnthropic.clbude-instbnt-v1",
+				CompletionModelMbxTokens: 9000,
 				AccessToken:              "",
-				Provider:                 "aws-bedrock",
+				Provider:                 "bws-bedrock",
 				Endpoint:                 "us-west-2",
 			},
 		},
 		{
-			name: "zero-config cody gateway completions without license key",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "zero-config cody gbtewby completions without license key",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  "",
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "zero-config cody gateway completions with license key",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "zero-config cody gbtewby completions with license key",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wbntConfig: zeroConfigDefbultWithLicense,
 		},
 		{
-			name: "zero-config cody gateway completions without provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "zero-config cody gbtewby completions without provider",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Completions: &schema.Completions{
-					ChatModel:       "anthropic/claude-v1.3",
-					FastChatModel:   "anthropic/claude-instant-1.3",
-					CompletionModel: "anthropic/claude-instant-1.3",
+				Completions: &schemb.Completions{
+					ChbtModel:       "bnthropic/clbude-v1.3",
+					FbstChbtModel:   "bnthropic/clbude-instbnt-1.3",
+					CompletionModel: "bnthropic/clbude-instbnt-1.3",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				ChatModel:                "anthropic/claude-v1.3",
-				ChatModelMaxTokens:       9000,
-				FastChatModel:            "anthropic/claude-instant-1.3",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic/claude-instant-1.3",
-				CompletionModelMaxTokens: 9000,
+			wbntConfig: &conftypes.CompletionsConfig{
+				ChbtModel:                "bnthropic/clbude-v1.3",
+				ChbtModelMbxTokens:       9000,
+				FbstChbtModel:            "bnthropic/clbude-instbnt-1.3",
+				FbstChbtModelMbxTokens:   9000,
+				CompletionModel:          "bnthropic/clbude-instbnt-1.3",
+				CompletionModelMbxTokens: 9000,
 				AccessToken:              licenseAccessToken,
-				Provider:                 "sourcegraph",
-				Endpoint:                 "https://cody-gateway.sourcegraph.com",
+				Provider:                 "sourcegrbph",
+				Endpoint:                 "https://cody-gbtewby.sourcegrbph.com",
 			},
 		},
 		{
-			// Legacy support for completions.enabled
-			name: "legacy field completions.enabled: zero-config cody gateway completions without license key",
-			siteConfig: schema.SiteConfiguration{
-				Completions: &schema.Completions{Enabled: pointers.Ptr(true)},
+			// Legbcy support for completions.enbbled
+			nbme: "legbcy field completions.enbbled: zero-config cody gbtewby completions without license key",
+			siteConfig: schemb.SiteConfigurbtion{
+				Completions: &schemb.Completions{Enbbled: pointers.Ptr(true)},
 				LicenseKey:  "",
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "legacy field completions.enabled: zero-config cody gateway completions with license key",
-			siteConfig: schema.SiteConfiguration{
-				Completions: &schema.Completions{
-					Enabled: pointers.Ptr(true),
+			nbme: "legbcy field completions.enbbled: zero-config cody gbtewby completions with license key",
+			siteConfig: schemb.SiteConfigurbtion{
+				Completions: &schemb.Completions{
+					Enbbled: pointers.Ptr(true),
 				},
 				LicenseKey: licenseKey,
 			},
-			// Not supported, zero-config is new and should be using the new
+			// Not supported, zero-config is new bnd should be using the new
 			// config.
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name:       "app zero-config cody gateway completions with dotcom token",
+			nbme:       "bpp zero-config cody gbtewby completions with dotcom token",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				App: &schemb.App{
 					DotcomAuthToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
-				AccessToken:              "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-				ChatModel:                "anthropic/claude-2",
-				ChatModelMaxTokens:       12000,
-				FastChatModel:            "anthropic/claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				CompletionModel:          "anthropic/claude-instant-1",
-				CompletionModelMaxTokens: 9000,
-				Endpoint:                 "https://cody-gateway.sourcegraph.com",
-				Provider:                 "sourcegraph",
+			wbntConfig: &conftypes.CompletionsConfig{
+				AccessToken:              "sgd_5df6e0e2761359d30b8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				ChbtModel:                "bnthropic/clbude-2",
+				ChbtModelMbxTokens:       12000,
+				FbstChbtModel:            "bnthropic/clbude-instbnt-1",
+				FbstChbtModelMbxTokens:   9000,
+				CompletionModel:          "bnthropic/clbude-instbnt-1",
+				CompletionModelMbxTokens: 9000,
+				Endpoint:                 "https://cody-gbtewby.sourcegrbph.com",
+				Provider:                 "sourcegrbph",
 			},
 		},
 		{
-			name:       "app with custom configuration",
+			nbme:       "bpp with custom configurbtion",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Completions: &schema.Completions{
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				Completions: &schemb.Completions{
 					AccessToken:     "CUSTOM_TOKEN",
-					Provider:        "anthropic",
-					ChatModel:       "claude-v1",
-					FastChatModel:   "claude-instant-1",
-					CompletionModel: "claude-instant-1",
+					Provider:        "bnthropic",
+					ChbtModel:       "clbude-v1",
+					FbstChbtModel:   "clbude-instbnt-1",
+					CompletionModel: "clbude-instbnt-1",
 				},
-				App: &schema.App{
+				App: &schemb.App{
 					DotcomAuthToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.CompletionsConfig{
+			wbntConfig: &conftypes.CompletionsConfig{
 				AccessToken:              "CUSTOM_TOKEN",
-				ChatModel:                "claude-v1",
-				ChatModelMaxTokens:       9000,
-				CompletionModel:          "claude-instant-1",
-				FastChatModelMaxTokens:   9000,
-				FastChatModel:            "claude-instant-1",
-				CompletionModelMaxTokens: 9000,
-				Provider:                 "anthropic",
-				Endpoint:                 "https://api.anthropic.com/v1/complete",
+				ChbtModel:                "clbude-v1",
+				ChbtModelMbxTokens:       9000,
+				CompletionModel:          "clbude-instbnt-1",
+				FbstChbtModelMbxTokens:   9000,
+				FbstChbtModel:            "clbude-instbnt-1",
+				CompletionModelMbxTokens: 9000,
+				Provider:                 "bnthropic",
+				Endpoint:                 "https://bpi.bnthropic.com/v1/complete",
 			},
 		},
 		{
-			name:       "App but no dotcom username",
+			nbme:       "App but no dotcom usernbme",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				App: &schemb.App{
 					DotcomAuthToken: "",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defaultDeploy := deploy.Type()
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			defbultDeploy := deploy.Type()
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
-			t.Cleanup(func() {
-				deploy.Mock(defaultDeploy)
+			t.Clebnup(func() {
+				deploy.Mock(defbultDeploy)
 			})
 			conf := GetCompletionsConfig(tc.siteConfig)
-			if tc.wantDisabled {
+			if tc.wbntDisbbled {
 				if conf != nil {
-					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+					t.Fbtblf("expected nil config but got non-nil: %+v", conf)
 				}
 			} else {
 				if conf == nil {
-					t.Fatal("unexpected nil config returned")
+					t.Fbtbl("unexpected nil config returned")
 				}
-				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
-					t.Fatalf("unexpected config computed: %s", diff)
+				if diff := cmp.Diff(tc.wbntConfig, conf); diff != "" {
+					t.Fbtblf("unexpected config computed: %s", diff)
 				}
 			}
 		})
@@ -694,428 +694,428 @@ func TestGetCompletionsConfig(t *testing.T) {
 }
 
 func TestGetEmbeddingsConfig(t *testing.T) {
-	licenseKey := "theasdfkey"
-	licenseAccessToken := license.GenerateLicenseKeyBasedAccessToken(licenseKey)
-	zeroConfigDefaultWithLicense := &conftypes.EmbeddingsConfig{
-		Provider:                   "sourcegraph",
+	licenseKey := "thebsdfkey"
+	licenseAccessToken := license.GenerbteLicenseKeyBbsedAccessToken(licenseKey)
+	zeroConfigDefbultWithLicense := &conftypes.EmbeddingsConfig{
+		Provider:                   "sourcegrbph",
 		AccessToken:                licenseAccessToken,
-		Model:                      "openai/text-embedding-ada-002",
-		Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+		Model:                      "openbi/text-embedding-bdb-002",
+		Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
 		Dimensions:                 1536,
-		Incremental:                true,
-		MinimumInterval:            24 * time.Hour,
-		MaxCodeEmbeddingsPerRepo:   3_072_000,
-		MaxTextEmbeddingsPerRepo:   512_000,
-		PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+		Incrementbl:                true,
+		MinimumIntervbl:            24 * time.Hour,
+		MbxCodeEmbeddingsPerRepo:   3_072_000,
+		MbxTextEmbeddingsPerRepo:   512_000,
+		PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 		FileFilters: conftypes.EmbeddingsFileFilters{
-			MaxFileSizeBytes: 1000000,
+			MbxFileSizeBytes: 1000000,
 		},
 		ExcludeChunkOnError: true,
 	}
 
-	testCases := []struct {
-		name         string
-		siteConfig   schema.SiteConfiguration
+	testCbses := []struct {
+		nbme         string
+		siteConfig   schemb.SiteConfigurbtion
 		deployType   string
-		wantConfig   *conftypes.EmbeddingsConfig
-		wantDisabled bool
+		wbntConfig   *conftypes.EmbeddingsConfig
+		wbntDisbbled bool
 	}{
 		{
-			name: "Embeddings disabled",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Embeddings disbbled",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Enabled: pointers.Ptr(false),
+				Embeddings: &schemb.Embeddings{
+					Enbbled: pointers.Ptr(fblse),
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "cody.enabled and empty embeddings object",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "cody.enbbled bnd empty embeddings object",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings:  &schema.Embeddings{},
+				Embeddings:  &schemb.Embeddings{},
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wbntConfig: zeroConfigDefbultWithLicense,
 		},
 		{
-			name: "cody.enabled set false",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(false),
-				Embeddings:  &schema.Embeddings{},
+			nbme: "cody.enbbled set fblse",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(fblse),
+				Embeddings:  &schemb.Embeddings{},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "no cody config",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: nil,
+			nbme: "no cody config",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: nil,
 				Embeddings:  nil,
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "Invalid provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Invblid provider",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider: "invalid",
+				Embeddings: &schemb.Embeddings{
+					Provider: "invblid",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "Implicit config with cody.enabled",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Implicit config with cody.enbbled",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wbntConfig: zeroConfigDefbultWithLicense,
 		},
 		{
-			name: "Sourcegraph provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Sourcegrbph provider",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
+				Embeddings: &schemb.Embeddings{
+					Provider: "sourcegrbph",
 				},
 			},
-			wantConfig: zeroConfigDefaultWithLicense,
+			wbntConfig: zeroConfigDefbultWithLicense,
 		},
 		{
-			name: "File filters",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "File filters",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
-					FileFilters: &schema.FileFilters{
-						MaxFileSizeBytes:         200,
-						IncludedFilePathPatterns: []string{"*.go"},
-						ExcludedFilePathPatterns: []string{"*.java"},
+				Embeddings: &schemb.Embeddings{
+					Provider: "sourcegrbph",
+					FileFilters: &schemb.FileFilters{
+						MbxFileSizeBytes:         200,
+						IncludedFilePbthPbtterns: []string{"*.go"},
+						ExcludedFilePbthPbtterns: []string{"*.jbvb"},
 					},
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegrbph",
 				AccessToken:                licenseAccessToken,
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Model:                      "openbi/text-embedding-bdb-002",
+				Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes:         200,
-					IncludedFilePathPatterns: []string{"*.go"},
-					ExcludedFilePathPatterns: []string{"*.java"},
+					MbxFileSizeBytes:         200,
+					IncludedFilePbthPbtterns: []string{"*.go"},
+					ExcludedFilePbthPbtterns: []string{"*.jbvb"},
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name: "Disable exclude failed chunk during indexing",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Disbble exclude fbiled chunk during indexing",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
-					FileFilters: &schema.FileFilters{
-						MaxFileSizeBytes:         200,
-						IncludedFilePathPatterns: []string{"*.go"},
-						ExcludedFilePathPatterns: []string{"*.java"},
+				Embeddings: &schemb.Embeddings{
+					Provider: "sourcegrbph",
+					FileFilters: &schemb.FileFilters{
+						MbxFileSizeBytes:         200,
+						IncludedFilePbthPbtterns: []string{"*.go"},
+						ExcludedFilePbthPbtterns: []string{"*.jbvb"},
 					},
-					ExcludeChunkOnError: pointers.Ptr(false),
+					ExcludeChunkOnError: pointers.Ptr(fblse),
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegrbph",
 				AccessToken:                licenseAccessToken,
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Model:                      "openbi/text-embedding-bdb-002",
+				Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes:         200,
-					IncludedFilePathPatterns: []string{"*.go"},
-					ExcludedFilePathPatterns: []string{"*.java"},
+					MbxFileSizeBytes:         200,
+					IncludedFilePbthPbtterns: []string{"*.go"},
+					ExcludedFilePbthPbtterns: []string{"*.jbvb"},
 				},
-				ExcludeChunkOnError: false,
+				ExcludeChunkOnError: fblse,
 			},
 		},
 		{
-			name: "No provider and no token, assume Sourcegraph",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "No provider bnd no token, bssume Sourcegrbph",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Model: "openai/text-embedding-bobert-9000",
+				Embeddings: &schemb.Embeddings{
+					Model: "openbi/text-embedding-bobert-9000",
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegrbph",
 				AccessToken:                licenseAccessToken,
-				Model:                      "openai/text-embedding-bobert-9000",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
-				Dimensions:                 0, // unknown model used for test case
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Model:                      "openbi/text-embedding-bobert-9000",
+				Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
+				Dimensions:                 0, // unknown model used for test cbse
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
+					MbxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name: "Sourcegraph provider without license",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Sourcegrbph provider without license",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  "",
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
+				Embeddings: &schemb.Embeddings{
+					Provider: "sourcegrbph",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "OpenAI provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "OpenAI provider",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider:    "openai",
-					AccessToken: "asdf",
+				Embeddings: &schemb.Embeddings{
+					Provider:    "openbi",
+					AccessToken: "bsdf",
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "openai",
-				AccessToken:                "asdf",
-				Model:                      "text-embedding-ada-002",
-				Endpoint:                   "https://api.openai.com/v1/embeddings",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "openbi",
+				AccessToken:                "bsdf",
+				Model:                      "text-embedding-bdb-002",
+				Endpoint:                   "https://bpi.openbi.com/v1/embeddings",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
+					MbxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name: "OpenAI provider without access token",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "OpenAI provider without bccess token",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider: "openai",
+				Embeddings: &schemb.Embeddings{
+					Provider: "openbi",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name: "Azure OpenAI provider",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
+			nbme: "Azure OpenAI provider",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
 				LicenseKey:  licenseKey,
-				Embeddings: &schema.Embeddings{
-					Provider:    "azure-openai",
-					AccessToken: "asdf",
-					Endpoint:    "https://acmecorp.openai.azure.com",
+				Embeddings: &schemb.Embeddings{
+					Provider:    "bzure-openbi",
+					AccessToken: "bsdf",
+					Endpoint:    "https://bcmecorp.openbi.bzure.com",
 					Dimensions:  1536,
 					Model:       "the-model",
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "azure-openai",
-				AccessToken:                "asdf",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "bzure-openbi",
+				AccessToken:                "bsdf",
 				Model:                      "the-model",
-				Endpoint:                   "https://acmecorp.openai.azure.com",
+				Endpoint:                   "https://bcmecorp.openbi.bzure.com",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
+					MbxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name:       "App default config",
+			nbme:       "App defbult config",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				App: &schemb.App{
 					DotcomAuthToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
-				AccessToken:                "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegrbph",
+				AccessToken:                "sgd_5df6e0e2761359d30b8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				Model:                      "openbi/text-embedding-bdb-002",
+				Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
+					MbxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name: "App but no dotcom username",
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				App: &schema.App{
+			nbme: "App but no dotcom usernbme",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				App: &schemb.App{
 					DotcomAuthToken: "",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 		{
-			name:       "App with dotcom token",
+			nbme:       "App with dotcom token",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				Embeddings: &schemb.Embeddings{
+					Provider: "sourcegrbph",
 				},
-				App: &schema.App{
+				App: &schemb.App{
 					DotcomAuthToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
-				AccessToken:                "sgd_5df6e0e2761359d30a8275058e299fcc0381534545f55cf43e41983f5d4c9456",
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegrbph",
+				AccessToken:                "sgd_5df6e0e2761359d30b8275058e299fcc0381534545f55cf43e41983f5d4c9456",
+				Model:                      "openbi/text-embedding-bdb-002",
+				Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
+					MbxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name:       "App with user token",
+			nbme:       "App with user token",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider:    "sourcegraph",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				Embeddings: &schemb.Embeddings{
+					Provider:    "sourcegrbph",
 					AccessToken: "TOKEN",
 				},
 			},
-			wantConfig: &conftypes.EmbeddingsConfig{
-				Provider:                   "sourcegraph",
+			wbntConfig: &conftypes.EmbeddingsConfig{
+				Provider:                   "sourcegrbph",
 				AccessToken:                "TOKEN",
-				Model:                      "openai/text-embedding-ada-002",
-				Endpoint:                   "https://cody-gateway.sourcegraph.com/v1/embeddings",
+				Model:                      "openbi/text-embedding-bdb-002",
+				Endpoint:                   "https://cody-gbtewby.sourcegrbph.com/v1/embeddings",
 				Dimensions:                 1536,
-				Incremental:                true,
-				MinimumInterval:            24 * time.Hour,
-				MaxCodeEmbeddingsPerRepo:   3_072_000,
-				MaxTextEmbeddingsPerRepo:   512_000,
-				PolicyRepositoryMatchLimit: pointers.Ptr(5000),
+				Incrementbl:                true,
+				MinimumIntervbl:            24 * time.Hour,
+				MbxCodeEmbeddingsPerRepo:   3_072_000,
+				MbxTextEmbeddingsPerRepo:   512_000,
+				PolicyRepositoryMbtchLimit: pointers.Ptr(5000),
 				FileFilters: conftypes.EmbeddingsFileFilters{
-					MaxFileSizeBytes: 1000000,
+					MbxFileSizeBytes: 1000000,
 				},
 				ExcludeChunkOnError: true,
 			},
 		},
 		{
-			name:       "App without dotcom or user token",
+			nbme:       "App without dotcom or user token",
 			deployType: deploy.App,
-			siteConfig: schema.SiteConfiguration{
-				CodyEnabled: pointers.Ptr(true),
-				Embeddings: &schema.Embeddings{
-					Provider: "sourcegraph",
+			siteConfig: schemb.SiteConfigurbtion{
+				CodyEnbbled: pointers.Ptr(true),
+				Embeddings: &schemb.Embeddings{
+					Provider: "sourcegrbph",
 				},
 			},
-			wantDisabled: true,
+			wbntDisbbled: true,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defaultDeploy := deploy.Type()
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			defbultDeploy := deploy.Type()
 			if tc.deployType != "" {
 				deploy.Mock(tc.deployType)
 			}
-			t.Cleanup(func() {
-				deploy.Mock(defaultDeploy)
+			t.Clebnup(func() {
+				deploy.Mock(defbultDeploy)
 			})
 			conf := GetEmbeddingsConfig(tc.siteConfig)
-			if tc.wantDisabled {
+			if tc.wbntDisbbled {
 				if conf != nil {
-					t.Fatalf("expected nil config but got non-nil: %+v", conf)
+					t.Fbtblf("expected nil config but got non-nil: %+v", conf)
 				}
 			} else {
 				if conf == nil {
-					t.Fatal("unexpected nil config returned")
+					t.Fbtbl("unexpected nil config returned")
 				}
-				if diff := cmp.Diff(tc.wantConfig, conf); diff != "" {
-					t.Fatalf("unexpected config computed: %s", diff)
+				if diff := cmp.Diff(tc.wbntConfig, conf); diff != "" {
+					t.Fbtblf("unexpected config computed: %s", diff)
 				}
 			}
 		})
 	}
 }
 
-func TestEmailSenderName(t *testing.T) {
-	testCases := []struct {
-		name       string
-		siteConfig schema.SiteConfiguration
-		want       string
+func TestEmbilSenderNbme(t *testing.T) {
+	testCbses := []struct {
+		nbme       string
+		siteConfig schemb.SiteConfigurbtion
+		wbnt       string
 	}{
 		{
-			name:       "nothing set",
-			siteConfig: schema.SiteConfiguration{},
-			want:       "Sourcegraph",
+			nbme:       "nothing set",
+			siteConfig: schemb.SiteConfigurbtion{},
+			wbnt:       "Sourcegrbph",
 		},
 		{
-			name: "value set",
-			siteConfig: schema.SiteConfiguration{
-				EmailSenderName: "Horsegraph",
+			nbme: "vblue set",
+			siteConfig: schemb.SiteConfigurbtion{
+				EmbilSenderNbme: "Horsegrbph",
 			},
-			want: "Horsegraph",
+			wbnt: "Horsegrbph",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			Mock(&Unified{SiteConfiguration: tc.siteConfig})
-			t.Cleanup(func() { Mock(nil) })
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			Mock(&Unified{SiteConfigurbtion: tc.siteConfig})
+			t.Clebnup(func() { Mock(nil) })
 
-			if got, want := EmailSenderName(), tc.want; got != want {
-				t.Fatalf("EmailSenderName() = %v, want %v", got, want)
+			if got, wbnt := EmbilSenderNbme(), tc.wbnt; got != wbnt {
+				t.Fbtblf("EmbilSenderNbme() = %v, wbnt %v", got, wbnt)
 			}
 		})
 	}

@@ -1,255 +1,255 @@
-package comby
+pbckbge comby
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
-	"syscall"
+	"pbth/filepbth"
+	"syscbll"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestMatchesUnmarshalling(t *testing.T) {
-	// If we are not on CI skip the test if comby is not installed.
+func TestMbtchesUnmbrshblling(t *testing.T) {
+	// If we bre not on CI skip the test if comby is not instblled.
 	if os.Getenv("CI") == "" && !Exists() {
-		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		t.Skip("comby is not instblled on the PATH. Try running 'bbsh <(curl -sL get.comby.dev)'.")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	files := map[string]string{
-		"main.go": `package main
+	files := mbp[string]string{
+		"mbin.go": `pbckbge mbin
 
 import "fmt"
 
-func main() {
+func mbin() {
 	fmt.Println("Hello foo")
 }
 `,
 	}
 
-	zipPath := tempZipFromFiles(t, files)
+	zipPbth := tempZipFromFiles(t, files)
 
-	cases := []struct {
-		args Args
-		want string
+	cbses := []struct {
+		brgs Args
+		wbnt string
 	}{
 		{
-			args: Args{
-				Input:         ZipPath(zipPath),
-				MatchTemplate: "func",
-				FilePatterns:  []string{".go"},
-				Matcher:       ".go",
+			brgs: Args{
+				Input:         ZipPbth(zipPbth),
+				MbtchTemplbte: "func",
+				FilePbtterns:  []string{".go"},
+				Mbtcher:       ".go",
 			},
-			want: "func",
+			wbnt: "func",
 		},
 	}
 
-	for _, test := range cases {
-		m, err := Matches(ctx, test.args)
+	for _, test := rbnge cbses {
+		m, err := Mbtches(ctx, test.brgs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		got := m[0].Matches[0].Matched
-		if got != test.want {
-			t.Errorf("got %v, want %v", got, test.want)
+		got := m[0].Mbtches[0].Mbtched
+		if got != test.wbnt {
+			t.Errorf("got %v, wbnt %v", got, test.wbnt)
 			continue
 		}
 	}
 }
 
-func TestMatchesInZip(t *testing.T) {
-	// If we are not on CI skip the test if comby is not installed.
+func TestMbtchesInZip(t *testing.T) {
+	// If we bre not on CI skip the test if comby is not instblled.
 	if os.Getenv("CI") == "" && !Exists() {
-		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		t.Skip("comby is not instblled on the PATH. Try running 'bbsh <(curl -sL get.comby.dev)'.")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	files := map[string]string{
+	files := mbp[string]string{
 
 		"README.md": `# Hello World
 
-Hello world example in go`,
-		"main.go": `package main
+Hello world exbmple in go`,
+		"mbin.go": `pbckbge mbin
 
 import "fmt"
 
-func main() {
+func mbin() {
 	fmt.Println("Hello foo")
 }
 `,
 	}
 
-	zipPath := tempZipFromFiles(t, files)
+	zipPbth := tempZipFromFiles(t, files)
 
-	cases := []struct {
-		args Args
-		want string
+	cbses := []struct {
+		brgs Args
+		wbnt string
 	}{
 		{
-			args: Args{
-				Input:           ZipPath(zipPath),
-				MatchTemplate:   "func",
-				RewriteTemplate: "derp",
+			brgs: Args{
+				Input:           ZipPbth(zipPbth),
+				MbtchTemplbte:   "func",
+				RewriteTemplbte: "derp",
 				ResultKind:      Diff,
-				FilePatterns:    []string{".go"},
-				Matcher:         ".go",
+				FilePbtterns:    []string{".go"},
+				Mbtcher:         ".go",
 			},
-			want: `{"uri":"main.go","diff":"--- main.go\n+++ main.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func main() {\n+derp main() {\n \tfmt.Println(\"Hello foo\")\n }"}
+			wbnt: `{"uri":"mbin.go","diff":"--- mbin.go\n+++ mbin.go\n@@ -2,6 +2,6 @@\n \n import \"fmt\"\n \n-func mbin() {\n+derp mbin() {\n \tfmt.Println(\"Hello foo\")\n }"}
 `},
 	}
 
-	for _, test := range cases {
-		var b bytes.Buffer
-		err := runWithoutPipes(ctx, test.args, &b)
+	for _, test := rbnge cbses {
+		vbr b bytes.Buffer
+		err := runWithoutPipes(ctx, test.brgs, &b)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		got := b.String()
-		if got != test.want {
-			t.Errorf("got %v, want %v", got, test.want)
+		if got != test.wbnt {
+			t.Errorf("got %v, wbnt %v", got, test.wbnt)
 			continue
 		}
 	}
 }
 
 func Test_stdin(t *testing.T) {
-	// If we are not on CI skip the test if comby is not installed.
+	// If we bre not on CI skip the test if comby is not instblled.
 	if os.Getenv("CI") == "" && !Exists() {
-		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		t.Skip("comby is not instblled on the PATH. Try running 'bbsh <(curl -sL get.comby.dev)'.")
 	}
 
-	test := func(args Args) string {
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
+	test := func(brgs Args) string {
+		ctx, cbncel := context.WithCbncel(context.Bbckground())
+		defer cbncel()
 
-		var b bytes.Buffer
-		err := runWithoutPipes(ctx, args, &b)
+		vbr b bytes.Buffer
+		err := runWithoutPipes(ctx, brgs, &b)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		return b.String()
 	}
 
-	autogold.Expect(`{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
+	butogold.Expect(`{"uri":null,"diff":"--- /dev/null\n+++ /dev/null\n@@ -1,1 +1,1 @@\n-yes\n+no"}
 `).
-		Equal(t, test(Args{
+		Equbl(t, test(Args{
 			Input:           FileContent("yes\n"),
-			MatchTemplate:   "yes",
-			RewriteTemplate: "no",
+			MbtchTemplbte:   "yes",
+			RewriteTemplbte: "no",
 			ResultKind:      Diff,
-			FilePatterns:    []string{".go"},
-			Matcher:         ".go",
+			FilePbtterns:    []string{".go"},
+			Mbtcher:         ".go",
 		}))
 }
 
-func TestReplacements(t *testing.T) {
-	// If we are not on CI skip the test if comby is not installed.
+func TestReplbcements(t *testing.T) {
+	// If we bre not on CI skip the test if comby is not instblled.
 	if os.Getenv("CI") == "" && !Exists() {
-		t.Skip("comby is not installed on the PATH. Try running 'bash <(curl -sL get.comby.dev)'.")
+		t.Skip("comby is not instblled on the PATH. Try running 'bbsh <(curl -sL get.comby.dev)'.")
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	files := map[string]string{
-		"main.go": `package tuesday`,
+	files := mbp[string]string{
+		"mbin.go": `pbckbge tuesdby`,
 	}
 
-	zipPath := tempZipFromFiles(t, files)
+	zipPbth := tempZipFromFiles(t, files)
 
-	cases := []struct {
-		args Args
-		want string
+	cbses := []struct {
+		brgs Args
+		wbnt string
 	}{
 		{
-			args: Args{
-				Input:           ZipPath(zipPath),
-				MatchTemplate:   "tuesday",
-				RewriteTemplate: "wednesday",
-				ResultKind:      Replacement,
-				FilePatterns:    []string{".go"},
-				Matcher:         ".go",
+			brgs: Args{
+				Input:           ZipPbth(zipPbth),
+				MbtchTemplbte:   "tuesdby",
+				RewriteTemplbte: "wednesdby",
+				ResultKind:      Replbcement,
+				FilePbtterns:    []string{".go"},
+				Mbtcher:         ".go",
 			},
-			want: "package wednesday",
+			wbnt: "pbckbge wednesdby",
 		},
 	}
 
-	for _, test := range cases {
-		r, err := Replacements(ctx, test.args)
+	for _, test := rbnge cbses {
+		r, err := Replbcements(ctx, test.brgs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		got := r[0].Content
-		if got != test.want {
-			t.Errorf("got %v, want %v", got, test.want)
+		if got != test.wbnt {
+			t.Errorf("got %v, wbnt %v", got, test.wbnt)
 			continue
 		}
 	}
 }
 
-func tempZipFromFiles(t *testing.T, files map[string]string) string {
+func tempZipFromFiles(t *testing.T, files mbp[string]string) string {
 	t.Helper()
 
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
-	for name, content := range files {
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   name,
+	for nbme, content := rbnge files {
+		w, err := zw.CrebteHebder(&zip.FileHebder{
+			Nbme:   nbme,
 			Method: zip.Store,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if _, err := io.WriteString(w, content); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	if err := zw.Close(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	path := filepath.Join(t.TempDir(), "test.zip")
-	if err := os.WriteFile(path, buf.Bytes(), 0600); err != nil {
-		t.Fatal(err)
+	pbth := filepbth.Join(t.TempDir(), "test.zip")
+	if err := os.WriteFile(pbth, buf.Bytes(), 0600); err != nil {
+		t.Fbtbl(err)
 	}
 
-	return path
+	return pbth
 }
 
-func runWithoutPipes(ctx context.Context, args Args, b *bytes.Buffer) (err error) {
+func runWithoutPipes(ctx context.Context, brgs Args, b *bytes.Buffer) (err error) {
 	if !Exists() {
-		return errors.New("comby is not installed")
+		return errors.New("comby is not instblled")
 	}
 
-	rawArgs := rawArgs(args)
-	cmd := exec.CommandContext(ctx, combyPath, rawArgs...)
-	// Ensure forked child processes are killed
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	rbwArgs := rbwArgs(brgs)
+	cmd := exec.CommbndContext(ctx, combyPbth, rbwArgs...)
+	// Ensure forked child processes bre killed
+	cmd.SysProcAttr = &syscbll.SysProcAttr{Setpgid: true}
 
-	if content, ok := args.Input.(FileContent); ok {
-		cmd.Stdin = bytes.NewReader(content)
+	if content, ok := brgs.Input.(FileContent); ok {
+		cmd.Stdin = bytes.NewRebder(content)
 	}
 	cmd.Stdout = b
-	var stderrBuf bytes.Buffer
+	vbr stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 
 	if err := cmd.Run(); err != nil {
-		return errors.Wrapf(err, "failed with stdout %s", stderrBuf.String())
+		return errors.Wrbpf(err, "fbiled with stdout %s", stderrBuf.String())
 	}
 	return nil
 }

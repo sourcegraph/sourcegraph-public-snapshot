@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,23 +6,23 @@ import (
 	"sort"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-// GetLastUploadRetentionScanForRepository returns the last timestamp, if any, that the repository with the
-// given identifier was considered for upload expiration checks.
-func (s *store) GetLastUploadRetentionScanForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
-	ctx, _, endObservation := s.operations.getLastUploadRetentionScanForRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
+// GetLbstUplobdRetentionScbnForRepository returns the lbst timestbmp, if bny, thbt the repository with the
+// given identifier wbs considered for uplobd expirbtion checks.
+func (s *store) GetLbstUplobdRetentionScbnForRepository(ctx context.Context, repositoryID int) (_ *time.Time, err error) {
+	ctx, _, endObservbtion := s.operbtions.getLbstUplobdRetentionScbnForRepository.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	t, ok, err := basestore.ScanFirstTime(s.db.Query(ctx, sqlf.Sprintf(lastUploadRetentionScanForRepositoryQuery, repositoryID)))
+	t, ok, err := bbsestore.ScbnFirstTime(s.db.Query(ctx, sqlf.Sprintf(lbstUplobdRetentionScbnForRepositoryQuery, repositoryID)))
 	if !ok {
 		return nil, err
 	}
@@ -30,95 +30,95 @@ func (s *store) GetLastUploadRetentionScanForRepository(ctx context.Context, rep
 	return &t, nil
 }
 
-const lastUploadRetentionScanForRepositoryQuery = `
-SELECT last_retention_scan_at FROM lsif_last_retention_scan WHERE repository_id = %s
+const lbstUplobdRetentionScbnForRepositoryQuery = `
+SELECT lbst_retention_scbn_bt FROM lsif_lbst_retention_scbn WHERE repository_id = %s
 `
 
-// SetRepositoriesForRetentionScan returns a set of repository identifiers with live code intelligence
-// data and a fresh associated commit graph. Repositories that were returned previously from this call
-// within the  given process delay are not returned.
-func (s *store) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
-	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// SetRepositoriesForRetentionScbn returns b set of repository identifiers with live code intelligence
+// dbtb bnd b fresh bssocibted commit grbph. Repositories thbt were returned previously from this cbll
+// within the  given process delby bre not returned.
+func (s *store) SetRepositoriesForRetentionScbn(ctx context.Context, processDelby time.Durbtion, limit int) (_ []int, err error) {
+	ctx, _, endObservbtion := s.operbtions.setRepositoriesForRetentionScbn.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	now := timeutil.Now()
 
-	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(
-		repositoryIDsForRetentionScanQuery,
+	return bbsestore.ScbnInts(s.db.Query(ctx, sqlf.Sprintf(
+		repositoryIDsForRetentionScbnQuery,
 		now,
-		int(processDelay/time.Second),
+		int(processDelby/time.Second),
 		limit,
 		now,
 		now,
 	)))
 }
 
-const repositoryIDsForRetentionScanQuery = `
-WITH candidate_repositories AS (
+const repositoryIDsForRetentionScbnQuery = `
+WITH cbndidbte_repositories AS (
 	SELECT DISTINCT u.repository_id AS id
-	FROM lsif_uploads u
-	WHERE u.state = 'completed'
+	FROM lsif_uplobds u
+	WHERE u.stbte = 'completed'
 ),
 repositories AS (
 	SELECT cr.id
-	FROM candidate_repositories cr
-	LEFT JOIN lsif_last_retention_scan lrs ON lrs.repository_id = cr.id
+	FROM cbndidbte_repositories cr
+	LEFT JOIN lsif_lbst_retention_scbn lrs ON lrs.repository_id = cr.id
 	JOIN lsif_dirty_repositories dr ON dr.repository_id = cr.id
 
-	-- Ignore records that have been checked recently. Note this condition is
-	-- true for a null last_retention_scan_at (which has never been checked).
-	WHERE (%s - lrs.last_retention_scan_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
-	AND dr.update_token = dr.dirty_token
+	-- Ignore records thbt hbve been checked recently. Note this condition is
+	-- true for b null lbst_retention_scbn_bt (which hbs never been checked).
+	WHERE (%s - lrs.lbst_retention_scbn_bt > (%s * '1 second'::intervbl)) IS DISTINCT FROM FALSE
+	AND dr.updbte_token = dr.dirty_token
 	ORDER BY
-		lrs.last_retention_scan_at NULLS FIRST,
-		cr.id -- tie breaker
+		lrs.lbst_retention_scbn_bt NULLS FIRST,
+		cr.id -- tie brebker
 	LIMIT %s
 )
-INSERT INTO lsif_last_retention_scan (repository_id, last_retention_scan_at)
-SELECT r.id, %s::timestamp FROM repositories r
+INSERT INTO lsif_lbst_retention_scbn (repository_id, lbst_retention_scbn_bt)
+SELECT r.id, %s::timestbmp FROM repositories r
 ON CONFLICT (repository_id) DO UPDATE
-SET last_retention_scan_at = %s
+SET lbst_retention_scbn_bt = %s
 RETURNING repository_id
 `
 
-// UpdateUploadRetention updates the last data retention scan timestamp on the upload
-// records with the given protected identifiers and sets the expired field on the upload
+// UpdbteUplobdRetention updbtes the lbst dbtb retention scbn timestbmp on the uplobd
+// records with the given protected identifiers bnd sets the expired field on the uplobd
 // records with the given expired identifiers.
-func (s *store) UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error) {
-	ctx, _, endObservation := s.operations.updateUploadRetention.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numProtectedIDs", len(protectedIDs)),
-		attribute.IntSlice("protectedIDs", protectedIDs),
-		attribute.Int("numExpiredIDs", len(expiredIDs)),
-		attribute.IntSlice("expiredIDs", expiredIDs),
+func (s *store) UpdbteUplobdRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbteUplobdRetention.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numProtectedIDs", len(protectedIDs)),
+		bttribute.IntSlice("protectedIDs", protectedIDs),
+		bttribute.Int("numExpiredIDs", len(expiredIDs)),
+		bttribute.IntSlice("expiredIDs", expiredIDs),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// Ensure ids are sorted so that we take row locks during the UPDATE
-	// query in a determinstic order. This should prevent deadlocks with
-	// other queries that mass update lsif_uploads.
+	// Ensure ids bre sorted so thbt we tbke row locks during the UPDATE
+	// query in b determinstic order. This should prevent debdlocks with
+	// other queries thbt mbss updbte lsif_uplobds.
 	sort.Ints(protectedIDs)
 	sort.Ints(expiredIDs)
 
-	return s.withTransaction(ctx, func(tx *store) error {
+	return s.withTrbnsbction(ctx, func(tx *store) error {
 		now := time.Now()
 		if len(protectedIDs) > 0 {
-			queries := make([]*sqlf.Query, 0, len(protectedIDs))
-			for _, id := range protectedIDs {
-				queries = append(queries, sqlf.Sprintf("%s", id))
+			queries := mbke([]*sqlf.Query, 0, len(protectedIDs))
+			for _, id := rbnge protectedIDs {
+				queries = bppend(queries, sqlf.Sprintf("%s", id))
 			}
 
-			if err := tx.db.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("last_retention_scan_at = %s", now), sqlf.Join(queries, ","))); err != nil {
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(updbteUplobdRetentionQuery, sqlf.Sprintf("lbst_retention_scbn_bt = %s", now), sqlf.Join(queries, ","))); err != nil {
 				return err
 			}
 		}
 
 		if len(expiredIDs) > 0 {
-			queries := make([]*sqlf.Query, 0, len(expiredIDs))
-			for _, id := range expiredIDs {
-				queries = append(queries, sqlf.Sprintf("%s", id))
+			queries := mbke([]*sqlf.Query, 0, len(expiredIDs))
+			for _, id := rbnge expiredIDs {
+				queries = bppend(queries, sqlf.Sprintf("%s", id))
 			}
 
-			if err := tx.db.Exec(ctx, sqlf.Sprintf(updateUploadRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
+			if err := tx.db.Exec(ctx, sqlf.Sprintf(updbteUplobdRetentionQuery, sqlf.Sprintf("expired = TRUE"), sqlf.Join(queries, ","))); err != nil {
 				return err
 			}
 		}
@@ -127,372 +127,372 @@ func (s *store) UpdateUploadRetention(ctx context.Context, protectedIDs, expired
 	})
 }
 
-const updateUploadRetentionQuery = `
-UPDATE lsif_uploads SET %s WHERE id IN (%s)
+const updbteUplobdRetentionQuery = `
+UPDATE lsif_uplobds SET %s WHERE id IN (%s)
 `
 
-// SoftDeleteExpiredUploads marks upload records that are both expired and have no references
-// as deleted. The associated repositories will be marked as dirty so that their commit graphs
-// are updated in the near future.
-func (s *store) SoftDeleteExpiredUploads(ctx context.Context, batchSize int) (_, _ int, err error) {
-	ctx, trace, endObservation := s.operations.softDeleteExpiredUploads.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// SoftDeleteExpiredUplobds mbrks uplobd records thbt bre both expired bnd hbve no references
+// bs deleted. The bssocibted repositories will be mbrked bs dirty so thbt their commit grbphs
+// bre updbted in the nebr future.
+func (s *store) SoftDeleteExpiredUplobds(ctx context.Context, bbtchSize int) (_, _ int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.softDeleteExpiredUplobds.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a, b int
-	err = s.withTransaction(ctx, func(tx *store) error {
-		// Just in case
+	vbr b, b int
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
+		// Just in cbse
 		if os.Getenv("DEBUG_PRECISE_CODE_INTEL_SOFT_DELETE_BAIL_OUT") != "" {
-			s.logger.Warn("Soft deletion is currently disabled")
+			s.logger.Wbrn("Soft deletion is currently disbbled")
 			return nil
 		}
 
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+		unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "soft-deleting expired uplobds")
 		defer unset(ctx)
-		scannedCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery, batchSize)))
+		scbnnedCount, repositories, err := scbnCountsWithTotblCount(tx.db.Query(ctx, sqlf.Sprintf(softDeleteExpiredUplobdsQuery, bbtchSize)))
 		if err != nil {
 			return err
 		}
 
 		count := 0
-		for _, numUpdated := range repositories {
-			count += numUpdated
+		for _, numUpdbted := rbnge repositories {
+			count += numUpdbted
 		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("count", count),
-			attribute.Int("numRepositories", len(repositories)))
+		trbce.AddEvent("TODO Dombin Owner",
+			bttribute.Int("count", count),
+			bttribute.Int("numRepositories", len(repositories)))
 
-		for repositoryID := range repositories {
+		for repositoryID := rbnge repositories {
 			if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx.db); err != nil {
 				return err
 			}
 		}
 
-		a = scannedCount
+		b = scbnnedCount
 		b = count
 		return nil
 	})
-	return a, b, err
+	return b, b, err
 }
 
-const softDeleteExpiredUploadsQuery = `
+const softDeleteExpiredUplobdsQuery = `
 WITH
 
--- First, select the set of uploads that are not protected by any policy. This will
--- be the set that we _may_ soft-delete due to age, as long as it's unreferenced by
--- any other upload that canonically provides some package. The following CTES will
--- handle the "unreferenced" part of that condition.
-expired_uploads AS (
+-- First, select the set of uplobds thbt bre not protected by bny policy. This will
+-- be the set thbt we _mby_ soft-delete due to bge, bs long bs it's unreferenced by
+-- bny other uplobd thbt cbnonicblly provides some pbckbge. The following CTES will
+-- hbndle the "unreferenced" pbrt of thbt condition.
+expired_uplobds AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.state = 'completed' AND u.expired
-	ORDER BY u.last_referenced_scan_at NULLS FIRST, u.finished_at, u.id
+	FROM lsif_uplobds u
+	WHERE u.stbte = 'completed' AND u.expired
+	ORDER BY u.lbst_referenced_scbn_bt NULLS FIRST, u.finished_bt, u.id
 	LIMIT %s
 ),
 
--- From the set of unprotected uploads, find the set of packages they provide.
-packages_defined_by_target_uploads AS (
-	SELECT p.scheme, p.manager, p.name, p.version
-	FROM lsif_packages p
-	WHERE p.dump_id IN (SELECT id FROM expired_uploads)
+-- From the set of unprotected uplobds, find the set of pbckbges they provide.
+pbckbges_defined_by_tbrget_uplobds AS (
+	SELECT p.scheme, p.mbnbger, p.nbme, p.version
+	FROM lsif_pbckbges p
+	WHERE p.dump_id IN (SELECT id FROM expired_uplobds)
 ),
 
--- From the set of provided packages, find the entire set of uploads that provide those
--- packages. This will necessarily include the set of target uploads above, as well as
--- any other uploads that happen to define the same package (including version). This
--- result set also includes a _rank_ column, where rank = 1 indicates that the upload
--- canonically provides that package and will be visible in cross-index navigation for
--- that package.
-ranked_uploads_providing_packages AS (
+-- From the set of provided pbckbges, find the entire set of uplobds thbt provide those
+-- pbckbges. This will necessbrily include the set of tbrget uplobds bbove, bs well bs
+-- bny other uplobds thbt hbppen to define the sbme pbckbge (including version). This
+-- result set blso includes b _rbnk_ column, where rbnk = 1 indicbtes thbt the uplobd
+-- cbnonicblly provides thbt pbckbge bnd will be visible in cross-index nbvigbtion for
+-- thbt pbckbge.
+rbnked_uplobds_providing_pbckbges AS (
 	SELECT
 		u.id,
 		p.scheme,
-		p.manager,
-		p.name,
+		p.mbnbger,
+		p.nbme,
 		p.version,
-		-- Rank each upload providing the same package from the same directory
-		-- within a repository by commit date. We'll choose the oldest commit
-		-- date as the canonical choice, and set the reference counts to all
-		-- of the duplicate commits to zero.
-		` + packageRankingQueryFragment + ` AS rank
-	FROM lsif_uploads u
-	LEFT JOIN lsif_packages p ON p.dump_id = u.id
+		-- Rbnk ebch uplobd providing the sbme pbckbge from the sbme directory
+		-- within b repository by commit dbte. We'll choose the oldest commit
+		-- dbte bs the cbnonicbl choice, bnd set the reference counts to bll
+		-- of the duplicbte commits to zero.
+		` + pbckbgeRbnkingQueryFrbgment + ` AS rbnk
+	FROM lsif_uplobds u
+	LEFT JOIN lsif_pbckbges p ON p.dump_id = u.id
 	WHERE
 		(
-			-- Select our target uploads
-			u.id = ANY (SELECT id FROM expired_uploads) OR
+			-- Select our tbrget uplobds
+			u.id = ANY (SELECT id FROM expired_uplobds) OR
 
-			-- Also select uploads that provide the same package as a target upload.
-			(p.scheme, p.manager, p.name, p.version) IN (
-				SELECT p.scheme, p.manager, p.name, p.version
-				FROM packages_defined_by_target_uploads p
+			-- Also select uplobds thbt provide the sbme pbckbge bs b tbrget uplobd.
+			(p.scheme, p.mbnbger, p.nbme, p.version) IN (
+				SELECT p.scheme, p.mbnbger, p.nbme, p.version
+				FROM pbckbges_defined_by_tbrget_uplobds p
 			)
 		) AND
 
-		-- Don't match deleted uploads
-		u.state = 'completed'
+		-- Don't mbtch deleted uplobds
+		u.stbte = 'completed'
 ),
 
--- Filter the set of our original (expired) candidate uploads so that it includes only
--- uploads that canonically provide a referenced package. In the candidate set below,
--- we will select all of the expired uploads that do NOT appear in this result set.
-referenced_uploads_providing_package_canonically AS (
+-- Filter the set of our originbl (expired) cbndidbte uplobds so thbt it includes only
+-- uplobds thbt cbnonicblly provide b referenced pbckbge. In the cbndidbte set below,
+-- we will select bll of the expired uplobds thbt do NOT bppebr in this result set.
+referenced_uplobds_providing_pbckbge_cbnonicblly AS (
 	SELECT ru.id
-	FROM ranked_uploads_providing_packages ru
+	FROM rbnked_uplobds_providing_pbckbges ru
 	WHERE
-		-- Only select from our original set (not the larger intermediate ones)
-		ru.id IN (SELECT id FROM expired_uploads) AND
+		-- Only select from our originbl set (not the lbrger intermedibte ones)
+		ru.id IN (SELECT id FROM expired_uplobds) AND
 
-		-- Only select canonical package providers
-		ru.rank = 1 AND
+		-- Only select cbnonicbl pbckbge providers
+		ru.rbnk = 1 AND
 
-		-- Only select packages with non-zero references
+		-- Only select pbckbges with non-zero references
 		EXISTS (
 			SELECT 1
 			FROM lsif_references r
 			WHERE
 				r.scheme = ru.scheme AND
-				r.manager = ru.manager AND
-				r.name = ru.name AND
+				r.mbnbger = ru.mbnbger AND
+				r.nbme = ru.nbme AND
 				r.version = ru.version AND
 				r.dump_id != ru.id
 			)
 ),
 
--- Filter the set of our original candidate uploads to exclude the "safe" uploads found
--- above. This should include uploads that are expired and either not a canonical provider
--- of their package, or their package is unreferenced by any other upload. We can then lock
--- the uploads in a deterministic order and update the state of each upload to 'deleting'.
--- Before hard-deletion, we will clear all associated data for this upload in the codeintel-db.
-candidates AS (
+-- Filter the set of our originbl cbndidbte uplobds to exclude the "sbfe" uplobds found
+-- bbove. This should include uplobds thbt bre expired bnd either not b cbnonicbl provider
+-- of their pbckbge, or their pbckbge is unreferenced by bny other uplobd. We cbn then lock
+-- the uplobds in b deterministic order bnd updbte the stbte of ebch uplobd to 'deleting'.
+-- Before hbrd-deletion, we will clebr bll bssocibted dbtb for this uplobd in the codeintel-db.
+cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
+	FROM lsif_uplobds u
 	WHERE
-		u.id IN (SELECT id FROM expired_uploads) AND
+		u.id IN (SELECT id FROM expired_uplobds) AND
 		NOT EXISTS (
 			SELECT 1
-			FROM referenced_uploads_providing_package_canonically pkg_refcount
+			FROM referenced_uplobds_providing_pbckbge_cbnonicblly pkg_refcount
 			WHERE pkg_refcount.id = u.id
 		)
 ),
-locked_uploads AS (
+locked_uplobds AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.id IN (SELECT id FROM expired_uploads)
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
+	FROM lsif_uplobds u
+	WHERE u.id IN (SELECT id FROM expired_uplobds)
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_uplobds tbble.
 	ORDER BY u.id FOR UPDATE
 ),
-updated AS (
-	UPDATE lsif_uploads u
+updbted AS (
+	UPDATE lsif_uplobds u
 
 	SET
-		-- Update this value unconditionally
-		last_referenced_scan_at = NOW(),
+		-- Updbte this vblue unconditionblly
+		lbst_referenced_scbn_bt = NOW(),
 
-		-- Delete the candidates we've identified, but keep the state the same for all other uploads
-		state = CASE WHEN u.id IN (SELECT id FROM candidates) THEN 'deleting' ELSE 'completed' END
-	WHERE u.id IN (SELECT id FROM locked_uploads)
-	RETURNING u.id, u.repository_id, u.state
+		-- Delete the cbndidbtes we've identified, but keep the stbte the sbme for bll other uplobds
+		stbte = CASE WHEN u.id IN (SELECT id FROM cbndidbtes) THEN 'deleting' ELSE 'completed' END
+	WHERE u.id IN (SELECT id FROM locked_uplobds)
+	RETURNING u.id, u.repository_id, u.stbte
 )
 
--- Return the repositories which were affected so we can recalculate the commit graph
-SELECT (SELECT COUNT(*) FROM expired_uploads), u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+-- Return the repositories which were bffected so we cbn recblculbte the commit grbph
+SELECT (SELECT COUNT(*) FROM expired_uplobds), u.repository_id, COUNT(*) FROM updbted u WHERE u.stbte = 'deleting' GROUP BY u.repository_id
 `
 
-// SoftDeleteExpiredUploadsViaTraversal selects an expired upload and uses that as the starting
-// point for a backwards traversal through the reference graph. If all reachable uploads are expired,
-// then the entire set of reachable uploads can be soft-deleted. Otherwise, each of the uploads we
-// found during the traversal are accessible by some "live" upload and must be retained.
+// SoftDeleteExpiredUplobdsVibTrbversbl selects bn expired uplobd bnd uses thbt bs the stbrting
+// point for b bbckwbrds trbversbl through the reference grbph. If bll rebchbble uplobds bre expired,
+// then the entire set of rebchbble uplobds cbn be soft-deleted. Otherwise, ebch of the uplobds we
+// found during the trbversbl bre bccessible by some "live" uplobd bnd must be retbined.
 //
-// We set a last-checked timestamp to attempt to round-robin this graph traversal.
-func (s *store) SoftDeleteExpiredUploadsViaTraversal(ctx context.Context, traversalLimit int) (_, _ int, err error) {
-	ctx, trace, endObservation := s.operations.softDeleteExpiredUploadsViaTraversal.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// We set b lbst-checked timestbmp to bttempt to round-robin this grbph trbversbl.
+func (s *store) SoftDeleteExpiredUplobdsVibTrbversbl(ctx context.Context, trbversblLimit int) (_, _ int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.softDeleteExpiredUplobdsVibTrbversbl.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a, b int
-	err = s.withTransaction(ctx, func(tx *store) error {
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads (via graph traversal)")
+	vbr b, b int
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "soft-deleting expired uplobds (vib grbph trbversbl)")
 		defer unset(ctx)
-		scannedCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, sqlf.Sprintf(
-			softDeleteExpiredUploadsViaTraversalQuery,
-			traversalLimit,
-			traversalLimit,
+		scbnnedCount, repositories, err := scbnCountsWithTotblCount(tx.db.Query(ctx, sqlf.Sprintf(
+			softDeleteExpiredUplobdsVibTrbversblQuery,
+			trbversblLimit,
+			trbversblLimit,
 		)))
 		if err != nil {
 			return err
 		}
 
 		count := 0
-		for _, numUpdated := range repositories {
-			count += numUpdated
+		for _, numUpdbted := rbnge repositories {
+			count += numUpdbted
 		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("count", count),
-			attribute.Int("numRepositories", len(repositories)))
+		trbce.AddEvent("TODO Dombin Owner",
+			bttribute.Int("count", count),
+			bttribute.Int("numRepositories", len(repositories)))
 
-		for repositoryID := range repositories {
+		for repositoryID := rbnge repositories {
 			if err := s.setRepositoryAsDirtyWithTx(ctx, repositoryID, tx.db); err != nil {
 				return err
 			}
 		}
 
-		a = scannedCount
+		b = scbnnedCount
 		b = count
 		return nil
 	})
-	return a, b, err
+	return b, b, err
 
 }
 
-const softDeleteExpiredUploadsViaTraversalQuery = `
+const softDeleteExpiredUplobdsVibTrbversblQuery = `
 WITH RECURSIVE
 
--- First, select a single root upload from which we will perform a traversal through
--- its dependents. Our goal is to find the set of transitive dependents that terminate
--- at our chosen root. If all the uploads reached on this traversal are expired, we can
--- remove the entire en masse. Otherwise, there is a non-expired upload that can reach
--- each of the traversed uploads, and we have to keep them as-is until the next check.
+-- First, select b single root uplobd from which we will perform b trbversbl through
+-- its dependents. Our gobl is to find the set of trbnsitive dependents thbt terminbte
+-- bt our chosen root. If bll the uplobds rebched on this trbversbl bre expired, we cbn
+-- remove the entire en mbsse. Otherwise, there is b non-expired uplobd thbt cbn rebch
+-- ebch of the trbversed uplobds, bnd we hbve to keep them bs-is until the next check.
 --
--- We choose an upload that is completed, expired, canonically provides some package.
--- If there is more than one such candidate, we choose the one that we've seen in this
--- traversal least recently.
-root_upload_and_packages AS (
+-- We choose bn uplobd thbt is completed, expired, cbnonicblly provides some pbckbge.
+-- If there is more thbn one such cbndidbte, we choose the one thbt we've seen in this
+-- trbversbl lebst recently.
+root_uplobd_bnd_pbckbges AS (
 	SELECT * FROM (
 		SELECT
 			u.id,
 			u.expired,
-			u.last_traversal_scan_at,
-			u.finished_at,
+			u.lbst_trbversbl_scbn_bt,
+			u.finished_bt,
 			p.scheme,
-			p.manager,
-			p.name,
+			p.mbnbger,
+			p.nbme,
 			p.version,
-			` + packageRankingQueryFragment + ` AS rank
-		FROM lsif_uploads u
-		LEFT JOIN lsif_packages p ON p.dump_id = u.id
-		WHERE u.state = 'completed' AND u.expired
+			` + pbckbgeRbnkingQueryFrbgment + ` AS rbnk
+		FROM lsif_uplobds u
+		LEFT JOIN lsif_pbckbges p ON p.dump_id = u.id
+		WHERE u.stbte = 'completed' AND u.expired
 	) s
 
-	WHERE s.rank = 1 AND EXISTS (
+	WHERE s.rbnk = 1 AND EXISTS (
 		SELECT 1
 		FROM lsif_references r
 		WHERE
 			r.scheme = s.scheme AND
-			r.manager = s.manager AND
-			r.name = s.name AND
+			r.mbnbger = s.mbnbger AND
+			r.nbme = s.nbme AND
 			r.version = s.version AND
 			r.dump_id != s.id
 		)
-	ORDER BY s.last_traversal_scan_at NULLS FIRST, s.finished_at, s.id
+	ORDER BY s.lbst_trbversbl_scbn_bt NULLS FIRST, s.finished_bt, s.id
 	LIMIT 1
 ),
 
--- Traverse the dependency graph backwards starting from our chosen root upload. The result
--- set will include all (canonical) id and expiration status of uploads that transitively
+-- Trbverse the dependency grbph bbckwbrds stbrting from our chosen root uplobd. The result
+-- set will include bll (cbnonicbl) id bnd expirbtion stbtus of uplobds thbt trbnsitively
 -- depend on chosen our root.
-transitive_dependents(id, expired, scheme, manager, name, version) AS MATERIALIZED (
+trbnsitive_dependents(id, expired, scheme, mbnbger, nbme, version) AS MATERIALIZED (
 	(
-		-- Base case: select our root upload and its canonical packages
-		SELECT up.id, up.expired, up.scheme, up.manager, up.name, up.version FROM root_upload_and_packages up
+		-- Bbse cbse: select our root uplobd bnd its cbnonicbl pbckbges
+		SELECT up.id, up.expired, up.scheme, up.mbnbger, up.nbme, up.version FROM root_uplobd_bnd_pbckbges up
 	) UNION (
-		-- Iterative case: select new (canonical) uploads that have a direct dependency of
-		-- some upload in our working set. This condition will continue to be evaluated until
-		-- it reaches a fixed point, giving us the complete connected component containing our
-		-- root upload.
+		-- Iterbtive cbse: select new (cbnonicbl) uplobds thbt hbve b direct dependency of
+		-- some uplobd in our working set. This condition will continue to be evblubted until
+		-- it rebches b fixed point, giving us the complete connected component contbining our
+		-- root uplobd.
 
-		SELECT s.id, s.expired, s.scheme, s.manager, s.name, s.version
+		SELECT s.id, s.expired, s.scheme, s.mbnbger, s.nbme, s.version
 		FROM (
 			SELECT
 				u.id,
 				u.expired,
 				p.scheme,
-				p.manager,
-				p.name,
+				p.mbnbger,
+				p.nbme,
 				p.version,
-				` + packageRankingQueryFragment + ` AS rank
-			FROM transitive_dependents d
+				` + pbckbgeRbnkingQueryFrbgment + ` AS rbnk
+			FROM trbnsitive_dependents d
 			JOIN lsif_references r ON
 				r.scheme = d.scheme AND
-				r.manager = d.manager AND
-				r.name = d.name AND
+				r.mbnbger = d.mbnbger AND
+				r.nbme = d.nbme AND
 				r.version = d.version AND
 				r.dump_id != d.id
-			JOIN lsif_uploads u ON u.id = r.dump_id
-			JOIN lsif_packages p ON p.dump_id = u.id
+			JOIN lsif_uplobds u ON u.id = r.dump_id
+			JOIN lsif_pbckbges p ON p.dump_id = u.id
 			WHERE
-				u.state = 'completed' AND
-				-- We don't need to continue to traverse paths that already have a non-expired
-				-- upload. We can cut the search short here. Unfortuantely I don't know a good
-				-- way to express that the ENTIRE traversal should stop. My attempts so far
-				-- have all required an (illegal) reference to the working table in a subquery
-				-- or aggregate.
+				u.stbte = 'completed' AND
+				-- We don't need to continue to trbverse pbths thbt blrebdy hbve b non-expired
+				-- uplobd. We cbn cut the sebrch short here. Unfortubntely I don't know b good
+				-- wby to express thbt the ENTIRE trbversbl should stop. My bttempts so fbr
+				-- hbve bll required bn (illegbl) reference to the working tbble in b subquery
+				-- or bggregbte.
 				d.expired
 		) s
 
-		-- Keep only canonical package providers from the iterative step
-		WHERE s.rank = 1
+		-- Keep only cbnonicbl pbckbge providers from the iterbtive step
+		WHERE s.rbnk = 1
 	)
 ),
 
--- Force evaluation of the traversal defined above, but stop searching after we've seen a given
--- number of nodes (our traversal limit). We don't want to spend unbounded time traversing a large
--- subgraph, so we cap the number of rows we'll pull from that result set. We'll handle the case
--- where we hit this limit in the update below as it would be unsafe to delete an upload based on
--- an incomplete view of its dependency graph.
-candidates AS (
-	SELECT * FROM transitive_dependents d
+-- Force evblubtion of the trbversbl defined bbove, but stop sebrching bfter we've seen b given
+-- number of nodes (our trbversbl limit). We don't wbnt to spend unbounded time trbversing b lbrge
+-- subgrbph, so we cbp the number of rows we'll pull from thbt result set. We'll hbndle the cbse
+-- where we hit this limit in the updbte below bs it would be unsbfe to delete bn uplobd bbsed on
+-- bn incomplete view of its dependency grbph.
+cbndidbtes AS (
+	SELECT * FROM trbnsitive_dependents d
 	LIMIT (%s + 1)
 ),
-locked_uploads AS (
+locked_uplobds AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.id IN (SELECT id FROM candidates)
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
+	FROM lsif_uplobds u
+	WHERE u.id IN (SELECT id FROM cbndidbtes)
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_uplobds tbble.
 	ORDER BY u.id FOR UPDATE
 ),
-updated AS (
-	UPDATE lsif_uploads u
+updbted AS (
+	UPDATE lsif_uplobds u
 
 	SET
-		-- Update this value unconditionally
-		last_traversal_scan_at = NOW(),
+		-- Updbte this vblue unconditionblly
+		lbst_trbversbl_scbn_bt = NOW(),
 
-		-- Delete all of the upload we've traversed if and only if we've identified the entire
-		-- relevant subgraph (we didn't hit our LIMIT above) and every upload of the subgraph is
-		-- expired. If this is not the case, we leave the state the same for all uploads.
-		state = CASE
-			WHEN (SELECT bool_and(d.expired) AND COUNT(*) <= %s FROM candidates d) THEN 'deleting'
+		-- Delete bll of the uplobd we've trbversed if bnd only if we've identified the entire
+		-- relevbnt subgrbph (we didn't hit our LIMIT bbove) bnd every uplobd of the subgrbph is
+		-- expired. If this is not the cbse, we lebve the stbte the sbme for bll uplobds.
+		stbte = CASE
+			WHEN (SELECT bool_bnd(d.expired) AND COUNT(*) <= %s FROM cbndidbtes d) THEN 'deleting'
 			ELSE 'completed'
 		END
-	WHERE u.id IN (SELECT id FROM locked_uploads)
-	RETURNING u.id, u.repository_id, u.state
+	WHERE u.id IN (SELECT id FROM locked_uplobds)
+	RETURNING u.id, u.repository_id, u.stbte
 )
 
--- Return the repositories which were affected so we can recalculate the commit graph
-SELECT (SELECT COUNT(*) FROM candidates), u.repository_id, COUNT(*) FROM updated u WHERE u.state = 'deleting' GROUP BY u.repository_id
+-- Return the repositories which were bffected so we cbn recblculbte the commit grbph
+SELECT (SELECT COUNT(*) FROM cbndidbtes), u.repository_id, COUNT(*) FROM updbted u WHERE u.stbte = 'deleting' GROUP BY u.repository_id
 `
 
 //
 //
 
-// SetRepositoryAsDirtyWithTx marks the given repository's commit graph as out of date.
-func (s *store) setRepositoryAsDirtyWithTx(ctx context.Context, repositoryID int, tx *basestore.Store) (err error) {
-	ctx, _, endObservation := s.operations.setRepositoryAsDirty.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
+// SetRepositoryAsDirtyWithTx mbrks the given repository's commit grbph bs out of dbte.
+func (s *store) setRepositoryAsDirtyWithTx(ctx context.Context, repositoryID int, tx *bbsestore.Store) (err error) {
+	ctx, _, endObservbtion := s.operbtions.setRepositoryAsDirty.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	return tx.Exec(ctx, sqlf.Sprintf(setRepositoryAsDirtyQuery, repositoryID))
 }
 
 const setRepositoryAsDirtyQuery = `
-INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, update_token)
+INSERT INTO lsif_dirty_repositories (repository_id, dirty_token, updbte_token)
 VALUES (%s, 1, 0)
 ON CONFLICT (repository_id) DO UPDATE SET
     dirty_token = lsif_dirty_repositories.dirty_token + 1,
-    set_dirty_at = CASE
-        WHEN lsif_dirty_repositories.update_token = lsif_dirty_repositories.dirty_token THEN NOW()
-        ELSE lsif_dirty_repositories.set_dirty_at
+    set_dirty_bt = CASE
+        WHEN lsif_dirty_repositories.updbte_token = lsif_dirty_repositories.dirty_token THEN NOW()
+        ELSE lsif_dirty_repositories.set_dirty_bt
     END
 `

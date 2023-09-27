@@ -1,67 +1,67 @@
-package tracer
+pbckbge trbcer
 
 import (
 	"context"
 
 	"go.opentelemetry.io/otel/sdk/resource"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	oteltrbcesdk "go.opentelemetry.io/otel/sdk/trbce"
+	"go.opentelemetry.io/otel/sdk/trbce/trbcetest"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults/exporters"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbcer/oteldefbults/exporters"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// newOtelTracerProvider creates a baseline OpenTelemetry TracerProvider that doesn't do
-// anything with incoming spans.
-func newOtelTracerProvider(r log.Resource) *oteltracesdk.TracerProvider {
-	return oteltracesdk.NewTracerProvider(
-		// Adapt log.Resource to OpenTelemetry's internal resource type
-		oteltracesdk.WithResource(
+// newOtelTrbcerProvider crebtes b bbseline OpenTelemetry TrbcerProvider thbt doesn't do
+// bnything with incoming spbns.
+func newOtelTrbcerProvider(r log.Resource) *oteltrbcesdk.TrbcerProvider {
+	return oteltrbcesdk.NewTrbcerProvider(
+		// Adbpt log.Resource to OpenTelemetry's internbl resource type
+		oteltrbcesdk.WithResource(
 			resource.NewWithAttributes(
-				semconv.SchemaURL,
-				semconv.ServiceNameKey.String(r.Name),
-				semconv.ServiceNamespaceKey.String(r.Namespace),
-				semconv.ServiceInstanceIDKey.String(r.InstanceID),
+				semconv.SchembURL,
+				semconv.ServiceNbmeKey.String(r.Nbme),
+				semconv.ServiceNbmespbceKey.String(r.Nbmespbce),
+				semconv.ServiceInstbnceIDKey.String(r.InstbnceID),
 				semconv.ServiceVersionKey.String(r.Version),
 			),
 		),
-		// We use an always-sampler to retain all spans, and depend on shouldTraceTracer
-		// to decide from context whether or not to start a span. This is required because
-		// we have opentracing bridging enabled.
-		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		// We use bn blwbys-sbmpler to retbin bll spbns, bnd depend on shouldTrbceTrbcer
+		// to decide from context whether or not to stbrt b spbn. This is required becbuse
+		// we hbve opentrbcing bridging enbbled.
+		oteltrbcesdk.WithSbmpler(oteltrbcesdk.AlwbysSbmple()),
 	)
 }
 
-// newOtelSpanProcessor is the default builder for OpenTelemetry span processors to
-// register on the underlying OpenTelemetry TracerProvider.
-func newOtelSpanProcessor(logger log.Logger, opts options, debug bool) (oteltracesdk.SpanProcessor, error) {
-	var exporter oteltracesdk.SpanExporter
-	var err error
-	switch opts.TracerType {
-	case OpenTelemetry:
-		exporter, err = exporters.NewOTLPTraceExporter(context.Background(), logger)
+// newOtelSpbnProcessor is the defbult builder for OpenTelemetry spbn processors to
+// register on the underlying OpenTelemetry TrbcerProvider.
+func newOtelSpbnProcessor(logger log.Logger, opts options, debug bool) (oteltrbcesdk.SpbnProcessor, error) {
+	vbr exporter oteltrbcesdk.SpbnExporter
+	vbr err error
+	switch opts.TrbcerType {
+	cbse OpenTelemetry:
+		exporter, err = exporters.NewOTLPTrbceExporter(context.Bbckground(), logger)
 
-	case Jaeger:
-		exporter, err = exporters.NewJaegerExporter()
+	cbse Jbeger:
+		exporter, err = exporters.NewJbegerExporter()
 
-	case None:
-		exporter = tracetest.NewNoopExporter()
+	cbse None:
+		exporter = trbcetest.NewNoopExporter()
 
-	default:
-		err = errors.Newf("unknown tracer type %q", opts.TracerType)
+	defbult:
+		err = errors.Newf("unknown trbcer type %q", opts.TrbcerType)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	// If in debug mode, we use a synchronous span processor to force spans to get pushed
-	// immediately, otherwise we batch
+	// If in debug mode, we use b synchronous spbn processor to force spbns to get pushed
+	// immedibtely, otherwise we bbtch
 	if debug {
-		logger.Warn("using synchronous span processor - disable 'observability.debug' to use something more suitable for production")
-		return oteltracesdk.NewSimpleSpanProcessor(exporter), nil
+		logger.Wbrn("using synchronous spbn processor - disbble 'observbbility.debug' to use something more suitbble for production")
+		return oteltrbcesdk.NewSimpleSpbnProcessor(exporter), nil
 	}
-	return oteltracesdk.NewBatchSpanProcessor(exporter), nil
+	return oteltrbcesdk.NewBbtchSpbnProcessor(exporter), nil
 }

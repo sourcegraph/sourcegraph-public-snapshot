@@ -1,37 +1,37 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestAccessToken(t *testing.T) {
-	t.Run("create a token and test it", func(t *testing.T) {
-		token, err := client.CreateAccessToken("TestAccessToken", []string{"user:all"})
+	t.Run("crebte b token bnd test it", func(t *testing.T) {
+		token, err := client.CrebteAccessToken("TestAccessToken", []string{"user:bll"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() {
 			err := client.DeleteAccessToken(token)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}()
 
 		_, err = client.CurrentUserID(token)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	t.Run("use an invalid token gets 401", func(t *testing.T) {
-		_, err := client.CurrentUserID("a bad token")
-		gotErr := fmt.Sprintf("%v", errors.Cause(err))
-		wantErr := "401: Invalid access token."
-		if gotErr != wantErr {
-			t.Fatalf("err: want %q but got %q", wantErr, gotErr)
+	t.Run("use bn invblid token gets 401", func(t *testing.T) {
+		_, err := client.CurrentUserID("b bbd token")
+		gotErr := fmt.Sprintf("%v", errors.Cbuse(err))
+		wbntErr := "401: Invblid bccess token."
+		if gotErr != wbntErr {
+			t.Fbtblf("err: wbnt %q but got %q", wbntErr, gotErr)
 		}
 	})
 }

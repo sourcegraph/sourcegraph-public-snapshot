@@ -1,29 +1,29 @@
-package bitbucketserver
+pbckbge bitbucketserver
 
 import (
 	"testing"
 )
 
-func TestIntegration(t *testing.T) {
+func TestIntegrbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 
 	cli := newClient(t, "BitbucketServer")
 
 	f := newFixtures()
-	f.load(t, cli)
+	f.lobd(t, cli)
 
-	for _, tc := range []struct {
-		name string
+	for _, tc := rbnge []struct {
+		nbme string
 		test func(*testing.T)
 	}{
 		{"Provider/FetchAccount", testProviderFetchAccount(f, cli)},
 		{"Provider/FetchUserPerms", testProviderFetchUserPerms(f, cli)},
 		{"Provider/FetchRepoPerms", testProviderFetchRepoPerms(f, cli)},
 	} {
-		t.Run(tc.name, tc.test)
+		t.Run(tc.nbme, tc.test)
 	}
 }

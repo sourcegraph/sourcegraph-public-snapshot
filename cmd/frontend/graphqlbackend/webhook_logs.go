@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,98 +7,98 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// WebhookLogsArgs are the arguments common to the two queries that provide
-// access to webhook logs: the webhookLogs method on the top level query, and on
-// the ExternalService type.
+// WebhookLogsArgs bre the brguments common to the two queries thbt provide
+// bccess to webhook logs: the webhookLogs method on the top level query, bnd on
+// the ExternblService type.
 type WebhookLogsArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	After      *string
 	OnlyErrors *bool
 	Since      *time.Time
 	Until      *time.Time
-	WebhookID  *graphql.ID
-	LegacyOnly *bool
+	WebhookID  *grbphql.ID
+	LegbcyOnly *bool
 }
 
-// webhookLogsExternalServiceID is used to represent an external service ID,
-// which may be a constant defined below to represent all or unmatched external
+// webhookLogsExternblServiceID is used to represent bn externbl service ID,
+// which mby be b constbnt defined below to represent bll or unmbtched externbl
 // services.
-type webhookLogsExternalServiceID int64
+type webhookLogsExternblServiceID int64
 
-var (
-	WebhookLogsAllExternalServices      webhookLogsExternalServiceID = -1
-	WebhookLogsUnmatchedExternalService webhookLogsExternalServiceID = 0
+vbr (
+	WebhookLogsAllExternblServices      webhookLogsExternblServiceID = -1
+	WebhookLogsUnmbtchedExternblService webhookLogsExternblServiceID = 0
 )
 
-func (id webhookLogsExternalServiceID) toListOpt() *int64 {
+func (id webhookLogsExternblServiceID) toListOpt() *int64 {
 	switch id {
-	case WebhookLogsAllExternalServices:
+	cbse WebhookLogsAllExternblServices:
 		return nil
-	case WebhookLogsUnmatchedExternalService:
-		fallthrough
-	default:
+	cbse WebhookLogsUnmbtchedExternblService:
+		fbllthrough
+	defbult:
 		i := int64(id)
 		return &i
 	}
 }
 
-// toListOpts transforms the GraphQL webhookLogsArgs into options that can be
-// provided to the WebhookLogStore's Count and List methods.
-func (args *WebhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalServiceID) (database.WebhookLogListOpts, error) {
-	opts := database.WebhookLogListOpts{
-		ExternalServiceID: externalServiceID.toListOpt(),
-		Since:             args.Since,
-		Until:             args.Until,
+// toListOpts trbnsforms the GrbphQL webhookLogsArgs into options thbt cbn be
+// provided to the WebhookLogStore's Count bnd List methods.
+func (brgs *WebhookLogsArgs) toListOpts(externblServiceID webhookLogsExternblServiceID) (dbtbbbse.WebhookLogListOpts, error) {
+	opts := dbtbbbse.WebhookLogListOpts{
+		ExternblServiceID: externblServiceID.toListOpt(),
+		Since:             brgs.Since,
+		Until:             brgs.Until,
 	}
 
-	if args.First != nil {
-		opts.Limit = int(*args.First)
+	if brgs.First != nil {
+		opts.Limit = int(*brgs.First)
 	} else {
 		opts.Limit = 50
 	}
 
-	if args.After != nil {
-		var err error
-		opts.Cursor, err = strconv.ParseInt(*args.After, 10, 64)
+	if brgs.After != nil {
+		vbr err error
+		opts.Cursor, err = strconv.PbrseInt(*brgs.After, 10, 64)
 		if err != nil {
-			return opts, errors.Wrap(err, "parsing the after cursor")
+			return opts, errors.Wrbp(err, "pbrsing the bfter cursor")
 		}
 	}
 
-	if args.OnlyErrors != nil && *args.OnlyErrors {
+	if brgs.OnlyErrors != nil && *brgs.OnlyErrors {
 		opts.OnlyErrors = true
 	}
 
-	// Both nil and "-1" webhook IDs should be resolved to nil WebhookID
+	// Both nil bnd "-1" webhook IDs should be resolved to nil WebhookID
 	// WebhookLogListOpts option
-	if args.WebhookID != nil {
-		id, err := unmarshalWebhookID(*args.WebhookID)
+	if brgs.WebhookID != nil {
+		id, err := unmbrshblWebhookID(*brgs.WebhookID)
 		if err != nil {
-			return opts, errors.Wrap(err, "unmarshalling webhook ID")
+			return opts, errors.Wrbp(err, "unmbrshblling webhook ID")
 		}
 		if id > 0 {
 			opts.WebhookID = &id
 		}
 	}
 
-	// If only legacy webhook logs is requested,
-	// set WebhookID to zero so that the database
+	// If only legbcy webhook logs is requested,
+	// set WebhookID to zero so thbt the dbtbbbse
 	// query only returns webhooks with no ID set.
-	if args.LegacyOnly != nil && *args.LegacyOnly {
+	if brgs.LegbcyOnly != nil && *brgs.LegbcyOnly {
 		zeroID := int32(0)
 		opts.WebhookID = &zeroID
 	}
@@ -106,27 +106,27 @@ func (args *WebhookLogsArgs) toListOpts(externalServiceID webhookLogsExternalSer
 	return opts, nil
 }
 
-type globalWebhookLogsArgs struct {
+type globblWebhookLogsArgs struct {
 	WebhookLogsArgs
-	OnlyUnmatched *bool
+	OnlyUnmbtched *bool
 }
 
-// WebhookLogs is the top level query used to return webhook logs that weren't
-// resolved to a specific external service.
-func (r *schemaResolver) WebhookLogs(ctx context.Context, args *globalWebhookLogsArgs) (*WebhookLogConnectionResolver, error) {
-	externalServiceID := WebhookLogsAllExternalServices
-	if unmatched := args.OnlyUnmatched; unmatched != nil && *unmatched {
-		externalServiceID = WebhookLogsUnmatchedExternalService
+// WebhookLogs is the top level query used to return webhook logs thbt weren't
+// resolved to b specific externbl service.
+func (r *schembResolver) WebhookLogs(ctx context.Context, brgs *globblWebhookLogsArgs) (*WebhookLogConnectionResolver, error) {
+	externblServiceID := WebhookLogsAllExternblServices
+	if unmbtched := brgs.OnlyUnmbtched; unmbtched != nil && *unmbtched {
+		externblServiceID = WebhookLogsUnmbtchedExternblService
 	}
 
-	return NewWebhookLogConnectionResolver(ctx, r.db, &args.WebhookLogsArgs, externalServiceID)
+	return NewWebhookLogConnectionResolver(ctx, r.db, &brgs.WebhookLogsArgs, externblServiceID)
 }
 
 type WebhookLogConnectionResolver struct {
 	logger            log.Logger
-	args              *WebhookLogsArgs
-	externalServiceID webhookLogsExternalServiceID
-	store             database.WebhookLogStore
+	brgs              *WebhookLogsArgs
+	externblServiceID webhookLogsExternblServiceID
+	store             dbtbbbse.WebhookLogStore
 
 	once sync.Once
 	logs []*types.WebhookLog
@@ -135,18 +135,18 @@ type WebhookLogConnectionResolver struct {
 }
 
 func NewWebhookLogConnectionResolver(
-	ctx context.Context, db database.DB, args *WebhookLogsArgs,
-	externalServiceID webhookLogsExternalServiceID,
+	ctx context.Context, db dbtbbbse.DB, brgs *WebhookLogsArgs,
+	externblServiceID webhookLogsExternblServiceID,
 ) (*WebhookLogConnectionResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
 	return &WebhookLogConnectionResolver{
 		logger:            log.Scoped("webhookLogConnectionResolver", ""),
-		args:              args,
-		externalServiceID: externalServiceID,
-		store:             db.WebhookLogs(keyring.Default().WebhookLogKey),
+		brgs:              brgs,
+		externblServiceID: externblServiceID,
+		store:             db.WebhookLogs(keyring.Defbult().WebhookLogKey),
 	}, nil
 }
 
@@ -156,9 +156,9 @@ func (r *WebhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 		return nil, err
 	}
 
-	nodes := make([]*webhookLogResolver, len(logs))
-	db := database.NewDBWith(r.logger, r.store)
-	for i, l := range logs {
+	nodes := mbke([]*webhookLogResolver, len(logs))
+	db := dbtbbbse.NewDBWith(r.logger, r.store)
+	for i, l := rbnge logs {
 		nodes[i] = &webhookLogResolver{
 			db:  db,
 			log: l,
@@ -168,8 +168,8 @@ func (r *WebhookLogConnectionResolver) Nodes(ctx context.Context) ([]*webhookLog
 	return nodes, nil
 }
 
-func (r *WebhookLogConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts, err := r.args.toListOpts(r.externalServiceID)
+func (r *WebhookLogConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	opts, err := r.brgs.toListOpts(r.externblServiceID)
 	if err != nil {
 		return 0, err
 	}
@@ -178,22 +178,22 @@ func (r *WebhookLogConnectionResolver) TotalCount(ctx context.Context) (int32, e
 	return int32(count), err
 }
 
-func (r *WebhookLogConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *WebhookLogConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if next == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
-	return graphqlutil.NextPageCursor(fmt.Sprint(next)), nil
+	return grbphqlutil.NextPbgeCursor(fmt.Sprint(next)), nil
 }
 
 func (r *WebhookLogConnectionResolver) compute(ctx context.Context) ([]*types.WebhookLog, int64, error) {
 	r.once.Do(func() {
 		r.err = func() error {
-			opts, err := r.args.toListOpts(r.externalServiceID)
+			opts, err := r.brgs.toListOpts(r.externblServiceID)
 			if err != nil {
 				return err
 			}
@@ -207,30 +207,30 @@ func (r *WebhookLogConnectionResolver) compute(ctx context.Context) ([]*types.We
 }
 
 type webhookLogResolver struct {
-	db  database.DB
+	db  dbtbbbse.DB
 	log *types.WebhookLog
 }
 
-func marshalWebhookLogID(id int64) graphql.ID {
-	return relay.MarshalID("WebhookLog", id)
+func mbrshblWebhookLogID(id int64) grbphql.ID {
+	return relby.MbrshblID("WebhookLog", id)
 }
 
-func unmarshalWebhookLogID(id graphql.ID) (logID int64, err error) {
-	err = relay.UnmarshalSpec(id, &logID)
+func unmbrshblWebhookLogID(id grbphql.ID) (logID int64, err error) {
+	err = relby.UnmbrshblSpec(id, &logID)
 	return
 }
 
-func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*webhookLogResolver, error) {
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+func webhookLogByID(ctx context.Context, db dbtbbbse.DB, gqlID grbphql.ID) (*webhookLogResolver, error) {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalWebhookLogID(gqlID)
+	id, err := unmbrshblWebhookLogID(gqlID)
 	if err != nil {
 		return nil, err
 	}
 
-	l, err := db.WebhookLogs(keyring.Default().WebhookLogKey).GetByID(ctx, id)
+	l, err := db.WebhookLogs(keyring.Defbult().WebhookLogKey).GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -238,77 +238,77 @@ func webhookLogByID(ctx context.Context, db database.DB, gqlID graphql.ID) (*web
 	return &webhookLogResolver{db: db, log: l}, nil
 }
 
-func (r *webhookLogResolver) ID() graphql.ID {
-	return marshalWebhookLogID(r.log.ID)
+func (r *webhookLogResolver) ID() grbphql.ID {
+	return mbrshblWebhookLogID(r.log.ID)
 }
 
-func (r *webhookLogResolver) ReceivedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.log.ReceivedAt}
+func (r *webhookLogResolver) ReceivedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.log.ReceivedAt}
 }
 
-func (r *webhookLogResolver) ExternalService(ctx context.Context) (*externalServiceResolver, error) {
-	if r.log.ExternalServiceID == nil {
+func (r *webhookLogResolver) ExternblService(ctx context.Context) (*externblServiceResolver, error) {
+	if r.log.ExternblServiceID == nil {
 		return nil, nil
 	}
 
-	return externalServiceByID(ctx, r.db, MarshalExternalServiceID(*r.log.ExternalServiceID))
+	return externblServiceByID(ctx, r.db, MbrshblExternblServiceID(*r.log.ExternblServiceID))
 }
 
-func (r *webhookLogResolver) StatusCode() int32 {
-	return int32(r.log.StatusCode)
+func (r *webhookLogResolver) StbtusCode() int32 {
+	return int32(r.log.StbtusCode)
 }
 
 func (r *webhookLogResolver) Request(ctx context.Context) (*webhookLogRequestResolver, error) {
-	message, err := r.log.Request.Decrypt(ctx)
+	messbge, err := r.log.Request.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &webhookLogRequestResolver{webhookLogMessageResolver{message: &message}}, nil
+	return &webhookLogRequestResolver{webhookLogMessbgeResolver{messbge: &messbge}}, nil
 }
 
-func (r *webhookLogResolver) Response(ctx context.Context) (*webhookLogMessageResolver, error) {
-	message, err := r.log.Response.Decrypt(ctx)
+func (r *webhookLogResolver) Response(ctx context.Context) (*webhookLogMessbgeResolver, error) {
+	messbge, err := r.log.Response.Decrypt(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &webhookLogMessageResolver{message: &message}, nil
+	return &webhookLogMessbgeResolver{messbge: &messbge}, nil
 }
 
-type webhookLogMessageResolver struct {
-	message *types.WebhookLogMessage
+type webhookLogMessbgeResolver struct {
+	messbge *types.WebhookLogMessbge
 }
 
-func (r *webhookLogMessageResolver) Headers() ([]*HttpHeaders, error) {
-	return newHttpHeaders(r.message.Header)
+func (r *webhookLogMessbgeResolver) Hebders() ([]*HttpHebders, error) {
+	return newHttpHebders(r.messbge.Hebder)
 }
 
-func (r *webhookLogMessageResolver) Body() string {
-	return string(r.message.Body)
+func (r *webhookLogMessbgeResolver) Body() string {
+	return string(r.messbge.Body)
 }
 
 type webhookLogRequestResolver struct {
-	webhookLogMessageResolver
+	webhookLogMessbgeResolver
 }
 
 func (r *webhookLogRequestResolver) Method() string {
-	return r.message.Method
+	return r.messbge.Method
 }
 
 func (r *webhookLogRequestResolver) URL() string {
-	return r.message.URL
+	return r.messbge.URL
 }
 
 func (r *webhookLogRequestResolver) Version() string {
-	return r.message.Version
+	return r.messbge.Version
 }
 
-func marshalWebhookID(id int32) graphql.ID {
-	return relay.MarshalID("Webhook", id)
+func mbrshblWebhookID(id int32) grbphql.ID {
+	return relby.MbrshblID("Webhook", id)
 }
 
-func unmarshalWebhookID(id graphql.ID) (hookID int32, err error) {
-	err = relay.UnmarshalSpec(id, &hookID)
+func unmbrshblWebhookID(id grbphql.ID) (hookID int32, err error) {
+	err = relby.UnmbrshblSpec(id, &hookID)
 	return
 }

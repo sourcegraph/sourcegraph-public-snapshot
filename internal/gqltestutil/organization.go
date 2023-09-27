@@ -1,182 +1,182 @@
-package gqltestutil
+pbckbge gqltestutil
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// Organization contains basic information of an organization.
-type Organization struct {
+// Orgbnizbtion contbins bbsic informbtion of bn orgbnizbtion.
+type Orgbnizbtion struct {
 	ID             string `json:"id"`
 	ViewerIsMember bool   `json:"viewerIsMember"`
 }
 
-// Organization returns basic information of the given organization.
-func (c *Client) Organization(name string) (*Organization, error) {
+// Orgbnizbtion returns bbsic informbtion of the given orgbnizbtion.
+func (c *Client) Orgbnizbtion(nbme string) (*Orgbnizbtion, error) {
 	const query = `
-query Organization($name: String!) {
-	organization(name: $name) {
+query Orgbnizbtion($nbme: String!) {
+	orgbnizbtion(nbme: $nbme) {
 		id
 		viewerIsMember
 	}
 }
 `
-	variables := map[string]any{
-		"name": name,
+	vbribbles := mbp[string]bny{
+		"nbme": nbme,
 	}
-	var resp struct {
-		Data struct {
-			*Organization `json:"organization"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			*Orgbnizbtion `json:"orgbnizbtion"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Organization, nil
+	return resp.Dbtb.Orgbnizbtion, nil
 }
 
-// InviteUserToOrganizationResult contains information of a user invitation to
-// an organization.
-type InviteUserToOrganizationResult struct {
-	SentInvitationEmail bool   `json:"sentInvitationEmail"`
-	InvitationURL       string `json:"invitationURL"`
+// InviteUserToOrgbnizbtionResult contbins informbtion of b user invitbtion to
+// bn orgbnizbtion.
+type InviteUserToOrgbnizbtionResult struct {
+	SentInvitbtionEmbil bool   `json:"sentInvitbtionEmbil"`
+	InvitbtionURL       string `json:"invitbtionURL"`
 }
 
-// InviteUserToOrganization invites a user to the given organization.
-func (c *Client) InviteUserToOrganization(orgID, username string, email string) (*InviteUserToOrganizationResult, error) {
+// InviteUserToOrgbnizbtion invites b user to the given orgbnizbtion.
+func (c *Client) InviteUserToOrgbnizbtion(orgID, usernbme string, embil string) (*InviteUserToOrgbnizbtionResult, error) {
 	const query = `
-mutation InviteUserToOrganization($organization: ID!, $username: String, $email: String) {
-	inviteUserToOrganization(organization: $organization, username: $username, email: $email) {
-		... on InviteUserToOrganizationResult {
-			sentInvitationEmail
-			invitationURL
+mutbtion InviteUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String, $embil: String) {
+	inviteUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme, embil: $embil) {
+		... on InviteUserToOrgbnizbtionResult {
+			sentInvitbtionEmbil
+			invitbtionURL
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"organization": orgID,
-		"username":     username,
-		"email":        email,
+	vbribbles := mbp[string]bny{
+		"orgbnizbtion": orgID,
+		"usernbme":     usernbme,
+		"embil":        embil,
 	}
-	var resp struct {
-		Data struct {
-			*InviteUserToOrganizationResult `json:"inviteUserToOrganization"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			*InviteUserToOrgbnizbtionResult `json:"inviteUserToOrgbnizbtion"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
-	return resp.Data.InviteUserToOrganizationResult, nil
+	return resp.Dbtb.InviteUserToOrgbnizbtionResult, nil
 }
 
-// AddUserToOrganization invites a user to the given organization.
-func (c *Client) AddUserToOrganization(orgID, username string) error {
+// AddUserToOrgbnizbtion invites b user to the given orgbnizbtion.
+func (c *Client) AddUserToOrgbnizbtion(orgID, usernbme string) error {
 	const query = `
-	mutation AddUserToOrganization($organization: ID!, $username: String!) {
-		addUserToOrganization(organization: $organization, username: $username) {
-			alwaysNil
+	mutbtion AddUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String!) {
+		bddUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+			blwbysNil
 		}
 	}`
 
-	variables := map[string]any{
-		"organization": orgID,
-		"username":     username,
+	vbribbles := mbp[string]bny{
+		"orgbnizbtion": orgID,
+		"usernbme":     usernbme,
 	}
 
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-// CreateOrganization creates a new organization with given name and display name.
-// It returns GraphQL node ID of newly created organization.
-func (c *Client) CreateOrganization(name, displayName string) (string, error) {
+// CrebteOrgbnizbtion crebtes b new orgbnizbtion with given nbme bnd displby nbme.
+// It returns GrbphQL node ID of newly crebted orgbnizbtion.
+func (c *Client) CrebteOrgbnizbtion(nbme, displbyNbme string) (string, error) {
 	const query = `
-mutation CreateOrganization($name: String!, $displayName: String) {
-	createOrganization(name: $name, displayName: $displayName) {
+mutbtion CrebteOrgbnizbtion($nbme: String!, $displbyNbme: String) {
+	crebteOrgbnizbtion(nbme: $nbme, displbyNbme: $displbyNbme) {
 		id
 	}
 }
 `
-	variables := map[string]any{
-		"name":        name,
-		"displayName": displayName,
+	vbribbles := mbp[string]bny{
+		"nbme":        nbme,
+		"displbyNbme": displbyNbme,
 	}
-	var resp struct {
-		Data struct {
-			CreateOrganization struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteOrgbnizbtion struct {
 				ID string `json:"id"`
-			} `json:"createOrganization"`
-		} `json:"data"`
+			} `json:"crebteOrgbnizbtion"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
-	return resp.Data.CreateOrganization.ID, nil
+	return resp.Dbtb.CrebteOrgbnizbtion.ID, nil
 }
 
-// UpdateOrganization updates display name of the given organization.
-func (c *Client) UpdateOrganization(id, displayName string) error {
+// UpdbteOrgbnizbtion updbtes displby nbme of the given orgbnizbtion.
+func (c *Client) UpdbteOrgbnizbtion(id, displbyNbme string) error {
 	const query = `
-mutation UpdateOrganization($id: ID!, $displayName: String) {
-	updateOrganization(id: $id, displayName: $displayName) {
+mutbtion UpdbteOrgbnizbtion($id: ID!, $displbyNbme: String) {
+	updbteOrgbnizbtion(id: $id, displbyNbme: $displbyNbme) {
 		id
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id":          id,
-		"displayName": displayName,
+		"displbyNbme": displbyNbme,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 
 	return nil
 }
 
-// DeleteOrganization deletes the organization by given GraphQL node ID.
+// DeleteOrgbnizbtion deletes the orgbnizbtion by given GrbphQL node ID.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) DeleteOrganization(id string) error {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) DeleteOrgbnizbtion(id string) error {
 	const query = `
-mutation DeleteOrganization($organization: ID!) {
-	deleteOrganization(organization: $organization) {
-		alwaysNil
+mutbtion DeleteOrgbnizbtion($orgbnizbtion: ID!) {
+	deleteOrgbnizbtion(orgbnizbtion: $orgbnizbtion) {
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{
-		"organization": id,
+	vbribbles := mbp[string]bny{
+		"orgbnizbtion": id,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-// RemoveUserFromOrganization removes user from given organization.
-func (c *Client) RemoveUserFromOrganization(userID, orgID string) error {
+// RemoveUserFromOrgbnizbtion removes user from given orgbnizbtion.
+func (c *Client) RemoveUserFromOrgbnizbtion(userID, orgID string) error {
 	const query = `
-mutation RemoveUserFromOrganization($user: ID!, $organization: ID!) {
-	removeUserFromOrganization(user: $user, organization: $organization) {
-		alwaysNil
+mutbtion RemoveUserFromOrgbnizbtion($user: ID!, $orgbnizbtion: ID!) {
+	removeUserFromOrgbnizbtion(user: $user, orgbnizbtion: $orgbnizbtion) {
+		blwbysNil
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"user":         userID,
-		"organization": orgID,
+		"orgbnizbtion": orgID,
 	}
-	err := c.GraphQL("", query, variables, nil)
+	err := c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }

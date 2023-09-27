@@ -1,55 +1,55 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"net/url"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/suspiciousnames"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/suspiciousnbmes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (r *schemaResolver) User(
+func (r *schembResolver) User(
 	ctx context.Context,
-	args struct {
-		Username *string
-		Email    *string
+	brgs struct {
+		Usernbme *string
+		Embil    *string
 	},
 ) (*UserResolver, error) {
-	var err error
-	var user *types.User
+	vbr err error
+	vbr user *types.User
 	switch {
-	case args.Username != nil:
-		user, err = r.db.Users().GetByUsername(ctx, *args.Username)
+	cbse brgs.Usernbme != nil:
+		user, err = r.db.Users().GetByUsernbme(ctx, *brgs.Usernbme)
 
-	case args.Email != nil:
-		// 🚨 SECURITY: Only site admins are allowed to look up by email address on
-		// Sourcegraph.com, for user privacy reasons.
-		if envvar.SourcegraphDotComMode() {
-			if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	cbse brgs.Embil != nil:
+		// 🚨 SECURITY: Only site bdmins bre bllowed to look up by embil bddress on
+		// Sourcegrbph.com, for user privbcy rebsons.
+		if envvbr.SourcegrbphDotComMode() {
+			if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 				return nil, err
 			}
 		}
-		user, err = r.db.Users().GetByVerifiedEmail(ctx, *args.Email)
+		user, err = r.db.Users().GetByVerifiedEmbil(ctx, *brgs.Embil)
 
-	default:
-		return nil, errors.New("must specify either username or email to look up a user")
+	defbult:
+		return nil, errors.New("must specify either usernbme or embil to look up b user")
 	}
 	if err != nil {
 		if errcode.IsNotFound(err) {
@@ -60,50 +60,50 @@ func (r *schemaResolver) User(
 	return NewUserResolver(ctx, r.db, user), nil
 }
 
-// UserResolver implements the GraphQL User type.
+// UserResolver implements the GrbphQL User type.
 type UserResolver struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 	user   *types.User
-	// actor containing current user (derived from request context), which lets us
-	// skip fetching actor from context in every resolver function and save DB calls,
-	// because user is fetched in actor only once.
-	actor *actor.Actor
+	// bctor contbining current user (derived from request context), which lets us
+	// skip fetching bctor from context in every resolver function bnd sbve DB cblls,
+	// becbuse user is fetched in bctor only once.
+	bctor *bctor.Actor
 }
 
-// NewUserResolver returns a new UserResolver with given user object.
-func NewUserResolver(ctx context.Context, db database.DB, user *types.User) *UserResolver {
+// NewUserResolver returns b new UserResolver with given user object.
+func NewUserResolver(ctx context.Context, db dbtbbbse.DB, user *types.User) *UserResolver {
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
-		actor:  actor.FromContext(ctx),
+		logger: log.Scoped("userResolver", "resolves b specific user").With(log.String("user", user.Usernbme)),
+		bctor:  bctor.FromContext(ctx),
 	}
 }
 
-// newUserResolverFromActor returns a new UserResolver with given user object.
-func newUserResolverFromActor(a *actor.Actor, db database.DB, user *types.User) *UserResolver {
+// newUserResolverFromActor returns b new UserResolver with given user object.
+func newUserResolverFromActor(b *bctor.Actor, db dbtbbbse.DB, user *types.User) *UserResolver {
 	return &UserResolver{
 		db:     db,
 		user:   user,
-		logger: log.Scoped("userResolver", "resolves a specific user").With(log.String("user", user.Username)),
-		actor:  a,
+		logger: log.Scoped("userResolver", "resolves b specific user").With(log.String("user", user.Usernbme)),
+		bctor:  b,
 	}
 }
 
-// UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
+// UserByID looks up bnd returns the user with the given GrbphQL ID. If no such user exists, it returns b
 // non-nil error.
-func UserByID(ctx context.Context, db database.DB, id graphql.ID) (*UserResolver, error) {
-	userID, err := UnmarshalUserID(id)
+func UserByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (*UserResolver, error) {
+	userID, err := UnmbrshblUserID(id)
 	if err != nil {
 		return nil, err
 	}
 	return UserByIDInt32(ctx, db, userID)
 }
 
-// UserByIDInt32 looks up and returns the user with the given database ID. If no such user exists,
-// it returns a non-nil error.
-func UserByIDInt32(ctx context.Context, db database.DB, id int32) (*UserResolver, error) {
+// UserByIDInt32 looks up bnd returns the user with the given dbtbbbse ID. If no such user exists,
+// it returns b non-nil error.
+func UserByIDInt32(ctx context.Context, db dbtbbbse.DB, id int32) (*UserResolver, error) {
 	user, err := db.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -111,88 +111,88 @@ func UserByIDInt32(ctx context.Context, db database.DB, id int32) (*UserResolver
 	return NewUserResolver(ctx, db, user), nil
 }
 
-func (r *UserResolver) ID() graphql.ID { return MarshalUserID(r.user.ID) }
+func (r *UserResolver) ID() grbphql.ID { return MbrshblUserID(r.user.ID) }
 
-func MarshalUserID(id int32) graphql.ID { return relay.MarshalID("User", id) }
+func MbrshblUserID(id int32) grbphql.ID { return relby.MbrshblID("User", id) }
 
-func UnmarshalUserID(id graphql.ID) (userID int32, err error) {
-	err = relay.UnmarshalSpec(id, &userID)
+func UnmbrshblUserID(id grbphql.ID) (userID int32, err error) {
+	err = relby.UnmbrshblSpec(id, &userID)
 	return
 }
 
-// DatabaseID returns the numeric ID for the user in the database.
-func (r *UserResolver) DatabaseID() int32 { return r.user.ID }
+// DbtbbbseID returns the numeric ID for the user in the dbtbbbse.
+func (r *UserResolver) DbtbbbseID() int32 { return r.user.ID }
 
-// Email returns the user's oldest email, if one exists.
-// Deprecated: use Emails instead.
-func (r *UserResolver) Email(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the email address.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+// Embil returns the user's oldest embil, if one exists.
+// Deprecbted: use Embils instebd.
+func (r *UserResolver) Embil(ctx context.Context) (string, error) {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to bccess the embil bddress.
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID); err != nil {
 		return "", err
 	}
 
-	email, _, err := r.db.UserEmails().GetPrimaryEmail(ctx, r.user.ID)
+	embil, _, err := r.db.UserEmbils().GetPrimbryEmbil(ctx, r.user.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return "", err
 	}
 
-	return email, nil
+	return embil, nil
 }
 
-func (r *UserResolver) Username() string { return r.user.Username }
+func (r *UserResolver) Usernbme() string { return r.user.Usernbme }
 
-func (r *UserResolver) DisplayName() *string {
-	if r.user.DisplayName == "" {
+func (r *UserResolver) DisplbyNbme() *string {
+	if r.user.DisplbyNbme == "" {
 		return nil
 	}
-	return &r.user.DisplayName
+	return &r.user.DisplbyNbme
 }
 
 func (r *UserResolver) BuiltinAuth() bool {
-	return r.user.BuiltinAuth && providers.BuiltinAuthEnabled()
+	return r.user.BuiltinAuth && providers.BuiltinAuthEnbbled()
 }
 
-func (r *UserResolver) AvatarURL() *string {
-	if r.user.AvatarURL == "" {
+func (r *UserResolver) AvbtbrURL() *string {
+	if r.user.AvbtbrURL == "" {
 		return nil
 	}
-	return &r.user.AvatarURL
+	return &r.user.AvbtbrURL
 }
 
 func (r *UserResolver) URL() string {
-	return "/users/" + r.user.Username
+	return "/users/" + r.user.Usernbme
 }
 
 func (r *UserResolver) SettingsURL() *string { return strptr(r.URL() + "/settings") }
 
-func (r *UserResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.user.CreatedAt}
+func (r *UserResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.user.CrebtedAt}
 }
 
-func (r *UserResolver) UpdatedAt() *gqlutil.DateTime {
-	return &gqlutil.DateTime{Time: r.user.UpdatedAt}
+func (r *UserResolver) UpdbtedAt() *gqlutil.DbteTime {
+	return &gqlutil.DbteTime{Time: r.user.UpdbtedAt}
 }
 
-func (r *UserResolver) settingsSubject() api.SettingsSubject {
-	return api.SettingsSubject{User: &r.user.ID}
+func (r *UserResolver) settingsSubject() bpi.SettingsSubject {
+	return bpi.SettingsSubject{User: &r.user.ID}
 }
 
-func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, error) {
-	// 🚨 SECURITY: Only the authenticated user can view their settings on
-	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
+func (r *UserResolver) LbtestSettings(ctx context.Context) (*settingsResolver, error) {
+	// 🚨 SECURITY: Only the buthenticbted user cbn view their settings on
+	// Sourcegrbph.com.
+	if envvbr.SourcegrbphDotComMode() {
+		if err := buth.CheckSbmeUserFromActor(r.bctor, r.user.ID); err != nil {
 			return nil, err
 		}
 	} else {
-		// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-		// settings, because they may contain secrets or other sensitive data.
-		if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+		// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to bccess the user's
+		// settings, becbuse they mby contbin secrets or other sensitive dbtb.
+		if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID); err != nil {
 			return nil, err
 		}
 	}
 
-	settings, err := r.db.Settings().GetLatest(ctx, r.settingsSubject())
+	settings, err := r.db.Settings().GetLbtest(ctx, r.settingsSubject())
 	if err != nil {
 		return nil, err
 	}
@@ -202,16 +202,16 @@ func (r *UserResolver) LatestSettings(ctx context.Context) (*settingsResolver, e
 	return &settingsResolver{r.db, &settingsSubjectResolver{user: r}, settings, nil}, nil
 }
 
-func (r *UserResolver) SettingsCascade() *settingsCascade {
-	return &settingsCascade{db: r.db, subject: &settingsSubjectResolver{user: r}}
+func (r *UserResolver) SettingsCbscbde() *settingsCbscbde {
+	return &settingsCbscbde{db: r.db, subject: &settingsSubjectResolver{user: r}}
 }
 
-func (r *UserResolver) ConfigurationCascade() *settingsCascade { return r.SettingsCascade() }
+func (r *UserResolver) ConfigurbtionCbscbde() *settingsCbscbde { return r.SettingsCbscbde() }
 
 func (r *UserResolver) SiteAdmin() (bool, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to determine if the user is a site admin.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return false, err
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to determine if the user is b site bdmin.
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID); err != nil {
+		return fblse, err
 	}
 
 	return r.user.SiteAdmin, nil
@@ -222,235 +222,235 @@ func (r *UserResolver) TosAccepted(_ context.Context) bool {
 }
 
 func (r *UserResolver) CompletedPostSignup(ctx context.Context) (bool, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to state of
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to stbte of
 	// post-signup flow completion.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
-		return false, err
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID); err != nil {
+		return fblse, err
 	}
 
 	return r.user.CompletedPostSignup, nil
 }
 
-func (r *UserResolver) Searchable(_ context.Context) bool {
-	return r.user.Searchable
+func (r *UserResolver) Sebrchbble(_ context.Context) bool {
+	return r.user.Sebrchbble
 }
 
-type updateUserArgs struct {
-	User        graphql.ID
-	Username    *string
-	DisplayName *string
-	AvatarURL   *string
+type updbteUserArgs struct {
+	User        grbphql.ID
+	Usernbme    *string
+	DisplbyNbme *string
+	AvbtbrURL   *string
 }
 
-func (r *schemaResolver) UpdateUser(ctx context.Context, args *updateUserArgs) (*UserResolver, error) {
-	userID, err := UnmarshalUserID(args.User)
+func (r *schembResolver) UpdbteUser(ctx context.Context, brgs *updbteUserArgs) (*UserResolver, error) {
+	userID, err := UnmbrshblUserID(brgs.User)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the authenticated user can update their properties on
-	// Sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckSameUser(ctx, userID); err != nil {
+	// 🚨 SECURITY: Only the buthenticbted user cbn updbte their properties on
+	// Sourcegrbph.com.
+	if envvbr.SourcegrbphDotComMode() {
+		if err := buth.CheckSbmeUser(ctx, userID); err != nil {
 			return nil, err
 		}
 	} else {
-		// 🚨 SECURITY: Only the user and site admins are allowed to update the user.
-		if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, userID); err != nil {
+		// 🚨 SECURITY: Only the user bnd site bdmins bre bllowed to updbte the user.
+		if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, userID); err != nil {
 			return nil, err
 		}
 	}
 
-	if args.Username != nil {
-		if err := suspiciousnames.CheckNameAllowedForUserOrOrganization(*args.Username); err != nil {
+	if brgs.Usernbme != nil {
+		if err := suspiciousnbmes.CheckNbmeAllowedForUserOrOrgbnizbtion(*brgs.Usernbme); err != nil {
 			return nil, err
 		}
 	}
 
-	if args.AvatarURL != nil && len(*args.AvatarURL) > 0 {
-		if len(*args.AvatarURL) > 3000 {
-			return nil, errors.New("avatar URL exceeded 3000 characters")
+	if brgs.AvbtbrURL != nil && len(*brgs.AvbtbrURL) > 0 {
+		if len(*brgs.AvbtbrURL) > 3000 {
+			return nil, errors.New("bvbtbr URL exceeded 3000 chbrbcters")
 		}
 
-		u, err := url.Parse(*args.AvatarURL)
+		u, err := url.Pbrse(*brgs.AvbtbrURL)
 		if err != nil {
-			return nil, errors.Wrap(err, "unable to parse avatar URL")
+			return nil, errors.Wrbp(err, "unbble to pbrse bvbtbr URL")
 		} else if u.Scheme != "http" && u.Scheme != "https" {
-			return nil, errors.New("avatar URL must be an HTTP or HTTPS URL")
+			return nil, errors.New("bvbtbr URL must be bn HTTP or HTTPS URL")
 		}
 	}
 
-	update := database.UserUpdate{
-		DisplayName: args.DisplayName,
-		AvatarURL:   args.AvatarURL,
+	updbte := dbtbbbse.UserUpdbte{
+		DisplbyNbme: brgs.DisplbyNbme,
+		AvbtbrURL:   brgs.AvbtbrURL,
 	}
 	user, err := r.db.Users().GetByID(ctx, userID)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting user from the database")
+		return nil, errors.Wrbp(err, "getting user from the dbtbbbse")
 	}
 
-	// If user is changing their username, we need to verify if this action can be
+	// If user is chbnging their usernbme, we need to verify if this bction cbn be
 	// done.
-	if args.Username != nil && user.Username != *args.Username {
-		if !viewerCanChangeUsername(actor.FromContext(ctx), r.db, userID) {
-			return nil, errors.Errorf("unable to change username because auth.enableUsernameChanges is false in site configuration")
+	if brgs.Usernbme != nil && user.Usernbme != *brgs.Usernbme {
+		if !viewerCbnChbngeUsernbme(bctor.FromContext(ctx), r.db, userID) {
+			return nil, errors.Errorf("unbble to chbnge usernbme becbuse buth.enbbleUsernbmeChbnges is fblse in site configurbtion")
 		}
-		update.Username = *args.Username
+		updbte.Usernbme = *brgs.Usernbme
 	}
-	if err := r.db.Users().Update(ctx, userID, update); err != nil {
+	if err := r.db.Users().Updbte(ctx, userID, updbte); err != nil {
 		return nil, err
 	}
 	return UserByIDInt32(ctx, r.db, userID)
 }
 
-// CurrentUser returns the authenticated user if any. If there is no authenticated user, it returns
+// CurrentUser returns the buthenticbted user if bny. If there is no buthenticbted user, it returns
 // (nil, nil). If some other error occurs, then the error is returned.
-func CurrentUser(ctx context.Context, db database.DB) (*UserResolver, error) {
+func CurrentUser(ctx context.Context, db dbtbbbse.DB) (*UserResolver, error) {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
+		if errcode.IsNotFound(err) || err == dbtbbbse.ErrNoCurrentUser {
 			return nil, nil
 		}
 		return nil, err
 	}
-	return newUserResolverFromActor(actor.FromActualUser(user), db, user), nil
+	return newUserResolverFromActor(bctor.FromActublUser(user), db, user), nil
 }
 
-func (r *UserResolver) Organizations(ctx context.Context) (*orgConnectionStaticResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's
-	// organisations.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+func (r *UserResolver) Orgbnizbtions(ctx context.Context) (*orgConnectionStbticResolver, error) {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to bccess the user's
+	// orgbnisbtions.
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 	orgs, err := r.db.Orgs().GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
-	c := orgConnectionStaticResolver{nodes: make([]*OrgResolver, len(orgs))}
-	for i, org := range orgs {
+	c := orgConnectionStbticResolver{nodes: mbke([]*OrgResolver, len(orgs))}
+	for i, org := rbnge orgs {
 		c.nodes[i] = &OrgResolver{r.db, org}
 	}
 	return &c, nil
 }
 
 func (r *UserResolver) SurveyResponses(ctx context.Context) ([]*surveyResponseResolver, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to access the user's survey responses.
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID); err != nil {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to bccess the user's survey responses.
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
-	responses, err := database.SurveyResponses(r.db).GetByUserID(ctx, r.user.ID)
+	responses, err := dbtbbbse.SurveyResponses(r.db).GetByUserID(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
-	surveyResponseResolvers := make([]*surveyResponseResolver, 0, len(responses))
-	for _, response := range responses {
-		surveyResponseResolvers = append(surveyResponseResolvers, &surveyResponseResolver{r.db, response})
+	surveyResponseResolvers := mbke([]*surveyResponseResolver, 0, len(responses))
+	for _, response := rbnge responses {
+		surveyResponseResolvers = bppend(surveyResponseResolvers, &surveyResponseResolver{r.db, response})
 	}
 	return surveyResponseResolvers, nil
 }
 
-func (r *UserResolver) ViewerCanAdminister() (bool, error) {
-	err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
-	if errcode.IsUnauthorized(err) {
-		return false, nil
+func (r *UserResolver) ViewerCbnAdminister() (bool, error) {
+	err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID)
+	if errcode.IsUnbuthorized(err) {
+		return fblse, nil
 	} else if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-func (r *UserResolver) viewerCanAdministerSettings() (bool, error) {
-	// 🚨 SECURITY: Only the authenticated user can administrate settings themselves on
-	// Sourcegraph.com.
-	var err error
-	if envvar.SourcegraphDotComMode() {
-		err = auth.CheckSameUserFromActor(r.actor, r.user.ID)
+func (r *UserResolver) viewerCbnAdministerSettings() (bool, error) {
+	// 🚨 SECURITY: Only the buthenticbted user cbn bdministrbte settings themselves on
+	// Sourcegrbph.com.
+	vbr err error
+	if envvbr.SourcegrbphDotComMode() {
+		err = buth.CheckSbmeUserFromActor(r.bctor, r.user.ID)
 	} else {
-		err = auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, r.user.ID)
+		err = buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, r.user.ID)
 	}
-	if errcode.IsUnauthorized(err) {
-		return false, nil
+	if errcode.IsUnbuthorized(err) {
+		return fblse, nil
 	} else if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
 
-func (r *UserResolver) NamespaceName() string { return r.user.Username }
+func (r *UserResolver) NbmespbceNbme() string { return r.user.Usernbme }
 
 func (r *UserResolver) SCIMControlled() bool { return r.user.SCIMControlled }
 
 func (r *UserResolver) PermissionsInfo(ctx context.Context) (PermissionsInfoResolver, error) {
-	return EnterpriseResolvers.authzResolver.UserPermissionsInfo(ctx, r.ID())
+	return EnterpriseResolvers.buthzResolver.UserPermissionsInfo(ctx, r.ID())
 }
 
-func (r *schemaResolver) UpdatePassword(ctx context.Context, args *struct {
-	OldPassword string
-	NewPassword string
+func (r *schembResolver) UpdbtePbssword(ctx context.Context, brgs *struct {
+	OldPbssword string
+	NewPbssword string
 },
 ) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only the authenticated user can change their password.
+	// 🚨 SECURITY: Only the buthenticbted user cbn chbnge their pbssword.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.New("no authenticated user")
+		return nil, errors.New("no buthenticbted user")
 	}
 
-	if err := r.db.Users().UpdatePassword(ctx, user.ID, args.OldPassword, args.NewPassword); err != nil {
+	if err := r.db.Users().UpdbtePbssword(ctx, user.ID, brgs.OldPbssword, brgs.NewPbssword); err != nil {
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("UpdatePassword", "password update").
+	logger := r.logger.Scoped("UpdbtePbssword", "pbssword updbte").
 		With(log.Int32("userID", user.ID))
 
-	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "updated the password"); err != nil {
-			logger.Warn("Failed to send email to inform user of password update", log.Error(err))
+	if conf.CbnSendEmbil() {
+		if err := bbckend.NewUserEmbilsService(r.db, logger).SendUserEmbilOnFieldUpdbte(ctx, user.ID, "updbted the pbssword"); err != nil {
+			logger.Wbrn("Fbiled to send embil to inform user of pbssword updbte", log.Error(err))
 		}
 	}
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) CreatePassword(ctx context.Context, args *struct {
-	NewPassword string
+func (r *schembResolver) CrebtePbssword(ctx context.Context, brgs *struct {
+	NewPbssword string
 },
 ) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only the authenticated user can create their password.
+	// 🚨 SECURITY: Only the buthenticbted user cbn crebte their pbssword.
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.New("no authenticated user")
+		return nil, errors.New("no buthenticbted user")
 	}
 
-	if err := r.db.Users().CreatePassword(ctx, user.ID, args.NewPassword); err != nil {
+	if err := r.db.Users().CrebtePbssword(ctx, user.ID, brgs.NewPbssword); err != nil {
 		return nil, err
 	}
 
-	logger := r.logger.Scoped("CreatePassword", "password creation").
+	logger := r.logger.Scoped("CrebtePbssword", "pbssword crebtion").
 		With(log.Int32("userID", user.ID))
 
-	if conf.CanSendEmail() {
-		if err := backend.NewUserEmailsService(r.db, logger).SendUserEmailOnFieldUpdate(ctx, user.ID, "created a password"); err != nil {
-			logger.Warn("Failed to send email to inform user of password creation", log.Error(err))
+	if conf.CbnSendEmbil() {
+		if err := bbckend.NewUserEmbilsService(r.db, logger).SendUserEmbilOnFieldUpdbte(ctx, user.ID, "crebted b pbssword"); err != nil {
+			logger.Wbrn("Fbiled to send embil to inform user of pbssword crebtion", log.Error(err))
 		}
 	}
 	return &EmptyResponse{}, nil
 }
 
-// userMutationArgs hold an optional user ID for mutations that take in a user ID
-// or assume the current user when no ID is given.
-type userMutationArgs struct {
-	UserID *graphql.ID
+// userMutbtionArgs hold bn optionbl user ID for mutbtions thbt tbke in b user ID
+// or bssume the current user when no ID is given.
+type userMutbtionArgs struct {
+	UserID *grbphql.ID
 }
 
-func (r *schemaResolver) affectedUserID(ctx context.Context, args *userMutationArgs) (affectedUserID int32, err error) {
-	if args.UserID != nil {
-		return UnmarshalUserID(*args.UserID)
+func (r *schembResolver) bffectedUserID(ctx context.Context, brgs *userMutbtionArgs) (bffectedUserID int32, err error) {
+	if brgs.UserID != nil {
+		return UnmbrshblUserID(*brgs.UserID)
 	}
 
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
@@ -460,81 +460,81 @@ func (r *schemaResolver) affectedUserID(ctx context.Context, args *userMutationA
 	return user.ID, nil
 }
 
-func (r *schemaResolver) SetTosAccepted(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
-	affectedUserID, err := r.affectedUserID(ctx, args)
+func (r *schembResolver) SetTosAccepted(ctx context.Context, brgs *userMutbtionArgs) (*EmptyResponse, error) {
+	bffectedUserID, err := r.bffectedUserID(ctx, brgs)
 	if err != nil {
 		return nil, err
 	}
 
 	tosAccepted := true
-	update := database.UserUpdate{TosAccepted: &tosAccepted}
-	return r.updateAffectedUser(ctx, affectedUserID, update)
+	updbte := dbtbbbse.UserUpdbte{TosAccepted: &tosAccepted}
+	return r.updbteAffectedUser(ctx, bffectedUserID, updbte)
 }
 
-func (r *schemaResolver) SetCompletedPostSignup(ctx context.Context, args *userMutationArgs) (*EmptyResponse, error) {
-	affectedUserID, err := r.affectedUserID(ctx, args)
+func (r *schembResolver) SetCompletedPostSignup(ctx context.Context, brgs *userMutbtionArgs) (*EmptyResponse, error) {
+	bffectedUserID, err := r.bffectedUserID(ctx, brgs)
 	if err != nil {
 		return nil, err
 	}
 
-	has, err := backend.NewUserEmailsService(r.db, r.logger).HasVerifiedEmail(ctx, affectedUserID)
+	hbs, err := bbckend.NewUserEmbilsService(r.db, r.logger).HbsVerifiedEmbil(ctx, bffectedUserID)
 	if err != nil {
 		return nil, err
-	} else if !has {
-		return nil, errors.New("must have a verified email to complete post-signup flow")
+	} else if !hbs {
+		return nil, errors.New("must hbve b verified embil to complete post-signup flow")
 	}
 
 	completedPostSignup := true
-	update := database.UserUpdate{CompletedPostSignup: &completedPostSignup}
-	return r.updateAffectedUser(ctx, affectedUserID, update)
+	updbte := dbtbbbse.UserUpdbte{CompletedPostSignup: &completedPostSignup}
+	return r.updbteAffectedUser(ctx, bffectedUserID, updbte)
 }
 
-func (r *schemaResolver) updateAffectedUser(ctx context.Context, affectedUserID int32, update database.UserUpdate) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to set the Terms of Service accepted flag.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, affectedUserID); err != nil {
+func (r *schembResolver) updbteAffectedUser(ctx context.Context, bffectedUserID int32, updbte dbtbbbse.UserUpdbte) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to set the Terms of Service bccepted flbg.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, bffectedUserID); err != nil {
 		return nil, err
 	}
 
-	if err := r.db.Users().Update(ctx, affectedUserID, update); err != nil {
+	if err := r.db.Users().Updbte(ctx, bffectedUserID, updbte); err != nil {
 		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) SetSearchable(ctx context.Context, args *struct{ Searchable bool }) (*EmptyResponse, error) {
+func (r *schembResolver) SetSebrchbble(ctx context.Context, brgs *struct{ Sebrchbble bool }) (*EmptyResponse, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if user == nil {
-		return nil, errors.New("no authenticated user")
+		return nil, errors.New("no buthenticbted user")
 	}
 
-	searchable := args.Searchable
-	update := database.UserUpdate{
-		Searchable: &searchable,
+	sebrchbble := brgs.Sebrchbble
+	updbte := dbtbbbse.UserUpdbte{
+		Sebrchbble: &sebrchbble,
 	}
 
-	if err := r.db.Users().Update(ctx, user.ID, update); err != nil {
+	if err := r.db.Users().Updbte(ctx, user.ID, updbte); err != nil {
 		return nil, err
 	}
 
 	return &EmptyResponse{}, nil
 }
 
-// ViewerCanChangeUsername returns if the current user can change the username of the user.
-func (r *UserResolver) ViewerCanChangeUsername() bool {
-	return viewerCanChangeUsername(r.actor, r.db, r.user.ID)
+// ViewerCbnChbngeUsernbme returns if the current user cbn chbnge the usernbme of the user.
+func (r *UserResolver) ViewerCbnChbngeUsernbme() bool {
+	return viewerCbnChbngeUsernbme(r.bctor, r.db, r.user.ID)
 }
 
-func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+func (r *UserResolver) CompletionsQuotbOverride(ctx context.Context) (*int32, error) {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to see quotbs.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
-	v, err := r.db.Users().GetChatCompletionsQuota(ctx, r.user.ID)
+	v, err := r.db.Users().GetChbtCompletionsQuotb(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -547,13 +547,13 @@ func (r *UserResolver) CompletionsQuotaOverride(ctx context.Context) (*int32, er
 	return &iv, nil
 }
 
-func (r *UserResolver) CodeCompletionsQuotaOverride(ctx context.Context) (*int32, error) {
-	// 🚨 SECURITY: Only the user and admins are allowed to see quotas.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, r.db, r.user.ID); err != nil {
+func (r *UserResolver) CodeCompletionsQuotbOverride(ctx context.Context) (*int32, error) {
+	// 🚨 SECURITY: Only the user bnd bdmins bre bllowed to see quotbs.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, r.user.ID); err != nil {
 		return nil, err
 	}
 
-	v, err := r.db.Users().GetCodeCompletionsQuota(ctx, r.user.ID)
+	v, err := r.db.Users().GetCodeCompletionsQuotb(ctx, r.user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -566,69 +566,69 @@ func (r *UserResolver) CodeCompletionsQuotaOverride(ctx context.Context) (*int32
 	return &iv, nil
 }
 
-func (r *UserResolver) BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error) {
+func (r *UserResolver) BbtchChbnges(ctx context.Context, brgs *ListBbtchChbngesArgs) (BbtchChbngesConnectionResolver, error) {
 	id := r.ID()
-	args.Namespace = &id
-	return EnterpriseResolvers.batchChangesResolver.BatchChanges(ctx, args)
+	brgs.Nbmespbce = &id
+	return EnterpriseResolvers.bbtchChbngesResolver.BbtchChbnges(ctx, brgs)
 }
 
-func (r *UserResolver) BatchChangesCodeHosts(ctx context.Context, args *ListBatchChangesCodeHostsArgs) (BatchChangesCodeHostConnectionResolver, error) {
-	args.UserID = &r.user.ID
-	return EnterpriseResolvers.batchChangesResolver.BatchChangesCodeHosts(ctx, args)
+func (r *UserResolver) BbtchChbngesCodeHosts(ctx context.Context, brgs *ListBbtchChbngesCodeHostsArgs) (BbtchChbngesCodeHostConnectionResolver, error) {
+	brgs.UserID = &r.user.ID
+	return EnterpriseResolvers.bbtchChbngesResolver.BbtchChbngesCodeHosts(ctx, brgs)
 }
 
-func (r *UserResolver) Roles(_ context.Context, args *ListRoleArgs) (*graphqlutil.ConnectionResolver[RoleResolver], error) {
-	if envvar.SourcegraphDotComMode() {
-		return nil, errors.New("roles are not available on sourcegraph.com")
+func (r *UserResolver) Roles(_ context.Context, brgs *ListRoleArgs) (*grbphqlutil.ConnectionResolver[RoleResolver], error) {
+	if envvbr.SourcegrbphDotComMode() {
+		return nil, errors.New("roles bre not bvbilbble on sourcegrbph.com")
 	}
 	userID := r.user.ID
 	connectionStore := &roleConnectionStore{
 		db:     r.db,
 		userID: userID,
 	}
-	return graphqlutil.NewConnectionResolver[RoleResolver](
+	return grbphqlutil.NewConnectionResolver[RoleResolver](
 		connectionStore,
-		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
+		&brgs.ConnectionResolverArgs,
+		&grbphqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)
 }
 
-func (r *UserResolver) Permissions() (*graphqlutil.ConnectionResolver[PermissionResolver], error) {
+func (r *UserResolver) Permissions() (*grbphqlutil.ConnectionResolver[PermissionResolver], error) {
 	userID := r.user.ID
-	if err := auth.CheckSiteAdminOrSameUserFromActor(r.actor, r.db, userID); err != nil {
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(r.bctor, r.db, userID); err != nil {
 		return nil, err
 	}
 	connectionStore := &permisionConnectionStore{
 		db:     r.db,
 		userID: userID,
 	}
-	return graphqlutil.NewConnectionResolver[PermissionResolver](
+	return grbphqlutil.NewConnectionResolver[PermissionResolver](
 		connectionStore,
-		&graphqlutil.ConnectionResolverArgs{},
-		&graphqlutil.ConnectionResolverOptions{
+		&grbphqlutil.ConnectionResolverArgs{},
+		&grbphqlutil.ConnectionResolverOptions{
 			AllowNoLimit: true,
 		},
 	)
 }
 
-func viewerCanChangeUsername(a *actor.Actor, db database.DB, userID int32) bool {
-	if err := auth.CheckSiteAdminOrSameUserFromActor(a, db, userID); err != nil {
-		return false
+func viewerCbnChbngeUsernbme(b *bctor.Actor, db dbtbbbse.DB, userID int32) bool {
+	if err := buth.CheckSiteAdminOrSbmeUserFromActor(b, db, userID); err != nil {
+		return fblse
 	}
-	if conf.Get().AuthEnableUsernameChanges {
+	if conf.Get().AuthEnbbleUsernbmeChbnges {
 		return true
 	}
-	// 🚨 SECURITY: Only site admins are allowed to change a user's username when auth.enableUsernameChanges == false.
-	return auth.CheckCurrentActorIsSiteAdmin(a, db) == nil
+	// 🚨 SECURITY: Only site bdmins bre bllowed to chbnge b user's usernbme when buth.enbbleUsernbmeChbnges == fblse.
+	return buth.CheckCurrentActorIsSiteAdmin(b, db) == nil
 }
 
-func (r *UserResolver) Monitors(ctx context.Context, args *ListMonitorsArgs) (MonitorConnectionResolver, error) {
-	if err := auth.CheckSameUserFromActor(r.actor, r.user.ID); err != nil {
+func (r *UserResolver) Monitors(ctx context.Context, brgs *ListMonitorsArgs) (MonitorConnectionResolver, error) {
+	if err := buth.CheckSbmeUserFromActor(r.bctor, r.user.ID); err != nil {
 		return nil, err
 	}
-	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, &r.user.ID, args)
+	return EnterpriseResolvers.codeMonitorsResolver.Monitors(ctx, &r.user.ID, brgs)
 }
 
 func (r *UserResolver) ToUser() (*UserResolver, bool) {
@@ -639,76 +639,76 @@ func (r *UserResolver) OwnerField() string {
 	return EnterpriseResolvers.ownResolver.UserOwnerField(r)
 }
 
-type SetUserCompletionsQuotaArgs struct {
-	User  graphql.ID
-	Quota *int32
+type SetUserCompletionsQuotbArgs struct {
+	User  grbphql.ID
+	Quotb *int32
 }
 
-func (r *schemaResolver) SetUserCompletionsQuota(ctx context.Context, args SetUserCompletionsQuotaArgs) (*UserResolver, error) {
-	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) SetUserCompletionsQuotb(ctx context.Context, brgs SetUserCompletionsQuotbArgs) (*UserResolver, error) {
+	// 🚨 SECURITY: Only site bdmins bre bllowed to chbnge b users quotb.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if args.Quota != nil && *args.Quota <= 0 {
-		return nil, errors.New("quota must be 1 or greater")
+	if brgs.Quotb != nil && *brgs.Quotb <= 0 {
+		return nil, errors.New("quotb must be 1 or grebter")
 	}
 
-	id, err := UnmarshalUserID(args.User)
+	id, err := UnmbrshblUserID(brgs.User)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify the ID is valid.
+	// Verify the ID is vblid.
 	user, err := r.db.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	var quota *int
-	if args.Quota != nil {
-		i := int(*args.Quota)
-		quota = &i
+	vbr quotb *int
+	if brgs.Quotb != nil {
+		i := int(*brgs.Quotb)
+		quotb = &i
 	}
-	if err := r.db.Users().SetChatCompletionsQuota(ctx, user.ID, quota); err != nil {
+	if err := r.db.Users().SetChbtCompletionsQuotb(ctx, user.ID, quotb); err != nil {
 		return nil, err
 	}
 
 	return UserByIDInt32(ctx, r.db, user.ID)
 }
 
-type SetUserCodeCompletionsQuotaArgs struct {
-	User  graphql.ID
-	Quota *int32
+type SetUserCodeCompletionsQuotbArgs struct {
+	User  grbphql.ID
+	Quotb *int32
 }
 
-func (r *schemaResolver) SetUserCodeCompletionsQuota(ctx context.Context, args SetUserCodeCompletionsQuotaArgs) (*UserResolver, error) {
-	// 🚨 SECURITY: Only site admins are allowed to change a users quota.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) SetUserCodeCompletionsQuotb(ctx context.Context, brgs SetUserCodeCompletionsQuotbArgs) (*UserResolver, error) {
+	// 🚨 SECURITY: Only site bdmins bre bllowed to chbnge b users quotb.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if args.Quota != nil && *args.Quota <= 0 {
-		return nil, errors.New("quota must be 1 or greater")
+	if brgs.Quotb != nil && *brgs.Quotb <= 0 {
+		return nil, errors.New("quotb must be 1 or grebter")
 	}
 
-	id, err := UnmarshalUserID(args.User)
+	id, err := UnmbrshblUserID(brgs.User)
 	if err != nil {
 		return nil, err
 	}
 
-	// Verify the ID is valid.
+	// Verify the ID is vblid.
 	user, err := r.db.Users().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	var quota *int
-	if args.Quota != nil {
-		i := int(*args.Quota)
-		quota = &i
+	vbr quotb *int
+	if brgs.Quotb != nil {
+		i := int(*brgs.Quotb)
+		quotb = &i
 	}
-	if err := r.db.Users().SetCodeCompletionsQuota(ctx, user.ID, quota); err != nil {
+	if err := r.db.Users().SetCodeCompletionsQuotb(ctx, user.ID, quotb); err != nil {
 		return nil, err
 	}
 

@@ -1,7 +1,7 @@
-package insights
+pbckbge insights
 
-func parseTimeIntervalUnit(insight searchInsight) string {
-	if insight.Step.Days != nil {
+func pbrseTimeIntervblUnit(insight sebrchInsight) string {
+	if insight.Step.Dbys != nil {
 		return "DAY"
 	}
 	if insight.Step.Hours != nil {
@@ -13,16 +13,16 @@ func parseTimeIntervalUnit(insight searchInsight) string {
 	if insight.Step.Months != nil {
 		return "MONTH"
 	}
-	if insight.Step.Years != nil {
+	if insight.Step.Yebrs != nil {
 		return "YEAR"
 	}
 
 	return ""
 }
 
-func parseTimeIntervalValue(insight searchInsight) int {
-	if insight.Step.Days != nil {
-		return *insight.Step.Days
+func pbrseTimeIntervblVblue(insight sebrchInsight) int {
+	if insight.Step.Dbys != nil {
+		return *insight.Step.Dbys
 	}
 	if insight.Step.Hours != nil {
 		return *insight.Step.Hours
@@ -33,8 +33,8 @@ func parseTimeIntervalValue(insight searchInsight) int {
 	if insight.Step.Months != nil {
 		return *insight.Step.Months
 	}
-	if insight.Step.Years != nil {
-		return *insight.Step.Years
+	if insight.Step.Yebrs != nil {
+		return *insight.Step.Yebrs
 	}
 
 	return 1

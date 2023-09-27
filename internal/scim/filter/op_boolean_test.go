@@ -1,52 +1,52 @@
-package filter
+pbckbge filter
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/elimity-com/scim/schema"
-	"github.com/scim2/filter-parser/v2"
+	"github.com/elimity-com/scim/schemb"
+	"github.com/scim2/filter-pbrser/v2"
 )
 
-func TestValidatorBoolean(t *testing.T) {
-	var (
-		exp = func(op filter.CompareOperator) string {
+func TestVblidbtorBoolebn(t *testing.T) {
+	vbr (
+		exp = func(op filter.CompbreOperbtor) string {
 			return fmt.Sprintf("bool %s true", op)
 		}
-		ref = schema.Schema{
-			Attributes: []schema.CoreAttribute{
-				schema.SimpleCoreAttribute(schema.SimpleBooleanParams(schema.BooleanParams{
-					Name: "bool",
+		ref = schemb.Schemb{
+			Attributes: []schemb.CoreAttribute{
+				schemb.SimpleCoreAttribute(schemb.SimpleBoolebnPbrbms(schemb.BoolebnPbrbms{
+					Nbme: "bool",
 				})),
 			},
 		}
-		attr = map[string]interface{}{
+		bttr = mbp[string]interfbce{}{
 			"bool": true,
 		}
 	)
 
-	for _, test := range []struct {
-		op    filter.CompareOperator
-		valid bool // Whether the filter is valid.
+	for _, test := rbnge []struct {
+		op    filter.CompbreOperbtor
+		vblid bool // Whether the filter is vblid.
 	}{
 		{filter.EQ, true},
-		{filter.NE, false},
+		{filter.NE, fblse},
 		{filter.CO, true},
 		{filter.SW, true},
 		{filter.EW, true},
-		{filter.GT, false},
-		{filter.LT, false},
-		{filter.GE, false},
-		{filter.LE, false},
+		{filter.GT, fblse},
+		{filter.LT, fblse},
+		{filter.GE, fblse},
+		{filter.LE, fblse},
 	} {
 		t.Run(string(test.op), func(t *testing.T) {
 			f := exp(test.op)
-			validator, err := NewValidator(f, ref)
+			vblidbtor, err := NewVblidbtor(f, ref)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if err := validator.PassesFilter(attr); (err == nil) != test.valid {
-				t.Errorf("%s %v | actual %v, expected %v", f, attr, err, test.valid)
+			if err := vblidbtor.PbssesFilter(bttr); (err == nil) != test.vblid {
+				t.Errorf("%s %v | bctubl %v, expected %v", f, bttr, err, test.vblid)
 			}
 		})
 	}

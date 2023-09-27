@@ -1,22 +1,22 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
 const setToCompletedFmtStr = `
 UPDATE cm_trigger_jobs
-SET state = 'completed',
-    started_at = %s,
-    finished_at = %s
+SET stbte = 'completed',
+    stbrted_bt = %s,
+    finished_bt = %s
 WHERE id = %s;
 `
 
@@ -26,18 +26,18 @@ FROM cm_trigger_jobs;
 `
 
 func TestDeleteOldJobLogs(t *testing.T) {
-	retentionInDays := 7
+	retentionInDbys := 7
 	ctx, db, s := newTestStore(t)
 	_, _, userCTX := newTestUser(ctx, t, db)
 	_ = s.insertTestMonitor(userCTX, t)
 
-	// Add 1 job and date it back to a long time ago.
+	// Add 1 job bnd dbte it bbck to b long time bgo.
 	triggerJobs, err := s.EnqueueQueryTriggerJobs(ctx)
 	require.NoError(t, err)
 	require.Len(t, triggerJobs, 1)
 	firstTriggerJobID := triggerJobs[0].ID
 
-	longTimeAgo := s.Now().AddDate(0, 0, -(retentionInDays + 1))
+	longTimeAgo := s.Now().AddDbte(0, 0, -(retentionInDbys + 1))
 	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, longTimeAgo, longTimeAgo, firstTriggerJobID))
 	require.NoError(t, err)
 
@@ -50,7 +50,7 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	err = s.Exec(ctx, sqlf.Sprintf(setToCompletedFmtStr, s.Now(), s.Now(), secondTriggerJobID))
 	require.NoError(t, err)
 
-	err = s.DeleteOldTriggerJobs(ctx, retentionInDays)
+	err = s.DeleteOldTriggerJobs(ctx, retentionInDbys)
 	require.NoError(t, err)
 
 	rows, err := s.Query(ctx, sqlf.Sprintf(getJobIDs))
@@ -58,39 +58,39 @@ func TestDeleteOldJobLogs(t *testing.T) {
 	defer rows.Close()
 
 	rowCount := 0
-	var id int32
+	vbr id int32
 	for rows.Next() {
 		rowCount++
 		if rowCount > 1 {
-			t.Fatalf("got more than 1 row, expected exactly 1 row")
+			t.Fbtblf("got more thbn 1 row, expected exbctly 1 row")
 		}
-		err = rows.Scan(&id)
+		err = rows.Scbn(&id)
 		require.NoError(t, err)
 	}
-	require.Equal(t, secondTriggerJobID, id)
+	require.Equbl(t, secondTriggerJobID, id)
 }
 
-func TestUpdateTriggerJob(t *testing.T) {
+func TestUpdbteTriggerJob(t *testing.T) {
 	logger := logtest.Scoped(t)
-	t.Run("handles null results", func(t *testing.T) {
-		ctx := context.Background()
+	t.Run("hbndles null results", func(t *testing.T) {
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		_ = populateCodeMonitorFixtures(t, db)
+		_ = populbteCodeMonitorFixtures(t, db)
 		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
 		require.NoError(t, err)
 		require.Len(t, jobs, 1)
 
-		err = db.CodeMonitors().UpdateTriggerJobWithResults(ctx, jobs[0].ID, "", nil)
+		err = db.CodeMonitors().UpdbteTriggerJobWithResults(ctx, jobs[0].ID, "", nil)
 		require.NoError(t, err)
 	})
 }
 
 func TestListTriggerJobs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	t.Run("handles null results", func(t *testing.T) {
-		ctx := context.Background()
+	t.Run("hbndles null results", func(t *testing.T) {
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		f := populateCodeMonitorFixtures(t, db)
+		f := populbteCodeMonitorFixtures(t, db)
 		jobs, err := db.CodeMonitors().EnqueueQueryTriggerJobs(ctx)
 		require.NoError(t, err)
 		require.Len(t, jobs, 1)
@@ -104,9 +104,9 @@ func TestListTriggerJobs(t *testing.T) {
 func TestEnqueueTriggerJobs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	t.Run("does not enqueue jobs for deleted users", func(t *testing.T) {
-		ctx := context.Background()
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		f := populateCodeMonitorFixtures(t, db)
+		f := populbteCodeMonitorFixtures(t, db)
 
 		err := db.Users().Delete(ctx, f.User.ID)
 		require.NoError(t, err)

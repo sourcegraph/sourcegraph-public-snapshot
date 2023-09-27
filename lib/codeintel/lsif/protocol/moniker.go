@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type Moniker struct {
 	Vertex
@@ -14,7 +14,7 @@ func NewMoniker(id uint64, kind, scheme, identifier string) Moniker {
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexMoniker,
+			Lbbel: VertexMoniker,
 		},
 		Kind:       kind,
 		Scheme:     scheme,
@@ -35,7 +35,7 @@ func NewMonikerEdge(id, outV, inV uint64) MonikerEdge {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeMoniker,
+			Lbbel: EdgeMoniker,
 		},
 		OutV: outV,
 		InV:  inV,
@@ -55,7 +55,7 @@ func NewNextMonikerEdge(id, outV, inV uint64) NextMonikerEdge {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeNextMoniker,
+			Lbbel: EdgeNextMoniker,
 		},
 		OutV: outV,
 		InV:  inV,

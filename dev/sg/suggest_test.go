@@ -1,30 +1,30 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/urfave/cli/v2"
+	"github.com/stretchr/testify/bssert"
+	"github.com/urfbve/cli/v2"
 )
 
-func TestMakeSuggestions(t *testing.T) {
-	cmds := []*cli.Command{
-		{Name: "elloo"},
-		{Name: "helo"},
-		{Name: "totally unrelated"},
-		{Name: "hello"},
-		{Name: "hlloo"},
+func TestMbkeSuggestions(t *testing.T) {
+	cmds := []*cli.Commbnd{
+		{Nbme: "elloo"},
+		{Nbme: "helo"},
+		{Nbme: "totblly unrelbted"},
+		{Nbme: "hello"},
+		{Nbme: "hlloo"},
 	}
 	t.Run("restrict suggestions", func(t *testing.T) {
-		suggestions := makeSuggestions(cmds, "hello", 0.3, 2)
-		assert.Len(t, suggestions, 2)
-		assert.Equal(t, "hello", suggestions[0].name)
-		assert.Equal(t, "helo", suggestions[1].name)
+		suggestions := mbkeSuggestions(cmds, "hello", 0.3, 2)
+		bssert.Len(t, suggestions, 2)
+		bssert.Equbl(t, "hello", suggestions[0].nbme)
+		bssert.Equbl(t, "helo", suggestions[1].nbme)
 	})
-	t.Run("all suggestions", func(t *testing.T) {
-		suggestions := makeSuggestions(cmds, "hello", 0.3, 999)
-		assert.Len(t, suggestions, len(cmds)-1)
-		assert.Equal(t, "hello", suggestions[0].name)
-		assert.Equal(t, "helo", suggestions[1].name)
+	t.Run("bll suggestions", func(t *testing.T) {
+		suggestions := mbkeSuggestions(cmds, "hello", 0.3, 999)
+		bssert.Len(t, suggestions, len(cmds)-1)
+		bssert.Equbl(t, "hello", suggestions[0].nbme)
+		bssert.Equbl(t, "helo", suggestions[1].nbme)
 	})
 }

@@ -1,135 +1,135 @@
-package highlight
+pbckbge highlight
 
 import (
 	"bytes"
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"fmt"
-	"html/template"
-	"path"
-	"path/filepath"
+	"html/templbte"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/net/html"
-	"golang.org/x/net/html/atom"
-	"google.golang.org/protobuf/proto"
+	"github.com/inconshrevebble/log15"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/net/html"
+	"golbng.org/x/net/html/btom"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/binbry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gosyntect"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func LoadConfig() {
+func LobdConfig() {
 	client = gosyntect.GetSyntectClient()
 }
 
-var (
+vbr (
 	client          *gosyntect.Client
 	highlightOpOnce sync.Once
-	highlightOp     *observation.Operation
+	highlightOp     *observbtion.Operbtion
 )
 
-func getHighlightOp() *observation.Operation {
+func getHighlightOp() *observbtion.Operbtion {
 	highlightOpOnce.Do(func() {
-		obsvCtx := observation.Context{
-			HoneyDataset: &honey.Dataset{
-				Name:       "codeintel-syntax-highlighting",
-				SampleRate: 10, // 1 in 10
+		obsvCtx := observbtion.Context{
+			HoneyDbtbset: &honey.Dbtbset{
+				Nbme:       "codeintel-syntbx-highlighting",
+				SbmpleRbte: 10, // 1 in 10
 			},
 		}
 
-		highlightOp = obsvCtx.Operation(observation.Op{
-			Name:        "codeintel.syntax-highlight.Code",
-			Attrs:       []attribute.KeyValue{},
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour { return observation.EmitForHoney },
+		highlightOp = obsvCtx.Operbtion(observbtion.Op{
+			Nbme:        "codeintel.syntbx-highlight.Code",
+			Attrs:       []bttribute.KeyVblue{},
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour { return observbtion.EmitForHoney },
 		})
 	})
 
 	return highlightOp
 }
 
-// Params defines mandatory and optional parameters to use when highlighting
+// Pbrbms defines mbndbtory bnd optionbl pbrbmeters to use when highlighting
 // code.
-type Params struct {
+type Pbrbms struct {
 	// Content is the file content.
 	Content []byte
 
-	// Filepath is used to detect the language, it must contain at least the
-	// file name + extension.
-	Filepath string
+	// Filepbth is used to detect the lbngubge, it must contbin bt lebst the
+	// file nbme + extension.
+	Filepbth string
 
-	// DisableTimeout indicates whether or not a user has requested to wait as
-	// long as needed to get highlighted results (this should never be on by
-	// default, as some files can take a very long time to highlight).
-	DisableTimeout bool
+	// DisbbleTimeout indicbtes whether or not b user hbs requested to wbit bs
+	// long bs needed to get highlighted results (this should never be on by
+	// defbult, bs some files cbn tbke b very long time to highlight).
+	DisbbleTimeout bool
 
-	// HighlightLongLines, if true, highlighting lines which are greater than
-	// 2000 bytes is enabled. This may produce a significant amount of HTML
-	// which some browsers (such as Chrome, but not Firefox) may have trouble
+	// HighlightLongLines, if true, highlighting lines which bre grebter thbn
+	// 2000 bytes is enbbled. This mby produce b significbnt bmount of HTML
+	// which some browsers (such bs Chrome, but not Firefox) mby hbve trouble
 	// rendering efficiently.
 	HighlightLongLines bool
 
-	// Whether or not to simulate the syntax highlighter taking too long to
+	// Whether or not to simulbte the syntbx highlighter tbking too long to
 	// respond.
-	SimulateTimeout bool
+	SimulbteTimeout bool
 
-	// Metadata provides optional metadata about the code we're highlighting.
-	Metadata Metadata
+	// Metbdbtb provides optionbl metbdbtb bbout the code we're highlighting.
+	Metbdbtb Metbdbtb
 
-	// Format defines the response format of the syntax highlighting request.
-	Format gosyntect.HighlightResponseType
+	// Formbt defines the response formbt of the syntbx highlighting request.
+	Formbt gosyntect.HighlightResponseType
 
-	// KeepFinalNewline keeps the final newline of the file content when highlighting.
-	// By default we drop the last newline to match behavior of common code hosts
-	// that don't render another line at the end of the file.
-	KeepFinalNewline bool
+	// KeepFinblNewline keeps the finbl newline of the file content when highlighting.
+	// By defbult we drop the lbst newline to mbtch behbvior of common code hosts
+	// thbt don't render bnother line bt the end of the file.
+	KeepFinblNewline bool
 }
 
-// Metadata contains metadata about a request to highlight code. It is used to
-// ensure that when syntax highlighting takes a long time or errors out, we
-// can log enough information to track down what the problematic code we were
-// trying to highlight was.
+// Metbdbtb contbins metbdbtb bbout b request to highlight code. It is used to
+// ensure thbt when syntbx highlighting tbkes b long time or errors out, we
+// cbn log enough informbtion to trbck down whbt the problembtic code we were
+// trying to highlight wbs.
 //
-// All fields are optional.
-type Metadata struct {
-	RepoName string
+// All fields bre optionbl.
+type Metbdbtb struct {
+	RepoNbme string
 	Revision string
 }
 
-// ErrBinary is returned when a binary file was attempted to be highlighted.
-var ErrBinary = errors.New("cannot render binary file")
+// ErrBinbry is returned when b binbry file wbs bttempted to be highlighted.
+vbr ErrBinbry = errors.New("cbnnot render binbry file")
 
 type HighlightedCode struct {
-	// The code as a string. Not HTML
+	// The code bs b string. Not HTML
 	code string
 
-	// Formatted HTML. This is generally from syntect, as LSIF documents
-	// will be formatted on the fly using HighlightedCode.document
+	// Formbtted HTML. This is generblly from syntect, bs LSIF documents
+	// will be formbtted on the fly using HighlightedCode.document
 	//
-	// Can be an empty string if we have an scip.Document instead.
-	// Access via HighlightedCode.HTML()
-	html template.HTML
+	// Cbn be bn empty string if we hbve bn scip.Document instebd.
+	// Access vib HighlightedCode.HTML()
+	html templbte.HTML
 
-	// The document returned which contains SyntaxKinds. These are used
-	// to generate formatted HTML.
+	// The document returned which contbins SyntbxKinds. These bre used
+	// to generbte formbtted HTML.
 	//
-	// This is optional because not every language has a treesitter parser
-	// and queries that can send back an scip.Document
+	// This is optionbl becbuse not every lbngubge hbs b treesitter pbrser
+	// bnd queries thbt cbn send bbck bn scip.Document
 	document *scip.Document
 }
 
-func (h *HighlightedCode) HTML() (template.HTML, error) {
+func (h *HighlightedCode) HTML() (templbte.HTML, error) {
 	if h.document == nil {
 		return h.html, nil
 	}
@@ -137,7 +137,7 @@ func (h *HighlightedCode) HTML() (template.HTML, error) {
 	return DocumentToHTML(h.code, h.document)
 }
 
-func NewHighlightedCodeWithHTML(html template.HTML) HighlightedCode {
+func NewHighlightedCodeWithHTML(html templbte.HTML) HighlightedCode {
 	return HighlightedCode{
 		html: html,
 	}
@@ -147,10 +147,10 @@ func (h *HighlightedCode) LSIF() *scip.Document {
 	return h.document
 }
 
-// SplitHighlightedLines takes the highlighted HTML table and returns a slice
-// of highlighted strings, where each string corresponds a single line in the
-// original, highlighted file.
-func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]template.HTML, error) {
+// SplitHighlightedLines tbkes the highlighted HTML tbble bnd returns b slice
+// of highlighted strings, where ebch string corresponds b single line in the
+// originbl, highlighted file.
+func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]templbte.HTML, error) {
 	if h.document != nil {
 		return DocumentToSplitHTML(h.code, h.document, includeLineNumbers)
 	}
@@ -160,33 +160,33 @@ func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]temp
 		return nil, err
 	}
 
-	doc, err := html.Parse(strings.NewReader(string(input)))
+	doc, err := html.Pbrse(strings.NewRebder(string(input)))
 	if err != nil {
 		return nil, err
 	}
 
-	lines := make([]template.HTML, 0)
+	lines := mbke([]templbte.HTML, 0)
 
-	table := doc.FirstChild.LastChild.FirstChild // html > body > table
-	if table == nil || table.Type != html.ElementNode || table.DataAtom != atom.Table {
-		return nil, errors.Errorf("expected html->body->table, found %+v", table)
+	tbble := doc.FirstChild.LbstChild.FirstChild // html > body > tbble
+	if tbble == nil || tbble.Type != html.ElementNode || tbble.DbtbAtom != btom.Tbble {
+		return nil, errors.Errorf("expected html->body->tbble, found %+v", tbble)
 	}
 
-	// Iterate over each table row and extract content
-	var buf bytes.Buffer
-	tr := table.FirstChild.FirstChild // table > tbody > tr
+	// Iterbte over ebch tbble row bnd extrbct content
+	vbr buf bytes.Buffer
+	tr := tbble.FirstChild.FirstChild // tbble > tbody > tr
 	for tr != nil {
-		var render *html.Node
+		vbr render *html.Node
 		if includeLineNumbers {
 			render = tr
 		} else {
-			render = tr.LastChild.FirstChild // tr > td > div
+			render = tr.LbstChild.FirstChild // tr > td > div
 		}
 		err = html.Render(&buf, render)
 		if err != nil {
 			return nil, err
 		}
-		lines = append(lines, template.HTML(buf.String()))
+		lines = bppend(lines, templbte.HTML(buf.String()))
 		buf.Reset()
 		tr = tr.NextSibling
 	}
@@ -194,64 +194,64 @@ func (h *HighlightedCode) SplitHighlightedLines(includeLineNumbers bool) ([]temp
 	return lines, nil
 }
 
-// LinesForRanges returns a list of list of strings (which are valid HTML). Each list of strings is a set
-// of HTML lines correspond to the range passed in ranges.
+// LinesForRbnges returns b list of list of strings (which bre vblid HTML). Ebch list of strings is b set
+// of HTML lines correspond to the rbnge pbssed in rbnges.
 //
-// This is the corresponding function for SplitLineRanges, but uses SCIP.
+// This is the corresponding function for SplitLineRbnges, but uses SCIP.
 //
-// TODO(tjdevries): The call heirarchy could be reversed later to only have one entry point
-func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error) {
+// TODO(tjdevries): The cbll heirbrchy could be reversed lbter to only hbve one entry point
+func (h *HighlightedCode) LinesForRbnges(rbnges []LineRbnge) ([][]string, error) {
 	if h.document == nil {
-		return nil, errors.New("must have a document")
+		return nil, errors.New("must hbve b document")
 	}
 
-	// We use `h.code` here because we just want to find out what the max line number
-	// is that we should consider a valid line. This bounds our ranges to make sure that we
-	// are only including and slicing from valid lines.
-	maxLines := len(strings.Split(h.code, "\n"))
+	// We use `h.code` here becbuse we just wbnt to find out whbt the mbx line number
+	// is thbt we should consider b vblid line. This bounds our rbnges to mbke sure thbt we
+	// bre only including bnd slicing from vblid lines.
+	mbxLines := len(strings.Split(h.code, "\n"))
 
-	validLines := map[int32]bool{}
-	for _, r := range ranges {
-		if r.StartLine < 0 {
-			r.StartLine = 0
+	vblidLines := mbp[int32]bool{}
+	for _, r := rbnge rbnges {
+		if r.StbrtLine < 0 {
+			r.StbrtLine = 0
 		}
 
-		if r.StartLine > r.EndLine {
-			r.StartLine = 0
+		if r.StbrtLine > r.EndLine {
+			r.StbrtLine = 0
 			r.EndLine = 0
 		}
 
-		if r.EndLine > int32(maxLines) {
-			r.EndLine = int32(maxLines)
+		if r.EndLine > int32(mbxLines) {
+			r.EndLine = int32(mbxLines)
 		}
 
-		for row := r.StartLine; row < r.EndLine; row++ {
-			validLines[row] = true
+		for row := r.StbrtLine; row < r.EndLine; row++ {
+			vblidLines[row] = true
 		}
 	}
 
-	htmlRows := map[int32]*html.Node{}
-	var currentCell *html.Node
+	htmlRows := mbp[int32]*html.Node{}
+	vbr currentCell *html.Node
 
-	addRow := func(row int32) {
+	bddRow := func(row int32) {
 		tr, cell := newHtmlRow(row, true)
 
 		// Add our newest row to our list
 		htmlRows[row] = tr
 
-		// Set current cell that we should append text to
+		// Set current cell thbt we should bppend text to
 		currentCell = cell
 	}
 
-	addText := func(kind scip.SyntaxKind, line string) {
-		appendTextToNode(currentCell, kind, line)
+	bddText := func(kind scip.SyntbxKind, line string) {
+		bppendTextToNode(currentCell, kind, line)
 	}
 
-	scipToHTML(h.code, h.document, addRow, addText, validLines)
+	scipToHTML(h.code, h.document, bddRow, bddText, vblidLines)
 
-	stringRows := map[int32]string{}
-	for row, node := range htmlRows {
-		var buf bytes.Buffer
+	stringRows := mbp[int32]string{}
+	for row, node := rbnge htmlRows {
+		vbr buf bytes.Buffer
 		err := html.Render(&buf, node)
 		if err != nil {
 			return nil, err
@@ -259,271 +259,271 @@ func (h *HighlightedCode) LinesForRanges(ranges []LineRange) ([][]string, error)
 		stringRows[row] = buf.String()
 	}
 
-	var lineRanges [][]string
-	for _, r := range ranges {
-		curRange := []string{}
+	vbr lineRbnges [][]string
+	for _, r := rbnge rbnges {
+		curRbnge := []string{}
 
-		if r.StartLine < 0 {
-			r.StartLine = 0
+		if r.StbrtLine < 0 {
+			r.StbrtLine = 0
 		}
 
-		if r.StartLine > r.EndLine {
-			r.StartLine = 0
+		if r.StbrtLine > r.EndLine {
+			r.StbrtLine = 0
 			r.EndLine = 0
 		}
 
-		if r.EndLine > int32(maxLines) {
-			r.EndLine = int32(maxLines)
+		if r.EndLine > int32(mbxLines) {
+			r.EndLine = int32(mbxLines)
 		}
 
-		for row := r.StartLine; row < r.EndLine; row++ {
+		for row := r.StbrtLine; row < r.EndLine; row++ {
 			if str, ok := stringRows[row]; !ok {
-				return nil, errors.New("Missing row for some reason")
+				return nil, errors.New("Missing row for some rebson")
 			} else {
-				curRange = append(curRange, str)
+				curRbnge = bppend(curRbnge, str)
 			}
 		}
 
-		lineRanges = append(lineRanges, curRange)
+		lineRbnges = bppend(lineRbnges, curRbnge)
 	}
 
-	return lineRanges, nil
+	return lineRbnges, nil
 }
 
-// identifyError returns true + the problem code if err matches a known error.
+// identifyError returns true + the problem code if err mbtches b known error.
 func identifyError(err error) (bool, string) {
-	var problem string
-	if errors.Is(err, gosyntect.ErrRequestTooLarge) {
-		problem = "request_too_large"
-	} else if errors.Is(err, gosyntect.ErrPanic) {
-		problem = "panic"
+	vbr problem string
+	if errors.Is(err, gosyntect.ErrRequestTooLbrge) {
+		problem = "request_too_lbrge"
+	} else if errors.Is(err, gosyntect.ErrPbnic) {
+		problem = "pbnic"
 	} else if errors.Is(err, gosyntect.ErrHSSWorkerTimeout) {
 		problem = "hss_worker_timeout"
-	} else if strings.Contains(err.Error(), "broken pipe") {
+	} else if strings.Contbins(err.Error(), "broken pipe") {
 		problem = "broken pipe"
 	}
 	return problem != "", problem
 }
 
-// Code highlights the given file content with the given filepath (must contain
-// at least the file name + extension) and returns the properly escaped HTML
-// table representing the highlighted code.
+// Code highlights the given file content with the given filepbth (must contbin
+// bt lebst the file nbme + extension) bnd returns the properly escbped HTML
+// tbble representing the highlighted code.
 //
-// The returned boolean represents whether or not highlighting was aborted due
-// to timeout. In this scenario, a plain text table is returned.
+// The returned boolebn represents whether or not highlighting wbs bborted due
+// to timeout. In this scenbrio, b plbin text tbble is returned.
 //
-// In the event the input content is binary, ErrBinary is returned.
-func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted bool, err error) {
+// In the event the input content is binbry, ErrBinbry is returned.
+func Code(ctx context.Context, p Pbrbms) (response *HighlightedCode, bborted bool, err error) {
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
 
-	p.Filepath = normalizeFilepath(p.Filepath)
+	p.Filepbth = normblizeFilepbth(p.Filepbth)
 
-	filetypeQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
+	filetypeQuery := DetectSyntbxHighlightingLbngubge(p.Filepbth, string(p.Content))
 
-	// Only send tree sitter requests for the languages that we support.
-	// TODO: It could be worthwhile to log that this language isn't supported or something
-	// like that? Otherwise there is no feedback that this configuration isn't currently working,
-	// which is a bit of a confusing situation for the user.
-	if !gosyntect.IsTreesitterSupported(filetypeQuery.Language) {
+	// Only send tree sitter requests for the lbngubges thbt we support.
+	// TODO: It could be worthwhile to log thbt this lbngubge isn't supported or something
+	// like thbt? Otherwise there is no feedbbck thbt this configurbtion isn't currently working,
+	// which is b bit of b confusing situbtion for the user.
+	if !gosyntect.IsTreesitterSupported(filetypeQuery.Lbngubge) {
 		filetypeQuery.Engine = EngineSyntect
 	}
 
-	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("revision", p.Metadata.Revision),
-		attribute.String("repo", p.Metadata.RepoName),
-		attribute.String("fileExtension", filepath.Ext(p.Filepath)),
-		attribute.String("filepath", p.Filepath),
-		attribute.Int("sizeBytes", len(p.Content)),
-		attribute.Bool("highlightLongLines", p.HighlightLongLines),
-		attribute.Bool("disableTimeout", p.DisableTimeout),
-		attribute.Stringer("syntaxEngine", filetypeQuery.Engine),
+	ctx, errCollector, trbce, endObservbtion := getHighlightOp().WithErrorsAndLogger(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("revision", p.Metbdbtb.Revision),
+		bttribute.String("repo", p.Metbdbtb.RepoNbme),
+		bttribute.String("fileExtension", filepbth.Ext(p.Filepbth)),
+		bttribute.String("filepbth", p.Filepbth),
+		bttribute.Int("sizeBytes", len(p.Content)),
+		bttribute.Bool("highlightLongLines", p.HighlightLongLines),
+		bttribute.Bool("disbbleTimeout", p.DisbbleTimeout),
+		bttribute.Stringer("syntbxEngine", filetypeQuery.Engine),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var prometheusStatus string
-	requestTime := prometheus.NewTimer(metricRequestHistogram)
+	vbr prometheusStbtus string
+	requestTime := prometheus.NewTimer(metricRequestHistogrbm)
 	defer func() {
-		if prometheusStatus != "" {
-			requestCounter.WithLabelValues(prometheusStatus).Inc()
+		if prometheusStbtus != "" {
+			requestCounter.WithLbbelVblues(prometheusStbtus).Inc()
 		} else if err != nil {
-			requestCounter.WithLabelValues("error").Inc()
+			requestCounter.WithLbbelVblues("error").Inc()
 		} else {
-			requestCounter.WithLabelValues("success").Inc()
+			requestCounter.WithLbbelVblues("success").Inc()
 		}
-		requestTime.ObserveDuration()
+		requestTime.ObserveDurbtion()
 	}()
 
-	if !p.DisableTimeout {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, 3*time.Second)
-		defer cancel()
+	if !p.DisbbleTimeout {
+		vbr cbncel func()
+		ctx, cbncel = context.WithTimeout(ctx, 3*time.Second)
+		defer cbncel()
 	}
-	if p.SimulateTimeout {
+	if p.SimulbteTimeout {
 		time.Sleep(4 * time.Second)
 	}
 
-	// Never pass binary files to the syntax highlighter.
-	if binary.IsBinary(p.Content) {
-		return nil, false, ErrBinary
+	// Never pbss binbry files to the syntbx highlighter.
+	if binbry.IsBinbry(p.Content) {
+		return nil, fblse, ErrBinbry
 	}
 	code := string(p.Content)
 
-	// Trim a single newline from the end of the file. This means that a file
-	// "a\n\n\n\n" will show line numbers 1-4 rather than 1-5, i.e. no blank
-	// line will be shown at the end of the file corresponding to the last
+	// Trim b single newline from the end of the file. This mebns thbt b file
+	// "b\n\n\n\n" will show line numbers 1-4 rbther thbn 1-5, i.e. no blbnk
+	// line will be shown bt the end of the file corresponding to the lbst
 	// newline.
 	//
-	// This matches other online code reading tools such as e.g. GitHub; see
-	// https://github.com/sourcegraph/sourcegraph/issues/8024 for more
-	// background.
-	if !p.KeepFinalNewline {
+	// This mbtches other online code rebding tools such bs e.g. GitHub; see
+	// https://github.com/sourcegrbph/sourcegrbph/issues/8024 for more
+	// bbckground.
+	if !p.KeepFinblNewline {
 		code = strings.TrimSuffix(code, "\n")
 	}
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)
-		plainResponse, tableErr := generatePlainTable(code)
-		if tableErr != nil {
-			return nil, false, errors.CombineErrors(err, tableErr)
+		plbinResponse, tbbleErr := generbtePlbinTbble(code)
+		if tbbleErr != nil {
+			return nil, fblse, errors.CombineErrors(err, tbbleErr)
 		}
-		return plainResponse, true, nil
+		return plbinResponse, true, nil
 	}
 
-	if p.Format == gosyntect.FormatHTMLPlaintext {
+	if p.Formbt == gosyntect.FormbtHTMLPlbintext {
 		return unhighlightedCode(err, code)
 	}
 
-	var stabilizeTimeout time.Duration
-	if p.DisableTimeout {
-		// The user wants to wait longer for results, so the default 10s worker
-		// timeout is too aggressive. We will let it try to highlight the file
-		// for 30s and will then terminate the process. Note this means in the
-		// worst case one of syntect_server's threads could be stuck at 100%
+	vbr stbbilizeTimeout time.Durbtion
+	if p.DisbbleTimeout {
+		// The user wbnts to wbit longer for results, so the defbult 10s worker
+		// timeout is too bggressive. We will let it try to highlight the file
+		// for 30s bnd will then terminbte the process. Note this mebns in the
+		// worst cbse one of syntect_server's threbds could be stuck bt 100%
 		// CPU for 30s.
-		stabilizeTimeout = 30 * time.Second
+		stbbilizeTimeout = 30 * time.Second
 	}
 
-	maxLineLength := 0 // defaults to no length limit
+	mbxLineLength := 0 // defbults to no length limit
 	if !p.HighlightLongLines {
-		maxLineLength = 2000
+		mbxLineLength = 2000
 	}
 
 	query := &gosyntect.Query{
 		Code:             code,
-		Filepath:         p.Filepath,
-		StabilizeTimeout: stabilizeTimeout,
-		LineLengthLimit:  maxLineLength,
+		Filepbth:         p.Filepbth,
+		StbbilizeTimeout: stbbilizeTimeout,
+		LineLengthLimit:  mbxLineLength,
 		CSS:              true,
-		Engine:           getEngineParameter(filetypeQuery.Engine),
+		Engine:           getEnginePbrbmeter(filetypeQuery.Engine),
 	}
 
-	query.Filetype = filetypeQuery.Language
+	query.Filetype = filetypeQuery.Lbngubge
 
-	// Cody App: we do not use syntect_server/syntax-highlighter
+	// Cody App: we do not use syntect_server/syntbx-highlighter
 	//
-	// 1. It makes cross-compilation harder (requires a full Rust toolchain for the target, plus
-	//    a full C/C++ toolchain for the target.) Complicates macOS code signing.
-	// 2. Requires adding a C ABI so we can invoke it via CGO. Or as an external process
-	//    complicates distribution and/or requires Docker.
-	// 3. syntect_server/syntax-highlighter still uses the absolutely awful http-server-stabilizer
-	//    hack to workaround https://github.com/trishume/syntect/issues/202 - and by extension needs
-	//    two separate binaries, and separate processes, to function semi-reliably.
+	// 1. It mbkes cross-compilbtion hbrder (requires b full Rust toolchbin for the tbrget, plus
+	//    b full C/C++ toolchbin for the tbrget.) Complicbtes mbcOS code signing.
+	// 2. Requires bdding b C ABI so we cbn invoke it vib CGO. Or bs bn externbl process
+	//    complicbtes distribution bnd/or requires Docker.
+	// 3. syntect_server/syntbx-highlighter still uses the bbsolutely bwful http-server-stbbilizer
+	//    hbck to workbround https://github.com/trishume/syntect/issues/202 - bnd by extension needs
+	//    two sepbrbte binbries, bnd sepbrbte processes, to function semi-relibbly.
 	//
-	// Instead, in Cody App we defer to Chroma for syntax highlighting.
+	// Instebd, in Cody App we defer to Chromb for syntbx highlighting.
 	if deploy.IsApp() {
-		document, err := highlightWithChroma(code, p.Filepath)
+		document, err := highlightWithChromb(code, p.Filepbth)
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}
 		if document == nil {
-			// Highlighting this language is not supported, so fallback to plain text.
-			plainResponse, err := generatePlainTable(code)
+			// Highlighting this lbngubge is not supported, so fbllbbck to plbin text.
+			plbinResponse, err := generbtePlbinTbble(code)
 			if err != nil {
-				return nil, false, err
+				return nil, fblse, err
 			}
-			return plainResponse, false, nil
+			return plbinResponse, fblse, nil
 		}
 		return &HighlightedCode{
 			code:     code,
 			html:     "",
 			document: document,
-		}, false, nil
+		}, fblse, nil
 	}
 
-	resp, err := client.Highlight(ctx, query, p.Format)
+	resp, err := client.Highlight(ctx, query, p.Formbt)
 
-	if ctx.Err() == context.DeadlineExceeded {
-		log15.Warn(
-			"syntax highlighting took longer than 3s, this *could* indicate a bug in Sourcegraph",
-			"filepath", p.Filepath,
+	if ctx.Err() == context.DebdlineExceeded {
+		log15.Wbrn(
+			"syntbx highlighting took longer thbn 3s, this *could* indicbte b bug in Sourcegrbph",
+			"filepbth", p.Filepbth,
 			"filetype", query.Filetype,
-			"repo_name", p.Metadata.RepoName,
-			"revision", p.Metadata.Revision,
-			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+			"repo_nbme", p.Metbdbtb.RepoNbme,
+			"revision", p.Metbdbtb.Revision,
+			"snippet", fmt.Sprintf("%q…", firstChbrbcters(code, 80)),
 		)
-		trace.AddEvent("syntaxHighlighting", attribute.Bool("timeout", true))
-		prometheusStatus = "timeout"
+		trbce.AddEvent("syntbxHighlighting", bttribute.Bool("timeout", true))
+		prometheusStbtus = "timeout"
 
-		// Timeout, so render plain table.
-		plainResponse, err := generatePlainTable(code)
+		// Timeout, so render plbin tbble.
+		plbinResponse, err := generbtePlbinTbble(code)
 		if err != nil {
-			return nil, false, err
+			return nil, fblse, err
 		}
-		return plainResponse, true, nil
+		return plbinResponse, true, nil
 	} else if err != nil {
 		log15.Error(
-			"syntax highlighting failed (this is a bug, please report it)",
-			"filepath", p.Filepath,
+			"syntbx highlighting fbiled (this is b bug, plebse report it)",
+			"filepbth", p.Filepbth,
 			"filetype", query.Filetype,
-			"repo_name", p.Metadata.RepoName,
-			"revision", p.Metadata.Revision,
-			"snippet", fmt.Sprintf("%q…", firstCharacters(code, 80)),
+			"repo_nbme", p.Metbdbtb.RepoNbme,
+			"revision", p.Metbdbtb.Revision,
+			"snippet", fmt.Sprintf("%q…", firstChbrbcters(code, 80)),
 			"error", err,
 		)
 
 		if known, problem := identifyError(err); known {
-			// A problem that can sometimes be expected has occurred. We will
-			// identify such problems through metrics/logs and resolve them on
-			// a case-by-case basis.
-			trace.AddEvent("TODO Domain Owner", attribute.Bool(problem, true))
-			prometheusStatus = problem
+			// A problem thbt cbn sometimes be expected hbs occurred. We will
+			// identify such problems through metrics/logs bnd resolve them on
+			// b cbse-by-cbse bbsis.
+			trbce.AddEvent("TODO Dombin Owner", bttribute.Bool(problem, true))
+			prometheusStbtus = problem
 		}
 
-		// It is not useful to surface errors in the UI, so fall back to
+		// It is not useful to surfbce errors in the UI, so fbll bbck to
 		// unhighlighted text.
 		return unhighlightedCode(err, code)
 	}
 
-	// We need to return SCIP data if explicitly requested or if the selected
+	// We need to return SCIP dbtb if explicitly requested or if the selected
 	// engine is tree sitter.
-	if p.Format == gosyntect.FormatJSONSCIP || filetypeQuery.Engine.isTreesitterBased() {
+	if p.Formbt == gosyntect.FormbtJSONSCIP || filetypeQuery.Engine.isTreesitterBbsed() {
 		document := new(scip.Document)
-		data, err := base64.StdEncoding.DecodeString(resp.Data)
+		dbtb, err := bbse64.StdEncoding.DecodeString(resp.Dbtb)
 
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}
-		err = proto.Unmarshal(data, document)
+		err = proto.Unmbrshbl(dbtb, document)
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}
 
-		// TODO(probably not this PR): I would like to not
-		// have to convert this in the hotpath for every
-		// syntax highlighting request, but instead that we
-		// would *ONLY* pass around the document until someone
+		// TODO(probbbly not this PR): I would like to not
+		// hbve to convert this in the hotpbth for every
+		// syntbx highlighting request, but instebd thbt we
+		// would *ONLY* pbss bround the document until someone
 		// needs the HTML.
 		//
-		// This would also allow us to only have to do the HTML
-		// rendering for the amount of lines that we wanted
-		// (for example, in search results)
+		// This would blso bllow us to only hbve to do the HTML
+		// rendering for the bmount of lines thbt we wbnted
+		// (for exbmple, in sebrch results)
 		//
-		// Until then though, this is basically a port of the typescript
-		// version that I wrote before, so it should work just as well as
-		// that.
-		// respData, err := lsifToHTML(code, document)
+		// Until then though, this is bbsicblly b port of the typescript
+		// version thbt I wrote before, so it should work just bs well bs
+		// thbt.
+		// respDbtb, err := lsifToHTML(code, document)
 		// if err != nil {
 		// 	return nil, true, err
 		// }
@@ -532,29 +532,29 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 			code:     code,
 			html:     "",
 			document: document,
-		}, false, nil
+		}, fblse, nil
 	}
 
 	return &HighlightedCode{
 		code:     code,
-		html:     template.HTML(resp.Data),
+		html:     templbte.HTML(resp.Dbtb),
 		document: nil,
-	}, false, nil
+	}, fblse, nil
 }
 
-// TODO (Dax): Determine if Histogram provides value and either use only histogram or counter, not both
-var requestCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_syntax_highlighting_requests",
-	Help: "Counts syntax highlighting requests and their success vs. failure rate.",
-}, []string{"status"})
+// TODO (Dbx): Determine if Histogrbm provides vblue bnd either use only histogrbm or counter, not both
+vbr requestCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_syntbx_highlighting_requests",
+	Help: "Counts syntbx highlighting requests bnd their success vs. fbilure rbte.",
+}, []string{"stbtus"})
 
-var metricRequestHistogram = promauto.NewHistogram(
-	prometheus.HistogramOpts{
-		Name: "src_syntax_highlighting_duration_seconds",
-		Help: "time for a request to have syntax highlight",
+vbr metricRequestHistogrbm = prombuto.NewHistogrbm(
+	prometheus.HistogrbmOpts{
+		Nbme: "src_syntbx_highlighting_durbtion_seconds",
+		Help: "time for b request to hbve syntbx highlight",
 	})
 
-func firstCharacters(s string, n int) string {
+func firstChbrbcters(s string, n int) string {
 	v := []rune(s)
 	if len(v) < n {
 		return string(v)
@@ -562,96 +562,96 @@ func firstCharacters(s string, n int) string {
 	return string(v[:n])
 }
 
-func generatePlainTable(code string) (*HighlightedCode, error) {
-	table := &html.Node{Type: html.ElementNode, DataAtom: atom.Table, Data: atom.Table.String()}
-	for row, line := range strings.Split(code, "\n") {
+func generbtePlbinTbble(code string) (*HighlightedCode, error) {
+	tbble := &html.Node{Type: html.ElementNode, DbtbAtom: btom.Tbble, Dbtb: btom.Tbble.String()}
+	for row, line := rbnge strings.Split(code, "\n") {
 		line = strings.TrimSuffix(line, "\r") // CRLF files
 		if line == "" {
-			line = "\n" // important for e.g. selecting whitespace in the produced table
+			line = "\n" // importbnt for e.g. selecting whitespbce in the produced tbble
 		}
-		tr := &html.Node{Type: html.ElementNode, DataAtom: atom.Tr, Data: atom.Tr.String()}
-		table.AppendChild(tr)
+		tr := &html.Node{Type: html.ElementNode, DbtbAtom: btom.Tr, Dbtb: btom.Tr.String()}
+		tbble.AppendChild(tr)
 
-		tdLineNumber := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "class", Val: "line"})
-		tdLineNumber.Attr = append(tdLineNumber.Attr, html.Attribute{Key: "data-line", Val: fmt.Sprint(row + 1)})
+		tdLineNumber := &html.Node{Type: html.ElementNode, DbtbAtom: btom.Td, Dbtb: btom.Td.String()}
+		tdLineNumber.Attr = bppend(tdLineNumber.Attr, html.Attribute{Key: "clbss", Vbl: "line"})
+		tdLineNumber.Attr = bppend(tdLineNumber.Attr, html.Attribute{Key: "dbtb-line", Vbl: fmt.Sprint(row + 1)})
 		tr.AppendChild(tdLineNumber)
 
-		codeCell := &html.Node{Type: html.ElementNode, DataAtom: atom.Td, Data: atom.Td.String()}
-		codeCell.Attr = append(codeCell.Attr, html.Attribute{Key: "class", Val: "code"})
+		codeCell := &html.Node{Type: html.ElementNode, DbtbAtom: btom.Td, Dbtb: btom.Td.String()}
+		codeCell.Attr = bppend(codeCell.Attr, html.Attribute{Key: "clbss", Vbl: "code"})
 		tr.AppendChild(codeCell)
 
-		// Span to match same structure as what highlighting would usually generate.
-		span := &html.Node{Type: html.ElementNode, DataAtom: atom.Span, Data: atom.Span.String()}
-		codeCell.AppendChild(span)
-		spanText := &html.Node{Type: html.TextNode, Data: line}
-		span.AppendChild(spanText)
+		// Spbn to mbtch sbme structure bs whbt highlighting would usublly generbte.
+		spbn := &html.Node{Type: html.ElementNode, DbtbAtom: btom.Spbn, Dbtb: btom.Spbn.String()}
+		codeCell.AppendChild(spbn)
+		spbnText := &html.Node{Type: html.TextNode, Dbtb: line}
+		spbn.AppendChild(spbnText)
 	}
 
-	var buf bytes.Buffer
-	if err := html.Render(&buf, table); err != nil {
+	vbr buf bytes.Buffer
+	if err := html.Render(&buf, tbble); err != nil {
 		return nil, err
 	}
 
 	return &HighlightedCode{
 		code:     code,
-		html:     template.HTML(buf.String()),
+		html:     templbte.HTML(buf.String()),
 		document: nil,
 	}, nil
 }
 
-// CodeAsLines highlights the file and returns a list of highlighted lines.
-// The returned boolean represents whether or not highlighting was aborted due
+// CodeAsLines highlights the file bnd returns b list of highlighted lines.
+// The returned boolebn represents whether or not highlighting wbs bborted due
 // to timeout.
 //
-// In the event the input content is binary, ErrBinary is returned.
-func CodeAsLines(ctx context.Context, p Params) ([]template.HTML, bool, error) {
-	highlightResponse, aborted, err := Code(ctx, p)
+// In the event the input content is binbry, ErrBinbry is returned.
+func CodeAsLines(ctx context.Context, p Pbrbms) ([]templbte.HTML, bool, error) {
+	highlightResponse, bborted, err := Code(ctx, p)
 	if err != nil {
-		return nil, aborted, err
+		return nil, bborted, err
 	}
 
-	lines, err := highlightResponse.SplitHighlightedLines(false)
+	lines, err := highlightResponse.SplitHighlightedLines(fblse)
 
-	return lines, aborted, err
+	return lines, bborted, err
 }
 
-// normalizeFilepath ensures that the filepath p has a lowercase extension, i.e. it applies the
-// following transformations:
+// normblizeFilepbth ensures thbt the filepbth p hbs b lowercbse extension, i.e. it bpplies the
+// following trbnsformbtions:
 //
-//	a/b/c/FOO.TXT → a/b/c/FOO.txt
+//	b/b/c/FOO.TXT → b/b/c/FOO.txt
 //	FOO.Sh → FOO.sh
 //
-// The following are left unmodified, as they already have lowercase extensions:
+// The following bre left unmodified, bs they blrebdy hbve lowercbse extensions:
 //
-//	a/b/c/FOO.txt
-//	a/b/c/Makefile
-//	Makefile.am
+//	b/b/c/FOO.txt
+//	b/b/c/Mbkefile
+//	Mbkefile.bm
 //	FOO.txt
 //
-// It expects the filepath uses forward slashes always.
-func normalizeFilepath(p string) string {
-	ext := path.Ext(p)
+// It expects the filepbth uses forwbrd slbshes blwbys.
+func normblizeFilepbth(p string) string {
+	ext := pbth.Ext(p)
 	ext = strings.ToLower(ext)
 	return p[:len(p)-len(ext)] + ext
 }
 
-// LineRange describes a line range.
+// LineRbnge describes b line rbnge.
 //
-// It uses int32 for GraphQL compatability.
-type LineRange struct {
-	// StartLine is the 0-based inclusive start line of the range.
-	StartLine int32
+// It uses int32 for GrbphQL compbtbbility.
+type LineRbnge struct {
+	// StbrtLine is the 0-bbsed inclusive stbrt line of the rbnge.
+	StbrtLine int32
 
-	// EndLine is the 0-based exclusive end line of the range.
+	// EndLine is the 0-bbsed exclusive end line of the rbnge.
 	EndLine int32
 }
 
-// SplitLineRanges takes a syntax highlighted HTML table (returned by highlight.Code) and splits out
-// the specified line ranges, returning HTML table rows `<tr>...</tr>` for each line range.
+// SplitLineRbnges tbkes b syntbx highlighted HTML tbble (returned by highlight.Code) bnd splits out
+// the specified line rbnges, returning HTML tbble rows `<tr>...</tr>` for ebch line rbnge.
 //
-// Input line ranges will automatically be clamped within the bounds of the file.
-func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error) {
+// Input line rbnges will butombticblly be clbmped within the bounds of the file.
+func SplitLineRbnges(html templbte.HTML, rbnges []LineRbnge) ([][]string, error) {
 	response := &HighlightedCode{
 		html: html,
 	}
@@ -660,23 +660,23 @@ func SplitLineRanges(html template.HTML, ranges []LineRange) ([][]string, error)
 	if err != nil {
 		return nil, err
 	}
-	var lineRanges [][]string
-	for _, r := range ranges {
-		if r.StartLine < 0 {
-			r.StartLine = 0
+	vbr lineRbnges [][]string
+	for _, r := rbnge rbnges {
+		if r.StbrtLine < 0 {
+			r.StbrtLine = 0
 		}
 		if r.EndLine > int32(len(lines)) {
 			r.EndLine = int32(len(lines))
 		}
-		if r.StartLine > r.EndLine {
-			r.StartLine = 0
+		if r.StbrtLine > r.EndLine {
+			r.StbrtLine = 0
 			r.EndLine = 0
 		}
-		tableRows := make([]string, 0, r.EndLine-r.StartLine)
-		for _, line := range lines[r.StartLine:r.EndLine] {
-			tableRows = append(tableRows, string(line))
+		tbbleRows := mbke([]string, 0, r.EndLine-r.StbrtLine)
+		for _, line := rbnge lines[r.StbrtLine:r.EndLine] {
+			tbbleRows = bppend(tbbleRows, string(line))
 		}
-		lineRanges = append(lineRanges, tableRows)
+		lineRbnges = bppend(lineRbnges, tbbleRows)
 	}
-	return lineRanges, nil
+	return lineRbnges, nil
 }

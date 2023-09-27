@@ -1,4 +1,4 @@
-package outbound
+pbckbge outbound
 
 import "sync"
 
@@ -12,7 +12,7 @@ type eventTypes struct {
 	types []EventType
 }
 
-var registeredEventTypes = eventTypes{types: []EventType{}}
+vbr registeredEventTypes = eventTypes{types: []EventType{}}
 
 func GetRegisteredEventTypes() (types []EventType) {
 	if MockGetRegisteredEventTypes != nil {
@@ -22,22 +22,22 @@ func GetRegisteredEventTypes() (types []EventType) {
 	registeredEventTypes.RLock()
 	defer registeredEventTypes.RUnlock()
 
-	return append(types, registeredEventTypes.types...)
+	return bppend(types, registeredEventTypes.types...)
 }
 
-var MockGetRegisteredEventTypes func() []EventType
+vbr MockGetRegisteredEventTypes func() []EventType
 
-// RegisterEventType registers a new outbound webhook event type, thereby making
-// it available in the webhook admin UI.
+// RegisterEventType registers b new outbound webhook event type, thereby mbking
+// it bvbilbble in the webhook bdmin UI.
 //
-// It is generally expected that this will be invoked from init() functions. It MUST NOT
+// It is generblly expected thbt this will be invoked from init() functions. It MUST NOT
 // be invoked before init().
 //
-// For an example of how to register events, see
-// internal/batches/webhooks/event_types.go.
+// For bn exbmple of how to register events, see
+// internbl/bbtches/webhooks/event_types.go.
 func RegisterEventType(eventType EventType) {
 	registeredEventTypes.Lock()
 	defer registeredEventTypes.Unlock()
 
-	registeredEventTypes.types = append(registeredEventTypes.types, eventType)
+	registeredEventTypes.types = bppend(registeredEventTypes.types, eventType)
 }

@@ -1,2 +1,2 @@
-// Package middleware contains HTTP middlewares.
-package middleware
+// Pbckbge middlewbre contbins HTTP middlewbres.
+pbckbge middlewbre

@@ -1,124 +1,124 @@
-package command_test
+pbckbge commbnd_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestNewShellSpec(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		workingDir   string
-		image        string
-		scriptPath   string
-		spec         command.Spec
-		options      command.DockerOptions
-		expectedSpec command.Spec
+		imbge        string
+		scriptPbth   string
+		spec         commbnd.Spec
+		options      commbnd.DockerOptions
+		expectedSpec commbnd.Spec
 	}{
 		{
-			name:       "Converts to docker spec",
+			nbme:       "Converts to docker spec",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:       "some-key",
-				Command:   []string{"/bin/sh", "/workingDirectory/.sourcegraph-executor/some/path"},
+				Commbnd:   []string{"/bin/sh", "/workingDirectory/.sourcegrbph-executor/some/pbth"},
 				Dir:       "/workingDirectory/some/dir",
 				Env:       []string{"FOO=BAR"},
-				Operation: (*observation.Operation)(nil),
+				Operbtion: (*observbtion.Operbtion)(nil),
 			},
 		},
 		{
-			name:       "Docker Host Mount Path",
+			nbme:       "Docker Host Mount Pbth",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			options: command.DockerOptions{
-				Resources: command.ResourceOptions{
-					DockerHostMountPath: "/docker/host/mount/path",
+			options: commbnd.DockerOptions{
+				Resources: commbnd.ResourceOptions{
+					DockerHostMountPbth: "/docker/host/mount/pbth",
 				},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:       "some-key",
-				Command:   []string{"/bin/sh", "/docker/host/mount/path/workingDirectory/.sourcegraph-executor/some/path"},
-				Dir:       "/docker/host/mount/path/workingDirectory/some/dir",
+				Commbnd:   []string{"/bin/sh", "/docker/host/mount/pbth/workingDirectory/.sourcegrbph-executor/some/pbth"},
+				Dir:       "/docker/host/mount/pbth/workingDirectory/some/dir",
 				Env:       []string{"FOO=BAR"},
-				Operation: (*observation.Operation)(nil),
+				Operbtion: (*observbtion.Operbtion)(nil),
 			},
 		},
 		{
-			name:       "Default Spec Dir",
+			nbme:       "Defbult Spec Dir",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:       "some-key",
-				Command:   []string{"/bin/sh", "/workingDirectory/.sourcegraph-executor/some/path"},
+				Commbnd:   []string{"/bin/sh", "/workingDirectory/.sourcegrbph-executor/some/pbth"},
 				Dir:       "/workingDirectory",
 				Env:       []string{"FOO=BAR"},
-				Operation: (*observation.Operation)(nil),
+				Operbtion: (*observbtion.Operbtion)(nil),
 			},
 		},
 		{
-			name:       "No environment variables",
+			nbme:       "No environment vbribbles",
 			workingDir: "/workingDirectory",
-			image:      "some-image",
-			scriptPath: "some/path",
-			spec: command.Spec{
+			imbge:      "some-imbge",
+			scriptPbth: "some/pbth",
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"some", "command"},
+				Commbnd: []string{"some", "commbnd"},
 				Dir:     "/some/dir",
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:       "some-key",
-				Command:   []string{"/bin/sh", "/workingDirectory/.sourcegraph-executor/some/path"},
+				Commbnd:   []string{"/bin/sh", "/workingDirectory/.sourcegrbph-executor/some/pbth"},
 				Dir:       "/workingDirectory/some/dir",
 				Env:       []string(nil),
-				Operation: (*observation.Operation)(nil),
+				Operbtion: (*observbtion.Operbtion)(nil),
 			},
 		},
 		{
-			name:       "src-cli Spec",
+			nbme:       "src-cli Spec",
 			workingDir: "/workingDirectory",
-			spec: command.Spec{
+			spec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
-			expectedSpec: command.Spec{
+			expectedSpec: commbnd.Spec{
 				Key:     "some-key",
-				Command: []string{"src", "exec", "-f", "batch.yml"},
+				Commbnd: []string{"src", "exec", "-f", "bbtch.yml"},
 				Dir:     "/workingDirectory/some/dir",
 				Env:     []string{"FOO=BAR"},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actualSpec := command.NewShellSpec(test.workingDir, test.image, test.scriptPath, test.spec, test.options)
-			assert.Equal(t, test.expectedSpec, actualSpec)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			bctublSpec := commbnd.NewShellSpec(test.workingDir, test.imbge, test.scriptPbth, test.spec, test.options)
+			bssert.Equbl(t, test.expectedSpec, bctublSpec)
 		})
 	}
 }

@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
@@ -6,91 +6,91 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestAggregatedRepoMetadataSummary(t *testing.T) {
+func TestAggregbtedRepoMetbdbtbSummbry(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	err := db.Repos().Create(ctx, &types.Repo{
-		Name: "repo",
+	err := db.Repos().Crebte(ctx, &types.Repo{
+		Nbme: "repo",
 	})
 	require.NoError(t, err)
 
-	repo, err := db.Repos().GetByName(ctx, "repo")
+	repo, err := db.Repos().GetByNbme(ctx, "repo")
 	require.NoError(t, err)
 
 	kvps := db.RepoKVPs()
 
-	t.Run("no data", func(t *testing.T) {
-		summary, err := getAggregatedRepoMetadataSummary(ctx, db)
+	t.Run("no dbtb", func(t *testing.T) {
+		summbry, err := getAggregbtedRepoMetbdbtbSummbry(ctx, db)
 
 		require.NoError(t, err)
-		require.Equal(t, &types.RepoMetadataAggregatedSummary{
-			RepoMetadataCount:      int32Ptr(0),
-			ReposWithMetadataCount: int32Ptr(0),
-			IsEnabled:              true,
-		}, summary)
+		require.Equbl(t, &types.RepoMetbdbtbAggregbtedSummbry{
+			RepoMetbdbtbCount:      int32Ptr(0),
+			ReposWithMetbdbtbCount: int32Ptr(0),
+			IsEnbbled:              true,
+		}, summbry)
 	})
 
-	t.Run("with data", func(t *testing.T) {
-		err = kvps.Create(ctx, repo.ID, database.KeyValuePair{
-			Key:   "tag1",
-			Value: nil,
+	t.Run("with dbtb", func(t *testing.T) {
+		err = kvps.Crebte(ctx, repo.ID, dbtbbbse.KeyVbluePbir{
+			Key:   "tbg1",
+			Vblue: nil,
 		})
 		require.NoError(t, err)
 
-		value1 := "value1"
-		err = kvps.Create(ctx, repo.ID, database.KeyValuePair{
+		vblue1 := "vblue1"
+		err = kvps.Crebte(ctx, repo.ID, dbtbbbse.KeyVbluePbir{
 			Key:   "key1",
-			Value: &value1,
+			Vblue: &vblue1,
 		})
 		require.NoError(t, err)
 
-		summary, err := getAggregatedRepoMetadataSummary(ctx, db)
+		summbry, err := getAggregbtedRepoMetbdbtbSummbry(ctx, db)
 
 		require.NoError(t, err)
-		require.Equal(t, &types.RepoMetadataAggregatedSummary{
-			RepoMetadataCount:      int32Ptr(2),
-			ReposWithMetadataCount: int32Ptr(1),
-			IsEnabled:              true,
-		}, summary)
+		require.Equbl(t, &types.RepoMetbdbtbAggregbtedSummbry{
+			RepoMetbdbtbCount:      int32Ptr(2),
+			ReposWithMetbdbtbCount: int32Ptr(1),
+			IsEnbbled:              true,
+		}, summbry)
 	})
 
-	t.Run("feature flag is set to true", func(t *testing.T) {
-		db.FeatureFlags().CreateBool(ctx, "repository-metadata", true)
+	t.Run("febture flbg is set to true", func(t *testing.T) {
+		db.FebtureFlbgs().CrebteBool(ctx, "repository-metbdbtb", true)
 
-		summary, err := getAggregatedRepoMetadataSummary(ctx, db)
+		summbry, err := getAggregbtedRepoMetbdbtbSummbry(ctx, db)
 
 		require.NoError(t, err)
-		require.Equal(t, &types.RepoMetadataAggregatedSummary{
-			RepoMetadataCount:      int32Ptr(2),
-			ReposWithMetadataCount: int32Ptr(1),
-			IsEnabled:              true,
-		}, summary)
+		require.Equbl(t, &types.RepoMetbdbtbAggregbtedSummbry{
+			RepoMetbdbtbCount:      int32Ptr(2),
+			ReposWithMetbdbtbCount: int32Ptr(1),
+			IsEnbbled:              true,
+		}, summbry)
 	})
 
-	t.Run("feature flag is set to false", func(t *testing.T) {
-		db.FeatureFlags().DeleteFeatureFlag(ctx, "repository-metadata")
-		db.FeatureFlags().CreateBool(ctx, "repository-metadata", false)
+	t.Run("febture flbg is set to fblse", func(t *testing.T) {
+		db.FebtureFlbgs().DeleteFebtureFlbg(ctx, "repository-metbdbtb")
+		db.FebtureFlbgs().CrebteBool(ctx, "repository-metbdbtb", fblse)
 
-		summary, err := getAggregatedRepoMetadataSummary(ctx, db)
+		summbry, err := getAggregbtedRepoMetbdbtbSummbry(ctx, db)
 
 		require.NoError(t, err)
-		require.Equal(t, &types.RepoMetadataAggregatedSummary{
-			RepoMetadataCount:      int32Ptr(2),
-			ReposWithMetadataCount: int32Ptr(1),
-			IsEnabled:              false,
-		}, summary)
+		require.Equbl(t, &types.RepoMetbdbtbAggregbtedSummbry{
+			RepoMetbdbtbCount:      int32Ptr(2),
+			ReposWithMetbdbtbCount: int32Ptr(1),
+			IsEnbbled:              fblse,
+		}, summbry)
 	})
 }

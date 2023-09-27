@@ -1,56 +1,56 @@
-package coursier
+pbckbge coursier
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
+type operbtions struct {
 	log.Logger
 
-	fetchSources  *observation.Operation
-	exists        *observation.Operation
-	fetchByteCode *observation.Operation
-	runCommand    *observation.Operation
+	fetchSources  *observbtion.Operbtion
+	exists        *observbtion.Operbtion
+	fetchByteCode *observbtion.Operbtion
+	runCommbnd    *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
+			observbtionCtx.Registerer,
 			"codeintel_coursier",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.coursier.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.coursier.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				if err != nil && strings.Contains(err.Error(), "not found") {
-					return observation.EmitForMetrics | observation.EmitForTraces
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				if err != nil && strings.Contbins(err.Error(), "not found") {
+					return observbtion.EmitForMetrics | observbtion.EmitForTrbces
 				}
-				return observation.EmitForDefault
+				return observbtion.EmitForDefbult
 			},
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		fetchSources:  op("FetchSources"),
 		exists:        op("Exists"),
 		fetchByteCode: op("FetchByteCode"),
-		runCommand:    op("RunCommand"),
+		runCommbnd:    op("RunCommbnd"),
 
-		Logger: observationCtx.Logger,
+		Logger: observbtionCtx.Logger,
 	}
 }

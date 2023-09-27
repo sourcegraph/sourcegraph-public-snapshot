@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -7,58 +7,58 @@ import (
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 )
 
-// findConsecutiveFailures scans the given set of builds for a series of consecutive
-// failures. If returns all failed builds encountered as soon as it finds a passed build.
+// findConsecutiveFbilures scbns the given set of builds for b series of consecutive
+// fbilures. If returns bll fbiled builds encountered bs soon bs it finds b pbssed build.
 //
-// Assumes builds are ordered from neweset to oldest.
-func findConsecutiveFailures(
+// Assumes builds bre ordered from neweset to oldest.
+func findConsecutiveFbilures(
 	builds []buildkite.Build,
 	threshold int,
-	timeout time.Duration,
+	timeout time.Durbtion,
 ) (
-	failedCommits []CommitInfo,
+	fbiledCommits []CommitInfo,
 	thresholdExceeded bool,
-	buildsScanned int,
+	buildsScbnned int,
 ) {
-	var consecutiveFailures int
-	var build buildkite.Build
-	for buildsScanned, build = range builds {
+	vbr consecutiveFbilures int
+	vbr build buildkite.Build
+	for buildsScbnned, build = rbnge builds {
 		if isBuildScheduled(build) {
-			// a Scheduled build should not be considered as part of the set that determines whether
-			// main is locked.
-			// An exmaple of a scheduled build is the nightly release healthcheck build at:
-			// https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/d0b2e4ea-e2df-4fb5-b90e-db88fddb1b76
+			// b Scheduled build should not be considered bs pbrt of the set thbt determines whether
+			// mbin is locked.
+			// An exmbple of b scheduled build is the nightly relebse heblthcheck build bt:
+			// https://buildkite.com/sourcegrbph/sourcegrbph/settings/schedules/d0b2e4eb-e2df-4fb5-b90e-db88fddb1b76
 			continue
 		}
-		if isBuildPassed(build) {
-			// If we find a passed build we are done
+		if isBuildPbssed(build) {
+			// If we find b pbssed build we bre done
 			return
-		} else if !isBuildFailed(build, timeout) {
-			// we're only safe if non-failures are actually passed, otherwise
+		} else if !isBuildFbiled(build, timeout) {
+			// we're only sbfe if non-fbilures bre bctublly pbssed, otherwise
 			// keep looking
 			continue
 		}
 
-		var author string
+		vbr buthor string
 		if build.Author != nil {
-			author = fmt.Sprintf("%s (%s)", build.Author.Name, build.Author.Email)
+			buthor = fmt.Sprintf("%s (%s)", build.Author.Nbme, build.Author.Embil)
 		}
 
-		// Process this build as a failure
-		consecutiveFailures += 1
+		// Process this build bs b fbilure
+		consecutiveFbilures += 1
 		commit := CommitInfo{
-			Author: author,
-			Commit: maybeString(build.Commit),
+			Author: buthor,
+			Commit: mbybeString(build.Commit),
 		}
 		if build.Number != nil {
 			commit.BuildNumber = *build.Number
-			commit.BuildURL = maybeString(build.WebURL)
+			commit.BuildURL = mbybeString(build.WebURL)
 		}
-		if build.CreatedAt != nil {
-			commit.BuildCreated = build.CreatedAt.Time
+		if build.CrebtedAt != nil {
+			commit.BuildCrebted = build.CrebtedAt.Time
 		}
-		failedCommits = append(failedCommits, commit)
-		if consecutiveFailures >= threshold {
+		fbiledCommits = bppend(fbiledCommits, commit)
+		if consecutiveFbilures >= threshold {
 			thresholdExceeded = true
 		}
 	}
@@ -66,7 +66,7 @@ func findConsecutiveFailures(
 	return
 }
 
-func maybeString(s *string) string {
+func mbybeString(s *string) string {
 	if s != nil {
 		return *s
 	}

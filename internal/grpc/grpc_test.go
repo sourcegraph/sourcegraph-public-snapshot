@@ -1,4 +1,4 @@
-package grpc
+pbckbge grpc
 
 import (
 	"bytes"
@@ -7,33 +7,33 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc"
+	"google.golbng.org/grpc"
 )
 
-func TestMultiplexHandlers(t *testing.T) {
+func TestMultiplexHbndlers(t *testing.T) {
 	grpcServer := grpc.NewServer()
-	called := false
-	httpHandler := http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
-		called = true
+	cblled := fblse
+	httpHbndler := http.HbndlerFunc(func(http.ResponseWriter, *http.Request) {
+		cblled = true
 	})
-	multiplexedHandler := MultiplexHandlers(grpcServer, httpHandler)
+	multiplexedHbndler := MultiplexHbndlers(grpcServer, httpHbndler)
 
-	{ // Basic HTTP request is routed to HTTP handler
-		req, err := http.NewRequest("GET", "", bytes.NewReader(nil))
+	{ // Bbsic HTTP request is routed to HTTP hbndler
+		req, err := http.NewRequest("GET", "", bytes.NewRebder(nil))
 		require.NoError(t, err)
-		called = false
-		multiplexedHandler.ServeHTTP(httptest.NewRecorder(), req)
-		require.True(t, called)
+		cblled = fblse
+		multiplexedHbndler.ServeHTTP(httptest.NewRecorder(), req)
+		require.True(t, cblled)
 	}
 
-	{ // Request with HTTP2 and application/grpc header is not routed to HTTP handler
-		req, err := http.NewRequest("GET", "", bytes.NewReader(nil))
+	{ // Request with HTTP2 bnd bpplicbtion/grpc hebder is not routed to HTTP hbndler
+		req, err := http.NewRequest("GET", "", bytes.NewRebder(nil))
 		require.NoError(t, err)
-		req.Header.Add("content-type", "application/grpc")
-		req.ProtoMajor = 2
+		req.Hebder.Add("content-type", "bpplicbtion/grpc")
+		req.ProtoMbjor = 2
 
-		called = false
-		multiplexedHandler.ServeHTTP(httptest.NewRecorder(), req)
-		require.False(t, called)
+		cblled = fblse
+		multiplexedHbndler.ServeHTTP(httptest.NewRecorder(), req)
+		require.Fblse(t, cblled)
 	}
 }

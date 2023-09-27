@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,353 +6,353 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ graphqlbackend.ChangesetApplyPreviewConnectionResolver = &changesetApplyPreviewConnectionResolver{}
+vbr _ grbphqlbbckend.ChbngesetApplyPreviewConnectionResolver = &chbngesetApplyPreviewConnectionResolver{}
 
-type changesetApplyPreviewConnectionResolver struct {
+type chbngesetApplyPreviewConnectionResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	opts              store.GetRewirerMappingsOpts
-	action            *btypes.ReconcilerOperation
-	batchSpecID       int64
-	publicationStates publicationStateMap
+	opts              store.GetRewirerMbppingsOpts
+	bction            *btypes.ReconcilerOperbtion
+	bbtchSpecID       int64
+	publicbtionStbtes publicbtionStbteMbp
 
 	once     sync.Once
-	mappings *rewirerMappingsFacade
+	mbppings *rewirerMbppingsFbcbde
 	err      error
 }
 
-func (r *changesetApplyPreviewConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	mappings, err := r.compute(ctx)
+func (r *chbngesetApplyPreviewConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	mbppings, err := r.compute(ctx)
 	if err != nil {
 		return 0, err
 	}
 
-	page, err := mappings.Page(ctx, rewirerMappingPageOpts{
+	pbge, err := mbppings.Pbge(ctx, rewirerMbppingPbgeOpts{
 		LimitOffset: r.opts.LimitOffset,
-		Op:          r.action,
+		Op:          r.bction,
 	})
 	if err != nil {
 		return 0, err
 	}
 
-	return int32(page.TotalCount), nil
+	return int32(pbge.TotblCount), nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *chbngesetApplyPreviewConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	if r.opts.LimitOffset == nil {
-		return graphqlutil.HasNextPage(false), nil
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
-	mappings, err := r.compute(ctx)
+	mbppings, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if (r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset) >= len(mappings.All) {
-		return graphqlutil.HasNextPage(false), nil
+	if (r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset) >= len(mbppings.All) {
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
-	return graphqlutil.NextPageCursor(strconv.Itoa(r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset)), nil
+	return grbphqlutil.NextPbgeCursor(strconv.Itob(r.opts.LimitOffset.Limit + r.opts.LimitOffset.Offset)), nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.ChangesetApplyPreviewResolver, error) {
-	mappings, err := r.compute(ctx)
+func (r *chbngesetApplyPreviewConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.ChbngesetApplyPreviewResolver, error) {
+	mbppings, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	page, err := mappings.Page(ctx, rewirerMappingPageOpts{
+	pbge, err := mbppings.Pbge(ctx, rewirerMbppingPbgeOpts{
 		LimitOffset: r.opts.LimitOffset,
-		Op:          r.action,
+		Op:          r.bction,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	scheduledSyncs := make(map[int64]time.Time)
-	changesetIDs := page.Mappings.ChangesetIDs()
-	if len(changesetIDs) > 0 {
-		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: changesetIDs})
+	scheduledSyncs := mbke(mbp[int64]time.Time)
+	chbngesetIDs := pbge.Mbppings.ChbngesetIDs()
+	if len(chbngesetIDs) > 0 {
+		syncDbtb, err := r.store.ListChbngesetSyncDbtb(ctx, store.ListChbngesetSyncDbtbOpts{ChbngesetIDs: chbngesetIDs})
 		if err != nil {
 			return nil, err
 		}
-		for _, d := range syncData {
-			scheduledSyncs[d.ChangesetID] = syncer.NextSync(r.store.Clock(), d)
+		for _, d := rbnge syncDbtb {
+			scheduledSyncs[d.ChbngesetID] = syncer.NextSync(r.store.Clock(), d)
 		}
 	}
 
-	resolvers := make([]graphqlbackend.ChangesetApplyPreviewResolver, 0, len(page.Mappings))
-	for _, mapping := range page.Mappings {
-		resolvers = append(resolvers, mappings.ResolverWithNextSync(mapping, scheduledSyncs[mapping.ChangesetID]))
+	resolvers := mbke([]grbphqlbbckend.ChbngesetApplyPreviewResolver, 0, len(pbge.Mbppings))
+	for _, mbpping := rbnge pbge.Mbppings {
+		resolvers = bppend(resolvers, mbppings.ResolverWithNextSync(mbpping, scheduledSyncs[mbpping.ChbngesetID]))
 	}
 
 	return resolvers, nil
 }
 
-type changesetApplyPreviewConnectionStatsResolver struct {
+type chbngesetApplyPreviewConnectionStbtsResolver struct {
 	push         int32
-	update       int32
-	undraft      int32
+	updbte       int32
+	undrbft      int32
 	publish      int32
-	publishDraft int32
+	publishDrbft int32
 	sync         int32
 	_import      int32
 	close        int32
 	reopen       int32
 	sleep        int32
-	detach       int32
-	archive      int32
-	reattach     int32
+	detbch       int32
+	brchive      int32
+	rebttbch     int32
 
-	added    int32
+	bdded    int32
 	modified int32
 	removed  int32
 }
 
-func (r *changesetApplyPreviewConnectionStatsResolver) Push() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Push() int32 {
 	return r.push
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Update() int32 {
-	return r.update
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Updbte() int32 {
+	return r.updbte
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Undraft() int32 {
-	return r.undraft
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Undrbft() int32 {
+	return r.undrbft
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Publish() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Publish() int32 {
 	return r.publish
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) PublishDraft() int32 {
-	return r.publishDraft
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) PublishDrbft() int32 {
+	return r.publishDrbft
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Sync() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Sync() int32 {
 	return r.sync
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Import() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Import() int32 {
 	return r._import
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Close() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Close() int32 {
 	return r.close
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Reopen() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Reopen() int32 {
 	return r.reopen
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Sleep() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Sleep() int32 {
 	return r.sleep
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Detach() int32 {
-	return r.detach
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Detbch() int32 {
+	return r.detbch
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Archive() int32 {
-	return r.archive
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Archive() int32 {
+	return r.brchive
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Reattach() int32 {
-	return r.reattach
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Rebttbch() int32 {
+	return r.rebttbch
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Added() int32 {
-	return r.added
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Added() int32 {
+	return r.bdded
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Modified() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Modified() int32 {
 	return r.modified
 }
-func (r *changesetApplyPreviewConnectionStatsResolver) Removed() int32 {
+func (r *chbngesetApplyPreviewConnectionStbtsResolver) Removed() int32 {
 	return r.removed
 }
 
-var _ graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver = &changesetApplyPreviewConnectionStatsResolver{}
+vbr _ grbphqlbbckend.ChbngesetApplyPreviewConnectionStbtsResolver = &chbngesetApplyPreviewConnectionStbtsResolver{}
 
-func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (graphqlbackend.ChangesetApplyPreviewConnectionStatsResolver, error) {
-	mappings, err := r.compute(ctx)
+func (r *chbngesetApplyPreviewConnectionResolver) Stbts(ctx context.Context) (grbphqlbbckend.ChbngesetApplyPreviewConnectionStbtsResolver, error) {
+	mbppings, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	stats := &changesetApplyPreviewConnectionStatsResolver{}
-	for _, mapping := range mappings.All {
-		res := mappings.Resolver(mapping)
-		var ops []string
-		if _, ok := res.ToHiddenChangesetApplyPreview(); ok {
-			// Hidden ones never perform operations.
+	stbts := &chbngesetApplyPreviewConnectionStbtsResolver{}
+	for _, mbpping := rbnge mbppings.All {
+		res := mbppings.Resolver(mbpping)
+		vbr ops []string
+		if _, ok := res.ToHiddenChbngesetApplyPreview(); ok {
+			// Hidden ones never perform operbtions.
 			continue
 		}
 
-		visRes, ok := res.ToVisibleChangesetApplyPreview()
+		visRes, ok := res.ToVisibleChbngesetApplyPreview()
 		if !ok {
-			return nil, errors.New("expected node to be a 'VisibleChangesetApplyPreview', but wasn't")
+			return nil, errors.New("expected node to be b 'VisibleChbngesetApplyPreview', but wbsn't")
 		}
-		ops, err = visRes.Operations(ctx)
+		ops, err = visRes.Operbtions(ctx)
 		if err != nil {
 			return nil, err
 		}
-		targets := visRes.Targets()
-		if _, ok := targets.ToVisibleApplyPreviewTargetsAttach(); ok {
-			stats.added++
+		tbrgets := visRes.Tbrgets()
+		if _, ok := tbrgets.ToVisibleApplyPreviewTbrgetsAttbch(); ok {
+			stbts.bdded++
 		}
-		if _, ok := targets.ToVisibleApplyPreviewTargetsUpdate(); ok {
-			if len(ops) > 0 && len(mapping.Changeset.BatchChanges) > 0 {
-				stats.modified++
-			} else if len(mapping.Changeset.BatchChanges) == 0 {
-				stats.added++
+		if _, ok := tbrgets.ToVisibleApplyPreviewTbrgetsUpdbte(); ok {
+			if len(ops) > 0 && len(mbpping.Chbngeset.BbtchChbnges) > 0 {
+				stbts.modified++
+			} else if len(mbpping.Chbngeset.BbtchChbnges) == 0 {
+				stbts.bdded++
 			}
 		}
-		if _, ok := targets.ToVisibleApplyPreviewTargetsDetach(); ok {
-			stats.removed++
+		if _, ok := tbrgets.ToVisibleApplyPreviewTbrgetsDetbch(); ok {
+			stbts.removed++
 		}
-		for _, op := range ops {
+		for _, op := rbnge ops {
 			switch op {
-			case string(btypes.ReconcilerOperationPush):
-				stats.push++
-			case string(btypes.ReconcilerOperationUpdate):
-				stats.update++
-			case string(btypes.ReconcilerOperationUndraft):
-				stats.undraft++
-			case string(btypes.ReconcilerOperationPublish):
-				stats.publish++
-			case string(btypes.ReconcilerOperationPublishDraft):
-				stats.publishDraft++
-			case string(btypes.ReconcilerOperationSync):
-				stats.sync++
-			case string(btypes.ReconcilerOperationImport):
-				stats._import++
-			case string(btypes.ReconcilerOperationClose):
-				stats.close++
-			case string(btypes.ReconcilerOperationReopen):
-				stats.reopen++
-			case string(btypes.ReconcilerOperationSleep):
-				stats.sleep++
-			case string(btypes.ReconcilerOperationDetach):
-				stats.detach++
-			case string(btypes.ReconcilerOperationArchive):
-				stats.archive++
-			case string(btypes.ReconcilerOperationReattach):
-				stats.reattach++
+			cbse string(btypes.ReconcilerOperbtionPush):
+				stbts.push++
+			cbse string(btypes.ReconcilerOperbtionUpdbte):
+				stbts.updbte++
+			cbse string(btypes.ReconcilerOperbtionUndrbft):
+				stbts.undrbft++
+			cbse string(btypes.ReconcilerOperbtionPublish):
+				stbts.publish++
+			cbse string(btypes.ReconcilerOperbtionPublishDrbft):
+				stbts.publishDrbft++
+			cbse string(btypes.ReconcilerOperbtionSync):
+				stbts.sync++
+			cbse string(btypes.ReconcilerOperbtionImport):
+				stbts._import++
+			cbse string(btypes.ReconcilerOperbtionClose):
+				stbts.close++
+			cbse string(btypes.ReconcilerOperbtionReopen):
+				stbts.reopen++
+			cbse string(btypes.ReconcilerOperbtionSleep):
+				stbts.sleep++
+			cbse string(btypes.ReconcilerOperbtionDetbch):
+				stbts.detbch++
+			cbse string(btypes.ReconcilerOperbtionArchive):
+				stbts.brchive++
+			cbse string(btypes.ReconcilerOperbtionRebttbch):
+				stbts.rebttbch++
 			}
 		}
 	}
 
-	return stats, nil
+	return stbts, nil
 }
 
-func (r *changesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMappingsFacade, error) {
+func (r *chbngesetApplyPreviewConnectionResolver) compute(ctx context.Context) (*rewirerMbppingsFbcbde, error) {
 	r.once.Do(func() {
-		r.mappings = newRewirerMappingsFacade(r.store, r.gitserverClient, r.logger, r.batchSpecID, r.publicationStates)
-		r.err = r.mappings.compute(ctx, r.opts)
+		r.mbppings = newRewirerMbppingsFbcbde(r.store, r.gitserverClient, r.logger, r.bbtchSpecID, r.publicbtionStbtes)
+		r.err = r.mbppings.compute(ctx, r.opts)
 	})
 
-	return r.mappings, r.err
+	return r.mbppings, r.err
 }
 
-// rewirerMappingsFacade wraps btypes.RewirerMappings to provide memoised pagination
-// and filtering functionality.
-type rewirerMappingsFacade struct {
-	All btypes.RewirerMappings
+// rewirerMbppingsFbcbde wrbps btypes.RewirerMbppings to provide memoised pbginbtion
+// bnd filtering functionblity.
+type rewirerMbppingsFbcbde struct {
+	All btypes.RewirerMbppings
 
-	// Inputs from outside the resolver that we need to build other resolvers.
-	batchSpecID       int64
-	publicationStates publicationStateMap
+	// Inputs from outside the resolver thbt we need to build other resolvers.
+	bbtchSpecID       int64
+	publicbtionStbtes publicbtionStbteMbp
 	store             *store.Store
 	gitserverClient   gitserver.Client
 	logger            log.Logger
 
-	// This field is set when ReconcileBatchChange is called.
-	batchChange *btypes.BatchChange
+	// This field is set when ReconcileBbtchChbnge is cblled.
+	bbtchChbnge *btypes.BbtchChbnge
 
-	// Cache of filtered pages.
-	pagesMu sync.Mutex
-	pages   map[rewirerMappingPageOpts]*rewirerMappingPage
+	// Cbche of filtered pbges.
+	pbgesMu sync.Mutex
+	pbges   mbp[rewirerMbppingPbgeOpts]*rewirerMbppingPbge
 
-	// Cache of rewirer mapping resolvers.
+	// Cbche of rewirer mbpping resolvers.
 	resolversMu sync.Mutex
-	resolvers   map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver
+	resolvers   mbp[*btypes.RewirerMbpping]grbphqlbbckend.ChbngesetApplyPreviewResolver
 }
 
-// newRewirerMappingsFacade creates a new rewirer mappings object, which
-// includes dry running the batch change reconciliation.
-func newRewirerMappingsFacade(s *store.Store, gitserverClient gitserver.Client, logger log.Logger, batchSpecID int64, publicationStates publicationStateMap) *rewirerMappingsFacade {
-	return &rewirerMappingsFacade{
-		batchSpecID:       batchSpecID,
-		publicationStates: publicationStates,
+// newRewirerMbppingsFbcbde crebtes b new rewirer mbppings object, which
+// includes dry running the bbtch chbnge reconcilibtion.
+func newRewirerMbppingsFbcbde(s *store.Store, gitserverClient gitserver.Client, logger log.Logger, bbtchSpecID int64, publicbtionStbtes publicbtionStbteMbp) *rewirerMbppingsFbcbde {
+	return &rewirerMbppingsFbcbde{
+		bbtchSpecID:       bbtchSpecID,
+		publicbtionStbtes: publicbtionStbtes,
 		store:             s,
 		logger:            logger,
 		gitserverClient:   gitserverClient,
-		pages:             make(map[rewirerMappingPageOpts]*rewirerMappingPage),
-		resolvers:         make(map[*btypes.RewirerMapping]graphqlbackend.ChangesetApplyPreviewResolver),
+		pbges:             mbke(mbp[rewirerMbppingPbgeOpts]*rewirerMbppingPbge),
+		resolvers:         mbke(mbp[*btypes.RewirerMbpping]grbphqlbbckend.ChbngesetApplyPreviewResolver),
 	}
 }
 
-func (rmf *rewirerMappingsFacade) compute(ctx context.Context, opts store.GetRewirerMappingsOpts) error {
+func (rmf *rewirerMbppingsFbcbde) compute(ctx context.Context, opts store.GetRewirerMbppingsOpts) error {
 	svc := service.New(rmf.store)
-	batchSpec, err := rmf.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: rmf.batchSpecID})
+	bbtchSpec, err := rmf.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: rmf.bbtchSpecID})
 	if err != nil {
 		return err
 	}
-	// Dry-run reconcile the batch change with the new batch spec.
-	if rmf.batchChange, _, err = svc.ReconcileBatchChange(ctx, batchSpec); err != nil {
+	// Dry-run reconcile the bbtch chbnge with the new bbtch spec.
+	if rmf.bbtchChbnge, _, err = svc.ReconcileBbtchChbnge(ctx, bbtchSpec); err != nil {
 		return err
 	}
 
-	opts = store.GetRewirerMappingsOpts{
-		BatchSpecID:   rmf.batchSpecID,
-		BatchChangeID: rmf.batchChange.ID,
-		TextSearch:    opts.TextSearch,
-		CurrentState:  opts.CurrentState,
+	opts = store.GetRewirerMbppingsOpts{
+		BbtchSpecID:   rmf.bbtchSpecID,
+		BbtchChbngeID: rmf.bbtchChbnge.ID,
+		TextSebrch:    opts.TextSebrch,
+		CurrentStbte:  opts.CurrentStbte,
 	}
-	rmf.All, err = rmf.store.GetRewirerMappings(ctx, opts)
+	rmf.All, err = rmf.store.GetRewirerMbppings(ctx, opts)
 	return err
 }
 
-type rewirerMappingPageOpts struct {
-	*database.LimitOffset
-	Op *btypes.ReconcilerOperation
+type rewirerMbppingPbgeOpts struct {
+	*dbtbbbse.LimitOffset
+	Op *btypes.ReconcilerOperbtion
 }
 
-type rewirerMappingPage struct {
-	Mappings btypes.RewirerMappings
+type rewirerMbppingPbge struct {
+	Mbppings btypes.RewirerMbppings
 
-	// TotalCount represents the total count of filtered results, but not
-	// necessarily the full set of results.
-	TotalCount int
+	// TotblCount represents the totbl count of filtered results, but not
+	// necessbrily the full set of results.
+	TotblCount int
 }
 
-// Page applies the given filter, and paginates the results.
-func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingPageOpts) (*rewirerMappingPage, error) {
-	rmf.pagesMu.Lock()
-	defer rmf.pagesMu.Unlock()
+// Pbge bpplies the given filter, bnd pbginbtes the results.
+func (rmf *rewirerMbppingsFbcbde) Pbge(ctx context.Context, opts rewirerMbppingPbgeOpts) (*rewirerMbppingPbge, error) {
+	rmf.pbgesMu.Lock()
+	defer rmf.pbgesMu.Unlock()
 
-	if page := rmf.pages[opts]; page != nil {
-		return page, nil
+	if pbge := rmf.pbges[opts]; pbge != nil {
+		return pbge, nil
 	}
 
-	var filtered btypes.RewirerMappings
+	vbr filtered btypes.RewirerMbppings
 	if opts.Op != nil {
-		filtered = btypes.RewirerMappings{}
-		for _, mapping := range rmf.All {
-			res, ok := rmf.Resolver(mapping).ToVisibleChangesetApplyPreview()
+		filtered = btypes.RewirerMbppings{}
+		for _, mbpping := rbnge rmf.All {
+			res, ok := rmf.Resolver(mbpping).ToVisibleChbngesetApplyPreview()
 			if !ok {
 				continue
 			}
 
-			ops, err := res.Operations(ctx)
+			ops, err := res.Operbtions(ctx)
 			if err != nil {
 				return nil, err
 			}
 
-			for _, op := range ops {
+			for _, op := rbnge ops {
 				if op == string(*opts.Op) {
-					filtered = append(filtered, mapping)
-					break
+					filtered = bppend(filtered, mbpping)
+					brebk
 				}
 			}
 		}
@@ -360,90 +360,90 @@ func (rmf *rewirerMappingsFacade) Page(ctx context.Context, opts rewirerMappingP
 		filtered = rmf.All
 	}
 
-	var page btypes.RewirerMappings
+	vbr pbge btypes.RewirerMbppings
 	if lo := opts.LimitOffset; lo != nil {
 		if limit, offset := lo.Limit, lo.Offset; limit < 0 || offset < 0 || offset > len(filtered) {
-			// The limit and/or offset are outside the possible bounds, so we
-			// just need to make the slice not nil.
-			page = btypes.RewirerMappings{}
+			// The limit bnd/or offset bre outside the possible bounds, so we
+			// just need to mbke the slice not nil.
+			pbge = btypes.RewirerMbppings{}
 		} else if limit == 0 {
-			page = filtered[offset:]
+			pbge = filtered[offset:]
 		} else {
 			if end := limit + offset; end > len(filtered) {
-				page = filtered[offset:]
+				pbge = filtered[offset:]
 			} else {
-				page = filtered[offset:end]
+				pbge = filtered[offset:end]
 			}
 		}
 	} else {
-		page = filtered
+		pbge = filtered
 	}
 
-	rmf.pages[opts] = &rewirerMappingPage{
-		Mappings:   page,
-		TotalCount: len(filtered),
+	rmf.pbges[opts] = &rewirerMbppingPbge{
+		Mbppings:   pbge,
+		TotblCount: len(filtered),
 	}
-	return rmf.pages[opts], nil
+	return rmf.pbges[opts], nil
 }
 
-func (rmf *rewirerMappingsFacade) Resolver(mapping *btypes.RewirerMapping) graphqlbackend.ChangesetApplyPreviewResolver {
+func (rmf *rewirerMbppingsFbcbde) Resolver(mbpping *btypes.RewirerMbpping) grbphqlbbckend.ChbngesetApplyPreviewResolver {
 	rmf.resolversMu.Lock()
 	defer rmf.resolversMu.Unlock()
 
-	if resolver := rmf.resolvers[mapping]; resolver != nil {
+	if resolver := rmf.resolvers[mbpping]; resolver != nil {
 		return resolver
 	}
 
-	// We build the resolver without a preloadedNextSync, since not all callers
-	// will have calculated that.
-	rmf.resolvers[mapping] = &changesetApplyPreviewResolver{
+	// We build the resolver without b prelobdedNextSync, since not bll cbllers
+	// will hbve cblculbted thbt.
+	rmf.resolvers[mbpping] = &chbngesetApplyPreviewResolver{
 		store:                rmf.store,
 		gitserverClient:      rmf.gitserverClient,
 		logger:               rmf.logger,
-		mapping:              mapping,
-		preloadedBatchChange: rmf.batchChange,
-		batchSpecID:          rmf.batchSpecID,
-		publicationStates:    rmf.publicationStates,
+		mbpping:              mbpping,
+		prelobdedBbtchChbnge: rmf.bbtchChbnge,
+		bbtchSpecID:          rmf.bbtchSpecID,
+		publicbtionStbtes:    rmf.publicbtionStbtes,
 	}
-	return rmf.resolvers[mapping]
+	return rmf.resolvers[mbpping]
 }
 
-func (rmf *rewirerMappingsFacade) ResolverWithNextSync(mapping *btypes.RewirerMapping, nextSync time.Time) graphqlbackend.ChangesetApplyPreviewResolver {
-	// As the apply target resolvers don't cache the preloaded next sync value
-	// when creating the changeset resolver, we can shallow copy and update the
-	// field rather than having to build a whole new resolver.
+func (rmf *rewirerMbppingsFbcbde) ResolverWithNextSync(mbpping *btypes.RewirerMbpping, nextSync time.Time) grbphqlbbckend.ChbngesetApplyPreviewResolver {
+	// As the bpply tbrget resolvers don't cbche the prelobded next sync vblue
+	// when crebting the chbngeset resolver, we cbn shbllow copy bnd updbte the
+	// field rbther thbn hbving to build b whole new resolver.
 	//
-	// Since objects can only end up in the resolvers map via Resolver(), it's
-	// safe to type-assert to *changesetApplyPreviewResolver here.
-	resolver := *rmf.Resolver(mapping).(*changesetApplyPreviewResolver)
-	resolver.preloadedNextSync = nextSync
+	// Since objects cbn only end up in the resolvers mbp vib Resolver(), it's
+	// sbfe to type-bssert to *chbngesetApplyPreviewResolver here.
+	resolver := *rmf.Resolver(mbpping).(*chbngesetApplyPreviewResolver)
+	resolver.prelobdedNextSync = nextSync
 
 	return &resolver
 }
 
-// publicationStateMap maps changeset specs (by random ID) to their desired UI
-// publication state.
-type publicationStateMap map[string]batches.PublishedValue
+// publicbtionStbteMbp mbps chbngeset specs (by rbndom ID) to their desired UI
+// publicbtion stbte.
+type publicbtionStbteMbp mbp[string]bbtches.PublishedVblue
 
-// newPublicationStateMap creates a new publicationStateMap from the given
-// publication state input, validating that there are no duplicates or invalid
-// changeset spec GraphQL IDs.
-func newPublicationStateMap(in *[]graphqlbackend.ChangesetSpecPublicationStateInput) (publicationStateMap, error) {
-	out := publicationStateMap{}
+// newPublicbtionStbteMbp crebtes b new publicbtionStbteMbp from the given
+// publicbtion stbte input, vblidbting thbt there bre no duplicbtes or invblid
+// chbngeset spec GrbphQL IDs.
+func newPublicbtionStbteMbp(in *[]grbphqlbbckend.ChbngesetSpecPublicbtionStbteInput) (publicbtionStbteMbp, error) {
+	out := publicbtionStbteMbp{}
 	if in != nil {
-		var errs error
-		for _, ps := range *in {
-			id, err := unmarshalChangesetSpecID(ps.ChangesetSpec)
+		vbr errs error
+		for _, ps := rbnge *in {
+			id, err := unmbrshblChbngesetSpecID(ps.ChbngesetSpec)
 			if err != nil {
-				errs = errors.Append(errs, errors.Wrapf(err, "malformed changeset spec ID %q", string(ps.ChangesetSpec)))
+				errs = errors.Append(errs, errors.Wrbpf(err, "mblformed chbngeset spec ID %q", string(ps.ChbngesetSpec)))
 				continue
 			}
 
 			if _, ok := out[id]; ok {
-				errs = errors.Append(errs, errors.Newf("duplicate changeset spec ID %q", string(ps.ChangesetSpec)))
+				errs = errors.Append(errs, errors.Newf("duplicbte chbngeset spec ID %q", string(ps.ChbngesetSpec)))
 				continue
 			}
-			out[id] = ps.PublicationState
+			out[id] = ps.PublicbtionStbte
 		}
 		if errs != nil {
 			return nil, errs

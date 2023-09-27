@@ -1,4 +1,4 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
@@ -6,45 +6,45 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	trbcepkg "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-var metricLabels = []string{"method", "success"}
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_backend_client_request_duration_seconds",
-	Help:    "Total time spent on backend endpoints.",
-	Buckets: tracepkg.UserLatencyBuckets,
-}, metricLabels)
+vbr metricLbbels = []string{"method", "success"}
+vbr requestDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_bbckend_client_request_durbtion_seconds",
+	Help:    "Totbl time spent on bbckend endpoints.",
+	Buckets: trbcepkg.UserLbtencyBuckets,
+}, metricLbbels)
 
-var requestGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
-	Name: "src_backend_client_requests",
-	Help: "Current number of requests running for a method.",
+vbr requestGbuge = prombuto.NewGbugeVec(prometheus.GbugeOpts{
+	Nbme: "src_bbckend_client_requests",
+	Help: "Current number of requests running for b method.",
 }, []string{"method"})
 
-func startTrace(ctx context.Context, method string, arg any, err *error) (context.Context, func()) { //nolint:unparam // unparam complains that `server` always has same value across call-sites, but that's OK
-	name := "Repos." + method
-	requestGauge.WithLabelValues(name).Inc()
+func stbrtTrbce(ctx context.Context, method string, brg bny, err *error) (context.Context, func()) { //nolint:unpbrbm // unpbrbm complbins thbt `server` blwbys hbs sbme vblue bcross cbll-sites, but thbt's OK
+	nbme := "Repos." + method
+	requestGbuge.WithLbbelVblues(nbme).Inc()
 
-	tr, ctx := trace.New(ctx, name,
-		attribute.String("argument", fmt.Sprintf("%#v", arg)),
-		attribute.Int("userID", int(actor.FromContext(ctx).UID)),
+	tr, ctx := trbce.New(ctx, nbme,
+		bttribute.String("brgument", fmt.Sprintf("%#v", brg)),
+		bttribute.Int("userID", int(bctor.FromContext(ctx).UID)),
 	)
-	start := time.Now()
+	stbrt := time.Now()
 
 	done := func() {
-		elapsed := time.Since(start)
-		labels := prometheus.Labels{
-			"method":  name,
-			"success": strconv.FormatBool(err == nil),
+		elbpsed := time.Since(stbrt)
+		lbbels := prometheus.Lbbels{
+			"method":  nbme,
+			"success": strconv.FormbtBool(err == nil),
 		}
-		requestDuration.With(labels).Observe(elapsed.Seconds())
-		requestGauge.WithLabelValues(name).Dec()
+		requestDurbtion.With(lbbels).Observe(elbpsed.Seconds())
+		requestGbuge.WithLbbelVblues(nbme).Dec()
 		tr.EndWithErr(err)
 	}
 

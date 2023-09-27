@@ -1,251 +1,251 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"io/ioutil"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
+	"github.com/dbvecgh/go-spew/spew"
+	"github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestGitCommitResolver(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	db := dbmocks.NewMockDB()
 
 	client := gitserver.NewMockClient()
 
-	commit := &gitdomain.Commit{
+	commit := &gitdombin.Commit{
 		ID:      "c1",
-		Message: "subject: Changes things\nBody of changes",
-		Parents: []api.CommitID{"p1", "p2"},
-		Author: gitdomain.Signature{
-			Name:  "Bob",
-			Email: "bob@alice.com",
-			Date:  time.Now(),
+		Messbge: "subject: Chbnges things\nBody of chbnges",
+		Pbrents: []bpi.CommitID{"p1", "p2"},
+		Author: gitdombin.Signbture{
+			Nbme:  "Bob",
+			Embil: "bob@blice.com",
+			Dbte:  time.Now(),
 		},
-		Committer: &gitdomain.Signature{
-			Name:  "Alice",
-			Email: "alice@bob.com",
-			Date:  time.Now(),
+		Committer: &gitdombin.Signbture{
+			Nbme:  "Alice",
+			Embil: "blice@bob.com",
+			Dbte:  time.Now(),
 		},
 	}
 
-	t.Run("URL Escaping", func(t *testing.T) {
-		repo := NewRepositoryResolver(db, client, &types.Repo{Name: "xyz"})
+	t.Run("URL Escbping", func(t *testing.T) {
+		repo := NewRepositoryResolver(db, client, &types.Repo{Nbme: "xyz"})
 		commitResolver := NewGitCommitResolver(db, client, repo, "c1", commit)
 		{
-			inputRev := "master^1"
+			inputRev := "mbster^1"
 			commitResolver.inputRev = &inputRev
-			require.Equal(t, "/xyz/-/commit/master%5E1", commitResolver.URL())
+			require.Equbl(t, "/xyz/-/commit/mbster%5E1", commitResolver.URL())
 
 			opts := GitTreeEntryResolverOpts{
 				Commit: commitResolver,
-				Stat:   CreateFileInfo("a/b", false),
+				Stbt:   CrebteFileInfo("b/b", fblse),
 			}
 			treeResolver := NewGitTreeEntryResolver(db, client, opts)
 			url, err := treeResolver.URL(ctx)
 			require.Nil(t, err)
-			require.Equal(t, "/xyz@master%5E1/-/blob/a/b", url)
+			require.Equbl(t, "/xyz@mbster%5E1/-/blob/b/b", url)
 		}
 		{
-			inputRev := "refs/heads/main"
+			inputRev := "refs/hebds/mbin"
 			commitResolver.inputRev = &inputRev
-			require.Equal(t, "/xyz/-/commit/refs/heads/main", commitResolver.URL())
+			require.Equbl(t, "/xyz/-/commit/refs/hebds/mbin", commitResolver.URL())
 		}
 	})
 
-	t.Run("Lazy loading", func(t *testing.T) {
+	t.Run("Lbzy lobding", func(t *testing.T) {
 		repo := &types.Repo{
 			ID:           1,
-			Name:         "bob-repo",
-			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypeGitHub},
+			Nbme:         "bob-repo",
+			ExternblRepo: bpi.ExternblRepoSpec{ServiceType: extsvc.TypeGitHub},
 		}
 
 		repos := dbmocks.NewMockRepoStore()
-		repos.GetFunc.SetDefaultReturn(repo, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
+		repos.GetFunc.SetDefbultReturn(repo, nil)
+		db.ReposFunc.SetDefbultReturn(repos)
 
 		client := gitserver.NewMockClient()
-		client.GetCommitFunc.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, gitserver.ResolveRevisionOptions) (*gitdomain.Commit, error) {
+		client.GetCommitFunc.SetDefbultHook(func(context.Context, buthz.SubRepoPermissionChecker, bpi.RepoNbme, bpi.CommitID, gitserver.ResolveRevisionOptions) (*gitdombin.Commit, error) {
 			return commit, nil
 		})
 
-		for _, tc := range []struct {
-			name string
-			want any
-			have func(*GitCommitResolver) (any, error)
+		for _, tc := rbnge []struct {
+			nbme string
+			wbnt bny
+			hbve func(*GitCommitResolver) (bny, error)
 		}{{
-			name: "author",
-			want: toSignatureResolver(db, &commit.Author, true),
-			have: func(r *GitCommitResolver) (any, error) {
+			nbme: "buthor",
+			wbnt: toSignbtureResolver(db, &commit.Author, true),
+			hbve: func(r *GitCommitResolver) (bny, error) {
 				return r.Author(ctx)
 			},
 		}, {
-			name: "committer",
-			want: toSignatureResolver(db, commit.Committer, true),
-			have: func(r *GitCommitResolver) (any, error) {
+			nbme: "committer",
+			wbnt: toSignbtureResolver(db, commit.Committer, true),
+			hbve: func(r *GitCommitResolver) (bny, error) {
 				return r.Committer(ctx)
 			},
 		}, {
-			name: "message",
-			want: string(commit.Message),
-			have: func(r *GitCommitResolver) (any, error) {
-				return r.Message(ctx)
+			nbme: "messbge",
+			wbnt: string(commit.Messbge),
+			hbve: func(r *GitCommitResolver) (bny, error) {
+				return r.Messbge(ctx)
 			},
 		}, {
-			name: "subject",
-			want: "subject: Changes things",
-			have: func(r *GitCommitResolver) (any, error) {
+			nbme: "subject",
+			wbnt: "subject: Chbnges things",
+			hbve: func(r *GitCommitResolver) (bny, error) {
 				return r.Subject(ctx)
 			},
 		}, {
-			name: "body",
-			want: "Body of changes",
-			have: func(r *GitCommitResolver) (any, error) {
+			nbme: "body",
+			wbnt: "Body of chbnges",
+			hbve: func(r *GitCommitResolver) (bny, error) {
 				s, err := r.Body(ctx)
 				return *s, err
 			},
 		}, {
-			name: "url",
-			want: "/bob-repo/-/commit/c1",
-			have: func(r *GitCommitResolver) (any, error) {
+			nbme: "url",
+			wbnt: "/bob-repo/-/commit/c1",
+			hbve: func(r *GitCommitResolver) (bny, error) {
 				return r.URL(), nil
 			},
 		}, {
-			name: "canonical-url",
-			want: "/bob-repo/-/commit/c1",
-			have: func(r *GitCommitResolver) (any, error) {
-				return r.CanonicalURL(), nil
+			nbme: "cbnonicbl-url",
+			wbnt: "/bob-repo/-/commit/c1",
+			hbve: func(r *GitCommitResolver) (bny, error) {
+				return r.CbnonicblURL(), nil
 			},
 		}} {
-			t.Run(tc.name, func(t *testing.T) {
+			t.Run(tc.nbme, func(t *testing.T) {
 				repo := NewRepositoryResolver(db, client, repo)
-				// We pass no commit here to test that it gets lazy loaded via
-				// the git.GetCommit mock above.
+				// We pbss no commit here to test thbt it gets lbzy lobded vib
+				// the git.GetCommit mock bbove.
 				r := NewGitCommitResolver(db, client, repo, "c1", nil)
 
-				have, err := tc.have(r)
+				hbve, err := tc.hbve(r)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if !reflect.DeepEqual(have, tc.want) {
-					t.Errorf("\nhave: %s\nwant: %s", spew.Sprint(have), spew.Sprint(tc.want))
+				if !reflect.DeepEqubl(hbve, tc.wbnt) {
+					t.Errorf("\nhbve: %s\nwbnt: %s", spew.Sprint(hbve), spew.Sprint(tc.wbnt))
 				}
 
 				source, err := r.repoResolver.SourceType(ctx)
 				require.NoError(t, err)
-				require.Equal(t, GitRepositorySourceType, *source)
+				require.Equbl(t, GitRepositorySourceType, *source)
 
-				pf, err := r.PerforceChangelist(ctx)
+				pf, err := r.PerforceChbngelist(ctx)
 				require.NoError(t, err)
 				require.Nil(t, pf)
 
 				f, err := ioutil.TempFile("/tmp", "foo")
 				require.NoError(t, err)
 
-				fs, err := f.Stat()
+				fs, err := f.Stbt()
 				require.NoError(t, err)
-				client.StatFunc.SetDefaultReturn(fs, nil)
+				client.StbtFunc.SetDefbultReturn(fs, nil)
 
-				path, err := filepath.Abs(filepath.Dir(f.Name()))
+				pbth, err := filepbth.Abs(filepbth.Dir(f.Nbme()))
 				require.NoError(t, err)
 
-				gitTree, err := r.Blob(ctx, &struct{ Path string }{Path: path})
+				gitTree, err := r.Blob(ctx, &struct{ Pbth string }{Pbth: pbth})
 				require.NoError(t, err)
 				require.NotNil(t, gitTree)
 
-				cl, err := gitTree.ChangelistURL(ctx)
+				cl, err := gitTree.ChbngelistURL(ctx)
 				require.NoError(t, err)
 				require.Nil(t, cl)
 			})
 		}
 	})
 
-	runPerforceTests := func(t *testing.T, commit *gitdomain.Commit) {
+	runPerforceTests := func(t *testing.T, commit *gitdombin.Commit) {
 		repo := &types.Repo{
 			ID:           1,
-			Name:         "perforce/test-depot",
-			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+			Nbme:         "perforce/test-depot",
+			ExternblRepo: bpi.ExternblRepoSpec{ServiceType: extsvc.TypePerforce},
 		}
 
 		repoResolver := NewRepositoryResolver(db, client, repo)
 
 		repos := dbmocks.NewMockRepoStore()
-		repos.GetFunc.SetDefaultReturn(repo, nil)
-		db.ReposFunc.SetDefaultReturn(repos)
+		repos.GetFunc.SetDefbultReturn(repo, nil)
+		db.ReposFunc.SetDefbultReturn(repos)
 
-		commitResolver := NewGitCommitResolver(db, client, repoResolver, "8aa15f6a85c07a882821053f361b538f404f238e", commit)
+		commitResolver := NewGitCommitResolver(db, client, repoResolver, "8bb15f6b85c07b882821053f361b538f404f238e", commit)
 
-		ctx := actor.WithInternalActor(context.Background())
+		ctx := bctor.WithInternblActor(context.Bbckground())
 
 		source, err := commitResolver.repoResolver.SourceType(ctx)
 		require.NoError(t, err)
 
-		require.Equal(t, PerforceDepotSourceType, *source)
+		require.Equbl(t, PerforceDepotSourceType, *source)
 
-		pf, err := commitResolver.PerforceChangelist(ctx)
+		pf, err := commitResolver.PerforceChbngelist(ctx)
 		require.NoError(t, err)
 		require.NotNil(t, pf)
 
-		require.Equal(t, "123", pf.cid)
+		require.Equbl(t, "123", pf.cid)
 		subject, err := commitResolver.Subject(ctx)
 		require.NoError(t, err)
-		require.Equal(t, "subject: Changes things", subject)
+		require.Equbl(t, "subject: Chbnges things", subject)
 
 		f, err := ioutil.TempFile("/tmp", "foo")
 		require.NoError(t, err)
 
-		fs, err := f.Stat()
+		fs, err := f.Stbt()
 		require.NoError(t, err)
-		client.StatFunc.SetDefaultReturn(fs, nil)
+		client.StbtFunc.SetDefbultReturn(fs, nil)
 
-		path, err := filepath.Abs(filepath.Dir(f.Name()))
-		require.NoError(t, err)
-
-		gitTree, err := commitResolver.Blob(ctx, &struct{ Path string }{Path: path})
+		pbth, err := filepbth.Abs(filepbth.Dir(f.Nbme()))
 		require.NoError(t, err)
 
-		gotURL, err := gitTree.ChangelistURL(ctx)
+		gitTree, err := commitResolver.Blob(ctx, &struct{ Pbth string }{Pbth: pbth})
 		require.NoError(t, err)
 
-		_, fileName := filepath.Split(f.Name())
-		require.Equal(
+		gotURL, err := gitTree.ChbngelistURL(ctx)
+		require.NoError(t, err)
+
+		_, fileNbme := filepbth.Split(f.Nbme())
+		require.Equbl(
 			t,
-			filepath.Join("/perforce/test-depot@123/-/blob", fileName),
+			filepbth.Join("/perforce/test-depot@123/-/blob", fileNbme),
 			*gotURL,
 		)
 	}
 
 	t.Run("perforce depot, git-p4 commit", func(t *testing.T) {
-		commit := &gitdomain.Commit{
+		commit := &gitdombin.Commit{
 			ID: "c1",
-			Message: `subject: Changes things
-[git-p4: depot-paths = "//test-depot/": change = 123]"`,
-			Parents: []api.CommitID{"p1", "p2"},
-			Author: gitdomain.Signature{
-				Name:  "Bob",
-				Email: "bob@alice.com",
+			Messbge: `subject: Chbnges things
+[git-p4: depot-pbths = "//test-depot/": chbnge = 123]"`,
+			Pbrents: []bpi.CommitID{"p1", "p2"},
+			Author: gitdombin.Signbture{
+				Nbme:  "Bob",
+				Embil: "bob@blice.com",
 			},
-			Committer: &gitdomain.Signature{
-				Name:  "Alice",
-				Email: "alice@bob.com",
+			Committer: &gitdombin.Signbture{
+				Nbme:  "Alice",
+				Embil: "blice@bob.com",
 			},
 		}
 
@@ -253,18 +253,18 @@ func TestGitCommitResolver(t *testing.T) {
 	})
 
 	t.Run("perforce depot, p4-fusion commit", func(t *testing.T) {
-		commit := &gitdomain.Commit{
+		commit := &gitdombin.Commit{
 			ID: "c1",
-			Message: `123 - subject: Changes things
-[p4-fusion: depot-paths = "//test-perms/": change = 123]"`,
-			Parents: []api.CommitID{"p1", "p2"},
-			Author: gitdomain.Signature{
-				Name:  "Bob",
-				Email: "bob@alice.com",
+			Messbge: `123 - subject: Chbnges things
+[p4-fusion: depot-pbths = "//test-perms/": chbnge = 123]"`,
+			Pbrents: []bpi.CommitID{"p1", "p2"},
+			Author: gitdombin.Signbture{
+				Nbme:  "Bob",
+				Embil: "bob@blice.com",
 			},
-			Committer: &gitdomain.Signature{
-				Name:  "Alice",
-				Email: "alice@bob.com",
+			Committer: &gitdombin.Signbture{
+				Nbme:  "Alice",
+				Embil: "blice@bob.com",
 			},
 		}
 
@@ -272,37 +272,37 @@ func TestGitCommitResolver(t *testing.T) {
 	})
 }
 
-func TestGitCommitFileNames(t *testing.T) {
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn(nil, nil)
+func TestGitCommitFileNbmes(t *testing.T) {
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListFunc.SetDefbultReturn(nil, nil)
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoID(2), repo.ID)
-		assert.Equal(t, exampleCommitSHA1, rev)
-		return exampleCommitSHA1, nil
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		bssert.Equbl(t, bpi.RepoID(2), repo.ID)
+		bssert.Equbl(t, exbmpleCommitSHA1, rev)
+		return exbmpleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	bbckend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdombin.Commit{ID: exbmpleCommitSHA1})
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.LsFilesFunc.SetDefaultReturn([]string{"a", "b"}, nil)
+	gitserverClient.LsFilesFunc.SetDefbultReturn([]string{"b", "b"}, nil)
 	defer func() {
-		backend.Mocks = backend.MockServices{}
+		bbckend.Mocks = bbckend.MockServices{}
 	}()
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, gitserverClient),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, gitserverClient),
 			Query: `
 				{
-					repository(name: "github.com/gorilla/mux") {
-						commit(rev: "` + exampleCommitSHA1 + `") {
-							fileNames
+					repository(nbme: "github.com/gorillb/mux") {
+						commit(rev: "` + exbmpleCommitSHA1 + `") {
+							fileNbmes
 						}
 					}
 				}
@@ -311,7 +311,7 @@ func TestGitCommitFileNames(t *testing.T) {
 {
   "repository": {
     "commit": {
-		"fileNames": ["a", "b"]
+		"fileNbmes": ["b", "b"]
     }
   }
 }
@@ -322,78 +322,78 @@ func TestGitCommitFileNames(t *testing.T) {
 
 func TestGitCommitAncestors(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return api.CommitID(rev), nil
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return bpi.CommitID(rev), nil
 	}
 
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	bbckend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdombin.Commit{ID: exbmpleCommitSHA1})
 
 	client := gitserver.NewMockClient()
-	client.LsFilesFunc.SetDefaultReturn([]string{"a", "b"}, nil)
+	client.LsFilesFunc.SetDefbultReturn([]string{"b", "b"}, nil)
 
-	// A linear commit tree:
+	// A linebr commit tree:
 	// * -> c1 -> c2 -> c3 -> c4 -> c5 (HEAD)
-	c1 := gitdomain.Commit{
-		ID: api.CommitID("aabbc12345"),
+	c1 := gitdombin.Commit{
+		ID: bpi.CommitID("bbbbc12345"),
 	}
-	c2 := gitdomain.Commit{
-		ID:      api.CommitID("ccdde12345"),
-		Parents: []api.CommitID{c1.ID},
+	c2 := gitdombin.Commit{
+		ID:      bpi.CommitID("ccdde12345"),
+		Pbrents: []bpi.CommitID{c1.ID},
 	}
-	c3 := gitdomain.Commit{
-		ID:      api.CommitID("eeffg12345"),
-		Parents: []api.CommitID{c2.ID},
+	c3 := gitdombin.Commit{
+		ID:      bpi.CommitID("eeffg12345"),
+		Pbrents: []bpi.CommitID{c2.ID},
 	}
-	c4 := gitdomain.Commit{
-		ID:      api.CommitID("gghhi12345"),
-		Parents: []api.CommitID{c3.ID},
+	c4 := gitdombin.Commit{
+		ID:      bpi.CommitID("gghhi12345"),
+		Pbrents: []bpi.CommitID{c3.ID},
 	}
-	c5 := gitdomain.Commit{
-		ID:      api.CommitID("ijklm12345"),
-		Parents: []api.CommitID{c4.ID},
+	c5 := gitdombin.Commit{
+		ID:      bpi.CommitID("ijklm12345"),
+		Pbrents: []bpi.CommitID{c4.ID},
 	}
 
-	commits := []*gitdomain.Commit{
+	commits := []*gitdombin.Commit{
 		&c1, &c2, &c3, &c4, &c5,
 	}
 
-	client.CommitsFunc.SetDefaultHook(func(
+	client.CommitsFunc.SetDefbultHook(func(
 		ctx context.Context,
-		authz authz.SubRepoPermissionChecker,
-		repo api.RepoName,
-		opt gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
+		buthz buthz.SubRepoPermissionChecker,
+		repo bpi.RepoNbme,
+		opt gitserver.CommitsOptions) ([]*gitdombin.Commit, error) {
 
-		// Offset the returned list of commits based on the value of the Skip option.
+		// Offset the returned list of commits bbsed on the vblue of the Skip option.
 		return commits[opt.Skip:], nil
 	})
 
 	defer func() {
-		backend.Mocks = backend.MockServices{}
+		bbckend.Mocks = bbckend.MockServices{}
 	}()
 
 	RunTests(t, []*Test{
-		// Invalid value for afterCursor.
-		// Expect errors and no result.
+		// Invblid vblue for bfterCursor.
+		// Expect errors bnd no result.
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 2, path: "bill-of-materials.json", afterCursor: "n") {
+				  repository(nbme: "github.com/gorillb/mux") {
+					commit(rev: "bbbbc12345") {
+					  bncestors(first: 2, pbth: "bill-of-mbteribls.json", bfterCursor: "n") {
 						nodes {
 						  id
 						  oid
-						  abbreviatedOID
+						  bbbrevibtedOID
 						}
-						pageInfo {
+						pbgeInfo {
 						  endCursor
-						  hasNextPage
+						  hbsNextPbge
 						}
 					  }
 					}
@@ -401,12 +401,12 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 			ExpectedErrors: []*errors.QueryError{
 				{
-					Message: "failed to parse afterCursor: strconv.Atoi: parsing \"n\": invalid syntax",
-					Path:    []any{"repository", "commit", "ancestors", "nodes"},
+					Messbge: "fbiled to pbrse bfterCursor: strconv.Atoi: pbrsing \"n\": invblid syntbx",
+					Pbth:    []bny{"repository", "commit", "bncestors", "nodes"},
 				},
 				{
-					Message: "failed to parse afterCursor: strconv.Atoi: parsing \"n\": invalid syntax",
-					Path:    []any{"repository", "commit", "ancestors", "pageInfo"},
+					Messbge: "fbiled to pbrse bfterCursor: strconv.Atoi: pbrsing \"n\": invblid syntbx",
+					Pbth:    []bny{"repository", "commit", "bncestors", "pbgeInfo"},
 				},
 			},
 			ExpectedResult: `
@@ -417,27 +417,27 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// When first:0 and commits exist.
-		// Expect no nodes, but hasNextPage: true.
+		// When first:0 bnd commits exist.
+		// Expect no nodes, but hbsNextPbge: true.
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 0, path: "bill-of-materials.json") {
+				  repository(nbme: "github.com/gorillb/mux") {
+					commit(rev: "bbbbc12345") {
+					  bncestors(first: 0, pbth: "bill-of-mbteribls.json") {
 						nodes {
 						  id
 						  oid
-						  abbreviatedOID
-						  perforceChangelist {
+						  bbbrevibtedOID
+						  perforceChbngelist {
 							cid
-                            canonicalURL
+                            cbnonicblURL
 						  }
 						}
-						pageInfo {
+						pbgeInfo {
 						  endCursor
-						  hasNextPage
+						  hbsNextPbge
 						}
 					  }
 					}
@@ -447,11 +447,11 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  "repository": {
 					"commit": {
-					  "ancestors": {
+					  "bncestors": {
 						"nodes": [],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "0",
-						  "hasNextPage": true
+						  "hbsNextPbge": true
 						}
 					  }
 					}
@@ -459,23 +459,23 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// When first:0 and afterCursor: 5, no commits exist.
-		// Expect no nodes, but hasNextPage: false.
+		// When first:0 bnd bfterCursor: 5, no commits exist.
+		// Expect no nodes, but hbsNextPbge: fblse.
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 0, path: "bill-of-materials.json", afterCursor: "5") {
+				  repository(nbme: "github.com/gorillb/mux") {
+					commit(rev: "bbbbc12345") {
+					  bncestors(first: 0, pbth: "bill-of-mbteribls.json", bfterCursor: "5") {
 						nodes {
 						  id
 						  oid
-						  abbreviatedOID
+						  bbbrevibtedOID
 						}
-						pageInfo {
+						pbgeInfo {
 						  endCursor
-						  hasNextPage
+						  hbsNextPbge
 						}
 					  }
 					}
@@ -485,11 +485,11 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  "repository": {
 					"commit": {
-					  "ancestors": {
+					  "bncestors": {
 						"nodes": [],
-						"pageInfo": {
+						"pbgeInfo": {
                           "endCursor": null,
-						  "hasNextPage": false
+						  "hbsNextPbge": fblse
 						}
 					  }
 					}
@@ -497,23 +497,23 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// Start at commit c1.
-		// Expect c1 and c2 in the nodes. 2 in the endCursor.
+		// Stbrt bt commit c1.
+		// Expect c1 bnd c2 in the nodes. 2 in the endCursor.
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 2, path: "bill-of-materials.json") {
+				  repository(nbme: "github.com/gorillb/mux") {
+					commit(rev: "bbbbc12345") {
+					  bncestors(first: 2, pbth: "bill-of-mbteribls.json") {
 						nodes {
 						  id
 						  oid
-						  abbreviatedOID
+						  bbbrevibtedOID
 						}
-						pageInfo {
+						pbgeInfo {
 						  endCursor
-						  hasNextPage
+						  hbsNextPbge
 						}
 					  }
 					}
@@ -523,23 +523,23 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  "repository": {
 					"commit": {
-					  "ancestors": {
+					  "bncestors": {
 						"nodes": [
 						  {
 							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
-							"oid": "aabbc12345",
-							"abbreviatedOID": "aabbc12"
+							"oid": "bbbbc12345",
+							"bbbrevibtedOID": "bbbbc12"
 						  },
 						  {
 							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
 							"oid": "ccdde12345",
 
-							"abbreviatedOID": "ccdde12"
+							"bbbrevibtedOID": "ccdde12"
 						  }
 						],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "2",
-						  "hasNextPage": true
+						  "hbsNextPbge": true
 						}
 					  }
 					}
@@ -547,23 +547,23 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// Start at commit c1 with afterCursor:1.
-		// Expect c2 and c3 in the nodes. 3 in the endCursor.
+		// Stbrt bt commit c1 with bfterCursor:1.
+		// Expect c2 bnd c3 in the nodes. 3 in the endCursor.
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 2, path: "bill-of-materials.json", afterCursor: "1") {
+				  repository(nbme: "github.com/gorillb/mux") {
+					commit(rev: "bbbbc12345") {
+					  bncestors(first: 2, pbth: "bill-of-mbteribls.json", bfterCursor: "1") {
 						nodes {
 						  id
 						  oid
-						  abbreviatedOID
+						  bbbrevibtedOID
 						}
-						pageInfo {
+						pbgeInfo {
 						  endCursor
-						  hasNextPage
+						  hbsNextPbge
 						}
 					  }
 					}
@@ -573,23 +573,23 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  "repository": {
 					"commit": {
-					  "ancestors": {
+					  "bncestors": {
 						"nodes": [
 						  {
 							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiY2NkZGUxMjM0NSJ9",
 							"oid": "ccdde12345",
 
-							"abbreviatedOID": "ccdde12"
+							"bbbrevibtedOID": "ccdde12"
 						  },
 						  {
 							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
 							"oid": "eeffg12345",
-							"abbreviatedOID": "eeffg12"
+							"bbbrevibtedOID": "eeffg12"
 						  }
 						],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "3",
-						  "hasNextPage": true
+						  "hbsNextPbge": true
 						}
 					  }
 					}
@@ -597,23 +597,23 @@ func TestGitCommitAncestors(t *testing.T) {
 				}`,
 		},
 
-		// Start at commit c1 with afterCursor:2
-		// Expect c3, c4, c5 in the nodes. No endCursor because there will be no new commits.
+		// Stbrt bt commit c1 with bfterCursor:2
+		// Expect c3, c4, c5 in the nodes. No endCursor becbuse there will be no new commits.
 		{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-					commit(rev: "aabbc12345") {
-					  ancestors(first: 3, path: "bill-of-materials.json", afterCursor: "2") {
+				  repository(nbme: "github.com/gorillb/mux") {
+					commit(rev: "bbbbc12345") {
+					  bncestors(first: 3, pbth: "bill-of-mbteribls.json", bfterCursor: "2") {
 						nodes {
 						  id
 						  oid
-						  abbreviatedOID
+						  bbbrevibtedOID
 						}
-						pageInfo {
+						pbgeInfo {
 						  endCursor
-						  hasNextPage
+						  hbsNextPbge
 						}
 					  }
 					}
@@ -623,27 +623,27 @@ func TestGitCommitAncestors(t *testing.T) {
 				{
 				  "repository": {
 					"commit": {
-					  "ancestors": {
+					  "bncestors": {
 						"nodes": [
 						  {
 							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZWVmZmcxMjM0NSJ9",
 							"oid": "eeffg12345",
-							"abbreviatedOID": "eeffg12"
+							"bbbrevibtedOID": "eeffg12"
 						  },
 						  {
-							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZ2doaGkxMjM0NSJ9",
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiZ2dobGkxMjM0NSJ9",
 							"oid": "gghhi12345",
-							"abbreviatedOID": "gghhi12"
+							"bbbrevibtedOID": "gghhi12"
 						  },
 						  {
-							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiaWprbG0xMjM0NSJ9",
+							"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoibWprbG0xMjM0NSJ9",
 							"oid": "ijklm12345",
-							"abbreviatedOID": "ijklm12"
+							"bbbrevibtedOID": "ijklm12"
 						  }
 						],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": null,
-						  "hasNextPage": false
+						  "hbsNextPbge": fblse
 						}
 					  }
 					}
@@ -653,52 +653,52 @@ func TestGitCommitAncestors(t *testing.T) {
 	})
 }
 
-func TestGitCommitPerforceChangelist(t *testing.T) {
+func TestGitCommitPerforceChbngelist(t *testing.T) {
 	repos := dbmocks.NewMockRepoStore()
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		return api.CommitID(rev), nil
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		return bpi.CommitID(rev), nil
 	}
 
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	bbckend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdombin.Commit{ID: exbmpleCommitSHA1})
 
 	client := gitserver.NewMockClient()
 
 	t.Run("git repo", func(t *testing.T) {
-		repos.GetFunc.SetDefaultReturn(
+		repos.GetFunc.SetDefbultReturn(
 			&types.Repo{
 				ID:   2,
-				Name: "github.com/gorilla/mux",
-				ExternalRepo: api.ExternalRepoSpec{
+				Nbme: "github.com/gorillb/mux",
+				ExternblRepo: bpi.ExternblRepoSpec{
 					ServiceType: extsvc.TypeGitHub,
 				},
 			},
 			nil,
 		)
 
-		c1 := gitdomain.Commit{
-			ID:      api.CommitID("aabbc12345"),
-			Message: gitdomain.Message(`adding sourcegraph repos`),
+		c1 := gitdombin.Commit{
+			ID:      bpi.CommitID("bbbbc12345"),
+			Messbge: gitdombin.Messbge(`bdding sourcegrbph repos`),
 		}
 
-		client.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{&c1}, nil)
+		client.CommitsFunc.SetDefbultReturn([]*gitdombin.Commit{&c1}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-						commit(rev: "aabbc12345") {
-							ancestors(first: 10) {
+				  repository(nbme: "github.com/gorillb/mux") {
+						commit(rev: "bbbbc12345") {
+							bncestors(first: 10) {
 								nodes {
 									id
 									oid
-									perforceChangelist {
+									perforceChbngelist {
 										cid
-                                        canonicalURL
+                                        cbnonicblURL
 									}
 								}
 							}
@@ -709,12 +709,12 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 				{
 				  "repository": {
 						"commit": {
-							"ancestors": {
+							"bncestors": {
 								"nodes": [
 									{
 										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3ciLCJjIjoiYWFiYmMxMjM0NSJ9",
-										"oid": "aabbc12345",
-										"perforceChangelist": null
+										"oid": "bbbbc12345",
+										"perforceChbngelist": null
 									}
 								]
 							}
@@ -727,42 +727,42 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 	t.Run("perforce depot", func(t *testing.T) {
 		repo := &types.Repo{
 			ID:           2,
-			Name:         "github.com/gorilla/mux",
-			ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+			Nbme:         "github.com/gorillb/mux",
+			ExternblRepo: bpi.ExternblRepoSpec{ServiceType: extsvc.TypePerforce},
 		}
 
-		repos.GetFunc.SetDefaultReturn(repo, nil)
-		repos.GetByNameFunc.SetDefaultReturn(repo, nil)
+		repos.GetFunc.SetDefbultReturn(repo, nil)
+		repos.GetByNbmeFunc.SetDefbultReturn(repo, nil)
 
 		// git-p4 commit.
-		c1 := gitdomain.Commit{
-			ID: api.CommitID("aabbc12345"),
-			Message: gitdomain.Message(`87654 - adding sourcegraph repos
-[git-p4: depot-paths = "//test-perms/": change = 87654]`),
+		c1 := gitdombin.Commit{
+			ID: bpi.CommitID("bbbbc12345"),
+			Messbge: gitdombin.Messbge(`87654 - bdding sourcegrbph repos
+[git-p4: depot-pbths = "//test-perms/": chbnge = 87654]`),
 		}
 
 		// p4-fusion commit.
-		c2 := gitdomain.Commit{
-			ID: api.CommitID("ccdde12345"),
-			Message: gitdomain.Message(`87655 - testing sourcegraph repos
-[p4-fusion: depot-paths = "//test-perms/": change = 87655]`),
+		c2 := gitdombin.Commit{
+			ID: bpi.CommitID("ccdde12345"),
+			Messbge: gitdombin.Messbge(`87655 - testing sourcegrbph repos
+[p4-fusion: depot-pbths = "//test-perms/": chbnge = 87655]`),
 		}
 
-		client.CommitsFunc.SetDefaultReturn([]*gitdomain.Commit{&c1, &c2}, nil)
+		client.CommitsFunc.SetDefbultReturn([]*gitdombin.Commit{&c1, &c2}, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchemaWithClient(t, db, client),
+			Schemb: mustPbrseGrbphQLSchembWithClient(t, db, client),
 			Query: `
 				{
-				  repository(name: "github.com/gorilla/mux") {
-						commit(rev: "aabbc12345") {
-							ancestors(first: 10) {
+				  repository(nbme: "github.com/gorillb/mux") {
+						commit(rev: "bbbbc12345") {
+							bncestors(first: 10) {
 								nodes {
 									id
 									oid
-									perforceChangelist {
+									perforceChbngelist {
 										cid
-                                        canonicalURL
+                                        cbnonicblURL
 									}
 								}
 							}
@@ -773,22 +773,22 @@ func TestGitCommitPerforceChangelist(t *testing.T) {
 				{
 				  "repository": {
 						"commit": {
-							"ancestors": {
+							"bncestors": {
 								"nodes": [
 									{
 										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiYWFiYmMxMjM0NSJ9",
-										"oid": "aabbc12345",
-										"perforceChangelist": {
+										"oid": "bbbbc12345",
+										"perforceChbngelist": {
 											"cid": "87654",
-											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87654"
+											"cbnonicblURL": "/github.com/gorillb/mux/-/chbngelist/87654"
 										}
 									},
 									{
 										"id": "R2l0Q29tbWl0OnsiciI6IlVtVndiM05wZEc5eWVUb3kiLCJjIjoiY2NkZGUxMjM0NSJ9",
 										"oid": "ccdde12345",
-										"perforceChangelist": {
+										"perforceChbngelist": {
 											"cid": "87655",
-											"canonicalURL": "/github.com/gorilla/mux/-/changelist/87655"
+											"cbnonicblURL": "/github.com/gorillb/mux/-/chbngelist/87655"
 										}
 									}
 								]

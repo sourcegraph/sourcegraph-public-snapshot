@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
@@ -7,87 +7,87 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestRetentionUsageStatistics(t *testing.T) {
-	ctx := context.Background()
+func TestRetentionUsbgeStbtistics(t *testing.T) {
+	ctx := context.Bbckground()
 
 	defer func() {
 		timeNow = time.Now
 	}()
 
-	eventDate := time.Date(2020, 11, 3, 0, 0, 0, 0, time.UTC)
-	userCreationDate := time.Date(2020, 10, 26, 0, 0, 0, 0, time.UTC)
+	eventDbte := time.Dbte(2020, 11, 3, 0, 0, 0, 0, time.UTC)
+	userCrebtionDbte := time.Dbte(2020, 10, 26, 0, 0, 0, 0, time.UTC)
 
-	mockTimeNow(eventDate)
+	mockTimeNow(eventDbte)
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	events := []database.Event{{
-		Name:      "ViewHome",
-		URL:       "https://sourcegraph.test:3443/search",
+	events := []dbtbbbse.Event{{
+		Nbme:      "ViewHome",
+		URL:       "https://sourcegrbph.test:3443/sebrch",
 		UserID:    1,
 		Source:    "WEB",
-		Timestamp: userCreationDate,
+		Timestbmp: userCrebtionDbte,
 	}, {
-		Name:      "ViewHome",
-		URL:       "https://sourcegraph.test:3443/search",
+		Nbme:      "ViewHome",
+		URL:       "https://sourcegrbph.test:3443/sebrch",
 		UserID:    1,
 		Source:    "WEB",
-		Timestamp: eventDate,
+		Timestbmp: eventDbte,
 	}}
 
-	for _, event := range events {
+	for _, event := rbnge events {
 		err := db.EventLogs().Insert(ctx, &event)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	// Insert user
 	_, err := db.ExecContext(
-		context.Background(),
-		`INSERT INTO users(username, display_name, avatar_url, created_at, updated_at, passwd, invalidated_sessions_at, site_admin)
+		context.Bbckground(),
+		`INSERT INTO users(usernbme, displby_nbme, bvbtbr_url, crebted_bt, updbted_bt, pbsswd, invblidbted_sessions_bt, site_bdmin)
 		VALUES($1, $2, $3, $4, $5, $6, $7, $8)`,
-		"test", "test", nil, userCreationDate, userCreationDate, "foobar", userCreationDate, true)
+		"test", "test", nil, userCrebtionDbte, userCrebtionDbte, "foobbr", userCrebtionDbte, true)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := GetRetentionStatistics(ctx, db)
+	hbve, err := GetRetentionStbtistics(ctx, db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	one := int32(1)
-	oneFloat := float64(1)
-	zeroFloat := float64(0)
-	weekly := []*types.WeeklyRetentionStats{
+	oneFlobt := flobt64(1)
+	zeroFlobt := flobt64(0)
+	weekly := []*types.WeeklyRetentionStbts{
 		{
-			WeekStart:  userCreationDate.UTC(),
+			WeekStbrt:  userCrebtionDbte.UTC(),
 			CohortSize: &one,
-			Week0:      &oneFloat,
-			Week1:      &oneFloat,
-			Week2:      &zeroFloat,
-			Week3:      &zeroFloat,
-			Week4:      &zeroFloat,
-			Week5:      &zeroFloat,
-			Week6:      &zeroFloat,
-			Week7:      &zeroFloat,
-			Week8:      &zeroFloat,
-			Week9:      &zeroFloat,
-			Week10:     &zeroFloat,
-			Week11:     &zeroFloat,
+			Week0:      &oneFlobt,
+			Week1:      &oneFlobt,
+			Week2:      &zeroFlobt,
+			Week3:      &zeroFlobt,
+			Week4:      &zeroFlobt,
+			Week5:      &zeroFlobt,
+			Week6:      &zeroFlobt,
+			Week7:      &zeroFlobt,
+			Week8:      &zeroFlobt,
+			Week9:      &zeroFlobt,
+			Week10:     &zeroFlobt,
+			Week11:     &zeroFlobt,
 		},
 	}
 
 	for i := 1; i <= 11; i++ {
-		weekly = append(weekly, &types.WeeklyRetentionStats{
-			WeekStart:  userCreationDate.Add(time.Hour * time.Duration(168*i) * -1).UTC(),
+		weekly = bppend(weekly, &types.WeeklyRetentionStbts{
+			WeekStbrt:  userCrebtionDbte.Add(time.Hour * time.Durbtion(168*i) * -1).UTC(),
 			CohortSize: nil,
 			Week0:      nil,
 			Week1:      nil,
@@ -104,12 +104,12 @@ func TestRetentionUsageStatistics(t *testing.T) {
 		})
 	}
 
-	want := &types.RetentionStats{
+	wbnt := &types.RetentionStbts{
 		Weekly: weekly,
 	}
 
-	if diff := cmp.Diff(want, have); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(wbnt, hbve); diff != "" {
+		t.Fbtbl(diff)
 	}
 
 }

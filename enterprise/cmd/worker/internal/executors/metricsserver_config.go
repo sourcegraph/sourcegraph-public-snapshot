@@ -1,17 +1,17 @@
-package executors
+pbckbge executors
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type metricsServerConfig struct {
-	env.BaseConfig
+	env.BbseConfig
 
 	MetricsServerPort int
 }
 
-var metricsServerConfigInst = &metricsServerConfig{}
+vbr metricsServerConfigInst = &metricsServerConfig{}
 
-func (c *metricsServerConfig) Load() {
+func (c *metricsServerConfig) Lobd() {
 	c.MetricsServerPort = c.GetInt("EXECUTORS_METRICS_SERVER_PORT", "6996", "The port to listen on to serve the metrics from executors.")
 }

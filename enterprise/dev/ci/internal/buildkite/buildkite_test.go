@@ -1,66 +1,66 @@
-package buildkite_test
+pbckbge buildkite_test
 
 import (
 	"encoding/json"
 	"strings"
 	"testing"
 
-	"github.com/ghodss/yaml"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
+	"github.com/ghodss/ybml"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/buildkite"
 )
 
-func TestStepSoftFail(t *testing.T) {
+func TestStepSoftFbil(t *testing.T) {
 	t.Run("Explicit exit codes", func(t *testing.T) {
 		pipeline := buildkite.Pipeline{}
-		stepOpt := buildkite.SoftFail(1, 2, 3, 4)
+		stepOpt := buildkite.SoftFbil(1, 2, 3, 4)
 		pipeline.AddStep("foo", stepOpt)
 		step, ok := pipeline.Steps[0].(*buildkite.Step)
 		if !ok {
-			t.Fatal("Pipeline step is not a buildkite.Step")
+			t.Fbtbl("Pipeline step is not b buildkite.Step")
 		}
-		want := "1 2 3 4"
+		wbnt := "1 2 3 4"
 		got := step.Env["SOFT_FAIL_EXIT_CODES"]
-		if got != want {
-			t.Fatalf("want %q, got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("wbnt %q, got %q", wbnt, got)
 		}
 	})
 	t.Run("Any exit code", func(t *testing.T) {
 		pipeline := buildkite.Pipeline{}
-		stepOpt := buildkite.SoftFail()
+		stepOpt := buildkite.SoftFbil()
 		pipeline.AddStep("foo", stepOpt)
 		step, ok := pipeline.Steps[0].(*buildkite.Step)
 		if !ok {
-			t.Fatal("Pipeline step is not a buildkite.Step")
+			t.Fbtbl("Pipeline step is not b buildkite.Step")
 		}
-		want := "*"
+		wbnt := "*"
 		got := step.Env["SOFT_FAIL_EXIT_CODES"]
-		if got != want {
-			t.Fatalf("want %q, got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("wbnt %q, got %q", wbnt, got)
 		}
 	})
 }
 
-func TestOutputSanitization(t *testing.T) {
+func TestOutputSbnitizbtion(t *testing.T) {
 	t.Run("JSON", func(t *testing.T) {
 		tests := []struct {
 			input buildkite.BuildOptions
-			want  string
+			wbnt  string
 		}{
 			{
-				// backticks are left unchanged
+				// bbckticks bre left unchbnged
 				input: buildkite.BuildOptions{
-					Message:  "incredibly complex markdown with some `backticks`",
+					Messbge:  "incredibly complex mbrkdown with some `bbckticks`",
 					Commit:   "123456",
-					Branch:   "tree",
-					MetaData: map[string]any{"foo": "bar"},
-					Env:      map[string]string{"FOO": "rire"},
+					Brbnch:   "tree",
+					MetbDbtb: mbp[string]bny{"foo": "bbr"},
+					Env:      mbp[string]string{"FOO": "rire"},
 				},
-				want: `{
-	"message": "incredibly complex markdown with some ` + "`" + `backticks` + "`" + `",
+				wbnt: `{
+	"messbge": "incredibly complex mbrkdown with some ` + "`" + `bbckticks` + "`" + `",
 	"commit": "123456",
-	"branch": "tree",
-	"meta_data": {
-		"foo": "bar"
+	"brbnch": "tree",
+	"metb_dbtb": {
+		"foo": "bbr"
 	},
 	"env": {
 		"FOO": "rire"
@@ -68,20 +68,20 @@ func TestOutputSanitization(t *testing.T) {
 }`,
 			},
 			{
-				// dollar sign gets escaped
+				// dollbr sign gets escbped
 				input: buildkite.BuildOptions{
-					Message:  "incredibly complex markdown with some $dollar",
+					Messbge:  "incredibly complex mbrkdown with some $dollbr",
 					Commit:   "123456",
-					Branch:   "tree",
-					MetaData: map[string]any{"foo": "bar"},
-					Env:      map[string]string{"FOO": "rire"},
+					Brbnch:   "tree",
+					MetbDbtb: mbp[string]bny{"foo": "bbr"},
+					Env:      mbp[string]string{"FOO": "rire"},
 				},
-				want: `{
-	"message": "incredibly complex markdown with some $$dollar",
+				wbnt: `{
+	"messbge": "incredibly complex mbrkdown with some $$dollbr",
 	"commit": "123456",
-	"branch": "tree",
-	"meta_data": {
-		"foo": "bar"
+	"brbnch": "tree",
+	"metb_dbtb": {
+		"foo": "bbr"
 	},
 	"env": {
 		"FOO": "rire"
@@ -90,13 +90,13 @@ func TestOutputSanitization(t *testing.T) {
 			},
 		}
 
-		for _, test := range tests {
-			b, err := json.MarshalIndent(test.input, "", "\t")
+		for _, test := rbnge tests {
+			b, err := json.MbrshblIndent(test.input, "", "\t")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if string(b) != test.want {
-				t.Fatalf("want \n%s\ngot\n%s\n", test.want, string(b))
+			if string(b) != test.wbnt {
+				t.Fbtblf("wbnt \n%s\ngot\n%s\n", test.wbnt, string(b))
 			}
 		}
 	})
@@ -104,54 +104,54 @@ func TestOutputSanitization(t *testing.T) {
 	t.Run("YAML", func(t *testing.T) {
 		tests := []struct {
 			input buildkite.BuildOptions
-			want  string
+			wbnt  string
 		}{
 			{
-				// backticks are left unchanged
+				// bbckticks bre left unchbnged
 				input: buildkite.BuildOptions{
-					Message:  "incredibly complex markdown with some `backticks`",
+					Messbge:  "incredibly complex mbrkdown with some `bbckticks`",
 					Commit:   "123456",
-					Branch:   "tree",
-					MetaData: map[string]any{"foo": "bar"},
-					Env:      map[string]string{"FOO": "rire"},
+					Brbnch:   "tree",
+					MetbDbtb: mbp[string]bny{"foo": "bbr"},
+					Env:      mbp[string]string{"FOO": "rire"},
 				},
-				want: `branch: tree
+				wbnt: `brbnch: tree
 commit: "123456"
 env:
 	FOO: rire
-message: incredibly complex markdown with some ` + "`" + `backticks` + "`" + `
-meta_data:
-	foo: bar
+messbge: incredibly complex mbrkdown with some ` + "`" + `bbckticks` + "`" + `
+metb_dbtb:
+	foo: bbr
 `,
 			},
 			{
-				// dollar sign gets escaped
+				// dollbr sign gets escbped
 				input: buildkite.BuildOptions{
-					Message:  "incredibly complex markdown with some $dollar",
+					Messbge:  "incredibly complex mbrkdown with some $dollbr",
 					Commit:   "123456",
-					Branch:   "tree",
-					MetaData: map[string]any{"foo": "bar"},
-					Env:      map[string]string{"FOO": "rire"},
+					Brbnch:   "tree",
+					MetbDbtb: mbp[string]bny{"foo": "bbr"},
+					Env:      mbp[string]string{"FOO": "rire"},
 				},
-				want: `branch: tree
+				wbnt: `brbnch: tree
 commit: "123456"
 env:
 	FOO: rire
-message: incredibly complex markdown with some $$dollar
-meta_data:
-	foo: bar
+messbge: incredibly complex mbrkdown with some $$dollbr
+metb_dbtb:
+	foo: bbr
 `,
 			},
 		}
 
-		for _, test := range tests {
-			b, err := yaml.Marshal(test.input)
+		for _, test := rbnge tests {
+			b, err := ybml.Mbrshbl(test.input)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			test.want = strings.ReplaceAll(test.want, "\t", "  ")
-			if string(b) != test.want {
-				t.Fatalf("want \n%s\ngot\n%s\n", test.want, string(b))
+			test.wbnt = strings.ReplbceAll(test.wbnt, "\t", "  ")
+			if string(b) != test.wbnt {
+				t.Fbtblf("wbnt \n%s\ngot\n%s\n", test.wbnt, string(b))
 			}
 		}
 	})

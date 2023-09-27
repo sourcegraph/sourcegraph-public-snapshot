@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -8,34 +8,34 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestPermissionLevels(t *testing.T) {
@@ -46,600 +46,600 @@ func TestPermissionLevels(t *testing.T) {
 	bt.MockRSAKeygen(t)
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	key := et.TestKey{}
 
-	bstore := store.New(db, &observation.TestContext, key)
+	bstore := store.New(db, &observbtion.TestContext, key)
 	sr := New(db, bstore, gitserver.NewMockClient(), logger)
-	s, err := newSchema(db, sr)
+	s, err := newSchemb(db, sr)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// SyncChangeset uses EnqueueChangesetSync and tries to talk to repo-updater, hence we need to mock it.
-	repoupdater.MockEnqueueChangesetSync = func(ctx context.Context, ids []int64) error {
+	// SyncChbngeset uses EnqueueChbngesetSync bnd tries to tblk to repo-updbter, hence we need to mock it.
+	repoupdbter.MockEnqueueChbngesetSync = func(ctx context.Context, ids []int64) error {
 		return nil
 	}
-	t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
+	t.Clebnup(func() { repoupdbter.MockEnqueueChbngesetSync = nil })
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Global test data that we reuse in every test
-	adminID := bt.CreateTestUser(t, db, true).ID
-	role, _ := assignBatchChangesWritePermissionToUser(ctx, t, db, adminID)
+	// Globbl test dbtb thbt we reuse in every test
+	bdminID := bt.CrebteTestUser(t, db, true).ID
+	role, _ := bssignBbtchChbngesWritePermissionToUser(ctx, t, db, bdminID)
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 	bt.AssignRoleToUser(ctx, t, db, userID, role.ID)
 
-	nonOrgUserID := bt.CreateTestUser(t, db, false).ID
+	nonOrgUserID := bt.CrebteTestUser(t, db, fblse).ID
 	bt.AssignRoleToUser(ctx, t, db, nonOrgUserID, role.ID)
 
-	// Create an organisation that only has userID in it.
-	orgID := bt.CreateTestOrg(t, db, "org", userID).ID
+	// Crebte bn orgbnisbtion thbt only hbs userID in it.
+	orgID := bt.CrebteTestOrg(t, db, "org", userID).ID
 
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/permission-levels-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/permission-levels-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	changeset := &btypes.Changeset{
+	chbngeset := &btypes.Chbngeset{
 		RepoID:              repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "1234",
+		ExternblServiceType: "github",
+		ExternblID:          "1234",
 	}
-	if err := bstore.CreateChangeset(ctx, changeset); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteChbngeset(ctx, chbngeset); err != nil {
+		t.Fbtbl(err)
 	}
 
-	type namespace struct {
+	type nbmespbce struct {
 		userID int32
 		orgID  int32
 	}
 
-	createBatchChange := func(t *testing.T, s *store.Store, ns namespace, name string, userID int32, batchSpecID int64) (batchChangeID int64) {
+	crebteBbtchChbnge := func(t *testing.T, s *store.Store, ns nbmespbce, nbme string, userID int32, bbtchSpecID int64) (bbtchChbngeID int64) {
 		t.Helper()
 
-		c := &btypes.BatchChange{
-			Name:            name,
-			CreatorID:       userID,
-			NamespaceOrgID:  ns.orgID,
-			NamespaceUserID: ns.userID,
-			LastApplierID:   userID,
-			LastAppliedAt:   time.Now(),
-			BatchSpecID:     batchSpecID,
+		c := &btypes.BbtchChbnge{
+			Nbme:            nbme,
+			CrebtorID:       userID,
+			NbmespbceOrgID:  ns.orgID,
+			NbmespbceUserID: ns.userID,
+			LbstApplierID:   userID,
+			LbstAppliedAt:   time.Now(),
+			BbtchSpecID:     bbtchSpecID,
 		}
-		if err := s.CreateBatchChange(ctx, c); err != nil {
-			t.Fatal(err)
-		}
-
-		// We attach the changeset to the batch change so we can test syncChangeset
-		changeset.BatchChanges = append(changeset.BatchChanges, btypes.BatchChangeAssoc{BatchChangeID: c.ID})
-		if err := s.UpdateChangeset(ctx, changeset); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchChbnge(ctx, c); err != nil {
+			t.Fbtbl(err)
 		}
 
-		cs := &btypes.BatchSpec{UserID: userID, NamespaceUserID: ns.userID, NamespaceOrgID: ns.orgID}
-		if err := s.CreateBatchSpec(ctx, cs); err != nil {
-			t.Fatal(err)
+		// We bttbch the chbngeset to the bbtch chbnge so we cbn test syncChbngeset
+		chbngeset.BbtchChbnges = bppend(chbngeset.BbtchChbnges, btypes.BbtchChbngeAssoc{BbtchChbngeID: c.ID})
+		if err := s.UpdbteChbngeset(ctx, chbngeset); err != nil {
+			t.Fbtbl(err)
+		}
+
+		cs := &btypes.BbtchSpec{UserID: userID, NbmespbceUserID: ns.userID, NbmespbceOrgID: ns.orgID}
+		if err := s.CrebteBbtchSpec(ctx, cs); err != nil {
+			t.Fbtbl(err)
 		}
 
 		return c.ID
 	}
 
-	createBatchSpec := func(t *testing.T, s *store.Store, ns namespace) (randID string, id int64) {
+	crebteBbtchSpec := func(t *testing.T, s *store.Store, ns nbmespbce) (rbndID string, id int64) {
 		t.Helper()
 
-		cs := &btypes.BatchSpec{UserID: ns.userID, NamespaceUserID: ns.userID, NamespaceOrgID: ns.orgID}
-		if err := s.CreateBatchSpec(ctx, cs); err != nil {
-			t.Fatal(err)
+		cs := &btypes.BbtchSpec{UserID: ns.userID, NbmespbceUserID: ns.userID, NbmespbceOrgID: ns.orgID}
+		if err := s.CrebteBbtchSpec(ctx, cs); err != nil {
+			t.Fbtbl(err)
 		}
 
-		return cs.RandID, cs.ID
+		return cs.RbndID, cs.ID
 	}
 
-	createBatchSpecFromRaw := func(t *testing.T, s *store.Store, ns namespace, userID int32) (randID string, id int64) {
+	crebteBbtchSpecFromRbw := func(t *testing.T, s *store.Store, ns nbmespbce, userID int32) (rbndID string, id int64) {
 		t.Helper()
 
-		// userCtx causes CreateBatchSpecFromRaw to set batchSpec.UserID to userID
-		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		// userCtx cbuses CrebteBbtchSpecFromRbw to set bbtchSpec.UserID to userID
+		userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		// We're using the service method here since it also creates a resolution job
+		// We're using the service method here since it blso crebtes b resolution job
 		svc := service.New(s)
-		spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
-			RawSpec:         bt.TestRawBatchSpecYAML,
-			NamespaceUserID: ns.userID,
-			NamespaceOrgID:  ns.orgID,
+		spec, err := svc.CrebteBbtchSpecFromRbw(userCtx, service.CrebteBbtchSpecFromRbwOpts{
+			RbwSpec:         bt.TestRbwBbtchSpecYAML,
+			NbmespbceUserID: ns.userID,
+			NbmespbceOrgID:  ns.orgID,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		return spec.RandID, spec.ID
+		return spec.RbndID, spec.ID
 	}
 
-	createBatchSpecWorkspace := func(t *testing.T, s *store.Store, batchSpecID int64) (id int64) {
+	crebteBbtchSpecWorkspbce := func(t *testing.T, s *store.Store, bbtchSpecID int64) (id int64) {
 		t.Helper()
 
-		ws := &btypes.BatchSpecWorkspace{
-			BatchSpecID: batchSpecID,
+		ws := &btypes.BbtchSpecWorkspbce{
+			BbtchSpecID: bbtchSpecID,
 			RepoID:      repo.ID,
 		}
-		if err := s.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+			t.Fbtbl(err)
 		}
 
 		return ws.ID
 	}
 
-	cleanUpBatchChanges := func(t *testing.T, s *store.Store) {
+	clebnUpBbtchChbnges := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		batchChanges, next, err := s.ListBatchChanges(ctx, store.ListBatchChangesOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
+		bbtchChbnges, next, err := s.ListBbtchChbnges(ctx, store.ListBbtchChbngesOpts{LimitOpts: store.LimitOpts{Limit: 1000}})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if next != 0 {
-			t.Fatalf("more batch changes in store")
+			t.Fbtblf("more bbtch chbnges in store")
 		}
 
-		for _, c := range batchChanges {
-			if err := s.DeleteBatchChange(ctx, c.ID); err != nil {
-				t.Fatal(err)
+		for _, c := rbnge bbtchChbnges {
+			if err := s.DeleteBbtchChbnge(ctx, c.ID); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 	}
 
-	cleanUpBatchSpecs := func(t *testing.T, s *store.Store) {
+	clebnUpBbtchSpecs := func(t *testing.T, s *store.Store) {
 		t.Helper()
 
-		batchChanges, next, err := s.ListBatchSpecs(ctx, store.ListBatchSpecsOpts{
+		bbtchChbnges, next, err := s.ListBbtchSpecs(ctx, store.ListBbtchSpecsOpts{
 			LimitOpts:                   store.LimitOpts{Limit: 1000},
-			IncludeLocallyExecutedSpecs: true,
+			IncludeLocbllyExecutedSpecs: true,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if next != 0 {
-			t.Fatalf("more batch specs in store")
+			t.Fbtblf("more bbtch specs in store")
 		}
 
-		for _, c := range batchChanges {
-			if err := s.DeleteBatchSpec(ctx, c.ID); err != nil {
-				t.Fatal(err)
+		for _, c := rbnge bbtchChbnges {
+			if err := s.DeleteBbtchSpec(ctx, c.ID); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 	}
 
 	t.Run("queries", func(t *testing.T) {
-		cleanUpBatchChanges(t, bstore)
+		clebnUpBbtchChbnges(t, bstore)
 
-		adminBatchSpec, adminBatchSpecID := createBatchSpec(t, bstore, namespace{userID: adminID})
-		adminBatchChange := createBatchChange(t, bstore, namespace{userID: adminID}, "admin", adminID, adminBatchSpecID)
-		userBatchSpec, userBatchSpecID := createBatchSpec(t, bstore, namespace{userID: userID})
-		userBatchChange := createBatchChange(t, bstore, namespace{userID: userID}, "user", userID, userBatchSpecID)
-		orgBatchSpec, orgBatchSpecID := createBatchSpec(t, bstore, namespace{orgID: orgID})
-		// Note that we intentionally apply the batch spec with the admin, not
-		// the regular user, to test that the regular user still has the
-		// expected admin access to the batch change even when they didn't
-		// apply it.
-		orgBatchChange := createBatchChange(t, bstore, namespace{orgID: orgID}, "org", adminID, orgBatchSpecID)
+		bdminBbtchSpec, bdminBbtchSpecID := crebteBbtchSpec(t, bstore, nbmespbce{userID: bdminID})
+		bdminBbtchChbnge := crebteBbtchChbnge(t, bstore, nbmespbce{userID: bdminID}, "bdmin", bdminID, bdminBbtchSpecID)
+		userBbtchSpec, userBbtchSpecID := crebteBbtchSpec(t, bstore, nbmespbce{userID: userID})
+		userBbtchChbnge := crebteBbtchChbnge(t, bstore, nbmespbce{userID: userID}, "user", userID, userBbtchSpecID)
+		orgBbtchSpec, orgBbtchSpecID := crebteBbtchSpec(t, bstore, nbmespbce{orgID: orgID})
+		// Note thbt we intentionblly bpply the bbtch spec with the bdmin, not
+		// the regulbr user, to test thbt the regulbr user still hbs the
+		// expected bdmin bccess to the bbtch chbnge even when they didn't
+		// bpply it.
+		orgBbtchChbnge := crebteBbtchChbnge(t, bstore, nbmespbce{orgID: orgID}, "org", bdminID, orgBbtchSpecID)
 
-		adminBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{userID: adminID}, adminID)
-		userBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{userID: userID}, userID)
-		orgBatchSpecCreatedFromRawRandID, _ := createBatchSpecFromRaw(t, bstore, namespace{orgID: orgID}, adminID)
+		bdminBbtchSpecCrebtedFromRbwRbndID, _ := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{userID: bdminID}, bdminID)
+		userBbtchSpecCrebtedFromRbwRbndID, _ := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{userID: userID}, userID)
+		orgBbtchSpecCrebtedFromRbwRbndID, _ := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{orgID: orgID}, bdminID)
 
-		t.Run("BatchChangeByID", func(t *testing.T) {
+		t.Run("BbtchChbngeByID", func(t *testing.T) {
 			tests := []struct {
-				name                    string
+				nbme                    string
 				currentUser             int32
-				batchChange             int64
-				wantViewerCanAdminister bool
+				bbtchChbnge             int64
+				wbntViewerCbnAdminister bool
 			}{
 				{
-					name:                    "site-admin viewing own batch change",
-					currentUser:             adminID,
-					batchChange:             adminBatchChange,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing own bbtch chbnge",
+					currentUser:             bdminID,
+					bbtchChbnge:             bdminBbtchChbnge,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing other's batch change",
+					nbme:                    "non-site-bdmin viewing other's bbtch chbnge",
 					currentUser:             userID,
-					batchChange:             adminBatchChange,
-					wantViewerCanAdminister: false,
+					bbtchChbnge:             bdminBbtchChbnge,
+					wbntViewerCbnAdminister: fblse,
 				},
 				{
-					name:                    "site-admin viewing other's batch change",
-					currentUser:             adminID,
-					batchChange:             userBatchChange,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing other's bbtch chbnge",
+					currentUser:             bdminID,
+					bbtchChbnge:             userBbtchChbnge,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing own batch change",
+					nbme:                    "non-site-bdmin viewing own bbtch chbnge",
 					currentUser:             userID,
-					batchChange:             userBatchChange,
-					wantViewerCanAdminister: true,
+					bbtchChbnge:             userBbtchChbnge,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "site-admin viewing batch change in org they do not belong to",
-					currentUser:             adminID,
-					batchChange:             orgBatchChange,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing bbtch chbnge in org they do not belong to",
+					currentUser:             bdminID,
+					bbtchChbnge:             orgBbtchChbnge,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing batch change in org they belong to",
+					nbme:                    "non-site-bdmin viewing bbtch chbnge in org they belong to",
 					currentUser:             userID,
-					batchChange:             orgBatchChange,
-					wantViewerCanAdminister: true,
+					bbtchChbnge:             orgBbtchChbnge,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing org batch change in org they do not belong to",
+					nbme:                    "non-site-bdmin viewing org bbtch chbnge in org they do not belong to",
 					currentUser:             nonOrgUserID,
-					batchChange:             orgBatchChange,
-					wantViewerCanAdminister: false,
+					bbtchChbnge:             orgBbtchChbnge,
+					wbntViewerCbnAdminister: fblse,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(bgql.MarshalBatchChangeID(tc.batchChange))
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					grbphqlID := string(bgql.MbrshblBbtchChbngeID(tc.bbtchChbnge))
 
-					var res struct{ Node apitest.BatchChange }
+					vbr res struct{ Node bpitest.BbtchChbnge }
 
-					input := map[string]any{"batchChange": graphqlID}
-					queryBatchChange := `
-				  query($batchChange: ID!) {
-				    node(id: $batchChange) { ... on BatchChange { id, viewerCanAdminister } }
+					input := mbp[string]bny{"bbtchChbnge": grbphqlID}
+					queryBbtchChbnge := `
+				  query($bbtchChbnge: ID!) {
+				    node(id: $bbtchChbnge) { ... on BbtchChbnge { id, viewerCbnAdminister } }
 				  }`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchChange)
+					bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.currentUser))
+					bpitest.MustExec(bctorCtx, t, s, input, &res, queryBbtchChbnge)
 
-					if have, want := res.Node.ID, graphqlID; have != want {
-						t.Fatalf("queried batch change has wrong id %q, want %q", have, want)
+					if hbve, wbnt := res.Node.ID, grbphqlID; hbve != wbnt {
+						t.Fbtblf("queried bbtch chbnge hbs wrong id %q, wbnt %q", hbve, wbnt)
 					}
-					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-						t.Fatalf("queried batch change's ViewerCanAdminister is wrong %t, want %t", have, want)
+					if hbve, wbnt := res.Node.ViewerCbnAdminister, tc.wbntViewerCbnAdminister; hbve != wbnt {
+						t.Fbtblf("queried bbtch chbnge's ViewerCbnAdminister is wrong %t, wbnt %t", hbve, wbnt)
 					}
 				})
 			}
 		})
 
-		t.Run("BatchSpecByID", func(t *testing.T) {
+		t.Run("BbtchSpecByID", func(t *testing.T) {
 			tests := []struct {
-				name                    string
+				nbme                    string
 				currentUser             int32
-				batchSpec               string
-				wantViewerCanAdminister bool
+				bbtchSpec               string
+				wbntViewerCbnAdminister bool
 			}{
 				{
-					name:                    "site-admin viewing own batch spec",
-					currentUser:             adminID,
-					batchSpec:               adminBatchSpec,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing own bbtch spec",
+					currentUser:             bdminID,
+					bbtchSpec:               bdminBbtchSpec,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "site-admin viewing own created-from-raw batch spec",
-					currentUser:             adminID,
-					batchSpec:               adminBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing own crebted-from-rbw bbtch spec",
+					currentUser:             bdminID,
+					bbtchSpec:               bdminBbtchSpecCrebtedFromRbwRbndID,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "site-admin viewing other's batch spec",
-					currentUser:             adminID,
-					batchSpec:               userBatchSpec,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing other's bbtch spec",
+					currentUser:             bdminID,
+					bbtchSpec:               userBbtchSpec,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "site-admin viewing other's created-from-raw batch spec",
-					currentUser:             adminID,
-					batchSpec:               userBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: true,
+					nbme:                    "site-bdmin viewing other's crebted-from-rbw bbtch spec",
+					currentUser:             bdminID,
+					bbtchSpec:               userBbtchSpecCrebtedFromRbwRbndID,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing own batch spec",
+					nbme:                    "non-site-bdmin viewing own bbtch spec",
 					currentUser:             userID,
-					batchSpec:               userBatchSpec,
-					wantViewerCanAdminister: true,
+					bbtchSpec:               userBbtchSpec,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing own created-from-raw batch spec",
+					nbme:                    "non-site-bdmin viewing own crebted-from-rbw bbtch spec",
 					currentUser:             userID,
-					batchSpec:               userBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: true,
+					bbtchSpec:               userBbtchSpecCrebtedFromRbwRbndID,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing other's batch spec",
+					nbme:                    "non-site-bdmin viewing other's bbtch spec",
 					currentUser:             userID,
-					batchSpec:               adminBatchSpec,
-					wantViewerCanAdminister: false,
+					bbtchSpec:               bdminBbtchSpec,
+					wbntViewerCbnAdminister: fblse,
 				},
 				{
-					name:                    "non-site-admin viewing other's created-from-raw batch spec",
+					nbme:                    "non-site-bdmin viewing other's crebted-from-rbw bbtch spec",
 					currentUser:             userID,
-					batchSpec:               adminBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: false,
+					bbtchSpec:               bdminBbtchSpecCrebtedFromRbwRbndID,
+					wbntViewerCbnAdminister: fblse,
 				},
 				{
-					name:                    "non-site-admin viewing batch spec in org they belong to",
+					nbme:                    "non-site-bdmin viewing bbtch spec in org they belong to",
 					currentUser:             userID,
-					batchSpec:               orgBatchSpec,
-					wantViewerCanAdminister: true,
+					bbtchSpec:               orgBbtchSpec,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing batch spec in org they do not belong to",
+					nbme:                    "non-site-bdmin viewing bbtch spec in org they do not belong to",
 					currentUser:             nonOrgUserID,
-					batchSpec:               orgBatchSpec,
-					wantViewerCanAdminister: false,
+					bbtchSpec:               orgBbtchSpec,
+					wbntViewerCbnAdminister: fblse,
 				},
 				{
-					name:                    "non-site-admin viewing created-from-raw batch spec in org they belong to",
+					nbme:                    "non-site-bdmin viewing crebted-from-rbw bbtch spec in org they belong to",
 					currentUser:             userID,
-					batchSpec:               orgBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: true,
+					bbtchSpec:               orgBbtchSpecCrebtedFromRbwRbndID,
+					wbntViewerCbnAdminister: true,
 				},
 				{
-					name:                    "non-site-admin viewing created-from-raw batch spec in org they do not belong to",
+					nbme:                    "non-site-bdmin viewing crebted-from-rbw bbtch spec in org they do not belong to",
 					currentUser:             nonOrgUserID,
-					batchSpec:               orgBatchSpecCreatedFromRawRandID,
-					wantViewerCanAdminister: false,
+					bbtchSpec:               orgBbtchSpecCrebtedFromRbwRbndID,
+					wbntViewerCbnAdminister: fblse,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					graphqlID := string(marshalBatchSpecRandID(tc.batchSpec))
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					grbphqlID := string(mbrshblBbtchSpecRbndID(tc.bbtchSpec))
 
-					var res struct{ Node apitest.BatchSpec }
+					vbr res struct{ Node bpitest.BbtchSpec }
 
-					input := map[string]any{"batchSpec": graphqlID}
-					queryBatchSpec := `
-				  query($batchSpec: ID!) {
-				    node(id: $batchSpec) { ... on BatchSpec { id, viewerCanAdminister } }
+					input := mbp[string]bny{"bbtchSpec": grbphqlID}
+					queryBbtchSpec := `
+				  query($bbtchSpec: ID!) {
+				    node(id: $bbtchSpec) { ... on BbtchSpec { id, viewerCbnAdminister } }
 				  }`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					apitest.MustExec(actorCtx, t, s, input, &res, queryBatchSpec)
+					bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.currentUser))
+					bpitest.MustExec(bctorCtx, t, s, input, &res, queryBbtchSpec)
 
-					if have, want := res.Node.ID, graphqlID; have != want {
-						t.Fatalf("queried batch spec has wrong id %q, want %q", have, want)
+					if hbve, wbnt := res.Node.ID, grbphqlID; hbve != wbnt {
+						t.Fbtblf("queried bbtch spec hbs wrong id %q, wbnt %q", hbve, wbnt)
 					}
-					if have, want := res.Node.ViewerCanAdminister, tc.wantViewerCanAdminister; have != want {
-						t.Fatalf("queried batch spec's ViewerCanAdminister is wrong %t, want %t", have, want)
+					if hbve, wbnt := res.Node.ViewerCbnAdminister, tc.wbntViewerCbnAdminister; hbve != wbnt {
+						t.Fbtblf("queried bbtch spec's ViewerCbnAdminister is wrong %t, wbnt %t", hbve, wbnt)
 					}
 				})
 			}
 		})
 
-		t.Run("User.BatchChangesCodeHosts", func(t *testing.T) {
+		t.Run("User.BbtchChbngesCodeHosts", func(t *testing.T) {
 			tests := []struct {
-				name        string
+				nbme        string
 				currentUser int32
 				user        int32
-				wantErr     bool
+				wbntErr     bool
 			}{
 				{
-					name:        "site-admin viewing other user",
-					currentUser: adminID,
+					nbme:        "site-bdmin viewing other user",
+					currentUser: bdminID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing other's hosts",
+					nbme:        "non-site-bdmin viewing other's hosts",
 					currentUser: userID,
-					user:        adminID,
-					wantErr:     true,
+					user:        bdminID,
+					wbntErr:     true,
 				},
 				{
-					name:        "non-site-admin viewing own hosts",
+					nbme:        "non-site-bdmin viewing own hosts",
 					currentUser: userID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, bstore)
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					pruneUserCredentibls(t, db, key)
+					pruneSiteCredentibls(t, bstore)
 
-					graphqlID := string(graphqlbackend.MarshalUserID(tc.user))
+					grbphqlID := string(grbphqlbbckend.MbrshblUserID(tc.user))
 
-					var res struct{ Node apitest.User }
+					vbr res struct{ Node bpitest.User }
 
-					input := map[string]any{"user": graphqlID}
+					input := mbp[string]bny{"user": grbphqlID}
 					queryCodeHosts := `
 				  query($user: ID!) {
-				    node(id: $user) { ... on User { batchChangesCodeHosts { totalCount } } }
+				    node(id: $user) { ... on User { bbtchChbngesCodeHosts { totblCount } } }
 				  }`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
-					if !tc.wantErr && len(errors) != 0 {
-						t.Fatalf("got error but didn't expect one: %+v", errors)
-					} else if tc.wantErr && len(errors) == 0 {
-						t.Fatal("expected error but got none")
+					bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.currentUser))
+					errors := bpitest.Exec(bctorCtx, t, s, input, &res, queryCodeHosts)
+					if !tc.wbntErr && len(errors) != 0 {
+						t.Fbtblf("got error but didn't expect one: %+v", errors)
+					} else if tc.wbntErr && len(errors) == 0 {
+						t.Fbtbl("expected error but got none")
 					}
 				})
 			}
 		})
 
-		t.Run("BatchChangesCredentialByID", func(t *testing.T) {
+		t.Run("BbtchChbngesCredentiblByID", func(t *testing.T) {
 			tests := []struct {
-				name        string
+				nbme        string
 				currentUser int32
 				user        int32
-				wantErr     bool
+				wbntErr     bool
 			}{
 				{
-					name:        "site-admin viewing other user",
-					currentUser: adminID,
+					nbme:        "site-bdmin viewing other user",
+					currentUser: bdminID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing other's credential",
+					nbme:        "non-site-bdmin viewing other's credentibl",
 					currentUser: userID,
-					user:        adminID,
-					wantErr:     true,
+					user:        bdminID,
+					wbntErr:     true,
 				},
 				{
-					name:        "non-site-admin viewing own credential",
+					nbme:        "non-site-bdmin viewing own credentibl",
 					currentUser: userID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 
 				{
-					name:        "site-admin viewing site-credential",
-					currentUser: adminID,
+					nbme:        "site-bdmin viewing site-credentibl",
+					currentUser: bdminID,
 					user:        0,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing site-credential",
+					nbme:        "non-site-bdmin viewing site-credentibl",
 					currentUser: userID,
 					user:        0,
-					wantErr:     true,
+					wbntErr:     true,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, bstore)
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					pruneUserCredentibls(t, db, key)
+					pruneSiteCredentibls(t, bstore)
 
-					var graphqlID graphql.ID
+					vbr grbphqlID grbphql.ID
 					if tc.user != 0 {
-						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
-						cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-							Domain:              database.UserCredentialDomainBatches,
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
+						ctx := bctor.WithActor(ctx, bctor.FromUser(tc.user))
+						cred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+							Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+							ExternblServiceID:   "https://github.com/",
+							ExternblServiceType: extsvc.TypeGitHub,
 							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						}, &buth.OAuthBebrerToken{Token: "SOSECRET"})
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						graphqlID = marshalBatchChangesCredentialID(cred.ID, false)
+						grbphqlID = mbrshblBbtchChbngesCredentiblID(cred.ID, fblse)
 					} else {
-						cred := &btypes.SiteCredential{
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
+						cred := &btypes.SiteCredentibl{
+							ExternblServiceID:   "https://github.com/",
+							ExternblServiceType: extsvc.TypeGitHub,
 						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-						if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
-							t.Fatal(err)
+						token := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+						if err := bstore.CrebteSiteCredentibl(ctx, cred, token); err != nil {
+							t.Fbtbl(err)
 						}
-						graphqlID = marshalBatchChangesCredentialID(cred.ID, true)
+						grbphqlID = mbrshblBbtchChbngesCredentiblID(cred.ID, true)
 					}
 
-					var res struct {
-						Node apitest.BatchChangesCredential
+					vbr res struct {
+						Node bpitest.BbtchChbngesCredentibl
 					}
 
-					input := map[string]any{"id": graphqlID}
+					input := mbp[string]bny{"id": grbphqlID}
 					queryCodeHosts := `
 				  query($id: ID!) {
-				    node(id: $id) { ... on BatchChangesCredential { id } }
+				    node(id: $id) { ... on BbtchChbngesCredentibl { id } }
 				  }`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, queryCodeHosts)
-					if !tc.wantErr && len(errors) != 0 {
-						t.Fatalf("got error but didn't expect one: %v", errors)
-					} else if tc.wantErr && len(errors) == 0 {
-						t.Fatal("expected error but got none")
+					bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.currentUser))
+					errors := bpitest.Exec(bctorCtx, t, s, input, &res, queryCodeHosts)
+					if !tc.wbntErr && len(errors) != 0 {
+						t.Fbtblf("got error but didn't expect one: %v", errors)
+					} else if tc.wbntErr && len(errors) == 0 {
+						t.Fbtbl("expected error but got none")
 					}
-					if !tc.wantErr {
-						if have, want := res.Node.ID, string(graphqlID); have != want {
-							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
+					if !tc.wbntErr {
+						if hbve, wbnt := res.Node.ID, string(grbphqlID); hbve != wbnt {
+							t.Fbtblf("invblid node returned, wbnted ID=%q, hbve=%q", wbnt, hbve)
 						}
 					}
 				})
 			}
 		})
 
-		t.Run("BatchChanges", func(t *testing.T) {
+		t.Run("BbtchChbnges", func(t *testing.T) {
 			tests := []struct {
-				name                string
+				nbme                string
 				currentUser         int32
-				viewerCanAdminister bool
-				wantBatchChanges    []int64
+				viewerCbnAdminister bool
+				wbntBbtchChbnges    []int64
 			}{
 				{
-					name:                "admin listing viewerCanAdminister: true",
-					currentUser:         adminID,
-					viewerCanAdminister: true,
-					wantBatchChanges:    []int64{adminBatchChange, userBatchChange, orgBatchChange},
+					nbme:                "bdmin listing viewerCbnAdminister: true",
+					currentUser:         bdminID,
+					viewerCbnAdminister: true,
+					wbntBbtchChbnges:    []int64{bdminBbtchChbnge, userBbtchChbnge, orgBbtchChbnge},
 				},
 				{
-					name:                "user listing viewerCanAdminister: true",
+					nbme:                "user listing viewerCbnAdminister: true",
 					currentUser:         userID,
-					viewerCanAdminister: true,
-					wantBatchChanges:    []int64{userBatchChange, orgBatchChange},
+					viewerCbnAdminister: true,
+					wbntBbtchChbnges:    []int64{userBbtchChbnge, orgBbtchChbnge},
 				},
 				{
-					name:                "non-org user listing viewerCanAdminister: true",
+					nbme:                "non-org user listing viewerCbnAdminister: true",
 					currentUser:         nonOrgUserID,
-					viewerCanAdminister: true,
-					wantBatchChanges:    []int64{},
+					viewerCbnAdminister: true,
+					wbntBbtchChbnges:    []int64{},
 				},
 				{
-					name:                "admin listing viewerCanAdminister: false",
-					currentUser:         adminID,
-					viewerCanAdminister: false,
-					wantBatchChanges:    []int64{adminBatchChange, userBatchChange, orgBatchChange},
+					nbme:                "bdmin listing viewerCbnAdminister: fblse",
+					currentUser:         bdminID,
+					viewerCbnAdminister: fblse,
+					wbntBbtchChbnges:    []int64{bdminBbtchChbnge, userBbtchChbnge, orgBbtchChbnge},
 				},
 				{
-					name:                "user listing viewerCanAdminister: false",
+					nbme:                "user listing viewerCbnAdminister: fblse",
 					currentUser:         userID,
-					viewerCanAdminister: false,
-					wantBatchChanges:    []int64{adminBatchChange, userBatchChange, orgBatchChange},
+					viewerCbnAdminister: fblse,
+					wbntBbtchChbnges:    []int64{bdminBbtchChbnge, userBbtchChbnge, orgBbtchChbnge},
 				},
 				{
-					name:                "non-org user listing viewerCanAdminister: false",
+					nbme:                "non-org user listing viewerCbnAdminister: fblse",
 					currentUser:         nonOrgUserID,
-					viewerCanAdminister: false,
-					wantBatchChanges:    []int64{adminBatchChange, userBatchChange, orgBatchChange},
+					viewerCbnAdminister: fblse,
+					wbntBbtchChbnges:    []int64{bdminBbtchChbnge, userBbtchChbnge, orgBbtchChbnge},
 				},
 			}
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
-					expectedIDs := make(map[string]bool, len(tc.wantBatchChanges))
-					for _, c := range tc.wantBatchChanges {
-						graphqlID := string(bgql.MarshalBatchChangeID(c))
-						expectedIDs[graphqlID] = true
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					bctorCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(tc.currentUser))
+					expectedIDs := mbke(mbp[string]bool, len(tc.wbntBbtchChbnges))
+					for _, c := rbnge tc.wbntBbtchChbnges {
+						grbphqlID := string(bgql.MbrshblBbtchChbngeID(c))
+						expectedIDs[grbphqlID] = true
 					}
 
 					query := fmt.Sprintf(`
 				query {
-					batchChanges(viewerCanAdminister: %t) { totalCount, nodes { id } }
+					bbtchChbnges(viewerCbnAdminister: %t) { totblCount, nodes { id } }
 					node(id: %q) {
 						id
-						... on ExternalChangeset {
-							batchChanges(viewerCanAdminister: %t) { totalCount, nodes { id } }
+						... on ExternblChbngeset {
+							bbtchChbnges(viewerCbnAdminister: %t) { totblCount, nodes { id } }
 						}
 					}
-					}`, tc.viewerCanAdminister, bgql.MarshalChangesetID(changeset.ID), tc.viewerCanAdminister)
-					var res struct {
-						BatchChanges apitest.BatchChangeConnection
-						Node         apitest.Changeset
+					}`, tc.viewerCbnAdminister, bgql.MbrshblChbngesetID(chbngeset.ID), tc.viewerCbnAdminister)
+					vbr res struct {
+						BbtchChbnges bpitest.BbtchChbngeConnection
+						Node         bpitest.Chbngeset
 					}
-					apitest.MustExec(actorCtx, t, s, nil, &res, query)
-					for _, conn := range []apitest.BatchChangeConnection{res.BatchChanges, res.Node.BatchChanges} {
-						if have, want := conn.TotalCount, len(tc.wantBatchChanges); have != want {
-							t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
+					bpitest.MustExec(bctorCtx, t, s, nil, &res, query)
+					for _, conn := rbnge []bpitest.BbtchChbngeConnection{res.BbtchChbnges, res.Node.BbtchChbnges} {
+						if hbve, wbnt := conn.TotblCount, len(tc.wbntBbtchChbnges); hbve != wbnt {
+							t.Fbtblf("wrong count of bbtch chbnges returned, wbnt=%d hbve=%d", wbnt, hbve)
 						}
-						if have, want := conn.TotalCount, len(conn.Nodes); have != want {
-							t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+						if hbve, wbnt := conn.TotblCount, len(conn.Nodes); hbve != wbnt {
+							t.Fbtblf("totblCount bnd nodes length don't mbtch, wbnt=%d hbve=%d", wbnt, hbve)
 						}
-						for _, node := range conn.Nodes {
+						for _, node := rbnge conn.Nodes {
 							if _, ok := expectedIDs[node.ID]; !ok {
-								t.Fatalf("received wrong batch change with id %q", node.ID)
+								t.Fbtblf("received wrong bbtch chbnge with id %q", node.ID)
 							}
 						}
 					}
@@ -647,376 +647,376 @@ func TestPermissionLevels(t *testing.T) {
 			}
 		})
 
-		t.Run("BatchSpecs", func(t *testing.T) {
-			cleanUpBatchChanges(t, bstore)
-			cleanUpBatchSpecs(t, bstore)
+		t.Run("BbtchSpecs", func(t *testing.T) {
+			clebnUpBbtchChbnges(t, bstore)
+			clebnUpBbtchSpecs(t, bstore)
 
-			adminBatchSpecCreatedFromRawRandID, adminBatchSpecCreatedFromRawID := createBatchSpecFromRaw(t, bstore, namespace{userID: adminID}, adminID)
-			adminBatchSpecCreatedRandID, adminBatchSpecCreatedID := createBatchSpec(t, bstore, namespace{userID: adminID})
+			bdminBbtchSpecCrebtedFromRbwRbndID, bdminBbtchSpecCrebtedFromRbwID := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{userID: bdminID}, bdminID)
+			bdminBbtchSpecCrebtedRbndID, bdminBbtchSpecCrebtedID := crebteBbtchSpec(t, bstore, nbmespbce{userID: bdminID})
 
-			userBatchSpecCreatedFromRawRandID, userBatchSpecCreatedFromRawID := createBatchSpecFromRaw(t, bstore, namespace{userID: userID}, userID)
-			userBatchSpecCreatedRandID, userBatchSpecCreatedID := createBatchSpec(t, bstore, namespace{userID: userID})
+			userBbtchSpecCrebtedFromRbwRbndID, userBbtchSpecCrebtedFromRbwID := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{userID: userID}, userID)
+			userBbtchSpecCrebtedRbndID, userBbtchSpecCrebtedID := crebteBbtchSpec(t, bstore, nbmespbce{userID: userID})
 
 			type ids struct {
-				randID string
+				rbndID string
 				id     int64
 			}
 
 			tests := []struct {
-				name           string
+				nbme           string
 				currentUser    int32
-				wantBatchSpecs []ids
+				wbntBbtchSpecs []ids
 			}{
 				{
-					name:        "admin listing",
-					currentUser: adminID,
-					wantBatchSpecs: []ids{
-						{adminBatchSpecCreatedRandID, adminBatchSpecCreatedID},
-						{userBatchSpecCreatedRandID, userBatchSpecCreatedID},
-						{adminBatchSpecCreatedFromRawRandID, adminBatchSpecCreatedFromRawID},
-						{userBatchSpecCreatedFromRawRandID, userBatchSpecCreatedFromRawID},
+					nbme:        "bdmin listing",
+					currentUser: bdminID,
+					wbntBbtchSpecs: []ids{
+						{bdminBbtchSpecCrebtedRbndID, bdminBbtchSpecCrebtedID},
+						{userBbtchSpecCrebtedRbndID, userBbtchSpecCrebtedID},
+						{bdminBbtchSpecCrebtedFromRbwRbndID, bdminBbtchSpecCrebtedFromRbwID},
+						{userBbtchSpecCrebtedFromRbwRbndID, userBbtchSpecCrebtedFromRbwID},
 					},
 				},
 				{
-					name:        "user listing",
+					nbme:        "user listing",
 					currentUser: userID,
-					wantBatchSpecs: []ids{
-						{adminBatchSpecCreatedRandID, adminBatchSpecCreatedID},
-						{userBatchSpecCreatedRandID, userBatchSpecCreatedID},
-						{userBatchSpecCreatedFromRawRandID, userBatchSpecCreatedFromRawID},
+					wbntBbtchSpecs: []ids{
+						{bdminBbtchSpecCrebtedRbndID, bdminBbtchSpecCrebtedID},
+						{userBbtchSpecCrebtedRbndID, userBbtchSpecCrebtedID},
+						{userBbtchSpecCrebtedFromRbwRbndID, userBbtchSpecCrebtedFromRbwID},
 					},
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					actorCtx := actor.WithActor(context.Background(), actor.FromUser(tc.currentUser))
-					expectedIDs := make(map[string]bool, len(tc.wantBatchSpecs))
-					for _, ids := range tc.wantBatchSpecs {
-						graphqlID := string(marshalBatchSpecRandID(ids.randID))
-						expectedIDs[graphqlID] = true
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					bctorCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(tc.currentUser))
+					expectedIDs := mbke(mbp[string]bool, len(tc.wbntBbtchSpecs))
+					for _, ids := rbnge tc.wbntBbtchSpecs {
+						grbphqlID := string(mbrshblBbtchSpecRbndID(ids.rbndID))
+						expectedIDs[grbphqlID] = true
 					}
 
-					input := map[string]any{
-						"includeLocallyExecutedSpecs": true,
+					input := mbp[string]bny{
+						"includeLocbllyExecutedSpecs": true,
 					}
 
 					query := `
-query($includeLocallyExecutedSpecs: Boolean) {
-	batchSpecs(includeLocallyExecutedSpecs: $includeLocallyExecutedSpecs) {
-		totalCount, nodes { id }
+query($includeLocbllyExecutedSpecs: Boolebn) {
+	bbtchSpecs(includeLocbllyExecutedSpecs: $includeLocbllyExecutedSpecs) {
+		totblCount, nodes { id }
 	}
 }`
 
-					var res struct{ BatchSpecs apitest.BatchSpecConnection }
-					apitest.MustExec(actorCtx, t, s, input, &res, query)
+					vbr res struct{ BbtchSpecs bpitest.BbtchSpecConnection }
+					bpitest.MustExec(bctorCtx, t, s, input, &res, query)
 
-					if have, want := res.BatchSpecs.TotalCount, len(tc.wantBatchSpecs); have != want {
-						t.Fatalf("wrong count of batch changes returned, want=%d have=%d", want, have)
+					if hbve, wbnt := res.BbtchSpecs.TotblCount, len(tc.wbntBbtchSpecs); hbve != wbnt {
+						t.Fbtblf("wrong count of bbtch chbnges returned, wbnt=%d hbve=%d", wbnt, hbve)
 					}
-					if have, want := res.BatchSpecs.TotalCount, len(res.BatchSpecs.Nodes); have != want {
-						t.Fatalf("totalCount and nodes length don't match, want=%d have=%d", want, have)
+					if hbve, wbnt := res.BbtchSpecs.TotblCount, len(res.BbtchSpecs.Nodes); hbve != wbnt {
+						t.Fbtblf("totblCount bnd nodes length don't mbtch, wbnt=%d hbve=%d", wbnt, hbve)
 					}
-					for _, node := range res.BatchSpecs.Nodes {
+					for _, node := rbnge res.BbtchSpecs.Nodes {
 						if _, ok := expectedIDs[node.ID]; !ok {
-							t.Fatalf("received wrong batch change with id %q", node.ID)
+							t.Fbtblf("received wrong bbtch chbnge with id %q", node.ID)
 						}
 					}
 				})
 			}
 		})
 
-		t.Run("BatchSpecWorkspaceByID", func(t *testing.T) {
+		t.Run("BbtchSpecWorkspbceByID", func(t *testing.T) {
 			tests := []struct {
-				name        string
+				nbme        string
 				currentUser int32
 				user        int32
-				wantErr     bool
+				wbntErr     bool
 			}{
 				{
-					name:        "site-admin viewing other user",
-					currentUser: adminID,
+					nbme:        "site-bdmin viewing other user",
+					currentUser: bdminID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing other's workspace",
+					nbme:        "non-site-bdmin viewing other's workspbce",
 					currentUser: userID,
-					user:        adminID,
-					wantErr:     false,
+					user:        bdminID,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing own workspace",
+					nbme:        "non-site-bdmin viewing own workspbce",
 					currentUser: userID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					_, batchSpecID := createBatchSpecFromRaw(t, bstore, namespace{userID: tc.user}, tc.user)
-					workspaceID := createBatchSpecWorkspace(t, bstore, batchSpecID)
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					_, bbtchSpecID := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{userID: tc.user}, tc.user)
+					workspbceID := crebteBbtchSpecWorkspbce(t, bstore, bbtchSpecID)
 
-					graphqlID := string(marshalBatchSpecWorkspaceID(workspaceID))
+					grbphqlID := string(mbrshblBbtchSpecWorkspbceID(workspbceID))
 
-					var res struct{ Node apitest.BatchSpecWorkspace }
+					vbr res struct{ Node bpitest.BbtchSpecWorkspbce }
 
-					input := map[string]any{"id": graphqlID}
-					query := `query($id: ID!) { node(id: $id) { ... on BatchSpecWorkspace { id } } }`
+					input := mbp[string]bny{"id": grbphqlID}
+					query := `query($id: ID!) { node(id: $id) { ... on BbtchSpecWorkspbce { id } } }`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
+					bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.currentUser))
 
-					errors := apitest.Exec(actorCtx, t, s, input, &res, query)
-					if !tc.wantErr && len(errors) != 0 {
-						t.Fatalf("got error but didn't expect one: %v", errors)
-					} else if tc.wantErr && len(errors) == 0 {
-						t.Fatal("expected error but got none")
+					errors := bpitest.Exec(bctorCtx, t, s, input, &res, query)
+					if !tc.wbntErr && len(errors) != 0 {
+						t.Fbtblf("got error but didn't expect one: %v", errors)
+					} else if tc.wbntErr && len(errors) == 0 {
+						t.Fbtbl("expected error but got none")
 					}
-					if !tc.wantErr {
-						if have, want := res.Node.ID, graphqlID; have != want {
-							t.Fatalf("invalid node returned, wanted ID=%q, have=%q", want, have)
+					if !tc.wbntErr {
+						if hbve, wbnt := res.Node.ID, grbphqlID; hbve != wbnt {
+							t.Fbtblf("invblid node returned, wbnted ID=%q, hbve=%q", wbnt, hbve)
 						}
 					}
 				})
 			}
 		})
 
-		t.Run("CheckBatchChangesCredential", func(t *testing.T) {
-			service.Mocks.ValidateAuthenticator = func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error {
+		t.Run("CheckBbtchChbngesCredentibl", func(t *testing.T) {
+			service.Mocks.VblidbteAuthenticbtor = func(ctx context.Context, externblServiceID, externblServiceType string, b buth.Authenticbtor) error {
 				return nil
 			}
-			t.Cleanup(func() {
+			t.Clebnup(func() {
 				service.Mocks.Reset()
 			})
 
 			tests := []struct {
-				name        string
+				nbme        string
 				currentUser int32
 				user        int32
-				wantErr     bool
+				wbntErr     bool
 			}{
 				{
-					name:        "site-admin viewing other user",
-					currentUser: adminID,
+					nbme:        "site-bdmin viewing other user",
+					currentUser: bdminID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing other's credential",
+					nbme:        "non-site-bdmin viewing other's credentibl",
 					currentUser: userID,
-					user:        adminID,
-					wantErr:     true,
+					user:        bdminID,
+					wbntErr:     true,
 				},
 				{
-					name:        "non-site-admin viewing own credential",
+					nbme:        "non-site-bdmin viewing own credentibl",
 					currentUser: userID,
 					user:        userID,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 
 				{
-					name:        "site-admin viewing site-credential",
-					currentUser: adminID,
+					nbme:        "site-bdmin viewing site-credentibl",
+					currentUser: bdminID,
 					user:        0,
-					wantErr:     false,
+					wbntErr:     fblse,
 				},
 				{
-					name:        "non-site-admin viewing site-credential",
+					nbme:        "non-site-bdmin viewing site-credentibl",
 					currentUser: userID,
 					user:        0,
-					wantErr:     true,
+					wbntErr:     true,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, bstore)
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					pruneUserCredentibls(t, db, key)
+					pruneSiteCredentibls(t, bstore)
 
-					var graphqlID graphql.ID
+					vbr grbphqlID grbphql.ID
 					if tc.user != 0 {
-						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
-						cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-							Domain:              database.UserCredentialDomainBatches,
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
+						ctx := bctor.WithActor(ctx, bctor.FromUser(tc.user))
+						cred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+							Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+							ExternblServiceID:   "https://github.com/",
+							ExternblServiceType: extsvc.TypeGitHub,
 							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						}, &buth.OAuthBebrerToken{Token: "SOSECRET"})
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						graphqlID = marshalBatchChangesCredentialID(cred.ID, false)
+						grbphqlID = mbrshblBbtchChbngesCredentiblID(cred.ID, fblse)
 					} else {
-						cred := &btypes.SiteCredential{
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
+						cred := &btypes.SiteCredentibl{
+							ExternblServiceID:   "https://github.com/",
+							ExternblServiceType: extsvc.TypeGitHub,
 						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-						if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
-							t.Fatal(err)
+						token := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+						if err := bstore.CrebteSiteCredentibl(ctx, cred, token); err != nil {
+							t.Fbtbl(err)
 						}
-						graphqlID = marshalBatchChangesCredentialID(cred.ID, true)
+						grbphqlID = mbrshblBbtchChbngesCredentiblID(cred.ID, true)
 					}
 
-					var res struct {
-						CheckBatchChangesCredential apitest.EmptyResponse
+					vbr res struct {
+						CheckBbtchChbngesCredentibl bpitest.EmptyResponse
 					}
 
-					input := map[string]any{"id": graphqlID}
-					query := `query($id: ID!) { checkBatchChangesCredential(batchChangesCredential: $id) { alwaysNil } }`
+					input := mbp[string]bny{"id": grbphqlID}
+					query := `query($id: ID!) { checkBbtchChbngesCredentibl(bbtchChbngesCredentibl: $id) { blwbysNil } }`
 
-					actorCtx := actor.WithActor(ctx, actor.FromUser(tc.currentUser))
-					errors := apitest.Exec(actorCtx, t, s, input, &res, query)
-					if !tc.wantErr {
-						assert.Len(t, errors, 0)
-					} else if tc.wantErr {
-						assert.Len(t, errors, 1)
+					bctorCtx := bctor.WithActor(ctx, bctor.FromUser(tc.currentUser))
+					errors := bpitest.Exec(bctorCtx, t, s, input, &res, query)
+					if !tc.wbntErr {
+						bssert.Len(t, errors, 0)
+					} else if tc.wbntErr {
+						bssert.Len(t, errors, 1)
 					}
 				})
 			}
 		})
 	})
 
-	t.Run("batch change mutations", func(t *testing.T) {
-		mutations := []struct {
-			name         string
-			mutationFunc func(userID, batchChangeID, changesetID, batchSpecID string) string
+	t.Run("bbtch chbnge mutbtions", func(t *testing.T) {
+		mutbtions := []struct {
+			nbme         string
+			mutbtionFunc func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string
 		}{
 			{
-				name: "createBatchChange",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { createBatchChange(batchSpec: %q) { id } }`, batchSpecID)
+				nbme: "crebteBbtchChbnge",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { crebteBbtchChbnge(bbtchSpec: %q) { id } }`, bbtchSpecID)
 				},
 			},
 			{
-				name: "closeBatchChange",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { closeBatchChange(batchChange: %q, closeChangesets: false) { id } }`, batchChangeID)
+				nbme: "closeBbtchChbnge",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { closeBbtchChbnge(bbtchChbnge: %q, closeChbngesets: fblse) { id } }`, bbtchChbngeID)
 				},
 			},
 			{
-				name: "deleteBatchChange",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { deleteBatchChange(batchChange: %q) { alwaysNil } } `, batchChangeID)
+				nbme: "deleteBbtchChbnge",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { deleteBbtchChbnge(bbtchChbnge: %q) { blwbysNil } } `, bbtchChbngeID)
 				},
 			},
 			{
-				name: "syncChangeset",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { syncChangeset(changeset: %q) { alwaysNil } }`, changesetID)
+				nbme: "syncChbngeset",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { syncChbngeset(chbngeset: %q) { blwbysNil } }`, chbngesetID)
 				},
 			},
 			{
-				name: "reenqueueChangeset",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { reenqueueChangeset(changeset: %q) { id } }`, changesetID)
+				nbme: "reenqueueChbngeset",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { reenqueueChbngeset(chbngeset: %q) { id } }`, chbngesetID)
 				},
 			},
 			{
-				name: "applyBatchChange",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { applyBatchChange(batchSpec: %q) { id } }`, batchSpecID)
+				nbme: "bpplyBbtchChbnge",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { bpplyBbtchChbnge(bbtchSpec: %q) { id } }`, bbtchSpecID)
 				},
 			},
 			{
-				name: "moveBatchChange",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { moveBatchChange(batchChange: %q, newName: "foobar") { id } }`, batchChangeID)
+				nbme: "moveBbtchChbnge",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { moveBbtchChbnge(bbtchChbnge: %q, newNbme: "foobbr") { id } }`, bbtchChbngeID)
 				},
 			},
 			{
-				name: "createChangesetComments",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { createChangesetComments(batchChange: %q, changesets: [%q], body: "test") { id } }`, batchChangeID, changesetID)
+				nbme: "crebteChbngesetComments",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { crebteChbngesetComments(bbtchChbnge: %q, chbngesets: [%q], body: "test") { id } }`, bbtchChbngeID, chbngesetID)
 				},
 			},
 			{
-				name: "reenqueueChangesets",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { reenqueueChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				nbme: "reenqueueChbngesets",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { reenqueueChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bbtchChbngeID, chbngesetID)
 				},
 			},
 			{
-				name: "mergeChangesets",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { mergeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				nbme: "mergeChbngesets",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { mergeChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bbtchChbngeID, chbngesetID)
 				},
 			},
 			{
-				name: "closeChangesets",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { closeChangesets(batchChange: %q, changesets: [%q]) { id } }`, batchChangeID, changesetID)
+				nbme: "closeChbngesets",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { closeChbngesets(bbtchChbnge: %q, chbngesets: [%q]) { id } }`, bbtchChbngeID, chbngesetID)
 				},
 			},
 			{
-				name: "createEmptyBatchChange",
-				mutationFunc: func(userID, batchChangeID, changesetID, batchSpecID string) string {
-					return fmt.Sprintf(`mutation { createEmptyBatchChange(namespace: %q, name: "testing") { id } }`, userID)
+				nbme: "crebteEmptyBbtchChbnge",
+				mutbtionFunc: func(userID, bbtchChbngeID, chbngesetID, bbtchSpecID string) string {
+					return fmt.Sprintf(`mutbtion { crebteEmptyBbtchChbnge(nbmespbce: %q, nbme: "testing") { id } }`, userID)
 				},
 			},
 		}
 
-		for _, m := range mutations {
-			t.Run(m.name, func(t *testing.T) {
+		for _, m := rbnge mutbtions {
+			t.Run(m.nbme, func(t *testing.T) {
 				tests := []struct {
-					name              string
+					nbme              string
 					currentUser       int32
-					batchChangeAuthor int32
-					wantAuthErr       bool
+					bbtchChbngeAuthor int32
+					wbntAuthErr       bool
 
-					// If batches.restrictToAdmins is enabled, should an error
-					// be generated?
-					wantDisabledErr bool
+					// If bbtches.restrictToAdmins is enbbled, should bn error
+					// be generbted?
+					wbntDisbbledErr bool
 				}{
 					{
-						name:              "unauthorized",
+						nbme:              "unbuthorized",
 						currentUser:       userID,
-						batchChangeAuthor: adminID,
-						wantAuthErr:       true,
-						wantDisabledErr:   true,
+						bbtchChbngeAuthor: bdminID,
+						wbntAuthErr:       true,
+						wbntDisbbledErr:   true,
 					},
 					{
-						name:              "authorized batch change owner",
+						nbme:              "buthorized bbtch chbnge owner",
 						currentUser:       userID,
-						batchChangeAuthor: userID,
-						wantAuthErr:       false,
-						wantDisabledErr:   true,
+						bbtchChbngeAuthor: userID,
+						wbntAuthErr:       fblse,
+						wbntDisbbledErr:   true,
 					},
 					{
-						name:              "authorized site-admin",
-						currentUser:       adminID,
-						batchChangeAuthor: userID,
-						wantAuthErr:       false,
-						wantDisabledErr:   false,
+						nbme:              "buthorized site-bdmin",
+						currentUser:       bdminID,
+						bbtchChbngeAuthor: userID,
+						wbntAuthErr:       fblse,
+						wbntDisbbledErr:   fblse,
 					},
 				}
 
-				for _, tc := range tests {
-					for _, restrict := range []bool{true, false} {
-						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
-							cleanUpBatchChanges(t, bstore)
+				for _, tc := rbnge tests {
+					for _, restrict := rbnge []bool{true, fblse} {
+						t.Run(fmt.Sprintf("%s restrict: %v", tc.nbme, restrict), func(t *testing.T) {
+							clebnUpBbtchChbnges(t, bstore)
 
-							batchSpecRandID, batchSpecID := createBatchSpec(t, bstore, namespace{userID: tc.batchChangeAuthor})
-							batchChangeID := createBatchChange(t, bstore, namespace{userID: tc.batchChangeAuthor}, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
+							bbtchSpecRbndID, bbtchSpecID := crebteBbtchSpec(t, bstore, nbmespbce{userID: tc.bbtchChbngeAuthor})
+							bbtchChbngeID := crebteBbtchChbnge(t, bstore, nbmespbce{userID: tc.bbtchChbngeAuthor}, "test-bbtch-chbnge", tc.bbtchChbngeAuthor, bbtchSpecID)
 
-							// We add the changeset to the batch change. It doesn't
-							// matter for the addChangesetsToBatchChange mutation,
-							// since that is idempotent and we want to solely
-							// check for auth errors.
-							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}}
-							if err := bstore.UpdateChangeset(ctx, changeset); err != nil {
-								t.Fatal(err)
+							// We bdd the chbngeset to the bbtch chbnge. It doesn't
+							// mbtter for the bddChbngesetsToBbtchChbnge mutbtion,
+							// since thbt is idempotent bnd we wbnt to solely
+							// check for buth errors.
+							chbngeset.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbngeID}}
+							if err := bstore.UpdbteChbngeset(ctx, chbngeset); err != nil {
+								t.Fbtbl(err)
 							}
 
-							mutation := m.mutationFunc(
-								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
-								string(bgql.MarshalBatchChangeID(batchChangeID)),
-								string(bgql.MarshalChangesetID(changeset.ID)),
-								string(marshalBatchSpecRandID(batchSpecRandID)),
+							mutbtion := m.mutbtionFunc(
+								string(grbphqlbbckend.MbrshblUserID(tc.bbtchChbngeAuthor)),
+								string(bgql.MbrshblBbtchChbngeID(bbtchChbngeID)),
+								string(bgql.MbrshblChbngesetID(chbngeset.ID)),
+								string(mbrshblBbtchSpecRbndID(bbtchSpecRbndID)),
 							)
 
-							assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, restrict, tc.wantDisabledErr, tc.wantAuthErr)
+							bssertAuthorizbtionResponse(t, ctx, s, nil, mutbtion, tc.currentUser, restrict, tc.wbntDisbbledErr, tc.wbntAuthErr)
 						})
 					}
 				}
@@ -1024,34 +1024,34 @@ query($includeLocallyExecutedSpecs: Boolean) {
 		}
 	})
 
-	t.Run("spec mutations", func(t *testing.T) {
-		mutations := []struct {
-			name         string
-			mutationFunc func(userID, bcID string) string
+	t.Run("spec mutbtions", func(t *testing.T) {
+		mutbtions := []struct {
+			nbme         string
+			mutbtionFunc func(userID, bcID string) string
 		}{
 			{
-				name: "createChangesetSpec",
-				mutationFunc: func(_, _ string) string {
-					return `mutation { createChangesetSpec(changesetSpec: "{}") { type } }`
+				nbme: "crebteChbngesetSpec",
+				mutbtionFunc: func(_, _ string) string {
+					return `mutbtion { crebteChbngesetSpec(chbngesetSpec: "{}") { type } }`
 				},
 			},
 			{
-				name: "createBatchSpec",
-				mutationFunc: func(userID, _ string) string {
+				nbme: "crebteBbtchSpec",
+				mutbtionFunc: func(userID, _ string) string {
 					return fmt.Sprintf(`
-					mutation {
-						createBatchSpec(namespace: %q, batchSpec: "{}", changesetSpecs: []) {
+					mutbtion {
+						crebteBbtchSpec(nbmespbce: %q, bbtchSpec: "{}", chbngesetSpecs: []) {
 							id
 						}
 					}`, userID)
 				},
 			},
 			{
-				name: "createBatchSpecFromRaw",
-				mutationFunc: func(userID string, bcID string) string {
+				nbme: "crebteBbtchSpecFromRbw",
+				mutbtionFunc: func(userID string, bcID string) string {
 					return fmt.Sprintf(`
-					mutation {
-						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing", batchChange: %q) {
+					mutbtion {
+						crebteBbtchSpecFromRbw(nbmespbce: %q, bbtchSpec: "nbme: testing", bbtchChbnge: %q) {
 							id
 						}
 					}`, userID, bcID)
@@ -1059,138 +1059,138 @@ query($includeLocallyExecutedSpecs: Boolean) {
 			},
 		}
 
-		for _, m := range mutations {
-			t.Run(m.name, func(t *testing.T) {
+		for _, m := rbnge mutbtions {
+			t.Run(m.nbme, func(t *testing.T) {
 				tests := []struct {
-					name        string
+					nbme        string
 					currentUser int32
-					wantAuthErr bool
+					wbntAuthErr bool
 				}{
-					{name: "no user", currentUser: 0, wantAuthErr: true},
-					{name: "user", currentUser: userID, wantAuthErr: false},
-					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
+					{nbme: "no user", currentUser: 0, wbntAuthErr: true},
+					{nbme: "user", currentUser: userID, wbntAuthErr: fblse},
+					{nbme: "site-bdmin", currentUser: bdminID, wbntAuthErr: fblse},
 				}
 
-				for _, tc := range tests {
-					t.Run(tc.name, func(t *testing.T) {
-						cleanUpBatchChanges(t, bstore)
+				for _, tc := rbnge tests {
+					t.Run(tc.nbme, func(t *testing.T) {
+						clebnUpBbtchChbnges(t, bstore)
 
-						_, bsID := createBatchSpec(t, bstore, namespace{userID: userID})
-						bcID := createBatchChange(t, bstore, namespace{userID: userID}, "testing", userID, bsID)
+						_, bsID := crebteBbtchSpec(t, bstore, nbmespbce{userID: userID})
+						bcID := crebteBbtchChbnge(t, bstore, nbmespbce{userID: userID}, "testing", userID, bsID)
 
-						batchChangeID := string(bgql.MarshalBatchChangeID(bcID))
-						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
+						bbtchChbngeID := string(bgql.MbrshblBbtchChbngeID(bcID))
+						nbmespbceID := string(grbphqlbbckend.MbrshblUserID(tc.currentUser))
 						if tc.currentUser == 0 {
-							// If we don't have a currentUser we try to create
-							// a batch change in another namespace, solely for the
+							// If we don't hbve b currentUser we try to crebte
+							// b bbtch chbnge in bnother nbmespbce, solely for the
 							// purposes of this test.
-							namespaceID = string(graphqlbackend.MarshalUserID(userID))
+							nbmespbceID = string(grbphqlbbckend.MbrshblUserID(userID))
 						}
-						mutation := m.mutationFunc(namespaceID, batchChangeID)
+						mutbtion := m.mutbtionFunc(nbmespbceID, bbtchChbngeID)
 
-						assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, false, false, tc.wantAuthErr)
+						bssertAuthorizbtionResponse(t, ctx, s, nil, mutbtion, tc.currentUser, fblse, fblse, tc.wbntAuthErr)
 					})
 				}
 			})
 		}
 	})
 
-	t.Run("batch spec execution mutations", func(t *testing.T) {
-		mutations := []struct {
-			name         string
-			mutationFunc func(batchSpecID, workspaceID string) string
+	t.Run("bbtch spec execution mutbtions", func(t *testing.T) {
+		mutbtions := []struct {
+			nbme         string
+			mutbtionFunc func(bbtchSpecID, workspbceID string) string
 		}{
 			{
-				name: "executeBatchSpec",
-				mutationFunc: func(batchSpecID, _ string) string {
-					return fmt.Sprintf(`mutation { executeBatchSpec(batchSpec: %q) { id } }`, batchSpecID)
+				nbme: "executeBbtchSpec",
+				mutbtionFunc: func(bbtchSpecID, _ string) string {
+					return fmt.Sprintf(`mutbtion { executeBbtchSpec(bbtchSpec: %q) { id } }`, bbtchSpecID)
 				},
 			},
 			{
-				name: "replaceBatchSpecInput",
-				mutationFunc: func(batchSpecID, _ string) string {
-					return fmt.Sprintf(`mutation { replaceBatchSpecInput(previousSpec: %q, batchSpec: "name: testing2") { id } }`, batchSpecID)
+				nbme: "replbceBbtchSpecInput",
+				mutbtionFunc: func(bbtchSpecID, _ string) string {
+					return fmt.Sprintf(`mutbtion { replbceBbtchSpecInput(previousSpec: %q, bbtchSpec: "nbme: testing2") { id } }`, bbtchSpecID)
 				},
 			},
 			{
-				name: "retryBatchSpecWorkspaceExecution",
-				mutationFunc: func(_, workspaceID string) string {
-					return fmt.Sprintf(`mutation { retryBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, workspaceID)
+				nbme: "retryBbtchSpecWorkspbceExecution",
+				mutbtionFunc: func(_, workspbceID string) string {
+					return fmt.Sprintf(`mutbtion { retryBbtchSpecWorkspbceExecution(bbtchSpecWorkspbces: [%q]) { blwbysNil } }`, workspbceID)
 				},
 			},
 			{
-				name: "retryBatchSpecExecution",
-				mutationFunc: func(batchSpecID, _ string) string {
-					return fmt.Sprintf(`mutation { retryBatchSpecExecution(batchSpec: %q) { id } }`, batchSpecID)
+				nbme: "retryBbtchSpecExecution",
+				mutbtionFunc: func(bbtchSpecID, _ string) string {
+					return fmt.Sprintf(`mutbtion { retryBbtchSpecExecution(bbtchSpec: %q) { id } }`, bbtchSpecID)
 				},
 			},
 			{
-				name: "cancelBatchSpecExecution",
-				mutationFunc: func(batchSpecID, _ string) string {
-					return fmt.Sprintf(`mutation { cancelBatchSpecExecution(batchSpec: %q) { id } }`, batchSpecID)
+				nbme: "cbncelBbtchSpecExecution",
+				mutbtionFunc: func(bbtchSpecID, _ string) string {
+					return fmt.Sprintf(`mutbtion { cbncelBbtchSpecExecution(bbtchSpec: %q) { id } }`, bbtchSpecID)
 				},
 			},
 			// TODO: Uncomment once implemented.
 			// {
-			// 	name: "cancelBatchSpecWorkspaceExecution",
-			// 	mutationFunc: func(_, workspaceID string) string {
-			// 		return fmt.Sprintf(`mutation { cancelBatchSpecWorkspaceExecution(batchSpecWorkspaces: [%q]) { alwaysNil } }`, workspaceID)
+			// 	nbme: "cbncelBbtchSpecWorkspbceExecution",
+			// 	mutbtionFunc: func(_, workspbceID string) string {
+			// 		return fmt.Sprintf(`mutbtion { cbncelBbtchSpecWorkspbceExecution(bbtchSpecWorkspbces: [%q]) { blwbysNil } }`, workspbceID)
 			// 	},
 			// },
-			// TODO: Once implemented, add test for EnqueueBatchSpecWorkspaceExecution
-			// TODO: Once implemented, add test for ToggleBatchSpecAutoApply
-			// TODO: Once implemented, add test for DeleteBatchSpec
+			// TODO: Once implemented, bdd test for EnqueueBbtchSpecWorkspbceExecution
+			// TODO: Once implemented, bdd test for ToggleBbtchSpecAutoApply
+			// TODO: Once implemented, bdd test for DeleteBbtchSpec
 		}
 
-		for _, m := range mutations {
-			t.Run(m.name, func(t *testing.T) {
+		for _, m := rbnge mutbtions {
+			t.Run(m.nbme, func(t *testing.T) {
 				tests := []struct {
-					name            string
+					nbme            string
 					currentUser     int32
-					batchSpecAuthor int32
-					wantAuthErr     bool
+					bbtchSpecAuthor int32
+					wbntAuthErr     bool
 
-					// If batches.restrictToAdmins is enabled, should an error
-					// be generated?
-					wantDisabledErr bool
+					// If bbtches.restrictToAdmins is enbbled, should bn error
+					// be generbted?
+					wbntDisbbledErr bool
 				}{
 					{
-						name:            "unauthorized",
+						nbme:            "unbuthorized",
 						currentUser:     userID,
-						batchSpecAuthor: adminID,
-						wantAuthErr:     true,
-						wantDisabledErr: true,
+						bbtchSpecAuthor: bdminID,
+						wbntAuthErr:     true,
+						wbntDisbbledErr: true,
 					},
 					{
-						name:            "authorized batch change owner",
+						nbme:            "buthorized bbtch chbnge owner",
 						currentUser:     userID,
-						batchSpecAuthor: userID,
-						wantAuthErr:     false,
-						wantDisabledErr: true,
+						bbtchSpecAuthor: userID,
+						wbntAuthErr:     fblse,
+						wbntDisbbledErr: true,
 					},
 					{
-						name:            "authorized site-admin",
-						currentUser:     adminID,
-						batchSpecAuthor: userID,
-						wantAuthErr:     false,
-						wantDisabledErr: false,
+						nbme:            "buthorized site-bdmin",
+						currentUser:     bdminID,
+						bbtchSpecAuthor: userID,
+						wbntAuthErr:     fblse,
+						wbntDisbbledErr: fblse,
 					},
 				}
 
-				for _, tc := range tests {
-					for _, restrict := range []bool{true, false} {
-						t.Run(fmt.Sprintf("%s restrict: %v", tc.name, restrict), func(t *testing.T) {
-							cleanUpBatchChanges(t, bstore)
+				for _, tc := rbnge tests {
+					for _, restrict := rbnge []bool{true, fblse} {
+						t.Run(fmt.Sprintf("%s restrict: %v", tc.nbme, restrict), func(t *testing.T) {
+							clebnUpBbtchChbnges(t, bstore)
 
-							batchSpecRandID, batchSpecID := createBatchSpecFromRaw(t, bstore, namespace{userID: tc.batchSpecAuthor}, tc.batchSpecAuthor)
-							workspaceID := createBatchSpecWorkspace(t, bstore, batchSpecID)
+							bbtchSpecRbndID, bbtchSpecID := crebteBbtchSpecFromRbw(t, bstore, nbmespbce{userID: tc.bbtchSpecAuthor}, tc.bbtchSpecAuthor)
+							workspbceID := crebteBbtchSpecWorkspbce(t, bstore, bbtchSpecID)
 
-							mutation := m.mutationFunc(
-								string(marshalBatchSpecRandID(batchSpecRandID)),
-								string(marshalBatchSpecWorkspaceID(workspaceID)),
+							mutbtion := m.mutbtionFunc(
+								string(mbrshblBbtchSpecRbndID(bbtchSpecRbndID)),
+								string(mbrshblBbtchSpecWorkspbceID(workspbceID)),
 							)
 
-							assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, restrict, tc.wantDisabledErr, tc.wantAuthErr)
+							bssertAuthorizbtionResponse(t, ctx, s, nil, mutbtion, tc.currentUser, restrict, tc.wbntDisbbledErr, tc.wbntAuthErr)
 						})
 					}
 				}
@@ -1198,154 +1198,154 @@ query($includeLocallyExecutedSpecs: Boolean) {
 		}
 	})
 
-	t.Run("credentials mutations", func(t *testing.T) {
-		t.Run("CreateBatchChangesCredential", func(t *testing.T) {
+	t.Run("credentibls mutbtions", func(t *testing.T) {
+		t.Run("CrebteBbtchChbngesCredentibl", func(t *testing.T) {
 			tests := []struct {
-				name        string
+				nbme        string
 				currentUser int32
 				user        int32
-				wantAuthErr bool
+				wbntAuthErr bool
 			}{
 				{
-					name:        "site-admin for other user",
-					currentUser: adminID,
+					nbme:        "site-bdmin for other user",
+					currentUser: bdminID,
 					user:        userID,
-					wantAuthErr: false,
+					wbntAuthErr: fblse,
 				},
 				{
-					name:        "non-site-admin for other user",
+					nbme:        "non-site-bdmin for other user",
 					currentUser: userID,
-					user:        adminID,
-					wantAuthErr: true,
+					user:        bdminID,
+					wbntAuthErr: true,
 				},
 				{
-					name:        "non-site-admin for self",
+					nbme:        "non-site-bdmin for self",
 					currentUser: userID,
 					user:        userID,
-					wantAuthErr: false,
+					wbntAuthErr: fblse,
 				},
 
 				{
-					name:        "site-admin for site-wide",
-					currentUser: adminID,
+					nbme:        "site-bdmin for site-wide",
+					currentUser: bdminID,
 					user:        0,
-					wantAuthErr: false,
+					wbntAuthErr: fblse,
 				},
 				{
-					name:        "non-site-admin for site-wide",
+					nbme:        "non-site-bdmin for site-wide",
 					currentUser: userID,
 					user:        0,
-					wantAuthErr: true,
+					wbntAuthErr: true,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, bstore)
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					pruneUserCredentibls(t, db, key)
+					pruneSiteCredentibls(t, bstore)
 
-					input := map[string]any{
-						"externalServiceKind": extsvc.KindGitHub,
-						"externalServiceURL":  "https://github.com/",
-						"credential":          "SOSECRET",
+					input := mbp[string]bny{
+						"externblServiceKind": extsvc.KindGitHub,
+						"externblServiceURL":  "https://github.com/",
+						"credentibl":          "SOSECRET",
 					}
 					if tc.user != 0 {
-						input["user"] = graphqlbackend.MarshalUserID(tc.user)
+						input["user"] = grbphqlbbckend.MbrshblUserID(tc.user)
 					}
-					mutationCreateBatchChangesCredential := `
-					mutation($user: ID, $externalServiceKind: ExternalServiceKind!, $externalServiceURL: String!, $credential: String!) {
-						createBatchChangesCredential(
+					mutbtionCrebteBbtchChbngesCredentibl := `
+					mutbtion($user: ID, $externblServiceKind: ExternblServiceKind!, $externblServiceURL: String!, $credentibl: String!) {
+						crebteBbtchChbngesCredentibl(
 							user: $user,
-							externalServiceKind: $externalServiceKind,
-							externalServiceURL: $externalServiceURL,
-							credential: $credential
+							externblServiceKind: $externblServiceKind,
+							externblServiceURL: $externblServiceURL,
+							credentibl: $credentibl
 						) { id }
 					}`
 
-					assertAuthorizationResponse(t, ctx, s, input, mutationCreateBatchChangesCredential, tc.currentUser, false, false, tc.wantAuthErr)
+					bssertAuthorizbtionResponse(t, ctx, s, input, mutbtionCrebteBbtchChbngesCredentibl, tc.currentUser, fblse, fblse, tc.wbntAuthErr)
 				})
 			}
 		})
 
-		t.Run("DeleteBatchChangesCredential", func(t *testing.T) {
+		t.Run("DeleteBbtchChbngesCredentibl", func(t *testing.T) {
 			tests := []struct {
-				name        string
+				nbme        string
 				currentUser int32
 				user        int32
-				wantAuthErr bool
+				wbntAuthErr bool
 			}{
 				{
-					name:        "site-admin for other user",
-					currentUser: adminID,
+					nbme:        "site-bdmin for other user",
+					currentUser: bdminID,
 					user:        userID,
-					wantAuthErr: false,
+					wbntAuthErr: fblse,
 				},
 				{
-					name:        "non-site-admin for other user",
+					nbme:        "non-site-bdmin for other user",
 					currentUser: userID,
-					user:        adminID,
-					wantAuthErr: false, // not an auth error because it's simply invisible, and therefore not found
+					user:        bdminID,
+					wbntAuthErr: fblse, // not bn buth error becbuse it's simply invisible, bnd therefore not found
 				},
 				{
-					name:        "non-site-admin for self",
+					nbme:        "non-site-bdmin for self",
 					currentUser: userID,
 					user:        userID,
-					wantAuthErr: false,
+					wbntAuthErr: fblse,
 				},
 
 				{
-					name:        "site-admin for site-credential",
-					currentUser: adminID,
+					nbme:        "site-bdmin for site-credentibl",
+					currentUser: bdminID,
 					user:        0,
-					wantAuthErr: false,
+					wbntAuthErr: fblse,
 				},
 				{
-					name:        "non-site-admin for site-credential",
+					nbme:        "non-site-bdmin for site-credentibl",
 					currentUser: userID,
 					user:        0,
-					wantAuthErr: true,
+					wbntAuthErr: true,
 				},
 			}
 
-			for _, tc := range tests {
-				t.Run(tc.name, func(t *testing.T) {
-					pruneUserCredentials(t, db, key)
-					pruneSiteCredentials(t, bstore)
+			for _, tc := rbnge tests {
+				t.Run(tc.nbme, func(t *testing.T) {
+					pruneUserCredentibls(t, db, key)
+					pruneSiteCredentibls(t, bstore)
 
-					var batchChangesCredentialID graphql.ID
+					vbr bbtchChbngesCredentiblID grbphql.ID
 					if tc.user != 0 {
-						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
-						cred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-							Domain:              database.UserCredentialDomainBatches,
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
+						ctx := bctor.WithActor(ctx, bctor.FromUser(tc.user))
+						cred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+							Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+							ExternblServiceID:   "https://github.com/",
+							ExternblServiceType: extsvc.TypeGitHub,
 							UserID:              tc.user,
-						}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+						}, &buth.OAuthBebrerToken{Token: "SOSECRET"})
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, false)
+						bbtchChbngesCredentiblID = mbrshblBbtchChbngesCredentiblID(cred.ID, fblse)
 					} else {
-						cred := &btypes.SiteCredential{
-							ExternalServiceID:   "https://github.com/",
-							ExternalServiceType: extsvc.TypeGitHub,
+						cred := &btypes.SiteCredentibl{
+							ExternblServiceID:   "https://github.com/",
+							ExternblServiceType: extsvc.TypeGitHub,
 						}
-						token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-						if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
-							t.Fatal(err)
+						token := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+						if err := bstore.CrebteSiteCredentibl(ctx, cred, token); err != nil {
+							t.Fbtbl(err)
 						}
-						batchChangesCredentialID = marshalBatchChangesCredentialID(cred.ID, true)
+						bbtchChbngesCredentiblID = mbrshblBbtchChbngesCredentiblID(cred.ID, true)
 					}
 
-					input := map[string]any{
-						"batchChangesCredential": batchChangesCredentialID,
+					input := mbp[string]bny{
+						"bbtchChbngesCredentibl": bbtchChbngesCredentiblID,
 					}
-					mutationDeleteBatchChangesCredential := `
-					mutation($batchChangesCredential: ID!) {
-						deleteBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+					mutbtionDeleteBbtchChbngesCredentibl := `
+					mutbtion($bbtchChbngesCredentibl: ID!) {
+						deleteBbtchChbngesCredentibl(bbtchChbngesCredentibl: $bbtchChbngesCredentibl) { blwbysNil }
 					}`
 
-					assertAuthorizationResponse(t, ctx, s, input, mutationDeleteBatchChangesCredential, tc.currentUser, false, false, tc.wantAuthErr)
+					bssertAuthorizbtionResponse(t, ctx, s, input, mutbtionDeleteBbtchChbngesCredentibl, tc.currentUser, fblse, fblse, tc.wbntAuthErr)
 				})
 			}
 		})
@@ -1359,385 +1359,385 @@ func TestRepositoryPermissions(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 	gitserverClient := gitserver.NewMockClient()
 	sr := &Resolver{store: bstore}
-	s, err := newSchema(db, sr)
+	s, err := newSchemb(db, sr)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
-	mockBackendCommits(t, testRev)
+	testRev := bpi.CommitID("b69072d5f687b31b9f6be3cebfdc24c259c4b9ec")
+	mockBbckendCommits(t, testRev)
 
-	// Global test data that we reuse in every test
-	userID := bt.CreateTestUser(t, db, false).ID
+	// Globbl test dbtb thbt we reuse in every test
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	// Create 2 repositories
-	repos := make([]*types.Repo, 0, 2)
-	for i := 0; i < cap(repos); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/test-repository-permissions-repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
-		if err := repoStore.Create(ctx, r); err != nil {
-			t.Fatal(err)
+	// Crebte 2 repositories
+	repos := mbke([]*types.Repo, 0, 2)
+	for i := 0; i < cbp(repos); i++ {
+		nbme := fmt.Sprintf("github.com/sourcegrbph/test-repository-permissions-repo-%d", i)
+		r := newGitHubTestRepo(nbme, newGitHubExternblService(t, esStore))
+		if err := repoStore.Crebte(ctx, r); err != nil {
+			t.Fbtbl(err)
 		}
-		repos = append(repos, r)
+		repos = bppend(repos, r)
 	}
 
-	t.Run("BatchChange and changesets", func(t *testing.T) {
-		// Create 2 changesets for 2 repositories
-		changesetBaseRefOid := "f00b4r"
-		changesetHeadRefOid := "b4rf00"
-		mockRepoComparison(t, gitserverClient, changesetBaseRefOid, changesetHeadRefOid, testDiff)
-		changesetDiffStat := apitest.DiffStat{Added: 2, Deleted: 2}
+	t.Run("BbtchChbnge bnd chbngesets", func(t *testing.T) {
+		// Crebte 2 chbngesets for 2 repositories
+		chbngesetBbseRefOid := "f00b4r"
+		chbngesetHebdRefOid := "b4rf00"
+		mockRepoCompbrison(t, gitserverClient, chbngesetBbseRefOid, chbngesetHebdRefOid, testDiff)
+		chbngesetDiffStbt := bpitest.DiffStbt{Added: 2, Deleted: 2}
 
-		changesets := make([]*btypes.Changeset, 0, len(repos))
-		for _, r := range repos {
-			c := &btypes.Changeset{
+		chbngesets := mbke([]*btypes.Chbngeset, 0, len(repos))
+		for _, r := rbnge repos {
+			c := &btypes.Chbngeset{
 				RepoID:              r.ID,
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalID:          fmt.Sprintf("external-%d", r.ID),
-				ExternalState:       btypes.ChangesetExternalStateOpen,
-				ExternalCheckState:  btypes.ChangesetCheckStatePassed,
-				ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
-				PublicationState:    btypes.ChangesetPublicationStatePublished,
-				ReconcilerState:     btypes.ReconcilerStateCompleted,
-				Metadata: &github.PullRequest{
-					BaseRefOid: changesetBaseRefOid,
-					HeadRefOid: changesetHeadRefOid,
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblID:          fmt.Sprintf("externbl-%d", r.ID),
+				ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+				ExternblCheckStbte:  btypes.ChbngesetCheckStbtePbssed,
+				ExternblReviewStbte: btypes.ChbngesetReviewStbteChbngesRequested,
+				PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+				ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
+				Metbdbtb: &github.PullRequest{
+					BbseRefOid: chbngesetBbseRefOid,
+					HebdRefOid: chbngesetHebdRefOid,
 				},
 			}
-			c.SetDiffStat(changesetDiffStat.ToDiffStat())
-			if err := bstore.CreateChangeset(ctx, c); err != nil {
-				t.Fatal(err)
+			c.SetDiffStbt(chbngesetDiffStbt.ToDiffStbt())
+			if err := bstore.CrebteChbngeset(ctx, c); err != nil {
+				t.Fbtbl(err)
 			}
-			changesets = append(changesets, c)
+			chbngesets = bppend(chbngesets, c)
 		}
 
-		spec := &btypes.BatchSpec{
-			NamespaceUserID: userID,
+		spec := &btypes.BbtchSpec{
+			NbmespbceUserID: userID,
 			UserID:          userID,
 		}
-		if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteBbtchSpec(ctx, spec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		batchChange := &btypes.BatchChange{
-			Name:            "my-batch-change",
-			CreatorID:       userID,
-			NamespaceUserID: userID,
-			LastApplierID:   userID,
-			LastAppliedAt:   time.Now(),
-			BatchSpecID:     spec.ID,
+		bbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:            "my-bbtch-chbnge",
+			CrebtorID:       userID,
+			NbmespbceUserID: userID,
+			LbstApplierID:   userID,
+			LbstAppliedAt:   time.Now(),
+			BbtchSpecID:     spec.ID,
 		}
-		if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+			t.Fbtbl(err)
 		}
-		// We attach the two changesets to the batch change
-		for _, c := range changesets {
-			c.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}}
-			if err := bstore.UpdateChangeset(ctx, c); err != nil {
-				t.Fatal(err)
+		// We bttbch the two chbngesets to the bbtch chbnge
+		for _, c := rbnge chbngesets {
+			c.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}}
+			if err := bstore.UpdbteChbngeset(ctx, c); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
-		// Query batch change and check that we get all changesets
-		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+		// Query bbtch chbnge bnd check thbt we get bll chbngesets
+		userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-		input := map[string]any{
-			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
+		input := mbp[string]bny{
+			"bbtchChbnge": string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)),
 		}
-		testBatchChangeResponse(t, s, userCtx, input, wantBatchChangeResponse{
-			changesetTypes:  map[string]int{"ExternalChangeset": 2},
-			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
-			batchChangeDiffStat: apitest.DiffStat{
-				Added:   2 * changesetDiffStat.Added,
-				Deleted: 2 * changesetDiffStat.Deleted,
+		testBbtchChbngeResponse(t, s, userCtx, input, wbntBbtchChbngeResponse{
+			chbngesetTypes:  mbp[string]int{"ExternblChbngeset": 2},
+			chbngesetsCount: 2,
+			chbngesetStbts:  bpitest.ChbngesetsStbts{Open: 2, Totbl: 2},
+			bbtchChbngeDiffStbt: bpitest.DiffStbt{
+				Added:   2 * chbngesetDiffStbt.Added,
+				Deleted: 2 * chbngesetDiffStbt.Deleted,
 			},
 		})
 
-		for _, c := range changesets {
-			// Both changesets are visible still, so both should be ExternalChangesets
-			testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
+		for _, c := rbnge chbngesets {
+			// Both chbngesets bre visible still, so both should be ExternblChbngesets
+			testChbngesetResponse(t, s, userCtx, c.ID, "ExternblChbngeset")
 		}
 
-		// Now we set permissions and filter out the repository of one changeset
-		filteredRepo := changesets[0].RepoID
-		accessibleRepo := changesets[1].RepoID
-		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
+		// Now we set permissions bnd filter out the repository of one chbngeset
+		filteredRepo := chbngesets[0].RepoID
+		bccessibleRepo := chbngesets[1].RepoID
+		bt.MockRepoPermissions(t, db, userID, bccessibleRepo)
 
-		// Send query again and check that for each filtered repository we get a
-		// HiddenChangeset
-		want := wantBatchChangeResponse{
-			changesetTypes: map[string]int{
-				"ExternalChangeset":       1,
-				"HiddenExternalChangeset": 1,
+		// Send query bgbin bnd check thbt for ebch filtered repository we get b
+		// HiddenChbngeset
+		wbnt := wbntBbtchChbngeResponse{
+			chbngesetTypes: mbp[string]int{
+				"ExternblChbngeset":       1,
+				"HiddenExternblChbngeset": 1,
 			},
-			changesetsCount: 2,
-			changesetStats:  apitest.ChangesetsStats{Open: 2, Total: 2},
-			batchChangeDiffStat: apitest.DiffStat{
-				Added:   1 * changesetDiffStat.Added,
-				Deleted: 1 * changesetDiffStat.Deleted,
+			chbngesetsCount: 2,
+			chbngesetStbts:  bpitest.ChbngesetsStbts{Open: 2, Totbl: 2},
+			bbtchChbngeDiffStbt: bpitest.DiffStbt{
+				Added:   1 * chbngesetDiffStbt.Added,
+				Deleted: 1 * chbngesetDiffStbt.Deleted,
 			},
 		}
-		testBatchChangeResponse(t, s, userCtx, input, want)
+		testBbtchChbngeResponse(t, s, userCtx, input, wbnt)
 
-		for _, c := range changesets {
-			// The changeset whose repository has been filtered should be hidden
+		for _, c := rbnge chbngesets {
+			// The chbngeset whose repository hbs been filtered should be hidden
 			if c.RepoID == filteredRepo {
-				testChangesetResponse(t, s, userCtx, c.ID, "HiddenExternalChangeset")
+				testChbngesetResponse(t, s, userCtx, c.ID, "HiddenExternblChbngeset")
 			} else {
-				testChangesetResponse(t, s, userCtx, c.ID, "ExternalChangeset")
+				testChbngesetResponse(t, s, userCtx, c.ID, "ExternblChbngeset")
 			}
 		}
 
-		// Now we query with more filters for the changesets. The hidden changesets
-		// should not be returned, since that would leak information about the
-		// hidden changesets.
-		input = map[string]any{
-			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
-			"checkState":  string(btypes.ChangesetCheckStatePassed),
+		// Now we query with more filters for the chbngesets. The hidden chbngesets
+		// should not be returned, since thbt would lebk informbtion bbout the
+		// hidden chbngesets.
+		input = mbp[string]bny{
+			"bbtchChbnge": string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)),
+			"checkStbte":  string(btypes.ChbngesetCheckStbtePbssed),
 		}
-		wantCheckStateResponse := want
-		wantCheckStateResponse.changesetsCount = 1
-		wantCheckStateResponse.changesetTypes = map[string]int{
-			"ExternalChangeset": 1,
-			// No HiddenExternalChangeset
+		wbntCheckStbteResponse := wbnt
+		wbntCheckStbteResponse.chbngesetsCount = 1
+		wbntCheckStbteResponse.chbngesetTypes = mbp[string]int{
+			"ExternblChbngeset": 1,
+			// No HiddenExternblChbngeset
 		}
-		testBatchChangeResponse(t, s, userCtx, input, wantCheckStateResponse)
+		testBbtchChbngeResponse(t, s, userCtx, input, wbntCheckStbteResponse)
 
-		input = map[string]any{
-			"batchChange": string(bgql.MarshalBatchChangeID(batchChange.ID)),
-			"reviewState": string(btypes.ChangesetReviewStateChangesRequested),
+		input = mbp[string]bny{
+			"bbtchChbnge": string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)),
+			"reviewStbte": string(btypes.ChbngesetReviewStbteChbngesRequested),
 		}
-		wantReviewStateResponse := wantCheckStateResponse
-		testBatchChangeResponse(t, s, userCtx, input, wantReviewStateResponse)
+		wbntReviewStbteResponse := wbntCheckStbteResponse
+		testBbtchChbngeResponse(t, s, userCtx, input, wbntReviewStbteResponse)
 	})
 
-	t.Run("BatchSpec and changesetSpecs", func(t *testing.T) {
-		batchSpec := &btypes.BatchSpec{
+	t.Run("BbtchSpec bnd chbngesetSpecs", func(t *testing.T) {
+		bbtchSpec := &btypes.BbtchSpec{
 			UserID:          userID,
-			NamespaceUserID: userID,
-			Spec:            &batcheslib.BatchSpec{Name: "batch-spec-and-changeset-specs"},
+			NbmespbceUserID: userID,
+			Spec:            &bbtcheslib.BbtchSpec{Nbme: "bbtch-spec-bnd-chbngeset-specs"},
 		}
-		if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		changesetSpecs := make([]*btypes.ChangesetSpec, 0, len(repos))
-		for _, r := range repos {
-			c := &btypes.ChangesetSpec{
-				BaseRepoID:      r.ID,
+		chbngesetSpecs := mbke([]*btypes.ChbngesetSpec, 0, len(repos))
+		for _, r := rbnge repos {
+			c := &btypes.ChbngesetSpec{
+				BbseRepoID:      r.ID,
 				UserID:          userID,
-				BatchSpecID:     batchSpec.ID,
-				DiffStatAdded:   4,
-				DiffStatDeleted: 4,
-				ExternalID:      "123",
-				Type:            btypes.ChangesetSpecTypeExisting,
+				BbtchSpecID:     bbtchSpec.ID,
+				DiffStbtAdded:   4,
+				DiffStbtDeleted: 4,
+				ExternblID:      "123",
+				Type:            btypes.ChbngesetSpecTypeExisting,
 			}
-			if err := bstore.CreateChangesetSpec(ctx, c); err != nil {
-				t.Fatal(err)
+			if err := bstore.CrebteChbngesetSpec(ctx, c); err != nil {
+				t.Fbtbl(err)
 			}
-			changesetSpecs = append(changesetSpecs, c)
+			chbngesetSpecs = bppend(chbngesetSpecs, c)
 		}
 
-		// Query BatchSpec and check that we get all changesetSpecs
-		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		testBatchSpecResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecResponse{
-			changesetSpecTypes:    map[string]int{"VisibleChangesetSpec": 2},
-			changesetSpecsCount:   2,
-			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 2},
-			changesetPreviewCount: 2,
-			batchSpecDiffStat: apitest.DiffStat{
+		// Query BbtchSpec bnd check thbt we get bll chbngesetSpecs
+		userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		testBbtchSpecResponse(t, s, userCtx, bbtchSpec.RbndID, wbntBbtchSpecResponse{
+			chbngesetSpecTypes:    mbp[string]int{"VisibleChbngesetSpec": 2},
+			chbngesetSpecsCount:   2,
+			chbngesetPreviewTypes: mbp[string]int{"VisibleChbngesetApplyPreview": 2},
+			chbngesetPreviewCount: 2,
+			bbtchSpecDiffStbt: bpitest.DiffStbt{
 				Added:   16,
 				Deleted: 16,
 			},
 		})
 
-		// Now query the changesetSpecs as single nodes, to make sure that fetching/preloading
+		// Now query the chbngesetSpecs bs single nodes, to mbke sure thbt fetching/prelobding
 		// of repositories works
-		for _, c := range changesetSpecs {
-			// Both changesetSpecs are visible still, so both should be VisibleChangesetSpec
-			testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
+		for _, c := rbnge chbngesetSpecs {
+			// Both chbngesetSpecs bre visible still, so both should be VisibleChbngesetSpec
+			testChbngesetSpecResponse(t, s, userCtx, c.RbndID, "VisibleChbngesetSpec")
 		}
 
-		// Now we set permissions and filter out the repository of one changeset
-		filteredRepo := changesetSpecs[0].BaseRepoID
-		accessibleRepo := changesetSpecs[1].BaseRepoID
-		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
+		// Now we set permissions bnd filter out the repository of one chbngeset
+		filteredRepo := chbngesetSpecs[0].BbseRepoID
+		bccessibleRepo := chbngesetSpecs[1].BbseRepoID
+		bt.MockRepoPermissions(t, db, userID, bccessibleRepo)
 
-		// Send query again and check that for each filtered repository we get a
-		// HiddenChangesetSpec.
-		testBatchSpecResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecResponse{
-			changesetSpecTypes: map[string]int{
-				"VisibleChangesetSpec": 1,
-				"HiddenChangesetSpec":  1,
+		// Send query bgbin bnd check thbt for ebch filtered repository we get b
+		// HiddenChbngesetSpec.
+		testBbtchSpecResponse(t, s, userCtx, bbtchSpec.RbndID, wbntBbtchSpecResponse{
+			chbngesetSpecTypes: mbp[string]int{
+				"VisibleChbngesetSpec": 1,
+				"HiddenChbngesetSpec":  1,
 			},
-			changesetSpecsCount:   2,
-			changesetPreviewTypes: map[string]int{"VisibleChangesetApplyPreview": 1, "HiddenChangesetApplyPreview": 1},
-			changesetPreviewCount: 2,
-			batchSpecDiffStat: apitest.DiffStat{
+			chbngesetSpecsCount:   2,
+			chbngesetPreviewTypes: mbp[string]int{"VisibleChbngesetApplyPreview": 1, "HiddenChbngesetApplyPreview": 1},
+			chbngesetPreviewCount: 2,
+			bbtchSpecDiffStbt: bpitest.DiffStbt{
 				Added:   8,
 				Deleted: 8,
 			},
 		})
 
-		// Query the single changesetSpec nodes again
-		for _, c := range changesetSpecs {
-			// The changesetSpec whose repository has been filtered should be hidden
-			if c.BaseRepoID == filteredRepo {
-				testChangesetSpecResponse(t, s, userCtx, c.RandID, "HiddenChangesetSpec")
+		// Query the single chbngesetSpec nodes bgbin
+		for _, c := rbnge chbngesetSpecs {
+			// The chbngesetSpec whose repository hbs been filtered should be hidden
+			if c.BbseRepoID == filteredRepo {
+				testChbngesetSpecResponse(t, s, userCtx, c.RbndID, "HiddenChbngesetSpec")
 			} else {
-				testChangesetSpecResponse(t, s, userCtx, c.RandID, "VisibleChangesetSpec")
+				testChbngesetSpecResponse(t, s, userCtx, c.RbndID, "VisibleChbngesetSpec")
 			}
 		}
 	})
 
-	t.Run("BatchSpec and workspaces", func(t *testing.T) {
-		batchSpec := &btypes.BatchSpec{
+	t.Run("BbtchSpec bnd workspbces", func(t *testing.T) {
+		bbtchSpec := &btypes.BbtchSpec{
 			UserID:          userID,
-			NamespaceUserID: userID,
-			CreatedFromRaw:  true,
-			Spec:            &batcheslib.BatchSpec{Name: "batch-spec-and-changeset-specs"},
+			NbmespbceUserID: userID,
+			CrebtedFromRbw:  true,
+			Spec:            &bbtcheslib.BbtchSpec{Nbme: "bbtch-spec-bnd-chbngeset-specs"},
 		}
-		if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-			t.Fatal(err)
+		if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		if err := bstore.CreateBatchSpecResolutionJob(ctx, &btypes.BatchSpecResolutionJob{
-			BatchSpecID: batchSpec.ID,
-			InitiatorID: userID,
-			State:       btypes.BatchSpecResolutionJobStateCompleted,
+		if err := bstore.CrebteBbtchSpecResolutionJob(ctx, &btypes.BbtchSpecResolutionJob{
+			BbtchSpecID: bbtchSpec.ID,
+			InitibtorID: userID,
+			Stbte:       btypes.BbtchSpecResolutionJobStbteCompleted,
 		}); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		workspaces := make([]*btypes.BatchSpecWorkspace, 0, len(repos))
-		for _, r := range repos {
-			w := &btypes.BatchSpecWorkspace{
+		workspbces := mbke([]*btypes.BbtchSpecWorkspbce, 0, len(repos))
+		for _, r := rbnge repos {
+			w := &btypes.BbtchSpecWorkspbce{
 				RepoID:      r.ID,
-				BatchSpecID: batchSpec.ID,
+				BbtchSpecID: bbtchSpec.ID,
 			}
-			if err := bstore.CreateBatchSpecWorkspace(ctx, w); err != nil {
-				t.Fatal(err)
+			if err := bstore.CrebteBbtchSpecWorkspbce(ctx, w); err != nil {
+				t.Fbtbl(err)
 			}
-			workspaces = append(workspaces, w)
+			workspbces = bppend(workspbces, w)
 		}
 
-		// Query BatchSpec and check that we get all workspaces
-		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		testBatchSpecWorkspacesResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecWorkspacesResponse{
-			types: map[string]int{"VisibleBatchSpecWorkspace": 2},
+		// Query BbtchSpec bnd check thbt we get bll workspbces
+		userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		testBbtchSpecWorkspbcesResponse(t, s, userCtx, bbtchSpec.RbndID, wbntBbtchSpecWorkspbcesResponse{
+			types: mbp[string]int{"VisibleBbtchSpecWorkspbce": 2},
 			count: 2,
 		})
 
-		// Now query the workspaces as single nodes, to make sure that fetching/preloading
+		// Now query the workspbces bs single nodes, to mbke sure thbt fetching/prelobding
 		// of repositories works.
-		for _, w := range workspaces {
-			// Both workspaces are visible still, so both should be VisibleBatchSpecWorkspace
-			testWorkspaceResponse(t, s, userCtx, w.ID, "VisibleBatchSpecWorkspace")
+		for _, w := rbnge workspbces {
+			// Both workspbces bre visible still, so both should be VisibleBbtchSpecWorkspbce
+			testWorkspbceResponse(t, s, userCtx, w.ID, "VisibleBbtchSpecWorkspbce")
 		}
 
-		// Now we set permissions and filter out the repository of one workspace.
-		filteredRepo := workspaces[0].RepoID
-		accessibleRepo := workspaces[1].RepoID
-		bt.MockRepoPermissions(t, db, userID, accessibleRepo)
+		// Now we set permissions bnd filter out the repository of one workspbce.
+		filteredRepo := workspbces[0].RepoID
+		bccessibleRepo := workspbces[1].RepoID
+		bt.MockRepoPermissions(t, db, userID, bccessibleRepo)
 
-		// Send query again and check that for each filtered repository we get a
-		// HiddenBatchSpecWorkspace.
-		testBatchSpecWorkspacesResponse(t, s, userCtx, batchSpec.RandID, wantBatchSpecWorkspacesResponse{
-			types: map[string]int{
-				"VisibleBatchSpecWorkspace": 1,
-				"HiddenBatchSpecWorkspace":  1,
+		// Send query bgbin bnd check thbt for ebch filtered repository we get b
+		// HiddenBbtchSpecWorkspbce.
+		testBbtchSpecWorkspbcesResponse(t, s, userCtx, bbtchSpec.RbndID, wbntBbtchSpecWorkspbcesResponse{
+			types: mbp[string]int{
+				"VisibleBbtchSpecWorkspbce": 1,
+				"HiddenBbtchSpecWorkspbce":  1,
 			},
 			count: 2,
 		})
 
-		// Query the single workspace nodes again.
-		for _, w := range workspaces {
-			// The workspace whose repository has been filtered should be hidden.
+		// Query the single workspbce nodes bgbin.
+		for _, w := rbnge workspbces {
+			// The workspbce whose repository hbs been filtered should be hidden.
 			if w.RepoID == filteredRepo {
-				testWorkspaceResponse(t, s, userCtx, w.ID, "HiddenBatchSpecWorkspace")
+				testWorkspbceResponse(t, s, userCtx, w.ID, "HiddenBbtchSpecWorkspbce")
 			} else {
-				testWorkspaceResponse(t, s, userCtx, w.ID, "VisibleBatchSpecWorkspace")
+				testWorkspbceResponse(t, s, userCtx, w.ID, "VisibleBbtchSpecWorkspbce")
 			}
 		}
 	})
 }
 
-type wantBatchChangeResponse struct {
-	changesetTypes      map[string]int
-	changesetsCount     int
-	changesetStats      apitest.ChangesetsStats
-	batchChangeDiffStat apitest.DiffStat
+type wbntBbtchChbngeResponse struct {
+	chbngesetTypes      mbp[string]int
+	chbngesetsCount     int
+	chbngesetStbts      bpitest.ChbngesetsStbts
+	bbtchChbngeDiffStbt bpitest.DiffStbt
 }
 
-func testBatchChangeResponse(t *testing.T, s *graphql.Schema, ctx context.Context, in map[string]any, w wantBatchChangeResponse) {
+func testBbtchChbngeResponse(t *testing.T, s *grbphql.Schemb, ctx context.Context, in mbp[string]bny, w wbntBbtchChbngeResponse) {
 	t.Helper()
 
-	var response struct{ Node apitest.BatchChange }
-	apitest.MustExec(ctx, t, s, in, &response, queryBatchChangePermLevels)
+	vbr response struct{ Node bpitest.BbtchChbnge }
+	bpitest.MustExec(ctx, t, s, in, &response, queryBbtchChbngePermLevels)
 
-	if have, want := response.Node.ID, in["batchChange"]; have != want {
-		t.Fatalf("batch change id is wrong. have %q, want %q", have, want)
+	if hbve, wbnt := response.Node.ID, in["bbtchChbnge"]; hbve != wbnt {
+		t.Fbtblf("bbtch chbnge id is wrong. hbve %q, wbnt %q", hbve, wbnt)
 	}
 
-	if diff := cmp.Diff(w.changesetsCount, response.Node.Changesets.TotalCount); diff != "" {
-		t.Fatalf("unexpected changesets total count (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.chbngesetsCount, response.Node.Chbngesets.TotblCount); diff != "" {
+		t.Fbtblf("unexpected chbngesets totbl count (-wbnt +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.changesetStats, response.Node.ChangesetsStats); diff != "" {
-		t.Fatalf("unexpected changesets stats (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.chbngesetStbts, response.Node.ChbngesetsStbts); diff != "" {
+		t.Fbtblf("unexpected chbngesets stbts (-wbnt +got):\n%s", diff)
 	}
 
-	changesetTypes := map[string]int{}
-	for _, c := range response.Node.Changesets.Nodes {
-		changesetTypes[c.Typename]++
+	chbngesetTypes := mbp[string]int{}
+	for _, c := rbnge response.Node.Chbngesets.Nodes {
+		chbngesetTypes[c.Typenbme]++
 	}
-	if diff := cmp.Diff(w.changesetTypes, changesetTypes); diff != "" {
-		t.Fatalf("unexpected changesettypes (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.chbngesetTypes, chbngesetTypes); diff != "" {
+		t.Fbtblf("unexpected chbngesettypes (-wbnt +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(w.batchChangeDiffStat, response.Node.DiffStat); diff != "" {
-		t.Fatalf("unexpected batch change diff stat (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.bbtchChbngeDiffStbt, response.Node.DiffStbt); diff != "" {
+		t.Fbtblf("unexpected bbtch chbnge diff stbt (-wbnt +got):\n%s", diff)
 	}
 }
 
-const queryBatchChangePermLevels = `
-query($batchChange: ID!, $reviewState: ChangesetReviewState, $checkState: ChangesetCheckState) {
-  node(id: $batchChange) {
-    ... on BatchChange {
+const queryBbtchChbngePermLevels = `
+query($bbtchChbnge: ID!, $reviewStbte: ChbngesetReviewStbte, $checkStbte: ChbngesetCheckStbte) {
+  node(id: $bbtchChbnge) {
+    ... on BbtchChbnge {
 	  id
 
-	  changesetsStats { unpublished, open, merged, closed, total }
+	  chbngesetsStbts { unpublished, open, merged, closed, totbl }
 
-      changesets(first: 100, reviewState: $reviewState, checkState: $checkState) {
-        totalCount
+      chbngesets(first: 100, reviewStbte: $reviewStbte, checkStbte: $checkStbte) {
+        totblCount
         nodes {
-          __typename
-          ... on HiddenExternalChangeset {
+          __typenbme
+          ... on HiddenExternblChbngeset {
             id
           }
-          ... on ExternalChangeset {
+          ... on ExternblChbngeset {
             id
             repository {
               id
-              name
+              nbme
             }
           }
         }
       }
 
-      diffStat {
-        added
+      diffStbt {
+        bdded
         deleted
       }
     }
@@ -1745,122 +1745,122 @@ query($batchChange: ID!, $reviewState: ChangesetReviewState, $checkState: Change
 }
 `
 
-func testChangesetResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, wantType string) {
+func testChbngesetResponse(t *testing.T, s *grbphql.Schemb, ctx context.Context, id int64, wbntType string) {
 	t.Helper()
 
-	var res struct{ Node apitest.Changeset }
-	query := fmt.Sprintf(queryChangesetPermLevels, bgql.MarshalChangesetID(id))
-	apitest.MustExec(ctx, t, s, nil, &res, query)
+	vbr res struct{ Node bpitest.Chbngeset }
+	query := fmt.Sprintf(queryChbngesetPermLevels, bgql.MbrshblChbngesetID(id))
+	bpitest.MustExec(ctx, t, s, nil, &res, query)
 
-	if have, want := res.Node.Typename, wantType; have != want {
-		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
+	if hbve, wbnt := res.Node.Typenbme, wbntType; hbve != wbnt {
+		t.Fbtblf("chbngeset hbs wrong typenbme. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 
-	if have, want := res.Node.State, string(btypes.ChangesetStateOpen); have != want {
-		t.Fatalf("changeset has wrong state. want=%q, have=%q", want, have)
+	if hbve, wbnt := res.Node.Stbte, string(btypes.ChbngesetStbteOpen); hbve != wbnt {
+		t.Fbtblf("chbngeset hbs wrong stbte. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 
-	if have, want := res.Node.BatchChanges.TotalCount, 1; have != want {
-		t.Fatalf("changeset has wrong batch changes totalcount. want=%d, have=%d", want, have)
+	if hbve, wbnt := res.Node.BbtchChbnges.TotblCount, 1; hbve != wbnt {
+		t.Fbtblf("chbngeset hbs wrong bbtch chbnges totblcount. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if parseJSONTime(t, res.Node.CreatedAt).IsZero() {
-		t.Fatalf("changeset createdAt is zero")
+	if pbrseJSONTime(t, res.Node.CrebtedAt).IsZero() {
+		t.Fbtblf("chbngeset crebtedAt is zero")
 	}
 
-	if parseJSONTime(t, res.Node.UpdatedAt).IsZero() {
-		t.Fatalf("changeset updatedAt is zero")
+	if pbrseJSONTime(t, res.Node.UpdbtedAt).IsZero() {
+		t.Fbtblf("chbngeset updbtedAt is zero")
 	}
 
-	if parseJSONTime(t, res.Node.NextSyncAt).IsZero() {
-		t.Fatalf("changeset next sync at is zero")
+	if pbrseJSONTime(t, res.Node.NextSyncAt).IsZero() {
+		t.Fbtblf("chbngeset next sync bt is zero")
 	}
 }
 
-const queryChangesetPermLevels = `
+const queryChbngesetPermLevels = `
 query {
   node(id: %q) {
-    __typename
+    __typenbme
 
-    ... on HiddenExternalChangeset {
+    ... on HiddenExternblChbngeset {
       id
 
-	  state
-	  createdAt
-	  updatedAt
+	  stbte
+	  crebtedAt
+	  updbtedAt
 	  nextSyncAt
-	  batchChanges {
-	    totalCount
+	  bbtchChbnges {
+	    totblCount
 	  }
     }
-    ... on ExternalChangeset {
+    ... on ExternblChbngeset {
       id
 
-	  state
-	  createdAt
-	  updatedAt
+	  stbte
+	  crebtedAt
+	  updbtedAt
 	  nextSyncAt
-	  batchChanges {
-	    totalCount
+	  bbtchChbnges {
+	    totblCount
 	  }
 
       repository {
         id
-        name
+        nbme
       }
     }
   }
 }
 `
 
-type wantBatchSpecWorkspacesResponse struct {
-	types map[string]int
+type wbntBbtchSpecWorkspbcesResponse struct {
+	types mbp[string]int
 	count int
 }
 
-func testBatchSpecWorkspacesResponse(t *testing.T, s *graphql.Schema, ctx context.Context, batchSpecRandID string, w wantBatchSpecWorkspacesResponse) {
+func testBbtchSpecWorkspbcesResponse(t *testing.T, s *grbphql.Schemb, ctx context.Context, bbtchSpecRbndID string, w wbntBbtchSpecWorkspbcesResponse) {
 	t.Helper()
 
-	in := map[string]any{
-		"batchSpec": string(marshalBatchSpecRandID(batchSpecRandID)),
+	in := mbp[string]bny{
+		"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpecRbndID)),
 	}
 
-	var response struct{ Node apitest.BatchSpec }
-	apitest.MustExec(ctx, t, s, in, &response, queryBatchSpecWorkspaces)
+	vbr response struct{ Node bpitest.BbtchSpec }
+	bpitest.MustExec(ctx, t, s, in, &response, queryBbtchSpecWorkspbces)
 
-	if have, want := response.Node.ID, in["batchSpec"]; have != want {
-		t.Fatalf("batch spec id is wrong. have %q, want %q", have, want)
+	if hbve, wbnt := response.Node.ID, in["bbtchSpec"]; hbve != wbnt {
+		t.Fbtblf("bbtch spec id is wrong. hbve %q, wbnt %q", hbve, wbnt)
 	}
 
-	if diff := cmp.Diff(w.count, response.Node.WorkspaceResolution.Workspaces.TotalCount); diff != "" {
-		t.Fatalf("unexpected workspaces total count (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.count, response.Node.WorkspbceResolution.Workspbces.TotblCount); diff != "" {
+		t.Fbtblf("unexpected workspbces totbl count (-wbnt +got):\n%s", diff)
 	}
 
-	typeCounts := map[string]int{}
-	for _, c := range response.Node.WorkspaceResolution.Workspaces.Nodes {
-		typeCounts[c.Typename]++
+	typeCounts := mbp[string]int{}
+	for _, c := rbnge response.Node.WorkspbceResolution.Workspbces.Nodes {
+		typeCounts[c.Typenbme]++
 	}
 	if diff := cmp.Diff(w.types, typeCounts); diff != "" {
-		t.Fatalf("unexpected workspace types (-want +got):\n%s", diff)
+		t.Fbtblf("unexpected workspbce types (-wbnt +got):\n%s", diff)
 	}
 }
 
-const queryBatchSpecWorkspaces = `
-query($batchSpec: ID!) {
-  node(id: $batchSpec) {
-    ... on BatchSpec {
+const queryBbtchSpecWorkspbces = `
+query($bbtchSpec: ID!) {
+  node(id: $bbtchSpec) {
+    ... on BbtchSpec {
       id
 
-     workspaceResolution {
-        workspaces(first: 100) {
-          totalCount
+     workspbceResolution {
+        workspbces(first: 100) {
+          totblCount
           nodes {
-            __typename
-            ... on HiddenBatchSpecWorkspace {
+            __typenbme
+            ... on HiddenBbtchSpecWorkspbce {
               id
             }
 
-            ... on VisibleBatchSpecWorkspace {
+            ... on VisibleBbtchSpecWorkspbce {
               id
             }
           }
@@ -1871,136 +1871,136 @@ query($batchSpec: ID!) {
 }
 `
 
-func testWorkspaceResponse(t *testing.T, s *graphql.Schema, ctx context.Context, id int64, wantType string) {
+func testWorkspbceResponse(t *testing.T, s *grbphql.Schemb, ctx context.Context, id int64, wbntType string) {
 	t.Helper()
 
-	var res struct{ Node apitest.BatchSpecWorkspace }
-	query := fmt.Sprintf(queryWorkspacePerm, marshalBatchSpecWorkspaceID(id))
-	apitest.MustExec(ctx, t, s, nil, &res, query)
+	vbr res struct{ Node bpitest.BbtchSpecWorkspbce }
+	query := fmt.Sprintf(queryWorkspbcePerm, mbrshblBbtchSpecWorkspbceID(id))
+	bpitest.MustExec(ctx, t, s, nil, &res, query)
 
-	if have, want := res.Node.Typename, wantType; have != want {
-		t.Fatalf("changeset has wrong typename. want=%q, have=%q", want, have)
+	if hbve, wbnt := res.Node.Typenbme, wbntType; hbve != wbnt {
+		t.Fbtblf("chbngeset hbs wrong typenbme. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 
-	if wantType == "HiddenBatchSpecWorkspace" {
+	if wbntType == "HiddenBbtchSpecWorkspbce" {
 		if res.Node.Repository.ID != "" {
-			t.Fatal("includes repo but shouldn't")
+			t.Fbtbl("includes repo but shouldn't")
 		}
 	}
 }
 
-const queryWorkspacePerm = `
+const queryWorkspbcePerm = `
 query {
   node(id: %q) {
-    __typename
+    __typenbme
 
-    ... on HiddenBatchSpecWorkspace {
+    ... on HiddenBbtchSpecWorkspbce {
       id
     }
-    ... on VisibleBatchSpecWorkspace {
+    ... on VisibleBbtchSpecWorkspbce {
       id
       repository {
         id
-        name
+        nbme
       }
     }
   }
 }
 `
 
-type wantBatchSpecResponse struct {
-	changesetPreviewTypes map[string]int
-	changesetPreviewCount int
-	changesetSpecTypes    map[string]int
-	changesetSpecsCount   int
-	batchSpecDiffStat     apitest.DiffStat
+type wbntBbtchSpecResponse struct {
+	chbngesetPreviewTypes mbp[string]int
+	chbngesetPreviewCount int
+	chbngesetSpecTypes    mbp[string]int
+	chbngesetSpecsCount   int
+	bbtchSpecDiffStbt     bpitest.DiffStbt
 }
 
-func testBatchSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, batchSpecRandID string, w wantBatchSpecResponse) {
+func testBbtchSpecResponse(t *testing.T, s *grbphql.Schemb, ctx context.Context, bbtchSpecRbndID string, w wbntBbtchSpecResponse) {
 	t.Helper()
 
-	in := map[string]any{
-		"batchSpec": string(marshalBatchSpecRandID(batchSpecRandID)),
+	in := mbp[string]bny{
+		"bbtchSpec": string(mbrshblBbtchSpecRbndID(bbtchSpecRbndID)),
 	}
 
-	var response struct{ Node apitest.BatchSpec }
-	apitest.MustExec(ctx, t, s, in, &response, queryBatchSpecPermLevels)
+	vbr response struct{ Node bpitest.BbtchSpec }
+	bpitest.MustExec(ctx, t, s, in, &response, queryBbtchSpecPermLevels)
 
-	if have, want := response.Node.ID, in["batchSpec"]; have != want {
-		t.Fatalf("batch spec id is wrong. have %q, want %q", have, want)
-	}
-
-	if diff := cmp.Diff(w.changesetSpecsCount, response.Node.ChangesetSpecs.TotalCount); diff != "" {
-		t.Fatalf("unexpected changesetSpecs total count (-want +got):\n%s", diff)
+	if hbve, wbnt := response.Node.ID, in["bbtchSpec"]; hbve != wbnt {
+		t.Fbtblf("bbtch spec id is wrong. hbve %q, wbnt %q", hbve, wbnt)
 	}
 
-	if diff := cmp.Diff(w.changesetPreviewCount, response.Node.ApplyPreview.TotalCount); diff != "" {
-		t.Fatalf("unexpected applyPreview total count (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.chbngesetSpecsCount, response.Node.ChbngesetSpecs.TotblCount); diff != "" {
+		t.Fbtblf("unexpected chbngesetSpecs totbl count (-wbnt +got):\n%s", diff)
 	}
 
-	changesetSpecTypes := map[string]int{}
-	for _, c := range response.Node.ChangesetSpecs.Nodes {
-		changesetSpecTypes[c.Typename]++
-	}
-	if diff := cmp.Diff(w.changesetSpecTypes, changesetSpecTypes); diff != "" {
-		t.Fatalf("unexpected changesetSpec types (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.chbngesetPreviewCount, response.Node.ApplyPreview.TotblCount); diff != "" {
+		t.Fbtblf("unexpected bpplyPreview totbl count (-wbnt +got):\n%s", diff)
 	}
 
-	changesetPreviewTypes := map[string]int{}
-	for _, c := range response.Node.ApplyPreview.Nodes {
-		changesetPreviewTypes[c.Typename]++
+	chbngesetSpecTypes := mbp[string]int{}
+	for _, c := rbnge response.Node.ChbngesetSpecs.Nodes {
+		chbngesetSpecTypes[c.Typenbme]++
 	}
-	if diff := cmp.Diff(w.changesetPreviewTypes, changesetPreviewTypes); diff != "" {
-		t.Fatalf("unexpected applyPreview types (-want +got):\n%s", diff)
+	if diff := cmp.Diff(w.chbngesetSpecTypes, chbngesetSpecTypes); diff != "" {
+		t.Fbtblf("unexpected chbngesetSpec types (-wbnt +got):\n%s", diff)
+	}
+
+	chbngesetPreviewTypes := mbp[string]int{}
+	for _, c := rbnge response.Node.ApplyPreview.Nodes {
+		chbngesetPreviewTypes[c.Typenbme]++
+	}
+	if diff := cmp.Diff(w.chbngesetPreviewTypes, chbngesetPreviewTypes); diff != "" {
+		t.Fbtblf("unexpected bpplyPreview types (-wbnt +got):\n%s", diff)
 	}
 }
 
-const queryBatchSpecPermLevels = `
-query($batchSpec: ID!) {
-  node(id: $batchSpec) {
-    ... on BatchSpec {
+const queryBbtchSpecPermLevels = `
+query($bbtchSpec: ID!) {
+  node(id: $bbtchSpec) {
+    ... on BbtchSpec {
       id
 
-      applyPreview(first: 100) {
-        totalCount
+      bpplyPreview(first: 100) {
+        totblCount
         nodes {
-          __typename
-          ... on HiddenChangesetApplyPreview {
-              targets {
-                  __typename
+          __typenbme
+          ... on HiddenChbngesetApplyPreview {
+              tbrgets {
+                  __typenbme
               }
           }
-          ... on VisibleChangesetApplyPreview {
-              targets {
-                  __typename
+          ... on VisibleChbngesetApplyPreview {
+              tbrgets {
+                  __typenbme
               }
           }
         }
       }
-      changesetSpecs(first: 100) {
-        totalCount
+      chbngesetSpecs(first: 100) {
+        totblCount
         nodes {
-          __typename
+          __typenbme
           type
-          ... on HiddenChangesetSpec {
+          ... on HiddenChbngesetSpec {
             id
           }
 
-          ... on VisibleChangesetSpec {
+          ... on VisibleChbngesetSpec {
             id
 
             description {
-              ... on ExistingChangesetReference {
-                baseRepository {
+              ... on ExistingChbngesetReference {
+                bbseRepository {
                   id
-                  name
+                  nbme
                 }
               }
 
-              ... on GitBranchChangesetDescription {
-                baseRepository {
+              ... on GitBrbnchChbngesetDescription {
+                bbseRepository {
                   id
-                  name
+                  nbme
                 }
               }
             }
@@ -2012,44 +2012,44 @@ query($batchSpec: ID!) {
 }
 `
 
-func testChangesetSpecResponse(t *testing.T, s *graphql.Schema, ctx context.Context, randID, wantType string) {
+func testChbngesetSpecResponse(t *testing.T, s *grbphql.Schemb, ctx context.Context, rbndID, wbntType string) {
 	t.Helper()
 
-	var res struct{ Node apitest.ChangesetSpec }
-	query := fmt.Sprintf(queryChangesetSpecPermLevels, marshalChangesetSpecRandID(randID))
-	apitest.MustExec(ctx, t, s, nil, &res, query)
+	vbr res struct{ Node bpitest.ChbngesetSpec }
+	query := fmt.Sprintf(queryChbngesetSpecPermLevels, mbrshblChbngesetSpecRbndID(rbndID))
+	bpitest.MustExec(ctx, t, s, nil, &res, query)
 
-	if have, want := res.Node.Typename, wantType; have != want {
-		t.Fatalf("changesetspec has wrong typename. want=%q, have=%q", want, have)
+	if hbve, wbnt := res.Node.Typenbme, wbntType; hbve != wbnt {
+		t.Fbtblf("chbngesetspec hbs wrong typenbme. wbnt=%q, hbve=%q", wbnt, hbve)
 	}
 }
 
-const queryChangesetSpecPermLevels = `
+const queryChbngesetSpecPermLevels = `
 query {
   node(id: %q) {
-    __typename
+    __typenbme
 
-    ... on HiddenChangesetSpec {
+    ... on HiddenChbngesetSpec {
       id
       type
     }
 
-    ... on VisibleChangesetSpec {
+    ... on VisibleChbngesetSpec {
       id
       type
 
       description {
-        ... on ExistingChangesetReference {
-          baseRepository {
+        ... on ExistingChbngesetReference {
+          bbseRepository {
             id
-            name
+            nbme
           }
         }
 
-        ... on GitBranchChangesetDescription {
-          baseRepository {
+        ... on GitBrbnchChbngesetDescription {
+          bbseRepository {
             id
-            name
+            nbme
           }
         }
       }
@@ -2058,60 +2058,60 @@ query {
 }
 `
 
-func assertAuthorizationResponse(
+func bssertAuthorizbtionResponse(
 	t *testing.T,
 	ctx context.Context,
-	s *graphql.Schema,
-	input map[string]any,
-	mutation string,
+	s *grbphql.Schemb,
+	input mbp[string]bny,
+	mutbtion string,
 	userID int32,
-	restrictToAdmins, wantDisabledErr, wantAuthErr bool,
+	restrictToAdmins, wbntDisbbledErr, wbntAuthErr bool,
 ) {
 	t.Helper()
 
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			BatchChangesRestrictToAdmins: &restrictToAdmins,
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			BbtchChbngesRestrictToAdmins: &restrictToAdmins,
 		},
 	})
 	defer conf.Mock(nil)
 
-	var response struct{}
-	errs := apitest.Exec(actorCtx, t, s, input, &response, mutation)
+	vbr response struct{}
+	errs := bpitest.Exec(bctorCtx, t, s, input, &response, mutbtion)
 
 	errLooksLikeAuthErr := func(err error) bool {
-		return strings.Contains(err.Error(), "must be authenticated") ||
-			strings.Contains(err.Error(), "not authenticated") ||
-			strings.Contains(err.Error(), "must be site admin")
+		return strings.Contbins(err.Error(), "must be buthenticbted") ||
+			strings.Contbins(err.Error(), "not buthenticbted") ||
+			strings.Contbins(err.Error(), "must be site bdmin")
 	}
 
-	// We don't care about other errors, we only want to
-	// check that we didn't get an auth error.
-	if restrictToAdmins && wantDisabledErr {
+	// We don't cbre bbout other errors, we only wbnt to
+	// check thbt we didn't get bn buth error.
+	if restrictToAdmins && wbntDisbbledErr {
 		if len(errs) != 1 {
-			t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+			t.Fbtblf("expected 1 error, but got %d: %s", len(errs), errs)
 		}
-		if !strings.Contains(errs[0].Error(), "batch changes are disabled for non-site-admin users") {
-			t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+		if !strings.Contbins(errs[0].Error(), "bbtch chbnges bre disbbled for non-site-bdmin users") {
+			t.Fbtblf("wrong error: %s %T", errs[0], errs[0])
 		}
-	} else if wantAuthErr {
+	} else if wbntAuthErr {
 		if len(errs) != 1 {
-			t.Fatalf("expected 1 error, but got %d: %s", len(errs), errs)
+			t.Fbtblf("expected 1 error, but got %d: %s", len(errs), errs)
 		}
 		if !errLooksLikeAuthErr(errs[0]) {
-			t.Fatalf("wrong error: %s %T", errs[0], errs[0])
+			t.Fbtblf("wrong error: %s %T", errs[0], errs[0])
 		}
 	} else {
-		// We don't care about other errors, we only
-		// want to check that we didn't get an auth
-		// or site admin error.
-		for _, e := range errs {
+		// We don't cbre bbout other errors, we only
+		// wbnt to check thbt we didn't get bn buth
+		// or site bdmin error.
+		for _, e := rbnge errs {
 			if errLooksLikeAuthErr(e) {
-				t.Fatalf("auth error wrongly returned: %s %T", errs[0], errs[0])
-			} else if strings.Contains(e.Error(), "batch changes are disabled for non-site-admin users") {
-				t.Fatalf("site admin error wrongly returned: %s %T", errs[0], errs[0])
+				t.Fbtblf("buth error wrongly returned: %s %T", errs[0], errs[0])
+			} else if strings.Contbins(e.Error(), "bbtch chbnges bre disbbled for non-site-bdmin users") {
+				t.Fbtblf("site bdmin error wrongly returned: %s %T", errs[0], errs[0])
 			}
 		}
 	}

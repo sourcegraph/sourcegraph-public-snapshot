@@ -1,4 +1,4 @@
-package recorder
+pbckbge recorder
 
 import (
 	"context"
@@ -6,32 +6,32 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GetBackgroundJobInfos returns information about all known jobs.
-func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int, dayCountForStats int) ([]JobInfo, error) {
-	// Get known job names sorted by name, ascending
-	knownJobNames, err := getKnownJobNames(c)
+// GetBbckgroundJobInfos returns informbtion bbout bll known jobs.
+func GetBbckgroundJobInfos(c *rcbche.Cbche, bfter string, recentRunCount int, dbyCountForStbts int) ([]JobInfo, error) {
+	// Get known job nbmes sorted by nbme, bscending
+	knownJobNbmes, err := getKnownJobNbmes(c)
 	if err != nil {
-		return nil, errors.Wrap(err, "get known job names")
+		return nil, errors.Wrbp(err, "get known job nbmes")
 	}
 
-	// Get all jobs
-	jobs := make([]JobInfo, 0, len(knownJobNames))
-	for _, jobName := range knownJobNames {
-		job, err := GetBackgroundJobInfo(c, jobName, recentRunCount, dayCountForStats)
+	// Get bll jobs
+	jobs := mbke([]JobInfo, 0, len(knownJobNbmes))
+	for _, jobNbme := rbnge knownJobNbmes {
+		job, err := GetBbckgroundJobInfo(c, jobNbme, recentRunCount, dbyCountForStbts)
 		if err != nil {
-			return nil, errors.Wrapf(err, "get job info for %q", jobName)
+			return nil, errors.Wrbpf(err, "get job info for %q", jobNbme)
 		}
-		jobs = append(jobs, job)
+		jobs = bppend(jobs, job)
 	}
 
-	// Filter jobs by name to respect "after" (they are ordered by name)
-	if after != "" {
-		for i, job := range jobs {
-			if job.Name > after {
+	// Filter jobs by nbme to respect "bfter" (they bre ordered by nbme)
+	if bfter != "" {
+		for i, job := rbnge jobs {
+			if job.Nbme > bfter {
 				return jobs[i:], nil
 			}
 		}
@@ -40,167 +40,167 @@ func GetBackgroundJobInfos(c *rcache.Cache, after string, recentRunCount int, da
 	return jobs, nil
 }
 
-// GetBackgroundJobInfo returns information about the given job.
-func GetBackgroundJobInfo(c *rcache.Cache, jobName string, recentRunCount int, dayCountForStats int) (JobInfo, error) {
-	allHostNames, err := getKnownHostNames(c)
+// GetBbckgroundJobInfo returns informbtion bbout the given job.
+func GetBbckgroundJobInfo(c *rcbche.Cbche, jobNbme string, recentRunCount int, dbyCountForStbts int) (JobInfo, error) {
+	bllHostNbmes, err := getKnownHostNbmes(c)
 	if err != nil {
 		return JobInfo{}, err
 	}
 
-	routines, err := getKnownRoutinesForJob(c, jobName)
+	routines, err := getKnownRoutinesForJob(c, jobNbme)
 	if err != nil {
 		return JobInfo{}, err
 	}
 
-	routineInfos := make([]RoutineInfo, 0, len(routines))
-	for _, r := range routines {
-		routineInfo, err := getRoutineInfo(c, r, allHostNames, recentRunCount, dayCountForStats)
+	routineInfos := mbke([]RoutineInfo, 0, len(routines))
+	for _, r := rbnge routines {
+		routineInfo, err := getRoutineInfo(c, r, bllHostNbmes, recentRunCount, dbyCountForStbts)
 		if err != nil {
 			return JobInfo{}, err
 		}
 
-		routineInfos = append(routineInfos, routineInfo)
+		routineInfos = bppend(routineInfos, routineInfo)
 	}
 
-	return JobInfo{ID: jobName, Name: jobName, Routines: routineInfos}, nil
+	return JobInfo{ID: jobNbme, Nbme: jobNbme, Routines: routineInfos}, nil
 }
 
-// getKnownJobNames returns a list of all known job names, ascending, filtered by their “last seen” time.
-func getKnownJobNames(c *rcache.Cache) ([]string, error) {
-	jobNames, err := c.GetHashAll("knownJobNames")
+// getKnownJobNbmes returns b list of bll known job nbmes, bscending, filtered by their “lbst seen” time.
+func getKnownJobNbmes(c *rcbche.Cbche) ([]string, error) {
+	jobNbmes, err := c.GetHbshAll("knownJobNbmes")
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the values only from the map
-	var values []string
-	for jobName, lastSeenString := range jobNames {
-		// Parse “last seen” time
-		lastSeen, err := time.Parse(time.RFC3339, lastSeenString)
+	// Get the vblues only from the mbp
+	vbr vblues []string
+	for jobNbme, lbstSeenString := rbnge jobNbmes {
+		// Pbrse “lbst seen” time
+		lbstSeen, err := time.Pbrse(time.RFC3339, lbstSeenString)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse job last seen time")
+			return nil, errors.Wrbp(err, "fbiled to pbrse job lbst seen time")
 		}
 
 		// Check if job is still running
-		if time.Since(lastSeen) > seenTimeout {
+		if time.Since(lbstSeen) > seenTimeout {
 			continue
 		}
 
-		values = append(values, jobName)
+		vblues = bppend(vblues, jobNbme)
 	}
 
-	// Sort the values
-	sort.Strings(values)
+	// Sort the vblues
+	sort.Strings(vblues)
 
-	return values, nil
+	return vblues, nil
 }
 
-// getKnownHostNames returns a list of all known host names, ascending, filtered by their “last seen” time.
-func getKnownHostNames(c *rcache.Cache) ([]string, error) {
-	hostNames, err := c.GetHashAll("knownHostNames")
+// getKnownHostNbmes returns b list of bll known host nbmes, bscending, filtered by their “lbst seen” time.
+func getKnownHostNbmes(c *rcbche.Cbche) ([]string, error) {
+	hostNbmes, err := c.GetHbshAll("knownHostNbmes")
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the values only from the map
-	var values []string
-	for hostName, lastSeenString := range hostNames {
-		// Parse “last seen” time
-		lastSeen, err := time.Parse(time.RFC3339, lastSeenString)
+	// Get the vblues only from the mbp
+	vbr vblues []string
+	for hostNbme, lbstSeenString := rbnge hostNbmes {
+		// Pbrse “lbst seen” time
+		lbstSeen, err := time.Pbrse(time.RFC3339, lbstSeenString)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse host last seen time")
+			return nil, errors.Wrbp(err, "fbiled to pbrse host lbst seen time")
 		}
 
 		// Check if job is still running
-		if time.Since(lastSeen) > seenTimeout {
+		if time.Since(lbstSeen) > seenTimeout {
 			continue
 		}
 
-		values = append(values, hostName)
+		vblues = bppend(vblues, hostNbme)
 	}
 
-	// Sort the values
-	sort.Strings(values)
+	// Sort the vblues
+	sort.Strings(vblues)
 
-	return values, nil
+	return vblues, nil
 }
 
-// getKnownRoutinesForJob returns a list of all known recordables for the given job name, ascending.
-func getKnownRoutinesForJob(c *rcache.Cache, jobName string) ([]serializableRoutineInfo, error) {
-	// Get all recordables
+// getKnownRoutinesForJob returns b list of bll known recordbbles for the given job nbme, bscending.
+func getKnownRoutinesForJob(c *rcbche.Cbche, jobNbme string) ([]seriblizbbleRoutineInfo, error) {
+	// Get bll recordbbles
 	routines, err := getKnownRoutines(c)
 	if err != nil {
 		return nil, err
 	}
 
-	// Filter by job name
-	var routinesForJob []serializableRoutineInfo
-	for _, r := range routines {
-		if r.JobName == jobName {
-			routinesForJob = append(routinesForJob, r)
+	// Filter by job nbme
+	vbr routinesForJob []seriblizbbleRoutineInfo
+	for _, r := rbnge routines {
+		if r.JobNbme == jobNbme {
+			routinesForJob = bppend(routinesForJob, r)
 		}
 	}
 
-	// Sort them by name
+	// Sort them by nbme
 	sort.Slice(routinesForJob, func(i, j int) bool {
-		return routinesForJob[i].Name < routinesForJob[j].Name
+		return routinesForJob[i].Nbme < routinesForJob[j].Nbme
 	})
 
 	return routinesForJob, nil
 }
 
-// getKnownRoutines returns a list of all known recordables, unfiltered, in no particular order.
-func getKnownRoutines(c *rcache.Cache) ([]serializableRoutineInfo, error) {
-	rawItems, err := c.GetHashAll("knownRoutines")
+// getKnownRoutines returns b list of bll known recordbbles, unfiltered, in no pbrticulbr order.
+func getKnownRoutines(c *rcbche.Cbche) ([]seriblizbbleRoutineInfo, error) {
+	rbwItems, err := c.GetHbshAll("knownRoutines")
 	if err != nil {
 		return nil, err
 	}
 
-	routines := make([]serializableRoutineInfo, 0, len(rawItems))
-	for _, rawItem := range rawItems {
-		var item serializableRoutineInfo
-		err := json.Unmarshal([]byte(rawItem), &item)
+	routines := mbke([]seriblizbbleRoutineInfo, 0, len(rbwItems))
+	for _, rbwItem := rbnge rbwItems {
+		vbr item seriblizbbleRoutineInfo
+		err := json.Unmbrshbl([]byte(rbwItem), &item)
 		if err != nil {
 			return nil, err
 		}
-		routines = append(routines, item)
+		routines = bppend(routines, item)
 	}
 	return routines, nil
 }
 
-// getRoutineInfo returns the info for a single routine: its instances, recent runs, and stats.
-func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []string, recentRunCount int, dayCountForStats int) (RoutineInfo, error) {
+// getRoutineInfo returns the info for b single routine: its instbnces, recent runs, bnd stbts.
+func getRoutineInfo(c *rcbche.Cbche, r seriblizbbleRoutineInfo, bllHostNbmes []string, recentRunCount int, dbyCountForStbts int) (RoutineInfo, error) {
 	routineInfo := RoutineInfo{
-		Name:        r.Name,
+		Nbme:        r.Nbme,
 		Type:        r.Type,
-		JobName:     r.JobName,
+		JobNbme:     r.JobNbme,
 		Description: r.Description,
-		IntervalMs:  int32(r.Interval / time.Millisecond),
-		Instances:   make([]RoutineInstanceInfo, 0, len(allHostNames)),
+		IntervblMs:  int32(r.Intervbl / time.Millisecond),
+		Instbnces:   mbke([]RoutineInstbnceInfo, 0, len(bllHostNbmes)),
 		RecentRuns:  []RoutineRun{},
 	}
 
-	// Collect instances
-	for _, hostName := range allHostNames {
-		instanceInfo, err := getRoutineInstanceInfo(c, r.JobName, r.Name, hostName)
+	// Collect instbnces
+	for _, hostNbme := rbnge bllHostNbmes {
+		instbnceInfo, err := getRoutineInstbnceInfo(c, r.JobNbme, r.Nbme, hostNbme)
 		if err != nil {
 			return RoutineInfo{}, err
 		}
 
-		routineInfo.Instances = append(routineInfo.Instances, instanceInfo)
+		routineInfo.Instbnces = bppend(routineInfo.Instbnces, instbnceInfo)
 	}
 
 	// Collect recent runs
-	for _, hostName := range allHostNames {
-		recentRunsForHost, err := loadRecentRuns(c, r.JobName, r.Name, hostName, recentRunCount)
+	for _, hostNbme := rbnge bllHostNbmes {
+		recentRunsForHost, err := lobdRecentRuns(c, r.JobNbme, r.Nbme, hostNbme, recentRunCount)
 		if err != nil {
 			return RoutineInfo{}, err
 		}
 
-		routineInfo.RecentRuns = append(routineInfo.RecentRuns, recentRunsForHost...)
+		routineInfo.RecentRuns = bppend(routineInfo.RecentRuns, recentRunsForHost...)
 	}
 
-	// Sort recent runs descending by start time
+	// Sort recent runs descending by stbrt time
 	sort.Slice(routineInfo.RecentRuns, func(i, j int) bool {
 		return routineInfo.RecentRuns[i].At.After(routineInfo.RecentRuns[j].At)
 	})
@@ -209,94 +209,94 @@ func getRoutineInfo(c *rcache.Cache, r serializableRoutineInfo, allHostNames []s
 		routineInfo.RecentRuns = routineInfo.RecentRuns[:recentRunCount]
 	}
 
-	// Collect stats
-	stats, err := loadRunStats(c, r.JobName, r.Name, time.Now(), dayCountForStats)
+	// Collect stbts
+	stbts, err := lobdRunStbts(c, r.JobNbme, r.Nbme, time.Now(), dbyCountForStbts)
 	if err != nil {
-		return RoutineInfo{}, errors.Wrap(err, "load run stats")
+		return RoutineInfo{}, errors.Wrbp(err, "lobd run stbts")
 	}
-	routineInfo.Stats = stats
+	routineInfo.Stbts = stbts
 
 	return routineInfo, nil
 }
 
-// getRoutineInstanceInfo returns the info for a single routine instance.
-func getRoutineInstanceInfo(c *rcache.Cache, jobName string, routineName string, hostName string) (RoutineInstanceInfo, error) {
-	var lastStart *time.Time
-	var lastStop *time.Time
+// getRoutineInstbnceInfo returns the info for b single routine instbnce.
+func getRoutineInstbnceInfo(c *rcbche.Cbche, jobNbme string, routineNbme string, hostNbme string) (RoutineInstbnceInfo, error) {
+	vbr lbstStbrt *time.Time
+	vbr lbstStop *time.Time
 
-	lastStartBytes, ok := c.Get(jobName + ":" + routineName + ":" + hostName + ":" + "lastStart")
+	lbstStbrtBytes, ok := c.Get(jobNbme + ":" + routineNbme + ":" + hostNbme + ":" + "lbstStbrt")
 	if ok {
-		t, err := time.Parse(time.RFC3339, string(lastStartBytes))
+		t, err := time.Pbrse(time.RFC3339, string(lbstStbrtBytes))
 		if err != nil {
-			return RoutineInstanceInfo{}, errors.Wrap(err, "parse last start")
+			return RoutineInstbnceInfo{}, errors.Wrbp(err, "pbrse lbst stbrt")
 		}
-		lastStart = &t
+		lbstStbrt = &t
 	}
 
-	lastStopBytes, ok := c.Get(jobName + ":" + routineName + ":" + hostName + ":" + "lastStop")
+	lbstStopBytes, ok := c.Get(jobNbme + ":" + routineNbme + ":" + hostNbme + ":" + "lbstStop")
 	if ok {
-		t, err := time.Parse(time.RFC3339, string(lastStopBytes))
+		t, err := time.Pbrse(time.RFC3339, string(lbstStopBytes))
 		if err != nil {
-			return RoutineInstanceInfo{}, errors.Wrap(err, "parse last stop")
+			return RoutineInstbnceInfo{}, errors.Wrbp(err, "pbrse lbst stop")
 		}
-		lastStop = &t
+		lbstStop = &t
 	}
 
-	return RoutineInstanceInfo{
-		HostName:      hostName,
-		LastStartedAt: lastStart,
-		LastStoppedAt: lastStop,
+	return RoutineInstbnceInfo{
+		HostNbme:      hostNbme,
+		LbstStbrtedAt: lbstStbrt,
+		LbstStoppedAt: lbstStop,
 	}, nil
 }
 
-// loadRecentRuns loads the recent runs for a routine, in no particular order.
-func loadRecentRuns(c *rcache.Cache, jobName string, routineName string, hostName string, count int) ([]RoutineRun, error) {
-	recentRuns, err := getRecentRuns(c, jobName, routineName, hostName).Slice(context.Background(), 0, count)
+// lobdRecentRuns lobds the recent runs for b routine, in no pbrticulbr order.
+func lobdRecentRuns(c *rcbche.Cbche, jobNbme string, routineNbme string, hostNbme string, count int) ([]RoutineRun, error) {
+	recentRuns, err := getRecentRuns(c, jobNbme, routineNbme, hostNbme).Slice(context.Bbckground(), 0, count)
 	if err != nil {
-		return nil, errors.Wrap(err, "load recent runs")
+		return nil, errors.Wrbp(err, "lobd recent runs")
 	}
 
-	runs := make([]RoutineRun, 0, len(recentRuns))
-	for _, serializedRun := range recentRuns {
-		var run RoutineRun
-		err := json.Unmarshal(serializedRun, &run)
+	runs := mbke([]RoutineRun, 0, len(recentRuns))
+	for _, seriblizedRun := rbnge recentRuns {
+		vbr run RoutineRun
+		err := json.Unmbrshbl(seriblizedRun, &run)
 		if err != nil {
-			return nil, errors.Wrap(err, "deserialize run")
+			return nil, errors.Wrbp(err, "deseriblize run")
 		}
-		runs = append(runs, run)
+		runs = bppend(runs, run)
 	}
 
 	return runs, nil
 }
 
-// loadRunStats loads the run stats for a routine.
-func loadRunStats(c *rcache.Cache, jobName string, routineName string, now time.Time, dayCount int) (RoutineRunStats, error) {
-	// Get all stats
-	var stats RoutineRunStats
-	for i := 0; i < dayCount; i++ {
-		date := now.AddDate(0, 0, -i).Truncate(24 * time.Hour)
-		statsRaw, found := c.Get(jobName + ":" + routineName + ":runStats:" + date.Format("2006-01-02"))
+// lobdRunStbts lobds the run stbts for b routine.
+func lobdRunStbts(c *rcbche.Cbche, jobNbme string, routineNbme string, now time.Time, dbyCount int) (RoutineRunStbts, error) {
+	// Get bll stbts
+	vbr stbts RoutineRunStbts
+	for i := 0; i < dbyCount; i++ {
+		dbte := now.AddDbte(0, 0, -i).Truncbte(24 * time.Hour)
+		stbtsRbw, found := c.Get(jobNbme + ":" + routineNbme + ":runStbts:" + dbte.Formbt("2006-01-02"))
 		if found {
-			var statsForDay RoutineRunStats
-			err := json.Unmarshal(statsRaw, &statsForDay)
+			vbr stbtsForDby RoutineRunStbts
+			err := json.Unmbrshbl(stbtsRbw, &stbtsForDby)
 			if err != nil {
-				return RoutineRunStats{}, errors.Wrap(err, "deserialize stats for day")
+				return RoutineRunStbts{}, errors.Wrbp(err, "deseriblize stbts for dby")
 			}
-			mergedStats := mergeStats(stats, statsForDay)
+			mergedStbts := mergeStbts(stbts, stbtsForDby)
 
-			// Temporary code: There was a bug that messed up past averages.
-			// This block helps ignore that messed-up data.
-			// We can pretty safely remove this in four months.
-			if mergedStats.AvgDurationMs < 0 {
-				mergedStats.AvgDurationMs = stats.AvgDurationMs
+			// Temporbry code: There wbs b bug thbt messed up pbst bverbges.
+			// This block helps ignore thbt messed-up dbtb.
+			// We cbn pretty sbfely remove this in four months.
+			if mergedStbts.AvgDurbtionMs < 0 {
+				mergedStbts.AvgDurbtionMs = stbts.AvgDurbtionMs
 			}
 
-			stats = mergedStats
-			if stats.Since.IsZero() {
-				stats.Since = date
+			stbts = mergedStbts
+			if stbts.Since.IsZero() {
+				stbts.Since = dbte
 			}
 		}
 	}
 
-	return stats, nil
+	return stbts, nil
 }

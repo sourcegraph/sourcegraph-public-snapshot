@@ -1,115 +1,115 @@
-package notify
+pbckbge notify
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/slack-go/slack"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/slbck-go/slbck"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
 )
 
 func TestThresholds(t *testing.T) {
 	th := Thresholds{
-		codygateway.ActorSourceDotcomUser:          []int{100},
-		codygateway.ActorSourceProductSubscription: []int{100, 90},
+		codygbtewby.ActorSourceDotcomUser:          []int{100},
+		codygbtewby.ActorSourceProductSubscription: []int{100, 90},
 	}
 	// Explicitly configured
-	autogold.Expect([]int{100}).Equal(t, th.Get(codygateway.ActorSourceDotcomUser))
+	butogold.Expect([]int{100}).Equbl(t, th.Get(codygbtewby.ActorSourceDotcomUser))
 	// Sorted
-	autogold.Expect([]int{90, 100}).Equal(t, th.Get(codygateway.ActorSourceProductSubscription))
-	// Defaults
-	autogold.Expect([]int{}).Equal(t, th.Get(codygateway.ActorSource("anonymous")))
+	butogold.Expect([]int{90, 100}).Equbl(t, th.Get(codygbtewby.ActorSourceProductSubscription))
+	// Defbults
+	butogold.Expect([]int{}).Equbl(t, th.Get(codygbtewby.ActorSource("bnonymous")))
 }
 
 type mockActor struct {
 	id     string
-	name   string
-	source codygateway.ActorSource
+	nbme   string
+	source codygbtewby.ActorSource
 }
 
 func (m *mockActor) GetID() string                      { return m.id }
-func (m *mockActor) GetName() string                    { return m.name }
-func (m *mockActor) GetSource() codygateway.ActorSource { return m.source }
+func (m *mockActor) GetNbme() string                    { return m.nbme }
+func (m *mockActor) GetSource() codygbtewby.ActorSource { return m.source }
 
-func TestSlackRateLimitNotifier(t *testing.T) {
+func TestSlbckRbteLimitNotifier(t *testing.T) {
 	logger := logtest.NoOp(t)
 
 	tests := []struct {
-		name        string
-		mockRedis   func(t *testing.T) redispool.KeyValue
-		usageRatio  float32
-		wantAlerted bool
+		nbme        string
+		mockRedis   func(t *testing.T) redispool.KeyVblue
+		usbgeRbtio  flobt32
+		wbntAlerted bool
 	}{
 		{
-			name:        "no alerts below lowest bucket",
-			mockRedis:   func(*testing.T) redispool.KeyValue { return redispool.NewMockKeyValue() },
-			usageRatio:  0.1,
-			wantAlerted: false,
+			nbme:        "no blerts below lowest bucket",
+			mockRedis:   func(*testing.T) redispool.KeyVblue { return redispool.NewMockKeyVblue() },
+			usbgeRbtio:  0.1,
+			wbntAlerted: fblse,
 		},
 		{
-			name: "alert when hits 50% bucket",
-			mockRedis: func(*testing.T) redispool.KeyValue {
-				rs := redispool.NewMockKeyValue()
-				rs.SetNxFunc.SetDefaultReturn(true, nil)
+			nbme: "blert when hits 50% bucket",
+			mockRedis: func(*testing.T) redispool.KeyVblue {
+				rs := redispool.NewMockKeyVblue()
+				rs.SetNxFunc.SetDefbultReturn(true, nil)
 				return rs
 			},
-			usageRatio:  0.5,
-			wantAlerted: true,
+			usbgeRbtio:  0.5,
+			wbntAlerted: true,
 		},
 		{
-			name: "no alert when hits alerted bucket",
-			mockRedis: func(*testing.T) redispool.KeyValue {
-				rs := redispool.NewMockKeyValue()
-				rs.SetNxFunc.SetDefaultReturn(true, nil)
-				rs.GetFunc.SetDefaultReturn(redispool.NewValue(int64(50), nil))
+			nbme: "no blert when hits blerted bucket",
+			mockRedis: func(*testing.T) redispool.KeyVblue {
+				rs := redispool.NewMockKeyVblue()
+				rs.SetNxFunc.SetDefbultReturn(true, nil)
+				rs.GetFunc.SetDefbultReturn(redispool.NewVblue(int64(50), nil))
 				return rs
 			},
-			usageRatio:  0.6,
-			wantAlerted: false,
+			usbgeRbtio:  0.6,
+			wbntAlerted: fblse,
 		},
 		{
-			name: "alert when hits another bucket",
-			mockRedis: func(*testing.T) redispool.KeyValue {
-				rs := redispool.NewMockKeyValue()
-				rs.SetNxFunc.SetDefaultReturn(true, nil)
-				rs.GetFunc.SetDefaultReturn(redispool.NewValue(int64(50), nil))
+			nbme: "blert when hits bnother bucket",
+			mockRedis: func(*testing.T) redispool.KeyVblue {
+				rs := redispool.NewMockKeyVblue()
+				rs.SetNxFunc.SetDefbultReturn(true, nil)
+				rs.GetFunc.SetDefbultReturn(redispool.NewVblue(int64(50), nil))
 				return rs
 			},
-			usageRatio:  0.8,
-			wantAlerted: true,
+			usbgeRbtio:  0.8,
+			wbntAlerted: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			alerted := false
-			alerter := NewSlackRateLimitNotifier(
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			blerted := fblse
+			blerter := NewSlbckRbteLimitNotifier(
 				logger,
 				test.mockRedis(t),
-				"https://sourcegraph.com/",
-				Thresholds{codygateway.ActorSourceProductSubscription: []int{50, 80, 90}},
-				"https://hooks.slack.com",
-				func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
-					alerted = true
+				"https://sourcegrbph.com/",
+				Thresholds{codygbtewby.ActorSourceProductSubscription: []int{50, 80, 90}},
+				"https://hooks.slbck.com",
+				func(ctx context.Context, url string, msg *slbck.WebhookMessbge) error {
+					blerted = true
 					return nil
 				},
 			)
 
-			alerter(context.Background(),
+			blerter(context.Bbckground(),
 				&mockActor{
-					id:     "foobar",
-					name:   "alice",
-					source: codygateway.ActorSourceProductSubscription,
+					id:     "foobbr",
+					nbme:   "blice",
+					source: codygbtewby.ActorSourceProductSubscription,
 				},
-				codygateway.FeatureChatCompletions,
-				test.usageRatio,
+				codygbtewby.FebtureChbtCompletions,
+				test.usbgeRbtio,
 				time.Minute)
-			assert.Equal(t, test.wantAlerted, alerted, "alert fired incorrectly")
+			bssert.Equbl(t, test.wbntAlerted, blerted, "blert fired incorrectly")
 		})
 	}
 }

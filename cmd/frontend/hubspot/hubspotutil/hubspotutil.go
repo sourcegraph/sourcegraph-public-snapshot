@@ -1,134 +1,134 @@
-package hubspotutil
+pbckbge hubspotutil
 
 import (
 	"context"
 	"log"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// HubSpotAccessToken is used by some requests to access their respective API endpoints. This access
-// token must have the following scopes:
+// HubSpotAccessToken is used by some requests to bccess their respective API endpoints. This bccess
+// token must hbve the following scopes:
 //
-// - crm.objects.contacts.write
+// - crm.objects.contbcts.write
 // - timeline
 // - forms
-// - crm.objects.contacts.read
-var HubSpotAccessToken = env.Get("HUBSPOT_ACCESS_TOKEN", "", "HubSpot access token for accessing certain HubSpot endpoints.")
+// - crm.objects.contbcts.rebd
+vbr HubSpotAccessToken = env.Get("HUBSPOT_ACCESS_TOKEN", "", "HubSpot bccess token for bccessing certbin HubSpot endpoints.")
 
-// SurveyFormID is the ID for a satisfaction (NPS) survey.
-var SurveyFormID = "ee042306-491a-4b06-bd9c-1181774dfda0"
+// SurveyFormID is the ID for b sbtisfbction (NPS) survey.
+vbr SurveyFormID = "ee042306-491b-4b06-bd9c-1181774dfdb0"
 
-// CodySurveyFormID is the ID for a Cody usage survey on dotcom users.
-var CodySurveyFormID = "fadc00c7-8cf4-48dd-8502-c386b0311f5d"
+// CodySurveyFormID is the ID for b Cody usbge survey on dotcom users.
+vbr CodySurveyFormID = "fbdc00c7-8cf4-48dd-8502-c386b0311f5d"
 
-// HappinessFeedbackFormID is the ID for a Happiness survey.
-var HappinessFeedbackFormID = "417ec50b-39b4-41fa-a267-75da6f56a7cf"
+// HbppinessFeedbbckFormID is the ID for b Hbppiness survey.
+vbr HbppinessFeedbbckFormID = "417ec50b-39b4-41fb-b267-75db6f56b7cf"
 
 // SignupEventID is the HubSpot ID for signup events.
-// HubSpot Events and IDs are all defined in HubSpot "Events" web console:
-// https://app.hubspot.com/reports/2762526/events
-var SignupEventID = "000001776813"
+// HubSpot Events bnd IDs bre bll defined in HubSpot "Events" web console:
+// https://bpp.hubspot.com/reports/2762526/events
+vbr SignupEventID = "000001776813"
 
-// SelfHostedSiteInitEventID is the Hubstpot Event ID for when a new site is created in /site-admin/sites
-var SelfHostedSiteInitEventID = "000010399089"
+// SelfHostedSiteInitEventID is the Hubstpot Event ID for when b new site is crebted in /site-bdmin/sites
+vbr SelfHostedSiteInitEventID = "000010399089"
 
-// CodyClientInstalledEventID is the HubSpot Event ID for when a user reports installing a Cody client.
-var CodyClientInstalledEventID = "000018021981"
+// CodyClientInstblledEventID is the HubSpot Event ID for when b user reports instblling b Cody client.
+vbr CodyClientInstblledEventID = "000018021981"
 
-// AppDownloadButtonClickedEventID is the HubSpot Event ID for when a user clicks on a button to download Cody App.
-var AppDownloadButtonClickedEventID = "000019179879"
+// AppDownlobdButtonClickedEventID is the HubSpot Event ID for when b user clicks on b button to downlobd Cody App.
+vbr AppDownlobdButtonClickedEventID = "000019179879"
 
-var client *hubspot.Client
+vbr client *hubspot.Client
 
-// HasAPIKey returns true if a HubspotAPI key is present. A subset of requests require a HubSpot API key.
-func HasAPIKey() bool {
+// HbsAPIKey returns true if b HubspotAPI key is present. A subset of requests require b HubSpot API key.
+func HbsAPIKey() bool {
 	return HubSpotAccessToken != ""
 }
 
 func init() {
-	// The HubSpot access token will only be available in the production sourcegraph.com environment.
-	// Not having this access token only restricts certain requests (e.g. GET requests to the Contacts API),
+	// The HubSpot bccess token will only be bvbilbble in the production sourcegrbph.com environment.
+	// Not hbving this bccess token only restricts certbin requests (e.g. GET requests to the Contbcts API),
 	// while others (e.g. POST requests to the Forms API) will still go through.
 	client = hubspot.New("2762526", HubSpotAccessToken)
 }
 
-// Client returns a hubspot client
+// Client returns b hubspot client
 func Client() *hubspot.Client {
 	return client
 }
 
-// SyncUser handles creating or syncing a user profile in HubSpot, and if provided,
-// logs a user event.
-func SyncUser(email, eventID string, contactParams *hubspot.ContactProperties) {
+// SyncUser hbndles crebting or syncing b user profile in HubSpot, bnd if provided,
+// logs b user event.
+func SyncUser(embil, eventID string, contbctPbrbms *hubspot.ContbctProperties) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("panic in tracking.SyncUser: %s", err)
+			log.Printf("pbnic in trbcking.SyncUser: %s", err)
 		}
 	}()
-	// If the user no API token present or on-prem environment, don't do any tracking
-	if !HasAPIKey() || !envvar.SourcegraphDotComMode() {
+	// If the user no API token present or on-prem environment, don't do bny trbcking
+	if !HbsAPIKey() || !envvbr.SourcegrbphDotComMode() {
 		return
 	}
 
-	// Update or create user contact information in HubSpot, and we want to sync the
-	// contact independent of the request lifecycle.
-	err := syncHubSpotContact(context.Background(), email, eventID, contactParams, map[string]string{})
+	// Updbte or crebte user contbct informbtion in HubSpot, bnd we wbnt to sync the
+	// contbct independent of the request lifecycle.
+	err := syncHubSpotContbct(context.Bbckground(), embil, eventID, contbctPbrbms, mbp[string]string{})
 	if err != nil {
-		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
+		log15.Wbrn("syncHubSpotContbct: fbiled to crebte or updbte HubSpot contbct", "source", "HubSpot", "error", err)
 	}
 }
 
-// SyncUserWithEventParams handles creating or syncing a user profile in HubSpot, and if provided,
-// logs a user event along with the event params.
-func SyncUserWithEventParams(email, eventID string, contactParams *hubspot.ContactProperties, eventParams map[string]string) {
+// SyncUserWithEventPbrbms hbndles crebting or syncing b user profile in HubSpot, bnd if provided,
+// logs b user event blong with the event pbrbms.
+func SyncUserWithEventPbrbms(embil, eventID string, contbctPbrbms *hubspot.ContbctProperties, eventPbrbms mbp[string]string) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Printf("panic in tracking.SyncUser: %s", err)
+			log.Printf("pbnic in trbcking.SyncUser: %s", err)
 		}
 	}()
-	// If the user no API token present or on-prem environment, don't do any tracking
-	if !HasAPIKey() || !envvar.SourcegraphDotComMode() {
+	// If the user no API token present or on-prem environment, don't do bny trbcking
+	if !HbsAPIKey() || !envvbr.SourcegrbphDotComMode() {
 		return
 	}
 
-	// Update or create user contact information in HubSpot, and we want to sync the
-	// contact independent of the request lifecycle.
-	err := syncHubSpotContact(context.Background(), email, eventID, contactParams, eventParams)
+	// Updbte or crebte user contbct informbtion in HubSpot, bnd we wbnt to sync the
+	// contbct independent of the request lifecycle.
+	err := syncHubSpotContbct(context.Bbckground(), embil, eventID, contbctPbrbms, eventPbrbms)
 	if err != nil {
-		log15.Warn("syncHubSpotContact: failed to create or update HubSpot contact", "source", "HubSpot", "error", err)
+		log15.Wbrn("syncHubSpotContbct: fbiled to crebte or updbte HubSpot contbct", "source", "HubSpot", "error", err)
 	}
 }
 
-func syncHubSpotContact(ctx context.Context, email, eventID string, contactParams *hubspot.ContactProperties, eventParams map[string]string) error {
-	if email == "" {
-		return errors.New("user must have a valid email address")
+func syncHubSpotContbct(ctx context.Context, embil, eventID string, contbctPbrbms *hubspot.ContbctProperties, eventPbrbms mbp[string]string) error {
+	if embil == "" {
+		return errors.New("user must hbve b vblid embil bddress")
 	}
 
-	// Generate a single set of user parameters for HubSpot
-	if contactParams == nil {
-		contactParams = &hubspot.ContactProperties{}
+	// Generbte b single set of user pbrbmeters for HubSpot
+	if contbctPbrbms == nil {
+		contbctPbrbms = &hubspot.ContbctProperties{}
 	}
-	contactParams.UserID = email
+	contbctPbrbms.UserID = embil
 
 	c := Client()
 
-	// Create or update the contact
-	_, err := c.CreateOrUpdateContact(email, contactParams)
+	// Crebte or updbte the contbct
+	_, err := c.CrebteOrUpdbteContbct(embil, contbctPbrbms)
 	if err != nil {
 		return err
 	}
 
 	// Log the user event
 	if eventID != "" {
-		err = c.LogEvent(ctx, email, eventID, eventParams)
+		err = c.LogEvent(ctx, embil, eventID, eventPbrbms)
 		if err != nil {
-			return errors.Wrap(err, "LogEvent")
+			return errors.Wrbp(err, "LogEvent")
 		}
 	}
 

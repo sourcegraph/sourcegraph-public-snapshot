@@ -1,92 +1,92 @@
-package backfillv2
+pbckbge bbckfillv2
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"testing"
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/hexops/autogold/v2"
-	"github.com/keegancsmith/sqlf"
+	"github.com/hexops/butogold/v2"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/timeseries"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 )
 
-type SeriesValidate struct {
+type SeriesVblidbte struct {
 	SeriesID           string
-	CreatedAt          string
+	CrebtedAt          string
 	NextRecordingAfter string
-	NextSnapshotAfter  string
-	BackfillQueuedAt   string
+	NextSnbpshotAfter  string
+	BbckfillQueuedAt   string
 	JustInTime         bool
-	NeedsMigration     bool
-	BackfillState      string
+	NeedsMigrbtion     bool
+	BbckfillStbte      string
 }
 
-const validateSeriesSql = `
-	SELECT  s.series_id, s.created_at, s.next_recording_after, s.next_snapshot_after, s.backfill_queued_at, s.just_in_time, s.needs_migration, isb.state
+const vblidbteSeriesSql = `
+	SELECT  s.series_id, s.crebted_bt, s.next_recording_bfter, s.next_snbpshot_bfter, s.bbckfill_queued_bt, s.just_in_time, s.needs_migrbtion, isb.stbte
 	FROM insight_series s
-		LEFT JOIN insight_series_backfill isb on s.id = isb.series_id`
+		LEFT JOIN insight_series_bbckfill isb on s.id = isb.series_id`
 
-func scanValidateSeries(rows *sql.Rows, queryErr error) (_ []SeriesValidate, err error) {
+func scbnVblidbteSeries(rows *sql.Rows, queryErr error) (_ []SeriesVblidbte, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	timeFmt := "2006-01-02 15:04:05"
 
-	var createdAt, nextRecordingAfter, nextSnapshotAfter time.Time
-	var backfillQueuedAt *time.Time
-	var backfillState *string
+	vbr crebtedAt, nextRecordingAfter, nextSnbpshotAfter time.Time
+	vbr bbckfillQueuedAt *time.Time
+	vbr bbckfillStbte *string
 
-	results := make([]SeriesValidate, 0)
+	results := mbke([]SeriesVblidbte, 0)
 	for rows.Next() {
-		var temp SeriesValidate
-		if err := rows.Scan(
+		vbr temp SeriesVblidbte
+		if err := rows.Scbn(
 			&temp.SeriesID,
-			&createdAt,
+			&crebtedAt,
 			&nextRecordingAfter,
-			&nextSnapshotAfter,
-			&backfillQueuedAt,
+			&nextSnbpshotAfter,
+			&bbckfillQueuedAt,
 			&temp.JustInTime,
-			&temp.NeedsMigration,
-			&backfillState,
+			&temp.NeedsMigrbtion,
+			&bbckfillStbte,
 		); err != nil {
 			return nil, err
 		}
-		temp.CreatedAt = createdAt.Format(timeFmt)
-		temp.NextRecordingAfter = nextRecordingAfter.Format(timeFmt)
-		temp.NextSnapshotAfter = nextSnapshotAfter.Format(timeFmt)
-		if backfillQueuedAt != nil {
-			tmp := backfillQueuedAt.Format(timeFmt)
-			temp.BackfillQueuedAt = tmp
+		temp.CrebtedAt = crebtedAt.Formbt(timeFmt)
+		temp.NextRecordingAfter = nextRecordingAfter.Formbt(timeFmt)
+		temp.NextSnbpshotAfter = nextSnbpshotAfter.Formbt(timeFmt)
+		if bbckfillQueuedAt != nil {
+			tmp := bbckfillQueuedAt.Formbt(timeFmt)
+			temp.BbckfillQueuedAt = tmp
 		}
-		if backfillState != nil {
-			temp.BackfillState = *backfillState
+		if bbckfillStbte != nil {
+			temp.BbckfillStbte = *bbckfillStbte
 		}
 
-		results = append(results, temp)
+		results = bppend(results, temp)
 	}
 	return results, nil
 }
 
-func getResults(ctx context.Context, store basestore.ShareableStore) (map[string]SeriesValidate, error) {
-	series, err := scanValidateSeries(store.Handle().QueryContext(ctx, validateSeriesSql))
+func getResults(ctx context.Context, store bbsestore.ShbrebbleStore) (mbp[string]SeriesVblidbte, error) {
+	series, err := scbnVblidbteSeries(store.Hbndle().QueryContext(ctx, vblidbteSeriesSql))
 	if err != nil {
 		return nil, err
 	}
-	m := make(map[string]SeriesValidate, len(series))
-	for _, s := range series {
+	m := mbke(mbp[string]SeriesVblidbte, len(series))
+	for _, s := rbnge series {
 		m[s.SeriesID] = s
 	}
 	return m, nil
@@ -96,81 +96,81 @@ type InsightSeries struct {
 	ID                         int
 	SeriesID                   string
 	Query                      string
-	CreatedAt                  time.Time
-	OldestHistoricalAt         time.Time
-	LastRecordedAt             time.Time
+	CrebtedAt                  time.Time
+	OldestHistoricblAt         time.Time
+	LbstRecordedAt             time.Time
 	NextRecordingAfter         time.Time
-	LastSnapshotAt             time.Time
-	NextSnapshotAfter          time.Time
-	BackfillQueuedAt           *time.Time
-	Enabled                    bool
+	LbstSnbpshotAt             time.Time
+	NextSnbpshotAfter          time.Time
+	BbckfillQueuedAt           *time.Time
+	Enbbled                    bool
 	Repositories               []string
-	SampleIntervalUnit         string
-	SampleIntervalValue        int
-	GeneratedFromCaptureGroups bool
+	SbmpleIntervblUnit         string
+	SbmpleIntervblVblue        int
+	GenerbtedFromCbptureGroups bool
 	JustInTime                 bool
-	GenerationMethod           string
+	GenerbtionMethod           string
 	GroupBy                    *string
 }
 
-func createSeries(ctx context.Context, store basestore.ShareableStore, series InsightSeries, clock glock.Clock) (InsightSeries, error) {
-	if series.CreatedAt.IsZero() {
-		series.CreatedAt = clock.Now()
+func crebteSeries(ctx context.Context, store bbsestore.ShbrebbleStore, series InsightSeries, clock glock.Clock) (InsightSeries, error) {
+	if series.CrebtedAt.IsZero() {
+		series.CrebtedAt = clock.Now()
 	}
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
+	intervbl := timeseries.TimeIntervbl{
+		Unit:  types.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
 	}
-	if !interval.IsValid() {
-		interval = timeseries.DefaultInterval
+	if !intervbl.IsVblid() {
+		intervbl = timeseries.DefbultIntervbl
 	}
-	series.NextSnapshotAfter = series.CreatedAt.Truncate(time.Minute).AddDate(0, 0, 1)
-	series.NextRecordingAfter = series.CreatedAt.AddDate(0, 0, 2)
-	q := sqlf.Sprintf(createInsightSeriesSql,
+	series.NextSnbpshotAfter = series.CrebtedAt.Truncbte(time.Minute).AddDbte(0, 0, 1)
+	series.NextRecordingAfter = series.CrebtedAt.AddDbte(0, 0, 2)
+	q := sqlf.Sprintf(crebteInsightSeriesSql,
 		series.SeriesID,
 		series.Query,
-		series.CreatedAt,
-		series.OldestHistoricalAt,
-		series.LastRecordedAt,
+		series.CrebtedAt,
+		series.OldestHistoricblAt,
+		series.LbstRecordedAt,
 		series.NextRecordingAfter,
-		series.LastSnapshotAt,
-		series.NextSnapshotAfter,
-		pq.Array(series.Repositories),
-		series.SampleIntervalUnit,
-		series.SampleIntervalValue,
-		series.GeneratedFromCaptureGroups,
+		series.LbstSnbpshotAt,
+		series.NextSnbpshotAfter,
+		pq.Arrby(series.Repositories),
+		series.SbmpleIntervblUnit,
+		series.SbmpleIntervblVblue,
+		series.GenerbtedFromCbptureGroups,
 		series.JustInTime,
-		series.GenerationMethod,
+		series.GenerbtionMethod,
 		series.GroupBy,
-		series.JustInTime && series.GenerationMethod != "language-stats", // marking needs migration
-		series.BackfillQueuedAt,
+		series.JustInTime && series.GenerbtionMethod != "lbngubge-stbts", // mbrking needs migrbtion
+		series.BbckfillQueuedAt,
 	)
 
-	row := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	var id int
-	err := row.Scan(&id)
+	row := store.Hbndle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
+	vbr id int
+	err := row.Scbn(&id)
 	if err != nil {
 		return InsightSeries{}, err
 	}
 	series.ID = id
-	series.Enabled = true
+	series.Enbbled = true
 	return series, nil
 }
 
-const createInsightSeriesSql = `
-INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
-							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method, group_by, needs_migration, backfill_queued_at)
+const crebteInsightSeriesSql = `
+INSERT INTO insight_series (series_id, query, crebted_bt, oldest_historicbl_bt, lbst_recorded_bt,
+                            next_recording_bfter, lbst_snbpshot_bt, next_snbpshot_bfter, repositories,
+							sbmple_intervbl_unit, sbmple_intervbl_vblue, generbted_from_cbpture_groups,
+							just_in_time, generbtion_method, group_by, needs_migrbtion, bbckfill_queued_bt)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
-func makeBackfill(t *testing.T, ctx context.Context, store basestore.ShareableStore) makeBackfillFunc {
-	return func(series InsightSeries, state string) error {
-		q := sqlf.Sprintf("INSERT INTO insight_series_backfill (series_id, state) VALUES(%s, %s)", series.ID, state)
-		_, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+func mbkeBbckfill(t *testing.T, ctx context.Context, store bbsestore.ShbrebbleStore) mbkeBbckfillFunc {
+	return func(series InsightSeries, stbte string) error {
+		q := sqlf.Sprintf("INSERT INTO insight_series_bbckfill (series_id, stbte) VALUES(%s, %s)", series.ID, stbte)
+		_, err := store.Hbndle().ExecContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 		if err != nil {
-			t.Fail()
+			t.Fbil()
 			return err
 		}
 		return err
@@ -178,303 +178,303 @@ func makeBackfill(t *testing.T, ctx context.Context, store basestore.ShareableSt
 }
 
 /*
-Test cases for migrator
+Test cbses for migrbtor
 
 +------+---------------+------------+-----------------+--------------+------------+-----------------+-------------------------------------------------------------------------------------------------------+
-| Case | Insight Type  | Created At | Backfill Queued | Just In Time | Repo Scope | Backfill Exists |                                           Expected outcome                                            |
+| Cbse | Insight Type  | Crebted At | Bbckfill Queued | Just In Time | Repo Scope | Bbckfill Exists |                                           Expected outcome                                            |
 +------+---------------+------------+-----------------+--------------+------------+-----------------+-------------------------------------------------------------------------------------------------------+
-| a    | Search        | Recent     | null            | false        | all        | false           | Backfill 'new', Job Created, Series - BackfillQueuedAt=now                                            |
-| b    | Search        | Recent     | null            | false        | named      | false           | Backfill 'new', Job Created, Series - BackfillQueuedAt=now                                            |
-| c    | Search        | Recent     | Recent          | false        | all        | false           | Backfill 'completed'                                                                                  |
-| d    | Search        | Recent     | Recent          | false        | named      | false           | Backfill 'completed'                                                                                  |
-| e    | Search        | Year ago   | Year Ago        | false        | all        | false           | Backfill 'completed'                                                                                  |
-| f    | Search        | Recent     | null            | True         | named      | false           | Backfill 'new', Job Created, Series:CreatedAt=now JIT=false NeedsMigration=false BackfillQueuedAt=now |
-| g    | Search        | Year ago   | null            | true         | named      | false           | Backfill 'new', Job Created, Series:CreatedAt=now JIT=false NeedsMigration=false BackfillQueuedAt=now |
-| h    | Capture Group | Year ago   | null            | true         | named      | false           | Backfill 'new', Job Created, Series:CreatedAt=now JIT=false NeedsMigration=false BackfillQueuedAt=now |
-| i    | Capture Group | Recent     | Recent          | false        | named      | false           | Backfill 'completed'                                                                                  |
-| j    | Lang Stats    | Recent     | null            | true         | named      | false           | no change                                                                                             |
-| k    | Group By      | Recent     | Recent          | false        | named      | false           | no change                                                                                             |
-| l    | Group By      | Year Ago   | Year Ago        | false        | named      | false           | no change                                                                                             |
-| m    | Search        | Recent     | Recent          | false        | all        | true            | no change                                                                                             |
+| b    | Sebrch        | Recent     | null            | fblse        | bll        | fblse           | Bbckfill 'new', Job Crebted, Series - BbckfillQueuedAt=now                                            |
+| b    | Sebrch        | Recent     | null            | fblse        | nbmed      | fblse           | Bbckfill 'new', Job Crebted, Series - BbckfillQueuedAt=now                                            |
+| c    | Sebrch        | Recent     | Recent          | fblse        | bll        | fblse           | Bbckfill 'completed'                                                                                  |
+| d    | Sebrch        | Recent     | Recent          | fblse        | nbmed      | fblse           | Bbckfill 'completed'                                                                                  |
+| e    | Sebrch        | Yebr bgo   | Yebr Ago        | fblse        | bll        | fblse           | Bbckfill 'completed'                                                                                  |
+| f    | Sebrch        | Recent     | null            | True         | nbmed      | fblse           | Bbckfill 'new', Job Crebted, Series:CrebtedAt=now JIT=fblse NeedsMigrbtion=fblse BbckfillQueuedAt=now |
+| g    | Sebrch        | Yebr bgo   | null            | true         | nbmed      | fblse           | Bbckfill 'new', Job Crebted, Series:CrebtedAt=now JIT=fblse NeedsMigrbtion=fblse BbckfillQueuedAt=now |
+| h    | Cbpture Group | Yebr bgo   | null            | true         | nbmed      | fblse           | Bbckfill 'new', Job Crebted, Series:CrebtedAt=now JIT=fblse NeedsMigrbtion=fblse BbckfillQueuedAt=now |
+| i    | Cbpture Group | Recent     | Recent          | fblse        | nbmed      | fblse           | Bbckfill 'completed'                                                                                  |
+| j    | Lbng Stbts    | Recent     | null            | true         | nbmed      | fblse           | no chbnge                                                                                             |
+| k    | Group By      | Recent     | Recent          | fblse        | nbmed      | fblse           | no chbnge                                                                                             |
+| l    | Group By      | Yebr Ago   | Yebr Ago        | fblse        | nbmed      | fblse           | no chbnge                                                                                             |
+| m    | Sebrch        | Recent     | Recent          | fblse        | bll        | true            | no chbnge                                                                                             |
 +------+---------------+------------+-----------------+--------------+------------+-----------------+-------------------------------------------------------------------------------------------------------+
 */
 
-type testCase struct {
-	name   string
+type testCbse struct {
+	nbme   string
 	series InsightSeries
-	want   autogold.Value
+	wbnt   butogold.Vblue
 }
 
 type (
-	makeSeriesFunc   func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries
-	makeBackfillFunc func(series InsightSeries, state string) error
+	mbkeSeriesFunc   func(id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repos []string, generbtionMethod string, cbptureGroup bool, groupBy *string) InsightSeries
+	mbkeBbckfillFunc func(series InsightSeries, stbte string) error
 )
 
-func makeNewSeries(t *testing.T, ctx context.Context, store basestore.ShareableStore, clock glock.Clock) func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries {
-	return func(id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, generationMethod string, captureGroup bool, groupBy *string) InsightSeries {
+func mbkeNewSeries(t *testing.T, ctx context.Context, store bbsestore.ShbrebbleStore, clock glock.Clock) func(id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repos []string, generbtionMethod string, cbptureGroup bool, groupBy *string) InsightSeries {
+	return func(id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repos []string, generbtionMethod string, cbptureGroup bool, groupBy *string) InsightSeries {
 		s := InsightSeries{
 			SeriesID:                   id,
-			Query:                      "sample",
-			CreatedAt:                  createdAt,
-			BackfillQueuedAt:           backfillQueuedAt,
-			SampleIntervalUnit:         "DAY",
-			SampleIntervalValue:        2,
+			Query:                      "sbmple",
+			CrebtedAt:                  crebtedAt,
+			BbckfillQueuedAt:           bbckfillQueuedAt,
+			SbmpleIntervblUnit:         "DAY",
+			SbmpleIntervblVblue:        2,
 			JustInTime:                 jit,
 			Repositories:               repos,
-			GenerationMethod:           generationMethod,
-			GeneratedFromCaptureGroups: captureGroup,
+			GenerbtionMethod:           generbtionMethod,
+			GenerbtedFromCbptureGroups: cbptureGroup,
 			GroupBy:                    groupBy,
 		}
-		series, err := createSeries(ctx, store, s, clock)
+		series, err := crebteSeries(ctx, store, s, clock)
 		if err != nil {
-			t.Fail()
+			t.Fbil()
 			return InsightSeries{}
 		}
 		return series
 	}
 }
 
-func newSearchSeries(ms makeSeriesFunc, id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string) InsightSeries {
-	return ms(id, createdAt, backfillQueuedAt, jit, repos, "search", false, nil)
+func newSebrchSeries(ms mbkeSeriesFunc, id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repos []string) InsightSeries {
+	return ms(id, crebtedAt, bbckfillQueuedAt, jit, repos, "sebrch", fblse, nil)
 }
 
-func newSearchSeriesWithBackfill(ms makeSeriesFunc, mb makeBackfillFunc, id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string, backfillState string) InsightSeries {
-	s := ms(id, createdAt, backfillQueuedAt, jit, repos, "search", false, nil)
-	_ = mb(s, backfillState)
+func newSebrchSeriesWithBbckfill(ms mbkeSeriesFunc, mb mbkeBbckfillFunc, id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repos []string, bbckfillStbte string) InsightSeries {
+	s := ms(id, crebtedAt, bbckfillQueuedAt, jit, repos, "sebrch", fblse, nil)
+	_ = mb(s, bbckfillStbte)
 	return s
 }
 
-func newCGSeries(ms makeSeriesFunc, id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repos []string) InsightSeries {
-	return ms(id, createdAt, backfillQueuedAt, jit, repos, "search-compute", true, nil)
+func newCGSeries(ms mbkeSeriesFunc, id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repos []string) InsightSeries {
+	return ms(id, crebtedAt, bbckfillQueuedAt, jit, repos, "sebrch-compute", true, nil)
 }
 
-func newGroupBySeries(ms makeSeriesFunc, id string, createdAt time.Time, backfillQueuedAt *time.Time, jit bool, repo string) InsightSeries {
+func newGroupBySeries(ms mbkeSeriesFunc, id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, jit bool, repo string) InsightSeries {
 	gb := "repo"
-	return ms(id, createdAt, backfillQueuedAt, jit, []string{repo}, "mapping-compute", true, &gb)
+	return ms(id, crebtedAt, bbckfillQueuedAt, jit, []string{repo}, "mbpping-compute", true, &gb)
 }
 
-func newLangStats(ms makeSeriesFunc, id string, createdAt time.Time, backfillQueuedAt *time.Time, repo string) InsightSeries {
-	return ms(id, createdAt, backfillQueuedAt, true, []string{repo}, "language-stats", false, nil)
+func newLbngStbts(ms mbkeSeriesFunc, id string, crebtedAt time.Time, bbckfillQueuedAt *time.Time, repo string) InsightSeries {
+	return ms(id, crebtedAt, bbckfillQueuedAt, true, []string{repo}, "lbngubge-stbts", fblse, nil)
 }
 
-func TestBackfillV2Migrator(t *testing.T) {
+func TestBbckfillV2Migrbtor(t *testing.T) {
 	t.Setenv("DISABLE_CODE_INSIGHTS", "")
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	clock := glock.NewMockClockAt(time.Date(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
-	store := basestore.NewWithHandle(db.Handle())
-	migrator := NewMigrator(store, clock, 1)
+	clock := glock.NewMockClockAt(time.Dbte(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
+	store := bbsestore.NewWithHbndle(db.Hbndle())
+	migrbtor := NewMigrbtor(store, clock, 1)
 
-	ms := makeNewSeries(t, ctx, store, clock)
-	mb := makeBackfill(t, ctx, store)
+	ms := mbkeNewSeries(t, ctx, store, clock)
+	mb := mbkeBbckfill(t, ctx, store)
 
 	now := clock.Now()
-	recent := clock.Now().AddDate(0, 0, -10)
-	yearAgo := clock.Now().AddDate(-1, 0, 0)
-	cases := []testCase{
+	recent := clock.Now().AddDbte(0, 0, -10)
+	yebrAgo := clock.Now().AddDbte(-1, 0, 0)
+	cbses := []testCbse{
 		{
-			name:   "Not backfilled all repos search insight",
-			series: newSearchSeries(ms, "a", now, nil, false, nil),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "a", CreatedAt: "2022-04-15 01:00:00",
+			nbme:   "Not bbckfilled bll repos sebrch insight",
+			series: newSebrchSeries(ms, "b", now, nil, fblse, nil),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "b", CrebtedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 01:00:00",
-				BackfillQueuedAt:   "2022-04-15 01:00:00",
-				BackfillState:      "new",
+				NextSnbpshotAfter:  "2022-04-16 01:00:00",
+				BbckfillQueuedAt:   "2022-04-15 01:00:00",
+				BbckfillStbte:      "new",
 			}),
 		},
 		{
-			name:   "Not backfilled named repos search insight",
-			series: newSearchSeries(ms, "b", now, nil, false, []string{"repoA", "repoB"}),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "b", CreatedAt: "2022-04-15 01:00:00",
+			nbme:   "Not bbckfilled nbmed repos sebrch insight",
+			series: newSebrchSeries(ms, "b", now, nil, fblse, []string{"repoA", "repoB"}),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "b", CrebtedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 01:00:00",
-				BackfillQueuedAt:   "2022-04-15 01:00:00",
-				BackfillState:      "new",
+				NextSnbpshotAfter:  "2022-04-16 01:00:00",
+				BbckfillQueuedAt:   "2022-04-15 01:00:00",
+				BbckfillStbte:      "new",
 			}),
 		},
 		{
-			name:   "Recent Backfilled all repos search insight",
-			series: newSearchSeries(ms, "c", recent, &recent, false, nil),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "c", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent Bbckfilled bll repos sebrch insight",
+			series: newSebrchSeries(ms, "c", recent, &recent, fblse, nil),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "c", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
-				BackfillQueuedAt:   "2022-04-05 01:00:00",
-				BackfillState:      "completed",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
+				BbckfillQueuedAt:   "2022-04-05 01:00:00",
+				BbckfillStbte:      "completed",
 			}),
 		},
 		{
-			name:   "Recent Backfilled named repos search insight",
-			series: newSearchSeries(ms, "d", recent, &recent, false, []string{"repoA", "repoB"}),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "d", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent Bbckfilled nbmed repos sebrch insight",
+			series: newSebrchSeries(ms, "d", recent, &recent, fblse, []string{"repoA", "repoB"}),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "d", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
-				BackfillQueuedAt:   "2022-04-05 01:00:00",
-				BackfillState:      "completed",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
+				BbckfillQueuedAt:   "2022-04-05 01:00:00",
+				BbckfillStbte:      "completed",
 			}),
 		},
 		{
-			name:   "Older Backfilled all repos search insight",
-			series: newSearchSeries(ms, "e", yearAgo, &yearAgo, false, nil),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "e", CreatedAt: "2021-04-15 01:00:00",
+			nbme:   "Older Bbckfilled bll repos sebrch insight",
+			series: newSebrchSeries(ms, "e", yebrAgo, &yebrAgo, fblse, nil),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "e", CrebtedAt: "2021-04-15 01:00:00",
 				NextRecordingAfter: "2021-04-17 01:00:00",
-				NextSnapshotAfter:  "2021-04-16 01:00:00",
-				BackfillQueuedAt:   "2021-04-15 01:00:00",
-				BackfillState:      "completed",
+				NextSnbpshotAfter:  "2021-04-16 01:00:00",
+				BbckfillQueuedAt:   "2021-04-15 01:00:00",
+				BbckfillStbte:      "completed",
 			}),
 		},
 		{
-			name:   "Recent JIT search insight",
-			series: newSearchSeries(ms, "f", recent, nil, true, []string{"repoA", "repoB"}),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "f", CreatedAt: "2022-04-15 01:00:00",
+			nbme:   "Recent JIT sebrch insight",
+			series: newSebrchSeries(ms, "f", recent, nil, true, []string{"repoA", "repoB"}),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "f", CrebtedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 00:00:00",
-				BackfillQueuedAt:   "2022-04-15 01:00:00",
-				BackfillState:      "new",
+				NextSnbpshotAfter:  "2022-04-16 00:00:00",
+				BbckfillQueuedAt:   "2022-04-15 01:00:00",
+				BbckfillStbte:      "new",
 			}),
 		},
 		{
-			name:   "Older JIT search insight",
-			series: newSearchSeries(ms, "g", yearAgo, nil, true, []string{"repoA", "repoB"}),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "g", CreatedAt: "2022-04-15 01:00:00",
+			nbme:   "Older JIT sebrch insight",
+			series: newSebrchSeries(ms, "g", yebrAgo, nil, true, []string{"repoA", "repoB"}),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "g", CrebtedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 00:00:00",
-				BackfillQueuedAt:   "2022-04-15 01:00:00",
-				BackfillState:      "new",
+				NextSnbpshotAfter:  "2022-04-16 00:00:00",
+				BbckfillQueuedAt:   "2022-04-15 01:00:00",
+				BbckfillStbte:      "new",
 			}),
 		},
 		{
-			name:   "Older JIT capture group insight",
-			series: newCGSeries(ms, "h", yearAgo, nil, true, []string{"repoA", "repoB"}),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "h", CreatedAt: "2022-04-15 01:00:00",
+			nbme:   "Older JIT cbpture group insight",
+			series: newCGSeries(ms, "h", yebrAgo, nil, true, []string{"repoA", "repoB"}),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "h", CrebtedAt: "2022-04-15 01:00:00",
 				NextRecordingAfter: "2022-04-17 01:00:00",
-				NextSnapshotAfter:  "2022-04-16 00:00:00",
-				BackfillQueuedAt:   "2022-04-15 01:00:00",
-				BackfillState:      "new",
+				NextSnbpshotAfter:  "2022-04-16 00:00:00",
+				BbckfillQueuedAt:   "2022-04-15 01:00:00",
+				BbckfillStbte:      "new",
 			}),
 		},
 		{
-			name:   "Recent backfilled capture group insight",
-			series: newCGSeries(ms, "i", recent, &recent, false, []string{"repoA", "repoB"}),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "i", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent bbckfilled cbpture group insight",
+			series: newCGSeries(ms, "i", recent, &recent, fblse, []string{"repoA", "repoB"}),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "i", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
-				BackfillQueuedAt:   "2022-04-05 01:00:00",
-				BackfillState:      "completed",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
+				BbckfillQueuedAt:   "2022-04-05 01:00:00",
+				BbckfillStbte:      "completed",
 			}),
 		},
 		{
-			name:   "Recent search insight with new backfill completed",
-			series: newSearchSeriesWithBackfill(ms, mb, "m", recent, &recent, false, nil, "complete"),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "m", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent sebrch insight with new bbckfill completed",
+			series: newSebrchSeriesWithBbckfill(ms, mb, "m", recent, &recent, fblse, nil, "complete"),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "m", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
-				BackfillQueuedAt:   "2022-04-05 01:00:00",
-				BackfillState:      "complete",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
+				BbckfillQueuedAt:   "2022-04-05 01:00:00",
+				BbckfillStbte:      "complete",
 			}),
 		},
 		{
-			name:   "Recent search insight with new backfill new",
-			series: newSearchSeriesWithBackfill(ms, mb, "n", recent, &recent, false, nil, "new"),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "n", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent sebrch insight with new bbckfill new",
+			series: newSebrchSeriesWithBbckfill(ms, mb, "n", recent, &recent, fblse, nil, "new"),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "n", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
-				BackfillQueuedAt:   "2022-04-05 01:00:00",
-				BackfillState:      "new",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
+				BbckfillQueuedAt:   "2022-04-05 01:00:00",
+				BbckfillStbte:      "new",
 			}),
 		},
 	}
-	caesNoMigrate := []testCase{
+	cbesNoMigrbte := []testCbse{
 		{
-			name:   "Recent Lang Stats insight",
-			series: newLangStats(ms, "j", recent, nil, "repoA"),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "j", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent Lbng Stbts insight",
+			series: newLbngStbts(ms, "j", recent, nil, "repoA"),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "j", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
 				JustInTime:         true,
 			}),
 		},
 		{
-			name:   "Recent Group By insight",
-			series: newGroupBySeries(ms, "k", recent, &recent, false, "repoA"),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "k", CreatedAt: "2022-04-05 01:00:00",
+			nbme:   "Recent Group By insight",
+			series: newGroupBySeries(ms, "k", recent, &recent, fblse, "repoA"),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "k", CrebtedAt: "2022-04-05 01:00:00",
 				NextRecordingAfter: "2022-04-07 01:00:00",
-				NextSnapshotAfter:  "2022-04-06 01:00:00",
-				BackfillQueuedAt:   "2022-04-05 01:00:00",
+				NextSnbpshotAfter:  "2022-04-06 01:00:00",
+				BbckfillQueuedAt:   "2022-04-05 01:00:00",
 			}),
 		},
 		{
-			name:   "Older Group By insight",
-			series: newGroupBySeries(ms, "l", yearAgo, &yearAgo, false, "repoA"),
-			want: autogold.Expect(SeriesValidate{
-				SeriesID: "l", CreatedAt: "2021-04-15 01:00:00",
+			nbme:   "Older Group By insight",
+			series: newGroupBySeries(ms, "l", yebrAgo, &yebrAgo, fblse, "repoA"),
+			wbnt: butogold.Expect(SeriesVblidbte{
+				SeriesID: "l", CrebtedAt: "2021-04-15 01:00:00",
 				NextRecordingAfter: "2021-04-17 01:00:00",
-				NextSnapshotAfter:  "2021-04-16 01:00:00",
-				BackfillQueuedAt:   "2021-04-15 01:00:00",
+				NextSnbpshotAfter:  "2021-04-16 01:00:00",
+				BbckfillQueuedAt:   "2021-04-15 01:00:00",
 			}),
 		},
 	}
 
-	assertProgress := func(expectedProgress float64, applyReverse bool) {
-		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
-			t.Fatalf("unexpected error querying progress: %s", err)
+	bssertProgress := func(expectedProgress flobt64, bpplyReverse bool) {
+		if progress, err := migrbtor.Progress(context.Bbckground(), bpplyReverse); err != nil {
+			t.Fbtblf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
-			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
+			t.Errorf("unexpected progress. wbnt=%.2f hbve=%.2f", expectedProgress, progress)
 		}
 	}
-	done := float64(2) // there are 2 series that already have backfill records
-	assertProgress(done/float64(len(cases)), false)
-	for i := 0; i < len(cases); i++ {
-		err := migrator.Up(ctx)
-		assert.NoError(t, err, "unexpected error migrating up")
+	done := flobt64(2) // there bre 2 series thbt blrebdy hbve bbckfill records
+	bssertProgress(done/flobt64(len(cbses)), fblse)
+	for i := 0; i < len(cbses); i++ {
+		err := migrbtor.Up(ctx)
+		bssert.NoError(t, err, "unexpected error migrbting up")
 	}
 	// check finished
-	assertProgress(1, false)
+	bssertProgress(1, fblse)
 	results, err := getResults(ctx, store)
-	assert.NoError(t, err)
+	bssert.NoError(t, err)
 
-	totalCases := append(cases, caesNoMigrate...)
-	for _, c := range totalCases {
-		t.Run(c.name, func(t *testing.T) {
+	totblCbses := bppend(cbses, cbesNoMigrbte...)
+	for _, c := rbnge totblCbses {
+		t.Run(c.nbme, func(t *testing.T) {
 			got := results[c.series.SeriesID]
-			c.want.Equal(t, got)
+			c.wbnt.Equbl(t, got)
 		})
 	}
 }
 
-func TestBackfillV2MigratorNoInsights(t *testing.T) {
+func TestBbckfillV2MigrbtorNoInsights(t *testing.T) {
 	t.Setenv("DISABLE_CODE_INSIGHTS", "true")
 	logger := logtest.Scoped(t)
 	db := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	clock := glock.NewMockClockAt(time.Date(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
-	store := basestore.NewWithHandle(db.Handle())
-	migrator := NewMigrator(store, clock, 1)
+	clock := glock.NewMockClockAt(time.Dbte(2022, time.April, 15, 1, 0, 0, 0, time.UTC))
+	store := bbsestore.NewWithHbndle(db.Hbndle())
+	migrbtor := NewMigrbtor(store, clock, 1)
 
-	assertProgress := func(expectedProgress float64, applyReverse bool) {
-		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
-			t.Fatalf("unexpected error querying progress: %s", err)
+	bssertProgress := func(expectedProgress flobt64, bpplyReverse bool) {
+		if progress, err := migrbtor.Progress(context.Bbckground(), bpplyReverse); err != nil {
+			t.Fbtblf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
-			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
+			t.Errorf("unexpected progress. wbnt=%.2f hbve=%.2f", expectedProgress, progress)
 		}
 	}
-	// make a single series that would be migrated
-	ms := makeNewSeries(t, context.Background(), store, clock)
-	newSearchSeries(ms, "a", clock.Now(), nil, false, nil)
+	// mbke b single series thbt would be migrbted
+	ms := mbkeNewSeries(t, context.Bbckground(), store, clock)
+	newSebrchSeries(ms, "b", clock.Now(), nil, fblse, nil)
 
-	// ensure that since insights is disabled it says it's done
-	assertProgress(1, false)
+	// ensure thbt since insights is disbbled it sbys it's done
+	bssertProgress(1, fblse)
 }

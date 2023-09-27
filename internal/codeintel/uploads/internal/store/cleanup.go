@@ -1,315 +1,315 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// HardDeleteUploadsByIDs deletes the upload record with the given identifier.
-func (s *store) HardDeleteUploadsByIDs(ctx context.Context, ids ...int) (err error) {
-	ctx, _, endObservation := s.operations.hardDeleteUploadsByIDs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIDs", len(ids)),
-		attribute.IntSlice("ids", ids),
+// HbrdDeleteUplobdsByIDs deletes the uplobd record with the given identifier.
+func (s *store) HbrdDeleteUplobdsByIDs(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.hbrdDeleteUplobdsByIDs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numIDs", len(ids)),
+		bttribute.IntSlice("ids", ids),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if len(ids) == 0 {
 		return nil
 	}
 
-	var idQueries []*sqlf.Query
-	for _, id := range ids {
-		idQueries = append(idQueries, sqlf.Sprintf("%s", id))
+	vbr idQueries []*sqlf.Query
+	for _, id := rbnge ids {
+		idQueries = bppend(idQueries, sqlf.Sprintf("%s", id))
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(hardDeleteUploadsByIDsQuery, sqlf.Join(idQueries, ", ")))
+	return s.db.Exec(ctx, sqlf.Sprintf(hbrdDeleteUplobdsByIDsQuery, sqlf.Join(idQueries, ", ")))
 }
 
-const hardDeleteUploadsByIDsQuery = `
+const hbrdDeleteUplobdsByIDsQuery = `
 WITH
-locked_uploads AS (
-	SELECT u.id, u.associated_index_id
-	FROM lsif_uploads u
+locked_uplobds AS (
+	SELECT u.id, u.bssocibted_index_id
+	FROM lsif_uplobds u
 	WHERE u.id IN (%s)
 	ORDER BY u.id FOR UPDATE
 ),
-delete_uploads AS (
-	DELETE FROM lsif_uploads WHERE id IN (SELECT id FROM locked_uploads)
+delete_uplobds AS (
+	DELETE FROM lsif_uplobds WHERE id IN (SELECT id FROM locked_uplobds)
 ),
 locked_indexes AS (
 	SELECT u.id
 	FROM lsif_indexes U
-	WHERE u.id IN (SELECT associated_index_id FROM locked_uploads)
+	WHERE u.id IN (SELECT bssocibted_index_id FROM locked_uplobds)
 	ORDER BY u.id FOR UPDATE
 )
 DELETE FROM lsif_indexes WHERE id IN (SELECT id FROM locked_indexes)
 `
 
-// DeleteUploadsStuckUploading soft deletes any upload record that has been uploading since the given time.
-func (s *store) DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_, _ int, err error) {
-	ctx, trace, endObservation := s.operations.deleteUploadsStuckUploading.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("uploadedBefore", uploadedBefore.Format(time.RFC3339)), // TODO - should be a duration
+// DeleteUplobdsStuckUplobding soft deletes bny uplobd record thbt hbs been uplobding since the given time.
+func (s *store) DeleteUplobdsStuckUplobding(ctx context.Context, uplobdedBefore time.Time) (_, _ int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.deleteUplobdsStuckUplobding.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("uplobdedBefore", uplobdedBefore.Formbt(time.RFC3339)), // TODO - should be b durbtion
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "stuck in uploading state")
+	unset, _ := s.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "stuck in uplobding stbte")
 	defer unset(ctx)
 
-	query := sqlf.Sprintf(deleteUploadsStuckUploadingQuery, uploadedBefore)
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
+	query := sqlf.Sprintf(deleteUplobdsStuckUplobdingQuery, uplobdedBefore)
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, query))
 	if err != nil {
 		return 0, 0, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("count", count))
 
 	return count, count, nil
 }
 
-const deleteUploadsStuckUploadingQuery = `
+const deleteUplobdsStuckUplobdingQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.state = 'uploading' AND u.uploaded_at < %s
+	FROM lsif_uplobds u
+	WHERE u.stbte = 'uplobding' AND u.uplobded_bt < %s
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_uplobds tbble.
 	ORDER BY u.id FOR UPDATE
 ),
 deleted AS (
-	UPDATE lsif_uploads u
-	SET state = 'deleted'
-	WHERE id IN (SELECT id FROM candidates)
+	UPDATE lsif_uplobds u
+	SET stbte = 'deleted'
+	WHERE id IN (SELECT id FROM cbndidbtes)
 	RETURNING u.repository_id
 )
 SELECT COUNT(*) FROM deleted
 `
 
-// deletedRepositoryGracePeriod is the minimum allowable duration between a repo deletion
-// and the upload and index records for that repository being deleted.
-const deletedRepositoryGracePeriod = time.Minute * 30
+// deletedRepositoryGrbcePeriod is the minimum bllowbble durbtion between b repo deletion
+// bnd the uplobd bnd index records for thbt repository being deleted.
+const deletedRepositoryGrbcePeriod = time.Minute * 30
 
-// DeleteUploadsWithoutRepository deletes uploads associated with repositories that were deleted at least
-// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of uploads
-// that were removed for that repository.
-func (s *store) DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error) {
-	ctx, trace, endObservation := s.operations.deleteUploadsWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// DeleteUplobdsWithoutRepository deletes uplobds bssocibted with repositories thbt were deleted bt lebst
+// DeletedRepositoryGrbcePeriod bgo. This returns the repository identifier mbpped to the number of uplobds
+// thbt were removed for thbt repository.
+func (s *store) DeleteUplobdsWithoutRepository(ctx context.Context, now time.Time) (_, _ int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.deleteUplobdsWithoutRepository.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a, b int
-	err = s.withTransaction(ctx, func(tx *store) error {
-		unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with repository not known to this instance")
+	vbr b, b int
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
+		unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "uplobd bssocibted with repository not known to this instbnce")
 		defer unset(ctx)
 
-		query := sqlf.Sprintf(deleteUploadsWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)
-		totalCount, repositories, err := scanCountsWithTotalCount(tx.db.Query(ctx, query))
+		query := sqlf.Sprintf(deleteUplobdsWithoutRepositoryQuery, now.UTC(), deletedRepositoryGrbcePeriod/time.Second)
+		totblCount, repositories, err := scbnCountsWithTotblCount(tx.db.Query(ctx, query))
 		if err != nil {
 			return err
 		}
 
 		count := 0
-		for _, numDeleted := range repositories {
+		for _, numDeleted := rbnge repositories {
 			count += numDeleted
 		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("count", count),
-			attribute.Int("numRepositories", len(repositories)))
+		trbce.AddEvent("TODO Dombin Owner",
+			bttribute.Int("count", count),
+			bttribute.Int("numRepositories", len(repositories)))
 
-		a = totalCount
+		b = totblCount
 		b = count
 		return nil
 	})
-	return a, b, err
+	return b, b, err
 }
 
-const deleteUploadsWithoutRepositoryQuery = `
+const deleteUplobdsWithoutRepositoryQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
 	FROM repo r
-	JOIN lsif_uploads u ON u.repository_id = r.id
+	JOIN lsif_uplobds u ON u.repository_id = r.id
 	WHERE
-		%s - r.deleted_at >= %s * interval '1 second' OR
+		%s - r.deleted_bt >= %s * intervbl '1 second' OR
 		r.blocked IS NOT NULL
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_uplobds tbble.
 	ORDER BY u.id FOR UPDATE
 ),
 deleted AS (
-	-- Note: we can go straight from completed -> deleted here as we
+	-- Note: we cbn go strbight from completed -> deleted here bs we
 	-- do not need to preserve the deleted repository's current commit
-	-- graph (the API cannot resolve any queries for this repository).
+	-- grbph (the API cbnnot resolve bny queries for this repository).
 
-	UPDATE lsif_uploads u
-	SET state = 'deleted'
-	WHERE u.id IN (SELECT id FROM candidates)
+	UPDATE lsif_uplobds u
+	SET stbte = 'deleted'
+	WHERE u.id IN (SELECT id FROM cbndidbtes)
 	RETURNING u.id, u.repository_id
 )
-SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+SELECT (SELECT COUNT(*) FROM cbndidbtes), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
-// DeleteOldAuditLogs removes lsif_upload audit log records older than the given max age.
-func (s *store) DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (_, _ int, err error) {
-	ctx, _, endObservation := s.operations.deleteOldAuditLogs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// DeleteOldAuditLogs removes lsif_uplobd budit log records older thbn the given mbx bge.
+func (s *store) DeleteOldAuditLogs(ctx context.Context, mbxAge time.Durbtion, now time.Time) (_, _ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.deleteOldAuditLogs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	query := sqlf.Sprintf(deleteOldAuditLogsQuery, now, int(maxAge/time.Second))
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
+	query := sqlf.Sprintf(deleteOldAuditLogsQuery, now, int(mbxAge/time.Second))
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, query))
 	return count, count, err
 }
 
 const deleteOldAuditLogsQuery = `
 WITH deleted AS (
-	DELETE FROM lsif_uploads_audit_logs
-	WHERE %s - log_timestamp > (%s * '1 second'::interval)
-	RETURNING upload_id
+	DELETE FROM lsif_uplobds_budit_logs
+	WHERE %s - log_timestbmp > (%s * '1 second'::intervbl)
+	RETURNING uplobd_id
 )
 SELECT count(*) FROM deleted
 `
 
-func (s *store) ReconcileCandidates(ctx context.Context, batchSize int) (_ []int, err error) {
-	return basestore.ScanInts(s.db.Query(ctx, sqlf.Sprintf(reconcileQuery, batchSize)))
+func (s *store) ReconcileCbndidbtes(ctx context.Context, bbtchSize int) (_ []int, err error) {
+	return bbsestore.ScbnInts(s.db.Query(ctx, sqlf.Sprintf(reconcileQuery, bbtchSize)))
 }
 
 const reconcileQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE u.state = 'completed'
-	ORDER BY u.last_reconcile_at DESC NULLS FIRST, u.id
+	FROM lsif_uplobds u
+	WHERE u.stbte = 'completed'
+	ORDER BY u.lbst_reconcile_bt DESC NULLS FIRST, u.id
 	LIMIT %s
 ),
-locked_candidates AS (
+locked_cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
-	WHERE id = ANY(SELECT id FROM candidates)
+	FROM lsif_uplobds u
+	WHERE id = ANY(SELECT id FROM cbndidbtes)
 	ORDER BY u.id
 	FOR UPDATE
 )
-UPDATE lsif_uploads
-SET last_reconcile_at = NOW()
-WHERE id = ANY(SELECT id FROM locked_candidates)
+UPDATE lsif_uplobds
+SET lbst_reconcile_bt = NOW()
+WHERE id = ANY(SELECT id FROM locked_cbndidbtes)
 RETURNING id
 `
 
-func (s *store) ProcessStaleSourcedCommits(
+func (s *store) ProcessStbleSourcedCommits(
 	ctx context.Context,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	_ time.Duration,
-	shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+	minimumTimeSinceLbstCheck time.Durbtion,
+	commitResolverBbtchSize int,
+	_ time.Durbtion,
+	shouldDelete func(ctx context.Context, repositoryID int, repositoryNbme, commit string) (bool, error),
 ) (int, int, error) {
-	return s.processStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, commitResolverBatchSize, shouldDelete, time.Now())
+	return s.processStbleSourcedCommits(ctx, minimumTimeSinceLbstCheck, commitResolverBbtchSize, shouldDelete, time.Now())
 }
 
-func (s *store) processStaleSourcedCommits(
+func (s *store) processStbleSourcedCommits(
 	ctx context.Context,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverBatchSize int,
-	shouldDelete func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+	minimumTimeSinceLbstCheck time.Durbtion,
+	commitResolverBbtchSize int,
+	shouldDelete func(ctx context.Context, repositoryID int, repositoryNbme, commit string) (bool, error),
 	now time.Time,
-) (totalScanned, totalDeleted int, err error) {
-	ctx, _, endObservation := s.operations.processStaleSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+) (totblScbnned, totblDeleted int, err error) {
+	ctx, _, endObservbtion := s.operbtions.processStbleSourcedCommits.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a, b int
-	err = s.withTransaction(ctx, func(tx *store) error {
+	vbr b, b int
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
 		now = now.UTC()
-		interval := int(minimumTimeSinceLastCheck / time.Second)
+		intervbl := int(minimumTimeSinceLbstCheck / time.Second)
 
-		staleIndexes, err := scanSourcedCommits(tx.db.Query(ctx, sqlf.Sprintf(
-			staleIndexSourcedCommitsQuery,
+		stbleIndexes, err := scbnSourcedCommits(tx.db.Query(ctx, sqlf.Sprintf(
+			stbleIndexSourcedCommitsQuery,
 			now,
-			interval,
-			commitResolverBatchSize,
+			intervbl,
+			commitResolverBbtchSize,
 		)))
 		if err != nil {
 			return err
 		}
 
-		for _, sc := range staleIndexes {
-			var (
+		for _, sc := rbnge stbleIndexes {
+			vbr (
 				keep   []string
 				remove []string
 			)
 
-			for _, commit := range sc.Commits {
-				if ok, err := shouldDelete(ctx, sc.RepositoryID, sc.RepositoryName, commit); err != nil {
+			for _, commit := rbnge sc.Commits {
+				if ok, err := shouldDelete(ctx, sc.RepositoryID, sc.RepositoryNbme, commit); err != nil {
 					return err
 				} else if ok {
-					remove = append(remove, commit)
+					remove = bppend(remove, commit)
 				} else {
-					keep = append(keep, commit)
+					keep = bppend(keep, commit)
 				}
 			}
 
-			unset, _ := tx.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
+			unset, _ := tx.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "uplobd bssocibted with unknown commit")
 			defer unset(ctx)
 
-			indexesDeleted, _, err := basestore.ScanFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
-				updateSourcedCommitsQuery2,
+			indexesDeleted, _, err := bbsestore.ScbnFirstInt(tx.db.Query(ctx, sqlf.Sprintf(
+				updbteSourcedCommitsQuery2,
 				sc.RepositoryID,
-				pq.Array(keep),
-				pq.Array(remove),
+				pq.Arrby(keep),
+				pq.Arrby(remove),
 				now,
-				pq.Array(keep),
-				pq.Array(remove),
+				pq.Arrby(keep),
+				pq.Arrby(remove),
 			)))
 			if err != nil {
 				return err
 			}
 
-			totalDeleted += indexesDeleted
+			totblDeleted += indexesDeleted
 		}
 
-		a = len(staleIndexes)
-		b = totalDeleted
+		b = len(stbleIndexes)
+		b = totblDeleted
 		return nil
 	})
-	return a, b, err
+	return b, b, err
 }
 
-const staleIndexSourcedCommitsQuery = `
-WITH candidates AS (
+const stbleIndexSourcedCommitsQuery = `
+WITH cbndidbtes AS (
 	SELECT
 		repository_id,
 		commit,
-		-- Keep track of the most recent update of this commit that we know about
-		-- as any earlier dates for the same repository and commit pair carry no
-		-- useful information.
-		MAX(commit_last_checked_at) as max_last_checked_at
+		-- Keep trbck of the most recent updbte of this commit thbt we know bbout
+		-- bs bny ebrlier dbtes for the sbme repository bnd commit pbir cbrry no
+		-- useful informbtion.
+		MAX(commit_lbst_checked_bt) bs mbx_lbst_checked_bt
 	FROM lsif_indexes
 	WHERE
-		-- Ignore records already marked as deleted
-		state NOT IN ('deleted', 'deleting') AND
-		-- Ignore records that have been checked recently. Note this condition is
-		-- true for a null commit_last_checked_at (which has never been checked).
-		(%s - commit_last_checked_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+		-- Ignore records blrebdy mbrked bs deleted
+		stbte NOT IN ('deleted', 'deleting') AND
+		-- Ignore records thbt hbve been checked recently. Note this condition is
+		-- true for b null commit_lbst_checked_bt (which hbs never been checked).
+		(%s - commit_lbst_checked_bt > (%s * '1 second'::intervbl)) IS DISTINCT FROM FALSE
 	GROUP BY repository_id, commit
 )
-SELECT r.id, r.name, c.commit
-FROM candidates c
+SELECT r.id, r.nbme, c.commit
+FROM cbndidbtes c
 JOIN repo r ON r.id = c.repository_id
--- Order results so that the repositories with the commits that have been updated
--- the least frequently come first. Once a number of commits are processed from a
--- given repository the ordering may change.
-ORDER BY MIN(c.max_last_checked_at) OVER (PARTITION BY c.repository_id), c.commit
+-- Order results so thbt the repositories with the commits thbt hbve been updbted
+-- the lebst frequently come first. Once b number of commits bre processed from b
+-- given repository the ordering mby chbnge.
+ORDER BY MIN(c.mbx_lbst_checked_bt) OVER (PARTITION BY c.repository_id), c.commit
 LIMIT %s
 `
 
-const updateSourcedCommitsQuery2 = `
+const updbteSourcedCommitsQuery2 = `
 WITH
-candidate_indexes AS (
+cbndidbte_indexes AS (
 	SELECT u.id
 	FROM lsif_indexes u
 	WHERE
@@ -319,96 +319,96 @@ candidate_indexes AS (
 			u.commit = ANY(%s)
 		)
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_indexes table.
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_indexes tbble.
 	ORDER BY u.id FOR UPDATE
 ),
-update_indexes AS (
+updbte_indexes AS (
 	UPDATE lsif_indexes
-	SET commit_last_checked_at = %s
-	WHERE id IN (SELECT id FROM candidate_indexes WHERE commit = ANY(%s))
+	SET commit_lbst_checked_bt = %s
+	WHERE id IN (SELECT id FROM cbndidbte_indexes WHERE commit = ANY(%s))
 	RETURNING 1
 ),
 delete_indexes AS (
 	DELETE FROM lsif_indexes
-	WHERE id IN (SELECT id FROM candidate_indexes WHERE commit = ANY(%s))
+	WHERE id IN (SELECT id FROM cbndidbte_indexes WHERE commit = ANY(%s))
 	RETURNING 1
 )
 SELECT COUNT(*) FROM delete_indexes
 `
 
-// DeleteIndexesWithoutRepository deletes indexes associated with repositories that were deleted at least
-// DeletedRepositoryGracePeriod ago. This returns the repository identifier mapped to the number of indexes
-// that were removed for that repository.
-func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totalCount int, deletedCount int, err error) {
-	ctx, trace, endObservation := s.operations.deleteIndexesWithoutRepository.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// DeleteIndexesWithoutRepository deletes indexes bssocibted with repositories thbt were deleted bt lebst
+// DeletedRepositoryGrbcePeriod bgo. This returns the repository identifier mbpped to the number of indexes
+// thbt were removed for thbt repository.
+func (s *store) DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (totblCount int, deletedCount int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.deleteIndexesWithoutRepository.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a, b int
-	err = s.withTransaction(ctx, func(tx *store) error {
-		// TODO(efritz) - this would benefit from an index on repository_id. We currently have
-		// a similar one on this index, but only for uploads that are completed or visible at tip.
-		totalCount, repositories, err := scanCountsAndTotalCount(tx.db.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), deletedRepositoryGracePeriod/time.Second)))
+	vbr b, b int
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
+		// TODO(efritz) - this would benefit from bn index on repository_id. We currently hbve
+		// b similbr one on this index, but only for uplobds thbt bre completed or visible bt tip.
+		totblCount, repositories, err := scbnCountsAndTotblCount(tx.db.Query(ctx, sqlf.Sprintf(deleteIndexesWithoutRepositoryQuery, now.UTC(), deletedRepositoryGrbcePeriod/time.Second)))
 		if err != nil {
 			return err
 		}
 
 		count := 0
-		for _, numDeleted := range repositories {
+		for _, numDeleted := rbnge repositories {
 			count += numDeleted
 		}
-		trace.AddEvent("scanCounts",
-			attribute.Int("count", count),
-			attribute.Int("numRepositories", len(repositories)))
+		trbce.AddEvent("scbnCounts",
+			bttribute.Int("count", count),
+			bttribute.Int("numRepositories", len(repositories)))
 
-		a = totalCount
+		b = totblCount
 		b = count
 		return nil
 	})
-	return a, b, err
+	return b, b, err
 }
 
 const deleteIndexesWithoutRepositoryQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
 	FROM repo r
 	JOIN lsif_indexes u ON u.repository_id = r.id
 	WHERE
-		%s - r.deleted_at >= %s * interval '1 second' OR
+		%s - r.deleted_bt >= %s * intervbl '1 second' OR
 		r.blocked IS NOT NULL
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_indexes table.
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_indexes tbble.
 	ORDER BY u.id FOR UPDATE
 ),
 deleted AS (
 	DELETE FROM lsif_indexes u
-	WHERE id IN (SELECT id FROM candidates)
+	WHERE id IN (SELECT id FROM cbndidbtes)
 	RETURNING u.id, u.repository_id
 )
-SELECT (SELECT COUNT(*) FROM candidates), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
+SELECT (SELECT COUNT(*) FROM cbndidbtes), d.repository_id, COUNT(*) FROM deleted d GROUP BY d.repository_id
 `
 
-// ExpireFailedRecords removes autoindexing job records that meet the following conditions:
+// ExpireFbiledRecords removes butoindexing job records thbt meet the following conditions:
 //
-//   - The record is in the "failed" state
-//   - The time between the job finishing and the current timestamp exceeds the given max age
-//   - It is not the most recent-to-finish failure for the same repo, root, and indexer values
-//     **unless** there is a more recent success.
-func (s *store) ExpireFailedRecords(ctx context.Context, batchSize int, failedIndexMaxAge time.Duration, now time.Time) (_, _ int, err error) {
-	ctx, _, endObservation := s.operations.expireFailedRecords.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+//   - The record is in the "fbiled" stbte
+//   - The time between the job finishing bnd the current timestbmp exceeds the given mbx bge
+//   - It is not the most recent-to-finish fbilure for the sbme repo, root, bnd indexer vblues
+//     **unless** there is b more recent success.
+func (s *store) ExpireFbiledRecords(ctx context.Context, bbtchSize int, fbiledIndexMbxAge time.Durbtion, now time.Time) (_, _ int, err error) {
+	ctx, _, endObservbtion := s.operbtions.expireFbiledRecords.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(expireFailedRecordsQuery, now, int(failedIndexMaxAge/time.Second), batchSize))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(expireFbiledRecordsQuery, now, int(fbiledIndexMbxAge/time.Second), bbtchSize))
 	if err != nil {
 		return 0, 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var c1, c2 int
+	vbr c1, c2 int
 	for rows.Next() {
-		if err := rows.Scan(&c1, &c2); err != nil {
+		if err := rows.Scbn(&c1, &c2); err != nil {
 			return 0, 0, err
 		}
 	}
@@ -416,9 +416,9 @@ func (s *store) ExpireFailedRecords(ctx context.Context, batchSize int, failedIn
 	return c1, c2, nil
 }
 
-const expireFailedRecordsQuery = `
+const expireFbiledRecordsQuery = `
 WITH
-ranked_indexes AS (
+rbnked_indexes AS (
 	SELECT
 		u.*,
 		RANK() OVER (
@@ -427,32 +427,32 @@ ranked_indexes AS (
 				root,
 				indexer
 			ORDER BY
-				finished_at DESC
-		) AS rank
+				finished_bt DESC
+		) AS rbnk
 	FROM lsif_indexes u
 	WHERE
-		u.state = 'failed' AND
-		%s - u.finished_at >= %s * interval '1 second'
+		u.stbte = 'fbiled' AND
+		%s - u.finished_bt >= %s * intervbl '1 second'
 ),
 locked_indexes AS (
 	SELECT i.id
 	FROM lsif_indexes i
-	JOIN ranked_indexes ri ON ri.id = i.id
+	JOIN rbnked_indexes ri ON ri.id = i.id
 
-	-- We either select ranked indexes that have a rank > 1, meaning
-	-- there's another more recent failure in this "pipeline" that has
-	-- relevant information to debug the failure.
+	-- We either select rbnked indexes thbt hbve b rbnk > 1, mebning
+	-- there's bnother more recent fbilure in this "pipeline" thbt hbs
+	-- relevbnt informbtion to debug the fbilure.
 	--
-	-- If we have rank = 1, but there's a newer SUCCESSFUL record for
-	-- the same "pipeline", then we can say that this failure information
-	-- is no longer relevant.
+	-- If we hbve rbnk = 1, but there's b newer SUCCESSFUL record for
+	-- the sbme "pipeline", then we cbn sby thbt this fbilure informbtion
+	-- is no longer relevbnt.
 
-	WHERE ri.rank != 1 OR EXISTS (
+	WHERE ri.rbnk != 1 OR EXISTS (
 		SELECT 1
 		FROM lsif_indexes i2
 		WHERE
-			i2.state = 'completed' AND
-			i2.finished_at > i.finished_at AND
+			i2.stbte = 'completed' AND
+			i2.finished_bt > i.finished_bt AND
 			i2.repository_id = i.repository_id AND
 			i2.root = i.root AND
 			i2.indexer = i.indexer
@@ -467,44 +467,44 @@ del AS (
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM ranked_indexes),
+	(SELECT COUNT(*) FROM rbnked_indexes),
 	(SELECT COUNT(*) FROM del)
 `
 
 func (s *store) ProcessSourcedCommits(
 	ctx context.Context,
-	minimumTimeSinceLastCheck time.Duration,
-	commitResolverMaximumCommitLag time.Duration,
+	minimumTimeSinceLbstCheck time.Durbtion,
+	commitResolverMbximumCommitLbg time.Durbtion,
 	limit int,
-	f func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error),
+	f func(ctx context.Context, repositoryID int, repositoryNbme, commit string) (bool, error),
 	now time.Time,
 ) (_, _ int, err error) {
-	sourcedUploads, err := s.GetStaleSourcedCommits(ctx, minimumTimeSinceLastCheck, limit, now)
+	sourcedUplobds, err := s.GetStbleSourcedCommits(ctx, minimumTimeSinceLbstCheck, limit, now)
 	if err != nil {
 		return 0, 0, err
 	}
 
 	numDeleted := 0
 	numCommits := 0
-	for _, sc := range sourcedUploads {
-		for _, commit := range sc.Commits {
+	for _, sc := rbnge sourcedUplobds {
+		for _, commit := rbnge sc.Commits {
 			numCommits++
 
-			shouldDelete, err := f(ctx, sc.RepositoryID, sc.RepositoryName, commit)
+			shouldDelete, err := f(ctx, sc.RepositoryID, sc.RepositoryNbme, commit)
 			if err != nil {
 				return 0, 0, err
 			}
 
 			if shouldDelete {
-				_, uploadsDeleted, err := s.DeleteSourcedCommits(ctx, sc.RepositoryID, commit, commitResolverMaximumCommitLag, now)
+				_, uplobdsDeleted, err := s.DeleteSourcedCommits(ctx, sc.RepositoryID, commit, commitResolverMbximumCommitLbg, now)
 				if err != nil {
 					return 0, 0, err
 				}
 
-				numDeleted += uploadsDeleted
+				numDeleted += uplobdsDeleted
 			}
 
-			if _, err := s.UpdateSourcedCommits(ctx, sc.RepositoryID, commit, now); err != nil {
+			if _, err := s.UpdbteSourcedCommits(ctx, sc.RepositoryID, commit, now); err != nil {
 				return 0, 0, err
 			}
 		}
@@ -516,232 +516,232 @@ func (s *store) ProcessSourcedCommits(
 //
 //
 
-// GetStaleSourcedCommits returns a set of commits attached to repositories that have been
-// least recently checked for resolvability via gitserver. We do this periodically in
-// order to determine which records in the database are unreachable by normal query
-// paths and clean up that occupied (but useless) space. The output is of this method is
+// GetStbleSourcedCommits returns b set of commits bttbched to repositories thbt hbve been
+// lebst recently checked for resolvbbility vib gitserver. We do this periodicblly in
+// order to determine which records in the dbtbbbse bre unrebchbble by normbl query
+// pbths bnd clebn up thbt occupied (but useless) spbce. The output is of this method is
 // ordered by repository ID then by commit.
-func (s *store) GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []SourcedCommits, err error) {
-	ctx, trace, endObservation := s.operations.getStaleSourcedCommits.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) GetStbleSourcedCommits(ctx context.Context, minimumTimeSinceLbstCheck time.Durbtion, limit int, now time.Time) (_ []SourcedCommits, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getStbleSourcedCommits.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var a []SourcedCommits
-	err = s.withTransaction(ctx, func(tx *store) error {
+	vbr b []SourcedCommits
+	err = s.withTrbnsbction(ctx, func(tx *store) error {
 		now = now.UTC()
-		interval := int(minimumTimeSinceLastCheck / time.Second)
-		uploadSubquery := sqlf.Sprintf(staleSourcedCommitsSubquery, now, interval)
-		query := sqlf.Sprintf(staleSourcedCommitsQuery, uploadSubquery, limit)
+		intervbl := int(minimumTimeSinceLbstCheck / time.Second)
+		uplobdSubquery := sqlf.Sprintf(stbleSourcedCommitsSubquery, now, intervbl)
+		query := sqlf.Sprintf(stbleSourcedCommitsQuery, uplobdSubquery, limit)
 
-		sourcedCommits, err := scanSourcedCommits(tx.db.Query(ctx, query))
+		sourcedCommits, err := scbnSourcedCommits(tx.db.Query(ctx, query))
 		if err != nil {
 			return err
 		}
 
 		numCommits := 0
-		for _, commits := range sourcedCommits {
+		for _, commits := rbnge sourcedCommits {
 			numCommits += len(commits.Commits)
 		}
-		trace.AddEvent("TODO Domain Owner",
-			attribute.Int("numRepositories", len(sourcedCommits)),
-			attribute.Int("numCommits", numCommits))
+		trbce.AddEvent("TODO Dombin Owner",
+			bttribute.Int("numRepositories", len(sourcedCommits)),
+			bttribute.Int("numCommits", numCommits))
 
-		a = sourcedCommits
+		b = sourcedCommits
 		return nil
 	})
-	return a, err
+	return b, err
 }
 
-const staleSourcedCommitsQuery = `
+const stbleSourcedCommitsQuery = `
 WITH
-	candidates AS (%s)
-SELECT r.id, r.name, c.commit
-FROM candidates c
+	cbndidbtes AS (%s)
+SELECT r.id, r.nbme, c.commit
+FROM cbndidbtes c
 JOIN repo r ON r.id = c.repository_id
--- Order results so that the repositories with the commits that have been updated
--- the least frequently come first. Once a number of commits are processed from a
--- given repository the ordering may change.
-ORDER BY MIN(c.max_last_checked_at) OVER (PARTITION BY c.repository_id), c.commit
+-- Order results so thbt the repositories with the commits thbt hbve been updbted
+-- the lebst frequently come first. Once b number of commits bre processed from b
+-- given repository the ordering mby chbnge.
+ORDER BY MIN(c.mbx_lbst_checked_bt) OVER (PARTITION BY c.repository_id), c.commit
 LIMIT %s
 `
 
-const staleSourcedCommitsSubquery = `
+const stbleSourcedCommitsSubquery = `
 SELECT
 	repository_id,
 	commit,
-	-- Keep track of the most recent update of this commit that we know about
-	-- as any earlier dates for the same repository and commit pair carry no
-	-- useful information.
-	MAX(commit_last_checked_at) as max_last_checked_at
-FROM lsif_uploads
+	-- Keep trbck of the most recent updbte of this commit thbt we know bbout
+	-- bs bny ebrlier dbtes for the sbme repository bnd commit pbir cbrry no
+	-- useful informbtion.
+	MAX(commit_lbst_checked_bt) bs mbx_lbst_checked_bt
+FROM lsif_uplobds
 WHERE
-	-- Ignore records already marked as deleted
-	state NOT IN ('deleted', 'deleting') AND
-	-- Ignore records that have been checked recently. Note this condition is
-	-- true for a null commit_last_checked_at (which has never been checked).
-	(%s - commit_last_checked_at > (%s * '1 second'::interval)) IS DISTINCT FROM FALSE
+	-- Ignore records blrebdy mbrked bs deleted
+	stbte NOT IN ('deleted', 'deleting') AND
+	-- Ignore records thbt hbve been checked recently. Note this condition is
+	-- true for b null commit_lbst_checked_bt (which hbs never been checked).
+	(%s - commit_lbst_checked_bt > (%s * '1 second'::intervbl)) IS DISTINCT FROM FALSE
 GROUP BY repository_id, commit
 `
 
-// UpdateSourcedCommits updates the commit_last_checked_at field of each upload records belonging to
-// the given repository identifier and commit. This method returns the count of upload records modified
-func (s *store) UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error) {
-	ctx, trace, endObservation := s.operations.updateSourcedCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
+// UpdbteSourcedCommits updbtes the commit_lbst_checked_bt field of ebch uplobd records belonging to
+// the given repository identifier bnd commit. This method returns the count of uplobd records modified
+func (s *store) UpdbteSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uplobdsUpdbted int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.updbteSourcedCommits.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("commit", commit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	candidateUploadsSubquery := sqlf.Sprintf(candidateUploadsCTE, repositoryID, commit)
-	updateSourcedCommitQuery := sqlf.Sprintf(updateSourcedCommitsQuery, candidateUploadsSubquery, now)
+	cbndidbteUplobdsSubquery := sqlf.Sprintf(cbndidbteUplobdsCTE, repositoryID, commit)
+	updbteSourcedCommitQuery := sqlf.Sprintf(updbteSourcedCommitsQuery, cbndidbteUplobdsSubquery, now)
 
-	uploadsUpdated, err = scanCount(s.db.Query(ctx, updateSourcedCommitQuery))
+	uplobdsUpdbted, err = scbnCount(s.db.Query(ctx, updbteSourcedCommitQuery))
 	if err != nil {
 		return 0, err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("uploadsUpdated", uploadsUpdated))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("uplobdsUpdbted", uplobdsUpdbted))
 
-	return uploadsUpdated, nil
+	return uplobdsUpdbted, nil
 }
 
-const updateSourcedCommitsQuery = `
+const updbteSourcedCommitsQuery = `
 WITH
-candidate_uploads AS (%s),
-update_uploads AS (
-	UPDATE lsif_uploads u
-	SET commit_last_checked_at = %s
-	WHERE id IN (SELECT id FROM candidate_uploads)
+cbndidbte_uplobds AS (%s),
+updbte_uplobds AS (
+	UPDATE lsif_uplobds u
+	SET commit_lbst_checked_bt = %s
+	WHERE id IN (SELECT id FROM cbndidbte_uplobds)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM update_uploads) AS num_uploads
+	(SELECT COUNT(*) FROM updbte_uplobds) AS num_uplobds
 `
 
-const candidateUploadsCTE = `
-SELECT u.id, u.state, u.uploaded_at
-FROM lsif_uploads u
+const cbndidbteUplobdsCTE = `
+SELECT u.id, u.stbte, u.uplobded_bt
+FROM lsif_uplobds u
 WHERE u.repository_id = %s AND u.commit = %s
 
--- Lock these rows in a deterministic order so that we don't
--- deadlock with other processes updating the lsif_uploads table.
+-- Lock these rows in b deterministic order so thbt we don't
+-- debdlock with other processes updbting the lsif_uplobds tbble.
 ORDER BY u.id FOR UPDATE
 `
 
-func scanCount(rows *sql.Rows, queryErr error) (value int, err error) {
+func scbnCount(rows *sql.Rows, queryErr error) (vblue int, err error) {
 	if queryErr != nil {
 		return 0, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		if err := rows.Scan(&value); err != nil {
+		if err := rows.Scbn(&vblue); err != nil {
 			return 0, err
 		}
 	}
 
-	return value, nil
+	return vblue, nil
 }
 
-// DeleteSourcedCommits deletes each upload record belonging to the given repository identifier
-// and commit. Uploads are soft deleted. This method returns the count of upload modified.
+// DeleteSourcedCommits deletes ebch uplobd record belonging to the given repository identifier
+// bnd commit. Uplobds bre soft deleted. This method returns the count of uplobd modified.
 //
-// If a maximum commit lag is supplied, then any upload records in the uploading, queued, or processing states
-// younger than the provided lag will not be deleted, but its timestamp will be modified as if the sibling method
-// UpdateSourcedCommits was called instead. This configurable parameter enables support for remote code hosts
-// that are not the source of truth; if we deleted all pending records without resolvable commits introduce races
-// between the customer's Sourcegraph instance and their CI (and their CI will usually win).
-func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (
-	uploadsUpdated, uploadsDeleted int,
+// If b mbximum commit lbg is supplied, then bny uplobd records in the uplobding, queued, or processing stbtes
+// younger thbn the provided lbg will not be deleted, but its timestbmp will be modified bs if the sibling method
+// UpdbteSourcedCommits wbs cblled instebd. This configurbble pbrbmeter enbbles support for remote code hosts
+// thbt bre not the source of truth; if we deleted bll pending records without resolvbble commits introduce rbces
+// between the customer's Sourcegrbph instbnce bnd their CI (bnd their CI will usublly win).
+func (s *store) DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, mbximumCommitLbg time.Durbtion, now time.Time) (
+	uplobdsUpdbted, uplobdsDeleted int,
 	err error,
 ) {
-	ctx, trace, endObservation := s.operations.deleteSourcedCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
+	ctx, trbce, endObservbtion := s.operbtions.deleteSourcedCommits.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("commit", commit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload associated with unknown commit")
+	unset, _ := s.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "uplobd bssocibted with unknown commit")
 	defer unset(ctx)
 
 	now = now.UTC()
-	interval := int(maximumCommitLag / time.Second)
+	intervbl := int(mbximumCommitLbg / time.Second)
 
-	candidateUploadsSubquery := sqlf.Sprintf(candidateUploadsCTE, repositoryID, commit)
-	taggedCandidateUploadsSubquery := sqlf.Sprintf(taggedCandidateUploadsCTE, now, interval)
-	deleteSourcedCommitsQuery := sqlf.Sprintf(deleteSourcedCommitsQuery, candidateUploadsSubquery, taggedCandidateUploadsSubquery, now)
+	cbndidbteUplobdsSubquery := sqlf.Sprintf(cbndidbteUplobdsCTE, repositoryID, commit)
+	tbggedCbndidbteUplobdsSubquery := sqlf.Sprintf(tbggedCbndidbteUplobdsCTE, now, intervbl)
+	deleteSourcedCommitsQuery := sqlf.Sprintf(deleteSourcedCommitsQuery, cbndidbteUplobdsSubquery, tbggedCbndidbteUplobdsSubquery, now)
 
-	uploadsUpdated, uploadsDeleted, err = scanPairOfCounts(s.db.Query(ctx, deleteSourcedCommitsQuery))
+	uplobdsUpdbted, uplobdsDeleted, err = scbnPbirOfCounts(s.db.Query(ctx, deleteSourcedCommitsQuery))
 	if err != nil {
 		return 0, 0, err
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("uploadsUpdated", uploadsUpdated),
-		attribute.Int("uploadsDeleted", uploadsDeleted))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("uplobdsUpdbted", uplobdsUpdbted),
+		bttribute.Int("uplobdsDeleted", uplobdsDeleted))
 
-	return uploadsUpdated, uploadsDeleted, nil
+	return uplobdsUpdbted, uplobdsDeleted, nil
 }
 
 const deleteSourcedCommitsQuery = `
 WITH
-candidate_uploads AS (%s),
-tagged_candidate_uploads AS (%s),
-update_uploads AS (
-	UPDATE lsif_uploads u
-	SET commit_last_checked_at = %s
-	WHERE EXISTS (SELECT 1 FROM tagged_candidate_uploads tu WHERE tu.id = u.id AND tu.protected)
+cbndidbte_uplobds AS (%s),
+tbgged_cbndidbte_uplobds AS (%s),
+updbte_uplobds AS (
+	UPDATE lsif_uplobds u
+	SET commit_lbst_checked_bt = %s
+	WHERE EXISTS (SELECT 1 FROM tbgged_cbndidbte_uplobds tu WHERE tu.id = u.id AND tu.protected)
 	RETURNING 1
 ),
-delete_uploads AS (
-	UPDATE lsif_uploads u
-	SET state = CASE WHEN u.state = 'completed' THEN 'deleting' ELSE 'deleted' END
-	WHERE EXISTS (SELECT 1 FROM tagged_candidate_uploads tu WHERE tu.id = u.id AND NOT tu.protected)
+delete_uplobds AS (
+	UPDATE lsif_uplobds u
+	SET stbte = CASE WHEN u.stbte = 'completed' THEN 'deleting' ELSE 'deleted' END
+	WHERE EXISTS (SELECT 1 FROM tbgged_cbndidbte_uplobds tu WHERE tu.id = u.id AND NOT tu.protected)
 	RETURNING 1
 )
 SELECT
-	(SELECT COUNT(*) FROM update_uploads) AS num_uploads_updated,
-	(SELECT COUNT(*) FROM delete_uploads) AS num_uploads_deleted
+	(SELECT COUNT(*) FROM updbte_uplobds) AS num_uplobds_updbted,
+	(SELECT COUNT(*) FROM delete_uplobds) AS num_uplobds_deleted
 `
 
-const taggedCandidateUploadsCTE = `
+const tbggedCbndidbteUplobdsCTE = `
 SELECT
 	u.*,
-	(u.state IN ('uploading', 'queued', 'processing') AND %s - u.uploaded_at <= (%s * '1 second'::interval)) AS protected
-FROM candidate_uploads u
+	(u.stbte IN ('uplobding', 'queued', 'processing') AND %s - u.uplobded_bt <= (%s * '1 second'::intervbl)) AS protected
+FROM cbndidbte_uplobds u
 `
 
-func scanPairOfCounts(rows *sql.Rows, queryErr error) (value1, value2 int, err error) {
+func scbnPbirOfCounts(rows *sql.Rows, queryErr error) (vblue1, vblue2 int, err error) {
 	if queryErr != nil {
 		return 0, 0, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		if err := rows.Scan(&value1, &value2); err != nil {
+		if err := rows.Scbn(&vblue1, &vblue2); err != nil {
 			return 0, 0, err
 		}
 	}
 
-	return value1, value2, nil
+	return vblue1, vblue2, nil
 }
 
 //
 //
 
-func scanCountsAndTotalCount(rows *sql.Rows, queryErr error) (totalCount int, _ map[int]int, err error) {
+func scbnCountsAndTotblCount(rows *sql.Rows, queryErr error) (totblCount int, _ mbp[int]int, err error) {
 	if queryErr != nil {
 		return 0, nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	visibilities := map[int]int{}
+	visibilities := mbp[int]int{}
 	for rows.Next() {
-		var id int
-		var count int
-		if err := rows.Scan(&totalCount, &id, &count); err != nil {
+		vbr id int
+		vbr count int
+		if err := rows.Scbn(&totblCount, &id, &count); err != nil {
 			return 0, nil, err
 		}
 
 		visibilities[id] = count
 	}
 
-	return totalCount, visibilities, nil
+	return totblCount, visibilities, nil
 }

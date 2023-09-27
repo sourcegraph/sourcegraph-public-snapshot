@@ -1,56 +1,56 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"net"
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
-	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbfbnb/regexp"
+	regexpsyntbx "github.com/grbfbnb/regexp/syntbx"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pagure"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bwscodecommit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitolite"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/pbgure"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/phbbricbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type RepoNotFoundErr struct {
-	ID         api.RepoID
-	Name       api.RepoName
-	HashedName api.RepoHashedName
+	ID         bpi.RepoID
+	Nbme       bpi.RepoNbme
+	HbshedNbme bpi.RepoHbshedNbme
 }
 
 func (e *RepoNotFoundErr) Error() string {
-	if e.Name != "" {
-		return fmt.Sprintf("repo not found: name=%q", e.Name)
+	if e.Nbme != "" {
+		return fmt.Sprintf("repo not found: nbme=%q", e.Nbme)
 	}
 	if e.ID != 0 {
 		return fmt.Sprintf("repo not found: id=%d", e.ID)
@@ -62,74 +62,74 @@ func (e *RepoNotFoundErr) NotFound() bool {
 	return true
 }
 
-type RepoStore interface {
-	basestore.ShareableStore
-	Transact(context.Context) (RepoStore, error)
-	With(basestore.ShareableStore) RepoStore
+type RepoStore interfbce {
+	bbsestore.ShbrebbleStore
+	Trbnsbct(context.Context) (RepoStore, error)
+	With(bbsestore.ShbrebbleStore) RepoStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
 
 	Count(context.Context, ReposListOptions) (int, error)
-	Create(context.Context, ...*types.Repo) error
-	Delete(context.Context, ...api.RepoID) error
-	Get(context.Context, api.RepoID) (*types.Repo, error)
-	GetByIDs(context.Context, ...api.RepoID) ([]*types.Repo, error)
-	GetByName(context.Context, api.RepoName) (*types.Repo, error)
-	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
-	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
+	Crebte(context.Context, ...*types.Repo) error
+	Delete(context.Context, ...bpi.RepoID) error
+	Get(context.Context, bpi.RepoID) (*types.Repo, error)
+	GetByIDs(context.Context, ...bpi.RepoID) ([]*types.Repo, error)
+	GetByNbme(context.Context, bpi.RepoNbme) (*types.Repo, error)
+	GetByHbshedNbme(context.Context, bpi.RepoHbshedNbme) (*types.Repo, error)
+	GetFirstRepoNbmeByCloneURL(context.Context, string) (bpi.RepoNbme, error)
 	GetFirstRepoByCloneURL(context.Context, string) (*types.Repo, error)
-	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
-	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
+	GetReposSetByIDs(context.Context, ...bpi.RepoID) (mbp[bpi.RepoID]*types.Repo, error)
+	GetRepoDescriptionsByIDs(context.Context, ...bpi.RepoID) (mbp[bpi.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
-	// ListSourcegraphDotComIndexableRepos returns a list of repos to be indexed for search on sourcegraph.com.
-	// This includes all non-forked, non-archived repos with >= listSourcegraphDotComIndexableReposMinStars stars,
-	// plus all repos from the following data sources:
-	// - src.fedoraproject.org
-	// - maven
+	// ListSourcegrbphDotComIndexbbleRepos returns b list of repos to be indexed for sebrch on sourcegrbph.com.
+	// This includes bll non-forked, non-brchived repos with >= listSourcegrbphDotComIndexbbleReposMinStbrs stbrs,
+	// plus bll repos from the following dbtb sources:
+	// - src.fedorbproject.org
+	// - mbven
 	// - NPM
 	// - JDK
 	// THIS QUERY SHOULD NEVER BE USED OUTSIDE OF SOURCEGRAPH.COM.
-	ListSourcegraphDotComIndexableRepos(context.Context, ListSourcegraphDotComIndexableReposOptions) ([]types.MinimalRepo, error)
-	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
-	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
-	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
-	RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error)
+	ListSourcegrbphDotComIndexbbleRepos(context.Context, ListSourcegrbphDotComIndexbbleReposOptions) ([]types.MinimblRepo, error)
+	ListMinimblRepos(context.Context, ReposListOptions) ([]types.MinimblRepo, error)
+	Metbdbtb(context.Context, ...bpi.RepoID) ([]*types.SebrchedRepo, error)
+	StrebmMinimblRepos(context.Context, ReposListOptions, func(*types.MinimblRepo)) error
+	RepoEmbeddingExists(ctx context.Context, repoID bpi.RepoID) (bool, error)
 }
 
-var _ RepoStore = (*repoStore)(nil)
+vbr _ RepoStore = (*repoStore)(nil)
 
-// repoStore handles access to the repo table
+// repoStore hbndles bccess to the repo tbble
 type repoStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// ReposWith instantiates and returns a new RepoStore using the other
-// store handle.
-func ReposWith(logger log.Logger, other basestore.ShareableStore) RepoStore {
+// ReposWith instbntibtes bnd returns b new RepoStore using the other
+// store hbndle.
+func ReposWith(logger log.Logger, other bbsestore.ShbrebbleStore) RepoStore {
 	return &repoStore{
 		logger: logger,
-		Store:  basestore.NewWithHandle(other.Handle()),
+		Store:  bbsestore.NewWithHbndle(other.Hbndle()),
 	}
 }
 
-func (s *repoStore) With(other basestore.ShareableStore) RepoStore {
+func (s *repoStore) With(other bbsestore.ShbrebbleStore) RepoStore {
 	return &repoStore{logger: s.logger, Store: s.Store.With(other)}
 }
 
-func (s *repoStore) Transact(ctx context.Context) (RepoStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &repoStore{logger: s.logger, Store: txBase}, err
+func (s *repoStore) Trbnsbct(ctx context.Context) (RepoStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &repoStore{logger: s.logger, Store: txBbse}, err
 }
 
-// Get finds and returns the repo with the given repository ID from the database.
-// When a repo isn't found or has been blocked, an error is returned.
-func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "repos.Get")
+// Get finds bnd returns the repo with the given repository ID from the dbtbbbse.
+// When b repo isn't found or hbs been blocked, bn error is returned.
+func (s *repoStore) Get(ctx context.Context, id bpi.RepoID) (_ *types.Repo, err error) {
+	tr, ctx := trbce.New(ctx, "repos.Get")
 	defer tr.EndWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		IDs:            []api.RepoID{id},
+		IDs:            []bpi.RepoID{id},
 		LimitOffset:    &LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
@@ -146,59 +146,59 @@ func (s *repoStore) Get(ctx context.Context, id api.RepoID) (_ *types.Repo, err 
 	return repo, repo.IsBlocked()
 }
 
-var counterAccessGranted = promauto.NewCounter(prometheus.CounterOpts{
-	Name: "src_access_granted_private_repo",
-	Help: "metric to measure the impact of logging access granted to private repos",
+vbr counterAccessGrbnted = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbme: "src_bccess_grbnted_privbte_repo",
+	Help: "metric to mebsure the impbct of logging bccess grbnted to privbte repos",
 })
 
-func logPrivateRepoAccessGranted(ctx context.Context, db DB, ids []api.RepoID) {
+func logPrivbteRepoAccessGrbnted(ctx context.Context, db DB, ids []bpi.RepoID) {
 
-	a := actor.FromContext(ctx)
-	arg, _ := json.Marshal(struct {
+	b := bctor.FromContext(ctx)
+	brg, _ := json.Mbrshbl(struct {
 		Resource string       `json:"resource"`
 		Service  string       `json:"service"`
-		Repos    []api.RepoID `json:"repo_ids"`
+		Repos    []bpi.RepoID `json:"repo_ids"`
 	}{
 		Resource: "db.repo",
-		Service:  env.MyName,
+		Service:  env.MyNbme,
 		Repos:    ids,
 	})
 
 	event := &SecurityEvent{
-		Name:            SecurityEventNameAccessGranted,
+		Nbme:            SecurityEventNbmeAccessGrbnted,
 		URL:             "",
-		UserID:          uint32(a.UID),
+		UserID:          uint32(b.UID),
 		AnonymousUserID: "",
-		Argument:        arg,
+		Argument:        brg,
 		Source:          "BACKEND",
-		Timestamp:       time.Now(),
+		Timestbmp:       time.Now(),
 	}
 
-	// If this event was triggered by an internal actor we need to ensure that at
-	// least the UserID or AnonymousUserID field are set so that we don't trigger
-	// the security_event_logs_check_has_user constraint
-	if a.Internal {
-		event.AnonymousUserID = "internal"
+	// If this event wbs triggered by bn internbl bctor we need to ensure thbt bt
+	// lebst the UserID or AnonymousUserID field bre set so thbt we don't trigger
+	// the security_event_logs_check_hbs_user constrbint
+	if b.Internbl {
+		event.AnonymousUserID = "internbl"
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
-// GetByName returns the repository with the given nameOrUri from the
-// database, or an error. If we have a match on name and uri, we prefer the
-// match on name.
+// GetByNbme returns the repository with the given nbmeOrUri from the
+// dbtbbbse, or bn error. If we hbve b mbtch on nbme bnd uri, we prefer the
+// mbtch on nbme.
 //
-// Name is the name for this repository (e.g., "github.com/user/repo"). It is
-// the same as URI, unless the user configures a non-default
-// repositoryPathPattern.
+// Nbme is the nbme for this repository (e.g., "github.com/user/repo"). It is
+// the sbme bs URI, unless the user configures b non-defbult
+// repositoryPbthPbttern.
 //
-// When a repo isn't found or has been blocked, an error is returned.
-func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "repos.GetByName")
+// When b repo isn't found or hbs been blocked, bn error is returned.
+func (s *repoStore) GetByNbme(ctx context.Context, nbmeOrURI bpi.RepoNbme) (_ *types.Repo, err error) {
+	tr, ctx := trbce.New(ctx, "repos.GetByNbme")
 	defer tr.EndWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		Names:          []string{string(nameOrURI)},
+		Nbmes:          []string{string(nbmeOrURI)},
 		LimitOffset:    &LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
@@ -210,11 +210,11 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 		return repos[0], repos[0].IsBlocked()
 	}
 
-	// We don't fetch in the same SQL query since uri is not unique and could
-	// conflict with a name. We prefer returning the matching name if it
+	// We don't fetch in the sbme SQL query since uri is not unique bnd could
+	// conflict with b nbme. We prefer returning the mbtching nbme if it
 	// exists.
 	repos, err = s.listRepos(ctx, tr, ReposListOptions{
-		URIs:           []string{string(nameOrURI)},
+		URIs:           []string{string(nbmeOrURI)},
 		LimitOffset:    &LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
@@ -223,21 +223,21 @@ func (s *repoStore) GetByName(ctx context.Context, nameOrURI api.RepoName) (_ *t
 	}
 
 	if len(repos) == 0 {
-		return nil, &RepoNotFoundErr{Name: nameOrURI}
+		return nil, &RepoNotFoundErr{Nbme: nbmeOrURI}
 	}
 
 	return repos[0], repos[0].IsBlocked()
 }
 
-// GetByHashedName returns the repository with the given hashedName from the database, or an error.
-// RepoHashedName is the repository hashed name.
-// When a repo isn't found or has been blocked, an error is returned.
-func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.RepoHashedName) (_ *types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "repos.GetByHashedName")
+// GetByHbshedNbme returns the repository with the given hbshedNbme from the dbtbbbse, or bn error.
+// RepoHbshedNbme is the repository hbshed nbme.
+// When b repo isn't found or hbs been blocked, bn error is returned.
+func (s *repoStore) GetByHbshedNbme(ctx context.Context, repoHbshedNbme bpi.RepoHbshedNbme) (_ *types.Repo, err error) {
+	tr, ctx := trbce.New(ctx, "repos.GetByHbshedNbme")
 	defer tr.EndWithErr(&err)
 
 	repos, err := s.listRepos(ctx, tr, ReposListOptions{
-		HashedName:     string(repoHashedName),
+		HbshedNbme:     string(repoHbshedNbme),
 		LimitOffset:    &LimitOffset{Limit: 1},
 		IncludeBlocked: true,
 	})
@@ -246,44 +246,44 @@ func (s *repoStore) GetByHashedName(ctx context.Context, repoHashedName api.Repo
 	}
 
 	if len(repos) == 0 {
-		return nil, &RepoNotFoundErr{HashedName: repoHashedName}
+		return nil, &RepoNotFoundErr{HbshedNbme: repoHbshedNbme}
 	}
 
 	return repos[0], repos[0].IsBlocked()
 }
 
-// GetByIDs returns a list of repositories by given IDs. The number of results list could be less
-// than the candidate list due to no repository is associated with some IDs.
-func (s *repoStore) GetByIDs(ctx context.Context, ids ...api.RepoID) (_ []*types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "repos.GetByIDs")
+// GetByIDs returns b list of repositories by given IDs. The number of results list could be less
+// thbn the cbndidbte list due to no repository is bssocibted with some IDs.
+func (s *repoStore) GetByIDs(ctx context.Context, ids ...bpi.RepoID) (_ []*types.Repo, err error) {
+	tr, ctx := trbce.New(ctx, "repos.GetByIDs")
 	defer tr.EndWithErr(&err)
 
-	// listRepos will return a list of all repos if we pass in an empty ID list,
-	// so it is better to just return here rather than leak repo info.
+	// listRepos will return b list of bll repos if we pbss in bn empty ID list,
+	// so it is better to just return here rbther thbn lebk repo info.
 	if len(ids) == 0 {
 		return []*types.Repo{}, nil
 	}
 	return s.listRepos(ctx, tr, ReposListOptions{IDs: ids})
 }
 
-// GetReposSetByIDs returns a map of repositories with the given IDs, indexed by their IDs. The number of results
-// entries could be less than the candidate list due to no repository is associated with some IDs.
-func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
+// GetReposSetByIDs returns b mbp of repositories with the given IDs, indexed by their IDs. The number of results
+// entries could be less thbn the cbndidbte list due to no repository is bssocibted with some IDs.
+func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...bpi.RepoID) (mbp[bpi.RepoID]*types.Repo, error) {
 	repos, err := s.GetByIDs(ctx, ids...)
 	if err != nil {
 		return nil, err
 	}
 
-	repoMap := make(map[api.RepoID]*types.Repo, len(repos))
-	for _, r := range repos {
-		repoMap[r.ID] = r
+	repoMbp := mbke(mbp[bpi.RepoID]*types.Repo, len(repos))
+	for _, r := rbnge repos {
+		repoMbp[r.ID] = r
 	}
 
-	return repoMap, nil
+	return repoMbp, nil
 }
 
-func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
-	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs")
+func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...bpi.RepoID) (_ mbp[bpi.RepoID]string, err error) {
+	tr, ctx := trbce.New(ctx, "repos.GetRepoDescriptionsByIDs")
 	defer tr.EndWithErr(&err)
 
 	opts := ReposListOptions{
@@ -291,11 +291,11 @@ func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.Rep
 		IDs:    ids,
 	}
 
-	res := make(map[api.RepoID]string, len(ids))
-	scanDescriptions := func(rows *sql.Rows) error {
-		var repoID api.RepoID
-		var repoDescription string
-		if err := rows.Scan(
+	res := mbke(mbp[bpi.RepoID]string, len(ids))
+	scbnDescriptions := func(rows *sql.Rows) error {
+		vbr repoID bpi.RepoID
+		vbr repoDescription string
+		if err := rows.Scbn(
 			&repoID,
 			&dbutil.NullString{S: &repoDescription},
 		); err != nil {
@@ -306,11 +306,11 @@ func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.Rep
 		return nil
 	}
 
-	return res, errors.Wrap(s.list(ctx, tr, opts, scanDescriptions), "fetch repo descriptions")
+	return res, errors.Wrbp(s.list(ctx, tr, opts, scbnDescriptions), "fetch repo descriptions")
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
-	tr, ctx := trace.New(ctx, "repos.Count")
+	tr, ctx := trbce.New(ctx, "repos.Count")
 	defer tr.EndWithErr(&err)
 
 	opt.Select = []string{"COUNT(*)"}
@@ -318,157 +318,157 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 	opt.LimitOffset = nil
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
-		return rows.Scan(&ct)
+		return rows.Scbn(&ct)
 	})
 
 	return ct, err
 }
 
-// Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
-// number of IDs given if a repo with the given ID does not exist.
-func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
-	tr, ctx := trace.New(ctx, "repos.Metadata")
+// Metbdbtb returns repo metbdbtb used to decorbte sebrch results. The returned slice mby be smbller thbn the
+// number of IDs given if b repo with the given ID does not exist.
+func (s *repoStore) Metbdbtb(ctx context.Context, ids ...bpi.RepoID) (_ []*types.SebrchedRepo, err error) {
+	tr, ctx := trbce.New(ctx, "repos.Metbdbtb")
 	defer tr.EndWithErr(&err)
 
 	opts := ReposListOptions{
 		IDs: ids,
-		// Return a limited subset of fields
+		// Return b limited subset of fields
 		Select: []string{
 			"repo.id",
-			"repo.name",
+			"repo.nbme",
 			"repo.description",
 			"repo.fork",
-			"repo.archived",
-			"repo.private",
-			"repo.stars",
-			"gr.last_fetched",
-			"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
+			"repo.brchived",
+			"repo.privbte",
+			"repo.stbrs",
+			"gr.lbst_fetched",
+			"(SELECT json_object_bgg(key, vblue) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 		},
-		// Required so gr.last_fetched is select-able
+		// Required so gr.lbst_fetched is select-bble
 		joinGitserverRepos: true,
 	}
 
-	res := make([]*types.SearchedRepo, 0, len(ids))
-	scanMetadata := func(rows *sql.Rows) error {
-		var r types.SearchedRepo
-		var kvps repoKVPs
-		if err := rows.Scan(
+	res := mbke([]*types.SebrchedRepo, 0, len(ids))
+	scbnMetbdbtb := func(rows *sql.Rows) error {
+		vbr r types.SebrchedRepo
+		vbr kvps repoKVPs
+		if err := rows.Scbn(
 			&r.ID,
-			&r.Name,
+			&r.Nbme,
 			&dbutil.NullString{S: &r.Description},
 			&r.Fork,
 			&r.Archived,
-			&r.Private,
-			&dbutil.NullInt{N: &r.Stars},
-			&r.LastFetched,
+			&r.Privbte,
+			&dbutil.NullInt{N: &r.Stbrs},
+			&r.LbstFetched,
 			&kvps,
 		); err != nil {
 			return err
 		}
 
-		r.KeyValuePairs = kvps.kvps
-		res = append(res, &r)
+		r.KeyVbluePbirs = kvps.kvps
+		res = bppend(res, &r)
 		return nil
 	}
 
-	return res, errors.Wrap(s.list(ctx, tr, opts, scanMetadata), "fetch metadata")
+	return res, errors.Wrbp(s.list(ctx, tr, opts, scbnMetbdbtb), "fetch metbdbtb")
 }
 
 type repoKVPs struct {
-	kvps map[string]*string
+	kvps mbp[string]*string
 }
 
-func (r *repoKVPs) Scan(value any) error {
-	switch b := value.(type) {
-	case []byte:
-		return json.Unmarshal(b, &r.kvps)
-	case nil:
+func (r *repoKVPs) Scbn(vblue bny) error {
+	switch b := vblue.(type) {
+	cbse []byte:
+		return json.Unmbrshbl(b, &r.kvps)
+	cbse nil:
 		return nil
-	default:
-		return errors.Newf("type assertion to []byte failed, got type %T", value)
+	defbult:
+		return errors.Newf("type bssertion to []byte fbiled, got type %T", vblue)
 	}
 }
 
 const listReposQueryFmtstr = `
-%%s -- Populates "queryPrefix", i.e. CTEs
+%%s -- Populbtes "queryPrefix", i.e. CTEs
 SELECT %s
 FROM repo
 %%s
 WHERE
-	%%s   -- Populates "queryConds"
+	%%s   -- Populbtes "queryConds"
 	AND
-	(%%s) -- Populates "authzConds"
-%%s       -- Populates "querySuffix"
+	(%%s) -- Populbtes "buthzConds"
+%%s       -- Populbtes "querySuffix"
 `
 
 const getSourcesByRepoQueryStr = `
 (
 	SELECT
-		json_agg(
+		json_bgg(
 		json_build_object(
 			'CloneURL', esr.clone_url,
-			'ID', esr.external_service_id,
+			'ID', esr.externbl_service_id,
 			'Kind', LOWER(svcs.kind)
 		)
 		)
-	FROM external_service_repos AS esr
-	JOIN external_services AS svcs ON esr.external_service_id = svcs.id
+	FROM externbl_service_repos AS esr
+	JOIN externbl_services AS svcs ON esr.externbl_service_id = svcs.id
 	WHERE
 		esr.repo_id = repo.id
 		AND
-		svcs.deleted_at IS NULL
+		svcs.deleted_bt IS NULL
 )
 `
 
-var minimalRepoColumns = []string{
+vbr minimblRepoColumns = []string{
 	"repo.id",
-	"repo.name",
-	"repo.private",
-	"repo.stars",
+	"repo.nbme",
+	"repo.privbte",
+	"repo.stbrs",
 }
 
-var repoColumns = []string{
+vbr repoColumns = []string{
 	"repo.id",
-	"repo.name",
-	"repo.private",
-	"repo.external_id",
-	"repo.external_service_type",
-	"repo.external_service_id",
+	"repo.nbme",
+	"repo.privbte",
+	"repo.externbl_id",
+	"repo.externbl_service_type",
+	"repo.externbl_service_id",
 	"repo.uri",
 	"repo.description",
 	"repo.fork",
-	"repo.archived",
-	"repo.stars",
-	"repo.created_at",
-	"repo.updated_at",
-	"repo.deleted_at",
-	"repo.metadata",
+	"repo.brchived",
+	"repo.stbrs",
+	"repo.crebted_bt",
+	"repo.updbted_bt",
+	"repo.deleted_bt",
+	"repo.metbdbtb",
 	"repo.blocked",
-	"(SELECT json_object_agg(key, value) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
+	"(SELECT json_object_bgg(key, vblue) FROM repo_kvps WHERE repo_kvps.repo_id = repo.id)",
 }
 
-func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
-	var sources dbutil.NullJSONRawMessage
-	var metadata json.RawMessage
-	var blocked dbutil.NullJSONRawMessage
-	var kvps repoKVPs
+func scbnRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
+	vbr sources dbutil.NullJSONRbwMessbge
+	vbr metbdbtb json.RbwMessbge
+	vbr blocked dbutil.NullJSONRbwMessbge
+	vbr kvps repoKVPs
 
-	err = rows.Scan(
+	err = rows.Scbn(
 		&r.ID,
-		&r.Name,
-		&r.Private,
-		&dbutil.NullString{S: &r.ExternalRepo.ID},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceType},
-		&dbutil.NullString{S: &r.ExternalRepo.ServiceID},
+		&r.Nbme,
+		&r.Privbte,
+		&dbutil.NullString{S: &r.ExternblRepo.ID},
+		&dbutil.NullString{S: &r.ExternblRepo.ServiceType},
+		&dbutil.NullString{S: &r.ExternblRepo.ServiceID},
 		&dbutil.NullString{S: &r.URI},
 		&dbutil.NullString{S: &r.Description},
 		&r.Fork,
 		&r.Archived,
-		&dbutil.NullInt{N: &r.Stars},
-		&r.CreatedAt,
-		&dbutil.NullTime{Time: &r.UpdatedAt},
+		&dbutil.NullInt{N: &r.Stbrs},
+		&r.CrebtedAt,
+		&dbutil.NullTime{Time: &r.UpdbtedAt},
 		&dbutil.NullTime{Time: &r.DeletedAt},
-		&metadata,
+		&metbdbtb,
 		&blocked,
 		&kvps,
 		&sources,
@@ -477,28 +477,28 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		return err
 	}
 
-	if blocked.Raw != nil {
+	if blocked.Rbw != nil {
 		r.Blocked = &types.RepoBlock{}
-		if err = json.Unmarshal(blocked.Raw, r.Blocked); err != nil {
+		if err = json.Unmbrshbl(blocked.Rbw, r.Blocked); err != nil {
 			return err
 		}
 	}
 
-	r.KeyValuePairs = kvps.kvps
+	r.KeyVbluePbirs = kvps.kvps
 
 	type sourceInfo struct {
 		ID       int64
 		CloneURL string
 		Kind     string
 	}
-	r.Sources = make(map[string]*types.SourceInfo)
+	r.Sources = mbke(mbp[string]*types.SourceInfo)
 
-	if sources.Raw != nil {
-		var srcs []sourceInfo
-		if err = json.Unmarshal(sources.Raw, &srcs); err != nil {
-			return errors.Wrap(err, "scanRepo: failed to unmarshal sources")
+	if sources.Rbw != nil {
+		vbr srcs []sourceInfo
+		if err = json.Unmbrshbl(sources.Rbw, &srcs); err != nil {
+			return errors.Wrbp(err, "scbnRepo: fbiled to unmbrshbl sources")
 		}
-		for _, src := range srcs {
+		for _, src := rbnge srcs {
 			urn := extsvc.URN(src.Kind, src.ID)
 			r.Sources[urn] = &types.SourceInfo{
 				ID:       urn,
@@ -507,57 +507,57 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 		}
 	}
 
-	typ, ok := extsvc.ParseServiceType(r.ExternalRepo.ServiceType)
+	typ, ok := extsvc.PbrseServiceType(r.ExternblRepo.ServiceType)
 	if !ok {
-		logger.Warn("failed to parse service type", log.String("r.ExternalRepo.ServiceType", r.ExternalRepo.ServiceType))
+		logger.Wbrn("fbiled to pbrse service type", log.String("r.ExternblRepo.ServiceType", r.ExternblRepo.ServiceType))
 		return nil
 	}
 	switch typ {
-	case extsvc.TypeGitHub:
-		r.Metadata = new(github.Repository)
-	case extsvc.TypeGitLab:
-		r.Metadata = new(gitlab.Project)
-	case extsvc.TypeAzureDevOps:
-		r.Metadata = new(azuredevops.Repository)
-	case extsvc.TypeGerrit:
-		r.Metadata = new(gerrit.Project)
-	case extsvc.TypeBitbucketServer:
-		r.Metadata = new(bitbucketserver.Repo)
-	case extsvc.TypeBitbucketCloud:
-		r.Metadata = new(bitbucketcloud.Repo)
-	case extsvc.TypeAWSCodeCommit:
-		r.Metadata = new(awscodecommit.Repository)
-	case extsvc.TypeGitolite:
-		r.Metadata = new(gitolite.Repo)
-	case extsvc.TypePerforce:
-		r.Metadata = new(perforce.Depot)
-	case extsvc.TypePhabricator:
-		r.Metadata = new(phabricator.Repo)
-	case extsvc.TypePagure:
-		r.Metadata = new(pagure.Project)
-	case extsvc.TypeOther:
-		r.Metadata = new(extsvc.OtherRepoMetadata)
-	case extsvc.TypeJVMPackages:
-		r.Metadata = new(reposource.MavenMetadata)
-	case extsvc.TypeNpmPackages:
-		r.Metadata = new(reposource.NpmMetadata)
-	case extsvc.TypeGoModules:
-		r.Metadata = &struct{}{}
-	case extsvc.TypePythonPackages:
-		r.Metadata = &struct{}{}
-	case extsvc.TypeRustPackages:
-		r.Metadata = &struct{}{}
-	case extsvc.TypeRubyPackages:
-		r.Metadata = &struct{}{}
-	case extsvc.VariantLocalGit.AsType():
-		r.Metadata = new(extsvc.LocalGitMetadata)
-	default:
-		logger.Warn("unknown service type", log.String("type", typ))
+	cbse extsvc.TypeGitHub:
+		r.Metbdbtb = new(github.Repository)
+	cbse extsvc.TypeGitLbb:
+		r.Metbdbtb = new(gitlbb.Project)
+	cbse extsvc.TypeAzureDevOps:
+		r.Metbdbtb = new(bzuredevops.Repository)
+	cbse extsvc.TypeGerrit:
+		r.Metbdbtb = new(gerrit.Project)
+	cbse extsvc.TypeBitbucketServer:
+		r.Metbdbtb = new(bitbucketserver.Repo)
+	cbse extsvc.TypeBitbucketCloud:
+		r.Metbdbtb = new(bitbucketcloud.Repo)
+	cbse extsvc.TypeAWSCodeCommit:
+		r.Metbdbtb = new(bwscodecommit.Repository)
+	cbse extsvc.TypeGitolite:
+		r.Metbdbtb = new(gitolite.Repo)
+	cbse extsvc.TypePerforce:
+		r.Metbdbtb = new(perforce.Depot)
+	cbse extsvc.TypePhbbricbtor:
+		r.Metbdbtb = new(phbbricbtor.Repo)
+	cbse extsvc.TypePbgure:
+		r.Metbdbtb = new(pbgure.Project)
+	cbse extsvc.TypeOther:
+		r.Metbdbtb = new(extsvc.OtherRepoMetbdbtb)
+	cbse extsvc.TypeJVMPbckbges:
+		r.Metbdbtb = new(reposource.MbvenMetbdbtb)
+	cbse extsvc.TypeNpmPbckbges:
+		r.Metbdbtb = new(reposource.NpmMetbdbtb)
+	cbse extsvc.TypeGoModules:
+		r.Metbdbtb = &struct{}{}
+	cbse extsvc.TypePythonPbckbges:
+		r.Metbdbtb = &struct{}{}
+	cbse extsvc.TypeRustPbckbges:
+		r.Metbdbtb = &struct{}{}
+	cbse extsvc.TypeRubyPbckbges:
+		r.Metbdbtb = &struct{}{}
+	cbse extsvc.VbribntLocblGit.AsType():
+		r.Metbdbtb = new(extsvc.LocblGitMetbdbtb)
+	defbult:
+		logger.Wbrn("unknown service type", log.String("type", typ))
 		return nil
 	}
 
-	if err = json.Unmarshal(metadata, r.Metadata); err != nil {
-		return errors.Wrapf(err, "scanRepo: failed to unmarshal %q metadata", typ)
+	if err = json.Unmbrshbl(metbdbtb, r.Metbdbtb); err != nil {
+		return errors.Wrbpf(err, "scbnRepo: fbiled to unmbrshbl %q metbdbtb", typ)
 	}
 
 	return nil
@@ -565,80 +565,80 @@ func scanRepo(logger log.Logger, rows *sql.Rows, r *types.Repo) (err error) {
 
 // ReposListOptions specifies the options for listing repositories.
 //
-// Query and IncludePatterns/ExcludePatterns may not be used together.
+// Query bnd IncludePbtterns/ExcludePbtterns mby not be used together.
 type ReposListOptions struct {
-	// What to select of each row.
+	// Whbt to select of ebch row.
 	Select []string
 
-	// Query specifies a search query for repositories. If specified, then the Sort and
-	// Direction options are ignored
+	// Query specifies b sebrch query for repositories. If specified, then the Sort bnd
+	// Direction options bre ignored
 	Query string
 
-	// IncludePatterns is a list of regular expressions, all of which must match all
+	// IncludePbtterns is b list of regulbr expressions, bll of which must mbtch bll
 	// repositories returned in the list.
-	IncludePatterns []string
+	IncludePbtterns []string
 
-	// ExcludePattern is a regular expression that must not match any repository
+	// ExcludePbttern is b regulbr expression thbt must not mbtch bny repository
 	// returned in the list.
-	ExcludePattern string
+	ExcludePbttern string
 
-	// DescriptionPatterns is a list of regular expressions, all of which must match the `description` value of all
+	// DescriptionPbtterns is b list of regulbr expressions, bll of which must mbtch the `description` vblue of bll
 	// repositories returned in the list.
-	DescriptionPatterns []string
+	DescriptionPbtterns []string
 
-	// A set of filters to select only repos with a given set of key-value pairs.
+	// A set of filters to select only repos with b given set of key-vblue pbirs.
 	KVPFilters []RepoKVPFilter
 
 	// A set of filters to select only repos with the given set of topics
 	TopicFilters []RepoTopicFilter
 
-	// CaseSensitivePatterns determines if IncludePatterns and ExcludePattern are treated
-	// with case sensitivity or not.
-	CaseSensitivePatterns bool
+	// CbseSensitivePbtterns determines if IncludePbtterns bnd ExcludePbttern bre trebted
+	// with cbse sensitivity or not.
+	CbseSensitivePbtterns bool
 
-	// Names is a list of repository names used to limit the results to that
+	// Nbmes is b list of repository nbmes used to limit the results to thbt
 	// set of repositories.
-	// Note: This is currently used for version contexts. In future iterations,
-	// version contexts may have their own table
-	// and this may be replaced by the version context name.
-	Names []string
+	// Note: This is currently used for version contexts. In future iterbtions,
+	// version contexts mby hbve their own tbble
+	// bnd this mby be replbced by the version context nbme.
+	Nbmes []string
 
-	// HashedName is a repository hashed name used to limit the results to that repository.
-	HashedName string
+	// HbshedNbme is b repository hbshed nbme used to limit the results to thbt repository.
+	HbshedNbme string
 
-	// URIs selects any repos in the given set of URIs (i.e. uri column)
+	// URIs selects bny repos in the given set of URIs (i.e. uri column)
 	URIs []string
 
-	// IDs of repos to list. When zero-valued, this is omitted from the predicate set.
-	IDs []api.RepoID
+	// IDs of repos to list. When zero-vblued, this is omitted from the predicbte set.
+	IDs []bpi.RepoID
 
-	// UserID, if non zero, will limit the set of results to repositories added by the user
-	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
+	// UserID, if non zero, will limit the set of results to repositories bdded by the user
+	// through externbl services. Mutublly exclusive with the ExternblServiceIDs bnd SebrchContextID options.
 	UserID int32
 
-	// OrgID, if non zero, will limit the set of results to repositories owned by the organization
-	// through external services. Mutually exclusive with the ExternalServiceIDs and SearchContextID options.
+	// OrgID, if non zero, will limit the set of results to repositories owned by the orgbnizbtion
+	// through externbl services. Mutublly exclusive with the ExternblServiceIDs bnd SebrchContextID options.
 	OrgID int32
 
-	// SearchContextID, if non zero, will limit the set of results to repositories listed in
-	// the search context.
-	SearchContextID int64
+	// SebrchContextID, if non zero, will limit the set of results to repositories listed in
+	// the sebrch context.
+	SebrchContextID int64
 
-	// ExternalServiceIDs, if non empty, will only return repos added by the given external services.
-	// The id is that of the external_services table NOT the external_service_id in the repo table
-	// Mutually exclusive with the UserID option.
-	ExternalServiceIDs []int64
+	// ExternblServiceIDs, if non empty, will only return repos bdded by the given externbl services.
+	// The id is thbt of the externbl_services tbble NOT the externbl_service_id in the repo tbble
+	// Mutublly exclusive with the UserID option.
+	ExternblServiceIDs []int64
 
-	// ExternalRepos of repos to list. When zero-valued, this is omitted from the predicate set.
-	ExternalRepos []api.ExternalRepoSpec
+	// ExternblRepos of repos to list. When zero-vblued, this is omitted from the predicbte set.
+	ExternblRepos []bpi.ExternblRepoSpec
 
-	// ExternalRepoIncludeContains is the list of specs to include repos using
-	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
-	ExternalRepoIncludeContains []api.ExternalRepoSpec
+	// ExternblRepoIncludeContbins is the list of specs to include repos using
+	// SIMILAR TO mbtching. When zero-vblued, this is omitted from the predicbte set.
+	ExternblRepoIncludeContbins []bpi.ExternblRepoSpec
 
-	// ExternalRepoExcludeContains is the list of specs to exclude repos using
-	// SIMILAR TO matching. When zero-valued, this is omitted from the predicate set.
-	ExternalRepoExcludeContains []api.ExternalRepoSpec
+	// ExternblRepoExcludeContbins is the list of specs to exclude repos using
+	// SIMILAR TO mbtching. When zero-vblued, this is omitted from the predicbte set.
+	ExternblRepoExcludeContbins []bpi.ExternblRepoSpec
 
 	// NoForks excludes forks from the list.
 	NoForks bool
@@ -646,10 +646,10 @@ type ReposListOptions struct {
 	// OnlyForks excludes non-forks from the lhist.
 	OnlyForks bool
 
-	// NoArchived excludes archived repositories from the list.
+	// NoArchived excludes brchived repositories from the list.
 	NoArchived bool
 
-	// OnlyArchived excludes non-archived repositories from the list.
+	// OnlyArchived excludes non-brchived repositories from the list.
 	OnlyArchived bool
 
 	// NoCloned excludes cloned repositories from the list.
@@ -658,96 +658,96 @@ type ReposListOptions struct {
 	// OnlyCloned excludes non-cloned repositories from the list.
 	OnlyCloned bool
 
-	// NoIndexed excludes repositories that are indexed by zoekt from the list.
+	// NoIndexed excludes repositories thbt bre indexed by zoekt from the list.
 	NoIndexed bool
 
-	// OnlyIndexed excludes repositories that are not indexed by zoekt from the list.
+	// OnlyIndexed excludes repositories thbt bre not indexed by zoekt from the list.
 	OnlyIndexed bool
 
-	// NoEmbedded excludes repositories that are embedded from the list.
+	// NoEmbedded excludes repositories thbt bre embedded from the list.
 	NoEmbedded bool
 
-	// OnlyEmbedded excludes repositories that are not embedded from the list.
+	// OnlyEmbedded excludes repositories thbt bre not embedded from the list.
 	OnlyEmbedded bool
 
-	// CloneStatus if set will only return repos of that clone status.
-	CloneStatus types.CloneStatus
+	// CloneStbtus if set will only return repos of thbt clone stbtus.
+	CloneStbtus types.CloneStbtus
 
-	// NoPrivate excludes private repositories from the list.
-	NoPrivate bool
+	// NoPrivbte excludes privbte repositories from the list.
+	NoPrivbte bool
 
-	// OnlyPrivate excludes non-private repositories from the list.
-	OnlyPrivate bool
+	// OnlyPrivbte excludes non-privbte repositories from the list.
+	OnlyPrivbte bool
 
 	// List of fields by which to order the return repositories.
 	OrderBy RepoListOrderBy
 
-	// Cursors to efficiently paginate through large result sets.
+	// Cursors to efficiently pbginbte through lbrge result sets.
 	Cursors types.MultiCursor
 
-	// UseOr decides between ANDing or ORing the predicates together.
+	// UseOr decides between ANDing or ORing the predicbtes together.
 	UseOr bool
 
-	// FailedFetch, if true, will filter to only repos that failed to clone or fetch
-	// when last attempted. Specifically, this means that they have a non-null
-	// last_error value in the gitserver_repos table.
-	FailedFetch bool
+	// FbiledFetch, if true, will filter to only repos thbt fbiled to clone or fetch
+	// when lbst bttempted. Specificblly, this mebns thbt they hbve b non-null
+	// lbst_error vblue in the gitserver_repos tbble.
+	FbiledFetch bool
 
-	// OnlyCorrupted, if true, will filter to only repos where corruption has been detected.
-	// A repository is corrupt in the gitserver_repos table if it has a non-null value in gitserver_repos.corrupted_at
+	// OnlyCorrupted, if true, will filter to only repos where corruption hbs been detected.
+	// A repository is corrupt in the gitserver_repos tbble if it hbs b non-null vblue in gitserver_repos.corrupted_bt
 	OnlyCorrupted bool
 
-	// MinLastChanged finds repository metadata or data that has changed since
-	// MinLastChanged. It filters against repos.UpdatedAt,
-	// gitserver.LastChanged and searchcontexts.UpdatedAt.
+	// MinLbstChbnged finds repository metbdbtb or dbtb thbt hbs chbnged since
+	// MinLbstChbnged. It filters bgbinst repos.UpdbtedAt,
+	// gitserver.LbstChbnged bnd sebrchcontexts.UpdbtedAt.
 	//
-	// LastChanged is the time of the last git fetch which changed refs
-	// stored. IE the last time any branch changed (not just HEAD).
+	// LbstChbnged is the time of the lbst git fetch which chbnged refs
+	// stored. IE the lbst time bny brbnch chbnged (not just HEAD).
 	//
-	// UpdatedAt is the last time the metadata changed for a repository.
+	// UpdbtedAt is the lbst time the metbdbtb chbnged for b repository.
 	//
-	// Note: This option is used by our search indexer to determine what has
-	// changed since it last polled. The fields its checks are all based on
-	// what can affect search indexes.
-	MinLastChanged time.Time
+	// Note: This option is used by our sebrch indexer to determine whbt hbs
+	// chbnged since it lbst polled. The fields its checks bre bll bbsed on
+	// whbt cbn bffect sebrch indexes.
+	MinLbstChbnged time.Time
 
-	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos can be blocked
-	// automatically or manually for different reasons, like being too big or having copyright issues.
+	// IncludeBlocked, if true, will include blocked repositories in the result set. Repos cbn be blocked
+	// butombticblly or mbnublly for different rebsons, like being too big or hbving copyright issues.
 	IncludeBlocked bool
 
 	// IncludeDeleted, if true, will include soft deleted repositories in the result set.
 	IncludeDeleted bool
 
-	// joinGitserverRepos, if true, will make the fields of gitserver_repos available to select against,
-	// with the table alias "gr".
+	// joinGitserverRepos, if true, will mbke the fields of gitserver_repos bvbilbble to select bgbinst,
+	// with the tbble blibs "gr".
 	joinGitserverRepos bool
 
-	// ExcludeSources, if true, will NULL out the Sources field on repo. Computing it is relatively costly
-	// and if it doesn't end up being used this is wasted compute.
+	// ExcludeSources, if true, will NULL out the Sources field on repo. Computing it is relbtively costly
+	// bnd if it doesn't end up being used this is wbsted compute.
 	ExcludeSources bool
 
-	// cursor-based pagination args
-	PaginationArgs *PaginationArgs
+	// cursor-bbsed pbginbtion brgs
+	PbginbtionArgs *PbginbtionArgs
 
 	*LimitOffset
 }
 
 type RepoKVPFilter struct {
 	Key   string
-	Value *string
-	// If negated is true, this filter will select only repos
-	// that do _not_ have the associated key and value
-	Negated bool
-	// If IgnoreValue is true, this filter will select only repos that
-	// have the given key, regardless of its value
+	Vblue *string
+	// If negbted is true, this filter will select only repos
+	// thbt do _not_ hbve the bssocibted key bnd vblue
+	Negbted bool
+	// If IgnoreVblue is true, this filter will select only repos thbt
+	// hbve the given key, regbrdless of its vblue
 	KeyOnly bool
 }
 
 type RepoTopicFilter struct {
 	Topic string
-	// If negated is true, this filter will select only repos
-	// that do _not_ have the associated topic
-	Negated bool
+	// If negbted is true, this filter will select only repos
+	// thbt do _not_ hbve the bssocibted topic
+	Negbted bool
 }
 
 type RepoListOrderBy []RepoListSort
@@ -757,14 +757,14 @@ func (r RepoListOrderBy) SQL() *sqlf.Query {
 		return sqlf.Sprintf("")
 	}
 
-	clauses := make([]*sqlf.Query, 0, len(r))
-	for _, s := range r {
-		clauses = append(clauses, s.SQL())
+	clbuses := mbke([]*sqlf.Query, 0, len(r))
+	for _, s := rbnge r {
+		clbuses = bppend(clbuses, s.SQL())
 	}
-	return sqlf.Sprintf(`ORDER BY %s`, sqlf.Join(clauses, ", "))
+	return sqlf.Sprintf(`ORDER BY %s`, sqlf.Join(clbuses, ", "))
 }
 
-// RepoListSort is a field by which to sort and the direction of the sorting.
+// RepoListSort is b field by which to sort bnd the direction of the sorting.
 type RepoListSort struct {
 	Field      RepoListColumn
 	Descending bool
@@ -772,7 +772,7 @@ type RepoListSort struct {
 }
 
 func (r RepoListSort) SQL() *sqlf.Query {
-	var sb strings.Builder
+	vbr sb strings.Builder
 
 	sb.WriteString(string(r.Field))
 
@@ -787,56 +787,56 @@ func (r RepoListSort) SQL() *sqlf.Query {
 	return sqlf.Sprintf(sb.String())
 }
 
-// RepoListColumn is a column by which repositories can be sorted. These correspond to columns in the database.
+// RepoListColumn is b column by which repositories cbn be sorted. These correspond to columns in the dbtbbbse.
 type RepoListColumn string
 
 const (
-	RepoListCreatedAt RepoListColumn = "created_at"
-	RepoListName      RepoListColumn = "name"
+	RepoListCrebtedAt RepoListColumn = "crebted_bt"
+	RepoListNbme      RepoListColumn = "nbme"
 	RepoListID        RepoListColumn = "id"
-	RepoListStars     RepoListColumn = "stars"
+	RepoListStbrs     RepoListColumn = "stbrs"
 	RepoListSize      RepoListColumn = "gr.repo_size_bytes"
 )
 
-// List lists repositories in the Sourcegraph repository
+// List lists repositories in the Sourcegrbph repository
 //
-// This will not return any repositories from external services that are not present in the Sourcegraph repository.
-// Matching is done with fuzzy matching, i.e. "query" will match any repo name that matches the regexp `q.*u.*e.*r.*y`
+// This will not return bny repositories from externbl services thbt bre not present in the Sourcegrbph repository.
+// Mbtching is done with fuzzy mbtching, i.e. "query" will mbtch bny repo nbme thbt mbtches the regexp `q.*u.*e.*r.*y`
 func (s *repoStore) List(ctx context.Context, opt ReposListOptions) (results []*types.Repo, err error) {
-	tr, ctx := trace.New(ctx, "repos.List")
+	tr, ctx := trbce.New(ctx, "repos.List")
 	defer tr.EndWithErr(&err)
 
 	if len(opt.OrderBy) == 0 {
-		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
+		opt.OrderBy = bppend(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
 	return s.listRepos(ctx, tr, opt)
 }
 
-// StreamMinimalRepos calls the given callback for each of the repositories names and ids that match the given options.
-func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimalRepo)) (err error) {
-	tr, ctx := trace.New(ctx, "repos.StreamMinimalRepos")
+// StrebmMinimblRepos cblls the given cbllbbck for ebch of the repositories nbmes bnd ids thbt mbtch the given options.
+func (s *repoStore) StrebmMinimblRepos(ctx context.Context, opt ReposListOptions, cb func(*types.MinimblRepo)) (err error) {
+	tr, ctx := trbce.New(ctx, "repos.StrebmMinimblRepos")
 	defer tr.EndWithErr(&err)
 
-	opt.Select = minimalRepoColumns
+	opt.Select = minimblRepoColumns
 	if len(opt.OrderBy) == 0 {
-		opt.OrderBy = append(opt.OrderBy, RepoListSort{Field: RepoListID})
+		opt.OrderBy = bppend(opt.OrderBy, RepoListSort{Field: RepoListID})
 	}
 
-	var privateIDs []api.RepoID
+	vbr privbteIDs []bpi.RepoID
 
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
-		var r types.MinimalRepo
-		var private bool
-		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars})
+		vbr r types.MinimblRepo
+		vbr privbte bool
+		err := rows.Scbn(&r.ID, &r.Nbme, &privbte, &dbutil.NullInt{N: &r.Stbrs})
 		if err != nil {
 			return err
 		}
 
 		cb(&r)
 
-		if private {
-			privateIDs = append(privateIDs, r.ID)
+		if privbte {
+			privbteIDs = bppend(privbteIDs, r.ID)
 		}
 
 		return nil
@@ -845,66 +845,66 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 		return err
 	}
 
-	if len(privateIDs) > 0 {
-		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
+	if len(privbteIDs) > 0 {
+		counterAccessGrbnted.Inc()
+		logPrivbteRepoAccessGrbnted(ctx, NewDBWith(s.logger, s), privbteIDs)
 	}
 
 	return nil
 }
 
-const repoEmbeddingExists = `SELECT EXISTS(SELECT 1 FROM repo_embedding_jobs WHERE repo_id = %s AND state = 'completed')`
+const repoEmbeddingExists = `SELECT EXISTS(SELECT 1 FROM repo_embedding_jobs WHERE repo_id = %s AND stbte = 'completed')`
 
-// RepoEmbeddingExists returns boolean indicating whether embeddings are generated for the repo.
-func (s *repoStore) RepoEmbeddingExists(ctx context.Context, repoID api.RepoID) (bool, error) {
+// RepoEmbeddingExists returns boolebn indicbting whether embeddings bre generbted for the repo.
+func (s *repoStore) RepoEmbeddingExists(ctx context.Context, repoID bpi.RepoID) (bool, error) {
 	q := sqlf.Sprintf(repoEmbeddingExists, repoID)
-	exists, _, err := basestore.ScanFirstBool(s.Query(ctx, q))
+	exists, _, err := bbsestore.ScbnFirstBool(s.Query(ctx, q))
 
 	return exists, err
 }
 
-// ListMinimalRepos returns a list of repositories names and ids.
-func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
-	preallocSize := 128
+// ListMinimblRepos returns b list of repositories nbmes bnd ids.
+func (s *repoStore) ListMinimblRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimblRepo, err error) {
+	prebllocSize := 128
 	if opt.LimitOffset != nil {
-		preallocSize = opt.Limit
+		prebllocSize = opt.Limit
 	} else if len(opt.IDs) > 0 {
-		preallocSize = len(opt.IDs)
+		prebllocSize = len(opt.IDs)
 	}
-	if preallocSize > 4096 {
-		preallocSize = 4096
+	if prebllocSize > 4096 {
+		prebllocSize = 4096
 	}
-	results = make([]types.MinimalRepo, 0, preallocSize)
-	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
-		results = append(results, *r)
+	results = mbke([]types.MinimblRepo, 0, prebllocSize)
+	return results, s.StrebmMinimblRepos(ctx, opt, func(r *types.MinimblRepo) {
+		results = bppend(results, *r)
 	})
 }
 
-func (s *repoStore) listRepos(ctx context.Context, tr trace.Trace, opt ReposListOptions) (rs []*types.Repo, err error) {
-	var privateIDs []api.RepoID
+func (s *repoStore) listRepos(ctx context.Context, tr trbce.Trbce, opt ReposListOptions) (rs []*types.Repo, err error) {
+	vbr privbteIDs []bpi.RepoID
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
-		var r types.Repo
-		if err := scanRepo(s.logger, rows, &r); err != nil {
+		vbr r types.Repo
+		if err := scbnRepo(s.logger, rows, &r); err != nil {
 			return err
 		}
 
-		rs = append(rs, &r)
-		if r.Private {
-			privateIDs = append(privateIDs, r.ID)
+		rs = bppend(rs, &r)
+		if r.Privbte {
+			privbteIDs = bppend(privbteIDs, r.ID)
 		}
 
 		return nil
 	})
 
-	if len(privateIDs) > 0 {
-		counterAccessGranted.Inc()
-		logPrivateRepoAccessGranted(ctx, NewDBWith(s.logger, s), privateIDs)
+	if len(privbteIDs) > 0 {
+		counterAccessGrbnted.Inc()
+		logPrivbteRepoAccessGrbnted(ctx, NewDBWith(s.logger, s), privbteIDs)
 	}
 
 	return rs, err
 }
 
-func (s *repoStore) list(ctx context.Context, tr trace.Trace, opt ReposListOptions, scanRepo func(rows *sql.Rows) error) error {
+func (s *repoStore) list(ctx context.Context, tr trbce.Trbce, opt ReposListOptions, scbnRepo func(rows *sql.Rows) error) error {
 	q, err := s.listSQL(ctx, tr, opt)
 	if err != nil {
 		return err
@@ -913,14 +913,14 @@ func (s *repoStore) list(ctx context.Context, tr trace.Trace, opt ReposListOptio
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
-			return errors.Wrapf(context.DeadlineExceeded, "RepoStore.list: %s", err.Error())
+			return errors.Wrbpf(context.DebdlineExceeded, "RepoStore.list: %s", err.Error())
 		}
 		return err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		if err := scanRepo(rows); err != nil {
+		if err := scbnRepo(rows); err != nil {
 			return err
 		}
 	}
@@ -928,306 +928,306 @@ func (s *repoStore) list(ctx context.Context, tr trace.Trace, opt ReposListOptio
 	return rows.Err()
 }
 
-func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOptions) (*sqlf.Query, error) {
-	var ctes, joins, where []*sqlf.Query
+func (s *repoStore) listSQL(ctx context.Context, tr trbce.Trbce, opt ReposListOptions) (*sqlf.Query, error) {
+	vbr ctes, joins, where []*sqlf.Query
 
 	querySuffix := sqlf.Sprintf("%s %s", opt.OrderBy.SQL(), opt.LimitOffset.SQL())
 
-	if opt.PaginationArgs != nil {
-		p := opt.PaginationArgs.SQL()
+	if opt.PbginbtionArgs != nil {
+		p := opt.PbginbtionArgs.SQL()
 
 		if p.Where != nil {
-			where = append(where, p.Where)
+			where = bppend(where, p.Where)
 		}
 
 		querySuffix = p.AppendOrderToQuery(&sqlf.Query{})
 		querySuffix = p.AppendLimitToQuery(querySuffix)
 	}
 
-	// Cursor-based pagination requires parsing a handful of extra fields, which
-	// may result in additional query conditions.
+	// Cursor-bbsed pbginbtion requires pbrsing b hbndful of extrb fields, which
+	// mby result in bdditionbl query conditions.
 	if len(opt.Cursors) > 0 {
-		cursorConds, err := parseCursorConds(opt.Cursors)
+		cursorConds, err := pbrseCursorConds(opt.Cursors)
 		if err != nil {
 			return nil, err
 		}
 
 		if cursorConds != nil {
-			where = append(where, cursorConds)
+			where = bppend(where, cursorConds)
 		}
 	}
 
-	if opt.Query != "" && (len(opt.IncludePatterns) > 0 || opt.ExcludePattern != "") {
-		return nil, errors.New("Repos.List: Query and IncludePatterns/ExcludePattern options are mutually exclusive")
+	if opt.Query != "" && (len(opt.IncludePbtterns) > 0 || opt.ExcludePbttern != "") {
+		return nil, errors.New("Repos.List: Query bnd IncludePbtterns/ExcludePbttern options bre mutublly exclusive")
 	}
 
 	if opt.Query != "" {
 		items := []*sqlf.Query{
-			sqlf.Sprintf("lower(name) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"),
+			sqlf.Sprintf("lower(nbme) LIKE %s", "%"+strings.ToLower(opt.Query)+"%"),
 		}
-		// Query looks like an ID
-		if id, ok := maybeQueryIsID(opt.Query); ok {
-			items = append(items, sqlf.Sprintf("id = %d", id))
+		// Query looks like bn ID
+		if id, ok := mbybeQueryIsID(opt.Query); ok {
+			items = bppend(items, sqlf.Sprintf("id = %d", id))
 		}
-		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
+		where = bppend(where, sqlf.Sprintf("(%s)", sqlf.Join(items, " OR ")))
 	}
 
-	for _, includePattern := range opt.IncludePatterns {
-		extraConds, err := parsePattern(tr, includePattern, opt.CaseSensitivePatterns)
+	for _, includePbttern := rbnge opt.IncludePbtterns {
+		extrbConds, err := pbrsePbttern(tr, includePbttern, opt.CbseSensitivePbtterns)
 		if err != nil {
 			return nil, err
 		}
-		where = append(where, extraConds...)
+		where = bppend(where, extrbConds...)
 	}
 
-	if opt.ExcludePattern != "" {
-		if opt.CaseSensitivePatterns {
-			where = append(where, sqlf.Sprintf("name !~* %s", opt.ExcludePattern))
+	if opt.ExcludePbttern != "" {
+		if opt.CbseSensitivePbtterns {
+			where = bppend(where, sqlf.Sprintf("nbme !~* %s", opt.ExcludePbttern))
 		} else {
-			where = append(where, sqlf.Sprintf("lower(name) !~* %s", opt.ExcludePattern))
+			where = bppend(where, sqlf.Sprintf("lower(nbme) !~* %s", opt.ExcludePbttern))
 		}
 	}
 
-	for _, descriptionPattern := range opt.DescriptionPatterns {
-		// filtering by description is always case-insensitive
-		descriptionConds, err := parseDescriptionPattern(tr, descriptionPattern)
+	for _, descriptionPbttern := rbnge opt.DescriptionPbtterns {
+		// filtering by description is blwbys cbse-insensitive
+		descriptionConds, err := pbrseDescriptionPbttern(tr, descriptionPbttern)
 		if err != nil {
 			return nil, err
 		}
-		where = append(where, descriptionConds...)
+		where = bppend(where, descriptionConds...)
 	}
 
 	if len(opt.IDs) > 0 {
-		where = append(where, sqlf.Sprintf("id = ANY (%s)", pq.Array(opt.IDs)))
+		where = bppend(where, sqlf.Sprintf("id = ANY (%s)", pq.Arrby(opt.IDs)))
 	}
 
-	if len(opt.ExternalRepos) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepos))
-		for _, spec := range opt.ExternalRepos {
-			er = append(er, sqlf.Sprintf("(external_id = %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternblRepos) > 0 {
+		er := mbke([]*sqlf.Query, 0, len(opt.ExternblRepos))
+		for _, spec := rbnge opt.ExternblRepos {
+			er = bppend(er, sqlf.Sprintf("(externbl_id = %s AND externbl_service_type = %s AND externbl_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
-		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+		where = bppend(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
-	if len(opt.ExternalRepoIncludeContains) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoIncludeContains))
-		for _, spec := range opt.ExternalRepoIncludeContains {
-			er = append(er, sqlf.Sprintf("(external_id SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternblRepoIncludeContbins) > 0 {
+		er := mbke([]*sqlf.Query, 0, len(opt.ExternblRepoIncludeContbins))
+		for _, spec := rbnge opt.ExternblRepoIncludeContbins {
+			er = bppend(er, sqlf.Sprintf("(externbl_id SIMILAR TO %s AND externbl_service_type = %s AND externbl_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
-		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
+		where = bppend(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n OR ")))
 	}
 
-	if len(opt.ExternalRepoExcludeContains) > 0 {
-		er := make([]*sqlf.Query, 0, len(opt.ExternalRepoExcludeContains))
-		for _, spec := range opt.ExternalRepoExcludeContains {
-			er = append(er, sqlf.Sprintf("(external_id NOT SIMILAR TO %s AND external_service_type = %s AND external_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
+	if len(opt.ExternblRepoExcludeContbins) > 0 {
+		er := mbke([]*sqlf.Query, 0, len(opt.ExternblRepoExcludeContbins))
+		for _, spec := rbnge opt.ExternblRepoExcludeContbins {
+			er = bppend(er, sqlf.Sprintf("(externbl_id NOT SIMILAR TO %s AND externbl_service_type = %s AND externbl_service_id = %s)", spec.ID, spec.ServiceType, spec.ServiceID))
 		}
-		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
+		where = bppend(where, sqlf.Sprintf("(%s)", sqlf.Join(er, "\n AND ")))
 	}
 
 	if opt.NoForks {
-		where = append(where, sqlf.Sprintf("NOT fork"))
+		where = bppend(where, sqlf.Sprintf("NOT fork"))
 	}
 	if opt.OnlyForks {
-		where = append(where, sqlf.Sprintf("fork"))
+		where = bppend(where, sqlf.Sprintf("fork"))
 	}
 	if opt.NoArchived {
-		where = append(where, sqlf.Sprintf("NOT archived"))
+		where = bppend(where, sqlf.Sprintf("NOT brchived"))
 	}
 	if opt.OnlyArchived {
-		where = append(where, sqlf.Sprintf("archived"))
+		where = bppend(where, sqlf.Sprintf("brchived"))
 	}
-	// Since https://github.com/sourcegraph/sourcegraph/pull/35633 there is no need to do an anti-join
-	// with gitserver_repos table (checking for such repos that are present in repo but absent in gitserver_repos
-	// table) because repo table is strictly consistent with gitserver_repos table.
+	// Since https://github.com/sourcegrbph/sourcegrbph/pull/35633 there is no need to do bn bnti-join
+	// with gitserver_repos tbble (checking for such repos thbt bre present in repo but bbsent in gitserver_repos
+	// tbble) becbuse repo tbble is strictly consistent with gitserver_repos tbble.
 	if opt.NoCloned {
-		where = append(where, sqlf.Sprintf("(gr.clone_status IN ('not_cloned', 'cloning'))"))
+		where = bppend(where, sqlf.Sprintf("(gr.clone_stbtus IN ('not_cloned', 'cloning'))"))
 	}
 	if opt.OnlyCloned {
-		where = append(where, sqlf.Sprintf("gr.clone_status = 'cloned'"))
+		where = bppend(where, sqlf.Sprintf("gr.clone_stbtus = 'cloned'"))
 	}
-	if opt.CloneStatus != types.CloneStatusUnknown {
-		where = append(where, sqlf.Sprintf("gr.clone_status = %s", opt.CloneStatus))
+	if opt.CloneStbtus != types.CloneStbtusUnknown {
+		where = bppend(where, sqlf.Sprintf("gr.clone_stbtus = %s", opt.CloneStbtus))
 	}
 	if opt.NoIndexed {
-		where = append(where, sqlf.Sprintf("zr.index_status = 'not_indexed'"))
+		where = bppend(where, sqlf.Sprintf("zr.index_stbtus = 'not_indexed'"))
 	}
 	if opt.OnlyIndexed {
-		where = append(where, sqlf.Sprintf("zr.index_status = 'indexed'"))
+		where = bppend(where, sqlf.Sprintf("zr.index_stbtus = 'indexed'"))
 	}
 	if opt.NoEmbedded {
-		where = append(where, sqlf.Sprintf("embedded IS NULL"))
+		where = bppend(where, sqlf.Sprintf("embedded IS NULL"))
 	}
 	if opt.OnlyEmbedded {
-		where = append(where, sqlf.Sprintf("embedded IS NOT NULL"))
+		where = bppend(where, sqlf.Sprintf("embedded IS NOT NULL"))
 	}
 
-	if opt.FailedFetch {
-		where = append(where, sqlf.Sprintf("gr.last_error IS NOT NULL"))
+	if opt.FbiledFetch {
+		where = bppend(where, sqlf.Sprintf("gr.lbst_error IS NOT NULL"))
 	}
 
 	if opt.OnlyCorrupted {
-		where = append(where, sqlf.Sprintf("gr.corrupted_at IS NOT NULL"))
+		where = bppend(where, sqlf.Sprintf("gr.corrupted_bt IS NOT NULL"))
 	}
 
-	if !opt.MinLastChanged.IsZero() {
+	if !opt.MinLbstChbnged.IsZero() {
 		conds := []*sqlf.Query{
 			sqlf.Sprintf(`
 				EXISTS (
 					SELECT 1
-					FROM codeintel_path_ranks pr
-					JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
+					FROM codeintel_pbth_rbnks pr
+					JOIN codeintel_rbnking_progress crp ON crp.grbph_key = pr.grbph_key
 					WHERE
 						pr.repository_id = repo.id AND
 
-						-- Only keep progress rows that are completed, otherwise
-						-- the data that the timestamp applies to will not be
+						-- Only keep progress rows thbt bre completed, otherwise
+						-- the dbtb thbt the timestbmp bpplies to will not be
 						-- visible (yet).
 						crp.id = (
 							SELECT pl.id
-							FROM codeintel_ranking_progress pl
-							WHERE pl.reducer_completed_at IS NOT NULL
-							ORDER BY pl.reducer_completed_at DESC
+							FROM codeintel_rbnking_progress pl
+							WHERE pl.reducer_completed_bt IS NOT NULL
+							ORDER BY pl.reducer_completed_bt DESC
 							LIMIT 1
 						) AND
 
-						-- The ranks became visible when the progress object was
-						-- marked as completed. The timestamp on the path ranks
-						-- table is now an insertion date, but inserted records
-						-- may not be visible to active ranking jobs.
-						crp.reducer_completed_at >= %s
+						-- The rbnks becbme visible when the progress object wbs
+						-- mbrked bs completed. The timestbmp on the pbth rbnks
+						-- tbble is now bn insertion dbte, but inserted records
+						-- mby not be visible to bctive rbnking jobs.
+						crp.reducer_completed_bt >= %s
 				)
-			`, opt.MinLastChanged),
+			`, opt.MinLbstChbnged),
 
-			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.last_changed >= %s)", opt.MinLastChanged),
-			sqlf.Sprintf("COALESCE(repo.updated_at, repo.created_at) >= %s", opt.MinLastChanged),
-			sqlf.Sprintf("EXISTS (SELECT 1 FROM search_context_repos scr LEFT JOIN search_contexts sc ON scr.search_context_id = sc.id WHERE scr.repo_id = repo.id AND sc.updated_at >= %s)", opt.MinLastChanged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM gitserver_repos gr WHERE gr.repo_id = repo.id AND gr.lbst_chbnged >= %s)", opt.MinLbstChbnged),
+			sqlf.Sprintf("COALESCE(repo.updbted_bt, repo.crebted_bt) >= %s", opt.MinLbstChbnged),
+			sqlf.Sprintf("EXISTS (SELECT 1 FROM sebrch_context_repos scr LEFT JOIN sebrch_contexts sc ON scr.sebrch_context_id = sc.id WHERE scr.repo_id = repo.id AND sc.updbted_bt >= %s)", opt.MinLbstChbnged),
 		}
-		where = append(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
+		where = bppend(where, sqlf.Sprintf("(%s)", sqlf.Join(conds, " OR ")))
 	}
-	if opt.NoPrivate {
-		where = append(where, sqlf.Sprintf("NOT private"))
+	if opt.NoPrivbte {
+		where = bppend(where, sqlf.Sprintf("NOT privbte"))
 	}
-	if opt.OnlyPrivate {
-		where = append(where, sqlf.Sprintf("private"))
+	if opt.OnlyPrivbte {
+		where = bppend(where, sqlf.Sprintf("privbte"))
 	}
 
-	if len(opt.Names) > 0 {
-		lowerNames := make([]string, len(opt.Names))
-		for i, name := range opt.Names {
-			lowerNames[i] = strings.ToLower(name)
+	if len(opt.Nbmes) > 0 {
+		lowerNbmes := mbke([]string, len(opt.Nbmes))
+		for i, nbme := rbnge opt.Nbmes {
+			lowerNbmes[i] = strings.ToLower(nbme)
 		}
 
-		// Performance improvement
+		// Performbnce improvement
 		//
-		// Comparing JUST the name field will use the repo_name_unique index, which is
-		// a unique btree index over the citext name field. This tends to be a VERY SLOW
-		// comparison over a large table. We were seeing query plans growing linearly with
-		// the size of the result set such that each unique index scan would take ~0.1ms.
-		// This adds up as we regularly query 10k-40k repositories at a time.
+		// Compbring JUST the nbme field will use the repo_nbme_unique index, which is
+		// b unique btree index over the citext nbme field. This tends to be b VERY SLOW
+		// compbrison over b lbrge tbble. We were seeing query plbns growing linebrly with
+		// the size of the result set such thbt ebch unique index scbn would tbke ~0.1ms.
+		// This bdds up bs we regulbrly query 10k-40k repositories bt b time.
 		//
-		// This condition instead forces the use of a btree index repo_name_idx defined over
-		// (lower(name::text) COLLATE "C"). This is a MUCH faster comparison as it does not
-		// need to fold the casing of either the input value nor the value in the index.
+		// This condition instebd forces the use of b btree index repo_nbme_idx defined over
+		// (lower(nbme::text) COLLATE "C"). This is b MUCH fbster compbrison bs it does not
+		// need to fold the cbsing of either the input vblue nor the vblue in the index.
 
-		where = append(where, sqlf.Sprintf(`lower(name::text) COLLATE "C" = ANY (%s::text[])`, pq.Array(lowerNames)))
+		where = bppend(where, sqlf.Sprintf(`lower(nbme::text) COLLATE "C" = ANY (%s::text[])`, pq.Arrby(lowerNbmes)))
 	}
 
-	if opt.HashedName != "" {
-		// This will use the repo_hashed_name_idx
-		where = append(where, sqlf.Sprintf(`sha256(lower(name)::bytea) = decode(%s, 'hex')`, opt.HashedName))
+	if opt.HbshedNbme != "" {
+		// This will use the repo_hbshed_nbme_idx
+		where = bppend(where, sqlf.Sprintf(`shb256(lower(nbme)::byteb) = decode(%s, 'hex')`, opt.HbshedNbme))
 	}
 
 	if len(opt.URIs) > 0 {
-		where = append(where, sqlf.Sprintf("uri = ANY (%s)", pq.Array(opt.URIs)))
+		where = bppend(where, sqlf.Sprintf("uri = ANY (%s)", pq.Arrby(opt.URIs)))
 	}
 
-	if (len(opt.ExternalServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
+	if (len(opt.ExternblServiceIDs) != 0 && (opt.UserID != 0 || opt.OrgID != 0)) ||
 		(opt.UserID != 0 && opt.OrgID != 0) {
-		return nil, errors.New("options ExternalServiceIDs, UserID and OrgID are mutually exclusive")
-	} else if len(opt.ExternalServiceIDs) != 0 {
-		where = append(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM external_service_repos esr WHERE repo.id = esr.repo_id AND esr.external_service_id = ANY (%s))", pq.Array(opt.ExternalServiceIDs)))
-	} else if opt.SearchContextID != 0 {
-		// Joining on distinct search context repos to avoid returning duplicates
-		joins = append(joins, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, search_context_id FROM search_context_repos) dscr ON repo.id = dscr.repo_id`))
-		where = append(where, sqlf.Sprintf("dscr.search_context_id = %d", opt.SearchContextID))
+		return nil, errors.New("options ExternblServiceIDs, UserID bnd OrgID bre mutublly exclusive")
+	} else if len(opt.ExternblServiceIDs) != 0 {
+		where = bppend(where, sqlf.Sprintf("EXISTS (SELECT 1 FROM externbl_service_repos esr WHERE repo.id = esr.repo_id AND esr.externbl_service_id = ANY (%s))", pq.Arrby(opt.ExternblServiceIDs)))
+	} else if opt.SebrchContextID != 0 {
+		// Joining on distinct sebrch context repos to bvoid returning duplicbtes
+		joins = bppend(joins, sqlf.Sprintf(`JOIN (SELECT DISTINCT repo_id, sebrch_context_id FROM sebrch_context_repos) dscr ON repo.id = dscr.repo_id`))
+		where = bppend(where, sqlf.Sprintf("dscr.sebrch_context_id = %d", opt.SebrchContextID))
 	} else if opt.UserID != 0 {
 		userReposCTE := sqlf.Sprintf(userReposCTEFmtstr, opt.UserID)
-		ctes = append(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
-		joins = append(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
+		ctes = bppend(ctes, sqlf.Sprintf("user_repos AS (%s)", userReposCTE))
+		joins = bppend(joins, sqlf.Sprintf("JOIN user_repos ON user_repos.id = repo.id"))
 	} else if opt.OrgID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN external_service_repos ON external_service_repos.repo_id = repo.id"))
-		where = append(where, sqlf.Sprintf("external_service_repos.org_id = %d", opt.OrgID))
+		joins = bppend(joins, sqlf.Sprintf("INNER JOIN externbl_service_repos ON externbl_service_repos.repo_id = repo.id"))
+		where = bppend(where, sqlf.Sprintf("externbl_service_repos.org_id = %d", opt.OrgID))
 	}
 
-	if opt.NoCloned || opt.OnlyCloned || opt.FailedFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
-		opt.CloneStatus != types.CloneStatusUnknown || containsSizeField(opt.OrderBy) || (opt.PaginationArgs != nil && containsOrderBySizeField(opt.PaginationArgs.OrderBy)) {
-		joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
+	if opt.NoCloned || opt.OnlyCloned || opt.FbiledFetch || opt.OnlyCorrupted || opt.joinGitserverRepos ||
+		opt.CloneStbtus != types.CloneStbtusUnknown || contbinsSizeField(opt.OrderBy) || (opt.PbginbtionArgs != nil && contbinsOrderBySizeField(opt.PbginbtionArgs.OrderBy)) {
+		joins = bppend(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id"))
 	}
 	if opt.OnlyIndexed || opt.NoIndexed {
-		joins = append(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
+		joins = bppend(joins, sqlf.Sprintf("JOIN zoekt_repos zr ON zr.repo_id = repo.id"))
 	}
 
 	if opt.NoEmbedded || opt.OnlyEmbedded {
 		embeddedRepoQuery := sqlf.Sprintf(embeddedReposQueryFmtstr)
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN (%s) embedded on embedded.repo_id = id", embeddedRepoQuery))
+		joins = bppend(joins, sqlf.Sprintf("LEFT JOIN (%s) embedded on embedded.repo_id = id", embeddedRepoQuery))
 	}
 
 	if len(opt.KVPFilters) > 0 {
-		var ands []*sqlf.Query
-		for _, filter := range opt.KVPFilters {
+		vbr bnds []*sqlf.Query
+		for _, filter := rbnge opt.KVPFilters {
 			if filter.KeyOnly {
 				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s)"
-				if filter.Negated {
+				if filter.Negbted {
 					q = "NOT " + q
 				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key))
-			} else if filter.Value != nil {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value = %s)"
-				if filter.Negated {
+				bnds = bppend(bnds, sqlf.Sprintf(q, filter.Key))
+			} else if filter.Vblue != nil {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND vblue = %s)"
+				if filter.Negbted {
 					q = "NOT " + q
 				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key, *filter.Value))
+				bnds = bppend(bnds, sqlf.Sprintf(q, filter.Key, *filter.Vblue))
 			} else {
-				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND value IS NULL)"
-				if filter.Negated {
+				q := "EXISTS (SELECT 1 FROM repo_kvps WHERE repo_id = repo.id AND key = %s AND vblue IS NULL)"
+				if filter.Negbted {
 					q = "NOT " + q
 				}
-				ands = append(ands, sqlf.Sprintf(q, filter.Key))
+				bnds = bppend(bnds, sqlf.Sprintf(q, filter.Key))
 			}
 		}
-		where = append(where, sqlf.Join(ands, "AND"))
+		where = bppend(where, sqlf.Join(bnds, "AND"))
 	}
 
 	if len(opt.TopicFilters) > 0 {
-		var ands []*sqlf.Query
-		for _, filter := range opt.TopicFilters {
-			// This condition checks that the requested topics are contained in
-			// the repo's metadata. This is designed to work with the
+		vbr bnds []*sqlf.Query
+		for _, filter := rbnge opt.TopicFilters {
+			// This condition checks thbt the requested topics bre contbined in
+			// the repo's metbdbtb. This is designed to work with the
 			// idx_repo_github_topics index.
 			//
-			// We use the unusual `jsonb_build_array` and `jsonb_build_object`
-			// syntax instead of JSONB literals so that we can use SQL
-			// variables for the user-provided topic names (don't want SQL
+			// We use the unusubl `jsonb_build_brrby` bnd `jsonb_build_object`
+			// syntbx instebd of JSONB literbls so thbt we cbn use SQL
+			// vbribbles for the user-provided topic nbmes (don't wbnt SQL
 			// injections here).
-			cond := `external_service_type = 'github' AND metadata->'RepositoryTopics'->'Nodes' @> jsonb_build_array(jsonb_build_object('Topic', jsonb_build_object('Name', %s::text)))`
-			if filter.Negated {
-				// Use Coalesce in case the JSON access evaluates to NULL.
-				// Since negating a NULL evaluates to NULL, we want to
-				// explicitly treat NULLs as false first
-				cond = `NOT COALESCE(` + cond + `, false)`
+			cond := `externbl_service_type = 'github' AND metbdbtb->'RepositoryTopics'->'Nodes' @> jsonb_build_brrby(jsonb_build_object('Topic', jsonb_build_object('Nbme', %s::text)))`
+			if filter.Negbted {
+				// Use Coblesce in cbse the JSON bccess evblubtes to NULL.
+				// Since negbting b NULL evblubtes to NULL, we wbnt to
+				// explicitly trebt NULLs bs fblse first
+				cond = `NOT COALESCE(` + cond + `, fblse)`
 			}
-			ands = append(ands, sqlf.Sprintf(cond, filter.Topic))
+			bnds = bppend(bnds, sqlf.Sprintf(cond, filter.Topic))
 		}
-		where = append(where, sqlf.Join(ands, "AND"))
+		where = bppend(where, sqlf.Join(bnds, "AND"))
 	}
 
-	baseConds := sqlf.Sprintf("TRUE")
+	bbseConds := sqlf.Sprintf("TRUE")
 	if !opt.IncludeDeleted {
-		baseConds = sqlf.Sprintf("repo.deleted_at IS NULL")
+		bbseConds = sqlf.Sprintf("repo.deleted_bt IS NULL")
 	}
 	if !opt.IncludeBlocked {
-		baseConds = sqlf.Sprintf("%s AND repo.blocked IS NULL", baseConds)
+		bbseConds = sqlf.Sprintf("%s AND repo.blocked IS NULL", bbseConds)
 	}
 
 	whereConds := sqlf.Sprintf("TRUE")
@@ -1239,7 +1239,7 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 		}
 	}
 
-	queryConds := sqlf.Sprintf("%s AND (%s)", baseConds, whereConds)
+	queryConds := sqlf.Sprintf("%s AND (%s)", bbseConds, whereConds)
 
 	queryPrefix := sqlf.Sprintf("")
 	if len(ctes) > 0 {
@@ -1248,15 +1248,15 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 
 	columns := repoColumns
 	if !opt.ExcludeSources {
-		columns = append(columns, getSourcesByRepoQueryStr)
+		columns = bppend(columns, getSourcesByRepoQueryStr)
 	} else {
-		columns = append(columns, "NULL")
+		columns = bppend(columns, "NULL")
 	}
 	if len(opt.Select) > 0 {
 		columns = opt.Select
 	}
 
-	authzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	buthzConds, err := AuthzQueryConds(ctx, NewDBWith(s.logger, s))
 	if err != nil {
 		return nil, err
 	}
@@ -1266,143 +1266,143 @@ func (s *repoStore) listSQL(ctx context.Context, tr trace.Trace, opt ReposListOp
 		queryPrefix,
 		sqlf.Join(joins, "\n"),
 		queryConds,
-		authzConds, // 🚨 SECURITY: Enforce repository permissions
+		buthzConds, // 🚨 SECURITY: Enforce repository permissions
 		querySuffix,
 	)
 
 	return q, nil
 }
 
-func containsSizeField(orderBy RepoListOrderBy) bool {
-	for _, field := range orderBy {
+func contbinsSizeField(orderBy RepoListOrderBy) bool {
+	for _, field := rbnge orderBy {
 		if field.Field == RepoListSize {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func containsOrderBySizeField(orderBy OrderBy) bool {
-	for _, field := range orderBy {
+func contbinsOrderBySizeField(orderBy OrderBy) bool {
+	for _, field := rbnge orderBy {
 		if field.Field == string(RepoListSize) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
 const embeddedReposQueryFmtstr = `
-	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE state = 'completed'
+	SELECT DISTINCT ON (repo_id) repo_id, true embedded FROM repo_embedding_jobs WHERE stbte = 'completed'
 `
 
 const userReposCTEFmtstr = `
-SELECT repo_id as id FROM external_service_repos WHERE user_id = %d
+SELECT repo_id bs id FROM externbl_service_repos WHERE user_id = %d
 `
 
-type ListSourcegraphDotComIndexableReposOptions struct {
-	// CloneStatus if set will only return indexable repos of that clone
-	// status.
-	CloneStatus types.CloneStatus
+type ListSourcegrbphDotComIndexbbleReposOptions struct {
+	// CloneStbtus if set will only return indexbble repos of thbt clone
+	// stbtus.
+	CloneStbtus types.CloneStbtus
 }
 
-// listSourcegraphDotComIndexableReposMinStars is the minimum number of stars needed for a public
-// repo to be indexed on sourcegraph.com.
-const listSourcegraphDotComIndexableReposMinStars = 5
+// listSourcegrbphDotComIndexbbleReposMinStbrs is the minimum number of stbrs needed for b public
+// repo to be indexed on sourcegrbph.com.
+const listSourcegrbphDotComIndexbbleReposMinStbrs = 5
 
-func (s *repoStore) ListSourcegraphDotComIndexableRepos(ctx context.Context, opts ListSourcegraphDotComIndexableReposOptions) (results []types.MinimalRepo, err error) {
-	tr, ctx := trace.New(ctx, "repos.ListIndexable")
+func (s *repoStore) ListSourcegrbphDotComIndexbbleRepos(ctx context.Context, opts ListSourcegrbphDotComIndexbbleReposOptions) (results []types.MinimblRepo, err error) {
+	tr, ctx := trbce.New(ctx, "repos.ListIndexbble")
 	defer tr.EndWithErr(&err)
 
-	var joins, where []*sqlf.Query
-	if opts.CloneStatus != types.CloneStatusUnknown {
-		if opts.CloneStatus == types.CloneStatusCloned {
-			// **Performance optimization case**:
+	vbr joins, where []*sqlf.Query
+	if opts.CloneStbtus != types.CloneStbtusUnknown {
+		if opts.CloneStbtus == types.CloneStbtusCloned {
+			// **Performbnce optimizbtion cbse**:
 			//
-			// sourcegraph.com (at the time of this comment) has 2.8M cloned and 10k uncloned _indexable_ repos.
-			// At this scale, it is much faster (and logically equivalent) to perform an anti-join on the inverse
-			// set (i.e., filter out non-cloned repos) than a join on the target set (i.e., retaining cloned repos).
+			// sourcegrbph.com (bt the time of this comment) hbs 2.8M cloned bnd 10k uncloned _indexbble_ repos.
+			// At this scble, it is much fbster (bnd logicblly equivblent) to perform bn bnti-join on the inverse
+			// set (i.e., filter out non-cloned repos) thbn b join on the tbrget set (i.e., retbining cloned repos).
 			//
-			// If these scales change significantly this optimization should be reconsidered. The original query
-			// plans informing this change are available at https://github.com/sourcegraph/sourcegraph/pull/44129.
-			joins = append(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status <> %s", types.CloneStatusCloned))
-			where = append(where, sqlf.Sprintf("gr.repo_id IS NULL"))
+			// If these scbles chbnge significbntly this optimizbtion should be reconsidered. The originbl query
+			// plbns informing this chbnge bre bvbilbble bt https://github.com/sourcegrbph/sourcegrbph/pull/44129.
+			joins = bppend(joins, sqlf.Sprintf("LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_stbtus <> %s", types.CloneStbtusCloned))
+			where = bppend(where, sqlf.Sprintf("gr.repo_id IS NULL"))
 		} else {
-			// Normal case: Filter out rows that do not have a gitserver repo with the target status
-			joins = append(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_status = %s", opts.CloneStatus))
+			// Normbl cbse: Filter out rows thbt do not hbve b gitserver repo with the tbrget stbtus
+			joins = bppend(joins, sqlf.Sprintf("JOIN gitserver_repos gr ON gr.repo_id = repo.id AND gr.clone_stbtus = %s", opts.CloneStbtus))
 		}
 	}
 
 	if len(where) == 0 {
-		where = append(where, sqlf.Sprintf("TRUE"))
+		where = bppend(where, sqlf.Sprintf("TRUE"))
 	}
 
 	q := sqlf.Sprintf(
-		listSourcegraphDotComIndexableReposQuery,
+		listSourcegrbphDotComIndexbbleReposQuery,
 		sqlf.Join(joins, "\n"),
-		listSourcegraphDotComIndexableReposMinStars,
+		listSourcegrbphDotComIndexbbleReposMinStbrs,
 		sqlf.Join(where, "\nAND"),
 	)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying indexable repos")
+		return nil, errors.Wrbp(err, "querying indexbble repos")
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var r types.MinimalRepo
-		if err := rows.Scan(&r.ID, &r.Name, &dbutil.NullInt{N: &r.Stars}); err != nil {
-			return nil, errors.Wrap(err, "scanning indexable repos")
+		vbr r types.MinimblRepo
+		if err := rows.Scbn(&r.ID, &r.Nbme, &dbutil.NullInt{N: &r.Stbrs}); err != nil {
+			return nil, errors.Wrbp(err, "scbnning indexbble repos")
 		}
-		results = append(results, r)
+		results = bppend(results, r)
 	}
 	if err = rows.Err(); err != nil {
-		return nil, errors.Wrap(err, "scanning indexable repos")
+		return nil, errors.Wrbp(err, "scbnning indexbble repos")
 	}
 
 	return results, nil
 }
 
-// N.B. This query's exact conditions are mirrored in the Postgres index
-// repo_dotcom_indexable_repos_idx. Any substantial changes to this query
-// may require an associated index redefinition.
-const listSourcegraphDotComIndexableReposQuery = `
+// N.B. This query's exbct conditions bre mirrored in the Postgres index
+// repo_dotcom_indexbble_repos_idx. Any substbntibl chbnges to this query
+// mby require bn bssocibted index redefinition.
+const listSourcegrbphDotComIndexbbleReposQuery = `
 SELECT
 	repo.id,
-	repo.name,
-	repo.stars
+	repo.nbme,
+	repo.stbrs
 FROM repo
 %s
 WHERE
-	deleted_at IS NULL AND
+	deleted_bt IS NULL AND
 	blocked IS NULL AND
 	(
-		(repo.stars >= %s AND NOT COALESCE(fork, false) AND NOT archived)
+		(repo.stbrs >= %s AND NOT COALESCE(fork, fblse) AND NOT brchived)
 		OR
-		lower(repo.name) ~ '^(src\.fedoraproject\.org|maven|npm|jdk)'
+		lower(repo.nbme) ~ '^(src\.fedorbproject\.org|mbven|npm|jdk)'
 	) AND
 	%s
-ORDER BY stars DESC NULLS LAST
+ORDER BY stbrs DESC NULLS LAST
 `
 
-// Create inserts repos and their sources, respectively in the repo and external_service_repos table.
-// Associated external services must already exist.
-func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error) {
-	tr, ctx := trace.New(ctx, "repos.Create")
+// Crebte inserts repos bnd their sources, respectively in the repo bnd externbl_service_repos tbble.
+// Associbted externbl services must blrebdy exist.
+func (s *repoStore) Crebte(ctx context.Context, repos ...*types.Repo) (err error) {
+	tr, ctx := trbce.New(ctx, "repos.Crebte")
 	defer tr.EndWithErr(&err)
 
-	records := make([]*repoRecord, 0, len(repos))
+	records := mbke([]*repoRecord, 0, len(repos))
 
-	for _, r := range repos {
+	for _, r := rbnge repos {
 		repoRec, err := newRepoRecord(r)
 		if err != nil {
 			return err
 		}
 
-		records = append(records, repoRec)
+		records = bppend(records, repoRec)
 	}
 
-	encodedRepos, err := json.Marshal(records)
+	encodedRepos, err := json.Mbrshbl(records)
 	if err != nil {
 		return err
 	}
@@ -1411,12 +1411,12 @@ func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "insert")
+		return errors.Wrbp(err, "insert")
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for i := 0; rows.Next(); i++ {
-		if err := rows.Scan(&repos[i].ID); err != nil {
+		if err := rows.Scbn(&repos[i].ID); err != nil {
 			return err
 		}
 	}
@@ -1424,112 +1424,112 @@ func (s *repoStore) Create(ctx context.Context, repos ...*types.Repo) (err error
 	return nil
 }
 
-// repoRecord is the json representation of a repository as used in this package
+// repoRecord is the json representbtion of b repository bs used in this pbckbge
 // Postgres CTEs.
 type repoRecord struct {
-	ID                  api.RepoID      `json:"id"`
-	Name                string          `json:"name"`
+	ID                  bpi.RepoID      `json:"id"`
+	Nbme                string          `json:"nbme"`
 	URI                 *string         `json:"uri,omitempty"`
 	Description         string          `json:"description"`
-	CreatedAt           time.Time       `json:"created_at"`
-	UpdatedAt           *time.Time      `json:"updated_at,omitempty"`
-	DeletedAt           *time.Time      `json:"deleted_at,omitempty"`
-	ExternalServiceType *string         `json:"external_service_type,omitempty"`
-	ExternalServiceID   *string         `json:"external_service_id,omitempty"`
-	ExternalID          *string         `json:"external_id,omitempty"`
-	Archived            bool            `json:"archived"`
+	CrebtedAt           time.Time       `json:"crebted_bt"`
+	UpdbtedAt           *time.Time      `json:"updbted_bt,omitempty"`
+	DeletedAt           *time.Time      `json:"deleted_bt,omitempty"`
+	ExternblServiceType *string         `json:"externbl_service_type,omitempty"`
+	ExternblServiceID   *string         `json:"externbl_service_id,omitempty"`
+	ExternblID          *string         `json:"externbl_id,omitempty"`
+	Archived            bool            `json:"brchived"`
 	Fork                bool            `json:"fork"`
-	Stars               int             `json:"stars"`
-	Private             bool            `json:"private"`
-	Metadata            json.RawMessage `json:"metadata"`
-	Sources             json.RawMessage `json:"sources,omitempty"`
+	Stbrs               int             `json:"stbrs"`
+	Privbte             bool            `json:"privbte"`
+	Metbdbtb            json.RbwMessbge `json:"metbdbtb"`
+	Sources             json.RbwMessbge `json:"sources,omitempty"`
 }
 
 func newRepoRecord(r *types.Repo) (*repoRecord, error) {
-	metadata, err := metadataColumn(r.Metadata)
+	metbdbtb, err := metbdbtbColumn(r.Metbdbtb)
 	if err != nil {
-		return nil, errors.Wrapf(err, "newRecord: metadata marshalling failed")
+		return nil, errors.Wrbpf(err, "newRecord: metbdbtb mbrshblling fbiled")
 	}
 
 	sources, err := sourcesColumn(r.ID, r.Sources)
 	if err != nil {
-		return nil, errors.Wrapf(err, "newRecord: sources marshalling failed")
+		return nil, errors.Wrbpf(err, "newRecord: sources mbrshblling fbiled")
 	}
 
 	return &repoRecord{
 		ID:                  r.ID,
-		Name:                string(r.Name),
+		Nbme:                string(r.Nbme),
 		URI:                 dbutil.NullStringColumn(r.URI),
 		Description:         r.Description,
-		CreatedAt:           r.CreatedAt.UTC(),
-		UpdatedAt:           dbutil.NullTimeColumn(r.UpdatedAt),
+		CrebtedAt:           r.CrebtedAt.UTC(),
+		UpdbtedAt:           dbutil.NullTimeColumn(r.UpdbtedAt),
 		DeletedAt:           dbutil.NullTimeColumn(r.DeletedAt),
-		ExternalServiceType: dbutil.NullStringColumn(r.ExternalRepo.ServiceType),
-		ExternalServiceID:   dbutil.NullStringColumn(r.ExternalRepo.ServiceID),
-		ExternalID:          dbutil.NullStringColumn(r.ExternalRepo.ID),
+		ExternblServiceType: dbutil.NullStringColumn(r.ExternblRepo.ServiceType),
+		ExternblServiceID:   dbutil.NullStringColumn(r.ExternblRepo.ServiceID),
+		ExternblID:          dbutil.NullStringColumn(r.ExternblRepo.ID),
 		Archived:            r.Archived,
 		Fork:                r.Fork,
-		Stars:               r.Stars,
-		Private:             r.Private,
-		Metadata:            metadata,
+		Stbrs:               r.Stbrs,
+		Privbte:             r.Privbte,
+		Metbdbtb:            metbdbtb,
 		Sources:             sources,
 	}, nil
 }
 
-func metadataColumn(metadata any) (msg json.RawMessage, err error) {
-	switch m := metadata.(type) {
-	case nil:
-		msg = json.RawMessage("{}")
-	case string:
-		msg = json.RawMessage(m)
-	case []byte:
+func metbdbtbColumn(metbdbtb bny) (msg json.RbwMessbge, err error) {
+	switch m := metbdbtb.(type) {
+	cbse nil:
+		msg = json.RbwMessbge("{}")
+	cbse string:
+		msg = json.RbwMessbge(m)
+	cbse []byte:
 		msg = m
-	case json.RawMessage:
+	cbse json.RbwMessbge:
 		msg = m
-	default:
-		msg, err = json.MarshalIndent(m, "        ", "    ")
+	defbult:
+		msg, err = json.MbrshblIndent(m, "        ", "    ")
 	}
 	return
 }
 
-func sourcesColumn(repoID api.RepoID, sources map[string]*types.SourceInfo) (json.RawMessage, error) {
-	var records []externalServiceRepo
-	for _, src := range sources {
-		records = append(records, externalServiceRepo{
-			ExternalServiceID: src.ExternalServiceID(),
+func sourcesColumn(repoID bpi.RepoID, sources mbp[string]*types.SourceInfo) (json.RbwMessbge, error) {
+	vbr records []externblServiceRepo
+	for _, src := rbnge sources {
+		records = bppend(records, externblServiceRepo{
+			ExternblServiceID: src.ExternblServiceID(),
 			RepoID:            int64(repoID),
 			CloneURL:          src.CloneURL,
 		})
 	}
 
-	return json.MarshalIndent(records, "        ", "    ")
+	return json.MbrshblIndent(records, "        ", "    ")
 }
 
-type externalServiceRepo struct {
-	ExternalServiceID int64  `json:"external_service_id"`
+type externblServiceRepo struct {
+	ExternblServiceID int64  `json:"externbl_service_id"`
 	RepoID            int64  `json:"repo_id"`
 	CloneURL          string `json:"clone_url"`
 }
 
-var insertReposQuery = `
+vbr insertReposQuery = `
 WITH repos_list AS (
   SELECT * FROM ROWS FROM (
 	json_to_recordset(%s)
 	AS (
-		name                  citext,
+		nbme                  citext,
 		uri                   citext,
 		description           text,
-		created_at            timestamptz,
-		updated_at            timestamptz,
-		deleted_at            timestamptz,
-		external_service_type text,
-		external_service_id   text,
-		external_id           text,
-		archived              boolean,
-		fork                  boolean,
-		stars                 integer,
-		private               boolean,
-		metadata              jsonb,
+		crebted_bt            timestbmptz,
+		updbted_bt            timestbmptz,
+		deleted_bt            timestbmptz,
+		externbl_service_type text,
+		externbl_service_id   text,
+		externbl_id           text,
+		brchived              boolebn,
+		fork                  boolebn,
+		stbrs                 integer,
+		privbte               boolebn,
+		metbdbtb              jsonb,
 		sources               jsonb
 	  )
 	)
@@ -1537,36 +1537,36 @@ WITH repos_list AS (
 ),
 inserted_repos AS (
   INSERT INTO repo (
-	name,
+	nbme,
 	uri,
 	description,
-	created_at,
-	updated_at,
-	deleted_at,
-	external_service_type,
-	external_service_id,
-	external_id,
-	archived,
+	crebted_bt,
+	updbted_bt,
+	deleted_bt,
+	externbl_service_type,
+	externbl_service_id,
+	externbl_id,
+	brchived,
 	fork,
-	stars,
-	private,
-	metadata
+	stbrs,
+	privbte,
+	metbdbtb
   )
   SELECT
-	name,
+	nbme,
 	NULLIF(BTRIM(uri), ''),
 	description,
-	created_at,
-	updated_at,
-	deleted_at,
-	external_service_type,
-	external_service_id,
-	external_id,
-	archived,
+	crebted_bt,
+	updbted_bt,
+	deleted_bt,
+	externbl_service_type,
+	externbl_service_id,
+	externbl_id,
+	brchived,
 	fork,
-	stars,
-	private,
-	metadata
+	stbrs,
+	privbte,
+	metbdbtb
   FROM repos_list
   RETURNING id
 ),
@@ -1586,51 +1586,51 @@ inserted_repos_with_ids AS (
 sources_list AS (
   SELECT
     inserted_repos_with_ids.id AS repo_id,
-	sources.external_service_id AS external_service_id,
+	sources.externbl_service_id AS externbl_service_id,
 	sources.clone_url AS clone_url
   FROM
     inserted_repos_with_ids,
 	jsonb_to_recordset(inserted_repos_with_ids.sources)
 	  AS sources(
-		external_service_id bigint,
+		externbl_service_id bigint,
 		repo_id             integer,
 		clone_url           text
 	  )
 ),
 insert_sources AS (
-  INSERT INTO external_service_repos (
-    external_service_id,
+  INSERT INTO externbl_service_repos (
+    externbl_service_id,
     repo_id,
     user_id,
     org_id,
     clone_url
   )
   SELECT
-    external_service_id,
+    externbl_service_id,
     repo_id,
-    es.namespace_user_id,
-    es.namespace_org_id,
+    es.nbmespbce_user_id,
+    es.nbmespbce_org_id,
     clone_url
   FROM sources_list
-  JOIN external_services es ON (es.id = external_service_id)
-  ON CONFLICT ON CONSTRAINT external_service_repos_repo_id_external_service_id_unique
+  JOIN externbl_services es ON (es.id = externbl_service_id)
+  ON CONFLICT ON CONSTRAINT externbl_service_repos_repo_id_externbl_service_id_unique
   DO
     UPDATE SET clone_url = EXCLUDED.clone_url
-    WHERE external_service_repos.clone_url != EXCLUDED.clone_url
+    WHERE externbl_service_repos.clone_url != EXCLUDED.clone_url
 )
 SELECT id FROM inserted_repos_with_ids;
 `
 
-// Delete deletes repos associated with the given ids and their associated sources.
-func (s *repoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
+// Delete deletes repos bssocibted with the given ids bnd their bssocibted sources.
+func (s *repoStore) Delete(ctx context.Context, ids ...bpi.RepoID) error {
 	if len(ids) == 0 {
 		return nil
 	}
 
-	// The number of deleted repos can potentially be higher
-	// than the maximum number of arguments we can pass to postgres.
-	// We pass them as a json array instead to overcome this limitation.
-	encodedIds, err := json.Marshal(ids)
+	// The number of deleted repos cbn potentiblly be higher
+	// thbn the mbximum number of brguments we cbn pbss to postgres.
+	// We pbss them bs b json brrby instebd to overcome this limitbtion.
+	encodedIds, err := json.Mbrshbl(ids)
 	if err != nil {
 		return err
 	}
@@ -1639,7 +1639,7 @@ func (s *repoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
 
 	err = s.Exec(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "delete")
+		return errors.Wrbp(err, "delete")
 	}
 
 	return nil
@@ -1647,159 +1647,159 @@ func (s *repoStore) Delete(ctx context.Context, ids ...api.RepoID) error {
 
 const deleteReposQuery = `
 WITH repo_ids AS (
-  SELECT jsonb_array_elements_text(%s) AS id
+  SELECT jsonb_brrby_elements_text(%s) AS id
 )
 UPDATE repo
 SET
-  name = soft_deleted_repository_name(name),
-  deleted_at = COALESCE(deleted_at, transaction_timestamp())
+  nbme = soft_deleted_repository_nbme(nbme),
+  deleted_bt = COALESCE(deleted_bt, trbnsbction_timestbmp())
 FROM repo_ids
 WHERE repo.id = repo_ids.id::int
 `
 
-const getFirstRepoNamesByCloneURLQueryFmtstr = `
+const getFirstRepoNbmesByCloneURLQueryFmtstr = `
 SELECT
-	name
+	nbme
 FROM
 	repo r
 JOIN
-	external_service_repos esr ON r.id = esr.repo_id
+	externbl_service_repos esr ON r.id = esr.repo_id
 WHERE
 	esr.clone_url = %s
 ORDER BY
-	r.updated_at DESC
+	r.updbted_bt DESC
 LIMIT 1
 `
 
-// GetFirstRepoNameByCloneURL returns the first repo name in our database that
-// match the given clone url. If no repo is found, an empty string and nil error
-// are returned.
-func (s *repoStore) GetFirstRepoNameByCloneURL(ctx context.Context, cloneURL string) (api.RepoName, error) {
-	name, _, err := basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNamesByCloneURLQueryFmtstr, cloneURL)))
+// GetFirstRepoNbmeByCloneURL returns the first repo nbme in our dbtbbbse thbt
+// mbtch the given clone url. If no repo is found, bn empty string bnd nil error
+// bre returned.
+func (s *repoStore) GetFirstRepoNbmeByCloneURL(ctx context.Context, cloneURL string) (bpi.RepoNbme, error) {
+	nbme, _, err := bbsestore.ScbnFirstString(s.Query(ctx, sqlf.Sprintf(getFirstRepoNbmesByCloneURLQueryFmtstr, cloneURL)))
 	if err != nil {
 		return "", err
 	}
-	return api.RepoName(name), nil
+	return bpi.RepoNbme(nbme), nil
 }
 
-// GetFirstRepoByCloneURL returns the first repo in our database that matches the given clone url.
-// If no repo is found, nil and an error are returned.
+// GetFirstRepoByCloneURL returns the first repo in our dbtbbbse thbt mbtches the given clone url.
+// If no repo is found, nil bnd bn error bre returned.
 func (s *repoStore) GetFirstRepoByCloneURL(ctx context.Context, cloneURL string) (*types.Repo, error) {
-	repoName, err := s.GetFirstRepoNameByCloneURL(ctx, cloneURL)
+	repoNbme, err := s.GetFirstRepoNbmeByCloneURL(ctx, cloneURL)
 	if err != nil {
 		return nil, err
 	}
 
-	return s.GetByName(ctx, repoName)
+	return s.GetByNbme(ctx, repoNbme)
 }
 
-func parsePattern(tr trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
-	exact, like, pattern, err := parseIncludePattern(p)
+func pbrsePbttern(tr trbce.Trbce, p string, cbseSensitive bool) ([]*sqlf.Query, error) {
+	exbct, like, pbttern, err := pbrseIncludePbttern(p)
 	if err != nil {
 		return nil, err
 	}
 
 	tr.SetAttributes(
-		attribute.String("parsePattern", p),
-		attribute.Bool("caseSensitive", caseSensitive),
-		attribute.StringSlice("exact", exact),
-		attribute.StringSlice("like", like),
-		attribute.String("pattern", pattern))
+		bttribute.String("pbrsePbttern", p),
+		bttribute.Bool("cbseSensitive", cbseSensitive),
+		bttribute.StringSlice("exbct", exbct),
+		bttribute.StringSlice("like", like),
+		bttribute.String("pbttern", pbttern))
 
-	var conds []*sqlf.Query
-	if exact != nil {
-		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-			conds = append(conds, sqlf.Sprintf("TRUE"))
+	vbr conds []*sqlf.Query
+	if exbct != nil {
+		if len(exbct) == 0 || (len(exbct) == 1 && exbct[0] == "") {
+			conds = bppend(conds, sqlf.Sprintf("TRUE"))
 		} else {
-			conds = append(conds, sqlf.Sprintf("name = ANY (%s)", pq.Array(exact)))
+			conds = bppend(conds, sqlf.Sprintf("nbme = ANY (%s)", pq.Arrby(exbct)))
 		}
 	}
-	for _, v := range like {
-		if caseSensitive {
-			conds = append(conds, sqlf.Sprintf(`name::text LIKE %s`, v))
+	for _, v := rbnge like {
+		if cbseSensitive {
+			conds = bppend(conds, sqlf.Sprintf(`nbme::text LIKE %s`, v))
 		} else {
-			conds = append(conds, sqlf.Sprintf(`lower(name) LIKE %s`, strings.ToLower(v)))
+			conds = bppend(conds, sqlf.Sprintf(`lower(nbme) LIKE %s`, strings.ToLower(v)))
 		}
 	}
-	if pattern != "" {
-		if caseSensitive {
-			conds = append(conds, sqlf.Sprintf("name::text ~ %s", pattern))
+	if pbttern != "" {
+		if cbseSensitive {
+			conds = bppend(conds, sqlf.Sprintf("nbme::text ~ %s", pbttern))
 		} else {
-			conds = append(conds, sqlf.Sprintf("lower(name) ~ lower(%s)", pattern))
+			conds = bppend(conds, sqlf.Sprintf("lower(nbme) ~ lower(%s)", pbttern))
 		}
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-func parseDescriptionPattern(tr trace.Trace, p string) ([]*sqlf.Query, error) {
-	exact, like, pattern, err := parseIncludePattern(p)
+func pbrseDescriptionPbttern(tr trbce.Trbce, p string) ([]*sqlf.Query, error) {
+	exbct, like, pbttern, err := pbrseIncludePbttern(p)
 	if err != nil {
 		return nil, err
 	}
 
 	tr.SetAttributes(
-		attribute.String("parseDescriptionPattern", p),
-		attribute.StringSlice("exact", exact),
-		attribute.StringSlice("like", like),
-		attribute.String("pattern", pattern))
+		bttribute.String("pbrseDescriptionPbttern", p),
+		bttribute.StringSlice("exbct", exbct),
+		bttribute.StringSlice("like", like),
+		bttribute.String("pbttern", pbttern))
 
-	var conds []*sqlf.Query
-	if len(exact) > 0 {
-		// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
-		// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
-		// than `IN (%s)` as it uses the trigram index on `description`.
-		// Equality support for `gin_trgm_ops` was added in Postgres v14, we are currently on v12. If we upgrade our
-		//  min pg version, then this block should be able to be simplified to just pass `exact` directly into
+	vbr conds []*sqlf.Query
+	if len(exbct) > 0 {
+		// NOTE: We bdd bnchors to ebch element of `exbct`, store the resulting contents in `exbctWithAnchors`,
+		// then pbss `exbctWithAnchors` into the query condition, becbuse using `~* ANY (%s)` is more efficient
+		// thbn `IN (%s)` bs it uses the trigrbm index on `description`.
+		// Equblity support for `gin_trgm_ops` wbs bdded in Postgres v14, we bre currently on v12. If we upgrbde our
+		//  min pg version, then this block should be bble to be simplified to just pbss `exbct` directly into
 		// `lower(description) IN (%s)`.
-		// Discussion: https://github.com/sourcegraph/sourcegraph/pull/39117#discussion_r925131158
-		exactWithAnchors := make([]string, len(exact))
-		for i, v := range exact {
-			exactWithAnchors[i] = "^" + regexp.QuoteMeta(v) + "$"
+		// Discussion: https://github.com/sourcegrbph/sourcegrbph/pull/39117#discussion_r925131158
+		exbctWithAnchors := mbke([]string, len(exbct))
+		for i, v := rbnge exbct {
+			exbctWithAnchors[i] = "^" + regexp.QuoteMetb(v) + "$"
 		}
-		conds = append(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Array(exactWithAnchors)))
+		conds = bppend(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Arrby(exbctWithAnchors)))
 	}
-	for _, v := range like {
-		conds = append(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))
+	for _, v := rbnge like {
+		conds = bppend(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))
 	}
-	if pattern != "" {
-		conds = append(conds, sqlf.Sprintf("lower(description) ~* %s", strings.ToLower(pattern)))
+	if pbttern != "" {
+		conds = bppend(conds, sqlf.Sprintf("lower(description) ~* %s", strings.ToLower(pbttern)))
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-// parseCursorConds returns the WHERE conditions for the given cursor
-func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
-	var (
+// pbrseCursorConds returns the WHERE conditions for the given cursor
+func pbrseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
+	vbr (
 		direction string
-		operator  string
-		columns   = make([]string, 0, len(cs))
-		values    = make([]*sqlf.Query, 0, len(cs))
+		operbtor  string
+		columns   = mbke([]string, 0, len(cs))
+		vblues    = mbke([]*sqlf.Query, 0, len(cs))
 	)
 
-	for _, c := range cs {
-		if c == nil || c.Column == "" || c.Value == "" {
+	for _, c := rbnge cs {
+		if c == nil || c.Column == "" || c.Vblue == "" {
 			continue
 		}
 
 		if direction == "" {
 			switch direction = c.Direction; direction {
-			case "next":
-				operator = ">="
-			case "prev":
-				operator = "<="
-			default:
-				return nil, errors.Errorf("missing or invalid cursor direction: %q", c.Direction)
+			cbse "next":
+				operbtor = ">="
+			cbse "prev":
+				operbtor = "<="
+			defbult:
+				return nil, errors.Errorf("missing or invblid cursor direction: %q", c.Direction)
 			}
 		} else if direction != c.Direction {
-			return nil, errors.Errorf("multi-cursors must have the same direction")
+			return nil, errors.Errorf("multi-cursors must hbve the sbme direction")
 		}
 
 		switch RepoListColumn(c.Column) {
-		case RepoListName, RepoListStars, RepoListCreatedAt, RepoListID:
-			columns = append(columns, c.Column)
-			values = append(values, sqlf.Sprintf("%s", c.Value))
-		default:
-			return nil, errors.Errorf("missing or invalid cursor: %q %q", c.Column, c.Value)
+		cbse RepoListNbme, RepoListStbrs, RepoListCrebtedAt, RepoListID:
+			columns = bppend(columns, c.Column)
+			vblues = bppend(vblues, sqlf.Sprintf("%s", c.Vblue))
+		defbult:
+			return nil, errors.Errorf("missing or invblid cursor: %q %q", c.Column, c.Vblue)
 		}
 	}
 
@@ -1807,56 +1807,56 @@ func parseCursorConds(cs types.MultiCursor) (cond *sqlf.Query, err error) {
 		return nil, nil
 	}
 
-	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", strings.Join(columns, ", "), operator), sqlf.Join(values, ", ")), nil
+	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", strings.Join(columns, ", "), operbtor), sqlf.Join(vblues, ", ")), nil
 }
 
-// parseIncludePattern either (1) parses the pattern into a list of exact possible
-// string values and LIKE patterns if such a list can be determined from the pattern,
-// or (2) returns the original regexp if those patterns are not equivalent to the
+// pbrseIncludePbttern either (1) pbrses the pbttern into b list of exbct possible
+// string vblues bnd LIKE pbtterns if such b list cbn be determined from the pbttern,
+// or (2) returns the originbl regexp if those pbtterns bre not equivblent to the
 // regexp.
 //
-// It allows Repos.List to optimize for the common case where a pattern like
-// `(^github.com/foo/bar$)|(^github.com/baz/qux$)` is provided. In that case,
-// it's faster to query for "WHERE name IN (...)" the two possible exact values
-// (because it can use an index) instead of using a "WHERE name ~*" regexp condition
-// (which generally can't use an index).
+// It bllows Repos.List to optimize for the common cbse where b pbttern like
+// `(^github.com/foo/bbr$)|(^github.com/bbz/qux$)` is provided. In thbt cbse,
+// it's fbster to query for "WHERE nbme IN (...)" the two possible exbct vblues
+// (becbuse it cbn use bn index) instebd of using b "WHERE nbme ~*" regexp condition
+// (which generblly cbn't use bn index).
 //
-// This optimization is necessary for good performance when there are many repos
-// in the database. With this optimization, specifying a "repogroup:" in the query
-// will be fast (even if there are many repos) because the query can be constrained
+// This optimizbtion is necessbry for good performbnce when there bre mbny repos
+// in the dbtbbbse. With this optimizbtion, specifying b "repogroup:" in the query
+// will be fbst (even if there bre mbny repos) becbuse the query cbn be constrbined
 // efficiently to only the repos in the group.
-func parseIncludePattern(pattern string) (exact, like []string, regexp string, err error) {
-	re, err := regexpsyntax.Parse(pattern, regexpsyntax.Perl)
+func pbrseIncludePbttern(pbttern string) (exbct, like []string, regexp string, err error) {
+	re, err := regexpsyntbx.Pbrse(pbttern, regexpsyntbx.Perl)
 	if err != nil {
 		return nil, nil, "", err
 	}
-	exact, contains, prefix, suffix, err := allMatchingStrings(re.Simplify())
+	exbct, contbins, prefix, suffix, err := bllMbtchingStrings(re.Simplify())
 	if err != nil {
 		return nil, nil, "", err
 	}
-	for _, v := range contains {
-		like = append(like, "%"+v+"%")
+	for _, v := rbnge contbins {
+		like = bppend(like, "%"+v+"%")
 	}
-	for _, v := range prefix {
-		like = append(like, v+"%")
+	for _, v := rbnge prefix {
+		like = bppend(like, v+"%")
 	}
-	for _, v := range suffix {
-		like = append(like, "%"+v)
+	for _, v := rbnge suffix {
+		like = bppend(like, "%"+v)
 	}
-	if exact != nil || like != nil {
-		return exact, like, "", nil
+	if exbct != nil || like != nil {
+		return exbct, like, "", nil
 	}
-	return nil, nil, pattern, nil
+	return nil, nil, pbttern, nil
 }
 
-// allMatchingStrings returns a complete list of the strings that re matches,
+// bllMbtchingStrings returns b complete list of the strings thbt re mbtches,
 // if it's possible to determine the list.
-func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffix []string, err error) {
+func bllMbtchingStrings(re *regexpsyntbx.Regexp) (exbct, contbins, prefix, suffix []string, err error) {
 	switch re.Op {
-	case regexpsyntax.OpEmptyMatch:
+	cbse regexpsyntbx.OpEmptyMbtch:
 		return []string{""}, nil, nil, nil, nil
-	case regexpsyntax.OpLiteral:
-		prog, err := regexpsyntax.Compile(re)
+	cbse regexpsyntbx.OpLiterbl:
+		prog, err := regexpsyntbx.Compile(re)
 		if err != nil {
 			return nil, nil, nil, nil, err
 		}
@@ -1867,49 +1867,49 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 		}
 		return nil, nil, nil, nil, nil
 
-	case regexpsyntax.OpCharClass:
-		// Only handle simple case of one range.
+	cbse regexpsyntbx.OpChbrClbss:
+		// Only hbndle simple cbse of one rbnge.
 		if len(re.Rune) == 2 {
 			len := int(re.Rune[1] - re.Rune[0] + 1)
 			if len > 26 {
-				// Avoid large character ranges (which could blow up the number
-				// of possible matches).
+				// Avoid lbrge chbrbcter rbnges (which could blow up the number
+				// of possible mbtches).
 				return nil, nil, nil, nil, nil
 			}
-			chars := make([]string, len)
+			chbrs := mbke([]string, len)
 			for r := re.Rune[0]; r <= re.Rune[1]; r++ {
-				chars[r-re.Rune[0]] = string(r)
+				chbrs[r-re.Rune[0]] = string(r)
 			}
-			return nil, chars, nil, nil, nil
+			return nil, chbrs, nil, nil, nil
 		}
 		return nil, nil, nil, nil, nil
 
-	case regexpsyntax.OpBeginText:
+	cbse regexpsyntbx.OpBeginText:
 		return nil, nil, []string{""}, nil, nil
 
-	case regexpsyntax.OpEndText:
+	cbse regexpsyntbx.OpEndText:
 		return nil, nil, nil, []string{""}, nil
 
-	case regexpsyntax.OpCapture:
-		return allMatchingStrings(re.Sub0[0])
+	cbse regexpsyntbx.OpCbpture:
+		return bllMbtchingStrings(re.Sub0[0])
 
-	case regexpsyntax.OpConcat:
-		var begin, end bool
-		for i, sub := range re.Sub {
-			if sub.Op == regexpsyntax.OpBeginText && i == 0 {
+	cbse regexpsyntbx.OpConcbt:
+		vbr begin, end bool
+		for i, sub := rbnge re.Sub {
+			if sub.Op == regexpsyntbx.OpBeginText && i == 0 {
 				begin = true
 				continue
 			}
-			if sub.Op == regexpsyntax.OpEndText && i == len(re.Sub)-1 {
+			if sub.Op == regexpsyntbx.OpEndText && i == len(re.Sub)-1 {
 				end = true
 				continue
 			}
-			var subexact, subcontains []string
-			if isDotStar(sub) && i == len(re.Sub)-1 {
-				subcontains = []string{""}
+			vbr subexbct, subcontbins []string
+			if isDotStbr(sub) && i == len(re.Sub)-1 {
+				subcontbins = []string{""}
 			} else {
-				var subprefix, subsuffix []string
-				subexact, subcontains, subprefix, subsuffix, err = allMatchingStrings(sub)
+				vbr subprefix, subsuffix []string
+				subexbct, subcontbins, subprefix, subsuffix, err = bllMbtchingStrings(sub)
 				if err != nil {
 					return nil, nil, nil, nil, err
 				}
@@ -1917,72 +1917,72 @@ func allMatchingStrings(re *regexpsyntax.Regexp) (exact, contains, prefix, suffi
 					return nil, nil, nil, nil, nil
 				}
 			}
-			if subexact == nil && subcontains == nil {
+			if subexbct == nil && subcontbins == nil {
 				return nil, nil, nil, nil, nil
 			}
 
-			// We only returns subcontains for child literals. But because it
-			// is part of a concat pattern, we know it is exact when we
-			// append. This transformation has been running in production for
-			// many years, so while it isn't correct for all inputs
-			// theoretically, in practice this hasn't been a problem. However,
-			// a redesign of this function as a whole is needed. - keegan
-			if subcontains != nil {
-				subexact = append(subexact, subcontains...)
+			// We only returns subcontbins for child literbls. But becbuse it
+			// is pbrt of b concbt pbttern, we know it is exbct when we
+			// bppend. This trbnsformbtion hbs been running in production for
+			// mbny yebrs, so while it isn't correct for bll inputs
+			// theoreticblly, in prbctice this hbsn't been b problem. However,
+			// b redesign of this function bs b whole is needed. - keegbn
+			if subcontbins != nil {
+				subexbct = bppend(subexbct, subcontbins...)
 			}
 
-			if exact == nil {
-				exact = subexact
+			if exbct == nil {
+				exbct = subexbct
 			} else {
-				size := len(exact) * len(subexact)
-				if len(subexact) > 4 || size > 30 {
-					// Avoid blowup in number of possible matches.
+				size := len(exbct) * len(subexbct)
+				if len(subexbct) > 4 || size > 30 {
+					// Avoid blowup in number of possible mbtches.
 					return nil, nil, nil, nil, nil
 				}
-				combined := make([]string, 0, size)
-				for _, match := range exact {
-					for _, submatch := range subexact {
-						combined = append(combined, match+submatch)
+				combined := mbke([]string, 0, size)
+				for _, mbtch := rbnge exbct {
+					for _, submbtch := rbnge subexbct {
+						combined = bppend(combined, mbtch+submbtch)
 					}
 				}
-				exact = combined
+				exbct = combined
 			}
 		}
-		if exact == nil {
-			exact = []string{""}
+		if exbct == nil {
+			exbct = []string{""}
 		}
 		if begin && end {
-			return exact, nil, nil, nil, nil
+			return exbct, nil, nil, nil, nil
 		} else if begin {
-			return nil, nil, exact, nil, nil
+			return nil, nil, exbct, nil, nil
 		} else if end {
-			return nil, nil, nil, exact, nil
+			return nil, nil, nil, exbct, nil
 		}
-		return nil, exact, nil, nil, nil
+		return nil, exbct, nil, nil, nil
 
-	case regexpsyntax.OpAlternate:
-		for _, sub := range re.Sub {
-			subexact, subcontains, subprefix, subsuffix, err := allMatchingStrings(sub)
+	cbse regexpsyntbx.OpAlternbte:
+		for _, sub := rbnge re.Sub {
+			subexbct, subcontbins, subprefix, subsuffix, err := bllMbtchingStrings(sub)
 			if err != nil {
 				return nil, nil, nil, nil, err
 			}
-			// If we don't understand one sub expression, we give up.
-			if subexact == nil && subcontains == nil && subprefix == nil && subsuffix == nil {
+			// If we don't understbnd one sub expression, we give up.
+			if subexbct == nil && subcontbins == nil && subprefix == nil && subsuffix == nil {
 				return nil, nil, nil, nil, nil
 			}
-			exact = append(exact, subexact...)
-			contains = append(contains, subcontains...)
-			prefix = append(prefix, subprefix...)
-			suffix = append(suffix, subsuffix...)
+			exbct = bppend(exbct, subexbct...)
+			contbins = bppend(contbins, subcontbins...)
+			prefix = bppend(prefix, subprefix...)
+			suffix = bppend(suffix, subsuffix...)
 		}
-		return exact, contains, prefix, suffix, nil
+		return exbct, contbins, prefix, suffix, nil
 	}
 
 	return nil, nil, nil, nil, nil
 }
 
-func isDotStar(re *regexpsyntax.Regexp) bool {
-	return re.Op == regexpsyntax.OpStar &&
+func isDotStbr(re *regexpsyntbx.Regexp) bool {
+	return re.Op == regexpsyntbx.OpStbr &&
 		len(re.Sub) == 1 &&
-		(re.Sub[0].Op == regexpsyntax.OpAnyCharNotNL || re.Sub[0].Op == regexpsyntax.OpAnyChar)
+		(re.Sub[0].Op == regexpsyntbx.OpAnyChbrNotNL || re.Sub[0].Op == regexpsyntbx.OpAnyChbr)
 }

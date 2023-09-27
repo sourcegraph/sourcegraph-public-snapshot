@@ -1,10 +1,10 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/prometheus/alertmanager/api/v2/models"
+	"github.com/prometheus/blertmbnbger/bpi/v2/models"
 )
 
 func stringP(v string) *string {
@@ -16,24 +16,24 @@ func boolP(v bool) *bool {
 }
 
 const (
-	matcherRegexPrefix = "^("
-	matcherRegexSuffix = ")$"
+	mbtcherRegexPrefix = "^("
+	mbtcherRegexSuffix = ")$"
 )
 
-// newMatchersFromSilence creates Alertmanager alert matchers from a configured silence
-func newMatchersFromSilence(silence string) models.Matchers {
-	return models.Matchers{{
-		Name:    stringP("alertname"),
-		Value:   stringP(fmt.Sprintf("%s%s%s", matcherRegexPrefix, silence, matcherRegexSuffix)),
+// newMbtchersFromSilence crebtes Alertmbnbger blert mbtchers from b configured silence
+func newMbtchersFromSilence(silence string) models.Mbtchers {
+	return models.Mbtchers{{
+		Nbme:    stringP("blertnbme"),
+		Vblue:   stringP(fmt.Sprintf("%s%s%s", mbtcherRegexPrefix, silence, mbtcherRegexSuffix)),
 		IsRegex: boolP(true),
 	}}
 }
 
-// newSilenceFromMatchers returns the silenced alert from Alertmanager alert matchers
-func newSilenceFromMatchers(matchers models.Matchers) string {
-	for _, m := range matchers {
-		if *m.Name == "alertname" {
-			return strings.TrimSuffix(strings.TrimPrefix(*m.Value, matcherRegexPrefix), matcherRegexSuffix)
+// newSilenceFromMbtchers returns the silenced blert from Alertmbnbger blert mbtchers
+func newSilenceFromMbtchers(mbtchers models.Mbtchers) string {
+	for _, m := rbnge mbtchers {
+		if *m.Nbme == "blertnbme" {
+			return strings.TrimSuffix(strings.TrimPrefix(*m.Vblue, mbtcherRegexPrefix), mbtcherRegexSuffix)
 		}
 	}
 	return ""

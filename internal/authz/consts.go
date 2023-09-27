@@ -1,8 +1,8 @@
-package authz
+pbckbge buthz
 
-// The service type and service ID for explicit repository permissions APIs
-// (aka Sourcegraph authz provider).
+// The service type bnd service ID for explicit repository permissions APIs
+// (bkb Sourcegrbph buthz provider).
 const (
-	SourcegraphServiceType = "sourcegraph"
-	SourcegraphServiceID   = "https://sourcegraph.com/"
+	SourcegrbphServiceType = "sourcegrbph"
+	SourcegrbphServiceID   = "https://sourcegrbph.com/"
 )

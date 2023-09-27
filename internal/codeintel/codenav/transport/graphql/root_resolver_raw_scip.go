@@ -1,54 +1,54 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	uplobdgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (r *gitBlobLSIFDataResolver) Snapshot(ctx context.Context, args *struct{ IndexID graphql.ID }) (resolvers *[]resolverstubs.SnapshotDataResolver, err error) {
-	uploadID, _, err := uploadgraphql.UnmarshalPreciseIndexGQLID(args.IndexID)
+func (r *gitBlobLSIFDbtbResolver) Snbpshot(ctx context.Context, brgs *struct{ IndexID grbphql.ID }) (resolvers *[]resolverstubs.SnbpshotDbtbResolver, err error) {
+	uplobdID, _, err := uplobdgrbphql.UnmbrshblPreciseIndexGQLID(brgs.IndexID)
 	if err != nil {
 		return nil, err
 	}
 
-	ctx, _, endObservation := r.operations.snapshot.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("uploadID", uploadID),
+	ctx, _, endObservbtion := r.operbtions.snbpshot.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobdID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	data, err := r.codeNavSvc.SnapshotForDocument(ctx, r.requestState.RepositoryID, r.requestState.Commit, r.requestState.Path, uploadID)
+	dbtb, err := r.codeNbvSvc.SnbpshotForDocument(ctx, r.requestStbte.RepositoryID, r.requestStbte.Commit, r.requestStbte.Pbth, uplobdID)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers = new([]resolverstubs.SnapshotDataResolver)
-	for _, d := range data {
-		*resolvers = append(*resolvers, &snapshotDataResolver{
-			data: d,
+	resolvers = new([]resolverstubs.SnbpshotDbtbResolver)
+	for _, d := rbnge dbtb {
+		*resolvers = bppend(*resolvers, &snbpshotDbtbResolver{
+			dbtb: d,
 		})
 	}
 	return
 }
 
-type snapshotDataResolver struct {
-	data shared.SnapshotData
+type snbpshotDbtbResolver struct {
+	dbtb shbred.SnbpshotDbtb
 }
 
-func (r *snapshotDataResolver) Offset() int32 {
-	return int32(r.data.DocumentOffset)
+func (r *snbpshotDbtbResolver) Offset() int32 {
+	return int32(r.dbtb.DocumentOffset)
 }
 
-func (r *snapshotDataResolver) Data() string {
-	return r.data.Symbol
+func (r *snbpshotDbtbResolver) Dbtb() string {
+	return r.dbtb.Symbol
 }
 
-func (r *snapshotDataResolver) Additional() *[]string {
-	return &r.data.AdditionalData
+func (r *snbpshotDbtbResolver) Additionbl() *[]string {
+	return &r.dbtb.AdditionblDbtb
 }

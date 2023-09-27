@@ -1,4 +1,4 @@
-package casetransform
+pbckbge cbsetrbnsform
 
-// implemented in assembly, see lower_amd64.s
+// implemented in bssembly, see lower_bmd64.s
 func BytesToLowerASCII(dst, src []byte)

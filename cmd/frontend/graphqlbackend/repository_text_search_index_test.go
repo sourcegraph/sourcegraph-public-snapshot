@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,58 +7,58 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestRetrievingAndDeduplicatingIndexedRefs(t *testing.T) {
+func TestRetrievingAndDeduplicbtingIndexedRefs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, nil)
-	defaultBranchRef := "refs/heads/main"
+	db := dbtbbbse.NewDB(logger, nil)
+	defbultBrbnchRef := "refs/hebds/mbin"
 	gsClient := gitserver.NewMockClient()
-	gsClient.GetDefaultBranchFunc.SetDefaultReturn(defaultBranchRef, "", nil)
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, rev string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if rev != defaultBranchRef && strings.HasSuffix(rev, defaultBranchRef) {
+	gsClient.GetDefbultBrbnchFunc.SetDefbultReturn(defbultBrbnchRef, "", nil)
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, rev string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if rev != defbultBrbnchRef && strings.HbsSuffix(rev, defbultBrbnchRef) {
 			return "", errors.New("x")
 		}
-		return "deadbeef", nil
+		return "debdbeef", nil
 	})
 
-	repoIndexResolver := &repositoryTextSearchIndexResolver{
-		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Name: "alice/repo"}),
-		client: &backend.FakeStreamer{Repos: []*zoekt.RepoListEntry{{
+	repoIndexResolver := &repositoryTextSebrchIndexResolver{
+		repo: NewRepositoryResolver(db, gsClient, &types.Repo{Nbme: "blice/repo"}),
+		client: &bbckend.FbkeStrebmer{Repos: []*zoekt.RepoListEntry{{
 			Repository: zoekt.Repository{
-				Name: "alice/repo",
-				Branches: []zoekt.RepositoryBranch{
-					{Name: "HEAD", Version: "deadbeef"},
-					{Name: "main", Version: "deadbeef"},
-					{Name: "1.0", Version: "deadbeef"},
+				Nbme: "blice/repo",
+				Brbnches: []zoekt.RepositoryBrbnch{
+					{Nbme: "HEAD", Version: "debdbeef"},
+					{Nbme: "mbin", Version: "debdbeef"},
+					{Nbme: "1.0", Version: "debdbeef"},
 				},
 			},
-			IndexMetadata: zoekt.IndexMetadata{
+			IndexMetbdbtb: zoekt.IndexMetbdbtb{
 				IndexTime: time.Now(),
 			},
 		}}},
 	}
-	refs, err := repoIndexResolver.Refs(context.Background())
+	refs, err := repoIndexResolver.Refs(context.Bbckground())
 	if err != nil {
-		t.Fatal("Error retrieving refs:", err)
+		t.Fbtbl("Error retrieving refs:", err)
 	}
 
-	want := []string{"refs/heads/main", "refs/heads/1.0"}
+	wbnt := []string{"refs/hebds/mbin", "refs/hebds/1.0"}
 	got := []string{}
-	for _, ref := range refs {
-		got = append(got, ref.ref.name)
+	for _, ref := rbnge refs {
+		got = bppend(got, ref.ref.nbme)
 	}
-	if !reflect.DeepEqual(got, want) {
-		t.Errorf("got %+v, want %+v", got, want)
+	if !reflect.DeepEqubl(got, wbnt) {
+		t.Errorf("got %+v, wbnt %+v", got, wbnt)
 	}
 }

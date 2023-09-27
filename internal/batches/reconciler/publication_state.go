@@ -1,33 +1,33 @@
-package reconciler
+pbckbge reconciler
 
 import (
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-// publicationStateCalculator calculates the desired publication state based on
-// the published field of a changeset spec and the UI publication state of the
-// changeset, if any.
-type publicationStateCalculator struct {
-	spec batches.PublishedValue
-	ui   *btypes.ChangesetUiPublicationState
+// publicbtionStbteCblculbtor cblculbtes the desired publicbtion stbte bbsed on
+// the published field of b chbngeset spec bnd the UI publicbtion stbte of the
+// chbngeset, if bny.
+type publicbtionStbteCblculbtor struct {
+	spec bbtches.PublishedVblue
+	ui   *btypes.ChbngesetUiPublicbtionStbte
 }
 
-func calculatePublicationState(specPublished batches.PublishedValue, uiPublished *btypes.ChangesetUiPublicationState) *publicationStateCalculator {
-	return &publicationStateCalculator{
+func cblculbtePublicbtionStbte(specPublished bbtches.PublishedVblue, uiPublished *btypes.ChbngesetUiPublicbtionStbte) *publicbtionStbteCblculbtor {
+	return &publicbtionStbteCblculbtor{
 		spec: specPublished,
 		ui:   uiPublished,
 	}
 }
 
-func (c *publicationStateCalculator) IsPublished() bool {
-	return c.spec.True() || (c.spec.Nil() && c.ui != nil && *c.ui == btypes.ChangesetUiPublicationStatePublished)
+func (c *publicbtionStbteCblculbtor) IsPublished() bool {
+	return c.spec.True() || (c.spec.Nil() && c.ui != nil && *c.ui == btypes.ChbngesetUiPublicbtionStbtePublished)
 }
 
-func (c *publicationStateCalculator) IsDraft() bool {
-	return c.spec.Draft() || (c.spec.Nil() && c.ui != nil && *c.ui == btypes.ChangesetUiPublicationStateDraft)
+func (c *publicbtionStbteCblculbtor) IsDrbft() bool {
+	return c.spec.Drbft() || (c.spec.Nil() && c.ui != nil && *c.ui == btypes.ChbngesetUiPublicbtionStbteDrbft)
 }
 
-func (c *publicationStateCalculator) IsUnpublished() bool {
-	return c.spec.False() || (c.spec.Nil() && (c.ui == nil || *c.ui == btypes.ChangesetUiPublicationStateUnpublished))
+func (c *publicbtionStbteCblculbtor) IsUnpublished() bool {
+	return c.spec.Fblse() || (c.spec.Nil() && (c.ui == nil || *c.ui == btypes.ChbngesetUiPublicbtionStbteUnpublished))
 }

@@ -1,79 +1,79 @@
-// Command search-plan is a debug helper which outputs the plan for a query.
-package main
+// Commbnd sebrch-plbn is b debug helper which outputs the plbn for b query.
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/jobutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/printer"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func run(w io.Writer, args []string) error {
-	fs := flag.NewFlagSet(args[0], flag.ExitOnError)
+func run(w io.Writer, brgs []string) error {
+	fs := flbg.NewFlbgSet(brgs[0], flbg.ExitOnError)
 
-	version := fs.String("version", "V3", "the version of the search API to use")
-	patternType := fs.String("pattern_type", "", "optionally specify query.PatternType (regex, literal, ...)")
-	smartSearch := fs.Bool("smart_search", false, "enable smart search mode instead of precise")
-	dotCom := fs.Bool("dotcom", false, "enable sourcegraph.com parsing rules")
+	version := fs.String("version", "V3", "the version of the sebrch API to use")
+	pbtternType := fs.String("pbttern_type", "", "optionblly specify query.PbtternType (regex, literbl, ...)")
+	smbrtSebrch := fs.Bool("smbrt_sebrch", fblse, "enbble smbrt sebrch mode instebd of precise")
+	dotCom := fs.Bool("dotcom", fblse, "enbble sourcegrbph.com pbrsing rules")
 
-	fs.Parse(args[1:])
-	if narg := fs.NArg(); narg != 1 {
-		return errors.Errorf("expected 1 argument for the query got %d", narg)
+	fs.Pbrse(brgs[1:])
+	if nbrg := fs.NArg(); nbrg != 1 {
+		return errors.Errorf("expected 1 brgument for the query got %d", nbrg)
 	}
 
-	// Further argument parsing
+	// Further brgument pbrsing
 	query := fs.Arg(0)
-	mode := search.Precise
-	if *smartSearch {
-		mode = search.SmartSearch
+	mode := sebrch.Precise
+	if *smbrtSebrch {
+		mode = sebrch.SmbrtSebrch
 	}
 
-	// Sourcegraph infra we need
+	// Sourcegrbph infrb we need
 	conf.Mock(&conf.Unified{})
-	envvar.MockSourcegraphDotComMode(*dotCom)
-	logger := log.Scoped("search-plan", "")
+	envvbr.MockSourcegrbphDotComMode(*dotCom)
+	logger := log.Scoped("sebrch-plbn", "")
 
 	cli := client.Mocked(job.RuntimeClients{Logger: logger})
 
-	inputs, err := cli.Plan(
-		context.Background(),
+	inputs, err := cli.Plbn(
+		context.Bbckground(),
 		*version,
-		pointers.NonZeroPtr(*patternType),
+		pointers.NonZeroPtr(*pbtternType),
 		query,
 		mode,
-		search.Streaming,
+		sebrch.Strebming,
 	)
 	if err != nil {
-		return errors.Wrap(err, "failed to plan")
+		return errors.Wrbp(err, "fbiled to plbn")
 	}
 
-	fmt.Fprintln(w, "plan", inputs.Plan)
+	fmt.Fprintln(w, "plbn", inputs.Plbn)
 	fmt.Fprintln(w, "query", inputs.Query)
 
-	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	plbnJob, err := jobutil.NewPlbnJob(inputs, inputs.Plbn)
 	if err != nil {
-		return errors.Wrap(err, "failed to create planJob")
+		return errors.Wrbp(err, "fbiled to crebte plbnJob")
 	}
-	fmt.Fprintln(w, printer.SexpVerbose(planJob, job.VerbosityMax, true))
+	fmt.Fprintln(w, printer.SexpVerbose(plbnJob, job.VerbosityMbx, true))
 
 	return nil
 }
 
-func main() {
-	liblog := log.Init(log.Resource{Name: "search-plan"})
+func mbin() {
+	liblog := log.Init(log.Resource{Nbme: "sebrch-plbn"})
 	defer liblog.Sync()
 
 	err := run(os.Stdout, os.Args)

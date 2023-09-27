@@ -1,181 +1,181 @@
-package types
+pbckbge types
 
 import (
 	"time"
 )
 
-// InsightViewSeries is an abstraction of a complete Code Insight. This type materializes a view with any associated series.
+// InsightViewSeries is bn bbstrbction of b complete Code Insight. This type mbteriblizes b view with bny bssocibted series.
 type InsightViewSeries struct {
 	ViewID                        int
-	DashboardViewID               int
+	DbshbobrdViewID               int
 	InsightSeriesID               int
 	UniqueID                      string
 	SeriesID                      string
 	Title                         string
 	Description                   string
 	Query                         string
-	CreatedAt                     time.Time
-	OldestHistoricalAt            time.Time
-	LastRecordedAt                time.Time
+	CrebtedAt                     time.Time
+	OldestHistoricblAt            time.Time
+	LbstRecordedAt                time.Time
 	NextRecordingAfter            time.Time
-	LastSnapshotAt                time.Time
-	NextSnapshotAfter             time.Time
-	BackfillQueuedAt              *time.Time
-	Label                         string
+	LbstSnbpshotAt                time.Time
+	NextSnbpshotAfter             time.Time
+	BbckfillQueuedAt              *time.Time
+	Lbbel                         string
 	LineColor                     string
 	Repositories                  []string
-	SampleIntervalUnit            string
-	SampleIntervalValue           int
-	DefaultFilterIncludeRepoRegex *string
-	DefaultFilterExcludeRepoRegex *string
-	DefaultFilterSearchContexts   []string
-	OtherThreshold                *float64
-	PresentationType              PresentationType
-	GeneratedFromCaptureGroups    bool
+	SbmpleIntervblUnit            string
+	SbmpleIntervblVblue           int
+	DefbultFilterIncludeRepoRegex *string
+	DefbultFilterExcludeRepoRegex *string
+	DefbultFilterSebrchContexts   []string
+	OtherThreshold                *flobt64
+	PresentbtionType              PresentbtionType
+	GenerbtedFromCbptureGroups    bool
 	JustInTime                    bool
-	GenerationMethod              GenerationMethod
+	GenerbtionMethod              GenerbtionMethod
 	IsFrozen                      bool
 	SeriesSortMode                *SeriesSortMode
 	SeriesSortDirection           *SeriesSortDirection
 	SeriesLimit                   *int32
 	GroupBy                       *string
-	BackfillAttempts              int32
-	SupportsAugmentation          bool
-	RepositoryCriteria            *string
-	SeriesNumSamples              *int32
+	BbckfillAttempts              int32
+	SupportsAugmentbtion          bool
+	RepositoryCriterib            *string
+	SeriesNumSbmples              *int32
 }
 
 type Insight struct {
 	ViewID           int
-	DashboardViewId  int
+	DbshbobrdViewId  int
 	UniqueID         string
 	Title            string
 	Description      string
 	Series           []InsightViewSeries
 	Filters          InsightViewFilters
-	OtherThreshold   *float64
-	PresentationType PresentationType
+	OtherThreshold   *flobt64
+	PresentbtionType PresentbtionType
 	IsFrozen         bool
-	SeriesOptions    SeriesDisplayOptions
+	SeriesOptions    SeriesDisplbyOptions
 }
 
 type InsightViewFilters struct {
 	IncludeRepoRegex *string
 	ExcludeRepoRegex *string
-	SearchContexts   []string
+	SebrchContexts   []string
 }
 
-// InsightViewSeriesMetadata contains metadata about a viewable insight series such as render properties.
-type InsightViewSeriesMetadata struct {
-	Label  string
+// InsightViewSeriesMetbdbtb contbins metbdbtb bbout b viewbble insight series such bs render properties.
+type InsightViewSeriesMetbdbtb struct {
+	Lbbel  string
 	Stroke string
 }
 
-// InsightView is a single insight view that may or may not have any associated series.
+// InsightView is b single insight view thbt mby or mby not hbve bny bssocibted series.
 type InsightView struct {
 	ID                  int
 	Title               string
 	Description         string
 	UniqueID            string
 	Filters             InsightViewFilters
-	OtherThreshold      *float64
-	PresentationType    PresentationType
+	OtherThreshold      *flobt64
+	PresentbtionType    PresentbtionType
 	IsFrozen            bool
 	SeriesSortMode      *SeriesSortMode
 	SeriesSortDirection *SeriesSortDirection
 	SeriesLimit         *int32
-	SeriesNumSamples    *int32
+	SeriesNumSbmples    *int32
 }
 
-// InsightSeries is a single data series for a Code Insight. This contains some metadata about the data series, as well
-// as its unique series ID.
+// InsightSeries is b single dbtb series for b Code Insight. This contbins some metbdbtb bbout the dbtb series, bs well
+// bs its unique series ID.
 type InsightSeries struct {
 	ID                         int
 	SeriesID                   string
 	Query                      string
-	CreatedAt                  time.Time
-	OldestHistoricalAt         time.Time
-	LastRecordedAt             time.Time
+	CrebtedAt                  time.Time
+	OldestHistoricblAt         time.Time
+	LbstRecordedAt             time.Time
 	NextRecordingAfter         time.Time
-	LastSnapshotAt             time.Time
-	NextSnapshotAfter          time.Time
-	BackfillQueuedAt           time.Time
-	Enabled                    bool
+	LbstSnbpshotAt             time.Time
+	NextSnbpshotAfter          time.Time
+	BbckfillQueuedAt           time.Time
+	Enbbled                    bool
 	Repositories               []string
-	SampleIntervalUnit         string
-	SampleIntervalValue        int
-	GeneratedFromCaptureGroups bool
+	SbmpleIntervblUnit         string
+	SbmpleIntervblVblue        int
+	GenerbtedFromCbptureGroups bool
 	JustInTime                 bool
-	GenerationMethod           GenerationMethod
+	GenerbtionMethod           GenerbtionMethod
 	GroupBy                    *string
-	BackfillAttempts           int32
-	SupportsAugmentation       bool
-	RepositoryCriteria         *string
+	BbckfillAttempts           int32
+	SupportsAugmentbtion       bool
+	RepositoryCriterib         *string
 }
 
-type IntervalUnit string
+type IntervblUnit string
 
 const (
-	Month IntervalUnit = "MONTH"
-	Day   IntervalUnit = "DAY"
-	Week  IntervalUnit = "WEEK"
-	Year  IntervalUnit = "YEAR"
-	Hour  IntervalUnit = "HOUR"
+	Month IntervblUnit = "MONTH"
+	Dby   IntervblUnit = "DAY"
+	Week  IntervblUnit = "WEEK"
+	Yebr  IntervblUnit = "YEAR"
+	Hour  IntervblUnit = "HOUR"
 )
 
-// GenerationMethod represents the method of execution for which to populate time series data for an insight series. This is effectively an enum of values.
-type GenerationMethod string
+// GenerbtionMethod represents the method of execution for which to populbte time series dbtb for bn insight series. This is effectively bn enum of vblues.
+type GenerbtionMethod string
 
 const (
-	Search         GenerationMethod = "search"
-	SearchCompute  GenerationMethod = "search-compute"
-	LanguageStats  GenerationMethod = "language-stats"
-	MappingCompute GenerationMethod = "mapping-compute"
+	Sebrch         GenerbtionMethod = "sebrch"
+	SebrchCompute  GenerbtionMethod = "sebrch-compute"
+	LbngubgeStbts  GenerbtionMethod = "lbngubge-stbts"
+	MbppingCompute GenerbtionMethod = "mbpping-compute"
 )
 
-type Dashboard struct {
+type Dbshbobrd struct {
 	ID           int
 	Title        string
-	InsightIDs   []string // shallow references
-	UserIdGrants []int64
-	OrgIdGrants  []int64
-	GlobalGrant  bool
-	Save         bool // temporarily save dashboards from being cleared during setting migration
+	InsightIDs   []string // shbllow references
+	UserIdGrbnts []int64
+	OrgIdGrbnts  []int64
+	GlobblGrbnt  bool
+	Sbve         bool // temporbrily sbve dbshbobrds from being clebred during setting migrbtion
 }
 
-type InsightSeriesStatus struct {
+type InsightSeriesStbtus struct {
 	SeriesId   string
 	Query      string
-	Enabled    bool
+	Enbbled    bool
 	Errored    int
 	Processing int
 	Queued     int
-	Failed     int
+	Fbiled     int
 	Completed  int
 }
 
-type InsightSearchFailure struct {
+type InsightSebrchFbilure struct {
 	Query          string
 	QueuedAt       time.Time
-	State          string
-	FailureMessage string
+	Stbte          string
+	FbilureMessbge string
 	RecordTime     *time.Time
 	PersistMode    string
 }
 
-type PresentationType string
+type PresentbtionType string
 
 const (
-	Line PresentationType = "LINE"
-	Pie  PresentationType = "PIE"
+	Line PresentbtionType = "LINE"
+	Pie  PresentbtionType = "PIE"
 )
 
 type SeriesSortMode string
 
 const (
-	ResultCount     SeriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent datapoint of a series.
-	DateAdded       SeriesSortMode = "DATE_ADDED"      // Sorts by the date of the earliest datapoint in the series.
-	Lexicographical SeriesSortMode = "LEXICOGRAPHICAL" // Sorts by label: first by semantic version and then alphabetically.
+	ResultCount     SeriesSortMode = "RESULT_COUNT"    // Sorts by the number of results for the most recent dbtbpoint of b series.
+	DbteAdded       SeriesSortMode = "DATE_ADDED"      // Sorts by the dbte of the ebrliest dbtbpoint in the series.
+	Lexicogrbphicbl SeriesSortMode = "LEXICOGRAPHICAL" // Sorts by lbbel: first by sembntic version bnd then blphbbeticblly.
 )
 
 type SeriesSortDirection string
@@ -185,10 +185,10 @@ const (
 	Desc SeriesSortDirection = "DESC"
 )
 
-type SeriesDisplayOptions struct {
+type SeriesDisplbyOptions struct {
 	SortOptions *SeriesSortOptions
 	Limit       *int32
-	NumSamples  *int32
+	NumSbmples  *int32
 }
 
 type SeriesSortOptions struct {
@@ -202,32 +202,32 @@ type InsightSeriesRecordingTimes struct {
 }
 
 type RecordingTime struct {
-	Timestamp time.Time
-	Snapshot  bool
+	Timestbmp time.Time
+	Snbpshot  bool
 }
 
-type SearchAggregationMode string
+type SebrchAggregbtionMode string
 
 const (
-	REPO_AGGREGATION_MODE          SearchAggregationMode = "REPO"
-	PATH_AGGREGATION_MODE          SearchAggregationMode = "PATH"
-	AUTHOR_AGGREGATION_MODE        SearchAggregationMode = "AUTHOR"
-	CAPTURE_GROUP_AGGREGATION_MODE SearchAggregationMode = "CAPTURE_GROUP"
-	REPO_METADATA_AGGREGATION_MODE SearchAggregationMode = "REPO_METADATA"
+	REPO_AGGREGATION_MODE          SebrchAggregbtionMode = "REPO"
+	PATH_AGGREGATION_MODE          SebrchAggregbtionMode = "PATH"
+	AUTHOR_AGGREGATION_MODE        SebrchAggregbtionMode = "AUTHOR"
+	CAPTURE_GROUP_AGGREGATION_MODE SebrchAggregbtionMode = "CAPTURE_GROUP"
+	REPO_METADATA_AGGREGATION_MODE SebrchAggregbtionMode = "REPO_METADATA"
 )
 
-var SearchAggregationModes = []SearchAggregationMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE, REPO_METADATA_AGGREGATION_MODE}
+vbr SebrchAggregbtionModes = []SebrchAggregbtionMode{REPO_AGGREGATION_MODE, PATH_AGGREGATION_MODE, AUTHOR_AGGREGATION_MODE, CAPTURE_GROUP_AGGREGATION_MODE, REPO_METADATA_AGGREGATION_MODE}
 
-type AggregationNotAvailableReasonType string
+type AggregbtionNotAvbilbbleRebsonType string
 
 const (
-	INVALID_QUERY                      AggregationNotAvailableReasonType = "INVALID_QUERY"
-	INVALID_AGGREGATION_MODE_FOR_QUERY AggregationNotAvailableReasonType = "INVALID_AGGREGATION_MODE_FOR_QUERY"
-	TIMEOUT_EXTENSION_AVAILABLE        AggregationNotAvailableReasonType = "TIMEOUT_EXTENSION_AVAILABLE"
-	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregationNotAvailableReasonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
-	ERROR_OCCURRED                     AggregationNotAvailableReasonType = "ERROR_OCCURRED"
+	INVALID_QUERY                      AggregbtionNotAvbilbbleRebsonType = "INVALID_QUERY"
+	INVALID_AGGREGATION_MODE_FOR_QUERY AggregbtionNotAvbilbbleRebsonType = "INVALID_AGGREGATION_MODE_FOR_QUERY"
+	TIMEOUT_EXTENSION_AVAILABLE        AggregbtionNotAvbilbbleRebsonType = "TIMEOUT_EXTENSION_AVAILABLE"
+	TIMEOUT_NO_EXTENSION_AVAILABLE     AggregbtionNotAvbilbbleRebsonType = "TIMEOUT_NO_EXTENSION_AVAILABLE"
+	ERROR_OCCURRED                     AggregbtionNotAvbilbbleRebsonType = "ERROR_OCCURRED"
 )
 
 const (
-	NO_REPO_METADATA_TEXT = "No metadata"
+	NO_REPO_METADATA_TEXT = "No metbdbtb"
 )

@@ -1,22 +1,22 @@
-package inference
+pbckbge inference
 
 import (
 	"testing"
 )
 
-func TestRubyGenerator(t *testing.T) {
-	testGenerators(t,
-		generatorTestCase{
+func TestRubyGenerbtor(t *testing.T) {
+	testGenerbtors(t,
+		generbtorTestCbse{
 			description: "scip-ruby",
-			repositoryContents: map[string]string{
-				"a/Gemfile":               "",
-				"a/a.gemspec":             "",
-				"a/Gemfile.lock":          "",
-				"a/rubygems-metadata.yml": "",
+			repositoryContents: mbp[string]string{
+				"b/Gemfile":               "",
+				"b/b.gemspec":             "",
+				"b/Gemfile.lock":          "",
+				"b/rubygems-metbdbtb.yml": "",
 				"b/Gemfile":               "",
 				"c/Gemfile.lock":          "",
 				"d/d.gemspec":             "",
-				"e/rubygems-metadata.yml": "",
+				"e/rubygems-metbdbtb.yml": "",
 			},
 		},
 	)

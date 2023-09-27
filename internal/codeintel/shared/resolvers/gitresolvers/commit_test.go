@@ -1,4 +1,4 @@
-package gitresolvers
+pbckbge gitresolvers
 
 import (
 	"context"
@@ -6,35 +6,35 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestCommit(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	gsClient := gitserver.NewMockClient()
-	gsClient.ListTagsFunc.SetDefaultReturn([]*gitdomain.Tag{
-		{Name: "v1"}, {Name: "v2"}, {Name: "v3"}, {Name: "v4"}, {Name: "v5"},
+	gsClient.ListTbgsFunc.SetDefbultReturn([]*gitdombin.Tbg{
+		{Nbme: "v1"}, {Nbme: "v2"}, {Nbme: "v3"}, {Nbme: "v4"}, {Nbme: "v5"},
 	}, nil)
 
 	repo := &repoResolver{repo: &types.Repo{
-		Name: api.RepoName("github.com/test/test"),
+		Nbme: bpi.RepoNbme("github.com/test/test"),
 	}}
-	resolver := NewGitCommitResolver(gsClient, repo, api.CommitID("deadbeef"), "")
+	resolver := NewGitCommitResolver(gsClient, repo, bpi.CommitID("debdbeef"), "")
 
 	for i := 0; i < 10; i++ {
-		tags, err := resolver.Tags(ctx)
+		tbgs, err := resolver.Tbgs(ctx)
 		if err != nil {
-			t.Fatalf("unexpected error from tags: %s", err)
+			t.Fbtblf("unexpected error from tbgs: %s", err)
 		}
-		if diff := cmp.Diff([]string{"v1", "v2", "v3", "v4", "v5"}, tags); diff != "" {
-			t.Errorf("unexpected tags (-want +got):\n%s", diff)
+		if diff := cmp.Diff([]string{"v1", "v2", "v3", "v4", "v5"}, tbgs); diff != "" {
+			t.Errorf("unexpected tbgs (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	if len(gsClient.ListTagsFunc.History()) != 1 {
-		t.Fatalf("expected function to be memoized")
+	if len(gsClient.ListTbgsFunc.History()) != 1 {
+		t.Fbtblf("expected function to be memoized")
 	}
 }

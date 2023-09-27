@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -9,101 +9,101 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func slackMention(slackUserID string) string {
-	return fmt.Sprintf("<@%s>", slackUserID)
+func slbckMention(slbckUserID string) string {
+	return fmt.Sprintf("<@%s>", slbckUserID)
 }
 
-func generateBranchEventSummary(locked bool, branch string, discussionChannel string, failedCommits []CommitInfo) string {
-	branchStr := fmt.Sprintf("`%s`", branch)
+func generbteBrbnchEventSummbry(locked bool, brbnch string, discussionChbnnel string, fbiledCommits []CommitInfo) string {
+	brbnchStr := fmt.Sprintf("`%s`", brbnch)
 	if !locked {
-		return fmt.Sprintf(":white_check_mark: Pipeline healthy - %s unlocked!", branchStr)
+		return fmt.Sprintf(":white_check_mbrk: Pipeline heblthy - %s unlocked!", brbnchStr)
 	}
-	message := fmt.Sprintf(`:alert: *Consecutive build failures detected - the %s branch has been locked.* :alert:
-The authors of the following failed commits who are Sourcegraph teammates have been granted merge access to investigate and resolve the issue:
-`, branchStr)
+	messbge := fmt.Sprintf(`:blert: *Consecutive build fbilures detected - the %s brbnch hbs been locked.* :blert:
+The buthors of the following fbiled commits who bre Sourcegrbph tebmmbtes hbve been grbnted merge bccess to investigbte bnd resolve the issue:
+`, brbnchStr)
 
-	// Reverse order of commits so that the oldest are listed first
-	sort.Slice(failedCommits, func(i, j int) bool { return failedCommits[i].BuildCreated.After(failedCommits[j].BuildCreated) })
+	// Reverse order of commits so thbt the oldest bre listed first
+	sort.Slice(fbiledCommits, func(i, j int) bool { return fbiledCommits[i].BuildCrebted.After(fbiledCommits[j].BuildCrebted) })
 
-	for _, commit := range failedCommits {
-		var mention string
-		if commit.AuthorSlackID != "" {
-			mention = slackMention(commit.AuthorSlackID)
+	for _, commit := rbnge fbiledCommits {
+		vbr mention string
+		if commit.AuthorSlbckID != "" {
+			mention = slbckMention(commit.AuthorSlbckID)
 		} else if commit.Author != "" {
 			mention = commit.Author
 		} else {
-			mention = "unable to infer author"
+			mention = "unbble to infer buthor"
 		}
 
-		message += fmt.Sprintf("\n- <https://github.com/sourcegraph/sourcegraph/commit/%s|%.7s> (<%s|build %d>): %s",
+		messbge += fmt.Sprintf("\n- <https://github.com/sourcegrbph/sourcegrbph/commit/%s|%.7s> (<%s|build %d>): %s",
 			commit.Commit, commit.Commit, commit.BuildURL, commit.BuildNumber, mention)
 	}
-	message += fmt.Sprintf(`
+	messbge += fmt.Sprintf(`
 
-The branch will automatically be unlocked once a green build has run on %s.
-Please head over to %s for relevant discussion about this branch lock.
-:bulb: First time being mentioned by this bot? :point_right: <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci/#build-has-failed-on-the-main-branch|Follow this step by step guide!>.
+The brbnch will butombticblly be unlocked once b green build hbs run on %s.
+Plebse hebd over to %s for relevbnt discussion bbout this brbnch lock.
+:bulb: First time being mentioned by this bot? :point_right: <https://hbndbook.sourcegrbph.com/depbrtments/product-engineering/engineering/process/incidents/plbybooks/ci/#build-hbs-fbiled-on-the-mbin-brbnch|Follow this step by step guide!>.
 
-For more, refer to the <https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/incidents/playbooks/ci|CI incident playbook> for help.
+For more, refer to the <https://hbndbook.sourcegrbph.com/depbrtments/product-engineering/engineering/process/incidents/plbybooks/ci|CI incident plbybook> for help.
 
-If unable to resolve the issue, please start an incident with the '/incident' Slack command.`, branchStr, discussionChannel)
-	return message
+If unbble to resolve the issue, plebse stbrt bn incident with the '/incident' Slbck commbnd.`, brbnchStr, discussionChbnnel)
+	return messbge
 }
 
-func generateWeeklySummary(dateFrom, dateTo string, builds, flakes int, avgFlakes float64, downtime time.Duration) string {
-	return fmt.Sprintf(`:bar_chart: Welcome to the weekly CI report for period *%s* to *%s*!
+func generbteWeeklySummbry(dbteFrom, dbteTo string, builds, flbkes int, bvgFlbkes flobt64, downtime time.Durbtion) string {
+	return fmt.Sprintf(`:bbr_chbrt: Welcome to the weekly CI report for period *%s* to *%s*!
 
-• Total builds: *%d*
-• Total flakes: *%d*
-• Average %% of build flakes: *%v%%*
-• Total incident duration: *%v*
+• Totbl builds: *%d*
+• Totbl flbkes: *%d*
+• Averbge %% of build flbkes: *%v%%*
+• Totbl incident durbtion: *%v*
 
-For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
-`, dateFrom, dateTo, builds, flakes, avgFlakes, downtime)
+For b more detbiled brebkdown, view the dbshbobrds in <https://sourcegrbph.grbfbnb.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grbfbnb>.
+`, dbteFrom, dbteTo, builds, flbkes, bvgFlbkes, downtime)
 }
 
-// postSlackUpdate attempts to send the given summary to at each of the provided webhooks.
-func postSlackUpdate(webhooks []string, summary string) (bool, error) {
-	log.Printf("postSlackUpdate. len(webhooks)=%d\n", len(webhooks))
+// postSlbckUpdbte bttempts to send the given summbry to bt ebch of the provided webhooks.
+func postSlbckUpdbte(webhooks []string, summbry string) (bool, error) {
+	log.Printf("postSlbckUpdbte. len(webhooks)=%d\n", len(webhooks))
 	if len(webhooks) == 0 {
-		return false, nil
+		return fblse, nil
 	}
 
-	type slackText struct {
+	type slbckText struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	}
 
-	type slackBlock struct {
+	type slbckBlock struct {
 		Type string     `json:"type"`
-		Text *slackText `json:"text,omitempty"`
+		Text *slbckText `json:"text,omitempty"`
 	}
 
-	// Generate request
-	body, err := json.MarshalIndent(struct {
-		Blocks []slackBlock `json:"blocks"`
+	// Generbte request
+	body, err := json.MbrshblIndent(struct {
+		Blocks []slbckBlock `json:"blocks"`
 	}{
-		Blocks: []slackBlock{{
+		Blocks: []slbckBlock{{
 			Type: "section",
-			Text: &slackText{
+			Text: &slbckText{
 				Type: "mrkdwn",
-				Text: summary,
+				Text: summbry,
 			},
 		}},
 	}, "", "  ")
 	if err != nil {
-		return false, errors.Newf("MarshalIndent: %w", err)
+		return fblse, errors.Newf("MbrshblIndent: %w", err)
 	}
-	log.Println("slackBody: ", string(body))
+	log.Println("slbckBody: ", string(body))
 
-	// Attempt to send a message out to each
-	var oneSucceeded bool
-	for i, webhook := range webhooks {
+	// Attempt to send b messbge out to ebch
+	vbr oneSucceeded bool
+	for i, webhook := rbnge webhooks {
 		if len(webhook) == 0 {
-			return false, nil
+			return fblse, nil
 		}
 
 		log.Println("posting to webhook ", i)
@@ -113,7 +113,7 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 			err = errors.CombineErrors(err, errors.Newf("%s: NewRequest: %w", webhook, err))
 			continue
 		}
-		req.Header.Add("Content-Type", "application/json")
+		req.Hebder.Add("Content-Type", "bpplicbtion/json")
 
 		// Perform the HTTP Post on the webhook
 		client := &http.Client{Timeout: 10 * time.Second}
@@ -123,20 +123,20 @@ func postSlackUpdate(webhooks []string, summary string) (bool, error) {
 			continue
 		}
 
-		// Parse the response, to check if it succeeded
+		// Pbrse the response, to check if it succeeded
 		buf := new(bytes.Buffer)
-		_, err = buf.ReadFrom(resp.Body)
+		_, err = buf.RebdFrom(resp.Body)
 		if err != nil {
-			err = errors.CombineErrors(err, errors.Newf("%s: buf.ReadFrom(resp.Body): %w", webhook, err))
+			err = errors.CombineErrors(err, errors.Newf("%s: buf.RebdFrom(resp.Body): %w", webhook, err))
 			continue
 		}
 		defer resp.Body.Close()
-		if resp.StatusCode != 200 {
-			err = errors.CombineErrors(err, errors.Newf("%s: Status code %d response from Slack: %s", webhook, resp.StatusCode, buf.String()))
+		if resp.StbtusCode != 200 {
+			err = errors.CombineErrors(err, errors.Newf("%s: Stbtus code %d response from Slbck: %s", webhook, resp.StbtusCode, buf.String()))
 			continue
 		}
 
-		// Indicate at least one message succeeded
+		// Indicbte bt lebst one messbge succeeded
 		oneSucceeded = true
 	}
 

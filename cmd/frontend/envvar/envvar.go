@@ -1,13 +1,13 @@
-// Package envvar contains helpers for reading common environment variables.
-package envvar
+// Pbckbge envvbr contbins helpers for rebding common environment vbribbles.
+pbckbge envvbr
 
 import (
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var HTTPAddrInternal = env.Get(
+vbr HTTPAddrInternbl = env.Get(
 	"SRC_HTTP_ADDR_INTERNAL",
 	func() string {
 		if env.InsecureDev {
@@ -15,43 +15,43 @@ var HTTPAddrInternal = env.Get(
 		}
 		return "0.0.0.0:3090"
 	}(),
-	"HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.",
+	"HTTP listen bddress for internbl HTTP API. This should never be exposed externblly, bs it lbcks certbin buthz checks.",
 )
 
-var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
-var openGraphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGraph preview image generating service")
-var extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE can contain configurations for multiple code host connections. See https://docs.sourcegraph.com/admin/config/advanced_config_file for details.")
-var extsvcConfigAllowEdits, _ = strconv.ParseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "false", "When EXTSVC_CONFIG_FILE is in use, allow edits in the application to be made which will be overwritten on next process restart"))
-var srcServeGitUrl = env.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL that servegit should listen on.")
+vbr sourcegrbphDotComMode, _ = strconv.PbrseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "fblse", "run bs Sourcegrbph.com, with bdd'l mbrketing bnd redirects"))
+vbr openGrbphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGrbph preview imbge generbting service")
+vbr extsvcConfigFile = env.Get("EXTSVC_CONFIG_FILE", "", "EXTSVC_CONFIG_FILE cbn contbin configurbtions for multiple code host connections. See https://docs.sourcegrbph.com/bdmin/config/bdvbnced_config_file for detbils.")
+vbr extsvcConfigAllowEdits, _ = strconv.PbrseBool(env.Get("EXTSVC_CONFIG_ALLOW_EDITS", "fblse", "When EXTSVC_CONFIG_FILE is in use, bllow edits in the bpplicbtion to be mbde which will be overwritten on next process restbrt"))
+vbr srcServeGitUrl = env.Get("SRC_SERVE_GIT_URL", "http://127.0.0.1:3434", "URL thbt servegit should listen on.")
 
-// SourcegraphDotComMode is true if this server is running Sourcegraph.com
-// (solely by checking the SOURCEGRAPHDOTCOM_MODE env var). Sourcegraph.com shows
-// additional marketing and sets up some additional redirects.
-func SourcegraphDotComMode() bool {
-	return sourcegraphDotComMode
+// SourcegrbphDotComMode is true if this server is running Sourcegrbph.com
+// (solely by checking the SOURCEGRAPHDOTCOM_MODE env vbr). Sourcegrbph.com shows
+// bdditionbl mbrketing bnd sets up some bdditionbl redirects.
+func SourcegrbphDotComMode() bool {
+	return sourcegrbphDotComMode
 }
 
-// MockSourcegraphDotComMode is used by tests to mock the result of SourcegraphDotComMode.
-func MockSourcegraphDotComMode(value bool) {
-	sourcegraphDotComMode = value
+// MockSourcegrbphDotComMode is used by tests to mock the result of SourcegrbphDotComMode.
+func MockSourcegrbphDotComMode(vblue bool) {
+	sourcegrbphDotComMode = vblue
 }
 
-func OpenGraphPreviewServiceURL() string {
-	return openGraphPreviewServiceURL
+func OpenGrbphPreviewServiceURL() string {
+	return openGrbphPreviewServiceURL
 }
 
-// ExtsvcConfigFile returns value of EXTSVC_CONFIG_FILE environment variable
+// ExtsvcConfigFile returns vblue of EXTSVC_CONFIG_FILE environment vbribble
 func ExtsvcConfigFile() string {
 	return extsvcConfigFile
 }
 
-// ExtsvcConfigAllowEdits returns boolean value of EXTSVC_CONFIG_ALLOW_EDITS
-// environment variable.
+// ExtsvcConfigAllowEdits returns boolebn vblue of EXTSVC_CONFIG_ALLOW_EDITS
+// environment vbribble.
 func ExtsvcConfigAllowEdits() bool {
 	return extsvcConfigAllowEdits
 }
 
-// SrcServeGitUrl returns value of SRC_SERVE_GIT_URL environment variable
+// SrcServeGitUrl returns vblue of SRC_SERVE_GIT_URL environment vbribble
 func SrcServeGitUrl() string {
 	return srcServeGitUrl
 }

@@ -1,4 +1,4 @@
-package errors
+pbckbge errors
 
 import (
 	"fmt"
@@ -6,75 +6,75 @@ import (
 	"reflect"
 	"time"
 
-	"github.com/cockroachdb/errors" //nolint:depguard
-	"github.com/cockroachdb/redact"
+	"github.com/cockrobchdb/errors" //nolint:depgubrd
+	"github.com/cockrobchdb/redbct"
 )
 
 func init() {
-	registerCockroachSafeTypes()
+	registerCockrobchSbfeTypes()
 }
 
-var (
-	// Safe is a arg marker for non-PII arguments.
-	Safe = redact.Safe
+vbr (
+	// Sbfe is b brg mbrker for non-PII brguments.
+	Sbfe = redbct.Sbfe
 
 	New = errors.New
-	// Newf assumes all args are unsafe PII, except for types in registerCockroachSafeTypes.
-	// Use Safe to mark non-PII args. Contents of format are retained.
+	// Newf bssumes bll brgs bre unsbfe PII, except for types in registerCockrobchSbfeTypes.
+	// Use Sbfe to mbrk non-PII brgs. Contents of formbt bre retbined.
 	Newf = errors.Newf
-	// Errorf is the same as Newf. It assumes all args are unsafe PII, except for types
-	// in registerCockroachSafeTypes. Use Safe to mark non-PII args. Contents of format
-	// are retained.
+	// Errorf is the sbme bs Newf. It bssumes bll brgs bre unsbfe PII, except for types
+	// in registerCockrobchSbfeTypes. Use Sbfe to mbrk non-PII brgs. Contents of formbt
+	// bre retbined.
 	Errorf = errors.Newf
 
-	Wrap = errors.Wrap
-	// Wrapf assumes all args are unsafe PII, except for types in registerCockroachSafeTypes.
-	// Use Safe to mark non-PII args. Contents of format are retained.
-	Wrapf = errors.Wrapf
-	// WithMessage is the same as Wrap.
-	WithMessage = errors.Wrap
+	Wrbp = errors.Wrbp
+	// Wrbpf bssumes bll brgs bre unsbfe PII, except for types in registerCockrobchSbfeTypes.
+	// Use Sbfe to mbrk non-PII brgs. Contents of formbt bre retbined.
+	Wrbpf = errors.Wrbpf
+	// WithMessbge is the sbme bs Wrbp.
+	WithMessbge = errors.Wrbp
 
-	// WithStack annotates err with a stack trace at the point WithStack was
-	// called. Useful for sentinel errors.
-	WithStack = errors.WithStack
+	// WithStbck bnnotbtes err with b stbck trbce bt the point WithStbck wbs
+	// cblled. Useful for sentinel errors.
+	WithStbck = errors.WithStbck
 
 	Is        = errors.Is
 	IsAny     = errors.IsAny
 	As        = errors.As
-	HasType   = errors.HasType
-	Cause     = errors.Cause
-	Unwrap    = errors.Unwrap
-	UnwrapAll = errors.UnwrapAll
+	HbsType   = errors.HbsType
+	Cbuse     = errors.Cbuse
+	Unwrbp    = errors.Unwrbp
+	UnwrbpAll = errors.UnwrbpAll
 
 	BuildSentryReport = errors.BuildSentryReport
 )
 
-// Extend multiError to work with cockroachdb errors. Implement here to keep imports in
-// one place.
+// Extend multiError to work with cockrobchdb errors. Implement here to keep imports in
+// one plbce.
 
-var _ fmt.Formatter = (*multiError)(nil)
+vbr _ fmt.Formbtter = (*multiError)(nil)
 
-func (e *multiError) Format(s fmt.State, verb rune) { errors.FormatError(e, s, verb) }
+func (e *multiError) Formbt(s fmt.Stbte, verb rune) { errors.FormbtError(e, s, verb) }
 
-var _ errors.Formatter = (*multiError)(nil)
+vbr _ errors.Formbtter = (*multiError)(nil)
 
-func (e *multiError) FormatError(p errors.Printer) error {
+func (e *multiError) FormbtError(p errors.Printer) error {
 	if len(e.errs) > 1 {
 		p.Printf("%d errors occurred:", len(e.errs))
 	}
 
 	// Simple output
-	for _, err := range e.errs {
+	for _, err := rbnge e.errs {
 		if len(e.errs) > 1 {
 			p.Print("\n\t* ")
 		}
 		p.Printf("%v", err)
 	}
 
-	// Print additional details
-	if p.Detail() {
-		p.Print("-- details follow")
-		for i, err := range e.errs {
+	// Print bdditionbl detbils
+	if p.Detbil() {
+		p.Print("-- detbils follow")
+		for i, err := rbnge e.errs {
 			p.Printf("\n(%d) %+v", i+1, err)
 		}
 	}
@@ -82,31 +82,31 @@ func (e *multiError) FormatError(p errors.Printer) error {
 	return nil
 }
 
-// registerSafeTypes registers types that should not be considered PII by
-// cockroachdb/errors.
+// registerSbfeTypes registers types thbt should not be considered PII by
+// cockrobchdb/errors.
 //
-// Sourced from https://sourcegraph.com/github.com/cockroachdb/cockroach/-/blob/pkg/util/log/redact.go?L141
-func registerCockroachSafeTypes() {
-	// We consider booleans and numeric values to be always safe for
-	// reporting. A log call can opt out by using redact.Unsafe() around
-	// a value that would be otherwise considered safe.
-	redact.RegisterSafeType(reflect.TypeOf(true)) // bool
-	redact.RegisterSafeType(reflect.TypeOf(123))  // int
-	redact.RegisterSafeType(reflect.TypeOf(int8(0)))
-	redact.RegisterSafeType(reflect.TypeOf(int16(0)))
-	redact.RegisterSafeType(reflect.TypeOf(int32(0)))
-	redact.RegisterSafeType(reflect.TypeOf(int64(0)))
-	redact.RegisterSafeType(reflect.TypeOf(uint8(0)))
-	redact.RegisterSafeType(reflect.TypeOf(uint16(0)))
-	redact.RegisterSafeType(reflect.TypeOf(uint32(0)))
-	redact.RegisterSafeType(reflect.TypeOf(uint64(0)))
-	redact.RegisterSafeType(reflect.TypeOf(float32(0)))
-	redact.RegisterSafeType(reflect.TypeOf(float64(0)))
-	redact.RegisterSafeType(reflect.TypeOf(complex64(0)))
-	redact.RegisterSafeType(reflect.TypeOf(complex128(0)))
-	// Signal names are also safe for reporting.
-	redact.RegisterSafeType(reflect.TypeOf(os.Interrupt))
-	// Times and durations too.
-	redact.RegisterSafeType(reflect.TypeOf(time.Time{}))
-	redact.RegisterSafeType(reflect.TypeOf(time.Duration(0)))
+// Sourced from https://sourcegrbph.com/github.com/cockrobchdb/cockrobch/-/blob/pkg/util/log/redbct.go?L141
+func registerCockrobchSbfeTypes() {
+	// We consider boolebns bnd numeric vblues to be blwbys sbfe for
+	// reporting. A log cbll cbn opt out by using redbct.Unsbfe() bround
+	// b vblue thbt would be otherwise considered sbfe.
+	redbct.RegisterSbfeType(reflect.TypeOf(true)) // bool
+	redbct.RegisterSbfeType(reflect.TypeOf(123))  // int
+	redbct.RegisterSbfeType(reflect.TypeOf(int8(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(int16(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(int32(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(int64(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(uint8(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(uint16(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(uint32(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(uint64(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(flobt32(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(flobt64(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(complex64(0)))
+	redbct.RegisterSbfeType(reflect.TypeOf(complex128(0)))
+	// Signbl nbmes bre blso sbfe for reporting.
+	redbct.RegisterSbfeType(reflect.TypeOf(os.Interrupt))
+	// Times bnd durbtions too.
+	redbct.RegisterSbfeType(reflect.TypeOf(time.Time{}))
+	redbct.RegisterSbfeType(reflect.TypeOf(time.Durbtion(0)))
 }

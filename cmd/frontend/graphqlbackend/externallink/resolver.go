@@ -1,24 +1,24 @@
-package externallink
+pbckbge externbllink
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-// A Resolver resolves the GraphQL ExternalLink type (which describes a resource on some external
+// A Resolver resolves the GrbphQL ExternblLink type (which describes b resource on some externbl
 // service).
 //
-// For example, a repository might have 2 external links, one to its origin repository on GitHub.com
-// and one to the repository on Phabricator.
+// For exbmple, b repository might hbve 2 externbl links, one to its origin repository on GitHub.com
+// bnd one to the repository on Phbbricbtor.
 type Resolver struct {
 	url         string // the URL to the resource
-	serviceType string // the type of service that the URL points to, used for showing a nice icon
-	serviceKind string // the kind of service that the URL points to, used for showing a nice icon
+	serviceType string // the type of service thbt the URL points to, used for showing b nice icon
+	serviceKind string // the kind of service thbt the URL points to, used for showing b nice icon
 }
 
 func NewResolver(url, serviceType string) *Resolver {
-	return &Resolver{url: url, serviceKind: typeToMaybeEmptyKind(serviceType), serviceType: serviceType}
+	return &Resolver{url: url, serviceKind: typeToMbybeEmptyKind(serviceType), serviceType: serviceType}
 }
 
 func (r *Resolver) URL() string { return r.url }
@@ -39,7 +39,7 @@ func (r *Resolver) ServiceType() *string {
 
 func (r *Resolver) String() string { return fmt.Sprintf("%s@%s", r.serviceKind, r.url) }
 
-func typeToMaybeEmptyKind(st string) string {
+func typeToMbybeEmptyKind(st string) string {
 	if st != "" {
 		return extsvc.TypeToKind(st)
 	}

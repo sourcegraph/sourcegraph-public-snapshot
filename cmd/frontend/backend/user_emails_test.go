@@ -1,4 +1,4 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
@@ -8,601 +8,601 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestCheckEmailAbuse(t *testing.T) {
+func TestCheckEmbilAbuse(t *testing.T) {
 	ctx := testContext()
 
 	cfg := conf.Get()
-	cfg.EmailSmtp = &schema.SMTPServerConfig{}
+	cfg.EmbilSmtp = &schemb.SMTPServerConfig{}
 	conf.Mock(cfg)
 	defer func() {
-		cfg.EmailSmtp = nil
+		cfg.EmbilSmtp = nil
 		conf.Mock(cfg)
 	}()
 
-	envvar.MockSourcegraphDotComMode(true)
-	defer envvar.MockSourcegraphDotComMode(false)
+	envvbr.MockSourcegrbphDotComMode(true)
+	defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 	now := time.Now()
 
 	tests := []struct {
-		name       string
-		mockEmails []*database.UserEmail
-		hasQuote   bool
+		nbme       string
+		mockEmbils []*dbtbbbse.UserEmbil
+		hbsQuote   bool
 		expAbused  bool
-		expReason  string
+		expRebson  string
 		expErr     error
 	}{
 		{
-			name: "no verified email address",
-			mockEmails: []*database.UserEmail{
+			nbme: "no verified embil bddress",
+			mockEmbils: []*dbtbbbse.UserEmbil{
 				{
-					Email: "alice@example.com",
+					Embil: "blice@exbmple.com",
 				},
 			},
-			hasQuote:  false,
+			hbsQuote:  fblse,
 			expAbused: true,
-			expReason: "a verified email is required before you can add additional email addressed to your account",
+			expRebson: "b verified embil is required before you cbn bdd bdditionbl embil bddressed to your bccount",
 			expErr:    nil,
 		},
 		{
-			name: "reached maximum number of unverified email addresses",
-			mockEmails: []*database.UserEmail{
+			nbme: "rebched mbximum number of unverified embil bddresses",
+			mockEmbils: []*dbtbbbse.UserEmbil{
 				{
-					Email:      "alice@example.com",
+					Embil:      "blice@exbmple.com",
 					VerifiedAt: &now,
 				},
 				{
-					Email: "alice2@example.com",
+					Embil: "blice2@exbmple.com",
 				},
 				{
-					Email: "alice3@example.com",
+					Embil: "blice3@exbmple.com",
 				},
 				{
-					Email: "alice4@example.com",
+					Embil: "blice4@exbmple.com",
 				},
 			},
-			hasQuote:  false,
+			hbsQuote:  fblse,
 			expAbused: true,
-			expReason: "too many existing unverified email addresses",
+			expRebson: "too mbny existing unverified embil bddresses",
 			expErr:    nil,
 		},
 		{
-			name: "no quota",
-			mockEmails: []*database.UserEmail{
+			nbme: "no quotb",
+			mockEmbils: []*dbtbbbse.UserEmbil{
 				{
-					Email:      "alice@example.com",
+					Embil:      "blice@exbmple.com",
 					VerifiedAt: &now,
 				},
 			},
-			hasQuote:  false,
+			hbsQuote:  fblse,
 			expAbused: true,
-			expReason: "email address quota exceeded (contact support to increase the quota)",
+			expRebson: "embil bddress quotb exceeded (contbct support to increbse the quotb)",
 			expErr:    nil,
 		},
 
 		{
-			name: "no abuse",
-			mockEmails: []*database.UserEmail{
+			nbme: "no bbuse",
+			mockEmbils: []*dbtbbbse.UserEmbil{
 				{
-					Email:      "alice@example.com",
+					Embil:      "blice@exbmple.com",
 					VerifiedAt: &now,
 				},
 			},
-			hasQuote:  true,
-			expAbused: false,
-			expReason: "",
+			hbsQuote:  true,
+			expAbused: fblse,
+			expRebson: "",
 			expErr:    nil,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
-			users.CheckAndDecrementInviteQuotaFunc.SetDefaultReturn(test.hasQuote, nil)
+			users.CheckAndDecrementInviteQuotbFunc.SetDefbultReturn(test.hbsQuote, nil)
 
-			userEmails := dbmocks.NewMockUserEmailsStore()
-			userEmails.ListByUserFunc.SetDefaultReturn(test.mockEmails, nil)
+			userEmbils := dbmocks.NewMockUserEmbilsStore()
+			userEmbils.ListByUserFunc.SetDefbultReturn(test.mockEmbils, nil)
 
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.UserEmailsFunc.SetDefaultReturn(userEmails)
+			db.UsersFunc.SetDefbultReturn(users)
+			db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-			abused, reason, err := checkEmailAbuse(ctx, db, 1)
+			bbused, rebson, err := checkEmbilAbuse(ctx, db, 1)
 			if test.expErr != err {
-				t.Fatalf("err: want %v but got %v", test.expErr, err)
-			} else if test.expAbused != abused {
-				t.Fatalf("abused: want %v but got %v", test.expAbused, abused)
-			} else if test.expReason != reason {
-				t.Fatalf("reason: want %q but got %q", test.expReason, reason)
+				t.Fbtblf("err: wbnt %v but got %v", test.expErr, err)
+			} else if test.expAbused != bbused {
+				t.Fbtblf("bbused: wbnt %v but got %v", test.expAbused, bbused)
+			} else if test.expRebson != rebson {
+				t.Fbtblf("rebson: wbnt %q but got %q", test.expRebson, rebson)
 			}
 		})
 	}
 }
 
-func TestSendUserEmailVerificationEmail(t *testing.T) {
-	var sent *txemail.Message
-	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
-		sent = &message
+func TestSendUserEmbilVerificbtionEmbil(t *testing.T) {
+	vbr sent *txembil.Messbge
+	txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
+		sent = &messbge
 		return nil
 	}
-	defer func() { txemail.MockSend = nil }()
+	defer func() { txembil.MockSend = nil }()
 
-	if err := SendUserEmailVerificationEmail(context.Background(), "Alan Johnson", "a@example.com", "c"); err != nil {
-		t.Fatal(err)
+	if err := SendUserEmbilVerificbtionEmbil(context.Bbckground(), "Albn Johnson", "b@exbmple.com", "c"); err != nil {
+		t.Fbtbl(err)
 	}
 	if sent == nil {
-		t.Fatal("want sent != nil")
+		t.Fbtbl("wbnt sent != nil")
 	}
-	if want := (txemail.Message{
-		To:       []string{"a@example.com"},
-		Template: verifyEmailTemplates,
-		Data: struct {
-			Username string
+	if wbnt := (txembil.Messbge{
+		To:       []string{"b@exbmple.com"},
+		Templbte: verifyEmbilTemplbtes,
+		Dbtb: struct {
+			Usernbme string
 			URL      string
 			Host     string
 		}{
-			Username: "Alan Johnson",
-			URL:      "http://example.com/-/verify-email?code=c&email=a%40example.com",
-			Host:     "example.com",
+			Usernbme: "Albn Johnson",
+			URL:      "http://exbmple.com/-/verify-embil?code=c&embil=b%40exbmple.com",
+			Host:     "exbmple.com",
 		},
-	}); !reflect.DeepEqual(*sent, want) {
-		t.Errorf("got %+v, want %+v", *sent, want)
+	}); !reflect.DeepEqubl(*sent, wbnt) {
+		t.Errorf("got %+v, wbnt %+v", *sent, wbnt)
 	}
 }
 
-func TestSendUserEmailOnFieldUpdate(t *testing.T) {
-	var sent *txemail.Message
-	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
-		sent = &message
+func TestSendUserEmbilOnFieldUpdbte(t *testing.T) {
+	vbr sent *txembil.Messbge
+	txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
+		sent = &messbge
 		return nil
 	}
-	defer func() { txemail.MockSend = nil }()
+	defer func() { txembil.MockSend = nil }()
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("b@exbmple.com", true, nil)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{Usernbme: "Foo"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+	db.UsersFunc.SetDefbultReturn(users)
 	logger := logtest.Scoped(t)
 
-	svc := NewUserEmailsService(db, logger)
-	if err := svc.SendUserEmailOnFieldUpdate(context.Background(), 123, "updated password"); err != nil {
-		t.Fatal(err)
+	svc := NewUserEmbilsService(db, logger)
+	if err := svc.SendUserEmbilOnFieldUpdbte(context.Bbckground(), 123, "updbted pbssword"); err != nil {
+		t.Fbtbl(err)
 	}
 	if sent == nil {
-		t.Fatal("want sent != nil")
+		t.Fbtbl("wbnt sent != nil")
 	}
-	if want := (txemail.Message{
-		To:       []string{"a@example.com"},
-		Template: updateAccountEmailTemplate,
-		Data: struct {
-			Email    string
-			Change   string
-			Username string
+	if wbnt := (txembil.Messbge{
+		To:       []string{"b@exbmple.com"},
+		Templbte: updbteAccountEmbilTemplbte,
+		Dbtb: struct {
+			Embil    string
+			Chbnge   string
+			Usernbme string
 			Host     string
 		}{
-			Email:    "a@example.com",
-			Change:   "updated password",
-			Username: "Foo",
-			Host:     "example.com",
+			Embil:    "b@exbmple.com",
+			Chbnge:   "updbted pbssword",
+			Usernbme: "Foo",
+			Host:     "exbmple.com",
 		},
-	}); !reflect.DeepEqual(*sent, want) {
-		t.Errorf("got %+v, want %+v", *sent, want)
+	}); !reflect.DeepEqubl(*sent, wbnt) {
+		t.Errorf("got %+v, wbnt %+v", *sent, wbnt)
 	}
 
-	mockrequire.Called(t, userEmails.GetPrimaryEmailFunc)
-	mockrequire.Called(t, users.GetByIDFunc)
+	mockrequire.Cblled(t, userEmbils.GetPrimbryEmbilFunc)
+	mockrequire.Cblled(t, users.GetByIDFunc)
 }
 
-func TestSendUserEmailOnTokenChange(t *testing.T) {
-	var sent *txemail.Message
-	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
-		sent = &message
+func TestSendUserEmbilOnTokenChbnge(t *testing.T) {
+	vbr sent *txembil.Messbge
+	txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
+		sent = &messbge
 		return nil
 	}
-	defer func() { txemail.MockSend = nil }()
+	defer func() { txembil.MockSend = nil }()
 
-	userEmails := dbmocks.NewMockUserEmailsStore()
-	userEmails.GetPrimaryEmailFunc.SetDefaultReturn("a@example.com", true, nil)
+	userEmbils := dbmocks.NewMockUserEmbilsStore()
+	userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("b@exbmple.com", true, nil)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{Username: "Foo"}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{Usernbme: "Foo"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
+	db.UsersFunc.SetDefbultReturn(users)
 	logger := logtest.Scoped(t)
 
-	svc := NewUserEmailsService(db, logger)
+	svc := NewUserEmbilsService(db, logger)
 	tt := []struct {
-		name      string
-		tokenName string
+		nbme      string
+		tokenNbme string
 		delete    bool
-		template  txtypes.Templates
+		templbte  txtypes.Templbtes
 	}{
 		{
 			"Access Token deleted",
-			"my-long-last-token",
+			"my-long-lbst-token",
 			true,
-			accessTokenDeletedEmailTemplate,
+			bccessTokenDeletedEmbilTemplbte,
 		},
 		{
-			"Access Token created",
+			"Access Token crebted",
 			"heyo-new-token",
-			false,
-			accessTokenCreatedEmailTemplate,
+			fblse,
+			bccessTokenCrebtedEmbilTemplbte,
 		},
 	}
-	for _, item := range tt {
-		t.Run(item.name, func(t *testing.T) {
-			if err := svc.SendUserEmailOnAccessTokenChange(context.Background(), 123, item.tokenName, item.delete); err != nil {
-				t.Fatal(err)
+	for _, item := rbnge tt {
+		t.Run(item.nbme, func(t *testing.T) {
+			if err := svc.SendUserEmbilOnAccessTokenChbnge(context.Bbckground(), 123, item.tokenNbme, item.delete); err != nil {
+				t.Fbtbl(err)
 			}
 			if sent == nil {
-				t.Fatal("want sent != nil")
+				t.Fbtbl("wbnt sent != nil")
 			}
 
-			if want := (txemail.Message{
-				To:       []string{"a@example.com"},
-				Template: item.template,
-				Data: struct {
-					Email     string
-					TokenName string
-					Username  string
+			if wbnt := (txembil.Messbge{
+				To:       []string{"b@exbmple.com"},
+				Templbte: item.templbte,
+				Dbtb: struct {
+					Embil     string
+					TokenNbme string
+					Usernbme  string
 					Host      string
 				}{
-					Email:     "a@example.com",
-					TokenName: item.tokenName,
-					Username:  "Foo",
-					Host:      "example.com",
+					Embil:     "b@exbmple.com",
+					TokenNbme: item.tokenNbme,
+					Usernbme:  "Foo",
+					Host:      "exbmple.com",
 				},
-			}); !reflect.DeepEqual(*sent, want) {
-				t.Errorf("got %+v, want %+v", *sent, want)
+			}); !reflect.DeepEqubl(*sent, wbnt) {
+				t.Errorf("got %+v, wbnt %+v", *sent, wbnt)
 			}
 		})
 	}
 }
 
-func TestUserEmailsAddRemove(t *testing.T) {
+func TestUserEmbilsAddRemove(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	txemail.DisableSilently()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	txembil.DisbbleSilently()
 
-	const email = "user@example.com"
-	const email2 = "user.secondary@example.com"
-	const username = "test-user"
-	const verificationCode = "code"
+	const embil = "user@exbmple.com"
+	const embil2 = "user.secondbry@exbmple.com"
+	const usernbme = "test-user"
+	const verificbtionCode = "code"
 
-	newUser := database.NewUser{
-		Email:                 email,
-		Username:              username,
-		EmailVerificationCode: verificationCode,
+	newUser := dbtbbbse.NewUser{
+		Embil:                 embil,
+		Usernbme:              usernbme,
+		EmbilVerificbtionCode: verificbtionCode,
 	}
 
-	createdUser, err := db.Users().Create(ctx, newUser)
-	assert.NoError(t, err)
+	crebtedUser, err := db.Users().Crebte(ctx, newUser)
+	bssert.NoError(t, err)
 
-	svc := NewUserEmailsService(db, logger)
+	svc := NewUserEmbilsService(db, logger)
 
-	// Unauthenticated user should fail
-	assert.Error(t, svc.Add(ctx, createdUser.ID, email2))
-	// Different user should fail
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	// Unbuthenticbted user should fbil
+	bssert.Error(t, svc.Add(ctx, crebtedUser.ID, embil2))
+	// Different user should fbil
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 99,
 	})
-	assert.Error(t, svc.Add(ctx, createdUser.ID, email2))
+	bssert.Error(t, svc.Add(ctx, crebtedUser.ID, embil2))
 
-	// Add as a site admin (or internal actor) should pass
-	ctx = actor.WithInternalActor(context.Background())
-	// Add secondary e-mail
-	assert.NoError(t, svc.Add(ctx, createdUser.ID, email2))
+	// Add bs b site bdmin (or internbl bctor) should pbss
+	ctx = bctor.WithInternblActor(context.Bbckground())
+	// Add secondbry e-mbil
+	bssert.NoError(t, svc.Add(ctx, crebtedUser.ID, embil2))
 
 	// Add reset code
-	code, err := db.Users().RenewPasswordResetCode(ctx, createdUser.ID)
-	assert.NoError(t, err)
+	code, err := db.Users().RenewPbsswordResetCode(ctx, crebtedUser.ID)
+	bssert.NoError(t, err)
 
-	// Remove as unauthenticated user should fail
-	ctx = context.Background()
-	assert.Error(t, svc.Remove(ctx, createdUser.ID, email2))
+	// Remove bs unbuthenticbted user should fbil
+	ctx = context.Bbckground()
+	bssert.Error(t, svc.Remove(ctx, crebtedUser.ID, embil2))
 
-	// Remove as different user should fail
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	// Remove bs different user should fbil
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 99,
 	})
-	assert.Error(t, svc.Remove(ctx, createdUser.ID, email2))
+	bssert.Error(t, svc.Remove(ctx, crebtedUser.ID, embil2))
 
-	// Remove as a site admin (or internal actor) should pass
-	ctx = actor.WithInternalActor(context.Background())
-	assert.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+	// Remove bs b site bdmin (or internbl bctor) should pbss
+	ctx = bctor.WithInternblActor(context.Bbckground())
+	bssert.NoError(t, svc.Remove(ctx, crebtedUser.ID, embil2))
 
-	// Trying to change the password with the old code should fail
-	changed, err := db.Users().SetPassword(ctx, createdUser.ID, code, "some-amazing-new-password")
-	assert.NoError(t, err)
-	assert.False(t, changed)
+	// Trying to chbnge the pbssword with the old code should fbil
+	chbnged, err := db.Users().SetPbssword(ctx, crebtedUser.ID, code, "some-bmbzing-new-pbssword")
+	bssert.NoError(t, err)
+	bssert.Fblse(t, chbnged)
 
-	// Can't remove primary e-mail
-	assert.Error(t, svc.Remove(ctx, createdUser.ID, email))
+	// Cbn't remove primbry e-mbil
+	bssert.Error(t, svc.Remove(ctx, crebtedUser.ID, embil))
 
-	// Set email as verified, add a second user, and try to add the verified email
-	svc.SetVerified(ctx, createdUser.ID, email, true)
-	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	// Set embil bs verified, bdd b second user, bnd try to bdd the verified embil
+	svc.SetVerified(ctx, crebtedUser.ID, embil, true)
+	user2, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-user-2"})
 	require.NoError(t, err)
 
-	require.Error(t, svc.Add(ctx, user2.ID, email))
+	require.Error(t, svc.Add(ctx, user2.ID, embil))
 }
 
-func TestUserEmailsSetPrimary(t *testing.T) {
+func TestUserEmbilsSetPrimbry(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	txemail.DisableSilently()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	txembil.DisbbleSilently()
 
-	const email = "user@example.com"
-	const username = "test-user"
-	const verificationCode = "code"
+	const embil = "user@exbmple.com"
+	const usernbme = "test-user"
+	const verificbtionCode = "code"
 
-	newUser := database.NewUser{
-		Email:                 email,
-		Username:              username,
-		EmailVerificationCode: verificationCode,
+	newUser := dbtbbbse.NewUser{
+		Embil:                 embil,
+		Usernbme:              usernbme,
+		EmbilVerificbtionCode: verificbtionCode,
 	}
 
-	createdUser, err := db.Users().Create(ctx, newUser)
-	assert.NoError(t, err)
+	crebtedUser, err := db.Users().Crebte(ctx, newUser)
+	bssert.NoError(t, err)
 
-	svc := NewUserEmailsService(db, logger)
+	svc := NewUserEmbilsService(db, logger)
 
-	// Unauthenticated user should fail
-	assert.Error(t, svc.SetPrimaryEmail(ctx, createdUser.ID, email))
-	// Different user should fail
-	ctx = actor.WithActor(ctx, &actor.Actor{
+	// Unbuthenticbted user should fbil
+	bssert.Error(t, svc.SetPrimbryEmbil(ctx, crebtedUser.ID, embil))
+	// Different user should fbil
+	ctx = bctor.WithActor(ctx, &bctor.Actor{
 		UID: 99,
 	})
-	assert.Error(t, svc.SetPrimaryEmail(ctx, createdUser.ID, email))
+	bssert.Error(t, svc.SetPrimbryEmbil(ctx, crebtedUser.ID, embil))
 
-	// As site admin (or internal actor) should pass
-	ctx = actor.WithInternalActor(ctx)
-	// Need to set e-mail as verified
-	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
-	assert.NoError(t, svc.SetPrimaryEmail(ctx, createdUser.ID, email))
+	// As site bdmin (or internbl bctor) should pbss
+	ctx = bctor.WithInternblActor(ctx)
+	// Need to set e-mbil bs verified
+	bssert.NoError(t, svc.SetVerified(ctx, crebtedUser.ID, embil, true))
+	bssert.NoError(t, svc.SetPrimbryEmbil(ctx, crebtedUser.ID, embil))
 
-	fromDB, verified, err := db.UserEmails().GetPrimaryEmail(ctx, createdUser.ID)
-	assert.NoError(t, err)
-	assert.Equal(t, email, fromDB)
-	assert.True(t, verified)
+	fromDB, verified, err := db.UserEmbils().GetPrimbryEmbil(ctx, crebtedUser.ID)
+	bssert.NoError(t, err)
+	bssert.Equbl(t, embil, fromDB)
+	bssert.True(t, verified)
 }
 
-func TestUserEmailsSetVerified(t *testing.T) {
+func TestUserEmbilsSetVerified(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	txemail.DisableSilently()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	txembil.DisbbleSilently()
 
-	const email = "user@example.com"
-	const email2 = "user.secondary@example.com"
-	const username = "test-user"
-	const verificationCode = "code"
+	const embil = "user@exbmple.com"
+	const embil2 = "user.secondbry@exbmple.com"
+	const usernbme = "test-user"
+	const verificbtionCode = "code"
 
-	newUser := database.NewUser{
-		Email:                 email,
-		Username:              username,
-		EmailVerificationCode: verificationCode,
+	newUser := dbtbbbse.NewUser{
+		Embil:                 embil,
+		Usernbme:              usernbme,
+		EmbilVerificbtionCode: verificbtionCode,
 	}
 
-	createdUser, err := db.Users().Create(ctx, newUser)
-	assert.NoError(t, err)
+	crebtedUser, err := db.Users().Crebte(ctx, newUser)
+	bssert.NoError(t, err)
 
-	svc := NewUserEmailsService(db, logger)
-	// Unauthenticated user should fail
-	assert.Error(t, svc.SetVerified(ctx, createdUser.ID, email, true))
-	// Different user should fail
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
+	svc := NewUserEmbilsService(db, logger)
+	// Unbuthenticbted user should fbil
+	bssert.Error(t, svc.SetVerified(ctx, crebtedUser.ID, embil, true))
+	// Different user should fbil
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 99})
 
-	// As site admin (or internal actor) should pass
-	ctx = actor.WithInternalActor(ctx)
-	// Need to set e-mail as verified
-	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true))
+	// As site bdmin (or internbl bctor) should pbss
+	ctx = bctor.WithInternblActor(ctx)
+	// Need to set e-mbil bs verified
+	bssert.NoError(t, svc.SetVerified(ctx, crebtedUser.ID, embil, true))
 
-	// Confirm that unverified emails get deleted when an email is marked as verified
-	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, false)) // first mark as unverified again
+	// Confirm thbt unverified embils get deleted when bn embil is mbrked bs verified
+	bssert.NoError(t, svc.SetVerified(ctx, crebtedUser.ID, embil, fblse)) // first mbrk bs unverified bgbin
 
-	user2, err := db.Users().Create(ctx, database.NewUser{Username: "test-user-2"})
+	user2, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test-user-2"})
 	require.NoError(t, err)
 
-	assert.NoError(t, svc.Add(ctx, user2.ID, email)) // Adding an unverified email is fine if all emails are unverified
+	bssert.NoError(t, svc.Add(ctx, user2.ID, embil)) // Adding bn unverified embil is fine if bll embils bre unverified
 
-	assert.NoError(t, svc.SetVerified(ctx, createdUser.ID, email, true)) // mark as verified again
-	_, _, err = db.UserEmails().Get(ctx, user2.ID, email)                // This should produce an error as the email should no longer exist
-	assert.Error(t, err)
+	bssert.NoError(t, svc.SetVerified(ctx, crebtedUser.ID, embil, true)) // mbrk bs verified bgbin
+	_, _, err = db.UserEmbils().Get(ctx, user2.ID, embil)                // This should produce bn error bs the embil should no longer exist
+	bssert.Error(t, err)
 
-	emails, err := db.UserEmails().GetVerifiedEmails(ctx, email, email2)
-	assert.NoError(t, err)
-	assert.Len(t, emails, 1)
-	assert.Equal(t, email, emails[0].Email)
+	embils, err := db.UserEmbils().GetVerifiedEmbils(ctx, embil, embil2)
+	bssert.NoError(t, err)
+	bssert.Len(t, embils, 1)
+	bssert.Equbl(t, embil, embils[0].Embil)
 }
 
-func TestUserEmailsResendVerificationEmail(t *testing.T) {
+func TestUserEmbilsResendVerificbtionEmbil(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	txemail.DisableSilently()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	txembil.DisbbleSilently()
 
-	oldSend := txemail.MockSend
-	t.Cleanup(func() {
-		txemail.MockSend = oldSend
+	oldSend := txembil.MockSend
+	t.Clebnup(func() {
+		txembil.MockSend = oldSend
 	})
-	var sendCalled bool
-	txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
-		sendCalled = true
+	vbr sendCblled bool
+	txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
+		sendCblled = true
 		return nil
 	}
-	assertSendCalled := func(want bool) {
-		assert.Equal(t, want, sendCalled)
-		// Reset to false
-		sendCalled = false
+	bssertSendCblled := func(wbnt bool) {
+		bssert.Equbl(t, wbnt, sendCblled)
+		// Reset to fblse
+		sendCblled = fblse
 	}
 
-	const email = "user@example.com"
-	const username = "test-user"
-	const verificationCode = "code"
+	const embil = "user@exbmple.com"
+	const usernbme = "test-user"
+	const verificbtionCode = "code"
 
-	newUser := database.NewUser{
-		Email:                 email,
-		Username:              username,
-		EmailVerificationCode: verificationCode,
+	newUser := dbtbbbse.NewUser{
+		Embil:                 embil,
+		Usernbme:              usernbme,
+		EmbilVerificbtionCode: verificbtionCode,
 	}
 
-	createdUser, err := db.Users().Create(ctx, newUser)
-	assert.NoError(t, err)
+	crebtedUser, err := db.Users().Crebte(ctx, newUser)
+	bssert.NoError(t, err)
 
-	svc := NewUserEmailsService(db, logger)
+	svc := NewUserEmbilsService(db, logger)
 	now := time.Now()
 
-	// Set that we sent the initial e-mail
-	assert.NoError(t, db.UserEmails().SetLastVerification(ctx, createdUser.ID, email, verificationCode, now))
+	// Set thbt we sent the initibl e-mbil
+	bssert.NoError(t, db.UserEmbils().SetLbstVerificbtion(ctx, crebtedUser.ID, embil, verificbtionCode, now))
 
-	// Unauthenticated user should fail
-	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now))
-	assertSendCalled(false)
+	// Unbuthenticbted user should fbil
+	bssert.Error(t, svc.ResendVerificbtionEmbil(ctx, crebtedUser.ID, embil, now))
+	bssertSendCblled(fblse)
 
-	// Different user should fail
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 99})
-	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now))
-	assertSendCalled(false)
+	// Different user should fbil
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 99})
+	bssert.Error(t, svc.ResendVerificbtionEmbil(ctx, crebtedUser.ID, embil, now))
+	bssertSendCblled(fblse)
 
-	// As site admin (or internal actor) should pass
-	ctx = actor.WithInternalActor(ctx)
-	// Set in the future so that we can resend
+	// As site bdmin (or internbl bctor) should pbss
+	ctx = bctor.WithInternblActor(ctx)
+	// Set in the future so thbt we cbn resend
 	now = now.Add(5 * time.Minute)
-	assert.NoError(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now))
-	assertSendCalled(true)
+	bssert.NoError(t, svc.ResendVerificbtionEmbil(ctx, crebtedUser.ID, embil, now))
+	bssertSendCblled(true)
 
-	// Trying to send again too soon should fail
-	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now.Add(1*time.Second)))
-	assertSendCalled(false)
+	// Trying to send bgbin too soon should fbil
+	bssert.Error(t, svc.ResendVerificbtionEmbil(ctx, crebtedUser.ID, embil, now.Add(1*time.Second)))
+	bssertSendCblled(fblse)
 
-	// Invalid e-mail
-	assert.Error(t, svc.ResendVerificationEmail(ctx, createdUser.ID, "another@example.com", now.Add(5*time.Minute)))
-	assertSendCalled(false)
+	// Invblid e-mbil
+	bssert.Error(t, svc.ResendVerificbtionEmbil(ctx, crebtedUser.ID, "bnother@exbmple.com", now.Add(5*time.Minute)))
+	bssertSendCblled(fblse)
 
-	// Manually mark as verified
-	assert.NoError(t, db.UserEmails().SetVerified(ctx, createdUser.ID, email, true))
+	// Mbnublly mbrk bs verified
+	bssert.NoError(t, db.UserEmbils().SetVerified(ctx, crebtedUser.ID, embil, true))
 
-	// Trying to send verification e-mail now should be a noop since we are already
+	// Trying to send verificbtion e-mbil now should be b noop since we bre blrebdy
 	// verified
-	assert.NoError(t, svc.ResendVerificationEmail(ctx, createdUser.ID, email, now.Add(10*time.Minute)))
-	assertSendCalled(false)
+	bssert.NoError(t, svc.ResendVerificbtionEmbil(ctx, crebtedUser.ID, embil, now.Add(10*time.Minute)))
+	bssertSendCblled(fblse)
 }
 
-func TestRemoveStalePerforceAccount(t *testing.T) {
+func TestRemoveStblePerforceAccount(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	txemail.DisableSilently()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	txembil.DisbbleSilently()
 
-	const email = "user@example.com"
-	const email2 = "user.secondary@example.com"
-	const username = "test-user"
-	const verificationCode = "code"
+	const embil = "user@exbmple.com"
+	const embil2 = "user.secondbry@exbmple.com"
+	const usernbme = "test-user"
+	const verificbtionCode = "code"
 
-	newUser := database.NewUser{
-		Email:                 email,
-		Username:              username,
-		EmailVerificationCode: verificationCode,
+	newUser := dbtbbbse.NewUser{
+		Embil:                 embil,
+		Usernbme:              usernbme,
+		EmbilVerificbtionCode: verificbtionCode,
 	}
 
-	createdUser, err := db.Users().Create(ctx, newUser)
-	assert.NoError(t, err)
+	crebtedUser, err := db.Users().Crebte(ctx, newUser)
+	bssert.NoError(t, err)
 
-	createdRepo := &types.Repo{
-		Name:         "github.com/soucegraph/sourcegraph",
-		URI:          "github.com/soucegraph/sourcegraph",
-		ExternalRepo: api.ExternalRepoSpec{},
+	crebtedRepo := &types.Repo{
+		Nbme:         "github.com/soucegrbph/sourcegrbph",
+		URI:          "github.com/soucegrbph/sourcegrbph",
+		ExternblRepo: bpi.ExternblRepoSpec{},
 	}
-	err = db.Repos().Create(ctx, createdRepo)
+	err = db.Repos().Crebte(ctx, crebtedRepo)
 	require.NoError(t, err)
 
-	svc := NewUserEmailsService(db, logger)
-	ctx = actor.WithInternalActor(ctx)
+	svc := NewUserEmbilsService(db, logger)
+	ctx = bctor.WithInternblActor(ctx)
 
 	setup := func() {
-		require.NoError(t, svc.Add(ctx, createdUser.ID, email2))
+		require.NoError(t, svc.Add(ctx, crebtedUser.ID, embil2))
 
 		spec := extsvc.AccountSpec{
 			ServiceType: extsvc.TypePerforce,
-			ServiceID:   "test-instance",
-			// We use the email address as the account id for Perforce
-			AccountID: email2,
+			ServiceID:   "test-instbnce",
+			// We use the embil bddress bs the bccount id for Perforce
+			AccountID: embil2,
 		}
-		perforceData := perforce.AccountData{
-			Username: "user",
-			Email:    email2,
+		perforceDbtb := perforce.AccountDbtb{
+			Usernbme: "user",
+			Embil:    embil2,
 		}
-		serializedData, err := json.Marshal(perforceData)
+		seriblizedDbtb, err := json.Mbrshbl(perforceDbtb)
 		require.NoError(t, err)
-		data := extsvc.AccountData{
-			Data: extsvc.NewUnencryptedData(serializedData),
+		dbtb := extsvc.AccountDbtb{
+			Dbtb: extsvc.NewUnencryptedDbtb(seriblizedDbtb),
 		}
-		require.NoError(t, db.UserExternalAccounts().Insert(ctx, createdUser.ID, spec, data))
+		require.NoError(t, db.UserExternblAccounts().Insert(ctx, crebtedUser.ID, spec, dbtb))
 
-		// Confirm that the external account was added
-		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-			UserID:      createdUser.ID,
+		// Confirm thbt the externbl bccount wbs bdded
+		bccounts, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
+			UserID:      crebtedUser.ID,
 			ServiceType: extsvc.TypePerforce,
 		})
 		require.NoError(t, err)
-		require.Len(t, accounts, 1)
+		require.Len(t, bccounts, 1)
 	}
 
-	assertRemovals := func(t *testing.T) {
-		// Confirm that the external account is gone
-		accounts, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-			UserID:      createdUser.ID,
+	bssertRemovbls := func(t *testing.T) {
+		// Confirm thbt the externbl bccount is gone
+		bccounts, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
+			UserID:      crebtedUser.ID,
 			ServiceType: extsvc.TypePerforce,
 		})
 		require.NoError(t, err)
-		require.Len(t, accounts, 0)
+		require.Len(t, bccounts, 0)
 	}
 
 	t.Run("OnDelete", func(t *testing.T) {
 		setup()
 
-		// Remove the email
-		require.NoError(t, svc.Remove(ctx, createdUser.ID, email2))
+		// Remove the embil
+		require.NoError(t, svc.Remove(ctx, crebtedUser.ID, embil2))
 
-		assertRemovals(t)
+		bssertRemovbls(t)
 	})
 
 	t.Run("OnUnverified", func(t *testing.T) {
 		setup()
 
-		// Mark the e-mail as unverified
-		require.NoError(t, svc.SetVerified(ctx, createdUser.ID, email2, false))
+		// Mbrk the e-mbil bs unverified
+		require.NoError(t, svc.SetVerified(ctx, crebtedUser.ID, embil2, fblse))
 
-		assertRemovals(t)
+		bssertRemovbls(t)
 	})
 }

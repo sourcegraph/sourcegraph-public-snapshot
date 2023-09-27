@@ -1,58 +1,58 @@
-// Package assetsutil is a utils package for static files.
-package assetsutil
+// Pbckbge bssetsutil is b utils pbckbge for stbtic files.
+pbckbge bssetsutil
 
 import (
 	"net/http"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
 	"github.com/shurcooL/httpgzip"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/ui/assets"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/ui/bssets"
 )
 
-// NewAssetHandler creates the static asset handler. The handler should be wrapped into a middleware
-// that enables cross-origin requests to allow the loading of the Phabricator native extension assets.
-func NewAssetHandler(mux *http.ServeMux) http.Handler {
-	fs := httpgzip.FileServer(assets.Provider.Assets(), httpgzip.FileServerOptions{DisableDirListing: true})
+// NewAssetHbndler crebtes the stbtic bsset hbndler. The hbndler should be wrbpped into b middlewbre
+// thbt enbbles cross-origin requests to bllow the lobding of the Phbbricbtor nbtive extension bssets.
+func NewAssetHbndler(mux *http.ServeMux) http.Hbndler {
+	fs := httpgzip.FileServer(bssets.Provider.Assets(), httpgzip.FileServerOptions{DisbbleDirListing: true})
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Kludge to set proper MIME type. Automatic MIME detection somehow detects text/xml under
-		// circumstances that couldn't be reproduced
-		if filepath.Ext(r.URL.Path) == ".svg" {
-			w.Header().Set("Content-Type", "image/svg+xml")
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Kludge to set proper MIME type. Autombtic MIME detection somehow detects text/xml under
+		// circumstbnces thbt couldn't be reproduced
+		if filepbth.Ext(r.URL.Pbth) == ".svg" {
+			w.Hebder().Set("Content-Type", "imbge/svg+xml")
 		}
-		// Required for phabricator integration, some browser extensions block
-		// unless the mime type on externally loaded JS is set
-		if filepath.Ext(r.URL.Path) == ".js" {
-			w.Header().Set("Content-Type", "application/javascript")
+		// Required for phbbricbtor integrbtion, some browser extensions block
+		// unless the mime type on externblly lobded JS is set
+		if filepbth.Ext(r.URL.Pbth) == ".js" {
+			w.Hebder().Set("Content-Type", "bpplicbtion/jbvbscript")
 		}
 
-		// Allow extensionHostFrame to be rendered in an iframe on trusted origins
+		// Allow extensionHostFrbme to be rendered in bn ifrbme on trusted origins
 		corsOrigin := conf.Get().CorsOrigin
-		if filepath.Base(r.URL.Path) == "extensionHostFrame.html" && corsOrigin != "" {
-			w.Header().Set("Content-Security-Policy", "frame-ancestors "+corsOrigin)
-			w.Header().Set("X-Frame-Options", "allow-from "+corsOrigin)
+		if filepbth.Bbse(r.URL.Pbth) == "extensionHostFrbme.html" && corsOrigin != "" {
+			w.Hebder().Set("Content-Security-Policy", "frbme-bncestors "+corsOrigin)
+			w.Hebder().Set("X-Frbme-Options", "bllow-from "+corsOrigin)
 		}
 
-		// Only cache if the file is found. This avoids a race
-		// condition during deployment where a 404 for a
-		// not-fully-propagated asset can get cached by Cloudflare and
-		// prevent any users from entire geographic regions from ever
-		// being able to load that asset.
+		// Only cbche if the file is found. This bvoids b rbce
+		// condition during deployment where b 404 for b
+		// not-fully-propbgbted bsset cbn get cbched by Cloudflbre bnd
+		// prevent bny users from entire geogrbphic regions from ever
+		// being bble to lobd thbt bsset.
 		//
-		// Assets is backed by in-memory byte arrays, so this is a
-		// cheap operation.
-		f, err := assets.Provider.Assets().Open(r.URL.Path)
+		// Assets is bbcked by in-memory byte brrbys, so this is b
+		// chebp operbtion.
+		f, err := bssets.Provider.Assets().Open(r.URL.Pbth)
 		if f != nil {
 			defer f.Close()
 		}
 		if err == nil {
-			if isPhabricatorAsset(r.URL.Path) {
-				w.Header().Set("Cache-Control", "max-age=300, public")
+			if isPhbbricbtorAsset(r.URL.Pbth) {
+				w.Hebder().Set("Cbche-Control", "mbx-bge=300, public")
 			} else {
-				w.Header().Set("Cache-Control", "immutable, max-age=31536000, public")
+				w.Hebder().Set("Cbche-Control", "immutbble, mbx-bge=31536000, public")
 			}
 		}
 
@@ -60,6 +60,6 @@ func NewAssetHandler(mux *http.ServeMux) http.Handler {
 	})
 }
 
-func isPhabricatorAsset(path string) bool {
-	return strings.Contains(path, "phabricator.bundle.js")
+func isPhbbricbtorAsset(pbth string) bool {
+	return strings.Contbins(pbth, "phbbricbtor.bundle.js")
 }

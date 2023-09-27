@@ -1,120 +1,120 @@
-package app
+pbckbge bpp
 
 import (
 	"encoding/json"
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/session"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/teestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/telemetryrecorder"
 )
 
 type SignOutURL struct {
-	ProviderDisplayName string
+	ProviderDisplbyNbme string
 	ProviderServiceType string
 	URL                 string
 }
 
-var ssoSignOutHandler func(w http.ResponseWriter, r *http.Request)
+vbr ssoSignOutHbndler func(w http.ResponseWriter, r *http.Request)
 
-// RegisterSSOSignOutHandler registers a SSO sign-out handler that takes care of cleaning up SSO
-// session state, both on Sourcegraph and on the SSO provider. This function should only be called
-// once from an init function.
-func RegisterSSOSignOutHandler(f func(w http.ResponseWriter, r *http.Request)) {
-	if ssoSignOutHandler != nil {
-		panic("RegisterSSOSignOutHandler already called")
+// RegisterSSOSignOutHbndler registers b SSO sign-out hbndler thbt tbkes cbre of clebning up SSO
+// session stbte, both on Sourcegrbph bnd on the SSO provider. This function should only be cblled
+// once from bn init function.
+func RegisterSSOSignOutHbndler(f func(w http.ResponseWriter, r *http.Request)) {
+	if ssoSignOutHbndler != nil {
+		pbnic("RegisterSSOSignOutHbndler blrebdy cblled")
 	}
-	ssoSignOutHandler = f
+	ssoSignOutHbndler = f
 }
 
-func serveSignOutHandler(logger log.Logger, db database.DB) http.HandlerFunc {
-	logger = logger.Scoped("signOut", "signout handler")
+func serveSignOutHbndler(logger log.Logger, db dbtbbbse.DB) http.HbndlerFunc {
+	logger = logger.Scoped("signOut", "signout hbndler")
 	recorder := telemetryrecorder.NewBestEffort(logger, db)
 
 	return func(w http.ResponseWriter, r *http.Request) {
-		// In this code, we still use legacy events (usagestats.LogBackendEvent),
-		// so do not tee events automatically.
+		// In this code, we still use legbcy events (usbgestbts.LogBbckendEvent),
+		// so do not tee events butombticblly.
 		// TODO: We should remove this in 5.3 entirely
 		ctx := teestore.WithoutV1(r.Context())
 
-		recordSecurityEvent(r, db, database.SecurityEventNameSignOutAttempted, nil)
+		recordSecurityEvent(r, db, dbtbbbse.SecurityEventNbmeSignOutAttempted, nil)
 
-		// Invalidate all user sessions first
-		// This way, any other signout failures should not leave a valid session
-		var err error
-		if err = session.InvalidateSessionCurrentUser(w, r, db); err != nil {
-			recordSecurityEvent(r, db, database.SecurityEventNameSignOutFailed, err)
-			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionFailed, nil)
-			logger.Error("serveSignOutHandler", log.Error(err))
+		// Invblidbte bll user sessions first
+		// This wby, bny other signout fbilures should not lebve b vblid session
+		vbr err error
+		if err = session.InvblidbteSessionCurrentUser(w, r, db); err != nil {
+			recordSecurityEvent(r, db, dbtbbbse.SecurityEventNbmeSignOutFbiled, err)
+			recorder.Record(ctx, telemetry.FebtureSignOut, telemetry.ActionFbiled, nil)
+			logger.Error("serveSignOutHbndler", log.Error(err))
 		}
 
 		if err = session.SetActor(w, r, nil, 0, time.Time{}); err != nil {
-			recordSecurityEvent(r, db, database.SecurityEventNameSignOutFailed, err)
-			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionFailed, nil)
-			logger.Error("serveSignOutHandler", log.Error(err))
+			recordSecurityEvent(r, db, dbtbbbse.SecurityEventNbmeSignOutFbiled, err)
+			recorder.Record(ctx, telemetry.FebtureSignOut, telemetry.ActionFbiled, nil)
+			logger.Error("serveSignOutHbndler", log.Error(err))
 		}
 
-		auth.SetSignOutCookie(w)
+		buth.SetSignOutCookie(w)
 
-		if ssoSignOutHandler != nil {
-			ssoSignOutHandler(w, r)
+		if ssoSignOutHbndler != nil {
+			ssoSignOutHbndler(w, r)
 		}
 
 		if err == nil {
-			recordSecurityEvent(r, db, database.SecurityEventNameSignOutSucceeded, nil)
-			recorder.Record(ctx, telemetry.FeatureSignOut, telemetry.ActionSucceeded, nil)
+			recordSecurityEvent(r, db, dbtbbbse.SecurityEventNbmeSignOutSucceeded, nil)
+			recorder.Record(ctx, telemetry.FebtureSignOut, telemetry.ActionSucceeded, nil)
 		}
 
-		http.Redirect(w, r, "/search", http.StatusSeeOther)
+		http.Redirect(w, r, "/sebrch", http.StbtusSeeOther)
 	}
 }
 
-// recordSecurityEvent records an event into the security event log.
-func recordSecurityEvent(r *http.Request, db database.DB, name database.SecurityEventName, err error) {
+// recordSecurityEvent records bn event into the security event log.
+func recordSecurityEvent(r *http.Request, db dbtbbbse.DB, nbme dbtbbbse.SecurityEventNbme, err error) {
 	ctx := r.Context()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 
-	arg := struct {
+	brg := struct {
 		Error string `json:"error"`
 	}{}
 	if err != nil {
-		arg.Error = err.Error()
+		brg.Error = err.Error()
 	}
 
-	marshalled, _ := json.Marshal(arg)
+	mbrshblled, _ := json.Mbrshbl(brg)
 
-	event := &database.SecurityEvent{
-		Name:      name,
-		URL:       r.URL.Path,
-		UserID:    uint32(a.UID),
-		Argument:  marshalled,
+	event := &dbtbbbse.SecurityEvent{
+		Nbme:      nbme,
+		URL:       r.URL.Pbth,
+		UserID:    uint32(b.UID),
+		Argument:  mbrshblled,
 		Source:    "BACKEND",
-		Timestamp: time.Now(),
+		Timestbmp: time.Now(),
 	}
 
-	// Safe to ignore this error
+	// Sbfe to ignore this error
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 
-	// Legacy event - TODO: Remove in 5.3, alongside the teestore.WithoutV1
+	// Legbcy event - TODO: Remove in 5.3, blongside the teestore.WithoutV1
 	// context.
-	logEvent := &database.Event{
-		Name:            string(name),
+	logEvent := &dbtbbbse.Event{
+		Nbme:            string(nbme),
 		URL:             r.URL.Host,
-		UserID:          uint32(a.UID),
-		AnonymousUserID: "backend",
-		Argument:        marshalled,
+		UserID:          uint32(b.UID),
+		AnonymousUserID: "bbckend",
+		Argument:        mbrshblled,
 		Source:          "BACKEND",
-		Timestamp:       time.Now(),
+		Timestbmp:       time.Now(),
 	}
 	_ = db.EventLogs().Insert(ctx, logEvent)
 }

@@ -1,48 +1,48 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	insertMetadata                            *observation.Operation
-	newSCIPWriter                             *observation.Operation
-	idsWithMeta                               *observation.Operation
-	reconcileCandidates                       *observation.Operation
-	deleteLsifDataByUploadIds                 *observation.Operation
-	deleteUnreferencedDocuments               *observation.Operation
-	insertDefinitionsAndReferencesForDocument *observation.Operation
+type operbtions struct {
+	insertMetbdbtb                            *observbtion.Operbtion
+	newSCIPWriter                             *observbtion.Operbtion
+	idsWithMetb                               *observbtion.Operbtion
+	reconcileCbndidbtes                       *observbtion.Operbtion
+	deleteLsifDbtbByUplobdIds                 *observbtion.Operbtion
+	deleteUnreferencedDocuments               *observbtion.Operbtion
+	insertDefinitionsAndReferencesForDocument *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"codeintel_uploads_lsifstore",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"codeintel_uplobds_lsifstore",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.uploads.lsifstore.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.uplobds.lsifstore.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		insertMetadata:                            op("InsertMetadata"),
+	return &operbtions{
+		insertMetbdbtb:                            op("InsertMetbdbtb"),
 		newSCIPWriter:                             op("NewSCIPWriter"),
-		idsWithMeta:                               op("IDsWithMeta"),
-		reconcileCandidates:                       op("ReconcileCandidates"),
-		deleteLsifDataByUploadIds:                 op("DeleteLsifDataByUploadIds"),
+		idsWithMetb:                               op("IDsWithMetb"),
+		reconcileCbndidbtes:                       op("ReconcileCbndidbtes"),
+		deleteLsifDbtbByUplobdIds:                 op("DeleteLsifDbtbByUplobdIds"),
 		deleteUnreferencedDocuments:               op("DeleteUnreferencedDocuments"),
 		insertDefinitionsAndReferencesForDocument: op("InsertDefinitionsAndReferencesForDocument"),
 	}

@@ -1,115 +1,115 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-// Namespace is the interface for the GraphQL Namespace interface.
-type Namespace interface {
-	ID() graphql.ID
+// Nbmespbce is the interfbce for the GrbphQL Nbmespbce interfbce.
+type Nbmespbce interfbce {
+	ID() grbphql.ID
 	URL() string
-	NamespaceName() string
+	NbmespbceNbme() string
 }
 
-func (r *schemaResolver) Namespace(ctx context.Context, args *struct{ ID graphql.ID }) (*NamespaceResolver, error) {
-	n, err := NamespaceByID(ctx, r.db, args.ID)
+func (r *schembResolver) Nbmespbce(ctx context.Context, brgs *struct{ ID grbphql.ID }) (*NbmespbceResolver, error) {
+	n, err := NbmespbceByID(ctx, r.db, brgs.ID)
 	if err != nil {
 		return nil, err
 	}
-	return &NamespaceResolver{n}, nil
+	return &NbmespbceResolver{n}, nil
 }
 
-type InvalidNamespaceIDErr struct {
-	id graphql.ID
+type InvblidNbmespbceIDErr struct {
+	id grbphql.ID
 }
 
-func (e InvalidNamespaceIDErr) Error() string {
-	return fmt.Sprintf("invalid ID %q for namespace", e.id)
+func (e InvblidNbmespbceIDErr) Error() string {
+	return fmt.Sprintf("invblid ID %q for nbmespbce", e.id)
 }
 
-// NamespaceByID looks up a GraphQL value of type Namespace by ID.
-func NamespaceByID(ctx context.Context, db database.DB, id graphql.ID) (Namespace, error) {
-	switch relay.UnmarshalKind(id) {
-	case "User":
+// NbmespbceByID looks up b GrbphQL vblue of type Nbmespbce by ID.
+func NbmespbceByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (Nbmespbce, error) {
+	switch relby.UnmbrshblKind(id) {
+	cbse "User":
 		return UserByID(ctx, db, id)
-	case "Org":
+	cbse "Org":
 		return OrgByID(ctx, db, id)
-	default:
-		return nil, InvalidNamespaceIDErr{id: id}
+	defbult:
+		return nil, InvblidNbmespbceIDErr{id: id}
 	}
 }
 
-func UnmarshalNamespaceID(id graphql.ID, userID *int32, orgID *int32) (err error) {
-	switch relay.UnmarshalKind(id) {
-	case "User":
-		err = relay.UnmarshalSpec(id, userID)
-	case "Org":
-		err = relay.UnmarshalSpec(id, orgID)
-	default:
-		err = InvalidNamespaceIDErr{id: id}
+func UnmbrshblNbmespbceID(id grbphql.ID, userID *int32, orgID *int32) (err error) {
+	switch relby.UnmbrshblKind(id) {
+	cbse "User":
+		err = relby.UnmbrshblSpec(id, userID)
+	cbse "Org":
+		err = relby.UnmbrshblSpec(id, orgID)
+	defbult:
+		err = InvblidNbmespbceIDErr{id: id}
 	}
 	return err
 }
 
-// UnmarshalNamespaceToIDs is similar to UnmarshalNamespaceID, except instead of
-// unmarshalling into existing variables, it creates its own for convenience.
-// It will return exactly one non-nil value.
-func UnmarshalNamespaceToIDs(id graphql.ID) (userID *int32, orgID *int32, err error) {
-	switch relay.UnmarshalKind(id) {
-	case "User":
-		var uid int32
-		err = relay.UnmarshalSpec(id, &uid)
+// UnmbrshblNbmespbceToIDs is similbr to UnmbrshblNbmespbceID, except instebd of
+// unmbrshblling into existing vbribbles, it crebtes its own for convenience.
+// It will return exbctly one non-nil vblue.
+func UnmbrshblNbmespbceToIDs(id grbphql.ID) (userID *int32, orgID *int32, err error) {
+	switch relby.UnmbrshblKind(id) {
+	cbse "User":
+		vbr uid int32
+		err = relby.UnmbrshblSpec(id, &uid)
 		return &uid, nil, err
-	case "Org":
-		var oid int32
-		err = relay.UnmarshalSpec(id, &oid)
+	cbse "Org":
+		vbr oid int32
+		err = relby.UnmbrshblSpec(id, &oid)
 		return nil, &oid, err
-	default:
-		return nil, nil, InvalidNamespaceIDErr{id: id}
+	defbult:
+		return nil, nil, InvblidNbmespbceIDErr{id: id}
 	}
 }
 
-func (r *schemaResolver) NamespaceByName(ctx context.Context, args *struct{ Name string }) (*NamespaceResolver, error) {
-	namespace, err := r.db.Namespaces().GetByName(ctx, args.Name)
-	if err == database.ErrNamespaceNotFound {
+func (r *schembResolver) NbmespbceByNbme(ctx context.Context, brgs *struct{ Nbme string }) (*NbmespbceResolver, error) {
+	nbmespbce, err := r.db.Nbmespbces().GetByNbme(ctx, brgs.Nbme)
+	if err == dbtbbbse.ErrNbmespbceNotFound {
 		return nil, nil
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	var n Namespace
+	vbr n Nbmespbce
 	switch {
-	case namespace.User != 0:
-		n, err = UserByIDInt32(ctx, r.db, namespace.User)
-	case namespace.Organization != 0:
-		n, err = OrgByIDInt32(ctx, r.db, namespace.Organization)
-	default:
-		panic("invalid namespace (neither user nor organization)")
+	cbse nbmespbce.User != 0:
+		n, err = UserByIDInt32(ctx, r.db, nbmespbce.User)
+	cbse nbmespbce.Orgbnizbtion != 0:
+		n, err = OrgByIDInt32(ctx, r.db, nbmespbce.Orgbnizbtion)
+	defbult:
+		pbnic("invblid nbmespbce (neither user nor orgbnizbtion)")
 	}
 	if err != nil {
 		return nil, err
 	}
-	return &NamespaceResolver{n}, nil
+	return &NbmespbceResolver{n}, nil
 }
 
-// NamespaceResolver resolves the GraphQL Namespace interface to a type.
-type NamespaceResolver struct {
-	Namespace
+// NbmespbceResolver resolves the GrbphQL Nbmespbce interfbce to b type.
+type NbmespbceResolver struct {
+	Nbmespbce
 }
 
-func (r NamespaceResolver) ToOrg() (*OrgResolver, bool) {
-	n, ok := r.Namespace.(*OrgResolver)
+func (r NbmespbceResolver) ToOrg() (*OrgResolver, bool) {
+	n, ok := r.Nbmespbce.(*OrgResolver)
 	return n, ok
 }
 
-func (r NamespaceResolver) ToUser() (*UserResolver, bool) {
-	n, ok := r.Namespace.(*UserResolver)
+func (r NbmespbceResolver) ToUser() (*UserResolver, bool) {
+	n, ok := r.Nbmespbce.(*UserResolver)
 	return n, ok
 }

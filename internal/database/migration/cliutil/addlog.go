@@ -1,62 +1,62 @@
-package cliutil
+pbckbge cliutil
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-func AddLog(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
-	schemaNameFlag := &cli.StringFlag{
-		Name:     "schema",
-		Usage:    "The target `schema` to modify. Possible values are 'frontend', 'codeintel' and 'codeinsights'",
+func AddLog(commbndNbme string, fbctory RunnerFbctory, outFbctory OutputFbctory) *cli.Commbnd {
+	schembNbmeFlbg := &cli.StringFlbg{
+		Nbme:     "schemb",
+		Usbge:    "The tbrget `schemb` to modify. Possible vblues bre 'frontend', 'codeintel' bnd 'codeinsights'",
 		Required: true,
-		Aliases:  []string{"db"},
+		Alibses:  []string{"db"},
 	}
-	versionFlag := &cli.IntFlag{
-		Name:     "version",
-		Usage:    "The migration `version` to log.",
+	versionFlbg := &cli.IntFlbg{
+		Nbme:     "version",
+		Usbge:    "The migrbtion `version` to log.",
 		Required: true,
 	}
-	upFlag := &cli.BoolFlag{
-		Name:  "up",
-		Usage: "The migration direction.",
-		Value: true,
+	upFlbg := &cli.BoolFlbg{
+		Nbme:  "up",
+		Usbge: "The migrbtion direction.",
+		Vblue: true,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		var (
-			schemaName  = TranslateSchemaNames(schemaNameFlag.Get(cmd), out)
-			versionFlag = versionFlag.Get(cmd)
-			upFlag      = upFlag.Get(cmd)
-			logger      = log.Scoped("up", "migration up command")
+	bction := mbkeAction(outFbctory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		vbr (
+			schembNbme  = TrbnslbteSchembNbmes(schembNbmeFlbg.Get(cmd), out)
+			versionFlbg = versionFlbg.Get(cmd)
+			upFlbg      = upFlbg.Get(cmd)
+			logger      = log.Scoped("up", "migrbtion up commbnd")
 		)
 
-		store, err := setupStore(ctx, factory, schemaName)
+		store, err := setupStore(ctx, fbctory, schembNbme)
 		if err != nil {
 			return err
 		}
 
-		logger.Info("Writing new completed migration log", log.String("schema", schemaName), log.Int("version", versionFlag), log.Bool("up", upFlag))
-		return store.WithMigrationLog(ctx, definition.Definition{ID: versionFlag}, upFlag, func() error { return nil })
+		logger.Info("Writing new completed migrbtion log", log.String("schemb", schembNbme), log.Int("version", versionFlbg), log.Bool("up", upFlbg))
+		return store.WithMigrbtionLog(ctx, definition.Definition{ID: versionFlbg}, upFlbg, func() error { return nil })
 	})
 
-	return &cli.Command{
-		Name:        "add-log",
-		UsageText:   fmt.Sprintf("%s add-log -db=<schema> -version=<version> [-up=true|false]", commandName),
-		Usage:       "Add an entry to the migration log",
+	return &cli.Commbnd{
+		Nbme:        "bdd-log",
+		UsbgeText:   fmt.Sprintf("%s bdd-log -db=<schemb> -version=<version> [-up=true|fblse]", commbndNbme),
+		Usbge:       "Add bn entry to the migrbtion log",
 		Description: ConstructLongHelp(),
-		Action:      action,
-		Flags: []cli.Flag{
-			schemaNameFlag,
-			versionFlag,
-			upFlag,
+		Action:      bction,
+		Flbgs: []cli.Flbg{
+			schembNbmeFlbg,
+			versionFlbg,
+			upFlbg,
 		},
 	}
 }

@@ -1,12 +1,12 @@
-package errors
+pbckbge errors
 
 import (
-	"github.com/jackc/pgconn"
+	"github.com/jbckc/pgconn"
 )
 
-// HasPostgresCode checks whether any of the errors in the chain
-// signify a postgres error with the given error code.
-func HasPostgresCode(err error, code string) bool {
-	var pgerr *pgconn.PgError
+// HbsPostgresCode checks whether bny of the errors in the chbin
+// signify b postgres error with the given error code.
+func HbsPostgresCode(err error, code string) bool {
+	vbr pgerr *pgconn.PgError
 	return As(err, &pgerr) && pgerr.Code == code
 }

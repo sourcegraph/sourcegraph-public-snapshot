@@ -1,38 +1,38 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
-type CreateBatchChanger interface {
-	CreateBatchChange(ctx context.Context, batchChange *btypes.BatchChange) error
+type CrebteBbtchChbnger interfbce {
+	CrebteBbtchChbnge(ctx context.Context, bbtchChbnge *btypes.BbtchChbnge) error
 	Clock() func() time.Time
 }
 
-func BuildBatchChange(store CreateBatchChanger, name string, userID int32, spec int64) *btypes.BatchChange {
-	b := &btypes.BatchChange{
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   store.Clock()(),
-		NamespaceUserID: userID,
-		BatchSpecID:     spec,
-		Name:            name,
-		Description:     "batch change description",
+func BuildBbtchChbnge(store CrebteBbtchChbnger, nbme string, userID int32, spec int64) *btypes.BbtchChbnge {
+	b := &btypes.BbtchChbnge{
+		CrebtorID:       userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   store.Clock()(),
+		NbmespbceUserID: userID,
+		BbtchSpecID:     spec,
+		Nbme:            nbme,
+		Description:     "bbtch chbnge description",
 	}
 	return b
 }
 
-func CreateBatchChange(t *testing.T, ctx context.Context, store CreateBatchChanger, name string, userID int32, spec int64) *btypes.BatchChange {
+func CrebteBbtchChbnge(t *testing.T, ctx context.Context, store CrebteBbtchChbnger, nbme string, userID int32, spec int64) *btypes.BbtchChbnge {
 	t.Helper()
 
-	b := BuildBatchChange(store, name, userID, spec)
+	b := BuildBbtchChbnge(store, nbme, userID, spec)
 
-	if err := store.CreateBatchChange(ctx, b); err != nil {
-		t.Fatal(err)
+	if err := store.CrebteBbtchChbnge(ctx, b); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return b

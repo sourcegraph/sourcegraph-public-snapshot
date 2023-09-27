@@ -1,46 +1,46 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestStatusMessages(t *testing.T) {
-	graphqlQuery := `
-		query StatusMessages {
-			statusMessages {
-				__typename
+func TestStbtusMessbges(t *testing.T) {
+	grbphqlQuery := `
+		query StbtusMessbges {
+			stbtusMessbges {
+				__typenbme
 
-				... on GitUpdatesDisabled {
-					message
+				... on GitUpdbtesDisbbled {
+					messbge
 				}
 
 				... on NoRepositoriesDetected {
-					message
+					messbge
 				}
 
 				... on CloningProgress {
-					message
+					messbge
 				}
 
 				... on SyncError {
-					message
+					messbge
 				}
 
-				... on ExternalServiceSyncError {
-					message
-					externalService {
+				... on ExternblServiceSyncError {
+					messbge
+					externblService {
 						id
-						displayName
+						displbyNbme
 					}
 				}
 			}
@@ -48,85 +48,85 @@ func TestStatusMessages(t *testing.T) {
 	`
 
 	db := dbmocks.NewMockDB()
-	t.Run("unauthenticated", func(t *testing.T) {
+	t.Run("unbuthenticbted", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(nil, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient()).StatusMessages(context.Background())
-		if want := auth.ErrNotAuthenticated; err != want {
-			t.Errorf("got err %v, want %v", err, want)
+		result, err := newSchembResolver(db, gitserver.NewClient()).StbtusMessbges(context.Bbckground())
+		if wbnt := buth.ErrNotAuthenticbted; err != wbnt {
+			t.Errorf("got err %v, wbnt %v", err, wbnt)
 		}
 		if result != nil {
-			t.Errorf("got result %v, want nil", result)
+			t.Errorf("got result %v, wbnt nil", result)
 		}
 	})
 
-	t.Run("no messages", func(t *testing.T) {
+	t.Run("no messbges", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
-			return []repos.StatusMessage{}, nil
+		repos.MockStbtusMessbges = func(_ context.Context) ([]repos.StbtusMessbge, error) {
+			return []repos.StbtusMessbge{}, nil
 		}
-		t.Cleanup(func() {
-			repos.MockStatusMessages = nil
+		t.Clebnup(func() {
+			repos.MockStbtusMessbges = nil
 		})
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
-				Query:  graphqlQuery,
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
+				Query:  grbphqlQuery,
 				ExpectedResult: `
 				{
-					"statusMessages": []
+					"stbtusMessbges": []
 				}
 			`,
 			},
 		})
 	})
 
-	t.Run("messages", func(t *testing.T) {
+	t.Run("messbges", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
-		externalServices := dbmocks.NewMockExternalServiceStore()
-		externalServices.GetByIDFunc.SetDefaultReturn(&types.ExternalService{
+		externblServices := dbmocks.NewMockExternblServiceStore()
+		externblServices.GetByIDFunc.SetDefbultReturn(&types.ExternblService{
 			ID:          1,
-			DisplayName: "GitHub.com testing",
+			DisplbyNbme: "GitHub.com testing",
 			Config:      extsvc.NewEmptyConfig(),
 		}, nil)
 
-		db.UsersFunc.SetDefaultReturn(users)
-		db.ExternalServicesFunc.SetDefaultReturn(externalServices)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.ExternblServicesFunc.SetDefbultReturn(externblServices)
 
-		repos.MockStatusMessages = func(_ context.Context) ([]repos.StatusMessage, error) {
-			res := []repos.StatusMessage{
+		repos.MockStbtusMessbges = func(_ context.Context) ([]repos.StbtusMessbge, error) {
+			res := []repos.StbtusMessbge{
 				{
-					GitUpdatesDisabled: &repos.GitUpdatesDisabled{
-						Message: "Repositories will not be cloned or updated.",
+					GitUpdbtesDisbbled: &repos.GitUpdbtesDisbbled{
+						Messbge: "Repositories will not be cloned or updbted.",
 					},
 				},
 				{
 					NoRepositoriesDetected: &repos.NoRepositoriesDetected{
-						Message: "No repositories have been added to Sourcegraph.",
+						Messbge: "No repositories hbve been bdded to Sourcegrbph.",
 					},
 				},
 				{
 					Cloning: &repos.CloningProgress{
-						Message: "Currently cloning 5 repositories in parallel...",
+						Messbge: "Currently cloning 5 repositories in pbrbllel...",
 					},
 				},
 				{
-					ExternalServiceSyncError: &repos.ExternalServiceSyncError{
-						Message:           "Authentication failed. Please check credentials.",
-						ExternalServiceId: 1,
+					ExternblServiceSyncError: &repos.ExternblServiceSyncError{
+						Messbge:           "Authenticbtion fbiled. Plebse check credentibls.",
+						ExternblServiceId: 1,
 					},
 				},
 				{
 					SyncError: &repos.SyncError{
-						Message: "Could not save to database",
+						Messbge: "Could not sbve to dbtbbbse",
 					},
 				},
 			}
@@ -134,45 +134,45 @@ func TestStatusMessages(t *testing.T) {
 		}
 
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				DisableAutoGitUpdates: true,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				DisbbleAutoGitUpdbtes: true,
 			},
 		})
 
-		t.Cleanup(func() {
-			repos.MockStatusMessages = nil
+		t.Clebnup(func() {
+			repos.MockStbtusMessbges = nil
 			conf.Mock(nil)
 		})
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
-			Query:  graphqlQuery,
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
+			Query:  grbphqlQuery,
 			ExpectedResult: `
 					{
-						"statusMessages": [
+						"stbtusMessbges": [
 							{
-								"__typename": "GitUpdatesDisabled",
-        						"message": "Repositories will not be cloned or updated."
+								"__typenbme": "GitUpdbtesDisbbled",
+        						"messbge": "Repositories will not be cloned or updbted."
 							},
 							{
-								"__typename": "NoRepositoriesDetected",
-        						"message": "No repositories have been added to Sourcegraph."
+								"__typenbme": "NoRepositoriesDetected",
+        						"messbge": "No repositories hbve been bdded to Sourcegrbph."
 							},
 							{
-								"__typename": "CloningProgress",
-								"message": "Currently cloning 5 repositories in parallel..."
+								"__typenbme": "CloningProgress",
+								"messbge": "Currently cloning 5 repositories in pbrbllel..."
 							},
 							{
-								"__typename": "ExternalServiceSyncError",
-								"externalService": {
-									"displayName": "GitHub.com testing",
-									"id": "RXh0ZXJuYWxTZXJ2aWNlOjE="
+								"__typenbme": "ExternblServiceSyncError",
+								"externblService": {
+									"displbyNbme": "GitHub.com testing",
+									"id": "RXh0ZXJuYWxTZXJ2bWNlOjE="
 								},
-								"message": "Authentication failed. Please check credentials."
+								"messbge": "Authenticbtion fbiled. Plebse check credentibls."
 							},
 							{
-								"__typename": "SyncError",
-								"message": "Could not save to database"
+								"__typenbme": "SyncError",
+								"messbge": "Could not sbve to dbtbbbse"
 							}
 						]
 					}

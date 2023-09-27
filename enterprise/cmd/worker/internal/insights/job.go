@@ -1,16 +1,16 @@
-package insights
+pbckbge insights
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background"
-	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground"
+	insightsdb "github.com/sourcegrbph/sourcegrbph/internbl/insights/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type insightsJob struct{}
@@ -23,24 +23,24 @@ func (s *insightsJob) Config() []env.Config {
 	return nil
 }
 
-func (s *insightsJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	if !insights.IsEnabled() {
-		observationCtx.Logger.Debug("Code Insights disabled. Disabling background jobs.")
-		return []goroutine.BackgroundRoutine{}, nil
+func (s *insightsJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	if !insights.IsEnbbled() {
+		observbtionCtx.Logger.Debug("Code Insights disbbled. Disbbling bbckground jobs.")
+		return []goroutine.BbckgroundRoutine{}, nil
 	}
-	observationCtx.Logger.Debug("Code Insights enabled. Enabling background jobs.")
+	observbtionCtx.Logger.Debug("Code Insights enbbled. Enbbling bbckground jobs.")
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	insightsDB, err := insightsdb.InitializeCodeInsightsDB(observationCtx, "worker")
+	insightsDB, err := insightsdb.InitiblizeCodeInsightsDB(observbtionCtx, "worker")
 	if err != nil {
 		return nil, err
 	}
 
-	return background.GetBackgroundJobs(context.Background(), observationCtx.Logger, db, insightsDB), nil
+	return bbckground.GetBbckgroundJobs(context.Bbckground(), observbtionCtx.Logger, db, insightsDB), nil
 }
 
 func NewInsightsJob() job.Job {

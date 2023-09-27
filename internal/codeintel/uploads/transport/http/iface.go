@@ -1,13 +1,13 @@
-package http
+pbckbge http
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type RepoStore interface {
-	GetByName(ctx context.Context, name api.RepoName) (*types.Repo, error)
-	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error)
+type RepoStore interfbce {
+	GetByNbme(ctx context.Context, nbme bpi.RepoNbme) (*types.Repo, error)
+	ResolveRev(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error)
 }

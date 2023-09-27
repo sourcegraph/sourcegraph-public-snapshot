@@ -1,80 +1,80 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// WorkerutilResetter exports available shared observable and group constructors related to workerutil
-// resetter metrics emitted by instances of internal/workerutil/dbworker/ResetterMetrics in the Go backend.
-var WorkerutilResetter workerutilResetterConstructor
+// WorkerutilResetter exports bvbilbble shbred observbble bnd group constructors relbted to workerutil
+// resetter metrics emitted by instbnces of internbl/workerutil/dbworker/ResetterMetrics in the Go bbckend.
+vbr WorkerutilResetter workerutilResetterConstructor
 
-// workerutilResetterConstructor provides `WorkerutilResetter` implementations.
+// workerutilResetterConstructor provides `WorkerutilResetter` implementbtions.
 type workerutilResetterConstructor struct{}
 
-// Resets creates an observable from the given options backed by the counter specifying the
-// number of records reset to queued state.
+// Resets crebtes bn observbble from the given options bbcked by the counter specifying the
+// number of records reset to queued stbte.
 //
-// Requires a counter of the format `src_{options.MetricNameRoot}_record_resets_total`
-func (workerutilResetterConstructor) Resets(options ObservableConstructorOptions) sharedObservable {
-	options.MetricNameRoot += "_record_resets"
-	return Standard.Count("records reset to queued state")(options)
+// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_record_resets_totbl`
+func (workerutilResetterConstructor) Resets(options ObservbbleConstructorOptions) shbredObservbble {
+	options.MetricNbmeRoot += "_record_resets"
+	return Stbndbrd.Count("records reset to queued stbte")(options)
 }
 
-// ResetFailures creates an observable from the given options backed by the counter specifying
-// the number of records reset to errored state.
+// ResetFbilures crebtes bn observbble from the given options bbcked by the counter specifying
+// the number of records reset to errored stbte.
 //
-// Requires a counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
-func (workerutilResetterConstructor) ResetFailures(options ObservableConstructorOptions) sharedObservable {
-	options.MetricNameRoot += "_record_reset_failures"
-	return Standard.Count("records reset to errored state")(options)
+// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_record_reset_fbilures_totbl`
+func (workerutilResetterConstructor) ResetFbilures(options ObservbbleConstructorOptions) shbredObservbble {
+	options.MetricNbmeRoot += "_record_reset_fbilures"
+	return Stbndbrd.Count("records reset to errored stbte")(options)
 }
 
 type ResetterGroupOptions struct {
 	GroupConstructorOptions
 
-	// Total transforms the default observable used to construct the reset count panel.
-	RecordResets ObservableOption
+	// Totbl trbnsforms the defbult observbble used to construct the reset count pbnel.
+	RecordResets ObservbbleOption
 
-	// Duration transforms the default observable used to construct the reset failure count panel.
-	RecordResetFailures ObservableOption
+	// Durbtion trbnsforms the defbult observbble used to construct the reset fbilure count pbnel.
+	RecordResetFbilures ObservbbleOption
 
-	// Errors transforms the default observable used to construct the resetter error rate panel.
-	Errors ObservableOption
+	// Errors trbnsforms the defbult observbble used to construct the resetter error rbte pbnel.
+	Errors ObservbbleOption
 }
 
-// NewGroup creates a group containing panels displaying the total number of records reset, the number
-// of records moved to errored, and the error rate of the resetter operating within the given container.
+// NewGroup crebtes b group contbining pbnels displbying the totbl number of records reset, the number
+// of records moved to errored, bnd the error rbte of the resetter operbting within the given contbiner.
 //
-// Requires any of the following:
-//   - counter of the format `src_{options.MetricNameRoot}_record_resets_total`
-//   - counter of the format `src_{options.MetricNameRoot}_record_reset_failures_total`
-//   - counter of the format `src_{options.MetricNameRoot}_record_reset_errors_total`
+// Requires bny of the following:
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_record_resets_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_record_reset_fbilures_totbl`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_record_reset_errors_totbl`
 //
-// These metrics are currently created by hand and assigned as fields of an instance of an
-// internal/workerutil/dbworker/ResetterMetrics struct in the Go backend. Metrics are emitted
+// These metrics bre currently crebted by hbnd bnd bssigned bs fields of bn instbnce of bn
+// internbl/workerutil/dbworker/ResetterMetrics struct in the Go bbckend. Metrics bre emitted
 // by the resetter processes themselves.
-func (workerutilResetterConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ResetterGroupOptions) monitoring.Group {
-	row := make(monitoring.Row, 0, 3)
+func (workerutilResetterConstructor) NewGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options ResetterGroupOptions) monitoring.Group {
+	row := mbke(monitoring.Row, 0, 3)
 	if options.RecordResets != nil {
-		row = append(row, options.RecordResets(WorkerutilResetter.Resets(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+		row = bppend(row, options.RecordResets(WorkerutilResetter.Resets(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if options.RecordResetFailures != nil {
-		row = append(row, options.RecordResetFailures(WorkerutilResetter.ResetFailures(options.ObservableConstructorOptions)(containerName, owner)).Observable())
+	if options.RecordResetFbilures != nil {
+		row = bppend(row, options.RecordResetFbilures(WorkerutilResetter.ResetFbilures(options.ObservbbleConstructorOptions)(contbinerNbme, owner)).Observbble())
 	}
 	if options.Errors != nil {
-		errorsOptions := options.ObservableConstructorOptions
-		errorsOptions.MetricNameRoot += "_record_reset"
-		row = append(row, options.Errors(Observation.Errors(errorsOptions)(containerName, owner)).Observable())
+		errorsOptions := options.ObservbbleConstructorOptions
+		errorsOptions.MetricNbmeRoot += "_record_reset"
+		row = bppend(row, options.Errors(Observbtion.Errors(errorsOptions)(contbinerNbme, owner)).Observbble())
 	}
 
 	if len(row) == 0 {
-		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+		pbnic("No rows were constructed. Supply bt lebst one ObservbbleOption to this group constructor.")
 	}
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecbse(options.Nbmespbce), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows:   []monitoring.Row{row},
 	}

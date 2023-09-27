@@ -1,29 +1,29 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/server/shared"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegrbph/sourcegrbph/cmd/server/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
 
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+	_ "github.com/sourcegrbph/sourcegrbph/ui/bssets/enterprise" // Select enterprise bssets
 )
 
-func main() {
-	sanitycheck.Pass()
+func mbin() {
+	sbnitycheck.Pbss()
 
-	enableEmbeddings, _ := strconv.ParseBool(os.Getenv("SRC_ENABLE_EMBEDDINGS"))
-	if enableEmbeddings {
-		shared.ProcfileAdditions = append(
-			shared.ProcfileAdditions,
+	enbbleEmbeddings, _ := strconv.PbrseBool(os.Getenv("SRC_ENABLE_EMBEDDINGS"))
+	if enbbleEmbeddings {
+		shbred.ProcfileAdditions = bppend(
+			shbred.ProcfileAdditions,
 			`embeddings: embeddings`,
 		)
-		shared.SrcProfServices = append(
-			shared.SrcProfServices,
-			map[string]string{"Name": "embeddings", "Host": "127.0.0.1:6099"},
+		shbred.SrcProfServices = bppend(
+			shbred.SrcProfServices,
+			mbp[string]string{"Nbme": "embeddings", "Host": "127.0.0.1:6099"},
 		)
 	}
 
-	shared.Main()
+	shbred.Mbin()
 }

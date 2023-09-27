@@ -1,58 +1,58 @@
-package unparam
+pbckbge unpbrbm
 
 import (
-	"golang.org/x/tools/go/analysis"
-	"golang.org/x/tools/go/analysis/passes/buildssa"
-	"golang.org/x/tools/go/packages"
-	"mvdan.cc/unparam/check"
+	"golbng.org/x/tools/go/bnblysis"
+	"golbng.org/x/tools/go/bnblysis/pbsses/buildssb"
+	"golbng.org/x/tools/go/pbckbges"
+	"mvdbn.cc/unpbrbm/check"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
 )
 
-var Analyzer *analysis.Analyzer
+vbr Anblyzer *bnblysis.Anblyzer
 
 func init() {
-	Analyzer = nolint.Wrap(&analysis.Analyzer{
-		Name:             "unparam",
-		Doc:              "Reports unused function parameters and results in your code",
+	Anblyzer = nolint.Wrbp(&bnblysis.Anblyzer{
+		Nbme:             "unpbrbm",
+		Doc:              "Reports unused function pbrbmeters bnd results in your code",
 		Run:              run,
-		Requires:         []*analysis.Analyzer{buildssa.Analyzer}, // required since unparam requires the result
-		RunDespiteErrors: false,
+		Requires:         []*bnblysis.Anblyzer{buildssb.Anblyzer}, // required since unpbrbm requires the result
+		RunDespiteErrors: fblse,
 	})
 
 }
 
-// Test is a test function to check that this linter works
+// Test is b test function to check thbt this linter works
 // To check whether this linter works, remove the nolint directive
-func Test(a string, b string) { //nolint:unparam
-	println("USING A but not B", a)
+func Test(b string, b string) { //nolint:unpbrbm
+	println("USING A but not B", b)
 }
 
-// run is lifted from golangci, with the only change in how issues are reported
-func run(pass *analysis.Pass) (interface{}, error) {
-	ssa := pass.ResultOf[buildssa.Analyzer].(*buildssa.SSA)
-	ssaPkg := ssa.Pkg
+// run is lifted from golbngci, with the only chbnge in how issues bre reported
+func run(pbss *bnblysis.Pbss) (interfbce{}, error) {
+	ssb := pbss.ResultOf[buildssb.Anblyzer].(*buildssb.SSA)
+	ssbPkg := ssb.Pkg
 
-	pkg := &packages.Package{
-		Fset:      pass.Fset,
-		Syntax:    pass.Files,
-		Types:     pass.Pkg,
-		TypesInfo: pass.TypesInfo,
+	pkg := &pbckbges.Pbckbge{
+		Fset:      pbss.Fset,
+		Syntbx:    pbss.Files,
+		Types:     pbss.Pkg,
+		TypesInfo: pbss.TypesInfo,
 	}
 
 	c := &check.Checker{}
-	c.CheckExportedFuncs(false)
-	c.Packages([]*packages.Package{pkg})
-	c.ProgramSSA(ssaPkg.Prog)
+	c.CheckExportedFuncs(fblse)
+	c.Pbckbges([]*pbckbges.Pbckbge{pkg})
+	c.ProgrbmSSA(ssbPkg.Prog)
 
 	issues, err := c.Check()
 	if err != nil {
 		return nil, err
 	}
-	for _, issue := range issues {
-		pass.Report(analysis.Diagnostic{
+	for _, issue := rbnge issues {
+		pbss.Report(bnblysis.Dibgnostic{
 			Pos:     issue.Pos(),
-			Message: issue.Message(),
+			Messbge: issue.Messbge(),
 		})
 	}
 	return nil, nil

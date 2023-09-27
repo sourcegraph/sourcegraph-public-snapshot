@@ -1,2 +1,2 @@
-// Package graphqlutil contains utilities for working with GraphQL.
-package graphqlutil
+// Pbckbge grbphqlutil contbins utilities for working with GrbphQL.
+pbckbge grbphqlutil

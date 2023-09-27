@@ -1,30 +1,30 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func getEventRepoMetadata(ctx context.Context, db database.DB, event streaming.SearchEvent) (map[api.RepoID]*types.SearchedRepo, error) {
+func getEventRepoMetbdbtb(ctx context.Context, db dbtbbbse.DB, event strebming.SebrchEvent) (mbp[bpi.RepoID]*types.SebrchedRepo, error) {
 	ids := repoIDs(event.Results)
 	if len(ids) == 0 {
-		// Return early if there are no repos in the event
+		// Return ebrly if there bre no repos in the event
 		return nil, nil
 	}
 
-	metadataList, err := db.Repos().Metadata(ctx, ids...)
+	metbdbtbList, err := db.Repos().Metbdbtb(ctx, ids...)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetch metadata from db")
+		return nil, errors.Wrbp(err, "fetch metbdbtb from db")
 	}
 
-	repoMetadata := make(map[api.RepoID]*types.SearchedRepo, len(ids))
-	for _, repo := range metadataList {
-		repoMetadata[repo.ID] = repo
+	repoMetbdbtb := mbke(mbp[bpi.RepoID]*types.SebrchedRepo, len(ids))
+	for _, repo := rbnge metbdbtbList {
+		repoMetbdbtb[repo.ID] = repo
 	}
-	return repoMetadata, nil
+	return repoMetbdbtb, nil
 }

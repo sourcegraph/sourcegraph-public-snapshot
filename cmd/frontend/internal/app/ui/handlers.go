@@ -1,8 +1,8 @@
-package ui
+pbckbge ui
 
 import (
 	"context"
-	"html/template"
+	"html/templbte"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -12,462 +12,462 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
+	"github.com/gorillb/mux"
+	"github.com/grbfbnb/regexp"
+	"github.com/inconshrevebble/log15"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot/hubspotutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/routevar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/symbol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/ui/assets"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hubspot/hubspotutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/bssetsutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/jscontext"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/hbndlerutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/routevbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/symbol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/ui/bssets"
 )
 
-var enableHTMLInject = env.Get("ENABLE_INJECT_HTML", "false", "Enable HTML customization")
+vbr enbbleHTMLInject = env.Get("ENABLE_INJECT_HTML", "fblse", "Enbble HTML customizbtion")
 
 type InjectedHTML struct {
-	HeadTop    template.HTML
-	HeadBottom template.HTML
-	BodyTop    template.HTML
-	BodyBottom template.HTML
+	HebdTop    templbte.HTML
+	HebdBottom templbte.HTML
+	BodyTop    templbte.HTML
+	BodyBottom templbte.HTML
 }
 
-type Metadata struct {
-	// Title is the title of the page for Twitter cards, OpenGraph, etc.
-	// e.g. "Open in Sourcegraph"
+type Metbdbtb struct {
+	// Title is the title of the pbge for Twitter cbrds, OpenGrbph, etc.
+	// e.g. "Open in Sourcegrbph"
 	Title string
 
-	// Description is the description of the page for Twitter cards, OpenGraph,
-	// etc. e.g. "View this link in Sourcegraph Editor."
+	// Description is the description of the pbge for Twitter cbrds, OpenGrbph,
+	// etc. e.g. "View this link in Sourcegrbph Editor."
 	Description string
 
-	// ShowPreview controls whether or not OpenGraph/Twitter card/etc metadata is rendered.
+	// ShowPreview controls whether or not OpenGrbph/Twitter cbrd/etc metbdbtb is rendered.
 	ShowPreview bool
 
-	// PreviewImage contains the URL of the preview image for relevant routes (e.g. blob).
-	PreviewImage string
+	// PreviewImbge contbins the URL of the preview imbge for relevbnt routes (e.g. blob).
+	PreviewImbge string
 }
 
-type PreloadedAsset struct {
-	// The as property. E.g. `image`
+type PrelobdedAsset struct {
+	// The bs property. E.g. `imbge`
 	As string
-	// The href property. It should be set to a resolved path using `assetsutil.URL`
+	// The href property. It should be set to b resolved pbth using `bssetsutil.URL`
 	Href string
 }
 
 type Common struct {
 	Injected InjectedHTML
-	Metadata *Metadata
+	Metbdbtb *Metbdbtb
 	Context  jscontext.JSContext
 	Title    string
-	Error    *pageError
+	Error    *pbgeError
 
-	PreloadedAssets *[]PreloadedAsset
+	PrelobdedAssets *[]PrelobdedAsset
 
-	Manifest *assets.WebpackManifest
+	Mbnifest *bssets.WebpbckMbnifest
 
-	WebpackDevServer bool // whether the Webpack dev server is running (WEBPACK_DEV_SERVER env var)
+	WebpbckDevServer bool // whether the Webpbck dev server is running (WEBPACK_DEV_SERVER env vbr)
 
-	// The fields below have zero values when not on a repo page.
+	// The fields below hbve zero vblues when not on b repo pbge.
 	Repo         *types.Repo
-	Rev          string // unresolved / user-specified revision (e.x.: "@master")
-	api.CommitID        // resolved SHA1 revision
+	Rev          string // unresolved / user-specified revision (e.x.: "@mbster")
+	bpi.CommitID        // resolved SHA1 revision
 }
 
-var webpackDevServer, _ = strconv.ParseBool(os.Getenv("WEBPACK_DEV_SERVER"))
+vbr webpbckDevServer, _ = strconv.PbrseBool(os.Getenv("WEBPACK_DEV_SERVER"))
 
-// repoShortName trims the first path element of the given repo name if it has
-// at least two path components.
-func repoShortName(name api.RepoName) string {
-	split := strings.Split(string(name), "/")
+// repoShortNbme trims the first pbth element of the given repo nbme if it hbs
+// bt lebst two pbth components.
+func repoShortNbme(nbme bpi.RepoNbme) string {
+	split := strings.Split(string(nbme), "/")
 	if len(split) < 2 {
-		return string(name)
+		return string(nbme)
 	}
 	return strings.Join(split[1:], "/")
 }
 
-// serveErrorHandler is a function signature used in newCommon and
-// mockNewCommon. This is used as syntactic sugar to prevent programmer's
-// (fragile creatures from planet Earth) from crashing out.
-type serveErrorHandler func(w http.ResponseWriter, r *http.Request, db database.DB, err error, statusCode int)
+// serveErrorHbndler is b function signbture used in newCommon bnd
+// mockNewCommon. This is used bs syntbctic sugbr to prevent progrbmmer's
+// (frbgile crebtures from plbnet Ebrth) from crbshing out.
+type serveErrorHbndler func(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, err error, stbtusCode int)
 
 // mockNewCommon is used in tests to mock newCommon (duh!).
 //
-// Ensure that the mock is reset at the end of every test by adding a call like the following:
+// Ensure thbt the mock is reset bt the end of every test by bdding b cbll like the following:
 //
 //	defer func() {
 //		mockNewCommon = nil
 //	}()
-var mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHandler) (*Common, error)
+vbr mockNewCommon func(w http.ResponseWriter, r *http.Request, title string, serveError serveErrorHbndler) (*Common, error)
 
-// newCommon builds a *Common data structure, returning an error if one occurs.
+// newCommon builds b *Common dbtb structure, returning bn error if one occurs.
 //
-// In the event of the repository having been renamed, the request is handled
-// by newCommon and nil, nil is returned. Basic usage looks like:
+// In the event of the repository hbving been renbmed, the request is hbndled
+// by newCommon bnd nil, nil is returned. Bbsic usbge looks like:
 //
 //	common, err := newCommon(w, r, noIndex, serveError)
 //	if err != nil {
 //		return err
 //	}
 //	if common == nil {
-//		return nil // request was handled
+//		return nil // request wbs hbndled
 //	}
 //
-// In the case of a repository that is cloning, a Common data structure is
-// returned but it has a nil Repo.
-func newCommon(w http.ResponseWriter, r *http.Request, db database.DB, title string, indexed bool, serveError serveErrorHandler) (*Common, error) {
-	logger := sglog.Scoped("commonHandler", "")
+// In the cbse of b repository thbt is cloning, b Common dbtb structure is
+// returned but it hbs b nil Repo.
+func newCommon(w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, title string, indexed bool, serveError serveErrorHbndler) (*Common, error) {
+	logger := sglog.Scoped("commonHbndler", "")
 	if mockNewCommon != nil {
 		return mockNewCommon(w, r, title, serveError)
 	}
 
-	manifest, err := assets.Provider.LoadWebpackManifest()
+	mbnifest, err := bssets.Provider.LobdWebpbckMbnifest()
 	if err != nil {
-		return nil, errors.Wrap(err, "loading webpack manifest")
+		return nil, errors.Wrbp(err, "lobding webpbck mbnifest")
 	}
 
 	if !indexed {
-		w.Header().Set("X-Robots-Tag", "noindex")
+		w.Hebder().Set("X-Robots-Tbg", "noindex")
 	}
 
-	var preloadedAssets *[]PreloadedAsset
-	preloadedAssets = nil
-	if globals.Branding() == nil || (globals.Branding().Dark == nil && globals.Branding().Light == nil) {
-		preloadedAssets = &[]PreloadedAsset{
-			// sourcegraph-mark.svg is always loaded as part of the layout component unless a custom
-			// branding is defined
-			{As: "image", Href: assetsutil.URL("/img/sourcegraph-mark.svg").String() + "?v2"},
+	vbr prelobdedAssets *[]PrelobdedAsset
+	prelobdedAssets = nil
+	if globbls.Brbnding() == nil || (globbls.Brbnding().Dbrk == nil && globbls.Brbnding().Light == nil) {
+		prelobdedAssets = &[]PrelobdedAsset{
+			// sourcegrbph-mbrk.svg is blwbys lobded bs pbrt of the lbyout component unless b custom
+			// brbnding is defined
+			{As: "imbge", Href: bssetsutil.URL("/img/sourcegrbph-mbrk.svg").String() + "?v2"},
 		}
 	}
 
 	common := &Common{
 		Injected: InjectedHTML{
-			HeadTop:    template.HTML(conf.Get().HtmlHeadTop),
-			HeadBottom: template.HTML(conf.Get().HtmlHeadBottom),
-			BodyTop:    template.HTML(conf.Get().HtmlBodyTop),
-			BodyBottom: template.HTML(conf.Get().HtmlBodyBottom),
+			HebdTop:    templbte.HTML(conf.Get().HtmlHebdTop),
+			HebdBottom: templbte.HTML(conf.Get().HtmlHebdBottom),
+			BodyTop:    templbte.HTML(conf.Get().HtmlBodyTop),
+			BodyBottom: templbte.HTML(conf.Get().HtmlBodyBottom),
 		},
 		Context:         jscontext.NewJSContextFromRequest(r, db),
 		Title:           title,
-		Manifest:        manifest,
-		PreloadedAssets: preloadedAssets,
-		Metadata: &Metadata{
-			Title:       globals.Branding().BrandName,
-			Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers.",
-			ShowPreview: r.URL.Path == "/sign-in" && r.URL.RawQuery == "returnTo=%2F",
+		Mbnifest:        mbnifest,
+		PrelobdedAssets: prelobdedAssets,
+		Metbdbtb: &Metbdbtb{
+			Title:       globbls.Brbnding().BrbndNbme,
+			Description: "Sourcegrbph is b web-bbsed code sebrch bnd nbvigbtion tool for dev tebms. Sebrch, nbvigbte, bnd review code. Find bnswers.",
+			ShowPreview: r.URL.Pbth == "/sign-in" && r.URL.RbwQuery == "returnTo=%2F",
 		},
 
-		WebpackDevServer: webpackDevServer,
+		WebpbckDevServer: webpbckDevServer,
 	}
 
-	if enableHTMLInject != "true" {
+	if enbbleHTMLInject != "true" {
 		common.Injected = InjectedHTML{}
 	}
 
-	if _, ok := mux.Vars(r)["Repo"]; ok {
-		// Common repo pages (blob, tree, etc).
-		var err error
-		common.Repo, common.CommitID, err = handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
-		isRepoEmptyError := routevar.ToRepoRev(mux.Vars(r)).Rev == "" && errors.HasType(err, &gitdomain.RevisionNotFoundError{}) // should reply with HTTP 200
+	if _, ok := mux.Vbrs(r)["Repo"]; ok {
+		// Common repo pbges (blob, tree, etc).
+		vbr err error
+		common.Repo, common.CommitID, err = hbndlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vbrs(r))
+		isRepoEmptyError := routevbr.ToRepoRev(mux.Vbrs(r)).Rev == "" && errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) // should reply with HTTP 200
 		if err != nil && !isRepoEmptyError {
-			var urlMovedError *handlerutil.URLMovedError
+			vbr urlMovedError *hbndlerutil.URLMovedError
 			if errors.As(err, &urlMovedError) {
-				// The repository has been renamed, e.g. "github.com/docker/docker"
-				// was renamed to "github.com/moby/moby" -> redirect the user now.
-				err = handlerutil.RedirectToNewRepoName(w, r, urlMovedError.NewRepo)
+				// The repository hbs been renbmed, e.g. "github.com/docker/docker"
+				// wbs renbmed to "github.com/moby/moby" -> redirect the user now.
+				err = hbndlerutil.RedirectToNewRepoNbme(w, r, urlMovedError.NewRepo)
 				if err != nil {
-					return nil, errors.Wrap(err, "when sending renamed repository redirect response")
+					return nil, errors.Wrbp(err, "when sending renbmed repository redirect response")
 				}
 
 				return nil, nil
 			}
-			var repoSeeOtherError backend.ErrRepoSeeOther
+			vbr repoSeeOtherError bbckend.ErrRepoSeeOther
 			if errors.As(err, &repoSeeOtherError) {
-				// Repo does not exist here, redirect to the recommended location.
-				u, err := url.Parse(repoSeeOtherError.RedirectURL)
+				// Repo does not exist here, redirect to the recommended locbtion.
+				u, err := url.Pbrse(repoSeeOtherError.RedirectURL)
 				if err != nil {
 					return nil, err
 				}
-				u.Path, u.RawQuery = r.URL.Path, r.URL.RawQuery
-				http.Redirect(w, r, u.String(), http.StatusSeeOther)
+				u.Pbth, u.RbwQuery = r.URL.Pbth, r.URL.RbwQuery
+				http.Redirect(w, r, u.String(), http.StbtusSeeOther)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+			if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
 				// Revision does not exist.
-				serveError(w, r, db, err, http.StatusNotFound)
+				serveError(w, r, db, err, http.StbtusNotFound)
 				return nil, nil
 			}
-			if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) {
+			if errors.HbsType(err, &gitserver.RepoNotClonebbleErr{}) {
 				if errcode.IsNotFound(err) {
 					// Repository is not found.
-					serveError(w, r, db, err, http.StatusNotFound)
+					serveError(w, r, db, err, http.StbtusNotFound)
 					return nil, nil
 				}
 
-				// Repository is not cloneable.
-				dangerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StatusInternalServerError)
+				// Repository is not clonebble.
+				dbngerouslyServeError(w, r, db, errors.New("repository could not be cloned"), http.StbtusInternblServerError)
 				return nil, nil
 			}
-			if gitdomain.IsRepoNotExist(err) {
-				if gitdomain.IsCloneInProgress(err) {
+			if gitdombin.IsRepoNotExist(err) {
+				if gitdombin.IsCloneInProgress(err) {
 					// Repo is cloning.
 					return common, nil
 				}
 				// Repo does not exist.
-				serveError(w, r, db, err, http.StatusNotFound)
+				serveError(w, r, db, err, http.StbtusNotFound)
 				return nil, nil
 			}
 			if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
 				// Repo does not exist.
-				serveError(w, r, db, err, http.StatusNotFound)
+				serveError(w, r, db, err, http.StbtusNotFound)
 				return nil, nil
 			}
-			if errcode.IsUnauthorized(err) {
-				// Not authorized to access repository.
-				serveError(w, r, db, err, http.StatusUnauthorized)
+			if errcode.IsUnbuthorized(err) {
+				// Not buthorized to bccess repository.
+				serveError(w, r, db, err, http.StbtusUnbuthorized)
 				return nil, nil
 			}
 			return nil, err
 		}
-		if common.Repo.Name == "github.com/sourcegraphtest/Always500Test" {
-			return nil, errors.New("error caused by Always500Test repo name")
+		if common.Repo.Nbme == "github.com/sourcegrbphtest/Alwbys500Test" {
+			return nil, errors.New("error cbused by Alwbys500Test repo nbme")
 		}
-		common.Rev = mux.Vars(r)["Rev"]
-		// Update gitserver contents for a repo whenever it is visited.
+		common.Rev = mux.Vbrs(r)["Rev"]
+		// Updbte gitserver contents for b repo whenever it is visited.
 		go func() {
-			ctx := context.Background()
-			_, err = repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, common.Repo.Name)
+			ctx := context.Bbckground()
+			_, err = repoupdbter.DefbultClient.EnqueueRepoUpdbte(ctx, common.Repo.Nbme)
 			if err != nil {
-				log15.Error("EnqueueRepoUpdate", "error", err)
+				log15.Error("EnqueueRepoUpdbte", "error", err)
 			}
 		}()
 	}
 
-	// common.Repo and common.CommitID are populated in the above if statement
-	if blobPath, ok := mux.Vars(r)["Path"]; ok && envvar.OpenGraphPreviewServiceURL() != "" && envvar.SourcegraphDotComMode() && common.Repo != nil {
-		lineRange := FindLineRangeInQueryParameters(r.URL.Query())
+	// common.Repo bnd common.CommitID bre populbted in the bbove if stbtement
+	if blobPbth, ok := mux.Vbrs(r)["Pbth"]; ok && envvbr.OpenGrbphPreviewServiceURL() != "" && envvbr.SourcegrbphDotComMode() && common.Repo != nil {
+		lineRbnge := FindLineRbngeInQueryPbrbmeters(r.URL.Query())
 
-		var symbolResult *result.Symbol
-		if lineRange != nil && lineRange.StartLine != 0 && lineRange.StartLineCharacter != 0 {
-			// Do not slow down the page load if symbol data takes too long to retrieve.
-			ctx, cancel := context.WithTimeout(r.Context(), time.Second*1)
-			defer cancel()
+		vbr symbolResult *result.Symbol
+		if lineRbnge != nil && lineRbnge.StbrtLine != 0 && lineRbnge.StbrtLineChbrbcter != 0 {
+			// Do not slow down the pbge lobd if symbol dbtb tbkes too long to retrieve.
+			ctx, cbncel := context.WithTimeout(r.Context(), time.Second*1)
+			defer cbncel()
 
-			if symbolMatch, _ := symbol.GetMatchAtLineCharacter(
+			if symbolMbtch, _ := symbol.GetMbtchAtLineChbrbcter(
 				ctx,
-				authz.DefaultSubRepoPermsChecker,
-				types.MinimalRepo{ID: common.Repo.ID, Name: common.Repo.Name},
+				buthz.DefbultSubRepoPermsChecker,
+				types.MinimblRepo{ID: common.Repo.ID, Nbme: common.Repo.Nbme},
 				common.CommitID,
-				strings.TrimLeft(blobPath, "/"),
-				lineRange.StartLine-1,
-				lineRange.StartLineCharacter-1,
-			); symbolMatch != nil {
-				symbolResult = &symbolMatch.Symbol
+				strings.TrimLeft(blobPbth, "/"),
+				lineRbnge.StbrtLine-1,
+				lineRbnge.StbrtLineChbrbcter-1,
+			); symbolMbtch != nil {
+				symbolResult = &symbolMbtch.Symbol
 			}
 		}
 
-		common.Metadata.ShowPreview = true
-		common.Metadata.PreviewImage = getBlobPreviewImageURL(envvar.OpenGraphPreviewServiceURL(), r.URL.Path, lineRange)
-		common.Metadata.Description = ""
-		common.Metadata.Title = getBlobPreviewTitle(blobPath, lineRange, symbolResult)
+		common.Metbdbtb.ShowPreview = true
+		common.Metbdbtb.PreviewImbge = getBlobPreviewImbgeURL(envvbr.OpenGrbphPreviewServiceURL(), r.URL.Pbth, lineRbnge)
+		common.Metbdbtb.Description = ""
+		common.Metbdbtb.Title = getBlobPreviewTitle(blobPbth, lineRbnge, symbolResult)
 	}
 
 	return common, nil
 }
 
-type handlerFunc func(w http.ResponseWriter, r *http.Request) error
+type hbndlerFunc func(w http.ResponseWriter, r *http.Request) error
 
 const (
 	index   = true
-	noIndex = false
+	noIndex = fblse
 )
 
-func serveBrandedPageString(db database.DB, titles string, description *string, indexed bool) handlerFunc {
-	return serveBasicPage(db, func(c *Common, r *http.Request) string {
-		return brandNameSubtitle(titles)
+func serveBrbndedPbgeString(db dbtbbbse.DB, titles string, description *string, indexed bool) hbndlerFunc {
+	return serveBbsicPbge(db, func(c *Common, r *http.Request) string {
+		return brbndNbmeSubtitle(titles)
 	}, description, indexed)
 }
 
-func serveBasicPage(db database.DB, title func(c *Common, r *http.Request) string, description *string, indexed bool) handlerFunc {
+func serveBbsicPbge(db dbtbbbse.DB, title func(c *Common, r *http.Request) string, description *string, indexed bool) hbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", indexed, serveError)
 		if err != nil {
 			return err
 		}
 		if description != nil {
-			common.Metadata.Description = *description
+			common.Metbdbtb.Description = *description
 		}
 		if common == nil {
-			return nil // request was handled
+			return nil // request wbs hbndled
 		}
 		common.Title = title(common, r)
-		return renderTemplate(w, "app.html", common)
+		return renderTemplbte(w, "bpp.html", common)
 	}
 }
 
-func serveHome(db database.DB) handlerFunc {
+func serveHome(db dbtbbbse.DB) hbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		common, err := newCommon(w, r, db, globals.Branding().BrandName, index, serveError)
+		common, err := newCommon(w, r, db, globbls.Brbnding().BrbndNbme, index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
-			return nil // request was handled
+			return nil // request wbs hbndled
 		}
 
-		// we only allow HEAD requests on sourcegraph.com.
+		// we only bllow HEAD requests on sourcegrbph.com.
 		if r.Method == "HEAD" {
-			w.WriteHeader(http.StatusOK)
+			w.WriteHebder(http.StbtusOK)
 			return nil
 		}
 
-		// On non-Sourcegraph.com instances, there is no separate homepage, so redirect to /search.
-		r.URL.Path = "/search"
-		http.Redirect(w, r, r.URL.String(), http.StatusTemporaryRedirect)
+		// On non-Sourcegrbph.com instbnces, there is no sepbrbte homepbge, so redirect to /sebrch.
+		r.URL.Pbth = "/sebrch"
+		http.Redirect(w, r, r.URL.String(), http.StbtusTemporbryRedirect)
 		return nil
 	}
 }
 
-func serveSignIn(db database.DB) handlerFunc {
-	handler := func(w http.ResponseWriter, r *http.Request) error {
+func serveSignIn(db dbtbbbse.DB) hbndlerFunc {
+	hbndler := func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
-			return nil // request was handled
+			return nil // request wbs hbndled
 		}
-		common.Title = brandNameSubtitle("Sign in")
+		common.Title = brbndNbmeSubtitle("Sign in")
 
-		return renderTemplate(w, "app.html", common)
+		return renderTemplbte(w, "bpp.html", common)
 	}
 
-	// For app we use an extra middleware to handle passwordless signin via a
+	// For bpp we use bn extrb middlewbre to hbndle pbsswordless signin vib b
 	// in-memory secret.
 	if deploy.IsApp() {
-		return userpasswd.AppSignInMiddleware(db, handler)
+		return userpbsswd.AppSignInMiddlewbre(db, hbndler)
 	}
 
-	return handler
+	return hbndler
 }
 
-func serveEmbed(db database.DB) handlerFunc {
+func serveEmbed(db dbtbbbse.DB) hbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
-		flagSet := featureflag.FromContext(r.Context())
-		if enabled := flagSet.GetBoolOr("enable-embed-route", false); !enabled {
-			w.WriteHeader(http.StatusNotFound)
+		flbgSet := febtureflbg.FromContext(r.Context())
+		if enbbled := flbgSet.GetBoolOr("enbble-embed-route", fblse); !enbbled {
+			w.WriteHebder(http.StbtusNotFound)
 			return nil
 		}
 
-		// 🚨 SECURITY: Removing the `X-Frame-Options` header allows embedding the `/embed` route in an iframe.
-		// The embedding is safe because the `/embed` route serves the `embed` JS bundle instead of the
-		// regular Sourcegraph (web) app bundle (see `client/web/webpack.config.js` for the entrypoint definitions).
-		// It contains only the components needed to render the embedded content, and it should not include sensitive pages, like the sign-in page.
-		// The embed bundle also has its own React router that only recognizes specific routes (e.g., for embedding a notebook).
+		// 🚨 SECURITY: Removing the `X-Frbme-Options` hebder bllows embedding the `/embed` route in bn ifrbme.
+		// The embedding is sbfe becbuse the `/embed` route serves the `embed` JS bundle instebd of the
+		// regulbr Sourcegrbph (web) bpp bundle (see `client/web/webpbck.config.js` for the entrypoint definitions).
+		// It contbins only the components needed to render the embedded content, bnd it should not include sensitive pbges, like the sign-in pbge.
+		// The embed bundle blso hbs its own Rebct router thbt only recognizes specific routes (e.g., for embedding b notebook).
 		//
-		// Any changes to this function could have security implications. Please consult the security team before making changes.
-		w.Header().Del("X-Frame-Options")
+		// Any chbnges to this function could hbve security implicbtions. Plebse consult the security tebm before mbking chbnges.
+		w.Hebder().Del("X-Frbme-Options")
 
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
-			return nil // request was handled
+			return nil // request wbs hbndled
 		}
 
-		return renderTemplate(w, "embed.html", common)
+		return renderTemplbte(w, "embed.html", common)
 	}
 }
 
-// redirectTreeOrBlob redirects a blob page to a tree page if the file is actually a directory,
-// or a tree page to a blob page if the directory is actually a file.
-func redirectTreeOrBlob(routeName, path string, common *Common, w http.ResponseWriter, r *http.Request, db database.DB, client gitserver.Client) (requestHandled bool, err error) {
-	// NOTE: It makes no sense for this function to proceed if the commit ID
+// redirectTreeOrBlob redirects b blob pbge to b tree pbge if the file is bctublly b directory,
+// or b tree pbge to b blob pbge if the directory is bctublly b file.
+func redirectTreeOrBlob(routeNbme, pbth string, common *Common, w http.ResponseWriter, r *http.Request, db dbtbbbse.DB, client gitserver.Client) (requestHbndled bool, err error) {
+	// NOTE: It mbkes no sense for this function to proceed if the commit ID
 	// for the repository is empty. It is most likely the repository is still
 	// clone in progress.
 	if common.CommitID == "" {
-		return false, nil
+		return fblse, nil
 	}
 
-	if path == "/" || path == "" {
-		if routeName != routeRepo {
+	if pbth == "/" || pbth == "" {
+		if routeNbme != routeRepo {
 			// Redirect to repo route
-			target := "/" + string(common.Repo.Name) + common.Rev
-			http.Redirect(w, r, target, http.StatusTemporaryRedirect)
+			tbrget := "/" + string(common.Repo.Nbme) + common.Rev
+			http.Redirect(w, r, tbrget, http.StbtusTemporbryRedirect)
 			return true, nil
 		}
-		return false, nil
+		return fblse, nil
 	}
-	stat, err := client.Stat(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name, common.CommitID, path)
+	stbt, err := client.Stbt(r.Context(), buthz.DefbultSubRepoPermsChecker, common.Repo.Nbme, common.CommitID, pbth)
 	if err != nil {
 		if os.IsNotExist(err) {
-			serveError(w, r, db, err, http.StatusNotFound)
+			serveError(w, r, db, err, http.StbtusNotFound)
 			return true, nil
 		}
-		return false, err
+		return fblse, err
 	}
-	expectedDir := routeName == routeTree
-	if stat.Mode().IsDir() != expectedDir {
-		target := "/" + string(common.Repo.Name) + common.Rev + "/-/"
+	expectedDir := routeNbme == routeTree
+	if stbt.Mode().IsDir() != expectedDir {
+		tbrget := "/" + string(common.Repo.Nbme) + common.Rev + "/-/"
 		if expectedDir {
-			target += "blob"
+			tbrget += "blob"
 		} else {
-			target += "tree"
+			tbrget += "tree"
 		}
-		target += path
-		http.Redirect(w, r, auth.SafeRedirectURL(target), http.StatusTemporaryRedirect)
+		tbrget += pbth
+		http.Redirect(w, r, buth.SbfeRedirectURL(tbrget), http.StbtusTemporbryRedirect)
 		return true, nil
 	}
-	return false, nil
+	return fblse, nil
 }
 
-// serveTree serves the tree (directory) pages.
-func serveTree(db database.DB, title func(c *Common, r *http.Request) string) handlerFunc {
+// serveTree serves the tree (directory) pbges.
+func serveTree(db dbtbbbse.DB, title func(c *Common, r *http.Request) string) hbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
-			return nil // request was handled
+			return nil // request wbs hbndled
 		}
 
-		// File, directory, and repository pages with a revision ("@foobar") should not be indexed, only
-		// the default revision should be indexed. Leading people to such pages through Google is harmful
-		// as the person is often looking for a specific file/dir/repository and the indexed commit or
-		// branch is outdated, leading to them getting the wrong result.
+		// File, directory, bnd repository pbges with b revision ("@foobbr") should not be indexed, only
+		// the defbult revision should be indexed. Lebding people to such pbges through Google is hbrmful
+		// bs the person is often looking for b specific file/dir/repository bnd the indexed commit or
+		// brbnch is outdbted, lebding to them getting the wrong result.
 		if common.Rev != "" {
-			w.Header().Set("X-Robots-Tag", "noindex")
+			w.Hebder().Set("X-Robots-Tbg", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeTree, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
-		if handled {
+		hbndled, err := redirectTreeOrBlob(routeTree, mux.Vbrs(r)["Pbth"], common, w, r, db, gitserver.NewClient())
+		if hbndled {
 			return nil
 		}
 		if err != nil {
@@ -475,30 +475,30 @@ func serveTree(db database.DB, title func(c *Common, r *http.Request) string) ha
 		}
 
 		common.Title = title(common, r)
-		return renderTemplate(w, "app.html", common)
+		return renderTemplbte(w, "bpp.html", common)
 	}
 }
 
-func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *http.Request) string) handlerFunc {
+func serveRepoOrBlob(db dbtbbbse.DB, routeNbme string, title func(c *Common, r *http.Request) string) hbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) error {
 		common, err := newCommon(w, r, db, "", index, serveError)
 		if err != nil {
 			return err
 		}
 		if common == nil {
-			return nil // request was handled
+			return nil // request wbs hbndled
 		}
 
-		// File, directory, and repository pages with a revision ("@foobar") should not be indexed, only
-		// the default revision should be indexed. Leading people to such pages through Google is harmful
-		// as the person is often looking for a specific file/dir/repository and the indexed commit or
-		// branch is outdated, leading to them getting the wrong result.
+		// File, directory, bnd repository pbges with b revision ("@foobbr") should not be indexed, only
+		// the defbult revision should be indexed. Lebding people to such pbges through Google is hbrmful
+		// bs the person is often looking for b specific file/dir/repository bnd the indexed commit or
+		// brbnch is outdbted, lebding to them getting the wrong result.
 		if common.Rev != "" {
-			w.Header().Set("X-Robots-Tag", "noindex")
+			w.Hebder().Set("X-Robots-Tbg", "noindex")
 		}
 
-		handled, err := redirectTreeOrBlob(routeName, mux.Vars(r)["Path"], common, w, r, db, gitserver.NewClient())
-		if handled {
+		hbndled, err := redirectTreeOrBlob(routeNbme, mux.Vbrs(r)["Pbth"], common, w, r, db, gitserver.NewClient())
+		if hbndled {
 			return nil
 		}
 		if err != nil {
@@ -508,78 +508,78 @@ func serveRepoOrBlob(db database.DB, routeName string, title func(c *Common, r *
 		common.Title = title(common, r)
 
 		q := r.URL.Query()
-		_, isNewQueryUX := q["sq"] // sq URL param is only set by new query UX in SearchNavbarItem.tsx
-		if search := q.Get("q"); search != "" && !isNewQueryUX {
-			// Redirect old search URLs:
+		_, isNewQueryUX := q["sq"] // sq URL pbrbm is only set by new query UX in SebrchNbvbbrItem.tsx
+		if sebrch := q.Get("q"); sebrch != "" && !isNewQueryUX {
+			// Redirect old sebrch URLs:
 			//
-			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7?q=ErrMethodMismatch&utm_source=chrome-extension
-			// 	/github.com/gorilla/mux@24fca303ac6da784b9e8269f724ddeb0b2eea5e7/-/blob/mux.go?q=NewRouter
+			// 	/github.com/gorillb/mux@24fcb303bc6db784b9e8269f724ddeb0b2eeb5e7?q=ErrMethodMismbtch&utm_source=chrome-extension
+			// 	/github.com/gorillb/mux@24fcb303bc6db784b9e8269f724ddeb0b2eeb5e7/-/blob/mux.go?q=NewRouter
 			//
 			// To new ones:
 			//
-			// 	/search?q=repo:^github.com/gorilla/mux$+ErrMethodMismatch
+			// 	/sebrch?q=repo:^github.com/gorillb/mux$+ErrMethodMismbtch
 			//
-			// It does not apply the file: filter because that was not the behavior of the
-			// old blob URLs with a 'q' parameter either.
-			r.URL.Path = "/search"
-			q.Set("sq", "repo:^"+regexp.QuoteMeta(string(common.Repo.Name))+"$")
-			r.URL.RawQuery = q.Encode()
-			http.Redirect(w, r, r.URL.String(), http.StatusPermanentRedirect)
+			// It does not bpply the file: filter becbuse thbt wbs not the behbvior of the
+			// old blob URLs with b 'q' pbrbmeter either.
+			r.URL.Pbth = "/sebrch"
+			q.Set("sq", "repo:^"+regexp.QuoteMetb(string(common.Repo.Nbme))+"$")
+			r.URL.RbwQuery = q.Encode()
+			http.Redirect(w, r, r.URL.String(), http.StbtusPermbnentRedirect)
 			return nil
 		}
-		return renderTemplate(w, "app.html", common)
+		return renderTemplbte(w, "bpp.html", common)
 	}
 }
 
-// searchBadgeHandler serves the search readme badges from the search-badger service
-// https://github.com/sourcegraph/search-badger
-func searchBadgeHandler() *httputil.ReverseProxy {
+// sebrchBbdgeHbndler serves the sebrch rebdme bbdges from the sebrch-bbdger service
+// https://github.com/sourcegrbph/sebrch-bbdger
+func sebrchBbdgeHbndler() *httputil.ReverseProxy {
 	return &httputil.ReverseProxy{
 		Director: func(r *http.Request) {
 			r.URL.Scheme = "http"
-			r.URL.Host = "search-badger"
-			r.URL.Path = "/"
+			r.URL.Host = "sebrch-bbdger"
+			r.URL.Pbth = "/"
 		},
-		ErrorLog: log.New(env.DebugOut, "search-badger proxy: ", log.LstdFlags),
+		ErrorLog: log.New(env.DebugOut, "sebrch-bbdger proxy: ", log.LstdFlbgs),
 	}
 }
 
 func servePingFromSelfHosted(w http.ResponseWriter, r *http.Request) error {
-	// CORS to allow request from anywhere
-	u, err := url.Parse(r.Referer())
+	// CORS to bllow request from bnywhere
+	u, err := url.Pbrse(r.Referer())
 	if err != nil {
 		return err
 	}
-	w.Header().Add("Access-Control-Allow-Origin", u.Host)
-	w.Header().Add("Access-Control-Allow-Credentials", "true")
+	w.Hebder().Add("Access-Control-Allow-Origin", u.Host)
+	w.Hebder().Add("Access-Control-Allow-Credentibls", "true")
 	if r.Method == http.MethodOptions {
-		// CORS preflight request, respond 204 and allow origin header
-		w.WriteHeader(http.StatusNoContent)
+		// CORS preflight request, respond 204 bnd bllow origin hebder
+		w.WriteHebder(http.StbtusNoContent)
 		return nil
 	}
-	email := r.URL.Query().Get("email")
-	tosAccepted := r.URL.Query().Get("tos_accepted")
+	embil := r.URL.Query().Get("embil")
+	tosAccepted := r.URL.Query().Get("tos_bccepted")
 
-	firstSourceURLCookie, err := r.Cookie("sourcegraphSourceUrl")
-	var firstSourceURL string
+	firstSourceURLCookie, err := r.Cookie("sourcegrbphSourceUrl")
+	vbr firstSourceURL string
 	if err == nil && firstSourceURLCookie != nil {
-		firstSourceURL = firstSourceURLCookie.Value
+		firstSourceURL = firstSourceURLCookie.Vblue
 	}
 
-	lastSourceURLCookie, err := r.Cookie("sourcegraphRecentSourceUrl")
-	var lastSourceURL string
-	if err == nil && lastSourceURLCookie != nil {
-		lastSourceURL = lastSourceURLCookie.Value
+	lbstSourceURLCookie, err := r.Cookie("sourcegrbphRecentSourceUrl")
+	vbr lbstSourceURL string
+	if err == nil && lbstSourceURLCookie != nil {
+		lbstSourceURL = lbstSourceURLCookie.Vblue
 	}
 
-	anonymousUserId, _ := cookie.AnonymousUID(r)
+	bnonymousUserId, _ := cookie.AnonymousUID(r)
 
-	hubspotutil.SyncUser(email, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContactProperties{
+	hubspotutil.SyncUser(embil, hubspotutil.SelfHostedSiteInitEventID, &hubspot.ContbctProperties{
 		IsServerAdmin:   true,
-		AnonymousUserID: anonymousUserId,
+		AnonymousUserID: bnonymousUserId,
 		FirstSourceURL:  firstSourceURL,
-		LastSourceURL:   lastSourceURL,
-		HasAgreedToToS:  tosAccepted == "true",
+		LbstSourceURL:   lbstSourceURL,
+		HbsAgreedToToS:  tosAccepted == "true",
 	})
 	return nil
 }

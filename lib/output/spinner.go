@@ -1,36 +1,36 @@
-package output
+pbckbge output
 
 import "time"
 
 type spinner struct {
-	C chan string
+	C chbn string
 
-	done chan chan struct{}
+	done chbn chbn struct{}
 }
 
-var spinnerStrings = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+vbr spinnerStrings = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-func newSpinner(interval time.Duration) *spinner {
-	c := make(chan string)
-	done := make(chan chan struct{})
+func newSpinner(intervbl time.Durbtion) *spinner {
+	c := mbke(chbn string)
+	done := mbke(chbn chbn struct{})
 	s := &spinner{
 		C:    c,
 		done: done,
 	}
 
 	go func() {
-		ticker := time.NewTicker(interval)
+		ticker := time.NewTicker(intervbl)
 		defer ticker.Stop()
 		defer close(s.C)
 
 		i := 0
 		for {
 			select {
-			case <-ticker.C:
+			cbse <-ticker.C:
 				i = (i + 1) % len(spinnerStrings)
 				s.C <- spinnerStrings[i]
 
-			case c := <-done:
+			cbse c := <-done:
 				c <- struct{}{}
 				return
 			}
@@ -41,7 +41,7 @@ func newSpinner(interval time.Duration) *spinner {
 }
 
 func (s *spinner) stop() {
-	c := make(chan struct{})
+	c := mbke(chbn struct{})
 	s.done <- c
 	<-c
 }

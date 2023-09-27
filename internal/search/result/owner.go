@@ -1,91 +1,91 @@
-package result
+pbckbge result
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type Owner interface {
+type Owner interfbce {
 	Type() string
 	Identifier() string
 }
 
 type OwnerPerson struct {
-	Handle string
-	Email  string
+	Hbndle string
+	Embil  string
 	User   *types.User
 }
 
 func (o OwnerPerson) Identifier() string {
-	return "Person:" + o.Handle + o.Email
+	return "Person:" + o.Hbndle + o.Embil
 }
 
 func (o OwnerPerson) Type() string {
 	return "person"
 }
 
-type OwnerTeam struct {
-	Handle string
-	Email  string
-	Team   *types.Team
+type OwnerTebm struct {
+	Hbndle string
+	Embil  string
+	Tebm   *types.Tebm
 }
 
-func (o OwnerTeam) Identifier() string {
-	return "Team:" + o.Team.Name
+func (o OwnerTebm) Identifier() string {
+	return "Tebm:" + o.Tebm.Nbme
 }
 
-func (o OwnerTeam) Type() string {
-	return "team"
+func (o OwnerTebm) Type() string {
+	return "tebm"
 }
 
-type OwnerMatch struct {
+type OwnerMbtch struct {
 	ResolvedOwner Owner
 
-	// The following contain information about what search the owner was matched from.
+	// The following contbin informbtion bbout whbt sebrch the owner wbs mbtched from.
 	InputRev *string           `json:"-"`
-	Repo     types.MinimalRepo `json:"-"`
-	CommitID api.CommitID      `json:"-"`
+	Repo     types.MinimblRepo `json:"-"`
+	CommitID bpi.CommitID      `json:"-"`
 
 	LimitHit int
 }
 
-func (om *OwnerMatch) RepoName() types.MinimalRepo {
-	// todo(own): this might not make sense forever. Right now we derive ownership from files within a repo but if we
-	// extend this with external sources then it might not be mandatory to attach an owner to repo.
-	// as an alternative we can also conduct a check that nothing expects RepoName to always exist.
+func (om *OwnerMbtch) RepoNbme() types.MinimblRepo {
+	// todo(own): this might not mbke sense forever. Right now we derive ownership from files within b repo but if we
+	// extend this with externbl sources then it might not be mbndbtory to bttbch bn owner to repo.
+	// bs bn blternbtive we cbn blso conduct b check thbt nothing expects RepoNbme to blwbys exist.
 	return om.Repo
 }
 
-func (om *OwnerMatch) ResultCount() int {
-	// just a safeguard
+func (om *OwnerMbtch) ResultCount() int {
+	// just b sbfegubrd
 	if om.ResolvedOwner == nil {
 		return 0
 	}
 	return 1
 }
 
-func (om *OwnerMatch) Select(filter.SelectPath) Match {
-	// There is nothing to "select" from an owner, so we return nil.
+func (om *OwnerMbtch) Select(filter.SelectPbth) Mbtch {
+	// There is nothing to "select" from bn owner, so we return nil.
 	return nil
 }
 
-func (om *OwnerMatch) Limit(limit int) int {
-	matchCount := om.ResultCount()
-	if matchCount == 0 {
+func (om *OwnerMbtch) Limit(limit int) int {
+	mbtchCount := om.ResultCount()
+	if mbtchCount == 0 {
 		return limit
 	}
-	return limit - matchCount
+	return limit - mbtchCount
 }
 
-func (om *OwnerMatch) Key() Key {
+func (om *OwnerMbtch) Key() Key {
 	k := Key{
-		TypeRank: rankOwnerMatch,
-		Repo:     om.Repo.Name,
+		TypeRbnk: rbnkOwnerMbtch,
+		Repo:     om.Repo.Nbme,
 		Commit:   om.CommitID,
 	}
 	if om.ResolvedOwner != nil {
-		k.OwnerMetadata = om.ResolvedOwner.Type() + om.ResolvedOwner.Identifier()
+		k.OwnerMetbdbtb = om.ResolvedOwner.Type() + om.ResolvedOwner.Identifier()
 	}
 	if om.InputRev != nil {
 		k.Rev = *om.InputRev
@@ -93,4 +93,4 @@ func (om *OwnerMatch) Key() Key {
 	return k
 }
 
-func (om *OwnerMatch) searchResultMarker() {}
+func (om *OwnerMbtch) sebrchResultMbrker() {}

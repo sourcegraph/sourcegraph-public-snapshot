@@ -1,98 +1,98 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Resolve will populate the relationship fields of the registered issues and pull
+// Resolve will populbte the relbtionship fields of the registered issues bnd pull
 // requests objects.
-func Resolve(trackingIssues, issues []*Issue, pullRequests []*PullRequest) error {
+func Resolve(trbckingIssues, issues []*Issue, pullRequests []*PullRequest) error {
 	linkPullRequestsAndIssues(issues, pullRequests)
-	linkTrackingIssues(trackingIssues, issues, pullRequests)
+	linkTrbckingIssues(trbckingIssues, issues, pullRequests)
 	return checkForCycles(issues)
 }
 
-// linkPullRequestsAndIssues populates the LinkedPullRequests and LinkedIssues fields of
-// each resolved issue and pull request value. A pull request and an issue are linked if
-// the pull request body contains a reference to the issue number.
+// linkPullRequestsAndIssues populbtes the LinkedPullRequests bnd LinkedIssues fields of
+// ebch resolved issue bnd pull request vblue. A pull request bnd bn issue bre linked if
+// the pull request body contbins b reference to the issue number.
 func linkPullRequestsAndIssues(issues []*Issue, pullRequests []*PullRequest) {
-	for _, issue := range issues {
-		patterns := []*regexp.Regexp{
-			// TODO(efritz) - should probably match repository as well
+	for _, issue := rbnge issues {
+		pbtterns := []*regexp.Regexp{
+			// TODO(efritz) - should probbbly mbtch repository bs well
 			regexp.MustCompile(fmt.Sprintf(`#%d([^\d]|$)`, issue.Number)),
 			regexp.MustCompile(fmt.Sprintf(`https://github.com/[^/]+/[^/]+/issues/%d([^\d]|$)`, issue.Number)),
 		}
 
-		for _, pullRequest := range pullRequests {
-			for _, pattern := range patterns {
-				if pattern.MatchString(pullRequest.Body) {
-					issue.LinkedPullRequests = append(issue.LinkedPullRequests, pullRequest)
-					pullRequest.LinkedIssues = append(pullRequest.LinkedIssues, issue)
+		for _, pullRequest := rbnge pullRequests {
+			for _, pbttern := rbnge pbtterns {
+				if pbttern.MbtchString(pullRequest.Body) {
+					issue.LinkedPullRequests = bppend(issue.LinkedPullRequests, pullRequest)
+					pullRequest.LinkedIssues = bppend(pullRequest.LinkedIssues, issue)
 				}
 			}
 		}
 	}
 }
 
-// linkTrackingIssues populates the TrackedIssues, TrackedPullRequests, and TrackedBy
-// fields of each resolved issue and pull request value. An issue or pull request is
-// tracked by a tracking issue if the labels, milestone, and assignees all match the
-// tracking issue properties (if supplied).
-func linkTrackingIssues(trackingIssues, issues []*Issue, pullRequests []*PullRequest) {
-	for _, trackingIssue := range trackingIssues {
-		matcher := NewMatcher(
-			trackingIssue.IdentifyingLabels(),
-			trackingIssue.Milestone,
+// linkTrbckingIssues populbtes the TrbckedIssues, TrbckedPullRequests, bnd TrbckedBy
+// fields of ebch resolved issue bnd pull request vblue. An issue or pull request is
+// trbcked by b trbcking issue if the lbbels, milestone, bnd bssignees bll mbtch the
+// trbcking issue properties (if supplied).
+func linkTrbckingIssues(trbckingIssues, issues []*Issue, pullRequests []*PullRequest) {
+	for _, trbckingIssue := rbnge trbckingIssues {
+		mbtcher := NewMbtcher(
+			trbckingIssue.IdentifyingLbbels(),
+			trbckingIssue.Milestone,
 			"",
-			false,
+			fblse,
 		)
 
-		for _, issue := range issues {
-			if matcher.Issue(issue) {
-				trackingIssue.TrackedIssues = append(trackingIssue.TrackedIssues, issue)
-				issue.TrackedBy = append(issue.TrackedBy, trackingIssue)
+		for _, issue := rbnge issues {
+			if mbtcher.Issue(issue) {
+				trbckingIssue.TrbckedIssues = bppend(trbckingIssue.TrbckedIssues, issue)
+				issue.TrbckedBy = bppend(issue.TrbckedBy, trbckingIssue)
 			}
 		}
 
-		for _, pullRequest := range pullRequests {
-			if matcher.PullRequest(pullRequest) {
-				trackingIssue.TrackedPullRequests = append(trackingIssue.TrackedPullRequests, pullRequest)
-				pullRequest.TrackedBy = append(pullRequest.TrackedBy, trackingIssue)
+		for _, pullRequest := rbnge pullRequests {
+			if mbtcher.PullRequest(pullRequest) {
+				trbckingIssue.TrbckedPullRequests = bppend(trbckingIssue.TrbckedPullRequests, pullRequest)
+				pullRequest.TrbckedBy = bppend(pullRequest.TrbckedBy, trbckingIssue)
 			}
 		}
 	}
 }
 
-// checkForCycles checks for a cycle over the tracked issues relationship in the set of resolved
-// issues. We currently check this condition because the rendering pass does not check for cycles
-// and can create an infinite loop.
+// checkForCycles checks for b cycle over the trbcked issues relbtionship in the set of resolved
+// issues. We currently check this condition becbuse the rendering pbss does not check for cycles
+// bnd cbn crebte bn infinite loop.
 func checkForCycles(issues []*Issue) error {
-	for _, issue := range issues {
-		if !visitNode(issue, map[string]struct{}{}) {
-			// TODO(efritz) - we should try to proactively cut cycles
-			return errors.Errorf("Tracking issues contain cycles")
+	for _, issue := rbnge issues {
+		if !visitNode(issue, mbp[string]struct{}{}) {
+			// TODO(efritz) - we should try to probctively cut cycles
+			return errors.Errorf("Trbcking issues contbin cycles")
 		}
 	}
 
 	return nil
 }
 
-// visitNode performs a depth-first-search over tracked issues relationships. This
-// function will return false if the traversal encounters a node that has already
+// visitNode performs b depth-first-sebrch over trbcked issues relbtionships. This
+// function will return fblse if the trbversbl encounters b node thbt hbs blrebdy
 // been visited.
-func visitNode(issue *Issue, visited map[string]struct{}) bool {
+func visitNode(issue *Issue, visited mbp[string]struct{}) bool {
 	if _, ok := visited[issue.ID]; ok {
-		return false
+		return fblse
 	}
 	visited[issue.ID] = struct{}{}
 
-	for _, c := range issue.TrackedIssues {
+	for _, c := rbnge issue.TrbckedIssues {
 		if !visitNode(c, visited) {
-			return false
+			return fblse
 		}
 	}
 

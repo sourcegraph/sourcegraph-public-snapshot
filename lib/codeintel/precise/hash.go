@@ -1,19 +1,19 @@
-package precise
+pbckbge precise
 
-// HashKey hashes a string identifier into the range [0, maxIndex)`. The
-// hash algorithm here is similar ot the one used in Java's String.hashCode.
-// This implementation is identical to the TypeScript version used before
-// the port to Go so that we can continue to read old conversions without
-// a migration.
-func HashKey(id ID, maxIndex int) int {
-	hash := int32(0)
-	for _, c := range string(id) {
-		hash = (hash << 5) - hash + c
+// HbshKey hbshes b string identifier into the rbnge [0, mbxIndex)`. The
+// hbsh blgorithm here is similbr ot the one used in Jbvb's String.hbshCode.
+// This implementbtion is identicbl to the TypeScript version used before
+// the port to Go so thbt we cbn continue to rebd old conversions without
+// b migrbtion.
+func HbshKey(id ID, mbxIndex int) int {
+	hbsh := int32(0)
+	for _, c := rbnge string(id) {
+		hbsh = (hbsh << 5) - hbsh + c
 	}
 
-	if hash < 0 {
-		hash = -hash
+	if hbsh < 0 {
+		hbsh = -hbsh
 	}
 
-	return int(hash % int32(maxIndex))
+	return int(hbsh % int32(mbxIndex))
 }

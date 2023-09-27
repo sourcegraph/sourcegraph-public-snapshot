@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -7,47 +7,47 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Tree struct {
 	ID   string `json:"id"`
-	Name string `json:"name"`
+	Nbme string `json:"nbme"`
 	Type string `json:"type"`
-	Path string `json:"path"`
+	Pbth string `json:"pbth"`
 	Mode string `json:"mode"`
 }
 
 type ListTreeOp struct {
 	ProjID                int
-	ProjPathWithNamespace string
+	ProjPbthWithNbmespbce string
 	CommonOp
 }
 
-var ListTreeMock func(ctx context.Context, op ListTreeOp) ([]*Tree, error)
+vbr ListTreeMock func(ctx context.Context, op ListTreeOp) ([]*Tree, error)
 
-// ListTree lists the repository tree of the specified project. The underlying GitLab API has more
+// ListTree lists the repository tree of the specified project. The underlying GitLbb API hbs more
 // options, but for now, we only support non-recursive queries of the root directory. Requests
-// results are not cached by the client at the moment (i.e., setting op.NoCache to true does not
-// alter behavior).
+// results bre not cbched by the client bt the moment (i.e., setting op.NoCbche to true does not
+// blter behbvior).
 func (c *Client) ListTree(ctx context.Context, op ListTreeOp) ([]*Tree, error) {
 	if MockListTree != nil {
 		return MockListTree(c, ctx, op)
 	}
 
-	if op.ProjID != 0 && op.ProjPathWithNamespace != "" {
-		return nil, errors.New("invalid args (specify exactly one of id and projPathWithNamespace")
+	if op.ProjID != 0 && op.ProjPbthWithNbmespbce != "" {
+		return nil, errors.New("invblid brgs (specify exbctly one of id bnd projPbthWithNbmespbce")
 	}
 
-	return c.listTreeFromAPI(ctx, op.ProjID, op.ProjPathWithNamespace)
+	return c.listTreeFromAPI(ctx, op.ProjID, op.ProjPbthWithNbmespbce)
 }
 
-func (c *Client) listTreeFromAPI(ctx context.Context, projID int, projPathWithNamespace string) (tree []*Tree, err error) {
-	var projSpecifier string
+func (c *Client) listTreeFromAPI(ctx context.Context, projID int, projPbthWithNbmespbce string) (tree []*Tree, err error) {
+	vbr projSpecifier string
 	if projID != 0 {
-		projSpecifier = strconv.Itoa(projID)
+		projSpecifier = strconv.Itob(projID)
 	} else {
-		projSpecifier = url.PathEscape(projPathWithNamespace)
+		projSpecifier = url.PbthEscbpe(projPbthWithNbmespbce)
 	}
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%s/repository/tree", projSpecifier), nil)
 	if err != nil {

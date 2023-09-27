@@ -1,324 +1,324 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type GitserverRepoStore interface {
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) GitserverRepoStore
+type GitserverRepoStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(other bbsestore.ShbrebbleStore) GitserverRepoStore
 
-	// Update updates the given rows with the GitServer status of a repo.
-	Update(ctx context.Context, repos ...*types.GitserverRepo) error
-	// IterateRepoGitserverStatus iterates over the status of all repos by joining
-	// our repo and gitserver_repos table. It is impossible for us not to have a
-	// corresponding row in gitserver_repos because of the trigger on repos table.
-	// Use cursors and limit batch size to paginate through the full set.
-	IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error)
-	GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error)
-	GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error)
-	GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
-	// LogCorruption sets the corrupted at value and logs the corruption reason. Reason will be truncated if it exceeds
-	// MaxReasonSizeInMB
-	LogCorruption(ctx context.Context, name api.RepoName, reason string, shardID string) error
-	// SetCloneStatus will attempt to update ONLY the clone status of a
-	// GitServerRepo. If a matching row does not yet exist a new one will be created.
-	// If the status value hasn't changed, the row will not be updated.
-	SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error
-	// SetLastError will attempt to update ONLY the last error of a GitServerRepo. If
-	// a matching row does not yet exist a new one will be created.
-	// If the error value hasn't changed, the row will not be updated.
-	SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error
-	// SetLastOutput will attempt to create/update the output of the last repository clone/fetch.
-	// If a matching row does not exist, a new one will be created.
-	// Only one record will be maintained, so this records only the most recent output.
-	SetLastOutput(ctx context.Context, name api.RepoName, output string) error
-	// SetLastFetched will attempt to update ONLY the last fetched data (last_fetched, last_changed, shard_id) of a GitServerRepo and ensures it is marked as cloned.
-	SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error
-	// SetRepoSize will attempt to update ONLY the repo size of a GitServerRepo. If
-	// a matching row does not yet exist a new one will be created.
-	// If the size value hasn't changed, the row will not be updated.
-	SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error
-	// ListReposWithLastError iterates over repos w/ non-empty last_error field and calls the repoFn for these repos.
-	// note that this currently filters out any repos which do not have an associated external service where cloud_default = true.
-	ListReposWithLastError(ctx context.Context) ([]api.RepoName, error)
-	// IteratePurgeableRepos iterates over all purgeable repos. These are repos that
-	// are cloned on disk but have been deleted or blocked.
-	IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) error
-	// TotalErroredCloudDefaultRepos returns the total number of repos which have a non-empty last_error field. Note that this is only
-	// counting repos with an associated cloud_default external service.
-	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
-	// UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (int, error)
-	// SetCloningProgress updates a piece of text description from how cloning proceeds.
-	SetCloningProgress(context.Context, api.RepoName, string) error
-	// GetLastSyncOutput returns the last stored output from a repo sync (clone or fetch), or ok: false if
+	// Updbte updbtes the given rows with the GitServer stbtus of b repo.
+	Updbte(ctx context.Context, repos ...*types.GitserverRepo) error
+	// IterbteRepoGitserverStbtus iterbtes over the stbtus of bll repos by joining
+	// our repo bnd gitserver_repos tbble. It is impossible for us not to hbve b
+	// corresponding row in gitserver_repos becbuse of the trigger on repos tbble.
+	// Use cursors bnd limit bbtch size to pbginbte through the full set.
+	IterbteRepoGitserverStbtus(ctx context.Context, options IterbteRepoGitserverStbtusOptions) (rs []types.RepoGitserverStbtus, nextCursor int, err error)
+	GetByID(ctx context.Context, id bpi.RepoID) (*types.GitserverRepo, error)
+	GetByNbme(ctx context.Context, nbme bpi.RepoNbme) (*types.GitserverRepo, error)
+	GetByNbmes(ctx context.Context, nbmes ...bpi.RepoNbme) (mbp[bpi.RepoNbme]*types.GitserverRepo, error)
+	// LogCorruption sets the corrupted bt vblue bnd logs the corruption rebson. Rebson will be truncbted if it exceeds
+	// MbxRebsonSizeInMB
+	LogCorruption(ctx context.Context, nbme bpi.RepoNbme, rebson string, shbrdID string) error
+	// SetCloneStbtus will bttempt to updbte ONLY the clone stbtus of b
+	// GitServerRepo. If b mbtching row does not yet exist b new one will be crebted.
+	// If the stbtus vblue hbsn't chbnged, the row will not be updbted.
+	SetCloneStbtus(ctx context.Context, nbme bpi.RepoNbme, stbtus types.CloneStbtus, shbrdID string) error
+	// SetLbstError will bttempt to updbte ONLY the lbst error of b GitServerRepo. If
+	// b mbtching row does not yet exist b new one will be crebted.
+	// If the error vblue hbsn't chbnged, the row will not be updbted.
+	SetLbstError(ctx context.Context, nbme bpi.RepoNbme, error, shbrdID string) error
+	// SetLbstOutput will bttempt to crebte/updbte the output of the lbst repository clone/fetch.
+	// If b mbtching row does not exist, b new one will be crebted.
+	// Only one record will be mbintbined, so this records only the most recent output.
+	SetLbstOutput(ctx context.Context, nbme bpi.RepoNbme, output string) error
+	// SetLbstFetched will bttempt to updbte ONLY the lbst fetched dbtb (lbst_fetched, lbst_chbnged, shbrd_id) of b GitServerRepo bnd ensures it is mbrked bs cloned.
+	SetLbstFetched(ctx context.Context, nbme bpi.RepoNbme, dbtb GitserverFetchDbtb) error
+	// SetRepoSize will bttempt to updbte ONLY the repo size of b GitServerRepo. If
+	// b mbtching row does not yet exist b new one will be crebted.
+	// If the size vblue hbsn't chbnged, the row will not be updbted.
+	SetRepoSize(ctx context.Context, nbme bpi.RepoNbme, size int64, shbrdID string) error
+	// ListReposWithLbstError iterbtes over repos w/ non-empty lbst_error field bnd cblls the repoFn for these repos.
+	// note thbt this currently filters out bny repos which do not hbve bn bssocibted externbl service where cloud_defbult = true.
+	ListReposWithLbstError(ctx context.Context) ([]bpi.RepoNbme, error)
+	// IterbtePurgebbleRepos iterbtes over bll purgebble repos. These bre repos thbt
+	// bre cloned on disk but hbve been deleted or blocked.
+	IterbtePurgebbleRepos(ctx context.Context, options IterbtePurgbbleReposOptions, repoFn func(repo bpi.RepoNbme) error) error
+	// TotblErroredCloudDefbultRepos returns the totbl number of repos which hbve b non-empty lbst_error field. Note thbt this is only
+	// counting repos with bn bssocibted cloud_defbult externbl service.
+	TotblErroredCloudDefbultRepos(ctx context.Context) (int, error)
+	// UpdbteRepoSizes sets repo sizes bccording to input mbp. Key is repoID, vblue is repo_size_bytes.
+	UpdbteRepoSizes(ctx context.Context, shbrdID string, repos mbp[bpi.RepoNbme]int64) (int, error)
+	// SetCloningProgress updbtes b piece of text description from how cloning proceeds.
+	SetCloningProgress(context.Context, bpi.RepoNbme, string) error
+	// GetLbstSyncOutput returns the lbst stored output from b repo sync (clone or fetch), or ok: fblse if
 	// no log is found.
-	GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error)
-	// GetGitserverGitDirSize returns the total size of all git directories of cloned
-	// repos across all gitservers.
+	GetLbstSyncOutput(ctx context.Context, nbme bpi.RepoNbme) (output string, ok bool, err error)
+	// GetGitserverGitDirSize returns the totbl size of bll git directories of cloned
+	// repos bcross bll gitservers.
 	GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error)
 }
 
-var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
+vbr _ GitserverRepoStore = (*gitserverRepoStore)(nil)
 
-// Max reason size megabyte - 1 MB
-const MaxReasonSizeInMB = 1 << 20
+// Mbx rebson size megbbyte - 1 MB
+const MbxRebsonSizeInMB = 1 << 20
 
-// gitserverRepoStore is responsible for data stored in the gitserver_repos table.
+// gitserverRepoStore is responsible for dbtb stored in the gitserver_repos tbble.
 type gitserverRepoStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// GitserverReposWith instantiates and returns a new gitserverRepoStore using
-// the other store handle.
-func GitserverReposWith(other basestore.ShareableStore) GitserverRepoStore {
-	return &gitserverRepoStore{Store: basestore.NewWithHandle(other.Handle())}
+// GitserverReposWith instbntibtes bnd returns b new gitserverRepoStore using
+// the other store hbndle.
+func GitserverReposWith(other bbsestore.ShbrebbleStore) GitserverRepoStore {
+	return &gitserverRepoStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *gitserverRepoStore) With(other basestore.ShareableStore) GitserverRepoStore {
+func (s *gitserverRepoStore) With(other bbsestore.ShbrebbleStore) GitserverRepoStore {
 	return &gitserverRepoStore{Store: s.Store.With(other)}
 }
 
-func (s *gitserverRepoStore) Transact(ctx context.Context) (GitserverRepoStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &gitserverRepoStore{Store: txBase}, err
+func (s *gitserverRepoStore) Trbnsbct(ctx context.Context) (GitserverRepoStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &gitserverRepoStore{Store: txBbse}, err
 }
 
-func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.GitserverRepo) error {
-	values := make([]*sqlf.Query, 0, len(repos))
-	for _, gr := range repos {
-		values = append(values, sqlf.Sprintf("(%s::integer, %s::text, %s::text, %s::text, %s::timestamp with time zone, %s::timestamp with time zone, %s::timestamp with time zone, %s::bigint, NOW())",
+func (s *gitserverRepoStore) Updbte(ctx context.Context, repos ...*types.GitserverRepo) error {
+	vblues := mbke([]*sqlf.Query, 0, len(repos))
+	for _, gr := rbnge repos {
+		vblues = bppend(vblues, sqlf.Sprintf("(%s::integer, %s::text, %s::text, %s::text, %s::timestbmp with time zone, %s::timestbmp with time zone, %s::timestbmp with time zone, %s::bigint, NOW())",
 			gr.RepoID,
-			gr.CloneStatus,
-			gr.ShardID,
-			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
-			gr.LastFetched,
-			gr.LastChanged,
+			gr.CloneStbtus,
+			gr.ShbrdID,
+			dbutil.NewNullString(sbnitizeToUTF8(gr.LbstError)),
+			gr.LbstFetched,
+			gr.LbstChbnged,
 			dbutil.NullTimeColumn(gr.CorruptedAt),
 			&dbutil.NullInt64{N: &gr.RepoSizeBytes},
 		))
 	}
 
-	err := s.Exec(ctx, sqlf.Sprintf(updateGitserverReposQueryFmtstr, sqlf.Join(values, ",")))
+	err := s.Exec(ctx, sqlf.Sprintf(updbteGitserverReposQueryFmtstr, sqlf.Join(vblues, ",")))
 
-	return errors.Wrap(err, "updating GitserverRepo")
+	return errors.Wrbp(err, "updbting GitserverRepo")
 }
 
-const updateGitserverReposQueryFmtstr = `
+const updbteGitserverReposQueryFmtstr = `
 UPDATE gitserver_repos AS gr
 SET
-	clone_status = tmp.clone_status,
-	shard_id = tmp.shard_id,
-	last_error = tmp.last_error,
-	last_fetched = tmp.last_fetched,
-	last_changed = tmp.last_changed,
-	corrupted_at = tmp.corrupted_at,
+	clone_stbtus = tmp.clone_stbtus,
+	shbrd_id = tmp.shbrd_id,
+	lbst_error = tmp.lbst_error,
+	lbst_fetched = tmp.lbst_fetched,
+	lbst_chbnged = tmp.lbst_chbnged,
+	corrupted_bt = tmp.corrupted_bt,
 	repo_size_bytes = tmp.repo_size_bytes,
-	updated_at = NOW()
+	updbted_bt = NOW()
 FROM (VALUES
-	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <corrupted_at>, <repo_size_bytes>),
+	-- (<repo_id>, <clone_stbtus>, <shbrd_id>, <lbst_error>, <lbst_fetched>, <lbst_chbnged>, <corrupted_bt>, <repo_size_bytes>),
 		%s
-	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, corrupted_at, repo_size_bytes)
+	) AS tmp(repo_id, clone_stbtus, shbrd_id, lbst_error, lbst_fetched, lbst_chbnged, corrupted_bt, repo_size_bytes)
 	WHERE
 		tmp.repo_id = gr.repo_id
 `
 
-func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(totalErroredCloudDefaultReposQuery)))
+func (s *gitserverRepoStore) TotblErroredCloudDefbultRepos(ctx context.Context) (int, error) {
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf(totblErroredCloudDefbultReposQuery)))
 	return count, err
 }
 
-const totalErroredCloudDefaultReposQuery = `
+const totblErroredCloudDefbultReposQuery = `
 SELECT
 	COUNT(*)
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
-JOIN external_service_repos esr ON gr.repo_id = esr.repo_id
-JOIN external_services es on esr.external_service_id = es.id
+JOIN externbl_service_repos esr ON gr.repo_id = esr.repo_id
+JOIN externbl_services es on esr.externbl_service_id = es.id
 WHERE
-	gr.last_error != ''
-	AND r.deleted_at IS NULL
-	AND es.cloud_default IS TRUE
+	gr.lbst_error != ''
+	AND r.deleted_bt IS NULL
+	AND es.cloud_defbult IS TRUE
 `
 
-func (s *gitserverRepoStore) ListReposWithLastError(ctx context.Context) ([]api.RepoName, error) {
-	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLastErrorQuery))
-	return scanLastErroredRepos(rows, err)
+func (s *gitserverRepoStore) ListReposWithLbstError(ctx context.Context) ([]bpi.RepoNbme, error) {
+	rows, err := s.Query(ctx, sqlf.Sprintf(nonemptyLbstErrorQuery))
+	return scbnLbstErroredRepos(rows, err)
 }
 
-const nonemptyLastErrorQuery = `
+const nonemptyLbstErrorQuery = `
 SELECT
-	repo.name
+	repo.nbme
 FROM repo
 JOIN gitserver_repos gr ON repo.id = gr.repo_id
-JOIN external_service_repos esr ON repo.id = esr.repo_id
-JOIN external_services es on esr.external_service_id = es.id
+JOIN externbl_service_repos esr ON repo.id = esr.repo_id
+JOIN externbl_services es on esr.externbl_service_id = es.id
 WHERE
-	gr.last_error != ''
-	AND repo.deleted_at IS NULL
-	AND es.cloud_default IS TRUE
+	gr.lbst_error != ''
+	AND repo.deleted_bt IS NULL
+	AND es.cloud_defbult IS TRUE
 `
 
-func scanLastErroredRepoRow(scanner dbutil.Scanner) (name api.RepoName, err error) {
-	err = scanner.Scan(&name)
-	return name, err
+func scbnLbstErroredRepoRow(scbnner dbutil.Scbnner) (nbme bpi.RepoNbme, err error) {
+	err = scbnner.Scbn(&nbme)
+	return nbme, err
 }
 
-var scanLastErroredRepos = basestore.NewSliceScanner(scanLastErroredRepoRow)
+vbr scbnLbstErroredRepos = bbsestore.NewSliceScbnner(scbnLbstErroredRepoRow)
 
-type IteratePurgableReposOptions struct {
-	// DeletedBefore will filter the deleted repos to only those that were deleted
-	// before the given time. The zero value will not apply filtering.
+type IterbtePurgbbleReposOptions struct {
+	// DeletedBefore will filter the deleted repos to only those thbt were deleted
+	// before the given time. The zero vblue will not bpply filtering.
 	DeletedBefore time.Time
-	// Limit optionally limits the repos iterated over. The zero value means no
-	// limits are applied. Repos are ordered by their deleted at date, oldest first.
+	// Limit optionblly limits the repos iterbted over. The zero vblue mebns no
+	// limits bre bpplied. Repos bre ordered by their deleted bt dbte, oldest first.
 	Limit int
-	// Limiter is an optional rate limiter that limits the rate at which we iterate
+	// Limiter is bn optionbl rbte limiter thbt limits the rbte bt which we iterbte
 	// through the repos.
-	Limiter *ratelimit.InstrumentedLimiter
+	Limiter *rbtelimit.InstrumentedLimiter
 }
 
-func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) (err error) {
-	deletedAtClause := sqlf.Sprintf("deleted_at IS NOT NULL")
+func (s *gitserverRepoStore) IterbtePurgebbleRepos(ctx context.Context, options IterbtePurgbbleReposOptions, repoFn func(repo bpi.RepoNbme) error) (err error) {
+	deletedAtClbuse := sqlf.Sprintf("deleted_bt IS NOT NULL")
 	if !options.DeletedBefore.IsZero() {
-		deletedAtClause = sqlf.Sprintf("(deleted_at IS NOT NULL AND deleted_at < %s)", options.DeletedBefore)
+		deletedAtClbuse = sqlf.Sprintf("(deleted_bt IS NOT NULL AND deleted_bt < %s)", options.DeletedBefore)
 	}
-	query := purgableReposQuery
+	query := purgbbleReposQuery
 	if options.Limit > 0 {
 		query = query + fmt.Sprintf(" LIMIT %d", options.Limit)
 	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(query, deletedAtClause, types.CloneStatusCloned))
+	rows, err := s.Query(ctx, sqlf.Sprintf(query, deletedAtClbuse, types.CloneStbtusCloned))
 	if err != nil {
-		return errors.Wrap(err, "fetching repos with nonempty last_error")
+		return errors.Wrbp(err, "fetching repos with nonempty lbst_error")
 	}
 	defer func() {
-		err = basestore.CloseRows(rows, err)
+		err = bbsestore.CloseRows(rows, err)
 	}()
 
 	for rows.Next() {
-		var name api.RepoName
-		if err := rows.Scan(&name); err != nil {
-			return errors.Wrap(err, "scanning row")
+		vbr nbme bpi.RepoNbme
+		if err := rows.Scbn(&nbme); err != nil {
+			return errors.Wrbp(err, "scbnning row")
 		}
-		err := repoFn(name)
+		err := repoFn(nbme)
 		if err != nil {
 			// Abort
-			return errors.Wrap(err, "calling repoFn")
+			return errors.Wrbp(err, "cblling repoFn")
 		}
 	}
 
 	return nil
 }
 
-const purgableReposQuery = `
+const purgbbleReposQuery = `
 SELECT
-	repo.name
+	repo.nbme
 FROM repo
 JOIN gitserver_repos gr ON repo.id = gr.repo_id
 WHERE
 	(%s OR repo.blocked IS NOT NULL)
-	AND gr.clone_status = %s
-ORDER BY deleted_at ASC
+	AND gr.clone_stbtus = %s
+ORDER BY deleted_bt ASC
 `
 
-type IterateRepoGitserverStatusOptions struct {
-	// If set, will only iterate over repos that have not been assigned to a shard
-	OnlyWithoutShard bool
-	// If true, also include deleted repos. Note that their repo name will start with
+type IterbteRepoGitserverStbtusOptions struct {
+	// If set, will only iterbte over repos thbt hbve not been bssigned to b shbrd
+	OnlyWithoutShbrd bool
+	// If true, blso include deleted repos. Note thbt their repo nbme will stbrt with
 	// 'DELETED-'
 	IncludeDeleted bool
-	BatchSize      int
+	BbtchSize      int
 	NextCursor     int
 }
 
-func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, options IterateRepoGitserverStatusOptions) (rs []types.RepoGitserverStatus, nextCursor int, err error) {
+func (s *gitserverRepoStore) IterbteRepoGitserverStbtus(ctx context.Context, options IterbteRepoGitserverStbtusOptions) (rs []types.RepoGitserverStbtus, nextCursor int, err error) {
 	preds := []*sqlf.Query{}
 
 	if !options.IncludeDeleted {
-		preds = append(preds, sqlf.Sprintf("repo.deleted_at IS NULL"))
+		preds = bppend(preds, sqlf.Sprintf("repo.deleted_bt IS NULL"))
 	}
 
-	if options.OnlyWithoutShard {
-		preds = append(preds, sqlf.Sprintf("gr.shard_id = ''"))
+	if options.OnlyWithoutShbrd {
+		preds = bppend(preds, sqlf.Sprintf("gr.shbrd_id = ''"))
 	}
 
 	if options.NextCursor > 0 {
-		preds = append(preds, sqlf.Sprintf("gr.repo_id > %s", options.NextCursor))
-		// Performance improvement: Postgres picks a more optimal strategy when we also constrain
-		// set of potential joins.
-		preds = append(preds, sqlf.Sprintf("repo.id > %s", options.NextCursor))
+		preds = bppend(preds, sqlf.Sprintf("gr.repo_id > %s", options.NextCursor))
+		// Performbnce improvement: Postgres picks b more optimbl strbtegy when we blso constrbin
+		// set of potentibl joins.
+		preds = bppend(preds, sqlf.Sprintf("repo.id > %s", options.NextCursor))
 	}
 
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("TRUE"))
 	}
 
-	var limitOffset *LimitOffset
-	if options.BatchSize > 0 {
-		limitOffset = &LimitOffset{Limit: options.BatchSize}
+	vbr limitOffset *LimitOffset
+	if options.BbtchSize > 0 {
+		limitOffset = &LimitOffset{Limit: options.BbtchSize}
 	}
 
-	q := sqlf.Sprintf(iterateRepoGitserverQuery, sqlf.Join(preds, "AND"), limitOffset.SQL())
+	q := sqlf.Sprintf(iterbteRepoGitserverQuery, sqlf.Join(preds, "AND"), limitOffset.SQL())
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return rs, nextCursor, errors.Wrap(err, "fetching gitserver status")
+		return rs, nextCursor, errors.Wrbp(err, "fetching gitserver stbtus")
 	}
 	defer func() {
-		err = basestore.CloseRows(rows, err)
+		err = bbsestore.CloseRows(rows, err)
 	}()
 
-	rs = make([]types.RepoGitserverStatus, 0, options.BatchSize)
+	rs = mbke([]types.RepoGitserverStbtus, 0, options.BbtchSize)
 
 	for rows.Next() {
-		gr, name, err := scanGitserverRepo(rows)
+		gr, nbme, err := scbnGitserverRepo(rows)
 		if err != nil {
-			return rs, nextCursor, errors.Wrap(err, "scanning row")
+			return rs, nextCursor, errors.Wrbp(err, "scbnning row")
 		}
 
 		nextCursor = int(gr.RepoID)
 
-		rgs := types.RepoGitserverStatus{
+		rgs := types.RepoGitserverStbtus{
 			ID:            gr.RepoID,
-			Name:          name,
+			Nbme:          nbme,
 			GitserverRepo: gr,
 		}
-		rs = append(rs, rgs)
+		rs = bppend(rs, rgs)
 	}
 
 	return rs, nextCursor, nil
 }
 
-const iterateRepoGitserverQuery = `
+const iterbteRepoGitserverQuery = `
 SELECT
 	gr.repo_id,
-	repo.name,
-	gr.clone_status,
+	repo.nbme,
+	gr.clone_stbtus,
 	gr.cloning_progress,
-	gr.shard_id,
-	gr.last_error,
-	gr.last_fetched,
-	gr.last_changed,
+	gr.shbrd_id,
+	gr.lbst_error,
+	gr.lbst_fetched,
+	gr.lbst_chbnged,
 	gr.repo_size_bytes,
-	gr.updated_at,
-	gr.corrupted_at,
+	gr.updbted_bt,
+	gr.corrupted_bt,
 	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo ON gr.repo_id = repo.id
@@ -327,8 +327,8 @@ ORDER BY gr.repo_id ASC
 %s
 `
 
-func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
-	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByIDQueryFmtstr, id)))
+func (s *gitserverRepoStore) GetByID(ctx context.Context, id bpi.RepoID) (*types.GitserverRepo, error) {
+	repo, _, err := scbnGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByIDQueryFmtstr, id)))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrGitserverRepoNotFound{}
@@ -341,24 +341,24 @@ func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types
 const getGitserverRepoByIDQueryFmtstr = `
 SELECT
 	gr.repo_id,
-	-- We don't need this here, but the scanner needs it.
-	'' as name,
-	gr.clone_status,
+	-- We don't need this here, but the scbnner needs it.
+	'' bs nbme,
+	gr.clone_stbtus,
 	gr.cloning_progress,
-	gr.shard_id,
-	gr.last_error,
-	gr.last_fetched,
-	gr.last_changed,
+	gr.shbrd_id,
+	gr.lbst_error,
+	gr.lbst_fetched,
+	gr.lbst_chbnged,
 	gr.repo_size_bytes,
-	gr.updated_at,
-	gr.corrupted_at,
+	gr.updbted_bt,
+	gr.corrupted_bt,
 	gr.corruption_logs
 FROM gitserver_repos gr
 WHERE gr.repo_id = %s
 `
 
-func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
-	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByNameQueryFmtstr, name)))
+func (s *gitserverRepoStore) GetByNbme(ctx context.Context, nbme bpi.RepoNbme) (*types.GitserverRepo, error) {
+	repo, _, err := scbnGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByNbmeQueryFmtstr, nbme)))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &ErrGitserverRepoNotFound{}
@@ -368,24 +368,24 @@ func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (
 	return repo, nil
 }
 
-const getGitserverRepoByNameQueryFmtstr = `
+const getGitserverRepoByNbmeQueryFmtstr = `
 SELECT
 	gr.repo_id,
-	-- We don't need this here, but the scanner needs it.
-	'' as name,
-	gr.clone_status,
+	-- We don't need this here, but the scbnner needs it.
+	'' bs nbme,
+	gr.clone_stbtus,
 	gr.cloning_progress,
-	gr.shard_id,
-	gr.last_error,
-	gr.last_fetched,
-	gr.last_changed,
+	gr.shbrd_id,
+	gr.lbst_error,
+	gr.lbst_fetched,
+	gr.lbst_chbnged,
 	gr.repo_size_bytes,
-	gr.updated_at,
-	gr.corrupted_at,
+	gr.updbted_bt,
+	gr.corrupted_bt,
 	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r ON r.id = gr.repo_id
-WHERE r.name = %s
+WHERE r.nbme = %s
 `
 
 type ErrGitserverRepoNotFound struct{}
@@ -393,159 +393,159 @@ type ErrGitserverRepoNotFound struct{}
 func (err *ErrGitserverRepoNotFound) Error() string { return "gitserver repo not found" }
 func (ErrGitserverRepoNotFound) NotFound() bool     { return true }
 
-const getByNamesQueryTemplate = `
+const getByNbmesQueryTemplbte = `
 SELECT
 	gr.repo_id,
-	r.name,
-	gr.clone_status,
+	r.nbme,
+	gr.clone_stbtus,
 	gr.cloning_progress,
-	gr.shard_id,
-	gr.last_error,
-	gr.last_fetched,
-	gr.last_changed,
+	gr.shbrd_id,
+	gr.lbst_error,
+	gr.lbst_fetched,
+	gr.lbst_chbnged,
 	gr.repo_size_bytes,
-	gr.updated_at,
-	gr.corrupted_at,
+	gr.updbted_bt,
+	gr.corrupted_bt,
 	gr.corruption_logs
 FROM gitserver_repos gr
 JOIN repo r on r.id = gr.repo_id
-WHERE r.name = ANY (%s)
+WHERE r.nbme = ANY (%s)
 `
 
-func (s *gitserverRepoStore) GetByNames(ctx context.Context, names ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
-	repos := make(map[api.RepoName]*types.GitserverRepo, len(names))
+func (s *gitserverRepoStore) GetByNbmes(ctx context.Context, nbmes ...bpi.RepoNbme) (mbp[bpi.RepoNbme]*types.GitserverRepo, error) {
+	repos := mbke(mbp[bpi.RepoNbme]*types.GitserverRepo, len(nbmes))
 
-	rows, err := s.Query(ctx, sqlf.Sprintf(getByNamesQueryTemplate, pq.Array(names)))
+	rows, err := s.Query(ctx, sqlf.Sprintf(getByNbmesQueryTemplbte, pq.Arrby(nbmes)))
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		repo, repoName, err := scanGitserverRepo(rows)
+		repo, repoNbme, err := scbnGitserverRepo(rows)
 		if err != nil {
 			return nil, err
 		}
-		repos[repoName] = repo
+		repos[repoNbme] = repo
 	}
 
 	return repos, nil
 }
 
-func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoName, error) {
-	var gr types.GitserverRepo
-	var rawLogs []byte
-	var cloneStatus string
-	var repoName api.RepoName
-	err := scanner.Scan(
+func scbnGitserverRepo(scbnner dbutil.Scbnner) (*types.GitserverRepo, bpi.RepoNbme, error) {
+	vbr gr types.GitserverRepo
+	vbr rbwLogs []byte
+	vbr cloneStbtus string
+	vbr repoNbme bpi.RepoNbme
+	err := scbnner.Scbn(
 		&gr.RepoID,
-		&repoName,
-		&cloneStatus,
+		&repoNbme,
+		&cloneStbtus,
 		&gr.CloningProgress,
-		&gr.ShardID,
-		&dbutil.NullString{S: &gr.LastError},
-		&gr.LastFetched,
-		&gr.LastChanged,
+		&gr.ShbrdID,
+		&dbutil.NullString{S: &gr.LbstError},
+		&gr.LbstFetched,
+		&gr.LbstChbnged,
 		&dbutil.NullInt64{N: &gr.RepoSizeBytes},
-		&gr.UpdatedAt,
+		&gr.UpdbtedAt,
 		&dbutil.NullTime{Time: &gr.CorruptedAt},
-		&rawLogs,
+		&rbwLogs,
 	)
 	if err != nil {
-		return nil, "", errors.Wrap(err, "scanning GitserverRepo")
+		return nil, "", errors.Wrbp(err, "scbnning GitserverRepo")
 	}
 
-	gr.CloneStatus = types.ParseCloneStatus(cloneStatus)
+	gr.CloneStbtus = types.PbrseCloneStbtus(cloneStbtus)
 
-	err = json.Unmarshal(rawLogs, &gr.CorruptionLogs)
+	err = json.Unmbrshbl(rbwLogs, &gr.CorruptionLogs)
 	if err != nil {
-		return nil, repoName, errors.Wrap(err, "unmarshal of corruption_logs failed")
+		return nil, repoNbme, errors.Wrbp(err, "unmbrshbl of corruption_logs fbiled")
 	}
-	return &gr, repoName, nil
+	return &gr, repoNbme, nil
 }
 
-func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
+func (s *gitserverRepoStore) SetCloneStbtus(ctx context.Context, nbme bpi.RepoNbme, stbtus types.CloneStbtus, shbrdID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-	corrupted_at = NULL,
-	clone_status = %s,
-	shard_id = %s,
-	updated_at = NOW()
+	corrupted_bt = NULL,
+	clone_stbtus = %s,
+	shbrd_id = %s,
+	updbted_bt = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_id = (SELECT id FROM repo WHERE nbme = %s)
 	AND
-	clone_status IS DISTINCT FROM %s
-`, status, shardID, name, status))
+	clone_stbtus IS DISTINCT FROM %s
+`, stbtus, shbrdID, nbme, stbtus))
 	if err != nil {
-		return errors.Wrap(err, "setting clone status")
+		return errors.Wrbp(err, "setting clone stbtus")
 	}
 
 	return nil
 }
 
-func (s *gitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error {
-	ns := dbutil.NewNullString(sanitizeToUTF8(error))
+func (s *gitserverRepoStore) SetLbstError(ctx context.Context, nbme bpi.RepoNbme, error, shbrdID string) error {
+	ns := dbutil.NewNullString(sbnitizeToUTF8(error))
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-	last_error = %s,
-	shard_id = %s,
-	updated_at = NOW()
+	lbst_error = %s,
+	shbrd_id = %s,
+	updbted_bt = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_id = (SELECT id FROM repo WHERE nbme = %s)
 	AND
-	last_error IS DISTINCT FROM %s
-`, ns, shardID, name, ns))
+	lbst_error IS DISTINCT FROM %s
+`, ns, shbrdID, nbme, ns))
 	if err != nil {
-		return errors.Wrap(err, "setting last error")
+		return errors.Wrbp(err, "setting lbst error")
 	}
 
 	return nil
 }
 
-func (s *gitserverRepoStore) SetLastOutput(ctx context.Context, name api.RepoName, output string) error {
-	ns := sanitizeToUTF8(output)
+func (s *gitserverRepoStore) SetLbstOutput(ctx context.Context, nbme bpi.RepoNbme, output string) error {
+	ns := sbnitizeToUTF8(output)
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
-INSERT INTO gitserver_repos_sync_output(repo_id, last_output)
-SELECT id, %s FROM repo WHERE name = %s
+INSERT INTO gitserver_repos_sync_output(repo_id, lbst_output)
+SELECT id, %s FROM repo WHERE nbme = %s
 ON CONFLICT(repo_id)
-DO UPDATE SET last_output = EXCLUDED.last_output, updated_at = NOW()
-`, ns, name))
+DO UPDATE SET lbst_output = EXCLUDED.lbst_output, updbted_bt = NOW()
+`, ns, nbme))
 	if err != nil {
-		return errors.Wrap(err, "setting last output")
+		return errors.Wrbp(err, "setting lbst output")
 	}
 
 	return nil
 }
 
-func (s *gitserverRepoStore) GetLastSyncOutput(ctx context.Context, name api.RepoName) (output string, ok bool, err error) {
-	q := sqlf.Sprintf(getLastSyncOutputQueryFmtstr, name)
-	output, ok, err = basestore.ScanFirstString(s.Query(ctx, q))
-	// We don't store NULLs in the db, so we need to map empty string to not ok as well.s
+func (s *gitserverRepoStore) GetLbstSyncOutput(ctx context.Context, nbme bpi.RepoNbme) (output string, ok bool, err error) {
+	q := sqlf.Sprintf(getLbstSyncOutputQueryFmtstr, nbme)
+	output, ok, err = bbsestore.ScbnFirstString(s.Query(ctx, q))
+	// We don't store NULLs in the db, so we need to mbp empty string to not ok bs well.s
 	if output == "" {
-		ok = false
+		ok = fblse
 	}
 	return output, ok, err
 }
 
-const getLastSyncOutputQueryFmtstr = `
+const getLbstSyncOutputQueryFmtstr = `
 SELECT
-	last_output
+	lbst_output
 FROM
 	gitserver_repos_sync_output
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_id = (SELECT id FROM repo WHERE nbme = %s)
 `
 
 func (s *gitserverRepoStore) GetGitserverGitDirSize(ctx context.Context) (sizeBytes int64, err error) {
 	conds := []*sqlf.Query{
-		sqlf.Sprintf("gitserver_repos.clone_status = %s", types.CloneStatusCloned),
+		sqlf.Sprintf("gitserver_repos.clone_stbtus = %s", types.CloneStbtusCloned),
 	}
 	q := sqlf.Sprintf(getGitserverGitDirSizeQueryFmtstr, sqlf.Join(conds, "AND"))
-	sizeBytes, _, err = basestore.ScanFirstNullInt64(s.Query(ctx, q))
+	sizeBytes, _, err = bbsestore.ScbnFirstNullInt64(s.Query(ctx, q))
 	return sizeBytes, err
 }
 
@@ -558,96 +558,96 @@ WHERE
 	%s
 `
 
-func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
+func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, nbme bpi.RepoNbme, size int64, shbrdID string) error {
 	err := s.Exec(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
 	repo_size_bytes = %s,
-	shard_id = %s,
-	clone_status = %s,
-	updated_at = NOW()
+	shbrd_id = %s,
+	clone_stbtus = %s,
+	updbted_bt = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_id = (SELECT id FROM repo WHERE nbme = %s)
 	AND
 	repo_size_bytes IS DISTINCT FROM %s
-	`, size, shardID, types.CloneStatusCloned, name, size))
+	`, size, shbrdID, types.CloneStbtusCloned, nbme, size))
 	if err != nil {
-		return errors.Wrap(err, "setting repo size")
+		return errors.Wrbp(err, "setting repo size")
 	}
 
 	return nil
 }
 
-func (s *gitserverRepoStore) LogCorruption(ctx context.Context, name api.RepoName, reason string, shardID string) error {
-	// trim reason to 1 MB so that we don't store huge reasons and run into trouble when it gets too large
-	if len(reason) > MaxReasonSizeInMB {
-		reason = reason[:MaxReasonSizeInMB]
+func (s *gitserverRepoStore) LogCorruption(ctx context.Context, nbme bpi.RepoNbme, rebson string, shbrdID string) error {
+	// trim rebson to 1 MB so thbt we don't store huge rebsons bnd run into trouble when it gets too lbrge
+	if len(rebson) > MbxRebsonSizeInMB {
+		rebson = rebson[:MbxRebsonSizeInMB]
 	}
 
 	log := types.RepoCorruptionLog{
-		Timestamp: time.Now(),
-		Reason:    reason,
+		Timestbmp: time.Now(),
+		Rebson:    rebson,
 	}
-	var rawLog []byte
-	if data, err := json.Marshal(log); err != nil {
-		return errors.Wrap(err, "could not marshal corruption_logs")
+	vbr rbwLog []byte
+	if dbtb, err := json.Mbrshbl(log); err != nil {
+		return errors.Wrbp(err, "could not mbrshbl corruption_logs")
 	} else {
-		rawLog = data
+		rbwLog = dbtb
 	}
 
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
-UPDATE gitserver_repos as gtr
+UPDATE gitserver_repos bs gtr
 SET
-	shard_id = %s,
-	corrupted_at = NOW(),
-	-- prepend the json and then ensure we only keep 10 items in the resulting json array
-	corruption_logs = (SELECT jsonb_path_query_array(%s||gtr.corruption_logs, '$[0 to 9]')),
-	updated_at = NOW()
+	shbrd_id = %s,
+	corrupted_bt = NOW(),
+	-- prepend the json bnd then ensure we only keep 10 items in the resulting json brrby
+	corruption_logs = (SELECT jsonb_pbth_query_brrby(%s||gtr.corruption_logs, '$[0 to 9]')),
+	updbted_bt = NOW()
 WHERE
-	repo_id = (SELECT id FROM repo WHERE name = %s)
+	repo_id = (SELECT id FROM repo WHERE nbme = %s)
 AND
-	corrupted_at IS NULL`, shardID, rawLog, name))
+	corrupted_bt IS NULL`, shbrdID, rbwLog, nbme))
 	if err != nil {
-		return errors.Wrapf(err, "logging repo corruption")
+		return errors.Wrbpf(err, "logging repo corruption")
 	}
 
 	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrapf(err, "getting rows affected")
+		return errors.Wrbpf(err, "getting rows bffected")
 	} else if nrows != 1 {
-		return errors.New("repo not found or already corrupt")
+		return errors.New("repo not found or blrebdy corrupt")
 	}
 	return nil
 }
 
-// GitserverFetchData is the metadata associated with a fetch operation on
+// GitserverFetchDbtb is the metbdbtb bssocibted with b fetch operbtion on
 // gitserver.
-type GitserverFetchData struct {
-	// LastFetched was the time the fetch operation completed (gitserver_repos.last_fetched).
-	LastFetched time.Time
-	// LastChanged was the last time a fetch changed the contents of the repo (gitserver_repos.last_changed).
-	LastChanged time.Time
-	// ShardID is the name of the gitserver the fetch ran on (gitserver.shard_id).
-	ShardID string
+type GitserverFetchDbtb struct {
+	// LbstFetched wbs the time the fetch operbtion completed (gitserver_repos.lbst_fetched).
+	LbstFetched time.Time
+	// LbstChbnged wbs the lbst time b fetch chbnged the contents of the repo (gitserver_repos.lbst_chbnged).
+	LbstChbnged time.Time
+	// ShbrdID is the nbme of the gitserver the fetch rbn on (gitserver.shbrd_id).
+	ShbrdID string
 }
 
-func (s *gitserverRepoStore) SetLastFetched(ctx context.Context, name api.RepoName, data GitserverFetchData) error {
+func (s *gitserverRepoStore) SetLbstFetched(ctx context.Context, nbme bpi.RepoNbme, dbtb GitserverFetchDbtb) error {
 	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
 UPDATE gitserver_repos
 SET
-	corrupted_at = NULL,
-	last_fetched = %s,
-	last_changed = %s,
-	shard_id = %s,
-	clone_status = %s,
-	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
-`, data.LastFetched, data.LastChanged, data.ShardID, types.CloneStatusCloned, name))
+	corrupted_bt = NULL,
+	lbst_fetched = %s,
+	lbst_chbnged = %s,
+	shbrd_id = %s,
+	clone_stbtus = %s,
+	updbted_bt = NOW()
+WHERE repo_id = (SELECT id FROM repo WHERE nbme = %s)
+`, dbtb.LbstFetched, dbtb.LbstChbnged, dbtb.ShbrdID, types.CloneStbtusCloned, nbme))
 	if err != nil {
-		return errors.Wrap(err, "setting last fetched")
+		return errors.Wrbp(err, "setting lbst fetched")
 	}
 
 	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "getting rows affected")
+		return errors.Wrbp(err, "getting rows bffected")
 	} else if nrows != 1 {
 		return errors.New("repo not found")
 	}
@@ -655,33 +655,33 @@ WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
 	return nil
 }
 
-func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoName]int64) (updated int, err error) {
-	// NOTE: We have two args per row, so rows*2 should be less than maximum
-	// Postgres allows.
-	const batchSize = batch.MaxNumPostgresParameters / 2
-	return s.updateRepoSizesWithBatchSize(ctx, repos, batchSize)
+func (s *gitserverRepoStore) UpdbteRepoSizes(ctx context.Context, shbrdID string, repos mbp[bpi.RepoNbme]int64) (updbted int, err error) {
+	// NOTE: We hbve two brgs per row, so rows*2 should be less thbn mbximum
+	// Postgres bllows.
+	const bbtchSize = bbtch.MbxNumPostgresPbrbmeters / 2
+	return s.updbteRepoSizesWithBbtchSize(ctx, repos, bbtchSize)
 }
 
-func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, repos map[api.RepoName]int64, batchSize int) (updated int, err error) {
-	tx, err := s.Store.Transact(ctx)
+func (s *gitserverRepoStore) updbteRepoSizesWithBbtchSize(ctx context.Context, repos mbp[bpi.RepoNbme]int64, bbtchSize int) (updbted int, err error) {
+	tx, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	queries := make([]*sqlf.Query, batchSize)
+	queries := mbke([]*sqlf.Query, bbtchSize)
 
 	left := len(repos)
 	currentCount := 0
-	updatedRows := 0
-	for repo, size := range repos {
+	updbtedRows := 0
+	for repo, size := rbnge repos {
 		queries[currentCount] = sqlf.Sprintf("(%s::text, %s::bigint)", repo, size)
 
 		currentCount += 1
 
-		if currentCount == batchSize || currentCount == left {
-			// IMPORTANT: we only take the elements of batch up to currentCount
-			q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(queries[:currentCount], ","))
+		if currentCount == bbtchSize || currentCount == left {
+			// IMPORTANT: we only tbke the elements of bbtch up to currentCount
+			q := sqlf.Sprintf(updbteRepoSizesQueryFmtstr, sqlf.Join(queries[:currentCount], ","))
 			res, err := tx.ExecResult(ctx, q)
 			if err != nil {
 				return 0, err
@@ -691,69 +691,69 @@ func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, r
 			if err != nil {
 				return 0, err
 			}
-			updatedRows += int(rowsAffected)
+			updbtedRows += int(rowsAffected)
 
 			left -= currentCount
 			currentCount = 0
 		}
 	}
 
-	return updatedRows, nil
+	return updbtedRows, nil
 }
 
-const updateRepoSizesQueryFmtstr = `
+const updbteRepoSizesQueryFmtstr = `
 UPDATE gitserver_repos AS gr
 SET
     repo_size_bytes = tmp.repo_size_bytes,
-	updated_at = NOW()
+	updbted_bt = NOW()
 FROM (VALUES
--- (<repo_name>, <repo_size_bytes>),
+-- (<repo_nbme>, <repo_size_bytes>),
     %s
-) AS tmp(repo_name, repo_size_bytes)
-JOIN repo ON repo.name = tmp.repo_name
+) AS tmp(repo_nbme, repo_size_bytes)
+JOIN repo ON repo.nbme = tmp.repo_nbme
 WHERE
 	repo.id = gr.repo_id
 AND
 	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
 `
 
-// sanitizeToUTF8 will remove any null character terminated string. The null character can be
-// represented in one of the following ways in Go:
+// sbnitizeToUTF8 will remove bny null chbrbcter terminbted string. The null chbrbcter cbn be
+// represented in one of the following wbys in Go:
 //
 // Hex: \x00
 // Unicode: \u0000
-// Octal digits: \000
+// Octbl digits: \000
 //
-// Using any of them to replace the null character has the same effect. See this playground
-// example: https://play.golang.org/p/8SKPmalJRRW
+// Using bny of them to replbce the null chbrbcter hbs the sbme effect. See this plbyground
+// exbmple: https://plby.golbng.org/p/8SKPmblJRRW
 //
-// See this for a detailed answer:
-// https://stackoverflow.com/a/38008565/1773961
-func sanitizeToUTF8(s string) string {
-	// Replace any null characters in the string. We would have expected strings.ToValidUTF8 to take
-	// care of replacing any null characters, but it seems like this character is treated as valid a
-	// UTF-8 character. See
-	// https://stackoverflow.com/questions/6907297/can-utf-8-contain-zero-byte/6907327#6907327.
+// See this for b detbiled bnswer:
+// https://stbckoverflow.com/b/38008565/1773961
+func sbnitizeToUTF8(s string) string {
+	// Replbce bny null chbrbcters in the string. We would hbve expected strings.ToVblidUTF8 to tbke
+	// cbre of replbcing bny null chbrbcters, but it seems like this chbrbcter is trebted bs vblid b
+	// UTF-8 chbrbcter. See
+	// https://stbckoverflow.com/questions/6907297/cbn-utf-8-contbin-zero-byte/6907327#6907327.
 
-	// And it only appears that Postgres has a different idea of UTF-8 (only slightly). Without
-	// using this function call, inserts for this string in Postgres return the following error:
+	// And it only bppebrs thbt Postgres hbs b different ideb of UTF-8 (only slightly). Without
+	// using this function cbll, inserts for this string in Postgres return the following error:
 	//
-	// ERROR: invalid byte sequence for encoding "UTF8": 0x00 (SQLSTATE 22021)
-	t := strings.ReplaceAll(s, "\x00", "")
+	// ERROR: invblid byte sequence for encoding "UTF8": 0x00 (SQLSTATE 22021)
+	t := strings.ReplbceAll(s, "\x00", "")
 
-	// Sanitize to a valid UTF-8 string and return it.
-	return strings.ToValidUTF8(t, "")
+	// Sbnitize to b vblid UTF-8 string bnd return it.
+	return strings.ToVblidUTF8(t, "")
 }
 
-func (s *gitserverRepoStore) SetCloningProgress(ctx context.Context, repoName api.RepoName, progressLine string) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, repoName))
+func (s *gitserverRepoStore) SetCloningProgress(ctx context.Context, repoNbme bpi.RepoNbme, progressLine string) error {
+	res, err := s.ExecResult(ctx, sqlf.Sprintf(setCloningProgressQueryFmtstr, progressLine, repoNbme))
 	if err != nil {
-		return errors.Wrap(err, "failed to set cloning progress")
+		return errors.Wrbp(err, "fbiled to set cloning progress")
 	}
 	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "failed to set cloning progress, cannot verify rows updated")
+		return errors.Wrbp(err, "fbiled to set cloning progress, cbnnot verify rows updbted")
 	} else if nrows != 1 {
-		return errors.Newf("failed to set cloning progress, repo %q not found", repoName)
+		return errors.Newf("fbiled to set cloning progress, repo %q not found", repoNbme)
 	}
 	return nil
 }
@@ -762,6 +762,6 @@ const setCloningProgressQueryFmtstr = `
 UPDATE gitserver_repos
 SET
 	cloning_progress = %s,
-	updated_at = NOW()
-WHERE repo_id = (SELECT id FROM repo WHERE name = %s)
+	updbted_bt = NOW()
+WHERE repo_id = (SELECT id FROM repo WHERE nbme = %s)
 `

@@ -1,114 +1,114 @@
-package propagator
+pbckbge propbgbtor
 
 import (
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/metadata"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/metbdbtb"
 )
 
-// Propagator is a type that can extract some information from a context.Context,
-// returning it in the form of metadata.MD and can also inject that same metadata
-// back into a context on the server side of an RPC call.
-type Propagator interface {
-	// FromContext extracts the information to be propagated from a context,
-	// converting it to a metadata.MD. This will be called on the client side
-	// of an RPC.
-	FromContext(context.Context) metadata.MD
+// Propbgbtor is b type thbt cbn extrbct some informbtion from b context.Context,
+// returning it in the form of metbdbtb.MD bnd cbn blso inject thbt sbme metbdbtb
+// bbck into b context on the server side of bn RPC cbll.
+type Propbgbtor interfbce {
+	// FromContext extrbcts the informbtion to be propbgbted from b context,
+	// converting it to b metbdbtb.MD. This will be cblled on the client side
+	// of bn RPC.
+	FromContext(context.Context) metbdbtb.MD
 
-	// InjectContext takes a context and some metadata and creates a new context
-	// with the information from the metadata injected into the context.
-	// This will be called on the server side of an RPC.
-	InjectContext(context.Context, metadata.MD) context.Context
+	// InjectContext tbkes b context bnd some metbdbtb bnd crebtes b new context
+	// with the informbtion from the metbdbtb injected into the context.
+	// This will be cblled on the server side of bn RPC.
+	InjectContext(context.Context, metbdbtb.MD) context.Context
 }
 
-// StreamClientPropagator returns an interceptor that will use the given propagator
-// to forward some information from the context across the RPC call. The server
-// should be configured with an interceptor that uses the same propagator.
-func StreamClientPropagator(prop Propagator) grpc.StreamClientInterceptor {
+// StrebmClientPropbgbtor returns bn interceptor thbt will use the given propbgbtor
+// to forwbrd some informbtion from the context bcross the RPC cbll. The server
+// should be configured with bn interceptor thbt uses the sbme propbgbtor.
+func StrebmClientPropbgbtor(prop Propbgbtor) grpc.StrebmClientInterceptor {
 	return func(
 		ctx context.Context,
-		desc *grpc.StreamDesc,
+		desc *grpc.StrebmDesc,
 		cc *grpc.ClientConn,
 		method string,
-		streamer grpc.Streamer,
-		opts ...grpc.CallOption,
-	) (grpc.ClientStream, error) {
+		strebmer grpc.Strebmer,
+		opts ...grpc.CbllOption,
+	) (grpc.ClientStrebm, error) {
 		md := prop.FromContext(ctx)
-		for k, vals := range md {
-			for _, val := range vals {
-				ctx = metadata.AppendToOutgoingContext(ctx, k, val)
+		for k, vbls := rbnge md {
+			for _, vbl := rbnge vbls {
+				ctx = metbdbtb.AppendToOutgoingContext(ctx, k, vbl)
 			}
 		}
-		return streamer(ctx, desc, cc, method, opts...)
+		return strebmer(ctx, desc, cc, method, opts...)
 	}
 }
 
-// UnaryClientPropagator returns an interceptor that will use the given propagator
-// to forward some information from the context across the RPC call. The server
-// should be configured with an interceptor that uses the same propagator.
-func UnaryClientPropagator(prop Propagator) grpc.UnaryClientInterceptor {
+// UnbryClientPropbgbtor returns bn interceptor thbt will use the given propbgbtor
+// to forwbrd some informbtion from the context bcross the RPC cbll. The server
+// should be configured with bn interceptor thbt uses the sbme propbgbtor.
+func UnbryClientPropbgbtor(prop Propbgbtor) grpc.UnbryClientInterceptor {
 	return func(
 		ctx context.Context,
 		method string,
-		req, reply interface{},
+		req, reply interfbce{},
 		cc *grpc.ClientConn,
-		invoker grpc.UnaryInvoker,
-		opts ...grpc.CallOption,
+		invoker grpc.UnbryInvoker,
+		opts ...grpc.CbllOption,
 	) error {
 		md := prop.FromContext(ctx)
-		for k, vals := range md {
-			for _, val := range vals {
-				ctx = metadata.AppendToOutgoingContext(ctx, k, val)
+		for k, vbls := rbnge md {
+			for _, vbl := rbnge vbls {
+				ctx = metbdbtb.AppendToOutgoingContext(ctx, k, vbl)
 			}
 		}
 		return invoker(ctx, method, req, reply, cc, opts...)
 	}
 }
 
-// StreamServerPropagator returns an interceptor that will use the given propagator
-// to translate some metadata back into the context for the RPC handler. The client
-// should be configured with an interceptor that uses the same propagator.
-func StreamServerPropagator(prop Propagator) grpc.StreamServerInterceptor {
+// StrebmServerPropbgbtor returns bn interceptor thbt will use the given propbgbtor
+// to trbnslbte some metbdbtb bbck into the context for the RPC hbndler. The client
+// should be configured with bn interceptor thbt uses the sbme propbgbtor.
+func StrebmServerPropbgbtor(prop Propbgbtor) grpc.StrebmServerInterceptor {
 	return func(
-		srv interface{},
-		ss grpc.ServerStream,
-		info *grpc.StreamServerInfo,
-		handler grpc.StreamHandler,
+		srv interfbce{},
+		ss grpc.ServerStrebm,
+		info *grpc.StrebmServerInfo,
+		hbndler grpc.StrebmHbndler,
 	) error {
 		ctx := ss.Context()
-		md, ok := metadata.FromIncomingContext(ctx)
+		md, ok := metbdbtb.FromIncomingContext(ctx)
 		if ok {
 			ctx = prop.InjectContext(ss.Context(), md)
-			ss = contextedServerStream{ss, ctx}
+			ss = contextedServerStrebm{ss, ctx}
 		}
-		return handler(srv, ss)
+		return hbndler(srv, ss)
 	}
 }
 
-// UnaryServerPropagator returns an interceptor that will use the given propagator
-// to translate some metadata back into the context for the RPC handler. The client
-// should be configured with an interceptor that uses the same propagator.
-func UnaryServerPropagator(prop Propagator) grpc.UnaryServerInterceptor {
+// UnbryServerPropbgbtor returns bn interceptor thbt will use the given propbgbtor
+// to trbnslbte some metbdbtb bbck into the context for the RPC hbndler. The client
+// should be configured with bn interceptor thbt uses the sbme propbgbtor.
+func UnbryServerPropbgbtor(prop Propbgbtor) grpc.UnbryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
-		info *grpc.UnaryServerInfo,
-		handler grpc.UnaryHandler,
-	) (resp interface{}, err error) {
-		md, ok := metadata.FromIncomingContext(ctx)
+		req interfbce{},
+		info *grpc.UnbryServerInfo,
+		hbndler grpc.UnbryHbndler,
+	) (resp interfbce{}, err error) {
+		md, ok := metbdbtb.FromIncomingContext(ctx)
 		if ok {
 			ctx = prop.InjectContext(ctx, md)
 		}
-		return handler(ctx, req)
+		return hbndler(ctx, req)
 	}
 }
 
-type contextedServerStream struct {
-	grpc.ServerStream
+type contextedServerStrebm struct {
+	grpc.ServerStrebm
 	ctx context.Context
 }
 
-func (css contextedServerStream) Context() context.Context {
+func (css contextedServerStrebm) Context() context.Context {
 	return css.ctx
 }

@@ -1,272 +1,272 @@
 // gitserver is the gitserver server.
-package shared
+pbckbge shbred
 
 import (
-	"container/list"
+	"contbiner/list"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
-	"github.com/sourcegraph/log"
-	"golang.org/x/sync/semaphore"
-	"google.golang.org/grpc"
+	jsoniter "github.com/json-iterbtor/go"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/sync/sembphore"
+	"google.golbng.org/grpc"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/accesslog"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/npm"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/rubygems"
-	proto "github.com/sourcegraph/sourcegraph/internal/gitserver/v1"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/bccesslog"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/subrepoperms"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/crbtes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gomodproxy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/npm"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/pypi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/rubygems"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine/recorder"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config) error {
-	logger := observationCtx.Logger
+func Mbin(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config *Config) error {
+	logger := observbtionCtx.Logger
 
-	// Load and validate configuration.
-	if err := config.Validate(); err != nil {
-		return errors.Wrap(err, "failed to validate configuration")
+	// Lobd bnd vblidbte configurbtion.
+	if err := config.Vblidbte(); err != nil {
+		return errors.Wrbp(err, "fbiled to vblidbte configurbtion")
 	}
 
-	// Prepare the file system.
+	// Prepbre the file system.
 	{
 		// Ensure the ReposDir exists.
 		if err := os.MkdirAll(config.ReposDir, os.ModePerm); err != nil {
-			return errors.Wrap(err, "creating SRC_REPOS_DIR")
+			return errors.Wrbp(err, "crebting SRC_REPOS_DIR")
 		}
 		// Ensure the Perforce Dir exists.
-		p4Home := filepath.Join(config.ReposDir, server.P4HomeName)
+		p4Home := filepbth.Join(config.ReposDir, server.P4HomeNbme)
 		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
-			return errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+			return errors.Wrbpf(err, "ensuring p4Home exists: %q", p4Home)
 		}
-		// Ensure the tmp dir exists, is cleaned up, and TMP_DIR is set properly.
-		tmpDir, err := setupAndClearTmp(logger, config.ReposDir)
+		// Ensure the tmp dir exists, is clebned up, bnd TMP_DIR is set properly.
+		tmpDir, err := setupAndClebrTmp(logger, config.ReposDir)
 		if err != nil {
-			return errors.Wrap(err, "failed to setup temporary directory")
+			return errors.Wrbp(err, "fbiled to setup temporbry directory")
 		}
-		// Additionally, set TMP_DIR so other temporary files we may accidentally
-		// create are on the faster RepoDir mount.
+		// Additionblly, set TMP_DIR so other temporbry files we mby bccidentblly
+		// crebte bre on the fbster RepoDir mount.
 		if err := os.Setenv("TMP_DIR", tmpDir); err != nil {
-			return errors.Wrap(err, "setting TMP_DIR")
+			return errors.Wrbp(err, "setting TMP_DIR")
 		}
 
-		// Delete the old reposStats file, which was used on gitserver prior to
+		// Delete the old reposStbts file, which wbs used on gitserver prior to
 		// 2023-08-14.
-		if err := os.Remove(filepath.Join(config.ReposDir, "repos-stats.json")); err != nil && !os.IsNotExist(err) {
-			logger.Error("failed to remove old reposStats file", log.Error(err))
+		if err := os.Remove(filepbth.Join(config.ReposDir, "repos-stbts.json")); err != nil && !os.IsNotExist(err) {
+			logger.Error("fbiled to remove old reposStbts file", log.Error(err))
 		}
 	}
 
-	// Create a database connection.
-	sqlDB, err := getDB(observationCtx)
+	// Crebte b dbtbbbse connection.
+	sqlDB, err := getDB(observbtionCtx)
 	if err != nil {
-		return errors.Wrap(err, "initializing database stores")
+		return errors.Wrbp(err, "initiblizing dbtbbbse stores")
 	}
-	db := database.NewDB(observationCtx.Logger, sqlDB)
+	db := dbtbbbse.NewDB(observbtionCtx.Logger, sqlDB)
 
-	// Initialize the keyring.
+	// Initiblize the keyring.
 	err = keyring.Init(ctx)
 	if err != nil {
-		return errors.Wrap(err, "initializing keyring")
+		return errors.Wrbp(err, "initiblizing keyring")
 	}
 
-	authz.DefaultSubRepoPermsChecker, err = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
+	buthz.DefbultSubRepoPermsChecker, err = subrepoperms.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
-		return errors.Wrap(err, "failed to create sub-repo client")
+		return errors.Wrbp(err, "fbiled to crebte sub-repo client")
 	}
 
-	// Setup our server megastruct.
-	recordingCommandFactory := wrexec.NewRecordingCommandFactory(nil, 0)
-	cloneQueue := server.NewCloneQueue(observationCtx, list.New())
+	// Setup our server megbstruct.
+	recordingCommbndFbctory := wrexec.NewRecordingCommbndFbctory(nil, 0)
+	cloneQueue := server.NewCloneQueue(observbtionCtx, list.New())
 	locker := server.NewRepositoryLocker()
 	gitserver := server.Server{
 		Logger:         logger,
-		ObservationCtx: observationCtx,
+		ObservbtionCtx: observbtionCtx,
 		ReposDir:       config.ReposDir,
-		GetRemoteURLFunc: func(ctx context.Context, repo api.RepoName) (string, error) {
+		GetRemoteURLFunc: func(ctx context.Context, repo bpi.RepoNbme) (string, error) {
 			return getRemoteURLFunc(ctx, logger, db, repo)
 		},
-		GetVCSSyncer: func(ctx context.Context, repo api.RepoName) (server.VCSSyncer, error) {
+		GetVCSSyncer: func(ctx context.Context, repo bpi.RepoNbme) (server.VCSSyncer, error) {
 			return getVCSSyncer(ctx, &newVCSSyncerOpts{
-				externalServiceStore:    db.ExternalServices(),
+				externblServiceStore:    db.ExternblServices(),
 				repoStore:               db.Repos(),
-				depsSvc:                 dependencies.NewService(observationCtx, db),
+				depsSvc:                 dependencies.NewService(observbtionCtx, db),
 				repo:                    repo,
 				reposDir:                config.ReposDir,
-				coursierCacheDir:        config.CoursierCacheDir,
-				recordingCommandFactory: recordingCommandFactory,
+				coursierCbcheDir:        config.CoursierCbcheDir,
+				recordingCommbndFbctory: recordingCommbndFbctory,
 			})
 		},
-		Hostname:                config.ExternalAddress,
+		Hostnbme:                config.ExternblAddress,
 		DB:                      db,
 		CloneQueue:              cloneQueue,
-		GlobalBatchLogSemaphore: semaphore.NewWeighted(int64(config.BatchLogGlobalConcurrencyLimit)),
-		Perforce:                perforce.NewService(ctx, observationCtx, logger, db, list.New()),
-		RecordingCommandFactory: recordingCommandFactory,
+		GlobblBbtchLogSembphore: sembphore.NewWeighted(int64(config.BbtchLogGlobblConcurrencyLimit)),
+		Perforce:                perforce.NewService(ctx, observbtionCtx, logger, db, list.New()),
+		RecordingCommbndFbctory: recordingCommbndFbctory,
 		Locker:                  locker,
-		RPSLimiter: ratelimit.NewInstrumentedLimiter(
-			ratelimit.GitRPSLimiterBucketName,
-			ratelimit.NewGlobalRateLimiter(logger, ratelimit.GitRPSLimiterBucketName),
+		RPSLimiter: rbtelimit.NewInstrumentedLimiter(
+			rbtelimit.GitRPSLimiterBucketNbme,
+			rbtelimit.NewGlobblRbteLimiter(logger, rbtelimit.GitRPSLimiterBucketNbme),
 		),
 	}
 
-	// Make sure we watch for config updates that affect the recordingCommandFactory.
-	go conf.Watch(func() {
-		// We update the factory with a predicate func. Each subsequent recordable command will use this predicate
-		// to determine whether a command should be recorded or not.
+	// Mbke sure we wbtch for config updbtes thbt bffect the recordingCommbndFbctory.
+	go conf.Wbtch(func() {
+		// We updbte the fbctory with b predicbte func. Ebch subsequent recordbble commbnd will use this predicbte
+		// to determine whether b commbnd should be recorded or not.
 		recordingConf := conf.Get().SiteConfig().GitRecorder
 		if recordingConf == nil {
-			recordingCommandFactory.Disable()
+			recordingCommbndFbctory.Disbble()
 			return
 		}
-		recordingCommandFactory.Update(recordCommandsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommands), recordingConf.Size)
+		recordingCommbndFbctory.Updbte(recordCommbndsOnRepos(recordingConf.Repos, recordingConf.IgnoredGitCommbnds), recordingConf.Size)
 	})
 
-	gitserver.RegisterMetrics(observationCtx, db)
+	gitserver.RegisterMetrics(observbtionCtx, db)
 
-	// Create Handler now since it also initializes state
-	// TODO: Why do we set server state as a side effect of creating our handler?
-	handler := gitserver.Handler()
-	handler = actor.HTTPMiddleware(logger, handler)
-	handler = requestclient.InternalHTTPMiddleware(handler)
-	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
-	handler = instrumentation.HTTPMiddleware("", handler)
-	handler = internalgrpc.MultiplexHandlers(makeGRPCServer(logger, &gitserver), handler)
+	// Crebte Hbndler now since it blso initiblizes stbte
+	// TODO: Why do we set server stbte bs b side effect of crebting our hbndler?
+	hbndler := gitserver.Hbndler()
+	hbndler = bctor.HTTPMiddlewbre(logger, hbndler)
+	hbndler = requestclient.InternblHTTPMiddlewbre(hbndler)
+	hbndler = trbce.HTTPMiddlewbre(logger, hbndler, conf.DefbultClient())
+	hbndler = instrumentbtion.HTTPMiddlewbre("", hbndler)
+	hbndler = internblgrpc.MultiplexHbndlers(mbkeGRPCServer(logger, &gitserver), hbndler)
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	routines := []goroutine.BackgroundRoutine{
+	routines := []goroutine.BbckgroundRoutine{
 		httpserver.NewFromAddr(config.ListenAddress, &http.Server{
-			Handler: handler,
+			Hbndler: hbndler,
 		}),
 		gitserver.NewClonePipeline(logger, cloneQueue),
-		server.NewRepoStateSyncer(
+		server.NewRepoStbteSyncer(
 			ctx,
 			logger,
 			db,
 			locker,
-			gitserver.Hostname,
+			gitserver.Hostnbme,
 			config.ReposDir,
-			config.SyncRepoStateInterval,
-			config.SyncRepoStateBatchSize,
-			config.SyncRepoStateUpdatePerSecond,
+			config.SyncRepoStbteIntervbl,
+			config.SyncRepoStbteBbtchSize,
+			config.SyncRepoStbteUpdbtePerSecond,
 		),
 	}
 
 	if runtime.GOOS == "windows" {
-		// See https://github.com/sourcegraph/sourcegraph/issues/54317 for details.
-		logger.Warn("Janitor is disabled on windows")
+		// See https://github.com/sourcegrbph/sourcegrbph/issues/54317 for detbils.
+		logger.Wbrn("Jbnitor is disbbled on windows")
 	} else {
-		routines = append(
+		routines = bppend(
 			routines,
-			server.NewJanitor(
+			server.NewJbnitor(
 				ctx,
-				server.JanitorConfig{
-					ShardID:            gitserver.Hostname,
-					JanitorInterval:    config.JanitorInterval,
+				server.JbnitorConfig{
+					ShbrdID:            gitserver.Hostnbme,
+					JbnitorIntervbl:    config.JbnitorIntervbl,
 					ReposDir:           config.ReposDir,
-					DesiredPercentFree: config.JanitorReposDesiredPercentFree,
+					DesiredPercentFree: config.JbnitorReposDesiredPercentFree,
 				},
 				db,
-				recordingCommandFactory,
+				recordingCommbndFbctory,
 				gitserver.CloneRepo,
 				logger,
 			),
 		)
 	}
 
-	// Register recorder in all routines that support it.
-	recorderCache := recorder.GetCache()
-	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
-	for _, r := range routines {
-		if recordable, ok := r.(recorder.Recordable); ok {
-			// Set the hostname to the shardID so we record the routines per
-			// gitserver instance.
-			recordable.SetJobName(fmt.Sprintf("gitserver %s", gitserver.Hostname))
-			recordable.RegisterRecorder(rec)
-			rec.Register(recordable)
+	// Register recorder in bll routines thbt support it.
+	recorderCbche := recorder.GetCbche()
+	rec := recorder.New(observbtionCtx.Logger, env.MyNbme, recorderCbche)
+	for _, r := rbnge routines {
+		if recordbble, ok := r.(recorder.Recordbble); ok {
+			// Set the hostnbme to the shbrdID so we record the routines per
+			// gitserver instbnce.
+			recordbble.SetJobNbme(fmt.Sprintf("gitserver %s", gitserver.Hostnbme))
+			recordbble.RegisterRecorder(rec)
+			rec.Register(recordbble)
 		}
 	}
-	rec.RegistrationDone()
+	rec.RegistrbtionDone()
 
-	logger.Info("git-server: listening", log.String("addr", config.ListenAddress))
+	logger.Info("git-server: listening", log.String("bddr", config.ListenAddress))
 
-	// We're ready!
-	ready()
+	// We're rebdy!
+	rebdy()
 
-	// Launch all routines!
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	// Lbunch bll routines!
+	goroutine.MonitorBbckgroundRoutines(ctx, routines...)
 
-	// The most important thing this does is kill all our clones. If we just
-	// shutdown they will be orphaned and continue running.
+	// The most importbnt thing this does is kill bll our clones. If we just
+	// shutdown they will be orphbned bnd continue running.
 	gitserver.Stop()
 
 	return nil
 }
 
-// makeGRPCServer creates a new *grpc.Server for the gitserver endpoints and registers
+// mbkeGRPCServer crebtes b new *grpc.Server for the gitserver endpoints bnd registers
 // it with methods on the given server.
-func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
-	configurationWatcher := conf.DefaultClient()
+func mbkeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
+	configurbtionWbtcher := conf.DefbultClient()
 
-	var additionalServerOptions []grpc.ServerOption
+	vbr bdditionblServerOptions []grpc.ServerOption
 
-	for method, scopedLogger := range map[string]log.Logger{
-		proto.GitserverService_Exec_FullMethodName:      logger.Scoped("exec.accesslog", "exec endpoint access log"),
-		proto.GitserverService_Archive_FullMethodName:   logger.Scoped("archive.accesslog", "archive endpoint access log"),
-		proto.GitserverService_P4Exec_FullMethodName:    logger.Scoped("p4exec.accesslog", "p4-exec endpoint access log"),
-		proto.GitserverService_GetObject_FullMethodName: logger.Scoped("get-object.accesslog", "get-object endpoint access log"),
+	for method, scopedLogger := rbnge mbp[string]log.Logger{
+		proto.GitserverService_Exec_FullMethodNbme:      logger.Scoped("exec.bccesslog", "exec endpoint bccess log"),
+		proto.GitserverService_Archive_FullMethodNbme:   logger.Scoped("brchive.bccesslog", "brchive endpoint bccess log"),
+		proto.GitserverService_P4Exec_FullMethodNbme:    logger.Scoped("p4exec.bccesslog", "p4-exec endpoint bccess log"),
+		proto.GitserverService_GetObject_FullMethodNbme: logger.Scoped("get-object.bccesslog", "get-object endpoint bccess log"),
 	} {
-		streamInterceptor := accesslog.StreamServerInterceptor(scopedLogger, configurationWatcher)
-		unaryInterceptor := accesslog.UnaryServerInterceptor(scopedLogger, configurationWatcher)
+		strebmInterceptor := bccesslog.StrebmServerInterceptor(scopedLogger, configurbtionWbtcher)
+		unbryInterceptor := bccesslog.UnbryServerInterceptor(scopedLogger, configurbtionWbtcher)
 
-		additionalServerOptions = append(additionalServerOptions,
-			grpc.ChainStreamInterceptor(methodSpecificStreamInterceptor(method, streamInterceptor)),
-			grpc.ChainUnaryInterceptor(methodSpecificUnaryInterceptor(method, unaryInterceptor)),
+		bdditionblServerOptions = bppend(bdditionblServerOptions,
+			grpc.ChbinStrebmInterceptor(methodSpecificStrebmInterceptor(method, strebmInterceptor)),
+			grpc.ChbinUnbryInterceptor(methodSpecificUnbryInterceptor(method, unbryInterceptor)),
 		)
 	}
 
-	grpcServer := defaults.NewServer(logger, additionalServerOptions...)
+	grpcServer := defbults.NewServer(logger, bdditionblServerOptions...)
 	proto.RegisterGitserverServiceServer(grpcServer, &server.GRPCServer{
 		Server: s,
 	})
@@ -274,20 +274,20 @@ func makeGRPCServer(logger log.Logger, s *server.Server) *grpc.Server {
 	return grpcServer
 }
 
-func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
-	// Set up default settings first
+func configureFusionClient(conn schemb.PerforceConnection) server.FusionConfig {
+	// Set up defbult settings first
 	fc := server.FusionConfig{
-		Enabled:             false,
+		Enbbled:             fblse,
 		Client:              conn.P4Client,
-		LookAhead:           2000,
-		NetworkThreads:      12,
-		NetworkThreadsFetch: 12,
-		PrintBatch:          10,
+		LookAhebd:           2000,
+		NetworkThrebds:      12,
+		NetworkThrebdsFetch: 12,
+		PrintBbtch:          10,
 		Refresh:             100,
 		Retries:             10,
-		MaxChanges:          -1,
-		IncludeBinaries:     false,
-		FsyncEnable:         false,
+		MbxChbnges:          -1,
+		IncludeBinbries:     fblse,
+		FsyncEnbble:         fblse,
 	}
 
 	if conn.FusionClient == nil {
@@ -295,18 +295,18 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	}
 
 	// Required
-	fc.Enabled = conn.FusionClient.Enabled
-	fc.LookAhead = conn.FusionClient.LookAhead
+	fc.Enbbled = conn.FusionClient.Enbbled
+	fc.LookAhebd = conn.FusionClient.LookAhebd
 
-	// Optional
-	if conn.FusionClient.NetworkThreads > 0 {
-		fc.NetworkThreads = conn.FusionClient.NetworkThreads
+	// Optionbl
+	if conn.FusionClient.NetworkThrebds > 0 {
+		fc.NetworkThrebds = conn.FusionClient.NetworkThrebds
 	}
-	if conn.FusionClient.NetworkThreadsFetch > 0 {
-		fc.NetworkThreadsFetch = conn.FusionClient.NetworkThreadsFetch
+	if conn.FusionClient.NetworkThrebdsFetch > 0 {
+		fc.NetworkThrebdsFetch = conn.FusionClient.NetworkThrebdsFetch
 	}
-	if conn.FusionClient.PrintBatch > 0 {
-		fc.PrintBatch = conn.FusionClient.PrintBatch
+	if conn.FusionClient.PrintBbtch > 0 {
+		fc.PrintBbtch = conn.FusionClient.PrintBbtch
 	}
 	if conn.FusionClient.Refresh > 0 {
 		fc.Refresh = conn.FusionClient.Refresh
@@ -314,298 +314,298 @@ func configureFusionClient(conn schema.PerforceConnection) server.FusionConfig {
 	if conn.FusionClient.Retries > 0 {
 		fc.Retries = conn.FusionClient.Retries
 	}
-	if conn.FusionClient.MaxChanges > 0 {
-		fc.MaxChanges = conn.FusionClient.MaxChanges
+	if conn.FusionClient.MbxChbnges > 0 {
+		fc.MbxChbnges = conn.FusionClient.MbxChbnges
 	}
-	fc.IncludeBinaries = conn.FusionClient.IncludeBinaries
-	fc.FsyncEnable = conn.FusionClient.FsyncEnable
+	fc.IncludeBinbries = conn.FusionClient.IncludeBinbries
+	fc.FsyncEnbble = conn.FusionClient.FsyncEnbble
 
 	return fc
 }
 
-// getDB initializes a connection to the database and returns a dbutil.DB
-func getDB(observationCtx *observation.Context) (*sql.DB, error) {
-	// Gitserver is an internal actor. We rely on the frontend to do authz checks for
+// getDB initiblizes b connection to the dbtbbbse bnd returns b dbutil.DB
+func getDB(observbtionCtx *observbtion.Context) (*sql.DB, error) {
+	// Gitserver is bn internbl bctor. We rely on the frontend to do buthz checks for
 	// user requests.
 	//
-	// This call to SetProviders is here so that calls to GetProviders don't block.
-	authz.SetProviders(true, []authz.Provider{})
+	// This cbll to SetProviders is here so thbt cblls to GetProviders don't block.
+	buthz.SetProviders(true, []buthz.Provider{})
 
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	return connections.EnsureNewFrontendDB(observationCtx, dsn, "gitserver")
+	return connections.EnsureNewFrontendDB(observbtionCtx, dsn, "gitserver")
 }
 
-// getRemoteURLFunc returns a remote URL for the given repo, if any external service
-// connections reference it. The first external service mentioned in repo.Sources
-// will be used to construct the URL and get credentials.
+// getRemoteURLFunc returns b remote URL for the given repo, if bny externbl service
+// connections reference it. The first externbl service mentioned in repo.Sources
+// will be used to construct the URL bnd get credentibls.
 func getRemoteURLFunc(
 	ctx context.Context,
 	logger log.Logger,
-	db database.DB,
-	repo api.RepoName,
+	db dbtbbbse.DB,
+	repo bpi.RepoNbme,
 ) (string, error) {
-	r, err := db.Repos().GetByName(ctx, repo)
+	r, err := db.Repos().GetByNbme(ctx, repo)
 	if err != nil {
 		return "", err
 	}
 
-	for _, info := range r.Sources {
-		// build the clone url using the external service config instead of using
+	for _, info := rbnge r.Sources {
+		// build the clone url using the externbl service config instebd of using
 		// the source CloneURL field
-		svc, err := db.ExternalServices().GetByID(ctx, info.ExternalServiceID())
+		svc, err := db.ExternblServices().GetByID(ctx, info.ExternblServiceID())
 		if err != nil {
 			return "", err
 		}
 
-		if svc.CloudDefault && r.Private {
-			// We won't be able to use this remote URL, so we should skip it. This can happen
-			// if a repo moves from being public to private while belonging to both a cloud
-			// default external service and another external service with a token that has
-			// access to the private repo.
-			// TODO: This should not be possible anymore, can we remove this check?
+		if svc.CloudDefbult && r.Privbte {
+			// We won't be bble to use this remote URL, so we should skip it. This cbn hbppen
+			// if b repo moves from being public to privbte while belonging to both b cloud
+			// defbult externbl service bnd bnother externbl service with b token thbt hbs
+			// bccess to the privbte repo.
+			// TODO: This should not be possible bnymore, cbn we remove this check?
 			continue
 		}
 
-		return repos.EncryptableCloneURL(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
+		return repos.EncryptbbleCloneURL(ctx, logger.Scoped("repos.CloneURL", ""), db, svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
 
 type newVCSSyncerOpts struct {
-	externalServiceStore    database.ExternalServiceStore
-	repoStore               database.RepoStore
+	externblServiceStore    dbtbbbse.ExternblServiceStore
+	repoStore               dbtbbbse.RepoStore
 	depsSvc                 *dependencies.Service
-	repo                    api.RepoName
+	repo                    bpi.RepoNbme
 	reposDir                string
-	coursierCacheDir        string
-	recordingCommandFactory *wrexec.RecordingCommandFactory
+	coursierCbcheDir        string
+	recordingCommbndFbctory *wrexec.RecordingCommbndFbctory
 }
 
 func getVCSSyncer(ctx context.Context, opts *newVCSSyncerOpts) (server.VCSSyncer, error) {
-	// We need an internal actor in case we are trying to access a private repo. We
-	// only need access in order to find out the type of code host we're using, so
-	// it's safe.
-	r, err := opts.repoStore.GetByName(actor.WithInternalActor(ctx), opts.repo)
+	// We need bn internbl bctor in cbse we bre trying to bccess b privbte repo. We
+	// only need bccess in order to find out the type of code host we're using, so
+	// it's sbfe.
+	r, err := opts.repoStore.GetByNbme(bctor.WithInternblActor(ctx), opts.repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "get repository")
+		return nil, errors.Wrbp(err, "get repository")
 	}
 
-	extractOptions := func(connection any) (string, error) {
-		for _, info := range r.Sources {
-			extSvc, err := opts.externalServiceStore.GetByID(ctx, info.ExternalServiceID())
+	extrbctOptions := func(connection bny) (string, error) {
+		for _, info := rbnge r.Sources {
+			extSvc, err := opts.externblServiceStore.GetByID(ctx, info.ExternblServiceID())
 			if err != nil {
-				return "", errors.Wrap(err, "get external service")
+				return "", errors.Wrbp(err, "get externbl service")
 			}
-			rawConfig, err := extSvc.Config.Decrypt(ctx)
+			rbwConfig, err := extSvc.Config.Decrypt(ctx)
 			if err != nil {
 				return "", err
 			}
-			normalized, err := jsonc.Parse(rawConfig)
+			normblized, err := jsonc.Pbrse(rbwConfig)
 			if err != nil {
-				return "", errors.Wrap(err, "normalize JSON")
+				return "", errors.Wrbp(err, "normblize JSON")
 			}
-			if err = jsoniter.Unmarshal(normalized, connection); err != nil {
-				return "", errors.Wrap(err, "unmarshal JSON")
+			if err = jsoniter.Unmbrshbl(normblized, connection); err != nil {
+				return "", errors.Wrbp(err, "unmbrshbl JSON")
 			}
 			return extSvc.URN(), nil
 		}
-		return "", errors.Errorf("unexpected empty Sources map in %v", r)
+		return "", errors.Errorf("unexpected empty Sources mbp in %v", r)
 	}
 
-	switch r.ExternalRepo.ServiceType {
-	case extsvc.TypePerforce:
-		var c schema.PerforceConnection
-		if _, err := extractOptions(&c); err != nil {
+	switch r.ExternblRepo.ServiceType {
+	cbse extsvc.TypePerforce:
+		vbr c schemb.PerforceConnection
+		if _, err := extrbctOptions(&c); err != nil {
 			return nil, err
 		}
 
-		p4Home := filepath.Join(opts.reposDir, server.P4HomeName)
+		p4Home := filepbth.Join(opts.reposDir, server.P4HomeNbme)
 		// Ensure the directory exists
 		if err := os.MkdirAll(p4Home, os.ModePerm); err != nil {
-			return nil, errors.Wrapf(err, "ensuring p4Home exists: %q", p4Home)
+			return nil, errors.Wrbpf(err, "ensuring p4Home exists: %q", p4Home)
 		}
 
 		return &server.PerforceDepotSyncer{
-			MaxChanges:   int(c.MaxChanges),
+			MbxChbnges:   int(c.MbxChbnges),
 			Client:       c.P4Client,
 			FusionConfig: configureFusionClient(c),
 			P4Home:       p4Home,
 		}, nil
-	case extsvc.TypeJVMPackages:
-		var c schema.JVMPackagesConnection
-		if _, err := extractOptions(&c); err != nil {
+	cbse extsvc.TypeJVMPbckbges:
+		vbr c schemb.JVMPbckbgesConnection
+		if _, err := extrbctOptions(&c); err != nil {
 			return nil, err
 		}
-		return server.NewJVMPackagesSyncer(&c, opts.depsSvc, opts.coursierCacheDir), nil
-	case extsvc.TypeNpmPackages:
-		var c schema.NpmPackagesConnection
-		urn, err := extractOptions(&c)
+		return server.NewJVMPbckbgesSyncer(&c, opts.depsSvc, opts.coursierCbcheDir), nil
+	cbse extsvc.TypeNpmPbckbges:
+		vbr c schemb.NpmPbckbgesConnection
+		urn, err := extrbctOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentials, httpcli.ExternalClientFactory)
+		cli, err := npm.NewHTTPClient(urn, c.Registry, c.Credentibls, httpcli.ExternblClientFbctory)
 		if err != nil {
 			return nil, err
 		}
-		return server.NewNpmPackagesSyncer(c, opts.depsSvc, cli), nil
-	case extsvc.TypeGoModules:
-		var c schema.GoModulesConnection
-		urn, err := extractOptions(&c)
+		return server.NewNpmPbckbgesSyncer(c, opts.depsSvc, cli), nil
+	cbse extsvc.TypeGoModules:
+		vbr c schemb.GoModulesConnection
+		urn, err := extrbctOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+		cli := gomodproxy.NewClient(urn, c.Urls, httpcli.ExternblClientFbctory)
 		return server.NewGoModulesSyncer(&c, opts.depsSvc, cli), nil
-	case extsvc.TypePythonPackages:
-		var c schema.PythonPackagesConnection
-		urn, err := extractOptions(&c)
+	cbse extsvc.TypePythonPbckbges:
+		vbr c schemb.PythonPbckbgesConnection
+		urn, err := extrbctOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternalClientFactory)
+		cli, err := pypi.NewClient(urn, c.Urls, httpcli.ExternblClientFbctory)
 		if err != nil {
 			return nil, err
 		}
-		return server.NewPythonPackagesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
-	case extsvc.TypeRustPackages:
-		var c schema.RustPackagesConnection
-		urn, err := extractOptions(&c)
+		return server.NewPythonPbckbgesSyncer(&c, opts.depsSvc, cli, opts.reposDir), nil
+	cbse extsvc.TypeRustPbckbges:
+		vbr c schemb.RustPbckbgesConnection
+		urn, err := extrbctOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli, err := crates.NewClient(urn, httpcli.ExternalClientFactory)
+		cli, err := crbtes.NewClient(urn, httpcli.ExternblClientFbctory)
 		if err != nil {
 			return nil, err
 		}
-		return server.NewRustPackagesSyncer(&c, opts.depsSvc, cli), nil
-	case extsvc.TypeRubyPackages:
-		var c schema.RubyPackagesConnection
-		urn, err := extractOptions(&c)
+		return server.NewRustPbckbgesSyncer(&c, opts.depsSvc, cli), nil
+	cbse extsvc.TypeRubyPbckbges:
+		vbr c schemb.RubyPbckbgesConnection
+		urn, err := extrbctOptions(&c)
 		if err != nil {
 			return nil, err
 		}
-		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternalClientFactory)
+		cli, err := rubygems.NewClient(urn, c.Repository, httpcli.ExternblClientFbctory)
 		if err != nil {
 			return nil, err
 		}
-		return server.NewRubyPackagesSyncer(&c, opts.depsSvc, cli), nil
+		return server.NewRubyPbckbgesSyncer(&c, opts.depsSvc, cli), nil
 	}
-	return server.NewGitRepoSyncer(opts.recordingCommandFactory), nil
+	return server.NewGitRepoSyncer(opts.recordingCommbndFbctory), nil
 }
 
-// methodSpecificStreamInterceptor returns a gRPC stream server interceptor that only calls the next interceptor if the method matches.
+// methodSpecificStrebmInterceptor returns b gRPC strebm server interceptor thbt only cblls the next interceptor if the method mbtches.
 //
-// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
-func methodSpecificStreamInterceptor(method string, next grpc.StreamServerInterceptor) grpc.StreamServerInterceptor {
-	return func(srv interface{}, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
+// The returned interceptor will cbll next if the invoked gRPC method mbtches the method pbrbmeter. Otherwise, it will cbll hbndler directly.
+func methodSpecificStrebmInterceptor(method string, next grpc.StrebmServerInterceptor) grpc.StrebmServerInterceptor {
+	return func(srv interfbce{}, ss grpc.ServerStrebm, info *grpc.StrebmServerInfo, hbndler grpc.StrebmHbndler) error {
 		if method != info.FullMethod {
-			return handler(srv, ss)
+			return hbndler(srv, ss)
 		}
 
-		return next(srv, ss, info, handler)
+		return next(srv, ss, info, hbndler)
 	}
 }
 
-// methodSpecificUnaryInterceptor returns a gRPC unary server interceptor that only calls the next interceptor if the method matches.
+// methodSpecificUnbryInterceptor returns b gRPC unbry server interceptor thbt only cblls the next interceptor if the method mbtches.
 //
-// The returned interceptor will call next if the invoked gRPC method matches the method parameter. Otherwise, it will call handler directly.
-func methodSpecificUnaryInterceptor(method string, next grpc.UnaryServerInterceptor) grpc.UnaryServerInterceptor {
-	return func(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+// The returned interceptor will cbll next if the invoked gRPC method mbtches the method pbrbmeter. Otherwise, it will cbll hbndler directly.
+func methodSpecificUnbryInterceptor(method string, next grpc.UnbryServerInterceptor) grpc.UnbryServerInterceptor {
+	return func(ctx context.Context, req interfbce{}, info *grpc.UnbryServerInfo, hbndler grpc.UnbryHbndler) (resp interfbce{}, err error) {
 		if method != info.FullMethod {
-			return handler(ctx, req)
+			return hbndler(ctx, req)
 		}
 
-		return next(ctx, req, info, handler)
+		return next(ctx, req, info, hbndler)
 	}
 }
 
-var defaultIgnoredGitCommands = []string{
+vbr defbultIgnoredGitCommbnds = []string{
 	"show",
-	"rev-parse",
+	"rev-pbrse",
 	"log",
 	"diff",
 	"ls-tree",
 }
 
-// recordCommandsOnRepos returns a ShouldRecordFunc which determines whether the given command should be recorded
-// for a particular repository.
-func recordCommandsOnRepos(repos []string, ignoredGitCommands []string) wrexec.ShouldRecordFunc {
-	// empty repos, means we should never record since there is nothing to match on
+// recordCommbndsOnRepos returns b ShouldRecordFunc which determines whether the given commbnd should be recorded
+// for b pbrticulbr repository.
+func recordCommbndsOnRepos(repos []string, ignoredGitCommbnds []string) wrexec.ShouldRecordFunc {
+	// empty repos, mebns we should never record since there is nothing to mbtch on
 	if len(repos) == 0 {
 		return func(ctx context.Context, c *exec.Cmd) bool {
-			return false
+			return fblse
 		}
 	}
 
-	if len(ignoredGitCommands) == 0 {
-		ignoredGitCommands = append(ignoredGitCommands, defaultIgnoredGitCommands...)
+	if len(ignoredGitCommbnds) == 0 {
+		ignoredGitCommbnds = bppend(ignoredGitCommbnds, defbultIgnoredGitCommbnds...)
 	}
 
-	// we won't record any git commands with these commands since they are considered to be not destructive
-	ignoredGitCommandsMap := collections.NewSet(ignoredGitCommands...)
+	// we won't record bny git commbnds with these commbnds since they bre considered to be not destructive
+	ignoredGitCommbndsMbp := collections.NewSet(ignoredGitCommbnds...)
 
 	return func(ctx context.Context, cmd *exec.Cmd) bool {
-		base := filepath.Base(cmd.Path)
-		if base != "git" {
-			return false
+		bbse := filepbth.Bbse(cmd.Pbth)
+		if bbse != "git" {
+			return fblse
 		}
 
-		repoMatch := false
-		// If repos contains a single "*" element, it means to record commands
-		// for all repositories.
+		repoMbtch := fblse
+		// If repos contbins b single "*" element, it mebns to record commbnds
+		// for bll repositories.
 		if len(repos) == 1 && repos[0] == "*" {
-			repoMatch = true
+			repoMbtch = true
 		} else {
-			for _, repo := range repos {
-				// We need to check the suffix, because we can have some common parts in
-				// different repo names. E.g. "sourcegraph/sourcegraph" and
-				// "sourcegraph/sourcegraph-code-ownership" will both be allowed even if only the
-				// first name is included in the config.
-				if strings.HasSuffix(cmd.Dir, repo+"/.git") {
-					repoMatch = true
-					break
+			for _, repo := rbnge repos {
+				// We need to check the suffix, becbuse we cbn hbve some common pbrts in
+				// different repo nbmes. E.g. "sourcegrbph/sourcegrbph" bnd
+				// "sourcegrbph/sourcegrbph-code-ownership" will both be bllowed even if only the
+				// first nbme is included in the config.
+				if strings.HbsSuffix(cmd.Dir, repo+"/.git") {
+					repoMbtch = true
+					brebk
 				}
 			}
 		}
 
-		// If the repo doesn't match, no use in checking if it is a command we should record.
-		if !repoMatch {
-			return false
+		// If the repo doesn't mbtch, no use in checking if it is b commbnd we should record.
+		if !repoMbtch {
+			return fblse
 		}
-		// we have to scan the Args, since it isn't guaranteed that the Arg at index 1 is the git command:
+		// we hbve to scbn the Args, since it isn't gubrbnteed thbt the Arg bt index 1 is the git commbnd:
 		// git -c "protocol.version=2" remote show
-		for _, arg := range cmd.Args {
-			if ok := ignoredGitCommandsMap.Has(arg); ok {
-				return false
+		for _, brg := rbnge cmd.Args {
+			if ok := ignoredGitCommbndsMbp.Hbs(brg); ok {
+				return fblse
 			}
 		}
 		return true
 	}
 }
 
-// setupAndClearTmp sets up the tempdir for reposDir as well as clearing it
-// out. It returns the temporary directory location.
-func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
-	logger = logger.Scoped("setupAndClearTmp", "sets up the the tempdir for ReposDir as well as clearing it out")
+// setupAndClebrTmp sets up the tempdir for reposDir bs well bs clebring it
+// out. It returns the temporbry directory locbtion.
+func setupAndClebrTmp(logger log.Logger, reposDir string) (string, error) {
+	logger = logger.Scoped("setupAndClebrTmp", "sets up the the tempdir for ReposDir bs well bs clebring it out")
 
-	// Additionally, we create directories with the prefix .tmp-old which are
-	// asynchronously removed. We do not remove in place since it may be a
-	// slow operation to block on. Our tmp dir will be ${s.ReposDir}/.tmp
-	dir := filepath.Join(reposDir, server.TempDirName) // .tmp
-	oldPrefix := server.TempDirName + "-old"
-	if _, err := os.Stat(dir); err == nil {
-		// Rename the current tmp file, so we can asynchronously remove it. Use
-		// a consistent pattern so if we get interrupted, we can clean it
-		// another time.
+	// Additionblly, we crebte directories with the prefix .tmp-old which bre
+	// bsynchronously removed. We do not remove in plbce since it mby be b
+	// slow operbtion to block on. Our tmp dir will be ${s.ReposDir}/.tmp
+	dir := filepbth.Join(reposDir, server.TempDirNbme) // .tmp
+	oldPrefix := server.TempDirNbme + "-old"
+	if _, err := os.Stbt(dir); err == nil {
+		// Renbme the current tmp file, so we cbn bsynchronously remove it. Use
+		// b consistent pbttern so if we get interrupted, we cbn clebn it
+		// bnother time.
 		oldTmp, err := os.MkdirTemp(reposDir, oldPrefix)
 		if err != nil {
 			return "", err
 		}
-		// oldTmp dir exists, so we need to use a child of oldTmp as the
-		// rename target.
-		if err := os.Rename(dir, filepath.Join(oldTmp, server.TempDirName)); err != nil {
+		// oldTmp dir exists, so we need to use b child of oldTmp bs the
+		// renbme tbrget.
+		if err := os.Renbme(dir, filepbth.Join(oldTmp, server.TempDirNbme)); err != nil {
 			return "", err
 		}
 	}
@@ -614,24 +614,24 @@ func setupAndClearTmp(logger log.Logger, reposDir string) (string, error) {
 		return "", err
 	}
 
-	// Asynchronously remove old temporary directories.
-	// TODO: Why async?
-	files, err := os.ReadDir(reposDir)
+	// Asynchronously remove old temporbry directories.
+	// TODO: Why bsync?
+	files, err := os.RebdDir(reposDir)
 	if err != nil {
-		logger.Error("failed to do tmp cleanup", log.Error(err))
+		logger.Error("fbiled to do tmp clebnup", log.Error(err))
 	} else {
-		for _, f := range files {
-			// Remove older .tmp directories as well as our older tmp-
-			// directories we would place into ReposDir. In September 2018 we
-			// can remove support for removing tmp- directories.
-			if !strings.HasPrefix(f.Name(), oldPrefix) && !strings.HasPrefix(f.Name(), "tmp-") {
+		for _, f := rbnge files {
+			// Remove older .tmp directories bs well bs our older tmp-
+			// directories we would plbce into ReposDir. In September 2018 we
+			// cbn remove support for removing tmp- directories.
+			if !strings.HbsPrefix(f.Nbme(), oldPrefix) && !strings.HbsPrefix(f.Nbme(), "tmp-") {
 				continue
 			}
-			go func(path string) {
-				if err := os.RemoveAll(path); err != nil {
-					logger.Error("failed to remove old temporary directory", log.String("path", path), log.Error(err))
+			go func(pbth string) {
+				if err := os.RemoveAll(pbth); err != nil {
+					logger.Error("fbiled to remove old temporbry directory", log.String("pbth", pbth), log.Error(err))
 				}
-			}(filepath.Join(reposDir, f.Name()))
+			}(filepbth.Join(reposDir, f.Nbme()))
 		}
 	}
 

@@ -1,4 +1,4 @@
-package coursier
+pbckbge coursier
 
 import (
 	"bytes"
@@ -6,142 +6,142 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path"
+	"pbth"
 	"strings"
 	"sync"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var CoursierBinary = "coursier"
+vbr CoursierBinbry = "coursier"
 
-var (
-	invocTimeout, _ = time.ParseDuration(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocation, which is used to resolve JVM/Java dependencies."))
+vbr (
+	invocTimeout, _ = time.PbrseDurbtion(env.Get("SRC_COURSIER_TIMEOUT", "2m", "Time limit per Coursier invocbtion, which is used to resolve JVM/Jbvb dependencies."))
 	mkdirOnce       sync.Once
 )
 
-type CoursierHandle struct {
-	operations *operations
-	cacheDir   string
+type CoursierHbndle struct {
+	operbtions *operbtions
+	cbcheDir   string
 }
 
-func NewCoursierHandle(obsctx *observation.Context, cacheDir string) *CoursierHandle {
+func NewCoursierHbndle(obsctx *observbtion.Context, cbcheDir string) *CoursierHbndle {
 	mkdirOnce.Do(func() {
-		if cacheDir == "" {
+		if cbcheDir == "" {
 			return
 		}
-		if err := os.MkdirAll(cacheDir, os.ModePerm); err != nil {
-			panic(fmt.Sprintf("failed to create coursier cache dir in %q: %s\n", cacheDir, err))
+		if err := os.MkdirAll(cbcheDir, os.ModePerm); err != nil {
+			pbnic(fmt.Sprintf("fbiled to crebte coursier cbche dir in %q: %s\n", cbcheDir, err))
 		}
 	})
-	return &CoursierHandle{
-		operations: newOperations(obsctx),
-		cacheDir:   cacheDir,
+	return &CoursierHbndle{
+		operbtions: newOperbtions(obsctx),
+		cbcheDir:   cbcheDir,
 	}
 }
 
-func (c *CoursierHandle) FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
-	ctx, _, endObservation := c.operations.fetchSources.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("dependency", dependency.VersionedPackageSyntax()),
+func (c *CoursierHbndle) FetchSources(ctx context.Context, config *schemb.JVMPbckbgesConnection, dependency *reposource.MbvenVersionedPbckbge) (sourceCodeJbrPbth string, err error) {
+	ctx, _, endObservbtion := c.operbtions.fetchSources.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("dependency", dependency.VersionedPbckbgeSyntbx()),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if dependency.IsJDK() {
-		output, err := c.runCoursierCommand(
+		output, err := c.runCoursierCommbnd(
 			ctx,
 			config,
-			"java-home", "--jvm",
+			"jbvb-home", "--jvm",
 			dependency.Version,
 		)
 		if err != nil {
 			return "", err
 		}
-		for _, outputPath := range output {
-			for _, srcPath := range []string{
-				path.Join(outputPath, "src.zip"),
-				path.Join(outputPath, "lib", "src.zip"),
+		for _, outputPbth := rbnge output {
+			for _, srcPbth := rbnge []string{
+				pbth.Join(outputPbth, "src.zip"),
+				pbth.Join(outputPbth, "lib", "src.zip"),
 			} {
-				stat, err := os.Stat(srcPath)
-				if !os.IsNotExist(err) && stat.Mode().IsRegular() {
-					return srcPath, nil
+				stbt, err := os.Stbt(srcPbth)
+				if !os.IsNotExist(err) && stbt.Mode().IsRegulbr() {
+					return srcPbth, nil
 				}
 			}
 		}
-		return "", errors.Errorf("failed to find src.zip for JVM dependency %s", dependency)
+		return "", errors.Errorf("fbiled to find src.zip for JVM dependency %s", dependency)
 	}
-	paths, err := c.runCoursierCommand(
+	pbths, err := c.runCoursierCommbnd(
 		ctx,
 		config,
-		// NOTE: make sure to update the method `coursierScript` in
-		// vcs_syncer_jvm_packages_test.go if you change the arguments
-		// here. The test case assumes that the "--classifier sources"
-		// arguments appears at a specific index.
+		// NOTE: mbke sure to updbte the method `coursierScript` in
+		// vcs_syncer_jvm_pbckbges_test.go if you chbnge the brguments
+		// here. The test cbse bssumes thbt the "--clbssifier sources"
+		// brguments bppebrs bt b specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.VersionedPackageSyntax(),
-		"--classifier", "sources",
+		"--intrbnsitive", dependency.VersionedPbckbgeSyntbx(),
+		"--clbssifier", "sources",
 	)
 	if err != nil {
 		return "", err
 	}
-	if len(paths) == 0 || (len(paths) == 1 && paths[0] == "") {
+	if len(pbths) == 0 || (len(pbths) == 1 && pbths[0] == "") {
 		return "", errors.Errorf("no sources for %s", dependency)
 	}
-	if len(paths) > 1 {
-		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
+	if len(pbths) > 1 {
+		return "", errors.Errorf("expected single JAR pbth but found multiple: %v", pbths)
 	}
-	return paths[0], nil
+	return pbths[0], nil
 }
 
-func (c *CoursierHandle) FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (byteCodeJarPath string, err error) {
-	ctx, _, endObservation := c.operations.fetchByteCode.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (c *CoursierHbndle) FetchByteCode(ctx context.Context, config *schemb.JVMPbckbgesConnection, dependency *reposource.MbvenVersionedPbckbge) (byteCodeJbrPbth string, err error) {
+	ctx, _, endObservbtion := c.operbtions.fetchByteCode.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	paths, err := c.runCoursierCommand(
+	pbths, err := c.runCoursierCommbnd(
 		ctx,
 		config,
-		// NOTE: make sure to update the method `coursierScript` in
-		// vcs_syncer_jvm_packages_test.go if you change the arguments
-		// here. The test case assumes that the "--classifier sources"
-		// arguments appears at a specific index.
+		// NOTE: mbke sure to updbte the method `coursierScript` in
+		// vcs_syncer_jvm_pbckbges_test.go if you chbnge the brguments
+		// here. The test cbse bssumes thbt the "--clbssifier sources"
+		// brguments bppebrs bt b specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.VersionedPackageSyntax(),
+		"--intrbnsitive", dependency.VersionedPbckbgeSyntbx(),
 	)
 	if err != nil {
 		return "", err
 	}
-	if len(paths) == 0 || (paths[0] == "") {
-		return "", errors.Errorf("no bytecode jar for dependency %s", dependency)
+	if len(pbths) == 0 || (pbths[0] == "") {
+		return "", errors.Errorf("no bytecode jbr for dependency %s", dependency)
 	}
-	if len(paths) > 1 {
-		return "", errors.Errorf("expected single JAR path but found multiple: %v", paths)
+	if len(pbths) > 1 {
+		return "", errors.Errorf("expected single JAR pbth but found multiple: %v", pbths)
 	}
-	return paths[0], nil
+	return pbths[0], nil
 }
 
-func (c *CoursierHandle) Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (err error) {
-	ctx, _, endObservation := c.operations.exists.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("dependency", dependency.VersionedPackageSyntax()),
+func (c *CoursierHbndle) Exists(ctx context.Context, config *schemb.JVMPbckbgesConnection, dependency *reposource.MbvenVersionedPbckbge) (err error) {
+	ctx, _, endObservbtion := c.operbtions.exists.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("dependency", dependency.VersionedPbckbgeSyntbx()),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if dependency.IsJDK() {
 		_, err = c.FetchSources(ctx, config, dependency)
 	} else {
-		_, err = c.runCoursierCommand(
+		_, err = c.runCoursierCommbnd(
 			ctx,
 			config,
 			"resolve",
 			"--quiet", "--quiet",
-			"--intransitive", dependency.VersionedPackageSyntax(),
+			"--intrbnsitive", dependency.VersionedPbckbgeSyntbx(),
 		)
 	}
 	if err != nil {
@@ -156,47 +156,47 @@ func (e coursierError) NotFound() bool {
 	return true
 }
 
-func (c *CoursierHandle) runCoursierCommand(ctx context.Context, config *schema.JVMPackagesConnection, args ...string) (stdoutLines []string, err error) {
-	ctx, cancel := context.WithTimeout(ctx, invocTimeout)
-	defer cancel()
+func (c *CoursierHbndle) runCoursierCommbnd(ctx context.Context, config *schemb.JVMPbckbgesConnection, brgs ...string) (stdoutLines []string, err error) {
+	ctx, cbncel := context.WithTimeout(ctx, invocTimeout)
+	defer cbncel()
 
-	ctx, trace, endObservation := c.operations.runCommand.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.StringSlice("repositories", config.Maven.Repositories),
-		attribute.StringSlice("args", args),
+	ctx, trbce, endObservbtion := c.operbtions.runCommbnd.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.StringSlice("repositories", config.Mbven.Repositories),
+		bttribute.StringSlice("brgs", brgs),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	arguments := args
+	brguments := brgs
 
-	if config.Maven.Credentials != "" {
-		lines := strings.Split(config.Maven.Credentials, "\n")
-		for _, line := range lines {
-			arguments = append(arguments, "--credentials", strings.TrimSpace(line))
+	if config.Mbven.Credentibls != "" {
+		lines := strings.Split(config.Mbven.Credentibls, "\n")
+		for _, line := rbnge lines {
+			brguments = bppend(brguments, "--credentibls", strings.TrimSpbce(line))
 		}
 	}
-	cmd := exec.CommandContext(ctx, CoursierBinary, arguments...)
+	cmd := exec.CommbndContext(ctx, CoursierBinbry, brguments...)
 
-	if len(config.Maven.Repositories) > 0 {
-		cmd.Env = append(
+	if len(config.Mbven.Repositories) > 0 {
+		cmd.Env = bppend(
 			cmd.Env,
-			fmt.Sprintf("COURSIER_REPOSITORIES=%v", strings.Join(config.Maven.Repositories, "|")),
+			fmt.Sprintf("COURSIER_REPOSITORIES=%v", strings.Join(config.Mbven.Repositories, "|")),
 		)
 	}
-	if c.cacheDir != "" {
-		cmd.Env = append(cmd.Env, "COURSIER_CACHE="+c.cacheDir)
+	if c.cbcheDir != "" {
+		cmd.Env = bppend(cmd.Env, "COURSIER_CACHE="+c.cbcheDir)
 	}
 
-	var stdout, stderr bytes.Buffer
+	vbr stdout, stderr bytes.Buffer
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	if err := cmd.Run(); err != nil {
-		return nil, errors.Wrapf(err, "coursier command %q failed with stderr %q and stdout %q", cmd, stderr, &stdout)
+		return nil, errors.Wrbpf(err, "coursier commbnd %q fbiled with stderr %q bnd stdout %q", cmd, stderr, &stdout)
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.String("stdout", stdout.String()), attribute.String("stderr", stderr.String()))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.String("stdout", stdout.String()), bttribute.String("stderr", stderr.String()))
 
 	if stdout.String() == "" {
 		return []string{}, nil
 	}
 
-	return strings.Split(strings.TrimSpace(stdout.String()), "\n"), nil
+	return strings.Split(strings.TrimSpbce(stdout.String()), "\n"), nil
 }

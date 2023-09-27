@@ -1,4 +1,4 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"context"
@@ -6,170 +6,170 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	sgtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-func TestDiagnostics(t *testing.T) {
+func TestDibgnostics(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
-	mockUploadSvc := NewMockUploadService()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
-	hunkCache, _ := NewHunkCache(50)
+	hunkCbche, _ := NewHunkCbche(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockRepoStore, mockLsifStore, mockUplobdSvc, mockGitserverClient)
 
-	// Set up request state
-	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	// Set up request stbte
+	mockRequestStbte := RequestStbte{}
+	mockRequestStbte.SetLocblCommitCbche(mockRepoStore, mockGitserverClient)
+	mockRequestStbte.SetLocblGitTreeTrbnslbtor(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPbth, hunkCbche)
+	uplobds := []uplobdsshbred.Dump{
+		{ID: 50, Commit: "debdbeef", Root: "sub1/"},
+		{ID: 51, Commit: "debdbeef", Root: "sub2/"},
+		{ID: 52, Commit: "debdbeef", Root: "sub3/"},
+		{ID: 53, Commit: "debdbeef", Root: "sub4/"},
 	}
-	mockRequestState.SetUploadsDataLoader(uploads)
+	mockRequestStbte.SetUplobdsDbtbLobder(uplobds)
 
-	diagnostics := []shared.Diagnostic{
-		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c4"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c5"}},
+	dibgnostics := []shbred.Dibgnostic{
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c1"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c2"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c3"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c4"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c5"}},
 	}
-	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
-	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
-	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
+	mockLsifStore.GetDibgnosticsFunc.PushReturn(dibgnostics[0:1], 1, nil)
+	mockLsifStore.GetDibgnosticsFunc.PushReturn(dibgnostics[1:4], 3, nil)
+	mockLsifStore.GetDibgnosticsFunc.PushReturn(dibgnostics[4:], 26, nil)
 
-	mockRequest := PositionalRequestArgs{
+	mockRequest := PositionblRequestArgs{
 		RequestArgs: RequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
 			Limit:        5,
 		},
-		Path:      mockPath,
+		Pbth:      mockPbth,
 		Line:      10,
-		Character: 20,
+		Chbrbcter: 20,
 	}
-	adjustedDiagnostics, totalCount, err := svc.GetDiagnostics(context.Background(), mockRequest, mockRequestState)
+	bdjustedDibgnostics, totblCount, err := svc.GetDibgnostics(context.Bbckground(), mockRequest, mockRequestStbte)
 	if err != nil {
-		t.Fatalf("unexpected error querying diagnostics: %s", err)
+		t.Fbtblf("unexpected error querying dibgnostics: %s", err)
 	}
 
-	if totalCount != 30 {
-		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
+	if totblCount != 30 {
+		t.Errorf("unexpected count. wbnt=%d hbve=%d", 30, totblCount)
 	}
 
-	expectedDiagnostics := []DiagnosticAtUpload{
-		{Dump: uploads[0], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub1/", DiagnosticData: precise.DiagnosticData{Code: "c1"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
-		{Dump: uploads[2], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub3/", DiagnosticData: precise.DiagnosticData{Code: "c5"}}},
+	expectedDibgnostics := []DibgnosticAtUplobd{
+		{Dump: uplobds[0], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub1/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c1"}}},
+		{Dump: uplobds[1], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub2/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c2"}}},
+		{Dump: uplobds[1], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub2/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c3"}}},
+		{Dump: uplobds[1], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub2/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c4"}}},
+		{Dump: uplobds[2], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub3/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c5"}}},
 	}
-	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
-		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedDibgnostics, bdjustedDibgnostics); diff != "" {
+		t.Errorf("unexpected dibgnostics (-wbnt +got):\n%s", diff)
 	}
 
-	var limits []int
-	for _, call := range mockLsifStore.GetDiagnosticsFunc.History() {
-		limits = append(limits, call.Arg3)
+	vbr limits []int
+	for _, cbll := rbnge mockLsifStore.GetDibgnosticsFunc.History() {
+		limits = bppend(limits, cbll.Arg3)
 	}
 	if diff := cmp.Diff([]int{5, 4, 1, 0}, limits); diff != "" {
-		t.Errorf("unexpected limits (-want +got):\n%s", diff)
+		t.Errorf("unexpected limits (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
+func TestDibgnosticsWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
-	mockRepoStore := defaultMockRepoStore()
+	mockRepoStore := defbultMockRepoStore()
 	mockLsifStore := NewMockLsifStore()
-	mockUploadSvc := NewMockUploadService()
+	mockUplobdSvc := NewMockUplobdService()
 	mockGitserverClient := gitserver.NewMockClient()
-	hunkCache, _ := NewHunkCache(50)
+	hunkCbche, _ := NewHunkCbche(50)
 
 	// Init service
-	svc := newService(&observation.TestContext, mockRepoStore, mockLsifStore, mockUploadSvc, mockGitserverClient)
+	svc := newService(&observbtion.TestContext, mockRepoStore, mockLsifStore, mockUplobdSvc, mockGitserverClient)
 
-	// Set up request state
-	mockRequestState := RequestState{}
-	mockRequestState.SetLocalCommitCache(mockRepoStore, mockGitserverClient)
-	mockRequestState.SetLocalGitTreeTranslator(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPath, hunkCache)
-	uploads := []uploadsshared.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	// Set up request stbte
+	mockRequestStbte := RequestStbte{}
+	mockRequestStbte.SetLocblCommitCbche(mockRepoStore, mockGitserverClient)
+	mockRequestStbte.SetLocblGitTreeTrbnslbtor(mockGitserverClient, &sgtypes.Repo{}, mockCommit, mockPbth, hunkCbche)
+	uplobds := []uplobdsshbred.Dump{
+		{ID: 50, Commit: "debdbeef", Root: "sub1/"},
+		{ID: 51, Commit: "debdbeef", Root: "sub2/"},
+		{ID: 52, Commit: "debdbeef", Root: "sub3/"},
+		{ID: 53, Commit: "debdbeef", Root: "sub4/"},
 	}
-	mockRequestState.SetUploadsDataLoader(uploads)
+	mockRequestStbte.SetUplobdsDbtbLobder(uplobds)
 
 	// Applying sub-repo permissions
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultHook(func() bool {
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultHook(func() bool {
 		return true
 	})
-	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
-		if content.Path == "sub2/" {
-			return authz.Read, nil
+	checker.PermissionsFunc.SetDefbultHook(func(ctx context.Context, i int32, content buthz.RepoContent) (buthz.Perms, error) {
+		if content.Pbth == "sub2/" {
+			return buthz.Rebd, nil
 		}
-		return authz.None, nil
+		return buthz.None, nil
 	})
-	mockRequestState.SetAuthChecker(checker)
+	mockRequestStbte.SetAuthChecker(checker)
 
-	diagnostics := []shared.Diagnostic{
-		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c4"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c5"}},
+	dibgnostics := []shbred.Dibgnostic{
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c1"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c2"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c3"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c4"}},
+		{DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c5"}},
 	}
-	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
-	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
-	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
+	mockLsifStore.GetDibgnosticsFunc.PushReturn(dibgnostics[0:1], 1, nil)
+	mockLsifStore.GetDibgnosticsFunc.PushReturn(dibgnostics[1:4], 3, nil)
+	mockLsifStore.GetDibgnosticsFunc.PushReturn(dibgnostics[4:], 26, nil)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-	mockRequest := PositionalRequestArgs{
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+	mockRequest := PositionblRequestArgs{
 		RequestArgs: RequestArgs{
 			RepositoryID: 42,
 			Commit:       mockCommit,
 			Limit:        5,
 		},
-		Path:      mockPath,
+		Pbth:      mockPbth,
 		Line:      10,
-		Character: 20,
+		Chbrbcter: 20,
 	}
-	adjustedDiagnostics, totalCount, err := svc.GetDiagnostics(ctx, mockRequest, mockRequestState)
+	bdjustedDibgnostics, totblCount, err := svc.GetDibgnostics(ctx, mockRequest, mockRequestStbte)
 	if err != nil {
-		t.Fatalf("unexpected error querying diagnostics: %s", err)
+		t.Fbtblf("unexpected error querying dibgnostics: %s", err)
 	}
 
-	if totalCount != 30 {
-		t.Errorf("unexpected count. want=%d have=%d", 30, totalCount)
+	if totblCount != 30 {
+		t.Errorf("unexpected count. wbnt=%d hbve=%d", 30, totblCount)
 	}
 
-	expectedDiagnostics := []DiagnosticAtUpload{
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c2"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c3"}}},
-		{Dump: uploads[1], AdjustedCommit: "deadbeef", Diagnostic: shared.Diagnostic{Path: "sub2/", DiagnosticData: precise.DiagnosticData{Code: "c4"}}},
+	expectedDibgnostics := []DibgnosticAtUplobd{
+		{Dump: uplobds[1], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub2/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c2"}}},
+		{Dump: uplobds[1], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub2/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c3"}}},
+		{Dump: uplobds[1], AdjustedCommit: "debdbeef", Dibgnostic: shbred.Dibgnostic{Pbth: "sub2/", DibgnosticDbtb: precise.DibgnosticDbtb{Code: "c4"}}},
 	}
-	if diff := cmp.Diff(expectedDiagnostics, adjustedDiagnostics); diff != "" {
-		t.Errorf("unexpected diagnostics (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedDibgnostics, bdjustedDibgnostics); diff != "" {
+		t.Errorf("unexpected dibgnostics (-wbnt +got):\n%s", diff)
 	}
 
-	var limits []int
-	for _, call := range mockLsifStore.GetDiagnosticsFunc.History() {
-		limits = append(limits, call.Arg3)
+	vbr limits []int
+	for _, cbll := rbnge mockLsifStore.GetDibgnosticsFunc.History() {
+		limits = bppend(limits, cbll.Arg3)
 	}
 	if diff := cmp.Diff([]int{5, 5, 2, 2}, limits); diff != "" {
-		t.Errorf("unexpected limits (-want +got):\n%s", diff)
+		t.Errorf("unexpected limits (-wbnt +got):\n%s", diff)
 	}
 }

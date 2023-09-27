@@ -1,20 +1,20 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ObservedSource returns a decorator that wraps a Source
-// with error logging, Prometheus metrics and tracing.
+// ObservedSource returns b decorbtor thbt wrbps b Source
+// with error logging, Prometheus metrics bnd trbcing.
 func ObservedSource(l log.Logger, m SourceMetrics) func(Source) Source {
 	return func(s Source) Source {
 		return &observedSource{
@@ -25,89 +25,89 @@ func ObservedSource(l log.Logger, m SourceMetrics) func(Source) Source {
 	}
 }
 
-// An observedSource wraps another Source with error logging,
-// Prometheus metrics and tracing.
+// An observedSource wrbps bnother Source with error logging,
+// Prometheus metrics bnd trbcing.
 type observedSource struct {
 	Source
 	metrics SourceMetrics
 	logger  log.Logger
 }
 
-// SourceMetrics encapsulates the Prometheus metrics of a Source.
+// SourceMetrics encbpsulbtes the Prometheus metrics of b Source.
 type SourceMetrics struct {
 	ListRepos *metrics.REDMetrics
 	GetRepo   *metrics.REDMetrics
 }
 
-// MustRegister registers all metrics in SourceMetrics in the given
-// prometheus.Registerer. It panics in case of failure.
+// MustRegister registers bll metrics in SourceMetrics in the given
+// prometheus.Registerer. It pbnics in cbse of fbilure.
 func (sm SourceMetrics) MustRegister(r prometheus.Registerer) {
 	r.MustRegister(sm.ListRepos.Count)
-	r.MustRegister(sm.ListRepos.Duration)
+	r.MustRegister(sm.ListRepos.Durbtion)
 	r.MustRegister(sm.ListRepos.Errors)
 	r.MustRegister(sm.GetRepo.Count)
-	r.MustRegister(sm.GetRepo.Duration)
+	r.MustRegister(sm.GetRepo.Durbtion)
 	r.MustRegister(sm.GetRepo.Errors)
 }
 
-// NewSourceMetrics returns SourceMetrics that need to be registered
-// in a Prometheus registry.
+// NewSourceMetrics returns SourceMetrics thbt need to be registered
+// in b Prometheus registry.
 func NewSourceMetrics() SourceMetrics {
 	return SourceMetrics{
 		ListRepos: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_source_duration_seconds",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_source_durbtion_seconds",
 				Help: "Time spent sourcing repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_source_repos_total",
-				Help: "Total number of sourced repositories",
+				Nbme: "src_repoupdbter_source_repos_totbl",
+				Help: "Totbl number of sourced repositories",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_source_errors_total",
-				Help: "Total number of sourcing errors",
+				Nbme: "src_repoupdbter_source_errors_totbl",
+				Help: "Totbl number of sourcing errors",
 			}, []string{}),
 		},
 		GetRepo: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_source_get_repo_duration_seconds",
-				Help: "Time spent calling GetRepo",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_source_get_repo_durbtion_seconds",
+				Help: "Time spent cblling GetRepo",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_source_get_repo_total",
-				Help: "Total number of GetRepo calls",
+				Nbme: "src_repoupdbter_source_get_repo_totbl",
+				Help: "Totbl number of GetRepo cblls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_source_get_repo_errors_total",
-				Help: "Total number of GetRepo errors",
+				Nbme: "src_repoupdbter_source_get_repo_errors_totbl",
+				Help: "Totbl number of GetRepo errors",
 			}, []string{}),
 		},
 	}
 }
 
-// ListRepos calls into the inner Source registers the observed results.
-func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResult) {
-	var (
+// ListRepos cblls into the inner Source registers the observed results.
+func (o *observedSource) ListRepos(ctx context.Context, results chbn SourceResult) {
+	vbr (
 		err   error
-		count float64
+		count flobt64
 	)
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 		o.metrics.ListRepos.Observe(secs, count, &err)
 		if err != nil {
 			o.logger.Error("source.list-repos", log.Error(err))
 		}
 	}(time.Now())
 
-	uncounted := make(chan SourceResult)
+	uncounted := mbke(chbn SourceResult)
 	go func() {
 		o.Source.ListRepos(ctx, uncounted)
 		close(uncounted)
 	}()
 
-	var errs error
-	for res := range uncounted {
+	vbr errs error
+	for res := rbnge uncounted {
 		results <- res
 		if res.Err != nil {
 			errs = errors.Append(errs, res.Err)
@@ -119,234 +119,234 @@ func (o *observedSource) ListRepos(ctx context.Context, results chan SourceResul
 	}
 }
 
-// GetRepo calls into the inner Source and registers the observed results.
-func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *types.Repo, err error) {
+// GetRepo cblls into the inner Source bnd registers the observed results.
+func (o *observedSource) GetRepo(ctx context.Context, pbth string) (sourced *types.Repo, err error) {
 	rg, ok := o.Source.(RepoGetter)
 	if !ok {
 		return nil, errors.New("RepoGetter not implemented")
 	}
 
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
+	defer func(begbn time.Time) {
+		secs := time.Since(begbn).Seconds()
 		o.metrics.GetRepo.Observe(secs, 1, &err)
 		if err != nil {
 			o.logger.Error("source.get-repo", log.Error(err))
 		}
 	}(time.Now())
 
-	return rg.GetRepo(ctx, path)
+	return rg.GetRepo(ctx, pbth)
 }
 
-// StoreMetrics encapsulates the Prometheus metrics of a Store.
+// StoreMetrics encbpsulbtes the Prometheus metrics of b Store.
 type StoreMetrics struct {
-	Transact                        *metrics.REDMetrics
+	Trbnsbct                        *metrics.REDMetrics
 	Done                            *metrics.REDMetrics
-	CreateExternalServiceRepo       *metrics.REDMetrics
-	UpdateExternalServiceRepo       *metrics.REDMetrics
-	DeleteExternalServiceRepo       *metrics.REDMetrics
-	DeleteExternalServiceReposNotIn *metrics.REDMetrics
-	UpdateRepo                      *metrics.REDMetrics
+	CrebteExternblServiceRepo       *metrics.REDMetrics
+	UpdbteExternblServiceRepo       *metrics.REDMetrics
+	DeleteExternblServiceRepo       *metrics.REDMetrics
+	DeleteExternblServiceReposNotIn *metrics.REDMetrics
+	UpdbteRepo                      *metrics.REDMetrics
 	UpsertRepos                     *metrics.REDMetrics
 	UpsertSources                   *metrics.REDMetrics
-	ListExternalRepoSpecs           *metrics.REDMetrics
-	GetExternalService              *metrics.REDMetrics
+	ListExternblRepoSpecs           *metrics.REDMetrics
+	GetExternblService              *metrics.REDMetrics
 	SetClonedRepos                  *metrics.REDMetrics
 	CountNotClonedRepos             *metrics.REDMetrics
 	EnqueueSyncJobs                 *metrics.REDMetrics
 }
 
-// MustRegister registers all metrics in StoreMetrics in the given
-// prometheus.Registerer. It panics in case of failure.
+// MustRegister registers bll metrics in StoreMetrics in the given
+// prometheus.Registerer. It pbnics in cbse of fbilure.
 func (sm StoreMetrics) MustRegister(r prometheus.Registerer) {
-	for _, om := range []*metrics.REDMetrics{
-		sm.Transact,
+	for _, om := rbnge []*metrics.REDMetrics{
+		sm.Trbnsbct,
 		sm.Done,
-		sm.ListExternalRepoSpecs,
-		sm.CreateExternalServiceRepo,
-		sm.UpdateExternalServiceRepo,
-		sm.DeleteExternalServiceRepo,
-		sm.DeleteExternalServiceReposNotIn,
+		sm.ListExternblRepoSpecs,
+		sm.CrebteExternblServiceRepo,
+		sm.UpdbteExternblServiceRepo,
+		sm.DeleteExternblServiceRepo,
+		sm.DeleteExternblServiceReposNotIn,
 		sm.UpsertRepos,
 		sm.UpsertSources,
-		sm.GetExternalService,
+		sm.GetExternblService,
 		sm.SetClonedRepos,
 	} {
 		r.MustRegister(om.Count)
-		r.MustRegister(om.Duration)
+		r.MustRegister(om.Durbtion)
 		r.MustRegister(om.Errors)
 	}
 }
 
-// NewStoreMetrics returns StoreMetrics that need to be registered
-// in a Prometheus registry.
+// NewStoreMetrics returns StoreMetrics thbt need to be registered
+// in b Prometheus registry.
 func NewStoreMetrics() StoreMetrics {
 	return StoreMetrics{
-		Transact: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_transact_duration_seconds",
-				Help: "Time spent opening a transaction",
+		Trbnsbct: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_trbnsbct_durbtion_seconds",
+				Help: "Time spent opening b trbnsbction",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_transact_total",
-				Help: "Total number of opened transactions",
+				Nbme: "src_repoupdbter_store_trbnsbct_totbl",
+				Help: "Totbl number of opened trbnsbctions",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_transact_errors_total",
-				Help: "Total number of errors when opening a transaction",
+				Nbme: "src_repoupdbter_store_trbnsbct_errors_totbl",
+				Help: "Totbl number of errors when opening b trbnsbction",
 			}, []string{}),
 		},
 		Done: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_done_duration_seconds",
-				Help: "Time spent closing a transaction",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_done_durbtion_seconds",
+				Help: "Time spent closing b trbnsbction",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_done_total",
-				Help: "Total number of closed transactions",
+				Nbme: "src_repoupdbter_store_done_totbl",
+				Help: "Totbl number of closed trbnsbctions",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_done_errors_total",
-				Help: "Total number of errors when closing a transaction",
+				Nbme: "src_repoupdbter_store_done_errors_totbl",
+				Help: "Totbl number of errors when closing b trbnsbction",
 			}, []string{}),
 		},
-		CreateExternalServiceRepo: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repocreater_store_create_external_service_repo_duration_seconds",
-				Help: "Time spent creating external service repos",
+		CrebteExternblServiceRepo: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repocrebter_store_crebte_externbl_service_repo_durbtion_seconds",
+				Help: "Time spent crebting externbl service repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repocreater_store_create_external_service_repo_total",
-				Help: "Total number of created external service repos",
+				Nbme: "src_repocrebter_store_crebte_externbl_service_repo_totbl",
+				Help: "Totbl number of crebted externbl service repos",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repocreater_store_create_external_service_repo_errors_total",
-				Help: "Total number of errors when creating external service repos",
+				Nbme: "src_repocrebter_store_crebte_externbl_service_repo_errors_totbl",
+				Help: "Totbl number of errors when crebting externbl service repos",
 			}, []string{}),
 		},
-		UpdateExternalServiceRepo: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_update_external_service_repo_duration_seconds",
-				Help: "Time spent updating external service repos",
+		UpdbteExternblServiceRepo: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_updbte_externbl_service_repo_durbtion_seconds",
+				Help: "Time spent updbting externbl service repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_update_external_service_repo_total",
-				Help: "Total number of updated external service repos",
+				Nbme: "src_repoupdbter_store_updbte_externbl_service_repo_totbl",
+				Help: "Totbl number of updbted externbl service repos",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_update_external_service_repo_errors_total",
-				Help: "Total number of errors when updating external service repos",
+				Nbme: "src_repoupdbter_store_updbte_externbl_service_repo_errors_totbl",
+				Help: "Totbl number of errors when updbting externbl service repos",
 			}, []string{}),
 		},
-		DeleteExternalServiceRepo: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_delete_external_service_repo_duration_seconds",
-				Help: "Time spent deleting external service repos",
+		DeleteExternblServiceRepo: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_delete_externbl_service_repo_durbtion_seconds",
+				Help: "Time spent deleting externbl service repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_delete_external_service_repo_total",
-				Help: "Total number of external service repo deletions",
+				Nbme: "src_repoupdbter_store_delete_externbl_service_repo_totbl",
+				Help: "Totbl number of externbl service repo deletions",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_delete_external_service_repo_errors_total",
-				Help: "Total number of errors when deleting external service repos",
+				Nbme: "src_repoupdbter_store_delete_externbl_service_repo_errors_totbl",
+				Help: "Totbl number of errors when deleting externbl service repos",
 			}, []string{}),
 		},
-		DeleteExternalServiceReposNotIn: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_delete_exernal_service_repos_not_in_duration_seconds",
-				Help: "Time spent calling DeleteExternalServiceReposNotIn",
+		DeleteExternblServiceReposNotIn: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_delete_exernbl_service_repos_not_in_durbtion_seconds",
+				Help: "Time spent cblling DeleteExternblServiceReposNotIn",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_delete_exernal_service_repos_not_in_total",
-				Help: "Total number of calls to DeleteExternalServiceReposNotIn",
+				Nbme: "src_repoupdbter_store_delete_exernbl_service_repos_not_in_totbl",
+				Help: "Totbl number of cblls to DeleteExternblServiceReposNotIn",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_delete_exernal_service_repos_not_in_errors_total",
-				Help: "Total number of errors when calling DeleteExternalServiceReposNotIn",
+				Nbme: "src_repoupdbter_store_delete_exernbl_service_repos_not_in_errors_totbl",
+				Help: "Totbl number of errors when cblling DeleteExternblServiceReposNotIn",
 			}, []string{}),
 		},
 		UpsertRepos: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_upsert_repos_duration_seconds",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_upsert_repos_durbtion_seconds",
 				Help: "Time spent upserting repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_upsert_repos_total",
-				Help: "Total number of upserted repositories",
+				Nbme: "src_repoupdbter_store_upsert_repos_totbl",
+				Help: "Totbl number of upserted repositories",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_upsert_repos_errors_total",
-				Help: "Total number of errors when upserting repos",
+				Nbme: "src_repoupdbter_store_upsert_repos_errors_totbl",
+				Help: "Totbl number of errors when upserting repos",
 			}, []string{}),
 		},
 		UpsertSources: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_upsert_sources_duration_seconds",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_upsert_sources_durbtion_seconds",
 				Help: "Time spent upserting sources",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_upsert_sources_total",
-				Help: "Total number of upserted sources",
+				Nbme: "src_repoupdbter_store_upsert_sources_totbl",
+				Help: "Totbl number of upserted sources",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_upsert_sources_errors_total",
-				Help: "Total number of errors when upserting sources",
+				Nbme: "src_repoupdbter_store_upsert_sources_errors_totbl",
+				Help: "Totbl number of errors when upserting sources",
 			}, []string{}),
 		},
-		ListExternalRepoSpecs: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_list_external_repo_specs_duration_seconds",
-				Help: "Time spent listing external repo specs",
+		ListExternblRepoSpecs: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_list_externbl_repo_specs_durbtion_seconds",
+				Help: "Time spent listing externbl repo specs",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_repo_specs_total",
-				Help: "Total number of listed external repo specs",
+				Nbme: "src_repoupdbter_store_list_externbl_repo_specs_totbl",
+				Help: "Totbl number of listed externbl repo specs",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_list_external_repo_specs_errors_total",
-				Help: "Total number of errors when listing external repo specs",
+				Nbme: "src_repoupdbter_store_list_externbl_repo_specs_errors_totbl",
+				Help: "Totbl number of errors when listing externbl repo specs",
 			}, []string{}),
 		},
-		GetExternalService: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_external_serviceupdater_store_get_external_service_duration_seconds",
-				Help: "Time spent getting external_services",
+		GetExternblService: &metrics.REDMetrics{
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_externbl_serviceupdbter_store_get_externbl_service_durbtion_seconds",
+				Help: "Time spent getting externbl_services",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_external_serviceupdater_store_get_external_service_total",
-				Help: "Total number of get external_service calls",
+				Nbme: "src_externbl_serviceupdbter_store_get_externbl_service_totbl",
+				Help: "Totbl number of get externbl_service cblls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_external_serviceupdater_store_get_external_service_errors_total",
-				Help: "Total number of errors when getting external_services",
+				Nbme: "src_externbl_serviceupdbter_store_get_externbl_service_errors_totbl",
+				Help: "Totbl number of errors when getting externbl_services",
 			}, []string{}),
 		},
 		SetClonedRepos: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_set_cloned_repos_duration_seconds",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_set_cloned_repos_durbtion_seconds",
 				Help: "Time spent setting cloned repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_set_cloned_repos_total",
-				Help: "Total number of set cloned repos calls",
+				Nbme: "src_repoupdbter_store_set_cloned_repos_totbl",
+				Help: "Totbl number of set cloned repos cblls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_set_cloned_repos_errors_total",
-				Help: "Total number of errors when setting cloned repos",
+				Nbme: "src_repoupdbter_store_set_cloned_repos_errors_totbl",
+				Help: "Totbl number of errors when setting cloned repos",
 			}, []string{}),
 		},
 		CountNotClonedRepos: &metrics.REDMetrics{
-			Duration: prometheus.NewHistogramVec(prometheus.HistogramOpts{
-				Name: "src_repoupdater_store_count_not_cloned_repos_duration_seconds",
+			Durbtion: prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+				Nbme: "src_repoupdbter_store_count_not_cloned_repos_durbtion_seconds",
 				Help: "Time spent counting not-cloned repos",
 			}, []string{}),
 			Count: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_count_not_cloned_repos_total",
-				Help: "Total number of count not-cloned repos calls",
+				Nbme: "src_repoupdbter_store_count_not_cloned_repos_totbl",
+				Help: "Totbl number of count not-cloned repos cblls",
 			}, []string{}),
 			Errors: prometheus.NewCounterVec(prometheus.CounterOpts{
-				Name: "src_repoupdater_store_count_not_cloned_repos_errors_total",
-				Help: "Total number of errors when counting not-cloned repos",
+				Nbme: "src_repoupdbter_store_count_not_cloned_repos_errors_totbl",
+				Help: "Totbl number of errors when counting not-cloned repos",
 			}, []string{}),
 		},
 	}

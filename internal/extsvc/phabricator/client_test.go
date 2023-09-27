@@ -1,58 +1,58 @@
-package phabricator_test
+pbckbge phbbricbtor_test
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/dnbeon/go-vcr/cbssette"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sergi/go-diff/diffmatchpatch"
+	"github.com/sergi/go-diff/diffmbtchpbtch"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/phabricator"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/phbbricbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
 )
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
 func TestClient_ListRepos(t *testing.T) {
-	cli, save := newClient(t, "ListRepos")
-	defer save()
+	cli, sbve := newClient(t, "ListRepos")
+	defer sbve()
 
-	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
-	defer cancel()
+	timeout, cbncel := context.WithDebdline(context.Bbckground(), time.Now().Add(-time.Second))
+	defer cbncel()
 
-	for _, tc := range []struct {
-		name   string
+	for _, tc := rbnge []struct {
+		nbme   string
 		ctx    context.Context
-		args   phabricator.ListReposArgs
-		cursor *phabricator.Cursor
+		brgs   phbbricbtor.ListReposArgs
+		cursor *phbbricbtor.Cursor
 		err    string
 	}{
 		{
-			name:   "repos-listed",
-			args:   phabricator.ListReposArgs{Cursor: &phabricator.Cursor{Limit: 5}},
-			cursor: &phabricator.Cursor{Limit: 5, After: "5", Order: "oldest"},
+			nbme:   "repos-listed",
+			brgs:   phbbricbtor.ListReposArgs{Cursor: &phbbricbtor.Cursor{Limit: 5}},
+			cursor: &phbbricbtor.Cursor{Limit: 5, After: "5", Order: "oldest"},
 		},
 		{
-			name: "pagination",
-			args: phabricator.ListReposArgs{
-				Cursor: &phabricator.Cursor{
+			nbme: "pbginbtion",
+			brgs: phbbricbtor.ListReposArgs{
+				Cursor: &phbbricbtor.Cursor{
 					Limit: 5,
 					After: "5",
 					Order: "oldest",
 				},
 			},
-			cursor: &phabricator.Cursor{
+			cursor: &phbbricbtor.Cursor{
 				Limit:  5,
 				After:  "19",
 				Before: "8",
@@ -60,118 +60,118 @@ func TestClient_ListRepos(t *testing.T) {
 			},
 		},
 		{
-			name: "timeout",
+			nbme: "timeout",
 			ctx:  timeout,
-			err:  `Post "https://secure.phabricator.com/api/diffusion.repository.search": context deadline exceeded`,
+			err:  `Post "https://secure.phbbricbtor.com/bpi/diffusion.repository.sebrch": context debdline exceeded`,
 		},
 	} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.ctx == nil {
-				tc.ctx = context.Background()
+				tc.ctx = context.Bbckground()
 			}
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			repos, cursor, err := cli.ListRepos(tc.ctx, tc.args)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			repos, cursor, err := cli.ListRepos(tc.ctx, tc.brgs)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
-			if have, want := cursor, tc.cursor; !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			if hbve, wbnt := cursor, tc.cursor; !reflect.DeepEqubl(hbve, wbnt) {
+				t.Error(cmp.Diff(hbve, wbnt))
 			}
 
-			if tc.args == (phabricator.ListReposArgs{}) {
+			if tc.brgs == (phbbricbtor.ListReposArgs{}) {
 				return
 			}
 
-			bs, err := json.MarshalIndent(repos, "", "  ")
+			bs, err := json.MbrshblIndent(repos, "", "  ")
 			if err != nil {
-				t.Fatalf("failed to marshal repos: %s", err)
+				t.Fbtblf("fbiled to mbrshbl repos: %s", err)
 			}
 
-			path := fmt.Sprintf("testdata/golden/ListRepos-%s.json", tc.name)
-			if *update {
-				if err = os.WriteFile(path, bs, 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
+			pbth := fmt.Sprintf("testdbtb/golden/ListRepos-%s.json", tc.nbme)
+			if *updbte {
+				if err = os.WriteFile(pbth, bs, 0640); err != nil {
+					t.Fbtblf("fbiled to updbte golden file %q: %s", pbth, err)
 				}
 			}
 
-			golden, err := os.ReadFile(path)
+			golden, err := os.RebdFile(pbth)
 			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
+				t.Fbtblf("fbiled to rebd golden file %q: %s", pbth, err)
 			}
 
-			if have, want := string(bs), string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
+			if hbve, wbnt := string(bs), string(golden); hbve != wbnt {
+				dmp := diffmbtchpbtch.New()
+				diffs := dmp.DiffMbin(hbve, wbnt, fblse)
 				t.Error(dmp.DiffPrettyText(diffs))
 			}
 		})
 	}
 }
 
-func TestClient_GetRawDiff(t *testing.T) {
-	cli, save := newClient(t, "GetRawDiff")
-	defer save()
+func TestClient_GetRbwDiff(t *testing.T) {
+	cli, sbve := newClient(t, "GetRbwDiff")
+	defer sbve()
 
-	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
-	defer cancel()
+	timeout, cbncel := context.WithDebdline(context.Bbckground(), time.Now().Add(-time.Second))
+	defer cbncel()
 
-	for _, tc := range []struct {
-		name string
+	for _, tc := rbnge []struct {
+		nbme string
 		ctx  context.Context
 		id   int
 		err  string
 	}{{
-		name: "diff not found",
-		id:   0xdeadbeef,
+		nbme: "diff not found",
+		id:   0xdebdbeef,
 		err:  "ERR_NOT_FOUND: Diff not found.",
 	}, {
-		name: "diff found",
+		nbme: "diff found",
 		id:   20455,
 	}, {
-		name: "timeout",
+		nbme: "timeout",
 		ctx:  timeout,
-		err:  `Post "https://secure.phabricator.com/api/differential.getrawdiff": context deadline exceeded`,
+		err:  `Post "https://secure.phbbricbtor.com/bpi/differentibl.getrbwdiff": context debdline exceeded`,
 	}} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.ctx == nil {
-				tc.ctx = context.Background()
+				tc.ctx = context.Bbckground()
 			}
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			diff, err := cli.GetRawDiff(tc.ctx, tc.id)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			diff, err := cli.GetRbwDiff(tc.ctx, tc.id)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
 			if tc.id == 0 {
 				return
 			}
 
-			path := "testdata/golden/GetRawDiff-" + strconv.Itoa(tc.id)
-			if *update {
-				if err = os.WriteFile(path, []byte(diff), 0640); err != nil {
-					t.Fatalf("failed to update golden file %q: %s", path, err)
+			pbth := "testdbtb/golden/GetRbwDiff-" + strconv.Itob(tc.id)
+			if *updbte {
+				if err = os.WriteFile(pbth, []byte(diff), 0640); err != nil {
+					t.Fbtblf("fbiled to updbte golden file %q: %s", pbth, err)
 				}
 			}
 
-			golden, err := os.ReadFile(path)
+			golden, err := os.RebdFile(pbth)
 			if err != nil {
-				t.Fatalf("failed to read golden file %q: %s", path, err)
+				t.Fbtblf("fbiled to rebd golden file %q: %s", pbth, err)
 			}
 
-			if have, want := diff, string(golden); have != want {
-				dmp := diffmatchpatch.New()
-				diffs := dmp.DiffMain(have, want, false)
+			if hbve, wbnt := diff, string(golden); hbve != wbnt {
+				dmp := diffmbtchpbtch.New()
+				diffs := dmp.DiffMbin(hbve, wbnt, fblse)
 				t.Error(dmp.DiffPrettyText(diffs))
 			}
 		})
@@ -179,40 +179,40 @@ func TestClient_GetRawDiff(t *testing.T) {
 }
 
 func TestClient_GetDiffInfo(t *testing.T) {
-	cli, save := newClient(t, "GetDiffInfo")
-	defer save()
+	cli, sbve := newClient(t, "GetDiffInfo")
+	defer sbve()
 
-	timeout, cancel := context.WithDeadline(context.Background(), time.Now().Add(-time.Second))
-	defer cancel()
+	timeout, cbncel := context.WithDebdline(context.Bbckground(), time.Now().Add(-time.Second))
+	defer cbncel()
 
-	for _, tc := range []struct {
-		name string
+	for _, tc := rbnge []struct {
+		nbme string
 		ctx  context.Context
 		id   int
-		info *phabricator.DiffInfo
+		info *phbbricbtor.DiffInfo
 		err  string
 	}{{
-		name: "diff not found",
-		id:   0xdeadbeef,
-		err:  "phabricator error: no diff info found for diff 3735928559",
+		nbme: "diff not found",
+		id:   0xdebdbeef,
+		err:  "phbbricbtor error: no diff info found for diff 3735928559",
 	}, {
-		name: "diff info found",
+		nbme: "diff info found",
 		id:   20455,
-		info: &phabricator.DiffInfo{
-			AuthorName:  "epriestley",
-			AuthorEmail: "git@epriestley.com",
-			DateCreated: "1395874084",
-			Date:        time.Unix(1395874084, 0).UTC(),
+		info: &phbbricbtor.DiffInfo{
+			AuthorNbme:  "epriestley",
+			AuthorEmbil: "git@epriestley.com",
+			DbteCrebted: "1395874084",
+			Dbte:        time.Unix(1395874084, 0).UTC(),
 		},
 	}, {
-		name: "timeout",
+		nbme: "timeout",
 		ctx:  timeout,
-		err:  `Post "https://secure.phabricator.com/api/differential.querydiffs": context deadline exceeded`,
+		err:  `Post "https://secure.phbbricbtor.com/bpi/differentibl.querydiffs": context debdline exceeded`,
 	}} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.ctx == nil {
-				tc.ctx = context.Background()
+				tc.ctx = context.Bbckground()
 			}
 
 			if tc.err == "" {
@@ -220,51 +220,51 @@ func TestClient_GetDiffInfo(t *testing.T) {
 			}
 
 			info, err := cli.GetDiffInfo(tc.ctx, tc.id)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
-			if have, want := info, tc.info; !reflect.DeepEqual(have, want) {
-				t.Error(cmp.Diff(have, want))
+			if hbve, wbnt := info, tc.info; !reflect.DeepEqubl(hbve, wbnt) {
+				t.Error(cmp.Diff(hbve, wbnt))
 			}
 		})
 	}
 }
 
-func newClient(t testing.TB, name string) (*phabricator.Client, func()) {
+func newClient(t testing.TB, nbme string) (*phbbricbtor.Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", strings.ReplaceAll(name, " ", "-"))
-	rec, err := httptestutil.NewRecorder(cassete, *update, func(i *cassette.Interaction) error {
-		// Remove all tokens
+	cbssete := filepbth.Join("testdbtb/vcr/", strings.ReplbceAll(nbme, " ", "-"))
+	rec, err := httptestutil.NewRecorder(cbssete, *updbte, func(i *cbssette.Interbction) error {
+		// Remove bll tokens
 		i.Request.Body = ""
-		i.Request.Form = map[string][]string{}
+		i.Request.Form = mbp[string][]string{}
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	hc, err := httpcli.NewFbctory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// See 1Password under PHABRICATOR_TOKEN for the required token
-	ctx := context.Background()
-	cli, err := phabricator.NewClient(
+	// See 1Pbssword under PHABRICATOR_TOKEN for the required token
+	ctx := context.Bbckground()
+	cli, err := phbbricbtor.NewClient(
 		ctx,
-		"https://secure.phabricator.com",
+		"https://secure.phbbricbtor.com",
 		os.Getenv("PHABRICATOR_TOKEN"),
 		hc,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	}
 }

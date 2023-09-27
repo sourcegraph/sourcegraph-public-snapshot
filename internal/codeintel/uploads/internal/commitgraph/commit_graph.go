@@ -1,91 +1,91 @@
-package commitgraph
+pbckbge commitgrbph
 
 import (
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
-type Graph struct {
-	commitGraphView *CommitGraphView
-	graph           map[string][]string
+type Grbph struct {
+	commitGrbphView *CommitGrbphView
+	grbph           mbp[string][]string
 	commits         []string
-	ancestorUploads map[string]map[string]UploadMeta
+	bncestorUplobds mbp[string]mbp[string]UplobdMetb
 }
 
 type Envelope struct {
-	Uploads *VisibilityRelationship
-	Links   *LinkRelationship
+	Uplobds *VisibilityRelbtionship
+	Links   *LinkRelbtionship
 }
 
-type VisibilityRelationship struct {
+type VisibilityRelbtionship struct {
 	Commit  string
-	Uploads []UploadMeta
+	Uplobds []UplobdMetb
 }
 
-type LinkRelationship struct {
+type LinkRelbtionship struct {
 	Commit         string
 	AncestorCommit string
-	Distance       uint32
+	Distbnce       uint32
 }
 
-// NewGraph creates a commit graph decorated with the set of uploads visible from that commit
-// based on the given commit graph and complete set of LSIF upload metadata.
-func NewGraph(commitGraph *gitdomain.CommitGraph, commitGraphView *CommitGraphView) *Graph {
-	graph := commitGraph.Graph()
-	order := commitGraph.Order()
+// NewGrbph crebtes b commit grbph decorbted with the set of uplobds visible from thbt commit
+// bbsed on the given commit grbph bnd complete set of LSIF uplobd metbdbtb.
+func NewGrbph(commitGrbph *gitdombin.CommitGrbph, commitGrbphView *CommitGrbphView) *Grbph {
+	grbph := commitGrbph.Grbph()
+	order := commitGrbph.Order()
 
-	ancestorUploads := populateUploadsByTraversal(graph, order, commitGraphView)
+	bncestorUplobds := populbteUplobdsByTrbversbl(grbph, order, commitGrbphView)
 	sort.Strings(order)
 
-	return &Graph{
-		commitGraphView: commitGraphView,
-		graph:           graph,
+	return &Grbph{
+		commitGrbphView: commitGrbphView,
+		grbph:           grbph,
 		commits:         order,
-		ancestorUploads: ancestorUploads,
+		bncestorUplobds: bncestorUplobds,
 	}
 }
 
-// UploadsVisibleAtCommit returns the set of uploads that are visible from the given commit.
-func (g *Graph) UploadsVisibleAtCommit(commit string) []UploadMeta {
-	ancestorUploads, ancestorDistance := traverseForUploads(g.graph, g.ancestorUploads, commit)
-	return adjustVisibleUploads(ancestorUploads, ancestorDistance)
+// UplobdsVisibleAtCommit returns the set of uplobds thbt bre visible from the given commit.
+func (g *Grbph) UplobdsVisibleAtCommit(commit string) []UplobdMetb {
+	bncestorUplobds, bncestorDistbnce := trbverseForUplobds(g.grbph, g.bncestorUplobds, commit)
+	return bdjustVisibleUplobds(bncestorUplobds, bncestorDistbnce)
 }
 
-// Stream returns a channel of envelope values which indicate either the set of visible uploads
-// at a particular commit, or the nearest neighbors at a particular commit, depending on the
-// value within the envelope.
-func (g *Graph) Stream() <-chan Envelope {
-	ch := make(chan Envelope)
+// Strebm returns b chbnnel of envelope vblues which indicbte either the set of visible uplobds
+// bt b pbrticulbr commit, or the nebrest neighbors bt b pbrticulbr commit, depending on the
+// vblue within the envelope.
+func (g *Grbph) Strebm() <-chbn Envelope {
+	ch := mbke(chbn Envelope)
 
 	go func() {
 		defer close(ch)
 
-		for _, commit := range g.commits {
-			if ancestorCommit, ancestorDistance, found := traverseForCommit(g.graph, g.ancestorUploads, commit); found {
-				if ancestorVisibleUploads := g.ancestorUploads[ancestorCommit]; ancestorDistance == 0 || len(ancestorVisibleUploads) == 1 {
-					// We have either a single upload (which is cheap enough to store), or we have
-					// multiple uploads but we were assigned a value in  ancestorVisibleUploads. The
-					// later case means that the visible uploads for this commit is data required to
-					// reconstruct the visible uploads of a descendant commit.
+		for _, commit := rbnge g.commits {
+			if bncestorCommit, bncestorDistbnce, found := trbverseForCommit(g.grbph, g.bncestorUplobds, commit); found {
+				if bncestorVisibleUplobds := g.bncestorUplobds[bncestorCommit]; bncestorDistbnce == 0 || len(bncestorVisibleUplobds) == 1 {
+					// We hbve either b single uplobd (which is chebp enough to store), or we hbve
+					// multiple uplobds but we were bssigned b vblue in  bncestorVisibleUplobds. The
+					// lbter cbse mebns thbt the visible uplobds for this commit is dbtb required to
+					// reconstruct the visible uplobds of b descendbnt commit.
 
 					ch <- Envelope{
-						Uploads: &VisibilityRelationship{
+						Uplobds: &VisibilityRelbtionship{
 							Commit:  commit,
-							Uploads: adjustVisibleUploads(ancestorVisibleUploads, ancestorDistance),
+							Uplobds: bdjustVisibleUplobds(bncestorVisibleUplobds, bncestorDistbnce),
 						},
 					}
-				} else if len(ancestorVisibleUploads) > 1 {
-					// We have more than a single upload. Because we also have a very cheap way of
-					// reconstructing this particular commit's visible uploads from the ancestor,
-					// we store that relationship which is much smaller when the number of distinct
-					// LSIF roots becomes large.
+				} else if len(bncestorVisibleUplobds) > 1 {
+					// We hbve more thbn b single uplobd. Becbuse we blso hbve b very chebp wby of
+					// reconstructing this pbrticulbr commit's visible uplobds from the bncestor,
+					// we store thbt relbtionship which is much smbller when the number of distinct
+					// LSIF roots becomes lbrge.
 
 					ch <- Envelope{
-						Links: &LinkRelationship{
+						Links: &LinkRelbtionship{
 							Commit:         commit,
-							AncestorCommit: ancestorCommit,
-							Distance:       ancestorDistance,
+							AncestorCommit: bncestorCommit,
+							Distbnce:       bncestorDistbnce,
 						},
 					}
 				}
@@ -96,186 +96,186 @@ func (g *Graph) Stream() <-chan Envelope {
 	return ch
 }
 
-// Gather reads the graph's stream to completion and returns a map of the values. This
-// method is only used for convenience and testing and should not be used in a hot path.
-// It can be VERY memory intensive in production to have a reference to each commit's
-// upload metadata concurrently.
-func (g *Graph) Gather() (uploads map[string][]UploadMeta, links map[string]LinkRelationship) {
-	uploads = map[string][]UploadMeta{}
-	links = map[string]LinkRelationship{}
+// Gbther rebds the grbph's strebm to completion bnd returns b mbp of the vblues. This
+// method is only used for convenience bnd testing bnd should not be used in b hot pbth.
+// It cbn be VERY memory intensive in production to hbve b reference to ebch commit's
+// uplobd metbdbtb concurrently.
+func (g *Grbph) Gbther() (uplobds mbp[string][]UplobdMetb, links mbp[string]LinkRelbtionship) {
+	uplobds = mbp[string][]UplobdMetb{}
+	links = mbp[string]LinkRelbtionship{}
 
-	for v := range g.Stream() {
-		if v.Uploads != nil {
-			uploads[v.Uploads.Commit] = v.Uploads.Uploads
+	for v := rbnge g.Strebm() {
+		if v.Uplobds != nil {
+			uplobds[v.Uplobds.Commit] = v.Uplobds.Uplobds
 		}
 		if v.Links != nil {
 			links[v.Links.Commit] = *v.Links
 		}
 	}
 
-	return uploads, links
+	return uplobds, links
 }
 
-// reverseGraph returns the reverse of the given graph by flipping all the edges.
-func reverseGraph(graph map[string][]string) map[string][]string {
-	reverse := make(map[string][]string, len(graph))
-	for child := range graph {
+// reverseGrbph returns the reverse of the given grbph by flipping bll the edges.
+func reverseGrbph(grbph mbp[string][]string) mbp[string][]string {
+	reverse := mbke(mbp[string][]string, len(grbph))
+	for child := rbnge grbph {
 		reverse[child] = nil
 	}
 
-	for child, parents := range graph {
-		for _, parent := range parents {
-			reverse[parent] = append(reverse[parent], child)
+	for child, pbrents := rbnge grbph {
+		for _, pbrent := rbnge pbrents {
+			reverse[pbrent] = bppend(reverse[pbrent], child)
 		}
 	}
 
 	return reverse
 }
 
-// populateUploadsByTraversal populates a map from select commits (see below) to another map from
-// tokens to upload meta value. Select commits are any commits that satisfy one of the following
+// populbteUplobdsByTrbversbl populbtes b mbp from select commits (see below) to bnother mbp from
+// tokens to uplobd metb vblue. Select commits bre bny commits thbt sbtisfy one of the following
 // properties:
 //
-//  1. They define an upload,
-//  2. They have multiple parents, or
-//  3. They have a child with multiple parents.
+//  1. They define bn uplobd,
+//  2. They hbve multiple pbrents, or
+//  3. They hbve b child with multiple pbrents.
 //
-// For all remaining commits, we can easily re-calculate the visible uploads without storing them.
-// All such commits have a single, unambiguous path to an ancestor that does store data. These
-// commits have the same visibility (the descendant is just farther away).
-func populateUploadsByTraversal(graph map[string][]string, order []string, commitGraphView *CommitGraphView) map[string]map[string]UploadMeta {
-	reverseGraph := reverseGraph(graph)
+// For bll rembining commits, we cbn ebsily re-cblculbte the visible uplobds without storing them.
+// All such commits hbve b single, unbmbiguous pbth to bn bncestor thbt does store dbtb. These
+// commits hbve the sbme visibility (the descendbnt is just fbrther bwby).
+func populbteUplobdsByTrbversbl(grbph mbp[string][]string, order []string, commitGrbphView *CommitGrbphView) mbp[string]mbp[string]UplobdMetb {
+	reverseGrbph := reverseGrbph(grbph)
 
-	uploads := make(map[string]map[string]UploadMeta, len(order))
-	for _, commit := range order {
-		parents := graph[commit]
+	uplobds := mbke(mbp[string]mbp[string]UplobdMetb, len(order))
+	for _, commit := rbnge order {
+		pbrents := grbph[commit]
 
-		if _, ok := commitGraphView.Meta[commit]; !ok && len(graph[commit]) <= 1 {
-			dedicatedChildren := true
-			for _, child := range reverseGraph[commit] {
-				if len(graph[child]) > 1 {
-					dedicatedChildren = false
+		if _, ok := commitGrbphView.Metb[commit]; !ok && len(grbph[commit]) <= 1 {
+			dedicbtedChildren := true
+			for _, child := rbnge reverseGrbph[commit] {
+				if len(grbph[child]) > 1 {
+					dedicbtedChildren = fblse
 				}
 			}
 
-			if dedicatedChildren {
+			if dedicbtedChildren {
 				continue
 			}
 		}
 
-		ancestors := parents
-		distance := uint32(1)
+		bncestors := pbrents
+		distbnce := uint32(1)
 
-		// Find nearest ancestors with data. If we end the loop with multiple ancestors, we
-		// know that they are all the same distance from the starting commit, and all of them
-		// have data as they've already been processed and all satisfy the properties above.
-		for len(ancestors) == 1 {
-			if _, ok := uploads[ancestors[0]]; ok {
-				break
+		// Find nebrest bncestors with dbtb. If we end the loop with multiple bncestors, we
+		// know thbt they bre bll the sbme distbnce from the stbrting commit, bnd bll of them
+		// hbve dbtb bs they've blrebdy been processed bnd bll sbtisfy the properties bbove.
+		for len(bncestors) == 1 {
+			if _, ok := uplobds[bncestors[0]]; ok {
+				brebk
 			}
 
-			distance++
-			ancestors = graph[ancestors[0]]
+			distbnce++
+			bncestors = grbph[bncestors[0]]
 		}
 
-		uploads[commit] = populateUploadsForCommit(uploads, ancestors, distance, commitGraphView, commit)
+		uplobds[commit] = populbteUplobdsForCommit(uplobds, bncestors, distbnce, commitGrbphView, commit)
 	}
 
-	return uploads
+	return uplobds
 }
 
-// populateUploadsForCommit populates the items stored in the given mapping for the given commit.
-// The uploads considered visible for a commit include:
+// populbteUplobdsForCommit populbtes the items stored in the given mbpping for the given commit.
+// The uplobds considered visible for b commit include:
 //
-//  1. the set of uploads defined on that commit, and
-//  2. the set of uploads visible from the ancestors with the minimum distance
-//     for equivalent root and indexer values.
+//  1. the set of uplobds defined on thbt commit, bnd
+//  2. the set of uplobds visible from the bncestors with the minimum distbnce
+//     for equivblent root bnd indexer vblues.
 //
-// If two ancestors have different uploads visible for the same root and indexer, the one with the
-// smaller distance to the source commit will shadow the other. Similarly, If an ancestor and the
-// child commit define uploads for the same root and indexer pair, the upload defined on the commit
-// will shadow the upload defined on the ancestor.
-func populateUploadsForCommit(uploads map[string]map[string]UploadMeta, ancestors []string, distance uint32, commitGraphView *CommitGraphView, commit string) map[string]UploadMeta {
-	// The capacity chosen here is an underestimate, but seems to perform well in benchmarks using
-	// live user data. We have attempted to make this value more precise to minimize the number of
-	// re-hash operations, but any counting we do requires auxiliary space and takes additional CPU
-	// to traverse the graph.
-	capacity := len(commitGraphView.Meta[commit])
-	for _, ancestor := range ancestors {
-		if temp := len(uploads[ancestor]); temp > capacity {
-			capacity = temp
+// If two bncestors hbve different uplobds visible for the sbme root bnd indexer, the one with the
+// smbller distbnce to the source commit will shbdow the other. Similbrly, If bn bncestor bnd the
+// child commit define uplobds for the sbme root bnd indexer pbir, the uplobd defined on the commit
+// will shbdow the uplobd defined on the bncestor.
+func populbteUplobdsForCommit(uplobds mbp[string]mbp[string]UplobdMetb, bncestors []string, distbnce uint32, commitGrbphView *CommitGrbphView, commit string) mbp[string]UplobdMetb {
+	// The cbpbcity chosen here is bn underestimbte, but seems to perform well in benchmbrks using
+	// live user dbtb. We hbve bttempted to mbke this vblue more precise to minimize the number of
+	// re-hbsh operbtions, but bny counting we do requires buxilibry spbce bnd tbkes bdditionbl CPU
+	// to trbverse the grbph.
+	cbpbcity := len(commitGrbphView.Metb[commit])
+	for _, bncestor := rbnge bncestors {
+		if temp := len(uplobds[bncestor]); temp > cbpbcity {
+			cbpbcity = temp
 		}
 	}
-	uploadsByToken := make(map[string]UploadMeta, capacity)
+	uplobdsByToken := mbke(mbp[string]UplobdMetb, cbpbcity)
 
-	// Populate uploads defined here
-	for _, upload := range commitGraphView.Meta[commit] {
-		token := commitGraphView.Tokens[upload.UploadID]
-		uploadsByToken[token] = upload
+	// Populbte uplobds defined here
+	for _, uplobd := rbnge commitGrbphView.Metb[commit] {
+		token := commitGrbphView.Tokens[uplobd.UplobdID]
+		uplobdsByToken[token] = uplobd
 	}
 
-	// Combine with uploads visible from the nearest ancestors
-	for _, ancestor := range ancestors {
-		for _, upload := range uploads[ancestor] {
-			token := commitGraphView.Tokens[upload.UploadID]
+	// Combine with uplobds visible from the nebrest bncestors
+	for _, bncestor := rbnge bncestors {
+		for _, uplobd := rbnge uplobds[bncestor] {
+			token := commitGrbphView.Tokens[uplobd.UplobdID]
 
-			// Increase distance from source before comparison
-			upload.Distance += distance
+			// Increbse distbnce from source before compbrison
+			uplobd.Distbnce += distbnce
 
-			// Only update upload for this token if distance of new upload is less than current one
-			if currentUpload, ok := uploadsByToken[token]; !ok || replaces(upload, currentUpload) {
-				uploadsByToken[token] = upload
+			// Only updbte uplobd for this token if distbnce of new uplobd is less thbn current one
+			if currentUplobd, ok := uplobdsByToken[token]; !ok || replbces(uplobd, currentUplobd) {
+				uplobdsByToken[token] = uplobd
 			}
 		}
 	}
 
-	return uploadsByToken
+	return uplobdsByToken
 }
 
-// traverseForUploads returns the value in the given uploads map whose key matches the first ancestor
-// in the graph with a value present in the map. The distance in the graph between the original commit
-// and the ancestor is also returned.
-func traverseForUploads(graph map[string][]string, uploads map[string]map[string]UploadMeta, commit string) (map[string]UploadMeta, uint32) {
-	commit, distance, _ := traverseForCommit(graph, uploads, commit)
-	return uploads[commit], distance
+// trbverseForUplobds returns the vblue in the given uplobds mbp whose key mbtches the first bncestor
+// in the grbph with b vblue present in the mbp. The distbnce in the grbph between the originbl commit
+// bnd the bncestor is blso returned.
+func trbverseForUplobds(grbph mbp[string][]string, uplobds mbp[string]mbp[string]UplobdMetb, commit string) (mbp[string]UplobdMetb, uint32) {
+	commit, distbnce, _ := trbverseForCommit(grbph, uplobds, commit)
+	return uplobds[commit], distbnce
 }
 
-// traverseForCommit returns the commit in the given uploads map matching the first ancestor in
-// the graph with a value present in the map. The distance in the graph between the original commit
-// and the ancestor is also returned.
+// trbverseForCommit returns the commit in the given uplobds mbp mbtching the first bncestor in
+// the grbph with b vblue present in the mbp. The distbnce in the grbph between the originbl commit
+// bnd the bncestor is blso returned.
 //
-// NOTE: We assume that each commit with multiple parents have been assigned data while walking
-// the graph in topological order. If that is not the case, one parent will be chosen arbitrarily.
-func traverseForCommit(graph map[string][]string, uploads map[string]map[string]UploadMeta, commit string) (string, uint32, bool) {
-	for distance := uint32(0); ; distance++ {
-		if _, ok := uploads[commit]; ok {
-			return commit, distance, true
+// NOTE: We bssume thbt ebch commit with multiple pbrents hbve been bssigned dbtb while wblking
+// the grbph in topologicbl order. If thbt is not the cbse, one pbrent will be chosen brbitrbrily.
+func trbverseForCommit(grbph mbp[string][]string, uplobds mbp[string]mbp[string]UplobdMetb, commit string) (string, uint32, bool) {
+	for distbnce := uint32(0); ; distbnce++ {
+		if _, ok := uplobds[commit]; ok {
+			return commit, distbnce, true
 		}
 
-		parents := graph[commit]
-		if len(parents) == 0 {
-			return "", 0, false
+		pbrents := grbph[commit]
+		if len(pbrents) == 0 {
+			return "", 0, fblse
 		}
 
-		commit = parents[0]
+		commit = pbrents[0]
 	}
 }
 
-// adjustVisibleUploads returns a copy of the given uploads map with the distance adjusted by
-// the given amount. This returns the uploads "inherited" from a the nearest ancestor with
-// commit data.
-func adjustVisibleUploads(ancestorVisibleUploads map[string]UploadMeta, ancestorDistance uint32) []UploadMeta {
-	uploads := make([]UploadMeta, 0, len(ancestorVisibleUploads))
-	for _, ancestorUpload := range ancestorVisibleUploads {
-		ancestorUpload.Distance += ancestorDistance
-		uploads = append(uploads, ancestorUpload)
+// bdjustVisibleUplobds returns b copy of the given uplobds mbp with the distbnce bdjusted by
+// the given bmount. This returns the uplobds "inherited" from b the nebrest bncestor with
+// commit dbtb.
+func bdjustVisibleUplobds(bncestorVisibleUplobds mbp[string]UplobdMetb, bncestorDistbnce uint32) []UplobdMetb {
+	uplobds := mbke([]UplobdMetb, 0, len(bncestorVisibleUplobds))
+	for _, bncestorUplobd := rbnge bncestorVisibleUplobds {
+		bncestorUplobd.Distbnce += bncestorDistbnce
+		uplobds = bppend(uplobds, bncestorUplobd)
 	}
 
-	return uploads
+	return uplobds
 }
 
-// replaces returns true if upload1 has a smaller distance than upload2.
-// Ties are broken by the minimum upload identifier to remain determinstic.
-func replaces(upload1, upload2 UploadMeta) bool {
-	return upload1.Distance < upload2.Distance || (upload1.Distance == upload2.Distance && upload1.UploadID < upload2.UploadID)
+// replbces returns true if uplobd1 hbs b smbller distbnce thbn uplobd2.
+// Ties bre broken by the minimum uplobd identifier to rembin determinstic.
+func replbces(uplobd1, uplobd2 UplobdMetb) bool {
+	return uplobd1.Distbnce < uplobd2.Distbnce || (uplobd1.Distbnce == uplobd2.Distbnce && uplobd1.UplobdID < uplobd2.UplobdID)
 }

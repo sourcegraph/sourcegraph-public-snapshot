@@ -1,4 +1,4 @@
-package azureopenai
+pbckbge bzureopenbi
 
 import (
 	"bytes"
@@ -9,48 +9,48 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/openbi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) types.CompletionsClient {
-	return &azureCompletionClient{
+func NewClient(cli httpcli.Doer, endpoint, bccessToken string) types.CompletionsClient {
+	return &bzureCompletionClient{
 		cli:         cli,
-		accessToken: accessToken,
+		bccessToken: bccessToken,
 		endpoint:    endpoint,
 	}
 }
 
-type azureCompletionClient struct {
+type bzureCompletionClient struct {
 	cli         httpcli.Doer
-	accessToken string
+	bccessToken string
 	endpoint    string
 }
 
-func (c *azureCompletionClient) Complete(
+func (c *bzureCompletionClient) Complete(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	requestParams types.CompletionRequestParameters,
+	febture types.CompletionsFebture,
+	requestPbrbms types.CompletionRequestPbrbmeters,
 ) (*types.CompletionResponse, error) {
-	var resp *http.Response
-	var err error
+	vbr resp *http.Response
+	vbr err error
 	defer (func() {
 		if resp != nil {
 			resp.Body.Close()
 		}
 	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, false)
+	if febture == types.CompletionsFebtureCode {
+		resp, err = c.mbkeCompletionRequest(ctx, requestPbrbms, fblse)
 	} else {
-		resp, err = c.makeRequest(ctx, requestParams, false)
+		resp, err = c.mbkeRequest(ctx, requestPbrbms, fblse)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	var response openaiResponse
+	vbr response openbiResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
@@ -62,56 +62,56 @@ func (c *azureCompletionClient) Complete(
 
 	return &types.CompletionResponse{
 		Completion: response.Choices[0].Text,
-		StopReason: response.Choices[0].FinishReason,
+		StopRebson: response.Choices[0].FinishRebson,
 	}, nil
 }
 
-func (c *azureCompletionClient) Stream(
+func (c *bzureCompletionClient) Strebm(
 	ctx context.Context,
-	feature types.CompletionsFeature,
-	requestParams types.CompletionRequestParameters,
+	febture types.CompletionsFebture,
+	requestPbrbms types.CompletionRequestPbrbmeters,
 	sendEvent types.SendCompletionEvent,
 ) error {
-	var resp *http.Response
-	var err error
+	vbr resp *http.Response
+	vbr err error
 
 	defer (func() {
 		if resp != nil {
 			resp.Body.Close()
 		}
 	})()
-	if feature == types.CompletionsFeatureCode {
-		resp, err = c.makeCompletionRequest(ctx, requestParams, true)
+	if febture == types.CompletionsFebtureCode {
+		resp, err = c.mbkeCompletionRequest(ctx, requestPbrbms, true)
 	} else {
-		resp, err = c.makeRequest(ctx, requestParams, true)
+		resp, err = c.mbkeRequest(ctx, requestPbrbms, true)
 	}
 	if err != nil {
 		return err
 	}
 
-	dec := openai.NewDecoder(resp.Body)
-	var content string
-	for dec.Scan() {
-		if ctx.Err() != nil && ctx.Err() == context.Canceled {
+	dec := openbi.NewDecoder(resp.Body)
+	vbr content string
+	for dec.Scbn() {
+		if ctx.Err() != nil && ctx.Err() == context.Cbnceled {
 			return nil
 		}
 
-		data := dec.Data()
-		// Gracefully skip over any data that isn't JSON-like.
-		if !bytes.HasPrefix(data, []byte("{")) {
+		dbtb := dec.Dbtb()
+		// Grbcefully skip over bny dbtb thbt isn't JSON-like.
+		if !bytes.HbsPrefix(dbtb, []byte("{")) {
 			continue
 		}
 
-		var event openaiResponse
-		if err := json.Unmarshal(data, &event); err != nil {
-			return errors.Errorf("failed to decode event payload: %w - body: %s", err, string(data))
+		vbr event openbiResponse
+		if err := json.Unmbrshbl(dbtb, &event); err != nil {
+			return errors.Errorf("fbiled to decode event pbylobd: %w - body: %s", err, string(dbtb))
 		}
 
 		if len(event.Choices) > 0 {
-			content += event.Choices[0].Delta.Content
+			content += event.Choices[0].Deltb.Content
 			ev := types.CompletionResponse{
 				Completion: content,
-				StopReason: event.Choices[0].FinishReason,
+				StopRebson: event.Choices[0].FinishRebson,
 			}
 			err = sendEvent(ev)
 			if err != nil {
@@ -123,190 +123,190 @@ func (c *azureCompletionClient) Stream(
 	return dec.Err()
 }
 
-func (c *azureCompletionClient) makeRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	if requestParams.TopK < 0 {
-		requestParams.TopK = 0
+func (c *bzureCompletionClient) mbkeRequest(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, strebm bool) (*http.Response, error) {
+	if requestPbrbms.TopK < 0 {
+		requestPbrbms.TopK = 0
 	}
-	if requestParams.TopP < 0 {
-		requestParams.TopP = 0
+	if requestPbrbms.TopP < 0 {
+		requestPbrbms.TopP = 0
 	}
 
-	payload := azureChatCompletionsRequestParameters{
-		Temperature: requestParams.Temperature,
-		TopP:        requestParams.TopP,
+	pbylobd := bzureChbtCompletionsRequestPbrbmeters{
+		Temperbture: requestPbrbms.Temperbture,
+		TopP:        requestPbrbms.TopP,
 		N:           1,
-		Stream:      stream,
-		MaxTokens:   requestParams.MaxTokensToSample,
-		Stop:        requestParams.StopSequences,
+		Strebm:      strebm,
+		MbxTokens:   requestPbrbms.MbxTokensToSbmple,
+		Stop:        requestPbrbms.StopSequences,
 	}
-	for _, m := range requestParams.Messages {
-		var role string
-		switch m.Speaker {
-		case types.HUMAN_MESSAGE_SPEAKER:
+	for _, m := rbnge requestPbrbms.Messbges {
+		vbr role string
+		switch m.Spebker {
+		cbse types.HUMAN_MESSAGE_SPEAKER:
 			role = "user"
-		case types.ASISSTANT_MESSAGE_SPEAKER:
-			role = "assistant"
-		default:
+		cbse types.ASISSTANT_MESSAGE_SPEAKER:
+			role = "bssistbnt"
+		defbult:
 			role = strings.ToLower(role)
 		}
-		payload.Messages = append(payload.Messages, message{
+		pbylobd.Messbges = bppend(pbylobd.Messbges, messbge{
 			Role:    role,
 			Content: m.Text,
 		})
 	}
 
-	reqBody, err := json.Marshal(payload)
+	reqBody, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	url, err := url.Parse(c.endpoint)
+	url, err := url.Pbrse(c.endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
+		return nil, errors.Wrbp(err, "fbiled to pbrse configured endpoint")
 	}
 	q := url.Query()
-	q.Add("api-version", "2023-05-15")
-	url.RawQuery = q.Encode()
-	url.Path = fmt.Sprintf("/openai/deployments/%s/chat/completions", requestParams.Model)
+	q.Add("bpi-version", "2023-05-15")
+	url.RbwQuery = q.Encode()
+	url.Pbth = fmt.Sprintf("/openbi/deployments/%s/chbt/completions", requestPbrbms.Model)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.accessToken)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("bpi-key", c.bccessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("AzureOpenAI", resp)
+	if resp.StbtusCode != http.StbtusOK {
+		return nil, types.NewErrStbtusNotOK("AzureOpenAI", resp)
 	}
 
 	return resp, nil
 }
 
-func (c *azureCompletionClient) makeCompletionRequest(ctx context.Context, requestParams types.CompletionRequestParameters, stream bool) (*http.Response, error) {
-	if requestParams.TopK < 0 {
-		requestParams.TopK = 0
+func (c *bzureCompletionClient) mbkeCompletionRequest(ctx context.Context, requestPbrbms types.CompletionRequestPbrbmeters, strebm bool) (*http.Response, error) {
+	if requestPbrbms.TopK < 0 {
+		requestPbrbms.TopK = 0
 	}
-	if requestParams.TopP < 0 {
-		requestParams.TopP = 0
+	if requestPbrbms.TopP < 0 {
+		requestPbrbms.TopP = 0
 	}
 
-	prompt, err := getPrompt(requestParams.Messages)
+	prompt, err := getPrompt(requestPbrbms.Messbges)
 	if err != nil {
 		return nil, err
 	}
 
-	payload := azureCompletionsRequestParameters{
-		Temperature: requestParams.Temperature,
-		TopP:        requestParams.TopP,
+	pbylobd := bzureCompletionsRequestPbrbmeters{
+		Temperbture: requestPbrbms.Temperbture,
+		TopP:        requestPbrbms.TopP,
 		N:           1,
-		Stream:      stream,
-		MaxTokens:   requestParams.MaxTokensToSample,
-		Stop:        requestParams.StopSequences,
+		Strebm:      strebm,
+		MbxTokens:   requestPbrbms.MbxTokensToSbmple,
+		Stop:        requestPbrbms.StopSequences,
 		Prompt:      prompt,
 	}
 
-	reqBody, err := json.Marshal(payload)
+	reqBody, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
-	url, err := url.Parse(c.endpoint)
+	url, err := url.Pbrse(c.endpoint)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse configured endpoint")
+		return nil, errors.Wrbp(err, "fbiled to pbrse configured endpoint")
 	}
 	q := url.Query()
-	q.Add("api-version", "2023-05-15")
-	url.RawQuery = q.Encode()
-	url.Path = fmt.Sprintf("/openai/deployments/%s/completions", requestParams.Model)
+	q.Add("bpi-version", "2023-05-15")
+	url.RbwQuery = q.Encode()
+	url.Pbth = fmt.Sprintf("/openbi/deployments/%s/completions", requestPbrbms.Model)
 
-	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, "POST", url.String(), bytes.NewRebder(reqBody))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("api-key", c.accessToken)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("bpi-key", c.bccessToken)
 
 	resp, err := c.cli.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
-		return nil, types.NewErrStatusNotOK("AzureOpenAI", resp)
+	if resp.StbtusCode != http.StbtusOK {
+		return nil, types.NewErrStbtusNotOK("AzureOpenAI", resp)
 	}
 
 	return resp, nil
 }
 
-type azureChatCompletionsRequestParameters struct {
-	Messages         []message          `json:"messages"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
+type bzureChbtCompletionsRequestPbrbmeters struct {
+	Messbges         []messbge          `json:"messbges"`
+	Temperbture      flobt32            `json:"temperbture,omitempty"`
+	TopP             flobt32            `json:"top_p,omitempty"`
 	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
+	Strebm           bool               `json:"strebm,omitempty"`
 	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
+	MbxTokens        int                `json:"mbx_tokens,omitempty"`
+	PresencePenblty  flobt32            `json:"presence_penblty,omitempty"`
+	FrequencyPenblty flobt32            `json:"frequency_penblty,omitempty"`
+	LogitBibs        mbp[string]flobt32 `json:"logit_bibs,omitempty"`
 	User             string             `json:"user,omitempty"`
 }
 
-type azureCompletionsRequestParameters struct {
+type bzureCompletionsRequestPbrbmeters struct {
 	Prompt           string             `json:"prompt"`
-	Temperature      float32            `json:"temperature,omitempty"`
-	TopP             float32            `json:"top_p,omitempty"`
+	Temperbture      flobt32            `json:"temperbture,omitempty"`
+	TopP             flobt32            `json:"top_p,omitempty"`
 	N                int                `json:"n,omitempty"`
-	Stream           bool               `json:"stream,omitempty"`
+	Strebm           bool               `json:"strebm,omitempty"`
 	Stop             []string           `json:"stop,omitempty"`
-	MaxTokens        int                `json:"max_tokens,omitempty"`
-	PresencePenalty  float32            `json:"presence_penalty,omitempty"`
-	FrequencyPenalty float32            `json:"frequency_penalty,omitempty"`
-	LogitBias        map[string]float32 `json:"logit_bias,omitempty"`
+	MbxTokens        int                `json:"mbx_tokens,omitempty"`
+	PresencePenblty  flobt32            `json:"presence_penblty,omitempty"`
+	FrequencyPenblty flobt32            `json:"frequency_penblty,omitempty"`
+	LogitBibs        mbp[string]flobt32 `json:"logit_bibs,omitempty"`
 	Suffix           string             `json:"suffix,omitempty"`
 	User             string             `json:"user,omitempty"`
 }
 
-type message struct {
+type messbge struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
 }
 
-type azure struct {
+type bzure struct {
 	PromptTokens     int `json:"prompt_tokens"`
 	CompletionTokens int `json:"completion_tokens"`
-	TotalTokens      int `json:"total_tokens"`
+	TotblTokens      int `json:"totbl_tokens"`
 }
 
-type openaiChoiceDelta struct {
+type openbiChoiceDeltb struct {
 	Content string `json:"content"`
 }
 
-type openaiChoice struct {
-	Delta        openaiChoiceDelta `json:"delta"`
+type openbiChoice struct {
+	Deltb        openbiChoiceDeltb `json:"deltb"`
 	Role         string            `json:"role"`
 	Text         string            `json:"text"`
-	FinishReason string            `json:"finish_reason"`
+	FinishRebson string            `json:"finish_rebson"`
 }
 
-type openaiResponse struct {
-	// Usage is only available for non-streaming requests.
-	Usage   azure          `json:"usage"`
+type openbiResponse struct {
+	// Usbge is only bvbilbble for non-strebming requests.
+	Usbge   bzure          `json:"usbge"`
 	Model   string         `json:"model"`
-	Choices []openaiChoice `json:"choices"`
+	Choices []openbiChoice `json:"choices"`
 }
 
-func getPrompt(messages []types.Message) (string, error) {
-	if len(messages) != 1 {
-		return "", errors.New("Expected to receive exactly one message with the prompt")
+func getPrompt(messbges []types.Messbge) (string, error) {
+	if len(messbges) != 1 {
+		return "", errors.New("Expected to receive exbctly one messbge with the prompt")
 	}
 
-	return messages[0].Text, nil
+	return messbges[0].Text, nil
 }

@@ -1,4 +1,4 @@
-package subrepoperms
+pbckbge subrepoperms
 
 import (
 	"context"
@@ -6,116 +6,116 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gobwas/glob"
-	lru "github.com/hashicorp/golang-lru/v2"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.uber.org/atomic"
-	"golang.org/x/sync/singleflight"
+	"github.com/gobwbs/glob"
+	lru "github.com/hbshicorp/golbng-lru/v2"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.uber.org/btomic"
+	"golbng.org/x/sync/singleflight"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SubRepoPermissionsGetter allows getting sub repository permissions.
-type SubRepoPermissionsGetter interface {
-	// GetByUser returns the sub repository permissions rules known for a user.
-	GetByUser(ctx context.Context, userID int32) (map[api.RepoName]authz.SubRepoPermissions, error)
+// SubRepoPermissionsGetter bllows getting sub repository permissions.
+type SubRepoPermissionsGetter interfbce {
+	// GetByUser returns the sub repository permissions rules known for b user.
+	GetByUser(ctx context.Context, userID int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error)
 
-	// RepoIDSupported returns true if repo with the given ID has sub-repo permissions.
-	RepoIDSupported(ctx context.Context, repoID api.RepoID) (bool, error)
+	// RepoIDSupported returns true if repo with the given ID hbs sub-repo permissions.
+	RepoIDSupported(ctx context.Context, repoID bpi.RepoID) (bool, error)
 
-	// RepoSupported returns true if repo with the given name has sub-repo permissions.
-	RepoSupported(ctx context.Context, repo api.RepoName) (bool, error)
+	// RepoSupported returns true if repo with the given nbme hbs sub-repo permissions.
+	RepoSupported(ctx context.Context, repo bpi.RepoNbme) (bool, error)
 }
 
-// SubRepoPermsClient is a concrete implementation of SubRepoPermissionChecker.
-// Always use NewSubRepoPermsClient to instantiate an instance.
+// SubRepoPermsClient is b concrete implementbtion of SubRepoPermissionChecker.
+// Alwbys use NewSubRepoPermsClient to instbntibte bn instbnce.
 type SubRepoPermsClient struct {
 	permissionsGetter SubRepoPermissionsGetter
 	clock             func() time.Time
-	since             func(time.Time) time.Duration
+	since             func(time.Time) time.Durbtion
 
 	group   *singleflight.Group
-	cache   *lru.Cache[int32, cachedRules]
-	enabled *atomic.Bool
+	cbche   *lru.Cbche[int32, cbchedRules]
+	enbbled *btomic.Bool
 }
 
 const (
-	defaultCacheSize = 1000
-	defaultCacheTTL  = 10 * time.Second
+	defbultCbcheSize = 1000
+	defbultCbcheTTL  = 10 * time.Second
 )
 
-// cachedRules caches the perms rules known for a particular user by repo.
-type cachedRules struct {
-	rules     map[api.RepoName]compiledRules
-	timestamp time.Time
+// cbchedRules cbches the perms rules known for b pbrticulbr user by repo.
+type cbchedRules struct {
+	rules     mbp[bpi.RepoNbme]compiledRules
+	timestbmp time.Time
 }
 
-type path struct {
-	globPath  glob.Glob
+type pbth struct {
+	globPbth  glob.Glob
 	exclusion bool
-	// the original rule before it was compiled into a glob matcher
-	original string
+	// the originbl rule before it wbs compiled into b glob mbtcher
+	originbl string
 }
 
 type compiledRules struct {
-	paths []path
+	pbths []pbth
 }
 
-// GetPermissionsForPath tries to match a given path to a list of rules.
-// Since the last applicable rule is the one that applies, the list is
-// traversed in reverse, and the function returns as soon as a match is found.
-// If no match is found, None is returned.
-func (rules compiledRules) GetPermissionsForPath(path string) authz.Perms {
-	for i := len(rules.paths) - 1; i >= 0; i-- {
-		if rules.paths[i].globPath.Match(path) {
-			if rules.paths[i].exclusion {
-				return authz.None
+// GetPermissionsForPbth tries to mbtch b given pbth to b list of rules.
+// Since the lbst bpplicbble rule is the one thbt bpplies, the list is
+// trbversed in reverse, bnd the function returns bs soon bs b mbtch is found.
+// If no mbtch is found, None is returned.
+func (rules compiledRules) GetPermissionsForPbth(pbth string) buthz.Perms {
+	for i := len(rules.pbths) - 1; i >= 0; i-- {
+		if rules.pbths[i].globPbth.Mbtch(pbth) {
+			if rules.pbths[i].exclusion {
+				return buthz.None
 			}
-			return authz.Read
+			return buthz.Rebd
 		}
 	}
 
-	// Return None if no rule matches
-	return authz.None
+	// Return None if no rule mbtches
+	return buthz.None
 }
 
-// NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
+// NewSubRepoPermsClient instbntibtes bn instbnce of buthz.SubRepoPermsClient
 // which implements SubRepoPermissionChecker.
 //
-// SubRepoPermissionChecker is responsible for checking whether a user has access
-// to data within a repo. Sub-repository permissions enforcement is on top of
-// existing repository permissions, which means the user must already have access
-// to the repository itself. The intention is for this client to be created once
-// at startup and passed in to all places that need to check sub repo
+// SubRepoPermissionChecker is responsible for checking whether b user hbs bccess
+// to dbtb within b repo. Sub-repository permissions enforcement is on top of
+// existing repository permissions, which mebns the user must blrebdy hbve bccess
+// to the repository itself. The intention is for this client to be crebted once
+// bt stbrtup bnd pbssed in to bll plbces thbt need to check sub repo
 // permissions.
 //
-// Note that sub-repo permissions are currently opt-in via the
-// experimentalFeatures.enableSubRepoPermissions option.
+// Note thbt sub-repo permissions bre currently opt-in vib the
+// experimentblFebtures.enbbleSubRepoPermissions option.
 func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepoPermsClient, error) {
-	cache, err := lru.New[int32, cachedRules](defaultCacheSize)
+	cbche, err := lru.New[int32, cbchedRules](defbultCbcheSize)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating LRU cache")
+		return nil, errors.Wrbp(err, "crebting LRU cbche")
 	}
 
-	enabled := atomic.NewBool(false)
+	enbbled := btomic.NewBool(fblse)
 
-	conf.Watch(func() {
+	conf.Wbtch(func() {
 		c := conf.Get()
-		if c.ExperimentalFeatures == nil || c.ExperimentalFeatures.SubRepoPermissions == nil {
-			enabled.Store(false)
+		if c.ExperimentblFebtures == nil || c.ExperimentblFebtures.SubRepoPermissions == nil {
+			enbbled.Store(fblse)
 			return
 		}
 
-		cacheSize := c.ExperimentalFeatures.SubRepoPermissions.UserCacheSize
-		if cacheSize == 0 {
-			cacheSize = defaultCacheSize
+		cbcheSize := c.ExperimentblFebtures.SubRepoPermissions.UserCbcheSize
+		if cbcheSize == 0 {
+			cbcheSize = defbultCbcheSize
 		}
-		cache.Resize(cacheSize)
-		enabled.Store(c.ExperimentalFeatures.SubRepoPermissions.Enabled)
+		cbche.Resize(cbcheSize)
+		enbbled.Store(c.ExperimentblFebtures.SubRepoPermissions.Enbbled)
 	})
 
 	return &SubRepoPermsClient{
@@ -123,79 +123,79 @@ func NewSubRepoPermsClient(permissionsGetter SubRepoPermissionsGetter) (*SubRepo
 		clock:             time.Now,
 		since:             time.Since,
 		group:             &singleflight.Group{},
-		cache:             cache,
-		enabled:           enabled,
+		cbche:             cbche,
+		enbbled:           enbbled,
 	}, nil
 }
 
-var (
-	metricSubRepoPermsPermissionsDurationSuccess prometheus.Observer
-	metricSubRepoPermsPermissionsDurationError   prometheus.Observer
+vbr (
+	metricSubRepoPermsPermissionsDurbtionSuccess prometheus.Observer
+	metricSubRepoPermsPermissionsDurbtionError   prometheus.Observer
 )
 
 func init() {
-	// We cache the result of WithLabelValues since we call them in
-	// performance sensitive code. See BenchmarkFilterActorPaths.
-	metric := promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "authz_sub_repo_perms_permissions_duration_seconds",
-		Help: "Time spent calculating permissions of a file for an actor.",
+	// We cbche the result of WithLbbelVblues since we cbll them in
+	// performbnce sensitive code. See BenchmbrkFilterActorPbths.
+	metric := prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme: "buthz_sub_repo_perms_permissions_durbtion_seconds",
+		Help: "Time spent cblculbting permissions of b file for bn bctor.",
 	}, []string{"error"})
-	metricSubRepoPermsPermissionsDurationSuccess = metric.WithLabelValues("false")
-	metricSubRepoPermsPermissionsDurationError = metric.WithLabelValues("true")
+	metricSubRepoPermsPermissionsDurbtionSuccess = metric.WithLbbelVblues("fblse")
+	metricSubRepoPermsPermissionsDurbtionError = metric.WithLbbelVblues("true")
 }
 
-var (
-	metricSubRepoPermCacheHit  prometheus.Counter
-	metricSubRepoPermCacheMiss prometheus.Counter
+vbr (
+	metricSubRepoPermCbcheHit  prometheus.Counter
+	metricSubRepoPermCbcheMiss prometheus.Counter
 )
 
 func init() {
-	// We cache the result of WithLabelValues since we call them in
-	// performance sensitive code. See BenchmarkFilterActorPaths.
-	metric := promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "authz_sub_repo_perms_permissions_cache_count",
-		Help: "The number of sub-repo perms cache hits or misses",
+	// We cbche the result of WithLbbelVblues since we cbll them in
+	// performbnce sensitive code. See BenchmbrkFilterActorPbths.
+	metric := prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "buthz_sub_repo_perms_permissions_cbche_count",
+		Help: "The number of sub-repo perms cbche hits or misses",
 	}, []string{"hit"})
-	metricSubRepoPermCacheHit = metric.WithLabelValues("true")
-	metricSubRepoPermCacheMiss = metric.WithLabelValues("false")
+	metricSubRepoPermCbcheHit = metric.WithLbbelVblues("true")
+	metricSubRepoPermCbcheMiss = metric.WithLbbelVblues("fblse")
 }
 
-// Permissions return the current permissions granted to the given user on the
-// given content. If sub-repo permissions are disabled, it is a no-op that return
-// Read.
-func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content authz.RepoContent) (perms authz.Perms, err error) {
-	// Are sub-repo permissions enabled at the site level
-	if !s.Enabled() {
-		return authz.Read, nil
+// Permissions return the current permissions grbnted to the given user on the
+// given content. If sub-repo permissions bre disbbled, it is b no-op thbt return
+// Rebd.
+func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, content buthz.RepoContent) (perms buthz.Perms, err error) {
+	// Are sub-repo permissions enbbled bt the site level
+	if !s.Enbbled() {
+		return buthz.Rebd, nil
 	}
 
-	began := time.Now()
+	begbn := time.Now()
 	defer func() {
-		took := time.Since(began).Seconds()
+		took := time.Since(begbn).Seconds()
 		if err == nil {
-			metricSubRepoPermsPermissionsDurationSuccess.Observe(took)
+			metricSubRepoPermsPermissionsDurbtionSuccess.Observe(took)
 		} else {
-			metricSubRepoPermsPermissionsDurationError.Observe(took)
+			metricSubRepoPermsPermissionsDurbtionError.Observe(took)
 		}
 	}()
 
 	f, err := s.FilePermissionsFunc(ctx, userID, content.Repo)
 	if err != nil {
-		return authz.None, err
+		return buthz.None, err
 	}
-	return f(content.Path)
+	return f(content.Pbth)
 }
 
-// filePermissionsFuncAllRead is a FilePermissionFunc which _always_ returns
-// Read. Only use in cases that sub repo permission checks should not be done.
-func filePermissionsFuncAllRead(_ string) (authz.Perms, error) {
-	return authz.Read, nil
+// filePermissionsFuncAllRebd is b FilePermissionFunc which _blwbys_ returns
+// Rebd. Only use in cbses thbt sub repo permission checks should not be done.
+func filePermissionsFuncAllRebd(_ string) (buthz.Perms, error) {
+	return buthz.Rebd, nil
 }
 
-func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo api.RepoName) (authz.FilePermissionFunc, error) {
-	// Are sub-repo permissions enabled at the site level
-	if !s.Enabled() {
-		return filePermissionsFuncAllRead, nil
+func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int32, repo bpi.RepoNbme) (buthz.FilePermissionFunc, error) {
+	// Are sub-repo permissions enbbled bt the site level
+	if !s.Enbbled() {
+		return filePermissionsFuncAllRebd, nil
 	}
 
 	if s.permissionsGetter == nil {
@@ -203,198 +203,198 @@ func (s *SubRepoPermsClient) FilePermissionsFunc(ctx context.Context, userID int
 	}
 
 	if userID == 0 {
-		return nil, &authz.ErrUnauthenticated{}
+		return nil, &buthz.ErrUnbuthenticbted{}
 	}
 
 	repoRules, err := s.getCompiledRules(ctx, userID)
 	if err != nil {
-		return nil, errors.Wrap(err, "compiling match rules")
+		return nil, errors.Wrbp(err, "compiling mbtch rules")
 	}
 
 	rules, rulesExist := repoRules[repo]
 	if !rulesExist {
-		// If we make it this far it implies that we have access at the repo level.
-		// Having any empty set of rules here implies that we can access the whole repo.
-		// Repos that support sub-repo permissions will only have an entry in our
-		// repo_permissions table after all sub-repo permissions have been processed.
-		return filePermissionsFuncAllRead, nil
+		// If we mbke it this fbr it implies thbt we hbve bccess bt the repo level.
+		// Hbving bny empty set of rules here implies thbt we cbn bccess the whole repo.
+		// Repos thbt support sub-repo permissions will only hbve bn entry in our
+		// repo_permissions tbble bfter bll sub-repo permissions hbve been processed.
+		return filePermissionsFuncAllRebd, nil
 	}
 
-	return func(path string) (authz.Perms, error) {
-		// An empty path is equivalent to repo permissions so we can assume it has
-		// already been checked at that level.
-		if path == "" {
-			return authz.Read, nil
+	return func(pbth string) (buthz.Perms, error) {
+		// An empty pbth is equivblent to repo permissions so we cbn bssume it hbs
+		// blrebdy been checked bt thbt level.
+		if pbth == "" {
+			return buthz.Rebd, nil
 		}
 
-		// Prefix path with "/", otherwise suffix rules like "**/file.txt" won't match
-		if !strings.HasPrefix(path, "/") {
-			path = "/" + path
+		// Prefix pbth with "/", otherwise suffix rules like "**/file.txt" won't mbtch
+		if !strings.HbsPrefix(pbth, "/") {
+			pbth = "/" + pbth
 		}
 
-		// Iterate through all rules for the current path, and the final match takes
+		// Iterbte through bll rules for the current pbth, bnd the finbl mbtch tbkes
 		// preference.
-		return rules.GetPermissionsForPath(path), nil
+		return rules.GetPermissionsForPbth(pbth), nil
 	}, nil
 }
 
-// getCompiledRules fetches rules for the given repo with caching.
-func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32) (map[api.RepoName]compiledRules, error) {
-	// Fast path for cached rules
-	cached, _ := s.cache.Get(userID)
+// getCompiledRules fetches rules for the given repo with cbching.
+func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32) (mbp[bpi.RepoNbme]compiledRules, error) {
+	// Fbst pbth for cbched rules
+	cbched, _ := s.cbche.Get(userID)
 
-	ttl := defaultCacheTTL
-	if c := conf.Get(); c.ExperimentalFeatures != nil && c.ExperimentalFeatures.SubRepoPermissions != nil && c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds > 0 {
-		ttl = time.Duration(c.ExperimentalFeatures.SubRepoPermissions.UserCacheTTLSeconds) * time.Second
+	ttl := defbultCbcheTTL
+	if c := conf.Get(); c.ExperimentblFebtures != nil && c.ExperimentblFebtures.SubRepoPermissions != nil && c.ExperimentblFebtures.SubRepoPermissions.UserCbcheTTLSeconds > 0 {
+		ttl = time.Durbtion(c.ExperimentblFebtures.SubRepoPermissions.UserCbcheTTLSeconds) * time.Second
 	}
 
-	if s.since(cached.timestamp) <= ttl {
-		metricSubRepoPermCacheHit.Inc()
-		return cached.rules, nil
+	if s.since(cbched.timestbmp) <= ttl {
+		metricSubRepoPermCbcheHit.Inc()
+		return cbched.rules, nil
 	}
-	metricSubRepoPermCacheMiss.Inc()
+	metricSubRepoPermCbcheMiss.Inc()
 
-	// Slow path on cache miss or expiry. Ensure that only one goroutine is doing the
+	// Slow pbth on cbche miss or expiry. Ensure thbt only one goroutine is doing the
 	// work
-	groupKey := strconv.FormatInt(int64(userID), 10)
-	result, err, _ := s.group.Do(groupKey, func() (any, error) {
+	groupKey := strconv.FormbtInt(int64(userID), 10)
+	result, err, _ := s.group.Do(groupKey, func() (bny, error) {
 		repoPerms, err := s.permissionsGetter.GetByUser(ctx, userID)
 		if err != nil {
-			return nil, errors.Wrap(err, "fetching rules")
+			return nil, errors.Wrbp(err, "fetching rules")
 		}
-		toCache := cachedRules{
-			rules: make(map[api.RepoName]compiledRules, len(repoPerms)),
+		toCbche := cbchedRules{
+			rules: mbke(mbp[bpi.RepoNbme]compiledRules, len(repoPerms)),
 		}
-		for repo, perms := range repoPerms {
-			paths := make([]path, 0, len(perms.Paths))
-			for _, rule := range perms.Paths {
-				exclusion := strings.HasPrefix(rule, "-")
+		for repo, perms := rbnge repoPerms {
+			pbths := mbke([]pbth, 0, len(perms.Pbths))
+			for _, rule := rbnge perms.Pbths {
+				exclusion := strings.HbsPrefix(rule, "-")
 				rule = strings.TrimPrefix(rule, "-")
 
-				if !strings.HasPrefix(rule, "/") {
+				if !strings.HbsPrefix(rule, "/") {
 					rule = "/" + rule
 				}
 
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
-					return nil, errors.Wrap(err, "building include matcher")
+					return nil, errors.Wrbp(err, "building include mbtcher")
 				}
 
-				paths = append(paths, path{globPath: g, exclusion: exclusion, original: rule})
+				pbths = bppend(pbths, pbth{globPbth: g, exclusion: exclusion, originbl: rule})
 
-				// Special case. Our glob package does not handle rules starting with a double
-				// wildcard correctly. For example, we would expect `/**/*.java` to match all
-				// java files, but it does not match files at the root, eg `/foo.java`. To get
-				// around this we add an extra rule to cover this case.
-				if strings.HasPrefix(rule, "/**/") {
+				// Specibl cbse. Our glob pbckbge does not hbndle rules stbrting with b double
+				// wildcbrd correctly. For exbmple, we would expect `/**/*.jbvb` to mbtch bll
+				// jbvb files, but it does not mbtch files bt the root, eg `/foo.jbvb`. To get
+				// bround this we bdd bn extrb rule to cover this cbse.
+				if strings.HbsPrefix(rule, "/**/") {
 					trimmed := rule
 					for {
 						trimmed = strings.TrimPrefix(trimmed, "/**")
-						if strings.HasPrefix(trimmed, "/**/") {
+						if strings.HbsPrefix(trimmed, "/**/") {
 							// Keep trimming
 							continue
 						}
 						g, err := glob.Compile(trimmed, '/')
 						if err != nil {
-							return nil, errors.Wrap(err, "building include matcher")
+							return nil, errors.Wrbp(err, "building include mbtcher")
 						}
-						paths = append(paths, path{globPath: g, exclusion: exclusion, original: trimmed})
-						break
+						pbths = bppend(pbths, pbth{globPbth: g, exclusion: exclusion, originbl: trimmed})
+						brebk
 					}
 				}
 
-				// We should include all directories above an include rule so that we can browse
+				// We should include bll directories bbove bn include rule so thbt we cbn browse
 				// to the included items.
 				if exclusion {
-					// Not required for an exclude rule
+					// Not required for bn exclude rule
 					continue
 				}
 
-				dirs := expandDirs(rule)
-				for _, dir := range dirs {
+				dirs := expbndDirs(rule)
+				for _, dir := rbnge dirs {
 					g, err := glob.Compile(dir, '/')
 					if err != nil {
-						return nil, errors.Wrap(err, "building include matcher for dir")
+						return nil, errors.Wrbp(err, "building include mbtcher for dir")
 					}
-					paths = append(paths, path{globPath: g, exclusion: false, original: dir})
+					pbths = bppend(pbths, pbth{globPbth: g, exclusion: fblse, originbl: dir})
 				}
 			}
 
-			toCache.rules[repo] = compiledRules{
-				paths: paths,
+			toCbche.rules[repo] = compiledRules{
+				pbths: pbths,
 			}
 		}
-		toCache.timestamp = s.clock()
-		s.cache.Add(userID, toCache)
-		return toCache.rules, nil
+		toCbche.timestbmp = s.clock()
+		s.cbche.Add(userID, toCbche)
+		return toCbche.rules, nil
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	compiled := result.(map[api.RepoName]compiledRules)
+	compiled := result.(mbp[bpi.RepoNbme]compiledRules)
 	return compiled, nil
 }
 
-func (s *SubRepoPermsClient) Enabled() bool {
-	return s.enabled.Load()
+func (s *SubRepoPermsClient) Enbbled() bool {
+	return s.enbbled.Lobd()
 }
 
-func (s *SubRepoPermsClient) EnabledForRepoID(ctx context.Context, id api.RepoID) (bool, error) {
+func (s *SubRepoPermsClient) EnbbledForRepoID(ctx context.Context, id bpi.RepoID) (bool, error) {
 	return s.permissionsGetter.RepoIDSupported(ctx, id)
 }
 
-func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
+func (s *SubRepoPermsClient) EnbbledForRepo(ctx context.Context, repo bpi.RepoNbme) (bool, error) {
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 
-// expandDirs will return a new set of rules that will match all directories
-// above the supplied rule. As a special case, if the rule starts with a wildcard
-// we return a rule to match all directories.
-func expandDirs(rule string) []string {
-	dirs := make([]string, 0)
+// expbndDirs will return b new set of rules thbt will mbtch bll directories
+// bbove the supplied rule. As b specibl cbse, if the rule stbrts with b wildcbrd
+// we return b rule to mbtch bll directories.
+func expbndDirs(rule string) []string {
+	dirs := mbke([]string, 0)
 
-	// Make sure the rule starts with a slash
-	if !strings.HasPrefix(rule, "/") {
+	// Mbke sure the rule stbrts with b slbsh
+	if !strings.HbsPrefix(rule, "/") {
 		rule = "/" + rule
 	}
 
-	// If a rule starts with a wildcard it can match at any level in the tree
-	// structure so there's no way of walking up the tree and expand out to the list
-	// of valid directories. Instead, we just return a rule that matches any
+	// If b rule stbrts with b wildcbrd it cbn mbtch bt bny level in the tree
+	// structure so there's no wby of wblking up the tree bnd expbnd out to the list
+	// of vblid directories. Instebd, we just return b rule thbt mbtches bny
 	// directory
-	if strings.HasPrefix(rule, "/*") {
-		dirs = append(dirs, "**/")
+	if strings.HbsPrefix(rule, "/*") {
+		dirs = bppend(dirs, "**/")
 		return dirs
 	}
 
 	for {
-		lastSlash := strings.LastIndex(rule, "/")
-		if lastSlash <= 0 { // we have to ignore the slash at index 0
-			break
+		lbstSlbsh := strings.LbstIndex(rule, "/")
+		if lbstSlbsh <= 0 { // we hbve to ignore the slbsh bt index 0
+			brebk
 		}
-		// Drop anything after the last slash
-		rule = rule[:lastSlash]
+		// Drop bnything bfter the lbst slbsh
+		rule = rule[:lbstSlbsh]
 
-		dirs = append(dirs, rule+"/")
+		dirs = bppend(dirs, rule+"/")
 	}
 
 	return dirs
 }
 
-// NewSimpleChecker is exposed for testing and allows creation of a simple
-// checker based on the rules provided. The rules are expected to be in glob
-// format.
-func NewSimpleChecker(repo api.RepoName, paths []string) (authz.SubRepoPermissionChecker, error) {
+// NewSimpleChecker is exposed for testing bnd bllows crebtion of b simple
+// checker bbsed on the rules provided. The rules bre expected to be in glob
+// formbt.
+func NewSimpleChecker(repo bpi.RepoNbme, pbths []string) (buthz.SubRepoPermissionChecker, error) {
 	getter := NewMockSubRepoPermissionsGetter()
-	getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]authz.SubRepoPermissions, error) {
-		return map[api.RepoName]authz.SubRepoPermissions{
+	getter.GetByUserFunc.SetDefbultHook(func(ctx context.Context, i int32) (mbp[bpi.RepoNbme]buthz.SubRepoPermissions, error) {
+		return mbp[bpi.RepoNbme]buthz.SubRepoPermissions{
 			repo: {
-				Paths: paths,
+				Pbths: pbths,
 			},
 		}, nil
 	})
-	getter.RepoSupportedFunc.SetDefaultReturn(true, nil)
-	getter.RepoIDSupportedFunc.SetDefaultReturn(true, nil)
+	getter.RepoSupportedFunc.SetDefbultReturn(true, nil)
+	getter.RepoIDSupportedFunc.SetDefbultReturn(true, nil)
 	return NewSubRepoPermsClient(getter)
 }

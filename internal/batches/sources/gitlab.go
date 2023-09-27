@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
@@ -6,454 +6,454 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/versions"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/versions"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type GitLabSource struct {
-	client *gitlab.Client
-	au     auth.Authenticator
+type GitLbbSource struct {
+	client *gitlbb.Client
+	bu     buth.Authenticbtor
 }
 
-var _ ChangesetSource = &GitLabSource{}
-var _ DraftChangesetSource = &GitLabSource{}
-var _ ForkableChangesetSource = &GitLabSource{}
+vbr _ ChbngesetSource = &GitLbbSource{}
+vbr _ DrbftChbngesetSource = &GitLbbSource{}
+vbr _ ForkbbleChbngesetSource = &GitLbbSource{}
 
-// NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewGitLbbSource returns b new GitLbbSource from the given externbl service.
+func NewGitLbbSource(ctx context.Context, svc *types.ExternblService, cf *httpcli.Fbctory) (*GitLbbSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.GitLabConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.GitLbbConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(svc.URN(), &c, cf)
+	return newGitLbbSource(svc.URN(), &c, cf)
 }
 
-func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
-	baseURL, err := url.Parse(c.Url)
+func newGitLbbSource(urn string, c *schemb.GitLbbConnection, cf *httpcli.Fbctory) (*GitLbbSource, error) {
+	bbseURL, err := url.Pbrse(c.Url)
 	if err != nil {
 		return nil, err
 	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
+	bbseURL = extsvc.NormblizeBbseURL(bbseURL)
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternblClientFbctory
 	}
 
-	opts := httpClientCertificateOptions(nil, c.Certificate)
+	opts := httpClientCertificbteOptions(nil, c.Certificbte)
 
 	cli, err := cf.Doer(opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	// Don't modify passed-in parameter.
-	var authr auth.Authenticator
+	// Don't modify pbssed-in pbrbmeter.
+	vbr buthr buth.Authenticbtor
 	if c.Token != "" {
 		switch c.TokenType {
-		case "oauth":
-			authr = &auth.OAuthBearerToken{Token: c.Token}
-		default:
-			authr = &gitlab.SudoableToken{Token: c.Token}
+		cbse "obuth":
+			buthr = &buth.OAuthBebrerToken{Token: c.Token}
+		defbult:
+			buthr = &gitlbb.SudobbleToken{Token: c.Token}
 		}
 	}
 
-	provider := gitlab.NewClientProvider(urn, baseURL, cli)
-	return &GitLabSource{
-		au:     authr,
-		client: provider.GetAuthenticatorClient(authr),
+	provider := gitlbb.NewClientProvider(urn, bbseURL, cli)
+	return &GitLbbSource{
+		bu:     buthr,
+		client: provider.GetAuthenticbtorClient(buthr),
 	}, nil
 }
 
-func (s GitLabSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.au)
+func (s GitLbbSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
+	return GitserverPushConfig(repo, s.bu)
 }
 
-func (s GitLabSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	switch a.(type) {
-	case *auth.OAuthBearerToken,
-		*auth.OAuthBearerTokenWithSSH:
-		break
+func (s GitLbbSource) WithAuthenticbtor(b buth.Authenticbtor) (ChbngesetSource, error) {
+	switch b.(type) {
+	cbse *buth.OAuthBebrerToken,
+		*buth.OAuthBebrerTokenWithSSH:
+		brebk
 
-	default:
-		return nil, newUnsupportedAuthenticatorError("GitLabSource", a)
+	defbult:
+		return nil, newUnsupportedAuthenticbtorError("GitLbbSource", b)
 	}
 
 	sc := s
-	sc.au = a
-	sc.client = sc.client.WithAuthenticator(a)
+	sc.bu = b
+	sc.client = sc.client.WithAuthenticbtor(b)
 
 	return &sc, nil
 }
 
-func (s GitLabSource) ValidateAuthenticator(ctx context.Context) error {
-	return s.client.ValidateToken(ctx)
+func (s GitLbbSource) VblidbteAuthenticbtor(ctx context.Context) error {
+	return s.client.VblidbteToken(ctx)
 }
 
-// CreateChangeset creates a GitLab merge request. If it already exists,
-// *Changeset will be populated and the return value will be true.
-func (s *GitLabSource) CreateChangeset(ctx context.Context, c *Changeset) (bool, error) {
-	remoteProject := c.RemoteRepo.Metadata.(*gitlab.Project)
-	targetProject := c.TargetRepo.Metadata.(*gitlab.Project)
-	exists := false
-	source := gitdomain.AbbreviateRef(c.HeadRef)
-	target := gitdomain.AbbreviateRef(c.BaseRef)
-	targetProjectID := 0
-	if c.RemoteRepo != c.TargetRepo {
-		targetProjectID = c.TargetRepo.Metadata.(*gitlab.Project).ID
+// CrebteChbngeset crebtes b GitLbb merge request. If it blrebdy exists,
+// *Chbngeset will be populbted bnd the return vblue will be true.
+func (s *GitLbbSource) CrebteChbngeset(ctx context.Context, c *Chbngeset) (bool, error) {
+	remoteProject := c.RemoteRepo.Metbdbtb.(*gitlbb.Project)
+	tbrgetProject := c.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
+	exists := fblse
+	source := gitdombin.AbbrevibteRef(c.HebdRef)
+	tbrget := gitdombin.AbbrevibteRef(c.BbseRef)
+	tbrgetProjectID := 0
+	if c.RemoteRepo != c.TbrgetRepo {
+		tbrgetProjectID = c.TbrgetRepo.Metbdbtb.(*gitlbb.Project).ID
 	}
-	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+	removeSource := conf.Get().BbtchChbngesAutoDeleteBrbnch
 
-	// We have to create the merge request against the remote project, not the
-	// target project, because that's how GitLab's API works: you provide the
-	// target project ID as one of the parameters. Yes, this is weird.
+	// We hbve to crebte the merge request bgbinst the remote project, not the
+	// tbrget project, becbuse thbt's how GitLbb's API works: you provide the
+	// tbrget project ID bs one of the pbrbmeters. Yes, this is weird.
 	//
-	// Of course, we then have to use the targetProject for everything else,
-	// because that's what the merge request actually belongs to.
-	mr, err := s.client.CreateMergeRequest(ctx, remoteProject, gitlab.CreateMergeRequestOpts{
-		SourceBranch:       source,
-		TargetBranch:       target,
-		TargetProjectID:    targetProjectID,
+	// Of course, we then hbve to use the tbrgetProject for everything else,
+	// becbuse thbt's whbt the merge request bctublly belongs to.
+	mr, err := s.client.CrebteMergeRequest(ctx, remoteProject, gitlbb.CrebteMergeRequestOpts{
+		SourceBrbnch:       source,
+		TbrgetBrbnch:       tbrget,
+		TbrgetProjectID:    tbrgetProjectID,
 		Title:              c.Title,
 		Description:        c.Body,
-		RemoveSourceBranch: removeSource,
+		RemoveSourceBrbnch: removeSource,
 	})
 	if err != nil {
-		if err == gitlab.ErrMergeRequestAlreadyExists {
+		if err == gitlbb.ErrMergeRequestAlrebdyExists {
 			exists = true
 
-			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, targetProject, source, target)
+			mr, err = s.client.GetOpenMergeRequestByRefs(ctx, tbrgetProject, source, tbrget)
 			if err != nil {
-				return exists, errors.Wrap(err, "retrieving an extant merge request")
+				return exists, errors.Wrbp(err, "retrieving bn extbnt merge request")
 			}
 		} else {
-			return exists, errors.Wrap(err, "creating the merge request")
+			return exists, errors.Wrbp(err, "crebting the merge request")
 		}
 	}
 
-	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, targetProject, mr); err != nil {
-		return exists, errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	// These bdditionbl API cblls cbn go bwby once we cbn use the GrbphQL API.
+	if err := s.decorbteMergeRequestDbtb(ctx, tbrgetProject, mr); err != nil {
+		return exists, errors.Wrbpf(err, "retrieving bdditionbl dbtb for merge request %d", mr.IID)
 	}
 
-	if err := c.SetMetadata(mr); err != nil {
-		return exists, errors.Wrap(err, "setting changeset metadata")
+	if err := c.SetMetbdbtb(mr); err != nil {
+		return exists, errors.Wrbp(err, "setting chbngeset metbdbtb")
 	}
 	return exists, nil
 }
 
-// CreateDraftChangeset creates a GitLab merge request. If it already exists,
-// *Changeset will be populated and the return value will be true.
-func (s *GitLabSource) CreateDraftChangeset(ctx context.Context, c *Changeset) (bool, error) {
+// CrebteDrbftChbngeset crebtes b GitLbb merge request. If it blrebdy exists,
+// *Chbngeset will be populbted bnd the return vblue will be true.
+func (s *GitLbbSource) CrebteDrbftChbngeset(ctx context.Context, c *Chbngeset) (bool, error) {
 	v, err := s.determineVersion(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	c.Title = gitlab.SetWIPOrDraft(c.Title, v)
+	c.Title = gitlbb.SetWIPOrDrbft(c.Title, v)
 
-	exists, err := s.CreateChangeset(ctx, c)
+	exists, err := s.CrebteChbngeset(ctx, c)
 	if err != nil {
 		return exists, err
 	}
 
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return false, errors.New("Changeset is not a GitLab merge request")
+		return fblse, errors.New("Chbngeset is not b GitLbb merge request")
 	}
 
-	isDraftOrWIP := mr.WorkInProgress || mr.Draft
+	isDrbftOrWIP := mr.WorkInProgress || mr.Drbft
 
-	// If it already exists, but is not a WIP, we need to update the title.
-	if exists && !isDraftOrWIP {
-		if err := s.UpdateChangeset(ctx, c); err != nil {
+	// If it blrebdy exists, but is not b WIP, we need to updbte the title.
+	if exists && !isDrbftOrWIP {
+		if err := s.UpdbteChbngeset(ctx, c); err != nil {
 			return exists, err
 		}
 	}
 	return exists, nil
 }
 
-// CloseChangeset closes the merge request on GitLab, leaving it unlocked.
-func (s *GitLabSource) CloseChangeset(ctx context.Context, c *Changeset) error {
-	project := c.TargetRepo.Metadata.(*gitlab.Project)
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+// CloseChbngeset closes the merge request on GitLbb, lebving it unlocked.
+func (s *GitLbbSource) CloseChbngeset(ctx context.Context, c *Chbngeset) error {
+	project := c.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitLab merge request")
+		return errors.New("Chbngeset is not b GitLbb merge request")
 	}
 
-	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+	removeSource := conf.Get().BbtchChbngesAutoDeleteBrbnch
 
-	// Title and TargetBranch are required, even though we're not actually
-	// changing them.
-	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
+	// Title bnd TbrgetBrbnch bre required, even though we're not bctublly
+	// chbnging them.
+	updbted, err := s.client.UpdbteMergeRequest(ctx, project, mr, gitlbb.UpdbteMergeRequestOpts{
 		Title:              mr.Title,
-		TargetBranch:       mr.TargetBranch,
-		StateEvent:         gitlab.UpdateMergeRequestStateEventClose,
-		RemoveSourceBranch: removeSource,
+		TbrgetBrbnch:       mr.TbrgetBrbnch,
+		StbteEvent:         gitlbb.UpdbteMergeRequestStbteEventClose,
+		RemoveSourceBrbnch: removeSource,
 	})
 	if err != nil {
-		return errors.Wrap(err, "updating GitLab merge request")
+		return errors.Wrbp(err, "updbting GitLbb merge request")
 	}
 
-	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	// These bdditionbl API cblls cbn go bwby once we cbn use the GrbphQL API.
+	if err := s.decorbteMergeRequestDbtb(ctx, project, mr); err != nil {
+		return errors.Wrbpf(err, "retrieving bdditionbl dbtb for merge request %d", mr.IID)
 	}
 
-	if err := c.SetMetadata(updated); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
+	if err := c.SetMetbdbtb(updbted); err != nil {
+		return errors.Wrbp(err, "setting chbngeset metbdbtb")
 	}
 	return nil
 }
 
-// LoadChangeset loads the given merge request from GitLab and updates it.
-func (s *GitLabSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	project := cs.TargetRepo.Metadata.(*gitlab.Project)
+// LobdChbngeset lobds the given merge request from GitLbb bnd updbtes it.
+func (s *GitLbbSource) LobdChbngeset(ctx context.Context, cs *Chbngeset) error {
+	project := cs.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
 
-	iid, err := strconv.ParseInt(cs.ExternalID, 10, 64)
+	iid, err := strconv.PbrseInt(cs.ExternblID, 10, 64)
 	if err != nil {
-		return errors.Wrapf(err, "parsing changeset external ID %s", cs.ExternalID)
+		return errors.Wrbpf(err, "pbrsing chbngeset externbl ID %s", cs.ExternblID)
 	}
 
-	mr, err := s.client.GetMergeRequest(ctx, project, gitlab.ID(iid))
+	mr, err := s.client.GetMergeRequest(ctx, project, gitlbb.ID(iid))
 	if err != nil {
-		if errors.Is(err, gitlab.ErrMergeRequestNotFound) {
-			return ChangesetNotFoundError{Changeset: cs}
+		if errors.Is(err, gitlbb.ErrMergeRequestNotFound) {
+			return ChbngesetNotFoundError{Chbngeset: cs}
 		}
-		return errors.Wrapf(err, "retrieving merge request %d", iid)
+		return errors.Wrbpf(err, "retrieving merge request %d", iid)
 	}
 
-	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-		return errors.Wrapf(err, "retrieving additional data for merge request %d", iid)
+	// These bdditionbl API cblls cbn go bwby once we cbn use the GrbphQL API.
+	if err := s.decorbteMergeRequestDbtb(ctx, project, mr); err != nil {
+		return errors.Wrbpf(err, "retrieving bdditionbl dbtb for merge request %d", iid)
 	}
 
-	if err := cs.SetMetadata(mr); err != nil {
-		return errors.Wrapf(err, "setting changeset metadata for merge request %d", iid)
+	if err := cs.SetMetbdbtb(mr); err != nil {
+		return errors.Wrbpf(err, "setting chbngeset metbdbtb for merge request %d", iid)
 	}
 
 	return nil
 }
 
-// ReopenChangeset closes the merge request on GitLab, leaving it unlocked.
-func (s *GitLabSource) ReopenChangeset(ctx context.Context, c *Changeset) error {
-	project := c.TargetRepo.Metadata.(*gitlab.Project)
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+// ReopenChbngeset closes the merge request on GitLbb, lebving it unlocked.
+func (s *GitLbbSource) ReopenChbngeset(ctx context.Context, c *Chbngeset) error {
+	project := c.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitLab merge request")
+		return errors.New("Chbngeset is not b GitLbb merge request")
 	}
 
-	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+	removeSource := conf.Get().BbtchChbngesAutoDeleteBrbnch
 
-	// Title and TargetBranch are required, even though we're not actually
-	// changing them.
-	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
+	// Title bnd TbrgetBrbnch bre required, even though we're not bctublly
+	// chbnging them.
+	updbted, err := s.client.UpdbteMergeRequest(ctx, project, mr, gitlbb.UpdbteMergeRequestOpts{
 		Title:              mr.Title,
-		TargetBranch:       mr.TargetBranch,
-		StateEvent:         gitlab.UpdateMergeRequestStateEventReopen,
-		RemoveSourceBranch: removeSource,
+		TbrgetBrbnch:       mr.TbrgetBrbnch,
+		StbteEvent:         gitlbb.UpdbteMergeRequestStbteEventReopen,
+		RemoveSourceBrbnch: removeSource,
 	})
 	if err != nil {
-		return errors.Wrap(err, "reopening GitLab merge request")
+		return errors.Wrbp(err, "reopening GitLbb merge request")
 	}
 
-	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	// These bdditionbl API cblls cbn go bwby once we cbn use the GrbphQL API.
+	if err := s.decorbteMergeRequestDbtb(ctx, project, mr); err != nil {
+		return errors.Wrbpf(err, "retrieving bdditionbl dbtb for merge request %d", mr.IID)
 	}
 
-	if err := c.SetMetadata(updated); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
+	if err := c.SetMetbdbtb(updbted); err != nil {
+		return errors.Wrbp(err, "setting chbngeset metbdbtb")
 	}
 	return nil
 }
 
-func (s *GitLabSource) decorateMergeRequestData(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) error {
+func (s *GitLbbSource) decorbteMergeRequestDbtb(ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest) error {
 	notes, err := s.getMergeRequestNotes(ctx, project, mr)
 	if err != nil {
-		return errors.Wrap(err, "retrieving notes")
+		return errors.Wrbp(err, "retrieving notes")
 	}
 
-	events, err := s.getMergeRequestResourceStateEvents(ctx, project, mr)
+	events, err := s.getMergeRequestResourceStbteEvents(ctx, project, mr)
 	if err != nil {
-		return errors.Wrap(err, "retrieving resource state events")
+		return errors.Wrbp(err, "retrieving resource stbte events")
 	}
 
 	pipelines, err := s.getMergeRequestPipelines(ctx, project, mr)
 	if err != nil {
-		return errors.Wrap(err, "retrieving pipelines")
+		return errors.Wrbp(err, "retrieving pipelines")
 	}
 
 	if mr.SourceProjectID != mr.ProjectID {
-		project, err := s.client.GetProject(ctx, gitlab.GetProjectOp{
+		project, err := s.client.GetProject(ctx, gitlbb.GetProjectOp{
 			ID: int(mr.SourceProjectID),
 		})
 		if err != nil {
-			return errors.Wrap(err, "getting source project")
+			return errors.Wrbp(err, "getting source project")
 		}
 
-		name, err := project.Name()
+		nbme, err := project.Nbme()
 		if err != nil {
-			return errors.Wrap(err, "parsing project name")
+			return errors.Wrbp(err, "pbrsing project nbme")
 		}
-		ns, err := project.Namespace()
+		ns, err := project.Nbmespbce()
 		if err != nil {
-			return errors.Wrap(err, "parsing project namespace")
+			return errors.Wrbp(err, "pbrsing project nbmespbce")
 		}
 
-		mr.SourceProjectName = name
-		mr.SourceProjectNamespace = ns
+		mr.SourceProjectNbme = nbme
+		mr.SourceProjectNbmespbce = ns
 	} else {
-		mr.SourceProjectName = ""
-		mr.SourceProjectNamespace = ""
+		mr.SourceProjectNbme = ""
+		mr.SourceProjectNbmespbce = ""
 	}
 
 	mr.Notes = notes
 	mr.Pipelines = pipelines
-	mr.ResourceStateEvents = events
+	mr.ResourceStbteEvents = events
 	return nil
 }
 
-// getMergeRequestNotes retrieves the notes attached to a merge request in
+// getMergeRequestNotes retrieves the notes bttbched to b merge request in
 // descending time order.
-func (s *GitLabSource) getMergeRequestNotes(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.Note, error) {
-	// Get the forward iterator that gives us a note page at a time.
+func (s *GitLbbSource) getMergeRequestNotes(ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest) ([]*gitlbb.Note, error) {
+	// Get the forwbrd iterbtor thbt gives us b note pbge bt b time.
 	it := s.client.GetMergeRequestNotes(ctx, project, mr.IID)
 
-	// Now we can iterate over the pages of notes and fill in the slice to be
+	// Now we cbn iterbte over the pbges of notes bnd fill in the slice to be
 	// returned.
-	notes, err := readSystemNotes(it)
+	notes, err := rebdSystemNotes(it)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading note pages")
+		return nil, errors.Wrbp(err, "rebding note pbges")
 	}
 
 	return notes, nil
 }
 
-func readSystemNotes(it func() ([]*gitlab.Note, error)) ([]*gitlab.Note, error) {
-	var notes []*gitlab.Note
+func rebdSystemNotes(it func() ([]*gitlbb.Note, error)) ([]*gitlbb.Note, error) {
+	vbr notes []*gitlbb.Note
 
 	for {
-		page, err := it()
+		pbge, err := it()
 		if err != nil {
-			return nil, errors.Wrap(err, "retrieving note page")
+			return nil, errors.Wrbp(err, "retrieving note pbge")
 		}
-		if len(page) == 0 {
-			// The terminal condition for the iterator is returning an empty
-			// slice with no error, so we can stop iterating here.
+		if len(pbge) == 0 {
+			// The terminbl condition for the iterbtor is returning bn empty
+			// slice with no error, so we cbn stop iterbting here.
 			return notes, nil
 		}
 
-		for _, note := range page {
-			// We're only interested in system notes for batch changes, since they
-			// include the review state changes we need; let's not even bother
+		for _, note := rbnge pbge {
+			// We're only interested in system notes for bbtch chbnges, since they
+			// include the review stbte chbnges we need; let's not even bother
 			// storing the non-system ones.
 			if note.System {
-				notes = append(notes, note)
+				notes = bppend(notes, note)
 			}
 		}
 	}
 }
 
-// getMergeRequestResourceStateEvents retrieves the events attached to a merge request in
+// getMergeRequestResourceStbteEvents retrieves the events bttbched to b merge request in
 // descending time order.
-func (s *GitLabSource) getMergeRequestResourceStateEvents(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.ResourceStateEvent, error) {
-	// Get the forward iterator that gives us a note page at a time.
-	it := s.client.GetMergeRequestResourceStateEvents(ctx, project, mr.IID)
+func (s *GitLbbSource) getMergeRequestResourceStbteEvents(ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest) ([]*gitlbb.ResourceStbteEvent, error) {
+	// Get the forwbrd iterbtor thbt gives us b note pbge bt b time.
+	it := s.client.GetMergeRequestResourceStbteEvents(ctx, project, mr.IID)
 
-	// Now we can iterate over the pages of notes and fill in the slice to be
+	// Now we cbn iterbte over the pbges of notes bnd fill in the slice to be
 	// returned.
-	events, err := readMergeRequestResourceStateEvents(it)
+	events, err := rebdMergeRequestResourceStbteEvents(it)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading resource state events pages")
+		return nil, errors.Wrbp(err, "rebding resource stbte events pbges")
 	}
 
 	return events, nil
 }
 
-func readMergeRequestResourceStateEvents(it func() ([]*gitlab.ResourceStateEvent, error)) ([]*gitlab.ResourceStateEvent, error) {
-	var events []*gitlab.ResourceStateEvent
+func rebdMergeRequestResourceStbteEvents(it func() ([]*gitlbb.ResourceStbteEvent, error)) ([]*gitlbb.ResourceStbteEvent, error) {
+	vbr events []*gitlbb.ResourceStbteEvent
 
 	for {
-		page, err := it()
+		pbge, err := it()
 		if err != nil {
-			return nil, errors.Wrap(err, "retrieving resource state events page")
+			return nil, errors.Wrbp(err, "retrieving resource stbte events pbge")
 		}
-		if len(page) == 0 {
-			// The terminal condition for the iterator is returning an empty
-			// slice with no error, so we can stop iterating here.
+		if len(pbge) == 0 {
+			// The terminbl condition for the iterbtor is returning bn empty
+			// slice with no error, so we cbn stop iterbting here.
 			return events, nil
 		}
 
-		events = append(events, page...)
+		events = bppend(events, pbge...)
 	}
 }
 
-// getMergeRequestPipelines retrieves the pipelines attached to a merge request
+// getMergeRequestPipelines retrieves the pipelines bttbched to b merge request
 // in descending time order.
-func (s *GitLabSource) getMergeRequestPipelines(ctx context.Context, project *gitlab.Project, mr *gitlab.MergeRequest) ([]*gitlab.Pipeline, error) {
-	// Get the forward iterator that gives us a pipeline page at a time.
+func (s *GitLbbSource) getMergeRequestPipelines(ctx context.Context, project *gitlbb.Project, mr *gitlbb.MergeRequest) ([]*gitlbb.Pipeline, error) {
+	// Get the forwbrd iterbtor thbt gives us b pipeline pbge bt b time.
 	it := s.client.GetMergeRequestPipelines(ctx, project, mr.IID)
 
-	// Now we can iterate over the pages of pipelines and fill in the slice to
+	// Now we cbn iterbte over the pbges of pipelines bnd fill in the slice to
 	// be returned.
-	pipelines, err := readPipelines(it)
+	pipelines, err := rebdPipelines(it)
 	if err != nil {
-		return nil, errors.Wrap(err, "reading pipeline pages")
+		return nil, errors.Wrbp(err, "rebding pipeline pbges")
 	}
 	return pipelines, nil
 }
 
-func readPipelines(it func() ([]*gitlab.Pipeline, error)) ([]*gitlab.Pipeline, error) {
-	var pipelines []*gitlab.Pipeline
+func rebdPipelines(it func() ([]*gitlbb.Pipeline, error)) ([]*gitlbb.Pipeline, error) {
+	vbr pipelines []*gitlbb.Pipeline
 
 	for {
-		page, err := it()
+		pbge, err := it()
 		if err != nil {
-			return nil, errors.Wrap(err, "retrieving pipeline page")
+			return nil, errors.Wrbp(err, "retrieving pipeline pbge")
 		}
-		if len(page) == 0 {
-			// The terminal condition for the iterator is returning an empty
-			// slice with no error, so we can stop iterating here.
+		if len(pbge) == 0 {
+			// The terminbl condition for the iterbtor is returning bn empty
+			// slice with no error, so we cbn stop iterbting here.
 			return pipelines, nil
 		}
 
-		pipelines = append(pipelines, page...)
+		pipelines = bppend(pipelines, pbge...)
 	}
 }
 
-func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, error) {
-	var v string
+func (s *GitLbbSource) determineVersion(ctx context.Context) (*semver.Version, error) {
+	vbr v string
 	chvs, err := versions.GetVersions()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, chv := range chvs {
-		if chv.ExternalServiceKind == extsvc.KindGitLab && chv.Key == s.client.Urn() {
+	for _, chv := rbnge chvs {
+		if chv.ExternblServiceKind == extsvc.KindGitLbb && chv.Key == s.client.Urn() {
 			v = chv.Version
-			break
+			brebk
 		}
 	}
 
-	// if we are unable to get the version from Redis, we default to making a request
+	// if we bre unbble to get the version from Redis, we defbult to mbking b request
 	// to the codehost to get the version.
 	if v == "" {
 		v, err = s.client.GetVersion(ctx)
@@ -466,160 +466,160 @@ func (s *GitLabSource) determineVersion(ctx context.Context) (*semver.Version, e
 	return version, err
 }
 
-// UpdateChangeset updates the merge request on GitLab to reflect the local
-// state of the Changeset.
-func (s *GitLabSource) UpdateChangeset(ctx context.Context, c *Changeset) error {
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+// UpdbteChbngeset updbtes the merge request on GitLbb to reflect the locbl
+// stbte of the Chbngeset.
+func (s *GitLbbSource) UpdbteChbngeset(ctx context.Context, c *Chbngeset) error {
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitLab merge request")
+		return errors.New("Chbngeset is not b GitLbb merge request")
 	}
-	project := c.TargetRepo.Metadata.(*gitlab.Project)
+	project := c.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
 
-	// Avoid accidentally undrafting the changeset by checking its current
-	// status.
+	// Avoid bccidentblly undrbfting the chbngeset by checking its current
+	// stbtus.
 	title := c.Title
-	if mr.WorkInProgress || mr.Draft {
+	if mr.WorkInProgress || mr.Drbft {
 		v, err := s.determineVersion(ctx)
 		if err != nil {
 			return err
 		}
 
-		title = gitlab.SetWIPOrDraft(c.Title, v)
+		title = gitlbb.SetWIPOrDrbft(c.Title, v)
 	}
 
-	removeSource := conf.Get().BatchChangesAutoDeleteBranch
+	removeSource := conf.Get().BbtchChbngesAutoDeleteBrbnch
 
-	updated, err := s.client.UpdateMergeRequest(ctx, project, mr, gitlab.UpdateMergeRequestOpts{
+	updbted, err := s.client.UpdbteMergeRequest(ctx, project, mr, gitlbb.UpdbteMergeRequestOpts{
 		Title:              title,
 		Description:        c.Body,
-		TargetBranch:       gitdomain.AbbreviateRef(c.BaseRef),
-		RemoveSourceBranch: removeSource,
+		TbrgetBrbnch:       gitdombin.AbbrevibteRef(c.BbseRef),
+		RemoveSourceBrbnch: removeSource,
 	})
 	if err != nil {
-		return errors.Wrap(err, "updating GitLab merge request")
+		return errors.Wrbp(err, "updbting GitLbb merge request")
 	}
 
-	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	// These bdditionbl API cblls cbn go bwby once we cbn use the GrbphQL API.
+	if err := s.decorbteMergeRequestDbtb(ctx, project, mr); err != nil {
+		return errors.Wrbpf(err, "retrieving bdditionbl dbtb for merge request %d", mr.IID)
 	}
 
-	return c.Changeset.SetMetadata(updated)
+	return c.Chbngeset.SetMetbdbtb(updbted)
 }
 
-// UndraftChangeset marks the changeset as *not* work in progress anymore.
-func (s *GitLabSource) UndraftChangeset(ctx context.Context, c *Changeset) error {
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+// UndrbftChbngeset mbrks the chbngeset bs *not* work in progress bnymore.
+func (s *GitLbbSource) UndrbftChbngeset(ctx context.Context, c *Chbngeset) error {
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitLab merge request")
+		return errors.New("Chbngeset is not b GitLbb merge request")
 	}
 
 	// Remove WIP prefix from title.
-	c.Title = gitlab.UnsetWIPOrDraft(c.Title)
-	// And mark the mr as not WorkInProgress / Draft anymore, otherwise UpdateChangeset
-	// will prepend the WIP: prefix again.
+	c.Title = gitlbb.UnsetWIPOrDrbft(c.Title)
+	// And mbrk the mr bs not WorkInProgress / Drbft bnymore, otherwise UpdbteChbngeset
+	// will prepend the WIP: prefix bgbin.
 
-	// We have to set both Draft and WorkInProgress or else the changeset will retain it's
-	// draft status. Both fields mirror each other, so if either is true then Gitlab assumes
-	// the changeset is still a draft.
-	mr.Draft = false
-	mr.WorkInProgress = false
+	// We hbve to set both Drbft bnd WorkInProgress or else the chbngeset will retbin it's
+	// drbft stbtus. Both fields mirror ebch other, so if either is true then Gitlbb bssumes
+	// the chbngeset is still b drbft.
+	mr.Drbft = fblse
+	mr.WorkInProgress = fblse
 
-	return s.UpdateChangeset(ctx, c)
+	return s.UpdbteChbngeset(ctx, c)
 }
 
-// CreateComment posts a comment on the Changeset.
-func (s *GitLabSource) CreateComment(ctx context.Context, c *Changeset, text string) error {
-	project := c.TargetRepo.Metadata.(*gitlab.Project)
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+// CrebteComment posts b comment on the Chbngeset.
+func (s *GitLbbSource) CrebteComment(ctx context.Context, c *Chbngeset, text string) error {
+	project := c.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitLab merge request")
+		return errors.New("Chbngeset is not b GitLbb merge request")
 	}
 
-	return s.client.CreateMergeRequestNote(ctx, project, mr, text)
+	return s.client.CrebteMergeRequestNote(ctx, project, mr, text)
 }
 
-// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-// If squash is true, a squash-then-merge merge will be performed.
-func (s *GitLabSource) MergeChangeset(ctx context.Context, c *Changeset, squash bool) error {
-	mr, ok := c.Changeset.Metadata.(*gitlab.MergeRequest)
+// MergeChbngeset merges b Chbngeset on the code host, if in b mergebble stbte.
+// If squbsh is true, b squbsh-then-merge merge will be performed.
+func (s *GitLbbSource) MergeChbngeset(ctx context.Context, c *Chbngeset, squbsh bool) error {
+	mr, ok := c.Chbngeset.Metbdbtb.(*gitlbb.MergeRequest)
 	if !ok {
-		return errors.New("Changeset is not a GitLab merge request")
+		return errors.New("Chbngeset is not b GitLbb merge request")
 	}
-	project := c.TargetRepo.Metadata.(*gitlab.Project)
+	project := c.TbrgetRepo.Metbdbtb.(*gitlbb.Project)
 
-	updated, err := s.client.MergeMergeRequest(ctx, project, mr, squash)
+	updbted, err := s.client.MergeMergeRequest(ctx, project, mr, squbsh)
 	if err != nil {
-		if errors.Is(err, gitlab.ErrNotMergeable) {
-			return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		if errors.Is(err, gitlbb.ErrNotMergebble) {
+			return ChbngesetNotMergebbleError{ErrorMsg: err.Error()}
 		}
-		return errors.Wrap(err, "merging GitLab merge request")
+		return errors.Wrbp(err, "merging GitLbb merge request")
 	}
 
-	// These additional API calls can go away once we can use the GraphQL API.
-	if err := s.decorateMergeRequestData(ctx, project, mr); err != nil {
-		return errors.Wrapf(err, "retrieving additional data for merge request %d", mr.IID)
+	// These bdditionbl API cblls cbn go bwby once we cbn use the GrbphQL API.
+	if err := s.decorbteMergeRequestDbtb(ctx, project, mr); err != nil {
+		return errors.Wrbpf(err, "retrieving bdditionbl dbtb for merge request %d", mr.IID)
 	}
 
-	return c.Changeset.SetMetadata(updated)
+	return c.Chbngeset.SetMetbdbtb(updbted)
 }
 
-func (*GitLabSource) IsPushResponseArchived(s string) bool {
-	return strings.Contains(s, "ERROR: You are not allowed to push code to this project")
+func (*GitLbbSource) IsPushResponseArchived(s string) bool {
+	return strings.Contbins(s, "ERROR: You bre not bllowed to push code to this project")
 }
 
-func (s GitLabSource) GetFork(ctx context.Context, targetRepo *types.Repo, namespace, n *string) (*types.Repo, error) {
-	return getGitLabForkInternal(ctx, targetRepo, s.client, namespace, n)
+func (s GitLbbSource) GetFork(ctx context.Context, tbrgetRepo *types.Repo, nbmespbce, n *string) (*types.Repo, error) {
+	return getGitLbbForkInternbl(ctx, tbrgetRepo, s.client, nbmespbce, n)
 }
 
-func (s GitLabSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s GitLbbSource) BuildCommitOpts(repo *types.Repo, _ *btypes.Chbngeset, spec *btypes.ChbngesetSpec, pushOpts *protocol.PushConfig) protocol.CrebteCommitFromPbtchRequest {
 	return BuildCommitOptsCommon(repo, spec, pushOpts)
 }
 
-type gitlabClientFork interface {
-	ForkProject(ctx context.Context, project *gitlab.Project, namespace *string, name string) (*gitlab.Project, error)
+type gitlbbClientFork interfbce {
+	ForkProject(ctx context.Context, project *gitlbb.Project, nbmespbce *string, nbme string) (*gitlbb.Project, error)
 }
 
-func getGitLabForkInternal(ctx context.Context, targetRepo *types.Repo, client gitlabClientFork, namespace, n *string) (*types.Repo, error) {
-	tr := targetRepo.Metadata.(*gitlab.Project)
+func getGitLbbForkInternbl(ctx context.Context, tbrgetRepo *types.Repo, client gitlbbClientFork, nbmespbce, n *string) (*types.Repo, error) {
+	tr := tbrgetRepo.Metbdbtb.(*gitlbb.Project)
 
-	targetNamespace, err := tr.Namespace()
+	tbrgetNbmespbce, err := tr.Nbmespbce()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting target project namespace")
+		return nil, errors.Wrbp(err, "getting tbrget project nbmespbce")
 	}
 
-	// It's possible to nest namespaces on GitLab, so we need to remove any internal "/"s
-	// to make the namespace repo-name-friendly when we use it to form the fork repo name.
-	targetNamespace = strings.ReplaceAll(targetNamespace, "/", "-")
+	// It's possible to nest nbmespbces on GitLbb, so we need to remove bny internbl "/"s
+	// to mbke the nbmespbce repo-nbme-friendly when we use it to form the fork repo nbme.
+	tbrgetNbmespbce = strings.ReplbceAll(tbrgetNbmespbce, "/", "-")
 
-	var name string
+	vbr nbme string
 	if n != nil {
-		name = *n
+		nbme = *n
 	} else {
-		targetName, err := tr.Name()
+		tbrgetNbme, err := tr.Nbme()
 		if err != nil {
-			return nil, errors.Wrap(err, "getting target project name")
+			return nil, errors.Wrbp(err, "getting tbrget project nbme")
 		}
-		name = DefaultForkName(targetNamespace, targetName)
+		nbme = DefbultForkNbme(tbrgetNbmespbce, tbrgetNbme)
 	}
 
-	// `client.ForkProject` returns an existing fork if it has already been created. It also automatically uses the currently authenticated user's namespace if none is provided.
-	fork, err := client.ForkProject(ctx, tr, namespace, name)
+	// `client.ForkProject` returns bn existing fork if it hbs blrebdy been crebted. It blso butombticblly uses the currently buthenticbted user's nbmespbce if none is provided.
+	fork, err := client.ForkProject(ctx, tr, nbmespbce, nbme)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching fork or forking project")
+		return nil, errors.Wrbp(err, "fetching fork or forking project")
 	}
 
 	if fork.ForkedFromProject == nil {
-		return nil, errors.New("project is not a fork")
+		return nil, errors.New("project is not b fork")
 	} else if fork.ForkedFromProject.ID != tr.ID {
-		return nil, errors.New("project was not forked from the target project")
+		return nil, errors.New("project wbs not forked from the tbrget project")
 	}
 
-	// Now we make a copy of targetRepo, but with its sources and metadata updated to
+	// Now we mbke b copy of tbrgetRepo, but with its sources bnd metbdbtb updbted to
 	// point to the fork
-	forkRepo, err := CopyRepoAsFork(targetRepo, fork, tr.PathWithNamespace, fork.PathWithNamespace)
+	forkRepo, err := CopyRepoAsFork(tbrgetRepo, fork, tr.PbthWithNbmespbce, fork.PbthWithNbmespbce)
 	if err != nil {
-		return nil, errors.Wrap(err, "updating target repo sources and metadata")
+		return nil, errors.Wrbp(err, "updbting tbrget repo sources bnd metbdbtb")
 	}
 
 	return forkRepo, nil

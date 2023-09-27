@@ -1,11 +1,11 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-// EmptyResponse is a type that can be used in the return signature for graphql queries
-// that don't require a return value.
+// EmptyResponse is b type thbt cbn be used in the return signbture for grbphql queries
+// thbt don't require b return vblue.
 type EmptyResponse struct{}
 
-// AlwaysNil exists since various graphql tools expect at least one field to be
-// present in the schema so we provide a dummy one here that is always nil.
-func (er *EmptyResponse) AlwaysNil() *string {
+// AlwbysNil exists since vbrious grbphql tools expect bt lebst one field to be
+// present in the schemb so we provide b dummy one here thbt is blwbys nil.
+func (er *EmptyResponse) AlwbysNil() *string {
 	return nil
 }

@@ -1,4 +1,4 @@
-package contextconv
+pbckbge contextconv
 
 import (
 	"context"
@@ -7,221 +7,221 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestConversionUnaryInterceptor(t *testing.T) {
-	cancelledCtx, cancel := context.WithCancel(context.Background())
-	cancel()
+func TestConversionUnbryInterceptor(t *testing.T) {
+	cbncelledCtx, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel()
 
-	deadlineExceededCtx, cancel := context.WithDeadline(context.Background(), time.Now())
-	t.Cleanup(cancel) // only cancel after all subtests have run, we want the context to be deadline exceeded in the relevant subtest
+	debdlineExceededCtx, cbncel := context.WithDebdline(context.Bbckground(), time.Now())
+	t.Clebnup(cbncel) // only cbncel bfter bll subtests hbve run, we wbnt the context to be debdline exceeded in the relevbnt subtest
 
-	testCases := []struct {
-		name        string
+	testCbses := []struct {
+		nbme        string
 		ctx         context.Context
-		handlerErr  error
+		hbndlerErr  error
 		expectedErr error
 	}{
 		{
-			name:        "handler success",
-			ctx:         context.Background(),
-			handlerErr:  nil,
+			nbme:        "hbndler success",
+			ctx:         context.Bbckground(),
+			hbndlerErr:  nil,
 			expectedErr: nil,
 		},
 		{
-			name:        "status error",
-			ctx:         context.Background(),
-			handlerErr:  status.Error(codes.Internal, "internal error"),
-			expectedErr: status.Error(codes.Internal, "internal error"),
+			nbme:        "stbtus error",
+			ctx:         context.Bbckground(),
+			hbndlerErr:  stbtus.Error(codes.Internbl, "internbl error"),
+			expectedErr: stbtus.Error(codes.Internbl, "internbl error"),
 		},
 		{
-			name:        "context cancellation error",
-			ctx:         cancelledCtx,
-			handlerErr:  cancelledCtx.Err(),
-			expectedErr: status.Error(codes.Canceled, "context canceled"),
+			nbme:        "context cbncellbtion error",
+			ctx:         cbncelledCtx,
+			hbndlerErr:  cbncelledCtx.Err(),
+			expectedErr: stbtus.Error(codes.Cbnceled, "context cbnceled"),
 		},
 		{
-			name:        "context deadline error",
-			ctx:         deadlineExceededCtx,
-			handlerErr:  deadlineExceededCtx.Err(),
-			expectedErr: status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
+			nbme:        "context debdline error",
+			ctx:         debdlineExceededCtx,
+			hbndlerErr:  debdlineExceededCtx.Err(),
+			expectedErr: stbtus.Error(codes.DebdlineExceeded, "context debdline exceeded"),
 		},
 		{
-			name:        "unknown error",
-			ctx:         context.Background(),
-			handlerErr:  errors.New("unknown error"),
+			nbme:        "unknown error",
+			ctx:         context.Bbckground(),
+			hbndlerErr:  errors.New("unknown error"),
 			expectedErr: errors.New("unknown error"),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			sentinelResponse := struct{}{}
 
-			called := false
-			handler := func(ctx context.Context, request any) (response any, err error) {
-				called = true
-				return sentinelResponse, tc.handlerErr
+			cblled := fblse
+			hbndler := func(ctx context.Context, request bny) (response bny, err error) {
+				cblled = true
+				return sentinelResponse, tc.hbndlerErr
 			}
 
 			request := struct{}{}
-			info := grpc.UnaryServerInfo{}
+			info := grpc.UnbryServerInfo{}
 
-			actualResponse, err := UnaryServerInterceptor(tc.ctx, request, &info, handler)
-			if !called {
-				t.Fatal("handler was not called")
+			bctublResponse, err := UnbryServerInterceptor(tc.ctx, request, &info, hbndler)
+			if !cblled {
+				t.Fbtbl("hbndler wbs not cblled")
 			}
 
-			if actualResponse != sentinelResponse {
-				t.Fatalf("unexpected response: %+v", actualResponse)
+			if bctublResponse != sentinelResponse {
+				t.Fbtblf("unexpected response: %+v", bctublResponse)
 			}
 
 			expectedErrString := fmt.Sprintf("%s", tc.expectedErr)
-			actualErrString := fmt.Sprintf("%s", err)
+			bctublErrString := fmt.Sprintf("%s", err)
 
-			if diff := cmp.Diff(expectedErrString, actualErrString); diff != "" {
-				t.Errorf("unexpected error (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedErrString, bctublErrString); diff != "" {
+				t.Errorf("unexpected error (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestStreamServerInterceptor(t *testing.T) {
-	cancelledCtx, cancel := context.WithCancel(context.Background())
-	cancel()
+func TestStrebmServerInterceptor(t *testing.T) {
+	cbncelledCtx, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel()
 
-	deadlineExceededCtx, cancel := context.WithDeadline(context.Background(), time.Now())
-	t.Cleanup(cancel) // only cancel after all subtests have run, we want the context to be deadline exceeded in the relevant subtest
+	debdlineExceededCtx, cbncel := context.WithDebdline(context.Bbckground(), time.Now())
+	t.Clebnup(cbncel) // only cbncel bfter bll subtests hbve run, we wbnt the context to be debdline exceeded in the relevbnt subtest
 
-	testCases := []struct {
-		name        string
+	testCbses := []struct {
+		nbme        string
 		ctx         context.Context
-		handlerErr  error
+		hbndlerErr  error
 		expectedErr error
 	}{
 		{
-			name:        "handler success",
-			ctx:         context.Background(),
-			handlerErr:  nil,
+			nbme:        "hbndler success",
+			ctx:         context.Bbckground(),
+			hbndlerErr:  nil,
 			expectedErr: nil,
 		},
 		{
-			name:        "status error",
-			ctx:         context.Background(),
-			handlerErr:  status.Error(codes.Internal, "internal error"),
-			expectedErr: status.Error(codes.Internal, "internal error"),
+			nbme:        "stbtus error",
+			ctx:         context.Bbckground(),
+			hbndlerErr:  stbtus.Error(codes.Internbl, "internbl error"),
+			expectedErr: stbtus.Error(codes.Internbl, "internbl error"),
 		},
 		{
-			name:        "context cancellation error",
-			ctx:         cancelledCtx,
-			handlerErr:  cancelledCtx.Err(),
-			expectedErr: status.Error(codes.Canceled, "context canceled"),
+			nbme:        "context cbncellbtion error",
+			ctx:         cbncelledCtx,
+			hbndlerErr:  cbncelledCtx.Err(),
+			expectedErr: stbtus.Error(codes.Cbnceled, "context cbnceled"),
 		},
 		{
-			name:        "context deadline error",
-			ctx:         deadlineExceededCtx,
-			handlerErr:  deadlineExceededCtx.Err(),
-			expectedErr: status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
+			nbme:        "context debdline error",
+			ctx:         debdlineExceededCtx,
+			hbndlerErr:  debdlineExceededCtx.Err(),
+			expectedErr: stbtus.Error(codes.DebdlineExceeded, "context debdline exceeded"),
 		},
 		{
-			name:        "unknown error",
-			ctx:         context.Background(),
-			handlerErr:  errors.New("unknown error"),
+			nbme:        "unknown error",
+			ctx:         context.Bbckground(),
+			hbndlerErr:  errors.New("unknown error"),
 			expectedErr: errors.New("unknown error"),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			called := false
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			cblled := fblse
 
-			handler := func(_ any, _ grpc.ServerStream) error {
-				called = true
-				return tc.handlerErr
+			hbndler := func(_ bny, _ grpc.ServerStrebm) error {
+				cblled = true
+				return tc.hbndlerErr
 			}
 
 			srv := struct{}{}
-			info := grpc.StreamServerInfo{}
+			info := grpc.StrebmServerInfo{}
 
-			err := StreamServerInterceptor(srv, &mockServerStream{ctx: tc.ctx}, &info, handler)
-			if !called {
-				t.Fatal("handler was not called")
+			err := StrebmServerInterceptor(srv, &mockServerStrebm{ctx: tc.ctx}, &info, hbndler)
+			if !cblled {
+				t.Fbtbl("hbndler wbs not cblled")
 			}
 
 			expectedErrString := fmt.Sprintf("%s", tc.expectedErr)
-			actualErrString := fmt.Sprintf("%s", err)
-			if diff := cmp.Diff(expectedErrString, actualErrString); diff != "" {
-				t.Errorf("unexpected error (-want +got):\n%s", diff)
+			bctublErrString := fmt.Sprintf("%s", err)
+			if diff := cmp.Diff(expectedErrString, bctublErrString); diff != "" {
+				t.Errorf("unexpected error (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-// mockServerStream is a fake grpc.ServerStream that returns the provided context
-type mockServerStream struct {
-	grpc.ServerStream
+// mockServerStrebm is b fbke grpc.ServerStrebm thbt returns the provided context
+type mockServerStrebm struct {
+	grpc.ServerStrebm
 	ctx context.Context
 }
 
-func (m *mockServerStream) Context() context.Context {
+func (m *mockServerStrebm) Context() context.Context {
 	return m.ctx
 }
 
-func TestUnaryClientInterceptor(t *testing.T) {
-	cancelledCtx, cancel := context.WithCancel(context.Background())
-	cancel()
+func TestUnbryClientInterceptor(t *testing.T) {
+	cbncelledCtx, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel()
 
-	deadlineExceededCtx, cancel := context.WithDeadline(context.Background(), time.Now())
-	t.Cleanup(cancel)
+	debdlineExceededCtx, cbncel := context.WithDebdline(context.Bbckground(), time.Now())
+	t.Clebnup(cbncel)
 
-	testCases := []struct {
-		name        string
+	testCbses := []struct {
+		nbme        string
 		ctx         context.Context
 		invokerErr  error
 		expectedErr error
 	}{
 		{
-			name:        "invoker success",
-			ctx:         context.Background(),
+			nbme:        "invoker success",
+			ctx:         context.Bbckground(),
 			invokerErr:  nil,
 			expectedErr: nil,
 		},
 		{
-			name:        "status error",
-			ctx:         context.Background(),
-			invokerErr:  status.Error(codes.Internal, "internal error"),
-			expectedErr: status.Error(codes.Internal, "internal error"),
+			nbme:        "stbtus error",
+			ctx:         context.Bbckground(),
+			invokerErr:  stbtus.Error(codes.Internbl, "internbl error"),
+			expectedErr: stbtus.Error(codes.Internbl, "internbl error"),
 		},
 		{
-			name:        "context cancellation error",
-			ctx:         cancelledCtx,
-			invokerErr:  status.Error(codes.Canceled, "context canceled"),
-			expectedErr: context.Canceled,
+			nbme:        "context cbncellbtion error",
+			ctx:         cbncelledCtx,
+			invokerErr:  stbtus.Error(codes.Cbnceled, "context cbnceled"),
+			expectedErr: context.Cbnceled,
 		},
 		{
-			name:        "context deadline error",
-			ctx:         deadlineExceededCtx,
-			invokerErr:  status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
-			expectedErr: context.DeadlineExceeded,
+			nbme:        "context debdline error",
+			ctx:         debdlineExceededCtx,
+			invokerErr:  stbtus.Error(codes.DebdlineExceeded, "context debdline exceeded"),
+			expectedErr: context.DebdlineExceeded,
 		},
 		{
-			name:        "unknown error",
-			ctx:         context.Background(),
+			nbme:        "unknown error",
+			ctx:         context.Bbckground(),
 			invokerErr:  errors.New("unknown error"),
 			expectedErr: errors.New("unknown error"),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			called := false
-			invoker := func(_ context.Context, _ string, _, _ any, _ *grpc.ClientConn, _ ...grpc.CallOption) error {
-				called = true
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			cblled := fblse
+			invoker := func(_ context.Context, _ string, _, _ bny, _ *grpc.ClientConn, _ ...grpc.CbllOption) error {
+				cblled = true
 				return tc.invokerErr
 			}
 
@@ -230,149 +230,149 @@ func TestUnaryClientInterceptor(t *testing.T) {
 			reply := struct{}{}
 			cc := &grpc.ClientConn{}
 
-			err := UnaryClientInterceptor(tc.ctx, method, req, &reply, cc, invoker)
-			if !called {
-				t.Fatal("invoker was not called")
+			err := UnbryClientInterceptor(tc.ctx, method, req, &reply, cc, invoker)
+			if !cblled {
+				t.Fbtbl("invoker wbs not cblled")
 			}
 
 			expectedErrString := fmt.Sprintf("%s", tc.expectedErr)
-			actualErrString := fmt.Sprintf("%s", err)
-			if diff := cmp.Diff(expectedErrString, actualErrString); diff != "" {
-				t.Errorf("unexpected error (-want +got):\n%s", diff)
+			bctublErrString := fmt.Sprintf("%s", err)
+			if diff := cmp.Diff(expectedErrString, bctublErrString); diff != "" {
+				t.Errorf("unexpected error (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestStreamClientInterceptor(t *testing.T) {
-	cancelledCtx, cancel := context.WithCancel(context.Background())
-	cancel()
+func TestStrebmClientInterceptor(t *testing.T) {
+	cbncelledCtx, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel()
 
-	deadlineExceededCtx, cancel := context.WithDeadline(context.Background(), time.Now())
-	t.Cleanup(cancel)
+	debdlineExceededCtx, cbncel := context.WithDebdline(context.Bbckground(), time.Now())
+	t.Clebnup(cbncel)
 
-	testCases := []struct {
-		name        string
+	testCbses := []struct {
+		nbme        string
 		ctx         context.Context
-		streamerErr error
+		strebmerErr error
 		expectedErr error
 	}{
 		{
-			name:        "streamer success",
-			ctx:         context.Background(),
-			streamerErr: nil,
+			nbme:        "strebmer success",
+			ctx:         context.Bbckground(),
+			strebmerErr: nil,
 			expectedErr: nil,
 		},
 		{
-			name:        "status error",
-			ctx:         context.Background(),
-			streamerErr: status.Error(codes.Internal, "internal error"),
-			expectedErr: status.Error(codes.Internal, "internal error"),
+			nbme:        "stbtus error",
+			ctx:         context.Bbckground(),
+			strebmerErr: stbtus.Error(codes.Internbl, "internbl error"),
+			expectedErr: stbtus.Error(codes.Internbl, "internbl error"),
 		},
 		{
-			name:        "context cancellation error",
-			ctx:         cancelledCtx,
-			streamerErr: status.Error(codes.Canceled, "context canceled"),
-			expectedErr: context.Canceled,
+			nbme:        "context cbncellbtion error",
+			ctx:         cbncelledCtx,
+			strebmerErr: stbtus.Error(codes.Cbnceled, "context cbnceled"),
+			expectedErr: context.Cbnceled,
 		},
 		{
-			name:        "context deadline error",
-			ctx:         deadlineExceededCtx,
-			streamerErr: status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
-			expectedErr: context.DeadlineExceeded,
+			nbme:        "context debdline error",
+			ctx:         debdlineExceededCtx,
+			strebmerErr: stbtus.Error(codes.DebdlineExceeded, "context debdline exceeded"),
+			expectedErr: context.DebdlineExceeded,
 		},
 		{
-			name:        "unknown error",
-			ctx:         context.Background(),
-			streamerErr: errors.New("unknown error"),
+			nbme:        "unknown error",
+			ctx:         context.Bbckground(),
+			strebmerErr: errors.New("unknown error"),
 			expectedErr: errors.New("unknown error"),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			called := false
-			streamer := func(_ context.Context, _ *grpc.StreamDesc, _ *grpc.ClientConn, _ string, _ ...grpc.CallOption) (grpc.ClientStream, error) {
-				called = true
-				if tc.streamerErr != nil {
-					return nil, tc.streamerErr
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			cblled := fblse
+			strebmer := func(_ context.Context, _ *grpc.StrebmDesc, _ *grpc.ClientConn, _ string, _ ...grpc.CbllOption) (grpc.ClientStrebm, error) {
+				cblled = true
+				if tc.strebmerErr != nil {
+					return nil, tc.strebmerErr
 				}
-				return &mockClientStream{}, nil
+				return &mockClientStrebm{}, nil
 			}
 
-			desc := &grpc.StreamDesc{}
+			desc := &grpc.StrebmDesc{}
 			cc := &grpc.ClientConn{}
 			method := "Test"
 
-			_, clientErr := StreamClientInterceptor(tc.ctx, desc, cc, method, streamer)
-			if !called {
-				t.Fatal("streamer was not called")
+			_, clientErr := StrebmClientInterceptor(tc.ctx, desc, cc, method, strebmer)
+			if !cblled {
+				t.Fbtbl("strebmer wbs not cblled")
 			}
 
 			expectedErrString := fmt.Sprintf("%s", tc.expectedErr)
-			actualErrString := fmt.Sprintf("%s", clientErr)
-			if diff := cmp.Diff(expectedErrString, actualErrString); diff != "" {
-				t.Fatalf("unexpected error (-want +got):\n%s", diff)
+			bctublErrString := fmt.Sprintf("%s", clientErr)
+			if diff := cmp.Diff(expectedErrString, bctublErrString); diff != "" {
+				t.Fbtblf("unexpected error (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestConvertingClientStream(t *testing.T) {
-	testCases := []struct {
-		name        string
-		streamErr   error
+func TestConvertingClientStrebm(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
+		strebmErr   error
 		expectedErr error
 	}{
 		{
-			name:        "status error",
-			streamErr:   status.Error(codes.Internal, "internal error"),
-			expectedErr: status.Error(codes.Internal, "internal error"),
+			nbme:        "stbtus error",
+			strebmErr:   stbtus.Error(codes.Internbl, "internbl error"),
+			expectedErr: stbtus.Error(codes.Internbl, "internbl error"),
 		},
 		{
-			name:        "context cancellation error",
-			streamErr:   status.Error(codes.Canceled, "context canceled"),
-			expectedErr: context.Canceled,
+			nbme:        "context cbncellbtion error",
+			strebmErr:   stbtus.Error(codes.Cbnceled, "context cbnceled"),
+			expectedErr: context.Cbnceled,
 		},
 		{
-			name:        "context deadline error",
-			streamErr:   status.Error(codes.DeadlineExceeded, "context deadline exceeded"),
-			expectedErr: context.DeadlineExceeded,
+			nbme:        "context debdline error",
+			strebmErr:   stbtus.Error(codes.DebdlineExceeded, "context debdline exceeded"),
+			expectedErr: context.DebdlineExceeded,
 		},
 		{
-			name:        "unknown error",
-			streamErr:   errors.New("unknown error"),
+			nbme:        "unknown error",
+			strebmErr:   errors.New("unknown error"),
 			expectedErr: errors.New("unknown error"),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			mockStream := &mockClientStream{
-				err: tc.streamErr,
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			mockStrebm := &mockClientStrebm{
+				err: tc.strebmErr,
 			}
-			wrappedStream := &convertingClientStream{
-				ClientStream: mockStream,
+			wrbppedStrebm := &convertingClientStrebm{
+				ClientStrebm: mockStrebm,
 			}
 
-			err := wrappedStream.RecvMsg(nil)
+			err := wrbppedStrebm.RecvMsg(nil)
 
 			expectedErrString := fmt.Sprintf("%s", tc.expectedErr)
-			actualErrString := fmt.Sprintf("%s", err)
+			bctublErrString := fmt.Sprintf("%s", err)
 
-			if diff := cmp.Diff(expectedErrString, actualErrString); diff != "" {
-				t.Errorf("unexpected error (-want +got):\n%s", diff)
+			if diff := cmp.Diff(expectedErrString, bctublErrString); diff != "" {
+				t.Errorf("unexpected error (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-// mockClientStream is a fake grpc.ClientStream
-type mockClientStream struct {
-	grpc.ClientStream
+// mockClientStrebm is b fbke grpc.ClientStrebm
+type mockClientStrebm struct {
+	grpc.ClientStrebm
 	err error
 }
 
-func (m *mockClientStream) RecvMsg(x interface{}) error {
+func (m *mockClientStrebm) RecvMsg(x interfbce{}) error {
 	return m.err
 }

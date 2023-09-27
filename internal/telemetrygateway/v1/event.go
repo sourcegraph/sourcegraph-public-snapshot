@@ -1,4 +1,4 @@
-package v1
+pbckbge v1
 
 import (
 	"context"
@@ -6,44 +6,44 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"google.golang.org/protobuf/types/known/timestamppb"
+	"google.golbng.org/protobuf/types/known/timestbmppb"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// DefaultEventIDFunc is the default generator for telemetry event IDs.
-var DefaultEventIDFunc = uuid.NewString
+// DefbultEventIDFunc is the defbult generbtor for telemetry event IDs.
+vbr DefbultEventIDFunc = uuid.NewString
 
-// NewEventWithDefaults creates a uniform event with defaults filled in. All
-// constructors making raw events should start with this. In particular, this
-// adds any relevant data required from context.
-func NewEventWithDefaults(ctx context.Context, now time.Time, newEventID func() string) *Event {
+// NewEventWithDefbults crebtes b uniform event with defbults filled in. All
+// constructors mbking rbw events should stbrt with this. In pbrticulbr, this
+// bdds bny relevbnt dbtb required from context.
+func NewEventWithDefbults(ctx context.Context, now time.Time, newEventID func() string) *Event {
 	return &Event{
 		Id:        newEventID(),
-		Timestamp: timestamppb.New(now),
+		Timestbmp: timestbmppb.New(now),
 		User: func() *EventUser {
-			act := actor.FromContext(ctx)
-			if !act.IsAuthenticated() && act.AnonymousUID == "" {
+			bct := bctor.FromContext(ctx)
+			if !bct.IsAuthenticbted() && bct.AnonymousUID == "" {
 				return nil
 			}
 			return &EventUser{
-				UserId:          pointers.NonZeroPtr(int64(act.UID)),
-				AnonymousUserId: pointers.NonZeroPtr(act.AnonymousUID),
+				UserId:          pointers.NonZeroPtr(int64(bct.UID)),
+				AnonymousUserId: pointers.NonZeroPtr(bct.AnonymousUID),
 			}
 		}(),
-		FeatureFlags: func() *EventFeatureFlags {
-			flags := featureflag.GetEvaluatedFlagSet(ctx)
-			if len(flags) == 0 {
+		FebtureFlbgs: func() *EventFebtureFlbgs {
+			flbgs := febtureflbg.GetEvblubtedFlbgSet(ctx)
+			if len(flbgs) == 0 {
 				return nil
 			}
-			data := make(map[string]string, len(flags))
-			for k, v := range flags {
-				data[k] = strconv.FormatBool(v)
+			dbtb := mbke(mbp[string]string, len(flbgs))
+			for k, v := rbnge flbgs {
+				dbtb[k] = strconv.FormbtBool(v)
 			}
-			return &EventFeatureFlags{
-				Flags: data,
+			return &EventFebtureFlbgs{
+				Flbgs: dbtb,
 			}
 		}(),
 	}

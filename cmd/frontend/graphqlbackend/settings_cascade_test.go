@@ -1,24 +1,24 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
 )
 
 func TestSubjects(t *testing.T) {
-	t.Run("Default settings are included", func(t *testing.T) {
-		cascade := &settingsCascade{db: dbmocks.NewMockDB(), subject: &settingsSubjectResolver{site: NewSiteResolver(nil, nil)}}
-		subjects, err := cascade.Subjects(context.Background())
+	t.Run("Defbult settings bre included", func(t *testing.T) {
+		cbscbde := &settingsCbscbde{db: dbmocks.NewMockDB(), subject: &settingsSubjectResolver{site: NewSiteResolver(nil, nil)}}
+		subjects, err := cbscbde.Subjects(context.Bbckground())
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(subjects) < 1 {
-			t.Fatal("Expected at least 1 subject")
+			t.Fbtbl("Expected bt lebst 1 subject")
 		}
-		if subjects[0].defaultSettings == nil {
-			t.Fatal("Expected the first subject to be default settings")
+		if subjects[0].defbultSettings == nil {
+			t.Fbtbl("Expected the first subject to be defbult settings")
 		}
 	})
 }

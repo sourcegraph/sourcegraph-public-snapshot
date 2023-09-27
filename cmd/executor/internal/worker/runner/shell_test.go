@@ -1,116 +1,116 @@
-package runner_test
+pbckbge runner_test
 
 import (
 	"context"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
 func TestShellRunner_Setup(t *testing.T) {
 	tests := []struct {
-		name               string
+		nbme               string
 		dockerAuthConfig   types.DockerAuthConfig
 		expectedDockerAuth string
 		expectedErr        error
 	}{
 		{
-			name: "Setup default",
+			nbme: "Setup defbult",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			options := command.DockerOptions{}
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			options := commbnd.DockerOptions{}
 			shellRunner := runner.NewShellRunner(nil, nil, "", options)
 
-			ctx := context.Background()
+			ctx := context.Bbckground()
 			err := shellRunner.Setup(ctx)
-			defer shellRunner.Teardown(ctx)
+			defer shellRunner.Tebrdown(ctx)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				entries, err := os.ReadDir(shellRunner.TempDir())
+				entries, err := os.RebdDir(shellRunner.TempDir())
 				require.NoError(t, err)
 				if len(test.expectedDockerAuth) == 0 {
 					require.Len(t, entries, 0)
 				} else {
 					require.Len(t, entries, 1)
-					dockerAuthEntries, err := os.ReadDir(filepath.Join(shellRunner.TempDir(), entries[0].Name()))
+					dockerAuthEntries, err := os.RebdDir(filepbth.Join(shellRunner.TempDir(), entries[0].Nbme()))
 					require.NoError(t, err)
 					require.Len(t, dockerAuthEntries, 1)
-					f, err := os.ReadFile(filepath.Join(shellRunner.TempDir(), entries[0].Name(), dockerAuthEntries[0].Name()))
+					f, err := os.RebdFile(filepbth.Join(shellRunner.TempDir(), entries[0].Nbme(), dockerAuthEntries[0].Nbme()))
 					require.NoError(t, err)
-					assert.JSONEq(t, test.expectedDockerAuth, string(f))
+					bssert.JSONEq(t, test.expectedDockerAuth, string(f))
 				}
 			}
 		})
 	}
 }
 
-func TestShellRunner_Teardown(t *testing.T) {
-	shellRunner := runner.NewShellRunner(nil, nil, "", command.DockerOptions{})
-	ctx := context.Background()
+func TestShellRunner_Tebrdown(t *testing.T) {
+	shellRunner := runner.NewShellRunner(nil, nil, "", commbnd.DockerOptions{})
+	ctx := context.Bbckground()
 	err := shellRunner.Setup(ctx)
 	require.NoError(t, err)
 
 	dir := shellRunner.TempDir()
 
-	_, err = os.Stat(dir)
+	_, err = os.Stbt(dir)
 	require.NoError(t, err)
 
-	err = shellRunner.Teardown(ctx)
+	err = shellRunner.Tebrdown(ctx)
 	require.NoError(t, err)
 
-	_, err = os.Stat(dir)
+	_, err = os.Stbt(dir)
 	require.Error(t, err)
-	assert.True(t, os.IsNotExist(err))
+	bssert.True(t, os.IsNotExist(err))
 }
 
 func TestShellRunner_Run(t *testing.T) {
-	cmd := runner.NewMockCommand()
+	cmd := runner.NewMockCommbnd()
 	logger := runner.NewMockLogger()
 	dir := "/some/dir"
-	options := command.DockerOptions{
-		ConfigPath:     "/docker/config",
-		AddHostGateway: true,
-		Resources: command.ResourceOptions{
+	options := commbnd.DockerOptions{
+		ConfigPbth:     "/docker/config",
+		AddHostGbtewby: true,
+		Resources: commbnd.ResourceOptions{
 			NumCPUs:   10,
 			Memory:    "1G",
-			DiskSpace: "10G",
+			DiskSpbce: "10G",
 		},
 	}
 	spec := runner.Spec{
-		CommandSpecs: []command.Spec{
+		CommbndSpecs: []commbnd.Spec{
 			{
 				Key:     "some-key",
-				Command: []string{"echo", "hello"},
+				Commbnd: []string{"echo", "hello"},
 				Dir:     "/workingdir",
-				Env:     []string{"FOO=bar"},
+				Env:     []string{"FOO=bbr"},
 			},
 		},
-		Image:      "alpine",
-		ScriptPath: "/some/script",
+		Imbge:      "blpine",
+		ScriptPbth: "/some/script",
 	}
 
 	shellRunner := runner.NewShellRunner(cmd, logger, dir, options)
 
 	cmd.RunFunc.PushReturn(nil)
 
-	err := shellRunner.Run(context.Background(), spec)
+	err := shellRunner.Run(context.Bbckground(), spec)
 
 	require.NoError(t, err)
 
 	require.Len(t, cmd.RunFunc.History(), 1)
-	assert.Equal(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
-	assert.Equal(t, []string{"/bin/sh", "/some/dir/.sourcegraph-executor/some/script"}, cmd.RunFunc.History()[0].Arg2.Command)
+	bssert.Equbl(t, "some-key", cmd.RunFunc.History()[0].Arg2.Key)
+	bssert.Equbl(t, []string{"/bin/sh", "/some/dir/.sourcegrbph-executor/some/script"}, cmd.RunFunc.History()[0].Arg2.Commbnd)
 }

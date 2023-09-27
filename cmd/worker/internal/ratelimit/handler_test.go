@@ -1,4 +1,4 @@
-package ratelimit
+pbckbge rbtelimit
 
 import (
 	"context"
@@ -7,94 +7,94 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestHandler_Handle(t *testing.T) {
+func TestHbndler_Hbndle(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	prefix := "__test__" + t.Name()
+	prefix := "__test__" + t.Nbme()
 	redisHost := "127.0.0.1:6379"
 
 	pool := &redis.Pool{
-		MaxIdle:     3,
+		MbxIdle:     3,
 		IdleTimeout: 240 * time.Second,
-		Dial: func() (redis.Conn, error) {
-			return redis.Dial("tcp", redisHost)
+		Dibl: func() (redis.Conn, error) {
+			return redis.Dibl("tcp", redisHost)
 		},
 		TestOnBorrow: func(c redis.Conn, t time.Time) error {
 			_, err := c.Do("PING")
 			return err
 		},
 	}
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		c := pool.Get()
 		err := redispool.DeleteAllKeysWithPrefix(c, prefix)
 		if err != nil {
-			t.Logf("Failed to clear redis: %+v\n", err)
+			t.Logf("Fbiled to clebr redis: %+v\n", err)
 		}
 		c.Close()
 	})
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			GitMaxCodehostRequestsPerSecond: pointers.Ptr(1),
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			GitMbxCodehostRequestsPerSecond: pointers.Ptr(1),
 		},
 	})
 	defer conf.Mock(nil)
 
-	// Create the external service so that the first code host appears when the handler calls GetByURL.
+	// Crebte the externbl service so thbt the first code host bppebrs when the hbndler cblls GetByURL.
 	confGet := func() *conf.Unified { return &conf.Unified{} }
-	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "token":"abc", "repositoryQuery": ["none"], "rateLimit": {"enabled": true, "requestsPerHour": 150}}`)
-	svc := &types.ExternalService{
+	extsvcConfig := extsvc.NewUnencryptedConfig(`{"url": "https://github.com/", "token":"bbc", "repositoryQuery": ["none"], "rbteLimit": {"enbbled": true, "requestsPerHour": 150}}`)
+	svc := &types.ExternblService{
 		Kind:   extsvc.KindGitHub,
 		Config: extsvcConfig,
 	}
-	err := db.ExternalServices().Create(ctx, confGet, svc)
+	err := db.ExternblServices().Crebte(ctx, confGet, svc)
 	require.NoError(t, err)
 
-	// Create the handler to start the test
-	h := handler{
-		externalServiceStore: db.ExternalServices(),
-		newRateLimiterFunc: func(bucketName string) ratelimit.GlobalLimiter {
-			return ratelimit.NewTestGlobalRateLimiter(pool, prefix, bucketName)
+	// Crebte the hbndler to stbrt the test
+	h := hbndler{
+		externblServiceStore: db.ExternblServices(),
+		newRbteLimiterFunc: func(bucketNbme string) rbtelimit.GlobblLimiter {
+			return rbtelimit.NewTestGlobblRbteLimiter(pool, prefix, bucketNbme)
 		},
 		logger: logger,
 	}
-	err = h.Handle(ctx)
-	assert.NoError(t, err)
+	err = h.Hbndle(ctx)
+	bssert.NoError(t, err)
 
-	info, err := ratelimit.GetGlobalLimiterStateFromPool(ctx, pool, prefix)
+	info, err := rbtelimit.GetGlobblLimiterStbteFromPool(ctx, pool, prefix)
 	require.NoError(t, err)
 
-	if diff := cmp.Diff(map[string]ratelimit.GlobalLimiterInfo{
+	if diff := cmp.Diff(mbp[string]rbtelimit.GlobblLimiterInfo{
 		svc.URN(): {
 			Burst:             10,
 			Limit:             150,
-			Interval:          time.Hour,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Hour,
+			LbstReplenishment: time.Unix(0, 0),
 		},
-		ratelimit.GitRPSLimiterBucketName: {
+		rbtelimit.GitRPSLimiterBucketNbme: {
 			Burst:             10,
 			Limit:             1,
-			Interval:          time.Second,
-			LastReplenishment: time.Unix(0, 0),
+			Intervbl:          time.Second,
+			LbstReplenishment: time.Unix(0, 0),
 		},
 	}, info); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }

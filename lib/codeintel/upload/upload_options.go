@@ -1,47 +1,47 @@
-package upload
+pbckbge uplobd
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-type Client interface {
-	// Do runs an http.Request against the Sourcegraph API.
+type Client interfbce {
+	// Do runs bn http.Request bgbinst the Sourcegrbph API.
 	Do(req *http.Request) (*http.Response, error)
 }
 
-type UploadOptions struct {
-	SourcegraphInstanceOptions
+type UplobdOptions struct {
+	SourcegrbphInstbnceOptions
 	OutputOptions
-	UploadRecordOptions
+	UplobdRecordOptions
 }
 
-type SourcegraphInstanceOptions struct {
-	SourcegraphURL      string            // The URL (including scheme) of the target Sourcegraph instance
-	AccessToken         string            // The user access token
-	AdditionalHeaders   map[string]string // Additional request headers on each request
-	Path                string            // Custom path on the Sourcegraph instance (used internally)
-	MaxRetries          int               // The maximum number of retries per request
-	RetryInterval       time.Duration     // Sleep duration between retries
-	MaxPayloadSizeBytes int64             // The maximum number of bytes sent in a single request
-	MaxConcurrency      int               // The maximum number of concurrent uploads. Only relevant for multipart uploads
-	GitHubToken         string            // GitHub token used for auth when lsif.enforceAuth is true (optional)
-	GitLabToken         string            // GitLab token used for auth when lsif.enforceAuth is true (optional)
+type SourcegrbphInstbnceOptions struct {
+	SourcegrbphURL      string            // The URL (including scheme) of the tbrget Sourcegrbph instbnce
+	AccessToken         string            // The user bccess token
+	AdditionblHebders   mbp[string]string // Additionbl request hebders on ebch request
+	Pbth                string            // Custom pbth on the Sourcegrbph instbnce (used internblly)
+	MbxRetries          int               // The mbximum number of retries per request
+	RetryIntervbl       time.Durbtion     // Sleep durbtion between retries
+	MbxPbylobdSizeBytes int64             // The mbximum number of bytes sent in b single request
+	MbxConcurrency      int               // The mbximum number of concurrent uplobds. Only relevbnt for multipbrt uplobds
+	GitHubToken         string            // GitHub token used for buth when lsif.enforceAuth is true (optionbl)
+	GitLbbToken         string            // GitLbb token used for buth when lsif.enforceAuth is true (optionbl)
 	HTTPClient          Client
 }
 
 type OutputOptions struct {
-	Logger RequestLogger  // Logger of all HTTP request/responses (optional)
-	Output *output.Output // Output instance used for fancy output (optional)
+	Logger RequestLogger  // Logger of bll HTTP request/responses (optionbl)
+	Output *output.Output // Output instbnce used for fbncy output (optionbl)
 }
 
-type UploadRecordOptions struct {
+type UplobdRecordOptions struct {
 	Repo              string
 	Commit            string
 	Root              string
 	Indexer           string
 	IndexerVersion    string
-	AssociatedIndexID *int
+	AssocibtedIndexID *int
 }

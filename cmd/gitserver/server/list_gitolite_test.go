@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"context"
@@ -7,77 +7,77 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/time/rate"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitolite"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func Test_Gitolite_listRepos(t *testing.T) {
 	tests := []struct {
-		name            string
-		listRepos       map[string][]*gitolite.Repo
-		configs         []*schema.GitoliteConnection
+		nbme            string
+		listRepos       mbp[string][]*gitolite.Repo
+		configs         []*schemb.GitoliteConnection
 		gitoliteHost    string
 		expResponseCode int
 		expResponseBody []*gitolite.Repo
-		wantedErr       string
+		wbntedErr       string
 	}{
 		{
-			name: "Simple case (git@sourcegraph.com)",
-			listRepos: map[string][]*gitolite.Repo{
-				"git@sourcegraph.com": {
-					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
+			nbme: "Simple cbse (git@sourcegrbph.com)",
+			listRepos: mbp[string][]*gitolite.Repo{
+				"git@sourcegrbph.com": {
+					{Nbme: "myrepo", URL: "git@sourcegrbph.com:myrepo"},
 				},
 			},
-			configs: []*schema.GitoliteConnection{
+			configs: []*schemb.GitoliteConnection{
 				{
-					Host:   "git@sourcegraph.com",
-					Prefix: "sourcegraph.com/",
+					Host:   "git@sourcegrbph.com",
+					Prefix: "sourcegrbph.com/",
 				},
 			},
-			gitoliteHost:    "git@sourcegraph.com",
+			gitoliteHost:    "git@sourcegrbph.com",
 			expResponseCode: 200,
 			expResponseBody: []*gitolite.Repo{
-				{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
+				{Nbme: "myrepo", URL: "git@sourcegrbph.com:myrepo"},
 			},
 		},
 		{
-			name: "Invalid gitoliteHost (--invalidhostnexample.com)",
-			listRepos: map[string][]*gitolite.Repo{
-				"git@sourcegraph.com": {
-					{Name: "myrepo", URL: "git@sourcegraph.com:myrepo"},
+			nbme: "Invblid gitoliteHost (--invblidhostnexbmple.com)",
+			listRepos: mbp[string][]*gitolite.Repo{
+				"git@sourcegrbph.com": {
+					{Nbme: "myrepo", URL: "git@sourcegrbph.com:myrepo"},
 				},
 			},
-			configs: []*schema.GitoliteConnection{
+			configs: []*schemb.GitoliteConnection{
 				{
-					Host:   "git@sourcegraph.com",
-					Prefix: "sourcegraph.com/",
+					Host:   "git@sourcegrbph.com",
+					Prefix: "sourcegrbph.com/",
 				},
 			},
-			gitoliteHost:    "--invalidhostnexample.com",
+			gitoliteHost:    "--invblidhostnexbmple.com",
 			expResponseCode: 500,
 			expResponseBody: nil,
-			wantedErr:       "invalid gitolite host",
+			wbntedErr:       "invblid gitolite host",
 		},
 		{
-			name: "Empty (but valid) gitoliteHost",
-			listRepos: map[string][]*gitolite.Repo{
-				"git@gitolite.example.com": {
-					{Name: "myrepo", URL: "git@gitolite.example.com:myrepo"},
+			nbme: "Empty (but vblid) gitoliteHost",
+			listRepos: mbp[string][]*gitolite.Repo{
+				"git@gitolite.exbmple.com": {
+					{Nbme: "myrepo", URL: "git@gitolite.exbmple.com:myrepo"},
 				},
 			},
-			configs: []*schema.GitoliteConnection{
+			configs: []*schemb.GitoliteConnection{
 				{
-					Host:   "git@gitolite.example.com",
-					Prefix: "gitolite.example.com/",
+					Host:   "git@gitolite.exbmple.com",
+					Prefix: "gitolite.exbmple.com/",
 				},
 			},
 			gitoliteHost:    "",
@@ -86,8 +86,8 @@ func Test_Gitolite_listRepos(t *testing.T) {
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			g := gitoliteFetcher{
 				client: stubGitoliteClient{
 					ListRepos_: func(ctx context.Context, host string) ([]*gitolite.Repo, error) {
@@ -95,15 +95,15 @@ func Test_Gitolite_listRepos(t *testing.T) {
 					},
 				},
 			}
-			resp, err := g.listRepos(context.Background(), test.gitoliteHost)
+			resp, err := g.listRepos(context.Bbckground(), test.gitoliteHost)
 			if err != nil {
-				if test.wantedErr != "" {
-					if diff := cmp.Diff(test.wantedErr, err.Error()); diff != "" {
+				if test.wbntedErr != "" {
+					if diff := cmp.Diff(test.wbntedErr, err.Error()); diff != "" {
 						t.Errorf("unexpected error diff:\n%s", diff)
 					}
 				} else {
 
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 			}
 
@@ -114,32 +114,32 @@ func Test_Gitolite_listRepos(t *testing.T) {
 	}
 }
 
-func TestCheckSSRFHeader(t *testing.T) {
+func TestCheckSSRFHebder(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gr := dbmocks.NewMockGitserverRepoStore()
-	db.GitserverReposFunc.SetDefaultReturn(gr)
+	db.GitserverReposFunc.SetDefbultReturn(gr)
 	s := &Server{
 		Logger:            logtest.Scoped(t),
-		ObservationCtx:    observation.TestContextTB(t),
+		ObservbtionCtx:    observbtion.TestContextTB(t),
 		ReposDir:          "/testroot",
 		skipCloneForTests: true,
-		GetRemoteURLFunc: func(ctx context.Context, name api.RepoName) (string, error) {
-			return "https://" + string(name) + ".git", nil
+		GetRemoteURLFunc: func(ctx context.Context, nbme bpi.RepoNbme) (string, error) {
+			return "https://" + string(nbme) + ".git", nil
 		},
-		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
-			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommandFactory()), nil
+		GetVCSSyncer: func(ctx context.Context, nbme bpi.RepoNbme) (VCSSyncer, error) {
+			return NewGitRepoSyncer(wrexec.NewNoOpRecordingCommbndFbctory()), nil
 		},
 		DB:         db,
 		Locker:     NewRepositoryLocker(),
-		RPSLimiter: ratelimit.NewInstrumentedLimiter("GitserverTest", rate.NewLimiter(rate.Inf, 10)),
+		RPSLimiter: rbtelimit.NewInstrumentedLimiter("GitserverTest", rbte.NewLimiter(rbte.Inf, 10)),
 	}
-	h := s.Handler()
+	h := s.Hbndler()
 
-	oldFetcher := defaultGitolite
-	t.Cleanup(func() {
-		defaultGitolite = oldFetcher
+	oldFetcher := defbultGitolite
+	t.Clebnup(func() {
+		defbultGitolite = oldFetcher
 	})
-	defaultGitolite = gitoliteFetcher{
+	defbultGitolite = gitoliteFetcher{
 		client: stubGitoliteClient{
 			ListRepos_: func(ctx context.Context, host string) ([]*gitolite.Repo, error) {
 				return []*gitolite.Repo{}, nil
@@ -147,27 +147,27 @@ func TestCheckSSRFHeader(t *testing.T) {
 		},
 	}
 
-	t.Run("header missing", func(t *testing.T) {
+	t.Run("hebder missing", func(t *testing.T) {
 		rw := httptest.NewRecorder()
 		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=127.0.0.1", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		h.ServeHTTP(rw, r)
 
-		assert.Equal(t, 400, rw.Code)
+		bssert.Equbl(t, 400, rw.Code)
 	})
 
-	t.Run("header supplied", func(t *testing.T) {
+	t.Run("hebder supplied", func(t *testing.T) {
 		rw := httptest.NewRecorder()
 		r, err := http.NewRequest("GET", "/list-gitolite?gitolite=127.0.0.1", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		r.Header.Set("X-Requested-With", "Sourcegraph")
+		r.Hebder.Set("X-Requested-With", "Sourcegrbph")
 		h.ServeHTTP(rw, r)
 
-		assert.Equal(t, 200, rw.Code)
+		bssert.Equbl(t, 200, rw.Code)
 	})
 }
 

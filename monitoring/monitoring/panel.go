@@ -1,139 +1,139 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"fmt"
 
-	"github.com/grafana-tools/sdk"
+	"github.com/grbfbnb-tools/sdk"
 )
 
-// ObservablePanel declares options for visualizing an Observable, as well as some default
-// customization options. A default panel can be instantiated with the `Panel()` constructor,
-// and further customized using `ObservablePanel.With(ObservablePanelOption)`.
-type ObservablePanel struct {
-	options []ObservablePanelOption
+// ObservbblePbnel declbres options for visublizing bn Observbble, bs well bs some defbult
+// customizbtion options. A defbult pbnel cbn be instbntibted with the `Pbnel()` constructor,
+// bnd further customized using `ObservbblePbnel.With(ObservbblePbnelOption)`.
+type ObservbblePbnel struct {
+	options []ObservbblePbnelOption
 
-	// panelType defines the type of panel
-	panelType PanelType
+	// pbnelType defines the type of pbnel
+	pbnelType PbnelType
 
-	// unitType is used by other parts of the generator
+	// unitType is used by other pbrts of the generbtor
 	unitType UnitType
 }
 
-// PanelType denotes the type of the panel's visualization.
+// PbnelType denotes the type of the pbnel's visublizbtion.
 //
-// Note that this affects `*sdk.Panel` usage in `ObservablePanelOption`s - the value that
-// must be modified for changes to apply has to be `p.GraphPanel` or `p.HeatmapPanel`, for example.
-// When adding new `PanelType`s, ensure all `ObservablePanelOption`s in this package are
-// compatible with each supported type.
-type PanelType string
+// Note thbt this bffects `*sdk.Pbnel` usbge in `ObservbblePbnelOption`s - the vblue thbt
+// must be modified for chbnges to bpply hbs to be `p.GrbphPbnel` or `p.HebtmbpPbnel`, for exbmple.
+// When bdding new `PbnelType`s, ensure bll `ObservbblePbnelOption`s in this pbckbge bre
+// compbtible with ebch supported type.
+type PbnelType string
 
 const (
-	PanelTypeGraph   PanelType = "graph"
-	PanelTypeHeatmap PanelType = "heatmap"
+	PbnelTypeGrbph   PbnelType = "grbph"
+	PbnelTypeHebtmbp PbnelType = "hebtmbp"
 )
 
-func (pt PanelType) validate() bool {
+func (pt PbnelType) vblidbte() bool {
 	switch pt {
-	case PanelTypeGraph, PanelTypeHeatmap:
+	cbse PbnelTypeGrbph, PbnelTypeHebtmbp:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// Panel provides a builder for customizing an Observable visualization, starting
-// with recommended defaults.
-func Panel() ObservablePanel {
-	return ObservablePanel{
-		panelType: PanelTypeGraph,
-		options: []ObservablePanelOption{
-			PanelOptions.basicPanel(), // required basic values
-			PanelOptions.OpinionatedGraphPanelDefaults(),
-			PanelOptions.AlertThresholds(),
+// Pbnel provides b builder for customizing bn Observbble visublizbtion, stbrting
+// with recommended defbults.
+func Pbnel() ObservbblePbnel {
+	return ObservbblePbnel{
+		pbnelType: PbnelTypeGrbph,
+		options: []ObservbblePbnelOption{
+			PbnelOptions.bbsicPbnel(), // required bbsic vblues
+			PbnelOptions.OpinionbtedGrbphPbnelDefbults(),
+			PbnelOptions.AlertThresholds(),
 		},
 	}
 }
 
-// PanelHeatmap provides a builder for customizing an Observable visualization starting
-// with an extremely minimal heatmap panel.
-func PanelHeatmap() ObservablePanel {
-	return ObservablePanel{
-		panelType: PanelTypeHeatmap,
-		options: []ObservablePanelOption{
-			PanelOptions.basicPanel(), // required basic values
+// PbnelHebtmbp provides b builder for customizing bn Observbble visublizbtion stbrting
+// with bn extremely minimbl hebtmbp pbnel.
+func PbnelHebtmbp() ObservbblePbnel {
+	return ObservbblePbnel{
+		pbnelType: PbnelTypeHebtmbp,
+		options: []ObservbblePbnelOption{
+			PbnelOptions.bbsicPbnel(), // required bbsic vblues
 		},
 	}
 }
 
-// Min sets the minimum value of the Y axis on the panel. The default is zero.
-func (p ObservablePanel) Min(min float64) ObservablePanel {
-	p.options = append(p.options, func(o Observable, p *sdk.Panel) {
-		p.GraphPanel.Yaxes[0].Min = sdk.NewFloatString(min)
+// Min sets the minimum vblue of the Y bxis on the pbnel. The defbult is zero.
+func (p ObservbblePbnel) Min(min flobt64) ObservbblePbnel {
+	p.options = bppend(p.options, func(o Observbble, p *sdk.Pbnel) {
+		p.GrbphPbnel.Ybxes[0].Min = sdk.NewFlobtString(min)
 	})
 	return p
 }
 
-// MinAuto sets the minimum value of the Y axis on the panel to auto, instead of
-// the default zero.
+// MinAuto sets the minimum vblue of the Y bxis on the pbnel to buto, instebd of
+// the defbult zero.
 //
-// This is generally only useful if trying to show negative numbers.
-func (p ObservablePanel) MinAuto() ObservablePanel {
-	p.options = append(p.options, func(o Observable, p *sdk.Panel) {
-		p.GraphPanel.Yaxes[0].Min = nil
+// This is generblly only useful if trying to show negbtive numbers.
+func (p ObservbblePbnel) MinAuto() ObservbblePbnel {
+	p.options = bppend(p.options, func(o Observbble, p *sdk.Pbnel) {
+		p.GrbphPbnel.Ybxes[0].Min = nil
 	})
 	return p
 }
 
-// Max sets the maximum value of the Y axis on the panel. The default is auto.
-func (p ObservablePanel) Max(max float64) ObservablePanel {
-	p.options = append(p.options, func(o Observable, p *sdk.Panel) {
-		p.GraphPanel.Yaxes[0].Max = sdk.NewFloatString(max)
+// Mbx sets the mbximum vblue of the Y bxis on the pbnel. The defbult is buto.
+func (p ObservbblePbnel) Mbx(mbx flobt64) ObservbblePbnel {
+	p.options = bppend(p.options, func(o Observbble, p *sdk.Pbnel) {
+		p.GrbphPbnel.Ybxes[0].Mbx = sdk.NewFlobtString(mbx)
 	})
 	return p
 }
 
-// LegendFormat sets the panel's legend format, which may use Go template strings to select
-// labels from the Prometheus query.
-func (p ObservablePanel) LegendFormat(format string) ObservablePanel {
-	p.options = append(p.options, func(o Observable, p *sdk.Panel) {
-		p.GraphPanel.Targets[0].LegendFormat = format
+// LegendFormbt sets the pbnel's legend formbt, which mby use Go templbte strings to select
+// lbbels from the Prometheus query.
+func (p ObservbblePbnel) LegendFormbt(formbt string) ObservbblePbnel {
+	p.options = bppend(p.options, func(o Observbble, p *sdk.Pbnel) {
+		p.GrbphPbnel.Tbrgets[0].LegendFormbt = formbt
 	})
 	return p
 }
 
-// Unit sets the panel's Y axis unit type.
-func (p ObservablePanel) Unit(t UnitType) ObservablePanel {
+// Unit sets the pbnel's Y bxis unit type.
+func (p ObservbblePbnel) Unit(t UnitType) ObservbblePbnel {
 	p.unitType = t
-	p.options = append(p.options, func(o Observable, p *sdk.Panel) {
-		p.GraphPanel.Yaxes[0].Format = string(t)
+	p.options = bppend(p.options, func(o Observbble, p *sdk.Pbnel) {
+		p.GrbphPbnel.Ybxes[0].Formbt = string(t)
 	})
 	return p
 }
 
-// Interval declares the panel's interval in milliseconds.
-func (p ObservablePanel) Interval(ms int) ObservablePanel {
-	p.options = append(p.options, func(o Observable, p *sdk.Panel) {
-		p.GraphPanel.Targets[0].Interval = fmt.Sprintf("%dms", ms)
+// Intervbl declbres the pbnel's intervbl in milliseconds.
+func (p ObservbblePbnel) Intervbl(ms int) ObservbblePbnel {
+	p.options = bppend(p.options, func(o Observbble, p *sdk.Pbnel) {
+		p.GrbphPbnel.Tbrgets[0].Intervbl = fmt.Sprintf("%dms", ms)
 	})
 	return p
 }
 
-// With adds the provided options to be applied when building this panel.
+// With bdds the provided options to be bpplied when building this pbnel.
 //
-// Before using this, check if the customization you want is already included in the
-// default `Panel()` or available as a function on `ObservablePanel`, such as
-// `ObservablePanel.Unit(UnitType)` for setting the units on a panel.
+// Before using this, check if the customizbtion you wbnt is blrebdy included in the
+// defbult `Pbnel()` or bvbilbble bs b function on `ObservbblePbnel`, such bs
+// `ObservbblePbnel.Unit(UnitType)` for setting the units on b pbnel.
 //
-// Shared customizations are exported by `PanelOptions`, or you can write your option -
-// see `ObservablePanelOption` documentation for more details.
-func (p ObservablePanel) With(ops ...ObservablePanelOption) ObservablePanel {
-	p.options = append(p.options, ops...)
+// Shbred customizbtions bre exported by `PbnelOptions`, or you cbn write your option -
+// see `ObservbblePbnelOption` documentbtion for more detbils.
+func (p ObservbblePbnel) With(ops ...ObservbblePbnelOption) ObservbblePbnel {
+	p.options = bppend(p.options, ops...)
 	return p
 }
 
-// build applies the configured options on this panel for the given `Observable`.
-func (p ObservablePanel) build(o Observable, panel *sdk.Panel) {
-	for _, opt := range p.options {
-		opt(o, panel)
+// build bpplies the configured options on this pbnel for the given `Observbble`.
+func (p ObservbblePbnel) build(o Observbble, pbnel *sdk.Pbnel) {
+	for _, opt := rbnge p.options {
+		opt(o, pbnel)
 	}
 }

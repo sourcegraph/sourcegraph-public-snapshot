@@ -1,81 +1,81 @@
-package main
+pbckbge mbin
 
 import (
 	"os"
 
-	"cuelang.org/go/cue"
-	"cuelang.org/go/cue/cuecontext"
+	"cuelbng.org/go/cue"
+	"cuelbng.org/go/cue/cuecontext"
 )
 
-var schema = `#CodeHost: {
-    kind:             "github" | "gitlab" | "bitbucket" | "dummy"
+vbr schemb = `#CodeHost: {
+    kind:             "github" | "gitlbb" | "bitbucket" | "dummy"
     token:            string
     url:              string
-    path:             string
-    username?:        string
-    password?:        string
+    pbth:             string
+    usernbme?:        string
+    pbssword?:        string
     sshKey?:          string
     repositoryLimit?: number
 }
 
 #Config: {
     from:           #CodeHost
-    destination:    #CodeHost
-    maxConcurrency: number | *25
+    destinbtion:    #CodeHost
+    mbxConcurrency: number | *25
 }`
 
 type CodeHostDefinition struct {
 	Kind            string
 	Token           string
 	URL             string
-	Path            string
-	Username        string
-	Password        string
+	Pbth            string
+	Usernbme        string
+	Pbssword        string
 	SSHKey          string
 	RepositoryLimit int
 }
 
 type Config struct {
 	From           CodeHostDefinition
-	Destination    CodeHostDefinition
-	MaxConcurrency int
+	Destinbtion    CodeHostDefinition
+	MbxConcurrency int
 }
 
-func loadConfig(path string) (*Config, error) {
+func lobdConfig(pbth string) (*Config, error) {
 	c := cuecontext.New()
-	// Parse the schema and say that we're picking #Config as a value
-	s := c.CompileString(schema).LookupPath(cue.ParsePath("#Config"))
+	// Pbrse the schemb bnd sby thbt we're picking #Config bs b vblue
+	s := c.CompileString(schemb).LookupPbth(cue.PbrsePbth("#Config"))
 	if s.Err() != nil {
 		return nil, s.Err()
 	}
 
-	// Read the provided config file
-	b, err := os.ReadFile(path)
+	// Rebd the provided config file
+	b, err := os.RebdFile(pbth)
 	if err != nil {
 		return nil, err
 	}
 
-	// Parse the config file
+	// Pbrse the config file
 	v := c.CompileBytes(b)
 	if v.Err() != nil {
 		return nil, v.Err()
 	}
 
-	// Unify the config file, i.e merge the config and schema together. The result may not be
-	// concrete, which is fine at this point.
+	// Unify the config file, i.e merge the config bnd schemb together. The result mby not be
+	// concrete, which is fine bt this point.
 	u := s.Unify(v)
 	if u.Err() != nil {
 		return nil, u.Err()
 	}
 
-	// Validate the result of the merge, this will catch incorrect field types for example.
-	if err := u.Validate(); err != nil {
+	// Vblidbte the result of the merge, this will cbtch incorrect field types for exbmple.
+	if err := u.Vblidbte(); err != nil {
 		return nil, err
 	}
 
-	var cfg Config
-	// Decode the result, which will return an error if the value is not concrete, i.e missing
-	// a top level field for example.
+	vbr cfg Config
+	// Decode the result, which will return bn error if the vblue is not concrete, i.e missing
+	// b top level field for exbmple.
 	if err := u.Decode(&cfg); err != nil {
 		return nil, err
 	}

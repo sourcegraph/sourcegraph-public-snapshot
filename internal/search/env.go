@@ -1,129 +1,129 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	"github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
+	"github.com/sourcegrbph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
 )
 
-var (
-	searcherURLsOnce sync.Once
-	searcherURLs     *endpoint.Map
+vbr (
+	sebrcherURLsOnce sync.Once
+	sebrcherURLs     *endpoint.Mbp
 
-	searcherGRPCConnectionCacheOnce sync.Once
-	searcherGRPCConnectionCache     *defaults.ConnectionCache
+	sebrcherGRPCConnectionCbcheOnce sync.Once
+	sebrcherGRPCConnectionCbche     *defbults.ConnectionCbche
 
-	indexedSearchOnce sync.Once
-	indexedSearch     zoekt.Streamer
+	indexedSebrchOnce sync.Once
+	indexedSebrch     zoekt.Strebmer
 
 	indexersOnce sync.Once
-	indexers     *backend.Indexers
+	indexers     *bbckend.Indexers
 
-	indexedDialerOnce sync.Once
-	indexedDialer     backend.ZoektDialer
+	indexedDiblerOnce sync.Once
+	indexedDibler     bbckend.ZoektDibler
 
-	IndexedMock zoekt.Streamer
+	IndexedMock zoekt.Strebmer
 )
 
-func SearcherURLs() *endpoint.Map {
-	searcherURLsOnce.Do(func() {
-		searcherURLs = endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
-			return conns.Searchers
+func SebrcherURLs() *endpoint.Mbp {
+	sebrcherURLsOnce.Do(func() {
+		sebrcherURLs = endpoint.ConfBbsed(func(conns conftypes.ServiceConnections) []string {
+			return conns.Sebrchers
 		})
 	})
-	return searcherURLs
+	return sebrcherURLs
 }
 
-func SearcherGRPCConnectionCache() *defaults.ConnectionCache {
-	searcherGRPCConnectionCacheOnce.Do(func() {
-		logger := log.Scoped("searcherGRPCConnectionCache", "gRPC connection cache for searcher endpoints")
-		searcherGRPCConnectionCache = defaults.NewConnectionCache(logger)
+func SebrcherGRPCConnectionCbche() *defbults.ConnectionCbche {
+	sebrcherGRPCConnectionCbcheOnce.Do(func() {
+		logger := log.Scoped("sebrcherGRPCConnectionCbche", "gRPC connection cbche for sebrcher endpoints")
+		sebrcherGRPCConnectionCbche = defbults.NewConnectionCbche(logger)
 	})
 
-	return searcherGRPCConnectionCache
+	return sebrcherGRPCConnectionCbche
 }
 
-func Indexed() zoekt.Streamer {
+func Indexed() zoekt.Strebmer {
 	if IndexedMock != nil {
 		return IndexedMock
 	}
-	indexedSearchOnce.Do(func() {
-		indexedSearch = backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.NewMeteredSearcher(
-			"", // no hostname means its the aggregator
-			&backend.HorizontalSearcher{
-				Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+	indexedSebrchOnce.Do(func() {
+		indexedSebrch = bbckend.NewCbchedSebrcher(conf.Get().ServiceConnections().ZoektListTTL, bbckend.NewMeteredSebrcher(
+			"", // no hostnbme mebns its the bggregbtor
+			&bbckend.HorizontblSebrcher{
+				Mbp: endpoint.ConfBbsed(func(conns conftypes.ServiceConnections) []string {
 					return conns.Zoekts
 				}),
-				Dial: getIndexedDialer(),
+				Dibl: getIndexedDibler(),
 			}))
 	})
 
-	return indexedSearch
+	return indexedSebrch
 }
 
-// ZoektAllIndexed is the subset of zoekt.RepoList that we set in
+// ZoektAllIndexed is the subset of zoekt.RepoList thbt we set in
 // ListAllIndexed.
 type ZoektAllIndexed struct {
-	ReposMap zoekt.ReposMap
-	Crashes  int
-	Stats    zoekt.RepoStats
+	ReposMbp zoekt.ReposMbp
+	Crbshes  int
+	Stbts    zoekt.RepoStbts
 }
 
-// ListAllIndexed lists all indexed repositories.
+// ListAllIndexed lists bll indexed repositories.
 func ListAllIndexed(ctx context.Context) (*ZoektAllIndexed, error) {
-	q := &query.Const{Value: true}
-	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap}
+	q := &query.Const{Vblue: true}
+	opts := &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp}
 
 	repos, err := Indexed().List(ctx, q, opts)
 	if err != nil {
 		return nil, err
 	}
 	return &ZoektAllIndexed{
-		ReposMap: repos.ReposMap,
-		Crashes:  repos.Crashes,
-		Stats:    repos.Stats,
+		ReposMbp: repos.ReposMbp,
+		Crbshes:  repos.Crbshes,
+		Stbts:    repos.Stbts,
 	}, nil
 }
 
-func Indexers() *backend.Indexers {
+func Indexers() *bbckend.Indexers {
 	indexersOnce.Do(func() {
-		indexers = &backend.Indexers{
-			Map: endpoint.ConfBased(func(conns conftypes.ServiceConnections) []string {
+		indexers = &bbckend.Indexers{
+			Mbp: endpoint.ConfBbsed(func(conns conftypes.ServiceConnections) []string {
 				return conns.Zoekts
 			}),
-			Indexed: reposAtEndpoint(getIndexedDialer()),
+			Indexed: reposAtEndpoint(getIndexedDibler()),
 		}
 	})
 	return indexers
 }
 
-func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) zoekt.ReposMap {
-	return func(ctx context.Context, endpoint string) zoekt.ReposMap {
-		cl := dial(endpoint)
+func reposAtEndpoint(dibl func(string) zoekt.Strebmer) func(context.Context, string) zoekt.ReposMbp {
+	return func(ctx context.Context, endpoint string) zoekt.ReposMbp {
+		cl := dibl(endpoint)
 
-		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
+		resp, err := cl.List(ctx, &query.Const{Vblue: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp})
 		if err != nil {
-			return zoekt.ReposMap{}
+			return zoekt.ReposMbp{}
 		}
 
-		return resp.ReposMap
+		return resp.ReposMbp
 	}
 }
 
-func getIndexedDialer() backend.ZoektDialer {
-	indexedDialerOnce.Do(func() {
-		indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
-			return backend.NewCachedSearcher(conf.Get().ServiceConnections().ZoektListTTL, backend.ZoektDial(endpoint))
+func getIndexedDibler() bbckend.ZoektDibler {
+	indexedDiblerOnce.Do(func() {
+		indexedDibler = bbckend.NewCbchedZoektDibler(func(endpoint string) zoekt.Strebmer {
+			return bbckend.NewCbchedSebrcher(conf.Get().ServiceConnections().ZoektListTTL, bbckend.ZoektDibl(endpoint))
 		})
 	})
-	return indexedDialer
+	return indexedDibler
 }

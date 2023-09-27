@@ -1,54 +1,54 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func TestOffsetBasedCursorSlice(t *testing.T) {
+func TestOffsetBbsedCursorSlice(t *testing.T) {
 	slice := []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
 
 	int2 := 2
 	string1 := "1"
 	string8 := "8"
 
-	testCases := []struct {
-		name string
-		args *database.PaginationArgs
-		want autogold.Value
+	testCbses := []struct {
+		nbme string
+		brgs *dbtbbbse.PbginbtionArgs
+		wbnt butogold.Vblue
 	}{
 		{
-			"first page",
-			&database.PaginationArgs{First: &int2},
-			autogold.Expect([]int{1, 2}),
+			"first pbge",
+			&dbtbbbse.PbginbtionArgs{First: &int2},
+			butogold.Expect([]int{1, 2}),
 		},
 		{
-			"next page",
-			&database.PaginationArgs{First: &int2, After: &string1},
-			autogold.Expect([]int{3, 4}),
+			"next pbge",
+			&dbtbbbse.PbginbtionArgs{First: &int2, After: &string1},
+			butogold.Expect([]int{3, 4}),
 		},
 		{
-			"last page",
-			&database.PaginationArgs{Last: &int2},
-			autogold.Expect([]int{9, 10}),
+			"lbst pbge",
+			&dbtbbbse.PbginbtionArgs{Lbst: &int2},
+			butogold.Expect([]int{9, 10}),
 		},
 		{
-			"previous page",
-			&database.PaginationArgs{Last: &int2, Before: &string8},
-			autogold.Expect([]int{7, 8}),
+			"previous pbge",
+			&dbtbbbse.PbginbtionArgs{Lbst: &int2, Before: &string8},
+			butogold.Expect([]int{7, 8}),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			result, _, err := OffsetBasedCursorSlice(slice, tc.args)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			result, _, err := OffsetBbsedCursorSlice(slice, tc.brgs)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			tc.want.Equal(t, result)
+			tc.wbnt.Equbl(t, result)
 		})
 	}
 }

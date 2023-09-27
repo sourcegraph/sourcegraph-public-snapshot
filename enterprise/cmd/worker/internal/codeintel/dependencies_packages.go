@@ -1,35 +1,35 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type packageFilterApplicatorJob struct{}
+type pbckbgeFilterApplicbtorJob struct{}
 
-func NewPackagesFilterApplicatorJob() job.Job {
-	return &packageFilterApplicatorJob{}
+func NewPbckbgesFilterApplicbtorJob() job.Job {
+	return &pbckbgeFilterApplicbtorJob{}
 }
 
-func (j *packageFilterApplicatorJob) Description() string {
-	return "package repo filters applicator"
+func (j *pbckbgeFilterApplicbtorJob) Description() string {
+	return "pbckbge repo filters bpplicbtor"
 }
 
-func (j *packageFilterApplicatorJob) Config() []env.Config {
+func (j *pbckbgeFilterApplicbtorJob) Config() []env.Config {
 	return nil
 }
 
-func (j *packageFilterApplicatorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDB(observationCtx)
+func (j *pbckbgeFilterApplicbtorJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return dependencies.PackageFiltersJob(observationCtx, db), nil
+	return dependencies.PbckbgeFiltersJob(observbtionCtx, db), nil
 }

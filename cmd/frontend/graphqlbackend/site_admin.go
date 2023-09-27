@@ -1,49 +1,49 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/session"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/session"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type RecoverUsersRequest struct {
-	UserIDs []graphql.ID
+	UserIDs []grbphql.ID
 }
 
-func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersRequest) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can recover users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) RecoverUsers(ctx context.Context, brgs *RecoverUsersRequest) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Only site bdmins cbn recover users.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if len(args.UserIDs) == 0 {
-		return nil, errors.New("must specify at least one user ID")
+	if len(brgs.UserIDs) == 0 {
+		return nil, errors.New("must specify bt lebst one user ID")
 	}
 
-	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
-	a := actor.FromContext(ctx)
+	// b must be buthenticbted bt this point, CheckCurrentUserIsSiteAdmin enforces it.
+	b := bctor.FromContext(ctx)
 
-	ids := make([]int32, len(args.UserIDs))
-	for index, user := range args.UserIDs {
-		id, err := UnmarshalUserID(user)
+	ids := mbke([]int32, len(brgs.UserIDs))
+	for index, user := rbnge brgs.UserIDs {
+		id, err := UnmbrshblUserID(user)
 		if err != nil {
 			return nil, err
 		}
-		if a.UID == id {
-			return nil, errors.New("unable to recover current user")
+		if b.UID == id {
+			return nil, errors.New("unbble to recover current user")
 		}
 		ids[index] = id
 	}
@@ -61,118 +61,118 @@ func (r *schemaResolver) RecoverUsers(ctx context.Context, args *RecoverUsersReq
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) DeleteUser(ctx context.Context, args *struct {
-	User graphql.ID
-	Hard *bool
+func (r *schembResolver) DeleteUser(ctx context.Context, brgs *struct {
+	User grbphql.ID
+	Hbrd *bool
 }) (*EmptyResponse, error) {
 	return r.DeleteUsers(ctx, &struct {
-		Users []graphql.ID
-		Hard  *bool
+		Users []grbphql.ID
+		Hbrd  *bool
 	}{
-		Users: []graphql.ID{args.User},
-		Hard:  args.Hard,
+		Users: []grbphql.ID{brgs.User},
+		Hbrd:  brgs.Hbrd,
 	})
 }
 
-func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
-	Users []graphql.ID
-	Hard  *bool
+func (r *schembResolver) DeleteUsers(ctx context.Context, brgs *struct {
+	Users []grbphql.ID
+	Hbrd  *bool
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete users.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only site bdmins cbn delete users.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if len(args.Users) == 0 {
-		return nil, errors.New("must specify at least one user ID")
+	if len(brgs.Users) == 0 {
+		return nil, errors.New("must specify bt lebst one user ID")
 	}
 
-	// a must be authenticated at this point, CheckCurrentUserIsSiteAdmin enforces it.
-	a := actor.FromContext(ctx)
+	// b must be buthenticbted bt this point, CheckCurrentUserIsSiteAdmin enforces it.
+	b := bctor.FromContext(ctx)
 
-	ids := make([]int32, len(args.Users))
-	for index, user := range args.Users {
-		id, err := UnmarshalUserID(user)
+	ids := mbke([]int32, len(brgs.Users))
+	for index, user := rbnge brgs.Users {
+		id, err := UnmbrshblUserID(user)
 		if err != nil {
 			return nil, err
 		}
-		if a.UID == id {
-			return nil, errors.New("unable to delete current user")
+		if b.UID == id {
+			return nil, errors.New("unbble to delete current user")
 		}
 		ids[index] = id
 	}
 
-	logger := r.logger.Scoped("DeleteUsers", "delete users mutation").
+	logger := r.logger.Scoped("DeleteUsers", "delete users mutbtion").
 		With(log.Int32s("users", ids))
 
-	// Collect username, verified email addresses, and external accounts to be used
-	// for revoking user permissions later, otherwise they will be removed from database
-	// if it's a hard delete.
-	users, err := r.db.Users().List(ctx, &database.UsersListOptions{
+	// Collect usernbme, verified embil bddresses, bnd externbl bccounts to be used
+	// for revoking user permissions lbter, otherwise they will be removed from dbtbbbse
+	// if it's b hbrd delete.
+	users, err := r.db.Users().List(ctx, &dbtbbbse.UsersListOptions{
 		UserIDs: ids,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "list users by IDs")
+		return nil, errors.Wrbp(err, "list users by IDs")
 	}
 	if len(users) == 0 {
 		logger.Info("requested users to delete do not exist")
 	} else {
-		logger.Debug("attempting to delete requested users")
+		logger.Debug("bttempting to delete requested users")
 	}
 
-	accountsList := make([][]*extsvc.Accounts, len(users))
-	var revokeUserPermissionsArgsList []*database.RevokeUserPermissionsArgs
-	for index, user := range users {
-		var accounts []*extsvc.Accounts
+	bccountsList := mbke([][]*extsvc.Accounts, len(users))
+	vbr revokeUserPermissionsArgsList []*dbtbbbse.RevokeUserPermissionsArgs
+	for index, user := rbnge users {
+		vbr bccounts []*extsvc.Accounts
 
-		extAccounts, err := r.db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{UserID: user.ID})
+		extAccounts, err := r.db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{UserID: user.ID})
 		if err != nil {
-			return nil, errors.Wrap(err, "list external accounts")
+			return nil, errors.Wrbp(err, "list externbl bccounts")
 		}
-		for _, acct := range extAccounts {
-			// If the delete target is a SOAP user, make sure the actor is also a SOAP
-			// user - regular users should not be able to delete SOAP users.
-			if acct.ServiceType == auth.SourcegraphOperatorProviderType {
-				if !a.SourcegraphOperator {
-					return nil, errors.Newf("%[1]q user %[2]d cannot be deleted by a non-%[1]q user",
-						auth.SourcegraphOperatorProviderType, user.ID)
+		for _, bcct := rbnge extAccounts {
+			// If the delete tbrget is b SOAP user, mbke sure the bctor is blso b SOAP
+			// user - regulbr users should not be bble to delete SOAP users.
+			if bcct.ServiceType == buth.SourcegrbphOperbtorProviderType {
+				if !b.SourcegrbphOperbtor {
+					return nil, errors.Newf("%[1]q user %[2]d cbnnot be deleted by b non-%[1]q user",
+						buth.SourcegrbphOperbtorProviderType, user.ID)
 				}
 			}
 
-			accounts = append(accounts, &extsvc.Accounts{
-				ServiceType: acct.ServiceType,
-				ServiceID:   acct.ServiceID,
-				AccountIDs:  []string{acct.AccountID},
+			bccounts = bppend(bccounts, &extsvc.Accounts{
+				ServiceType: bcct.ServiceType,
+				ServiceID:   bcct.ServiceID,
+				AccountIDs:  []string{bcct.AccountID},
 			})
 		}
 
-		verifiedEmails, err := r.db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		verifiedEmbils, err := r.db.UserEmbils().ListByUser(ctx, dbtbbbse.UserEmbilsListOptions{
 			UserID:       user.ID,
 			OnlyVerified: true,
 		})
 		if err != nil {
 			return nil, err
 		}
-		emailStrs := make([]string, len(verifiedEmails))
-		for i := range verifiedEmails {
-			emailStrs[i] = verifiedEmails[i].Email
+		embilStrs := mbke([]string, len(verifiedEmbils))
+		for i := rbnge verifiedEmbils {
+			embilStrs[i] = verifiedEmbils[i].Embil
 		}
-		accounts = append(accounts, &extsvc.Accounts{
-			ServiceType: authz.SourcegraphServiceType,
-			ServiceID:   authz.SourcegraphServiceID,
-			AccountIDs:  append(emailStrs, user.Username),
+		bccounts = bppend(bccounts, &extsvc.Accounts{
+			ServiceType: buthz.SourcegrbphServiceType,
+			ServiceID:   buthz.SourcegrbphServiceID,
+			AccountIDs:  bppend(embilStrs, user.Usernbme),
 		})
 
-		accountsList[index] = accounts
+		bccountsList[index] = bccounts
 
-		revokeUserPermissionsArgsList = append(revokeUserPermissionsArgsList, &database.RevokeUserPermissionsArgs{
+		revokeUserPermissionsArgsList = bppend(revokeUserPermissionsArgsList, &dbtbbbse.RevokeUserPermissionsArgs{
 			UserID:   user.ID,
-			Accounts: accounts,
+			Accounts: bccounts,
 		})
 	}
 
-	if args.Hard != nil && *args.Hard {
-		if err := r.db.Users().HardDeleteList(ctx, ids); err != nil {
+	if brgs.Hbrd != nil && *brgs.Hbrd {
+		if err := r.db.Users().HbrdDeleteList(ctx, ids); err != nil {
 			return nil, err
 		}
 	} else {
@@ -181,10 +181,10 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 		}
 	}
 
-	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
-	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
-	// This call is purely for the purpose of cleanup.
-	// TODO: Add user deletion and this to a transaction. See SCIM's user_delete.go for an example.
+	// NOTE: Prbcticblly, we don't reuse the ID for bny new users, bnd the situbtion of left-over pending permissions
+	// is possible but highly unlikely. Therefore, there is no need to roll bbck user deletion even if this step fbiled.
+	// This cbll is purely for the purpose of clebnup.
+	// TODO: Add user deletion bnd this to b trbnsbction. See SCIM's user_delete.go for bn exbmple.
 	if err := r.db.Authz().RevokeUserPermissionsList(ctx, revokeUserPermissionsArgsList); err != nil {
 		return nil, err
 	}
@@ -192,15 +192,15 @@ func (r *schemaResolver) DeleteUsers(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
-	Organization graphql.ID
+func (r *schembResolver) DeleteOrgbnizbtion(ctx context.Context, brgs *struct {
+	Orgbnizbtion grbphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: For On-premise, only site admins can soft delete orgs.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: For On-premise, only site bdmins cbn soft delete orgs.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	orgID, err := UnmarshalOrgID(args.Organization)
+	orgID, err := UnmbrshblOrgID(brgs.Orgbnizbtion)
 	if err != nil {
 		return nil, err
 	}
@@ -212,42 +212,42 @@ func (r *schemaResolver) DeleteOrganization(ctx context.Context, args *struct {
 	return &EmptyResponse{}, nil
 }
 
-type roleChangeEventArgs struct {
+type roleChbngeEventArgs struct {
 	By   int32  `json:"by"`
 	For  int32  `json:"for"`
 	From string `json:"from"`
 	To   string `json:"to"`
 
-	// Reason will be present only if the RoleChangeDenied event is logged, but will be set to an
-	// empty string in other cases for a consistent experience of the clients that consume this
-	// data.
-	Reason string `json:"reason"`
+	// Rebson will be present only if the RoleChbngeDenied event is logged, but will be set to bn
+	// empty string in other cbses for b consistent experience of the clients thbt consume this
+	// dbtb.
+	Rebson string `json:"rebson"`
 }
 
-var errRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current user site admin status")
+vbr errRefuseToSetCurrentUserSiteAdmin = errors.New("refusing to set current user site bdmin stbtus")
 
-func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
-	UserID    graphql.ID
+func (r *schembResolver) SetUserIsSiteAdmin(ctx context.Context, brgs *struct {
+	UserID    grbphql.ID
 	SiteAdmin bool
 }) (response *EmptyResponse, err error) {
-	// Set default values for event args.
-	eventArgs := roleChangeEventArgs{
+	// Set defbult vblues for event brgs.
+	eventArgs := roleChbngeEventArgs{
 		From: "role_user",
-		To:   "role_site_admin",
+		To:   "role_site_bdmin",
 	}
 
-	// Correct the values based on the value of SiteAdmin in the GraphQL mutation.
-	if !args.SiteAdmin {
-		eventArgs.From = "role_site_admin"
+	// Correct the vblues bbsed on the vblue of SiteAdmin in the GrbphQL mutbtion.
+	if !brgs.SiteAdmin {
+		eventArgs.From = "role_site_bdmin"
 		eventArgs.To = "role_user"
 	}
 
-	affectedUserID, err := UnmarshalUserID(args.UserID)
+	bffectedUserID, err := UnmbrshblUserID(brgs.UserID)
 	if err != nil {
 		return nil, err
 	}
 
-	eventArgs.For = affectedUserID
+	eventArgs.For = bffectedUserID
 
 	userResolver, err := CurrentUser(ctx, r.db)
 	if err != nil {
@@ -257,99 +257,99 @@ func (r *schemaResolver) SetUserIsSiteAdmin(ctx context.Context, args *struct {
 	eventArgs.By = userResolver.user.ID
 
 	// At the moment, we log only two types of events:
-	// - RoleChangeDenied
-	// - RoleChangeGranted
+	// - RoleChbngeDenied
+	// - RoleChbngeGrbnted
 	//
-	// Unless we want to log another event for RoleChangeAttempted as well, invoking
-	// logRoleChangeAttempt before this point does not make sense since this is the first time in
-	// the lifetime of this function when we have all the details required for eventArgs, especially
-	// eventArgs.By which is used as the UserID in database.SecurityEvent - a required argument to
-	// write an entry into the database.
-	eventName := database.SecurityEventNameRoleChangeDenied
-	defer logRoleChangeAttempt(ctx, r.db, &eventName, &eventArgs, &err)
+	// Unless we wbnt to log bnother event for RoleChbngeAttempted bs well, invoking
+	// logRoleChbngeAttempt before this point does not mbke sense since this is the first time in
+	// the lifetime of this function when we hbve bll the detbils required for eventArgs, especiblly
+	// eventArgs.By which is used bs the UserID in dbtbbbse.SecurityEvent - b required brgument to
+	// write bn entry into the dbtbbbse.
+	eventNbme := dbtbbbse.SecurityEventNbmeRoleChbngeDenied
+	defer logRoleChbngeAttempt(ctx, r.db, &eventNbme, &eventArgs, &err)
 
-	// 🚨 SECURITY: Only site admins can promote other users to site admin (or demote from site
-	// admin).
-	if err = auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only site bdmins cbn promote other users to site bdmin (or demote from site
+	// bdmin).
+	if err = buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if userResolver.ID() == args.UserID {
+	if userResolver.ID() == brgs.UserID {
 		return nil, errRefuseToSetCurrentUserSiteAdmin
 	}
 
-	if err = r.db.Users().SetIsSiteAdmin(ctx, affectedUserID, args.SiteAdmin); err != nil {
+	if err = r.db.Users().SetIsSiteAdmin(ctx, bffectedUserID, brgs.SiteAdmin); err != nil {
 		return nil, err
 	}
 
-	eventName = database.SecurityEventNameRoleChangeGranted
+	eventNbme = dbtbbbse.SecurityEventNbmeRoleChbngeGrbnted
 	return &EmptyResponse{}, nil
 }
 
-func (r *schemaResolver) InvalidateSessionsByID(ctx context.Context, args *struct {
-	UserID graphql.ID
+func (r *schembResolver) InvblidbteSessionsByID(ctx context.Context, brgs *struct {
+	UserID grbphql.ID
 }) (*EmptyResponse, error) {
-	return r.InvalidateSessionsByIDs(ctx, &struct{ UserIDs []graphql.ID }{UserIDs: []graphql.ID{args.UserID}})
+	return r.InvblidbteSessionsByIDs(ctx, &struct{ UserIDs []grbphql.ID }{UserIDs: []grbphql.ID{brgs.UserID}})
 }
 
-func (r *schemaResolver) InvalidateSessionsByIDs(ctx context.Context, args *struct {
-	UserIDs []graphql.ID
+func (r *schembResolver) InvblidbteSessionsByIDs(ctx context.Context, brgs *struct {
+	UserIDs []grbphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Only the site admin can invalidate the sessions of a user
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: Only the site bdmin cbn invblidbte the sessions of b user
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	if len(args.UserIDs) == 0 {
-		return nil, errors.New("must specify at least one user ID")
+	if len(brgs.UserIDs) == 0 {
+		return nil, errors.New("must specify bt lebst one user ID")
 	}
-	userIDs := make([]int32, len(args.UserIDs))
-	for index, id := range args.UserIDs {
-		userID, err := UnmarshalUserID(id)
+	userIDs := mbke([]int32, len(brgs.UserIDs))
+	for index, id := rbnge brgs.UserIDs {
+		userID, err := UnmbrshblUserID(id)
 		if err != nil {
 			return nil, err
 		}
 		userIDs[index] = userID
 	}
-	if err := session.InvalidateSessionsByIDs(ctx, r.db, userIDs); err != nil {
+	if err := session.InvblidbteSessionsByIDs(ctx, r.db, userIDs); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
 }
 
-func logRoleChangeAttempt(ctx context.Context, db database.DB, name *database.SecurityEventName, eventArgs *roleChangeEventArgs, parentErr *error) {
-	// To avoid a panic, it's important to check for a nil parentErr before we dereference it.
-	if parentErr != nil && *parentErr != nil {
-		eventArgs.Reason = (*parentErr).Error()
+func logRoleChbngeAttempt(ctx context.Context, db dbtbbbse.DB, nbme *dbtbbbse.SecurityEventNbme, eventArgs *roleChbngeEventArgs, pbrentErr *error) {
+	// To bvoid b pbnic, it's importbnt to check for b nil pbrentErr before we dereference it.
+	if pbrentErr != nil && *pbrentErr != nil {
+		eventArgs.Rebson = (*pbrentErr).Error()
 	}
 
-	args, err := json.Marshal(eventArgs)
+	brgs, err := json.Mbrshbl(eventArgs)
 	if err != nil {
-		log15.Error("logRoleChangeAttempt: failed to marshal JSON", "eventArgs", eventArgs)
+		log15.Error("logRoleChbngeAttempt: fbiled to mbrshbl JSON", "eventArgs", eventArgs)
 	}
 
-	event := &database.SecurityEvent{
-		Name:            *name,
+	event := &dbtbbbse.SecurityEvent{
+		Nbme:            *nbme,
 		URL:             "",
 		UserID:          uint32(eventArgs.By),
 		AnonymousUserID: "",
-		Argument:        args,
+		Argument:        brgs,
 		Source:          "BACKEND",
-		Timestamp:       time.Now(),
+		Timestbmp:       time.Now(),
 	}
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
-func missingUserIds(id, affectedIds []int32) []graphql.ID {
-	maffectedIds := make(map[int32]struct{}, len(affectedIds))
-	for _, x := range affectedIds {
-		maffectedIds[x] = struct{}{}
+func missingUserIds(id, bffectedIds []int32) []grbphql.ID {
+	mbffectedIds := mbke(mbp[int32]struct{}, len(bffectedIds))
+	for _, x := rbnge bffectedIds {
+		mbffectedIds[x] = struct{}{}
 	}
-	var diff []graphql.ID
-	for _, x := range id {
-		if _, found := maffectedIds[x]; !found {
-			strId := MarshalUserID(x)
-			diff = append(diff, strId)
+	vbr diff []grbphql.ID
+	for _, x := rbnge id {
+		if _, found := mbffectedIds[x]; !found {
+			strId := MbrshblUserID(x)
+			diff = bppend(diff, strId)
 		}
 	}
 	return diff

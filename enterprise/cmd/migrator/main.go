@@ -1,26 +1,26 @@
-package main
+pbckbge mbin
 
 import (
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/migrator/shared"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/cmd/migrbtor/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/register"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-func main() {
-	sanitycheck.Pass()
+func mbin() {
+	sbnitycheck.Pbss()
 	liblog := log.Init(log.Resource{
-		Name:    env.MyName,
+		Nbme:    env.MyNbme,
 		Version: version.Version(),
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("migrator", "migrator enterprise edition")
+	logger := log.Scoped("migrbtor", "migrbtor enterprise edition")
 
-	if err := shared.Start(logger, register.RegisterEnterpriseMigratorsUsingConfAndStoreFactory); err != nil {
-		logger.Fatal(err.Error())
+	if err := shbred.Stbrt(logger, register.RegisterEnterpriseMigrbtorsUsingConfAndStoreFbctory); err != nil {
+		logger.Fbtbl(err.Error())
 	}
 }

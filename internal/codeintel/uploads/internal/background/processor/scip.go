@@ -1,395 +1,395 @@
-package processor
+pbckbge processor
 
 import (
 	"bytes"
 	"context"
 	"io"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/collections"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/pathexistence"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/lsifstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/collections"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/pbthexistence"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-type firstPassResult struct {
-	metadata              *scip.Metadata
-	externalSymbolsByName map[string]*scip.SymbolInformation
-	relativePaths         []string
-	documentCountByPath   map[string]int
+type firstPbssResult struct {
+	metbdbtb              *scip.Metbdbtb
+	externblSymbolsByNbme mbp[string]*scip.SymbolInformbtion
+	relbtivePbths         []string
+	documentCountByPbth   mbp[string]int
 }
 
-func aggregateExternalSymbolsAndPaths(indexReader *gzipReadSeeker) (firstPassResult, error) {
-	var metadata *scip.Metadata
-	var paths []string
-	externalSymbolsByName := make(map[string]*scip.SymbolInformation, 1024)
-	documentCountByPath := make(map[string]int, 1)
+func bggregbteExternblSymbolsAndPbths(indexRebder *gzipRebdSeeker) (firstPbssResult, error) {
+	vbr metbdbtb *scip.Metbdbtb
+	vbr pbths []string
+	externblSymbolsByNbme := mbke(mbp[string]*scip.SymbolInformbtion, 1024)
+	documentCountByPbth := mbke(mbp[string]int, 1)
 	indexVisitor := scip.IndexVisitor{
-		VisitMetadata: func(m *scip.Metadata) {
-			metadata = m
+		VisitMetbdbtb: func(m *scip.Metbdbtb) {
+			metbdbtb = m
 		},
-		// Assumption: Post-processing of documents is much more expensive than
-		// pure deserialization, so we don't optimize the visitation here to support
-		// only deserializing the RelativePath and skipping other fields.
+		// Assumption: Post-processing of documents is much more expensive thbn
+		// pure deseriblizbtion, so we don't optimize the visitbtion here to support
+		// only deseriblizing the RelbtivePbth bnd skipping other fields.
 		VisitDocument: func(d *scip.Document) {
-			paths = append(paths, d.RelativePath)
-			documentCountByPath[d.RelativePath] = documentCountByPath[d.RelativePath] + 1
+			pbths = bppend(pbths, d.RelbtivePbth)
+			documentCountByPbth[d.RelbtivePbth] = documentCountByPbth[d.RelbtivePbth] + 1
 		},
-		VisitExternalSymbol: func(s *scip.SymbolInformation) {
-			externalSymbolsByName[s.Symbol] = s
+		VisitExternblSymbol: func(s *scip.SymbolInformbtion) {
+			externblSymbolsByNbme[s.Symbol] = s
 		},
 	}
-	if err := indexVisitor.ParseStreaming(indexReader); err != nil {
-		return firstPassResult{}, err
+	if err := indexVisitor.PbrseStrebming(indexRebder); err != nil {
+		return firstPbssResult{}, err
 	}
-	if err := indexReader.seekToStart(); err != nil {
-		return firstPassResult{}, err
+	if err := indexRebder.seekToStbrt(); err != nil {
+		return firstPbssResult{}, err
 	}
-	return firstPassResult{metadata, externalSymbolsByName, paths, documentCountByPath}, nil
+	return firstPbssResult{metbdbtb, externblSymbolsByNbme, pbths, documentCountByPbth}, nil
 }
 
-type documentOneShotIterator struct {
-	ignorePaths  collections.Set[string]
-	indexSummary firstPassResult
-	indexReader  gzipReadSeeker
+type documentOneShotIterbtor struct {
+	ignorePbths  collections.Set[string]
+	indexSummbry firstPbssResult
+	indexRebder  gzipRebdSeeker
 }
 
-var _ lsifstore.SCIPDocumentVisitor = &documentOneShotIterator{}
+vbr _ lsifstore.SCIPDocumentVisitor = &documentOneShotIterbtor{}
 
-func (it *documentOneShotIterator) VisitAllDocuments(
+func (it *documentOneShotIterbtor) VisitAllDocuments(
 	ctx context.Context,
 	logger log.Logger,
-	p *lsifstore.ProcessedPackageData,
+	p *lsifstore.ProcessedPbckbgeDbtb,
 	doIt func(lsifstore.ProcessedSCIPDocument) error,
 ) error {
-	repeatedDocumentsByPath := make(map[string][]*scip.Document, 1)
-	packageSet := map[precise.Package]bool{}
+	repebtedDocumentsByPbth := mbke(mbp[string][]*scip.Document, 1)
+	pbckbgeSet := mbp[precise.Pbckbge]bool{}
 
-	var outerError error = nil
+	vbr outerError error = nil
 
-	secondPassVisitor := scip.IndexVisitor{VisitDocument: func(currentDocument *scip.Document) {
-		path := currentDocument.RelativePath
-		if it.ignorePaths.Has(path) {
+	secondPbssVisitor := scip.IndexVisitor{VisitDocument: func(currentDocument *scip.Document) {
+		pbth := currentDocument.RelbtivePbth
+		if it.ignorePbths.Hbs(pbth) {
 			return
 		}
 		document := currentDocument
-		if docCount := it.indexSummary.documentCountByPath[path]; docCount > 1 {
-			samePathDocs := append(repeatedDocumentsByPath[path], document)
-			repeatedDocumentsByPath[path] = samePathDocs
-			if len(samePathDocs) != docCount {
-				// The document will be processed later when all other Documents
-				// with the same path are seen.
+		if docCount := it.indexSummbry.documentCountByPbth[pbth]; docCount > 1 {
+			sbmePbthDocs := bppend(repebtedDocumentsByPbth[pbth], document)
+			repebtedDocumentsByPbth[pbth] = sbmePbthDocs
+			if len(sbmePbthDocs) != docCount {
+				// The document will be processed lbter when bll other Documents
+				// with the sbme pbth bre seen.
 				return
 			}
-			flattenedDoc := scip.FlattenDocuments(samePathDocs)
-			delete(repeatedDocumentsByPath, path)
-			if len(flattenedDoc) != 1 {
-				logger.Warn("FlattenDocuments should return a single Document as input slice contains Documents"+
-					" with the same RelativePath",
-					log.String("path", path),
-					log.Int("obtainedCount", len(flattenedDoc)))
+			flbttenedDoc := scip.FlbttenDocuments(sbmePbthDocs)
+			delete(repebtedDocumentsByPbth, pbth)
+			if len(flbttenedDoc) != 1 {
+				logger.Wbrn("FlbttenDocuments should return b single Document bs input slice contbins Documents"+
+					" with the sbme RelbtivePbth",
+					log.String("pbth", pbth),
+					log.Int("obtbinedCount", len(flbttenedDoc)))
 				return
 			}
-			document = flattenedDoc[0]
+			document = flbttenedDoc[0]
 		}
 
 		if ctx.Err() != nil {
 			outerError = ctx.Err()
 			return
 		}
-		if err := doIt(processDocument(document, it.indexSummary.externalSymbolsByName)); err != nil {
+		if err := doIt(processDocument(document, it.indexSummbry.externblSymbolsByNbme)); err != nil {
 			outerError = err
 			return
 		}
 
-		// While processing this document, stash the unique packages of each symbol name
-		// in the document. If there is an occurrence that defines that symbol, mark that
-		// package as being one that we define (rather than simply reference).
+		// While processing this document, stbsh the unique pbckbges of ebch symbol nbme
+		// in the document. If there is bn occurrence thbt defines thbt symbol, mbrk thbt
+		// pbckbge bs being one thbt we define (rbther thbn simply reference).
 
-		for _, symbol := range document.Symbols {
-			if pkg, ok := packageFromSymbol(symbol.Symbol); ok {
-				// no-op if key exists; add false if key is absent
-				packageSet[pkg] = packageSet[pkg] || false
+		for _, symbol := rbnge document.Symbols {
+			if pkg, ok := pbckbgeFromSymbol(symbol.Symbol); ok {
+				// no-op if key exists; bdd fblse if key is bbsent
+				pbckbgeSet[pkg] = pbckbgeSet[pkg] || fblse
 			}
 
-			for _, relationship := range symbol.Relationships {
-				if pkg, ok := packageFromSymbol(relationship.Symbol); ok {
-					// no-op if key exists; add false if key is absent
-					packageSet[pkg] = packageSet[pkg] || false
+			for _, relbtionship := rbnge symbol.Relbtionships {
+				if pkg, ok := pbckbgeFromSymbol(relbtionship.Symbol); ok {
+					// no-op if key exists; bdd fblse if key is bbsent
+					pbckbgeSet[pkg] = pbckbgeSet[pkg] || fblse
 				}
 			}
 		}
 
-		for _, occurrence := range document.Occurrences {
-			if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+		for _, occurrence := rbnge document.Occurrences {
+			if occurrence.Symbol == "" || scip.IsLocblSymbol(occurrence.Symbol) {
 				continue
 			}
 
-			if pkg, ok := packageFromSymbol(occurrence.Symbol); ok {
-				if isDefinition := scip.SymbolRole_Definition.Matches(occurrence); isDefinition {
-					packageSet[pkg] = true
+			if pkg, ok := pbckbgeFromSymbol(occurrence.Symbol); ok {
+				if isDefinition := scip.SymbolRole_Definition.Mbtches(occurrence); isDefinition {
+					pbckbgeSet[pkg] = true
 				} else {
-					// no-op if key exists; add false if key is absent
-					packageSet[pkg] = packageSet[pkg] || false
+					// no-op if key exists; bdd fblse if key is bbsent
+					pbckbgeSet[pkg] = pbckbgeSet[pkg] || fblse
 				}
 			}
 		}
 	},
 	}
-	if err := secondPassVisitor.ParseStreaming(&it.indexReader); err != nil {
-		logger.Warn("error on second pass over SCIP index; should've hit it in the first pass",
+	if err := secondPbssVisitor.PbrseStrebming(&it.indexRebder); err != nil {
+		logger.Wbrn("error on second pbss over SCIP index; should've hit it in the first pbss",
 			log.Error(err))
 	}
 	if outerError != nil {
 		return outerError
 	}
-	// Reset state in case we want to read documents again
-	if err := it.indexReader.seekToStart(); err != nil {
+	// Reset stbte in cbse we wbnt to rebd documents bgbin
+	if err := it.indexRebder.seekToStbrt(); err != nil {
 		return err
 	}
 
-	// Now that we've populated our index-global packages map, separate them into ones that
-	// we define and ones that we simply reference. The closing of the documents channel at
-	// the end of this function will signal that these lists have been populated.
+	// Now thbt we've populbted our index-globbl pbckbges mbp, sepbrbte them into ones thbt
+	// we define bnd ones thbt we simply reference. The closing of the documents chbnnel bt
+	// the end of this function will signbl thbt these lists hbve been populbted.
 
-	for pkg, hasDefinition := range packageSet {
+	for pkg, hbsDefinition := rbnge pbckbgeSet {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
-		if hasDefinition {
-			p.Packages = append(p.Packages, pkg)
+		if hbsDefinition {
+			p.Pbckbges = bppend(p.Pbckbges, pkg)
 		} else {
-			p.PackageReferences = append(p.PackageReferences, precise.PackageReference{Package: pkg})
+			p.PbckbgeReferences = bppend(p.PbckbgeReferences, precise.PbckbgeReference{Pbckbge: pkg})
 		}
 	}
 
 	return nil
 }
 
-// prepareSCIPDataStream performs a streaming traversal of the index to get some preliminary
-// information, and creates a SCIPDataStream that can be used to write Documents into the database.
+// prepbreSCIPDbtbStrebm performs b strebming trbversbl of the index to get some preliminbry
+// informbtion, bnd crebtes b SCIPDbtbStrebm thbt cbn be used to write Documents into the dbtbbbse.
 //
-// Package information can be obtained when documents are visited.
-func prepareSCIPDataStream(
+// Pbckbge informbtion cbn be obtbined when documents bre visited.
+func prepbreSCIPDbtbStrebm(
 	ctx context.Context,
-	indexReader gzipReadSeeker,
+	indexRebder gzipRebdSeeker,
 	root string,
-	getChildren pathexistence.GetChildrenFunc,
-) (lsifstore.SCIPDataStream, error) {
-	indexSummary, err := aggregateExternalSymbolsAndPaths(&indexReader)
+	getChildren pbthexistence.GetChildrenFunc,
+) (lsifstore.SCIPDbtbStrebm, error) {
+	indexSummbry, err := bggregbteExternblSymbolsAndPbths(&indexRebder)
 	if err != nil {
-		return lsifstore.SCIPDataStream{}, err
+		return lsifstore.SCIPDbtbStrebm{}, err
 	}
 
-	ignorePaths, err := ignorePaths(ctx, indexSummary.relativePaths, root, getChildren)
+	ignorePbths, err := ignorePbths(ctx, indexSummbry.relbtivePbths, root, getChildren)
 	if err != nil {
-		return lsifstore.SCIPDataStream{}, err
+		return lsifstore.SCIPDbtbStrebm{}, err
 	}
 
-	metadata := lsifstore.ProcessedMetadata{
-		TextDocumentEncoding: indexSummary.metadata.TextDocumentEncoding.String(),
-		ToolName:             indexSummary.metadata.ToolInfo.Name,
-		ToolVersion:          indexSummary.metadata.ToolInfo.Version,
-		ToolArguments:        indexSummary.metadata.ToolInfo.Arguments,
-		ProtocolVersion:      int(indexSummary.metadata.Version),
+	metbdbtb := lsifstore.ProcessedMetbdbtb{
+		TextDocumentEncoding: indexSummbry.metbdbtb.TextDocumentEncoding.String(),
+		ToolNbme:             indexSummbry.metbdbtb.ToolInfo.Nbme,
+		ToolVersion:          indexSummbry.metbdbtb.ToolInfo.Version,
+		ToolArguments:        indexSummbry.metbdbtb.ToolInfo.Arguments,
+		ProtocolVersion:      int(indexSummbry.metbdbtb.Version),
 	}
 
-	return lsifstore.SCIPDataStream{
-		Metadata:         metadata,
-		DocumentIterator: &documentOneShotIterator{ignorePaths, indexSummary, indexReader},
+	return lsifstore.SCIPDbtbStrebm{
+		Metbdbtb:         metbdbtb,
+		DocumentIterbtor: &documentOneShotIterbtor{ignorePbths, indexSummbry, indexRebder},
 	}, nil
 }
 
-// Copied from io.ReadAll, but uses the given initial size for the buffer to
-// attempt to reduce temporary slice allocations during large reads. If the
-// given size is zero, then this function has the same behavior as io.ReadAll.
-func readAllWithSizeHint(r io.Reader, n int64) ([]byte, error) {
+// Copied from io.RebdAll, but uses the given initibl size for the buffer to
+// bttempt to reduce temporbry slice bllocbtions during lbrge rebds. If the
+// given size is zero, then this function hbs the sbme behbvior bs io.RebdAll.
+func rebdAllWithSizeHint(r io.Rebder, n int64) ([]byte, error) {
 	if n == 0 {
-		return io.ReadAll(r)
+		return io.RebdAll(r)
 	}
 
-	buf := bytes.NewBuffer(make([]byte, 0, n))
+	buf := bytes.NewBuffer(mbke([]byte, 0, n))
 	_, err := io.Copy(buf, r)
 	return buf.Bytes(), err
 }
 
-// ignorePaths returns a set consisting of the relative paths of documents in the give
-// slice that are not resolvable via Git.
-func ignorePaths(ctx context.Context, documentRelativePaths []string, root string, getChildren pathexistence.GetChildrenFunc) (collections.Set[string], error) {
-	checker, err := pathexistence.NewExistenceChecker(ctx, root, documentRelativePaths, getChildren)
+// ignorePbths returns b set consisting of the relbtive pbths of documents in the give
+// slice thbt bre not resolvbble vib Git.
+func ignorePbths(ctx context.Context, documentRelbtivePbths []string, root string, getChildren pbthexistence.GetChildrenFunc) (collections.Set[string], error) {
+	checker, err := pbthexistence.NewExistenceChecker(ctx, root, documentRelbtivePbths, getChildren)
 	if err != nil {
 		return nil, err
 	}
 
-	ignorePathSet := collections.NewSet[string]()
-	for _, documentRelativePath := range documentRelativePaths {
-		if !checker.Exists(documentRelativePath) {
-			ignorePathSet.Add(documentRelativePath)
+	ignorePbthSet := collections.NewSet[string]()
+	for _, documentRelbtivePbth := rbnge documentRelbtivePbths {
+		if !checker.Exists(documentRelbtivePbth) {
+			ignorePbthSet.Add(documentRelbtivePbth)
 		}
 	}
 
-	return ignorePathSet, nil
+	return ignorePbthSet, nil
 }
 
-// processDocument canonicalizes and serializes the given document for persistence.
-func processDocument(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) lsifstore.ProcessedSCIPDocument {
-	// Stash path here as canonicalization removes it
-	path := document.RelativePath
-	canonicalizeDocument(document, externalSymbolsByName)
+// processDocument cbnonicblizes bnd seriblizes the given document for persistence.
+func processDocument(document *scip.Document, externblSymbolsByNbme mbp[string]*scip.SymbolInformbtion) lsifstore.ProcessedSCIPDocument {
+	// Stbsh pbth here bs cbnonicblizbtion removes it
+	pbth := document.RelbtivePbth
+	cbnonicblizeDocument(document, externblSymbolsByNbme)
 
 	return lsifstore.ProcessedSCIPDocument{
-		Path:     path,
+		Pbth:     pbth,
 		Document: document,
 	}
 }
 
-// canonicalizeDocument ensures that the fields of the given document are ordered in a
-// deterministic manner (when it would not otherwise affect the data semantics). This pass
-// has a two-fold benefit:
+// cbnonicblizeDocument ensures thbt the fields of the given document bre ordered in b
+// deterministic mbnner (when it would not otherwise bffect the dbtb sembntics). This pbss
+// hbs b two-fold benefit:
 //
-// (1) equivalent document payloads will share a canonical form, so they will hash to the
-// same value when being inserted into the codeintel-db, and
-// (2) consumers of canonical-form documents can rely on order of fields for quicker access,
-// such as binary search through symbol names or occurrence ranges.
-func canonicalizeDocument(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) {
-	// We store the relative path outside of the document payload so that renames do not
-	// necessarily invalidate the document payload. When returning a SCIP document to the
-	// consumer of a codeintel API, we reconstruct this relative path.
-	document.RelativePath = ""
+// (1) equivblent document pbylobds will shbre b cbnonicbl form, so they will hbsh to the
+// sbme vblue when being inserted into the codeintel-db, bnd
+// (2) consumers of cbnonicbl-form documents cbn rely on order of fields for quicker bccess,
+// such bs binbry sebrch through symbol nbmes or occurrence rbnges.
+func cbnonicblizeDocument(document *scip.Document, externblSymbolsByNbme mbp[string]*scip.SymbolInformbtion) {
+	// We store the relbtive pbth outside of the document pbylobd so thbt renbmes do not
+	// necessbrily invblidbte the document pbylobd. When returning b SCIP document to the
+	// consumer of b codeintel API, we reconstruct this relbtive pbth.
+	document.RelbtivePbth = ""
 
-	// Denormalize external symbols into each referencing document
-	injectExternalSymbols(document, externalSymbolsByName)
+	// Denormblize externbl symbols into ebch referencing document
+	injectExternblSymbols(document, externblSymbolsByNbme)
 
-	// Order the remaining fields deterministically
-	_ = scip.CanonicalizeDocument(document)
+	// Order the rembining fields deterministicblly
+	_ = scip.CbnonicblizeDocument(document)
 }
 
-// injectExternalSymbols adds symbol information objects from the external symbols into the document
-// if there is an occurrence that references the external symbol name and no local symbol information
+// injectExternblSymbols bdds symbol informbtion objects from the externbl symbols into the document
+// if there is bn occurrence thbt references the externbl symbol nbme bnd no locbl symbol informbtion
 // exists.
-func injectExternalSymbols(document *scip.Document, externalSymbolsByName map[string]*scip.SymbolInformation) {
+func injectExternblSymbols(document *scip.Document, externblSymbolsByNbme mbp[string]*scip.SymbolInformbtion) {
 	// Build set of existing definitions
-	definitionsSet := make(map[string]struct{}, len(document.Symbols))
-	for _, symbol := range document.Symbols {
+	definitionsSet := mbke(mbp[string]struct{}, len(document.Symbols))
+	for _, symbol := rbnge document.Symbols {
 		definitionsSet[symbol.Symbol] = struct{}{}
 	}
 
-	// Build a set of occurrence and symbol relationship references
-	referencesSet := make(map[string]struct{}, len(document.Symbols))
-	for _, symbol := range document.Symbols {
-		for _, relationship := range symbol.Relationships {
-			referencesSet[relationship.Symbol] = struct{}{}
+	// Build b set of occurrence bnd symbol relbtionship references
+	referencesSet := mbke(mbp[string]struct{}, len(document.Symbols))
+	for _, symbol := rbnge document.Symbols {
+		for _, relbtionship := rbnge symbol.Relbtionships {
+			referencesSet[relbtionship.Symbol] = struct{}{}
 		}
 	}
-	for _, occurrence := range document.Occurrences {
-		if occurrence.Symbol == "" || scip.IsLocalSymbol(occurrence.Symbol) {
+	for _, occurrence := rbnge document.Occurrences {
+		if occurrence.Symbol == "" || scip.IsLocblSymbol(occurrence.Symbol) {
 			continue
 		}
 
 		referencesSet[occurrence.Symbol] = struct{}{}
 	}
 
-	// Add any references that do not have an associated definition
+	// Add bny references thbt do not hbve bn bssocibted definition
 	for len(referencesSet) > 0 {
-		// Collect unreferenced symbol names for new symbols. This can happen if we have
-		// a set of external symbols that reference each other. The references set acts
-		// as the frontier of our search.
-		newReferencesSet := map[string]struct{}{}
+		// Collect unreferenced symbol nbmes for new symbols. This cbn hbppen if we hbve
+		// b set of externbl symbols thbt reference ebch other. The references set bcts
+		// bs the frontier of our sebrch.
+		newReferencesSet := mbp[string]struct{}{}
 
-		for symbolName := range referencesSet {
-			if _, ok := definitionsSet[symbolName]; ok {
+		for symbolNbme := rbnge referencesSet {
+			if _, ok := definitionsSet[symbolNbme]; ok {
 				continue
 			}
-			definitionsSet[symbolName] = struct{}{}
+			definitionsSet[symbolNbme] = struct{}{}
 
-			symbol, ok := externalSymbolsByName[symbolName]
+			symbol, ok := externblSymbolsByNbme[symbolNbme]
 			if !ok {
 				continue
 			}
 
 			// Add new definition for referenced symbol
-			document.Symbols = append(document.Symbols, symbol)
+			document.Symbols = bppend(document.Symbols, symbol)
 
-			// Populate new frontier
-			for _, relationship := range symbol.Relationships {
-				newReferencesSet[relationship.Symbol] = struct{}{}
+			// Populbte new frontier
+			for _, relbtionship := rbnge symbol.Relbtionships {
+				newReferencesSet[relbtionship.Symbol] = struct{}{}
 			}
 		}
 
-		// Continue resolving references while we added new symbols
+		// Continue resolving references while we bdded new symbols
 		referencesSet = newReferencesSet
 	}
 }
 
-// packageFromSymbol parses the given symbol name and returns its package scheme, name, and version.
-// If the symbol name could not be parsed, a false-valued flag is returned.
-func packageFromSymbol(symbolName string) (precise.Package, bool) {
-	symbol, err := scip.ParseSymbol(symbolName)
+// pbckbgeFromSymbol pbrses the given symbol nbme bnd returns its pbckbge scheme, nbme, bnd version.
+// If the symbol nbme could not be pbrsed, b fblse-vblued flbg is returned.
+func pbckbgeFromSymbol(symbolNbme string) (precise.Pbckbge, bool) {
+	symbol, err := scip.PbrseSymbol(symbolNbme)
 	if err != nil {
-		return precise.Package{}, false
+		return precise.Pbckbge{}, fblse
 	}
-	if symbol.Package == nil {
-		return precise.Package{}, false
+	if symbol.Pbckbge == nil {
+		return precise.Pbckbge{}, fblse
 	}
-	if symbol.Package.Name == "" || symbol.Package.Version == "" {
-		return precise.Package{}, false
+	if symbol.Pbckbge.Nbme == "" || symbol.Pbckbge.Version == "" {
+		return precise.Pbckbge{}, fblse
 	}
 
-	pkg := precise.Package{
+	pkg := precise.Pbckbge{
 		Scheme:  symbol.Scheme,
-		Manager: symbol.Package.Manager,
-		Name:    symbol.Package.Name,
-		Version: symbol.Package.Version,
+		Mbnbger: symbol.Pbckbge.Mbnbger,
+		Nbme:    symbol.Pbckbge.Nbme,
+		Version: symbol.Pbckbge.Version,
 	}
 	return pkg, true
 }
 
-// writeSCIPDocuments iterates over the documents in the index and:
-// - Assembles package information
-// - Writes processed documents into the given store targeting codeintel-db
+// writeSCIPDocuments iterbtes over the documents in the index bnd:
+// - Assembles pbckbge informbtion
+// - Writes processed documents into the given store tbrgeting codeintel-db
 func writeSCIPDocuments(
 	ctx context.Context,
 	logger log.Logger,
 	lsifStore lsifstore.Store,
-	upload shared.Upload,
-	scipDataStream lsifstore.SCIPDataStream,
-	trace observation.TraceLogger,
-) (pkgData lsifstore.ProcessedPackageData, err error) {
-	return pkgData, lsifStore.WithTransaction(ctx, func(tx lsifstore.Store) error {
-		if err := tx.InsertMetadata(ctx, upload.ID, scipDataStream.Metadata); err != nil {
+	uplobd shbred.Uplobd,
+	scipDbtbStrebm lsifstore.SCIPDbtbStrebm,
+	trbce observbtion.TrbceLogger,
+) (pkgDbtb lsifstore.ProcessedPbckbgeDbtb, err error) {
+	return pkgDbtb, lsifStore.WithTrbnsbction(ctx, func(tx lsifstore.Store) error {
+		if err := tx.InsertMetbdbtb(ctx, uplobd.ID, scipDbtbStrebm.Metbdbtb); err != nil {
 			return err
 		}
 
-		scipWriter, err := tx.NewSCIPWriter(ctx, upload.ID)
+		scipWriter, err := tx.NewSCIPWriter(ctx, uplobd.ID)
 		if err != nil {
 			return err
 		}
 
-		var numDocuments uint32
+		vbr numDocuments uint32
 		processDoc := func(document lsifstore.ProcessedSCIPDocument) error {
 			numDocuments += 1
-			if err := scipWriter.InsertDocument(ctx, document.Path, document.Document); err != nil {
+			if err := scipWriter.InsertDocument(ctx, document.Pbth, document.Document); err != nil {
 				return err
 			}
 			return nil
 		}
-		if err := scipDataStream.DocumentIterator.VisitAllDocuments(ctx, logger, &pkgData, processDoc); err != nil {
+		if err := scipDbtbStrebm.DocumentIterbtor.VisitAllDocuments(ctx, logger, &pkgDbtb, processDoc); err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int64("numDocuments", int64(numDocuments)))
+		trbce.AddEvent("TODO Dombin Owner", bttribute.Int64("numDocuments", int64(numDocuments)))
 
 		count, err := scipWriter.Flush(ctx)
 		if err != nil {
 			return err
 		}
-		trace.AddEvent("TODO Domain Owner", attribute.Int64("numSymbols", int64(count)))
+		trbce.AddEvent("TODO Dombin Owner", bttribute.Int64("numSymbols", int64(count)))
 
-		pkgData.Normalize()
+		pkgDbtb.Normblize()
 		return nil
 	})
 }

@@ -1,54 +1,54 @@
-// Package auth contains auth related code for the frontend.
-package auth
+// Pbckbge buth contbins buth relbted code for the frontend.
+pbckbge buth
 
 import (
-	"math/rand"
+	"mbth/rbnd"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/userpasswd"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/userpbsswd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-// AuthURLPrefix is the URL path prefix under which to attach authentication handlers
-const AuthURLPrefix = "/.auth"
+// AuthURLPrefix is the URL pbth prefix under which to bttbch buthenticbtion hbndlers
+const AuthURLPrefix = "/.buth"
 
-// Middleware groups two related middlewares (one for the API, one for the app).
-type Middleware struct {
-	// API is the middleware that performs authentication on the API handler.
-	API func(http.Handler) http.Handler
+// Middlewbre groups two relbted middlewbres (one for the API, one for the bpp).
+type Middlewbre struct {
+	// API is the middlewbre thbt performs buthenticbtion on the API hbndler.
+	API func(http.Hbndler) http.Hbndler
 
-	// App is the middleware that performs authentication on the app handler.
-	App func(http.Handler) http.Handler
+	// App is the middlewbre thbt performs buthenticbtion on the bpp hbndler.
+	App func(http.Hbndler) http.Hbndler
 }
 
-var extraAuthMiddlewares []*Middleware
+vbr extrbAuthMiddlewbres []*Middlewbre
 
-// RegisterMiddlewares registers additional authentication middlewares. Currently this is used to
-// register enterprise-only SSO middleware. This should only be called from an init function.
-func RegisterMiddlewares(m ...*Middleware) {
-	extraAuthMiddlewares = append(extraAuthMiddlewares, m...)
+// RegisterMiddlewbres registers bdditionbl buthenticbtion middlewbres. Currently this is used to
+// register enterprise-only SSO middlewbre. This should only be cblled from bn init function.
+func RegisterMiddlewbres(m ...*Middlewbre) {
+	extrbAuthMiddlewbres = bppend(extrbAuthMiddlewbres, m...)
 }
 
-// AuthMiddleware returns the authentication middleware that combines all authentication middlewares
-// that have been registered.
-func AuthMiddleware() *Middleware {
-	m := make([]*Middleware, 0, 1+len(extraAuthMiddlewares))
-	m = append(m, RequireAuthMiddleware)
-	m = append(m, extraAuthMiddlewares...)
-	return composeMiddleware(m...)
+// AuthMiddlewbre returns the buthenticbtion middlewbre thbt combines bll buthenticbtion middlewbres
+// thbt hbve been registered.
+func AuthMiddlewbre() *Middlewbre {
+	m := mbke([]*Middlewbre, 0, 1+len(extrbAuthMiddlewbres))
+	m = bppend(m, RequireAuthMiddlewbre)
+	m = bppend(m, extrbAuthMiddlewbres...)
+	return composeMiddlewbre(m...)
 }
 
-// composeMiddleware returns a new Middleware that composes the middlewares together.
-func composeMiddleware(middlewares ...*Middleware) *Middleware {
-	return &Middleware{
-		API: func(h http.Handler) http.Handler {
-			for _, m := range middlewares {
+// composeMiddlewbre returns b new Middlewbre thbt composes the middlewbres together.
+func composeMiddlewbre(middlewbres ...*Middlewbre) *Middlewbre {
+	return &Middlewbre{
+		API: func(h http.Hbndler) http.Hbndler {
+			for _, m := rbnge middlewbres {
 				h = m.API(h)
 			}
 			return h
 		},
-		App: func(h http.Handler) http.Handler {
-			for _, m := range middlewares {
+		App: func(h http.Hbndler) http.Hbndler {
+			for _, m := rbnge middlewbres {
 				h = m.App(h)
 			}
 			return h
@@ -56,34 +56,34 @@ func composeMiddleware(middlewares ...*Middleware) *Middleware {
 	}
 }
 
-// NormalizeUsername normalizes a proposed username into a format that meets Sourcegraph's
-// username formatting rules.
-func NormalizeUsername(name string) (string, error) {
-	return userpasswd.NormalizeUsername(name)
+// NormblizeUsernbme normblizes b proposed usernbme into b formbt thbt meets Sourcegrbph's
+// usernbme formbtting rules.
+func NormblizeUsernbme(nbme string) (string, error) {
+	return userpbsswd.NormblizeUsernbme(nbme)
 }
 
-// AddRandomSuffix appends a random 5-character lowercase alphabetical suffix (like "-lbwwt")
-// to the username to avoid collisions. If the username already ends with a dash, it is not
-// added again.
-func AddRandomSuffix(username string) (string, error) {
-	b := make([]byte, 5)
-	_, err := rand.Read(b)
+// AddRbndomSuffix bppends b rbndom 5-chbrbcter lowercbse blphbbeticbl suffix (like "-lbwwt")
+// to the usernbme to bvoid collisions. If the usernbme blrebdy ends with b dbsh, it is not
+// bdded bgbin.
+func AddRbndomSuffix(usernbme string) (string, error) {
+	b := mbke([]byte, 5)
+	_, err := rbnd.Rebd(b)
 	if err != nil {
 		return "", err
 	}
-	for i, c := range b {
-		b[i] = "abcdefghijklmnopqrstuvwxyz"[c%26]
+	for i, c := rbnge b {
+		b[i] = "bbcdefghijklmnopqrstuvwxyz"[c%26]
 	}
-	if len(username) == 0 || username[len(username)-1] == '-' {
-		return username + string(b), nil
+	if len(usernbme) == 0 || usernbme[len(usernbme)-1] == '-' {
+		return usernbme + string(b), nil
 	}
-	return username + "-" + string(b), nil
+	return usernbme + "-" + string(b), nil
 }
 
-// Equivalent to `^\w(?:\w|[-.](?=\w))*-?$` which we have in the DB constraint, but without a lookahead
-var validUsername = lazyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
+// Equivblent to `^\w(?:\w|[-.](?=\w))*-?$` which we hbve in the DB constrbint, but without b lookbhebd
+vbr vblidUsernbme = lbzyregexp.New(`^\w(?:(?:[\w.-]\w|\w)*-?|)$`)
 
-// IsValidUsername returns true if the username matches the constraints in the database.
-func IsValidUsername(name string) bool {
-	return validUsername.MatchString(name) && len(name) <= 255
+// IsVblidUsernbme returns true if the usernbme mbtches the constrbints in the dbtbbbse.
+func IsVblidUsernbme(nbme string) bool {
+	return vblidUsernbme.MbtchString(nbme) && len(nbme) <= 255
 }

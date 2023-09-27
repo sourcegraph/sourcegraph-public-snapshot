@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,148 +6,148 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type fakeGitServer struct {
+type fbkeGitServer struct {
 	gitserver.Client
 	files        []string
-	fileContents map[string]string
+	fileContents mbp[string]string
 }
 
-func (f fakeGitServer) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
+func (f fbkeGitServer) LsFiles(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, pbthspecs ...gitdombin.Pbthspec) ([]string, error) {
 	return f.files, nil
 }
 
-func (f fakeGitServer) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-	return api.CommitID(""), nil
+func (f fbkeGitServer) ResolveRevision(ctx context.Context, repo bpi.RepoNbme, spec string, opt gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+	return bpi.CommitID(""), nil
 }
 
-func (f fakeGitServer) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) ([]byte, error) {
+func (f fbkeGitServer) RebdFile(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, nbme string) ([]byte, error) {
 	if f.fileContents == nil {
 		return nil, os.ErrNotExist
 	}
-	contents, ok := f.fileContents[name]
+	contents, ok := f.fileContents[nbme]
 	if !ok {
 		return nil, os.ErrNotExist
 	}
 	return []byte(contents), nil
 }
 
-func TestAnalyticsIndexerSuccess(t *testing.T) {
-	rcache.SetupForTest(t)
-	obsCtx := observation.TestContextTB(t)
+func TestAnblyticsIndexerSuccess(t *testing.T) {
+	rcbche.SetupForTest(t)
+	obsCtx := observbtion.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	user, err := db.Users().Create(ctx, database.NewUser{Username: "test"})
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "test"})
 	require.NoError(t, err)
-	var repoID api.RepoID = 1
-	require.NoError(t, db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID}))
-	client := fakeGitServer{
+	vbr repoID bpi.RepoID = 1
+	require.NoError(t, db.Repos().Crebte(ctx, &types.Repo{Nbme: "repo", ID: repoID}))
+	client := fbkeGitServer{
 		files: []string{
 			"notOwned.go",
-			"alsoNotOwned.go",
+			"blsoNotOwned.go",
 			"owned/file1.go",
 			"owned/file2.go",
 			"owned/file3.go",
-			"assigned.go",
+			"bssigned.go",
 		},
-		fileContents: map[string]string{
+		fileContents: mbp[string]string{
 			"CODEOWNERS": "/owned/* @owner",
 		},
 	}
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultReturn(true)
-	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultReturn(true)
+	checker.EnbbledForRepoIDFunc.SetDefbultReturn(fblse, nil)
 	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "owned/file1.go", user.ID))
-	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "assigned.go", user.ID))
-	require.NoError(t, newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker))
+	require.NoError(t, db.AssignedOwners().Insert(ctx, user.ID, repoID, "bssigned.go", user.ID))
+	require.NoError(t, newAnblyticsIndexer(client, db, rcbche.New("test_own_signbl"), logger).indexRepo(ctx, repoID, checker))
 
-	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
+	totblFileCount, err := db.RepoPbths().AggregbteFileCount(ctx, dbtbbbse.TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(len(client.files)), totalFileCount)
+	bssert.Equbl(t, int32(len(client.files)), totblFileCount)
 
-	gotCounts, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	gotCounts, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, dbtbbbse.TreeLocbtionOpts{})
 	require.NoError(t, err)
-	// We don't really need to compare time here.
-	defaultTime := time.Time{}
-	gotCounts.UpdatedAt = defaultTime
-	wantCounts := database.PathAggregateCounts{
+	// We don't reblly need to compbre time here.
+	defbultTime := time.Time{}
+	gotCounts.UpdbtedAt = defbultTime
+	wbntCounts := dbtbbbse.PbthAggregbteCounts{
 		CodeownedFileCount:         3,
 		AssignedOwnershipFileCount: 2,
-		TotalOwnedFileCount:        4,
-		UpdatedAt:                  defaultTime,
+		TotblOwnedFileCount:        4,
+		UpdbtedAt:                  defbultTime,
 	}
-	assert.Equal(t, wantCounts, gotCounts)
+	bssert.Equbl(t, wbntCounts, gotCounts)
 }
 
-func TestAnalyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
-	rcache.SetupForTest(t)
-	obsCtx := observation.TestContextTB(t)
+func TestAnblyticsIndexerSkipsReposWithSubRepoPerms(t *testing.T) {
+	rcbche.SetupForTest(t)
+	obsCtx := observbtion.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	var repoID api.RepoID = 1
-	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	vbr repoID bpi.RepoID = 1
+	err := db.Repos().Crebte(ctx, &types.Repo{Nbme: "repo", ID: repoID})
 	require.NoError(t, err)
-	client := fakeGitServer{
-		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
-		fileContents: map[string]string{
+	client := fbkeGitServer{
+		files: []string{"notOwned.go", "blsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
+		fileContents: mbp[string]string{
 			"CODEOWNERS": "/owned/* @owner",
 		},
 	}
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultReturn(true)
-	checker.EnabledForRepoIDFunc.SetDefaultReturn(true, nil)
-	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultReturn(true)
+	checker.EnbbledForRepoIDFunc.SetDefbultReturn(true, nil)
+	err = newAnblyticsIndexer(client, db, rcbche.New("test_own_signbl"), logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
-	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
+	totblFileCount, err := db.RepoPbths().AggregbteFileCount(ctx, dbtbbbse.TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(0), totalFileCount)
+	bssert.Equbl(t, int32(0), totblFileCount)
 
-	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
+	codeownedCount, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, dbtbbbse.TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0}, codeownedCount)
+	bssert.Equbl(t, dbtbbbse.PbthAggregbteCounts{CodeownedFileCount: 0}, codeownedCount)
 }
 
-func TestAnalyticsIndexerNoCodeowners(t *testing.T) {
-	rcache.SetupForTest(t)
-	obsCtx := observation.TestContextTB(t)
+func TestAnblyticsIndexerNoCodeowners(t *testing.T) {
+	rcbche.SetupForTest(t)
+	obsCtx := observbtion.TestContextTB(t)
 	logger := obsCtx.Logger
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	var repoID api.RepoID = 1
-	err := db.Repos().Create(ctx, &types.Repo{Name: "repo", ID: repoID})
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	vbr repoID bpi.RepoID = 1
+	err := db.Repos().Crebte(ctx, &types.Repo{Nbme: "repo", ID: repoID})
 	require.NoError(t, err)
-	client := fakeGitServer{
-		files: []string{"notOwned.go", "alsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
+	client := fbkeGitServer{
+		files: []string{"notOwned.go", "blsoNotOwned.go", "owned/file1.go", "owned/file2.go", "owned/file3.go"},
 	}
-	checker := authz.NewMockSubRepoPermissionChecker()
-	checker.EnabledFunc.SetDefaultReturn(true)
-	checker.EnabledForRepoIDFunc.SetDefaultReturn(false, nil)
-	err = newAnalyticsIndexer(client, db, rcache.New("test_own_signal"), logger).indexRepo(ctx, repoID, checker)
+	checker := buthz.NewMockSubRepoPermissionChecker()
+	checker.EnbbledFunc.SetDefbultReturn(true)
+	checker.EnbbledForRepoIDFunc.SetDefbultReturn(fblse, nil)
+	err = newAnblyticsIndexer(client, db, rcbche.New("test_own_signbl"), logger).indexRepo(ctx, repoID, checker)
 	require.NoError(t, err)
 
-	totalFileCount, err := db.RepoPaths().AggregateFileCount(ctx, database.TreeLocationOpts{})
+	totblFileCount, err := db.RepoPbths().AggregbteFileCount(ctx, dbtbbbse.TreeLocbtionOpts{})
 	require.NoError(t, err)
-	assert.Equal(t, int32(5), totalFileCount)
+	bssert.Equbl(t, int32(5), totblFileCount)
 
-	codeownedCount, err := db.OwnershipStats().QueryAggregateCounts(ctx, database.TreeLocationOpts{})
-	defaultTime := time.Time{}
-	codeownedCount.UpdatedAt = defaultTime
+	codeownedCount, err := db.OwnershipStbts().QueryAggregbteCounts(ctx, dbtbbbse.TreeLocbtionOpts{})
+	defbultTime := time.Time{}
+	codeownedCount.UpdbtedAt = defbultTime
 	require.NoError(t, err)
-	assert.Equal(t, database.PathAggregateCounts{CodeownedFileCount: 0, UpdatedAt: defaultTime}, codeownedCount)
+	bssert.Equbl(t, dbtbbbse.PbthAggregbteCounts{CodeownedFileCount: 0, UpdbtedAt: defbultTime}, codeownedCount)
 }

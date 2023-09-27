@@ -1,4 +1,4 @@
-package template
+pbckbge templbte
 
 import (
 	"testing"
@@ -6,287 +6,287 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-var partialEvalStepCtx = &StepContext{
-	BatchChange: BatchChangeAttributes{
-		Name:        "test-batch-change",
+vbr pbrtiblEvblStepCtx = &StepContext{
+	BbtchChbnge: BbtchChbngeAttributes{
+		Nbme:        "test-bbtch-chbnge",
 		Description: "test-description",
 	},
-	// Step is not set when evalStepCondition is called
+	// Step is not set when evblStepCondition is cblled
 	Repository: Repository{
-		Name: "github.com/sourcegraph/src-cli",
-		FileMatches: []string{
-			"main.go", "README.md",
+		Nbme: "github.com/sourcegrbph/src-cli",
+		FileMbtches: []string{
+			"mbin.go", "README.md",
 		},
 	},
 }
 
-func runParseAndPartialTest(t *testing.T, in, want string) {
+func runPbrseAndPbrtiblTest(t *testing.T, in, wbnt string) {
 	t.Helper()
 
-	tmpl, err := parseAndPartialEval(in, partialEvalStepCtx)
+	tmpl, err := pbrseAndPbrtiblEvbl(in, pbrtiblEvblStepCtx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tmplStr := tmpl.Tree.Root.String()
-	if tmplStr != want {
-		t.Fatalf("wrong output:\n%s", cmp.Diff(want, tmplStr))
+	if tmplStr != wbnt {
+		t.Fbtblf("wrong output:\n%s", cmp.Diff(wbnt, tmplStr))
 	}
 }
 
-func TestParseAndPartialEval(t *testing.T) {
-	t.Run("evaluated", func(t *testing.T) {
-		for _, tt := range []struct{ input, want string }{
+func TestPbrseAndPbrtiblEvbl(t *testing.T) {
+	t.Run("evblubted", func(t *testing.T) {
+		for _, tt := rbnge []struct{ input, wbnt string }{
 			{
-				// Literal constants:
-				`this is my template ${{ "hardcoded string" }}`,
-				`this is my template hardcoded string`,
+				// Literbl constbnts:
+				`this is my templbte ${{ "hbrdcoded string" }}`,
+				`this is my templbte hbrdcoded string`,
 			},
 			{
 				`${{ 1234 }}`,
 				`1234`,
 			},
 			{
-				`${{ true }} ${{ false }}`,
-				`true false`,
+				`${{ true }} ${{ fblse }}`,
+				`true fblse`,
 			},
 			{
-				// Evaluated, since they're static values:
-				`${{ repository.name }} ${{ batch_change.name }} ${{ batch_change.description }}`,
-				`github.com/sourcegraph/src-cli test-batch-change test-description`,
+				// Evblubted, since they're stbtic vblues:
+				`${{ repository.nbme }} ${{ bbtch_chbnge.nbme }} ${{ bbtch_chbnge.description }}`,
+				`github.com/sourcegrbph/src-cli test-bbtch-chbnge test-description`,
 			},
 			{
-				`AAA${{ repository.name }}BBB${{ batch_change.name }}CCC${{ batch_change.description }}DDD`,
-				`AAAgithub.com/sourcegraph/src-cliBBBtest-batch-changeCCCtest-descriptionDDD`,
+				`AAA${{ repository.nbme }}BBB${{ bbtch_chbnge.nbme }}CCC${{ bbtch_chbnge.description }}DDD`,
+				`AAAgithub.com/sourcegrbph/src-cliBBBtest-bbtch-chbngeCCCtest-descriptionDDD`,
 			},
 			{
-				// Function call with static value and runtime value:
-				`${{ eq repository.name outputs.repo.name }}`,
-				// Aborts, since one of them is runtime value
-				`{{eq repository.name outputs.repo.name}}`,
+				// Function cbll with stbtic vblue bnd runtime vblue:
+				`${{ eq repository.nbme outputs.repo.nbme }}`,
+				// Aborts, since one of them is runtime vblue
+				`{{eq repository.nbme outputs.repo.nbme}}`,
 			},
 			{
-				// "eq" call with 2 static values:
-				`${{ eq repository.name "github.com/sourcegraph/src-cli" }}`,
+				// "eq" cbll with 2 stbtic vblues:
+				`${{ eq repository.nbme "github.com/sourcegrbph/src-cli" }}`,
 				`true`,
 			},
 			{
-				// "eq" call with 2 literal values:
+				// "eq" cbll with 2 literbl vblues:
 				`${{ eq 5 5 }}`,
 				`true`,
 			},
 			{
-				// "not" call:
-				`${{ not (eq repository.name "bitbucket-repo") }}`,
+				// "not" cbll:
+				`${{ not (eq repository.nbme "bitbucket-repo") }}`,
 				`true`,
 			},
 			{
-				// "not" call:
-				`${{ not 1234 }} ${{ not false }} ${{ not true }}`,
-				`false true false`,
+				// "not" cbll:
+				`${{ not 1234 }} ${{ not fblse }} ${{ not true }}`,
+				`fblse true fblse`,
 			},
 			{
-				// "ne" call with 2 static values:
-				`${{ ne repository.name "github.com/sourcegraph/src-cli" }}`,
-				`false`,
+				// "ne" cbll with 2 stbtic vblues:
+				`${{ ne repository.nbme "github.com/sourcegrbph/src-cli" }}`,
+				`fblse`,
 			},
 			{
-				// "ne" call with 2 literal values:
+				// "ne" cbll with 2 literbl vblues:
 				`${{ ne 5 5 }}`,
-				`false`,
+				`fblse`,
 			},
 			{
-				// Function call with builtin function and static values:
-				`${{ matches repository.name "github.com*" }}`,
+				// Function cbll with builtin function bnd stbtic vblues:
+				`${{ mbtches repository.nbme "github.com*" }}`,
 				`true`,
 			},
 			{
-				// Nested function call with builtin function and static values:
-				`${{ eq false (matches repository.name "github.com*") }}`,
-				`false`,
+				// Nested function cbll with builtin function bnd stbtic vblues:
+				`${{ eq fblse (mbtches repository.nbme "github.com*") }}`,
+				`fblse`,
 			},
 			{
-				// Nested nested function call with builtin function and static values:
-				`${{ eq false (eq false (matches repository.name "github.com*")) }}`,
+				// Nested nested function cbll with builtin function bnd stbtic vblues:
+				`${{ eq fblse (eq fblse (mbtches repository.nbme "github.com*")) }}`,
 				`true`,
 			},
 		} {
-			runParseAndPartialTest(t, tt.input, tt.want)
+			runPbrseAndPbrtiblTest(t, tt.input, tt.wbnt)
 		}
 	})
 
-	t.Run("aborted", func(t *testing.T) {
-		for _, tt := range []struct{ input, want string }{
+	t.Run("bborted", func(t *testing.T) {
+		for _, tt := rbnge []struct{ input, wbnt string }{
 			{
-				// Field that doesn't exist
-				`${{ repository.secretlocation }}`,
-				`{{repository.secretlocation}}`,
+				// Field thbt doesn't exist
+				`${{ repository.secretlocbtion }}`,
+				`{{repository.secretlocbtion}}`,
 			},
 			{
-				// Field access that's too deep
-				`${{ repository.name.doesnotexist }}`,
-				`{{repository.name.doesnotexist}}`,
+				// Field bccess thbt's too deep
+				`${{ repository.nbme.doesnotexist }}`,
+				`{{repository.nbme.doesnotexist}}`,
 			},
 			{
-				// Complex value
-				`${{ repository.search_result_paths }}`,
-				// String representation of templates uses standard delimiters
-				`{{repository.search_result_paths}}`,
+				// Complex vblue
+				`${{ repository.sebrch_result_pbths }}`,
+				// String representbtion of templbtes uses stbndbrd delimiters
+				`{{repository.sebrch_result_pbths}}`,
 			},
 			{
-				// Runtime value
-				`${{ outputs.runtime.value }}`,
-				`{{outputs.runtime.value}}`,
+				// Runtime vblue
+				`${{ outputs.runtime.vblue }}`,
+				`{{outputs.runtime.vblue}}`,
 			},
 			{
-				// Runtime value
+				// Runtime vblue
 				`${{ step.modified_files }}`,
 				`{{step.modified_files}}`,
 			},
 			{
-				// Runtime value
+				// Runtime vblue
 				`${{ previous_step.modified_files }}`,
 				`{{previous_step.modified_files}}`,
 			},
 			{
-				// "eq" call with static value and runtime value:
-				`${{ eq repository.name outputs.repo.name }}`,
-				// Aborts, since one of them is runtime value
-				`{{eq repository.name outputs.repo.name}}`,
+				// "eq" cbll with stbtic vblue bnd runtime vblue:
+				`${{ eq repository.nbme outputs.repo.nbme }}`,
+				// Aborts, since one of them is runtime vblue
+				`{{eq repository.nbme outputs.repo.nbme}}`,
 			},
 			{
-				// "eq" call with more than 2 arguments:
-				`${{ eq repository.name "github.com/sourcegraph/src-cli" "github.com/sourcegraph/sourcegraph" }}`,
-				`{{eq repository.name "github.com/sourcegraph/src-cli" "github.com/sourcegraph/sourcegraph"}}`,
+				// "eq" cbll with more thbn 2 brguments:
+				`${{ eq repository.nbme "github.com/sourcegrbph/src-cli" "github.com/sourcegrbph/sourcegrbph" }}`,
+				`{{eq repository.nbme "github.com/sourcegrbph/src-cli" "github.com/sourcegrbph/sourcegrbph"}}`,
 			},
 			{
-				// Nested nested function call with builtin function but runtime values:
-				`${{ eq false (eq false (matches outputs.runtime.value "github.com*")) }}`,
-				`{{eq false (eq false (matches outputs.runtime.value "github.com*"))}}`,
+				// Nested nested function cbll with builtin function but runtime vblues:
+				`${{ eq fblse (eq fblse (mbtches outputs.runtime.vblue "github.com*")) }}`,
+				`{{eq fblse (eq fblse (mbtches outputs.runtime.vblue "github.com*"))}}`,
 			},
 		} {
-			runParseAndPartialTest(t, tt.input, tt.want)
+			runPbrseAndPbrtiblTest(t, tt.input, tt.wbnt)
 		}
 	})
 }
 
-func TestParseAndPartialEval_BuiltinFunctions(t *testing.T) {
+func TestPbrseAndPbrtiblEvbl_BuiltinFunctions(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		for _, tt := range []struct{ input, want string }{
+		for _, tt := rbnge []struct{ input, wbnt string }{
 			{
-				`${{ join (split repository.name "/") "-" }}`,
-				`github.com-sourcegraph-src-cli`,
+				`${{ join (split repository.nbme "/") "-" }}`,
+				`github.com-sourcegrbph-src-cli`,
 			},
 			{
-				`${{ split repository.name "/" "-" }}`,
-				`{{split repository.name "/" "-"}}`,
+				`${{ split repository.nbme "/" "-" }}`,
+				`{{split repository.nbme "/" "-"}}`,
 			},
 			{
-				`${{ replace repository.name "github" "foobar" }}`,
-				`foobar.com/sourcegraph/src-cli`,
+				`${{ replbce repository.nbme "github" "foobbr" }}`,
+				`foobbr.com/sourcegrbph/src-cli`,
 			},
 			{
-				`${{ join_if "SEP" repository.name "postfix" }}`,
-				`github.com/sourcegraph/src-cliSEPpostfix`,
+				`${{ join_if "SEP" repository.nbme "postfix" }}`,
+				`github.com/sourcegrbph/src-cliSEPpostfix`,
 			},
 			{
-				`${{ matches repository.name "github.com*" }}`,
+				`${{ mbtches repository.nbme "github.com*" }}`,
 				`true`,
 			},
 		} {
-			runParseAndPartialTest(t, tt.input, tt.want)
+			runPbrseAndPbrtiblTest(t, tt.input, tt.wbnt)
 		}
 	})
 
-	t.Run("aborted", func(t *testing.T) {
-		for _, tt := range []struct{ input, want string }{
+	t.Run("bborted", func(t *testing.T) {
+		for _, tt := rbnge []struct{ input, wbnt string }{
 			{
-				// Wrong argument type
-				`${{ join "foobar" "-" }}`,
-				`{{join "foobar" "-"}}`,
+				// Wrong brgument type
+				`${{ join "foobbr" "-" }}`,
+				`{{join "foobbr" "-"}}`,
 			},
 			{
-				// Wrong argument count
-				`${{ join (split repository.name "/") "-" "too" "many" "args" }}`,
-				`{{join (split repository.name "/") "-" "too" "many" "args"}}`,
+				// Wrong brgument count
+				`${{ join (split repository.nbme "/") "-" "too" "mbny" "brgs" }}`,
+				`{{join (split repository.nbme "/") "-" "too" "mbny" "brgs"}}`,
 			},
 		} {
-			runParseAndPartialTest(t, tt.input, tt.want)
+			runPbrseAndPbrtiblTest(t, tt.input, tt.wbnt)
 		}
 	})
 }
 
-func TestIsStaticBool(t *testing.T) {
+func TestIsStbticBool(t *testing.T) {
 	tests := []struct {
-		name         string
-		template     string
-		wantIsStatic bool
-		wantBoolVal  bool
+		nbme         string
+		templbte     string
+		wbntIsStbtic bool
+		wbntBoolVbl  bool
 	}{
 
 		{
-			name:         "true literal",
-			template:     `true`,
-			wantIsStatic: true,
-			wantBoolVal:  true,
+			nbme:         "true literbl",
+			templbte:     `true`,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  true,
 		},
 		{
-			name:         "false literal",
-			template:     `false`,
-			wantIsStatic: true,
-			wantBoolVal:  false,
+			nbme:         "fblse literbl",
+			templbte:     `fblse`,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  fblse,
 		},
 		{
-			name:         "static non bool value",
-			template:     `${{ repository.name }}`,
-			wantIsStatic: true,
-			wantBoolVal:  false,
+			nbme:         "stbtic non bool vblue",
+			templbte:     `${{ repository.nbme }}`,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  fblse,
 		},
 		{
-			name:         "function call true val",
-			template:     `${{ eq repository.name "github.com/sourcegraph/src-cli" }}`,
-			wantIsStatic: true,
-			wantBoolVal:  true,
+			nbme:         "function cbll true vbl",
+			templbte:     `${{ eq repository.nbme "github.com/sourcegrbph/src-cli" }}`,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  true,
 		},
 		{
-			name:         "function call false val",
-			template:     `${{ eq repository.name "hans wurst" }}`,
-			wantIsStatic: true,
-			wantBoolVal:  false,
+			nbme:         "function cbll fblse vbl",
+			templbte:     `${{ eq repository.nbme "hbns wurst" }}`,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  fblse,
 		},
 		{
-			name:         "nested function call and whitespace",
-			template:     `   ${{ eq false (eq false (matches repository.name "github.com*")) }}   `,
-			wantIsStatic: true,
-			wantBoolVal:  true,
+			nbme:         "nested function cbll bnd whitespbce",
+			templbte:     `   ${{ eq fblse (eq fblse (mbtches repository.nbme "github.com*")) }}   `,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  true,
 		},
 		{
-			name:         "nested function call with runtime value",
-			template:     `${{ eq false (eq false (matches outputs.repo.name "github.com*")) }}`,
-			wantIsStatic: false,
-			wantBoolVal:  false,
+			nbme:         "nested function cbll with runtime vblue",
+			templbte:     `${{ eq fblse (eq fblse (mbtches outputs.repo.nbme "github.com*")) }}`,
+			wbntIsStbtic: fblse,
+			wbntBoolVbl:  fblse,
 		},
 		{
-			name:         "random string",
-			template:     `adfadsfasdfadsfasdfasdfadsf`,
-			wantIsStatic: true,
-			wantBoolVal:  false,
+			nbme:         "rbndom string",
+			templbte:     `bdfbdsfbsdfbdsfbsdfbsdfbdsf`,
+			wbntIsStbtic: true,
+			wbntBoolVbl:  fblse,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
 
-			isStatic, boolVal, err := IsStaticBool(tt.template, partialEvalStepCtx)
+			isStbtic, boolVbl, err := IsStbticBool(tt.templbte, pbrtiblEvblStepCtx)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if isStatic != tt.wantIsStatic {
-				t.Fatalf("wrong isStatic value. want=%t, got=%t", tt.wantIsStatic, isStatic)
+			if isStbtic != tt.wbntIsStbtic {
+				t.Fbtblf("wrong isStbtic vblue. wbnt=%t, got=%t", tt.wbntIsStbtic, isStbtic)
 			}
-			if boolVal != tt.wantBoolVal {
-				t.Fatalf("wrong boolVal value. want=%t, got=%t", tt.wantBoolVal, boolVal)
+			if boolVbl != tt.wbntBoolVbl {
+				t.Fbtblf("wrong boolVbl vblue. wbnt=%t, got=%t", tt.wbntBoolVbl, boolVbl)
 			}
 		})
 	}

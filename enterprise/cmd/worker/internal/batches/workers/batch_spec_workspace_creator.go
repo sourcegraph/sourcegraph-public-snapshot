@@ -1,147 +1,147 @@
-package workers
+pbckbge workers
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store/author"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store/buthor"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution/cbche"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
-// RepoWorkspaces and then persists those as pending BatchSpecWorkspaces.
-type batchSpecWorkspaceCreator struct {
+// bbtchSpecWorkspbceCrebtor tbkes in BbtchSpecs, resolves them into
+// RepoWorkspbces bnd then persists those bs pending BbtchSpecWorkspbces.
+type bbtchSpecWorkspbceCrebtor struct {
 	store  *store.Store
 	logger log.Logger
 }
 
-// HandlerFunc returns a workerutil.HandlerFunc that can be passed to a
-// workerutil.Worker to process queued changesets.
-func (r *batchSpecWorkspaceCreator) HandlerFunc() workerutil.HandlerFunc[*btypes.BatchSpecResolutionJob] {
-	return func(ctx context.Context, logger log.Logger, job *btypes.BatchSpecResolutionJob) (err error) {
-		// Run the resolution job as the user, so that only secrets and workspaces
-		// that are visible to the user are returned.
-		ctx = actor.WithActor(ctx, actor.FromUser(job.InitiatorID))
+// HbndlerFunc returns b workerutil.HbndlerFunc thbt cbn be pbssed to b
+// workerutil.Worker to process queued chbngesets.
+func (r *bbtchSpecWorkspbceCrebtor) HbndlerFunc() workerutil.HbndlerFunc[*btypes.BbtchSpecResolutionJob] {
+	return func(ctx context.Context, logger log.Logger, job *btypes.BbtchSpecResolutionJob) (err error) {
+		// Run the resolution job bs the user, so thbt only secrets bnd workspbces
+		// thbt bre visible to the user bre returned.
+		ctx = bctor.WithActor(ctx, bctor.FromUser(job.InitibtorID))
 
-		return r.process(ctx, service.NewWorkspaceResolver, job)
+		return r.process(ctx, service.NewWorkspbceResolver, job)
 	}
 }
 
-type stepCacheKey struct {
+type stepCbcheKey struct {
 	index int
 	key   string
 }
 
-type workspaceCacheKey struct {
-	dbWorkspace   *btypes.BatchSpecWorkspace
-	repo          batcheslib.Repository
-	stepCacheKeys []stepCacheKey
-	skippedSteps  map[int]struct{}
+type workspbceCbcheKey struct {
+	dbWorkspbce   *btypes.BbtchSpecWorkspbce
+	repo          bbtcheslib.Repository
+	stepCbcheKeys []stepCbcheKey
+	skippedSteps  mbp[int]struct{}
 }
 
-// process runs one workspace creation run for the given job utilizing the given
-// workspace resolver to find the workspaces. It creates a database transaction
-// to store all the entities in one transaction after the resolution process,
-// to prevent long running transactions.
-func (r *batchSpecWorkspaceCreator) process(
+// process runs one workspbce crebtion run for the given job utilizing the given
+// workspbce resolver to find the workspbces. It crebtes b dbtbbbse trbnsbction
+// to store bll the entities in one trbnsbction bfter the resolution process,
+// to prevent long running trbnsbctions.
+func (r *bbtchSpecWorkspbceCrebtor) process(
 	ctx context.Context,
-	newResolver service.WorkspaceResolverBuilder,
-	job *btypes.BatchSpecResolutionJob,
+	newResolver service.WorkspbceResolverBuilder,
+	job *btypes.BbtchSpecResolutionJob,
 ) error {
-	spec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{ID: job.BatchSpecID})
+	spec, err := r.store.GetBbtchSpec(ctx, store.GetBbtchSpecOpts{ID: job.BbtchSpecID})
 	if err != nil {
 		return err
 	}
 
-	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec))
+	evblubtbbleSpec, err := bbtcheslib.PbrseBbtchSpec([]byte(spec.RbwSpec))
 	if err != nil {
 		return err
 	}
 
-	// Next, we fetch all secrets that are requested by the spec.
-	rk := spec.Spec.RequiredEnvVars()
-	var secrets []*database.ExecutorSecret
+	// Next, we fetch bll secrets thbt bre requested by the spec.
+	rk := spec.Spec.RequiredEnvVbrs()
+	vbr secrets []*dbtbbbse.ExecutorSecret
 	if len(rk) > 0 {
-		esStore := r.store.DatabaseDB().ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-		secrets, _, err = esStore.List(ctx, database.ExecutorSecretScopeBatches, database.ExecutorSecretsListOpts{
-			NamespaceUserID: spec.NamespaceUserID,
-			NamespaceOrgID:  spec.NamespaceOrgID,
+		esStore := r.store.DbtbbbseDB().ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
+		secrets, _, err = esStore.List(ctx, dbtbbbse.ExecutorSecretScopeBbtches, dbtbbbse.ExecutorSecretsListOpts{
+			NbmespbceUserID: spec.NbmespbceUserID,
+			NbmespbceOrgID:  spec.NbmespbceOrgID,
 			Keys:            rk,
 		})
 		if err != nil {
-			return errors.Wrap(err, "fetching secrets")
+			return errors.Wrbp(err, "fetching secrets")
 		}
 	}
 
-	esalStore := r.store.DatabaseDB().ExecutorSecretAccessLogs()
-	envVars := make([]string, len(secrets))
-	for i, secret := range secrets {
-		// This will create an audit log event in the name of the initiating user.
-		val, err := secret.Value(ctx, esalStore)
+	esblStore := r.store.DbtbbbseDB().ExecutorSecretAccessLogs()
+	envVbrs := mbke([]string, len(secrets))
+	for i, secret := rbnge secrets {
+		// This will crebte bn budit log event in the nbme of the initibting user.
+		vbl, err := secret.Vblue(ctx, esblStore)
 		if err != nil {
-			return errors.Wrap(err, "getting value for secret")
+			return errors.Wrbp(err, "getting vblue for secret")
 		}
-		envVars[i] = fmt.Sprintf("%s=%s", secret.Key, val)
+		envVbrs[i] = fmt.Sprintf("%s=%s", secret.Key, vbl)
 	}
 
 	resolver := newResolver(r.store)
-	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
+	workspbces, err := resolver.ResolveWorkspbcesForBbtchSpec(ctx, evblubtbbleSpec)
 	if err != nil {
 		return err
 	}
 
-	r.logger.Info("resolved workspaces for batch spec", log.Int64("job", job.ID), log.Int64("spec", spec.ID), log.Int("workspaces", len(workspaces)))
+	r.logger.Info("resolved workspbces for bbtch spec", log.Int64("job", job.ID), log.Int64("spec", spec.ID), log.Int("workspbces", len(workspbces)))
 
-	// Build DB workspaces and check for cache entries.
-	ws := make([]*btypes.BatchSpecWorkspace, 0, len(workspaces))
-	// Collect all cache keys so we can look them up in a single query.
-	cacheKeyWorkspaces := make([]workspaceCacheKey, 0, len(workspaces))
-	allStepCacheKeys := make([]string, 0, len(workspaces))
-	// load the mounts from the DB up front to avoid duplicate calls with no difference in data
-	mounts, err := listBatchSpecMounts(ctx, r.store, spec.ID)
+	// Build DB workspbces bnd check for cbche entries.
+	ws := mbke([]*btypes.BbtchSpecWorkspbce, 0, len(workspbces))
+	// Collect bll cbche keys so we cbn look them up in b single query.
+	cbcheKeyWorkspbces := mbke([]workspbceCbcheKey, 0, len(workspbces))
+	bllStepCbcheKeys := mbke([]string, 0, len(workspbces))
+	// lobd the mounts from the DB up front to bvoid duplicbte cblls with no difference in dbtb
+	mounts, err := listBbtchSpecMounts(ctx, r.store, spec.ID)
 	if err != nil {
 		return err
 	}
-	retriever := &remoteFileMetadataRetriever{mounts: mounts}
+	retriever := &remoteFileMetbdbtbRetriever{mounts: mounts}
 
-	// Build workspaces DB objects.
-	for _, w := range workspaces {
-		workspace := &btypes.BatchSpecWorkspace{
-			BatchSpecID:      spec.ID,
-			ChangesetSpecIDs: []int64{},
+	// Build workspbces DB objects.
+	for _, w := rbnge workspbces {
+		workspbce := &btypes.BbtchSpecWorkspbce{
+			BbtchSpecID:      spec.ID,
+			ChbngesetSpecIDs: []int64{},
 
 			RepoID:             w.Repo.ID,
-			Branch:             w.Branch,
+			Brbnch:             w.Brbnch,
 			Commit:             string(w.Commit),
-			Path:               w.Path,
-			FileMatches:        w.FileMatches,
-			OnlyFetchWorkspace: w.OnlyFetchWorkspace,
+			Pbth:               w.Pbth,
+			FileMbtches:        w.FileMbtches,
+			OnlyFetchWorkspbce: w.OnlyFetchWorkspbce,
 
 			Unsupported: w.Unsupported,
 			Ignored:     w.Ignored,
 		}
 
-		ws = append(ws, workspace)
+		ws = bppend(ws, workspbce)
 
 		if !spec.AllowIgnored && w.Ignored {
 			continue
@@ -150,279 +150,279 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		repo := batcheslib.Repository{
-			ID:          string(marshalRepositoryID(w.Repo.ID)),
-			Name:        string(w.Repo.Name),
-			BaseRef:     w.Branch,
-			BaseRev:     string(w.Commit),
-			FileMatches: w.FileMatches,
+		repo := bbtcheslib.Repository{
+			ID:          string(mbrshblRepositoryID(w.Repo.ID)),
+			Nbme:        string(w.Repo.Nbme),
+			BbseRef:     w.Brbnch,
+			BbseRev:     string(w.Commit),
+			FileMbtches: w.FileMbtches,
 		}
 
-		skippedSteps, err := batcheslib.SkippedStepsForRepo(spec.Spec, string(w.Repo.Name), w.FileMatches)
+		skippedSteps, err := bbtcheslib.SkippedStepsForRepo(spec.Spec, string(w.Repo.Nbme), w.FileMbtches)
 		if err != nil {
 			return err
 		}
 
-		stepCacheKeys := make([]stepCacheKey, 0, len(spec.Spec.Steps))
-		// Generate cache keys for all the steps.
+		stepCbcheKeys := mbke([]stepCbcheKey, 0, len(spec.Spec.Steps))
+		// Generbte cbche keys for bll the steps.
 		for i := 0; i < len(spec.Spec.Steps); i++ {
 			if _, ok := skippedSteps[i]; ok {
 				continue
 			}
 
-			key := cache.KeyForWorkspace(
-				&template.BatchChangeAttributes{
-					Name:        spec.Spec.Name,
+			key := cbche.KeyForWorkspbce(
+				&templbte.BbtchChbngeAttributes{
+					Nbme:        spec.Spec.Nbme,
 					Description: spec.Spec.Description,
 				},
 				repo,
-				w.Path,
-				envVars,
-				w.OnlyFetchWorkspace,
+				w.Pbth,
+				envVbrs,
+				w.OnlyFetchWorkspbce,
 				spec.Spec.Steps,
 				i,
 				retriever,
 			)
 
-			rawStepKey, err := key.Key()
+			rbwStepKey, err := key.Key()
 			if err != nil {
 				return err
 			}
 
-			stepCacheKeys = append(stepCacheKeys, stepCacheKey{index: i, key: rawStepKey})
-			allStepCacheKeys = append(allStepCacheKeys, rawStepKey)
+			stepCbcheKeys = bppend(stepCbcheKeys, stepCbcheKey{index: i, key: rbwStepKey})
+			bllStepCbcheKeys = bppend(bllStepCbcheKeys, rbwStepKey)
 		}
 
-		cacheKeyWorkspaces = append(cacheKeyWorkspaces, workspaceCacheKey{
-			dbWorkspace:   workspace,
+		cbcheKeyWorkspbces = bppend(cbcheKeyWorkspbces, workspbceCbcheKey{
+			dbWorkspbce:   workspbce,
 			repo:          repo,
-			stepCacheKeys: stepCacheKeys,
+			stepCbcheKeys: stepCbcheKeys,
 			skippedSteps:  skippedSteps,
 		})
 	}
 
-	stepEntriesByCacheKey := make(map[string]*btypes.BatchSpecExecutionCacheEntry, len(allStepCacheKeys))
-	if len(allStepCacheKeys) > 0 {
-		entries, err := r.store.ListBatchSpecExecutionCacheEntries(ctx, store.ListBatchSpecExecutionCacheEntriesOpts{
+	stepEntriesByCbcheKey := mbke(mbp[string]*btypes.BbtchSpecExecutionCbcheEntry, len(bllStepCbcheKeys))
+	if len(bllStepCbcheKeys) > 0 {
+		entries, err := r.store.ListBbtchSpecExecutionCbcheEntries(ctx, store.ListBbtchSpecExecutionCbcheEntriesOpts{
 			UserID: spec.UserID,
-			Keys:   allStepCacheKeys,
+			Keys:   bllStepCbcheKeys,
 		})
 		if err != nil {
 			return err
 		}
-		for _, entry := range entries {
-			stepEntriesByCacheKey[entry.Key] = entry
+		for _, entry := rbnge entries {
+			stepEntriesByCbcheKey[entry.Key] = entry
 		}
 	}
 
-	// All changeset specs to be created.
-	cs := []*btypes.ChangesetSpec{}
-	// Collect all IDs of used cache entries to mark them as recently used later.
-	usedCacheEntries := []int64{}
-	changesetsByWorkspace := make(map[*btypes.BatchSpecWorkspace][]*btypes.ChangesetSpec)
+	// All chbngeset specs to be crebted.
+	cs := []*btypes.ChbngesetSpec{}
+	// Collect bll IDs of used cbche entries to mbrk them bs recently used lbter.
+	usedCbcheEntries := []int64{}
+	chbngesetsByWorkspbce := mbke(mbp[*btypes.BbtchSpecWorkspbce][]*btypes.ChbngesetSpec)
 
-	changesetAuthor, err := author.GetChangesetAuthorForUser(ctx, database.UsersWith(r.logger, r.store), spec.UserID)
+	chbngesetAuthor, err := buthor.GetChbngesetAuthorForUser(ctx, dbtbbbse.UsersWith(r.logger, r.store), spec.UserID)
 	if err != nil {
 		return err
 	}
 
-	// Check for an existing cache entry for each of the workspaces.
-	for _, workspace := range cacheKeyWorkspaces {
-		for _, ck := range workspace.stepCacheKeys {
+	// Check for bn existing cbche entry for ebch of the workspbces.
+	for _, workspbce := rbnge cbcheKeyWorkspbces {
+		for _, ck := rbnge workspbce.stepCbcheKeys {
 			key := ck.key
 			idx := ck.index
-			if c, ok := stepEntriesByCacheKey[key]; ok {
-				var res execution.AfterStepResult
-				if err := json.Unmarshal([]byte(c.Value), &res); err != nil {
+			if c, ok := stepEntriesByCbcheKey[key]; ok {
+				vbr res execution.AfterStepResult
+				if err := json.Unmbrshbl([]byte(c.Vblue), &res); err != nil {
 					return err
 				}
-				workspace.dbWorkspace.SetStepCacheResult(idx+1, btypes.StepCacheResult{Key: key, Value: &res})
+				workspbce.dbWorkspbce.SetStepCbcheResult(idx+1, btypes.StepCbcheResult{Key: key, Vblue: &res})
 
-				// Mark the cache entry as used.
-				usedCacheEntries = append(usedCacheEntries, c.ID)
+				// Mbrk the cbche entry bs used.
+				usedCbcheEntries = bppend(usedCbcheEntries, c.ID)
 			} else {
-				// Only add cache entries up until we don't have the cache entry
-				// for the previous step anymore.
-				break
+				// Only bdd cbche entries up until we don't hbve the cbche entry
+				// for the previous step bnymore.
+				brebk
 			}
 		}
 
-		// Validate there is anything to run. If not, we skip execution.
-		// TODO: In the future, move this to a separate field, so we can
-		// tell the two cases apart.
-		if len(spec.Spec.Steps) == len(workspace.skippedSteps) {
-			// TODO: Doesn't this mean we don't build changeset specs?
-			workspace.dbWorkspace.CachedResultFound = true
+		// Vblidbte there is bnything to run. If not, we skip execution.
+		// TODO: In the future, move this to b sepbrbte field, so we cbn
+		// tell the two cbses bpbrt.
+		if len(spec.Spec.Steps) == len(workspbce.skippedSteps) {
+			// TODO: Doesn't this mebn we don't build chbngeset specs?
+			workspbce.dbWorkspbce.CbchedResultFound = true
 			continue
 		}
 
-		// Find the latest step that is not statically skipped.
-		latestStepIdx := -1
+		// Find the lbtest step thbt is not stbticblly skipped.
+		lbtestStepIdx := -1
 		for i := len(spec.Spec.Steps) - 1; i >= 0; i-- {
-			// Keep skipping steps until the first one is hit that we do want to run.
-			if _, ok := workspace.skippedSteps[i]; ok {
+			// Keep skipping steps until the first one is hit thbt we do wbnt to run.
+			if _, ok := workspbce.skippedSteps[i]; ok {
 				continue
 			}
-			latestStepIdx = i
-			break
+			lbtestStepIdx = i
+			brebk
 		}
-		if latestStepIdx == -1 {
+		if lbtestStepIdx == -1 {
 			continue
 		}
 
-		// TODO: Should we also do dynamic evaluation, instead of just static?
-		// We have everything that's needed at this point, including the latest
+		// TODO: Should we blso do dynbmic evblubtion, instebd of just stbtic?
+		// We hbve everything thbt's needed bt this point, including the lbtest
 		// execution step result.
-		res, found := workspace.dbWorkspace.StepCacheResult(latestStepIdx + 1)
+		res, found := workspbce.dbWorkspbce.StepCbcheResult(lbtestStepIdx + 1)
 		if !found {
-			// There is no cache result available, proceed.
+			// There is no cbche result bvbilbble, proceed.
 			continue
 		}
 
-		workspace.dbWorkspace.CachedResultFound = true
+		workspbce.dbWorkspbce.CbchedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path, true, changesetAuthor)
+		rbwSpecs, err := cbche.ChbngesetSpecsFromCbche(spec.Spec, workspbce.repo, *res.Vblue, workspbce.dbWorkspbce.Pbth, true, chbngesetAuthor)
 		if err != nil {
 			return err
 		}
 
-		var specs []*btypes.ChangesetSpec
-		for _, s := range rawSpecs {
-			changesetSpec, err := btypes.NewChangesetSpecFromSpec(s)
+		vbr specs []*btypes.ChbngesetSpec
+		for _, s := rbnge rbwSpecs {
+			chbngesetSpec, err := btypes.NewChbngesetSpecFromSpec(s)
 			if err != nil {
 				return err
 			}
-			changesetSpec.BatchSpecID = spec.ID
-			changesetSpec.BaseRepoID = workspace.dbWorkspace.RepoID
-			changesetSpec.UserID = spec.UserID
+			chbngesetSpec.BbtchSpecID = spec.ID
+			chbngesetSpec.BbseRepoID = workspbce.dbWorkspbce.RepoID
+			chbngesetSpec.UserID = spec.UserID
 
-			specs = append(specs, changesetSpec)
+			specs = bppend(specs, chbngesetSpec)
 		}
 
-		cs = append(cs, specs...)
-		changesetsByWorkspace[workspace.dbWorkspace] = specs
+		cs = bppend(cs, specs...)
+		chbngesetsByWorkspbce[workspbce.dbWorkspbce] = specs
 	}
 
-	// If there are "importChangesets" statements in the spec we evaluate
-	// them now and create ChangesetSpecs for them.
-	im, err := changesetSpecsForImports(ctx, r.store, evaluatableSpec.ImportChangesets, spec.ID, spec.UserID)
+	// If there bre "importChbngesets" stbtements in the spec we evblubte
+	// them now bnd crebte ChbngesetSpecs for them.
+	im, err := chbngesetSpecsForImports(ctx, r.store, evblubtbbleSpec.ImportChbngesets, spec.ID, spec.UserID)
 	if err != nil {
 		return err
 	}
-	cs = append(cs, im...)
+	cs = bppend(cs, im...)
 
-	tx, err := r.store.Transact(ctx)
+	tx, err := r.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// Mark all used cache entries as recently used for cache eviction purposes.
-	if err := tx.MarkUsedBatchSpecExecutionCacheEntries(ctx, usedCacheEntries); err != nil {
+	// Mbrk bll used cbche entries bs recently used for cbche eviction purposes.
+	if err := tx.MbrkUsedBbtchSpecExecutionCbcheEntries(ctx, usedCbcheEntries); err != nil {
 		return err
 	}
 
-	if err = tx.CreateChangesetSpec(ctx, cs...); err != nil {
+	if err = tx.CrebteChbngesetSpec(ctx, cs...); err != nil {
 		return err
 	}
 
-	// Associate the changeset specs with the workspace now that they have IDs.
-	for workspace, changesetSpecs := range changesetsByWorkspace {
-		for _, spec := range changesetSpecs {
-			workspace.ChangesetSpecIDs = append(workspace.ChangesetSpecIDs, spec.ID)
+	// Associbte the chbngeset specs with the workspbce now thbt they hbve IDs.
+	for workspbce, chbngesetSpecs := rbnge chbngesetsByWorkspbce {
+		for _, spec := rbnge chbngesetSpecs {
+			workspbce.ChbngesetSpecIDs = bppend(workspbce.ChbngesetSpecIDs, spec.ID)
 		}
 	}
 
-	return tx.CreateBatchSpecWorkspace(ctx, ws...)
+	return tx.CrebteBbtchSpecWorkspbce(ctx, ws...)
 }
 
-func listBatchSpecMounts(ctx context.Context, s *store.Store, batchSpecID int64) ([]*btypes.BatchSpecWorkspaceFile, error) {
-	mounts, _, err := s.ListBatchSpecWorkspaceFiles(ctx, store.ListBatchSpecWorkspaceFileOpts{BatchSpecID: batchSpecID})
+func listBbtchSpecMounts(ctx context.Context, s *store.Store, bbtchSpecID int64) ([]*btypes.BbtchSpecWorkspbceFile, error) {
+	mounts, _, err := s.ListBbtchSpecWorkspbceFiles(ctx, store.ListBbtchSpecWorkspbceFileOpts{BbtchSpecID: bbtchSpecID})
 	if err != nil {
 		return nil, err
 	}
 	return mounts, nil
 }
 
-type remoteFileMetadataRetriever struct {
-	mounts []*btypes.BatchSpecWorkspaceFile
+type remoteFileMetbdbtbRetriever struct {
+	mounts []*btypes.BbtchSpecWorkspbceFile
 }
 
-func (r *remoteFileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
-	var mountsMetadata []cache.MountMetadata
-	for _, step := range steps {
-		for _, stepMount := range step.Mount {
-			dir, file := filepath.Split(stepMount.Path)
-			dir = strings.TrimSuffix(dir, string(filepath.Separator))
-			dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepath.Separator)))
+func (r *remoteFileMetbdbtbRetriever) Get(steps []bbtcheslib.Step) ([]cbche.MountMetbdbtb, error) {
+	vbr mountsMetbdbtb []cbche.MountMetbdbtb
+	for _, step := rbnge steps {
+		for _, stepMount := rbnge step.Mount {
+			dir, file := filepbth.Split(stepMount.Pbth)
+			dir = strings.TrimSuffix(dir, string(filepbth.Sepbrbtor))
+			dir = strings.TrimPrefix(dir, fmt.Sprintf(".%s", string(filepbth.Sepbrbtor)))
 
-			mountPath := filepath.Join(dir, file)
-			var metadata cache.MountMetadata
-			for _, mount := range r.mounts {
-				if filepath.Join(mount.Path, mount.FileName) == mountPath {
-					metadata = cache.MountMetadata{Path: mountPath, Size: mount.Size, Modified: mount.ModifiedAt}
+			mountPbth := filepbth.Join(dir, file)
+			vbr metbdbtb cbche.MountMetbdbtb
+			for _, mount := rbnge r.mounts {
+				if filepbth.Join(mount.Pbth, mount.FileNbme) == mountPbth {
+					metbdbtb = cbche.MountMetbdbtb{Pbth: mountPbth, Size: mount.Size, Modified: mount.ModifiedAt}
 				}
 			}
-			if metadata.Path != "" {
-				mountsMetadata = append(mountsMetadata, metadata)
+			if metbdbtb.Pbth != "" {
+				mountsMetbdbtb = bppend(mountsMetbdbtb, metbdbtb)
 			} else {
-				// It is probably a directory
-				for _, mount := range r.mounts {
-					mountsMetadata = append(mountsMetadata, cache.MountMetadata{Path: filepath.Join(mount.Path, mount.FileName), Size: mount.Size, Modified: mount.ModifiedAt})
+				// It is probbbly b directory
+				for _, mount := rbnge r.mounts {
+					mountsMetbdbtb = bppend(mountsMetbdbtb, cbche.MountMetbdbtb{Pbth: filepbth.Join(mount.Pbth, mount.FileNbme), Size: mount.Size, Modified: mount.ModifiedAt})
 				}
 			}
 
 		}
 	}
-	return mountsMetadata, nil
+	return mountsMetbdbtb, nil
 }
 
-func changesetSpecsForImports(ctx context.Context, s *store.Store, importChangesets []batcheslib.ImportChangeset, batchSpecID int64, userID int32) ([]*btypes.ChangesetSpec, error) {
-	cs := []*btypes.ChangesetSpec{}
+func chbngesetSpecsForImports(ctx context.Context, s *store.Store, importChbngesets []bbtcheslib.ImportChbngeset, bbtchSpecID int64, userID int32) ([]*btypes.ChbngesetSpec, error) {
+	cs := []*btypes.ChbngesetSpec{}
 
 	reposStore := s.Repos()
 
-	specs, err := batcheslib.BuildImportChangesetSpecs(ctx, importChangesets, func(ctx context.Context, repoNames []string) (map[string]string, error) {
-		if len(repoNames) == 0 {
-			return map[string]string{}, nil
+	specs, err := bbtcheslib.BuildImportChbngesetSpecs(ctx, importChbngesets, func(ctx context.Context, repoNbmes []string) (mbp[string]string, error) {
+		if len(repoNbmes) == 0 {
+			return mbp[string]string{}, nil
 		}
 
-		// 🚨 SECURITY: We use database.Repos.List to get the ID and also to check
-		// whether the user has access to the repository or not.
-		repos, err := reposStore.List(ctx, database.ReposListOptions{Names: repoNames})
+		// 🚨 SECURITY: We use dbtbbbse.Repos.List to get the ID bnd blso to check
+		// whether the user hbs bccess to the repository or not.
+		repos, err := reposStore.List(ctx, dbtbbbse.ReposListOptions{Nbmes: repoNbmes})
 		if err != nil {
 			return nil, err
 		}
 
-		repoNameIDs := make(map[string]string, len(repos))
-		for _, r := range repos {
-			repoNameIDs[string(r.Name)] = string(marshalRepositoryID(r.ID))
+		repoNbmeIDs := mbke(mbp[string]string, len(repos))
+		for _, r := rbnge repos {
+			repoNbmeIDs[string(r.Nbme)] = string(mbrshblRepositoryID(r.ID))
 		}
-		return repoNameIDs, nil
+		return repoNbmeIDs, nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	for _, c := range specs {
-		var repoID api.RepoID
-		err = relay.UnmarshalSpec(graphql.ID(c.BaseRepository), &repoID)
+	for _, c := rbnge specs {
+		vbr repoID bpi.RepoID
+		err = relby.UnmbrshblSpec(grbphql.ID(c.BbseRepository), &repoID)
 		if err != nil {
 			return nil, err
 		}
 
-		changesetSpec, err := btypes.NewChangesetSpecFromSpec(c)
+		chbngesetSpec, err := btypes.NewChbngesetSpecFromSpec(c)
 		if err != nil {
 			return nil, err
 		}
-		changesetSpec.UserID = userID
-		changesetSpec.BaseRepoID = repoID
-		changesetSpec.BatchSpecID = batchSpecID
+		chbngesetSpec.UserID = userID
+		chbngesetSpec.BbseRepoID = repoID
+		chbngesetSpec.BbtchSpecID = bbtchSpecID
 
-		cs = append(cs, changesetSpec)
+		cs = bppend(cs, chbngesetSpec)
 	}
 	return cs, nil
 }
 
-func marshalRepositoryID(id api.RepoID) graphql.ID {
-	return relay.MarshalID("Repository", id)
+func mbrshblRepositoryID(id bpi.RepoID) grbphql.ID {
+	return relby.MbrshblID("Repository", id)
 }

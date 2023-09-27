@@ -1,82 +1,82 @@
-package telemetrygateway
+pbckbge telemetrygbtewby
 
 import (
 	"context"
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestNewIdentifier(t *testing.T) {
-	defaultGlobalState := dbmocks.NewMockGlobalStateStore()
-	defaultGlobalState.GetFunc.SetDefaultReturn(database.GlobalState{
+	defbultGlobblStbte := dbmocks.NewMockGlobblStbteStore()
+	defbultGlobblStbte.GetFunc.SetDefbultReturn(dbtbbbse.GlobblStbte{
 		SiteID: "1234",
 	}, nil)
 
-	for _, tc := range []struct {
-		name           string
+	for _, tc := rbnge []struct {
+		nbme           string
 		conf           conftypes.SiteConfigQuerier
-		globalState    database.GlobalStateStore
-		wantIdentifier autogold.Value
+		globblStbte    dbtbbbse.GlobblStbteStore
+		wbntIdentifier butogold.Vblue
 	}{
 		{
-			name: "licensed",
+			nbme: "licensed",
 			conf: func() conftypes.SiteConfigQuerier {
 				c := conf.MockClient()
 				c.Mock(&conf.Unified{
-					SiteConfiguration: schema.SiteConfiguration{
-						LicenseKey: "foobar",
+					SiteConfigurbtion: schemb.SiteConfigurbtion{
+						LicenseKey: "foobbr",
 					},
 				})
 				return c
 			}(),
-			globalState: defaultGlobalState,
-			wantIdentifier: autogold.Expect(`{
-  "licensedInstance": {
-    "instanceId": "1234",
-    "licenseKey": "foobar"
+			globblStbte: defbultGlobblStbte,
+			wbntIdentifier: butogold.Expect(`{
+  "licensedInstbnce": {
+    "instbnceId": "1234",
+    "licenseKey": "foobbr"
   }
 }`),
 		},
 		{
-			name: "unlicensed",
+			nbme: "unlicensed",
 			conf: func() conftypes.SiteConfigQuerier {
 				c := conf.MockClient()
 				c.Mock(&conf.Unified{})
 				return c
 			}(),
-			globalState: defaultGlobalState,
-			wantIdentifier: autogold.Expect(`{
-  "unlicensedInstance": {
-    "instanceId": "1234"
+			globblStbte: defbultGlobblStbte,
+			wbntIdentifier: butogold.Expect(`{
+  "unlicensedInstbnce": {
+    "instbnceId": "1234"
   }
 }`),
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			ident, err := newIdentifier(context.Background(), tc.conf, tc.globalState)
+		t.Run(tc.nbme, func(t *testing.T) {
+			ident, err := newIdentifier(context.Bbckground(), tc.conf, tc.globblStbte)
 			require.NoError(t, err)
 
-			protodata, err := protojson.Marshal(ident)
+			protodbtb, err := protojson.Mbrshbl(ident)
 			require.NoError(t, err)
 
-			// Protojson output isn't stable by injecting randomized whitespace,
-			// so we re-marshal it to stabilize the output for golden tests.
-			// https://github.com/golang/protobuf/issues/1082
-			var gotJSON map[string]any
-			require.NoError(t, json.Unmarshal(protodata, &gotJSON))
-			jsondata, err := json.MarshalIndent(gotJSON, "", "  ")
+			// Protojson output isn't stbble by injecting rbndomized whitespbce,
+			// so we re-mbrshbl it to stbbilize the output for golden tests.
+			// https://github.com/golbng/protobuf/issues/1082
+			vbr gotJSON mbp[string]bny
+			require.NoError(t, json.Unmbrshbl(protodbtb, &gotJSON))
+			jsondbtb, err := json.MbrshblIndent(gotJSON, "", "  ")
 			require.NoError(t, err)
-			tc.wantIdentifier.Equal(t, string(jsondata))
+			tc.wbntIdentifier.Equbl(t, string(jsondbtb))
 		})
 	}
 }

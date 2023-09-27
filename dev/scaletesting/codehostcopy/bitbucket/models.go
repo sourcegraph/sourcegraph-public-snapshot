@@ -1,35 +1,35 @@
-package bitbucket
+pbckbge bitbucket
 
 import "encoding/json"
 
-type PagedResp struct {
-	Start         int               `json:"start"`
+type PbgedResp struct {
+	Stbrt         int               `json:"stbrt"`
 	Size          int               `json:"size"`
 	Limit         int               `json:"Limit"`
-	IsLastPage    bool              `json:"isLastPage,omitempty"`
-	NextPageStart int               `json:"nextPageStart,omitempty"`
-	Values        []json.RawMessage `json:"values"`
+	IsLbstPbge    bool              `json:"isLbstPbge,omitempty"`
+	NextPbgeStbrt int               `json:"nextPbgeStbrt,omitempty"`
+	Vblues        []json.RbwMessbge `json:"vblues"`
 }
 
 type Href struct {
 	Url  string `json:"href"`
-	Name string `json:"name,omitempty"`
+	Nbme string `json:"nbme,omitempty"`
 }
 
 type Repo struct {
 	Id      int               `json:"id"`
-	Links   map[string][]Href `json:"links"`
-	Name    string            `json:"name"`
+	Links   mbp[string][]Href `json:"links"`
+	Nbme    string            `json:"nbme"`
 	Project Project           `json:"project"`
 	ScmId   string            `json:"scmId"`
 	Slug    string            `json:"slug"`
-	State   string            `json:"state"`
+	Stbte   string            `json:"stbte"`
 }
 
 type Project struct {
 	Key    string `json:"key"`
 	Id     int64  `json:"id"`
-	Name   string `json:"name"`
+	Nbme   string `json:"nbme"`
 	Public bool   `json:"bool"`
 	Type   string `json:"type"`
 }
@@ -37,7 +37,7 @@ type Project struct {
 type User struct{}
 type Group struct{}
 
-type State struct {
+type Stbte struct {
 	Users    []User    `json:"users"`
 	Groups   []Group   `json:"groups"`
 	Repos    []Repo    `json:"repos"`

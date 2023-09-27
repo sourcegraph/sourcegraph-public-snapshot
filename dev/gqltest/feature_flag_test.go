@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
@@ -6,373 +6,373 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFeatureFlags(t *testing.T) {
-	const featureFlagOverrideFragment = `fragment FeatureFlagOverrideData on FeatureFlagOverride {
+func TestFebtureFlbgs(t *testing.T) {
+	const febtureFlbgOverrideFrbgment = `frbgment FebtureFlbgOverrideDbtb on FebtureFlbgOverride {
 		id
-		namespace {
+		nbmespbce {
 			id
 		}
-		targetFlag {
-			...on FeatureFlagBoolean {
-				name
+		tbrgetFlbg {
+			...on FebtureFlbgBoolebn {
+				nbme
 			}
-			...on FeatureFlagRollout{
-				name
+			...on FebtureFlbgRollout{
+				nbme
 			}
 		}
-		value
+		vblue
 	}`
 
-	type featureFlagOverrideResult struct {
+	type febtureFlbgOverrideResult struct {
 		ID        string
-		Namespace struct {
+		Nbmespbce struct {
 			ID string
 		}
-		TargetFlag struct {
-			Name string
+		TbrgetFlbg struct {
+			Nbme string
 		}
-		Value bool
+		Vblue bool
 	}
 
-	const featureFlagFragment = `fragment FeatureFlagData on FeatureFlag {
-		...on FeatureFlagBoolean{
-		  name
-		  value
+	const febtureFlbgFrbgment = `frbgment FebtureFlbgDbtb on FebtureFlbg {
+		...on FebtureFlbgBoolebn{
+		  nbme
+		  vblue
 		  overrides {
-			...FeatureFlagOverrideData
+			...FebtureFlbgOverrideDbtb
 		  }
 		}
-		...on FeatureFlagRollout {
-		  name
-		  rolloutBasisPoints
+		...on FebtureFlbgRollout {
+		  nbme
+		  rolloutBbsisPoints
 		  overrides {
-			...FeatureFlagOverrideData
+			...FebtureFlbgOverrideDbtb
 		  }
 		}
 	}`
 
-	type featureFlagResult struct {
-		Name               string
-		Value              *bool
-		RolloutBasisPoints *int
-		Overrides          []featureFlagOverrideResult
+	type febtureFlbgResult struct {
+		Nbme               string
+		Vblue              *bool
+		RolloutBbsisPoints *int
+		Overrides          []febtureFlbgOverrideResult
 	}
 
-	createFeatureFlag := func(name string, value *bool, rolloutBasisPoints *int) (featureFlagResult, error) {
-		m := featureFlagFragment + featureFlagOverrideFragment + `
-		mutation CreateFeatureFlag($name: String!, $value: Boolean, $rollout: Int) {
-			createFeatureFlag(
-				name: $name,
-				value: $value,
-				rolloutBasisPoints: $rollout,
+	crebteFebtureFlbg := func(nbme string, vblue *bool, rolloutBbsisPoints *int) (febtureFlbgResult, error) {
+		m := febtureFlbgFrbgment + febtureFlbgOverrideFrbgment + `
+		mutbtion CrebteFebtureFlbg($nbme: String!, $vblue: Boolebn, $rollout: Int) {
+			crebteFebtureFlbg(
+				nbme: $nbme,
+				vblue: $vblue,
+				rolloutBbsisPoints: $rollout,
 			) {
-				...FeatureFlagData
+				...FebtureFlbgDbtb
 			}
 		}`
 
-		var res struct {
-			Data struct {
-				CreateFeatureFlag featureFlagResult
+		vbr res struct {
+			Dbtb struct {
+				CrebteFebtureFlbg febtureFlbgResult
 			}
 		}
-		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
-		err := client.GraphQL("", m, params, &res)
-		return res.Data.CreateFeatureFlag, err
+		pbrbms := mbp[string]bny{"nbme": nbme, "vblue": vblue, "rollout": rolloutBbsisPoints}
+		err := client.GrbphQL("", m, pbrbms, &res)
+		return res.Dbtb.CrebteFebtureFlbg, err
 	}
 
-	updateFeatureFlag := func(name string, value *bool, rolloutBasisPoints *int) (featureFlagResult, error) {
-		m := featureFlagFragment + featureFlagOverrideFragment + `
-		mutation UpdateFeatureFlag($name: String!, $value: Boolean, $rollout: Int) {
-			updateFeatureFlag(
-				name: $name,
-				value: $value,
-				rolloutBasisPoints: $rollout
+	updbteFebtureFlbg := func(nbme string, vblue *bool, rolloutBbsisPoints *int) (febtureFlbgResult, error) {
+		m := febtureFlbgFrbgment + febtureFlbgOverrideFrbgment + `
+		mutbtion UpdbteFebtureFlbg($nbme: String!, $vblue: Boolebn, $rollout: Int) {
+			updbteFebtureFlbg(
+				nbme: $nbme,
+				vblue: $vblue,
+				rolloutBbsisPoints: $rollout
 			) {
-				...FeatureFlagData
+				...FebtureFlbgDbtb
 			}
 		}`
 
-		var res struct {
-			Data struct {
-				UpdateFeatureFlag featureFlagResult
+		vbr res struct {
+			Dbtb struct {
+				UpdbteFebtureFlbg febtureFlbgResult
 			}
 		}
-		params := map[string]any{"name": name, "value": value, "rollout": rolloutBasisPoints}
-		err := client.GraphQL("", m, params, &res)
-		return res.Data.UpdateFeatureFlag, err
+		pbrbms := mbp[string]bny{"nbme": nbme, "vblue": vblue, "rollout": rolloutBbsisPoints}
+		err := client.GrbphQL("", m, pbrbms, &res)
+		return res.Dbtb.UpdbteFebtureFlbg, err
 	}
 
-	deleteFeatureFlag := func(name string) error {
-		m := `mutation DeleteFeatureFlag($name: String!){
-			deleteFeatureFlag(
-				name: $name,
+	deleteFebtureFlbg := func(nbme string) error {
+		m := `mutbtion DeleteFebtureFlbg($nbme: String!){
+			deleteFebtureFlbg(
+				nbme: $nbme,
 			) {
-				alwaysNil
+				blwbysNil
 			}
 		}`
-		params := map[string]any{"name": name}
-		return client.GraphQL("", m, params, nil)
+		pbrbms := mbp[string]bny{"nbme": nbme}
+		return client.GrbphQL("", m, pbrbms, nil)
 	}
 
-	listFeatureFlags := func() ([]featureFlagResult, error) {
-		m := featureFlagFragment + featureFlagOverrideFragment + `
-		query ListFeatureFlags{
-			featureFlags{
-				...FeatureFlagData
+	listFebtureFlbgs := func() ([]febtureFlbgResult, error) {
+		m := febtureFlbgFrbgment + febtureFlbgOverrideFrbgment + `
+		query ListFebtureFlbgs{
+			febtureFlbgs{
+				...FebtureFlbgDbtb
 			}
 		}`
 
-		var res struct {
-			Data struct {
-				FeatureFlags []featureFlagResult
+		vbr res struct {
+			Dbtb struct {
+				FebtureFlbgs []febtureFlbgResult
 			}
 		}
-		err := client.GraphQL("", m, nil, &res)
-		return res.Data.FeatureFlags, err
+		err := client.GrbphQL("", m, nil, &res)
+		return res.Dbtb.FebtureFlbgs, err
 	}
 
-	// NOTE: these tests are intended to run in order, and not in parallel.
-	// The orders matter for create, update, delete, list.
+	// NOTE: these tests bre intended to run in order, bnd not in pbrbllel.
+	// The orders mbtter for crebte, updbte, delete, list.
 
-	t.Run("Create", func(t *testing.T) {
+	t.Run("Crebte", func(t *testing.T) {
 		t.Run("Concrete", func(t *testing.T) {
 			boolTrue := true
-			res, err := createFeatureFlag("test_concrete", &boolTrue, nil)
+			res, err := crebteFebtureFlbg("test_concrete", &boolTrue, nil)
 			require.NoError(t, err)
 
-			expected := featureFlagResult{
-				Name:      "test_concrete",
-				Value:     &boolTrue,
-				Overrides: []featureFlagOverrideResult{},
+			expected := febtureFlbgResult{
+				Nbme:      "test_concrete",
+				Vblue:     &boolTrue,
+				Overrides: []febtureFlbgOverrideResult{},
 			}
-			require.Equal(t, expected, res)
+			require.Equbl(t, expected, res)
 		})
 
 		t.Run("Rollout", func(t *testing.T) {
 			int343 := 343
-			res, err := createFeatureFlag("test_rollout", nil, &int343)
+			res, err := crebteFebtureFlbg("test_rollout", nil, &int343)
 			require.NoError(t, err)
 
-			expected := featureFlagResult{
-				Name:               "test_rollout",
-				RolloutBasisPoints: &int343,
-				Overrides:          []featureFlagOverrideResult{},
+			expected := febtureFlbgResult{
+				Nbme:               "test_rollout",
+				RolloutBbsisPoints: &int343,
+				Overrides:          []febtureFlbgOverrideResult{},
 			}
-			require.Equal(t, expected, res)
+			require.Equbl(t, expected, res)
 		})
 
-		t.Run("BadArgsError", func(t *testing.T) {
+		t.Run("BbdArgsError", func(t *testing.T) {
 			int343 := 343
 			boolTrue := true
-			_, err := createFeatureFlag("test_rollout", &boolTrue, &int343)
+			_, err := crebteFebtureFlbg("test_rollout", &boolTrue, &int343)
 			require.Error(t, err)
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
+	t.Run("Updbte", func(t *testing.T) {
 		t.Run("Concrete", func(t *testing.T) {
-			boolFalse := false
-			res, err := updateFeatureFlag("test_concrete", &boolFalse, nil)
+			boolFblse := fblse
+			res, err := updbteFebtureFlbg("test_concrete", &boolFblse, nil)
 			require.NoError(t, err)
 
-			expected := featureFlagResult{
-				Name:      "test_concrete",
-				Value:     &boolFalse,
-				Overrides: []featureFlagOverrideResult{},
+			expected := febtureFlbgResult{
+				Nbme:      "test_concrete",
+				Vblue:     &boolFblse,
+				Overrides: []febtureFlbgOverrideResult{},
 			}
-			require.Equal(t, expected, res)
+			require.Equbl(t, expected, res)
 		})
 
 		t.Run("Rollout", func(t *testing.T) {
 			int344 := 344
-			res, err := updateFeatureFlag("test_rollout", nil, &int344)
+			res, err := updbteFebtureFlbg("test_rollout", nil, &int344)
 			require.NoError(t, err)
 
-			expected := featureFlagResult{
-				Name:               "test_rollout",
-				RolloutBasisPoints: &int344,
-				Overrides:          []featureFlagOverrideResult{},
+			expected := febtureFlbgResult{
+				Nbme:               "test_rollout",
+				RolloutBbsisPoints: &int344,
+				Overrides:          []febtureFlbgOverrideResult{},
 			}
-			require.Equal(t, expected, res)
+			require.Equbl(t, expected, res)
 		})
 
-		t.Run("NonextantError", func(t *testing.T) {
+		t.Run("NonextbntError", func(t *testing.T) {
 			int344 := 344
-			_, err := updateFeatureFlag("test_nonextant", nil, &int344)
+			_, err := updbteFebtureFlbg("test_nonextbnt", nil, &int344)
 			require.Error(t, err)
 		})
 	})
 
 	t.Run("Delete", func(t *testing.T) {
 		t.Run("Concrete", func(t *testing.T) {
-			err := deleteFeatureFlag("test_concrete")
+			err := deleteFebtureFlbg("test_concrete")
 			require.NoError(t, err)
 		})
 
 		t.Run("Rollout", func(t *testing.T) {
-			err := deleteFeatureFlag("test_rollout")
+			err := deleteFebtureFlbg("test_rollout")
 			require.NoError(t, err)
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
 		t.Run("None", func(t *testing.T) {
-			res, err := listFeatureFlags()
+			res, err := listFebtureFlbgs()
 			require.NoError(t, err)
 			require.Len(t, res, 0)
 		})
 
 		t.Run("Some", func(t *testing.T) {
-			// Create a feature flag first
+			// Crebte b febture flbg first
 			boolTrue := true
-			_, err := createFeatureFlag("test_concrete", &boolTrue, nil)
+			_, err := crebteFebtureFlbg("test_concrete", &boolTrue, nil)
 			require.NoError(t, err)
-			t.Cleanup(func() {
-				err := deleteFeatureFlag("test_concrete")
+			t.Clebnup(func() {
+				err := deleteFebtureFlbg("test_concrete")
 				require.NoError(t, err)
 			})
 
 			// Then see if it shows up when we list it
-			res, err := listFeatureFlags()
+			res, err := listFebtureFlbgs()
 			require.NoError(t, err)
 
-			expected := []featureFlagResult{{
-				Name:      "test_concrete",
-				Value:     &boolTrue,
-				Overrides: []featureFlagOverrideResult{},
+			expected := []febtureFlbgResult{{
+				Nbme:      "test_concrete",
+				Vblue:     &boolTrue,
+				Overrides: []febtureFlbgOverrideResult{},
 			}}
-			require.Equal(t, res, expected)
+			require.Equbl(t, res, expected)
 		})
 	})
 
-	createOverride := func(namespace string, flagName string, value bool) (featureFlagOverrideResult, error) {
-		m := featureFlagOverrideFragment + `
-		mutation CreateFeatureFlagOverride($namespace: ID!, $flagName: String!, $value: Boolean!) {
-			createFeatureFlagOverride(
-				namespace: $namespace,
-				flagName: $flagName,
-				value: $value,
+	crebteOverride := func(nbmespbce string, flbgNbme string, vblue bool) (febtureFlbgOverrideResult, error) {
+		m := febtureFlbgOverrideFrbgment + `
+		mutbtion CrebteFebtureFlbgOverride($nbmespbce: ID!, $flbgNbme: String!, $vblue: Boolebn!) {
+			crebteFebtureFlbgOverride(
+				nbmespbce: $nbmespbce,
+				flbgNbme: $flbgNbme,
+				vblue: $vblue,
 			) {
-				...FeatureFlagOverrideData
+				...FebtureFlbgOverrideDbtb
 			}
 		}`
 
-		var res struct {
-			Data struct {
-				CreateFeatureFlagOverride featureFlagOverrideResult
+		vbr res struct {
+			Dbtb struct {
+				CrebteFebtureFlbgOverride febtureFlbgOverrideResult
 			}
 		}
-		params := map[string]any{"namespace": namespace, "flagName": flagName, "value": value}
-		err := client.GraphQL("", m, params, &res)
-		return res.Data.CreateFeatureFlagOverride, err
+		pbrbms := mbp[string]bny{"nbmespbce": nbmespbce, "flbgNbme": flbgNbme, "vblue": vblue}
+		err := client.GrbphQL("", m, pbrbms, &res)
+		return res.Dbtb.CrebteFebtureFlbgOverride, err
 	}
 
-	updateOverride := func(id string, value bool) (featureFlagOverrideResult, error) {
-		m := featureFlagOverrideFragment + `
-		mutation UpdateFeatureFlagOverride($id: ID!, $value: Boolean!) {
-			updateFeatureFlagOverride(
+	updbteOverride := func(id string, vblue bool) (febtureFlbgOverrideResult, error) {
+		m := febtureFlbgOverrideFrbgment + `
+		mutbtion UpdbteFebtureFlbgOverride($id: ID!, $vblue: Boolebn!) {
+			updbteFebtureFlbgOverride(
 				id: $id,
-				value: $value,
+				vblue: $vblue,
 			) {
-				...FeatureFlagOverrideData
+				...FebtureFlbgOverrideDbtb
 			}
 		}`
 
-		var res struct {
-			Data struct {
-				UpdateFeatureFlagOverride featureFlagOverrideResult
+		vbr res struct {
+			Dbtb struct {
+				UpdbteFebtureFlbgOverride febtureFlbgOverrideResult
 			}
 		}
-		params := map[string]any{"id": id, "value": value}
-		err := client.GraphQL("", m, params, &res)
-		return res.Data.UpdateFeatureFlagOverride, err
+		pbrbms := mbp[string]bny{"id": id, "vblue": vblue}
+		err := client.GrbphQL("", m, pbrbms, &res)
+		return res.Dbtb.UpdbteFebtureFlbgOverride, err
 	}
 
 	deleteOverride := func(id string) error {
 		m := `
-		mutation DeleteFeatureFlagOverride($id: ID!) {
-			deleteFeatureFlagOverride(
+		mutbtion DeleteFebtureFlbgOverride($id: ID!) {
+			deleteFebtureFlbgOverride(
 				id: $id,
 			) {
-				alwaysNil
+				blwbysNil
 			}
 		}`
 
-		params := map[string]any{"id": id}
-		return client.GraphQL("", m, params, nil)
+		pbrbms := mbp[string]bny{"id": id}
+		return client.GrbphQL("", m, pbrbms, nil)
 	}
 
 	t.Run("Overrides", func(t *testing.T) {
-		orgID, err := client.CreateOrganization("testoverrides", "test")
+		orgID, err := client.CrebteOrgbnizbtion("testoverrides", "test")
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			client.DeleteOrganization(orgID)
+		t.Clebnup(func() {
+			client.DeleteOrgbnizbtion(orgID)
 		})
 
-		userID, err := client.CreateUser("testuseroverrides", "test@override.com")
+		userID, err := client.CrebteUser("testuseroverrides", "test@override.com")
 		require.NoError(t, err)
 		removeTestUserAfterTest(t, userID)
 
 		boolTrue := true
-		flag, err := createFeatureFlag("test_override", &boolTrue, nil)
+		flbg, err := crebteFebtureFlbg("test_override", &boolTrue, nil)
 		require.NoError(t, err)
-		t.Cleanup(func() {
-			deleteFeatureFlag("test_override")
+		t.Clebnup(func() {
+			deleteFebtureFlbg("test_override")
 		})
 
 		overrideT := t
-		t.Run("Create", func(t *testing.T) {
+		t.Run("Crebte", func(t *testing.T) {
 			t.Run("OrgOverride", func(t *testing.T) {
-				res, err := createOverride(orgID, flag.Name, false)
+				res, err := crebteOverride(orgID, flbg.Nbme, fblse)
 				require.NoError(t, err)
-				overrideT.Cleanup(func() {
+				overrideT.Clebnup(func() {
 					deleteOverride(res.ID)
 				})
 
-				require.Equal(t, res.Namespace.ID, orgID)
-				require.Equal(t, res.TargetFlag.Name, flag.Name)
-				require.Equal(t, res.Value, false)
+				require.Equbl(t, res.Nbmespbce.ID, orgID)
+				require.Equbl(t, res.TbrgetFlbg.Nbme, flbg.Nbme)
+				require.Equbl(t, res.Vblue, fblse)
 
-				t.Run("Update", func(t *testing.T) {
-					updated, err := updateOverride(res.ID, true)
+				t.Run("Updbte", func(t *testing.T) {
+					updbted, err := updbteOverride(res.ID, true)
 					require.NoError(t, err)
-					require.Equal(t, updated.Value, true)
+					require.Equbl(t, updbted.Vblue, true)
 				})
 
 			})
 
 			t.Run("UserOverride", func(t *testing.T) {
-				res, err := createOverride(userID, flag.Name, false)
+				res, err := crebteOverride(userID, flbg.Nbme, fblse)
 				require.NoError(t, err)
-				overrideT.Cleanup(func() {
+				overrideT.Clebnup(func() {
 					deleteOverride(res.ID)
 				})
 
-				require.Equal(t, res.Namespace.ID, userID)
-				require.Equal(t, res.TargetFlag.Name, flag.Name)
-				require.Equal(t, res.Value, false)
+				require.Equbl(t, res.Nbmespbce.ID, userID)
+				require.Equbl(t, res.TbrgetFlbg.Nbme, flbg.Nbme)
+				require.Equbl(t, res.Vblue, fblse)
 			})
 
-			t.Run("NonextantFlag", func(t *testing.T) {
-				_, err = createOverride(orgID, "test_nonextant", true)
+			t.Run("NonextbntFlbg", func(t *testing.T) {
+				_, err = crebteOverride(orgID, "test_nonextbnt", true)
 				require.Error(t, err)
 			})
 
-			t.Run("NonextantUser", func(t *testing.T) {
-				userString := "nonextant"
-				_, err := createOverride(userString, "test_nonextant", true)
+			t.Run("NonextbntUser", func(t *testing.T) {
+				userString := "nonextbnt"
+				_, err := crebteOverride(userString, "test_nonextbnt", true)
 				require.Error(t, err)
 			})
 
-			t.Run("NonextantOrg", func(t *testing.T) {
-				orgID := "nonextant"
-				_, err := createOverride(orgID, "test_nonextant", true)
+			t.Run("NonextbntOrg", func(t *testing.T) {
+				orgID := "nonextbnt"
+				_, err := crebteOverride(orgID, "test_nonextbnt", true)
 				require.Error(t, err)
 			})
 		})
 
-		t.Run("ListFlagsIncludesOverride", func(t *testing.T) {
-			res, err := listFeatureFlags()
+		t.Run("ListFlbgsIncludesOverride", func(t *testing.T) {
+			res, err := listFebtureFlbgs()
 			require.NoError(t, err)
 
 			require.Len(t, res, 1)
@@ -380,12 +380,12 @@ func TestFeatureFlags(t *testing.T) {
 
 			o1 := res[0].Overrides[0]
 			o2 := res[0].Overrides[1]
-			require.Equal(t, o1.Namespace.ID, orgID)
-			require.Equal(t, o2.Namespace.ID, userID)
-			require.Equal(t, o1.TargetFlag.Name, "test_override")
-			require.Equal(t, o2.TargetFlag.Name, "test_override")
-			require.Equal(t, o1.Value, true)
-			require.Equal(t, o2.Value, false)
+			require.Equbl(t, o1.Nbmespbce.ID, orgID)
+			require.Equbl(t, o2.Nbmespbce.ID, userID)
+			require.Equbl(t, o1.TbrgetFlbg.Nbme, "test_override")
+			require.Equbl(t, o2.TbrgetFlbg.Nbme, "test_override")
+			require.Equbl(t, o1.Vblue, true)
+			require.Equbl(t, o2.Vblue, fblse)
 		})
 	})
 }

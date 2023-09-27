@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,43 +7,43 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
 )
 
-type batchSpecWorkspaceStepV1Resolver struct {
+type bbtchSpecWorkspbceStepV1Resolver struct {
 	store    *store.Store
-	repo     *graphqlbackend.RepositoryResolver
-	baseRev  string
+	repo     *grbphqlbbckend.RepositoryResolver
+	bbseRev  string
 	index    int
-	step     batcheslib.Step
+	step     bbtcheslib.Step
 	stepInfo *btypes.StepInfo
 
-	cachedResult *execution.AfterStepResult
+	cbchedResult *execution.AfterStepResult
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceStepResolver = &batchSpecWorkspaceStepV1Resolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceStepResolver = &bbtchSpecWorkspbceStepV1Resolver{}
 
-func (r *batchSpecWorkspaceStepV1Resolver) Number() int32 {
+func (r *bbtchSpecWorkspbceStepV1Resolver) Number() int32 {
 	return int32(r.index + 1)
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) Run() string {
+func (r *bbtchSpecWorkspbceStepV1Resolver) Run() string {
 	return r.step.Run
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) Container() string {
-	return r.step.Container
+func (r *bbtchSpecWorkspbceStepV1Resolver) Contbiner() string {
+	return r.step.Contbiner
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) IfCondition() *string {
+func (r *bbtchSpecWorkspbceStepV1Resolver) IfCondition() *string {
 	cond := r.step.IfCondition()
 	if cond == "" {
 		return nil
@@ -51,39 +51,39 @@ func (r *batchSpecWorkspaceStepV1Resolver) IfCondition() *string {
 	return &cond
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) CachedResultFound() bool {
-	return r.stepInfo.StartedAt.IsZero() && r.cachedResult != nil
+func (r *bbtchSpecWorkspbceStepV1Resolver) CbchedResultFound() bool {
+	return r.stepInfo.StbrtedAt.IsZero() && r.cbchedResult != nil
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) Skipped() bool {
-	return r.CachedResultFound() || r.stepInfo.Skipped
+func (r *bbtchSpecWorkspbceStepV1Resolver) Skipped() bool {
+	return r.CbchedResultFound() || r.stepInfo.Skipped
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
+func (r *bbtchSpecWorkspbceStepV1Resolver) OutputLines(ctx context.Context, brgs *grbphqlbbckend.BbtchSpecWorkspbceStepOutputLinesArgs) grbphqlbbckend.BbtchSpecWorkspbceStepOutputLineConnectionResolver {
 	lines := r.stepInfo.OutputLines
 
-	return &batchSpecWorkspaceOutputLinesResolver{
+	return &bbtchSpecWorkspbceOutputLinesResolver{
 		lines: lines,
-		first: args.First,
-		after: args.After,
+		first: brgs.First,
+		bfter: brgs.After,
 	}
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) StartedAt() *gqlutil.DateTime {
-	if r.stepInfo.StartedAt.IsZero() {
+func (r *bbtchSpecWorkspbceStepV1Resolver) StbrtedAt() *gqlutil.DbteTime {
+	if r.stepInfo.StbrtedAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.stepInfo.StartedAt}
+	return &gqlutil.DbteTime{Time: r.stepInfo.StbrtedAt}
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) FinishedAt() *gqlutil.DateTime {
+func (r *bbtchSpecWorkspbceStepV1Resolver) FinishedAt() *gqlutil.DbteTime {
 	if r.stepInfo.FinishedAt.IsZero() {
 		return nil
 	}
-	return &gqlutil.DateTime{Time: r.stepInfo.FinishedAt}
+	return &gqlutil.DbteTime{Time: r.stepInfo.FinishedAt}
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) ExitCode() *int32 {
+func (r *bbtchSpecWorkspbceStepV1Resolver) ExitCode() *int32 {
 	if r.stepInfo.ExitCode == nil {
 		return nil
 	}
@@ -91,87 +91,87 @@ func (r *batchSpecWorkspaceStepV1Resolver) ExitCode() *int32 {
 	return &code
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) Environment() ([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, error) {
-	// The environment is dependent on environment of the executor and template variables, that aren't
-	// known at the time when we resolve the workspace. If the step already started, src cli has logged
-	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
-	// resolve workspaces step.
+func (r *bbtchSpecWorkspbceStepV1Resolver) Environment() ([]grbphqlbbckend.BbtchSpecWorkspbceEnvironmentVbribbleResolver, error) {
+	// The environment is dependent on environment of the executor bnd templbte vbribbles, thbt bren't
+	// known bt the time when we resolve the workspbce. If the step blrebdy stbrted, src cli hbs logged
+	// the finbl env. Otherwise, we fbll bbck to the preliminbry set of env vbrs bs determined by the
+	// resolve workspbces step.
 
-	var env = r.stepInfo.Environment
+	vbr env = r.stepInfo.Environment
 
-	// Not yet resolved, do a server-side pass.
+	// Not yet resolved, do b server-side pbss.
 	if env == nil {
-		var err error
+		vbr err error
 		env, err = r.step.Env.Resolve([]string{})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	outer := r.step.Env.OuterVars()
-	outerMap := make(map[string]struct{})
-	for _, o := range outer {
-		outerMap[o] = struct{}{}
+	outer := r.step.Env.OuterVbrs()
+	outerMbp := mbke(mbp[string]struct{})
+	for _, o := rbnge outer {
+		outerMbp[o] = struct{}{}
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
-	for k, v := range env {
-		resolvers = append(resolvers, newBatchSpecWorkspaceEnvironmentVariableResolver(k, v, outerMap))
+	resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceEnvironmentVbribbleResolver, 0, len(env))
+	for k, v := rbnge env {
+		resolvers = bppend(resolvers, newBbtchSpecWorkspbceEnvironmentVbribbleResolver(k, v, outerMbp))
 	}
 	return resolvers, nil
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
-	if r.CachedResultFound() {
-		resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.cachedResult.Outputs))
-		for k, v := range r.cachedResult.Outputs {
-			resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+func (r *bbtchSpecWorkspbceStepV1Resolver) OutputVbribbles() *[]grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver {
+	if r.CbchedResultFound() {
+		resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver, 0, len(r.cbchedResult.Outputs))
+		for k, v := rbnge r.cbchedResult.Outputs {
+			resolvers = bppend(resolvers, &bbtchSpecWorkspbceOutputVbribbleResolver{key: k, vblue: v})
 		}
 		return &resolvers
 	}
 
-	if r.stepInfo.OutputVariables == nil {
+	if r.stepInfo.OutputVbribbles == nil {
 		return nil
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.stepInfo.OutputVariables))
-	for k, v := range r.stepInfo.OutputVariables {
-		resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+	resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver, 0, len(r.stepInfo.OutputVbribbles))
+	for k, v := rbnge r.stepInfo.OutputVbribbles {
+		resolvers = bppend(resolvers, &bbtchSpecWorkspbceOutputVbribbleResolver{key: k, vblue: v})
 	}
 	return &resolvers
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+func (r *bbtchSpecWorkspbceStepV1Resolver) DiffStbt(ctx context.Context) (*grbphqlbbckend.DiffStbt, error) {
 	diffRes, err := r.Diff(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if diffRes != nil {
-		fd, err := diffRes.FileDiffs(ctx, &graphqlbackend.FileDiffsConnectionArgs{})
+		fd, err := diffRes.FileDiffs(ctx, &grbphqlbbckend.FileDiffsConnectionArgs{})
 		if err != nil {
 			return nil, err
 		}
-		return fd.DiffStat(ctx)
+		return fd.DiffStbt(ctx)
 	}
 	return nil, nil
 }
 
-func (r *batchSpecWorkspaceStepV1Resolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	if r.CachedResultFound() {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
+func (r *bbtchSpecWorkspbceStepV1Resolver) Diff(ctx context.Context) (grbphqlbbckend.PreviewRepositoryCompbrisonResolver, error) {
+	if r.CbchedResultFound() {
+		return grbphqlbbckend.NewPreviewRepositoryCompbrisonResolver(ctx, r.store.DbtbbbseDB(), gitserver.NewClient(), r.repo, r.bbseRev, r.cbchedResult.Diff)
 	}
 	if r.stepInfo.DiffFound {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
+		return grbphqlbbckend.NewPreviewRepositoryCompbrisonResolver(ctx, r.store.DbtbbbseDB(), gitserver.NewClient(), r.repo, r.bbseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }
 
-type batchSpecWorkspaceStepV2Resolver struct {
+type bbtchSpecWorkspbceStepV2Resolver struct {
 	store   *store.Store
-	repo    *graphqlbackend.RepositoryResolver
-	baseRev string
+	repo    *grbphqlbbckend.RepositoryResolver
+	bbseRev string
 	index   int
-	step    batcheslib.Step
+	step    bbtcheslib.Step
 	skipped bool
 
 	logEntry      executor.ExecutionLogEntry
@@ -179,24 +179,24 @@ type batchSpecWorkspaceStepV2Resolver struct {
 
 	stepInfo *btypes.StepInfo
 
-	cachedResult *execution.AfterStepResult
+	cbchedResult *execution.AfterStepResult
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceStepResolver = &batchSpecWorkspaceStepV2Resolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceStepResolver = &bbtchSpecWorkspbceStepV2Resolver{}
 
-func (r *batchSpecWorkspaceStepV2Resolver) Number() int32 {
+func (r *bbtchSpecWorkspbceStepV2Resolver) Number() int32 {
 	return int32(r.index + 1)
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) Run() string {
+func (r *bbtchSpecWorkspbceStepV2Resolver) Run() string {
 	return r.step.Run
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) Container() string {
-	return r.step.Container
+func (r *bbtchSpecWorkspbceStepV2Resolver) Contbiner() string {
+	return r.step.Contbiner
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) IfCondition() *string {
+func (r *bbtchSpecWorkspbceStepV2Resolver) IfCondition() *string {
 	cond := r.step.IfCondition()
 	if cond == "" {
 		return nil
@@ -204,50 +204,50 @@ func (r *batchSpecWorkspaceStepV2Resolver) IfCondition() *string {
 	return &cond
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) CachedResultFound() bool {
-	return r.cachedResult != nil
+func (r *bbtchSpecWorkspbceStepV2Resolver) CbchedResultFound() bool {
+	return r.cbchedResult != nil
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) Skipped() bool {
-	return r.CachedResultFound() || r.skipped
+func (r *bbtchSpecWorkspbceStepV2Resolver) Skipped() bool {
+	return r.CbchedResultFound() || r.skipped
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) OutputLines(ctx context.Context, args *graphqlbackend.BatchSpecWorkspaceStepOutputLinesArgs) graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver {
+func (r *bbtchSpecWorkspbceStepV2Resolver) OutputLines(ctx context.Context, brgs *grbphqlbbckend.BbtchSpecWorkspbceStepOutputLinesArgs) grbphqlbbckend.BbtchSpecWorkspbceStepOutputLineConnectionResolver {
 	lines := []string{}
 	if r.logEntryFound {
 		lines = strings.Split(r.logEntry.Out, "\n")
 	}
 
-	return &batchSpecWorkspaceOutputLinesResolver{
+	return &bbtchSpecWorkspbceOutputLinesResolver{
 		lines: lines,
-		first: args.First,
-		after: args.After,
+		first: brgs.First,
+		bfter: brgs.After,
 	}
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) StartedAt() *gqlutil.DateTime {
+func (r *bbtchSpecWorkspbceStepV2Resolver) StbrtedAt() *gqlutil.DbteTime {
 	if !r.logEntryFound {
 		return nil
 	}
 
-	return &gqlutil.DateTime{Time: r.logEntry.StartTime}
+	return &gqlutil.DbteTime{Time: r.logEntry.StbrtTime}
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) FinishedAt() *gqlutil.DateTime {
+func (r *bbtchSpecWorkspbceStepV2Resolver) FinishedAt() *gqlutil.DbteTime {
 	if !r.logEntryFound {
 		return nil
 	}
 
-	if r.logEntry.DurationMs == nil {
+	if r.logEntry.DurbtionMs == nil {
 		return nil
 	}
 
-	finish := r.logEntry.StartTime.Add(time.Duration(*r.logEntry.DurationMs) * time.Millisecond)
+	finish := r.logEntry.StbrtTime.Add(time.Durbtion(*r.logEntry.DurbtionMs) * time.Millisecond)
 
-	return &gqlutil.DateTime{Time: finish}
+	return &gqlutil.DbteTime{Time: finish}
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) ExitCode() *int32 {
+func (r *bbtchSpecWorkspbceStepV2Resolver) ExitCode() *int32 {
 	if !r.logEntryFound {
 		return nil
 	}
@@ -259,76 +259,76 @@ func (r *batchSpecWorkspaceStepV2Resolver) ExitCode() *int32 {
 	return &i32
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) Environment() ([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, error) {
-	// The environment is dependent on environment of the executor and template variables, that aren't
-	// known at the time when we resolve the workspace. If the step already started, batcheshelper has logged
-	// the final env. Otherwise, we fall back to the preliminary set of env vars as determined by the
-	// resolve workspaces step.
+func (r *bbtchSpecWorkspbceStepV2Resolver) Environment() ([]grbphqlbbckend.BbtchSpecWorkspbceEnvironmentVbribbleResolver, error) {
+	// The environment is dependent on environment of the executor bnd templbte vbribbles, thbt bren't
+	// known bt the time when we resolve the workspbce. If the step blrebdy stbrted, bbtcheshelper hbs logged
+	// the finbl env. Otherwise, we fbll bbck to the preliminbry set of env vbrs bs determined by the
+	// resolve workspbces step.
 	if r.skipped {
 		return nil, nil
 	}
 
-	var env map[string]string
+	vbr env mbp[string]string
 
 	if r.stepInfo != nil {
 		env = r.stepInfo.Environment
 	}
 
-	// Not yet resolved, use the preliminary env vars.
+	// Not yet resolved, use the preliminbry env vbrs.
 	if env == nil {
-		var err error
+		vbr err error
 		env, err = r.step.Env.Resolve([]string{})
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	outer := r.step.Env.OuterVars()
-	outerMap := make(map[string]struct{})
-	for _, o := range outer {
-		outerMap[o] = struct{}{}
+	outer := r.step.Env.OuterVbrs()
+	outerMbp := mbke(mbp[string]struct{})
+	for _, o := rbnge outer {
+		outerMbp[o] = struct{}{}
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver, 0, len(env))
-	for k, v := range env {
-		resolvers = append(resolvers, newBatchSpecWorkspaceEnvironmentVariableResolver(k, v, outerMap))
+	resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceEnvironmentVbribbleResolver, 0, len(env))
+	for k, v := rbnge env {
+		resolvers = bppend(resolvers, newBbtchSpecWorkspbceEnvironmentVbribbleResolver(k, v, outerMbp))
 	}
 	return resolvers, nil
 }
 
-func newBatchSpecWorkspaceEnvironmentVariableResolver(key, value string, outerMap map[string]struct{}) graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver {
-	var val *string
-	if _, ok := outerMap[key]; !ok {
-		val = &value
+func newBbtchSpecWorkspbceEnvironmentVbribbleResolver(key, vblue string, outerMbp mbp[string]struct{}) grbphqlbbckend.BbtchSpecWorkspbceEnvironmentVbribbleResolver {
+	vbr vbl *string
+	if _, ok := outerMbp[key]; !ok {
+		vbl = &vblue
 	}
-	return &batchSpecWorkspaceEnvironmentVariableResolver{key: key, value: val}
+	return &bbtchSpecWorkspbceEnvironmentVbribbleResolver{key: key, vblue: vbl}
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) OutputVariables() *[]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver {
-	// If a cached result was found previously, or one was generated for this step, we can
-	// use it to read the rendered output variables.
-	// TODO: Should we return the underendered variables before the cached result is
-	// available like we do with env vars?
-	if r.CachedResultFound() {
-		resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.cachedResult.Outputs))
-		for k, v := range r.cachedResult.Outputs {
-			resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+func (r *bbtchSpecWorkspbceStepV2Resolver) OutputVbribbles() *[]grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver {
+	// If b cbched result wbs found previously, or one wbs generbted for this step, we cbn
+	// use it to rebd the rendered output vbribbles.
+	// TODO: Should we return the underendered vbribbles before the cbched result is
+	// bvbilbble like we do with env vbrs?
+	if r.CbchedResultFound() {
+		resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver, 0, len(r.cbchedResult.Outputs))
+		for k, v := rbnge r.cbchedResult.Outputs {
+			resolvers = bppend(resolvers, &bbtchSpecWorkspbceOutputVbribbleResolver{key: k, vblue: v})
 		}
 		return &resolvers
 	}
 
-	if r.stepInfo == nil || r.stepInfo.OutputVariables == nil {
+	if r.stepInfo == nil || r.stepInfo.OutputVbribbles == nil {
 		return nil
 	}
 
-	resolvers := make([]graphqlbackend.BatchSpecWorkspaceOutputVariableResolver, 0, len(r.stepInfo.OutputVariables))
-	for k, v := range r.stepInfo.OutputVariables {
-		resolvers = append(resolvers, &batchSpecWorkspaceOutputVariableResolver{key: k, value: v})
+	resolvers := mbke([]grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver, 0, len(r.stepInfo.OutputVbribbles))
+	for k, v := rbnge r.stepInfo.OutputVbribbles {
+		resolvers = bppend(resolvers, &bbtchSpecWorkspbceOutputVbribbleResolver{key: k, vblue: v})
 	}
 	return &resolvers
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
+func (r *bbtchSpecWorkspbceStepV2Resolver) DiffStbt(ctx context.Context) (*grbphqlbbckend.DiffStbt, error) {
 	diffRes, err := r.Diff(ctx)
 	if err != nil {
 		return nil, err
@@ -337,114 +337,114 @@ func (r *batchSpecWorkspaceStepV2Resolver) DiffStat(ctx context.Context) (*graph
 		return nil, nil
 	}
 
-	fd, err := diffRes.FileDiffs(ctx, &graphqlbackend.FileDiffsConnectionArgs{})
+	fd, err := diffRes.FileDiffs(ctx, &grbphqlbbckend.FileDiffsConnectionArgs{})
 	if err != nil {
 		return nil, err
 	}
-	return fd.DiffStat(ctx)
+	return fd.DiffStbt(ctx)
 }
 
-func (r *batchSpecWorkspaceStepV2Resolver) Diff(ctx context.Context) (graphqlbackend.PreviewRepositoryComparisonResolver, error) {
-	// If a cached result was found previously, or one was generated for this step, we can
-	// use it to return a comparison resolver.
-	if r.cachedResult != nil {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.cachedResult.Diff)
+func (r *bbtchSpecWorkspbceStepV2Resolver) Diff(ctx context.Context) (grbphqlbbckend.PreviewRepositoryCompbrisonResolver, error) {
+	// If b cbched result wbs found previously, or one wbs generbted for this step, we cbn
+	// use it to return b compbrison resolver.
+	if r.cbchedResult != nil {
+		return grbphqlbbckend.NewPreviewRepositoryCompbrisonResolver(ctx, r.store.DbtbbbseDB(), gitserver.NewClient(), r.repo, r.bbseRev, r.cbchedResult.Diff)
 	}
 	if r.stepInfo != nil && r.stepInfo.DiffFound {
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(ctx, r.store.DatabaseDB(), gitserver.NewClient(), r.repo, r.baseRev, r.stepInfo.Diff)
+		return grbphqlbbckend.NewPreviewRepositoryCompbrisonResolver(ctx, r.store.DbtbbbseDB(), gitserver.NewClient(), r.repo, r.bbseRev, r.stepInfo.Diff)
 	}
 	return nil, nil
 }
 
-type batchSpecWorkspaceEnvironmentVariableResolver struct {
+type bbtchSpecWorkspbceEnvironmentVbribbleResolver struct {
 	key   string
-	value *string
+	vblue *string
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceEnvironmentVariableResolver = &batchSpecWorkspaceEnvironmentVariableResolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceEnvironmentVbribbleResolver = &bbtchSpecWorkspbceEnvironmentVbribbleResolver{}
 
-func (r *batchSpecWorkspaceEnvironmentVariableResolver) Name() string {
+func (r *bbtchSpecWorkspbceEnvironmentVbribbleResolver) Nbme() string {
 	return r.key
 }
-func (r *batchSpecWorkspaceEnvironmentVariableResolver) Value() *string {
-	return r.value
+func (r *bbtchSpecWorkspbceEnvironmentVbribbleResolver) Vblue() *string {
+	return r.vblue
 }
 
-type batchSpecWorkspaceOutputVariableResolver struct {
+type bbtchSpecWorkspbceOutputVbribbleResolver struct {
 	key   string
-	value any
+	vblue bny
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceOutputVariableResolver = &batchSpecWorkspaceOutputVariableResolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceOutputVbribbleResolver = &bbtchSpecWorkspbceOutputVbribbleResolver{}
 
-func (r *batchSpecWorkspaceOutputVariableResolver) Name() string {
+func (r *bbtchSpecWorkspbceOutputVbribbleResolver) Nbme() string {
 	return r.key
 }
-func (r *batchSpecWorkspaceOutputVariableResolver) Value() graphqlbackend.JSONValue {
-	return graphqlbackend.JSONValue{Value: r.value}
+func (r *bbtchSpecWorkspbceOutputVbribbleResolver) Vblue() grbphqlbbckend.JSONVblue {
+	return grbphqlbbckend.JSONVblue{Vblue: r.vblue}
 }
 
-type batchSpecWorkspaceOutputLinesResolver struct {
+type bbtchSpecWorkspbceOutputLinesResolver struct {
 	lines []string
 	first int32
-	after *string
+	bfter *string
 
 	once        sync.Once
 	err         error
-	total       int32
+	totbl       int32
 	linesSubset []string
-	hasNextPage bool
+	hbsNextPbge bool
 	endCursor   int32
 }
 
-var _ graphqlbackend.BatchSpecWorkspaceStepOutputLineConnectionResolver = &batchSpecWorkspaceOutputLinesResolver{}
+vbr _ grbphqlbbckend.BbtchSpecWorkspbceStepOutputLineConnectionResolver = &bbtchSpecWorkspbceOutputLinesResolver{}
 
-func (r *batchSpecWorkspaceOutputLinesResolver) compute() ([]string, int32, bool) {
+func (r *bbtchSpecWorkspbceOutputLinesResolver) compute() ([]string, int32, bool) {
 	r.once.Do(func() {
-		totalLines := len(r.lines)
-		r.total = int32(totalLines)
+		totblLines := len(r.lines)
+		r.totbl = int32(totblLines)
 
-		var after int32
-		if r.after != nil {
-			a, err := strconv.Atoi(*r.after)
+		vbr bfter int32
+		if r.bfter != nil {
+			b, err := strconv.Atoi(*r.bfter)
 			if err != nil {
 				r.err = err
 				return
 			}
-			after = int32(a)
+			bfter = int32(b)
 		}
 
-		offset := (after + r.first)
+		offset := (bfter + r.first)
 
-		if after < r.total {
-			r.linesSubset = r.lines[after:]
+		if bfter < r.totbl {
+			r.linesSubset = r.lines[bfter:]
 		}
 
-		if int(r.first) < len(r.lines) && r.total > offset {
+		if int(r.first) < len(r.lines) && r.totbl > offset {
 			r.linesSubset = r.linesSubset[:r.first]
 		}
-		r.hasNextPage = r.total > offset
-		if r.hasNextPage {
+		r.hbsNextPbge = r.totbl > offset
+		if r.hbsNextPbge {
 			r.endCursor = offset
 		}
 	})
-	return r.linesSubset, r.total, r.hasNextPage
+	return r.linesSubset, r.totbl, r.hbsNextPbge
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) TotalCount() (int32, error) {
-	_, totalCount, _ := r.compute()
-	return totalCount, r.err
+func (r *bbtchSpecWorkspbceOutputLinesResolver) TotblCount() (int32, error) {
+	_, totblCount, _ := r.compute()
+	return totblCount, r.err
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) PageInfo() (*graphqlutil.PageInfo, error) {
-	_, _, hasNextPage := r.compute()
-	if hasNextPage {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(r.endCursor))), r.err
+func (r *bbtchSpecWorkspbceOutputLinesResolver) PbgeInfo() (*grbphqlutil.PbgeInfo, error) {
+	_, _, hbsNextPbge := r.compute()
+	if hbsNextPbge {
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(int(r.endCursor))), r.err
 	}
-	return graphqlutil.HasNextPage(hasNextPage), r.err
+	return grbphqlutil.HbsNextPbge(hbsNextPbge), r.err
 }
 
-func (r *batchSpecWorkspaceOutputLinesResolver) Nodes() ([]string, error) {
+func (r *bbtchSpecWorkspbceOutputLinesResolver) Nodes() ([]string, error) {
 	lines, _, _ := r.compute()
 	return lines, r.err
 }

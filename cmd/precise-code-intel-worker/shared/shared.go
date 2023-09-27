@@ -1,126 +1,126 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"net/http"
 	"time"
 
-	smithyhttp "github.com/aws/smithy-go/transport/http"
-	"github.com/sourcegraph/log"
+	smithyhttp "github.com/bws/smithy-go/trbnsport/http"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
-	srp "github.com/sourcegraph/sourcegraph/internal/authz/subrepoperms"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/uploadstore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers"
+	srp "github.com/sourcegrbph/sourcegrbph/internbl/buthz/subrepoperms"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/lsifuplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/uplobdstore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const addr = ":3188"
+const bddr = ":3188"
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config Config) error {
-	logger := observationCtx.Logger
+func Mbin(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config Config) error {
+	logger := observbtionCtx.Logger
 
-	// Initialize tracing/metrics
-	observationCtx = observation.NewContext(logger, observation.Honeycomb(&honey.Dataset{
-		Name: "codeintel-worker",
+	// Initiblize trbcing/metrics
+	observbtionCtx = observbtion.NewContext(logger, observbtion.Honeycomb(&honey.Dbtbset{
+		Nbme: "codeintel-worker",
 	}))
 
 	if err := keyring.Init(ctx); err != nil {
-		return errors.Wrap(err, "initializing keyring")
+		return errors.Wrbp(err, "initiblizing keyring")
 	}
 
-	// Connect to databases
-	db := database.NewDB(logger, mustInitializeDB(observationCtx))
-	codeIntelDB := mustInitializeCodeIntelDB(observationCtx)
+	// Connect to dbtbbbses
+	db := dbtbbbse.NewDB(logger, mustInitiblizeDB(observbtionCtx))
+	codeIntelDB := mustInitiblizeCodeIntelDB(observbtionCtx)
 
-	// Migrations may take a while, but after they're done we'll immediately
-	// spin up a server and can accept traffic. Inform external clients we'll
-	// be ready for traffic.
-	ready()
+	// Migrbtions mby tbke b while, but bfter they're done we'll immedibtely
+	// spin up b server bnd cbn bccept trbffic. Inform externbl clients we'll
+	// be rebdy for trbffic.
+	rebdy()
 
-	// Initialize sub-repo permissions client
-	var err error
-	authz.DefaultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
+	// Initiblize sub-repo permissions client
+	vbr err error
+	buthz.DefbultSubRepoPermsChecker, err = srp.NewSubRepoPermsClient(db.SubRepoPerms())
 	if err != nil {
-		return errors.Wrap(err, "creating sub-repo client")
+		return errors.Wrbp(err, "crebting sub-repo client")
 	}
 
 	services, err := codeintel.NewServices(codeintel.ServiceDependencies{
 		DB:             db,
 		CodeIntelDB:    codeIntelDB,
-		ObservationCtx: observationCtx,
+		ObservbtionCtx: observbtionCtx,
 	})
 	if err != nil {
-		return errors.Wrap(err, "creating codeintel services")
+		return errors.Wrbp(err, "crebting codeintel services")
 	}
 
-	// Initialize stores
-	uploadStore, err := lsifuploadstore.New(ctx, observationCtx, config.LSIFUploadStoreConfig)
+	// Initiblize stores
+	uplobdStore, err := lsifuplobdstore.New(ctx, observbtionCtx, config.LSIFUplobdStoreConfig)
 	if err != nil {
-		return errors.Wrap(err, "creating upload store")
+		return errors.Wrbp(err, "crebting uplobd store")
 	}
-	if err := initializeUploadStore(ctx, uploadStore); err != nil {
-		return errors.Wrap(err, "initializing upload store")
+	if err := initiblizeUplobdStore(ctx, uplobdStore); err != nil {
+		return errors.Wrbp(err, "initiblizing uplobd store")
 	}
 
-	// Initialize worker
-	worker := uploads.NewUploadProcessorJob(
-		observationCtx,
-		services.UploadsService,
+	// Initiblize worker
+	worker := uplobds.NewUplobdProcessorJob(
+		observbtionCtx,
+		services.UplobdsService,
 		db,
-		uploadStore,
+		uplobdStore,
 		config.WorkerConcurrency,
 		config.WorkerBudget,
-		config.WorkerPollInterval,
-		config.MaximumRuntimePerJob,
+		config.WorkerPollIntervbl,
+		config.MbximumRuntimePerJob,
 	)
 
-	// Initialize health server
-	server := httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
+	// Initiblize heblth server
+	server := httpserver.NewFromAddr(bddr, &http.Server{
+		RebdTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      httpserver.NewHandler(nil),
+		Hbndler:      httpserver.NewHbndler(nil),
 	})
 
 	// Go!
-	goroutine.MonitorBackgroundRoutines(ctx, append(worker, server)...)
+	goroutine.MonitorBbckgroundRoutines(ctx, bppend(worker, server)...)
 
 	return nil
 }
 
-func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+func mustInitiblizeDB(observbtionCtx *observbtion.Context) *sql.DB {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "precise-code-intel-worker")
+	sqlDB, err := connections.EnsureNewFrontendDB(observbtionCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		log.Scoped("init db", "Initialize fontend database").Fatal("Failed to connect to frontend database", log.Error(err))
+		log.Scoped("init db", "Initiblize fontend dbtbbbse").Fbtbl("Fbiled to connect to frontend dbtbbbse", log.Error(err))
 	}
 
 	//
 	// START FLAILING
 
-	ctx := context.Background()
-	db := database.NewDB(observationCtx.Logger, sqlDB)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(observbtionCtx.Logger, sqlDB)
 	go func() {
-		for range time.NewTicker(providers.RefreshInterval()).C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternalServices(), db)
-			authz.SetProviders(allowAccessByDefault, authzProviders)
+		for rbnge time.NewTicker(providers.RefreshIntervbl()).C {
+			bllowAccessByDefbult, buthzProviders, _, _, _ := providers.ProvidersFromConfig(ctx, conf.Get(), db.ExternblServices(), db)
+			buthz.SetProviders(bllowAccessByDefbult, buthzProviders)
 		}
 	}()
 
@@ -130,32 +130,32 @@ func mustInitializeDB(observationCtx *observation.Context) *sql.DB {
 	return sqlDB
 }
 
-func mustInitializeCodeIntelDB(observationCtx *observation.Context) codeintelshared.CodeIntelDB {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+func mustInitiblizeCodeIntelDB(observbtionCtx *observbtion.Context) codeintelshbred.CodeIntelDB {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
-	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "precise-code-intel-worker")
+	db, err := connections.EnsureNewCodeIntelDB(observbtionCtx, dsn, "precise-code-intel-worker")
 	if err != nil {
-		log.Scoped("init db", "Initialize codeintel database.").Fatal("Failed to connect to codeintel database", log.Error(err))
+		log.Scoped("init db", "Initiblize codeintel dbtbbbse.").Fbtbl("Fbiled to connect to codeintel dbtbbbse", log.Error(err))
 	}
 
-	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, db)
+	return codeintelshbred.NewCodeIntelDB(observbtionCtx.Logger, db)
 }
 
-func initializeUploadStore(ctx context.Context, uploadStore uploadstore.Store) error {
+func initiblizeUplobdStore(ctx context.Context, uplobdStore uplobdstore.Store) error {
 	for {
-		if err := uploadStore.Init(ctx); err == nil || !isRequestError(err) {
+		if err := uplobdStore.Init(ctx); err == nil || !isRequestError(err) {
 			return err
 		}
 
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return ctx.Err()
-		case <-time.After(250 * time.Millisecond):
+		cbse <-time.After(250 * time.Millisecond):
 		}
 	}
 }
 
 func isRequestError(err error) bool {
-	return errors.HasType(err, &smithyhttp.RequestSendError{})
+	return errors.HbsType(err, &smithyhttp.RequestSendError{})
 }

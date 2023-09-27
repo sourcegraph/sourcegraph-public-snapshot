@@ -1,39 +1,39 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/processrestart"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/processrestbrt"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// canReloadSite is whether the current site can be reloaded via the API. Currently
-// only goreman-managed sites can be reloaded. Callers must also check if the actor
-// is an admin before actually reloading the site.
-var canReloadSite = processrestart.CanRestart()
+// cbnRelobdSite is whether the current site cbn be relobded vib the API. Currently
+// only gorembn-mbnbged sites cbn be relobded. Cbllers must blso check if the bctor
+// is bn bdmin before bctublly relobding the site.
+vbr cbnRelobdSite = processrestbrt.CbnRestbrt()
 
-func (r *schemaResolver) ReloadSite(ctx context.Context) (*EmptyResponse, error) {
-	// 🚨 SECURITY: Reloading the site is an interruptive action, so only admins
-	// may do it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *schembResolver) RelobdSite(ctx context.Context) (*EmptyResponse, error) {
+	// 🚨 SECURITY: Relobding the site is bn interruptive bction, so only bdmins
+	// mby do it.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	if !canReloadSite {
-		return nil, errors.New("reloading site is not supported")
+	if !cbnRelobdSite {
+		return nil, errors.New("relobding site is not supported")
 	}
 
-	const delay = 750 * time.Millisecond
-	log15.Warn("Will reload site (from API request)", "actor", actor.FromContext(ctx))
-	time.AfterFunc(delay, func() {
-		log15.Warn("Reloading site", "actor", actor.FromContext(ctx))
-		if err := processrestart.Restart(); err != nil {
-			log15.Error("Error reloading site", "err", err)
+	const delby = 750 * time.Millisecond
+	log15.Wbrn("Will relobd site (from API request)", "bctor", bctor.FromContext(ctx))
+	time.AfterFunc(delby, func() {
+		log15.Wbrn("Relobding site", "bctor", bctor.FromContext(ctx))
+		if err := processrestbrt.Restbrt(); err != nil {
+			log15.Error("Error relobding site", "err", err)
 		}
 	})
 

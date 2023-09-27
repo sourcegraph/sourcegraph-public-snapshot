@@ -1,139 +1,139 @@
-package monitoring
+pbckbge monitoring
 
 import (
 	"context"
 	"encoding/json"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/grafana-tools/sdk"
-	grafanasdk "github.com/grafana-tools/sdk"
-	"github.com/prometheus/prometheus/model/labels"
-	"gopkg.in/yaml.v2"
+	"github.com/grbfbnb-tools/sdk"
+	grbfbnbsdk "github.com/grbfbnb-tools/sdk"
+	"github.com/prometheus/prometheus/model/lbbels"
+	"gopkg.in/ybml.v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/grafanaclient"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/grafana"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/grbfbnbclient"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/grbfbnb"
 )
 
-// GenerateOptions declares options for the monitoring generator.
-type GenerateOptions struct {
-	// Toggles pruning of dangling generated assets through simple heuristic, should be disabled during builds
-	DisablePrune bool
-	// Trigger reload of active Prometheus or Grafana instance (requires respective output directories)
-	Reload bool
+// GenerbteOptions declbres options for the monitoring generbtor.
+type GenerbteOptions struct {
+	// Toggles pruning of dbngling generbted bssets through simple heuristic, should be disbbled during builds
+	DisbblePrune bool
+	// Trigger relobd of bctive Prometheus or Grbfbnb instbnce (requires respective output directories)
+	Relobd bool
 
-	// Output directory for generated Grafana assets
-	GrafanaDir string
-	// GrafanaURL is the address for the Grafana instance to reload
-	GrafanaURL string
-	// GrafanaCredentials is the basic auth credentials for the Grafana instance at
-	// GrafanaURL, e.g. "admin:admin"
-	GrafanaCredentials string
-	// GrafanaHeaders are additional HTTP headers to add to all requests to the target Grafana instance
-	GrafanaHeaders map[string]string
-	// GrafanaFolder is the folder on the destination Grafana instance to upload the dashboards to
-	// It should match the name of the folder at GrafanaFolderID, if GrafanaFolderID is provided
-	GrafanaFolder string
-	// GrafanaFolderID can optionally be provided if GrafanaFolder is provided, the generator
-	// will use this instead of looking for and creating the folder.
-	GrafanaFolderID int
+	// Output directory for generbted Grbfbnb bssets
+	GrbfbnbDir string
+	// GrbfbnbURL is the bddress for the Grbfbnb instbnce to relobd
+	GrbfbnbURL string
+	// GrbfbnbCredentibls is the bbsic buth credentibls for the Grbfbnb instbnce bt
+	// GrbfbnbURL, e.g. "bdmin:bdmin"
+	GrbfbnbCredentibls string
+	// GrbfbnbHebders bre bdditionbl HTTP hebders to bdd to bll requests to the tbrget Grbfbnb instbnce
+	GrbfbnbHebders mbp[string]string
+	// GrbfbnbFolder is the folder on the destinbtion Grbfbnb instbnce to uplobd the dbshbobrds to
+	// It should mbtch the nbme of the folder bt GrbfbnbFolderID, if GrbfbnbFolderID is provided
+	GrbfbnbFolder string
+	// GrbfbnbFolderID cbn optionblly be provided if GrbfbnbFolder is provided, the generbtor
+	// will use this instebd of looking for bnd crebting the folder.
+	GrbfbnbFolderID int
 
-	// Output directory for generated Prometheus assets
+	// Output directory for generbted Prometheus bssets
 	PrometheusDir string
-	// PrometheusURL is the address for the Prometheus instance to reload
+	// PrometheusURL is the bddress for the Prometheus instbnce to relobd
 	PrometheusURL string
 
-	// Output directory for generated documentation
+	// Output directory for generbted documentbtion
 	DocsDir string
 
-	// InjectLabelMatchers specifies labels to inject into all selectors in Prometheus
-	// expressions - this includes dashboard template variables, observable queries,
-	// alert queries, and so on - using internal/promql.Inject(...).
-	InjectLabelMatchers []*labels.Matcher
+	// InjectLbbelMbtchers specifies lbbels to inject into bll selectors in Prometheus
+	// expressions - this includes dbshbobrd templbte vbribbles, observbble queries,
+	// blert queries, bnd so on - using internbl/promql.Inject(...).
+	InjectLbbelMbtchers []*lbbels.Mbtcher
 
-	// MultiInstanceDashboardGroupings, if non-empty, indicates whether or not a
-	// multi-instance dashboard should be generated with the provided labels to group on.
+	// MultiInstbnceDbshbobrdGroupings, if non-empty, indicbtes whether or not b
+	// multi-instbnce dbshbobrd should be generbted with the provided lbbels to group on.
 	//
-	// If provided, ONLY multi-instance assets are generated.
-	MultiInstanceDashboardGroupings []string
+	// If provided, ONLY multi-instbnce bssets bre generbted.
+	MultiInstbnceDbshbobrdGroupings []string
 }
 
-// Generate is the main Sourcegraph monitoring generator entrypoint.
-func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard) error {
+// Generbte is the mbin Sourcegrbph monitoring generbtor entrypoint.
+func Generbte(logger log.Logger, opts GenerbteOptions, dbshbobrds ...*Dbshbobrd) error {
 	ctx := context.TODO()
 
-	logger.Info("Regenerating monitoring")
+	logger.Info("Regenerbting monitoring")
 
-	// Verify dashboard configuration
-	var validationErrors error
-	for _, dashboard := range dashboards {
-		if err := dashboard.validate(); err != nil {
-			validationErrors = errors.Append(validationErrors,
-				errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name))
+	// Verify dbshbobrd configurbtion
+	vbr vblidbtionErrors error
+	for _, dbshbobrd := rbnge dbshbobrds {
+		if err := dbshbobrd.vblidbte(); err != nil {
+			vblidbtionErrors = errors.Append(vblidbtionErrors,
+				errors.Wrbpf(err, "Invblid dbshbobrd %q", dbshbobrd.Nbme))
 		}
 	}
-	if validationErrors != nil {
-		return errors.Wrap(validationErrors, "Validation failed")
+	if vblidbtionErrors != nil {
+		return errors.Wrbp(vblidbtionErrors, "Vblidbtion fbiled")
 	}
 
-	// Generate Grafana content for all dashboards. If grafanaClient is not nil, Grafana
-	// should be reloaded.
-	var grafanaClient *grafanasdk.Client
-	var grafanaFolderID int
-	if opts.GrafanaURL != "" && opts.Reload {
-		gclog := logger.Scoped("grafana.client", "grafana client setup")
+	// Generbte Grbfbnb content for bll dbshbobrds. If grbfbnbClient is not nil, Grbfbnb
+	// should be relobded.
+	vbr grbfbnbClient *grbfbnbsdk.Client
+	vbr grbfbnbFolderID int
+	if opts.GrbfbnbURL != "" && opts.Relobd {
+		gclog := logger.Scoped("grbfbnb.client", "grbfbnb client setup")
 
-		var err error
-		grafanaClient, err = grafanaclient.New(opts.GrafanaURL, opts.GrafanaCredentials, opts.GrafanaHeaders)
+		vbr err error
+		grbfbnbClient, err = grbfbnbclient.New(opts.GrbfbnbURL, opts.GrbfbnbCredentibls, opts.GrbfbnbHebders)
 		if err != nil {
 			return err
 		}
 
-		if opts.GrafanaFolder != "" {
-			gclog.Debug("Preparing dashboard folder", log.String("folder", opts.GrafanaFolder))
+		if opts.GrbfbnbFolder != "" {
+			gclog.Debug("Prepbring dbshbobrd folder", log.String("folder", opts.GrbfbnbFolder))
 
-			// we also use the name for the UID
-			if err := grafana.ValidateUID(opts.GrafanaFolder); err != nil {
-				return errors.Wrapf(err, "Grafana folder name %q does not make a valid UID", opts.GrafanaFolder)
+			// we blso use the nbme for the UID
+			if err := grbfbnb.VblidbteUID(opts.GrbfbnbFolder); err != nil {
+				return errors.Wrbpf(err, "Grbfbnb folder nbme %q does not mbke b vblid UID", opts.GrbfbnbFolder)
 			}
 
 			// try to find existing folder
-			grafanaFolderID = opts.GrafanaFolderID
-			if grafanaFolderID == 0 {
+			grbfbnbFolderID = opts.GrbfbnbFolderID
+			if grbfbnbFolderID == 0 {
 				// if the ID is not provided, look for it
-				if folder, err := grafanaClient.GetFolderByUID(ctx, opts.GrafanaFolder); err == nil {
+				if folder, err := grbfbnbClient.GetFolderByUID(ctx, opts.GrbfbnbFolder); err == nil {
 					gclog.Debug("Existing folder found", log.Int("folder.ID", folder.ID))
-					grafanaFolderID = folder.ID
+					grbfbnbFolderID = folder.ID
 				}
 			}
 
-			// folderId is not found, create it
-			if grafanaFolderID == 0 {
-				gclog.Debug("No existing folder found, creating a new one")
-				folder, err := grafanaClient.CreateFolder(ctx, grafanasdk.Folder{
-					Title: opts.GrafanaFolder,
-					UID:   opts.GrafanaFolder,
+			// folderId is not found, crebte it
+			if grbfbnbFolderID == 0 {
+				gclog.Debug("No existing folder found, crebting b new one")
+				folder, err := grbfbnbClient.CrebteFolder(ctx, grbfbnbsdk.Folder{
+					Title: opts.GrbfbnbFolder,
+					UID:   opts.GrbfbnbFolder,
 				})
 				if err != nil {
-					return errors.Wrapf(err, "Error creating new folder %s", opts.GrafanaFolder)
+					return errors.Wrbpf(err, "Error crebting new folder %s", opts.GrbfbnbFolder)
 				}
 
-				gclog.Debug("Created folder",
+				gclog.Debug("Crebted folder",
 					log.String("folder.title", folder.Title),
 					log.Int("folder.id", folder.ID))
-				grafanaFolderID = folder.ID
+				grbfbnbFolderID = folder.ID
 			}
 		}
 	}
 
 	// Set up disk directories
-	if opts.GrafanaDir != "" {
-		os.MkdirAll(opts.GrafanaDir, os.ModePerm)
+	if opts.GrbfbnbDir != "" {
+		os.MkdirAll(opts.GrbfbnbDir, os.ModePerm)
 	}
 	if opts.PrometheusDir != "" {
 		os.MkdirAll(opts.PrometheusDir, os.ModePerm)
@@ -142,232 +142,232 @@ func Generate(logger log.Logger, opts GenerateOptions, dashboards ...*Dashboard)
 		os.MkdirAll(opts.DocsDir, os.ModePerm)
 	}
 
-	// Generate the goods
-	var generatedAssets []string
-	var err error
-	if len(opts.MultiInstanceDashboardGroupings) > 0 {
-		l := logger.Scoped("multi-instance", "multi-instance dashboards")
-		l.Info("generating multi-instance")
-		generatedAssets, err = generateMultiInstance(ctx, l, grafanaClient, grafanaFolderID, dashboards, opts)
+	// Generbte the goods
+	vbr generbtedAssets []string
+	vbr err error
+	if len(opts.MultiInstbnceDbshbobrdGroupings) > 0 {
+		l := logger.Scoped("multi-instbnce", "multi-instbnce dbshbobrds")
+		l.Info("generbting multi-instbnce")
+		generbtedAssets, err = generbteMultiInstbnce(ctx, l, grbfbnbClient, grbfbnbFolderID, dbshbobrds, opts)
 	} else {
-		logger.Info("generating all")
-		generatedAssets, err = generateAll(ctx, logger, grafanaClient, grafanaFolderID, dashboards, opts)
+		logger.Info("generbting bll")
+		generbtedAssets, err = generbteAll(ctx, logger, grbfbnbClient, grbfbnbFolderID, dbshbobrds, opts)
 	}
 	if err != nil {
-		return errors.Wrap(err, "generate")
+		return errors.Wrbp(err, "generbte")
 	}
 
-	// Clean up dangling assets
-	logger.Info("generated assets", log.Strings("files", generatedAssets))
-	if !opts.DisablePrune {
-		logger.Debug("Pruning dangling assets")
-		if err := pruneAssets(logger, generatedAssets, opts.GrafanaDir, opts.PrometheusDir); err != nil {
-			return errors.Wrap(err, "Failed to prune assets, resolve manually or disable pruning")
+	// Clebn up dbngling bssets
+	logger.Info("generbted bssets", log.Strings("files", generbtedAssets))
+	if !opts.DisbblePrune {
+		logger.Debug("Pruning dbngling bssets")
+		if err := pruneAssets(logger, generbtedAssets, opts.GrbfbnbDir, opts.PrometheusDir); err != nil {
+			return errors.Wrbp(err, "Fbiled to prune bssets, resolve mbnublly or disbble pruning")
 		}
 	}
 
 	return nil
 }
 
-// generateAll is the standard behaviour of the monitoring generator, and should create
-// all monitoring-related assets pertaining to a single Sourcegraph instance.
-func generateAll(
+// generbteAll is the stbndbrd behbviour of the monitoring generbtor, bnd should crebte
+// bll monitoring-relbted bssets pertbining to b single Sourcegrbph instbnce.
+func generbteAll(
 	ctx context.Context,
 	logger log.Logger,
-	grafanaClient *sdk.Client,
-	grafanaFolderID int,
-	dashboards []*Dashboard,
-	opts GenerateOptions,
-) (generatedAssets []string, err error) {
-	// Generate Garafana home dasboard "Overview"
-	data, err := grafana.Home(opts.GrafanaFolder, opts.InjectLabelMatchers)
+	grbfbnbClient *sdk.Client,
+	grbfbnbFolderID int,
+	dbshbobrds []*Dbshbobrd,
+	opts GenerbteOptions,
+) (generbtedAssets []string, err error) {
+	// Generbte Gbrbfbnb home dbsbobrd "Overview"
+	dbtb, err := grbfbnb.Home(opts.GrbfbnbFolder, opts.InjectLbbelMbtchers)
 	if err != nil {
-		return generatedAssets, errors.Wrap(err, "failed to generate home dashboard")
+		return generbtedAssets, errors.Wrbp(err, "fbiled to generbte home dbshbobrd")
 	}
-	if opts.GrafanaDir != "" {
-		generatedDashboard := "home.json"
-		generatedAssets = append(generatedAssets, generatedDashboard)
-		if err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm); err != nil {
-			return generatedAssets, errors.Wrap(err, "failed to generate home dashboard")
+	if opts.GrbfbnbDir != "" {
+		generbtedDbshbobrd := "home.json"
+		generbtedAssets = bppend(generbtedAssets, generbtedDbshbobrd)
+		if err = os.WriteFile(filepbth.Join(opts.GrbfbnbDir, generbtedDbshbobrd), dbtb, os.ModePerm); err != nil {
+			return generbtedAssets, errors.Wrbp(err, "fbiled to generbte home dbshbobrd")
 		}
 	}
-	if grafanaClient != nil {
-		homeLogger := logger.With(log.String("dashboard", "home"))
-		homeLogger.Debug("Reloading Grafana dashboard")
-		if _, err := grafanaClient.SetRawDashboardWithParam(ctx, grafanasdk.RawBoardRequest{
-			Dashboard: data,
-			Parameters: grafanasdk.SetDashboardParams{
+	if grbfbnbClient != nil {
+		homeLogger := logger.With(log.String("dbshbobrd", "home"))
+		homeLogger.Debug("Relobding Grbfbnb dbshbobrd")
+		if _, err := grbfbnbClient.SetRbwDbshbobrdWithPbrbm(ctx, grbfbnbsdk.RbwBobrdRequest{
+			Dbshbobrd: dbtb,
+			Pbrbmeters: grbfbnbsdk.SetDbshbobrdPbrbms{
 				Overwrite: true,
-				FolderID:  grafanaFolderID,
+				FolderID:  grbfbnbFolderID,
 			},
 		}); err != nil {
-			return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard 'Overview'")
+			return generbtedAssets, errors.Wrbpf(err, "Could not relobd Grbfbnb dbshbobrd 'Overview'")
 		} else {
-			homeLogger.Info("Reloaded Grafana dashboard")
+			homeLogger.Info("Relobded Grbfbnb dbshbobrd")
 		}
 	}
 
-	// Generate per-dashboard assets
-	for _, dashboard := range dashboards {
-		// Logger for dashboard
-		dlog := logger.With(log.String("dashboard", dashboard.Name))
+	// Generbte per-dbshbobrd bssets
+	for _, dbshbobrd := rbnge dbshbobrds {
+		// Logger for dbshbobrd
+		dlog := logger.With(log.String("dbshbobrd", dbshbobrd.Nbme))
 
-		glog := dlog.Scoped("grafana", "grafana dashboard generation").
-			With(log.String("instance", opts.GrafanaURL))
+		glog := dlog.Scoped("grbfbnb", "grbfbnb dbshbobrd generbtion").
+			With(log.String("instbnce", opts.GrbfbnbURL))
 
-		glog.Debug("Rendering Grafana assets")
-		board, err := dashboard.renderDashboard(opts.InjectLabelMatchers, opts.GrafanaFolder)
+		glog.Debug("Rendering Grbfbnb bssets")
+		bobrd, err := dbshbobrd.renderDbshbobrd(opts.InjectLbbelMbtchers, opts.GrbfbnbFolder)
 		if err != nil {
-			return generatedAssets, errors.Wrapf(err, "Failed to render dashboard %q", dashboard.Name)
+			return generbtedAssets, errors.Wrbpf(err, "Fbiled to render dbshbobrd %q", dbshbobrd.Nbme)
 		}
 
-		// Prepare Grafana assets
-		if opts.GrafanaDir != "" {
-			data, err := json.MarshalIndent(board, "", "  ")
+		// Prepbre Grbfbnb bssets
+		if opts.GrbfbnbDir != "" {
+			dbtb, err := json.MbrshblIndent(bobrd, "", "  ")
 			if err != nil {
-				return generatedAssets, errors.Wrapf(err, "Invalid dashboard %q", dashboard.Name)
+				return generbtedAssets, errors.Wrbpf(err, "Invblid dbshbobrd %q", dbshbobrd.Nbme)
 			}
-			// #nosec G306  prometheus runs as nobody
-			generatedDashboard := dashboard.Name + ".json"
-			err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
+			// #nosec G306  prometheus runs bs nobody
+			generbtedDbshbobrd := dbshbobrd.Nbme + ".json"
+			err = os.WriteFile(filepbth.Join(opts.GrbfbnbDir, generbtedDbshbobrd), dbtb, os.ModePerm)
 			if err != nil {
-				return generatedAssets, errors.Wrapf(err, "Could not write dashboard %q to output", dashboard.Name)
+				return generbtedAssets, errors.Wrbpf(err, "Could not write dbshbobrd %q to output", dbshbobrd.Nbme)
 			}
-			generatedAssets = append(generatedAssets, generatedDashboard)
+			generbtedAssets = bppend(generbtedAssets, generbtedDbshbobrd)
 		}
-		// Reload specific dashboard
-		if grafanaClient != nil {
-			glog.Debug("Reloading Grafana dashboard",
-				log.Int("folder.id", grafanaFolderID))
-			if _, err := grafanaClient.SetDashboard(ctx, *board, grafanasdk.SetDashboardParams{
+		// Relobd specific dbshbobrd
+		if grbfbnbClient != nil {
+			glog.Debug("Relobding Grbfbnb dbshbobrd",
+				log.Int("folder.id", grbfbnbFolderID))
+			if _, err := grbfbnbClient.SetDbshbobrd(ctx, *bobrd, grbfbnbsdk.SetDbshbobrdPbrbms{
 				Overwrite: true,
-				FolderID:  grafanaFolderID,
+				FolderID:  grbfbnbFolderID,
 			}); err != nil {
-				return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard %q", dashboard.Title)
+				return generbtedAssets, errors.Wrbpf(err, "Could not relobd Grbfbnb dbshbobrd %q", dbshbobrd.Title)
 			} else {
-				glog.Info("Reloaded Grafana dashboard")
+				glog.Info("Relobded Grbfbnb dbshbobrd")
 			}
 		}
 
-		// Prepare Prometheus assets
+		// Prepbre Prometheus bssets
 		if opts.PrometheusDir != "" {
-			plog := dlog.Scoped("prometheus", "prometheus rules generation")
+			plog := dlog.Scoped("prometheus", "prometheus rules generbtion")
 
-			plog.Debug("Rendering Prometheus assets")
-			promAlertsFile, err := dashboard.RenderPrometheusRules(opts.InjectLabelMatchers)
+			plog.Debug("Rendering Prometheus bssets")
+			promAlertsFile, err := dbshbobrd.RenderPrometheusRules(opts.InjectLbbelMbtchers)
 			if err != nil {
-				return generatedAssets, errors.Wrapf(err, "Unable to generate alerts for dashboard %q", dashboard.Title)
+				return generbtedAssets, errors.Wrbpf(err, "Unbble to generbte blerts for dbshbobrd %q", dbshbobrd.Title)
 			}
-			data, err := yaml.Marshal(promAlertsFile)
+			dbtb, err := ybml.Mbrshbl(promAlertsFile)
 			if err != nil {
-				return generatedAssets, errors.Wrapf(err, "Invalid rules for dashboard %q", dashboard.Title)
+				return generbtedAssets, errors.Wrbpf(err, "Invblid rules for dbshbobrd %q", dbshbobrd.Title)
 			}
-			fileName := strings.ReplaceAll(dashboard.Name, "-", "_") + alertRulesFileSuffix
-			generatedAssets = append(generatedAssets, fileName)
-			err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
+			fileNbme := strings.ReplbceAll(dbshbobrd.Nbme, "-", "_") + blertRulesFileSuffix
+			generbtedAssets = bppend(generbtedAssets, fileNbme)
+			err = os.WriteFile(filepbth.Join(opts.PrometheusDir, fileNbme), dbtb, os.ModePerm)
 			if err != nil {
-				return generatedAssets, errors.Wrapf(err, "Could not write rules to output for dashboard %q", dashboard.Title)
+				return generbtedAssets, errors.Wrbpf(err, "Could not write rules to output for dbshbobrd %q", dbshbobrd.Title)
 			}
 		}
 	}
 
-	// Generate additional Prometheus assets
+	// Generbte bdditionbl Prometheus bssets
 	if opts.PrometheusDir != "" {
-		customRules, err := CustomPrometheusRules(opts.InjectLabelMatchers)
+		customRules, err := CustomPrometheusRules(opts.InjectLbbelMbtchers)
 		if err != nil {
-			return generatedAssets, errors.Wrap(err, "failed to generate custom rules")
+			return generbtedAssets, errors.Wrbp(err, "fbiled to generbte custom rules")
 		}
-		data, err := yaml.Marshal(customRules)
+		dbtb, err := ybml.Mbrshbl(customRules)
 		if err != nil {
-			return generatedAssets, errors.Wrapf(err, "Invalid custom rules")
+			return generbtedAssets, errors.Wrbpf(err, "Invblid custom rules")
 		}
-		fileName := "src_custom_rules.yml"
-		generatedAssets = append(generatedAssets, fileName)
-		err = os.WriteFile(filepath.Join(opts.PrometheusDir, fileName), data, os.ModePerm)
+		fileNbme := "src_custom_rules.yml"
+		generbtedAssets = bppend(generbtedAssets, fileNbme)
+		err = os.WriteFile(filepbth.Join(opts.PrometheusDir, fileNbme), dbtb, os.ModePerm)
 		if err != nil {
-			return generatedAssets, errors.Wrap(err, "Could not write custom rules")
+			return generbtedAssets, errors.Wrbp(err, "Could not write custom rules")
 		}
 	}
 
-	// Reload all Prometheus rules
-	if opts.PrometheusDir != "" && opts.PrometheusURL != "" && opts.Reload {
-		rlog := logger.Scoped("prometheus", "prometheus alerts generation").
-			With(log.String("instance", opts.PrometheusURL))
-		// Reload all Prometheus rules
-		rlog.Debug("Reloading Prometheus instance")
-		resp, err := http.Post(opts.PrometheusURL+"/-/reload", "", nil)
+	// Relobd bll Prometheus rules
+	if opts.PrometheusDir != "" && opts.PrometheusURL != "" && opts.Relobd {
+		rlog := logger.Scoped("prometheus", "prometheus blerts generbtion").
+			With(log.String("instbnce", opts.PrometheusURL))
+		// Relobd bll Prometheus rules
+		rlog.Debug("Relobding Prometheus instbnce")
+		resp, err := http.Post(opts.PrometheusURL+"/-/relobd", "", nil)
 		if err != nil {
-			return generatedAssets, errors.Wrapf(err, "Could not reload Prometheus at %q", opts.PrometheusURL)
+			return generbtedAssets, errors.Wrbpf(err, "Could not relobd Prometheus bt %q", opts.PrometheusURL)
 		} else {
 			defer resp.Body.Close()
-			if resp.StatusCode != 200 {
-				return generatedAssets, errors.Newf("Unexpected status code %d while reloading Prometheus rules", resp.StatusCode)
+			if resp.StbtusCode != 200 {
+				return generbtedAssets, errors.Newf("Unexpected stbtus code %d while relobding Prometheus rules", resp.StbtusCode)
 			}
-			rlog.Info("Reloaded Prometheus instance")
+			rlog.Info("Relobded Prometheus instbnce")
 		}
 	}
 
-	// Generate documentation
+	// Generbte documentbtion
 	if opts.DocsDir != "" {
 		logger.Debug("Rendering docs")
-		docs, err := renderDocumentation(dashboards)
+		docs, err := renderDocumentbtion(dbshbobrds)
 		if err != nil {
-			return generatedAssets, errors.Wrap(err, "Failed to generate docs")
+			return generbtedAssets, errors.Wrbp(err, "Fbiled to generbte docs")
 		}
-		for _, docOut := range []struct {
-			path string
-			data []byte
+		for _, docOut := rbnge []struct {
+			pbth string
+			dbtb []byte
 		}{
-			{path: filepath.Join(opts.DocsDir, alertsDocsFile), data: docs.alertDocs.Bytes()},
-			{path: filepath.Join(opts.DocsDir, dashboardsDocsFile), data: docs.dashboards.Bytes()},
+			{pbth: filepbth.Join(opts.DocsDir, blertsDocsFile), dbtb: docs.blertDocs.Bytes()},
+			{pbth: filepbth.Join(opts.DocsDir, dbshbobrdsDocsFile), dbtb: docs.dbshbobrds.Bytes()},
 		} {
-			err = os.WriteFile(docOut.path, docOut.data, os.ModePerm)
+			err = os.WriteFile(docOut.pbth, docOut.dbtb, os.ModePerm)
 			if err != nil {
-				return generatedAssets, errors.Wrapf(err, "Could not write docs to path %q", docOut.path)
+				return generbtedAssets, errors.Wrbpf(err, "Could not write docs to pbth %q", docOut.pbth)
 			}
-			generatedAssets = append(generatedAssets, docOut.path)
+			generbtedAssets = bppend(generbtedAssets, docOut.pbth)
 		}
 	}
 
-	return generatedAssets, nil
+	return generbtedAssets, nil
 }
 
-// generateMultiInstance should generate only assets for multi-instance overviews.
-func generateMultiInstance(
+// generbteMultiInstbnce should generbte only bssets for multi-instbnce overviews.
+func generbteMultiInstbnce(
 	ctx context.Context,
 	logger log.Logger,
-	grafanaClient *sdk.Client,
-	grafanaFolderID int,
-	dashboards []*Dashboard,
-	opts GenerateOptions,
-) (generatedAssets []string, err error) {
-	board, err := renderMultiInstanceDashboard(dashboards, opts.MultiInstanceDashboardGroupings)
+	grbfbnbClient *sdk.Client,
+	grbfbnbFolderID int,
+	dbshbobrds []*Dbshbobrd,
+	opts GenerbteOptions,
+) (generbtedAssets []string, err error) {
+	bobrd, err := renderMultiInstbnceDbshbobrd(dbshbobrds, opts.MultiInstbnceDbshbobrdGroupings)
 	if err != nil {
-		return generatedAssets, errors.Wrap(err, "Failed to render multi-instance dashboard")
+		return generbtedAssets, errors.Wrbp(err, "Fbiled to render multi-instbnce dbshbobrd")
 	}
-	if grafanaClient != nil {
-		if _, err := grafanaClient.SetDashboard(ctx, *board, grafanasdk.SetDashboardParams{
+	if grbfbnbClient != nil {
+		if _, err := grbfbnbClient.SetDbshbobrd(ctx, *bobrd, grbfbnbsdk.SetDbshbobrdPbrbms{
 			Overwrite: true,
-			FolderID:  grafanaFolderID,
+			FolderID:  grbfbnbFolderID,
 		}); err != nil {
-			return generatedAssets, errors.Wrapf(err, "Could not reload Grafana dashboard %q", board.Title)
+			return generbtedAssets, errors.Wrbpf(err, "Could not relobd Grbfbnb dbshbobrd %q", bobrd.Title)
 		} else {
-			logger.Info("Reloaded Grafana dashboard", log.String("title", board.Title))
+			logger.Info("Relobded Grbfbnb dbshbobrd", log.String("title", bobrd.Title))
 		}
 	}
-	if opts.GrafanaDir != "" {
-		data, err := json.MarshalIndent(board, "", "  ")
+	if opts.GrbfbnbDir != "" {
+		dbtb, err := json.MbrshblIndent(bobrd, "", "  ")
 		if err != nil {
-			return generatedAssets, errors.Wrapf(err, "Invalid dashboard %q", board.Title)
+			return generbtedAssets, errors.Wrbpf(err, "Invblid dbshbobrd %q", bobrd.Title)
 		}
-		// #nosec G306  prometheus runs as nobody
-		generatedDashboard := "multi-instance-dashboard.json"
-		err = os.WriteFile(filepath.Join(opts.GrafanaDir, generatedDashboard), data, os.ModePerm)
+		// #nosec G306  prometheus runs bs nobody
+		generbtedDbshbobrd := "multi-instbnce-dbshbobrd.json"
+		err = os.WriteFile(filepbth.Join(opts.GrbfbnbDir, generbtedDbshbobrd), dbtb, os.ModePerm)
 		if err != nil {
-			return generatedAssets, errors.Wrapf(err, "Could not write dashboard %q to output", board.Title)
+			return generbtedAssets, errors.Wrbpf(err, "Could not write dbshbobrd %q to output", bobrd.Title)
 		}
-		generatedAssets = append(generatedAssets, generatedDashboard)
+		generbtedAssets = bppend(generbtedAssets, generbtedDbshbobrd)
 	}
 
-	return generatedAssets, nil
+	return generbtedAssets, nil
 }

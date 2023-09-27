@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,124 +7,124 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/config"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/stbte"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types/scheduler/config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type changesetResolver struct {
+type chbngesetResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	changeset *btypes.Changeset
+	chbngeset *btypes.Chbngeset
 
-	// When repo is nil, this resolver resolves to a `HiddenExternalChangeset` in the API.
+	// When repo is nil, this resolver resolves to b `HiddenExternblChbngeset` in the API.
 	repo         *types.Repo
-	repoResolver *graphqlbackend.RepositoryResolver
+	repoResolver *grbphqlbbckend.RepositoryResolver
 
-	attemptedPreloadNextSyncAt bool
+	bttemptedPrelobdNextSyncAt bool
 	// When the next sync is scheduled
-	preloadedNextSyncAt time.Time
+	prelobdedNextSyncAt time.Time
 	nextSyncAtOnce      sync.Once
 	nextSyncAt          time.Time
 	nextSyncAtErr       error
 
-	// cache the current ChangesetSpec as it's accessed by multiple methods
+	// cbche the current ChbngesetSpec bs it's bccessed by multiple methods
 	specOnce sync.Once
-	spec     *btypes.ChangesetSpec
+	spec     *btypes.ChbngesetSpec
 	specErr  error
 }
 
-func NewChangesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, changeset *btypes.Changeset, repo *types.Repo, nextSyncAt time.Time) *changesetResolver {
-	r := NewChangesetResolver(store, gitserverClient, logger, changeset, repo)
-	r.attemptedPreloadNextSyncAt = true
-	r.preloadedNextSyncAt = nextSyncAt
+func NewChbngesetResolverWithNextSync(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, chbngeset *btypes.Chbngeset, repo *types.Repo, nextSyncAt time.Time) *chbngesetResolver {
+	r := NewChbngesetResolver(store, gitserverClient, logger, chbngeset, repo)
+	r.bttemptedPrelobdNextSyncAt = true
+	r.prelobdedNextSyncAt = nextSyncAt
 	return r
 }
 
-func NewChangesetResolver(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, changeset *btypes.Changeset, repo *types.Repo) *changesetResolver {
-	return &changesetResolver{
+func NewChbngesetResolver(store *store.Store, gitserverClient gitserver.Client, logger log.Logger, chbngeset *btypes.Chbngeset, repo *types.Repo) *chbngesetResolver {
+	return &chbngesetResolver{
 		store:           store,
 		gitserverClient: gitserverClient,
 
 		repo:         repo,
-		repoResolver: graphqlbackend.NewRepositoryResolver(store.DatabaseDB(), gitserverClient, repo),
-		changeset:    changeset,
+		repoResolver: grbphqlbbckend.NewRepositoryResolver(store.DbtbbbseDB(), gitserverClient, repo),
+		chbngeset:    chbngeset,
 	}
 }
 
-const changesetIDKind = "Changeset"
+const chbngesetIDKind = "Chbngeset"
 
-func unmarshalChangesetID(id graphql.ID) (cid int64, err error) {
-	err = relay.UnmarshalSpec(id, &cid)
+func unmbrshblChbngesetID(id grbphql.ID) (cid int64, err error) {
+	err = relby.UnmbrshblSpec(id, &cid)
 	return
 }
 
-func (r *changesetResolver) ToExternalChangeset() (graphqlbackend.ExternalChangesetResolver, bool) {
+func (r *chbngesetResolver) ToExternblChbngeset() (grbphqlbbckend.ExternblChbngesetResolver, bool) {
 	if !r.repoAccessible() {
-		return nil, false
+		return nil, fblse
 	}
 
 	return r, true
 }
 
-func (r *changesetResolver) ToHiddenExternalChangeset() (graphqlbackend.HiddenExternalChangesetResolver, bool) {
+func (r *chbngesetResolver) ToHiddenExternblChbngeset() (grbphqlbbckend.HiddenExternblChbngesetResolver, bool) {
 	if r.repoAccessible() {
-		return nil, false
+		return nil, fblse
 	}
 
 	return r, true
 }
 
-func (r *changesetResolver) repoAccessible() bool {
-	// If the repository is not nil, it's accessible
+func (r *chbngesetResolver) repoAccessible() bool {
+	// If the repository is not nil, it's bccessible
 	return r.repo != nil
 }
 
-func (r *changesetResolver) computeSpec(ctx context.Context) (*btypes.ChangesetSpec, error) {
+func (r *chbngesetResolver) computeSpec(ctx context.Context) (*btypes.ChbngesetSpec, error) {
 	r.specOnce.Do(func() {
-		if r.changeset.CurrentSpecID == 0 {
-			r.specErr = errors.New("Changeset has no ChangesetSpec")
+		if r.chbngeset.CurrentSpecID == 0 {
+			r.specErr = errors.New("Chbngeset hbs no ChbngesetSpec")
 			return
 		}
 
-		r.spec, r.specErr = r.store.GetChangesetSpecByID(ctx, r.changeset.CurrentSpecID)
+		r.spec, r.specErr = r.store.GetChbngesetSpecByID(ctx, r.chbngeset.CurrentSpecID)
 	})
 	return r.spec, r.specErr
 }
 
-func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
+func (r *chbngesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, error) {
 	r.nextSyncAtOnce.Do(func() {
-		if r.attemptedPreloadNextSyncAt {
-			r.nextSyncAt = r.preloadedNextSyncAt
+		if r.bttemptedPrelobdNextSyncAt {
+			r.nextSyncAt = r.prelobdedNextSyncAt
 			return
 		}
-		syncData, err := r.store.ListChangesetSyncData(ctx, store.ListChangesetSyncDataOpts{ChangesetIDs: []int64{r.changeset.ID}})
+		syncDbtb, err := r.store.ListChbngesetSyncDbtb(ctx, store.ListChbngesetSyncDbtbOpts{ChbngesetIDs: []int64{r.chbngeset.ID}})
 		if err != nil {
 			r.nextSyncAtErr = err
 			return
 		}
-		for _, d := range syncData {
-			if d.ChangesetID == r.changeset.ID {
+		for _, d := rbnge syncDbtb {
+			if d.ChbngesetID == r.chbngeset.ID {
 				r.nextSyncAt = syncer.NextSync(r.store.Clock(), d)
 				return
 			}
@@ -133,92 +133,92 @@ func (r *changesetResolver) computeNextSyncAt(ctx context.Context) (time.Time, e
 	return r.nextSyncAt, r.nextSyncAtErr
 }
 
-func (r *changesetResolver) ID() graphql.ID {
-	return bgql.MarshalChangesetID(r.changeset.ID)
+func (r *chbngesetResolver) ID() grbphql.ID {
+	return bgql.MbrshblChbngesetID(r.chbngeset.ID)
 }
 
-func (r *changesetResolver) ExternalID() *string {
-	if r.changeset.ExternalID == "" {
+func (r *chbngesetResolver) ExternblID() *string {
+	if r.chbngeset.ExternblID == "" {
 		return nil
 	}
-	return &r.changeset.ExternalID
+	return &r.chbngeset.ExternblID
 }
 
-func (r *changesetResolver) Repository(ctx context.Context) *graphqlbackend.RepositoryResolver {
+func (r *chbngesetResolver) Repository(ctx context.Context) *grbphqlbbckend.RepositoryResolver {
 	return r.repoResolver
 }
 
-func (r *changesetResolver) BatchChanges(ctx context.Context, args *graphqlbackend.ListBatchChangesArgs) (graphqlbackend.BatchChangesConnectionResolver, error) {
-	opts := store.ListBatchChangesOpts{
-		ChangesetID: r.changeset.ID,
+func (r *chbngesetResolver) BbtchChbnges(ctx context.Context, brgs *grbphqlbbckend.ListBbtchChbngesArgs) (grbphqlbbckend.BbtchChbngesConnectionResolver, error) {
+	opts := store.ListBbtchChbngesOpts{
+		ChbngesetID: r.chbngeset.ID,
 	}
 
-	bcState, err := parseBatchChangeState(args.State)
+	bcStbte, err := pbrseBbtchChbngeStbte(brgs.Stbte)
 	if err != nil {
 		return nil, err
 	}
-	if bcState != "" {
-		opts.States = []btypes.BatchChangeState{bcState}
+	if bcStbte != "" {
+		opts.Stbtes = []btypes.BbtchChbngeStbte{bcStbte}
 	}
 
-	// If multiple `states` are provided, prefer them over `bcState`.
-	if args.States != nil {
-		states, err := parseBatchChangeStates(args.States)
+	// If multiple `stbtes` bre provided, prefer them over `bcStbte`.
+	if brgs.Stbtes != nil {
+		stbtes, err := pbrseBbtchChbngeStbtes(brgs.Stbtes)
 		if err != nil {
 			return nil, err
 		}
-		opts.States = states
+		opts.Stbtes = stbtes
 	}
 
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts.Limit = int(args.First)
-	if args.After != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+	opts.Limit = int(brgs.First)
+	if brgs.After != nil {
+		cursor, err := strconv.PbrseInt(*brgs.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = cursor
 	}
 
-	authErr := auth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DatabaseDB())
-	if authErr != nil && authErr != auth.ErrMustBeSiteAdmin {
+	buthErr := buth.CheckCurrentUserIsSiteAdmin(ctx, r.store.DbtbbbseDB())
+	if buthErr != nil && buthErr != buth.ErrMustBeSiteAdmin {
 		return nil, err
 	}
-	isSiteAdmin := authErr != auth.ErrMustBeSiteAdmin
+	isSiteAdmin := buthErr != buth.ErrMustBeSiteAdmin
 	if !isSiteAdmin {
-		if args.ViewerCanAdminister != nil && *args.ViewerCanAdminister {
-			actor := sgactor.FromContext(ctx)
-			opts.OnlyAdministeredByUserID = actor.UID
+		if brgs.ViewerCbnAdminister != nil && *brgs.ViewerCbnAdminister {
+			bctor := sgbctor.FromContext(ctx)
+			opts.OnlyAdministeredByUserID = bctor.UID
 		}
 	}
 
-	return &batchChangesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts, logger: r.logger}, nil
+	return &bbtchChbngesConnectionResolver{store: r.store, gitserverClient: r.gitserverClient, opts: opts, logger: r.logger}, nil
 }
 
-// This points to the Batch Change that can close or open this changeset on its codehost. If this is nil,
-// then the changeset is imported.
-func (r *changesetResolver) OwnedByBatchChange() *graphql.ID {
-	if batchChangeID := r.changeset.OwnedByBatchChangeID; batchChangeID != 0 {
-		bcID := bgql.MarshalBatchChangeID(batchChangeID)
+// This points to the Bbtch Chbnge thbt cbn close or open this chbngeset on its codehost. If this is nil,
+// then the chbngeset is imported.
+func (r *chbngesetResolver) OwnedByBbtchChbnge() *grbphql.ID {
+	if bbtchChbngeID := r.chbngeset.OwnedByBbtchChbngeID; bbtchChbngeID != 0 {
+		bcID := bgql.MbrshblBbtchChbngeID(bbtchChbngeID)
 		return &bcID
 	}
 	return nil
 }
 
-func (r *changesetResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.changeset.CreatedAt}
+func (r *chbngesetResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.chbngeset.CrebtedAt}
 }
 
-func (r *changesetResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.changeset.UpdatedAt}
+func (r *chbngesetResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.chbngeset.UpdbtedAt}
 }
 
-func (r *changesetResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	// If code host syncs are disabled, the syncer is not actively syncing
-	// changesets and the next sync time cannot be determined.
-	if conf.Get().DisableAutoCodeHostSyncs {
+func (r *chbngesetResolver) NextSyncAt(ctx context.Context) (*gqlutil.DbteTime, error) {
+	// If code host syncs bre disbbled, the syncer is not bctively syncing
+	// chbngesets bnd the next sync time cbnnot be determined.
+	if conf.Get().DisbbleAutoCodeHostSyncs {
 		return nil, nil
 	}
 
@@ -229,23 +229,23 @@ func (r *changesetResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, 
 	if nextSyncAt.IsZero() {
 		return nil, nil
 	}
-	return &gqlutil.DateTime{Time: nextSyncAt}, nil
+	return &gqlutil.DbteTime{Time: nextSyncAt}, nil
 }
 
-func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
-	if r.changeset.IsImporting() {
+func (r *chbngesetResolver) Title(ctx context.Context) (*string, error) {
+	if r.chbngeset.IsImporting() {
 		return nil, nil
 	}
 
-	if r.changeset.Published() {
-		t, err := r.changeset.Title()
+	if r.chbngeset.Published() {
+		t, err := r.chbngeset.Title()
 		if err != nil {
 			return nil, err
 		}
 		return &t, nil
 	}
 
-	desc, err := r.getBranchSpecDescription(ctx)
+	desc, err := r.getBrbnchSpecDescription(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -253,52 +253,52 @@ func (r *changesetResolver) Title(ctx context.Context) (*string, error) {
 	return &desc.Title, nil
 }
 
-func (r *changesetResolver) Author() (*graphqlbackend.PersonResolver, error) {
-	if r.changeset.IsImporting() {
+func (r *chbngesetResolver) Author() (*grbphqlbbckend.PersonResolver, error) {
+	if r.chbngeset.IsImporting() {
 		return nil, nil
 	}
 
-	if !r.changeset.Published() {
+	if !r.chbngeset.Published() {
 		return nil, nil
 	}
 
-	name, err := r.changeset.AuthorName()
+	nbme, err := r.chbngeset.AuthorNbme()
 	if err != nil {
 		return nil, err
 	}
-	email, err := r.changeset.AuthorEmail()
+	embil, err := r.chbngeset.AuthorEmbil()
 	if err != nil {
 		return nil, err
 	}
 
-	// For many code hosts, we can't get the author information from the API.
-	if name == "" && email == "" {
+	// For mbny code hosts, we cbn't get the buthor informbtion from the API.
+	if nbme == "" && embil == "" {
 		return nil, nil
 	}
 
-	return graphqlbackend.NewPersonResolver(
-		r.store.DatabaseDB(),
-		name,
-		email,
-		// Try to find the corresponding Sourcegraph user.
+	return grbphqlbbckend.NewPersonResolver(
+		r.store.DbtbbbseDB(),
+		nbme,
+		embil,
+		// Try to find the corresponding Sourcegrbph user.
 		true,
 	), nil
 }
 
-func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
-	if r.changeset.IsImporting() {
+func (r *chbngesetResolver) Body(ctx context.Context) (*string, error) {
+	if r.chbngeset.IsImporting() {
 		return nil, nil
 	}
 
-	if r.changeset.Published() {
-		b, err := r.changeset.Body()
+	if r.chbngeset.Published() {
+		b, err := r.chbngeset.Body()
 		if err != nil {
 			return nil, err
 		}
 		return &b, nil
 	}
 
-	desc, err := r.getBranchSpecDescription(ctx)
+	desc, err := r.getBrbnchSpecDescription(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -306,123 +306,123 @@ func (r *changesetResolver) Body(ctx context.Context) (*string, error) {
 	return &desc.Body, nil
 }
 
-func (r *changesetResolver) getBranchSpecDescription(ctx context.Context) (*btypes.ChangesetSpec, error) {
+func (r *chbngesetResolver) getBrbnchSpecDescription(ctx context.Context) (*btypes.ChbngesetSpec, error) {
 	spec, err := r.computeSpec(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if spec.Type == btypes.ChangesetSpecTypeExisting {
-		return nil, errors.New("ChangesetSpec imports a changeset")
+	if spec.Type == btypes.ChbngesetSpecTypeExisting {
+		return nil, errors.New("ChbngesetSpec imports b chbngeset")
 	}
 
 	return spec, nil
 }
 
-func (r *changesetResolver) State() string {
-	return string(r.changeset.State)
+func (r *chbngesetResolver) Stbte() string {
+	return string(r.chbngeset.Stbte)
 }
 
-func (r *changesetResolver) ExternalURL() (*externallink.Resolver, error) {
-	if !r.changeset.Published() {
+func (r *chbngesetResolver) ExternblURL() (*externbllink.Resolver, error) {
+	if !r.chbngeset.Published() {
 		return nil, nil
 	}
-	if r.changeset.ExternalState == btypes.ChangesetExternalStateDeleted {
+	if r.chbngeset.ExternblStbte == btypes.ChbngesetExternblStbteDeleted {
 		return nil, nil
 	}
-	url, err := r.changeset.URL()
+	url, err := r.chbngeset.URL()
 	if err != nil {
 		return nil, err
 	}
 	if url == "" {
 		return nil, nil
 	}
-	return externallink.NewResolver(url, r.changeset.ExternalServiceType), nil
+	return externbllink.NewResolver(url, r.chbngeset.ExternblServiceType), nil
 }
 
-func (r *changesetResolver) ForkNamespace() *string {
-	if namespace := r.changeset.ExternalForkNamespace; namespace != "" {
-		return &namespace
+func (r *chbngesetResolver) ForkNbmespbce() *string {
+	if nbmespbce := r.chbngeset.ExternblForkNbmespbce; nbmespbce != "" {
+		return &nbmespbce
 	}
 	return nil
 }
 
-func (r *changesetResolver) ForkName() *string {
-	if name := r.changeset.ExternalForkName; name != "" {
-		return &name
+func (r *chbngesetResolver) ForkNbme() *string {
+	if nbme := r.chbngeset.ExternblForkNbme; nbme != "" {
+		return &nbme
 	}
 	return nil
 }
 
-func (r *changesetResolver) CommitVerification(ctx context.Context) (graphqlbackend.CommitVerificationResolver, error) {
-	switch r.changeset.ExternalServiceType {
-	case extsvc.TypeGitHub:
-		if r.changeset.CommitVerification != nil {
-			return &commitVerificationResolver{
-				commitVerification: r.changeset.CommitVerification,
+func (r *chbngesetResolver) CommitVerificbtion(ctx context.Context) (grbphqlbbckend.CommitVerificbtionResolver, error) {
+	switch r.chbngeset.ExternblServiceType {
+	cbse extsvc.TypeGitHub:
+		if r.chbngeset.CommitVerificbtion != nil {
+			return &commitVerificbtionResolver{
+				commitVerificbtion: r.chbngeset.CommitVerificbtion,
 			}, nil
 		}
 	}
 	return nil, nil
 }
 
-func (r *changesetResolver) ReviewState(ctx context.Context) *string {
-	if !r.changeset.Published() {
+func (r *chbngesetResolver) ReviewStbte(ctx context.Context) *string {
+	if !r.chbngeset.Published() {
 		return nil
 	}
-	reviewState := string(r.changeset.ExternalReviewState)
-	return &reviewState
+	reviewStbte := string(r.chbngeset.ExternblReviewStbte)
+	return &reviewStbte
 }
 
-func (r *changesetResolver) CheckState() *string {
-	if !r.changeset.Published() {
+func (r *chbngesetResolver) CheckStbte() *string {
+	if !r.chbngeset.Published() {
 		return nil
 	}
 
-	checkState := string(r.changeset.ExternalCheckState)
-	if checkState == string(btypes.ChangesetCheckStateUnknown) {
+	checkStbte := string(r.chbngeset.ExternblCheckStbte)
+	if checkStbte == string(btypes.ChbngesetCheckStbteUnknown) {
 		return nil
 	}
 
-	return &checkState
+	return &checkStbte
 }
 
-// Error: `FailureMessage` is set by the reconciler worker if it fails when processing
-// a changeset job. However, for most reconciler operations, we automatically retry the
-// operation a number of times. When the reconciler worker picks up a failed changeset job
-// to restart processing, it clears out the `FailureMessage`, resulting in the error
-// disappearing in the UI where we use this resolver field. To retain this context even as
-// we retry to process the changeset, we copy over the error to `PreviousFailureMessage`
-// when re-enqueueing a changeset and clearing its original `FailureMessage`. Only when a
-// changeset is successfully processed will the `PreviousFailureMessage` be cleared.
+// Error: `FbilureMessbge` is set by the reconciler worker if it fbils when processing
+// b chbngeset job. However, for most reconciler operbtions, we butombticblly retry the
+// operbtion b number of times. When the reconciler worker picks up b fbiled chbngeset job
+// to restbrt processing, it clebrs out the `FbilureMessbge`, resulting in the error
+// disbppebring in the UI where we use this resolver field. To retbin this context even bs
+// we retry to process the chbngeset, we copy over the error to `PreviousFbilureMessbge`
+// when re-enqueueing b chbngeset bnd clebring its originbl `FbilureMessbge`. Only when b
+// chbngeset is successfully processed will the `PreviousFbilureMessbge` be clebred.
 //
-// When resolving this field, we still prefer the latest `FailureMessage` we have, but if
-// there's not a `FailureMessage` and there is a `Previous` one, we return that.
-func (r *changesetResolver) Error() *string {
-	if r.changeset.FailureMessage != nil {
-		return r.changeset.FailureMessage
+// When resolving this field, we still prefer the lbtest `FbilureMessbge` we hbve, but if
+// there's not b `FbilureMessbge` bnd there is b `Previous` one, we return thbt.
+func (r *chbngesetResolver) Error() *string {
+	if r.chbngeset.FbilureMessbge != nil {
+		return r.chbngeset.FbilureMessbge
 	}
-	return r.changeset.PreviousFailureMessage
+	return r.chbngeset.PreviousFbilureMessbge
 }
 
-func (r *changesetResolver) SyncerError() *string { return r.changeset.SyncErrorMessage }
+func (r *chbngesetResolver) SyncerError() *string { return r.chbngeset.SyncErrorMessbge }
 
-func (r *changesetResolver) ScheduleEstimateAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	// We need to find out how deep in the queue this changeset is.
-	place, err := r.store.GetChangesetPlaceInSchedulerQueue(ctx, r.changeset.ID)
+func (r *chbngesetResolver) ScheduleEstimbteAt(ctx context.Context) (*gqlutil.DbteTime, error) {
+	// We need to find out how deep in the queue this chbngeset is.
+	plbce, err := r.store.GetChbngesetPlbceInSchedulerQueue(ctx, r.chbngeset.ID)
 	if err == store.ErrNoResults {
 		return nil, nil
 	} else if err != nil {
 		return nil, err
 	}
 
-	// Now we can ask the scheduler to estimate where this item would fall in
+	// Now we cbn bsk the scheduler to estimbte where this item would fbll in
 	// the schedule.
-	return gqlutil.DateTimeOrNil(config.ActiveWindow().Estimate(r.store.Clock()(), place)), nil
+	return gqlutil.DbteTimeOrNil(config.ActiveWindow().Estimbte(r.store.Clock()(), plbce)), nil
 }
 
-func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.VisibleChangesetSpecResolver, error) {
-	if r.changeset.CurrentSpecID == 0 {
+func (r *chbngesetResolver) CurrentSpec(ctx context.Context) (grbphqlbbckend.VisibleChbngesetSpecResolver, error) {
+	if r.chbngeset.CurrentSpecID == 0 {
 		return nil, nil
 	}
 
@@ -431,180 +431,180 @@ func (r *changesetResolver) CurrentSpec(ctx context.Context) (graphqlbackend.Vis
 		return nil, err
 	}
 
-	return NewChangesetSpecResolverWithRepo(r.store, r.repo, spec), nil
+	return NewChbngesetSpecResolverWithRepo(r.store, r.repo, spec), nil
 }
 
-func (r *changesetResolver) Labels(ctx context.Context) ([]graphqlbackend.ChangesetLabelResolver, error) {
-	if !r.changeset.Published() {
-		return []graphqlbackend.ChangesetLabelResolver{}, nil
+func (r *chbngesetResolver) Lbbels(ctx context.Context) ([]grbphqlbbckend.ChbngesetLbbelResolver, error) {
+	if !r.chbngeset.Published() {
+		return []grbphqlbbckend.ChbngesetLbbelResolver{}, nil
 	}
 
-	// Not every code host supports labels on changesets so don't make a DB call unless we need to.
-	if ok := r.changeset.SupportsLabels(); !ok {
-		return []graphqlbackend.ChangesetLabelResolver{}, nil
+	// Not every code host supports lbbels on chbngesets so don't mbke b DB cbll unless we need to.
+	if ok := r.chbngeset.SupportsLbbels(); !ok {
+		return []grbphqlbbckend.ChbngesetLbbelResolver{}, nil
 	}
 
-	opts := store.ListChangesetEventsOpts{
-		ChangesetIDs: []int64{r.changeset.ID},
-		Kinds:        state.ComputeLabelsRequiredEventTypes,
+	opts := store.ListChbngesetEventsOpts{
+		ChbngesetIDs: []int64{r.chbngeset.ID},
+		Kinds:        stbte.ComputeLbbelsRequiredEventTypes,
 	}
-	es, _, err := r.store.ListChangesetEvents(ctx, opts)
+	es, _, err := r.store.ListChbngesetEvents(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
-	// ComputeLabels expects the events to be pre-sorted.
-	sort.Sort(state.ChangesetEvents(es))
+	// ComputeLbbels expects the events to be pre-sorted.
+	sort.Sort(stbte.ChbngesetEvents(es))
 
-	// We use changeset labels as the source of truth as they can be renamed
-	// or removed but we'll also take into account any changeset events that
-	// have happened since the last sync in order to reflect changes that
-	// have come in via webhooks
-	labels := state.ComputeLabels(r.changeset, es)
-	resolvers := make([]graphqlbackend.ChangesetLabelResolver, 0, len(labels))
-	for _, l := range labels {
-		resolvers = append(resolvers, &changesetLabelResolver{label: l})
+	// We use chbngeset lbbels bs the source of truth bs they cbn be renbmed
+	// or removed but we'll blso tbke into bccount bny chbngeset events thbt
+	// hbve hbppened since the lbst sync in order to reflect chbnges thbt
+	// hbve come in vib webhooks
+	lbbels := stbte.ComputeLbbels(r.chbngeset, es)
+	resolvers := mbke([]grbphqlbbckend.ChbngesetLbbelResolver, 0, len(lbbels))
+	for _, l := rbnge lbbels {
+		resolvers = bppend(resolvers, &chbngesetLbbelResolver{lbbel: l})
 	}
 	return resolvers, nil
 }
 
-func (r *changesetResolver) Events(ctx context.Context, args *graphqlbackend.ChangesetEventsConnectionArgs) (graphqlbackend.ChangesetEventsConnectionResolver, error) {
-	if err := validateFirstParamDefaults(args.First); err != nil {
+func (r *chbngesetResolver) Events(ctx context.Context, brgs *grbphqlbbckend.ChbngesetEventsConnectionArgs) (grbphqlbbckend.ChbngesetEventsConnectionResolver, error) {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	var cursor int64
-	if args.After != nil {
-		var err error
-		cursor, err = strconv.ParseInt(*args.After, 10, 32)
+	vbr cursor int64
+	if brgs.After != nil {
+		vbr err error
+		cursor, err = strconv.PbrseInt(*brgs.After, 10, 32)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to parse after cursor")
+			return nil, errors.Wrbp(err, "fbiled to pbrse bfter cursor")
 		}
 	}
-	// TODO: We already need to fetch all events for ReviewState and Labels
-	// perhaps we can use the cached data here
-	return &changesetEventsConnectionResolver{
+	// TODO: We blrebdy need to fetch bll events for ReviewStbte bnd Lbbels
+	// perhbps we cbn use the cbched dbtb here
+	return &chbngesetEventsConnectionResolver{
 		store:             r.store,
-		changesetResolver: r,
-		first:             int(args.First),
+		chbngesetResolver: r,
+		first:             int(brgs.First),
 		cursor:            cursor,
 	}, nil
 }
 
-func (r *changesetResolver) Diff(ctx context.Context) (graphqlbackend.RepositoryComparisonInterface, error) {
-	if r.changeset.IsImporting() {
+func (r *chbngesetResolver) Diff(ctx context.Context) (grbphqlbbckend.RepositoryCompbrisonInterfbce, error) {
+	if r.chbngeset.IsImporting() {
 		return nil, nil
 	}
 
-	db := r.store.DatabaseDB()
-	// If the Changeset is from a code host that doesn't push to branches (like Gerrit), we can just use the branch spec description.
-	if r.changeset.Unpublished() || r.changeset.SyncState.BaseRefOid == r.changeset.SyncState.HeadRefOid {
-		desc, err := r.getBranchSpecDescription(ctx)
+	db := r.store.DbtbbbseDB()
+	// If the Chbngeset is from b code host thbt doesn't push to brbnches (like Gerrit), we cbn just use the brbnch spec description.
+	if r.chbngeset.Unpublished() || r.chbngeset.SyncStbte.BbseRefOid == r.chbngeset.SyncStbte.HebdRefOid {
+		desc, err := r.getBrbnchSpecDescription(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		return graphqlbackend.NewPreviewRepositoryComparisonResolver(
+		return grbphqlbbckend.NewPreviewRepositoryCompbrisonResolver(
 			ctx,
 			db,
 			r.gitserverClient,
 			r.repoResolver,
-			desc.BaseRev,
+			desc.BbseRev,
 			desc.Diff,
 		)
 	}
 
-	if !r.changeset.HasDiff() {
+	if !r.chbngeset.HbsDiff() {
 		return nil, nil
 	}
 
-	base, err := r.changeset.BaseRefOid()
+	bbse, err := r.chbngeset.BbseRefOid()
 	if err != nil {
 		return nil, err
 	}
-	if base == "" {
-		// Fallback to the ref if we can't get the OID
-		base, err = r.changeset.BaseRef()
+	if bbse == "" {
+		// Fbllbbck to the ref if we cbn't get the OID
+		bbse, err = r.chbngeset.BbseRef()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	head, err := r.changeset.HeadRefOid()
+	hebd, err := r.chbngeset.HebdRefOid()
 	if err != nil {
 		return nil, err
 	}
-	if head == "" {
-		// Fallback to the ref if we can't get the OID
-		head, err = r.changeset.HeadRef()
+	if hebd == "" {
+		// Fbllbbck to the ref if we cbn't get the OID
+		hebd, err = r.chbngeset.HebdRef()
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return graphqlbackend.NewRepositoryComparison(ctx, db, r.gitserverClient, r.repoResolver, &graphqlbackend.RepositoryComparisonInput{
-		Base:         &base,
-		Head:         &head,
+	return grbphqlbbckend.NewRepositoryCompbrison(ctx, db, r.gitserverClient, r.repoResolver, &grbphqlbbckend.RepositoryCompbrisonInput{
+		Bbse:         &bbse,
+		Hebd:         &hebd,
 		FetchMissing: true,
 	})
 }
 
-func (r *changesetResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	if stat := r.changeset.DiffStat(); stat != nil {
-		return graphqlbackend.NewDiffStat(*stat), nil
+func (r *chbngesetResolver) DiffStbt(ctx context.Context) (*grbphqlbbckend.DiffStbt, error) {
+	if stbt := r.chbngeset.DiffStbt(); stbt != nil {
+		return grbphqlbbckend.NewDiffStbt(*stbt), nil
 	}
 	return nil, nil
 }
 
-type changesetLabelResolver struct {
-	label btypes.ChangesetLabel
+type chbngesetLbbelResolver struct {
+	lbbel btypes.ChbngesetLbbel
 }
 
-func (r *changesetLabelResolver) Text() string {
-	return r.label.Name
+func (r *chbngesetLbbelResolver) Text() string {
+	return r.lbbel.Nbme
 }
 
-func (r *changesetLabelResolver) Color() string {
-	return r.label.Color
+func (r *chbngesetLbbelResolver) Color() string {
+	return r.lbbel.Color
 }
 
-func (r *changesetLabelResolver) Description() *string {
-	if r.label.Description == "" {
+func (r *chbngesetLbbelResolver) Description() *string {
+	if r.lbbel.Description == "" {
 		return nil
 	}
-	return &r.label.Description
+	return &r.lbbel.Description
 }
 
-var _ graphqlbackend.CommitVerificationResolver = &commitVerificationResolver{}
+vbr _ grbphqlbbckend.CommitVerificbtionResolver = &commitVerificbtionResolver{}
 
-type commitVerificationResolver struct {
-	commitVerification *github.Verification
+type commitVerificbtionResolver struct {
+	commitVerificbtion *github.Verificbtion
 }
 
-func (c *commitVerificationResolver) ToGitHubCommitVerification() (graphqlbackend.GitHubCommitVerificationResolver, bool) {
-	if c.commitVerification != nil {
-		return &gitHubCommitVerificationResolver{commitVerification: c.commitVerification}, true
+func (c *commitVerificbtionResolver) ToGitHubCommitVerificbtion() (grbphqlbbckend.GitHubCommitVerificbtionResolver, bool) {
+	if c.commitVerificbtion != nil {
+		return &gitHubCommitVerificbtionResolver{commitVerificbtion: c.commitVerificbtion}, true
 	}
 
-	return nil, false
+	return nil, fblse
 }
 
-var _ graphqlbackend.GitHubCommitVerificationResolver = &gitHubCommitVerificationResolver{}
+vbr _ grbphqlbbckend.GitHubCommitVerificbtionResolver = &gitHubCommitVerificbtionResolver{}
 
-type gitHubCommitVerificationResolver struct {
-	commitVerification *github.Verification
+type gitHubCommitVerificbtionResolver struct {
+	commitVerificbtion *github.Verificbtion
 }
 
-func (r *gitHubCommitVerificationResolver) Verified() bool {
-	return r.commitVerification.Verified
+func (r *gitHubCommitVerificbtionResolver) Verified() bool {
+	return r.commitVerificbtion.Verified
 }
 
-func (r *gitHubCommitVerificationResolver) Reason() string {
-	return r.commitVerification.Reason
+func (r *gitHubCommitVerificbtionResolver) Rebson() string {
+	return r.commitVerificbtion.Rebson
 }
 
-func (r *gitHubCommitVerificationResolver) Signature() string {
-	return r.commitVerification.Signature
+func (r *gitHubCommitVerificbtionResolver) Signbture() string {
+	return r.commitVerificbtion.Signbture
 }
 
-func (r *gitHubCommitVerificationResolver) Payload() string {
-	return r.commitVerification.Payload
+func (r *gitHubCommitVerificbtionResolver) Pbylobd() string {
+	return r.commitVerificbtion.Pbylobd
 }

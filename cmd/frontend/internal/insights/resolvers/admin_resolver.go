@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,104 +6,104 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/insights/background/queryrunner"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler"
-	insightsstore "github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/bbckground/queryrunner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler"
+	insightsstore "github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var _ graphqlbackend.InsightSeriesMetadataPayloadResolver = &insightSeriesMetadataPayloadResolver{}
-var _ graphqlbackend.InsightSeriesMetadataResolver = &insightSeriesMetadataResolver{}
-var _ graphqlbackend.InsightSeriesQueryStatusResolver = &insightSeriesQueryStatusResolver{}
+vbr _ grbphqlbbckend.InsightSeriesMetbdbtbPbylobdResolver = &insightSeriesMetbdbtbPbylobdResolver{}
+vbr _ grbphqlbbckend.InsightSeriesMetbdbtbResolver = &insightSeriesMetbdbtbResolver{}
+vbr _ grbphqlbbckend.InsightSeriesQueryStbtusResolver = &insightSeriesQueryStbtusResolver{}
 
-func (r *Resolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend.UpdateInsightSeriesArgs) (graphqlbackend.InsightSeriesMetadataPayloadResolver, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+func (r *Resolver) UpdbteInsightSeries(ctx context.Context, brgs *grbphqlbbckend.UpdbteInsightSeriesArgs) (grbphqlbbckend.InsightSeriesMetbdbtbPbylobdResolver, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
 
-	if args.Input.Enabled != nil {
-		err := r.dataSeriesStore.SetSeriesEnabled(ctx, args.Input.SeriesId, *args.Input.Enabled)
+	if brgs.Input.Enbbled != nil {
+		err := r.dbtbSeriesStore.SetSeriesEnbbled(ctx, brgs.Input.SeriesId, *brgs.Input.Enbbled)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	series, err := r.dataSeriesStore.GetDataSeries(ctx, insightsstore.GetDataSeriesArgs{IncludeDeleted: true, SeriesID: args.Input.SeriesId})
+	series, err := r.dbtbSeriesStore.GetDbtbSeries(ctx, insightsstore.GetDbtbSeriesArgs{IncludeDeleted: true, SeriesID: brgs.Input.SeriesId})
 	if err != nil {
 		return nil, err
 	}
 	if len(series) == 0 {
-		return nil, errors.Newf("unable to fetch series with series_id: %v", args.Input.SeriesId)
+		return nil, errors.Newf("unbble to fetch series with series_id: %v", brgs.Input.SeriesId)
 	}
-	return &insightSeriesMetadataPayloadResolver{series: &series[0]}, nil
+	return &insightSeriesMetbdbtbPbylobdResolver{series: &series[0]}, nil
 }
 
-func (r *Resolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbackend.InsightSeriesQueryStatusResolver, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+func (r *Resolver) InsightSeriesQueryStbtus(ctx context.Context) ([]grbphqlbbckend.InsightSeriesQueryStbtusResolver, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
 
-	// this will get the queue information from the primary postgres database
-	seriesStatus, err := queryrunner.QueryAllSeriesStatus(ctx, r.workerBaseStore)
+	// this will get the queue informbtion from the primbry postgres dbtbbbse
+	seriesStbtus, err := queryrunner.QueryAllSeriesStbtus(ctx, r.workerBbseStore)
 	if err != nil {
 		return nil, err
 	}
 
-	// need to do a manual join with metadata since this lives in a separate database.
-	seriesMetadata, err := r.dataSeriesStore.GetDataSeries(ctx, insightsstore.GetDataSeriesArgs{IncludeDeleted: true})
+	// need to do b mbnubl join with metbdbtb since this lives in b sepbrbte dbtbbbse.
+	seriesMetbdbtb, err := r.dbtbSeriesStore.GetDbtbSeries(ctx, insightsstore.GetDbtbSeriesArgs{IncludeDeleted: true})
 	if err != nil {
 		return nil, err
 	}
-	// index the metadata by seriesId to perform lookups
-	metadataBySeries := make(map[string]*types.InsightSeries)
-	for i, series := range seriesMetadata {
-		metadataBySeries[series.SeriesID] = &seriesMetadata[i]
+	// index the metbdbtb by seriesId to perform lookups
+	metbdbtbBySeries := mbke(mbp[string]*types.InsightSeries)
+	for i, series := rbnge seriesMetbdbtb {
+		metbdbtbBySeries[series.SeriesID] = &seriesMetbdbtb[i]
 	}
 
-	var resolvers []graphqlbackend.InsightSeriesQueryStatusResolver
-	// we will treat the results from the queue as the "primary" and perform a left join on query metadata. That way
-	// we never have a situation where we can't inspect the records in the queue, that's the entire point of this operation.
-	for _, status := range seriesStatus {
-		if series, ok := metadataBySeries[status.SeriesId]; ok {
-			status.Query = series.Query
-			status.Enabled = series.Enabled
+	vbr resolvers []grbphqlbbckend.InsightSeriesQueryStbtusResolver
+	// we will trebt the results from the queue bs the "primbry" bnd perform b left join on query metbdbtb. Thbt wby
+	// we never hbve b situbtion where we cbn't inspect the records in the queue, thbt's the entire point of this operbtion.
+	for _, stbtus := rbnge seriesStbtus {
+		if series, ok := metbdbtbBySeries[stbtus.SeriesId]; ok {
+			stbtus.Query = series.Query
+			stbtus.Enbbled = series.Enbbled
 		}
-		resolvers = append(resolvers, &insightSeriesQueryStatusResolver{status: status})
+		resolvers = bppend(resolvers, &insightSeriesQueryStbtusResolver{stbtus: stbtus})
 	}
 	return resolvers, nil
 }
 
-func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.InsightViewDebugArgs) (graphqlbackend.InsightViewDebugResolver, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+func (r *Resolver) InsightViewDebug(ctx context.Context, brgs grbphqlbbckend.InsightViewDebugArgs) (grbphqlbbckend.InsightViewDebugResolver, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
-	var viewId string
-	err := relay.UnmarshalSpec(args.Id, &viewId)
+	vbr viewId string
+	err := relby.UnmbrshblSpec(brgs.Id, &viewId)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the insight view id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the insight view id")
 	}
 
-	// 🚨 SECURITY: This debug resolver is restricted to admins only so looking up the series does not check for the users authorization
-	viewSeries, err := r.insightStore.Get(ctx, insightsstore.InsightQueryArgs{UniqueID: viewId, WithoutAuthorization: true})
+	// 🚨 SECURITY: This debug resolver is restricted to bdmins only so looking up the series does not check for the users buthorizbtion
+	viewSeries, err := r.insightStore.Get(ctx, insightsstore.InsightQueryArgs{UniqueID: viewId, WithoutAuthorizbtion: true})
 	if err != nil {
 		return nil, err
 	}
@@ -111,377 +111,377 @@ func (r *Resolver) InsightViewDebug(ctx context.Context, args graphqlbackend.Ins
 	resolver := &insightViewDebugResolver{
 		insightViewID:   viewId,
 		viewSeries:      viewSeries,
-		workerBaseStore: r.workerBaseStore,
-		backfillStore:   scheduler.NewBackfillStore(r.insightsDB),
+		workerBbseStore: r.workerBbseStore,
+		bbckfillStore:   scheduler.NewBbckfillStore(r.insightsDB),
 	}
 	return resolver, nil
 }
 
-func (r *Resolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+func (r *Resolver) RetryInsightSeriesBbckfill(ctx context.Context, brgs *grbphqlbbckend.BbckfillArgs) (*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
-	var backfillQueueID graphqlbackend.BackfillQueueID
-	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
+	vbr bbckfillQueueID grbphqlbbckend.BbckfillQueueID
+	err := relby.UnmbrshblSpec(brgs.Id, &bbckfillQueueID)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the bbckfill id")
 	}
-	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
+	bbckfillStore := scheduler.NewBbckfillStore(r.insightsDB)
+	bbckfill, err := bbckfillStore.LobdBbckfill(ctx, bbckfillQueueID.BbckfillID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to load backfill")
+		return nil, errors.Wrbp(err, "unbble to lobd bbckfill")
 	}
-	if !backfill.IsTerminalState() {
-		return nil, errors.Newf("only backfills that have finished can can be retried [current state %v]", backfill.State)
+	if !bbckfill.IsTerminblStbte() {
+		return nil, errors.Newf("only bbckfills thbt hbve finished cbn cbn be retried [current stbte %v]", bbckfill.Stbte)
 	}
-	err = backfill.RetryBackfillAttempt(ctx, backfillStore)
+	err = bbckfill.RetryBbckfillAttempt(ctx, bbckfillStore)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to reset backfill")
+		return nil, errors.Wrbp(err, "unbble to reset bbckfill")
 	}
 
-	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{ID: &backfill.Id})
+	bbckfillItems, err := bbckfillStore.GetBbckfillQueueInfo(ctx, scheduler.BbckfillQueueArgs{ID: &bbckfill.Id})
 	if err != nil {
 		return nil, err
 	}
-	if len(backfillItems) != 1 {
-		return nil, errors.New("unable to load backfill")
+	if len(bbckfillItems) != 1 {
+		return nil, errors.New("unbble to lobd bbckfill")
 	}
-	updatedItem := backfillItems[0]
-	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:      updatedItem.ID,
-		InsightTitle:    updatedItem.InsightTitle,
-		Label:           updatedItem.SeriesLabel,
-		Query:           updatedItem.SeriesSearchQuery,
-		InsightUniqueID: updatedItem.InsightUniqueID,
-		BackfillStatus: &backfillStatusResolver{
-			queueItem: updatedItem,
+	updbtedItem := bbckfillItems[0]
+	return &grbphqlbbckend.BbckfillQueueItemResolver{
+		BbckfillID:      updbtedItem.ID,
+		InsightTitle:    updbtedItem.InsightTitle,
+		Lbbel:           updbtedItem.SeriesLbbel,
+		Query:           updbtedItem.SeriesSebrchQuery,
+		InsightUniqueID: updbtedItem.InsightUniqueID,
+		BbckfillStbtus: &bbckfillStbtusResolver{
+			queueItem: updbtedItem,
 		},
 	}, nil
 }
 
-func (r *Resolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+func (r *Resolver) MoveInsightSeriesBbckfillToFrontOfQueue(ctx context.Context, brgs *grbphqlbbckend.BbckfillArgs) (*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
-	var backfillQueueID graphqlbackend.BackfillQueueID
-	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
+	vbr bbckfillQueueID grbphqlbbckend.BbckfillQueueID
+	err := relby.UnmbrshblSpec(brgs.Id, &bbckfillQueueID)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the bbckfill id")
 	}
-	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
+	bbckfillStore := scheduler.NewBbckfillStore(r.insightsDB)
+	bbckfill, err := bbckfillStore.LobdBbckfill(ctx, bbckfillQueueID.BbckfillID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to load backfill")
+		return nil, errors.Wrbp(err, "unbble to lobd bbckfill")
 	}
-	if backfill.State != scheduler.BackfillStateProcessing {
-		return nil, errors.Newf("only backfills ready for processing can have priority changed [current state %v]", backfill.State)
+	if bbckfill.Stbte != scheduler.BbckfillStbteProcessing {
+		return nil, errors.Newf("only bbckfills rebdy for processing cbn hbve priority chbnged [current stbte %v]", bbckfill.Stbte)
 	}
-	err = backfill.SetHighestPriority(ctx, backfillStore)
+	err = bbckfill.SetHighestPriority(ctx, bbckfillStore)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to set backfill to highest priority")
+		return nil, errors.Wrbp(err, "unbble to set bbckfill to highest priority")
 	}
-	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{ID: &backfill.Id})
+	bbckfillItems, err := bbckfillStore.GetBbckfillQueueInfo(ctx, scheduler.BbckfillQueueArgs{ID: &bbckfill.Id})
 	if err != nil {
 		return nil, err
 	}
-	if len(backfillItems) != 1 {
-		return nil, errors.New("unable to load backfill")
+	if len(bbckfillItems) != 1 {
+		return nil, errors.New("unbble to lobd bbckfill")
 	}
-	updatedItem := backfillItems[0]
-	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:      updatedItem.ID,
-		InsightTitle:    updatedItem.InsightTitle,
-		Label:           updatedItem.SeriesLabel,
-		Query:           updatedItem.SeriesSearchQuery,
-		InsightUniqueID: updatedItem.InsightUniqueID,
-		BackfillStatus: &backfillStatusResolver{
-			queueItem: updatedItem,
+	updbtedItem := bbckfillItems[0]
+	return &grbphqlbbckend.BbckfillQueueItemResolver{
+		BbckfillID:      updbtedItem.ID,
+		InsightTitle:    updbtedItem.InsightTitle,
+		Lbbel:           updbtedItem.SeriesLbbel,
+		Query:           updbtedItem.SeriesSebrchQuery,
+		InsightUniqueID: updbtedItem.InsightUniqueID,
+		BbckfillStbtus: &bbckfillStbtusResolver{
+			queueItem: updbtedItem,
 		},
 	}, nil
 }
 
-func (r *Resolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+func (r *Resolver) MoveInsightSeriesBbckfillToBbckOfQueue(ctx context.Context, brgs *grbphqlbbckend.BbckfillArgs) (*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
-	var backfillQueueID graphqlbackend.BackfillQueueID
-	err := relay.UnmarshalSpec(args.Id, &backfillQueueID)
+	vbr bbckfillQueueID grbphqlbbckend.BbckfillQueueID
+	err := relby.UnmbrshblSpec(brgs.Id, &bbckfillQueueID)
 	if err != nil {
-		return nil, errors.Wrap(err, "error unmarshalling the backfill id")
+		return nil, errors.Wrbp(err, "error unmbrshblling the bbckfill id")
 	}
-	backfillStore := scheduler.NewBackfillStore(r.insightsDB)
-	backfill, err := backfillStore.LoadBackfill(ctx, backfillQueueID.BackfillID)
+	bbckfillStore := scheduler.NewBbckfillStore(r.insightsDB)
+	bbckfill, err := bbckfillStore.LobdBbckfill(ctx, bbckfillQueueID.BbckfillID)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to load backfill")
+		return nil, errors.Wrbp(err, "unbble to lobd bbckfill")
 	}
-	if backfill.State != scheduler.BackfillStateProcessing {
-		return nil, errors.Newf("only backfills ready for processing can have priority changed [current state %v]", backfill.State)
+	if bbckfill.Stbte != scheduler.BbckfillStbteProcessing {
+		return nil, errors.Newf("only bbckfills rebdy for processing cbn hbve priority chbnged [current stbte %v]", bbckfill.Stbte)
 	}
-	err = backfill.SetLowestPriority(ctx, backfillStore)
+	err = bbckfill.SetLowestPriority(ctx, bbckfillStore)
 	if err != nil {
-		return nil, errors.Wrap(err, "unable to set backfill to lowest priority")
+		return nil, errors.Wrbp(err, "unbble to set bbckfill to lowest priority")
 	}
-	backfillItems, err := backfillStore.GetBackfillQueueInfo(ctx, scheduler.BackfillQueueArgs{ID: &backfill.Id})
+	bbckfillItems, err := bbckfillStore.GetBbckfillQueueInfo(ctx, scheduler.BbckfillQueueArgs{ID: &bbckfill.Id})
 	if err != nil {
 		return nil, err
 	}
-	if len(backfillItems) != 1 {
-		return nil, errors.New("unable to load backfill")
+	if len(bbckfillItems) != 1 {
+		return nil, errors.New("unbble to lobd bbckfill")
 	}
-	updatedItem := backfillItems[0]
-	return &graphqlbackend.BackfillQueueItemResolver{
-		BackfillID:      updatedItem.ID,
-		InsightTitle:    updatedItem.InsightTitle,
-		Label:           updatedItem.SeriesLabel,
-		Query:           updatedItem.SeriesSearchQuery,
-		InsightUniqueID: updatedItem.InsightUniqueID,
-		BackfillStatus: &backfillStatusResolver{
-			queueItem: updatedItem,
+	updbtedItem := bbckfillItems[0]
+	return &grbphqlbbckend.BbckfillQueueItemResolver{
+		BbckfillID:      updbtedItem.ID,
+		InsightTitle:    updbtedItem.InsightTitle,
+		Lbbel:           updbtedItem.SeriesLbbel,
+		Query:           updbtedItem.SeriesSebrchQuery,
+		InsightUniqueID: updbtedItem.InsightUniqueID,
+		BbckfillStbtus: &bbckfillStbtusResolver{
+			queueItem: updbtedItem,
 		},
 	}, nil
 }
 
-type insightSeriesMetadataPayloadResolver struct {
+type insightSeriesMetbdbtbPbylobdResolver struct {
 	series *types.InsightSeries
 }
 
-func (i *insightSeriesMetadataPayloadResolver) Series(_ context.Context) graphqlbackend.InsightSeriesMetadataResolver {
-	return &insightSeriesMetadataResolver{series: i.series}
+func (i *insightSeriesMetbdbtbPbylobdResolver) Series(_ context.Context) grbphqlbbckend.InsightSeriesMetbdbtbResolver {
+	return &insightSeriesMetbdbtbResolver{series: i.series}
 }
 
-type insightSeriesMetadataResolver struct {
+type insightSeriesMetbdbtbResolver struct {
 	series *types.InsightSeries
 }
 
-func (i *insightSeriesMetadataResolver) SeriesId(_ context.Context) (string, error) {
+func (i *insightSeriesMetbdbtbResolver) SeriesId(_ context.Context) (string, error) {
 	return i.series.SeriesID, nil
 }
 
-func (i *insightSeriesMetadataResolver) Query(_ context.Context) (string, error) {
+func (i *insightSeriesMetbdbtbResolver) Query(_ context.Context) (string, error) {
 	return i.series.Query, nil
 }
 
-func (i *insightSeriesMetadataResolver) Enabled(_ context.Context) (bool, error) {
-	return i.series.Enabled, nil
+func (i *insightSeriesMetbdbtbResolver) Enbbled(_ context.Context) (bool, error) {
+	return i.series.Enbbled, nil
 }
 
-type insightSeriesQueryStatusResolver struct {
-	status types.InsightSeriesStatus
+type insightSeriesQueryStbtusResolver struct {
+	stbtus types.InsightSeriesStbtus
 }
 
-func (i *insightSeriesQueryStatusResolver) SeriesId(_ context.Context) (string, error) {
-	return i.status.SeriesId, nil
+func (i *insightSeriesQueryStbtusResolver) SeriesId(_ context.Context) (string, error) {
+	return i.stbtus.SeriesId, nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Query(_ context.Context) (string, error) {
-	return i.status.Query, nil
+func (i *insightSeriesQueryStbtusResolver) Query(_ context.Context) (string, error) {
+	return i.stbtus.Query, nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Enabled(_ context.Context) (bool, error) {
-	return i.status.Enabled, nil
+func (i *insightSeriesQueryStbtusResolver) Enbbled(_ context.Context) (bool, error) {
+	return i.stbtus.Enbbled, nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Errored(_ context.Context) (int32, error) {
-	return int32(i.status.Errored), nil
+func (i *insightSeriesQueryStbtusResolver) Errored(_ context.Context) (int32, error) {
+	return int32(i.stbtus.Errored), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Completed(_ context.Context) (int32, error) {
-	return int32(i.status.Completed), nil
+func (i *insightSeriesQueryStbtusResolver) Completed(_ context.Context) (int32, error) {
+	return int32(i.stbtus.Completed), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Processing(_ context.Context) (int32, error) {
-	return int32(i.status.Processing), nil
+func (i *insightSeriesQueryStbtusResolver) Processing(_ context.Context) (int32, error) {
+	return int32(i.stbtus.Processing), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Failed(_ context.Context) (int32, error) {
-	return int32(i.status.Failed), nil
+func (i *insightSeriesQueryStbtusResolver) Fbiled(_ context.Context) (int32, error) {
+	return int32(i.stbtus.Fbiled), nil
 }
 
-func (i *insightSeriesQueryStatusResolver) Queued(_ context.Context) (int32, error) {
-	return int32(i.status.Queued), nil
+func (i *insightSeriesQueryStbtusResolver) Queued(_ context.Context) (int32, error) {
+	return int32(i.stbtus.Queued), nil
 }
 
 type insightViewDebugResolver struct {
 	insightViewID   string
 	viewSeries      []types.InsightViewSeries
-	workerBaseStore *basestore.Store
-	backfillStore   *scheduler.BackfillStore
+	workerBbseStore *bbsestore.Store
+	bbckfillStore   *scheduler.BbckfillStore
 }
 
-func (r *insightViewDebugResolver) Raw(ctx context.Context) ([]string, error) {
+func (r *insightViewDebugResolver) Rbw(ctx context.Context) ([]string, error) {
 	type queueDebug struct {
-		types.InsightSeriesStatus
-		SearchErrors []types.InsightSearchFailure
+		types.InsightSeriesStbtus
+		SebrchErrors []types.InsightSebrchFbilure
 	}
 
 	type insightDebugInfo struct {
-		QueueStatus    queueDebug
-		Backfills      []scheduler.SeriesBackfillDebug
-		SeriesMetadata json.RawMessage
+		QueueStbtus    queueDebug
+		Bbckfills      []scheduler.SeriesBbckfillDebug
+		SeriesMetbdbtb json.RbwMessbge
 	}
 
-	ids := make([]string, 0, len(r.viewSeries))
+	ids := mbke([]string, 0, len(r.viewSeries))
 	for i := 0; i < len(r.viewSeries); i++ {
-		ids = append(ids, r.viewSeries[i].SeriesID)
+		ids = bppend(ids, r.viewSeries[i].SeriesID)
 	}
 
-	// this will get the queue information from the primary postgres database
-	seriesStatus, err := queryrunner.QuerySeriesStatus(ctx, r.workerBaseStore, ids)
+	// this will get the queue informbtion from the primbry postgres dbtbbbse
+	seriesStbtus, err := queryrunner.QuerySeriesStbtus(ctx, r.workerBbseStore, ids)
 	if err != nil {
 		return nil, err
 	}
 
-	// index the metadata by seriesId to perform lookups
-	queueStatusBySeries := make(map[string]*types.InsightSeriesStatus)
-	for i, status := range seriesStatus {
-		queueStatusBySeries[status.SeriesId] = &seriesStatus[i]
+	// index the metbdbtb by seriesId to perform lookups
+	queueStbtusBySeries := mbke(mbp[string]*types.InsightSeriesStbtus)
+	for i, stbtus := rbnge seriesStbtus {
+		queueStbtusBySeries[stbtus.SeriesId] = &seriesStbtus[i]
 	}
 
-	var viewDebug []string
-	// we will treat the results from the queue as the "secondary" and left join it to the series metadata.
+	vbr viewDebug []string
+	// we will trebt the results from the queue bs the "secondbry" bnd left join it to the series metbdbtb.
 
-	for _, series := range r.viewSeries {
+	for _, series := rbnge r.viewSeries {
 		// Build the Queue Info
-		status := types.InsightSeriesStatus{
+		stbtus := types.InsightSeriesStbtus{
 			SeriesId: series.SeriesID,
 			Query:    series.Query,
-			Enabled:  true,
+			Enbbled:  true,
 		}
-		if tmpStatus, ok := queueStatusBySeries[series.SeriesID]; ok {
-			status.Completed = tmpStatus.Completed
-			status.Enabled = tmpStatus.Enabled
-			status.Errored = tmpStatus.Errored
-			status.Failed = tmpStatus.Failed
-			status.Queued = tmpStatus.Queued
-			status.Processing = tmpStatus.Processing
+		if tmpStbtus, ok := queueStbtusBySeries[series.SeriesID]; ok {
+			stbtus.Completed = tmpStbtus.Completed
+			stbtus.Enbbled = tmpStbtus.Enbbled
+			stbtus.Errored = tmpStbtus.Errored
+			stbtus.Fbiled = tmpStbtus.Fbiled
+			stbtus.Queued = tmpStbtus.Queued
+			stbtus.Processing = tmpStbtus.Processing
 		}
-		seriesErrors, err := queryrunner.QuerySeriesSearchFailures(ctx, r.workerBaseStore, series.SeriesID, 100)
+		seriesErrors, err := queryrunner.QuerySeriesSebrchFbilures(ctx, r.workerBbseStore, series.SeriesID, 100)
 		if err != nil {
 			return nil, err
 		}
 
-		// Build the Backfill Info
-		backfillDebugInfo, err := r.backfillStore.LoadSeriesBackfillsDebugInfo(ctx, series.InsightSeriesID)
+		// Build the Bbckfill Info
+		bbckfillDebugInfo, err := r.bbckfillStore.LobdSeriesBbckfillsDebugInfo(ctx, series.InsightSeriesID)
 		if err != nil {
 			return nil, err
 		}
 
-		var metadata json.RawMessage
-		row := r.backfillStore.QueryRow(ctx, sqlf.Sprintf("select row_to_json(insight_series) from insight_series where id = %s", series.InsightSeriesID))
-		if err = row.Scan(&metadata); err != nil {
+		vbr metbdbtb json.RbwMessbge
+		row := r.bbckfillStore.QueryRow(ctx, sqlf.Sprintf("select row_to_json(insight_series) from insight_series where id = %s", series.InsightSeriesID))
+		if err = row.Scbn(&metbdbtb); err != nil {
 			return nil, err
 		}
 
 		seriesDebug := insightDebugInfo{
-			QueueStatus: queueDebug{
-				SearchErrors:        seriesErrors,
-				InsightSeriesStatus: status,
+			QueueStbtus: queueDebug{
+				SebrchErrors:        seriesErrors,
+				InsightSeriesStbtus: stbtus,
 			},
-			Backfills:      backfillDebugInfo,
-			SeriesMetadata: metadata,
+			Bbckfills:      bbckfillDebugInfo,
+			SeriesMetbdbtb: metbdbtb,
 		}
-		debugJson, err := json.Marshal(seriesDebug)
+		debugJson, err := json.Mbrshbl(seriesDebug)
 		if err != nil {
 			return nil, err
 		}
-		viewDebug = append(viewDebug, string(debugJson))
+		viewDebug = bppend(viewDebug, string(debugJson))
 
 	}
 	return viewDebug, nil
 }
 
-func (r *Resolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*graphqlbackend.BackfillQueueItemResolver], error) {
+func (r *Resolver) InsightAdminBbckfillQueue(ctx context.Context, brgs *grbphqlbbckend.AdminBbckfillQueueArgs) (*grbphqlutil.ConnectionResolver[*grbphqlbbckend.BbckfillQueueItemResolver], error) {
 	// 🚨 SECURITY
-	// only admin users can access this resolver
-	actr := actor.FromContext(ctx)
-	if err := auth.CheckUserIsSiteAdmin(ctx, r.postgresDB, actr.UID); err != nil {
+	// only bdmin users cbn bccess this resolver
+	bctr := bctor.FromContext(ctx)
+	if err := buth.CheckUserIsSiteAdmin(ctx, r.postgresDB, bctr.UID); err != nil {
 		return nil, err
 	}
-	store := &adminBackfillQueueConnectionStore{
-		args:          args,
-		backfillStore: scheduler.NewBackfillStore(r.insightsDB),
-		logger:        r.logger.Scoped("backfillqueue", "insights admin backfill queue resolver"),
-		mainDB:        r.postgresDB,
+	store := &bdminBbckfillQueueConnectionStore{
+		brgs:          brgs,
+		bbckfillStore: scheduler.NewBbckfillStore(r.insightsDB),
+		logger:        r.logger.Scoped("bbckfillqueue", "insights bdmin bbckfill queue resolver"),
+		mbinDB:        r.postgresDB,
 	}
 
-	// `STATE` is the default enum value in the graphql schema.
+	// `STATE` is the defbult enum vblue in the grbphql schemb.
 	orderBy := "STATE"
-	if args.OrderBy != "" {
-		orderBy = args.OrderBy
+	if brgs.OrderBy != "" {
+		orderBy = brgs.OrderBy
 	}
 
-	resolver, err := graphqlutil.NewConnectionResolver[*graphqlbackend.BackfillQueueItemResolver](
+	resolver, err := grbphqlutil.NewConnectionResolver[*grbphqlbbckend.BbckfillQueueItemResolver](
 		store,
-		&args.ConnectionResolverArgs,
-		&graphqlutil.ConnectionResolverOptions{
-			OrderBy: database.OrderBy{
-				{Field: string(orderByToDBBackfillColumn(orderBy))}, // user selected or default
-				{Field: string(scheduler.BackfillID)},               // key field to support paging
+		&brgs.ConnectionResolverArgs,
+		&grbphqlutil.ConnectionResolverOptions{
+			OrderBy: dbtbbbse.OrderBy{
+				{Field: string(orderByToDBBbckfillColumn(orderBy))}, // user selected or defbult
+				{Field: string(scheduler.BbckfillID)},               // key field to support pbging
 			},
-			Ascending: !args.Descending})
+			Ascending: !brgs.Descending})
 	if err != nil {
 		return nil, err
 	}
 	return resolver, nil
 }
 
-type adminBackfillQueueConnectionStore struct {
-	backfillStore *scheduler.BackfillStore
-	mainDB        database.DB
+type bdminBbckfillQueueConnectionStore struct {
+	bbckfillStore *scheduler.BbckfillStore
+	mbinDB        dbtbbbse.DB
 	logger        log.Logger
-	args          *graphqlbackend.AdminBackfillQueueArgs
+	brgs          *grbphqlbbckend.AdminBbckfillQueueArgs
 }
 
-// ComputeTotal returns the total count of all the items in the connection, independent of pagination arguments.
-func (a *adminBackfillQueueConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	filterArgs := scheduler.BackfillQueueArgs{}
-	if a.args != nil {
-		filterArgs.States = a.args.States
-		filterArgs.TextSearch = a.args.TextSearch
+// ComputeTotbl returns the totbl count of bll the items in the connection, independent of pbginbtion brguments.
+func (b *bdminBbckfillQueueConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
+	filterArgs := scheduler.BbckfillQueueArgs{}
+	if b.brgs != nil {
+		filterArgs.Stbtes = b.brgs.Stbtes
+		filterArgs.TextSebrch = b.brgs.TextSebrch
 	}
 
-	count, err := a.backfillStore.GetBackfillQueueTotalCount(ctx, filterArgs)
+	count, err := b.bbckfillStore.GetBbckfillQueueTotblCount(ctx, filterArgs)
 	if err != nil {
 		return nil, err
 	}
 	return i32Ptr(&count), nil
 }
 
-func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*graphqlbackend.BackfillQueueItemResolver, error) {
-	filterArgs := scheduler.BackfillQueueArgs{PaginationArgs: args}
-	if a.args != nil {
-		filterArgs.States = a.args.States
-		filterArgs.TextSearch = a.args.TextSearch
+func (b *bdminBbckfillQueueConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	filterArgs := scheduler.BbckfillQueueArgs{PbginbtionArgs: brgs}
+	if b.brgs != nil {
+		filterArgs.Stbtes = b.brgs.Stbtes
+		filterArgs.TextSebrch = b.brgs.TextSebrch
 	}
-	backfillItems, err := a.backfillStore.GetBackfillQueueInfo(ctx, filterArgs)
+	bbckfillItems, err := b.bbckfillStore.GetBbckfillQueueInfo(ctx, filterArgs)
 	if err != nil {
 		return nil, err
 	}
 
-	getUser := func(userID *int32) (*graphqlbackend.UserResolver, error) {
+	getUser := func(userID *int32) (*grbphqlbbckend.UserResolver, error) {
 		if userID == nil {
 			return nil, nil
 		}
-		user, err := graphqlbackend.UserByIDInt32(ctx, a.mainDB, *userID)
+		user, err := grbphqlbbckend.UserByIDInt32(ctx, b.mbinDB, *userID)
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return user, err
 	}
 
-	resolvers := make([]*graphqlbackend.BackfillQueueItemResolver, 0, len(backfillItems))
-	for _, item := range backfillItems {
-		resolvers = append(resolvers, &graphqlbackend.BackfillQueueItemResolver{
-			BackfillID:      item.ID,
+	resolvers := mbke([]*grbphqlbbckend.BbckfillQueueItemResolver, 0, len(bbckfillItems))
+	for _, item := rbnge bbckfillItems {
+		resolvers = bppend(resolvers, &grbphqlbbckend.BbckfillQueueItemResolver{
+			BbckfillID:      item.ID,
 			InsightTitle:    item.InsightTitle,
-			CreatorID:       item.CreatorID,
-			Label:           item.SeriesLabel,
-			Query:           item.SeriesSearchQuery,
+			CrebtorID:       item.CrebtorID,
+			Lbbel:           item.SeriesLbbel,
+			Query:           item.SeriesSebrchQuery,
 			InsightUniqueID: item.InsightUniqueID,
-			BackfillStatus: &backfillStatusResolver{
+			BbckfillStbtus: &bbckfillStbtusResolver{
 				queueItem: item,
 			},
 			GetUserResolver: getUser,
@@ -491,22 +491,22 @@ func (a *adminBackfillQueueConnectionStore) ComputeNodes(ctx context.Context, ar
 	return resolvers, nil
 }
 
-// MarshalCursor returns cursor for a node and is called for generating start and end cursors.
-func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.BackfillQueueItemResolver, orderBy database.OrderBy) (*string, error) {
+// MbrshblCursor returns cursor for b node bnd is cblled for generbting stbrt bnd end cursors.
+func (b *bdminBbckfillQueueConnectionStore) MbrshblCursor(node *grbphqlbbckend.BbckfillQueueItemResolver, orderBy dbtbbbse.OrderBy) (*string, error) {
 	// This is the enum the client requested ordering by
 	column := orderBy[0].Field
 
-	switch scheduler.BackfillQueueColumn(column) {
-	case scheduler.State, scheduler.QueuePosition:
-	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (STATE, QUEUE_POSITION). Actual: %s", column))
+	switch scheduler.BbckfillQueueColumn(column) {
+	cbse scheduler.Stbte, scheduler.QueuePosition:
+	defbult:
+		return nil, errors.New(fmt.Sprintf("invblid OrderBy.Field. Expected: one of (STATE, QUEUE_POSITION). Actubl: %s", column))
 	}
 
-	// In cursor Column is the what to sort by and the Value is the backfillID
-	cursor := marshalBackfillItemCursor(
+	// In cursor Column is the whbt to sort by bnd the Vblue is the bbckfillID
+	cursor := mbrshblBbckfillItemCursor(
 		&itypes.Cursor{
-			Column: string(dbToOrderBy(scheduler.BackfillQueueColumn(column))),
-			Value:  fmt.Sprintf("%d", node.IDInt32()),
+			Column: string(dbToOrderBy(scheduler.BbckfillQueueColumn(column))),
+			Vblue:  fmt.Sprintf("%d", node.IDInt32()),
 		},
 	)
 
@@ -514,37 +514,37 @@ func (a *adminBackfillQueueConnectionStore) MarshalCursor(node *graphqlbackend.B
 
 }
 
-// UnmarshalCursor returns node id from after/before cursor string.
-func (a *adminBackfillQueueConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
-	backfillCursor, err := unmarshalBackfillItemCursor(&cursor)
+// UnmbrshblCursor returns node id from bfter/before cursor string.
+func (b *bdminBbckfillQueueConnectionStore) UnmbrshblCursor(cursor string, orderBy dbtbbbse.OrderBy) (*string, error) {
+	bbckfillCursor, err := unmbrshblBbckfillItemCursor(&cursor)
 	if err != nil {
 		return nil, err
 	}
 
-	orderByColumn := scheduler.BackfillQueueColumn(orderBy[0].Field)
-	cursorColumn := orderByToDBBackfillColumn(backfillCursor.Column)
+	orderByColumn := scheduler.BbckfillQueueColumn(orderBy[0].Field)
+	cursorColumn := orderByToDBBbckfillColumn(bbckfillCursor.Column)
 	if cursorColumn != orderByColumn {
-		return nil, errors.New("Invalid cursor. Expected one of (STATE, QUEUE_POSITION)")
+		return nil, errors.New("Invblid cursor. Expected one of (STATE, QUEUE_POSITION)")
 	}
 
-	return &backfillCursor.Value, err
+	return &bbckfillCursor.Vblue, err
 }
 
-const backfillCursorKind = "InsightsAdminBackfillItem"
+const bbckfillCursorKind = "InsightsAdminBbckfillItem"
 
-func marshalBackfillItemCursor(cursor *itypes.Cursor) string {
-	return string(relay.MarshalID(backfillCursorKind, cursor))
+func mbrshblBbckfillItemCursor(cursor *itypes.Cursor) string {
+	return string(relby.MbrshblID(bbckfillCursorKind, cursor))
 }
 
-func unmarshalBackfillItemCursor(cursor *string) (*itypes.Cursor, error) {
+func unmbrshblBbckfillItemCursor(cursor *string) (*itypes.Cursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}
-	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != backfillCursorKind {
-		return nil, errors.Errorf("cannot unmarshal repository cursor type: %q", kind)
+	if kind := relby.UnmbrshblKind(grbphql.ID(*cursor)); kind != bbckfillCursorKind {
+		return nil, errors.Errorf("cbnnot unmbrshbl repository cursor type: %q", kind)
 	}
-	var spec *itypes.Cursor
-	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
+	vbr spec *itypes.Cursor
+	if err := relby.UnmbrshblSpec(grbphql.ID(*cursor), &spec); err != nil {
 		return nil, err
 	}
 	return spec, nil
@@ -558,67 +558,67 @@ func i32Ptr(n *int) *int32 {
 	return nil
 }
 
-type backfillStatusResolver struct {
-	queueItem scheduler.BackfillQueueItem
+type bbckfillStbtusResolver struct {
+	queueItem scheduler.BbckfillQueueItem
 }
 
-func (r *backfillStatusResolver) State() string {
-	return strings.ToUpper(r.queueItem.BackfillState)
+func (r *bbckfillStbtusResolver) Stbte() string {
+	return strings.ToUpper(r.queueItem.BbckfillStbte)
 }
 
-func (r *backfillStatusResolver) QueuePosition() *int32 {
+func (r *bbckfillStbtusResolver) QueuePosition() *int32 {
 	return i32Ptr(r.queueItem.QueuePosition)
 }
 
-func (r *backfillStatusResolver) Cost() *int32 {
-	return i32Ptr(r.queueItem.BackfillCost)
+func (r *bbckfillStbtusResolver) Cost() *int32 {
+	return i32Ptr(r.queueItem.BbckfillCost)
 }
 
-func (r *backfillStatusResolver) PercentComplete() *int32 {
+func (r *bbckfillStbtusResolver) PercentComplete() *int32 {
 	return i32Ptr(r.queueItem.PercentComplete)
 }
 
-func (r *backfillStatusResolver) CreatedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCreatedAt)
+func (r *bbckfillStbtusResolver) CrebtedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.queueItem.BbckfillCrebtedAt)
 }
 
-func (r *backfillStatusResolver) StartedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.queueItem.BackfillStartedAt)
+func (r *bbckfillStbtusResolver) StbrtedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.queueItem.BbckfillStbrtedAt)
 }
 
-func (r *backfillStatusResolver) CompletedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.queueItem.BackfillCompletedAt)
+func (r *bbckfillStbtusResolver) CompletedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.queueItem.BbckfillCompletedAt)
 }
-func (r *backfillStatusResolver) Errors() *[]string {
+func (r *bbckfillStbtusResolver) Errors() *[]string {
 	return r.queueItem.Errors
 }
 
-func (r *backfillStatusResolver) Runtime() *string {
-	if r.queueItem.RuntimeDuration != nil {
-		tmp := r.queueItem.RuntimeDuration.String()
+func (r *bbckfillStbtusResolver) Runtime() *string {
+	if r.queueItem.RuntimeDurbtion != nil {
+		tmp := r.queueItem.RuntimeDurbtion.String()
 		return &tmp
 	}
 	return nil
 }
 
-func orderByToDBBackfillColumn(ob string) scheduler.BackfillQueueColumn {
+func orderByToDBBbckfillColumn(ob string) scheduler.BbckfillQueueColumn {
 	switch ob {
-	case "STATE":
-		return scheduler.State
-	case "QUEUE_POSITION":
+	cbse "STATE":
+		return scheduler.Stbte
+	cbse "QUEUE_POSITION":
 		return scheduler.QueuePosition
-	default:
+	defbult:
 		return ""
 	}
 }
 
-func dbToOrderBy(dbField scheduler.BackfillQueueColumn) scheduler.BackfillQueueColumn {
+func dbToOrderBy(dbField scheduler.BbckfillQueueColumn) scheduler.BbckfillQueueColumn {
 	switch dbField {
-	case scheduler.State:
+	cbse scheduler.Stbte:
 		return "STATE"
-	case scheduler.QueuePosition:
+	cbse scheduler.QueuePosition:
 		return "QUEUE_POSITION"
-	default:
-		return "STATE" // default
+	defbult:
+		return "STATE" // defbult
 	}
 }

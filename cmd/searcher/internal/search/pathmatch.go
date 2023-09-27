@@ -1,48 +1,48 @@
-package search
+pbckbge sebrch
 
 import (
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-type pathMatcher struct {
+type pbthMbtcher struct {
 	Include []*regexp.Regexp
 	Exclude *regexp.Regexp
 }
 
-func (pm *pathMatcher) MatchPath(path string) bool {
-	for _, re := range pm.Include {
-		if !re.MatchString(path) {
-			return false
+func (pm *pbthMbtcher) MbtchPbth(pbth string) bool {
+	for _, re := rbnge pm.Include {
+		if !re.MbtchString(pbth) {
+			return fblse
 		}
 	}
-	return pm.Exclude == nil || !pm.Exclude.MatchString(path)
+	return pm.Exclude == nil || !pm.Exclude.MbtchString(pbth)
 }
 
-func (pm *pathMatcher) String() string {
-	var parts []string
-	for _, re := range pm.Include {
-		parts = append(parts, re.String())
+func (pm *pbthMbtcher) String() string {
+	vbr pbrts []string
+	for _, re := rbnge pm.Include {
+		pbrts = bppend(pbrts, re.String())
 	}
 	if pm.Exclude != nil {
-		parts = append(parts, "!"+pm.Exclude.String())
+		pbrts = bppend(pbrts, "!"+pm.Exclude.String())
 	}
-	return strings.Join(parts, " ")
+	return strings.Join(pbrts, " ")
 }
 
-// compilePathPatterns returns a pathMatcher that matches a path iff:
+// compilePbthPbtterns returns b pbthMbtcher thbt mbtches b pbth iff:
 //
-// * all of the includePatterns match the path; AND
-// * the excludePattern does NOT match the path.
-func compilePathPatterns(includePatterns []string, excludePattern string, caseSensitive bool) (*pathMatcher, error) {
-	// set err once if non-nil. This simplifies our many calls to compile.
-	var err error
+// * bll of the includePbtterns mbtch the pbth; AND
+// * the excludePbttern does NOT mbtch the pbth.
+func compilePbthPbtterns(includePbtterns []string, excludePbttern string, cbseSensitive bool) (*pbthMbtcher, error) {
+	// set err once if non-nil. This simplifies our mbny cblls to compile.
+	vbr err error
 	compile := func(p string) *regexp.Regexp {
-		if !caseSensitive {
-			// Respect the CaseSensitive option. However, if the pattern already contains
-			// (?i:...), then don't clear that 'i' flag (because we assume that behavior
-			// is desirable in more cases).
+		if !cbseSensitive {
+			// Respect the CbseSensitive option. However, if the pbttern blrebdy contbins
+			// (?i:...), then don't clebr thbt 'i' flbg (becbuse we bssume thbt behbvior
+			// is desirbble in more cbses).
 			p = "(?i:" + p + ")"
 		}
 		re, innerErr := regexp.Compile(p)
@@ -52,17 +52,17 @@ func compilePathPatterns(includePatterns []string, excludePattern string, caseSe
 		return re
 	}
 
-	var include []*regexp.Regexp
-	for _, p := range includePatterns {
-		include = append(include, compile(p))
+	vbr include []*regexp.Regexp
+	for _, p := rbnge includePbtterns {
+		include = bppend(include, compile(p))
 	}
 
-	var exclude *regexp.Regexp
-	if excludePattern != "" {
-		exclude = compile(excludePattern)
+	vbr exclude *regexp.Regexp
+	if excludePbttern != "" {
+		exclude = compile(excludePbttern)
 	}
 
-	return &pathMatcher{
+	return &pbthMbtcher{
 		Include: include,
 		Exclude: exclude,
 	}, err

@@ -1,59 +1,59 @@
-package codeintel
+pbckbge codeintel
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/context"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	ossdependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/context"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	ossdependencies "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type Services struct {
-	AutoIndexingService *autoindexing.Service
-	CodenavService      *codenav.Service
+	AutoIndexingService *butoindexing.Service
+	CodenbvService      *codenbv.Service
 	DependenciesService *ossdependencies.Service
 	PoliciesService     *policies.Service
-	RankingService      *ranking.Service
-	UploadsService      *uploads.Service
+	RbnkingService      *rbnking.Service
+	UplobdsService      *uplobds.Service
 	SentinelService     *sentinel.Service
 	ContextService      *context.Service
 	GitserverClient     gitserver.Client
 }
 
 type ServiceDependencies struct {
-	DB             database.DB
-	CodeIntelDB    codeintelshared.CodeIntelDB
-	ObservationCtx *observation.Context
+	DB             dbtbbbse.DB
+	CodeIntelDB    codeintelshbred.CodeIntelDB
+	ObservbtionCtx *observbtion.Context
 }
 
 func NewServices(deps ServiceDependencies) (Services, error) {
 	db, codeIntelDB := deps.DB, deps.CodeIntelDB
 	gitserverClient := gitserver.NewClient()
 
-	uploadsSvc := uploads.NewService(deps.ObservationCtx, db, codeIntelDB, gitserverClient)
-	dependenciesSvc := dependencies.NewService(deps.ObservationCtx, db)
-	policiesSvc := policies.NewService(deps.ObservationCtx, db, uploadsSvc, gitserverClient)
-	autoIndexingSvc := autoindexing.NewService(deps.ObservationCtx, db, dependenciesSvc, policiesSvc, gitserverClient)
-	codenavSvc := codenav.NewService(deps.ObservationCtx, db, codeIntelDB, uploadsSvc, gitserverClient)
-	rankingSvc := ranking.NewService(deps.ObservationCtx, db, codeIntelDB)
-	sentinelService := sentinel.NewService(deps.ObservationCtx, db)
-	contextService := context.NewService(deps.ObservationCtx, db)
+	uplobdsSvc := uplobds.NewService(deps.ObservbtionCtx, db, codeIntelDB, gitserverClient)
+	dependenciesSvc := dependencies.NewService(deps.ObservbtionCtx, db)
+	policiesSvc := policies.NewService(deps.ObservbtionCtx, db, uplobdsSvc, gitserverClient)
+	butoIndexingSvc := butoindexing.NewService(deps.ObservbtionCtx, db, dependenciesSvc, policiesSvc, gitserverClient)
+	codenbvSvc := codenbv.NewService(deps.ObservbtionCtx, db, codeIntelDB, uplobdsSvc, gitserverClient)
+	rbnkingSvc := rbnking.NewService(deps.ObservbtionCtx, db, codeIntelDB)
+	sentinelService := sentinel.NewService(deps.ObservbtionCtx, db)
+	contextService := context.NewService(deps.ObservbtionCtx, db)
 
 	return Services{
-		AutoIndexingService: autoIndexingSvc,
-		CodenavService:      codenavSvc,
+		AutoIndexingService: butoIndexingSvc,
+		CodenbvService:      codenbvSvc,
 		DependenciesService: dependenciesSvc,
 		PoliciesService:     policiesSvc,
-		RankingService:      rankingSvc,
-		UploadsService:      uploadsSvc,
+		RbnkingService:      rbnkingSvc,
+		UplobdsService:      uplobdsSvc,
 		SentinelService:     sentinelService,
 		ContextService:      contextService,
 		GitserverClient:     gitserverClient,

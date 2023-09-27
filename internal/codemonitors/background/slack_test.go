@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -9,100 +9,100 @@ import (
 	"net/url"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-func TestSlackWebhook(t *testing.T) {
-	t.Parallel()
-	eu, err := url.Parse("https://sourcegraph.com")
+func TestSlbckWebhook(t *testing.T) {
+	t.Pbrbllel()
+	eu, err := url.Pbrse("https://sourcegrbph.com")
 	require.NoError(t, err)
 
-	action := actionArgs{
+	bction := bctionArgs{
 		MonitorDescription: "My test monitor",
-		MonitorOwnerName:   "Camden Cheek",
-		ExternalURL:        eu,
-		Query:              "repo:camdentest -file:id_rsa.pub BEGIN",
-		Results:            []*result.CommitMatch{&diffResultMock, &commitResultMock},
-		IncludeResults:     false,
+		MonitorOwnerNbme:   "Cbmden Cheek",
+		ExternblURL:        eu,
+		Query:              "repo:cbmdentest -file:id_rsb.pub BEGIN",
+		Results:            []*result.CommitMbtch{&diffResultMock, &commitResultMock},
+		IncludeResults:     fblse,
 	}
 
-	jsonSlackPayload := func(a actionArgs) autogold.Raw {
-		b, err := json.MarshalIndent(slackPayload(a), " ", " ")
+	jsonSlbckPbylobd := func(b bctionArgs) butogold.Rbw {
+		b, err := json.MbrshblIndent(slbckPbylobd(b), " ", " ")
 		require.NoError(t, err)
-		return autogold.Raw(b)
+		return butogold.Rbw(b)
 	}
 
 	t.Run("no error", func(t *testing.T) {
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, err := io.ReadAll(r.Body)
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, err := io.RebdAll(r.Body)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(b))
-			w.WriteHeader(200)
+			butogold.ExpectFile(t, butogold.Rbw(b))
+			w.WriteHebder(200)
 		}))
 		defer s.Close()
 
 		client := s.Client()
-		err := postSlackWebhook(context.Background(), client, s.URL, slackPayload(action))
+		err := postSlbckWebhook(context.Bbckground(), client, s.URL, slbckPbylobd(bction))
 		require.NoError(t, err)
 	})
 
 	t.Run("error is returned", func(t *testing.T) {
-		s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			b, err := io.ReadAll(r.Body)
+		s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			b, err := io.RebdAll(r.Body)
 			require.NoError(t, err)
-			autogold.ExpectFile(t, autogold.Raw(b))
-			w.WriteHeader(500)
+			butogold.ExpectFile(t, butogold.Rbw(b))
+			w.WriteHebder(500)
 		}))
 		defer s.Close()
 
 		client := s.Client()
-		err := postSlackWebhook(context.Background(), client, s.URL, slackPayload(action))
+		err := postSlbckWebhook(context.Bbckground(), client, s.URL, slbckPbylobd(bction))
 		require.Error(t, err)
 	})
 
-	// If these tests fail, be sure to check that the changes are correct here:
-	// https://app.slack.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%5D%7D
+	// If these tests fbil, be sure to check thbt the chbnges bre correct here:
+	// https://bpp.slbck.com/block-kit-builder/T02FSM7DL#%7B%22blocks%22:%5B%5D%7D
 	t.Run("golden with results", func(t *testing.T) {
-		actionCopy := action
-		actionCopy.IncludeResults = true
-		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
+		bctionCopy := bction
+		bctionCopy.IncludeResults = true
+		butogold.ExpectFile(t, jsonSlbckPbylobd(bctionCopy))
 	})
 
-	t.Run("golden with truncated results", func(t *testing.T) {
-		actionCopy := action
-		actionCopy.IncludeResults = true
-		// quadruple the number of results
-		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
-		actionCopy.Results = append(actionCopy.Results, actionCopy.Results...)
-		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
+	t.Run("golden with truncbted results", func(t *testing.T) {
+		bctionCopy := bction
+		bctionCopy.IncludeResults = true
+		// qubdruple the number of results
+		bctionCopy.Results = bppend(bctionCopy.Results, bctionCopy.Results...)
+		bctionCopy.Results = bppend(bctionCopy.Results, bctionCopy.Results...)
+		butogold.ExpectFile(t, jsonSlbckPbylobd(bctionCopy))
 	})
 
-	t.Run("golden with truncated matches", func(t *testing.T) {
-		actionCopy := action
-		actionCopy.IncludeResults = true
-		// add a commit result with very long lines that exceeds the character limit
-		actionCopy.Results = append(actionCopy.Results, &longCommitResultMock)
-		autogold.ExpectFile(t, jsonSlackPayload(actionCopy))
+	t.Run("golden with truncbted mbtches", func(t *testing.T) {
+		bctionCopy := bction
+		bctionCopy.IncludeResults = true
+		// bdd b commit result with very long lines thbt exceeds the chbrbcter limit
+		bctionCopy.Results = bppend(bctionCopy.Results, &longCommitResultMock)
+		butogold.ExpectFile(t, jsonSlbckPbylobd(bctionCopy))
 	})
 
 	t.Run("golden without results", func(t *testing.T) {
-		autogold.ExpectFile(t, jsonSlackPayload(action))
+		butogold.ExpectFile(t, jsonSlbckPbylobd(bction))
 	})
 }
 
-func TestTriggerTestSlackWebhookAction(t *testing.T) {
-	s := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		b, err := io.ReadAll(r.Body)
+func TestTriggerTestSlbckWebhookAction(t *testing.T) {
+	s := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b, err := io.RebdAll(r.Body)
 		require.NoError(t, err)
-		autogold.ExpectFile(t, autogold.Raw(b))
-		w.WriteHeader(200)
+		butogold.ExpectFile(t, butogold.Rbw(b))
+		w.WriteHebder(200)
 	}))
 	defer s.Close()
 
 	client := s.Client()
-	err := SendTestSlackWebhook(context.Background(), client, "My test monitor", s.URL)
+	err := SendTestSlbckWebhook(context.Bbckground(), client, "My test monitor", s.URL)
 	require.NoError(t, err)
 }

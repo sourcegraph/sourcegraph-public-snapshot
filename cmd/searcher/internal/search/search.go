@@ -1,333 +1,333 @@
-// Package search is a service which exposes an API to text search a repo at
-// a specific commit.
+// Pbckbge sebrch is b service which exposes bn API to text sebrch b repo bt
+// b specific commit.
 //
 // Architecture Notes:
 //   - Archive is fetched from gitserver
 //   - Simple HTTP API exposed
-//   - Currently no concept of authorization
-//   - On disk cache of fetched archives to reduce load on gitserver
-//   - Run search on archive. Rely on OS file buffers
-//   - Simple to scale up since stateless
-//   - Use ingress with affinity to increase local cache hit ratio
-package search
+//   - Currently no concept of buthorizbtion
+//   - On disk cbche of fetched brchives to reduce lobd on gitserver
+//   - Run sebrch on brchive. Rely on OS file buffers
+//   - Simple to scble up since stbteless
+//   - Use ingress with bffinity to increbse locbl cbche hit rbtio
+pbckbge sebrch
 
 import (
 	"context"
 	"encoding/json"
-	"math"
+	"mbth"
 	"net"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	// numWorkers is how many concurrent readerGreps run in the case of
-	// regexSearch, and the number of parallel workers in the case of
-	// structuralSearch.
+	// numWorkers is how mbny concurrent rebderGreps run in the cbse of
+	// regexSebrch, bnd the number of pbrbllel workers in the cbse of
+	// structurblSebrch.
 	numWorkers = 8
 )
 
-// Service is the search service. It is an http.Handler.
+// Service is the sebrch service. It is bn http.Hbndler.
 type Service struct {
 	Store *Store
 	Log   log.Logger
 
-	Indexed zoekt.Streamer
+	Indexed zoekt.Strebmer
 
-	// GitDiffSymbols returns the stdout of running "git diff -z --name-status
-	// --no-renames commitA commitB" against repo.
+	// GitDiffSymbols returns the stdout of running "git diff -z --nbme-stbtus
+	// --no-renbmes commitA commitB" bgbinst repo.
 	//
-	// TODO Git client should be exposing a better API here.
-	GitDiffSymbols func(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+	// TODO Git client should be exposing b better API here.
+	GitDiffSymbols func(ctx context.Context, repo bpi.RepoNbme, commitA, commitB bpi.CommitID) ([]byte, error)
 
-	// MaxTotalPathsLength is the maximum sum of lengths of all paths in a
-	// single call to git archive. This mainly needs to be less than ARG_MAX
-	// for the exec.Command on gitserver.
-	MaxTotalPathsLength int
+	// MbxTotblPbthsLength is the mbximum sum of lengths of bll pbths in b
+	// single cbll to git brchive. This mbinly needs to be less thbn ARG_MAX
+	// for the exec.Commbnd on gitserver.
+	MbxTotblPbthsLength int
 }
 
-// ServeHTTP handles HTTP based search requests
+// ServeHTTP hbndles HTTP bbsed sebrch requests
 func (s *Service) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	var p protocol.Request
+	vbr p protocol.Request
 	dec := json.NewDecoder(r.Body)
 	if err := dec.Decode(&p); err != nil {
-		http.Error(w, "failed to decode form: "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "fbiled to decode form: "+err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	if !p.PatternMatchesContent && !p.PatternMatchesPath {
-		// BACKCOMPAT: Old frontends send neither of these fields, but we still want to
-		// search file content in that case.
-		p.PatternMatchesContent = true
+	if !p.PbtternMbtchesContent && !p.PbtternMbtchesPbth {
+		// BACKCOMPAT: Old frontends send neither of these fields, but we still wbnt to
+		// sebrch file content in thbt cbse.
+		p.PbtternMbtchesContent = true
 	}
-	if err := validateParams(&p); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+	if err := vblidbtePbrbms(&p); err != nil {
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	s.streamSearch(ctx, w, p)
+	s.strebmSebrch(ctx, w, p)
 }
 
-// isNetOpError returns true if net.OpError is contained in err. This is
-// useful to ignore errors when the connection has gone away.
+// isNetOpError returns true if net.OpError is contbined in err. This is
+// useful to ignore errors when the connection hbs gone bwby.
 func isNetOpError(err error) bool {
-	return errors.HasType(err, (*net.OpError)(nil))
+	return errors.HbsType(err, (*net.OpError)(nil))
 }
 
-func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
+func (s *Service) strebmSebrch(ctx context.Context, w http.ResponseWriter, p protocol.Request) {
 	if p.Limit == 0 {
-		// No limit for streaming search since upstream limits
-		// will either be sent in the request, or propagated by
-		// a cancelled context.
-		p.Limit = math.MaxInt32
+		// No limit for strebming sebrch since upstrebm limits
+		// will either be sent in the request, or propbgbted by
+		// b cbncelled context.
+		p.Limit = mbth.MbxInt32
 	}
-	eventWriter, err := streamhttp.NewWriter(w)
+	eventWriter, err := strebmhttp.NewWriter(w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	var bufMux sync.Mutex
-	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
-		return eventWriter.EventBytes("matches", data)
+	vbr bufMux sync.Mutex
+	mbtchesBuf := strebmhttp.NewJSONArrbyBuf(32*1024, func(dbtb []byte) error {
+		return eventWriter.EventBytes("mbtches", dbtb)
 	})
-	onMatches := func(match protocol.FileMatch) {
+	onMbtches := func(mbtch protocol.FileMbtch) {
 		bufMux.Lock()
-		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
-			s.Log.Warn("failed appending match to buffer", log.Error(err))
+		if err := mbtchesBuf.Append(mbtch); err != nil && !isNetOpError(err) {
+			s.Log.Wbrn("fbiled bppending mbtch to buffer", log.Error(err))
 		}
 		bufMux.Unlock()
 	}
 
-	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)
-	defer cancel()
+	ctx, cbncel, strebm := newLimitedStrebm(ctx, p.Limit, onMbtches)
+	defer cbncel()
 
-	err = s.search(ctx, &p, stream)
-	doneEvent := searcher.EventDone{
-		LimitHit: stream.LimitHit(),
+	err = s.sebrch(ctx, &p, strebm)
+	doneEvent := sebrcher.EventDone{
+		LimitHit: strebm.LimitHit(),
 	}
 	if err != nil {
 		doneEvent.Error = err.Error()
 	}
 
-	// Flush remaining matches before sending a different event
-	if err := matchesBuf.Flush(); err != nil && !isNetOpError(err) {
-		s.Log.Warn("failed to flush matches", log.Error(err))
+	// Flush rembining mbtches before sending b different event
+	if err := mbtchesBuf.Flush(); err != nil && !isNetOpError(err) {
+		s.Log.Wbrn("fbiled to flush mbtches", log.Error(err))
 	}
 	if err := eventWriter.Event("done", doneEvent); err != nil && !isNetOpError(err) {
-		s.Log.Warn("failed to send done event", log.Error(err))
+		s.Log.Wbrn("fbiled to send done event", log.Error(err))
 	}
 }
 
-func (s *Service) search(ctx context.Context, p *protocol.Request, sender matchSender) (err error) {
+func (s *Service) sebrch(ctx context.Context, p *protocol.Request, sender mbtchSender) (err error) {
 	metricRunning.Inc()
 	defer metricRunning.Dec()
 
-	var tr trace.Trace
-	tr, ctx = trace.New(ctx, "search",
+	vbr tr trbce.Trbce
+	tr, ctx = trbce.New(ctx, "sebrch",
 		p.Repo.Attr(),
 		p.Commit.Attr(),
-		attribute.String("url", p.URL),
-		attribute.String("pattern", p.Pattern),
-		attribute.Bool("isRegExp", p.IsRegExp),
-		attribute.StringSlice("languages", p.Languages),
-		attribute.Bool("isWordMatch", p.IsWordMatch),
-		attribute.Bool("isCaseSensitive", p.IsCaseSensitive),
-		attribute.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive),
-		attribute.Int("limit", p.Limit),
-		attribute.Bool("patternMatchesContent", p.PatternMatchesContent),
-		attribute.Bool("patternMatchesPath", p.PatternMatchesPath),
-		attribute.String("select", p.Select))
+		bttribute.String("url", p.URL),
+		bttribute.String("pbttern", p.Pbttern),
+		bttribute.Bool("isRegExp", p.IsRegExp),
+		bttribute.StringSlice("lbngubges", p.Lbngubges),
+		bttribute.Bool("isWordMbtch", p.IsWordMbtch),
+		bttribute.Bool("isCbseSensitive", p.IsCbseSensitive),
+		bttribute.Bool("pbthPbtternsAreCbseSensitive", p.PbthPbtternsAreCbseSensitive),
+		bttribute.Int("limit", p.Limit),
+		bttribute.Bool("pbtternMbtchesContent", p.PbtternMbtchesContent),
+		bttribute.Bool("pbtternMbtchesPbth", p.PbtternMbtchesPbth),
+		bttribute.String("select", p.Select))
 	defer tr.End()
-	defer func(start time.Time) {
+	defer func(stbrt time.Time) {
 		code := "200"
-		// We often have canceled and timed out requests. We do not want to
-		// record them as errors to avoid noise
-		if ctx.Err() == context.Canceled {
-			code = "canceled"
+		// We often hbve cbnceled bnd timed out requests. We do not wbnt to
+		// record them bs errors to bvoid noise
+		if ctx.Err() == context.Cbnceled {
+			code = "cbnceled"
 			tr.SetError(err)
 		} else if err != nil {
 			tr.SetError(err)
-			if errcode.IsBadRequest(err) {
+			if errcode.IsBbdRequest(err) {
 				code = "400"
-			} else if errcode.IsTemporary(err) {
+			} else if errcode.IsTemporbry(err) {
 				code = "503"
 			} else {
 				code = "500"
 			}
 		}
-		metricRequestTotal.WithLabelValues(code).Inc()
+		metricRequestTotbl.WithLbbelVblues(code).Inc()
 		tr.AddEvent("done",
-			attribute.String("code", code),
-			attribute.Int("matches.len", sender.SentCount()),
-			attribute.Bool("limitHit", sender.LimitHit()),
+			bttribute.String("code", code),
+			bttribute.Int("mbtches.len", sender.SentCount()),
+			bttribute.Bool("limitHit", sender.LimitHit()),
 		)
-		s.Log.Debug("search request",
+		s.Log.Debug("sebrch request",
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
-			log.String("pattern", p.Pattern),
+			log.String("pbttern", p.Pbttern),
 			log.Bool("isRegExp", p.IsRegExp),
-			log.Bool("isStructuralPat", p.IsStructuralPat),
-			log.Strings("languages", p.Languages),
-			log.Bool("isWordMatch", p.IsWordMatch),
-			log.Bool("isCaseSensitive", p.IsCaseSensitive),
-			log.Bool("patternMatchesContent", p.PatternMatchesContent),
-			log.Bool("patternMatchesPath", p.PatternMatchesPath),
-			log.Int("matches", sender.SentCount()),
+			log.Bool("isStructurblPbt", p.IsStructurblPbt),
+			log.Strings("lbngubges", p.Lbngubges),
+			log.Bool("isWordMbtch", p.IsWordMbtch),
+			log.Bool("isCbseSensitive", p.IsCbseSensitive),
+			log.Bool("pbtternMbtchesContent", p.PbtternMbtchesContent),
+			log.Bool("pbtternMbtchesPbth", p.PbtternMbtchesPbth),
+			log.Int("mbtches", sender.SentCount()),
 			log.String("code", code),
-			log.Duration("duration", time.Since(start)),
+			log.Durbtion("durbtion", time.Since(stbrt)),
 			log.Error(err))
 	}(time.Now())
 
-	if p.IsStructuralPat && p.Indexed {
-		// Execute the new structural search path that directly calls Zoekt.
-		// TODO use limit in indexed structural search
-		return structuralSearchWithZoekt(ctx, s.Indexed, p, sender)
+	if p.IsStructurblPbt && p.Indexed {
+		// Execute the new structurbl sebrch pbth thbt directly cblls Zoekt.
+		// TODO use limit in indexed structurbl sebrch
+		return structurblSebrchWithZoekt(ctx, s.Indexed, p, sender)
 	}
 
-	// Compile pattern before fetching from store incase it is bad.
-	var rg *readerGrep
-	if !p.IsStructuralPat {
-		rg, err = compile(&p.PatternInfo)
+	// Compile pbttern before fetching from store incbse it is bbd.
+	vbr rg *rebderGrep
+	if !p.IsStructurblPbt {
+		rg, err = compile(&p.PbtternInfo)
 		if err != nil {
-			return badRequestError{err.Error()}
+			return bbdRequestError{err.Error()}
 		}
 	}
 
-	if p.FetchTimeout == time.Duration(0) {
+	if p.FetchTimeout == time.Durbtion(0) {
 		p.FetchTimeout = 500 * time.Millisecond
 	}
-	prepareCtx, cancel := context.WithTimeout(ctx, p.FetchTimeout)
-	defer cancel()
+	prepbreCtx, cbncel := context.WithTimeout(ctx, p.FetchTimeout)
+	defer cbncel()
 
 	getZf := func() (string, *zipFile, error) {
-		path, err := s.Store.PrepareZip(prepareCtx, p.Repo, p.Commit)
+		pbth, err := s.Store.PrepbreZip(prepbreCtx, p.Repo, p.Commit)
 		if err != nil {
 			return "", nil, err
 		}
-		zf, err := s.Store.zipCache.Get(path)
-		return path, zf, err
+		zf, err := s.Store.zipCbche.Get(pbth)
+		return pbth, zf, err
 	}
 
-	// Hybrid search only works with our normal searcher code path, not
-	// structural search.
-	hybrid := !p.IsStructuralPat
+	// Hybrid sebrch only works with our normbl sebrcher code pbth, not
+	// structurbl sebrch.
+	hybrid := !p.IsStructurblPbt
 	if hybrid {
-		logger := logWithTrace(ctx, s.Log).Scoped("hybrid", "hybrid indexed and unindexed search").With(
+		logger := logWithTrbce(ctx, s.Log).Scoped("hybrid", "hybrid indexed bnd unindexed sebrch").With(
 			log.String("repo", string(p.Repo)),
 			log.String("commit", string(p.Commit)),
 		)
 
-		unsearched, ok, err := s.hybrid(ctx, logger, p, sender)
+		unsebrched, ok, err := s.hybrid(ctx, logger, p, sender)
 		if err != nil {
-			logger.Error("hybrid search failed",
+			logger.Error("hybrid sebrch fbiled",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)),
 				log.Error(err))
-			return errors.Wrap(err, "hybrid search failed")
+			return errors.Wrbp(err, "hybrid sebrch fbiled")
 		}
 		if !ok {
-			logger.Debug("hybrid search is falling back to normal unindexed search",
+			logger.Debug("hybrid sebrch is fblling bbck to normbl unindexed sebrch",
 				log.String("repo", string(p.Repo)),
 				log.String("commit", string(p.Commit)))
 		} else {
-			// now we only need to search unsearched
-			if len(unsearched) == 0 {
-				// indexed search did it all
+			// now we only need to sebrch unsebrched
+			if len(unsebrched) == 0 {
+				// indexed sebrch did it bll
 				return nil
 			}
 
 			getZf = func() (string, *zipFile, error) {
-				path, err := s.Store.PrepareZipPaths(prepareCtx, p.Repo, p.Commit, unsearched)
+				pbth, err := s.Store.PrepbreZipPbths(prepbreCtx, p.Repo, p.Commit, unsebrched)
 				if err != nil {
 					return "", nil, err
 				}
-				zf, err := s.Store.zipCache.Get(path)
-				return path, zf, err
+				zf, err := s.Store.zipCbche.Get(pbth)
+				return pbth, zf, err
 			}
 		}
 	}
 
-	zipPath, zf, err := getZipFileWithRetry(getZf)
+	zipPbth, zf, err := getZipFileWithRetry(getZf)
 	if err != nil {
-		return errors.Wrap(err, "failed to get archive")
+		return errors.Wrbp(err, "fbiled to get brchive")
 	}
 	defer zf.Close()
 
 	nFiles := uint64(len(zf.Files))
-	bytes := int64(len(zf.Data))
-	tr.AddEvent("archive",
-		attribute.Int64("archive.files", int64(nFiles)),
-		attribute.Int64("archive.size", bytes))
-	metricArchiveFiles.Observe(float64(nFiles))
-	metricArchiveSize.Observe(float64(bytes))
+	bytes := int64(len(zf.Dbtb))
+	tr.AddEvent("brchive",
+		bttribute.Int64("brchive.files", int64(nFiles)),
+		bttribute.Int64("brchive.size", bytes))
+	metricArchiveFiles.Observe(flobt64(nFiles))
+	metricArchiveSize.Observe(flobt64(bytes))
 
-	if p.IsStructuralPat {
-		return filteredStructuralSearch(ctx, zipPath, zf, &p.PatternInfo, p.Repo, sender)
+	if p.IsStructurblPbt {
+		return filteredStructurblSebrch(ctx, zipPbth, zf, &p.PbtternInfo, p.Repo, sender)
 	} else {
-		return regexSearch(ctx, rg, zf, p.PatternMatchesContent, p.PatternMatchesPath, p.IsNegated, sender)
+		return regexSebrch(ctx, rg, zf, p.PbtternMbtchesContent, p.PbtternMbtchesPbth, p.IsNegbted, sender)
 	}
 }
 
-func validateParams(p *protocol.Request) error {
+func vblidbtePbrbms(p *protocol.Request) error {
 	if p.Repo == "" {
 		return errors.New("Repo must be non-empty")
 	}
-	// Surprisingly this is the same sanity check used in the git source.
+	// Surprisingly this is the sbme sbnity check used in the git source.
 	if len(p.Commit) != 40 {
 		return errors.Errorf("Commit must be resolved (Commit=%q)", p.Commit)
 	}
-	if p.Pattern == "" && p.ExcludePattern == "" && len(p.IncludePatterns) == 0 {
-		return errors.New("At least one of pattern and include/exclude pattners must be non-empty")
+	if p.Pbttern == "" && p.ExcludePbttern == "" && len(p.IncludePbtterns) == 0 {
+		return errors.New("At lebst one of pbttern bnd include/exclude pbttners must be non-empty")
 	}
-	if p.IsNegated && p.IsStructuralPat {
-		return errors.New("Negated patterns are not supported for structural searches")
+	if p.IsNegbted && p.IsStructurblPbt {
+		return errors.New("Negbted pbtterns bre not supported for structurbl sebrches")
 	}
 	return nil
 }
 
-const megabyte = float64(1000 * 1000)
+const megbbyte = flobt64(1000 * 1000)
 
-var (
-	metricRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "searcher_service_running",
-		Help: "Number of running search requests.",
+vbr (
+	metricRunning = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "sebrcher_service_running",
+		Help: "Number of running sebrch requests.",
 	})
-	metricArchiveSize = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "searcher_service_archive_size_bytes",
-		Help:    "Observes the size when an archive is searched.",
-		Buckets: []float64{1 * megabyte, 10 * megabyte, 100 * megabyte, 500 * megabyte, 1000 * megabyte, 5000 * megabyte},
+	metricArchiveSize = prombuto.NewHistogrbm(prometheus.HistogrbmOpts{
+		Nbme:    "sebrcher_service_brchive_size_bytes",
+		Help:    "Observes the size when bn brchive is sebrched.",
+		Buckets: []flobt64{1 * megbbyte, 10 * megbbyte, 100 * megbbyte, 500 * megbbyte, 1000 * megbbyte, 5000 * megbbyte},
 	})
-	metricArchiveFiles = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "searcher_service_archive_files",
-		Help:    "Observes the number of files when an archive is searched.",
-		Buckets: []float64{100, 1000, 10000, 50000, 100000},
+	metricArchiveFiles = prombuto.NewHistogrbm(prometheus.HistogrbmOpts{
+		Nbme:    "sebrcher_service_brchive_files",
+		Help:    "Observes the number of files when bn brchive is sebrched.",
+		Buckets: []flobt64{100, 1000, 10000, 50000, 100000},
 	})
-	metricRequestTotal = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "searcher_service_request_total",
-		Help: "Number of returned search requests.",
+	metricRequestTotbl = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "sebrcher_service_request_totbl",
+		Help: "Number of returned sebrch requests.",
 	}, []string{"code"})
 )
 
-type badRequestError struct{ msg string }
+type bbdRequestError struct{ msg string }
 
-func (e badRequestError) Error() string    { return e.msg }
-func (e badRequestError) BadRequest() bool { return true }
+func (e bbdRequestError) Error() string    { return e.msg }
+func (e bbdRequestError) BbdRequest() bool { return true }

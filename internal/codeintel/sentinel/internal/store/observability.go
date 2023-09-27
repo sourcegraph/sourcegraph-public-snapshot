@@ -1,53 +1,53 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	vulnerabilityByID                        *observation.Operation
-	getVulnerabilitiesByIDs                  *observation.Operation
-	getVulnerabilities                       *observation.Operation
-	insertVulnerabilities                    *observation.Operation
-	vulnerabilityMatchByID                   *observation.Operation
-	getVulnerabilityMatches                  *observation.Operation
-	getVulnerabilityMatchesSummaryCount      *observation.Operation
-	getVulnerabilityMatchesCountByRepository *observation.Operation
-	scanMatches                              *observation.Operation
+type operbtions struct {
+	vulnerbbilityByID                        *observbtion.Operbtion
+	getVulnerbbilitiesByIDs                  *observbtion.Operbtion
+	getVulnerbbilities                       *observbtion.Operbtion
+	insertVulnerbbilities                    *observbtion.Operbtion
+	vulnerbbilityMbtchByID                   *observbtion.Operbtion
+	getVulnerbbilityMbtches                  *observbtion.Operbtion
+	getVulnerbbilityMbtchesSummbryCount      *observbtion.Operbtion
+	getVulnerbbilityMbtchesCountByRepository *observbtion.Operbtion
+	scbnMbtches                              *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
+			observbtionCtx.Registerer,
 			"codeintel_sentinel_store",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.sentinel.store.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.sentinel.store.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		vulnerabilityByID:                        op("VulnerabilityByID"),
-		getVulnerabilitiesByIDs:                  op("GetVulnerabilitiesByIDs"),
-		getVulnerabilities:                       op("GetVulnerabilities"),
-		insertVulnerabilities:                    op("InsertVulnerabilities"),
-		vulnerabilityMatchByID:                   op("VulnerabilityMatchByID"),
-		getVulnerabilityMatches:                  op("GetVulnerabilityMatches"),
-		getVulnerabilityMatchesSummaryCount:      op("GetVulnerabilityMatchesSummaryCount"),
-		getVulnerabilityMatchesCountByRepository: op("GetVulnerabilityMatchesCountByRepository"),
-		scanMatches:                              op("ScanMatches"),
+	return &operbtions{
+		vulnerbbilityByID:                        op("VulnerbbilityByID"),
+		getVulnerbbilitiesByIDs:                  op("GetVulnerbbilitiesByIDs"),
+		getVulnerbbilities:                       op("GetVulnerbbilities"),
+		insertVulnerbbilities:                    op("InsertVulnerbbilities"),
+		vulnerbbilityMbtchByID:                   op("VulnerbbilityMbtchByID"),
+		getVulnerbbilityMbtches:                  op("GetVulnerbbilityMbtches"),
+		getVulnerbbilityMbtchesSummbryCount:      op("GetVulnerbbilityMbtchesSummbryCount"),
+		getVulnerbbilityMbtchesCountByRepository: op("GetVulnerbbilityMbtchesCountByRepository"),
+		scbnMbtches:                              op("ScbnMbtches"),
 	}
 }

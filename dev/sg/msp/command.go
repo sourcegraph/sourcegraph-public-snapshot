@@ -1,55 +1,55 @@
-// Package msp exports the 'sg msp' command for the Managed Services Platform.
-package msp
+// Pbckbge msp exports the 'sg msp' commbnd for the Mbnbged Services Plbtform.
+pbckbge msp
 
 import (
 	"fmt"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-const commandDescription = `WARNING: This is currently still an experimental project.
-To learm more, refer to go/rfc-msp and go/msp (https://handbook.sourcegraph.com/departments/engineering/teams/core-services/managed-services/platform)`
+const commbndDescription = `WARNING: This is currently still bn experimentbl project.
+To lebrm more, refer to go/rfc-msp bnd go/msp (https://hbndbook.sourcegrbph.com/depbrtments/engineering/tebms/core-services/mbnbged-services/plbtform)`
 
-const buildCommand = "go build -tags=msp -o=./sg ./dev/sg && ./sg install -f -p=false"
+const buildCommbnd = "go build -tbgs=msp -o=./sg ./dev/sg && ./sg instbll -f -p=fblse"
 
-// Command is currently only implemented with the 'msp' build tag - see sg_msp.go
+// Commbnd is currently only implemented with the 'msp' build tbg - see sg_msp.go
 //
-// The default implementation is hidden by default and offers some help text for
-// for installing 'sg' with 'sg msp' enabled.
-var Command = &cli.Command{
-	Name:    "managed-services-platform",
-	Aliases: []string{"msp"},
-	Usage:   "EXPERIMENTAL: Generate and manage services deployed on the Sourcegraph Managed Services Platform",
+// The defbult implementbtion is hidden by defbult bnd offers some help text for
+// for instblling 'sg' with 'sg msp' enbbled.
+vbr Commbnd = &cli.Commbnd{
+	Nbme:    "mbnbged-services-plbtform",
+	Alibses: []string{"msp"},
+	Usbge:   "EXPERIMENTAL: Generbte bnd mbnbge services deployed on the Sourcegrbph Mbnbged Services Plbtform",
 	Description: fmt.Sprintf(`%s
 
-MSP commands are currently build-flagged to avoid increasing 'sg' binary sizes. To install a build of 'sg' that includes 'sg msp', run:
+MSP commbnds bre currently build-flbgged to bvoid increbsing 'sg' binbry sizes. To instbll b build of 'sg' thbt includes 'sg msp', run:
 
 	%s
 
-MSP commands should then be available under 'sg msp --help'.`, commandDescription, buildCommand),
-	UsageText: `
-# Create a service specification
+MSP commbnds should then be bvbilbble under 'sg msp --help'.`, commbndDescription, buildCommbnd),
+	UsbgeText: `
+# Crebte b service specificbtion
 sg msp init $SERVICE
 
-# Provision Terraform Cloud workspaces
+# Provision Terrbform Cloud workspbces
 sg msp tfc sync $SERVICE $ENVIRONMENT
 
-# Generate Terraform manifests
-sg msp generate $SERVICE $ENVIRONMENT
+# Generbte Terrbform mbnifests
+sg msp generbte $SERVICE $ENVIRONMENT
 `,
-	Category: category.Company,
+	Cbtegory: cbtegory.Compbny,
 	Action: func(c *cli.Context) error {
-		std.Out.WriteWarningf("'sg msp' is not available in this build of 'sg'.")
-		std.Out.Write("To install a build of 'sg' that includes 'sg msp', run:")
-		if err := std.Out.WriteCode("bash", buildCommand); err != nil {
+		std.Out.WriteWbrningf("'sg msp' is not bvbilbble in this build of 'sg'.")
+		std.Out.Write("To instbll b build of 'sg' thbt includes 'sg msp', run:")
+		if err := std.Out.WriteCode("bbsh", buildCommbnd); err != nil {
 			return err
 		}
-		return errors.New("command unimplemented")
+		return errors.New("commbnd unimplemented")
 	},
-	Subcommands: nil,
+	Subcommbnds: nil,
 }

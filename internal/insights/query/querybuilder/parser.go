@@ -1,105 +1,105 @@
-package querybuilder
+pbckbge querybuilder
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	sebrchquery "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func DetectSearchType(rawQuery string, patternType string) (query.SearchType, error) {
-	searchType, err := client.SearchTypeFromString(patternType)
+func DetectSebrchType(rbwQuery string, pbtternType string) (query.SebrchType, error) {
+	sebrchType, err := client.SebrchTypeFromString(pbtternType)
 	if err != nil {
-		return -1, errors.Wrap(err, "client.SearchTypeFromString")
+		return -1, errors.Wrbp(err, "client.SebrchTypeFromString")
 	}
-	q, err := query.Parse(rawQuery, searchType)
+	q, err := query.Pbrse(rbwQuery, sebrchType)
 	if err != nil {
-		return -1, errors.Wrap(err, "query.Parse")
+		return -1, errors.Wrbp(err, "query.Pbrse")
 	}
-	q = query.LowercaseFieldNames(q)
-	query.VisitField(q, searchquery.FieldPatternType, func(value string, _ bool, _ query.Annotation) {
-		if value != "" {
-			searchType, err = client.SearchTypeFromString(value)
+	q = query.LowercbseFieldNbmes(q)
+	query.VisitField(q, sebrchquery.FieldPbtternType, func(vblue string, _ bool, _ query.Annotbtion) {
+		if vblue != "" {
+			sebrchType, err = client.SebrchTypeFromString(vblue)
 		}
 	})
-	return searchType, err
+	return sebrchType, err
 
 }
 
-func ParseQuery(q string, patternType string) (query.Plan, error) {
-	searchType, err := DetectSearchType(q, patternType)
+func PbrseQuery(q string, pbtternType string) (query.Plbn, error) {
+	sebrchType, err := DetectSebrchType(q, pbtternType)
 	if err != nil {
-		return nil, errors.Wrap(err, "overrideSearchType")
+		return nil, errors.Wrbp(err, "overrideSebrchType")
 	}
-	plan, err := query.Pipeline(query.Init(q, searchType))
+	plbn, err := query.Pipeline(query.Init(q, sebrchType))
 	if err != nil {
-		return nil, errors.Wrap(err, "query.Pipeline")
+		return nil, errors.Wrbp(err, "query.Pipeline")
 	}
-	return plan, nil
+	return plbn, nil
 }
 
-func ParseComputeQuery(q string, gitserverClient gitserver.Client) (*compute.Query, error) {
-	computeQuery, err := compute.Parse(q)
+func PbrseComputeQuery(q string, gitserverClient gitserver.Client) (*compute.Query, error) {
+	computeQuery, err := compute.Pbrse(q)
 	if err != nil {
-		return nil, errors.Wrap(err, "compute.Parse")
+		return nil, errors.Wrbp(err, "compute.Pbrse")
 	}
 	return computeQuery, nil
 }
 
-// ParametersFromQueryPlan expects a valid query plan and returns all parameters from it, e.g. context:global.
-func ParametersFromQueryPlan(plan query.Plan) query.Parameters {
-	var parameters []query.Parameter
-	for _, basic := range plan {
-		parameters = append(parameters, basic.Parameters...)
+// PbrbmetersFromQueryPlbn expects b vblid query plbn bnd returns bll pbrbmeters from it, e.g. context:globbl.
+func PbrbmetersFromQueryPlbn(plbn query.Plbn) query.Pbrbmeters {
+	vbr pbrbmeters []query.Pbrbmeter
+	for _, bbsic := rbnge plbn {
+		pbrbmeters = bppend(pbrbmeters, bbsic.Pbrbmeters...)
 	}
-	return parameters
+	return pbrbmeters
 }
 
-func ContainsField(rawQuery, field string) (bool, error) {
-	plan, err := ParseQuery(rawQuery, "literal")
+func ContbinsField(rbwQuery, field string) (bool, error) {
+	plbn, err := PbrseQuery(rbwQuery, "literbl")
 	if err != nil {
-		return false, errors.Wrap(err, "ParseQuery")
+		return fblse, errors.Wrbp(err, "PbrseQuery")
 	}
-	for _, basic := range plan {
-		if basic.Parameters.Exists(field) {
+	for _, bbsic := rbnge plbn {
+		if bbsic.Pbrbmeters.Exists(field) {
 			return true, nil
 		}
 	}
-	return false, nil
+	return fblse, nil
 }
 
-// Possible reasons that a scope query is invalid.
-const containsPattern = "the query cannot be used for scoping because it contains a pattern: `%s`."
-const containsDisallowedFilter = "the query cannot be used for scoping because it contains a disallowed filter: `%s`."
-const containsDisallowedRevision = "the query cannot be used for scoping because it contains a revision."
-const containsInvalidExpression = "the query cannot be used for scoping because it is not a valid regular expression."
+// Possible rebsons thbt b scope query is invblid.
+const contbinsPbttern = "the query cbnnot be used for scoping becbuse it contbins b pbttern: `%s`."
+const contbinsDisbllowedFilter = "the query cbnnot be used for scoping becbuse it contbins b disbllowed filter: `%s`."
+const contbinsDisbllowedRevision = "the query cbnnot be used for scoping becbuse it contbins b revision."
+const contbinsInvblidExpression = "the query cbnnot be used for scoping becbuse it is not b vblid regulbr expression."
 
-// IsValidScopeQuery takes a query plan and returns whether the query is a valid scope query, that is it only contains
-// repo filters or boolean predicates.
-func IsValidScopeQuery(plan searchquery.Plan) (string, bool) {
-	for _, basic := range plan {
-		if basic.Pattern != nil {
-			return fmt.Sprintf(containsPattern, basic.PatternString()), false
+// IsVblidScopeQuery tbkes b query plbn bnd returns whether the query is b vblid scope query, thbt is it only contbins
+// repo filters or boolebn predicbtes.
+func IsVblidScopeQuery(plbn sebrchquery.Plbn) (string, bool) {
+	for _, bbsic := rbnge plbn {
+		if bbsic.Pbttern != nil {
+			return fmt.Sprintf(contbinsPbttern, bbsic.PbtternString()), fblse
 		}
-		for _, parameter := range basic.Parameters {
-			field := strings.ToLower(parameter.Field)
-			// Only allowed filter is repo (including repo:has predicates).
-			if field != searchquery.FieldRepo {
-				return fmt.Sprintf(containsDisallowedFilter, parameter.Field), false
+		for _, pbrbmeter := rbnge bbsic.Pbrbmeters {
+			field := strings.ToLower(pbrbmeter.Field)
+			// Only bllowed filter is repo (including repo:hbs predicbtes).
+			if field != sebrchquery.FieldRepo {
+				return fmt.Sprintf(contbinsDisbllowedFilter, pbrbmeter.Field), fblse
 			}
-			// This is a repo filter make sure no revision was specified
-			repoRevs, err := query.ParseRepositoryRevisions(parameter.Value)
+			// This is b repo filter mbke sure no revision wbs specified
+			repoRevs, err := query.PbrseRepositoryRevisions(pbrbmeter.Vblue)
 			if err != nil {
-				// This shouldn't be possible because it should have failed earlier when parsed
-				return containsInvalidExpression, false
+				// This shouldn't be possible becbuse it should hbve fbiled ebrlier when pbrsed
+				return contbinsInvblidExpression, fblse
 			}
 			if len(repoRevs.Revs) > 0 {
-				return containsDisallowedRevision, false
+				return contbinsDisbllowedRevision, fblse
 			}
 		}
 	}

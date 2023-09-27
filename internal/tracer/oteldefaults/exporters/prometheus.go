@@ -1,14 +1,14 @@
-package exporters
+pbckbge exporters
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 	otelprometheus "go.opentelemetry.io/otel/exporters/prometheus"
 	metricsdk "go.opentelemetry.io/otel/sdk/metric"
 )
 
-// NewPrometheusExporter sets up a metrics Reader for interacting with a
-// Prometheus exporter based on prometheus.DefaultRegisterer
-func NewPrometheusExporter() (metricsdk.Reader, error) {
+// NewPrometheusExporter sets up b metrics Rebder for interbcting with b
+// Prometheus exporter bbsed on prometheus.DefbultRegisterer
+func NewPrometheusExporter() (metricsdk.Rebder, error) {
 	return otelprometheus.New(
-		otelprometheus.WithRegisterer(prometheus.DefaultRegisterer))
+		otelprometheus.WithRegisterer(prometheus.DefbultRegisterer))
 }

@@ -1,15 +1,15 @@
-package visualization
+pbckbge visublizbtion
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-type VisualizationContext struct {
-	Stasher *reader.Stasher
+type VisublizbtionContext struct {
+	Stbsher *rebder.Stbsher
 }
 
-func NewVisualizationContext() *VisualizationContext {
-	return &VisualizationContext{
-		Stasher: reader.NewStasher(),
+func NewVisublizbtionContext() *VisublizbtionContext {
+	return &VisublizbtionContext{
+		Stbsher: rebder.NewStbsher(),
 	}
 }

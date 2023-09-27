@@ -1,9 +1,9 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"bytes"
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"os"
@@ -11,243 +11,243 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/inconshreveable/log15"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	githubapp "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/githubappauth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	githubbpp "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/githubbppbuth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
 	}
 	os.Exit(m.Run())
 }
 
-var testDiff = []byte(`diff README.md README.md
-index 671e50a..851b23a 100644
+vbr testDiff = []byte(`diff README.md README.md
+index 671e50b..851b23b 100644
 --- README.md
 +++ README.md
 @@ -1,2 +1,2 @@
  # README
--This file is hosted at example.com and is a test file.
-+This file is hosted at sourcegraph.com and is a test file.
+-This file is hosted bt exbmple.com bnd is b test file.
++This file is hosted bt sourcegrbph.com bnd is b test file.
 diff --git urls.txt urls.txt
 index 6f8b5d9..17400bc 100644
 --- urls.txt
 +++ urls.txt
 @@ -1,3 +1,3 @@
- another-url.com
--example.com
-+sourcegraph.com
+ bnother-url.com
+-exbmple.com
++sourcegrbph.com
  never-touch-the-mouse.com
 `)
 
-// testDiffGraphQL is the parsed representation of testDiff.
-var testDiffGraphQL = apitest.FileDiffs{
-	TotalCount: 2,
-	RawDiff:    string(testDiff),
-	DiffStat:   apitest.DiffStat{Added: 2, Deleted: 2},
-	PageInfo:   apitest.PageInfo{},
-	Nodes: []apitest.FileDiff{
+// testDiffGrbphQL is the pbrsed representbtion of testDiff.
+vbr testDiffGrbphQL = bpitest.FileDiffs{
+	TotblCount: 2,
+	RbwDiff:    string(testDiff),
+	DiffStbt:   bpitest.DiffStbt{Added: 2, Deleted: 2},
+	PbgeInfo:   bpitest.PbgeInfo{},
+	Nodes: []bpitest.FileDiff{
 		{
-			OldPath: "README.md",
-			NewPath: "README.md",
-			OldFile: apitest.File{Name: "README.md"},
-			Hunks: []apitest.FileDiffHunk{
+			OldPbth: "README.md",
+			NewPbth: "README.md",
+			OldFile: bpitest.File{Nbme: "README.md"},
+			Hunks: []bpitest.FileDiffHunk{
 				{
-					Body:     " # README\n-This file is hosted at example.com and is a test file.\n+This file is hosted at sourcegraph.com and is a test file.\n",
-					OldRange: apitest.DiffRange{StartLine: 1, Lines: 2},
-					NewRange: apitest.DiffRange{StartLine: 1, Lines: 2},
+					Body:     " # README\n-This file is hosted bt exbmple.com bnd is b test file.\n+This file is hosted bt sourcegrbph.com bnd is b test file.\n",
+					OldRbnge: bpitest.DiffRbnge{StbrtLine: 1, Lines: 2},
+					NewRbnge: bpitest.DiffRbnge{StbrtLine: 1, Lines: 2},
 				},
 			},
-			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
+			Stbt: bpitest.DiffStbt{Added: 1, Deleted: 1},
 		},
 		{
-			OldPath: "urls.txt",
-			NewPath: "urls.txt",
-			OldFile: apitest.File{Name: "urls.txt"},
-			Hunks: []apitest.FileDiffHunk{
+			OldPbth: "urls.txt",
+			NewPbth: "urls.txt",
+			OldFile: bpitest.File{Nbme: "urls.txt"},
+			Hunks: []bpitest.FileDiffHunk{
 				{
-					Body:     " another-url.com\n-example.com\n+sourcegraph.com\n never-touch-the-mouse.com\n",
-					OldRange: apitest.DiffRange{StartLine: 1, Lines: 3},
-					NewRange: apitest.DiffRange{StartLine: 1, Lines: 3},
+					Body:     " bnother-url.com\n-exbmple.com\n+sourcegrbph.com\n never-touch-the-mouse.com\n",
+					OldRbnge: bpitest.DiffRbnge{StbrtLine: 1, Lines: 3},
+					NewRbnge: bpitest.DiffRbnge{StbrtLine: 1, Lines: 3},
 				},
 			},
-			Stat: apitest.DiffStat{Added: 1, Deleted: 1},
+			Stbt: bpitest.DiffStbt{Added: 1, Deleted: 1},
 		},
 	},
 }
 
-func marshalDateTime(t testing.TB, ts time.Time) string {
+func mbrshblDbteTime(t testing.TB, ts time.Time) string {
 	t.Helper()
 
-	dt := gqlutil.DateTime{Time: ts}
+	dt := gqlutil.DbteTime{Time: ts}
 
-	bs, err := dt.MarshalJSON()
+	bs, err := dt.MbrshblJSON()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Unquote the date time.
-	return strings.ReplaceAll(string(bs), "\"", "")
+	// Unquote the dbte time.
+	return strings.ReplbceAll(string(bs), "\"", "")
 }
 
-func parseJSONTime(t testing.TB, ts string) time.Time {
+func pbrseJSONTime(t testing.TB, ts string) time.Time {
 	t.Helper()
 
-	timestamp, err := time.Parse(time.RFC3339, ts)
+	timestbmp, err := time.Pbrse(time.RFC3339, ts)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	return timestamp
+	return timestbmp
 }
 
-func newSchema(db database.DB, bcr graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	ghar := githubapp.NewResolver(log.NoOp(), db)
-	return graphqlbackend.NewSchemaWithBatchChangesResolver(db, bcr, ghar)
+func newSchemb(db dbtbbbse.DB, bcr grbphqlbbckend.BbtchChbngesResolver) (*grbphql.Schemb, error) {
+	ghbr := githubbpp.NewResolver(log.NoOp(), db)
+	return grbphqlbbckend.NewSchembWithBbtchChbngesResolver(db, bcr, ghbr)
 }
 
-func newGitHubExternalService(t *testing.T, store database.ExternalServiceStore) *types.ExternalService {
+func newGitHubExternblService(t *testing.T, store dbtbbbse.ExternblServiceStore) *types.ExternblService {
 	t.Helper()
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 	now := clock.Now()
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "Github - Test",
-		// The authorization field is needed to enforce permissions
-		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
-		CreatedAt: now,
-		UpdatedAt: now,
+		DisplbyNbme: "Github - Test",
+		// The buthorizbtion field is needed to enforce permissions
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "buthorizbtion": {}, "token": "bbc", "repos": ["owner/nbme"]}`),
+		CrebtedAt: now,
+		UpdbtedAt: now,
 	}
 
-	if err := store.Upsert(context.Background(), &svc); err != nil {
-		t.Fatalf("failed to insert external services: %v", err)
+	if err := store.Upsert(context.Bbckground(), &svc); err != nil {
+		t.Fbtblf("fbiled to insert externbl services: %v", err)
 	}
 
 	return &svc
 }
 
-func newGitHubTestRepo(name string, externalService *types.ExternalService) *types.Repo {
+func newGitHubTestRepo(nbme string, externblService *types.ExternblService) *types.Repo {
 	return &types.Repo{
-		Name:    api.RepoName(name),
-		Private: true,
-		ExternalRepo: api.ExternalRepoSpec{
-			ID:          fmt.Sprintf("external-id-%d", externalService.ID),
+		Nbme:    bpi.RepoNbme(nbme),
+		Privbte: true,
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ID:          fmt.Sprintf("externbl-id-%d", externblService.ID),
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
 		},
-		Sources: map[string]*types.SourceInfo{
-			externalService.URN(): {
-				ID:       externalService.URN(),
-				CloneURL: fmt.Sprintf("https://secrettoken@%s", name),
+		Sources: mbp[string]*types.SourceInfo{
+			externblService.URN(): {
+				ID:       externblService.URN(),
+				CloneURL: fmt.Sprintf("https://secrettoken@%s", nbme),
 			},
 		},
 	}
 }
 
-func mockBackendCommits(t *testing.T, revs ...api.CommitID) {
+func mockBbckendCommits(t *testing.T, revs ...bpi.CommitID) {
 	t.Helper()
 
-	byRev := map[api.CommitID]struct{}{}
-	for _, r := range revs {
+	byRev := mbp[bpi.CommitID]struct{}{}
+	for _, r := rbnge revs {
 		byRev[r] = struct{}{}
 	}
 
-	backend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (api.CommitID, error) {
-		if _, ok := byRev[api.CommitID(rev)]; !ok {
-			t.Fatalf("ResolveRev received unexpected rev: %q", rev)
+	bbckend.Mocks.Repos.ResolveRev = func(_ context.Context, _ *types.Repo, rev string) (bpi.CommitID, error) {
+		if _, ok := byRev[bpi.CommitID(rev)]; !ok {
+			t.Fbtblf("ResolveRev received unexpected rev: %q", rev)
 		}
-		return api.CommitID(rev), nil
+		return bpi.CommitID(rev), nil
 	}
-	t.Cleanup(func() { backend.Mocks.Repos.ResolveRev = nil })
+	t.Clebnup(func() { bbckend.Mocks.Repos.ResolveRev = nil })
 }
 
-func mockRepoComparison(t *testing.T, gitserverClient *gitserver.MockClient, baseRev, headRev string, diff []byte) {
+func mockRepoCompbrison(t *testing.T, gitserverClient *gitserver.MockClient, bbseRev, hebdRev string, diff []byte) {
 	t.Helper()
 
-	spec := fmt.Sprintf("%s...%s", baseRev, headRev)
-	gitserverClientWithExecReader := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (io.ReadCloser, error) {
-		if len(args) < 1 && args[0] != "diff" {
-			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
+	spec := fmt.Sprintf("%s...%s", bbseRev, hebdRev)
+	gitserverClientWithExecRebder := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (io.RebdCloser, error) {
+		if len(brgs) < 1 && brgs[0] != "diff" {
+			t.Fbtblf("gitserver.ExecRebder received wrong brgs: %v", brgs)
 		}
 
-		if have, want := args[len(args)-2], spec; have != want {
-			t.Fatalf("gitserver.ExecReader received wrong spec: %q, want %q", have, want)
+		if hbve, wbnt := brgs[len(brgs)-2], spec; hbve != wbnt {
+			t.Fbtblf("gitserver.ExecRebder received wrong spec: %q, wbnt %q", hbve, wbnt)
 		}
-		return io.NopCloser(bytes.NewReader(diff)), nil
+		return io.NopCloser(bytes.NewRebder(diff)), nil
 	})
 
-	gitserverClientWithExecReader.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec != baseRev && spec != headRev {
-			t.Fatalf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
+	gitserverClientWithExecRebder.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if spec != bbseRev && spec != hebdRev {
+			t.Fbtblf("gitserver.Mocks.ResolveRevision received unknown spec: %s", spec)
 		}
-		return api.CommitID(spec), nil
+		return bpi.CommitID(spec), nil
 	})
 
-	gitserverClientWithExecReader.MergeBaseFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, a api.CommitID, b api.CommitID) (api.CommitID, error) {
-		if string(a) != baseRev && string(b) != headRev {
-			t.Fatalf("git.Mocks.MergeBase received unknown commit ids: %s %s", a, b)
+	gitserverClientWithExecRebder.MergeBbseFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, b bpi.CommitID, b bpi.CommitID) (bpi.CommitID, error) {
+		if string(b) != bbseRev && string(b) != hebdRev {
+			t.Fbtblf("git.Mocks.MergeBbse received unknown commit ids: %s %s", b, b)
 		}
-		return a, nil
+		return b, nil
 	})
-	*gitserverClient = *gitserverClientWithExecReader
+	*gitserverClient = *gitserverClientWithExecRebder
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {
+func bddChbngeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Chbngeset, bbtchChbnge int64) {
 	t.Helper()
 
-	c.BatchChanges = append(c.BatchChanges, btypes.BatchChangeAssoc{BatchChangeID: batchChange})
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatal(err)
+	c.BbtchChbnges = bppend(c.BbtchChbnges, btypes.BbtchChbngeAssoc{BbtchChbngeID: bbtchChbnge})
+	if err := s.UpdbteChbngeset(ctx, c); err != nil {
+		t.Fbtbl(err)
 	}
 }
 
-func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
+func pruneUserCredentibls(t *testing.T, db dbtbbbse.DB, key encryption.Key) {
 	t.Helper()
-	ctx := actor.WithInternalActor(context.Background())
-	creds, _, err := db.UserCredentials(key).List(ctx, database.UserCredentialsListOpts{})
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	creds, _, err := db.UserCredentibls(key).List(ctx, dbtbbbse.UserCredentiblsListOpts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, c := range creds {
-		if err := db.UserCredentials(key).Delete(ctx, c.ID); err != nil {
-			t.Fatal(err)
+	for _, c := rbnge creds {
+		if err := db.UserCredentibls(key).Delete(ctx, c.ID); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 }
 
-func pruneSiteCredentials(t *testing.T, bstore *store.Store) {
+func pruneSiteCredentibls(t *testing.T, bstore *store.Store) {
 	t.Helper()
-	creds, _, err := bstore.ListSiteCredentials(context.Background(), store.ListSiteCredentialsOpts{})
+	creds, _, err := bstore.ListSiteCredentibls(context.Bbckground(), store.ListSiteCredentiblsOpts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, c := range creds {
-		if err := bstore.DeleteSiteCredential(context.Background(), c.ID); err != nil {
-			t.Fatal(err)
+	for _, c := rbnge creds {
+		if err := bstore.DeleteSiteCredentibl(context.Bbckground(), c.ID); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 }

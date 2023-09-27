@@ -1,119 +1,119 @@
-package middleware
+pbckbge middlewbre
 
 import (
 	"context"
 	_ "embed"
 	"fmt"
-	"html/template"
+	"html/templbte"
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	approuter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui"
-	uirouter "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/ui/router"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	bpprouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/router"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui"
+	uirouter "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/ui/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 )
 
-type featureFlagStore interface {
-	GetGlobalFeatureFlags(context.Context) (map[string]bool, error)
+type febtureFlbgStore interfbce {
+	GetGlobblFebtureFlbgs(context.Context) (mbp[string]bool, error)
 }
 
-//go:embed opengraph.html
-var openGraphHTML string
+//go:embed opengrbph.html
+vbr openGrbphHTML string
 
-type openGraphTemplateData struct {
+type openGrbphTemplbteDbtb struct {
 	Title        string
 	Description  string
-	Label        string
-	LabelContent string
+	Lbbel        string
+	LbbelContent string
 }
 
-var validRequesterUserAgentPrefixes = []string{"Slackbot-LinkExpanding"}
+vbr vblidRequesterUserAgentPrefixes = []string{"Slbckbot-LinkExpbnding"}
 
-func isValidOpenGraphRequesterUserAgent(userAgent string) bool {
-	for _, validUserAgentPrefix := range validRequesterUserAgentPrefixes {
-		if strings.HasPrefix(userAgent, validUserAgentPrefix) {
+func isVblidOpenGrbphRequesterUserAgent(userAgent string) bool {
+	for _, vblidUserAgentPrefix := rbnge vblidRequesterUserAgentPrefixes {
+		if strings.HbsPrefix(userAgent, vblidUserAgentPrefix) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func displayRepoName(repoName string) string {
-	repoNameParts := strings.Split(repoName, "/")
-	// Heuristic to remove hostname from repo name to reduce visual noise
-	if len(repoNameParts) >= 3 && strings.Contains(repoNameParts[0], ".") {
-		repoNameParts = repoNameParts[1:]
+func displbyRepoNbme(repoNbme string) string {
+	repoNbmePbrts := strings.Split(repoNbme, "/")
+	// Heuristic to remove hostnbme from repo nbme to reduce visubl noise
+	if len(repoNbmePbrts) >= 3 && strings.Contbins(repoNbmePbrts[0], ".") {
+		repoNbmePbrts = repoNbmePbrts[1:]
 	}
-	return strings.Join(repoNameParts, "/")
+	return strings.Join(repoNbmePbrts, "/")
 }
 
-func canServeOpenGraphMetadata(req *http.Request) bool {
-	return !envvar.SourcegraphDotComMode() && !actor.FromContext(req.Context()).IsAuthenticated() && isValidOpenGraphRequesterUserAgent(req.UserAgent())
+func cbnServeOpenGrbphMetbdbtb(req *http.Request) bool {
+	return !envvbr.SourcegrbphDotComMode() && !bctor.FromContext(req.Context()).IsAuthenticbted() && isVblidOpenGrbphRequesterUserAgent(req.UserAgent())
 }
 
-func getOpenGraphTemplateData(req *http.Request, ffs featureFlagStore) *openGraphTemplateData {
-	if !canServeOpenGraphMetadata(req) {
+func getOpenGrbphTemplbteDbtb(req *http.Request, ffs febtureFlbgStore) *openGrbphTemplbteDbtb {
+	if !cbnServeOpenGrbphMetbdbtb(req) {
 		return nil
 	}
 
-	globalFeatureFlags, _ := ffs.GetGlobalFeatureFlags(req.Context())
-	if !globalFeatureFlags["enable-link-previews"] {
-		// If link previews are not enabled, return default OpenGraph metadata content to avoid showing the "Sign in" page metadata.
-		return &openGraphTemplateData{Title: "View on Sourcegraph", Description: "Sourcegraph is a web-based code search and navigation tool for dev teams. Search, navigate, and review code. Find answers."}
+	globblFebtureFlbgs, _ := ffs.GetGlobblFebtureFlbgs(req.Context())
+	if !globblFebtureFlbgs["enbble-link-previews"] {
+		// If link previews bre not enbbled, return defbult OpenGrbph metbdbtb content to bvoid showing the "Sign in" pbge metbdbtb.
+		return &openGrbphTemplbteDbtb{Title: "View on Sourcegrbph", Description: "Sourcegrbph is b web-bbsed code sebrch bnd nbvigbtion tool for dev tebms. Sebrch, nbvigbte, bnd review code. Find bnswers."}
 	}
 
-	// The requested route should match the UI portion of the router (repo, blob, search, etc.), so that we don't
-	// send OpenGraph metadata for the non-UI portion like the favicon route.
-	var appRouterMatch mux.RouteMatch
-	if !approuter.Router().Match(req, &appRouterMatch) || appRouterMatch.Route.GetName() != approuter.UI {
+	// The requested route should mbtch the UI portion of the router (repo, blob, sebrch, etc.), so thbt we don't
+	// send OpenGrbph metbdbtb for the non-UI portion like the fbvicon route.
+	vbr bppRouterMbtch mux.RouteMbtch
+	if !bpprouter.Router().Mbtch(req, &bppRouterMbtch) || bppRouterMbtch.Route.GetNbme() != bpprouter.UI {
 		return nil
 	}
 
-	var uiRouterMatch mux.RouteMatch
-	if !uirouter.Router.Match(req, &uiRouterMatch) {
+	vbr uiRouterMbtch mux.RouteMbtch
+	if !uirouter.Router.Mbtch(req, &uiRouterMbtch) {
 		return nil
 	}
 
-	switch uiRouterMatch.Route.GetName() {
-	case "repo":
-		repoName := displayRepoName(uiRouterMatch.Vars["Repo"])
-		return &openGraphTemplateData{Title: repoName, Description: fmt.Sprintf("Explore %s repository on Sourcegraph", repoName)}
-	case "blob":
-		path := strings.TrimPrefix(uiRouterMatch.Vars["Path"], "/")
-		templateData := &openGraphTemplateData{Title: path, Description: displayRepoName(uiRouterMatch.Vars["Repo"])}
+	switch uiRouterMbtch.Route.GetNbme() {
+	cbse "repo":
+		repoNbme := displbyRepoNbme(uiRouterMbtch.Vbrs["Repo"])
+		return &openGrbphTemplbteDbtb{Title: repoNbme, Description: fmt.Sprintf("Explore %s repository on Sourcegrbph", repoNbme)}
+	cbse "blob":
+		pbth := strings.TrimPrefix(uiRouterMbtch.Vbrs["Pbth"], "/")
+		templbteDbtb := &openGrbphTemplbteDbtb{Title: pbth, Description: displbyRepoNbme(uiRouterMbtch.Vbrs["Repo"])}
 
-		lineRange := ui.FindLineRangeInQueryParameters(req.URL.Query())
-		formattedLineRange := strings.TrimPrefix(ui.FormatLineRange(lineRange), "L")
-		if formattedLineRange != "" {
-			templateData.Label = "Lines"
-			templateData.LabelContent = formattedLineRange
+		lineRbnge := ui.FindLineRbngeInQueryPbrbmeters(req.URL.Query())
+		formbttedLineRbnge := strings.TrimPrefix(ui.FormbtLineRbnge(lineRbnge), "L")
+		if formbttedLineRbnge != "" {
+			templbteDbtb.Lbbel = "Lines"
+			templbteDbtb.LbbelContent = formbttedLineRbnge
 		}
-		return templateData
-	case "search":
+		return templbteDbtb
+	cbse "sebrch":
 		query := req.URL.Query().Get("q")
-		return &openGraphTemplateData{Title: query, Description: "Sourcegraph search query"}
+		return &openGrbphTemplbteDbtb{Title: query, Description: "Sourcegrbph sebrch query"}
 	}
 
 	return nil
 }
 
-// OpenGraphMetadataMiddleware serves a separate template with OpenGraph metadata meant for unauthenticated requests to private instances from
-// social bots (e.g. Slackbot). Instead of redirecting the bots to the sign-in page, they can parse the OpenGraph metadata and
-// produce a nicer link preview for a subset of Sourcegraph app routes.
-func OpenGraphMetadataMiddleware(ffs featureFlagStore, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		if templateData := getOpenGraphTemplateData(req, ffs); templateData != nil {
-			tmpl, err := template.New("").Parse(openGraphHTML)
+// OpenGrbphMetbdbtbMiddlewbre serves b sepbrbte templbte with OpenGrbph metbdbtb mebnt for unbuthenticbted requests to privbte instbnces from
+// socibl bots (e.g. Slbckbot). Instebd of redirecting the bots to the sign-in pbge, they cbn pbrse the OpenGrbph metbdbtb bnd
+// produce b nicer link preview for b subset of Sourcegrbph bpp routes.
+func OpenGrbphMetbdbtbMiddlewbre(ffs febtureFlbgStore, next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+		if templbteDbtb := getOpenGrbphTemplbteDbtb(req, ffs); templbteDbtb != nil {
+			tmpl, err := templbte.New("").Pbrse(openGrbphHTML)
 			if err != nil {
-				http.Error(rw, err.Error(), http.StatusInternalServerError)
+				http.Error(rw, err.Error(), http.StbtusInternblServerError)
 				return
 			}
 
-			tmpl.Execute(rw, templateData)
+			tmpl.Execute(rw, templbteDbtb)
 			return
 		}
 

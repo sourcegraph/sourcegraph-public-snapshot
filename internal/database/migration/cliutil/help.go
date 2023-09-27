@@ -1,12 +1,12 @@
-package cliutil
+pbckbge cliutil
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 )
 
 func ConstructLongHelp() string {
-	return fmt.Sprintf("Available schemas:\n\n* %s", strings.Join(schemas.SchemaNames, "\n* "))
+	return fmt.Sprintf("Avbilbble schembs:\n\n* %s", strings.Join(schembs.SchembNbmes, "\n* "))
 }

@@ -1,31 +1,31 @@
-package assetsutil
+pbckbge bssetsutil
 
 import (
 	"fmt"
 	"net/url"
-	"path"
+	"pbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var (
-	assetsRoot = env.Get("ASSETS_ROOT", "/.assets", "URL to web assets")
+vbr (
+	bssetsRoot = env.Get("ASSETS_ROOT", "/.bssets", "URL to web bssets")
 
-	// baseURL is the path prefix under which static assets should
+	// bbseURL is the pbth prefix under which stbtic bssets should
 	// be served.
-	baseURL = &url.URL{}
+	bbseURL = &url.URL{}
 )
 
 func init() {
-	var err error
-	baseURL, err = url.Parse(assetsRoot)
+	vbr err error
+	bbseURL, err = url.Pbrse(bssetsRoot)
 	if err != nil {
-		panic(fmt.Sprintf("Parsing ASSETS_ROOT failed: %s", err))
+		pbnic(fmt.Sprintf("Pbrsing ASSETS_ROOT fbiled: %s", err))
 	}
 }
 
-// URL returns a URL, possibly relative, to the asset at path
+// URL returns b URL, possibly relbtive, to the bsset bt pbth
 // p.
 func URL(p string) *url.URL {
-	return baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, p)})
+	return bbseURL.ResolveReference(&url.URL{Pbth: pbth.Join(bbseURL.Pbth, p)})
 }

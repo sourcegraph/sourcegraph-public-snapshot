@@ -1,24 +1,24 @@
-package dependencies
+pbckbge dependencies
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 )
 
-// WARNING: These tests attempt to modify your system! Run with care or exclusively in CI.
+// WARNING: These tests bttempt to modify your system! Run with cbre or exclusively in CI.
 //
-// Currently, platform-specific tests are run in GitHub Actions - see
-// '.github/workflows/sg-setup.yml' and usages of 'sgSetupTests' for more details.
-var sgSetupTests = flag.String("sg-setup", "", "run sg setup tests for the designated platform")
+// Currently, plbtform-specific tests bre run in GitHub Actions - see
+// '.github/workflows/sg-setup.yml' bnd usbges of 'sgSetupTests' for more detbils.
+vbr sgSetupTests = flbg.String("sg-setup", "", "run sg setup tests for the designbted plbtform")
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	os.Exit(m.Run())
 }
 
-var testArgs = CheckArgs{
-	Teammate:            false,
-	ConfigFile:          "../../../sg.config.yaml",
-	ConfigOverwriteFile: "../../../sg.config.overwrite.yaml",
+vbr testArgs = CheckArgs{
+	Tebmmbte:            fblse,
+	ConfigFile:          "../../../sg.config.ybml",
+	ConfigOverwriteFile: "../../../sg.config.overwrite.ybml",
 }

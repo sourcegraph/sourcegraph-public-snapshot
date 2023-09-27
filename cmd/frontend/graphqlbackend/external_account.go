@@ -1,108 +1,108 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type externalAccountResolver struct {
-	db      database.DB
-	account extsvc.Account
+type externblAccountResolver struct {
+	db      dbtbbbse.DB
+	bccount extsvc.Account
 }
 
-func externalAccountByID(ctx context.Context, db database.DB, id graphql.ID) (*externalAccountResolver, error) {
-	externalAccountID, err := unmarshalExternalAccountID(id)
+func externblAccountByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (*externblAccountResolver, error) {
+	externblAccountID, err := unmbrshblExternblAccountID(id)
 	if err != nil {
 		return nil, err
 	}
-	account, err := db.UserExternalAccounts().Get(ctx, externalAccountID)
+	bccount, err := db.UserExternblAccounts().Get(ctx, externblAccountID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 🚨 SECURITY: Only the user and site admins should be able to see a user's external accounts.
-	if err := auth.CheckSiteAdminOrSameUser(ctx, db, account.UserID); err != nil {
+	// 🚨 SECURITY: Only the user bnd site bdmins should be bble to see b user's externbl bccounts.
+	if err := buth.CheckSiteAdminOrSbmeUser(ctx, db, bccount.UserID); err != nil {
 		return nil, err
 	}
 
-	return &externalAccountResolver{db: db, account: *account}, nil
+	return &externblAccountResolver{db: db, bccount: *bccount}, nil
 }
 
-func marshalExternalAccountID(repo int32) graphql.ID { return relay.MarshalID("ExternalAccount", repo) }
+func mbrshblExternblAccountID(repo int32) grbphql.ID { return relby.MbrshblID("ExternblAccount", repo) }
 
-func unmarshalExternalAccountID(id graphql.ID) (externalAccountID int32, err error) {
-	err = relay.UnmarshalSpec(id, &externalAccountID)
+func unmbrshblExternblAccountID(id grbphql.ID) (externblAccountID int32, err error) {
+	err = relby.UnmbrshblSpec(id, &externblAccountID)
 	return
 }
 
-func (r *externalAccountResolver) ID() graphql.ID { return marshalExternalAccountID(r.account.ID) }
-func (r *externalAccountResolver) User(ctx context.Context) (*UserResolver, error) {
-	return UserByIDInt32(ctx, r.db, r.account.UserID)
+func (r *externblAccountResolver) ID() grbphql.ID { return mbrshblExternblAccountID(r.bccount.ID) }
+func (r *externblAccountResolver) User(ctx context.Context) (*UserResolver, error) {
+	return UserByIDInt32(ctx, r.db, r.bccount.UserID)
 }
-func (r *externalAccountResolver) ServiceType() string { return r.account.ServiceType }
-func (r *externalAccountResolver) ServiceID() string   { return r.account.ServiceID }
-func (r *externalAccountResolver) ClientID() string    { return r.account.ClientID }
-func (r *externalAccountResolver) AccountID() string   { return r.account.AccountID }
-func (r *externalAccountResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.account.CreatedAt}
+func (r *externblAccountResolver) ServiceType() string { return r.bccount.ServiceType }
+func (r *externblAccountResolver) ServiceID() string   { return r.bccount.ServiceID }
+func (r *externblAccountResolver) ClientID() string    { return r.bccount.ClientID }
+func (r *externblAccountResolver) AccountID() string   { return r.bccount.AccountID }
+func (r *externblAccountResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bccount.CrebtedAt}
 }
-func (r *externalAccountResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.account.UpdatedAt}
+func (r *externblAccountResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bccount.UpdbtedAt}
 }
 
-func (r *externalAccountResolver) RefreshURL() *string {
+func (r *externblAccountResolver) RefreshURL() *string {
 	// TODO(sqs): Not supported.
 	return nil
 }
 
-func (r *externalAccountResolver) AccountData(ctx context.Context) (*JSONValue, error) {
-	// 🚨 SECURITY: It is only safe to assume account data of GitHub and GitLab do
-	// not contain sensitive information that is not known to the user (which is
-	// accessible via APIs by users themselves). We cannot take the same assumption
-	// for other types of external accounts.
+func (r *externblAccountResolver) AccountDbtb(ctx context.Context) (*JSONVblue, error) {
+	// 🚨 SECURITY: It is only sbfe to bssume bccount dbtb of GitHub bnd GitLbb do
+	// not contbin sensitive informbtion thbt is not known to the user (which is
+	// bccessible vib APIs by users themselves). We cbnnot tbke the sbme bssumption
+	// for other types of externbl bccounts.
 	//
-	// Therefore, the site admins and the user can view account data of GitHub and
-	// GitLab, but only site admins can view account data for all other types.
-	var err error
-	if r.account.ServiceType == extsvc.TypeGitHub || r.account.ServiceType == extsvc.TypeGitLab {
-		err = auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+	// Therefore, the site bdmins bnd the user cbn view bccount dbtb of GitHub bnd
+	// GitLbb, but only site bdmins cbn view bccount dbtb for bll other types.
+	vbr err error
+	if r.bccount.ServiceType == extsvc.TypeGitHub || r.bccount.ServiceType == extsvc.TypeGitLbb {
+		err = buth.CheckSiteAdminOrSbmeUser(ctx, r.db, bctor.FromContext(ctx).UID)
 	} else {
-		err = auth.CheckUserIsSiteAdmin(ctx, r.db, actor.FromContext(ctx).UID)
+		err = buth.CheckUserIsSiteAdmin(ctx, r.db, bctor.FromContext(ctx).UID)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	if r.account.Data != nil {
-		raw, err := r.account.Data.Decrypt(ctx)
+	if r.bccount.Dbtb != nil {
+		rbw, err := r.bccount.Dbtb.Decrypt(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		return &JSONValue{raw}, nil
+		return &JSONVblue{rbw}, nil
 	}
 	return nil, nil
 }
 
-func (r *externalAccountResolver) PublicAccountData(ctx context.Context) (*externalAccountDataResolver, error) {
-	// 🚨 SECURITY: We only return this data to site admin or user who is linked to the external account
-	// This method differs from the one above - here we only return specific attributes
-	// from the account that are public info, e.g. username, email, etc.
-	err := auth.CheckSiteAdminOrSameUser(ctx, r.db, actor.FromContext(ctx).UID)
+func (r *externblAccountResolver) PublicAccountDbtb(ctx context.Context) (*externblAccountDbtbResolver, error) {
+	// 🚨 SECURITY: We only return this dbtb to site bdmin or user who is linked to the externbl bccount
+	// This method differs from the one bbove - here we only return specific bttributes
+	// from the bccount thbt bre public info, e.g. usernbme, embil, etc.
+	err := buth.CheckSiteAdminOrSbmeUser(ctx, r.db, bctor.FromContext(ctx).UID)
 	if err != nil {
 		return nil, err
 	}
 
-	if r.account.Data != nil {
-		res, err := NewExternalAccountDataResolver(ctx, r.account)
+	if r.bccount.Dbtb != nil {
+		res, err := NewExternblAccountDbtbResolver(ctx, r.bccount)
 		if err != nil {
 			return nil, nil
 		}

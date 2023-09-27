@@ -1,67 +1,67 @@
-package dbconn
+pbckbge dbconn
 
 import (
 	"context"
 
-	"github.com/qustavo/sqlhooks/v2"
+	"github.com/qustbvo/sqlhooks/v2"
 )
 
 type hookCollection struct {
 	beforeHooks []sqlhooks.Hook
-	afterHooks  []sqlhooks.Hook
+	bfterHooks  []sqlhooks.Hook
 	errorHooks  []sqlhooks.ErrorHook
 }
 
-var _ sqlhooks.Hooks = &hookCollection{}
-var _ sqlhooks.OnErrorer = &hookCollection{}
+vbr _ sqlhooks.Hooks = &hookCollection{}
+vbr _ sqlhooks.OnErrorer = &hookCollection{}
 
 func combineHooks(hooks ...sqlhooks.Hooks) sqlhooks.Hooks {
-	beforeHooks := make([]sqlhooks.Hook, 0, len(hooks))
-	afterHooks := make([]sqlhooks.Hook, 0, len(hooks))
-	errorHooks := make([]sqlhooks.ErrorHook, 0, len(hooks))
+	beforeHooks := mbke([]sqlhooks.Hook, 0, len(hooks))
+	bfterHooks := mbke([]sqlhooks.Hook, 0, len(hooks))
+	errorHooks := mbke([]sqlhooks.ErrorHook, 0, len(hooks))
 
-	for _, hook := range hooks {
-		beforeHooks = append(beforeHooks, hook.Before)
-		afterHooks = append(afterHooks, hook.After)
+	for _, hook := rbnge hooks {
+		beforeHooks = bppend(beforeHooks, hook.Before)
+		bfterHooks = bppend(bfterHooks, hook.After)
 
 		if errorHook, ok := hook.(sqlhooks.OnErrorer); ok {
-			errorHooks = append(errorHooks, errorHook.OnError)
+			errorHooks = bppend(errorHooks, errorHook.OnError)
 		}
 	}
 
 	return &hookCollection{
 		beforeHooks: beforeHooks,
-		afterHooks:  afterHooks,
+		bfterHooks:  bfterHooks,
 		errorHooks:  errorHooks,
 	}
 }
 
-func (h *hookCollection) Before(ctx context.Context, query string, args ...any) (_ context.Context, err error) {
-	return runHooks(ctx, h.beforeHooks, query, args...)
+func (h *hookCollection) Before(ctx context.Context, query string, brgs ...bny) (_ context.Context, err error) {
+	return runHooks(ctx, h.beforeHooks, query, brgs...)
 }
 
-func (h *hookCollection) After(ctx context.Context, query string, args ...any) (_ context.Context, err error) {
-	return runHooks(ctx, h.afterHooks, query, args...)
+func (h *hookCollection) After(ctx context.Context, query string, brgs ...bny) (_ context.Context, err error) {
+	return runHooks(ctx, h.bfterHooks, query, brgs...)
 }
 
-func (h *hookCollection) OnError(ctx context.Context, err error, query string, args ...any) error {
-	return runErrorHooks(ctx, h.errorHooks, err, query, args...)
+func (h *hookCollection) OnError(ctx context.Context, err error, query string, brgs ...bny) error {
+	return runErrorHooks(ctx, h.errorHooks, err, query, brgs...)
 }
 
-func runHooks(ctx context.Context, hooks []sqlhooks.Hook, query string, args ...any) (_ context.Context, err error) {
-	for _, hook := range hooks {
-		ctx, err = hook(ctx, query, args...)
+func runHooks(ctx context.Context, hooks []sqlhooks.Hook, query string, brgs ...bny) (_ context.Context, err error) {
+	for _, hook := rbnge hooks {
+		ctx, err = hook(ctx, query, brgs...)
 		if err != nil {
-			break
+			brebk
 		}
 	}
 
 	return ctx, err
 }
 
-func runErrorHooks(ctx context.Context, hooks []sqlhooks.ErrorHook, err error, query string, args ...any) error {
-	for _, hook := range hooks {
-		err = hook(ctx, err, query, args...)
+func runErrorHooks(ctx context.Context, hooks []sqlhooks.ErrorHook, err error, query string, brgs ...bny) error {
+	for _, hook := rbnge hooks {
+		err = hook(ctx, err, query, brgs...)
 	}
 
 	return err

@@ -1,41 +1,41 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"bytes"
 	"encoding/json"
 	"io"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type StreamSearchDecoder struct {
-	OnMatches func(protocol.SearchEventMatches)
-	OnDone    func(protocol.SearchEventDone)
-	OnUnknown func(event, data []byte)
+type StrebmSebrchDecoder struct {
+	OnMbtches func(protocol.SebrchEventMbtches)
+	OnDone    func(protocol.SebrchEventDone)
+	OnUnknown func(event, dbtb []byte)
 }
 
-func (s StreamSearchDecoder) ReadAll(r io.Reader) error {
+func (s StrebmSebrchDecoder) RebdAll(r io.Rebder) error {
 	dec := http.NewDecoder(r)
 
-	for dec.Scan() {
+	for dec.Scbn() {
 		event := dec.Event()
-		data := dec.Data()
+		dbtb := dec.Dbtb()
 
-		if bytes.Equal(event, []byte("matches")) {
-			if s.OnMatches == nil {
+		if bytes.Equbl(event, []byte("mbtches")) {
+			if s.OnMbtches == nil {
 				continue
 			}
-			var e protocol.SearchEventMatches
-			if err := json.Unmarshal(data, &e); err != nil {
-				return errors.Errorf("failed to decode matches payload: %w", err)
+			vbr e protocol.SebrchEventMbtches
+			if err := json.Unmbrshbl(dbtb, &e); err != nil {
+				return errors.Errorf("fbiled to decode mbtches pbylobd: %w", err)
 			}
-			s.OnMatches(e)
-		} else if bytes.Equal(event, []byte("done")) {
-			var e protocol.SearchEventDone
-			if err := json.Unmarshal(data, &e); err != nil {
-				return errors.Errorf("failed to decode matches payload: %w", err)
+			s.OnMbtches(e)
+		} else if bytes.Equbl(event, []byte("done")) {
+			vbr e protocol.SebrchEventDone
+			if err := json.Unmbrshbl(dbtb, &e); err != nil {
+				return errors.Errorf("fbiled to decode mbtches pbylobd: %w", err)
 			}
 			s.OnDone(e)
 		}

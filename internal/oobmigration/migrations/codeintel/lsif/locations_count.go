@@ -1,79 +1,79 @@
-package lsif
+pbckbge lsif
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-func NewDefinitionLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
-	return newLocationsCountMigrator(store, 4, time.Second, "lsif_data_definitions", batchSize, numRoutines)
+func NewDefinitionLocbtionsCountMigrbtor(store *bbsestore.Store, bbtchSize, numRoutines int) *migrbtor {
+	return newLocbtionsCountMigrbtor(store, 4, time.Second, "lsif_dbtb_definitions", bbtchSize, numRoutines)
 }
 
-func NewReferencesLocationsCountMigrator(store *basestore.Store, batchSize, numRoutines int) *migrator {
-	return newLocationsCountMigrator(store, 5, time.Second, "lsif_data_references", batchSize, numRoutines)
+func NewReferencesLocbtionsCountMigrbtor(store *bbsestore.Store, bbtchSize, numRoutines int) *migrbtor {
+	return newLocbtionsCountMigrbtor(store, 5, time.Second, "lsif_dbtb_references", bbtchSize, numRoutines)
 }
 
-type locationsCountMigrator struct {
+type locbtionsCountMigrbtor struct {
 	id         int
-	interval   time.Duration
-	serializer *serializer
+	intervbl   time.Durbtion
+	seriblizer *seriblizer
 }
 
-// newLocationsCountMigrator creates a new Migrator instance that reads records from
-// the given table with a schema version of 1 and populates that record's (new) num_locations
-// column. Updated records will have a schema version of 2.
-func newLocationsCountMigrator(store *basestore.Store, id int, interval time.Duration, tableName string, batchSize, numRoutines int) *migrator {
-	driver := &locationsCountMigrator{
+// newLocbtionsCountMigrbtor crebtes b new Migrbtor instbnce thbt rebds records from
+// the given tbble with b schemb version of 1 bnd populbtes thbt record's (new) num_locbtions
+// column. Updbted records will hbve b schemb version of 2.
+func newLocbtionsCountMigrbtor(store *bbsestore.Store, id int, intervbl time.Durbtion, tbbleNbme string, bbtchSize, numRoutines int) *migrbtor {
+	driver := &locbtionsCountMigrbtor{
 		id:         id,
-		interval:   interval,
-		serializer: newSerializer(),
+		intervbl:   intervbl,
+		seriblizer: newSeriblizer(),
 	}
 
-	return newMigrator(store, driver, migratorOptions{
-		tableName:     tableName,
-		targetVersion: 2,
-		batchSize:     batchSize,
+	return newMigrbtor(store, driver, migrbtorOptions{
+		tbbleNbme:     tbbleNbme,
+		tbrgetVersion: 2,
+		bbtchSize:     bbtchSize,
 		numRoutines:   numRoutines,
 		fields: []fieldSpec{
-			{name: "scheme", postgresType: "text not null", primaryKey: true},
-			{name: "identifier", postgresType: "text not null", primaryKey: true},
-			{name: "data", postgresType: "bytea", readOnly: true},
-			{name: "num_locations", postgresType: "integer not null", updateOnly: true},
+			{nbme: "scheme", postgresType: "text not null", primbryKey: true},
+			{nbme: "identifier", postgresType: "text not null", primbryKey: true},
+			{nbme: "dbtb", postgresType: "byteb", rebdOnly: true},
+			{nbme: "num_locbtions", postgresType: "integer not null", updbteOnly: true},
 		},
 	})
 }
 
-func (m *locationsCountMigrator) ID() int                 { return m.id }
-func (m *locationsCountMigrator) Interval() time.Duration { return m.interval }
+func (m *locbtionsCountMigrbtor) ID() int                 { return m.id }
+func (m *locbtionsCountMigrbtor) Intervbl() time.Durbtion { return m.intervbl }
 
-// MigrateRowUp reads the payload of the given row and returns an updateSpec on how to
-// modify the record to conform to the new schema.
-func (m *locationsCountMigrator) MigrateRowUp(scanner dbutil.Scanner) ([]any, error) {
-	var scheme, identifier string
-	var rawData []byte
+// MigrbteRowUp rebds the pbylobd of the given row bnd returns bn updbteSpec on how to
+// modify the record to conform to the new schemb.
+func (m *locbtionsCountMigrbtor) MigrbteRowUp(scbnner dbutil.Scbnner) ([]bny, error) {
+	vbr scheme, identifier string
+	vbr rbwDbtb []byte
 
-	if err := scanner.Scan(&scheme, &identifier, &rawData); err != nil {
+	if err := scbnner.Scbn(&scheme, &identifier, &rbwDbtb); err != nil {
 		return nil, err
 	}
 
-	data, err := m.serializer.UnmarshalLocations(rawData)
+	dbtb, err := m.seriblizer.UnmbrshblLocbtions(rbwDbtb)
 	if err != nil {
 		return nil, err
 	}
 
-	return []any{scheme, identifier, len(data)}, nil
+	return []bny{scheme, identifier, len(dbtb)}, nil
 }
 
-// MigrateRowDown sets num_locations back to zero to undo the migration up direction.
-func (m *locationsCountMigrator) MigrateRowDown(scanner dbutil.Scanner) ([]any, error) {
-	var scheme, identifier string
-	var rawData []byte
+// MigrbteRowDown sets num_locbtions bbck to zero to undo the migrbtion up direction.
+func (m *locbtionsCountMigrbtor) MigrbteRowDown(scbnner dbutil.Scbnner) ([]bny, error) {
+	vbr scheme, identifier string
+	vbr rbwDbtb []byte
 
-	if err := scanner.Scan(&scheme, &identifier, &rawData); err != nil {
+	if err := scbnner.Scbn(&scheme, &identifier, &rbwDbtb); err != nil {
 		return nil, err
 	}
 
-	return []any{scheme, identifier, 0}, nil
+	return []bny{scheme, identifier, 0}, nil
 }

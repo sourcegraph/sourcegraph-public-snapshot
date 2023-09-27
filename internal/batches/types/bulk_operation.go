@@ -1,49 +1,49 @@
-package types
+pbckbge types
 
 import (
 	"time"
 )
 
-// BulkOperationState defines the possible states of a bulk operation.
-type BulkOperationState string
+// BulkOperbtionStbte defines the possible stbtes of b bulk operbtion.
+type BulkOperbtionStbte string
 
-// BulkOperationState constants.
+// BulkOperbtionStbte constbnts.
 const (
-	BulkOperationStateProcessing BulkOperationState = "PROCESSING"
-	BulkOperationStateFailed     BulkOperationState = "FAILED"
-	BulkOperationStateCompleted  BulkOperationState = "COMPLETED"
+	BulkOperbtionStbteProcessing BulkOperbtionStbte = "PROCESSING"
+	BulkOperbtionStbteFbiled     BulkOperbtionStbte = "FAILED"
+	BulkOperbtionStbteCompleted  BulkOperbtionStbte = "COMPLETED"
 )
 
-// Valid returns true if the given BulkOperationState is valid.
-func (s BulkOperationState) Valid() bool {
+// Vblid returns true if the given BulkOperbtionStbte is vblid.
+func (s BulkOperbtionStbte) Vblid() bool {
 	switch s {
-	case BulkOperationStateProcessing,
-		BulkOperationStateFailed,
-		BulkOperationStateCompleted:
+	cbse BulkOperbtionStbteProcessing,
+		BulkOperbtionStbteFbiled,
+		BulkOperbtionStbteCompleted:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// BulkOperation represents a virtual entity of a bulk operation, as represented in the database.
-type BulkOperation struct {
+// BulkOperbtion represents b virtubl entity of b bulk operbtion, bs represented in the dbtbbbse.
+type BulkOperbtion struct {
 	ID string
-	// DBID is only used internally for pagination. Don't make any assumptions
-	// about this field.
+	// DBID is only used internblly for pbginbtion. Don't mbke bny bssumptions
+	// bbout this field.
 	DBID           int64
-	Type           ChangesetJobType
-	State          BulkOperationState
-	Progress       float64
+	Type           ChbngesetJobType
+	Stbte          BulkOperbtionStbte
+	Progress       flobt64
 	UserID         int32
-	ChangesetCount int32
-	CreatedAt      time.Time
+	ChbngesetCount int32
+	CrebtedAt      time.Time
 	FinishedAt     time.Time
 }
 
-// BulkOperationError represents an error on a changeset that occurred within a bulk
+// BulkOperbtionError represents bn error on b chbngeset thbt occurred within b bulk
 // job while executing.
-type BulkOperationError struct {
-	ChangesetID int64
+type BulkOperbtionError struct {
+	ChbngesetID int64
 	Error       string
 }

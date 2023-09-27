@@ -1,78 +1,78 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type SavedSearchStore interface {
-	Create(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
+type SbvedSebrchStore interfbce {
+	Crebte(context.Context, *types.SbvedSebrch) (*types.SbvedSebrch, error)
 	Delete(context.Context, int32) error
-	GetByID(context.Context, int32) (*api.SavedQuerySpecAndConfig, error)
+	GetByID(context.Context, int32) (*bpi.SbvedQuerySpecAndConfig, error)
 	IsEmpty(context.Context) (bool, error)
-	ListAll(context.Context) ([]api.SavedQuerySpecAndConfig, error)
-	ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error)
-	ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error)
-	ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error)
-	CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error)
-	WithTransact(context.Context, func(SavedSearchStore) error) error
-	Update(context.Context, *types.SavedSearch) (*types.SavedSearch, error)
-	With(basestore.ShareableStore) SavedSearchStore
-	basestore.ShareableStore
+	ListAll(context.Context) ([]bpi.SbvedQuerySpecAndConfig, error)
+	ListSbvedSebrchesByOrgID(ctx context.Context, orgID int32) ([]*types.SbvedSebrch, error)
+	ListSbvedSebrchesByUserID(ctx context.Context, userID int32) ([]*types.SbvedSebrch, error)
+	ListSbvedSebrchesByOrgOrUser(ctx context.Context, userID, orgID *int32, pbginbtionArgs *PbginbtionArgs) ([]*types.SbvedSebrch, error)
+	CountSbvedSebrchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error)
+	WithTrbnsbct(context.Context, func(SbvedSebrchStore) error) error
+	Updbte(context.Context, *types.SbvedSebrch) (*types.SbvedSebrch, error)
+	With(bbsestore.ShbrebbleStore) SbvedSebrchStore
+	bbsestore.ShbrebbleStore
 }
 
-type savedSearchStore struct {
-	*basestore.Store
+type sbvedSebrchStore struct {
+	*bbsestore.Store
 }
 
-// SavedSearchesWith instantiates and returns a new SavedSearchStore using the other store handle.
-func SavedSearchesWith(other basestore.ShareableStore) SavedSearchStore {
-	return &savedSearchStore{Store: basestore.NewWithHandle(other.Handle())}
+// SbvedSebrchesWith instbntibtes bnd returns b new SbvedSebrchStore using the other store hbndle.
+func SbvedSebrchesWith(other bbsestore.ShbrebbleStore) SbvedSebrchStore {
+	return &sbvedSebrchStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *savedSearchStore) With(other basestore.ShareableStore) SavedSearchStore {
-	return &savedSearchStore{Store: s.Store.With(other)}
+func (s *sbvedSebrchStore) With(other bbsestore.ShbrebbleStore) SbvedSebrchStore {
+	return &sbvedSebrchStore{Store: s.Store.With(other)}
 }
 
-func (s *savedSearchStore) WithTransact(ctx context.Context, f func(SavedSearchStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
-		return f(&savedSearchStore{Store: tx})
+func (s *sbvedSebrchStore) WithTrbnsbct(ctx context.Context, f func(SbvedSebrchStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		return f(&sbvedSebrchStore{Store: tx})
 	})
 }
 
-// IsEmpty tells if there are no saved searches (at all) on this Sourcegraph
-// instance.
-func (s *savedSearchStore) IsEmpty(ctx context.Context) (bool, error) {
-	q := `SELECT true FROM saved_searches LIMIT 1`
-	var isNotEmpty bool
-	err := s.Handle().QueryRowContext(ctx, q).Scan(&isNotEmpty)
+// IsEmpty tells if there bre no sbved sebrches (bt bll) on this Sourcegrbph
+// instbnce.
+func (s *sbvedSebrchStore) IsEmpty(ctx context.Context) (bool, error) {
+	q := `SELECT true FROM sbved_sebrches LIMIT 1`
+	vbr isNotEmpty bool
+	err := s.Hbndle().QueryRowContext(ctx, q).Scbn(&isNotEmpty)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return true, nil
 		}
-		return false, err
+		return fblse, err
 	}
-	return false, nil
+	return fblse, nil
 }
 
-// ListAll lists all the saved searches on an instance.
+// ListAll lists bll the sbved sebrches on bn instbnce.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure that only users
-// with the proper permissions can access the returned saved searches.
-func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.SavedQuerySpecAndConfig, err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.ListAll",
-		attribute.Int("count", len(savedSearches)),
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure thbt only users
+// with the proper permissions cbn bccess the returned sbved sebrches.
+func (s *sbvedSebrchStore) ListAll(ctx context.Context) (sbvedSebrches []bpi.SbvedQuerySpecAndConfig, err error) {
+	tr, ctx := trbce.New(ctx, "dbtbbbse.SbvedSebrches.ListAll",
+		bttribute.Int("count", len(sbvedSebrches)),
 	)
 	defer tr.EndWithErr(&err)
 
@@ -81,28 +81,28 @@ func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 		description,
 		query,
 		notify_owner,
-		notify_slack,
+		notify_slbck,
 		user_id,
 		org_id,
-		slack_webhook_url FROM saved_searches
+		slbck_webhook_url FROM sbved_sebrches
 	`)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return nil, errors.Wrap(err, "QueryContext")
+		return nil, errors.Wrbp(err, "QueryContext")
 	}
 
 	for rows.Next() {
-		var sq api.SavedQuerySpecAndConfig
-		if err := rows.Scan(
+		vbr sq bpi.SbvedQuerySpecAndConfig
+		if err := rows.Scbn(
 			&sq.Config.Key,
 			&sq.Config.Description,
 			&sq.Config.Query,
 			&sq.Config.Notify,
-			&sq.Config.NotifySlack,
+			&sq.Config.NotifySlbck,
 			&sq.Config.UserID,
 			&sq.Config.OrgID,
-			&sq.Config.SlackWebhookURL); err != nil {
-			return nil, errors.Wrap(err, "Scan")
+			&sq.Config.SlbckWebhookURL); err != nil {
+			return nil, errors.Wrbp(err, "Scbn")
 		}
 		sq.Spec.Key = sq.Config.Key
 		if sq.Config.UserID != nil {
@@ -111,36 +111,36 @@ func (s *savedSearchStore) ListAll(ctx context.Context) (savedSearches []api.Sav
 			sq.Spec.Subject.Org = sq.Config.OrgID
 		}
 
-		savedSearches = append(savedSearches, sq)
+		sbvedSebrches = bppend(sbvedSebrches, sq)
 	}
-	return savedSearches, nil
+	return sbvedSebrches, nil
 }
 
-// GetByID returns the saved search with the given ID.
+// GetByID returns the sbved sebrch with the given ID.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure this response
-// only makes it to users with proper permissions to access the saved search.
-func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQuerySpecAndConfig, error) {
-	var sq api.SavedQuerySpecAndConfig
-	err := s.Handle().QueryRowContext(ctx, `SELECT
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure this response
+// only mbkes it to users with proper permissions to bccess the sbved sebrch.
+func (s *sbvedSebrchStore) GetByID(ctx context.Context, id int32) (*bpi.SbvedQuerySpecAndConfig, error) {
+	vbr sq bpi.SbvedQuerySpecAndConfig
+	err := s.Hbndle().QueryRowContext(ctx, `SELECT
 		id,
 		description,
 		query,
 		notify_owner,
-		notify_slack,
+		notify_slbck,
 		user_id,
 		org_id,
-		slack_webhook_url
-		FROM saved_searches WHERE id=$1`, id).Scan(
+		slbck_webhook_url
+		FROM sbved_sebrches WHERE id=$1`, id).Scbn(
 		&sq.Config.Key,
 		&sq.Config.Description,
 		&sq.Config.Query,
 		&sq.Config.Notify,
-		&sq.Config.NotifySlack,
+		&sq.Config.NotifySlbck,
 		&sq.Config.UserID,
 		&sq.Config.OrgID,
-		&sq.Config.SlackWebhookURL)
+		&sq.Config.SlbckWebhookURL)
 	if err != nil {
 		return nil, err
 	}
@@ -153,26 +153,26 @@ func (s *savedSearchStore) GetByID(ctx context.Context, id int32) (*api.SavedQue
 	return &sq, err
 }
 
-// ListSavedSearchesByUserID lists all the saved searches associated with a
-// user, including saved searches in organizations the user is a member of.
+// ListSbvedSebrchesByUserID lists bll the sbved sebrches bssocibted with b
+// user, including sbved sebrches in orgbnizbtions the user is b member of.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure that only the
-// specified user or users with proper permissions can access the returned
-// saved searches.
-func (s *savedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID int32) ([]*types.SavedSearch, error) {
-	var savedSearches []*types.SavedSearch
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure thbt only the
+// specified user or users with proper permissions cbn bccess the returned
+// sbved sebrches.
+func (s *sbvedSebrchStore) ListSbvedSebrchesByUserID(ctx context.Context, userID int32) ([]*types.SbvedSebrch, error) {
+	vbr sbvedSebrches []*types.SbvedSebrch
 	orgs, err := OrgsWith(s).GetByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	var orgIDs []int32
-	for _, org := range orgs {
-		orgIDs = append(orgIDs, org.ID)
+	vbr orgIDs []int32
+	for _, org := rbnge orgs {
+		orgIDs = bppend(orgIDs, org.ID)
 	}
-	var orgConditions []*sqlf.Query
-	for _, orgID := range orgIDs {
-		orgConditions = append(orgConditions, sqlf.Sprintf("org_id=%d", orgID))
+	vbr orgConditions []*sqlf.Query
+	for _, orgID := rbnge orgIDs {
+		orgConditions = bppend(orgConditions, sqlf.Sprintf("org_id=%d", orgID))
 	}
 	conds := sqlf.Sprintf("WHERE user_id=%d", userID)
 
@@ -185,218 +185,218 @@ func (s *savedSearchStore) ListSavedSearchesByUserID(ctx context.Context, userID
 		description,
 		query,
 		notify_owner,
-		notify_slack,
+		notify_slbck,
 		user_id,
 		org_id,
-		slack_webhook_url
-		FROM saved_searches %v`, conds)
+		slbck_webhook_url
+		FROM sbved_sebrches %v`, conds)
 
 	rows, err := s.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "QueryContext(2)")
+		return nil, errors.Wrbp(err, "QueryContext(2)")
 	}
 	for rows.Next() {
-		var ss types.SavedSearch
-		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-			return nil, errors.Wrap(err, "Scan(2)")
+		vbr ss types.SbvedSebrch
+		if err := rows.Scbn(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlbck, &ss.UserID, &ss.OrgID, &ss.SlbckWebhookURL); err != nil {
+			return nil, errors.Wrbp(err, "Scbn(2)")
 		}
-		savedSearches = append(savedSearches, &ss)
+		sbvedSebrches = bppend(sbvedSebrches, &ss)
 	}
-	return savedSearches, nil
+	return sbvedSebrches, nil
 }
 
-// ListSavedSearchesByUserID lists all the saved searches associated with an
-// organization.
+// ListSbvedSebrchesByUserID lists bll the sbved sebrches bssocibted with bn
+// orgbnizbtion.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure only admins or
-// members of the specified organization can access the returned saved
-// searches.
-func (s *savedSearchStore) ListSavedSearchesByOrgID(ctx context.Context, orgID int32) ([]*types.SavedSearch, error) {
-	var savedSearches []*types.SavedSearch
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure only bdmins or
+// members of the specified orgbnizbtion cbn bccess the returned sbved
+// sebrches.
+func (s *sbvedSebrchStore) ListSbvedSebrchesByOrgID(ctx context.Context, orgID int32) ([]*types.SbvedSebrch, error) {
+	vbr sbvedSebrches []*types.SbvedSebrch
 	conds := sqlf.Sprintf("WHERE org_id=%d", orgID)
 	query := sqlf.Sprintf(`SELECT
 		id,
 		description,
 		query,
 		notify_owner,
-		notify_slack,
+		notify_slbck,
 		user_id,
 		org_id,
-		slack_webhook_url
-		FROM saved_searches %v`, conds)
+		slbck_webhook_url
+		FROM sbved_sebrches %v`, conds)
 
 	rows, err := s.Query(ctx, query)
 	if err != nil {
-		return nil, errors.Wrap(err, "QueryContext")
+		return nil, errors.Wrbp(err, "QueryContext")
 	}
 	for rows.Next() {
-		var ss types.SavedSearch
-		if err := rows.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-			return nil, errors.Wrap(err, "Scan")
+		vbr ss types.SbvedSebrch
+		if err := rows.Scbn(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlbck, &ss.UserID, &ss.OrgID, &ss.SlbckWebhookURL); err != nil {
+			return nil, errors.Wrbp(err, "Scbn")
 		}
 
-		savedSearches = append(savedSearches, &ss)
+		sbvedSebrches = bppend(sbvedSebrches, &ss)
 	}
-	return savedSearches, nil
+	return sbvedSebrches, nil
 }
 
-// ListSavedSearchesByOrgOrUser lists all the saved searches associated with an
-// organization for the user.
+// ListSbvedSebrchesByOrgOrUser lists bll the sbved sebrches bssocibted with bn
+// orgbnizbtion for the user.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the caller's responsibility to ensure only admins or
-// members of the specified organization can access the returned saved
-// searches.
-func (s *savedSearchStore) ListSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32, paginationArgs *PaginationArgs) ([]*types.SavedSearch, error) {
-	p := paginationArgs.SQL()
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbller's responsibility to ensure only bdmins or
+// members of the specified orgbnizbtion cbn bccess the returned sbved
+// sebrches.
+func (s *sbvedSebrchStore) ListSbvedSebrchesByOrgOrUser(ctx context.Context, userID, orgID *int32, pbginbtionArgs *PbginbtionArgs) ([]*types.SbvedSebrch, error) {
+	p := pbginbtionArgs.SQL()
 
-	var where []*sqlf.Query
+	vbr where []*sqlf.Query
 
 	if userID != nil && *userID != 0 {
-		where = append(where, sqlf.Sprintf("user_id = %v", *userID))
+		where = bppend(where, sqlf.Sprintf("user_id = %v", *userID))
 	} else if orgID != nil && *orgID != 0 {
-		where = append(where, sqlf.Sprintf("org_id = %v", *orgID))
+		where = bppend(where, sqlf.Sprintf("org_id = %v", *orgID))
 	} else {
 		return nil, errors.New("userID or orgID must be provided.")
 	}
 
 	if p.Where != nil {
-		where = append(where, p.Where)
+		where = bppend(where, p.Where)
 	}
 
-	query := sqlf.Sprintf(listSavedSearchesQueryFmtStr, sqlf.Sprintf("WHERE %v", sqlf.Join(where, " AND ")))
+	query := sqlf.Sprintf(listSbvedSebrchesQueryFmtStr, sqlf.Sprintf("WHERE %v", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)
 	query = p.AppendLimitToQuery(query)
 
-	return scanSavedSearches(s.Query(ctx, query))
+	return scbnSbvedSebrches(s.Query(ctx, query))
 }
 
-const listSavedSearchesQueryFmtStr = `
+const listSbvedSebrchesQueryFmtStr = `
 SELECT
 	id,
 	description,
 	query,
 	notify_owner,
-	notify_slack,
+	notify_slbck,
 	user_id,
 	org_id,
-	slack_webhook_url
-FROM saved_searches %v
+	slbck_webhook_url
+FROM sbved_sebrches %v
 `
 
-var scanSavedSearches = basestore.NewSliceScanner(scanSavedSearch)
+vbr scbnSbvedSebrches = bbsestore.NewSliceScbnner(scbnSbvedSebrch)
 
-func scanSavedSearch(s dbutil.Scanner) (*types.SavedSearch, error) {
-	var ss types.SavedSearch
-	if err := s.Scan(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlack, &ss.UserID, &ss.OrgID, &ss.SlackWebhookURL); err != nil {
-		return nil, errors.Wrap(err, "Scan")
+func scbnSbvedSebrch(s dbutil.Scbnner) (*types.SbvedSebrch, error) {
+	vbr ss types.SbvedSebrch
+	if err := s.Scbn(&ss.ID, &ss.Description, &ss.Query, &ss.Notify, &ss.NotifySlbck, &ss.UserID, &ss.OrgID, &ss.SlbckWebhookURL); err != nil {
+		return nil, errors.Wrbp(err, "Scbn")
 	}
 	return &ss, nil
 }
 
-// CountSavedSearchesByOrgOrUser counts all the saved searches associated with an
-// organization for the user.
+// CountSbvedSebrchesByOrgOrUser counts bll the sbved sebrches bssocibted with bn
+// orgbnizbtion for the user.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure only admins or
-// members of the specified organization can access the returned saved
-// searches.
-func (s *savedSearchStore) CountSavedSearchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error) {
-	query := sqlf.Sprintf(`SELECT COUNT(*) FROM saved_searches WHERE user_id=%v OR org_id=%v`, userID, orgID)
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure only bdmins or
+// members of the specified orgbnizbtion cbn bccess the returned sbved
+// sebrches.
+func (s *sbvedSebrchStore) CountSbvedSebrchesByOrgOrUser(ctx context.Context, userID, orgID *int32) (int, error) {
+	query := sqlf.Sprintf(`SELECT COUNT(*) FROM sbved_sebrches WHERE user_id=%v OR org_id=%v`, userID, orgID)
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, query))
 	return count, err
 }
 
-// Create creates a new saved search with the specified parameters. The ID
-// field must be zero, or an error will be returned.
+// Crebte crebtes b new sbved sebrch with the specified pbrbmeters. The ID
+// field must be zero, or bn error will be returned.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure the user has
-// proper permissions to create the saved search.
-func (s *savedSearchStore) Create(ctx context.Context, newSavedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
-	if newSavedSearch.ID != 0 {
-		return nil, errors.New("newSavedSearch.ID must be zero")
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure the user hbs
+// proper permissions to crebte the sbved sebrch.
+func (s *sbvedSebrchStore) Crebte(ctx context.Context, newSbvedSebrch *types.SbvedSebrch) (sbvedQuery *types.SbvedSebrch, err error) {
+	if newSbvedSebrch.ID != 0 {
+		return nil, errors.New("newSbvedSebrch.ID must be zero")
 	}
 
-	tr, ctx := trace.New(ctx, "database.SavedSearches.Create")
+	tr, ctx := trbce.New(ctx, "dbtbbbse.SbvedSebrches.Crebte")
 	defer tr.EndWithErr(&err)
 
-	savedQuery = &types.SavedSearch{
-		Description: newSavedSearch.Description,
-		Query:       newSavedSearch.Query,
-		Notify:      newSavedSearch.Notify,
-		NotifySlack: newSavedSearch.NotifySlack,
-		UserID:      newSavedSearch.UserID,
-		OrgID:       newSavedSearch.OrgID,
+	sbvedQuery = &types.SbvedSebrch{
+		Description: newSbvedSebrch.Description,
+		Query:       newSbvedSebrch.Query,
+		Notify:      newSbvedSebrch.Notify,
+		NotifySlbck: newSbvedSebrch.NotifySlbck,
+		UserID:      newSbvedSebrch.UserID,
+		OrgID:       newSbvedSebrch.OrgID,
 	}
 
-	err = s.Handle().QueryRowContext(ctx, `INSERT INTO saved_searches(
+	err = s.Hbndle().QueryRowContext(ctx, `INSERT INTO sbved_sebrches(
 			description,
 			query,
 			notify_owner,
-			notify_slack,
+			notify_slbck,
 			user_id,
 			org_id
 		) VALUES($1, $2, $3, $4, $5, $6) RETURNING id`,
-		newSavedSearch.Description,
-		savedQuery.Query,
-		newSavedSearch.Notify,
-		newSavedSearch.NotifySlack,
-		newSavedSearch.UserID,
-		newSavedSearch.OrgID,
-	).Scan(&savedQuery.ID)
+		newSbvedSebrch.Description,
+		sbvedQuery.Query,
+		newSbvedSebrch.Notify,
+		newSbvedSebrch.NotifySlbck,
+		newSbvedSebrch.UserID,
+		newSbvedSebrch.OrgID,
+	).Scbn(&sbvedQuery.ID)
 	if err != nil {
 		return nil, err
 	}
-	return savedQuery, nil
+	return sbvedQuery, nil
 }
 
-// Update updates an existing saved search.
+// Updbte updbtes bn existing sbved sebrch.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure the user has
-// proper permissions to perform the update.
-func (s *savedSearchStore) Update(ctx context.Context, savedSearch *types.SavedSearch) (savedQuery *types.SavedSearch, err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.Update")
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure the user hbs
+// proper permissions to perform the updbte.
+func (s *sbvedSebrchStore) Updbte(ctx context.Context, sbvedSebrch *types.SbvedSebrch) (sbvedQuery *types.SbvedSebrch, err error) {
+	tr, ctx := trbce.New(ctx, "dbtbbbse.SbvedSebrches.Updbte")
 	defer tr.EndWithErr(&err)
 
-	savedQuery = &types.SavedSearch{
-		Description:     savedSearch.Description,
-		Query:           savedSearch.Query,
-		Notify:          savedSearch.Notify,
-		NotifySlack:     savedSearch.NotifySlack,
-		UserID:          savedSearch.UserID,
-		OrgID:           savedSearch.OrgID,
-		SlackWebhookURL: savedSearch.SlackWebhookURL,
+	sbvedQuery = &types.SbvedSebrch{
+		Description:     sbvedSebrch.Description,
+		Query:           sbvedSebrch.Query,
+		Notify:          sbvedSebrch.Notify,
+		NotifySlbck:     sbvedSebrch.NotifySlbck,
+		UserID:          sbvedSebrch.UserID,
+		OrgID:           sbvedSebrch.OrgID,
+		SlbckWebhookURL: sbvedSebrch.SlbckWebhookURL,
 	}
 
-	fieldUpdates := []*sqlf.Query{
-		sqlf.Sprintf("updated_at=now()"),
-		sqlf.Sprintf("description=%s", savedSearch.Description),
-		sqlf.Sprintf("query=%s", savedSearch.Query),
-		sqlf.Sprintf("notify_owner=%t", savedSearch.Notify),
-		sqlf.Sprintf("notify_slack=%t", savedSearch.NotifySlack),
-		sqlf.Sprintf("user_id=%v", savedSearch.UserID),
-		sqlf.Sprintf("org_id=%v", savedSearch.OrgID),
-		sqlf.Sprintf("slack_webhook_url=%v", savedSearch.SlackWebhookURL),
+	fieldUpdbtes := []*sqlf.Query{
+		sqlf.Sprintf("updbted_bt=now()"),
+		sqlf.Sprintf("description=%s", sbvedSebrch.Description),
+		sqlf.Sprintf("query=%s", sbvedSebrch.Query),
+		sqlf.Sprintf("notify_owner=%t", sbvedSebrch.Notify),
+		sqlf.Sprintf("notify_slbck=%t", sbvedSebrch.NotifySlbck),
+		sqlf.Sprintf("user_id=%v", sbvedSebrch.UserID),
+		sqlf.Sprintf("org_id=%v", sbvedSebrch.OrgID),
+		sqlf.Sprintf("slbck_webhook_url=%v", sbvedSebrch.SlbckWebhookURL),
 	}
 
-	updateQuery := sqlf.Sprintf(`UPDATE saved_searches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdates, ", "), savedSearch.ID)
-	if err := s.QueryRow(ctx, updateQuery).Scan(&savedQuery.ID); err != nil {
+	updbteQuery := sqlf.Sprintf(`UPDATE sbved_sebrches SET %s WHERE ID=%v RETURNING id`, sqlf.Join(fieldUpdbtes, ", "), sbvedSebrch.ID)
+	if err := s.QueryRow(ctx, updbteQuery).Scbn(&sbvedQuery.ID); err != nil {
 		return nil, err
 	}
-	return savedQuery, nil
+	return sbvedQuery, nil
 }
 
-// Delete hard-deletes an existing saved search.
+// Delete hbrd-deletes bn existing sbved sebrch.
 //
-// 🚨 SECURITY: This method does NOT verify the user's identity or that the
-// user is an admin. It is the callers responsibility to ensure the user has
+// 🚨 SECURITY: This method does NOT verify the user's identity or thbt the
+// user is bn bdmin. It is the cbllers responsibility to ensure the user hbs
 // proper permissions to perform the delete.
-func (s *savedSearchStore) Delete(ctx context.Context, id int32) (err error) {
-	tr, ctx := trace.New(ctx, "database.SavedSearches.Delete")
+func (s *sbvedSebrchStore) Delete(ctx context.Context, id int32) (err error) {
+	tr, ctx := trbce.New(ctx, "dbtbbbse.SbvedSebrches.Delete")
 	defer tr.EndWithErr(&err)
-	_, err = s.Handle().ExecContext(ctx, `DELETE FROM saved_searches WHERE ID=$1`, id)
+	_, err = s.Hbndle().ExecContext(ctx, `DELETE FROM sbved_sebrches WHERE ID=$1`, id)
 	return err
 }

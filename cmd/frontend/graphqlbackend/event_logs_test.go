@@ -1,67 +1,67 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestUser_EventLogs(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("only bllowed by buthenticbted user on Sourcegrbph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 
 		tests := []struct {
-			name  string
+			nbme  string
 			ctx   context.Context
 			setup func()
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				nbme: "unbuthenticbted",
+				ctx:  context.Bbckground(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+					users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 				},
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id}, nil
 					})
 				},
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id, SiteAdmin: true}, nil
 					})
 				},
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				test.setup()
 
 				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).EventLogs(test.ctx, nil)
 				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				wbnt := "must be buthenticbted bs user with id 1"
+				bssert.Equbl(t, wbnt, got)
 			})
 		}
 	})

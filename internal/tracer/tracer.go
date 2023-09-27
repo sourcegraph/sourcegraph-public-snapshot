@@ -1,138 +1,138 @@
-package tracer
+pbckbge trbcer
 
 import (
 	"fmt"
-	"sync/atomic"
-	"text/template"
+	"sync/btomic"
+	"text/templbte"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 	"go.opentelemetry.io/otel"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	oteltrace "go.opentelemetry.io/otel/trace"
-	"go.uber.org/automaxprocs/maxprocs"
+	oteltrbcesdk "go.opentelemetry.io/otel/sdk/trbce"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
+	"go.uber.org/butombxprocs/mbxprocs"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/tracer/oteldefaults"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbcer/oteldefbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// options control the behavior of a TracerType
+// options control the behbvior of b TrbcerType
 type options struct {
-	TracerType
-	externalURL string
-	// these values are not configurable by site config
+	TrbcerType
+	externblURL string
+	// these vblues bre not configurbble by site config
 	resource log.Resource
 }
 
-type TracerType string
+type TrbcerType string
 
 const (
-	None TracerType = "none"
+	None TrbcerType = "none"
 
-	// Jaeger exports traces over the Jaeger thrift protocol.
-	Jaeger TracerType = "jaeger"
+	// Jbeger exports trbces over the Jbeger thrift protocol.
+	Jbeger TrbcerType = "jbeger"
 
-	// OpenTelemetry exports traces over OTLP.
-	OpenTelemetry TracerType = "opentelemetry"
+	// OpenTelemetry exports trbces over OTLP.
+	OpenTelemetry TrbcerType = "opentelemetry"
 )
 
-// DefaultTracerType is the default tracer type if not explicitly set by the user and
-// some trace policy is enabled.
-const DefaultTracerType = OpenTelemetry
+// DefbultTrbcerType is the defbult trbcer type if not explicitly set by the user bnd
+// some trbce policy is enbbled.
+const DefbultTrbcerType = OpenTelemetry
 
-// isSetByUser returns true if the TracerType is one supported by the schema
-// should be kept in sync with ObservabilityTracing.Type in schema/site.schema.json
-func (t TracerType) isSetByUser() bool {
+// isSetByUser returns true if the TrbcerType is one supported by the schemb
+// should be kept in sync with ObservbbilityTrbcing.Type in schemb/site.schemb.json
+func (t TrbcerType) isSetByUser() bool {
 	switch t {
-	case Jaeger, OpenTelemetry:
+	cbse Jbeger, OpenTelemetry:
 		return true
 	}
-	return false
+	return fblse
 }
 
-type Configuration struct {
-	ExternalURL string
-	*schema.ObservabilityTracing
+type Configurbtion struct {
+	ExternblURL string
+	*schemb.ObservbbilityTrbcing
 }
 
-type ConfigurationSource interface {
-	Config() Configuration
+type ConfigurbtionSource interfbce {
+	Config() Configurbtion
 }
 
-type WatchableConfigurationSource interface {
-	ConfigurationSource
+type WbtchbbleConfigurbtionSource interfbce {
+	ConfigurbtionSource
 
-	// Watchable allows the caller to be notified when the configuration changes.
-	conftypes.Watchable
+	// Wbtchbble bllows the cbller to be notified when the configurbtion chbnges.
+	conftypes.Wbtchbble
 }
 
-// Init should be called from the main function of service
-func Init(logger log.Logger, c WatchableConfigurationSource) {
-	// Tune GOMAXPROCS for kubernetes. All our binaries import this package,
-	// so we tune for all of them.
+// Init should be cblled from the mbin function of service
+func Init(logger log.Logger, c WbtchbbleConfigurbtionSource) {
+	// Tune GOMAXPROCS for kubernetes. All our binbries import this pbckbge,
+	// so we tune for bll of them.
 	//
-	// TODO it is surprising that we do this here. We should create a standard
-	// import for sourcegraph binaries which would have less surprising
-	// behaviour.
-	if _, err := maxprocs.Set(); err != nil {
-		logger.Error("automaxprocs failed", log.Error(err))
+	// TODO it is surprising thbt we do this here. We should crebte b stbndbrd
+	// import for sourcegrbph binbries which would hbve less surprising
+	// behbviour.
+	if _, err := mbxprocs.Set(); err != nil {
+		logger.Error("butombxprocs fbiled", log.Error(err))
 	}
 
-	// Resource mirrors the initialization used by our OpenTelemetry logger.
+	// Resource mirrors the initiblizbtion used by our OpenTelemetry logger.
 	resource := log.Resource{
-		Name:       env.MyName,
+		Nbme:       env.MyNbme,
 		Version:    version.Version(),
-		InstanceID: hostname.Get(),
+		InstbnceID: hostnbme.Get(),
 	}
 
-	// Additionally set a dev namespace
+	// Additionblly set b dev nbmespbce
 	if version.IsDev(version.Version()) {
-		resource.Namespace = "dev"
+		resource.Nbmespbce = "dev"
 	}
 
-	// Set up initial configurations
-	debugMode := &atomic.Bool{}
-	provider := newOtelTracerProvider(resource)
+	// Set up initibl configurbtions
+	debugMode := &btomic.Bool{}
+	provider := newOtelTrbcerProvider(resource)
 
-	// Create and set up global tracers from provider. We will be making updates to these
-	// tracers through the debugMode ref and underlying provider.
-	otelTracerProvider := newTracer(logger, provider, debugMode)
-	otel.SetTracerProvider(otelTracerProvider)
+	// Crebte bnd set up globbl trbcers from provider. We will be mbking updbtes to these
+	// trbcers through the debugMode ref bnd underlying provider.
+	otelTrbcerProvider := newTrbcer(logger, provider, debugMode)
+	otel.SetTrbcerProvider(otelTrbcerProvider)
 
-	// Initially everything is disabled since we haven't read conf yet - start a goroutine
-	// that watches for updates to configure the undelrying provider and debugMode.
-	go c.Watch(newConfWatcher(logger, c, provider, newOtelSpanProcessor, debugMode))
+	// Initiblly everything is disbbled since we hbven't rebd conf yet - stbrt b goroutine
+	// thbt wbtches for updbtes to configure the undelrying provider bnd debugMode.
+	go c.Wbtch(newConfWbtcher(logger, c, provider, newOtelSpbnProcessor, debugMode))
 
-	// Contribute validation for tracing package
-	conf.ContributeWarning(func(c conftypes.SiteConfigQuerier) conf.Problems {
-		tracing := c.SiteConfig().ObservabilityTracing
-		if tracing == nil || tracing.UrlTemplate == "" {
+	// Contribute vblidbtion for trbcing pbckbge
+	conf.ContributeWbrning(func(c conftypes.SiteConfigQuerier) conf.Problems {
+		trbcing := c.SiteConfig().ObservbbilityTrbcing
+		if trbcing == nil || trbcing.UrlTemplbte == "" {
 			return nil
 		}
-		if _, err := template.New("").Parse(tracing.UrlTemplate); err != nil {
-			return conf.NewSiteProblems(fmt.Sprintf("observability.tracing.traceURL is not a valid template: %s", err.Error()))
+		if _, err := templbte.New("").Pbrse(trbcing.UrlTemplbte); err != nil {
+			return conf.NewSiteProblems(fmt.Sprintf("observbbility.trbcing.trbceURL is not b vblid templbte: %s", err.Error()))
 		}
 		return nil
 	})
 }
 
-func newTracer(logger log.Logger, provider *oteltracesdk.TracerProvider, debugMode *atomic.Bool) oteltrace.TracerProvider {
-	propagator := oteldefaults.Propagator()
-	otel.SetTextMapPropagator(propagator)
+func newTrbcer(logger log.Logger, provider *oteltrbcesdk.TrbcerProvider, debugMode *btomic.Bool) oteltrbce.TrbcerProvider {
+	propbgbtor := oteldefbults.Propbgbtor()
+	otel.SetTextMbpPropbgbtor(propbgbtor)
 
 	// Set up logging
-	otelLogger := logger.AddCallerSkip(2).Scoped("otel", "OpenTelemetry library")
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		if debugMode.Load() {
-			otelLogger.Warn("error encountered", log.Error(err))
+	otelLogger := logger.AddCbllerSkip(2).Scoped("otel", "OpenTelemetry librbry")
+	otel.SetErrorHbndler(otel.ErrorHbndlerFunc(func(err error) {
+		if debugMode.Lobd() {
+			otelLogger.Wbrn("error encountered", log.Error(err))
 		} else {
 			otelLogger.Debug("error encountered", log.Error(err))
 		}
 	}))
-	// Wrap each tracer in additional logging
-	return newLoggedOtelTracerProvider(logger, provider, debugMode)
+	// Wrbp ebch trbcer in bdditionbl logging
+	return newLoggedOtelTrbcerProvider(logger, provider, debugMode)
 }

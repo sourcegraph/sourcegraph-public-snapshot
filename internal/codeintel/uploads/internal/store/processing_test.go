@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -7,363 +7,363 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestInsertUploadUploading(t *testing.T) {
+func TestInsertUplobdUplobding(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertRepo(t, db, 50, "", false)
+	insertRepo(t, db, 50, "", fblse)
 
-	id, err := store.InsertUpload(context.Background(), shared.Upload{
-		Commit:       makeCommit(1),
+	id, err := store.InsertUplobd(context.Bbckground(), shbred.Uplobd{
+		Commit:       mbkeCommit(1),
 		Root:         "sub/",
-		State:        "uploading",
+		Stbte:        "uplobding",
 		RepositoryID: 50,
 		Indexer:      "lsif-go",
-		NumParts:     3,
+		NumPbrts:     3,
 	})
 	if err != nil {
-		t.Fatalf("unexpected error enqueueing upload: %s", err)
+		t.Fbtblf("unexpected error enqueueing uplobd: %s", err)
 	}
 
-	expected := shared.Upload{
+	expected := shbred.Uplobd{
 		ID:             id,
-		Commit:         makeCommit(1),
+		Commit:         mbkeCommit(1),
 		Root:           "sub/",
-		VisibleAtTip:   false,
-		UploadedAt:     time.Time{},
-		State:          "uploading",
-		FailureMessage: nil,
-		StartedAt:      nil,
+		VisibleAtTip:   fblse,
+		UplobdedAt:     time.Time{},
+		Stbte:          "uplobding",
+		FbilureMessbge: nil,
+		StbrtedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
-		RepositoryName: "n-50",
+		RepositoryNbme: "n-50",
 		Indexer:        "lsif-go",
-		NumParts:       3,
-		UploadedParts:  []int{},
+		NumPbrts:       3,
+		UplobdedPbrts:  []int{},
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), id); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
+		t.Fbtbl("expected record to exist")
 	} else {
-		// Update auto-generated timestamp
-		expected.UploadedAt = upload.UploadedAt
+		// Updbte buto-generbted timestbmp
+		expected.UplobdedAt = uplobd.UplobdedAt
 
-		if diff := cmp.Diff(expected, upload); diff != "" {
-			t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expected, uplobd); diff != "" {
+			t.Errorf("unexpected uplobd (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestInsertUploadQueued(t *testing.T) {
+func TestInsertUplobdQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertRepo(t, db, 50, "", false)
+	insertRepo(t, db, 50, "", fblse)
 
-	id, err := store.InsertUpload(context.Background(), shared.Upload{
-		Commit:        makeCommit(1),
+	id, err := store.InsertUplobd(context.Bbckground(), shbred.Uplobd{
+		Commit:        mbkeCommit(1),
 		Root:          "sub/",
-		State:         "queued",
+		Stbte:         "queued",
 		RepositoryID:  50,
 		Indexer:       "lsif-go",
-		NumParts:      1,
-		UploadedParts: []int{0},
+		NumPbrts:      1,
+		UplobdedPbrts: []int{0},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error enqueueing upload: %s", err)
+		t.Fbtblf("unexpected error enqueueing uplobd: %s", err)
 	}
 
-	rank := 1
-	expected := shared.Upload{
+	rbnk := 1
+	expected := shbred.Uplobd{
 		ID:             id,
-		Commit:         makeCommit(1),
+		Commit:         mbkeCommit(1),
 		Root:           "sub/",
-		VisibleAtTip:   false,
-		UploadedAt:     time.Time{},
-		State:          "queued",
-		FailureMessage: nil,
-		StartedAt:      nil,
+		VisibleAtTip:   fblse,
+		UplobdedAt:     time.Time{},
+		Stbte:          "queued",
+		FbilureMessbge: nil,
+		StbrtedAt:      nil,
 		FinishedAt:     nil,
 		RepositoryID:   50,
-		RepositoryName: "n-50",
+		RepositoryNbme: "n-50",
 		Indexer:        "lsif-go",
-		NumParts:       1,
-		UploadedParts:  []int{0},
-		Rank:           &rank,
+		NumPbrts:       1,
+		UplobdedPbrts:  []int{0},
+		Rbnk:           &rbnk,
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), id); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
+		t.Fbtbl("expected record to exist")
 	} else {
-		// Update auto-generated timestamp
-		expected.UploadedAt = upload.UploadedAt
+		// Updbte buto-generbted timestbmp
+		expected.UplobdedAt = uplobd.UplobdedAt
 
-		if diff := cmp.Diff(expected, upload); diff != "" {
-			t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expected, uplobd); diff != "" {
+			t.Errorf("unexpected uplobd (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestInsertUploadWithAssociatedIndexID(t *testing.T) {
+func TestInsertUplobdWithAssocibtedIndexID(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertRepo(t, db, 50, "", false)
+	insertRepo(t, db, 50, "", fblse)
 
-	associatedIndexIDArg := 42
-	id, err := store.InsertUpload(context.Background(), shared.Upload{
-		Commit:            makeCommit(1),
+	bssocibtedIndexIDArg := 42
+	id, err := store.InsertUplobd(context.Bbckground(), shbred.Uplobd{
+		Commit:            mbkeCommit(1),
 		Root:              "sub/",
-		State:             "queued",
+		Stbte:             "queued",
 		RepositoryID:      50,
 		Indexer:           "lsif-go",
-		NumParts:          1,
-		UploadedParts:     []int{0},
-		AssociatedIndexID: &associatedIndexIDArg,
+		NumPbrts:          1,
+		UplobdedPbrts:     []int{0},
+		AssocibtedIndexID: &bssocibtedIndexIDArg,
 	})
 	if err != nil {
-		t.Fatalf("unexpected error enqueueing upload: %s", err)
+		t.Fbtblf("unexpected error enqueueing uplobd: %s", err)
 	}
 
-	rank := 1
-	associatedIndexIDResult := 42
-	expected := shared.Upload{
+	rbnk := 1
+	bssocibtedIndexIDResult := 42
+	expected := shbred.Uplobd{
 		ID:                id,
-		Commit:            makeCommit(1),
+		Commit:            mbkeCommit(1),
 		Root:              "sub/",
-		VisibleAtTip:      false,
-		UploadedAt:        time.Time{},
-		State:             "queued",
-		FailureMessage:    nil,
-		StartedAt:         nil,
+		VisibleAtTip:      fblse,
+		UplobdedAt:        time.Time{},
+		Stbte:             "queued",
+		FbilureMessbge:    nil,
+		StbrtedAt:         nil,
 		FinishedAt:        nil,
 		RepositoryID:      50,
-		RepositoryName:    "n-50",
+		RepositoryNbme:    "n-50",
 		Indexer:           "lsif-go",
-		NumParts:          1,
-		UploadedParts:     []int{0},
-		Rank:              &rank,
-		AssociatedIndexID: &associatedIndexIDResult,
+		NumPbrts:          1,
+		UplobdedPbrts:     []int{0},
+		Rbnk:              &rbnk,
+		AssocibtedIndexID: &bssocibtedIndexIDResult,
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), id); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), id); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
+		t.Fbtbl("expected record to exist")
 	} else {
-		// Update auto-generated timestamp
-		expected.UploadedAt = upload.UploadedAt
+		// Updbte buto-generbted timestbmp
+		expected.UplobdedAt = uplobd.UplobdedAt
 
-		if diff := cmp.Diff(expected, upload); diff != "" {
-			t.Errorf("unexpected upload (-want +got):\n%s", diff)
+		if diff := cmp.Diff(expected, uplobd); diff != "" {
+			t.Errorf("unexpected uplobd (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestAddUploadPart(t *testing.T) {
+func TestAddUplobdPbrt(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "uplobding"})
 
-	for _, part := range []int{1, 5, 2, 3, 2, 2, 1, 6} {
-		if err := store.AddUploadPart(context.Background(), 1, part); err != nil {
-			t.Fatalf("unexpected error adding upload part: %s", err)
+	for _, pbrt := rbnge []int{1, 5, 2, 3, 2, 2, 1, 6} {
+		if err := store.AddUplobdPbrt(context.Bbckground(), 1, pbrt); err != nil {
+			t.Fbtblf("unexpected error bdding uplobd pbrt: %s", err)
 		}
 	}
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
+		t.Fbtbl("expected record to exist")
 	} else {
-		sort.Ints(upload.UploadedParts)
-		if diff := cmp.Diff([]int{1, 2, 3, 5, 6}, upload.UploadedParts); diff != "" {
-			t.Errorf("unexpected upload parts (-want +got):\n%s", diff)
+		sort.Ints(uplobd.UplobdedPbrts)
+		if diff := cmp.Diff([]int{1, 2, 3, 5, 6}, uplobd.UplobdedPbrts); diff != "" {
+			t.Errorf("unexpected uplobd pbrts (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestMarkQueued(t *testing.T) {
+func TestMbrkQueued(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "uplobding"})
 
-	uploadSize := int64(300)
-	if err := store.MarkQueued(context.Background(), 1, &uploadSize); err != nil {
-		t.Fatalf("unexpected error marking upload as queued: %s", err)
+	uplobdSize := int64(300)
+	if err := store.MbrkQueued(context.Bbckground(), 1, &uplobdSize); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobd bs queued: %s", err)
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if upload.State != "queued" {
-		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
-	} else if upload.UploadSize == nil || *upload.UploadSize != 300 {
-		if upload.UploadSize == nil {
-			t.Errorf("unexpected upload size. want=%v have=%v", 300, upload.UploadSize)
+		t.Fbtbl("expected record to exist")
+	} else if uplobd.Stbte != "queued" {
+		t.Errorf("unexpected stbte. wbnt=%q hbve=%q", "queued", uplobd.Stbte)
+	} else if uplobd.UplobdSize == nil || *uplobd.UplobdSize != 300 {
+		if uplobd.UplobdSize == nil {
+			t.Errorf("unexpected uplobd size. wbnt=%v hbve=%v", 300, uplobd.UplobdSize)
 		} else {
-			t.Errorf("unexpected upload size. want=%v have=%v", 300, *upload.UploadSize)
+			t.Errorf("unexpected uplobd size. wbnt=%v hbve=%v", 300, *uplobd.UplobdSize)
 		}
 	}
 }
 
-func TestMarkQueuedNoSize(t *testing.T) {
+func TestMbrkQueuedNoSize(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "uplobding"})
 
-	if err := store.MarkQueued(context.Background(), 1, nil); err != nil {
-		t.Fatalf("unexpected error marking upload as queued: %s", err)
+	if err := store.MbrkQueued(context.Bbckground(), 1, nil); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobd bs queued: %s", err)
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if upload.State != "queued" {
-		t.Errorf("unexpected state. want=%q have=%q", "queued", upload.State)
-	} else if upload.UploadSize != nil {
-		t.Errorf("unexpected upload size. want=%v have=%v", nil, upload.UploadSize)
+		t.Fbtbl("expected record to exist")
+	} else if uplobd.Stbte != "queued" {
+		t.Errorf("unexpected stbte. wbnt=%q hbve=%q", "queued", uplobd.Stbte)
+	} else if uplobd.UplobdSize != nil {
+		t.Errorf("unexpected uplobd size. wbnt=%v hbve=%v", nil, uplobd.UplobdSize)
 	}
 }
 
-func TestMarkFailed(t *testing.T) {
+func TestMbrkFbiled(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{ID: 1, State: "uploading"})
+	insertUplobds(t, db, shbred.Uplobd{ID: 1, Stbte: "uplobding"})
 
-	failureReason := "didn't like it"
-	if err := store.MarkFailed(context.Background(), 1, failureReason); err != nil {
-		t.Fatalf("unexpected error marking upload as failed: %s", err)
+	fbilureRebson := "didn't like it"
+	if err := store.MbrkFbiled(context.Bbckground(), 1, fbilureRebson); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobd bs fbiled: %s", err)
 	}
 
-	if upload, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting upload: %s", err)
+	if uplobd, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting uplobd: %s", err)
 	} else if !exists {
-		t.Fatal("expected record to exist")
-	} else if upload.State != "failed" {
-		t.Errorf("unexpected state. want=%q have=%q", "failed", upload.State)
-	} else if upload.NumFailures != 1 {
-		t.Errorf("unexpected num failures. want=%v have=%v", 1, upload.NumFailures)
-	} else if upload.FailureMessage == nil || *upload.FailureMessage != failureReason {
-		if upload.FailureMessage == nil {
-			t.Errorf("unexpected failure message. want='%s' have='%v'", failureReason, upload.FailureMessage)
+		t.Fbtbl("expected record to exist")
+	} else if uplobd.Stbte != "fbiled" {
+		t.Errorf("unexpected stbte. wbnt=%q hbve=%q", "fbiled", uplobd.Stbte)
+	} else if uplobd.NumFbilures != 1 {
+		t.Errorf("unexpected num fbilures. wbnt=%v hbve=%v", 1, uplobd.NumFbilures)
+	} else if uplobd.FbilureMessbge == nil || *uplobd.FbilureMessbge != fbilureRebson {
+		if uplobd.FbilureMessbge == nil {
+			t.Errorf("unexpected fbilure messbge. wbnt='%s' hbve='%v'", fbilureRebson, uplobd.FbilureMessbge)
 		} else {
-			t.Errorf("unexpected failure message. want='%s' have='%v'", failureReason, *upload.FailureMessage)
+			t.Errorf("unexpected fbilure messbge. wbnt='%s' hbve='%v'", fbilureRebson, *uplobd.FbilureMessbge)
 		}
 	}
 }
 
-func TestDeleteOverlappingDumps(t *testing.T) {
+func TestDeleteOverlbppingDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{
+	insertUplobds(t, db, shbred.Uplobd{
 		ID:      1,
-		Commit:  makeCommit(1),
+		Commit:  mbkeCommit(1),
 		Root:    "cmd/",
 		Indexer: "lsif-go",
 	})
 
-	err := store.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	err := store.DeleteOverlbppingDumps(context.Bbckground(), 50, mbkeCommit(1), "cmd/", "lsif-go")
 	if err != nil {
-		t.Fatalf("unexpected error deleting dump: %s", err)
+		t.Fbtblf("unexpected error deleting dump: %s", err)
 	}
 
-	// Ensure record was deleted
-	if states, err := getUploadStates(db, 1); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(map[int]string{1: "deleting"}, states); diff != "" {
-		t.Errorf("unexpected dump (-want +got):\n%s", diff)
+	// Ensure record wbs deleted
+	if stbtes, err := getUplobdStbtes(db, 1); err != nil {
+		t.Fbtblf("unexpected error getting stbtes: %s", err)
+	} else if diff := cmp.Diff(mbp[int]string{1: "deleting"}, stbtes); diff != "" {
+		t.Errorf("unexpected dump (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestDeleteOverlappingDumpsNoMatches(t *testing.T) {
+func TestDeleteOverlbppingDumpsNoMbtches(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{
+	insertUplobds(t, db, shbred.Uplobd{
 		ID:      1,
-		Commit:  makeCommit(1),
+		Commit:  mbkeCommit(1),
 		Root:    "cmd/",
 		Indexer: "lsif-go",
 	})
 
-	testCases := []struct {
+	testCbses := []struct {
 		commit  string
 		root    string
 		indexer string
 	}{
-		{makeCommit(2), "cmd/", "lsif-go"},
-		{makeCommit(1), "cmds/", "lsif-go"},
-		{makeCommit(1), "cmd/", "scip-typescript"},
+		{mbkeCommit(2), "cmd/", "lsif-go"},
+		{mbkeCommit(1), "cmds/", "lsif-go"},
+		{mbkeCommit(1), "cmd/", "scip-typescript"},
 	}
 
-	for _, testCase := range testCases {
-		err := store.DeleteOverlappingDumps(context.Background(), 50, testCase.commit, testCase.root, testCase.indexer)
+	for _, testCbse := rbnge testCbses {
+		err := store.DeleteOverlbppingDumps(context.Bbckground(), 50, testCbse.commit, testCbse.root, testCbse.indexer)
 		if err != nil {
-			t.Fatalf("unexpected error deleting dump: %s", err)
+			t.Fbtblf("unexpected error deleting dump: %s", err)
 		}
 	}
 
-	// Original dump still exists
-	if dumps, err := store.GetDumpsByIDs(context.Background(), []int{1}); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
+	// Originbl dump still exists
+	if dumps, err := store.GetDumpsByIDs(context.Bbckground(), []int{1}); err != nil {
+		t.Fbtblf("unexpected error getting dump: %s", err)
 	} else if len(dumps) != 1 {
-		t.Fatal("expected dump record to still exist")
+		t.Fbtbl("expected dump record to still exist")
 	}
 }
 
-func TestDeleteOverlappingDumpsIgnoresIncompleteUploads(t *testing.T) {
+func TestDeleteOverlbppingDumpsIgnoresIncompleteUplobds(t *testing.T) {
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db, shared.Upload{
+	insertUplobds(t, db, shbred.Uplobd{
 		ID:      1,
-		Commit:  makeCommit(1),
+		Commit:  mbkeCommit(1),
 		Root:    "cmd/",
 		Indexer: "lsif-go",
-		State:   "queued",
+		Stbte:   "queued",
 	})
 
-	err := store.DeleteOverlappingDumps(context.Background(), 50, makeCommit(1), "cmd/", "lsif-go")
+	err := store.DeleteOverlbppingDumps(context.Bbckground(), 50, mbkeCommit(1), "cmd/", "lsif-go")
 	if err != nil {
-		t.Fatalf("unexpected error deleting dump: %s", err)
+		t.Fbtblf("unexpected error deleting dump: %s", err)
 	}
 
-	// Original upload still exists
-	if _, exists, err := store.GetUploadByID(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error getting dump: %s", err)
+	// Originbl uplobd still exists
+	if _, exists, err := store.GetUplobdByID(context.Bbckground(), 1); err != nil {
+		t.Fbtblf("unexpected error getting dump: %s", err)
 	} else if !exists {
-		t.Fatal("expected dump record to still exist")
+		t.Fbtbl("expected dump record to still exist")
 	}
 }

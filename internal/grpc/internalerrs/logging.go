@@ -1,4 +1,4 @@
-package internalerrs
+pbckbge internblerrs
 
 import (
 	"context"
@@ -7,303 +7,303 @@ import (
 	"io"
 	"strings"
 
-	"github.com/dustin/go-humanize"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/grpcutil"
+	"github.com/dustin/go-humbnize"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/grpcutil"
 
-	"google.golang.org/grpc/codes"
-	"google.golang.org/protobuf/proto"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/status"
+	"github.com/sourcegrbph/log"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/stbtus"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var (
-	logScope       = "gRPC.internal.error.reporter"
-	logDescription = "logs gRPC errors that appear to come from the go-grpc implementation"
+vbr (
+	logScope       = "gRPC.internbl.error.reporter"
+	logDescription = "logs gRPC errors thbt bppebr to come from the go-grpc implementbtion"
 
-	envLoggingEnabled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enables logging of gRPC internal errors")
-	envLogStackTracesEnabled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", false, "Enables including stack traces in logs of gRPC internal errors")
+	envLoggingEnbbled        = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_ENABLED", true, "Enbbles logging of gRPC internbl errors")
+	envLogStbckTrbcesEnbbled = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_STACK_TRACES", fblse, "Enbbles including stbck trbces in logs of gRPC internbl errors")
 
-	envLogMessagesEnabled                   = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED", false, "Enables inclusion of raw protobuf messages in the gRPC internal error logs")
-	envLogMessagesHandleMaxMessageSizeBytes = env.MustGetBytes("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES", "100MB", "Maximum size of protobuf messages that can be included in gRPC internal error logs. The purpose of this is to avoid excessive allocations. 0 bytes mean no limit.")
-	envLogMessagesMaxJSONSizeBytes          = env.MustGetBytes("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES", "1KB", "Maximum size of the JSON representation of protobuf messages to log. JSON representations larger than this value will be truncated. 0 bytes disables truncation.")
+	envLogMessbgesEnbbled                   = env.MustGetBool("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_ENABLED", fblse, "Enbbles inclusion of rbw protobuf messbges in the gRPC internbl error logs")
+	envLogMessbgesHbndleMbxMessbgeSizeBytes = env.MustGetBytes("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_HANDLING_MAX_MESSAGE_SIZE_BYTES", "100MB", "Mbximum size of protobuf messbges thbt cbn be included in gRPC internbl error logs. The purpose of this is to bvoid excessive bllocbtions. 0 bytes mebn no limit.")
+	envLogMessbgesMbxJSONSizeBytes          = env.MustGetBytes("SRC_GRPC_INTERNAL_ERROR_LOGGING_LOG_PROTOBUF_MESSAGES_JSON_TRUNCATION_SIZE_BYTES", "1KB", "Mbximum size of the JSON representbtion of protobuf messbges to log. JSON representbtions lbrger thbn this vblue will be truncbted. 0 bytes disbbles truncbtion.")
 )
 
-// LoggingUnaryClientInterceptor returns a grpc.UnaryClientInterceptor that logs
-// errors that appear to come from the go-grpc implementation.
-func LoggingUnaryClientInterceptor(l log.Logger) grpc.UnaryClientInterceptor {
-	if !envLoggingEnabled {
-		// Just return the default invoker if logging is disabled.
-		return func(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+// LoggingUnbryClientInterceptor returns b grpc.UnbryClientInterceptor thbt logs
+// errors thbt bppebr to come from the go-grpc implementbtion.
+func LoggingUnbryClientInterceptor(l log.Logger) grpc.UnbryClientInterceptor {
+	if !envLoggingEnbbled {
+		// Just return the defbult invoker if logging is disbbled.
+		return func(ctx context.Context, method string, req, reply bny, cc *grpc.ClientConn, invoker grpc.UnbryInvoker, opts ...grpc.CbllOption) error {
 			return invoker(ctx, method, req, reply, cc, opts...)
 		}
 	}
 
 	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("unaryMethod", "errors that originated from a unary method")
+	logger = logger.Scoped("unbryMethod", "errors thbt originbted from b unbry method")
 
-	return func(ctx context.Context, fullMethod string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+	return func(ctx context.Context, fullMethod string, req, reply bny, cc *grpc.ClientConn, invoker grpc.UnbryInvoker, opts ...grpc.CbllOption) error {
 		err := invoker(ctx, fullMethod, req, reply, cc, opts...)
 		if err != nil {
-			serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
+			serviceNbme, methodNbme := grpcutil.SplitMethodNbme(fullMethod)
 
-			var initialRequest proto.Message
-			if m, ok := req.(proto.Message); ok {
-				initialRequest = m
+			vbr initiblRequest proto.Messbge
+			if m, ok := req.(proto.Messbge); ok {
+				initiblRequest = m
 			}
 
-			doLog(logger, serviceName, methodName, &initialRequest, req, err)
+			doLog(logger, serviceNbme, methodNbme, &initiblRequest, req, err)
 		}
 
 		return err
 	}
 }
 
-// LoggingStreamClientInterceptor returns a grpc.StreamClientInterceptor that logs
-// errors that appear to come from the go-grpc implementation.
-func LoggingStreamClientInterceptor(l log.Logger) grpc.StreamClientInterceptor {
-	if !envLoggingEnabled {
-		// Just return the default streamer if logging is disabled.
-		return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-			return streamer(ctx, desc, cc, method, opts...)
+// LoggingStrebmClientInterceptor returns b grpc.StrebmClientInterceptor thbt logs
+// errors thbt bppebr to come from the go-grpc implementbtion.
+func LoggingStrebmClientInterceptor(l log.Logger) grpc.StrebmClientInterceptor {
+	if !envLoggingEnbbled {
+		// Just return the defbult strebmer if logging is disbbled.
+		return func(ctx context.Context, desc *grpc.StrebmDesc, cc *grpc.ClientConn, method string, strebmer grpc.Strebmer, opts ...grpc.CbllOption) (grpc.ClientStrebm, error) {
+			return strebmer(ctx, desc, cc, method, opts...)
 		}
 	}
 
 	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("streamingMethod", "errors that originated from a streaming method")
+	logger = logger.Scoped("strebmingMethod", "errors thbt originbted from b strebming method")
 
-	return func(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, fullMethod string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-		serviceName, methodName := grpcutil.SplitMethodName(fullMethod)
+	return func(ctx context.Context, desc *grpc.StrebmDesc, cc *grpc.ClientConn, fullMethod string, strebmer grpc.Strebmer, opts ...grpc.CbllOption) (grpc.ClientStrebm, error) {
+		serviceNbme, methodNbme := grpcutil.SplitMethodNbme(fullMethod)
 
-		stream, err := streamer(ctx, desc, cc, fullMethod, opts...)
+		strebm, err := strebmer(ctx, desc, cc, fullMethod, opts...)
 		if err != nil {
-			// Note: This is a bit hacky, we provide nil initial and payload messages here since the message isn't available
-			// until after the stream is created.
+			// Note: This is b bit hbcky, we provide nil initibl bnd pbylobd messbges here since the messbge isn't bvbilbble
+			// until bfter the strebm is crebted.
 			//
-			// This is fine since the error is already available, and the non-utf8 string check is robust against nil messages.
-			logger := logger.Scoped("postInit", "errors that occurred after stream initialization, but before the first message was sent")
-			doLog(logger, serviceName, methodName, nil, nil, err)
+			// This is fine since the error is blrebdy bvbilbble, bnd the non-utf8 string check is robust bgbinst nil messbges.
+			logger := logger.Scoped("postInit", "errors thbt occurred bfter strebm initiblizbtion, but before the first messbge wbs sent")
+			doLog(logger, serviceNbme, methodNbme, nil, nil, err)
 			return nil, err
 		}
 
-		stream = newLoggingClientStream(stream, logger, serviceName, methodName)
-		return stream, nil
+		strebm = newLoggingClientStrebm(strebm, logger, serviceNbme, methodNbme)
+		return strebm, nil
 	}
 }
 
-// LoggingUnaryServerInterceptor returns a grpc.UnaryServerInterceptor that logs
-// errors that appear to come from the go-grpc implementation.
-func LoggingUnaryServerInterceptor(l log.Logger) grpc.UnaryServerInterceptor {
-	if !envLoggingEnabled {
-		// Just return the default handler if logging is disabled.
-		return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-			return handler(ctx, req)
+// LoggingUnbryServerInterceptor returns b grpc.UnbryServerInterceptor thbt logs
+// errors thbt bppebr to come from the go-grpc implementbtion.
+func LoggingUnbryServerInterceptor(l log.Logger) grpc.UnbryServerInterceptor {
+	if !envLoggingEnbbled {
+		// Just return the defbult hbndler if logging is disbbled.
+		return func(ctx context.Context, req bny, info *grpc.UnbryServerInfo, hbndler grpc.UnbryHbndler) (resp bny, err error) {
+			return hbndler(ctx, req)
 		}
 	}
 
 	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("unaryMethod", "errors that originated from a unary method")
+	logger = logger.Scoped("unbryMethod", "errors thbt originbted from b unbry method")
 
-	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
-		response, err := handler(ctx, req)
+	return func(ctx context.Context, req bny, info *grpc.UnbryServerInfo, hbndler grpc.UnbryHbndler) (resp bny, err error) {
+		response, err := hbndler(ctx, req)
 		if err != nil {
-			serviceName, methodName := grpcutil.SplitMethodName(info.FullMethod)
+			serviceNbme, methodNbme := grpcutil.SplitMethodNbme(info.FullMethod)
 
-			var initialRequest proto.Message
-			if m, ok := req.(proto.Message); ok {
-				initialRequest = m
+			vbr initiblRequest proto.Messbge
+			if m, ok := req.(proto.Messbge); ok {
+				initiblRequest = m
 			}
 
-			doLog(logger, serviceName, methodName, &initialRequest, response, err)
+			doLog(logger, serviceNbme, methodNbme, &initiblRequest, response, err)
 		}
 
 		return response, err
 	}
 }
 
-// LoggingStreamServerInterceptor returns a grpc.StreamServerInterceptor that logs
-// errors that appear to come from the go-grpc implementation.
-func LoggingStreamServerInterceptor(l log.Logger) grpc.StreamServerInterceptor {
-	if !envLoggingEnabled {
-		// Just return the default handler if logging is disabled.
-		return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-			return handler(srv, ss)
+// LoggingStrebmServerInterceptor returns b grpc.StrebmServerInterceptor thbt logs
+// errors thbt bppebr to come from the go-grpc implementbtion.
+func LoggingStrebmServerInterceptor(l log.Logger) grpc.StrebmServerInterceptor {
+	if !envLoggingEnbbled {
+		// Just return the defbult hbndler if logging is disbbled.
+		return func(srv bny, ss grpc.ServerStrebm, info *grpc.StrebmServerInfo, hbndler grpc.StrebmHbndler) error {
+			return hbndler(srv, ss)
 		}
 	}
 
 	logger := l.Scoped(logScope, logDescription)
-	logger = logger.Scoped("streamingMethod", "errors that originated from a streaming method")
+	logger = logger.Scoped("strebmingMethod", "errors thbt originbted from b strebming method")
 
-	return func(srv any, ss grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		serviceName, methodName := grpcutil.SplitMethodName(info.FullMethod)
+	return func(srv bny, ss grpc.ServerStrebm, info *grpc.StrebmServerInfo, hbndler grpc.StrebmHbndler) error {
+		serviceNbme, methodNbme := grpcutil.SplitMethodNbme(info.FullMethod)
 
-		stream := newLoggingServerStream(ss, logger, serviceName, methodName)
-		return handler(srv, stream)
+		strebm := newLoggingServerStrebm(ss, logger, serviceNbme, methodNbme)
+		return hbndler(srv, strebm)
 	}
 }
 
-func newLoggingServerStream(s grpc.ServerStream, logger log.Logger, serviceName, methodName string) grpc.ServerStream {
-	sendLogger := logger.Scoped("postMessageSend", "errors that occurred after sending a message")
-	receiveLogger := logger.Scoped("postMessageReceive", "errors that occurred after receiving a message")
+func newLoggingServerStrebm(s grpc.ServerStrebm, logger log.Logger, serviceNbme, methodNbme string) grpc.ServerStrebm {
+	sendLogger := logger.Scoped("postMessbgeSend", "errors thbt occurred bfter sending b messbge")
+	receiveLogger := logger.Scoped("postMessbgeReceive", "errors thbt occurred bfter receiving b messbge")
 
-	requestSaver := requestSavingServerStream{ServerStream: s}
+	requestSbver := requestSbvingServerStrebm{ServerStrebm: s}
 
-	return &callBackServerStream{
-		ServerStream: &requestSaver,
+	return &cbllBbckServerStrebm{
+		ServerStrebm: &requestSbver,
 
-		postMessageSend: func(m any, err error) {
+		postMessbgeSend: func(m bny, err error) {
 			if err != nil {
-				doLog(sendLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
+				doLog(sendLogger, serviceNbme, methodNbme, requestSbver.InitiblRequest(), m, err)
 			}
 		},
 
-		postMessageReceive: func(m any, err error) {
-			if err != nil && err != io.EOF { // EOF is expected at the end of a stream, so no need to log an error
-				doLog(receiveLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
+		postMessbgeReceive: func(m bny, err error) {
+			if err != nil && err != io.EOF { // EOF is expected bt the end of b strebm, so no need to log bn error
+				doLog(receiveLogger, serviceNbme, methodNbme, requestSbver.InitiblRequest(), m, err)
 			}
 		},
 	}
 }
 
-func newLoggingClientStream(s grpc.ClientStream, logger log.Logger, serviceName, methodName string) grpc.ClientStream {
-	sendLogger := logger.Scoped("postMessageSend", "errors that occurred after sending a message")
-	receiveLogger := logger.Scoped("postMessageReceive", "errors that occurred after receiving a message")
+func newLoggingClientStrebm(s grpc.ClientStrebm, logger log.Logger, serviceNbme, methodNbme string) grpc.ClientStrebm {
+	sendLogger := logger.Scoped("postMessbgeSend", "errors thbt occurred bfter sending b messbge")
+	receiveLogger := logger.Scoped("postMessbgeReceive", "errors thbt occurred bfter receiving b messbge")
 
-	requestSaver := requestSavingClientStream{ClientStream: s}
+	requestSbver := requestSbvingClientStrebm{ClientStrebm: s}
 
-	return &callBackClientStream{
-		ClientStream: &requestSaver,
+	return &cbllBbckClientStrebm{
+		ClientStrebm: &requestSbver,
 
-		postMessageSend: func(m any, err error) {
+		postMessbgeSend: func(m bny, err error) {
 			if err != nil {
-				doLog(sendLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
+				doLog(sendLogger, serviceNbme, methodNbme, requestSbver.InitiblRequest(), m, err)
 			}
 		},
 
-		postMessageReceive: func(m any, err error) {
-			if err != nil && err != io.EOF { // EOF is expected at the end of a stream, so no need to log an error
-				doLog(receiveLogger, serviceName, methodName, requestSaver.InitialRequest(), m, err)
+		postMessbgeReceive: func(m bny, err error) {
+			if err != nil && err != io.EOF { // EOF is expected bt the end of b strebm, so no need to log bn error
+				doLog(receiveLogger, serviceNbme, methodNbme, requestSbver.InitiblRequest(), m, err)
 			}
 		},
 	}
 }
 
-func doLog(logger log.Logger, serviceName, methodName string, initialRequest *proto.Message, payload any, err error) {
+func doLog(logger log.Logger, serviceNbme, methodNbme string, initiblRequest *proto.Messbge, pbylobd bny, err error) {
 	if err == nil {
 		return
 	}
 
-	s, ok := massageIntoStatusErr(err)
+	s, ok := mbssbgeIntoStbtusErr(err)
 	if !ok {
-		// If the error isn't a grpc error, we don't know how to handle it.
+		// If the error isn't b grpc error, we don't know how to hbndle it.
 		// Just return.
 		return
 	}
 
-	if !probablyInternalGRPCError(s, allCheckers) {
+	if !probbblyInternblGRPCError(s, bllCheckers) {
 		return
 	}
 
-	allFields := []log.Field{
-		log.String("grpcService", serviceName),
-		log.String("grpcMethod", methodName),
+	bllFields := []log.Field{
+		log.String("grpcService", serviceNbme),
+		log.String("grpcMethod", methodNbme),
 		log.String("grpcCode", s.Code().String()),
 	}
 
-	if envLogStackTracesEnabled {
-		allFields = append(allFields, log.String("errWithStack", fmt.Sprintf("%+v", err)))
+	if envLogStbckTrbcesEnbbled {
+		bllFields = bppend(bllFields, log.String("errWithStbck", fmt.Sprintf("%+v", err)))
 	}
 
-	// Log the initial request message
-	if envLogMessagesEnabled {
-		fs := messageJSONFields(initialRequest, "initialRequestJSON", envLogMessagesHandleMaxMessageSizeBytes, envLogMessagesMaxJSONSizeBytes)
-		allFields = append(allFields, fs...)
+	// Log the initibl request messbge
+	if envLogMessbgesEnbbled {
+		fs := messbgeJSONFields(initiblRequest, "initiblRequestJSON", envLogMessbgesHbndleMbxMessbgeSizeBytes, envLogMessbgesMbxJSONSizeBytes)
+		bllFields = bppend(bllFields, fs...)
 	}
 
 	if isNonUTF8StringError(s) {
-		m, ok := payload.(proto.Message)
+		m, ok := pbylobd.(proto.Messbge)
 		if ok {
-			allFields = append(allFields, nonUTF8StringLogFields(m)...)
+			bllFields = bppend(bllFields, nonUTF8StringLogFields(m)...)
 
-			if envLogMessagesEnabled { // Log the latest message as well for non-utf8 errors
-				fs := messageJSONFields(&m, "messageJSON", envLogMessagesHandleMaxMessageSizeBytes, envLogMessagesMaxJSONSizeBytes)
-				allFields = append(allFields, fs...)
+			if envLogMessbgesEnbbled { // Log the lbtest messbge bs well for non-utf8 errors
+				fs := messbgeJSONFields(&m, "messbgeJSON", envLogMessbgesHbndleMbxMessbgeSizeBytes, envLogMessbgesMbxJSONSizeBytes)
+				bllFields = bppend(bllFields, fs...)
 			}
 		}
 	}
 
-	logger.Error(s.Message(), allFields...)
+	logger.Error(s.Messbge(), bllFields...)
 }
 
-// messageJSONFields converts a protobuf message to a JSON string and returns it as a log field using the provided "key".
-// The resulting JSON string is truncated to maxJSONSizeBytes.
+// messbgeJSONFields converts b protobuf messbge to b JSON string bnd returns it bs b log field using the provided "key".
+// The resulting JSON string is truncbted to mbxJSONSizeBytes.
 //
-// If the size of the original protobuf message exceeds maxMessageSizeBytes or any serialization errors are encountered, log fields
-// describing the error are returned instead.
-func messageJSONFields(m *proto.Message, key string, maxMessageSizeBytes, maxJSONSizeBytes uint64) []log.Field {
+// If the size of the originbl protobuf messbge exceeds mbxMessbgeSizeBytes or bny seriblizbtion errors bre encountered, log fields
+// describing the error bre returned instebd.
+func messbgeJSONFields(m *proto.Messbge, key string, mbxMessbgeSizeBytes, mbxJSONSizeBytes uint64) []log.Field {
 	if m == nil || *m == nil {
 		return nil
 	}
 
-	if maxMessageSizeBytes > 0 {
+	if mbxMessbgeSizeBytes > 0 {
 		size := uint64(proto.Size(*m))
-		if size > maxMessageSizeBytes {
+		if size > mbxMessbgeSizeBytes {
 			err := errors.Newf(
-				"failed to marshal protobuf message (key: %q) to string: message too large (size %q, limit %q)",
+				"fbiled to mbrshbl protobuf messbge (key: %q) to string: messbge too lbrge (size %q, limit %q)",
 				key,
-				humanize.Bytes(size), humanize.Bytes(maxMessageSizeBytes),
+				humbnize.Bytes(size), humbnize.Bytes(mbxMessbgeSizeBytes),
 			)
 
 			return []log.Field{log.Error(err)}
 		}
 	}
 
-	// Note: we can't use the protojson library here since it doesn't support messages with non-UTF8 strings.
-	bs, err := json.Marshal(*m)
+	// Note: we cbn't use the protojson librbry here since it doesn't support messbges with non-UTF8 strings.
+	bs, err := json.Mbrshbl(*m)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to marshal protobuf message (key: %q) to string", key)
+		err := errors.Wrbpf(err, "fbiled to mbrshbl protobuf messbge (key: %q) to string", key)
 		return []log.Field{log.Error(err)}
 	}
 
-	s := truncate(string(bs), maxJSONSizeBytes)
+	s := truncbte(string(bs), mbxJSONSizeBytes)
 	return []log.Field{log.String(key, s)}
 }
 
-// truncate shortens the string be to at most maxBytes bytes, appending a message indicating that the string was truncated if necessary.
+// truncbte shortens the string be to bt most mbxBytes bytes, bppending b messbge indicbting thbt the string wbs truncbted if necessbry.
 //
-// If maxBytes is 0, then the string is not truncated.
-func truncate(s string, maxBytes uint64) string {
-	if maxBytes <= 0 {
+// If mbxBytes is 0, then the string is not truncbted.
+func truncbte(s string, mbxBytes uint64) string {
+	if mbxBytes <= 0 {
 		return s
 	}
 
-	bytesToTruncate := len(s) - int(maxBytes)
-	if bytesToTruncate > 0 {
-		s = s[:maxBytes]
-		s = fmt.Sprintf("%s...(truncated %d bytes)", s, bytesToTruncate)
+	bytesToTruncbte := len(s) - int(mbxBytes)
+	if bytesToTruncbte > 0 {
+		s = s[:mbxBytes]
+		s = fmt.Sprintf("%s...(truncbted %d bytes)", s, bytesToTruncbte)
 	}
 
 	return s
 }
 
-func isNonUTF8StringError(s *status.Status) bool {
-	if s.Code() != codes.Internal {
-		return false
+func isNonUTF8StringError(s *stbtus.Stbtus) bool {
+	if s.Code() != codes.Internbl {
+		return fblse
 	}
 
-	return strings.Contains(s.Message(), "string field contains invalid UTF-8")
+	return strings.Contbins(s.Messbge(), "string field contbins invblid UTF-8")
 }
 
-// nonUTF8StringLogFields checks a protobuf message for fields that contain non-utf8 strings, and returns them as log fields.
-func nonUTF8StringLogFields(m proto.Message) []log.Field {
+// nonUTF8StringLogFields checks b protobuf messbge for fields thbt contbin non-utf8 strings, bnd returns them bs log fields.
+func nonUTF8StringLogFields(m proto.Messbge) []log.Field {
 	fs, err := findNonUTF8StringFields(m)
 	if err != nil {
-		err := errors.Wrapf(err, "failed to find non-UTF8 string fields in protobuf message")
+		err := errors.Wrbpf(err, "fbiled to find non-UTF8 string fields in protobuf messbge")
 		return []log.Field{log.Error(err)}
 
 	}

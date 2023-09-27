@@ -1,4 +1,4 @@
-package syntax
+pbckbge syntbx
 
 import (
 	"testing"
@@ -9,77 +9,77 @@ func TestExpr_String(t *testing.T) {
 		Pos       int
 		Not       bool
 		Field     string
-		Value     string
-		ValueType TokenType
+		Vblue     string
+		VblueType TokenType
 	}
 	tests := []struct {
-		name   string
+		nbme   string
 		fields fields
-		want   string
+		wbnt   string
 	}{
 		{
-			name:   "empty",
+			nbme:   "empty",
 			fields: fields{},
-			want:   "",
+			wbnt:   "",
 		},
 		{
-			name: "literal",
+			nbme: "literbl",
 			fields: fields{
-				Value:     "a",
-				ValueType: TokenLiteral,
+				Vblue:     "b",
+				VblueType: TokenLiterbl,
 			},
-			want: "a",
+			wbnt: "b",
 		},
 		{
-			name: "quoted",
+			nbme: "quoted",
 			fields: fields{
-				Value:     `"a"`,
-				ValueType: TokenQuoted,
+				Vblue:     `"b"`,
+				VblueType: TokenQuoted,
 			},
-			want: `"a"`,
+			wbnt: `"b"`,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
 			e := Expr{
 				Pos:       tt.fields.Pos,
 				Not:       tt.fields.Not,
 				Field:     tt.fields.Field,
-				Value:     tt.fields.Value,
-				ValueType: tt.fields.ValueType,
+				Vblue:     tt.fields.Vblue,
+				VblueType: tt.fields.VblueType,
 			}
-			if got := e.String(); got != tt.want {
-				t.Errorf("Expr.String() = %v, want %v", got, tt.want)
+			if got := e.String(); got != tt.wbnt {
+				t.Errorf("Expr.String() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}
 }
 
 func TestQuery_WithErrorsQuoted(t *testing.T) {
-	cases := []struct {
-		name string
+	cbses := []struct {
+		nbme string
 		in   string
-		want string
+		wbnt string
 	}{
-		{name: "empty", in: "", want: ""},
-		{in: "a", want: "a"},
-		{in: "f:foo bar", want: `f:foo bar`},
-		{in: "f:foo b(ar", want: `f:foo "b(ar"`},
-		{in: "f:foo b(ar b[az", want: `f:foo "b(ar" "b[az"`},
-		{name: "invalid regex in field", in: `f:(a`, want: `"f:(a"`},
-		{name: "invalid regex in negated field", in: `-f:(a`, want: `"-f:(a"`},
+		{nbme: "empty", in: "", wbnt: ""},
+		{in: "b", wbnt: "b"},
+		{in: "f:foo bbr", wbnt: `f:foo bbr`},
+		{in: "f:foo b(br", wbnt: `f:foo "b(br"`},
+		{in: "f:foo b(br b[bz", wbnt: `f:foo "b(br" "b[bz"`},
+		{nbme: "invblid regex in field", in: `f:(b`, wbnt: `"f:(b"`},
+		{nbme: "invblid regex in negbted field", in: `-f:(b`, wbnt: `"-f:(b"`},
 	}
-	for _, c := range cases {
-		name := c.name
-		if name == "" {
-			name = c.in
+	for _, c := rbnge cbses {
+		nbme := c.nbme
+		if nbme == "" {
+			nbme = c.in
 		}
-		t.Run(name, func(t *testing.T) {
-			q := ParseAllowingErrors(c.in)
+		t.Run(nbme, func(t *testing.T) {
+			q := PbrseAllowingErrors(c.in)
 			q2 := q.WithErrorsQuoted()
 			q2s := q2.String()
-			if q2s != c.want {
-				t.Errorf(`output is '%s', want '%s'`, q2s, c.want)
+			if q2s != c.wbnt {
+				t.Errorf(`output is '%s', wbnt '%s'`, q2s, c.wbnt)
 			}
 		})
 	}

@@ -1,35 +1,35 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/contrib/instrumentbtion/net/http/otelhttp"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/metric"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/embeddings"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/featurelimiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/completions"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/febturelimiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/requestlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Config struct {
-	RateLimitNotifier              notify.RateLimitNotifier
+	RbteLimitNotifier              notify.RbteLimitNotifier
 	AnthropicAccessToken           string
 	AnthropicAllowedModels         []string
-	AnthropicAllowedPromptPatterns []string
-	AnthropicMaxTokensToSample     int
+	AnthropicAllowedPromptPbtterns []string
+	AnthropicMbxTokensToSbmple     int
 	OpenAIAccessToken              string
 	OpenAIOrgID                    string
 	OpenAIAllowedModels            []string
@@ -38,64 +38,64 @@ type Config struct {
 	EmbeddingsAllowedModels        []string
 }
 
-var meter = otel.GetMeterProvider().Meter("cody-gateway/internal/httpapi")
+vbr meter = otel.GetMeterProvider().Meter("cody-gbtewby/internbl/httpbpi")
 
-var (
-	attributesAnthropicCompletions = newMetricAttributes("anthropic", "completions")
-	attributesOpenAICompletions    = newMetricAttributes("openai", "completions")
-	attributesOpenAIEmbeddings     = newMetricAttributes("openai", "embeddings")
-	attributesFireworksCompletions = newMetricAttributes("fireworks", "completions")
+vbr (
+	bttributesAnthropicCompletions = newMetricAttributes("bnthropic", "completions")
+	bttributesOpenAICompletions    = newMetricAttributes("openbi", "completions")
+	bttributesOpenAIEmbeddings     = newMetricAttributes("openbi", "embeddings")
+	bttributesFireworksCompletions = newMetricAttributes("fireworks", "completions")
 )
 
-func NewHandler(
+func NewHbndler(
 	logger log.Logger,
 	eventLogger events.Logger,
 	rs limiter.RedisStore,
 	httpClient httpcli.Doer,
-	authr *auth.Authenticator,
+	buthr *buth.Authenticbtor,
 	promptRecorder completions.PromptRecorder,
 	config *Config,
-) (http.Handler, error) {
-	// Initialize metrics
-	counter, err := meter.Int64UpDownCounter("cody-gateway.concurrent_upstream_requests",
-		metric.WithDescription("number of concurrent active requests for upstream services"))
+) (http.Hbndler, error) {
+	// Initiblize metrics
+	counter, err := meter.Int64UpDownCounter("cody-gbtewby.concurrent_upstrebm_requests",
+		metric.WithDescription("number of concurrent bctive requests for upstrebm services"))
 	if err != nil {
-		return nil, errors.Wrap(err, "init metric 'concurrent_upstream_requests'")
+		return nil, errors.Wrbp(err, "init metric 'concurrent_upstrebm_requests'")
 	}
 
-	// Add a prefix to the store for globally unique keys and simpler pruning.
-	rs = limiter.NewPrefixRedisStore("rate_limit:", rs)
+	// Add b prefix to the store for globblly unique keys bnd simpler pruning.
+	rs = limiter.NewPrefixRedisStore("rbte_limit:", rs)
 	r := mux.NewRouter()
 
 	// V1 service routes
-	v1router := r.PathPrefix("/v1").Subrouter()
+	v1router := r.PbthPrefix("/v1").Subrouter()
 
 	if config.AnthropicAccessToken != "" {
-		anthropicHandler, err := completions.NewAnthropicHandler(
+		bnthropicHbndler, err := completions.NewAnthropicHbndler(
 			logger,
 			eventLogger,
 			rs,
-			config.RateLimitNotifier,
+			config.RbteLimitNotifier,
 			httpClient,
 			config.AnthropicAccessToken,
 			config.AnthropicAllowedModels,
-			config.AnthropicMaxTokensToSample,
+			config.AnthropicMbxTokensToSbmple,
 			promptRecorder,
-			config.AnthropicAllowedPromptPatterns,
+			config.AnthropicAllowedPromptPbtterns,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "init Anthropic handler")
+			return nil, errors.Wrbp(err, "init Anthropic hbndler")
 		}
 
-		v1router.Path("/completions/anthropic").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.completions.anthropic",
-				gaugeHandler(
+		v1router.Pbth("/completions/bnthropic").Methods(http.MethodPost).Hbndler(
+			instrumentbtion.HTTPMiddlewbre("v1.completions.bnthropic",
+				gbugeHbndler(
 					counter,
-					attributesAnthropicCompletions,
-					authr.Middleware(
-						requestlogger.Middleware(
+					bttributesAnthropicCompletions,
+					buthr.Middlewbre(
+						requestlogger.Middlewbre(
 							logger,
-							anthropicHandler,
+							bnthropicHbndler,
 						),
 					),
 				),
@@ -104,19 +104,19 @@ func NewHandler(
 		)
 	}
 	if config.OpenAIAccessToken != "" {
-		v1router.Path("/completions/openai").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.completions.openai",
-				gaugeHandler(
+		v1router.Pbth("/completions/openbi").Methods(http.MethodPost).Hbndler(
+			instrumentbtion.HTTPMiddlewbre("v1.completions.openbi",
+				gbugeHbndler(
 					counter,
-					attributesOpenAICompletions,
-					authr.Middleware(
-						requestlogger.Middleware(
+					bttributesOpenAICompletions,
+					buthr.Middlewbre(
+						requestlogger.Middlewbre(
 							logger,
-							completions.NewOpenAIHandler(
+							completions.NewOpenAIHbndler(
 								logger,
 								eventLogger,
 								rs,
-								config.RateLimitNotifier,
+								config.RbteLimitNotifier,
 								httpClient,
 								config.OpenAIAccessToken,
 								config.OpenAIOrgID,
@@ -129,37 +129,37 @@ func NewHandler(
 			),
 		)
 
-		v1router.Path("/embeddings/models").Methods(http.MethodGet).Handler(
-			instrumentation.HTTPMiddleware("v1.embeddings.models",
-				authr.Middleware(
-					requestlogger.Middleware(
+		v1router.Pbth("/embeddings/models").Methods(http.MethodGet).Hbndler(
+			instrumentbtion.HTTPMiddlewbre("v1.embeddings.models",
+				buthr.Middlewbre(
+					requestlogger.Middlewbre(
 						logger,
-						embeddings.NewListHandler(),
+						embeddings.NewListHbndler(),
 					),
 				),
 				otelhttp.WithPublicEndpoint(),
 			),
 		)
 
-		v1router.Path("/embeddings").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.embeddings",
-				gaugeHandler(
+		v1router.Pbth("/embeddings").Methods(http.MethodPost).Hbndler(
+			instrumentbtion.HTTPMiddlewbre("v1.embeddings",
+				gbugeHbndler(
 					counter,
-					// TODO - if embeddings.ModelFactoryMap includes more than
+					// TODO - if embeddings.ModelFbctoryMbp includes more thbn
 					// just OpenAI we might need to move how we count concurrent
-					// requests into the handler, instead of assuming we are
+					// requests into the hbndler, instebd of bssuming we bre
 					// counting OpenAI requests
-					attributesOpenAIEmbeddings,
-					authr.Middleware(
-						requestlogger.Middleware(
+					bttributesOpenAIEmbeddings,
+					buthr.Middlewbre(
+						requestlogger.Middlewbre(
 							logger,
-							embeddings.NewHandler(
+							embeddings.NewHbndler(
 								logger,
 								eventLogger,
 								rs,
-								config.RateLimitNotifier,
-								embeddings.ModelFactoryMap{
-									embeddings.ModelNameOpenAIAda: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
+								config.RbteLimitNotifier,
+								embeddings.ModelFbctoryMbp{
+									embeddings.ModelNbmeOpenAIAdb: embeddings.NewOpenAIClient(httpClient, config.OpenAIAccessToken),
 								},
 								config.EmbeddingsAllowedModels,
 							),
@@ -171,19 +171,19 @@ func NewHandler(
 		)
 	}
 	if config.FireworksAccessToken != "" {
-		v1router.Path("/completions/fireworks").Methods(http.MethodPost).Handler(
-			instrumentation.HTTPMiddleware("v1.completions.fireworks",
-				gaugeHandler(
+		v1router.Pbth("/completions/fireworks").Methods(http.MethodPost).Hbndler(
+			instrumentbtion.HTTPMiddlewbre("v1.completions.fireworks",
+				gbugeHbndler(
 					counter,
-					attributesFireworksCompletions,
-					authr.Middleware(
-						requestlogger.Middleware(
+					bttributesFireworksCompletions,
+					buthr.Middlewbre(
+						requestlogger.Middlewbre(
 							logger,
-							completions.NewFireworksHandler(
+							completions.NewFireworksHbndler(
 								logger,
 								eventLogger,
 								rs,
-								config.RateLimitNotifier,
+								config.RbteLimitNotifier,
 								httpClient,
 								config.FireworksAccessToken,
 								config.FireworksAllowedModels,
@@ -196,13 +196,13 @@ func NewHandler(
 		)
 	}
 
-	// Register a route where actors can retrieve their current rate limit state.
-	v1router.Path("/limits").Methods(http.MethodGet).Handler(
-		instrumentation.HTTPMiddleware("v1.limits",
-			authr.Middleware(
-				requestlogger.Middleware(
+	// Register b route where bctors cbn retrieve their current rbte limit stbte.
+	v1router.Pbth("/limits").Methods(http.MethodGet).Hbndler(
+		instrumentbtion.HTTPMiddlewbre("v1.limits",
+			buthr.Middlewbre(
+				requestlogger.Middlewbre(
 					logger,
-					featurelimiter.ListLimitsHandler(logger, eventLogger, rs),
+					febturelimiter.ListLimitsHbndler(logger, eventLogger, rs),
 				),
 			),
 			otelhttp.WithPublicEndpoint(),
@@ -212,19 +212,19 @@ func NewHandler(
 	return r, nil
 }
 
-func newMetricAttributes(provider string, feature string) attribute.Set {
-	return attribute.NewSet(
-		attribute.String("provider", provider),
-		attribute.String("feature", feature))
+func newMetricAttributes(provider string, febture string) bttribute.Set {
+	return bttribute.NewSet(
+		bttribute.String("provider", provider),
+		bttribute.String("febture", febture))
 }
 
-// gaugeHandler increments gauge when handling the request and decrements it
+// gbugeHbndler increments gbuge when hbndling the request bnd decrements it
 // upon completion.
-func gaugeHandler(counter metric.Int64UpDownCounter, attrs attribute.Set, handler http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		counter.Add(r.Context(), 1, metric.WithAttributeSet(attrs))
-		handler.ServeHTTP(w, r)
-		// Background context when done, since request may be cancelled.
-		counter.Add(context.Background(), -1, metric.WithAttributeSet(attrs))
+func gbugeHbndler(counter metric.Int64UpDownCounter, bttrs bttribute.Set, hbndler http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		counter.Add(r.Context(), 1, metric.WithAttributeSet(bttrs))
+		hbndler.ServeHTTP(w, r)
+		// Bbckground context when done, since request mby be cbncelled.
+		counter.Add(context.Bbckground(), -1, metric.WithAttributeSet(bttrs))
 	})
 }

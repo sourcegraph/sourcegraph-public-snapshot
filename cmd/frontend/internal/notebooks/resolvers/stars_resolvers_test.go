@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,203 +6,203 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	notebooksapitest "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/notebooks/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/notebooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	notebooksbpitest "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/notebooks/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/notebooks"
 )
 
-const notebookStarFields = `
+const notebookStbrFields = `
 	user {
-		username
+		usernbme
 	}
-	createdAt
+	crebtedAt
 `
 
-var createNotebookStarMutation = fmt.Sprintf(`
-mutation CreateNotebookStar($notebookID: ID!) {
-	createNotebookStar(notebookID: $notebookID) {
+vbr crebteNotebookStbrMutbtion = fmt.Sprintf(`
+mutbtion CrebteNotebookStbr($notebookID: ID!) {
+	crebteNotebookStbr(notebookID: $notebookID) {
 		%s
 	}
 }
-`, notebookStarFields)
+`, notebookStbrFields)
 
-var deleteNotebookStarMutation = `
-mutation DeleteNotebookStar($notebookID: ID!) {
-	deleteNotebookStar(notebookID: $notebookID) {
-		alwaysNil
+vbr deleteNotebookStbrMutbtion = `
+mutbtion DeleteNotebookStbr($notebookID: ID!) {
+	deleteNotebookStbr(notebookID: $notebookID) {
+		blwbysNil
 	}
 }
 `
 
-var listNotebookStarsQuery = fmt.Sprintf(`
-query NotebookStars($id: ID!, $first: Int!, $after: String) {
+vbr listNotebookStbrsQuery = fmt.Sprintf(`
+query NotebookStbrs($id: ID!, $first: Int!, $bfter: String) {
 	node(id: $id) {
 		... on Notebook {
-			stars(first: $first, after: $after) {
+			stbrs(first: $first, bfter: $bfter) {
 				nodes {
 					%s
 			  	}
-			  	pageInfo {
+			  	pbgeInfo {
 					endCursor
-					hasNextPage
+					hbsNextPbge
 				}
-				totalCount
+				totblCount
 			}
 		}
 	}
 }
-`, notebookStarFields)
+`, notebookStbrFields)
 
-func TestCreateAndDeleteNotebookStars(t *testing.T) {
+func TestCrebteAndDeleteNotebookStbrs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
 	u := db.Users()
 
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	user1, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u1", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	user2, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u2", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	createdNotebooks := createNotebooks(t, db, []*notebooks.Notebook{userNotebookFixture(user1.ID, true), userNotebookFixture(user1.ID, false)})
+	crebtedNotebooks := crebteNotebooks(t, db, []*notebooks.Notebook{userNotebookFixture(user1.ID, true), userNotebookFixture(user1.ID, fblse)})
 
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
+	schemb, err := grbphqlbbckend.NewSchembWithNotebooksResolver(db, NewResolver(db))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Create notebook stars for each user
-	createAPINotebookStars(t, schema, createdNotebooks[0].ID, user1.ID, user2.ID)
+	// Crebte notebook stbrs for ebch user
+	crebteAPINotebookStbrs(t, schemb, crebtedNotebooks[0].ID, user1.ID, user2.ID)
 
-	// Try creating a duplicate notebook star with user1
-	input := map[string]any{"notebookID": marshalNotebookID(createdNotebooks[0].ID)}
-	var response struct{ CreateNotebookStar notebooksapitest.NotebookStar }
-	apiError := apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &response, createNotebookStarMutation)
-	if apiError == nil {
-		t.Fatalf("expected error when creating a duplicate notebook star, got nil")
+	// Try crebting b duplicbte notebook stbr with user1
+	input := mbp[string]bny{"notebookID": mbrshblNotebookID(crebtedNotebooks[0].ID)}
+	vbr response struct{ CrebteNotebookStbr notebooksbpitest.NotebookStbr }
+	bpiError := bpitest.Exec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user1.ID)), t, schemb, input, &response, crebteNotebookStbrMutbtion)
+	if bpiError == nil {
+		t.Fbtblf("expected error when crebting b duplicbte notebook stbr, got nil")
 	}
 
-	// user2 cannot create a notebook star for user1's private notebook, since user2 does not have access to it
-	input = map[string]any{"notebookID": marshalNotebookID(createdNotebooks[1].ID)}
-	apiError = apitest.Exec(actor.WithActor(context.Background(), actor.FromUser(user2.ID)), t, schema, input, &response, createNotebookStarMutation)
-	if apiError == nil {
-		t.Fatalf("expected error when creating a notebook star for inaccessible notebook, got nil")
+	// user2 cbnnot crebte b notebook stbr for user1's privbte notebook, since user2 does not hbve bccess to it
+	input = mbp[string]bny{"notebookID": mbrshblNotebookID(crebtedNotebooks[1].ID)}
+	bpiError = bpitest.Exec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user2.ID)), t, schemb, input, &response, crebteNotebookStbrMutbtion)
+	if bpiError == nil {
+		t.Fbtblf("expected error when crebting b notebook stbr for inbccessible notebook, got nil")
 	}
 
-	// Delete the notebook star for createdNotebooks[0] and user1
-	input = map[string]any{"notebookID": marshalNotebookID(createdNotebooks[0].ID)}
-	var deleteResponse struct{}
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &deleteResponse, deleteNotebookStarMutation)
+	// Delete the notebook stbr for crebtedNotebooks[0] bnd user1
+	input = mbp[string]bny{"notebookID": mbrshblNotebookID(crebtedNotebooks[0].ID)}
+	vbr deleteResponse struct{}
+	bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user1.ID)), t, schemb, input, &deleteResponse, deleteNotebookStbrMutbtion)
 
-	// Verify that only one notebook star remains (createdNotebooks[0] and user2)
-	input = map[string]any{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 2}
-	var listResponse struct {
+	// Verify thbt only one notebook stbr rembins (crebtedNotebooks[0] bnd user2)
+	input = mbp[string]bny{"id": mbrshblNotebookID(crebtedNotebooks[0].ID), "first": 2}
+	vbr listResponse struct {
 		Node struct {
-			Stars struct {
-				Nodes      []notebooksapitest.NotebookStar
-				TotalCount int32
-				PageInfo   apitest.PageInfo
+			Stbrs struct {
+				Nodes      []notebooksbpitest.NotebookStbr
+				TotblCount int32
+				PbgeInfo   bpitest.PbgeInfo
 			}
 		}
 	}
-	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &listResponse, listNotebookStarsQuery)
+	bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user1.ID)), t, schemb, input, &listResponse, listNotebookStbrsQuery)
 
-	if listResponse.Node.Stars.TotalCount != 1 {
-		t.Fatalf("expected 1 notebook star to remain, got %d", listResponse.Node.Stars.TotalCount)
+	if listResponse.Node.Stbrs.TotblCount != 1 {
+		t.Fbtblf("expected 1 notebook stbr to rembin, got %d", listResponse.Node.Stbrs.TotblCount)
 	}
 }
 
-func createAPINotebookStars(t *testing.T, schema *graphql.Schema, notebookID int64, userIDs ...int32) []notebooksapitest.NotebookStar {
+func crebteAPINotebookStbrs(t *testing.T, schemb *grbphql.Schemb, notebookID int64, userIDs ...int32) []notebooksbpitest.NotebookStbr {
 	t.Helper()
-	createdStars := make([]notebooksapitest.NotebookStar, 0, len(userIDs))
-	input := map[string]any{"notebookID": marshalNotebookID(notebookID)}
-	for _, userID := range userIDs {
-		var response struct{ CreateNotebookStar notebooksapitest.NotebookStar }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, schema, input, &response, createNotebookStarMutation)
-		createdStars = append(createdStars, response.CreateNotebookStar)
+	crebtedStbrs := mbke([]notebooksbpitest.NotebookStbr, 0, len(userIDs))
+	input := mbp[string]bny{"notebookID": mbrshblNotebookID(notebookID)}
+	for _, userID := rbnge userIDs {
+		vbr response struct{ CrebteNotebookStbr notebooksbpitest.NotebookStbr }
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, schemb, input, &response, crebteNotebookStbrMutbtion)
+		crebtedStbrs = bppend(crebtedStbrs, response.CrebteNotebookStbr)
 	}
-	return createdStars
+	return crebtedStbrs
 }
 
-func TestListNotebookStars(t *testing.T) {
+func TestListNotebookStbrs(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	internalCtx := actor.WithInternalActor(context.Background())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	internblCtx := bctor.WithInternblActor(context.Bbckground())
 	u := db.Users()
 
-	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	user1, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u1", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
-	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	user2, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u2", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
-	user3, err := u.Create(internalCtx, database.NewUser{Username: "u3", Password: "p"})
+	user3, err := u.Crebte(internblCtx, dbtbbbse.NewUser{Usernbme: "u3", Pbssword: "p"})
 	if err != nil {
-		t.Fatalf("Expected no error, got %s", err)
-	}
-
-	schema, err := graphqlbackend.NewSchemaWithNotebooksResolver(db, NewResolver(db))
-	if err != nil {
-		t.Fatal(err)
+		t.Fbtblf("Expected no error, got %s", err)
 	}
 
-	createdNotebooks := createNotebooks(t, db, []*notebooks.Notebook{userNotebookFixture(user1.ID, true)})
-	createdStars := createAPINotebookStars(t, schema, createdNotebooks[0].ID, user1.ID, user2.ID, user3.ID)
+	schemb, err := grbphqlbbckend.NewSchembWithNotebooksResolver(db, NewResolver(db))
+	if err != nil {
+		t.Fbtbl(err)
+	}
+
+	crebtedNotebooks := crebteNotebooks(t, db, []*notebooks.Notebook{userNotebookFixture(user1.ID, true)})
+	crebtedStbrs := crebteAPINotebookStbrs(t, schemb, crebtedNotebooks[0].ID, user1.ID, user2.ID, user3.ID)
 
 	tests := []struct {
-		name      string
-		args      map[string]any
-		wantCount int32
-		wantStars []notebooksapitest.NotebookStar
+		nbme      string
+		brgs      mbp[string]bny
+		wbntCount int32
+		wbntStbrs []notebooksbpitest.NotebookStbr
 	}{
 		{
-			name:      "fetch all notebook stars",
-			args:      map[string]any{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 3},
-			wantStars: []notebooksapitest.NotebookStar{createdStars[2], createdStars[1], createdStars[0]},
-			wantCount: 3,
+			nbme:      "fetch bll notebook stbrs",
+			brgs:      mbp[string]bny{"id": mbrshblNotebookID(crebtedNotebooks[0].ID), "first": 3},
+			wbntStbrs: []notebooksbpitest.NotebookStbr{crebtedStbrs[2], crebtedStbrs[1], crebtedStbrs[0]},
+			wbntCount: 3,
 		},
 		{
-			name:      "list second page of notebook stars",
-			args:      map[string]any{"id": marshalNotebookID(createdNotebooks[0].ID), "first": 1, "after": marshalNotebookStarCursor(1)},
-			wantStars: []notebooksapitest.NotebookStar{createdStars[1]},
-			wantCount: 3,
+			nbme:      "list second pbge of notebook stbrs",
+			brgs:      mbp[string]bny{"id": mbrshblNotebookID(crebtedNotebooks[0].ID), "first": 1, "bfter": mbrshblNotebookStbrCursor(1)},
+			wbntStbrs: []notebooksbpitest.NotebookStbr{crebtedStbrs[1]},
+			wbntCount: 3,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			var listResponse struct {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			vbr listResponse struct {
 				Node struct {
-					Stars struct {
-						Nodes      []notebooksapitest.NotebookStar
-						TotalCount int32
-						PageInfo   apitest.PageInfo
+					Stbrs struct {
+						Nodes      []notebooksbpitest.NotebookStbr
+						TotblCount int32
+						PbgeInfo   bpitest.PbgeInfo
 					}
 				}
 			}
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, tt.args, &listResponse, listNotebookStarsQuery)
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(user1.ID)), t, schemb, tt.brgs, &listResponse, listNotebookStbrsQuery)
 
-			if tt.wantCount != listResponse.Node.Stars.TotalCount {
-				t.Fatalf("expected %d total stars, got %d", tt.wantCount, listResponse.Node.Stars.TotalCount)
+			if tt.wbntCount != listResponse.Node.Stbrs.TotblCount {
+				t.Fbtblf("expected %d totbl stbrs, got %d", tt.wbntCount, listResponse.Node.Stbrs.TotblCount)
 			}
 
-			if diff := cmp.Diff(listResponse.Node.Stars.Nodes, tt.wantStars); diff != "" {
-				t.Fatalf("wrong notebook stars: %s", diff)
+			if diff := cmp.Diff(listResponse.Node.Stbrs.Nodes, tt.wbntStbrs); diff != "" {
+				t.Fbtblf("wrong notebook stbrs: %s", diff)
 			}
 		})
 	}

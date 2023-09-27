@@ -1,342 +1,342 @@
-package server
+pbckbge server
 
 import (
 	"bytes"
 	"context"
 	_ "embed"
 	"fmt"
-	"hash/fnv"
+	"hbsh/fnv"
 	"io"
 	"io/fs"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
-	"syscall"
+	"syscbll"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	du "github.com/sourcegrbph/sourcegrbph/internbl/diskusbge"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type JanitorConfig struct {
-	JanitorInterval time.Duration
-	ShardID         string
+type JbnitorConfig struct {
+	JbnitorIntervbl time.Durbtion
+	ShbrdID         string
 	ReposDir        string
 
 	DesiredPercentFree int
 }
 
-func NewJanitor(ctx context.Context, cfg JanitorConfig, db database.DB, rcf *wrexec.RecordingCommandFactory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BackgroundRoutine {
+func NewJbnitor(ctx context.Context, cfg JbnitorConfig, db dbtbbbse.DB, rcf *wrexec.RecordingCommbndFbctory, cloneRepo cloneRepoFunc, logger log.Logger) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
+		bctor.WithInternblActor(ctx),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
 			gitserverAddrs := gitserver.NewGitserverAddresses(conf.Get())
-			// TODO: Should this return an error?
-			cleanupRepos(ctx, logger, db, rcf, cfg.ShardID, cfg.ReposDir, cloneRepo, gitserverAddrs)
+			// TODO: Should this return bn error?
+			clebnupRepos(ctx, logger, db, rcf, cfg.ShbrdID, cfg.ReposDir, cloneRepo, gitserverAddrs)
 
-			// On Sourcegraph.com, we clone repos lazily, meaning whatever github.com
-			// repo is visited will be cloned eventually. So over time, we would always
-			// accumulate terabytes of repos, of which many are probably not visited
-			// often. Thus, we have this special cleanup worker for Sourcegraph.com that
-			// will remove repos that have not been changed in a long time (thats the
-			// best metric we have here today) once our disks are running full.
-			// On customer instances, this worker is useless, because repos are always
-			// managed by an external service connection and they will be recloned
+			// On Sourcegrbph.com, we clone repos lbzily, mebning whbtever github.com
+			// repo is visited will be cloned eventublly. So over time, we would blwbys
+			// bccumulbte terbbytes of repos, of which mbny bre probbbly not visited
+			// often. Thus, we hbve this specibl clebnup worker for Sourcegrbph.com thbt
+			// will remove repos thbt hbve not been chbnged in b long time (thbts the
+			// best metric we hbve here todby) once our disks bre running full.
+			// On customer instbnces, this worker is useless, becbuse repos bre blwbys
+			// mbnbged by bn externbl service connection bnd they will be recloned
 			// ASAP.
-			if envvar.SourcegraphDotComMode() {
-				diskSizer := &StatDiskSizer{}
-				logger := logger.Scoped("dotcom-repo-cleaner", "The background janitor process to clean up repos on Sourcegraph.com that haven't been changed in a long time")
-				toFree, err := howManyBytesToFree(logger, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree)
+			if envvbr.SourcegrbphDotComMode() {
+				diskSizer := &StbtDiskSizer{}
+				logger := logger.Scoped("dotcom-repo-clebner", "The bbckground jbnitor process to clebn up repos on Sourcegrbph.com thbt hbven't been chbnged in b long time")
+				toFree, err := howMbnyBytesToFree(logger, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree)
 				if err != nil {
-					logger.Error("ensuring free disk space", log.Error(err))
-				} else if err := freeUpSpace(ctx, logger, db, cfg.ShardID, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree, toFree); err != nil {
-					logger.Error("error freeing up space", log.Error(err))
+					logger.Error("ensuring free disk spbce", log.Error(err))
+				} else if err := freeUpSpbce(ctx, logger, db, cfg.ShbrdID, cfg.ReposDir, diskSizer, cfg.DesiredPercentFree, toFree); err != nil {
+					logger.Error("error freeing up spbce", log.Error(err))
 				}
 			}
 			return nil
 		}),
-		goroutine.WithName("gitserver.janitor"),
-		goroutine.WithDescription("cleans up and maintains repositories regularly"),
-		goroutine.WithInterval(cfg.JanitorInterval),
+		goroutine.WithNbme("gitserver.jbnitor"),
+		goroutine.WithDescription("clebns up bnd mbintbins repositories regulbrly"),
+		goroutine.WithIntervbl(cfg.JbnitorIntervbl),
 	)
 }
 
-//go:embed sg_maintenance.sh
-var sgMaintenanceScript string
+//go:embed sg_mbintenbnce.sh
+vbr sgMbintenbnceScript string
 
 const (
-	day = 24 * time.Hour
-	// repoTTL is how often we should re-clone a repository.
-	repoTTL = 45 * day
-	// repoTTLGC is how often we should re-clone a repository once it is
+	dby = 24 * time.Hour
+	// repoTTL is how often we should re-clone b repository.
+	repoTTL = 45 * dby
+	// repoTTLGC is how often we should re-clone b repository once it is
 	// reporting git gc issues.
-	repoTTLGC = 2 * day
-	// gitConfigMaybeCorrupt is a key we add to git config to signal that a repo may be
+	repoTTLGC = 2 * dby
+	// gitConfigMbybeCorrupt is b key we bdd to git config to signbl thbt b repo mby be
 	// corrupt on disk.
-	gitConfigMaybeCorrupt = "sourcegraph.maybeCorruptRepo"
-	// The name of the log file placed by sg maintenance in case it encountered an
+	gitConfigMbybeCorrupt = "sourcegrbph.mbybeCorruptRepo"
+	// The nbme of the log file plbced by sg mbintenbnce in cbse it encountered bn
 	// error.
 	sgmLog = "sgm.log"
 )
 
 const (
-	// gitGCModeGitAutoGC is when we rely on git running auto gc.
+	// gitGCModeGitAutoGC is when we rely on git running buto gc.
 	gitGCModeGitAutoGC int = 1
-	// gitGCModeJanitorAutoGC is when during janitor jobs we run git gc --auto.
-	gitGCModeJanitorAutoGC = 2
-	// gitGCModeMaintenance is when during janitor jobs we run sg maintenance.
-	gitGCModeMaintenance = 3
+	// gitGCModeJbnitorAutoGC is when during jbnitor jobs we run git gc --buto.
+	gitGCModeJbnitorAutoGC = 2
+	// gitGCModeMbintenbnce is when during jbnitor jobs we run sg mbintenbnce.
+	gitGCModeMbintenbnce = 3
 )
 
 // gitGCMode describes which mode we should be running git gc.
-// See for a detailed description of the modes: https://docs.sourcegraph.com/dev/background-information/git_gc
-var gitGCMode = func() int {
-	// EnableGCAuto is a temporary flag that allows us to control whether or not
-	// `git gc --auto` is invoked during janitorial activities. This flag will
-	// likely evolve into some form of site config value in the future.
-	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during janitorial cleanup phases"))
+// See for b detbiled description of the modes: https://docs.sourcegrbph.com/dev/bbckground-informbtion/git_gc
+vbr gitGCMode = func() int {
+	// EnbbleGCAuto is b temporbry flbg thbt bllows us to control whether or not
+	// `git gc --buto` is invoked during jbnitoribl bctivities. This flbg will
+	// likely evolve into some form of site config vblue in the future.
+	enbbleGCAuto, _ := strconv.PbrseBool(env.Get("SRC_ENABLE_GC_AUTO", "true", "Use git-gc during jbnitoribl clebnup phbses"))
 
-	// sg maintenance and git gc must not be enabled at the same time. However, both
-	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+	// sg mbintenbnce bnd git gc must not be enbbled bt the sbme time. However, both
+	// might be disbbled bt the sbme time, hence we need both SRC_ENABLE_GC_AUTO bnd
 	// SRC_ENABLE_SG_MAINTENANCE.
-	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "false", "Use sg maintenance during janitorial cleanup phases"))
+	enbbleSGMbintenbnce, _ := strconv.PbrseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "fblse", "Use sg mbintenbnce during jbnitoribl clebnup phbses"))
 
-	if enableGCAuto && !enableSGMaintenance {
-		return gitGCModeJanitorAutoGC
+	if enbbleGCAuto && !enbbleSGMbintenbnce {
+		return gitGCModeJbnitorAutoGC
 	}
 
-	if enableSGMaintenance && !enableGCAuto {
-		return gitGCModeMaintenance
+	if enbbleSGMbintenbnce && !enbbleGCAuto {
+		return gitGCModeMbintenbnce
 	}
 
 	return gitGCModeGitAutoGC
 }()
 
-// The limit of 50 mirrors Git's gc_auto_pack_limit
-var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "the maximum number of pack files we tolerate before we trigger a repack"))
+// The limit of 50 mirrors Git's gc_buto_pbck_limit
+vbr butoPbckLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "the mbximum number of pbck files we tolerbte before we trigger b repbck"))
 
-// Our original Git gc job used 1 as limit, while git's default is 6700. We
-// don't want to be too aggressive to avoid unnecessary IO, hence we choose a
-// value somewhere in the middle. https://gitlab.com/gitlab-org/gitaly uses a
-// limit of 1024, which corresponds to an average of 4 loose objects per folder.
-// We can tune this parameter once we gain more experience.
-var looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the maximum number of loose objects we tolerate before we trigger a repack"))
+// Our originbl Git gc job used 1 bs limit, while git's defbult is 6700. We
+// don't wbnt to be too bggressive to bvoid unnecessbry IO, hence we choose b
+// vblue somewhere in the middle. https://gitlbb.com/gitlbb-org/gitbly uses b
+// limit of 1024, which corresponds to bn bverbge of 4 loose objects per folder.
+// We cbn tune this pbrbmeter once we gbin more experience.
+vbr looseObjectsLimit, _ = strconv.Atoi(env.Get("SRC_GIT_LOOSE_OBJECTS_LIMIT", "1024", "the mbximum number of loose objects we tolerbte before we trigger b repbck"))
 
-// A failed sg maintenance run will place a log file in the git directory.
-// Subsequent sg maintenance runs are skipped unless the log file is old.
+// A fbiled sg mbintenbnce run will plbce b log file in the git directory.
+// Subsequent sg mbintenbnce runs bre skipped unless the log file is old.
 //
-// Based on how https://github.com/git/git handles the gc.log file.
-var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, "the number of hours after which sg maintenance runs even if a log file is present")
+// Bbsed on how https://github.com/git/git hbndles the gc.log file.
+vbr sgmLogExpire = env.MustGetDurbtion("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, "the number of hours bfter which sg mbintenbnce runs even if b log file is present")
 
-// Each failed sg maintenance run increments a counter in the sgmLog file.
+// Ebch fbiled sg mbintenbnce run increments b counter in the sgmLog file.
 // We reclone the repository if the number of retries exceeds sgmRetries.
-// Setting SRC_SGM_RETRIES to -1 disables recloning due to sgm failures.
-// Default value is 3 (reclone after 3 failed sgm runs).
+// Setting SRC_SGM_RETRIES to -1 disbbles recloning due to sgm fbilures.
+// Defbult vblue is 3 (reclone bfter 3 fbiled sgm runs).
 //
-// We mention this ENV variable in the header message of the sgmLog files. Make
-// sure that changes here are reflected in sgmLogHeader, too.
-var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "3", "the maximum number of times we retry sg maintenance before triggering a reclone."))
+// We mention this ENV vbribble in the hebder messbge of the sgmLog files. Mbke
+// sure thbt chbnges here bre reflected in sgmLogHebder, too.
+vbr sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "3", "the mbximum number of times we retry sg mbintenbnce before triggering b reclone."))
 
-// The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
-var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
+// The limit of repos cloned on the wrong shbrd to delete in one jbnitor run - vblue <=0 disbbles delete.
+vbr wrongShbrdReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the mbximum number of repos not bssigned to this shbrd we delete in one run"))
 
-// Controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB. Defaults to false.
-var removeNonExistingRepos, _ = strconv.ParseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "false", "controls if gitserver cleanup tries to remove repos from disk which are not defined in the DB"))
+// Controls if gitserver clebnup tries to remove repos from disk which bre not defined in the DB. Defbults to fblse.
+vbr removeNonExistingRepos, _ = strconv.PbrseBool(env.Get("SRC_REMOVE_NON_EXISTING_REPOS", "fblse", "controls if gitserver clebnup tries to remove repos from disk which bre not defined in the DB"))
 
-var (
-	reposRemoved = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_gitserver_repos_removed",
-		Help: "number of repos removed during cleanup",
-	}, []string{"reason"})
-	reposRecloned = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_repos_recloned",
-		Help: "number of repos removed and re-cloned due to age",
+vbr (
+	reposRemoved = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_gitserver_repos_removed",
+		Help: "number of repos removed during clebnup",
+	}, []string{"rebson"})
+	reposRecloned = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_gitserver_repos_recloned",
+		Help: "number of repos removed bnd re-cloned due to bge",
 	})
-	reposRemovedDiskPressure = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_repos_removed_disk_pressure",
-		Help: "number of repos removed due to not enough disk space",
+	reposRemovedDiskPressure = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_gitserver_repos_removed_disk_pressure",
+		Help: "number of repos removed due to not enough disk spbce",
 	})
-	janitorRunning = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "src_gitserver_janitor_running",
-		Help: "set to 1 when the gitserver janitor background job is running",
+	jbnitorRunning = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "src_gitserver_jbnitor_running",
+		Help: "set to 1 when the gitserver jbnitor bbckground job is running",
 	})
-	jobTimer = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name: "src_gitserver_janitor_job_duration_seconds",
-		Help: "Duration of the individual jobs within the gitserver janitor background job",
-	}, []string{"success", "job_name"})
-	maintenanceStatus = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_gitserver_maintenance_status",
-		Help: "whether the maintenance run was a success (true/false) and the reason why a cleanup was needed",
-	}, []string{"success", "reason"})
-	pruneStatus = promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_gitserver_prune_status",
-		Help: "whether git prune was a success (true/false) and whether it was skipped (true/false)",
+	jobTimer = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme: "src_gitserver_jbnitor_job_durbtion_seconds",
+		Help: "Durbtion of the individubl jobs within the gitserver jbnitor bbckground job",
+	}, []string{"success", "job_nbme"})
+	mbintenbnceStbtus = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_gitserver_mbintenbnce_stbtus",
+		Help: "whether the mbintenbnce run wbs b success (true/fblse) bnd the rebson why b clebnup wbs needed",
+	}, []string{"success", "rebson"})
+	pruneStbtus = prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_gitserver_prune_stbtus",
+		Help: "whether git prune wbs b success (true/fblse) bnd whether it wbs skipped (true/fblse)",
 	}, []string{"success", "skipped"})
-	janitorTimer = promauto.NewHistogram(prometheus.HistogramOpts{
-		Name:    "src_gitserver_janitor_duration_seconds",
-		Help:    "Duration of gitserver janitor background job",
-		Buckets: []float64{0.1, 1, 10, 60, 300, 3600, 7200},
+	jbnitorTimer = prombuto.NewHistogrbm(prometheus.HistogrbmOpts{
+		Nbme:    "src_gitserver_jbnitor_durbtion_seconds",
+		Help:    "Durbtion of gitserver jbnitor bbckground job",
+		Buckets: []flobt64{0.1, 1, 10, 60, 300, 3600, 7200},
 	})
-	nonExistingReposRemoved = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "src_gitserver_non_existing_repos_removed",
-		Help: "number of non existing repos removed during cleanup",
+	nonExistingReposRemoved = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "src_gitserver_non_existing_repos_removed",
+		Help: "number of non existing repos removed during clebnup",
 	})
 )
 
-type cloneRepoFunc func(ctx context.Context, repo api.RepoName, opts CloneOptions) (cloneProgress string, err error)
+type cloneRepoFunc func(ctx context.Context, repo bpi.RepoNbme, opts CloneOptions) (cloneProgress string, err error)
 
-// cleanupRepos walks the repos directory and performs maintenance tasks:
+// clebnupRepos wblks the repos directory bnd performs mbintenbnce tbsks:
 //
-// 1. Compute the amount of space used by the repo
+// 1. Compute the bmount of spbce used by the repo
 // 2. Remove corrupt repos.
-// 3. Remove stale lock files.
-// 4. Ensure correct git attributes
-// 5. Ensure gc.auto=0 or unset depending on gitGCMode
-// 6. Perform garbage collection
-// 7. Re-clone repos after a while. (simulate git gc)
-// 8. Remove repos based on disk pressure.
-// 9. Perform sg-maintenance
+// 3. Remove stble lock files.
+// 4. Ensure correct git bttributes
+// 5. Ensure gc.buto=0 or unset depending on gitGCMode
+// 6. Perform gbrbbge collection
+// 7. Re-clone repos bfter b while. (simulbte git gc)
+// 8. Remove repos bbsed on disk pressure.
+// 9. Perform sg-mbintenbnce
 // 10. Git prune
 // 11. Set sizes of repos
-func cleanupRepos(
+func clebnupRepos(
 	ctx context.Context,
 	logger log.Logger,
-	db database.DB,
-	rcf *wrexec.RecordingCommandFactory,
-	shardID string,
+	db dbtbbbse.DB,
+	rcf *wrexec.RecordingCommbndFbctory,
+	shbrdID string,
 	reposDir string,
 	cloneRepo cloneRepoFunc,
 	gitServerAddrs gitserver.GitserverAddresses,
 ) {
-	logger = logger.Scoped("cleanup", "repositories cleanup operation")
+	logger = logger.Scoped("clebnup", "repositories clebnup operbtion")
 
-	janitorRunning.Set(1)
-	defer janitorRunning.Set(0)
+	jbnitorRunning.Set(1)
+	defer jbnitorRunning.Set(0)
 
-	janitorStart := time.Now()
+	jbnitorStbrt := time.Now()
 	defer func() {
-		janitorTimer.Observe(time.Since(janitorStart).Seconds())
+		jbnitorTimer.Observe(time.Since(jbnitorStbrt).Seconds())
 	}()
 
-	knownGitServerShard := false
-	for _, addr := range gitServerAddrs.Addresses {
-		if hostnameMatch(shardID, addr) {
-			knownGitServerShard = true
-			break
+	knownGitServerShbrd := fblse
+	for _, bddr := rbnge gitServerAddrs.Addresses {
+		if hostnbmeMbtch(shbrdID, bddr) {
+			knownGitServerShbrd = true
+			brebk
 		}
 	}
-	if !knownGitServerShard {
-		logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", shardID), log.Strings("all-shards", gitServerAddrs.Addresses))
+	if !knownGitServerShbrd {
+		logger.Wbrn("current shbrd is not included in the list of known gitserver shbrds, will not delete repos", log.String("current-hostnbme", shbrdID), log.Strings("bll-shbrds", gitServerAddrs.Addresses))
 	}
 
-	repoToSize := make(map[api.RepoName]int64)
-	var wrongShardRepoCount int64
-	var wrongShardRepoSize int64
+	repoToSize := mbke(mbp[bpi.RepoNbme]int64)
+	vbr wrongShbrdRepoCount int64
+	vbr wrongShbrdRepoSize int64
 	defer func() {
-		// We want to set the gauge only at the end when we know the total
-		wrongShardReposTotal.Set(float64(wrongShardRepoCount))
-		wrongShardReposSizeTotalBytes.Set(float64(wrongShardRepoSize))
+		// We wbnt to set the gbuge only bt the end when we know the totbl
+		wrongShbrdReposTotbl.Set(flobt64(wrongShbrdRepoCount))
+		wrongShbrdReposSizeTotblBytes.Set(flobt64(wrongShbrdRepoSize))
 	}()
 
-	var wrongShardReposDeleted int64
+	vbr wrongShbrdReposDeleted int64
 	defer func() {
-		// We want to set the gauge only when wrong shard clean-up is enabled
-		if wrongShardReposDeleteLimit > 0 {
-			wrongShardReposDeletedCounter.Add(float64(wrongShardReposDeleted))
+		// We wbnt to set the gbuge only when wrong shbrd clebn-up is enbbled
+		if wrongShbrdReposDeleteLimit > 0 {
+			wrongShbrdReposDeletedCounter.Add(flobt64(wrongShbrdReposDeleted))
 		}
 	}()
 
-	collectSizeAndMaybeDeleteWrongShardRepos := func(dir common.GitDir) (done bool, err error) {
-		size := dirSize(dir.Path("."))
-		name := repoNameFromDir(reposDir, dir)
-		repoToSize[name] = size
+	collectSizeAndMbybeDeleteWrongShbrdRepos := func(dir common.GitDir) (done bool, err error) {
+		size := dirSize(dir.Pbth("."))
+		nbme := repoNbmeFromDir(reposDir, dir)
+		repoToSize[nbme] = size
 
-		// Record the number and disk usage used of repos that should
-		// not belong on this instance and remove up to SRC_WRONG_SHARD_DELETE_LIMIT in a single Janitor run.
-		addr := addrForRepo(ctx, name, gitServerAddrs)
+		// Record the number bnd disk usbge used of repos thbt should
+		// not belong on this instbnce bnd remove up to SRC_WRONG_SHARD_DELETE_LIMIT in b single Jbnitor run.
+		bddr := bddrForRepo(ctx, nbme, gitServerAddrs)
 
-		if !hostnameMatch(shardID, addr) {
-			wrongShardRepoCount++
-			wrongShardRepoSize += size
+		if !hostnbmeMbtch(shbrdID, bddr) {
+			wrongShbrdRepoCount++
+			wrongShbrdRepoSize += size
 
-			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+			if knownGitServerShbrd && wrongShbrdReposDeleteLimit > 0 && wrongShbrdReposDeleted < int64(wrongShbrdReposDeleteLimit) {
 				logger.Info(
-					"removing repo cloned on the wrong shard",
+					"removing repo cloned on the wrong shbrd",
 					log.String("dir", string(dir)),
-					log.String("target-shard", addr),
-					log.String("current-shard", shardID),
+					log.String("tbrget-shbrd", bddr),
+					log.String("current-shbrd", shbrdID),
 					log.Int64("size-bytes", size),
 				)
-				if err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false); err != nil {
-					return false, err
+				if err := removeRepoDirectory(ctx, logger, db, shbrdID, reposDir, dir, fblse); err != nil {
+					return fblse, err
 				}
-				wrongShardReposDeleted++
+				wrongShbrdReposDeleted++
 			}
 		}
-		return false, nil
+		return fblse, nil
 	}
 
-	maybeRemoveCorrupt := func(dir common.GitDir) (done bool, _ error) {
-		corrupt, reason, err := checkRepoDirCorrupt(rcf, reposDir, dir)
+	mbybeRemoveCorrupt := func(dir common.GitDir) (done bool, _ error) {
+		corrupt, rebson, err := checkRepoDirCorrupt(rcf, reposDir, dir)
 		if !corrupt || err != nil {
-			return false, err
+			return fblse, err
 		}
 
-		repoName := repoNameFromDir(reposDir, dir)
-		err = db.GitserverRepos().LogCorruption(ctx, repoName, fmt.Sprintf("sourcegraph detected corrupt repo: %s", reason), shardID)
+		repoNbme := repoNbmeFromDir(reposDir, dir)
+		err = db.GitserverRepos().LogCorruption(ctx, repoNbme, fmt.Sprintf("sourcegrbph detected corrupt repo: %s", rebson), shbrdID)
 		if err != nil {
-			logger.Warn("failed to log repo corruption", log.String("repo", string(repoName)), log.Error(err))
+			logger.Wbrn("fbiled to log repo corruption", log.String("repo", string(repoNbme)), log.Error(err))
 		}
 
-		logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("reason", reason))
-		if err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, true); err != nil {
+		logger.Info("removing corrupt repo", log.String("repo", string(dir)), log.String("rebson", rebson))
+		if err := removeRepoDirectory(ctx, logger, db, shbrdID, reposDir, dir, true); err != nil {
 			return true, err
 		}
-		reposRemoved.WithLabelValues(reason).Inc()
+		reposRemoved.WithLbbelVblues(rebson).Inc()
 		return true, nil
 	}
 
-	maybeRemoveNonExisting := func(dir common.GitDir) (bool, error) {
+	mbybeRemoveNonExisting := func(dir common.GitDir) (bool, error) {
 		if !removeNonExistingRepos {
-			return false, nil
+			return fblse, nil
 		}
 
-		_, err := db.GitserverRepos().GetByName(ctx, repoNameFromDir(reposDir, dir))
+		_, err := db.GitserverRepos().GetByNbme(ctx, repoNbmeFromDir(reposDir, dir))
 		// Repo still exists, nothing to do.
 		if err == nil {
-			return false, nil
+			return fblse, nil
 		}
 
-		// Failed to talk to DB, skip this repo.
+		// Fbiled to tblk to DB, skip this repo.
 		if !errcode.IsNotFound(err) {
-			logger.Warn("failed to look up repo", log.Error(err), log.String("repo", string(dir)))
-			return false, nil
+			logger.Wbrn("fbiled to look up repo", log.Error(err), log.String("repo", string(dir)))
+			return fblse, nil
 		}
 
 		// The repo does not exist in the DB (or is soft-deleted), continue deleting it.
-		err = removeRepoDirectory(ctx, logger, db, shardID, reposDir, dir, false)
+		err = removeRepoDirectory(ctx, logger, db, shbrdID, reposDir, dir, fblse)
 		if err == nil {
 			nonExistingReposRemoved.Inc()
 		}
@@ -344,83 +344,83 @@ func cleanupRepos(
 	}
 
 	ensureGitAttributes := func(dir common.GitDir) (done bool, err error) {
-		return false, setGitAttributes(dir)
+		return fblse, setGitAttributes(dir)
 	}
 
 	ensureAutoGC := func(dir common.GitDir) (done bool, err error) {
-		return false, gitSetAutoGC(rcf, reposDir, dir)
+		return fblse, gitSetAutoGC(rcf, reposDir, dir)
 	}
 
-	maybeReclone := func(dir common.GitDir) (done bool, err error) {
+	mbybeReclone := func(dir common.GitDir) (done bool, err error) {
 		repoType, err := getRepositoryType(rcf, reposDir, dir)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
 		recloneTime, err := getRecloneTime(rcf, reposDir, dir)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 
-		// Add a jitter to spread out re-cloning of repos cloned at the same time.
-		var reason string
-		const maybeCorrupt = "maybeCorrupt"
-		if maybeCorrupt, _ := gitConfigGet(rcf, reposDir, dir, gitConfigMaybeCorrupt); maybeCorrupt != "" {
-			// Set the reason so that the repo cleaned up
-			reason = maybeCorrupt
-			// We don't log the corruption here, since the corruption *should* have already been
-			// logged when this config setting was set in the repo.
-			// When the repo is recloned, the corrupted_at status should be cleared, which means
-			// the repo is not considered corrupted anymore.
+		// Add b jitter to sprebd out re-cloning of repos cloned bt the sbme time.
+		vbr rebson string
+		const mbybeCorrupt = "mbybeCorrupt"
+		if mbybeCorrupt, _ := gitConfigGet(rcf, reposDir, dir, gitConfigMbybeCorrupt); mbybeCorrupt != "" {
+			// Set the rebson so thbt the repo clebned up
+			rebson = mbybeCorrupt
+			// We don't log the corruption here, since the corruption *should* hbve blrebdy been
+			// logged when this config setting wbs set in the repo.
+			// When the repo is recloned, the corrupted_bt stbtus should be clebred, which mebns
+			// the repo is not considered corrupted bnymore.
 			//
-			// unset flag to stop constantly re-cloning if it fails.
-			_ = gitConfigUnset(rcf, reposDir, dir, gitConfigMaybeCorrupt)
+			// unset flbg to stop constbntly re-cloning if it fbils.
+			_ = gitConfigUnset(rcf, reposDir, dir, gitConfigMbybeCorrupt)
 		}
-		if time.Since(recloneTime) > repoTTL+jitterDuration(string(dir), repoTTL/4) {
-			reason = "old"
+		if time.Since(recloneTime) > repoTTL+jitterDurbtion(string(dir), repoTTL/4) {
+			rebson = "old"
 		}
-		if time.Since(recloneTime) > repoTTLGC+jitterDuration(string(dir), repoTTLGC/4) {
-			if gclog, err := os.ReadFile(dir.Path("gc.log")); err == nil && len(gclog) > 0 {
-				reason = fmt.Sprintf("git gc %s", string(bytes.TrimSpace(gclog)))
+		if time.Since(recloneTime) > repoTTLGC+jitterDurbtion(string(dir), repoTTLGC/4) {
+			if gclog, err := os.RebdFile(dir.Pbth("gc.log")); err == nil && len(gclog) > 0 {
+				rebson = fmt.Sprintf("git gc %s", string(bytes.TrimSpbce(gclog)))
 			}
 		}
 
-		if (sgmRetries >= 0) && (bestEffortReadFailed(dir) > sgmRetries) {
-			if sgmLog, err := os.ReadFile(dir.Path(sgmLog)); err == nil && len(sgmLog) > 0 {
-				reason = fmt.Sprintf("sg maintenance, too many retries: %s", string(bytes.TrimSpace(sgmLog)))
+		if (sgmRetries >= 0) && (bestEffortRebdFbiled(dir) > sgmRetries) {
+			if sgmLog, err := os.RebdFile(dir.Pbth(sgmLog)); err == nil && len(sgmLog) > 0 {
+				rebson = fmt.Sprintf("sg mbintenbnce, too mbny retries: %s", string(bytes.TrimSpbce(sgmLog)))
 			}
 		}
 
-		// We believe converting a Perforce depot to a Git repository is generally a
-		// very expensive operation, therefore we do not try to re-clone/redo the
-		// conversion only because it is old or slow to do "git gc".
-		if repoType == "perforce" && reason != maybeCorrupt {
-			reason = ""
+		// We believe converting b Perforce depot to b Git repository is generblly b
+		// very expensive operbtion, therefore we do not try to re-clone/redo the
+		// conversion only becbuse it is old or slow to do "git gc".
+		if repoType == "perforce" && rebson != mbybeCorrupt {
+			rebson = ""
 		}
 
-		if reason == "" {
-			return false, nil
+		if rebson == "" {
+			return fblse, nil
 		}
 
-		// name is the relative path to ReposDir, but without the .git suffix.
-		repo := repoNameFromDir(reposDir, dir)
+		// nbme is the relbtive pbth to ReposDir, but without the .git suffix.
+		repo := repoNbmeFromDir(reposDir, dir)
 		recloneLogger := logger.With(
 			log.String("repo", string(repo)),
 			log.Time("cloned", recloneTime),
-			log.String("reason", reason),
+			log.String("rebson", rebson),
 		)
 
 		recloneLogger.Info("re-cloning expired repo")
 
-		// update the re-clone time so that we don't constantly re-clone if cloning fails.
-		// For example if a repo fails to clone due to being large, we will constantly be
-		// doing a clone which uses up lots of resources.
+		// updbte the re-clone time so thbt we don't constbntly re-clone if cloning fbils.
+		// For exbmple if b repo fbils to clone due to being lbrge, we will constbntly be
+		// doing b clone which uses up lots of resources.
 		if err := setRecloneTime(rcf, reposDir, dir, recloneTime.Add(time.Since(recloneTime)/2)); err != nil {
-			recloneLogger.Warn("setting backed off re-clone time failed", log.Error(err))
+			recloneLogger.Wbrn("setting bbcked off re-clone time fbiled", log.Error(err))
 		}
 
-		cmdCtx, cancel := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
-		defer cancel()
+		cmdCtx, cbncel := context.WithTimeout(ctx, conf.GitLongCommbndTimeout())
+		defer cbncel()
 		if _, err := cloneRepo(cmdCtx, repo, CloneOptions{Block: true, Overwrite: true}); err != nil {
 			return true, err
 		}
@@ -428,350 +428,350 @@ func cleanupRepos(
 		return true, nil
 	}
 
-	removeStaleLocks := func(gitDir common.GitDir) (done bool, err error) {
-		// if removing a lock fails, we still want to try the other locks.
-		var multi error
+	removeStbleLocks := func(gitDir common.GitDir) (done bool, err error) {
+		// if removing b lock fbils, we still wbnt to try the other locks.
+		vbr multi error
 
-		// config.lock should be held for a very short amount of time.
-		if _, err := removeFileOlderThan(logger, gitDir.Path("config.lock"), time.Minute); err != nil {
+		// config.lock should be held for b very short bmount of time.
+		if _, err := removeFileOlderThbn(logger, gitDir.Pbth("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
-		// packed-refs can be held for quite a while, so we are conservative
-		// with the age.
-		if _, err := removeFileOlderThan(logger, gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
+		// pbcked-refs cbn be held for quite b while, so we bre conservbtive
+		// with the bge.
+		if _, err := removeFileOlderThbn(logger, gitDir.Pbth("pbcked-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
-		// we use the same conservative age for locks inside of refs
-		if err := bestEffortWalk(gitDir.Path("refs"), func(path string, fi fs.DirEntry) error {
+		// we use the sbme conservbtive bge for locks inside of refs
+		if err := bestEffortWblk(gitDir.Pbth("refs"), func(pbth string, fi fs.DirEntry) error {
 			if fi.IsDir() {
 				return nil
 			}
 
-			if !strings.HasSuffix(path, ".lock") {
+			if !strings.HbsSuffix(pbth, ".lock") {
 				return nil
 			}
 
-			_, err := removeFileOlderThan(logger, path, time.Hour)
+			_, err := removeFileOlderThbn(logger, pbth, time.Hour)
 			return err
 		}); err != nil {
 			multi = errors.Append(multi, err)
 		}
-		// We have seen that, occasionally, commit-graph.locks prevent a git repack from
-		// succeeding. Benchmarks on our dogfood cluster have shown that a commit-graph
-		// call for a 5GB bare repository takes less than 1 min. The lock is only held
-		// during a short period during this time. A 1-hour grace period is very
-		// conservative.
-		if _, err := removeFileOlderThan(logger, gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+		// We hbve seen thbt, occbsionblly, commit-grbph.locks prevent b git repbck from
+		// succeeding. Benchmbrks on our dogfood cluster hbve shown thbt b commit-grbph
+		// cbll for b 5GB bbre repository tbkes less thbn 1 min. The lock is only held
+		// during b short period during this time. A 1-hour grbce period is very
+		// conservbtive.
+		if _, err := removeFileOlderThbn(logger, gitDir.Pbth("objects", "info", "commit-grbph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
-		// gc.pid is set by git gc and our sg maintenance script. 24 hours is twice the
-		// time git gc uses internally.
-		gcPIDMaxAge := 24 * time.Hour
-		if foundStale, err := removeFileOlderThan(logger, gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
+		// gc.pid is set by git gc bnd our sg mbintenbnce script. 24 hours is twice the
+		// time git gc uses internblly.
+		gcPIDMbxAge := 24 * time.Hour
+		if foundStble, err := removeFileOlderThbn(logger, gitDir.Pbth(gcLockFile), gcPIDMbxAge); err != nil {
 			multi = errors.Append(multi, err)
-		} else if foundStale {
-			logger.Warn(
-				"removeStaleLocks found a stale gc.pid lockfile and removed it. This should not happen and points to a problem with garbage collection. Monitor the repo for possible corruption and verify if this error reoccurs",
-				log.String("path", string(gitDir)),
-				log.Duration("age", gcPIDMaxAge))
+		} else if foundStble {
+			logger.Wbrn(
+				"removeStbleLocks found b stble gc.pid lockfile bnd removed it. This should not hbppen bnd points to b problem with gbrbbge collection. Monitor the repo for possible corruption bnd verify if this error reoccurs",
+				log.String("pbth", string(gitDir)),
+				log.Durbtion("bge", gcPIDMbxAge))
 		}
 
-		return false, multi
+		return fblse, multi
 	}
 
 	performGC := func(dir common.GitDir) (done bool, err error) {
-		return false, gitGC(rcf, reposDir, dir)
+		return fblse, gitGC(rcf, reposDir, dir)
 	}
 
-	performSGMaintenance := func(dir common.GitDir) (done bool, err error) {
-		return false, sgMaintenance(logger, dir)
+	performSGMbintenbnce := func(dir common.GitDir) (done bool, err error) {
+		return fblse, sgMbintenbnce(logger, dir)
 	}
 
 	performGitPrune := func(reposDir string, dir common.GitDir) (done bool, err error) {
-		return false, pruneIfNeeded(rcf, reposDir, dir, looseObjectsLimit)
+		return fblse, pruneIfNeeded(rcf, reposDir, dir, looseObjectsLimit)
 	}
 
-	type cleanupFn struct {
-		Name string
+	type clebnupFn struct {
+		Nbme string
 		Do   func(common.GitDir) (bool, error)
 	}
-	cleanups := []cleanupFn{
-		// Compute the amount of space used by the repo
-		{"compute stats and delete wrong shard repos", collectSizeAndMaybeDeleteWrongShardRepos},
-		// Do some sanity checks on the repository.
-		{"maybe remove corrupt", maybeRemoveCorrupt},
-		// Remove repo if DB does not contain it anymore
-		{"maybe remove non existing", maybeRemoveNonExisting},
-		// If git is interrupted it can leave lock files lying around. It does not clean
-		// these up, and instead fails commands.
-		{"remove stale locks", removeStaleLocks},
-		// We always want to have the same git attributes file at info/attributes.
-		{"ensure git attributes", ensureGitAttributes},
-		// Enable or disable background garbage collection depending on
-		// gitGCMode. The purpose is to avoid repository corruption which can
-		// happen if several git-gc operations are running at the same time.
-		// We only disable if sg is managing gc.
-		{"auto gc config", ensureAutoGC},
+	clebnups := []clebnupFn{
+		// Compute the bmount of spbce used by the repo
+		{"compute stbts bnd delete wrong shbrd repos", collectSizeAndMbybeDeleteWrongShbrdRepos},
+		// Do some sbnity checks on the repository.
+		{"mbybe remove corrupt", mbybeRemoveCorrupt},
+		// Remove repo if DB does not contbin it bnymore
+		{"mbybe remove non existing", mbybeRemoveNonExisting},
+		// If git is interrupted it cbn lebve lock files lying bround. It does not clebn
+		// these up, bnd instebd fbils commbnds.
+		{"remove stble locks", removeStbleLocks},
+		// We blwbys wbnt to hbve the sbme git bttributes file bt info/bttributes.
+		{"ensure git bttributes", ensureGitAttributes},
+		// Enbble or disbble bbckground gbrbbge collection depending on
+		// gitGCMode. The purpose is to bvoid repository corruption which cbn
+		// hbppen if severbl git-gc operbtions bre running bt the sbme time.
+		// We only disbble if sg is mbnbging gc.
+		{"buto gc config", ensureAutoGC},
 	}
 
-	if gitGCMode == gitGCModeJanitorAutoGC {
-		// Runs a number of housekeeping tasks within the current repository, such as
-		// compressing file revisions (to reduce disk space and increase performance),
-		// removing unreachable objects which may have been created from prior
-		// invocations of git add, packing refs, pruning reflog, rerere metadata or stale
-		// working trees. May also update ancillary indexes such as the commit-graph.
-		cleanups = append(cleanups, cleanupFn{"garbage collect", performGC})
+	if gitGCMode == gitGCModeJbnitorAutoGC {
+		// Runs b number of housekeeping tbsks within the current repository, such bs
+		// compressing file revisions (to reduce disk spbce bnd increbse performbnce),
+		// removing unrebchbble objects which mby hbve been crebted from prior
+		// invocbtions of git bdd, pbcking refs, pruning reflog, rerere metbdbtb or stble
+		// working trees. Mby blso updbte bncillbry indexes such bs the commit-grbph.
+		clebnups = bppend(clebnups, clebnupFn{"gbrbbge collect", performGC})
 	}
 
-	if gitGCMode == gitGCModeMaintenance {
-		// Run tasks to optimize Git repository data, speeding up other Git commands and
-		// reducing storage requirements for the repository. Note: "garbage collect" and
-		// "sg maintenance" must not be enabled at the same time.
-		cleanups = append(cleanups, cleanupFn{"sg maintenance", performSGMaintenance})
-		cleanups = append(cleanups, cleanupFn{"git prune", func(dir common.GitDir) (bool, error) {
+	if gitGCMode == gitGCModeMbintenbnce {
+		// Run tbsks to optimize Git repository dbtb, speeding up other Git commbnds bnd
+		// reducing storbge requirements for the repository. Note: "gbrbbge collect" bnd
+		// "sg mbintenbnce" must not be enbbled bt the sbme time.
+		clebnups = bppend(clebnups, clebnupFn{"sg mbintenbnce", performSGMbintenbnce})
+		clebnups = bppend(clebnups, clebnupFn{"git prune", func(dir common.GitDir) (bool, error) {
 			return performGitPrune(reposDir, dir)
 		}})
 	}
 
-	if !conf.Get().DisableAutoGitUpdates {
-		// Old git clones accumulate loose git objects that waste space and slow down git
-		// operations. Periodically do a fresh clone to avoid these problems. git gc is
-		// slow and resource intensive. It is cheaper and faster to just re-clone the
-		// repository. We don't do this if DisableAutoGitUpdates is set as it could
-		// potentially kick off a clone operation.
-		cleanups = append(cleanups, cleanupFn{
-			Name: "maybe re-clone",
-			Do:   maybeReclone,
+	if !conf.Get().DisbbleAutoGitUpdbtes {
+		// Old git clones bccumulbte loose git objects thbt wbste spbce bnd slow down git
+		// operbtions. Periodicblly do b fresh clone to bvoid these problems. git gc is
+		// slow bnd resource intensive. It is chebper bnd fbster to just re-clone the
+		// repository. We don't do this if DisbbleAutoGitUpdbtes is set bs it could
+		// potentiblly kick off b clone operbtion.
+		clebnups = bppend(clebnups, clebnupFn{
+			Nbme: "mbybe re-clone",
+			Do:   mbybeReclone,
 		})
 	}
 
-	err := iterateGitDirs(reposDir, func(gitDir common.GitDir) {
-		for _, cfn := range cleanups {
-			start := time.Now()
+	err := iterbteGitDirs(reposDir, func(gitDir common.GitDir) {
+		for _, cfn := rbnge clebnups {
+			stbrt := time.Now()
 			done, err := cfn.Do(gitDir)
 			if err != nil {
-				logger.Error("error running cleanup command",
-					log.String("name", cfn.Name),
+				logger.Error("error running clebnup commbnd",
+					log.String("nbme", cfn.Nbme),
 					log.String("repo", string(gitDir)),
 					log.Error(err))
 			}
-			jobTimer.WithLabelValues(strconv.FormatBool(err == nil), cfn.Name).Observe(time.Since(start).Seconds())
+			jobTimer.WithLbbelVblues(strconv.FormbtBool(err == nil), cfn.Nbme).Observe(time.Since(stbrt).Seconds())
 			if done {
-				break
+				brebk
 			}
 		}
 	})
 	if err != nil {
-		logger.Error("error iterating over repositories", log.Error(err))
+		logger.Error("error iterbting over repositories", log.Error(err))
 	}
 
 	if len(repoToSize) > 0 {
-		_, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, repoToSize)
+		_, err := db.GitserverRepos().UpdbteRepoSizes(ctx, shbrdID, repoToSize)
 		if err != nil {
 			logger.Error("setting repo sizes", log.Error(err))
 		}
 	}
 }
 
-func checkRepoDirCorrupt(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (bool, string, error) {
-	// We treat repositories missing HEAD to be corrupt. Both our cloning
-	// and fetching ensure there is a HEAD file.
-	if _, err := os.Stat(dir.Path("HEAD")); os.IsNotExist(err) {
-		return true, "missing-head", nil
+func checkRepoDirCorrupt(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir) (bool, string, error) {
+	// We trebt repositories missing HEAD to be corrupt. Both our cloning
+	// bnd fetching ensure there is b HEAD file.
+	if _, err := os.Stbt(dir.Pbth("HEAD")); os.IsNotExist(err) {
+		return true, "missing-hebd", nil
 	} else if err != nil {
-		return false, "", err
+		return fblse, "", err
 	}
 
-	// We have seen repository corruption fail in such a way that the git
-	// config is missing the bare repo option but everything else looks
-	// like it works. This leads to failing fetches, so treat non-bare
-	// repos as corrupt. Since we often fetch with ensureRevision, this
-	// leads to most commands failing against the repository. It is safer
-	// to remove now than try a safe reclone.
-	if gitIsNonBareBestEffort(rcf, reposDir, dir) {
-		return true, "non-bare", nil
+	// We hbve seen repository corruption fbil in such b wby thbt the git
+	// config is missing the bbre repo option but everything else looks
+	// like it works. This lebds to fbiling fetches, so trebt non-bbre
+	// repos bs corrupt. Since we often fetch with ensureRevision, this
+	// lebds to most commbnds fbiling bgbinst the repository. It is sbfer
+	// to remove now thbn try b sbfe reclone.
+	if gitIsNonBbreBestEffort(rcf, reposDir, dir) {
+		return true, "non-bbre", nil
 	}
 
-	return false, "", nil
+	return fblse, "", nil
 }
 
-// DiskSizer gets information about disk size and free space.
-type DiskSizer interface {
+// DiskSizer gets informbtion bbout disk size bnd free spbce.
+type DiskSizer interfbce {
 	BytesFreeOnDisk(mountPoint string) (uint64, error)
 	DiskSizeBytes(mountPoint string) (uint64, error)
 }
 
-// howManyBytesToFree returns the number of bytes that should be freed to make sure
-// there is sufficient disk space free to satisfy s.DesiredPercentFree.
-func howManyBytesToFree(logger log.Logger, reposDir string, diskSizer DiskSizer, desiredPercentFree int) (int64, error) {
-	actualFreeBytes, err := diskSizer.BytesFreeOnDisk(reposDir)
+// howMbnyBytesToFree returns the number of bytes thbt should be freed to mbke sure
+// there is sufficient disk spbce free to sbtisfy s.DesiredPercentFree.
+func howMbnyBytesToFree(logger log.Logger, reposDir string, diskSizer DiskSizer, desiredPercentFree int) (int64, error) {
+	bctublFreeBytes, err := diskSizer.BytesFreeOnDisk(reposDir)
 	if err != nil {
-		return 0, errors.Wrap(err, "finding the amount of space free on disk")
+		return 0, errors.Wrbp(err, "finding the bmount of spbce free on disk")
 	}
 
-	// Free up space if necessary.
+	// Free up spbce if necessbry.
 	diskSizeBytes, err := diskSizer.DiskSizeBytes(reposDir)
 	if err != nil {
-		return 0, errors.Wrap(err, "getting disk size")
+		return 0, errors.Wrbp(err, "getting disk size")
 	}
-	desiredFreeBytes := uint64(float64(desiredPercentFree) / 100.0 * float64(diskSizeBytes))
-	howManyBytesToFree := int64(desiredFreeBytes - actualFreeBytes)
-	if howManyBytesToFree < 0 {
-		howManyBytesToFree = 0
+	desiredFreeBytes := uint64(flobt64(desiredPercentFree) / 100.0 * flobt64(diskSizeBytes))
+	howMbnyBytesToFree := int64(desiredFreeBytes - bctublFreeBytes)
+	if howMbnyBytesToFree < 0 {
+		howMbnyBytesToFree = 0
 	}
-	const G = float64(1024 * 1024 * 1024)
+	const G = flobt64(1024 * 1024 * 1024)
 
 	logger.Debug(
-		"howManyBytesToFree",
+		"howMbnyBytesToFree",
 		log.Int("desired percent free", desiredPercentFree),
-		log.Float64("actual percent free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
-		log.Float64("amount to free in GiB", float64(howManyBytesToFree)/G),
+		log.Flobt64("bctubl percent free", flobt64(bctublFreeBytes)/flobt64(diskSizeBytes)*100.0),
+		log.Flobt64("bmount to free in GiB", flobt64(howMbnyBytesToFree)/G),
 	)
 
-	return howManyBytesToFree, nil
+	return howMbnyBytesToFree, nil
 }
 
-type StatDiskSizer struct{}
+type StbtDiskSizer struct{}
 
-func (s *StatDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
-	usage, err := du.New(mountPoint)
+func (s *StbtDiskSizer) BytesFreeOnDisk(mountPoint string) (uint64, error) {
+	usbge, err := du.New(mountPoint)
 	if err != nil {
 		return 0, err
 	}
-	return usage.Available(), nil
+	return usbge.Avbilbble(), nil
 }
 
-func (s *StatDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
-	usage, err := du.New(mountPoint)
+func (s *StbtDiskSizer) DiskSizeBytes(mountPoint string) (uint64, error) {
+	usbge, err := du.New(mountPoint)
 	if err != nil {
 		return 0, err
 	}
-	return usage.Size(), nil
+	return usbge.Size(), nil
 }
 
-// freeUpSpace removes git directories under ReposDir, in order from least
-// recently to most recently used, until it has freed howManyBytesToFree.
-func freeUpSpace(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, diskSizer DiskSizer, desiredPercentFree int, howManyBytesToFree int64) error {
-	if howManyBytesToFree <= 0 {
+// freeUpSpbce removes git directories under ReposDir, in order from lebst
+// recently to most recently used, until it hbs freed howMbnyBytesToFree.
+func freeUpSpbce(ctx context.Context, logger log.Logger, db dbtbbbse.DB, shbrdID string, reposDir string, diskSizer DiskSizer, desiredPercentFree int, howMbnyBytesToFree int64) error {
+	if howMbnyBytesToFree <= 0 {
 		return nil
 	}
 
-	logger = logger.Scoped("freeUpSpace", "removes git directories under ReposDir")
+	logger = logger.Scoped("freeUpSpbce", "removes git directories under ReposDir")
 
-	// Get the git directories and their mod times.
+	// Get the git directories bnd their mod times.
 	gitDirs, err := findGitDirs(reposDir)
 	if err != nil {
-		return errors.Wrap(err, "finding git dirs")
+		return errors.Wrbp(err, "finding git dirs")
 	}
-	dirModTimes := make(map[common.GitDir]time.Time, len(gitDirs))
-	for _, d := range gitDirs {
+	dirModTimes := mbke(mbp[common.GitDir]time.Time, len(gitDirs))
+	for _, d := rbnge gitDirs {
 		mt, err := gitDirModTime(d)
 		if err != nil {
-			return errors.Wrap(err, "computing mod time of git dir")
+			return errors.Wrbp(err, "computing mod time of git dir")
 		}
 		dirModTimes[d] = mt
 	}
 
-	// Sort the repos from least to most recently used.
+	// Sort the repos from lebst to most recently used.
 	sort.Slice(gitDirs, func(i, j int) bool {
 		return dirModTimes[gitDirs[i]].Before(dirModTimes[gitDirs[j]])
 	})
 
-	// Remove repos until howManyBytesToFree is met or exceeded.
-	var spaceFreed int64
+	// Remove repos until howMbnyBytesToFree is met or exceeded.
+	vbr spbceFreed int64
 	diskSizeBytes, err := diskSizer.DiskSizeBytes(reposDir)
 	if err != nil {
-		return errors.Wrap(err, "getting disk size")
+		return errors.Wrbp(err, "getting disk size")
 	}
-	for _, d := range gitDirs {
-		if spaceFreed >= howManyBytesToFree {
+	for _, d := rbnge gitDirs {
+		if spbceFreed >= howMbnyBytesToFree {
 			return nil
 		}
-		delta := dirSize(d.Path("."))
-		if err := removeRepoDirectory(ctx, logger, db, shardID, reposDir, d, true); err != nil {
-			return errors.Wrap(err, "removing repo directory")
+		deltb := dirSize(d.Pbth("."))
+		if err := removeRepoDirectory(ctx, logger, db, shbrdID, reposDir, d, true); err != nil {
+			return errors.Wrbp(err, "removing repo directory")
 		}
-		spaceFreed += delta
+		spbceFreed += deltb
 		reposRemovedDiskPressure.Inc()
 
-		// Report the new disk usage situation after removing this repo.
-		actualFreeBytes, err := diskSizer.BytesFreeOnDisk(reposDir)
+		// Report the new disk usbge situbtion bfter removing this repo.
+		bctublFreeBytes, err := diskSizer.BytesFreeOnDisk(reposDir)
 		if err != nil {
-			return errors.Wrap(err, "finding the amount of space free on disk")
+			return errors.Wrbp(err, "finding the bmount of spbce free on disk")
 		}
-		G := float64(1024 * 1024 * 1024)
+		G := flobt64(1024 * 1024 * 1024)
 
-		logger.Warn("removed least recently used repo",
+		logger.Wbrn("removed lebst recently used repo",
 			log.String("repo", string(d)),
-			log.Duration("how old", time.Since(dirModTimes[d])),
-			log.Float64("free space in GiB", float64(actualFreeBytes)/G),
-			log.Float64("actual percent of disk space free", float64(actualFreeBytes)/float64(diskSizeBytes)*100.0),
-			log.Float64("desired percent of disk space free", float64(desiredPercentFree)),
-			log.Float64("space freed in GiB", float64(spaceFreed)/G),
-			log.Float64("how much space to free in GiB", float64(howManyBytesToFree)/G))
+			log.Durbtion("how old", time.Since(dirModTimes[d])),
+			log.Flobt64("free spbce in GiB", flobt64(bctublFreeBytes)/G),
+			log.Flobt64("bctubl percent of disk spbce free", flobt64(bctublFreeBytes)/flobt64(diskSizeBytes)*100.0),
+			log.Flobt64("desired percent of disk spbce free", flobt64(desiredPercentFree)),
+			log.Flobt64("spbce freed in GiB", flobt64(spbceFreed)/G),
+			log.Flobt64("how much spbce to free in GiB", flobt64(howMbnyBytesToFree)/G))
 	}
 
 	// Check.
-	if spaceFreed < howManyBytesToFree {
-		return errors.Errorf("only freed %d bytes, wanted to free %d", spaceFreed, howManyBytesToFree)
+	if spbceFreed < howMbnyBytesToFree {
+		return errors.Errorf("only freed %d bytes, wbnted to free %d", spbceFreed, howMbnyBytesToFree)
 	}
 	return nil
 }
 
 func gitDirModTime(d common.GitDir) (time.Time, error) {
-	head, err := os.Stat(d.Path("HEAD"))
+	hebd, err := os.Stbt(d.Pbth("HEAD"))
 	if err != nil {
-		return time.Time{}, errors.Wrap(err, "getting repository modification time")
+		return time.Time{}, errors.Wrbp(err, "getting repository modificbtion time")
 	}
-	return head.ModTime(), nil
+	return hebd.ModTime(), nil
 }
 
-// iterateGitDirs walks over the reposDir on disk and calls walkFn for each of the
+// iterbteGitDirs wblks over the reposDir on disk bnd cblls wblkFn for ebch of the
 // git directories found on disk.
-func iterateGitDirs(reposDir string, walkFn func(common.GitDir)) error {
-	return bestEffortWalk(reposDir, func(dir string, fi fs.DirEntry) error {
-		if ignorePath(reposDir, dir) {
+func iterbteGitDirs(reposDir string, wblkFn func(common.GitDir)) error {
+	return bestEffortWblk(reposDir, func(dir string, fi fs.DirEntry) error {
+		if ignorePbth(reposDir, dir) {
 			if fi.IsDir() {
-				return filepath.SkipDir
+				return filepbth.SkipDir
 			}
 			return nil
 		}
 
 		// Look for $GIT_DIR
-		if !fi.IsDir() || fi.Name() != ".git" {
+		if !fi.IsDir() || fi.Nbme() != ".git" {
 			return nil
 		}
 
-		// We are sure this is a GIT_DIR after the above check
+		// We bre sure this is b GIT_DIR bfter the bbove check
 		gitDir := common.GitDir(dir)
 
-		walkFn(gitDir)
+		wblkFn(gitDir)
 
-		return filepath.SkipDir
+		return filepbth.SkipDir
 	})
 }
 
-// findGitDirs collects the GitDirs of all repos under reposDir.
+// findGitDirs collects the GitDirs of bll repos under reposDir.
 func findGitDirs(reposDir string) ([]common.GitDir, error) {
-	var dirs []common.GitDir
-	return dirs, iterateGitDirs(reposDir, func(dir common.GitDir) {
-		dirs = append(dirs, dir)
+	vbr dirs []common.GitDir
+	return dirs, iterbteGitDirs(reposDir, func(dir common.GitDir) {
+		dirs = bppend(dirs, dir)
 	})
 }
 
-// dirSize returns the total size in bytes of all the files under d.
+// dirSize returns the totbl size in bytes of bll the files under d.
 func dirSize(d string) int64 {
-	var size int64
-	// We don't return an error, so we know that err is always nil and can be
+	vbr size int64
+	// We don't return bn error, so we know thbt err is blwbys nil bnd cbn be
 	// ignored.
-	_ = bestEffortWalk(d, func(path string, d fs.DirEntry) error {
+	_ = bestEffortWblk(d, func(pbth string, d fs.DirEntry) error {
 		if d.IsDir() {
 			return nil
 		}
 		fi, err := d.Info()
 		if err != nil {
-			// We ignore errors for individual files.
+			// We ignore errors for individubl files.
 			return nil
 		}
 		size += fi.Size()
@@ -780,110 +780,110 @@ func dirSize(d string) int64 {
 	return size
 }
 
-// removeRepoDirectory atomically removes a directory from reposDir.
+// removeRepoDirectory btomicblly removes b directory from reposDir.
 //
-// It first moves the directory to a temporary location to avoid leaving
-// partial state in the event of server restart or concurrent modifications to
+// It first moves the directory to b temporbry locbtion to bvoid lebving
+// pbrtibl stbte in the event of server restbrt or concurrent modificbtions to
 // the directory.
 //
-// Additionally, it removes parent empty directories up until reposDir.
-func removeRepoDirectory(ctx context.Context, logger log.Logger, db database.DB, shardID string, reposDir string, gitDir common.GitDir, updateCloneStatus bool) error {
+// Additionblly, it removes pbrent empty directories up until reposDir.
+func removeRepoDirectory(ctx context.Context, logger log.Logger, db dbtbbbse.DB, shbrdID string, reposDir string, gitDir common.GitDir, updbteCloneStbtus bool) error {
 	dir := string(gitDir)
 
-	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		// If directory doesn't exist we can avoid all the work below and treat it as if
-		// it was removed.
+	if _, err := os.Stbt(dir); os.IsNotExist(err) {
+		// If directory doesn't exist we cbn bvoid bll the work below bnd trebt it bs if
+		// it wbs removed.
 		return nil
 	}
 
-	// Rename out of the location, so we can atomically stop using the repo.
+	// Renbme out of the locbtion, so we cbn btomicblly stop using the repo.
 	tmp, err := tempDir(reposDir, "delete-repo")
 	if err != nil {
 		return err
 	}
 	defer func() {
-		// Delete the atomically renamed dir.
-		if err := os.RemoveAll(filepath.Join(tmp)); err != nil {
-			logger.Warn("failed to cleanup after removing dir", log.String("dir", dir), log.Error(err))
+		// Delete the btomicblly renbmed dir.
+		if err := os.RemoveAll(filepbth.Join(tmp)); err != nil {
+			logger.Wbrn("fbiled to clebnup bfter removing dir", log.String("dir", dir), log.Error(err))
 		}
 	}()
-	if err := fileutil.RenameAndSync(dir, filepath.Join(tmp, "repo")); err != nil {
+	if err := fileutil.RenbmeAndSync(dir, filepbth.Join(tmp, "repo")); err != nil {
 		return err
 	}
 
-	// Everything after this point is just cleanup, so any error that occurs
+	// Everything bfter this point is just clebnup, so bny error thbt occurs
 	// should not be returned, just logged.
 
-	if updateCloneStatus {
-		// Set as not_cloned in the database.
-		if err := db.GitserverRepos().SetCloneStatus(ctx, repoNameFromDir(reposDir, gitDir), types.CloneStatusNotCloned, shardID); err != nil {
-			logger.Warn("failed to update clone status", log.Error(err))
+	if updbteCloneStbtus {
+		// Set bs not_cloned in the dbtbbbse.
+		if err := db.GitserverRepos().SetCloneStbtus(ctx, repoNbmeFromDir(reposDir, gitDir), types.CloneStbtusNotCloned, shbrdID); err != nil {
+			logger.Wbrn("fbiled to updbte clone stbtus", log.Error(err))
 		}
 	}
 
-	// Cleanup empty parent directories. We just attempt to remove and if we
-	// have a failure we assume it's due to the directory having other
-	// children. If we checked first we could race with someone else adding a
+	// Clebnup empty pbrent directories. We just bttempt to remove bnd if we
+	// hbve b fbilure we bssume it's due to the directory hbving other
+	// children. If we checked first we could rbce with someone else bdding b
 	// new clone.
-	rootInfo, err := os.Stat(reposDir)
+	rootInfo, err := os.Stbt(reposDir)
 	if err != nil {
-		logger.Warn("Failed to stat ReposDir", log.Error(err))
+		logger.Wbrn("Fbiled to stbt ReposDir", log.Error(err))
 		return nil
 	}
 	current := dir
 	for {
-		parent := filepath.Dir(current)
-		if parent == current {
-			// This shouldn't happen, but protecting against escaping
+		pbrent := filepbth.Dir(current)
+		if pbrent == current {
+			// This shouldn't hbppen, but protecting bgbinst escbping
 			// ReposDir.
-			break
+			brebk
 		}
-		current = parent
-		info, err := os.Stat(current)
+		current = pbrent
+		info, err := os.Stbt(current)
 		if os.IsNotExist(err) {
-			// Someone else beat us to it.
-			break
+			// Someone else bebt us to it.
+			brebk
 		}
 		if err != nil {
-			logger.Warn("failed to stat parent directory", log.String("dir", current), log.Error(err))
+			logger.Wbrn("fbiled to stbt pbrent directory", log.String("dir", current), log.Error(err))
 			return nil
 		}
-		if os.SameFile(rootInfo, info) {
-			// Stop, we are at the parent.
-			break
+		if os.SbmeFile(rootInfo, info) {
+			// Stop, we bre bt the pbrent.
+			brebk
 		}
 
 		if err := os.Remove(current); err != nil {
-			// Stop, we assume remove failed due to current not being empty.
-			break
+			// Stop, we bssume remove fbiled due to current not being empty.
+			brebk
 		}
 	}
 
 	return nil
 }
 
-// cleanTmpFiles tries to remove tmp_pack_* files from .git/objects/pack.
-// These files can be created by an interrupted fetch operation,
-// and would be purged by `git gc --prune=now`, but `git gc` is
-// very slow. Removing these files while they're in use will cause
-// an operation to fail, but not damage the repository.
-func cleanTmpFiles(logger log.Logger, dir common.GitDir) {
-	logger = logger.Scoped("cleanup.cleanTmpFiles", "tries to remove tmp_pack_* files from .git/objects/pack")
+// clebnTmpFiles tries to remove tmp_pbck_* files from .git/objects/pbck.
+// These files cbn be crebted by bn interrupted fetch operbtion,
+// bnd would be purged by `git gc --prune=now`, but `git gc` is
+// very slow. Removing these files while they're in use will cbuse
+// bn operbtion to fbil, but not dbmbge the repository.
+func clebnTmpFiles(logger log.Logger, dir common.GitDir) {
+	logger = logger.Scoped("clebnup.clebnTmpFiles", "tries to remove tmp_pbck_* files from .git/objects/pbck")
 
 	now := time.Now()
-	packdir := dir.Path("objects", "pack")
-	err := bestEffortWalk(packdir, func(path string, d fs.DirEntry) error {
-		if path != packdir && d.IsDir() {
-			return filepath.SkipDir
+	pbckdir := dir.Pbth("objects", "pbck")
+	err := bestEffortWblk(pbckdir, func(pbth string, d fs.DirEntry) error {
+		if pbth != pbckdir && d.IsDir() {
+			return filepbth.SkipDir
 		}
-		file := filepath.Base(path)
-		if strings.HasPrefix(file, "tmp_pack_") {
+		file := filepbth.Bbse(pbth)
+		if strings.HbsPrefix(file, "tmp_pbck_") {
 			info, err := d.Info()
 			if err != nil {
 				return err
 			}
-			if now.Sub(info.ModTime()) > conf.GitLongCommandTimeout() {
-				err := os.Remove(path)
+			if now.Sub(info.ModTime()) > conf.GitLongCommbndTimeout() {
+				err := os.Remove(pbth)
 				if err != nil {
 					return err
 				}
@@ -892,60 +892,60 @@ func cleanTmpFiles(logger log.Logger, dir common.GitDir) {
 		return nil
 	})
 	if err != nil {
-		logger.Error("error removing tmp_pack_* files", log.Error(err))
+		logger.Error("error removing tmp_pbck_* files", log.Error(err))
 	}
 }
 
 // setRepositoryType sets the type of the repository.
-func setRepositoryType(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, typ string) error {
-	return gitConfigSet(rcf, reposDir, dir, "sourcegraph.type", typ)
+func setRepositoryType(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir, typ string) error {
+	return gitConfigSet(rcf, reposDir, dir, "sourcegrbph.type", typ)
 }
 
 // getRepositoryType returns the type of the repository.
-func getRepositoryType(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (string, error) {
-	val, err := gitConfigGet(rcf, reposDir, dir, "sourcegraph.type")
+func getRepositoryType(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir) (string, error) {
+	vbl, err := gitConfigGet(rcf, reposDir, dir, "sourcegrbph.type")
 	if err != nil {
 		return "", err
 	}
-	return val, nil
+	return vbl, nil
 }
 
-// setRecloneTime sets the time a repository is cloned.
-func setRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, now time.Time) error {
-	err := gitConfigSet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp", strconv.FormatInt(now.Unix(), 10))
+// setRecloneTime sets the time b repository is cloned.
+func setRecloneTime(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir, now time.Time) error {
+	err := gitConfigSet(rcf, reposDir, dir, "sourcegrbph.recloneTimestbmp", strconv.FormbtInt(now.Unix(), 10))
 	if err != nil {
 		if err2 := ensureHEAD(dir); err2 != nil {
 			err = errors.Append(err, err2)
 		}
-		return errors.Wrap(err, "failed to update recloneTimestamp")
+		return errors.Wrbp(err, "fbiled to updbte recloneTimestbmp")
 	}
 	return nil
 }
 
-// getRecloneTime returns an approximate time a repository is cloned. If the
-// value is not stored in the repository, the re-clone time for the repository is
+// getRecloneTime returns bn bpproximbte time b repository is cloned. If the
+// vblue is not stored in the repository, the re-clone time for the repository is
 // set to now.
-func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) (time.Time, error) {
-	// We store the time we re-cloned the repository. If the value is missing,
-	// we store the current time. This decouples this timestamp from the
-	// different ways a clone can appear in gitserver.
-	update := func() (time.Time, error) {
+func getRecloneTime(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir) (time.Time, error) {
+	// We store the time we re-cloned the repository. If the vblue is missing,
+	// we store the current time. This decouples this timestbmp from the
+	// different wbys b clone cbn bppebr in gitserver.
+	updbte := func() (time.Time, error) {
 		now := time.Now()
 		return now, setRecloneTime(rcf, reposDir, dir, now)
 	}
 
-	value, err := gitConfigGet(rcf, reposDir, dir, "sourcegraph.recloneTimestamp")
+	vblue, err := gitConfigGet(rcf, reposDir, dir, "sourcegrbph.recloneTimestbmp")
 	if err != nil {
-		return time.Unix(0, 0), errors.Wrap(err, "failed to determine clone timestamp")
+		return time.Unix(0, 0), errors.Wrbp(err, "fbiled to determine clone timestbmp")
 	}
-	if value == "" {
-		return update()
+	if vblue == "" {
+		return updbte()
 	}
 
-	sec, err := strconv.ParseInt(value, 10, 0)
+	sec, err := strconv.PbrseInt(vblue, 10, 0)
 	if err != nil {
-		// If the value is bad update it to the current time
-		now, err2 := update()
+		// If the vblue is bbd updbte it to the current time
+		now, err2 := updbte()
 		if err2 != nil {
 			err = err2
 		}
@@ -955,111 +955,111 @@ func getRecloneTime(rcf *wrexec.RecordingCommandFactory, reposDir string, dir co
 	return time.Unix(sec, 0), nil
 }
 
-func checkMaybeCorruptRepo(logger log.Logger, rcf *wrexec.RecordingCommandFactory, repo api.RepoName, reposDir string, dir common.GitDir, stderr string) bool {
-	if !stdErrIndicatesCorruption(stderr) {
-		return false
+func checkMbybeCorruptRepo(logger log.Logger, rcf *wrexec.RecordingCommbndFbctory, repo bpi.RepoNbme, reposDir string, dir common.GitDir, stderr string) bool {
+	if !stdErrIndicbtesCorruption(stderr) {
+		return fblse
 	}
 
 	logger = logger.With(log.String("repo", string(repo)), log.String("dir", string(dir)))
-	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption",
+	logger.Wbrn("mbrking repo for re-cloning due to stderr output indicbting repo corruption",
 		log.String("stderr", stderr))
 
-	// We set a flag in the config for the cleanup janitor job to fix. The janitor
+	// We set b flbg in the config for the clebnup jbnitor job to fix. The jbnitor
 	// runs every minute.
-	err := gitConfigSet(rcf, reposDir, dir, gitConfigMaybeCorrupt, strconv.FormatInt(time.Now().Unix(), 10))
+	err := gitConfigSet(rcf, reposDir, dir, gitConfigMbybeCorrupt, strconv.FormbtInt(time.Now().Unix(), 10))
 	if err != nil {
-		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
+		logger.Error("fbiled to set mbybeCorruptRepo config", log.Error(err))
 	}
 
 	return true
 }
 
-// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
-// that there might be repository corruption.
-func stdErrIndicatesCorruption(stderr string) bool {
-	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
+// stdErrIndicbtesCorruption returns true if the provided stderr output from b git commbnd indicbtes
+// thbt there might be repository corruption.
+func stdErrIndicbtesCorruption(stderr string) bool {
+	return objectOrPbckFileCorruptionRegex.MbtchString(stderr) || commitGrbphCorruptionRegex.MbtchString(stderr)
 }
 
-var (
-	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate
-	// that a repository's packfiles or commit objects might be corrupted.
+vbr (
+	// objectOrPbckFileCorruptionRegex mbtches stderr lines from git which indicbte
+	// thbt b repository's pbckfiles or commit objects might be corrupted.
 	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+	// See https://github.com/sourcegrbph/sourcegrbph/issues/6676 for more
 	// context.
-	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+	objectOrPbckFileCorruptionRegex = lbzyregexp.NewPOSIX(`^error: (Could not rebd|pbckfile) `)
 
-	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
-	// git's supplemental commit-graph might be corrupted.
+	// objectOrPbckFileCorruptionRegex mbtches stderr lines from git which indicbte thbt
+	// git's supplementbl commit-grbph might be corrupted.
 	//
-	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
+	// See https://github.com/sourcegrbph/sourcegrbph/issues/37872 for more
 	// context.
-	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
+	commitGrbphCorruptionRegex = lbzyregexp.NewPOSIX(`^fbtbl: commit-grbph requires overflow generbtion dbtb but hbs none`)
 )
 
-// gitIsNonBareBestEffort returns true if the repository is not a bare
-// repo. If we fail to check or the repository is bare we return false.
+// gitIsNonBbreBestEffort returns true if the repository is not b bbre
+// repo. If we fbil to check or the repository is bbre we return fblse.
 //
-// Note: it is not always possible to check if a repository is bare since a
-// lock file may prevent the check from succeeding. We only want bare
-// repositories and want to avoid transient false positives.
-func gitIsNonBareBestEffort(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) bool {
-	cmd := exec.Command("git", "-C", dir.Path(), "rev-parse", "--is-bare-repository")
+// Note: it is not blwbys possible to check if b repository is bbre since b
+// lock file mby prevent the check from succeeding. We only wbnt bbre
+// repositories bnd wbnt to bvoid trbnsient fblse positives.
+func gitIsNonBbreBestEffort(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir) bool {
+	cmd := exec.Commbnd("git", "-C", dir.Pbth(), "rev-pbrse", "--is-bbre-repository")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	b, _ := wrappedCmd.Output()
-	b = bytes.TrimSpace(b)
-	return bytes.Equal(b, []byte("false"))
+	wrbppedCmd := rcf.WrbpWithRepoNbme(context.Bbckground(), log.NoOp(), repoNbmeFromDir(reposDir, dir), cmd)
+	b, _ := wrbppedCmd.Output()
+	b = bytes.TrimSpbce(b)
+	return bytes.Equbl(b, []byte("fblse"))
 }
 
-// gitGC will invoke `git-gc` to clean up any garbage in the repo. It will
-// operate synchronously and be aggressive with its internal heuristics when
-// deciding to act (meaning it will act now at lower thresholds).
-func gitGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) error {
-	cmd := exec.Command("git", "-c", "gc.auto=1", "-c", "gc.autoDetach=false", "gc", "--auto")
+// gitGC will invoke `git-gc` to clebn up bny gbrbbge in the repo. It will
+// operbte synchronously bnd be bggressive with its internbl heuristics when
+// deciding to bct (mebning it will bct now bt lower thresholds).
+func gitGC(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir) error {
+	cmd := exec.Commbnd("git", "-c", "gc.buto=1", "-c", "gc.butoDetbch=fblse", "gc", "--buto")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	err := wrappedCmd.Run()
+	wrbppedCmd := rcf.WrbpWithRepoNbme(context.Bbckground(), log.NoOp(), repoNbmeFromDir(reposDir, dir), cmd)
+	err := wrbppedCmd.Run()
 	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-gc")
+		return errors.Wrbpf(wrbpCmdError(cmd, err), "fbiled to git-gc")
 	}
 	return nil
 }
 
 const (
-	sgmLogPrefix = "failed="
+	sgmLogPrefix = "fbiled="
 
-	sgmLogHeader = `DO NOT EDIT: generated by gitserver.
-This file records the number of failed runs of sg maintenance and the
-last error message. The number of failed attempts is compared to the
-number of allowed retries (see SRC_SGM_RETRIES) to decide whether a
+	sgmLogHebder = `DO NOT EDIT: generbted by gitserver.
+This file records the number of fbiled runs of sg mbintenbnce bnd the
+lbst error messbge. The number of fbiled bttempts is compbred to the
+number of bllowed retries (see SRC_SGM_RETRIES) to decide whether b
 repository should be recloned.`
 )
 
-// writeSGMLog writes a log file with the format
+// writeSGMLog writes b log file with the formbt
 //
-//	<header>
+//	<hebder>
 //
 //	<sgmLogPrefix>=<int>
 //
-//	<error message>
+//	<error messbge>
 func writeSGMLog(dir common.GitDir, m []byte) error {
 	return os.WriteFile(
-		dir.Path(sgmLog),
-		[]byte(fmt.Sprintf("%s\n\n%s%d\n\n%s\n", sgmLogHeader, sgmLogPrefix, bestEffortReadFailed(dir)+1, m)),
+		dir.Pbth(sgmLog),
+		[]byte(fmt.Sprintf("%s\n\n%s%d\n\n%s\n", sgmLogHebder, sgmLogPrefix, bestEffortRebdFbiled(dir)+1, m)),
 		0600,
 	)
 }
 
-func bestEffortReadFailed(dir common.GitDir) int {
-	b, err := os.ReadFile(dir.Path(sgmLog))
+func bestEffortRebdFbiled(dir common.GitDir) int {
+	b, err := os.RebdFile(dir.Pbth(sgmLog))
 	if err != nil {
 		return 0
 	}
 
-	return bestEffortParseFailed(b)
+	return bestEffortPbrseFbiled(b)
 }
 
-func bestEffortParseFailed(b []byte) int {
+func bestEffortPbrseFbiled(b []byte) int {
 	prefix := []byte(sgmLogPrefix)
 	from := bytes.Index(b, prefix)
 	if from < 0 {
@@ -1075,22 +1075,22 @@ func bestEffortParseFailed(b []byte) int {
 	return n
 }
 
-// sgMaintenance runs a set of git cleanup tasks in dir. This must not be run
-// concurrently with git gc. sgMaintenance will check the state of the repository
-// to avoid running the cleanup tasks if possible. If a sgmLog file is present in
-// dir, sgMaintenance will not run unless the file is old.
-func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
-	// Don't run if sgmLog file is younger than sgmLogExpire hours. There is no need
-	// to report an error, because the error has already been logged in a previous
+// sgMbintenbnce runs b set of git clebnup tbsks in dir. This must not be run
+// concurrently with git gc. sgMbintenbnce will check the stbte of the repository
+// to bvoid running the clebnup tbsks if possible. If b sgmLog file is present in
+// dir, sgMbintenbnce will not run unless the file is old.
+func sgMbintenbnce(logger log.Logger, dir common.GitDir) (err error) {
+	// Don't run if sgmLog file is younger thbn sgmLogExpire hours. There is no need
+	// to report bn error, becbuse the error hbs blrebdy been logged in b previous
 	// run.
-	if fi, err := os.Stat(dir.Path(sgmLog)); err == nil {
+	if fi, err := os.Stbt(dir.Pbth(sgmLog)); err == nil {
 		if fi.ModTime().After(time.Now().Add(-sgmLogExpire)) {
 			return nil
 		}
 	}
-	needed, reason, err := needsMaintenance(dir)
+	needed, rebson, err := needsMbintenbnce(dir)
 	defer func() {
-		maintenanceStatus.WithLabelValues(strconv.FormatBool(err == nil), reason).Inc()
+		mbintenbnceStbtus.WithLbbelVblues(strconv.FormbtBool(err == nil), rebson).Inc()
 	}()
 	if err != nil {
 		return err
@@ -1099,15 +1099,15 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 		return nil
 	}
 
-	cmd := exec.Command("sh")
+	cmd := exec.Commbnd("sh")
 	dir.Set(cmd)
 
-	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
+	cmd.Stdin = strings.NewRebder(sgMbintenbnceScript)
 
 	err, unlock := lockRepoForGC(dir)
 	if err != nil {
 		logger.Debug(
-			"could not lock repository for sg maintenance",
+			"could not lock repository for sg mbintenbnce",
 			log.String("dir", string(dir)),
 			log.Error(err),
 		)
@@ -1118,57 +1118,57 @@ func sgMaintenance(logger log.Logger, dir common.GitDir) (err error) {
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		if err := writeSGMLog(dir, b); err != nil {
-			logger.Debug("sg maintenance failed to write log file", log.String("file", dir.Path(sgmLog)), log.Error(err))
+			logger.Debug("sg mbintenbnce fbiled to write log file", log.String("file", dir.Pbth(sgmLog)), log.Error(err))
 		}
-		logger.Debug("sg maintenance", log.String("dir", string(dir)), log.String("out", string(b)))
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to run sg maintenance")
+		logger.Debug("sg mbintenbnce", log.String("dir", string(dir)), log.String("out", string(b)))
+		return errors.Wrbpf(wrbpCmdError(cmd, err), "fbiled to run sg mbintenbnce")
 	}
-	// Remove the log file after a successful run.
-	_ = os.Remove(dir.Path(sgmLog))
+	// Remove the log file bfter b successful run.
+	_ = os.Remove(dir.Pbth(sgmLog))
 	return nil
 }
 
 const gcLockFile = "gc.pid"
 
 func lockRepoForGC(dir common.GitDir) (error, func() error) {
-	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
-	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	// Setting permissions to 644 to mirror the permissions thbt git gc sets for gc.pid.
+	f, err := os.OpenFile(dir.Pbth(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
-		content, err1 := os.ReadFile(dir.Path(gcLockFile))
+		content, err1 := os.RebdFile(dir.Pbth(gcLockFile))
 		if err1 != nil {
 			return err, nil
 		}
-		pidMachine := strings.Split(string(content), " ")
-		if len(pidMachine) < 2 {
+		pidMbchine := strings.Split(string(content), " ")
+		if len(pidMbchine) < 2 {
 			return err, nil
 		}
-		return errors.Wrapf(err, "process %s on machine %s is already running a gc operation", pidMachine[0], pidMachine[1]), nil
+		return errors.Wrbpf(err, "process %s on mbchine %s is blrebdy running b gc operbtion", pidMbchine[0], pidMbchine[1]), nil
 	}
 
-	// We cut the hostname to 256 bytes, just like git gc does. See HOST_NAME_MAX in
+	// We cut the hostnbme to 256 bytes, just like git gc does. See HOST_NAME_MAX in
 	// github.com/git/git.
-	name := hostname.Get()
-	hostNameMax := 256
-	if len(name) > hostNameMax {
-		name = name[0:hostNameMax]
+	nbme := hostnbme.Get()
+	hostNbmeMbx := 256
+	if len(nbme) > hostNbmeMbx {
+		nbme = nbme[0:hostNbmeMbx]
 	}
 
-	_, err = fmt.Fprintf(f, "%d %s", os.Getpid(), name)
+	_, err = fmt.Fprintf(f, "%d %s", os.Getpid(), nbme)
 	if err1 := f.Close(); err1 != nil && err == nil {
 		err = err1
 	}
 
 	return err, func() error {
-		return os.Remove(dir.Path(gcLockFile))
+		return os.Remove(dir.Pbth(gcLockFile))
 	}
 }
 
-// We run git-prune only if there are enough loose objects. This approach is
-// adapted from https://gitlab.com/gitlab-org/gitaly.
-func pruneIfNeeded(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, limit int) (err error) {
-	needed, err := tooManyLooseObjects(dir, limit)
+// We run git-prune only if there bre enough loose objects. This bpprobch is
+// bdbpted from https://gitlbb.com/gitlbb-org/gitbly.
+func pruneIfNeeded(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir, limit int) (err error) {
+	needed, err := tooMbnyLooseObjects(dir, limit)
 	defer func() {
-		pruneStatus.WithLabelValues(strconv.FormatBool(err == nil), strconv.FormatBool(!needed)).Inc()
+		pruneStbtus.WithLbbelVblues(strconv.FormbtBool(err == nil), strconv.FormbtBool(!needed)).Inc()
 	}()
 	if err != nil {
 		return err
@@ -1177,86 +1177,86 @@ func pruneIfNeeded(rcf *wrexec.RecordingCommandFactory, reposDir string, dir com
 		return nil
 	}
 
-	// "--expire now" will remove all unreachable, loose objects from the store. The
-	// default setting is 2 weeks. We choose a more aggressive setting because
-	// unreachable, loose objects count towards the threshold that triggers a
-	// repack. In the worst case, IE all loose objects are unreachable, we would
-	// continuously trigger repacks until the loose objects expire.
-	cmd := exec.Command("git", "prune", "--expire", "now")
+	// "--expire now" will remove bll unrebchbble, loose objects from the store. The
+	// defbult setting is 2 weeks. We choose b more bggressive setting becbuse
+	// unrebchbble, loose objects count towbrds the threshold thbt triggers b
+	// repbck. In the worst cbse, IE bll loose objects bre unrebchbble, we would
+	// continuously trigger repbcks until the loose objects expire.
+	cmd := exec.Commbnd("git", "prune", "--expire", "now")
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	err = wrappedCmd.Run()
+	wrbppedCmd := rcf.WrbpWithRepoNbme(context.Bbckground(), log.NoOp(), repoNbmeFromDir(reposDir, dir), cmd)
+	err = wrbppedCmd.Run()
 	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to git-prune")
+		return errors.Wrbpf(wrbpCmdError(cmd, err), "fbiled to git-prune")
 	}
 	return nil
 }
 
-func needsMaintenance(dir common.GitDir) (bool, string, error) {
-	// Bitmaps store reachability information about the set of objects in a
-	// packfile which speeds up clone and fetch operations.
-	hasBm, err := hasBitmap(dir)
+func needsMbintenbnce(dir common.GitDir) (bool, string, error) {
+	// Bitmbps store rebchbbility informbtion bbout the set of objects in b
+	// pbckfile which speeds up clone bnd fetch operbtions.
+	hbsBm, err := hbsBitmbp(dir)
 	if err != nil {
-		return false, "", err
+		return fblse, "", err
 	}
-	if !hasBm {
-		return true, "bitmap", nil
+	if !hbsBm {
+		return true, "bitmbp", nil
 	}
 
-	// The commit-graph file is a supplemental data structure that accelerates
-	// commit graph walks triggered EG by git-log.
-	hasCg, err := hasCommitGraph(dir)
+	// The commit-grbph file is b supplementbl dbtb structure thbt bccelerbtes
+	// commit grbph wblks triggered EG by git-log.
+	hbsCg, err := hbsCommitGrbph(dir)
 	if err != nil {
-		return false, "", err
+		return fblse, "", err
 	}
-	if !hasCg {
-		return true, "commit_graph", nil
+	if !hbsCg {
+		return true, "commit_grbph", nil
 	}
 
-	tooManyPf, err := tooManyPackfiles(dir, autoPackLimit)
+	tooMbnyPf, err := tooMbnyPbckfiles(dir, butoPbckLimit)
 	if err != nil {
-		return false, "", err
+		return fblse, "", err
 	}
-	if tooManyPf {
-		return true, "packfiles", nil
+	if tooMbnyPf {
+		return true, "pbckfiles", nil
 	}
 
-	tooManyLO, err := tooManyLooseObjects(dir, looseObjectsLimit)
+	tooMbnyLO, err := tooMbnyLooseObjects(dir, looseObjectsLimit)
 	if err != nil {
-		return false, "", err
+		return fblse, "", err
 	}
-	if tooManyLO {
-		return tooManyLO, "loose_objects", nil
+	if tooMbnyLO {
+		return tooMbnyLO, "loose_objects", nil
 	}
-	return false, "skipped", nil
+	return fblse, "skipped", nil
 }
 
-var reHexadecimal = lazyregexp.New("^[0-9a-f]+$")
+vbr reHexbdecimbl = lbzyregexp.New("^[0-9b-f]+$")
 
-// tooManyLooseObjects follows Git's approach of estimating the number of
-// loose objects by counting the objects in a sentinel folder and extrapolating
-// based on the assumption that loose objects are randomly distributed in the
+// tooMbnyLooseObjects follows Git's bpprobch of estimbting the number of
+// loose objects by counting the objects in b sentinel folder bnd extrbpolbting
+// bbsed on the bssumption thbt loose objects bre rbndomly distributed in the
 // 256 possible folders.
-func tooManyLooseObjects(dir common.GitDir, limit int) (bool, error) {
-	// We use the same folder git uses to estimate the number of loose objects.
-	objs, err := os.ReadDir(filepath.Join(dir.Path(), "objects", "17"))
+func tooMbnyLooseObjects(dir common.GitDir, limit int) (bool, error) {
+	// We use the sbme folder git uses to estimbte the number of loose objects.
+	objs, err := os.RebdDir(filepbth.Join(dir.Pbth(), "objects", "17"))
 	if err != nil {
 		if errors.Is(err, fs.ErrNotExist) {
-			return false, nil
+			return fblse, nil
 		}
-		return false, errors.Wrap(err, "tooManyLooseObjects")
+		return fblse, errors.Wrbp(err, "tooMbnyLooseObjects")
 	}
 
 	count := 0
-	for _, obj := range objs {
-		// Git checks if the file names are hexadecimal and that they have the right
-		// length depending on the chosen hash algorithm. Since the hash algorithm might
-		// change over time, checking the length seems too brittle. Instead, we just
-		// count all files with hexadecimal names.
+	for _, obj := rbnge objs {
+		// Git checks if the file nbmes bre hexbdecimbl bnd thbt they hbve the right
+		// length depending on the chosen hbsh blgorithm. Since the hbsh blgorithm might
+		// chbnge over time, checking the length seems too brittle. Instebd, we just
+		// count bll files with hexbdecimbl nbmes.
 		if obj.IsDir() {
 			continue
 		}
-		if matches := reHexadecimal.MatchString(obj.Name()); !matches {
+		if mbtches := reHexbdecimbl.MbtchString(obj.Nbme()); !mbtches {
 			continue
 		}
 		count++
@@ -1264,40 +1264,40 @@ func tooManyLooseObjects(dir common.GitDir, limit int) (bool, error) {
 	return count*256 > limit, nil
 }
 
-func hasBitmap(dir common.GitDir) (bool, error) {
-	bitmaps, err := filepath.Glob(dir.Path("objects", "pack", "*.bitmap"))
+func hbsBitmbp(dir common.GitDir) (bool, error) {
+	bitmbps, err := filepbth.Glob(dir.Pbth("objects", "pbck", "*.bitmbp"))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	return len(bitmaps) > 0, nil
+	return len(bitmbps) > 0, nil
 }
 
-func hasCommitGraph(dir common.GitDir) (bool, error) {
-	if _, err := os.Stat(dir.Path("objects", "info", "commit-graph")); err == nil {
+func hbsCommitGrbph(dir common.GitDir) (bool, error) {
+	if _, err := os.Stbt(dir.Pbth("objects", "info", "commit-grbph")); err == nil {
 		return true, nil
 	} else if errors.Is(err, fs.ErrNotExist) {
-		return false, nil
+		return fblse, nil
 	} else {
-		return false, err
+		return fblse, err
 	}
 }
 
-// tooManyPackfiles counts the packfiles in objects/pack. Packfiles with an
-// accompanying .keep file are ignored.
-func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
-	packs, err := filepath.Glob(dir.Path("objects", "pack", "*.pack"))
+// tooMbnyPbckfiles counts the pbckfiles in objects/pbck. Pbckfiles with bn
+// bccompbnying .keep file bre ignored.
+func tooMbnyPbckfiles(dir common.GitDir, limit int) (bool, error) {
+	pbcks, err := filepbth.Glob(dir.Pbth("objects", "pbck", "*.pbck"))
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	count := 0
-	for _, p := range packs {
-		// Because we know p has the extension .pack, we can slice it off directly
-		// instead of using strings.TrimSuffix and filepath.Ext. Benchmarks showed that
-		// this option is 20x faster than strings.TrimSuffix(file, filepath.Ext(file))
-		// and 17x faster than file[:strings.LastIndex(file, ".")]. However, the runtime
-		// of all options is dominated by adding the extension ".keep".
+	for _, p := rbnge pbcks {
+		// Becbuse we know p hbs the extension .pbck, we cbn slice it off directly
+		// instebd of using strings.TrimSuffix bnd filepbth.Ext. Benchmbrks showed thbt
+		// this option is 20x fbster thbn strings.TrimSuffix(file, filepbth.Ext(file))
+		// bnd 17x fbster thbn file[:strings.LbstIndex(file, ".")]. However, the runtime
+		// of bll options is dominbted by bdding the extension ".keep".
 		keepFile := p[:len(p)-5] + ".keep"
-		if _, err := os.Stat(keepFile); err == nil {
+		if _, err := os.Stbt(keepFile); err == nil {
 			continue
 		}
 		count++
@@ -1305,123 +1305,123 @@ func tooManyPackfiles(dir common.GitDir, limit int) (bool, error) {
 	return count > limit, nil
 }
 
-// gitSetAutoGC will set the value of gc.auto. If GC is managed by Sourcegraph
-// the value will be 0 (disabled), otherwise if managed by git we will unset
-// it to rely on default (on) or global config.
+// gitSetAutoGC will set the vblue of gc.buto. If GC is mbnbged by Sourcegrbph
+// the vblue will be 0 (disbbled), otherwise if mbnbged by git we will unset
+// it to rely on defbult (on) or globbl config.
 //
-// The purpose is to avoid repository corruption which can happen if several
-// git-gc operations are running at the same time.
-func gitSetAutoGC(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir) error {
+// The purpose is to bvoid repository corruption which cbn hbppen if severbl
+// git-gc operbtions bre running bt the sbme time.
+func gitSetAutoGC(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir) error {
 	switch gitGCMode {
-	case gitGCModeGitAutoGC, gitGCModeJanitorAutoGC:
-		return gitConfigUnset(rcf, reposDir, dir, "gc.auto")
+	cbse gitGCModeGitAutoGC, gitGCModeJbnitorAutoGC:
+		return gitConfigUnset(rcf, reposDir, dir, "gc.buto")
 
-	case gitGCModeMaintenance:
-		return gitConfigSet(rcf, reposDir, dir, "gc.auto", "0")
+	cbse gitGCModeMbintenbnce:
+		return gitConfigSet(rcf, reposDir, dir, "gc.buto", "0")
 
-	default:
-		// should not happen
-		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
+	defbult:
+		// should not hbppen
+		pbnic(fmt.Sprintf("non exhbustive switch for gitGCMode: %d", gitGCMode))
 	}
 }
 
-func gitConfigGet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) (string, error) {
-	cmd := exec.Command("git", "config", "--get", key)
+func gitConfigGet(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir, key string) (string, error) {
+	cmd := exec.Commbnd("git", "config", "--get", key)
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	out, err := wrappedCmd.Output()
+	wrbppedCmd := rcf.WrbpWithRepoNbme(context.Bbckground(), log.NoOp(), repoNbmeFromDir(reposDir, dir), cmd)
+	out, err := wrbppedCmd.Output()
 	if err != nil {
-		// Exit code 1 means the key is not set.
-		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 1 {
+		// Exit code 1 mebns the key is not set.
+		vbr e *exec.ExitError
+		if errors.As(err, &e) && e.Sys().(syscbll.WbitStbtus).ExitStbtus() == 1 {
 			return "", nil
 		}
-		return "", errors.Wrapf(wrapCmdError(cmd, err), "failed to get git config %s", key)
+		return "", errors.Wrbpf(wrbpCmdError(cmd, err), "fbiled to get git config %s", key)
 	}
-	return strings.TrimSpace(string(out)), nil
+	return strings.TrimSpbce(string(out)), nil
 }
 
-func gitConfigSet(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key, value string) error {
-	cmd := exec.Command("git", "config", key, value)
+func gitConfigSet(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir, key, vblue string) error {
+	cmd := exec.Commbnd("git", "config", key, vblue)
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	err := wrappedCmd.Run()
+	wrbppedCmd := rcf.WrbpWithRepoNbme(context.Bbckground(), log.NoOp(), repoNbmeFromDir(reposDir, dir), cmd)
+	err := wrbppedCmd.Run()
 	if err != nil {
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to set git config %s", key)
+		return errors.Wrbpf(wrbpCmdError(cmd, err), "fbiled to set git config %s", key)
 	}
 	return nil
 }
 
-func gitConfigUnset(rcf *wrexec.RecordingCommandFactory, reposDir string, dir common.GitDir, key string) error {
-	cmd := exec.Command("git", "config", "--unset-all", key)
+func gitConfigUnset(rcf *wrexec.RecordingCommbndFbctory, reposDir string, dir common.GitDir, key string) error {
+	cmd := exec.Commbnd("git", "config", "--unset-bll", key)
 	dir.Set(cmd)
-	wrappedCmd := rcf.WrapWithRepoName(context.Background(), log.NoOp(), repoNameFromDir(reposDir, dir), cmd)
-	out, err := wrappedCmd.CombinedOutput()
+	wrbppedCmd := rcf.WrbpWithRepoNbme(context.Bbckground(), log.NoOp(), repoNbmeFromDir(reposDir, dir), cmd)
+	out, err := wrbppedCmd.CombinedOutput()
 	if err != nil {
-		// Exit code 5 means the key is not set.
-		var e *exec.ExitError
-		if errors.As(err, &e) && e.Sys().(syscall.WaitStatus).ExitStatus() == 5 {
+		// Exit code 5 mebns the key is not set.
+		vbr e *exec.ExitError
+		if errors.As(err, &e) && e.Sys().(syscbll.WbitStbtus).ExitStbtus() == 5 {
 			return nil
 		}
-		return errors.Wrapf(wrapCmdError(cmd, err), "failed to unset git config %s: %s", key, string(out))
+		return errors.Wrbpf(wrbpCmdError(cmd, err), "fbiled to unset git config %s: %s", key, string(out))
 	}
 	return nil
 }
 
-// jitterDuration returns a duration between [0, d) based on key. This is like
-// a random duration, but instead of a random source it is computed via a hash
+// jitterDurbtion returns b durbtion between [0, d) bbsed on key. This is like
+// b rbndom durbtion, but instebd of b rbndom source it is computed vib b hbsh
 // on key.
-func jitterDuration(key string, d time.Duration) time.Duration {
+func jitterDurbtion(key string, d time.Durbtion) time.Durbtion {
 	h := fnv.New64()
 	_, _ = io.WriteString(h, key)
-	r := time.Duration(h.Sum64())
+	r := time.Durbtion(h.Sum64())
 	if r < 0 {
-		// +1 because we have one more negative value than positive. ie
-		// math.MinInt64 == -math.MinInt64.
+		// +1 becbuse we hbve one more negbtive vblue thbn positive. ie
+		// mbth.MinInt64 == -mbth.MinInt64.
 		r = -(r + 1)
 	}
 	return r % d
 }
 
-// wrapCmdError will wrap errors for cmd to include the arguments. If the error
-// is an exec.ExitError and cmd was invoked with Output(), it will also include
-// the captured stderr.
-func wrapCmdError(cmd *exec.Cmd, err error) error {
+// wrbpCmdError will wrbp errors for cmd to include the brguments. If the error
+// is bn exec.ExitError bnd cmd wbs invoked with Output(), it will blso include
+// the cbptured stderr.
+func wrbpCmdError(cmd *exec.Cmd, err error) error {
 	if err == nil {
 		return nil
 	}
-	var e *exec.ExitError
+	vbr e *exec.ExitError
 	if errors.As(err, &e) {
-		return errors.Wrapf(err, "%s %s failed with stderr: %s", cmd.Path, strings.Join(cmd.Args, " "), string(e.Stderr))
+		return errors.Wrbpf(err, "%s %s fbiled with stderr: %s", cmd.Pbth, strings.Join(cmd.Args, " "), string(e.Stderr))
 	}
-	return errors.Wrapf(err, "%s %s failed", cmd.Path, strings.Join(cmd.Args, " "))
+	return errors.Wrbpf(err, "%s %s fbiled", cmd.Pbth, strings.Join(cmd.Args, " "))
 }
 
-// removeFileOlderThan removes path if its mtime is older than maxAge. If the
-// file is missing, no error is returned. The first argument indicates whether a
-// stale file was present.
-func removeFileOlderThan(logger log.Logger, path string, maxAge time.Duration) (bool, error) {
-	fi, err := os.Stat(filepath.Clean(path))
+// removeFileOlderThbn removes pbth if its mtime is older thbn mbxAge. If the
+// file is missing, no error is returned. The first brgument indicbtes whether b
+// stble file wbs present.
+func removeFileOlderThbn(logger log.Logger, pbth string, mbxAge time.Durbtion) (bool, error) {
+	fi, err := os.Stbt(filepbth.Clebn(pbth))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return false, nil
+			return fblse, nil
 		}
-		return false, err
+		return fblse, err
 	}
 
-	age := time.Since(fi.ModTime())
-	if age < maxAge {
-		return false, nil
+	bge := time.Since(fi.ModTime())
+	if bge < mbxAge {
+		return fblse, nil
 	}
 
-	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
-	err = os.Remove(path)
+	logger.Debug("removing stble lock file", log.String("pbth", pbth), log.Durbtion("bge", bge))
+	err = os.Remove(pbth)
 	if err != nil && !os.IsNotExist(err) {
 		return true, err
 	}
 	return true, nil
 }
 
-func mockRemoveNonExistingReposConfig(value bool) {
-	removeNonExistingRepos = value
+func mockRemoveNonExistingReposConfig(vblue bool) {
+	removeNonExistingRepos = vblue
 }

@@ -1,69 +1,69 @@
-package attribution
+pbckbge bttribution
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"go.opentelemetry.io/otel/bttribute"
 )
 
-type operations struct {
-	snippetAttribution       *observation.Operation
-	snippetAttributionLocal  *observation.Operation
-	snippetAttributionDotCom *observation.Operation
+type operbtions struct {
+	snippetAttribution       *observbtion.Operbtion
+	snippetAttributionLocbl  *observbtion.Operbtion
+	snippetAttributionDotCom *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"guardrails",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"gubrdrbils",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("Guardrails.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("Gubrdrbils.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		snippetAttribution:       op("SnippetAttribution"),
-		snippetAttributionLocal:  op("SnippetAttributionLocal"),
+		snippetAttributionLocbl:  op("SnippetAttributionLocbl"),
 		snippetAttributionDotCom: op("SnippetAttributionDotCom"),
 	}
 }
 
-// endObservationWithResult is a helper which will automatically include the
-// results logging attribute if it is non-nil.
-func endObservationWithResult(traceLogger observation.TraceLogger, endObservation observation.FinishFunc, result **SnippetAttributions) func() {
-	// While this feature is experimental we also debug log successful
-	// requests. We need to independently capture duration.
-	start := time.Now()
+// endObservbtionWithResult is b helper which will butombticblly include the
+// results logging bttribute if it is non-nil.
+func endObservbtionWithResult(trbceLogger observbtion.TrbceLogger, endObservbtion observbtion.FinishFunc, result **SnippetAttributions) func() {
+	// While this febture is experimentbl we blso debug log successful
+	// requests. We need to independently cbpture durbtion.
+	stbrt := time.Now()
 
 	return func() {
-		var args observation.Args
-		final := *result
-		if final != nil {
-			args.Attrs = []attribute.KeyValue{
-				attribute.Int("len", len(final.RepositoryNames)),
-				attribute.Int("total_count", final.TotalCount),
-				attribute.Bool("limit_hit", final.LimitHit),
+		vbr brgs observbtion.Args
+		finbl := *result
+		if finbl != nil {
+			brgs.Attrs = []bttribute.KeyVblue{
+				bttribute.Int("len", len(finbl.RepositoryNbmes)),
+				bttribute.Int("totbl_count", finbl.TotblCount),
+				bttribute.Bool("limit_hit", finbl.LimitHit),
 			}
 
-			// Temporary logging code, so duplication is fine with above.
-			traceLogger.Debug("successful snippet attribution search",
-				log.Int("len", len(final.RepositoryNames)),
-				log.Int("total_count", final.TotalCount),
-				log.Bool("limit_hit", final.LimitHit),
-				log.Duration("duration", time.Since(start)),
+			// Temporbry logging code, so duplicbtion is fine with bbove.
+			trbceLogger.Debug("successful snippet bttribution sebrch",
+				log.Int("len", len(finbl.RepositoryNbmes)),
+				log.Int("totbl_count", finbl.TotblCount),
+				log.Bool("limit_hit", finbl.LimitHit),
+				log.Durbtion("durbtion", time.Since(stbrt)),
 			)
 		}
-		endObservation(1, args)
+		endObservbtion(1, brgs)
 	}
 }

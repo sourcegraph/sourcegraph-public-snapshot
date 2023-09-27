@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,110 +6,110 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 
-	logger "github.com/sourcegraph/log"
+	logger "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func handleRecentContributors(ctx context.Context, lgr logger.Logger, repoId api.RepoID, db database.DB, subRepoPermsCache *rcache.Cache) error {
-	// 🚨 SECURITY: we use the internal actor because the background indexer is not associated with any user, and needs
-	// to see all repos and files
-	internalCtx := actor.WithInternalActor(ctx)
+func hbndleRecentContributors(ctx context.Context, lgr logger.Logger, repoId bpi.RepoID, db dbtbbbse.DB, subRepoPermsCbche *rcbche.Cbche) error {
+	// 🚨 SECURITY: we use the internbl bctor becbuse the bbckground indexer is not bssocibted with bny user, bnd needs
+	// to see bll repos bnd files
+	internblCtx := bctor.WithInternblActor(ctx)
 
-	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr, subRepoPermsCache)
-	return indexer.indexRepo(internalCtx, repoId, authz.DefaultSubRepoPermsChecker)
+	indexer := newRecentContributorsIndexer(gitserver.NewClient(), db, lgr, subRepoPermsCbche)
+	return indexer.indexRepo(internblCtx, repoId, buthz.DefbultSubRepoPermsChecker)
 }
 
 type recentContributorsIndexer struct {
 	client            gitserver.Client
-	db                database.DB
+	db                dbtbbbse.DB
 	logger            logger.Logger
-	subRepoPermsCache rcache.Cache
+	subRepoPermsCbche rcbche.Cbche
 }
 
-func newRecentContributorsIndexer(client gitserver.Client, db database.DB, lgr logger.Logger, subRepoPermsCache *rcache.Cache) *recentContributorsIndexer {
-	return &recentContributorsIndexer{client: client, db: db, logger: lgr, subRepoPermsCache: *subRepoPermsCache}
+func newRecentContributorsIndexer(client gitserver.Client, db dbtbbbse.DB, lgr logger.Logger, subRepoPermsCbche *rcbche.Cbche) *recentContributorsIndexer {
+	return &recentContributorsIndexer{client: client, db: db, logger: lgr, subRepoPermsCbche: *subRepoPermsCbche}
 }
 
-var commitCounter = promauto.NewCounter(prometheus.CounterOpts{
-	Namespace: "src",
-	Name:      "own_recent_contributors_commits_indexed_total",
+vbr commitCounter = prombuto.NewCounter(prometheus.CounterOpts{
+	Nbmespbce: "src",
+	Nbme:      "own_recent_contributors_commits_indexed_totbl",
 })
 
-func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId api.RepoID, checker authz.SubRepoPermissionChecker) error {
-	// If the repo has sub-repo perms enabled, skip indexing.
-	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCache, checker)
+func (r *recentContributorsIndexer) indexRepo(ctx context.Context, repoId bpi.RepoID, checker buthz.SubRepoPermissionChecker) error {
+	// If the repo hbs sub-repo perms enbbled, skip indexing.
+	isSubRepoPermsRepo, err := isSubRepoPermsRepo(ctx, repoId, r.subRepoPermsCbche, checker)
 	if err != nil {
-		return errcode.MakeNonRetryable(err)
+		return errcode.MbkeNonRetrybble(err)
 	} else if isSubRepoPermsRepo {
-		r.logger.Debug("skipping own contributor signal due to the repo having subrepo perms enabled", logger.Int32("repoID", int32(repoId)))
+		r.logger.Debug("skipping own contributor signbl due to the repo hbving subrepo perms enbbled", logger.Int32("repoID", int32(repoId)))
 		return nil
 	}
 
 	repoStore := r.db.Repos()
 	repo, err := repoStore.Get(ctx, repoId)
 	if err != nil {
-		return errors.Wrap(err, "repoStore.Get")
+		return errors.Wrbp(err, "repoStore.Get")
 	}
-	commitLog, err := r.client.CommitLog(ctx, repo.Name, time.Now().AddDate(0, 0, -90))
+	commitLog, err := r.client.CommitLog(ctx, repo.Nbme, time.Now().AddDbte(0, 0, -90))
 	if err != nil {
-		return errors.Wrap(err, "CommitLog")
+		return errors.Wrbp(err, "CommitLog")
 	}
 
-	store := r.db.RecentContributionSignals()
-	err = store.ClearSignals(ctx, repoId)
+	store := r.db.RecentContributionSignbls()
+	err = store.ClebrSignbls(ctx, repoId)
 	if err != nil {
-		return errors.Wrap(err, "ClearSignals")
+		return errors.Wrbp(err, "ClebrSignbls")
 	}
 
-	for _, commit := range commitLog {
-		err := store.AddCommit(ctx, database.Commit{
+	for _, commit := rbnge commitLog {
+		err := store.AddCommit(ctx, dbtbbbse.Commit{
 			RepoID:       repoId,
-			AuthorName:   commit.AuthorName,
-			AuthorEmail:  commit.AuthorEmail,
-			Timestamp:    commit.Timestamp,
+			AuthorNbme:   commit.AuthorNbme,
+			AuthorEmbil:  commit.AuthorEmbil,
+			Timestbmp:    commit.Timestbmp,
 			CommitSHA:    commit.SHA,
-			FilesChanged: commit.ChangedFiles,
+			FilesChbnged: commit.ChbngedFiles,
 		})
 		if err != nil {
-			return errors.Wrapf(err, "AddCommit %v", commit)
+			return errors.Wrbpf(err, "AddCommit %v", commit)
 		}
 	}
 	r.logger.Info("commits inserted", logger.Int("count", len(commitLog)), logger.Int("repo_id", int(repoId)))
-	commitCounter.Add(float64(len(commitLog)))
+	commitCounter.Add(flobt64(len(commitLog)))
 	return nil
 }
 
-func isSubRepoPermsRepo(ctx context.Context, repoID api.RepoID, cache rcache.Cache, checker authz.SubRepoPermissionChecker) (bool, error) {
-	cacheKey := strconv.Itoa(int(repoID))
-	// Look for the repo in cache to see if we have seen it before instead of hitting the DB.
-	val, ok := cache.Get(cacheKey)
+func isSubRepoPermsRepo(ctx context.Context, repoID bpi.RepoID, cbche rcbche.Cbche, checker buthz.SubRepoPermissionChecker) (bool, error) {
+	cbcheKey := strconv.Itob(int(repoID))
+	// Look for the repo in cbche to see if we hbve seen it before instebd of hitting the DB.
+	vbl, ok := cbche.Get(cbcheKey)
 	if ok {
-		var isSubRepoPermsRepo bool
-		err := json.Unmarshal(val, &isSubRepoPermsRepo)
+		vbr isSubRepoPermsRepo bool
+		err := json.Unmbrshbl(vbl, &isSubRepoPermsRepo)
 		return isSubRepoPermsRepo, err
 	}
 
-	// No entry in cache, so we need to look up whether this is a sub-repo perms repo in the DB.
-	isSubRepoPermsRepo, err := authz.SubRepoEnabledForRepoID(ctx, checker, repoID)
+	// No entry in cbche, so we need to look up whether this is b sub-repo perms repo in the DB.
+	isSubRepoPermsRepo, err := buthz.SubRepoEnbbledForRepoID(ctx, checker, repoID)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	b, err := json.Marshal(isSubRepoPermsRepo)
+	b, err := json.Mbrshbl(isSubRepoPermsRepo)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	cache.Set(cacheKey, b)
+	cbche.Set(cbcheKey, b)
 	return isSubRepoPermsRepo, nil
 }

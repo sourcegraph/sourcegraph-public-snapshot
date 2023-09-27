@@ -1,433 +1,433 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 	_ "embed"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"html/templbte"
 	"net"
 	"net/http"
 	"os"
 	"strconv"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/sourcegrbph/log"
 	"go.opentelemetry.io/otel"
-	"golang.org/x/time/rate"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/reflection"
+	"golbng.org/x/time/rbte"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/reflection"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/authz"
-	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	ossAuthz "github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers"
-	"github.com/sourcegraph/sourcegraph/internal/batches"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	internalgrpc "github.com/sourcegraph/sourcegraph/internal/grpc"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/defaults"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	proto "github.com/sourcegraph/sourcegraph/internal/repoupdater/v1"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/repo-updbter/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/cmd/repo-updbter/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	ossAuthz "github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine/recorder"
+	internblgrpc "github.com/sourcegrbph/sourcegrbph/internbl/grpc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/defbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/v1"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const port = "3182"
 
-//go:embed state.html.tmpl
-var stateHTMLTemplate string
+//go:embed stbte.html.tmpl
+vbr stbteHTMLTemplbte string
 
-type LazyDebugserverEndpoint struct {
-	repoUpdaterStateEndpoint     http.HandlerFunc
-	listAuthzProvidersEndpoint   http.HandlerFunc
-	gitserverReposStatusEndpoint http.HandlerFunc
-	manualPurgeEndpoint          http.HandlerFunc
+type LbzyDebugserverEndpoint struct {
+	repoUpdbterStbteEndpoint     http.HbndlerFunc
+	listAuthzProvidersEndpoint   http.HbndlerFunc
+	gitserverReposStbtusEndpoint http.HbndlerFunc
+	mbnublPurgeEndpoint          http.HbndlerFunc
 }
 
-func Main(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, debugserverEndpoints *LazyDebugserverEndpoint) error {
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	ctx = actor.WithInternalActor(ctx)
+func Mbin(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, debugserverEndpoints *LbzyDebugserverEndpoint) error {
+	// NOTE: Internbl bctor is required to hbve full visibility of the repo tbble
+	// 	(i.e. bypbss repository buthorizbtion).
+	ctx = bctor.WithInternblActor(ctx)
 
-	logger := observationCtx.Logger
+	logger := observbtionCtx.Logger
 
 	if err := keyring.Init(ctx); err != nil {
-		return errors.Wrap(err, "initializing encryption keyring")
+		return errors.Wrbp(err, "initiblizing encryption keyring")
 	}
 
-	db, err := getDB(observationCtx)
+	db, err := getDB(observbtionCtx)
 	if err != nil {
 		return err
 	}
 
-	// Generally we'll mark the service as ready sometime after the database has been
-	// connected; migrations may take a while and we don't want to start accepting
-	// traffic until we've fully constructed the server we'll be exposing. We have a
-	// bit more to do in this method, though, and the process will be marked ready
+	// Generblly we'll mbrk the service bs rebdy sometime bfter the dbtbbbse hbs been
+	// connected; migrbtions mby tbke b while bnd we don't wbnt to stbrt bccepting
+	// trbffic until we've fully constructed the server we'll be exposing. We hbve b
+	// bit more to do in this method, though, bnd the process will be mbrked rebdy
 	// further down this function.
 
-	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics", ""), db, envvar.SourcegraphDotComMode())
+	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics", ""), db, envvbr.SourcegrbphDotComMode())
 
 	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
 		m := repos.NewStoreMetrics()
-		m.MustRegister(prometheus.DefaultRegisterer)
+		m.MustRegister(prometheus.DefbultRegisterer)
 		store.SetMetrics(m)
 	}
 
 	sourcerLogger := logger.Scoped("repos.Sourcer", "repositories source")
-	cf := httpcli.NewExternalClientFactory(
-		httpcli.NewLoggingMiddleware(sourcerLogger),
+	cf := httpcli.NewExternblClientFbctory(
+		httpcli.NewLoggingMiddlewbre(sourcerLogger),
 	)
 
 	sourceMetrics := repos.NewSourceMetrics()
-	sourceMetrics.MustRegister(prometheus.DefaultRegisterer)
-	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observationCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
-	syncer := repos.NewSyncer(observationCtx, store, src)
-	updateScheduler := repos.NewUpdateScheduler(logger, db)
-	server := &repoupdater.Server{
+	sourceMetrics.MustRegister(prometheus.DefbultRegisterer)
+	src := repos.NewSourcer(sourcerLogger, db, cf, repos.WithDependenciesService(dependencies.NewService(observbtionCtx, db)), repos.ObservedSource(sourcerLogger, sourceMetrics))
+	syncer := repos.NewSyncer(observbtionCtx, store, src)
+	updbteScheduler := repos.NewUpdbteScheduler(logger, db)
+	server := &repoupdbter.Server{
 		Logger:                logger,
-		ObservationCtx:        observationCtx,
+		ObservbtionCtx:        observbtionCtx,
 		Store:                 store,
 		Syncer:                syncer,
-		Scheduler:             updateScheduler,
-		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
+		Scheduler:             updbteScheduler,
+		SourcegrbphDotComMode: envvbr.SourcegrbphDotComMode(),
 	}
 
-	// No Batch Changes on dotcom, so we don't need to spawn the
-	// background jobs for this feature.
-	if !envvar.SourcegraphDotComMode() {
-		syncRegistry := batches.InitBackgroundJobs(ctx, db, keyring.Default().BatchChangesCredentialKey, cf)
-		server.ChangesetSyncRegistry = syncRegistry
+	// No Bbtch Chbnges on dotcom, so we don't need to spbwn the
+	// bbckground jobs for this febture.
+	if !envvbr.SourcegrbphDotComMode() {
+		syncRegistry := bbtches.InitBbckgroundJobs(ctx, db, keyring.Defbult().BbtchChbngesCredentiblKey, cf)
+		server.ChbngesetSyncRegistry = syncRegistry
 	}
 
-	go globals.WatchExternalURL()
-	go watchAuthzProviders(ctx, db)
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.ChangesetSyncRegistry)
+	go globbls.WbtchExternblURL()
+	go wbtchAuthzProviders(ctx, db)
+	go wbtchSyncer(ctx, logger, syncer, updbteScheduler, server.ChbngesetSyncRegistry)
 
-	permsSyncer := authz.NewPermsSyncer(
-		observationCtx.Logger.Scoped("PermsSyncer", "repository and user permissions syncer"),
+	permsSyncer := buthz.NewPermsSyncer(
+		observbtionCtx.Logger.Scoped("PermsSyncer", "repository bnd user permissions syncer"),
 		db,
 		store,
-		database.Perms(observationCtx.Logger, db, timeutil.Now),
+		dbtbbbse.Perms(observbtionCtx.Logger, db, timeutil.Now),
 		timeutil.Now,
 	)
-	repoWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeRepo)
-	userWorkerStore := authz.MakeStore(observationCtx, db.Handle(), authz.SyncTypeUser)
-	permissionSyncJobStore := database.PermissionSyncJobsWith(observationCtx.Logger, db)
-	routines := []goroutine.BackgroundRoutine{
-		makeHTTPServer(logger, server),
+	repoWorkerStore := buthz.MbkeStore(observbtionCtx, db.Hbndle(), buthz.SyncTypeRepo)
+	userWorkerStore := buthz.MbkeStore(observbtionCtx, db.Hbndle(), buthz.SyncTypeUser)
+	permissionSyncJobStore := dbtbbbse.PermissionSyncJobsWith(observbtionCtx.Logger, db)
+	routines := []goroutine.BbckgroundRoutine{
+		mbkeHTTPServer(logger, server),
 		// repoSyncWorker
-		authz.MakeWorker(ctx, observationCtx, repoWorkerStore, permsSyncer, authz.SyncTypeRepo, permissionSyncJobStore),
+		buthz.MbkeWorker(ctx, observbtionCtx, repoWorkerStore, permsSyncer, buthz.SyncTypeRepo, permissionSyncJobStore),
 		// userSyncWorker
-		authz.MakeWorker(ctx, observationCtx, userWorkerStore, permsSyncer, authz.SyncTypeUser, permissionSyncJobStore),
-		// Type of store (repo/user) for resetter doesn't matter, because it has its
-		// separate name for logging and metrics.
-		authz.MakeResetter(observationCtx, repoWorkerStore),
-		newUnclonedReposManager(ctx, logger, envvar.SourcegraphDotComMode(), updateScheduler, store),
-		repos.NewPhabricatorRepositorySyncWorker(ctx, db, log.Scoped("PhabricatorRepositorySyncWorker", ""), store),
+		buthz.MbkeWorker(ctx, observbtionCtx, userWorkerStore, permsSyncer, buthz.SyncTypeUser, permissionSyncJobStore),
+		// Type of store (repo/user) for resetter doesn't mbtter, becbuse it hbs its
+		// sepbrbte nbme for logging bnd metrics.
+		buthz.MbkeResetter(observbtionCtx, repoWorkerStore),
+		newUnclonedReposMbnbger(ctx, logger, envvbr.SourcegrbphDotComMode(), updbteScheduler, store),
+		repos.NewPhbbricbtorRepositorySyncWorker(ctx, db, log.Scoped("PhbbricbtorRepositorySyncWorker", ""), store),
 		// Run git fetches scheduler
-		updateScheduler,
+		updbteScheduler,
 	}
 
-	routines = append(routines,
+	routines = bppend(routines,
 		syncer.Routines(ctx, store, repos.RunOptions{
-			EnqueueInterval: repos.ConfRepoListUpdateInterval,
-			IsDotCom:        envvar.SourcegraphDotComMode(),
-			MinSyncInterval: repos.ConfRepoListUpdateInterval,
+			EnqueueIntervbl: repos.ConfRepoListUpdbteIntervbl,
+			IsDotCom:        envvbr.SourcegrbphDotComMode(),
+			MinSyncIntervbl: repos.ConfRepoListUpdbteIntervbl,
 		})...,
 	)
 
-	if envvar.SourcegraphDotComMode() {
-		rateLimiter := ratelimit.NewInstrumentedLimiter("SyncReposWithLastErrors", rate.NewLimiter(.05, 1))
-		routines = append(routines, syncer.NewSyncReposWithLastErrorsWorker(ctx, rateLimiter))
+	if envvbr.SourcegrbphDotComMode() {
+		rbteLimiter := rbtelimit.NewInstrumentedLimiter("SyncReposWithLbstErrors", rbte.NewLimiter(.05, 1))
+		routines = bppend(routines, syncer.NewSyncReposWithLbstErrorsWorker(ctx, rbteLimiter))
 	}
 
-	// git-server repos purging thread
-	// Temporary escape hatch if this feature proves to be dangerous
+	// git-server repos purging threbd
+	// Temporbry escbpe hbtch if this febture proves to be dbngerous
 	// TODO: Move to config.
-	if disabled, _ := strconv.ParseBool(os.Getenv("DISABLE_REPO_PURGE")); disabled {
-		logger.Info("repository purger is disabled via env DISABLE_REPO_PURGE")
+	if disbbled, _ := strconv.PbrseBool(os.Getenv("DISABLE_REPO_PURGE")); disbbled {
+		logger.Info("repository purger is disbbled vib env DISABLE_REPO_PURGE")
 	} else {
-		routines = append(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"), db, conf.DefaultClient()))
+		routines = bppend(routines, repos.NewRepositoryPurgeWorker(ctx, log.Scoped("repoPurgeWorker", "remove deleted repositories"), db, conf.DefbultClient()))
 	}
 
-	// Register recorder in all routines that support it.
-	recorderCache := recorder.GetCache()
-	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
-	for _, r := range routines {
-		if recordable, ok := r.(recorder.Recordable); ok {
-			recordable.SetJobName("repo-updater")
-			recordable.RegisterRecorder(rec)
-			rec.Register(recordable)
+	// Register recorder in bll routines thbt support it.
+	recorderCbche := recorder.GetCbche()
+	rec := recorder.New(observbtionCtx.Logger, env.MyNbme, recorderCbche)
+	for _, r := rbnge routines {
+		if recordbble, ok := r.(recorder.Recordbble); ok {
+			recordbble.SetJobNbme("repo-updbter")
+			recordbble.RegisterRecorder(rec)
+			rec.Register(recordbble)
 		}
 	}
-	rec.RegistrationDone()
+	rec.RegistrbtionDone()
 
-	debugDumpers := make(map[string]debugserver.Dumper)
-	debugDumpers["repos"] = updateScheduler
-	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
-	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
-	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
-	debugserverEndpoints.manualPurgeEndpoint = manualPurgeHandler(db)
+	debugDumpers := mbke(mbp[string]debugserver.Dumper)
+	debugDumpers["repos"] = updbteScheduler
+	debugserverEndpoints.repoUpdbterStbteEndpoint = repoUpdbterStbtsHbndler(debugDumpers)
+	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHbndler()
+	debugserverEndpoints.gitserverReposStbtusEndpoint = gitserverReposStbtusHbndler(db)
+	debugserverEndpoints.mbnublPurgeEndpoint = mbnublPurgeHbndler(db)
 
-	// We mark the service as ready now AFTER assigning the additional endpoints in
-	// the debugserver constructed at the top of this function. This ensures we don't
-	// have a race between becoming ready and a debugserver request failing directly
-	// after being unblocked.
-	ready()
+	// We mbrk the service bs rebdy now AFTER bssigning the bdditionbl endpoints in
+	// the debugserver constructed bt the top of this function. This ensures we don't
+	// hbve b rbce between becoming rebdy bnd b debugserver request fbiling directly
+	// bfter being unblocked.
+	rebdy()
 
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	goroutine.MonitorBbckgroundRoutines(ctx, routines...)
 
 	return nil
 }
 
-func getDB(observationCtx *observation.Context) (database.DB, error) {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+func getDB(observbtionCtx *observbtion.Context) (dbtbbbse.DB, error) {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
-	sqlDB, err := connections.EnsureNewFrontendDB(observationCtx, dsn, "repo-updater")
+	sqlDB, err := connections.EnsureNewFrontendDB(observbtionCtx, dsn, "repo-updbter")
 	if err != nil {
-		return nil, errors.Wrap(err, "initializing database store")
+		return nil, errors.Wrbp(err, "initiblizing dbtbbbse store")
 	}
-	return database.NewDB(observationCtx.Logger, sqlDB), nil
+	return dbtbbbse.NewDB(observbtionCtx.Logger, sqlDB), nil
 }
 
-func makeHTTPServer(logger log.Logger, server *repoupdater.Server) goroutine.BackgroundRoutine {
+func mbkeHTTPServer(logger log.Logger, server *repoupdbter.Server) goroutine.BbckgroundRoutine {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
 
-	addr := net.JoinHostPort(host, port)
-	logger.Info("listening", log.String("addr", addr))
+	bddr := net.JoinHostPort(host, port)
+	logger.Info("listening", log.String("bddr", bddr))
 
-	m := repoupdater.NewHandlerMetrics()
-	m.MustRegister(prometheus.DefaultRegisterer)
-	handler := repoupdater.ObservedHandler(
+	m := repoupdbter.NewHbndlerMetrics()
+	m.MustRegister(prometheus.DefbultRegisterer)
+	hbndler := repoupdbter.ObservedHbndler(
 		logger,
 		m,
-		otel.GetTracerProvider(),
-	)(server.Handler())
-	grpcServer := grpc.NewServer(defaults.ServerOptions(logger)...)
-	serviceServer := &repoupdater.RepoUpdaterServiceServer{
+		otel.GetTrbcerProvider(),
+	)(server.Hbndler())
+	grpcServer := grpc.NewServer(defbults.ServerOptions(logger)...)
+	serviceServer := &repoupdbter.RepoUpdbterServiceServer{
 		Server: server,
 	}
-	proto.RegisterRepoUpdaterServiceServer(grpcServer, serviceServer)
+	proto.RegisterRepoUpdbterServiceServer(grpcServer, serviceServer)
 	reflection.Register(grpcServer)
-	handler = internalgrpc.MultiplexHandlers(grpcServer, handler)
+	hbndler = internblgrpc.MultiplexHbndlers(grpcServer, hbndler)
 
-	// NOTE: Internal actor is required to have full visibility of the repo table
-	// 	(i.e. bypass repository authorization).
-	authzBypass := func(f http.Handler) http.HandlerFunc {
+	// NOTE: Internbl bctor is required to hbve full visibility of the repo tbble
+	// 	(i.e. bypbss repository buthorizbtion).
+	buthzBypbss := func(f http.Hbndler) http.HbndlerFunc {
 		return func(w http.ResponseWriter, r *http.Request) {
-			r = r.WithContext(actor.WithInternalActor(r.Context()))
+			r = r.WithContext(bctor.WithInternblActor(r.Context()))
 			f.ServeHTTP(w, r)
 		}
 	}
 
-	return httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
+	return httpserver.NewFromAddr(bddr, &http.Server{
+		RebdTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler: instrumentation.HTTPMiddleware(
+		Hbndler: instrumentbtion.HTTPMiddlewbre(
 			"",
-			trace.HTTPMiddleware(logger, authzBypass(handler), conf.DefaultClient()),
+			trbce.HTTPMiddlewbre(logger, buthzBypbss(hbndler), conf.DefbultClient()),
 		),
 	})
 }
 
-func gitserverReposStatusHandler(db database.DB) http.HandlerFunc {
+func gitserverReposStbtusHbndler(db dbtbbbse.DB) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		repo := r.FormValue("repo")
+		repo := r.FormVblue("repo")
 		if repo == "" {
-			http.Error(w, "missing 'repo' param", http.StatusBadRequest)
+			http.Error(w, "missing 'repo' pbrbm", http.StbtusBbdRequest)
 			return
 		}
 
-		status, err := db.GitserverRepos().GetByName(r.Context(), api.RepoName(repo))
+		stbtus, err := db.GitserverRepos().GetByNbme(r.Context(), bpi.RepoNbme(repo))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("fetching repository status: %q", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("fetching repository stbtus: %q", err), http.StbtusInternblServerError)
 			return
 		}
 
-		resp, err := json.MarshalIndent(status, "", "  ")
+		resp, err := json.MbrshblIndent(stbtus, "", "  ")
 		if err != nil {
-			http.Error(w, fmt.Sprintf("failed to marshal status: %q", err.Error()), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("fbiled to mbrshbl stbtus: %q", err.Error()), http.StbtusInternblServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_, _ = w.Write(resp)
 	}
 }
 
-func manualPurgeHandler(db database.DB) http.HandlerFunc {
+func mbnublPurgeHbndler(db dbtbbbse.DB) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		limit, err := strconv.Atoi(r.FormValue("limit"))
+		limit, err := strconv.Atoi(r.FormVblue("limit"))
 		if err != nil {
-			http.Error(w, fmt.Sprintf("invalid limit: %v", err), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("invblid limit: %v", err), http.StbtusBbdRequest)
 			return
 		}
 		if limit <= 0 {
-			http.Error(w, "limit must be greater than 0", http.StatusBadRequest)
+			http.Error(w, "limit must be grebter thbn 0", http.StbtusBbdRequest)
 			return
 		}
 		if limit > 10000 {
-			http.Error(w, "limit must be less than 10000", http.StatusBadRequest)
+			http.Error(w, "limit must be less thbn 10000", http.StbtusBbdRequest)
 			return
 		}
-		perSecond := 1.0 // Default value
-		perSecondParam := r.FormValue("perSecond")
-		if perSecondParam != "" {
-			perSecond, err = strconv.ParseFloat(perSecondParam, 64)
+		perSecond := 1.0 // Defbult vblue
+		perSecondPbrbm := r.FormVblue("perSecond")
+		if perSecondPbrbm != "" {
+			perSecond, err = strconv.PbrseFlobt(perSecondPbrbm, 64)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("invalid per second rate limit: %v", err), http.StatusBadRequest)
+				http.Error(w, fmt.Sprintf("invblid per second rbte limit: %v", err), http.StbtusBbdRequest)
 				return
 			}
-			// Set a sane lower bound
+			// Set b sbne lower bound
 			if perSecond <= 0.1 {
-				http.Error(w, fmt.Sprintf("invalid per second rate limit. Must be > 0.1, got %f", perSecond), http.StatusBadRequest)
+				http.Error(w, fmt.Sprintf("invblid per second rbte limit. Must be > 0.1, got %f", perSecond), http.StbtusBbdRequest)
 				return
 			}
 		}
 		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos", ""), db, limit, perSecond)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("stbrting mbnubl purge: %v", err), http.StbtusInternblServerError)
 			return
 		}
-		_, _ = w.Write([]byte(fmt.Sprintf("manual purge started with limit of %d and rate of %f", limit, perSecond)))
+		_, _ = w.Write([]byte(fmt.Sprintf("mbnubl purge stbrted with limit of %d bnd rbte of %f", limit, perSecond)))
 	}
 }
 
-func listAuthzProvidersHandler() http.HandlerFunc {
+func listAuthzProvidersHbndler() http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		type providerInfo struct {
 			ServiceType        string `json:"service_type"`
 			ServiceID          string `json:"service_id"`
-			ExternalServiceURL string `json:"external_service_url"`
+			ExternblServiceURL string `json:"externbl_service_url"`
 		}
 
 		_, providers := ossAuthz.GetProviders()
-		infos := make([]providerInfo, len(providers))
-		for i, p := range providers {
+		infos := mbke([]providerInfo, len(providers))
+		for i, p := rbnge providers {
 			_, id := extsvc.DecodeURN(p.URN())
 
-			// Note that the ID marshalling below replicates code found in `graphqlbackend`.
-			// We cannot import that package's code into this one (see /dev/check/go-dbconn-import.sh).
+			// Note thbt the ID mbrshblling below replicbtes code found in `grbphqlbbckend`.
+			// We cbnnot import thbt pbckbge's code into this one (see /dev/check/go-dbconn-import.sh).
 			infos[i] = providerInfo{
 				ServiceType:        p.ServiceType(),
 				ServiceID:          p.ServiceID(),
-				ExternalServiceURL: fmt.Sprintf("%s/site-admin/external-services/%s", globals.ExternalURL(), relay.MarshalID("ExternalService", id)),
+				ExternblServiceURL: fmt.Sprintf("%s/site-bdmin/externbl-services/%s", globbls.ExternblURL(), relby.MbrshblID("ExternblService", id)),
 			}
 		}
 
-		resp, err := json.MarshalIndent(infos, "", "  ")
+		resp, err := json.MbrshblIndent(infos, "", "  ")
 		if err != nil {
-			http.Error(w, "failed to marshal infos: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "fbiled to mbrshbl infos: "+err.Error(), http.StbtusInternblServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_, _ = w.Write(resp)
 	}
 }
 
-func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.HandlerFunc {
+func repoUpdbterStbtsHbndler(debugDumpers mbp[string]debugserver.Dumper) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		wantDumper := r.URL.Query().Get("dumper")
-		wantFormat := r.URL.Query().Get("format")
+		wbntDumper := r.URL.Query().Get("dumper")
+		wbntFormbt := r.URL.Query().Get("formbt")
 
-		// Showing the HTML version of repository syncing schedule as the default,
-		// also the only dumper that supports rendering the HTML version.
-		if (wantDumper == "" || wantDumper == "repos") && wantFormat != "json" {
-			reposDumper, ok := debugDumpers["repos"].(*repos.UpdateScheduler)
+		// Showing the HTML version of repository syncing schedule bs the defbult,
+		// blso the only dumper thbt supports rendering the HTML version.
+		if (wbntDumper == "" || wbntDumper == "repos") && wbntFormbt != "json" {
+			reposDumper, ok := debugDumpers["repos"].(*repos.UpdbteScheduler)
 			if !ok {
-				http.Error(w, "No debug dumper for repos found", http.StatusInternalServerError)
+				http.Error(w, "No debug dumper for repos found", http.StbtusInternblServerError)
 				return
 			}
 
-			// This case also applies for defaultOffer. Note that this is preferred
-			// over e.g. a 406 status code, according to the MDN:
-			// https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/406
-			tmpl := template.New("state.html").Funcs(template.FuncMap{
-				"truncateDuration": func(d time.Duration) time.Duration {
-					return d.Truncate(time.Second)
+			// This cbse blso bpplies for defbultOffer. Note thbt this is preferred
+			// over e.g. b 406 stbtus code, bccording to the MDN:
+			// https://developer.mozillb.org/en-US/docs/Web/HTTP/Stbtus/406
+			tmpl := templbte.New("stbte.html").Funcs(templbte.FuncMbp{
+				"truncbteDurbtion": func(d time.Durbtion) time.Durbtion {
+					return d.Truncbte(time.Second)
 				},
 			})
-			template.Must(tmpl.Parse(stateHTMLTemplate))
+			templbte.Must(tmpl.Pbrse(stbteHTMLTemplbte))
 			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context()))
 			if err != nil {
-				http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "Fbiled to render templbte: "+err.Error(), http.StbtusInternblServerError)
 				return
 			}
 			return
 		}
 
-		var dumps []any
-		for name, dumper := range debugDumpers {
-			if wantDumper != "" && wantDumper != name {
+		vbr dumps []bny
+		for nbme, dumper := rbnge debugDumpers {
+			if wbntDumper != "" && wbntDumper != nbme {
 				continue
 			}
-			dumps = append(dumps, dumper.DebugDump(r.Context()))
+			dumps = bppend(dumps, dumper.DebugDump(r.Context()))
 		}
 
-		p, err := json.MarshalIndent(dumps, "", "  ")
+		p, err := json.MbrshblIndent(dumps, "", "  ")
 		if err != nil {
-			http.Error(w, "Failed to marshal dumps: "+err.Error(), http.StatusInternalServerError)
+			http.Error(w, "Fbiled to mbrshbl dumps: "+err.Error(), http.StbtusInternblServerError)
 			return
 		}
-		w.Header().Set("Content-Type", "application/json")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
 		_, _ = w.Write(p)
 	}
 }
 
-func watchSyncer(
+func wbtchSyncer(
 	ctx context.Context,
 	logger log.Logger,
 	syncer *repos.Syncer,
-	sched *repos.UpdateScheduler,
-	changesetSyncer syncer.UnarchivedChangesetSyncRegistry,
+	sched *repos.UpdbteScheduler,
+	chbngesetSyncer syncer.UnbrchivedChbngesetSyncRegistry,
 ) {
-	logger.Debug("started new repo syncer updates scheduler relay thread")
+	logger.Debug("stbrted new repo syncer updbtes scheduler relby threbd")
 
 	for {
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return
-		case diff := <-syncer.Synced:
-			if !conf.Get().DisableAutoGitUpdates {
-				sched.UpdateFromDiff(diff)
+		cbse diff := <-syncer.Synced:
+			if !conf.Get().DisbbleAutoGitUpdbtes {
+				sched.UpdbteFromDiff(diff)
 			}
 
-			// Similarly, changesetSyncer is only available in enterprise mode.
-			if changesetSyncer != nil {
+			// Similbrly, chbngesetSyncer is only bvbilbble in enterprise mode.
+			if chbngesetSyncer != nil {
 				repositories := diff.Modified.ReposModified(types.RepoModifiedArchived)
 				if len(repositories) > 0 {
-					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repositories.IDs()); err != nil {
-						logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+					if err := chbngesetSyncer.EnqueueChbngesetSyncsForRepos(ctx, repositories.IDs()); err != nil {
+						logger.Wbrn("error enqueuing chbngeset syncs for brchived bnd unbrchived repos", log.Error(err))
 					}
 				}
 			}
@@ -435,68 +435,68 @@ func watchSyncer(
 	}
 }
 
-// newUnclonedReposManager creates a background routine that will periodically list
-// the uncloned repositories on gitserver and update the scheduler with the list.
-// It also ensures that if any of our indexable repos are missing from the cloned
-// list they will be added for cloning ASAP.
-func newUnclonedReposManager(ctx context.Context, logger log.Logger, isSourcegraphDotCom bool, sched *repos.UpdateScheduler, store repos.Store) goroutine.BackgroundRoutine {
+// newUnclonedReposMbnbger crebtes b bbckground routine thbt will periodicblly list
+// the uncloned repositories on gitserver bnd updbte the scheduler with the list.
+// It blso ensures thbt if bny of our indexbble repos bre missing from the cloned
+// list they will be bdded for cloning ASAP.
+func newUnclonedReposMbnbger(ctx context.Context, logger log.Logger, isSourcegrbphDotCom bool, sched *repos.UpdbteScheduler, store repos.Store) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			// Don't modify the scheduler if we're not performing auto updates.
-			if conf.Get().DisableAutoGitUpdates {
+		bctor.WithInternblActor(ctx),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			// Don't modify the scheduler if we're not performing buto updbtes.
+			if conf.Get().DisbbleAutoGitUpdbtes {
 				return nil
 			}
 
-			baseRepoStore := database.ReposWith(logger, store)
+			bbseRepoStore := dbtbbbse.ReposWith(logger, store)
 
-			if isSourcegraphDotCom {
-				// Fetch ALL indexable repos that are NOT cloned so that we can add them to the
+			if isSourcegrbphDotCom {
+				// Fetch ALL indexbble repos thbt bre NOT cloned so thbt we cbn bdd them to the
 				// scheduler.
-				opts := database.ListSourcegraphDotComIndexableReposOptions{
-					CloneStatus: types.CloneStatusNotCloned,
+				opts := dbtbbbse.ListSourcegrbphDotComIndexbbleReposOptions{
+					CloneStbtus: types.CloneStbtusNotCloned,
 				}
-				indexable, err := baseRepoStore.ListSourcegraphDotComIndexableRepos(ctx, opts)
+				indexbble, err := bbseRepoStore.ListSourcegrbphDotComIndexbbleRepos(ctx, opts)
 				if err != nil {
-					return errors.Wrap(err, "listing indexable repos")
+					return errors.Wrbp(err, "listing indexbble repos")
 				}
-				// Ensure that uncloned indexable repos are known to the scheduler
-				sched.EnsureScheduled(indexable)
+				// Ensure thbt uncloned indexbble repos bre known to the scheduler
+				sched.EnsureScheduled(indexbble)
 			}
 
-			// Next, move any repos managed by the scheduler that are uncloned to the front
+			// Next, move bny repos mbnbged by the scheduler thbt bre uncloned to the front
 			// of the queue.
-			managed := sched.ListRepoIDs()
+			mbnbged := sched.ListRepoIDs()
 
-			uncloned, err := baseRepoStore.ListMinimalRepos(ctx, database.ReposListOptions{IDs: managed, NoCloned: true})
+			uncloned, err := bbseRepoStore.ListMinimblRepos(ctx, dbtbbbse.ReposListOptions{IDs: mbnbged, NoCloned: true})
 			if err != nil {
-				return errors.Wrap(err, "failed to fetch list of uncloned repositories")
+				return errors.Wrbp(err, "fbiled to fetch list of uncloned repositories")
 			}
 
 			sched.PrioritiseUncloned(uncloned)
 
 			return nil
 		}),
-		goroutine.WithName("repo-updater.uncloned-repo-manager"),
-		goroutine.WithDescription("periodically lists uncloned repos and schedules them as high priority in the repo updater update queue"),
-		goroutine.WithInterval(30*time.Second),
+		goroutine.WithNbme("repo-updbter.uncloned-repo-mbnbger"),
+		goroutine.WithDescription("periodicblly lists uncloned repos bnd schedules them bs high priority in the repo updbter updbte queue"),
+		goroutine.WithIntervbl(30*time.Second),
 	)
 }
 
-// TODO: This might clash with what osscmd.Main does.
-// watchAuthzProviders updates authz providers if config changes.
-func watchAuthzProviders(ctx context.Context, db database.DB) {
-	globals.WatchPermissionsUserMapping()
+// TODO: This might clbsh with whbt osscmd.Mbin does.
+// wbtchAuthzProviders updbtes buthz providers if config chbnges.
+func wbtchAuthzProviders(ctx context.Context, db dbtbbbse.DB) {
+	globbls.WbtchPermissionsUserMbpping()
 	go func() {
-		t := time.NewTicker(providers.RefreshInterval())
-		for range t.C {
-			allowAccessByDefault, authzProviders, _, _, _ := providers.ProvidersFromConfig(
+		t := time.NewTicker(providers.RefreshIntervbl())
+		for rbnge t.C {
+			bllowAccessByDefbult, buthzProviders, _, _, _ := providers.ProvidersFromConfig(
 				ctx,
 				conf.Get(),
-				db.ExternalServices(),
+				db.ExternblServices(),
 				db,
 			)
-			ossAuthz.SetProviders(allowAccessByDefault, authzProviders)
+			ossAuthz.SetProviders(bllowAccessByDefbult, buthzProviders)
 		}
 	}()
 }

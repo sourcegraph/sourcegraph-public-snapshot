@@ -1,39 +1,39 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/context/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/context/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	codycontext "github.com/sourcegrbph/sourcegrbph/internbl/codycontext"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	vdb "github.com/sourcegrbph/sourcegrbph/internbl/embeddings/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
 )
 
 func Init(
 	_ context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	services codeintel.Services,
-	_ conftypes.UnifiedWatchable,
+	_ conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	embeddingsClient := embeddings.NewDefaultClient()
-	searchClient := client.New(observationCtx.Logger, db)
-	getQdrantDB := vdb.NewDBFromConfFunc(observationCtx.Logger, vdb.NewDisabledDB())
-	getQdrantSearcher := func() (vdb.VectorSearcher, error) { return getQdrantDB() }
+	embeddingsClient := embeddings.NewDefbultClient()
+	sebrchClient := client.New(observbtionCtx.Logger, db)
+	getQdrbntDB := vdb.NewDBFromConfFunc(observbtionCtx.Logger, vdb.NewDisbbledDB())
+	getQdrbntSebrcher := func() (vdb.VectorSebrcher, error) { return getQdrbntDB() }
 
 	contextClient := codycontext.NewCodyContextClient(
-		observationCtx,
+		observbtionCtx,
 		db,
 		embeddingsClient,
-		searchClient,
-		getQdrantSearcher,
+		sebrchClient,
+		getQdrbntSebrcher,
 	)
 	enterpriseServices.CodyContextResolver = resolvers.NewResolver(
 		db,

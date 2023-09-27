@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -8,290 +8,290 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestPermissionSyncJobs_CreateAndList(t *testing.T) {
+func TestPermissionSyncJobs_CrebteAndList(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
+	user, err := db.Users().Crebte(ctx, NewUser{Usernbme: "horse"})
 	require.NoError(t, err)
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// Create users.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
+	// Crebte users.
+	user1, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-1", DisplbyNbme: "t0pc0d3r"})
 	require.NoError(t, err)
-	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
+	user2, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-2"})
 	require.NoError(t, err)
 
-	// Create repos.
-	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	require.NoError(t, reposStore.Create(ctx, &repo1))
-	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
-	require.NoError(t, reposStore.Create(ctx, &repo2))
-	repo3 := types.Repo{Name: "test-repo-3", ID: 303}
-	require.NoError(t, reposStore.Create(ctx, &repo3))
+	// Crebte repos.
+	repo1 := types.Repo{Nbme: "test-repo-1", ID: 101}
+	require.NoError(t, reposStore.Crebte(ctx, &repo1))
+	repo2 := types.Repo{Nbme: "test-repo-2", ID: 201}
+	require.NoError(t, reposStore.Crebte(ctx, &repo2))
+	repo3 := types.Repo{Nbme: "test-repo-3", ID: 303}
+	require.NoError(t, reposStore.Crebte(ctx, &repo3))
 
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
-	require.Len(t, jobs, 0, "jobs returned even though database is empty")
+	require.Len(t, jobs, 0, "jobs returned even though dbtbbbse is empty")
 
-	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true, TriggeredByUserID: user.ID}
-	require.NoError(t, store.CreateRepoSyncJob(ctx, repo1.ID, opts))
+	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvblidbteCbches: true, Rebson: RebsonUserNoPermissions, NoPerms: true, TriggeredByUserID: user.ID}
+	require.NoError(t, store.CrebteRepoSyncJob(ctx, repo1.ID, opts))
 
-	opts = PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonManualUserSync}
-	require.NoError(t, store.CreateUserSyncJob(ctx, user1.ID, opts))
+	opts = PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvblidbteCbches: true, Rebson: RebsonMbnublUserSync}
+	require.NoError(t, store.CrebteUserSyncJob(ctx, user1.ID, opts))
 
-	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserEmailVerified}
-	require.NoError(t, store.CreateUserSyncJob(ctx, user2.ID, opts))
+	opts = PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, InvblidbteCbches: true, Rebson: RebsonUserEmbilVerified}
+	require.NoError(t, store.CrebteUserSyncJob(ctx, user2.ID, opts))
 
-	// Adding 1 failed and 1 partially successful job for repoID = 2.
-	require.NoError(t, store.CreateRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
-	codeHostStates := getSampleCodeHostStates()
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	// Adding 1 fbiled bnd 1 pbrtiblly successful job for repoID = 2.
+	require.NoError(t, store.CrebteRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Rebson: RebsonGitHubRepoEvent}))
+	codeHostStbtes := getSbmpleCodeHostStbtes()
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 	finishedTime := clock.Now()
-	finishSyncJobWithState(t, db, ctx, 4, finishedTime, PermissionsSyncJobStateFailed, codeHostStates[1:])
-	// Adding a reason and a message.
-	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET cancellation_reason='i tried to cancel but it already failed', failure_message='imma failure' WHERE id=4")
+	finishSyncJobWithStbte(t, db, ctx, 4, finishedTime, PermissionsSyncJobStbteFbiled, codeHostStbtes[1:])
+	// Adding b rebson bnd b messbge.
+	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET cbncellbtion_rebson='i tried to cbncel but it blrebdy fbiled', fbilure_messbge='immb fbilure' WHERE id=4")
 	require.NoError(t, err)
 
-	// Partial success (one of `codeHostStates` failed).
-	require.NoError(t, store.CreateRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
-	finishSyncJobWithState(t, db, ctx, 5, finishedTime, PermissionsSyncJobStateCompleted, codeHostStates)
+	// Pbrtibl success (one of `codeHostStbtes` fbiled).
+	require.NoError(t, store.CrebteRepoSyncJob(ctx, repo2.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Rebson: RebsonGitHubRepoEvent}))
+	finishSyncJobWithStbte(t, db, ctx, 5, finishedTime, PermissionsSyncJobStbteCompleted, codeHostStbtes)
 
-	// Creating a sync job for repoID = 3 and marking it as completed.
-	require.NoError(t, store.CreateRepoSyncJob(ctx, repo3.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Reason: ReasonGitHubRepoEvent}))
+	// Crebting b sync job for repoID = 3 bnd mbrking it bs completed.
+	require.NoError(t, store.CrebteRepoSyncJob(ctx, repo3.ID, PermissionSyncJobOpts{Priority: LowPriorityPermissionsSync, Rebson: RebsonGitHubRepoEvent}))
 	// Success.
-	finishSyncJobWithState(t, db, ctx, 6, finishedTime, PermissionsSyncJobStateCompleted, codeHostStates[:1])
+	finishSyncJobWithStbte(t, db, ctx, 6, finishedTime, PermissionsSyncJobStbteCompleted, codeHostStbtes[:1])
 
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
 	require.Len(t, jobs, 6, "wrong number of jobs returned")
 
-	wantJobs := []*PermissionSyncJob{
+	wbntJobs := []*PermissionSyncJob{
 		{
 			ID:                jobs[0].ID,
-			State:             PermissionsSyncJobStateQueued,
+			Stbte:             PermissionsSyncJobStbteQueued,
 			RepositoryID:      int(repo1.ID),
 			Priority:          HighPriorityPermissionsSync,
-			InvalidateCaches:  true,
-			Reason:            ReasonUserNoPermissions,
+			InvblidbteCbches:  true,
+			Rebson:            RebsonUserNoPermissions,
 			NoPerms:           true,
 			TriggeredByUserID: user.ID,
 		},
 		{
 			ID:               jobs[1].ID,
-			State:            PermissionsSyncJobStateQueued,
+			Stbte:            PermissionsSyncJobStbteQueued,
 			UserID:           int(user1.ID),
 			Priority:         MediumPriorityPermissionsSync,
-			InvalidateCaches: true,
-			Reason:           ReasonManualUserSync,
+			InvblidbteCbches: true,
+			Rebson:           RebsonMbnublUserSync,
 		},
 		{
 			ID:               jobs[2].ID,
-			State:            PermissionsSyncJobStateQueued,
+			Stbte:            PermissionsSyncJobStbteQueued,
 			UserID:           int(user2.ID),
 			Priority:         LowPriorityPermissionsSync,
-			InvalidateCaches: true,
-			Reason:           ReasonUserEmailVerified,
+			InvblidbteCbches: true,
+			Rebson:           RebsonUserEmbilVerified,
 		},
 		{
 			ID:                 jobs[3].ID,
-			State:              PermissionsSyncJobStateFailed,
+			Stbte:              PermissionsSyncJobStbteFbiled,
 			RepositoryID:       int(repo2.ID),
 			Priority:           LowPriorityPermissionsSync,
-			Reason:             ReasonGitHubRepoEvent,
+			Rebson:             RebsonGitHubRepoEvent,
 			FinishedAt:         finishedTime,
-			CodeHostStates:     codeHostStates[1:],
-			FailureMessage:     pointers.Ptr("imma failure"),
-			CancellationReason: pointers.Ptr("i tried to cancel but it already failed"),
-			IsPartialSuccess:   false,
+			CodeHostStbtes:     codeHostStbtes[1:],
+			FbilureMessbge:     pointers.Ptr("immb fbilure"),
+			CbncellbtionRebson: pointers.Ptr("i tried to cbncel but it blrebdy fbiled"),
+			IsPbrtiblSuccess:   fblse,
 		},
 		{
 			ID:               jobs[4].ID,
-			State:            PermissionsSyncJobStateCompleted,
+			Stbte:            PermissionsSyncJobStbteCompleted,
 			RepositoryID:     int(repo2.ID),
 			Priority:         LowPriorityPermissionsSync,
-			Reason:           ReasonGitHubRepoEvent,
+			Rebson:           RebsonGitHubRepoEvent,
 			FinishedAt:       finishedTime,
-			CodeHostStates:   codeHostStates,
-			IsPartialSuccess: true,
+			CodeHostStbtes:   codeHostStbtes,
+			IsPbrtiblSuccess: true,
 		},
 		{
 			ID:               jobs[5].ID,
-			State:            PermissionsSyncJobStateCompleted,
+			Stbte:            PermissionsSyncJobStbteCompleted,
 			RepositoryID:     int(repo3.ID),
 			Priority:         LowPriorityPermissionsSync,
-			Reason:           ReasonGitHubRepoEvent,
+			Rebson:           RebsonGitHubRepoEvent,
 			FinishedAt:       finishedTime,
-			CodeHostStates:   codeHostStates[:1],
-			IsPartialSuccess: false,
+			CodeHostStbtes:   codeHostStbtes[:1],
+			IsPbrtiblSuccess: fblse,
 		},
 	}
-	if diff := cmp.Diff(jobs, wantJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {
-		t.Fatalf("jobs[0] has wrong attributes: %s", diff)
+	if diff := cmp.Diff(jobs, wbntJobs, cmpopts.IgnoreFields(PermissionSyncJob{}, "QueuedAt")); diff != "" {
+		t.Fbtblf("jobs[0] hbs wrong bttributes: %s", diff)
 	}
-	for i, j := range jobs {
-		require.NotZerof(t, j.QueuedAt, "job %d has no QueuedAt set", i)
+	for i, j := rbnge jobs {
+		require.NotZerof(t, j.QueuedAt, "job %d hbs no QueuedAt set", i)
 	}
 
 	listTests := []struct {
-		name     string
+		nbme     string
 		opts     ListPermissionSyncJobOpts
-		wantJobs []*PermissionSyncJob
+		wbntJobs []*PermissionSyncJob
 	}{
 		{
-			name:     "ID",
+			nbme:     "ID",
 			opts:     ListPermissionSyncJobOpts{ID: jobs[0].ID},
-			wantJobs: jobs[:1],
+			wbntJobs: jobs[:1],
 		},
 		{
-			name:     "RepoID",
+			nbme:     "RepoID",
 			opts:     ListPermissionSyncJobOpts{RepoID: jobs[0].RepositoryID},
-			wantJobs: jobs[:1],
+			wbntJobs: jobs[:1],
 		},
 		{
-			name:     "UserID",
+			nbme:     "UserID",
 			opts:     ListPermissionSyncJobOpts{UserID: jobs[1].UserID},
-			wantJobs: jobs[1:2],
+			wbntJobs: jobs[1:2],
 		},
 		{
-			name:     "UserID",
+			nbme:     "UserID",
 			opts:     ListPermissionSyncJobOpts{UserID: jobs[2].UserID},
-			wantJobs: jobs[2:3],
+			wbntJobs: jobs[2:3],
 		},
 		{
-			name:     "State=queued",
-			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateQueued},
-			wantJobs: jobs[:3],
+			nbme:     "Stbte=queued",
+			opts:     ListPermissionSyncJobOpts{Stbte: PermissionsSyncJobStbteQueued},
+			wbntJobs: jobs[:3],
 		},
 		{
-			name:     "State=completed (partially successful shouldn't be included)",
-			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateCompleted},
-			wantJobs: jobs[5:6],
+			nbme:     "Stbte=completed (pbrtiblly successful shouldn't be included)",
+			opts:     ListPermissionSyncJobOpts{Stbte: PermissionsSyncJobStbteCompleted},
+			wbntJobs: jobs[5:6],
 		},
 		{
-			name:     "State=failed",
-			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateFailed},
-			wantJobs: jobs[3:4],
+			nbme:     "Stbte=fbiled",
+			opts:     ListPermissionSyncJobOpts{Stbte: PermissionsSyncJobStbteFbiled},
+			wbntJobs: jobs[3:4],
 		},
 		{
-			name:     "Partial success",
-			opts:     ListPermissionSyncJobOpts{PartialSuccess: true},
-			wantJobs: jobs[4:5],
+			nbme:     "Pbrtibl success",
+			opts:     ListPermissionSyncJobOpts{PbrtiblSuccess: true},
+			wbntJobs: jobs[4:5],
 		},
 		{
-			name:     "Partial success overrides provided state",
-			opts:     ListPermissionSyncJobOpts{State: PermissionsSyncJobStateFailed, PartialSuccess: true},
-			wantJobs: jobs[4:5],
+			nbme:     "Pbrtibl success overrides provided stbte",
+			opts:     ListPermissionSyncJobOpts{Stbte: PermissionsSyncJobStbteFbiled, PbrtiblSuccess: true},
+			wbntJobs: jobs[4:5],
 		},
 		{
-			name:     "Reason filtering",
-			opts:     ListPermissionSyncJobOpts{Reason: ReasonManualUserSync},
-			wantJobs: jobs[1:2],
+			nbme:     "Rebson filtering",
+			opts:     ListPermissionSyncJobOpts{Rebson: RebsonMbnublUserSync},
+			wbntJobs: jobs[1:2],
 		},
 		{
-			name:     "ReasonGroup filtering",
-			opts:     ListPermissionSyncJobOpts{ReasonGroup: PermissionsSyncJobReasonGroupWebhook},
-			wantJobs: jobs[3:],
+			nbme:     "RebsonGroup filtering",
+			opts:     ListPermissionSyncJobOpts{RebsonGroup: PermissionsSyncJobRebsonGroupWebhook},
+			wbntJobs: jobs[3:],
 		},
 		{
-			name:     "ReasonGroup filtering",
-			opts:     ListPermissionSyncJobOpts{ReasonGroup: PermissionsSyncJobReasonGroupSourcegraph},
-			wantJobs: jobs[2:3],
+			nbme:     "RebsonGroup filtering",
+			opts:     ListPermissionSyncJobOpts{RebsonGroup: PermissionsSyncJobRebsonGroupSourcegrbph},
+			wbntJobs: jobs[2:3],
 		},
 		{
-			name:     "Reason and ReasonGroup filtering (reason filtering wins)",
-			opts:     ListPermissionSyncJobOpts{Reason: ReasonManualUserSync, ReasonGroup: PermissionsSyncJobReasonGroupSchedule},
-			wantJobs: jobs[1:2],
+			nbme:     "Rebson bnd RebsonGroup filtering (rebson filtering wins)",
+			opts:     ListPermissionSyncJobOpts{Rebson: RebsonMbnublUserSync, RebsonGroup: PermissionsSyncJobRebsonGroupSchedule},
+			wbntJobs: jobs[1:2],
 		},
 		{
-			name:     "Search doesn't work without SearchType",
-			opts:     ListPermissionSyncJobOpts{Query: "where's the search type, Lebowski?"},
-			wantJobs: jobs,
+			nbme:     "Sebrch doesn't work without SebrchType",
+			opts:     ListPermissionSyncJobOpts{Query: "where's the sebrch type, Lebowski?"},
+			wbntJobs: jobs,
 		},
 		{
-			name:     "SearchType alone works as a filter by sync job subject (repository)",
-			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo},
-			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3], jobs[4], jobs[5]},
+			nbme:     "SebrchType blone works bs b filter by sync job subject (repository)",
+			opts:     ListPermissionSyncJobOpts{SebrchType: PermissionsSyncSebrchTypeRepo},
+			wbntJobs: []*PermissionSyncJob{jobs[0], jobs[3], jobs[4], jobs[5]},
 		},
 		{
-			name:     "Repo name search, case-insensitivity",
-			opts:     ListPermissionSyncJobOpts{Query: "TeST", SearchType: PermissionsSyncSearchTypeRepo},
-			wantJobs: []*PermissionSyncJob{jobs[0], jobs[3], jobs[4], jobs[5]},
+			nbme:     "Repo nbme sebrch, cbse-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "TeST", SebrchType: PermissionsSyncSebrchTypeRepo},
+			wbntJobs: []*PermissionSyncJob{jobs[0], jobs[3], jobs[4], jobs[5]},
 		},
 		{
-			name:     "Repo name search",
-			opts:     ListPermissionSyncJobOpts{Query: "1", SearchType: PermissionsSyncSearchTypeRepo},
-			wantJobs: jobs[:1],
+			nbme:     "Repo nbme sebrch",
+			opts:     ListPermissionSyncJobOpts{Query: "1", SebrchType: PermissionsSyncSebrchTypeRepo},
+			wbntJobs: jobs[:1],
 		},
 		{
-			name:     "SearchType alone works as a filter by sync job subject (user)",
-			opts:     ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser},
-			wantJobs: jobs[1:3],
+			nbme:     "SebrchType blone works bs b filter by sync job subject (user)",
+			opts:     ListPermissionSyncJobOpts{SebrchType: PermissionsSyncSebrchTypeUser},
+			wbntJobs: jobs[1:3],
 		},
 		{
-			name:     "User display name search, case-insensitivity",
-			opts:     ListPermissionSyncJobOpts{Query: "3", SearchType: PermissionsSyncSearchTypeUser},
-			wantJobs: jobs[1:2],
+			nbme:     "User displby nbme sebrch, cbse-insensitivity",
+			opts:     ListPermissionSyncJobOpts{Query: "3", SebrchType: PermissionsSyncSebrchTypeUser},
+			wbntJobs: jobs[1:2],
 		},
 		{
-			name:     "User name search",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser},
-			wantJobs: jobs[2:3],
+			nbme:     "User nbme sebrch",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SebrchType: PermissionsSyncSebrchTypeUser},
+			wbntJobs: jobs[2:3],
 		},
 		{
-			name:     "User name search with pagination",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{First: pointers.Ptr(1)}},
-			wantJobs: jobs[2:3],
+			nbme:     "User nbme sebrch with pbginbtion",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SebrchType: PermissionsSyncSebrchTypeUser, PbginbtionArgs: &PbginbtionArgs{First: pointers.Ptr(1)}},
+			wbntJobs: jobs[2:3],
 		},
 		{
-			name:     "User name search with default OrderBy",
-			opts:     ListPermissionSyncJobOpts{Query: "user-2", SearchType: PermissionsSyncSearchTypeUser, PaginationArgs: &PaginationArgs{OrderBy: OrderBy{{Field: "id"}}}},
-			wantJobs: jobs[2:3],
+			nbme:     "User nbme sebrch with defbult OrderBy",
+			opts:     ListPermissionSyncJobOpts{Query: "user-2", SebrchType: PermissionsSyncSebrchTypeUser, PbginbtionArgs: &PbginbtionArgs{OrderBy: OrderBy{{Field: "id"}}}},
+			wbntJobs: jobs[2:3],
 		},
 	}
 
-	for _, tt := range listTests {
-		t.Run(tt.name, func(t *testing.T) {
-			have, err := store.List(ctx, tt.opts)
+	for _, tt := rbnge listTests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			hbve, err := store.List(ctx, tt.opts)
 			require.NoError(t, err)
-			if len(have) != len(tt.wantJobs) {
-				t.Fatalf("wrong number of jobs returned. want=%d, have=%d", len(tt.wantJobs), len(have))
+			if len(hbve) != len(tt.wbntJobs) {
+				t.Fbtblf("wrong number of jobs returned. wbnt=%d, hbve=%d", len(tt.wbntJobs), len(hbve))
 			}
-			if diff := cmp.Diff(have, tt.wantJobs); diff != "" {
-				t.Fatalf("unexpected jobs. diff: %s", diff)
+			if diff := cmp.Diff(hbve, tt.wbntJobs); diff != "" {
+				t.Fbtblf("unexpected jobs. diff: %s", diff)
 			}
 		})
 	}
 }
 
-func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
+func TestPermissionSyncJobs_GetLbtestSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
@@ -299,491 +299,491 @@ func TestPermissionSyncJobs_GetLatestSyncJob(t *testing.T) {
 	usersStore := UsersWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// Create users.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
+	// Crebte users.
+	user1, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-1", DisplbyNbme: "t0pc0d3r"})
 	require.NoError(t, err)
-	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
+	user2, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-2"})
 	require.NoError(t, err)
 
-	// Create repos.
-	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	err = reposStore.Create(ctx, &repo1)
+	// Crebte repos.
+	repo1 := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err = reposStore.Crebte(ctx, &repo1)
 	require.NoError(t, err)
-	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
-	err = reposStore.Create(ctx, &repo2)
+	repo2 := types.Repo{Nbme: "test-repo-2", ID: 201}
+	err = reposStore.Crebte(ctx, &repo2)
 	require.NoError(t, err)
 
 	t.Run("No jobs", func(t *testing.T) {
-		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
+		job, err := store.GetLbtestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
 		require.NoError(t, err)
-		require.Nil(t, job, "should not return any job")
+		require.Nil(t, job, "should not return bny job")
 	})
 
 	t.Run("One finished job", func(t *testing.T) {
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 2
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 2
 
 		finishSyncJob(t, db, ctx, 1, clock.Now())
 
-		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
+		job, err := store.GetLbtestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
 		require.NoError(t, err)
-		require.NotNil(t, job, "should return a job")
-		require.Equal(t, 1, job.ID, "wrong job ID")
+		require.NotNil(t, job, "should return b job")
+		require.Equbl(t, 1, job.ID, "wrong job ID")
 	})
 
 	t.Run("Two finished jobs", func(t *testing.T) {
-		t.Cleanup(func() { cleanupSyncJobs(t, db, ctx) })
+		t.Clebnup(func() { clebnupSyncJobs(t, db, ctx) })
 
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 2
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 2
 
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
 		finishSyncJob(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
 
-		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
+		job, err := store.GetLbtestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{})
 		require.NoError(t, err)
-		require.NotNil(t, job, "should return a job")
-		require.Equal(t, 2, job.ID, "wrong job ID")
+		require.NotNil(t, job, "should return b job")
+		require.Equbl(t, 2, job.ID, "wrong job ID")
 	})
 
-	t.Run("Three finished jobs, but one cancelled", func(t *testing.T) {
-		t.Cleanup(func() { cleanupSyncJobs(t, db, ctx) })
+	t.Run("Three finished jobs, but one cbncelled", func(t *testing.T) {
+		t.Clebnup(func() { clebnupSyncJobs(t, db, ctx) })
 
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 2
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 3
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 2
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 3
 
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
-		finishSyncJobWithCancel(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
+		finishSyncJobWithCbncel(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
 		finishSyncJob(t, db, ctx, 3, clock.Now().Add(-10*time.Minute))
 
-		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
-			NotCanceled: true,
+		job, err := store.GetLbtestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
+			NotCbnceled: true,
 		})
 		require.NoError(t, err)
-		require.NotNil(t, job, "should return a job")
-		require.Equal(t, 3, job.ID, "wrong job ID")
+		require.NotNil(t, job, "should return b job")
+		require.Equbl(t, 3, job.ID, "wrong job ID")
 	})
 
-	t.Run("Two finished jobs for each user, pick userIDs latest", func(t *testing.T) {
-		t.Cleanup(func() { cleanupSyncJobs(t, db, ctx) })
+	t.Run("Two finished jobs for ebch user, pick userIDs lbtest", func(t *testing.T) {
+		t.Clebnup(func() { clebnupSyncJobs(t, db, ctx) })
 
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 2
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 2
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
 		finishSyncJob(t, db, ctx, 2, clock.Now().Add(-10*time.Minute))
 
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 3
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 4
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 3
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 4
 		finishSyncJob(t, db, ctx, 3, clock.Now().Add(-1*time.Minute))
 		finishSyncJob(t, db, ctx, 4, clock.Now())
 
-		job, err := store.GetLatestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
+		job, err := store.GetLbtestFinishedSyncJob(ctx, ListPermissionSyncJobOpts{
 			UserID: int(user2.ID),
 		})
 		require.NoError(t, err)
-		require.NotNil(t, job, "should return a job")
-		require.Equal(t, 3, job.ID, "wrong job ID")
+		require.NotNil(t, job, "should return b job")
+		require.Equbl(t, 3, job.ID, "wrong job ID")
 	})
 }
 
-func TestPermissionSyncJobs_Deduplication(t *testing.T) {
+func TestPermissionSyncJobs_Deduplicbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user1, err := db.Users().Create(ctx, NewUser{Username: "horse"})
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "horse"})
 	require.NoError(t, err)
 
-	user2, err := db.Users().Create(ctx, NewUser{Username: "graph"})
+	user2, err := db.Users().Crebte(ctx, NewUser{Usernbme: "grbph"})
 	require.NoError(t, err)
 
 	store := PermissionSyncJobsWith(logger, db)
 
-	// 1) Insert low priority job without process_after for user1.
-	user1LowPrioJob := PermissionSyncJobOpts{Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
+	// 1) Insert low priority job without process_bfter for user1.
+	user1LowPrioJob := PermissionSyncJobOpts{Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
+	err = store.CrebteUserSyncJob(ctx, 1, user1LowPrioJob)
 	require.NoError(t, err)
 
-	allJobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
+	bllJobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
-	// Check that we have 1 job with userID=1.
-	require.Len(t, allJobs, 1)
-	require.Equal(t, 1, allJobs[0].UserID)
+	// Check thbt we hbve 1 job with userID=1.
+	require.Len(t, bllJobs, 1)
+	require.Equbl(t, 1, bllJobs[0].UserID)
 
-	// 2) Insert low priority job without process_after for user2.
-	user2LowPrioJob := PermissionSyncJobOpts{Reason: ReasonManualUserSync, TriggeredByUserID: user2.ID}
-	err = store.CreateUserSyncJob(ctx, 2, user2LowPrioJob)
-	require.NoError(t, err)
-
-	allJobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
-	require.NoError(t, err)
-	// Check that we have 2 jobs including job for userID=2. Job ID should match user ID.
-	require.Len(t, allJobs, 2)
-	require.Equal(t, allJobs[0].ID, allJobs[0].UserID)
-	require.Equal(t, allJobs[1].ID, allJobs[1].UserID)
-
-	// 3) Another low priority job without process_after for user1 is dropped.
-	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
+	// 2) Insert low priority job without process_bfter for user2.
+	user2LowPrioJob := PermissionSyncJobOpts{Rebson: RebsonMbnublUserSync, TriggeredByUserID: user2.ID}
+	err = store.CrebteUserSyncJob(ctx, 2, user2LowPrioJob)
 	require.NoError(t, err)
 
-	allJobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
+	bllJobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
-	// Check that we still have 2 jobs. Job ID should match user ID.
-	require.Len(t, allJobs, 2)
-	require.Equal(t, allJobs[0].ID, allJobs[0].UserID)
-	require.Equal(t, allJobs[1].ID, allJobs[1].UserID)
+	// Check thbt we hbve 2 jobs including job for userID=2. Job ID should mbtch user ID.
+	require.Len(t, bllJobs, 2)
+	require.Equbl(t, bllJobs[0].ID, bllJobs[0].UserID)
+	require.Equbl(t, bllJobs[1].ID, bllJobs[1].UserID)
 
-	// 4) Insert some low priority jobs with process_after for both users. All of them should be inserted.
-	fiveMinutesLater := clock.Now().Add(5 * time.Minute)
-	tenMinutesLater := clock.Now().Add(10 * time.Minute)
-	user1LowPrioDelayedJob := PermissionSyncJobOpts{ProcessAfter: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	user2LowPrioDelayedJob := PermissionSyncJobOpts{ProcessAfter: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-
-	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioDelayedJob)
+	// 3) Another low priority job without process_bfter for user1 is dropped.
+	err = store.CrebteUserSyncJob(ctx, 1, user1LowPrioJob)
 	require.NoError(t, err)
 
-	err = store.CreateUserSyncJob(ctx, 2, user2LowPrioDelayedJob)
+	bllJobs, err = store.List(ctx, ListPermissionSyncJobOpts{})
+	require.NoError(t, err)
+	// Check thbt we still hbve 2 jobs. Job ID should mbtch user ID.
+	require.Len(t, bllJobs, 2)
+	require.Equbl(t, bllJobs[0].ID, bllJobs[0].UserID)
+	require.Equbl(t, bllJobs[1].ID, bllJobs[1].UserID)
+
+	// 4) Insert some low priority jobs with process_bfter for both users. All of them should be inserted.
+	fiveMinutesLbter := clock.Now().Add(5 * time.Minute)
+	tenMinutesLbter := clock.Now().Add(10 * time.Minute)
+	user1LowPrioDelbyedJob := PermissionSyncJobOpts{ProcessAfter: fiveMinutesLbter, Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
+	user2LowPrioDelbyedJob := PermissionSyncJobOpts{ProcessAfter: tenMinutesLbter, Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
+
+	err = store.CrebteUserSyncJob(ctx, 1, user1LowPrioDelbyedJob)
 	require.NoError(t, err)
 
-	allDelayedJobs, err := store.List(ctx, ListPermissionSyncJobOpts{NotNullProcessAfter: true})
+	err = store.CrebteUserSyncJob(ctx, 2, user2LowPrioDelbyedJob)
 	require.NoError(t, err)
-	// Check that we have 2 delayed jobs in total.
-	require.Len(t, allDelayedJobs, 2)
+
+	bllDelbyedJobs, err := store.List(ctx, ListPermissionSyncJobOpts{NotNullProcessAfter: true})
+	require.NoError(t, err)
+	// Check thbt we hbve 2 delbyed jobs in totbl.
+	require.Len(t, bllDelbyedJobs, 2)
 	// UserID of the job should be (jobID - 2).
-	require.Equal(t, allDelayedJobs[0].UserID, allDelayedJobs[0].ID-2)
-	require.Equal(t, allDelayedJobs[1].UserID, allDelayedJobs[1].ID-2)
+	require.Equbl(t, bllDelbyedJobs[0].UserID, bllDelbyedJobs[0].ID-2)
+	require.Equbl(t, bllDelbyedJobs[1].UserID, bllDelbyedJobs[1].ID-2)
 
-	// 5) Insert *medium* priority job without process_after for user1. Check that low priority job is canceled.
-	user1MediumPrioJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	err = store.CreateUserSyncJob(ctx, 1, user1MediumPrioJob)
+	// 5) Insert *medium* priority job without process_bfter for user1. Check thbt low priority job is cbnceled.
+	user1MediumPrioJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
+	err = store.CrebteUserSyncJob(ctx, 1, user1MediumPrioJob)
 	require.NoError(t, err)
 
-	allUser1Jobs, err := store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
+	bllUser1Jobs, err := store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	require.NoError(t, err)
-	// Check that we have 3 jobs for userID=1 in total (low prio (canceled), delayed, medium prio).
-	require.Len(t, allUser1Jobs, 3)
-	// Check that low prio job (ID=1) is canceled and others are not.
-	for _, job := range allUser1Jobs {
+	// Check thbt we hbve 3 jobs for userID=1 in totbl (low prio (cbnceled), delbyed, medium prio).
+	require.Len(t, bllUser1Jobs, 3)
+	// Check thbt low prio job (ID=1) is cbnceled bnd others bre not.
+	for _, job := rbnge bllUser1Jobs {
 		if job.ID == 1 {
-			require.True(t, job.Cancel)
-			require.Equal(t, PermissionsSyncJobStateCanceled, job.State)
+			require.True(t, job.Cbncel)
+			require.Equbl(t, PermissionsSyncJobStbteCbnceled, job.Stbte)
 		} else {
-			require.False(t, job.Cancel)
+			require.Fblse(t, job.Cbncel)
 		}
 	}
 
-	// 6) Insert some medium priority jobs with process_after for both users. All of them should be inserted.
-	user1MediumPrioDelayedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, ProcessAfter: fiveMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	user2MediumPrioDelayedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, ProcessAfter: tenMinutesLater, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
+	// 6) Insert some medium priority jobs with process_bfter for both users. All of them should be inserted.
+	user1MediumPrioDelbyedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, ProcessAfter: fiveMinutesLbter, Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
+	user2MediumPrioDelbyedJob := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, ProcessAfter: tenMinutesLbter, Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
 
-	err = store.CreateUserSyncJob(ctx, 1, user1MediumPrioDelayedJob)
+	err = store.CrebteUserSyncJob(ctx, 1, user1MediumPrioDelbyedJob)
 	require.NoError(t, err)
 
-	err = store.CreateUserSyncJob(ctx, 2, user2MediumPrioDelayedJob)
+	err = store.CrebteUserSyncJob(ctx, 2, user2MediumPrioDelbyedJob)
 	require.NoError(t, err)
 
-	allDelayedJobs, err = store.List(ctx, ListPermissionSyncJobOpts{NotNullProcessAfter: true})
+	bllDelbyedJobs, err = store.List(ctx, ListPermissionSyncJobOpts{NotNullProcessAfter: true})
 	require.NoError(t, err)
-	// Check that we have 2 delayed jobs in total.
-	require.Len(t, allDelayedJobs, 4)
+	// Check thbt we hbve 2 delbyed jobs in totbl.
+	require.Len(t, bllDelbyedJobs, 4)
 	// UserID of the job should be (jobID - 2).
-	require.Equal(t, allDelayedJobs[0].UserID, allDelayedJobs[0].ID-2)
-	require.Equal(t, allDelayedJobs[1].UserID, allDelayedJobs[1].ID-2)
-	require.Equal(t, allDelayedJobs[2].UserID, allDelayedJobs[1].ID-3)
-	require.Equal(t, allDelayedJobs[3].UserID, allDelayedJobs[1].ID-2)
+	require.Equbl(t, bllDelbyedJobs[0].UserID, bllDelbyedJobs[0].ID-2)
+	require.Equbl(t, bllDelbyedJobs[1].UserID, bllDelbyedJobs[1].ID-2)
+	require.Equbl(t, bllDelbyedJobs[2].UserID, bllDelbyedJobs[1].ID-3)
+	require.Equbl(t, bllDelbyedJobs[3].UserID, bllDelbyedJobs[1].ID-2)
 
-	// 5) Insert *high* priority job without process_after for user1. Check that medium and low priority job is canceled.
-	user1HighPrioJob := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, Reason: ReasonManualUserSync, TriggeredByUserID: user1.ID}
-	err = store.CreateUserSyncJob(ctx, 1, user1HighPrioJob)
+	// 5) Insert *high* priority job without process_bfter for user1. Check thbt medium bnd low priority job is cbnceled.
+	user1HighPrioJob := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, Rebson: RebsonMbnublUserSync, TriggeredByUserID: user1.ID}
+	err = store.CrebteUserSyncJob(ctx, 1, user1HighPrioJob)
 	require.NoError(t, err)
 
-	allUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
+	bllUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	require.NoError(t, err)
-	// Check that we have 3 jobs for userID=1 in total (medium prio (canceled), delayed, high prio).
-	require.Len(t, allUser1Jobs, 5)
-	// Check that medium prio job (ID=3) is canceled and others are not.
-	for _, job := range allUser1Jobs {
+	// Check thbt we hbve 3 jobs for userID=1 in totbl (medium prio (cbnceled), delbyed, high prio).
+	require.Len(t, bllUser1Jobs, 5)
+	// Check thbt medium prio job (ID=3) is cbnceled bnd others bre not.
+	for _, job := rbnge bllUser1Jobs {
 		if job.ID == 1 || job.ID == 5 {
-			require.True(t, job.Cancel)
+			require.True(t, job.Cbncel)
 		} else {
-			require.False(t, job.Cancel)
+			require.Fblse(t, job.Cbncel)
 		}
 	}
 
-	// 6) Insert another low and high priority jobs without process_after for user1.
-	// Check that all of them are dropped since we already have a high prio job.
-	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
+	// 6) Insert bnother low bnd high priority jobs without process_bfter for user1.
+	// Check thbt bll of them bre dropped since we blrebdy hbve b high prio job.
+	err = store.CrebteUserSyncJob(ctx, 1, user1LowPrioJob)
 	require.NoError(t, err)
 
-	err = store.CreateUserSyncJob(ctx, 1, user1HighPrioJob)
+	err = store.CrebteUserSyncJob(ctx, 1, user1HighPrioJob)
 	require.NoError(t, err)
 
-	allUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
+	bllUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	require.NoError(t, err)
-	// Check that we still have 3 jobs for userID=1 in total (low prio (canceled), medium prio (cancelled), high prio).
-	require.Len(t, allUser1Jobs, 5)
+	// Check thbt we still hbve 3 jobs for userID=1 in totbl (low prio (cbnceled), medium prio (cbncelled), high prio).
+	require.Len(t, bllUser1Jobs, 5)
 
-	// 7) Check that not "queued" jobs doesn't affect duplicates check: let's change high prio job to "processing"
-	// and insert one low prio after that.
-	result, err := db.ExecContext(ctx, "UPDATE permission_sync_jobs SET state='processing' WHERE id=7")
+	// 7) Check thbt not "queued" jobs doesn't bffect duplicbtes check: let's chbnge high prio job to "processing"
+	// bnd insert one low prio bfter thbt.
+	result, err := db.ExecContext(ctx, "UPDATE permission_sync_jobs SET stbte='processing' WHERE id=7")
 	require.NoError(t, err)
-	updatedRows, err := result.RowsAffected()
+	updbtedRows, err := result.RowsAffected()
 	require.NoError(t, err)
-	require.Equal(t, int64(1), updatedRows)
+	require.Equbl(t, int64(1), updbtedRows)
 
 	// Now we're good to insert new low prio job.
-	err = store.CreateUserSyncJob(ctx, 1, user1LowPrioJob)
+	err = store.CrebteUserSyncJob(ctx, 1, user1LowPrioJob)
 	require.NoError(t, err)
 
-	allUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
+	bllUser1Jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: 1})
 	require.NoError(t, err)
-	// Check that we now have 4 jobs for userID=1 in total (low prio (canceled), delayed, high prio (processing), NEW low prio).
-	require.Len(t, allUser1Jobs, 5)
+	// Check thbt we now hbve 4 jobs for userID=1 in totbl (low prio (cbnceled), delbyed, high prio (processing), NEW low prio).
+	require.Len(t, bllUser1Jobs, 5)
 }
 
-func TestPermissionSyncJobs_CancelQueuedJob(t *testing.T) {
+func TestPermissionSyncJobs_CbncelQueuedJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// Create a repo.
-	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	err := reposStore.Create(ctx, &repo1)
+	// Crebte b repo.
+	repo1 := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := reposStore.Crebte(ctx, &repo1)
 	require.NoError(t, err)
 
-	// Test that cancelling non-existent job errors out.
-	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)
+	// Test thbt cbncelling non-existent job errors out.
+	err = store.CbncelQueuedJob(ctx, CbncellbtionRebsonHigherPriority, 1)
 	require.True(t, errcode.IsNotFound(err))
 
-	// Adding a job.
-	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	// Adding b job.
+	err = store.CrebteRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Rebson: RebsonMbnublUserSync})
 	require.NoError(t, err)
 
-	// Cancelling a job should be successful now.
-	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)
+	// Cbncelling b job should be successful now.
+	err = store.CbncelQueuedJob(ctx, CbncellbtionRebsonHigherPriority, 1)
 	require.NoError(t, err)
-	// Checking that cancellation reason is set.
-	cancelledJob, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
+	// Checking thbt cbncellbtion rebson is set.
+	cbncelledJob, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
-	require.Len(t, cancelledJob, 1)
-	require.Equal(t, CancellationReasonHigherPriority, *cancelledJob[0].CancellationReason)
+	require.Len(t, cbncelledJob, 1)
+	require.Equbl(t, CbncellbtionRebsonHigherPriority, *cbncelledJob[0].CbncellbtionRebson)
 
-	// Cancelling already cancelled job doesn't make sense and errors out as well.
-	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 1)
+	// Cbncelling blrebdy cbncelled job doesn't mbke sense bnd errors out bs well.
+	err = store.CbncelQueuedJob(ctx, CbncellbtionRebsonHigherPriority, 1)
 	require.True(t, errcode.IsNotFound(err))
 
-	// Adding another job and setting it to "processing" state.
-	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
+	// Adding bnother job bnd setting it to "processing" stbte.
+	err = store.CrebteRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Rebson: RebsonMbnublRepoSync})
 	require.NoError(t, err)
-	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET state='processing' WHERE id=2")
+	_, err = db.ExecContext(ctx, "UPDATE permission_sync_jobs SET stbte='processing' WHERE id=2")
 	require.NoError(t, err)
 
-	// Cancelling it errors out because it is in a state different from "queued".
-	err = store.CancelQueuedJob(ctx, CancellationReasonHigherPriority, 2)
+	// Cbncelling it errors out becbuse it is in b stbte different from "queued".
+	err = store.CbncelQueuedJob(ctx, CbncellbtionRebsonHigherPriority, 2)
 	require.True(t, errcode.IsNotFound(err))
 }
 
-func TestPermissionSyncJobs_SaveSyncResult(t *testing.T) {
+func TestPermissionSyncJobs_SbveSyncResult(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// Create repo.
-	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	err := reposStore.Create(ctx, &repo1)
+	// Crebte repo.
+	repo1 := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := reposStore.Crebte(ctx, &repo1)
 	require.NoError(t, err)
 
-	// Creating result.
+	// Crebting result.
 	result := SetPermissionsResult{
 		Added:   1,
 		Removed: 2,
 		Found:   5,
 	}
 
-	// Creating code host states.
-	codeHostStates := getSampleCodeHostStates()
-	// Adding a job.
-	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	// Crebting code host stbtes.
+	codeHostStbtes := getSbmpleCodeHostStbtes()
+	// Adding b job.
+	err = store.CrebteRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Rebson: RebsonMbnublUserSync})
 	require.NoError(t, err)
 
-	// Saving result should be successful.
-	err = store.SaveSyncResult(ctx, 1, true, &result, codeHostStates)
+	// Sbving result should be successful.
+	err = store.SbveSyncResult(ctx, 1, true, &result, codeHostStbtes)
 	require.NoError(t, err)
 
-	// Checking that all the results are set.
+	// Checking thbt bll the results bre set.
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 	theJob := jobs[0]
-	require.Equal(t, 1, theJob.PermissionsAdded)
-	require.Equal(t, 2, theJob.PermissionsRemoved)
-	require.Equal(t, 5, theJob.PermissionsFound)
-	require.Equal(t, codeHostStates, theJob.CodeHostStates)
-	require.True(t, theJob.IsPartialSuccess)
+	require.Equbl(t, 1, theJob.PermissionsAdded)
+	require.Equbl(t, 2, theJob.PermissionsRemoved)
+	require.Equbl(t, 5, theJob.PermissionsFound)
+	require.Equbl(t, codeHostStbtes, theJob.CodeHostStbtes)
+	require.True(t, theJob.IsPbrtiblSuccess)
 
-	// Saving nil result (in case of errors from code host) should be also successful.
-	err = store.SaveSyncResult(ctx, 1, false, nil, codeHostStates[1:])
+	// Sbving nil result (in cbse of errors from code host) should be blso successful.
+	err = store.SbveSyncResult(ctx, 1, fblse, nil, codeHostStbtes[1:])
 	require.NoError(t, err)
 
-	// Checking that all the results are set.
+	// Checking thbt bll the results bre set.
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 	theJob = jobs[0]
-	require.Equal(t, 0, theJob.PermissionsAdded)
-	require.Equal(t, 0, theJob.PermissionsRemoved)
-	require.Equal(t, 0, theJob.PermissionsFound)
-	require.Equal(t, codeHostStates[1:], theJob.CodeHostStates)
-	require.False(t, theJob.IsPartialSuccess)
+	require.Equbl(t, 0, theJob.PermissionsAdded)
+	require.Equbl(t, 0, theJob.PermissionsRemoved)
+	require.Equbl(t, 0, theJob.PermissionsFound)
+	require.Equbl(t, codeHostStbtes[1:], theJob.CodeHostStbtes)
+	require.Fblse(t, theJob.IsPbrtiblSuccess)
 }
 
-func TestPermissionSyncJobs_CascadeOnRepoDelete(t *testing.T) {
+func TestPermissionSyncJobs_CbscbdeOnRepoDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// Create a repo.
-	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	err := reposStore.Create(ctx, &repo1)
+	// Crebte b repo.
+	repo1 := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := reposStore.Crebte(ctx, &repo1)
 	require.NoError(t, err)
 
-	// Adding a job.
-	err = store.CreateRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
+	// Adding b job.
+	err = store.CrebteRepoSyncJob(ctx, repo1.ID, PermissionSyncJobOpts{Rebson: RebsonMbnublRepoSync})
 	require.NoError(t, err)
 
-	// Checking that the job is created.
+	// Checking thbt the job is crebted.
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 
 	// Deleting repo.
-	_, err = db.ExecContext(context.Background(), fmt.Sprintf(`DELETE FROM repo WHERE id = %d`, int(repo1.ID)))
+	_, err = db.ExecContext(context.Bbckground(), fmt.Sprintf(`DELETE FROM repo WHERE id = %d`, int(repo1.ID)))
 	require.NoError(t, err)
 
-	// Checking that the job is deleted.
+	// Checking thbt the job is deleted.
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{RepoID: int(repo1.ID)})
 	require.NoError(t, err)
 	require.Empty(t, jobs)
 }
 
-func TestPermissionSyncJobs_CascadeOnUserDelete(t *testing.T) {
+func TestPermissionSyncJobs_CbscbdeOnUserDelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
 
-	// Create a user.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1"})
+	// Crebte b user.
+	user1, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-1"})
 	require.NoError(t, err)
 
-	// Adding a job.
-	err = store.CreateUserSyncJob(ctx, user1.ID, PermissionSyncJobOpts{Reason: ReasonManualRepoSync})
+	// Adding b job.
+	err = store.CrebteUserSyncJob(ctx, user1.ID, PermissionSyncJobOpts{Rebson: RebsonMbnublRepoSync})
 	require.NoError(t, err)
 
-	// Checking that the job is created.
+	// Checking thbt the job is crebted.
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{UserID: int(user1.ID)})
 	require.NoError(t, err)
 	require.Len(t, jobs, 1)
 
 	// Deleting user.
-	err = usersStore.HardDelete(ctx, user1.ID)
+	err = usersStore.HbrdDelete(ctx, user1.ID)
 	require.NoError(t, err)
 
-	// Checking that the job is deleted.
+	// Checking thbt the job is deleted.
 	jobs, err = store.List(ctx, ListPermissionSyncJobOpts{UserID: int(user1.ID)})
 	require.NoError(t, err)
 	require.Empty(t, jobs)
 }
 
-func TestPermissionSyncJobs_Pagination(t *testing.T) {
+func TestPermissionSyncJobs_Pbginbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
+	user, err := db.Users().Crebte(ctx, NewUser{Usernbme: "horse"})
 	require.NoError(t, err)
 
 	store := PermissionSyncJobsWith(logger, db)
 
-	// Create 10 sync jobs.
-	createSyncJobs(t, ctx, user.ID, store)
+	// Crebte 10 sync jobs.
+	crebteSyncJobs(t, ctx, user.ID, store)
 
 	jobs, err := store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
-	paginationTests := []struct {
-		name           string
-		paginationArgs PaginationArgs
-		wantJobs       []*PermissionSyncJob
+	pbginbtionTests := []struct {
+		nbme           string
+		pbginbtionArgs PbginbtionArgs
+		wbntJobs       []*PermissionSyncJob
 	}{
 		{
-			name:           "After",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
-			wantJobs:       []*PermissionSyncJob{},
+			nbme:           "After",
+			pbginbtionArgs: PbginbtionArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, After: pointers.Ptr("1")},
+			wbntJobs:       []*PermissionSyncJob{},
 		},
 		{
-			name:           "Before",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
-			wantJobs:       jobs,
+			nbme:           "Before",
+			pbginbtionArgs: PbginbtionArgs{OrderBy: []OrderByOption{{Field: "user_id"}}, Ascending: true, Before: pointers.Ptr("2")},
+			wbntJobs:       jobs,
 		},
 		{
-			name:           "First",
-			paginationArgs: PaginationArgs{Ascending: true, First: pointers.Ptr(5)},
-			wantJobs:       jobs[:5],
+			nbme:           "First",
+			pbginbtionArgs: PbginbtionArgs{Ascending: true, First: pointers.Ptr(5)},
+			wbntJobs:       jobs[:5],
 		},
 		{
-			name:           "OrderBy",
-			paginationArgs: PaginationArgs{OrderBy: []OrderByOption{{Field: "queued_at"}}, Ascending: false},
-			wantJobs:       reverse(jobs),
+			nbme:           "OrderBy",
+			pbginbtionArgs: PbginbtionArgs{OrderBy: []OrderByOption{{Field: "queued_bt"}}, Ascending: fblse},
+			wbntJobs:       reverse(jobs),
 		},
 	}
 
-	for _, tt := range paginationTests {
-		t.Run(tt.name, func(t *testing.T) {
-			have, err := store.List(ctx, ListPermissionSyncJobOpts{PaginationArgs: &tt.paginationArgs})
+	for _, tt := rbnge pbginbtionTests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			hbve, err := store.List(ctx, ListPermissionSyncJobOpts{PbginbtionArgs: &tt.pbginbtionArgs})
 			require.NoError(t, err)
-			if len(have) != len(tt.wantJobs) {
-				t.Fatalf("wrong number of jobs returned. want=%d, have=%d", len(tt.wantJobs), len(have))
+			if len(hbve) != len(tt.wbntJobs) {
+				t.Fbtblf("wrong number of jobs returned. wbnt=%d, hbve=%d", len(tt.wbntJobs), len(hbve))
 			}
-			if len(tt.wantJobs) > 0 {
-				if diff := cmp.Diff(tt.wantJobs, have); diff != "" {
-					t.Fatalf("unexpected jobs. diff: %s", diff)
+			if len(tt.wbntJobs) > 0 {
+				if diff := cmp.Diff(tt.wbntJobs, hbve); diff != "" {
+					t.Fbtblf("unexpected jobs. diff: %s", diff)
 				}
 			}
 		})
@@ -795,267 +795,267 @@ func TestPermissionSyncJobs_Count(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	user, err := db.Users().Create(ctx, NewUser{Username: "horse"})
+	user, err := db.Users().Crebte(ctx, NewUser{Usernbme: "horse"})
 	require.NoError(t, err)
 
 	store := PermissionSyncJobsWith(logger, db)
 
-	// Create 10 sync jobs.
-	createSyncJobs(t, ctx, user.ID, store)
+	// Crebte 10 sync jobs.
+	crebteSyncJobs(t, ctx, user.ID, store)
 
 	_, err = store.List(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
 
 	count, err := store.Count(ctx, ListPermissionSyncJobOpts{})
 	require.NoError(t, err)
-	require.Equal(t, 10, count)
+	require.Equbl(t, 10, count)
 
-	// Create 10 more sync jobs.
-	createSyncJobs(t, ctx, user.ID, store)
-	// Now we will count only the ReasonManualUserSync jobs (which should be a half
-	// of all jobs).
-	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Reason: ReasonManualUserSync})
+	// Crebte 10 more sync jobs.
+	crebteSyncJobs(t, ctx, user.ID, store)
+	// Now we will count only the RebsonMbnublUserSync jobs (which should be b hblf
+	// of bll jobs).
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{Rebson: RebsonMbnublUserSync})
 	require.NoError(t, err)
-	require.Equal(t, 10, count)
+	require.Equbl(t, 10, count)
 
-	// Counting with user search.
-	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeUser, Query: "hors"})
+	// Counting with user sebrch.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SebrchType: PermissionsSyncSebrchTypeUser, Query: "hors"})
 	require.NoError(t, err)
-	require.Equal(t, 20, count)
+	require.Equbl(t, 20, count)
 
-	// Counting with repo search.
-	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SearchType: PermissionsSyncSearchTypeRepo, Query: "no :("})
+	// Counting with repo sebrch.
+	count, err = store.Count(ctx, ListPermissionSyncJobOpts{SebrchType: PermissionsSyncSebrchTypeRepo, Query: "no :("})
 	require.NoError(t, err)
-	require.Equal(t, 0, count)
+	require.Equbl(t, 0, count)
 }
 
-func TestPermissionSyncJobs_CountUsersWithFailingSyncJob(t *testing.T) {
+func TestPermissionSyncJobs_CountUsersWithFbilingSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	usersStore := UsersWith(logger, db)
 
-	// Create users.
-	user1, err := usersStore.Create(ctx, NewUser{Username: "test-user-1", DisplayName: "t0pc0d3r"})
+	// Crebte users.
+	user1, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-1", DisplbyNbme: "t0pc0d3r"})
 	require.NoError(t, err)
-	user2, err := usersStore.Create(ctx, NewUser{Username: "test-user-2"})
+	user2, err := usersStore.Crebte(ctx, NewUser{Usernbme: "test-user-2"})
 	require.NoError(t, err)
 
 	t.Run("No jobs", func(t *testing.T) {
-		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		count, err := store.CountUsersWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(0), count, "wrong count")
+		require.Equbl(t, int32(0), count, "wrong count")
 	})
 
-	t.Run("No failining sync job", func(t *testing.T) {
-		cleanupSyncJobs(t, db, ctx)
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 2
+	t.Run("No fbilining sync job", func(t *testing.T) {
+		clebnupSyncJobs(t, db, ctx)
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 2
 
 		finishSyncJob(t, db, ctx, 1, clock.Now())
 
-		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		count, err := store.CountUsersWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(0), count, "wrong count")
+		require.Equbl(t, int32(0), count, "wrong count")
 	})
 
-	t.Run("No latest failing sync job", func(t *testing.T) {
-		cleanupSyncJobs(t, db, ctx)
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+	t.Run("No lbtest fbiling sync job", func(t *testing.T) {
+		clebnupSyncJobs(t, db, ctx)
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Minute))
 
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 2
-		finishSyncJobWithFailure(t, db, ctx, 2, clock.Now().Add(-1*time.Hour))
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 2
+		finishSyncJobWithFbilure(t, db, ctx, 2, clock.Now().Add(-1*time.Hour))
 
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 3
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 3
 		finishSyncJob(t, db, ctx, 3, clock.Now())
 
-		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		count, err := store.CountUsersWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(0), count, "wrong count")
+		require.Equbl(t, int32(0), count, "wrong count")
 	})
 
-	t.Run("With latest failing sync job", func(t *testing.T) {
-		cleanupSyncJobs(t, db, ctx)
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 1
+	t.Run("With lbtest fbiling sync job", func(t *testing.T) {
+		clebnupSyncJobs(t, db, ctx)
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 1
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
 
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 2
-		finishSyncJobWithFailure(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 2
+		finishSyncJobWithFbilure(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
 
-		createSyncJob(t, store, ctx, user1.ID, 0) // id = 3
-		finishSyncJobWithCancel(t, db, ctx, 3, clock.Now().Add(-1*time.Minute))
+		crebteSyncJob(t, store, ctx, user1.ID, 0) // id = 3
+		finishSyncJobWithCbncel(t, db, ctx, 3, clock.Now().Add(-1*time.Minute))
 
-		createSyncJob(t, store, ctx, user2.ID, 0) // id = 4
-		finishSyncJobWithFailure(t, db, ctx, 4, clock.Now())
+		crebteSyncJob(t, store, ctx, user2.ID, 0) // id = 4
+		finishSyncJobWithFbilure(t, db, ctx, 4, clock.Now())
 
-		count, err := store.CountUsersWithFailingSyncJob(ctx)
+		count, err := store.CountUsersWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(2), count, "wrong count")
+		require.Equbl(t, int32(2), count, "wrong count")
 	})
 }
 
-func TestPermissionSyncJobs_CountReposWithFailingSyncJob(t *testing.T) {
+func TestPermissionSyncJobs_CountReposWithFbilingSyncJob(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	store := PermissionSyncJobsWith(logger, db)
 	reposStore := ReposWith(logger, db)
 
-	// Create repos.
-	repo1 := types.Repo{Name: "test-repo-1", ID: 101}
-	err := reposStore.Create(ctx, &repo1)
+	// Crebte repos.
+	repo1 := types.Repo{Nbme: "test-repo-1", ID: 101}
+	err := reposStore.Crebte(ctx, &repo1)
 	require.NoError(t, err)
-	repo2 := types.Repo{Name: "test-repo-2", ID: 201}
-	err = reposStore.Create(ctx, &repo2)
+	repo2 := types.Repo{Nbme: "test-repo-2", ID: 201}
+	err = reposStore.Crebte(ctx, &repo2)
 	require.NoError(t, err)
 
 	t.Run("No jobs", func(t *testing.T) {
-		count, err := store.CountReposWithFailingSyncJob(ctx)
+		count, err := store.CountReposWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(0), count, "wrong count")
+		require.Equbl(t, int32(0), count, "wrong count")
 	})
 
-	t.Run("No failining sync job", func(t *testing.T) {
-		cleanupSyncJobs(t, db, ctx)
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 1
-		createSyncJob(t, store, ctx, 0, repo2.ID) // id = 2
+	t.Run("No fbilining sync job", func(t *testing.T) {
+		clebnupSyncJobs(t, db, ctx)
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 1
+		crebteSyncJob(t, store, ctx, 0, repo2.ID) // id = 2
 
 		finishSyncJob(t, db, ctx, 1, clock.Now())
 
-		count, err := store.CountReposWithFailingSyncJob(ctx)
+		count, err := store.CountReposWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(0), count, "wrong count")
+		require.Equbl(t, int32(0), count, "wrong count")
 	})
 
-	t.Run("No latest failing sync job", func(t *testing.T) {
-		cleanupSyncJobs(t, db, ctx)
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 1
+	t.Run("No lbtest fbiling sync job", func(t *testing.T) {
+		clebnupSyncJobs(t, db, ctx)
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 1
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Minute))
 
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 2
-		finishSyncJobWithFailure(t, db, ctx, 2, clock.Now().Add(-1*time.Hour))
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 2
+		finishSyncJobWithFbilure(t, db, ctx, 2, clock.Now().Add(-1*time.Hour))
 
-		createSyncJob(t, store, ctx, 0, repo2.ID) // id = 3
+		crebteSyncJob(t, store, ctx, 0, repo2.ID) // id = 3
 		finishSyncJob(t, db, ctx, 3, clock.Now())
 
-		count, err := store.CountReposWithFailingSyncJob(ctx)
+		count, err := store.CountReposWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(0), count, "wrong count")
+		require.Equbl(t, int32(0), count, "wrong count")
 	})
 
-	t.Run("With latest failing sync job", func(t *testing.T) {
-		cleanupSyncJobs(t, db, ctx)
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 1
+	t.Run("With lbtest fbiling sync job", func(t *testing.T) {
+		clebnupSyncJobs(t, db, ctx)
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 1
 		finishSyncJob(t, db, ctx, 1, clock.Now().Add(-1*time.Hour))
 
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 2
-		finishSyncJobWithFailure(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 2
+		finishSyncJobWithFbilure(t, db, ctx, 2, clock.Now().Add(-1*time.Minute))
 
-		createSyncJob(t, store, ctx, 0, repo1.ID) // id = 3
-		finishSyncJobWithCancel(t, db, ctx, 3, clock.Now().Add(-1*time.Minute))
+		crebteSyncJob(t, store, ctx, 0, repo1.ID) // id = 3
+		finishSyncJobWithCbncel(t, db, ctx, 3, clock.Now().Add(-1*time.Minute))
 
-		createSyncJob(t, store, ctx, 0, repo2.ID) // id = 4
-		finishSyncJobWithFailure(t, db, ctx, 4, clock.Now())
+		crebteSyncJob(t, store, ctx, 0, repo2.ID) // id = 4
+		finishSyncJobWithFbilure(t, db, ctx, 4, clock.Now())
 
-		count, err := store.CountReposWithFailingSyncJob(ctx)
+		count, err := store.CountReposWithFbilingSyncJob(ctx)
 		require.NoError(t, err)
-		require.Equal(t, int32(2), count, "wrong count")
+		require.Equbl(t, int32(2), count, "wrong count")
 	})
 }
 
-// createSyncJobs creates 10 sync jobs, half with the ReasonManualUserSync reason
-// and half with the ReasonGitHubUserMembershipRemovedEvent reason.
-func createSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {
+// crebteSyncJobs crebtes 10 sync jobs, hblf with the RebsonMbnublUserSync rebson
+// bnd hblf with the RebsonGitHubUserMembershipRemovedEvent rebson.
+func crebteSyncJobs(t *testing.T, ctx context.Context, userID int32, store PermissionSyncJobStore) {
 	t.Helper()
-	clock := timeutil.NewFakeClock(time.Now(), 0)
+	clock := timeutil.NewFbkeClock(time.Now(), 0)
 	for i := 0; i < 10; i++ {
 		processAfter := clock.Now().Add(5 * time.Minute)
-		reason := ReasonManualUserSync
+		rebson := RebsonMbnublUserSync
 		if i%2 == 0 {
-			reason = ReasonGitHubUserMembershipRemovedEvent
+			rebson = RebsonGitHubUserMembershipRemovedEvent
 		}
-		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvalidateCaches: true, ProcessAfter: processAfter, Reason: reason}
-		err := store.CreateUserSyncJob(ctx, userID, opts)
+		opts := PermissionSyncJobOpts{Priority: MediumPriorityPermissionsSync, InvblidbteCbches: true, ProcessAfter: processAfter, Rebson: rebson}
+		err := store.CrebteUserSyncJob(ctx, userID, opts)
 		require.NoError(t, err)
 	}
 }
 
-func createSyncJob(t *testing.T, store PermissionSyncJobStore, ctx context.Context, userID int32, repoID api.RepoID) {
+func crebteSyncJob(t *testing.T, store PermissionSyncJobStore, ctx context.Context, userID int32, repoID bpi.RepoID) {
 	t.Helper()
 
-	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvalidateCaches: true, Reason: ReasonUserNoPermissions, NoPerms: true}
+	opts := PermissionSyncJobOpts{Priority: HighPriorityPermissionsSync, InvblidbteCbches: true, Rebson: RebsonUserNoPermissions, NoPerms: true}
 	if userID != 0 {
-		err := store.CreateUserSyncJob(ctx, userID, opts)
+		err := store.CrebteUserSyncJob(ctx, userID, opts)
 		require.NoError(t, err)
 	}
 	if repoID != 0 {
-		err := store.CreateRepoSyncJob(ctx, repoID, opts)
+		err := store.CrebteRepoSyncJob(ctx, repoID, opts)
 		require.NoError(t, err)
 	}
 }
 
-func finishSyncJobWithState(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time, state PermissionsSyncJobState, statuses CodeHostStatusesSet) {
+func finishSyncJobWithStbte(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time, stbte PermissionsSyncJobStbte, stbtuses CodeHostStbtusesSet) {
 	t.Helper()
 
-	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, state, id)
+	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_bt = %s, stbte = %s WHERE id = %d", finishedAt, stbte, id)
 
-	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 	require.NoError(t, err)
 
-	err = db.PermissionSyncJobs().SaveSyncResult(ctx, id, state == PermissionsSyncJobStateCompleted, nil, statuses)
-	require.NoError(t, err)
-}
-
-func finishSyncJobWithFailure(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time) {
-	t.Helper()
-
-	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, PermissionsSyncJobStateFailed, id)
-
-	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	err = db.PermissionSyncJobs().SbveSyncResult(ctx, id, stbte == PermissionsSyncJobStbteCompleted, nil, stbtuses)
 	require.NoError(t, err)
 }
 
-func finishSyncJobWithCancel(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time) {
+func finishSyncJobWithFbilure(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time) {
 	t.Helper()
 
-	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s, cancel = true WHERE id = %d", finishedAt, PermissionsSyncJobStateCanceled, id)
+	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_bt = %s, stbte = %s WHERE id = %d", finishedAt, PermissionsSyncJobStbteFbiled, id)
 
-	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
+	require.NoError(t, err)
+}
+
+func finishSyncJobWithCbncel(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time) {
+	t.Helper()
+
+	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_bt = %s, stbte = %s, cbncel = true WHERE id = %d", finishedAt, PermissionsSyncJobStbteCbnceled, id)
+
+	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 	require.NoError(t, err)
 }
 
 func finishSyncJob(t *testing.T, db DB, ctx context.Context, id int, finishedAt time.Time) {
 	t.Helper()
 
-	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_at = %s, state = %s WHERE id = %d", finishedAt, PermissionsSyncJobStateCompleted, id)
+	query := sqlf.Sprintf("UPDATE permission_sync_jobs SET finished_bt = %s, stbte = %s WHERE id = %d", finishedAt, PermissionsSyncJobStbteCompleted, id)
 
-	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
+	_, err := db.ExecContext(ctx, query.Query(sqlf.PostgresBindVbr), query.Args()...)
 	require.NoError(t, err)
 }
 
-func cleanupSyncJobs(t *testing.T, db DB, ctx context.Context) {
+func clebnupSyncJobs(t *testing.T, db DB, ctx context.Context) {
 	t.Helper()
 
-	if t.Failed() {
+	if t.Fbiled() {
 		return
 	}
 
@@ -1064,26 +1064,26 @@ func cleanupSyncJobs(t *testing.T, db DB, ctx context.Context) {
 }
 
 func reverse(jobs []*PermissionSyncJob) []*PermissionSyncJob {
-	reversed := make([]*PermissionSyncJob, 0, len(jobs))
+	reversed := mbke([]*PermissionSyncJob, 0, len(jobs))
 	for i := 0; i < len(jobs); i++ {
-		reversed = append(reversed, jobs[len(jobs)-i-1])
+		reversed = bppend(reversed, jobs[len(jobs)-i-1])
 	}
 	return reversed
 }
 
-func getSampleCodeHostStates() []PermissionSyncCodeHostState {
-	return []PermissionSyncCodeHostState{
+func getSbmpleCodeHostStbtes() []PermissionSyncCodeHostStbte {
+	return []PermissionSyncCodeHostStbte{
 		{
 			ProviderID:   "ID",
 			ProviderType: "Type",
-			Status:       CodeHostStatusSuccess,
-			Message:      "successful success",
+			Stbtus:       CodeHostStbtusSuccess,
+			Messbge:      "successful success",
 		},
 		{
 			ProviderID:   "ID",
 			ProviderType: "Type",
-			Status:       CodeHostStatusError,
-			Message:      "unsuccessful unsuccess :(",
+			Stbtus:       CodeHostStbtusError,
+			Messbge:      "unsuccessful unsuccess :(",
 		},
 	}
 

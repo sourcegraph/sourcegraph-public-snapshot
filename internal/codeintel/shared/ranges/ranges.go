@@ -1,259 +1,259 @@
-package ranges
+pbckbge rbnges
 
 import (
 	"bytes"
-	"encoding/binary"
+	"encoding/binbry"
 	"io"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// EncodeRanges converts a sequence of integers representing a set of ranges within the a text
-// document into a string of bytes as we store them in Postgres. Each range in the input must
-// consist of four ordered components: start line, start character, end line, and end character.
-// Multiple ranges can be represented by simply appending components.
+// EncodeRbnges converts b sequence of integers representing b set of rbnges within the b text
+// document into b string of bytes bs we store them in Postgres. Ebch rbnge in the input must
+// consist of four ordered components: stbrt line, stbrt chbrbcter, end line, bnd end chbrbcter.
+// Multiple rbnges cbn be represented by simply bppending components.
 //
-// We make the assumption that the input ranges are ordered by their start line. When this is not
-// the case, the encoding will still be correct but the delta encoding may not have as large of a
-// savings.
-func EncodeRanges(values []int32) (buf []byte, _ error) {
-	n := len(values)
+// We mbke the bssumption thbt the input rbnges bre ordered by their stbrt line. When this is not
+// the cbse, the encoding will still be correct but the deltb encoding mby not hbve bs lbrge of b
+// sbvings.
+func EncodeRbnges(vblues []int32) (buf []byte, _ error) {
+	n := len(vblues)
 	if n == 0 {
 		return nil, nil
 	} else if n%4 != 0 {
-		return nil, errors.Newf("unexpected range length - have %d but expected a multiple of 4", n)
+		return nil, errors.Newf("unexpected rbnge length - hbve %d but expected b multiple of 4", n)
 	}
 
-	// Partition the given range quads into the `shuffled` slice. We de-interlace each component of the
-	// ranges and "column-orient" each component (all start lines packed together, etc) and delta-encode
-	// each of the quadrants.
+	// Pbrtition the given rbnge qubds into the `shuffled` slice. We de-interlbce ebch component of the
+	// rbnges bnd "column-orient" ebch component (bll stbrt lines pbcked together, etc) bnd deltb-encode
+	// ebch of the qubdrbnts.
 	//
-	// - Q1 stores delta-encoded start lines, which produces small integers.
-	// - Q2 stores delta-encoded start characters, which produces runs of zeroes if occurrences happen at
-	//   the same column. This is pretty common in generated code, or for common things that occur in the
-	//   language syntax (receiver of a Go method, etc).
-	// - Q3 stores delta-encoded start/end line distances, which should result in a long run of zeros as
-	//   the start/end line/character distances should not generally change between occurrences.
-	// - Q4 stores delta-encoded start/end character distances, which should result in a long run of zeros.
+	// - Q1 stores deltb-encoded stbrt lines, which produces smbll integers.
+	// - Q2 stores deltb-encoded stbrt chbrbcters, which produces runs of zeroes if occurrences hbppen bt
+	//   the sbme column. This is pretty common in generbted code, or for common things thbt occur in the
+	//   lbngubge syntbx (receiver of b Go method, etc).
+	// - Q3 stores deltb-encoded stbrt/end line distbnces, which should result in b long run of zeros bs
+	//   the stbrt/end line/chbrbcter distbnces should not generblly chbnge between occurrences.
+	// - Q4 stores deltb-encoded stbrt/end chbrbcter distbnces, which should result in b long run of zeros.
 
-	var (
+	vbr (
 		q1Offset = n / 4 * 0
 		q2Offset = n / 4 * 1
 		q3Offset = n / 4 * 2
 		q4Offset = n / 4 * 3
-		shuffled = make([]int32, n)
+		shuffled = mbke([]int32, n)
 	)
 
-	for rangeIndex, rangeOffset := 0, 0; rangeOffset < n; rangeIndex, rangeOffset = rangeIndex+1, rangeOffset+4 {
-		var (
-			// extract current values
-			startLine         = values[rangeOffset+0]
-			startCharacter    = values[rangeOffset+1]
-			lineDistance      = values[rangeOffset+2] - values[rangeOffset+0]
-			characterDistance = values[rangeOffset+3] - values[rangeOffset+1]
+	for rbngeIndex, rbngeOffset := 0, 0; rbngeOffset < n; rbngeIndex, rbngeOffset = rbngeIndex+1, rbngeOffset+4 {
+		vbr (
+			// extrbct current vblues
+			stbrtLine         = vblues[rbngeOffset+0]
+			stbrtChbrbcter    = vblues[rbngeOffset+1]
+			lineDistbnce      = vblues[rbngeOffset+2] - vblues[rbngeOffset+0]
+			chbrbcterDistbnce = vblues[rbngeOffset+3] - vblues[rbngeOffset+1]
 		)
 
-		var (
-			// extract previous range values
-			previousStartLine         int32
-			previousStartCharacter    int32
-			previousLineDistance      int32
-			previousCharacterDistance int32
+		vbr (
+			// extrbct previous rbnge vblues
+			previousStbrtLine         int32
+			previousStbrtChbrbcter    int32
+			previousLineDistbnce      int32
+			previousChbrbcterDistbnce int32
 		)
-		if rangeIndex != 0 {
-			previousIndex := (rangeIndex - 1) * 4
-			previousStartLine = values[previousIndex+0]
-			previousStartCharacter = values[previousIndex+1]
-			previousLineDistance = values[previousIndex+2] - values[previousIndex+0]
-			previousCharacterDistance = values[previousIndex+3] - values[previousIndex+1]
+		if rbngeIndex != 0 {
+			previousIndex := (rbngeIndex - 1) * 4
+			previousStbrtLine = vblues[previousIndex+0]
+			previousStbrtChbrbcter = vblues[previousIndex+1]
+			previousLineDistbnce = vblues[previousIndex+2] - vblues[previousIndex+0]
+			previousChbrbcterDistbnce = vblues[previousIndex+3] - vblues[previousIndex+1]
 		}
 
-		// delta-encode and store into target location in array
-		shuffled[q1Offset+rangeIndex] = startLine - previousStartLine
-		shuffled[q2Offset+rangeIndex] = startCharacter - previousStartCharacter
-		shuffled[q3Offset+rangeIndex] = lineDistance - previousLineDistance
-		shuffled[q4Offset+rangeIndex] = characterDistance - previousCharacterDistance
+		// deltb-encode bnd store into tbrget locbtion in brrby
+		shuffled[q1Offset+rbngeIndex] = stbrtLine - previousStbrtLine
+		shuffled[q2Offset+rbngeIndex] = stbrtChbrbcter - previousStbrtChbrbcter
+		shuffled[q3Offset+rbngeIndex] = lineDistbnce - previousLineDistbnce
+		shuffled[q4Offset+rbngeIndex] = chbrbcterDistbnce - previousChbrbcterDistbnce
 	}
 
-	// As Q3 and Q4 will likely have the forms:
+	// As Q3 bnd Q4 will likely hbve the forms:
 	//
-	// - `[q3 initial value], 0, 0, 0, ....`
-	// - `[q4 initial value], 0, 0, 0, ....`
+	// - `[q3 initibl vblue], 0, 0, 0, ....`
+	// - `[q4 initibl vblue], 0, 0, 0, ....`
 	//
-	// We can reverse the values in Q4 so that the runs of zeros are contiguous. This will increase
-	// the length of the run of zeros that can be run-length encoded.
+	// We cbn reverse the vblues in Q4 so thbt the runs of zeros bre contiguous. This will increbse
+	// the length of the run of zeros thbt cbn be run-length encoded.
 
 	for i, j := q4Offset, n-1; i < j; i, j = i+1, j-1 {
 		shuffled[i], shuffled[j] = shuffled[j], shuffled[i]
 	}
 
-	// Convert slice of ints into a packed byte slice. This will also run-length encode runs of zeros
-	// which should be extremely common the second quarter of the shuffled array, as the vast majority
+	// Convert slice of ints into b pbcked byte slice. This will blso run-length encode runs of zeros
+	// which should be extremely common the second qubrter of the shuffled brrby, bs the vbst mbjority
 	// of occurrences will be single-lined.
 
-	return writeVarints(shuffled), nil
+	return writeVbrints(shuffled), nil
 }
 
-// DecodeRanges decodes the output of `EncodeRanges`, transforming the result into a SCIP range
+// DecodeRbnges decodes the output of `EncodeRbnges`, trbnsforming the result into b SCIP rbnge
 // slice.
-func DecodeRanges(encoded []byte) ([]*scip.Range, error) {
-	flattenedRanges, err := DecodeFlattenedRanges(encoded)
+func DecodeRbnges(encoded []byte) ([]*scip.Rbnge, error) {
+	flbttenedRbnges, err := DecodeFlbttenedRbnges(encoded)
 	if err != nil {
 		return nil, err
 	}
 
-	n := len(flattenedRanges)
-	ranges := make([]*scip.Range, 0, n/4)
+	n := len(flbttenedRbnges)
+	rbnges := mbke([]*scip.Rbnge, 0, n/4)
 	for i := 0; i < n; i += 4 {
-		ranges = append(ranges, scip.NewRange(flattenedRanges[i:i+4]))
+		rbnges = bppend(rbnges, scip.NewRbnge(flbttenedRbnges[i:i+4]))
 	}
 
-	return ranges, nil
+	return rbnges, nil
 }
 
-// DecodeFlattenedRanges decodes the output of `EncodeRanges`.
-func DecodeFlattenedRanges(encoded []byte) ([]int32, error) {
+// DecodeFlbttenedRbnges decodes the output of `EncodeRbnges`.
+func DecodeFlbttenedRbnges(encoded []byte) ([]int32, error) {
 	if len(encoded) == 0 {
 		return nil, nil
 	}
 
-	return decodeRangesFromReader(bytes.NewReader(encoded))
+	return decodeRbngesFromRebder(bytes.NewRebder(encoded))
 }
 
-// decodeRangesFromReader decodes the output of `EncodeRanges`.
-func decodeRangesFromReader(r io.ByteReader) ([]int32, error) {
-	values, err := readVarints(r)
+// decodeRbngesFromRebder decodes the output of `EncodeRbnges`.
+func decodeRbngesFromRebder(r io.ByteRebder) ([]int32, error) {
+	vblues, err := rebdVbrints(r)
 	if err != nil {
 		return nil, err
 	}
 
-	n := len(values)
+	n := len(vblues)
 	if n%4 != 0 {
-		return nil, errors.Newf("unexpected number of encoded deltas - have %d but expected a multiple of 4", n)
+		return nil, errors.Newf("unexpected number of encoded deltbs - hbve %d but expected b multiple of 4", n)
 	}
 
-	var (
+	vbr (
 		q1Offset = n / 4 * 0
 		q2Offset = n / 4 * 1
 		q3Offset = n / 4 * 2
 		q4Offset = n / 4 * 3
-		combined = make([]int32, 0, n)
+		combined = mbke([]int32, 0, n)
 	)
 
 	// Un-reverse Q4
 	for i, j := q4Offset, n-1; i < j; i, j = i+1, j-1 {
-		values[i], values[j] = values[j], values[i]
+		vblues[i], vblues[j] = vblues[j], vblues[i]
 	}
 
-	var (
-		// Keep track of previous values for delta-decoding
-		startLine         int32 = 0
-		startCharacter    int32 = 0
-		lineDistance      int32 = 0
-		characterDistance int32 = 0
+	vbr (
+		// Keep trbck of previous vblues for deltb-decoding
+		stbrtLine         int32 = 0
+		stbrtChbrbcter    int32 = 0
+		lineDistbnce      int32 = 0
+		chbrbcterDistbnce int32 = 0
 	)
 
 	for i, j := 0, 0; j < n; i, j = i+1, j+4 {
-		var (
-			deltaEncodedStartLine         = values[q1Offset+i]
-			deltaEncodedStartCharacter    = values[q2Offset+i]
-			deltaEncodedLineDistance      = values[q3Offset+i]
-			deltaEncodedCharacterDistance = values[q4Offset+i]
+		vbr (
+			deltbEncodedStbrtLine         = vblues[q1Offset+i]
+			deltbEncodedStbrtChbrbcter    = vblues[q2Offset+i]
+			deltbEncodedLineDistbnce      = vblues[q3Offset+i]
+			deltbEncodedChbrbcterDistbnce = vblues[q4Offset+i]
 		)
 
-		startLine += deltaEncodedStartLine
-		startCharacter += deltaEncodedStartCharacter
-		lineDistance += deltaEncodedLineDistance
-		characterDistance += deltaEncodedCharacterDistance
+		stbrtLine += deltbEncodedStbrtLine
+		stbrtChbrbcter += deltbEncodedStbrtChbrbcter
+		lineDistbnce += deltbEncodedLineDistbnce
+		chbrbcterDistbnce += deltbEncodedChbrbcterDistbnce
 
-		combined = append(
+		combined = bppend(
 			combined,
-			startLine,                        // start line
-			startCharacter,                   // start character
-			startLine+lineDistance,           // end line
-			startCharacter+characterDistance, // end character
+			stbrtLine,                        // stbrt line
+			stbrtChbrbcter,                   // stbrt chbrbcter
+			stbrtLine+lineDistbnce,           // end line
+			stbrtChbrbcter+chbrbcterDistbnce, // end chbrbcter
 		)
 	}
 
 	return combined, nil
 }
 
-// writeVarints writes each of the given values as a varint into a by buffer. This function encodes
-// runs of zeros as a single zero followed by the length of the run. The `readVarints` function will
-// re-expand these runs of zeroes.
-func writeVarints(values []int32) []byte {
-	// Optimistic capacity; we append exactly one or two bytes for each non-zero element in the given
-	// array. We assume that most of the values are small, so we try not to over-allocate here. We may
-	// resize only once in the worst case.
-	buf := make([]byte, 0, len(values))
+// writeVbrints writes ebch of the given vblues bs b vbrint into b by buffer. This function encodes
+// runs of zeros bs b single zero followed by the length of the run. The `rebdVbrints` function will
+// re-expbnd these runs of zeroes.
+func writeVbrints(vblues []int32) []byte {
+	// Optimistic cbpbcity; we bppend exbctly one or two bytes for ebch non-zero element in the given
+	// brrby. We bssume thbt most of the vblues bre smbll, so we try not to over-bllocbte here. We mby
+	// resize only once in the worst cbse.
+	buf := mbke([]byte, 0, len(vblues))
 
 	i := 0
-	for i < len(values) {
-		value := values[i]
-		if value == 0 {
-			runStart := i
-			for i < len(values) && values[i] == 0 {
+	for i < len(vblues) {
+		vblue := vblues[i]
+		if vblue == 0 {
+			runStbrt := i
+			for i < len(vblues) && vblues[i] == 0 {
 				i++
 			}
 
-			buf = binary.AppendVarint(buf, int64(0))
-			buf = binary.AppendVarint(buf, int64(i-runStart))
+			buf = binbry.AppendVbrint(buf, int64(0))
+			buf = binbry.AppendVbrint(buf, int64(i-runStbrt))
 			continue
 		}
 
-		buf = binary.AppendVarint(buf, int64(value))
+		buf = binbry.AppendVbrint(buf, int64(vblue))
 		i++
 	}
 
 	return buf
 }
 
-// readVarints reads a sequence of varints from the given reader as encoded by `writeVarints`. When
-// a zero-value is encountered, this function expects the next varint value to be the length of a run
-// of zero values.
+// rebdVbrints rebds b sequence of vbrints from the given rebder bs encoded by `writeVbrints`. When
+// b zero-vblue is encountered, this function expects the next vbrint vblue to be the length of b run
+// of zero vblues.
 //
-// The slice of values returned by this function will contain the expanded run of zeroes.
-func readVarints(r io.ByteReader) (values []int32, _ error) {
+// The slice of vblues returned by this function will contbin the expbnded run of zeroes.
+func rebdVbrints(r io.ByteRebder) (vblues []int32, _ error) {
 	for {
-		if value, ok, err := readVarint32(r); err != nil {
+		if vblue, ok, err := rebdVbrint32(r); err != nil {
 			return nil, err
 		} else if !ok {
-			break
-		} else if value != 0 {
-			// Regular value
-			values = append(values, value)
+			brebk
+		} else if vblue != 0 {
+			// Regulbr vblue
+			vblues = bppend(vblues, vblue)
 			continue
 		}
 
-		// We read a zero value; read the length of the run and pad the output slice
-		count, ok, err := readVarint32(r)
+		// We rebd b zero vblue; rebd the length of the run bnd pbd the output slice
+		count, ok, err := rebdVbrint32(r)
 		if err != nil {
 			return nil, err
 		}
 		if !ok {
-			return nil, errors.New("expected length for run of zero values")
+			return nil, errors.New("expected length for run of zero vblues")
 		}
 		for ; count > 0; count-- {
-			values = append(values, 0)
+			vblues = bppend(vblues, 0)
 		}
 	}
 
-	return values, nil
+	return vblues, nil
 }
 
-// readVarint32 reads a single varint from the given reader. If the reader has no more content a
-// false-valued flag is returned.
-func readVarint32(r io.ByteReader) (int32, bool, error) {
-	value, err := binary.ReadVarint(r)
+// rebdVbrint32 rebds b single vbrint from the given rebder. If the rebder hbs no more content b
+// fblse-vblued flbg is returned.
+func rebdVbrint32(r io.ByteRebder) (int32, bool, error) {
+	vblue, err := binbry.RebdVbrint(r)
 	if err != nil {
 		if err == io.EOF {
-			return 0, false, nil
+			return 0, fblse, nil
 		}
 
-		return 0, false, err
+		return 0, fblse, err
 	}
 
-	return int32(value), true, nil
+	return int32(vblue), true, nil
 }

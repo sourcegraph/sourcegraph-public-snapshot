@@ -1,46 +1,46 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise/diff"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise/diff"
 )
 
-func main() {
+func mbin() {
 	if len(os.Args) != 3 {
-		usage()
+		usbge()
 	}
 
-	dumpPath1 := os.Args[1]
-	dumpPath2 := os.Args[2]
+	dumpPbth1 := os.Args[1]
+	dumpPbth2 := os.Args[2]
 
-	if !strings.HasSuffix(dumpPath1, ".lsif") {
-		usage()
+	if !strings.HbsSuffix(dumpPbth1, ".lsif") {
+		usbge()
 	}
-	if !strings.HasSuffix(dumpPath2, ".lsif") {
-		usage()
+	if !strings.HbsSuffix(dumpPbth2, ".lsif") {
+		usbge()
 	}
 
-	bundle1, err := conversion.CorrelateLocalGit(
-		context.Background(),
-		dumpPath1,
-		filepath.Dir(dumpPath1),
+	bundle1, err := conversion.CorrelbteLocblGit(
+		context.Bbckground(),
+		dumpPbth1,
+		filepbth.Dir(dumpPbth1),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	bundle2, err := conversion.CorrelateLocalGit(
-		context.Background(),
-		dumpPath2,
-		filepath.Dir(dumpPath2),
+	bundle2, err := conversion.CorrelbteLocblGit(
+		context.Bbckground(),
+		dumpPbth2,
+		filepbth.Dir(dumpPbth2),
 	)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
@@ -48,14 +48,14 @@ func main() {
 	}
 
 	fmt.Print(diff.Diff(
-		precise.GroupedBundleDataChansToMaps(bundle1),
-		precise.GroupedBundleDataChansToMaps(bundle2),
+		precise.GroupedBundleDbtbChbnsToMbps(bundle1),
+		precise.GroupedBundleDbtbChbnsToMbps(bundle2),
 	))
 }
 
-func usage() {
+func usbge() {
 	fmt.Println(`
-usage: diff old.lsif new.lsif
+usbge: diff old.lsif new.lsif
 
 lsif dumps must be in project's root directory`)
 	os.Exit(1)

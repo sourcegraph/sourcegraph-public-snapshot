@@ -1,4 +1,4 @@
-package embeddings
+pbckbge embeddings
 
 import (
 	"context"
@@ -7,21 +7,21 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/response"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestOpenAI(t *testing.T) {
 	t.Run("errors on empty embedding string", func(t *testing.T) {
-		client := NewOpenAIClient(http.DefaultClient, "")
-		_, _, err := client.GenerateEmbeddings(context.Background(), codygateway.EmbeddingsRequest{
-			Input: []string{"a", ""}, // empty string is invalid
+		client := NewOpenAIClient(http.DefbultClient, "")
+		_, _, err := client.GenerbteEmbeddings(context.Bbckground(), codygbtewby.EmbeddingsRequest{
+			Input: []string{"b", ""}, // empty string is invblid
 		})
-		require.ErrorContains(t, err, "empty string")
+		require.ErrorContbins(t, err, "empty string")
 
-		var statusCodeErr response.HTTPStatusCodeError
-		require.True(t, errors.As(err, &statusCodeErr))
-		require.Equal(t, statusCodeErr.HTTPStatusCode(), 400)
+		vbr stbtusCodeErr response.HTTPStbtusCodeError
+		require.True(t, errors.As(err, &stbtusCodeErr))
+		require.Equbl(t, stbtusCodeErr.HTTPStbtusCode(), 400)
 	})
 }

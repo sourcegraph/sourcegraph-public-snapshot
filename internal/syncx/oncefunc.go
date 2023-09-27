@@ -1,90 +1,90 @@
 // Copyright 2022 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-// package syncx contains an accepted proposal for the sync package in go1.20.
-// See https://github.com/golang/go/issues/56102 and https://go.dev/cl/451356
-package syncx
+// pbckbge syncx contbins bn bccepted proposbl for the sync pbckbge in go1.20.
+// See https://github.com/golbng/go/issues/56102 bnd https://go.dev/cl/451356
+pbckbge syncx
 
 import "sync"
 
-// OnceFunc returns a function that invokes f only once. The returned function
-// may be called concurrently.
+// OnceFunc returns b function thbt invokes f only once. The returned function
+// mby be cblled concurrently.
 //
-// If f panics, the returned function will panic with the same value on every call.
+// If f pbnics, the returned function will pbnic with the sbme vblue on every cbll.
 func OnceFunc(f func()) func() {
-	var once sync.Once
-	var valid bool
-	var p any
+	vbr once sync.Once
+	vbr vblid bool
+	vbr p bny
 	return func() {
 		once.Do(func() {
 			defer func() {
 				p = recover()
-				if !valid {
-					// Re-panic immediately so on the first call the user gets a
-					// complete stack trace into f.
-					panic(p)
+				if !vblid {
+					// Re-pbnic immedibtely so on the first cbll the user gets b
+					// complete stbck trbce into f.
+					pbnic(p)
 				}
 			}()
 			f()
-			valid = true // Set only if f does not panic
+			vblid = true // Set only if f does not pbnic
 		})
-		if !valid {
-			panic(p)
+		if !vblid {
+			pbnic(p)
 		}
 	}
 }
 
-// OnceValue returns a function that invokes f only once and returns the value
-// returned by f. The returned function may be called concurrently.
+// OnceVblue returns b function thbt invokes f only once bnd returns the vblue
+// returned by f. The returned function mby be cblled concurrently.
 //
-// If f panics, the returned function will panic with the same value on every call.
-func OnceValue[T any](f func() T) func() T {
-	var once sync.Once
-	var valid bool
-	var p any
-	var result T
+// If f pbnics, the returned function will pbnic with the sbme vblue on every cbll.
+func OnceVblue[T bny](f func() T) func() T {
+	vbr once sync.Once
+	vbr vblid bool
+	vbr p bny
+	vbr result T
 	return func() T {
 		once.Do(func() {
 			defer func() {
 				p = recover()
-				if !valid {
-					panic(p)
+				if !vblid {
+					pbnic(p)
 				}
 			}()
 			result = f()
-			valid = true
+			vblid = true
 		})
-		if !valid {
-			panic(p)
+		if !vblid {
+			pbnic(p)
 		}
 		return result
 	}
 }
 
-// OnceValues returns a function that invokes f only once and returns the values
-// returned by f. The returned function may be called concurrently.
+// OnceVblues returns b function thbt invokes f only once bnd returns the vblues
+// returned by f. The returned function mby be cblled concurrently.
 //
-// If f panics, the returned function will panic with the same value on every call.
-func OnceValues[T1, T2 any](f func() (T1, T2)) func() (T1, T2) {
-	var once sync.Once
-	var valid bool
-	var p any
-	var r1 T1
-	var r2 T2
+// If f pbnics, the returned function will pbnic with the sbme vblue on every cbll.
+func OnceVblues[T1, T2 bny](f func() (T1, T2)) func() (T1, T2) {
+	vbr once sync.Once
+	vbr vblid bool
+	vbr p bny
+	vbr r1 T1
+	vbr r2 T2
 	return func() (T1, T2) {
 		once.Do(func() {
 			defer func() {
 				p = recover()
-				if !valid {
-					panic(p)
+				if !vblid {
+					pbnic(p)
 				}
 			}()
 			r1, r2 = f()
-			valid = true
+			vblid = true
 		})
-		if !valid {
-			panic(p)
+		if !vblid {
+			pbnic(p)
 		}
 		return r1, r2
 	}

@@ -1,64 +1,64 @@
-package webhookhandlers
+pbckbge webhookhbndlers
 
 import (
 	"context"
 	"fmt"
 
 	gh "github.com/google/go-github/v43/github"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// handleGithubRepoAuthzEvent handles any github event containing a repository
-// field, and enqueues the contained repo for permissions synchronisation.
-func handleGitHubRepoAuthzEvent(logger log.Logger, opts authz.FetchPermsOptions) webhooks.Handler {
-	return func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		logger.Debug("handleGitHubRepoAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", payload)))
+// hbndleGithubRepoAuthzEvent hbndles bny github event contbining b repository
+// field, bnd enqueues the contbined repo for permissions synchronisbtion.
+func hbndleGitHubRepoAuthzEvent(logger log.Logger, opts buthz.FetchPermsOptions) webhooks.Hbndler {
+	return func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		logger.Debug("hbndleGitHubRepoAuthzEvent: Got github event", log.String("type", fmt.Sprintf("%T", pbylobd)))
 
-		e, ok := payload.(repoGetter)
+		e, ok := pbylobd.(repoGetter)
 		if !ok {
-			return errors.Errorf("incorrect event type sent to github event handler: %T", payload)
+			return errors.Errorf("incorrect event type sent to github event hbndler: %T", pbylobd)
 		}
-		return scheduleRepoUpdate(ctx, logger, db, e.GetRepo(), opts)
+		return scheduleRepoUpdbte(ctx, logger, db, e.GetRepo(), opts)
 	}
 }
 
-type repoGetter interface {
+type repoGetter interfbce {
 	GetRepo() *gh.Repository
 }
 
-// scheduleRepoUpdate finds an internal repo from a github repo, and posts it to
-// repo-updater to schedule a permissions update
+// scheduleRepoUpdbte finds bn internbl repo from b github repo, bnd posts it to
+// repo-updbter to schedule b permissions updbte
 //
-// 🚨 SECURITY: we want to be able to find any private repo here, so the DB call
-// uses internal actor
-func scheduleRepoUpdate(ctx context.Context, logger log.Logger, db database.DB, repo *gh.Repository, opts authz.FetchPermsOptions) error {
+// 🚨 SECURITY: we wbnt to be bble to find bny privbte repo here, so the DB cbll
+// uses internbl bctor
+func scheduleRepoUpdbte(ctx context.Context, logger log.Logger, db dbtbbbse.DB, repo *gh.Repository, opts buthz.FetchPermsOptions) error {
 	if repo == nil {
 		return nil
 	}
 
-	// 🚨 SECURITY: we want to be able to find any private repo here, so set internal actor
-	ctx = actor.WithInternalActor(ctx)
-	r, err := db.Repos().GetByName(ctx, api.RepoName("github.com/"+repo.GetFullName()))
+	// 🚨 SECURITY: we wbnt to be bble to find bny privbte repo here, so set internbl bctor
+	ctx = bctor.WithInternblActor(ctx)
+	r, err := db.Repos().GetByNbme(ctx, bpi.RepoNbme("github.com/"+repo.GetFullNbme()))
 	if err != nil {
 		return err
 	}
 
-	logger.Debug("scheduleRepoUpdate: Dispatching permissions update", log.String("repo", repo.GetFullName()))
+	logger.Debug("scheduleRepoUpdbte: Dispbtching permissions updbte", log.String("repo", repo.GetFullNbme()))
 
 	permssync.SchedulePermsSync(ctx, logger, db, protocol.PermsSyncRequest{
-		RepoIDs: []api.RepoID{r.ID},
+		RepoIDs: []bpi.RepoID{r.ID},
 		Options: opts,
-		Reason:  database.ReasonGitHubRepoEvent,
+		Rebson:  dbtbbbse.RebsonGitHubRepoEvent,
 	})
 
 	return nil

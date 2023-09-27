@@ -1,76 +1,76 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"net/url"
 	"strings"
 
-	gerritbatches "github.com/sourcegraph/sourcegraph/internal/batches/sources/gerrit"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gerrit"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	gerritbbtches "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/gerrit"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gerrit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type GerritSource struct {
 	client gerrit.Client
 }
 
-func NewGerritSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*GerritSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+func NewGerritSource(ctx context.Context, svc *types.ExternblService, cf *httpcli.Fbctory) (*GerritSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.GerritConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Wrapf(err, "external service id=%d", svc.ID)
+	vbr c schemb.GerritConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Wrbpf(err, "externbl service id=%d", svc.ID)
 	}
 
 	if cf == nil {
-		cf = httpcli.ExternalClientFactory
+		cf = httpcli.ExternblClientFbctory
 	}
 
 	cli, err := cf.Doer()
 	if err != nil {
-		return nil, errors.Wrap(err, "creating external client")
+		return nil, errors.Wrbp(err, "crebting externbl client")
 	}
 
-	gerritURL, err := url.Parse(c.Url)
+	gerritURL, err := url.Pbrse(c.Url)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing Gerrit CodeHostURL")
+		return nil, errors.Wrbp(err, "pbrsing Gerrit CodeHostURL")
 	}
 
-	client, err := gerrit.NewClient(svc.URN(), gerritURL, &gerrit.AccountCredentials{Username: c.Username, Password: c.Password}, cli)
+	client, err := gerrit.NewClient(svc.URN(), gerritURL, &gerrit.AccountCredentibls{Usernbme: c.Usernbme, Pbssword: c.Pbssword}, cli)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating Gerrit client")
+		return nil, errors.Wrbp(err, "crebting Gerrit client")
 	}
 
 	return &GerritSource{client: client}, nil
 }
 
-// GitserverPushConfig returns an authenticated push config used for pushing
+// GitserverPushConfig returns bn buthenticbted push config used for pushing
 // commits to the code host.
 func (s GerritSource) GitserverPushConfig(repo *types.Repo) (*protocol.PushConfig, error) {
-	return GitserverPushConfig(repo, s.client.Authenticator())
+	return GitserverPushConfig(repo, s.client.Authenticbtor())
 }
 
-// WithAuthenticator returns a copy of the original Source configured to use the
-// given authenticator, provided that authenticator type is supported by the
+// WithAuthenticbtor returns b copy of the originbl Source configured to use the
+// given buthenticbtor, provided thbt buthenticbtor type is supported by the
 // code host.
-func (s GerritSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
-	client, err := s.client.WithAuthenticator(a)
+func (s GerritSource) WithAuthenticbtor(b buth.Authenticbtor) (ChbngesetSource, error) {
+	client, err := s.client.WithAuthenticbtor(b)
 	if err != nil {
 		return nil, err
 	}
@@ -78,242 +78,242 @@ func (s GerritSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, 
 	return &GerritSource{client: client}, nil
 }
 
-// ValidateAuthenticator validates the currently set authenticator is usable.
-// Returns an error, when validating the Authenticator yielded an error.
-func (s GerritSource) ValidateAuthenticator(ctx context.Context) error {
-	_, err := s.client.GetAuthenticatedUserAccount(ctx)
+// VblidbteAuthenticbtor vblidbtes the currently set buthenticbtor is usbble.
+// Returns bn error, when vblidbting the Authenticbtor yielded bn error.
+func (s GerritSource) VblidbteAuthenticbtor(ctx context.Context) error {
+	_, err := s.client.GetAuthenticbtedUserAccount(ctx)
 	return err
 }
 
-// LoadChangeset loads the given Changeset from the source and updates it. If
-// the Changeset could not be found on the source, a ChangesetNotFoundError is
+// LobdChbngeset lobds the given Chbngeset from the source bnd updbtes it. If
+// the Chbngeset could not be found on the source, b ChbngesetNotFoundError is
 // returned.
-func (s GerritSource) LoadChangeset(ctx context.Context, cs *Changeset) error {
-	pr, err := s.client.GetChange(ctx, cs.ExternalID)
+func (s GerritSource) LobdChbngeset(ctx context.Context, cs *Chbngeset) error {
+	pr, err := s.client.GetChbnge(ctx, cs.ExternblID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return ChangesetNotFoundError{Changeset: cs}
+			return ChbngesetNotFoundError{Chbngeset: cs}
 		}
-		return errors.Wrap(err, "getting change")
+		return errors.Wrbp(err, "getting chbnge")
 	}
-	return errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
+	return errors.Wrbp(s.setChbngesetMetbdbtb(ctx, pr, cs), "setting Gerrit chbngeset metbdbtb")
 }
 
-// CreateChangeset will create the Changeset on the source. If it already
-// exists, *Changeset will be populated and the return value will be true.
-func (s GerritSource) CreateChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	changeID := GenerateGerritChangeID(*cs.Changeset)
-	// For Gerrit, the Change is created at `git push` time, so we just load it here to verify it
-	// was created successfully.
-	pr, err := s.client.GetChange(ctx, changeID)
+// CrebteChbngeset will crebte the Chbngeset on the source. If it blrebdy
+// exists, *Chbngeset will be populbted bnd the return vblue will be true.
+func (s GerritSource) CrebteChbngeset(ctx context.Context, cs *Chbngeset) (bool, error) {
+	chbngeID := GenerbteGerritChbngeID(*cs.Chbngeset)
+	// For Gerrit, the Chbnge is crebted bt `git push` time, so we just lobd it here to verify it
+	// wbs crebted successfully.
+	pr, err := s.client.GetChbnge(ctx, chbngeID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return false, ChangesetNotFoundError{Changeset: cs}
+			return fblse, ChbngesetNotFoundError{Chbngeset: cs}
 		}
-		return false, errors.Wrap(err, "getting change")
+		return fblse, errors.Wrbp(err, "getting chbnge")
 	}
 
-	// The Changeset technically "exists" at this point because it gets created at push time,
-	// therefore exists would always return true. However, we send false here because otherwise we would always
-	// enqueue a ChangesetUpdate webhook event instead of the regular publish event.
-	return false, errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
+	// The Chbngeset technicblly "exists" bt this point becbuse it gets crebted bt push time,
+	// therefore exists would blwbys return true. However, we send fblse here becbuse otherwise we would blwbys
+	// enqueue b ChbngesetUpdbte webhook event instebd of the regulbr publish event.
+	return fblse, errors.Wrbp(s.setChbngesetMetbdbtb(ctx, pr, cs), "setting Gerrit chbngeset metbdbtb")
 }
 
-// CreateDraftChangeset creates the given changeset on the code host in draft mode.
-func (s GerritSource) CreateDraftChangeset(ctx context.Context, cs *Changeset) (bool, error) {
-	changeID := GenerateGerritChangeID(*cs.Changeset)
+// CrebteDrbftChbngeset crebtes the given chbngeset on the code host in drbft mode.
+func (s GerritSource) CrebteDrbftChbngeset(ctx context.Context, cs *Chbngeset) (bool, error) {
+	chbngeID := GenerbteGerritChbngeID(*cs.Chbngeset)
 
-	// For Gerrit, the Change is created at `git push` time, so we just call the API to mark it as WIP.
-	if err := s.client.SetWIP(ctx, changeID); err != nil {
+	// For Gerrit, the Chbnge is crebted bt `git push` time, so we just cbll the API to mbrk it bs WIP.
+	if err := s.client.SetWIP(ctx, chbngeID); err != nil {
 		if errcode.IsNotFound(err) {
-			return false, ChangesetNotFoundError{Changeset: cs}
+			return fblse, ChbngesetNotFoundError{Chbngeset: cs}
 		}
-		return false, errors.Wrap(err, "making change WIP")
+		return fblse, errors.Wrbp(err, "mbking chbnge WIP")
 	}
 
-	pr, err := s.client.GetChange(ctx, changeID)
+	pr, err := s.client.GetChbnge(ctx, chbngeID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return false, ChangesetNotFoundError{Changeset: cs}
+			return fblse, ChbngesetNotFoundError{Chbngeset: cs}
 		}
-		return false, errors.Wrap(err, "getting change")
+		return fblse, errors.Wrbp(err, "getting chbnge")
 	}
-	// The Changeset technically "exists" at this point because it gets created at push time,
-	// therefore exists would always return true. However, we send false here because otherwise we would always
-	// enqueue a ChangesetUpdate webhook event instead of the regular publish event.
-	return false, errors.Wrap(s.setChangesetMetadata(ctx, pr, cs), "setting Gerrit changeset metadata")
+	// The Chbngeset technicblly "exists" bt this point becbuse it gets crebted bt push time,
+	// therefore exists would blwbys return true. However, we send fblse here becbuse otherwise we would blwbys
+	// enqueue b ChbngesetUpdbte webhook event instebd of the regulbr publish event.
+	return fblse, errors.Wrbp(s.setChbngesetMetbdbtb(ctx, pr, cs), "setting Gerrit chbngeset metbdbtb")
 }
 
-// UndraftChangeset will update the Changeset on the source to be not in draft mode anymore.
-func (s GerritSource) UndraftChangeset(ctx context.Context, cs *Changeset) error {
-	if err := s.client.SetReadyForReview(ctx, cs.ExternalID); err != nil {
+// UndrbftChbngeset will updbte the Chbngeset on the source to be not in drbft mode bnymore.
+func (s GerritSource) UndrbftChbngeset(ctx context.Context, cs *Chbngeset) error {
+	if err := s.client.SetRebdyForReview(ctx, cs.ExternblID); err != nil {
 		if errcode.IsNotFound(err) {
-			return ChangesetNotFoundError{Changeset: cs}
+			return ChbngesetNotFoundError{Chbngeset: cs}
 		}
-		return errors.Wrap(err, "setting change as ready")
+		return errors.Wrbp(err, "setting chbnge bs rebdy")
 	}
 
-	if err := s.LoadChangeset(ctx, cs); err != nil {
-		return errors.Wrap(err, "getting change")
+	if err := s.LobdChbngeset(ctx, cs); err != nil {
+		return errors.Wrbp(err, "getting chbnge")
 	}
 	return nil
 }
 
-// CloseChangeset will close the Changeset on the source, where "close"
-// means the appropriate final state on the codehost (e.g. "abandoned" on
+// CloseChbngeset will close the Chbngeset on the source, where "close"
+// mebns the bppropribte finbl stbte on the codehost (e.g. "bbbndoned" on
 // Gerrit).
-func (s GerritSource) CloseChangeset(ctx context.Context, cs *Changeset) error {
-	updated, err := s.client.AbandonChange(ctx, cs.ExternalID)
+func (s GerritSource) CloseChbngeset(ctx context.Context, cs *Chbngeset) error {
+	updbted, err := s.client.AbbndonChbnge(ctx, cs.ExternblID)
 	if err != nil {
-		return errors.Wrap(err, "abandoning change")
+		return errors.Wrbp(err, "bbbndoning chbnge")
 	}
 
-	if conf.Get().BatchChangesAutoDeleteBranch {
-		if err := s.client.DeleteChange(ctx, cs.ExternalID); err != nil {
-			return errors.Wrap(err, "deleting change")
+	if conf.Get().BbtchChbngesAutoDeleteBrbnch {
+		if err := s.client.DeleteChbnge(ctx, cs.ExternblID); err != nil {
+			return errors.Wrbp(err, "deleting chbnge")
 		}
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrbp(s.setChbngesetMetbdbtb(ctx, updbted, cs), "setting Gerrit chbngeset metbdbtb")
 }
 
-// UpdateChangeset can update Changesets.
-func (s GerritSource) UpdateChangeset(ctx context.Context, cs *Changeset) error {
-	pr, err := s.client.GetChange(ctx, cs.ExternalID)
+// UpdbteChbngeset cbn updbte Chbngesets.
+func (s GerritSource) UpdbteChbngeset(ctx context.Context, cs *Chbngeset) error {
+	pr, err := s.client.GetChbnge(ctx, cs.ExternblID)
 	if err != nil {
 		// Route 1
-		// The most recent push has created two Gerrit changes with the same Change ID.
-		// This happens when the target branch is changed at the same time that the diffs are changed,
-		// it is a bit of a fringe scenario, but it causes us to have 2 changes with the same Change ID,
-		// but different ID. What we do here, is delete the change that existed before our most
-		// recent push, and then load the new change now that it doesn't have a conflict.
-		if errors.As(err, &gerrit.MultipleChangesError{}) {
-			originalPR := cs.Metadata.(*gerritbatches.AnnotatedChange)
-			err = s.client.DeleteChange(ctx, originalPR.Change.ID)
+		// The most recent push hbs crebted two Gerrit chbnges with the sbme Chbnge ID.
+		// This hbppens when the tbrget brbnch is chbnged bt the sbme time thbt the diffs bre chbnged,
+		// it is b bit of b fringe scenbrio, but it cbuses us to hbve 2 chbnges with the sbme Chbnge ID,
+		// but different ID. Whbt we do here, is delete the chbnge thbt existed before our most
+		// recent push, bnd then lobd the new chbnge now thbt it doesn't hbve b conflict.
+		if errors.As(err, &gerrit.MultipleChbngesError{}) {
+			originblPR := cs.Metbdbtb.(*gerritbbtches.AnnotbtedChbnge)
+			err = s.client.DeleteChbnge(ctx, originblPR.Chbnge.ID)
 			if err != nil {
-				return errors.Wrap(err, "deleting change")
+				return errors.Wrbp(err, "deleting chbnge")
 			}
-			// If the original PR was a WIP, the new one needs to be as well.
-			if originalPR.Change.WorkInProgress {
-				err = s.client.SetWIP(ctx, cs.ExternalID)
+			// If the originbl PR wbs b WIP, the new one needs to be bs well.
+			if originblPR.Chbnge.WorkInProgress {
+				err = s.client.SetWIP(ctx, cs.ExternblID)
 				if err != nil {
-					return errors.Wrap(err, "setting updated change as WIP")
+					return errors.Wrbp(err, "setting updbted chbnge bs WIP")
 				}
 			}
-			return s.LoadChangeset(ctx, cs)
+			return s.LobdChbngeset(ctx, cs)
 		} else {
 			if errcode.IsNotFound(err) {
-				return ChangesetNotFoundError{Changeset: cs}
+				return ChbngesetNotFoundError{Chbngeset: cs}
 			}
-			return errors.Wrap(err, "getting newer change")
+			return errors.Wrbp(err, "getting newer chbnge")
 		}
 	}
 	// Route 2
-	// We did not push before this, therefore this update, is only through API
-	if pr.Branch != cs.BaseRef {
-		_, err = s.client.MoveChange(ctx, cs.ExternalID, gerrit.MoveChangePayload{
-			DestinationBranch: cs.BaseRef,
+	// We did not push before this, therefore this updbte, is only through API
+	if pr.Brbnch != cs.BbseRef {
+		_, err = s.client.MoveChbnge(ctx, cs.ExternblID, gerrit.MoveChbngePbylobd{
+			DestinbtionBrbnch: cs.BbseRef,
 		})
 		if err != nil {
-			return errors.Wrap(err, "moving change")
+			return errors.Wrbp(err, "moving chbnge")
 		}
 	}
 	if pr.Subject != cs.Title {
-		err = s.client.SetCommitMessage(ctx, cs.ExternalID, gerrit.SetCommitMessagePayload{
-			Message: fmt.Sprintf("%s\n\nChange-Id: %s\n", cs.Title, cs.ExternalID),
+		err = s.client.SetCommitMessbge(ctx, cs.ExternblID, gerrit.SetCommitMessbgePbylobd{
+			Messbge: fmt.Sprintf("%s\n\nChbnge-Id: %s\n", cs.Title, cs.ExternblID),
 		})
 		if err != nil {
-			return errors.Wrap(err, "setting change commit message")
+			return errors.Wrbp(err, "setting chbnge commit messbge")
 		}
 	}
-	return s.LoadChangeset(ctx, cs)
+	return s.LobdChbngeset(ctx, cs)
 }
 
-// ReopenChangeset will reopen the Changeset on the source, if it's closed.
-// If not, it's a noop.
-func (s GerritSource) ReopenChangeset(ctx context.Context, cs *Changeset) error {
-	updated, err := s.client.RestoreChange(ctx, cs.ExternalID)
+// ReopenChbngeset will reopen the Chbngeset on the source, if it's closed.
+// If not, it's b noop.
+func (s GerritSource) ReopenChbngeset(ctx context.Context, cs *Chbngeset) error {
+	updbted, err := s.client.RestoreChbnge(ctx, cs.ExternblID)
 	if err != nil {
-		return errors.Wrap(err, "restoring change")
+		return errors.Wrbp(err, "restoring chbnge")
 	}
 
-	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrbp(s.setChbngesetMetbdbtb(ctx, updbted, cs), "setting Gerrit chbngeset metbdbtb")
 }
 
-// CreateComment posts a comment on the Changeset.
-func (s GerritSource) CreateComment(ctx context.Context, cs *Changeset, comment string) error {
-	return s.client.WriteReviewComment(ctx, cs.ExternalID, gerrit.ChangeReviewComment{
-		Message: comment,
+// CrebteComment posts b comment on the Chbngeset.
+func (s GerritSource) CrebteComment(ctx context.Context, cs *Chbngeset, comment string) error {
+	return s.client.WriteReviewComment(ctx, cs.ExternblID, gerrit.ChbngeReviewComment{
+		Messbge: comment,
 	})
 }
 
-// MergeChangeset merges a Changeset on the code host, if in a mergeable state.
-// If squash is true, and the code host supports squash merges, the source
-// must attempt a squash merge. Otherwise, it is expected to perform a regular
-// merge. If the changeset cannot be merged, because it is in an unmergeable
-// state, ChangesetNotMergeableError must be returned.
-// Gerrit changes are always single commit, so squash does not matter.
-func (s GerritSource) MergeChangeset(ctx context.Context, cs *Changeset, _ bool) error {
-	updated, err := s.client.SubmitChange(ctx, cs.ExternalID)
+// MergeChbngeset merges b Chbngeset on the code host, if in b mergebble stbte.
+// If squbsh is true, bnd the code host supports squbsh merges, the source
+// must bttempt b squbsh merge. Otherwise, it is expected to perform b regulbr
+// merge. If the chbngeset cbnnot be merged, becbuse it is in bn unmergebble
+// stbte, ChbngesetNotMergebbleError must be returned.
+// Gerrit chbnges bre blwbys single commit, so squbsh does not mbtter.
+func (s GerritSource) MergeChbngeset(ctx context.Context, cs *Chbngeset, _ bool) error {
+	updbted, err := s.client.SubmitChbnge(ctx, cs.ExternblID)
 	if err != nil {
 		if errcode.IsNotFound(err) {
-			return errors.Wrap(err, "submitting change")
+			return errors.Wrbp(err, "submitting chbnge")
 		}
-		return ChangesetNotMergeableError{ErrorMsg: err.Error()}
+		return ChbngesetNotMergebbleError{ErrorMsg: err.Error()}
 	}
-	return errors.Wrap(s.setChangesetMetadata(ctx, updated, cs), "setting Gerrit changeset metadata")
+	return errors.Wrbp(s.setChbngesetMetbdbtb(ctx, updbted, cs), "setting Gerrit chbngeset metbdbtb")
 }
 
-func (s GerritSource) BuildCommitOpts(repo *types.Repo, changeset *btypes.Changeset, spec *btypes.ChangesetSpec, pushOpts *protocol.PushConfig) protocol.CreateCommitFromPatchRequest {
+func (s GerritSource) BuildCommitOpts(repo *types.Repo, chbngeset *btypes.Chbngeset, spec *btypes.ChbngesetSpec, pushOpts *protocol.PushConfig) protocol.CrebteCommitFromPbtchRequest {
 	opts := BuildCommitOptsCommon(repo, spec, pushOpts)
-	pushRef := strings.Replace(gitdomain.EnsureRefPrefix(spec.BaseRef), "refs/heads", "refs/for", 1) //Magical Gerrit ref for pushing changes.
+	pushRef := strings.Replbce(gitdombin.EnsureRefPrefix(spec.BbseRef), "refs/hebds", "refs/for", 1) //Mbgicbl Gerrit ref for pushing chbnges.
 	opts.PushRef = &pushRef
-	changeID := changeset.ExternalID
-	if changeID == "" {
-		changeID = GenerateGerritChangeID(*changeset)
+	chbngeID := chbngeset.ExternblID
+	if chbngeID == "" {
+		chbngeID = GenerbteGerritChbngeID(*chbngeset)
 	}
-	// We append the "title" as the first line of the commit message because Gerrit doesn't have a concept of title.
-	opts.CommitInfo.Messages = append([]string{spec.Title}, opts.CommitInfo.Messages...)
-	// We attach the Change ID to the bottom of the commit message because this is how Gerrit creates it's Changes.
-	opts.CommitInfo.Messages = append(opts.CommitInfo.Messages, "Change-Id: "+changeID)
+	// We bppend the "title" bs the first line of the commit messbge becbuse Gerrit doesn't hbve b concept of title.
+	opts.CommitInfo.Messbges = bppend([]string{spec.Title}, opts.CommitInfo.Messbges...)
+	// We bttbch the Chbnge ID to the bottom of the commit messbge becbuse this is how Gerrit crebtes it's Chbnges.
+	opts.CommitInfo.Messbges = bppend(opts.CommitInfo.Messbges, "Chbnge-Id: "+chbngeID)
 	return opts
 }
 
-func (s GerritSource) setChangesetMetadata(ctx context.Context, change *gerrit.Change, cs *Changeset) error {
-	apr, err := s.annotateChange(ctx, change)
+func (s GerritSource) setChbngesetMetbdbtb(ctx context.Context, chbnge *gerrit.Chbnge, cs *Chbngeset) error {
+	bpr, err := s.bnnotbteChbnge(ctx, chbnge)
 	if err != nil {
-		return errors.Wrap(err, "annotating Change")
+		return errors.Wrbp(err, "bnnotbting Chbnge")
 	}
-	if err = cs.SetMetadata(apr); err != nil {
-		return errors.Wrap(err, "setting changeset metadata")
+	if err = cs.SetMetbdbtb(bpr); err != nil {
+		return errors.Wrbp(err, "setting chbngeset metbdbtb")
 	}
 	return nil
 }
 
-func (s GerritSource) annotateChange(ctx context.Context, change *gerrit.Change) (*gerritbatches.AnnotatedChange, error) {
-	reviewers, err := s.client.GetChangeReviews(ctx, change.ChangeID)
+func (s GerritSource) bnnotbteChbnge(ctx context.Context, chbnge *gerrit.Chbnge) (*gerritbbtches.AnnotbtedChbnge, error) {
+	reviewers, err := s.client.GetChbngeReviews(ctx, chbnge.ChbngeID)
 	if err != nil {
 		return nil, err
 	}
-	return &gerritbatches.AnnotatedChange{
-		Change:      change,
+	return &gerritbbtches.AnnotbtedChbnge{
+		Chbnge:      chbnge,
 		Reviewers:   *reviewers,
 		CodeHostURL: *s.client.GetURL(),
 	}, nil
 }
 
-// GenerateGerritChangeID deterministically generates a Gerrit Change ID from a Changeset object.
-// We do this because Gerrit Change IDs are required at commit time, and deterministically generating
-// the Change IDs allows us to locate and track a Change once it's created.
-func GenerateGerritChangeID(cs btypes.Changeset) string {
-	jsonData, err := json.Marshal(cs)
+// GenerbteGerritChbngeID deterministicblly generbtes b Gerrit Chbnge ID from b Chbngeset object.
+// We do this becbuse Gerrit Chbnge IDs bre required bt commit time, bnd deterministicblly generbting
+// the Chbnge IDs bllows us to locbte bnd trbck b Chbnge once it's crebted.
+func GenerbteGerritChbngeID(cs btypes.Chbngeset) string {
+	jsonDbtb, err := json.Mbrshbl(cs)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	hash := sha256.Sum256(jsonData)
-	hexString := hex.EncodeToString(hash[:])
-	changeID := hexString[:40]
+	hbsh := shb256.Sum256(jsonDbtb)
+	hexString := hex.EncodeToString(hbsh[:])
+	chbngeID := hexString[:40]
 
-	return "I" + strings.ToLower(changeID)
+	return "I" + strings.ToLower(chbngeID)
 }

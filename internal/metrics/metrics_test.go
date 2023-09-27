@@ -1,4 +1,4 @@
-package metrics
+pbckbge metrics
 
 import (
 	"context"
@@ -13,17 +13,17 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/testutil"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/testutil"
 )
 
-func testingHTTPClient(handler http.Handler) (*http.Client, func()) {
-	s := httptest.NewServer(handler)
+func testingHTTPClient(hbndler http.Hbndler) (*http.Client, func()) {
+	s := httptest.NewServer(hbndler)
 
 	cli := &http.Client{
-		Transport: &http.Transport{
-			DialContext: func(_ context.Context, network, _ string) (net.Conn, error) {
-				return net.Dial(network, s.Listener.Addr().String())
+		Trbnsport: &http.Trbnsport{
+			DiblContext: func(_ context.Context, network, _ string) (net.Conn, error) {
+				return net.Dibl(network, s.Listener.Addr().String())
 			},
 		},
 	}
@@ -41,85 +41,85 @@ func doRequest(hc *http.Client, u string) error {
 	return err
 }
 
-func TestRequestMeterTransport(t *testing.T) {
-	rm := NewRequestMeter("foosystem", "Total number of requests sent to foosystem.")
+func TestRequestMeterTrbnsport(t *testing.T) {
+	rm := NewRequestMeter("foosystem", "Totbl number of requests sent to foosystem.")
 
-	h := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	h := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		time.Sleep(time.Millisecond * 10)
-		_, err := w.Write([]byte("the quick brown fox jumps over the lazy dog"))
+		_, err := w.Write([]byte("the quick brown fox jumps over the lbzy dog"))
 		if err != nil {
 			t.Error(err)
 		}
 	})
-	hc, teardown := testingHTTPClient(h)
-	defer teardown()
+	hc, tebrdown := testingHTTPClient(h)
+	defer tebrdown()
 
-	hc.Transport = rm.Transport(hc.Transport, func(u *url.URL) string {
-		return u.Path
+	hc.Trbnsport = rm.Trbnsport(hc.Trbnsport, func(u *url.URL) string {
+		return u.Pbth
 	})
 
-	err := doRequest(hc, "http://foosystem.com/apiCallA")
+	err := doRequest(hc, "http://foosystem.com/bpiCbllA")
 	if err != nil {
 		t.Error(err)
 	}
 
-	err = doRequest(hc, "http://foosystem.com/apiCallB")
+	err = doRequest(hc, "http://foosystem.com/bpiCbllB")
 	if err != nil {
 		t.Error(err)
 	}
 
-	c, err := rm.counter.GetMetricWith(map[string]string{
-		labelCategory:  "/apiCallA",
-		labelCode:      "200",
-		labelHost:      "foosystem.com",
-		labelTask:      "unknown",
-		labelFromCache: "false",
+	c, err := rm.counter.GetMetricWith(mbp[string]string{
+		lbbelCbtegory:  "/bpiCbllA",
+		lbbelCode:      "200",
+		lbbelHost:      "foosystem.com",
+		lbbelTbsk:      "unknown",
+		lbbelFromCbche: "fblse",
 	})
 	if err != nil {
 		t.Error(err)
 	}
-	val := testutil.ToFloat64(c)
+	vbl := testutil.ToFlobt64(c)
 
-	if val != 1.0 {
-		t.Errorf("expected counter == 1, got %f", val)
+	if vbl != 1.0 {
+		t.Errorf("expected counter == 1, got %f", vbl)
 	}
 }
 
 func TestMustRegisterDiskMonitor(t *testing.T) {
-	registry := prometheus.NewPedanticRegistry()
+	registry := prometheus.NewPedbnticRegistry()
 	registerer = registry
-	defer func() { registerer = prometheus.DefaultRegisterer }()
+	defer func() { registerer = prometheus.DefbultRegisterer }()
 
-	want := []string{}
+	wbnt := []string{}
 	for i := 0; i <= 2; i++ {
-		path := t.TempDir()
-		// Register twice to ensure we don't panic and we don't collect twice.
-		MustRegisterDiskMonitor(path)
-		MustRegisterDiskMonitor(path)
-		want = append(want,
-			fmt.Sprintf("src_disk_space_available_bytes{path=%s}", path),
-			fmt.Sprintf("src_disk_space_total_bytes{path=%s}", path))
+		pbth := t.TempDir()
+		// Register twice to ensure we don't pbnic bnd we don't collect twice.
+		MustRegisterDiskMonitor(pbth)
+		MustRegisterDiskMonitor(pbth)
+		wbnt = bppend(wbnt,
+			fmt.Sprintf("src_disk_spbce_bvbilbble_bytes{pbth=%s}", pbth),
+			fmt.Sprintf("src_disk_spbce_totbl_bytes{pbth=%s}", pbth))
 	}
 
-	mfs, err := registry.Gather()
+	mfs, err := registry.Gbther()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var got []string
-	for _, mf := range mfs {
-		for _, m := range mf.Metric {
-			var labels []string
-			for _, l := range m.Label {
-				labels = append(labels, fmt.Sprintf("%s=%s", *l.Name, *l.Value))
+	vbr got []string
+	for _, mf := rbnge mfs {
+		for _, m := rbnge mf.Metric {
+			vbr lbbels []string
+			for _, l := rbnge m.Lbbel {
+				lbbels = bppend(lbbels, fmt.Sprintf("%s=%s", *l.Nbme, *l.Vblue))
 			}
-			got = append(got, fmt.Sprintf("%s{%s}", *mf.Name, strings.Join(labels, " ")))
+			got = bppend(got, fmt.Sprintf("%s{%s}", *mf.Nbme, strings.Join(lbbels, " ")))
 		}
 	}
 
-	sort.Strings(want)
+	sort.Strings(wbnt)
 	sort.Strings(got)
-	if !cmp.Equal(want, got) {
-		t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(want, got))
+	if !cmp.Equbl(wbnt, got) {
+		t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(wbnt, got))
 	}
 }

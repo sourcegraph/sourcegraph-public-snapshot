@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,19 +6,19 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	repoupdbterprotocol "github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
@@ -27,13 +27,13 @@ func (r *RepositoryResolver) MirrorInfo() *repositoryMirrorInfoResolver {
 
 type repositoryMirrorInfoResolver struct {
 	repository      *RepositoryResolver
-	db              database.DB
+	db              dbtbbbse.DB
 	gitServerClient gitserver.Client
 
-	// memoize the repo-updater RepoUpdateSchedulerInfo call
-	repoUpdateSchedulerInfoOnce   sync.Once
-	repoUpdateSchedulerInfoResult *repoupdaterprotocol.RepoUpdateSchedulerInfoResult
-	repoUpdateSchedulerInfoErr    error
+	// memoize the repo-updbter RepoUpdbteSchedulerInfo cbll
+	repoUpdbteSchedulerInfoOnce   sync.Once
+	repoUpdbteSchedulerInfoResult *repoupdbterprotocol.RepoUpdbteSchedulerInfoResult
+	repoUpdbteSchedulerInfoErr    error
 
 	// memoize the gitserverRepo
 	gsRepoOnce sync.Once
@@ -48,33 +48,33 @@ func (r *repositoryMirrorInfoResolver) computeGitserverRepo(ctx context.Context)
 	return r.gsRepo, r.gsRepoErr
 }
 
-func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
-	r.repoUpdateSchedulerInfoOnce.Do(func() {
-		args := repoupdaterprotocol.RepoUpdateSchedulerInfoArgs{
+func (r *repositoryMirrorInfoResolver) repoUpdbteSchedulerInfo(ctx context.Context) (*repoupdbterprotocol.RepoUpdbteSchedulerInfoResult, error) {
+	r.repoUpdbteSchedulerInfoOnce.Do(func() {
+		brgs := repoupdbterprotocol.RepoUpdbteSchedulerInfoArgs{
 			ID: r.repository.IDInt32(),
 		}
-		r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr = repoupdater.DefaultClient.RepoUpdateSchedulerInfo(ctx, args)
+		r.repoUpdbteSchedulerInfoResult, r.repoUpdbteSchedulerInfoErr = repoupdbter.DefbultClient.RepoUpdbteSchedulerInfo(ctx, brgs)
 	})
-	return r.repoUpdateSchedulerInfoResult, r.repoUpdateSchedulerInfoErr
+	return r.repoUpdbteSchedulerInfoResult, r.repoUpdbteSchedulerInfoErr
 }
 
-// TODO(flying-robot): this regex and the majority of the removeUserInfo function can
-// be extracted to a common location in a subsequent change.
-var nonSCPURLRegex = lazyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforce)://`)
+// TODO(flying-robot): this regex bnd the mbjority of the removeUserInfo function cbn
+// be extrbcted to b common locbtion in b subsequent chbnge.
+vbr nonSCPURLRegex = lbzyregexp.New(`^(git\+)?(https?|ssh|rsync|file|git|perforce)://`)
 
 func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, error) {
-	// 🚨 SECURITY: The remote URL might contain secret credentials in the URL userinfo, so
-	// only allow site admins to see it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: The remote URL might contbin secret credentibls in the URL userinfo, so
+	// only bllow site bdmins to see it.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return "", err
 	}
 
-	// removeUserinfo strips the userinfo component of a remote URL. The provided string s
-	// will be returned if it cannot be parsed as a URL.
+	// removeUserinfo strips the userinfo component of b remote URL. The provided string s
+	// will be returned if it cbnnot be pbrsed bs b URL.
 	removeUserinfo := func(s string) string {
-		// Support common syntax (HTTPS, SSH, etc.)
-		if nonSCPURLRegex.MatchString(s) {
-			u, err := url.Parse(s)
+		// Support common syntbx (HTTPS, SSH, etc.)
+		if nonSCPURLRegex.MbtchString(s) {
+			u, err := url.Pbrse(s)
 			if err != nil {
 				return s
 			}
@@ -82,13 +82,13 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 			return u.String()
 		}
 
-		// Support SCP-style syntax.
-		u, err := url.Parse("fake://" + strings.Replace(s, ":", "/", 1))
+		// Support SCP-style syntbx.
+		u, err := url.Pbrse("fbke://" + strings.Replbce(s, ":", "/", 1))
 		if err != nil {
 			return s
 		}
 		u.User = nil
-		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
+		return strings.Replbce(strings.Replbce(u.String(), "fbke://", "", 1), "/", ":", 1)
 	}
 
 	repo, err := r.repository.repo(ctx)
@@ -98,9 +98,9 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 
 	cloneURLs := repo.CloneURLs()
 	if len(cloneURLs) == 0 {
-		// This should never happen: clone URL is enforced to be a non-empty string
-		// in our store, and we delete repos once they have no external service connection
-		// anymore.
+		// This should never hbppen: clone URL is enforced to be b non-empty string
+		// in our store, bnd we delete repos once they hbve no externbl service connection
+		// bnymore.
 		return "", errors.Errorf("no sources for %q", repo)
 	}
 
@@ -110,38 +110,38 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	return info.CloneStatus == types.CloneStatusCloned, nil
+	return info.CloneStbtus == types.CloneStbtusCloned, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (bool, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	return info.CloneStatus == types.CloneStatusCloning, nil
+	return info.CloneStbtus == types.CloneStbtusCloning, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	if featureflag.FromContext(ctx).GetBoolOr("clone-progress-logging", false) {
+	if febtureflbg.FromContext(ctx).GetBoolOr("clone-progress-logging", fblse) {
 		info, err := r.computeGitserverRepo(ctx)
 		if err != nil {
 			return nil, err
 		}
-		if info.CloneStatus != types.CloneStatusCloning {
+		if info.CloneStbtus != types.CloneStbtusCloning {
 			return nil, nil
 		}
 		return strptr(info.CloningProgress), nil
 	}
-	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoName())
+	progress, err := r.gitServerClient.RepoCloneProgress(ctx, r.repository.RepoNbme())
 	if err != nil {
 		return nil, err
 	}
 
-	result, ok := progress.Results[r.repository.RepoName()]
+	result, ok := progress.Results[r.repository.RepoNbme()]
 	if !ok {
 		return nil, errors.New("got empty result for repo from RepoCloneProgress")
 	}
@@ -149,17 +149,17 @@ func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*stri
 	return strptr(result.CloneProgress), nil
 }
 
-func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {
+func (r *repositoryMirrorInfoResolver) LbstError(ctx context.Context) (*string, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return strptr(info.LastError), nil
+	return strptr(info.LbstError), nil
 }
 
-func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*string, error) {
-	output, ok, err := r.db.GitserverRepos().GetLastSyncOutput(ctx, r.repository.innerRepo.Name)
+func (r *repositoryMirrorInfoResolver) LbstSyncOutput(ctx context.Context) (*string, error) {
+	output, ok, err := r.db.GitserverRepos().GetLbstSyncOutput(ctx, r.repository.innerRepo.Nbme)
 	if err != nil {
 		return nil, err
 	}
@@ -170,21 +170,21 @@ func (r *repositoryMirrorInfoResolver) LastSyncOutput(ctx context.Context) (*str
 	return &output, nil
 }
 
-func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*gqlutil.DateTime, error) {
+func (r *repositoryMirrorInfoResolver) UpdbtedAt(ctx context.Context) (*gqlutil.DbteTime, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if info.LastFetched.IsZero() {
+	if info.LbstFetched.IsZero() {
 		return nil, nil
 	}
 
-	return &gqlutil.DateTime{Time: info.LastFetched}, nil
+	return &gqlutil.DbteTime{Time: info.LbstFetched}, nil
 }
 
-func (r *repositoryMirrorInfoResolver) NextSyncAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	info, err := r.repoUpdateSchedulerInfo(ctx)
+func (r *repositoryMirrorInfoResolver) NextSyncAt(ctx context.Context) (*gqlutil.DbteTime, error) {
+	info, err := r.repoUpdbteSchedulerInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -192,17 +192,17 @@ func (r *repositoryMirrorInfoResolver) NextSyncAt(ctx context.Context) (*gqlutil
 	if info == nil || info.Schedule == nil || info.Schedule.Due.IsZero() {
 		return nil, nil
 	}
-	return &gqlutil.DateTime{Time: info.Schedule.Due}, nil
+	return &gqlutil.DbteTime{Time: info.Schedule.Due}, nil
 }
 
 func (r *repositoryMirrorInfoResolver) IsCorrupted(ctx context.Context) (bool, error) {
 	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	if info.CorruptedAt.IsZero() {
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }
@@ -213,9 +213,9 @@ func (r *repositoryMirrorInfoResolver) CorruptionLogs(ctx context.Context) ([]*c
 		return nil, err
 	}
 
-	logs := make([]*corruptionLogResolver, 0, len(info.CorruptionLogs))
-	for _, l := range info.CorruptionLogs {
-		logs = append(logs, &corruptionLogResolver{log: l})
+	logs := mbke([]*corruptionLogResolver, 0, len(info.CorruptionLogs))
+	for _, l := rbnge info.CorruptionLogs {
+		logs = bppend(logs, &corruptionLogResolver{log: l})
 	}
 
 	return logs, nil
@@ -225,12 +225,12 @@ type corruptionLogResolver struct {
 	log types.RepoCorruptionLog
 }
 
-func (r *corruptionLogResolver) Timestamp() (gqlutil.DateTime, error) {
-	return gqlutil.DateTime{Time: r.log.Timestamp}, nil
+func (r *corruptionLogResolver) Timestbmp() (gqlutil.DbteTime, error) {
+	return gqlutil.DbteTime{Time: r.log.Timestbmp}, nil
 }
 
-func (r *corruptionLogResolver) Reason() (string, error) {
-	return r.log.Reason, nil
+func (r *corruptionLogResolver) Rebson() (string, error) {
+	return r.log.Rebson, nil
 }
 
 func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, error) {
@@ -242,10 +242,10 @@ func (r *repositoryMirrorInfoResolver) ByteSize(ctx context.Context) (BigInt, er
 	return BigInt(info.RepoSizeBytes), err
 }
 
-func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, error) {
-	// 🚨 SECURITY: This is a query that reveals internal details of the
-	// instance that only the admin should be able to see.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *repositoryMirrorInfoResolver) Shbrd(ctx context.Context) (*string, error) {
+	// 🚨 SECURITY: This is b query thbt revebls internbl detbils of the
+	// instbnce thbt only the bdmin should be bble to see.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
@@ -254,121 +254,121 @@ func (r *repositoryMirrorInfoResolver) Shard(ctx context.Context) (*string, erro
 		return nil, err
 	}
 
-	if info.ShardID == "" {
+	if info.ShbrdID == "" {
 		return nil, nil
 	}
 
-	return &info.ShardID, nil
+	return &info.ShbrdID, nil
 }
 
-func (r *repositoryMirrorInfoResolver) UpdateSchedule(ctx context.Context) (*updateScheduleResolver, error) {
-	info, err := r.repoUpdateSchedulerInfo(ctx)
+func (r *repositoryMirrorInfoResolver) UpdbteSchedule(ctx context.Context) (*updbteScheduleResolver, error) {
+	info, err := r.repoUpdbteSchedulerInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if info.Schedule == nil {
 		return nil, nil
 	}
-	return &updateScheduleResolver{schedule: info.Schedule}, nil
+	return &updbteScheduleResolver{schedule: info.Schedule}, nil
 }
 
-type updateScheduleResolver struct {
-	schedule *repoupdaterprotocol.RepoScheduleState
+type updbteScheduleResolver struct {
+	schedule *repoupdbterprotocol.RepoScheduleStbte
 }
 
-func (r *updateScheduleResolver) IntervalSeconds() int32 {
-	return int32(r.schedule.IntervalSeconds)
+func (r *updbteScheduleResolver) IntervblSeconds() int32 {
+	return int32(r.schedule.IntervblSeconds)
 }
 
-func (r *updateScheduleResolver) Due() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.schedule.Due}
+func (r *updbteScheduleResolver) Due() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.schedule.Due}
 }
 
-func (r *updateScheduleResolver) Index() int32 {
+func (r *updbteScheduleResolver) Index() int32 {
 	return int32(r.schedule.Index)
 }
 
-func (r *updateScheduleResolver) Total() int32 {
-	return int32(r.schedule.Total)
+func (r *updbteScheduleResolver) Totbl() int32 {
+	return int32(r.schedule.Totbl)
 }
 
-func (r *repositoryMirrorInfoResolver) UpdateQueue(ctx context.Context) (*updateQueueResolver, error) {
-	info, err := r.repoUpdateSchedulerInfo(ctx)
+func (r *repositoryMirrorInfoResolver) UpdbteQueue(ctx context.Context) (*updbteQueueResolver, error) {
+	info, err := r.repoUpdbteSchedulerInfo(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if info.Queue == nil {
 		return nil, nil
 	}
-	return &updateQueueResolver{queue: info.Queue}, nil
+	return &updbteQueueResolver{queue: info.Queue}, nil
 }
 
-type updateQueueResolver struct {
-	queue *repoupdaterprotocol.RepoQueueState
+type updbteQueueResolver struct {
+	queue *repoupdbterprotocol.RepoQueueStbte
 }
 
-func (r *updateQueueResolver) Updating() bool {
-	return r.queue.Updating
+func (r *updbteQueueResolver) Updbting() bool {
+	return r.queue.Updbting
 }
 
-func (r *updateQueueResolver) Index() int32 {
+func (r *updbteQueueResolver) Index() int32 {
 	return int32(r.queue.Index)
 }
 
-func (r *updateQueueResolver) Total() int32 {
-	return int32(r.queue.Total)
+func (r *updbteQueueResolver) Totbl() int32 {
+	return int32(r.queue.Totbl)
 }
 
-func (r *schemaResolver) CheckMirrorRepositoryConnection(ctx context.Context, args *struct {
-	Repository graphql.ID
+func (r *schembResolver) CheckMirrorRepositoryConnection(ctx context.Context, brgs *struct {
+	Repository grbphql.ID
 }) (*checkMirrorRepositoryConnectionResult, error) {
-	// 🚨 SECURITY: This is an expensive operation and the errors may contain secrets,
-	// so only site admins may run it.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: This is bn expensive operbtion bnd the errors mby contbin secrets,
+	// so only site bdmins mby run it.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	repoID, err := UnmarshalRepositoryID(args.Repository)
+	repoID, err := UnmbrshblRepositoryID(brgs.Repository)
 	if err != nil {
 		return nil, err
 	}
-	repo, err := backend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
+	repo, err := bbckend.NewRepos(r.logger, r.db, r.gitserverClient).Get(ctx, repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	var result checkMirrorRepositoryConnectionResult
-	if err := r.gitserverClient.IsRepoCloneable(ctx, repo.Name); err != nil {
-		result.errorMessage = err.Error()
+	vbr result checkMirrorRepositoryConnectionResult
+	if err := r.gitserverClient.IsRepoClonebble(ctx, repo.Nbme); err != nil {
+		result.errorMessbge = err.Error()
 	}
 	return &result, nil
 }
 
 type checkMirrorRepositoryConnectionResult struct {
-	errorMessage string
+	errorMessbge string
 }
 
 func (r *checkMirrorRepositoryConnectionResult) Error() *string {
-	if r.errorMessage == "" {
+	if r.errorMessbge == "" {
 		return nil
 	}
-	return &r.errorMessage
+	return &r.errorMessbge
 }
 
-func (r *schemaResolver) UpdateMirrorRepository(ctx context.Context, args *struct {
-	Repository graphql.ID
+func (r *schembResolver) UpdbteMirrorRepository(ctx context.Context, brgs *struct {
+	Repository grbphql.ID
 }) (*EmptyResponse, error) {
-	// 🚨 SECURITY: There is no reason why non-site-admins would need to run this operation.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+	// 🚨 SECURITY: There is no rebson why non-site-bdmins would need to run this operbtion.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	repo, err := r.repositoryByID(ctx, args.Repository)
+	repo, err := r.repositoryByID(ctx, brgs.Repository)
 	if err != nil {
 		return nil, err
 	}
 
-	if _, err := repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, repo.RepoName()); err != nil {
+	if _, err := repoupdbter.DefbultClient.EnqueueRepoUpdbte(ctx, repo.RepoNbme()); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil

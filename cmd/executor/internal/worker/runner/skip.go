@@ -1,32 +1,32 @@
-package runner
+pbckbge runner
 
 import (
 	"encoding/json"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NextStep reads the skip file from the working directory and returns the next step.
-// What the values can mean are,
-//   - 0: Nothing was skipped
+// NextStep rebds the skip file from the working directory bnd returns the next step.
+// Whbt the vblues cbn mebn bre,
+//   - 0: Nothing wbs skipped
 //   - n: The next step to run
 func NextStep(workingDirectory string) (string, error) {
-	path := filepath.Join(workingDirectory, types.SkipFile)
-	b, err := os.ReadFile(path)
+	pbth := filepbth.Join(workingDirectory, types.SkipFile)
+	b, err := os.RebdFile(pbth)
 	if err != nil {
 		if os.IsNotExist(err) {
 			return "", nil
 		}
-		return "", errors.Wrap(err, "reading skip file")
+		return "", errors.Wrbp(err, "rebding skip file")
 	}
-	var s types.Skip
-	if err = json.Unmarshal(b, &s); err != nil {
-		return "", errors.Wrap(err, "unmarshalling skip file")
+	vbr s types.Skip
+	if err = json.Unmbrshbl(b, &s); err != nil {
+		return "", errors.Wrbp(err, "unmbrshblling skip file")
 	}
 	// Try to remove the skip file.
-	defer os.Remove(path)
+	defer os.Remove(pbth)
 	return s.NextStep, nil
 }

@@ -1,4 +1,4 @@
-package run_test
+pbckbge run_test
 
 import (
 	"bytes"
@@ -6,114 +6,114 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/log"
-	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/run"
-	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/util"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegrbph/sourcegrbph/cmd/bbtcheshelper/log"
+	"github.com/sourcegrbph/sourcegrbph/cmd/bbtcheshelper/run"
+	"github.com/sourcegrbph/sourcegrbph/cmd/bbtcheshelper/util"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
 )
 
 func TestPost(t *testing.T) {
 	tests := []struct {
-		name           string
-		setupFunc      func(t *testing.T, dir string, workspaceFileDir string, executionInput batcheslib.WorkspacesExecutionInput)
-		mockFunc       func(runner *fakeCmdRunner)
+		nbme           string
+		setupFunc      func(t *testing.T, dir string, workspbceFileDir string, executionInput bbtcheslib.WorkspbcesExecutionInput)
+		mockFunc       func(runner *fbkeCmdRunner)
 		step           int
-		executionInput batcheslib.WorkspacesExecutionInput
+		executionInput bbtcheslib.WorkspbcesExecutionInput
 		previousResult execution.AfterStepResult
 		stdoutLogs     string
 		stderrLogs     string
 		expectedErr    error
-		assertFunc     func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner)
+		bssertFunc     func(t *testing.T, logEntries []bbtcheslib.LogEvent, dir string, runner *fbkeCmdRunner)
 	}{
 		{
-			name: "Success",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/job/repository"}).
+			nbme: "Success",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("Git", mock.Anything, "", []string{"config", "--globbl", "--bdd", "sbfe.directory", "/job/repository"}).
 					Return("", nil)
-				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
+				runner.On("Git", mock.Anything, "repository", []string{"bdd", "--bll"}).
 					Return("", nil)
-				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cached", "--no-prefix", "--binary"}).
+				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cbched", "--no-prefix", "--binbry"}).
 					Return("git diff", nil)
 			},
 			step: 0,
-			executionInput: batcheslib.WorkspacesExecutionInput{
-				Steps: []batcheslib.Step{
+			executionInput: bbtcheslib.WorkspbcesExecutionInput{
+				Steps: []bbtcheslib.Step{
 					{Run: "echo hello world"},
 				},
 			},
 			previousResult: execution.AfterStepResult{},
 			stdoutLogs:     "hello world",
 			stderrLogs:     "error",
-			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
+			bssertFunc: func(t *testing.T, logEntries []bbtcheslib.LogEvent, dir string, runner *fbkeCmdRunner) {
 				require.Len(t, logEntries, 2)
 
-				assert.Equal(t, batcheslib.LogEventOperationTaskStep, logEntries[0].Operation)
-				assert.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \+\d{4} UTC$`, logEntries[0].Timestamp)
-				assert.Equal(t, batcheslib.LogEventStatusSuccess, logEntries[0].Status)
-				assert.IsType(t, &batcheslib.TaskStepMetadata{}, logEntries[0].Metadata)
-				assert.Equal(t, []byte("git diff"), logEntries[0].Metadata.(*batcheslib.TaskStepMetadata).Diff)
+				bssert.Equbl(t, bbtcheslib.LogEventOperbtionTbskStep, logEntries[0].Operbtion)
+				bssert.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \+\d{4} UTC$`, logEntries[0].Timestbmp)
+				bssert.Equbl(t, bbtcheslib.LogEventStbtusSuccess, logEntries[0].Stbtus)
+				bssert.IsType(t, &bbtcheslib.TbskStepMetbdbtb{}, logEntries[0].Metbdbtb)
+				bssert.Equbl(t, []byte("git diff"), logEntries[0].Metbdbtb.(*bbtcheslib.TbskStepMetbdbtb).Diff)
 
-				assert.Equal(t, batcheslib.LogEventOperationCacheAfterStepResult, logEntries[1].Operation)
-				assert.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \+\d{4} UTC$`, logEntries[1].Timestamp)
-				assert.Equal(t, batcheslib.LogEventStatusSuccess, logEntries[1].Status)
-				assert.IsType(t, &batcheslib.CacheAfterStepResultMetadata{}, logEntries[1].Metadata)
-				assert.Equal(t, "deZzMP85HWs6lfhWRnMVBA-step-0", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
-				assert.Equal(t, "hello world", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Stdout)
-				assert.Equal(t, "error", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Stderr)
-				assert.Equal(t, []byte("git diff"), logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Value.Diff)
+				bssert.Equbl(t, bbtcheslib.LogEventOperbtionCbcheAfterStepResult, logEntries[1].Operbtion)
+				bssert.Regexp(t, `^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\.\d+ \+\d{4} UTC$`, logEntries[1].Timestbmp)
+				bssert.Equbl(t, bbtcheslib.LogEventStbtusSuccess, logEntries[1].Stbtus)
+				bssert.IsType(t, &bbtcheslib.CbcheAfterStepResultMetbdbtb{}, logEntries[1].Metbdbtb)
+				bssert.Equbl(t, "deZzMP85HWs6lfhWRnMVBA-step-0", logEntries[1].Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb).Key)
+				bssert.Equbl(t, "hello world", logEntries[1].Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb).Vblue.Stdout)
+				bssert.Equbl(t, "error", logEntries[1].Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb).Vblue.Stderr)
+				bssert.Equbl(t, []byte("git diff"), logEntries[1].Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb).Vblue.Diff)
 
-				entries, err := os.ReadDir(dir)
+				entries, err := os.RebdDir(dir)
 				require.NoError(t, err)
 				require.Len(t, entries, 3)
-				b, err := os.ReadFile(filepath.Join(dir, "step0.json"))
+				b, err := os.RebdFile(filepbth.Join(dir, "step0.json"))
 				require.NoError(t, err)
-				var result execution.AfterStepResult
-				err = json.Unmarshal(b, &result)
+				vbr result execution.AfterStepResult
+				err = json.Unmbrshbl(b, &result)
 				require.NoError(t, err)
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					execution.AfterStepResult{
 						Version: 2,
 						Stdout:  "hello world",
 						Stderr:  "error",
 						Diff:    []byte("git diff"),
-						Outputs: make(map[string]interface{}),
+						Outputs: mbke(mbp[string]interfbce{}),
 					},
 					result,
 				)
 			},
 		},
 		{
-			name: "File Mounts",
-			setupFunc: func(t *testing.T, dir string, workspaceFileDir string, executionInput batcheslib.WorkspacesExecutionInput) {
-				err := os.Mkdir(filepath.Join(dir, "step0files"), os.ModePerm)
+			nbme: "File Mounts",
+			setupFunc: func(t *testing.T, dir string, workspbceFileDir string, executionInput bbtcheslib.WorkspbcesExecutionInput) {
+				err := os.Mkdir(filepbth.Join(dir, "step0files"), os.ModePerm)
 				require.NoError(t, err)
-				err = os.WriteFile(filepath.Join(dir, "step0files", "file1.txt"), []byte("hello world"), os.ModePerm)
+				err = os.WriteFile(filepbth.Join(dir, "step0files", "file1.txt"), []byte("hello world"), os.ModePerm)
 				require.NoError(t, err)
 			},
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/job/repository"}).
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("Git", mock.Anything, "", []string{"config", "--globbl", "--bdd", "sbfe.directory", "/job/repository"}).
 					Return("", nil)
-				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
+				runner.On("Git", mock.Anything, "repository", []string{"bdd", "--bll"}).
 					Return("", nil)
-				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cached", "--no-prefix", "--binary"}).
+				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cbched", "--no-prefix", "--binbry"}).
 					Return("git diff", nil)
 			},
 			step: 0,
-			executionInput: batcheslib.WorkspacesExecutionInput{
-				Steps: []batcheslib.Step{
+			executionInput: bbtcheslib.WorkspbcesExecutionInput{
+				Steps: []bbtcheslib.Step{
 					{
 						Run: "echo hello world",
-						Files: map[string]string{
+						Files: mbp[string]string{
 							"file1.txt": "hello world",
 						},
 					},
@@ -122,155 +122,155 @@ func TestPost(t *testing.T) {
 			previousResult: execution.AfterStepResult{},
 			stdoutLogs:     "hello world",
 			stderrLogs:     "error",
-			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
+			bssertFunc: func(t *testing.T, logEntries []bbtcheslib.LogEvent, dir string, runner *fbkeCmdRunner) {
 				require.Len(t, logEntries, 2)
-				assert.Equal(t, "4qXjs4-Arh1VpWWfWhqm3A-step-0", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+				bssert.Equbl(t, "4qXjs4-Arh1VpWWfWhqm3A-step-0", logEntries[1].Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb).Key)
 
-				entries, err := os.ReadDir(dir)
+				entries, err := os.RebdDir(dir)
 				require.NoError(t, err)
 				require.Len(t, entries, 3)
-				b, err := os.ReadFile(filepath.Join(dir, "step0.json"))
+				b, err := os.RebdFile(filepbth.Join(dir, "step0.json"))
 				require.NoError(t, err)
-				var result execution.AfterStepResult
-				err = json.Unmarshal(b, &result)
+				vbr result execution.AfterStepResult
+				err = json.Unmbrshbl(b, &result)
 				require.NoError(t, err)
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					execution.AfterStepResult{
 						Version: 2,
 						Stdout:  "hello world",
 						Stderr:  "error",
 						Diff:    []byte("git diff"),
-						Outputs: make(map[string]interface{}),
+						Outputs: mbke(mbp[string]interfbce{}),
 					},
 					result,
 				)
 
-				_, err = os.Stat(filepath.Join(dir, "step0files"))
+				_, err = os.Stbt(filepbth.Join(dir, "step0files"))
 				require.Error(t, err)
-				assert.True(t, os.IsNotExist(err))
+				bssert.True(t, os.IsNotExist(err))
 			},
 		},
 		{
-			name: "Workspace Files",
-			setupFunc: func(t *testing.T, dir string, workspaceFileDir string, executionInput batcheslib.WorkspacesExecutionInput) {
-				path := filepath.Join(workspaceFileDir, "file1.txt")
-				err := os.WriteFile(path, []byte("hello world"), os.ModePerm)
+			nbme: "Workspbce Files",
+			setupFunc: func(t *testing.T, dir string, workspbceFileDir string, executionInput bbtcheslib.WorkspbcesExecutionInput) {
+				pbth := filepbth.Join(workspbceFileDir, "file1.txt")
+				err := os.WriteFile(pbth, []byte("hello world"), os.ModePerm)
 				require.NoError(t, err)
-				executionInput.Steps[0].Mount = []batcheslib.Mount{
+				executionInput.Steps[0].Mount = []bbtcheslib.Mount{
 					{
 						Mountpoint: "/foo/file1.txt",
-						Path:       path,
+						Pbth:       pbth,
 					},
 				}
 			},
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("Git", mock.Anything, "", []string{"config", "--global", "--add", "safe.directory", "/job/repository"}).
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("Git", mock.Anything, "", []string{"config", "--globbl", "--bdd", "sbfe.directory", "/job/repository"}).
 					Return("", nil)
-				runner.On("Git", mock.Anything, "repository", []string{"add", "--all"}).
+				runner.On("Git", mock.Anything, "repository", []string{"bdd", "--bll"}).
 					Return("", nil)
-				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cached", "--no-prefix", "--binary"}).
+				runner.On("Git", mock.Anything, "repository", []string{"diff", "--cbched", "--no-prefix", "--binbry"}).
 					Return("git diff", nil)
 			},
 			step: 0,
-			executionInput: batcheslib.WorkspacesExecutionInput{
-				Steps: []batcheslib.Step{
+			executionInput: bbtcheslib.WorkspbcesExecutionInput{
+				Steps: []bbtcheslib.Step{
 					{Run: "echo hello world"},
 				},
 			},
 			previousResult: execution.AfterStepResult{},
 			stdoutLogs:     "hello world",
 			stderrLogs:     "error",
-			assertFunc: func(t *testing.T, logEntries []batcheslib.LogEvent, dir string, runner *fakeCmdRunner) {
+			bssertFunc: func(t *testing.T, logEntries []bbtcheslib.LogEvent, dir string, runner *fbkeCmdRunner) {
 				require.Len(t, logEntries, 2)
-				assert.Regexp(t, ".*-step-0$", logEntries[1].Metadata.(*batcheslib.CacheAfterStepResultMetadata).Key)
+				bssert.Regexp(t, ".*-step-0$", logEntries[1].Metbdbtb.(*bbtcheslib.CbcheAfterStepResultMetbdbtb).Key)
 
-				entries, err := os.ReadDir(dir)
+				entries, err := os.RebdDir(dir)
 				require.NoError(t, err)
 				require.Len(t, entries, 3)
-				b, err := os.ReadFile(filepath.Join(dir, "step0.json"))
+				b, err := os.RebdFile(filepbth.Join(dir, "step0.json"))
 				require.NoError(t, err)
-				var result execution.AfterStepResult
-				err = json.Unmarshal(b, &result)
+				vbr result execution.AfterStepResult
+				err = json.Unmbrshbl(b, &result)
 				require.NoError(t, err)
-				assert.Equal(
+				bssert.Equbl(
 					t,
 					execution.AfterStepResult{
 						Version: 2,
 						Stdout:  "hello world",
 						Stderr:  "error",
 						Diff:    []byte("git diff"),
-						Outputs: make(map[string]interface{}),
+						Outputs: mbke(mbp[string]interfbce{}),
 					},
 					result,
 				)
 
-				_, err = os.Stat(filepath.Join(dir, "workspaceFiles"))
+				_, err = os.Stbt(filepbth.Join(dir, "workspbceFiles"))
 				require.Error(t, err)
-				assert.True(t, os.IsNotExist(err))
+				bssert.True(t, os.IsNotExist(err))
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var buf bytes.Buffer
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			vbr buf bytes.Buffer
 			logger := &log.Logger{Writer: &buf}
 
 			dir := t.TempDir()
-			workspaceFilesDir := filepath.Join(dir, "workspaceFiles")
-			err := os.Mkdir(workspaceFilesDir, os.ModePerm)
+			workspbceFilesDir := filepbth.Join(dir, "workspbceFiles")
+			err := os.Mkdir(workspbceFilesDir, os.ModePerm)
 			require.NoError(t, err)
 
-			err = os.WriteFile(filepath.Join(dir, fmt.Sprintf("stdout%d.log", test.step)), []byte(test.stdoutLogs), os.ModePerm)
+			err = os.WriteFile(filepbth.Join(dir, fmt.Sprintf("stdout%d.log", test.step)), []byte(test.stdoutLogs), os.ModePerm)
 			require.NoError(t, err)
-			err = os.WriteFile(filepath.Join(dir, fmt.Sprintf("stderr%d.log", test.step)), []byte(test.stderrLogs), os.ModePerm)
+			err = os.WriteFile(filepbth.Join(dir, fmt.Sprintf("stderr%d.log", test.step)), []byte(test.stderrLogs), os.ModePerm)
 			require.NoError(t, err)
 
 			if test.setupFunc != nil {
-				test.setupFunc(t, dir, workspaceFilesDir, test.executionInput)
+				test.setupFunc(t, dir, workspbceFilesDir, test.executionInput)
 			}
 
-			runner := new(fakeCmdRunner)
+			runner := new(fbkeCmdRunner)
 			if test.mockFunc != nil {
 				test.mockFunc(runner)
 			}
 
-			err = run.Post(context.Background(), logger, runner, test.step, test.executionInput, test.previousResult, dir, workspaceFilesDir, true)
+			err = run.Post(context.Bbckground(), logger, runner, test.step, test.executionInput, test.previousResult, dir, workspbceFilesDir, true)
 
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
 
 			logs := buf.String()
 			logLines := strings.Split(logs, "\n")
-			logEntries := make([]batcheslib.LogEvent, len(logLines)-1)
-			for i, line := range logLines {
+			logEntries := mbke([]bbtcheslib.LogEvent, len(logLines)-1)
+			for i, line := rbnge logLines {
 				if len(line) == 0 {
-					break
+					brebk
 				}
-				var entry batcheslib.LogEvent
-				err = json.Unmarshal([]byte(line), &entry)
+				vbr entry bbtcheslib.LogEvent
+				err = json.Unmbrshbl([]byte(line), &entry)
 				require.NoError(t, err)
 				logEntries[i] = entry
 			}
 
-			if test.assertFunc != nil {
-				test.assertFunc(t, logEntries, dir, runner)
+			if test.bssertFunc != nil {
+				test.bssertFunc(t, logEntries, dir, runner)
 			}
 		})
 	}
 }
 
-type fakeCmdRunner struct {
+type fbkeCmdRunner struct {
 	mock.Mock
 }
 
-var _ util.CmdRunner = &fakeCmdRunner{}
+vbr _ util.CmdRunner = &fbkeCmdRunner{}
 
-func (f *fakeCmdRunner) Git(ctx context.Context, dir string, args ...string) ([]byte, error) {
-	calledArgs := f.Called(ctx, dir, args)
-	return []byte(calledArgs.String(0)), calledArgs.Error(1)
+func (f *fbkeCmdRunner) Git(ctx context.Context, dir string, brgs ...string) ([]byte, error) {
+	cblledArgs := f.Cblled(ctx, dir, brgs)
+	return []byte(cblledArgs.String(0)), cblledArgs.Error(1)
 }

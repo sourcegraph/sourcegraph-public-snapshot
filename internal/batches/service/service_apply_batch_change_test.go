@@ -1,4 +1,4 @@
-package service
+pbckbge service
 
 import (
 	"context"
@@ -8,808 +8,808 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/reconciler"
-	bstore "github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/reconciler"
+	bstore "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestServiceApplyBatchChange(t *testing.T) {
+func TestServiceApplyBbtchChbnge(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	admin := bt.CreateTestUser(t, db, true)
-	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
+	bdmin := bt.CrebteTestUser(t, db, true)
+	bdminCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(bdmin.ID))
 
-	user := bt.CreateTestUser(t, db, false)
-	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+	user := bt.CrebteTestUser(t, db, fblse)
+	userCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(user.ID))
 
-	repos, _ := bt.CreateTestRepos(t, ctx, db, 4)
+	repos, _ := bt.CrebteTestRepos(t, ctx, db, 4)
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	store := bstore.NewWithClock(db, &observation.TestContext, nil, clock)
+	store := bstore.NewWithClock(db, &observbtion.TestContext, nil, clock)
 	svc := New(store)
 
-	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {
-		t.Run("new batch change", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange1", admin.ID, 0)
-			batchChange, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-				BatchSpecRandID: batchSpec.RandID,
+	t.Run("BbtchSpec without chbngesetSpecs", func(t *testing.T) {
+		t.Run("new bbtch chbnge", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge1", bdmin.ID, 0)
+			bbtchChbnge, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+				BbtchSpecRbndID: bbtchSpec.RbndID,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if batchChange.ID == 0 {
-				t.Fatalf("batch change ID is 0")
+			if bbtchChbnge.ID == 0 {
+				t.Fbtblf("bbtch chbnge ID is 0")
 			}
 
-			want := &btypes.BatchChange{
-				Name:            batchSpec.Spec.Name,
-				Description:     batchSpec.Spec.Description,
-				CreatorID:       admin.ID,
-				LastApplierID:   admin.ID,
-				LastAppliedAt:   now,
-				NamespaceUserID: batchSpec.NamespaceUserID,
-				BatchSpecID:     batchSpec.ID,
+			wbnt := &btypes.BbtchChbnge{
+				Nbme:            bbtchSpec.Spec.Nbme,
+				Description:     bbtchSpec.Spec.Description,
+				CrebtorID:       bdmin.ID,
+				LbstApplierID:   bdmin.ID,
+				LbstAppliedAt:   now,
+				NbmespbceUserID: bbtchSpec.NbmespbceUserID,
+				BbtchSpecID:     bbtchSpec.ID,
 
 				// Ignore these fields
-				ID:        batchChange.ID,
-				UpdatedAt: batchChange.UpdatedAt,
-				CreatedAt: batchChange.CreatedAt,
+				ID:        bbtchChbnge.ID,
+				UpdbtedAt: bbtchChbnge.UpdbtedAt,
+				CrebtedAt: bbtchChbnge.CrebtedAt,
 			}
 
-			if diff := cmp.Diff(want, batchChange); diff != "" {
-				t.Fatalf("wrong spec fields (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbnt, bbtchChbnge); diff != "" {
+				t.Fbtblf("wrong spec fields (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("existing batch change", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
-			batchChange := bt.CreateBatchChange(t, ctx, store, "batchchange2", admin.ID, batchSpec.ID)
+		t.Run("existing bbtch chbnge", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge2", bdmin.ID, 0)
+			bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, store, "bbtchchbnge2", bdmin.ID, bbtchSpec.ID)
 
-			t.Run("apply same BatchSpec", func(t *testing.T) {
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-					BatchSpecRandID: batchSpec.RandID,
+			t.Run("bpply sbme BbtchSpec", func(t *testing.T) {
+				bbtchChbnge2, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID: bbtchSpec.RbndID,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := batchChange2.ID, batchChange.ID; have != want {
-					t.Fatalf("batch change ID is wrong. want=%d, have=%d", want, have)
+				if hbve, wbnt := bbtchChbnge2.ID, bbtchChbnge.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge ID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 			})
 
-			t.Run("apply same BatchSpec with FailIfExists", func(t *testing.T) {
-				_, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
-					BatchSpecRandID:         batchSpec.RandID,
-					FailIfBatchChangeExists: true,
+			t.Run("bpply sbme BbtchSpec with FbilIfExists", func(t *testing.T) {
+				_, err := svc.ApplyBbtchChbnge(ctx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID:         bbtchSpec.RbndID,
+					FbilIfBbtchChbngeExists: true,
 				})
-				if err != ErrMatchingBatchChangeExists {
-					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingBatchChangeExists, err)
+				if err != ErrMbtchingBbtchChbngeExists {
+					t.Fbtblf("unexpected error. wbnt=%s, got=%s", ErrMbtchingBbtchChbngeExists, err)
 				}
 			})
 
-			t.Run("apply batch spec with same name", func(t *testing.T) {
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-					BatchSpecRandID: batchSpec2.RandID,
-				})
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				if have, want := batchChange2.ID, batchChange.ID; have != want {
-					t.Fatalf("batch change ID is wrong. want=%d, have=%d", want, have)
-				}
-			})
-
-			t.Run("apply batch spec with same name but different current user", func(t *testing.T) {
-				batchSpec := bt.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID, 0)
-				batchChange := bt.CreateBatchChange(t, ctx, store, "created-by-user", user.ID, batchSpec.ID)
-
-				if have, want := batchChange.CreatorID, user.ID; have != want {
-					t.Fatalf("batch change CreatorID is wrong. want=%d, have=%d", want, have)
-				}
-
-				if have, want := batchChange.LastApplierID, user.ID; have != want {
-					t.Fatalf("batch change LastApplierID is wrong. want=%d, have=%d", want, have)
-				}
-
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID, 0)
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-					BatchSpecRandID: batchSpec2.RandID,
+			t.Run("bpply bbtch spec with sbme nbme", func(t *testing.T) {
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge2", bdmin.ID, 0)
+				bbtchChbnge2, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID: bbtchSpec2.RbndID,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := batchChange2.ID, batchChange.ID; have != want {
-					t.Fatalf("batch change ID is wrong. want=%d, have=%d", want, have)
-				}
-
-				if have, want := batchChange2.CreatorID, batchChange.CreatorID; have != want {
-					t.Fatalf("batch change CreatorID is wrong. want=%d, have=%d", want, have)
-				}
-
-				if have, want := batchChange2.LastApplierID, admin.ID; have != want {
-					t.Fatalf("batch change LastApplierID is wrong. want=%d, have=%d", want, have)
+				if hbve, wbnt := bbtchChbnge2.ID, bbtchChbnge.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge ID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 			})
 
-			t.Run("apply batch spec with same name but different namespace", func(t *testing.T) {
-				user2 := bt.CreateTestUser(t, db, false)
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", user2.ID, 0)
+			t.Run("bpply bbtch spec with sbme nbme but different current user", func(t *testing.T) {
+				bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "crebted-by-user", user.ID, 0)
+				bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, store, "crebted-by-user", user.ID, bbtchSpec.ID)
 
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-					BatchSpecRandID: batchSpec2.RandID,
+				if hbve, wbnt := bbtchChbnge.CrebtorID, user.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge CrebtorID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
+				}
+
+				if hbve, wbnt := bbtchChbnge.LbstApplierID, user.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge LbstApplierID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
+				}
+
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "crebted-by-user", user.ID, 0)
+				bbtchChbnge2, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID: bbtchSpec2.RbndID,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if batchChange2.ID == 0 {
-					t.Fatalf("batchChange2 ID is 0")
+				if hbve, wbnt := bbtchChbnge2.ID, bbtchChbnge.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge ID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 
-				if batchChange2.ID == batchChange.ID {
-					t.Fatalf("batch change IDs are the same, but want different")
+				if hbve, wbnt := bbtchChbnge2.CrebtorID, bbtchChbnge.CrebtorID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge CrebtorID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
+				}
+
+				if hbve, wbnt := bbtchChbnge2.LbstApplierID, bdmin.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge LbstApplierID is wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 			})
 
-			t.Run("batch spec with same name and same ensureBatchChangeID", func(t *testing.T) {
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
+			t.Run("bpply bbtch spec with sbme nbme but different nbmespbce", func(t *testing.T) {
+				user2 := bt.CrebteTestUser(t, db, fblse)
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge2", user2.ID, 0)
 
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-					BatchSpecRandID:     batchSpec2.RandID,
-					EnsureBatchChangeID: batchChange.ID,
+				bbtchChbnge2, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID: bbtchSpec2.RbndID,
 				})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if have, want := batchChange2.ID, batchChange.ID; have != want {
-					t.Fatalf("batch change has wrong ID. want=%d, have=%d", want, have)
+
+				if bbtchChbnge2.ID == 0 {
+					t.Fbtblf("bbtchChbnge2 ID is 0")
+				}
+
+				if bbtchChbnge2.ID == bbtchChbnge.ID {
+					t.Fbtblf("bbtch chbnge IDs bre the sbme, but wbnt different")
 				}
 			})
 
-			t.Run("batch spec with same name but different ensureBatchChangeID", func(t *testing.T) {
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID, 0)
+			t.Run("bbtch spec with sbme nbme bnd sbme ensureBbtchChbngeID", func(t *testing.T) {
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge2", bdmin.ID, 0)
 
-				_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-					BatchSpecRandID:     batchSpec2.RandID,
-					EnsureBatchChangeID: batchChange.ID + 999,
+				bbtchChbnge2, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID:     bbtchSpec2.RbndID,
+					EnsureBbtchChbngeID: bbtchChbnge.ID,
 				})
-				if err != ErrEnsureBatchChangeFailed {
-					t.Fatalf("wrong error: %s", err)
+				if err != nil {
+					t.Fbtbl(err)
+				}
+				if hbve, wbnt := bbtchChbnge2.ID, bbtchChbnge.ID; hbve != wbnt {
+					t.Fbtblf("bbtch chbnge hbs wrong ID. wbnt=%d, hbve=%d", wbnt, hbve)
+				}
+			})
+
+			t.Run("bbtch spec with sbme nbme but different ensureBbtchChbngeID", func(t *testing.T) {
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge2", bdmin.ID, 0)
+
+				_, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+					BbtchSpecRbndID:     bbtchSpec2.RbndID,
+					EnsureBbtchChbngeID: bbtchChbnge.ID + 999,
+				})
+				if err != ErrEnsureBbtchChbngeFbiled {
+					t.Fbtblf("wrong error: %s", err)
 				}
 			})
 		})
 	})
 
-	// These tests focus on changesetSpecs and wiring them up with changesets.
-	// The applying/re-applying of a batchSpec to an existing batch change is
-	// covered in the tests above.
-	t.Run("batchSpec with changesetSpecs", func(t *testing.T) {
-		t.Run("new batch change", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange3", admin.ID, 0)
+	// These tests focus on chbngesetSpecs bnd wiring them up with chbngesets.
+	// The bpplying/re-bpplying of b bbtchSpec to bn existing bbtch chbnge is
+	// covered in the tests bbove.
+	t.Run("bbtchSpec with chbngesetSpecs", func(t *testing.T) {
+		t.Run("new bbtch chbnge", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge3", bdmin.ID, 0)
 
-			spec1 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:       admin.ID,
+			spec1 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:       bdmin.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec.ID,
-				ExternalID: "1234",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec.ID,
+				ExternblID: "1234",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			spec2 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			spec2 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[1].ID,
-				BatchSpec: batchSpec.ID,
-				HeadRef:   "refs/heads/my-branch",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec.ID,
+				HebdRef:   "refs/hebds/my-brbnch",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec.RandID, 2)
+			bbtchChbnge, cs := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec.RbndID, 2)
 
-			if have, want := batchChange.Name, "batchchange3"; have != want {
-				t.Fatalf("wrong batch change name. want=%s, have=%s", want, have)
+			if hbve, wbnt := bbtchChbnge.Nbme, "bbtchchbnge3"; hbve != wbnt {
+				t.Fbtblf("wrong bbtch chbnge nbme. wbnt=%s, hbve=%s", wbnt, hbve)
 			}
 
-			c1 := cs.Find(btypes.WithExternalID(spec1.ExternalID))
-			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
-				Repo:             spec1.BaseRepoID,
-				ExternalID:       "1234",
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:       []int64{batchChange.ID},
+			c1 := cs.Find(btypes.WithExternblID(spec1.ExternblID))
+			bt.AssertChbngeset(t, c1, bt.ChbngesetAssertions{
+				Repo:             spec1.BbseRepoID,
+				ExternblID:       "1234",
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:       []int64{bbtchChbnge.ID},
 			})
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(spec2.ID))
-			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
-				Repo:               spec2.BaseRepoID,
+			bt.AssertChbngeset(t, c2, bt.ChbngesetAssertions{
+				Repo:               spec2.BbseRepoID,
 				CurrentSpec:        spec2.ID,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 		})
 
-		t.Run("batch change with changesets", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			// First we create a batchSpec and apply it, so that we have
-			// changesets and changesetSpecs in the database, wired up
+		t.Run("bbtch chbnge with chbngesets", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			// First we crebte b bbtchSpec bnd bpply it, so thbt we hbve
+			// chbngesets bnd chbngesetSpecs in the dbtbbbse, wired up
 			// correctly.
-			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "batchchange4", admin.ID, 0)
+			bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge4", bdmin.ID, 0)
 
-			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:       admin.ID,
+			bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:       bdmin.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec1.ID,
-				ExternalID: "1234",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec1.ID,
+				ExternblID: "1234",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:       admin.ID,
+			bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:       bdmin.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec1.ID,
-				ExternalID: "5678",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec1.ID,
+				ExternblID: "5678",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			oldSpec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			oldSpec3 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[1].ID,
-				BatchSpec: batchSpec1.ID,
-				HeadRef:   "refs/heads/repo-1-branch-1",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec1.ID,
+				HebdRef:   "refs/hebds/repo-1-brbnch-1",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			oldSpec4 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			oldSpec4 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[2].ID,
-				BatchSpec: batchSpec1.ID,
-				HeadRef:   "refs/heads/repo-2-branch-1",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec1.ID,
+				HebdRef:   "refs/hebds/repo-2-brbnch-1",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			// Apply and expect 4 changesets
-			oldBatchChange, oldChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 4)
+			// Apply bnd expect 4 chbngesets
+			oldBbtchChbnge, oldChbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 4)
 
-			// Now we create another batch spec with the same batch change name
-			// and namespace.
-			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "batchchange4", admin.ID, 0)
+			// Now we crebte bnother bbtch spec with the sbme bbtch chbnge nbme
+			// bnd nbmespbce.
+			bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge4", bdmin.ID, 0)
 
-			// Same
-			spec1 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:       admin.ID,
+			// Sbme
+			spec1 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:       bdmin.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec2.ID,
-				ExternalID: "1234",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec2.ID,
+				ExternblID: "1234",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			// DIFFERENT: Track #9999 in repo[0]
-			spec2 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:       admin.ID,
+			// DIFFERENT: Trbck #9999 in repo[0]
+			spec2 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:       bdmin.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec2.ID,
-				ExternalID: "5678",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec2.ID,
+				ExternblID: "5678",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			// Same
-			spec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			// Sbme
+			spec3 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[1].ID,
-				BatchSpec: batchSpec2.ID,
-				HeadRef:   "refs/heads/repo-1-branch-1",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec2.ID,
+				HebdRef:   "refs/hebds/repo-1-brbnch-1",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			// DIFFERENT: branch changed in repo[2]
-			spec4 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			// DIFFERENT: brbnch chbnged in repo[2]
+			spec4 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[2].ID,
-				BatchSpec: batchSpec2.ID,
-				HeadRef:   "refs/heads/repo-2-branch-2",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec2.ID,
+				HebdRef:   "refs/hebds/repo-2-brbnch-2",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
 			// NEW: repo[3]
-			spec5 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			spec5 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[3].ID,
-				BatchSpec: batchSpec2.ID,
-				HeadRef:   "refs/heads/repo-3-branch-1",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec2.ID,
+				HebdRef:   "refs/hebds/repo-3-brbnch-1",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			// Before we apply the new batch spec, we make the changeset we
+			// Before we bpply the new bbtch spec, we mbke the chbngeset we
 			// expect to be closed to look "published", otherwise it won't be
 			// closed.
-			wantClosed := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec4.ID))
-			bt.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.HeadRef)
+			wbntClosed := oldChbngesets.Find(btypes.WithCurrentSpecID(oldSpec4.ID))
+			bt.SetChbngesetPublished(t, ctx, store, wbntClosed, "98765", oldSpec4.HebdRef)
 
-			changeset3 := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec3.ID))
-			bt.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.HeadRef)
+			chbngeset3 := oldChbngesets.Find(btypes.WithCurrentSpecID(oldSpec3.ID))
+			bt.SetChbngesetPublished(t, ctx, store, chbngeset3, "12345", oldSpec3.HebdRef)
 
-			// Apply and expect 6 changesets
-			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 6)
+			// Apply bnd expect 6 chbngesets
+			bbtchChbnge, cs := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 6)
 
-			if oldBatchChange.ID != batchChange.ID {
-				t.Fatal("expected to update batch change, but got a new one")
+			if oldBbtchChbnge.ID != bbtchChbnge.ID {
+				t.Fbtbl("expected to updbte bbtch chbnge, but got b new one")
 			}
 
-			// This changeset we want marked as "to be archived" and "to be closed"
-			bt.ReloadAndAssertChangeset(t, ctx, store, wantClosed, bt.ChangesetAssertions{
+			// This chbngeset we wbnt mbrked bs "to be brchived" bnd "to be closed"
+			bt.RelobdAndAssertChbngeset(t, ctx, store, wbntClosed, bt.ChbngesetAssertions{
 				Repo:         repos[2].ID,
 				CurrentSpec:  oldSpec4.ID,
 				PreviousSpec: oldSpec4.ID,
-				ExternalID:   wantClosed.ExternalID,
-				// It's still open, just _marked as to be closed_.
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				ExternalBranch:     wantClosed.ExternalBranch,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
-				ArchiveIn:          batchChange.ID,
+				ExternblID:   wbntClosed.ExternblID,
+				// It's still open, just _mbrked bs to be closed_.
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				ExternblBrbnch:     wbntClosed.ExternblBrbnch,
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
+				ArchiveIn:          bbtchChbnge.ID,
 				Closing:            true,
 			})
 
-			c1 := cs.Find(btypes.WithExternalID(spec1.ExternalID))
-			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
+			c1 := cs.Find(btypes.WithExternblID(spec1.ExternblID))
+			bt.AssertChbngeset(t, c1, bt.ChbngesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
 				PreviousSpec:     0,
-				ExternalID:       "1234",
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:       []int64{batchChange.ID},
+				ExternblID:       "1234",
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:       []int64{bbtchChbnge.ID},
 			})
 
-			c2 := cs.Find(btypes.WithExternalID(spec2.ExternalID))
-			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
+			c2 := cs.Find(btypes.WithExternblID(spec2.ExternblID))
+			bt.AssertChbngeset(t, c2, bt.ChbngesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
 				PreviousSpec:     0,
-				ExternalID:       "5678",
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:       []int64{batchChange.ID},
+				ExternblID:       "5678",
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:       []int64{bbtchChbnge.ID},
 			})
 
 			c3 := cs.Find(btypes.WithCurrentSpecID(spec3.ID))
-			bt.AssertChangeset(t, c3, bt.ChangesetAssertions{
+			bt.AssertChbngeset(t, c3, bt.ChbngesetAssertions{
 				Repo:           repos[1].ID,
 				CurrentSpec:    spec3.ID,
-				ExternalID:     changeset3.ExternalID,
-				ExternalBranch: changeset3.ExternalBranch,
-				ExternalState:  btypes.ChangesetExternalStateOpen,
-				// Has a previous spec, because it succeeded publishing.
+				ExternblID:     chbngeset3.ExternblID,
+				ExternblBrbnch: chbngeset3.ExternblBrbnch,
+				ExternblStbte:  btypes.ChbngesetExternblStbteOpen,
+				// Hbs b previous spec, becbuse it succeeded publishing.
 				PreviousSpec:       oldSpec3.ID,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 
 			c4 := cs.Find(btypes.WithCurrentSpecID(spec4.ID))
-			bt.AssertChangeset(t, c4, bt.ChangesetAssertions{
+			bt.AssertChbngeset(t, c4, bt.ChbngesetAssertions{
 				Repo:               repos[2].ID,
 				CurrentSpec:        spec4.ID,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 
 			c5 := cs.Find(btypes.WithCurrentSpecID(spec5.ID))
-			bt.AssertChangeset(t, c5, bt.ChangesetAssertions{
+			bt.AssertChbngeset(t, c5, bt.ChbngesetAssertions{
 				Repo:               repos[3].ID,
 				CurrentSpec:        spec5.ID,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 		})
 
-		t.Run("batch change tracking changesets owned by another batch change", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "owner-batch-change", admin.ID, 0)
+		t.Run("bbtch chbnge trbcking chbngesets owned by bnother bbtch chbnge", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "owner-bbtch-chbnge", bdmin.ID, 0)
 
-			oldSpec1 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			oldSpec1 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[0].ID,
-				BatchSpec: batchSpec1.ID,
-				HeadRef:   "refs/heads/repo-0-branch-0",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec1.ID,
+				HebdRef:   "refs/hebds/repo-0-brbnch-0",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			ownerBatchChange, ownerChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			ownerBbtchChbnge, ownerChbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
-			// Now we update the changeset so it looks like it's been published
+			// Now we updbte the chbngeset so it looks like it's been published
 			// on the code host.
-			c := ownerChangesets[0]
-			bt.SetChangesetPublished(t, ctx, store, c, "88888", "refs/heads/repo-0-branch-0")
+			c := ownerChbngesets[0]
+			bt.SetChbngesetPublished(t, ctx, store, c, "88888", "refs/hebds/repo-0-brbnch-0")
 
-			// This other batch change tracks the changeset created by the first one
-			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "tracking-batch-change", admin.ID, 0)
-			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:       admin.ID,
+			// This other bbtch chbnge trbcks the chbngeset crebted by the first one
+			bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "trbcking-bbtch-chbnge", bdmin.ID, 0)
+			bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:       bdmin.ID,
 				Repo:       c.RepoID,
-				BatchSpec:  batchSpec2.ID,
-				ExternalID: c.ExternalID,
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec2.ID,
+				ExternblID: c.ExternblID,
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			trackingBatchChange, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
-			// This should still point to the owner batch change
-			c2 := trackedChangesets[0]
-			trackedChangesetAssertions := bt.ChangesetAssertions{
+			trbckingBbtchChbnge, trbckedChbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 1)
+			// This should still point to the owner bbtch chbnge
+			c2 := trbckedChbngesets[0]
+			trbckedChbngesetAssertions := bt.ChbngesetAssertions{
 				Repo:               c.RepoID,
 				CurrentSpec:        oldSpec1.ID,
-				OwnedByBatchChange: ownerBatchChange.ID,
-				ExternalBranch:     c.ExternalBranch,
-				ExternalID:         c.ExternalID,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				ReconcilerState:    btypes.ReconcilerStateCompleted,
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{ownerBatchChange.ID, trackingBatchChange.ID},
+				OwnedByBbtchChbnge: ownerBbtchChbnge.ID,
+				ExternblBrbnch:     c.ExternblBrbnch,
+				ExternblID:         c.ExternblID,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{ownerBbtchChbnge.ID, trbckingBbtchChbnge.ID},
 			}
-			bt.AssertChangeset(t, c2, trackedChangesetAssertions)
+			bt.AssertChbngeset(t, c2, trbckedChbngesetAssertions)
 
-			// Now try to apply a new spec that wants to modify the formerly tracked changeset.
-			batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "tracking-batch-change", admin.ID, 0)
+			// Now try to bpply b new spec thbt wbnts to modify the formerly trbcked chbngeset.
+			bbtchSpec3 := bt.CrebteBbtchSpec(t, ctx, store, "trbcking-bbtch-chbnge", bdmin.ID, 0)
 
-			spec3 := bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			spec3 := bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[0].ID,
-				BatchSpec: batchSpec3.ID,
-				HeadRef:   "refs/heads/repo-0-branch-0",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec3.ID,
+				HebdRef:   "refs/hebds/repo-0-brbnch-0",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
-			// Apply again. This should have flagged the association as detach
-			// and it should not be closed, since the batch change is not the
+			// Apply bgbin. This should hbve flbgged the bssocibtion bs detbch
+			// bnd it should not be closed, since the bbtch chbnge is not the
 			// owner.
-			trackingBatchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 2)
+			trbckingBbtchChbnge, cs := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec3.RbndID, 2)
 
-			trackedChangesetAssertions.Closing = false
-			trackedChangesetAssertions.ReconcilerState = btypes.ReconcilerStateQueued
-			trackedChangesetAssertions.DetachFrom = []int64{trackingBatchChange.ID}
-			trackedChangesetAssertions.AttachedTo = []int64{ownerBatchChange.ID}
-			bt.ReloadAndAssertChangeset(t, ctx, store, c2, trackedChangesetAssertions)
+			trbckedChbngesetAssertions.Closing = fblse
+			trbckedChbngesetAssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
+			trbckedChbngesetAssertions.DetbchFrom = []int64{trbckingBbtchChbnge.ID}
+			trbckedChbngesetAssertions.AttbchedTo = []int64{ownerBbtchChbnge.ID}
+			bt.RelobdAndAssertChbngeset(t, ctx, store, c2, trbckedChbngesetAssertions)
 
-			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
-			bt.ReloadAndAssertChangeset(t, ctx, store, cs[1], bt.ChangesetAssertions{
-				Repo:               spec3.BaseRepoID,
+			// But we do wbnt to hbve b new chbngeset record thbt is going to crebte b new chbngeset on the code host.
+			bt.RelobdAndAssertChbngeset(t, ctx, store, cs[1], bt.ChbngesetAssertions{
+				Repo:               spec3.BbseRepoID,
 				CurrentSpec:        spec3.ID,
-				OwnedByBatchChange: trackingBatchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{trackingBatchChange.ID},
+				OwnedByBbtchChbnge: trbckingBbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{trbckingBbtchChbnge.ID},
 			})
 		})
 
-		t.Run("batch change with changeset that is unpublished", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID, 0)
+		t.Run("bbtch chbnge with chbngeset thbt is unpublished", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "unpublished-chbngesets", bdmin.ID, 0)
 
-			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[3].ID,
-				BatchSpec: batchSpec1.ID,
-				HeadRef:   "refs/heads/never-published",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec1.ID,
+				HebdRef:   "refs/hebds/never-published",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			// We apply the spec and expect 1 changeset
-			applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			// We bpply the spec bnd expect 1 chbngeset
+			bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
-			// But the changeset was not published yet.
-			// And now we apply a new spec without any changesets.
-			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "unpublished-changesets", admin.ID, 0)
+			// But the chbngeset wbs not published yet.
+			// And now we bpply b new spec without bny chbngesets.
+			bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "unpublished-chbngesets", bdmin.ID, 0)
 
-			// That should close no changesets, but set the unpublished changesets to be detached when
+			// Thbt should close no chbngesets, but set the unpublished chbngesets to be detbched when
 			// the reconciler picks them up.
-			applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 1)
 		})
 
-		t.Run("batch change with changeset that wasn't processed before reapply", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+		t.Run("bbtch chbnge with chbngeset thbt wbsn't processed before rebpply", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "queued-chbngesets", bdmin.ID, 0)
 
 			specOpts := bt.TestSpecOpts{
-				User:      admin.ID,
+				User:      bdmin.ID,
 				Repo:      repos[3].ID,
-				BatchSpec: batchSpec1.ID,
+				BbtchSpec: bbtchSpec1.ID,
 				Title:     "Spec1",
-				HeadRef:   "refs/heads/queued",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				HebdRef:   "refs/hebds/queued",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				Published: true,
 			}
-			spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec1 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-			// We apply the spec and expect 1 changeset
-			batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			// We bpply the spec bnd expect 1 chbngeset
+			bbtchChbnge, chbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
 			// And publish it.
-			bt.SetChangesetPublished(t, ctx, store, changesets[0], "123-queued", "refs/heads/queued")
+			bt.SetChbngesetPublished(t, ctx, store, chbngesets[0], "123-queued", "refs/hebds/queued")
 
-			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
-				ReconcilerState:    btypes.ReconcilerStateCompleted,
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalBranch:     "refs/heads/queued",
-				ExternalID:         "123-queued",
-				ExternalState:      btypes.ChangesetExternalStateOpen,
+			bt.RelobdAndAssertChbngeset(t, ctx, store, chbngesets[0], bt.ChbngesetAssertions{
+				ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblBrbnch:     "refs/hebds/queued",
+				ExternblID:         "123-queued",
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
 				Repo:               repos[3].ID,
 				CurrentSpec:        spec1.ID,
-				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 
-			// Apply again so that an update to the changeset is pending.
-			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			// Apply bgbin so thbt bn updbte to the chbngeset is pending.
+			bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "queued-chbngesets", bdmin.ID, 0)
 
-			specOpts.BatchSpec = batchSpec2.ID
+			specOpts.BbtchSpec = bbtchSpec2.ID
 			specOpts.Title = "Spec2"
-			spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec2 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-			// That should still want to publish the changeset
-			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			// Thbt should still wbnt to publish the chbngeset
+			_, chbngesets = bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 1)
 
-			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalBranch:   "refs/heads/queued",
-				ExternalID:       "123-queued",
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			bt.RelobdAndAssertChbngeset(t, ctx, store, chbngesets[0], bt.ChbngesetAssertions{
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblBrbnch:   "refs/hebds/queued",
+				ExternblID:       "123-queued",
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Repo:             repos[3].ID,
 				CurrentSpec:      spec2.ID,
-				// Track the previous spec.
+				// Trbck the previous spec.
 				PreviousSpec:       spec1.ID,
-				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 
-			// Make sure the reconciler wants to update this changeset.
-			plan, err := reconciler.DeterminePlan(
-				// changesets[0].PreviousSpecID
+			// Mbke sure the reconciler wbnts to updbte this chbngeset.
+			plbn, err := reconciler.DeterminePlbn(
+				// chbngesets[0].PreviousSpecID
 				spec1,
-				// changesets[0].CurrentSpecID
+				// chbngesets[0].CurrentSpecID
 				spec2,
 				nil,
-				changesets[0],
+				chbngesets[0],
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if !plan.Ops.Equal(reconciler.Operations{btypes.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
+			if !plbn.Ops.Equbl(reconciler.Operbtions{btypes.ReconcilerOperbtionUpdbte}) {
+				t.Fbtblf("Got invblid reconciler operbtions: %q", plbn.Ops.String())
 			}
 
-			// And now we apply a new spec before the reconciler could process the changeset.
-			batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			// And now we bpply b new spec before the reconciler could process the chbngeset.
+			bbtchSpec3 := bt.CrebteBbtchSpec(t, ctx, store, "queued-chbngesets", bdmin.ID, 0)
 
-			// No change this time, just reapplying.
-			specOpts.BatchSpec = batchSpec3.ID
-			spec3 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+			// No chbnge this time, just rebpplying.
+			specOpts.BbtchSpec = bbtchSpec3.ID
+			spec3 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+			_, chbngesets = bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec3.RbndID, 1)
 
-			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalBranch:   "refs/heads/queued",
-				ExternalID:       "123-queued",
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			bt.RelobdAndAssertChbngeset(t, ctx, store, chbngesets[0], bt.ChbngesetAssertions{
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblBrbnch:   "refs/hebds/queued",
+				ExternblID:       "123-queued",
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Repo:             repos[3].ID,
 				CurrentSpec:      spec3.ID,
-				// Still be pointing at the first spec, since the second was never applied.
+				// Still be pointing bt the first spec, since the second wbs never bpplied.
 				PreviousSpec:       spec1.ID,
-				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 
-			// Make sure the reconciler would still update this changeset.
-			plan, err = reconciler.DeterminePlan(
-				// changesets[0].PreviousSpecID
+			// Mbke sure the reconciler would still updbte this chbngeset.
+			plbn, err = reconciler.DeterminePlbn(
+				// chbngesets[0].PreviousSpecID
 				spec1,
-				// changesets[0].CurrentSpecID
+				// chbngesets[0].CurrentSpecID
 				spec3,
 				nil,
-				changesets[0],
+				chbngesets[0],
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if !plan.Ops.Equal(reconciler.Operations{btypes.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
+			if !plbn.Ops.Equbl(reconciler.Operbtions{btypes.ReconcilerOperbtionUpdbte}) {
+				t.Fbtblf("Got invblid reconciler operbtions: %q", plbn.Ops.String())
 			}
 
-			// Now test that it still updates when this update failed.
-			bt.SetChangesetFailed(t, ctx, store, changesets[0])
+			// Now test thbt it still updbtes when this updbte fbiled.
+			bt.SetChbngesetFbiled(t, ctx, store, chbngesets[0])
 
-			batchSpec4 := bt.CreateBatchSpec(t, ctx, store, "queued-changesets", admin.ID, 0)
+			bbtchSpec4 := bt.CrebteBbtchSpec(t, ctx, store, "queued-chbngesets", bdmin.ID, 0)
 
-			// No change this time, just reapplying.
-			specOpts.BatchSpec = batchSpec4.ID
-			spec4 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+			// No chbnge this time, just rebpplying.
+			specOpts.BbtchSpec = bbtchSpec4.ID
+			spec4 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec4.RandID, 1)
+			_, chbngesets = bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec4.RbndID, 1)
 
-			bt.ReloadAndAssertChangeset(t, ctx, store, changesets[0], bt.ChangesetAssertions{
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalBranch:   "refs/heads/queued",
-				ExternalID:       "123-queued",
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+			bt.RelobdAndAssertChbngeset(t, ctx, store, chbngesets[0], bt.ChbngesetAssertions{
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblBrbnch:   "refs/hebds/queued",
+				ExternblID:       "123-queued",
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 				Repo:             repos[3].ID,
 				CurrentSpec:      spec4.ID,
-				// Still be pointing at the first spec, since the second and third were never applied.
+				// Still be pointing bt the first spec, since the second bnd third were never bpplied.
 				PreviousSpec:       spec1.ID,
-				OwnedByBatchChange: batchChange.ID,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			})
 
-			// Make sure the reconciler would still update this changeset.
-			plan, err = reconciler.DeterminePlan(
-				// changesets[0].PreviousSpecID
+			// Mbke sure the reconciler would still updbte this chbngeset.
+			plbn, err = reconciler.DeterminePlbn(
+				// chbngesets[0].PreviousSpecID
 				spec1,
-				// changesets[0].CurrentSpecID
+				// chbngesets[0].CurrentSpecID
 				spec4,
 				nil,
-				changesets[0],
+				chbngesets[0],
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if !plan.Ops.Equal(reconciler.Operations{btypes.ReconcilerOperationUpdate}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
+			if !plbn.Ops.Equbl(reconciler.Operbtions{btypes.ReconcilerOperbtionUpdbte}) {
+				t.Fbtblf("Got invblid reconciler operbtions: %q", plbn.Ops.String())
 			}
 		})
 
 		t.Run("missing repository permissions", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
 			bt.MockRepoPermissions(t, db, user.ID, repos[0].ID, repos[2].ID, repos[3].ID)
 
-			// NOTE: We cannot use a context with an internal actor.
-			batchSpec := bt.CreateBatchSpec(t, userCtx, store, "missing-permissions", user.ID, 0)
+			// NOTE: We cbnnot use b context with bn internbl bctor.
+			bbtchSpec := bt.CrebteBbtchSpec(t, userCtx, store, "missing-permissions", user.ID, 0)
 
-			bt.CreateChangesetSpec(t, userCtx, store, bt.TestSpecOpts{
+			bt.CrebteChbngesetSpec(t, userCtx, store, bt.TestSpecOpts{
 				User:       user.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec.ID,
-				ExternalID: "1234",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec.ID,
+				ExternblID: "1234",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 			})
 
-			bt.CreateChangesetSpec(t, userCtx, store, bt.TestSpecOpts{
+			bt.CrebteChbngesetSpec(t, userCtx, store, bt.TestSpecOpts{
 				User:      user.ID,
-				Repo:      repos[1].ID, // Not authorized to access this repository
-				BatchSpec: batchSpec.ID,
-				HeadRef:   "refs/heads/my-branch",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				Repo:      repos[1].ID, // Not buthorized to bccess this repository
+				BbtchSpec: bbtchSpec.ID,
+				HebdRef:   "refs/hebds/my-brbnch",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			_, err := svc.ApplyBatchChange(userCtx, ApplyBatchChangeOpts{
-				BatchSpecRandID: batchSpec.RandID,
+			_, err := svc.ApplyBbtchChbnge(userCtx, ApplyBbtchChbngeOpts{
+				BbtchSpecRbndID: bbtchSpec.RbndID,
 			})
 			if err == nil {
-				t.Fatal("expected error, but got none")
+				t.Fbtbl("expected error, but got none")
 			}
-			var e *database.RepoNotFoundErr
+			vbr e *dbtbbbse.RepoNotFoundErr
 			if !errors.As(err, &e) {
-				t.Fatalf("expected RepoNotFoundErr but got: %s", err)
+				t.Fbtblf("expected RepoNotFoundErr but got: %s", err)
 			}
 			if e.ID != repos[1].ID {
-				t.Fatalf("wrong repository ID in RepoNotFoundErr: %d", e.ID)
+				t.Fbtblf("wrong repository ID in RepoNotFoundErr: %d", e.ID)
 			}
 		})
 
-		t.Run("batch change with errored changeset", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID, 0)
+		t.Run("bbtch chbnge with errored chbngeset", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "errored-chbngeset-bbtch-chbnge", bdmin.ID, 0)
 
 			spec1Opts := bt.TestSpecOpts{
-				User:       admin.ID,
+				User:       bdmin.ID,
 				Repo:       repos[0].ID,
-				BatchSpec:  batchSpec1.ID,
-				ExternalID: "1234",
-				Typ:        btypes.ChangesetSpecTypeExisting,
+				BbtchSpec:  bbtchSpec1.ID,
+				ExternblID: "1234",
+				Typ:        btypes.ChbngesetSpecTypeExisting,
 				Published:  true,
 			}
-			bt.CreateChangesetSpec(t, ctx, store, spec1Opts)
+			bt.CrebteChbngesetSpec(t, ctx, store, spec1Opts)
 
 			spec2Opts := bt.TestSpecOpts{
-				User:      admin.ID,
+				User:      bdmin.ID,
 				Repo:      repos[1].ID,
-				BatchSpec: batchSpec1.ID,
-				HeadRef:   "refs/heads/repo-1-branch-1",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec1.ID,
+				HebdRef:   "refs/hebds/repo-1-brbnch-1",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				Published: true,
 			}
-			bt.CreateChangesetSpec(t, ctx, store, spec2Opts)
+			bt.CrebteChbngesetSpec(t, ctx, store, spec2Opts)
 
-			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 2)
+			_, oldChbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 2)
 
-			// Set the changesets to look like they failed in the reconciler
-			for _, c := range oldChangesets {
-				bt.SetChangesetFailed(t, ctx, store, c)
+			// Set the chbngesets to look like they fbiled in the reconciler
+			for _, c := rbnge oldChbngesets {
+				bt.SetChbngesetFbiled(t, ctx, store, c)
 			}
 
-			// Now we create another batch spec with the same batch change name
-			// and namespace.
-			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "errored-changeset-batch-change", admin.ID, 0)
-			spec1Opts.BatchSpec = batchSpec2.ID
-			newSpec1 := bt.CreateChangesetSpec(t, ctx, store, spec1Opts)
-			spec2Opts.BatchSpec = batchSpec2.ID
-			newSpec2 := bt.CreateChangesetSpec(t, ctx, store, spec2Opts)
+			// Now we crebte bnother bbtch spec with the sbme bbtch chbnge nbme
+			// bnd nbmespbce.
+			bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "errored-chbngeset-bbtch-chbnge", bdmin.ID, 0)
+			spec1Opts.BbtchSpec = bbtchSpec2.ID
+			newSpec1 := bt.CrebteChbngesetSpec(t, ctx, store, spec1Opts)
+			spec2Opts.BbtchSpec = bbtchSpec2.ID
+			newSpec2 := bt.CrebteChbngesetSpec(t, ctx, store, spec2Opts)
 
-			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 2)
+			bbtchChbnge, cs := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 2)
 
-			c1 := cs.Find(btypes.WithExternalID(newSpec1.ExternalID))
-			bt.ReloadAndAssertChangeset(t, ctx, store, c1, bt.ChangesetAssertions{
+			c1 := cs.Find(btypes.WithExternblID(newSpec1.ExternblID))
+			bt.RelobdAndAssertChbngeset(t, ctx, store, c1, bt.ChbngesetAssertions{
 				Repo:             spec1Opts.Repo,
-				ExternalID:       "1234",
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:       []int64{batchChange.ID},
+				ExternblID:       "1234",
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:       []int64{bbtchChbnge.ID},
 
-				ReconcilerState: btypes.ReconcilerStateQueued,
-				FailureMessage:  nil,
-				NumFailures:     0,
+				ReconcilerStbte: btypes.ReconcilerStbteQueued,
+				FbilureMessbge:  nil,
+				NumFbilures:     0,
 			})
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(newSpec2.ID))
-			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
-				Repo:        newSpec2.BaseRepoID,
+			bt.AssertChbngeset(t, c2, bt.ChbngesetAssertions{
+				Repo:        newSpec2.BbseRepoID,
 				CurrentSpec: newSpec2.ID,
-				// An errored changeset doesn't get the specs rotated, to prevent https://github.com/sourcegraph/sourcegraph/issues/16041.
+				// An errored chbngeset doesn't get the specs rotbted, to prevent https://github.com/sourcegrbph/sourcegrbph/issues/16041.
 				PreviousSpec:       0,
-				OwnedByBatchChange: batchChange.ID,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 
-				ReconcilerState: btypes.ReconcilerStateQueued,
-				FailureMessage:  nil,
-				NumFailures:     0,
+				ReconcilerStbte: btypes.ReconcilerStbteQueued,
+				FbilureMessbge:  nil,
+				NumFbilures:     0,
 			})
 
-			// Make sure the reconciler would still publish this changeset.
-			plan, err := reconciler.DeterminePlan(
+			// Mbke sure the reconciler would still publish this chbngeset.
+			plbn, err := reconciler.DeterminePlbn(
 				// c2.previousSpec is 0
 				nil,
 				// c2.currentSpec is newSpec2
@@ -818,414 +818,414 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				c2,
 			)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if !plan.Ops.Equal(reconciler.Operations{btypes.ReconcilerOperationPush, btypes.ReconcilerOperationPublish}) {
-				t.Fatalf("Got invalid reconciler operations: %q", plan.Ops.String())
+			if !plbn.Ops.Equbl(reconciler.Operbtions{btypes.ReconcilerOperbtionPush, btypes.ReconcilerOperbtionPublish}) {
+				t.Fbtblf("Got invblid reconciler operbtions: %q", plbn.Ops.String())
 			}
 		})
 
-		t.Run("closed and archived changeset not re-enqueued for close", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
+		t.Run("closed bnd brchived chbngeset not re-enqueued for close", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "brchived-closed-chbngeset", bdmin.ID, 0)
 
 			specOpts := bt.TestSpecOpts{
-				User:      admin.ID,
+				User:      bdmin.ID,
 				Repo:      repos[0].ID,
-				BatchSpec: batchSpec1.ID,
-				Typ:       btypes.ChangesetSpecTypeBranch,
-				HeadRef:   "refs/heads/archived-closed",
+				BbtchSpec: bbtchSpec1.ID,
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
+				HebdRef:   "refs/hebds/brchived-closed",
 			}
-			spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+			spec1 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-			// STEP 1: We apply the spec and expect 1 changeset.
-			batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			// STEP 1: We bpply the spec bnd expect 1 chbngeset.
+			bbtchChbnge, chbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
-			// Now we update the changeset so it looks like it's been published
+			// Now we updbte the chbngeset so it looks like it's been published
 			// on the code host.
-			c := changesets[0]
-			bt.SetChangesetPublished(t, ctx, store, c, "995544", specOpts.HeadRef)
+			c := chbngesets[0]
+			bt.SetChbngesetPublished(t, ctx, store, c, "995544", specOpts.HebdRef)
 
-			assertions := bt.ChangesetAssertions{
+			bssertions := bt.ChbngesetAssertions{
 				Repo:               c.RepoID,
 				CurrentSpec:        spec1.ID,
-				ExternalID:         c.ExternalID,
-				ExternalBranch:     c.ExternalBranch,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateCompleted,
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				DiffStat:           bt.TestChangsetSpecDiffStat,
-				AttachedTo:         []int64{batchChange.ID},
+				ExternblID:         c.ExternblID,
+				ExternblBrbnch:     c.ExternblBrbnch,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+				AttbchedTo:         []int64{bbtchChbnge.ID},
 			}
-			c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			c = bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-archived to
-			// be left in the batch change (the reconciler would detach it, if the executor picked up the changeset).
-			batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
-			applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			// STEP 2: Now we bpply b new spec without bny chbngesets, but expect the chbngeset-to-be-brchived to
+			// be left in the bbtch chbnge (the reconciler would detbch it, if the executor picked up the chbngeset).
+			bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "brchived-closed-chbngeset", bdmin.ID, 0)
+			bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 1)
 
-			// Our previously published changeset should be marked as "to be
-			// archived" and "to be closed"
-			assertions.ArchiveIn = batchChange.ID
-			assertions.AttachedTo = []int64{batchChange.ID}
-			assertions.Closing = true
-			assertions.ReconcilerState = btypes.ReconcilerStateQueued
-			// And the previous spec is recorded, because the previous run finished with reconcilerState completed.
-			assertions.PreviousSpec = spec1.ID
-			c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			// Our previously published chbngeset should be mbrked bs "to be
+			// brchived" bnd "to be closed"
+			bssertions.ArchiveIn = bbtchChbnge.ID
+			bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+			bssertions.Closing = true
+			bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
+			// And the previous spec is recorded, becbuse the previous run finished with reconcilerStbte completed.
+			bssertions.PreviousSpec = spec1.ID
+			c = bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-			// Now we update the changeset to make it look closed and archived.
-			bt.SetChangesetClosed(t, ctx, store, c)
-			assertions.Closing = false
-			assertions.ReconcilerState = btypes.ReconcilerStateCompleted
-			assertions.ArchivedInOwnerBatchChange = true
-			assertions.ArchiveIn = 0
-			assertions.ExternalState = btypes.ChangesetExternalStateClosed
-			c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			// Now we updbte the chbngeset to mbke it look closed bnd brchived.
+			bt.SetChbngesetClosed(t, ctx, store, c)
+			bssertions.Closing = fblse
+			bssertions.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+			bssertions.ArchivedInOwnerBbtchChbnge = true
+			bssertions.ArchiveIn = 0
+			bssertions.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+			c = bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-			// STEP 3: We apply a new batch spec and expect that the archived changeset record is not re-enqueued.
-			batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID, 0)
+			// STEP 3: We bpply b new bbtch spec bnd expect thbt the brchived chbngeset record is not re-enqueued.
+			bbtchSpec3 := bt.CrebteBbtchSpec(t, ctx, store, "brchived-closed-chbngeset", bdmin.ID, 0)
 
-			// 1 changeset that's archived
-			applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+			// 1 chbngeset thbt's brchived
+			bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec3.RbndID, 1)
 
-			// Assert that the changeset record is still archived and closed.
-			bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+			// Assert thbt the chbngeset record is still brchived bnd closed.
+			bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 		})
 
-		t.Run("batch change with changeset that is archived and reattached", func(t *testing.T) {
-			t.Run("changeset has been closed before re-attaching", func(t *testing.T) {
-				bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-				batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
+		t.Run("bbtch chbnge with chbngeset thbt is brchived bnd rebttbched", func(t *testing.T) {
+			t.Run("chbngeset hbs been closed before re-bttbching", func(t *testing.T) {
+				bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+				bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-chbngeset", bdmin.ID, 0)
 
 				specOpts := bt.TestSpecOpts{
-					User:      admin.ID,
+					User:      bdmin.ID,
 					Repo:      repos[0].ID,
-					BatchSpec: batchSpec1.ID,
-					HeadRef:   "refs/heads/archived-reattached",
-					Typ:       btypes.ChangesetSpecTypeBranch,
+					BbtchSpec: bbtchSpec1.ID,
+					HebdRef:   "refs/hebds/brchived-rebttbched",
+					Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				}
-				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec1 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-				// STEP 1: We apply the spec and expect 1 changeset.
-				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+				// STEP 1: We bpply the spec bnd expect 1 chbngeset.
+				bbtchChbnge, chbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
-				// Now we update the changeset so it looks like it's been published
+				// Now we updbte the chbngeset so it looks like it's been published
 				// on the code host.
-				c := changesets[0]
-				bt.SetChangesetPublished(t, ctx, store, c, "995533", specOpts.HeadRef)
+				c := chbngesets[0]
+				bt.SetChbngesetPublished(t, ctx, store, c, "995533", specOpts.HebdRef)
 
-				assertions := bt.ChangesetAssertions{
+				bssertions := bt.ChbngesetAssertions{
 					Repo:               c.RepoID,
 					CurrentSpec:        spec1.ID,
-					ExternalID:         c.ExternalID,
-					ExternalBranch:     c.ExternalBranch,
-					ExternalState:      btypes.ChangesetExternalStateOpen,
-					OwnedByBatchChange: batchChange.ID,
-					ReconcilerState:    btypes.ReconcilerStateCompleted,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					DiffStat:           bt.TestChangsetSpecDiffStat,
-					AttachedTo:         []int64{batchChange.ID},
+					ExternblID:         c.ExternblID,
+					ExternblBrbnch:     c.ExternblBrbnch,
+					ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+					OwnedByBbtchChbnge: bbtchChbnge.ID,
+					ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+					AttbchedTo:         []int64{bbtchChbnge.ID},
 				}
-				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// STEP 2: Now we apply a new spec without any changesets.
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
-				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+				// STEP 2: Now we bpply b new spec without bny chbngesets.
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-chbngeset", bdmin.ID, 0)
+				bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 1)
 
-				// Our previously published changeset should be marked as "to
-				// be archived" and "to be closed"
-				assertions.Closing = true
-				assertions.ArchiveIn = batchChange.ID
-				assertions.AttachedTo = []int64{batchChange.ID}
-				assertions.ReconcilerState = btypes.ReconcilerStateQueued
+				// Our previously published chbngeset should be mbrked bs "to
+				// be brchived" bnd "to be closed"
+				bssertions.Closing = true
+				bssertions.ArchiveIn = bbtchChbnge.ID
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
 				// And the previous spec is recorded.
-				assertions.PreviousSpec = spec1.ID
-				c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bssertions.PreviousSpec = spec1.ID
+				c = bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// Now we update the changeset to make it look closed.
-				bt.SetChangesetClosed(t, ctx, store, c)
-				assertions.Closing = false
-				assertions.ArchiveIn = 0
-				assertions.ReconcilerState = btypes.ReconcilerStateCompleted
-				assertions.ExternalState = btypes.ChangesetExternalStateClosed
-				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				// Now we updbte the chbngeset to mbke it look closed.
+				bt.SetChbngesetClosed(t, ctx, store, c)
+				bssertions.Closing = fblse
+				bssertions.ArchiveIn = 0
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+				bssertions.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+				bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// STEP 3: We apply a new batch spec with a changeset spec that
-				// matches the old changeset and expect _the same changeset_ to be
-				// re-attached.
-				batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID, 0)
+				// STEP 3: We bpply b new bbtch spec with b chbngeset spec thbt
+				// mbtches the old chbngeset bnd expect _the sbme chbngeset_ to be
+				// re-bttbched.
+				bbtchSpec3 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-chbngeset", bdmin.ID, 0)
 
-				specOpts.BatchSpec = batchSpec3.ID
-				spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+				specOpts.BbtchSpec = bbtchSpec3.ID
+				spec2 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+				_, chbngesets = bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec3.RbndID, 1)
 
-				attachedChangeset := changesets[0]
-				if have, want := attachedChangeset.ID, c.ID; have != want {
-					t.Fatalf("attached changeset has wrong ID. want=%d, have=%d", want, have)
+				bttbchedChbngeset := chbngesets[0]
+				if hbve, wbnt := bttbchedChbngeset.ID, c.ID; hbve != wbnt {
+					t.Fbtblf("bttbched chbngeset hbs wrong ID. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 
-				// Assert that the changeset has been updated to point to the new spec
-				assertions.CurrentSpec = spec2.ID
-				// Assert that the previous spec is still spec 1
-				assertions.PreviousSpec = spec1.ID
-				assertions.ReconcilerState = btypes.ReconcilerStateQueued
-				// Assert that it's not archived anymore:
-				assertions.ArchiveIn = 0
-				assertions.AttachedTo = []int64{batchChange.ID}
-				bt.AssertChangeset(t, attachedChangeset, assertions)
+				// Assert thbt the chbngeset hbs been updbted to point to the new spec
+				bssertions.CurrentSpec = spec2.ID
+				// Assert thbt the previous spec is still spec 1
+				bssertions.PreviousSpec = spec1.ID
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
+				// Assert thbt it's not brchived bnymore:
+				bssertions.ArchiveIn = 0
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+				bt.AssertChbngeset(t, bttbchedChbngeset, bssertions)
 			})
 
-			t.Run("changeset has failed closing before re-attaching", func(t *testing.T) {
-				bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-				batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
+			t.Run("chbngeset hbs fbiled closing before re-bttbching", func(t *testing.T) {
+				bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+				bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-fbiled-chbngeset", bdmin.ID, 0)
 
 				specOpts := bt.TestSpecOpts{
-					User:      admin.ID,
+					User:      bdmin.ID,
 					Repo:      repos[0].ID,
-					BatchSpec: batchSpec1.ID,
-					HeadRef:   "refs/heads/detached-reattach-failed",
-					Typ:       btypes.ChangesetSpecTypeBranch,
+					BbtchSpec: bbtchSpec1.ID,
+					HebdRef:   "refs/hebds/detbched-rebttbch-fbiled",
+					Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				}
-				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec1 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-				// STEP 1: We apply the spec and expect 1 changeset.
-				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+				// STEP 1: We bpply the spec bnd expect 1 chbngeset.
+				bbtchChbnge, chbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
-				// Now we update the changeset so it looks like it's been published
+				// Now we updbte the chbngeset so it looks like it's been published
 				// on the code host.
-				c := changesets[0]
-				bt.SetChangesetPublished(t, ctx, store, c, "80022", specOpts.HeadRef)
+				c := chbngesets[0]
+				bt.SetChbngesetPublished(t, ctx, store, c, "80022", specOpts.HebdRef)
 
-				assertions := bt.ChangesetAssertions{
+				bssertions := bt.ChbngesetAssertions{
 					Repo:               c.RepoID,
 					CurrentSpec:        spec1.ID,
-					ExternalID:         c.ExternalID,
-					ExternalBranch:     c.ExternalBranch,
-					ExternalState:      btypes.ChangesetExternalStateOpen,
-					OwnedByBatchChange: batchChange.ID,
-					ReconcilerState:    btypes.ReconcilerStateCompleted,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					DiffStat:           bt.TestChangsetSpecDiffStat,
-					AttachedTo:         []int64{batchChange.ID},
+					ExternblID:         c.ExternblID,
+					ExternblBrbnch:     c.ExternblBrbnch,
+					ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+					OwnedByBbtchChbnge: bbtchChbnge.ID,
+					ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+					AttbchedTo:         []int64{bbtchChbnge.ID},
 				}
-				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// STEP 2: Now we apply a new spec without any changesets.
-				batchSpec2 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
-				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+				// STEP 2: Now we bpply b new spec without bny chbngesets.
+				bbtchSpec2 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-fbiled-chbngeset", bdmin.ID, 0)
+				bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec2.RbndID, 1)
 
-				// Our previously published changeset should be marked as "to
-				// be archived" and "to be closed"
-				assertions.Closing = true
-				assertions.ArchiveIn = batchChange.ID
-				assertions.AttachedTo = []int64{batchChange.ID}
-				assertions.ReconcilerState = btypes.ReconcilerStateQueued
+				// Our previously published chbngeset should be mbrked bs "to
+				// be brchived" bnd "to be closed"
+				bssertions.Closing = true
+				bssertions.ArchiveIn = bbtchChbnge.ID
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
 				// And the previous spec is recorded.
-				assertions.PreviousSpec = spec1.ID
-				c = bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bssertions.PreviousSpec = spec1.ID
+				c = bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				if len(c.BatchChanges) != 1 {
-					t.Fatal("Expected changeset to be still attached to batch change, but wasn't")
+				if len(c.BbtchChbnges) != 1 {
+					t.Fbtbl("Expected chbngeset to be still bttbched to bbtch chbnge, but wbsn't")
 				}
 
-				// Now we update the changeset to simulate that closing failed.
-				bt.SetChangesetFailed(t, ctx, store, c)
-				assertions.Closing = true
-				assertions.ReconcilerState = btypes.ReconcilerStateFailed
-				assertions.ExternalState = btypes.ChangesetExternalStateOpen
+				// Now we updbte the chbngeset to simulbte thbt closing fbiled.
+				bt.SetChbngesetFbiled(t, ctx, store, c)
+				bssertions.Closing = true
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteFbiled
+				bssertions.ExternblStbte = btypes.ChbngesetExternblStbteOpen
 
-				// Side-effects of bt.setChangesetFailed.
-				assertions.FailureMessage = c.FailureMessage
-				assertions.NumFailures = c.NumFailures
-				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				// Side-effects of bt.setChbngesetFbiled.
+				bssertions.FbilureMessbge = c.FbilureMessbge
+				bssertions.NumFbilures = c.NumFbilures
+				bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// STEP 3: We apply a new batch spec with a changeset spec that
-				// matches the old changeset and expect _the same changeset_ to be
-				// re-attached.
-				batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID, 0)
+				// STEP 3: We bpply b new bbtch spec with b chbngeset spec thbt
+				// mbtches the old chbngeset bnd expect _the sbme chbngeset_ to be
+				// re-bttbched.
+				bbtchSpec3 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-fbiled-chbngeset", bdmin.ID, 0)
 
-				specOpts.BatchSpec = batchSpec3.ID
-				spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+				specOpts.BbtchSpec = bbtchSpec3.ID
+				spec2 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+				_, chbngesets = bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec3.RbndID, 1)
 
-				attachedChangeset := changesets[0]
-				if have, want := attachedChangeset.ID, c.ID; have != want {
-					t.Fatalf("attached changeset has wrong ID. want=%d, have=%d", want, have)
+				bttbchedChbngeset := chbngesets[0]
+				if hbve, wbnt := bttbchedChbngeset.ID, c.ID; hbve != wbnt {
+					t.Fbtblf("bttbched chbngeset hbs wrong ID. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 
-				// Assert that the changeset has been updated to point to the new spec
-				assertions.CurrentSpec = spec2.ID
-				// Assert that the previous spec is still spec 1
-				assertions.PreviousSpec = spec1.ID
-				assertions.ReconcilerState = btypes.ReconcilerStateQueued
-				assertions.FailureMessage = nil
-				assertions.NumFailures = 0
-				assertions.DetachFrom = []int64{}
-				assertions.AttachedTo = []int64{batchChange.ID}
-				assertions.ArchiveIn = 0
-				bt.AssertChangeset(t, attachedChangeset, assertions)
+				// Assert thbt the chbngeset hbs been updbted to point to the new spec
+				bssertions.CurrentSpec = spec2.ID
+				// Assert thbt the previous spec is still spec 1
+				bssertions.PreviousSpec = spec1.ID
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
+				bssertions.FbilureMessbge = nil
+				bssertions.NumFbilures = 0
+				bssertions.DetbchFrom = []int64{}
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+				bssertions.ArchiveIn = 0
+				bt.AssertChbngeset(t, bttbchedChbngeset, bssertions)
 			})
 
-			t.Run("changeset has not been closed before re-attaching", func(t *testing.T) {
-				bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-				// The difference to the previous test: we DON'T update the
-				// changeset to make it look closed. We want to make sure that
-				// we also pick up enqueued-to-be-closed changesets.
+			t.Run("chbngeset hbs not been closed before re-bttbching", func(t *testing.T) {
+				bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+				// The difference to the previous test: we DON'T updbte the
+				// chbngeset to mbke it look closed. We wbnt to mbke sure thbt
+				// we blso pick up enqueued-to-be-closed chbngesets.
 
-				batchSpec1 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
+				bbtchSpec1 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-chbngeset-2", bdmin.ID, 0)
 
 				specOpts := bt.TestSpecOpts{
-					User:      admin.ID,
+					User:      bdmin.ID,
 					Repo:      repos[0].ID,
-					BatchSpec: batchSpec1.ID,
-					HeadRef:   "refs/heads/detached-reattached-2",
-					Typ:       btypes.ChangesetSpecTypeBranch,
+					BbtchSpec: bbtchSpec1.ID,
+					HebdRef:   "refs/hebds/detbched-rebttbched-2",
+					Typ:       btypes.ChbngesetSpecTypeBrbnch,
 				}
-				spec1 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+				spec1 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-				// STEP 1: We apply the spec and expect 1 changeset.
-				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+				// STEP 1: We bpply the spec bnd expect 1 chbngeset.
+				bbtchChbnge, chbngesets := bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec1.RbndID, 1)
 
-				c := changesets[0]
-				bt.SetChangesetPublished(t, ctx, store, c, "449955", specOpts.HeadRef)
+				c := chbngesets[0]
+				bt.SetChbngesetPublished(t, ctx, store, c, "449955", specOpts.HebdRef)
 
-				assertions := bt.ChangesetAssertions{
+				bssertions := bt.ChbngesetAssertions{
 					Repo:               c.RepoID,
 					CurrentSpec:        spec1.ID,
-					ExternalID:         c.ExternalID,
-					ExternalBranch:     c.ExternalBranch,
-					ExternalState:      btypes.ChangesetExternalStateOpen,
-					OwnedByBatchChange: batchChange.ID,
-					ReconcilerState:    btypes.ReconcilerStateCompleted,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					DiffStat:           bt.TestChangsetSpecDiffStat,
-					AttachedTo:         []int64{batchChange.ID},
+					ExternblID:         c.ExternblID,
+					ExternblBrbnch:     c.ExternblBrbnch,
+					ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+					OwnedByBbtchChbnge: bbtchChbnge.ID,
+					ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					DiffStbt:           bt.TestChbngsetSpecDiffStbt,
+					AttbchedTo:         []int64{bbtchChbnge.ID},
 				}
-				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// STEP 2: Now we apply a new spec without any changesets.
-				batchChange2 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
-				applyAndListChangesets(adminCtx, t, svc, batchChange2.RandID, 1)
+				// STEP 2: Now we bpply b new spec without bny chbngesets.
+				bbtchChbnge2 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-chbngeset-2", bdmin.ID, 0)
+				bpplyAndListChbngesets(bdminCtx, t, svc, bbtchChbnge2.RbndID, 1)
 
-				// Our previously published changeset should be marked as "to
-				// be archived" and "to be closed"
-				assertions.Closing = true
-				assertions.ArchiveIn = batchChange.ID
-				assertions.AttachedTo = []int64{batchChange.ID}
-				assertions.ReconcilerState = btypes.ReconcilerStateQueued
+				// Our previously published chbngeset should be mbrked bs "to
+				// be brchived" bnd "to be closed"
+				bssertions.Closing = true
+				bssertions.ArchiveIn = bbtchChbnge.ID
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
 				// And the previous spec is recorded.
-				assertions.PreviousSpec = spec1.ID
-				bt.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
+				bssertions.PreviousSpec = spec1.ID
+				bt.RelobdAndAssertChbngeset(t, ctx, store, c, bssertions)
 
-				// STEP 3: We apply a new batch spec with a changeset spec that
-				// matches the old changeset and expect _the same changeset_ to be
-				// re-attached.
-				batchSpec3 := bt.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID, 0)
+				// STEP 3: We bpply b new bbtch spec with b chbngeset spec thbt
+				// mbtches the old chbngeset bnd expect _the sbme chbngeset_ to be
+				// re-bttbched.
+				bbtchSpec3 := bt.CrebteBbtchSpec(t, ctx, store, "detbch-rebttbch-chbngeset-2", bdmin.ID, 0)
 
-				specOpts.BatchSpec = batchSpec3.ID
-				spec2 := bt.CreateChangesetSpec(t, ctx, store, specOpts)
+				specOpts.BbtchSpec = bbtchSpec3.ID
+				spec2 := bt.CrebteChbngesetSpec(t, ctx, store, specOpts)
 
-				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+				_, chbngesets = bpplyAndListChbngesets(bdminCtx, t, svc, bbtchSpec3.RbndID, 1)
 
-				attachedChangeset := changesets[0]
-				if have, want := attachedChangeset.ID, c.ID; have != want {
-					t.Fatalf("attached changeset has wrong ID. want=%d, have=%d", want, have)
+				bttbchedChbngeset := chbngesets[0]
+				if hbve, wbnt := bttbchedChbngeset.ID, c.ID; hbve != wbnt {
+					t.Fbtblf("bttbched chbngeset hbs wrong ID. wbnt=%d, hbve=%d", wbnt, hbve)
 				}
 
-				// Assert that the changeset has been updated to point to the new spec
-				assertions.CurrentSpec = spec2.ID
-				// Assert that the previous spec is still spec 1
-				assertions.PreviousSpec = spec1.ID
-				assertions.ReconcilerState = btypes.ReconcilerStateQueued
-				assertions.DetachFrom = []int64{}
-				assertions.AttachedTo = []int64{batchChange.ID}
-				assertions.ArchiveIn = 0
-				bt.AssertChangeset(t, attachedChangeset, assertions)
+				// Assert thbt the chbngeset hbs been updbted to point to the new spec
+				bssertions.CurrentSpec = spec2.ID
+				// Assert thbt the previous spec is still spec 1
+				bssertions.PreviousSpec = spec1.ID
+				bssertions.ReconcilerStbte = btypes.ReconcilerStbteQueued
+				bssertions.DetbchFrom = []int64{}
+				bssertions.AttbchedTo = []int64{bbtchChbnge.ID}
+				bssertions.ArchiveIn = 0
+				bt.AssertChbngeset(t, bttbchedChbngeset, bssertions)
 			})
 		})
 
-		t.Run("invalid changeset specs", func(t *testing.T) {
-			bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-			batchSpec := bt.CreateBatchSpec(t, ctx, store, "batchchange-invalid-specs", admin.ID, 0)
+		t.Run("invblid chbngeset specs", func(t *testing.T) {
+			bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+			bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "bbtchchbnge-invblid-specs", bdmin.ID, 0)
 
-			// Both specs here have the same HeadRef in the same repository
-			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			// Both specs here hbve the sbme HebdRef in the sbme repository
+			bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[0].ID,
-				BatchSpec: batchSpec.ID,
-				HeadRef:   "refs/heads/my-branch",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec.ID,
+				HebdRef:   "refs/hebds/my-brbnch",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			bt.CreateChangesetSpec(t, ctx, store, bt.TestSpecOpts{
-				User:      admin.ID,
+			bt.CrebteChbngesetSpec(t, ctx, store, bt.TestSpecOpts{
+				User:      bdmin.ID,
 				Repo:      repos[0].ID,
-				BatchSpec: batchSpec.ID,
-				HeadRef:   "refs/heads/my-branch",
-				Typ:       btypes.ChangesetSpecTypeBranch,
+				BbtchSpec: bbtchSpec.ID,
+				HebdRef:   "refs/hebds/my-brbnch",
+				Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			})
 
-			_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-				BatchSpecRandID: batchSpec.RandID,
+			_, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+				BbtchSpecRbndID: bbtchSpec.RbndID,
 			})
 			if err == nil {
-				t.Fatal("expected error, but got none")
+				t.Fbtbl("expected error, but got none")
 			}
 
-			if !strings.Contains(err.Error(), "Validating changeset specs resulted in an error") {
-				t.Fatalf("wrong error: %s", err)
+			if !strings.Contbins(err.Error(), "Vblidbting chbngeset specs resulted in bn error") {
+				t.Fbtblf("wrong error: %s", err)
 			}
 		})
 	})
 
-	t.Run("applying to closed batch change", func(t *testing.T) {
-		bt.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
-		batchSpec := bt.CreateBatchSpec(t, ctx, store, "closed-batch-change", admin.ID, 0)
-		batchChange := bt.CreateBatchChange(t, ctx, store, "closed-batch-change", admin.ID, batchSpec.ID)
+	t.Run("bpplying to closed bbtch chbnge", func(t *testing.T) {
+		bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets", "bbtch_chbnges", "bbtch_specs", "chbngeset_specs")
+		bbtchSpec := bt.CrebteBbtchSpec(t, ctx, store, "closed-bbtch-chbnge", bdmin.ID, 0)
+		bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, store, "closed-bbtch-chbnge", bdmin.ID, bbtchSpec.ID)
 
-		batchChange.ClosedAt = time.Now()
-		if err := store.UpdateBatchChange(ctx, batchChange); err != nil {
-			t.Fatalf("failed to update batch change: %s", err)
+		bbtchChbnge.ClosedAt = time.Now()
+		if err := store.UpdbteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+			t.Fbtblf("fbiled to updbte bbtch chbnge: %s", err)
 		}
 
-		_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
-			BatchSpecRandID: batchSpec.RandID,
+		_, err := svc.ApplyBbtchChbnge(bdminCtx, ApplyBbtchChbngeOpts{
+			BbtchSpecRbndID: bbtchSpec.RbndID,
 		})
-		if err != ErrApplyClosedBatchChange {
-			t.Fatalf("ApplyBatchChange returned unexpected error: %s", err)
+		if err != ErrApplyClosedBbtchChbnge {
+			t.Fbtblf("ApplyBbtchChbnge returned unexpected error: %s", err)
 		}
 	})
 }
 
-func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, batchSpecRandID string, wantChangesets int) (*btypes.BatchChange, btypes.Changesets) {
+func bpplyAndListChbngesets(ctx context.Context, t *testing.T, svc *Service, bbtchSpecRbndID string, wbntChbngesets int) (*btypes.BbtchChbnge, btypes.Chbngesets) {
 	t.Helper()
 
-	batchChange, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
-		BatchSpecRandID: batchSpecRandID,
+	bbtchChbnge, err := svc.ApplyBbtchChbnge(ctx, ApplyBbtchChbngeOpts{
+		BbtchSpecRbndID: bbtchSpecRbndID,
 	})
 	if err != nil {
-		t.Fatalf("failed to apply batch change: %s", err)
+		t.Fbtblf("fbiled to bpply bbtch chbnge: %s", err)
 	}
 
-	if batchChange.ID == 0 {
-		t.Fatalf("batch change ID is zero")
+	if bbtchChbnge.ID == 0 {
+		t.Fbtblf("bbtch chbnge ID is zero")
 	}
 
-	changesets, _, err := svc.store.ListChangesets(ctx, bstore.ListChangesetsOpts{
-		BatchChangeID:   batchChange.ID,
+	chbngesets, _, err := svc.store.ListChbngesets(ctx, bstore.ListChbngesetsOpts{
+		BbtchChbngeID:   bbtchChbnge.ID,
 		IncludeArchived: true,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if have, want := len(changesets), wantChangesets; have != want {
-		t.Fatalf("wrong number of changesets. want=%d, have=%d", want, have)
+	if hbve, wbnt := len(chbngesets), wbntChbngesets; hbve != wbnt {
+		t.Fbtblf("wrong number of chbngesets. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	return batchChange, changesets
+	return bbtchChbnge, chbngesets
 }

@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -7,93 +7,93 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab/webhooks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (wr *Router) HandleGitLabWebhook(ctx context.Context, logger log.Logger, w http.ResponseWriter, codeHostURN extsvc.CodeHostBaseURL, payload []byte) {
-	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
-	// internal actor on the context.
-	ctx = actor.WithInternalActor(ctx)
+func (wr *Router) HbndleGitLbbWebhook(ctx context.Context, logger log.Logger, w http.ResponseWriter, codeHostURN extsvc.CodeHostBbseURL, pbylobd []byte) {
+	// 🚨 SECURITY: now thbt the shbred secret hbs been vblidbted, we cbn use bn
+	// internbl bctor on the context.
+	ctx = bctor.WithInternblActor(ctx)
 
-	var eventKind struct {
+	vbr eventKind struct {
 		ObjectKind string `json:"object_kind"`
 	}
-	if err := json.Unmarshal(payload, &eventKind); err != nil {
-		http.Error(w, errors.Wrap(err, "determining object kind").Error(), http.StatusInternalServerError)
+	if err := json.Unmbrshbl(pbylobd, &eventKind); err != nil {
+		http.Error(w, errors.Wrbp(err, "determining object kind").Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	event, err := webhooks.UnmarshalEvent(payload)
+	event, err := webhooks.UnmbrshblEvent(pbylobd)
 	if err != nil {
 		if errors.Is(err, webhooks.ErrObjectKindUnknown) {
-			// We don't want to return a non-2XX status code and have GitLab
-			// retry the webhook, so we'll log that we don't know what to do
-			// and return 204.
+			// We don't wbnt to return b non-2XX stbtus code bnd hbve GitLbb
+			// retry the webhook, so we'll log thbt we don't know whbt to do
+			// bnd return 204.
 			logger.Debug("unknown object kind", log.Error(err))
 
-			// We don't use respond() here so that we don't log an error, since
-			// this really isn't one.
-			w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-			w.WriteHeader(http.StatusNoContent)
+			// We don't use respond() here so thbt we don't log bn error, since
+			// this reblly isn't one.
+			w.Hebder().Set("Content-Type", "text/plbin; chbrset=utf-8")
+			w.WriteHebder(http.StbtusNoContent)
 			fmt.Fprintf(w, "%v", err)
 		} else {
-			http.Error(w, errors.Wrap(err, "unmarshalling event kind from webhook payload").Error(), http.StatusInternalServerError)
+			http.Error(w, errors.Wrbp(err, "unmbrshblling event kind from webhook pbylobd").Error(), http.StbtusInternblServerError)
 		}
 		return
 	}
 
-	// Route the request based on the event type.
-	err = wr.Dispatch(ctx, eventKind.ObjectKind, extsvc.KindGitLab, codeHostURN, event)
+	// Route the request bbsed on the event type.
+	err = wr.Dispbtch(ctx, eventKind.ObjectKind, extsvc.KindGitLbb, codeHostURN, event)
 	if err != nil {
-		logger.Error("Error handling gitlab webhook event", log.Error(err))
+		logger.Error("Error hbndling gitlbb webhook event", log.Error(err))
 		if errcode.IsNotFound(err) {
-			http.Error(w, err.Error(), http.StatusNotFound)
+			http.Error(w, err.Error(), http.StbtusNotFound)
 			return
 		}
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 	}
 }
 
-func gitlabValidatePayload(r *http.Request, secret string) ([]byte, error) {
-	glSecret := r.Header.Get("X-Gitlab-Token")
+func gitlbbVblidbtePbylobd(r *http.Request, secret string) ([]byte, error) {
+	glSecret := r.Hebder.Get("X-Gitlbb-Token")
 	if glSecret != secret {
-		return nil, errors.New("secrets don't match!")
+		return nil, errors.New("secrets don't mbtch!")
 	}
 
-	body, err := io.ReadAll(r.Body)
+	body, err := io.RebdAll(r.Body)
 	if err != nil {
 		return nil, err
 	}
-	return body, errors.Wrap(r.Body.Close(), "closing body")
+	return body, errors.Wrbp(r.Body.Close(), "closing body")
 }
 
-func (wr *Router) handleGitLabWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBaseURL, secret string) {
+func (wr *Router) hbndleGitLbbWebHook(logger log.Logger, w http.ResponseWriter, r *http.Request, urn extsvc.CodeHostBbseURL, secret string) {
 	if secret == "" {
-		payload, err := io.ReadAll(r.Body)
+		pbylobd, err := io.RebdAll(r.Body)
 		if err != nil {
-			http.Error(w, "Error while reading request body.", http.StatusInternalServerError)
+			http.Error(w, "Error while rebding request body.", http.StbtusInternblServerError)
 			return
 		}
 		if err := r.Body.Close(); err != nil {
-			http.Error(w, "Closing body", http.StatusInternalServerError)
+			http.Error(w, "Closing body", http.StbtusInternblServerError)
 			return
 		}
 
-		wr.HandleGitLabWebhook(r.Context(), logger, w, urn, payload)
+		wr.HbndleGitLbbWebhook(r.Context(), logger, w, urn, pbylobd)
 		return
 	}
 
-	payload, err := gitlabValidatePayload(r, secret)
+	pbylobd, err := gitlbbVblidbtePbylobd(r, secret)
 	if err != nil {
-		http.Error(w, "Could not validate payload with secret.", http.StatusBadRequest)
+		http.Error(w, "Could not vblidbte pbylobd with secret.", http.StbtusBbdRequest)
 		return
 	}
 
-	wr.HandleGitLabWebhook(r.Context(), logger, w, urn, payload)
+	wr.HbndleGitLbbWebhook(r.Context(), logger, w, urn, pbylobd)
 }

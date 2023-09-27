@@ -1,4 +1,4 @@
-package updatecheck
+pbckbge updbtecheck
 
 import (
 	"encoding/json"
@@ -11,122 +11,122 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestLatestDockerVersionPushed(t *testing.T) {
-	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+func TestLbtestDockerVersionPushed(t *testing.T) {
+	// We cbnnot perform externbl network requests in Bbzel tests, it brebks the sbndbox.
 	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
-		t.Skip("Skipping due to network request against dockerhub")
+		t.Skip("Skipping due to network request bgbinst dockerhub")
 	}
 
-	urlStr := fmt.Sprintf("https://index.docker.io/v1/repositories/sourcegraph/server/tags/%s", latestReleaseDockerServerImageBuild.Version)
+	urlStr := fmt.Sprintf("https://index.docker.io/v1/repositories/sourcegrbph/server/tbgs/%s", lbtestRelebseDockerServerImbgeBuild.Version)
 	resp, err := http.Get(urlStr)
 	if err != nil {
-		t.Skip("Failed to contact dockerhub", err)
+		t.Skip("Fbiled to contbct dockerhub", err)
 	}
-	if resp.StatusCode == 404 {
-		t.Fatalf("sourcegraph/server:%s does not exist on dockerhub. %s", latestReleaseDockerServerImageBuild.Version, urlStr)
+	if resp.StbtusCode == 404 {
+		t.Fbtblf("sourcegrbph/server:%s does not exist on dockerhub. %s", lbtestRelebseDockerServerImbgeBuild.Version, urlStr)
 	}
-	if resp.StatusCode != 200 {
-		t.Skip("unexpected response from dockerhub", resp.StatusCode)
+	if resp.StbtusCode != 200 {
+		t.Skip("unexpected response from dockerhub", resp.StbtusCode)
 	}
 }
 
-func TestLatestKubernetesVersionPushed(t *testing.T) {
-	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+func TestLbtestKubernetesVersionPushed(t *testing.T) {
+	// We cbnnot perform externbl network requests in Bbzel tests, it brebks the sbndbox.
 	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
 		t.Skip("Skipping due to network request")
 	}
 
-	urlStr := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph/releases/tag/v%v", latestReleaseKubernetesBuild.Version)
-	resp, err := http.Head(urlStr)
+	urlStr := fmt.Sprintf("https://github.com/sourcegrbph/deploy-sourcegrbph/relebses/tbg/v%v", lbtestRelebseKubernetesBuild.Version)
+	resp, err := http.Hebd(urlStr)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if resp.StatusCode != 200 {
-		t.Errorf("Could not find Kubernetes release %s on GitHub. Response code %s from %s, err: %v", latestReleaseKubernetesBuild.Version, resp.Status, urlStr, err)
+	if resp.StbtusCode != 200 {
+		t.Errorf("Could not find Kubernetes relebse %s on GitHub. Response code %s from %s, err: %v", lbtestRelebseKubernetesBuild.Version, resp.Stbtus, urlStr, err)
 	}
 }
 
-func TestLatestDockerComposeOrPureDockerVersionPushed(t *testing.T) {
-	// We cannot perform external network requests in Bazel tests, it breaks the sandbox.
+func TestLbtestDockerComposeOrPureDockerVersionPushed(t *testing.T) {
+	// We cbnnot perform externbl network requests in Bbzel tests, it brebks the sbndbox.
 	if testing.Short() || os.Getenv("BAZEL_TEST") == "1" {
 		t.Skip("Skipping due to network request")
 	}
 
-	urlStr := fmt.Sprintf("https://github.com/sourcegraph/deploy-sourcegraph-docker/releases/tag/v%v", latestReleaseDockerComposeOrPureDocker.Version)
-	resp, err := http.Head(urlStr)
+	urlStr := fmt.Sprintf("https://github.com/sourcegrbph/deploy-sourcegrbph-docker/relebses/tbg/v%v", lbtestRelebseDockerComposeOrPureDocker.Version)
+	resp, err := http.Hebd(urlStr)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if resp.StatusCode != 200 {
-		t.Errorf("Could not find Docker Compose or Pure Docker release %s on GitHub. Response code %s from %s, err: %v", latestReleaseDockerComposeOrPureDocker.Version, resp.Status, urlStr, err)
+	if resp.StbtusCode != 200 {
+		t.Errorf("Could not find Docker Compose or Pure Docker relebse %s on GitHub. Response code %s from %s, err: %v", lbtestRelebseDockerComposeOrPureDocker.Version, resp.Stbtus, urlStr, err)
 	}
 }
 
-func TestCanUpdate(t *testing.T) {
+func TestCbnUpdbte(t *testing.T) {
 	tests := []struct {
-		name                string
+		nbme                string
 		now                 time.Time
 		clientVersionString string
-		latestReleaseBuild  pingResponse
+		lbtestRelebseBuild  pingResponse
 		deployType          string
-		hasUpdate           bool
+		hbsUpdbte           bool
 		err                 error
 	}{
 		{
-			name:                "no version update",
+			nbme:                "no version updbte",
 			clientVersionString: "v1.2.3",
-			latestReleaseBuild:  newPingResponse("1.2.3"),
-			hasUpdate:           false,
+			lbtestRelebseBuild:  newPingResponse("1.2.3"),
+			hbsUpdbte:           fblse,
 		},
 		{
-			name:                "version update",
+			nbme:                "version updbte",
 			clientVersionString: "v1.2.3",
-			latestReleaseBuild:  newPingResponse("1.2.4"),
-			hasUpdate:           true,
+			lbtestRelebseBuild:  newPingResponse("1.2.4"),
+			hbsUpdbte:           true,
 		},
 		{
-			name:                "no date update clock skew",
-			now:                 time.Date(2018, time.August, 1, 0, 0, 0, 0, time.UTC),
+			nbme:                "no dbte updbte clock skew",
+			now:                 time.Dbte(2018, time.August, 1, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-02_f7dec47",
-			latestReleaseBuild:  newPingResponse("1.2.3"),
-			hasUpdate:           false,
+			lbtestRelebseBuild:  newPingResponse("1.2.3"),
+			hbsUpdbte:           fblse,
 		},
 		{
-			name:                "no date update",
-			now:                 time.Date(2018, time.September, 1, 0, 0, 0, 0, time.UTC),
+			nbme:                "no dbte updbte",
+			now:                 time.Dbte(2018, time.September, 1, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-01_f7dec47",
-			latestReleaseBuild:  newPingResponse("1.2.3"),
-			hasUpdate:           false,
+			lbtestRelebseBuild:  newPingResponse("1.2.3"),
+			hbsUpdbte:           fblse,
 		},
 		{
-			name:                "date update",
-			now:                 time.Date(2018, time.August, 42, 0, 0, 0, 0, time.UTC),
+			nbme:                "dbte updbte",
+			now:                 time.Dbte(2018, time.August, 42, 0, 0, 0, 0, time.UTC),
 			clientVersionString: "19272_2018-08-01_f7dec47",
-			latestReleaseBuild:  newPingResponse("1.2.3"),
-			hasUpdate:           true,
+			lbtestRelebseBuild:  newPingResponse("1.2.3"),
+			hbsUpdbte:           true,
 		},
 		{
-			name:                "app version update",
+			nbme:                "bpp version updbte",
 			clientVersionString: "2023.03.23+205275.dd37e7",
-			latestReleaseBuild:  newPingResponse("2023.03.24+205301.ca3646"),
-			hasUpdate:           true,
+			lbtestRelebseBuild:  newPingResponse("2023.03.24+205301.cb3646"),
+			hbsUpdbte:           true,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			// Mock the current time for this test.
 			timeNow = func() time.Time {
 				return test.now
 			}
-			// Restore the real time after this test is done.
+			// Restore the rebl time bfter this test is done.
 			defer func() {
 				timeNow = time.Now
 			}()
@@ -134,18 +134,18 @@ func TestCanUpdate(t *testing.T) {
 			if test.deployType == "" {
 				test.deployType = "kubernetes"
 			}
-			hasUpdate, err := canUpdate(test.clientVersionString, test.latestReleaseBuild, test.deployType)
+			hbsUpdbte, err := cbnUpdbte(test.clientVersionString, test.lbtestRelebseBuild, test.deployType)
 			if err != test.err {
-				t.Fatalf("expected error %s; got %s", test.err, err)
+				t.Fbtblf("expected error %s; got %s", test.err, err)
 			}
-			if hasUpdate != test.hasUpdate {
-				t.Fatalf("expected hasUpdate=%t; got hasUpdate=%t", test.hasUpdate, hasUpdate)
+			if hbsUpdbte != test.hbsUpdbte {
+				t.Fbtblf("expected hbsUpdbte=%t; got hbsUpdbte=%t", test.hbsUpdbte, hbsUpdbte)
 			}
 		})
 	}
 }
 
-func makeDefaultPingRequest(t *testing.T) *pingRequest {
+func mbkeDefbultPingRequest(t *testing.T) *pingRequest {
 	t.Helper()
 
 	return &pingRequest{
@@ -153,1013 +153,1013 @@ func makeDefaultPingRequest(t *testing.T) *pingRequest {
 		LicenseKey:               "mylicense",
 		DeployType:               "server",
 		ClientVersionString:      "3.12.6",
-		AuthProviders:            []string{"foo", "bar"},
-		ExternalServices:         []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		AuthProviders:            []string{"foo", "bbr"},
+		ExternblServices:         []string{extsvc.KindGitHub, extsvc.KindGitLbb},
 		CodeHostVersions:         nil,
 		BuiltinSignupAllowed:     true,
-		AccessRequestEnabled:     true,
-		HasExtURL:                false,
+		AccessRequestEnbbled:     true,
+		HbsExtURL:                fblse,
 		UniqueUsers:              123,
-		Activity:                 json.RawMessage(`{"foo":"bar"}`),
-		BatchChangesUsage:        nil,
-		CodeIntelUsage:           nil,
-		CodeMonitoringUsage:      nil,
-		NotebooksUsage:           nil,
-		CodeHostIntegrationUsage: nil,
-		IDEExtensionsUsage:       nil,
-		MigratedExtensionsUsage:  nil,
-		OwnUsage:                 nil,
-		SearchUsage:              nil,
-		GrowthStatistics:         nil,
-		SavedSearches:            nil,
-		HomepagePanels:           nil,
-		SearchOnboarding:         nil,
-		InitialAdminEmail:        "test@sourcegraph.com",
-		TotalUsers:               234,
-		HasRepos:                 true,
-		EverSearched:             false,
+		Activity:                 json.RbwMessbge(`{"foo":"bbr"}`),
+		BbtchChbngesUsbge:        nil,
+		CodeIntelUsbge:           nil,
+		CodeMonitoringUsbge:      nil,
+		NotebooksUsbge:           nil,
+		CodeHostIntegrbtionUsbge: nil,
+		IDEExtensionsUsbge:       nil,
+		MigrbtedExtensionsUsbge:  nil,
+		OwnUsbge:                 nil,
+		SebrchUsbge:              nil,
+		GrowthStbtistics:         nil,
+		SbvedSebrches:            nil,
+		HomepbgePbnels:           nil,
+		SebrchOnbobrding:         nil,
+		InitiblAdminEmbil:        "test@sourcegrbph.com",
+		TotblUsers:               234,
+		HbsRepos:                 true,
+		EverSebrched:             fblse,
 		EverFindRefs:             true,
-		RetentionStatistics:      nil,
-		HasCodyEnabled:           false,
-		CodyUsage:                nil,
+		RetentionStbtistics:      nil,
+		HbsCodyEnbbled:           fblse,
+		CodyUsbge:                nil,
 	}
 }
 
-func makeLimitedPingRequest(t *testing.T) *pingRequest {
+func mbkeLimitedPingRequest(t *testing.T) *pingRequest {
 	return &pingRequest{
 		ClientSiteID:        "0101-0101",
-		DeployType:          "app",
+		DeployType:          "bpp",
 		ClientVersionString: "2023.03.23+205275.dd37e7",
-		Os:                  "mac",
-		TotalRepos:          345,
-		ActiveToday:         true,
+		Os:                  "mbc",
+		TotblRepos:          345,
+		ActiveTodby:         true,
 	}
 }
 
-func TestSerializeBasic(t *testing.T) {
-	pr := makeDefaultPingRequest(t)
+func TestSeriblizeBbsic(t *testing.T) {
+	pr := mbkeDefbultPingRequest(t)
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo":"bar"},
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo":"bbr"},
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
-		"homepage_panels": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
+		"homepbge_pbnels": null,
 		"repositories": null,
-		"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+		"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "true",
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeLimited(t *testing.T) {
-	pr := makeLimitedPingRequest(t)
+func TestSeriblizeLimited(t *testing.T) {
+	pr := mbkeLimitedPingRequest(t)
 
-	pingRequestBody, err := json.Marshal(pr)
+	pingRequestBody, err := json.Mbrshbl(pr)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	// This is the expected JSON request that will be sent over HTTP to the
-	// handler. This checks that omitempty is applied to all the absent fields.
-	compareJSON(t, pingRequestBody, `{
+	// This is the expected JSON request thbt will be sent over HTTP to the
+	// hbndler. This checks thbt omitempty is bpplied to bll the bbsent fields.
+	compbreJSON(t, pingRequestBody, `{
 		"site": "0101-0101",
-		"deployType": "app",
+		"deployType": "bpp",
 		"version": "2023.03.23+205275.dd37e7",
-		"os": "mac",
-		"totalRepos": 345,
-		"activeToday": true
+		"os": "mbc",
+		"totblRepos": 345,
+		"bctiveTodby": true
 	}`)
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "2023.03.23+205275.dd37e7",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
-		"has_update": "true",
-		"unique_users_today": "0",
-		"site_activity": null,
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "0",
+		"site_bctivity": null,
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
-		"homepage_panels": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
+		"homepbge_pbnels": null,
 		"repositories": null,
-"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "",
-		"auth_providers": "",
+"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "",
+		"buth_providers": "",
 		"ext_services": "",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "false",
-		"access_request_enabled": "false",
-		"deploy_type": "app",
-		"total_user_accounts": "0",
-		"has_external_url": "false",
-		"has_repos": "false",
-		"ever_searched": "false",
-		"ever_find_refs": "false",
-		"total_repos": "345",
-		"active_today": "true",
-		"os": "mac",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"builtin_signup_bllowed": "fblse",
+		"bccess_request_enbbled": "fblse",
+		"deploy_type": "bpp",
+		"totbl_user_bccounts": "0",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "fblse",
+		"ever_sebrched": "fblse",
+		"ever_find_refs": "fblse",
+		"totbl_repos": "345",
+		"bctive_todby": "true",
+		"os": "mbc",
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeFromQuery(t *testing.T) {
-	pr, err := readPingRequestFromQuery(url.Values{
+func TestSeriblizeFromQuery(t *testing.T) {
+	pr, err := rebdPingRequestFromQuery(url.Vblues{
 		"site":       []string{"0101-0101"},
 		"deployType": []string{"server"},
 		"version":    []string{"3.12.6"},
-		"auth":       []string{"foo,bar"},
+		"buth":       []string{"foo,bbr"},
 		"extsvcs":    []string{"GITHUB,GITLAB"},
 		"signup":     []string{"true"},
-		"hasExtURL":  []string{"false"},
+		"hbsExtURL":  []string{"fblse"},
 		"u":          []string{"123"},
-		"act":        []string{`{"foo": "bar"}`},
-		"initAdmin":  []string{"test@sourcegraph.com"},
-		"totalUsers": []string{"234"},
+		"bct":        []string{`{"foo": "bbr"}`},
+		"initAdmin":  []string{"test@sourcegrbph.com"},
+		"totblUsers": []string{"234"},
 		"repos":      []string{"true"},
-		"searched":   []string{"false"},
+		"sebrched":   []string{"fblse"},
 		"refs":       []string{"true"},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo":"bar"},
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo":"bbr"},
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "false",
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "fblse",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeBatchChangesUsage(t *testing.T) {
-	pr := makeDefaultPingRequest(t)
-	pr.BatchChangesUsage = json.RawMessage(`{"baz":"bonk"}`)
+func TestSeriblizeBbtchChbngesUsbge(t *testing.T) {
+	pr := mbkeDefbultPingRequest(t)
+	pr.BbtchChbngesUsbge = json.RbwMessbge(`{"bbz":"bonk"}`)
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo":"bar"},
-		"batch_changes_usage": {"baz":"bonk"},
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo":"bbr"},
+		"bbtch_chbnges_usbge": {"bbz":"bonk"},
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "true",
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeGrowthStatistics(t *testing.T) {
-	pr := makeDefaultPingRequest(t)
-	pr.GrowthStatistics = json.RawMessage(`{"baz":"bonk"}`)
+func TestSeriblizeGrowthStbtistics(t *testing.T) {
+	pr := mbkeDefbultPingRequest(t)
+	pr.GrowthStbtistics = json.RbwMessbge(`{"bbz":"bonk"}`)
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo":"bar"},
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo":"bbr"},
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"search_usage": null,
-		"growth_statistics": {"baz":"bonk"},
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
-		"homepage_panels": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": {"bbz":"bonk"},
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
+		"homepbge_pbnels": null,
 		"repositories": null,
-		"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+		"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "true",
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeCodeIntelUsage(t *testing.T) {
+func TestSeriblizeCodeIntelUsbge(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
-	testUsage, err := json.Marshal(types.NewCodeIntelUsageStatistics{
-		StartOfWeek:                now,
+	testUsbge, err := json.Mbrshbl(types.NewCodeIntelUsbgeStbtistics{
+		StbrtOfWeek:                now,
 		WAUs:                       pointers.Ptr(int32(25)),
-		SearchBasedWAUs:            pointers.Ptr(int32(10)),
+		SebrchBbsedWAUs:            pointers.Ptr(int32(10)),
 		PreciseCrossRepositoryWAUs: pointers.Ptr(int32(40)),
-		EventSummaries: []types.CodeIntelEventSummary{
+		EventSummbries: []types.CodeIntelEventSummbry{
 			{
 				Action:          types.HoverAction,
 				Source:          types.PreciseSource,
-				LanguageID:      "go",
-				CrossRepository: false,
+				LbngubgeID:      "go",
+				CrossRepository: fblse,
 				WAUs:            1,
-				TotalActions:    1,
+				TotblActions:    1,
 			},
 			{
 				Action:          types.HoverAction,
-				Source:          types.SearchSource,
-				LanguageID:      "",
+				Source:          types.SebrchSource,
+				LbngubgeID:      "",
 				CrossRepository: true,
 				WAUs:            2,
-				TotalActions:    2,
+				TotblActions:    2,
 			},
 			{
 				Action:          types.DefinitionsAction,
 				Source:          types.PreciseSource,
-				LanguageID:      "go",
+				LbngubgeID:      "go",
 				CrossRepository: true,
 				WAUs:            3,
-				TotalActions:    3,
+				TotblActions:    3,
 			},
 			{
 				Action:          types.DefinitionsAction,
-				Source:          types.SearchSource,
-				LanguageID:      "go",
-				CrossRepository: false,
+				Source:          types.SebrchSource,
+				LbngubgeID:      "go",
+				CrossRepository: fblse,
 				WAUs:            4,
-				TotalActions:    4,
+				TotblActions:    4,
 			},
 			{
 				Action:          types.ReferencesAction,
 				Source:          types.PreciseSource,
-				LanguageID:      "",
-				CrossRepository: false,
+				LbngubgeID:      "",
+				CrossRepository: fblse,
 				WAUs:            5,
-				TotalActions:    1,
+				TotblActions:    1,
 			},
 			{
 				Action:          types.ReferencesAction,
-				Source:          types.SearchSource,
-				LanguageID:      "typescript",
-				CrossRepository: false,
+				Source:          types.SebrchSource,
+				LbngubgeID:      "typescript",
+				CrossRepository: fblse,
 				WAUs:            6,
-				TotalActions:    3,
+				TotblActions:    3,
 			},
 		},
 		NumRepositories:                                  pointers.Ptr(int32(50 + 85)),
-		NumRepositoriesWithUploadRecords:                 pointers.Ptr(int32(50)),
-		NumRepositoriesWithFreshUploadRecords:            pointers.Ptr(int32(40)),
+		NumRepositoriesWithUplobdRecords:                 pointers.Ptr(int32(50)),
+		NumRepositoriesWithFreshUplobdRecords:            pointers.Ptr(int32(40)),
 		NumRepositoriesWithIndexRecords:                  pointers.Ptr(int32(30)),
 		NumRepositoriesWithFreshIndexRecords:             pointers.Ptr(int32(20)),
-		NumRepositoriesWithAutoIndexConfigurationRecords: pointers.Ptr(int32(7)),
-		CountsByLanguage: map[string]types.CodeIntelRepositoryCountsByLanguage{
+		NumRepositoriesWithAutoIndexConfigurbtionRecords: pointers.Ptr(int32(7)),
+		CountsByLbngubge: mbp[string]types.CodeIntelRepositoryCountsByLbngubge{
 			"go": {
-				NumRepositoriesWithUploadRecords:      pointers.Ptr(int32(10)),
-				NumRepositoriesWithFreshUploadRecords: pointers.Ptr(int32(20)),
+				NumRepositoriesWithUplobdRecords:      pointers.Ptr(int32(10)),
+				NumRepositoriesWithFreshUplobdRecords: pointers.Ptr(int32(20)),
 				NumRepositoriesWithIndexRecords:       pointers.Ptr(int32(30)),
 				NumRepositoriesWithFreshIndexRecords:  pointers.Ptr(int32(40)),
 			},
 			"typescript": {
-				NumRepositoriesWithUploadRecords:      pointers.Ptr(int32(15)),
-				NumRepositoriesWithFreshUploadRecords: pointers.Ptr(int32(25)),
+				NumRepositoriesWithUplobdRecords:      pointers.Ptr(int32(15)),
+				NumRepositoriesWithFreshUplobdRecords: pointers.Ptr(int32(25)),
 				NumRepositoriesWithIndexRecords:       pointers.Ptr(int32(35)),
 				NumRepositoriesWithFreshIndexRecords:  pointers.Ptr(int32(45)),
 			},
 		},
-		SettingsPageViewCount:            pointers.Ptr(int32(1489)),
-		UsersWithRefPanelRedesignEnabled: pointers.Ptr(int32(46)),
-		LanguageRequests: []types.LanguageRequest{
+		SettingsPbgeViewCount:            pointers.Ptr(int32(1489)),
+		UsersWithRefPbnelRedesignEnbbled: pointers.Ptr(int32(46)),
+		LbngubgeRequests: []types.LbngubgeRequest{
 			{
-				LanguageID:  "frob",
+				LbngubgeID:  "frob",
 				NumRequests: 123,
 			},
 			{
-				LanguageID:  "borf",
+				LbngubgeID:  "borf",
 				NumRequests: 321,
 			},
 		},
-		InvestigationEvents: []types.CodeIntelInvestigationEvent{
+		InvestigbtionEvents: []types.CodeIntelInvestigbtionEvent{
 			{
-				Type:  types.CodeIntelUploadErrorInvestigationType,
+				Type:  types.CodeIntelUplobdErrorInvestigbtionType,
 				WAUs:  25,
-				Total: 42,
+				Totbl: 42,
 			},
 		},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	pr := makeDefaultPingRequest(t)
+	pr := mbkeDefbultPingRequest(t)
 
-	pr.NewCodeIntelUsage = testUsage
+	pr.NewCodeIntelUsbge = testUsbge
 
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo":"bar"},
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": {
-			"start_time": "2020-04-20T15:29:17Z",
-			"waus": 25,
-			"precise_waus": null,
-			"search_waus": 10,
-			"xrepo_waus": null,
-			"precise_xrepo_waus": 40,
-			"search_xrepo_waus": null,
-			"event_summaries": [
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo":"bbr"},
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": {
+			"stbrt_time": "2020-04-20T15:29:17Z",
+			"wbus": 25,
+			"precise_wbus": null,
+			"sebrch_wbus": 10,
+			"xrepo_wbus": null,
+			"precise_xrepo_wbus": 40,
+			"sebrch_xrepo_wbus": null,
+			"event_summbries": [
 				{
-					"action": "hover",
+					"bction": "hover",
 					"source": "precise",
-					"language_id": "go",
-					"cross_repository": false,
-					"waus": 1,
-					"total_actions": 1
+					"lbngubge_id": "go",
+					"cross_repository": fblse,
+					"wbus": 1,
+					"totbl_bctions": 1
 				},
 				{
-					"action": "hover",
-					"source": "search",
-					"language_id": "",
+					"bction": "hover",
+					"source": "sebrch",
+					"lbngubge_id": "",
 					"cross_repository": true,
-					"waus": 2,
-					"total_actions": 2
+					"wbus": 2,
+					"totbl_bctions": 2
 				},
 				{
-					"action": "definitions",
+					"bction": "definitions",
 					"source": "precise",
-					"language_id": "go",
+					"lbngubge_id": "go",
 					"cross_repository": true,
-					"waus": 3,
-					"total_actions": 3
+					"wbus": 3,
+					"totbl_bctions": 3
 				},
 				{
-					"action": "definitions",
-					"source": "search",
-					"language_id": "go",
-					"cross_repository": false,
-					"waus": 4,
-					"total_actions": 4
+					"bction": "definitions",
+					"source": "sebrch",
+					"lbngubge_id": "go",
+					"cross_repository": fblse,
+					"wbus": 4,
+					"totbl_bctions": 4
 				},
 				{
-					"action": "references",
+					"bction": "references",
 					"source": "precise",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 5,
-					"total_actions": 1
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 5,
+					"totbl_bctions": 1
 				},
 				{
-					"action": "references",
-					"source": "search",
-					"language_id": "typescript",
-					"cross_repository": false,
-					"waus": 6,
-					"total_actions": 3
+					"bction": "references",
+					"source": "sebrch",
+					"lbngubge_id": "typescript",
+					"cross_repository": fblse,
+					"wbus": 6,
+					"totbl_bctions": 3
 				}
 			],
 			"num_repositories": 135,
-			"num_repositories_with_upload_records": 50,
-			"num_repositories_without_upload_records": 85,
-			"num_repositories_with_fresh_upload_records": 40,
+			"num_repositories_with_uplobd_records": 50,
+			"num_repositories_without_uplobd_records": 85,
+			"num_repositories_with_fresh_uplobd_records": 40,
 			"num_repositories_with_index_records": 30,
 			"num_repositories_with_fresh_index_records": 20,
-			"num_repositories_with_index_configuration_records": 7,
-			"counts_by_language": [
+			"num_repositories_with_index_configurbtion_records": 7,
+			"counts_by_lbngubge": [
 				{
-					"language_id": "go",
-					"num_repositories_with_upload_records": 10,
-					"num_repositories_with_fresh_upload_records": 20,
+					"lbngubge_id": "go",
+					"num_repositories_with_uplobd_records": 10,
+					"num_repositories_with_fresh_uplobd_records": 20,
 					"num_repositories_with_index_records": 30,
 					"num_repositories_with_fresh_index_records": 40
 				},
 				{
-					"language_id": "typescript",
-					"num_repositories_with_upload_records": 15,
-					"num_repositories_with_fresh_upload_records": 25,
+					"lbngubge_id": "typescript",
+					"num_repositories_with_uplobd_records": 15,
+					"num_repositories_with_fresh_uplobd_records": 25,
 					"num_repositories_with_index_records": 35,
 					"num_repositories_with_fresh_index_records": 45
 				}
 			],
-			"settings_page_view_count": 1489,
-			"users_with_ref_panel_redesign_enabled": 46,
-			"language_requests": [
+			"settings_pbge_view_count": 1489,
+			"users_with_ref_pbnel_redesign_enbbled": 46,
+			"lbngubge_requests": [
 				{
-					"language_id": "frob",
+					"lbngubge_id": "frob",
 					"num_requests": 123
 				},
 				{
-					"language_id": "borf",
+					"lbngubge_id": "borf",
 					"num_requests": 321
 				}
 			],
-			"investigation_events": [
+			"investigbtion_events": [
 				{
-					"type": "CodeIntelligenceUploadErrorInvestigated",
-					"waus": 25,
-					"total": 42
+					"type": "CodeIntelligenceUplobdErrorInvestigbted",
+					"wbus": 25,
+					"totbl": 42
 				}
 			]
 		},
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "true",
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeOldCodeIntelUsage(t *testing.T) {
+func TestSeriblizeOldCodeIntelUsbge(t *testing.T) {
 	now := time.Unix(1587396557, 0).UTC()
 
-	testPeriod, err := json.Marshal(&types.OldCodeIntelUsagePeriod{
-		StartTime: now,
-		Hover: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 1, EventsCount: pointers.Ptr(int32(1))},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 2, EventsCount: pointers.Ptr(int32(2))},
+	testPeriod, err := json.Mbrshbl(&types.OldCodeIntelUsbgePeriod{
+		StbrtTime: now,
+		Hover: &types.OldCodeIntelEventCbtegoryStbtistics{
+			LSIF:   &types.OldCodeIntelEventStbtistics{UsersCount: 1, EventsCount: pointers.Ptr(int32(1))},
+			Sebrch: &types.OldCodeIntelEventStbtistics{UsersCount: 2, EventsCount: pointers.Ptr(int32(2))},
 		},
-		Definitions: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 3, EventsCount: pointers.Ptr(int32(3))},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 4, EventsCount: pointers.Ptr(int32(4))},
+		Definitions: &types.OldCodeIntelEventCbtegoryStbtistics{
+			LSIF:   &types.OldCodeIntelEventStbtistics{UsersCount: 3, EventsCount: pointers.Ptr(int32(3))},
+			Sebrch: &types.OldCodeIntelEventStbtistics{UsersCount: 4, EventsCount: pointers.Ptr(int32(4))},
 		},
-		References: &types.OldCodeIntelEventCategoryStatistics{
-			LSIF:   &types.OldCodeIntelEventStatistics{UsersCount: 5, EventsCount: pointers.Ptr(int32(1))},
-			Search: &types.OldCodeIntelEventStatistics{UsersCount: 6, EventsCount: pointers.Ptr(int32(3))},
+		References: &types.OldCodeIntelEventCbtegoryStbtistics{
+			LSIF:   &types.OldCodeIntelEventStbtistics{UsersCount: 5, EventsCount: pointers.Ptr(int32(1))},
+			Sebrch: &types.OldCodeIntelEventStbtistics{UsersCount: 6, EventsCount: pointers.Ptr(int32(3))},
 		},
 	})
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 	period := string(testPeriod)
 
-	pr := makeDefaultPingRequest(t)
+	pr := mbkeDefbultPingRequest(t)
 
-	pr.CodeIntelUsage = json.RawMessage(`{"Weekly": [` + period + `]}`)
+	pr.CodeIntelUsbge = json.RbwMessbge(`{"Weekly": [` + period + `]}`)
 
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo":"bar"},
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": {
-			"start_time": "2020-04-20T15:29:17Z",
-			"waus": null,
-			"precise_waus": null,
-			"search_waus": null,
-			"xrepo_waus": null,
-			"precise_xrepo_waus": null,
-			"search_xrepo_waus": null,
-			"event_summaries": [
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo":"bbr"},
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": {
+			"stbrt_time": "2020-04-20T15:29:17Z",
+			"wbus": null,
+			"precise_wbus": null,
+			"sebrch_wbus": null,
+			"xrepo_wbus": null,
+			"precise_xrepo_wbus": null,
+			"sebrch_xrepo_wbus": null,
+			"event_summbries": [
 				{
-					"action": "hover",
+					"bction": "hover",
 					"source": "precise",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 1,
-					"total_actions": 1
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 1,
+					"totbl_bctions": 1
 				},
 				{
-					"action": "hover",
-					"source": "search",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 2,
-					"total_actions": 2
+					"bction": "hover",
+					"source": "sebrch",
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 2,
+					"totbl_bctions": 2
 				},
 				{
-					"action": "definitions",
+					"bction": "definitions",
 					"source": "precise",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 3,
-					"total_actions": 3
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 3,
+					"totbl_bctions": 3
 				},
 				{
-					"action": "definitions",
-					"source": "search",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 4,
-					"total_actions": 4
+					"bction": "definitions",
+					"source": "sebrch",
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 4,
+					"totbl_bctions": 4
 				},
 				{
-					"action": "references",
+					"bction": "references",
 					"source": "precise",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 5,
-					"total_actions": 1
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 5,
+					"totbl_bctions": 1
 				},
 				{
-					"action": "references",
-					"source": "search",
-					"language_id": "",
-					"cross_repository": false,
-					"waus": 6,
-					"total_actions": 3
+					"bction": "references",
+					"source": "sebrch",
+					"lbngubge_id": "",
+					"cross_repository": fblse,
+					"wbus": 6,
+					"totbl_bctions": 3
 				}
 			],
 			"num_repositories": null,
-			"num_repositories_with_upload_records": null,
-			"num_repositories_without_upload_records": null,
-			"num_repositories_with_fresh_upload_records": null,
+			"num_repositories_with_uplobd_records": null,
+			"num_repositories_without_uplobd_records": null,
+			"num_repositories_with_fresh_uplobd_records": null,
 			"num_repositories_with_index_records": null,
 			"num_repositories_with_fresh_index_records": null,
-			"num_repositories_with_index_configuration_records": null,
-			"counts_by_language": null,
-			"settings_page_view_count": null,
-			"users_with_ref_panel_redesign_enabled": null,
-			"language_requests": null,
-			"investigation_events": null
+			"num_repositories_with_index_configurbtion_records": null,
+			"counts_by_lbngubge": null,
+			"settings_pbge_view_count": null,
+			"users_with_ref_pbnel_redesign_enbbled": null,
+			"lbngubge_requests": null,
+			"investigbtion_events": null
 		},
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "true",
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeCodeHostVersions(t *testing.T) {
-	pr := makeDefaultPingRequest(t)
-	pr.CodeHostVersions = json.RawMessage(`[{"external_service_kind":"GITHUB","version":"1.2.3.4"}]`)
+func TestSeriblizeCodeHostVersions(t *testing.T) {
+	pr := mbkeDefbultPingRequest(t)
+	pr.CodeHostVersions = json.RbwMessbge(`[{"externbl_service_kind":"GITHUB","version":"1.2.3.4"}]`)
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
+	compbreJSON(t, pbylobd, `{
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "mylicense",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": {"foo": "bar"},
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": {"foo": "bbr"},
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
-		"code_host_versions": [{"external_service_kind":"GITHUB","version":"1.2.3.4"}],
-		"builtin_signup_allowed": "true",
-		"access_request_enabled": "true",
+		"code_host_versions": [{"externbl_service_kind":"GITHUB","version":"1.2.3.4"}],
+		"builtin_signup_bllowed": "true",
+		"bccess_request_enbbled": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeOwn(t *testing.T) {
+func TestSeriblizeOwn(t *testing.T) {
 	pr := &pingRequest{
 		ClientSiteID:         "0101-0101",
 		DeployType:           "server",
 		ClientVersionString:  "3.12.6",
-		AuthProviders:        []string{"foo", "bar"},
-		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		AuthProviders:        []string{"foo", "bbr"},
+		ExternblServices:     []string{extsvc.KindGitHub, extsvc.KindGitLbb},
 		BuiltinSignupAllowed: true,
-		HasExtURL:            false,
+		HbsExtURL:            fblse,
 		UniqueUsers:          123,
-		InitialAdminEmail:    "test@sourcegraph.com",
-		TotalUsers:           234,
-		HasRepos:             true,
-		EverSearched:         false,
+		InitiblAdminEmbil:    "test@sourcegrbph.com",
+		TotblUsers:           234,
+		HbsRepos:             true,
+		EverSebrched:         fblse,
 		EverFindRefs:         true,
-		OwnUsage: json.RawMessage(`{
-			"feature_flag_on": true,
+		OwnUsbge: json.RbwMessbge(`{
+			"febture_flbg_on": true,
 			"repos_count": {
-				"total": 42,
+				"totbl": 42,
 				"with_ingested_ownership": 15
 			},
-			"select_file_owners_search": {
-				"dau": 100,
-				"wau": 150,
-				"mau": 300
+			"select_file_owners_sebrch": {
+				"dbu": 100,
+				"wbu": 150,
+				"mbu": 300
 			},
-			"file_has_owner_search": {
-				"dau": 100,
-				"wau": 150,
-				"mau": 300
+			"file_hbs_owner_sebrch": {
+				"dbu": 100,
+				"wbu": 150,
+				"mbu": 300
 			},
-			"ownership_panel_opened": {
-				"dau": 100,
-				"wau": 150,
-				"mau": 300
+			"ownership_pbnel_opened": {
+				"dbu": 100,
+				"wbu": 150,
+				"mbu": 300
 			},
-			"assigned_owners_count": 12
+			"bssigned_owners_count": 12
 		}`),
 	}
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
-		"access_request_enabled": "false",
+	compbreJSON(t, pbylobd, `{
+		"bccess_request_enbbled": "fblse",
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": null,
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": null,
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": {
-			"feature_flag_on": true,
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": {
+			"febture_flbg_on": true,
 			"repos_count": {
-				"total": 42,
+				"totbl": 42,
 				"with_ingested_ownership": 15
 			},
-			"select_file_owners_search": {
-				"dau": 100,
-				"wau": 150,
-				"mau": 300
+			"select_file_owners_sebrch": {
+				"dbu": 100,
+				"wbu": 150,
+				"mbu": 300
 			},
-			"file_has_owner_search": {
-				"dau": 100,
-				"wau": 150,
-				"mau": 300
+			"file_hbs_owner_sebrch": {
+				"dbu": 100,
+				"wbu": 150,
+				"mbu": 300
 			},
-			"ownership_panel_opened": {
-				"dau": 100,
-				"wau": 150,
-				"mau": 300
+			"ownership_pbnel_opened": {
+				"dbu": 100,
+				"wbu": 150,
+				"mbu": 300
 			},
-			"assigned_owners_count": 12
+			"bssigned_owners_count": 12
 		},
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-		"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+		"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
+		"builtin_signup_bllowed": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func TestSerializeRepoMetadataUsage(t *testing.T) {
+func TestSeriblizeRepoMetbdbtbUsbge(t *testing.T) {
 	pr := &pingRequest{
 		ClientSiteID:         "0101-0101",
 		DeployType:           "server",
 		ClientVersionString:  "3.12.6",
-		AuthProviders:        []string{"foo", "bar"},
-		ExternalServices:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
+		AuthProviders:        []string{"foo", "bbr"},
+		ExternblServices:     []string{extsvc.KindGitHub, extsvc.KindGitLbb},
 		BuiltinSignupAllowed: true,
-		HasExtURL:            false,
+		HbsExtURL:            fblse,
 		UniqueUsers:          123,
-		InitialAdminEmail:    "test@sourcegraph.com",
-		TotalUsers:           234,
-		HasRepos:             true,
-		EverSearched:         false,
+		InitiblAdminEmbil:    "test@sourcegrbph.com",
+		TotblUsers:           234,
+		HbsRepos:             true,
+		EverSebrched:         fblse,
 		EverFindRefs:         true,
-		RepoMetadataUsage: json.RawMessage(`{
-			"summary": {
-				"is_enabled": true,
-				"repos_with_metadata_count": 10,
-				"repo_metadata_count": 100
+		RepoMetbdbtbUsbge: json.RbwMessbge(`{
+			"summbry": {
+				"is_enbbled": true,
+				"repos_with_metbdbtb_count": 10,
+				"repo_metbdbtb_count": 100
 			},
-			"daily": {
-				"start_time": "2020-01-01T00:00:00Z",
-				"create_repo_metadata": {
+			"dbily": {
+				"stbrt_time": "2020-01-01T00:00:00Z",
+				"crebte_repo_metbdbtb": {
 					"events_count": 10,
 					"users_count": 5
 				}
@@ -1168,89 +1168,89 @@ func TestSerializeRepoMetadataUsage(t *testing.T) {
 	}
 
 	now := time.Now()
-	payload, err := marshalPing(pr, true, "127.0.0.1", now)
+	pbylobd, err := mbrshblPing(pr, true, "127.0.0.1", now)
 	if err != nil {
-		t.Fatalf("unexpected error %s", err)
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	compareJSON(t, payload, `{
-		"access_request_enabled": "false",
+	compbreJSON(t, pbylobd, `{
+		"bccess_request_enbbled": "fblse",
 		"remote_ip": "127.0.0.1",
 		"remote_site_version": "3.12.6",
-		"repo_metadata_usage": null,
+		"repo_metbdbtb_usbge": null,
 		"remote_site_id": "0101-0101",
 		"license_key": "",
-		"has_update": "true",
-		"unique_users_today": "123",
-		"site_activity": null,
-		"batch_changes_usage": null,
-		"code_intel_usage": null,
-		"new_code_intel_usage": null,
+		"hbs_updbte": "true",
+		"unique_users_todby": "123",
+		"site_bctivity": null,
+		"bbtch_chbnges_usbge": null,
+		"code_intel_usbge": null,
+		"new_code_intel_usbge": null,
 		"dependency_versions": null,
-		"extensions_usage": null,
-		"code_insights_usage": null,
-		"code_insights_critical_telemetry": null,
-		"code_monitoring_usage": null,
-		"cody_usage": null,
-		"notebooks_usage": null,
-		"code_host_integration_usage": null,
-		"ide_extensions_usage": null,
-		"migrated_extensions_usage": null,
-		"own_usage": null,
-		"repo_metadata_usage": {
-			"summary": {
-				"is_enabled": true,
-				"repos_with_metadata_count": 10,
-				"repo_metadata_count": 100
+		"extensions_usbge": null,
+		"code_insights_usbge": null,
+		"code_insights_criticbl_telemetry": null,
+		"code_monitoring_usbge": null,
+		"cody_usbge": null,
+		"notebooks_usbge": null,
+		"code_host_integrbtion_usbge": null,
+		"ide_extensions_usbge": null,
+		"migrbted_extensions_usbge": null,
+		"own_usbge": null,
+		"repo_metbdbtb_usbge": {
+			"summbry": {
+				"is_enbbled": true,
+				"repos_with_metbdbtb_count": 10,
+				"repo_metbdbtb_count": 100
 			},
-			"daily": {
-				"start_time": "2020-01-01T00:00:00Z",
-				"create_repo_metadata": {
+			"dbily": {
+				"stbrt_time": "2020-01-01T00:00:00Z",
+				"crebte_repo_metbdbtb": {
 					"events_count": 10,
 					"users_count": 5
 				}
 			}
 		},
-		"search_usage": null,
-		"growth_statistics": null,
-		"has_cody_enabled": "false",
-		"saved_searches": null,
-		"homepage_panels": null,
-		"search_jobs_usage": null,
-		"search_onboarding": null,
+		"sebrch_usbge": null,
+		"growth_stbtistics": null,
+		"hbs_cody_enbbled": "fblse",
+		"sbved_sebrches": null,
+		"homepbge_pbnels": null,
+		"sebrch_jobs_usbge": null,
+		"sebrch_onbobrding": null,
 		"repositories": null,
-		"repository_size_histogram": null,
-		"retention_statistics": null,
-		"installer_email": "test@sourcegraph.com",
-		"auth_providers": "foo,bar",
+		"repository_size_histogrbm": null,
+		"retention_stbtistics": null,
+		"instbller_embil": "test@sourcegrbph.com",
+		"buth_providers": "foo,bbr",
 		"ext_services": "GITHUB,GITLAB",
 		"code_host_versions": null,
-		"builtin_signup_allowed": "true",
+		"builtin_signup_bllowed": "true",
 		"deploy_type": "server",
-		"total_user_accounts": "234",
-		"has_external_url": "false",
-		"has_repos": "true",
-		"ever_searched": "false",
+		"totbl_user_bccounts": "234",
+		"hbs_externbl_url": "fblse",
+		"hbs_repos": "true",
+		"ever_sebrched": "fblse",
 		"ever_find_refs": "true",
-		"total_repos": "0",
-		"active_today": "false",
+		"totbl_repos": "0",
+		"bctive_todby": "fblse",
 		"os": "",
-		"timestamp": "`+now.UTC().Format(time.RFC3339)+`"
+		"timestbmp": "`+now.UTC().Formbt(time.RFC3339)+`"
 	}`)
 }
 
-func compareJSON(t *testing.T, actual []byte, expected string) {
-	var o1 any
-	if err := json.Unmarshal(actual, &o1); err != nil {
-		t.Fatalf("unexpected error %s", err)
+func compbreJSON(t *testing.T, bctubl []byte, expected string) {
+	vbr o1 bny
+	if err := json.Unmbrshbl(bctubl, &o1); err != nil {
+		t.Fbtblf("unexpected error %s", err)
 	}
 
-	var o2 any
-	if err := json.Unmarshal([]byte(expected), &o2); err != nil {
-		t.Fatalf("unexpected error %s", err)
+	vbr o2 bny
+	if err := json.Unmbrshbl([]byte(expected), &o2); err != nil {
+		t.Fbtblf("unexpected error %s", err)
 	}
 
 	if diff := cmp.Diff(o2, o1); diff != "" {
-		t.Fatalf("mismatch (-want +got):\n%s", diff)
+		t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 	}
 }

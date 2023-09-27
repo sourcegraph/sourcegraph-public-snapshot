@@ -1,117 +1,117 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"net/url"
 	"os"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/secrets"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-type srcInstance struct {
-	AccessToken string `json:"access_token"`
+type srcInstbnce struct {
+	AccessToken string `json:"bccess_token"`
 	Endpoint    string `json:"endpoint"`
 }
 
 type srcSecrets struct {
 	Current   string                 `json:"current"`
-	Instances map[string]srcInstance `json:"instances"`
+	Instbnces mbp[string]srcInstbnce `json:"instbnces"`
 }
 
-var srcInstanceCommand = &cli.Command{
-	Name:      "src-instance",
-	UsageText: "sg src-instance [command]",
-	Usage:     "Interact with Sourcegraph instances that 'sg src' will use",
-	Category:  category.Dev,
-	Subcommands: []*cli.Command{
+vbr srcInstbnceCommbnd = &cli.Commbnd{
+	Nbme:      "src-instbnce",
+	UsbgeText: "sg src-instbnce [commbnd]",
+	Usbge:     "Interbct with Sourcegrbph instbnces thbt 'sg src' will use",
+	Cbtegory:  cbtegory.Dev,
+	Subcommbnds: []*cli.Commbnd{
 		{
-			Name:      "register",
-			Usage:     "Register (or edit an existing) Sourcegraph instance to target with src-cli",
-			UsageText: "sg src instance register [name] [endpoint]",
+			Nbme:      "register",
+			Usbge:     "Register (or edit bn existing) Sourcegrbph instbnce to tbrget with src-cli",
+			UsbgeText: "sg src instbnce register [nbme] [endpoint]",
 			Action: func(cmd *cli.Context) error {
-				store, sc, err := getSrcInstances(cmd.Context)
+				store, sc, err := getSrcInstbnces(cmd.Context)
 				if err != nil {
-					return errors.Wrap(err, "failed to read existing instances")
+					return errors.Wrbp(err, "fbiled to rebd existing instbnces")
 				}
 				if cmd.Args().Len() != 2 {
-					return errors.Newf("not enough arguments, want %d got %d", 2, cmd.Args().Len())
+					return errors.Newf("not enough brguments, wbnt %d got %d", 2, cmd.Args().Len())
 				}
 
-				name := cmd.Args().First()
+				nbme := cmd.Args().First()
 				endpoint := cmd.Args().Slice()[1]
-				endpointUrl, err := url.Parse(endpoint)
+				endpointUrl, err := url.Pbrse(endpoint)
 				if err != nil {
-					return errors.Wrapf(err, "cannot parse [endpoint]")
+					return errors.Wrbpf(err, "cbnnot pbrse [endpoint]")
 				}
 				if endpointUrl.Scheme != "http" && endpointUrl.Scheme != "https" {
-					return errors.New("cannot parse [endpoint], scheme must be http or https")
+					return errors.New("cbnnot pbrse [endpoint], scheme must be http or https")
 				}
 
-				accessToken, err := std.Out.PromptPasswordf(
+				bccessToken, err := std.Out.PromptPbsswordf(
 					os.Stdin,
-					`Please enter the access token for Sourcegraph instance named %s (%s):`,
-					name,
+					`Plebse enter the bccess token for Sourcegrbph instbnce nbmed %s (%s):`,
+					nbme,
 					endpoint,
 				)
 				if err != nil {
-					return errors.Wrapf(err, "failed to read access token")
+					return errors.Wrbpf(err, "fbiled to rebd bccess token")
 				}
 
-				sc.Instances[name] = srcInstance{
+				sc.Instbnces[nbme] = srcInstbnce{
 					Endpoint:    endpoint,
-					AccessToken: accessToken,
+					AccessToken: bccessToken,
 				}
-				if err := store.PutAndSave("src", sc); err != nil {
-					return errors.Wrap(err, "failed to save instance")
+				if err := store.PutAndSbve("src", sc); err != nil {
+					return errors.Wrbp(err, "fbiled to sbve instbnce")
 				}
-				std.Out.WriteSuccessf("src instance %s added", name)
-				std.Out.WriteSuggestionf("Run 'sg src-instance use %s' to switch to that instance for 'sg src'", name)
+				std.Out.WriteSuccessf("src instbnce %s bdded", nbme)
+				std.Out.WriteSuggestionf("Run 'sg src-instbnce use %s' to switch to thbt instbnce for 'sg src'", nbme)
 				return nil
 			},
 		},
 		{
-			Name:  "use",
-			Usage: "Set current src-cli instance to use with 'sg src'",
+			Nbme:  "use",
+			Usbge: "Set current src-cli instbnce to use with 'sg src'",
 			Action: func(cmd *cli.Context) error {
-				store, sc, err := getSrcInstances(cmd.Context)
+				store, sc, err := getSrcInstbnces(cmd.Context)
 				if err != nil {
 					return err
 				}
-				name := cmd.Args().First()
-				instance, ok := sc.Instances[name]
+				nbme := cmd.Args().First()
+				instbnce, ok := sc.Instbnces[nbme]
 				if !ok {
-					std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
-					return errors.New("instance not found")
+					std.Out.WriteFbiluref("Instbnce not found, register one with 'sg src register-instbnce'")
+					return errors.New("instbnce not found")
 				}
-				sc.Current = name
-				if err := store.PutAndSave("src", sc); err != nil {
-					return errors.Wrap(err, "failed to save instance")
+				sc.Current = nbme
+				if err := store.PutAndSbve("src", sc); err != nil {
+					return errors.Wrbp(err, "fbiled to sbve instbnce")
 				}
-				std.Out.WriteSuccessf("Switched to %s (%s)", name, instance.Endpoint)
+				std.Out.WriteSuccessf("Switched to %s (%s)", nbme, instbnce.Endpoint)
 				return nil
 			},
 		},
 		{
-			Name:  "list",
-			Usage: "List registered instances for src-cli",
+			Nbme:  "list",
+			Usbge: "List registered instbnces for src-cli",
 			Action: func(cmd *cli.Context) error {
-				_, sc, err := getSrcInstances(cmd.Context)
+				_, sc, err := getSrcInstbnces(cmd.Context)
 				if err != nil {
 					return err
 				}
-				std.Out.WriteLine(output.Linef("", output.StyleReset, "| %-16s| %-32s|", "Name", "Endpoint"))
-				for name, instance := range sc.Instances {
-					if name == sc.Current {
-						std.Out.WriteLine(output.Linef("", output.StyleSuccess, "| %-16s| %-32s|", name, instance.Endpoint))
+				std.Out.WriteLine(output.Linef("", output.StyleReset, "| %-16s| %-32s|", "Nbme", "Endpoint"))
+				for nbme, instbnce := rbnge sc.Instbnces {
+					if nbme == sc.Current {
+						std.Out.WriteLine(output.Linef("", output.StyleSuccess, "| %-16s| %-32s|", nbme, instbnce.Endpoint))
 					} else {
-						std.Out.WriteLine(output.Linef("", output.StyleReset, "| %-16s| %-32s|", name, instance.Endpoint))
+						std.Out.WriteLine(output.Linef("", output.StyleReset, "| %-16s| %-32s|", nbme, instbnce.Endpoint))
 					}
 				}
 				return nil
@@ -120,43 +120,43 @@ var srcInstanceCommand = &cli.Command{
 	},
 }
 
-var srcCommand = &cli.Command{
-	Name:      "src",
-	UsageText: "sg src [src-cli args]\nsg src help # get src-cli help",
-	Usage:     "Run src-cli on a given instance defined with 'sg src-instance'",
-	Category:  category.Dev,
+vbr srcCommbnd = &cli.Commbnd{
+	Nbme:      "src",
+	UsbgeText: "sg src [src-cli brgs]\nsg src help # get src-cli help",
+	Usbge:     "Run src-cli on b given instbnce defined with 'sg src-instbnce'",
+	Cbtegory:  cbtegory.Dev,
 	Action: func(cmd *cli.Context) error {
-		_, sc, err := getSrcInstances(cmd.Context)
+		_, sc, err := getSrcInstbnces(cmd.Context)
 		if err != nil {
 			return err
 		}
-		instanceName := sc.Current
-		if instanceName == "" {
-			std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
-			return errors.New("set an instance with sg src-instance use [instance-name]")
+		instbnceNbme := sc.Current
+		if instbnceNbme == "" {
+			std.Out.WriteFbiluref("Instbnce not found, register one with 'sg src register-instbnce'")
+			return errors.New("set bn instbnce with sg src-instbnce use [instbnce-nbme]")
 		}
-		instance, ok := sc.Instances[instanceName]
+		instbnce, ok := sc.Instbnces[instbnceNbme]
 		if !ok {
-			std.Out.WriteFailuref("Instance not found, register one with 'sg src register-instance'")
-			return errors.New("instance not found")
+			std.Out.WriteFbiluref("Instbnce not found, register one with 'sg src register-instbnce'")
+			return errors.New("instbnce not found")
 		}
 
-		c := usershell.Command(cmd.Context, append([]string{"src"}, cmd.Args().Slice()...)...)
-		c = c.Env(map[string]string{
-			"SRC_ACCESS_TOKEN": instance.AccessToken,
-			"SRC_ENDPOINT":     instance.Endpoint,
+		c := usershell.Commbnd(cmd.Context, bppend([]string{"src"}, cmd.Args().Slice()...)...)
+		c = c.Env(mbp[string]string{
+			"SRC_ACCESS_TOKEN": instbnce.AccessToken,
+			"SRC_ENDPOINT":     instbnce.Endpoint,
 		})
-		return c.Run().Stream(os.Stdout)
+		return c.Run().Strebm(os.Stdout)
 	},
 }
 
-// getSrcInstances retrieves src instances configuration from the secrets store
-func getSrcInstances(ctx context.Context) (*secrets.Store, *srcSecrets, error) {
+// getSrcInstbnces retrieves src instbnces configurbtion from the secrets store
+func getSrcInstbnces(ctx context.Context) (*secrets.Store, *srcSecrets, error) {
 	sec, err := secrets.FromContext(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
-	sc := srcSecrets{Instances: map[string]srcInstance{}}
+	sc := srcSecrets{Instbnces: mbp[string]srcInstbnce{}}
 	err = sec.Get("src", &sc)
 	if err != nil && !errors.Is(err, secrets.ErrSecretNotFound) {
 		return nil, nil, err

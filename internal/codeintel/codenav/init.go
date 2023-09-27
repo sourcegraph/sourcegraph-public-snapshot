@@ -1,31 +1,31 @@
-package codenav
+pbckbge codenbv
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/internbl/lsifstore"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func NewService(
-	observationCtx *observation.Context,
-	db database.DB,
-	codeIntelDB codeintelshared.CodeIntelDB,
-	uploadSvc UploadService,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
+	codeIntelDB codeintelshbred.CodeIntelDB,
+	uplobdSvc UplobdService,
 	gitserver gitserver.Client,
 ) *Service {
-	lsifStore := lsifstore.New(scopedContext("lsifstore", observationCtx), codeIntelDB)
+	lsifStore := lsifstore.New(scopedContext("lsifstore", observbtionCtx), codeIntelDB)
 
 	return newService(
-		observationCtx,
+		observbtionCtx,
 		db.Repos(),
 		lsifStore,
-		uploadSvc,
+		uplobdSvc,
 		gitserver,
 	)
 }
 
-func scopedContext(component string, parent *observation.Context) *observation.Context {
-	return observation.ScopedContext("codeintel", "codenav", component, parent)
+func scopedContext(component string, pbrent *observbtion.Context) *observbtion.Context {
+	return observbtion.ScopedContext("codeintel", "codenbv", component, pbrent)
 }

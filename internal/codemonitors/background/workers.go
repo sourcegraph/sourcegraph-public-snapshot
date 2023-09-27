@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,48 +6,48 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codemonitors"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codemonitors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	eventRetentionInDays int = 30
+	eventRetentionInDbys int = 30
 )
 
-func newTriggerQueryRunner(ctx context.Context, observationCtx *observation.Context, db database.DB, metrics codeMonitorsMetrics) *workerutil.Worker[*database.TriggerJob] {
+func newTriggerQueryRunner(ctx context.Context, observbtionCtx *observbtion.Context, db dbtbbbse.DB, metrics codeMonitorsMetrics) *workerutil.Worker[*dbtbbbse.TriggerJob] {
 	options := workerutil.WorkerOptions{
-		Name:                 "code_monitors_trigger_jobs_worker",
+		Nbme:                 "code_monitors_trigger_jobs_worker",
 		Description:          "runs trigger queries for code monitors",
-		NumHandlers:          4,
-		Interval:             5 * time.Second,
-		HeartbeatInterval:    15 * time.Second,
+		NumHbndlers:          4,
+		Intervbl:             5 * time.Second,
+		HebrtbebtIntervbl:    15 * time.Second,
 		Metrics:              metrics.workerMetrics,
-		MaximumRuntimePerJob: time.Minute,
+		MbximumRuntimePerJob: time.Minute,
 	}
 
-	store := createDBWorkerStoreForTriggerJobs(observationCtx, db)
+	store := crebteDBWorkerStoreForTriggerJobs(observbtionCtx, db)
 
-	worker := dbworker.NewWorker[*database.TriggerJob](ctx, store, &queryRunner{db: db}, options)
+	worker := dbworker.NewWorker[*dbtbbbse.TriggerJob](ctx, store, &queryRunner{db: db}, options)
 	return worker
 }
 
-func newTriggerQueryEnqueuer(ctx context.Context, store database.CodeMonitorStore) goroutine.BackgroundRoutine {
-	enqueueActive := goroutine.HandlerFunc(
+func newTriggerQueryEnqueuer(ctx context.Context, store dbtbbbse.CodeMonitorStore) goroutine.BbckgroundRoutine {
+	enqueueActive := goroutine.HbndlerFunc(
 
 		func(ctx context.Context) error {
 			_, err := store.EnqueueQueryTriggerJobs(ctx)
@@ -56,110 +56,110 @@ func newTriggerQueryEnqueuer(ctx context.Context, store database.CodeMonitorStor
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		enqueueActive,
-		goroutine.WithName("code_monitors.trigger_query_enqueuer"),
+		goroutine.WithNbme("code_monitors.trigger_query_enqueuer"),
 		goroutine.WithDescription("enqueues code monitor trigger query jobs"),
-		goroutine.WithInterval(1*time.Minute),
+		goroutine.WithIntervbl(1*time.Minute),
 	)
 }
 
-func newTriggerQueryResetter(_ context.Context, observationCtx *observation.Context, s database.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*database.TriggerJob] {
-	workerStore := createDBWorkerStoreForTriggerJobs(observationCtx, s)
+func newTriggerQueryResetter(_ context.Context, observbtionCtx *observbtion.Context, s dbtbbbse.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*dbtbbbse.TriggerJob] {
+	workerStore := crebteDBWorkerStoreForTriggerJobs(observbtionCtx, s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "code_monitors_trigger_jobs_worker_resetter",
-		Interval: 1 * time.Minute,
+		Nbme:     "code_monitors_trigger_jobs_worker_resetter",
+		Intervbl: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
-			RecordResetFailures: metrics.resetFailures,
+			RecordResetFbilures: metrics.resetFbilures,
 			RecordResets:        metrics.resets,
 		},
 	}
-	return dbworker.NewResetter(observationCtx.Logger, workerStore, options)
+	return dbworker.NewResetter(observbtionCtx.Logger, workerStore, options)
 }
 
-func newTriggerJobsLogDeleter(ctx context.Context, store database.CodeMonitorStore) goroutine.BackgroundRoutine {
-	deleteLogs := goroutine.HandlerFunc(
+func newTriggerJobsLogDeleter(ctx context.Context, store dbtbbbse.CodeMonitorStore) goroutine.BbckgroundRoutine {
+	deleteLogs := goroutine.HbndlerFunc(
 		func(ctx context.Context) error {
-			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDays)
+			return store.DeleteOldTriggerJobs(ctx, eventRetentionInDbys)
 		})
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
 		deleteLogs,
-		goroutine.WithName("code_monitors.trigger_jobs_log_deleter"),
+		goroutine.WithNbme("code_monitors.trigger_jobs_log_deleter"),
 		goroutine.WithDescription("deletes code job logs from code monitor triggers"),
-		goroutine.WithInterval(60*time.Minute),
+		goroutine.WithIntervbl(60*time.Minute),
 	)
 }
 
-func newActionRunner(ctx context.Context, observationCtx *observation.Context, s database.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*database.ActionJob] {
+func newActionRunner(ctx context.Context, observbtionCtx *observbtion.Context, s dbtbbbse.CodeMonitorStore, metrics codeMonitorsMetrics) *workerutil.Worker[*dbtbbbse.ActionJob] {
 	options := workerutil.WorkerOptions{
-		Name:              "code_monitors_action_jobs_worker",
-		Description:       "runs actions for code monitors",
-		NumHandlers:       1,
-		Interval:          5 * time.Second,
-		HeartbeatInterval: 15 * time.Second,
+		Nbme:              "code_monitors_bction_jobs_worker",
+		Description:       "runs bctions for code monitors",
+		NumHbndlers:       1,
+		Intervbl:          5 * time.Second,
+		HebrtbebtIntervbl: 15 * time.Second,
 		Metrics:           metrics.workerMetrics,
 	}
 
-	store := createDBWorkerStoreForActionJobs(observationCtx, s)
+	store := crebteDBWorkerStoreForActionJobs(observbtionCtx, s)
 
-	worker := dbworker.NewWorker[*database.ActionJob](ctx, store, &actionRunner{s}, options)
+	worker := dbworker.NewWorker[*dbtbbbse.ActionJob](ctx, store, &bctionRunner{s}, options)
 	return worker
 }
 
-func newActionJobResetter(_ context.Context, observationCtx *observation.Context, s database.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*database.ActionJob] {
-	workerStore := createDBWorkerStoreForActionJobs(observationCtx, s)
+func newActionJobResetter(_ context.Context, observbtionCtx *observbtion.Context, s dbtbbbse.CodeMonitorStore, metrics codeMonitorsMetrics) *dbworker.Resetter[*dbtbbbse.ActionJob] {
+	workerStore := crebteDBWorkerStoreForActionJobs(observbtionCtx, s)
 
 	options := dbworker.ResetterOptions{
-		Name:     "code_monitors_action_jobs_worker_resetter",
-		Interval: 1 * time.Minute,
+		Nbme:     "code_monitors_bction_jobs_worker_resetter",
+		Intervbl: 1 * time.Minute,
 		Metrics: dbworker.ResetterMetrics{
 			Errors:              metrics.errors,
-			RecordResetFailures: metrics.resetFailures,
+			RecordResetFbilures: metrics.resetFbilures,
 			RecordResets:        metrics.resets,
 		},
 	}
-	return dbworker.NewResetter(observationCtx.Logger, workerStore, options)
+	return dbworker.NewResetter(observbtionCtx.Logger, workerStore, options)
 }
 
-func createDBWorkerStoreForTriggerJobs(observationCtx *observation.Context, s basestore.ShareableStore) dbworkerstore.Store[*database.TriggerJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("triggerJobs.dbworker.Store", ""), observationCtx)
+func crebteDBWorkerStoreForTriggerJobs(observbtionCtx *observbtion.Context, s bbsestore.ShbrebbleStore) dbworkerstore.Store[*dbtbbbse.TriggerJob] {
+	observbtionCtx = observbtion.ContextWithLogger(observbtionCtx.Logger.Scoped("triggerJobs.dbworker.Store", ""), observbtionCtx)
 
-	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*database.TriggerJob]{
-		Name:              "code_monitors_trigger_jobs_worker_store",
-		TableName:         "cm_trigger_jobs",
-		ColumnExpressions: database.TriggerJobsColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(database.ScanTriggerJob),
-		StalledMaxAge:     60 * time.Second,
+	return dbworkerstore.New(observbtionCtx, s.Hbndle(), dbworkerstore.Options[*dbtbbbse.TriggerJob]{
+		Nbme:              "code_monitors_trigger_jobs_worker_store",
+		TbbleNbme:         "cm_trigger_jobs",
+		ColumnExpressions: dbtbbbse.TriggerJobsColumns,
+		Scbn:              dbworkerstore.BuildWorkerScbn(dbtbbbse.ScbnTriggerJob),
+		StblledMbxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
-		MaxNumRetries:     3,
+		MbxNumRetries:     3,
 		OrderByExpression: sqlf.Sprintf("id"),
 	})
 }
 
-func createDBWorkerStoreForActionJobs(observationCtx *observation.Context, s database.CodeMonitorStore) dbworkerstore.Store[*database.ActionJob] {
-	observationCtx = observation.ContextWithLogger(observationCtx.Logger.Scoped("actionJobs.dbworker.Store", ""), observationCtx)
+func crebteDBWorkerStoreForActionJobs(observbtionCtx *observbtion.Context, s dbtbbbse.CodeMonitorStore) dbworkerstore.Store[*dbtbbbse.ActionJob] {
+	observbtionCtx = observbtion.ContextWithLogger(observbtionCtx.Logger.Scoped("bctionJobs.dbworker.Store", ""), observbtionCtx)
 
-	return dbworkerstore.New(observationCtx, s.Handle(), dbworkerstore.Options[*database.ActionJob]{
-		Name:              "code_monitors_action_jobs_worker_store",
-		TableName:         "cm_action_jobs",
-		ColumnExpressions: database.ActionJobColumns,
-		Scan:              dbworkerstore.BuildWorkerScan(database.ScanActionJob),
-		StalledMaxAge:     60 * time.Second,
+	return dbworkerstore.New(observbtionCtx, s.Hbndle(), dbworkerstore.Options[*dbtbbbse.ActionJob]{
+		Nbme:              "code_monitors_bction_jobs_worker_store",
+		TbbleNbme:         "cm_bction_jobs",
+		ColumnExpressions: dbtbbbse.ActionJobColumns,
+		Scbn:              dbworkerstore.BuildWorkerScbn(dbtbbbse.ScbnActionJob),
+		StblledMbxAge:     60 * time.Second,
 		RetryAfter:        10 * time.Second,
-		MaxNumRetries:     3,
+		MbxNumRetries:     3,
 		OrderByExpression: sqlf.Sprintf("id"),
 	})
 }
 
 type queryRunner struct {
-	db database.DB
+	db dbtbbbse.DB
 }
 
-func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob *database.TriggerJob) (err error) {
+func (r *queryRunner) Hbndle(ctx context.Context, logger log.Logger, triggerJob *dbtbbbse.TriggerJob) (err error) {
 	defer func() {
 		if err != nil {
-			logger.Error("queryRunner.Handle", log.Error(err))
+			logger.Error("queryRunner.Hbndle", log.Error(err))
 		}
 	}()
 
@@ -175,110 +175,110 @@ func (r *queryRunner) Handle(ctx context.Context, logger log.Logger, triggerJob 
 		return err
 	}
 
-	// SECURITY: set the actor to the user that owns the code monitor.
-	// For all downstream actions (specifically executing searches),
-	// we should run as the user who owns the code monitor.
-	ctx = actor.WithActor(ctx, actor.FromUser(m.UserID))
-	ctx = featureflag.WithFlags(ctx, r.db.FeatureFlags())
+	// SECURITY: set the bctor to the user thbt owns the code monitor.
+	// For bll downstrebm bctions (specificblly executing sebrches),
+	// we should run bs the user who owns the code monitor.
+	ctx = bctor.WithActor(ctx, bctor.FromUser(m.UserID))
+	ctx = febtureflbg.WithFlbgs(ctx, r.db.FebtureFlbgs())
 
-	results, searchErr := codemonitors.Search(ctx, logger, r.db, q.QueryString, m.ID)
+	results, sebrchErr := codemonitors.Sebrch(ctx, logger, r.db, q.QueryString, m.ID)
 
-	// Log next_run and latest_result to table cm_queries.
-	newLatestResult := latestResultTime(q.LatestResult, results, searchErr)
-	err = cm.SetQueryTriggerNextRun(ctx, q.ID, cm.Clock()().Add(5*time.Minute), newLatestResult.UTC())
+	// Log next_run bnd lbtest_result to tbble cm_queries.
+	newLbtestResult := lbtestResultTime(q.LbtestResult, results, sebrchErr)
+	err = cm.SetQueryTriggerNextRun(ctx, q.ID, cm.Clock()().Add(5*time.Minute), newLbtestResult.UTC())
 	if err != nil {
 		return err
 	}
 
-	// After setting the next run, check the error value
-	if searchErr != nil {
-		return errors.Wrap(searchErr, "execute search")
+	// After setting the next run, check the error vblue
+	if sebrchErr != nil {
+		return errors.Wrbp(sebrchErr, "execute sebrch")
 	}
 
-	// Log the actual query we ran and whether we got any new results.
-	err = cm.UpdateTriggerJobWithResults(ctx, triggerJob.ID, q.QueryString, results)
+	// Log the bctubl query we rbn bnd whether we got bny new results.
+	err = cm.UpdbteTriggerJobWithResults(ctx, triggerJob.ID, q.QueryString, results)
 	if err != nil {
-		return errors.Wrap(err, "UpdateTriggerJobWithResults")
+		return errors.Wrbp(err, "UpdbteTriggerJobWithResults")
 	}
 
 	if len(results) > 0 {
 		_, err := cm.EnqueueActionJobsForMonitor(ctx, m.ID, triggerJob.ID)
 		if err != nil {
-			return errors.Wrap(err, "store.EnqueueActionJobsForQuery")
+			return errors.Wrbp(err, "store.EnqueueActionJobsForQuery")
 		}
 	}
 	return nil
 }
 
-type actionRunner struct {
-	database.CodeMonitorStore
+type bctionRunner struct {
+	dbtbbbse.CodeMonitorStore
 }
 
-func (r *actionRunner) Handle(ctx context.Context, logger log.Logger, j *database.ActionJob) (err error) {
-	logger.Info("actionRunner.Handle starting")
+func (r *bctionRunner) Hbndle(ctx context.Context, logger log.Logger, j *dbtbbbse.ActionJob) (err error) {
+	logger.Info("bctionRunner.Hbndle stbrting")
 	switch {
-	case j.Email != nil:
-		return errors.Wrap(r.handleEmail(ctx, j), "Email")
-	case j.Webhook != nil:
-		return errors.Wrap(r.handleWebhook(ctx, j), "Webhook")
-	case j.SlackWebhook != nil:
-		return errors.Wrap(r.handleSlackWebhook(ctx, j), "SlackWebhook")
-	default:
-		return errors.New("job must be one of type email, webhook, or slack webhook")
+	cbse j.Embil != nil:
+		return errors.Wrbp(r.hbndleEmbil(ctx, j), "Embil")
+	cbse j.Webhook != nil:
+		return errors.Wrbp(r.hbndleWebhook(ctx, j), "Webhook")
+	cbse j.SlbckWebhook != nil:
+		return errors.Wrbp(r.hbndleSlbckWebhook(ctx, j), "SlbckWebhook")
+	defbult:
+		return errors.New("job must be one of type embil, webhook, or slbck webhook")
 	}
 }
 
-func (r *actionRunner) handleEmail(ctx context.Context, j *database.ActionJob) error {
-	s, err := r.CodeMonitorStore.Transact(ctx)
+func (r *bctionRunner) hbndleEmbil(ctx context.Context, j *dbtbbbse.ActionJob) error {
+	s, err := r.CodeMonitorStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
 
-	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	m, err := s.GetActionJobMetbdbtb(ctx, j.ID)
 	if err != nil {
-		return errors.Wrap(err, "GetActionJobMetadata")
+		return errors.Wrbp(err, "GetActionJobMetbdbtb")
 	}
 
-	e, err := s.GetEmailAction(ctx, *j.Email)
+	e, err := s.GetEmbilAction(ctx, *j.Embil)
 	if err != nil {
-		return errors.Wrap(err, "GetEmailAction")
+		return errors.Wrbp(err, "GetEmbilAction")
 	}
 
-	recs, err := s.ListRecipients(ctx, database.ListRecipientsOpts{EmailID: j.Email})
+	recs, err := s.ListRecipients(ctx, dbtbbbse.ListRecipientsOpts{EmbilID: j.Embil})
 	if err != nil {
-		return errors.Wrap(err, "ListRecipients")
+		return errors.Wrbp(err, "ListRecipients")
 	}
 
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externblURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
 		return err
 	}
 
-	args := actionArgs{
+	brgs := bctionArgs{
 		MonitorDescription: m.Description,
 		MonitorID:          m.MonitorID,
-		ExternalURL:        externalURL,
-		UTMSource:          utmSourceEmail,
+		ExternblURL:        externblURL,
+		UTMSource:          utmSourceEmbil,
 		Query:              m.Query,
-		MonitorOwnerName:   m.OwnerName,
+		MonitorOwnerNbme:   m.OwnerNbme,
 		Results:            m.Results,
 		IncludeResults:     e.IncludeResults,
 	}
 
-	data, err := NewTemplateDataForNewSearchResults(args, e)
+	dbtb, err := NewTemplbteDbtbForNewSebrchResults(brgs, e)
 	if err != nil {
-		return errors.Wrap(err, "NewTemplateDataForNewSearchResults")
+		return errors.Wrbp(err, "NewTemplbteDbtbForNewSebrchResults")
 	}
-	for _, rec := range recs {
-		if rec.NamespaceOrgID != nil {
-			// TODO (stefan): Send emails to org members.
+	for _, rec := rbnge recs {
+		if rec.NbmespbceOrgID != nil {
+			// TODO (stefbn): Send embils to org members.
 			continue
 		}
-		if rec.NamespaceUserID == nil {
+		if rec.NbmespbceUserID == nil {
 			return errors.New("nil recipient")
 		}
-		err = SendEmailForNewSearchResult(ctx, database.NewDBWith(log.Scoped("handleEmail", ""), r.CodeMonitorStore), *rec.NamespaceUserID, data)
+		err = SendEmbilForNewSebrchResult(ctx, dbtbbbse.NewDBWith(log.Scoped("hbndleEmbil", ""), r.CodeMonitorStore), *rec.NbmespbceUserID, dbtb)
 		if err != nil {
 			return err
 		}
@@ -286,100 +286,100 @@ func (r *actionRunner) handleEmail(ctx context.Context, j *database.ActionJob) e
 	return nil
 }
 
-func (r *actionRunner) handleWebhook(ctx context.Context, j *database.ActionJob) error {
-	s, err := r.CodeMonitorStore.Transact(ctx)
+func (r *bctionRunner) hbndleWebhook(ctx context.Context, j *dbtbbbse.ActionJob) error {
+	s, err := r.CodeMonitorStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
 
-	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	m, err := s.GetActionJobMetbdbtb(ctx, j.ID)
 	if err != nil {
-		return errors.Wrap(err, "GetActionJobMetadata")
+		return errors.Wrbp(err, "GetActionJobMetbdbtb")
 	}
 
 	w, err := s.GetWebhookAction(ctx, *j.Webhook)
 	if err != nil {
-		return errors.Wrap(err, "GetWebhookAction")
+		return errors.Wrbp(err, "GetWebhookAction")
 	}
 
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externblURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
 		return err
 	}
 
-	args := actionArgs{
+	brgs := bctionArgs{
 		MonitorDescription: m.Description,
 		MonitorID:          w.Monitor,
-		ExternalURL:        externalURL,
+		ExternblURL:        externblURL,
 		UTMSource:          "code-monitor-webhook",
 		Query:              m.Query,
-		MonitorOwnerName:   m.OwnerName,
+		MonitorOwnerNbme:   m.OwnerNbme,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
 	}
 
-	return sendWebhookNotification(ctx, w.URL, args)
+	return sendWebhookNotificbtion(ctx, w.URL, brgs)
 }
 
-func (r *actionRunner) handleSlackWebhook(ctx context.Context, j *database.ActionJob) error {
-	s, err := r.CodeMonitorStore.Transact(ctx)
+func (r *bctionRunner) hbndleSlbckWebhook(ctx context.Context, j *dbtbbbse.ActionJob) error {
+	s, err := r.CodeMonitorStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = s.Done(err) }()
 
-	m, err := s.GetActionJobMetadata(ctx, j.ID)
+	m, err := s.GetActionJobMetbdbtb(ctx, j.ID)
 	if err != nil {
-		return errors.Wrap(err, "GetActionJobMetadata")
+		return errors.Wrbp(err, "GetActionJobMetbdbtb")
 	}
 
-	w, err := s.GetSlackWebhookAction(ctx, *j.SlackWebhook)
+	w, err := s.GetSlbckWebhookAction(ctx, *j.SlbckWebhook)
 	if err != nil {
-		return errors.Wrap(err, "GetSlackWebhookAction")
+		return errors.Wrbp(err, "GetSlbckWebhookAction")
 	}
 
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externblURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
 		return err
 	}
 
-	args := actionArgs{
+	brgs := bctionArgs{
 		MonitorDescription: m.Description,
 		MonitorID:          w.Monitor,
-		ExternalURL:        externalURL,
-		UTMSource:          "code-monitor-slack-webhook",
+		ExternblURL:        externblURL,
+		UTMSource:          "code-monitor-slbck-webhook",
 		Query:              m.Query,
-		MonitorOwnerName:   m.OwnerName,
+		MonitorOwnerNbme:   m.OwnerNbme,
 		Results:            m.Results,
 		IncludeResults:     w.IncludeResults,
 	}
 
-	return sendSlackNotification(ctx, w.URL, args)
+	return sendSlbckNotificbtion(ctx, w.URL, brgs)
 }
 
-type StatusCodeError struct {
+type StbtusCodeError struct {
 	Code   int
-	Status string
+	Stbtus string
 	Body   string
 }
 
-func (s StatusCodeError) Error() string {
-	return fmt.Sprintf("non-200 response %d %s with body %q", s.Code, s.Status, s.Body)
+func (s StbtusCodeError) Error() string {
+	return fmt.Sprintf("non-200 response %d %s with body %q", s.Code, s.Stbtus, s.Body)
 }
 
-func latestResultTime(previousLastResult *time.Time, results []*result.CommitMatch, searchErr error) time.Time {
-	if searchErr != nil || len(results) == 0 {
-		// Error performing the search, or there were no results. Assume the
+func lbtestResultTime(previousLbstResult *time.Time, results []*result.CommitMbtch, sebrchErr error) time.Time {
+	if sebrchErr != nil || len(results) == 0 {
+		// Error performing the sebrch, or there were no results. Assume the
 		// previous info's result time.
-		if previousLastResult != nil {
-			return *previousLastResult
+		if previousLbstResult != nil {
+			return *previousLbstResult
 		}
 		return time.Now()
 	}
 
 	if results[0].Commit.Committer != nil {
-		return results[0].Commit.Committer.Date
+		return results[0].Commit.Committer.Dbte
 	}
 	return time.Now()
 }

@@ -1,31 +1,31 @@
-package matcher
+pbckbge mbtcher
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewCVEMatcher(store store.Store, observationCtx *observation.Context, config *Config) goroutine.BackgroundRoutine {
-	metrics := newMetrics(observationCtx)
+func NewCVEMbtcher(store store.Store, observbtionCtx *observbtion.Context, config *Config) goroutine.BbckgroundRoutine {
+	metrics := newMetrics(observbtionCtx)
 
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(context.Background()),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			numReferencesScanned, numVulnerabilityMatches, err := store.ScanMatches(ctx, config.BatchSize)
+		bctor.WithInternblActor(context.Bbckground()),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			numReferencesScbnned, numVulnerbbilityMbtches, err := store.ScbnMbtches(ctx, config.BbtchSize)
 			if err != nil {
 				return err
 			}
 
-			metrics.numReferencesScanned.Add(float64(numReferencesScanned))
-			metrics.numVulnerabilityMatches.Add(float64(numVulnerabilityMatches))
+			metrics.numReferencesScbnned.Add(flobt64(numReferencesScbnned))
+			metrics.numVulnerbbilityMbtches.Add(flobt64(numVulnerbbilityMbtches))
 			return nil
 		}),
-		goroutine.WithName("codeintel.sentinel-cve-matcher"),
-		goroutine.WithDescription("Matches SCIP indexes against known vulnerabilities."),
-		goroutine.WithInterval(config.MatcherInterval),
+		goroutine.WithNbme("codeintel.sentinel-cve-mbtcher"),
+		goroutine.WithDescription("Mbtches SCIP indexes bgbinst known vulnerbbilities."),
+		goroutine.WithIntervbl(config.MbtcherIntervbl),
 	)
 }

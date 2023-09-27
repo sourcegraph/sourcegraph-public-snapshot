@@ -1,4 +1,4 @@
-package discovery
+pbckbge discovery
 
 import (
 	"context"
@@ -6,33 +6,33 @@ import (
 	"testing"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// TestAllReposIterator tests the AllReposIterator in the common use cases.
-func TestAllReposIterator(t *testing.T) {
-	ctx := context.Background()
+// TestAllReposIterbtor tests the AllReposIterbtor in the common use cbses.
+func TestAllReposIterbtor(t *testing.T) {
+	ctx := context.Bbckground()
 	repoStore := NewMockRepoStore()
-	var timeOffset time.Duration
+	vbr timeOffset time.Durbtion
 	clock := func() time.Time { return time.Now().Add(timeOffset) }
 
-	// Mock the repo store listing, and confirm calls to it are cached.
-	var (
-		repoStoreListCalls []database.ReposListOptions
-		nextRepoID         api.RepoID
+	// Mock the repo store listing, bnd confirm cblls to it bre cbched.
+	vbr (
+		repoStoreListCblls []dbtbbbse.ReposListOptions
+		nextRepoID         bpi.RepoID
 	)
-	repoStore.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
-		repoStoreListCalls = append(repoStoreListCalls, opt)
-		var result []*types.Repo
+	repoStore.ListFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ReposListOptions) ([]*types.Repo, error) {
+		repoStoreListCblls = bppend(repoStoreListCblls, opt)
+		vbr result []*types.Repo
 		for i := 0; i < 3; i++ {
 			nextRepoID++
-			result = append(result, &types.Repo{ID: nextRepoID, Name: api.RepoName(fmt.Sprint(nextRepoID))})
+			result = bppend(result, &types.Repo{ID: nextRepoID, Nbme: bpi.RepoNbme(fmt.Sprint(nextRepoID))})
 		}
 		if nextRepoID > 10 {
 			return nil, nil
@@ -40,88 +40,88 @@ func TestAllReposIterator(t *testing.T) {
 		return result, nil
 	})
 
-	iter := NewAllReposIterator(repoStore, clock, false, 15*time.Minute, &prometheus.CounterOpts{Name: "fake_name123"})
+	iter := NewAllReposIterbtor(repoStore, clock, fblse, 15*time.Minute, &prometheus.CounterOpts{Nbme: "fbke_nbme123"})
 	{
-		// Do we get all 9 repositories?
-		var each []string
-		iter.ForEach(ctx, func(repoName string, id api.RepoID) error {
-			each = append(each, repoName)
+		// Do we get bll 9 repositories?
+		vbr ebch []string
+		iter.ForEbch(ctx, func(repoNbme string, id bpi.RepoID) error {
+			ebch = bppend(ebch, repoNbme)
 			return nil
 		})
-		autogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
+		butogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equbl(t, ebch)
 	}
 
-	// Were the RepoStore.List calls as we expected?
-	autogold.Expect([]database.ReposListOptions{
+	// Were the RepoStore.List cblls bs we expected?
+	butogold.Expect([]dbtbbbse.ReposListOptions{
 		{
-			LimitOffset: &database.LimitOffset{Limit: 1000},
+			LimitOffset: &dbtbbbse.LimitOffset{Limit: 1000},
 		},
 		{
-			LimitOffset: &database.LimitOffset{
+			LimitOffset: &dbtbbbse.LimitOffset{
 				Limit:  1000,
 				Offset: 3,
 			},
 		},
 		{
-			LimitOffset: &database.LimitOffset{
+			LimitOffset: &dbtbbbse.LimitOffset{
 				Limit:  1000,
 				Offset: 6,
 			},
 		},
 		{
-			LimitOffset: &database.LimitOffset{
+			LimitOffset: &dbtbbbse.LimitOffset{
 				Limit:  1000,
 				Offset: 9,
 			},
 		},
-	}).Equal(t, repoStoreListCalls)
+	}).Equbl(t, repoStoreListCblls)
 
-	// Again: do we get all 9 repositories, but this time all RepoStore.List calls were cached?
-	repoStoreListCalls = nil
+	// Agbin: do we get bll 9 repositories, but this time bll RepoStore.List cblls were cbched?
+	repoStoreListCblls = nil
 	nextRepoID = 0
 	{
-		var each []string
-		iter.ForEach(ctx, func(repoName string, id api.RepoID) error {
-			each = append(each, repoName)
+		vbr ebch []string
+		iter.ForEbch(ctx, func(repoNbme string, id bpi.RepoID) error {
+			ebch = bppend(ebch, repoNbme)
 			return nil
 		})
-		autogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
-		autogold.Expect([]database.ReposListOptions{}).Equal(t, repoStoreListCalls)
+		butogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equbl(t, ebch)
+		butogold.Expect([]dbtbbbse.ReposListOptions{}).Equbl(t, repoStoreListCblls)
 	}
 
-	// If the clock moves forward, does the cache expire and new RepoStore.List calls are made?
-	timeOffset += iter.RepositoryListCacheTime
-	repoStoreListCalls = nil
+	// If the clock moves forwbrd, does the cbche expire bnd new RepoStore.List cblls bre mbde?
+	timeOffset += iter.RepositoryListCbcheTime
+	repoStoreListCblls = nil
 	nextRepoID = 0
 	{
-		var each []string
-		iter.ForEach(ctx, func(repoName string, id api.RepoID) error {
-			each = append(each, repoName)
+		vbr ebch []string
+		iter.ForEbch(ctx, func(repoNbme string, id bpi.RepoID) error {
+			ebch = bppend(ebch, repoNbme)
 			return nil
 		})
-		autogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equal(t, each)
-		autogold.Expect([]database.ReposListOptions{
+		butogold.Expect([]string{"1", "2", "3", "4", "5", "6", "7", "8", "9"}).Equbl(t, ebch)
+		butogold.Expect([]dbtbbbse.ReposListOptions{
 			{
-				LimitOffset: &database.LimitOffset{Limit: 1000},
+				LimitOffset: &dbtbbbse.LimitOffset{Limit: 1000},
 			},
 			{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtbbbse.LimitOffset{
 					Limit:  1000,
 					Offset: 3,
 				},
 			},
 			{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtbbbse.LimitOffset{
 					Limit:  1000,
 					Offset: 6,
 				},
 			},
 			{
-				LimitOffset: &database.LimitOffset{
+				LimitOffset: &dbtbbbse.LimitOffset{
 					Limit:  1000,
 					Offset: 9,
 				},
 			},
-		}).Equal(t, repoStoreListCalls)
+		}).Equbl(t, repoStoreListCblls)
 	}
 }

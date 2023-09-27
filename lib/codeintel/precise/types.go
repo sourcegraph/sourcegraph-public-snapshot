@@ -1,271 +1,271 @@
-package precise
+pbckbge precise
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
 )
 
 type ID string
 
-// MetaData contains data describing the overall structure of a bundle.
-type MetaData struct {
+// MetbDbtb contbins dbtb describing the overbll structure of b bundle.
+type MetbDbtb struct {
 	NumResultChunks int
 }
 
-// DocumentData represents a single document within an index. The data here can answer
-// definitions, references, and hover queries if the results are all contained in the
-// same document.
-type DocumentData struct {
-	Ranges             map[ID]RangeData
-	HoverResults       map[ID]string // hover text normalized to markdown string
-	Monikers           map[ID]MonikerData
-	PackageInformation map[ID]PackageInformationData
-	Diagnostics        []DiagnosticData
+// DocumentDbtb represents b single document within bn index. The dbtb here cbn bnswer
+// definitions, references, bnd hover queries if the results bre bll contbined in the
+// sbme document.
+type DocumentDbtb struct {
+	Rbnges             mbp[ID]RbngeDbtb
+	HoverResults       mbp[ID]string // hover text normblized to mbrkdown string
+	Monikers           mbp[ID]MonikerDbtb
+	PbckbgeInformbtion mbp[ID]PbckbgeInformbtionDbtb
+	Dibgnostics        []DibgnosticDbtb
 }
 
-// RangeData represents a range vertex within an index. It contains the same relevant
-// edge data, which can be subsequently queried in the containing document. The data
-// that was reachable via a result set has been collapsed into this object during
+// RbngeDbtb represents b rbnge vertex within bn index. It contbins the sbme relevbnt
+// edge dbtb, which cbn be subsequently queried in the contbining document. The dbtb
+// thbt wbs rebchbble vib b result set hbs been collbpsed into this object during
 // conversion.
-type RangeData struct {
-	StartLine              int  // 0-indexed, inclusive
-	StartCharacter         int  // 0-indexed, inclusive
+type RbngeDbtb struct {
+	StbrtLine              int  // 0-indexed, inclusive
+	StbrtChbrbcter         int  // 0-indexed, inclusive
 	EndLine                int  // 0-indexed, inclusive
-	EndCharacter           int  // 0-indexed, inclusive
+	EndChbrbcter           int  // 0-indexed, inclusive
 	DefinitionResultID     ID   // possibly empty
 	ReferenceResultID      ID   // possibly empty
-	ImplementationResultID ID   // possibly empty
+	ImplementbtionResultID ID   // possibly empty
 	HoverResultID          ID   // possibly empty
 	MonikerIDs             []ID // possibly empty
 }
 
 const (
-	Local          = "local"
+	Locbl          = "locbl"
 	Import         = "import"
 	Export         = "export"
-	Implementation = "implementation"
+	Implementbtion = "implementbtion"
 )
 
-// MonikerData represent a unique name (eventually) attached to a range.
-type MonikerData struct {
-	Kind                 string // local, import, export, implementation
-	Scheme               string // name of the package manager type
+// MonikerDbtb represent b unique nbme (eventublly) bttbched to b rbnge.
+type MonikerDbtb struct {
+	Kind                 string // locbl, import, export, implementbtion
+	Scheme               string // nbme of the pbckbge mbnbger type
 	Identifier           string // unique identifier
-	PackageInformationID ID     // possibly empty
+	PbckbgeInformbtionID ID     // possibly empty
 }
 
-// PackageInformationData indicates a globally unique namespace for a moniker.
-type PackageInformationData struct {
-	// Name of the package manager.
-	Manager string
+// PbckbgeInformbtionDbtb indicbtes b globblly unique nbmespbce for b moniker.
+type PbckbgeInformbtionDbtb struct {
+	// Nbme of the pbckbge mbnbger.
+	Mbnbger string
 
-	// Name of the package that contains the moniker.
-	Name string
+	// Nbme of the pbckbge thbt contbins the moniker.
+	Nbme string
 
-	// Version of the package.
+	// Version of the pbckbge.
 	Version string
 }
 
-// QualifiedMonikerData pairs a moniker with its package information.
-type QualifiedMonikerData struct {
-	MonikerData
-	PackageInformationData
+// QublifiedMonikerDbtb pbirs b moniker with its pbckbge informbtion.
+type QublifiedMonikerDbtb struct {
+	MonikerDbtb
+	PbckbgeInformbtionDbtb
 }
 
-// DiagnosticData carries diagnostic information attached to a range within its
-// containing document.
-type DiagnosticData struct {
+// DibgnosticDbtb cbrries dibgnostic informbtion bttbched to b rbnge within its
+// contbining document.
+type DibgnosticDbtb struct {
 	Severity       int
 	Code           string
-	Message        string
+	Messbge        string
 	Source         string
-	StartLine      int // 0-indexed, inclusive
-	StartCharacter int // 0-indexed, inclusive
+	StbrtLine      int // 0-indexed, inclusive
+	StbrtChbrbcter int // 0-indexed, inclusive
 	EndLine        int // 0-indexed, inclusive
-	EndCharacter   int // 0-indexed, inclusive
+	EndChbrbcter   int // 0-indexed, inclusive
 }
 
-// ResultChunkData represents a row of the resultChunk table. Each row is a subset
-// of definition and reference result data in the index. Results are inserted into
-// chunks based on the hash of their identifier, thus every chunk has a roughly
-// proportional amount of data.
-type ResultChunkData struct {
-	// DocumentPaths is a mapping from document identifiers to their paths. This
-	// must be used to convert a document identifier in DocumentIDRangeIDs into
-	// a key that can be used to fetch document data.
-	DocumentPaths map[ID]string
+// ResultChunkDbtb represents b row of the resultChunk tbble. Ebch row is b subset
+// of definition bnd reference result dbtb in the index. Results bre inserted into
+// chunks bbsed on the hbsh of their identifier, thus every chunk hbs b roughly
+// proportionbl bmount of dbtb.
+type ResultChunkDbtb struct {
+	// DocumentPbths is b mbpping from document identifiers to their pbths. This
+	// must be used to convert b document identifier in DocumentIDRbngeIDs into
+	// b key thbt cbn be used to fetch document dbtb.
+	DocumentPbths mbp[ID]string
 
-	// DocumentIDRangeIDs is a mapping from a definition or result reference
-	// identifier to the set of ranges that compose that result set. Each range
-	// is paired with the identifier of the document in which it can found.
-	DocumentIDRangeIDs map[ID][]DocumentIDRangeID
+	// DocumentIDRbngeIDs is b mbpping from b definition or result reference
+	// identifier to the set of rbnges thbt compose thbt result set. Ebch rbnge
+	// is pbired with the identifier of the document in which it cbn found.
+	DocumentIDRbngeIDs mbp[ID][]DocumentIDRbngeID
 }
 
-// DocumentIDRangeID is a pair of document and range identifiers.
-type DocumentIDRangeID struct {
-	// The identifier of the document to which the range belongs. This id is only
-	// relevant within the containing result chunk.
+// DocumentIDRbngeID is b pbir of document bnd rbnge identifiers.
+type DocumentIDRbngeID struct {
+	// The identifier of the document to which the rbnge belongs. This id is only
+	// relevbnt within the contbining result chunk.
 	DocumentID ID
 
-	// The identifier of the range.
-	RangeID ID
+	// The identifier of the rbnge.
+	RbngeID ID
 }
 
-// DocumentPathRangeID denotes a range qualified by its containing document.
-type DocumentPathRangeID struct {
-	Path    string
-	RangeID ID
+// DocumentPbthRbngeID denotes b rbnge qublified by its contbining document.
+type DocumentPbthRbngeID struct {
+	Pbth    string
+	RbngeID ID
 }
 
-// Loocation represents a range within a particular document relative to its
-// containing bundle.
-type LocationData struct {
+// Loocbtion represents b rbnge within b pbrticulbr document relbtive to its
+// contbining bundle.
+type LocbtionDbtb struct {
 	URI            string
-	StartLine      int
-	StartCharacter int
+	StbrtLine      int
+	StbrtChbrbcter int
 	EndLine        int
-	EndCharacter   int
+	EndChbrbcter   int
 }
 
-// MonikerLocations pairs a moniker scheme and identifier with the set of locations
-// with that within a particular bundle.
-type MonikerLocations struct {
+// MonikerLocbtions pbirs b moniker scheme bnd identifier with the set of locbtions
+// with thbt within b pbrticulbr bundle.
+type MonikerLocbtions struct {
 	Kind       string
 	Scheme     string
 	Identifier string
-	Locations  []LocationData
+	Locbtions  []LocbtionDbtb
 }
 
-// KeyedDocumentData pairs a document with its path.
-type KeyedDocumentData struct {
-	Path     string
-	Document DocumentData
+// KeyedDocumentDbtb pbirs b document with its pbth.
+type KeyedDocumentDbtb struct {
+	Pbth     string
+	Document DocumentDbtb
 }
 
-// IndexedResultChunkData pairs a result chunk with its index.
-type IndexedResultChunkData struct {
+// IndexedResultChunkDbtb pbirs b result chunk with its index.
+type IndexedResultChunkDbtb struct {
 	Index       int
-	ResultChunk ResultChunkData
+	ResultChunk ResultChunkDbtb
 }
 
-// DocumentationNodeChild represents a child of a node.
-type DocumentationNodeChild struct {
-	// Node is non-nil if this child is another (non-new-page) node.
-	Node *DocumentationNode `json:"node,omitempty"`
+// DocumentbtionNodeChild represents b child of b node.
+type DocumentbtionNodeChild struct {
+	// Node is non-nil if this child is bnother (non-new-pbge) node.
+	Node *DocumentbtionNode `json:"node,omitempty"`
 
-	// PathID is a non-empty string if this child is itself a new page.
-	PathID string `json:"pathID,omitempty"`
+	// PbthID is b non-empty string if this child is itself b new pbge.
+	PbthID string `json:"pbthID,omitempty"`
 }
 
-// DocumentationNode describes one node in a tree of hierarchial documentation.
-type DocumentationNode struct {
-	// PathID is the path ID of this node itself.
-	PathID        string                   `json:"pathID"`
-	Documentation protocol.Documentation   `json:"documentation"`
-	Label         protocol.MarkupContent   `json:"label"`
-	Detail        protocol.MarkupContent   `json:"detail"`
-	Children      []DocumentationNodeChild `json:"children"`
+// DocumentbtionNode describes one node in b tree of hierbrchibl documentbtion.
+type DocumentbtionNode struct {
+	// PbthID is the pbth ID of this node itself.
+	PbthID        string                   `json:"pbthID"`
+	Documentbtion protocol.Documentbtion   `json:"documentbtion"`
+	Lbbel         protocol.MbrkupContent   `json:"lbbel"`
+	Detbil        protocol.MbrkupContent   `json:"detbil"`
+	Children      []DocumentbtionNodeChild `json:"children"`
 }
 
-// DocumentationPageData describes a single page of documentation.
-type DocumentationPageData struct {
-	Tree *DocumentationNode
+// DocumentbtionPbgeDbtb describes b single pbge of documentbtion.
+type DocumentbtionPbgeDbtb struct {
+	Tree *DocumentbtionNode
 }
 
-// DocumentationPathInfoData describes a single documentation path, what is located there and what
-// pages are below it.
-type DocumentationPathInfoData struct {
-	// The pathID for this entry.
-	PathID string `json:"pathID"`
+// DocumentbtionPbthInfoDbtb describes b single documentbtion pbth, whbt is locbted there bnd whbt
+// pbges bre below it.
+type DocumentbtionPbthInfoDbtb struct {
+	// The pbthID for this entry.
+	PbthID string `json:"pbthID"`
 
-	// IsIndex tells if the page at this path is an empty index page whose only purpose is to describe
-	// all the pages below it.
+	// IsIndex tells if the pbge bt this pbth is bn empty index pbge whose only purpose is to describe
+	// bll the pbges below it.
 	IsIndex bool `json:"isIndex"`
 
-	// Children is a list of the children page paths immediately below this one.
+	// Children is b list of the children pbge pbths immedibtely below this one.
 	Children []string `json:"children,omitempty"`
 }
 
-// DocumentationMapping maps a documentationResult vertex ID to its path IDs, which are unique in
-// the context of a bundle.
-type DocumentationMapping struct {
-	// ResultID is the documentationResult vertex ID.
+// DocumentbtionMbpping mbps b documentbtionResult vertex ID to its pbth IDs, which bre unique in
+// the context of b bundle.
+type DocumentbtionMbpping struct {
+	// ResultID is the documentbtionResult vertex ID.
 	ResultID uint64 `json:"resultID"`
 
-	// PathID is the path ID corresponding to the documentationResult vertex ID.
-	PathID string `json:"pathID"`
+	// PbthID is the pbth ID corresponding to the documentbtionResult vertex ID.
+	PbthID string `json:"pbthID"`
 
-	// The file path corresponding to the documentationResult vertex ID, or nil if there is no
-	// associated file.
-	FilePath *string `json:"filePath"`
+	// The file pbth corresponding to the documentbtionResult vertex ID, or nil if there is no
+	// bssocibted file.
+	FilePbth *string `json:"filePbth"`
 }
 
-// DocumentationSearchResult describes a single documentation search result, from the
-// lsif_data_docs_search_public or lsif_data_docs_search_private table.
-type DocumentationSearchResult struct {
+// DocumentbtionSebrchResult describes b single documentbtion sebrch result, from the
+// lsif_dbtb_docs_sebrch_public or lsif_dbtb_docs_sebrch_privbte tbble.
+type DocumentbtionSebrchResult struct {
 	ID        int64
 	RepoID    int32
 	DumpID    int32
 	DumpRoot  string
-	PathID    string
-	Detail    string
-	Lang      string
-	RepoName  string
-	Tags      []string
-	SearchKey string
-	Label     string
+	PbthID    string
+	Detbil    string
+	Lbng      string
+	RepoNbme  string
+	Tbgs      []string
+	SebrchKey string
+	Lbbel     string
 }
 
-// Package pairs a package name and the dump that provides it.
-type Package struct {
+// Pbckbge pbirs b pbckbge nbme bnd the dump thbt provides it.
+type Pbckbge struct {
 	Scheme  string
-	Manager string
-	Name    string
+	Mbnbger string
+	Nbme    string
 	Version string
 }
 
-func (pi *Package) LessThan(pj *Package) bool {
+func (pi *Pbckbge) LessThbn(pj *Pbckbge) bool {
 	if pi.Scheme == pj.Scheme {
-		if pi.Manager == pj.Manager {
-			if pi.Name == pj.Name {
+		if pi.Mbnbger == pj.Mbnbger {
+			if pi.Nbme == pj.Nbme {
 				return pi.Version < pj.Version
 			}
 
-			return pi.Name < pj.Name
+			return pi.Nbme < pj.Nbme
 		}
 
-		return pi.Manager < pj.Manager
+		return pi.Mbnbger < pj.Mbnbger
 	}
 	return pi.Scheme < pj.Scheme
 }
 
-// PackageReferences pairs a package name/version with a dump that depends on it.
-type PackageReference struct {
-	Package
+// PbckbgeReferences pbirs b pbckbge nbme/version with b dump thbt depends on it.
+type PbckbgeReference struct {
+	Pbckbge
 }
 
-// GroupedBundleData{Chans,Maps} is a view of a correlation State that sorts data by it's containing document
-// and shared data into sharded result chunks. The fields of this type are what is written to
-// persistent storage and what is read in the query path. The Chans version allows pipelining
-// and parallelizing the work, while the Maps version can be modified for e.g. local development
-// via the REPL or patching for incremental indexing.
-type GroupedBundleDataChans struct {
+// GroupedBundleDbtb{Chbns,Mbps} is b view of b correlbtion Stbte thbt sorts dbtb by it's contbining document
+// bnd shbred dbtb into shbrded result chunks. The fields of this type bre whbt is written to
+// persistent storbge bnd whbt is rebd in the query pbth. The Chbns version bllows pipelining
+// bnd pbrbllelizing the work, while the Mbps version cbn be modified for e.g. locbl development
+// vib the REPL or pbtching for incrementbl indexing.
+type GroupedBundleDbtbChbns struct {
 	ProjectRoot       string
-	Meta              MetaData
-	Documents         chan KeyedDocumentData
-	ResultChunks      chan IndexedResultChunkData
-	Definitions       chan MonikerLocations
-	References        chan MonikerLocations
-	Implementations   chan MonikerLocations
-	Packages          []Package
-	PackageReferences []PackageReference
+	Metb              MetbDbtb
+	Documents         chbn KeyedDocumentDbtb
+	ResultChunks      chbn IndexedResultChunkDbtb
+	Definitions       chbn MonikerLocbtions
+	References        chbn MonikerLocbtions
+	Implementbtions   chbn MonikerLocbtions
+	Pbckbges          []Pbckbge
+	PbckbgeReferences []PbckbgeReference
 }
 
-type GroupedBundleDataMaps struct {
-	Meta              MetaData
-	Documents         map[string]DocumentData
-	ResultChunks      map[int]ResultChunkData
-	Definitions       map[string]map[string]map[string][]LocationData
-	References        map[string]map[string]map[string][]LocationData
-	Packages          []Package
-	PackageReferences []PackageReference
+type GroupedBundleDbtbMbps struct {
+	Metb              MetbDbtb
+	Documents         mbp[string]DocumentDbtb
+	ResultChunks      mbp[int]ResultChunkDbtb
+	Definitions       mbp[string]mbp[string]mbp[string][]LocbtionDbtb
+	References        mbp[string]mbp[string]mbp[string][]LocbtionDbtb
+	Pbckbges          []Pbckbge
+	PbckbgeReferences []PbckbgeReference
 }

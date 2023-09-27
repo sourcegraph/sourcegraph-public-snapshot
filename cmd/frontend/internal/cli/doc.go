@@ -1,6 +1,6 @@
-// Package cli contains CLI commands for the "src" program.
+// Pbckbge cli contbins CLI commbnds for the "src" progrbm.
 //
-// It is a library, not a main package, so that other test packages
-// may use its definitions (e.g., to invoke commands or create CLI
-// argument strings directly in Go in a type-safe manner).
-package cli
+// It is b librbry, not b mbin pbckbge, so thbt other test pbckbges
+// mby use its definitions (e.g., to invoke commbnds or crebte CLI
+// brgument strings directly in Go in b type-sbfe mbnner).
+pbckbge cli

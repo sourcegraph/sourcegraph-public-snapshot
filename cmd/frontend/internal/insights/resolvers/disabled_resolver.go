@@ -1,116 +1,116 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type disabledResolver struct {
-	reason string
+type disbbledResolver struct {
+	rebson string
 }
 
-func NewDisabledResolver(reason string) graphqlbackend.InsightsResolver {
-	return &disabledResolver{reason}
+func NewDisbbledResolver(rebson string) grbphqlbbckend.InsightsResolver {
+	return &disbbledResolver{rebson}
 }
 
-func (r *disabledResolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.InsightsDashboardsArgs) (graphqlbackend.InsightsDashboardConnectionResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) InsightsDbshbobrds(ctx context.Context, brgs *grbphqlbbckend.InsightsDbshbobrdsArgs) (grbphqlbbckend.InsightsDbshbobrdConnectionResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) CreateInsightsDashboard(ctx context.Context, args *graphqlbackend.CreateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) CrebteInsightsDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.CrebteInsightsDbshbobrdArgs) (grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) UpdateInsightsDashboard(ctx context.Context, args *graphqlbackend.UpdateInsightsDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) UpdbteInsightsDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.UpdbteInsightsDbshbobrdArgs) (grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) DeleteInsightsDashboard(ctx context.Context, args *graphqlbackend.DeleteInsightsDashboardArgs) (*graphqlbackend.EmptyResponse, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) DeleteInsightsDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.DeleteInsightsDbshbobrdArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) AddInsightViewToDashboard(ctx context.Context, args *graphqlbackend.AddInsightViewToDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) AddInsightViewToDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.AddInsightViewToDbshbobrdArgs) (grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) RemoveInsightViewFromDashboard(ctx context.Context, args *graphqlbackend.RemoveInsightViewFromDashboardArgs) (graphqlbackend.InsightsDashboardPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) RemoveInsightViewFromDbshbobrd(ctx context.Context, brgs *grbphqlbbckend.RemoveInsightViewFromDbshbobrdArgs) (grbphqlbbckend.InsightsDbshbobrdPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) UpdateInsightSeries(ctx context.Context, args *graphqlbackend.UpdateInsightSeriesArgs) (graphqlbackend.InsightSeriesMetadataPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) UpdbteInsightSeries(ctx context.Context, brgs *grbphqlbbckend.UpdbteInsightSeriesArgs) (grbphqlbbckend.InsightSeriesMetbdbtbPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) InsightSeriesQueryStatus(ctx context.Context) ([]graphqlbackend.InsightSeriesQueryStatusResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) InsightSeriesQueryStbtus(ctx context.Context) ([]grbphqlbbckend.InsightSeriesQueryStbtusResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) CreateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.CreateLineChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) CrebteLineChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.CrebteLineChbrtSebrchInsightArgs) (grbphqlbbckend.InsightViewPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) UpdateLineChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdateLineChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) UpdbteLineChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.UpdbteLineChbrtSebrchInsightArgs) (grbphqlbbckend.InsightViewPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) CreatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.CreatePieChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) CrebtePieChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.CrebtePieChbrtSebrchInsightArgs) (grbphqlbbckend.InsightViewPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) UpdatePieChartSearchInsight(ctx context.Context, args *graphqlbackend.UpdatePieChartSearchInsightArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) UpdbtePieChbrtSebrchInsight(ctx context.Context, brgs *grbphqlbbckend.UpdbtePieChbrtSebrchInsightArgs) (grbphqlbbckend.InsightViewPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) InsightViews(ctx context.Context, args *graphqlbackend.InsightViewQueryArgs) (graphqlbackend.InsightViewConnectionResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) InsightViews(ctx context.Context, brgs *grbphqlbbckend.InsightViewQueryArgs) (grbphqlbbckend.InsightViewConnectionResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) DeleteInsightView(ctx context.Context, args *graphqlbackend.DeleteInsightViewArgs) (*graphqlbackend.EmptyResponse, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) DeleteInsightView(ctx context.Context, brgs *grbphqlbbckend.DeleteInsightViewArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) SearchInsightLivePreview(ctx context.Context, args graphqlbackend.SearchInsightLivePreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) SebrchInsightLivePreview(ctx context.Context, brgs grbphqlbbckend.SebrchInsightLivePreviewArgs) ([]grbphqlbbckend.SebrchInsightLivePreviewSeriesResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) SearchInsightPreview(ctx context.Context, args graphqlbackend.SearchInsightPreviewArgs) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) SebrchInsightPreview(ctx context.Context, brgs grbphqlbbckend.SebrchInsightPreviewArgs) ([]grbphqlbbckend.SebrchInsightLivePreviewSeriesResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) SearchQueryAggregate(ctx context.Context, args graphqlbackend.SearchQueryArgs) (graphqlbackend.SearchQueryAggregateResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) SebrchQueryAggregbte(ctx context.Context, brgs grbphqlbbckend.SebrchQueryArgs) (grbphqlbbckend.SebrchQueryAggregbteResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) InsightViewDebug(ctx context.Context, args graphqlbackend.InsightViewDebugArgs) (graphqlbackend.InsightViewDebugResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) InsightViewDebug(ctx context.Context, brgs grbphqlbbckend.InsightViewDebugArgs) (grbphqlbbckend.InsightViewDebugResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) SaveInsightAsNewView(ctx context.Context, args graphqlbackend.SaveInsightAsNewViewArgs) (graphqlbackend.InsightViewPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) SbveInsightAsNewView(ctx context.Context, brgs grbphqlbbckend.SbveInsightAsNewViewArgs) (grbphqlbbckend.InsightViewPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) ValidateScopedInsightQuery(ctx context.Context, args graphqlbackend.ValidateScopedInsightQueryArgs) (graphqlbackend.ScopedInsightQueryPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) VblidbteScopedInsightQuery(ctx context.Context, brgs grbphqlbbckend.VblidbteScopedInsightQueryArgs) (grbphqlbbckend.ScopedInsightQueryPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) PreviewRepositoriesFromQuery(ctx context.Context, args graphqlbackend.PreviewRepositoriesFromQueryArgs) (graphqlbackend.RepositoryPreviewPayloadResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) PreviewRepositoriesFromQuery(ctx context.Context, brgs grbphqlbbckend.PreviewRepositoriesFromQueryArgs) (grbphqlbbckend.RepositoryPreviewPbylobdResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) InsightAdminBackfillQueue(ctx context.Context, args *graphqlbackend.AdminBackfillQueueArgs) (*graphqlutil.ConnectionResolver[*graphqlbackend.BackfillQueueItemResolver], error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) InsightAdminBbckfillQueue(ctx context.Context, brgs *grbphqlbbckend.AdminBbckfillQueueArgs) (*grbphqlutil.ConnectionResolver[*grbphqlbbckend.BbckfillQueueItemResolver], error) {
+	return nil, errors.New(r.rebson)
 }
-func (r *disabledResolver) RetryInsightSeriesBackfill(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
-	return nil, errors.New(r.reason)
-}
-
-func (r *disabledResolver) MoveInsightSeriesBackfillToFrontOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) RetryInsightSeriesBbckfill(ctx context.Context, brgs *grbphqlbbckend.BbckfillArgs) (*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	return nil, errors.New(r.rebson)
 }
 
-func (r *disabledResolver) MoveInsightSeriesBackfillToBackOfQueue(ctx context.Context, args *graphqlbackend.BackfillArgs) (*graphqlbackend.BackfillQueueItemResolver, error) {
-	return nil, errors.New(r.reason)
+func (r *disbbledResolver) MoveInsightSeriesBbckfillToFrontOfQueue(ctx context.Context, brgs *grbphqlbbckend.BbckfillArgs) (*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	return nil, errors.New(r.rebson)
+}
+
+func (r *disbbledResolver) MoveInsightSeriesBbckfillToBbckOfQueue(ctx context.Context, brgs *grbphqlbbckend.BbckfillArgs) (*grbphqlbbckend.BbckfillQueueItemResolver, error) {
+	return nil, errors.New(r.rebson)
 }

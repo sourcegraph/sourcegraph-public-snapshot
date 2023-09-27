@@ -1,52 +1,52 @@
-package sentinel
+pbckbge sentinel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type Service struct {
 	store      store.Store
-	operations *operations
+	operbtions *operbtions
 }
 
 func newService(
-	observationCtx *observation.Context,
+	observbtionCtx *observbtion.Context,
 	store store.Store,
 ) *Service {
 	return &Service{
 		store:      store,
-		operations: newOperations(observationCtx),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }
 
-func (s *Service) GetVulnerabilitiesByIDs(ctx context.Context, ids ...int) ([]shared.Vulnerability, error) {
-	return s.store.GetVulnerabilitiesByIDs(ctx, ids...)
+func (s *Service) GetVulnerbbilitiesByIDs(ctx context.Context, ids ...int) ([]shbred.Vulnerbbility, error) {
+	return s.store.GetVulnerbbilitiesByIDs(ctx, ids...)
 }
 
-func (s *Service) VulnerabilityByID(ctx context.Context, id int) (shared.Vulnerability, bool, error) {
-	return s.store.VulnerabilityByID(ctx, id)
+func (s *Service) VulnerbbilityByID(ctx context.Context, id int) (shbred.Vulnerbbility, bool, error) {
+	return s.store.VulnerbbilityByID(ctx, id)
 }
 
-func (s *Service) VulnerabilityMatchByID(ctx context.Context, id int) (shared.VulnerabilityMatch, bool, error) {
-	return s.store.VulnerabilityMatchByID(ctx, id)
+func (s *Service) VulnerbbilityMbtchByID(ctx context.Context, id int) (shbred.VulnerbbilityMbtch, bool, error) {
+	return s.store.VulnerbbilityMbtchByID(ctx, id)
 }
 
-func (s *Service) GetVulnerabilities(ctx context.Context, args shared.GetVulnerabilitiesArgs) ([]shared.Vulnerability, int, error) {
-	return s.store.GetVulnerabilities(ctx, args)
+func (s *Service) GetVulnerbbilities(ctx context.Context, brgs shbred.GetVulnerbbilitiesArgs) ([]shbred.Vulnerbbility, int, error) {
+	return s.store.GetVulnerbbilities(ctx, brgs)
 }
 
-func (s *Service) GetVulnerabilityMatches(ctx context.Context, args shared.GetVulnerabilityMatchesArgs) ([]shared.VulnerabilityMatch, int, error) {
-	return s.store.GetVulnerabilityMatches(ctx, args)
+func (s *Service) GetVulnerbbilityMbtches(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesArgs) ([]shbred.VulnerbbilityMbtch, int, error) {
+	return s.store.GetVulnerbbilityMbtches(ctx, brgs)
 }
 
-func (s *Service) GetVulnerabilityMatchesSummaryCounts(ctx context.Context) (shared.GetVulnerabilityMatchesSummaryCounts, error) {
-	return s.store.GetVulnerabilityMatchesSummaryCount(ctx)
+func (s *Service) GetVulnerbbilityMbtchesSummbryCounts(ctx context.Context) (shbred.GetVulnerbbilityMbtchesSummbryCounts, error) {
+	return s.store.GetVulnerbbilityMbtchesSummbryCount(ctx)
 }
 
-func (s *Service) GetVulnerabilityMatchesCountByRepository(ctx context.Context, args shared.GetVulnerabilityMatchesCountByRepositoryArgs) ([]shared.VulnerabilityMatchesByRepository, int, error) {
-	return s.store.GetVulnerabilityMatchesCountByRepository(ctx, args)
+func (s *Service) GetVulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs shbred.GetVulnerbbilityMbtchesCountByRepositoryArgs) ([]shbred.VulnerbbilityMbtchesByRepository, int, error) {
+	return s.store.GetVulnerbbilityMbtchesCountByRepository(ctx, brgs)
 }

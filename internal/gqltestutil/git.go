@@ -1,27 +1,27 @@
-package gqltestutil
+pbckbge gqltestutil
 
-import "github.com/sourcegraph/sourcegraph/lib/errors"
+import "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-// GitBlob returns blob content of the file in given repository at given revision.
-func (c *Client) GitBlob(repoName, revision, filePath string) (string, error) {
+// GitBlob returns blob content of the file in given repository bt given revision.
+func (c *Client) GitBlob(repoNbme, revision, filePbth string) (string, error) {
 	const gqlQuery = `
-query Blob($repoName: String!, $revision: String!, $filePath: String!) {
-	repository(name: $repoName) {
+query Blob($repoNbme: String!, $revision: String!, $filePbth: String!) {
+	repository(nbme: $repoNbme) {
 		commit(rev: $revision) {
-			file(path: $filePath) {
+			file(pbth: $filePbth) {
 				content
 			}
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"repoName": repoName,
+	vbribbles := mbp[string]bny{
+		"repoNbme": repoNbme,
 		"revision": revision,
-		"filePath": filePath,
+		"filePbth": filePbth,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Repository struct {
 				Commit struct {
 					File struct {
@@ -29,95 +29,95 @@ query Blob($repoName: String!, $revision: String!, $filePath: String!) {
 					} `json:"file"`
 				} `json:"commit"`
 			} `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository.Commit.File.Content, nil
+	return resp.Dbtb.Repository.Commit.File.Content, nil
 }
 
-// GitListFilenames lists all files for the repo
-func (c *Client) GitListFilenames(repoName, revision string) ([]string, error) {
+// GitListFilenbmes lists bll files for the repo
+func (c *Client) GitListFilenbmes(repoNbme, revision string) ([]string, error) {
 	const gqlQuery = `
-query Files($repoName: String!, $revision: String!) {
-	repository(name: $repoName) {
+query Files($repoNbme: String!, $revision: String!) {
+	repository(nbme: $repoNbme) {
 		commit(rev: $revision) {
-            fileNames
+            fileNbmes
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"repoName": repoName,
+	vbribbles := mbp[string]bny{
+		"repoNbme": repoNbme,
 		"revision": revision,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Repository struct {
 				Commit struct {
-					FileNames []string `json:"fileNames"`
+					FileNbmes []string `json:"fileNbmes"`
 				} `json:"commit"`
 			} `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository.Commit.FileNames, nil
+	return resp.Dbtb.Repository.Commit.FileNbmes, nil
 }
 
-// GitGetCommitMessage returns commit message for given repo and revision.
-// This spins up sub-repo permissions for the commit and error is returned when
-// trying to access restricted commit
-func (c *Client) GitGetCommitMessage(repoName, revision string) (string, error) {
+// GitGetCommitMessbge returns commit messbge for given repo bnd revision.
+// This spins up sub-repo permissions for the commit bnd error is returned when
+// trying to bccess restricted commit
+func (c *Client) GitGetCommitMessbge(repoNbme, revision string) (string, error) {
 	const gqlQuery = `
-query Files($repoName: String!, $revision: String!) {
-	repository(name: $repoName) {
+query Files($repoNbme: String!, $revision: String!) {
+	repository(nbme: $repoNbme) {
 		commit(rev: $revision) {
-            message
+            messbge
 		}
 	}
 }
 `
-	variables := map[string]any{
-		"repoName": repoName,
+	vbribbles := mbp[string]bny{
+		"repoNbme": repoNbme,
 		"revision": revision,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Repository struct {
 				Commit struct {
-					Message string `json:"message"`
+					Messbge string `json:"messbge"`
 				} `json:"commit"`
 			} `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository.Commit.Message, nil
+	return resp.Dbtb.Repository.Commit.Messbge, nil
 }
 
-// GitGetCommitSymbols returns symbols of all files in a given commit.
-func (c *Client) GitGetCommitSymbols(repoName, revision string) ([]SimplifiedSymbolNode, error) {
+// GitGetCommitSymbols returns symbols of bll files in b given commit.
+func (c *Client) GitGetCommitSymbols(repoNbme, revision string) ([]SimplifiedSymbolNode, error) {
 	const gqlQuery = `
-query CommitSymbols($repoName: String!, $revision: String!) {
-	repository(name: $repoName) {
+query CommitSymbols($repoNbme: String!, $revision: String!) {
+	repository(nbme: $repoNbme) {
 		commit(rev: $revision) {
             symbols(query: "") {
 				nodes {
-					name
+					nbme
 					kind
-					location {
+					locbtion {
 						resource {
-							path
+							pbth
 						}
 					}
 				}
@@ -126,12 +126,12 @@ query CommitSymbols($repoName: String!, $revision: String!) {
 	}
 }
 `
-	variables := map[string]any{
-		"repoName": repoName,
+	vbribbles := mbp[string]bny{
+		"repoNbme": repoNbme,
 		"revision": revision,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Repository struct {
 				Commit struct {
 					Symbols struct {
@@ -139,22 +139,22 @@ query CommitSymbols($repoName: String!, $revision: String!) {
 					} `json:"symbols"`
 				} `json:"commit"`
 			} `json:"repository"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", gqlQuery, variables, &resp)
+	err := c.GrbphQL("", gqlQuery, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.Repository.Commit.Symbols.Nodes, nil
+	return resp.Dbtb.Repository.Commit.Symbols.Nodes, nil
 }
 
 type SimplifiedSymbolNode struct {
-	Name     string `json:"name"`
+	Nbme     string `json:"nbme"`
 	Kind     string `json:"kind"`
-	Location struct {
+	Locbtion struct {
 		Resource struct {
-			Path string `json:"path"`
+			Pbth string `json:"pbth"`
 		} `json:"resource"`
-	} `json:"location"`
+	} `json:"locbtion"`
 }

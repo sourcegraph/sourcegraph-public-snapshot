@@ -1,74 +1,74 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-var _ graphqlbackend.BatchChangesConnectionResolver = &batchChangesConnectionResolver{}
+vbr _ grbphqlbbckend.BbtchChbngesConnectionResolver = &bbtchChbngesConnectionResolver{}
 
-type batchChangesConnectionResolver struct {
+type bbtchChbngesConnectionResolver struct {
 	store           *store.Store
-	opts            store.ListBatchChangesOpts
+	opts            store.ListBbtchChbngesOpts
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once         sync.Once
-	batchChanges []*btypes.BatchChange
+	bbtchChbnges []*btypes.BbtchChbnge
 	next         int64
 	err          error
 }
 
-func (r *batchChangesConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BatchChangeResolver, error) {
+func (r *bbtchChbngesConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.BbtchChbngeResolver, error) {
 	nodes, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]graphqlbackend.BatchChangeResolver, 0, len(nodes))
-	for _, c := range nodes {
-		resolvers = append(resolvers, &batchChangeResolver{store: r.store, gitserverClient: r.gitserverClient, batchChange: c, logger: r.logger})
+	resolvers := mbke([]grbphqlbbckend.BbtchChbngeResolver, 0, len(nodes))
+	for _, c := rbnge nodes {
+		resolvers = bppend(resolvers, &bbtchChbngeResolver{store: r.store, gitserverClient: r.gitserverClient, bbtchChbnge: c, logger: r.logger})
 	}
 	return resolvers, nil
 }
 
-func (r *batchChangesConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	opts := store.CountBatchChangesOpts{
-		ChangesetID:                   r.opts.ChangesetID,
-		States:                        r.opts.States,
+func (r *bbtchChbngesConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	opts := store.CountBbtchChbngesOpts{
+		ChbngesetID:                   r.opts.ChbngesetID,
+		Stbtes:                        r.opts.Stbtes,
 		OnlyAdministeredByUserID:      r.opts.OnlyAdministeredByUserID,
-		NamespaceUserID:               r.opts.NamespaceUserID,
-		NamespaceOrgID:                r.opts.NamespaceOrgID,
+		NbmespbceUserID:               r.opts.NbmespbceUserID,
+		NbmespbceOrgID:                r.opts.NbmespbceOrgID,
 		RepoID:                        r.opts.RepoID,
-		ExcludeDraftsNotOwnedByUserID: r.opts.ExcludeDraftsNotOwnedByUserID,
+		ExcludeDrbftsNotOwnedByUserID: r.opts.ExcludeDrbftsNotOwnedByUserID,
 	}
-	count, err := r.store.CountBatchChanges(ctx, opts)
+	count, err := r.store.CountBbtchChbnges(ctx, opts)
 	return int32(count), err
 }
 
-func (r *batchChangesConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *bbtchChbngesConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if next != 0 {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(int(next))), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *batchChangesConnectionResolver) compute(ctx context.Context) ([]*btypes.BatchChange, int64, error) {
+func (r *bbtchChbngesConnectionResolver) compute(ctx context.Context) ([]*btypes.BbtchChbnge, int64, error) {
 	r.once.Do(func() {
-		r.batchChanges, r.next, r.err = r.store.ListBatchChanges(ctx, r.opts)
+		r.bbtchChbnges, r.next, r.err = r.store.ListBbtchChbnges(ctx, r.opts)
 	})
-	return r.batchChanges, r.next, r.err
+	return r.bbtchChbnges, r.next, r.err
 }

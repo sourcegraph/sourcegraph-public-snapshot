@@ -1,4 +1,4 @@
-package openai
+pbckbge openbi
 
 import (
 	"bytes"
@@ -9,123 +9,123 @@ import (
 	"net/http"
 	"sort"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed/client/modeltransformations"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed/client/modeltrbnsformbtions"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openaiEmbeddingsClient {
-	return &openaiEmbeddingsClient{
+func NewClient(httpClient *http.Client, config *conftypes.EmbeddingsConfig) *openbiEmbeddingsClient {
+	return &openbiEmbeddingsClient{
 		httpClient:  httpClient,
 		dimensions:  config.Dimensions,
-		accessToken: config.AccessToken,
+		bccessToken: config.AccessToken,
 		model:       config.Model,
 		endpoint:    config.Endpoint,
 	}
 }
 
-type openaiEmbeddingsClient struct {
+type openbiEmbeddingsClient struct {
 	httpClient  *http.Client
 	model       string
 	dimensions  int
 	endpoint    string
-	accessToken string
+	bccessToken string
 }
 
-func (c *openaiEmbeddingsClient) GetDimensions() (int, error) {
+func (c *openbiEmbeddingsClient) GetDimensions() (int, error) {
 	if c.dimensions <= 0 {
-		return 0, errors.New("invalid config for embeddings.dimensions, must be > 0")
+		return 0, errors.New("invblid config for embeddings.dimensions, must be > 0")
 	}
 	return c.dimensions, nil
 }
 
-func (c *openaiEmbeddingsClient) GetModelIdentifier() string {
-	return fmt.Sprintf("openai/%s", c.model)
+func (c *openbiEmbeddingsClient) GetModelIdentifier() string {
+	return fmt.Sprintf("openbi/%s", c.model)
 }
 
-func (c *openaiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
-	return c.getEmbeddings(ctx, []string{modeltransformations.ApplyToQuery(query, c.GetModelIdentifier())})
+func (c *openbiEmbeddingsClient) GetQueryEmbedding(ctx context.Context, query string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, []string{modeltrbnsformbtions.ApplyToQuery(query, c.GetModelIdentifier())})
 }
 
-func (c *openaiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
-	return c.getEmbeddings(ctx, modeltransformations.ApplyToDocuments(documents, c.GetModelIdentifier()))
+func (c *openbiEmbeddingsClient) GetDocumentEmbeddings(ctx context.Context, documents []string) (*client.EmbeddingsResults, error) {
+	return c.getEmbeddings(ctx, modeltrbnsformbtions.ApplyToDocuments(documents, c.GetModelIdentifier()))
 }
 
-func (c *openaiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
-	for _, text := range texts {
+func (c *openbiEmbeddingsClient) getEmbeddings(ctx context.Context, texts []string) (*client.EmbeddingsResults, error) {
+	for _, text := rbnge texts {
 		if text == "" {
-			// The OpenAI API will return an error if any of the strings in texts is an empty string,
-			// so fail fast to avoid making tons of retryable requests.
-			return nil, errors.New("cannot generate embeddings for an empty string")
+			// The OpenAI API will return bn error if bny of the strings in texts is bn empty string,
+			// so fbil fbst to bvoid mbking tons of retrybble requests.
+			return nil, errors.New("cbnnot generbte embeddings for bn empty string")
 		}
 	}
 
-	response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: texts})
+	response, err := c.do(ctx, openbiEmbeddingAPIRequest{Model: c.model, Input: texts})
 	if err != nil {
 		return nil, err
 	}
 
-	if len(response.Data) == 0 {
+	if len(response.Dbtb) == 0 {
 		return nil, nil
 	}
 
-	// Ensure embedding responses are sorted in the original order.
-	sort.Slice(response.Data, func(i, j int) bool {
-		return response.Data[i].Index < response.Data[j].Index
+	// Ensure embedding responses bre sorted in the originbl order.
+	sort.Slice(response.Dbtb, func(i, j int) bool {
+		return response.Dbtb[i].Index < response.Dbtb[j].Index
 	})
 
-	dimensionality := len(response.Data[0].Embedding)
-	embeddings := make([]float32, 0, len(response.Data)*dimensionality)
-	failed := make([]int, 0)
-	for _, embedding := range response.Data {
+	dimensionblity := len(response.Dbtb[0].Embedding)
+	embeddings := mbke([]flobt32, 0, len(response.Dbtb)*dimensionblity)
+	fbiled := mbke([]int, 0)
+	for _, embedding := rbnge response.Dbtb {
 		if len(embedding.Embedding) != 0 {
-			embeddings = append(embeddings, embedding.Embedding...)
+			embeddings = bppend(embeddings, embedding.Embedding...)
 		} else {
-			// HACK(camdencheek): Nondeterministically, the OpenAI API will
-			// occasionally send back a `null` for an embedding in the
-			// response. Try it again a few times and hope for the best.
+			// HACK(cbmdencheek): Nondeterministicblly, the OpenAI API will
+			// occbsionblly send bbck b `null` for bn embedding in the
+			// response. Try it bgbin b few times bnd hope for the best.
 			resp, err := c.requestSingleEmbeddingWithRetryOnNull(ctx, texts[embedding.Index], 3)
 			if err != nil {
-				failed = append(failed, embedding.Index)
+				fbiled = bppend(fbiled, embedding.Index)
 
-				// reslice to provide zero value embedding for failed chunk
-				embeddings = embeddings[:len(embeddings)+dimensionality]
+				// reslice to provide zero vblue embedding for fbiled chunk
+				embeddings = embeddings[:len(embeddings)+dimensionblity]
 				continue
 			}
-			embeddings = append(embeddings, resp.Data[0].Embedding...)
+			embeddings = bppend(embeddings, resp.Dbtb[0].Embedding...)
 		}
 	}
 
-	return &client.EmbeddingsResults{Embeddings: embeddings, Failed: failed, Dimensions: dimensionality}, nil
+	return &client.EmbeddingsResults{Embeddings: embeddings, Fbiled: fbiled, Dimensions: dimensionblity}, nil
 }
 
-func (c *openaiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openaiEmbeddingAPIResponse, error) {
+func (c *openbiEmbeddingsClient) requestSingleEmbeddingWithRetryOnNull(ctx context.Context, input string, retries int) (*openbiEmbeddingAPIResponse, error) {
 	for i := 0; i < retries; i++ {
-		response, err := c.do(ctx, openaiEmbeddingAPIRequest{Model: c.model, Input: []string{input}})
+		response, err := c.do(ctx, openbiEmbeddingAPIRequest{Model: c.model, Input: []string{input}})
 		if err != nil {
 			return nil, err
 		}
-		if len(response.Data) != 1 || len(response.Data[0].Embedding) == 0 {
+		if len(response.Dbtb) != 1 || len(response.Dbtb[0].Embedding) == 0 {
 			continue
 		}
 		return response, nil
 	}
-	return nil, errors.Newf("null response for embedding after %d retries", retries)
+	return nil, errors.Newf("null response for embedding bfter %d retries", retries)
 }
 
-func (c *openaiEmbeddingsClient) do(ctx context.Context, request openaiEmbeddingAPIRequest) (*openaiEmbeddingAPIResponse, error) {
-	bodyBytes, err := json.Marshal(request)
+func (c *openbiEmbeddingsClient) do(ctx context.Context, request openbiEmbeddingAPIRequest) (*openbiEmbeddingAPIResponse, error) {
+	bodyBytes, err := json.Mbrshbl(request)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewReader(bodyBytes))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.endpoint, bytes.NewRebder(bodyBytes))
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.accessToken)
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("Authorizbtion", "Bebrer "+c.bccessToken)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
@@ -133,28 +133,28 @@ func (c *openaiEmbeddingsClient) do(ctx context.Context, request openaiEmbedding
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(io.LimitReader(resp.Body, 1024))
-		return nil, errors.Errorf("embeddings: %s %q: failed with status %d: %s", req.Method, req.URL.String(), resp.StatusCode, string(respBody))
+	if resp.StbtusCode != http.StbtusOK {
+		respBody, _ := io.RebdAll(io.LimitRebder(resp.Body, 1024))
+		return nil, errors.Errorf("embeddings: %s %q: fbiled with stbtus %d: %s", req.Method, req.URL.String(), resp.StbtusCode, string(respBody))
 	}
 
-	var response openaiEmbeddingAPIResponse
+	vbr response openbiEmbeddingAPIResponse
 	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
 		return nil, err
 	}
 	return &response, nil
 }
 
-type openaiEmbeddingAPIRequest struct {
+type openbiEmbeddingAPIRequest struct {
 	Model string   `json:"model"`
 	Input []string `json:"input"`
 }
 
-type openaiEmbeddingAPIResponse struct {
-	Data []openaiEmbeddingAPIResponseData `json:"data"`
+type openbiEmbeddingAPIResponse struct {
+	Dbtb []openbiEmbeddingAPIResponseDbtb `json:"dbtb"`
 }
 
-type openaiEmbeddingAPIResponseData struct {
+type openbiEmbeddingAPIResponseDbtb struct {
 	Index     int       `json:"index"`
-	Embedding []float32 `json:"embedding"`
+	Embedding []flobt32 `json:"embedding"`
 }

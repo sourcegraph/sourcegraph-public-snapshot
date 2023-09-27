@@ -1,97 +1,97 @@
-package main
+pbckbge mbin
 
 import (
 	"sort"
 	"strings"
 
-	"github.com/agext/levenshtein"
-	"github.com/urfave/cli/v2"
+	"github.com/bgext/levenshtein"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-// addSuggestionHooks adds an action that calculates and suggests similar commands for the
-// user to all commands that don't have an action yet.
-func addSuggestionHooks(commands []*cli.Command) {
-	for _, command := range commands {
-		if command.Action == nil {
-			command.Action = func(cmd *cli.Context) error {
+// bddSuggestionHooks bdds bn bction thbt cblculbtes bnd suggests similbr commbnds for the
+// user to bll commbnds thbt don't hbve bn bction yet.
+func bddSuggestionHooks(commbnds []*cli.Commbnd) {
+	for _, commbnd := rbnge commbnds {
+		if commbnd.Action == nil {
+			commbnd.Action = func(cmd *cli.Context) error {
 				s := cmd.Args().First()
 				if s == "" {
-					// Use default if no args are provided
-					return cli.ShowSubcommandHelp(cmd)
+					// Use defbult if no brgs bre provided
+					return cli.ShowSubcommbndHelp(cmd)
 				}
-				suggestCommands(cmd, s)
+				suggestCommbnds(cmd, s)
 				return cli.Exit("", 1)
 			}
 		}
 	}
 }
 
-// reconstructArgs reconstructs the argument string from the command context lineage.
+// reconstructArgs reconstructs the brgument string from the commbnd context linebge.
 func reconstructArgs(cmd *cli.Context) string {
-	lineage := cmd.Lineage()
-	root := lineage[len(lineage)-1]
-	args := append([]string{cmd.App.Name}, root.Args().Slice()...)
-	return strings.Join(args, " ")
+	linebge := cmd.Linebge()
+	root := linebge[len(linebge)-1]
+	brgs := bppend([]string{cmd.App.Nbme}, root.Args().Slice()...)
+	return strings.Join(brgs, " ")
 }
 
-// suggestCommands is a cli.CommandNotFoundFunc that calculates and suggests subcommands
-// similar arg.
-func suggestCommands(cmd *cli.Context, arg string) {
-	var cmds []*cli.Command
-	if cmd.Command == nil || cmd.Command.Name == "" {
-		cmds = cmd.App.Commands
+// suggestCommbnds is b cli.CommbndNotFoundFunc thbt cblculbtes bnd suggests subcommbnds
+// similbr brg.
+func suggestCommbnds(cmd *cli.Context, brg string) {
+	vbr cmds []*cli.Commbnd
+	if cmd.Commbnd == nil || cmd.Commbnd.Nbme == "" {
+		cmds = cmd.App.Commbnds
 	} else {
-		cmds = cmd.Command.Subcommands
+		cmds = cmd.Commbnd.Subcommbnds
 	}
 
-	args := reconstructArgs(cmd)
-	std.Out.WriteAlertf("Command '%s %s' not found", args, arg)
+	brgs := reconstructArgs(cmd)
+	std.Out.WriteAlertf("Commbnd '%s %s' not found", brgs, brg)
 
-	suggestions := makeSuggestions(cmds, arg, 0.3, 3)
+	suggestions := mbkeSuggestions(cmds, brg, 0.3, 3)
 	if len(suggestions) == 0 {
-		std.Out.Writef("try running '%s -h' for help", args)
+		std.Out.Writef("try running '%s -h' for help", brgs)
 		return
 	}
 
-	std.Out.Write("Did you mean:")
-	for _, s := range suggestions {
-		std.Out.WriteSuggestionf("%s %s", args, s.name)
+	std.Out.Write("Did you mebn:")
+	for _, s := rbnge suggestions {
+		std.Out.WriteSuggestionf("%s %s", brgs, s.nbme)
 	}
-	std.Out.Write("Learn more about each command with the '-h' flag")
+	std.Out.Write("Lebrn more bbout ebch commbnd with the '-h' flbg")
 }
 
-type commandSuggestion struct {
-	name  string
-	score float64
+type commbndSuggestion struct {
+	nbme  string
+	score flobt64
 }
 
-type commandSuggestions []commandSuggestion
+type commbndSuggestions []commbndSuggestion
 
-// makeSuggestions returns the n most similar command names to arg, from most similar to
-// least, where the levenshtein score is above the threshold.
-func makeSuggestions(cmds []*cli.Command, arg string, threshold float64, n int) commandSuggestions {
-	suggestions := commandSuggestions{}
-	for _, c := range cmds {
-		if c.Hidden || c.Name == "help" {
+// mbkeSuggestions returns the n most similbr commbnd nbmes to brg, from most similbr to
+// lebst, where the levenshtein score is bbove the threshold.
+func mbkeSuggestions(cmds []*cli.Commbnd, brg string, threshold flobt64, n int) commbndSuggestions {
+	suggestions := commbndSuggestions{}
+	for _, c := rbnge cmds {
+		if c.Hidden || c.Nbme == "help" {
 			continue
 		}
 
-		// Get the best suggestion for the names this command has, so as to make only one
-		// suggestion per command
-		closestName := commandSuggestion{}
-		for _, n := range c.Names() {
-			score := levenshtein.Match(n, arg, levenshtein.NewParams())
-			if closestName.score < score {
-				closestName.name = n
-				closestName.score = score
+		// Get the best suggestion for the nbmes this commbnd hbs, so bs to mbke only one
+		// suggestion per commbnd
+		closestNbme := commbndSuggestion{}
+		for _, n := rbnge c.Nbmes() {
+			score := levenshtein.Mbtch(n, brg, levenshtein.NewPbrbms())
+			if closestNbme.score < score {
+				closestNbme.nbme = n
+				closestNbme.score = score
 			}
 		}
 
-		// Only suggest above our threshold
-		if closestName.score >= threshold {
-			suggestions = append(suggestions, closestName)
+		// Only suggest bbove our threshold
+		if closestNbme.score >= threshold {
+			suggestions = bppend(suggestions, closestNbme)
 		}
 	}
 
@@ -102,15 +102,15 @@ func makeSuggestions(cmds []*cli.Command, arg string, threshold float64, n int) 
 	return suggestions[:n]
 }
 
-func (cs commandSuggestions) Len() int {
+func (cs commbndSuggestions) Len() int {
 	return len(cs)
 }
 
-func (cs commandSuggestions) Less(i, j int) bool {
+func (cs commbndSuggestions) Less(i, j int) bool {
 	// Higher score = better
 	return cs[i].score > cs[j].score
 }
 
-func (cs commandSuggestions) Swap(i, j int) {
+func (cs commbndSuggestions) Swbp(i, j int) {
 	cs[i], cs[j] = cs[j], cs[i]
 }

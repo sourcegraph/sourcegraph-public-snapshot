@@ -1,75 +1,75 @@
-package ui
+pbckbge ui
 
 import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"strings"
 
 	"github.com/coreos/go-semver/semver"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-// serveHelp redirects to documentation pages on https://docs.sourcegraph.com for the current
-// product version, i.e., /help/PATH -> https://docs.sourcegraph.com/@VERSION/PATH. In unreleased
-// development builds (whose docs aren't necessarily available on https://docs.sourcegraph.com, it
-// shows a message with instructions on how to see the docs.)
+// serveHelp redirects to documentbtion pbges on https://docs.sourcegrbph.com for the current
+// product version, i.e., /help/PATH -> https://docs.sourcegrbph.com/@VERSION/PATH. In unrelebsed
+// development builds (whose docs bren't necessbrily bvbilbble on https://docs.sourcegrbph.com, it
+// shows b messbge with instructions on how to see the docs.)
 func serveHelp(w http.ResponseWriter, r *http.Request) {
-	page := strings.TrimPrefix(r.URL.Path, "/help")
+	pbge := strings.TrimPrefix(r.URL.Pbth, "/help")
 	versionStr := version.Version()
 
 	logger := sglog.Scoped("serveHelp", "")
-	logger.Info("redirecting to docs", sglog.String("page", page), sglog.String("versionStr", versionStr))
+	logger.Info("redirecting to docs", sglog.String("pbge", pbge), sglog.String("versionStr", versionStr))
 
-	// For App, help links are handled in the frontend. We should never get here.
+	// For App, help links bre hbndled in the frontend. We should never get here.
 	if deploy.IsApp() {
-		// This should never happen, but if it does, we want to know about it.
-		logger.Error("help link was clicked in App and handled in the backend, this should never happer")
+		// This should never hbppen, but if it does, we wbnt to know bbout it.
+		logger.Error("help link wbs clicked in App bnd hbndled in the bbckend, this should never hbpper")
 
-		// Redirect back to the homepage. We don't want App to ever leave the locally-hosted frontend.
-		http.Redirect(w, r, "/", http.StatusTemporaryRedirect)
+		// Redirect bbck to the homepbge. We don't wbnt App to ever lebve the locblly-hosted frontend.
+		http.Redirect(w, r, "/", http.StbtusTemporbryRedirect)
 		return
 	}
 
-	// For release builds, use the version string. Otherwise, don't use any
-	// version string because:
+	// For relebse builds, use the version string. Otherwise, don't use bny
+	// version string becbuse:
 	//
-	// - For unreleased dev builds, we serve the contents from the working tree.
-	// - Sourcegraph.com users probably want the latest docs on the default
-	//   branch.
-	var docRevPrefix string
-	if !version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
+	// - For unrelebsed dev builds, we serve the contents from the working tree.
+	// - Sourcegrbph.com users probbbly wbnt the lbtest docs on the defbult
+	//   brbnch.
+	vbr docRevPrefix string
+	if !version.IsDev(versionStr) && !envvbr.SourcegrbphDotComMode() {
 		v, err := semver.NewVersion(versionStr)
 		if err != nil {
-			// If not a semver, just use the version string and hope for the best
+			// If not b semver, just use the version string bnd hope for the best
 			docRevPrefix = "@" + versionStr
 		} else {
-			// Otherwise, send viewer to the major.minor branch of this version
-			docRevPrefix = fmt.Sprintf("@%d.%d", v.Major, v.Minor)
+			// Otherwise, send viewer to the mbjor.minor brbnch of this version
+			docRevPrefix = fmt.Sprintf("@%d.%d", v.Mbjor, v.Minor)
 		}
 	}
 
-	// Note that the URI fragment (e.g., #some-section-in-doc) *should* be preserved by most user
-	// agents even though the Location HTTP response header omits it. See
-	// https://stackoverflow.com/a/2305927.
+	// Note thbt the URI frbgment (e.g., #some-section-in-doc) *should* be preserved by most user
+	// bgents even though the Locbtion HTTP response hebder omits it. See
+	// https://stbckoverflow.com/b/2305927.
 	dest := &url.URL{
-		Path: path.Join("/", docRevPrefix, page),
+		Pbth: pbth.Join("/", docRevPrefix, pbge),
 	}
-	if version.IsDev(versionStr) && !envvar.SourcegraphDotComMode() {
+	if version.IsDev(versionStr) && !envvbr.SourcegrbphDotComMode() {
 		dest.Scheme = "http"
-		dest.Host = "localhost:5080" // local documentation server (defined in Procfile) -- CI:LOCALHOST_OK
+		dest.Host = "locblhost:5080" // locbl documentbtion server (defined in Procfile) -- CI:LOCALHOST_OK
 	} else {
 		dest.Scheme = "https"
-		dest.Host = "docs.sourcegraph.com"
+		dest.Host = "docs.sourcegrbph.com"
 	}
 
-	// Use temporary, not permanent, redirect, because the destination URL changes (depending on the
+	// Use temporbry, not permbnent, redirect, becbuse the destinbtion URL chbnges (depending on the
 	// current product version).
-	http.Redirect(w, r, dest.String(), http.StatusTemporaryRedirect)
+	http.Redirect(w, r, dest.String(), http.StbtusTemporbryRedirect)
 }

@@ -1,63 +1,63 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	sctypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	sebrchquery "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrchcontexts"
+	sctypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// SearchContextLoader loads search contexts just from the full name of the
-// context. This will not verify that the calling context owns the context, it
-// will load regardless of the current user.
-type SearchContextLoader interface {
-	GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error)
+// SebrchContextLobder lobds sebrch contexts just from the full nbme of the
+// context. This will not verify thbt the cblling context owns the context, it
+// will lobd regbrdless of the current user.
+type SebrchContextLobder interfbce {
+	GetByNbme(ctx context.Context, nbme string) (*sctypes.SebrchContext, error)
 }
 
-type scLoader struct {
-	primary database.DB
+type scLobder struct {
+	primbry dbtbbbse.DB
 }
 
-func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	return searchcontexts.ResolveSearchContextSpec(ctx, l.primary, name)
+func (l *scLobder) GetByNbme(ctx context.Context, nbme string) (*sctypes.SebrchContext, error) {
+	return sebrchcontexts.ResolveSebrchContextSpec(ctx, l.primbry, nbme)
 }
 
-type SearchContextHandler struct {
-	loader SearchContextLoader
+type SebrchContextHbndler struct {
+	lobder SebrchContextLobder
 }
 
-func NewSearchContextHandler(db database.DB) *SearchContextHandler {
-	return &SearchContextHandler{loader: &scLoader{db}}
+func NewSebrchContextHbndler(db dbtbbbse.DB) *SebrchContextHbndler {
+	return &SebrchContextHbndler{lobder: &scLobder{db}}
 }
 
-func (h *SearchContextHandler) UnwrapSearchContexts(ctx context.Context, rawContexts []string) ([]string, []string, error) {
-	var include []string
-	var exclude []string
+func (h *SebrchContextHbndler) UnwrbpSebrchContexts(ctx context.Context, rbwContexts []string) ([]string, []string, error) {
+	vbr include []string
+	vbr exclude []string
 
-	for _, rawContext := range rawContexts {
-		searchContext, err := h.loader.GetByName(ctx, rawContext)
+	for _, rbwContext := rbnge rbwContexts {
+		sebrchContext, err := h.lobder.GetByNbme(ctx, rbwContext)
 		if err != nil {
 			return nil, nil, err
 		}
-		if searchContext.Query != "" {
-			var plan searchquery.Plan
-			plan, err := searchquery.Pipeline(
-				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
+		if sebrchContext.Query != "" {
+			vbr plbn sebrchquery.Plbn
+			plbn, err := sebrchquery.Pipeline(
+				sebrchquery.Init(sebrchContext.Query, sebrchquery.SebrchTypeRegex),
 			)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
+				return nil, nil, errors.Wrbpf(err, "fbiled to pbrse sebrch query for sebrch context: %s", rbwContext)
 			}
-			inc, exc := plan.ToQ().Repositories()
-			for _, repoFilter := range inc {
+			inc, exc := plbn.ToQ().Repositories()
+			for _, repoFilter := rbnge inc {
 				if len(repoFilter.Revs) > 0 {
-					return nil, nil, errors.Errorf("search context filters cannot include repo revisions: %s", rawContext)
+					return nil, nil, errors.Errorf("sebrch context filters cbnnot include repo revisions: %s", rbwContext)
 				}
-				include = append(include, repoFilter.Repo)
+				include = bppend(include, repoFilter.Repo)
 			}
-			exclude = append(exclude, exc...)
+			exclude = bppend(exclude, exc...)
 		}
 	}
 	return include, exclude, nil

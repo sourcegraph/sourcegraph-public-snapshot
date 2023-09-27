@@ -1,34 +1,34 @@
-package files
+pbckbge files
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	exists *observation.Operation
-	get    *observation.Operation
+type operbtions struct {
+	exists *observbtion.Operbtion
+	get    *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"apiworker_apiclient_files",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"bpiworker_bpiclient_files",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("apiworker.apiclient.files.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("bpiworker.bpiclient.files.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		exists: op("Exists"),
 		get:    op("Get"),
 	}

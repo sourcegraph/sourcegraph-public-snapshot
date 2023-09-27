@@ -1,42 +1,42 @@
-package keyring
+pbckbge keyring
 
 import (
 	"context"
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/awskms"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/cache"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/cloudkms"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/mounted"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/bwskms"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/cbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/cloudkms"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/mounted"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var (
+vbr (
 	mu          sync.RWMutex
-	defaultRing Ring
+	defbultRing Ring
 )
 
-// Default returns the default keyring, if you can avoid using this from arbitrary points in your code, please do!
-// we would rather inject the individual keys as dependencies when initialised from main(), but if that's impractical
+// Defbult returns the defbult keyring, if you cbn bvoid using this from brbitrbry points in your code, plebse do!
+// we would rbther inject the individubl keys bs dependencies when initiblised from mbin(), but if thbt's imprbcticbl
 // it's fine to use this.
-func Default() Ring {
+func Defbult() Ring {
 	mu.RLock()
 	defer mu.RUnlock()
-	return defaultRing
+	return defbultRing
 }
 
-// MockDefault overrides the default keyring.
+// MockDefbult overrides the defbult keyring.
 // Note: This function is defined for testing purpose.
-// Use Init to correctly setup a keyring.
-func MockDefault(r Ring) {
+// Use Init to correctly setup b keyring.
+func MockDefbult(r Ring) {
 	mu.Lock()
 	defer mu.Unlock()
-	defaultRing = r
+	defbultRing = r
 }
 
 func Init(ctx context.Context) error {
@@ -47,53 +47,53 @@ func Init(ctx context.Context) error {
 	}
 	if ring != nil {
 		mu.Lock()
-		defaultRing = *ring
+		defbultRing = *ring
 		mu.Unlock()
 	}
 
-	conf.ContributeValidator(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
+	conf.ContributeVblidbtor(func(cfg conftypes.SiteConfigQuerier) conf.Problems {
 		if _, err := NewRing(ctx, cfg.SiteConfig().EncryptionKeys); err != nil {
-			return conf.Problems{conf.NewSiteProblem(fmt.Sprintf("Invalid encryption.keys config: %s", err))}
+			return conf.Problems{conf.NewSiteProblem(fmt.Sprintf("Invblid encryption.keys config: %s", err))}
 		}
 		return nil
 	})
 
-	conf.Watch(func() {
+	conf.Wbtch(func() {
 		newConfig := conf.Get().EncryptionKeys
 		if newConfig == config {
 			return
 		}
 		newRing, err := NewRing(ctx, newConfig)
 		if err != nil {
-			panic("creating encryption keyring: " + err.Error())
+			pbnic("crebting encryption keyring: " + err.Error())
 		}
 		mu.Lock()
-		defaultRing = *newRing
+		defbultRing = *newRing
 		mu.Unlock()
 	})
 	return nil
 }
 
-// NewRing creates a keyring.Ring containing all the keys configured in site config
-func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, error) {
+// NewRing crebtes b keyring.Ring contbining bll the keys configured in site config
+func NewRing(ctx context.Context, keyConfig *schemb.EncryptionKeys) (*Ring, error) {
 	if keyConfig == nil {
 		return nil, nil
 	}
 
-	var (
+	vbr (
 		r   Ring
 		err error
 	)
 
-	if keyConfig.BatchChangesCredentialKey != nil {
-		r.BatchChangesCredentialKey, err = NewKey(ctx, keyConfig.BatchChangesCredentialKey, keyConfig)
+	if keyConfig.BbtchChbngesCredentiblKey != nil {
+		r.BbtchChbngesCredentiblKey, err = NewKey(ctx, keyConfig.BbtchChbngesCredentiblKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	if keyConfig.ExternalServiceKey != nil {
-		r.ExternalServiceKey, err = NewKey(ctx, keyConfig.ExternalServiceKey, keyConfig)
+	if keyConfig.ExternblServiceKey != nil {
+		r.ExternblServiceKey, err = NewKey(ctx, keyConfig.ExternblServiceKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +106,8 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 		}
 	}
 
-	if keyConfig.UserExternalAccountKey != nil {
-		r.UserExternalAccountKey, err = NewKey(ctx, keyConfig.UserExternalAccountKey, keyConfig)
+	if keyConfig.UserExternblAccountKey != nil {
+		r.UserExternblAccountKey, err = NewKey(ctx, keyConfig.UserExternblAccountKey, keyConfig)
 		if err != nil {
 			return nil, err
 		}
@@ -138,42 +138,42 @@ func NewRing(ctx context.Context, keyConfig *schema.EncryptionKeys) (*Ring, erro
 }
 
 type Ring struct {
-	BatchChangesCredentialKey encryption.Key
-	ExternalServiceKey        encryption.Key
+	BbtchChbngesCredentiblKey encryption.Key
+	ExternblServiceKey        encryption.Key
 	GitHubAppKey              encryption.Key
 	OutboundWebhookKey        encryption.Key
-	UserExternalAccountKey    encryption.Key
+	UserExternblAccountKey    encryption.Key
 	WebhookKey                encryption.Key
 	WebhookLogKey             encryption.Key
 	ExecutorSecretKey         encryption.Key
 }
 
-func NewKey(ctx context.Context, k *schema.EncryptionKey, config *schema.EncryptionKeys) (encryption.Key, error) {
+func NewKey(ctx context.Context, k *schemb.EncryptionKey, config *schemb.EncryptionKeys) (encryption.Key, error) {
 	if k == nil {
-		return nil, errors.Errorf("cannot configure nil key")
+		return nil, errors.Errorf("cbnnot configure nil key")
 	}
-	var (
+	vbr (
 		key encryption.Key
 		err error
 	)
 	switch {
-	case k.Cloudkms != nil:
+	cbse k.Cloudkms != nil:
 		key, err = cloudkms.NewKey(ctx, *k.Cloudkms)
-	case k.Awskms != nil:
-		key, err = awskms.NewKey(ctx, *k.Awskms)
-	case k.Mounted != nil:
+	cbse k.Awskms != nil:
+		key, err = bwskms.NewKey(ctx, *k.Awskms)
+	cbse k.Mounted != nil:
 		key, err = mounted.NewKey(ctx, *k.Mounted)
-	case k.Noop != nil:
+	cbse k.Noop != nil:
 		key = &encryption.NoopKey{}
-	default:
+	defbult:
 		return nil, errors.Errorf("couldn't configure key: %v", *k)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	if config.EnableCache {
-		key, err = cache.New(key, config.CacheSize)
+	if config.EnbbleCbche {
+		key, err = cbche.New(key, config.CbcheSize)
 	}
 	return key, err
 }

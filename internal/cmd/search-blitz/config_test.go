@@ -1,30 +1,30 @@
-package main
+pbckbge mbin
 
 import "testing"
 
-func TestLoadQueries(t *testing.T) {
-	for _, env := range []string{"", "cloud", "dogfood"} {
+func TestLobdQueries(t *testing.T) {
+	for _, env := rbnge []string{"", "cloud", "dogfood"} {
 		t.Run(env, func(t *testing.T) {
-			c, err := loadQueries(env)
+			c, err := lobdQueries(env)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(c.Queries) < 2 {
-				t.Fatal("expected atleast 2 queries")
+				t.Fbtbl("expected btlebst 2 queries")
 			}
 
-			names := map[string]bool{}
-			for _, q := range c.Queries {
-				if names[q.Name] {
-					t.Fatalf("name %q is not unique", q.Name)
+			nbmes := mbp[string]bool{}
+			for _, q := rbnge c.Queries {
+				if nbmes[q.Nbme] {
+					t.Fbtblf("nbme %q is not unique", q.Nbme)
 				}
-				names[q.Name] = true
+				nbmes[q.Nbme] = true
 			}
 
 			if testing.Verbose() {
-				for _, q := range c.Queries {
-					t.Logf("% -25s %s", q.Name, q.Query)
+				for _, q := rbnge c.Queries {
+					t.Logf("% -25s %s", q.Nbme, q.Query)
 				}
 			}
 		})

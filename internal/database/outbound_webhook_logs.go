@@ -1,27 +1,27 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type OutboundWebhookLogStore interface {
-	basestore.ShareableStore
-	WithTransact(context.Context, func(OutboundWebhookLogStore) error) error
-	With(basestore.ShareableStore) OutboundWebhookLogStore
+type OutboundWebhookLogStore interfbce {
+	bbsestore.ShbrebbleStore
+	WithTrbnsbct(context.Context, func(OutboundWebhookLogStore) error) error
+	With(bbsestore.ShbrebbleStore) OutboundWebhookLogStore
 	Query(ctx context.Context, query *sqlf.Query) (*sql.Rows, error)
 	Done(error) error
 
-	CountsForOutboundWebhook(ctx context.Context, outboundWebhookID int64) (total, errored int64, err error)
-	Create(context.Context, *types.OutboundWebhookLog) error
+	CountsForOutboundWebhook(ctx context.Context, outboundWebhookID int64) (totbl, errored int64, err error)
+	Crebte(context.Context, *types.OutboundWebhookLog) error
 	ListForOutboundWebhook(ctx context.Context, opts OutboundWebhookLogListOpts) ([]*types.OutboundWebhookLog, error)
 }
 
@@ -37,9 +37,9 @@ func (opts *OutboundWebhookLogListOpts) where() *sqlf.Query {
 	}
 
 	if opts.OnlyErrors {
-		preds = append(
+		preds = bppend(
 			preds,
-			sqlf.Sprintf("status_code NOT BETWEEN 100 AND 399"),
+			sqlf.Sprintf("stbtus_code NOT BETWEEN 100 AND 399"),
 		)
 	}
 
@@ -47,26 +47,26 @@ func (opts *OutboundWebhookLogListOpts) where() *sqlf.Query {
 }
 
 type outboundWebhookLogStore struct {
-	*basestore.Store
+	*bbsestore.Store
 	key encryption.Key
 }
 
-func OutboundWebhookLogsWith(other basestore.ShareableStore, key encryption.Key) OutboundWebhookLogStore {
+func OutboundWebhookLogsWith(other bbsestore.ShbrebbleStore, key encryption.Key) OutboundWebhookLogStore {
 	return &outboundWebhookLogStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 		key:   key,
 	}
 }
 
-func (s *outboundWebhookLogStore) With(other basestore.ShareableStore) OutboundWebhookLogStore {
+func (s *outboundWebhookLogStore) With(other bbsestore.ShbrebbleStore) OutboundWebhookLogStore {
 	return &outboundWebhookLogStore{
 		Store: s.Store.With(other),
 		key:   s.key,
 	}
 }
 
-func (s *outboundWebhookLogStore) WithTransact(ctx context.Context, f func(OutboundWebhookLogStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *outboundWebhookLogStore) WithTrbnsbct(ctx context.Context, f func(OutboundWebhookLogStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&outboundWebhookLogStore{
 			Store: tx,
 			key:   s.key,
@@ -74,47 +74,47 @@ func (s *outboundWebhookLogStore) WithTransact(ctx context.Context, f func(Outbo
 	})
 }
 
-func (s *outboundWebhookLogStore) CountsForOutboundWebhook(ctx context.Context, outboundWebhookID int64) (total, errored int64, err error) {
+func (s *outboundWebhookLogStore) CountsForOutboundWebhook(ctx context.Context, outboundWebhookID int64) (totbl, errored int64, err error) {
 	q := sqlf.Sprintf(
 		outboundWebhookCountsForOutboundWebhookQueryFmtstr,
 		outboundWebhookID,
 	)
 
-	err = s.QueryRow(ctx, q).Scan(&total, &errored)
+	err = s.QueryRow(ctx, q).Scbn(&totbl, &errored)
 	return
 }
 
-func (s *outboundWebhookLogStore) Create(ctx context.Context, log *types.OutboundWebhookLog) error {
-	rawRequest, _, err := log.Request.Encrypt(ctx, s.key)
+func (s *outboundWebhookLogStore) Crebte(ctx context.Context, log *types.OutboundWebhookLog) error {
+	rbwRequest, _, err := log.Request.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "encrypting request")
+		return errors.Wrbp(err, "encrypting request")
 	}
 
-	rawResponse, _, err := log.Response.Encrypt(ctx, s.key)
+	rbwResponse, _, err := log.Response.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "encrypting response")
+		return errors.Wrbp(err, "encrypting response")
 	}
 
-	rawError, keyID, err := log.Error.Encrypt(ctx, s.key)
+	rbwError, keyID, err := log.Error.Encrypt(ctx, s.key)
 	if err != nil {
-		return errors.Wrap(err, "encrypting error")
+		return errors.Wrbp(err, "encrypting error")
 	}
 
 	q := sqlf.Sprintf(
-		outboundWebhookLogCreateQueryFmtstr,
+		outboundWebhookLogCrebteQueryFmtstr,
 		log.JobID,
 		log.OutboundWebhookID,
-		log.StatusCode,
+		log.StbtusCode,
 		dbutil.NullStringColumn(keyID),
-		[]byte(rawRequest),
-		[]byte(rawResponse),
-		[]byte(rawError),
+		[]byte(rbwRequest),
+		[]byte(rbwResponse),
+		[]byte(rbwError),
 		sqlf.Join(outboundWebhookLogColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
-	if err := s.scanOutboundWebhookLog(log, row); err != nil {
-		return errors.Wrap(err, "scanning outbound webhook log")
+	if err := s.scbnOutboundWebhookLog(log, row); err != nil {
+		return errors.Wrbp(err, "scbnning outbound webhook log")
 	}
 
 	return nil
@@ -136,51 +136,51 @@ func (s *outboundWebhookLogStore) ListForOutboundWebhook(ctx context.Context, op
 
 	logs := []*types.OutboundWebhookLog{}
 	for rows.Next() {
-		var log types.OutboundWebhookLog
-		if err := s.scanOutboundWebhookLog(&log, rows); err != nil {
+		vbr log types.OutboundWebhookLog
+		if err := s.scbnOutboundWebhookLog(&log, rows); err != nil {
 			return nil, err
 		}
-		logs = append(logs, &log)
+		logs = bppend(logs, &log)
 	}
 
 	return logs, nil
 }
 
-func (s *outboundWebhookLogStore) scanOutboundWebhookLog(log *types.OutboundWebhookLog, sc dbutil.Scanner) error {
-	var (
+func (s *outboundWebhookLogStore) scbnOutboundWebhookLog(log *types.OutboundWebhookLog, sc dbutil.Scbnner) error {
+	vbr (
 		keyID       string
-		rawRequest  []byte
-		rawResponse []byte
-		rawError    []byte
+		rbwRequest  []byte
+		rbwResponse []byte
+		rbwError    []byte
 	)
 
-	if err := sc.Scan(
+	if err := sc.Scbn(
 		&log.ID,
 		&log.JobID,
 		&log.OutboundWebhookID,
 		&log.SentAt,
-		&log.StatusCode,
+		&log.StbtusCode,
 		&dbutil.NullString{S: &keyID},
-		&rawRequest,
-		&rawResponse,
-		&rawError,
+		&rbwRequest,
+		&rbwResponse,
+		&rbwError,
 	); err != nil {
 		return err
 	}
 
-	log.Request = types.NewEncryptedWebhookLogMessage(string(rawRequest), keyID, s.key)
-	log.Response = types.NewEncryptedWebhookLogMessage(string(rawResponse), keyID, s.key)
-	log.Error = encryption.NewEncrypted(string(rawError), keyID, s.key)
+	log.Request = types.NewEncryptedWebhookLogMessbge(string(rbwRequest), keyID, s.key)
+	log.Response = types.NewEncryptedWebhookLogMessbge(string(rbwResponse), keyID, s.key)
+	log.Error = encryption.NewEncrypted(string(rbwError), keyID, s.key)
 
 	return nil
 }
 
-var outboundWebhookLogColumns = []*sqlf.Query{
+vbr outboundWebhookLogColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("job_id"),
 	sqlf.Sprintf("outbound_webhook_id"),
-	sqlf.Sprintf("sent_at"),
-	sqlf.Sprintf("status_code"),
+	sqlf.Sprintf("sent_bt"),
+	sqlf.Sprintf("stbtus_code"),
 	sqlf.Sprintf("encryption_key_id"),
 	sqlf.Sprintf("request"),
 	sqlf.Sprintf("response"),
@@ -188,23 +188,23 @@ var outboundWebhookLogColumns = []*sqlf.Query{
 }
 
 const outboundWebhookCountsForOutboundWebhookQueryFmtstr = `
--- source: internal/database/outbound_webhook_logs:CountsForOutboundWebhook
+-- source: internbl/dbtbbbse/outbound_webhook_logs:CountsForOutboundWebhook
 SELECT
-	COUNT(*) AS total,
-	COUNT(*) FILTER (WHERE status_code NOT BETWEEN 100 AND 399) AS errored
+	COUNT(*) AS totbl,
+	COUNT(*) FILTER (WHERE stbtus_code NOT BETWEEN 100 AND 399) AS errored
 FROM
 	outbound_webhook_logs
 WHERE
 	outbound_webhook_id = %s
 `
 
-const outboundWebhookLogCreateQueryFmtstr = `
--- source: internal/database/outbound_webhook_logs.go:Create
+const outboundWebhookLogCrebteQueryFmtstr = `
+-- source: internbl/dbtbbbse/outbound_webhook_logs.go:Crebte
 INSERT INTO
 	outbound_webhook_logs (
 		job_id,
 		outbound_webhook_id,
-		status_code,
+		stbtus_code,
 		encryption_key_id,
 		request,
 		response,
@@ -215,7 +215,7 @@ RETURNING %s
 `
 
 const outboundWebhookLogListForOutboundWebhookQueryFmtstr = `
--- source: internal/database/outbound_webhook_logs.go:ListForOutboundWebhook
+-- source: internbl/dbtbbbse/outbound_webhook_logs.go:ListForOutboundWebhook
 SELECT
 	%s
 FROM

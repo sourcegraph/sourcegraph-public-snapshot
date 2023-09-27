@@ -1,187 +1,187 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
-func TestModeAvailability(t *testing.T) {
-	t.Parallel()
+func TestModeAvbilbbility(t *testing.T) {
+	t.Pbrbllel()
 
-	t.Run("invalid query returns unavailable", func(t *testing.T) {
-		availabilities, err := client.ModeAvailability("fork:insights test", "literal")
+	t.Run("invblid query returns unbvbilbble", func(t *testing.T) {
+		bvbilbbilities, err := client.ModeAvbilbbility("fork:insights test", "literbl")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		for _, response := range availabilities {
-			if response.Available == true {
-				t.Errorf("expected mode %v to be unavailable", response.Mode)
+		for _, response := rbnge bvbilbbilities {
+			if response.Avbilbble == true {
+				t.Errorf("expected mode %v to be unbvbilbble", response.Mode)
 			}
-			if response.ReasonUnavailable == nil {
-				t.Errorf("expected to receive an unavailable reason, got nil")
+			if response.RebsonUnbvbilbble == nil {
+				t.Errorf("expected to receive bn unbvbilbble rebson, got nil")
 			}
 		}
 	})
 
-	t.Run("returns repo path capture group", func(t *testing.T) {
+	t.Run("returns repo pbth cbpture group", func(t *testing.T) {
 		query := `(\w)\s\*testing.T`
-		availabilities, err := client.ModeAvailability(query, "regexp")
+		bvbilbbilities, err := client.ModeAvbilbbility(query, "regexp")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		for mode, response := range availabilities {
+		for mode, response := rbnge bvbilbbilities {
 			if mode == "REPO" || mode == "PATH" || mode == "CAPTURE_GROUP" {
-				if response.Available != true {
-					t.Errorf("expected mode %v to be available for query %q", response.Mode, query)
+				if response.Avbilbble != true {
+					t.Errorf("expected mode %v to be bvbilbble for query %q", response.Mode, query)
 				}
-				if response.ReasonUnavailable != nil {
-					t.Errorf("expected to be available, got %q", *response.ReasonUnavailable)
+				if response.RebsonUnbvbilbble != nil {
+					t.Errorf("expected to be bvbilbble, got %q", *response.RebsonUnbvbilbble)
 				}
 			} else {
-				if response.Available == true {
-					t.Errorf("expected mode %v to be unavailable for query %q", response.Mode, query)
+				if response.Avbilbble == true {
+					t.Errorf("expected mode %v to be unbvbilbble for query %q", response.Mode, query)
 				}
-				if response.ReasonUnavailable == nil {
-					t.Errorf("expected to receive an unavailable reason, got nil")
+				if response.RebsonUnbvbilbble == nil {
+					t.Errorf("expected to receive bn unbvbilbble rebson, got nil")
 				}
 			}
 		}
 	})
 
-	t.Run("returns repo author", func(t *testing.T) {
+	t.Run("returns repo buthor", func(t *testing.T) {
 		query := "type:commit insights"
-		availabilities, err := client.ModeAvailability(query, "literal")
+		bvbilbbilities, err := client.ModeAvbilbbility(query, "literbl")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		for mode, response := range availabilities {
+		for mode, response := rbnge bvbilbbilities {
 			if mode == "REPO" || mode == "AUTHOR" {
-				if response.Available != true {
-					t.Errorf("expected mode %v to be available for query %q", response.Mode, query)
+				if response.Avbilbble != true {
+					t.Errorf("expected mode %v to be bvbilbble for query %q", response.Mode, query)
 				}
-				if response.ReasonUnavailable != nil {
-					t.Errorf("expected to be available, got %q", *response.ReasonUnavailable)
+				if response.RebsonUnbvbilbble != nil {
+					t.Errorf("expected to be bvbilbble, got %q", *response.RebsonUnbvbilbble)
 				}
 			} else {
-				if response.Available == true {
-					t.Errorf("expected mode %v to be unavailable for query %q", response.Mode, query)
+				if response.Avbilbble == true {
+					t.Errorf("expected mode %v to be unbvbilbble for query %q", response.Mode, query)
 				}
-				if response.ReasonUnavailable == nil {
-					t.Errorf("expected to receive an unavailable reason, got nil")
+				if response.RebsonUnbvbilbble == nil {
+					t.Errorf("expected to receive bn unbvbilbble rebson, got nil")
 				}
 			}
 		}
 	})
 }
 
-func TestAggregations(t *testing.T) {
+func TestAggregbtions(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Skip("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment vbribble GITHUB_TOKEN is not set")
 	}
 
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-aggregation-search",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-bggregbtion-sebrch",
+		Config: mustMbrshblJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
 			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 		}{
 			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
 				"sgtest/go-diff",
 			},
-			RepositoryPathPattern: "github.com/{nameWithOwner}",
+			RepositoryPbthPbttern: "github.com/{nbmeWithOwner}",
 		}),
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	removeExternblServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
+	err = client.WbitForReposToBeCloned(
 		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = client.WaitForReposToBeIndexed(
+	err = client.WbitForReposToBeIndexed(
 		"github.com/sgtest/go-diff",
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("finds default mode if not specified", func(t *testing.T) {
-		args := gqltestutil.AggregationArgs{
+	t.Run("finds defbult mode if not specified", func(t *testing.T) {
+		brgs := gqltestutil.AggregbtionArgs{
 			Query:       `(\w+) query`,
-			PatternType: "regexp",
+			PbtternType: "regexp",
 		}
-		resp, err := client.Aggregations(args)
+		resp, err := client.Aggregbtions(brgs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if resp.Reason != "" {
-			t.Errorf("Expected to work, got %q", resp.Reason)
+		if resp.Rebson != "" {
+			t.Errorf("Expected to work, got %q", resp.Rebson)
 		}
 		if resp.Mode != "CAPTURE_GROUP" {
-			t.Errorf("Expected to default to CAPTURE_GROUP, got %v", resp.Mode)
+			t.Errorf("Expected to defbult to CAPTURE_GROUP, got %v", resp.Mode)
 		}
 	})
 
-	t.Run("returns unavailable for unavailable mode for query", func(t *testing.T) {
+	t.Run("returns unbvbilbble for unbvbilbble mode for query", func(t *testing.T) {
 		mode := "CAPTURE_GROUP"
-		args := gqltestutil.AggregationArgs{
+		brgs := gqltestutil.AggregbtionArgs{
 			Query:       `(\w+) query`,
-			PatternType: "literal",
+			PbtternType: "literbl",
 			Mode:        &mode,
 		}
-		resp, err := client.Aggregations(args)
+		resp, err := client.Aggregbtions(brgs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if resp.Reason == "" {
-			t.Error("Expected reason unavailable, got empty")
+		if resp.Rebson == "" {
+			t.Error("Expected rebson unbvbilbble, got empty")
 		}
 	})
 
 	t.Run("returns results", func(t *testing.T) {
 		mode := "CAPTURE_GROUP"
-		args := gqltestutil.AggregationArgs{
-			Query:       `(\w+) main lang:go`,
-			PatternType: "regexp",
+		brgs := gqltestutil.AggregbtionArgs{
+			Query:       `(\w+) mbin lbng:go`,
+			PbtternType: "regexp",
 			Mode:        &mode,
 		}
-		var resp gqltestutil.AggregationResponse
-		var err error
-		// We'll retry with timeout max twice.
+		vbr resp gqltestutil.AggregbtionResponse
+		vbr err error
+		// We'll retry with timeout mbx twice.
 		err = gqltestutil.Retry(2*time.Minute, func() error {
-			resp, err = client.Aggregations(args)
+			resp, err = client.Aggregbtions(brgs)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if resp.ReasonType == "TIMEOUT_EXTENSION_AVAILABLE" {
-				args.ExtendedTimeout = true
+			if resp.RebsonType == "TIMEOUT_EXTENSION_AVAILABLE" {
+				brgs.ExtendedTimeout = true
 				return gqltestutil.ErrContinueRetry
 			}
-			if resp.Reason != "" {
-				t.Fatalf("Got unexpected unavailable reason: %v", resp.Reason)
+			if resp.Rebson != "" {
+				t.Fbtblf("Got unexpected unbvbilbble rebson: %v", resp.Rebson)
 			}
-			// We don't assert on the results because these could change, but we want to get some.
-			// However, the query is for `main`, given the go repo we should always get at least *one* result.
+			// We don't bssert on the results becbuse these could chbnge, but we wbnt to get some.
+			// However, the query is for `mbin`, given the go repo we should blwbys get bt lebst *one* result.
 			if len(resp.Groups) == 0 {
-				t.Error("Did not get any results")
+				t.Error("Did not get bny results")
 			}
 			return nil
 		})
 		if err != nil {
-			t.Errorf("got error after retrying: %v", err)
+			t.Errorf("got error bfter retrying: %v", err)
 		}
 	})
 }

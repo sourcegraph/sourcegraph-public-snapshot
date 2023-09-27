@@ -1,98 +1,98 @@
-package pings
+pbckbge pings
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	insightTypes "github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	insightTypes "github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func (e *InsightsPingEmitter) GetTotalCountByViewType(ctx context.Context) (_ []types.InsightViewsCountPing, err error) {
-	rows, err := e.insightsDb.QueryContext(ctx, insightViewTotalCountQuery)
+func (e *InsightsPingEmitter) GetTotblCountByViewType(ctx context.Context) (_ []types.InsightViewsCountPing, err error) {
+	rows, err := e.insightsDb.QueryContext(ctx, insightViewTotblCountQuery)
 	if err != nil {
 		return []types.InsightViewsCountPing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	results := make([]types.InsightViewsCountPing, 0)
+	results := mbke([]types.InsightViewsCountPing, 0)
 	for rows.Next() {
-		stats := types.InsightViewsCountPing{}
-		if err := rows.Scan(&stats.ViewType, &stats.TotalCount); err != nil {
+		stbts := types.InsightViewsCountPing{}
+		if err := rows.Scbn(&stbts.ViewType, &stbts.TotblCount); err != nil {
 			return []types.InsightViewsCountPing{}, err
 		}
-		results = append(results, stats)
+		results = bppend(results, stbts)
 	}
 
 	return results, nil
 }
 
-func (e *InsightsPingEmitter) GetTotalCountCritical(ctx context.Context) (_ int, err error) {
-	return basestore.ScanInt(e.insightsDb.QueryRowContext(ctx, insightsCriticalCountQuery))
+func (e *InsightsPingEmitter) GetTotblCountCriticbl(ctx context.Context) (_ int, err error) {
+	return bbsestore.ScbnInt(e.insightsDb.QueryRowContext(ctx, insightsCriticblCountQuery))
 }
 
-func (e *InsightsPingEmitter) GetTotalCountByViewSeriesType(ctx context.Context) (_ []types.InsightViewSeriesCountPing, err error) {
-	q := fmt.Sprintf(insightViewSeriesTotalCountQuery, pingSeriesType)
+func (e *InsightsPingEmitter) GetTotblCountByViewSeriesType(ctx context.Context) (_ []types.InsightViewSeriesCountPing, err error) {
+	q := fmt.Sprintf(insightViewSeriesTotblCountQuery, pingSeriesType)
 	rows, err := e.insightsDb.QueryContext(ctx, q)
 	if err != nil {
 		return []types.InsightViewSeriesCountPing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	results := make([]types.InsightViewSeriesCountPing, 0)
+	results := mbke([]types.InsightViewSeriesCountPing, 0)
 	for rows.Next() {
-		stats := types.InsightViewSeriesCountPing{}
-		if err := rows.Scan(&stats.ViewType, &stats.GenerationType, &stats.TotalCount); err != nil {
+		stbts := types.InsightViewSeriesCountPing{}
+		if err := rows.Scbn(&stbts.ViewType, &stbts.GenerbtionType, &stbts.TotblCount); err != nil {
 			return []types.InsightViewSeriesCountPing{}, err
 		}
-		results = append(results, stats)
+		results = bppend(results, stbts)
 	}
 
 	return results, nil
 }
 
-func (e *InsightsPingEmitter) GetTotalCountBySeriesType(ctx context.Context) (_ []types.InsightSeriesCountPing, err error) {
-	q := fmt.Sprintf(insightSeriesTotalCountQuery, pingSeriesType)
+func (e *InsightsPingEmitter) GetTotblCountBySeriesType(ctx context.Context) (_ []types.InsightSeriesCountPing, err error) {
+	q := fmt.Sprintf(insightSeriesTotblCountQuery, pingSeriesType)
 	rows, err := e.insightsDb.QueryContext(ctx, q)
 	if err != nil {
 		return []types.InsightSeriesCountPing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	results := make([]types.InsightSeriesCountPing, 0)
+	results := mbke([]types.InsightSeriesCountPing, 0)
 	for rows.Next() {
-		stats := types.InsightSeriesCountPing{}
-		if err := rows.Scan(&stats.GenerationType, &stats.TotalCount); err != nil {
+		stbts := types.InsightSeriesCountPing{}
+		if err := rows.Scbn(&stbts.GenerbtionType, &stbts.TotblCount); err != nil {
 			return []types.InsightSeriesCountPing{}, err
 		}
-		results = append(results, stats)
+		results = bppend(results, stbts)
 	}
 
 	return results, nil
 }
 
-func (e *InsightsPingEmitter) GetIntervalCounts(ctx context.Context) (_ []types.InsightTimeIntervalPing, err error) {
-	rows, err := e.insightsDb.QueryContext(ctx, insightIntervalCountsQuery)
+func (e *InsightsPingEmitter) GetIntervblCounts(ctx context.Context) (_ []types.InsightTimeIntervblPing, err error) {
+	rows, err := e.insightsDb.QueryContext(ctx, insightIntervblCountsQuery)
 	if err != nil {
-		return []types.InsightTimeIntervalPing{}, err
+		return []types.InsightTimeIntervblPing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	results := make([]types.InsightTimeIntervalPing, 0)
+	results := mbke([]types.InsightTimeIntervblPing, 0)
 	for rows.Next() {
-		var count, intervalValue int
-		var intervalUnit insightTypes.IntervalUnit
-		if err := rows.Scan(&count, &intervalValue, &intervalUnit); err != nil {
-			return []types.InsightTimeIntervalPing{}, err
+		vbr count, intervblVblue int
+		vbr intervblUnit insightTypes.IntervblUnit
+		if err := rows.Scbn(&count, &intervblVblue, &intervblUnit); err != nil {
+			return []types.InsightTimeIntervblPing{}, err
 		}
 
-		results = append(results, types.InsightTimeIntervalPing{IntervalDays: getDays(intervalValue, intervalUnit), TotalCount: count})
+		results = bppend(results, types.InsightTimeIntervblPing{IntervblDbys: getDbys(intervblVblue, intervblUnit), TotblCount: count})
 	}
-	regroupedResults := regroupIntervalCounts(results)
+	regroupedResults := regroupIntervblCounts(results)
 	return regroupedResults, nil
 }
 
@@ -103,206 +103,206 @@ func (e *InsightsPingEmitter) GetOrgVisibleInsightCounts(ctx context.Context) (_
 	}
 	defer func() { err = rows.Close() }()
 
-	results := make([]types.OrgVisibleInsightPing, 0)
+	results := mbke([]types.OrgVisibleInsightPing, 0)
 	for rows.Next() {
-		var count int
-		var presentationType insightTypes.PresentationType
-		if err := rows.Scan(&presentationType, &count); err != nil {
+		vbr count int
+		vbr presentbtionType insightTypes.PresentbtionType
+		if err := rows.Scbn(&presentbtionType, &count); err != nil {
 			return []types.OrgVisibleInsightPing{}, err
 		}
 
-		if presentationType == insightTypes.Line {
-			results = append(results, types.OrgVisibleInsightPing{Type: "search", TotalCount: count})
+		if presentbtionType == insightTypes.Line {
+			results = bppend(results, types.OrgVisibleInsightPing{Type: "sebrch", TotblCount: count})
 		} else {
-			results = append(results, types.OrgVisibleInsightPing{Type: "lang-stats", TotalCount: count})
+			results = bppend(results, types.OrgVisibleInsightPing{Type: "lbng-stbts", TotblCount: count})
 		}
 	}
 	return results, nil
 }
 
-func (e *InsightsPingEmitter) GetTotalOrgsWithDashboard(ctx context.Context) (int, error) {
-	total, _, err := basestore.ScanFirstInt(e.insightsDb.QueryContext(ctx, totalOrgsWithDashboardsQuery))
+func (e *InsightsPingEmitter) GetTotblOrgsWithDbshbobrd(ctx context.Context) (int, error) {
+	totbl, _, err := bbsestore.ScbnFirstInt(e.insightsDb.QueryContext(ctx, totblOrgsWithDbshbobrdsQuery))
 	if err != nil {
 		return 0, err
 	}
-	return total, nil
+	return totbl, nil
 }
 
-func (e *InsightsPingEmitter) GetTotalDashboards(ctx context.Context) (int, error) {
-	total, _, err := basestore.ScanFirstInt(e.insightsDb.QueryContext(ctx, totalDashboardsQuery))
+func (e *InsightsPingEmitter) GetTotblDbshbobrds(ctx context.Context) (int, error) {
+	totbl, _, err := bbsestore.ScbnFirstInt(e.insightsDb.QueryContext(ctx, totblDbshbobrdsQuery))
 	if err != nil {
 		return 0, err
 	}
-	return total, nil
+	return totbl, nil
 }
 
-func (e *InsightsPingEmitter) GetInsightsPerDashboard(ctx context.Context) (types.InsightsPerDashboardPing, error) {
-	rows, err := e.insightsDb.QueryContext(ctx, insightsPerDashboardQuery)
+func (e *InsightsPingEmitter) GetInsightsPerDbshbobrd(ctx context.Context) (types.InsightsPerDbshbobrdPing, error) {
+	rows, err := e.insightsDb.QueryContext(ctx, insightsPerDbshbobrdQuery)
 	if err != nil {
-		return types.InsightsPerDashboardPing{}, err
+		return types.InsightsPerDbshbobrdPing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	var insightsPerDashboardStats types.InsightsPerDashboardPing
+	vbr insightsPerDbshbobrdStbts types.InsightsPerDbshbobrdPing
 	rows.Next()
-	if err := rows.Scan(
-		&insightsPerDashboardStats.Avg,
-		&insightsPerDashboardStats.Min,
-		&insightsPerDashboardStats.Max,
-		&insightsPerDashboardStats.StdDev,
-		&insightsPerDashboardStats.Median,
+	if err := rows.Scbn(
+		&insightsPerDbshbobrdStbts.Avg,
+		&insightsPerDbshbobrdStbts.Min,
+		&insightsPerDbshbobrdStbts.Mbx,
+		&insightsPerDbshbobrdStbts.StdDev,
+		&insightsPerDbshbobrdStbts.Medibn,
 	); err != nil {
-		return types.InsightsPerDashboardPing{}, err
+		return types.InsightsPerDbshbobrdPing{}, err
 	}
 
-	return insightsPerDashboardStats, nil
+	return insightsPerDbshbobrdStbts, nil
 }
 
-func (e *InsightsPingEmitter) GetBackfillTime(ctx context.Context) ([]types.InsightsBackfillTimePing, error) {
-	q := sqlf.Sprintf(backfillTimeQuery, time.Now())
-	rows, err := e.insightsDb.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+func (e *InsightsPingEmitter) GetBbckfillTime(ctx context.Context) ([]types.InsightsBbckfillTimePing, error) {
+	q := sqlf.Sprintf(bbckfillTimeQuery, time.Now())
+	rows, err := e.insightsDb.QueryContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	if err != nil {
-		return []types.InsightsBackfillTimePing{}, err
+		return []types.InsightsBbckfillTimePing{}, err
 	}
 	defer func() { err = rows.Close() }()
 
-	results := []types.InsightsBackfillTimePing{}
+	results := []types.InsightsBbckfillTimePing{}
 	for rows.Next() {
-		backfillTimePing := types.InsightsBackfillTimePing{AllRepos: false}
-		if err := rows.Scan(
-			&backfillTimePing.Count,
-			&backfillTimePing.P99Seconds,
-			&backfillTimePing.P90Seconds,
-			&backfillTimePing.P50Seconds,
+		bbckfillTimePing := types.InsightsBbckfillTimePing{AllRepos: fblse}
+		if err := rows.Scbn(
+			&bbckfillTimePing.Count,
+			&bbckfillTimePing.P99Seconds,
+			&bbckfillTimePing.P90Seconds,
+			&bbckfillTimePing.P50Seconds,
 		); err != nil {
-			return []types.InsightsBackfillTimePing{}, err
+			return []types.InsightsBbckfillTimePing{}, err
 		}
-		results = append(results, backfillTimePing)
+		results = bppend(results, bbckfillTimePing)
 	}
 
 	return results, nil
 }
 
-func getDays(intervalValue int, intervalUnit insightTypes.IntervalUnit) int {
-	switch intervalUnit {
-	case insightTypes.Month:
-		return intervalValue * 30
-	case insightTypes.Week:
-		return intervalValue * 7
-	case insightTypes.Day:
-		return intervalValue
-	case insightTypes.Hour:
-		// We can't return anything more granular than 1 day.
+func getDbys(intervblVblue int, intervblUnit insightTypes.IntervblUnit) int {
+	switch intervblUnit {
+	cbse insightTypes.Month:
+		return intervblVblue * 30
+	cbse insightTypes.Week:
+		return intervblVblue * 7
+	cbse insightTypes.Dby:
+		return intervblVblue
+	cbse insightTypes.Hour:
+		// We cbn't return bnything more grbnulbr thbn 1 dby.
 		return 0
 	}
 	return 0
 }
 
-// This combines any groups of interval counts that have the same number of days.
-// Example: A group that had unit MONTH and value 1 alongside a group that had unit DAY and value 30.
-func regroupIntervalCounts(fromGroups []types.InsightTimeIntervalPing) []types.InsightTimeIntervalPing {
-	groupByDays := make(map[int]int)
-	newGroups := make([]types.InsightTimeIntervalPing, 0)
+// This combines bny groups of intervbl counts thbt hbve the sbme number of dbys.
+// Exbmple: A group thbt hbd unit MONTH bnd vblue 1 blongside b group thbt hbd unit DAY bnd vblue 30.
+func regroupIntervblCounts(fromGroups []types.InsightTimeIntervblPing) []types.InsightTimeIntervblPing {
+	groupByDbys := mbke(mbp[int]int)
+	newGroups := mbke([]types.InsightTimeIntervblPing, 0)
 
-	for _, g := range fromGroups {
-		groupByDays[g.IntervalDays] += g.TotalCount
+	for _, g := rbnge fromGroups {
+		groupByDbys[g.IntervblDbys] += g.TotblCount
 	}
-	for days, count := range groupByDays {
-		newGroups = append(newGroups, types.InsightTimeIntervalPing{IntervalDays: days, TotalCount: count})
+	for dbys, count := rbnge groupByDbys {
+		newGroups = bppend(newGroups, types.InsightTimeIntervblPing{IntervblDbys: dbys, TotblCount: count})
 	}
 	return newGroups
 }
 
 const pingSeriesType = `
 CONCAT(
-   CASE WHEN ((generation_method = 'search' or generation_method = 'search-compute') and generated_from_capture_groups) THEN 'capture-groups' ELSE generation_method END,
+   CASE WHEN ((generbtion_method = 'sebrch' or generbtion_method = 'sebrch-compute') bnd generbted_from_cbpture_groups) THEN 'cbpture-groups' ELSE generbtion_method END,
     '::',
-   CASE WHEN (repositories IS NOT NULL AND cardinality(repositories) > 0) THEN 'scoped' WHEN repository_criteria IS NOT NULL THEN 'repo-search' ELSE 'global' END,
+   CASE WHEN (repositories IS NOT NULL AND cbrdinblity(repositories) > 0) THEN 'scoped' WHEN repository_criterib IS NOT NULL THEN 'repo-sebrch' ELSE 'globbl' END,
     '::',
    CASE WHEN (just_in_time = true) THEN 'jit' ELSE 'recorded' END
-    ) as ping_series_type
+    ) bs ping_series_type
 `
 
-const insightViewSeriesTotalCountQuery = `
-SELECT presentation_type,
+const insightViewSeriesTotblCountQuery = `
+SELECT presentbtion_type,
        %s,
        COUNT(*)
 FROM insight_series
          JOIN insight_view_series ivs ON insight_series.id = ivs.insight_series_id
          JOIN insight_view iv ON ivs.insight_view_id = iv.id
-WHERE deleted_at IS NULL
-GROUP BY presentation_type, ping_series_type;
+WHERE deleted_bt IS NULL
+GROUP BY presentbtion_type, ping_series_type;
 `
 
-const insightSeriesTotalCountQuery = `
+const insightSeriesTotblCountQuery = `
 SELECT %s,
        COUNT(*)
 FROM insight_series
-WHERE deleted_at IS NULL
+WHERE deleted_bt IS NULL
 GROUP BY ping_series_type;
 `
 
-const insightViewTotalCountQuery = `
-SELECT presentation_type, COUNT(*)
+const insightViewTotblCountQuery = `
+SELECT presentbtion_type, COUNT(*)
 FROM insight_view
-GROUP BY presentation_type;
+GROUP BY presentbtion_type;
 `
 
-const insightIntervalCountsQuery = `
-SELECT COUNT(DISTINCT(ivs.insight_view_id)), series.sample_interval_value, series.sample_interval_unit FROM insight_series AS series
+const insightIntervblCountsQuery = `
+SELECT COUNT(DISTINCT(ivs.insight_view_id)), series.sbmple_intervbl_vblue, series.sbmple_intervbl_unit FROM insight_series AS series
 JOIN insight_view_series AS ivs ON series.id = ivs.insight_series_id
-WHERE series.sample_interval_value != 0
-	AND series.sample_interval_value IS NOT NULL
-	AND series.sample_interval_unit IS NOT NULL
-GROUP BY series.sample_interval_value, series.sample_interval_unit;
+WHERE series.sbmple_intervbl_vblue != 0
+	AND series.sbmple_intervbl_vblue IS NOT NULL
+	AND series.sbmple_intervbl_unit IS NOT NULL
+GROUP BY series.sbmple_intervbl_vblue, series.sbmple_intervbl_unit;
 `
 
 const orgVisibleInsightCountsQuery = `
-SELECT iv.presentation_type, COUNT(iv.presentation_type) FROM insight_view AS iv
-JOIN insight_view_grants AS ivg ON iv.id = ivg.insight_view_id
+SELECT iv.presentbtion_type, COUNT(iv.presentbtion_type) FROM insight_view AS iv
+JOIN insight_view_grbnts AS ivg ON iv.id = ivg.insight_view_id
 WHERE ivg.org_id IS NOT NULL
-GROUP BY iv.presentation_type;
+GROUP BY iv.presentbtion_type;
 `
 
-const totalOrgsWithDashboardsQuery = `
-SELECT COUNT(DISTINCT(org_id)) FROM dashboard_grants WHERE org_id IS NOT NULL;
+const totblOrgsWithDbshbobrdsQuery = `
+SELECT COUNT(DISTINCT(org_id)) FROM dbshbobrd_grbnts WHERE org_id IS NOT NULL;
 `
 
-const totalDashboardsQuery = `
-SELECT COUNT(*) FROM dashboard WHERE deleted_at IS NULL;
+const totblDbshbobrdsQuery = `
+SELECT COUNT(*) FROM dbshbobrd WHERE deleted_bt IS NULL;
 `
 
-const insightsPerDashboardQuery = `
+const insightsPerDbshbobrdQuery = `
 SELECT
-	COALESCE(AVG(count), 0) AS average,
+	COALESCE(AVG(count), 0) AS bverbge,
 	COALESCE(MIN(count), 0) AS min,
-	COALESCE(MAX(count), 0) AS max,
+	COALESCE(MAX(count), 0) AS mbx,
 	COALESCE(STDDEV(count), 0) AS stddev,
-	COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY count), 0) AS median FROM
+	COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP(ORDER BY count), 0) AS medibn FROM
 	(
-		SELECT DISTINCT(dashboard_id), COUNT(insight_view_id) FROM dashboard_insight_view GROUP BY dashboard_id
+		SELECT DISTINCT(dbshbobrd_id), COUNT(insight_view_id) FROM dbshbobrd_insight_view GROUP BY dbshbobrd_id
 	) counts;
 `
 
-const insightsCriticalCountQuery = `
-SELECT COUNT(*) FROM insight_view WHERE is_frozen = false
+const insightsCriticblCountQuery = `
+SELECT COUNT(*) FROM insight_view WHERE is_frozen = fblse
 `
 
-const backfillTimeQuery = `
-WITH recent_backfills as (
+const bbckfillTimeQuery = `
+WITH recent_bbckfills bs (
 	SELECT
 		isb.series_id,
-		SUM(runtime_duration)/1000000000 duration_seconds
-	FROM insight_series_backfill isb
-	  JOIN repo_iterator ri on isb.repo_iterator_id = ri.id
-	WHERE isb.state = 'completed'
-		AND ri.completed_at > date_trunc('week', %s::date)
+		SUM(runtime_durbtion)/1000000000 durbtion_seconds
+	FROM insight_series_bbckfill isb
+	  JOIN repo_iterbtor ri on isb.repo_iterbtor_id = ri.id
+	WHERE isb.stbte = 'completed'
+		AND ri.completed_bt > dbte_trunc('week', %s::dbte)
 	GROUP BY isb.series_id
 )
 SELECT
 	COUNT(*),
-	ROUND(COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY duration_seconds), '0'))::INT AS p99_seconds,
-	ROUND(COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY duration_seconds), '0'))::INT AS p90_seconds,
-	ROUND(COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY duration_seconds), '0'))::INT AS p50_seconds
-FROM recent_backfills;
+	ROUND(COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP( ORDER BY durbtion_seconds), '0'))::INT AS p99_seconds,
+	ROUND(COALESCE(PERCENTILE_CONT(0.90) WITHIN GROUP (ORDER BY durbtion_seconds), '0'))::INT AS p90_seconds,
+	ROUND(COALESCE(PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY durbtion_seconds), '0'))::INT AS p50_seconds
+FROM recent_bbckfills;
 `

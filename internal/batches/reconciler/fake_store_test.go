@@ -1,28 +1,28 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
 )
 
 type mockMissingErr struct {
-	mockName string
+	mockNbme string
 }
 
 func (e mockMissingErr) Error() string {
-	return fmt.Sprintf("FakeStore is missing mock for %s", e.mockName)
+	return fmt.Sprintf("FbkeStore is missing mock for %s", e.mockNbme)
 }
 
-type FakeStore struct {
-	GetBatchChangeMock func(context.Context, store.GetBatchChangeOpts) (*btypes.BatchChange, error)
+type FbkeStore struct {
+	GetBbtchChbngeMock func(context.Context, store.GetBbtchChbngeOpts) (*btypes.BbtchChbnge, error)
 }
 
-func (fs *FakeStore) GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error) {
-	if fs.GetBatchChangeMock != nil {
-		return fs.GetBatchChangeMock(ctx, opts)
+func (fs *FbkeStore) GetBbtchChbnge(ctx context.Context, opts store.GetBbtchChbngeOpts) (*btypes.BbtchChbnge, error) {
+	if fs.GetBbtchChbngeMock != nil {
+		return fs.GetBbtchChbngeMock(ctx, opts)
 	}
-	return nil, mockMissingErr{"GetBatchChange"}
+	return nil, mockMissingErr{"GetBbtchChbnge"}
 }

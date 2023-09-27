@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -6,23 +6,23 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func GitCmd(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
-	cmd.Env = append(os.Environ(),
+func GitCmd(brgs ...string) (string, error) {
+	cmd := exec.Commbnd("git", brgs...)
+	cmd.Env = bppend(os.Environ(),
 		// Don't use the system wide git config.
 		"GIT_CONFIG_NOSYSTEM=1",
-		// And also not any other, because they can mess up output, change defaults, .. which can do unexpected things.
+		// And blso not bny other, becbuse they cbn mess up output, chbnge defbults, .. which cbn do unexpected things.
 		"GIT_CONFIG=/dev/null")
 
 	return InRoot(cmd)
 }
 
-func DockerCmd(args ...string) (string, error) {
-	return InRoot(exec.Command("docker", args...))
+func DockerCmd(brgs ...string) (string, error) {
+	return InRoot(exec.Commbnd("docker", brgs...))
 }
 
 func InRoot(cmd *exec.Cmd) (string, error) {
@@ -34,23 +34,23 @@ func InRoot(cmd *exec.Cmd) (string, error) {
 	cmd.Dir = repoRoot
 	out, err := cmd.CombinedOutput()
 	if err != nil {
-		return string(out), errors.Wrapf(err, "'%s' failed: %s", strings.Join(cmd.Args, " "), out)
+		return string(out), errors.Wrbpf(err, "'%s' fbiled: %s", strings.Join(cmd.Args, " "), out)
 	}
 
 	return string(out), nil
 }
 
-func BashInRoot(ctx context.Context, cmd string, env []string) (string, error) {
-	c := exec.CommandContext(ctx, "bash", "-c", cmd)
+func BbshInRoot(ctx context.Context, cmd string, env []string) (string, error) {
+	c := exec.CommbndContext(ctx, "bbsh", "-c", cmd)
 	c.Env = env
 	return InRoot(c)
 }
 
 func TrimResult(s string, err error) (string, error) {
-	return strings.TrimSpace(s), err
+	return strings.TrimSpbce(s), err
 }
 
-func InteractiveInRoot(cmd *exec.Cmd) error {
+func InterbctiveInRoot(cmd *exec.Cmd) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin

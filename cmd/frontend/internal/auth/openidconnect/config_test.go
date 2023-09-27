@@ -1,37 +1,37 @@
-package openidconnect
+pbckbge openidconnect
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestValidateCustom(t *testing.T) {
-	tests := map[string]struct {
+func TestVblidbteCustom(t *testing.T) {
+	tests := mbp[string]struct {
 		input        conf.Unified
-		wantProblems conf.Problems
+		wbntProblems conf.Problems
 	}{
-		"duplicates": {
-			input: conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "x",
-				AuthProviders: []schema.AuthProviders{
-					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
-					{Openidconnect: &schema.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
+		"duplicbtes": {
+			input: conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "x",
+				AuthProviders: []schemb.AuthProviders{
+					{Openidconnect: &schemb.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
+					{Openidconnect: &schemb.OpenIDConnectAuthProvider{Type: "openidconnect", Issuer: "x"}},
 				},
 			}},
-			wantProblems: conf.NewSiteProblems("OpenID Connect auth provider at index 1 is duplicate of index 0"),
+			wbntProblems: conf.NewSiteProblems("OpenID Connect buth provider bt index 1 is duplicbte of index 0"),
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			conf.TestValidator(t, test.input, validateConfig, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			conf.TestVblidbtor(t, test.input, vblidbteConfig, test.wbntProblems)
 		})
 	}
 }
 
 func TestProviderConfigID(t *testing.T) {
-	p := schema.OpenIDConnectAuthProvider{Issuer: "x"}
+	p := schemb.OpenIDConnectAuthProvider{Issuer: "x"}
 	id1 := providerConfigID(&p)
 	id2 := providerConfigID(&p)
 	if id1 != id2 {

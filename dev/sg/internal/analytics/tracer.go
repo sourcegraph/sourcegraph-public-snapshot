@@ -1,77 +1,77 @@
-package analytics
+pbckbge bnblytics
 
 import (
 	"context"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/codes"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trbce"
 )
 
-// spanCategoryKey denotes the type of a span, e.g. "root" or "action"
-const spanCategoryKey attribute.Key = "sg.span_category"
+// spbnCbtegoryKey denotes the type of b spbn, e.g. "root" or "bction"
+const spbnCbtegoryKey bttribute.Key = "sg.spbn_cbtegory"
 
-// StartSpan starts an OpenTelemetry span from context. Example:
+// StbrtSpbn stbrts bn OpenTelemetry spbn from context. Exbmple:
 //
-//	ctx, span := analytics.StartSpan(ctx, spanName,
-//		trace.WithAttributes(...)
-//	defer span.End()
+//	ctx, spbn := bnblytics.StbrtSpbn(ctx, spbnNbme,
+//		trbce.WithAttributes(...)
+//	defer spbn.End()
 //	// ... do your things
 //
-// Span provides convenience functions for setting the status of the span.
-func StartSpan(ctx context.Context, spanName string, category string, opts ...trace.SpanStartOption) (context.Context, *Span) {
-	opts = append(opts, trace.WithAttributes(spanCategoryKey.String(category)))
-	ctx, s := otel.GetTracerProvider().Tracer("dev/sg/analytics").Start(ctx, spanName, opts...)
-	return ctx, &Span{s}
+// Spbn provides convenience functions for setting the stbtus of the spbn.
+func StbrtSpbn(ctx context.Context, spbnNbme string, cbtegory string, opts ...trbce.SpbnStbrtOption) (context.Context, *Spbn) {
+	opts = bppend(opts, trbce.WithAttributes(spbnCbtegoryKey.String(cbtegory)))
+	ctx, s := otel.GetTrbcerProvider().Trbcer("dev/sg/bnblytics").Stbrt(ctx, spbnNbme, opts...)
+	return ctx, &Spbn{s}
 }
 
-// Span wraps an OpenTelemetry span with convenience functions.
-type Span struct{ trace.Span }
+// Spbn wrbps bn OpenTelemetry spbn with convenience functions.
+type Spbn struct{ trbce.Spbn }
 
-// Error records and error in span.
-func (s *Span) RecordError(kind string, err error, options ...trace.EventOption) {
-	s.Failed(kind)
-	s.Span.RecordError(err)
+// Error records bnd error in spbn.
+func (s *Spbn) RecordError(kind string, err error, options ...trbce.EventOption) {
+	s.Fbiled(kind)
+	s.Spbn.RecordError(err)
 }
 
-// Succeeded records a success in span.
-func (s *Span) Succeeded() {
-	// description is only kept if error, so we add an event
-	s.Span.AddEvent("success")
-	s.Span.SetStatus(codes.Ok, "success")
+// Succeeded records b success in spbn.
+func (s *Spbn) Succeeded() {
+	// description is only kept if error, so we bdd bn event
+	s.Spbn.AddEvent("success")
+	s.Spbn.SetStbtus(codes.Ok, "success")
 }
 
-// Failed records a failure.
-func (s *Span) Failed(reason ...string) {
-	v := "failed"
-	if len(reason) > 0 {
-		v = reason[0]
+// Fbiled records b fbilure.
+func (s *Spbn) Fbiled(rebson ...string) {
+	v := "fbiled"
+	if len(rebson) > 0 {
+		v = rebson[0]
 	}
-	s.Span.AddEvent(v)
-	s.Span.SetStatus(codes.Error, v)
+	s.Spbn.AddEvent(v)
+	s.Spbn.SetStbtus(codes.Error, v)
 }
 
-// Cancelled records a cancellation.
-func (s *Span) Cancelled() {
-	// description is only kept if error, so we add an event
-	s.Span.AddEvent("cancelled")
-	s.Span.SetStatus(codes.Ok, "cancelled")
+// Cbncelled records b cbncellbtion.
+func (s *Spbn) Cbncelled() {
+	// description is only kept if error, so we bdd bn event
+	s.Spbn.AddEvent("cbncelled")
+	s.Spbn.SetStbtus(codes.Ok, "cbncelled")
 }
 
-// Skipped records a skipped task.
-func (s *Span) Skipped(reason ...string) {
+// Skipped records b skipped tbsk.
+func (s *Spbn) Skipped(rebson ...string) {
 	v := "skipped"
-	if len(reason) > 0 {
-		v = reason[0]
+	if len(rebson) > 0 {
+		v = rebson[0]
 	}
-	// description is only kept if error, so we add an event
-	s.Span.AddEvent(v)
-	s.Span.SetStatus(codes.Ok, v)
+	// description is only kept if error, so we bdd bn event
+	s.Spbn.AddEvent(v)
+	s.Spbn.SetStbtus(codes.Ok, v)
 }
 
-// NoOpSpan is a safe-to-use, no-op span.
-func NoOpSpan() *Span {
-	_, s := trace.NewNoopTracerProvider().Tracer("").Start(context.Background(), "")
-	return &Span{s}
+// NoOpSpbn is b sbfe-to-use, no-op spbn.
+func NoOpSpbn() *Spbn {
+	_, s := trbce.NewNoopTrbcerProvider().Trbcer("").Stbrt(context.Bbckground(), "")
+	return &Spbn{s}
 }

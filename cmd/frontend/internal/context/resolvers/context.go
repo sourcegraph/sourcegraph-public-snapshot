@@ -1,21 +1,21 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/conc/iter"
+	"github.com/sourcegrbph/conc/iter"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	codycontext "github.com/sourcegraph/sourcegraph/internal/codycontext"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	codycontext "github.com/sourcegrbph/sourcegrbph/internbl/codycontext"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient) graphqlbackend.CodyContextResolver {
+func NewResolver(db dbtbbbse.DB, gitserverClient gitserver.Client, contextClient *codycontext.CodyContextClient) grbphqlbbckend.CodyContextResolver {
 	return &Resolver{
 		db:              db,
 		gitserverClient: gitserverClient,
@@ -24,13 +24,13 @@ func NewResolver(db database.DB, gitserverClient gitserver.Client, contextClient
 }
 
 type Resolver struct {
-	db              database.DB
+	db              dbtbbbse.DB
 	gitserverClient gitserver.Client
 	contextClient   *codycontext.CodyContextClient
 }
 
-func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetContextArgs) (_ []graphqlbackend.ContextResultResolver, err error) {
-	repoIDs, err := graphqlbackend.UnmarshalRepositoryIDs(args.Repos)
+func (r *Resolver) GetCodyContext(ctx context.Context, brgs grbphqlbbckend.GetContextArgs) (_ []grbphqlbbckend.ContextResultResolver, err error) {
+	repoIDs, err := grbphqlbbckend.UnmbrshblRepositoryIDs(brgs.Repos)
 	if err != nil {
 		return nil, err
 	}
@@ -40,53 +40,53 @@ func (r *Resolver) GetCodyContext(ctx context.Context, args graphqlbackend.GetCo
 		return nil, err
 	}
 
-	repoNameIDs := make([]types.RepoIDName, len(repoIDs))
-	for i, repoID := range repoIDs {
+	repoNbmeIDs := mbke([]types.RepoIDNbme, len(repoIDs))
+	for i, repoID := rbnge repoIDs {
 		repo, ok := repos[repoID]
 		if !ok {
-			// GetReposSetByIDs does not error if a repo could not be found.
+			// GetReposSetByIDs does not error if b repo could not be found.
 			return nil, errors.Newf("could not find repo with id %d", int32(repoID))
 		}
 
-		repoNameIDs[i] = types.RepoIDName{ID: repoID, Name: repo.Name}
+		repoNbmeIDs[i] = types.RepoIDNbme{ID: repoID, Nbme: repo.Nbme}
 	}
 
 	fileChunks, err := r.contextClient.GetCodyContext(ctx, codycontext.GetContextArgs{
-		Repos:            repoNameIDs,
-		Query:            args.Query,
-		CodeResultsCount: args.CodeResultsCount,
-		TextResultsCount: args.TextResultsCount,
+		Repos:            repoNbmeIDs,
+		Query:            brgs.Query,
+		CodeResultsCount: brgs.CodeResultsCount,
+		TextResultsCount: brgs.TextResultsCount,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	tr, ctx := trace.New(ctx, "resolveChunks")
+	tr, ctx := trbce.New(ctx, "resolveChunks")
 	defer tr.EndWithErr(&err)
 
-	return iter.MapErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
+	return iter.MbpErr(fileChunks, func(fileChunk *codycontext.FileChunkContext) (grbphqlbbckend.ContextResultResolver, error) {
 		return r.fileChunkToResolver(ctx, fileChunk)
 	})
 }
 
-func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.FileChunkContext) (graphqlbackend.ContextResultResolver, error) {
-	repoResolver := graphqlbackend.NewRepositoryResolver(r.db, r.gitserverClient, &types.Repo{
+func (r *Resolver) fileChunkToResolver(ctx context.Context, chunk *codycontext.FileChunkContext) (grbphqlbbckend.ContextResultResolver, error) {
+	repoResolver := grbphqlbbckend.NewRepositoryResolver(r.db, r.gitserverClient, &types.Repo{
 		ID:   chunk.RepoID,
-		Name: chunk.RepoName,
+		Nbme: chunk.RepoNbme,
 	})
 
-	commitResolver := graphqlbackend.NewGitCommitResolver(r.db, r.gitserverClient, repoResolver, chunk.CommitID, nil)
-	stat, err := r.gitserverClient.Stat(ctx, authz.DefaultSubRepoPermsChecker, chunk.RepoName, chunk.CommitID, chunk.Path)
+	commitResolver := grbphqlbbckend.NewGitCommitResolver(r.db, r.gitserverClient, repoResolver, chunk.CommitID, nil)
+	stbt, err := r.gitserverClient.Stbt(ctx, buthz.DefbultSubRepoPermsChecker, chunk.RepoNbme, chunk.CommitID, chunk.Pbth)
 	if err != nil {
 		return nil, err
 	}
 
-	gitTreeEntryResolver := graphqlbackend.NewGitTreeEntryResolver(r.db, r.gitserverClient, graphqlbackend.GitTreeEntryResolverOpts{
+	gitTreeEntryResolver := grbphqlbbckend.NewGitTreeEntryResolver(r.db, r.gitserverClient, grbphqlbbckend.GitTreeEntryResolverOpts{
 		Commit: commitResolver,
-		Stat:   stat,
+		Stbt:   stbt,
 	})
 
-	// Populate content ahead of time so we can do it concurrently
-	gitTreeEntryResolver.Content(ctx, &graphqlbackend.GitTreeContentPageArgs{})
-	return graphqlbackend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StartLine, chunk.EndLine), nil
+	// Populbte content bhebd of time so we cbn do it concurrently
+	gitTreeEntryResolver.Content(ctx, &grbphqlbbckend.GitTreeContentPbgeArgs{})
+	return grbphqlbbckend.NewFileChunkContextResolver(gitTreeEntryResolver, chunk.StbrtLine, chunk.EndLine), nil
 }

@@ -1,13 +1,13 @@
-package types
+pbckbge types
 
 import "time"
 
-// Executor describes an executor instance that has recently connected to Sourcegraph.
+// Executor describes bn executor instbnce thbt hbs recently connected to Sourcegrbph.
 type Executor struct {
 	ID              int
-	Hostname        string
-	QueueName       string
-	QueueNames      []string
+	Hostnbme        string
+	QueueNbme       string
+	QueueNbmes      []string
 	OS              string
 	Architecture    string
 	DockerVersion   string
@@ -16,5 +16,5 @@ type Executor struct {
 	IgniteVersion   string
 	SrcCliVersion   string
 	FirstSeenAt     time.Time
-	LastSeenAt      time.Time
+	LbstSeenAt      time.Time
 }

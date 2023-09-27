@@ -1,59 +1,59 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-// NewGraphKey creates a new root graph key. This key identifies all work related to ranking,
-// including the SCIP export tasks.
-func NewGraphKey(graphKey string) string {
-	return encode(graphKey)
+// NewGrbphKey crebtes b new root grbph key. This key identifies bll work relbted to rbnking,
+// including the SCIP export tbsks.
+func NewGrbphKey(grbphKey string) string {
+	return encode(grbphKey)
 }
 
-// NewDerivativeGraphKey creates a new derivative graph key. This key identifies work related
-// to ranking, excluding the SCIP export tasks, which are identified by the same root graph key
-// but with different derivative graph key prefix values.
-func NewDerivativeGraphKey(graphKey, derivativeGraphKeyPrefix string) string {
+// NewDerivbtiveGrbphKey crebtes b new derivbtive grbph key. This key identifies work relbted
+// to rbnking, excluding the SCIP export tbsks, which bre identified by the sbme root grbph key
+// but with different derivbtive grbph key prefix vblues.
+func NewDerivbtiveGrbphKey(grbphKey, derivbtiveGrbphKeyPrefix string) string {
 	return fmt.Sprintf("%s.%s",
-		encode(graphKey),
-		encode(derivativeGraphKeyPrefix),
+		encode(grbphKey),
+		encode(derivbtiveGrbphKeyPrefix),
 	)
 }
 
-// GraphKey returns a graph key from the configured root.
-func GraphKey() string {
-	return NewGraphKey(conf.CodeIntelRankingDocumentReferenceCountsGraphKey())
+// GrbphKey returns b grbph key from the configured root.
+func GrbphKey() string {
+	return NewGrbphKey(conf.CodeIntelRbnkingDocumentReferenceCountsGrbphKey())
 }
 
-// DerivativeGraphKeyFromPrefix returns a derivative key from the configured root used for exports
-// as well as the current "bucket" of time containing the current instant identified by the given
+// DerivbtiveGrbphKeyFromPrefix returns b derivbtive key from the configured root used for exports
+// bs well bs the current "bucket" of time contbining the current instbnt identified by the given
 // prefix.
 //
-// Constructing a graph key for the mapper and reducer jobs in this way ensures that begin a fresh
-// map/reduce job on a periodic cadence (determined by a cron-like site config setting). Changing
-// the root graph key will also create a new map/reduce job.
-func DerivativeGraphKeyFromPrefix(derivativeGraphKeyPrefix string) string {
-	return NewDerivativeGraphKey(conf.CodeIntelRankingDocumentReferenceCountsGraphKey(), derivativeGraphKeyPrefix)
+// Constructing b grbph key for the mbpper bnd reducer jobs in this wby ensures thbt begin b fresh
+// mbp/reduce job on b periodic cbdence (determined by b cron-like site config setting). Chbnging
+// the root grbph key will blso crebte b new mbp/reduce job.
+func DerivbtiveGrbphKeyFromPrefix(derivbtiveGrbphKeyPrefix string) string {
+	return NewDerivbtiveGrbphKey(conf.CodeIntelRbnkingDocumentReferenceCountsGrbphKey(), derivbtiveGrbphKeyPrefix)
 }
 
-// GraphKeyFromDerivativeGraphKey returns the root of the given derivative graph key.
-func GraphKeyFromDerivativeGraphKey(derivativeGraphKey string) (string, bool) {
-	parts := strings.Split(derivativeGraphKey, ".")
-	if len(parts) != 2 {
-		return "", false
+// GrbphKeyFromDerivbtiveGrbphKey returns the root of the given derivbtive grbph key.
+func GrbphKeyFromDerivbtiveGrbphKey(derivbtiveGrbphKey string) (string, bool) {
+	pbrts := strings.Split(derivbtiveGrbphKey, ".")
+	if len(pbrts) != 2 {
+		return "", fblse
 	}
 
-	return parts[0], true
+	return pbrts[0], true
 }
 
-var replacer = strings.NewReplacer(
+vbr replbcer = strings.NewReplbcer(
 	".", "_",
 	"-", "_",
 )
 
 func encode(s string) string {
-	return replacer.Replace(s)
+	return replbcer.Replbce(s)
 }

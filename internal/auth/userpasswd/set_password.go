@@ -1,57 +1,57 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// HandleSetPasswordEmail sends the password reset email directly to the user for users
-// created by site admins.
+// HbndleSetPbsswordEmbil sends the pbssword reset embil directly to the user for users
+// crebted by site bdmins.
 //
-// If the primary user's email is not verified, a special version of the reset link is
-// emailed that also verifies the email.
-func HandleSetPasswordEmail(ctx context.Context, db database.DB, id int32, username, email string, emailVerified bool) (string, error) {
-	resetURL, err := backend.MakePasswordResetURL(ctx, db, id)
-	if err == database.ErrPasswordResetRateLimit {
+// If the primbry user's embil is not verified, b specibl version of the reset link is
+// embiled thbt blso verifies the embil.
+func HbndleSetPbsswordEmbil(ctx context.Context, db dbtbbbse.DB, id int32, usernbme, embil string, embilVerified bool) (string, error) {
+	resetURL, err := bbckend.MbkePbsswordResetURL(ctx, db, id)
+	if err == dbtbbbse.ErrPbsswordResetRbteLimit {
 		return "", err
 	} else if err != nil {
-		return "", errors.Wrap(err, "make password reset URL")
+		return "", errors.Wrbp(err, "mbke pbssword reset URL")
 	}
 
-	shareableResetURL := globals.ExternalURL().ResolveReference(resetURL).String()
-	emailedResetURL := shareableResetURL
+	shbrebbleResetURL := globbls.ExternblURL().ResolveReference(resetURL).String()
+	embiledResetURL := shbrebbleResetURL
 
-	if !emailVerified {
-		newURL, err := AttachEmailVerificationToPasswordReset(ctx, db.UserEmails(), *resetURL, id, email)
+	if !embilVerified {
+		newURL, err := AttbchEmbilVerificbtionToPbsswordReset(ctx, db.UserEmbils(), *resetURL, id, embil)
 		if err != nil {
-			return shareableResetURL, errors.Wrap(err, "attach email verification")
+			return shbrebbleResetURL, errors.Wrbp(err, "bttbch embil verificbtion")
 		}
-		emailedResetURL = globals.ExternalURL().ResolveReference(newURL).String()
+		embiledResetURL = globbls.ExternblURL().ResolveReference(newURL).String()
 	}
 
-	// Configure the template
-	emailTemplate := defaultSetPasswordEmailTemplate
-	if customTemplates := conf.SiteConfig().EmailTemplates; customTemplates != nil {
-		emailTemplate = txemail.FromSiteConfigTemplateWithDefault(customTemplates.SetPassword, emailTemplate)
+	// Configure the templbte
+	embilTemplbte := defbultSetPbsswordEmbilTemplbte
+	if customTemplbtes := conf.SiteConfig().EmbilTemplbtes; customTemplbtes != nil {
+		embilTemplbte = txembil.FromSiteConfigTemplbteWithDefbult(customTemplbtes.SetPbssword, embilTemplbte)
 	}
 
-	if err := txemail.Send(ctx, "password_set", txemail.Message{
-		To:       []string{email},
-		Template: emailTemplate,
-		Data: SetPasswordEmailTemplateData{
-			Username: username,
-			URL:      emailedResetURL,
-			Host:     globals.ExternalURL().Host,
+	if err := txembil.Send(ctx, "pbssword_set", txembil.Messbge{
+		To:       []string{embil},
+		Templbte: embilTemplbte,
+		Dbtb: SetPbsswordEmbilTemplbteDbtb{
+			Usernbme: usernbme,
+			URL:      embiledResetURL,
+			Host:     globbls.ExternblURL().Host,
 		},
 	}); err != nil {
-		return shareableResetURL, err
+		return shbrebbleResetURL, err
 	}
 
-	return shareableResetURL, nil
+	return shbrebbleResetURL, nil
 }

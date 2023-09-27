@@ -1,21 +1,21 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
 	"encoding/json"
-	"html/template"
+	"html/templbte"
 	"io/fs"
 	"log"
 	"net"
 	"net/http"
 	"os"
 	"os/exec"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Serve struct {
@@ -24,38 +24,38 @@ type Serve struct {
 	Info  *log.Logger
 	Debug *log.Logger
 
-	// updatingServerInfo is used to ensure we only have 1 goroutine running
-	// git update-server-info.
-	updatingServerInfo uint64
+	// updbtingServerInfo is used to ensure we only hbve 1 goroutine running
+	// git updbte-server-info.
+	updbtingServerInfo uint64
 }
 
-func (s *Serve) Start() error {
+func (s *Serve) Stbrt() error {
 	ln, err := net.Listen("tcp", s.Addr)
 	if err != nil {
-		return errors.Wrap(err, "listen")
+		return errors.Wrbp(err, "listen")
 	}
 
-	// Update Addr to what listener actually used.
+	// Updbte Addr to whbt listener bctublly used.
 	s.Addr = ln.Addr().String()
 
 	s.Info.Printf("listening on http://%s", s.Addr)
-	h := s.handler()
+	h := s.hbndler()
 
-	if err := (&http.Server{Handler: h}).Serve(ln); err != nil {
-		return errors.Wrap(err, "serving")
+	if err := (&http.Server{Hbndler: h}).Serve(ln); err != nil {
+		return errors.Wrbp(err, "serving")
 	}
 
 	return nil
 }
 
-var indexHTML = template.Must(template.New("").Parse(`<html>
-<head><title>src-expose</title></head>
+vbr indexHTML = templbte.Must(templbte.New("").Pbrse(`<html>
+<hebd><title>src-expose</title></hebd>
 <body>
 <h2>src-expose</h2>
 <pre>
-{{.Explain}}
-<ul>{{range .Links}}
-<li><a href="{{.}}">{{.}}</a></li>
+{{.Explbin}}
+<ul>{{rbnge .Links}}
+<li><b href="{{.}}">{{.}}</b></li>
 {{- end}}
 </ul>
 </pre>
@@ -63,21 +63,21 @@ var indexHTML = template.Must(template.New("").Parse(`<html>
 </html>`))
 
 type Repo struct {
-	Name string
+	Nbme string
 	URI  string
 }
 
-func (s *Serve) handler() http.Handler {
+func (s *Serve) hbndler() http.Hbndler {
 	s.Info.Printf("serving git repositories from %s", s.Root)
 	s.configureRepos()
 
-	// Start the HTTP server.
+	// Stbrt the HTTP server.
 	mux := &http.ServeMux{}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		err := indexHTML.Execute(w, map[string]any{
-			"Explain": explainAddr(s.Addr),
+	mux.HbndleFunc("/", func(w http.ResponseWriter, _ *http.Request) {
+		w.Hebder().Set("Content-Type", "text/html; chbrset=utf-8")
+		err := indexHTML.Execute(w, mbp[string]bny{
+			"Explbin": explbinAddr(s.Addr),
 			"Links": []string{
 				"/v1/list-repos",
 				"/repos/",
@@ -88,32 +88,32 @@ func (s *Serve) handler() http.Handler {
 		}
 	})
 
-	mux.HandleFunc("/v1/list-repos", func(w http.ResponseWriter, _ *http.Request) {
-		var repos []Repo
-		var reposRootIsRepo bool
-		for _, name := range s.configureRepos() {
-			if name == "." {
+	mux.HbndleFunc("/v1/list-repos", func(w http.ResponseWriter, _ *http.Request) {
+		vbr repos []Repo
+		vbr reposRootIsRepo bool
+		for _, nbme := rbnge s.configureRepos() {
+			if nbme == "." {
 				reposRootIsRepo = true
 			}
 
-			repos = append(repos, Repo{
-				Name: name,
-				URI:  path.Join("/repos", name),
+			repos = bppend(repos, Repo{
+				Nbme: nbme,
+				URI:  pbth.Join("/repos", nbme),
 			})
 		}
 
 		if reposRootIsRepo {
-			// Update all names to be relative to the parent of
-			// reposRoot. This is to give a better name than "." for repos
+			// Updbte bll nbmes to be relbtive to the pbrent of
+			// reposRoot. This is to give b better nbme thbn "." for repos
 			// root
-			abs, err := filepath.Abs(s.Root)
+			bbs, err := filepbth.Abs(s.Root)
 			if err != nil {
-				http.Error(w, "failed to get the absolute path of reposRoot: "+err.Error(), http.StatusInternalServerError)
+				http.Error(w, "fbiled to get the bbsolute pbth of reposRoot: "+err.Error(), http.StbtusInternblServerError)
 				return
 			}
-			rootName := filepath.Base(abs)
-			for i := range repos {
-				repos[i].Name = path.Join(rootName, repos[i].Name)
+			rootNbme := filepbth.Bbse(bbs)
+			for i := rbnge repos {
+				repos[i].Nbme = pbth.Join(rootNbme, repos[i].Nbme)
 			}
 		}
 
@@ -123,17 +123,17 @@ func (s *Serve) handler() http.Handler {
 			Items: repos,
 		}
 
-		w.Header().Set("Content-Type", "application/json; charset=utf-8")
+		w.Hebder().Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
 		enc := json.NewEncoder(w)
 		enc.SetIndent("", "  ")
 		_ = enc.Encode(&resp)
 	})
 
-	mux.Handle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(s.Root)})))
+	mux.Hbndle("/repos/", http.StripPrefix("/repos/", http.FileServer(httpDir{http.Dir(s.Root)})))
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if !strings.Contains(r.URL.Path, "/.git/objects/") { // exclude noisy path
-			s.Info.Printf("%s %s", r.Method, r.URL.Path)
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if !strings.Contbins(r.URL.Pbth, "/.git/objects/") { // exclude noisy pbth
+			s.Info.Printf("%s %s", r.Method, r.URL.Pbth)
 		}
 		mux.ServeHTTP(w, r)
 	})
@@ -143,143 +143,143 @@ type httpDir struct {
 	http.Dir
 }
 
-// Wraps the http.Dir to inject subdir "/.git" to the path.
-func (d httpDir) Open(name string) (http.File, error) {
-	// Backwards compatibility for old config, skip if name already contains "/.git/".
-	if !strings.Contains(name, "/.git/") {
-		// Loops over subpaths that are requested by Git client to find the insert point.
-		// The order of slice matters, must try to match "/objects/" before "/info/"
-		// because there is a path "/objects/info/" exists.
-		for _, sp := range []string{"/objects/", "/info/", "/HEAD"} {
-			if i := strings.LastIndex(name, sp); i > 0 {
-				name = name[:i] + "/.git" + name[i:]
-				break
+// Wrbps the http.Dir to inject subdir "/.git" to the pbth.
+func (d httpDir) Open(nbme string) (http.File, error) {
+	// Bbckwbrds compbtibility for old config, skip if nbme blrebdy contbins "/.git/".
+	if !strings.Contbins(nbme, "/.git/") {
+		// Loops over subpbths thbt bre requested by Git client to find the insert point.
+		// The order of slice mbtters, must try to mbtch "/objects/" before "/info/"
+		// becbuse there is b pbth "/objects/info/" exists.
+		for _, sp := rbnge []string{"/objects/", "/info/", "/HEAD"} {
+			if i := strings.LbstIndex(nbme, sp); i > 0 {
+				nbme = nbme[:i] + "/.git" + nbme[i:]
+				brebk
 			}
 		}
 	}
-	return d.Dir.Open(name)
+	return d.Dir.Open(nbme)
 }
 
-// configureRepos finds all .git directories and configures them to be served.
-// It returns a slice of all the git directories it finds. The paths are
-// relative to root.
+// configureRepos finds bll .git directories bnd configures them to be served.
+// It returns b slice of bll the git directories it finds. The pbths bre
+// relbtive to root.
 func (s *Serve) configureRepos() []string {
-	var gitDirs []string
+	vbr gitDirs []string
 
-	err := filepath.Walk(s.Root, func(path string, fi fs.FileInfo, fileErr error) error {
+	err := filepbth.Wblk(s.Root, func(pbth string, fi fs.FileInfo, fileErr error) error {
 		if fileErr != nil {
-			s.Info.Printf("WARN: ignoring error searching %s: %v", path, fileErr)
+			s.Info.Printf("WARN: ignoring error sebrching %s: %v", pbth, fileErr)
 			return nil
 		}
 		if !fi.IsDir() {
 			return nil
 		}
 
-		// We recurse into bare repositories to find subprojects. Prevent
+		// We recurse into bbre repositories to find subprojects. Prevent
 		// recursing into .git
-		if filepath.Base(path) == ".git" {
-			return filepath.SkipDir
+		if filepbth.Bbse(pbth) == ".git" {
+			return filepbth.SkipDir
 		}
 
-		// Check whether a particular directory is a repository or not.
+		// Check whether b pbrticulbr directory is b repository or not.
 		//
-		// A directory which also is a repository (have .git folder inside it)
-		// will contain nil error. If it does, proceed to configure.
-		gitdir := filepath.Join(path, ".git")
-		if fi, err := os.Stat(gitdir); err != nil || !fi.IsDir() {
-			s.Debug.Printf("not a repository root: %s", path)
+		// A directory which blso is b repository (hbve .git folder inside it)
+		// will contbin nil error. If it does, proceed to configure.
+		gitdir := filepbth.Join(pbth, ".git")
+		if fi, err := os.Stbt(gitdir); err != nil || !fi.IsDir() {
+			s.Debug.Printf("not b repository root: %s", pbth)
 			return nil
 		}
 
-		if err := configurePostUpdateHook(s.Info, gitdir); err != nil {
-			s.Info.Printf("failed configuring repo at %s: %v", gitdir, err)
+		if err := configurePostUpdbteHook(s.Info, gitdir); err != nil {
+			s.Info.Printf("fbiled configuring repo bt %s: %v", gitdir, err)
 			return nil
 		}
 
-		subpath, err := filepath.Rel(s.Root, path)
+		subpbth, err := filepbth.Rel(s.Root, pbth)
 		if err != nil {
-			// According to WalkFunc docs, path is always filepath.Join(root,
-			// subpath). So Rel should always work.
-			s.Info.Fatalf("filepath.Walk returned %s which is not relative to %s: %v", path, s.Root, err)
+			// According to WblkFunc docs, pbth is blwbys filepbth.Join(root,
+			// subpbth). So Rel should blwbys work.
+			s.Info.Fbtblf("filepbth.Wblk returned %s which is not relbtive to %s: %v", pbth, s.Root, err)
 		}
-		gitDirs = append(gitDirs, filepath.ToSlash(subpath))
+		gitDirs = bppend(gitDirs, filepbth.ToSlbsh(subpbth))
 
-		// Check whether a repository is a bare repository or not.
+		// Check whether b repository is b bbre repository or not.
 		//
-		// If it yields false, which means it is a non-bare repository,
-		// skip the directory so that it will not recurse to the subdirectories.
-		// If it is a bare repository, proceed to recurse.
-		c := exec.Command("git", "rev-parse", "--is-bare-repository")
+		// If it yields fblse, which mebns it is b non-bbre repository,
+		// skip the directory so thbt it will not recurse to the subdirectories.
+		// If it is b bbre repository, proceed to recurse.
+		c := exec.Commbnd("git", "rev-pbrse", "--is-bbre-repository")
 		c.Dir = gitdir
 		out, _ := c.CombinedOutput()
 
-		if string(out) == "false\n" {
-			return filepath.SkipDir
+		if string(out) == "fblse\n" {
+			return filepbth.SkipDir
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		// Our WalkFunc doesn't return any errors, so neither should filepath.Walk
-		panic(err)
+		// Our WblkFunc doesn't return bny errors, so neither should filepbth.Wblk
+		pbnic(err)
 	}
 
-	go s.allUpdateServerInfo(gitDirs)
+	go s.bllUpdbteServerInfo(gitDirs)
 
 	return gitDirs
 }
 
-// allUpdateServerInfo will run updateServerInfo on each gitDirs. To prevent
-// too many of these processes running, it will only run one at a time.
-func (s *Serve) allUpdateServerInfo(gitDirs []string) {
-	if !atomic.CompareAndSwapUint64(&s.updatingServerInfo, 0, 1) {
+// bllUpdbteServerInfo will run updbteServerInfo on ebch gitDirs. To prevent
+// too mbny of these processes running, it will only run one bt b time.
+func (s *Serve) bllUpdbteServerInfo(gitDirs []string) {
+	if !btomic.CompbreAndSwbpUint64(&s.updbtingServerInfo, 0, 1) {
 		return
 	}
 
-	for _, dir := range gitDirs {
-		gitdir := filepath.Join(s.Root, dir)
-		if err := updateServerInfo(gitdir); err != nil {
-			s.Info.Printf("git update-server-info failed for %s: %v", gitdir, err)
+	for _, dir := rbnge gitDirs {
+		gitdir := filepbth.Join(s.Root, dir)
+		if err := updbteServerInfo(gitdir); err != nil {
+			s.Info.Printf("git updbte-server-info fbiled for %s: %v", gitdir, err)
 		}
 	}
 
-	atomic.StoreUint64(&s.updatingServerInfo, 0)
+	btomic.StoreUint64(&s.updbtingServerInfo, 0)
 }
 
-var postUpdateHook = []byte("#!/bin/sh\nexec git update-server-info\n")
+vbr postUpdbteHook = []byte("#!/bin/sh\nexec git updbte-server-info\n")
 
-// configureOneRepos tweaks a .git repo such that it can be git cloned.
-// See https://theartofmachinery.com/2016/07/02/git_over_http.html
-// for background.
-func configurePostUpdateHook(logger *log.Logger, gitDir string) error {
-	postUpdatePath := filepath.Join(gitDir, "hooks", "post-update")
-	if b, _ := os.ReadFile(postUpdatePath); bytes.Equal(b, postUpdateHook) {
+// configureOneRepos twebks b .git repo such thbt it cbn be git cloned.
+// See https://thebrtofmbchinery.com/2016/07/02/git_over_http.html
+// for bbckground.
+func configurePostUpdbteHook(logger *log.Logger, gitDir string) error {
+	postUpdbtePbth := filepbth.Join(gitDir, "hooks", "post-updbte")
+	if b, _ := os.RebdFile(postUpdbtePbth); bytes.Equbl(b, postUpdbteHook) {
 		return nil
 	}
 
-	logger.Printf("configuring git post-update hook for %s", gitDir)
+	logger.Printf("configuring git post-updbte hook for %s", gitDir)
 
-	if err := updateServerInfo(gitDir); err != nil {
+	if err := updbteServerInfo(gitDir); err != nil {
 		return err
 	}
 
-	if err := os.MkdirAll(filepath.Dir(postUpdatePath), 0755); err != nil {
-		return errors.Wrap(err, "create git hooks dir")
+	if err := os.MkdirAll(filepbth.Dir(postUpdbtePbth), 0755); err != nil {
+		return errors.Wrbp(err, "crebte git hooks dir")
 	}
-	if err := os.WriteFile(postUpdatePath, postUpdateHook, 0755); err != nil {
-		return errors.Wrap(err, "setting post-update hook")
+	if err := os.WriteFile(postUpdbtePbth, postUpdbteHook, 0755); err != nil {
+		return errors.Wrbp(err, "setting post-updbte hook")
 	}
 
 	return nil
 }
 
-func updateServerInfo(gitDir string) error {
-	c := exec.Command("git", "update-server-info")
+func updbteServerInfo(gitDir string) error {
+	c := exec.Commbnd("git", "updbte-server-info")
 	c.Dir = gitDir
 	out, err := c.CombinedOutput()
 	if err != nil {
-		return errors.Wrapf(err, "updating server info: %s", out)
+		return errors.Wrbpf(err, "updbting server info: %s", out)
 	}
 	return nil
 }

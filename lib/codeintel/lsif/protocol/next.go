@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type Next struct {
 	Edge
@@ -13,7 +13,7 @@ func NewNext(id, outV, inV uint64) Next {
 				ID:   id,
 				Type: ElementEdge,
 			},
-			Label: EdgeNext,
+			Lbbel: EdgeNext,
 		},
 		OutV: outV,
 		InV:  inV,

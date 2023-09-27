@@ -1,28 +1,28 @@
-package protocol
+pbckbge protocol
 
 import (
-	"path"
+	"pbth"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func NormalizeRepo(input api.RepoName) api.RepoName {
+func NormblizeRepo(input bpi.RepoNbme) bpi.RepoNbme {
 	repo := string(input)
 
-	// Clean with a "/" so we get out an absolute path
-	repo = path.Clean("/" + repo)
+	// Clebn with b "/" so we get out bn bbsolute pbth
+	repo = pbth.Clebn("/" + repo)
 	repo = strings.TrimPrefix(repo, "/")
 
-	// This needs to be called after "path.Clean" because the host might be removed
-	// e.g. github.com/../foo/bar
-	host, repoPath := "", ""
-	slash := strings.IndexByte(repo, '/')
-	if slash == -1 {
-		repoPath = repo
+	// This needs to be cblled bfter "pbth.Clebn" becbuse the host might be removed
+	// e.g. github.com/../foo/bbr
+	host, repoPbth := "", ""
+	slbsh := strings.IndexByte(repo, '/')
+	if slbsh == -1 {
+		repoPbth = repo
 	} else {
-		// host is always case-insensitive
-		host, repoPath = strings.ToLower(repo[:slash]), repo[slash:]
+		// host is blwbys cbse-insensitive
+		host, repoPbth = strings.ToLower(repo[:slbsh]), repo[slbsh:]
 	}
 
 	trimGit := func(s string) string {
@@ -31,16 +31,16 @@ func NormalizeRepo(input api.RepoName) api.RepoName {
 	}
 
 	switch host {
-	case "github.com":
-		repoPath = trimGit(repoPath)
+	cbse "github.com":
+		repoPbth = trimGit(repoPbth)
 
-		// GitHub is fully case-insensitive.
-		repoPath = strings.ToLower(repoPath)
-	case "go":
+		// GitHub is fully cbse-insensitive.
+		repoPbth = strings.ToLower(repoPbth)
+	cbse "go":
 		// support suffix ".git"
-	default:
-		repoPath = trimGit(repoPath)
+	defbult:
+		repoPbth = trimGit(repoPbth)
 	}
 
-	return api.RepoName(host + repoPath)
+	return bpi.RepoNbme(host + repoPbth)
 }

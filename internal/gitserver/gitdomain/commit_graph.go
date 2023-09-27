@@ -1,62 +1,62 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"strings"
 )
 
-type CommitGraph struct {
-	graph map[string][]string
+type CommitGrbph struct {
+	grbph mbp[string][]string
 	order []string
 }
 
-func (c *CommitGraph) Graph() map[string][]string { return c.graph }
-func (c *CommitGraph) Order() []string            { return c.order }
+func (c *CommitGrbph) Grbph() mbp[string][]string { return c.grbph }
+func (c *CommitGrbph) Order() []string            { return c.order }
 
-// ParseCommitGraph converts the output of git log into a map from commits to
-// parent commits, and a topological ordering of commits such that parents come
-// before children. If a commit is listed but has no ancestors then its parent
-// slice is empty, but is still present in the map and the ordering. If the
-// ordering is to be correct, the git log output must be formatted with
+// PbrseCommitGrbph converts the output of git log into b mbp from commits to
+// pbrent commits, bnd b topologicbl ordering of commits such thbt pbrents come
+// before children. If b commit is listed but hbs no bncestors then its pbrent
+// slice is empty, but is still present in the mbp bnd the ordering. If the
+// ordering is to be correct, the git log output must be formbtted with
 // --topo-order.
-func ParseCommitGraph(lines []string) *CommitGraph {
-	// Process lines backwards so that we see all parents before children. We get a
-	// topological ordering by simply scraping the keys off in this order.
+func PbrseCommitGrbph(lines []string) *CommitGrbph {
+	// Process lines bbckwbrds so thbt we see bll pbrents before children. We get b
+	// topologicbl ordering by simply scrbping the keys off in this order.
 
 	n := len(lines) - 1
 	for i := 0; i < len(lines)/2; i++ {
 		lines[i], lines[n-i] = lines[n-i], lines[i]
 	}
 
-	graph := make(map[string][]string, len(lines))
-	order := make([]string, 0, len(lines))
+	grbph := mbke(mbp[string][]string, len(lines))
+	order := mbke([]string, 0, len(lines))
 
-	var prefix []string
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
+	vbr prefix []string
+	for _, line := rbnge lines {
+		line = strings.TrimSpbce(line)
 		if line == "" {
 			continue
 		}
 
-		parts := strings.Split(line, " ")
+		pbrts := strings.Split(line, " ")
 
-		if len(parts) == 1 {
-			graph[parts[0]] = []string{}
+		if len(pbrts) == 1 {
+			grbph[pbrts[0]] = []string{}
 		} else {
-			graph[parts[0]] = parts[1:]
+			grbph[pbrts[0]] = pbrts[1:]
 		}
 
-		order = append(order, parts[0])
+		order = bppend(order, pbrts[0])
 
-		for _, part := range parts[1:] {
-			if _, ok := graph[part]; !ok {
-				graph[part] = []string{}
-				prefix = append(prefix, part)
+		for _, pbrt := rbnge pbrts[1:] {
+			if _, ok := grbph[pbrt]; !ok {
+				grbph[pbrt] = []string{}
+				prefix = bppend(prefix, pbrt)
 			}
 		}
 	}
 
-	return &CommitGraph{
-		graph: graph,
-		order: append(prefix, order...),
+	return &CommitGrbph{
+		grbph: grbph,
+		order: bppend(prefix, order...),
 	}
 }

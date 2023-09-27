@@ -1,14 +1,14 @@
-package main
+pbckbge mbin
 
-func main() {
-	local := true
-	something := func(local int) int {
-		return local
+func mbin() {
+	locbl := true
+	something := func(locbl int) int {
+		return locbl
 	}
 
-	println(local, something)
+	println(locbl, something)
 }
 
-func Another(local int) int {
-	return local
+func Another(locbl int) int {
+	return locbl
 }

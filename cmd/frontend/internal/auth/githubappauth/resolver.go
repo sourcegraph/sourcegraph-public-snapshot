@@ -1,4 +1,4 @@
-package githubapp
+pbckbge githubbpp
 
 import (
 	"context"
@@ -7,283 +7,283 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/repos/webhooks/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/repos/webhooks/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	ghbuth "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewResolver returns a new Resolver that uses the given database
-func NewResolver(logger log.Logger, db database.DB) graphqlbackend.GitHubAppsResolver {
+// NewResolver returns b new Resolver thbt uses the given dbtbbbse
+func NewResolver(logger log.Logger, db dbtbbbse.DB) grbphqlbbckend.GitHubAppsResolver {
 	return &resolver{logger: logger, db: db}
 }
 
 type resolver struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 }
 
 const gitHubAppIDKind = "GitHubApp"
 
-// MarshalGitHubAppID converts a GitHub App ID (database ID) to a GraphQL ID.
-func MarshalGitHubAppID(id int64) graphql.ID {
-	return relay.MarshalID(gitHubAppIDKind, id)
+// MbrshblGitHubAppID converts b GitHub App ID (dbtbbbse ID) to b GrbphQL ID.
+func MbrshblGitHubAppID(id int64) grbphql.ID {
+	return relby.MbrshblID(gitHubAppIDKind, id)
 }
 
-// UnmarshalGitHubAppID converts a GitHub App GraphQL ID into a database ID.
-func UnmarshalGitHubAppID(id graphql.ID) (gitHubAppID int64, err error) {
-	if kind := relay.UnmarshalKind(id); kind != gitHubAppIDKind {
-		err = errors.Errorf("expected graph ID to have kind %q; got %q", gitHubAppIDKind, kind)
+// UnmbrshblGitHubAppID converts b GitHub App GrbphQL ID into b dbtbbbse ID.
+func UnmbrshblGitHubAppID(id grbphql.ID) (gitHubAppID int64, err error) {
+	if kind := relby.UnmbrshblKind(id); kind != gitHubAppIDKind {
+		err = errors.Errorf("expected grbph ID to hbve kind %q; got %q", gitHubAppIDKind, kind)
 		return
 	}
 
-	err = relay.UnmarshalSpec(id, &gitHubAppID)
+	err = relby.UnmbrshblSpec(id, &gitHubAppID)
 	return
 }
 
-// DeleteGitHubApp deletes a GitHub App along with all of its associated
-// code host connections and auth providers.
-func (r *resolver) DeleteGitHubApp(ctx context.Context, args *graphqlbackend.DeleteGitHubAppArgs) (*graphqlbackend.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site admins can delete GitHub Apps.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+// DeleteGitHubApp deletes b GitHub App blong with bll of its bssocibted
+// code host connections bnd buth providers.
+func (r *resolver) DeleteGitHubApp(ctx context.Context, brgs *grbphqlbbckend.DeleteGitHubAppArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site bdmins cbn delete GitHub Apps.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	appID, err := UnmarshalGitHubAppID(args.GitHubApp)
+	bppID, err := UnmbrshblGitHubAppID(brgs.GitHubApp)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := r.db.GitHubApps().Delete(ctx, int(appID)); err != nil {
+	if err := r.db.GitHubApps().Delete(ctx, int(bppID)); err != nil {
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func (r *resolver) GitHubApps(ctx context.Context, args *graphqlbackend.GitHubAppsArgs) (graphqlbackend.GitHubAppConnectionResolver, error) {
-	// 🚨 SECURITY: Check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *resolver) GitHubApps(ctx context.Context, brgs *grbphqlbbckend.GitHubAppsArgs) (grbphqlbbckend.GitHubAppConnectionResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	domain, err := parseDomain(args.Domain)
+	dombin, err := pbrseDombin(brgs.Dombin)
 	if err != nil {
 		return nil, err
 	}
-	apps, err := r.db.GitHubApps().List(ctx, domain)
+	bpps, err := r.db.GitHubApps().List(ctx, dombin)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.GitHubAppResolver, len(apps))
-	for i := range apps {
-		resolvers[i] = NewGitHubAppResolver(r.db, apps[i], r.logger)
+	resolvers := mbke([]grbphqlbbckend.GitHubAppResolver, len(bpps))
+	for i := rbnge bpps {
+		resolvers[i] = NewGitHubAppResolver(r.db, bpps[i], r.logger)
 	}
 
 	gitHubAppConnection := &gitHubAppConnectionResolver{
 		resolvers:  resolvers,
-		totalCount: len(resolvers),
+		totblCount: len(resolvers),
 	}
 
 	return gitHubAppConnection, nil
 }
 
-func parseDomain(s *string) (*itypes.GitHubAppDomain, error) {
+func pbrseDombin(s *string) (*itypes.GitHubAppDombin, error) {
 	if s == nil {
 		return nil, nil
 	}
 	switch strings.ToUpper(*s) {
-	case "REPOS":
-		domain := itypes.ReposGitHubAppDomain
-		return &domain, nil
-	case "BATCHES":
-		domain := itypes.BatchesGitHubAppDomain
-		return &domain, nil
-	default:
-		return nil, errors.Errorf("unknown domain %q", *s)
+	cbse "REPOS":
+		dombin := itypes.ReposGitHubAppDombin
+		return &dombin, nil
+	cbse "BATCHES":
+		dombin := itypes.BbtchesGitHubAppDombin
+		return &dombin, nil
+	defbult:
+		return nil, errors.Errorf("unknown dombin %q", *s)
 	}
 }
 
-func (r *resolver) GitHubApp(ctx context.Context, args *graphqlbackend.GitHubAppArgs) (graphqlbackend.GitHubAppResolver, error) {
-	// 🚨 SECURITY: Check whether user is site-admin
-	return r.gitHubAppByID(ctx, args.ID)
+func (r *resolver) GitHubApp(ctx context.Context, brgs *grbphqlbbckend.GitHubAppArgs) (grbphqlbbckend.GitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-bdmin
+	return r.gitHubAppByID(ctx, brgs.ID)
 }
 
-func (r *resolver) GitHubAppByAppID(ctx context.Context, args *graphqlbackend.GitHubAppByAppIDArgs) (graphqlbackend.GitHubAppResolver, error) {
-	// 🚨 SECURITY: Check whether user is site-admin
-	return r.gitHubAppByAppID(ctx, int(args.AppID), args.BaseURL)
+func (r *resolver) GitHubAppByAppID(ctx context.Context, brgs *grbphqlbbckend.GitHubAppByAppIDArgs) (grbphqlbbckend.GitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-bdmin
+	return r.gitHubAppByAppID(ctx, int(brgs.AppID), brgs.BbseURL)
 }
 
-func (r *resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		gitHubAppIDKind: func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+func (r *resolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		gitHubAppIDKind: func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 			return r.gitHubAppByID(ctx, id)
 		},
 	}
 }
 
-func (r *resolver) gitHubAppByID(ctx context.Context, id graphql.ID) (*gitHubAppResolver, error) {
-	// 🚨 SECURITY: Check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *resolver) gitHubAppByID(ctx context.Context, id grbphql.ID) (*gitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
-	gitHubAppID, err := UnmarshalGitHubAppID(id)
+	gitHubAppID, err := UnmbrshblGitHubAppID(id)
 	if err != nil {
 		return nil, err
 	}
-	app, err := r.db.GitHubApps().GetByID(ctx, int(gitHubAppID))
-	if err != nil {
-		return nil, err
-	}
-
-	return &gitHubAppResolver{
-		app:    app,
-		db:     r.db,
-		logger: r.logger,
-	}, nil
-}
-
-func (r *resolver) gitHubAppByAppID(ctx context.Context, appID int, baseURL string) (*gitHubAppResolver, error) {
-	// 🚨 SECURITY: Check whether user is site-admin
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
-		return nil, err
-	}
-
-	app, err := r.db.GitHubApps().GetByAppID(ctx, appID, baseURL)
+	bpp, err := r.db.GitHubApps().GetByID(ctx, int(gitHubAppID))
 	if err != nil {
 		return nil, err
 	}
 
 	return &gitHubAppResolver{
-		app:    app,
+		bpp:    bpp,
 		db:     r.db,
 		logger: r.logger,
 	}, nil
 }
 
-// NewGitHubAppResolver creates a new GitHubAppResolver from a GitHubApp.
-func NewGitHubAppResolver(db database.DB, app *types.GitHubApp, logger log.Logger) *gitHubAppResolver {
-	return &gitHubAppResolver{app: app, db: db, logger: logger}
+func (r *resolver) gitHubAppByAppID(ctx context.Context, bppID int, bbseURL string) (*gitHubAppResolver, error) {
+	// 🚨 SECURITY: Check whether user is site-bdmin
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	bpp, err := r.db.GitHubApps().GetByAppID(ctx, bppID, bbseURL)
+	if err != nil {
+		return nil, err
+	}
+
+	return &gitHubAppResolver{
+		bpp:    bpp,
+		db:     r.db,
+		logger: r.logger,
+	}, nil
+}
+
+// NewGitHubAppResolver crebtes b new GitHubAppResolver from b GitHubApp.
+func NewGitHubAppResolver(db dbtbbbse.DB, bpp *types.GitHubApp, logger log.Logger) *gitHubAppResolver {
+	return &gitHubAppResolver{bpp: bpp, db: db, logger: logger}
 }
 
 type gitHubAppConnectionResolver struct {
-	resolvers  []graphqlbackend.GitHubAppResolver
-	totalCount int
+	resolvers  []grbphqlbbckend.GitHubAppResolver
+	totblCount int
 }
 
-func (r *gitHubAppConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.GitHubAppResolver {
+func (r *gitHubAppConnectionResolver) Nodes(ctx context.Context) []grbphqlbbckend.GitHubAppResolver {
 	return r.resolvers
 }
 
-func (r *gitHubAppConnectionResolver) TotalCount(ctx context.Context) int32 {
-	return int32(r.totalCount)
+func (r *gitHubAppConnectionResolver) TotblCount(ctx context.Context) int32 {
+	return int32(r.totblCount)
 }
 
-// gitHubAppResolver is a GraphQL node resolver for GitHubApps.
+// gitHubAppResolver is b GrbphQL node resolver for GitHubApps.
 type gitHubAppResolver struct {
 	logger log.Logger
-	app    *types.GitHubApp
-	db     database.DB
+	bpp    *types.GitHubApp
+	db     dbtbbbse.DB
 
 	once          sync.Once
-	installations []graphqlbackend.GitHubAppInstallation
+	instbllbtions []grbphqlbbckend.GitHubAppInstbllbtion
 	err           error
 }
 
-func (r *gitHubAppResolver) ID() graphql.ID {
-	return MarshalGitHubAppID(int64(r.app.ID))
+func (r *gitHubAppResolver) ID() grbphql.ID {
+	return MbrshblGitHubAppID(int64(r.bpp.ID))
 }
 
 func (r *gitHubAppResolver) AppID() int32 {
-	return int32(r.app.AppID)
+	return int32(r.bpp.AppID)
 }
 
-func (r *gitHubAppResolver) Name() string {
-	return r.app.Name
+func (r *gitHubAppResolver) Nbme() string {
+	return r.bpp.Nbme
 }
 
-func (r *gitHubAppResolver) Domain() string {
-	return r.app.Domain.ToGraphQL()
+func (r *gitHubAppResolver) Dombin() string {
+	return r.bpp.Dombin.ToGrbphQL()
 }
 
 func (r *gitHubAppResolver) Slug() string {
-	return r.app.Slug
+	return r.bpp.Slug
 }
 
-func (r *gitHubAppResolver) BaseURL() string {
-	return r.app.BaseURL
+func (r *gitHubAppResolver) BbseURL() string {
+	return r.bpp.BbseURL
 }
 
 func (r *gitHubAppResolver) AppURL() string {
-	return r.app.AppURL
+	return r.bpp.AppURL
 }
 
 func (r *gitHubAppResolver) ClientID() string {
-	return r.app.ClientID
+	return r.bpp.ClientID
 }
 
 func (r *gitHubAppResolver) ClientSecret() string {
-	return r.app.ClientSecret
+	return r.bpp.ClientSecret
 }
 
 func (r *gitHubAppResolver) Logo() string {
-	return r.app.Logo
+	return r.bpp.Logo
 }
 
-func (r *gitHubAppResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.app.CreatedAt}
+func (r *gitHubAppResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bpp.CrebtedAt}
 }
 
-func (r *gitHubAppResolver) UpdatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.app.UpdatedAt}
+func (r *gitHubAppResolver) UpdbtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bpp.UpdbtedAt}
 }
 
-func (r *gitHubAppResolver) Installations(ctx context.Context) (installations []graphqlbackend.GitHubAppInstallation, err error) {
-	installations, err = r.compute(ctx)
+func (r *gitHubAppResolver) Instbllbtions(ctx context.Context) (instbllbtions []grbphqlbbckend.GitHubAppInstbllbtion, err error) {
+	instbllbtions, err = r.compute(ctx)
 	if err != nil {
-		return []graphqlbackend.GitHubAppInstallation{}, err
+		return []grbphqlbbckend.GitHubAppInstbllbtion{}, err
 	}
-	return installations, nil
+	return instbllbtions, nil
 }
 
-func (r *gitHubAppResolver) Webhook(ctx context.Context) graphqlbackend.WebhookResolver {
-	if r.app.WebhookID == nil {
+func (r *gitHubAppResolver) Webhook(ctx context.Context) grbphqlbbckend.WebhookResolver {
+	if r.bpp.WebhookID == nil {
 		return nil
 	}
-	hook, err := r.db.Webhooks(keyring.Default().WebhookKey).GetByID(ctx, int32(*r.app.WebhookID))
+	hook, err := r.db.Webhooks(keyring.Defbult().WebhookKey).GetByID(ctx, int32(*r.bpp.WebhookID))
 	if err != nil {
 		return nil
 	}
 	return resolvers.NewWebhookResolver(r.db, hook)
 }
 
-func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHubAppInstallation, error) {
+func (r *gitHubAppResolver) compute(ctx context.Context) ([]grbphqlbbckend.GitHubAppInstbllbtion, error) {
 	r.once.Do(func() {
-		installs, err := r.db.GitHubApps().GetInstallations(ctx, r.app.ID)
+		instblls, err := r.db.GitHubApps().GetInstbllbtions(ctx, r.bpp.ID)
 		if err != nil {
 			r.err = err
 			return
 		}
 
-		// We use this opportunity to sync installations in our database. This is done in
-		// a goroutine so that we don't block the request completion.
-		go r.syncInstallations()
+		// We use this opportunity to sync instbllbtions in our dbtbbbse. This is done in
+		// b goroutine so thbt we don't block the request completion.
+		go r.syncInstbllbtions()
 
-		extsvcs, err := r.db.ExternalServices().List(ctx, database.ExternalServicesListOptions{
+		extsvcs, err := r.db.ExternblServices().List(ctx, dbtbbbse.ExternblServicesListOptions{
 			Kinds: []string{extsvc.KindGitHub},
 		})
 		if err != nil {
@@ -291,64 +291,64 @@ func (r *gitHubAppResolver) compute(ctx context.Context) ([]graphqlbackend.GitHu
 			return
 		}
 
-		for _, install := range installs {
-			var installationExtsvcs []*itypes.ExternalService
-			for _, es := range extsvcs {
-				parsed, err := extsvc.ParseEncryptableConfig(ctx, extsvc.KindGitHub, es.Config)
+		for _, instbll := rbnge instblls {
+			vbr instbllbtionExtsvcs []*itypes.ExternblService
+			for _, es := rbnge extsvcs {
+				pbrsed, err := extsvc.PbrseEncryptbbleConfig(ctx, extsvc.KindGitHub, es.Config)
 				if err != nil {
 					continue
 				}
-				c := parsed.(*schema.GitHubConnection)
-				if c.GitHubAppDetails == nil || c.GitHubAppDetails.AppID != r.app.AppID || c.Url != r.app.BaseURL || c.GitHubAppDetails.InstallationID != int(install.InstallationID) {
+				c := pbrsed.(*schemb.GitHubConnection)
+				if c.GitHubAppDetbils == nil || c.GitHubAppDetbils.AppID != r.bpp.AppID || c.Url != r.bpp.BbseURL || c.GitHubAppDetbils.InstbllbtionID != int(instbll.InstbllbtionID) {
 					continue
 				}
-				installationExtsvcs = append(installationExtsvcs, es)
+				instbllbtionExtsvcs = bppend(instbllbtionExtsvcs, es)
 			}
 
-			r.installations = append(r.installations, graphqlbackend.GitHubAppInstallation{
+			r.instbllbtions = bppend(r.instbllbtions, grbphqlbbckend.GitHubAppInstbllbtion{
 				DB:         r.db,
-				InstallID:  int32(install.InstallationID),
-				InstallURL: install.URL,
-				InstallAccount: graphqlbackend.GitHubAppInstallationAccount{
-					AccountLogin:     install.AccountLogin,
-					AccountAvatarURL: install.AccountAvatarURL,
-					AccountURL:       install.AccountURL,
-					AccountType:      install.AccountType,
+				InstbllID:  int32(instbll.InstbllbtionID),
+				InstbllURL: instbll.URL,
+				InstbllAccount: grbphqlbbckend.GitHubAppInstbllbtionAccount{
+					AccountLogin:     instbll.AccountLogin,
+					AccountAvbtbrURL: instbll.AccountAvbtbrURL,
+					AccountURL:       instbll.AccountURL,
+					AccountType:      instbll.AccountType,
 				},
-				InstallExternalServices: installationExtsvcs,
+				InstbllExternblServices: instbllbtionExtsvcs,
 			})
 		}
 	})
-	return r.installations, r.err
+	return r.instbllbtions, r.err
 }
 
-// syncInstallations syncs the GitHub App Installations in our database with those
-// found on GitHub.com. This method only logs errors rather than assigning them to
-// the resolver because they should not block the request from completing.
-func (r *gitHubAppResolver) syncInstallations() {
-	ctx := context.Background()
-	ctx, cancel := context.WithTimeout(ctx, 1*time.Minute)
-	defer cancel()
+// syncInstbllbtions syncs the GitHub App Instbllbtions in our dbtbbbse with those
+// found on GitHub.com. This method only logs errors rbther thbn bssigning them to
+// the resolver becbuse they should not block the request from completing.
+func (r *gitHubAppResolver) syncInstbllbtions() {
+	ctx := context.Bbckground()
+	ctx, cbncel := context.WithTimeout(ctx, 1*time.Minute)
+	defer cbncel()
 
-	r.logger.Info("Performing opportunistic GitHub App Installations sync", log.String("app_name", r.app.Name))
+	r.logger.Info("Performing opportunistic GitHub App Instbllbtions sync", log.String("bpp_nbme", r.bpp.Nbme))
 
-	auther, err := ghauth.NewGitHubAppAuthenticator(int(r.AppID()), []byte(r.app.PrivateKey))
+	buther, err := ghbuth.NewGitHubAppAuthenticbtor(int(r.AppID()), []byte(r.bpp.PrivbteKey))
 	if err != nil {
-		r.logger.Warn("Error creating GitHub App authenticator", log.Error(err))
+		r.logger.Wbrn("Error crebting GitHub App buthenticbtor", log.Error(err))
 		return
 	}
 
-	baseURL, err := url.Parse(r.app.BaseURL)
+	bbseURL, err := url.Pbrse(r.bpp.BbseURL)
 	if err != nil {
-		r.logger.Warn("Error parsing GitHub App base URL", log.Error(err))
+		r.logger.Wbrn("Error pbrsing GitHub App bbse URL", log.Error(err))
 		return
 	}
-	apiURL, _ := github.APIRoot(baseURL)
+	bpiURL, _ := github.APIRoot(bbseURL)
 
-	client := github.NewV3Client(r.logger, "", apiURL, auther, nil)
+	client := github.NewV3Client(r.logger, "", bpiURL, buther, nil)
 
-	errs := r.db.GitHubApps().SyncInstallations(ctx, *r.app, r.logger, client)
+	errs := r.db.GitHubApps().SyncInstbllbtions(ctx, *r.bpp, r.logger, client)
 	if errs != nil && len(errs.Errors()) > 0 {
-		r.logger.Warn("Error syncing GitHub App Installations", log.Error(errs))
+		r.logger.Wbrn("Error syncing GitHub App Instbllbtions", log.Error(errs))
 	}
 }

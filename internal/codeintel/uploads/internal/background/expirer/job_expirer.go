@@ -1,80 +1,80 @@
-package expirer
+pbckbge expirer
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewUploadExpirer(
-	observationCtx *observation.Context,
+func NewUplobdExpirer(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
-	repoStore database.RepoStore,
+	repoStore dbtbbbse.RepoStore,
 	policySvc PolicyService,
 	gitserverClient gitserver.Client,
 	config *Config,
-) goroutine.BackgroundRoutine {
+) goroutine.BbckgroundRoutine {
 	expirer := &expirer{
 		store:         store,
 		repoStore:     repoStore,
 		policySvc:     policySvc,
-		policyMatcher: policies.NewMatcher(gitserverClient, policies.RetentionExtractor, true, false),
+		policyMbtcher: policies.NewMbtcher(gitserverClient, policies.RetentionExtrbctor, true, fblse),
 	}
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(context.Background()),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return expirer.HandleExpiredUploadsBatch(ctx, NewExpirationMetrics(observationCtx), config)
+		bctor.WithInternblActor(context.Bbckground()),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			return expirer.HbndleExpiredUplobdsBbtch(ctx, NewExpirbtionMetrics(observbtionCtx), config)
 		}),
-		goroutine.WithName("codeintel.upload-expirer"),
-		goroutine.WithDescription("marks uploads as expired based on retention policies"),
-		goroutine.WithInterval(config.ExpirerInterval),
+		goroutine.WithNbme("codeintel.uplobd-expirer"),
+		goroutine.WithDescription("mbrks uplobds bs expired bbsed on retention policies"),
+		goroutine.WithIntervbl(config.ExpirerIntervbl),
 	)
 }
 
 type expirer struct {
 	store         store.Store
-	repoStore     database.RepoStore
+	repoStore     dbtbbbse.RepoStore
 	policySvc     PolicyService
-	policyMatcher PolicyMatcher
+	policyMbtcher PolicyMbtcher
 }
 
-// handleExpiredUploadsBatch compares the age of upload records against the age of uploads
-// protected by global and repository specific data retention policies.
+// hbndleExpiredUplobdsBbtch compbres the bge of uplobd records bgbinst the bge of uplobds
+// protected by globbl bnd repository specific dbtb retention policies.
 //
-// Uploads that are older than the protected retention age are marked as expired. Expired records with
-// no dependents will be removed by the expiredUploadDeleter.
-func (s *expirer) HandleExpiredUploadsBatch(ctx context.Context, metrics *ExpirationMetrics, cfg *Config) (err error) {
-	// Get the batch of repositories that we'll handle in this invocation of the periodic goroutine. This
-	// set should contain repositories that have yet to be updated, or that have been updated least recently.
-	// This allows us to update every repository reliably, even if it takes a long time to process through
-	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
-	// process records that have been uploaded but the commits from which they are visible have yet to be
-	// determined (and appearing as if they are visible to no commit).
-	repositories, err := s.store.SetRepositoriesForRetentionScan(ctx, cfg.RepositoryProcessDelay, cfg.RepositoryBatchSize)
+// Uplobds thbt bre older thbn the protected retention bge bre mbrked bs expired. Expired records with
+// no dependents will be removed by the expiredUplobdDeleter.
+func (s *expirer) HbndleExpiredUplobdsBbtch(ctx context.Context, metrics *ExpirbtionMetrics, cfg *Config) (err error) {
+	// Get the bbtch of repositories thbt we'll hbndle in this invocbtion of the periodic goroutine. This
+	// set should contbin repositories thbt hbve yet to be updbted, or thbt hbve been updbted lebst recently.
+	// This bllows us to updbte every repository relibbly, even if it tbkes b long time to process through
+	// the bbcklog. Note thbt this set of repositories require b fresh commit grbph, so we're not trying to
+	// process records thbt hbve been uplobded but the commits from which they bre visible hbve yet to be
+	// determined (bnd bppebring bs if they bre visible to no commit).
+	repositories, err := s.store.SetRepositoriesForRetentionScbn(ctx, cfg.RepositoryProcessDelby, cfg.RepositoryBbtchSize)
 	if err != nil {
-		return errors.Wrap(err, "uploadSvc.SelectRepositoriesForRetentionScan")
+		return errors.Wrbp(err, "uplobdSvc.SelectRepositoriesForRetentionScbn")
 	}
 	if len(repositories) == 0 {
-		// All repositories updated recently enough
+		// All repositories updbted recently enough
 		return nil
 	}
 
 	now := timeutil.Now()
 
-	for _, repositoryID := range repositories {
-		if repositoryErr := s.handleRepository(ctx, repositoryID, cfg, now, metrics); repositoryErr != nil {
+	for _, repositoryID := rbnge repositories {
+		if repositoryErr := s.hbndleRepository(ctx, repositoryID, cfg, now, metrics); repositoryErr != nil {
 			if err == nil {
 				err = repositoryErr
 			} else {
@@ -86,116 +86,116 @@ func (s *expirer) HandleExpiredUploadsBatch(ctx context.Context, metrics *Expira
 	return err
 }
 
-func (s *expirer) handleRepository(ctx context.Context, repositoryID int, cfg *Config, now time.Time, metrics *ExpirationMetrics) error {
-	metrics.NumRepositoriesScanned.Inc()
+func (s *expirer) hbndleRepository(ctx context.Context, repositoryID int, cfg *Config, now time.Time, metrics *ExpirbtionMetrics) error {
+	metrics.NumRepositoriesScbnned.Inc()
 
-	// Build a map from commits to the set of policies that affect them. Note that this map should
-	// never be empty as we have multiple protected data retention policies on the global scope so
-	// that all data visible from a tag or branch tip is protected for at least a short amount of
-	// time after upload.
-	commitMap, err := s.buildCommitMap(ctx, repositoryID, cfg, now)
+	// Build b mbp from commits to the set of policies thbt bffect them. Note thbt this mbp should
+	// never be empty bs we hbve multiple protected dbtb retention policies on the globbl scope so
+	// thbt bll dbtb visible from b tbg or brbnch tip is protected for bt lebst b short bmount of
+	// time bfter uplobd.
+	commitMbp, err := s.buildCommitMbp(ctx, repositoryID, cfg, now)
 	if err != nil {
 		return err
 	}
 
-	// Mark the time after which all unprocessed uploads for this repository will not be touched.
-	// This timestamp field is used as a rate limiting device so we do not busy-loop over the same
-	// protected records in the background.
+	// Mbrk the time bfter which bll unprocessed uplobds for this repository will not be touched.
+	// This timestbmp field is used bs b rbte limiting device so we do not busy-loop over the sbme
+	// protected records in the bbckground.
 	//
-	// This value should be assigned OUTSIDE of the following loop to prevent the case where the
-	// upload process delay is shorter than the time it takes to process one batch of uploads. This
-	// is obviously a mis-configuration, but one we can make a bit less catastrophic by not updating
-	// this value in the loop.
-	lastRetentionScanBefore := now.Add(-cfg.UploadProcessDelay)
+	// This vblue should be bssigned OUTSIDE of the following loop to prevent the cbse where the
+	// uplobd process delby is shorter thbn the time it tbkes to process one bbtch of uplobds. This
+	// is obviously b mis-configurbtion, but one we cbn mbke b bit less cbtbstrophic by not updbting
+	// this vblue in the loop.
+	lbstRetentionScbnBefore := now.Add(-cfg.UplobdProcessDelby)
 
 	for {
-		// Each record pulled back by this query will either have its expired flag or its last
-		// retention scan timestamp updated by the following handleUploads call. This guarantees
-		// that the loop will terminate naturally after the entire set of candidate uploads have
-		// been seen and updated with a time necessarily greater than lastRetentionScanBefore.
+		// Ebch record pulled bbck by this query will either hbve its expired flbg or its lbst
+		// retention scbn timestbmp updbted by the following hbndleUplobds cbll. This gubrbntees
+		// thbt the loop will terminbte nbturblly bfter the entire set of cbndidbte uplobds hbve
+		// been seen bnd updbted with b time necessbrily grebter thbn lbstRetentionScbnBefore.
 		//
-		// Additionally, we skip the set of uploads that have finished processing strictly after
-		// the last update to the commit graph for that repository. This ensures we do not throw
-		// out new uploads that would happen to be visible to no commits since they were never
-		// installed into the commit graph.
+		// Additionblly, we skip the set of uplobds thbt hbve finished processing strictly bfter
+		// the lbst updbte to the commit grbph for thbt repository. This ensures we do not throw
+		// out new uplobds thbt would hbppen to be visible to no commits since they were never
+		// instblled into the commit grbph.
 
-		uploads, _, err := s.store.GetUploads(ctx, shared.GetUploadsOptions{
-			State:                   "completed",
+		uplobds, _, err := s.store.GetUplobds(ctx, shbred.GetUplobdsOptions{
+			Stbte:                   "completed",
 			RepositoryID:            repositoryID,
-			AllowExpired:            false,
+			AllowExpired:            fblse,
 			OldestFirst:             true,
-			Limit:                   cfg.UploadBatchSize,
-			LastRetentionScanBefore: &lastRetentionScanBefore,
-			InCommitGraph:           true,
+			Limit:                   cfg.UplobdBbtchSize,
+			LbstRetentionScbnBefore: &lbstRetentionScbnBefore,
+			InCommitGrbph:           true,
 		})
-		if err != nil || len(uploads) == 0 {
+		if err != nil || len(uplobds) == 0 {
 			return err
 		}
 
-		if err := s.handleUploads(ctx, commitMap, uploads, cfg, metrics, now); err != nil {
-			// Note that we collect errors in the lop of the handleUploads call, but we will still terminate
-			// this loop on any non-nil error from that function. This is required to prevent us from pullling
-			// back the same set of failing records from the database in a tight loop.
+		if err := s.hbndleUplobds(ctx, commitMbp, uplobds, cfg, metrics, now); err != nil {
+			// Note thbt we collect errors in the lop of the hbndleUplobds cbll, but we will still terminbte
+			// this loop on bny non-nil error from thbt function. This is required to prevent us from pullling
+			// bbck the sbme set of fbiling records from the dbtbbbse in b tight loop.
 			return err
 		}
 	}
 }
 
-// buildCommitMap will iterate the complete set of configuration policies that apply to a particular
-// repository and build a map from commits to the policies that apply to them.
-func (s *expirer) buildCommitMap(ctx context.Context, repositoryID int, cfg *Config, now time.Time) (map[string][]policies.PolicyMatch, error) {
-	var (
+// buildCommitMbp will iterbte the complete set of configurbtion policies thbt bpply to b pbrticulbr
+// repository bnd build b mbp from commits to the policies thbt bpply to them.
+func (s *expirer) buildCommitMbp(ctx context.Context, repositoryID int, cfg *Config, now time.Time) (mbp[string][]policies.PolicyMbtch, error) {
+	vbr (
 		t        = true
 		offset   int
-		policies []policiesshared.ConfigurationPolicy
+		policies []policiesshbred.ConfigurbtionPolicy
 	)
 
-	repo, err := s.repoStore.Get(ctx, api.RepoID(repositoryID))
+	repo, err := s.repoStore.Get(ctx, bpi.RepoID(repositoryID))
 	if err != nil {
 		return nil, err
 	}
-	repoName := repo.Name
+	repoNbme := repo.Nbme
 
 	for {
-		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := s.policySvc.GetConfigurationPolicies(ctx, policiesshared.GetConfigurationPoliciesOptions{
+		// Retrieve the complete set of configurbtion policies thbt bffect dbtb retention for this repository
+		policyBbtch, totblCount, err := s.policySvc.GetConfigurbtionPolicies(ctx, policiesshbred.GetConfigurbtionPoliciesOptions{
 			RepositoryID:     repositoryID,
-			ForDataRetention: &t,
-			Limit:            cfg.PolicyBatchSize,
+			ForDbtbRetention: &t,
+			Limit:            cfg.PolicyBbtchSize,
 			Offset:           offset,
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "policySvc.GetConfigurationPolicies")
+			return nil, errors.Wrbp(err, "policySvc.GetConfigurbtionPolicies")
 		}
 
-		offset += len(policyBatch)
-		policies = append(policies, policyBatch...)
+		offset += len(policyBbtch)
+		policies = bppend(policies, policyBbtch...)
 
-		if len(policyBatch) == 0 || offset >= totalCount {
-			break
+		if len(policyBbtch) == 0 || offset >= totblCount {
+			brebk
 		}
 	}
 
-	// Get the set of commits within this repository that match a data retention policy
-	return s.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, repoName, policies, now)
+	// Get the set of commits within this repository thbt mbtch b dbtb retention policy
+	return s.policyMbtcher.CommitsDescribedByPolicy(ctx, repositoryID, repoNbme, policies, now)
 }
 
-func (s *expirer) handleUploads(
+func (s *expirer) hbndleUplobds(
 	ctx context.Context,
-	commitMap map[string][]policies.PolicyMatch,
-	uploads []shared.Upload,
+	commitMbp mbp[string][]policies.PolicyMbtch,
+	uplobds []shbred.Uplobd,
 	cfg *Config,
-	metrics *ExpirationMetrics,
+	metrics *ExpirbtionMetrics,
 	now time.Time,
 ) (err error) {
-	// Categorize each upload as protected or expired
-	var (
-		protectedUploadIDs = make([]int, 0, len(uploads))
-		expiredUploadIDs   = make([]int, 0, len(uploads))
+	// Cbtegorize ebch uplobd bs protected or expired
+	vbr (
+		protectedUplobdIDs = mbke([]int, 0, len(uplobds))
+		expiredUplobdIDs   = mbke([]int, 0, len(uplobds))
 	)
 
-	for _, upload := range uploads {
-		protected, checkErr := s.isUploadProtectedByPolicy(ctx, commitMap, upload, cfg, metrics, now)
+	for _, uplobd := rbnge uplobds {
+		protected, checkErr := s.isUplobdProtectedByPolicy(ctx, commitMbp, uplobd, cfg, metrics, now)
 		if checkErr != nil {
 			if err == nil {
 				err = checkErr
@@ -203,74 +203,74 @@ func (s *expirer) handleUploads(
 				err = errors.Append(err, checkErr)
 			}
 
-			// Collect errors but not prevent other commits from being successfully processed. We'll leave the
-			// ones that fail here alone to be re-checked the next time records for this repository are scanned.
+			// Collect errors but not prevent other commits from being successfully processed. We'll lebve the
+			// ones thbt fbil here blone to be re-checked the next time records for this repository bre scbnned.
 			continue
 		}
 
 		if protected {
-			protectedUploadIDs = append(protectedUploadIDs, upload.ID)
+			protectedUplobdIDs = bppend(protectedUplobdIDs, uplobd.ID)
 		} else {
-			expiredUploadIDs = append(expiredUploadIDs, upload.ID)
+			expiredUplobdIDs = bppend(expiredUplobdIDs, uplobd.ID)
 		}
 	}
 
-	// Update the last data retention scan timestamp on the upload records with the given protected identifiers
-	// (so that we do not re-select the same uploads on the next batch) and sets the expired field on the upload
-	// records with the given expired identifiers so that the expiredUploadDeleter process can remove then once
-	// they are no longer referenced.
+	// Updbte the lbst dbtb retention scbn timestbmp on the uplobd records with the given protected identifiers
+	// (so thbt we do not re-select the sbme uplobds on the next bbtch) bnd sets the expired field on the uplobd
+	// records with the given expired identifiers so thbt the expiredUplobdDeleter process cbn remove then once
+	// they bre no longer referenced.
 
-	if updateErr := s.store.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
-		if updateErr := errors.Wrap(err, "uploadSvc.UpdateUploadRetention"); err == nil {
-			err = updateErr
+	if updbteErr := s.store.UpdbteUplobdRetention(ctx, protectedUplobdIDs, expiredUplobdIDs); updbteErr != nil {
+		if updbteErr := errors.Wrbp(err, "uplobdSvc.UpdbteUplobdRetention"); err == nil {
+			err = updbteErr
 		} else {
-			err = errors.Append(err, updateErr)
+			err = errors.Append(err, updbteErr)
 		}
 	}
 
-	if count := len(expiredUploadIDs); count > 0 {
-		// s.logger.Info("Expiring codeintel uploads", log.Int("count", count))
-		metrics.NumUploadsExpired.Add(float64(count))
+	if count := len(expiredUplobdIDs); count > 0 {
+		// s.logger.Info("Expiring codeintel uplobds", log.Int("count", count))
+		metrics.NumUplobdsExpired.Add(flobt64(count))
 	}
 
 	return err
 }
 
-func (s *expirer) isUploadProtectedByPolicy(
+func (s *expirer) isUplobdProtectedByPolicy(
 	ctx context.Context,
-	commitMap map[string][]policies.PolicyMatch,
-	upload shared.Upload,
+	commitMbp mbp[string][]policies.PolicyMbtch,
+	uplobd shbred.Uplobd,
 	cfg *Config,
-	metrics *ExpirationMetrics,
+	metrics *ExpirbtionMetrics,
 	now time.Time,
 ) (bool, error) {
-	metrics.NumUploadsScanned.Inc()
+	metrics.NumUplobdsScbnned.Inc()
 
-	var token *string
+	vbr token *string
 
-	for first := true; first || token != nil; first = false {
-		// Fetch the set of commits for which this upload can resolve code intelligence queries. This will necessarily
-		// include the exact commit indicated by the upload, but may also provide best-effort code intelligence to
-		// nearby commits.
+	for first := true; first || token != nil; first = fblse {
+		// Fetch the set of commits for which this uplobd cbn resolve code intelligence queries. This will necessbrily
+		// include the exbct commit indicbted by the uplobd, but mby blso provide best-effort code intelligence to
+		// nebrby commits.
 		//
-		// We need to consider all visible commits, as we may otherwise delete the uploads providing code intelligence
-		// for  the tip of a branch between the time gitserver is updated and new the associated code intelligence index
+		// We need to consider bll visible commits, bs we mby otherwise delete the uplobds providing code intelligence
+		// for  the tip of b brbnch between the time gitserver is updbted bnd new the bssocibted code intelligence index
 		// is processed.
 		//
-		// We check the set of commits visible to an upload in batches as in some cases it can be very large; for
-		// example, a single historic commit providing code intelligence for all descendants.
-		commits, nextToken, err := s.store.GetCommitsVisibleToUpload(ctx, upload.ID, cfg.CommitBatchSize, token)
+		// We check the set of commits visible to bn uplobd in bbtches bs in some cbses it cbn be very lbrge; for
+		// exbmple, b single historic commit providing code intelligence for bll descendbnts.
+		commits, nextToken, err := s.store.GetCommitsVisibleToUplobd(ctx, uplobd.ID, cfg.CommitBbtchSize, token)
 		if err != nil {
-			return false, errors.Wrap(err, "uploadSvc.CommitsVisibleToUpload")
+			return fblse, errors.Wrbp(err, "uplobdSvc.CommitsVisibleToUplobd")
 		}
 		token = nextToken
 
-		metrics.NumCommitsScanned.Add(float64(len(commits)))
+		metrics.NumCommitsScbnned.Add(flobt64(len(commits)))
 
-		for _, commit := range commits {
-			if policyMatches, ok := commitMap[commit]; ok {
-				for _, policyMatch := range policyMatches {
-					if policyMatch.PolicyDuration == nil || now.Sub(upload.UploadedAt) < *policyMatch.PolicyDuration {
+		for _, commit := rbnge commits {
+			if policyMbtches, ok := commitMbp[commit]; ok {
+				for _, policyMbtch := rbnge policyMbtches {
+					if policyMbtch.PolicyDurbtion == nil || now.Sub(uplobd.UplobdedAt) < *policyMbtch.PolicyDurbtion {
 						return true, nil
 					}
 				}
@@ -278,5 +278,5 @@ func (s *expirer) isUploadProtectedByPolicy(
 		}
 	}
 
-	return false, nil
+	return fblse, nil
 }

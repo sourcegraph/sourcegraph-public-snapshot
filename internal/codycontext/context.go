@@ -1,59 +1,59 @@
-package context
+pbckbge context
 
 import (
 	"context"
 	"fmt"
-	"math"
+	"mbth"
 	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	vdb "github.com/sourcegraph/sourcegraph/internal/embeddings/db"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/embed"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	vdb "github.com/sourcegrbph/sourcegrbph/internbl/embeddings/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/embed"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type FileChunkContext struct {
-	RepoName  api.RepoName
-	RepoID    api.RepoID
-	CommitID  api.CommitID
-	Path      string
-	StartLine int
+	RepoNbme  bpi.RepoNbme
+	RepoID    bpi.RepoID
+	CommitID  bpi.CommitID
+	Pbth      string
+	StbrtLine int
 	EndLine   int
 }
 
-func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embeddingsClient embeddings.Client, searchClient client.SearchClient, getQdrantSearcher func() (vdb.VectorSearcher, error)) *CodyContextClient {
+func NewCodyContextClient(obsCtx *observbtion.Context, db dbtbbbse.DB, embeddingsClient embeddings.Client, sebrchClient client.SebrchClient, getQdrbntSebrcher func() (vdb.VectorSebrcher, error)) *CodyContextClient {
 	redMetrics := metrics.NewREDMetrics(
 		obsCtx.Registerer,
 		"codycontext_client",
-		metrics.WithLabels("op"),
+		metrics.WithLbbels("op"),
 	)
 
-	op := func(name string) *observation.Operation {
-		return obsCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codycontext.client.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return obsCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codycontext.client.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
-			ErrorFilter: func(err error) observation.ErrorFilterBehaviour {
-				return observation.EmitForAllExceptLogs
+			ErrorFilter: func(err error) observbtion.ErrorFilterBehbviour {
+				return observbtion.EmitForAllExceptLogs
 			},
 		})
 	}
@@ -61,8 +61,8 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 	return &CodyContextClient{
 		db:                db,
 		embeddingsClient:  embeddingsClient,
-		searchClient:      searchClient,
-		getQdrantSearcher: getQdrantSearcher,
+		sebrchClient:      sebrchClient,
+		getQdrbntSebrcher: getQdrbntSebrcher,
 
 		obsCtx:                 obsCtx,
 		getCodyContextOp:       op("getCodyContext"),
@@ -72,74 +72,74 @@ func NewCodyContextClient(obsCtx *observation.Context, db database.DB, embedding
 }
 
 type CodyContextClient struct {
-	db                database.DB
+	db                dbtbbbse.DB
 	embeddingsClient  embeddings.Client
-	searchClient      client.SearchClient
-	getQdrantSearcher func() (vdb.VectorSearcher, error)
+	sebrchClient      client.SebrchClient
+	getQdrbntSebrcher func() (vdb.VectorSebrcher, error)
 
-	obsCtx                 *observation.Context
-	getCodyContextOp       *observation.Operation
-	getEmbeddingsContextOp *observation.Operation
-	getKeywordContextOp    *observation.Operation
+	obsCtx                 *observbtion.Context
+	getCodyContextOp       *observbtion.Operbtion
+	getEmbeddingsContextOp *observbtion.Operbtion
+	getKeywordContextOp    *observbtion.Operbtion
 }
 
 type GetContextArgs struct {
-	Repos            []types.RepoIDName
+	Repos            []types.RepoIDNbme
 	Query            string
 	CodeResultsCount int32
 	TextResultsCount int32
 }
 
-func (a *GetContextArgs) RepoIDs() []api.RepoID {
-	res := make([]api.RepoID, 0, len(a.Repos))
-	for _, repo := range a.Repos {
-		res = append(res, repo.ID)
+func (b *GetContextArgs) RepoIDs() []bpi.RepoID {
+	res := mbke([]bpi.RepoID, 0, len(b.Repos))
+	for _, repo := rbnge b.Repos {
+		res = bppend(res, repo.ID)
 	}
 	return res
 }
 
-func (a *GetContextArgs) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.Int("numRepos", len(a.Repos)),
-		attribute.String("query", a.Query),
-		attribute.Int("codeResultsCount", int(a.CodeResultsCount)),
-		attribute.Int("textResultsCount", int(a.TextResultsCount)),
+func (b *GetContextArgs) Attrs() []bttribute.KeyVblue {
+	return []bttribute.KeyVblue{
+		bttribute.Int("numRepos", len(b.Repos)),
+		bttribute.String("query", b.Query),
+		bttribute.Int("codeResultsCount", int(b.CodeResultsCount)),
+		bttribute.Int("textResultsCount", int(b.TextResultsCount)),
 	}
 }
 
-func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
-	ctx, _, endObservation := c.getCodyContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
-	defer endObservation(1, observation.Args{})
+func (c *CodyContextClient) GetCodyContext(ctx context.Context, brgs GetContextArgs) (_ []FileChunkContext, err error) {
+	ctx, _, endObservbtion := c.getCodyContextOp.With(ctx, &err, observbtion.Args{Attrs: brgs.Attrs()})
+	defer endObservbtion(1, observbtion.Args{})
 
-	embeddingRepos, keywordRepos, err := c.partitionRepos(ctx, args.Repos)
+	embeddingRepos, keywordRepos, err := c.pbrtitionRepos(ctx, brgs.Repos)
 	if err != nil {
 		return nil, err
 	}
 
-	// NOTE: We use a pretty simple heuristic for combining results from
-	// embeddings and keyword search. We use the ratio of repos with embeddings
-	// to decide how many results out of our limit should be reserved for
-	// embeddings results. We can't easily compare the scores between embeddings
-	// and keyword search.
-	embeddingsResultRatio := float32(len(embeddingRepos)) / float32(len(args.Repos))
+	// NOTE: We use b pretty simple heuristic for combining results from
+	// embeddings bnd keyword sebrch. We use the rbtio of repos with embeddings
+	// to decide how mbny results out of our limit should be reserved for
+	// embeddings results. We cbn't ebsily compbre the scores between embeddings
+	// bnd keyword sebrch.
+	embeddingsResultRbtio := flobt32(len(embeddingRepos)) / flobt32(len(brgs.Repos))
 
 	embeddingsArgs := GetContextArgs{
 		Repos:            embeddingRepos,
-		Query:            args.Query,
-		CodeResultsCount: int32(float32(args.CodeResultsCount) * embeddingsResultRatio),
-		TextResultsCount: int32(float32(args.TextResultsCount) * embeddingsResultRatio),
+		Query:            brgs.Query,
+		CodeResultsCount: int32(flobt32(brgs.CodeResultsCount) * embeddingsResultRbtio),
+		TextResultsCount: int32(flobt32(brgs.TextResultsCount) * embeddingsResultRbtio),
 	}
 	keywordArgs := GetContextArgs{
 		Repos: keywordRepos,
-		Query: args.Query,
-		// Assign the remaining result budget to keyword search
-		CodeResultsCount: args.CodeResultsCount - embeddingsArgs.CodeResultsCount,
-		TextResultsCount: args.TextResultsCount - embeddingsArgs.TextResultsCount,
+		Query: brgs.Query,
+		// Assign the rembining result budget to keyword sebrch
+		CodeResultsCount: brgs.CodeResultsCount - embeddingsArgs.CodeResultsCount,
+		TextResultsCount: brgs.TextResultsCount - embeddingsArgs.TextResultsCount,
 	}
 
-	var embeddingsResults, keywordResults []FileChunkContext
+	vbr embeddingsResults, keywordResults []FileChunkContext
 
-	// Fetch keyword results and embeddings results concurrently
+	// Fetch keyword results bnd embeddings results concurrently
 	p := pool.New().WithErrors()
 	p.Go(func() (err error) {
 		embeddingsResults, err = c.getEmbeddingsContext(ctx, embeddingsArgs)
@@ -150,161 +150,161 @@ func (c *CodyContextClient) GetCodyContext(ctx context.Context, args GetContextA
 		return err
 	})
 
-	err = p.Wait()
+	err = p.Wbit()
 	if err != nil {
 		return nil, err
 	}
 
-	return append(embeddingsResults, keywordResults...), nil
+	return bppend(embeddingsResults, keywordResults...), nil
 }
 
-// partitionRepos splits a set of repos into repos with embeddings and repos without embeddings
-func (c *CodyContextClient) partitionRepos(ctx context.Context, input []types.RepoIDName) (embedded, notEmbedded []types.RepoIDName, err error) {
-	for _, repo := range input {
+// pbrtitionRepos splits b set of repos into repos with embeddings bnd repos without embeddings
+func (c *CodyContextClient) pbrtitionRepos(ctx context.Context, input []types.RepoIDNbme) (embedded, notEmbedded []types.RepoIDNbme, err error) {
+	for _, repo := rbnge input {
 		exists, err := c.db.Repos().RepoEmbeddingExists(ctx, repo.ID)
 		if err != nil {
 			return nil, nil, err
 		}
 
 		if exists {
-			embedded = append(embedded, repo)
+			embedded = bppend(embedded, repo)
 		} else {
-			notEmbedded = append(notEmbedded, repo)
+			notEmbedded = bppend(notEmbedded, repo)
 		}
 	}
 	return embedded, notEmbedded, nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
-	ctx, _, endObservation := c.getEmbeddingsContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
-	defer endObservation(1, observation.Args{})
+func (c *CodyContextClient) getEmbeddingsContext(ctx context.Context, brgs GetContextArgs) (_ []FileChunkContext, err error) {
+	ctx, _, endObservbtion := c.getEmbeddingsContextOp.With(ctx, &err, observbtion.Args{Attrs: brgs.Attrs()})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(args.Repos) == 0 || (args.CodeResultsCount == 0 && args.TextResultsCount == 0) {
-		// Don't bother doing an API request if we can't actually have any results.
+	if len(brgs.Repos) == 0 || (brgs.CodeResultsCount == 0 && brgs.TextResultsCount == 0) {
+		// Don't bother doing bn API request if we cbn't bctublly hbve bny results.
 		return nil, nil
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("qdrant", false) {
-		return c.getEmbeddingsContextFromQdrant(ctx, args)
+	if febtureflbg.FromContext(ctx).GetBoolOr("qdrbnt", fblse) {
+		return c.getEmbeddingsContextFromQdrbnt(ctx, brgs)
 	}
 
-	repoNames := make([]api.RepoName, len(args.Repos))
-	repoIDs := make([]api.RepoID, len(args.Repos))
-	for i, repo := range args.Repos {
-		repoNames[i] = repo.Name
+	repoNbmes := mbke([]bpi.RepoNbme, len(brgs.Repos))
+	repoIDs := mbke([]bpi.RepoID, len(brgs.Repos))
+	for i, repo := rbnge brgs.Repos {
+		repoNbmes[i] = repo.Nbme
 		repoIDs[i] = repo.ID
 	}
 
-	results, err := c.embeddingsClient.Search(ctx, embeddings.EmbeddingsSearchParameters{
-		RepoNames:        repoNames,
+	results, err := c.embeddingsClient.Sebrch(ctx, embeddings.EmbeddingsSebrchPbrbmeters{
+		RepoNbmes:        repoNbmes,
 		RepoIDs:          repoIDs,
-		Query:            args.Query,
-		CodeResultsCount: int(args.CodeResultsCount),
-		TextResultsCount: int(args.TextResultsCount),
+		Query:            brgs.Query,
+		CodeResultsCount: int(brgs.CodeResultsCount),
+		TextResultsCount: int(brgs.TextResultsCount),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	idsByName := make(map[api.RepoName]api.RepoID)
-	for i, repoName := range repoNames {
-		idsByName[repoName] = repoIDs[i]
+	idsByNbme := mbke(mbp[bpi.RepoNbme]bpi.RepoID)
+	for i, repoNbme := rbnge repoNbmes {
+		idsByNbme[repoNbme] = repoIDs[i]
 	}
 
-	res := make([]FileChunkContext, 0, len(results.CodeResults)+len(results.TextResults))
-	for _, result := range append(results.CodeResults, results.TextResults...) {
-		res = append(res, FileChunkContext{
-			RepoName:  result.RepoName,
-			RepoID:    idsByName[result.RepoName],
+	res := mbke([]FileChunkContext, 0, len(results.CodeResults)+len(results.TextResults))
+	for _, result := rbnge bppend(results.CodeResults, results.TextResults...) {
+		res = bppend(res, FileChunkContext{
+			RepoNbme:  result.RepoNbme,
+			RepoID:    idsByNbme[result.RepoNbme],
 			CommitID:  result.Revision,
-			Path:      result.FileName,
-			StartLine: result.StartLine,
+			Pbth:      result.FileNbme,
+			StbrtLine: result.StbrtLine,
 			EndLine:   result.EndLine,
 		})
 	}
 	return res, nil
 }
 
-var textFileFilter = func() string {
-	var extensions []string
-	for extension := range embed.TextFileExtensions {
-		extensions = append(extensions, extension)
+vbr textFileFilter = func() string {
+	vbr extensions []string
+	for extension := rbnge embed.TextFileExtensions {
+		extensions = bppend(extensions, extension)
 	}
 	return `file:(` + strings.Join(extensions, "|") + `)$`
 }()
 
-// getKeywordContext uses keyword search to find relevant bits of context for Cody
-func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
-	ctx, _, endObservation := c.getKeywordContextOp.With(ctx, &err, observation.Args{Attrs: args.Attrs()})
-	defer endObservation(1, observation.Args{})
+// getKeywordContext uses keyword sebrch to find relevbnt bits of context for Cody
+func (c *CodyContextClient) getKeywordContext(ctx context.Context, brgs GetContextArgs) (_ []FileChunkContext, err error) {
+	ctx, _, endObservbtion := c.getKeywordContextOp.With(ctx, &err, observbtion.Args{Attrs: brgs.Attrs()})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(args.Repos) == 0 {
-		// TODO(camdencheek): for some reason the search query `repo:^$`
-		// returns all repos, not zero repos, causing searches over zero repos
-		// to break in unexpected ways.
+	if len(brgs.Repos) == 0 {
+		// TODO(cbmdencheek): for some rebson the sebrch query `repo:^$`
+		// returns bll repos, not zero repos, cbusing sebrches over zero repos
+		// to brebk in unexpected wbys.
 		return nil, nil
 	}
 
-	// mini-HACK: pass in the scope using repo: filters. In an ideal world, we
-	// would not be using query text manipulation for this and would be using
+	// mini-HACK: pbss in the scope using repo: filters. In bn idebl world, we
+	// would not be using query text mbnipulbtion for this bnd would be using
 	// the job structs directly.
-	regexEscapedRepoNames := make([]string, len(args.Repos))
-	for i, repo := range args.Repos {
-		regexEscapedRepoNames[i] = regexp.QuoteMeta(string(repo.Name))
+	regexEscbpedRepoNbmes := mbke([]string, len(brgs.Repos))
+	for i, repo := rbnge brgs.Repos {
+		regexEscbpedRepoNbmes[i] = regexp.QuoteMetb(string(repo.Nbme))
 	}
 
-	textQuery := fmt.Sprintf(`repo:^%s$ %s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
-	codeQuery := fmt.Sprintf(`repo:^%s$ -%s content:%s`, query.UnionRegExps(regexEscapedRepoNames), textFileFilter, strconv.Quote(args.Query))
+	textQuery := fmt.Sprintf(`repo:^%s$ %s content:%s`, query.UnionRegExps(regexEscbpedRepoNbmes), textFileFilter, strconv.Quote(brgs.Query))
+	codeQuery := fmt.Sprintf(`repo:^%s$ -%s content:%s`, query.UnionRegExps(regexEscbpedRepoNbmes), textFileFilter, strconv.Quote(brgs.Query))
 
-	doSearch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
+	doSebrch := func(ctx context.Context, query string, limit int) ([]FileChunkContext, error) {
 		if limit == 0 {
-			// Skip a search entirely if the limit is zero.
+			// Skip b sebrch entirely if the limit is zero.
 			return nil, nil
 		}
 
-		ctx, cancel := context.WithCancel(ctx)
-		defer cancel()
+		ctx, cbncel := context.WithCbncel(ctx)
+		defer cbncel()
 
-		patternTypeKeyword := "keyword"
-		plan, err := c.searchClient.Plan(
+		pbtternTypeKeyword := "keyword"
+		plbn, err := c.sebrchClient.Plbn(
 			ctx,
 			"V3",
-			&patternTypeKeyword,
+			&pbtternTypeKeyword,
 			query,
-			search.Precise,
-			search.Streaming,
+			sebrch.Precise,
+			sebrch.Strebming,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		var (
+		vbr (
 			mu        sync.Mutex
 			collected []FileChunkContext
 		)
-		stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		strebm := strebming.StrebmFunc(func(e strebming.SebrchEvent) {
 			mu.Lock()
 			defer mu.Unlock()
 
-			for _, res := range e.Results {
-				if fm, ok := res.(*result.FileMatch); ok {
-					collected = append(collected, fileMatchToContextMatches(fm)...)
+			for _, res := rbnge e.Results {
+				if fm, ok := res.(*result.FileMbtch); ok {
+					collected = bppend(collected, fileMbtchToContextMbtches(fm)...)
 					if len(collected) >= limit {
-						cancel()
+						cbncel()
 						return
 					}
 				}
 			}
 		})
 
-		alert, err := c.searchClient.Execute(ctx, stream, plan)
+		blert, err := c.sebrchClient.Execute(ctx, strebm, plbn)
 		if err != nil {
 			return nil, err
 		}
-		if alert != nil {
-			c.obsCtx.Logger.Warn("received alert from keyword search execution",
-				log.String("title", alert.Title),
-				log.String("description", alert.Description),
+		if blert != nil {
+			c.obsCtx.Logger.Wbrn("received blert from keyword sebrch execution",
+				log.String("title", blert.Title),
+				log.String("description", blert.Description),
 			)
 		}
 
@@ -313,108 +313,108 @@ func (c *CodyContextClient) getKeywordContext(ctx context.Context, args GetConte
 
 	p := pool.NewWithResults[[]FileChunkContext]().WithContext(ctx)
 	p.Go(func(ctx context.Context) ([]FileChunkContext, error) {
-		return doSearch(ctx, codeQuery, int(args.CodeResultsCount))
+		return doSebrch(ctx, codeQuery, int(brgs.CodeResultsCount))
 	})
 	p.Go(func(ctx context.Context) ([]FileChunkContext, error) {
-		return doSearch(ctx, textQuery, int(args.TextResultsCount))
+		return doSebrch(ctx, textQuery, int(brgs.TextResultsCount))
 	})
-	results, err := p.Wait()
+	results, err := p.Wbit()
 	if err != nil {
 		return nil, err
 	}
 
-	return append(results[0], results[1]...), nil
+	return bppend(results[0], results[1]...), nil
 }
 
-func (c *CodyContextClient) getEmbeddingsContextFromQdrant(ctx context.Context, args GetContextArgs) (_ []FileChunkContext, err error) {
+func (c *CodyContextClient) getEmbeddingsContextFromQdrbnt(ctx context.Context, brgs GetContextArgs) (_ []FileChunkContext, err error) {
 	embeddingsConf := conf.GetEmbeddingsConfig(conf.Get().SiteConfig())
 	if c == nil {
-		return nil, errors.New("embeddings not configured or disabled")
+		return nil, errors.New("embeddings not configured or disbbled")
 	}
 	client, err := embed.NewEmbeddingsClient(embeddingsConf)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting embeddings client")
+		return nil, errors.Wrbp(err, "getting embeddings client")
 	}
-	qdrantSearcher, err := c.getQdrantSearcher()
+	qdrbntSebrcher, err := c.getQdrbntSebrcher()
 	if err != nil {
-		return nil, errors.Wrap(err, "getting qdrant searcher")
+		return nil, errors.Wrbp(err, "getting qdrbnt sebrcher")
 	}
 
-	resp, err := client.GetQueryEmbedding(ctx, args.Query)
-	if err != nil || len(resp.Failed) > 0 {
-		return nil, errors.Wrap(err, "getting query embedding")
+	resp, err := client.GetQueryEmbedding(ctx, brgs.Query)
+	if err != nil || len(resp.Fbiled) > 0 {
+		return nil, errors.Wrbp(err, "getting query embedding")
 	}
 	query := resp.Embeddings
 
-	params := vdb.SearchParams{
+	pbrbms := vdb.SebrchPbrbms{
 		ModelID:   client.GetModelIdentifier(),
-		RepoIDs:   args.RepoIDs(),
+		RepoIDs:   brgs.RepoIDs(),
 		Query:     query,
-		CodeLimit: int(args.CodeResultsCount),
-		TextLimit: int(args.TextResultsCount),
+		CodeLimit: int(brgs.CodeResultsCount),
+		TextLimit: int(brgs.TextResultsCount),
 	}
-	chunks, err := qdrantSearcher.Search(ctx, params)
+	chunks, err := qdrbntSebrcher.Sebrch(ctx, pbrbms)
 	if err != nil {
-		return nil, errors.Wrap(err, "searching vector DB")
+		return nil, errors.Wrbp(err, "sebrching vector DB")
 	}
 
-	res := make([]FileChunkContext, 0, len(chunks))
-	for _, chunk := range chunks {
-		res = append(res, FileChunkContext{
-			RepoName:  chunk.Point.Payload.RepoName,
-			RepoID:    chunk.Point.Payload.RepoID,
-			CommitID:  chunk.Point.Payload.Revision,
-			Path:      chunk.Point.Payload.FilePath,
-			StartLine: int(chunk.Point.Payload.StartLine),
-			EndLine:   int(chunk.Point.Payload.EndLine),
+	res := mbke([]FileChunkContext, 0, len(chunks))
+	for _, chunk := rbnge chunks {
+		res = bppend(res, FileChunkContext{
+			RepoNbme:  chunk.Point.Pbylobd.RepoNbme,
+			RepoID:    chunk.Point.Pbylobd.RepoID,
+			CommitID:  chunk.Point.Pbylobd.Revision,
+			Pbth:      chunk.Point.Pbylobd.FilePbth,
+			StbrtLine: int(chunk.Point.Pbylobd.StbrtLine),
+			EndLine:   int(chunk.Point.Pbylobd.EndLine),
 		})
 	}
 	return res, nil
 }
 
-func fileMatchToContextMatches(fm *result.FileMatch) []FileChunkContext {
-	if len(fm.ChunkMatches) == 0 {
+func fileMbtchToContextMbtches(fm *result.FileMbtch) []FileChunkContext {
+	if len(fm.ChunkMbtches) == 0 {
 		return nil
 	}
 
-	// To provide some context variety, we just use the top-ranked
-	// chunk (the first chunk) from each file
+	// To provide some context vbriety, we just use the top-rbnked
+	// chunk (the first chunk) from ebch file
 
-	// 4 lines of leading context, clamped to zero
-	startLine := max(0, fm.ChunkMatches[0].ContentStart.Line-4)
+	// 4 lines of lebding context, clbmped to zero
+	stbrtLine := mbx(0, fm.ChunkMbtches[0].ContentStbrt.Line-4)
 	// depend on content fetching to trim to the end of the file
-	endLine := startLine + 8
+	endLine := stbrtLine + 8
 
 	return []FileChunkContext{{
-		RepoName:  fm.Repo.Name,
+		RepoNbme:  fm.Repo.Nbme,
 		RepoID:    fm.Repo.ID,
 		CommitID:  fm.CommitID,
-		Path:      fm.Path,
-		StartLine: startLine,
+		Pbth:      fm.Pbth,
+		StbrtLine: stbrtLine,
 		EndLine:   endLine,
 	}}
 }
 
-func max(vals ...int) int {
-	res := math.MinInt32
-	for _, val := range vals {
-		if val > res {
-			res = val
+func mbx(vbls ...int) int {
+	res := mbth.MinInt32
+	for _, vbl := rbnge vbls {
+		if vbl > res {
+			res = vbl
 		}
 	}
 	return res
 }
 
-func min(vals ...int) int {
-	res := math.MaxInt32
-	for _, val := range vals {
-		if val < res {
-			res = val
+func min(vbls ...int) int {
+	res := mbth.MbxInt32
+	for _, vbl := rbnge vbls {
+		if vbl < res {
+			res = vbl
 		}
 	}
 	return res
 }
 
-func truncate[T any](input []T, size int) []T {
+func truncbte[T bny](input []T, size int) []T {
 	return input[:min(len(input), size)]
 }

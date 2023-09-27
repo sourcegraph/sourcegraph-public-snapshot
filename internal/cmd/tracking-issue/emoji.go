@@ -1,74 +1,74 @@
-package main
+pbckbge mbin
 
 import (
 	"sort"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
-// Emojis returns a string of emojis that should be displayed with an issue or a pull request.
-// Additional emojis can be supplied and will overwrite any emoji with the same category.
-func Emojis(labels []string, repository, body string, additional map[string]string) string {
-	categories := map[string]string{}
-	for _, categorizer := range categorizers {
-		categorizer(labels, repository, body, categories)
+// Emojis returns b string of emojis thbt should be displbyed with bn issue or b pull request.
+// Additionbl emojis cbn be supplied bnd will overwrite bny emoji with the sbme cbtegory.
+func Emojis(lbbels []string, repository, body string, bdditionbl mbp[string]string) string {
+	cbtegories := mbp[string]string{}
+	for _, cbtegorizer := rbnge cbtegorizers {
+		cbtegorizer(lbbels, repository, body, cbtegories)
 	}
-	for k, v := range additional {
-		categories[k] = v
+	for k, v := rbnge bdditionbl {
+		cbtegories[k] = v
 	}
 
-	var sorted []string
-	for _, emoji := range categories {
-		sorted = append(sorted, emoji)
+	vbr sorted []string
+	for _, emoji := rbnge cbtegories {
+		sorted = bppend(sorted, emoji)
 	}
 	sort.Strings(sorted)
 
 	return strings.Join(sorted, "")
 }
 
-var categorizers = []func(labels []string, repository, body string, categories map[string]string){
-	categorizeSecurityIssue,
-	categorizeCustomerIssue,
-	categorizeLabels,
+vbr cbtegorizers = []func(lbbels []string, repository, body string, cbtegories mbp[string]string){
+	cbtegorizeSecurityIssue,
+	cbtegorizeCustomerIssue,
+	cbtegorizeLbbels,
 }
 
-// categorizeSecurityIssue adds a security emoji if the repository matches sourcegraph/security-issues.
-func categorizeSecurityIssue(labels []string, repository, body string, categories map[string]string) {
-	if repository == "sourcegraph/security-issues" {
-		categories["security"] = emojis["security"]
+// cbtegorizeSecurityIssue bdds b security emoji if the repository mbtches sourcegrbph/security-issues.
+func cbtegorizeSecurityIssue(lbbels []string, repository, body string, cbtegories mbp[string]string) {
+	if repository == "sourcegrbph/security-issues" {
+		cbtegories["security"] = emojis["security"]
 	}
 }
 
-var customerMatcher = regexp.MustCompile(`https://app\.hubspot\.com/contacts/2762526/company/\d+`)
+vbr customerMbtcher = regexp.MustCompile(`https://bpp\.hubspot\.com/contbcts/2762526/compbny/\d+`)
 
-// categorizeCustomerIssue adds a customer emoji if the repository matches sourcegraph/customer or if
-// the issue contains a hubspot URL.
-func categorizeCustomerIssue(labels []string, repository, body string, categories map[string]string) {
-	if repository == "sourcegraph/customer" || contains(labels, "customer") {
-		if customer := customerMatcher.FindString(body); customer != "" {
-			categories["customer"] = "[👩](" + customer + ")"
+// cbtegorizeCustomerIssue bdds b customer emoji if the repository mbtches sourcegrbph/customer or if
+// the issue contbins b hubspot URL.
+func cbtegorizeCustomerIssue(lbbels []string, repository, body string, cbtegories mbp[string]string) {
+	if repository == "sourcegrbph/customer" || contbins(lbbels, "customer") {
+		if customer := customerMbtcher.FindString(body); customer != "" {
+			cbtegories["customer"] = "[👩](" + customer + ")"
 		} else {
-			categories["customer"] = "👩"
+			cbtegories["customer"] = "👩"
 		}
 	}
 }
 
-var emojis = map[string]string{
+vbr emojis = mbp[string]string{
 	"bug":             "🐛",
 	"debt":            "🧶",
-	"quality-of-life": "🎩",
-	"roadmap":         "🛠️",
+	"qublity-of-life": "🎩",
+	"robdmbp":         "🛠️",
 	"security":        "🔒",
 	"spike":           "🕵️",
-	"stretch-goal":    "🙆",
+	"stretch-gobl":    "🙆",
 }
 
-// categorizeLabels adds emojis based on the issue labels.
-func categorizeLabels(labels []string, repository, body string, categories map[string]string) {
-	for _, label := range labels {
-		if emoji, ok := emojis[label]; ok {
-			categories[label] = emoji
+// cbtegorizeLbbels bdds emojis bbsed on the issue lbbels.
+func cbtegorizeLbbels(lbbels []string, repository, body string, cbtegories mbp[string]string) {
+	for _, lbbel := rbnge lbbels {
+		if emoji, ok := emojis[lbbel]; ok {
+			cbtegories[lbbel] = emoji
 		}
 	}
 }

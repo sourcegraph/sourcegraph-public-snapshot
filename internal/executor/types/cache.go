@@ -1,23 +1,23 @@
-package types
+pbckbge types
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
-	DequeueCachePrefix = "executor_multihandler_dequeues"
+	DequeueCbchePrefix = "executor_multihbndler_dequeues"
 	DequeueTtl         = 5 * time.Minute
-	CleanupInterval    = 5 * time.Second
+	ClebnupIntervbl    = 5 * time.Second
 )
 
-var DequeuePropertiesPerQueue = &schema.DequeueCacheConfig{
-	Batches: &schema.Batches{
+vbr DequeuePropertiesPerQueue = &schemb.DequeueCbcheConfig{
+	Bbtches: &schemb.Bbtches{
 		Limit:  50,
 		Weight: 4,
 	},
-	Codeintel: &schema.Codeintel{
+	Codeintel: &schemb.Codeintel{
 		Limit:  250,
 		Weight: 1,
 	},

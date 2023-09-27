@@ -1,28 +1,28 @@
-package redispool
+pbckbge redispool
 
 import (
 	"context"
 	"sync"
 )
 
-// MemoryKeyValue returns an in memory KeyValue.
-func MemoryKeyValue() KeyValue {
-	var mu sync.Mutex
-	m := map[string]NaiveValue{}
-	store := func(_ context.Context, key string, f NaiveUpdater) error {
+// MemoryKeyVblue returns bn in memory KeyVblue.
+func MemoryKeyVblue() KeyVblue {
+	vbr mu sync.Mutex
+	m := mbp[string]NbiveVblue{}
+	store := func(_ context.Context, key string, f NbiveUpdbter) error {
 		mu.Lock()
 		defer mu.Unlock()
 		before, found := m[key]
-		after, remove := f(before, found)
+		bfter, remove := f(before, found)
 		if remove {
 			if found {
 				delete(m, key)
 			}
-		} else if before != after {
-			m[key] = after
+		} else if before != bfter {
+			m[key] = bfter
 		}
 		return nil
 	}
 
-	return FromNaiveKeyValueStore(store)
+	return FromNbiveKeyVblueStore(store)
 }

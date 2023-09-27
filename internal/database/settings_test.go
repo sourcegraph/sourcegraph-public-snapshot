@@ -1,148 +1,148 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
 func TestSettings_ListAll(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	user1, err := db.Users().Create(ctx, NewUser{Username: "u1"})
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "u1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user2, err := db.Users().Create(ctx, NewUser{Username: "u2"})
+	user2, err := db.Users().Crebte(ctx, NewUser{Usernbme: "u2"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Try creating both with non-nil author and nil author.
-	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"abc": 1}`); err != nil {
-		t.Fatal(err)
+	// Try crebting both with non-nil buthor bnd nil buthor.
+	if _, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"bbc": 1}`); err != nil {
+		t.Fbtbl(err)
 	}
-	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user2.ID}, nil, nil, `{"xyz": 2}`); err != nil {
-		t.Fatal(err)
+	if _, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &user2.ID}, nil, nil, `{"xyz": 2}`); err != nil {
+		t.Fbtbl(err)
 	}
 
-	t.Run("all", func(t *testing.T) {
+	t.Run("bll", func(t *testing.T) {
 		settings, err := db.Settings().ListAll(ctx, "")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := 2; len(settings) != want {
-			t.Errorf("got %d settings, want %d", len(settings), want)
+		if wbnt := 2; len(settings) != wbnt {
+			t.Errorf("got %d settings, wbnt %d", len(settings), wbnt)
 		}
 	})
 
 	t.Run("impreciseSubstring", func(t *testing.T) {
 		settings, err := db.Settings().ListAll(ctx, "xyz")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if want := 1; len(settings) != want {
-			t.Errorf("got %d settings, want %d", len(settings), want)
+		if wbnt := 1; len(settings) != wbnt {
+			t.Errorf("got %d settings, wbnt %d", len(settings), wbnt)
 		}
-		if want := `{"xyz": 2}`; settings[0].Contents != want {
-			t.Errorf("got contents %q, want %q", settings[0].Contents, want)
+		if wbnt := `{"xyz": 2}`; settings[0].Contents != wbnt {
+			t.Errorf("got contents %q, wbnt %q", settings[0].Contents, wbnt)
 		}
 	})
 }
 
-func TestCreateIfUpToDate(t *testing.T) {
-	t.Parallel()
+func TestCrebteIfUpToDbte(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	u, err := db.Users().Create(ctx, NewUser{Username: "test"})
+	ctx := context.Bbckground()
+	u, err := db.Users().Crebte(ctx, NewUser{Usernbme: "test"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("quicklink with safe link", func(t *testing.T) {
-		contents := "{\"quicklinks\": [{\"name\": \"malicious link test\",      \"url\": \"https://example.com\"}]}"
+	t.Run("quicklink with sbfe link", func(t *testing.T) {
+		contents := "{\"quicklinks\": [{\"nbme\": \"mblicious link test\",      \"url\": \"https://exbmple.com\"}]}"
 
-		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		_, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &u.ID}, nil, nil, contents)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	t.Run("quicklink with javascript link", func(t *testing.T) {
-		contents := "{\"quicklinks\": [{\"name\": \"malicious link test\",      \"url\": \"javascript:alert(1)\"}]}"
+	t.Run("quicklink with jbvbscript link", func(t *testing.T) {
+		contents := "{\"quicklinks\": [{\"nbme\": \"mblicious link test\",      \"url\": \"jbvbscript:blert(1)\"}]}"
 
-		want := "invalid settings: quicklinks.0.url: Does not match pattern '^(https?://|/)'"
+		wbnt := "invblid settings: quicklinks.0.url: Does not mbtch pbttern '^(https?://|/)'"
 
-		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		_, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &u.ID}, nil, nil, contents)
 		if err == nil {
-			t.Log("Expected an error")
-			t.Fail()
+			t.Log("Expected bn error")
+			t.Fbil()
 		} else {
 			got := err.Error()
-			if got != want {
-				t.Errorf("err: want %q but got %q", want, got)
+			if got != wbnt {
+				t.Errorf("err: wbnt %q but got %q", wbnt, got)
 			}
 		}
 	})
 
-	t.Run("valid settings", func(t *testing.T) {
-		contents := `{"experimentalFeatures": {}}`
-		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
+	t.Run("vblid settings", func(t *testing.T) {
+		contents := `{"experimentblFebtures": {}}`
+		_, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &u.ID}, nil, nil, contents)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	t.Run("invalid settings per JSON Schema", func(t *testing.T) {
-		contents := `{"experimentalFeatures": 1}`
-		wantErr := "invalid settings: experimentalFeatures: Invalid type. Expected: object, given: integer"
-		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
-		if err == nil || err.Error() != wantErr {
-			t.Errorf("got err %q, want %q", err, wantErr)
+	t.Run("invblid settings per JSON Schemb", func(t *testing.T) {
+		contents := `{"experimentblFebtures": 1}`
+		wbntErr := "invblid settings: experimentblFebtures: Invblid type. Expected: object, given: integer"
+		_, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		if err == nil || err.Error() != wbntErr {
+			t.Errorf("got err %q, wbnt %q", err, wbntErr)
 		}
 	})
 
-	t.Run("syntactically invalid settings", func(t *testing.T) {
+	t.Run("syntbcticblly invblid settings", func(t *testing.T) {
 		contents := `{`
-		wantErr := "invalid settings: failed to parse JSON: [CloseBraceExpected]"
-		_, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &u.ID}, nil, nil, contents)
-		if err == nil || err.Error() != wantErr {
-			t.Errorf("got err %q, want %q", err, wantErr)
+		wbntErr := "invblid settings: fbiled to pbrse JSON: [CloseBrbceExpected]"
+		_, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &u.ID}, nil, nil, contents)
+		if err == nil || err.Error() != wbntErr {
+			t.Errorf("got err %q, wbnt %q", err, wbntErr)
 		}
 	})
 }
 
-func TestGetLatestSchemaSettings(t *testing.T) {
+func TestGetLbtestSchembSettings(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	user1, err := db.Users().Create(ctx, NewUser{Username: "u1"})
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "u1"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if _, err := db.Settings().CreateIfUpToDate(ctx, api.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"search.defaultMode": "smart" }`); err != nil {
+	if _, err := db.Settings().CrebteIfUpToDbte(ctx, bpi.SettingsSubject{User: &user1.ID}, nil, &user1.ID, `{"sebrch.defbultMode": "smbrt" }`); err != nil {
 		t.Error(err)
 	}
 
-	settings, err := db.Settings().GetLatestSchemaSettings(ctx, api.SettingsSubject{User: &user1.ID})
+	settings, err := db.Settings().GetLbtestSchembSettings(ctx, bpi.SettingsSubject{User: &user1.ID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if settings.SearchDefaultMode != "smart" {
-		t.Errorf("Got invalid settings: %+v", settings)
+	if settings.SebrchDefbultMode != "smbrt" {
+		t.Errorf("Got invblid settings: %+v", settings)
 	}
 }

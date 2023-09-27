@@ -1,23 +1,23 @@
-package expirer
+pbckbge expirer
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/memo"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/memo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type ExpirationMetrics struct {
-	NumRepositoriesScanned prometheus.Counter
-	NumUploadsExpired      prometheus.Counter
-	NumUploadsScanned      prometheus.Counter
-	NumCommitsScanned      prometheus.Counter
+type ExpirbtionMetrics struct {
+	NumRepositoriesScbnned prometheus.Counter
+	NumUplobdsExpired      prometheus.Counter
+	NumUplobdsScbnned      prometheus.Counter
+	NumCommitsScbnned      prometheus.Counter
 }
 
-var expirationMetrics = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (*ExpirationMetrics, error) {
-	counter := func(name, help string) prometheus.Counter {
+vbr expirbtionMetrics = memo.NewMemoizedConstructorWithArg(func(r prometheus.Registerer) (*ExpirbtionMetrics, error) {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
@@ -25,32 +25,32 @@ var expirationMetrics = memo.NewMemoizedConstructorWithArg(func(r prometheus.Reg
 		return counter
 	}
 
-	numRepositoriesScanned := counter(
-		"src_codeintel_background_repositories_scanned_total",
-		"The number of repositories scanned for data retention.",
+	numRepositoriesScbnned := counter(
+		"src_codeintel_bbckground_repositories_scbnned_totbl",
+		"The number of repositories scbnned for dbtb retention.",
 	)
-	numUploadsScanned := counter(
-		"src_codeintel_background_upload_records_scanned_total",
-		"The number of codeintel upload records scanned for data retention.",
+	numUplobdsScbnned := counter(
+		"src_codeintel_bbckground_uplobd_records_scbnned_totbl",
+		"The number of codeintel uplobd records scbnned for dbtb retention.",
 	)
-	numCommitsScanned := counter(
-		"src_codeintel_background_commits_scanned_total",
-		"The number of commits reachable from a codeintel upload record scanned for data retention.",
+	numCommitsScbnned := counter(
+		"src_codeintel_bbckground_commits_scbnned_totbl",
+		"The number of commits rebchbble from b codeintel uplobd record scbnned for dbtb retention.",
 	)
-	numUploadsExpired := counter(
-		"src_codeintel_background_upload_records_expired_total",
-		"The number of codeintel upload records marked as expired.",
+	numUplobdsExpired := counter(
+		"src_codeintel_bbckground_uplobd_records_expired_totbl",
+		"The number of codeintel uplobd records mbrked bs expired.",
 	)
 
-	return &ExpirationMetrics{
-		NumRepositoriesScanned: numRepositoriesScanned,
-		NumUploadsScanned:      numUploadsScanned,
-		NumCommitsScanned:      numCommitsScanned,
-		NumUploadsExpired:      numUploadsExpired,
+	return &ExpirbtionMetrics{
+		NumRepositoriesScbnned: numRepositoriesScbnned,
+		NumUplobdsScbnned:      numUplobdsScbnned,
+		NumCommitsScbnned:      numCommitsScbnned,
+		NumUplobdsExpired:      numUplobdsExpired,
 	}, nil
 })
 
-func NewExpirationMetrics(observationCtx *observation.Context) *ExpirationMetrics {
-	metrics, _ := expirationMetrics.Init(observationCtx.Registerer)
+func NewExpirbtionMetrics(observbtionCtx *observbtion.Context) *ExpirbtionMetrics {
+	metrics, _ := expirbtionMetrics.Init(observbtionCtx.Registerer)
 	return metrics
 }

@@ -1,26 +1,26 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
-import "github.com/sourcegraph/sourcegraph/internal/search/result"
+import "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 
-// A resolver for the GraphQL type GenericSearchMatch
-type searchResultMatchResolver struct {
+// A resolver for the GrbphQL type GenericSebrchMbtch
+type sebrchResultMbtchResolver struct {
 	url        string
 	body       string
-	highlights []result.HighlightedRange
+	highlights []result.HighlightedRbnge
 }
 
-func (m *searchResultMatchResolver) URL() string {
+func (m *sebrchResultMbtchResolver) URL() string {
 	return m.url
 }
 
-func (m *searchResultMatchResolver) Body() Markdown {
-	return Markdown(m.body)
+func (m *sebrchResultMbtchResolver) Body() Mbrkdown {
+	return Mbrkdown(m.body)
 }
 
-func (m *searchResultMatchResolver) Highlights() []highlightedRangeResolver {
-	res := make([]highlightedRangeResolver, len(m.highlights))
-	for i, hl := range m.highlights {
-		res[i] = highlightedRangeResolver{hl}
+func (m *sebrchResultMbtchResolver) Highlights() []highlightedRbngeResolver {
+	res := mbke([]highlightedRbngeResolver, len(m.highlights))
+	for i, hl := rbnge m.highlights {
+		res[i] = highlightedRbngeResolver{hl}
 	}
 	return res
 }

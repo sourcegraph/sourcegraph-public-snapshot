@@ -1,4 +1,4 @@
-package githubapp
+pbckbge githubbpp
 
 import (
 	"context"
@@ -8,116 +8,116 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
 	"github.com/google/uuid"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	ghtypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
+	ghtypes "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestGenerateRedirectURL(t *testing.T) {
-	reposDomain := "repos"
-	batchesDomain := "batches"
-	invalidDomain := "invalid"
-	appName := "my-cool-app"
-	creationErr := errors.New("uh oh!")
+func TestGenerbteRedirectURL(t *testing.T) {
+	reposDombin := "repos"
+	bbtchesDombin := "bbtches"
+	invblidDombin := "invblid"
+	bppNbme := "my-cool-bpp"
+	crebtionErr := errors.New("uh oh!")
 
-	testCases := []struct {
-		name           string
-		domain         *string
-		installationID int
-		appID          int
-		creationErr    error
+	testCbses := []struct {
+		nbme           string
+		dombin         *string
+		instbllbtionID int
+		bppID          int
+		crebtionErr    error
 		expectedURL    string
 	}{
 		{
-			name:           "repos domain",
-			domain:         &reposDomain,
-			installationID: 1,
-			appID:          2,
-			expectedURL:    "/site-admin/github-apps/R2l0SHViQXBwOjI=?installation_id=1",
+			nbme:           "repos dombin",
+			dombin:         &reposDombin,
+			instbllbtionID: 1,
+			bppID:          2,
+			expectedURL:    "/site-bdmin/github-bpps/R2l0SHViQXBwOjI=?instbllbtion_id=1",
 		},
 		{
-			name:           "batches domain",
-			domain:         &batchesDomain,
-			installationID: 1,
-			appID:          2,
-			expectedURL:    "/site-admin/batch-changes?success=true&app_name=my-cool-app",
+			nbme:           "bbtches dombin",
+			dombin:         &bbtchesDombin,
+			instbllbtionID: 1,
+			bppID:          2,
+			expectedURL:    "/site-bdmin/bbtch-chbnges?success=true&bpp_nbme=my-cool-bpp",
 		},
 		{
-			name:        "invalid domain",
-			domain:      &invalidDomain,
-			expectedURL: "/site-admin/github-apps?success=false&error=invalid+domain%3A+invalid",
+			nbme:        "invblid dombin",
+			dombin:      &invblidDombin,
+			expectedURL: "/site-bdmin/github-bpps?success=fblse&error=invblid+dombin%3A+invblid",
 		},
 		{
-			name:        "repos creation error",
-			domain:      &reposDomain,
-			creationErr: creationErr,
-			expectedURL: "/site-admin/github-apps?success=false&error=uh+oh%21",
+			nbme:        "repos crebtion error",
+			dombin:      &reposDombin,
+			crebtionErr: crebtionErr,
+			expectedURL: "/site-bdmin/github-bpps?success=fblse&error=uh+oh%21",
 		},
 		{
-			name:        "batches creation error",
-			domain:      &batchesDomain,
-			creationErr: creationErr,
-			expectedURL: "/site-admin/batch-changes?success=false&error=uh+oh%21",
+			nbme:        "bbtches crebtion error",
+			dombin:      &bbtchesDombin,
+			crebtionErr: crebtionErr,
+			expectedURL: "/site-bdmin/bbtch-chbnges?success=fblse&error=uh+oh%21",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			url := generateRedirectURL(tc.domain, &tc.installationID, &tc.appID, &appName, tc.creationErr)
-			require.Equal(t, tc.expectedURL, url)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			url := generbteRedirectURL(tc.dombin, &tc.instbllbtionID, &tc.bppID, &bppNbme, tc.crebtionErr)
+			require.Equbl(t, tc.expectedURL, url)
 		})
 	}
 }
 
-func TestGithubAppAuthMiddleware(t *testing.T) {
-	t.Cleanup(func() {
-		MockCreateGitHubApp = nil
+func TestGithubAppAuthMiddlewbre(t *testing.T) {
+	t.Clebnup(func() {
+		MockCrebteGitHubApp = nil
 	})
 
 	webhookUUID := uuid.New()
 
 	mockUserStore := dbmocks.NewMockUserStore()
-	mockUserStore.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-		a := actor.FromContext(ctx)
+	mockUserStore.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
+		b := bctor.FromContext(ctx)
 		return &types.User{
-			ID:        a.UID,
-			SiteAdmin: a.UID == 2,
+			ID:        b.UID,
+			SiteAdmin: b.UID == 2,
 		}, nil
 	})
 
 	mockWebhookStore := dbmocks.NewMockWebhookStore()
-	mockWebhookStore.CreateFunc.SetDefaultHook(func(ctx context.Context, name, kind, urn string, actorUID int32, e *encryption.Encryptable) (*types.Webhook, error) {
+	mockWebhookStore.CrebteFunc.SetDefbultHook(func(ctx context.Context, nbme, kind, urn string, bctorUID int32, e *encryption.Encryptbble) (*types.Webhook, error) {
 		return &types.Webhook{
 			ID:              1,
 			UUID:            webhookUUID,
-			Name:            name,
+			Nbme:            nbme,
 			CodeHostKind:    kind,
-			CreatedByUserID: actorUID,
-			UpdatedByUserID: actorUID,
+			CrebtedByUserID: bctorUID,
+			UpdbtedByUserID: bctorUID,
 		}, nil
 	})
-	mockWebhookStore.GetByUUIDFunc.SetDefaultReturn(&types.Webhook{
+	mockWebhookStore.GetByUUIDFunc.SetDefbultReturn(&types.Webhook{
 		ID:   1,
 		UUID: webhookUUID,
-		Name: "test-github-app",
+		Nbme: "test-github-bpp",
 	}, nil)
-	mockWebhookStore.UpdateFunc.SetDefaultHook(func(ctx context.Context, w *types.Webhook) (*types.Webhook, error) {
+	mockWebhookStore.UpdbteFunc.SetDefbultHook(func(ctx context.Context, w *types.Webhook) (*types.Webhook, error) {
 		return w, nil
 	})
 
 	mockGitHubAppsStore := store.NewMockGitHubAppsStore()
-	mockGitHubAppsStore.CreateFunc.SetDefaultReturn(1, nil)
-	mockGitHubAppsStore.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int) (*ghtypes.GitHubApp, error) {
+	mockGitHubAppsStore.CrebteFunc.SetDefbultReturn(1, nil)
+	mockGitHubAppsStore.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int) (*ghtypes.GitHubApp, error) {
 		return &ghtypes.GitHubApp{
 			ID: id,
 		}, nil
@@ -125,329 +125,329 @@ func TestGithubAppAuthMiddleware(t *testing.T) {
 
 	db := dbmocks.NewMockDB()
 
-	db.UsersFunc.SetDefaultReturn(mockUserStore)
-	db.WebhooksFunc.SetDefaultReturn(mockWebhookStore)
-	db.GitHubAppsFunc.SetDefaultReturn(mockGitHubAppsStore)
+	db.UsersFunc.SetDefbultReturn(mockUserStore)
+	db.WebhooksFunc.SetDefbultReturn(mockWebhookStore)
+	db.GitHubAppsFunc.SetDefbultReturn(mockGitHubAppsStore)
 
-	rcache.SetupForTest(t)
-	cache := rcache.NewWithTTL("test_cache", 200)
+	rcbche.SetupForTest(t)
+	cbche := rcbche.NewWithTTL("test_cbche", 200)
 
-	mux := newServeMux(db, "/githubapp", cache)
+	mux := newServeMux(db, "/githubbpp", cbche)
 
-	t.Run("/state", func(t *testing.T) {
-		req := httptest.NewRequest("GET", "/githubapp/state", nil)
+	t.Run("/stbte", func(t *testing.T) {
+		req := httptest.NewRequest("GET", "/githubbpp/stbte", nil)
 
-		t.Run("regular user", func(t *testing.T) {
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("regulbr user", func(t *testing.T) {
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 1,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusForbidden {
-				t.Fatalf("expected status code %d but got %d", http.StatusForbidden, w.Code)
+			if w.Code != http.StbtusForbidden {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusForbidden, w.Code)
 			}
 		})
 
-		t.Run("site-admin", func(t *testing.T) {
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("site-bdmin", func(t *testing.T) {
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusOK {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+			if w.Code != http.StbtusOK {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusOK, w.Code)
 			}
 
-			state := w.Body.String()
-			if state == "" {
-				t.Fatal("expected non-empty state in response")
+			stbte := w.Body.String()
+			if stbte == "" {
+				t.Fbtbl("expected non-empty stbte in response")
 			}
 
-			cachedState, ok := cache.Get(state)
+			cbchedStbte, ok := cbche.Get(stbte)
 			if !ok {
-				t.Fatal("expected state to be cached")
+				t.Fbtbl("expected stbte to be cbched")
 			}
 
-			var stateDetails gitHubAppStateDetails
-			if err := json.Unmarshal(cachedState, &stateDetails); err != nil {
-				t.Fatalf("unexpected error unmarshalling cached state: %s", err.Error())
+			vbr stbteDetbils gitHubAppStbteDetbils
+			if err := json.Unmbrshbl(cbchedStbte, &stbteDetbils); err != nil {
+				t.Fbtblf("unexpected error unmbrshblling cbched stbte: %s", err.Error())
 			}
 
-			if stateDetails.AppID != 0 {
-				t.Fatal("expected AppID to be 0 for empty state")
+			if stbteDetbils.AppID != 0 {
+				t.Fbtbl("expected AppID to be 0 for empty stbte")
 			}
 		})
 	})
 
-	t.Run("/new-app-state", func(t *testing.T) {
-		webhookURN := "https://example.com"
-		appName := "TestApp"
-		domain := "batches"
-		baseURL := "https://ghe.example.org"
-		req := httptest.NewRequest("GET", fmt.Sprintf("/githubapp/new-app-state?webhookURN=%s&appName=%s&domain=%s&baseURL=%s", webhookURN, appName, domain, baseURL), nil)
+	t.Run("/new-bpp-stbte", func(t *testing.T) {
+		webhookURN := "https://exbmple.com"
+		bppNbme := "TestApp"
+		dombin := "bbtches"
+		bbseURL := "https://ghe.exbmple.org"
+		req := httptest.NewRequest("GET", fmt.Sprintf("/githubbpp/new-bpp-stbte?webhookURN=%s&bppNbme=%s&dombin=%s&bbseURL=%s", webhookURN, bppNbme, dombin, bbseURL), nil)
 
-		t.Run("normal user", func(t *testing.T) {
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("normbl user", func(t *testing.T) {
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 1,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusForbidden {
-				t.Fatalf("expected status code %d but got %d", http.StatusForbidden, w.Code)
+			if w.Code != http.StbtusForbidden {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusForbidden, w.Code)
 			}
 		})
 
-		t.Run("site-admin", func(t *testing.T) {
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("site-bdmin", func(t *testing.T) {
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusOK {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+			if w.Code != http.StbtusOK {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusOK, w.Code)
 			}
 
-			var resp struct {
-				State       string `json:"state"`
+			vbr resp struct {
+				Stbte       string `json:"stbte"`
 				WebhookUUID string `json:"webhookUUID,omitempty"`
 			}
 			if err := json.NewDecoder(w.Body).Decode(&resp); err != nil {
-				t.Fatalf("unexpected error decoding response: %s", err.Error())
+				t.Fbtblf("unexpected error decoding response: %s", err.Error())
 			}
 
-			if resp.State == "" {
-				t.Fatal("expected non-empty state in response")
+			if resp.Stbte == "" {
+				t.Fbtbl("expected non-empty stbte in response")
 			}
 			if resp.WebhookUUID == "" {
-				t.Fatal("expected non-empty webhookUUID in response")
+				t.Fbtbl("expected non-empty webhookUUID in response")
 			}
 
-			cachedState, ok := cache.Get(resp.State)
+			cbchedStbte, ok := cbche.Get(resp.Stbte)
 			if !ok {
-				t.Fatal("expected state to be cached")
+				t.Fbtbl("expected stbte to be cbched")
 			}
 
-			var stateDetails gitHubAppStateDetails
-			if err := json.Unmarshal(cachedState, &stateDetails); err != nil {
-				t.Fatalf("unexpected error unmarshalling cached state: %s", err.Error())
+			vbr stbteDetbils gitHubAppStbteDetbils
+			if err := json.Unmbrshbl(cbchedStbte, &stbteDetbils); err != nil {
+				t.Fbtblf("unexpected error unmbrshblling cbched stbte: %s", err.Error())
 			}
 
-			if stateDetails.WebhookUUID != resp.WebhookUUID {
-				t.Fatal("expected webhookUUID in state details to match response")
+			if stbteDetbils.WebhookUUID != resp.WebhookUUID {
+				t.Fbtbl("expected webhookUUID in stbte detbils to mbtch response")
 			}
-			if stateDetails.Domain != domain {
-				t.Fatal("expected domain in state details to match request param")
+			if stbteDetbils.Dombin != dombin {
+				t.Fbtbl("expected dombin in stbte detbils to mbtch request pbrbm")
 			}
-			if stateDetails.BaseURL != baseURL {
-				t.Fatal("expected baseURL in state details to match request param")
+			if stbteDetbils.BbseURL != bbseURL {
+				t.Fbtbl("expected bbseURL in stbte detbils to mbtch request pbrbm")
 			}
 		})
 	})
 
 	t.Run("/redirect", func(t *testing.T) {
-		baseURL := "/githubapp/redirect"
-		code := "2644896245sasdsf6dsd"
-		state, err := RandomState(128)
+		bbseURL := "/githubbpp/redirect"
+		code := "2644896245sbsdsf6dsd"
+		stbte, err := RbndomStbte(128)
 		if err != nil {
-			t.Fatalf("unexpected error generating random state: %s", err.Error())
+			t.Fbtblf("unexpected error generbting rbndom stbte: %s", err.Error())
 		}
-		domain := types.BatchesGitHubAppDomain
-		stateBaseURL := "https://github.com"
+		dombin := types.BbtchesGitHubAppDombin
+		stbteBbseURL := "https://github.com"
 
-		t.Run("normal user", func(t *testing.T) {
-			req := httptest.NewRequest("GET", baseURL, nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("normbl user", func(t *testing.T) {
+			req := httptest.NewRequest("GET", bbseURL, nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 1,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusForbidden {
-				t.Fatalf("expected status code %d but got %d", http.StatusForbidden, w.Code)
+			if w.Code != http.StbtusForbidden {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusForbidden, w.Code)
 			}
 		})
 
-		t.Run("without state", func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?code=%s", baseURL, code), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("without stbte", func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?code=%s", bbseURL, code), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusBadRequest {
-				t.Fatalf("expected status code %d but got %d", http.StatusBadRequest, w.Code)
+			if w.Code != http.StbtusBbdRequest {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusBbdRequest, w.Code)
 			}
 		})
 
 		t.Run("without code", func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?state=%s", baseURL, state), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?stbte=%s", bbseURL, stbte), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusBadRequest {
-				t.Fatalf("expected status code %d but got %d", http.StatusBadRequest, w.Code)
+			if w.Code != http.StbtusBbdRequest {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusBbdRequest, w.Code)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			MockCreateGitHubApp = func(conversionURL string, domain types.GitHubAppDomain) (*ghtypes.GitHubApp, error) {
+			MockCrebteGitHubApp = func(conversionURL string, dombin types.GitHubAppDombin) (*ghtypes.GitHubApp, error) {
 				return &ghtypes.GitHubApp{}, nil
 			}
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?state=%s&code=%s", baseURL, state, code), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?stbte=%s&code=%s", bbseURL, stbte, code), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
-			stateDeets, err := json.Marshal(gitHubAppStateDetails{
+			stbteDeets, err := json.Mbrshbl(gitHubAppStbteDetbils{
 				WebhookUUID: webhookUUID.String(),
-				Domain:      string(domain),
-				BaseURL:     stateBaseURL,
+				Dombin:      string(dombin),
+				BbseURL:     stbteBbseURL,
 			})
 			require.NoError(t, err)
-			cache.Set(state, stateDeets)
+			cbche.Set(stbte, stbteDeets)
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusSeeOther {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+			if w.Code != http.StbtusSeeOther {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusOK, w.Code)
 			}
 		})
 	})
 
 	t.Run("/setup", func(t *testing.T) {
-		baseURL := "/githubapp/setup"
-		state, err := RandomState(128)
+		bbseURL := "/githubbpp/setup"
+		stbte, err := RbndomStbte(128)
 		if err != nil {
-			t.Fatalf("unexpected error generating random state: %s", err.Error())
+			t.Fbtblf("unexpected error generbting rbndom stbte: %s", err.Error())
 		}
-		installationID := 232034243
-		domain := types.BatchesGitHubAppDomain
+		instbllbtionID := 232034243
+		dombin := types.BbtchesGitHubAppDombin
 
-		t.Run("normal user", func(t *testing.T) {
-			req := httptest.NewRequest("GET", baseURL, nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("normbl user", func(t *testing.T) {
+			req := httptest.NewRequest("GET", bbseURL, nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 1,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusForbidden {
-				t.Fatalf("expected status code %d but got %d", http.StatusForbidden, w.Code)
+			if w.Code != http.StbtusForbidden {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusForbidden, w.Code)
 			}
 		})
 
-		t.Run("without state", func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?installation_id=%d", baseURL, installationID), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("without stbte", func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?instbllbtion_id=%d", bbseURL, instbllbtionID), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusFound {
-				t.Fatalf("expected status code %d but got %d", http.StatusBadRequest, w.Code)
+			if w.Code != http.StbtusFound {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusBbdRequest, w.Code)
 			}
 		})
 
-		t.Run("without installation_id", func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?state=%s", baseURL, state), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("without instbllbtion_id", func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?stbte=%s", bbseURL, stbte), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusFound {
-				t.Fatalf("expected status code %d but got %d", http.StatusBadRequest, w.Code)
+			if w.Code != http.StbtusFound {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusBbdRequest, w.Code)
 			}
 		})
 
-		t.Run("without setup_action", func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?installation_id=%d&state=%s", baseURL, installationID, state), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+		t.Run("without setup_bction", func(t *testing.T) {
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?instbllbtion_id=%d&stbte=%s", bbseURL, instbllbtionID, stbte), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
-			stateDeets, err := json.Marshal(gitHubAppStateDetails{})
+			stbteDeets, err := json.Mbrshbl(gitHubAppStbteDetbils{})
 			require.NoError(t, err)
-			cache.Set(state, stateDeets)
+			cbche.Set(stbte, stbteDeets)
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusBadRequest {
-				t.Fatalf("expected status code %d but got %d", http.StatusBadRequest, w.Code)
+			if w.Code != http.StbtusBbdRequest {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusBbdRequest, w.Code)
 			}
 		})
 
 		t.Run("success", func(t *testing.T) {
-			req := httptest.NewRequest("GET", fmt.Sprintf("%s?installation_id=%d&state=%s&setup_action=install", baseURL, installationID, state), nil)
-			req = req.WithContext(actor.WithActor(req.Context(), &actor.Actor{
+			req := httptest.NewRequest("GET", fmt.Sprintf("%s?instbllbtion_id=%d&stbte=%s&setup_bction=instbll", bbseURL, instbllbtionID, stbte), nil)
+			req = req.WithContext(bctor.WithActor(req.Context(), &bctor.Actor{
 				UID: 2,
 			}))
 
-			stateDeets, err := json.Marshal(gitHubAppStateDetails{
-				Domain: string(domain),
+			stbteDeets, err := json.Mbrshbl(gitHubAppStbteDetbils{
+				Dombin: string(dombin),
 			})
 			require.NoError(t, err)
-			cache.Set(state, stateDeets)
+			cbche.Set(stbte, stbteDeets)
 
 			w := httptest.NewRecorder()
 			mux.ServeHTTP(w, req)
 
-			if w.Code != http.StatusFound {
-				t.Fatalf("expected status code %d but got %d", http.StatusOK, w.Code)
+			if w.Code != http.StbtusFound {
+				t.Fbtblf("expected stbtus code %d but got %d", http.StbtusOK, w.Code)
 			}
 		})
 	})
 }
 
-func TestCreateGitHubApp(t *testing.T) {
+func TestCrebteGitHubApp(t *testing.T) {
 	tests := []struct {
-		name          string
-		domain        types.GitHubAppDomain
-		handlerAssert func(t *testing.T) http.HandlerFunc
+		nbme          string
+		dombin        types.GitHubAppDombin
+		hbndlerAssert func(t *testing.T) http.HbndlerFunc
 		expected      *ghtypes.GitHubApp
 		expectedErr   error
 	}{
 		{
-			name:   "success",
-			domain: types.BatchesGitHubAppDomain,
-			handlerAssert: func(t *testing.T) http.HandlerFunc {
+			nbme:   "success",
+			dombin: types.BbtchesGitHubAppDombin,
+			hbndlerAssert: func(t *testing.T) http.HbndlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					assert.Equal(t, http.MethodPost, r.Method)
+					bssert.Equbl(t, http.MethodPost, r.Method)
 
-					w.WriteHeader(http.StatusCreated)
+					w.WriteHebder(http.StbtusCrebted)
 
 					resp := GitHubAppResponse{
 						AppID:         1,
-						Slug:          "test/github-app",
-						Name:          "test",
-						HtmlURL:       "http://my-github-app.com/app",
-						ClientID:      "abc",
-						ClientSecret:  "password",
+						Slug:          "test/github-bpp",
+						Nbme:          "test",
+						HtmlURL:       "http://my-github-bpp.com/bpp",
+						ClientID:      "bbc",
+						ClientSecret:  "pbssword",
 						PEM:           "some-pem",
 						WebhookSecret: "secret",
-						Permissions: map[string]string{
+						Permissions: mbp[string]string{
 							"checks": "write",
 						},
 						Events: []string{
@@ -460,66 +460,66 @@ func TestCreateGitHubApp(t *testing.T) {
 			},
 			expected: &ghtypes.GitHubApp{
 				AppID:         1,
-				Name:          "test",
-				Slug:          "test/github-app",
-				ClientID:      "abc",
-				ClientSecret:  "password",
+				Nbme:          "test",
+				Slug:          "test/github-bpp",
+				ClientID:      "bbc",
+				ClientSecret:  "pbssword",
 				WebhookSecret: "secret",
-				PrivateKey:    "some-pem",
-				BaseURL:       "http://my-github-app.com",
-				AppURL:        "http://my-github-app.com/app",
-				Domain:        types.BatchesGitHubAppDomain,
-				Logo:          "http://my-github-app.com/identicons/app/app/test/github-app",
+				PrivbteKey:    "some-pem",
+				BbseURL:       "http://my-github-bpp.com",
+				AppURL:        "http://my-github-bpp.com/bpp",
+				Dombin:        types.BbtchesGitHubAppDombin,
+				Logo:          "http://my-github-bpp.com/identicons/bpp/bpp/test/github-bpp",
 			},
 		},
 		{
-			name:   "unexpected status code",
-			domain: types.BatchesGitHubAppDomain,
-			handlerAssert: func(t *testing.T) http.HandlerFunc {
+			nbme:   "unexpected stbtus code",
+			dombin: types.BbtchesGitHubAppDombin,
+			hbndlerAssert: func(t *testing.T) http.HbndlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusOK)
+					w.WriteHebder(http.StbtusOK)
 				}
 			},
-			expectedErr: errors.New("expected 201 statusCode, got: 200"),
+			expectedErr: errors.New("expected 201 stbtusCode, got: 200"),
 		},
 		{
-			name:   "server error",
-			domain: types.BatchesGitHubAppDomain,
-			handlerAssert: func(t *testing.T) http.HandlerFunc {
+			nbme:   "server error",
+			dombin: types.BbtchesGitHubAppDombin,
+			hbndlerAssert: func(t *testing.T) http.HbndlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusInternalServerError)
+					w.WriteHebder(http.StbtusInternblServerError)
 				}
 			},
-			expectedErr: errors.New("expected 201 statusCode, got: 500"),
+			expectedErr: errors.New("expected 201 stbtusCode, got: 500"),
 		},
 		{
-			name:   "invalid html url",
-			domain: types.BatchesGitHubAppDomain,
-			handlerAssert: func(t *testing.T) http.HandlerFunc {
+			nbme:   "invblid html url",
+			dombin: types.BbtchesGitHubAppDombin,
+			hbndlerAssert: func(t *testing.T) http.HbndlerFunc {
 				return func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusCreated)
+					w.WriteHebder(http.StbtusCrebted)
 
 					resp := GitHubAppResponse{HtmlURL: ":"}
 					err := json.NewEncoder(w).Encode(resp)
 					require.NoError(t, err)
 				}
 			},
-			expectedErr: errors.New("parse \":\": missing protocol scheme"),
+			expectedErr: errors.New("pbrse \":\": missing protocol scheme"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			srv := httptest.NewServer(test.handlerAssert(t))
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			srv := httptest.NewServer(test.hbndlerAssert(t))
 			defer srv.Close()
 
-			app, err := createGitHubApp(srv.URL, test.domain)
+			bpp, err := crebteGitHubApp(srv.URL, test.dombin)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
-				assert.Nil(t, app)
+				bssert.EqublError(t, err, test.expectedErr.Error())
+				bssert.Nil(t, bpp)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, test.expected, app)
+				bssert.Equbl(t, test.expected, bpp)
 			}
 		})
 	}

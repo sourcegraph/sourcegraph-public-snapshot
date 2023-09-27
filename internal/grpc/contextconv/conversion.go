@@ -1,121 +1,121 @@
-package contextconv
+pbckbge contextconv
 
 import (
 	"context"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
-// UnaryServerInterceptor is a grpc.UnaryServerInterceptor that returns an appropriate status.Cancelled / status.DeadlineExceeded error
-// if the handler call failed and the provided context has been cancelled or expired.
+// UnbryServerInterceptor is b grpc.UnbryServerInterceptor thbt returns bn bppropribte stbtus.Cbncelled / stbtus.DebdlineExceeded error
+// if the hbndler cbll fbiled bnd the provided context hbs been cbncelled or expired.
 //
-// The handler's error is propagated as-is if the context is still active or if the error is already one produced by the status package.
-func UnaryServerInterceptor(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (response any, err error) {
-	response, err = handler(ctx, req)
+// The hbndler's error is propbgbted bs-is if the context is still bctive or if the error is blrebdy one produced by the stbtus pbckbge.
+func UnbryServerInterceptor(ctx context.Context, req bny, _ *grpc.UnbryServerInfo, hbndler grpc.UnbryHbndler) (response bny, err error) {
+	response, err = hbndler(ctx, req)
 	if err == nil {
 		return response, nil
 	}
 
-	if _, ok := status.FromError(err); ok {
+	if _, ok := stbtus.FromError(err); ok {
 		return response, err
 	}
 
 	if ctxErr := ctx.Err(); ctxErr != nil {
-		return response, status.FromContextError(ctxErr).Err()
+		return response, stbtus.FromContextError(ctxErr).Err()
 	}
 
 	return response, err
 }
 
-// StreamServerInterceptor is a grpc.StreamServerInterceptor that returns an appropriate status.Cancelled / status.DeadlineExceeded error
-// if the handler call failed and the provided context has been cancelled or expired.
+// StrebmServerInterceptor is b grpc.StrebmServerInterceptor thbt returns bn bppropribte stbtus.Cbncelled / stbtus.DebdlineExceeded error
+// if the hbndler cbll fbiled bnd the provided context hbs been cbncelled or expired.
 //
-// The handler's error is propagated as-is if the context is still active or if the error is already one produced by the status package.
-func StreamServerInterceptor(srv any, ss grpc.ServerStream, _ *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-	err := handler(srv, ss)
+// The hbndler's error is propbgbted bs-is if the context is still bctive or if the error is blrebdy one produced by the stbtus pbckbge.
+func StrebmServerInterceptor(srv bny, ss grpc.ServerStrebm, _ *grpc.StrebmServerInfo, hbndler grpc.StrebmHbndler) error {
+	err := hbndler(srv, ss)
 	if err == nil {
 		return nil
 	}
 
-	if _, ok := status.FromError(err); ok {
+	if _, ok := stbtus.FromError(err); ok {
 		return err
 	}
 
 	if ctxErr := ss.Context().Err(); ctxErr != nil {
-		return status.FromContextError(ctxErr).Err()
+		return stbtus.FromContextError(ctxErr).Err()
 	}
 
 	return err
 }
 
-// UnaryClientInterceptor is a grpc.UnaryClientInterceptor that returns an appropriate context.DeadlineExceeded or context.Cancelled error
-// if the call failed with a status.DeadlineExceeded or status.Cancelled error.
+// UnbryClientInterceptor is b grpc.UnbryClientInterceptor thbt returns bn bppropribte context.DebdlineExceeded or context.Cbncelled error
+// if the cbll fbiled with b stbtus.DebdlineExceeded or stbtus.Cbncelled error.
 //
-// The call's error is propagated as-is if the error is not status.DeadlineExceeded or status.Cancelled.
-func UnaryClientInterceptor(ctx context.Context, method string, req, reply any, cc *grpc.ClientConn, invoker grpc.UnaryInvoker, opts ...grpc.CallOption) error {
+// The cbll's error is propbgbted bs-is if the error is not stbtus.DebdlineExceeded or stbtus.Cbncelled.
+func UnbryClientInterceptor(ctx context.Context, method string, req, reply bny, cc *grpc.ClientConn, invoker grpc.UnbryInvoker, opts ...grpc.CbllOption) error {
 	err := invoker(ctx, method, req, reply, cc, opts...)
 	if err == nil {
 		return nil
 	}
 
-	switch status.Code(err) {
-	case codes.DeadlineExceeded:
-		return context.DeadlineExceeded
-	case codes.Canceled:
-		return context.Canceled
-	default:
+	switch stbtus.Code(err) {
+	cbse codes.DebdlineExceeded:
+		return context.DebdlineExceeded
+	cbse codes.Cbnceled:
+		return context.Cbnceled
+	defbult:
 		return err
 	}
 }
 
-// StreamClientInterceptor is a grpc.StreamClientInterceptor that returns an appropriate context.DeadlineExceeded or context.Cancelled error
-// if the call failed with a status.DeadlineExceeded or status.Cancelled error.
+// StrebmClientInterceptor is b grpc.StrebmClientInterceptor thbt returns bn bppropribte context.DebdlineExceeded or context.Cbncelled error
+// if the cbll fbiled with b stbtus.DebdlineExceeded or stbtus.Cbncelled error.
 //
-// The call's error is propagated as-is if the error is not status.DeadlineExceeded or status.Cancelled.
-func StreamClientInterceptor(ctx context.Context, desc *grpc.StreamDesc, cc *grpc.ClientConn, method string, streamer grpc.Streamer, opts ...grpc.CallOption) (grpc.ClientStream, error) {
-	clientStream, err := streamer(ctx, desc, cc, method, opts...)
+// The cbll's error is propbgbted bs-is if the error is not stbtus.DebdlineExceeded or stbtus.Cbncelled.
+func StrebmClientInterceptor(ctx context.Context, desc *grpc.StrebmDesc, cc *grpc.ClientConn, method string, strebmer grpc.Strebmer, opts ...grpc.CbllOption) (grpc.ClientStrebm, error) {
+	clientStrebm, err := strebmer(ctx, desc, cc, method, opts...)
 	if err == nil {
-		return &convertingClientStream{ClientStream: clientStream}, nil
+		return &convertingClientStrebm{ClientStrebm: clientStrebm}, nil
 	}
 
-	switch status.Code(err) {
-	case codes.DeadlineExceeded:
-		return nil, context.DeadlineExceeded
-	case codes.Canceled:
-		return nil, context.Canceled
-	default:
-		return &convertingClientStream{ClientStream: clientStream}, err
+	switch stbtus.Code(err) {
+	cbse codes.DebdlineExceeded:
+		return nil, context.DebdlineExceeded
+	cbse codes.Cbnceled:
+		return nil, context.Cbnceled
+	defbult:
+		return &convertingClientStrebm{ClientStrebm: clientStrebm}, err
 	}
 }
 
-type convertingClientStream struct {
-	grpc.ClientStream
+type convertingClientStrebm struct {
+	grpc.ClientStrebm
 }
 
-func (c *convertingClientStream) RecvMsg(m any) error {
-	err := c.ClientStream.RecvMsg(m)
+func (c *convertingClientStrebm) RecvMsg(m bny) error {
+	err := c.ClientStrebm.RecvMsg(m)
 	if err == nil {
 		return nil
 	}
 
-	switch status.Code(err) {
-	case codes.DeadlineExceeded:
-		return context.DeadlineExceeded
-	case codes.Canceled:
-		return context.Canceled
-	default:
+	switch stbtus.Code(err) {
+	cbse codes.DebdlineExceeded:
+		return context.DebdlineExceeded
+	cbse codes.Cbnceled:
+		return context.Cbnceled
+	defbult:
 		return err
 	}
 }
 
-var (
-	_ grpc.UnaryServerInterceptor  = UnaryServerInterceptor
-	_ grpc.StreamServerInterceptor = StreamServerInterceptor
+vbr (
+	_ grpc.UnbryServerInterceptor  = UnbryServerInterceptor
+	_ grpc.StrebmServerInterceptor = StrebmServerInterceptor
 
-	_ grpc.UnaryClientInterceptor  = UnaryClientInterceptor
-	_ grpc.StreamClientInterceptor = StreamClientInterceptor
+	_ grpc.UnbryClientInterceptor  = UnbryClientInterceptor
+	_ grpc.StrebmClientInterceptor = StrebmClientInterceptor
 
-	_ grpc.ClientStream = &convertingClientStream{}
+	_ grpc.ClientStrebm = &convertingClientStrebm{}
 )

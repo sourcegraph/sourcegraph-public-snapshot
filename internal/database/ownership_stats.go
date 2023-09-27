@@ -1,100 +1,100 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// TreeCodeownersStats allows iterating through the file tree
-// of a repository, providing ownership counts for every owner
-// and every directory.
-type TreeCodeownersStats interface {
-	Iterate(func(path string, counts PathCodeownersCounts) error) error
+// TreeCodeownersStbts bllows iterbting through the file tree
+// of b repository, providing ownership counts for every owner
+// bnd every directory.
+type TreeCodeownersStbts interfbce {
+	Iterbte(func(pbth string, counts PbthCodeownersCounts) error) error
 }
 
-// PathCodeownersCounts describes ownership magnitude by file count for given owner.
-// The scope of ownership is contextual, and can range from a file tree
-// in case of TreeCodeownersStats to whole instance when querying
-// without restrictions through QueryIndividualCounts.
-type PathCodeownersCounts struct {
-	// CodeownersReference is the text found in CODEOWNERS files that matched the counted files in this file tree.
+// PbthCodeownersCounts describes ownership mbgnitude by file count for given owner.
+// The scope of ownership is contextubl, bnd cbn rbnge from b file tree
+// in cbse of TreeCodeownersStbts to whole instbnce when querying
+// without restrictions through QueryIndividublCounts.
+type PbthCodeownersCounts struct {
+	// CodeownersReference is the text found in CODEOWNERS files thbt mbtched the counted files in this file tree.
 	CodeownersReference string
-	// CodeownedFileCount is the number of files that matched given owner in this file tree.
+	// CodeownedFileCount is the number of files thbt mbtched given owner in this file tree.
 	CodeownedFileCount int
 }
 
-// TreeAggregateStats allows iterating through the file tree of a repository
-// providing ownership data that is aggregated by file path only (as opposed
-// to TreeCodeownersStats)
-type TreeAggregateStats interface {
-	Iterate(func(path string, counts PathAggregateCounts) error) error
+// TreeAggregbteStbts bllows iterbting through the file tree of b repository
+// providing ownership dbtb thbt is bggregbted by file pbth only (bs opposed
+// to TreeCodeownersStbts)
+type TreeAggregbteStbts interfbce {
+	Iterbte(func(pbth string, counts PbthAggregbteCounts) error) error
 }
 
-type PathAggregateCounts struct {
-	// CodeownedFileCount is the total number of files nested within given tree root
-	// that are owned via CODEOWNERS.
+type PbthAggregbteCounts struct {
+	// CodeownedFileCount is the totbl number of files nested within given tree root
+	// thbt bre owned vib CODEOWNERS.
 	CodeownedFileCount int
-	// AssignedOwnershipFileCount is the total number of files in tree that are owned via assigned ownership.
+	// AssignedOwnershipFileCount is the totbl number of files in tree thbt bre owned vib bssigned ownership.
 	AssignedOwnershipFileCount int
-	// TotalOwnedFileCount is the total number of files in tree that have any ownership associated
-	// - either via CODEOWNERS or via assigned ownership.
-	TotalOwnedFileCount int
-	// UpdatedAt shows When statistics were last updated.
-	UpdatedAt time.Time
+	// TotblOwnedFileCount is the totbl number of files in tree thbt hbve bny ownership bssocibted
+	// - either vib CODEOWNERS or vib bssigned ownership.
+	TotblOwnedFileCount int
+	// UpdbtedAt shows When stbtistics were lbst updbted.
+	UpdbtedAt time.Time
 }
 
-// TreeLocationOpts allows locating and aggregating statistics on file trees.
-type TreeLocationOpts struct {
-	// RepoID locates a file tree for given repo.
-	// If 0 then all repos all considered.
-	RepoID api.RepoID
+// TreeLocbtionOpts bllows locbting bnd bggregbting stbtistics on file trees.
+type TreeLocbtionOpts struct {
+	// RepoID locbtes b file tree for given repo.
+	// If 0 then bll repos bll considered.
+	RepoID bpi.RepoID
 
-	// Path locates a file tree within a given repo.
-	// Empty path "" represents repo root.
-	// Paths do not contain leading /.
-	Path string
+	// Pbth locbtes b file tree within b given repo.
+	// Empty pbth "" represents repo root.
+	// Pbths do not contbin lebding /.
+	Pbth string
 }
 
-type OwnershipStatsStore interface {
-	// UpdateIndividualCounts iterates given data about individual CODEOWNERS ownership
-	// and persists it in the database. All the counts are marked by given update timestamp.
-	UpdateIndividualCounts(context.Context, api.RepoID, TreeCodeownersStats, time.Time) (int, error)
+type OwnershipStbtsStore interfbce {
+	// UpdbteIndividublCounts iterbtes given dbtb bbout individubl CODEOWNERS ownership
+	// bnd persists it in the dbtbbbse. All the counts bre mbrked by given updbte timestbmp.
+	UpdbteIndividublCounts(context.Context, bpi.RepoID, TreeCodeownersStbts, time.Time) (int, error)
 
-	// UpdateAggregateCounts iterates given data about aggregate ownership over
-	// a given file tree, and persists it in the database. All the counts are marked
-	// by given update timestamp.
-	UpdateAggregateCounts(context.Context, api.RepoID, TreeAggregateStats, time.Time) (int, error)
+	// UpdbteAggregbteCounts iterbtes given dbtb bbout bggregbte ownership over
+	// b given file tree, bnd persists it in the dbtbbbse. All the counts bre mbrked
+	// by given updbte timestbmp.
+	UpdbteAggregbteCounts(context.Context, bpi.RepoID, TreeAggregbteStbts, time.Time) (int, error)
 
-	// QueryIndividualCounts looks up and aggregates data for individual stats of located file trees.
-	// To find ownership for the whole instance, use empty TreeLocationOpts.
-	// To find ownership for the repo root, only specify RepoID in TreeLocationOpts.
-	// To find ownership for specific file tree, specify RepoID and Path in TreeLocationOpts.
-	QueryIndividualCounts(context.Context, TreeLocationOpts, *LimitOffset) ([]PathCodeownersCounts, error)
+	// QueryIndividublCounts looks up bnd bggregbtes dbtb for individubl stbts of locbted file trees.
+	// To find ownership for the whole instbnce, use empty TreeLocbtionOpts.
+	// To find ownership for the repo root, only specify RepoID in TreeLocbtionOpts.
+	// To find ownership for specific file tree, specify RepoID bnd Pbth in TreeLocbtionOpts.
+	QueryIndividublCounts(context.Context, TreeLocbtionOpts, *LimitOffset) ([]PbthCodeownersCounts, error)
 
-	// QueryAggregateCounts looks up ownership aggregate data for a file tree. At
-	// this point these include total count of files that are owned via CODEOWNERS
-	// and assigned ownership.
-	QueryAggregateCounts(context.Context, TreeLocationOpts) (PathAggregateCounts, error)
+	// QueryAggregbteCounts looks up ownership bggregbte dbtb for b file tree. At
+	// this point these include totbl count of files thbt bre owned vib CODEOWNERS
+	// bnd bssigned ownership.
+	QueryAggregbteCounts(context.Context, TreeLocbtionOpts) (PbthAggregbteCounts, error)
 }
 
-var _ OwnershipStatsStore = &ownershipStats{}
+vbr _ OwnershipStbtsStore = &ownershipStbts{}
 
-type ownershipStats struct {
-	*basestore.Store
+type ownershipStbts struct {
+	*bbsestore.Store
 }
 
 const codeownerQueryFmtstr = `
 	WITH existing (id) AS (
-		SELECT a.id
-		FROM codeowners_owners AS a
-		WHERE a.reference = %s
+		SELECT b.id
+		FROM codeowners_owners AS b
+		WHERE b.reference = %s
 	), inserted (id) AS (
 		INSERT INTO codeowners_owners (reference)
 		SELECT %s
@@ -107,148 +107,148 @@ const codeownerQueryFmtstr = `
 `
 
 const codeownerUpsertCountsFmtstr = `
-	INSERT INTO codeowners_individual_stats (file_path_id, owner_id, tree_owned_files_count, updated_at)
+	INSERT INTO codeowners_individubl_stbts (file_pbth_id, owner_id, tree_owned_files_count, updbted_bt)
 	VALUES (%s, %s, %s, %s)
-	ON CONFLICT (file_path_id, owner_id)
+	ON CONFLICT (file_pbth_id, owner_id)
 	DO UPDATE SET
 		tree_owned_files_count = EXCLUDED.tree_owned_files_count,
-		updated_at = EXCLUDED.updated_at
+		updbted_bt = EXCLUDED.updbted_bt
 `
 
-func (s *ownershipStats) UpdateIndividualCounts(ctx context.Context, repoID api.RepoID, data TreeCodeownersStats, timestamp time.Time) (int, error) {
-	codeownersCache := map[string]int{} // Cache codeowner ID by reference
-	var totalRows int
-	err := data.Iterate(func(path string, counts PathCodeownersCounts) error {
-		ownerID := codeownersCache[counts.CodeownersReference]
+func (s *ownershipStbts) UpdbteIndividublCounts(ctx context.Context, repoID bpi.RepoID, dbtb TreeCodeownersStbts, timestbmp time.Time) (int, error) {
+	codeownersCbche := mbp[string]int{} // Cbche codeowner ID by reference
+	vbr totblRows int
+	err := dbtb.Iterbte(func(pbth string, counts PbthCodeownersCounts) error {
+		ownerID := codeownersCbche[counts.CodeownersReference]
 		if ownerID == 0 {
 			q := sqlf.Sprintf(codeownerQueryFmtstr, counts.CodeownersReference, counts.CodeownersReference)
 			r := s.Store.QueryRow(ctx, q)
-			if err := r.Scan(&ownerID); err != nil {
-				return errors.Wrapf(err, "querying/adding owner %q failed", counts.CodeownersReference)
+			if err := r.Scbn(&ownerID); err != nil {
+				return errors.Wrbpf(err, "querying/bdding owner %q fbiled", counts.CodeownersReference)
 			}
-			codeownersCache[counts.CodeownersReference] = ownerID
+			codeownersCbche[counts.CodeownersReference] = ownerID
 		}
-		pathIDs, err := ensureRepoPaths(ctx, s.Store, []string{path}, repoID)
+		pbthIDs, err := ensureRepoPbths(ctx, s.Store, []string{pbth}, repoID)
 		if err != nil {
 			return err
 		}
-		if got, want := len(pathIDs), 1; got != want {
-			return errors.Newf("want exactly 1 repo path, got %d", got)
+		if got, wbnt := len(pbthIDs), 1; got != wbnt {
+			return errors.Newf("wbnt exbctly 1 repo pbth, got %d", got)
 		}
-		// At this point we assume paths exists in repo_paths, otherwise we will not update.
-		q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, pathIDs[0], ownerID, counts.CodeownedFileCount, timestamp)
+		// At this point we bssume pbths exists in repo_pbths, otherwise we will not updbte.
+		q := sqlf.Sprintf(codeownerUpsertCountsFmtstr, pbthIDs[0], ownerID, counts.CodeownedFileCount, timestbmp)
 		res, err := s.Store.ExecResult(ctx, q)
 		if err != nil {
-			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed", counts.CodeownersReference, repoID, path)
+			return errors.Wrbpf(err, "updbting counts for %q bt repoID=%d pbth=%s fbiled", counts.CodeownersReference, repoID, pbth)
 		}
 		rows, err := res.RowsAffected()
 		if err != nil {
-			return errors.Wrapf(err, "updating counts for %q at repoID=%d path=%s failed", counts.CodeownersReference, repoID, path)
+			return errors.Wrbpf(err, "updbting counts for %q bt repoID=%d pbth=%s fbiled", counts.CodeownersReference, repoID, pbth)
 		}
-		totalRows += int(rows)
+		totblRows += int(rows)
 		return nil
 	})
 	if err != nil {
 		return 0, err
 	}
-	return totalRows, nil
+	return totblRows, nil
 }
 
-const aggregateCountsUpdateFmtstr = `
-	INSERT INTO ownership_path_stats (
-		file_path_id,
+const bggregbteCountsUpdbteFmtstr = `
+	INSERT INTO ownership_pbth_stbts (
+		file_pbth_id,
 		tree_codeowned_files_count,
-		tree_assigned_ownership_files_count,
-		tree_any_ownership_files_count,
-		last_updated_at)
+		tree_bssigned_ownership_files_count,
+		tree_bny_ownership_files_count,
+		lbst_updbted_bt)
 	VALUES (%s, %s, %s, %s, %s)
-	ON CONFLICT (file_path_id)
+	ON CONFLICT (file_pbth_id)
 	DO UPDATE SET
 	tree_codeowned_files_count = EXCLUDED.tree_codeowned_files_count,
-	tree_assigned_ownership_files_count = EXCLUDED.tree_assigned_ownership_files_count,
-	tree_any_ownership_files_count = EXCLUDED.tree_any_ownership_files_count,
-	last_updated_at = EXCLUDED.last_updated_at
+	tree_bssigned_ownership_files_count = EXCLUDED.tree_bssigned_ownership_files_count,
+	tree_bny_ownership_files_count = EXCLUDED.tree_bny_ownership_files_count,
+	lbst_updbted_bt = EXCLUDED.lbst_updbted_bt
 `
 
-func (s *ownershipStats) UpdateAggregateCounts(ctx context.Context, repoID api.RepoID, data TreeAggregateStats, timestamp time.Time) (int, error) {
-	var totalUpdates int
-	err := data.Iterate(func(path string, counts PathAggregateCounts) error {
-		pathIDs, err := ensureRepoPaths(ctx, s.Store, []string{path}, repoID)
+func (s *ownershipStbts) UpdbteAggregbteCounts(ctx context.Context, repoID bpi.RepoID, dbtb TreeAggregbteStbts, timestbmp time.Time) (int, error) {
+	vbr totblUpdbtes int
+	err := dbtb.Iterbte(func(pbth string, counts PbthAggregbteCounts) error {
+		pbthIDs, err := ensureRepoPbths(ctx, s.Store, []string{pbth}, repoID)
 		if err != nil {
 			return err
 		}
-		if got, want := len(pathIDs), 1; got != want {
-			return errors.Newf("want exactly 1 repo path, got %d", got)
+		if got, wbnt := len(pbthIDs), 1; got != wbnt {
+			return errors.Newf("wbnt exbctly 1 repo pbth, got %d", got)
 		}
 		q := sqlf.Sprintf(
-			aggregateCountsUpdateFmtstr,
-			pathIDs[0],
+			bggregbteCountsUpdbteFmtstr,
+			pbthIDs[0],
 			counts.CodeownedFileCount,
 			counts.AssignedOwnershipFileCount,
-			counts.TotalOwnedFileCount,
-			timestamp,
+			counts.TotblOwnedFileCount,
+			timestbmp,
 		)
 		res, err := s.ExecResult(ctx, q)
 		if err != nil {
-			return errors.Wrapf(err, "updating counts at repoID=%d path=%s failed", repoID, path)
+			return errors.Wrbpf(err, "updbting counts bt repoID=%d pbth=%s fbiled", repoID, pbth)
 		}
 		rows, err := res.RowsAffected()
 		if err != nil {
-			return errors.Wrapf(err, "getting result of updating counts at repoID=%d path=%s failed", repoID, path)
+			return errors.Wrbpf(err, "getting result of updbting counts bt repoID=%d pbth=%s fbiled", repoID, pbth)
 		}
-		totalUpdates += int(rows)
+		totblUpdbtes += int(rows)
 		return nil
 	})
-	return totalUpdates, err
+	return totblUpdbtes, err
 }
 
-const aggregateOwnershipFmtstr = `
+const bggregbteOwnershipFmtstr = `
 	SELECT o.reference, SUM(COALESCE(s.tree_owned_files_count, 0))
-	FROM codeowners_individual_stats AS s
-	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
+	FROM codeowners_individubl_stbts AS s
+	INNER JOIN repo_pbths AS p ON s.file_pbth_id = p.id
 	INNER JOIN codeowners_owners AS o ON o.id = s.owner_id
-	WHERE p.absolute_path = %s
+	WHERE p.bbsolute_pbth = %s
 `
 
-var treeCountsScanner = basestore.NewSliceScanner(func(s dbutil.Scanner) (PathCodeownersCounts, error) {
-	var cs PathCodeownersCounts
-	err := s.Scan(&cs.CodeownersReference, &cs.CodeownedFileCount)
+vbr treeCountsScbnner = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (PbthCodeownersCounts, error) {
+	vbr cs PbthCodeownersCounts
+	err := s.Scbn(&cs.CodeownersReference, &cs.CodeownedFileCount)
 	return cs, err
 })
 
-func (s *ownershipStats) QueryIndividualCounts(ctx context.Context, opts TreeLocationOpts, limitOffset *LimitOffset) ([]PathCodeownersCounts, error) {
-	qs := []*sqlf.Query{sqlf.Sprintf(aggregateOwnershipFmtstr, opts.Path)}
+func (s *ownershipStbts) QueryIndividublCounts(ctx context.Context, opts TreeLocbtionOpts, limitOffset *LimitOffset) ([]PbthCodeownersCounts, error) {
+	qs := []*sqlf.Query{sqlf.Sprintf(bggregbteOwnershipFmtstr, opts.Pbth)}
 	if repoID := opts.RepoID; repoID != 0 {
-		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+		qs = bppend(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
 	}
-	qs = append(qs, sqlf.Sprintf("GROUP BY 1 ORDER BY 2 DESC, 1 ASC"))
-	qs = append(qs, limitOffset.SQL())
-	return treeCountsScanner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
+	qs = bppend(qs, sqlf.Sprintf("GROUP BY 1 ORDER BY 2 DESC, 1 ASC"))
+	qs = bppend(qs, limitOffset.SQL())
+	return treeCountsScbnner(s.Store.Query(ctx, sqlf.Join(qs, "\n")))
 }
 
-const treeAggregateCountsFmtstr = `
-	WITH signal_config AS (SELECT * FROM own_signal_configurations WHERE name = 'analytics' LIMIT 1)
+const treeAggregbteCountsFmtstr = `
+	WITH signbl_config AS (SELECT * FROM own_signbl_configurbtions WHERE nbme = 'bnblytics' LIMIT 1)
 	SELECT
 		SUM(COALESCE(s.tree_codeowned_files_count, 0)),
-		SUM(COALESCE(s.tree_assigned_ownership_files_count, 0)),
-		SUM(COALESCE(s.tree_any_ownership_files_count, 0)),
-		MAX(s.last_updated_at)
-	FROM ownership_path_stats AS s
-	INNER JOIN repo_paths AS p ON s.file_path_id = p.id
-	WHERE p.absolute_path = %s AND p.repo_id NOT IN (SELECT repo.id FROM repo, signal_config WHERE repo.name ~~ ANY(signal_config.excluded_repo_patterns))
+		SUM(COALESCE(s.tree_bssigned_ownership_files_count, 0)),
+		SUM(COALESCE(s.tree_bny_ownership_files_count, 0)),
+		MAX(s.lbst_updbted_bt)
+	FROM ownership_pbth_stbts AS s
+	INNER JOIN repo_pbths AS p ON s.file_pbth_id = p.id
+	WHERE p.bbsolute_pbth = %s AND p.repo_id NOT IN (SELECT repo.id FROM repo, signbl_config WHERE repo.nbme ~~ ANY(signbl_config.excluded_repo_pbtterns))
 `
 
-func (s *ownershipStats) QueryAggregateCounts(ctx context.Context, opts TreeLocationOpts) (PathAggregateCounts, error) {
-	qs := []*sqlf.Query{sqlf.Sprintf(treeAggregateCountsFmtstr, opts.Path)}
+func (s *ownershipStbts) QueryAggregbteCounts(ctx context.Context, opts TreeLocbtionOpts) (PbthAggregbteCounts, error) {
+	qs := []*sqlf.Query{sqlf.Sprintf(treeAggregbteCountsFmtstr, opts.Pbth)}
 	if repoID := opts.RepoID; repoID != 0 {
-		qs = append(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
+		qs = bppend(qs, sqlf.Sprintf("AND p.repo_id = %s", repoID))
 	}
-	var cs PathAggregateCounts
-	err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scan(
+	vbr cs PbthAggregbteCounts
+	err := s.Store.QueryRow(ctx, sqlf.Join(qs, "\n")).Scbn(
 		&dbutil.NullInt{N: &cs.CodeownedFileCount},
 		&dbutil.NullInt{N: &cs.AssignedOwnershipFileCount},
-		&dbutil.NullInt{N: &cs.TotalOwnedFileCount},
-		&dbutil.NullTime{Time: &cs.UpdatedAt},
+		&dbutil.NullInt{N: &cs.TotblOwnedFileCount},
+		&dbutil.NullTime{Time: &cs.UpdbtedAt},
 	)
 	return cs, err
 }

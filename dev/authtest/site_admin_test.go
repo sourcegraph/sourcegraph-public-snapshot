@@ -1,4 +1,4 @@
-package authtest
+pbckbge buthtest
 
 import (
 	"fmt"
@@ -6,144 +6,144 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
 )
 
 func TestSiteAdminEndpoints(t *testing.T) {
-	// Create a test user (authtest-user-1) which is not a site admin, the user
-	// should receive access denied for site admin endpoints.
-	const testUsername = "authtest-user-1"
-	userClient, err := gqltestutil.SignUp(*baseURL, testUsername+"@sourcegraph.com", testUsername, "mysecurepassword")
+	// Crebte b test user (buthtest-user-1) which is not b site bdmin, the user
+	// should receive bccess denied for site bdmin endpoints.
+	const testUsernbme = "buthtest-user-1"
+	userClient, err := gqltestutil.SignUp(*bbseURL, testUsernbme+"@sourcegrbph.com", testUsernbme, "mysecurepbssword")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer func() {
-		err := client.DeleteUser(userClient.AuthenticatedUserID(), true)
+		err := client.DeleteUser(userClient.AuthenticbtedUserID(), true)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}()
 
 	t.Run("debug endpoints", func(t *testing.T) {
 		tests := []struct {
-			name string
-			path string
+			nbme string
+			pbth string
 		}{
 			{
-				name: "debug",
-				path: "/-/debug/",
+				nbme: "debug",
+				pbth: "/-/debug/",
 			}, {
-				name: "jaeger",
-				path: "/-/debug/jaeger/",
+				nbme: "jbeger",
+				pbth: "/-/debug/jbeger/",
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				resp, err := userClient.Get(*baseURL + test.path)
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				resp, err := userClient.Get(*bbseURL + test.pbth)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 				defer func() { _ = resp.Body.Close() }()
 
-				if resp.StatusCode != http.StatusForbidden {
-					t.Fatalf(`Want status code %d error but got %d`, http.StatusForbidden, resp.StatusCode)
+				if resp.StbtusCode != http.StbtusForbidden {
+					t.Fbtblf(`Wbnt stbtus code %d error but got %d`, http.StbtusForbidden, resp.StbtusCode)
 				}
 			})
 		}
 	})
 
-	t.Run("latest ping", func(t *testing.T) {
-		resp, err := userClient.Get(*baseURL + "/site-admin/pings/latest")
+	t.Run("lbtest ping", func(t *testing.T) {
+		resp, err := userClient.Get(*bbseURL + "/site-bdmin/pings/lbtest")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if want, got := http.StatusUnauthorized, resp.StatusCode; want != got {
-			t.Fatalf("Want %d but got %d", want, got)
+		if wbnt, got := http.StbtusUnbuthorized, resp.StbtusCode; wbnt != got {
+			t.Fbtblf("Wbnt %d but got %d", wbnt, got)
 		}
 	})
 
-	t.Run("usage stats archive", func(t *testing.T) {
-		resp, err := userClient.Get(*baseURL + "/site-admin/usage-statistics/archive")
+	t.Run("usbge stbts brchive", func(t *testing.T) {
+		resp, err := userClient.Get(*bbseURL + "/site-bdmin/usbge-stbtistics/brchive")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() { _ = resp.Body.Close() }()
 
-		if want, got := http.StatusUnauthorized, resp.StatusCode; want != got {
-			t.Fatalf("Want %d but got %d", want, got)
+		if wbnt, got := http.StbtusUnbuthorized, resp.StbtusCode; wbnt != got {
+			t.Fbtblf("Wbnt %d but got %d", wbnt, got)
 		}
 	})
 
-	t.Run("GraphQL queries", func(t *testing.T) {
+	t.Run("GrbphQL queries", func(t *testing.T) {
 		type gqlTest struct {
-			name      string
+			nbme      string
 			errorStr  string
 			query     string
-			variables map[string]any
+			vbribbles mbp[string]bny
 		}
 		tests := []gqlTest{
 			{
-				name: "resetTriggerQueryTimestamps",
+				nbme: "resetTriggerQueryTimestbmps",
 				query: `
-mutation {
-	resetTriggerQueryTimestamps(id: "SUQ6MTIz") {
-		alwaysNil
+mutbtion {
+	resetTriggerQueryTimestbmps(id: "SUQ6MTIz") {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "reindexRepository",
+				nbme: "reindexRepository",
 				query: `
-mutation {
+mutbtion {
 	reindexRepository(repository: "UmVwb3NpdG9yeTox") {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			},
 			{
-				name: "updateMirrorRepository",
+				nbme: "updbteMirrorRepository",
 				query: `
-mutation {
-	updateMirrorRepository(repository: "UmVwb3NpdG9yeTox") {
-		alwaysNil
+mutbtion {
+	updbteMirrorRepository(repository: "UmVwb3NpdG9yeTox") {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "addUserToOrganization",
+				nbme: "bddUserToOrgbnizbtion",
 				query: `
-mutation {
-	addUserToOrganization(organization: "T3JnYW5pemF0aW9uOjE=", username: "alice") {
-		alwaysNil
+mutbtion {
+	bddUserToOrgbnizbtion(orgbnizbtion: "T3JnYW5pemF0bW9uOjE=", usernbme: "blice") {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "site.configuration",
+				nbme: "site.configurbtion",
 				query: `
 {
 	site {
-		configuration {
+		configurbtion {
 			id
 		}
 	}
 }`,
 			}, {
-				name: "site.accessTokens",
+				nbme: "site.bccessTokens",
 				query: `
 {
 	site {
-		accessTokens {
-			totalCount
+		bccessTokens {
+			totblCount
 		}
 	}
 }`,
 			}, {
-				name: "site.externalAccounts",
+				nbme: "site.externblAccounts",
 				query: `
 {
 	site {
-		externalAccounts {
+		externblAccounts {
 			nodes {
 				id
 			}
@@ -151,152 +151,152 @@ mutation {
 	}
 }`,
 			}, {
-				name: "updateSiteConfiguration",
+				nbme: "updbteSiteConfigurbtion",
 				query: `
-mutation {
-	updateSiteConfiguration(input: "", lastID: 0)
+mutbtion {
+	updbteSiteConfigurbtion(input: "", lbstID: 0)
 }`,
 			}, {
-				name: "deletePreciseIndex",
+				nbme: "deletePreciseIndex",
 				query: `
-mutation {
+mutbtion {
 	deletePreciseIndex(id: "TFNJRjox") {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "outOfBandMigrations",
+				nbme: "outOfBbndMigrbtions",
 				query: `
 {
-	outOfBandMigrations {
+	outOfBbndMigrbtions {
 		id
 	}
 }`,
 			}, {
-				name: "setMigrationDirection",
+				nbme: "setMigrbtionDirection",
 				query: `
-mutation {
-	setMigrationDirection(id: "TWlncmF0aW9uOjE=", applyReverse: false) {
-		alwaysNil
+mutbtion {
+	setMigrbtionDirection(id: "TWlncmF0bW9uOjE=", bpplyReverse: fblse) {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "createAccessToken.ScopeSiteAdminSudo",
+				nbme: "crebteAccessToken.ScopeSiteAdminSudo",
 				query: `
-mutation CreateAccessToken($userID: ID!) {
-	createAccessToken(user: $userID, scopes: ["site-admin:sudo"], note: "") {
+mutbtion CrebteAccessToken($userID: ID!) {
+	crebteAccessToken(user: $userID, scopes: ["site-bdmin:sudo"], note: "") {
 		id
 	}
 }`,
-				variables: map[string]any{
-					"userID": userClient.AuthenticatedUserID(),
+				vbribbles: mbp[string]bny{
+					"userID": userClient.AuthenticbtedUserID(),
 				},
 			}, {
-				name: "setRepositoryPermissionsForUsers",
+				nbme: "setRepositoryPermissionsForUsers",
 				query: `
-mutation {
+mutbtion {
 	setRepositoryPermissionsForUsers(
 		repository: "UmVwb3NpdG9yeTox"
-		userPermissions: [{bindID: "alice@example.com"}]
+		userPermissions: [{bindID: "blice@exbmple.com"}]
 	) {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "scheduleRepositoryPermissionsSync",
+				nbme: "scheduleRepositoryPermissionsSync",
 				query: `
-mutation {
+mutbtion {
 	scheduleRepositoryPermissionsSync(repository: "UmVwb3NpdG9yeTox") {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name:     "scheduleUserPermissionsSync",
-				errorStr: auth.ErrMustBeSiteAdminOrSameUser.Error(),
+				nbme:     "scheduleUserPermissionsSync",
+				errorStr: buth.ErrMustBeSiteAdminOrSbmeUser.Error(),
 				query: `
-mutation {
+mutbtion {
 	scheduleUserPermissionsSync(user: "VXNlcjox") {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "authorizedUserRepositories",
+				nbme: "buthorizedUserRepositories",
 				query: `
 {
-	authorizedUserRepositories(username: "alice", first: 1) {
-		totalCount
+	buthorizedUserRepositories(usernbme: "blice", first: 1) {
+		totblCount
 	}
 }`,
 			}, {
-				name: "usersWithPendingPermissions",
+				nbme: "usersWithPendingPermissions",
 				query: `
 {
 	usersWithPendingPermissions
 }`,
 			}, {
-				name: "authorizedUserRepositories",
+				nbme: "buthorizedUserRepositories",
 				query: `
 {
-	authorizedUserRepositories(username: "alice", first: 1) {
-		totalCount
+	buthorizedUserRepositories(usernbme: "blice", first: 1) {
+		totblCount
 	}
 }`,
 			}, {
-				name: "setUserEmailVerified",
+				nbme: "setUserEmbilVerified",
 				query: `
-mutation {
-	setUserEmailVerified(
+mutbtion {
+	setUserEmbilVerified(
 		user: "VXNlcjox"
-		email: "alice@exmaple.com"
+		embil: "blice@exmbple.com"
 		verified: true
 	) {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "setUserIsSiteAdmin",
+				nbme: "setUserIsSiteAdmin",
 				query: `
-mutation {
+mutbtion {
 	setUserIsSiteAdmin(userID: "VXNlcjox", siteAdmin: true) {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "invalidateSessionsByID",
+				nbme: "invblidbteSessionsByID",
 				query: `
-mutation {
-	invalidateSessionsByID(userID: "VXNlcjox") {
-		alwaysNil
+mutbtion {
+	invblidbteSessionsByID(userID: "VXNlcjox") {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "triggerObservabilityTestAlert",
+				nbme: "triggerObservbbilityTestAlert",
 				query: `
-mutation {
-	triggerObservabilityTestAlert(level: "critical") {
-		alwaysNil
+mutbtion {
+	triggerObservbbilityTestAlert(level: "criticbl") {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "reloadSite",
+				nbme: "relobdSite",
 				query: `
-mutation {
-	reloadSite {
-		alwaysNil
+mutbtion {
+	relobdSite {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "organizations",
+				nbme: "orgbnizbtions",
 				query: `
 {
-	organizations {
+	orgbnizbtions {
 		nodes {
 			id
 		}
 	}
 }`,
 			}, {
-				name: "surveyResponses",
+				nbme: "surveyResponses",
 				query: `
 {
 	surveyResponses {
@@ -306,112 +306,112 @@ mutation {
 	}
 }`,
 			}, {
-				name: "repositoryStats",
+				nbme: "repositoryStbts",
 				query: `
 {
-	repositoryStats {
+	repositoryStbts {
 		gitDirBytes
 	}
 }`,
 			}, {
-				name: "createUser",
+				nbme: "crebteUser",
 				query: `
-mutation {
-	createUser(username: "alice") {
-		resetPasswordURL
+mutbtion {
+	crebteUser(usernbme: "blice") {
+		resetPbsswordURL
 	}
 }`,
 			}, {
-				name: "deleteUser",
+				nbme: "deleteUser",
 				query: `
-mutation {
+mutbtion {
 	deleteUser(user: "VXNlcjox") {
-		alwaysNil
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "deleteOrganization",
+				nbme: "deleteOrgbnizbtion",
 				query: `
-mutation {
-	deleteOrganization(organization: "T3JnYW5pemF0aW9uOjE=") {
-		alwaysNil
+mutbtion {
+	deleteOrgbnizbtion(orgbnizbtion: "T3JnYW5pemF0bW9uOjE=") {
+		blwbysNil
 	}
 }`,
 			}, {
-				name: "randomizeUserPassword",
+				nbme: "rbndomizeUserPbssword",
 				query: `
-mutation {
-	randomizeUserPassword(user: "VXNlcjox") {
-		resetPasswordURL
+mutbtion {
+	rbndomizeUserPbssword(user: "VXNlcjox") {
+		resetPbsswordURL
 	}
 }`,
 			},
 		}
 
 		if *dotcom {
-			tests = append(tests,
+			tests = bppend(tests,
 				gqlTest{
-					name: "look up user by email",
+					nbme: "look up user by embil",
 					query: `
 {
-	user(email: "alice@example.com") {
+	user(embil: "blice@exbmple.com") {
 		id
 	}
 }
 `,
 				},
 				gqlTest{
-					name: "dotcom.productLicenses",
+					nbme: "dotcom.productLicenses",
 					query: `
 {
 	dotcom {
 		productLicenses {
-			__typename
+			__typenbme
 		}
 	}
 }`,
 				},
 				gqlTest{
-					name: "dotcom.createProductSubscription",
+					nbme: "dotcom.crebteProductSubscription",
 					query: `
-mutation {
+mutbtion {
 	dotcom {
-		createProductSubscription(accountID: "VXNlcjox") {
+		crebteProductSubscription(bccountID: "VXNlcjox") {
 			id
 		}
 	}
 }`,
 				},
 				gqlTest{
-					name: "dotcom.setProductSubscriptionBilling",
+					nbme: "dotcom.setProductSubscriptionBilling",
 					query: `
-mutation {
+mutbtion {
 	dotcom {
 		setProductSubscriptionBilling(id: "VXNlcjox") {
-			alwaysNil
+			blwbysNil
 		}
 	}
 }`,
 				},
 				gqlTest{
-					name: "dotcom.archiveProductSubscription",
+					nbme: "dotcom.brchiveProductSubscription",
 					query: `
-mutation {
+mutbtion {
 	dotcom {
-		archiveProductSubscription(id: "VXNlcjox") {
-			alwaysNil
+		brchiveProductSubscription(id: "VXNlcjox") {
+			blwbysNil
 		}
 	}
 }`,
 				},
 				gqlTest{
-					name: "dotcom.generateProductLicenseForSubscription",
+					nbme: "dotcom.generbteProductLicenseForSubscription",
 					query: `
-mutation {
+mutbtion {
 	dotcom {
-		generateProductLicenseForSubscription(
+		generbteProductLicenseForSubscription(
 			productSubscriptionID: "UHJvZHVjdFN1YnNjcmlwdGlvbjox"
-			license: {tags: [], userCount: 1, expiresAt: 1}
+			license: {tbgs: [], userCount: 1, expiresAt: 1}
 		) {
 			id
 		}
@@ -419,29 +419,29 @@ mutation {
 }`,
 				},
 				gqlTest{
-					name: "dotcom.setUserBilling",
+					nbme: "dotcom.setUserBilling",
 					query: `
-mutation {
+mutbtion {
 	dotcom {
 		setUserBilling(user: "VXNlcjox", billingCustomerID: "404") {
-			alwaysNil
+			blwbysNil
 		}
 	}
 }`,
 				},
 			)
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				err := userClient.GraphQL("", test.query, test.variables, nil)
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				err := userClient.GrbphQL("", test.query, test.vbribbles, nil)
 				got := fmt.Sprintf("%v", err)
-				expected := auth.ErrMustBeSiteAdmin.Error()
+				expected := buth.ErrMustBeSiteAdmin.Error()
 				if test.errorStr != "" {
 					expected = test.errorStr
 				}
-				// check if it's one of errors that we expect
-				if !strings.Contains(got, expected) {
-					t.Fatalf(`Want "%s" error, but got "%q"`, expected, got)
+				// check if it's one of errors thbt we expect
+				if !strings.Contbins(got, expected) {
+					t.Fbtblf(`Wbnt "%s" error, but got "%q"`, expected, got)
 				}
 			})
 		}

@@ -1,239 +1,239 @@
-package batches
+pbckbge bbtches
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type LogEvent struct {
-	Operation LogEventOperation `json:"operation"`
+	Operbtion LogEventOperbtion `json:"operbtion"`
 
-	Timestamp time.Time `json:"timestamp"`
+	Timestbmp time.Time `json:"timestbmp"`
 
-	Status   LogEventStatus `json:"status"`
-	Metadata any            `json:"metadata,omitempty"`
+	Stbtus   LogEventStbtus `json:"stbtus"`
+	Metbdbtb bny            `json:"metbdbtb,omitempty"`
 }
 
 type logEventJSON struct {
-	Operation LogEventOperation `json:"operation"`
-	Timestamp time.Time         `json:"timestamp"`
-	Status    LogEventStatus    `json:"status"`
+	Operbtion LogEventOperbtion `json:"operbtion"`
+	Timestbmp time.Time         `json:"timestbmp"`
+	Stbtus    LogEventStbtus    `json:"stbtus"`
 }
 
-func (l *LogEvent) UnmarshalJSON(data []byte) error {
-	var j *logEventJSON
-	if err := json.Unmarshal(data, &j); err != nil {
+func (l *LogEvent) UnmbrshblJSON(dbtb []byte) error {
+	vbr j *logEventJSON
+	if err := json.Unmbrshbl(dbtb, &j); err != nil {
 		return err
 	}
-	l.Operation = j.Operation
-	l.Timestamp = j.Timestamp
-	l.Status = j.Status
+	l.Operbtion = j.Operbtion
+	l.Timestbmp = j.Timestbmp
+	l.Stbtus = j.Stbtus
 
-	switch l.Operation {
-	case LogEventOperationParsingBatchSpec:
-		l.Metadata = new(ParsingBatchSpecMetadata)
-	case LogEventOperationResolvingNamespace:
-		l.Metadata = new(ResolvingNamespaceMetadata)
-	case LogEventOperationPreparingDockerImages:
-		l.Metadata = new(PreparingDockerImagesMetadata)
-	case LogEventOperationDeterminingWorkspaceType:
-		l.Metadata = new(DeterminingWorkspaceTypeMetadata)
-	case LogEventOperationDeterminingWorkspaces:
-		l.Metadata = new(DeterminingWorkspacesMetadata)
-	case LogEventOperationCheckingCache:
-		l.Metadata = new(CheckingCacheMetadata)
-	case LogEventOperationExecutingTasks:
-		l.Metadata = new(ExecutingTasksMetadata)
-	case LogEventOperationLogFileKept:
-		l.Metadata = new(LogFileKeptMetadata)
-	case LogEventOperationUploadingChangesetSpecs:
-		l.Metadata = new(UploadingChangesetSpecsMetadata)
-	case LogEventOperationCreatingBatchSpec:
-		l.Metadata = new(CreatingBatchSpecMetadata)
-	case LogEventOperationApplyingBatchSpec:
-		l.Metadata = new(ApplyingBatchSpecMetadata)
-	case LogEventOperationBatchSpecExecution:
-		l.Metadata = new(BatchSpecExecutionMetadata)
-	case LogEventOperationExecutingTask:
-		l.Metadata = new(ExecutingTaskMetadata)
-	case LogEventOperationTaskBuildChangesetSpecs:
-		l.Metadata = new(TaskBuildChangesetSpecsMetadata)
-	case LogEventOperationTaskSkippingSteps:
-		l.Metadata = new(TaskSkippingStepsMetadata)
-	case LogEventOperationTaskStepSkipped:
-		l.Metadata = new(TaskStepSkippedMetadata)
-	case LogEventOperationTaskPreparingStep:
-		l.Metadata = new(TaskPreparingStepMetadata)
-	case LogEventOperationTaskStep:
-		l.Metadata = new(TaskStepMetadata)
-	case LogEventOperationCacheAfterStepResult:
-		l.Metadata = new(CacheAfterStepResultMetadata)
-	case LogEventOperationDockerWatchDog:
-		l.Metadata = new(DockerWatchDogMetadata)
-	default:
-		return errors.Newf("invalid event type %s", l.Operation)
+	switch l.Operbtion {
+	cbse LogEventOperbtionPbrsingBbtchSpec:
+		l.Metbdbtb = new(PbrsingBbtchSpecMetbdbtb)
+	cbse LogEventOperbtionResolvingNbmespbce:
+		l.Metbdbtb = new(ResolvingNbmespbceMetbdbtb)
+	cbse LogEventOperbtionPrepbringDockerImbges:
+		l.Metbdbtb = new(PrepbringDockerImbgesMetbdbtb)
+	cbse LogEventOperbtionDeterminingWorkspbceType:
+		l.Metbdbtb = new(DeterminingWorkspbceTypeMetbdbtb)
+	cbse LogEventOperbtionDeterminingWorkspbces:
+		l.Metbdbtb = new(DeterminingWorkspbcesMetbdbtb)
+	cbse LogEventOperbtionCheckingCbche:
+		l.Metbdbtb = new(CheckingCbcheMetbdbtb)
+	cbse LogEventOperbtionExecutingTbsks:
+		l.Metbdbtb = new(ExecutingTbsksMetbdbtb)
+	cbse LogEventOperbtionLogFileKept:
+		l.Metbdbtb = new(LogFileKeptMetbdbtb)
+	cbse LogEventOperbtionUplobdingChbngesetSpecs:
+		l.Metbdbtb = new(UplobdingChbngesetSpecsMetbdbtb)
+	cbse LogEventOperbtionCrebtingBbtchSpec:
+		l.Metbdbtb = new(CrebtingBbtchSpecMetbdbtb)
+	cbse LogEventOperbtionApplyingBbtchSpec:
+		l.Metbdbtb = new(ApplyingBbtchSpecMetbdbtb)
+	cbse LogEventOperbtionBbtchSpecExecution:
+		l.Metbdbtb = new(BbtchSpecExecutionMetbdbtb)
+	cbse LogEventOperbtionExecutingTbsk:
+		l.Metbdbtb = new(ExecutingTbskMetbdbtb)
+	cbse LogEventOperbtionTbskBuildChbngesetSpecs:
+		l.Metbdbtb = new(TbskBuildChbngesetSpecsMetbdbtb)
+	cbse LogEventOperbtionTbskSkippingSteps:
+		l.Metbdbtb = new(TbskSkippingStepsMetbdbtb)
+	cbse LogEventOperbtionTbskStepSkipped:
+		l.Metbdbtb = new(TbskStepSkippedMetbdbtb)
+	cbse LogEventOperbtionTbskPrepbringStep:
+		l.Metbdbtb = new(TbskPrepbringStepMetbdbtb)
+	cbse LogEventOperbtionTbskStep:
+		l.Metbdbtb = new(TbskStepMetbdbtb)
+	cbse LogEventOperbtionCbcheAfterStepResult:
+		l.Metbdbtb = new(CbcheAfterStepResultMetbdbtb)
+	cbse LogEventOperbtionDockerWbtchDog:
+		l.Metbdbtb = new(DockerWbtchDogMetbdbtb)
+	defbult:
+		return errors.Newf("invblid event type %s", l.Operbtion)
 	}
 
-	wrapper := struct {
-		Metadata any `json:"metadata"`
+	wrbpper := struct {
+		Metbdbtb bny `json:"metbdbtb"`
 	}{
-		Metadata: l.Metadata,
+		Metbdbtb: l.Metbdbtb,
 	}
 
-	return json.Unmarshal(data, &wrapper)
+	return json.Unmbrshbl(dbtb, &wrbpper)
 }
 
-type LogEventOperation string
+type LogEventOperbtion string
 
 const (
-	LogEventOperationParsingBatchSpec         LogEventOperation = "PARSING_BATCH_SPEC"
-	LogEventOperationResolvingNamespace       LogEventOperation = "RESOLVING_NAMESPACE"
-	LogEventOperationPreparingDockerImages    LogEventOperation = "PREPARING_DOCKER_IMAGES"
-	LogEventOperationDeterminingWorkspaceType LogEventOperation = "DETERMINING_WORKSPACE_TYPE"
-	LogEventOperationDeterminingWorkspaces    LogEventOperation = "DETERMINING_WORKSPACES"
-	LogEventOperationCheckingCache            LogEventOperation = "CHECKING_CACHE"
-	LogEventOperationExecutingTasks           LogEventOperation = "EXECUTING_TASKS"
-	LogEventOperationLogFileKept              LogEventOperation = "LOG_FILE_KEPT"
-	LogEventOperationUploadingChangesetSpecs  LogEventOperation = "UPLOADING_CHANGESET_SPECS"
-	LogEventOperationCreatingBatchSpec        LogEventOperation = "CREATING_BATCH_SPEC"
-	LogEventOperationApplyingBatchSpec        LogEventOperation = "APPLYING_BATCH_SPEC"
-	LogEventOperationBatchSpecExecution       LogEventOperation = "BATCH_SPEC_EXECUTION"
-	LogEventOperationExecutingTask            LogEventOperation = "EXECUTING_TASK"
-	LogEventOperationTaskBuildChangesetSpecs  LogEventOperation = "TASK_BUILD_CHANGESET_SPECS"
-	LogEventOperationTaskSkippingSteps        LogEventOperation = "TASK_SKIPPING_STEPS"
-	LogEventOperationTaskStepSkipped          LogEventOperation = "TASK_STEP_SKIPPED"
-	LogEventOperationTaskPreparingStep        LogEventOperation = "TASK_PREPARING_STEP"
-	LogEventOperationTaskStep                 LogEventOperation = "TASK_STEP"
-	LogEventOperationCacheAfterStepResult     LogEventOperation = "CACHE_AFTER_STEP_RESULT"
-	LogEventOperationDockerWatchDog           LogEventOperation = "DOCKER_WATCH_DOG"
+	LogEventOperbtionPbrsingBbtchSpec         LogEventOperbtion = "PARSING_BATCH_SPEC"
+	LogEventOperbtionResolvingNbmespbce       LogEventOperbtion = "RESOLVING_NAMESPACE"
+	LogEventOperbtionPrepbringDockerImbges    LogEventOperbtion = "PREPARING_DOCKER_IMAGES"
+	LogEventOperbtionDeterminingWorkspbceType LogEventOperbtion = "DETERMINING_WORKSPACE_TYPE"
+	LogEventOperbtionDeterminingWorkspbces    LogEventOperbtion = "DETERMINING_WORKSPACES"
+	LogEventOperbtionCheckingCbche            LogEventOperbtion = "CHECKING_CACHE"
+	LogEventOperbtionExecutingTbsks           LogEventOperbtion = "EXECUTING_TASKS"
+	LogEventOperbtionLogFileKept              LogEventOperbtion = "LOG_FILE_KEPT"
+	LogEventOperbtionUplobdingChbngesetSpecs  LogEventOperbtion = "UPLOADING_CHANGESET_SPECS"
+	LogEventOperbtionCrebtingBbtchSpec        LogEventOperbtion = "CREATING_BATCH_SPEC"
+	LogEventOperbtionApplyingBbtchSpec        LogEventOperbtion = "APPLYING_BATCH_SPEC"
+	LogEventOperbtionBbtchSpecExecution       LogEventOperbtion = "BATCH_SPEC_EXECUTION"
+	LogEventOperbtionExecutingTbsk            LogEventOperbtion = "EXECUTING_TASK"
+	LogEventOperbtionTbskBuildChbngesetSpecs  LogEventOperbtion = "TASK_BUILD_CHANGESET_SPECS"
+	LogEventOperbtionTbskSkippingSteps        LogEventOperbtion = "TASK_SKIPPING_STEPS"
+	LogEventOperbtionTbskStepSkipped          LogEventOperbtion = "TASK_STEP_SKIPPED"
+	LogEventOperbtionTbskPrepbringStep        LogEventOperbtion = "TASK_PREPARING_STEP"
+	LogEventOperbtionTbskStep                 LogEventOperbtion = "TASK_STEP"
+	LogEventOperbtionCbcheAfterStepResult     LogEventOperbtion = "CACHE_AFTER_STEP_RESULT"
+	LogEventOperbtionDockerWbtchDog           LogEventOperbtion = "DOCKER_WATCH_DOG"
 )
 
-type LogEventStatus string
+type LogEventStbtus string
 
 const (
-	LogEventStatusStarted  LogEventStatus = "STARTED"
-	LogEventStatusSuccess  LogEventStatus = "SUCCESS"
-	LogEventStatusFailure  LogEventStatus = "FAILURE"
-	LogEventStatusProgress LogEventStatus = "PROGRESS"
+	LogEventStbtusStbrted  LogEventStbtus = "STARTED"
+	LogEventStbtusSuccess  LogEventStbtus = "SUCCESS"
+	LogEventStbtusFbilure  LogEventStbtus = "FAILURE"
+	LogEventStbtusProgress LogEventStbtus = "PROGRESS"
 )
 
-type ParsingBatchSpecMetadata struct {
+type PbrsingBbtchSpecMetbdbtb struct {
 	Error string `json:"error,omitempty"`
 }
 
-type ResolvingNamespaceMetadata struct {
-	NamespaceID string `json:"namespaceID,omitempty"`
+type ResolvingNbmespbceMetbdbtb struct {
+	NbmespbceID string `json:"nbmespbceID,omitempty"`
 }
 
-type PreparingDockerImagesMetadata struct {
+type PrepbringDockerImbgesMetbdbtb struct {
 	Done  int `json:"done,omitempty"`
-	Total int `json:"total,omitempty"`
+	Totbl int `json:"totbl,omitempty"`
 }
 
-type DeterminingWorkspaceTypeMetadata struct {
+type DeterminingWorkspbceTypeMetbdbtb struct {
 	Type string `json:"type,omitempty"`
 }
 
-type DeterminingWorkspacesMetadata struct {
+type DeterminingWorkspbcesMetbdbtb struct {
 	Unsupported    int `json:"unsupported,omitempty"`
 	Ignored        int `json:"ignored,omitempty"`
 	RepoCount      int `json:"repoCount,omitempty"`
-	WorkspaceCount int `json:"workspaceCount,omitempty"`
+	WorkspbceCount int `json:"workspbceCount,omitempty"`
 }
 
-type CheckingCacheMetadata struct {
-	CachedSpecsFound int `json:"cachedSpecsFound,omitempty"`
-	TasksToExecute   int `json:"tasksToExecute,omitempty"`
+type CheckingCbcheMetbdbtb struct {
+	CbchedSpecsFound int `json:"cbchedSpecsFound,omitempty"`
+	TbsksToExecute   int `json:"tbsksToExecute,omitempty"`
 }
 
-type JSONLinesTask struct {
+type JSONLinesTbsk struct {
 	ID                     string `json:"id"`
 	Repository             string `json:"repository"`
-	Workspace              string `json:"workspace"`
+	Workspbce              string `json:"workspbce"`
 	Steps                  []Step `json:"steps"`
-	CachedStepResultsFound bool   `json:"cachedStepResultFound"`
-	StartStep              int    `json:"startStep"`
+	CbchedStepResultsFound bool   `json:"cbchedStepResultFound"`
+	StbrtStep              int    `json:"stbrtStep"`
 }
 
-type ExecutingTasksMetadata struct {
-	Tasks   []JSONLinesTask `json:"tasks,omitempty"`
+type ExecutingTbsksMetbdbtb struct {
+	Tbsks   []JSONLinesTbsk `json:"tbsks,omitempty"`
 	Skipped bool            `json:"skipped,omitempty"`
 	Error   string          `json:"error,omitempty"`
 }
 
-type LogFileKeptMetadata struct {
-	Path string `json:"path,omitempty"`
+type LogFileKeptMetbdbtb struct {
+	Pbth string `json:"pbth,omitempty"`
 }
 
-type UploadingChangesetSpecsMetadata struct {
+type UplobdingChbngesetSpecsMetbdbtb struct {
 	Done  int `json:"done,omitempty"`
-	Total int `json:"total,omitempty"`
-	// IDs is the slice of GraphQL IDs of the created changeset specs.
+	Totbl int `json:"totbl,omitempty"`
+	// IDs is the slice of GrbphQL IDs of the crebted chbngeset specs.
 	IDs []string `json:"ids,omitempty"`
 }
 
-type CreatingBatchSpecMetadata struct {
+type CrebtingBbtchSpecMetbdbtb struct {
 	PreviewURL string `json:"previewURL,omitempty"`
 }
 
-type ApplyingBatchSpecMetadata struct {
-	BatchChangeURL string `json:"batchChangeURL,omitempty"`
+type ApplyingBbtchSpecMetbdbtb struct {
+	BbtchChbngeURL string `json:"bbtchChbngeURL,omitempty"`
 }
 
-type BatchSpecExecutionMetadata struct {
+type BbtchSpecExecutionMetbdbtb struct {
 	Error string `json:"error,omitempty"`
 }
 
-type ExecutingTaskMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
+type ExecutingTbskMetbdbtb struct {
+	TbskID string `json:"tbskID,omitempty"`
 	Error  string `json:"error,omitempty"`
 }
 
-type TaskBuildChangesetSpecsMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
+type TbskBuildChbngesetSpecsMetbdbtb struct {
+	TbskID string `json:"tbskID,omitempty"`
 }
 
-type TaskSkippingStepsMetadata struct {
-	TaskID    string `json:"taskID,omitempty"`
-	StartStep int    `json:"startStep,omitempty"`
+type TbskSkippingStepsMetbdbtb struct {
+	TbskID    string `json:"tbskID,omitempty"`
+	StbrtStep int    `json:"stbrtStep,omitempty"`
 }
 
-type TaskStepSkippedMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
+type TbskStepSkippedMetbdbtb struct {
+	TbskID string `json:"tbskID,omitempty"`
 	Step   int    `json:"step,omitempty"`
 }
 
-type TaskPreparingStepMetadata struct {
-	TaskID string `json:"taskID,omitempty"`
+type TbskPrepbringStepMetbdbtb struct {
+	TbskID string `json:"tbskID,omitempty"`
 	Step   int    `json:"step,omitempty"`
 	Error  string `json:"error,omitempty"`
 }
 
-type TaskStepMetadata struct {
+type TbskStepMetbdbtb struct {
 	Version int
-	TaskID  string
+	TbskID  string
 	Step    int
 
 	RunScript string
-	Env       map[string]string
+	Env       mbp[string]string
 
 	Out string
 
 	Diff    []byte
-	Outputs map[string]any
+	Outputs mbp[string]bny
 
 	ExitCode int
 	Error    string
 }
 
-func (m TaskStepMetadata) MarshalJSON() ([]byte, error) {
+func (m TbskStepMetbdbtb) MbrshblJSON() ([]byte, error) {
 	if m.Version == 2 {
-		return json.Marshal(v2TaskStepMetadata{
+		return json.Mbrshbl(v2TbskStepMetbdbtb{
 			Version:   2,
-			TaskID:    m.TaskID,
+			TbskID:    m.TbskID,
 			Step:      m.Step,
 			RunScript: m.RunScript,
 			Env:       m.Env,
@@ -244,8 +244,8 @@ func (m TaskStepMetadata) MarshalJSON() ([]byte, error) {
 			Error:     m.Error,
 		})
 	}
-	return json.Marshal(v1TaskStepMetadata{
-		TaskID:    m.TaskID,
+	return json.Mbrshbl(v1TbskStepMetbdbtb{
+		TbskID:    m.TbskID,
 		Step:      m.Step,
 		RunScript: m.RunScript,
 		Env:       m.Env,
@@ -257,18 +257,18 @@ func (m TaskStepMetadata) MarshalJSON() ([]byte, error) {
 	})
 }
 
-func (m *TaskStepMetadata) UnmarshalJSON(data []byte) error {
-	var version versionTaskStepMetadata
-	if err := json.Unmarshal(data, &version); err != nil {
+func (m *TbskStepMetbdbtb) UnmbrshblJSON(dbtb []byte) error {
+	vbr version versionTbskStepMetbdbtb
+	if err := json.Unmbrshbl(dbtb, &version); err != nil {
 		return err
 	}
 	if version.Version == 2 {
-		var v2 v2TaskStepMetadata
-		if err := json.Unmarshal(data, &v2); err != nil {
+		vbr v2 v2TbskStepMetbdbtb
+		if err := json.Unmbrshbl(dbtb, &v2); err != nil {
 			return err
 		}
 		m.Version = v2.Version
-		m.TaskID = v2.TaskID
+		m.TbskID = v2.TbskID
 		m.Step = v2.Step
 		m.RunScript = v2.RunScript
 		m.Env = v2.Env
@@ -279,11 +279,11 @@ func (m *TaskStepMetadata) UnmarshalJSON(data []byte) error {
 		m.Error = v2.Error
 		return nil
 	}
-	var v1 v1TaskStepMetadata
-	if err := json.Unmarshal(data, &v1); err != nil {
-		return errors.Wrap(err, string(data))
+	vbr v1 v1TbskStepMetbdbtb
+	if err := json.Unmbrshbl(dbtb, &v1); err != nil {
+		return errors.Wrbp(err, string(dbtb))
 	}
-	m.TaskID = v1.TaskID
+	m.TbskID = v1.TbskID
 	m.Step = v1.Step
 	m.RunScript = v1.RunScript
 	m.Env = v1.Env
@@ -295,40 +295,40 @@ func (m *TaskStepMetadata) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-type versionTaskStepMetadata struct {
+type versionTbskStepMetbdbtb struct {
 	Version int `json:"version,omitempty"`
 }
 
-type v2TaskStepMetadata struct {
+type v2TbskStepMetbdbtb struct {
 	Version   int               `json:"version,omitempty"`
-	TaskID    string            `json:"taskID,omitempty"`
+	TbskID    string            `json:"tbskID,omitempty"`
 	Step      int               `json:"step,omitempty"`
 	RunScript string            `json:"runScript,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
+	Env       mbp[string]string `json:"env,omitempty"`
 	Out       string            `json:"out,omitempty"`
 	Diff      []byte            `json:"diff,omitempty"`
-	Outputs   map[string]any    `json:"outputs,omitempty"`
+	Outputs   mbp[string]bny    `json:"outputs,omitempty"`
 	ExitCode  int               `json:"exitCode,omitempty"`
 	Error     string            `json:"error,omitempty"`
 }
 
-type v1TaskStepMetadata struct {
-	TaskID    string            `json:"taskID,omitempty"`
+type v1TbskStepMetbdbtb struct {
+	TbskID    string            `json:"tbskID,omitempty"`
 	Step      int               `json:"step,omitempty"`
 	RunScript string            `json:"runScript,omitempty"`
-	Env       map[string]string `json:"env,omitempty"`
+	Env       mbp[string]string `json:"env,omitempty"`
 	Out       string            `json:"out,omitempty"`
 	Diff      string            `json:"diff,omitempty"`
-	Outputs   map[string]any    `json:"outputs,omitempty"`
+	Outputs   mbp[string]bny    `json:"outputs,omitempty"`
 	ExitCode  int               `json:"exitCode,omitempty"`
 	Error     string            `json:"error,omitempty"`
 }
 
-type CacheAfterStepResultMetadata struct {
+type CbcheAfterStepResultMetbdbtb struct {
 	Key   string                    `json:"key,omitempty"`
-	Value execution.AfterStepResult `json:"value,omitempty"`
+	Vblue execution.AfterStepResult `json:"vblue,omitempty"`
 }
 
-type DockerWatchDogMetadata struct {
+type DockerWbtchDogMetbdbtb struct {
 	Error string `json:"error,omitempty"`
 }

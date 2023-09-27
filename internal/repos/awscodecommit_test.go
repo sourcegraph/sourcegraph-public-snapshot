@@ -1,53 +1,53 @@
-package repos
+pbckbge repos
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bwscodecommit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestAWSCodeCommitSource_Exclude(t *testing.T) {
-	config := &schema.AWSCodeCommitConnection{
-		AccessKeyID:     "secret-access-key-id",
-		SecretAccessKey: "secret-secret-access-key",
+	config := &schemb.AWSCodeCommitConnection{
+		AccessKeyID:     "secret-bccess-key-id",
+		SecretAccessKey: "secret-secret-bccess-key",
 		Region:          "us-west-1",
-		Exclude: []*schema.ExcludedAWSCodeCommitRepo{
-			{Name: "my-repository"},
+		Exclude: []*schemb.ExcludedAWSCodeCommitRepo{
+			{Nbme: "my-repository"},
 			{Id: "id1"},
-			{Id: "id2", Name: "other-repository"},
+			{Id: "id2", Nbme: "other-repository"},
 		},
 	}
 
-	fact := httpcli.NewFactory(httpcli.NewMiddleware())
-	svc := types.ExternalService{Kind: extsvc.KindAWSCodeCommit, Config: extsvc.NewEmptyConfig()}
-	conn, err := newAWSCodeCommitSource(&svc, config, fact)
+	fbct := httpcli.NewFbctory(httpcli.NewMiddlewbre())
+	svc := types.ExternblService{Kind: extsvc.KindAWSCodeCommit, Config: extsvc.NewEmptyConfig()}
+	conn, err := newAWSCodeCommitSource(&svc, config, fbct)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, tc := range []struct {
-		name         string
-		repo         *awscodecommit.Repository
-		wantExcluded bool
+	for _, tc := rbnge []struct {
+		nbme         string
+		repo         *bwscodecommit.Repository
+		wbntExcluded bool
 	}{
-		{"name matches", &awscodecommit.Repository{Name: "my-repository"}, true},
-		{"name does not match", &awscodecommit.Repository{Name: "foobar"}, false},
-		{"id matches", &awscodecommit.Repository{ID: "id1"}, true},
-		{"id does not match", &awscodecommit.Repository{ID: "id99"}, false},
-		{"name and id match", &awscodecommit.Repository{ID: "id2", Name: "other-repository"}, true},
-		{"name or id match", &awscodecommit.Repository{ID: "id1", Name: "made-up-name"}, true},
+		{"nbme mbtches", &bwscodecommit.Repository{Nbme: "my-repository"}, true},
+		{"nbme does not mbtch", &bwscodecommit.Repository{Nbme: "foobbr"}, fblse},
+		{"id mbtches", &bwscodecommit.Repository{ID: "id1"}, true},
+		{"id does not mbtch", &bwscodecommit.Repository{ID: "id99"}, fblse},
+		{"nbme bnd id mbtch", &bwscodecommit.Repository{ID: "id2", Nbme: "other-repository"}, true},
+		{"nbme or id mbtch", &bwscodecommit.Repository{ID: "id1", Nbme: "mbde-up-nbme"}, true},
 	} {
 
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+		t.Run(tc.nbme, func(t *testing.T) {
+			t.Pbrbllel()
 
-			if have, want := conn.excludes(tc.repo), tc.wantExcluded; have != want {
-				t.Errorf("conn.excludes(%v):\nhave: %t\nwant: %t", tc.repo, have, want)
+			if hbve, wbnt := conn.excludes(tc.repo), tc.wbntExcluded; hbve != wbnt {
+				t.Errorf("conn.excludes(%v):\nhbve: %t\nwbnt: %t", tc.repo, hbve, wbnt)
 			}
 		})
 	}

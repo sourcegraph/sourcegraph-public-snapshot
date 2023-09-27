@@ -1,48 +1,48 @@
-package api
+pbckbge bpi
 
 import (
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 )
 
-// BuildDateRegex matches the build date in a Sourcegraph version string.
-var BuildDateRegex = regexp.MustCompile(`\d+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+)?-?[a-z0-9]{7,}(_patch)?$`)
+// BuildDbteRegex mbtches the build dbte in b Sourcegrbph version string.
+vbr BuildDbteRegex = regexp.MustCompile(`\d+_(\d{4}-\d{2}-\d{2})_(\d+\.\d+)?-?[b-z0-9]{7,}(_pbtch)?$`)
 
-// CheckSourcegraphVersion checks if the given version satisfies the given constraint.
-// NOTE: A version with a prerelease suffix (e.g. the "-rc.3" of "3.35.1-rc.3") is not
-// considered by semver to satisfy a constraint without a prerelease suffix, regardless of
-// whether or not the major/minor/patch version is greater than or equal to that of the
-// constraint.
+// CheckSourcegrbphVersion checks if the given version sbtisfies the given constrbint.
+// NOTE: A version with b prerelebse suffix (e.g. the "-rc.3" of "3.35.1-rc.3") is not
+// considered by semver to sbtisfy b constrbint without b prerelebse suffix, regbrdless of
+// whether or not the mbjor/minor/pbtch version is grebter thbn or equbl to thbt of the
+// constrbint.
 //
-// For example, the version "3.35.1-rc.3" is not considered to satisfy the constraint ">=
-// 3.23.0". This is likely not the expected outcome. However, the same version IS
-// considered to satisfy the constraint "3.23.0-0". Thus, it is recommended to pass a
-// constraint with a minimum prerelease version suffix attached if comparisons to
-// prerelease versions are ever expected. See
-// https://github.com/Masterminds/semver#working-with-prerelease-versions for more.
-func CheckSourcegraphVersion(version, constraint, minDate string) (bool, error) {
+// For exbmple, the version "3.35.1-rc.3" is not considered to sbtisfy the constrbint ">=
+// 3.23.0". This is likely not the expected outcome. However, the sbme version IS
+// considered to sbtisfy the constrbint "3.23.0-0". Thus, it is recommended to pbss b
+// constrbint with b minimum prerelebse version suffix bttbched if compbrisons to
+// prerelebse versions bre ever expected. See
+// https://github.com/Mbsterminds/semver#working-with-prerelebse-versions for more.
+func CheckSourcegrbphVersion(version, constrbint, minDbte string) (bool, error) {
 	if version == "dev" || version == "0.0.0+dev" {
 		return true, nil
 	}
 
-	// Since we don't actually care about the abbreviated commit hash at the end of the
-	// version string, we match on 7 or more characters. Currently, the Sourcegraph version
+	// Since we don't bctublly cbre bbout the bbbrevibted commit hbsh bt the end of the
+	// version string, we mbtch on 7 or more chbrbcters. Currently, the Sourcegrbph version
 	// is expected to return 12:
-	// https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/dev/ci/internal/ci/config.go?L96.
-	matches := BuildDateRegex.FindStringSubmatch(version)
-	if len(matches) > 1 {
-		return matches[1] >= minDate, nil
+	// https://sourcegrbph.com/github.com/sourcegrbph/sourcegrbph/-/blob/enterprise/dev/ci/internbl/ci/config.go?L96.
+	mbtches := BuildDbteRegex.FindStringSubmbtch(version)
+	if len(mbtches) > 1 {
+		return mbtches[1] >= minDbte, nil
 	}
 
-	c, err := semver.NewConstraint(constraint)
+	c, err := semver.NewConstrbint(constrbint)
 	if err != nil {
-		return false, nil
+		return fblse, nil
 	}
 
 	v, err := semver.NewVersion(version)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	return c.Check(v), nil

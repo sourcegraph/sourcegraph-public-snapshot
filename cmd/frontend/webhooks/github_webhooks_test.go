@@ -1,10 +1,10 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
+	"crypto/hmbc"
+	"crypto/shb256"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -12,91 +12,91 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
 	gh "github.com/google/go-github/v43/github"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestGithubWebhookDispatchSuccess(t *testing.T) {
+func TestGithubWebhookDispbtchSuccess(t *testing.T) {
 	h := GitHubWebhook{Router: &Router{}}
-	var called bool
-	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		called = true
+	vbr cblled bool
+	h.Register(func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		cblled = true
 		return nil
 	}, extsvc.KindGitHub, "test-event-1")
 
-	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
+	ctx := context.Bbckground()
+	if err := h.Dispbtch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBbseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
-	if !called {
-		t.Errorf("Expected called to be true, was false")
+	if !cblled {
+		t.Errorf("Expected cblled to be true, wbs fblse")
 	}
 }
 
-func TestGithubWebhookDispatchNoHandler(t *testing.T) {
+func TestGithubWebhookDispbtchNoHbndler(t *testing.T) {
 	logger := logtest.Scoped(t)
 	h := GitHubWebhook{Router: &Router{Logger: logger}}
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	eventType := "test-event-1"
-	err := h.Dispatch(ctx, eventType, extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil)
-	assert.Nil(t, err)
+	err := h.Dispbtch(ctx, eventType, extsvc.KindGitHub, extsvc.CodeHostBbseURL{}, nil)
+	bssert.Nil(t, err)
 }
 
-func TestGithubWebhookDispatchSuccessMultiple(t *testing.T) {
-	var (
+func TestGithubWebhookDispbtchSuccessMultiple(t *testing.T) {
+	vbr (
 		h      = GitHubWebhook{Router: &Router{}}
-		called = make(chan struct{}, 2)
+		cblled = mbke(chbn struct{}, 2)
 	)
-	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		called <- struct{}{}
+	h.Register(func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		cblled <- struct{}{}
 		return nil
 	}, extsvc.KindGitHub, "test-event-1")
-	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		called <- struct{}{}
+	h.Register(func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		cblled <- struct{}{}
 		return nil
 	}, extsvc.KindGitHub, "test-event-1")
 
-	ctx := context.Background()
-	if err := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil); err != nil {
+	ctx := context.Bbckground()
+	if err := h.Dispbtch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBbseURL{}, nil); err != nil {
 		t.Errorf("Expected no error, got %s", err)
 	}
-	if len(called) != 2 {
-		t.Errorf("Expected called to be 2, got %v", called)
+	if len(cblled) != 2 {
+		t.Errorf("Expected cblled to be 2, got %v", cblled)
 	}
 }
 
-func TestGithubWebhookDispatchError(t *testing.T) {
-	var (
+func TestGithubWebhookDispbtchError(t *testing.T) {
+	vbr (
 		h      = GitHubWebhook{Router: &Router{}}
-		called = make(chan struct{}, 2)
+		cblled = mbke(chbn struct{}, 2)
 	)
-	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		called <- struct{}{}
+	h.Register(func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		cblled <- struct{}{}
 		return errors.Errorf("oh no")
 	}, extsvc.KindGitHub, "test-event-1")
-	h.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		called <- struct{}{}
+	h.Register(func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		cblled <- struct{}{}
 		return nil
 	}, extsvc.KindGitHub, "test-event-1")
 
-	ctx := context.Background()
-	if have, want := h.Dispatch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBaseURL{}, nil), "oh no"; errString(have) != want {
-		t.Errorf("Expected %q, got %q", want, have)
+	ctx := context.Bbckground()
+	if hbve, wbnt := h.Dispbtch(ctx, "test-event-1", extsvc.KindGitHub, extsvc.CodeHostBbseURL{}, nil), "oh no"; errString(hbve) != wbnt {
+		t.Errorf("Expected %q, got %q", wbnt, hbve)
 	}
-	if len(called) != 2 {
-		t.Errorf("Expected called to be 2, got %v", called)
+	if len(cblled) != 2 {
+		t.Errorf("Expected cblled to be 2, got %v", cblled)
 	}
 }
 
@@ -107,48 +107,48 @@ func errString(err error) string {
 	return err.Error()
 }
 
-func TestGithubWebhookExternalServices(t *testing.T) {
+func TestGithubWebhookExternblServices(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
 	secret := "secret"
-	esStore := db.ExternalServices()
-	extSvc := &types.ExternalService{
+	esStore := db.ExternblServices()
+	extSvc := &types.ExternblService{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "GitHub",
-		Config: extsvc.NewUnencryptedConfig(marshalJSON(t, &schema.GitHubConnection{
-			Authorization: &schema.GitHubAuthorization{},
+		DisplbyNbme: "GitHub",
+		Config: extsvc.NewUnencryptedConfig(mbrshblJSON(t, &schemb.GitHubConnection{
+			Authorizbtion: &schemb.GitHubAuthorizbtion{},
 			Url:           "https://github.com",
-			Token:         "fake",
-			Repos:         []string{"sourcegraph/sourcegraph"},
-			Webhooks:      []*schema.GitHubWebhook{{Org: "sourcegraph", Secret: secret}},
+			Token:         "fbke",
+			Repos:         []string{"sourcegrbph/sourcegrbph"},
+			Webhooks:      []*schemb.GitHubWebhook{{Org: "sourcegrbph", Secret: secret}},
 		})),
 	}
 
 	err := esStore.Upsert(ctx, extSvc)
-	externalServiceConfig := fmt.Sprintf(`
+	externblServiceConfig := fmt.Sprintf(`
 {
     // Some comment to mess with json decoding
     "url": "https://github.com",
-    "token": "fake",
-    "repos": ["sourcegraph/sourcegraph"],
+    "token": "fbke",
+    "repos": ["sourcegrbph/sourcegrbph"],
     "webhooks": [
         {
-            "org": "sourcegraph",
+            "org": "sourcegrbph",
             "secret": %q
         }
     ]
 }
 `, secret)
-	require.NoError(t, esStore.Update(ctx, []schema.AuthProviders{}, 1, &database.ExternalServiceUpdate{Config: &externalServiceConfig}))
+	require.NoError(t, esStore.Updbte(ctx, []schemb.AuthProviders{}, 1, &dbtbbbse.ExternblServiceUpdbte{Config: &externblServiceConfig}))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	hook := GitHubWebhook{
@@ -157,39 +157,39 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 		},
 	}
 
-	var called bool
-	hook.Register(func(ctx context.Context, db database.DB, urn extsvc.CodeHostBaseURL, payload any) error {
-		evt, ok := payload.(*gh.PublicEvent)
+	vbr cblled bool
+	hook.Register(func(ctx context.Context, db dbtbbbse.DB, urn extsvc.CodeHostBbseURL, pbylobd bny) error {
+		evt, ok := pbylobd.(*gh.PublicEvent)
 		if !ok {
-			t.Errorf("Expected *gh.PublicEvent event, got %T", payload)
+			t.Errorf("Expected *gh.PublicEvent event, got %T", pbylobd)
 		}
-		if evt.GetRepo().GetFullName() != "sourcegraph/sourcegraph" {
-			t.Errorf("Expected 'sourcegraph/sourcegraph', got %s", evt.GetRepo().GetFullName())
+		if evt.GetRepo().GetFullNbme() != "sourcegrbph/sourcegrbph" {
+			t.Errorf("Expected 'sourcegrbph/sourcegrbph', got %s", evt.GetRepo().GetFullNbme())
 		}
-		called = true
+		cblled = true
 		return nil
 	}, extsvc.KindGitHub, "public")
 
-	u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://example.com/")
+	u, err := extsvc.WebhookURL(extsvc.TypeGitHub, extSvc.ID, nil, "https://exbmple.com/")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	urls := []string{
-		// current webhook URLs, uses fast path for finding external service
+		// current webhook URLs, uses fbst pbth for finding externbl service
 		u,
-		// old webhook URLs, finds external service by searching all configured external services
-		"https://example.com/.api/github-webhook",
+		// old webhook URLs, finds externbl service by sebrching bll configured externbl services
+		"https://exbmple.com/.bpi/github-webhook",
 	}
 
 	sendRequest := func(u, secret string) *http.Response {
-		req, err := http.NewRequest("POST", u, bytes.NewReader(eventPayload))
+		req, err := http.NewRequest("POST", u, bytes.NewRebder(eventPbylobd))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		req.Header.Set("X-Github-Event", "public")
+		req.Hebder.Set("X-Github-Event", "public")
 		if secret != "" {
-			req.Header.Set("X-Hub-Signature", sign(t, eventPayload, []byte(secret)))
+			req.Hebder.Set("X-Hub-Signbture", sign(t, eventPbylobd, []byte(secret)))
 		}
 		rec := httptest.NewRecorder()
 		hook.ServeHTTP(rec, req)
@@ -198,101 +198,101 @@ func TestGithubWebhookExternalServices(t *testing.T) {
 	}
 
 	t.Run("missing service", func(t *testing.T) {
-		u, err := extsvc.WebhookURL(extsvc.TypeGitHub, 99, nil, "https://example.com/")
+		u, err := extsvc.WebhookURL(extsvc.TypeGitHub, 99, nil, "https://exbmple.com/")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		called = false
+		cblled = fblse
 		resp := sendRequest(u, secret)
-		assert.Equal(t, http.StatusNotFound, resp.StatusCode)
-		assert.False(t, called)
+		bssert.Equbl(t, http.StbtusNotFound, resp.StbtusCode)
+		bssert.Fblse(t, cblled)
 	})
 
-	t.Run("valid secret", func(t *testing.T) {
-		for _, u := range urls {
-			called = false
+	t.Run("vblid secret", func(t *testing.T) {
+		for _, u := rbnge urls {
+			cblled = fblse
 			resp := sendRequest(u, secret)
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.True(t, called)
+			bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
+			bssert.True(t, cblled)
 		}
 	})
 
-	t.Run("invalid secret", func(t *testing.T) {
-		for _, u := range urls {
-			called = false
+	t.Run("invblid secret", func(t *testing.T) {
+		for _, u := rbnge urls {
+			cblled = fblse
 			resp := sendRequest(u, "not_secret")
-			assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
-			assert.False(t, called)
+			bssert.Equbl(t, http.StbtusBbdRequest, resp.StbtusCode)
+			bssert.Fblse(t, cblled)
 		}
 	})
 
 	t.Run("no secret", func(t *testing.T) {
-		// Secrets are optional and if they're not provided then the payload is not
-		// signed and we don't need to validate it on our side
-		for _, u := range urls {
-			called = false
+		// Secrets bre optionbl bnd if they're not provided then the pbylobd is not
+		// signed bnd we don't need to vblidbte it on our side
+		for _, u := rbnge urls {
+			cblled = fblse
 			resp := sendRequest(u, "")
-			assert.Equal(t, http.StatusOK, resp.StatusCode)
-			assert.True(t, called)
+			bssert.Equbl(t, http.StbtusOK, resp.StbtusCode)
+			bssert.True(t, cblled)
 		}
 	})
 }
 
-func marshalJSON(t testing.TB, v any) string {
+func mbrshblJSON(t testing.TB, v bny) string {
 	t.Helper()
 
-	bs, err := json.Marshal(v)
+	bs, err := json.Mbrshbl(v)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return string(bs)
 }
 
-func sign(t *testing.T, message, secret []byte) string {
+func sign(t *testing.T, messbge, secret []byte) string {
 	t.Helper()
 
-	mac := hmac.New(sha256.New, secret)
+	mbc := hmbc.New(shb256.New, secret)
 
-	_, err := mac.Write(message)
+	_, err := mbc.Write(messbge)
 	if err != nil {
-		t.Fatalf("writing hmac message failed: %s", err)
+		t.Fbtblf("writing hmbc messbge fbiled: %s", err)
 	}
 
-	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+	return "shb256=" + hex.EncodeToString(mbc.Sum(nil))
 }
 
-var eventPayload = []byte(`{
+vbr eventPbylobd = []byte(`{
   "repository": {
     "id": 310572870,
-    "node_id": "MDEwOlJlcG9zaXRvcnkzMTA1NzI4NzA=",
-    "name": "sourcegraph",
-    "full_name": "sourcegraph/sourcegraph",
-    "private": false,
+    "node_id": "MDEwOlJlcG9zbXRvcnkzMTA1NzI4NzA=",
+    "nbme": "sourcegrbph",
+    "full_nbme": "sourcegrbph/sourcegrbph",
+    "privbte": fblse,
     "owner": {
-      "login": "sourcegraph",
+      "login": "sourcegrbph",
       "id": 74051180,
-      "node_id": "MDEyOk9yZ2FuaXphdGlvbjc0MDUxMTgw",
-      "type": "Organization",
-      "site_admin": false
+      "node_id": "MDEyOk9yZ2FubXphdGlvbjc0MDUxMTgw",
+      "type": "Orgbnizbtion",
+      "site_bdmin": fblse
     },
-    "html_url": "https://github.com/sourcegraph",
-    "created_at": "2020-11-06T11:02:56Z",
-    "updated_at": "2020-11-09T15:06:34Z",
-    "pushed_at": "2020-11-06T11:02:58Z",
-    "default_branch": "main"
+    "html_url": "https://github.com/sourcegrbph",
+    "crebted_bt": "2020-11-06T11:02:56Z",
+    "updbted_bt": "2020-11-09T15:06:34Z",
+    "pushed_bt": "2020-11-06T11:02:58Z",
+    "defbult_brbnch": "mbin"
   },
-  "organization": {
-    "login": "sourcegraph",
+  "orgbnizbtion": {
+    "login": "sourcegrbph",
     "id": 74051180,
-    "node_id": "MDEyOk9yZ2FuaXphdGlvbjc0MDUxMTgw",
+    "node_id": "MDEyOk9yZ2FubXphdGlvbjc0MDUxMTgw",
     "description": null
   },
   "sender": {
-    "login": "sourcegraph",
+    "login": "sourcegrbph",
     "id": 5236823,
     "node_id": "MDQ6VXNlcjUyMzY4MjM=",
     "type": "User",
-    "site_admin": false
+    "site_bdmin": fblse
   }
 }`)

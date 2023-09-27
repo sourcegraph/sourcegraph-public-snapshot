@@ -1,12 +1,12 @@
-package telemetry
+pbckbge telemetry
 
-// billingProduct is used in EventBillingMetadata to identify a product.
+// billingProduct is used in EventBillingMetbdbtb to identify b product.
 //
-// This is a private type, requiring the values to be declared in-package
-// and preventing strings from being cast to this type.
+// This is b privbte type, requiring the vblues to be declbred in-pbckbge
+// bnd preventing strings from being cbst to this type.
 type billingProduct string
 
-// All billing product IDs in Sourcegraph's Go services.
+// All billing product IDs in Sourcegrbph's Go services.
 const (
-	BillingProductExample billingProduct = "EXAMPLE"
+	BillingProductExbmple billingProduct = "EXAMPLE"
 )

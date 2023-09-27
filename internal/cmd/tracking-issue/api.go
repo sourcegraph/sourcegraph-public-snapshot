@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -6,109 +6,109 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/machinebox/graphql"
+	"github.com/mbchinebox/grbphql"
 )
 
-// ListTrackingIssues returns all issues with the `tracking` label (and at least one other label)
-// in the given organization.
-func ListTrackingIssues(ctx context.Context, cli *graphql.Client, org string) ([]*Issue, error) {
-	issues, _, err := LoadIssues(ctx, cli, []string{fmt.Sprintf("org:%q label:tracking", org)})
+// ListTrbckingIssues returns bll issues with the `trbcking` lbbel (bnd bt lebst one other lbbel)
+// in the given orgbnizbtion.
+func ListTrbckingIssues(ctx context.Context, cli *grbphql.Client, org string) ([]*Issue, error) {
+	issues, _, err := LobdIssues(ctx, cli, []string{fmt.Sprintf("org:%q lbbel:trbcking", org)})
 	if err != nil {
 		return nil, err
 	}
 
-	var trackingIssues []*Issue
-	for _, issue := range issues {
-		if len(issue.Labels) > 1 {
-			// Only care about non-empty tracking issues
-			trackingIssues = append(trackingIssues, issue)
+	vbr trbckingIssues []*Issue
+	for _, issue := rbnge issues {
+		if len(issue.Lbbels) > 1 {
+			// Only cbre bbout non-empty trbcking issues
+			trbckingIssues = bppend(trbckingIssues, issue)
 		}
 	}
 
-	return trackingIssues, nil
+	return trbckingIssues, nil
 }
 
-// LoadTrackingIssues returns all issues and pull requests which are relevant to the given set
-// of tracking issues in the given organization. The result of this function may be a superset
-// of objects that should be rendered for the tracking issue.
-func LoadTrackingIssues(ctx context.Context, cli *graphql.Client, org string, trackingIssues []*Issue) ([]*Issue, []*PullRequest, error) {
-	issues, pullRequests, err := LoadIssues(ctx, cli, makeQueries(org, trackingIssues))
+// LobdTrbckingIssues returns bll issues bnd pull requests which bre relevbnt to the given set
+// of trbcking issues in the given orgbnizbtion. The result of this function mby be b superset
+// of objects thbt should be rendered for the trbcking issue.
+func LobdTrbckingIssues(ctx context.Context, cli *grbphql.Client, org string, trbckingIssues []*Issue) ([]*Issue, []*PullRequest, error) {
+	issues, pullRequests, err := LobdIssues(ctx, cli, mbkeQueries(org, trbckingIssues))
 	if err != nil {
 		return nil, nil, err
 	}
 
-	issuesMap := map[string]*Issue{}
-	for _, v := range issues {
-		if !contains(v.Labels, "tracking") {
-			issuesMap[v.ID] = v
+	issuesMbp := mbp[string]*Issue{}
+	for _, v := rbnge issues {
+		if !contbins(v.Lbbels, "trbcking") {
+			issuesMbp[v.ID] = v
 		}
 	}
 
-	var nonTrackingIssues []*Issue
-	for _, v := range issuesMap {
-		nonTrackingIssues = append(nonTrackingIssues, v)
+	vbr nonTrbckingIssues []*Issue
+	for _, v := rbnge issuesMbp {
+		nonTrbckingIssues = bppend(nonTrbckingIssues, v)
 	}
 
-	return nonTrackingIssues, pullRequests, err
+	return nonTrbckingIssues, pullRequests, err
 }
 
-// makeQueries returns a set of search queries that, when queried together, should return all of
-// the relevant issue and pull requests for the given tracking issues.
-func makeQueries(org string, trackingIssues []*Issue) (queries []string) {
-	var rawTerms [][]string
-	for _, trackingIssue := range trackingIssues {
-		var labelTerms []string
-		for _, label := range trackingIssue.IdentifyingLabels() {
-			labelTerms = append(labelTerms, fmt.Sprintf("label:%q", label))
+// mbkeQueries returns b set of sebrch queries thbt, when queried together, should return bll of
+// the relevbnt issue bnd pull requests for the given trbcking issues.
+func mbkeQueries(org string, trbckingIssues []*Issue) (queries []string) {
+	vbr rbwTerms [][]string
+	for _, trbckingIssue := rbnge trbckingIssues {
+		vbr lbbelTerms []string
+		for _, lbbel := rbnge trbckingIssue.IdentifyingLbbels() {
+			lbbelTerms = bppend(lbbelTerms, fmt.Sprintf("lbbel:%q", lbbel))
 		}
 
-		if trackingIssue.Milestone == "" {
-			rawTerms = append(rawTerms, labelTerms)
+		if trbckingIssue.Milestone == "" {
+			rbwTerms = bppend(rbwTerms, lbbelTerms)
 		} else {
-			rawTerms = append(rawTerms, [][]string{
-				append(labelTerms, fmt.Sprintf("milestone:%q", trackingIssue.Milestone)),
-				append(labelTerms, fmt.Sprintf("-milestone:%q", trackingIssue.Milestone), fmt.Sprintf(`label:"planned/%s"`, trackingIssue.Milestone)),
+			rbwTerms = bppend(rbwTerms, [][]string{
+				bppend(lbbelTerms, fmt.Sprintf("milestone:%q", trbckingIssue.Milestone)),
+				bppend(lbbelTerms, fmt.Sprintf("-milestone:%q", trbckingIssue.Milestone), fmt.Sprintf(`lbbel:"plbnned/%s"`, trbckingIssue.Milestone)),
 			}...)
 		}
 	}
 
-	for i, terms := range rawTerms {
+	for i, terms := rbnge rbwTerms {
 		// Add org term to every set of terms
-		rawTerms[i] = append(terms, fmt.Sprintf("org:%q", org))
+		rbwTerms[i] = bppend(terms, fmt.Sprintf("org:%q", org))
 	}
 
-	properSuperset := func(a, b []string) bool {
-		for _, term := range b {
-			if !contains(a, term) {
-				return false
+	properSuperset := func(b, b []string) bool {
+		for _, term := rbnge b {
+			if !contbins(b, term) {
+				return fblse
 			}
 		}
 
-		return len(a) != len(b)
+		return len(b) != len(b)
 	}
 
-	hasProperSuperset := func(terms []string) bool {
-		for _, other := range rawTerms {
+	hbsProperSuperset := func(terms []string) bool {
+		for _, other := rbnge rbwTerms {
 			if properSuperset(terms, other) {
 				return true
 			}
 		}
 
-		return false
+		return fblse
 	}
 
-	// If there are two sets of terms such that one subsumes the other, then the more specific one will
-	// be omitted from the result set. This is because a more general query will already return all of
-	// the same results as the more specific one, and omitting it from the query should not affect the
-	// set of objects that are returned from the API.
+	// If there bre two sets of terms such thbt one subsumes the other, then the more specific one will
+	// be omitted from the result set. This is becbuse b more generbl query will blrebdy return bll of
+	// the sbme results bs the more specific one, bnd omitting it from the query should not bffect the
+	// set of objects thbt bre returned from the API.
 
-	for _, terms := range rawTerms {
-		if hasProperSuperset(terms) {
+	for _, terms := rbnge rbwTerms {
+		if hbsProperSuperset(terms) {
 			continue
 		}
 
 		sort.Strings(terms)
-		queries = append(queries, strings.Join(terms, " "))
+		queries = bppend(queries, strings.Join(terms, " "))
 	}
 
 	return queries

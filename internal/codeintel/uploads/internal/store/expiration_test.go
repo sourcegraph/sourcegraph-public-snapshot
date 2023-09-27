@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,62 +6,62 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestSoftDeleteExpiredUploads(t *testing.T) {
+func TestSoftDeleteExpiredUplobds(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 50, RepositoryID: 100, State: "completed"},
-		shared.Upload{ID: 51, RepositoryID: 101, State: "completed"},
-		shared.Upload{ID: 52, RepositoryID: 102, State: "completed"},
-		shared.Upload{ID: 53, RepositoryID: 102, State: "completed"}, // referenced by 51, 52, 54, 55, 56
-		shared.Upload{ID: 54, RepositoryID: 103, State: "completed"}, // referenced by 52
-		shared.Upload{ID: 55, RepositoryID: 103, State: "completed"}, // referenced by 51
-		shared.Upload{ID: 56, RepositoryID: 103, State: "completed"}, // referenced by 52, 53
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 50, RepositoryID: 100, Stbte: "completed"},
+		shbred.Uplobd{ID: 51, RepositoryID: 101, Stbte: "completed"},
+		shbred.Uplobd{ID: 52, RepositoryID: 102, Stbte: "completed"},
+		shbred.Uplobd{ID: 53, RepositoryID: 102, Stbte: "completed"}, // referenced by 51, 52, 54, 55, 56
+		shbred.Uplobd{ID: 54, RepositoryID: 103, Stbte: "completed"}, // referenced by 52
+		shbred.Uplobd{ID: 55, RepositoryID: 103, Stbte: "completed"}, // referenced by 51
+		shbred.Uplobd{ID: 56, RepositoryID: 103, Stbte: "completed"}, // referenced by 52, 53
 	)
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 53, Scheme: "test", Name: "p1", Version: "1.2.3"},
-		{DumpID: 54, Scheme: "test", Name: "p2", Version: "1.2.3"},
-		{DumpID: 55, Scheme: "test", Name: "p3", Version: "1.2.3"},
-		{DumpID: 56, Scheme: "test", Name: "p4", Version: "1.2.3"},
+	insertPbckbges(t, store, []shbred.Pbckbge{
+		{DumpID: 53, Scheme: "test", Nbme: "p1", Version: "1.2.3"},
+		{DumpID: 54, Scheme: "test", Nbme: "p2", Version: "1.2.3"},
+		{DumpID: 55, Scheme: "test", Nbme: "p3", Version: "1.2.3"},
+		{DumpID: 56, Scheme: "test", Nbme: "p4", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []shared.PackageReference{
+	insertPbckbgeReferences(t, store, []shbred.PbckbgeReference{
 		// References removed
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 51, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 52, Scheme: "test", Name: "p4", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 51, Scheme: "test", Nbme: "p1", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 51, Scheme: "test", Nbme: "p2", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 51, Scheme: "test", Nbme: "p3", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 52, Scheme: "test", Nbme: "p1", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 52, Scheme: "test", Nbme: "p4", Version: "1.2.3"}},
 
-		// Remaining references
-		{Package: shared.Package{DumpID: 53, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 54, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 55, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 56, Scheme: "test", Name: "p1", Version: "1.2.3"}},
+		// Rembining references
+		{Pbckbge: shbred.Pbckbge{DumpID: 53, Scheme: "test", Nbme: "p4", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 54, Scheme: "test", Nbme: "p1", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 55, Scheme: "test", Nbme: "p1", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 56, Scheme: "test", Nbme: "p1", Version: "1.2.3"}},
 	})
 
-	// expire uploads 51-54
-	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{51, 52, 53, 54}); err != nil {
-		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	// expire uplobds 51-54
+	if err := store.UpdbteUplobdRetention(context.Bbckground(), []int{}, []int{51, 52, 53, 54}); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobds bs expired: %s", err)
 	}
 
-	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	if _, count, err := store.SoftDeleteExpiredUplobds(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 2 {
-		t.Fatalf("unexpected number of uploads deleted: want=%d have=%d", 2, count)
+		t.Fbtblf("unexpected number of uplobds deleted: wbnt=%d hbve=%d", 2, count)
 	}
 
 	// Ensure records were deleted
-	expectedStates := map[int]string{
+	expectedStbtes := mbp[int]string{
 		50: "completed",
 		51: "deleting",
 		52: "deleting",
@@ -70,36 +70,36 @@ func TestSoftDeleteExpiredUploads(t *testing.T) {
 		55: "completed",
 		56: "completed",
 	}
-	if states, err := getUploadStates(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
-		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	if stbtes, err := getUplobdStbtes(db, 50, 51, 52, 53, 54, 55, 56); err != nil {
+		t.Fbtblf("unexpected error getting stbtes: %s", err)
+	} else if diff := cmp.Diff(expectedStbtes, stbtes); diff != "" {
+		t.Errorf("unexpected uplobd stbtes (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure repository was marked as dirty
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	// Ensure repository wbs mbrked bs dirty
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 
-	var keys []int
-	for _, dirtyRepository := range dirtyRepositories {
-		keys = append(keys, dirtyRepository.RepositoryID)
+	vbr keys []int
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		keys = bppend(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
 	expectedKeys := []int{101, 102}
 	if diff := cmp.Diff(expectedKeys, keys); diff != "" {
-		t.Errorf("unexpected dirty repositories (-want +got):\n%s", diff)
+		t.Errorf("unexpected dirty repositories (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
+func TestSoftDeleteExpiredUplobdsVibTrbversbl(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	// The packages in this test reference each other in the following way:
+	// The pbckbges in this test reference ebch other in the following wby:
 	//
 	//     [p1] ---> [p2] -> [p3]    [p8]
 	//      ^         ^       |       ^
@@ -112,106 +112,106 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 	//  v
 	// [p7]
 	//
-	// Note that all packages except for p6 are attached to an expired upload,
-	// and each upload is _reachable_ from a non-expired upload.
+	// Note thbt bll pbckbges except for p6 bre bttbched to bn expired uplobd,
+	// bnd ebch uplobd is _rebchbble_ from b non-expired uplobd.
 
-	insertUploads(t, db,
-		shared.Upload{ID: 100, RepositoryID: 50, State: "completed"}, // Referenced by 104
-		shared.Upload{ID: 101, RepositoryID: 51, State: "completed"}, // Referenced by 100, 104
-		shared.Upload{ID: 102, RepositoryID: 52, State: "completed"}, // Referenced by 101
-		shared.Upload{ID: 103, RepositoryID: 53, State: "completed"}, // Referenced by 102
-		shared.Upload{ID: 104, RepositoryID: 54, State: "completed"}, // Referenced by 103, 105
-		shared.Upload{ID: 105, RepositoryID: 55, State: "completed"}, // Referenced by 106
-		shared.Upload{ID: 106, RepositoryID: 56, State: "completed"}, // Referenced by 105
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 100, RepositoryID: 50, Stbte: "completed"}, // Referenced by 104
+		shbred.Uplobd{ID: 101, RepositoryID: 51, Stbte: "completed"}, // Referenced by 100, 104
+		shbred.Uplobd{ID: 102, RepositoryID: 52, Stbte: "completed"}, // Referenced by 101
+		shbred.Uplobd{ID: 103, RepositoryID: 53, Stbte: "completed"}, // Referenced by 102
+		shbred.Uplobd{ID: 104, RepositoryID: 54, Stbte: "completed"}, // Referenced by 103, 105
+		shbred.Uplobd{ID: 105, RepositoryID: 55, Stbte: "completed"}, // Referenced by 106
+		shbred.Uplobd{ID: 106, RepositoryID: 56, Stbte: "completed"}, // Referenced by 105
 
 		// Another component
-		shared.Upload{ID: 107, RepositoryID: 57, State: "completed"}, // Referenced by 108
-		shared.Upload{ID: 108, RepositoryID: 58, State: "completed"}, // Referenced by 107
+		shbred.Uplobd{ID: 107, RepositoryID: 57, Stbte: "completed"}, // Referenced by 108
+		shbred.Uplobd{ID: 108, RepositoryID: 58, Stbte: "completed"}, // Referenced by 107
 	)
-	insertPackages(t, store, []shared.Package{
-		{DumpID: 100, Scheme: "test", Name: "p1", Version: "1.2.3"},
-		{DumpID: 101, Scheme: "test", Name: "p2", Version: "1.2.3"},
-		{DumpID: 102, Scheme: "test", Name: "p3", Version: "1.2.3"},
-		{DumpID: 103, Scheme: "test", Name: "p4", Version: "1.2.3"},
-		{DumpID: 104, Scheme: "test", Name: "p5", Version: "1.2.3"},
-		{DumpID: 105, Scheme: "test", Name: "p6", Version: "1.2.3"},
-		{DumpID: 106, Scheme: "test", Name: "p7", Version: "1.2.3"},
+	insertPbckbges(t, store, []shbred.Pbckbge{
+		{DumpID: 100, Scheme: "test", Nbme: "p1", Version: "1.2.3"},
+		{DumpID: 101, Scheme: "test", Nbme: "p2", Version: "1.2.3"},
+		{DumpID: 102, Scheme: "test", Nbme: "p3", Version: "1.2.3"},
+		{DumpID: 103, Scheme: "test", Nbme: "p4", Version: "1.2.3"},
+		{DumpID: 104, Scheme: "test", Nbme: "p5", Version: "1.2.3"},
+		{DumpID: 105, Scheme: "test", Nbme: "p6", Version: "1.2.3"},
+		{DumpID: 106, Scheme: "test", Nbme: "p7", Version: "1.2.3"},
 
 		// Another component
-		{DumpID: 107, Scheme: "test", Name: "p8", Version: "1.2.3"},
-		{DumpID: 108, Scheme: "test", Name: "p9", Version: "1.2.3"},
+		{DumpID: 107, Scheme: "test", Nbme: "p8", Version: "1.2.3"},
+		{DumpID: 108, Scheme: "test", Nbme: "p9", Version: "1.2.3"},
 	})
-	insertPackageReferences(t, store, []shared.PackageReference{
-		{Package: shared.Package{DumpID: 100, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 101, Scheme: "test", Name: "p3", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 102, Scheme: "test", Name: "p4", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 103, Scheme: "test", Name: "p5", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 104, Scheme: "test", Name: "p1", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 104, Scheme: "test", Name: "p2", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 105, Scheme: "test", Name: "p5", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 106, Scheme: "test", Name: "p6", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 105, Scheme: "test", Name: "p7", Version: "1.2.3"}},
+	insertPbckbgeReferences(t, store, []shbred.PbckbgeReference{
+		{Pbckbge: shbred.Pbckbge{DumpID: 100, Scheme: "test", Nbme: "p2", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 101, Scheme: "test", Nbme: "p3", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 102, Scheme: "test", Nbme: "p4", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 103, Scheme: "test", Nbme: "p5", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 104, Scheme: "test", Nbme: "p1", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 104, Scheme: "test", Nbme: "p2", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 105, Scheme: "test", Nbme: "p5", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 106, Scheme: "test", Nbme: "p6", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 105, Scheme: "test", Nbme: "p7", Version: "1.2.3"}},
 
 		// Another component
-		{Package: shared.Package{DumpID: 107, Scheme: "test", Name: "p9", Version: "1.2.3"}},
-		{Package: shared.Package{DumpID: 108, Scheme: "test", Name: "p8", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 107, Scheme: "test", Nbme: "p9", Version: "1.2.3"}},
+		{Pbckbge: shbred.Pbckbge{DumpID: 108, Scheme: "test", Nbme: "p8", Version: "1.2.3"}},
 	})
 
-	// We'll first confirm that none of the uploads can be deleted by either of the soft delete mechanisms;
-	// once we expire the upload providing p6, the "unreferenced" method should no-op, but the traversal
-	// method should soft delete all fo them.
+	// We'll first confirm thbt none of the uplobds cbn be deleted by either of the soft delete mechbnisms;
+	// once we expire the uplobd providing p6, the "unreferenced" method should no-op, but the trbversbl
+	// method should soft delete bll fo them.
 
-	// expire all uploads except 105 and 109
-	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{100, 101, 102, 103, 104, 106, 107}); err != nil {
-		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	// expire bll uplobds except 105 bnd 109
+	if err := store.UpdbteUplobdRetention(context.Bbckground(), []int{}, []int{100, 101, 102, 103, 104, 106, 107}); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobds bs expired: %s", err)
 	}
-	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	if _, count, err := store.SoftDeleteExpiredUplobds(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 0 {
-		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib refcount: wbnt=%d hbve=%d", 0, count)
 	}
 	for i := 0; i < 9; i++ {
-		// Initially null last_traversal_scan_at values; run once for each upload (overkill)
-		if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
-			t.Fatalf("unexpected error soft deleting uploads: %s", err)
+		// Initiblly null lbst_trbversbl_scbn_bt vblues; run once for ebch uplobd (overkill)
+		if _, count, err := store.SoftDeleteExpiredUplobdsVibTrbversbl(context.Bbckground(), 100); err != nil {
+			t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 		} else if count != 0 {
-			t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
+			t.Fbtblf("unexpected number of uplobds deleted vib trbversbl: wbnt=%d hbve=%d", 0, count)
 		}
 	}
-	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	if _, count, err := store.SoftDeleteExpiredUplobdsVibTrbversbl(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 0 {
-		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib trbversbl: wbnt=%d hbve=%d", 0, count)
 	}
 
-	// Expire upload 105, making the connected component soft-deletable
-	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{105}); err != nil {
-		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	// Expire uplobd 105, mbking the connected component soft-deletbble
+	if err := store.UpdbteUplobdRetention(context.Bbckground(), []int{}, []int{105}); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobds bs expired: %s", err)
 	}
-	// Reset timestamps so the test is deterministics
-	if _, err := db.ExecContext(context.Background(), "UPDATE lsif_uploads SET last_traversal_scan_at = NULL"); err != nil {
-		t.Fatalf("unexpected error clearing last_traversal_scan_at: %s", err)
+	// Reset timestbmps so the test is deterministics
+	if _, err := db.ExecContext(context.Bbckground(), "UPDATE lsif_uplobds SET lbst_trbversbl_scbn_bt = NULL"); err != nil {
+		t.Fbtblf("unexpected error clebring lbst_trbversbl_scbn_bt: %s", err)
 	}
-	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	if _, count, err := store.SoftDeleteExpiredUplobds(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 0 {
-		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib refcount: wbnt=%d hbve=%d", 0, count)
 	}
-	// First connected component (rooted with upload 100)
-	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	// First connected component (rooted with uplobd 100)
+	if _, count, err := store.SoftDeleteExpiredUplobdsVibTrbversbl(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 7 {
-		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 7, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib trbversbl: wbnt=%d hbve=%d", 7, count)
 	}
-	// Second connected component (rooted with upload 107)
-	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	// Second connected component (rooted with uplobd 107)
+	if _, count, err := store.SoftDeleteExpiredUplobdsVibTrbversbl(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 0 {
-		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 0, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib trbversbl: wbnt=%d hbve=%d", 0, count)
 	}
 
 	// Ensure records were deleted
-	expectedStates := map[int]string{
+	expectedStbtes := mbp[int]string{
 		100: "deleting",
 		101: "deleting",
 		102: "deleting",
@@ -222,52 +222,52 @@ func TestSoftDeleteExpiredUploadsViaTraversal(t *testing.T) {
 		107: "completed",
 		108: "completed",
 	}
-	if states, err := getUploadStates(db, 100, 101, 102, 103, 104, 105, 106, 107, 108); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
-		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	if stbtes, err := getUplobdStbtes(db, 100, 101, 102, 103, 104, 105, 106, 107, 108); err != nil {
+		t.Fbtblf("unexpected error getting stbtes: %s", err)
+	} else if diff := cmp.Diff(expectedStbtes, stbtes); diff != "" {
+		t.Errorf("unexpected uplobd stbtes (-wbnt +got):\n%s", diff)
 	}
 
-	// Ensure repository was marked as dirty
-	dirtyRepositories, err := store.GetDirtyRepositories(context.Background())
+	// Ensure repository wbs mbrked bs dirty
+	dirtyRepositories, err := store.GetDirtyRepositories(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error listing dirty repositories: %s", err)
+		t.Fbtblf("unexpected error listing dirty repositories: %s", err)
 	}
 
-	var keys []int
-	for _, dirtyRepository := range dirtyRepositories {
-		keys = append(keys, dirtyRepository.RepositoryID)
+	vbr keys []int
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		keys = bppend(keys, dirtyRepository.RepositoryID)
 	}
 	sort.Ints(keys)
 
 	expectedKeys := []int{50, 51, 52, 53, 54, 55, 56}
 	if diff := cmp.Diff(expectedKeys, keys); diff != "" {
-		t.Errorf("unexpected dirty repositories (-want +got):\n%s", diff)
+		t.Errorf("unexpected dirty repositories (-wbnt +got):\n%s", diff)
 	}
 
-	// expire uploads 107-108, making the second connected component soft-deletable
-	if err := store.UpdateUploadRetention(context.Background(), []int{}, []int{107, 108}); err != nil {
-		t.Fatalf("unexpected error marking uploads as expired: %s", err)
+	// expire uplobds 107-108, mbking the second connected component soft-deletbble
+	if err := store.UpdbteUplobdRetention(context.Bbckground(), []int{}, []int{107, 108}); err != nil {
+		t.Fbtblf("unexpected error mbrking uplobds bs expired: %s", err)
 	}
-	if _, count, err := store.SoftDeleteExpiredUploads(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	if _, count, err := store.SoftDeleteExpiredUplobds(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 0 {
-		t.Fatalf("unexpected number of uploads deleted via refcount: want=%d have=%d", 0, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib refcount: wbnt=%d hbve=%d", 0, count)
 	}
-	if _, count, err := store.SoftDeleteExpiredUploadsViaTraversal(context.Background(), 100); err != nil {
-		t.Fatalf("unexpected error soft deleting uploads: %s", err)
+	if _, count, err := store.SoftDeleteExpiredUplobdsVibTrbversbl(context.Bbckground(), 100); err != nil {
+		t.Fbtblf("unexpected error soft deleting uplobds: %s", err)
 	} else if count != 2 {
-		t.Fatalf("unexpected number of uploads deleted via traversal: want=%d have=%d", 2, count)
+		t.Fbtblf("unexpected number of uplobds deleted vib trbversbl: wbnt=%d hbve=%d", 2, count)
 	}
 
 	// Ensure new records were deleted
-	expectedStates = map[int]string{
+	expectedStbtes = mbp[int]string{
 		107: "deleting",
 		108: "deleting",
 	}
-	if states, err := getUploadStates(db, 107, 108); err != nil {
-		t.Fatalf("unexpected error getting states: %s", err)
-	} else if diff := cmp.Diff(expectedStates, states); diff != "" {
-		t.Errorf("unexpected upload states (-want +got):\n%s", diff)
+	if stbtes, err := getUplobdStbtes(db, 107, 108); err != nil {
+		t.Fbtblf("unexpected error getting stbtes: %s", err)
+	} else if diff := cmp.Diff(expectedStbtes, stbtes); diff != "" {
+		t.Errorf("unexpected uplobd stbtes (-wbnt +got):\n%s", diff)
 	}
 }

@@ -1,70 +1,70 @@
-package iam
+pbckbge ibm
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"sort"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
 )
 
-type licenseKeyFieldsMigrator struct {
-	store     *basestore.Store
-	batchSize int
+type licenseKeyFieldsMigrbtor struct {
+	store     *bbsestore.Store
+	bbtchSize int
 }
 
-var _ oobmigration.Migrator = &licenseKeyFieldsMigrator{}
+vbr _ oobmigrbtion.Migrbtor = &licenseKeyFieldsMigrbtor{}
 
-func NewLicenseKeyFieldsMigrator(store *basestore.Store, batchSize int) *licenseKeyFieldsMigrator {
-	return &licenseKeyFieldsMigrator{
+func NewLicenseKeyFieldsMigrbtor(store *bbsestore.Store, bbtchSize int) *licenseKeyFieldsMigrbtor {
+	return &licenseKeyFieldsMigrbtor{
 		store:     store,
-		batchSize: batchSize,
+		bbtchSize: bbtchSize,
 	}
 }
 
-func (m *licenseKeyFieldsMigrator) ID() int                 { return 16 }
-func (m *licenseKeyFieldsMigrator) Interval() time.Duration { return time.Second * 5 }
+func (m *licenseKeyFieldsMigrbtor) ID() int                 { return 16 }
+func (m *licenseKeyFieldsMigrbtor) Intervbl() time.Durbtion { return time.Second * 5 }
 
-func (m *licenseKeyFieldsMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorProgressQuery)))
+func (m *licenseKeyFieldsMigrbtor) Progress(ctx context.Context, _ bool) (flobt64, error) {
+	progress, _, err := bbsestore.ScbnFirstFlobt(m.store.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigrbtorProgressQuery)))
 	return progress, err
 }
 
-const licenseKeyFieldsMigratorProgressQuery = `
+const licenseKeyFieldsMigrbtorProgressQuery = `
 SELECT
 	CASE c2.count WHEN 0 THEN 1 ELSE
-		cast(c1.count as float) / cast(c2.count as float)
+		cbst(c1.count bs flobt) / cbst(c2.count bs flobt)
 	END
 FROM
-	(SELECT count(*) as count FROM product_licenses WHERE license_tags IS NOT NULL) c1,
-	(SELECT count(*) as count FROM product_licenses) c2
+	(SELECT count(*) bs count FROM product_licenses WHERE license_tbgs IS NOT NULL) c1,
+	(SELECT count(*) bs count FROM product_licenses) c2
 `
 
-func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
-	tx, err := m.store.Transact(ctx)
+func (m *licenseKeyFieldsMigrbtor) Up(ctx context.Context) (err error) {
+	tx, err := m.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	licenseKeys, err := func() (_ map[string]string, err error) {
-		rows, err := tx.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorSelectQuery, m.batchSize))
+	licenseKeys, err := func() (_ mbp[string]string, err error) {
+		rows, err := tx.Query(ctx, sqlf.Sprintf(licenseKeyFieldsMigrbtorSelectQuery, m.bbtchSize))
 		if err != nil {
 			return nil, err
 		}
-		defer func() { err = basestore.CloseRows(rows, err) }()
+		defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-		licenseKeys := map[string]string{}
+		licenseKeys := mbp[string]string{}
 		for rows.Next() {
-			var id, licenseKey string
-			if err := rows.Scan(&id, &licenseKey); err != nil {
+			vbr id, licenseKey string
+			if err := rows.Scbn(&id, &licenseKey); err != nil {
 				return nil, err
 			}
 
@@ -77,89 +77,89 @@ func (m *licenseKeyFieldsMigrator) Up(ctx context.Context) (err error) {
 		return err
 	}
 
-	ids := make([]string, 0, len(licenseKeys))
-	for id := range licenseKeys {
-		ids = append(ids, id)
+	ids := mbke([]string, 0, len(licenseKeys))
+	for id := rbnge licenseKeys {
+		ids = bppend(ids, id)
 	}
 	sort.Strings(ids)
 
 	type Info struct {
-		Tags      []string  `json:"t"`
+		Tbgs      []string  `json:"t"`
 		UserCount uint      `json:"u"`
 		ExpiresAt time.Time `json:"e"`
 	}
 	decode := func(licenseKey string) (Info, error) {
-		decodedText, err := base64.RawURLEncoding.DecodeString(licenseKey)
+		decodedText, err := bbse64.RbwURLEncoding.DecodeString(licenseKey)
 		if err != nil {
 			return Info{}, err
 		}
 
-		var decodedKey struct {
+		vbr decodedKey struct {
 			Info []byte `json:"info"`
 		}
-		if err := json.Unmarshal(decodedText, &decodedKey); err != nil {
+		if err := json.Unmbrshbl(decodedText, &decodedKey); err != nil {
 			return Info{}, err
 		}
 
-		var info Info
-		if err := json.Unmarshal(decodedKey.Info, &info); err != nil {
+		vbr info Info
+		if err := json.Unmbrshbl(decodedKey.Info, &info); err != nil {
 			return Info{}, err
 		}
 
 		return info, nil
 	}
 
-	updates := make([]*sqlf.Query, 0, len(ids))
-	for _, id := range ids {
+	updbtes := mbke([]*sqlf.Query, 0, len(ids))
+	for _, id := rbnge ids {
 		info, err := decode(licenseKeys[id])
 		if err != nil {
 			return err
 		}
 
-		var expiresAt *time.Time
+		vbr expiresAt *time.Time
 		if !info.ExpiresAt.IsZero() {
 			expiresAt = &info.ExpiresAt
 		}
 
-		updates = append(updates, sqlf.Sprintf(
-			`(%s, %s::integer, %s::text[], %s::integer, %s::timestamptz)`,
+		updbtes = bppend(updbtes, sqlf.Sprintf(
+			`(%s, %s::integer, %s::text[], %s::integer, %s::timestbmptz)`,
 			id,
 			dbutil.NewNullInt64(int64(1)), // license_version
-			pq.Array(info.Tags),           // license_tags
+			pq.Arrby(info.Tbgs),           // license_tbgs
 			dbutil.NewNullInt64(int64(info.UserCount)), // license_user_count
-			dbutil.NullTime{Time: expiresAt}),          // license_expires_at
+			dbutil.NullTime{Time: expiresAt}),          // license_expires_bt
 		)
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigratorUpdateQuery, sqlf.Join(updates, ", "))); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(licenseKeyFieldsMigrbtorUpdbteQuery, sqlf.Join(updbtes, ", "))); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-const licenseKeyFieldsMigratorSelectQuery = `
+const licenseKeyFieldsMigrbtorSelectQuery = `
 SELECT
 	id,
 	license_key
 FROM product_licenses
-WHERE license_tags IS NULL
+WHERE license_tbgs IS NULL
 LIMIT %s
 FOR UPDATE SKIP LOCKED
 `
 
-const licenseKeyFieldsMigratorUpdateQuery = `
+const licenseKeyFieldsMigrbtorUpdbteQuery = `
 UPDATE product_licenses
 SET
-	license_version    = updates.license_version::integer,
-	license_tags       = updates.license_tags::text[],
-	license_user_count = updates.license_user_count::integer,
-	license_expires_at = updates.license_expires_at::timestamptz
-FROM (VALUES %s) AS updates(id, license_version, license_tags, license_user_count, license_expires_at)
-WHERE product_licenses.id = updates.id::uuid
+	license_version    = updbtes.license_version::integer,
+	license_tbgs       = updbtes.license_tbgs::text[],
+	license_user_count = updbtes.license_user_count::integer,
+	license_expires_bt = updbtes.license_expires_bt::timestbmptz
+FROM (VALUES %s) AS updbtes(id, license_version, license_tbgs, license_user_count, license_expires_bt)
+WHERE product_licenses.id = updbtes.id::uuid
 `
 
-func (m *licenseKeyFieldsMigrator) Down(_ context.Context) error {
+func (m *licenseKeyFieldsMigrbtor) Down(_ context.Context) error {
 	// non-destructive
 	return nil
 }

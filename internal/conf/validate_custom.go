@@ -1,4 +1,4 @@
-package conf
+pbckbge conf
 
 import (
 	"encoding/json"
@@ -6,126 +6,126 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-type Validator func(conftypes.SiteConfigQuerier) Problems
+type Vblidbtor func(conftypes.SiteConfigQuerier) Problems
 
-// ContributeValidator adds the site configuration validator function to the validation process. It
-// is called to validate site configuration. Any strings it returns are shown as validation
+// ContributeVblidbtor bdds the site configurbtion vblidbtor function to the vblidbtion process. It
+// is cblled to vblidbte site configurbtion. Any strings it returns bre shown bs vblidbtion
 // problems.
 //
-// It may only be called at init time.
-func ContributeValidator(f Validator) {
-	contributedValidators = append(contributedValidators, f)
+// It mby only be cblled bt init time.
+func ContributeVblidbtor(f Vblidbtor) {
+	contributedVblidbtors = bppend(contributedVblidbtors, f)
 }
 
-var contributedValidators []Validator
+vbr contributedVblidbtors []Vblidbtor
 
-func validateCustomRaw(normalizedInput conftypes.RawUnified) (problems Problems, err error) {
-	var cfg Unified
-	if err := json.Unmarshal([]byte(normalizedInput.Site), &cfg.SiteConfiguration); err != nil {
+func vblidbteCustomRbw(normblizedInput conftypes.RbwUnified) (problems Problems, err error) {
+	vbr cfg Unified
+	if err := json.Unmbrshbl([]byte(normblizedInput.Site), &cfg.SiteConfigurbtion); err != nil {
 		return nil, err
 	}
-	return validateCustom(cfg), nil
+	return vblidbteCustom(cfg), nil
 }
 
-// validateCustom validates the site config using custom validation steps that are not
-// able to be expressed in the JSON Schema.
-func validateCustom(cfg Unified) (problems Problems) {
-	invalid := func(p *Problem) {
-		problems = append(problems, p)
+// vblidbteCustom vblidbtes the site config using custom vblidbtion steps thbt bre not
+// bble to be expressed in the JSON Schemb.
+func vblidbteCustom(cfg Unified) (problems Problems) {
+	invblid := func(p *Problem) {
+		problems = bppend(problems, p)
 	}
 
-	// Auth provider config validation is contributed by the
-	// github.com/sourcegraph/sourcegraph/internal/auth/... packages (using
-	// ContributeValidator).
+	// Auth provider config vblidbtion is contributed by the
+	// github.com/sourcegrbph/sourcegrbph/internbl/buth/... pbckbges (using
+	// ContributeVblidbtor).
 
 	{
-		hasSMTP := cfg.EmailSmtp != nil
-		hasSMTPAuth := cfg.EmailSmtp != nil && cfg.EmailSmtp.Authentication != "none"
-		if hasSMTP && cfg.EmailAddress == "" {
-			invalid(NewSiteProblem(`should set email.address because email.smtp is set`))
+		hbsSMTP := cfg.EmbilSmtp != nil
+		hbsSMTPAuth := cfg.EmbilSmtp != nil && cfg.EmbilSmtp.Authenticbtion != "none"
+		if hbsSMTP && cfg.EmbilAddress == "" {
+			invblid(NewSiteProblem(`should set embil.bddress becbuse embil.smtp is set`))
 		}
-		if hasSMTPAuth && (cfg.EmailSmtp.Username == "" && cfg.EmailSmtp.Password == "") {
-			invalid(NewSiteProblem(`must set email.smtp username and password for email.smtp authentication`))
+		if hbsSMTPAuth && (cfg.EmbilSmtp.Usernbme == "" && cfg.EmbilSmtp.Pbssword == "") {
+			invblid(NewSiteProblem(`must set embil.smtp usernbme bnd pbssword for embil.smtp buthenticbtion`))
 		}
 	}
 
-	// Prevent usage of non-root externalURLs until we add their support:
-	// https://github.com/sourcegraph/sourcegraph/issues/7884
-	if cfg.ExternalURL != "" {
-		eURL, err := url.Parse(cfg.ExternalURL)
+	// Prevent usbge of non-root externblURLs until we bdd their support:
+	// https://github.com/sourcegrbph/sourcegrbph/issues/7884
+	if cfg.ExternblURL != "" {
+		eURL, err := url.Pbrse(cfg.ExternblURL)
 		if err != nil {
-			invalid(NewSiteProblem(`externalURL must be a valid URL`))
-		} else if eURL.Path != "/" && eURL.Path != "" {
-			invalid(NewSiteProblem(`externalURL must not be a non-root URL`))
+			invblid(NewSiteProblem(`externblURL must be b vblid URL`))
+		} else if eURL.Pbth != "/" && eURL.Pbth != "" {
+			invblid(NewSiteProblem(`externblURL must not be b non-root URL`))
 		}
 	}
 
-	for _, rule := range cfg.GitUpdateInterval {
-		if _, err := regexp.Compile(rule.Pattern); err != nil {
-			invalid(NewSiteProblem(fmt.Sprintf("GitUpdateIntervalRule pattern is not valid regex: %q", rule.Pattern)))
+	for _, rule := rbnge cfg.GitUpdbteIntervbl {
+		if _, err := regexp.Compile(rule.Pbttern); err != nil {
+			invblid(NewSiteProblem(fmt.Sprintf("GitUpdbteIntervblRule pbttern is not vblid regex: %q", rule.Pbttern)))
 		}
 	}
 
-	for _, f := range contributedValidators {
-		problems = append(problems, f(cfg)...)
+	for _, f := rbnge contributedVblidbtors {
+		problems = bppend(problems, f(cfg)...)
 	}
 
 	return problems
 }
 
-// TestValidator is an exported helper function for other packages to test their contributed
-// validators (registered with ContributeValidator). It should only be called by tests.
-func TestValidator(t interface {
-	Errorf(format string, args ...any)
+// TestVblidbtor is bn exported helper function for other pbckbges to test their contributed
+// vblidbtors (registered with ContributeVblidbtor). It should only be cblled by tests.
+func TestVblidbtor(t interfbce {
+	Errorf(formbt string, brgs ...bny)
 	Helper()
-}, c conftypes.UnifiedQuerier, f Validator, wantProblems Problems,
+}, c conftypes.UnifiedQuerier, f Vblidbtor, wbntProblems Problems,
 ) {
 	t.Helper()
 	problems := f(c)
-	wantSet := make(map[string]problemKind, len(wantProblems))
-	for _, p := range wantProblems {
-		wantSet[p.String()] = p.kind
+	wbntSet := mbke(mbp[string]problemKind, len(wbntProblems))
+	for _, p := rbnge wbntProblems {
+		wbntSet[p.String()] = p.kind
 	}
-	for _, p := range problems {
-		var found bool
-		for ps, k := range wantSet {
-			if strings.Contains(p.String(), ps) && p.kind == k {
-				delete(wantSet, ps)
+	for _, p := rbnge problems {
+		vbr found bool
+		for ps, k := rbnge wbntSet {
+			if strings.Contbins(p.String(), ps) && p.kind == k {
+				delete(wbntSet, ps)
 				found = true
-				break
+				brebk
 			}
 		}
 		if !found {
 			t.Errorf("got unexpected error %q with kind %q", p, p.kind)
 		}
 	}
-	if len(wantSet) > 0 {
-		t.Errorf("got no matches for expected error substrings %q", wantSet)
+	if len(wbntSet) > 0 {
+		t.Errorf("got no mbtches for expected error substrings %q", wbntSet)
 	}
 }
 
-// ContributeWarning adds the configuration validator function to the validation process.
-// It is called to validate site configuration. Any problems it returns are shown as configuration
-// warnings in the form of site alerts.
+// ContributeWbrning bdds the configurbtion vblidbtor function to the vblidbtion process.
+// It is cblled to vblidbte site configurbtion. Any problems it returns bre shown bs configurbtion
+// wbrnings in the form of site blerts.
 //
-// It may only be called at init time.
-func ContributeWarning(f Validator) {
-	contributedWarnings = append(contributedWarnings, f)
+// It mby only be cblled bt init time.
+func ContributeWbrning(f Vblidbtor) {
+	contributedWbrnings = bppend(contributedWbrnings, f)
 }
 
-var contributedWarnings []Validator
+vbr contributedWbrnings []Vblidbtor
 
-// GetWarnings identifies problems with the configuration that a site
-// admin should address, but do not prevent Sourcegraph from running.
-func GetWarnings() (problems Problems, err error) {
+// GetWbrnings identifies problems with the configurbtion thbt b site
+// bdmin should bddress, but do not prevent Sourcegrbph from running.
+func GetWbrnings() (problems Problems, err error) {
 	c := *Get()
-	for i := range contributedWarnings {
-		problems = append(problems, contributedWarnings[i](c)...)
+	for i := rbnge contributedWbrnings {
+		problems = bppend(problems, contributedWbrnings[i](c)...)
 	}
 	return problems, nil
 }

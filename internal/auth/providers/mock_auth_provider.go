@@ -1,49 +1,49 @@
-package providers
+pbckbge providers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type MockAuthProvider struct {
 	MockConfigID            ConfigID
-	MockConfig              schema.AuthProviderCommon
-	MockAuthProvidersConfig *schema.AuthProviders
-	MockPublicAccountData   *extsvc.PublicAccountData
+	MockConfig              schemb.AuthProviderCommon
+	MockAuthProvidersConfig *schemb.AuthProviders
+	MockPublicAccountDbtb   *extsvc.PublicAccountDbtb
 }
 
 func (m MockAuthProvider) ConfigID() ConfigID {
 	return m.MockConfigID
 }
 
-func (m MockAuthProvider) Config() schema.AuthProviders {
+func (m MockAuthProvider) Config() schemb.AuthProviders {
 	if m.MockAuthProvidersConfig != nil {
 		return *m.MockAuthProvidersConfig
 	}
 
-	return schema.AuthProviders{
-		Github: &schema.GitHubAuthProvider{
+	return schemb.AuthProviders{
+		Github: &schemb.GitHubAuthProvider{
 			Type:          m.MockConfigID.Type,
-			DisplayName:   m.MockConfig.DisplayName,
-			DisplayPrefix: m.MockConfig.DisplayPrefix,
+			DisplbyNbme:   m.MockConfig.DisplbyNbme,
+			DisplbyPrefix: m.MockConfig.DisplbyPrefix,
 			Hidden:        m.MockConfig.Hidden,
 			Order:         m.MockConfig.Order,
 		},
 	}
 }
 
-func (m MockAuthProvider) CachedInfo() *Info {
+func (m MockAuthProvider) CbchedInfo() *Info {
 	return &Info{
-		DisplayName: m.MockConfigID.Type,
+		DisplbyNbme: m.MockConfigID.Type,
 	}
 }
 
 func (m MockAuthProvider) Refresh(_ context.Context) error {
-	panic("should not be called")
+	pbnic("should not be cblled")
 }
 
-func (m MockAuthProvider) ExternalAccountInfo(_ context.Context, _ extsvc.Account) (*extsvc.PublicAccountData, error) {
-	return m.MockPublicAccountData, nil
+func (m MockAuthProvider) ExternblAccountInfo(_ context.Context, _ extsvc.Account) (*extsvc.PublicAccountDbtb, error) {
+	return m.MockPublicAccountDbtb, nil
 }

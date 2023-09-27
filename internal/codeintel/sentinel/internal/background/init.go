@@ -1,27 +1,27 @@
-package background
+pbckbge bbckground
 
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/background/downloader"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/background/matcher"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/bbckground/downlobder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/bbckground/mbtcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func CVEScannerJob(
-	observationCtx *observation.Context,
+func CVEScbnnerJob(
+	observbtionCtx *observbtion.Context,
 	store store.Store,
-	downloaderConfig *downloader.Config,
-	matcherConfig *matcher.Config,
-) []goroutine.BackgroundRoutine {
+	downlobderConfig *downlobder.Config,
+	mbtcherConfig *mbtcher.Config,
+) []goroutine.BbckgroundRoutine {
 	if os.Getenv("RUN_EXPERIMENTAL_SENTINEL_JOBS") != "true" {
 		return nil
 	}
 
-	return []goroutine.BackgroundRoutine{
-		downloader.NewCVEDownloader(store, observationCtx, downloaderConfig),
-		matcher.NewCVEMatcher(store, observationCtx, matcherConfig),
+	return []goroutine.BbckgroundRoutine{
+		downlobder.NewCVEDownlobder(store, observbtionCtx, downlobderConfig),
+		mbtcher.NewCVEMbtcher(store, observbtionCtx, mbtcherConfig),
 	}
 }

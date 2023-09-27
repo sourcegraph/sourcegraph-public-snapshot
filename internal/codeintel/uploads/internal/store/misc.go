@@ -1,71 +1,71 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/keegbncsmith/sqlf"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// HasRepository determines if there is LSIF data for the given repository.
-func (s *store) HasRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.hasRepository.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
+// HbsRepository determines if there is LSIF dbtb for the given repository.
+func (s *store) HbsRepository(ctx context.Context, repositoryID int) (_ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.hbsRepository.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	_, found, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(hasRepositoryQuery, repositoryID)))
+	_, found, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(hbsRepositoryQuery, repositoryID)))
 	return found, err
 }
 
-const hasRepositoryQuery = `
-SELECT 1 FROM lsif_uploads WHERE state NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
+const hbsRepositoryQuery = `
+SELECT 1 FROM lsif_uplobds WHERE stbte NOT IN ('deleted', 'deleting') AND repository_id = %s LIMIT 1
 `
 
-// HasCommit determines if the given commit is known for the given repository.
-func (s *store) HasCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
-	ctx, _, endObservation := s.operations.hasCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
+// HbsCommit determines if the given commit is known for the given repository.
+func (s *store) HbsCommit(ctx context.Context, repositoryID int, commit string) (_ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.hbsCommit.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("commit", commit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	count, _, err := basestore.ScanFirstInt(s.db.Query(
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(
 		ctx,
 		sqlf.Sprintf(
-			hasCommitQuery,
-			repositoryID, dbutil.CommitBytea(commit),
-			repositoryID, dbutil.CommitBytea(commit),
+			hbsCommitQuery,
+			repositoryID, dbutil.CommitByteb(commit),
+			repositoryID, dbutil.CommitByteb(commit),
 		),
 	))
 
 	return count > 0, err
 }
 
-const hasCommitQuery = `
+const hbsCommitQuery = `
 SELECT
-	(SELECT COUNT(*) FROM lsif_nearest_uploads WHERE repository_id = %s AND commit_bytea = %s) +
-	(SELECT COUNT(*) FROM lsif_nearest_uploads_links WHERE repository_id = %s AND commit_bytea = %s)
+	(SELECT COUNT(*) FROM lsif_nebrest_uplobds WHERE repository_id = %s AND commit_byteb = %s) +
+	(SELECT COUNT(*) FROM lsif_nebrest_uplobds_links WHERE repository_id = %s AND commit_byteb = %s)
 `
 
-// InsertDependencySyncingJob inserts a new dependency syncing job and returns its identifier.
-func (s *store) InsertDependencySyncingJob(ctx context.Context, uploadID int) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertDependencySyncingJob.With(ctx, &err, observation.Args{})
+// InsertDependencySyncingJob inserts b new dependency syncing job bnd returns its identifier.
+func (s *store) InsertDependencySyncingJob(ctx context.Context, uplobdID int) (id int, err error) {
+	ctx, _, endObservbtion := s.operbtions.insertDependencySyncingJob.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("id", id),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("id", id),
 		}})
 	}()
 
-	id, _, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(insertDependencySyncingJobQuery, uploadID)))
+	id, _, err = bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(insertDependencySyncingJobQuery, uplobdID)))
 	return id, err
 }
 
 const insertDependencySyncingJobQuery = `
-INSERT INTO lsif_dependency_syncing_jobs (upload_id) VALUES (%s)
+INSERT INTO lsif_dependency_syncing_jobs (uplobd_id) VALUES (%s)
 RETURNING id
 `

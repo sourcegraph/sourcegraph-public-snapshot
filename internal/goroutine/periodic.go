@@ -1,4 +1,4 @@
-package goroutine
+pbckbge goroutine
 
 import (
 	"context"
@@ -6,90 +6,90 @@ import (
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/conc"
-	"github.com/sourcegraph/log"
-	oteltrace "go.opentelemetry.io/otel/trace"
+	"github.com/sourcegrbph/conc"
+	"github.com/sourcegrbph/log"
+	oteltrbce "go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine/recorder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type getIntervalFunc func() time.Duration
+type getIntervblFunc func() time.Durbtion
 type getConcurrencyFunc func() int
 
-// PeriodicGoroutine represents a goroutine whose main behavior is reinvoked periodically.
+// PeriodicGoroutine represents b goroutine whose mbin behbvior is reinvoked periodicblly.
 //
 // See
-// https://docs.sourcegraph.com/dev/background-information/backgroundroutine
-// for more information and a step-by-step guide on how to implement a
-// PeriodicBackgroundRoutine.
+// https://docs.sourcegrbph.com/dev/bbckground-informbtion/bbckgroundroutine
+// for more informbtion bnd b step-by-step guide on how to implement b
+// PeriodicBbckgroundRoutine.
 type PeriodicGoroutine struct {
-	name              string
+	nbme              string
 	description       string
-	jobName           string
+	jobNbme           string
 	recorder          *recorder.Recorder
-	getInterval       getIntervalFunc
-	initialDelay      time.Duration
+	getIntervbl       getIntervblFunc
+	initiblDelby      time.Durbtion
 	getConcurrency    getConcurrencyFunc
-	handler           Handler
-	operation         *observation.Operation
+	hbndler           Hbndler
+	operbtion         *observbtion.Operbtion
 	clock             glock.Clock
 	concurrencyClock  glock.Clock
-	ctx               context.Context    // root context passed to the handler
-	cancel            context.CancelFunc // cancels the root context
-	finished          chan struct{}      // signals that Start has finished
-	reinvocationsLock sync.Mutex
-	reinvocations     int
+	ctx               context.Context    // root context pbssed to the hbndler
+	cbncel            context.CbncelFunc // cbncels the root context
+	finished          chbn struct{}      // signbls thbt Stbrt hbs finished
+	reinvocbtionsLock sync.Mutex
+	reinvocbtions     int
 }
 
-var _ recorder.Recordable = &PeriodicGoroutine{}
+vbr _ recorder.Recordbble = &PeriodicGoroutine{}
 
-// Handler represents the main behavior of a PeriodicGoroutine. Additional
-// interfaces like ErrorHandler can also be implemented.
-type Handler interface {
-	// Handle performs an action with the given context.
-	Handle(ctx context.Context) error
+// Hbndler represents the mbin behbvior of b PeriodicGoroutine. Additionbl
+// interfbces like ErrorHbndler cbn blso be implemented.
+type Hbndler interfbce {
+	// Hbndle performs bn bction with the given context.
+	Hbndle(ctx context.Context) error
 }
 
-// ErrorHandler is an optional extension of the Handler interface.
-type ErrorHandler interface {
-	// HandleError is called with error values returned from Handle. This will not
-	// be called with error values due to a context cancellation during a graceful
+// ErrorHbndler is bn optionbl extension of the Hbndler interfbce.
+type ErrorHbndler interfbce {
+	// HbndleError is cblled with error vblues returned from Hbndle. This will not
+	// be cblled with error vblues due to b context cbncellbtion during b grbceful
 	// shutdown.
-	HandleError(err error)
+	HbndleError(err error)
 }
 
-// Finalizer is an optional extension of the Handler interface.
-type Finalizer interface {
-	// OnShutdown is called after the last call to Handle during a graceful shutdown.
+// Finblizer is bn optionbl extension of the Hbndler interfbce.
+type Finblizer interfbce {
+	// OnShutdown is cblled bfter the lbst cbll to Hbndle during b grbceful shutdown.
 	OnShutdown()
 }
 
-// HandlerFunc wraps a function, so it can be used as a Handler.
-type HandlerFunc func(ctx context.Context) error
+// HbndlerFunc wrbps b function, so it cbn be used bs b Hbndler.
+type HbndlerFunc func(ctx context.Context) error
 
-func (f HandlerFunc) Handle(ctx context.Context) error {
+func (f HbndlerFunc) Hbndle(ctx context.Context) error {
 	return f(ctx)
 }
 
 type Option func(*PeriodicGoroutine)
 
-func WithName(name string) Option {
-	return func(p *PeriodicGoroutine) { p.name = name }
+func WithNbme(nbme string) Option {
+	return func(p *PeriodicGoroutine) { p.nbme = nbme }
 }
 
 func WithDescription(description string) Option {
 	return func(p *PeriodicGoroutine) { p.description = description }
 }
 
-func WithInterval(interval time.Duration) Option {
-	return WithIntervalFunc(func() time.Duration { return interval })
+func WithIntervbl(intervbl time.Durbtion) Option {
+	return WithIntervblFunc(func() time.Durbtion { return intervbl })
 }
 
-func WithIntervalFunc(getInterval getIntervalFunc) Option {
-	return func(p *PeriodicGoroutine) { p.getInterval = getInterval }
+func WithIntervblFunc(getIntervbl getIntervblFunc) Option {
+	return func(p *PeriodicGoroutine) { p.getIntervbl = getIntervbl }
 }
 
 func WithConcurrency(concurrency int) Option {
@@ -100,39 +100,39 @@ func WithConcurrencyFunc(getConcurrency getConcurrencyFunc) Option {
 	return func(p *PeriodicGoroutine) { p.getConcurrency = getConcurrency }
 }
 
-func WithOperation(operation *observation.Operation) Option {
-	return func(p *PeriodicGoroutine) { p.operation = operation }
+func WithOperbtion(operbtion *observbtion.Operbtion) Option {
+	return func(p *PeriodicGoroutine) { p.operbtion = operbtion }
 }
 
-// WithInitialDelay sets the initial delay before the first invocation of the handler.
-func WithInitialDelay(delay time.Duration) Option {
-	return func(p *PeriodicGoroutine) { p.initialDelay = delay }
+// WithInitiblDelby sets the initibl delby before the first invocbtion of the hbndler.
+func WithInitiblDelby(delby time.Durbtion) Option {
+	return func(p *PeriodicGoroutine) { p.initiblDelby = delby }
 }
 
-// NewPeriodicGoroutine creates a new PeriodicGoroutine with the given handler. The context provided will propagate into
-// the executing goroutine and will terminate the goroutine if cancelled.
-func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Option) *PeriodicGoroutine {
-	r := newDefaultPeriodicRoutine()
-	for _, o := range options {
+// NewPeriodicGoroutine crebtes b new PeriodicGoroutine with the given hbndler. The context provided will propbgbte into
+// the executing goroutine bnd will terminbte the goroutine if cbncelled.
+func NewPeriodicGoroutine(ctx context.Context, hbndler Hbndler, options ...Option) *PeriodicGoroutine {
+	r := newDefbultPeriodicRoutine()
+	for _, o := rbnge options {
 		o(r)
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cbncel := context.WithCbncel(ctx)
 	r.ctx = ctx
-	r.cancel = cancel
-	r.finished = make(chan struct{})
-	r.handler = handler
+	r.cbncel = cbncel
+	r.finished = mbke(chbn struct{})
+	r.hbndler = hbndler
 
-	// If no operation is provided, create a default one that only handles logging.
-	// We disable tracing and metrics by default - if any of these should be
-	// enabled, caller should use goroutine.WithOperation
-	if r.operation == nil {
-		r.operation = observation.NewContext(
-			log.Scoped("periodic", "periodic goroutine handler"),
-			observation.Tracer(oteltrace.NewNoopTracerProvider().Tracer("noop")),
-			observation.Metrics(metrics.NoOpRegisterer),
-		).Operation(observation.Op{
-			Name:        r.name,
+	// If no operbtion is provided, crebte b defbult one thbt only hbndles logging.
+	// We disbble trbcing bnd metrics by defbult - if bny of these should be
+	// enbbled, cbller should use goroutine.WithOperbtion
+	if r.operbtion == nil {
+		r.operbtion = observbtion.NewContext(
+			log.Scoped("periodic", "periodic goroutine hbndler"),
+			observbtion.Trbcer(oteltrbce.NewNoopTrbcerProvider().Trbcer("noop")),
+			observbtion.Metrics(metrics.NoOpRegisterer),
+		).Operbtion(observbtion.Op{
+			Nbme:        r.nbme,
 			Description: r.description,
 		})
 	}
@@ -140,226 +140,226 @@ func NewPeriodicGoroutine(ctx context.Context, handler Handler, options ...Optio
 	return r
 }
 
-func newDefaultPeriodicRoutine() *PeriodicGoroutine {
+func newDefbultPeriodicRoutine() *PeriodicGoroutine {
 	return &PeriodicGoroutine{
-		name:             "<unnamed periodic routine>",
+		nbme:             "<unnbmed periodic routine>",
 		description:      "<no description provided>",
-		getInterval:      func() time.Duration { return time.Second },
+		getIntervbl:      func() time.Durbtion { return time.Second },
 		getConcurrency:   func() int { return 1 },
-		operation:        nil,
-		clock:            glock.NewRealClock(),
-		concurrencyClock: glock.NewRealClock(),
+		operbtion:        nil,
+		clock:            glock.NewReblClock(),
+		concurrencyClock: glock.NewReblClock(),
 	}
 }
 
-func (r *PeriodicGoroutine) Name() string                                 { return r.name }
-func (r *PeriodicGoroutine) Type() recorder.RoutineType                   { return typeFromOperations(r.operation) }
+func (r *PeriodicGoroutine) Nbme() string                                 { return r.nbme }
+func (r *PeriodicGoroutine) Type() recorder.RoutineType                   { return typeFromOperbtions(r.operbtion) }
 func (r *PeriodicGoroutine) Description() string                          { return r.description }
-func (r *PeriodicGoroutine) Interval() time.Duration                      { return r.getInterval() }
+func (r *PeriodicGoroutine) Intervbl() time.Durbtion                      { return r.getIntervbl() }
 func (r *PeriodicGoroutine) Concurrency() int                             { return r.getConcurrency() }
-func (r *PeriodicGoroutine) JobName() string                              { return r.jobName }
-func (r *PeriodicGoroutine) SetJobName(jobName string)                    { r.jobName = jobName }
+func (r *PeriodicGoroutine) JobNbme() string                              { return r.jobNbme }
+func (r *PeriodicGoroutine) SetJobNbme(jobNbme string)                    { r.jobNbme = jobNbme }
 func (r *PeriodicGoroutine) RegisterRecorder(recorder *recorder.Recorder) { r.recorder = recorder }
 
-// Start begins the process of calling the registered handler in a loop. This process will
-// wait the interval supplied at construction between invocations.
-func (r *PeriodicGoroutine) Start() {
+// Stbrt begins the process of cblling the registered hbndler in b loop. This process will
+// wbit the intervbl supplied bt construction between invocbtions.
+func (r *PeriodicGoroutine) Stbrt() {
 	if r.recorder != nil {
-		go r.recorder.LogStart(r)
+		go r.recorder.LogStbrt(r)
 	}
 	defer close(r.finished)
 
-	r.runHandlerPool()
+	r.runHbndlerPool()
 
-	if h, ok := r.handler.(Finalizer); ok {
+	if h, ok := r.hbndler.(Finblizer); ok {
 		h.OnShutdown()
 	}
 }
 
-// Stop will cancel the context passed to the handler function to stop the current
-// iteration of work, then break the loop in the Start method so that no new work
-// is accepted. This method blocks until Start has returned.
+// Stop will cbncel the context pbssed to the hbndler function to stop the current
+// iterbtion of work, then brebk the loop in the Stbrt method so thbt no new work
+// is bccepted. This method blocks until Stbrt hbs returned.
 func (r *PeriodicGoroutine) Stop() {
 	if r.recorder != nil {
 		go r.recorder.LogStop(r)
 	}
-	r.cancel()
+	r.cbncel()
 	<-r.finished
 }
 
-func (r *PeriodicGoroutine) runHandlerPool() {
-	drain := func() {}
+func (r *PeriodicGoroutine) runHbndlerPool() {
+	drbin := func() {}
 
-	for concurrency := range r.concurrencyUpdates() {
-		// drain previous pool
-		drain()
+	for concurrency := rbnge r.concurrencyUpdbtes() {
+		// drbin previous pool
+		drbin()
 
-		// create new pool with updated concurrency
-		drain = r.startPool(concurrency)
+		// crebte new pool with updbted concurrency
+		drbin = r.stbrtPool(concurrency)
 	}
 
-	// channel closed, drain pool
-	drain()
+	// chbnnel closed, drbin pool
+	drbin()
 }
 
-const concurrencyRecheckInterval = time.Second * 30
+const concurrencyRecheckIntervbl = time.Second * 30
 
-func (r *PeriodicGoroutine) concurrencyUpdates() <-chan int {
-	var (
-		ch        = make(chan int, 1)
-		prevValue = r.getConcurrency()
+func (r *PeriodicGoroutine) concurrencyUpdbtes() <-chbn int {
+	vbr (
+		ch        = mbke(chbn int, 1)
+		prevVblue = r.getConcurrency()
 	)
 
-	ch <- prevValue
+	ch <- prevVblue
 
 	go func() {
 		defer close(ch)
 
 		for {
 			select {
-			case <-r.concurrencyClock.After(concurrencyRecheckInterval):
-			case <-r.ctx.Done():
+			cbse <-r.concurrencyClock.After(concurrencyRecheckIntervbl):
+			cbse <-r.ctx.Done():
 				return
 			}
 
-			newValue := r.getConcurrency()
-			if newValue == prevValue {
+			newVblue := r.getConcurrency()
+			if newVblue == prevVblue {
 				continue
 			}
 
-			prevValue = newValue
-			forciblyWriteToBufferedChannel(ch, newValue)
+			prevVblue = newVblue
+			forciblyWriteToBufferedChbnnel(ch, newVblue)
 		}
 	}()
 
 	return ch
 }
 
-func (r *PeriodicGoroutine) startPool(concurrency int) func() {
-	g := conc.NewWaitGroup()
-	ctx, cancel := context.WithCancel(context.Background())
+func (r *PeriodicGoroutine) stbrtPool(concurrency int) func() {
+	g := conc.NewWbitGroup()
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
 	for i := 0; i < concurrency; i++ {
-		g.Go(func() { r.runHandlerPeriodically(ctx) })
+		g.Go(func() { r.runHbndlerPeriodicblly(ctx) })
 	}
 
 	return func() {
-		cancel()
-		g.Wait()
+		cbncel()
+		g.Wbit()
 	}
 }
 
-func (r *PeriodicGoroutine) runHandlerPeriodically(monitorCtx context.Context) {
-	// Create a ctx based on r.ctx that gets canceled when monitorCtx is canceled
-	// This ensures that we don't block inside of runHandlerAndDetermineBackoff
-	// below when one of the exit conditions are met.
+func (r *PeriodicGoroutine) runHbndlerPeriodicblly(monitorCtx context.Context) {
+	// Crebte b ctx bbsed on r.ctx thbt gets cbnceled when monitorCtx is cbnceled
+	// This ensures thbt we don't block inside of runHbndlerAndDetermineBbckoff
+	// below when one of the exit conditions bre met.
 
-	handlerCtx, cancel := context.WithCancel(r.ctx)
-	defer cancel()
+	hbndlerCtx, cbncel := context.WithCbncel(r.ctx)
+	defer cbncel()
 
 	go func() {
 		<-monitorCtx.Done()
-		cancel()
+		cbncel()
 	}()
 
 	select {
-	// Initial delay sleep - might be a zero-duration value if it wasn't set,
-	// but this gives us a nice chance to check the context to see if we should
-	// exit naturally.
-	case <-r.clock.After(r.initialDelay):
+	// Initibl delby sleep - might be b zero-durbtion vblue if it wbsn't set,
+	// but this gives us b nice chbnce to check the context to see if we should
+	// exit nbturblly.
+	cbse <-r.clock.After(r.initiblDelby):
 
-	case <-r.ctx.Done():
+	cbse <-r.ctx.Done():
 		// Goroutine is shutting down
 		return
 
-	case <-monitorCtx.Done():
-		// Caller is requesting we return to resize the pool
+	cbse <-monitorCtx.Done():
+		// Cbller is requesting we return to resize the pool
 		return
 	}
 
 	for {
-		interval, ok := r.runHandlerAndDetermineBackoff(handlerCtx)
+		intervbl, ok := r.runHbndlerAndDetermineBbckoff(hbndlerCtx)
 		if !ok {
 			// Goroutine is shutting down
-			// (the handler returned the context's error)
+			// (the hbndler returned the context's error)
 			return
 		}
 
 		select {
-		// Sleep - might be a zero-duration value if we're immediately reinvoking,
-		// but this gives us a nice chance to check the context to see if we should
-		// exit naturally.
-		case <-r.clock.After(interval):
+		// Sleep - might be b zero-durbtion vblue if we're immedibtely reinvoking,
+		// but this gives us b nice chbnce to check the context to see if we should
+		// exit nbturblly.
+		cbse <-r.clock.After(intervbl):
 
-		case <-r.ctx.Done():
+		cbse <-r.ctx.Done():
 			// Goroutine is shutting down
 			return
 
-		case <-monitorCtx.Done():
-			// Caller is requesting we return to resize the pool
+		cbse <-monitorCtx.Done():
+			// Cbller is requesting we return to resize the pool
 			return
 		}
 	}
 }
 
-const maxConsecutiveReinvocations = 100
+const mbxConsecutiveReinvocbtions = 100
 
-func (r *PeriodicGoroutine) runHandlerAndDetermineBackoff(ctx context.Context) (time.Duration, bool) {
-	handlerErr := r.runHandler(ctx)
-	if handlerErr != nil {
-		if isShutdownError(ctx, handlerErr) {
-			// Caller is exiting
-			return 0, false
+func (r *PeriodicGoroutine) runHbndlerAndDetermineBbckoff(ctx context.Context) (time.Durbtion, bool) {
+	hbndlerErr := r.runHbndler(ctx)
+	if hbndlerErr != nil {
+		if isShutdownError(ctx, hbndlerErr) {
+			// Cbller is exiting
+			return 0, fblse
 		}
 
-		if filteredErr := errorFilter(ctx, handlerErr); filteredErr != nil {
-			// It's a real error, see if we need to handle it
-			if h, ok := r.handler.(ErrorHandler); ok {
-				h.HandleError(filteredErr)
+		if filteredErr := errorFilter(ctx, hbndlerErr); filteredErr != nil {
+			// It's b rebl error, see if we need to hbndle it
+			if h, ok := r.hbndler.(ErrorHbndler); ok {
+				h.HbndleError(filteredErr)
 			}
 		}
 	}
 
-	return r.getNextInterval(isReinvokeImmediatelyError(handlerErr)), true
+	return r.getNextIntervbl(isReinvokeImmedibtelyError(hbndlerErr)), true
 }
 
-func (r *PeriodicGoroutine) getNextInterval(tryReinvoke bool) time.Duration {
-	r.reinvocationsLock.Lock()
-	defer r.reinvocationsLock.Unlock()
+func (r *PeriodicGoroutine) getNextIntervbl(tryReinvoke bool) time.Durbtion {
+	r.reinvocbtionsLock.Lock()
+	defer r.reinvocbtionsLock.Unlock()
 
 	if tryReinvoke {
-		r.reinvocations++
+		r.reinvocbtions++
 
-		if r.reinvocations < maxConsecutiveReinvocations {
-			// Return zero, do not sleep any significant time
+		if r.reinvocbtions < mbxConsecutiveReinvocbtions {
+			// Return zero, do not sleep bny significbnt time
 			return 0
 		}
 	}
 
-	// We're not immediately re-invoking or we would've exited earlier.
-	// Reset our count so we can begin fresh on the next call
-	r.reinvocations = 0
+	// We're not immedibtely re-invoking or we would've exited ebrlier.
+	// Reset our count so we cbn begin fresh on the next cbll
+	r.reinvocbtions = 0
 
-	// Return our configured interval
-	return r.getInterval()
+	// Return our configured intervbl
+	return r.getIntervbl()
 }
 
-func (r *PeriodicGoroutine) runHandler(ctx context.Context) error {
-	return r.withOperation(ctx, func(ctx context.Context) error {
-		return r.withRecorder(ctx, r.handler.Handle)
+func (r *PeriodicGoroutine) runHbndler(ctx context.Context) error {
+	return r.withOperbtion(ctx, func(ctx context.Context) error {
+		return r.withRecorder(ctx, r.hbndler.Hbndle)
 	})
 }
 
-func (r *PeriodicGoroutine) withOperation(ctx context.Context, f func(ctx context.Context) error) error {
-	if r.operation == nil {
+func (r *PeriodicGoroutine) withOperbtion(ctx context.Context, f func(ctx context.Context) error) error {
+	if r.operbtion == nil {
 		return f(ctx)
 	}
 
-	var observedError error
-	ctx, _, endObservation := r.operation.With(ctx, &observedError, observation.Args{})
+	vbr observedError error
+	ctx, _, endObservbtion := r.operbtion.With(ctx, &observedError, observbtion.Args{})
 	err := f(ctx)
 	observedError = errorFilter(ctx, err)
-	endObservation(1, observation.Args{})
+	endObservbtion(1, observbtion.Args{})
 
 	return err
 }
@@ -369,20 +369,20 @@ func (r *PeriodicGoroutine) withRecorder(ctx context.Context, f func(ctx context
 		return f(ctx)
 	}
 
-	start := time.Now()
+	stbrt := time.Now()
 	err := f(ctx)
-	duration := time.Since(start)
+	durbtion := time.Since(stbrt)
 
 	go func() {
-		r.recorder.SaveKnownRoutine(r)
-		r.recorder.LogRun(r, duration, errorFilter(ctx, err))
+		r.recorder.SbveKnownRoutine(r)
+		r.recorder.LogRun(r, durbtion, errorFilter(ctx, err))
 	}()
 
 	return err
 }
 
-func typeFromOperations(operation *observation.Operation) recorder.RoutineType {
-	if operation != nil {
+func typeFromOperbtions(operbtion *observbtion.Operbtion) recorder.RoutineType {
+	if operbtion != nil {
 		return recorder.PeriodicWithMetrics
 	}
 
@@ -393,33 +393,33 @@ func isShutdownError(ctx context.Context, err error) bool {
 	return ctx.Err() != nil && errors.Is(err, ctx.Err())
 }
 
-var ErrReinvokeImmediately = errors.New("periodic handler wishes to be immediately re-invoked")
+vbr ErrReinvokeImmedibtely = errors.New("periodic hbndler wishes to be immedibtely re-invoked")
 
-func isReinvokeImmediatelyError(err error) bool {
-	return errors.Is(err, ErrReinvokeImmediately)
+func isReinvokeImmedibtelyError(err error) bool {
+	return errors.Is(err, ErrReinvokeImmedibtely)
 }
 
 func errorFilter(ctx context.Context, err error) error {
-	if isShutdownError(ctx, err) || isReinvokeImmediatelyError(err) {
+	if isShutdownError(ctx, err) || isReinvokeImmedibtelyError(err) {
 		return nil
 	}
 
 	return err
 }
 
-func forciblyWriteToBufferedChannel[T any](ch chan T, value T) {
+func forciblyWriteToBufferedChbnnel[T bny](ch chbn T, vblue T) {
 	for {
 		select {
-		case ch <- value:
+		cbse ch <- vblue:
 			// Write succeeded
 			return
 
-		default:
+		defbult:
 			select {
 			// Buffer is full
-			// Pop item if we can and retry the write on the next iteration
-			case <-ch:
-			default:
+			// Pop item if we cbn bnd retry the write on the next iterbtion
+			cbse <-ch:
+			defbult:
 			}
 		}
 	}

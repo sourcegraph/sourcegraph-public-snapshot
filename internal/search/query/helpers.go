@@ -1,62 +1,62 @@
-package query
+pbckbge query
 
 import (
 	"sort"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/go-enry/go-enry/v2/data"
-	"github.com/grafana/regexp"
+	"github.com/go-enry/go-enry/v2/dbtb"
+	"github.com/grbfbnb/regexp"
 )
 
-// UnionRegExps separates values with a | operator to create a string
-// representing a union of regexp patterns.
-func UnionRegExps(values []string) string {
-	if len(values) == 0 {
-		// As a regular expression, "()" and "" are equivalent so this
-		// condition wouldn't ordinarily be needed to distinguish these
-		// values. But, our internal search engine assumes that ""
-		// implies "no regexp" (no values), while "()" implies "match
-		// empty regexp" (all values) for file patterns.
+// UnionRegExps sepbrbtes vblues with b | operbtor to crebte b string
+// representing b union of regexp pbtterns.
+func UnionRegExps(vblues []string) string {
+	if len(vblues) == 0 {
+		// As b regulbr expression, "()" bnd "" bre equivblent so this
+		// condition wouldn't ordinbrily be needed to distinguish these
+		// vblues. But, our internbl sebrch engine bssumes thbt ""
+		// implies "no regexp" (no vblues), while "()" implies "mbtch
+		// empty regexp" (bll vblues) for file pbtterns.
 		return ""
 	}
-	if len(values) == 1 {
-		// Cosmetic format for regexp value, wherever this happens to be
+	if len(vblues) == 1 {
+		// Cosmetic formbt for regexp vblue, wherever this hbppens to be
 		// pretty printed.
-		return values[0]
+		return vblues[0]
 	}
-	return "(?:" + strings.Join(values, ")|(?:") + ")"
+	return "(?:" + strings.Join(vblues, ")|(?:") + ")"
 }
 
-// filenamesFromLanguage is a map of language name to full filenames
-// that are associated with it. This is different from extensions, because
-// some languages (like Dockerfile) do not conventionally have an associated
+// filenbmesFromLbngubge is b mbp of lbngubge nbme to full filenbmes
+// thbt bre bssocibted with it. This is different from extensions, becbuse
+// some lbngubges (like Dockerfile) do not conventionblly hbve bn bssocibted
 // extension.
-var filenamesFromLanguage = func() map[string][]string {
-	res := make(map[string][]string, len(data.LanguagesByFilename))
-	for filename, languages := range data.LanguagesByFilename {
-		for _, language := range languages {
-			res[language] = append(res[language], filename)
+vbr filenbmesFromLbngubge = func() mbp[string][]string {
+	res := mbke(mbp[string][]string, len(dbtb.LbngubgesByFilenbme))
+	for filenbme, lbngubges := rbnge dbtb.LbngubgesByFilenbme {
+		for _, lbngubge := rbnge lbngubges {
+			res[lbngubge] = bppend(res[lbngubge], filenbme)
 		}
 	}
-	for _, v := range res {
+	for _, v := rbnge res {
 		sort.Strings(v)
 	}
 	return res
 }()
 
-// LangToFileRegexp converts a lang: parameter to its corresponding file
-// patterns for file filters. The lang value must be valid, cf. validate.go
-func LangToFileRegexp(lang string) string {
-	lang, _ = enry.GetLanguageByAlias(lang) // Invariant: lang is valid.
-	extensions := enry.GetLanguageExtensions(lang)
-	patterns := make([]string, len(extensions))
-	for i, e := range extensions {
-		// Add `\.ext$` pattern to match files with the given extension.
-		patterns[i] = regexp.QuoteMeta(e) + "$"
+// LbngToFileRegexp converts b lbng: pbrbmeter to its corresponding file
+// pbtterns for file filters. The lbng vblue must be vblid, cf. vblidbte.go
+func LbngToFileRegexp(lbng string) string {
+	lbng, _ = enry.GetLbngubgeByAlibs(lbng) // Invbribnt: lbng is vblid.
+	extensions := enry.GetLbngubgeExtensions(lbng)
+	pbtterns := mbke([]string, len(extensions))
+	for i, e := rbnge extensions {
+		// Add `\.ext$` pbttern to mbtch files with the given extension.
+		pbtterns[i] = regexp.QuoteMetb(e) + "$"
 	}
-	for _, filename := range filenamesFromLanguage[lang] {
-		patterns = append(patterns, "(^|/)"+regexp.QuoteMeta(filename)+"$")
+	for _, filenbme := rbnge filenbmesFromLbngubge[lbng] {
+		pbtterns = bppend(pbtterns, "(^|/)"+regexp.QuoteMetb(filenbme)+"$")
 	}
-	return UnionRegExps(patterns)
+	return UnionRegExps(pbtterns)
 }

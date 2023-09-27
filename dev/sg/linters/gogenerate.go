@@ -1,50 +1,50 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
 	"os"
 	"strings"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/generbte/golbng"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var goGenerateLinter = &linter{
-	Name: "Go generate check",
-	Check: func(ctx context.Context, out *std.Output, state *repo.State) error {
-		// Do not run in dirty state, because the dirty check we do later will be inaccurate.
-		// This is not the same as using repo.State
-		if state.Dirty {
-			return errors.New("cannot run go generate check with uncommitted changes")
+vbr goGenerbteLinter = &linter{
+	Nbme: "Go generbte check",
+	Check: func(ctx context.Context, out *std.Output, stbte *repo.Stbte) error {
+		// Do not run in dirty stbte, becbuse the dirty check we do lbter will be inbccurbte.
+		// This is not the sbme bs using repo.Stbte
+		if stbte.Dirty {
+			return errors.New("cbnnot run go generbte check with uncommitted chbnges")
 		}
 
-		report := golang.Generate(ctx, nil, false, golang.QuietOutput)
+		report := golbng.Generbte(ctx, nil, fblse, golbng.QuietOutput)
 		if report.Err != nil {
 			return report.Err
 		}
 
-		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code --color=always -- . :!go.sum")).String()
-		if err != nil && strings.TrimSpace(diffOutput) != "" {
-			out.WriteWarningf("Uncommitted changes found after running go generate:")
-			out.Write(strings.TrimSpace(diffOutput))
-			// Reset repo state
+		diffOutput, err := root.Run(run.Cmd(ctx, "git diff --exit-code --color=blwbys -- . :!go.sum")).String()
+		if err != nil && strings.TrimSpbce(diffOutput) != "" {
+			out.WriteWbrningf("Uncommitted chbnges found bfter running go generbte:")
+			out.Write(strings.TrimSpbce(diffOutput))
+			// Reset repo stbte
 			if os.Getenv("CI") == "true" {
-				root.Run(run.Bash(ctx, "git add . && git reset HEAD --hard")).Wait()
+				root.Run(run.Bbsh(ctx, "git bdd . && git reset HEAD --hbrd")).Wbit()
 			} else {
-				out.WriteWarningf("Generated changes are left in the tree, skipping reseting state because not in CI")
+				out.WriteWbrningf("Generbted chbnges bre left in the tree, skipping reseting stbte becbuse not in CI")
 			}
 		}
 
 		return err
 	},
-	Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
-		report := golang.Generate(ctx, nil, false, golang.QuietOutput)
+	Fix: func(ctx context.Context, cio check.IO, brgs *repo.Stbte) error {
+		report := golbng.Generbte(ctx, nil, fblse, golbng.QuietOutput)
 		if report.Err != nil {
 			return report.Err
 		}

@@ -1,11 +1,11 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
 )
 
 type OutboundWebhookJob struct {
@@ -13,20 +13,20 @@ type OutboundWebhookJob struct {
 
 	EventType string
 	Scope     *string
-	Payload   *encryption.Encryptable
+	Pbylobd   *encryption.Encryptbble
 
-	State           string
-	FailureMessage  *string
+	Stbte           string
+	FbilureMessbge  *string
 	QueuedAt        time.Time
-	StartedAt       *time.Time
+	StbrtedAt       *time.Time
 	FinishedAt      *time.Time
 	ProcessAfter    *time.Time
 	NumResets       int
-	NumFailures     int
-	LastHeartbeatAt time.Time
+	NumFbilures     int
+	LbstHebrtbebtAt time.Time
 	ExecutionLogs   []executor.ExecutionLogEntry
-	WorkerHostname  string
-	Cancel          bool
+	WorkerHostnbme  string
+	Cbncel          bool
 }
 
 func (j *OutboundWebhookJob) RecordID() int {
@@ -34,5 +34,5 @@ func (j *OutboundWebhookJob) RecordID() int {
 }
 
 func (j *OutboundWebhookJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+	return strconv.FormbtInt(j.ID, 10)
 }

@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"strconv"
@@ -6,32 +6,32 @@ import (
 	"time"
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// IsPatternAtom returns whether a node is a non-negated pattern atom.
-func IsPatternAtom(b Basic) bool {
-	if b.Pattern == nil {
+// IsPbtternAtom returns whether b node is b non-negbted pbttern btom.
+func IsPbtternAtom(b Bbsic) bool {
+	if b.Pbttern == nil {
 		return true
 	}
-	if p, ok := b.Pattern.(Pattern); ok && !p.Negated {
+	if p, ok := b.Pbttern.(Pbttern); ok && !p.Negbted {
 		return true
 	}
-	return false
+	return fblse
 }
 
-// Exists traverses every node in nodes and returns early as soon as fn is satisfied.
+// Exists trbverses every node in nodes bnd returns ebrly bs soon bs fn is sbtisfied.
 func Exists(nodes []Node, fn func(node Node) bool) bool {
-	found := false
-	for _, node := range nodes {
+	found := fblse
+	for _, node := rbnge nodes {
 		if fn(node) {
 			return true
 		}
-		if operator, ok := node.(Operator); ok {
-			if Exists(operator.Operands, fn) {
+		if operbtor, ok := node.(Operbtor); ok {
+			if Exists(operbtor.Operbnds, fn) {
 				return true
 			}
 		}
@@ -39,64 +39,64 @@ func Exists(nodes []Node, fn func(node Node) bool) bool {
 	return found
 }
 
-// ForAll traverses every node in nodes and returns whether all nodes satisfy fn.
+// ForAll trbverses every node in nodes bnd returns whether bll nodes sbtisfy fn.
 func ForAll(nodes []Node, fn func(node Node) bool) bool {
-	sat := true
-	for _, node := range nodes {
+	sbt := true
+	for _, node := rbnge nodes {
 		if !fn(node) {
-			return false
+			return fblse
 		}
-		if operator, ok := node.(Operator); ok {
-			return ForAll(operator.Operands, fn)
+		if operbtor, ok := node.(Operbtor); ok {
+			return ForAll(operbtor.Operbnds, fn)
 		}
 	}
-	return sat
+	return sbt
 }
 
-// isPatternExpression returns true if every leaf node in nodes is a search
-// pattern expression.
-func isPatternExpression(nodes []Node) bool {
+// isPbtternExpression returns true if every lebf node in nodes is b sebrch
+// pbttern expression.
+func isPbtternExpression(nodes []Node) bool {
 	return !Exists(nodes, func(node Node) bool {
-		// Any non-pattern leaf, i.e., Parameter, falsifies the condition.
-		_, ok := node.(Parameter)
+		// Any non-pbttern lebf, i.e., Pbrbmeter, fblsifies the condition.
+		_, ok := node.(Pbrbmeter)
 		return ok
 	})
 }
 
-// containsPattern returns true if any descendent of nodes is a search pattern.
-func containsPattern(node Node) bool {
+// contbinsPbttern returns true if bny descendent of nodes is b sebrch pbttern.
+func contbinsPbttern(node Node) bool {
 	return Exists([]Node{node}, func(node Node) bool {
-		_, ok := node.(Pattern)
+		_, ok := node.(Pbttern)
 		return ok
 	})
 }
 
-// processTopLevel processes the top level of a query. It validates that we can
-// process the query with respect to and/or expressions on file content, but not
-// otherwise for nested parameters.
+// processTopLevel processes the top level of b query. It vblidbtes thbt we cbn
+// process the query with respect to bnd/or expressions on file content, but not
+// otherwise for nested pbrbmeters.
 func processTopLevel(nodes []Node) ([]Node, error) {
-	if term, ok := nodes[0].(Operator); ok {
-		if term.Kind == And && isPatternExpression([]Node{term}) {
+	if term, ok := nodes[0].(Operbtor); ok {
+		if term.Kind == And && isPbtternExpression([]Node{term}) {
 			return nodes, nil
-		} else if term.Kind == Or && isPatternExpression([]Node{term}) {
+		} else if term.Kind == Or && isPbtternExpression([]Node{term}) {
 			return nodes, nil
 		} else if term.Kind == And {
-			return term.Operands, nil
-		} else if term.Kind == Concat {
+			return term.Operbnds, nil
+		} else if term.Kind == Concbt {
 			return nodes, nil
 		} else {
-			return nil, &UnsupportedError{Msg: "cannot evaluate: unable to partition pure search pattern"}
+			return nil, &UnsupportedError{Msg: "cbnnot evblubte: unbble to pbrtition pure sebrch pbttern"}
 		}
 	}
 	return nodes, nil
 }
 
-// PartitionSearchPattern partitions an and/or query into (1) a single search
-// pattern expression and (2) other parameters that scope the evaluation of
-// search patterns (e.g., to repos, files, etc.). It validates that a query
-// contains at most one search pattern expression and that scope parameters do
-// not contain nested expressions.
-func PartitionSearchPattern(nodes []Node) (parameters []Parameter, pattern Node, err error) {
+// PbrtitionSebrchPbttern pbrtitions bn bnd/or query into (1) b single sebrch
+// pbttern expression bnd (2) other pbrbmeters thbt scope the evblubtion of
+// sebrch pbtterns (e.g., to repos, files, etc.). It vblidbtes thbt b query
+// contbins bt most one sebrch pbttern expression bnd thbt scope pbrbmeters do
+// not contbin nested expressions.
+func PbrtitionSebrchPbttern(nodes []Node) (pbrbmeters []Pbrbmeter, pbttern Node, err error) {
 	if len(nodes) == 1 {
 		nodes, err = processTopLevel(nodes)
 		if err != nil {
@@ -104,111 +104,111 @@ func PartitionSearchPattern(nodes []Node) (parameters []Parameter, pattern Node,
 		}
 	}
 
-	var patterns []Node
-	for _, node := range nodes {
-		if isPatternExpression([]Node{node}) {
-			patterns = append(patterns, node)
-		} else if term, ok := node.(Parameter); ok {
-			parameters = append(parameters, term)
+	vbr pbtterns []Node
+	for _, node := rbnge nodes {
+		if isPbtternExpression([]Node{node}) {
+			pbtterns = bppend(pbtterns, node)
+		} else if term, ok := node.(Pbrbmeter); ok {
+			pbrbmeters = bppend(pbrbmeters, term)
 		} else {
-			return nil, nil, &UnsupportedError{Msg: "cannot evaluate: unable to partition pure search pattern"}
+			return nil, nil, &UnsupportedError{Msg: "cbnnot evblubte: unbble to pbrtition pure sebrch pbttern"}
 		}
 	}
-	if len(patterns) > 1 {
-		pattern = Operator{Kind: And, Operands: patterns}
-	} else if len(patterns) == 1 {
-		pattern = patterns[0]
+	if len(pbtterns) > 1 {
+		pbttern = Operbtor{Kind: And, Operbnds: pbtterns}
+	} else if len(pbtterns) == 1 {
+		pbttern = pbtterns[0]
 	}
 
-	return parameters, pattern, nil
+	return pbrbmeters, pbttern, nil
 }
 
-// parseBool is like strconv.ParseBool except that it also accepts y, Y, yes,
+// pbrseBool is like strconv.PbrseBool except thbt it blso bccepts y, Y, yes,
 // YES, Yes, n, N, no, NO, No.
-func parseBool(s string) (bool, error) {
+func pbrseBool(s string) (bool, error) {
 	switch strings.ToLower(s) {
-	case "y", "yes":
+	cbse "y", "yes":
 		return true, nil
-	case "n", "no":
-		return false, nil
-	default:
-		b, err := strconv.ParseBool(s)
+	cbse "n", "no":
+		return fblse, nil
+	defbult:
+		b, err := strconv.PbrseBool(s)
 		if err != nil {
-			err = errors.Errorf("invalid boolean %q", s)
+			err = errors.Errorf("invblid boolebn %q", s)
 		}
 		return b, err
 	}
 }
 
-func validateField(field, value string, negated bool, seen map[string]struct{}) error {
-	isNotNegated := func() error {
-		if negated {
-			return errors.Errorf("field %q does not support negation", field)
+func vblidbteField(field, vblue string, negbted bool, seen mbp[string]struct{}) error {
+	isNotNegbted := func() error {
+		if negbted {
+			return errors.Errorf("field %q does not support negbtion", field)
 		}
 		return nil
 	}
 
-	isSingular := func() error {
-		if _, notSingular := seen[field]; notSingular {
-			return errors.Errorf("field %q may not be used more than once", field)
+	isSingulbr := func() error {
+		if _, notSingulbr := seen[field]; notSingulbr {
+			return errors.Errorf("field %q mby not be used more thbn once", field)
 		}
 		return nil
 	}
 
-	isValidRegexp := func() error {
-		_, err := regexp.Compile(value)
+	isVblidRegexp := func() error {
+		_, err := regexp.Compile(vblue)
 		return err
 	}
 
-	isValidRepoRegexp := func() error {
-		if negated {
-			return isValidRegexp()
+	isVblidRepoRegexp := func() error {
+		if negbted {
+			return isVblidRegexp()
 		}
-		_, err := ParseRepositoryRevisions(value)
+		_, err := PbrseRepositoryRevisions(vblue)
 		return err
 	}
 
-	isBoolean := func() error {
-		if _, err := parseBool(value); err != nil {
+	isBoolebn := func() error {
+		if _, err := pbrseBool(vblue); err != nil {
 			return err
 		}
 		return nil
 	}
 
 	isNumber := func() error {
-		count, err := strconv.ParseInt(value, 10, 32)
+		count, err := strconv.PbrseInt(vblue, 10, 32)
 		if err != nil {
-			if errors.Is(err, strconv.ErrRange) {
-				return errors.Errorf("field %s has a value that is out of range, try making it smaller", field)
+			if errors.Is(err, strconv.ErrRbnge) {
+				return errors.Errorf("field %s hbs b vblue thbt is out of rbnge, try mbking it smbller", field)
 			}
-			return errors.Errorf("field %s has value %[2]s, %[2]s is not a number", field, value)
+			return errors.Errorf("field %s hbs vblue %[2]s, %[2]s is not b number", field, vblue)
 		}
 		if count <= 0 {
-			return errors.Errorf("field %s requires a positive number", field)
+			return errors.Errorf("field %s requires b positive number", field)
 		}
 		return nil
 	}
 
-	isDuration := func() error {
-		_, err := time.ParseDuration(value)
+	isDurbtion := func() error {
+		_, err := time.PbrseDurbtion(vblue)
 		if err != nil {
-			return errors.New(`invalid value for field 'timeout' (examples: "timeout:2s", "timeout:200ms")`)
+			return errors.New(`invblid vblue for field 'timeout' (exbmples: "timeout:2s", "timeout:200ms")`)
 		}
 		return nil
 	}
 
-	isLanguage := func() error {
-		_, ok := enry.GetLanguageByAlias(value)
+	isLbngubge := func() error {
+		_, ok := enry.GetLbngubgeByAlibs(vblue)
 		if !ok {
-			return errors.Errorf("unknown language: %q", value)
+			return errors.Errorf("unknown lbngubge: %q", vblue)
 		}
 		return nil
 	}
 
 	isYesNoOnly := func() error {
-		v := parseYesNoOnly(value)
-		if v == Invalid {
-			return errors.Errorf("invalid value %q for field %q. Valid values are: yes, only, no", value, field)
+		v := pbrseYesNoOnly(vblue)
+		if v == Invblid {
+			return errors.Errorf("invblid vblue %q for field %q. Vblid vblues bre: yes, only, no", vblue, field)
 		}
 		return nil
 	}
@@ -217,18 +217,18 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 		return errors.Errorf("unrecognized field %q", field)
 	}
 
-	isValidSelect := func() error {
-		_, err := filter.SelectPathFromString(value)
+	isVblidSelect := func() error {
+		_, err := filter.SelectPbthFromString(vblue)
 		return err
 	}
 
-	isValidGitDate := func() error {
-		_, err := ParseGitDate(value, time.Now)
+	isVblidGitDbte := func() error {
+		_, err := PbrseGitDbte(vblue, time.Now)
 		return err
 	}
 
-	satisfies := func(fns ...func() error) error {
-		for _, fn := range fns {
+	sbtisfies := func(fns ...func() error) error {
+		for _, fn := rbnge fns {
 			if err := fn(); err != nil {
 				return err
 			}
@@ -237,254 +237,254 @@ func validateField(field, value string, negated bool, seen map[string]struct{}) 
 	}
 
 	switch field {
-	case
-		FieldDefault:
-		// Search patterns are not validated here, as it depends on the search type.
-	case
-		FieldCase:
-		return satisfies(isSingular, isBoolean, isNotNegated)
-	case
+	cbse
+		FieldDefbult:
+		// Sebrch pbtterns bre not vblidbted here, bs it depends on the sebrch type.
+	cbse
+		FieldCbse:
+		return sbtisfies(isSingulbr, isBoolebn, isNotNegbted)
+	cbse
 		FieldRepo:
-		return satisfies(isValidRepoRegexp)
-	case
+		return sbtisfies(isVblidRepoRegexp)
+	cbse
 		FieldContext:
-		return satisfies(isSingular, isNotNegated)
-	case
+		return sbtisfies(isSingulbr, isNotNegbted)
+	cbse
 		FieldFile:
-		return satisfies(isValidRegexp)
-	case
-		FieldLang:
-		return satisfies(isLanguage)
-	case
+		return sbtisfies(isVblidRegexp)
+	cbse
+		FieldLbng:
+		return sbtisfies(isLbngubge)
+	cbse
 		FieldType:
-		return satisfies(isNotNegated)
-	case
-		FieldPatternType,
+		return sbtisfies(isNotNegbted)
+	cbse
+		FieldPbtternType,
 		FieldContent,
 		FieldVisibility:
-		return satisfies(isSingular, isNotNegated)
-	case
-		FieldRepoHasFile:
-		return satisfies(isValidRegexp)
-	case
-		FieldRepoHasCommitAfter:
-		return satisfies(isSingular, isNotNegated)
-	case
+		return sbtisfies(isSingulbr, isNotNegbted)
+	cbse
+		FieldRepoHbsFile:
+		return sbtisfies(isVblidRegexp)
+	cbse
+		FieldRepoHbsCommitAfter:
+		return sbtisfies(isSingulbr, isNotNegbted)
+	cbse
 		FieldBefore,
 		FieldAfter:
-		return satisfies(isNotNegated, isValidGitDate)
-	case
+		return sbtisfies(isNotNegbted, isVblidGitDbte)
+	cbse
 		FieldAuthor,
 		FieldCommitter,
-		FieldMessage:
-		return satisfies(isValidRegexp)
-	case
+		FieldMessbge:
+		return sbtisfies(isVblidRegexp)
+	cbse
 		FieldIndex,
 		FieldFork,
 		FieldArchived:
-		return satisfies(isSingular, isNotNegated, isYesNoOnly)
-	case
+		return sbtisfies(isSingulbr, isNotNegbted, isYesNoOnly)
+	cbse
 		FieldCount:
-		return satisfies(isSingular, isNumber, isNotNegated)
-	case
+		return sbtisfies(isSingulbr, isNumber, isNotNegbted)
+	cbse
 		FieldCombyRule:
-		return satisfies(isSingular, isNotNegated)
-	case
+		return sbtisfies(isSingulbr, isNotNegbted)
+	cbse
 		FieldTimeout:
-		return satisfies(isSingular, isNotNegated, isDuration)
-	case
+		return sbtisfies(isSingulbr, isNotNegbted, isDurbtion)
+	cbse
 		FieldRev:
-		return satisfies(isSingular, isNotNegated)
-	case
+		return sbtisfies(isSingulbr, isNotNegbted)
+	cbse
 		FieldSelect:
-		return satisfies(isSingular, isNotNegated, isValidSelect)
-	default:
+		return sbtisfies(isSingulbr, isNotNegbted, isVblidSelect)
+	defbult:
 		return isUnrecognizedField()
 	}
 	return nil
 }
 
-// A query with a rev: filter is invalid if:
-// (1) a repo is specified with @, OR
+// A query with b rev: filter is invblid if:
+// (1) b repo is specified with @, OR
 // (2) no repo is specified, OR
-// (3) an empty repo value is specified (i.e., repo:"").
-func validateRepoRevPair(nodes []Node) error {
-	var seenRepoWithCommit bool
-	var seenRepo bool
-	var seenEmptyRepo bool
-	VisitField(nodes, FieldRepo, func(value string, negated bool, _ Annotation) {
+// (3) bn empty repo vblue is specified (i.e., repo:"").
+func vblidbteRepoRevPbir(nodes []Node) error {
+	vbr seenRepoWithCommit bool
+	vbr seenRepo bool
+	vbr seenEmptyRepo bool
+	VisitField(nodes, FieldRepo, func(vblue string, negbted bool, _ Annotbtion) {
 		seenRepo = true
-		seenEmptyRepo = value == ""
-		if !negated && strings.ContainsRune(value, '@') {
+		seenEmptyRepo = vblue == ""
+		if !negbted && strings.ContbinsRune(vblue, '@') {
 			seenRepoWithCommit = true
 		}
 	})
 	revSpecified := Exists(nodes, func(node Node) bool {
-		n, ok := node.(Parameter)
+		n, ok := node.(Pbrbmeter)
 		if ok && n.Field == FieldRev {
 			return true
 		}
-		return false
+		return fblse
 	})
 	if seenRepoWithCommit && revSpecified {
-		return errors.New("invalid syntax. You specified both @ and rev: for a" +
-			" repo: filter and I don't know how to interpret this. Remove either @ or rev: and try again")
+		return errors.New("invblid syntbx. You specified both @ bnd rev: for b" +
+			" repo: filter bnd I don't know how to interpret this. Remove either @ or rev: bnd try bgbin")
 	}
 	if !seenRepo && revSpecified {
-		return errors.New("invalid syntax. The query contains `rev:` without `repo:`. Add a `repo:` filter and try again")
+		return errors.New("invblid syntbx. The query contbins `rev:` without `repo:`. Add b `repo:` filter bnd try bgbin")
 	}
 	if seenEmptyRepo && revSpecified {
-		return errors.New("invalid syntax. The query contains `rev:` but `repo:` is empty. Add a non-empty `repo:` filter and try again")
+		return errors.New("invblid syntbx. The query contbins `rev:` but `repo:` is empty. Add b non-empty `repo:` filter bnd try bgbin")
 	}
 	return nil
 }
 
-// Queries containing commit parameters without type:diff or type:commit are not
-// valid. cf. https://docs.sourcegraph.com/code_search/reference/language#commit-parameter
-func validateCommitParameters(nodes []Node) error {
-	var seenCommitParam string
-	var typeCommitExists bool
-	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
-		if field == FieldAuthor || field == FieldBefore || field == FieldAfter || field == FieldMessage {
-			seenCommitParam = field
+// Queries contbining commit pbrbmeters without type:diff or type:commit bre not
+// vblid. cf. https://docs.sourcegrbph.com/code_sebrch/reference/lbngubge#commit-pbrbmeter
+func vblidbteCommitPbrbmeters(nodes []Node) error {
+	vbr seenCommitPbrbm string
+	vbr typeCommitExists bool
+	VisitPbrbmeter(nodes, func(field, vblue string, _ bool, _ Annotbtion) {
+		if field == FieldAuthor || field == FieldBefore || field == FieldAfter || field == FieldMessbge {
+			seenCommitPbrbm = field
 		}
-		if field == FieldType && (value == "commit" || value == "diff") {
+		if field == FieldType && (vblue == "commit" || vblue == "diff") {
 			typeCommitExists = true
 		}
 	})
-	if seenCommitParam != "" && !typeCommitExists {
-		return errors.Errorf(`your query contains the field '%s', which requires type:commit or type:diff in the query`, seenCommitParam)
+	if seenCommitPbrbm != "" && !typeCommitExists {
+		return errors.Errorf(`your query contbins the field '%s', which requires type:commit or type:diff in the query`, seenCommitPbrbm)
 	}
 	return nil
 }
 
-func validateTypeStructural(nodes []Node) error {
-	seenStructural := false
-	seenType := false
-	typeDiff := false
-	invalid := Exists(nodes, func(node Node) bool {
-		if p, ok := node.(Pattern); ok && p.Annotation.Labels.IsSet(Structural) {
-			seenStructural = true
+func vblidbteTypeStructurbl(nodes []Node) error {
+	seenStructurbl := fblse
+	seenType := fblse
+	typeDiff := fblse
+	invblid := Exists(nodes, func(node Node) bool {
+		if p, ok := node.(Pbttern); ok && p.Annotbtion.Lbbels.IsSet(Structurbl) {
+			seenStructurbl = true
 		}
-		if p, ok := node.(Parameter); ok && p.Field == FieldType {
+		if p, ok := node.(Pbrbmeter); ok && p.Field == FieldType {
 			seenType = true
-			typeDiff = p.Value == "diff"
+			typeDiff = p.Vblue == "diff"
 		}
-		return seenStructural && seenType
+		return seenStructurbl && seenType
 	})
-	if invalid {
-		basic := "this structural search query specifies `type:` and is not supported. Structural search syntax only applies to searching file contents"
+	if invblid {
+		bbsic := "this structurbl sebrch query specifies `type:` bnd is not supported. Structurbl sebrch syntbx only bpplies to sebrching file contents"
 		if typeDiff {
-			basic = basic + " and is not currently supported for diff searches"
+			bbsic = bbsic + " bnd is not currently supported for diff sebrches"
 		}
-		return errors.New(basic)
+		return errors.New(bbsic)
 	}
 	return nil
 }
 
-func validateRefGlobs(nodes []Node) error {
-	if !ContainsRefGlobs(nodes) {
+func vblidbteRefGlobs(nodes []Node) error {
+	if !ContbinsRefGlobs(nodes) {
 		return nil
 	}
-	var indexValue string
-	VisitField(nodes, FieldIndex, func(value string, _ bool, _ Annotation) {
-		indexValue = value
+	vbr indexVblue string
+	VisitField(nodes, FieldIndex, func(vblue string, _ bool, _ Annotbtion) {
+		indexVblue = vblue
 	})
-	if parseYesNoOnly(indexValue) == Only {
-		return errors.Errorf("invalid index:%s (revisions with glob pattern cannot be resolved for indexed searches)", indexValue)
+	if pbrseYesNoOnly(indexVblue) == Only {
+		return errors.Errorf("invblid index:%s (revisions with glob pbttern cbnnot be resolved for indexed sebrches)", indexVblue)
 	}
 	return nil
 }
 
-// validatePredicates validates predicate parameters with respect to their validation logic.
-func validatePredicate(field, value string, negated bool) error {
-	name, params := ParseAsPredicate(value)                // guaranteed to succeed
-	predicate := DefaultPredicateRegistry.Get(field, name) // guaranteed to succeed
-	if err := predicate.Unmarshal(params, negated); err != nil {
-		return errors.Errorf("invalid predicate value: %s", err)
+// vblidbtePredicbtes vblidbtes predicbte pbrbmeters with respect to their vblidbtion logic.
+func vblidbtePredicbte(field, vblue string, negbted bool) error {
+	nbme, pbrbms := PbrseAsPredicbte(vblue)                // gubrbnteed to succeed
+	predicbte := DefbultPredicbteRegistry.Get(field, nbme) // gubrbnteed to succeed
+	if err := predicbte.Unmbrshbl(pbrbms, negbted); err != nil {
+		return errors.Errorf("invblid predicbte vblue: %s", err)
 	}
 	return nil
 }
 
-// validateRepoHasFile validates that the repohasfile parameter can be executed.
-// A query like `repohasfile:foo type:symbol patter-to-match-symbols` is
+// vblidbteRepoHbsFile vblidbtes thbt the repohbsfile pbrbmeter cbn be executed.
+// A query like `repohbsfile:foo type:symbol pbtter-to-mbtch-symbols` is
 // currently not supported.
-func validateRepoHasFile(nodes []Node) error {
-	var seenRepoHasFile, seenTypeSymbol bool
-	VisitParameter(nodes, func(field, value string, _ bool, _ Annotation) {
-		if field == FieldRepoHasFile {
-			seenRepoHasFile = true
+func vblidbteRepoHbsFile(nodes []Node) error {
+	vbr seenRepoHbsFile, seenTypeSymbol bool
+	VisitPbrbmeter(nodes, func(field, vblue string, _ bool, _ Annotbtion) {
+		if field == FieldRepoHbsFile {
+			seenRepoHbsFile = true
 		}
-		if field == FieldType && strings.EqualFold(value, "symbol") {
+		if field == FieldType && strings.EqublFold(vblue, "symbol") {
 			seenTypeSymbol = true
 		}
 	})
-	if seenRepoHasFile && seenTypeSymbol {
-		return errors.New("repohasfile is not compatible for type:symbol. Subscribe to https://github.com/sourcegraph/sourcegraph/issues/4610 for updates")
+	if seenRepoHbsFile && seenTypeSymbol {
+		return errors.New("repohbsfile is not compbtible for type:symbol. Subscribe to https://github.com/sourcegrbph/sourcegrbph/issues/4610 for updbtes")
 	}
 	return nil
 }
 
-// validatePureLiteralPattern checks that no pattern expression contains and/or
-// operators nested inside concat. It may happen that we interpret a query this
-// way due to ambiguity. If this happens, return an error message.
-func validatePureLiteralPattern(nodes []Node, balanced bool) error {
+// vblidbtePureLiterblPbttern checks thbt no pbttern expression contbins bnd/or
+// operbtors nested inside concbt. It mby hbppen thbt we interpret b query this
+// wby due to bmbiguity. If this hbppens, return bn error messbge.
+func vblidbtePureLiterblPbttern(nodes []Node, bblbnced bool) error {
 	impure := Exists(nodes, func(node Node) bool {
-		if operator, ok := node.(Operator); ok && operator.Kind == Concat {
-			for _, node := range operator.Operands {
-				if op, ok := node.(Operator); ok && (op.Kind == Or || op.Kind == And) {
+		if operbtor, ok := node.(Operbtor); ok && operbtor.Kind == Concbt {
+			for _, node := rbnge operbtor.Operbnds {
+				if op, ok := node.(Operbtor); ok && (op.Kind == Or || op.Kind == And) {
 					return true
 				}
 			}
 		}
-		return false
+		return fblse
 	})
 	if impure {
-		if !balanced {
-			return errors.New("this literal search query contains unbalanced parentheses. I tried to guess what you meant, but wasn't able to. Maybe you missed a parenthesis? Otherwise, try using the content: filter if the pattern is unbalanced")
+		if !bblbnced {
+			return errors.New("this literbl sebrch query contbins unbblbnced pbrentheses. I tried to guess whbt you mebnt, but wbsn't bble to. Mbybe you missed b pbrenthesis? Otherwise, try using the content: filter if the pbttern is unbblbnced")
 		}
-		return errors.New("i'm having trouble understanding that query. The combination of parentheses is the problem. Try using the content: filter to quote patterns that contain parentheses")
+		return errors.New("i'm hbving trouble understbnding thbt query. The combinbtion of pbrentheses is the problem. Try using the content: filter to quote pbtterns thbt contbin pbrentheses")
 	}
 	return nil
 }
 
-func validateParameters(nodes []Node) error {
-	var err error
-	seen := map[string]struct{}{}
-	VisitParameter(nodes, func(field, value string, negated bool, annotation Annotation) {
+func vblidbtePbrbmeters(nodes []Node) error {
+	vbr err error
+	seen := mbp[string]struct{}{}
+	VisitPbrbmeter(nodes, func(field, vblue string, negbted bool, bnnotbtion Annotbtion) {
 		if err != nil {
 			return
 		}
-		if annotation.Labels.IsSet(IsPredicate) {
-			err = validatePredicate(field, value, negated)
+		if bnnotbtion.Lbbels.IsSet(IsPredicbte) {
+			err = vblidbtePredicbte(field, vblue, negbted)
 			seen[field] = struct{}{}
 			return
 		}
-		err = validateField(field, value, negated, seen)
+		err = vblidbteField(field, vblue, negbted, seen)
 		seen[field] = struct{}{}
 	})
 	return err
 }
 
-func validatePattern(nodes []Node) error {
-	var err error
-	VisitPattern(nodes, func(value string, negated bool, annotation Annotation) {
+func vblidbtePbttern(nodes []Node) error {
+	vbr err error
+	VisitPbttern(nodes, func(vblue string, negbted bool, bnnotbtion Annotbtion) {
 		if err != nil {
 			return
 		}
-		if annotation.Labels.IsSet(Regexp) {
-			_, err = regexp.Compile(value)
+		if bnnotbtion.Lbbels.IsSet(Regexp) {
+			_, err = regexp.Compile(vblue)
 		}
-		if annotation.Labels.IsSet(Structural) && negated {
-			err = errors.New("the query contains a negated search pattern. Structural search does not support negated search patterns at the moment")
+		if bnnotbtion.Lbbels.IsSet(Structurbl) && negbted {
+			err = errors.New("the query contbins b negbted sebrch pbttern. Structurbl sebrch does not support negbted sebrch pbtterns bt the moment")
 		}
 	})
 	return err
 }
 
-func validate(nodes []Node) error {
+func vblidbte(nodes []Node) error {
 	succeeds := func(fns ...func([]Node) error) error {
-		for _, fn := range fns {
+		for _, fn := rbnge fns {
 			if err := fn(nodes); err != nil {
 				return err
 			}
@@ -493,13 +493,13 @@ func validate(nodes []Node) error {
 	}
 
 	return succeeds(
-		validateParameters,
-		validatePattern,
-		validateRepoRevPair,
-		validateRepoHasFile,
-		validateCommitParameters,
-		validateTypeStructural,
-		validateRefGlobs,
+		vblidbtePbrbmeters,
+		vblidbtePbttern,
+		vblidbteRepoRevPbir,
+		vblidbteRepoHbsFile,
+		vblidbteCommitPbrbmeters,
+		vblidbteTypeStructurbl,
+		vblidbteRefGlobs,
 	)
 }
 
@@ -509,37 +509,37 @@ const (
 	Yes     YesNoOnly = "yes"
 	No      YesNoOnly = "no"
 	Only    YesNoOnly = "only"
-	Invalid YesNoOnly = "invalid"
+	Invblid YesNoOnly = "invblid"
 )
 
-func parseYesNoOnly(s string) YesNoOnly {
+func pbrseYesNoOnly(s string) YesNoOnly {
 	switch s {
-	case "y", "Y", "yes", "YES", "Yes":
+	cbse "y", "Y", "yes", "YES", "Yes":
 		return Yes
-	case "n", "N", "no", "NO", "No":
+	cbse "n", "N", "no", "NO", "No":
 		return No
-	case "o", "only", "ONLY", "Only":
+	cbse "o", "only", "ONLY", "Only":
 		return Only
-	default:
-		if b, err := strconv.ParseBool(s); err == nil {
+	defbult:
+		if b, err := strconv.PbrseBool(s); err == nil {
 			if b {
 				return Yes
 			}
 			return No
 		}
-		return Invalid
+		return Invblid
 	}
 }
 
-func ContainsRefGlobs(q Q) bool {
+func ContbinsRefGlobs(q Q) bool {
 	if repoFilters, _ := q.Repositories(); len(repoFilters) > 0 {
-		for _, r := range repoFilters {
-			for _, rev := range r.Revs {
-				if rev.HasRefGlob() {
+		for _, r := rbnge repoFilters {
+			for _, rev := rbnge r.Revs {
+				if rev.HbsRefGlob() {
 					return true
 				}
 			}
 		}
 	}
-	return false
+	return fblse
 }

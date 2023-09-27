@@ -1,11 +1,11 @@
-package store
+pbckbge store
 
-// Repo represents a repository, regardless from which codehost it came from.
+// Repo represents b repository, regbrdless from which codehost it cbme from.
 type Repo struct {
 	GitURL   string
 	ToGitURL string
-	Name     string
-	Failed   string
-	Created  bool
+	Nbme     string
+	Fbiled   string
+	Crebted  bool
 	Pushed   bool
 }

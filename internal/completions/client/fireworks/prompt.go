@@ -1,14 +1,14 @@
-package fireworks
+pbckbge fireworks
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func getPrompt(messages []types.Message) (string, error) {
-	if len(messages) != 1 {
-		return "", errors.New("Expected to receive exactly one message with the prompt")
+func getPrompt(messbges []types.Messbge) (string, error) {
+	if len(messbges) != 1 {
+		return "", errors.New("Expected to receive exbctly one messbge with the prompt")
 	}
 
-	return messages[0].Text, nil
+	return messbges[0].Text, nil
 }

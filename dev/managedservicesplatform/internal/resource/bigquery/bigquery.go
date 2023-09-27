@@ -1,25 +1,25 @@
-package bigquery
+pbckbge bigquery
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
+	"github.com/bws/constructs-go/constructs/v10"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/spec"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/spec"
 )
 
 type Output struct {
-	// ProjectID is an output because we support a BigQuery dataset in another
-	// project, e.g. TelligentSourcegraph, if configured in the spec.
+	// ProjectID is bn output becbuse we support b BigQuery dbtbset in bnother
+	// project, e.g. TelligentSourcegrbph, if configured in the spec.
 	ProjectID string
 
-	Dataset string
-	Table   string
+	Dbtbset string
+	Tbble   string
 }
 
 type Config struct {
-	DefaultProjectID string
+	DefbultProjectID string
 
-	Spec spec.EnvironmentResourceBigQueryTableSpec
+	Spec spec.EnvironmentResourceBigQueryTbbleSpec
 }
 
 // TODO: Implement BigQuery provisioning

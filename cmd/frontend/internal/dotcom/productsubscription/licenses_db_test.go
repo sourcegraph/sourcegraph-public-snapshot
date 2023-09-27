@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
@@ -8,51 +8,51 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestProductLicenses_Create(t *testing.T) {
+func TestProductLicenses_Crebte(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
 	subscriptionStore := dbSubscriptions{db: db}
 	store := dbLicenses{db: db}
 
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "u"})
 	require.NoError(t, err)
 
 	t.Run("empty license info", func(t *testing.T) {
-		ps, err := subscriptionStore.Create(ctx, u.ID, u.Username)
+		ps, err := subscriptionStore.Crebte(ctx, u.ID, u.Usernbme)
 		require.NoError(t, err)
 
-		// This should not happen in practice but just in case to check it won't blow up
-		id, err := store.Create(ctx, ps, "k1", 0, license.Info{})
+		// This should not hbppen in prbctice but just in cbse to check it won't blow up
+		id, err := store.Crebte(ctx, ps, "k1", 0, license.Info{})
 		require.NoError(t, err)
 
 		got, err := store.GetByID(ctx, id)
 		require.NoError(t, err)
-		assert.Nil(t, got.LicenseVersion)
-		assert.Nil(t, got.LicenseTags)
-		assert.Nil(t, got.LicenseUserCount)
-		assert.Nil(t, got.LicenseExpiresAt)
+		bssert.Nil(t, got.LicenseVersion)
+		bssert.Nil(t, got.LicenseTbgs)
+		bssert.Nil(t, got.LicenseUserCount)
+		bssert.Nil(t, got.LicenseExpiresAt)
 	})
 
-	ps, err := subscriptionStore.Create(ctx, u.ID, "")
+	ps, err := subscriptionStore.Crebte(ctx, u.ID, "")
 	require.NoError(t, err)
 
 	now := timeutil.Now()
 	licenseV1 := license.Info{
-		Tags:      []string{"true-up"},
+		Tbgs:      []string{"true-up"},
 		UserCount: 10,
 		ExpiresAt: now,
 	}
@@ -61,89 +61,89 @@ func TestProductLicenses_Create(t *testing.T) {
 	sfOpID := "0A8908908A800F"
 
 	licenseV2 := license.Info{
-		Tags:                     []string{"true-up"},
+		Tbgs:                     []string{"true-up"},
 		UserCount:                10,
 		ExpiresAt:                now,
-		SalesforceSubscriptionID: &sfSubID,
-		SalesforceOpportunityID:  &sfOpID,
+		SblesforceSubscriptionID: &sfSubID,
+		SblesforceOpportunityID:  &sfOpID,
 	}
 
-	for v, info := range []license.Info{licenseV1, licenseV2} {
+	for v, info := rbnge []license.Info{licenseV1, licenseV2} {
 		t.Run(fmt.Sprintf("Test v%d", v+1), func(t *testing.T) {
 			version := v + 1
 			key := fmt.Sprintf("key%d", version)
-			pl, err := store.Create(ctx, ps, key, version, info)
+			pl, err := store.Crebte(ctx, ps, key, version, info)
 			require.NoError(t, err)
 
 			got, err := store.GetByID(ctx, pl)
 			require.NoError(t, err)
-			assert.Equal(t, pl, got.ID)
-			assert.Equal(t, ps, got.ProductSubscriptionID)
-			assert.Equal(t, key, got.LicenseKey)
-			assert.NotNil(t, got.LicenseVersion)
-			assert.Equal(t, version, int(*got.LicenseVersion))
-			require.NotNil(t, got.LicenseTags)
-			assert.Equal(t, info.Tags, got.LicenseTags)
+			bssert.Equbl(t, pl, got.ID)
+			bssert.Equbl(t, ps, got.ProductSubscriptionID)
+			bssert.Equbl(t, key, got.LicenseKey)
+			bssert.NotNil(t, got.LicenseVersion)
+			bssert.Equbl(t, version, int(*got.LicenseVersion))
+			require.NotNil(t, got.LicenseTbgs)
+			bssert.Equbl(t, info.Tbgs, got.LicenseTbgs)
 			require.NotNil(t, got.LicenseUserCount)
-			assert.Equal(t, int(info.UserCount), *got.LicenseUserCount)
+			bssert.Equbl(t, int(info.UserCount), *got.LicenseUserCount)
 			require.NotNil(t, got.LicenseExpiresAt)
-			assert.Equal(t, info.ExpiresAt, *got.LicenseExpiresAt)
+			bssert.Equbl(t, info.ExpiresAt, *got.LicenseExpiresAt)
 
 			ts, err := store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps})
 			require.NoError(t, err)
-			assert.Len(t, ts, version)
+			bssert.Len(t, ts, version)
 
-			// Invalid subscription ID.
-			ts, err = store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca"})
+			// Invblid subscription ID.
+			ts, err = store.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69db12d5-323c-4e42-9d44-cc7951639bcb"})
 			require.NoError(t, err)
-			assert.Len(t, ts, 0)
+			bssert.Len(t, ts, 0)
 		})
 	}
 }
 
 func TestGetByToken(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
 	store := dbLicenses{db: db}
 
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "user"})
+	u, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user"})
 	require.NoError(t, err)
 
 	lc := insertLicense(t, ctx, db, u, "key")
 	require.NotNil(t, lc.LicenseCheckToken)
 
 	tests := []struct {
-		name      string
+		nbme      string
 		token     string
-		want      *string
-		wantError error
+		wbnt      *string
+		wbntError error
 	}{
 		{
-			name:  "ok",
-			token: license.GenerateLicenseKeyBasedAccessToken("key"),
-			want:  &lc.ID,
+			nbme:  "ok",
+			token: license.GenerbteLicenseKeyBbsedAccessToken("key"),
+			wbnt:  &lc.ID,
 		},
 		{
-			name:      "invalid non-hex token",
-			token:     "invalid",
-			wantError: errTokenInvalid,
+			nbme:      "invblid non-hex token",
+			token:     "invblid",
+			wbntError: errTokenInvblid,
 		},
 		{
-			name:      "no match found",
+			nbme:      "no mbtch found",
 			token:     hex.EncodeToString([]byte("key")),
-			wantError: errTokenInvalid,
+			wbntError: errTokenInvblid,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
 			got, err := store.GetByAccessToken(ctx, tt.token)
-			if tt.wantError != nil {
-				require.Equal(t, tt.wantError, err)
+			if tt.wbntError != nil {
+				require.Equbl(t, tt.wbntError, err)
 			} else {
 				require.NoError(t, err)
-				require.Equal(t, *tt.want, got.ID)
+				require.Equbl(t, *tt.wbnt, got.ID)
 			}
 		})
 	}
@@ -154,12 +154,12 @@ func TestAssignSiteID(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
 	store := dbLicenses{db: db}
 
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "user"})
+	u, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "user"})
 	require.NoError(t, err)
 
 	license := insertLicense(t, ctx, db, u, "key")
@@ -172,21 +172,21 @@ func TestAssignSiteID(t *testing.T) {
 	require.NoError(t, err)
 
 	require.NotNil(t, license.SiteID)
-	require.Equal(t, siteID, *license.SiteID)
+	require.Equbl(t, siteID, *license.SiteID)
 }
 
-func insertLicense(t *testing.T, ctx context.Context, db database.DB, user *types.User, licenseKey string) *dbLicense {
+func insertLicense(t *testing.T, ctx context.Context, db dbtbbbse.DB, user *types.User, licenseKey string) *dbLicense {
 	subscriptionStore := dbSubscriptions{db: db}
 	store := dbLicenses{db: db}
 
-	ps, err := subscriptionStore.Create(ctx, user.ID, "")
+	ps, err := subscriptionStore.Crebte(ctx, user.ID, "")
 	require.NoError(t, err)
 
 	sfSubID := "sf_sub_id"
 	sfOpID := "sf_op_id"
-	id, err := store.Create(ctx, ps, licenseKey, 2, license.Info{
-		SalesforceSubscriptionID: &sfSubID,
-		SalesforceOpportunityID:  &sfOpID,
+	id, err := store.Crebte(ctx, ps, licenseKey, 2, license.Info{
+		SblesforceSubscriptionID: &sfSubID,
+		SblesforceOpportunityID:  &sfOpID,
 	})
 	require.NoError(t, err)
 
@@ -200,24 +200,24 @@ func TestProductLicenses_List(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 	subscriptionStore := dbSubscriptions{db: db}
 	store := dbLicenses{db: db}
 
-	u1, err := db.Users().Create(ctx, database.NewUser{Username: "u1"})
+	u1, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "u1"})
 	require.NoError(t, err)
 
-	ps0, err := subscriptionStore.Create(ctx, u1.ID, "")
+	ps0, err := subscriptionStore.Crebte(ctx, u1.ID, "")
 	require.NoError(t, err)
-	ps1, err := subscriptionStore.Create(ctx, u1.ID, "")
+	ps1, err := subscriptionStore.Crebte(ctx, u1.ID, "")
 	require.NoError(t, err)
 
 	licenses := []struct {
 		key          string
 		expiresAt    time.Time
 		revokedAt    time.Time
-		revokeReason string
+		revokeRebson string
 		siteID       string
 		subscription string
 		version      int
@@ -230,7 +230,7 @@ func TestProductLicenses_List(t *testing.T) {
 		{
 			key:          "k2",
 			revokedAt:    time.Now().Add(-2 * time.Hour),
-			revokeReason: "test",
+			revokeRebson: "test",
 			version:      2,
 		},
 		{
@@ -245,9 +245,9 @@ func TestProductLicenses_List(t *testing.T) {
 		},
 	}
 
-	for _, l := range licenses {
+	for _, l := rbnge licenses {
 		info := license.Info{
-			ExpiresAt: time.Now().Add(365 * 24 * time.Hour), // 1 year from now
+			ExpiresAt: time.Now().Add(365 * 24 * time.Hour), // 1 yebr from now
 		}
 
 		if !l.expiresAt.IsZero() {
@@ -259,11 +259,11 @@ func TestProductLicenses_List(t *testing.T) {
 			subID = l.subscription
 		}
 
-		id, err := store.Create(ctx, subID, l.key, l.version, info)
+		id, err := store.Crebte(ctx, subID, l.key, l.version, info)
 		require.NoError(t, err)
 
 		if !l.revokedAt.IsZero() {
-			err = store.Revoke(ctx, id, l.revokeReason)
+			err = store.Revoke(ctx, id, l.revokeRebson)
 			require.NoError(t, err)
 		}
 		if l.siteID != "" {
@@ -273,74 +273,74 @@ func TestProductLicenses_List(t *testing.T) {
 	}
 
 	tests := []struct {
-		name          string
+		nbme          string
 		opts          dbLicensesListOptions
 		expectedCount int
 	}{
 		{
-			name:          "all",
+			nbme:          "bll",
 			opts:          dbLicensesListOptions{},
 			expectedCount: len(licenses),
 		},
 		{
-			name:          "ps0 licenses",
+			nbme:          "ps0 licenses",
 			opts:          dbLicensesListOptions{ProductSubscriptionID: ps0},
 			expectedCount: len(licenses) - 1,
 		},
 		{
-			name:          "ps1 licenses",
+			nbme:          "ps1 licenses",
 			opts:          dbLicensesListOptions{ProductSubscriptionID: ps1},
 			expectedCount: 1,
 		},
 		{
-			name:          "with side ID only",
+			nbme:          "with side ID only",
 			opts:          dbLicensesListOptions{WithSiteIDsOnly: true},
 			expectedCount: 1,
 		},
 		{
-			name:          "expired only",
+			nbme:          "expired only",
 			opts:          dbLicensesListOptions{Expired: pointers.Ptr(true)},
 			expectedCount: 1,
 		},
 		{
-			name:          "non expired only",
-			opts:          dbLicensesListOptions{Expired: pointers.Ptr(false)},
+			nbme:          "non expired only",
+			opts:          dbLicensesListOptions{Expired: pointers.Ptr(fblse)},
 			expectedCount: len(licenses) - 1,
 		},
 		{
-			name:          "revoked only",
+			nbme:          "revoked only",
 			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(true)},
 			expectedCount: 1,
 		},
 		{
-			name:          "non revoked only",
-			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(false)},
+			nbme:          "non revoked only",
+			opts:          dbLicensesListOptions{Revoked: pointers.Ptr(fblse)},
 			expectedCount: len(licenses) - 1,
 		},
 		{
-			name: "non revoked and non expired",
+			nbme: "non revoked bnd non expired",
 			opts: dbLicensesListOptions{
-				Revoked: pointers.Ptr(false),
-				Expired: pointers.Ptr(false),
+				Revoked: pointers.Ptr(fblse),
+				Expired: pointers.Ptr(fblse),
 			},
 			expectedCount: len(licenses) - 2,
 		},
 		{
-			name: "non revoked and non expired with site ID",
+			nbme: "non revoked bnd non expired with site ID",
 			opts: dbLicensesListOptions{
-				Revoked:         pointers.Ptr(false),
-				Expired:         pointers.Ptr(false),
+				Revoked:         pointers.Ptr(fblse),
+				Expired:         pointers.Ptr(fblse),
 				WithSiteIDsOnly: true,
 			},
 			expectedCount: 1,
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			ts, err := store.List(ctx, test.opts)
 			require.NoError(t, err)
-			assert.Equalf(t, test.expectedCount, len(ts), "got %d product licenses, want %d", len(ts), test.expectedCount)
+			bssert.Equblf(t, test.expectedCount, len(ts), "got %d product licenses, wbnt %d", len(ts), test.expectedCount)
 		})
 	}
 }
@@ -350,34 +350,34 @@ func TestRevokeLicense(t *testing.T) {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
 	subscriptionStore := dbSubscriptions{db: db}
 	store := dbLicenses{db: db}
 
-	// Create a license
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "alice"})
+	// Crebte b license
+	u, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "blice"})
 	require.NoError(t, err)
 
-	ps, err := subscriptionStore.Create(ctx, u.ID, "")
+	ps, err := subscriptionStore.Crebte(ctx, u.ID, "")
 	require.NoError(t, err)
 
-	id, err := store.Create(ctx, ps, "key", 2, license.Info{})
+	id, err := store.Crebte(ctx, ps, "key", 2, license.Info{})
 	require.NoError(t, err)
 
 	// Revoke the license
-	err = store.Revoke(ctx, id, "reason")
+	err = store.Revoke(ctx, id, "rebson")
 	require.NoError(t, err)
 
 	// License should now be revoked
 	license, err := store.GetByID(ctx, id)
 	require.NoError(t, err)
 	require.NotNil(t, license.RevokedAt)
-	require.NotNil(t, license.RevokeReason)
-	require.Equal(t, "reason", *license.RevokeReason)
+	require.NotNil(t, license.RevokeRebson)
+	require.Equbl(t, "rebson", *license.RevokeRebson)
 
 	// Revoke non-existent license
-	err = store.Revoke(ctx, "12345678-1234-5678-1234-567812345678", "reason")
+	err = store.Revoke(ctx, "12345678-1234-5678-1234-567812345678", "rebson")
 	require.Error(t, err, "product license not found")
 }

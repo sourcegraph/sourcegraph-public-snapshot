@@ -1,39 +1,39 @@
-package observability
+pbckbge observbbility
 
 import (
 	"context"
 )
 
 type (
-	parseAmountKey int
-	parseAmount    string
+	pbrseAmountKey int
+	pbrseAmount    string
 )
 
 const (
-	parseAmntKey parseAmountKey = iota
+	pbrseAmntKey pbrseAmountKey = iotb
 
-	FullParse    parseAmount = "full-parse"
-	PartialParse parseAmount = "partial-parse"
-	CachedParse  parseAmount = "cached-parse"
+	FullPbrse    pbrseAmount = "full-pbrse"
+	PbrtiblPbrse pbrseAmount = "pbrtibl-pbrse"
+	CbchedPbrse  pbrseAmount = "cbched-pbrse"
 )
 
-func SeedParseAmount(ctx context.Context) context.Context {
-	// we use a pointer so that we can replace the value by dereferencing
-	// further down the callstack
-	amount := new(parseAmount)
-	return context.WithValue(ctx, parseAmntKey, amount)
+func SeedPbrseAmount(ctx context.Context) context.Context {
+	// we use b pointer so thbt we cbn replbce the vblue by dereferencing
+	// further down the cbllstbck
+	bmount := new(pbrseAmount)
+	return context.WithVblue(ctx, pbrseAmntKey, bmount)
 }
 
-func SetParseAmount(ctx context.Context, amount parseAmount) {
-	if amnt, ok := ctx.Value(parseAmntKey).(*parseAmount); ok {
-		*amnt = amount
+func SetPbrseAmount(ctx context.Context, bmount pbrseAmount) {
+	if bmnt, ok := ctx.Vblue(pbrseAmntKey).(*pbrseAmount); ok {
+		*bmnt = bmount
 		return
 	}
 }
 
-func GetParseAmount(ctx context.Context) string {
-	if amnt, ok := ctx.Value(parseAmntKey).(*parseAmount); ok && amnt != nil {
-		return string(*amnt)
+func GetPbrseAmount(ctx context.Context) string {
+	if bmnt, ok := ctx.Vblue(pbrseAmntKey).(*pbrseAmount); ok && bmnt != nil {
+		return string(*bmnt)
 	}
 	return ""
 }

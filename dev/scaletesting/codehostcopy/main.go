@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -8,180 +8,180 @@ import (
 	"os"
 	"time"
 
-	cueErrs "cuelang.org/go/cue/errors"
-	"github.com/urfave/cli/v2"
+	cueErrs "cuelbng.org/go/cue/errors"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/scaletesting/internal/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/scbletesting/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-//go:embed config.example.cue
-var exampleConfig string
+//go:embed config.exbmple.cue
+vbr exbmpleConfig string
 
-// SSHKeyHandler enables one to add and remove SSH keys
-type SSHKeyHandler interface {
+// SSHKeyHbndler enbbles one to bdd bnd remove SSH keys
+type SSHKeyHbndler interfbce {
 	AddSSHKey(ctx context.Context) (int64, error)
 	DropSSHKey(ctx context.Context, keyID int64) error
 }
 
-type CodeHostSource interface {
+type CodeHostSource interfbce {
 	GitOpts() []GitOpt
-	SSHKeyHandler
-	InitializeFromState(ctx context.Context, stateRepos []*store.Repo) (int, int, error)
-	Iterator() Iterator[[]*store.Repo]
+	SSHKeyHbndler
+	InitiblizeFromStbte(ctx context.Context, stbteRepos []*store.Repo) (int, int, error)
+	Iterbtor() Iterbtor[[]*store.Repo]
 }
 
-type CodeHostDestination interface {
+type CodeHostDestinbtion interfbce {
 	GitOpts() []GitOpt
-	SSHKeyHandler
-	CreateRepo(ctx context.Context, name string) (*url.URL, error)
+	SSHKeyHbndler
+	CrebteRepo(ctx context.Context, nbme string) (*url.URL, error)
 }
 
-type Iterator[T any] interface {
+type Iterbtor[T bny] interfbce {
 	Err() error
 	Next(ctx context.Context) T
 	Done() bool
 }
 
-var app = &cli.App{
-	Usage:       "Copy organizations across code hosts",
-	Description: "https://handbook.sourcegraph.com/departments/engineering/dev/tools/scaletesting/",
+vbr bpp = &cli.App{
+	Usbge:       "Copy orgbnizbtions bcross code hosts",
+	Description: "https://hbndbook.sourcegrbph.com/depbrtments/engineering/dev/tools/scbletesting/",
 	Compiled:    time.Now(),
-	Flags: []cli.Flag{
-		&cli.StringFlag{
-			Name:  "state",
-			Usage: "Path to the file storing state, to resume work from",
-			Value: "codehostcopy.db",
+	Flbgs: []cli.Flbg{
+		&cli.StringFlbg{
+			Nbme:  "stbte",
+			Usbge: "Pbth to the file storing stbte, to resume work from",
+			Vblue: "codehostcopy.db",
 		},
-		&cli.StringFlag{
-			Name:     "config",
-			Usage:    "Path to the config file defining what to copy",
+		&cli.StringFlbg{
+			Nbme:     "config",
+			Usbge:    "Pbth to the config file defining whbt to copy",
 			Required: true,
 		},
-		&cli.PathFlag{
-			Name:     "ssh-key",
-			Usage:    "path to ssh key to use for cloning",
-			Value:    "",
-			Required: false,
+		&cli.PbthFlbg{
+			Nbme:     "ssh-key",
+			Usbge:    "pbth to ssh key to use for cloning",
+			Vblue:    "",
+			Required: fblse,
 		},
 	},
 	Action: func(cmd *cli.Context) error {
-		return doRun(cmd.Context, log.Scoped("runner", ""), cmd.String("state"), cmd.String("config"))
+		return doRun(cmd.Context, log.Scoped("runner", ""), cmd.String("stbte"), cmd.String("config"))
 	},
-	Commands: []*cli.Command{
+	Commbnds: []*cli.Commbnd{
 		{
-			Name:        "example",
-			Description: "Create a new config file to start from",
+			Nbme:        "exbmple",
+			Description: "Crebte b new config file to stbrt from",
 			Action: func(_ *cli.Context) error {
-				fmt.Printf("%s", exampleConfig)
+				fmt.Printf("%s", exbmpleConfig)
 				return nil
 			},
 		},
 		{
-			Name:        "list",
-			Description: "list repos from the 'from' codehost defined in the configuration",
+			Nbme:        "list",
+			Description: "list repos from the 'from' codehost defined in the configurbtion",
 			Action: func(cmd *cli.Context) error {
-				return doList(cmd.Context, log.Scoped("list", ""), cmd.String("state"), cmd.String("config"), cmd.Int("limit"))
+				return doList(cmd.Context, log.Scoped("list", ""), cmd.String("stbte"), cmd.String("config"), cmd.Int("limit"))
 			},
-			Flags: []cli.Flag{
-				&cli.IntFlag{
-					Name:        "limit",
-					DefaultText: "limit the amount of repos that gets printed. Use 0 to print all repos",
-					Value:       10,
+			Flbgs: []cli.Flbg{
+				&cli.IntFlbg{
+					Nbme:        "limit",
+					DefbultText: "limit the bmount of repos thbt gets printed. Use 0 to print bll repos",
+					Vblue:       10,
 				},
 			},
 		},
 	},
 }
 
-func createDestinationCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostDestination, error) {
+func crebteDestinbtionCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostDestinbtion, error) {
 	switch cfg.Kind {
-	case "dummy":
+	cbse "dummy":
 		return NewDummyCodeHost(logger, &cfg), nil
-	case "bitbucket":
+	cbse "bitbucket":
 		return NewBitbucketCodeHost(logger, &cfg)
-	case "gitlab":
-		return NewGitLabCodeHost(ctx, &cfg)
-	case "github":
+	cbse "gitlbb":
+		return NewGitLbbCodeHost(ctx, &cfg)
+	cbse "github":
 		return NewGitHubCodeHost(ctx, &cfg)
-	default:
+	defbult:
 		return nil, errors.Newf("unknown code host %q", cfg.Kind)
 	}
 }
 
-func createSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostSource, error) {
+func crebteSourceCodeHost(ctx context.Context, logger log.Logger, cfg CodeHostDefinition) (CodeHostSource, error) {
 	switch cfg.Kind {
-	case "bitbucket":
+	cbse "bitbucket":
 		return NewBitbucketCodeHost(logger, &cfg)
-	case "github":
+	cbse "github":
 		return NewGitHubCodeHost(ctx, &cfg)
-	case "gitlab":
-		return NewGitLabCodeHost(ctx, &cfg)
-	default:
+	cbse "gitlbb":
+		return NewGitLbbCodeHost(ctx, &cfg)
+	defbult:
 		return nil, errors.Newf("unknown code host %q", cfg.Kind)
 	}
 }
 
-func doRun(ctx context.Context, logger log.Logger, state string, config string) error {
-	cfg, err := loadConfig(config)
+func doRun(ctx context.Context, logger log.Logger, stbte string, config string) error {
+	cfg, err := lobdConfig(config)
 	if err != nil {
-		var cueErr cueErrs.Error
+		vbr cueErr cueErrs.Error
 		if errors.As(err, &cueErr) {
-			logger.Info(cueErrs.Details(err, nil))
+			logger.Info(cueErrs.Detbils(err, nil))
 		}
-		logger.Fatal("failed to load config", log.Error(err))
+		logger.Fbtbl("fbiled to lobd config", log.Error(err))
 	}
 
-	s, err := store.New(state)
+	s, err := store.New(stbte)
 	if err != nil {
-		logger.Fatal("failed to init state", log.Error(err))
+		logger.Fbtbl("fbiled to init stbte", log.Error(err))
 	}
-	from, err := createSourceCodeHost(ctx, logger, cfg.From)
+	from, err := crebteSourceCodeHost(ctx, logger, cfg.From)
 	if err != nil {
-		logger.Fatal("failed to create from code host", log.Error(err))
+		logger.Fbtbl("fbiled to crebte from code host", log.Error(err))
 	}
 
-	dest, err := createDestinationCodeHost(ctx, logger, cfg.Destination)
+	dest, err := crebteDestinbtionCodeHost(ctx, logger, cfg.Destinbtion)
 	if err != nil {
-		logger.Fatal("failed to create destination code host", log.Error(err))
+		logger.Fbtbl("fbiled to crebte destinbtion code host", log.Error(err))
 	}
 	runner := NewRunner(logger, s, from, dest)
-	return runner.Copy(ctx, cfg.MaxConcurrency)
+	return runner.Copy(ctx, cfg.MbxConcurrency)
 }
 
-func doList(ctx context.Context, logger log.Logger, state string, config string, limit int) error {
-	cfg, err := loadConfig(config)
+func doList(ctx context.Context, logger log.Logger, stbte string, config string, limit int) error {
+	cfg, err := lobdConfig(config)
 	if err != nil {
-		var cueErr cueErrs.Error
+		vbr cueErr cueErrs.Error
 		if errors.As(err, &cueErr) {
-			logger.Info(cueErrs.Details(err, nil))
+			logger.Info(cueErrs.Detbils(err, nil))
 		}
-		logger.Fatal("failed to load config", log.Error(err))
+		logger.Fbtbl("fbiled to lobd config", log.Error(err))
 	}
-	s, err := store.New(state)
+	s, err := store.New(stbte)
 	if err != nil {
-		logger.Fatal("failed to init state", log.Error(err))
+		logger.Fbtbl("fbiled to init stbte", log.Error(err))
 	}
 
-	from, err := createSourceCodeHost(ctx, logger, cfg.From)
+	from, err := crebteSourceCodeHost(ctx, logger, cfg.From)
 	if err != nil {
-		logger.Fatal("failed to create from code host", log.Error(err))
+		logger.Fbtbl("fbiled to crebte from code host", log.Error(err))
 	}
 
 	runner := NewRunner(logger, s, from, nil)
 	return runner.List(ctx, limit)
 }
 
-func main() {
+func mbin() {
 	cb := log.Init(log.Resource{
-		Name: "codehostcopy",
+		Nbme: "codehostcopy",
 	})
 	defer cb.Sync()
-	logger := log.Scoped("main", "")
+	logger := log.Scoped("mbin", "")
 
-	if err := app.RunContext(context.Background(), os.Args); err != nil {
-		logger.Fatal("failed to run", log.Error(err))
+	if err := bpp.RunContext(context.Bbckground(), os.Args); err != nil {
+		logger.Fbtbl("fbiled to run", log.Error(err))
 	}
 }

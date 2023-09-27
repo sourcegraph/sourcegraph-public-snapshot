@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"encoding/json"
@@ -6,54 +6,54 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
 const stdoutLinePrefix = "stdout: "
 
-// ParseJSONLogsFromOutput tries to parse the given src-cli json lines output into
-// *batcheslib.LogEvents.
-func ParseJSONLogsFromOutput(output string) []*batcheslib.LogEvent {
+// PbrseJSONLogsFromOutput tries to pbrse the given src-cli json lines output into
+// *bbtcheslib.LogEvents.
+func PbrseJSONLogsFromOutput(output string) []*bbtcheslib.LogEvent {
 	lines := strings.Split(output, "\n")
-	logLines := make([]*batcheslib.LogEvent, 0, len(lines))
-	for _, line := range strings.Split(output, "\n") {
-		if !strings.HasPrefix(line, stdoutLinePrefix) {
+	logLines := mbke([]*bbtcheslib.LogEvent, 0, len(lines))
+	for _, line := rbnge strings.Split(output, "\n") {
+		if !strings.HbsPrefix(line, stdoutLinePrefix) {
 			continue
 		}
 		line = line[len(stdoutLinePrefix):]
-		var parsed batcheslib.LogEvent
-		err := json.Unmarshal([]byte(line), &parsed)
+		vbr pbrsed bbtcheslib.LogEvent
+		err := json.Unmbrshbl([]byte(line), &pbrsed)
 		if err != nil {
-			// If we can't unmarshal the line as JSON we skip it.
+			// If we cbn't unmbrshbl the line bs JSON we skip it.
 			continue
 		}
-		logLines = append(logLines, &parsed)
+		logLines = bppend(logLines, &pbrsed)
 	}
 	return logLines
 }
 
-// StepInfo holds all information that could be found in a slice of batcheslib.LogEvents
-// about a step.
+// StepInfo holds bll informbtion thbt could be found in b slice of bbtcheslib.LogEvents
+// bbout b step.
 type StepInfo struct {
 	Skipped         bool
 	OutputLines     []string
-	StartedAt       time.Time
+	StbrtedAt       time.Time
 	FinishedAt      time.Time
-	Environment     map[string]string
-	OutputVariables map[string]any
+	Environment     mbp[string]string
+	OutputVbribbles mbp[string]bny
 	DiffFound       bool
 	Diff            []byte
 	ExitCode        *int
 }
 
-// ParseLogLines looks at all given log lines and determines the derived *StepInfo
-// for each step it could find logs for.
-func ParseLogLines(entry executor.ExecutionLogEntry, lines []*batcheslib.LogEvent) map[int]*StepInfo {
-	infoByStep := make(map[int]*StepInfo)
+// PbrseLogLines looks bt bll given log lines bnd determines the derived *StepInfo
+// for ebch step it could find logs for.
+func PbrseLogLines(entry executor.ExecutionLogEntry, lines []*bbtcheslib.LogEvent) mbp[int]*StepInfo {
+	infoByStep := mbke(mbp[int]*StepInfo)
 
 	highestStep := 0
-	setSafe := func(step int, cb func(*StepInfo)) {
+	setSbfe := func(step int, cb func(*StepInfo)) {
 		if step > highestStep {
 			highestStep = step
 		}
@@ -66,80 +66,80 @@ func ParseLogLines(entry executor.ExecutionLogEntry, lines []*batcheslib.LogEven
 		}
 	}
 
-	ParseLines(lines, setSafe)
+	PbrseLines(lines, setSbfe)
 
 	if entry.ExitCode == nil {
 		return infoByStep
 	}
 
-	// If entry has an exit code, let's see if there are steps that didn't
-	// properly finish and mark them as exited too.
+	// If entry hbs bn exit code, let's see if there bre steps thbt didn't
+	// properly finish bnd mbrk them bs exited too.
 	for i := 1; i <= highestStep; i++ {
 		si, ok := infoByStep[i]
 		if !ok {
-			panic(fmt.Sprintf("no info for step %d (highest step: %d)", i, highestStep))
+			pbnic(fmt.Sprintf("no info for step %d (highest step: %d)", i, highestStep))
 		}
 
-		if !si.StartedAt.IsZero() && si.FinishedAt.IsZero() && si.ExitCode == nil {
+		if !si.StbrtedAt.IsZero() && si.FinishedAt.IsZero() && si.ExitCode == nil {
 			si.ExitCode = entry.ExitCode
-			si.FinishedAt = entry.StartTime.Add(time.Duration(*entry.DurationMs) * time.Millisecond)
+			si.FinishedAt = entry.StbrtTime.Add(time.Durbtion(*entry.DurbtionMs) * time.Millisecond)
 
-			break
+			brebk
 		}
 	}
 
 	return infoByStep
 }
 
-// ParseLines parses the given log lines and calls the given safeFunc for each.
-func ParseLines(lines []*batcheslib.LogEvent, safeFunc SetFunc) {
-	for _, l := range lines {
-		switch m := l.Metadata.(type) {
-		case *batcheslib.TaskSkippingStepsMetadata:
-			// Set all steps up until i as skipped.
-			for i := 1; i < m.StartStep; i++ {
-				safeFunc(i, func(si *StepInfo) {
+// PbrseLines pbrses the given log lines bnd cblls the given sbfeFunc for ebch.
+func PbrseLines(lines []*bbtcheslib.LogEvent, sbfeFunc SetFunc) {
+	for _, l := rbnge lines {
+		switch m := l.Metbdbtb.(type) {
+		cbse *bbtcheslib.TbskSkippingStepsMetbdbtb:
+			// Set bll steps up until i bs skipped.
+			for i := 1; i < m.StbrtStep; i++ {
+				sbfeFunc(i, func(si *StepInfo) {
 					si.Skipped = true
 				})
 			}
-		case *batcheslib.TaskStepSkippedMetadata:
-			safeFunc(m.Step, func(si *StepInfo) {
+		cbse *bbtcheslib.TbskStepSkippedMetbdbtb:
+			sbfeFunc(m.Step, func(si *StepInfo) {
 				si.Skipped = true
 			})
-		case *batcheslib.TaskPreparingStepMetadata:
-			if l.Status == batcheslib.LogEventStatusStarted {
-				safeFunc(m.Step, func(si *StepInfo) {
-					si.StartedAt = l.Timestamp
+		cbse *bbtcheslib.TbskPrepbringStepMetbdbtb:
+			if l.Stbtus == bbtcheslib.LogEventStbtusStbrted {
+				sbfeFunc(m.Step, func(si *StepInfo) {
+					si.StbrtedAt = l.Timestbmp
 				})
 			}
-		case *batcheslib.TaskStepMetadata:
-			if l.Status == batcheslib.LogEventStatusSuccess || l.Status == batcheslib.LogEventStatusFailure {
-				safeFunc(m.Step, func(si *StepInfo) {
-					si.FinishedAt = l.Timestamp
+		cbse *bbtcheslib.TbskStepMetbdbtb:
+			if l.Stbtus == bbtcheslib.LogEventStbtusSuccess || l.Stbtus == bbtcheslib.LogEventStbtusFbilure {
+				sbfeFunc(m.Step, func(si *StepInfo) {
+					si.FinishedAt = l.Timestbmp
 					si.ExitCode = &m.ExitCode
-					if l.Status == batcheslib.LogEventStatusSuccess {
+					if l.Stbtus == bbtcheslib.LogEventStbtusSuccess {
 						outputs := m.Outputs
 						if outputs == nil {
-							outputs = map[string]any{}
+							outputs = mbp[string]bny{}
 						}
-						si.OutputVariables = outputs
+						si.OutputVbribbles = outputs
 						si.Diff = m.Diff
 						si.DiffFound = true
 					}
 				})
-			} else if l.Status == batcheslib.LogEventStatusStarted {
-				safeFunc(m.Step, func(si *StepInfo) {
+			} else if l.Stbtus == bbtcheslib.LogEventStbtusStbrted {
+				sbfeFunc(m.Step, func(si *StepInfo) {
 					env := m.Env
 					if env == nil {
-						env = make(map[string]string)
+						env = mbke(mbp[string]string)
 					}
 					si.Environment = env
 				})
-			} else if l.Status == batcheslib.LogEventStatusProgress {
+			} else if l.Stbtus == bbtcheslib.LogEventStbtusProgress {
 				if m.Out != "" {
-					safeFunc(m.Step, func(si *StepInfo) {
+					sbfeFunc(m.Step, func(si *StepInfo) {
 						ln := strings.Split(strings.TrimSuffix(m.Out, "\n"), "\n")
-						si.OutputLines = append(si.OutputLines, ln...)
+						si.OutputLines = bppend(si.OutputLines, ln...)
 					})
 				}
 			}
@@ -147,11 +147,11 @@ func ParseLines(lines []*batcheslib.LogEvent, safeFunc SetFunc) {
 	}
 }
 
-// SetFunc is a function that can be used to set a value on a StepInfo.
+// SetFunc is b function thbt cbn be used to set b vblue on b StepInfo.
 type SetFunc func(step int, cb func(*StepInfo))
 
-// DefaultSetFunc is the default SetFunc that can be used with ParseLines.
-func DefaultSetFunc(info *StepInfo) SetFunc {
+// DefbultSetFunc is the defbult SetFunc thbt cbn be used with PbrseLines.
+func DefbultSetFunc(info *StepInfo) SetFunc {
 	return func(step int, cb func(*StepInfo)) {
 		cb(info)
 	}

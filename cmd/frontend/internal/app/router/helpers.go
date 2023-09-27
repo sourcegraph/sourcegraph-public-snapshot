@@ -1,19 +1,19 @@
-package router
+pbckbge router
 
 import (
 	"fmt"
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func URLToRepoTreeEntry(repo api.RepoName, rev, path string) *url.URL {
-	return &url.URL{Path: fmt.Sprintf("/%s%s/-/tree/%s", repo, revStr(rev), path)}
+func URLToRepoTreeEntry(repo bpi.RepoNbme, rev, pbth string) *url.URL {
+	return &url.URL{Pbth: fmt.Sprintf("/%s%s/-/tree/%s", repo, revStr(rev), pbth)}
 }
 
 func revStr(rev string) string {
-	if rev == "" || strings.HasPrefix(rev, "@") {
+	if rev == "" || strings.HbsPrefix(rev, "@") {
 		return rev
 	}
 	return "@" + rev

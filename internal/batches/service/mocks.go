@@ -1,17 +1,17 @@
-package service
+pbckbge service
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
 )
 
 type ServiceMocks struct {
-	ValidateAuthenticator func(ctx context.Context, externalServiceID, externalServiceType string, a auth.Authenticator) error
+	VblidbteAuthenticbtor func(ctx context.Context, externblServiceID, externblServiceType string, b buth.Authenticbtor) error
 }
 
 func (sm *ServiceMocks) Reset() {
-	sm.ValidateAuthenticator = nil
+	sm.VblidbteAuthenticbtor = nil
 }
 
-var Mocks = ServiceMocks{}
+vbr Mocks = ServiceMocks{}

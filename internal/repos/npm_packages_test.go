@@ -1,192 +1,192 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestGetNpmDependencyRepos(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	depsSvc := testDependenciesService(ctx, t, testDependencyRepos)
 
-	type testCase struct {
-		pkgName string
-		matches []string
+	type testCbse struct {
+		pkgNbme string
+		mbtches []string
 	}
 
-	testCases := []testCase{
+	testCbses := []testCbse{
 		{"pkg1", []string{"pkg1@1", "pkg1@2", "pkg1@3"}},
-		{"pkg2", []string{"pkg2@1", "pkg2@0.1-abc"}},
+		{"pkg2", []string{"pkg2@1", "pkg2@0.1-bbc"}},
 		{"@scope/pkg1", []string{"@scope/pkg1@1"}},
 		{"missing", []string{}},
 	}
 
-	for _, testCase := range testCases {
-		deps, _, hasMore, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
-			Scheme:        dependencies.NpmPackagesScheme,
-			Name:          reposource.PackageName(testCase.pkgName),
-			ExactNameOnly: true,
+	for _, testCbse := rbnge testCbses {
+		deps, _, hbsMore, err := depsSvc.ListPbckbgeRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        dependencies.NpmPbckbgesScheme,
+			Nbme:          reposource.PbckbgeNbme(testCbse.pkgNbme),
+			ExbctNbmeOnly: true,
 		})
 		if err != nil {
-			t.Fatalf("unexpected error listing package repos: %v", err)
+			t.Fbtblf("unexpected error listing pbckbge repos: %v", err)
 		}
 
-		if hasMore {
-			t.Error("unexpected more-pages flag set, expected no more pages to follow")
+		if hbsMore {
+			t.Error("unexpected more-pbges flbg set, expected no more pbges to follow")
 		}
 
 		depStrs := []string{}
-		for _, dep := range deps {
-			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
+		for _, dep := rbnge deps {
+			pkg, err := reposource.PbrseNpmPbckbgeFromPbckbgeSyntbx(dep.Nbme)
 			if err != nil {
-				t.Fatalf("unexpected error parsing package from package name: %v", err)
+				t.Fbtblf("unexpected error pbrsing pbckbge from pbckbge nbme: %v", err)
 			}
 
-			for _, version := range dep.Versions {
-				depStrs = append(depStrs,
-					(&reposource.NpmVersionedPackage{
-						NpmPackageName: pkg,
+			for _, version := rbnge dep.Versions {
+				depStrs = bppend(depStrs,
+					(&reposource.NpmVersionedPbckbge{
+						NpmPbckbgeNbme: pkg,
 						Version:        version.Version,
-					}).VersionedPackageSyntax(),
+					}).VersionedPbckbgeSyntbx(),
 				)
 			}
 		}
 		sort.Strings(depStrs)
-		sort.Strings(testCase.matches)
-		require.Equal(t, testCase.matches, depStrs)
+		sort.Strings(testCbse.mbtches)
+		require.Equbl(t, testCbse.mbtches, depStrs)
 	}
 
-	for _, testCase := range testCases {
-		var depStrs []string
-		deps, _, _, err := depsSvc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
-			Scheme:        dependencies.NpmPackagesScheme,
-			Name:          reposource.PackageName(testCase.pkgName),
-			ExactNameOnly: true,
+	for _, testCbse := rbnge testCbses {
+		vbr depStrs []string
+		deps, _, _, err := depsSvc.ListPbckbgeRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+			Scheme:        dependencies.NpmPbckbgesScheme,
+			Nbme:          reposource.PbckbgeNbme(testCbse.pkgNbme),
+			ExbctNbmeOnly: true,
 			Limit:         1,
 		})
 		require.Nil(t, err)
-		if len(testCase.matches) > 0 {
-			require.Equal(t, 1, len(deps))
+		if len(testCbse.mbtches) > 0 {
+			require.Equbl(t, 1, len(deps))
 		} else {
-			require.Equal(t, 0, len(deps))
+			require.Equbl(t, 0, len(deps))
 			continue
 		}
-		pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
+		pkg, err := reposource.PbrseNpmPbckbgeFromPbckbgeSyntbx(deps[0].Nbme)
 		require.Nil(t, err)
-		for _, version := range deps[0].Versions {
-			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{
-				NpmPackageName: pkg,
+		for _, version := rbnge deps[0].Versions {
+			depStrs = bppend(depStrs, (&reposource.NpmVersionedPbckbge{
+				NpmPbckbgeNbme: pkg,
 				Version:        version.Version,
-			}).VersionedPackageSyntax())
+			}).VersionedPbckbgeSyntbx())
 		}
 		sort.Strings(depStrs)
-		sort.Strings(testCase.matches)
-		require.Equal(t, testCase.matches, depStrs)
+		sort.Strings(testCbse.mbtches)
+		require.Equbl(t, testCbse.mbtches, depStrs)
 	}
 }
 
-func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.MinimalPackageRepoRef) *dependencies.Service {
+func testDependenciesService(ctx context.Context, t *testing.T, dependencyRepos []dependencies.MinimblPbckbgeRepoRef) *dependencies.Service {
 	t.Helper()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	depsSvc := dependencies.TestService(db)
 
-	_, _, err := depsSvc.InsertPackageRepoRefs(ctx, dependencyRepos)
+	_, _, err := depsSvc.InsertPbckbgeRepoRefs(ctx, dependencyRepos)
 	if err != nil {
-		t.Fatalf(err.Error())
+		t.Fbtblf(err.Error())
 	}
 
 	return depsSvc
 }
 
-var testDependencies = []string{
+vbr testDependencies = []string{
 	"@scope/pkg1@1",
 	"pkg1@1",
 	"pkg1@2",
 	"pkg1@3",
-	"pkg2@0.1-abc",
+	"pkg2@0.1-bbc",
 	"pkg2@1",
 }
 
-var testDependencyRepos = func() []dependencies.MinimalPackageRepoRef {
-	dependencyRepos := []dependencies.MinimalPackageRepoRef{}
-	for _, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmVersionedPackage(depStr)
+vbr testDependencyRepos = func() []dependencies.MinimblPbckbgeRepoRef {
+	dependencyRepos := []dependencies.MinimblPbckbgeRepoRef{}
+	for _, depStr := rbnge testDependencies {
+		dep, err := reposource.PbrseNpmVersionedPbckbge(depStr)
 		if err != nil {
-			panic(err.Error())
+			pbnic(err.Error())
 		}
 
-		dependencyRepos = append(dependencyRepos, dependencies.MinimalPackageRepoRef{
-			Scheme:   dependencies.NpmPackagesScheme,
-			Name:     dep.PackageSyntax(),
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: dep.Version}},
+		dependencyRepos = bppend(dependencyRepos, dependencies.MinimblPbckbgeRepoRef{
+			Scheme:   dependencies.NpmPbckbgesScheme,
+			Nbme:     dep.PbckbgeSyntbx(),
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: dep.Version}},
 		})
 	}
 
 	return dependencyRepos
 }()
 
-func TestNPMPackagesSource_ListRepos(t *testing.T) {
-	ctx := context.Background()
-	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimalPackageRepoRef{
+func TestNPMPbckbgesSource_ListRepos(t *testing.T) {
+	ctx := context.Bbckground()
+	depsSvc := testDependenciesService(ctx, t, []dependencies.MinimblPbckbgeRepoRef{
 		{
-			Scheme: dependencies.NpmPackagesScheme,
-			Name:   "@sourcegraph/sourcegraph.proposed",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{
-				{Version: "12.0.0"}, // test deduplication with version from config
-				{Version: "12.0.1"}, // test deduplication with version from config
+			Scheme: dependencies.NpmPbckbgesScheme,
+			Nbme:   "@sourcegrbph/sourcegrbph.proposed",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{
+				{Version: "12.0.0"}, // test deduplicbtion with version from config
+				{Version: "12.0.1"}, // test deduplicbtion with version from config
 			},
 		},
 		{
-			Scheme:   dependencies.NpmPackagesScheme,
-			Name:     "@sourcegraph/web-ext",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "3.0.0-fork.1"}},
+			Scheme:   dependencies.NpmPbckbgesScheme,
+			Nbme:     "@sourcegrbph/web-ext",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: "3.0.0-fork.1"}},
 		},
 		{
-			Scheme:   dependencies.NpmPackagesScheme,
-			Name:     "fastq",
-			Versions: []dependencies.MinimalPackageRepoRefVersion{{Version: "0.9.9"}}, // test missing modules still create a repo.
+			Scheme:   dependencies.NpmPbckbgesScheme,
+			Nbme:     "fbstq",
+			Versions: []dependencies.MinimblPbckbgeRepoRefVersion{{Version: "0.9.9"}}, // test missing modules still crebte b repo.
 		},
 	})
 
-	svc := types.ExternalService{
-		Kind: extsvc.KindNpmPackages,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, &schema.NpmPackagesConnection{
+	svc := types.ExternblService{
+		Kind: extsvc.KindNpmPbckbges,
+		Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, &schemb.NpmPbckbgesConnection{
 			Registry:     "https://registry.npmjs.org",
-			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
+			Dependencies: []string{"@sourcegrbph/prettierrc@2.2.0"},
 		})),
 	}
 
-	cf, save := NewClientFactory(t, t.Name())
-	t.Cleanup(func() { save(t) })
+	cf, sbve := NewClientFbctory(t, t.Nbme())
+	t.Clebnup(func() { sbve(t) })
 
-	src, err := NewNpmPackagesSource(ctx, &svc, cf)
+	src, err := NewNpmPbckbgesSource(ctx, &svc, cf)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	src.SetDependenciesService(depsSvc)
 
 	repos, err := ListAll(ctx, src)
 	sort.Slice(repos, func(i, j int) bool {
-		return repos[i].Name < repos[j].Name
+		return repos[i].Nbme < repos[j].Nbme
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdbtb/sources/"+t.Nbme(), Updbte(t.Nbme()), repos)
 }

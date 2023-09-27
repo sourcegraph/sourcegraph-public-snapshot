@@ -1,19 +1,19 @@
-package dotcomuser
+pbckbge dotcomuser
 
 import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hbshutil"
 )
 
-// DotcomUserGatewayAccessTokenPrefix is the prefix used for identifying tokens
-// generated for a dotcom api token .
-const DotcomUserGatewayAccessTokenPrefix = "sgd_" // "(S)ource(g)raph (d)otcom user key"
+// DotcomUserGbtewbyAccessTokenPrefix is the prefix used for identifying tokens
+// generbted for b dotcom bpi token .
+const DotcomUserGbtewbyAccessTokenPrefix = "sgd_" // "(S)ource(g)rbph (d)otcom user key"
 
-// GenerateLicenseKeyBasedAccessToken creates a prefixed, encoded token based on a
-// Sourcegraph license key.
-func GenerateDotcomUserGatewayAccessToken(apiToken string) string {
-	tokenBytes, _ := hex.DecodeString(strings.TrimPrefix(apiToken, "sgp_"))
-	return "sgd_" + hex.EncodeToString(hashutil.ToSHA256Bytes(hashutil.ToSHA256Bytes(tokenBytes)))
+// GenerbteLicenseKeyBbsedAccessToken crebtes b prefixed, encoded token bbsed on b
+// Sourcegrbph license key.
+func GenerbteDotcomUserGbtewbyAccessToken(bpiToken string) string {
+	tokenBytes, _ := hex.DecodeString(strings.TrimPrefix(bpiToken, "sgp_"))
+	return "sgd_" + hex.EncodeToString(hbshutil.ToSHA256Bytes(hbshutil.ToSHA256Bytes(tokenBytes)))
 }

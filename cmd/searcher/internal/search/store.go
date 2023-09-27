@@ -1,11 +1,11 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
-	"archive/zip"
+	"brchive/tbr"
+	"brchive/zip"
 	"bytes"
 	"context"
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"fmt"
 	"io"
@@ -13,251 +13,251 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/mountinfo"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/mountinfo"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/diskcache"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/diskcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/xcontext"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// maxFileSize is the limit on file size in bytes. Only files smaller
-// than this are searched.
-const maxFileSize = 2 << 20 // 2MB; match https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/zoekt%24+%22-file_limit%22
+// mbxFileSize is the limit on file size in bytes. Only files smbller
+// thbn this bre sebrched.
+const mbxFileSize = 2 << 20 // 2MB; mbtch https://sourcegrbph.com/sebrch?q=repo:%5Egithub%5C.com/sourcegrbph/zoekt%24+%22-file_limit%22
 
-// Store manages the fetching and storing of git archives. Its main purpose is
-// keeping a local disk cache of the fetched archives to help speed up future
-// requests for the same archive. As a performance optimization, it is also
-// responsible for filtering out files we receive from `git archive` that we
-// do not want to search.
+// Store mbnbges the fetching bnd storing of git brchives. Its mbin purpose is
+// keeping b locbl disk cbche of the fetched brchives to help speed up future
+// requests for the sbme brchive. As b performbnce optimizbtion, it is blso
+// responsible for filtering out files we receive from `git brchive` thbt we
+// do not wbnt to sebrch.
 //
-// We use an LRU to do cache eviction:
+// We use bn LRU to do cbche eviction:
 //
-//   - When to evict is based on the total size of *.zip on disk.
-//   - What to evict uses the LRU algorithm.
-//   - We touch files when opening them, so can do LRU based on file
-//     modification times.
+//   - When to evict is bbsed on the totbl size of *.zip on disk.
+//   - Whbt to evict uses the LRU blgorithm.
+//   - We touch files when opening them, so cbn do LRU bbsed on file
+//     modificbtion times.
 //
-// Note: The store fetches tarballs but stores zips. We want to be able to
-// filter which files we cache, so we need a format that supports streaming
-// (tar). We want to be able to support random concurrent access for reading,
-// so we store as a zip.
+// Note: The store fetches tbrbblls but stores zips. We wbnt to be bble to
+// filter which files we cbche, so we need b formbt thbt supports strebming
+// (tbr). We wbnt to be bble to support rbndom concurrent bccess for rebding,
+// so we store bs b zip.
 type Store struct {
-	// GitserverClient is the client to interact with gitserver.
+	// GitserverClient is the client to interbct with gitserver.
 	GitserverClient gitserver.Client
 
-	// FetchTar returns an io.ReadCloser to a tar archive of repo at commit.
-	// If the error implements "BadRequest() bool", it will be used to
-	// determine if the error is a bad request (eg invalid repo).
-	FetchTar func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error)
+	// FetchTbr returns bn io.RebdCloser to b tbr brchive of repo bt commit.
+	// If the error implements "BbdRequest() bool", it will be used to
+	// determine if the error is b bbd request (eg invblid repo).
+	FetchTbr func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (io.RebdCloser, error)
 
-	// FetchTarPaths is the future version of FetchTar, but for now exists as
-	// its own function to minimize changes.
+	// FetchTbrPbths is the future version of FetchTbr, but for now exists bs
+	// its own function to minimize chbnges.
 	//
-	// If paths is non-empty, the archive will only contain files from paths.
-	// If a path is missing the first Read call will fail with an error.
-	FetchTarPaths func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error)
+	// If pbths is non-empty, the brchive will only contbin files from pbths.
+	// If b pbth is missing the first Rebd cbll will fbil with bn error.
+	FetchTbrPbths func(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (io.RebdCloser, error)
 
-	// FilterTar returns a FilterFunc that filters out files we don't want to write to disk
-	FilterTar func(ctx context.Context, client gitserver.Client, repo api.RepoName, commit api.CommitID) (FilterFunc, error)
+	// FilterTbr returns b FilterFunc thbt filters out files we don't wbnt to write to disk
+	FilterTbr func(ctx context.Context, client gitserver.Client, repo bpi.RepoNbme, commit bpi.CommitID) (FilterFunc, error)
 
-	// Path is the directory to store the cache
-	Path string
+	// Pbth is the directory to store the cbche
+	Pbth string
 
-	// MaxCacheSizeBytes is the maximum size of the cache in bytes. Note:
-	// We can temporarily be larger than MaxCacheSizeBytes. When we go
-	// over MaxCacheSizeBytes we trigger delete files until we get below
-	// MaxCacheSizeBytes.
-	MaxCacheSizeBytes int64
+	// MbxCbcheSizeBytes is the mbximum size of the cbche in bytes. Note:
+	// We cbn temporbrily be lbrger thbn MbxCbcheSizeBytes. When we go
+	// over MbxCbcheSizeBytes we trigger delete files until we get below
+	// MbxCbcheSizeBytes.
+	MbxCbcheSizeBytes int64
 
-	// BackgroundTimeout is the maximum time spent fetching a working copy
-	// from gitserver. If zero then we will respect the passed in context of a
+	// BbckgroundTimeout is the mbximum time spent fetching b working copy
+	// from gitserver. If zero then we will respect the pbssed in context of b
 	// request.
-	BackgroundTimeout time.Duration
+	BbckgroundTimeout time.Durbtion
 
 	// Log is the Logger to use.
 	Log log.Logger
 
-	// ObservationCtx is used to configure observability in diskcache.
-	ObservationCtx *observation.Context
+	// ObservbtionCtx is used to configure observbbility in diskcbche.
+	ObservbtionCtx *observbtion.Context
 
-	// once protects Start
+	// once protects Stbrt
 	once sync.Once
 
-	// cache is the disk backed cache.
-	cache diskcache.Store
+	// cbche is the disk bbcked cbche.
+	cbche diskcbche.Store
 
-	// fetchLimiter limits concurrent calls to FetchTar.
-	fetchLimiter *limiter.MutableLimiter
+	// fetchLimiter limits concurrent cblls to FetchTbr.
+	fetchLimiter *limiter.MutbbleLimiter
 
-	// zipCache provides efficient access to repo zip files.
-	zipCache zipCache
+	// zipCbche provides efficient bccess to repo zip files.
+	zipCbche zipCbche
 }
 
-// FilterFunc filters tar files based on their header.
-// Tar files for which FilterFunc evaluates to true
-// are not stored in the target zip.
-type FilterFunc func(hdr *tar.Header) bool
+// FilterFunc filters tbr files bbsed on their hebder.
+// Tbr files for which FilterFunc evblubtes to true
+// bre not stored in the tbrget zip.
+type FilterFunc func(hdr *tbr.Hebder) bool
 
-// Start initializes state and starts background goroutines. It can be called
-// more than once. It is optional to call, but starting it earlier avoids a
-// search request paying the cost of initializing.
-func (s *Store) Start() {
+// Stbrt initiblizes stbte bnd stbrts bbckground goroutines. It cbn be cblled
+// more thbn once. It is optionbl to cbll, but stbrting it ebrlier bvoids b
+// sebrch request pbying the cost of initiblizing.
+func (s *Store) Stbrt() {
 	s.once.Do(func() {
-		s.fetchLimiter = limiter.NewMutable(15)
-		s.cache = diskcache.NewStore(s.Path, "store",
-			diskcache.WithBackgroundTimeout(s.BackgroundTimeout),
-			diskcache.WithBeforeEvict(s.zipCache.delete),
-			diskcache.WithobservationCtx(s.ObservationCtx),
+		s.fetchLimiter = limiter.NewMutbble(15)
+		s.cbche = diskcbche.NewStore(s.Pbth, "store",
+			diskcbche.WithBbckgroundTimeout(s.BbckgroundTimeout),
+			diskcbche.WithBeforeEvict(s.zipCbche.delete),
+			diskcbche.WithobservbtionCtx(s.ObservbtionCtx),
 		)
-		_ = os.MkdirAll(s.Path, 0o700)
-		metrics.MustRegisterDiskMonitor(s.Path)
+		_ = os.MkdirAll(s.Pbth, 0o700)
+		metrics.MustRegisterDiskMonitor(s.Pbth)
 
 		logger := s.Log
 		if deploy.IsApp() {
-			logger = logger.IncreaseLevel("mountinfo", "", log.LevelError)
+			logger = logger.IncrebseLevel("mountinfo", "", log.LevelError)
 		}
-		o := mountinfo.CollectorOpts{Namespace: "searcher"}
-		m := mountinfo.NewCollector(logger, o, map[string]string{"cacheDir": s.Path})
-		s.ObservationCtx.Registerer.MustRegister(m)
+		o := mountinfo.CollectorOpts{Nbmespbce: "sebrcher"}
+		m := mountinfo.NewCollector(logger, o, mbp[string]string{"cbcheDir": s.Pbth})
+		s.ObservbtionCtx.Registerer.MustRegister(m)
 
-		go s.watchAndEvict()
-		go s.watchConfig()
+		go s.wbtchAndEvict()
+		go s.wbtchConfig()
 	})
 }
 
-// PrepareZip returns the path to a local zip archive of repo at commit.
-// It will first consult the local cache, otherwise will fetch from the network.
-func (s *Store) PrepareZip(ctx context.Context, repo api.RepoName, commit api.CommitID) (path string, err error) {
-	return s.PrepareZipPaths(ctx, repo, commit, nil)
+// PrepbreZip returns the pbth to b locbl zip brchive of repo bt commit.
+// It will first consult the locbl cbche, otherwise will fetch from the network.
+func (s *Store) PrepbreZip(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID) (pbth string, err error) {
+	return s.PrepbreZipPbths(ctx, repo, commit, nil)
 }
 
-func (s *Store) PrepareZipPaths(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (path string, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore.PrepareZipPaths")
+func (s *Store) PrepbreZipPbths(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (pbth string, err error) {
+	tr, ctx := trbce.New(ctx, "ArchiveStore.PrepbreZipPbths")
 	defer tr.EndWithErr(&err)
 
-	var cacheHit bool
-	start := time.Now()
+	vbr cbcheHit bool
+	stbrt := time.Now()
 	defer func() {
-		duration := time.Since(start).Seconds()
-		if cacheHit {
-			metricZipAccess.WithLabelValues("true").Observe(duration)
+		durbtion := time.Since(stbrt).Seconds()
+		if cbcheHit {
+			metricZipAccess.WithLbbelVblues("true").Observe(durbtion)
 		} else {
-			metricZipAccess.WithLabelValues("false").Observe(duration)
+			metricZipAccess.WithLbbelVblues("fblse").Observe(durbtion)
 		}
 	}()
 
-	// Ensure we have initialized
-	s.Start()
+	// Ensure we hbve initiblized
+	s.Stbrt()
 
-	// We already validate commit is absolute in ServeHTTP, but since we
-	// rely on it for caching we check again.
+	// We blrebdy vblidbte commit is bbsolute in ServeHTTP, but since we
+	// rely on it for cbching we check bgbin.
 	if len(commit) != 40 {
 		return "", errors.Errorf("commit must be resolved (repo=%q, commit=%q)", repo, commit)
 	}
 
-	filter := newSearchableFilter(&conf.Get().SiteConfiguration)
+	filter := newSebrchbbleFilter(&conf.Get().SiteConfigurbtion)
 
-	// key is a sha256 hash since we want to use it for the disk name
-	h := sha256.New()
+	// key is b shb256 hbsh since we wbnt to use it for the disk nbme
+	h := shb256.New()
 	_, _ = fmt.Fprintf(h, "%q %q", repo, commit)
-	filter.HashKey(h)
-	_, _ = io.WriteString(h, "\x00Paths")
-	for _, p := range paths {
+	filter.HbshKey(h)
+	_, _ = io.WriteString(h, "\x00Pbths")
+	for _, p := rbnge pbths {
 		_, _ = h.Write([]byte{0})
 		_, _ = io.WriteString(h, p)
 	}
 	key := hex.EncodeToString(h.Sum(nil))
-	tr.AddEvent("calculated key", attribute.String("key", key))
+	tr.AddEvent("cblculbted key", bttribute.String("key", key))
 
-	// Our fetch can take a long time, and the frontend aggressively cancels
-	// requests. So we open in the background to give it extra time.
+	// Our fetch cbn tbke b long time, bnd the frontend bggressively cbncels
+	// requests. So we open in the bbckground to give it extrb time.
 	type result struct {
-		path     string
+		pbth     string
 		err      error
-		cacheHit bool
+		cbcheHit bool
 	}
-	resC := make(chan result, 1)
+	resC := mbke(chbn result, 1)
 	go func() {
-		start := time.Now()
-		// TODO: consider adding a cache method that doesn't actually bother opening the file,
-		// since we're just going to close it again immediately.
-		cacheHit := true
-		bgctx := xcontext.Detach(ctx)
-		f, err := s.cache.Open(bgctx, []string{key}, func(ctx context.Context) (io.ReadCloser, error) {
-			cacheHit = false
-			return s.fetch(ctx, repo, commit, filter, paths)
+		stbrt := time.Now()
+		// TODO: consider bdding b cbche method thbt doesn't bctublly bother opening the file,
+		// since we're just going to close it bgbin immedibtely.
+		cbcheHit := true
+		bgctx := xcontext.Detbch(ctx)
+		f, err := s.cbche.Open(bgctx, []string{key}, func(ctx context.Context) (io.RebdCloser, error) {
+			cbcheHit = fblse
+			return s.fetch(ctx, repo, commit, filter, pbths)
 		})
-		var path string
+		vbr pbth string
 		if f != nil {
-			path = f.Path
+			pbth = f.Pbth
 			if f.File != nil {
 				f.File.Close()
 			}
 		}
 		if err != nil {
-			s.Log.Error("failed to fetch archive", log.String("repo", string(repo)), log.String("commit", string(commit)), log.Duration("duration", time.Since(start)), log.Error(err))
+			s.Log.Error("fbiled to fetch brchive", log.String("repo", string(repo)), log.String("commit", string(commit)), log.Durbtion("durbtion", time.Since(stbrt)), log.Error(err))
 		}
-		resC <- result{path, err, cacheHit}
+		resC <- result{pbth, err, cbcheHit}
 	}()
 
 	select {
-	case <-ctx.Done():
+	cbse <-ctx.Done():
 		return "", ctx.Err()
 
-	case res := <-resC:
+	cbse res := <-resC:
 		if res.err != nil {
 			return "", res.err
 		}
-		cacheHit = res.cacheHit
-		return res.path, nil
+		cbcheHit = res.cbcheHit
+		return res.pbth, nil
 	}
 }
 
-// fetch fetches an archive from the network and stores it on disk. It does
-// not populate the in-memory cache. You should probably be calling
-// prepareZip.
-func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitID, filter *searchableFilter, paths []string) (rc io.ReadCloser, err error) {
-	tr, ctx := trace.New(ctx, "ArchiveStore.fetch",
+// fetch fetches bn brchive from the network bnd stores it on disk. It does
+// not populbte the in-memory cbche. You should probbbly be cblling
+// prepbreZip.
+func (s *Store) fetch(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, filter *sebrchbbleFilter, pbths []string) (rc io.RebdCloser, err error) {
+	tr, ctx := trbce.New(ctx, "ArchiveStore.fetch",
 		repo.Attr(),
 		commit.Attr())
 
 	metricFetchQueueSize.Inc()
-	ctx, releaseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches semaphore
+	ctx, relebseFetchLimiter, err := s.fetchLimiter.Acquire(ctx) // Acquire concurrent fetches sembphore
 	if err != nil {
-		return nil, err // err will be a context error
+		return nil, err // err will be b context error
 	}
 	metricFetchQueueSize.Dec()
 
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cbncel := context.WithCbncel(ctx)
 
 	metricFetching.Inc()
 
-	// Done is called when the returned reader is closed, or if this function
-	// returns an error. It should always be called once.
-	doneCalled := false
+	// Done is cblled when the returned rebder is closed, or if this function
+	// returns bn error. It should blwbys be cblled once.
+	doneCblled := fblse
 	done := func(err error) {
-		if doneCalled {
-			panic("Store.fetch.done called twice")
+		if doneCblled {
+			pbnic("Store.fetch.done cblled twice")
 		}
-		doneCalled = true
+		doneCblled = true
 
-		releaseFetchLimiter() // Release concurrent fetches semaphore
-		cancel()              // Release context resources
+		relebseFetchLimiter() // Relebse concurrent fetches sembphore
+		cbncel()              // Relebse context resources
 		if err != nil {
-			metricFetchFailed.Inc()
+			metricFetchFbiled.Inc()
 		}
 		metricFetching.Dec()
 		defer tr.EndWithErr(&err)
@@ -268,112 +268,112 @@ func (s *Store) fetch(ctx context.Context, repo api.RepoName, commit api.CommitI
 		}
 	}()
 
-	var r io.ReadCloser
-	if len(paths) == 0 {
-		r, err = s.FetchTar(ctx, repo, commit)
+	vbr r io.RebdCloser
+	if len(pbths) == 0 {
+		r, err = s.FetchTbr(ctx, repo, commit)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		r, err = s.FetchTarPaths(ctx, repo, commit, paths)
+		r, err = s.FetchTbrPbths(ctx, repo, commit, pbths)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	filter.CommitIgnore = func(hdr *tar.Header) bool { return false } // default: don't filter
-	if s.FilterTar != nil {
-		filter.CommitIgnore, err = s.FilterTar(ctx, s.GitserverClient, repo, commit)
+	filter.CommitIgnore = func(hdr *tbr.Hebder) bool { return fblse } // defbult: don't filter
+	if s.FilterTbr != nil {
+		filter.CommitIgnore, err = s.FilterTbr(ctx, s.GitserverClient, repo, commit)
 		if err != nil {
-			return nil, errors.Errorf("error while calling FilterTar: %w", err)
+			return nil, errors.Errorf("error while cblling FilterTbr: %w", err)
 		}
 	}
 
 	pr, pw := io.Pipe()
 
-	// After this point we are not allowed to return an error. Instead we can
-	// return an error via the reader we return. If you do want to update this
-	// code please ensure we still always call done once.
+	// After this point we bre not bllowed to return bn error. Instebd we cbn
+	// return bn error vib the rebder we return. If you do wbnt to updbte this
+	// code plebse ensure we still blwbys cbll done once.
 
-	// Write tr to zw. Return the first error encountered, but clean up if
-	// we encounter an error.
+	// Write tr to zw. Return the first error encountered, but clebn up if
+	// we encounter bn error.
 	go func() {
 		defer r.Close()
-		tr := tar.NewReader(r)
+		tr := tbr.NewRebder(r)
 		zw := zip.NewWriter(pw)
-		err := copySearchable(tr, zw, filter)
+		err := copySebrchbble(tr, zw, filter)
 		if err1 := zw.Close(); err == nil {
 			err = err1
 		}
 		done(err)
-		// CloseWithError is guaranteed to return a nil error
-		_ = pw.CloseWithError(errors.Wrapf(err, "failed to fetch %s@%s", repo, commit))
+		// CloseWithError is gubrbnteed to return b nil error
+		_ = pw.CloseWithError(errors.Wrbpf(err, "fbiled to fetch %s@%s", repo, commit))
 	}()
 
 	return pr, nil
 }
 
-// copySearchable copies searchable files from tr to zw. A searchable file is
-// any file that is under size limit, non-binary, and not matching the filter.
-func copySearchable(tr *tar.Reader, zw *zip.Writer, filter *searchableFilter) error {
-	// 32*1024 is the same size used by io.Copy
-	buf := make([]byte, 32*1024)
+// copySebrchbble copies sebrchbble files from tr to zw. A sebrchbble file is
+// bny file thbt is under size limit, non-binbry, bnd not mbtching the filter.
+func copySebrchbble(tr *tbr.Rebder, zw *zip.Writer, filter *sebrchbbleFilter) error {
+	// 32*1024 is the sbme size used by io.Copy
+	buf := mbke([]byte, 32*1024)
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
 			return nil
 		}
 		if err != nil {
-			// Gitserver sometimes returns invalid headers. However, it only
-			// seems to occur in situations where a retry would likely solve
-			// it. So mark the error as temporary, to avoid failing the whole
-			// search. https://github.com/sourcegraph/sourcegraph/issues/3799
-			if err == tar.ErrHeader {
-				return temporaryError{error: err}
+			// Gitserver sometimes returns invblid hebders. However, it only
+			// seems to occur in situbtions where b retry would likely solve
+			// it. So mbrk the error bs temporbry, to bvoid fbiling the whole
+			// sebrch. https://github.com/sourcegrbph/sourcegrbph/issues/3799
+			if err == tbr.ErrHebder {
+				return temporbryError{error: err}
 			}
 			return err
 		}
 
-		switch hdr.Typeflag {
-		case tar.TypeReg, tar.TypeRegA:
-			// ignore files if they match the filter
+		switch hdr.Typeflbg {
+		cbse tbr.TypeReg, tbr.TypeRegA:
+			// ignore files if they mbtch the filter
 			if filter.Ignore(hdr) {
 				continue
 			}
 
-			// We are happy with the file, so we can write it to zw.
-			w, err := zw.CreateHeader(&zip.FileHeader{
-				Name:   hdr.Name,
+			// We bre hbppy with the file, so we cbn write it to zw.
+			w, err := zw.CrebteHebder(&zip.FileHebder{
+				Nbme:   hdr.Nbme,
 				Method: zip.Store,
 			})
 			if err != nil {
 				return err
 			}
 
-			// We do not search the content of large files unless they are
-			// allowed.
+			// We do not sebrch the content of lbrge files unless they bre
+			// bllowed.
 			if filter.SkipContent(hdr) {
 				continue
 			}
 
-			n, err := tr.Read(buf)
+			n, err := tr.Rebd(buf)
 			switch err {
-			case io.EOF:
+			cbse io.EOF:
 				if n == 0 {
 					continue
 				}
-			case nil:
-			default:
+			cbse nil:
+			defbult:
 				return err
 			}
 
-			// Heuristic: Assume file is binary if first 256 bytes contain a
-			// 0x00. Best effort, so ignore err. We only search names of binary files.
+			// Heuristic: Assume file is binbry if first 256 bytes contbin b
+			// 0x00. Best effort, so ignore err. We only sebrch nbmes of binbry files.
 			if n > 0 && bytes.IndexByte(buf[:n], 0x00) >= 0 {
 				continue
 			}
 
-			// First write the data already read into buf
+			// First write the dbtb blrebdy rebd into buf
 			nw, err := w.Write(buf[:n])
 			if err != nil {
 				return err
@@ -386,59 +386,59 @@ func copySearchable(tr *tar.Reader, zw *zip.Writer, filter *searchableFilter) er
 			if err != nil {
 				return err
 			}
-		case tar.TypeSymlink:
-			// We cannot use tr.Read like we do for normal files because tr.Read returns (0,
-			// io.EOF) for symlinks. We zip symlinks by setting the mode bits explicitly and
-			// writing the link's target path as content.
+		cbse tbr.TypeSymlink:
+			// We cbnnot use tr.Rebd like we do for normbl files becbuse tr.Rebd returns (0,
+			// io.EOF) for symlinks. We zip symlinks by setting the mode bits explicitly bnd
+			// writing the link's tbrget pbth bs content.
 
-			// ignore symlinks if they match the filter
+			// ignore symlinks if they mbtch the filter
 			if filter.Ignore(hdr) {
 				continue
 			}
-			fh := &zip.FileHeader{
-				Name:   hdr.Name,
+			fh := &zip.FileHebder{
+				Nbme:   hdr.Nbme,
 				Method: zip.Store,
 			}
 			fh.SetMode(os.ModeSymlink)
-			w, err := zw.CreateHeader(fh)
+			w, err := zw.CrebteHebder(fh)
 			if err != nil {
 				return err
 			}
-			w.Write([]byte(hdr.Linkname))
-		default:
+			w.Write([]byte(hdr.Linknbme))
+		defbult:
 			continue
 		}
 	}
 }
 
 func (s *Store) String() string {
-	return "Store(" + s.Path + ")"
+	return "Store(" + s.Pbth + ")"
 }
 
-// watchAndEvict is a loop which periodically checks the size of the cache and
-// evicts/deletes items if the store gets too large.
-func (s *Store) watchAndEvict() {
-	metricMaxCacheSizeBytes.Set(float64(s.MaxCacheSizeBytes))
+// wbtchAndEvict is b loop which periodicblly checks the size of the cbche bnd
+// evicts/deletes items if the store gets too lbrge.
+func (s *Store) wbtchAndEvict() {
+	metricMbxCbcheSizeBytes.Set(flobt64(s.MbxCbcheSizeBytes))
 
-	if s.MaxCacheSizeBytes == 0 {
+	if s.MbxCbcheSizeBytes == 0 {
 		return
 	}
 
 	for {
 		time.Sleep(10 * time.Second)
 
-		stats, err := s.cache.Evict(s.MaxCacheSizeBytes)
+		stbts, err := s.cbche.Evict(s.MbxCbcheSizeBytes)
 		if err != nil {
-			s.Log.Error("failed to Evict", log.Error(err))
+			s.Log.Error("fbiled to Evict", log.Error(err))
 			continue
 		}
-		metricCacheSizeBytes.Set(float64(stats.CacheSize))
-		metricEvictions.Add(float64(stats.Evicted))
+		metricCbcheSizeBytes.Set(flobt64(stbts.CbcheSize))
+		metricEvictions.Add(flobt64(stbts.Evicted))
 	}
 }
 
-// watchConfig updates fetchLimiter as the number of gitservers change.
-func (s *Store) watchConfig() {
+// wbtchConfig updbtes fetchLimiter bs the number of gitservers chbnge.
+func (s *Store) wbtchConfig() {
 	for {
 		// Allow roughly 10 fetches per gitserver
 		limit := 10 * len(s.GitserverClient.Addrs())
@@ -451,45 +451,45 @@ func (s *Store) watchConfig() {
 	}
 }
 
-var (
-	metricMaxCacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "searcher_store_max_cache_size_bytes",
-		Help: "The configured maximum size of items in the on disk cache before eviction.",
+vbr (
+	metricMbxCbcheSizeBytes = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "sebrcher_store_mbx_cbche_size_bytes",
+		Help: "The configured mbximum size of items in the on disk cbche before eviction.",
 	})
-	metricCacheSizeBytes = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "searcher_store_cache_size_bytes",
-		Help: "The total size of items in the on disk cache.",
+	metricCbcheSizeBytes = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "sebrcher_store_cbche_size_bytes",
+		Help: "The totbl size of items in the on disk cbche.",
 	})
-	metricEvictions = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "searcher_store_evictions",
-		Help: "The total number of items evicted from the cache.",
+	metricEvictions = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "sebrcher_store_evictions",
+		Help: "The totbl number of items evicted from the cbche.",
 	})
-	metricFetching = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "searcher_store_fetching",
+	metricFetching = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "sebrcher_store_fetching",
 		Help: "The number of fetches currently running.",
 	})
-	metricFetchQueueSize = promauto.NewGauge(prometheus.GaugeOpts{
-		Name: "searcher_store_fetch_queue_size",
+	metricFetchQueueSize = prombuto.NewGbuge(prometheus.GbugeOpts{
+		Nbme: "sebrcher_store_fetch_queue_size",
 		Help: "The number of fetch jobs enqueued.",
 	})
-	metricFetchFailed = promauto.NewCounter(prometheus.CounterOpts{
-		Name: "searcher_store_fetch_failed",
-		Help: "The total number of archive fetches that failed.",
+	metricFetchFbiled = prombuto.NewCounter(prometheus.CounterOpts{
+		Nbme: "sebrcher_store_fetch_fbiled",
+		Help: "The totbl number of brchive fetches thbt fbiled.",
 	})
-	metricZipAccess = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Name:    "searcher_store_zip_prepare_duration",
-		Help:    "Observes the duration to prepare the zip file for searching.",
+	metricZipAccess = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbme:    "sebrcher_store_zip_prepbre_durbtion",
+		Help:    "Observes the durbtion to prepbre the zip file for sebrching.",
 		Buckets: prometheus.DefBuckets,
-	}, []string{"cache_hit"})
+	}, []string{"cbche_hit"})
 )
 
-// temporaryError wraps an error but adds the Temporary method. It does not
-// implement Cause so that errors.Cause() returns an error which implements
-// Temporary.
-type temporaryError struct {
+// temporbryError wrbps bn error but bdds the Temporbry method. It does not
+// implement Cbuse so thbt errors.Cbuse() returns bn error which implements
+// Temporbry.
+type temporbryError struct {
 	error
 }
 
-func (temporaryError) Temporary() bool {
+func (temporbryError) Temporbry() bool {
 	return true
 }

@@ -1,156 +1,156 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"fmt"
 	"reflect"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-// FileMatchResolver is a resolver for the GraphQL type `FileMatch`
-type FileMatchResolver struct {
-	result.FileMatch
+// FileMbtchResolver is b resolver for the GrbphQL type `FileMbtch`
+type FileMbtchResolver struct {
+	result.FileMbtch
 
 	RepoResolver *RepositoryResolver
-	db           database.DB
+	db           dbtbbbse.DB
 }
 
-// Equal provides custom comparison which is used by go-cmp
-func (fm *FileMatchResolver) Equal(other *FileMatchResolver) bool {
-	return reflect.DeepEqual(fm, other)
+// Equbl provides custom compbrison which is used by go-cmp
+func (fm *FileMbtchResolver) Equbl(other *FileMbtchResolver) bool {
+	return reflect.DeepEqubl(fm, other)
 }
 
-func (fm *FileMatchResolver) Key() string {
-	return fmt.Sprintf("%#v", fm.FileMatch.Key())
+func (fm *FileMbtchResolver) Key() string {
+	return fmt.Sprintf("%#v", fm.FileMbtch.Key())
 }
 
-func (fm *FileMatchResolver) File() *GitTreeEntryResolver {
-	// NOTE(sqs): Omits other commit fields to avoid needing to fetch them
-	// (which would make it slow). This GitCommitResolver will return empty
-	// values for all other fields.
+func (fm *FileMbtchResolver) File() *GitTreeEntryResolver {
+	// NOTE(sqs): Omits other commit fields to bvoid needing to fetch them
+	// (which would mbke it slow). This GitCommitResolver will return empty
+	// vblues for bll other fields.
 	opts := GitTreeEntryResolverOpts{
 		Commit: fm.Commit(),
-		Stat:   CreateFileInfo(fm.Path, false),
+		Stbt:   CrebteFileInfo(fm.Pbth, fblse),
 	}
 	return NewGitTreeEntryResolver(fm.db, gitserver.NewClient(), opts)
 }
 
-func (fm *FileMatchResolver) Commit() *GitCommitResolver {
+func (fm *FileMbtchResolver) Commit() *GitCommitResolver {
 	commit := NewGitCommitResolver(fm.db, gitserver.NewClient(), fm.RepoResolver, fm.CommitID, nil)
 	commit.inputRev = fm.InputRev
 	return commit
 }
 
-func (fm *FileMatchResolver) Repository() *RepositoryResolver {
+func (fm *FileMbtchResolver) Repository() *RepositoryResolver {
 	return fm.RepoResolver
 }
 
-func (fm *FileMatchResolver) RevSpec() *gitRevSpec {
+func (fm *FileMbtchResolver) RevSpec() *gitRevSpec {
 	if fm.InputRev == nil || *fm.InputRev == "" {
-		return nil // default branch
+		return nil // defbult brbnch
 	}
 	return &gitRevSpec{
 		expr: &gitRevSpecExpr{expr: *fm.InputRev, repo: fm.Repository()},
 	}
 }
 
-func (fm *FileMatchResolver) Symbols() []symbolResolver {
-	return symbolResultsToResolvers(fm.db, fm.Commit(), fm.FileMatch.Symbols)
+func (fm *FileMbtchResolver) Symbols() []symbolResolver {
+	return symbolResultsToResolvers(fm.db, fm.Commit(), fm.FileMbtch.Symbols)
 }
 
-func (fm *FileMatchResolver) LineMatches() []lineMatchResolver {
-	lineMatches := fm.FileMatch.ChunkMatches.AsLineMatches()
-	r := make([]lineMatchResolver, 0, len(lineMatches))
-	for _, lm := range lineMatches {
-		r = append(r, lineMatchResolver{lm})
+func (fm *FileMbtchResolver) LineMbtches() []lineMbtchResolver {
+	lineMbtches := fm.FileMbtch.ChunkMbtches.AsLineMbtches()
+	r := mbke([]lineMbtchResolver, 0, len(lineMbtches))
+	for _, lm := rbnge lineMbtches {
+		r = bppend(r, lineMbtchResolver{lm})
 	}
 	return r
 }
 
-func (fm *FileMatchResolver) ChunkMatches() []chunkMatchResolver {
-	r := make([]chunkMatchResolver, 0, len(fm.FileMatch.ChunkMatches))
-	for _, cm := range fm.FileMatch.ChunkMatches {
-		r = append(r, chunkMatchResolver{cm})
+func (fm *FileMbtchResolver) ChunkMbtches() []chunkMbtchResolver {
+	r := mbke([]chunkMbtchResolver, 0, len(fm.FileMbtch.ChunkMbtches))
+	for _, cm := rbnge fm.FileMbtch.ChunkMbtches {
+		r = bppend(r, chunkMbtchResolver{cm})
 	}
 	return r
 }
 
-func (fm *FileMatchResolver) LimitHit() bool {
-	return fm.FileMatch.LimitHit
+func (fm *FileMbtchResolver) LimitHit() bool {
+	return fm.FileMbtch.LimitHit
 }
 
-func (fm *FileMatchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, false }
-func (fm *FileMatchResolver) ToFileMatch() (*FileMatchResolver, bool)   { return fm, true }
-func (fm *FileMatchResolver) ToCommitSearchResult() (*CommitSearchResultResolver, bool) {
-	return nil, false
+func (fm *FileMbtchResolver) ToRepository() (*RepositoryResolver, bool) { return nil, fblse }
+func (fm *FileMbtchResolver) ToFileMbtch() (*FileMbtchResolver, bool)   { return fm, true }
+func (fm *FileMbtchResolver) ToCommitSebrchResult() (*CommitSebrchResultResolver, bool) {
+	return nil, fblse
 }
 
-type lineMatchResolver struct {
-	*result.LineMatch
+type lineMbtchResolver struct {
+	*result.LineMbtch
 }
 
-func (lm lineMatchResolver) Preview() string {
-	return lm.LineMatch.Preview
+func (lm lineMbtchResolver) Preview() string {
+	return lm.LineMbtch.Preview
 }
 
-func (lm lineMatchResolver) LineNumber() int32 {
-	return lm.LineMatch.LineNumber
+func (lm lineMbtchResolver) LineNumber() int32 {
+	return lm.LineMbtch.LineNumber
 }
 
-func (lm lineMatchResolver) OffsetAndLengths() [][]int32 {
-	r := make([][]int32, len(lm.LineMatch.OffsetAndLengths))
-	for i := range lm.LineMatch.OffsetAndLengths {
-		r[i] = lm.LineMatch.OffsetAndLengths[i][:]
+func (lm lineMbtchResolver) OffsetAndLengths() [][]int32 {
+	r := mbke([][]int32, len(lm.LineMbtch.OffsetAndLengths))
+	for i := rbnge lm.LineMbtch.OffsetAndLengths {
+		r[i] = lm.LineMbtch.OffsetAndLengths[i][:]
 	}
 	return r
 }
 
-func (lm lineMatchResolver) LimitHit() bool {
-	return false
+func (lm lineMbtchResolver) LimitHit() bool {
+	return fblse
 }
 
-type chunkMatchResolver struct {
-	result.ChunkMatch
+type chunkMbtchResolver struct {
+	result.ChunkMbtch
 }
 
-func (c chunkMatchResolver) Content() string {
-	return c.ChunkMatch.Content
+func (c chunkMbtchResolver) Content() string {
+	return c.ChunkMbtch.Content
 }
 
-func (c chunkMatchResolver) ContentStart() searchPositionResolver {
-	return searchPositionResolver{c.ChunkMatch.ContentStart}
+func (c chunkMbtchResolver) ContentStbrt() sebrchPositionResolver {
+	return sebrchPositionResolver{c.ChunkMbtch.ContentStbrt}
 }
 
-func (c chunkMatchResolver) Ranges() []searchRangeResolver {
-	res := make([]searchRangeResolver, 0, len(c.ChunkMatch.Ranges))
-	for _, r := range c.ChunkMatch.Ranges {
-		res = append(res, searchRangeResolver{r})
+func (c chunkMbtchResolver) Rbnges() []sebrchRbngeResolver {
+	res := mbke([]sebrchRbngeResolver, 0, len(c.ChunkMbtch.Rbnges))
+	for _, r := rbnge c.ChunkMbtch.Rbnges {
+		res = bppend(res, sebrchRbngeResolver{r})
 	}
 	return res
 }
 
-type searchPositionResolver struct {
-	result.Location
+type sebrchPositionResolver struct {
+	result.Locbtion
 }
 
-func (l searchPositionResolver) Line() int32 {
-	return int32(l.Location.Line)
+func (l sebrchPositionResolver) Line() int32 {
+	return int32(l.Locbtion.Line)
 }
 
-func (l searchPositionResolver) Character() int32 {
-	return int32(l.Location.Column)
+func (l sebrchPositionResolver) Chbrbcter() int32 {
+	return int32(l.Locbtion.Column)
 }
 
-type searchRangeResolver struct {
-	result.Range
+type sebrchRbngeResolver struct {
+	result.Rbnge
 }
 
-func (r searchRangeResolver) Start() searchPositionResolver {
-	return searchPositionResolver{r.Range.Start}
+func (r sebrchRbngeResolver) Stbrt() sebrchPositionResolver {
+	return sebrchPositionResolver{r.Rbnge.Stbrt}
 }
 
-func (r searchRangeResolver) End() searchPositionResolver {
-	return searchPositionResolver{r.Range.End}
+func (r sebrchRbngeResolver) End() sebrchPositionResolver {
+	return sebrchPositionResolver{r.Rbnge.End}
 }

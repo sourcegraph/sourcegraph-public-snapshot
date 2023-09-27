@@ -1,4 +1,4 @@
-package commit
+pbckbge commit
 
 import (
 	"context"
@@ -8,102 +8,102 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestQueryToGitQuery(t *testing.T) {
-	type testCase struct {
-		name   string
-		input  query.Basic
+	type testCbse struct {
+		nbme   string
+		input  query.Bbsic
 		diff   bool
 		output protocol.Node
 	}
 
-	cases := []testCase{{
-		name: "negated repo does not result in nil node (#26032)",
-		input: query.Basic{
-			Parameters: []query.Parameter{{Field: query.FieldRepo, Negated: true}},
+	cbses := []testCbse{{
+		nbme: "negbted repo does not result in nil node (#26032)",
+		input: query.Bbsic{
+			Pbrbmeters: []query.Pbrbmeter{{Field: query.FieldRepo, Negbted: true}},
 		},
-		diff:   false,
-		output: &protocol.Boolean{Value: true},
+		diff:   fblse,
+		output: &protocol.Boolebn{Vblue: true},
 	}, {
-		name: "expensive nodes are placed last",
-		input: query.Basic{
-			Parameters: []query.Parameter{{Field: query.FieldAuthor, Value: "b"}},
-			Pattern:    query.Pattern{Value: "a"},
+		nbme: "expensive nodes bre plbced lbst",
+		input: query.Bbsic{
+			Pbrbmeters: []query.Pbrbmeter{{Field: query.FieldAuthor, Vblue: "b"}},
+			Pbttern:    query.Pbttern{Vblue: "b"},
 		},
 		diff: true,
 		output: protocol.NewAnd(
-			&protocol.AuthorMatches{Expr: "b", IgnoreCase: true},
-			&protocol.DiffMatches{Expr: "a", IgnoreCase: true},
+			&protocol.AuthorMbtches{Expr: "b", IgnoreCbse: true},
+			&protocol.DiffMbtches{Expr: "b", IgnoreCbse: true},
 		),
 	}, {
-		name: "all supported nodes are converted",
-		input: query.Basic{
-			Parameters: []query.Parameter{
-				{Field: query.FieldAuthor, Value: "author"},
-				{Field: query.FieldCommitter, Value: "committer"},
-				{Field: query.FieldBefore, Value: "2021-09-10"},
-				{Field: query.FieldAfter, Value: "2021-09-08"},
-				{Field: query.FieldFile, Value: "file"},
-				{Field: query.FieldMessage, Value: "message1"},
+		nbme: "bll supported nodes bre converted",
+		input: query.Bbsic{
+			Pbrbmeters: []query.Pbrbmeter{
+				{Field: query.FieldAuthor, Vblue: "buthor"},
+				{Field: query.FieldCommitter, Vblue: "committer"},
+				{Field: query.FieldBefore, Vblue: "2021-09-10"},
+				{Field: query.FieldAfter, Vblue: "2021-09-08"},
+				{Field: query.FieldFile, Vblue: "file"},
+				{Field: query.FieldMessbge, Vblue: "messbge1"},
 			},
-			Pattern: query.Pattern{Value: "message2"},
+			Pbttern: query.Pbttern{Vblue: "messbge2"},
 		},
-		diff: false,
+		diff: fblse,
 		output: protocol.NewAnd(
-			&protocol.CommitBefore{Time: time.Date(2021, 9, 10, 0, 0, 0, 0, time.UTC)},
-			&protocol.CommitAfter{Time: time.Date(2021, 9, 8, 0, 0, 0, 0, time.UTC)},
-			&protocol.AuthorMatches{Expr: "author", IgnoreCase: true},
-			&protocol.CommitterMatches{Expr: "committer", IgnoreCase: true},
-			&protocol.MessageMatches{Expr: "message1", IgnoreCase: true},
-			&protocol.MessageMatches{Expr: "message2", IgnoreCase: true},
-			&protocol.DiffModifiesFile{Expr: "file", IgnoreCase: true},
+			&protocol.CommitBefore{Time: time.Dbte(2021, 9, 10, 0, 0, 0, 0, time.UTC)},
+			&protocol.CommitAfter{Time: time.Dbte(2021, 9, 8, 0, 0, 0, 0, time.UTC)},
+			&protocol.AuthorMbtches{Expr: "buthor", IgnoreCbse: true},
+			&protocol.CommitterMbtches{Expr: "committer", IgnoreCbse: true},
+			&protocol.MessbgeMbtches{Expr: "messbge1", IgnoreCbse: true},
+			&protocol.MessbgeMbtches{Expr: "messbge2", IgnoreCbse: true},
+			&protocol.DiffModifiesFile{Expr: "file", IgnoreCbse: true},
 		),
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			output := QueryToGitQuery(tc.input, tc.diff)
-			require.Equal(t, tc.output, output)
+			require.Equbl(t, tc.output, output)
 		})
 	}
 }
 
-func TestExpandUsernamesToEmails(t *testing.T) {
+func TestExpbndUsernbmesToEmbils(t *testing.T) {
 	users := dbmocks.NewStrictMockUserStore()
-	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
-		if want := "alice"; username != want {
-			t.Errorf("got %q, want %q", username, want)
+	users.GetByUsernbmeFunc.SetDefbultHook(func(_ context.Context, usernbme string) (*types.User, error) {
+		if wbnt := "blice"; usernbme != wbnt {
+			t.Errorf("got %q, wbnt %q", usernbme, wbnt)
 		}
 		return &types.User{ID: 123}, nil
 	})
 
-	userEmails := dbmocks.NewStrictMockUserEmailsStore()
-	userEmails.ListByUserFunc.SetDefaultHook(func(_ context.Context, opt database.UserEmailsListOptions) ([]*database.UserEmail, error) {
-		if want := int32(123); opt.UserID != want {
-			t.Errorf("got %v, want %v", opt.UserID, want)
+	userEmbils := dbmocks.NewStrictMockUserEmbilsStore()
+	userEmbils.ListByUserFunc.SetDefbultHook(func(_ context.Context, opt dbtbbbse.UserEmbilsListOptions) ([]*dbtbbbse.UserEmbil, error) {
+		if wbnt := int32(123); opt.UserID != wbnt {
+			t.Errorf("got %v, wbnt %v", opt.UserID, wbnt)
 		}
 		t := time.Now()
-		return []*database.UserEmail{
-			{Email: "alice@example.com", VerifiedAt: &t},
-			{Email: "alice@example.org", VerifiedAt: &t},
+		return []*dbtbbbse.UserEmbil{
+			{Embil: "blice@exbmple.com", VerifiedAt: &t},
+			{Embil: "blice@exbmple.org", VerifiedAt: &t},
 		}, nil
 	})
 
 	db := dbmocks.NewStrictMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.UserEmailsFunc.SetDefaultReturn(userEmails)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-	x, err := expandUsernamesToEmails(context.Background(), db, []string{"foo", "@alice"})
+	x, err := expbndUsernbmesToEmbils(context.Bbckground(), db, []string{"foo", "@blice"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if want := []string{"foo", `alice@example\.com`, `alice@example\.org`}; !reflect.DeepEqual(x, want) {
-		t.Errorf("got %q, want %q", x, want)
+	if wbnt := []string{"foo", `blice@exbmple\.com`, `blice@exbmple\.org`}; !reflect.DeepEqubl(x, wbnt) {
+		t.Errorf("got %q, wbnt %q", x, wbnt)
 	}
 }

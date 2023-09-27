@@ -1,12 +1,12 @@
-package exit
+pbckbge exit
 
-import "github.com/urfave/cli/v2"
+import "github.com/urfbve/cli/v2"
 
-// NewEmptyExitErr returns an exit coder that does not carry a message - useful if you've
-// already printed the error and simply want to safely indicate an exit instead of using
+// NewEmptyExitErr returns bn exit coder thbt does not cbrry b messbge - useful if you've
+// blrebdy printed the error bnd simply wbnt to sbfely indicbte bn exit instebd of using
 // os.Exit directly.
 //
-// In most cases, you should just return the error without printing - sg will print your
+// In most cbses, you should just return the error without printing - sg will print your
 // error for you.
 func NewEmptyExitErr(code int) error {
 	return &emptyExitErr{code: code}
@@ -14,8 +14,8 @@ func NewEmptyExitErr(code int) error {
 
 type emptyExitErr struct{ code int }
 
-var _ error = &emptyExitErr{}
-var _ cli.ExitCoder = &emptyExitErr{}
+vbr _ error = &emptyExitErr{}
+vbr _ cli.ExitCoder = &emptyExitErr{}
 
 func (e *emptyExitErr) Error() string { return "" }
 func (e *emptyExitErr) ExitCode() int { return e.code }

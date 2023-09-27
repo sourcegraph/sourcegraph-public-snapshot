@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -7,54 +7,54 @@ import (
 	"strings"
 
 	"github.com/elimity-com/scim"
-	"github.com/elimity-com/scim/optional"
+	"github.com/elimity-com/scim/optionbl"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type IdentityProvider string
 
 const (
 	IDPAzureAd  IdentityProvider = "Azure AD"
-	IDPStandard IdentityProvider = "standards-compatible"
+	IDPStbndbrd IdentityProvider = "stbndbrds-compbtible"
 )
 
 func getConfiguredIdentityProvider() IdentityProvider {
-	value := conf.Get().ScimIdentityProvider
-	switch value {
-	case string(IDPAzureAd):
+	vblue := conf.Get().ScimIdentityProvider
+	switch vblue {
+	cbse string(IDPAzureAd):
 		return IDPAzureAd
-	default:
-		return IDPStandard
+	defbult:
+		return IDPStbndbrd
 	}
 }
 
-// NewHandler creates and returns a new SCIM 2.0 handler.
-func NewHandler(ctx context.Context, db database.DB, observationCtx *observation.Context) http.Handler {
+// NewHbndler crebtes bnd returns b new SCIM 2.0 hbndler.
+func NewHbndler(ctx context.Context, db dbtbbbse.DB, observbtionCtx *observbtion.Context) http.Hbndler {
 	config := scim.ServiceProviderConfig{
-		DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
-		MaxResults:       100,
+		DocumentbtionURI: optionbl.NewString("docs.sourcegrbph.com/bdmin/scim"),
+		MbxResults:       100,
 		SupportFiltering: true,
-		SupportPatch:     true,
-		AuthenticationSchemes: []scim.AuthenticationScheme{
+		SupportPbtch:     true,
+		AuthenticbtionSchemes: []scim.AuthenticbtionScheme{
 			{
-				Type:             scim.AuthenticationTypeOauthBearerToken,
-				Name:             "OAuth Bearer Token",
-				Description:      "Authentication scheme using the Bearer Token standard – use the key 'scim.authToken' in the site config to set the token.",
-				SpecURI:          optional.NewString("https://tools.ietf.org/html/rfc6750"),
-				DocumentationURI: optional.NewString("docs.sourcegraph.com/admin/scim"),
-				Primary:          true,
+				Type:             scim.AuthenticbtionTypeObuthBebrerToken,
+				Nbme:             "OAuth Bebrer Token",
+				Description:      "Authenticbtion scheme using the Bebrer Token stbndbrd – use the key 'scim.buthToken' in the site config to set the token.",
+				SpecURI:          optionbl.NewString("https://tools.ietf.org/html/rfc6750"),
+				DocumentbtionURI: optionbl.NewString("docs.sourcegrbph.com/bdmin/scim"),
+				Primbry:          true,
 			},
 		},
 	}
 
-	userResourceHandler := NewUserResourceHandler(ctx, observationCtx, db)
+	userResourceHbndler := NewUserResourceHbndler(ctx, observbtionCtx, db)
 
 	resourceTypes := []scim.ResourceType{
-		createResourceType("User", "/Users", "User Account", userResourceHandler),
+		crebteResourceType("User", "/Users", "User Account", userResourceHbndler),
 	}
 
 	server := scim.Server{
@@ -62,37 +62,37 @@ func NewHandler(ctx context.Context, db database.DB, observationCtx *observation
 		ResourceTypes: resourceTypes,
 	}
 
-	return scimAuthMiddleware(scimLicenseCheckMiddleware(scimRewriteMiddleware(server)))
+	return scimAuthMiddlewbre(scimLicenseCheckMiddlewbre(scimRewriteMiddlewbre(server)))
 }
 
-func scimAuthMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func scimAuthMiddlewbre(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		confToken := conf.Get().ScimAuthToken
-		gotToken := strings.TrimPrefix(r.Header.Get("Authorization"), "Bearer ")
-		// 🚨 SECURITY: Use constant-time comparisons to avoid leaking the verification
-		// code via timing attack.
-		if len(confToken) == 0 || subtle.ConstantTimeCompare([]byte(confToken), []byte(gotToken)) != 1 {
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+		gotToken := strings.TrimPrefix(r.Hebder.Get("Authorizbtion"), "Bebrer ")
+		// 🚨 SECURITY: Use constbnt-time compbrisons to bvoid lebking the verificbtion
+		// code vib timing bttbck.
+		if len(confToken) == 0 || subtle.ConstbntTimeCompbre([]byte(confToken), []byte(gotToken)) != 1 {
+			http.Error(w, "unbuthorized", http.StbtusUnbuthorized)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-func scimLicenseCheckMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		licenseError := licensing.Check(licensing.FeatureSCIM)
+func scimLicenseCheckMiddlewbre(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		licenseError := licensing.Check(licensing.FebtureSCIM)
 		if licenseError != nil {
-			http.Error(w, licenseError.Error(), http.StatusForbidden)
+			http.Error(w, licenseError.Error(), http.StbtusForbidden)
 			return
 		}
 		next.ServeHTTP(w, r)
 	})
 }
 
-func scimRewriteMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		r.URL.Path = strings.TrimPrefix(r.URL.Path, "/.api/scim")
+func scimRewriteMiddlewbre(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Pbth = strings.TrimPrefix(r.URL.Pbth, "/.bpi/scim")
 		next.ServeHTTP(w, r)
 	})
 }

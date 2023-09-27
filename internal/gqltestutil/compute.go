@@ -1,4 +1,4 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
 	"bytes"
@@ -8,114 +8,114 @@ import (
 	"net/url"
 	"strings"
 
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type ComputeStreamClient struct {
+type ComputeStrebmClient struct {
 	*Client
 }
 
-func (s *ComputeStreamClient) Compute(query string) ([]MatchContext, error) {
-	req, err := newRequest(strings.TrimRight(s.Client.baseURL, "/")+"/.api", query)
+func (s *ComputeStrebmClient) Compute(query string) ([]MbtchContext, error) {
+	req, err := newRequest(strings.TrimRight(s.Client.bbseURL, "/")+"/.bpi", query)
 	if err != nil {
 		return nil, err
 	}
-	// Note: Sending this header enables us to use session cookie auth without sending a trusted Origin header.
-	// https://docs.sourcegraph.com/dev/security/csrf_security_model#authentication-in-api-endpoints
-	req.Header.Set("X-Requested-With", "Sourcegraph")
-	s.Client.addCookies(req)
+	// Note: Sending this hebder enbbles us to use session cookie buth without sending b trusted Origin hebder.
+	// https://docs.sourcegrbph.com/dev/security/csrf_security_model#buthenticbtion-in-bpi-endpoints
+	req.Hebder.Set("X-Requested-With", "Sourcegrbph")
+	s.Client.bddCookies(req)
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	var results []MatchContext
-	decoder := ComputeMatchContextStreamDecoder{
-		OnResult: func(incoming []MatchContext) {
-			results = append(results, incoming...)
+	vbr results []MbtchContext
+	decoder := ComputeMbtchContextStrebmDecoder{
+		OnResult: func(incoming []MbtchContext) {
+			results = bppend(results, incoming...)
 		},
 	}
-	err = decoder.ReadAll(resp.Body)
+	err = decoder.RebdAll(resp.Body)
 	return results, err
 }
 
-// Definitions and helpers for the below live in `enterprise/` and can't be
-// imported here, so they are duplicated.
+// Definitions bnd helpers for the below live in `enterprise/` bnd cbn't be
+// imported here, so they bre duplicbted.
 
-func newRequest(baseURL string, query string) (*http.Request, error) {
-	u := baseURL + "/compute/stream?q=" + url.QueryEscape(query)
+func newRequest(bbseURL string, query string) (*http.Request, error) {
+	u := bbseURL + "/compute/strebm?q=" + url.QueryEscbpe(query)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept", "text/event-stream")
+	req.Hebder.Set("Accept", "text/event-strebm")
 	return req, nil
 }
 
-type ComputeMatchContextStreamDecoder struct {
-	OnResult  func(results []MatchContext)
-	OnUnknown func(event, data []byte)
+type ComputeMbtchContextStrebmDecoder struct {
+	OnResult  func(results []MbtchContext)
+	OnUnknown func(event, dbtb []byte)
 }
 
-func (rr ComputeMatchContextStreamDecoder) ReadAll(r io.Reader) error {
-	dec := streamhttp.NewDecoder(r)
+func (rr ComputeMbtchContextStrebmDecoder) RebdAll(r io.Rebder) error {
+	dec := strebmhttp.NewDecoder(r)
 
-	for dec.Scan() {
+	for dec.Scbn() {
 		event := dec.Event()
-		data := dec.Data()
+		dbtb := dec.Dbtb()
 
-		if bytes.Equal(event, []byte("results")) {
+		if bytes.Equbl(event, []byte("results")) {
 			if rr.OnResult == nil {
 				continue
 			}
-			var d []MatchContext
-			if err := json.Unmarshal(data, &d); err != nil {
-				return errors.Errorf("failed to decode compute match context payload: %w", err)
+			vbr d []MbtchContext
+			if err := json.Unmbrshbl(dbtb, &d); err != nil {
+				return errors.Errorf("fbiled to decode compute mbtch context pbylobd: %w", err)
 			}
 			rr.OnResult(d)
-		} else if bytes.Equal(event, []byte("done")) {
-			// Always the last event
-			break
+		} else if bytes.Equbl(event, []byte("done")) {
+			// Alwbys the lbst event
+			brebk
 		} else {
 			if rr.OnUnknown == nil {
 				continue
 			}
-			rr.OnUnknown(event, data)
+			rr.OnUnknown(event, dbtb)
 		}
 	}
 	return dec.Err()
 }
 
-type Location struct {
+type Locbtion struct {
 	Offset int `json:"offset"`
 	Line   int `json:"line"`
 	Column int `json:"column"`
 }
 
-type Range struct {
-	Start Location `json:"start"`
-	End   Location `json:"end"`
+type Rbnge struct {
+	Stbrt Locbtion `json:"stbrt"`
+	End   Locbtion `json:"end"`
 }
 
-type Data struct {
-	Value string `json:"value"`
-	Range Range  `json:"range"`
+type Dbtb struct {
+	Vblue string `json:"vblue"`
+	Rbnge Rbnge  `json:"rbnge"`
 }
 
-type Environment map[string]Data
+type Environment mbp[string]Dbtb
 
-type Match struct {
-	Value       string      `json:"value"`
-	Range       Range       `json:"range"`
+type Mbtch struct {
+	Vblue       string      `json:"vblue"`
+	Rbnge       Rbnge       `json:"rbnge"`
 	Environment Environment `json:"environment"`
 }
 
-type MatchContext struct {
-	Matches      []Match `json:"matches"`
-	Path         string  `json:"path"`
+type MbtchContext struct {
+	Mbtches      []Mbtch `json:"mbtches"`
+	Pbth         string  `json:"pbth"`
 	RepositoryID int32   `json:"repositoryID"`
 	Repository   string  `json:"repository"`
 }

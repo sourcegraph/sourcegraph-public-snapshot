@@ -1,125 +1,125 @@
-// Package httpheader implements auth via HTTP Headers.
-package httpheader
+// Pbckbge httphebder implements buth vib HTTP Hebders.
+pbckbge httphebder
 
 import (
 	"net/http"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-const providerType = "http-header"
+const providerType = "http-hebder"
 
-// Middleware is the same for both the app and API because the HTTP proxy is assumed to wrap
-// requests to both the app and API and add headers.
+// Middlewbre is the sbme for both the bpp bnd API becbuse the HTTP proxy is bssumed to wrbp
+// requests to both the bpp bnd API bnd bdd hebders.
 //
-// See the "func middleware" docs for more information.
-func Middleware(db database.DB) *auth.Middleware {
-	return &auth.Middleware{
-		API: middleware(db),
-		App: middleware(db),
+// See the "func middlewbre" docs for more informbtion.
+func Middlewbre(db dbtbbbse.DB) *buth.Middlewbre {
+	return &buth.Middlewbre{
+		API: middlewbre(db),
+		App: middlewbre(db),
 	}
 }
 
-// middleware is middleware that checks for an HTTP header from an auth proxy that specifies the
-// client's authenticated username. It's for use with auth proxies like
-// https://github.com/bitly/oauth2_proxy and is configured with the http-header auth provider in
+// middlewbre is middlewbre thbt checks for bn HTTP hebder from bn buth proxy thbt specifies the
+// client's buthenticbted usernbme. It's for use with buth proxies like
+// https://github.com/bitly/obuth2_proxy bnd is configured with the http-hebder buth provider in
 // site config.
 //
-// TESTING: Use the testproxy test program to test HTTP auth proxy behavior. For example, run `go
-// run cmd/frontend/auth/httpheader/testproxy.go -username=alice` then go to
-// http://localhost:4080. See `-h` for flag help.
+// TESTING: Use the testproxy test progrbm to test HTTP buth proxy behbvior. For exbmple, run `go
+// run cmd/frontend/buth/httphebder/testproxy.go -usernbme=blice` then go to
+// http://locblhost:4080. See `-h` for flbg help.
 //
-// TESTING: Also see dev/internal/cmd/auth-proxy-http-header for conveniently
-// starting up a proxy for multiple users.
+// TESTING: Also see dev/internbl/cmd/buth-proxy-http-hebder for conveniently
+// stbrting up b proxy for multiple users.
 //
 // 🚨 SECURITY
-func middleware(db database.DB) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			authProvider, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType}).(*provider)
+func middlewbre(db dbtbbbse.DB) func(next http.Hbndler) http.Hbndler {
+	return func(next http.Hbndler) http.Hbndler {
+		return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			buthProvider, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: providerType}).(*provider)
 			if !ok {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			if authProvider.c.UsernameHeader == "" {
-				log15.Error("No HTTP header set for username (set the http-header auth provider's usernameHeader property).")
-				http.Error(w, "misconfigured http-header auth provider", http.StatusInternalServerError)
+			if buthProvider.c.UsernbmeHebder == "" {
+				log15.Error("No HTTP hebder set for usernbme (set the http-hebder buth provider's usernbmeHebder property).")
+				http.Error(w, "misconfigured http-hebder buth provider", http.StbtusInternblServerError)
 				return
 			}
 
-			rawUsername := strings.TrimPrefix(r.Header.Get(authProvider.c.UsernameHeader), authProvider.c.StripUsernameHeaderPrefix)
-			rawEmail := strings.TrimPrefix(r.Header.Get(authProvider.c.EmailHeader), authProvider.c.StripUsernameHeaderPrefix)
+			rbwUsernbme := strings.TrimPrefix(r.Hebder.Get(buthProvider.c.UsernbmeHebder), buthProvider.c.StripUsernbmeHebderPrefix)
+			rbwEmbil := strings.TrimPrefix(r.Hebder.Get(buthProvider.c.EmbilHebder), buthProvider.c.StripUsernbmeHebderPrefix)
 
-			// Continue onto next auth provider if no header is set (in case the auth proxy allows
-			// unauthenticated users to bypass it, which some do). Also respect already authenticated
-			// actors (e.g., via access token).
+			// Continue onto next buth provider if no hebder is set (in cbse the buth proxy bllows
+			// unbuthenticbted users to bypbss it, which some do). Also respect blrebdy buthenticbted
+			// bctors (e.g., vib bccess token).
 			//
-			// It would NOT add any additional security to return an error here, because a user who can
-			// access this HTTP endpoint directly can just as easily supply a fake username whose
-			// identity to assume.
-			if (rawEmail == "" && rawUsername == "") || actor.FromContext(r.Context()).IsAuthenticated() {
+			// It would NOT bdd bny bdditionbl security to return bn error here, becbuse b user who cbn
+			// bccess this HTTP endpoint directly cbn just bs ebsily supply b fbke usernbme whose
+			// identity to bssume.
+			if (rbwEmbil == "" && rbwUsernbme == "") || bctor.FromContext(r.Context()).IsAuthenticbted() {
 				next.ServeHTTP(w, r)
 				return
 			}
 
-			// Otherwise, get or create the user and proceed with the authenticated request.
-			var (
-				username string
+			// Otherwise, get or crebte the user bnd proceed with the buthenticbted request.
+			vbr (
+				usernbme string
 				err      error
 			)
-			if rawUsername != "" {
-				username, err = auth.NormalizeUsername(rawUsername)
+			if rbwUsernbme != "" {
+				usernbme, err = buth.NormblizeUsernbme(rbwUsernbme)
 				if err != nil {
-					log15.Error("Error normalizing username from HTTP auth proxy.", "username", rawUsername, "err", err)
-					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
+					log15.Error("Error normblizing usernbme from HTTP buth proxy.", "usernbme", rbwUsernbme, "err", err)
+					http.Error(w, "unbble to normblize usernbme", http.StbtusInternblServerError)
 					return
 				}
-			} else if rawEmail != "" {
-				// if they don't have a username, let's create one from their email
-				username, err = auth.NormalizeUsername(rawEmail)
+			} else if rbwEmbil != "" {
+				// if they don't hbve b usernbme, let's crebte one from their embil
+				usernbme, err = buth.NormblizeUsernbme(rbwEmbil)
 				if err != nil {
-					log15.Error("Error normalizing username from email header in HTTP auth proxy.", "email", rawEmail, "err", err)
-					http.Error(w, "unable to normalize username", http.StatusInternalServerError)
+					log15.Error("Error normblizing usernbme from embil hebder in HTTP buth proxy.", "embil", rbwEmbil, "err", err)
+					http.Error(w, "unbble to normblize usernbme", http.StbtusInternblServerError)
 					return
 				}
 			}
-			userID, safeErrMsg, err := auth.GetAndSaveUser(r.Context(), db, auth.GetAndSaveUserOp{
-				UserProps: database.NewUser{
-					Username: username,
-					Email:    rawEmail,
-					// We always only take verified emails from an external source.
-					EmailIsVerified: true,
+			userID, sbfeErrMsg, err := buth.GetAndSbveUser(r.Context(), db, buth.GetAndSbveUserOp{
+				UserProps: dbtbbbse.NewUser{
+					Usernbme: usernbme,
+					Embil:    rbwEmbil,
+					// We blwbys only tbke verified embils from bn externbl source.
+					EmbilIsVerified: true,
 				},
-				ExternalAccount: extsvc.AccountSpec{
+				ExternblAccount: extsvc.AccountSpec{
 					ServiceType: providerType,
-					// Store rawUsername, not normalized username, to prevent two users with distinct
-					// pre-normalization usernames from being merged into the same normalized username
-					// (and therefore letting them each impersonate the other).
+					// Store rbwUsernbme, not normblized usernbme, to prevent two users with distinct
+					// pre-normblizbtion usernbmes from being merged into the sbme normblized usernbme
+					// (bnd therefore letting them ebch impersonbte the other).
 					AccountID: func() string {
-						if rawEmail != "" {
-							return rawEmail
+						if rbwEmbil != "" {
+							return rbwEmbil
 						}
-						return rawUsername
+						return rbwUsernbme
 					}(),
 				},
-				CreateIfNotExist: true,
-				LookUpByUsername: rawEmail == "", // if the email is provided, we should look up by email, otherwise username
+				CrebteIfNotExist: true,
+				LookUpByUsernbme: rbwEmbil == "", // if the embil is provided, we should look up by embil, otherwise usernbme
 			})
 			if err != nil {
-				log15.Error("unable to get/create user from SSO header", "header", authProvider.c.UsernameHeader, "rawUsername", rawUsername, "err", err, "userErr", safeErrMsg)
-				http.Error(w, safeErrMsg, http.StatusInternalServerError)
+				log15.Error("unbble to get/crebte user from SSO hebder", "hebder", buthProvider.c.UsernbmeHebder, "rbwUsernbme", rbwUsernbme, "err", err, "userErr", sbfeErrMsg)
+				http.Error(w, sbfeErrMsg, http.StbtusInternblServerError)
 				return
 			}
 
-			r = r.WithContext(actor.WithActor(r.Context(), &actor.Actor{UID: userID}))
+			r = r.WithContext(bctor.WithActor(r.Context(), &bctor.Actor{UID: userID}))
 			next.ServeHTTP(w, r)
 		})
 	}

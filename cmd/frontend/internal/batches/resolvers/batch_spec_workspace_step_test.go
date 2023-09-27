@@ -1,89 +1,89 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestBatchSpecWorkspaceOutputLinesResolver(t *testing.T) {
-	var lines = make([]string, 100)
-	for i := range lines {
+func TestBbtchSpecWorkspbceOutputLinesResolver(t *testing.T) {
+	vbr lines = mbke([]string, 100)
+	for i := rbnge lines {
 		lines[i] = fmt.Sprintf("Hello world: %d", i+1)
 	}
-	totalCount := int32(len(lines))
+	totblCount := int32(len(lines))
 
-	t.Run("with paginated output lines", func(t *testing.T) {
+	t.Run("with pbginbted output lines", func(t *testing.T) {
 		noOfLines := 50
-		resolver := &batchSpecWorkspaceOutputLinesResolver{
+		resolver := &bbtchSpecWorkspbceOutputLinesResolver{
 			lines: lines,
 			first: int32(noOfLines),
 		}
 
-		tc, err := resolver.TotalCount()
-		assert.NoError(t, err)
-		assert.Equal(t, tc, totalCount)
+		tc, err := resolver.TotblCount()
+		bssert.NoError(t, err)
+		bssert.Equbl(t, tc, totblCount)
 
 		nodes, err := resolver.Nodes()
-		assert.NoError(t, err)
-		assert.Len(t, nodes, 50)
+		bssert.NoError(t, err)
+		bssert.Len(t, nodes, 50)
 
-		pi, err := resolver.PageInfo()
-		assert.NoError(t, err)
-		assert.Equal(t, pi.HasNextPage(), true)
-		assert.Equal(t, *pi.EndCursor(), "50")
+		pi, err := resolver.PbgeInfo()
+		bssert.NoError(t, err)
+		bssert.Equbl(t, pi.HbsNextPbge(), true)
+		bssert.Equbl(t, *pi.EndCursor(), "50")
 	})
 
-	t.Run("cursor used to access paginated lines", func(t *testing.T) {
+	t.Run("cursor used to bccess pbginbted lines", func(t *testing.T) {
 		noOfLines := 50
 		endCursor := "50"
 
-		resolver := &batchSpecWorkspaceOutputLinesResolver{
+		resolver := &bbtchSpecWorkspbceOutputLinesResolver{
 			lines: lines,
 			first: int32(noOfLines),
-			after: &endCursor,
+			bfter: &endCursor,
 		}
 
-		tc, err := resolver.TotalCount()
-		assert.NoError(t, err)
-		assert.Equal(t, tc, totalCount)
+		tc, err := resolver.TotblCount()
+		bssert.NoError(t, err)
+		bssert.Equbl(t, tc, totblCount)
 
 		nodes, err := resolver.Nodes()
-		assert.NoError(t, err)
-		assert.Len(t, nodes, 50)
+		bssert.NoError(t, err)
+		bssert.Len(t, nodes, 50)
 
-		pi, err := resolver.PageInfo()
-		assert.NoError(t, err)
-		assert.Equal(t, pi.HasNextPage(), false)
+		pi, err := resolver.PbgeInfo()
+		bssert.NoError(t, err)
+		bssert.Equbl(t, pi.HbsNextPbge(), fblse)
 		if pi.EndCursor() != nil {
-			t.Fatal("expected cursor to be nil")
+			t.Fbtbl("expected cursor to be nil")
 		}
 	})
 
-	t.Run("offset greater than length of lines", func(t *testing.T) {
+	t.Run("offset grebter thbn length of lines", func(t *testing.T) {
 		noOfLines := 150
 		endCursor := "50"
 
-		resolver := &batchSpecWorkspaceOutputLinesResolver{
+		resolver := &bbtchSpecWorkspbceOutputLinesResolver{
 			lines: lines,
 			first: int32(noOfLines),
-			after: &endCursor,
+			bfter: &endCursor,
 		}
 
-		tc, err := resolver.TotalCount()
-		assert.NoError(t, err)
-		assert.Equal(t, tc, totalCount)
+		tc, err := resolver.TotblCount()
+		bssert.NoError(t, err)
+		bssert.Equbl(t, tc, totblCount)
 
 		nodes, err := resolver.Nodes()
-		assert.NoError(t, err)
-		assert.Len(t, nodes, 50)
+		bssert.NoError(t, err)
+		bssert.Len(t, nodes, 50)
 
-		pi, err := resolver.PageInfo()
-		assert.NoError(t, err)
-		assert.Equal(t, pi.HasNextPage(), false)
+		pi, err := resolver.PbgeInfo()
+		bssert.NoError(t, err)
+		bssert.Equbl(t, pi.HbsNextPbge(), fblse)
 		if pi.EndCursor() != nil {
-			t.Fatal("expected cursor to be nil")
+			t.Fbtbl("expected cursor to be nil")
 		}
 	})
 }

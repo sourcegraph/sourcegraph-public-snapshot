@@ -1,4 +1,4 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"bytes"
@@ -9,141 +9,141 @@ import (
 	"io"
 	"io/fs"
 	"net/http"
-	"net/mail"
+	"net/mbil"
 	"os"
-	stdlibpath "path"
-	"path/filepath"
+	stdlibpbth "pbth"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/go-git/go-git/v5/plumbing/format/config"
-	"github.com/golang/groupcache/lru"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/go-git/go-git/v5/plumbing/formbt/config"
+	"github.com/golbng/groupcbche/lru"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/grpc/streamio"
-	"github.com/sourcegraph/sourcegraph/internal/honey"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/byteutils"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/grpc/strebmio"
+	"github.com/sourcegrbph/sourcegrbph/internbl/honey"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type DiffOptions struct {
-	Repo api.RepoName
+	Repo bpi.RepoNbme
 
-	// These fields must be valid <commit> inputs as defined by gitrevisions(7).
-	Base string
-	Head string
+	// These fields must be vblid <commit> inputs bs defined by gitrevisions(7).
+	Bbse string
+	Hebd string
 
-	// RangeType to be used for computing the diff: one of ".." or "..." (or unset: "").
-	// For a nice visual explanation of ".." vs "...", see https://stackoverflow.com/a/46345364/2682729
-	RangeType string
+	// RbngeType to be used for computing the diff: one of ".." or "..." (or unset: "").
+	// For b nice visubl explbnbtion of ".." vs "...", see https://stbckoverflow.com/b/46345364/2682729
+	RbngeType string
 
-	Paths []string
+	Pbths []string
 }
 
-// Diff returns an iterator that can be used to access the diff between two
-// commits on a per-file basis. The iterator must be closed with Close when no
+// Diff returns bn iterbtor thbt cbn be used to bccess the diff between two
+// commits on b per-file bbsis. The iterbtor must be closed with Close when no
 // longer required.
-func (c *clientImplementor) Diff(ctx context.Context, checker authz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterator, error) {
-	// Rare case: the base is the empty tree, in which case we must use ..
-	// instead of ... as the latter only works for commits.
-	if opts.Base == DevNullSHA {
-		opts.RangeType = ".."
-	} else if opts.RangeType != ".." {
-		opts.RangeType = "..."
+func (c *clientImplementor) Diff(ctx context.Context, checker buthz.SubRepoPermissionChecker, opts DiffOptions) (*DiffFileIterbtor, error) {
+	// Rbre cbse: the bbse is the empty tree, in which cbse we must use ..
+	// instebd of ... bs the lbtter only works for commits.
+	if opts.Bbse == DevNullSHA {
+		opts.RbngeType = ".."
+	} else if opts.RbngeType != ".." {
+		opts.RbngeType = "..."
 	}
 
-	rangeSpec := opts.Base + opts.RangeType + opts.Head
-	if strings.HasPrefix(rangeSpec, "-") || strings.HasPrefix(rangeSpec, ".") {
-		// We don't want to allow user input to add `git diff` command line
-		// flags or refer to a file.
-		return nil, errors.Errorf("invalid diff range argument: %q", rangeSpec)
+	rbngeSpec := opts.Bbse + opts.RbngeType + opts.Hebd
+	if strings.HbsPrefix(rbngeSpec, "-") || strings.HbsPrefix(rbngeSpec, ".") {
+		// We don't wbnt to bllow user input to bdd `git diff` commbnd line
+		// flbgs or refer to b file.
+		return nil, errors.Errorf("invblid diff rbnge brgument: %q", rbngeSpec)
 	}
-	args := append([]string{
+	brgs := bppend([]string{
 		"diff",
-		"--find-renames",
-		// TODO(eseliger): Enable once we have support for copy detection in go-diff
-		// and actually expose a `isCopy` field in the api, otherwise this
-		// information is thrown away anyways.
+		"--find-renbmes",
+		// TODO(eseliger): Enbble once we hbve support for copy detection in go-diff
+		// bnd bctublly expose b `isCopy` field in the bpi, otherwise this
+		// informbtion is thrown bwby bnywbys.
 		// "--find-copies",
 		"--full-index",
 		"--inter-hunk-context=3",
 		"--no-prefix",
-		rangeSpec,
+		rbngeSpec,
 		"--",
-	}, opts.Paths...)
+	}, opts.Pbths...)
 
-	rdr, err := c.gitCommand(opts.Repo, args...).StdoutReader(ctx)
+	rdr, err := c.gitCommbnd(opts.Repo, brgs...).StdoutRebder(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "executing git diff")
+		return nil, errors.Wrbp(err, "executing git diff")
 	}
 
-	return &DiffFileIterator{
+	return &DiffFileIterbtor{
 		rdr:            rdr,
-		mfdr:           diff.NewMultiFileDiffReader(rdr),
+		mfdr:           diff.NewMultiFileDiffRebder(rdr),
 		fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
 	}, nil
 }
 
-type DiffFileIterator struct {
-	rdr            io.ReadCloser
-	mfdr           *diff.MultiFileDiffReader
-	fileFilterFunc diffFileIteratorFilter
+type DiffFileIterbtor struct {
+	rdr            io.RebdCloser
+	mfdr           *diff.MultiFileDiffRebder
+	fileFilterFunc diffFileIterbtorFilter
 }
 
-func NewDiffFileIterator(rdr io.ReadCloser) *DiffFileIterator {
-	return &DiffFileIterator{
+func NewDiffFileIterbtor(rdr io.RebdCloser) *DiffFileIterbtor {
+	return &DiffFileIterbtor{
 		rdr:  rdr,
-		mfdr: diff.NewMultiFileDiffReader(rdr),
+		mfdr: diff.NewMultiFileDiffRebder(rdr),
 	}
 }
 
-type diffFileIteratorFilter func(fileName string) (bool, error)
+type diffFileIterbtorFilter func(fileNbme string) (bool, error)
 
-func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) diffFileIteratorFilter {
-	if !authz.SubRepoEnabled(checker) {
+func getFilterFunc(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme) diffFileIterbtorFilter {
+	if !buthz.SubRepoEnbbled(checker) {
 		return nil
 	}
-	return func(fileName string) (bool, error) {
-		shouldFilter, err := authz.FilterActorPath(ctx, checker, actor.FromContext(ctx), repo, fileName)
+	return func(fileNbme string) (bool, error) {
+		shouldFilter, err := buthz.FilterActorPbth(ctx, checker, bctor.FromContext(ctx), repo, fileNbme)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
 		return shouldFilter, nil
 	}
 }
 
-func (i *DiffFileIterator) Close() error {
+func (i *DiffFileIterbtor) Close() error {
 	return i.rdr.Close()
 }
 
-// Next returns the next file diff. If no more diffs are available, the diff
-// will be nil and the error will be io.EOF.
-func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
-	fd, err := i.mfdr.ReadFile()
+// Next returns the next file diff. If no more diffs bre bvbilbble, the diff
+// will be nil bnd the error will be io.EOF.
+func (i *DiffFileIterbtor) Next() (*diff.FileDiff, error) {
+	fd, err := i.mfdr.RebdFile()
 	if err != nil {
 		return fd, err
 	}
 	if i.fileFilterFunc != nil {
-		if canRead, err := i.fileFilterFunc(fd.NewName); err != nil {
+		if cbnRebd, err := i.fileFilterFunc(fd.NewNbme); err != nil {
 			return nil, err
-		} else if !canRead {
+		} else if !cbnRebd {
 			// go to next
 			return i.Next()
 		}
@@ -151,233 +151,233 @@ func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
 	return fd, err
 }
 
-// ContributorOptions contains options for filtering contributor commit counts
+// ContributorOptions contbins options for filtering contributor commit counts
 type ContributorOptions struct {
-	Range string // the range for which stats will be fetched
-	After string // the date after which to collect commits
-	Path  string // compute stats for commits that touch this path
+	Rbnge string // the rbnge for which stbts will be fetched
+	After string // the dbte bfter which to collect commits
+	Pbth  string // compute stbts for commits thbt touch this pbth
 }
 
-func (o *ContributorOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.String("range", o.Range),
-		attribute.String("after", o.After),
-		attribute.String("path", o.Path),
+func (o *ContributorOptions) Attrs() []bttribute.KeyVblue {
+	return []bttribute.KeyVblue{
+		bttribute.String("rbnge", o.Rbnge),
+		bttribute.String("bfter", o.After),
+		bttribute.String("pbth", o.Pbth),
 	}
 }
 
-func (c *clientImplementor) ContributorCount(ctx context.Context, repo api.RepoName, opt ContributorOptions) (_ []*gitdomain.ContributorCount, err error) {
-	ctx, _, endObservation := c.operations.contributorCount.With(ctx, &err, observation.Args{Attrs: opt.Attrs()})
-	defer endObservation(1, observation.Args{})
+func (c *clientImplementor) ContributorCount(ctx context.Context, repo bpi.RepoNbme, opt ContributorOptions) (_ []*gitdombin.ContributorCount, err error) {
+	ctx, _, endObservbtion := c.operbtions.contributorCount.With(ctx, &err, observbtion.Args{Attrs: opt.Attrs()})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if opt.Range == "" {
-		opt.Range = "HEAD"
+	if opt.Rbnge == "" {
+		opt.Rbnge = "HEAD"
 	}
-	if err := checkSpecArgSafety(opt.Range); err != nil {
+	if err := checkSpecArgSbfety(opt.Rbnge); err != nil {
 		return nil, err
 	}
 
-	// We split the individual args for the shortlog command instead of -sne for easier arg checking in the allowlist.
-	args := []string{"shortlog", "-s", "-n", "-e", "--no-merges"}
+	// We split the individubl brgs for the shortlog commbnd instebd of -sne for ebsier brg checking in the bllowlist.
+	brgs := []string{"shortlog", "-s", "-n", "-e", "--no-merges"}
 	if opt.After != "" {
-		args = append(args, "--after="+opt.After)
+		brgs = bppend(brgs, "--bfter="+opt.After)
 	}
-	args = append(args, opt.Range, "--")
-	if opt.Path != "" {
-		args = append(args, opt.Path)
+	brgs = bppend(brgs, opt.Rbnge, "--")
+	if opt.Pbth != "" {
+		brgs = bppend(brgs, opt.Pbth)
 	}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, errors.Errorf("exec `git shortlog -s -n -e` failed: %v", err)
+		return nil, errors.Errorf("exec `git shortlog -s -n -e` fbiled: %v", err)
 	}
-	return parseShortLog(out)
+	return pbrseShortLog(out)
 }
 
-// logEntryPattern is the regexp pattern that matches entries in the output of the `git shortlog
-// -sne` command.
-var logEntryPattern = lazyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
+// logEntryPbttern is the regexp pbttern thbt mbtches entries in the output of the `git shortlog
+// -sne` commbnd.
+vbr logEntryPbttern = lbzyregexp.New(`^\s*([0-9]+)\s+(.*)$`)
 
-func parseShortLog(out []byte) ([]*gitdomain.ContributorCount, error) {
-	out = bytes.TrimSpace(out)
+func pbrseShortLog(out []byte) ([]*gitdombin.ContributorCount, error) {
+	out = bytes.TrimSpbce(out)
 	if len(out) == 0 {
 		return nil, nil
 	}
 	lines := bytes.Split(out, []byte{'\n'})
-	results := make([]*gitdomain.ContributorCount, len(lines))
-	for i, line := range lines {
-		// example line: "1125\tJane Doe <jane@sourcegraph.com>"
-		match := logEntryPattern.FindSubmatch(line)
-		if match == nil {
-			return nil, errors.Errorf("invalid git shortlog line: %q", line)
+	results := mbke([]*gitdombin.ContributorCount, len(lines))
+	for i, line := rbnge lines {
+		// exbmple line: "1125\tJbne Doe <jbne@sourcegrbph.com>"
+		mbtch := logEntryPbttern.FindSubmbtch(line)
+		if mbtch == nil {
+			return nil, errors.Errorf("invblid git shortlog line: %q", line)
 		}
-		// example match: ["1125\tJane Doe <jane@sourcegraph.com>" "1125" "Jane Doe <jane@sourcegraph.com>"]
-		count, err := strconv.Atoi(string(match[1]))
+		// exbmple mbtch: ["1125\tJbne Doe <jbne@sourcegrbph.com>" "1125" "Jbne Doe <jbne@sourcegrbph.com>"]
+		count, err := strconv.Atoi(string(mbtch[1]))
 		if err != nil {
 			return nil, err
 		}
-		addr, err := lenientParseAddress(string(match[2]))
-		if err != nil || addr == nil {
-			addr = &mail.Address{Name: string(match[2])}
+		bddr, err := lenientPbrseAddress(string(mbtch[2]))
+		if err != nil || bddr == nil {
+			bddr = &mbil.Address{Nbme: string(mbtch[2])}
 		}
-		results[i] = &gitdomain.ContributorCount{
+		results[i] = &gitdombin.ContributorCount{
 			Count: int32(count),
-			Name:  addr.Name,
-			Email: addr.Address,
+			Nbme:  bddr.Nbme,
+			Embil: bddr.Address,
 		}
 	}
 	return results, nil
 }
 
-// lenientParseAddress is just like mail.ParseAddress, except that it treats
-// the following somewhat-common malformed syntax where a user has misconfigured
-// their email address as their name:
+// lenientPbrseAddress is just like mbil.PbrseAddress, except thbt it trebts
+// the following somewhbt-common mblformed syntbx where b user hbs misconfigured
+// their embil bddress bs their nbme:
 //
-//	foo@gmail.com <foo@gmail.com>
+//	foo@gmbil.com <foo@gmbil.com>
 //
-// As a valid name, whereas mail.ParseAddress would return an error:
+// As b vblid nbme, wherebs mbil.PbrseAddress would return bn error:
 //
-//	mail: expected single address, got "<foo@gmail.com>"
-func lenientParseAddress(address string) (*mail.Address, error) {
-	addr, err := mail.ParseAddress(address)
-	if err != nil && strings.Contains(err.Error(), "expected single address") {
-		p := strings.LastIndex(address, "<")
+//	mbil: expected single bddress, got "<foo@gmbil.com>"
+func lenientPbrseAddress(bddress string) (*mbil.Address, error) {
+	bddr, err := mbil.PbrseAddress(bddress)
+	if err != nil && strings.Contbins(err.Error(), "expected single bddress") {
+		p := strings.LbstIndex(bddress, "<")
 		if p == -1 {
-			return addr, err
+			return bddr, err
 		}
-		return &mail.Address{
-			Name:    strings.TrimSpace(address[:p]),
-			Address: strings.Trim(address[p:], " <>"),
+		return &mbil.Address{
+			Nbme:    strings.TrimSpbce(bddress[:p]),
+			Address: strings.Trim(bddress[p:], " <>"),
 		}, nil
 	}
-	return addr, err
+	return bddr, err
 }
 
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which
-// could cause it to be interpreted as a git command line argument.
-func checkSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+// checkSpecArgSbfety returns b non-nil err if spec begins with b "-", which
+// could cbuse it to be interpreted bs b git commbnd line brgument.
+func checkSpecArgSbfety(spec string) error {
+	if strings.HbsPrefix(spec, "-") {
+		return errors.Errorf("invblid git revision spec %q (begins with '-')", spec)
 	}
 	return nil
 }
 
-type CommitGraphOptions struct {
+type CommitGrbphOptions struct {
 	Commit  string
 	AllRefs bool
 	Limit   int
 	Since   *time.Time
-} // please update LogFields if you add a field here
+} // plebse updbte LogFields if you bdd b field here
 
-// CommitGraph returns the commit graph for the given repository as a mapping
-// from a commit to its parents. If a commit is supplied, the returned graph will
-// be rooted at the given commit. If a non-zero limit is supplied, at most that
-// many commits will be returned.
-func (c *clientImplementor) CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error) {
-	args := []string{"log", "--pretty=%H %P", "--topo-order"}
+// CommitGrbph returns the commit grbph for the given repository bs b mbpping
+// from b commit to its pbrents. If b commit is supplied, the returned grbph will
+// be rooted bt the given commit. If b non-zero limit is supplied, bt most thbt
+// mbny commits will be returned.
+func (c *clientImplementor) CommitGrbph(ctx context.Context, repo bpi.RepoNbme, opts CommitGrbphOptions) (_ *gitdombin.CommitGrbph, err error) {
+	brgs := []string{"log", "--pretty=%H %P", "--topo-order"}
 	if opts.AllRefs {
-		args = append(args, "--all")
+		brgs = bppend(brgs, "--bll")
 	}
 	if opts.Commit != "" {
-		args = append(args, opts.Commit)
+		brgs = bppend(brgs, opts.Commit)
 	}
 	if opts.Since != nil {
-		args = append(args, fmt.Sprintf("--since=%s", opts.Since.Format(time.RFC3339)))
+		brgs = bppend(brgs, fmt.Sprintf("--since=%s", opts.Since.Formbt(time.RFC3339)))
 	}
 	if opts.Limit > 0 {
-		args = append(args, fmt.Sprintf("-%d", opts.Limit))
+		brgs = bppend(brgs, fmt.Sprintf("-%d", opts.Limit))
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return gitdomain.ParseCommitGraph(strings.Split(string(out), "\n")), nil
+	return gitdombin.PbrseCommitGrbph(strings.Split(string(out), "\n")), nil
 }
 
-// CommitLog returns the repository commit log, including the file paths that were changed. The general approach to parsing
-// is to separate the first line (the metadata line) from the remaining lines (the files), and then parse the metadata line
-// into component parts separately.
-func (c *clientImplementor) CommitLog(ctx context.Context, repo api.RepoName, after time.Time) ([]CommitLog, error) {
-	args := []string{"log", "--pretty=format:%H<!>%ae<!>%an<!>%ad", "--name-only", "--topo-order", "--no-merges"}
-	if !after.IsZero() {
-		args = append(args, fmt.Sprintf("--after=%s", after.Format(time.RFC3339)))
+// CommitLog returns the repository commit log, including the file pbths thbt were chbnged. The generbl bpprobch to pbrsing
+// is to sepbrbte the first line (the metbdbtb line) from the rembining lines (the files), bnd then pbrse the metbdbtb line
+// into component pbrts sepbrbtely.
+func (c *clientImplementor) CommitLog(ctx context.Context, repo bpi.RepoNbme, bfter time.Time) ([]CommitLog, error) {
+	brgs := []string{"log", "--pretty=formbt:%H<!>%be<!>%bn<!>%bd", "--nbme-only", "--topo-order", "--no-merges"}
+	if !bfter.IsZero() {
+		brgs = bppend(brgs, fmt.Sprintf("--bfter=%s", bfter.Formbt(time.RFC3339)))
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, errors.Wrapf(err, "gitCommand %s", string(out))
+		return nil, errors.Wrbpf(err, "gitCommbnd %s", string(out))
 	}
 
-	var ls []CommitLog
+	vbr ls []CommitLog
 	lines := strings.Split(string(out), "\n\n")
 
-	for _, logOutput := range lines {
-		partitions := strings.Split(logOutput, "\n")
-		if len(partitions) < 2 {
+	for _, logOutput := rbnge lines {
+		pbrtitions := strings.Split(logOutput, "\n")
+		if len(pbrtitions) < 2 {
 			continue
 		}
-		metaLine := partitions[0]
-		var changedFiles []string
-		for _, pt := range partitions[1:] {
+		metbLine := pbrtitions[0]
+		vbr chbngedFiles []string
+		for _, pt := rbnge pbrtitions[1:] {
 			if pt != "" {
-				changedFiles = append(changedFiles, pt)
+				chbngedFiles = bppend(chbngedFiles, pt)
 			}
 		}
 
-		parts := strings.Split(metaLine, "<!>")
-		if len(parts) != 4 {
+		pbrts := strings.Split(metbLine, "<!>")
+		if len(pbrts) != 4 {
 			continue
 		}
-		sha, authorEmail, authorName, timestamp := parts[0], parts[1], parts[2], parts[3]
-		t, err := parseTimestamp(timestamp)
+		shb, buthorEmbil, buthorNbme, timestbmp := pbrts[0], pbrts[1], pbrts[2], pbrts[3]
+		t, err := pbrseTimestbmp(timestbmp)
 		if err != nil {
-			return nil, errors.Wrapf(err, "parseTimestamp %s", timestamp)
+			return nil, errors.Wrbpf(err, "pbrseTimestbmp %s", timestbmp)
 		}
-		ls = append(ls, CommitLog{
-			SHA:          sha,
-			AuthorEmail:  authorEmail,
-			AuthorName:   authorName,
-			Timestamp:    t,
-			ChangedFiles: changedFiles,
+		ls = bppend(ls, CommitLog{
+			SHA:          shb,
+			AuthorEmbil:  buthorEmbil,
+			AuthorNbme:   buthorNbme,
+			Timestbmp:    t,
+			ChbngedFiles: chbngedFiles,
 		})
 	}
 	return ls, nil
 }
 
-func parseTimestamp(timestamp string) (time.Time, error) {
-	layout := "Mon Jan 2 15:04:05 2006 -0700"
-	t, err := time.Parse(layout, timestamp)
+func pbrseTimestbmp(timestbmp string) (time.Time, error) {
+	lbyout := "Mon Jbn 2 15:04:05 2006 -0700"
+	t, err := time.Pbrse(lbyout, timestbmp)
 	if err != nil {
 		return time.Time{}, err
 	}
 	return t, nil
 }
 
-// DevNullSHA 4b825dc642cb6eb9a060e54bf8d69288fbee4904 is `git hash-object -t
-// tree /dev/null`, which is used as the base when computing the `git diff` of
+// DevNullSHA 4b825dc642cb6eb9b060e54bf8d69288fbee4904 is `git hbsh-object -t
+// tree /dev/null`, which is used bs the bbse when computing the `git diff` of
 // the root commit.
-const DevNullSHA = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
+const DevNullSHA = "4b825dc642cb6eb9b060e54bf8d69288fbee4904"
 
-func (c *clientImplementor) DiffPath(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, sourceCommit, targetCommit, path string) ([]*diff.Hunk, error) {
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil {
+func (c *clientImplementor) DiffPbth(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, sourceCommit, tbrgetCommit, pbth string) ([]*diff.Hunk, error) {
+	b := bctor.FromContext(ctx)
+	if hbsAccess, err := buthz.FilterActorPbth(ctx, checker, b, repo, pbth); err != nil {
 		return nil, err
-	} else if !hasAccess {
+	} else if !hbsAccess {
 		return nil, os.ErrNotExist
 	}
-	args := []string{"diff", sourceCommit, targetCommit, "--", path}
-	reader, err := c.gitCommand(repo, args...).StdoutReader(ctx)
+	brgs := []string{"diff", sourceCommit, tbrgetCommit, "--", pbth}
+	rebder, err := c.gitCommbnd(repo, brgs...).StdoutRebder(ctx)
 	if err != nil {
 		return nil, err
 	}
-	defer reader.Close()
+	defer rebder.Close()
 
-	output, err := io.ReadAll(reader)
+	output, err := io.RebdAll(rebder)
 	if err != nil {
 		return nil, err
 	}
@@ -385,126 +385,126 @@ func (c *clientImplementor) DiffPath(ctx context.Context, checker authz.SubRepoP
 		return nil, nil
 	}
 
-	d, err := diff.NewFileDiffReader(bytes.NewReader(output)).Read()
+	d, err := diff.NewFileDiffRebder(bytes.NewRebder(output)).Rebd()
 	if err != nil {
 		return nil, err
 	}
 	return d.Hunks, nil
 }
 
-// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
-func (c *clientImplementor) DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error) {
-	command := c.gitCommand(repo, "diff", "-z", "--name-status", "--no-renames", string(commitA), string(commitB))
-	return command.Output(ctx)
+// DiffSymbols performs b diff commbnd which is expected to be pbrsed by our symbols pbckbge
+func (c *clientImplementor) DiffSymbols(ctx context.Context, repo bpi.RepoNbme, commitA, commitB bpi.CommitID) ([]byte, error) {
+	commbnd := c.gitCommbnd(repo, "diff", "-z", "--nbme-stbtus", "--no-renbmes", string(commitA), string(commitB))
+	return commbnd.Output(ctx)
 }
 
-// ReadDir reads the contents of the named directory at commit.
-func (c *clientImplementor) ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) (_ []fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.readDir.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// RebdDir rebds the contents of the nbmed directory bt commit.
+func (c *clientImplementor) RebdDir(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, pbth string, recurse bool) (_ []fs.FileInfo, err error) {
+	ctx, _, endObservbtion := c.operbtions.rebdDir.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 		commit.Attr(),
-		attribute.String("path", path),
-		attribute.Bool("recurse", recurse),
+		bttribute.String("pbth", pbth),
+		bttribute.Bool("recurse", recurse),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := checkSpecArgSafety(string(commit)); err != nil {
+	if err := checkSpecArgSbfety(string(commit)); err != nil {
 		return nil, err
 	}
 
-	if path != "" {
-		// Trailing slash is necessary to ls-tree under the dir (not just
-		// to list the dir's tree entry in its parent dir).
-		path = filepath.Clean(rel(path)) + "/"
+	if pbth != "" {
+		// Trbiling slbsh is necessbry to ls-tree under the dir (not just
+		// to list the dir's tree entry in its pbrent dir).
+		pbth = filepbth.Clebn(rel(pbth)) + "/"
 	}
-	files, err := c.lsTree(ctx, repo, commit, path, recurse)
+	files, err := c.lsTree(ctx, repo, commit, pbth, recurse)
 
-	if err != nil || !authz.SubRepoEnabled(checker) {
+	if err != nil || !buthz.SubRepoEnbbled(checker) {
 		return files, err
 	}
 
-	a := actor.FromContext(ctx)
-	filtered, filteringErr := authz.FilterActorFileInfos(ctx, checker, a, repo, files)
+	b := bctor.FromContext(ctx)
+	filtered, filteringErr := buthz.FilterActorFileInfos(ctx, checker, b, repo, files)
 	if filteringErr != nil {
-		return nil, errors.Wrap(err, "filtering paths")
+		return nil, errors.Wrbp(err, "filtering pbths")
 	} else {
 		return filtered, nil
 	}
 }
 
-// lsTreeRootCache caches the result of running `git ls-tree ...` on a repository's root path
-// (because non-root paths are likely to have a lower cache hit rate). It is intended to improve the
-// perceived performance of large monorepos, where the tree for a given repo+commit (usually the
-// repo's latest commit on default branch) will be requested frequently and would take multiple
-// seconds to compute if uncached.
-var (
-	lsTreeRootCacheMu sync.Mutex
-	lsTreeRootCache   = lru.New(5)
+// lsTreeRootCbche cbches the result of running `git ls-tree ...` on b repository's root pbth
+// (becbuse non-root pbths bre likely to hbve b lower cbche hit rbte). It is intended to improve the
+// perceived performbnce of lbrge monorepos, where the tree for b given repo+commit (usublly the
+// repo's lbtest commit on defbult brbnch) will be requested frequently bnd would tbke multiple
+// seconds to compute if uncbched.
+vbr (
+	lsTreeRootCbcheMu sync.Mutex
+	lsTreeRootCbche   = lru.New(5)
 )
 
-// lsTree returns ls of tree at path.
+// lsTree returns ls of tree bt pbth.
 func (c *clientImplementor) lsTree(
 	ctx context.Context,
-	repo api.RepoName,
-	commit api.CommitID,
-	path string,
+	repo bpi.RepoNbme,
+	commit bpi.CommitID,
+	pbth string,
 	recurse bool,
 ) (files []fs.FileInfo, err error) {
-	if path != "" || !recurse {
-		// Only cache the root recursive ls-tree.
-		return c.lsTreeUncached(ctx, repo, commit, path, recurse)
+	if pbth != "" || !recurse {
+		// Only cbche the root recursive ls-tree.
+		return c.lsTreeUncbched(ctx, repo, commit, pbth, recurse)
 	}
 
-	key := string(repo) + ":" + string(commit) + ":" + path
-	lsTreeRootCacheMu.Lock()
-	v, ok := lsTreeRootCache.Get(key)
-	lsTreeRootCacheMu.Unlock()
-	var entries []fs.FileInfo
+	key := string(repo) + ":" + string(commit) + ":" + pbth
+	lsTreeRootCbcheMu.Lock()
+	v, ok := lsTreeRootCbche.Get(key)
+	lsTreeRootCbcheMu.Unlock()
+	vbr entries []fs.FileInfo
 	if ok {
-		// Cache hit.
+		// Cbche hit.
 		entries = v.([]fs.FileInfo)
 	} else {
-		// Cache miss.
-		var err error
-		start := time.Now()
-		entries, err = c.lsTreeUncached(ctx, repo, commit, path, recurse)
+		// Cbche miss.
+		vbr err error
+		stbrt := time.Now()
+		entries, err = c.lsTreeUncbched(ctx, repo, commit, pbth, recurse)
 		if err != nil {
 			return nil, err
 		}
 
-		// It's only worthwhile to cache if the operation took a while and returned a lot of
-		// data. This is a heuristic.
-		if time.Since(start) > 500*time.Millisecond && len(entries) > 5000 {
-			lsTreeRootCacheMu.Lock()
-			lsTreeRootCache.Add(key, entries)
-			lsTreeRootCacheMu.Unlock()
+		// It's only worthwhile to cbche if the operbtion took b while bnd returned b lot of
+		// dbtb. This is b heuristic.
+		if time.Since(stbrt) > 500*time.Millisecond && len(entries) > 5000 {
+			lsTreeRootCbcheMu.Lock()
+			lsTreeRootCbche.Add(key, entries)
+			lsTreeRootCbcheMu.Unlock()
 		}
 	}
 	return entries, nil
 }
 
-type objectInfo gitdomain.OID
+type objectInfo gitdombin.OID
 
-func (oid objectInfo) OID() gitdomain.OID { return gitdomain.OID(oid) }
+func (oid objectInfo) OID() gitdombin.OID { return gitdombin.OID(oid) }
 
-// lStat returns a FileInfo describing the named file at commit. If the file is a
-// symbolic link, the returned FileInfo describes the symbolic link. lStat makes
-// no attempt to follow the link.
-func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.lstat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// lStbt returns b FileInfo describing the nbmed file bt commit. If the file is b
+// symbolic link, the returned FileInfo describes the symbolic link. lStbt mbkes
+// no bttempt to follow the link.
+func (c *clientImplementor) lStbt(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, pbth string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservbtion := c.operbtions.lstbt.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		commit.Attr(),
-		attribute.String("path", path),
+		bttribute.String("pbth", pbth),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := checkSpecArgSafety(string(commit)); err != nil {
+	if err := checkSpecArgSbfety(string(commit)); err != nil {
 		return nil, err
 	}
 
-	path = filepath.Clean(rel(path))
+	pbth = filepbth.Clebn(rel(pbth))
 
-	if path == "." {
-		// Special case root, which is not returned by `git ls-tree`.
+	if pbth == "." {
+		// Specibl cbse root, which is not returned by `git ls-tree`.
 		obj, err := c.GetObject(ctx, repo, string(commit)+"^{tree}")
 		if err != nil {
 			return nil, err
@@ -512,1030 +512,1030 @@ func (c *clientImplementor) lStat(ctx context.Context, checker authz.SubRepoPerm
 		return &fileutil.FileInfo{Mode_: os.ModeDir, Sys_: objectInfo(obj.ID)}, nil
 	}
 
-	fis, err := c.lsTree(ctx, repo, commit, path, false)
+	fis, err := c.lsTree(ctx, repo, commit, pbth, fblse)
 	if err != nil {
 		return nil, err
 	}
 	if len(fis) == 0 {
-		return nil, &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+		return nil, &os.PbthError{Op: "ls-tree", Pbth: pbth, Err: os.ErrNotExist}
 	}
 
-	if !authz.SubRepoEnabled(checker) {
+	if !buthz.SubRepoEnbbled(checker) {
 		return fis[0], nil
 	}
 	// Applying sub-repo permissions
-	a := actor.FromContext(ctx)
-	include, filteringErr := authz.FilterActorFileInfo(ctx, checker, a, repo, fis[0])
+	b := bctor.FromContext(ctx)
+	include, filteringErr := buthz.FilterActorFileInfo(ctx, checker, b, repo, fis[0])
 	if include && filteringErr == nil {
 		return fis[0], nil
 	} else {
 		if filteringErr != nil {
-			err = errors.Wrap(filteringErr, "filtering paths")
+			err = errors.Wrbp(filteringErr, "filtering pbths")
 		} else {
-			err = &os.PathError{Op: "ls-tree", Path: path, Err: os.ErrNotExist}
+			err = &os.PbthError{Op: "ls-tree", Pbth: pbth, Err: os.ErrNotExist}
 		}
 		return nil, err
 	}
 }
 
-func errorMessageTruncatedOutput(cmd []string, out []byte) string {
-	const maxOutput = 5000
+func errorMessbgeTruncbtedOutput(cmd []string, out []byte) string {
+	const mbxOutput = 5000
 
-	message := fmt.Sprintf("git command %v failed", cmd)
-	if len(out) > maxOutput {
-		message += fmt.Sprintf(" (truncated output: %q, %d more)", out[:maxOutput], len(out)-maxOutput)
+	messbge := fmt.Sprintf("git commbnd %v fbiled", cmd)
+	if len(out) > mbxOutput {
+		messbge += fmt.Sprintf(" (truncbted output: %q, %d more)", out[:mbxOutput], len(out)-mbxOutput)
 	} else {
-		message += fmt.Sprintf(" (output: %q)", out)
+		messbge += fmt.Sprintf(" (output: %q)", out)
 	}
 
-	return message
+	return messbge
 }
 
-func (c *clientImplementor) lsTreeUncached(ctx context.Context, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+func (c *clientImplementor) lsTreeUncbched(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbth string, recurse bool) ([]fs.FileInfo, error) {
+	if err := gitdombin.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
-	// Don't call filepath.Clean(path) because ReadDir needs to pass
-	// path with a trailing slash.
+	// Don't cbll filepbth.Clebn(pbth) becbuse RebdDir needs to pbss
+	// pbth with b trbiling slbsh.
 
-	if err := checkSpecArgSafety(path); err != nil {
+	if err := checkSpecArgSbfety(pbth); err != nil {
 		return nil, err
 	}
 
-	args := []string{
+	brgs := []string{
 		"ls-tree",
 		"--long", // show size
-		"--full-name",
+		"--full-nbme",
 		"-z",
 		string(commit),
 	}
 	if recurse {
-		args = append(args, "-r", "-t")
+		brgs = bppend(brgs, "-r", "-t")
 	}
-	if path != "" {
-		args = append(args, "--", filepath.ToSlash(path))
+	if pbth != "" {
+		brgs = bppend(brgs, "--", filepbth.ToSlbsh(pbth))
 	}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if bytes.Contains(out, []byte("exists on disk, but not in")) {
-			return nil, &os.PathError{Op: "ls-tree", Path: filepath.ToSlash(path), Err: os.ErrNotExist}
+		if bytes.Contbins(out, []byte("exists on disk, but not in")) {
+			return nil, &os.PbthError{Op: "ls-tree", Pbth: filepbth.ToSlbsh(pbth), Err: os.ErrNotExist}
 		}
 
-		message := errorMessageTruncatedOutput(cmd.Args(), out)
-		return nil, errors.WithMessage(err, message)
+		messbge := errorMessbgeTruncbtedOutput(cmd.Args(), out)
+		return nil, errors.WithMessbge(err, messbge)
 	}
 
 	if len(out) == 0 {
-		// If we are listing the empty root tree, we will have no output.
-		if stdlibpath.Clean(path) == "." {
+		// If we bre listing the empty root tree, we will hbve no output.
+		if stdlibpbth.Clebn(pbth) == "." {
 			return []fs.FileInfo{}, nil
 		}
-		return nil, &os.PathError{Op: "git ls-tree", Path: path, Err: os.ErrNotExist}
+		return nil, &os.PbthError{Op: "git ls-tree", Pbth: pbth, Err: os.ErrNotExist}
 	}
 
-	trimPath := strings.TrimPrefix(path, "./")
+	trimPbth := strings.TrimPrefix(pbth, "./")
 	lines := strings.Split(string(out), "\x00")
-	fis := make([]fs.FileInfo, len(lines)-1)
-	for i, line := range lines {
+	fis := mbke([]fs.FileInfo, len(lines)-1)
+	for i, line := rbnge lines {
 		if i == len(lines)-1 {
-			// last entry is empty
+			// lbst entry is empty
 			continue
 		}
 
-		tabPos := strings.IndexByte(line, '\t')
-		if tabPos == -1 {
-			return nil, errors.Errorf("invalid `git ls-tree` output: %q", out)
+		tbbPos := strings.IndexByte(line, '\t')
+		if tbbPos == -1 {
+			return nil, errors.Errorf("invblid `git ls-tree` output: %q", out)
 		}
-		info := strings.SplitN(line[:tabPos], " ", 4)
-		name := line[tabPos+1:]
-		if len(name) < len(trimPath) {
-			// This is in a submodule; return the original path to avoid a slice out of bounds panic
-			// when setting the FileInfo._Name below.
-			name = trimPath
+		info := strings.SplitN(line[:tbbPos], " ", 4)
+		nbme := line[tbbPos+1:]
+		if len(nbme) < len(trimPbth) {
+			// This is in b submodule; return the originbl pbth to bvoid b slice out of bounds pbnic
+			// when setting the FileInfo._Nbme below.
+			nbme = trimPbth
 		}
 
 		if len(info) != 4 {
-			return nil, errors.Errorf("invalid `git ls-tree` output: %q", out)
+			return nil, errors.Errorf("invblid `git ls-tree` output: %q", out)
 		}
 		typ := info[1]
-		sha := info[2]
-		if !gitdomain.IsAbsoluteRevision(sha) {
-			return nil, errors.Errorf("invalid `git ls-tree` SHA output: %q", sha)
+		shb := info[2]
+		if !gitdombin.IsAbsoluteRevision(shb) {
+			return nil, errors.Errorf("invblid `git ls-tree` SHA output: %q", shb)
 		}
-		oid, err := decodeOID(sha)
+		oid, err := decodeOID(shb)
 		if err != nil {
 			return nil, err
 		}
 
-		sizeStr := strings.TrimSpace(info[3])
-		var size int64
+		sizeStr := strings.TrimSpbce(info[3])
+		vbr size int64
 		if sizeStr != "-" {
-			// Size of "-" indicates a dir or submodule.
-			size, err = strconv.ParseInt(sizeStr, 10, 64)
+			// Size of "-" indicbtes b dir or submodule.
+			size, err = strconv.PbrseInt(sizeStr, 10, 64)
 			if err != nil || size < 0 {
-				return nil, errors.Errorf("invalid `git ls-tree` size output: %q (error: %s)", sizeStr, err)
+				return nil, errors.Errorf("invblid `git ls-tree` size output: %q (error: %s)", sizeStr, err)
 			}
 		}
 
-		var sys any
-		modeVal, err := strconv.ParseInt(info[0], 8, 32)
+		vbr sys bny
+		modeVbl, err := strconv.PbrseInt(info[0], 8, 32)
 		if err != nil {
 			return nil, err
 		}
-		mode := os.FileMode(modeVal)
+		mode := os.FileMode(modeVbl)
 		switch typ {
-		case "blob":
+		cbse "blob":
 			const gitModeSymlink = 0o20000
 			if mode&gitModeSymlink != 0 {
 				mode = os.ModeSymlink
 			} else {
-				// Regular file.
+				// Regulbr file.
 				mode = mode | 0o644
 			}
-		case "commit":
-			mode = mode | gitdomain.ModeSubmodule
-			cmd := c.gitCommand(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
-			var submodule gitdomain.Submodule
+		cbse "commit":
+			mode = mode | gitdombin.ModeSubmodule
+			cmd := c.gitCommbnd(repo, "show", fmt.Sprintf("%s:.gitmodules", commit))
+			vbr submodule gitdombin.Submodule
 			if out, err := cmd.Output(ctx); err == nil {
 
-				var cfg config.Config
+				vbr cfg config.Config
 				err := config.NewDecoder(bytes.NewBuffer(out)).Decode(&cfg)
 				if err != nil {
-					return nil, errors.Errorf("error parsing .gitmodules: %s", err)
+					return nil, errors.Errorf("error pbrsing .gitmodules: %s", err)
 				}
 
-				submodule.Path = cfg.Section("submodule").Subsection(name).Option("path")
-				submodule.URL = cfg.Section("submodule").Subsection(name).Option("url")
+				submodule.Pbth = cfg.Section("submodule").Subsection(nbme).Option("pbth")
+				submodule.URL = cfg.Section("submodule").Subsection(nbme).Option("url")
 			}
-			submodule.CommitID = api.CommitID(oid.String())
+			submodule.CommitID = bpi.CommitID(oid.String())
 			sys = submodule
-		case "tree":
+		cbse "tree":
 			mode = mode | os.ModeDir
 		}
 
 		if sys == nil {
-			// Some callers might find it useful to know the object's OID.
+			// Some cbllers might find it useful to know the object's OID.
 			sys = objectInfo(oid)
 		}
 
 		fis[i] = &fileutil.FileInfo{
-			Name_: name, // full path relative to root (not just basename)
+			Nbme_: nbme, // full pbth relbtive to root (not just bbsenbme)
 			Mode_: mode,
 			Size_: size,
 			Sys_:  sys,
 		}
 	}
-	fileutil.SortFileInfosByName(fis)
+	fileutil.SortFileInfosByNbme(fis)
 
 	return fis, nil
 }
 
-func decodeOID(sha string) (gitdomain.OID, error) {
-	oidBytes, err := hex.DecodeString(sha)
+func decodeOID(shb string) (gitdombin.OID, error) {
+	oidBytes, err := hex.DecodeString(shb)
 	if err != nil {
-		return gitdomain.OID{}, err
+		return gitdombin.OID{}, err
 	}
-	var oid gitdomain.OID
+	vbr oid gitdombin.OID
 	copy(oid[:], oidBytes)
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+func (c *clientImplementor) LogReverseEbch(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdombin.LogEntry) error) error {
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
-	command := c.gitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
+	commbnd := c.gitCommbnd(bpi.RepoNbme(repo), gitdombin.LogReverseArgs(n, commit)...)
 
-	// We run a single `git log` command and stream the output while the repo is being processed, which
-	// can take much longer than 1 minute (the default timeout).
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
+	// We run b single `git log` commbnd bnd strebm the output while the repo is being processed, which
+	// cbn tbke much longer thbn 1 minute (the defbult timeout).
+	commbnd.DisbbleTimeout()
+	stdout, err := commbnd.StdoutRebder(ctx)
 	if err != nil {
 		return err
 	}
 	defer stdout.Close()
 
-	return errors.Wrap(gitdomain.ParseLogReverseEach(stdout, onLogEntry), "ParseLogReverseEach")
+	return errors.Wrbp(gitdombin.PbrseLogReverseEbch(stdout, onLogEntry), "PbrseLogReverseEbch")
 }
 
-// BlameOptions configures a blame.
-type BlameOptions struct {
-	NewestCommit api.CommitID `json:",omitempty" url:",omitempty"`
+// BlbmeOptions configures b blbme.
+type BlbmeOptions struct {
+	NewestCommit bpi.CommitID `json:",omitempty" url:",omitempty"`
 
-	StartLine int `json:",omitempty" url:",omitempty"` // 1-indexed start line (or 0 for beginning of file)
+	StbrtLine int `json:",omitempty" url:",omitempty"` // 1-indexed stbrt line (or 0 for beginning of file)
 	EndLine   int `json:",omitempty" url:",omitempty"` // 1-indexed end line (or 0 for end of file)
 }
 
-func (o *BlameOptions) Attrs() []attribute.KeyValue {
-	return []attribute.KeyValue{
-		attribute.String("newestCommit", string(o.NewestCommit)),
-		attribute.Int("startLine", o.StartLine),
-		attribute.Int("endLine", o.EndLine),
+func (o *BlbmeOptions) Attrs() []bttribute.KeyVblue {
+	return []bttribute.KeyVblue{
+		bttribute.String("newestCommit", string(o.NewestCommit)),
+		bttribute.Int("stbrtLine", o.StbrtLine),
+		bttribute.Int("endLine", o.EndLine),
 	}
 }
 
-// A Hunk is a contiguous portion of a file associated with a commit.
+// A Hunk is b contiguous portion of b file bssocibted with b commit.
 type Hunk struct {
-	StartLine int // 1-indexed start line number
+	StbrtLine int // 1-indexed stbrt line number
 	EndLine   int // 1-indexed end line number
-	StartByte int // 0-indexed start byte position (inclusive)
+	StbrtByte int // 0-indexed stbrt byte position (inclusive)
 	EndByte   int // 0-indexed end byte position (exclusive)
-	api.CommitID
-	Author   gitdomain.Signature
-	Message  string
-	Filename string
+	bpi.CommitID
+	Author   gitdombin.Signbture
+	Messbge  string
+	Filenbme string
 }
 
-// StreamBlameFile returns Git blame information about a file.
-func (c *clientImplementor) StreamBlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ HunkReader, err error) {
-	ctx, _, endObservation := c.operations.streamBlameFile.With(ctx, &err, observation.Args{
-		Attrs: append([]attribute.KeyValue{
+// StrebmBlbmeFile returns Git blbme informbtion bbout b file.
+func (c *clientImplementor) StrebmBlbmeFile(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, pbth string, opt *BlbmeOptions) (_ HunkRebder, err error) {
+	ctx, _, endObservbtion := c.operbtions.strebmBlbmeFile.With(ctx, &err, observbtion.Args{
+		Attrs: bppend([]bttribute.KeyVblue{
 			repo.Attr(),
-			attribute.String("path", path),
+			bttribute.String("pbth", pbth),
 		}, opt.Attrs()...),
 	})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return streamBlameFileCmd(ctx, checker, repo, path, opt, c.gitserverGitCommandFunc(repo))
+	return strebmBlbmeFileCmd(ctx, checker, repo, pbth, opt, c.gitserverGitCommbndFunc(repo))
 }
 
-type errUnauthorizedStreamBlame struct {
-	Repo api.RepoName
+type errUnbuthorizedStrebmBlbme struct {
+	Repo bpi.RepoNbme
 }
 
-func (e errUnauthorizedStreamBlame) Unauthorized() bool {
+func (e errUnbuthorizedStrebmBlbme) Unbuthorized() bool {
 	return true
 }
 
-func (e errUnauthorizedStreamBlame) Error() string {
-	return fmt.Sprintf("not authorized (name=%s)", e.Repo)
+func (e errUnbuthorizedStrebmBlbme) Error() string {
+	return fmt.Sprintf("not buthorized (nbme=%s)", e.Repo)
 }
 
-func streamBlameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions, command gitCommandFunc) (HunkReader, error) {
-	a := actor.FromContext(ctx)
-	hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path)
+func strebmBlbmeFileCmd(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, pbth string, opt *BlbmeOptions, commbnd gitCommbndFunc) (HunkRebder, error) {
+	b := bctor.FromContext(ctx)
+	hbsAccess, err := buthz.FilterActorPbth(ctx, checker, b, repo, pbth)
 	if err != nil {
 		return nil, err
 	}
-	if !hasAccess {
-		return nil, errUnauthorizedStreamBlame{Repo: repo}
+	if !hbsAccess {
+		return nil, errUnbuthorizedStrebmBlbme{Repo: repo}
 	}
 	if opt == nil {
-		opt = &BlameOptions{}
+		opt = &BlbmeOptions{}
 	}
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+	if err := checkSpecArgSbfety(string(opt.NewestCommit)); err != nil {
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain", "--incremental"}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	brgs := []string{"blbme", "-w", "--porcelbin", "--incrementbl"}
+	if opt.StbrtLine != 0 || opt.EndLine != 0 {
+		brgs = bppend(brgs, fmt.Sprintf("-L%d,%d", opt.StbrtLine, opt.EndLine))
 	}
-	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+	brgs = bppend(brgs, string(opt.NewestCommit), "--", filepbth.ToSlbsh(pbth))
 
-	rc, err := command(args).StdoutReader(ctx)
+	rc, err := commbnd(brgs).StdoutRebder(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed", args))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled", brgs))
 	}
 
-	return newBlameHunkReader(rc), nil
+	return newBlbmeHunkRebder(rc), nil
 }
 
-// BlameFile returns Git blame information about a file.
-func (c *clientImplementor) BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) (_ []*Hunk, err error) {
-	ctx, _, endObservation := c.operations.blameFile.With(ctx, &err, observation.Args{
-		Attrs: append([]attribute.KeyValue{
+// BlbmeFile returns Git blbme informbtion bbout b file.
+func (c *clientImplementor) BlbmeFile(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, pbth string, opt *BlbmeOptions) (_ []*Hunk, err error) {
+	ctx, _, endObservbtion := c.operbtions.blbmeFile.With(ctx, &err, observbtion.Args{
+		Attrs: bppend([]bttribute.KeyVblue{
 			repo.Attr(),
-			attribute.String("path", path),
+			bttribute.String("pbth", pbth),
 		}, opt.Attrs()...),
 	})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return blameFileCmd(ctx, checker, c.gitserverGitCommandFunc(repo), path, opt, repo)
+	return blbmeFileCmd(ctx, checker, c.gitserverGitCommbndFunc(repo), pbth, opt, repo)
 }
 
-func blameFileCmd(ctx context.Context, checker authz.SubRepoPermissionChecker, command gitCommandFunc, path string, opt *BlameOptions, repo api.RepoName) ([]*Hunk, error) {
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, path); err != nil || !hasAccess {
+func blbmeFileCmd(ctx context.Context, checker buthz.SubRepoPermissionChecker, commbnd gitCommbndFunc, pbth string, opt *BlbmeOptions, repo bpi.RepoNbme) ([]*Hunk, error) {
+	b := bctor.FromContext(ctx)
+	if hbsAccess, err := buthz.FilterActorPbth(ctx, checker, b, repo, pbth); err != nil || !hbsAccess {
 		return nil, err
 	}
 	if opt == nil {
-		opt = &BlameOptions{}
+		opt = &BlbmeOptions{}
 	}
-	if err := checkSpecArgSafety(string(opt.NewestCommit)); err != nil {
+	if err := checkSpecArgSbfety(string(opt.NewestCommit)); err != nil {
 		return nil, err
 	}
 
-	args := []string{"blame", "-w", "--porcelain"}
-	if opt.StartLine != 0 || opt.EndLine != 0 {
-		args = append(args, fmt.Sprintf("-L%d,%d", opt.StartLine, opt.EndLine))
+	brgs := []string{"blbme", "-w", "--porcelbin"}
+	if opt.StbrtLine != 0 || opt.EndLine != 0 {
+		brgs = bppend(brgs, fmt.Sprintf("-L%d,%d", opt.StbrtLine, opt.EndLine))
 	}
-	args = append(args, string(opt.NewestCommit), "--", filepath.ToSlash(path))
+	brgs = bppend(brgs, string(opt.NewestCommit), "--", filepbth.ToSlbsh(pbth))
 
-	out, err := command(args).Output(ctx)
+	out, err := commbnd(brgs).Output(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", brgs, out))
 	}
 	if len(out) == 0 {
 		return nil, nil
 	}
 
-	return parseGitBlameOutput(string(out))
+	return pbrseGitBlbmeOutput(string(out))
 }
 
-// parseGitBlameOutput parses the output of `git blame -w --porcelain`
-func parseGitBlameOutput(out string) ([]*Hunk, error) {
-	commits := make(map[string]gitdomain.Commit)
-	filenames := make(map[string]string)
-	hunks := make([]*Hunk, 0)
-	remainingLines := strings.Split(out[:len(out)-1], "\n")
+// pbrseGitBlbmeOutput pbrses the output of `git blbme -w --porcelbin`
+func pbrseGitBlbmeOutput(out string) ([]*Hunk, error) {
+	commits := mbke(mbp[string]gitdombin.Commit)
+	filenbmes := mbke(mbp[string]string)
+	hunks := mbke([]*Hunk, 0)
+	rembiningLines := strings.Split(out[:len(out)-1], "\n")
 	byteOffset := 0
-	for len(remainingLines) > 0 {
+	for len(rembiningLines) > 0 {
 		// Consume hunk
-		hunkHeader := strings.Split(remainingLines[0], " ")
-		if len(hunkHeader) != 4 {
-			return nil, errors.Errorf("Expected at least 4 parts to hunkHeader, but got: '%s'", hunkHeader)
+		hunkHebder := strings.Split(rembiningLines[0], " ")
+		if len(hunkHebder) != 4 {
+			return nil, errors.Errorf("Expected bt lebst 4 pbrts to hunkHebder, but got: '%s'", hunkHebder)
 		}
-		commitID := hunkHeader[0]
-		lineNoCur, _ := strconv.Atoi(hunkHeader[2])
-		nLines, _ := strconv.Atoi(hunkHeader[3])
+		commitID := hunkHebder[0]
+		lineNoCur, _ := strconv.Atoi(hunkHebder[2])
+		nLines, _ := strconv.Atoi(hunkHebder[3])
 		hunk := &Hunk{
-			CommitID:  api.CommitID(commitID),
-			StartLine: lineNoCur,
+			CommitID:  bpi.CommitID(commitID),
+			StbrtLine: lineNoCur,
 			EndLine:   lineNoCur + nLines,
-			StartByte: byteOffset,
+			StbrtByte: byteOffset,
 		}
 
 		if _, in := commits[commitID]; in {
-			// Already seen commit
-			byteOffset += len(remainingLines[1])
-			remainingLines = remainingLines[2:]
+			// Alrebdy seen commit
+			byteOffset += len(rembiningLines[1])
+			rembiningLines = rembiningLines[2:]
 		} else {
 			// New commit
-			author := strings.Join(strings.Split(remainingLines[1], " ")[1:], " ")
-			email := strings.Join(strings.Split(remainingLines[2], " ")[1:], " ")
-			if len(email) >= 2 && email[0] == '<' && email[len(email)-1] == '>' {
-				email = email[1 : len(email)-1]
+			buthor := strings.Join(strings.Split(rembiningLines[1], " ")[1:], " ")
+			embil := strings.Join(strings.Split(rembiningLines[2], " ")[1:], " ")
+			if len(embil) >= 2 && embil[0] == '<' && embil[len(embil)-1] == '>' {
+				embil = embil[1 : len(embil)-1]
 			}
-			authorTime, err := strconv.ParseInt(strings.Join(strings.Split(remainingLines[3], " ")[1:], " "), 10, 64)
+			buthorTime, err := strconv.PbrseInt(strings.Join(strings.Split(rembiningLines[3], " ")[1:], " "), 10, 64)
 			if err != nil {
-				return nil, errors.Errorf("Failed to parse author-time %q", remainingLines[3])
+				return nil, errors.Errorf("Fbiled to pbrse buthor-time %q", rembiningLines[3])
 			}
-			summary := strings.Join(strings.Split(remainingLines[9], " ")[1:], " ")
-			commit := gitdomain.Commit{
-				ID:      api.CommitID(commitID),
-				Message: gitdomain.Message(summary),
-				Author: gitdomain.Signature{
-					Name:  author,
-					Email: email,
-					Date:  time.Unix(authorTime, 0).UTC(),
+			summbry := strings.Join(strings.Split(rembiningLines[9], " ")[1:], " ")
+			commit := gitdombin.Commit{
+				ID:      bpi.CommitID(commitID),
+				Messbge: gitdombin.Messbge(summbry),
+				Author: gitdombin.Signbture{
+					Nbme:  buthor,
+					Embil: embil,
+					Dbte:  time.Unix(buthorTime, 0).UTC(),
 				},
 			}
 
-			for i := 10; i < 13 && i < len(remainingLines); i++ {
-				if strings.HasPrefix(remainingLines[i], "filename ") {
-					filenames[commitID] = strings.SplitN(remainingLines[i], " ", 2)[1]
-					break
+			for i := 10; i < 13 && i < len(rembiningLines); i++ {
+				if strings.HbsPrefix(rembiningLines[i], "filenbme ") {
+					filenbmes[commitID] = strings.SplitN(rembiningLines[i], " ", 2)[1]
+					brebk
 				}
 			}
 
-			if len(remainingLines) >= 13 && strings.HasPrefix(remainingLines[10], "previous ") {
-				byteOffset += len(remainingLines[12])
-				remainingLines = remainingLines[13:]
-			} else if len(remainingLines) >= 13 && remainingLines[10] == "boundary" {
-				byteOffset += len(remainingLines[12])
-				remainingLines = remainingLines[13:]
-			} else if len(remainingLines) >= 12 {
-				byteOffset += len(remainingLines[11])
-				remainingLines = remainingLines[12:]
-			} else if len(remainingLines) == 11 {
+			if len(rembiningLines) >= 13 && strings.HbsPrefix(rembiningLines[10], "previous ") {
+				byteOffset += len(rembiningLines[12])
+				rembiningLines = rembiningLines[13:]
+			} else if len(rembiningLines) >= 13 && rembiningLines[10] == "boundbry" {
+				byteOffset += len(rembiningLines[12])
+				rembiningLines = rembiningLines[13:]
+			} else if len(rembiningLines) >= 12 {
+				byteOffset += len(rembiningLines[11])
+				rembiningLines = rembiningLines[12:]
+			} else if len(rembiningLines) == 11 {
 				// Empty file
-				remainingLines = remainingLines[11:]
+				rembiningLines = rembiningLines[11:]
 			} else {
-				return nil, errors.Errorf("Unexpected number of remaining lines (%d):\n%s", len(remainingLines), "  "+strings.Join(remainingLines, "\n  "))
+				return nil, errors.Errorf("Unexpected number of rembining lines (%d):\n%s", len(rembiningLines), "  "+strings.Join(rembiningLines, "\n  "))
 			}
 
 			commits[commitID] = commit
 		}
 
 		if commit, present := commits[commitID]; present {
-			// Should always be present, but check just to avoid
-			// panicking in case of a (somewhat likely) bug in our
-			// git-blame parser above.
+			// Should blwbys be present, but check just to bvoid
+			// pbnicking in cbse of b (somewhbt likely) bug in our
+			// git-blbme pbrser bbove.
 			hunk.CommitID = commit.ID
 			hunk.Author = commit.Author
-			hunk.Message = string(commit.Message)
+			hunk.Messbge = string(commit.Messbge)
 		}
 
-		if filename, present := filenames[commitID]; present {
-			hunk.Filename = filename
+		if filenbme, present := filenbmes[commitID]; present {
+			hunk.Filenbme = filenbme
 		}
 
-		// Consume remaining lines in hunk
+		// Consume rembining lines in hunk
 		for i := 1; i < nLines; i++ {
-			byteOffset += len(remainingLines[1])
-			remainingLines = remainingLines[2:]
+			byteOffset += len(rembiningLines[1])
+			rembiningLines = rembiningLines[2:]
 		}
 
 		hunk.EndByte = byteOffset
-		hunks = append(hunks, hunk)
+		hunks = bppend(hunks, hunk)
 	}
 
 	return hunks, nil
 }
 
-func (c *clientImplementor) gitserverGitCommandFunc(repo api.RepoName) gitCommandFunc {
-	return func(args []string) GitCommand {
-		return c.gitCommand(repo, args...)
+func (c *clientImplementor) gitserverGitCommbndFunc(repo bpi.RepoNbme) gitCommbndFunc {
+	return func(brgs []string) GitCommbnd {
+		return c.gitCommbnd(repo, brgs...)
 	}
 }
 
-// gitCommandFunc is a func that creates a new executable Git command.
-type gitCommandFunc func(args []string) GitCommand
+// gitCommbndFunc is b func thbt crebtes b new executbble Git commbnd.
+type gitCommbndFunc func(brgs []string) GitCommbnd
 
-// IsAbsoluteRevision checks if the revision is a git OID SHA string.
+// IsAbsoluteRevision checks if the revision is b git OID SHA string.
 //
-// Note: This doesn't mean the SHA exists in a repository, nor does it mean it
-// isn't a ref. Git allows 40-char hexadecimal strings to be references.
+// Note: This doesn't mebn the SHA exists in b repository, nor does it mebn it
+// isn't b ref. Git bllows 40-chbr hexbdecimbl strings to be references.
 func IsAbsoluteRevision(s string) bool {
 	if len(s) != 40 {
-		return false
+		return fblse
 	}
-	for _, r := range s {
+	for _, r := rbnge s {
 		if !(('0' <= r && r <= '9') ||
-			('a' <= r && r <= 'f') ||
+			('b' <= r && r <= 'f') ||
 			('A' <= r && r <= 'F')) {
-			return false
+			return fblse
 		}
 	}
 	return true
 }
 
 // ResolveRevisionOptions configure how we resolve revisions.
-// The zero value should contain appropriate default values.
+// The zero vblue should contbin bppropribte defbult vblues.
 type ResolveRevisionOptions struct {
-	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locally
+	NoEnsureRevision bool // do not try to fetch from remote if revision doesn't exist locblly
 }
 
-var resolveRevisionCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_resolve_revision_total",
-	Help: "The number of times we call internal/vcs/git/ResolveRevision",
+vbr resolveRevisionCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_resolve_revision_totbl",
+	Help: "The number of times we cbll internbl/vcs/git/ResolveRevision",
 }, []string{"ensure_revision"})
 
-// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
+// ResolveRevision will return the bbsolute commit for b commit-ish spec. If spec is empty, HEAD is
 // used.
 //
-// Error cases:
-// * Repo does not exist: gitdomain.RepoNotExistError
-// * Commit does not exist: gitdomain.RevisionNotFoundError
-// * Empty repository: gitdomain.RevisionNotFoundError
+// Error cbses:
+// * Repo does not exist: gitdombin.RepoNotExistError
+// * Commit does not exist: gitdombin.RevisionNotFoundError
+// * Empty repository: gitdombin.RevisionNotFoundError
 // * Other unexpected errors.
-func (c *clientImplementor) ResolveRevision(ctx context.Context, repo api.RepoName, spec string, opt ResolveRevisionOptions) (_ api.CommitID, err error) {
-	labelEnsureRevisionValue := "true"
+func (c *clientImplementor) ResolveRevision(ctx context.Context, repo bpi.RepoNbme, spec string, opt ResolveRevisionOptions) (_ bpi.CommitID, err error) {
+	lbbelEnsureRevisionVblue := "true"
 	if opt.NoEnsureRevision {
-		labelEnsureRevisionValue = "false"
+		lbbelEnsureRevisionVblue = "fblse"
 	}
-	resolveRevisionCounter.WithLabelValues(labelEnsureRevisionValue).Inc()
+	resolveRevisionCounter.WithLbbelVblues(lbbelEnsureRevisionVblue).Inc()
 
-	ctx, _, endObservation := c.operations.resolveRevision.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+	ctx, _, endObservbtion := c.operbtions.resolveRevision.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.String("spec", spec),
-		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+		bttribute.String("spec", spec),
+		bttribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := checkSpecArgSafety(spec); err != nil {
+	if err := checkSpecArgSbfety(spec); err != nil {
 		return "", err
 	}
 	if spec == "" {
 		spec = "HEAD"
 	}
 	if spec != "HEAD" {
-		// "git rev-parse HEAD^0" is slower than "git rev-parse HEAD"
-		// since it checks that the resolved git object exists. We can
-		// assume it exists for HEAD, but for other commits we should
+		// "git rev-pbrse HEAD^0" is slower thbn "git rev-pbrse HEAD"
+		// since it checks thbt the resolved git object exists. We cbn
+		// bssume it exists for HEAD, but for other commits we should
 		// check.
 		spec = spec + "^0"
 	}
 
-	cmd := c.gitCommand(repo, "rev-parse", spec)
+	cmd := c.gitCommbnd(repo, "rev-pbrse", spec)
 	cmd.SetEnsureRevision(spec)
 
-	// We don't ever need to ensure that HEAD is in git-server.
-	// HEAD is always there once a repo is cloned
+	// We don't ever need to ensure thbt HEAD is in git-server.
+	// HEAD is blwbys there once b repo is cloned
 	// (except empty repos, but we don't need to ensure revision on those).
 	if opt.NoEnsureRevision || spec == "HEAD" {
 		cmd.SetEnsureRevision("")
 	}
 
-	return runRevParse(ctx, cmd, spec)
+	return runRevPbrse(ctx, cmd, spec)
 }
 
-// runRevParse sends the git rev-parse command to gitserver. It interprets
-// missing revision responses and converts them into RevisionNotFoundError.
-func runRevParse(ctx context.Context, cmd GitCommand, spec string) (api.CommitID, error) {
+// runRevPbrse sends the git rev-pbrse commbnd to gitserver. It interprets
+// missing revision responses bnd converts them into RevisionNotFoundError.
+func runRevPbrse(ctx context.Context, cmd GitCommbnd, spec string) (bpi.CommitID, error) {
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if gitdombin.IsRepoNotExist(err) {
 			return "", err
 		}
-		if bytes.Contains(stderr, []byte("unknown revision")) {
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
+		if bytes.Contbins(stderr, []byte("unknown revision")) {
+			return "", &gitdombin.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (stderr: %q)", cmd.Args(), stderr))
+		return "", errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (stderr: %q)", cmd.Args(), stderr))
 	}
-	commit := api.CommitID(bytes.TrimSpace(stdout))
+	commit := bpi.CommitID(bytes.TrimSpbce(stdout))
 	if !IsAbsoluteRevision(string(commit)) {
 		if commit == "HEAD" {
-			// We don't verify the existence of HEAD (see above comments), but
-			// if HEAD doesn't point to anything git just returns `HEAD` as the
-			// output of rev-parse. An example where this occurs is an empty
+			// We don't verify the existence of HEAD (see bbove comments), but
+			// if HEAD doesn't point to bnything git just returns `HEAD` bs the
+			// output of rev-pbrse. An exbmple where this occurs is bn empty
 			// repository.
-			return "", &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
+			return "", &gitdombin.RevisionNotFoundError{Repo: cmd.Repo(), Spec: spec}
 		}
-		return "", &gitdomain.BadCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
+		return "", &gitdombin.BbdCommitError{Spec: spec, Commit: commit, Repo: cmd.Repo()}
 	}
 	return commit, nil
 }
 
 // LsFiles returns the output of `git ls-files`.
-func (c *clientImplementor) LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
-	args := []string{
+func (c *clientImplementor) LsFiles(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, pbthspecs ...gitdombin.Pbthspec) ([]string, error) {
+	brgs := []string{
 		"ls-files",
 		"-z",
 		"--with-tree",
 		string(commit),
 	}
 
-	if len(pathspecs) > 0 {
-		args = append(args, "--")
-		for _, pathspec := range pathspecs {
-			args = append(args, string(pathspec))
+	if len(pbthspecs) > 0 {
+		brgs = bppend(brgs, "--")
+		for _, pbthspec := rbnge pbthspecs {
+			brgs = bppend(brgs, string(pbthspec))
 		}
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", cmd.Args(), out))
 	}
 
 	files := strings.Split(string(out), "\x00")
-	// Drop trailing empty string
+	// Drop trbiling empty string
 	if len(files) > 0 && files[len(files)-1] == "" {
 		files = files[:len(files)-1]
 	}
-	return filterPaths(ctx, checker, repo, files)
+	return filterPbths(ctx, checker, repo, files)
 }
 
-// 🚨 SECURITY: All git methods that deal with file or path access need to have
-// sub-repo permissions applied
-func filterPaths(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, paths []string) ([]string, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return paths, nil
+// 🚨 SECURITY: All git methods thbt debl with file or pbth bccess need to hbve
+// sub-repo permissions bpplied
+func filterPbths(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, pbths []string) ([]string, error) {
+	if !buthz.SubRepoEnbbled(checker) {
+		return pbths, nil
 	}
-	a := actor.FromContext(ctx)
-	filtered, err := authz.FilterActorPaths(ctx, checker, a, repo, paths)
+	b := bctor.FromContext(ctx)
+	filtered, err := buthz.FilterActorPbths(ctx, checker, b, repo, pbths)
 	if err != nil {
-		return nil, errors.Wrap(err, "filtering paths")
+		return nil, errors.Wrbp(err, "filtering pbths")
 	}
 	return filtered, nil
 }
 
 // ListDirectoryChildren fetches the list of children under the given directory
-// names. The result is a map keyed by the directory names with the list of files
-// under each.
+// nbmes. The result is b mbp keyed by the directory nbmes with the list of files
+// under ebch.
 func (c *clientImplementor) ListDirectoryChildren(
 	ctx context.Context,
-	checker authz.SubRepoPermissionChecker,
-	repo api.RepoName,
-	commit api.CommitID,
-	dirnames []string,
-) (map[string][]string, error) {
-	args := []string{"ls-tree", "--name-only", string(commit), "--"}
-	args = append(args, cleanDirectoriesForLsTree(dirnames)...)
-	cmd := c.gitCommand(repo, args...)
+	checker buthz.SubRepoPermissionChecker,
+	repo bpi.RepoNbme,
+	commit bpi.CommitID,
+	dirnbmes []string,
+) (mbp[string][]string, error) {
+	brgs := []string{"ls-tree", "--nbme-only", string(commit), "--"}
+	brgs = bppend(brgs, clebnDirectoriesForLsTree(dirnbmes)...)
+	cmd := c.gitCommbnd(repo, brgs...)
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	paths := strings.Split(string(out), "\n")
-	if authz.SubRepoEnabled(checker) {
-		paths, err = authz.FilterActorPaths(ctx, checker, actor.FromContext(ctx), repo, paths)
+	pbths := strings.Split(string(out), "\n")
+	if buthz.SubRepoEnbbled(checker) {
+		pbths, err = buthz.FilterActorPbths(ctx, checker, bctor.FromContext(ctx), repo, pbths)
 		if err != nil {
 			return nil, err
 		}
 	}
-	return parseDirectoryChildren(dirnames, paths), nil
+	return pbrseDirectoryChildren(dirnbmes, pbths), nil
 }
 
-// cleanDirectoriesForLsTree sanitizes the input dirnames to a git ls-tree command. There are a
-// few peculiarities handled here:
+// clebnDirectoriesForLsTree sbnitizes the input dirnbmes to b git ls-tree commbnd. There bre b
+// few peculibrities hbndled here:
 //
-//  1. The root of the tree must be indicated with `.`, and
-//  2. In order for git ls-tree to return a directory's contents, the name must end in a slash.
-func cleanDirectoriesForLsTree(dirnames []string) []string {
-	var args []string
-	for _, dir := range dirnames {
+//  1. The root of the tree must be indicbted with `.`, bnd
+//  2. In order for git ls-tree to return b directory's contents, the nbme must end in b slbsh.
+func clebnDirectoriesForLsTree(dirnbmes []string) []string {
+	vbr brgs []string
+	for _, dir := rbnge dirnbmes {
 		if dir == "" {
-			args = append(args, ".")
+			brgs = bppend(brgs, ".")
 		} else {
-			if !strings.HasSuffix(dir, "/") {
+			if !strings.HbsSuffix(dir, "/") {
 				dir += "/"
 			}
-			args = append(args, dir)
+			brgs = bppend(brgs, dir)
 		}
 	}
 
-	return args
+	return brgs
 }
 
-// parseDirectoryChildren converts the flat list of files from git ls-tree into a map. The keys of the
-// resulting map are the input (unsanitized) dirnames, and the value of that key are the files nested
-// under that directory. If dirnames contains a directory that encloses another, then the paths will
-// be placed into the key sharing the longest path prefix.
-func parseDirectoryChildren(dirnames, paths []string) map[string][]string {
-	childrenMap := map[string][]string{}
+// pbrseDirectoryChildren converts the flbt list of files from git ls-tree into b mbp. The keys of the
+// resulting mbp bre the input (unsbnitized) dirnbmes, bnd the vblue of thbt key bre the files nested
+// under thbt directory. If dirnbmes contbins b directory thbt encloses bnother, then the pbths will
+// be plbced into the key shbring the longest pbth prefix.
+func pbrseDirectoryChildren(dirnbmes, pbths []string) mbp[string][]string {
+	childrenMbp := mbp[string][]string{}
 
-	// Ensure each directory has an entry, even if it has no children
+	// Ensure ebch directory hbs bn entry, even if it hbs no children
 	// listed in the gitserver output.
-	for _, dirname := range dirnames {
-		childrenMap[dirname] = nil
+	for _, dirnbme := rbnge dirnbmes {
+		childrenMbp[dirnbme] = nil
 	}
 
-	// Order directory names by length (biggest first) so that we assign
-	// paths to the most specific enclosing directory in the following loop.
-	sort.Slice(dirnames, func(i, j int) bool {
-		return len(dirnames[i]) > len(dirnames[j])
+	// Order directory nbmes by length (biggest first) so thbt we bssign
+	// pbths to the most specific enclosing directory in the following loop.
+	sort.Slice(dirnbmes, func(i, j int) bool {
+		return len(dirnbmes[i]) > len(dirnbmes[j])
 	})
 
-	for _, path := range paths {
-		if strings.Contains(path, "/") {
-			for _, dirname := range dirnames {
-				if strings.HasPrefix(path, dirname) {
-					childrenMap[dirname] = append(childrenMap[dirname], path)
-					break
+	for _, pbth := rbnge pbths {
+		if strings.Contbins(pbth, "/") {
+			for _, dirnbme := rbnge dirnbmes {
+				if strings.HbsPrefix(pbth, dirnbme) {
+					childrenMbp[dirnbme] = bppend(childrenMbp[dirnbme], pbth)
+					brebk
 				}
 			}
-		} else if len(dirnames) > 0 && dirnames[len(dirnames)-1] == "" {
-			// No need to loop here. If we have a root input directory it
-			// will necessarily be the last element due to the previous
+		} else if len(dirnbmes) > 0 && dirnbmes[len(dirnbmes)-1] == "" {
+			// No need to loop here. If we hbve b root input directory it
+			// will necessbrily be the lbst element due to the previous
 			// sorting step.
-			childrenMap[""] = append(childrenMap[""], path)
+			childrenMbp[""] = bppend(childrenMbp[""], pbth)
 		}
 	}
 
-	return childrenMap
+	return childrenMbp
 }
 
-// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
-func (c *clientImplementor) ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) (_ []*gitdomain.Tag, err error) {
-	ctx, _, endObservation := c.operations.listTags.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// ListTbgs returns b list of bll tbgs in the repository. If commitObjs is non-empty, only bll tbgs pointing bt those commits bre returned.
+func (c *clientImplementor) ListTbgs(ctx context.Context, repo bpi.RepoNbme, commitObjs ...string) (_ []*gitdombin.Tbg, err error) {
+	ctx, _, endObservbtion := c.operbtions.listTbgs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.StringSlice("commitObjs", commitObjs),
+		bttribute.StringSlice("commitObjs", commitObjs),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	// Support both lightweight tags and tag objects. For creatordate, use an %(if) to prefer the
-	// taggerdate for tag objects, otherwise use the commit's committerdate (instead of just always
-	// using committerdate).
-	args := []string{"tag", "--list", "--sort", "-creatordate", "--format", "%(if)%(*objectname)%(then)%(*objectname)%(else)%(objectname)%(end)%00%(refname:short)%00%(if)%(creatordate:unix)%(then)%(creatordate:unix)%(else)%(*creatordate:unix)%(end)"}
+	// Support both lightweight tbgs bnd tbg objects. For crebtordbte, use bn %(if) to prefer the
+	// tbggerdbte for tbg objects, otherwise use the commit's committerdbte (instebd of just blwbys
+	// using committerdbte).
+	brgs := []string{"tbg", "--list", "--sort", "-crebtordbte", "--formbt", "%(if)%(*objectnbme)%(then)%(*objectnbme)%(else)%(objectnbme)%(end)%00%(refnbme:short)%00%(if)%(crebtordbte:unix)%(then)%(crebtordbte:unix)%(else)%(*crebtordbte:unix)%(end)"}
 
-	for _, commit := range commitObjs {
-		args = append(args, "--points-at", commit)
+	for _, commit := rbnge commitObjs {
+		brgs = bppend(brgs, "--points-bt", commit)
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if gitdombin.IsRepoNotExist(err) {
 			return nil, err
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", cmd.Args(), out))
 	}
 
-	return parseTags(out)
+	return pbrseTbgs(out)
 }
 
-func parseTags(in []byte) ([]*gitdomain.Tag, error) {
-	in = bytes.TrimSuffix(in, []byte("\n")) // remove trailing newline
+func pbrseTbgs(in []byte) ([]*gitdombin.Tbg, error) {
+	in = bytes.TrimSuffix(in, []byte("\n")) // remove trbiling newline
 	if len(in) == 0 {
-		return nil, nil // no tags
+		return nil, nil // no tbgs
 	}
 	lines := bytes.Split(in, []byte("\n"))
-	tags := make([]*gitdomain.Tag, len(lines))
-	for i, line := range lines {
-		parts := bytes.SplitN(line, []byte("\x00"), 3)
-		if len(parts) != 3 {
-			return nil, errors.Errorf("invalid git tag list output line: %q", line)
+	tbgs := mbke([]*gitdombin.Tbg, len(lines))
+	for i, line := rbnge lines {
+		pbrts := bytes.SplitN(line, []byte("\x00"), 3)
+		if len(pbrts) != 3 {
+			return nil, errors.Errorf("invblid git tbg list output line: %q", line)
 		}
 
-		tag := &gitdomain.Tag{
-			Name:     string(parts[1]),
-			CommitID: api.CommitID(parts[0]),
+		tbg := &gitdombin.Tbg{
+			Nbme:     string(pbrts[1]),
+			CommitID: bpi.CommitID(pbrts[0]),
 		}
 
-		date, err := strconv.ParseInt(string(parts[2]), 10, 64)
+		dbte, err := strconv.PbrseInt(string(pbrts[2]), 10, 64)
 		if err == nil {
-			tag.CreatorDate = time.Unix(date, 0).UTC()
+			tbg.CrebtorDbte = time.Unix(dbte, 0).UTC()
 		}
 
-		tags[i] = tag
+		tbgs[i] = tbg
 	}
-	return tags, nil
+	return tbgs, nil
 }
 
-// GetDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository. If short is true, then `main` instead
-// of `refs/heads/main` would be returned.
+// GetDefbultBrbnch returns the nbme of the defbult brbnch bnd the commit it's
+// currently bt from the given repository. If short is true, then `mbin` instebd
+// of `refs/hebds/mbin` would be returned.
 //
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
-func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
-	args := []string{"symbolic-ref", "HEAD"}
+// If the repository is empty or currently being cloned, empty vblues bnd no
+// error bre returned.
+func (c *clientImplementor) GetDefbultBrbnch(ctx context.Context, repo bpi.RepoNbme, short bool) (refNbme string, commit bpi.CommitID, err error) {
+	brgs := []string{"symbolic-ref", "HEAD"}
 	if short {
-		args = append(args, "--short")
+		brgs = bppend(brgs, "--short")
 	}
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	refBytes, _, err := cmd.DividedOutput(ctx)
-	exitCode := cmd.ExitStatus()
+	exitCode := cmd.ExitStbtus()
 	if exitCode != 0 && err != nil {
-		err = nil // the error must just indicate that the exit code was nonzero
+		err = nil // the error must just indicbte thbt the exit code wbs nonzero
 	}
-	refName = string(bytes.TrimSpace(refBytes))
+	refNbme = string(bytes.TrimSpbce(refBytes))
 
 	if err == nil && exitCode == 0 {
-		// Check that our repo is not empty
+		// Check thbt our repo is not empty
 		commit, err = c.ResolveRevision(ctx, repo, "HEAD", ResolveRevisionOptions{NoEnsureRevision: true})
 	}
 
-	// If we fail to get the default branch due to cloning or being empty, we return nothing.
+	// If we fbil to get the defbult brbnch due to cloning or being empty, we return nothing.
 	if err != nil {
-		if gitdomain.IsCloneInProgress(err) || errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if gitdombin.IsCloneInProgress(err) || errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
 			return "", "", nil
 		}
 		return "", "", err
 	}
 
-	return refName, commit, nil
+	return refNbme, commit, nil
 }
 
-// MergeBase returns the merge base commit for the specified commits.
-func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a, b api.CommitID) (_ api.CommitID, err error) {
-	ctx, _, endObservation := c.operations.mergeBase.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("a", string(a)),
-		attribute.String("b", string(b)),
+// MergeBbse returns the merge bbse commit for the specified commits.
+func (c *clientImplementor) MergeBbse(ctx context.Context, repo bpi.RepoNbme, b, b bpi.CommitID) (_ bpi.CommitID, err error) {
+	ctx, _, endObservbtion := c.operbtions.mergeBbse.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("b", string(b)),
+		bttribute.String("b", string(b)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	cmd := c.gitCommand(repo, "merge-base", "--", string(a), string(b))
+	cmd := c.gitCommbnd(repo, "merge-bbse", "--", string(b), string(b))
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		return "", errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return "", errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", cmd.Args(), out))
 	}
-	return api.CommitID(bytes.TrimSpace(out)), nil
+	return bpi.CommitID(bytes.TrimSpbce(out)), nil
 }
 
-// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+// RevList mbkes b git rev-list cbll bnd iterbtes through the resulting commits, cblling the provided onCommit function for ebch.
 func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) (err error) {
-	ctx, _, endObservation := c.operations.revList.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repo", repo),
-		attribute.String("commit", commit),
+	ctx, _, endObservbtion := c.operbtions.revList.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("repo", repo),
+		bttribute.String("commit", commit),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
-	command.DisableTimeout()
-	stdout, err := command.StdoutReader(ctx)
+	commbnd := c.gitCommbnd(bpi.RepoNbme(repo), RevListArgs(commit)...)
+	commbnd.DisbbleTimeout()
+	stdout, err := commbnd.StdoutRebder(ctx)
 	if err != nil {
 		return err
 	}
 	defer stdout.Close()
 
-	return gitdomain.RevListEach(stdout, onCommit)
+	return gitdombin.RevListEbch(stdout, onCommit)
 }
 
 func RevListArgs(givenCommit string) []string {
-	return []string{"rev-list", "--first-parent", givenCommit}
+	return []string{"rev-list", "--first-pbrent", givenCommit}
 }
 
-// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+// GetBehindAhebd returns the behind/bhebd commit counts informbtion for right vs. left (both Git
 // revspecs).
-func (c *clientImplementor) GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (_ *gitdomain.BehindAhead, err error) {
-	ctx, _, endObservation := c.operations.getBehindAhead.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (c *clientImplementor) GetBehindAhebd(ctx context.Context, repo bpi.RepoNbme, left, right string) (_ *gitdombin.BehindAhebd, err error) {
+	ctx, _, endObservbtion := c.operbtions.getBehindAhebd.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.String("left", left),
-		attribute.String("right", right),
+		bttribute.String("left", left),
+		bttribute.String("right", right),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := checkSpecArgSafety(left); err != nil {
+	if err := checkSpecArgSbfety(left); err != nil {
 		return nil, err
 	}
-	if err := checkSpecArgSafety(right); err != nil {
+	if err := checkSpecArgSbfety(right); err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
+	cmd := c.gitCommbnd(repo, "rev-list", "--count", "--left-right", fmt.Sprintf("%s...%s", left, right))
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return nil, err
 	}
-	behindAhead := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
-	b, err := strconv.ParseUint(behindAhead[0], 10, 0)
+	behindAhebd := strings.Split(strings.TrimSuffix(string(out), "\n"), "\t")
+	b, err := strconv.PbrseUint(behindAhebd[0], 10, 0)
 	if err != nil {
 		return nil, err
 	}
-	a, err := strconv.ParseUint(behindAhead[1], 10, 0)
+	b, err := strconv.PbrseUint(behindAhebd[1], 10, 0)
 	if err != nil {
 		return nil, err
 	}
-	return &gitdomain.BehindAhead{Behind: uint32(b), Ahead: uint32(a)}, nil
+	return &gitdombin.BehindAhebd{Behind: uint32(b), Ahebd: uint32(b)}, nil
 }
 
-// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
-// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
-func (c *clientImplementor) ReadFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ []byte, err error) {
-	ctx, _, endObservation := c.operations.readFile.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// RebdFile returns the first mbxBytes of the nbmed file bt commit. If mbxBytes <= 0, the entire
+// file is rebd. (If you just need to check b file's existence, use Stbt, not RebdFile.)
+func (c *clientImplementor) RebdFile(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, nbme string) (_ []byte, err error) {
+	ctx, _, endObservbtion := c.operbtions.rebdFile.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 		commit.Attr(),
-		attribute.String("name", name),
+		bttribute.String("nbme", nbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	br, err := c.NewFileReader(ctx, checker, repo, commit, name)
+	br, err := c.NewFileRebder(ctx, checker, repo, commit, nbme)
 	if err != nil {
 		return nil, err
 	}
 	defer br.Close()
 
-	r := io.Reader(br)
-	data, err := io.ReadAll(r)
+	r := io.Rebder(br)
+	dbtb, err := io.RebdAll(r)
 	if err != nil {
 		return nil, err
 	}
-	return data, nil
+	return dbtb, nil
 }
 
-// NewFileReader returns an io.ReadCloser reading from the named file at commit.
-// The caller should always close the reader after use
-func (c *clientImplementor) NewFileReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, name string) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request since we return a reader
-	ctx, _, endObservation := c.operations.newFileReader.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// NewFileRebder returns bn io.RebdCloser rebding from the nbmed file bt commit.
+// The cbller should blwbys close the rebder bfter use
+func (c *clientImplementor) NewFileRebder(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, nbme string) (_ io.RebdCloser, err error) {
+	// TODO: this does not cbpture the lifetime of the request since we return b rebder
+	ctx, _, endObservbtion := c.operbtions.newFileRebder.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 		commit.Attr(),
-		attribute.String("name", name),
+		bttribute.String("nbme", nbme),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	a := actor.FromContext(ctx)
-	if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repo, name); err != nil {
+	b := bctor.FromContext(ctx)
+	if hbsAccess, err := buthz.FilterActorPbth(ctx, checker, b, repo, nbme); err != nil {
 		return nil, err
-	} else if !hasAccess {
+	} else if !hbsAccess {
 		return nil, os.ErrNotExist
 	}
 
-	name = rel(name)
-	br, err := c.newBlobReader(ctx, repo, commit, name)
+	nbme = rel(nbme)
+	br, err := c.newBlobRebder(ctx, repo, commit, nbme)
 	if err != nil {
-		return nil, errors.Wrapf(err, "getting blobReader for %q", name)
+		return nil, errors.Wrbpf(err, "getting blobRebder for %q", nbme)
 	}
 	return br, nil
 }
 
-// blobReader, which should be created using newBlobReader, is a struct that allows
-// us to get a ReadCloser to a specific named file at a specific commit
-type blobReader struct {
+// blobRebder, which should be crebted using newBlobRebder, is b struct thbt bllows
+// us to get b RebdCloser to b specific nbmed file bt b specific commit
+type blobRebder struct {
 	c      *clientImplementor
 	ctx    context.Context
-	repo   api.RepoName
-	commit api.CommitID
-	name   string
-	cmd    GitCommand
-	rc     io.ReadCloser
+	repo   bpi.RepoNbme
+	commit bpi.CommitID
+	nbme   string
+	cmd    GitCommbnd
+	rc     io.RebdCloser
 }
 
-func (c *clientImplementor) blobOID(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (string, error) {
-	// Note: when our git is new enough we can just use --object-only
-	out, err := c.gitCommand(repo, "ls-tree", string(commit), "--", name).Output(ctx)
+func (c *clientImplementor) blobOID(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, nbme string) (string, error) {
+	// Note: when our git is new enough we cbn just use --object-only
+	out, err := c.gitCommbnd(repo, "ls-tree", string(commit), "--", nbme).Output(ctx)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to lookup blob OID")
+		return "", errors.Wrbp(err, "fbiled to lookup blob OID")
 	}
 
-	out = bytes.TrimSpace(out)
+	out = bytes.TrimSpbce(out)
 	if len(out) == 0 {
-		return "", &os.PathError{Op: "open", Path: name, Err: os.ErrNotExist}
+		return "", &os.PbthError{Op: "open", Pbth: nbme, Err: os.ErrNotExist}
 	}
 
-	// 100644 blob 3bad331187e39c05c78a9b5e443689f78f4365a7	README.md
+	// 100644 blob 3bbd331187e39c05c78b9b5e443689f78f4365b7	README.md
 	fields := bytes.Fields(out)
 	if len(fields) < 3 {
-		return "", errors.Newf("unexpected output while parsing blob OID: %q", string(out))
+		return "", errors.Newf("unexpected output while pbrsing blob OID: %q", string(out))
 	}
 	return string(fields[2]), nil
 }
 
-func (c *clientImplementor) newBlobReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string) (*blobReader, error) {
-	if err := gitdomain.EnsureAbsoluteCommit(commit); err != nil {
+func (c *clientImplementor) newBlobRebder(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, nbme string) (*blobRebder, error) {
+	if err := gitdombin.EnsureAbsoluteCommit(commit); err != nil {
 		return nil, err
 	}
 
-	var cmd GitCommand
-	if strings.Contains(name, "..") {
-		// We special case ".." in path to running a less efficient two
-		// commands. For other paths we can rely on the faster git show.
+	vbr cmd GitCommbnd
+	if strings.Contbins(nbme, "..") {
+		// We specibl cbse ".." in pbth to running b less efficient two
+		// commbnds. For other pbths we cbn rely on the fbster git show.
 		//
-		// git show will try and resolve revisions on anything containing
-		// "..". Depending on what branches/files exist, this can lead to:
+		// git show will try bnd resolve revisions on bnything contbining
+		// "..". Depending on whbt brbnches/files exist, this cbn lebd to:
 		//
-		//   - error: object $SHA is a tree, not a commit
-		//   - fatal: Invalid symmetric difference expression $SHA:$name
-		//   - outputting a diff instead of the file
+		//   - error: object $SHA is b tree, not b commit
+		//   - fbtbl: Invblid symmetric difference expression $SHA:$nbme
+		//   - outputting b diff instebd of the file
 		//
-		// The last point is a security issue for repositories with sub-repo
+		// The lbst point is b security issue for repositories with sub-repo
 		// permissions since the diff will not be filtered.
-		blobOID, err := c.blobOID(ctx, repo, commit, name)
+		blobOID, err := c.blobOID(ctx, repo, commit, nbme)
 		if err != nil {
 			return nil, err
 		}
-		cmd = c.gitCommand(repo, "cat-file", "-p", blobOID)
+		cmd = c.gitCommbnd(repo, "cbt-file", "-p", blobOID)
 	} else {
-		// Otherwise we can rely on a single command git show sha:name.
-		cmd = c.gitCommand(repo, "show", string(commit)+":"+name)
+		// Otherwise we cbn rely on b single commbnd git show shb:nbme.
+		cmd = c.gitCommbnd(repo, "show", string(commit)+":"+nbme)
 	}
 
-	stdout, err := cmd.StdoutReader(ctx)
+	stdout, err := cmd.StdoutRebder(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &blobReader{
+	return &blobRebder{
 		c:      c,
 		ctx:    ctx,
 		repo:   repo,
 		commit: commit,
-		name:   name,
+		nbme:   nbme,
 		cmd:    cmd,
 		rc:     stdout,
 	}, nil
 }
 
-func (br *blobReader) Read(p []byte) (int, error) {
-	n, err := br.rc.Read(p)
+func (br *blobRebder) Rebd(p []byte) (int, error) {
+	n, err := br.rc.Rebd(p)
 	if err != nil {
 		return n, br.convertError(err)
 	}
 	return n, nil
 }
 
-func (br *blobReader) Close() error {
+func (br *blobRebder) Close() error {
 	return br.rc.Close()
 }
 
-// convertError converts an error returned from 'git show' into a more appropriate error type
-func (br *blobReader) convertError(err error) error {
+// convertError converts bn error returned from 'git show' into b more bppropribte error type
+func (br *blobRebder) convertError(err error) error {
 	if err == nil {
 		return nil
 	}
 	if err == io.EOF {
 		return err
 	}
-	if strings.Contains(err.Error(), "exists on disk, but not in") || strings.Contains(err.Error(), "does not exist") {
-		return &os.PathError{Op: "open", Path: br.name, Err: os.ErrNotExist}
+	if strings.Contbins(err.Error(), "exists on disk, but not in") || strings.Contbins(err.Error(), "does not exist") {
+		return &os.PbthError{Op: "open", Pbth: br.nbme, Err: os.ErrNotExist}
 	}
-	if strings.Contains(err.Error(), "fatal: bad object ") {
-		// Could be a git submodule.
-		fi, err := br.c.Stat(br.ctx, authz.DefaultSubRepoPermsChecker, br.repo, br.commit, br.name)
+	if strings.Contbins(err.Error(), "fbtbl: bbd object ") {
+		// Could be b git submodule.
+		fi, err := br.c.Stbt(br.ctx, buthz.DefbultSubRepoPermsChecker, br.repo, br.commit, br.nbme)
 		if err != nil {
 			return err
 		}
-		// Return EOF for a submodule for now which indicates zero content
-		if fi.Mode()&gitdomain.ModeSubmodule != 0 {
+		// Return EOF for b submodule for now which indicbtes zero content
+		if fi.Mode()&gitdombin.ModeSubmodule != 0 {
 			return io.EOF
 		}
 	}
-	return errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", br.cmd.Args(), err))
+	return errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", br.cmd.Args(), err))
 }
 
-// Stat returns a FileInfo describing the named file at commit.
-func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string) (_ fs.FileInfo, err error) {
-	ctx, _, endObservation := c.operations.stat.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// Stbt returns b FileInfo describing the nbmed file bt commit.
+func (c *clientImplementor) Stbt(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID, pbth string) (_ fs.FileInfo, err error) {
+	ctx, _, endObservbtion := c.operbtions.stbt.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		commit.Attr(),
-		attribute.String("path", path),
+		bttribute.String("pbth", pbth),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := checkSpecArgSafety(string(commit)); err != nil {
+	if err := checkSpecArgSbfety(string(commit)); err != nil {
 		return nil, err
 	}
 
-	path = rel(path)
+	pbth = rel(pbth)
 
-	fi, err := c.lStat(ctx, checker, repo, commit, path)
+	fi, err := c.lStbt(ctx, checker, repo, commit, pbth)
 	if err != nil {
 		return nil, err
 	}
@@ -1545,45 +1545,45 @@ func (c *clientImplementor) Stat(ctx context.Context, checker authz.SubRepoPermi
 
 // CommitsOptions specifies options for Commits.
 type CommitsOptions struct {
-	Range string // commit range (revspec, "A..B", "A...B", etc.)
+	Rbnge string // commit rbnge (revspec, "A..B", "A...B", etc.)
 
-	N    uint // limit the number of returned commits to this many (0 means no limit)
-	Skip uint // skip this many commits at the beginning
+	N    uint // limit the number of returned commits to this mbny (0 mebns no limit)
+	Skip uint // skip this mbny commits bt the beginning
 
-	MessageQuery string // include only commits whose commit message contains this substring
+	MessbgeQuery string // include only commits whose commit messbge contbins this substring
 
-	Author string // include only commits whose author matches this
-	After  string // include only commits after this date
-	Before string // include only commits before this date
+	Author string // include only commits whose buthor mbtches this
+	After  string // include only commits bfter this dbte
+	Before string // include only commits before this dbte
 
-	Reverse   bool // Whether or not commits should be given in reverse order (optional)
-	DateOrder bool // Whether or not commits should be sorted by date (optional)
+	Reverse   bool // Whether or not commits should be given in reverse order (optionbl)
+	DbteOrder bool // Whether or not commits should be sorted by dbte (optionbl)
 
-	Path string // only commits modifying the given path are selected (optional)
+	Pbth string // only commits modifying the given pbth bre selected (optionbl)
 
-	Follow bool // follow the history of the path beyond renames (works only for a single path)
+	Follow bool // follow the history of the pbth beyond renbmes (works only for b single pbth)
 
-	// When true we opt out of attempting to fetch missing revisions
+	// When true we opt out of bttempting to fetch missing revisions
 	NoEnsureRevision bool
 
-	// When true return the names of the files changed in the commit
-	NameOnly bool
+	// When true return the nbmes of the files chbnged in the commit
+	NbmeOnly bool
 }
 
-var recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
+vbr recordGetCommitQueries = os.Getenv("RECORD_GET_COMMIT_QUERIES") == "1"
 
 // getCommit returns the commit with the given id.
-func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
-	if honey.Enabled() && recordGetCommitQueries {
+func (c *clientImplementor) getCommit(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, id bpi.CommitID, opt ResolveRevisionOptions) (_ *gitdombin.Commit, err error) {
+	if honey.Enbbled() && recordGetCommitQueries {
 		defer func() {
 			ev := honey.NewEvent("getCommit")
-			ev.SetSampleRate(10) // 1 in 10
+			ev.SetSbmpleRbte(10) // 1 in 10
 			ev.AddField("repo", repo)
 			ev.AddField("commit", id)
 			ev.AddField("no_ensure_revision", opt.NoEnsureRevision)
-			ev.AddField("actor", actor.FromContext(ctx).UIDString())
+			ev.AddField("bctor", bctor.FromContext(ctx).UIDString())
 
-			q, _ := ctx.Value(trace.GraphQLQueryKey).(string)
+			q, _ := ctx.Vblue(trbce.GrbphQLQueryKey).(string)
 			ev.AddField("query", q)
 
 			if err != nil {
@@ -1594,16 +1594,16 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 		}()
 	}
 
-	if err := checkSpecArgSafety(string(id)); err != nil {
+	if err := checkSpecArgSbfety(string(id)); err != nil {
 		return nil, err
 	}
 
 	commitOptions := CommitsOptions{
-		Range:            string(id),
+		Rbnge:            string(id),
 		N:                1,
 		NoEnsureRevision: opt.NoEnsureRevision,
 	}
-	commitOptions = addNameOnly(commitOptions, checker)
+	commitOptions = bddNbmeOnly(commitOptions, checker)
 
 	commits, err := c.commitLog(ctx, repo, commitOptions, checker)
 	if err != nil {
@@ -1611,7 +1611,7 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 	}
 
 	if len(commits) == 0 {
-		return nil, &gitdomain.RevisionNotFoundError{Repo: repo, Spec: string(id)}
+		return nil, &gitdombin.RevisionNotFoundError{Repo: repo, Spec: string(id)}
 	}
 	if len(commits) != 1 {
 		return nil, errors.Errorf("git log: expected 1 commit, got %d", len(commits))
@@ -1623,43 +1623,43 @@ func (c *clientImplementor) getCommit(ctx context.Context, checker authz.SubRepo
 // GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
 // exists.
 //
-// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
-// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
+// The remoteURLFunc is cblled to get the Git remote URL if it's not set in repo bnd if it is
+// needed. The Git remote URL is only required if the gitserver doesn't blrebdy contbin b clone of
 // the repository or if the commit must be fetched from the remote.
-func (c *clientImplementor) GetCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions) (_ *gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.getCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (c *clientImplementor) GetCommit(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, id bpi.CommitID, opt ResolveRevisionOptions) (_ *gitdombin.Commit, err error) {
+	ctx, _, endObservbtion := c.operbtions.getCommit.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 		id.Attr(),
-		attribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
+		bttribute.Bool("noEnsureRevision", opt.NoEnsureRevision),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	return c.getCommit(ctx, checker, repo, id, opt)
 }
 
-// Commits returns all commits matching the options.
-func (c *clientImplementor) Commits(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, opt CommitsOptions) (_ []*gitdomain.Commit, err error) {
-	opt = addNameOnly(opt, checker)
-	ctx, _, endObservation := c.operations.commits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// Commits returns bll commits mbtching the options.
+func (c *clientImplementor) Commits(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, opt CommitsOptions) (_ []*gitdombin.Commit, err error) {
+	opt = bddNbmeOnly(opt, checker)
+	ctx, _, endObservbtion := c.operbtions.commits.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.String("opts", fmt.Sprintf("%#v", opt)),
+		bttribute.String("opts", fmt.Sprintf("%#v", opt)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if err := checkSpecArgSafety(opt.Range); err != nil {
+	if err := checkSpecArgSbfety(opt.Rbnge); err != nil {
 		return nil, err
 	}
 	return c.commitLog(ctx, repo, opt, checker)
 }
 
-func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, commits []*wrappedCommit, repoName api.RepoName) ([]*gitdomain.Commit, error) {
-	if !authz.SubRepoEnabled(checker) {
-		return unWrapCommits(commits), nil
+func filterCommits(ctx context.Context, checker buthz.SubRepoPermissionChecker, commits []*wrbppedCommit, repoNbme bpi.RepoNbme) ([]*gitdombin.Commit, error) {
+	if !buthz.SubRepoEnbbled(checker) {
+		return unWrbpCommits(commits), nil
 	}
-	filtered := make([]*gitdomain.Commit, 0, len(commits))
-	for _, commit := range commits {
-		if hasAccess, err := hasAccessToCommit(ctx, commit, repoName, checker); hasAccess {
-			filtered = append(filtered, commit.Commit)
+	filtered := mbke([]*gitdombin.Commit, 0, len(commits))
+	for _, commit := rbnge commits {
+		if hbsAccess, err := hbsAccessToCommit(ctx, commit, repoNbme, checker); hbsAccess {
+			filtered = bppend(filtered, commit.Commit)
 		} else if err != nil {
 			return nil, err
 		}
@@ -1667,106 +1667,106 @@ func filterCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 	return filtered, nil
 }
 
-func unWrapCommits(wrappedCommits []*wrappedCommit) []*gitdomain.Commit {
-	commits := make([]*gitdomain.Commit, 0, len(wrappedCommits))
-	for _, wc := range wrappedCommits {
-		commits = append(commits, wc.Commit)
+func unWrbpCommits(wrbppedCommits []*wrbppedCommit) []*gitdombin.Commit {
+	commits := mbke([]*gitdombin.Commit, 0, len(wrbppedCommits))
+	for _, wc := rbnge wrbppedCommits {
+		commits = bppend(commits, wc.Commit)
 	}
 	return commits
 }
 
-func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.RepoName, checker authz.SubRepoPermissionChecker) (bool, error) {
-	a := actor.FromContext(ctx)
+func hbsAccessToCommit(ctx context.Context, commit *wrbppedCommit, repoNbme bpi.RepoNbme, checker buthz.SubRepoPermissionChecker) (bool, error) {
+	b := bctor.FromContext(ctx)
 	if commit.files == nil || len(commit.files) == 0 {
-		return true, nil // If commit has no files, assume user has access to view the commit.
+		return true, nil // If commit hbs no files, bssume user hbs bccess to view the commit.
 	}
-	for _, fileName := range commit.files {
-		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
-			return false, err
-		} else if hasAccess {
-			// if the user has access to one file modified in the commit, they have access to view the commit
+	for _, fileNbme := rbnge commit.files {
+		if hbsAccess, err := buthz.FilterActorPbth(ctx, checker, b, repoNbme, fileNbme); err != nil {
+			return fblse, err
+		} else if hbsAccess {
+			// if the user hbs bccess to one file modified in the commit, they hbve bccess to view the commit
 			return true, nil
 		}
 	}
-	return false, nil
+	return fblse, nil
 }
 
-// CommitsUniqueToBranch returns a map from commits that exist on a particular
-// branch in the given repository to their committer date. This set of commits is
-// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
-// commits on {branchName} not also on the tip of the default branch. If the
-// supplied branch name is the default branch, then this method instead returns
-// all commits reachable from HEAD.
-func (c *clientImplementor) CommitsUniqueToBranch(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time) (_ map[string]time.Time, err error) {
-	args := []string{"log", "--pretty=format:%H:%cI"}
-	if maxAge != nil {
-		args = append(args, fmt.Sprintf("--after=%s", *maxAge))
+// CommitsUniqueToBrbnch returns b mbp from commits thbt exist on b pbrticulbr
+// brbnch in the given repository to their committer dbte. This set of commits is
+// determined by listing `{brbnchNbme} ^HEAD`, which is interpreted bs: bll
+// commits on {brbnchNbme} not blso on the tip of the defbult brbnch. If the
+// supplied brbnch nbme is the defbult brbnch, then this method instebd returns
+// bll commits rebchbble from HEAD.
+func (c *clientImplementor) CommitsUniqueToBrbnch(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, brbnchNbme string, isDefbultBrbnch bool, mbxAge *time.Time) (_ mbp[string]time.Time, err error) {
+	brgs := []string{"log", "--pretty=formbt:%H:%cI"}
+	if mbxAge != nil {
+		brgs = bppend(brgs, fmt.Sprintf("--bfter=%s", *mbxAge))
 	}
-	if isDefaultBranch {
-		args = append(args, "HEAD")
+	if isDefbultBrbnch {
+		brgs = bppend(brgs, "HEAD")
 	} else {
-		args = append(args, branchName, "^HEAD")
+		brgs = bppend(brgs, brbnchNbme, "^HEAD")
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	commits, err := parseCommitsUniqueToBranch(strings.Split(string(out), "\n"))
-	if authz.SubRepoEnabled(checker) && err == nil {
-		return c.filterCommitsUniqueToBranch(ctx, repo, commits, checker), nil
+	commits, err := pbrseCommitsUniqueToBrbnch(strings.Split(string(out), "\n"))
+	if buthz.SubRepoEnbbled(checker) && err == nil {
+		return c.filterCommitsUniqueToBrbnch(ctx, repo, commits, checker), nil
 	}
 	return commits, err
 }
 
-func (c *clientImplementor) filterCommitsUniqueToBranch(ctx context.Context, repo api.RepoName, commitsMap map[string]time.Time, checker authz.SubRepoPermissionChecker) map[string]time.Time {
-	filtered := make(map[string]time.Time, len(commitsMap))
-	for commitID, timeStamp := range commitsMap {
-		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-			filtered[commitID] = timeStamp
+func (c *clientImplementor) filterCommitsUniqueToBrbnch(ctx context.Context, repo bpi.RepoNbme, commitsMbp mbp[string]time.Time, checker buthz.SubRepoPermissionChecker) mbp[string]time.Time {
+	filtered := mbke(mbp[string]time.Time, len(commitsMbp))
+	for commitID, timeStbmp := rbnge commitsMbp {
+		if _, err := c.GetCommit(ctx, checker, repo, bpi.CommitID(commitID), ResolveRevisionOptions{}); !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+			filtered[commitID] = timeStbmp
 		}
 	}
 	return filtered
 }
 
-func parseCommitsUniqueToBranch(lines []string) (_ map[string]time.Time, err error) {
-	commitDates := make(map[string]time.Time, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
+func pbrseCommitsUniqueToBrbnch(lines []string) (_ mbp[string]time.Time, err error) {
+	commitDbtes := mbke(mbp[string]time.Time, len(lines))
+	for _, line := rbnge lines {
+		line = strings.TrimSpbce(line)
 		if line == "" {
 			continue
 		}
 
-		parts := strings.SplitN(line, ":", 2)
-		if len(parts) != 2 {
+		pbrts := strings.SplitN(line, ":", 2)
+		if len(pbrts) != 2 {
 			return nil, errors.Errorf(`unexpected output from git log "%s"`, line)
 		}
 
-		duration, err := time.Parse(time.RFC3339, parts[1])
+		durbtion, err := time.Pbrse(time.RFC3339, pbrts[1])
 		if err != nil {
-			return nil, errors.Errorf(`unexpected output from git log (bad date format) "%s"`, line)
+			return nil, errors.Errorf(`unexpected output from git log (bbd dbte formbt) "%s"`, line)
 		}
 
-		commitDates[parts[0]] = duration
+		commitDbtes[pbrts[0]] = durbtion
 	}
 
-	return commitDates, nil
+	return commitDbtes, nil
 }
 
-// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
-// contains a commit past a specified date.
-func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, date string, revspec string) (_ bool, err error) {
-	ctx, _, endObservation := c.operations.hasCommitAfter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// HbsCommitAfter indicbtes the stbleness of b repository. It returns b boolebn indicbting if b repository
+// contbins b commit pbst b specified dbte.
+func (c *clientImplementor) HbsCommitAfter(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, dbte string, revspec string) (_ bool, err error) {
+	ctx, _, endObservbtion := c.operbtions.hbsCommitAfter.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.String("date", date),
-		attribute.String("revSpec", revspec),
+		bttribute.String("dbte", dbte),
+		bttribute.String("revSpec", revspec),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if authz.SubRepoEnabled(checker) {
-		return c.hasCommitAfterWithFiltering(ctx, repo, date, revspec, checker)
+	if buthz.SubRepoEnbbled(checker) {
+		return c.hbsCommitAfterWithFiltering(ctx, repo, dbte, revspec, checker)
 	}
 
 	if revspec == "" {
@@ -1775,354 +1775,354 @@ func (c *clientImplementor) HasCommitAfter(ctx context.Context, checker authz.Su
 
 	commitid, err := c.ResolveRevision(ctx, repo, revspec, ResolveRevisionOptions{NoEnsureRevision: true})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	args, err := commitLogArgs([]string{"rev-list", "--count"}, CommitsOptions{
+	brgs, err := commitLogArgs([]string{"rev-list", "--count"}, CommitsOptions{
 		N:     1,
-		After: date,
-		Range: string(commitid),
+		After: dbte,
+		Rbnge: string(commitid),
 	})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return false, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return fblse, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", cmd.Args(), out))
 	}
 
-	out = bytes.TrimSpace(out)
+	out = bytes.TrimSpbce(out)
 	n, err := strconv.Atoi(string(out))
 	return n > 0, err
 }
 
-func (c *clientImplementor) hasCommitAfterWithFiltering(ctx context.Context, repo api.RepoName, date, revspec string, checker authz.SubRepoPermissionChecker) (bool, error) {
-	if commits, err := c.Commits(ctx, checker, repo, CommitsOptions{After: date, Range: revspec}); err != nil {
-		return false, err
+func (c *clientImplementor) hbsCommitAfterWithFiltering(ctx context.Context, repo bpi.RepoNbme, dbte, revspec string, checker buthz.SubRepoPermissionChecker) (bool, error) {
+	if commits, err := c.Commits(ctx, checker, repo, CommitsOptions{After: dbte, Rbnge: revspec}); err != nil {
+		return fblse, err
 	} else if len(commits) > 0 {
 		return true, nil
 	}
-	return false, nil
+	return fblse, nil
 }
 
-func isBadObjectErr(output, obj string) bool {
-	return output == "fatal: bad object "+obj
+func isBbdObjectErr(output, obj string) bool {
+	return output == "fbtbl: bbd object "+obj
 }
 
-// commitLog returns a list of commits.
+// commitLog returns b list of commits.
 //
-// The caller is responsible for doing checkSpecArgSafety on opt.Head and opt.Base.
-func (c *clientImplementor) commitLog(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error) {
-	wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
+// The cbller is responsible for doing checkSpecArgSbfety on opt.Hebd bnd opt.Bbse.
+func (c *clientImplementor) commitLog(ctx context.Context, repo bpi.RepoNbme, opt CommitsOptions, checker buthz.SubRepoPermissionChecker) ([]*gitdombin.Commit, error) {
+	wrbppedCommits, err := c.getWrbppedCommits(ctx, repo, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	filtered, err := filterCommits(ctx, checker, wrappedCommits, repo)
+	filtered, err := filterCommits(ctx, checker, wrbppedCommits, repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "filtering commits")
+		return nil, errors.Wrbp(err, "filtering commits")
 	}
 
-	if needMoreCommits(filtered, wrappedCommits, opt, checker) {
+	if needMoreCommits(filtered, wrbppedCommits, opt, checker) {
 		return c.getMoreCommits(ctx, repo, opt, checker, filtered)
 	}
 	return filtered, err
 }
 
-func (c *clientImplementor) getWrappedCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions) ([]*wrappedCommit, error) {
-	args, err := commitLogArgs([]string{"log", logFormatWithoutRefs}, opt)
+func (c *clientImplementor) getWrbppedCommits(ctx context.Context, repo bpi.RepoNbme, opt CommitsOptions) ([]*wrbppedCommit, error) {
+	brgs, err := commitLogArgs([]string{"log", logFormbtWithoutRefs}, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := c.gitCommand(repo, args...)
+	cmd := c.gitCommbnd(repo, brgs...)
 	if !opt.NoEnsureRevision {
-		cmd.SetEnsureRevision(opt.Range)
+		cmd.SetEnsureRevision(opt.Rbnge)
 	}
-	wrappedCommits, err := runCommitLog(ctx, cmd, opt)
+	wrbppedCommits, err := runCommitLog(ctx, cmd, opt)
 	if err != nil {
 		return nil, err
 	}
-	return wrappedCommits, nil
+	return wrbppedCommits, nil
 }
 
-func needMoreCommits(filtered []*gitdomain.Commit, commits []*wrappedCommit, opt CommitsOptions, checker authz.SubRepoPermissionChecker) bool {
-	if !authz.SubRepoEnabled(checker) {
-		return false
+func needMoreCommits(filtered []*gitdombin.Commit, commits []*wrbppedCommit, opt CommitsOptions, checker buthz.SubRepoPermissionChecker) bool {
+	if !buthz.SubRepoEnbbled(checker) {
+		return fblse
 	}
 	if opt.N == 0 || isRequestForSingleCommit(opt) {
-		return false
+		return fblse
 	}
 	if len(filtered) < len(commits) {
 		return true
 	}
-	return false
+	return fblse
 }
 
 func isRequestForSingleCommit(opt CommitsOptions) bool {
-	return opt.Range != "" && opt.N == 1
+	return opt.Rbnge != "" && opt.N == 1
 }
 
-// getMoreCommits handles the case where a specific number of commits was requested via CommitsOptions, but after sub-repo
-// filtering, fewer than that requested number was left. This function requests the next N commits (where N was the number
-// originally requested), filters the commits, and determines if this is at least N commits total after filtering. If not,
-// the loop continues until N total filtered commits are collected _or_ there are no commits left to request.
-func (c *clientImplementor) getMoreCommits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, baselineCommits []*gitdomain.Commit) ([]*gitdomain.Commit, error) {
-	// We want to place an upper bound on the number of times we loop here so that we
-	// don't hit pathological conditions where a lot of filtering has been applied.
-	const maxIterations = 5
+// getMoreCommits hbndles the cbse where b specific number of commits wbs requested vib CommitsOptions, but bfter sub-repo
+// filtering, fewer thbn thbt requested number wbs left. This function requests the next N commits (where N wbs the number
+// originblly requested), filters the commits, bnd determines if this is bt lebst N commits totbl bfter filtering. If not,
+// the loop continues until N totbl filtered commits bre collected _or_ there bre no commits left to request.
+func (c *clientImplementor) getMoreCommits(ctx context.Context, repo bpi.RepoNbme, opt CommitsOptions, checker buthz.SubRepoPermissionChecker, bbselineCommits []*gitdombin.Commit) ([]*gitdombin.Commit, error) {
+	// We wbnt to plbce bn upper bound on the number of times we loop here so thbt we
+	// don't hit pbthologicbl conditions where b lot of filtering hbs been bpplied.
+	const mbxIterbtions = 5
 
-	totalCommits := make([]*gitdomain.Commit, 0, opt.N)
-	for i := 0; i < maxIterations; i++ {
-		if uint(len(totalCommits)) == opt.N {
-			break
+	totblCommits := mbke([]*gitdombin.Commit, 0, opt.N)
+	for i := 0; i < mbxIterbtions; i++ {
+		if uint(len(totblCommits)) == opt.N {
+			brebk
 		}
 		// Increment the Skip number to get the next N commits
 		opt.Skip += opt.N
-		wrappedCommits, err := c.getWrappedCommits(ctx, repo, opt)
+		wrbppedCommits, err := c.getWrbppedCommits(ctx, repo, opt)
 		if err != nil {
 			return nil, err
 		}
-		filtered, err := filterCommits(ctx, checker, wrappedCommits, repo)
+		filtered, err := filterCommits(ctx, checker, wrbppedCommits, repo)
 		if err != nil {
 			return nil, err
 		}
-		// join the new (filtered) commits with those already fetched (potentially truncating the list to have length N if necessary)
-		totalCommits = joinCommits(baselineCommits, filtered, opt.N)
-		baselineCommits = totalCommits
-		if uint(len(wrappedCommits)) < opt.N {
-			// No more commits available before filtering, so return current total commits (e.g. the last "page" of N commits has been reached)
-			break
+		// join the new (filtered) commits with those blrebdy fetched (potentiblly truncbting the list to hbve length N if necessbry)
+		totblCommits = joinCommits(bbselineCommits, filtered, opt.N)
+		bbselineCommits = totblCommits
+		if uint(len(wrbppedCommits)) < opt.N {
+			// No more commits bvbilbble before filtering, so return current totbl commits (e.g. the lbst "pbge" of N commits hbs been rebched)
+			brebk
 		}
 	}
-	return totalCommits, nil
+	return totblCommits, nil
 }
 
-func joinCommits(previous, next []*gitdomain.Commit, desiredTotal uint) []*gitdomain.Commit {
-	allCommits := append(previous, next...)
-	// ensure that we don't return more than what was requested
-	if uint(len(allCommits)) > desiredTotal {
-		return allCommits[:desiredTotal]
+func joinCommits(previous, next []*gitdombin.Commit, desiredTotbl uint) []*gitdombin.Commit {
+	bllCommits := bppend(previous, next...)
+	// ensure thbt we don't return more thbn whbt wbs requested
+	if uint(len(bllCommits)) > desiredTotbl {
+		return bllCommits[:desiredTotbl]
 	}
-	return allCommits
+	return bllCommits
 }
 
-// runCommitLog sends the git command to gitserver. It interprets missing
-// revision responses and converts them into RevisionNotFoundError.
-// It is declared as a variable so that we can swap it out in tests
-var runCommitLog = func(ctx context.Context, cmd GitCommand, opt CommitsOptions) ([]*wrappedCommit, error) {
-	data, stderr, err := cmd.DividedOutput(ctx)
+// runCommitLog sends the git commbnd to gitserver. It interprets missing
+// revision responses bnd converts them into RevisionNotFoundError.
+// It is declbred bs b vbribble so thbt we cbn swbp it out in tests
+vbr runCommitLog = func(ctx context.Context, cmd GitCommbnd, opt CommitsOptions) ([]*wrbppedCommit, error) {
+	dbtb, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
-		data = bytes.TrimSpace(data)
-		if isBadObjectErr(string(stderr), opt.Range) {
-			return nil, &gitdomain.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Range}
+		dbtb = bytes.TrimSpbce(dbtb)
+		if isBbdObjectErr(string(stderr), opt.Rbnge) {
+			return nil, &gitdombin.RevisionNotFoundError{Repo: cmd.Repo(), Spec: opt.Rbnge}
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), data))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", cmd.Args(), dbtb))
 	}
 
-	return parseCommitLogOutput(data, opt.NameOnly)
+	return pbrseCommitLogOutput(dbtb, opt.NbmeOnly)
 }
 
-func parseCommitLogOutput(data []byte, nameOnly bool) ([]*wrappedCommit, error) {
-	allParts := bytes.Split(data, []byte{'\x00'})
-	partsPerCommit := partsPerCommitBasic
-	if nameOnly {
-		partsPerCommit = partsPerCommitWithFileNames
+func pbrseCommitLogOutput(dbtb []byte, nbmeOnly bool) ([]*wrbppedCommit, error) {
+	bllPbrts := bytes.Split(dbtb, []byte{'\x00'})
+	pbrtsPerCommit := pbrtsPerCommitBbsic
+	if nbmeOnly {
+		pbrtsPerCommit = pbrtsPerCommitWithFileNbmes
 	}
-	numCommits := len(allParts) / partsPerCommit
-	commits := make([]*wrappedCommit, 0, numCommits)
-	for len(data) > 0 {
-		var commit *wrappedCommit
-		var err error
-		commit, data, err = parseCommitFromLog(data, partsPerCommit)
+	numCommits := len(bllPbrts) / pbrtsPerCommit
+	commits := mbke([]*wrbppedCommit, 0, numCommits)
+	for len(dbtb) > 0 {
+		vbr commit *wrbppedCommit
+		vbr err error
+		commit, dbtb, err = pbrseCommitFromLog(dbtb, pbrtsPerCommit)
 		if err != nil {
 			return nil, err
 		}
-		commits = append(commits, commit)
+		commits = bppend(commits, commit)
 	}
 	return commits, nil
 }
 
-type wrappedCommit struct {
-	*gitdomain.Commit
+type wrbppedCommit struct {
+	*gitdombin.Commit
 	files []string
 }
 
-func commitLogArgs(initialArgs []string, opt CommitsOptions) (args []string, err error) {
-	if err := checkSpecArgSafety(opt.Range); err != nil {
+func commitLogArgs(initiblArgs []string, opt CommitsOptions) (brgs []string, err error) {
+	if err := checkSpecArgSbfety(opt.Rbnge); err != nil {
 		return nil, err
 	}
 
-	args = initialArgs
+	brgs = initiblArgs
 	if opt.N != 0 {
-		args = append(args, "-n", strconv.FormatUint(uint64(opt.N), 10))
+		brgs = bppend(brgs, "-n", strconv.FormbtUint(uint64(opt.N), 10))
 	}
 	if opt.Skip != 0 {
-		args = append(args, "--skip="+strconv.FormatUint(uint64(opt.Skip), 10))
+		brgs = bppend(brgs, "--skip="+strconv.FormbtUint(uint64(opt.Skip), 10))
 	}
 
 	if opt.Author != "" {
-		args = append(args, "--fixed-strings", "--author="+opt.Author)
+		brgs = bppend(brgs, "--fixed-strings", "--buthor="+opt.Author)
 	}
 
 	if opt.After != "" {
-		args = append(args, "--after="+opt.After)
+		brgs = bppend(brgs, "--bfter="+opt.After)
 	}
 	if opt.Before != "" {
-		args = append(args, "--before="+opt.Before)
+		brgs = bppend(brgs, "--before="+opt.Before)
 	}
 	if opt.Reverse {
-		args = append(args, "--reverse")
+		brgs = bppend(brgs, "--reverse")
 	}
-	if opt.DateOrder {
-		args = append(args, "--date-order")
-	}
-
-	if opt.MessageQuery != "" {
-		args = append(args, "--fixed-strings", "--regexp-ignore-case", "--grep="+opt.MessageQuery)
+	if opt.DbteOrder {
+		brgs = bppend(brgs, "--dbte-order")
 	}
 
-	if opt.Range != "" {
-		args = append(args, opt.Range)
+	if opt.MessbgeQuery != "" {
+		brgs = bppend(brgs, "--fixed-strings", "--regexp-ignore-cbse", "--grep="+opt.MessbgeQuery)
 	}
-	if opt.NameOnly {
-		args = append(args, "--name-only")
+
+	if opt.Rbnge != "" {
+		brgs = bppend(brgs, opt.Rbnge)
+	}
+	if opt.NbmeOnly {
+		brgs = bppend(brgs, "--nbme-only")
 	}
 	if opt.Follow {
-		args = append(args, "--follow")
+		brgs = bppend(brgs, "--follow")
 	}
-	if opt.Path != "" {
-		args = append(args, "--", opt.Path)
+	if opt.Pbth != "" {
+		brgs = bppend(brgs, "--", opt.Pbth)
 	}
-	return args, nil
+	return brgs, nil
 }
 
-// FirstEverCommit returns the first commit ever made to the repository.
-func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (_ *gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.firstEverCommit.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// FirstEverCommit returns the first commit ever mbde to the repository.
+func (c *clientImplementor) FirstEverCommit(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme) (_ *gitdombin.Commit, err error) {
+	ctx, _, endObservbtion := c.operbtions.firstEverCommit.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	args := []string{"rev-list", "--reverse", "--date-order", "--max-parents=0", "HEAD"}
-	cmd := c.gitCommand(repo, args...)
+	brgs := []string{"rev-list", "--reverse", "--dbte-order", "--mbx-pbrents=0", "HEAD"}
+	cmd := c.gitCommbnd(repo, brgs...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", args, out))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", brgs, out))
 	}
-	lines := bytes.TrimSpace(out)
+	lines := bytes.TrimSpbce(out)
 	tokens := bytes.SplitN(lines, []byte("\n"), 2)
 	if len(tokens) == 0 {
 		return nil, errors.New("FirstEverCommit returned no revisions")
 	}
 	first := tokens[0]
-	id := api.CommitID(bytes.TrimSpace(first))
+	id := bpi.CommitID(bytes.TrimSpbce(first))
 	return c.GetCommit(ctx, checker, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
 }
 
 // CommitExists determines if the given commit exists in the given repository.
-func (c *clientImplementor) CommitExists(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, id api.CommitID) (bool, error) {
+func (c *clientImplementor) CommitExists(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, id bpi.CommitID) (bool, error) {
 	commit, err := c.getCommit(ctx, checker, repo, id, ResolveRevisionOptions{NoEnsureRevision: true})
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-		return false, nil
+	if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+		return fblse, nil
 	}
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return commit != nil, nil
 }
 
 // CommitsExist determines if the given commits exists in the given repositories. This function returns
-// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
+// b slice of the sbme size bs the input slice, true indicbting thbt the commit bt the symmetric index
 // exists.
-func (c *clientImplementor) CommitsExist(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit) ([]bool, error) {
+func (c *clientImplementor) CommitsExist(ctx context.Context, checker buthz.SubRepoPermissionChecker, repoCommits []bpi.RepoCommit) ([]bool, error) {
 	commits, err := c.GetCommits(ctx, checker, repoCommits, true)
 	if err != nil {
 		return nil, err
 	}
 
-	exists := make([]bool, len(commits))
-	for i, commit := range commits {
+	exists := mbke([]bool, len(commits))
+	for i, commit := rbnge commits {
 		exists[i] = commit != nil
 	}
 
 	return exists, nil
 }
 
-// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
-// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
-// their associated repository or commit are unresolvable.
+// GetCommits returns b git commit object describing ebch of the given repository bnd commit pbirs. This
+// function returns b slice of the sbme size bs the input slice. Vblues in the output slice mby be nil if
+// their bssocibted repository or commit bre unresolvbble.
 //
-// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
-// resulting commit to be nil, but not fail the entire operation.
-func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRepoPermissionChecker, repoCommits []api.RepoCommit, ignoreErrors bool) (_ []*gitdomain.Commit, err error) {
-	ctx, _, endObservation := c.operations.getCommits.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numRepoCommits", len(repoCommits)),
-		attribute.Bool("ignoreErrors", ignoreErrors),
+// If ignoreErrors is true, then errors brising from bny single fbiled git log operbtion will cbuse the
+// resulting commit to be nil, but not fbil the entire operbtion.
+func (c *clientImplementor) GetCommits(ctx context.Context, checker buthz.SubRepoPermissionChecker, repoCommits []bpi.RepoCommit, ignoreErrors bool) (_ []*gitdombin.Commit, err error) {
+	ctx, _, endObservbtion := c.operbtions.getCommits.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numRepoCommits", len(repoCommits)),
+		bttribute.Bool("ignoreErrors", ignoreErrors),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	indexesByRepoCommit := make(map[api.RepoCommit]int, len(repoCommits))
-	for i, repoCommit := range repoCommits {
-		if err := checkSpecArgSafety(string(repoCommit.CommitID)); err != nil {
+	indexesByRepoCommit := mbke(mbp[bpi.RepoCommit]int, len(repoCommits))
+	for i, repoCommit := rbnge repoCommits {
+		if err := checkSpecArgSbfety(string(repoCommit.CommitID)); err != nil {
 			return nil, err
 		}
 
-		// Ensure repository names are normalized. If do this in a lower layer, then we may
-		// not be able to compare the RepoCommit parameter in the callback below with the
-		// input values.
-		repoCommits[i].Repo = protocol.NormalizeRepo(repoCommit.Repo)
+		// Ensure repository nbmes bre normblized. If do this in b lower lbyer, then we mby
+		// not be bble to compbre the RepoCommit pbrbmeter in the cbllbbck below with the
+		// input vblues.
+		repoCommits[i].Repo = protocol.NormblizeRepo(repoCommit.Repo)
 
-		// Make it easy to look up the index to populate for a particular RepoCommit value.
-		// Note that we use the slice-indexed version as the key, not the local variable, which
-		// was not updated in the normalization phase above
+		// Mbke it ebsy to look up the index to populbte for b pbrticulbr RepoCommit vblue.
+		// Note thbt we use the slice-indexed version bs the key, not the locbl vbribble, which
+		// wbs not updbted in the normblizbtion phbse bbove
 		indexesByRepoCommit[repoCommits[i]] = i
 	}
 
-	// Create a slice with values populated in the callback defined below. Since the callback
-	// may be invoked concurrently inside BatchLog, we need to synchronize writes to this slice
-	// with this local mutex.
-	commits := make([]*gitdomain.Commit, len(repoCommits))
-	var mu sync.Mutex
+	// Crebte b slice with vblues populbted in the cbllbbck defined below. Since the cbllbbck
+	// mby be invoked concurrently inside BbtchLog, we need to synchronize writes to this slice
+	// with this locbl mutex.
+	commits := mbke([]*gitdombin.Commit, len(repoCommits))
+	vbr mu sync.Mutex
 
-	callback := func(repoCommit api.RepoCommit, rawResult RawBatchLogResult) error {
-		if err := rawResult.Error; err != nil {
+	cbllbbck := func(repoCommit bpi.RepoCommit, rbwResult RbwBbtchLogResult) error {
+		if err := rbwResult.Error; err != nil {
 			if ignoreErrors {
-				// Treat as not-found
+				// Trebt bs not-found
 				return nil
 			}
 
-			return errors.Wrap(err, "failed to perform git log")
+			return errors.Wrbp(err, "fbiled to perform git log")
 		}
 
-		wrappedCommits, err := parseCommitLogOutput([]byte(rawResult.Stdout), true)
+		wrbppedCommits, err := pbrseCommitLogOutput([]byte(rbwResult.Stdout), true)
 		if err != nil {
 			if ignoreErrors {
-				// Treat as not-found
+				// Trebt bs not-found
 				return nil
 			}
-			return errors.Wrap(err, "parseCommitLogOutput")
+			return errors.Wrbp(err, "pbrseCommitLogOutput")
 		}
-		if len(wrappedCommits) > 1 {
-			// Check this prior to filtering commits so that we still log an issue
-			// if the user happens to have access one but not the other; a rev being
-			// ambiguous here should be a visible issue regardless of permissions.
+		if len(wrbppedCommits) > 1 {
+			// Check this prior to filtering commits so thbt we still log bn issue
+			// if the user hbppens to hbve bccess one but not the other; b rev being
+			// bmbiguous here should be b visible issue regbrdless of permissions.
 			return errors.Errorf("git log: expected 1 commit, got %d", len(commits))
 		}
 
 		// Enforce sub-repository permissions
-		filteredCommits, err := filterCommits(ctx, checker, wrappedCommits, repoCommit.Repo)
+		filteredCommits, err := filterCommits(ctx, checker, wrbppedCommits, repoCommit.Repo)
 		if err != nil {
-			// Note that we don't check ignoreErrors on this condition. When we
-			// ignore errors it's to hide an issue with a single git log request on a
-			// single shard, which could return an error if that repo is missing, the
-			// supplied commit does not exist in the clone, or if the repo is malformed.
+			// Note thbt we don't check ignoreErrors on this condition. When we
+			// ignore errors it's to hide bn issue with b single git log request on b
+			// single shbrd, which could return bn error if thbt repo is missing, the
+			// supplied commit does not exist in the clone, or if the repo is mblformed.
 			//
-			// We don't want to hide unrelated infrastructure errors caused by this
-			// method call.
-			return errors.Wrap(err, "filterCommits")
+			// We don't wbnt to hide unrelbted infrbstructure errors cbused by this
+			// method cbll.
+			return errors.Wrbp(err, "filterCommits")
 		}
 		if len(filteredCommits) == 0 {
 			// Not found
@@ -2136,31 +2136,31 @@ func (c *clientImplementor) GetCommits(ctx context.Context, checker authz.SubRep
 		return nil
 	}
 
-	opts := BatchLogOptions{
+	opts := BbtchLogOptions{
 		RepoCommits: repoCommits,
-		Format:      logFormatWithoutRefs,
+		Formbt:      logFormbtWithoutRefs,
 	}
-	if err := c.BatchLog(ctx, opts, callback); err != nil {
-		return nil, errors.Wrap(err, "gitserver.BatchLog")
+	if err := c.BbtchLog(ctx, opts, cbllbbck); err != nil {
+		return nil, errors.Wrbp(err, "gitserver.BbtchLog")
 	}
 
 	return commits, nil
 }
 
-// Head determines the tip commit of the default branch for the given repository.
+// Hebd determines the tip commit of the defbult brbnch for the given repository.
 // If no HEAD revision exists for the given repository (which occurs with empty
-// repositories), a false-valued flag is returned along with a nil error and
+// repositories), b fblse-vblued flbg is returned blong with b nil error bnd
 // empty revision.
-func (c *clientImplementor) Head(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) (_ string, revisionExists bool, err error) {
-	cmd := c.gitCommand(repo, "rev-parse", "HEAD")
+func (c *clientImplementor) Hebd(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme) (_ string, revisionExists bool, err error) {
+	cmd := c.gitCommbnd(repo, "rev-pbrse", "HEAD")
 
 	out, err := cmd.Output(ctx)
 	if err != nil {
 		return checkError(err)
 	}
 	commitID := string(out)
-	if authz.SubRepoEnabled(checker) {
-		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); err != nil {
+	if buthz.SubRepoEnbbled(checker) {
+		if _, err := c.GetCommit(ctx, checker, repo, bpi.CommitID(commitID), ResolveRevisionOptions{}); err != nil {
 			return checkError(err)
 		}
 	}
@@ -2169,176 +2169,176 @@ func (c *clientImplementor) Head(ctx context.Context, checker authz.SubRepoPermi
 }
 
 func checkError(err error) (string, bool, error) {
-	if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
 		err = nil
 	}
-	return "", false, err
+	return "", fblse, err
 }
 
 const (
-	partsPerCommitBasic         = 9  // number of \x00-separated fields per commit
-	partsPerCommitWithFileNames = 10 // number of \x00-separated fields per commit with names of modified files also returned
+	pbrtsPerCommitBbsic         = 9  // number of \x00-sepbrbted fields per commit
+	pbrtsPerCommitWithFileNbmes = 10 // number of \x00-sepbrbted fields per commit with nbmes of modified files blso returned
 
-	// don't include refs (faster, should be used if refs are not needed)
-	logFormatWithoutRefs = "--format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
+	// don't include refs (fbster, should be used if refs bre not needed)
+	logFormbtWithoutRefs = "--formbt=formbt:%H%x00%bN%x00%bE%x00%bt%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00"
 )
 
-// parseCommitFromLog parses the next commit from data and returns the commit and the remaining
-// data. The data arg is a byte array that contains NUL-separated log fields as formatted by
-// logFormatFlag.
-func parseCommitFromLog(data []byte, partsPerCommit int) (commit *wrappedCommit, rest []byte, err error) {
-	parts := bytes.SplitN(data, []byte{'\x00'}, partsPerCommit+1)
-	if len(parts) < partsPerCommit {
-		return nil, nil, errors.Errorf("invalid commit log entry: %q", parts)
+// pbrseCommitFromLog pbrses the next commit from dbtb bnd returns the commit bnd the rembining
+// dbtb. The dbtb brg is b byte brrby thbt contbins NUL-sepbrbted log fields bs formbtted by
+// logFormbtFlbg.
+func pbrseCommitFromLog(dbtb []byte, pbrtsPerCommit int) (commit *wrbppedCommit, rest []byte, err error) {
+	pbrts := bytes.SplitN(dbtb, []byte{'\x00'}, pbrtsPerCommit+1)
+	if len(pbrts) < pbrtsPerCommit {
+		return nil, nil, errors.Errorf("invblid commit log entry: %q", pbrts)
 	}
 
-	// log outputs are newline separated, so all but the 1st commit ID part
-	// has an erroneous leading newline.
-	parts[0] = bytes.TrimPrefix(parts[0], []byte{'\n'})
-	commitID := api.CommitID(parts[0])
+	// log outputs bre newline sepbrbted, so bll but the 1st commit ID pbrt
+	// hbs bn erroneous lebding newline.
+	pbrts[0] = bytes.TrimPrefix(pbrts[0], []byte{'\n'})
+	commitID := bpi.CommitID(pbrts[0])
 
-	authorTime, err := strconv.ParseInt(string(parts[3]), 10, 64)
+	buthorTime, err := strconv.PbrseInt(string(pbrts[3]), 10, 64)
 	if err != nil {
-		return nil, nil, errors.Errorf("parsing git commit author time: %s", err)
+		return nil, nil, errors.Errorf("pbrsing git commit buthor time: %s", err)
 	}
-	committerTime, err := strconv.ParseInt(string(parts[6]), 10, 64)
+	committerTime, err := strconv.PbrseInt(string(pbrts[6]), 10, 64)
 	if err != nil {
-		return nil, nil, errors.Errorf("parsing git commit committer time: %s", err)
+		return nil, nil, errors.Errorf("pbrsing git commit committer time: %s", err)
 	}
 
-	var parents []api.CommitID
-	if parentPart := parts[8]; len(parentPart) > 0 {
-		parentIDs := bytes.Split(parentPart, []byte{' '})
-		parents = make([]api.CommitID, len(parentIDs))
-		for i, id := range parentIDs {
-			parents[i] = api.CommitID(id)
+	vbr pbrents []bpi.CommitID
+	if pbrentPbrt := pbrts[8]; len(pbrentPbrt) > 0 {
+		pbrentIDs := bytes.Split(pbrentPbrt, []byte{' '})
+		pbrents = mbke([]bpi.CommitID, len(pbrentIDs))
+		for i, id := rbnge pbrentIDs {
+			pbrents[i] = bpi.CommitID(id)
 		}
 	}
 
-	fileNames, nextCommit := parseCommitFileNames(partsPerCommit, parts)
+	fileNbmes, nextCommit := pbrseCommitFileNbmes(pbrtsPerCommit, pbrts)
 
-	commit = &wrappedCommit{
-		Commit: &gitdomain.Commit{
+	commit = &wrbppedCommit{
+		Commit: &gitdombin.Commit{
 			ID:        commitID,
-			Author:    gitdomain.Signature{Name: string(parts[1]), Email: string(parts[2]), Date: time.Unix(authorTime, 0).UTC()},
-			Committer: &gitdomain.Signature{Name: string(parts[4]), Email: string(parts[5]), Date: time.Unix(committerTime, 0).UTC()},
-			Message:   gitdomain.Message(strings.TrimSuffix(string(parts[7]), "\n")),
-			Parents:   parents,
-		}, files: fileNames,
+			Author:    gitdombin.Signbture{Nbme: string(pbrts[1]), Embil: string(pbrts[2]), Dbte: time.Unix(buthorTime, 0).UTC()},
+			Committer: &gitdombin.Signbture{Nbme: string(pbrts[4]), Embil: string(pbrts[5]), Dbte: time.Unix(committerTime, 0).UTC()},
+			Messbge:   gitdombin.Messbge(strings.TrimSuffix(string(pbrts[7]), "\n")),
+			Pbrents:   pbrents,
+		}, files: fileNbmes,
 	}
 
-	if len(parts) == partsPerCommit+1 {
-		rest = parts[partsPerCommit]
+	if len(pbrts) == pbrtsPerCommit+1 {
+		rest = pbrts[pbrtsPerCommit]
 		if string(nextCommit) != "" {
 			// Add the next commit ID with the rest to be processed
-			rest = append(append(nextCommit, '\x00'), rest...)
+			rest = bppend(bppend(nextCommit, '\x00'), rest...)
 		}
 	}
 
 	return commit, rest, nil
 }
 
-// If the commit has filenames, parse those and return as a list. Also, in this case the next commit ID shows up in this
-// portion of the byte array, so it must be returned as well to be added to the rest of the commits to be processed.
-func parseCommitFileNames(partsPerCommit int, parts [][]byte) ([]string, []byte) {
-	var fileNames []string
-	var nextCommit []byte
-	if partsPerCommit == partsPerCommitWithFileNames {
-		parts[9] = bytes.TrimPrefix(parts[9], []byte{'\n'})
-		fileNamesRaw := parts[9]
-		fileNameParts := bytes.Split(fileNamesRaw, []byte{'\n'})
-		for i, name := range fileNameParts {
-			// The last item contains the files modified, some empty space, and the commit ID for the next commit. Drop
-			// the empty space and the next commit ID (which will be processed in the next iteration).
-			if string(name) == "" || i == len(fileNameParts)-1 {
+// If the commit hbs filenbmes, pbrse those bnd return bs b list. Also, in this cbse the next commit ID shows up in this
+// portion of the byte brrby, so it must be returned bs well to be bdded to the rest of the commits to be processed.
+func pbrseCommitFileNbmes(pbrtsPerCommit int, pbrts [][]byte) ([]string, []byte) {
+	vbr fileNbmes []string
+	vbr nextCommit []byte
+	if pbrtsPerCommit == pbrtsPerCommitWithFileNbmes {
+		pbrts[9] = bytes.TrimPrefix(pbrts[9], []byte{'\n'})
+		fileNbmesRbw := pbrts[9]
+		fileNbmePbrts := bytes.Split(fileNbmesRbw, []byte{'\n'})
+		for i, nbme := rbnge fileNbmePbrts {
+			// The lbst item contbins the files modified, some empty spbce, bnd the commit ID for the next commit. Drop
+			// the empty spbce bnd the next commit ID (which will be processed in the next iterbtion).
+			if string(nbme) == "" || i == len(fileNbmePbrts)-1 {
 				continue
 			}
-			fileNames = append(fileNames, string(name))
+			fileNbmes = bppend(fileNbmes, string(nbme))
 		}
-		nextCommit = fileNameParts[len(fileNameParts)-1]
+		nextCommit = fileNbmePbrts[len(fileNbmePbrts)-1]
 	}
-	return fileNames, nextCommit
+	return fileNbmes, nextCommit
 }
 
-// BranchesContaining returns a map from branch names to branch tip hashes for
-// each branch containing the given commit.
-func (c *clientImplementor) BranchesContaining(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) ([]string, error) {
-	if authz.SubRepoEnabled(checker) {
-		// GetCommit to validate that the user has permissions to access it.
+// BrbnchesContbining returns b mbp from brbnch nbmes to brbnch tip hbshes for
+// ebch brbnch contbining the given commit.
+func (c *clientImplementor) BrbnchesContbining(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID) ([]string, error) {
+	if buthz.SubRepoEnbbled(checker) {
+		// GetCommit to vblidbte thbt the user hbs permissions to bccess it.
 		if _, err := c.GetCommit(ctx, checker, repo, commit, ResolveRevisionOptions{}); err != nil {
 			return nil, err
 		}
 	}
-	cmd := c.gitCommand(repo, "branch", "--contains", string(commit), "--format", "%(refname)")
+	cmd := c.gitCommbnd(repo, "brbnch", "--contbins", string(commit), "--formbt", "%(refnbme)")
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return parseBranchesContaining(strings.Split(string(out), "\n")), nil
+	return pbrseBrbnchesContbining(strings.Split(string(out), "\n")), nil
 }
 
-var refReplacer = strings.NewReplacer("refs/heads/", "", "refs/tags/", "")
+vbr refReplbcer = strings.NewReplbcer("refs/hebds/", "", "refs/tbgs/", "")
 
-func parseBranchesContaining(lines []string) []string {
-	names := make([]string, 0, len(lines))
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
+func pbrseBrbnchesContbining(lines []string) []string {
+	nbmes := mbke([]string, 0, len(lines))
+	for _, line := rbnge lines {
+		line = strings.TrimSpbce(line)
 		if line == "" {
 			continue
 		}
-		line = refReplacer.Replace(line)
-		names = append(names, line)
+		line = refReplbcer.Replbce(line)
+		nbmes = bppend(nbmes, line)
 	}
-	sort.Strings(names)
+	sort.Strings(nbmes)
 
-	return names
+	return nbmes
 }
 
-// RefDescriptions returns a map from commits to descriptions of the tip of each
-// branch and tag of the given repository.
-func (c *clientImplementor) RefDescriptions(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, gitObjs ...string) (map[string][]gitdomain.RefDescription, error) {
-	f := func(refPrefix string) (map[string][]gitdomain.RefDescription, error) {
-		format := strings.Join([]string{
-			derefField("objectname"),
-			"%(refname)",
+// RefDescriptions returns b mbp from commits to descriptions of the tip of ebch
+// brbnch bnd tbg of the given repository.
+func (c *clientImplementor) RefDescriptions(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, gitObjs ...string) (mbp[string][]gitdombin.RefDescription, error) {
+	f := func(refPrefix string) (mbp[string][]gitdombin.RefDescription, error) {
+		formbt := strings.Join([]string{
+			derefField("objectnbme"),
+			"%(refnbme)",
 			"%(HEAD)",
-			derefField("creatordate:iso8601-strict"),
+			derefField("crebtordbte:iso8601-strict"),
 		}, "%00")
 
-		args := make([]string, 0, len(gitObjs)+3)
-		args = append(args, "for-each-ref", "--format="+format, refPrefix)
+		brgs := mbke([]string, 0, len(gitObjs)+3)
+		brgs = bppend(brgs, "for-ebch-ref", "--formbt="+formbt, refPrefix)
 
-		for _, obj := range gitObjs {
-			args = append(args, "--points-at="+obj)
+		for _, obj := rbnge gitObjs {
+			brgs = bppend(brgs, "--points-bt="+obj)
 		}
 
-		cmd := c.gitCommand(repo, args...)
+		cmd := c.gitCommbnd(repo, brgs...)
 
 		out, err := cmd.CombinedOutput(ctx)
 		if err != nil {
 			return nil, err
 		}
 
-		return parseRefDescriptions(out)
+		return pbrseRefDescriptions(out)
 	}
 
-	aggregate := make(map[string][]gitdomain.RefDescription)
-	for prefix := range refPrefixes {
+	bggregbte := mbke(mbp[string][]gitdombin.RefDescription)
+	for prefix := rbnge refPrefixes {
 		descriptions, err := f(prefix)
 		if err != nil {
 			return nil, err
 		}
-		for commit, descs := range descriptions {
-			aggregate[commit] = append(aggregate[commit], descs...)
+		for commit, descs := rbnge descriptions {
+			bggregbte[commit] = bppend(bggregbte[commit], descs...)
 		}
 	}
 
-	if authz.SubRepoEnabled(checker) {
-		return c.filterRefDescriptions(ctx, repo, aggregate, checker), nil
+	if buthz.SubRepoEnbbled(checker) {
+		return c.filterRefDescriptions(ctx, repo, bggregbte, checker), nil
 	}
-	return aggregate, nil
+	return bggregbte, nil
 }
 
 func derefField(field string) string {
@@ -2346,168 +2346,168 @@ func derefField(field string) string {
 }
 
 func (c *clientImplementor) filterRefDescriptions(ctx context.Context,
-	repo api.RepoName,
-	refDescriptions map[string][]gitdomain.RefDescription,
-	checker authz.SubRepoPermissionChecker,
-) map[string][]gitdomain.RefDescription {
-	filtered := make(map[string][]gitdomain.RefDescription, len(refDescriptions))
-	for commitID, descriptions := range refDescriptions {
-		if _, err := c.GetCommit(ctx, checker, repo, api.CommitID(commitID), ResolveRevisionOptions{}); !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+	repo bpi.RepoNbme,
+	refDescriptions mbp[string][]gitdombin.RefDescription,
+	checker buthz.SubRepoPermissionChecker,
+) mbp[string][]gitdombin.RefDescription {
+	filtered := mbke(mbp[string][]gitdombin.RefDescription, len(refDescriptions))
+	for commitID, descriptions := rbnge refDescriptions {
+		if _, err := c.GetCommit(ctx, checker, repo, bpi.CommitID(commitID), ResolveRevisionOptions{}); !errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
 			filtered[commitID] = descriptions
 		}
 	}
 	return filtered
 }
 
-var refPrefixes = map[string]gitdomain.RefType{
-	"refs/heads/": gitdomain.RefTypeBranch,
-	"refs/tags/":  gitdomain.RefTypeTag,
+vbr refPrefixes = mbp[string]gitdombin.RefType{
+	"refs/hebds/": gitdombin.RefTypeBrbnch,
+	"refs/tbgs/":  gitdombin.RefTypeTbg,
 }
 
-// parseRefDescriptions converts the output of the for-each-ref command in the RefDescriptions
-// method to a map from commits to RefDescription objects. The output is expected to be a series
-// of lines each conforming to  `%(objectname)%00%(refname)%00%(HEAD)%00%(creatordate)`, where
+// pbrseRefDescriptions converts the output of the for-ebch-ref commbnd in the RefDescriptions
+// method to b mbp from commits to RefDescription objects. The output is expected to be b series
+// of lines ebch conforming to  `%(objectnbme)%00%(refnbme)%00%(HEAD)%00%(crebtordbte)`, where
 //
-// - %(objectname) is the 40-character revhash
-// - %(refname) is the name of the tag or branch (prefixed with refs/heads/ or ref/tags/)
-// - %(HEAD) is `*` if the branch is the default branch (and whitesace otherwise)
-// - %(creatordate) is the ISO-formatted date the object was created
-func parseRefDescriptions(out []byte) (map[string][]gitdomain.RefDescription, error) {
-	refDescriptions := make(map[string][]gitdomain.RefDescription, bytes.Count(out, []byte("\n")))
+// - %(objectnbme) is the 40-chbrbcter revhbsh
+// - %(refnbme) is the nbme of the tbg or brbnch (prefixed with refs/hebds/ or ref/tbgs/)
+// - %(HEAD) is `*` if the brbnch is the defbult brbnch (bnd whitesbce otherwise)
+// - %(crebtordbte) is the ISO-formbtted dbte the object wbs crebted
+func pbrseRefDescriptions(out []byte) (mbp[string][]gitdombin.RefDescription, error) {
+	refDescriptions := mbke(mbp[string][]gitdombin.RefDescription, bytes.Count(out, []byte("\n")))
 
-	lr := byteutils.NewLineReader(out)
+	lr := byteutils.NewLineRebder(out)
 
 lineLoop:
-	for lr.Scan() {
-		line := bytes.TrimSpace(lr.Line())
+	for lr.Scbn() {
+		line := bytes.TrimSpbce(lr.Line())
 		if len(line) == 0 {
 			continue
 		}
 
-		parts := bytes.SplitN(line, []byte("\x00"), 4)
-		if len(parts) != 4 {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref %q`, string(line))
+		pbrts := bytes.SplitN(line, []byte("\x00"), 4)
+		if len(pbrts) != 4 {
+			return nil, errors.Errorf(`unexpected output from git for-ebch-ref %q`, string(line))
 		}
 
-		commit := string(parts[0])
-		isDefaultBranch := string(parts[2]) == "*"
+		commit := string(pbrts[0])
+		isDefbultBrbnch := string(pbrts[2]) == "*"
 
-		var name string
-		var refType gitdomain.RefType
-		for prefix, typ := range refPrefixes {
-			if strings.HasPrefix(string(parts[1]), prefix) {
-				name = string(parts[1])[len(prefix):]
+		vbr nbme string
+		vbr refType gitdombin.RefType
+		for prefix, typ := rbnge refPrefixes {
+			if strings.HbsPrefix(string(pbrts[1]), prefix) {
+				nbme = string(pbrts[1])[len(prefix):]
 				refType = typ
-				break
+				brebk
 			}
 		}
-		if refType == gitdomain.RefTypeUnknown {
-			return nil, errors.Errorf(`unexpected output from git for-each-ref "%s"`, line)
+		if refType == gitdombin.RefTypeUnknown {
+			return nil, errors.Errorf(`unexpected output from git for-ebch-ref "%s"`, line)
 		}
 
-		var (
-			createdDatePart = string(parts[3])
-			createdDatePtr  *time.Time
+		vbr (
+			crebtedDbtePbrt = string(pbrts[3])
+			crebtedDbtePtr  *time.Time
 		)
-		// Some repositories attach tags to non-commit objects, such as trees. In such a situation, one
-		// cannot deference the tag to obtain the commit it points to, and there is no associated creatordate.
-		if createdDatePart != "" {
-			createdDate, err := time.Parse(time.RFC3339, createdDatePart)
+		// Some repositories bttbch tbgs to non-commit objects, such bs trees. In such b situbtion, one
+		// cbnnot deference the tbg to obtbin the commit it points to, bnd there is no bssocibted crebtordbte.
+		if crebtedDbtePbrt != "" {
+			crebtedDbte, err := time.Pbrse(time.RFC3339, crebtedDbtePbrt)
 			if err != nil {
-				return nil, errors.Errorf(`unexpected output from git for-each-ref (bad date format) "%s"`, line)
+				return nil, errors.Errorf(`unexpected output from git for-ebch-ref (bbd dbte formbt) "%s"`, line)
 			}
-			createdDatePtr = &createdDate
+			crebtedDbtePtr = &crebtedDbte
 		}
 
-		// Check for duplicates before adding it to the slice
-		for _, candidate := range refDescriptions[commit] {
-			if candidate.Name == name && candidate.Type == refType && candidate.IsDefaultBranch == isDefaultBranch {
+		// Check for duplicbtes before bdding it to the slice
+		for _, cbndidbte := rbnge refDescriptions[commit] {
+			if cbndidbte.Nbme == nbme && cbndidbte.Type == refType && cbndidbte.IsDefbultBrbnch == isDefbultBrbnch {
 				continue lineLoop
 			}
 		}
 
-		refDescriptions[commit] = append(refDescriptions[commit], gitdomain.RefDescription{
-			Name:            name,
+		refDescriptions[commit] = bppend(refDescriptions[commit], gitdombin.RefDescription{
+			Nbme:            nbme,
 			Type:            refType,
-			IsDefaultBranch: isDefaultBranch,
-			CreatedDate:     createdDatePtr,
+			IsDefbultBrbnch: isDefbultBrbnch,
+			CrebtedDbte:     crebtedDbtePtr,
 		})
 	}
 
 	return refDescriptions, nil
 }
 
-// CommitDate returns the time that the given commit was committed. If the given
-// revision does not exist, a false-valued flag is returned along with a nil
-// error and zero-valued time.
-func (c *clientImplementor) CommitDate(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
-	if authz.SubRepoEnabled(checker) {
-		// GetCommit to validate that the user has permissions to access it.
+// CommitDbte returns the time thbt the given commit wbs committed. If the given
+// revision does not exist, b fblse-vblued flbg is returned blong with b nil
+// error bnd zero-vblued time.
+func (c *clientImplementor) CommitDbte(ctx context.Context, checker buthz.SubRepoPermissionChecker, repo bpi.RepoNbme, commit bpi.CommitID) (_ string, _ time.Time, revisionExists bool, err error) {
+	if buthz.SubRepoEnbbled(checker) {
+		// GetCommit to vblidbte thbt the user hbs permissions to bccess it.
 		if _, err := c.GetCommit(ctx, checker, repo, commit, ResolveRevisionOptions{}); err != nil {
-			return "", time.Time{}, false, nil
+			return "", time.Time{}, fblse, nil
 		}
 	}
 
-	cmd := c.gitCommand(repo, "show", "-s", "--format=%H:%cI", string(commit))
+	cmd := c.gitCommbnd(repo, "show", "-s", "--formbt=%H:%cI", string(commit))
 
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
+		if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
 			err = nil
 		}
-		return "", time.Time{}, false, err
+		return "", time.Time{}, fblse, err
 	}
 	outs := string(out)
 
-	line := strings.TrimSpace(outs)
+	line := strings.TrimSpbce(outs)
 	if line == "" {
-		return "", time.Time{}, false, nil
+		return "", time.Time{}, fblse, nil
 	}
 
-	parts := strings.SplitN(line, ":", 2)
-	if len(parts) != 2 {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show "%s"`, line)
+	pbrts := strings.SplitN(line, ":", 2)
+	if len(pbrts) != 2 {
+		return "", time.Time{}, fblse, errors.Errorf(`unexpected output from git show "%s"`, line)
 	}
 
-	duration, err := time.Parse(time.RFC3339, parts[1])
+	durbtion, err := time.Pbrse(time.RFC3339, pbrts[1])
 	if err != nil {
-		return "", time.Time{}, false, errors.Errorf(`unexpected output from git show (bad date format) "%s"`, line)
+		return "", time.Time{}, fblse, errors.Errorf(`unexpected output from git show (bbd dbte formbt) "%s"`, line)
 	}
 
-	return parts[0], duration, true, nil
+	return pbrts[0], durbtion, true, nil
 }
 
-type ArchiveFormat string
+type ArchiveFormbt string
 
 const (
-	// ArchiveFormatZip indicates a zip archive is desired.
-	ArchiveFormatZip ArchiveFormat = "zip"
+	// ArchiveFormbtZip indicbtes b zip brchive is desired.
+	ArchiveFormbtZip ArchiveFormbt = "zip"
 
-	// ArchiveFormatTar indicates a tar archive is desired.
-	ArchiveFormatTar ArchiveFormat = "tar"
+	// ArchiveFormbtTbr indicbtes b tbr brchive is desired.
+	ArchiveFormbtTbr ArchiveFormbt = "tbr"
 )
 
-// ArchiveReader streams back the file contents of an archived git repo.
-func (c *clientImplementor) ArchiveReader(
+// ArchiveRebder strebms bbck the file contents of bn brchived git repo.
+func (c *clientImplementor) ArchiveRebder(
 	ctx context.Context,
-	checker authz.SubRepoPermissionChecker,
-	repo api.RepoName,
+	checker buthz.SubRepoPermissionChecker,
+	repo bpi.RepoNbme,
 	options ArchiveOptions,
-) (_ io.ReadCloser, err error) {
-	// TODO: this does not capture the lifetime of the request because we return a reader
-	ctx, _, endObservation := c.operations.archiveReader.With(ctx, &err, observation.Args{
-		Attrs: append(
-			[]attribute.KeyValue{repo.Attr()},
+) (_ io.RebdCloser, err error) {
+	// TODO: this does not cbpture the lifetime of the request becbuse we return b rebder
+	ctx, _, endObservbtion := c.operbtions.brchiveRebder.With(ctx, &err, observbtion.Args{
+		Attrs: bppend(
+			[]bttribute.KeyVblue{repo.Attr()},
 			options.Attrs()...,
 		),
 	})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if authz.SubRepoEnabled(checker) {
-		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
-			return nil, errors.Wrap(err, "sub-repo permissions check:")
-		} else if enabled {
-			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
+	if buthz.SubRepoEnbbled(checker) {
+		if enbbled, err := buthz.SubRepoEnbbledForRepo(ctx, checker, repo); err != nil {
+			return nil, errors.Wrbp(err, "sub-repo permissions check:")
+		} else if enbbled {
+			return nil, errors.New("brchiveRebder invoked for b repo with sub-repo permissions")
 		}
 	}
 
@@ -2515,322 +2515,322 @@ func (c *clientImplementor) ArchiveReader(
 		return ClientMocks.Archive(ctx, repo, options)
 	}
 
-	// Check that ctx is not expired.
+	// Check thbt ctx is not expired.
 	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
+		debdlineExceededCounter.Inc()
 		return nil, err
 	}
 
-	if conf.IsGRPCEnabled(ctx) {
+	if conf.IsGRPCEnbbled(ctx) {
 		client, err := c.clientSource.ClientForRepo(ctx, c.userAgent, repo)
 		if err != nil {
 			return nil, err
 		}
 
-		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't have a repository here, so we have to add it ourselves.
+		req := options.ToProto(string(repo)) // HACK: ArchiveOptions doesn't hbve b repository here, so we hbve to bdd it ourselves.
 
-		ctx, cancel := context.WithCancel(ctx)
+		ctx, cbncel := context.WithCbncel(ctx)
 
-		stream, err := client.Archive(ctx, req)
+		strebm, err := client.Archive(ctx, req)
 		if err != nil {
-			cancel()
+			cbncel()
 			return nil, err
 		}
 
-		// first message from the gRPC stream needs to be read to check for errors before continuing
-		// to read the rest of the stream. If the first message is an error, we cancel the stream
-		// and return the error.
+		// first messbge from the gRPC strebm needs to be rebd to check for errors before continuing
+		// to rebd the rest of the strebm. If the first messbge is bn error, we cbncel the strebm
+		// bnd return the error.
 		//
-		// This is necessary to provide parity between the REST and gRPC implementations of
-		// ArchiveReader. Users of cli.ArchiveReader may assume error handling occurs immediately,
-		// as is the case with the HTTP implementation where errors are returned as soon as the
-		// function returns. gRPC is asynchronous, so we have to start consuming messages from
-		// the stream to see any errors from the server. Reading the first message ensures we
-		// handle any errors synchronously, similar to the HTTP implementation.
+		// This is necessbry to provide pbrity between the REST bnd gRPC implementbtions of
+		// ArchiveRebder. Users of cli.ArchiveRebder mby bssume error hbndling occurs immedibtely,
+		// bs is the cbse with the HTTP implementbtion where errors bre returned bs soon bs the
+		// function returns. gRPC is bsynchronous, so we hbve to stbrt consuming messbges from
+		// the strebm to see bny errors from the server. Rebding the first messbge ensures we
+		// hbndle bny errors synchronously, similbr to the HTTP implementbtion.
 
-		firstMessage, firstError := stream.Recv()
+		firstMessbge, firstError := strebm.Recv()
 		if firstError != nil {
-			// Hack: The ArchiveReader.Read() implementation handles surfacing the
-			// any "revision not found" errors returned from the invoked git binary.
+			// Hbck: The ArchiveRebder.Rebd() implementbtion hbndles surfbcing the
+			// bny "revision not found" errors returned from the invoked git binbry.
 			//
-			// In order to maintainparity with the HTTP API, we return this error in the ArchiveReader.Read() method
-			// instead of returning it immediately.
+			// In order to mbintbinpbrity with the HTTP API, we return this error in the ArchiveRebder.Rebd() method
+			// instebd of returning it immedibtely.
 
-			// We return early only if this isn't a revision not found error.
+			// We return ebrly only if this isn't b revision not found error.
 
-			err := convertGRPCErrorToGitDomainError(firstError)
+			err := convertGRPCErrorToGitDombinError(firstError)
 
-			var cse *CommandStatusError
+			vbr cse *CommbndStbtusError
 			if !errors.As(err, &cse) || !isRevisionNotFound(cse.Stderr) {
-				cancel()
-				return nil, convertGRPCErrorToGitDomainError(err)
+				cbncel()
+				return nil, convertGRPCErrorToGitDombinError(err)
 			}
 		}
 
-		firstMessageRead := false
+		firstMessbgeRebd := fblse
 
-		// Create a reader to read from the gRPC stream.
-		r := streamio.NewReader(func() ([]byte, error) {
-			// Check if we've read the first message yet. If not, read it and return.
-			if !firstMessageRead {
-				firstMessageRead = true
+		// Crebte b rebder to rebd from the gRPC strebm.
+		r := strebmio.NewRebder(func() ([]byte, error) {
+			// Check if we've rebd the first messbge yet. If not, rebd it bnd return.
+			if !firstMessbgeRebd {
+				firstMessbgeRebd = true
 
 				if firstError != nil {
 					return nil, firstError
 				}
 
-				return firstMessage.GetData(), nil
+				return firstMessbge.GetDbtb(), nil
 			}
 
-			// Receive the next message from the stream.
-			msg, err := stream.Recv()
+			// Receive the next messbge from the strebm.
+			msg, err := strebm.Recv()
 			if err != nil {
-				return nil, convertGRPCErrorToGitDomainError(err)
+				return nil, convertGRPCErrorToGitDombinError(err)
 			}
 
-			// Return the data from the received message.
-			return msg.GetData(), nil
+			// Return the dbtb from the received messbge.
+			return msg.GetDbtb(), nil
 		})
 
-		return &archiveReader{
-			base: &readCloseWrapper{r: r, closeFn: cancel},
+		return &brchiveRebder{
+			bbse: &rebdCloseWrbpper{r: r, closeFn: cbncel},
 			repo: repo,
 			spec: options.Treeish,
 		}, nil
 
 	} else {
-		// Fall back to http request
-		u := c.archiveURL(ctx, repo, options)
+		// Fbll bbck to http request
+		u := c.brchiveURL(ctx, repo, options)
 		resp, err := c.do(ctx, repo, u.String(), nil)
 		if err != nil {
 			return nil, err
 		}
 
-		switch resp.StatusCode {
-		case http.StatusOK:
-			return &archiveReader{
-				base: &cmdReader{
+		switch resp.StbtusCode {
+		cbse http.StbtusOK:
+			return &brchiveRebder{
+				bbse: &cmdRebder{
 					rc:      resp.Body,
-					trailer: resp.Trailer,
+					trbiler: resp.Trbiler,
 				},
 				repo: repo,
 				spec: options.Treeish,
 			}, nil
-		case http.StatusNotFound:
-			var payload protocol.NotFoundPayload
-			if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+		cbse http.StbtusNotFound:
+			vbr pbylobd protocol.NotFoundPbylobd
+			if err := json.NewDecoder(resp.Body).Decode(&pbylobd); err != nil {
 				resp.Body.Close()
 				return nil, err
 			}
 			resp.Body.Close()
-			return nil, &badRequestError{
-				error: &gitdomain.RepoNotExistError{
+			return nil, &bbdRequestError{
+				error: &gitdombin.RepoNotExistError{
 					Repo:            repo,
-					CloneInProgress: payload.CloneInProgress,
-					CloneProgress:   payload.CloneProgress,
+					CloneInProgress: pbylobd.CloneInProgress,
+					CloneProgress:   pbylobd.CloneProgress,
 				},
 			}
-		default:
+		defbult:
 			resp.Body.Close()
-			return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+			return nil, errors.Errorf("unexpected stbtus code: %d", resp.StbtusCode)
 		}
 	}
 }
 
-func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
-	if authz.SubRepoEnabled(checker) {
-		// If sub-repo permissions enabled, must fetch files modified w/ commits to determine if user has access to view this commit
-		opt.NameOnly = true
+func bddNbmeOnly(opt CommitsOptions, checker buthz.SubRepoPermissionChecker) CommitsOptions {
+	if buthz.SubRepoEnbbled(checker) {
+		// If sub-repo permissions enbbled, must fetch files modified w/ commits to determine if user hbs bccess to view this commit
+		opt.NbmeOnly = true
 	}
 	return opt
 }
 
-// BranchesOptions specifies options for the list of branches returned by
-// (Repository).Branches.
-type BranchesOptions struct {
-	// MergedInto will cause the returned list to be restricted to only
-	// branches that were merged into this branch name.
+// BrbnchesOptions specifies options for the list of brbnches returned by
+// (Repository).Brbnches.
+type BrbnchesOptions struct {
+	// MergedInto will cbuse the returned list to be restricted to only
+	// brbnches thbt were merged into this brbnch nbme.
 	MergedInto string `json:"MergedInto,omitempty" url:",omitempty"`
-	// IncludeCommit controls whether complete commit information is included.
+	// IncludeCommit controls whether complete commit informbtion is included.
 	IncludeCommit bool `json:"IncludeCommit,omitempty" url:",omitempty"`
-	// BehindAheadBranch specifies a branch name. If set to something other than blank
-	// string, then each returned branch will include a behind/ahead commit counts
-	// information against the specified base branch. If left blank, then branches will
-	// not include that information and their Counts will be nil.
-	BehindAheadBranch string `json:"BehindAheadBranch,omitempty" url:",omitempty"`
-	// ContainsCommit filters the list of branches to only those that
-	// contain a specific commit ID (if set).
-	ContainsCommit string `json:"ContainsCommit,omitempty" url:",omitempty"`
+	// BehindAhebdBrbnch specifies b brbnch nbme. If set to something other thbn blbnk
+	// string, then ebch returned brbnch will include b behind/bhebd commit counts
+	// informbtion bgbinst the specified bbse brbnch. If left blbnk, then brbnches will
+	// not include thbt informbtion bnd their Counts will be nil.
+	BehindAhebdBrbnch string `json:"BehindAhebdBrbnch,omitempty" url:",omitempty"`
+	// ContbinsCommit filters the list of brbnches to only those thbt
+	// contbin b specific commit ID (if set).
+	ContbinsCommit string `json:"ContbinsCommit,omitempty" url:",omitempty"`
 }
 
-func (bo *BranchesOptions) Attrs() (res []attribute.KeyValue) {
+func (bo *BrbnchesOptions) Attrs() (res []bttribute.KeyVblue) {
 	if bo.MergedInto != "" {
-		res = append(res, attribute.String("mergedInto", bo.MergedInto))
+		res = bppend(res, bttribute.String("mergedInto", bo.MergedInto))
 	}
-	res = append(res, attribute.Bool("includeCommit", bo.IncludeCommit))
+	res = bppend(res, bttribute.Bool("includeCommit", bo.IncludeCommit))
 
-	if bo.BehindAheadBranch != "" {
-		res = append(res, attribute.String("behindAheadBranch", bo.BehindAheadBranch))
+	if bo.BehindAhebdBrbnch != "" {
+		res = bppend(res, bttribute.String("behindAhebdBrbnch", bo.BehindAhebdBrbnch))
 	}
 
-	if bo.ContainsCommit != "" {
-		res = append(res, attribute.String("containsCommit", bo.ContainsCommit))
+	if bo.ContbinsCommit != "" {
+		res = bppend(res, bttribute.String("contbinsCommit", bo.ContbinsCommit))
 	}
 
 	return res
 }
 
-// branchFilter is a filter for branch names.
-// If not empty, only contained branch names are allowed. If empty, all names are allowed.
-// The map should be made so it's not nil.
-type branchFilter map[string]struct{}
+// brbnchFilter is b filter for brbnch nbmes.
+// If not empty, only contbined brbnch nbmes bre bllowed. If empty, bll nbmes bre bllowed.
+// The mbp should be mbde so it's not nil.
+type brbnchFilter mbp[string]struct{}
 
-// allows will return true if the current filter set-up validates against
-// the passed string. If there are no filters, all strings pass.
-func (f branchFilter) allows(name string) bool {
+// bllows will return true if the current filter set-up vblidbtes bgbinst
+// the pbssed string. If there bre no filters, bll strings pbss.
+func (f brbnchFilter) bllows(nbme string) bool {
 	if len(f) == 0 {
 		return true
 	}
-	_, ok := f[name]
+	_, ok := f[nbme]
 	return ok
 }
 
-// add adds a slice of strings to the filter.
-func (f branchFilter) add(list []string) {
-	for _, l := range list {
+// bdd bdds b slice of strings to the filter.
+func (f brbnchFilter) bdd(list []string) {
+	for _, l := rbnge list {
 		f[l] = struct{}{}
 	}
 }
 
-// ListBranches returns a list of all branches in the repository.
-func (c *clientImplementor) ListBranches(ctx context.Context, repo api.RepoName, opt BranchesOptions) (_ []*gitdomain.Branch, err error) {
-	ctx, _, endObservation := c.operations.listBranches.With(ctx, &err, observation.Args{
-		Attrs: append(
-			[]attribute.KeyValue{repo.Attr()},
+// ListBrbnches returns b list of bll brbnches in the repository.
+func (c *clientImplementor) ListBrbnches(ctx context.Context, repo bpi.RepoNbme, opt BrbnchesOptions) (_ []*gitdombin.Brbnch, err error) {
+	ctx, _, endObservbtion := c.operbtions.listBrbnches.With(ctx, &err, observbtion.Args{
+		Attrs: bppend(
+			[]bttribute.KeyVblue{repo.Attr()},
 			opt.Attrs()...,
 		),
 	})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	f := make(branchFilter)
+	f := mbke(brbnchFilter)
 	if opt.MergedInto != "" {
-		b, err := c.branches(ctx, repo, "--merged", opt.MergedInto)
+		b, err := c.brbnches(ctx, repo, "--merged", opt.MergedInto)
 		if err != nil {
 			return nil, err
 		}
-		f.add(b)
+		f.bdd(b)
 	}
-	if opt.ContainsCommit != "" {
-		b, err := c.branches(ctx, repo, "--contains="+opt.ContainsCommit)
+	if opt.ContbinsCommit != "" {
+		b, err := c.brbnches(ctx, repo, "--contbins="+opt.ContbinsCommit)
 		if err != nil {
 			return nil, err
 		}
-		f.add(b)
+		f.bdd(b)
 	}
 
-	refs, err := c.showRef(ctx, repo, "--heads")
+	refs, err := c.showRef(ctx, repo, "--hebds")
 	if err != nil {
 		return nil, err
 	}
 
-	var branches []*gitdomain.Branch
-	for _, ref := range refs {
-		name := strings.TrimPrefix(ref.Name, "refs/heads/")
-		if !f.allows(name) {
+	vbr brbnches []*gitdombin.Brbnch
+	for _, ref := rbnge refs {
+		nbme := strings.TrimPrefix(ref.Nbme, "refs/hebds/")
+		if !f.bllows(nbme) {
 			continue
 		}
 
-		branch := &gitdomain.Branch{Name: name, Head: ref.CommitID}
+		brbnch := &gitdombin.Brbnch{Nbme: nbme, Hebd: ref.CommitID}
 		if opt.IncludeCommit {
-			branch.Commit, err = c.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo, ref.CommitID, ResolveRevisionOptions{})
+			brbnch.Commit, err = c.GetCommit(ctx, buthz.DefbultSubRepoPermsChecker, repo, ref.CommitID, ResolveRevisionOptions{})
 			if err != nil {
 				return nil, err
 			}
 		}
-		if opt.BehindAheadBranch != "" {
-			branch.Counts, err = c.GetBehindAhead(ctx, repo, "refs/heads/"+opt.BehindAheadBranch, "refs/heads/"+name)
+		if opt.BehindAhebdBrbnch != "" {
+			brbnch.Counts, err = c.GetBehindAhebd(ctx, repo, "refs/hebds/"+opt.BehindAhebdBrbnch, "refs/hebds/"+nbme)
 			if err != nil {
 				return nil, err
 			}
 		}
-		branches = append(branches, branch)
+		brbnches = bppend(brbnches, brbnch)
 	}
-	return branches, nil
+	return brbnches, nil
 }
 
-// branches runs the `git branch` command followed by the given arguments and
-// returns the list of branches if successful.
-func (c *clientImplementor) branches(ctx context.Context, repo api.RepoName, args ...string) ([]string, error) {
-	cmd := c.gitCommand(repo, append([]string{"branch"}, args...)...)
+// brbnches runs the `git brbnch` commbnd followed by the given brguments bnd
+// returns the list of brbnches if successful.
+func (c *clientImplementor) brbnches(ctx context.Context, repo bpi.RepoNbme, brgs ...string) ([]string, error) {
+	cmd := c.gitCommbnd(repo, bppend([]string{"brbnch"}, brgs...)...)
 	out, err := cmd.Output(ctx)
 	if err != nil {
-		return nil, errors.Errorf("exec %v in %s failed: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
+		return nil, errors.Errorf("exec %v in %s fbiled: %v (output follows)\n\n%s", cmd.Args(), cmd.Repo(), err, out)
 	}
 	lines := strings.Split(string(out), "\n")
 	lines = lines[:len(lines)-1]
-	branches := make([]string, len(lines))
-	for i, line := range lines {
-		branches[i] = line[2:]
+	brbnches := mbke([]string, len(lines))
+	for i, line := rbnge lines {
+		brbnches[i] = line[2:]
 	}
-	return branches, nil
+	return brbnches, nil
 }
 
 type byteSlices [][]byte
 
 func (p byteSlices) Len() int           { return len(p) }
-func (p byteSlices) Less(i, j int) bool { return bytes.Compare(p[i], p[j]) < 0 }
-func (p byteSlices) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p byteSlices) Less(i, j int) bool { return bytes.Compbre(p[i], p[j]) < 0 }
+func (p byteSlices) Swbp(i, j int)      { p[i], p[j] = p[j], p[i] }
 
-// ListRefs returns a list of all refs in the repository.
-func (c *clientImplementor) ListRefs(ctx context.Context, repo api.RepoName) (_ []gitdomain.Ref, err error) {
-	ctx, _, endObservation := c.operations.listRefs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+// ListRefs returns b list of bll refs in the repository.
+func (c *clientImplementor) ListRefs(ctx context.Context, repo bpi.RepoNbme) (_ []gitdombin.Ref, err error) {
+	ctx, _, endObservbtion := c.operbtions.listRefs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	return c.showRef(ctx, repo)
 }
 
-func (c *clientImplementor) showRef(ctx context.Context, repo api.RepoName, args ...string) ([]gitdomain.Ref, error) {
-	cmdArgs := append([]string{"show-ref"}, args...)
-	cmd := c.gitCommand(repo, cmdArgs...)
+func (c *clientImplementor) showRef(ctx context.Context, repo bpi.RepoNbme, brgs ...string) ([]gitdombin.Ref, error) {
+	cmdArgs := bppend([]string{"show-ref"}, brgs...)
+	cmd := c.gitCommbnd(repo, cmdArgs...)
 	out, err := cmd.CombinedOutput(ctx)
 	if err != nil {
-		if gitdomain.IsRepoNotExist(err) {
+		if gitdombin.IsRepoNotExist(err) {
 			return nil, err
 		}
-		// Exit status of 1 and no output means there were no
-		// results. This is not a fatal error.
-		if cmd.ExitStatus() == 1 && len(out) == 0 {
+		// Exit stbtus of 1 bnd no output mebns there were no
+		// results. This is not b fbtbl error.
+		if cmd.ExitStbtus() == 1 && len(out) == 0 {
 			return nil, nil
 		}
-		return nil, errors.WithMessage(err, fmt.Sprintf("git command %v failed (output: %q)", cmd.Args(), out))
+		return nil, errors.WithMessbge(err, fmt.Sprintf("git commbnd %v fbiled (output: %q)", cmd.Args(), out))
 	}
 
-	out = bytes.TrimSuffix(out, []byte("\n")) // remove trailing newline
+	out = bytes.TrimSuffix(out, []byte("\n")) // remove trbiling newline
 	lines := bytes.Split(out, []byte("\n"))
 	sort.Sort(byteSlices(lines)) // sort for consistency
-	refs := make([]gitdomain.Ref, len(lines))
-	for i, line := range lines {
+	refs := mbke([]gitdombin.Ref, len(lines))
+	for i, line := rbnge lines {
 		if len(line) <= 41 {
 			return nil, errors.New("unexpectedly short (<=41 bytes) line in `git show-ref ...` output")
 		}
 		id := line[:40]
-		name := line[41:]
-		refs[i] = gitdomain.Ref{Name: string(name), CommitID: api.CommitID(id)}
+		nbme := line[41:]
+		refs[i] = gitdombin.Ref{Nbme: string(nbme), CommitID: bpi.CommitID(id)}
 	}
 	return refs, nil
 }
 
-// rel strips the leading "/" prefix from the path string, effectively turning
-// an absolute path into one relative to the root directory. A path that is just
-// "/" is treated specially, returning just ".".
+// rel strips the lebding "/" prefix from the pbth string, effectively turning
+// bn bbsolute pbth into one relbtive to the root directory. A pbth thbt is just
+// "/" is trebted speciblly, returning just ".".
 //
-// The elements in a file path are separated by slash ('/', U+002F) characters,
-// regardless of host operating system convention.
-func rel(path string) string {
-	if path == "/" {
+// The elements in b file pbth bre sepbrbted by slbsh ('/', U+002F) chbrbcters,
+// regbrdless of host operbting system convention.
+func rel(pbth string) string {
+	if pbth == "/" {
 		return "."
 	}
-	return strings.TrimPrefix(path, "/")
+	return strings.TrimPrefix(pbth, "/")
 }

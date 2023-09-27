@@ -1,74 +1,74 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Store interface {
-	WithTransaction(ctx context.Context, f func(s Store) error) error
+type Store interfbce {
+	WithTrbnsbction(ctx context.Context, f func(s Store) error) error
 
 	// Insert
-	InsertMetadata(ctx context.Context, uploadID int, meta ProcessedMetadata) error
-	NewSCIPWriter(ctx context.Context, uploadID int) (SCIPWriter, error)
+	InsertMetbdbtb(ctx context.Context, uplobdID int, metb ProcessedMetbdbtb) error
+	NewSCIPWriter(ctx context.Context, uplobdID int) (SCIPWriter, error)
 
-	// Reconciliation and cleanup
-	IDsWithMeta(ctx context.Context, ids []int) ([]int, error)
-	ReconcileCandidates(ctx context.Context, batchSize int) ([]int, error)
-	ReconcileCandidatesWithTime(ctx context.Context, batchSize int, now time.Time) (_ []int, err error)
-	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
-	DeleteAbandonedSchemaVersionsRecords(ctx context.Context) (_ int, err error)
-	DeleteUnreferencedDocuments(ctx context.Context, batchSize int, maxAge time.Duration, now time.Time) (numScanned, numDeleted int, err error)
+	// Reconcilibtion bnd clebnup
+	IDsWithMetb(ctx context.Context, ids []int) ([]int, error)
+	ReconcileCbndidbtes(ctx context.Context, bbtchSize int) ([]int, error)
+	ReconcileCbndidbtesWithTime(ctx context.Context, bbtchSize int, now time.Time) (_ []int, err error)
+	DeleteLsifDbtbByUplobdIds(ctx context.Context, bundleIDs ...int) (err error)
+	DeleteAbbndonedSchembVersionsRecords(ctx context.Context) (_ int, err error)
+	DeleteUnreferencedDocuments(ctx context.Context, bbtchSize int, mbxAge time.Durbtion, now time.Time) (numScbnned, numDeleted int, err error)
 
-	// Scan/export document data
-	InsertDefinitionsAndReferencesForDocument(ctx context.Context, upload shared.ExportedUpload, rankingGraphKey string, rankingBatchSize int, f func(ctx context.Context, upload shared.ExportedUpload, rankingBatchSize int, rankingGraphKey, path string, document *scip.Document) error) (err error)
+	// Scbn/export document dbtb
+	InsertDefinitionsAndReferencesForDocument(ctx context.Context, uplobd shbred.ExportedUplobd, rbnkingGrbphKey string, rbnkingBbtchSize int, f func(ctx context.Context, uplobd shbred.ExportedUplobd, rbnkingBbtchSize int, rbnkingGrbphKey, pbth string, document *scip.Document) error) (err error)
 }
 
-type SCIPWriter interface {
-	InsertDocument(ctx context.Context, path string, scipDocument *scip.Document) error
+type SCIPWriter interfbce {
+	InsertDocument(ctx context.Context, pbth string, scipDocument *scip.Document) error
 	Flush(ctx context.Context) (uint32, error)
 }
 
 type store struct {
-	db         *basestore.Store
-	operations *operations
+	db         *bbsestore.Store
+	operbtions *operbtions
 }
 
-func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) Store {
-	return newInternal(observationCtx, db)
+func New(observbtionCtx *observbtion.Context, db codeintelshbred.CodeIntelDB) Store {
+	return newInternbl(observbtionCtx, db)
 }
 
-func newInternal(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) *store {
+func newInternbl(observbtionCtx *observbtion.Context, db codeintelshbred.CodeIntelDB) *store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
-		operations: newOperations(observationCtx),
+		db:         bbsestore.NewWithHbndle(db.Hbndle()),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }
 
-func (s *store) WithTransaction(ctx context.Context, f func(s Store) error) error {
-	return s.withTransaction(ctx, func(s *store) error { return f(s) })
+func (s *store) WithTrbnsbction(ctx context.Context, f func(s Store) error) error {
+	return s.withTrbnsbction(ctx, func(s *store) error { return f(s) })
 }
 
-func (s *store) withTransaction(ctx context.Context, f func(s *store) error) error {
-	return basestore.InTransaction[*store](ctx, s, f)
+func (s *store) withTrbnsbction(ctx context.Context, f func(s *store) error) error {
+	return bbsestore.InTrbnsbction[*store](ctx, s, f)
 }
 
-func (s *store) Transact(ctx context.Context) (*store, error) {
-	tx, err := s.db.Transact(ctx)
+func (s *store) Trbnsbct(ctx context.Context) (*store, error) {
+	tx, err := s.db.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return &store{
 		db:         tx,
-		operations: s.operations,
+		operbtions: s.operbtions,
 	}, nil
 }
 

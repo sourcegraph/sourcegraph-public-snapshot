@@ -1,29 +1,29 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/background"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/bbckground"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func NewUnknownRepositoryJanitor(
+func NewUnknownRepositoryJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.autoindexing.janitor.unknown-repository"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.butoindexing.jbnitor.unknown-repository"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes index records associated with an unknown repository.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes index records bssocibted with bn unknown repository.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
 			return store.DeleteIndexesWithoutRepository(ctx, time.Now())
 		},
 	})
@@ -32,27 +32,27 @@ func NewUnknownRepositoryJanitor(
 //
 //
 
-func NewUnknownCommitJanitor2(
+func NewUnknownCommitJbnitor2(
 	store store.Store,
 	gitserverClient gitserver.Client,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.autoindexing.janitor.unknown-commit"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.butoindexing.jbnitor.unknown-commit"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
-		Description: "Removes index records associated with an unknown commit.",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.ProcessStaleSourcedCommits(
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
+		Description: "Removes index records bssocibted with bn unknown commit.",
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.ProcessStbleSourcedCommits(
 				ctx,
-				config.MinimumTimeSinceLastCheck,
-				config.CommitResolverBatchSize,
-				config.CommitResolverMaximumCommitLag,
-				func(ctx context.Context, repositoryID int, repositoryName, commit string) (bool, error) {
-					return shouldDeleteRecordsForCommit(ctx, gitserverClient, repositoryName, commit)
+				config.MinimumTimeSinceLbstCheck,
+				config.CommitResolverBbtchSize,
+				config.CommitResolverMbximumCommitLbg,
+				func(ctx context.Context, repositoryID int, repositoryNbme, commit string) (bool, error) {
+					return shouldDeleteRecordsForCommit(ctx, gitserverClient, repositoryNbme, commit)
 				},
 			)
 		},
@@ -62,20 +62,20 @@ func NewUnknownCommitJanitor2(
 //
 //
 
-func NewExpiredRecordJanitor(
+func NewExpiredRecordJbnitor(
 	store store.Store,
 	config *Config,
-	observationCtx *observation.Context,
-) goroutine.BackgroundRoutine {
-	name := "codeintel.autoindexing.janitor.expired"
+	observbtionCtx *observbtion.Context,
+) goroutine.BbckgroundRoutine {
+	nbme := "codeintel.butoindexing.jbnitor.expired"
 
-	return background.NewJanitorJob(context.Background(), background.JanitorOptions{
-		Name:        name,
+	return bbckground.NewJbnitorJob(context.Bbckground(), bbckground.JbnitorOptions{
+		Nbme:        nbme,
 		Description: "Removes old index records",
-		Interval:    config.Interval,
-		Metrics:     background.NewJanitorMetrics(observationCtx, name),
-		CleanupFunc: func(ctx context.Context) (numRecordsScanned, numRecordsAltered int, _ error) {
-			return store.ExpireFailedRecords(ctx, config.FailedIndexBatchSize, config.FailedIndexMaxAge, time.Now())
+		Intervbl:    config.Intervbl,
+		Metrics:     bbckground.NewJbnitorMetrics(observbtionCtx, nbme),
+		ClebnupFunc: func(ctx context.Context) (numRecordsScbnned, numRecordsAltered int, _ error) {
+			return store.ExpireFbiledRecords(ctx, config.FbiledIndexBbtchSize, config.FbiledIndexMbxAge, time.Now())
 		},
 	})
 }

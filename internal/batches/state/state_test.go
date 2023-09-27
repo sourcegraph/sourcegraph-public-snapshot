@@ -1,4 +1,4 @@
-package state
+pbckbge stbte
 
 import (
 	"testing"
@@ -6,1062 +6,1062 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	azuredevops2 "github.com/sourcegraph/sourcegraph/internal/batches/sources/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	bzuredevops2 "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestComputeGithubCheckState(t *testing.T) {
-	t.Parallel()
+func TestComputeGithubCheckStbte(t *testing.T) {
+	t.Pbrbllel()
 
 	now := timeutil.Now()
-	commitEvent := func(minutesSinceSync int, context, state string) *btypes.ChangesetEvent {
-		commit := &github.CommitStatus{
+	commitEvent := func(minutesSinceSync int, context, stbte string) *btypes.ChbngesetEvent {
+		commit := &github.CommitStbtus{
 			Context:    context,
-			State:      state,
-			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
+			Stbte:      stbte,
+			ReceivedAt: now.Add(time.Durbtion(minutesSinceSync) * time.Minute),
 		}
-		event := &btypes.ChangesetEvent{
-			Kind:     btypes.ChangesetEventKindCommitStatus,
-			Metadata: commit,
+		event := &btypes.ChbngesetEvent{
+			Kind:     btypes.ChbngesetEventKindCommitStbtus,
+			Metbdbtb: commit,
 		}
 		return event
 	}
-	checkRun := func(id, status, conclusion string) github.CheckRun {
+	checkRun := func(id, stbtus, conclusion string) github.CheckRun {
 		return github.CheckRun{
 			ID:         id,
-			Status:     status,
+			Stbtus:     stbtus,
 			Conclusion: conclusion,
 		}
 	}
-	checkSuiteEvent := func(minutesSinceSync int, id, status, conclusion string, runs ...github.CheckRun) *btypes.ChangesetEvent {
+	checkSuiteEvent := func(minutesSinceSync int, id, stbtus, conclusion string, runs ...github.CheckRun) *btypes.ChbngesetEvent {
 		suite := &github.CheckSuite{
 			ID:         id,
-			Status:     status,
+			Stbtus:     stbtus,
 			Conclusion: conclusion,
-			ReceivedAt: now.Add(time.Duration(minutesSinceSync) * time.Minute),
+			ReceivedAt: now.Add(time.Durbtion(minutesSinceSync) * time.Minute),
 		}
 		suite.CheckRuns.Nodes = runs
-		event := &btypes.ChangesetEvent{
-			Kind:     btypes.ChangesetEventKindCheckSuite,
-			Metadata: suite,
+		event := &btypes.ChbngesetEvent{
+			Kind:     btypes.ChbngesetEventKindCheckSuite,
+			Metbdbtb: suite,
 		}
 		return event
 	}
 
-	lastSynced := now.Add(-1 * time.Minute)
+	lbstSynced := now.Add(-1 * time.Minute)
 	pr := &github.PullRequest{}
 
 	tests := []struct {
-		name   string
-		events []*btypes.ChangesetEvent
-		want   btypes.ChangesetCheckState
+		nbme   string
+		events []*btypes.ChbngesetEvent
+		wbnt   btypes.ChbngesetCheckStbte
 	}{
 		{
-			name:   "empty slice",
+			nbme:   "empty slice",
 			events: nil,
-			want:   btypes.ChangesetCheckStateUnknown,
+			wbnt:   btypes.ChbngesetCheckStbteUnknown,
 		},
 		{
-			name: "single success",
-			events: []*btypes.ChangesetEvent{
+			nbme: "single success",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "success status and suite",
-			events: []*btypes.ChangesetEvent{
+			nbme: "success stbtus bnd suite",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "COMPLETED", "SUCCESS", checkRun("cr1", "COMPLETED", "SUCCESS")),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "single pending",
-			events: []*btypes.ChangesetEvent{
+			nbme: "single pending",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "single error",
-			events: []*btypes.ChangesetEvent{
+			nbme: "single error",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "ERROR"),
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 		{
-			name: "pending + error",
-			events: []*btypes.ChangesetEvent{
+			nbme: "pending + error",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx2", "ERROR"),
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "pending + success",
-			events: []*btypes.ChangesetEvent{
+			nbme: "pending + success",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "success + error",
-			events: []*btypes.ChangesetEvent{
+			nbme: "success + error",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				commitEvent(1, "ctx2", "ERROR"),
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 		{
-			name: "success x2",
-			events: []*btypes.ChangesetEvent{
+			nbme: "success x2",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				commitEvent(1, "ctx2", "SUCCESS"),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "later events have precedence",
-			events: []*btypes.ChangesetEvent{
+			nbme: "lbter events hbve precedence",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "PENDING"),
 				commitEvent(1, "ctx1", "SUCCESS"),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "queued suites with zero runs should be ignored",
-			events: []*btypes.ChangesetEvent{
+			nbme: "queued suites with zero runs should be ignored",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "SUCCESS"),
 				checkSuiteEvent(1, "cs1", "QUEUED", ""),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "completed suites with zero runs should be ignored",
-			events: []*btypes.ChangesetEvent{
+			nbme: "completed suites with zero runs should be ignored",
+			events: []*btypes.ChbngesetEvent{
 				commitEvent(1, "ctx1", "ERROR"),
 				checkSuiteEvent(1, "cs1", "COMPLETED", ""),
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := computeGitHubCheckState(lastSynced, pr, tc.events)
-			if diff := cmp.Diff(tc.want, got); diff != "" {
-				t.Fatalf(diff)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			got := computeGitHubCheckStbte(lbstSynced, pr, tc.events)
+			if diff := cmp.Diff(tc.wbnt, got); diff != "" {
+				t.Fbtblf(diff)
 			}
 		})
 	}
 }
 
-func TestComputeBitbucketBuildStatus(t *testing.T) {
-	t.Parallel()
+func TestComputeBitbucketBuildStbtus(t *testing.T) {
+	t.Pbrbllel()
 
 	now := timeutil.Now()
-	sha := "abcdef"
-	statusEvent := func(key, state string) *btypes.ChangesetEvent {
-		commit := &bitbucketserver.CommitStatus{
-			Commit: sha,
-			Status: bitbucketserver.BuildStatus{
-				State:     state,
+	shb := "bbcdef"
+	stbtusEvent := func(key, stbte string) *btypes.ChbngesetEvent {
+		commit := &bitbucketserver.CommitStbtus{
+			Commit: shb,
+			Stbtus: bitbucketserver.BuildStbtus{
+				Stbte:     stbte,
 				Key:       key,
-				DateAdded: now.Add(1*time.Second).Unix() * 1000,
+				DbteAdded: now.Add(1*time.Second).Unix() * 1000,
 			},
 		}
-		event := &btypes.ChangesetEvent{
-			Kind:     btypes.ChangesetEventKindBitbucketServerCommitStatus,
-			Metadata: commit,
+		event := &btypes.ChbngesetEvent{
+			Kind:     btypes.ChbngesetEventKindBitbucketServerCommitStbtus,
+			Metbdbtb: commit,
 		}
 		return event
 	}
 
-	lastSynced := now.Add(-1 * time.Minute)
+	lbstSynced := now.Add(-1 * time.Minute)
 	pr := &bitbucketserver.PullRequest{
 		Commits: []*bitbucketserver.Commit{
 			{
-				ID: sha,
+				ID: shb,
 			},
 		},
 	}
 
 	tests := []struct {
-		name   string
-		events []*btypes.ChangesetEvent
-		want   btypes.ChangesetCheckState
+		nbme   string
+		events []*btypes.ChbngesetEvent
+		wbnt   btypes.ChbngesetCheckStbte
 	}{
 		{
-			name:   "empty slice",
+			nbme:   "empty slice",
 			events: nil,
-			want:   btypes.ChangesetCheckStateUnknown,
+			wbnt:   btypes.ChbngesetCheckStbteUnknown,
 		},
 		{
-			name: "single success",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "SUCCESSFUL"),
+			nbme: "single success",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "SUCCESSFUL"),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "single pending",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "INPROGRESS"),
+			nbme: "single pending",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "INPROGRESS"),
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "single error",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "FAILED"),
+			nbme: "single error",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "FAILED"),
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 		{
-			name: "pending + error",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "INPROGRESS"),
-				statusEvent("ctx2", "FAILED"),
+			nbme: "pending + error",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "INPROGRESS"),
+				stbtusEvent("ctx2", "FAILED"),
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "pending + success",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "INPROGRESS"),
-				statusEvent("ctx2", "SUCCESSFUL"),
+			nbme: "pending + success",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "INPROGRESS"),
+				stbtusEvent("ctx2", "SUCCESSFUL"),
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "success + error",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "SUCCESSFUL"),
-				statusEvent("ctx2", "FAILED"),
+			nbme: "success + error",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "SUCCESSFUL"),
+				stbtusEvent("ctx2", "FAILED"),
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 		{
-			name: "success x2",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "SUCCESSFUL"),
-				statusEvent("ctx2", "SUCCESSFUL"),
+			nbme: "success x2",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "SUCCESSFUL"),
+				stbtusEvent("ctx2", "SUCCESSFUL"),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "later events have precedence",
-			events: []*btypes.ChangesetEvent{
-				statusEvent("ctx1", "INPROGRESS"),
-				statusEvent("ctx1", "SUCCESSFUL"),
+			nbme: "lbter events hbve precedence",
+			events: []*btypes.ChbngesetEvent{
+				stbtusEvent("ctx1", "INPROGRESS"),
+				stbtusEvent("ctx1", "SUCCESSFUL"),
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			have := computeBitbucketServerBuildStatus(lastSynced, pr, tc.events)
-			if diff := cmp.Diff(tc.want, have); diff != "" {
-				t.Fatalf(diff)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve := computeBitbucketServerBuildStbtus(lbstSynced, pr, tc.events)
+			if diff := cmp.Diff(tc.wbnt, hbve); diff != "" {
+				t.Fbtblf(diff)
 			}
 		})
 	}
 }
 
-func TestComputeAzureDevOpsBuildStatus(t *testing.T) {
-	t.Parallel()
+func TestComputeAzureDevOpsBuildStbtus(t *testing.T) {
+	t.Pbrbllel()
 
-	pr := &azuredevops2.AnnotatedPullRequest{
-		PullRequest: &azuredevops.PullRequest{},
+	pr := &bzuredevops2.AnnotbtedPullRequest{
+		PullRequest: &bzuredevops.PullRequest{},
 	}
 
 	tests := []struct {
-		name     string
-		statuses []*azuredevops.PullRequestBuildStatus
-		want     btypes.ChangesetCheckState
+		nbme     string
+		stbtuses []*bzuredevops.PullRequestBuildStbtus
+		wbnt     btypes.ChbngesetCheckStbte
 	}{
 		{
-			name:     "empty slice",
-			statuses: []*azuredevops.PullRequestBuildStatus{},
-			want:     btypes.ChangesetCheckStateUnknown,
+			nbme:     "empty slice",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{},
+			wbnt:     btypes.ChbngesetCheckStbteUnknown,
 		},
 		{
-			name: "single success",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "single success",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStateSucceeded,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteSucceeded,
 				},
 			},
-			want: btypes.ChangesetCheckStatePassed,
+			wbnt: btypes.ChbngesetCheckStbtePbssed,
 		},
 		{
-			name: "single pending",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "single pending",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStatePending,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbtePending,
 				},
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "single error",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "single error",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStateError,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteError,
 				},
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 		{
-			name: "single failed",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "single fbiled",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStateFailed,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteFbiled,
 				},
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 		{
-			name: "failed + pending",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "fbiled + pending",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStateFailed,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteFbiled,
 				},
 				{
 					ID:    2,
-					State: azuredevops.PullRequestBuildStatusStatePending,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbtePending,
 				},
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "pending + success",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "pending + success",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStateSucceeded,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteSucceeded,
 				},
 				{
 					ID:    2,
-					State: azuredevops.PullRequestBuildStatusStatePending,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbtePending,
 				},
 			},
-			want: btypes.ChangesetCheckStatePending,
+			wbnt: btypes.ChbngesetCheckStbtePending,
 		},
 		{
-			name: "failed + success",
-			statuses: []*azuredevops.PullRequestBuildStatus{
+			nbme: "fbiled + success",
+			stbtuses: []*bzuredevops.PullRequestBuildStbtus{
 				{
 					ID:    1,
-					State: azuredevops.PullRequestBuildStatusStateFailed,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteFbiled,
 				},
 				{
 					ID:    2,
-					State: azuredevops.PullRequestBuildStatusStateSucceeded,
+					Stbte: bzuredevops.PullRequestBuildStbtusStbteSucceeded,
 				},
 			},
-			want: btypes.ChangesetCheckStateFailed,
+			wbnt: btypes.ChbngesetCheckStbteFbiled,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			pr.Statuses = tc.statuses
-			have := computeAzureDevOpsBuildState(pr)
-			if diff := cmp.Diff(tc.want, have); diff != "" {
-				t.Fatalf(diff)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			pr.Stbtuses = tc.stbtuses
+			hbve := computeAzureDevOpsBuildStbte(pr)
+			if diff := cmp.Diff(tc.wbnt, hbve); diff != "" {
+				t.Fbtblf(diff)
 			}
 		})
 	}
 }
 
-func TestComputeGitLabCheckState(t *testing.T) {
-	t.Parallel()
+func TestComputeGitLbbCheckStbte(t *testing.T) {
+	t.Pbrbllel()
 
 	t.Run("no events", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			mr   *gitlab.MergeRequest
-			want btypes.ChangesetCheckState
+		for nbme, tc := rbnge mbp[string]struct {
+			mr   *gitlbb.MergeRequest
+			wbnt btypes.ChbngesetCheckStbte
 		}{
-			"no pipelines at all": {
-				mr:   &gitlab.MergeRequest{},
-				want: btypes.ChangesetCheckStateUnknown,
+			"no pipelines bt bll": {
+				mr:   &gitlbb.MergeRequest{},
+				wbnt: btypes.ChbngesetCheckStbteUnknown,
 			},
-			"only a head pipeline": {
-				mr: &gitlab.MergeRequest{
-					HeadPipeline: &gitlab.Pipeline{
-						Status: gitlab.PipelineStatusPending,
+			"only b hebd pipeline": {
+				mr: &gitlbb.MergeRequest{
+					HebdPipeline: &gitlbb.Pipeline{
+						Stbtus: gitlbb.PipelineStbtusPending,
 					},
 				},
-				want: btypes.ChangesetCheckStatePending,
+				wbnt: btypes.ChbngesetCheckStbtePending,
 			},
 			"one pipeline only": {
-				mr: &gitlab.MergeRequest{
-					HeadPipeline: &gitlab.Pipeline{
-						Status: gitlab.PipelineStatusPending,
+				mr: &gitlbb.MergeRequest{
+					HebdPipeline: &gitlbb.Pipeline{
+						Stbtus: gitlbb.PipelineStbtusPending,
 					},
-					Pipelines: []*gitlab.Pipeline{
+					Pipelines: []*gitlbb.Pipeline{
 						{
-							CreatedAt: gitlab.Time{Time: time.Unix(10, 0)},
-							Status:    gitlab.PipelineStatusFailed,
+							CrebtedAt: gitlbb.Time{Time: time.Unix(10, 0)},
+							Stbtus:    gitlbb.PipelineStbtusFbiled,
 						},
 					},
 				},
-				want: btypes.ChangesetCheckStateFailed,
+				wbnt: btypes.ChbngesetCheckStbteFbiled,
 			},
 			"two pipelines in the expected order": {
-				mr: &gitlab.MergeRequest{
-					HeadPipeline: &gitlab.Pipeline{
-						Status: gitlab.PipelineStatusPending,
+				mr: &gitlbb.MergeRequest{
+					HebdPipeline: &gitlbb.Pipeline{
+						Stbtus: gitlbb.PipelineStbtusPending,
 					},
-					Pipelines: []*gitlab.Pipeline{
+					Pipelines: []*gitlbb.Pipeline{
 						{
-							CreatedAt: gitlab.Time{Time: time.Unix(10, 0)},
-							Status:    gitlab.PipelineStatusFailed,
+							CrebtedAt: gitlbb.Time{Time: time.Unix(10, 0)},
+							Stbtus:    gitlbb.PipelineStbtusFbiled,
 						},
 						{
-							CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
-							Status:    gitlab.PipelineStatusSuccess,
+							CrebtedAt: gitlbb.Time{Time: time.Unix(5, 0)},
+							Stbtus:    gitlbb.PipelineStbtusSuccess,
 						},
 					},
 				},
-				want: btypes.ChangesetCheckStateFailed,
+				wbnt: btypes.ChbngesetCheckStbteFbiled,
 			},
-			"two pipelines in an unexpected order": {
-				mr: &gitlab.MergeRequest{
-					HeadPipeline: &gitlab.Pipeline{
-						Status: gitlab.PipelineStatusPending,
+			"two pipelines in bn unexpected order": {
+				mr: &gitlbb.MergeRequest{
+					HebdPipeline: &gitlbb.Pipeline{
+						Stbtus: gitlbb.PipelineStbtusPending,
 					},
-					Pipelines: []*gitlab.Pipeline{
+					Pipelines: []*gitlbb.Pipeline{
 						{
-							CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
-							Status:    gitlab.PipelineStatusFailed,
+							CrebtedAt: gitlbb.Time{Time: time.Unix(5, 0)},
+							Stbtus:    gitlbb.PipelineStbtusFbiled,
 						},
 						{
-							CreatedAt: gitlab.Time{Time: time.Unix(10, 0)},
-							Status:    gitlab.PipelineStatusSuccess,
+							CrebtedAt: gitlbb.Time{Time: time.Unix(10, 0)},
+							Stbtus:    gitlbb.PipelineStbtusSuccess,
 						},
 					},
 				},
-				want: btypes.ChangesetCheckStatePassed,
+				wbnt: btypes.ChbngesetCheckStbtePbssed,
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have := computeGitLabCheckState(time.Unix(0, 0), tc.mr, nil)
-				if have != tc.want {
-					t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
+			t.Run(nbme, func(t *testing.T) {
+				hbve := computeGitLbbCheckStbte(time.Unix(0, 0), tc.mr, nil)
+				if hbve != tc.wbnt {
+					t.Errorf("unexpected check stbte: hbve %s; wbnt %s", hbve, tc.wbnt)
 				}
 			})
 		}
 	})
 
 	t.Run("with events", func(t *testing.T) {
-		mr := &gitlab.MergeRequest{
-			HeadPipeline: &gitlab.Pipeline{
-				Status: gitlab.PipelineStatusPending,
+		mr := &gitlbb.MergeRequest{
+			HebdPipeline: &gitlbb.Pipeline{
+				Stbtus: gitlbb.PipelineStbtusPending,
 			},
 		}
 
-		events := []*btypes.ChangesetEvent{
+		events := []*btypes.ChbngesetEvent{
 			{
-				Kind: btypes.ChangesetEventKindGitLabPipeline,
-				Metadata: &gitlab.Pipeline{
-					CreatedAt: gitlab.Time{Time: time.Unix(5, 0)},
-					Status:    gitlab.PipelineStatusSuccess,
+				Kind: btypes.ChbngesetEventKindGitLbbPipeline,
+				Metbdbtb: &gitlbb.Pipeline{
+					CrebtedAt: gitlbb.Time{Time: time.Unix(5, 0)},
+					Stbtus:    gitlbb.PipelineStbtusSuccess,
 				},
 			},
 			{
-				Kind: btypes.ChangesetEventKindGitLabPipeline,
-				Metadata: &gitlab.Pipeline{
-					CreatedAt: gitlab.Time{Time: time.Unix(4, 0)},
-					Status:    gitlab.PipelineStatusFailed,
+				Kind: btypes.ChbngesetEventKindGitLbbPipeline,
+				Metbdbtb: &gitlbb.Pipeline{
+					CrebtedAt: gitlbb.Time{Time: time.Unix(4, 0)},
+					Stbtus:    gitlbb.PipelineStbtusFbiled,
 				},
 			},
 		}
 
-		for name, tc := range map[string]struct {
-			events     []*btypes.ChangesetEvent
-			lastSynced time.Time
-			want       btypes.ChangesetCheckState
+		for nbme, tc := rbnge mbp[string]struct {
+			events     []*btypes.ChbngesetEvent
+			lbstSynced time.Time
+			wbnt       btypes.ChbngesetCheckStbte
 		}{
 			"older events only": {
 				events:     events,
-				lastSynced: time.Unix(10, 0),
-				want:       btypes.ChangesetCheckStatePending,
+				lbstSynced: time.Unix(10, 0),
+				wbnt:       btypes.ChbngesetCheckStbtePending,
 			},
 			"newer events only": {
 				events:     events,
-				lastSynced: time.Unix(3, 0),
-				want:       btypes.ChangesetCheckStatePassed,
+				lbstSynced: time.Unix(3, 0),
+				wbnt:       btypes.ChbngesetCheckStbtePbssed,
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have := computeGitLabCheckState(tc.lastSynced, mr, tc.events)
-				if have != tc.want {
-					t.Errorf("unexpected check state: have %s; want %s", have, tc.want)
+			t.Run(nbme, func(t *testing.T) {
+				hbve := computeGitLbbCheckStbte(tc.lbstSynced, mr, tc.events)
+				if hbve != tc.wbnt {
+					t.Errorf("unexpected check stbte: hbve %s; wbnt %s", hbve, tc.wbnt)
 				}
 			})
 		}
 	})
 }
 
-func TestComputeReviewState(t *testing.T) {
-	t.Parallel()
+func TestComputeReviewStbte(t *testing.T) {
+	t.Pbrbllel()
 
 	now := timeutil.Now()
-	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
+	dbysAgo := func(dbys int) time.Time { return now.AddDbte(0, 0, -dbys) }
 
 	tests := []struct {
-		name      string
-		changeset *btypes.Changeset
-		history   []changesetStatesAtTime
-		want      btypes.ChangesetReviewState
+		nbme      string
+		chbngeset *btypes.Chbngeset
+		history   []chbngesetStbtesAtTime
+		wbnt      btypes.ChbngesetReviewStbte
 	}{
 		{
-			name:      "github - review required",
-			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetReviewStatePending,
+			nbme:      "github - review required",
+			chbngeset: githubChbngeset(dbysAgo(10), "OPEN", "REVIEW_REQUIRED"),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetReviewStbtePending,
 		},
 		{
-			name:      "github - approved by codeowner",
-			changeset: githubChangeset(daysAgo(10), "OPEN", "APPROVED"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
+			nbme:      "github - bpproved by codeowner",
+			chbngeset: githubChbngeset(dbysAgo(10), "OPEN", "APPROVED"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), reviewStbte: btypes.ChbngesetReviewStbteApproved},
 			},
-			want: btypes.ChangesetReviewStateApproved,
+			wbnt: btypes.ChbngesetReviewStbteApproved,
 		},
 		{
-			name:      "github - requires changes",
-			changeset: githubChangeset(daysAgo(0), "OPEN", "CHANGES_REQUESTED"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateChangesRequested},
+			nbme:      "github - requires chbnges",
+			chbngeset: githubChbngeset(dbysAgo(0), "OPEN", "CHANGES_REQUESTED"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), reviewStbte: btypes.ChbngesetReviewStbteChbngesRequested},
 			},
-			want: btypes.ChangesetReviewStateChangesRequested,
+			wbnt: btypes.ChbngesetReviewStbteChbngesRequested,
 		},
 		{
-			name:      "bitbucketserver - no events",
-			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetReviewStateChangesRequested,
+			nbme:      "bitbucketserver - no events",
+			chbngeset: bitbucketChbngeset(dbysAgo(10), "OPEN", "NEEDS_WORK"),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetReviewStbteChbngesRequested,
 		},
 
 		{
-			name:      "bitbucketserver - changeset older than events",
-			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
+			nbme:      "bitbucketserver - chbngeset older thbn events",
+			chbngeset: bitbucketChbngeset(dbysAgo(10), "OPEN", "NEEDS_WORK"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), reviewStbte: btypes.ChbngesetReviewStbteApproved},
 			},
-			want: btypes.ChangesetReviewStateApproved,
+			wbnt: btypes.ChbngesetReviewStbteApproved,
 		},
 
 		{
-			name:      "bitbucketserver - changeset newer than events",
-			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
+			nbme:      "bitbucketserver - chbngeset newer thbn events",
+			chbngeset: bitbucketChbngeset(dbysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), reviewStbte: btypes.ChbngesetReviewStbteApproved},
 			},
-			want: btypes.ChangesetReviewStateChangesRequested,
+			wbnt: btypes.ChbngesetReviewStbteChbngesRequested,
 		},
 		{
-			name:      "gitlab - no events, no approvals",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{}),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetReviewStatePending,
+			nbme:      "gitlbb - no events, no bpprovbls",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, []*gitlbb.Note{}),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetReviewStbtePending,
 		},
 		{
-			name: "gitlab - no events, one approval",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+			nbme: "gitlbb - no events, one bpprovbl",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, []*gitlbb.Note{
 				{
 					System: true,
-					Body:   "approved this merge request",
+					Body:   "bpproved this merge request",
 				},
 			}),
-			history: []changesetStatesAtTime{},
-			want:    btypes.ChangesetReviewStateApproved,
+			history: []chbngesetStbtesAtTime{},
+			wbnt:    btypes.ChbngesetReviewStbteApproved,
 		},
 		{
-			name: "gitlab - no events, one unapproval",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+			nbme: "gitlbb - no events, one unbpprovbl",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, []*gitlbb.Note{
 				{
 					System: true,
-					Body:   "unapproved this merge request",
+					Body:   "unbpproved this merge request",
 				},
 			}),
-			history: []changesetStatesAtTime{},
-			want:    btypes.ChangesetReviewStateChangesRequested,
+			history: []chbngesetStbtesAtTime{},
+			wbnt:    btypes.ChbngesetReviewStbteChbngesRequested,
 		},
 		{
-			name: "gitlab - no events, several notes",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
-				{Body: "this is a user note"},
+			nbme: "gitlbb - no events, severbl notes",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, []*gitlbb.Note{
+				{Body: "this is b user note"},
 				{
 					System: true,
-					Body:   "unapproved this merge request",
+					Body:   "unbpproved this merge request",
 				},
-				{Body: "this is a user note"},
+				{Body: "this is b user note"},
 				{
 					System: true,
-					Body:   "approved this merge request",
+					Body:   "bpproved this merge request",
 				},
 			}),
-			history: []changesetStatesAtTime{},
-			want:    btypes.ChangesetReviewStateChangesRequested,
+			history: []chbngesetStbtesAtTime{},
+			wbnt:    btypes.ChbngesetReviewStbteChbngesRequested,
 		},
 		{
-			name: "gitlab - changeset older than events",
-			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+			nbme: "gitlbb - chbngeset older thbn events",
+			chbngeset: gitLbbChbngeset(dbysAgo(10), gitlbb.MergeRequestStbteOpened, []*gitlbb.Note{
 				{
 					System: true,
-					Body:   "unapproved this merge request",
+					Body:   "unbpproved this merge request",
 				},
 			}),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), reviewState: btypes.ChangesetReviewStateApproved},
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), reviewStbte: btypes.ChbngesetReviewStbteApproved},
 			},
-			want: btypes.ChangesetReviewStateApproved,
+			wbnt: btypes.ChbngesetReviewStbteApproved,
 		},
 		{
-			name: "gitlab - changeset newer than events",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, []*gitlab.Note{
+			nbme: "gitlbb - chbngeset newer thbn events",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, []*gitlbb.Note{
 				{
 					System: true,
-					Body:   "unapproved this merge request",
+					Body:   "unbpproved this merge request",
 				},
 			}),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), reviewState: btypes.ChangesetReviewStateApproved},
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), reviewStbte: btypes.ChbngesetReviewStbteApproved},
 			},
-			want: btypes.ChangesetReviewStateChangesRequested,
+			wbnt: btypes.ChbngesetReviewStbteChbngesRequested,
 		},
 	}
 
-	for i, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			changeset := tc.changeset
+	for i, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			chbngeset := tc.chbngeset
 
-			have, err := computeReviewState(changeset, tc.history)
+			hbve, err := computeReviewStbte(chbngeset, tc.history)
 			if err != nil {
-				t.Fatalf("got error: %s", err)
+				t.Fbtblf("got error: %s", err)
 			}
 
-			if have, want := have, tc.want; have != want {
-				t.Errorf("%d: wrong reviewstate. have=%s, want=%s", i, have, want)
+			if hbve, wbnt := hbve, tc.wbnt; hbve != wbnt {
+				t.Errorf("%d: wrong reviewstbte. hbve=%s, wbnt=%s", i, hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestComputeExternalState(t *testing.T) {
-	t.Parallel()
+func TestComputeExternblStbte(t *testing.T) {
+	t.Pbrbllel()
 
 	now := timeutil.Now()
-	daysAgo := func(days int) time.Time { return now.AddDate(0, 0, -days) }
+	dbysAgo := func(dbys int) time.Time { return now.AddDbte(0, 0, -dbys) }
 
-	archivedRepo := &types.Repo{Archived: true}
+	brchivedRepo := &types.Repo{Archived: true}
 
 	tests := []struct {
-		name      string
-		changeset *btypes.Changeset
+		nbme      string
+		chbngeset *btypes.Chbngeset
 		repo      *types.Repo
-		history   []changesetStatesAtTime
-		want      btypes.ChangesetExternalState
-		wantErr   error
+		history   []chbngesetStbtesAtTime
+		wbnt      btypes.ChbngesetExternblStbte
+		wbntErr   error
 	}{
 		{
-			name:      "github - no events",
-			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateOpen,
+			nbme:      "github - no events",
+			chbngeset: githubChbngeset(dbysAgo(10), "OPEN", "REVIEW_REQUIRED"),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "github - changeset older than events",
-			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "github - chbngeset older thbn events",
+			chbngeset: githubChbngeset(dbysAgo(10), "OPEN", "REVIEW_REQUIRED"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateClosed,
+			wbnt: btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "github - changeset newer than events",
-			changeset: githubChangeset(daysAgo(0), "OPEN", "REVIEW_REQUIRED"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "github - chbngeset newer thbn events",
+			chbngeset: githubChbngeset(dbysAgo(0), "OPEN", "REVIEW_REQUIRED"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateOpen,
+			wbnt: btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "github - changeset newer and deleted",
-			changeset: setDeletedAt(githubChangeset(daysAgo(0), "OPEN", "REVIEW_REQUIRED"), daysAgo(0)),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "github - chbngeset newer bnd deleted",
+			chbngeset: setDeletedAt(githubChbngeset(dbysAgo(0), "OPEN", "REVIEW_REQUIRED"), dbysAgo(0)),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateDeleted,
+			wbnt: btypes.ChbngesetExternblStbteDeleted,
 		},
 		{
-			name:      "github draft - no events",
-			changeset: setDraft(githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED")),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateDraft,
+			nbme:      "github drbft - no events",
+			chbngeset: setDrbft(githubChbngeset(dbysAgo(10), "OPEN", "REVIEW_REQUIRED")),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteDrbft,
 		},
 		{
-			name:      "github draft - changeset older than events",
-			changeset: githubChangeset(daysAgo(10), "OPEN", "REVIEW_REQUIRED"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
+			nbme:      "github drbft - chbngeset older thbn events",
+			chbngeset: githubChbngeset(dbysAgo(10), "OPEN", "REVIEW_REQUIRED"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), externblStbte: btypes.ChbngesetExternblStbteDrbft},
 			},
-			want: btypes.ChangesetExternalStateDraft,
+			wbnt: btypes.ChbngesetExternblStbteDrbft,
 		},
 		{
-			name:      "github draft - changeset newer than events",
-			changeset: setDraft(githubChangeset(daysAgo(0), "OPEN", "REVIEW_REQUIRED")),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "github drbft - chbngeset newer thbn events",
+			chbngeset: setDrbft(githubChbngeset(dbysAgo(0), "OPEN", "REVIEW_REQUIRED")),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateDraft,
+			wbnt: btypes.ChbngesetExternblStbteDrbft,
 		},
 		{
-			name:      "github draft closed",
-			changeset: setDraft(githubChangeset(daysAgo(1), "CLOSED", "REVIEW_REQUIRED")),
-			history:   []changesetStatesAtTime{{t: daysAgo(2), externalState: btypes.ChangesetExternalStateClosed}},
-			want:      btypes.ChangesetExternalStateClosed,
+			nbme:      "github drbft closed",
+			chbngeset: setDrbft(githubChbngeset(dbysAgo(1), "CLOSED", "REVIEW_REQUIRED")),
+			history:   []chbngesetStbtesAtTime{{t: dbysAgo(2), externblStbte: btypes.ChbngesetExternblStbteClosed}},
+			wbnt:      btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "bitbucketserver - no events",
-			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateOpen,
+			nbme:      "bitbucketserver - no events",
+			chbngeset: bitbucketChbngeset(dbysAgo(10), "OPEN", "NEEDS_WORK"),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "bitbucketserver - changeset older than events",
-			changeset: bitbucketChangeset(daysAgo(10), "OPEN", "NEEDS_WORK"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "bitbucketserver - chbngeset older thbn events",
+			chbngeset: bitbucketChbngeset(dbysAgo(10), "OPEN", "NEEDS_WORK"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateClosed,
+			wbnt: btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "bitbucketserver - changeset newer than events",
-			changeset: bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "bitbucketserver - chbngeset newer thbn events",
+			chbngeset: bitbucketChbngeset(dbysAgo(0), "OPEN", "NEEDS_WORK"),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateOpen,
+			wbnt: btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "bitbucketserver - changeset newer and deleted",
-			changeset: setDeletedAt(bitbucketChangeset(daysAgo(0), "OPEN", "NEEDS_WORK"), daysAgo(0)),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "bitbucketserver - chbngeset newer bnd deleted",
+			chbngeset: setDeletedAt(bitbucketChbngeset(dbysAgo(0), "OPEN", "NEEDS_WORK"), dbysAgo(0)),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateDeleted,
+			wbnt: btypes.ChbngesetExternblStbteDeleted,
 		},
 		{
-			name:      "gitlab - no events, opened",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateOpen,
+			nbme:      "gitlbb - no events, opened",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, nil),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "gitlab - no events, closed",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateClosed, nil),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateClosed,
+			nbme:      "gitlbb - no events, closed",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteClosed, nil),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "gitlab - no events, locked",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateLocked, nil),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateClosed,
+			nbme:      "gitlbb - no events, locked",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteLocked, nil),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "gitlab - no events, merged",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateMerged,
+			nbme:      "gitlbb - no events, merged",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteMerged, nil),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteMerged,
 		},
 		{
-			name:      "gitlab - changeset older than events",
-			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateMerged, nil),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "gitlbb - chbngeset older thbn events",
+			chbngeset: gitLbbChbngeset(dbysAgo(10), gitlbb.MergeRequestStbteMerged, nil),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateClosed,
+			wbnt: btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "gitlab - changeset newer than events",
-			changeset: gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateMerged, nil),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "gitlbb - chbngeset newer thbn events",
+			chbngeset: gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteMerged, nil),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateMerged,
+			wbnt: btypes.ChbngesetExternblStbteMerged,
 		},
 		{
-			name:      "gitlab draft - no events",
-			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateDraft,
+			nbme:      "gitlbb drbft - no events",
+			chbngeset: setDrbft(gitLbbChbngeset(dbysAgo(10), gitlbb.MergeRequestStbteOpened, nil)),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteDrbft,
 		},
 		{
-			name:      "gitlab draft - changeset older than events",
-			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
+			nbme:      "gitlbb drbft - chbngeset older thbn events",
+			chbngeset: gitLbbChbngeset(dbysAgo(10), gitlbb.MergeRequestStbteOpened, nil),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), externblStbte: btypes.ChbngesetExternblStbteDrbft},
 			},
-			want: btypes.ChangesetExternalStateDraft,
+			wbnt: btypes.ChbngesetExternblStbteDrbft,
 		},
 		{
-			name:      "gitlab draft - changeset newer than events",
-			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "gitlbb drbft - chbngeset newer thbn events",
+			chbngeset: setDrbft(gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, nil)),
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateDraft,
+			wbnt: btypes.ChbngesetExternblStbteDrbft,
 		},
 		{
-			name:      "gitlab read-only - no events",
-			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
-			repo:      archivedRepo,
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateReadOnly,
+			nbme:      "gitlbb rebd-only - no events",
+			chbngeset: setDrbft(gitLbbChbngeset(dbysAgo(10), gitlbb.MergeRequestStbteOpened, nil)),
+			repo:      brchivedRepo,
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteRebdOnly,
 		},
 		{
-			name:      "gitlab read-only - changeset older than events",
-			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
-			repo:      archivedRepo,
-			history: []changesetStatesAtTime{
-				{t: daysAgo(0), externalState: btypes.ChangesetExternalStateDraft},
+			nbme:      "gitlbb rebd-only - chbngeset older thbn events",
+			chbngeset: gitLbbChbngeset(dbysAgo(10), gitlbb.MergeRequestStbteOpened, nil),
+			repo:      brchivedRepo,
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(0), externblStbte: btypes.ChbngesetExternblStbteDrbft},
 			},
-			want: btypes.ChangesetExternalStateReadOnly,
+			wbnt: btypes.ChbngesetExternblStbteRebdOnly,
 		},
 		{
-			name:      "gitlab read-only - changeset newer than events",
-			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
-			repo:      archivedRepo,
-			history: []changesetStatesAtTime{
-				{t: daysAgo(10), externalState: btypes.ChangesetExternalStateClosed},
+			nbme:      "gitlbb rebd-only - chbngeset newer thbn events",
+			chbngeset: setDrbft(gitLbbChbngeset(dbysAgo(0), gitlbb.MergeRequestStbteOpened, nil)),
+			repo:      brchivedRepo,
+			history: []chbngesetStbtesAtTime{
+				{t: dbysAgo(10), externblStbte: btypes.ChbngesetExternblStbteClosed},
 			},
-			want: btypes.ChangesetExternalStateReadOnly,
+			wbnt: btypes.ChbngesetExternblStbteRebdOnly,
 		},
 		{
-			name:      "perforce closed - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateClosed),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateClosed,
+			nbme:      "perforce closed - no events",
+			chbngeset: perforceChbngeset(dbysAgo(10), protocol.PerforceChbngelistStbteClosed),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteClosed,
 		},
 		{
-			name:      "perforce submitted - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateSubmitted),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateMerged,
+			nbme:      "perforce submitted - no events",
+			chbngeset: perforceChbngeset(dbysAgo(10), protocol.PerforceChbngelistStbteSubmitted),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteMerged,
 		},
 		{
-			name:      "perforce pending - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStatePending),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateOpen,
+			nbme:      "perforce pending - no events",
+			chbngeset: perforceChbngeset(dbysAgo(10), protocol.PerforceChbngelistStbtePending),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "perforce shelved - no events",
-			changeset: perforceChangeset(daysAgo(10), protocol.PerforceChangelistStateShelved),
-			history:   []changesetStatesAtTime{},
-			want:      btypes.ChangesetExternalStateOpen,
+			nbme:      "perforce shelved - no events",
+			chbngeset: perforceChbngeset(dbysAgo(10), protocol.PerforceChbngelistStbteShelved),
+			history:   []chbngesetStbtesAtTime{},
+			wbnt:      btypes.ChbngesetExternblStbteOpen,
 		},
 		{
-			name:      "perforce unknown state",
-			changeset: perforceChangeset(daysAgo(10), "foobar"),
-			history:   []changesetStatesAtTime{},
-			wantErr:   errors.New("unknown Perforce Change state: foobar"),
+			nbme:      "perforce unknown stbte",
+			chbngeset: perforceChbngeset(dbysAgo(10), "foobbr"),
+			history:   []chbngesetStbtesAtTime{},
+			wbntErr:   errors.New("unknown Perforce Chbnge stbte: foobbr"),
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			changeset := tc.changeset
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			chbngeset := tc.chbngeset
 
 			repo := tc.repo
 			if repo == nil {
-				repo = &types.Repo{Archived: false}
+				repo = &types.Repo{Archived: fblse}
 			}
 
-			have, err := computeExternalState(changeset, tc.history, repo)
+			hbve, err := computeExternblStbte(chbngeset, tc.history, repo)
 
-			if tc.wantErr != nil {
+			if tc.wbntErr != nil {
 				require.Error(t, err)
-				assert.Equal(t, tc.wantErr.Error(), err.Error())
-				assert.Empty(t, have)
+				bssert.Equbl(t, tc.wbntErr.Error(), err.Error())
+				bssert.Empty(t, hbve)
 			} else {
 				require.NoError(t, err)
-				assert.Equal(t, tc.want, have)
+				bssert.Equbl(t, tc.wbnt, hbve)
 			}
 		})
 	}
 }
 
-func TestComputeLabels(t *testing.T) {
-	t.Parallel()
+func TestComputeLbbels(t *testing.T) {
+	t.Pbrbllel()
 
 	now := timeutil.Now()
-	labelEvent := func(name string, kind btypes.ChangesetEventKind, when time.Time) *btypes.ChangesetEvent {
-		removed := kind == btypes.ChangesetEventKindGitHubUnlabeled
-		return &btypes.ChangesetEvent{
+	lbbelEvent := func(nbme string, kind btypes.ChbngesetEventKind, when time.Time) *btypes.ChbngesetEvent {
+		removed := kind == btypes.ChbngesetEventKindGitHubUnlbbeled
+		return &btypes.ChbngesetEvent{
 			Kind:      kind,
-			UpdatedAt: when,
-			Metadata: &github.LabelEvent{
+			UpdbtedAt: when,
+			Metbdbtb: &github.LbbelEvent{
 				Actor: github.Actor{},
-				Label: github.Label{
-					Name: name,
+				Lbbel: github.Lbbel{
+					Nbme: nbme,
 				},
-				CreatedAt: when,
+				CrebtedAt: when,
 				Removed:   removed,
 			},
 		}
 	}
-	changeset := func(names []string, updated time.Time) *btypes.Changeset {
-		meta := &github.PullRequest{}
-		for _, name := range names {
-			meta.Labels.Nodes = append(meta.Labels.Nodes, github.Label{
-				Name: name,
+	chbngeset := func(nbmes []string, updbted time.Time) *btypes.Chbngeset {
+		metb := &github.PullRequest{}
+		for _, nbme := rbnge nbmes {
+			metb.Lbbels.Nodes = bppend(metb.Lbbels.Nodes, github.Lbbel{
+				Nbme: nbme,
 			})
 		}
-		return &btypes.Changeset{
-			UpdatedAt: updated,
-			Metadata:  meta,
+		return &btypes.Chbngeset{
+			UpdbtedAt: updbted,
+			Metbdbtb:  metb,
 		}
 	}
-	labels := func(names ...string) []btypes.ChangesetLabel {
-		var ls []btypes.ChangesetLabel
-		for _, name := range names {
-			ls = append(ls, btypes.ChangesetLabel{Name: name})
+	lbbels := func(nbmes ...string) []btypes.ChbngesetLbbel {
+		vbr ls []btypes.ChbngesetLbbel
+		for _, nbme := rbnge nbmes {
+			ls = bppend(ls, btypes.ChbngesetLbbel{Nbme: nbme})
 		}
 		return ls
 	}
 
 	tests := []struct {
-		name      string
-		changeset *btypes.Changeset
-		events    ChangesetEvents
-		want      []btypes.ChangesetLabel
+		nbme      string
+		chbngeset *btypes.Chbngeset
+		events    ChbngesetEvents
+		wbnt      []btypes.ChbngesetLbbel
 	}{
 		{
-			name: "zero values",
+			nbme: "zero vblues",
 		},
 		{
-			name:      "no events",
-			changeset: changeset([]string{"label1"}, time.Time{}),
-			events:    ChangesetEvents{},
-			want:      labels("label1"),
+			nbme:      "no events",
+			chbngeset: chbngeset([]string{"lbbel1"}, time.Time{}),
+			events:    ChbngesetEvents{},
+			wbnt:      lbbels("lbbel1"),
 		},
 		{
-			name:      "remove event",
-			changeset: changeset([]string{"label1"}, time.Time{}),
-			events: ChangesetEvents{
-				labelEvent("label1", btypes.ChangesetEventKindGitHubUnlabeled, now),
+			nbme:      "remove event",
+			chbngeset: chbngeset([]string{"lbbel1"}, time.Time{}),
+			events: ChbngesetEvents{
+				lbbelEvent("lbbel1", btypes.ChbngesetEventKindGitHubUnlbbeled, now),
 			},
-			want: []btypes.ChangesetLabel{},
+			wbnt: []btypes.ChbngesetLbbel{},
 		},
 		{
-			name:      "add event",
-			changeset: changeset([]string{"label1"}, time.Time{}),
-			events: ChangesetEvents{
-				labelEvent("label2", btypes.ChangesetEventKindGitHubLabeled, now),
+			nbme:      "bdd event",
+			chbngeset: chbngeset([]string{"lbbel1"}, time.Time{}),
+			events: ChbngesetEvents{
+				lbbelEvent("lbbel2", btypes.ChbngesetEventKindGitHubLbbeled, now),
 			},
-			want: labels("label1", "label2"),
+			wbnt: lbbels("lbbel1", "lbbel2"),
 		},
 		{
-			name:      "old add event",
-			changeset: changeset([]string{"label1"}, now.Add(5*time.Minute)),
-			events: ChangesetEvents{
-				labelEvent("label2", btypes.ChangesetEventKindGitHubLabeled, now),
+			nbme:      "old bdd event",
+			chbngeset: chbngeset([]string{"lbbel1"}, now.Add(5*time.Minute)),
+			events: ChbngesetEvents{
+				lbbelEvent("lbbel2", btypes.ChbngesetEventKindGitHubLbbeled, now),
 			},
-			want: labels("label1"),
+			wbnt: lbbels("lbbel1"),
 		},
 		{
-			name:      "sorting",
-			changeset: changeset([]string{"label4", "label3"}, time.Time{}),
-			events: ChangesetEvents{
-				labelEvent("label2", btypes.ChangesetEventKindGitHubLabeled, now),
-				labelEvent("label1", btypes.ChangesetEventKindGitHubLabeled, now.Add(5*time.Minute)),
+			nbme:      "sorting",
+			chbngeset: chbngeset([]string{"lbbel4", "lbbel3"}, time.Time{}),
+			events: ChbngesetEvents{
+				lbbelEvent("lbbel2", btypes.ChbngesetEventKindGitHubLbbeled, now),
+				lbbelEvent("lbbel1", btypes.ChbngesetEventKindGitHubLbbeled, now.Add(5*time.Minute)),
 			},
-			want: labels("label1", "label2", "label3", "label4"),
+			wbnt: lbbels("lbbel1", "lbbel2", "lbbel3", "lbbel4"),
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			have := ComputeLabels(tc.changeset, tc.events)
-			want := tc.want
-			if diff := cmp.Diff(have, want, cmpopts.EquateEmpty()); diff != "" {
-				t.Fatal(diff)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve := ComputeLbbels(tc.chbngeset, tc.events)
+			wbnt := tc.wbnt
+			if diff := cmp.Diff(hbve, wbnt, cmpopts.EqubteEmpty()); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-func bitbucketChangeset(updatedAt time.Time, state, reviewStatus string) *btypes.Changeset {
-	return &btypes.Changeset{
-		ExternalServiceType: extsvc.TypeBitbucketServer,
-		UpdatedAt:           updatedAt,
-		Metadata: &bitbucketserver.PullRequest{
-			State: state,
+func bitbucketChbngeset(updbtedAt time.Time, stbte, reviewStbtus string) *btypes.Chbngeset {
+	return &btypes.Chbngeset{
+		ExternblServiceType: extsvc.TypeBitbucketServer,
+		UpdbtedAt:           updbtedAt,
+		Metbdbtb: &bitbucketserver.PullRequest{
+			Stbte: stbte,
 			Reviewers: []bitbucketserver.Reviewer{
-				{Status: reviewStatus},
+				{Stbtus: reviewStbtus},
 			},
 		},
 	}
 }
 
-func githubChangeset(updatedAt time.Time, state string, reviewDecision string) *btypes.Changeset {
-	return &btypes.Changeset{
-		ExternalServiceType: extsvc.TypeGitHub,
-		UpdatedAt:           updatedAt,
-		Metadata:            &github.PullRequest{State: state, ReviewDecision: reviewDecision},
+func githubChbngeset(updbtedAt time.Time, stbte string, reviewDecision string) *btypes.Chbngeset {
+	return &btypes.Chbngeset{
+		ExternblServiceType: extsvc.TypeGitHub,
+		UpdbtedAt:           updbtedAt,
+		Metbdbtb:            &github.PullRequest{Stbte: stbte, ReviewDecision: reviewDecision},
 	}
 }
 
-func gitLabChangeset(updatedAt time.Time, state gitlab.MergeRequestState, notes []*gitlab.Note) *btypes.Changeset {
-	return &btypes.Changeset{
-		ExternalServiceType: extsvc.TypeGitLab,
-		UpdatedAt:           updatedAt,
-		Metadata: &gitlab.MergeRequest{
+func gitLbbChbngeset(updbtedAt time.Time, stbte gitlbb.MergeRequestStbte, notes []*gitlbb.Note) *btypes.Chbngeset {
+	return &btypes.Chbngeset{
+		ExternblServiceType: extsvc.TypeGitLbb,
+		UpdbtedAt:           updbtedAt,
+		Metbdbtb: &gitlbb.MergeRequest{
 			Notes: notes,
-			State: state,
+			Stbte: stbte,
 		},
 	}
 }
 
-func perforceChangeset(updatedAt time.Time, state protocol.PerforceChangelistState) *btypes.Changeset {
-	return &btypes.Changeset{
-		ExternalServiceType: extsvc.TypePerforce,
-		UpdatedAt:           updatedAt,
-		Metadata: &protocol.PerforceChangelist{
-			State: state,
+func perforceChbngeset(updbtedAt time.Time, stbte protocol.PerforceChbngelistStbte) *btypes.Chbngeset {
+	return &btypes.Chbngeset{
+		ExternblServiceType: extsvc.TypePerforce,
+		UpdbtedAt:           updbtedAt,
+		Metbdbtb: &protocol.PerforceChbngelist{
+			Stbte: stbte,
 		},
 	}
 }
 
-func setDeletedAt(c *btypes.Changeset, deletedAt time.Time) *btypes.Changeset {
-	c.ExternalDeletedAt = deletedAt
+func setDeletedAt(c *btypes.Chbngeset, deletedAt time.Time) *btypes.Chbngeset {
+	c.ExternblDeletedAt = deletedAt
 	return c
 }

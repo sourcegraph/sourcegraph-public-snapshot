@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,547 +6,547 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestRepoStatistics(t *testing.T) {
+func TestRepoStbtistics(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &repoStbtisticsStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	shards := []string{
-		"shard-1",
-		"shard-2",
-		"shard-3",
+	shbrds := []string{
+		"shbrd-1",
+		"shbrd-2",
+		"shbrd-3",
 	}
 	repos := types.Repos{
-		&types.Repo{Name: "repo1"},
-		&types.Repo{Name: "repo2"},
-		&types.Repo{Name: "repo3"},
-		&types.Repo{Name: "repo4"},
-		&types.Repo{Name: "repo5"},
-		&types.Repo{Name: "repo6"},
+		&types.Repo{Nbme: "repo1"},
+		&types.Repo{Nbme: "repo2"},
+		&types.Repo{Nbme: "repo3"},
+		&types.Repo{Nbme: "repo4"},
+		&types.Repo{Nbme: "repo5"},
+		&types.Repo{Nbme: "repo6"},
 	}
 
-	createTestRepos(ctx, t, db, repos)
+	crebteTestRepos(ctx, t, db, repos)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, NotCloned: 6, SoftDeleted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: "", Total: 6, NotCloned: 6},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, NotCloned: 6, SoftDeleted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: "", Totbl: 6, NotCloned: 6},
 	})
 
-	// Move to shards[0] as cloning
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
+	// Move to shbrds[0] bs cloning
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[0], types.CloneStbtusCloning)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, SoftDeleted: 0, NotCloned: 4, Cloning: 2,
-	}, []GitserverReposStatistic{
-		{ShardID: "", Total: 4, NotCloned: 4},
-		{ShardID: shards[0], Total: 2, Cloning: 2},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, SoftDeleted: 0, NotCloned: 4, Cloning: 2,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: "", Totbl: 4, NotCloned: 4},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2},
 	})
 
-	// Move two repos to shards[1] as cloning
-	setCloneStatus(t, db, repos[2].Name, shards[1], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[3].Name, shards[1], types.CloneStatusCloning)
-	// Move two repos to shards[2] as cloning
-	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
+	// Move two repos to shbrds[1] bs cloning
+	setCloneStbtus(t, db, repos[2].Nbme, shbrds[1], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[3].Nbme, shbrds[1], types.CloneStbtusCloning)
+	// Move two repos to shbrds[2] bs cloning
+	setCloneStbtus(t, db, repos[4].Nbme, shbrds[2], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[5].Nbme, shbrds[2], types.CloneStbtusCloning)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, SoftDeleted: 0, Cloning: 6,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 2, Cloning: 2},
-		{ShardID: shards[1], Total: 2, Cloning: 2},
-		{ShardID: shards[2], Total: 2, Cloning: 2},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, SoftDeleted: 0, Cloning: 6,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2},
+		{ShbrdID: shbrds[1], Totbl: 2, Cloning: 2},
+		{ShbrdID: shbrds[2], Totbl: 2, Cloning: 2},
 	})
 
-	// Move from shards[0] to shards[2] and change status
-	setCloneStatus(t, db, repos[2].Name, shards[2], types.CloneStatusCloned)
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, SoftDeleted: 0, Cloning: 5, Cloned: 1,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 2, Cloning: 2},
-		{ShardID: shards[1], Total: 1, Cloning: 1},
-		{ShardID: shards[2], Total: 3, Cloning: 2, Cloned: 1},
+	// Move from shbrds[0] to shbrds[2] bnd chbnge stbtus
+	setCloneStbtus(t, db, repos[2].Nbme, shbrds[2], types.CloneStbtusCloned)
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, SoftDeleted: 0, Cloning: 5, Cloned: 1,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2},
+		{ShbrdID: shbrds[1], Totbl: 1, Cloning: 1},
+		{ShbrdID: shbrds[2], Totbl: 3, Cloning: 2, Cloned: 1},
 	})
 
 	// Soft delete repos
 	if err := db.Repos().Delete(ctx, repos[2].ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	deletedRepoName := queryRepoName(t, ctx, s, repos[2].ID)
+	deletedRepoNbme := queryRepoNbme(t, ctx, s, repos[2].ID)
 
-	// Deletion is reflected in repoStatistics
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 5, SoftDeleted: 1, Cloning: 5,
-	}, []GitserverReposStatistic{
-		// But gitserverReposStatistics is unchanged
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 2, Cloning: 2},
-		{ShardID: shards[1], Total: 1, Cloning: 1},
-		{ShardID: shards[2], Total: 3, Cloning: 2, Cloned: 1},
+	// Deletion is reflected in repoStbtistics
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 5, SoftDeleted: 1, Cloning: 5,
+	}, []GitserverReposStbtistic{
+		// But gitserverReposStbtistics is unchbnged
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2},
+		{ShbrdID: shbrds[1], Totbl: 1, Cloning: 1},
+		{ShbrdID: shbrds[2], Totbl: 3, Cloning: 2, Cloned: 1},
 	})
 
-	// Until we remove it from disk in gitserver, which causes the clone status
+	// Until we remove it from disk in gitserver, which cbuses the clone stbtus
 	// to be set to not_cloned:
-	setCloneStatus(t, db, deletedRepoName, shards[2], types.CloneStatusNotCloned)
+	setCloneStbtus(t, db, deletedRepoNbme, shbrds[2], types.CloneStbtusNotCloned)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		// Global stats are unchanged
-		Total: 5, SoftDeleted: 1, Cloning: 5,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 2, Cloning: 2},
-		{ShardID: shards[1], Total: 1, Cloning: 1},
-		// But now it's reflected as NotCloned
-		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		// Globbl stbts bre unchbnged
+		Totbl: 5, SoftDeleted: 1, Cloning: 5,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2},
+		{ShbrdID: shbrds[1], Totbl: 1, Cloning: 1},
+		// But now it's reflected bs NotCloned
+		{ShbrdID: shbrds[2], Totbl: 3, Cloning: 2, NotCloned: 1},
 	})
 
 	// Now we set errors on 2 non-deleted repositories
-	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
-	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-3")
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		// Only FailedFetch changed
-		Total: 5, SoftDeleted: 1, Cloning: 5, FailedFetch: 2,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
-		{ShardID: shards[1], Total: 1, Cloning: 1, FailedFetch: 0},
-		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1, FailedFetch: 1},
+	setLbstError(t, db, repos[0].Nbme, shbrds[0], "internet broke repo-1")
+	setLbstError(t, db, repos[4].Nbme, shbrds[2], "internet broke repo-3")
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		// Only FbiledFetch chbnged
+		Totbl: 5, SoftDeleted: 1, Cloning: 5, FbiledFetch: 2,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2, FbiledFetch: 1},
+		{ShbrdID: shbrds[1], Totbl: 1, Cloning: 1, FbiledFetch: 0},
+		{ShbrdID: shbrds[2], Totbl: 3, Cloning: 2, NotCloned: 1, FbiledFetch: 1},
 	})
-	// Now we move a repo and set an error
-	setLastError(t, db, repos[1].Name, shards[1], "internet broke repo-2")
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		// Only FailedFetch changed
-		Total: 5, SoftDeleted: 1, Cloning: 5, FailedFetch: 3,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 1, Cloning: 1, FailedFetch: 1},
-		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 1},
-		{ShardID: shards[2], Total: 3, Cloning: 2, NotCloned: 1, FailedFetch: 1},
+	// Now we move b repo bnd set bn error
+	setLbstError(t, db, repos[1].Nbme, shbrds[1], "internet broke repo-2")
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		// Only FbiledFetch chbnged
+		Totbl: 5, SoftDeleted: 1, Cloning: 5, FbiledFetch: 3,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 1, Cloning: 1, FbiledFetch: 1},
+		{ShbrdID: shbrds[1], Totbl: 2, Cloning: 2, FbiledFetch: 1},
+		{ShbrdID: shbrds[2], Totbl: 3, Cloning: 2, NotCloned: 1, FbiledFetch: 1},
 	})
 
-	// Two repos got cloned again
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloned)
-	setCloneStatus(t, db, repos[1].Name, shards[1], types.CloneStatusCloned)
+	// Two repos got cloned bgbin
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloned)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[1], types.CloneStbtusCloned)
 	// One repo gets corrupted
-	logCorruption(t, db, repos[1].Name, shards[1], "internet corrupted repo")
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		// Total, Cloning changed. Added Cloned and Corrupted
-		Total: 5, SoftDeleted: 1, Cloned: 2, Cloning: 3, FailedFetch: 3, Corrupted: 1,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 1, Cloned: 1, Cloning: 0, FailedFetch: 1, NotCloned: 0, Corrupted: 0},
-		{ShardID: shards[1], Total: 2, Cloned: 1, Cloning: 1, FailedFetch: 1, NotCloned: 0, Corrupted: 1},
-		{ShardID: shards[2], Total: 3, Cloned: 0, Cloning: 2, FailedFetch: 1, NotCloned: 1, Corrupted: 0},
+	logCorruption(t, db, repos[1].Nbme, shbrds[1], "internet corrupted repo")
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		// Totbl, Cloning chbnged. Added Cloned bnd Corrupted
+		Totbl: 5, SoftDeleted: 1, Cloned: 2, Cloning: 3, FbiledFetch: 3, Corrupted: 1,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 1, Cloned: 1, Cloning: 0, FbiledFetch: 1, NotCloned: 0, Corrupted: 0},
+		{ShbrdID: shbrds[1], Totbl: 2, Cloned: 1, Cloning: 1, FbiledFetch: 1, NotCloned: 0, Corrupted: 1},
+		{ShbrdID: shbrds[2], Totbl: 3, Cloned: 0, Cloning: 2, FbiledFetch: 1, NotCloned: 1, Corrupted: 0},
 	})
 	// Another repo gets corrupted!
-	logCorruption(t, db, repos[0].Name, shards[0], "corrupted! the internet is unhinged")
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		// Only Corrupted changed
-		Total: 5, SoftDeleted: 1, Cloned: 2, Cloning: 3, FailedFetch: 3, Corrupted: 2,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 1, Cloned: 1, Cloning: 0, FailedFetch: 1, NotCloned: 0, Corrupted: 1},
-		{ShardID: shards[1], Total: 2, Cloned: 1, Cloning: 1, FailedFetch: 1, NotCloned: 0, Corrupted: 1},
-		{ShardID: shards[2], Total: 3, Cloned: 0, Cloning: 2, FailedFetch: 1, NotCloned: 1, Corrupted: 0},
+	logCorruption(t, db, repos[0].Nbme, shbrds[0], "corrupted! the internet is unhinged")
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		// Only Corrupted chbnged
+		Totbl: 5, SoftDeleted: 1, Cloned: 2, Cloning: 3, FbiledFetch: 3, Corrupted: 2,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 1, Cloned: 1, Cloning: 0, FbiledFetch: 1, NotCloned: 0, Corrupted: 1},
+		{ShbrdID: shbrds[1], Totbl: 2, Cloned: 1, Cloning: 1, FbiledFetch: 1, NotCloned: 0, Corrupted: 1},
+		{ShbrdID: shbrds[2], Totbl: 3, Cloned: 0, Cloning: 2, FbiledFetch: 1, NotCloned: 1, Corrupted: 0},
 	})
 }
 
-func TestRepoStatistics_RecloneAndCorruption(t *testing.T) {
+func TestRepoStbtistics_RecloneAndCorruption(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &repoStbtisticsStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	shards := []string{
-		"shard-1",
-		"shard-2",
-		"shard-3",
+	shbrds := []string{
+		"shbrd-1",
+		"shbrd-2",
+		"shbrd-3",
 	}
 	repos := types.Repos{
-		&types.Repo{Name: "repo1"},
-		&types.Repo{Name: "repo2"},
+		&types.Repo{Nbme: "repo1"},
+		&types.Repo{Nbme: "repo2"},
 	}
 
-	createTestRepos(ctx, t, db, repos)
+	crebteTestRepos(ctx, t, db, repos)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, NotCloned: 2, SoftDeleted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: "", Total: 2, NotCloned: 2},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, NotCloned: 2, SoftDeleted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: "", Totbl: 2, NotCloned: 2},
 	})
-	// Repos start cloning, all onto shard-1
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, Cloning: 2, SoftDeleted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: "shard-1", Total: 2, Cloning: 2},
+	// Repos stbrt cloning, bll onto shbrd-1
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[0], types.CloneStbtusCloning)
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, Cloning: 2, SoftDeleted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: "shbrd-1", Totbl: 2, Cloning: 2},
 	})
 	// Cloning complete
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloned)
-	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloned)
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, Cloned: 2, SoftDeleted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: "shard-1", Total: 2, Cloned: 2},
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloned)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[0], types.CloneStbtusCloned)
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, Cloned: 2, SoftDeleted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: "shbrd-1", Totbl: 2, Cloned: 2},
 	})
 	// both repos get corrupted
-	logCorruption(t, db, repos[0].Name, shards[0], "shard-1 corruption")
-	logCorruption(t, db, repos[1].Name, shards[0], "shard-1 corruption")
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 2,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: "shard-1", Total: 2, Cloned: 2, Corrupted: 2},
+	logCorruption(t, db, repos[0].Nbme, shbrds[0], "shbrd-1 corruption")
+	logCorruption(t, db, repos[1].Nbme, shbrds[0], "shbrd-1 corruption")
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 2,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: "shbrd-1", Totbl: 2, Cloned: 2, Corrupted: 2},
 	})
-	// We reclone repo 0 on shard-1 and repo-1 on shard-2
-	// Why don't we set the status directly to cloned? A status update requires
-	// the status to be distinct from the current status
+	// We reclone repo 0 on shbrd-1 bnd repo-1 on shbrd-2
+	// Why don't we set the stbtus directly to cloned? A stbtus updbte requires
+	// the stbtus to be distinct from the current stbtus
 	//
-	// Corrupted should now be 0 for all shards
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[1].Name, shards[1], types.CloneStatusCloning)
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, Cloning: 2, SoftDeleted: 0, Corrupted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: "shard-1", Total: 1, Cloning: 1, Corrupted: 0},
-		{ShardID: "shard-2", Total: 1, Cloning: 1, Corrupted: 0},
+	// Corrupted should now be 0 for bll shbrds
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[1], types.CloneStbtusCloning)
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, Cloning: 2, SoftDeleted: 0, Corrupted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: "shbrd-1", Totbl: 1, Cloning: 1, Corrupted: 0},
+		{ShbrdID: "shbrd-2", Totbl: 1, Cloning: 1, Corrupted: 0},
 	})
 	// Done cloning!
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloned)
-	setCloneStatus(t, db, repos[1].Name, shards[1], types.CloneStatusCloned)
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: "shard-1", Total: 1, Cloned: 1, Corrupted: 0},
-		{ShardID: "shard-2", Total: 1, Cloned: 1, Corrupted: 0},
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloned)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[1], types.CloneStbtusCloned)
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: "shbrd-1", Totbl: 1, Cloned: 1, Corrupted: 0},
+		{ShbrdID: "shbrd-2", Totbl: 1, Cloned: 1, Corrupted: 0},
 	})
-	// Repo 1 now gets corrupted AGAIN on shard-2
-	logCorruption(t, db, repos[1].Name, shards[1], "shard-2 corruption")
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 1,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: "shard-1", Total: 1, Cloned: 1, Corrupted: 0},
-		{ShardID: "shard-2", Total: 1, Cloned: 1, Corrupted: 1},
+	// Repo 1 now gets corrupted AGAIN on shbrd-2
+	logCorruption(t, db, repos[1].Nbme, shbrds[1], "shbrd-2 corruption")
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 2, Cloned: 2, SoftDeleted: 0, Corrupted: 1,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: "shbrd-1", Totbl: 1, Cloned: 1, Corrupted: 0},
+		{ShbrdID: "shbrd-2", Totbl: 1, Cloned: 1, Corrupted: 1},
 	})
 }
 
-func TestRepoStatistics_DeleteAndUndelete(t *testing.T) {
+func TestRepoStbtistics_DeleteAndUndelete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &repoStbtisticsStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	shards := []string{
-		"shard-1",
-		"shard-2",
-		"shard-3",
+	shbrds := []string{
+		"shbrd-1",
+		"shbrd-2",
+		"shbrd-3",
 	}
 	repos := types.Repos{
-		&types.Repo{Name: "repo1"},
-		&types.Repo{Name: "repo2"},
-		&types.Repo{Name: "repo3"},
-		&types.Repo{Name: "repo4"},
-		&types.Repo{Name: "repo5"},
-		&types.Repo{Name: "repo6"},
+		&types.Repo{Nbme: "repo1"},
+		&types.Repo{Nbme: "repo2"},
+		&types.Repo{Nbme: "repo3"},
+		&types.Repo{Nbme: "repo4"},
+		&types.Repo{Nbme: "repo5"},
+		&types.Repo{Nbme: "repo6"},
 	}
 
-	createTestRepos(ctx, t, db, repos)
+	crebteTestRepos(ctx, t, db, repos)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, NotCloned: 6, SoftDeleted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: "", Total: 6, NotCloned: 6},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, NotCloned: 6, SoftDeleted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: "", Totbl: 6, NotCloned: 6},
 	})
 
-	// Move to to shards[0] as cloning
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[2].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[3].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[4].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[5].Name, shards[0], types.CloneStatusCloning)
+	// Move to to shbrds[0] bs cloning
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[2].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[3].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[4].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[5].Nbme, shbrds[0], types.CloneStbtusCloning)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, SoftDeleted: 0, Cloning: 6,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 6, Cloning: 6},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, SoftDeleted: 0, Cloning: 6,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 6, Cloning: 6},
 	})
 
 	// Soft delete repos
 	if err := db.Repos().Delete(ctx, repos[2].ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	deletedRepoName := queryRepoName(t, ctx, s, repos[2].ID)
+	deletedRepoNbme := queryRepoNbme(t, ctx, s, repos[2].ID)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
 		// correct
-		Total: 5, SoftDeleted: 1, Cloning: 5,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 6, Cloning: 6},
+		Totbl: 5, SoftDeleted: 1, Cloning: 5,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 6, Cloning: 6},
 	})
 
-	// Until we remove it from disk in gitserver, which causes the clone status
+	// Until we remove it from disk in gitserver, which cbuses the clone stbtus
 	// to be set to not_cloned:
-	setCloneStatus(t, db, deletedRepoName, shards[0], types.CloneStatusNotCloned)
+	setCloneStbtus(t, db, deletedRepoNbme, shbrds[0], types.CloneStbtusNotCloned)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 5, SoftDeleted: 1, Cloning: 5,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 6, Cloning: 5, NotCloned: 1},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 5, SoftDeleted: 1, Cloning: 5,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 6, Cloning: 5, NotCloned: 1},
 	})
 
 	// Undelete it
-	err := s.Exec(ctx, sqlf.Sprintf("UPDATE repo SET deleted_at = NULL WHERE name = %s;", deletedRepoName))
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE repo SET deleted_bt = NULL WHERE nbme = %s;", deletedRepoNbme))
 	if err != nil {
-		t.Fatalf("failed to query repo name: %s", err)
+		t.Fbtblf("fbiled to query repo nbme: %s", err)
 	}
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, SoftDeleted: 0, Cloning: 5, NotCloned: 1,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 6, Cloning: 5, NotCloned: 1},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, SoftDeleted: 0, Cloning: 5, NotCloned: 1,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 6, Cloning: 5, NotCloned: 1},
 	})
 
-	// reshard and clone
-	setCloneStatus(t, db, deletedRepoName, shards[1], types.CloneStatusCloning)
+	// reshbrd bnd clone
+	setCloneStbtus(t, db, deletedRepoNbme, shbrds[1], types.CloneStbtusCloning)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, SoftDeleted: 0, Cloning: 6, NotCloned: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 5, Cloning: 5, NotCloned: 0},
-		{ShardID: shards[1], Total: 1, Cloning: 1, NotCloned: 0},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, SoftDeleted: 0, Cloning: 6, NotCloned: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 5, Cloning: 5, NotCloned: 0},
+		{ShbrdID: shbrds[1], Totbl: 1, Cloning: 1, NotCloned: 0},
 	})
 }
 
-func TestRepoStatistics_AvoidZeros(t *testing.T) {
+func TestRepoStbtistics_AvoidZeros(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &repoStbtisticsStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
 	repos := types.Repos{
-		&types.Repo{Name: "repo1"},
-		&types.Repo{Name: "repo2"},
-		&types.Repo{Name: "repo3"},
-		&types.Repo{Name: "repo4"},
-		&types.Repo{Name: "repo5"},
-		&types.Repo{Name: "repo6"},
+		&types.Repo{Nbme: "repo1"},
+		&types.Repo{Nbme: "repo2"},
+		&types.Repo{Nbme: "repo3"},
+		&types.Repo{Nbme: "repo4"},
+		&types.Repo{Nbme: "repo5"},
+		&types.Repo{Nbme: "repo6"},
 	}
 
-	createTestRepos(ctx, t, db, repos)
+	crebteTestRepos(ctx, t, db, repos)
 
-	assertRepoStatistics(t, ctx, s, RepoStatistics{
-		Total: 6, NotCloned: 6, SoftDeleted: 0,
-	}, []GitserverReposStatistic{
-		{ShardID: "", Total: 6, NotCloned: 6},
+	bssertRepoStbtistics(t, ctx, s, RepoStbtistics{
+		Totbl: 6, NotCloned: 6, SoftDeleted: 0,
+	}, []GitserverReposStbtistic{
+		{ShbrdID: "", Totbl: 6, NotCloned: 6},
 	})
 
-	wantCount := 2 // initial row and then the 6 repos
-	if count := queryRepoStatisticsCount(t, ctx, s); count != wantCount {
-		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	wbntCount := 2 // initibl row bnd then the 6 repos
+	if count := queryRepoStbtisticsCount(t, ctx, s); count != wbntCount {
+		t.Fbtblf("wrong stbtistics count. hbve=%d, wbnt=%d", count, wbntCount)
 	}
 
-	// Update a repo row, which should _not_ affect the statistics
-	err := s.Exec(ctx, sqlf.Sprintf("UPDATE repo SET updated_at = now() WHERE id = %s;", repos[0].ID))
+	// Updbte b repo row, which should _not_ bffect the stbtistics
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE repo SET updbted_bt = now() WHERE id = %s;", repos[0].ID))
 	if err != nil {
-		t.Fatalf("failed to query repo name: %s", err)
+		t.Fbtblf("fbiled to query repo nbme: %s", err)
 	}
 
-	// Count should stay the same
-	if count := queryRepoStatisticsCount(t, ctx, s); count != wantCount {
-		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	// Count should stby the sbme
+	if count := queryRepoStbtisticsCount(t, ctx, s); count != wbntCount {
+		t.Fbtblf("wrong stbtistics count. hbve=%d, wbnt=%d", count, wbntCount)
 	}
 
-	// Update a gitserver_repos row, which should _not_ affect the statistics
-	err = s.Exec(ctx, sqlf.Sprintf("UPDATE gitserver_repos SET updated_at = now() WHERE repo_id = %s;", repos[0].ID))
+	// Updbte b gitserver_repos row, which should _not_ bffect the stbtistics
+	err = s.Exec(ctx, sqlf.Sprintf("UPDATE gitserver_repos SET updbted_bt = now() WHERE repo_id = %s;", repos[0].ID))
 	if err != nil {
-		t.Fatalf("failed to query repo name: %s", err)
+		t.Fbtblf("fbiled to query repo nbme: %s", err)
 	}
 
-	// Count should stay the same
-	if count := queryRepoStatisticsCount(t, ctx, s); count != wantCount {
-		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	// Count should stby the sbme
+	if count := queryRepoStbtisticsCount(t, ctx, s); count != wbntCount {
+		t.Fbtblf("wrong stbtistics count. hbve=%d, wbnt=%d", count, wbntCount)
 	}
 }
 
-func TestRepoStatistics_Compaction(t *testing.T) {
+func TestRepoStbtistics_Compbction(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	s := &repoStatisticsStore{Store: basestore.NewWithHandle(db.Handle())}
+	ctx := context.Bbckground()
+	s := &repoStbtisticsStore{Store: bbsestore.NewWithHbndle(db.Hbndle())}
 
-	shards := []string{
-		"shard-1",
-		"shard-2",
-		"shard-3",
+	shbrds := []string{
+		"shbrd-1",
+		"shbrd-2",
+		"shbrd-3",
 	}
 	repos := types.Repos{
-		&types.Repo{Name: "repo1"},
-		&types.Repo{Name: "repo2"},
-		&types.Repo{Name: "repo3"},
-		&types.Repo{Name: "repo4"},
-		&types.Repo{Name: "repo5"},
-		&types.Repo{Name: "repo6"},
+		&types.Repo{Nbme: "repo1"},
+		&types.Repo{Nbme: "repo2"},
+		&types.Repo{Nbme: "repo3"},
+		&types.Repo{Nbme: "repo4"},
+		&types.Repo{Nbme: "repo5"},
+		&types.Repo{Nbme: "repo6"},
 	}
 
-	// Trigger 10 insertions into repo_statistics table:
-	createTestRepos(ctx, t, db, repos)
-	setCloneStatus(t, db, repos[0].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[1].Name, shards[0], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[2].Name, shards[1], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[3].Name, shards[1], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[4].Name, shards[2], types.CloneStatusCloning)
-	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloning)
-	setLastError(t, db, repos[0].Name, shards[0], "internet broke repo-1")
-	setLastError(t, db, repos[4].Name, shards[2], "internet broke repo-5")
-	logCorruption(t, db, repos[2].Name, shards[1], "runaway corruption repo-3")
-	// Safety check that the counts are right:
-	wantRepoStatistics := RepoStatistics{
-		Total: 6, Cloning: 6, FailedFetch: 2, Corrupted: 1,
+	// Trigger 10 insertions into repo_stbtistics tbble:
+	crebteTestRepos(ctx, t, db, repos)
+	setCloneStbtus(t, db, repos[0].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[1].Nbme, shbrds[0], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[2].Nbme, shbrds[1], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[3].Nbme, shbrds[1], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[4].Nbme, shbrds[2], types.CloneStbtusCloning)
+	setCloneStbtus(t, db, repos[5].Nbme, shbrds[2], types.CloneStbtusCloning)
+	setLbstError(t, db, repos[0].Nbme, shbrds[0], "internet broke repo-1")
+	setLbstError(t, db, repos[4].Nbme, shbrds[2], "internet broke repo-5")
+	logCorruption(t, db, repos[2].Nbme, shbrds[1], "runbwby corruption repo-3")
+	// Sbfety check thbt the counts bre right:
+	wbntRepoStbtistics := RepoStbtistics{
+		Totbl: 6, Cloning: 6, FbiledFetch: 2, Corrupted: 1,
 	}
-	wantGitserverReposStatistics := []GitserverReposStatistic{
-		{ShardID: ""},
-		{ShardID: shards[0], Total: 2, Cloning: 2, FailedFetch: 1},
-		{ShardID: shards[1], Total: 2, Cloning: 2, FailedFetch: 0, Corrupted: 1},
-		{ShardID: shards[2], Total: 2, Cloning: 2, FailedFetch: 1},
+	wbntGitserverReposStbtistics := []GitserverReposStbtistic{
+		{ShbrdID: ""},
+		{ShbrdID: shbrds[0], Totbl: 2, Cloning: 2, FbiledFetch: 1},
+		{ShbrdID: shbrds[1], Totbl: 2, Cloning: 2, FbiledFetch: 0, Corrupted: 1},
+		{ShbrdID: shbrds[2], Totbl: 2, Cloning: 2, FbiledFetch: 1},
 	}
-	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
+	bssertRepoStbtistics(t, ctx, s, wbntRepoStbtistics, wbntGitserverReposStbtistics)
 
-	// The initial insert in the migration also added a row, which means we want:
-	wantCount := 11
-	count := queryRepoStatisticsCount(t, ctx, s)
-	if count != wantCount {
-		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	// The initibl insert in the migrbtion blso bdded b row, which mebns we wbnt:
+	wbntCount := 11
+	count := queryRepoStbtisticsCount(t, ctx, s)
+	if count != wbntCount {
+		t.Fbtblf("wrong stbtistics count. hbve=%d, wbnt=%d", count, wbntCount)
 	}
 
-	// Now we compact the rows into a single row:
-	if err := s.CompactRepoStatistics(ctx); err != nil {
-		t.Fatalf("GetRepoStatistics failed: %s", err)
+	// Now we compbct the rows into b single row:
+	if err := s.CompbctRepoStbtistics(ctx); err != nil {
+		t.Fbtblf("GetRepoStbtistics fbiled: %s", err)
 	}
 
 	// We should be left with 1 row
-	wantCount = 1
-	count = queryRepoStatisticsCount(t, ctx, s)
-	if count != wantCount {
-		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	wbntCount = 1
+	count = queryRepoStbtisticsCount(t, ctx, s)
+	if count != wbntCount {
+		t.Fbtblf("wrong stbtistics count. hbve=%d, wbnt=%d", count, wbntCount)
 	}
 
-	// And counts should still be the same
-	assertRepoStatistics(t, ctx, s, wantRepoStatistics, wantGitserverReposStatistics)
+	// And counts should still be the sbme
+	bssertRepoStbtistics(t, ctx, s, wbntRepoStbtistics, wbntGitserverReposStbtistics)
 
-	// Safety check: add another event and make sure row count goes up again
-	setCloneStatus(t, db, repos[5].Name, shards[2], types.CloneStatusCloned)
-	wantCount = 2
-	count = queryRepoStatisticsCount(t, ctx, s)
-	if count != wantCount {
-		t.Fatalf("wrong statistics count. have=%d, want=%d", count, wantCount)
+	// Sbfety check: bdd bnother event bnd mbke sure row count goes up bgbin
+	setCloneStbtus(t, db, repos[5].Nbme, shbrds[2], types.CloneStbtusCloned)
+	wbntCount = 2
+	count = queryRepoStbtisticsCount(t, ctx, s)
+	if count != wbntCount {
+		t.Fbtblf("wrong stbtistics count. hbve=%d, wbnt=%d", count, wbntCount)
 	}
 }
 
-func queryRepoName(t *testing.T, ctx context.Context, s *repoStatisticsStore, repoID api.RepoID) api.RepoName {
+func queryRepoNbme(t *testing.T, ctx context.Context, s *repoStbtisticsStore, repoID bpi.RepoID) bpi.RepoNbme {
 	t.Helper()
-	var name api.RepoName
-	err := s.QueryRow(ctx, sqlf.Sprintf("SELECT name FROM repo WHERE id = %s", repoID)).Scan(&name)
+	vbr nbme bpi.RepoNbme
+	err := s.QueryRow(ctx, sqlf.Sprintf("SELECT nbme FROM repo WHERE id = %s", repoID)).Scbn(&nbme)
 	if err != nil {
-		t.Fatalf("failed to query repo name: %s", err)
+		t.Fbtblf("fbiled to query repo nbme: %s", err)
 	}
-	return name
+	return nbme
 }
 
-func queryRepoStatisticsCount(t *testing.T, ctx context.Context, s *repoStatisticsStore) int {
+func queryRepoStbtisticsCount(t *testing.T, ctx context.Context, s *repoStbtisticsStore) int {
 	t.Helper()
-	var count int
-	err := s.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM repo_statistics;")).Scan(&count)
+	vbr count int
+	err := s.QueryRow(ctx, sqlf.Sprintf("SELECT COUNT(*) FROM repo_stbtistics;")).Scbn(&count)
 	if err != nil {
-		t.Fatalf("failed to query repo name: %s", err)
+		t.Fbtblf("fbiled to query repo nbme: %s", err)
 	}
 	return count
 }
 
-func setCloneStatus(t *testing.T, db DB, repoName api.RepoName, shard string, status types.CloneStatus) {
+func setCloneStbtus(t *testing.T, db DB, repoNbme bpi.RepoNbme, shbrd string, stbtus types.CloneStbtus) {
 	t.Helper()
-	if err := db.GitserverRepos().SetCloneStatus(context.Background(), repoName, status, shard); err != nil {
-		t.Fatalf("failed to set clone status for repo %s: %s", repoName, err)
+	if err := db.GitserverRepos().SetCloneStbtus(context.Bbckground(), repoNbme, stbtus, shbrd); err != nil {
+		t.Fbtblf("fbiled to set clone stbtus for repo %s: %s", repoNbme, err)
 	}
 }
 
-func setLastError(t *testing.T, db DB, repoName api.RepoName, shard string, msg string) {
+func setLbstError(t *testing.T, db DB, repoNbme bpi.RepoNbme, shbrd string, msg string) {
 	t.Helper()
-	if err := db.GitserverRepos().SetLastError(context.Background(), repoName, msg, shard); err != nil {
-		t.Fatalf("failed to set clone status for repo %s: %s", repoName, err)
+	if err := db.GitserverRepos().SetLbstError(context.Bbckground(), repoNbme, msg, shbrd); err != nil {
+		t.Fbtblf("fbiled to set clone stbtus for repo %s: %s", repoNbme, err)
 	}
 }
 
-func logCorruption(t *testing.T, db DB, repoName api.RepoName, shard string, msg string) {
+func logCorruption(t *testing.T, db DB, repoNbme bpi.RepoNbme, shbrd string, msg string) {
 	t.Helper()
-	if err := db.GitserverRepos().LogCorruption(context.Background(), repoName, msg, shard); err != nil {
-		t.Fatalf("failed to log corruption for repo %s: %s", repoName, err)
+	if err := db.GitserverRepos().LogCorruption(context.Bbckground(), repoNbme, msg, shbrd); err != nil {
+		t.Fbtblf("fbiled to log corruption for repo %s: %s", repoNbme, err)
 	}
 }
 
-func assertRepoStatistics(t *testing.T, ctx context.Context, s RepoStatisticsStore, wantRepoStats RepoStatistics, wantGitserverStats []GitserverReposStatistic) {
+func bssertRepoStbtistics(t *testing.T, ctx context.Context, s RepoStbtisticsStore, wbntRepoStbts RepoStbtistics, wbntGitserverStbts []GitserverReposStbtistic) {
 	t.Helper()
 
-	haveRepoStats, err := s.GetRepoStatistics(ctx)
+	hbveRepoStbts, err := s.GetRepoStbtistics(ctx)
 	if err != nil {
-		t.Fatalf("GetRepoStatistics failed: %s", err)
+		t.Fbtblf("GetRepoStbtistics fbiled: %s", err)
 	}
 
-	if diff := cmp.Diff(haveRepoStats, wantRepoStats); diff != "" {
-		t.Errorf("repoStatistics differ: %s", diff)
+	if diff := cmp.Diff(hbveRepoStbts, wbntRepoStbts); diff != "" {
+		t.Errorf("repoStbtistics differ: %s", diff)
 	}
 
-	haveGitserverStats, err := s.GetGitserverReposStatistics(ctx)
+	hbveGitserverStbts, err := s.GetGitserverReposStbtistics(ctx)
 	if err != nil {
-		t.Fatalf("GetRepoStatistics failed: %s", err)
+		t.Fbtblf("GetRepoStbtistics fbiled: %s", err)
 	}
 
-	type Stat = GitserverReposStatistic
-	lessThan := func(s1 Stat, s2 Stat) bool { return s1.ShardID < s2.ShardID }
-	if diff := cmp.Diff(haveGitserverStats, wantGitserverStats, cmpopts.SortSlices(lessThan)); diff != "" {
-		t.Fatalf("gitserverReposStatistics differ: %s", diff)
+	type Stbt = GitserverReposStbtistic
+	lessThbn := func(s1 Stbt, s2 Stbt) bool { return s1.ShbrdID < s2.ShbrdID }
+	if diff := cmp.Diff(hbveGitserverStbts, wbntGitserverStbts, cmpopts.SortSlices(lessThbn)); diff != "" {
+		t.Fbtblf("gitserverReposStbtistics differ: %s", diff)
 	}
 }

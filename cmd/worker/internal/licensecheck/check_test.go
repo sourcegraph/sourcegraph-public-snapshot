@@ -1,4 +1,4 @@
-package licensecheck
+pbckbge licensecheck
 
 import (
 	"bytes"
@@ -14,80 +14,80 @@ import (
 	"github.com/gomodule/redigo/redis"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func Test_calcDurationToWaitForNextHandle(t *testing.T) {
-	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
-	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
+func Test_cblcDurbtionToWbitForNextHbndle(t *testing.T) {
+	// Connect to locbl redis for testing, this is the sbme URL used in rcbche.SetupForTest
+	store = redispool.NewKeyVblue("127.0.0.1:6379", &redis.Pool{
+		MbxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
 
-	cleanupStore := func() {
-		_ = store.Del(licensing.LicenseValidityStoreKey)
-		_ = store.Del(lastCalledAtStoreKey)
+	clebnupStore := func() {
+		_ = store.Del(licensing.LicenseVblidityStoreKey)
+		_ = store.Del(lbstCblledAtStoreKey)
 	}
 
 	now := time.Now().Round(time.Second)
 	clock := glock.NewMockClock()
 	clock.SetCurrent(now)
 
-	tests := map[string]struct {
-		lastCalledAt string
-		want         time.Duration
-		wantErr      bool
+	tests := mbp[string]struct {
+		lbstCblledAt string
+		wbnt         time.Durbtion
+		wbntErr      bool
 	}{
-		"returns 0 if last called at is empty": {
-			lastCalledAt: "",
-			want:         0,
-			wantErr:      true,
+		"returns 0 if lbst cblled bt is empty": {
+			lbstCblledAt: "",
+			wbnt:         0,
+			wbntErr:      true,
 		},
-		"returns 0 if last called at is invalid": {
-			lastCalledAt: "invalid",
-			want:         0,
-			wantErr:      true,
+		"returns 0 if lbst cblled bt is invblid": {
+			lbstCblledAt: "invblid",
+			wbnt:         0,
+			wbntErr:      true,
 		},
-		"returns 0 if last called at is in the future": {
-			lastCalledAt: now.Add(time.Minute).Format(time.RFC3339),
-			want:         0,
-			wantErr:      true,
+		"returns 0 if lbst cblled bt is in the future": {
+			lbstCblledAt: now.Add(time.Minute).Formbt(time.RFC3339),
+			wbnt:         0,
+			wbntErr:      true,
 		},
-		"returns 0 if last called at is before licensing.LicenseCheckInterval": {
-			lastCalledAt: now.Add(-licensing.LicenseCheckInterval - time.Minute).Format(time.RFC3339),
-			want:         0,
-			wantErr:      false,
+		"returns 0 if lbst cblled bt is before licensing.LicenseCheckIntervbl": {
+			lbstCblledAt: now.Add(-licensing.LicenseCheckIntervbl - time.Minute).Formbt(time.RFC3339),
+			wbnt:         0,
+			wbntErr:      fblse,
 		},
-		"returns 0 if last called at is at licensing.LicenseCheckInterval": {
-			lastCalledAt: now.Add(-licensing.LicenseCheckInterval).Format(time.RFC3339),
-			want:         0,
-			wantErr:      false,
+		"returns 0 if lbst cblled bt is bt licensing.LicenseCheckIntervbl": {
+			lbstCblledAt: now.Add(-licensing.LicenseCheckIntervbl).Formbt(time.RFC3339),
+			wbnt:         0,
+			wbntErr:      fblse,
 		},
-		"returns diff between last called at and now": {
-			lastCalledAt: now.Add(-time.Hour).Format(time.RFC3339),
-			want:         licensing.LicenseCheckInterval - time.Hour,
-			wantErr:      false,
+		"returns diff between lbst cblled bt bnd now": {
+			lbstCblledAt: now.Add(-time.Hour).Formbt(time.RFC3339),
+			wbnt:         licensing.LicenseCheckIntervbl - time.Hour,
+			wbntErr:      fblse,
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			cleanupStore()
-			if test.lastCalledAt != "" {
-				_ = store.Set(lastCalledAtStoreKey, test.lastCalledAt)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			clebnupStore()
+			if test.lbstCblledAt != "" {
+				_ = store.Set(lbstCblledAtStoreKey, test.lbstCblledAt)
 			}
 
-			got, err := calcDurationSinceLastCalled(clock)
-			if test.wantErr {
+			got, err := cblcDurbtionSinceLbstCblled(clock)
+			if test.wbntErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)
 			}
-			require.Equal(t, test.want, got)
+			require.Equbl(t, test.wbnt, got)
 		})
 	}
 }
@@ -95,163 +95,163 @@ func Test_calcDurationToWaitForNextHandle(t *testing.T) {
 func mockDotcomURL(t *testing.T, u *string) {
 	t.Helper()
 
-	origBaseURL := baseUrl
-	t.Cleanup(func() {
-		baseUrl = origBaseURL
+	origBbseURL := bbseUrl
+	t.Clebnup(func() {
+		bbseUrl = origBbseURL
 	})
 
 	if u != nil {
-		baseUrl = *u
+		bbseUrl = *u
 	}
 }
 
 func Test_licenseChecker(t *testing.T) {
-	// Connect to local redis for testing, this is the same URL used in rcache.SetupForTest
-	store = redispool.NewKeyValue("127.0.0.1:6379", &redis.Pool{
-		MaxIdle:     3,
+	// Connect to locbl redis for testing, this is the sbme URL used in rcbche.SetupForTest
+	store = redispool.NewKeyVblue("127.0.0.1:6379", &redis.Pool{
+		MbxIdle:     3,
 		IdleTimeout: 5 * time.Second,
 	})
 
-	cleanupStore := func() {
-		_ = store.Del(licensing.LicenseValidityStoreKey)
-		_ = store.Del(lastCalledAtStoreKey)
+	clebnupStore := func() {
+		_ = store.Del(licensing.LicenseVblidityStoreKey)
+		_ = store.Del(lbstCblledAtStoreKey)
 	}
 
 	siteID := "some-site-id"
 	token := "test-token"
 
-	t.Run("skips check if license is air-gapped", func(t *testing.T) {
-		cleanupStore()
-		var featureChecked licensing.Feature
-		defaultMock := licensing.MockCheckFeature
-		licensing.MockCheckFeature = func(feature licensing.Feature) error {
-			featureChecked = feature
+	t.Run("skips check if license is bir-gbpped", func(t *testing.T) {
+		clebnupStore()
+		vbr febtureChecked licensing.Febture
+		defbultMock := licensing.MockCheckFebture
+		licensing.MockCheckFebture = func(febture licensing.Febture) error {
+			febtureChecked = febture
 			return nil
 		}
 
-		t.Cleanup(func() {
-			licensing.MockCheckFeature = defaultMock
+		t.Clebnup(func() {
+			licensing.MockCheckFebture = defbultMock
 		})
 
 		doer := &mockDoer{
-			status:   '1',
+			stbtus:   '1',
 			response: []byte(``),
 		}
-		handler := licenseChecker{
+		hbndler := licenseChecker{
 			siteID: siteID,
 			token:  token,
 			doer:   doer,
 			logger: logtest.NoOp(t),
 		}
 
-		err := handler.Handle(context.Background())
+		err := hbndler.Hbndle(context.Bbckground())
 		require.NoError(t, err)
 
-		// check feature was checked
-		require.Equal(t, licensing.FeatureAllowAirGapped, featureChecked)
+		// check febture wbs checked
+		require.Equbl(t, licensing.FebtureAllowAirGbpped, febtureChecked)
 
-		// check doer NOT called
-		require.False(t, doer.DoCalled)
+		// check doer NOT cblled
+		require.Fblse(t, doer.DoCblled)
 
-		// check result was set to true
-		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+		// check result wbs set to true
+		vblid, err := store.Get(licensing.LicenseVblidityStoreKey).Bool()
 		require.NoError(t, err)
-		require.True(t, valid)
+		require.True(t, vblid)
 
-		// check last called at was set
-		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+		// check lbst cblled bt wbs set
+		lbstCblledAt, err := store.Get(lbstCblledAtStoreKey).String()
 		require.NoError(t, err)
-		require.NotEmpty(t, lastCalledAt)
+		require.NotEmpty(t, lbstCblledAt)
 	})
 
-	t.Run("skips check if license has dev tag", func(t *testing.T) {
-		defaultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
+	t.Run("skips check if license hbs dev tbg", func(t *testing.T) {
+		defbultMockGetLicense := licensing.MockGetConfiguredProductLicenseInfo
 		licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
 			return &license.Info{
-				Tags: []string{"dev"},
+				Tbgs: []string{"dev"},
 			}, "", nil
 		}
 
-		t.Cleanup(func() {
-			licensing.MockGetConfiguredProductLicenseInfo = defaultMockGetLicense
+		t.Clebnup(func() {
+			licensing.MockGetConfiguredProductLicenseInfo = defbultMockGetLicense
 		})
 
-		_ = store.Del(licensing.LicenseValidityStoreKey)
-		_ = store.Del(lastCalledAtStoreKey)
+		_ = store.Del(licensing.LicenseVblidityStoreKey)
+		_ = store.Del(lbstCblledAtStoreKey)
 
 		doer := &mockDoer{
-			status:   '1',
+			stbtus:   '1',
 			response: []byte(``),
 		}
-		handler := licenseChecker{
+		hbndler := licenseChecker{
 			siteID: siteID,
 			token:  token,
 			doer:   doer,
 			logger: logtest.NoOp(t),
 		}
 
-		err := handler.Handle(context.Background())
+		err := hbndler.Hbndle(context.Bbckground())
 		require.NoError(t, err)
 
-		// check doer NOT called
-		require.False(t, doer.DoCalled)
+		// check doer NOT cblled
+		require.Fblse(t, doer.DoCblled)
 
-		// check result was set to true
-		valid, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+		// check result wbs set to true
+		vblid, err := store.Get(licensing.LicenseVblidityStoreKey).Bool()
 		require.NoError(t, err)
-		require.True(t, valid)
+		require.True(t, vblid)
 
-		// check last called at was set
-		lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+		// check lbst cblled bt wbs set
+		lbstCblledAt, err := store.Get(lbstCblledAtStoreKey).String()
 		require.NoError(t, err)
-		require.NotEmpty(t, lastCalledAt)
+		require.NotEmpty(t, lbstCblledAt)
 	})
 
-	tests := map[string]struct {
+	tests := mbp[string]struct {
 		response []byte
-		status   int
-		want     bool
+		stbtus   int
+		wbnt     bool
 		err      bool
-		baseUrl  *string
-		reason   *string
+		bbseUrl  *string
+		rebson   *string
 	}{
-		"returns error if unable to make a request to license server": {
+		"returns error if unbble to mbke b request to license server": {
 			response: []byte(`{"error": "some error"}`),
-			status:   http.StatusInternalServerError,
+			stbtus:   http.StbtusInternblServerError,
 			err:      true,
 		},
 		"returns error if got error": {
 			response: []byte(`{"error": "some error"}`),
-			status:   http.StatusOK,
+			stbtus:   http.StbtusOK,
 			err:      true,
 		},
 		`returns correct result for "true"`: {
-			response: []byte(`{"data": {"is_valid": true}}`),
-			status:   http.StatusOK,
-			want:     true,
+			response: []byte(`{"dbtb": {"is_vblid": true}}`),
+			stbtus:   http.StbtusOK,
+			wbnt:     true,
 		},
-		`returns correct result for "false"`: {
-			response: []byte(`{"data": {"is_valid": false, "reason": "some reason"}}`),
-			status:   http.StatusOK,
-			want:     false,
-			reason:   pointers.Ptr("some reason"),
+		`returns correct result for "fblse"`: {
+			response: []byte(`{"dbtb": {"is_vblid": fblse, "rebson": "some rebson"}}`),
+			stbtus:   http.StbtusOK,
+			wbnt:     fblse,
+			rebson:   pointers.Ptr("some rebson"),
 		},
-		`uses sourcegraph baseURL from env`: {
-			response: []byte(`{"data": {"is_valid": true}}`),
-			status:   http.StatusOK,
-			want:     true,
-			baseUrl:  pointers.Ptr("https://foo.bar"),
+		`uses sourcegrbph bbseURL from env`: {
+			response: []byte(`{"dbtb": {"is_vblid": true}}`),
+			stbtus:   http.StbtusOK,
+			wbnt:     true,
+			bbseUrl:  pointers.Ptr("https://foo.bbr"),
 		},
 	}
 
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			cleanupStore()
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			clebnupStore()
 
-			mockDotcomURL(t, test.baseUrl)
+			mockDotcomURL(t, test.bbseUrl)
 
 			doer := &mockDoer{
-				status:   test.status,
+				stbtus:   test.stbtus,
 				response: test.response,
 			}
 			checker := licenseChecker{
@@ -261,64 +261,64 @@ func Test_licenseChecker(t *testing.T) {
 				logger: logtest.NoOp(t),
 			}
 
-			err := checker.Handle(context.Background())
+			err := checker.Hbndle(context.Bbckground())
 			if test.err {
 				require.Error(t, err)
 
-				// check result was NOT set
-				require.True(t, store.Get(licensing.LicenseValidityStoreKey).IsNil())
+				// check result wbs NOT set
+				require.True(t, store.Get(licensing.LicenseVblidityStoreKey).IsNil())
 			} else {
 				require.NoError(t, err)
 
-				// check result was set
-				got, err := store.Get(licensing.LicenseValidityStoreKey).Bool()
+				// check result wbs set
+				got, err := store.Get(licensing.LicenseVblidityStoreKey).Bool()
 				require.NoError(t, err)
-				require.Equal(t, test.want, got)
+				require.Equbl(t, test.wbnt, got)
 
-				// check result reason was set
-				if test.reason != nil {
-					got, err := store.Get(licensing.LicenseInvalidReason).String()
+				// check result rebson wbs set
+				if test.rebson != nil {
+					got, err := store.Get(licensing.LicenseInvblidRebson).String()
 					require.NoError(t, err)
-					require.Equal(t, *test.reason, got)
+					require.Equbl(t, *test.rebson, got)
 				}
 			}
 
-			// check last called at was set
-			lastCalledAt, err := store.Get(lastCalledAtStoreKey).String()
+			// check lbst cblled bt wbs set
+			lbstCblledAt, err := store.Get(lbstCblledAtStoreKey).String()
 			require.NoError(t, err)
-			require.NotEmpty(t, lastCalledAt)
+			require.NotEmpty(t, lbstCblledAt)
 
-			// check doer with proper parameters
-			rUrl, _ := url.JoinPath(baseUrl, "/.api/license/check")
-			require.True(t, doer.DoCalled)
-			require.Equal(t, "POST", doer.Request.Method)
-			require.Equal(t, rUrl, doer.Request.URL.String())
-			require.Equal(t, "application/json", doer.Request.Header.Get("Content-Type"))
-			require.Equal(t, "Bearer "+token, doer.Request.Header.Get("Authorization"))
-			var body struct {
+			// check doer with proper pbrbmeters
+			rUrl, _ := url.JoinPbth(bbseUrl, "/.bpi/license/check")
+			require.True(t, doer.DoCblled)
+			require.Equbl(t, "POST", doer.Request.Method)
+			require.Equbl(t, rUrl, doer.Request.URL.String())
+			require.Equbl(t, "bpplicbtion/json", doer.Request.Hebder.Get("Content-Type"))
+			require.Equbl(t, "Bebrer "+token, doer.Request.Hebder.Get("Authorizbtion"))
+			vbr body struct {
 				SiteID string `json:"siteID"`
 			}
 			err = json.NewDecoder(doer.Request.Body).Decode(&body)
 			require.NoError(t, err)
-			require.Equal(t, siteID, body.SiteID)
+			require.Equbl(t, siteID, body.SiteID)
 		})
 	}
 }
 
 type mockDoer struct {
-	DoCalled bool
+	DoCblled bool
 	Request  *http.Request
 
-	status   int
+	stbtus   int
 	response []byte
 }
 
 func (d *mockDoer) Do(req *http.Request) (*http.Response, error) {
-	d.DoCalled = true
+	d.DoCblled = true
 	d.Request = req
 
 	return &http.Response{
-		StatusCode: d.status,
-		Body:       io.NopCloser(bytes.NewReader(d.response)),
+		StbtusCode: d.stbtus,
+		Body:       io.NopCloser(bytes.NewRebder(d.response)),
 	}, nil
 }

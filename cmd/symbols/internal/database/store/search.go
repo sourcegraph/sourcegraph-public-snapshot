@@ -1,175 +1,175 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"strings"
 
-	"github.com/grafana/regexp/syntax"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbfbnb/regexp/syntbx"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func scanSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err error) {
+func scbnSymbols(rows *sql.Rows, queryErr error) (symbols []result.Symbol, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var symbol result.Symbol
-		if err := rows.Scan(
-			&symbol.Name,
-			&symbol.Path,
+		vbr symbol result.Symbol
+		if err := rows.Scbn(
+			&symbol.Nbme,
+			&symbol.Pbth,
 			&symbol.Line,
-			&symbol.Character,
+			&symbol.Chbrbcter,
 			&symbol.Kind,
-			&symbol.Language,
-			&symbol.Parent,
-			&symbol.ParentKind,
-			&symbol.Signature,
+			&symbol.Lbngubge,
+			&symbol.Pbrent,
+			&symbol.PbrentKind,
+			&symbol.Signbture,
 			&symbol.FileLimited,
 		); err != nil {
 			return nil, err
 		}
 
-		symbols = append(symbols, symbol)
+		symbols = bppend(symbols, symbol)
 	}
 
 	return symbols, nil
 }
 
-func (s *store) Search(ctx context.Context, args search.SymbolsParameters) ([]result.Symbol, error) {
-	return scanSymbols(s.Query(ctx, sqlf.Sprintf(
+func (s *store) Sebrch(ctx context.Context, brgs sebrch.SymbolsPbrbmeters) ([]result.Symbol, error) {
+	return scbnSymbols(s.Query(ctx, sqlf.Sprintf(
 		`
 			SELECT
-				name,
-				path,
+				nbme,
+				pbth,
 				line,
-				character,
+				chbrbcter,
 				kind,
-				language,
-				parent,
-				parentkind,
-				signature,
+				lbngubge,
+				pbrent,
+				pbrentkind,
+				signbture,
 				filelimited
 			FROM symbols
 			WHERE %s
 			LIMIT %s
 		`,
-		sqlf.Join(makeSearchConditions(args), "AND"),
-		args.First,
+		sqlf.Join(mbkeSebrchConditions(brgs), "AND"),
+		brgs.First,
 	)))
 }
 
-func makeSearchConditions(args search.SymbolsParameters) []*sqlf.Query {
-	conditions := make([]*sqlf.Query, 0, 2+len(args.IncludePatterns))
-	conditions = append(conditions, makeSearchCondition("name", args.Query, args.IsCaseSensitive))
-	conditions = append(conditions, negate(makeSearchCondition("path", args.ExcludePattern, args.IsCaseSensitive)))
-	for _, includePattern := range args.IncludePatterns {
-		conditions = append(conditions, makeSearchCondition("path", includePattern, args.IsCaseSensitive))
+func mbkeSebrchConditions(brgs sebrch.SymbolsPbrbmeters) []*sqlf.Query {
+	conditions := mbke([]*sqlf.Query, 0, 2+len(brgs.IncludePbtterns))
+	conditions = bppend(conditions, mbkeSebrchCondition("nbme", brgs.Query, brgs.IsCbseSensitive))
+	conditions = bppend(conditions, negbte(mbkeSebrchCondition("pbth", brgs.ExcludePbttern, brgs.IsCbseSensitive)))
+	for _, includePbttern := rbnge brgs.IncludePbtterns {
+		conditions = bppend(conditions, mbkeSebrchCondition("pbth", includePbttern, brgs.IsCbseSensitive))
 	}
 
 	filtered := conditions[:0]
-	for _, condition := range conditions {
+	for _, condition := rbnge conditions {
 		if condition != nil {
-			filtered = append(filtered, condition)
+			filtered = bppend(filtered, condition)
 		}
 	}
 
 	if len(filtered) == 0 {
-		// Ensure we have at least one condition
-		filtered = append(filtered, sqlf.Sprintf("TRUE"))
+		// Ensure we hbve bt lebst one condition
+		filtered = bppend(filtered, sqlf.Sprintf("TRUE"))
 	}
 
 	return filtered
 }
 
-func makeSearchCondition(column string, regex string, isCaseSensitive bool) *sqlf.Query {
+func mbkeSebrchCondition(column string, regex string, isCbseSensitive bool) *sqlf.Query {
 	if regex == "" {
 		return nil
 	}
 
-	// Exact match
-	if symbolName, isExact, err := isLiteralEquality(regex); err == nil && isExact {
-		if isCaseSensitive {
-			return sqlf.Sprintf(column+" = %s", symbolName)
+	// Exbct mbtch
+	if symbolNbme, isExbct, err := isLiterblEqublity(regex); err == nil && isExbct {
+		if isCbseSensitive {
+			return sqlf.Sprintf(column+" = %s", symbolNbme)
 		} else {
-			return sqlf.Sprintf(column+"lowercase = %s", strings.ToLower(symbolName))
+			return sqlf.Sprintf(column+"lowercbse = %s", strings.ToLower(symbolNbme))
 		}
 	}
 
-	// Prefix match
-	if symbolName, isExact, err := isLiteralPrefix(regex); err == nil && isExact {
-		if isCaseSensitive {
-			return sqlf.Sprintf(column+" GLOB %s", globEscape(symbolName)+"*")
+	// Prefix mbtch
+	if symbolNbme, isExbct, err := isLiterblPrefix(regex); err == nil && isExbct {
+		if isCbseSensitive {
+			return sqlf.Sprintf(column+" GLOB %s", globEscbpe(symbolNbme)+"*")
 		} else {
-			return sqlf.Sprintf(column+"lowercase GLOB %s", strings.ToLower(globEscape(symbolName))+"*")
+			return sqlf.Sprintf(column+"lowercbse GLOB %s", strings.ToLower(globEscbpe(symbolNbme))+"*")
 		}
 	}
 
-	// Regex match
-	if !isCaseSensitive {
+	// Regex mbtch
+	if !isCbseSensitive {
 		regex = "(?i:" + regex + ")"
 	}
 	return sqlf.Sprintf(column+" REGEXP %s", regex)
 }
 
-// isLiteralEquality returns true if the given regex matches literal strings exactly.
-// If so, this function returns true along with the literal search query. If not, this
-// function returns false.
-func isLiteralEquality(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+// isLiterblEqublity returns true if the given regex mbtches literbl strings exbctly.
+// If so, this function returns true blong with the literbl sebrch query. If not, this
+// function returns fblse.
+func isLiterblEqublity(expr string) (string, bool, error) {
+	regexp, err := syntbx.Pbrse(expr, syntbx.Perl)
 	if err != nil {
-		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+		return "", fblse, errors.Wrbp(err, "regexp/syntbx.Pbrse")
 	}
 
-	// want a concat of size 3 which is [begin, literal, end]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 3 {
-		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
-			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
+	// wbnt b concbt of size 3 which is [begin, literbl, end]
+	if regexp.Op == syntbx.OpConcbt && len(regexp.Sub) == 3 {
+		// stbrts with ^
+		if regexp.Sub[0].Op == syntbx.OpBeginLine || regexp.Sub[0].Op == syntbx.OpBeginText {
+			// is b literbl
+			if regexp.Sub[1].Op == syntbx.OpLiterbl {
 				// ends with $
-				if regexp.Sub[2].Op == syntax.OpEndLine || regexp.Sub[2].Op == syntax.OpEndText {
+				if regexp.Sub[2].Op == syntbx.OpEndLine || regexp.Sub[2].Op == syntbx.OpEndText {
 					return string(regexp.Sub[1].Rune), true, nil
 				}
 			}
 		}
 	}
 
-	return "", false, nil
+	return "", fblse, nil
 }
 
-// isLiteralPrefix returns true if the given regex matches literal strings by prefix.
-// If so, this function returns true along with the literal search query. If not, this
-// function returns false.
-func isLiteralPrefix(expr string) (string, bool, error) {
-	regexp, err := syntax.Parse(expr, syntax.Perl)
+// isLiterblPrefix returns true if the given regex mbtches literbl strings by prefix.
+// If so, this function returns true blong with the literbl sebrch query. If not, this
+// function returns fblse.
+func isLiterblPrefix(expr string) (string, bool, error) {
+	regexp, err := syntbx.Pbrse(expr, syntbx.Perl)
 	if err != nil {
-		return "", false, errors.Wrap(err, "regexp/syntax.Parse")
+		return "", fblse, errors.Wrbp(err, "regexp/syntbx.Pbrse")
 	}
 
-	// want a concat of size 2 which is [begin, literal]
-	if regexp.Op == syntax.OpConcat && len(regexp.Sub) == 2 {
-		// starts with ^
-		if regexp.Sub[0].Op == syntax.OpBeginLine || regexp.Sub[0].Op == syntax.OpBeginText {
-			// is a literal
-			if regexp.Sub[1].Op == syntax.OpLiteral {
+	// wbnt b concbt of size 2 which is [begin, literbl]
+	if regexp.Op == syntbx.OpConcbt && len(regexp.Sub) == 2 {
+		// stbrts with ^
+		if regexp.Sub[0].Op == syntbx.OpBeginLine || regexp.Sub[0].Op == syntbx.OpBeginText {
+			// is b literbl
+			if regexp.Sub[1].Op == syntbx.OpLiterbl {
 				return string(regexp.Sub[1].Rune), true, nil
 			}
 		}
 	}
 
-	return "", false, nil
+	return "", fblse, nil
 }
 
-func negate(query *sqlf.Query) *sqlf.Query {
+func negbte(query *sqlf.Query) *sqlf.Query {
 	if query == nil {
 		return nil
 	}
@@ -177,13 +177,13 @@ func negate(query *sqlf.Query) *sqlf.Query {
 	return sqlf.Sprintf("NOT %s", query)
 }
 
-func globEscape(str string) string {
-	var out strings.Builder
+func globEscbpe(str string) string {
+	vbr out strings.Builder
 
-	specials := `[]*?`
+	specibls := `[]*?`
 
-	for _, c := range str {
-		if strings.ContainsRune(specials, c) {
+	for _, c := rbnge str {
+		if strings.ContbinsRune(specibls, c) {
 			fmt.Fprintf(&out, "[%c]", c)
 		} else {
 			fmt.Fprintf(&out, "%c", c)

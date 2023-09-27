@@ -1,201 +1,201 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"bytes"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"google.golang.org/protobuf/proto"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"google.golbng.org/protobuf/proto"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/ranges"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/rbnges"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-type qualifiedDocumentData struct {
-	UploadID int
-	Path     string
-	LSIFData *precise.DocumentData
-	SCIPData *scip.Document
+type qublifiedDocumentDbtb struct {
+	UplobdID int
+	Pbth     string
+	LSIFDbtb *precise.DocumentDbtb
+	SCIPDbtb *scip.Document
 }
 
-func (s *store) scanDocumentData(rows *sql.Rows, queryErr error) (_ []qualifiedDocumentData, err error) {
+func (s *store) scbnDocumentDbtb(rows *sql.Rows, queryErr error) (_ []qublifiedDocumentDbtb, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var values []qualifiedDocumentData
+	vbr vblues []qublifiedDocumentDbtb
 	for rows.Next() {
-		record, err := s.scanSingleDocumentDataObject(rows)
+		record, err := s.scbnSingleDocumentDbtbObject(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		values = append(values, record)
+		vblues = bppend(vblues, record)
 	}
 
-	return values, nil
+	return vblues, nil
 }
 
-func (s *store) scanFirstDocumentData(rows *sql.Rows, queryErr error) (_ qualifiedDocumentData, _ bool, err error) {
+func (s *store) scbnFirstDocumentDbtb(rows *sql.Rows, queryErr error) (_ qublifiedDocumentDbtb, _ bool, err error) {
 	if queryErr != nil {
-		return qualifiedDocumentData{}, false, queryErr
+		return qublifiedDocumentDbtb{}, fblse, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		record, err := s.scanSingleDocumentDataObject(rows)
+		record, err := s.scbnSingleDocumentDbtbObject(rows)
 		if err != nil {
-			return qualifiedDocumentData{}, false, err
+			return qublifiedDocumentDbtb{}, fblse, err
 		}
 
 		return record, true, nil
 	}
 
-	return qualifiedDocumentData{}, false, nil
+	return qublifiedDocumentDbtb{}, fblse, nil
 }
 
-func (s *store) scanSingleDocumentDataObject(rows *sql.Rows) (qualifiedDocumentData, error) {
-	var uploadID int
-	var path string
-	var compressedSCIPPayload []byte
+func (s *store) scbnSingleDocumentDbtbObject(rows *sql.Rows) (qublifiedDocumentDbtb, error) {
+	vbr uplobdID int
+	vbr pbth string
+	vbr compressedSCIPPbylobd []byte
 
-	if err := rows.Scan(&uploadID, &path, &compressedSCIPPayload); err != nil {
-		return qualifiedDocumentData{}, err
+	if err := rows.Scbn(&uplobdID, &pbth, &compressedSCIPPbylobd); err != nil {
+		return qublifiedDocumentDbtb{}, err
 	}
 
-	scipPayload, err := shared.Decompressor.Decompress(bytes.NewReader(compressedSCIPPayload))
+	scipPbylobd, err := shbred.Decompressor.Decompress(bytes.NewRebder(compressedSCIPPbylobd))
 	if err != nil {
-		return qualifiedDocumentData{}, err
+		return qublifiedDocumentDbtb{}, err
 	}
 
-	var data scip.Document
-	if err := proto.Unmarshal(scipPayload, &data); err != nil {
-		return qualifiedDocumentData{}, err
+	vbr dbtb scip.Document
+	if err := proto.Unmbrshbl(scipPbylobd, &dbtb); err != nil {
+		return qublifiedDocumentDbtb{}, err
 	}
 
-	qualifiedData := qualifiedDocumentData{
-		UploadID: uploadID,
-		Path:     path,
-		SCIPData: &data,
+	qublifiedDbtb := qublifiedDocumentDbtb{
+		UplobdID: uplobdID,
+		Pbth:     pbth,
+		SCIPDbtb: &dbtb,
 	}
-	return qualifiedData, nil
+	return qublifiedDbtb, nil
 }
 
-type qualifiedMonikerLocations struct {
+type qublifiedMonikerLocbtions struct {
 	DumpID int
-	precise.MonikerLocations
+	precise.MonikerLocbtions
 }
 
-func (s *store) scanQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []qualifiedMonikerLocations, err error) {
+func (s *store) scbnQublifiedMonikerLocbtions(rows *sql.Rows, queryErr error) (_ []qublifiedMonikerLocbtions, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var values []qualifiedMonikerLocations
+	vbr vblues []qublifiedMonikerLocbtions
 	for rows.Next() {
-		record, err := s.scanSingleQualifiedMonikerLocationsObject(rows)
+		record, err := s.scbnSingleQublifiedMonikerLocbtionsObject(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		values = append(values, record)
+		vblues = bppend(vblues, record)
 	}
 
-	return values, nil
+	return vblues, nil
 }
 
-func (s *store) scanSingleQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
-	var uri string
-	var scipPayload []byte
-	var record qualifiedMonikerLocations
+func (s *store) scbnSingleQublifiedMonikerLocbtionsObject(rows *sql.Rows) (qublifiedMonikerLocbtions, error) {
+	vbr uri string
+	vbr scipPbylobd []byte
+	vbr record qublifiedMonikerLocbtions
 
-	if err := rows.Scan(&record.DumpID, &record.Scheme, &record.Identifier, &scipPayload, &uri); err != nil {
-		return qualifiedMonikerLocations{}, err
+	if err := rows.Scbn(&record.DumpID, &record.Scheme, &record.Identifier, &scipPbylobd, &uri); err != nil {
+		return qublifiedMonikerLocbtions{}, err
 	}
 
-	ranges, err := ranges.DecodeRanges(scipPayload)
+	rbnges, err := rbnges.DecodeRbnges(scipPbylobd)
 	if err != nil {
-		return qualifiedMonikerLocations{}, err
+		return qublifiedMonikerLocbtions{}, err
 	}
 
-	locations := make([]precise.LocationData, 0, len(ranges))
-	for _, r := range ranges {
-		locations = append(locations, precise.LocationData{
+	locbtions := mbke([]precise.LocbtionDbtb, 0, len(rbnges))
+	for _, r := rbnge rbnges {
+		locbtions = bppend(locbtions, precise.LocbtionDbtb{
 			URI:            uri,
-			StartLine:      int(r.Start.Line),
-			StartCharacter: int(r.Start.Character),
+			StbrtLine:      int(r.Stbrt.Line),
+			StbrtChbrbcter: int(r.Stbrt.Chbrbcter),
 			EndLine:        int(r.End.Line),
-			EndCharacter:   int(r.End.Character),
+			EndChbrbcter:   int(r.End.Chbrbcter),
 		})
 	}
 
-	record.Locations = locations
+	record.Locbtions = locbtions
 	return record, nil
 }
 
 //
 //
 
-func (s *store) scanDeduplicatedQualifiedMonikerLocations(rows *sql.Rows, queryErr error) (_ []qualifiedMonikerLocations, err error) {
+func (s *store) scbnDeduplicbtedQublifiedMonikerLocbtions(rows *sql.Rows, queryErr error) (_ []qublifiedMonikerLocbtions, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var values []qualifiedMonikerLocations
+	vbr vblues []qublifiedMonikerLocbtions
 	for rows.Next() {
-		record, err := s.scanSingleMinimalQualifiedMonikerLocationsObject(rows)
+		record, err := s.scbnSingleMinimblQublifiedMonikerLocbtionsObject(rows)
 		if err != nil {
 			return nil, err
 		}
 
-		if n := len(values) - 1; n >= 0 && values[n].DumpID == record.DumpID {
-			values[n].Locations = append(values[n].Locations, record.Locations...)
+		if n := len(vblues) - 1; n >= 0 && vblues[n].DumpID == record.DumpID {
+			vblues[n].Locbtions = bppend(vblues[n].Locbtions, record.Locbtions...)
 		} else {
-			values = append(values, record)
+			vblues = bppend(vblues, record)
 		}
 	}
-	for i := range values {
-		values[i].Locations = deduplicate(values[i].Locations, locationDataKey)
+	for i := rbnge vblues {
+		vblues[i].Locbtions = deduplicbte(vblues[i].Locbtions, locbtionDbtbKey)
 	}
 
-	return values, nil
+	return vblues, nil
 }
 
-func (s *store) scanSingleMinimalQualifiedMonikerLocationsObject(rows *sql.Rows) (qualifiedMonikerLocations, error) {
-	var uri string
-	var scipPayload []byte
-	var record qualifiedMonikerLocations
+func (s *store) scbnSingleMinimblQublifiedMonikerLocbtionsObject(rows *sql.Rows) (qublifiedMonikerLocbtions, error) {
+	vbr uri string
+	vbr scipPbylobd []byte
+	vbr record qublifiedMonikerLocbtions
 
-	if err := rows.Scan(&record.DumpID, &scipPayload, &uri); err != nil {
-		return qualifiedMonikerLocations{}, err
+	if err := rows.Scbn(&record.DumpID, &scipPbylobd, &uri); err != nil {
+		return qublifiedMonikerLocbtions{}, err
 	}
 
-	ranges, err := ranges.DecodeRanges(scipPayload)
+	rbnges, err := rbnges.DecodeRbnges(scipPbylobd)
 	if err != nil {
-		return qualifiedMonikerLocations{}, err
+		return qublifiedMonikerLocbtions{}, err
 	}
 
-	locations := make([]precise.LocationData, 0, len(ranges))
-	for _, r := range ranges {
-		locations = append(locations, precise.LocationData{
+	locbtions := mbke([]precise.LocbtionDbtb, 0, len(rbnges))
+	for _, r := rbnge rbnges {
+		locbtions = bppend(locbtions, precise.LocbtionDbtb{
 			URI:            uri,
-			StartLine:      int(r.Start.Line),
-			StartCharacter: int(r.Start.Character),
+			StbrtLine:      int(r.Stbrt.Line),
+			StbrtChbrbcter: int(r.Stbrt.Chbrbcter),
 			EndLine:        int(r.End.Line),
-			EndCharacter:   int(r.End.Character),
+			EndChbrbcter:   int(r.End.Chbrbcter),
 		})
 	}
 
-	record.Locations = locations
+	record.Locbtions = locbtions
 	return record, nil
 }
 
-func locationDataKey(v precise.LocationData) string {
-	return fmt.Sprintf("%s:%d:%d:%d:%d", v.URI, v.StartLine, v.StartCharacter, v.EndLine, v.EndCharacter)
+func locbtionDbtbKey(v precise.LocbtionDbtb) string {
+	return fmt.Sprintf("%s:%d:%d:%d:%d", v.URI, v.StbrtLine, v.StbrtChbrbcter, v.EndLine, v.EndChbrbcter)
 }

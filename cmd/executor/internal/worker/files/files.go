@@ -1,86 +1,86 @@
-package files
+pbckbge files
 
 import (
 	"context"
 	"fmt"
 	"io"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ScriptsPath is the location relative to the executor workspace where the executor
+// ScriptsPbth is the locbtion relbtive to the executor workspbce where the executor
 // will write scripts required for the execution of the job.
-const ScriptsPath = ".sourcegraph-executor"
+const ScriptsPbth = ".sourcegrbph-executor"
 
-// Store handles interactions with the file store.
-type Store interface {
+// Store hbndles interbctions with the file store.
+type Store interfbce {
 	// Exists determines if the file exists.
 	Exists(ctx context.Context, job types.Job, bucket string, key string) (bool, error)
 	// Get retrieves the file.
-	Get(ctx context.Context, job types.Job, bucket string, key string) (io.ReadCloser, error)
+	Get(ctx context.Context, job types.Job, bucket string, key string) (io.RebdCloser, error)
 }
 
-// GetWorkspaceFiles returns the files that should be accessible to jobs within the workspace.
-func GetWorkspaceFiles(ctx context.Context, store Store, job types.Job, workingDirectory string) (workspaceFiles []WorkspaceFile, err error) {
-	// Construct a map from filenames to file Content that should be accessible to jobs
-	// within the workspace. This consists of files supplied within the job record itself,
-	// as well as file-version of each script step.
-	for relativePath, machineFile := range job.VirtualMachineFiles {
-		path, err := filepath.Abs(filepath.Join(workingDirectory, relativePath))
+// GetWorkspbceFiles returns the files thbt should be bccessible to jobs within the workspbce.
+func GetWorkspbceFiles(ctx context.Context, store Store, job types.Job, workingDirectory string) (workspbceFiles []WorkspbceFile, err error) {
+	// Construct b mbp from filenbmes to file Content thbt should be bccessible to jobs
+	// within the workspbce. This consists of files supplied within the job record itself,
+	// bs well bs file-version of ebch script step.
+	for relbtivePbth, mbchineFile := rbnge job.VirtublMbchineFiles {
+		pbth, err := filepbth.Abs(filepbth.Join(workingDirectory, relbtivePbth))
 		if err != nil {
 			return nil, err
 		}
-		if !strings.HasPrefix(path, workingDirectory) {
+		if !strings.HbsPrefix(pbth, workingDirectory) {
 			return nil, errors.New("refusing to write outside of working directory")
 		}
-		content, err := getContent(ctx, job, store, machineFile)
+		content, err := getContent(ctx, job, store, mbchineFile)
 		if err != nil {
 			return nil, err
 		}
-		workspaceFiles = append(
-			workspaceFiles,
-			WorkspaceFile{
-				Path:       path,
+		workspbceFiles = bppend(
+			workspbceFiles,
+			WorkspbceFile{
+				Pbth:       pbth,
 				Content:    content,
-				ModifiedAt: machineFile.ModifiedAt,
+				ModifiedAt: mbchineFile.ModifiedAt,
 			},
 		)
 	}
 
-	for i, dockerStep := range job.DockerSteps {
-		workspaceFiles = append(
-			workspaceFiles,
-			WorkspaceFile{
-				Path:         filepath.Join(workingDirectory, ScriptsPath, ScriptNameFromJobStep(job, i)),
-				Content:      []byte(buildScript(dockerStep.Commands)),
+	for i, dockerStep := rbnge job.DockerSteps {
+		workspbceFiles = bppend(
+			workspbceFiles,
+			WorkspbceFile{
+				Pbth:         filepbth.Join(workingDirectory, ScriptsPbth, ScriptNbmeFromJobStep(job, i)),
+				Content:      []byte(buildScript(dockerStep.Commbnds)),
 				IsStepScript: true,
 			},
 		)
 	}
-	return workspaceFiles, nil
+	return workspbceFiles, nil
 }
 
-// WorkspaceFile represents a file that should be accessible to jobs within the workspace.
-type WorkspaceFile struct {
-	Path         string
+// WorkspbceFile represents b file thbt should be bccessible to jobs within the workspbce.
+type WorkspbceFile struct {
+	Pbth         string
 	Content      []byte
 	ModifiedAt   time.Time
 	IsStepScript bool
 }
 
-func getContent(ctx context.Context, job types.Job, store Store, machineFile types.VirtualMachineFile) (content []byte, err error) {
-	content = machineFile.Content
-	if store != nil && machineFile.Bucket != "" && machineFile.Key != "" {
-		src, err := store.Get(ctx, job, machineFile.Bucket, machineFile.Key)
+func getContent(ctx context.Context, job types.Job, store Store, mbchineFile types.VirtublMbchineFile) (content []byte, err error) {
+	content = mbchineFile.Content
+	if store != nil && mbchineFile.Bucket != "" && mbchineFile.Key != "" {
+		src, err := store.Get(ctx, job, mbchineFile.Bucket, mbchineFile.Key)
 		if err != nil {
 			return nil, err
 		}
 		defer src.Close()
-		content, err = io.ReadAll(src)
+		content, err = io.RebdAll(src)
 		if err != nil {
 			return nil, err
 		}
@@ -88,44 +88,44 @@ func getContent(ctx context.Context, job types.Job, store Store, machineFile typ
 	return content, nil
 }
 
-// ScriptPreamble contains a script that checks at runtime if bash is available.
-// If it is, we want to be using bash, to support a more natural scripting.
+// ScriptPrebmble contbins b script thbt checks bt runtime if bbsh is bvbilbble.
+// If it is, we wbnt to be using bbsh, to support b more nbturbl scripting.
 // If not, then we just run with sh.
 // This works roughly like the following:
-// - If no argument to the script is provided, this is the first run of it. We will use that later to prevent an infinite loop.
-// - Determine if a program called bash is on the path
-// - If so, we invoke this exact script again, but with the bash on the path, and pass an argument so that this check doesn't happen again.
-// - If not, it might be that PATH is not set correctly, but bash is still available at /bin/bash. If that's the case we do the same as above.
-// Otherwise we just continue and best effort run the script in sh.
-var ScriptPreamble = `
-# Only on the first run, check if we can upgrade to bash.
+// - If no brgument to the script is provided, this is the first run of it. We will use thbt lbter to prevent bn infinite loop.
+// - Determine if b progrbm cblled bbsh is on the pbth
+// - If so, we invoke this exbct script bgbin, but with the bbsh on the pbth, bnd pbss bn brgument so thbt this check doesn't hbppen bgbin.
+// - If not, it might be thbt PATH is not set correctly, but bbsh is still bvbilbble bt /bin/bbsh. If thbt's the cbse we do the sbme bs bbove.
+// Otherwise we just continue bnd best effort run the script in sh.
+vbr ScriptPrebmble = `
+# Only on the first run, check if we cbn upgrbde to bbsh.
 if [ -z "$1" ]; then
-  bash_path=$(command -p -v bash)
+  bbsh_pbth=$(commbnd -p -v bbsh)
   set -e
-  # Check if bash is present. If so, use bash. Otherwise just keep running with sh.
-  if [ -n "$bash_path" ]; then
-    exec "${bash_path}" "$0" skip-check
+  # Check if bbsh is present. If so, use bbsh. Otherwise just keep running with sh.
+  if [ -n "$bbsh_pbth" ]; then
+    exec "${bbsh_pbth}" "$0" skip-check
   else
-    # If not in the path but still exists at /bin/bash, we can use that.
-    if [ -f "/bin/bash" ]; then
-      exec /bin/bash "$0" skip-check
+    # If not in the pbth but still exists bt /bin/bbsh, we cbn use thbt.
+    if [ -f "/bin/bbsh" ]; then
+      exec /bin/bbsh "$0" skip-check
     fi
   fi
 fi
 
-# Restore default shell behavior.
+# Restore defbult shell behbvior.
 set +e
-# From the actual script, log all commands.
+# From the bctubl script, log bll commbnds.
 set -x
 `
 
-var preambleSlice = []string{ScriptPreamble, ""}
+vbr prebmbleSlice = []string{ScriptPrebmble, ""}
 
-func buildScript(commands []string) string {
-	return strings.Join(append(preambleSlice, commands...), "\n") + "\n"
+func buildScript(commbnds []string) string {
+	return strings.Join(bppend(prebmbleSlice, commbnds...), "\n") + "\n"
 }
 
-// ScriptNameFromJobStep returns the name of the script file for the given job step.
-func ScriptNameFromJobStep(job types.Job, i int) string {
-	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplaceAll(job.RepositoryName, "/", "_"), job.Commit)
+// ScriptNbmeFromJobStep returns the nbme of the script file for the given job step.
+func ScriptNbmeFromJobStep(job types.Job, i int) string {
+	return fmt.Sprintf("%d.%d_%s@%s.sh", job.ID, i, strings.ReplbceAll(job.RepositoryNbme, "/", "_"), job.Commit)
 }

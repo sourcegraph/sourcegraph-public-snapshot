@@ -1,4 +1,4 @@
-package batches
+pbckbge bbtches
 
 import (
 	"encoding/json"
@@ -7,175 +7,175 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/copystructure"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
-	"github.com/sourcegraph/sourcegraph/lib/batches/overridable"
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/git"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/overridbble"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
 )
 
-func TestCreateChangesetSpecs(t *testing.T) {
-	defaultChangesetSpec := &ChangesetSpec{
-		BaseRepository: "base-repo-id",
-		BaseRef:        "refs/heads/my-cool-base-ref",
-		BaseRev:        "f00b4r",
-		// This field is deprecated and should always match BaseRepository.
-		HeadRepository: "base-repo-id",
-		HeadRef:        "refs/heads/my-branch",
+func TestCrebteChbngesetSpecs(t *testing.T) {
+	defbultChbngesetSpec := &ChbngesetSpec{
+		BbseRepository: "bbse-repo-id",
+		BbseRef:        "refs/hebds/my-cool-bbse-ref",
+		BbseRev:        "f00b4r",
+		// This field is deprecbted bnd should blwbys mbtch BbseRepository.
+		HebdRepository: "bbse-repo-id",
+		HebdRef:        "refs/hebds/my-brbnch",
 
 		Title: "The title",
 		Body:  "The body",
 		Commits: []GitCommitDescription{
 			{
 				Version:     2,
-				Message:     "git commit message",
+				Messbge:     "git commit messbge",
 				Diff:        []byte("cool diff"),
-				AuthorName:  "Sourcegraph",
-				AuthorEmail: "batch-changes@sourcegraph.com",
+				AuthorNbme:  "Sourcegrbph",
+				AuthorEmbil: "bbtch-chbnges@sourcegrbph.com",
 			},
 		},
-		Published: PublishedValue{Val: false},
+		Published: PublishedVblue{Vbl: fblse},
 	}
 
-	specWith := func(s *ChangesetSpec, f func(s *ChangesetSpec)) *ChangesetSpec {
+	specWith := func(s *ChbngesetSpec, f func(s *ChbngesetSpec)) *ChbngesetSpec {
 		copy, err := copystructure.Copy(s)
 		if err != nil {
-			t.Fatalf("deep copying spec: %+v", err)
+			t.Fbtblf("deep copying spec: %+v", err)
 		}
 
-		s = copy.(*ChangesetSpec)
+		s = copy.(*ChbngesetSpec)
 		f(s)
 		return s
 	}
 
-	defaultInput := &ChangesetSpecInput{
+	defbultInput := &ChbngesetSpecInput{
 		Repository: Repository{
-			ID:          "base-repo-id",
-			Name:        "github.com/sourcegraph/src-cli",
-			FileMatches: []string{"go.mod", "README"},
-			BaseRef:     "refs/heads/my-cool-base-ref",
-			BaseRev:     "f00b4r",
+			ID:          "bbse-repo-id",
+			Nbme:        "github.com/sourcegrbph/src-cli",
+			FileMbtches: []string{"go.mod", "README"},
+			BbseRef:     "refs/hebds/my-cool-bbse-ref",
+			BbseRev:     "f00b4r",
 		},
 
-		BatchChangeAttributes: &template.BatchChangeAttributes{
-			Name:        "the name",
+		BbtchChbngeAttributes: &templbte.BbtchChbngeAttributes{
+			Nbme:        "the nbme",
 			Description: "The description",
 		},
 
-		Template: &ChangesetTemplate{
+		Templbte: &ChbngesetTemplbte{
 			Title:  "The title",
 			Body:   "The body",
-			Branch: "my-branch",
-			Commit: ExpandedGitCommitDescription{
-				Message: "git commit message",
+			Brbnch: "my-brbnch",
+			Commit: ExpbndedGitCommitDescription{
+				Messbge: "git commit messbge",
 			},
-			Published: parsePublishedFieldString(t, "false"),
+			Published: pbrsePublishedFieldString(t, "fblse"),
 		},
 
 		Result: execution.AfterStepResult{
 			Diff: []byte("cool diff"),
-			ChangedFiles: git.Changes{
+			ChbngedFiles: git.Chbnges{
 				Modified: []string{"README.md"},
 			},
-			Outputs: map[string]any{},
+			Outputs: mbp[string]bny{},
 		},
 	}
 
-	inputWith := func(task *ChangesetSpecInput, f func(task *ChangesetSpecInput)) *ChangesetSpecInput {
-		copy, err := copystructure.Copy(task)
+	inputWith := func(tbsk *ChbngesetSpecInput, f func(tbsk *ChbngesetSpecInput)) *ChbngesetSpecInput {
+		copy, err := copystructure.Copy(tbsk)
 		if err != nil {
-			t.Fatalf("deep copying task: %+v", err)
+			t.Fbtblf("deep copying tbsk: %+v", err)
 		}
 
-		task = copy.(*ChangesetSpecInput)
-		f(task)
-		return task
+		tbsk = copy.(*ChbngesetSpecInput)
+		f(tbsk)
+		return tbsk
 	}
 
 	tests := []struct {
-		name string
+		nbme string
 
-		input  *ChangesetSpecInput
-		author *ChangesetSpecAuthor
+		input  *ChbngesetSpecInput
+		buthor *ChbngesetSpecAuthor
 
-		want    []*ChangesetSpec
-		wantErr string
+		wbnt    []*ChbngesetSpec
+		wbntErr string
 	}{
 		{
-			name:  "success",
-			input: defaultInput,
-			want: []*ChangesetSpec{
-				defaultChangesetSpec,
+			nbme:  "success",
+			input: defbultInput,
+			wbnt: []*ChbngesetSpec{
+				defbultChbngesetSpec,
 			},
-			wantErr: "",
+			wbntErr: "",
 		},
 		{
-			name: "publish by branch",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				published := `[{"github.com/sourcegraph/*@my-branch": true}]`
-				input.Template.Published = parsePublishedFieldString(t, published)
+			nbme: "publish by brbnch",
+			input: inputWith(defbultInput, func(input *ChbngesetSpecInput) {
+				published := `[{"github.com/sourcegrbph/*@my-brbnch": true}]`
+				input.Templbte.Published = pbrsePublishedFieldString(t, published)
 			}),
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
-					s.Published = PublishedValue{Val: true}
+			wbnt: []*ChbngesetSpec{
+				specWith(defbultChbngesetSpec, func(s *ChbngesetSpec) {
+					s.Published = PublishedVblue{Vbl: true}
 				}),
 			},
-			wantErr: "",
+			wbntErr: "",
 		},
 		{
-			name: "publish by branch not matching",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				published := `[{"github.com/sourcegraph/*@another-branch-name": true}]`
-				input.Template.Published = parsePublishedFieldString(t, published)
+			nbme: "publish by brbnch not mbtching",
+			input: inputWith(defbultInput, func(input *ChbngesetSpecInput) {
+				published := `[{"github.com/sourcegrbph/*@bnother-brbnch-nbme": true}]`
+				input.Templbte.Published = pbrsePublishedFieldString(t, published)
 			}),
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
-					s.Published = PublishedValue{Val: nil}
+			wbnt: []*ChbngesetSpec{
+				specWith(defbultChbngesetSpec, func(s *ChbngesetSpec) {
+					s.Published = PublishedVblue{Vbl: nil}
 				}),
 			},
-			wantErr: "",
+			wbntErr: "",
 		},
 		{
-			name: "publish in UI",
-			input: inputWith(defaultInput, func(input *ChangesetSpecInput) {
-				input.Template.Published = nil
+			nbme: "publish in UI",
+			input: inputWith(defbultInput, func(input *ChbngesetSpecInput) {
+				input.Templbte.Published = nil
 			}),
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
-					s.Published = PublishedValue{Val: nil}
+			wbnt: []*ChbngesetSpec{
+				specWith(defbultChbngesetSpec, func(s *ChbngesetSpec) {
+					s.Published = PublishedVblue{Vbl: nil}
 				}),
 			},
-			wantErr: "",
+			wbntErr: "",
 		},
 		{
-			name:   "publish with fallback author",
-			input:  defaultInput,
-			author: &ChangesetSpecAuthor{Name: "Sourcegrapher", Email: "sourcegrapher@sourcegraph.com"},
-			want: []*ChangesetSpec{
-				specWith(defaultChangesetSpec, func(s *ChangesetSpec) {
-					s.Commits[0].AuthorEmail = "sourcegrapher@sourcegraph.com"
-					s.Commits[0].AuthorName = "Sourcegrapher"
+			nbme:   "publish with fbllbbck buthor",
+			input:  defbultInput,
+			buthor: &ChbngesetSpecAuthor{Nbme: "Sourcegrbpher", Embil: "sourcegrbpher@sourcegrbph.com"},
+			wbnt: []*ChbngesetSpec{
+				specWith(defbultChbngesetSpec, func(s *ChbngesetSpec) {
+					s.Commits[0].AuthorEmbil = "sourcegrbpher@sourcegrbph.com"
+					s.Commits[0].AuthorNbme = "Sourcegrbpher"
 				}),
 			},
-			wantErr: "",
+			wbntErr: "",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			have, err := BuildChangesetSpecs(tt.input, true, tt.author)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			hbve, err := BuildChbngesetSpecs(tt.input, true, tt.buthor)
 			if err != nil {
-				if tt.wantErr != "" {
-					if err.Error() != tt.wantErr {
-						t.Fatalf("wrong error. want=%q, got=%q", tt.wantErr, err.Error())
+				if tt.wbntErr != "" {
+					if err.Error() != tt.wbntErr {
+						t.Fbtblf("wrong error. wbnt=%q, got=%q", tt.wbntErr, err.Error())
 					}
 					return
 				} else {
-					t.Fatalf("unexpected error: %s", err)
+					t.Fbtblf("unexpected error: %s", err)
 				}
 			}
 
-			if !cmp.Equal(tt.want, have) {
-				t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tt.want, have))
+			if !cmp.Equbl(tt.wbnt, hbve) {
+				t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(tt.wbnt, hbve))
 			}
 		})
 	}
@@ -207,146 +207,146 @@ index 0000000..1bd79fb
 +this is 3
 `
 
-	defaultBranch := "my-default-branch"
-	allDiffs := diff1 + diff2 + diff3
+	defbultBrbnch := "my-defbult-brbnch"
+	bllDiffs := diff1 + diff2 + diff3
 
 	tests := []struct {
 		diff          string
-		defaultBranch string
+		defbultBrbnch string
 		groups        []Group
-		want          map[string][]byte
+		wbnt          mbp[string][]byte
 	}{
 		{
-			diff: allDiffs,
+			diff: bllDiffs,
 			groups: []Group{
-				{Directory: "1/2/3", Branch: "everything-in-3"},
+				{Directory: "1/2/3", Brbnch: "everything-in-3"},
 			},
-			want: map[string][]byte{
-				"my-default-branch": []byte(diff1 + diff2),
+			wbnt: mbp[string][]byte{
+				"my-defbult-brbnch": []byte(diff1 + diff2),
 				"everything-in-3":   []byte(diff3),
 			},
 		},
 		{
-			diff: allDiffs,
+			diff: bllDiffs,
 			groups: []Group{
-				{Directory: "1/2", Branch: "everything-in-2-and-3"},
+				{Directory: "1/2", Brbnch: "everything-in-2-bnd-3"},
 			},
-			want: map[string][]byte{
-				"my-default-branch":     []byte(diff1),
-				"everything-in-2-and-3": []byte(diff2 + diff3),
+			wbnt: mbp[string][]byte{
+				"my-defbult-brbnch":     []byte(diff1),
+				"everything-in-2-bnd-3": []byte(diff2 + diff3),
 			},
 		},
 		{
-			diff: allDiffs,
+			diff: bllDiffs,
 			groups: []Group{
-				{Directory: "1", Branch: "everything-in-1-and-2-and-3"},
+				{Directory: "1", Brbnch: "everything-in-1-bnd-2-bnd-3"},
 			},
-			want: map[string][]byte{
-				"my-default-branch":           nil,
-				"everything-in-1-and-2-and-3": []byte(diff1 + diff2 + diff3),
+			wbnt: mbp[string][]byte{
+				"my-defbult-brbnch":           nil,
+				"everything-in-1-bnd-2-bnd-3": []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
-			diff: allDiffs,
+			diff: bllDiffs,
 			groups: []Group{
-				// Each diff is matched against each directory, last match wins
-				{Directory: "1", Branch: "only-in-1"},
-				{Directory: "1/2", Branch: "only-in-2"},
-				{Directory: "1/2/3", Branch: "only-in-3"},
+				// Ebch diff is mbtched bgbinst ebch directory, lbst mbtch wins
+				{Directory: "1", Brbnch: "only-in-1"},
+				{Directory: "1/2", Brbnch: "only-in-2"},
+				{Directory: "1/2/3", Brbnch: "only-in-3"},
 			},
-			want: map[string][]byte{
-				"my-default-branch": nil,
+			wbnt: mbp[string][]byte{
+				"my-defbult-brbnch": nil,
 				"only-in-3":         []byte(diff3),
 				"only-in-2":         []byte(diff2),
 				"only-in-1":         []byte(diff1),
 			},
 		},
 		{
-			diff: allDiffs,
+			diff: bllDiffs,
 			groups: []Group{
-				// Last one wins here, because it matches every diff
-				{Directory: "1/2/3", Branch: "only-in-3"},
-				{Directory: "1/2", Branch: "only-in-2"},
-				{Directory: "1", Branch: "only-in-1"},
+				// Lbst one wins here, becbuse it mbtches every diff
+				{Directory: "1/2/3", Brbnch: "only-in-3"},
+				{Directory: "1/2", Brbnch: "only-in-2"},
+				{Directory: "1", Brbnch: "only-in-1"},
 			},
-			want: map[string][]byte{
-				"my-default-branch": nil,
+			wbnt: mbp[string][]byte{
+				"my-defbult-brbnch": nil,
 				"only-in-1":         []byte(diff1 + diff2 + diff3),
 			},
 		},
 		{
-			diff: allDiffs,
+			diff: bllDiffs,
 			groups: []Group{
-				{Directory: "", Branch: "everything"},
+				{Directory: "", Brbnch: "everything"},
 			},
-			want: map[string][]byte{
-				"my-default-branch": []byte(diff1 + diff2 + diff3),
+			wbnt: mbp[string][]byte{
+				"my-defbult-brbnch": []byte(diff1 + diff2 + diff3),
 			},
 		},
 	}
 
-	for _, tc := range tests {
-		have, err := groupFileDiffs([]byte(tc.diff), defaultBranch, tc.groups)
+	for _, tc := rbnge tests {
+		hbve, err := groupFileDiffs([]byte(tc.diff), defbultBrbnch, tc.groups)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
-		if !cmp.Equal(tc.want, have) {
-			t.Errorf("mismatch (-want +got):\n%s", cmp.Diff(tc.want, have))
+		if !cmp.Equbl(tc.wbnt, hbve) {
+			t.Errorf("mismbtch (-wbnt +got):\n%s", cmp.Diff(tc.wbnt, hbve))
 		}
 	}
 }
 
-func TestValidateGroups(t *testing.T) {
-	repoName := "github.com/sourcegraph/src-cli"
-	defaultBranch := "my-batch-change"
+func TestVblidbteGroups(t *testing.T) {
+	repoNbme := "github.com/sourcegrbph/src-cli"
+	defbultBrbnch := "my-bbtch-chbnge"
 
 	tests := []struct {
-		defaultBranch string
+		defbultBrbnch string
 		groups        []Group
-		wantErr       string
+		wbntErr       string
 	}{
 		{
 			groups: []Group{
-				{Directory: "a", Branch: "my-batch-change-a"},
-				{Directory: "b", Branch: "my-batch-change-b"},
+				{Directory: "b", Brbnch: "my-bbtch-chbnge-b"},
+				{Directory: "b", Brbnch: "my-bbtch-chbnge-b"},
 			},
-			wantErr: "",
+			wbntErr: "",
 		},
 		{
 			groups: []Group{
-				{Directory: "a", Branch: "my-batch-change-SAME"},
-				{Directory: "b", Branch: "my-batch-change-SAME"},
+				{Directory: "b", Brbnch: "my-bbtch-chbnge-SAME"},
+				{Directory: "b", Brbnch: "my-bbtch-chbnge-SAME"},
 			},
-			wantErr: "transformChanges would lead to multiple changesets in repository github.com/sourcegraph/src-cli to have the same branch \"my-batch-change-SAME\"",
+			wbntErr: "trbnsformChbnges would lebd to multiple chbngesets in repository github.com/sourcegrbph/src-cli to hbve the sbme brbnch \"my-bbtch-chbnge-SAME\"",
 		},
 		{
 			groups: []Group{
-				{Directory: "a", Branch: "my-batch-change-SAME"},
-				{Directory: "b", Branch: defaultBranch},
+				{Directory: "b", Brbnch: "my-bbtch-chbnge-SAME"},
+				{Directory: "b", Brbnch: defbultBrbnch},
 			},
-			wantErr: "transformChanges group branch for repository github.com/sourcegraph/src-cli is the same as branch \"my-batch-change\" in changesetTemplate",
+			wbntErr: "trbnsformChbnges group brbnch for repository github.com/sourcegrbph/src-cli is the sbme bs brbnch \"my-bbtch-chbnge\" in chbngesetTemplbte",
 		},
 	}
 
-	for _, tc := range tests {
-		err := validateGroups(repoName, defaultBranch, tc.groups)
-		var haveErr string
+	for _, tc := rbnge tests {
+		err := vblidbteGroups(repoNbme, defbultBrbnch, tc.groups)
+		vbr hbveErr string
 		if err != nil {
-			haveErr = err.Error()
+			hbveErr = err.Error()
 		}
 
-		if haveErr != tc.wantErr {
-			t.Fatalf("wrong error:\nwant=%q\nhave=%q", tc.wantErr, haveErr)
+		if hbveErr != tc.wbntErr {
+			t.Fbtblf("wrong error:\nwbnt=%q\nhbve=%q", tc.wbntErr, hbveErr)
 		}
 	}
 }
 
-func parsePublishedFieldString(t *testing.T, input string) *overridable.BoolOrString {
+func pbrsePublishedFieldString(t *testing.T, input string) *overridbble.BoolOrString {
 	t.Helper()
 
-	var result overridable.BoolOrString
-	if err := json.Unmarshal([]byte(input), &result); err != nil {
-		t.Fatalf("failed to parse %q as overridable.BoolOrString: %s", input, err)
+	vbr result overridbble.BoolOrString
+	if err := json.Unmbrshbl([]byte(input), &result); err != nil {
+		t.Fbtblf("fbiled to pbrse %q bs overridbble.BoolOrString: %s", input, err)
 	}
 	return &result
 }

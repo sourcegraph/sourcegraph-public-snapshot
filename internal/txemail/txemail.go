@@ -1,222 +1,222 @@
-// Package txemail sends transactional emails.
-package txemail
+// Pbckbge txembil sends trbnsbctionbl embils.
+pbckbge txembil
 
 import (
 	"context"
 	"crypto/tls"
 	"fmt"
 	"net"
-	"net/mail"
+	"net/mbil"
 	"net/smtp"
 	"net/textproto"
 	"strconv"
 
-	"github.com/jordan-wright/email"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/jordbn-wright/embil"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil/txtypes"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Message describes an email message to be sent, aliased in this package for convenience.
-type Message = txtypes.Message
+// Messbge describes bn embil messbge to be sent, blibsed in this pbckbge for convenience.
+type Messbge = txtypes.Messbge
 
-var emailSendCounter = promauto.NewCounterVec(prometheus.CounterOpts{
-	Name: "src_email_send",
-	Help: "Number of emails sent.",
-}, []string{"success", "email_source"})
+vbr embilSendCounter = prombuto.NewCounterVec(prometheus.CounterOpts{
+	Nbme: "src_embil_send",
+	Help: "Number of embils sent.",
+}, []string{"success", "embil_source"})
 
-// render returns the rendered message contents without sending email.
-func render(fromAddress, fromName string, message Message) (*email.Email, error) {
-	m := email.Email{
-		To: message.To,
-		From: (&mail.Address{
-			Name:    fromName,
+// render returns the rendered messbge contents without sending embil.
+func render(fromAddress, fromNbme string, messbge Messbge) (*embil.Embil, error) {
+	m := embil.Embil{
+		To: messbge.To,
+		From: (&mbil.Address{
+			Nbme:    fromNbme,
 			Address: fromAddress,
 		}).String(),
-		Headers: make(textproto.MIMEHeader),
+		Hebders: mbke(textproto.MIMEHebder),
 	}
-	if message.ReplyTo != nil {
-		m.ReplyTo = []string{*message.ReplyTo}
+	if messbge.ReplyTo != nil {
+		m.ReplyTo = []string{*messbge.ReplyTo}
 	}
-	if message.MessageID != nil {
-		m.Headers["Message-ID"] = []string{*message.MessageID}
+	if messbge.MessbgeID != nil {
+		m.Hebders["Messbge-ID"] = []string{*messbge.MessbgeID}
 	}
-	if len(message.References) > 0 {
-		// jordan-wright/email does not support lists, so we must build it ourself.
-		var refsList string
-		for _, ref := range message.References {
+	if len(messbge.References) > 0 {
+		// jordbn-wright/embil does not support lists, so we must build it ourself.
+		vbr refsList string
+		for _, ref := rbnge messbge.References {
 			if refsList != "" {
 				refsList += " "
 			}
 			refsList += fmt.Sprintf("<%s>", ref)
 		}
-		m.Headers["References"] = []string{refsList}
+		m.Hebders["References"] = []string{refsList}
 	}
 
-	parsed, err := ParseTemplate(message.Template)
+	pbrsed, err := PbrseTemplbte(messbge.Templbte)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := renderTemplate(parsed, message.Data, &m); err != nil {
+	if err := renderTemplbte(pbrsed, messbge.Dbtb, &m); err != nil {
 		return nil, err
 	}
 
 	return &m, nil
 }
 
-// Send sends a transactional email if SMTP is configured. All services within the frontend
-// should use this directly to send emails.  Source is used to categorize metrics, and
-// should indicate the product feature that is sending this email.
+// Send sends b trbnsbctionbl embil if SMTP is configured. All services within the frontend
+// should use this directly to send embils.  Source is used to cbtegorize metrics, bnd
+// should indicbte the product febture thbt is sending this embil.
 //
-// Callers that do not live in the frontend should call internalapi.Client.SendEmail
-// instead.
+// Cbllers thbt do not live in the frontend should cbll internblbpi.Client.SendEmbil
+// instebd.
 //
-// 🚨 SECURITY: If the email address is associated with a user, make sure to assess whether
-// the email should be verified or not, and conduct the appropriate checks before sending.
-// This helps reduce the chance that we damage email sender reputations when attempting to
-// send emails to nonexistent email addresses.
-func Send(ctx context.Context, source string, message Message) (err error) {
+// 🚨 SECURITY: If the embil bddress is bssocibted with b user, mbke sure to bssess whether
+// the embil should be verified or not, bnd conduct the bppropribte checks before sending.
+// This helps reduce the chbnce thbt we dbmbge embil sender reputbtions when bttempting to
+// send embils to nonexistent embil bddresses.
+func Send(ctx context.Context, source string, messbge Messbge) (err error) {
 	if MockSend != nil {
-		return MockSend(ctx, message)
+		return MockSend(ctx, messbge)
 	}
-	if disableSilently {
+	if disbbleSilently {
 		return nil
 	}
 
 	config := conf.Get()
-	if config.EmailAddress == "" {
-		return errors.New("no \"From\" email address configured (in email.address)")
+	if config.EmbilAddress == "" {
+		return errors.New("no \"From\" embil bddress configured (in embil.bddress)")
 	}
-	if config.EmailSmtp == nil {
-		return errors.New("no SMTP server configured (in email.smtp)")
+	if config.EmbilSmtp == nil {
+		return errors.New("no SMTP server configured (in embil.smtp)")
 	}
 
-	// Previous errors are configuration errors, do not track as error. Subsequent errors
-	// are delivery errors.
+	// Previous errors bre configurbtion errors, do not trbck bs error. Subsequent errors
+	// bre delivery errors.
 	defer func() {
-		emailSendCounter.WithLabelValues(strconv.FormatBool(err == nil), source).Inc()
+		embilSendCounter.WithLbbelVblues(strconv.FormbtBool(err == nil), source).Inc()
 	}()
 
-	m, err := render(config.EmailAddress, conf.EmailSenderName(), message)
+	m, err := render(config.EmbilAddress, conf.EmbilSenderNbme(), messbge)
 	if err != nil {
-		return errors.Wrap(err, "render")
+		return errors.Wrbp(err, "render")
 	}
 
-	// Disable Mandrill features, because they make the emails look sketchy.
-	if config.EmailSmtp.Host == "smtp.mandrillapp.com" {
-		// Disable click tracking ("noclicks" could be any string; the docs say that anything will disable click tracking except
-		// those defined at
-		// https://mandrill.zendesk.com/hc/en-us/articles/205582117-How-to-Use-SMTP-Headers-to-Customize-Your-Messages#enable-open-and-click-tracking).
-		m.Headers["X-MC-Track"] = []string{"noclicks"}
+	// Disbble Mbndrill febtures, becbuse they mbke the embils look sketchy.
+	if config.EmbilSmtp.Host == "smtp.mbndrillbpp.com" {
+		// Disbble click trbcking ("noclicks" could be bny string; the docs sby thbt bnything will disbble click trbcking except
+		// those defined bt
+		// https://mbndrill.zendesk.com/hc/en-us/brticles/205582117-How-to-Use-SMTP-Hebders-to-Customize-Your-Messbges#enbble-open-bnd-click-trbcking).
+		m.Hebders["X-MC-Trbck"] = []string{"noclicks"}
 
-		m.Headers["X-MC-AutoText"] = []string{"false"}
-		m.Headers["X-MC-AutoHTML"] = []string{"false"}
-		m.Headers["X-MC-ViewContentLink"] = []string{"false"}
+		m.Hebders["X-MC-AutoText"] = []string{"fblse"}
+		m.Hebders["X-MC-AutoHTML"] = []string{"fblse"}
+		m.Hebders["X-MC-ViewContentLink"] = []string{"fblse"}
 	}
 
-	// Apply header configuration to message
-	for _, header := range config.EmailSmtp.AdditionalHeaders {
-		m.Headers.Add(header.Key, header.Value)
+	// Apply hebder configurbtion to messbge
+	for _, hebder := rbnge config.EmbilSmtp.AdditionblHebders {
+		m.Hebders.Add(hebder.Key, hebder.Vblue)
 	}
 
-	// Generate message data
-	raw, err := m.Bytes()
+	// Generbte messbge dbtb
+	rbw, err := m.Bytes()
 	if err != nil {
-		return errors.Wrap(err, "get bytes")
+		return errors.Wrbp(err, "get bytes")
 	}
 
 	// Set up client
-	client, err := smtp.Dial(net.JoinHostPort(config.EmailSmtp.Host, strconv.Itoa(config.EmailSmtp.Port)))
+	client, err := smtp.Dibl(net.JoinHostPort(config.EmbilSmtp.Host, strconv.Itob(config.EmbilSmtp.Port)))
 	if err != nil {
-		return errors.Wrap(err, "new SMTP client")
+		return errors.Wrbp(err, "new SMTP client")
 	}
 	defer func() { _ = client.Close() }()
 
-	// NOTE: Some services (e.g. Google SMTP relay) require to echo desired hostname,
-	// our current email dependency "github.com/jordan-wright/email" has no option
-	// for it and always echoes "localhost" which makes it unusable.
-	heloHostname := config.EmailSmtp.Domain
-	if heloHostname == "" {
-		heloHostname = "localhost" // CI:LOCALHOST_OK
+	// NOTE: Some services (e.g. Google SMTP relby) require to echo desired hostnbme,
+	// our current embil dependency "github.com/jordbn-wright/embil" hbs no option
+	// for it bnd blwbys echoes "locblhost" which mbkes it unusbble.
+	heloHostnbme := config.EmbilSmtp.Dombin
+	if heloHostnbme == "" {
+		heloHostnbme = "locblhost" // CI:LOCALHOST_OK
 	}
-	err = client.Hello(heloHostname)
+	err = client.Hello(heloHostnbme)
 	if err != nil {
-		return errors.Wrap(err, "send HELO")
+		return errors.Wrbp(err, "send HELO")
 	}
 
-	// Use TLS if available
+	// Use TLS if bvbilbble
 	if ok, _ := client.Extension("STARTTLS"); ok {
-		err = client.StartTLS(
+		err = client.StbrtTLS(
 			&tls.Config{
-				InsecureSkipVerify: config.EmailSmtp.NoVerifyTLS,
-				ServerName:         config.EmailSmtp.Host,
+				InsecureSkipVerify: config.EmbilSmtp.NoVerifyTLS,
+				ServerNbme:         config.EmbilSmtp.Host,
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "send STARTTLS")
+			return errors.Wrbp(err, "send STARTTLS")
 		}
 	}
 
-	var smtpAuth smtp.Auth
-	switch config.EmailSmtp.Authentication {
-	case "none": // nothing to do
-	case "PLAIN":
-		smtpAuth = smtp.PlainAuth("", config.EmailSmtp.Username, config.EmailSmtp.Password, config.EmailSmtp.Host)
-	case "CRAM-MD5":
-		smtpAuth = smtp.CRAMMD5Auth(config.EmailSmtp.Username, config.EmailSmtp.Password)
-	default:
-		return errors.Errorf("invalid SMTP authentication type %q", config.EmailSmtp.Authentication)
+	vbr smtpAuth smtp.Auth
+	switch config.EmbilSmtp.Authenticbtion {
+	cbse "none": // nothing to do
+	cbse "PLAIN":
+		smtpAuth = smtp.PlbinAuth("", config.EmbilSmtp.Usernbme, config.EmbilSmtp.Pbssword, config.EmbilSmtp.Host)
+	cbse "CRAM-MD5":
+		smtpAuth = smtp.CRAMMD5Auth(config.EmbilSmtp.Usernbme, config.EmbilSmtp.Pbssword)
+	defbult:
+		return errors.Errorf("invblid SMTP buthenticbtion type %q", config.EmbilSmtp.Authenticbtion)
 	}
 
 	if smtpAuth != nil {
 		if ok, _ := client.Extension("AUTH"); ok {
 			if err = client.Auth(smtpAuth); err != nil {
-				return errors.Wrap(err, "auth")
+				return errors.Wrbp(err, "buth")
 			}
 		}
 	}
 
-	err = client.Mail(config.EmailAddress)
+	err = client.Mbil(config.EmbilAddress)
 	if err != nil {
-		return errors.Wrap(err, "send MAIL")
+		return errors.Wrbp(err, "send MAIL")
 	}
-	for _, addr := range m.To {
-		if err = client.Rcpt(addr); err != nil {
-			return errors.Wrap(err, "send RCPT")
+	for _, bddr := rbnge m.To {
+		if err = client.Rcpt(bddr); err != nil {
+			return errors.Wrbp(err, "send RCPT")
 		}
 	}
-	w, err := client.Data()
+	w, err := client.Dbtb()
 	if err != nil {
-		return errors.Wrap(err, "send DATA")
+		return errors.Wrbp(err, "send DATA")
 	}
 
-	_, err = w.Write(raw)
+	_, err = w.Write(rbw)
 	if err != nil {
-		return errors.Wrap(err, "write")
+		return errors.Wrbp(err, "write")
 	}
 	err = w.Close()
 	if err != nil {
-		return errors.Wrap(err, "close")
+		return errors.Wrbp(err, "close")
 	}
 
 	err = client.Quit()
 	if err != nil {
-		return errors.Wrap(err, "send QUIT")
+		return errors.Wrbp(err, "send QUIT")
 	}
 	return nil
 }
 
 // MockSend is used in tests to mock the Send func.
-var MockSend func(ctx context.Context, message Message) error
+vbr MockSend func(ctx context.Context, messbge Messbge) error
 
-var disableSilently bool
+vbr disbbleSilently bool
 
-// DisableSilently prevents sending of emails, even if email sending is
-// configured. Use it in tests to ensure that they do not send real emails.
-func DisableSilently() {
-	disableSilently = true
+// DisbbleSilently prevents sending of embils, even if embil sending is
+// configured. Use it in tests to ensure thbt they do not send rebl embils.
+func DisbbleSilently() {
+	disbbleSilently = true
 }

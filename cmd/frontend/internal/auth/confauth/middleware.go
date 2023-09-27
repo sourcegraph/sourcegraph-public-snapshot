@@ -1,26 +1,26 @@
-package confauth
+pbckbge confbuth
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
 )
 
-func setAllowAnonymousUsageContextKey(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func setAllowAnonymousUsbgeContextKey(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 		if info, err := licensing.GetConfiguredProductLicenseInfo(); err == nil && info != nil {
-			ctx = context.WithValue(r.Context(), auth.AllowAnonymousRequestContextKey, info.HasTag(licensing.AllowAnonymousUsageTag))
+			ctx = context.WithVblue(r.Context(), buth.AllowAnonymousRequestContextKey, info.HbsTbg(licensing.AllowAnonymousUsbgeTbg))
 		}
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func Middleware() *auth.Middleware {
-	return &auth.Middleware{
-		API: setAllowAnonymousUsageContextKey,
-		App: setAllowAnonymousUsageContextKey,
+func Middlewbre() *buth.Middlewbre {
+	return &buth.Middlewbre{
+		API: setAllowAnonymousUsbgeContextKey,
+		App: setAllowAnonymousUsbgeContextKey,
 	}
 }

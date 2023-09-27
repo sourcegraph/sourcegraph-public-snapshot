@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -8,23 +8,23 @@ import (
 	"sync"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/log"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type repositoryArgs struct {
-	Query *string // Search query
-	Names *[]string
+	Query *string // Sebrch query
+	Nbmes *[]string
 
 	Cloned     bool
 	NotCloned  bool
@@ -34,79 +34,79 @@ type repositoryArgs struct {
 	Embedded    bool
 	NotEmbedded bool
 
-	CloneStatus *string
-	FailedFetch bool
+	CloneStbtus *string
+	FbiledFetch bool
 	Corrupted   bool
 
-	ExternalService *graphql.ID
+	ExternblService *grbphql.ID
 
 	OrderBy    string
 	Descending bool
-	graphqlutil.ConnectionResolverArgs
+	grbphqlutil.ConnectionResolverArgs
 }
 
-func (args *repositoryArgs) toReposListOptions() (database.ReposListOptions, error) {
-	opt := database.ReposListOptions{}
-	if args.Names != nil {
-		opt.Names = *args.Names
+func (brgs *repositoryArgs) toReposListOptions() (dbtbbbse.ReposListOptions, error) {
+	opt := dbtbbbse.ReposListOptions{}
+	if brgs.Nbmes != nil {
+		opt.Nbmes = *brgs.Nbmes
 	}
-	if args.Query != nil {
-		opt.Query = *args.Query
-	}
-
-	if args.CloneStatus != nil {
-		opt.CloneStatus = types.ParseCloneStatusFromGraphQL(*args.CloneStatus)
+	if brgs.Query != nil {
+		opt.Query = *brgs.Query
 	}
 
-	opt.FailedFetch = args.FailedFetch
-	opt.OnlyCorrupted = args.Corrupted
-
-	if !args.Cloned && !args.NotCloned {
-		return database.ReposListOptions{}, errors.New("excluding cloned and not cloned repos leaves an empty set")
+	if brgs.CloneStbtus != nil {
+		opt.CloneStbtus = types.PbrseCloneStbtusFromGrbphQL(*brgs.CloneStbtus)
 	}
-	if !args.Cloned {
+
+	opt.FbiledFetch = brgs.FbiledFetch
+	opt.OnlyCorrupted = brgs.Corrupted
+
+	if !brgs.Cloned && !brgs.NotCloned {
+		return dbtbbbse.ReposListOptions{}, errors.New("excluding cloned bnd not cloned repos lebves bn empty set")
+	}
+	if !brgs.Cloned {
 		opt.NoCloned = true
 	}
-	if !args.NotCloned {
-		// notCloned is true by default.
-		// this condition is valid only if it has been
-		// explicitly set to false by the client.
+	if !brgs.NotCloned {
+		// notCloned is true by defbult.
+		// this condition is vblid only if it hbs been
+		// explicitly set to fblse by the client.
 		opt.OnlyCloned = true
 	}
 
-	if !args.Indexed && !args.NotIndexed {
-		return database.ReposListOptions{}, errors.New("excluding indexed and not indexed repos leaves an empty set")
+	if !brgs.Indexed && !brgs.NotIndexed {
+		return dbtbbbse.ReposListOptions{}, errors.New("excluding indexed bnd not indexed repos lebves bn empty set")
 	}
-	if !args.Indexed {
+	if !brgs.Indexed {
 		opt.NoIndexed = true
 	}
-	if !args.NotIndexed {
+	if !brgs.NotIndexed {
 		opt.OnlyIndexed = true
 	}
 
-	if !args.Embedded && !args.NotEmbedded {
-		return database.ReposListOptions{}, errors.New("excluding embedded and not embedded repos leaves an empty set")
+	if !brgs.Embedded && !brgs.NotEmbedded {
+		return dbtbbbse.ReposListOptions{}, errors.New("excluding embedded bnd not embedded repos lebves bn empty set")
 	}
-	if !args.Embedded {
+	if !brgs.Embedded {
 		opt.NoEmbedded = true
 	}
-	if !args.NotEmbedded {
+	if !brgs.NotEmbedded {
 		opt.OnlyEmbedded = true
 	}
 
-	if args.ExternalService != nil {
-		extSvcID, err := UnmarshalExternalServiceID(*args.ExternalService)
+	if brgs.ExternblService != nil {
+		extSvcID, err := UnmbrshblExternblServiceID(*brgs.ExternblService)
 		if err != nil {
 			return opt, err
 		}
-		opt.ExternalServiceIDs = append(opt.ExternalServiceIDs, extSvcID)
+		opt.ExternblServiceIDs = bppend(opt.ExternblServiceIDs, extSvcID)
 	}
 
 	return opt, nil
 }
 
-func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs) (*graphqlutil.ConnectionResolver[*RepositoryResolver], error) {
-	opt, err := args.toReposListOptions()
+func (r *schembResolver) Repositories(ctx context.Context, brgs *repositoryArgs) (*grbphqlutil.ConnectionResolver[*RepositoryResolver], error) {
+	opt, err := brgs.toReposListOptions()
 	if err != nil {
 		return nil, err
 	}
@@ -114,65 +114,65 @@ func (r *schemaResolver) Repositories(ctx context.Context, args *repositoryArgs)
 	connectionStore := &repositoriesConnectionStore{
 		ctx:    ctx,
 		db:     r.db,
-		logger: r.logger.Scoped("repositoryConnectionResolver", "resolves connections to a repository"),
+		logger: r.logger.Scoped("repositoryConnectionResolver", "resolves connections to b repository"),
 		opt:    opt,
 	}
 
-	maxPageSize := 1000
+	mbxPbgeSize := 1000
 
-	// `REPOSITORY_NAME` is the enum value in the graphql schema.
+	// `REPOSITORY_NAME` is the enum vblue in the grbphql schemb.
 	orderBy := "REPOSITORY_NAME"
-	if args.OrderBy != "" {
-		orderBy = args.OrderBy
+	if brgs.OrderBy != "" {
+		orderBy = brgs.OrderBy
 	}
 
-	connectionOptions := graphqlutil.ConnectionResolverOptions{
-		MaxPageSize: &maxPageSize,
-		OrderBy:     database.OrderBy{{Field: string(ToDBRepoListColumn(orderBy))}, {Field: "id"}},
-		Ascending:   !args.Descending,
+	connectionOptions := grbphqlutil.ConnectionResolverOptions{
+		MbxPbgeSize: &mbxPbgeSize,
+		OrderBy:     dbtbbbse.OrderBy{{Field: string(ToDBRepoListColumn(orderBy))}, {Field: "id"}},
+		Ascending:   !brgs.Descending,
 	}
 
-	return graphqlutil.NewConnectionResolver[*RepositoryResolver](connectionStore, &args.ConnectionResolverArgs, &connectionOptions)
+	return grbphqlutil.NewConnectionResolver[*RepositoryResolver](connectionStore, &brgs.ConnectionResolverArgs, &connectionOptions)
 }
 
 type repositoriesConnectionStore struct {
 	ctx    context.Context
 	logger log.Logger
-	db     database.DB
-	opt    database.ReposListOptions
+	db     dbtbbbse.DB
+	opt    dbtbbbse.ReposListOptions
 }
 
-func (s *repositoriesConnectionStore) MarshalCursor(node *RepositoryResolver, orderBy database.OrderBy) (*string, error) {
+func (s *repositoriesConnectionStore) MbrshblCursor(node *RepositoryResolver, orderBy dbtbbbse.OrderBy) (*string, error) {
 	column := orderBy[0].Field
-	var value string
+	vbr vblue string
 
-	switch database.RepoListColumn(column) {
-	case database.RepoListName:
-		value = node.Name()
-	case database.RepoListCreatedAt:
-		value = fmt.Sprintf("'%v'", node.RawCreatedAt())
-	case database.RepoListSize:
+	switch dbtbbbse.RepoListColumn(column) {
+	cbse dbtbbbse.RepoListNbme:
+		vblue = node.Nbme()
+	cbse dbtbbbse.RepoListCrebtedAt:
+		vblue = fmt.Sprintf("'%v'", node.RbwCrebtedAt())
+	cbse dbtbbbse.RepoListSize:
 		size, err := node.DiskSizeBytes(s.ctx)
 		if err != nil {
 			return nil, err
 		}
-		value = strconv.FormatInt(int64(*size), 10)
-	default:
-		return nil, errors.New(fmt.Sprintf("invalid OrderBy.Field. Expected: one of (name, created_at, gr.repo_size_bytes). Actual: %s", column))
+		vblue = strconv.FormbtInt(int64(*size), 10)
+	defbult:
+		return nil, errors.New(fmt.Sprintf("invblid OrderBy.Field. Expected: one of (nbme, crebted_bt, gr.repo_size_bytes). Actubl: %s", column))
 	}
 
-	cursor := MarshalRepositoryCursor(
+	cursor := MbrshblRepositoryCursor(
 		&types.Cursor{
 			Column: column,
-			Value:  fmt.Sprintf("%s@%d", value, node.IDInt32()),
+			Vblue:  fmt.Sprintf("%s@%d", vblue, node.IDInt32()),
 		},
 	)
 
 	return &cursor, nil
 }
 
-func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy database.OrderBy) (*string, error) {
-	repoCursor, err := UnmarshalRepositoryCursor(&cursor)
+func (s *repositoriesConnectionStore) UnmbrshblCursor(cursor string, orderBy dbtbbbse.OrderBy) (*string, error) {
+	repoCursor, err := UnmbrshblRepositoryCursor(&cursor)
 	if err != nil {
 		return nil, err
 	}
@@ -183,38 +183,38 @@ func (s *repositoriesConnectionStore) UnmarshalCursor(cursor string, orderBy dat
 
 	column := orderBy[0].Field
 	if repoCursor.Column != column {
-		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected: %s Actual: %s", column, repoCursor.Column))
+		return nil, errors.New(fmt.Sprintf("Invblid cursor. Expected: %s Actubl: %s", column, repoCursor.Column))
 	}
 
 	csv := ""
-	values := strings.Split(repoCursor.Value, "@")
-	if len(values) != 2 {
-		return nil, errors.New(fmt.Sprintf("Invalid cursor. Expected Value: <%s>@<id> Actual Value: %s", column, repoCursor.Value))
+	vblues := strings.Split(repoCursor.Vblue, "@")
+	if len(vblues) != 2 {
+		return nil, errors.New(fmt.Sprintf("Invblid cursor. Expected Vblue: <%s>@<id> Actubl Vblue: %s", column, repoCursor.Vblue))
 	}
 
-	switch database.RepoListColumn(column) {
-	case database.RepoListName:
-		csv = fmt.Sprintf("'%v', %v", values[0], values[1])
-	case database.RepoListCreatedAt:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	case database.RepoListSize:
-		csv = fmt.Sprintf("%v, %v", values[0], values[1])
-	default:
-		return nil, errors.New("Invalid OrderBy Field.")
+	switch dbtbbbse.RepoListColumn(column) {
+	cbse dbtbbbse.RepoListNbme:
+		csv = fmt.Sprintf("'%v', %v", vblues[0], vblues[1])
+	cbse dbtbbbse.RepoListCrebtedAt:
+		csv = fmt.Sprintf("%v, %v", vblues[0], vblues[1])
+	cbse dbtbbbse.RepoListSize:
+		csv = fmt.Sprintf("%v, %v", vblues[0], vblues[1])
+	defbult:
+		return nil, errors.New("Invblid OrderBy Field.")
 	}
 
 	return &csv, err
 }
 
-func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countptr *int32, err error) {
-	// 🚨 SECURITY: Only site admins can list all repos, because a total repository
+func (s *repositoriesConnectionStore) ComputeTotbl(ctx context.Context) (countptr *int32, err error) {
+	// 🚨 SECURITY: Only site bdmins cbn list bll repos, becbuse b totbl repository
 	// count does not respect repository permissions.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, s.db); err != nil {
 		return pointers.Ptr(int32(0)), nil
 	}
 
-	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
-	if envvar.SourcegraphDotComMode() {
+	// Counting repositories is slow on Sourcegrbph.com. Don't wbit very long for bn exbct count.
+	if envvbr.SourcegrbphDotComMode() {
 		return pointers.Ptr(int32(0)), nil
 	}
 
@@ -222,48 +222,48 @@ func (s *repositoriesConnectionStore) ComputeTotal(ctx context.Context) (countpt
 	return pointers.Ptr(int32(count)), err
 }
 
-func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]*RepositoryResolver, error) {
+func (s *repositoriesConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]*RepositoryResolver, error) {
 	opt := s.opt
-	opt.PaginationArgs = args
+	opt.PbginbtionArgs = brgs
 
 	client := gitserver.NewClient()
-	repos, err := backend.NewRepos(s.logger, s.db, client).List(ctx, opt)
+	repos, err := bbckend.NewRepos(s.logger, s.db, client).List(ctx, opt)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*RepositoryResolver, 0, len(repos))
-	for _, repo := range repos {
-		resolvers = append(resolvers, NewRepositoryResolver(s.db, client, repo))
+	resolvers := mbke([]*RepositoryResolver, 0, len(repos))
+	for _, repo := rbnge repos {
+		resolvers = bppend(resolvers, NewRepositoryResolver(s.db, client, repo))
 	}
 
 	return resolvers, nil
 }
 
-// NOTE(naman): The old resolver `RepositoryConnectionResolver` defined below is
-// deprecated and replaced by `graphqlutil.ConnectionResolver` above which implements
-// proper cursor-based pagination and do not support `precise` argument for totalCount.
+// NOTE(nbmbn): The old resolver `RepositoryConnectionResolver` defined below is
+// deprecbted bnd replbced by `grbphqlutil.ConnectionResolver` bbove which implements
+// proper cursor-bbsed pbginbtion bnd do not support `precise` brgument for totblCount.
 // The old resolver is still being used by `AuthorizedUserRepositories` API, therefore
 // the code is not removed yet.
 
-type TotalCountArgs struct {
+type TotblCountArgs struct {
 	Precise bool
 }
 
-type RepositoryConnectionResolver interface {
+type RepositoryConnectionResolver interfbce {
 	Nodes(ctx context.Context) ([]*RepositoryResolver, error)
-	TotalCount(ctx context.Context, args *TotalCountArgs) (*int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	TotblCount(ctx context.Context, brgs *TotblCountArgs) (*int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-var _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
+vbr _ RepositoryConnectionResolver = &repositoryConnectionResolver{}
 
 type repositoryConnectionResolver struct {
 	logger log.Logger
-	db     database.DB
-	opt    database.ReposListOptions
+	db     dbtbbbse.DB
+	opt    dbtbbbse.ReposListOptions
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once  sync.Once
 	repos []*types.Repo
 	err   error
@@ -273,21 +273,21 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 	r.once.Do(func() {
 		opt2 := r.opt
 
-		if envvar.SourcegraphDotComMode() {
-			// 🚨 SECURITY: Don't allow non-admins to perform huge queries on Sourcegraph.com.
-			if isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
+		if envvbr.SourcegrbphDotComMode() {
+			// 🚨 SECURITY: Don't bllow non-bdmins to perform huge queries on Sourcegrbph.com.
+			if isSiteAdmin := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db) == nil; !isSiteAdmin {
 				if opt2.LimitOffset == nil {
-					opt2.LimitOffset = &database.LimitOffset{Limit: 1000}
+					opt2.LimitOffset = &dbtbbbse.LimitOffset{Limit: 1000}
 				}
 			}
 		}
 
-		reposClient := backend.NewRepos(r.logger, r.db, gitserver.NewClient())
+		reposClient := bbckend.NewRepos(r.logger, r.db, gitserver.NewClient())
 		for {
-			// Cursor-based pagination requires that we fetch limit+1 records, so
-			// that we know whether or not there's an additional page (or more)
-			// beyond the current one. We reset the limit immediately afterward for
-			// any subsequent calculations.
+			// Cursor-bbsed pbginbtion requires thbt we fetch limit+1 records, so
+			// thbt we know whether or not there's bn bdditionbl pbge (or more)
+			// beyond the current one. We reset the limit immedibtely bfterwbrd for
+			// bny subsequent cblculbtions.
 			if opt2.LimitOffset != nil {
 				opt2.LimitOffset.Limit++
 			}
@@ -301,14 +301,14 @@ func (r *repositoryConnectionResolver) compute(ctx context.Context) ([]*types.Re
 			}
 			reposFromDB := len(repos)
 
-			r.repos = append(r.repos, repos...)
+			r.repos = bppend(r.repos, repos...)
 
 			if opt2.LimitOffset == nil {
-				break
+				brebk
 			} else {
-				// check if we filtered some repos and if we need to get more from the DB
+				// check if we filtered some repos bnd if we need to get more from the DB
 				if len(repos) >= opt2.Limit || reposFromDB < opt2.Limit {
-					break
+					brebk
 				}
 				opt2.Offset += opt2.Limit
 			}
@@ -323,47 +323,47 @@ func (r *repositoryConnectionResolver) Nodes(ctx context.Context) ([]*Repository
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*RepositoryResolver, 0, len(repos))
+	resolvers := mbke([]*RepositoryResolver, 0, len(repos))
 	client := gitserver.NewClient()
-	for i, repo := range repos {
+	for i, repo := rbnge repos {
 		if r.opt.LimitOffset != nil && i == r.opt.Limit {
-			break
+			brebk
 		}
 
-		resolvers = append(resolvers, NewRepositoryResolver(r.db, client, repo))
+		resolvers = bppend(resolvers, NewRepositoryResolver(r.db, client, repo))
 	}
 	return resolvers, nil
 }
 
-func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *TotalCountArgs) (countptr *int32, err error) {
+func (r *repositoryConnectionResolver) TotblCount(ctx context.Context, brgs *TotblCountArgs) (countptr *int32, err error) {
 	if r.opt.UserID != 0 {
-		// 🚨 SECURITY: If filtering by user, restrict to that user
-		if err := auth.CheckSameUser(ctx, r.opt.UserID); err != nil {
+		// 🚨 SECURITY: If filtering by user, restrict to thbt user
+		if err := buth.CheckSbmeUser(ctx, r.opt.UserID); err != nil {
 			return nil, err
 		}
 	} else if r.opt.OrgID != 0 {
-		if err := auth.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
+		if err := buth.CheckOrgAccess(ctx, r.db, r.opt.OrgID); err != nil {
 			return nil, err
 		}
 	} else {
-		// 🚨 SECURITY: Only site admins can list all repos, because a total repository
+		// 🚨 SECURITY: Only site bdmins cbn list bll repos, becbuse b totbl repository
 		// count does not respect repository permissions.
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 			return nil, err
 		}
 	}
 
-	// Counting repositories is slow on Sourcegraph.com. Don't wait very long for an exact count.
-	if !args.Precise && envvar.SourcegraphDotComMode() {
+	// Counting repositories is slow on Sourcegrbph.com. Don't wbit very long for bn exbct count.
+	if !brgs.Precise && envvbr.SourcegrbphDotComMode() {
 		if len(r.opt.Query) < 4 {
 			return nil, nil
 		}
 
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, 300*time.Millisecond)
-		defer cancel()
+		vbr cbncel func()
+		ctx, cbncel = context.WithTimeout(ctx, 300*time.Millisecond)
+		defer cbncel()
 		defer func() {
-			if ctx.Err() == context.DeadlineExceeded {
+			if ctx.Err() == context.DebdlineExceeded {
 				countptr = nil
 				err = nil
 			}
@@ -374,42 +374,42 @@ func (r *repositoryConnectionResolver) TotalCount(ctx context.Context, args *Tot
 	return pointers.Ptr(int32(count)), err
 }
 
-func (r *repositoryConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *repositoryConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	repos, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if len(repos) == 0 || r.opt.LimitOffset == nil || len(repos) <= r.opt.Limit || len(r.opt.Cursors) == 0 {
-		return graphqlutil.HasNextPage(false), nil
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
 	cursor := r.opt.Cursors[0]
 
-	var value string
+	vbr vblue string
 	switch cursor.Column {
-	case string(database.RepoListName):
-		value = string(repos[len(repos)-1].Name)
-	case string(database.RepoListCreatedAt):
-		value = repos[len(repos)-1].CreatedAt.Format("2006-01-02 15:04:05.999999")
+	cbse string(dbtbbbse.RepoListNbme):
+		vblue = string(repos[len(repos)-1].Nbme)
+	cbse string(dbtbbbse.RepoListCrebtedAt):
+		vblue = repos[len(repos)-1].CrebtedAt.Formbt("2006-01-02 15:04:05.999999")
 	}
-	return graphqlutil.NextPageCursor(MarshalRepositoryCursor(
+	return grbphqlutil.NextPbgeCursor(MbrshblRepositoryCursor(
 		&types.Cursor{
 			Column:    cursor.Column,
-			Value:     value,
+			Vblue:     vblue,
 			Direction: cursor.Direction,
 		},
 	)), nil
 }
 
-func ToDBRepoListColumn(ob string) database.RepoListColumn {
+func ToDBRepoListColumn(ob string) dbtbbbse.RepoListColumn {
 	switch ob {
-	case "REPO_URI", "REPOSITORY_NAME":
-		return database.RepoListName
-	case "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
-		return database.RepoListCreatedAt
-	case "SIZE":
-		return database.RepoListSize
-	default:
+	cbse "REPO_URI", "REPOSITORY_NAME":
+		return dbtbbbse.RepoListNbme
+	cbse "REPO_CREATED_AT", "REPOSITORY_CREATED_AT":
+		return dbtbbbse.RepoListCrebtedAt
+	cbse "SIZE":
+		return dbtbbbse.RepoListSize
+	defbult:
 		return ""
 	}
 }

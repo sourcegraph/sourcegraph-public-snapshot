@@ -1,53 +1,53 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// GetAggregatedCodeIntelStats returns aggregated statistics for code intelligence usage.
-func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.NewCodeIntelUsageStatistics, error) {
+// GetAggregbtedCodeIntelStbts returns bggregbted stbtistics for code intelligence usbge.
+func GetAggregbtedCodeIntelStbts(ctx context.Context, db dbtbbbse.DB) (*types.NewCodeIntelUsbgeStbtistics, error) {
 	eventLogs := db.EventLogs()
 
-	codeIntelEvents, err := eventLogs.AggregatedCodeIntelEvents(ctx)
+	codeIntelEvents, err := eventLogs.AggregbtedCodeIntelEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
-	codeIntelInvestigationEvents, err := eventLogs.AggregatedCodeIntelInvestigationEvents(ctx)
+	codeIntelInvestigbtionEvents, err := eventLogs.AggregbtedCodeIntelInvestigbtionEvents(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if len(codeIntelEvents) == 0 && len(codeIntelInvestigationEvents) == 0 {
+	if len(codeIntelEvents) == 0 && len(codeIntelInvestigbtionEvents) == 0 {
 		return nil, nil
 	}
 
-	// NOTE: this requires at least one of these to be non-empty (to get an initial date)
-	stats := groupAggregatedCodeIntelStats(codeIntelEvents, codeIntelInvestigationEvents)
+	// NOTE: this requires bt lebst one of these to be non-empty (to get bn initibl dbte)
+	stbts := groupAggregbtedCodeIntelStbts(codeIntelEvents, codeIntelInvestigbtionEvents)
 
-	pairs := []struct {
+	pbirs := []struct {
 		fetch  func(ctx context.Context) (int, error)
-		target **int32
+		tbrget **int32
 	}{
-		{eventLogs.CodeIntelligenceWAUs, &stats.WAUs},
-		{eventLogs.CodeIntelligencePreciseWAUs, &stats.PreciseWAUs},
-		{eventLogs.CodeIntelligenceSearchBasedWAUs, &stats.SearchBasedWAUs},
-		{eventLogs.CodeIntelligenceCrossRepositoryWAUs, &stats.CrossRepositoryWAUs},
-		{eventLogs.CodeIntelligencePreciseCrossRepositoryWAUs, &stats.PreciseCrossRepositoryWAUs},
-		{eventLogs.CodeIntelligenceSearchBasedCrossRepositoryWAUs, &stats.SearchBasedCrossRepositoryWAUs},
+		{eventLogs.CodeIntelligenceWAUs, &stbts.WAUs},
+		{eventLogs.CodeIntelligencePreciseWAUs, &stbts.PreciseWAUs},
+		{eventLogs.CodeIntelligenceSebrchBbsedWAUs, &stbts.SebrchBbsedWAUs},
+		{eventLogs.CodeIntelligenceCrossRepositoryWAUs, &stbts.CrossRepositoryWAUs},
+		{eventLogs.CodeIntelligencePreciseCrossRepositoryWAUs, &stbts.PreciseCrossRepositoryWAUs},
+		{eventLogs.CodeIntelligenceSebrchBbsedCrossRepositoryWAUs, &stbts.SebrchBbsedCrossRepositoryWAUs},
 	}
 
-	for _, pair := range pairs {
-		count, err := pair.fetch(ctx)
+	for _, pbir := rbnge pbirs {
+		count, err := pbir.fetch(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		v := int32(count)
-		*pair.target = &v
+		*pbir.tbrget = &v
 	}
 
 	counts, err := eventLogs.CodeIntelligenceRepositoryCounts(ctx)
@@ -55,123 +55,123 @@ func GetAggregatedCodeIntelStats(ctx context.Context, db database.DB) (*types.Ne
 		return nil, err
 	}
 
-	countsByLanguage, err := eventLogs.CodeIntelligenceRepositoryCountsByLanguage(ctx)
+	countsByLbngubge, err := eventLogs.CodeIntelligenceRepositoryCountsByLbngubge(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	settingsPageViewCount, err := eventLogs.CodeIntelligenceSettingsPageViewCount(ctx)
+	settingsPbgeViewCount, err := eventLogs.CodeIntelligenceSettingsPbgeViewCount(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	stats.NumRepositories = int32Ptr(counts.NumRepositories)
-	stats.NumRepositoriesWithUploadRecords = int32Ptr(counts.NumRepositoriesWithUploadRecords)
-	stats.NumRepositoriesWithFreshUploadRecords = int32Ptr(counts.NumRepositoriesWithFreshUploadRecords)
-	stats.NumRepositoriesWithIndexRecords = int32Ptr(counts.NumRepositoriesWithIndexRecords)
-	stats.NumRepositoriesWithFreshIndexRecords = int32Ptr(counts.NumRepositoriesWithFreshIndexRecords)
-	stats.NumRepositoriesWithAutoIndexConfigurationRecords = int32Ptr(counts.NumRepositoriesWithAutoIndexConfigurationRecords)
-	stats.SettingsPageViewCount = int32Ptr(settingsPageViewCount)
+	stbts.NumRepositories = int32Ptr(counts.NumRepositories)
+	stbts.NumRepositoriesWithUplobdRecords = int32Ptr(counts.NumRepositoriesWithUplobdRecords)
+	stbts.NumRepositoriesWithFreshUplobdRecords = int32Ptr(counts.NumRepositoriesWithFreshUplobdRecords)
+	stbts.NumRepositoriesWithIndexRecords = int32Ptr(counts.NumRepositoriesWithIndexRecords)
+	stbts.NumRepositoriesWithFreshIndexRecords = int32Ptr(counts.NumRepositoriesWithFreshIndexRecords)
+	stbts.NumRepositoriesWithAutoIndexConfigurbtionRecords = int32Ptr(counts.NumRepositoriesWithAutoIndexConfigurbtionRecords)
+	stbts.SettingsPbgeViewCount = int32Ptr(settingsPbgeViewCount)
 
-	stats.CountsByLanguage = make(map[string]types.CodeIntelRepositoryCountsByLanguage, len(countsByLanguage))
-	for language, counts := range countsByLanguage {
-		stats.CountsByLanguage[language] = types.CodeIntelRepositoryCountsByLanguage{
-			NumRepositoriesWithUploadRecords:      int32Ptr(counts.NumRepositoriesWithUploadRecords),
-			NumRepositoriesWithFreshUploadRecords: int32Ptr(counts.NumRepositoriesWithFreshUploadRecords),
+	stbts.CountsByLbngubge = mbke(mbp[string]types.CodeIntelRepositoryCountsByLbngubge, len(countsByLbngubge))
+	for lbngubge, counts := rbnge countsByLbngubge {
+		stbts.CountsByLbngubge[lbngubge] = types.CodeIntelRepositoryCountsByLbngubge{
+			NumRepositoriesWithUplobdRecords:      int32Ptr(counts.NumRepositoriesWithUplobdRecords),
+			NumRepositoriesWithFreshUplobdRecords: int32Ptr(counts.NumRepositoriesWithFreshUplobdRecords),
 			NumRepositoriesWithIndexRecords:       int32Ptr(counts.NumRepositoriesWithIndexRecords),
 			NumRepositoriesWithFreshIndexRecords:  int32Ptr(counts.NumRepositoriesWithFreshIndexRecords),
 		}
 	}
 
-	requestCountsByLanguage, err := eventLogs.RequestsByLanguage(ctx)
+	requestCountsByLbngubge, err := eventLogs.RequestsByLbngubge(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	languageRequests := make([]types.LanguageRequest, 0, len(countsByLanguage))
-	for languageID, value := range requestCountsByLanguage {
-		languageRequests = append(languageRequests, types.LanguageRequest{
-			LanguageID:  languageID,
-			NumRequests: int32(value),
+	lbngubgeRequests := mbke([]types.LbngubgeRequest, 0, len(countsByLbngubge))
+	for lbngubgeID, vblue := rbnge requestCountsByLbngubge {
+		lbngubgeRequests = bppend(lbngubgeRequests, types.LbngubgeRequest{
+			LbngubgeID:  lbngubgeID,
+			NumRequests: int32(vblue),
 		})
 	}
-	stats.LanguageRequests = languageRequests
+	stbts.LbngubgeRequests = lbngubgeRequests
 
-	return stats, nil
+	return stbts, nil
 }
 
-var actionMap = map[string]types.CodeIntelAction{
+vbr bctionMbp = mbp[string]types.CodeIntelAction{
 	"codeintel.lsifHover":               types.HoverAction,
-	"codeintel.searchHover":             types.HoverAction,
+	"codeintel.sebrchHover":             types.HoverAction,
 	"codeintel.lsifDefinitions":         types.DefinitionsAction,
 	"codeintel.lsifDefinitions.xrepo":   types.DefinitionsAction,
-	"codeintel.searchDefinitions":       types.DefinitionsAction,
-	"codeintel.searchDefinitions.xrepo": types.DefinitionsAction,
+	"codeintel.sebrchDefinitions":       types.DefinitionsAction,
+	"codeintel.sebrchDefinitions.xrepo": types.DefinitionsAction,
 	"codeintel.lsifReferences":          types.ReferencesAction,
 	"codeintel.lsifReferences.xrepo":    types.ReferencesAction,
-	"codeintel.searchReferences":        types.ReferencesAction,
-	"codeintel.searchReferences.xrepo":  types.ReferencesAction,
+	"codeintel.sebrchReferences":        types.ReferencesAction,
+	"codeintel.sebrchReferences.xrepo":  types.ReferencesAction,
 }
 
-var sourceMap = map[string]types.CodeIntelSource{
+vbr sourceMbp = mbp[string]types.CodeIntelSource{
 	"codeintel.lsifHover":               types.PreciseSource,
 	"codeintel.lsifDefinitions":         types.PreciseSource,
 	"codeintel.lsifDefinitions.xrepo":   types.PreciseSource,
 	"codeintel.lsifReferences":          types.PreciseSource,
 	"codeintel.lsifReferences.xrepo":    types.PreciseSource,
-	"codeintel.searchHover":             types.SearchSource,
-	"codeintel.searchDefinitions":       types.SearchSource,
-	"codeintel.searchDefinitions.xrepo": types.SearchSource,
-	"codeintel.searchReferences":        types.SearchSource,
-	"codeintel.searchReferences.xrepo":  types.SearchSource,
+	"codeintel.sebrchHover":             types.SebrchSource,
+	"codeintel.sebrchDefinitions":       types.SebrchSource,
+	"codeintel.sebrchDefinitions.xrepo": types.SebrchSource,
+	"codeintel.sebrchReferences":        types.SebrchSource,
+	"codeintel.sebrchReferences.xrepo":  types.SebrchSource,
 }
 
-var investigationTypeMap = map[string]types.CodeIntelInvestigationType{
-	"CodeIntelligenceIndexerSetupInvestigated": types.CodeIntelIndexerSetupInvestigationType,
-	"CodeIntelligenceUploadErrorInvestigated":  types.CodeIntelUploadErrorInvestigationType,
-	"CodeIntelligenceIndexErrorInvestigated":   types.CodeIntelIndexErrorInvestigationType,
+vbr investigbtionTypeMbp = mbp[string]types.CodeIntelInvestigbtionType{
+	"CodeIntelligenceIndexerSetupInvestigbted": types.CodeIntelIndexerSetupInvestigbtionType,
+	"CodeIntelligenceUplobdErrorInvestigbted":  types.CodeIntelUplobdErrorInvestigbtionType,
+	"CodeIntelligenceIndexErrorInvestigbted":   types.CodeIntelIndexErrorInvestigbtionType,
 }
 
-func groupAggregatedCodeIntelStats(
-	rawEvents []types.CodeIntelAggregatedEvent,
-	rawInvestigationEvents []types.CodeIntelAggregatedInvestigationEvent,
-) *types.NewCodeIntelUsageStatistics {
-	var eventSummaries []types.CodeIntelEventSummary
-	for _, event := range rawEvents {
-		languageID := ""
-		if event.LanguageID != nil {
-			languageID = *event.LanguageID
+func groupAggregbtedCodeIntelStbts(
+	rbwEvents []types.CodeIntelAggregbtedEvent,
+	rbwInvestigbtionEvents []types.CodeIntelAggregbtedInvestigbtionEvent,
+) *types.NewCodeIntelUsbgeStbtistics {
+	vbr eventSummbries []types.CodeIntelEventSummbry
+	for _, event := rbnge rbwEvents {
+		lbngubgeID := ""
+		if event.LbngubgeID != nil {
+			lbngubgeID = *event.LbngubgeID
 		}
 
-		eventSummaries = append(eventSummaries, types.CodeIntelEventSummary{
-			Action:          actionMap[event.Name],
-			Source:          sourceMap[event.Name],
-			LanguageID:      languageID,
-			CrossRepository: strings.HasSuffix(event.Name, ".xrepo"),
+		eventSummbries = bppend(eventSummbries, types.CodeIntelEventSummbry{
+			Action:          bctionMbp[event.Nbme],
+			Source:          sourceMbp[event.Nbme],
+			LbngubgeID:      lbngubgeID,
+			CrossRepository: strings.HbsSuffix(event.Nbme, ".xrepo"),
 			WAUs:            event.UniquesWeek,
-			TotalActions:    event.TotalWeek,
+			TotblActions:    event.TotblWeek,
 		})
 	}
 
-	var investigationEvents []types.CodeIntelInvestigationEvent
-	for _, event := range rawInvestigationEvents {
-		investigationEvents = append(investigationEvents, types.CodeIntelInvestigationEvent{
-			Type:  investigationTypeMap[event.Name],
+	vbr investigbtionEvents []types.CodeIntelInvestigbtionEvent
+	for _, event := rbnge rbwInvestigbtionEvents {
+		investigbtionEvents = bppend(investigbtionEvents, types.CodeIntelInvestigbtionEvent{
+			Type:  investigbtionTypeMbp[event.Nbme],
 			WAUs:  event.UniquesWeek,
-			Total: event.TotalWeek,
+			Totbl: event.TotblWeek,
 		})
 	}
 
-	var startOfWeek time.Time
-	if len(rawEvents) > 0 {
-		startOfWeek = rawEvents[0].Week
-	} else if len(rawInvestigationEvents) > 0 {
-		startOfWeek = rawInvestigationEvents[0].Week
+	vbr stbrtOfWeek time.Time
+	if len(rbwEvents) > 0 {
+		stbrtOfWeek = rbwEvents[0].Week
+	} else if len(rbwInvestigbtionEvents) > 0 {
+		stbrtOfWeek = rbwInvestigbtionEvents[0].Week
 	}
 
-	return &types.NewCodeIntelUsageStatistics{
-		StartOfWeek:         startOfWeek,
-		EventSummaries:      eventSummaries,
-		InvestigationEvents: investigationEvents,
+	return &types.NewCodeIntelUsbgeStbtistics{
+		StbrtOfWeek:         stbrtOfWeek,
+		EventSummbries:      eventSummbries,
+		InvestigbtionEvents: investigbtionEvents,
 	}
 }

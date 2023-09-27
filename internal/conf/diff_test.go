@@ -1,92 +1,92 @@
-package conf
+pbckbge conf
 
 import (
 	"reflect"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestDiff(t *testing.T) {
 	tests := []struct {
-		name          string
-		before, after *Unified
-		want          []string
+		nbme          string
+		before, bfter *Unified
+		wbnt          []string
 	}{
 		{
-			name:   "diff",
-			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
-			after:  &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "b"}},
-			want:   []string{"externalURL"},
+			nbme:   "diff",
+			before: &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "b"}},
+			bfter:  &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "b"}},
+			wbnt:   []string{"externblURL"},
 		},
 		{
-			name:   "nodiff",
-			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
-			after:  &Unified{SiteConfiguration: schema.SiteConfiguration{ExternalURL: "a"}},
-			want:   nil,
+			nbme:   "nodiff",
+			before: &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "b"}},
+			bfter:  &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExternblURL: "b"}},
+			wbnt:   nil,
 		},
 		{
-			name: "slice_diff",
+			nbme: "slice_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{GitCloneURLToRepositoryNbme: []*schemb.CloneURLToRepositoryNbme{{From: "b"}}, ExternblURL: "b"},
 			},
-			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}, ExternalURL: "a"},
+			bfter: &Unified{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{GitCloneURLToRepositoryNbme: []*schemb.CloneURLToRepositoryNbme{{From: "b"}}, ExternblURL: "b"},
 			},
-			want: []string{"git.cloneURLToRepositoryName"},
+			wbnt: []string{"git.cloneURLToRepositoryNbme"},
 		},
 		{
-			name: "slice_nodiff",
+			nbme: "slice_nodiff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{GitCloneURLToRepositoryNbme: []*schemb.CloneURLToRepositoryNbme{{From: "b"}}, ExternblURL: "b"},
 			},
-			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "a"},
+			bfter: &Unified{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{GitCloneURLToRepositoryNbme: []*schemb.CloneURLToRepositoryNbme{{From: "b"}}, ExternblURL: "b"},
 			},
 		},
 		{
-			name: "multi_diff",
+			nbme: "multi_diff",
 			before: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "b"}}, ExternalURL: "a"},
+				SiteConfigurbtion: schemb.SiteConfigurbtion{GitCloneURLToRepositoryNbme: []*schemb.CloneURLToRepositoryNbme{{From: "b"}}, ExternblURL: "b"},
 			},
-			after: &Unified{
-				SiteConfiguration: schema.SiteConfiguration{GitCloneURLToRepositoryName: []*schema.CloneURLToRepositoryName{{From: "a"}}, ExternalURL: "b"},
+			bfter: &Unified{
+				SiteConfigurbtion: schemb.SiteConfigurbtion{GitCloneURLToRepositoryNbme: []*schemb.CloneURLToRepositoryNbme{{From: "b"}}, ExternblURL: "b"},
 			},
-			want: []string{"externalURL", "git.cloneURLToRepositoryName"},
+			wbnt: []string{"externblURL", "git.cloneURLToRepositoryNbme"},
 		},
 		{
-			name: "experimental_features",
-			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				StructuralSearch: "enabled",
+			nbme: "experimentbl_febtures",
+			before: &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				StructurblSebrch: "enbbled",
 			}}},
-			after: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-				StructuralSearch: "disabled",
+			bfter: &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				StructurblSebrch: "disbbled",
 			}}},
-			want: []string{"experimentalFeatures::structuralSearch"},
+			wbnt: []string{"experimentblFebtures::structurblSebrch"},
 		},
 		{
-			name:   "experimental_features_noop",
-			before: &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}}},
-			after:  &Unified{SiteConfiguration: schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{}}},
-			want:   nil,
+			nbme:   "experimentbl_febtures_noop",
+			before: &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{}}},
+			bfter:  &Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{}}},
+			wbnt:   nil,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := toSlice(diff(test.before, test.after))
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := toSlice(diff(test.before, test.bfter))
 			sort.Strings(got)
-			if !reflect.DeepEqual(got, test.want) {
-				t.Fatalf("got %#v want %#v", got, test.want)
+			if !reflect.DeepEqubl(got, test.wbnt) {
+				t.Fbtblf("got %#v wbnt %#v", got, test.wbnt)
 			}
 		})
 	}
 }
 
-func toSlice(m map[string]struct{}) []string {
-	var s []string
-	for v := range m {
-		s = append(s, v)
+func toSlice(m mbp[string]struct{}) []string {
+	vbr s []string
+	for v := rbnge m {
+		s = bppend(s, v)
 	}
 	return s
 }

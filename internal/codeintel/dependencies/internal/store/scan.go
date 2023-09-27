@@ -1,86 +1,86 @@
-package store
+pbckbge store
 
 import (
 	"bytes"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"time"
 
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func scanDependencyRepoWithVersions(s dbutil.Scanner) (shared.PackageRepoReference, error) {
-	var ref shared.PackageRepoReference
-	var (
+func scbnDependencyRepoWithVersions(s dbutil.Scbnner) (shbred.PbckbgeRepoReference, error) {
+	vbr ref shbred.PbckbgeRepoReference
+	vbr (
 		versionStrings []string
 		ids            []int64
 		blocked        []bool
-		lastCheckedAt  []sql.NullString
+		lbstCheckedAt  []sql.NullString
 	)
-	err := s.Scan(
+	err := s.Scbn(
 		&ref.ID,
 		&ref.Scheme,
-		&ref.Name,
+		&ref.Nbme,
 		&ref.Blocked,
-		&ref.LastCheckedAt,
-		pq.Array(&ids),
-		pq.Array(&versionStrings),
-		pq.Array(&blocked),
-		pq.Array(&lastCheckedAt),
+		&ref.LbstCheckedAt,
+		pq.Arrby(&ids),
+		pq.Arrby(&versionStrings),
+		pq.Arrby(&blocked),
+		pq.Arrby(&lbstCheckedAt),
 	)
 	if err != nil {
-		return shared.PackageRepoReference{}, err
+		return shbred.PbckbgeRepoReference{}, err
 	}
 
-	ref.Versions = make([]shared.PackageRepoRefVersion, 0, len(versionStrings))
-	for i, version := range versionStrings {
-		// because pq.Array(&[]pq.NullTime) isnt supported...
-		var t *time.Time
-		if lastCheckedAt[i].Valid {
-			parsedT, err := pq.ParseTimestamp(nil, lastCheckedAt[i].String)
+	ref.Versions = mbke([]shbred.PbckbgeRepoRefVersion, 0, len(versionStrings))
+	for i, version := rbnge versionStrings {
+		// becbuse pq.Arrby(&[]pq.NullTime) isnt supported...
+		vbr t *time.Time
+		if lbstCheckedAt[i].Vblid {
+			pbrsedT, err := pq.PbrseTimestbmp(nil, lbstCheckedAt[i].String)
 			if err != nil {
-				return shared.PackageRepoReference{}, errors.Wrapf(err, "time string %q is not valid", lastCheckedAt[i].String)
+				return shbred.PbckbgeRepoReference{}, errors.Wrbpf(err, "time string %q is not vblid", lbstCheckedAt[i].String)
 			}
-			t = &parsedT
+			t = &pbrsedT
 		}
-		ref.Versions = append(ref.Versions, shared.PackageRepoRefVersion{
+		ref.Versions = bppend(ref.Versions, shbred.PbckbgeRepoRefVersion{
 			ID:            int(ids[i]),
-			PackageRefID:  ref.ID,
+			PbckbgeRefID:  ref.ID,
 			Version:       version,
 			Blocked:       blocked[i],
-			LastCheckedAt: t,
+			LbstCheckedAt: t,
 		})
 	}
 	return ref, err
 }
 
-func scanPackageFilter(s dbutil.Scanner) (shared.PackageRepoFilter, error) {
-	var filter shared.PackageRepoFilter
-	var data []byte
-	err := s.Scan(
+func scbnPbckbgeFilter(s dbutil.Scbnner) (shbred.PbckbgeRepoFilter, error) {
+	vbr filter shbred.PbckbgeRepoFilter
+	vbr dbtb []byte
+	err := s.Scbn(
 		&filter.ID,
-		&filter.Behaviour,
-		&filter.PackageScheme,
-		&data,
+		&filter.Behbviour,
+		&filter.PbckbgeScheme,
+		&dbtb,
 		&filter.DeletedAt,
-		&filter.UpdatedAt,
+		&filter.UpdbtedAt,
 	)
 	if err != nil {
-		return shared.PackageRepoFilter{}, err
+		return shbred.PbckbgeRepoFilter{}, err
 	}
 
-	b := bytes.NewReader(data)
+	b := bytes.NewRebder(dbtb)
 	d := json.NewDecoder(b)
-	d.DisallowUnknownFields()
+	d.DisbllowUnknownFields()
 
-	if err := d.Decode(&filter.NameFilter); err != nil {
-		// d.Decode will set NameFilter to != nil even if theres an error, meaning we potentially
-		// have both NameFilter and VersionFilter set to not nil
-		filter.NameFilter = nil
+	if err := d.Decode(&filter.NbmeFilter); err != nil {
+		// d.Decode will set NbmeFilter to != nil even if theres bn error, mebning we potentiblly
+		// hbve both NbmeFilter bnd VersionFilter set to not nil
+		filter.NbmeFilter = nil
 		b.Seek(0, 0)
 		return filter, d.Decode(&filter.VersionFilter)
 	}

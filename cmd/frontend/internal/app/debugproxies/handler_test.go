@@ -1,8 +1,8 @@
-package debugproxies
+pbckbge debugproxies
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"io"
 	"net/http"
@@ -12,81 +12,81 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/gorilla/mux"
-	"github.com/stretchr/testify/assert"
+	"github.com/gorillb/mux"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/router"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestReverseProxyRequestPaths(t *testing.T) {
-	var rph ReverseProxyHandler
+func TestReverseProxyRequestPbths(t *testing.T) {
+	vbr rph ReverseProxyHbndler
 
-	proxiedServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		_, _ = writer.Write([]byte(request.URL.Path))
+	proxiedServer := httptest.NewServer(http.HbndlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		_, _ = writer.Write([]byte(request.URL.Pbth))
 	}))
 	defer proxiedServer.Close()
 
-	proxiedURL, err := url.Parse(proxiedServer.URL)
+	proxiedURL, err := url.Pbrse(proxiedServer.URL)
 	if err != nil {
 		t.Errorf("setup error %v", err)
 		return
 	}
 
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+	febtureFlbgs := dbmocks.NewMockFebtureFlbgStore()
+	febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(nil, sql.ErrNoRows)
 
 	db := dbmocks.NewStrictMockDB()
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.FebtureFlbgsFunc.SetDefbultReturn(febtureFlbgs)
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
-	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(db, []Endpoint{ep})
+	displbyNbme := displbyNbmeFromEndpoint(ep)
+	rph.Populbte(db, []Endpoint{ep})
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
-	link := fmt.Sprintf("%s/-/debug/proxies/%s/metrics", proxiedServer.URL, displayName)
+	link := fmt.Sprintf("%s/-/debug/proxies/%s/metrics", proxiedServer.URL, displbyNbme)
 	req := httptest.NewRequest("GET", link, nil)
 
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
 	rtr := mux.NewRouter()
-	rtr.PathPrefix("/-/debug").Name(router.Debug)
+	rtr.PbthPrefix("/-/debug").Nbme(router.Debug)
 	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), db)
 
 	rtr.ServeHTTP(w, req)
 
 	resp := w.Result()
-	body, _ := io.ReadAll(resp.Body)
+	body, _ := io.RebdAll(resp.Body)
 
 	if string(body) != "/metrics" {
-		t.Errorf("expected /metrics to be passed to reverse proxy, got %s", body)
+		t.Errorf("expected /metrics to be pbssed to reverse proxy, got %s", body)
 	}
 }
 
 func TestIndexLinks(t *testing.T) {
-	var rph ReverseProxyHandler
+	vbr rph ReverseProxyHbndler
 
-	proxiedServer := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		_, _ = writer.Write([]byte(request.URL.Path))
+	proxiedServer := httptest.NewServer(http.HbndlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		_, _ = writer.Write([]byte(request.URL.Pbth))
 	}))
 	defer proxiedServer.Close()
 
-	proxiedURL, err := url.Parse(proxiedServer.URL)
+	proxiedURL, err := url.Pbrse(proxiedServer.URL)
 	if err != nil {
 		t.Errorf("setup error %v", err)
 		return
 	}
 
 	ep := Endpoint{Service: "gitserver", Addr: proxiedURL.Host}
-	displayName := displayNameFromEndpoint(ep)
-	rph.Populate(dbmocks.NewMockDB(), []Endpoint{ep})
+	displbyNbme := displbyNbmeFromEndpoint(ep)
+	rph.Populbte(dbmocks.NewMockDB(), []Endpoint{ep})
 
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 
 	link := fmt.Sprintf("%s/-/debug/", proxiedServer.URL)
 	req := httptest.NewRequest("GET", link, nil)
@@ -94,146 +94,146 @@ func TestIndexLinks(t *testing.T) {
 	req = req.WithContext(ctx)
 	w := httptest.NewRecorder()
 
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+	febtureFlbgs := dbmocks.NewMockFebtureFlbgStore()
+	febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(nil, sql.ErrNoRows)
 
 	db := dbmocks.NewStrictMockDB()
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.FebtureFlbgsFunc.SetDefbultReturn(febtureFlbgs)
 
 	rtr := mux.NewRouter()
-	rtr.PathPrefix("/-/debug").Name(router.Debug)
+	rtr.PbthPrefix("/-/debug").Nbme(router.Debug)
 	rph.AddToRouter(rtr.Get(router.Debug).Subrouter(), db)
 
 	rtr.ServeHTTP(w, req)
 
 	resp := w.Result()
-	body, _ := io.ReadAll(resp.Body)
+	body, _ := io.RebdAll(resp.Body)
 
-	expectedContent := fmt.Sprintf("<a href=\"proxies/%s/\">%s</a><br>", displayName, displayName)
+	expectedContent := fmt.Sprintf("<b href=\"proxies/%s/\">%s</b><br>", displbyNbme, displbyNbme)
 
-	if !strings.Contains(string(body), expectedContent) {
+	if !strings.Contbins(string(body), expectedContent) {
 		t.Errorf("expected %s, got %s", expectedContent, body)
 	}
 }
 
-func TestDisplayNameFromEndpoint(t *testing.T) {
-	cases := []struct {
-		Service, Addr, Hostname string
-		Want                    string
+func TestDisplbyNbmeFromEndpoint(t *testing.T) {
+	cbses := []struct {
+		Service, Addr, Hostnbme string
+		Wbnt                    string
 	}{{
 		Service:  "gitserver",
 		Addr:     "192.168.10.0:2323",
-		Hostname: "gitserver-0",
-		Want:     "gitserver-0",
+		Hostnbme: "gitserver-0",
+		Wbnt:     "gitserver-0",
 	}, {
-		Service: "searcher",
+		Service: "sebrcher",
 		Addr:    "192.168.10.3:2323",
-		Want:    "searcher-192.168.10.3",
+		Wbnt:    "sebrcher-192.168.10.3",
 	}, {
 		Service: "no-port",
 		Addr:    "192.168.10.1",
-		Want:    "no-port-192.168.10.1",
+		Wbnt:    "no-port-192.168.10.1",
 	}}
 
-	for _, c := range cases {
-		got := displayNameFromEndpoint(Endpoint{
+	for _, c := rbnge cbses {
+		got := displbyNbmeFromEndpoint(Endpoint{
 			Service:  c.Service,
 			Addr:     c.Addr,
-			Hostname: c.Hostname,
+			Hostnbme: c.Hostnbme,
 		})
-		if got != c.Want {
-			t.Errorf("displayNameFromEndpoint(%q, %q) mismatch (-want +got):\n%s", c.Service, c.Addr, cmp.Diff(c.Want, got))
+		if got != c.Wbnt {
+			t.Errorf("displbyNbmeFromEndpoint(%q, %q) mismbtch (-wbnt +got):\n%s", c.Service, c.Addr, cmp.Diff(c.Wbnt, got))
 		}
 	}
 }
 
 func TestAdminOnly(t *testing.T) {
 	tests := []struct {
-		name             string
+		nbme             string
 		mockUsers        func(users *dbmocks.MockUserStore)
-		mockFeatureFlags func(featureFlags *dbmocks.MockFeatureFlagStore)
-		mockActor        *actor.Actor
-		wantStatus       int
+		mockFebtureFlbgs func(febtureFlbgs *dbmocks.MockFebtureFlbgStore)
+		mockActor        *bctor.Actor
+		wbntStbtus       int
 	}{
 		{
-			name: "not an admin",
+			nbme: "not bn bdmin",
 			mockUsers: func(users *dbmocks.MockUserStore) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
-				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+			mockFebtureFlbgs: func(febtureFlbgs *dbmocks.MockFebtureFlbgStore) {
+				febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(nil, sql.ErrNoRows)
 			},
-			mockActor:  &actor.Actor{},
-			wantStatus: http.StatusForbidden,
+			mockActor:  &bctor.Actor{},
+			wbntStbtus: http.StbtusForbidden,
 		},
 		{
-			name: "no feature flag",
+			nbme: "no febture flbg",
 			mockUsers: func(users *dbmocks.MockUserStore) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
-				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+			mockFebtureFlbgs: func(febtureFlbgs *dbmocks.MockFebtureFlbgStore) {
+				febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(nil, sql.ErrNoRows)
 			},
-			mockActor:  &actor.Actor{},
-			wantStatus: http.StatusOK,
+			mockActor:  &bctor.Actor{},
+			wbntStbtus: http.StbtusOK,
 		},
 		{
-			name: "has feature flag but not enabled",
+			nbme: "hbs febture flbg but not enbbled",
 			mockUsers: func(users *dbmocks.MockUserStore) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
-				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: false}}, nil)
+			mockFebtureFlbgs: func(febtureFlbgs *dbmocks.MockFebtureFlbgStore) {
+				febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(&febtureflbg.FebtureFlbg{Bool: &febtureflbg.FebtureFlbgBool{Vblue: fblse}}, nil)
 			},
-			mockActor:  &actor.Actor{},
-			wantStatus: http.StatusOK,
+			mockActor:  &bctor.Actor{},
+			wbntStbtus: http.StbtusOK,
 		},
 		{
-			name: "feature flag enabled but not Sourcegraph operator",
+			nbme: "febture flbg enbbled but not Sourcegrbph operbtor",
 			mockUsers: func(users *dbmocks.MockUserStore) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
-				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: true}}, nil)
+			mockFebtureFlbgs: func(febtureFlbgs *dbmocks.MockFebtureFlbgStore) {
+				febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(&febtureflbg.FebtureFlbg{Bool: &febtureflbg.FebtureFlbgBool{Vblue: true}}, nil)
 			},
-			mockActor:  &actor.Actor{},
-			wantStatus: http.StatusForbidden,
+			mockActor:  &bctor.Actor{},
+			wbntStbtus: http.StbtusForbidden,
 		},
 		{
-			name: "feature flag enabled and Sourcegraph operator",
+			nbme: "febture flbg enbbled bnd Sourcegrbph operbtor",
 			mockUsers: func(users *dbmocks.MockUserStore) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 			},
-			mockFeatureFlags: func(featureFlags *dbmocks.MockFeatureFlagStore) {
-				featureFlags.GetFeatureFlagFunc.SetDefaultReturn(&featureflag.FeatureFlag{Bool: &featureflag.FeatureFlagBool{Value: true}}, nil)
+			mockFebtureFlbgs: func(febtureFlbgs *dbmocks.MockFebtureFlbgStore) {
+				febtureFlbgs.GetFebtureFlbgFunc.SetDefbultReturn(&febtureflbg.FebtureFlbg{Bool: &febtureflbg.FebtureFlbgBool{Vblue: true}}, nil)
 			},
-			mockActor:  &actor.Actor{SourcegraphOperator: true},
-			wantStatus: http.StatusOK,
+			mockActor:  &bctor.Actor{SourcegrbphOperbtor: true},
+			wbntStbtus: http.StbtusOK,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			users := dbmocks.NewMockUserStore()
 			test.mockUsers(users)
 
-			featureFlags := dbmocks.NewMockFeatureFlagStore()
-			test.mockFeatureFlags(featureFlags)
+			febtureFlbgs := dbmocks.NewMockFebtureFlbgStore()
+			test.mockFebtureFlbgs(febtureFlbgs)
 
 			db := dbmocks.NewMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
-			db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+			db.UsersFunc.SetDefbultReturn(users)
+			db.FebtureFlbgsFunc.SetDefbultReturn(febtureFlbgs)
 
 			w := httptest.NewRecorder()
 			r := httptest.NewRequest(http.MethodGet, "/-/debug", nil)
-			r = r.WithContext(actor.WithActor(r.Context(), test.mockActor))
+			r = r.WithContext(bctor.WithActor(r.Context(), test.mockActor))
 			AdminOnly(
 				db,
-				http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-					w.WriteHeader(http.StatusOK)
+				http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+					w.WriteHebder(http.StbtusOK)
 				}),
 			).ServeHTTP(w, r)
 
-			assert.Equal(t, test.wantStatus, w.Code)
+			bssert.Equbl(t, test.wbntStbtus, w.Code)
 		})
 	}
 }

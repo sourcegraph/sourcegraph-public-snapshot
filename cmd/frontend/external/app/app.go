@@ -1,22 +1,22 @@
-// Package app exports symbols from frontend/internal/app. See the parent
-// package godoc for more information.
-package app
+// Pbckbge bpp exports symbols from frontend/internbl/bpp. See the pbrent
+// pbckbge godoc for more informbtion.
+pbckbge bpp
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/jscontext"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/jscontext"
 )
 
-type SignOutURL = app.SignOutURL
+type SignOutURL = bpp.SignOutURL
 
-var RegisterSSOSignOutHandler = app.RegisterSSOSignOutHandler
+vbr RegisterSSOSignOutHbndler = bpp.RegisterSSOSignOutHbndler
 
-func SetBillingPublishableKey(value string) {
-	jscontext.BillingPublishableKey = value
+func SetBillingPublishbbleKey(vblue string) {
+	jscontext.BillingPublishbbleKey = vblue
 }
 
-// SetPreMountGrafanaHook allows the enterprise package to inject a tier
-// enforcement function during initialization.
-func SetPreMountGrafanaHook(hookFn func() error) {
-	app.PreMountGrafanaHook = hookFn
+// SetPreMountGrbfbnbHook bllows the enterprise pbckbge to inject b tier
+// enforcement function during initiblizbtion.
+func SetPreMountGrbfbnbHook(hookFn func() error) {
+	bpp.PreMountGrbfbnbHook = hookFn
 }

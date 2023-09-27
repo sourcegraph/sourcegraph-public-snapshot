@@ -1,32 +1,32 @@
-package repository_matcher
+pbckbge repository_mbtcher
 
 import (
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metrics struct {
-	numPoliciesUpdated prometheus.Counter
+	numPoliciesUpdbted prometheus.Counter
 }
 
-func newMetrics(observationCtx *observation.Context) *metrics {
-	counter := func(name, help string) prometheus.Counter {
+func newMetrics(observbtionCtx *observbtion.Context) *metrics {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	numPoliciesUpdated := counter(
-		"src_codeintel_background_policies_updated_total",
-		"The number of configuration policies whose repository membership list was updated.",
+	numPoliciesUpdbted := counter(
+		"src_codeintel_bbckground_policies_updbted_totbl",
+		"The number of configurbtion policies whose repository membership list wbs updbted.",
 	)
 
 	return &metrics{
-		numPoliciesUpdated: numPoliciesUpdated,
+		numPoliciesUpdbted: numPoliciesUpdbted,
 	}
 }

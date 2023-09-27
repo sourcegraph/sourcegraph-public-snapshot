@@ -1,36 +1,36 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const specExpireInteral = 60 * time.Minute
+const specExpireInterbl = 60 * time.Minute
 
-func NewSpecExpirer(ctx context.Context, bstore *store.Store) goroutine.BackgroundRoutine {
+func NewSpecExpirer(ctx context.Context, bstore *store.Store) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
 		ctx,
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			// Delete all unattached changeset specs...
-			if err := bstore.DeleteUnattachedExpiredChangesetSpecs(ctx); err != nil {
-				return errors.Wrap(err, "DeleteExpiredChangesetSpecs")
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			// Delete bll unbttbched chbngeset specs...
+			if err := bstore.DeleteUnbttbchedExpiredChbngesetSpecs(ctx); err != nil {
+				return errors.Wrbp(err, "DeleteExpiredChbngesetSpecs")
 			}
-			// ... and all expired changeset specs...
-			if err := bstore.DeleteExpiredChangesetSpecs(ctx); err != nil {
-				return errors.Wrap(err, "DeleteExpiredChangesetSpecs")
+			// ... bnd bll expired chbngeset specs...
+			if err := bstore.DeleteExpiredChbngesetSpecs(ctx); err != nil {
+				return errors.Wrbp(err, "DeleteExpiredChbngesetSpecs")
 			}
-			// ... and then the BatchSpecs, that are expired.
-			if err := bstore.DeleteExpiredBatchSpecs(ctx); err != nil {
-				return errors.Wrap(err, "DeleteExpiredBatchSpecs")
+			// ... bnd then the BbtchSpecs, thbt bre expired.
+			if err := bstore.DeleteExpiredBbtchSpecs(ctx); err != nil {
+				return errors.Wrbp(err, "DeleteExpiredBbtchSpecs")
 			}
 			return nil
 		}),
-		goroutine.WithName("batchchanges.spec-expirer"),
-		goroutine.WithDescription("expire batch changes specs"),
-		goroutine.WithInterval(specExpireInteral),
+		goroutine.WithNbme("bbtchchbnges.spec-expirer"),
+		goroutine.WithDescription("expire bbtch chbnges specs"),
+		goroutine.WithIntervbl(specExpireInterbl),
 	)
 }

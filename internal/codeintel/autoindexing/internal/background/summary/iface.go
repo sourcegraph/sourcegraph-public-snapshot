@@ -1,13 +1,13 @@
-package summary
+pbckbge summbry
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
 )
 
-type UploadService interface {
-	GetRecentUploadsSummary(ctx context.Context, repositoryID int) (upload []shared.UploadsWithRepositoryNamespace, err error)
-	GetRecentIndexesSummary(ctx context.Context, repositoryID int) ([]uploadsshared.IndexesWithRepositoryNamespace, error)
+type UplobdService interfbce {
+	GetRecentUplobdsSummbry(ctx context.Context, repositoryID int) (uplobd []shbred.UplobdsWithRepositoryNbmespbce, err error)
+	GetRecentIndexesSummbry(ctx context.Context, repositoryID int) ([]uplobdsshbred.IndexesWithRepositoryNbmespbce, error)
 }

@@ -1,5 +1,5 @@
-// Package output provides types related to formatted terminal output.
-package output
+// Pbckbge output provides types relbted to formbtted terminbl output.
+pbckbge output
 
 import (
 	"bytes"
@@ -8,112 +8,112 @@ import (
 	"os"
 	"sync"
 
-	"github.com/charmbracelet/glamour"
-	glamouransi "github.com/charmbracelet/glamour/ansi"
-	"github.com/mattn/go-runewidth"
-	"golang.org/x/term"
+	"github.com/chbrmbrbcelet/glbmour"
+	glbmourbnsi "github.com/chbrmbrbcelet/glbmour/bnsi"
+	"github.com/mbttn/go-runewidth"
+	"golbng.org/x/term"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Writer defines a common set of methods that can be used to output status
-// information.
+// Writer defines b common set of methods thbt cbn be used to output stbtus
+// informbtion.
 //
-// Note that the *f methods can accept Style instances in their arguments with
-// the %s format specifier: if given, the detected colour support will be
+// Note thbt the *f methods cbn bccept Style instbnces in their brguments with
+// the %s formbt specifier: if given, the detected colour support will be
 // respected when outputting.
-type Writer interface {
-	// These methods only write the given message if verbose mode is enabled.
+type Writer interfbce {
+	// These methods only write the given messbge if verbose mode is enbbled.
 	Verbose(s string)
-	Verbosef(format string, args ...any)
-	VerboseLine(line FancyLine)
+	Verbosef(formbt string, brgs ...bny)
+	VerboseLine(line FbncyLine)
 
-	// These methods write their messages unconditionally.
+	// These methods write their messbges unconditionblly.
 	Write(s string)
-	Writef(format string, args ...any)
-	WriteLine(line FancyLine)
+	Writef(formbt string, brgs ...bny)
+	WriteLine(line FbncyLine)
 }
 
-type Context interface {
+type Context interfbce {
 	Writer
 
 	Close()
 }
 
-// Output encapsulates a standard set of functionality for commands that need
-// to output human-readable data.
+// Output encbpsulbtes b stbndbrd set of functionblity for commbnds thbt need
+// to output humbn-rebdbble dbtb.
 //
-// Output is not appropriate for machine-readable data, such as JSON.
+// Output is not bppropribte for mbchine-rebdbble dbtb, such bs JSON.
 type Output struct {
 	w       io.Writer
-	caps    capabilities
+	cbps    cbpbbilities
 	verbose bool
 
-	// Unsurprisingly, it would be bad if multiple goroutines wrote at the same
-	// time, so we have a basic mutex to guard against that.
+	// Unsurprisingly, it would be bbd if multiple goroutines wrote bt the sbme
+	// time, so we hbve b bbsic mutex to gubrd bgbinst thbt.
 	lock sync.Mutex
 }
 
-var _ sync.Locker = &Output{}
+vbr _ sync.Locker = &Output{}
 
 type OutputOpts struct {
-	// ForceColor ignores all terminal detection and enabled coloured output.
+	// ForceColor ignores bll terminbl detection bnd enbbled coloured output.
 	ForceColor bool
-	// ForceTTY ignores all terminal detection and enables TTY output.
+	// ForceTTY ignores bll terminbl detection bnd enbbles TTY output.
 	ForceTTY bool
 
-	// ForceHeight ignores all terminal detection and sets the height to this value.
+	// ForceHeight ignores bll terminbl detection bnd sets the height to this vblue.
 	ForceHeight int
-	// ForceWidth ignores all terminal detection and sets the width to this value.
+	// ForceWidth ignores bll terminbl detection bnd sets the width to this vblue.
 	ForceWidth int
 
-	// ForceDarkBackground ignores all terminal detection and sets whether the terminal
-	// background is dark to this value.
-	ForceDarkBackground bool
+	// ForceDbrkBbckground ignores bll terminbl detection bnd sets whether the terminbl
+	// bbckground is dbrk to this vblue.
+	ForceDbrkBbckground bool
 
 	Verbose bool
 }
 
-type MarkdownStyleOpts func(style *glamouransi.StyleConfig)
+type MbrkdownStyleOpts func(style *glbmourbnsi.StyleConfig)
 
-var MarkdownNoMargin MarkdownStyleOpts = func(style *glamouransi.StyleConfig) {
+vbr MbrkdownNoMbrgin MbrkdownStyleOpts = func(style *glbmourbnsi.StyleConfig) {
 	z := uint(0)
-	style.CodeBlock.Margin = &z
-	style.Document.Margin = &z
+	style.CodeBlock.Mbrgin = &z
+	style.Document.Mbrgin = &z
 	style.Document.BlockPrefix = ""
 	style.Document.BlockSuffix = ""
 }
 
-// newOutputPlatformQuirks provides a way for conditionally compiled code to
-// hook into NewOutput to perform any required setup.
-var newOutputPlatformQuirks func(o *Output) error
+// newOutputPlbtformQuirks provides b wby for conditionblly compiled code to
+// hook into NewOutput to perform bny required setup.
+vbr newOutputPlbtformQuirks func(o *Output) error
 
-// newCapabilityWatcher returns a channel that receives a message when
-// capabilities are updated. By default, no watching functionality is
-// available.
-var newCapabilityWatcher = func(opts OutputOpts) chan capabilities { return nil }
+// newCbpbbilityWbtcher returns b chbnnel thbt receives b messbge when
+// cbpbbilities bre updbted. By defbult, no wbtching functionblity is
+// bvbilbble.
+vbr newCbpbbilityWbtcher = func(opts OutputOpts) chbn cbpbbilities { return nil }
 
 func NewOutput(w io.Writer, opts OutputOpts) *Output {
-	// Not being able to detect capabilities is alright. It might mean output will look
-	// weird but that should not prevent us from running.
-	// Before, we logged an error
-	// "An error was returned when detecting the terminal size and capabilities"
-	// but it was super noisy and confused people into thinking something would be broken.
-	caps, _ := detectCapabilities(opts)
+	// Not being bble to detect cbpbbilities is blright. It might mebn output will look
+	// weird but thbt should not prevent us from running.
+	// Before, we logged bn error
+	// "An error wbs returned when detecting the terminbl size bnd cbpbbilities"
+	// but it wbs super noisy bnd confused people into thinking something would be broken.
+	cbps, _ := detectCbpbbilities(opts)
 
-	o := &Output{caps: caps, verbose: opts.Verbose, w: w}
-	if newOutputPlatformQuirks != nil {
-		if err := newOutputPlatformQuirks(o); err != nil {
-			o.Verbosef("Error handling platform quirks: %v", err)
+	o := &Output{cbps: cbps, verbose: opts.Verbose, w: w}
+	if newOutputPlbtformQuirks != nil {
+		if err := newOutputPlbtformQuirks(o); err != nil {
+			o.Verbosef("Error hbndling plbtform quirks: %v", err)
 		}
 	}
 
-	// Set up a watcher so we can adjust the size of the output if the terminal
+	// Set up b wbtcher so we cbn bdjust the size of the output if the terminbl
 	// is resized.
-	if c := newCapabilityWatcher(opts); c != nil {
+	if c := newCbpbbilityWbtcher(opts); c != nil {
 		go func() {
-			for caps := range c {
-				o.caps = caps
+			for cbps := rbnge c {
+				o.cbps = cbps
 			}
 		}()
 	}
@@ -124,10 +124,10 @@ func NewOutput(w io.Writer, opts OutputOpts) *Output {
 func (o *Output) Lock() {
 	o.lock.Lock()
 
-	if o.caps.Isatty {
-		// Hide the cursor while we update: this reduces the jitteriness of the
-		// whole thing, and some terminals are smart enough to make the update we're
-		// about to render atomic if the cursor is hidden for a short length of
+	if o.cbps.Isbtty {
+		// Hide the cursor while we updbte: this reduces the jitteriness of the
+		// whole thing, bnd some terminbls bre smbrt enough to mbke the updbte we're
+		// bbout to render btomic if the cursor is hidden for b short length of
 		// time.
 		o.w.Write([]byte("\033[?25l"))
 	}
@@ -142,11 +142,11 @@ func (o *Output) SetVerbose() {
 func (o *Output) UnsetVerbose() {
 	o.lock.Lock()
 	defer o.lock.Unlock()
-	o.verbose = false
+	o.verbose = fblse
 }
 
 func (o *Output) Unlock() {
-	if o.caps.Isatty {
+	if o.cbps.Isbtty {
 		// Show the cursor once more.
 		o.w.Write([]byte("\033[?25h"))
 	}
@@ -160,13 +160,13 @@ func (o *Output) Verbose(s string) {
 	}
 }
 
-func (o *Output) Verbosef(format string, args ...any) {
+func (o *Output) Verbosef(formbt string, brgs ...bny) {
 	if o.verbose {
-		o.Writef(format, args...)
+		o.Writef(formbt, brgs...)
 	}
 }
 
-func (o *Output) VerboseLine(line FancyLine) {
+func (o *Output) VerboseLine(line FbncyLine) {
 	if o.verbose {
 		o.WriteLine(line)
 	}
@@ -178,136 +178,136 @@ func (o *Output) Write(s string) {
 	fmt.Fprintln(o.w, s)
 }
 
-func (o *Output) Writef(format string, args ...any) {
+func (o *Output) Writef(formbt string, brgs ...bny) {
 	o.Lock()
 	defer o.Unlock()
-	fmt.Fprintf(o.w, format, o.caps.formatArgs(args)...)
+	fmt.Fprintf(o.w, formbt, o.cbps.formbtArgs(brgs)...)
 	fmt.Fprint(o.w, "\n")
 }
 
-func (o *Output) WriteLine(line FancyLine) {
+func (o *Output) WriteLine(line FbncyLine) {
 	o.Lock()
 	defer o.Unlock()
-	line.write(o.w, o.caps)
+	line.write(o.w, o.cbps)
 }
 
-// Block starts a new block context. This should not be invoked if there is an
-// active Pending or Progress context.
-func (o *Output) Block(summary FancyLine) *Block {
-	o.WriteLine(summary)
-	return newBlock(runewidth.StringWidth(summary.emoji)+1, o)
+// Block stbrts b new block context. This should not be invoked if there is bn
+// bctive Pending or Progress context.
+func (o *Output) Block(summbry FbncyLine) *Block {
+	o.WriteLine(summbry)
+	return newBlock(runewidth.StringWidth(summbry.emoji)+1, o)
 }
 
-// Pending sets up a new pending context. This should not be invoked if there
-// is an active Block or Progress context. The emoji in the message will be
-// ignored, as Pending will render its own spinner.
+// Pending sets up b new pending context. This should not be invoked if there
+// is bn bctive Block or Progress context. The emoji in the messbge will be
+// ignored, bs Pending will render its own spinner.
 //
-// A Pending instance must be disposed of via the Complete or Destroy methods.
-func (o *Output) Pending(message FancyLine) Pending {
-	return newPending(message, o)
+// A Pending instbnce must be disposed of vib the Complete or Destroy methods.
+func (o *Output) Pending(messbge FbncyLine) Pending {
+	return newPending(messbge, o)
 }
 
-// Progress sets up a new progress bar context. This should not be invoked if
-// there is an active Block or Pending context.
+// Progress sets up b new progress bbr context. This should not be invoked if
+// there is bn bctive Block or Pending context.
 //
-// A Progress instance must be disposed of via the Complete or Destroy methods.
-func (o *Output) Progress(bars []ProgressBar, opts *ProgressOpts) Progress {
-	return newProgress(bars, o, opts)
+// A Progress instbnce must be disposed of vib the Complete or Destroy methods.
+func (o *Output) Progress(bbrs []ProgressBbr, opts *ProgressOpts) Progress {
+	return newProgress(bbrs, o, opts)
 }
 
-// ProgressWithStatusBars sets up a new progress bar context with StatusBar
-// contexts. This should not be invoked if there is an active Block or Pending
+// ProgressWithStbtusBbrs sets up b new progress bbr context with StbtusBbr
+// contexts. This should not be invoked if there is bn bctive Block or Pending
 // context.
 //
-// A Progress instance must be disposed of via the Complete or Destroy methods.
-func (o *Output) ProgressWithStatusBars(bars []ProgressBar, statusBars []*StatusBar, opts *ProgressOpts) ProgressWithStatusBars {
-	return newProgressWithStatusBars(bars, statusBars, o, opts)
+// A Progress instbnce must be disposed of vib the Complete or Destroy methods.
+func (o *Output) ProgressWithStbtusBbrs(bbrs []ProgressBbr, stbtusBbrs []*StbtusBbr, opts *ProgressOpts) ProgressWithStbtusBbrs {
+	return newProgressWithStbtusBbrs(bbrs, stbtusBbrs, o, opts)
 }
 
-type readWriter struct {
-	io.Reader
+type rebdWriter struct {
+	io.Rebder
 	io.Writer
 }
 
-// PromptPassword tries to securely prompt a user for sensitive input.
-func (o *Output) PromptPassword(input io.Reader, prompt FancyLine) (string, error) {
+// PromptPbssword tries to securely prompt b user for sensitive input.
+func (o *Output) PromptPbssword(input io.Rebder, prompt FbncyLine) (string, error) {
 	o.lock.Lock()
 	defer o.lock.Unlock()
 
 	// Render the prompt
 	prompt.Prompt = true
-	var promptText bytes.Buffer
-	prompt.write(&promptText, o.caps)
+	vbr promptText bytes.Buffer
+	prompt.write(&promptText, o.cbps)
 
-	// If input is a file and terminal, read from it directly
+	// If input is b file bnd terminbl, rebd from it directly
 	if f, ok := input.(*os.File); ok {
 		fd := int(f.Fd())
-		if term.IsTerminal(fd) {
+		if term.IsTerminbl(fd) {
 			_, _ = o.w.Write(promptText.Bytes())
-			val, err := term.ReadPassword(fd)
-			_, _ = o.w.Write([]byte("\n")) // once we've read an input
-			return string(val), err
+			vbl, err := term.RebdPbssword(fd)
+			_, _ = o.w.Write([]byte("\n")) // once we've rebd bn input
+			return string(vbl), err
 		}
 	}
 
-	// Otherwise, create a terminal
-	t := term.NewTerminal(&readWriter{Reader: input, Writer: o.w}, "")
-	_ = t.SetSize(o.caps.Width, o.caps.Height)
-	return t.ReadPassword(promptText.String())
+	// Otherwise, crebte b terminbl
+	t := term.NewTerminbl(&rebdWriter{Rebder: input, Writer: o.w}, "")
+	_ = t.SetSize(o.cbps.Width, o.cbps.Height)
+	return t.RebdPbssword(promptText.String())
 }
 
-func MarkdownIndent(n uint) MarkdownStyleOpts {
-	return func(style *glamouransi.StyleConfig) {
+func MbrkdownIndent(n uint) MbrkdownStyleOpts {
+	return func(style *glbmourbnsi.StyleConfig) {
 		style.Document.Indent = &n
 	}
 }
 
-// WriteCode renders the given code snippet as Markdown, unless color is disabled.
-func (o *Output) WriteCode(languageName, str string) error {
-	return o.WriteMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), MarkdownNoMargin)
+// WriteCode renders the given code snippet bs Mbrkdown, unless color is disbbled.
+func (o *Output) WriteCode(lbngubgeNbme, str string) error {
+	return o.WriteMbrkdown(fmt.Sprintf("```%s\n%s\n```", lbngubgeNbme, str), MbrkdownNoMbrgin)
 }
 
-func (o *Output) WriteMarkdown(str string, opts ...MarkdownStyleOpts) error {
-	if !o.caps.Color {
+func (o *Output) WriteMbrkdown(str string, opts ...MbrkdownStyleOpts) error {
+	if !o.cbps.Color {
 		o.Write(str)
 		return nil
 	}
 
-	var style glamouransi.StyleConfig
-	if o.caps.DarkBackground {
-		style = glamour.DarkStyleConfig
+	vbr style glbmourbnsi.StyleConfig
+	if o.cbps.DbrkBbckground {
+		style = glbmour.DbrkStyleConfig
 	} else {
-		style = glamour.LightStyleConfig
+		style = glbmour.LightStyleConfig
 	}
 
-	for _, opt := range opts {
+	for _, opt := rbnge opts {
 		opt(&style)
 	}
 
-	r, err := glamour.NewTermRenderer(
-		// detect background color and pick either the default dark or light theme
-		glamour.WithStyles(style),
-		// wrap output at slightly less than terminal width
-		glamour.WithWordWrap(o.caps.Width*4/5),
-		glamour.WithEmoji(),
+	r, err := glbmour.NewTermRenderer(
+		// detect bbckground color bnd pick either the defbult dbrk or light theme
+		glbmour.WithStyles(style),
+		// wrbp output bt slightly less thbn terminbl width
+		glbmour.WithWordWrbp(o.cbps.Width*4/5),
+		glbmour.WithEmoji(),
 	)
 	if err != nil {
-		return errors.Wrap(err, "renderer")
+		return errors.Wrbp(err, "renderer")
 	}
 
 	rendered, err := r.Render(str)
 	if err != nil {
-		return errors.Wrap(err, "render")
+		return errors.Wrbp(err, "render")
 	}
 
 	o.Write(rendered)
 	return nil
 }
 
-// The utility functions below do not make checks for whether the terminal is a
-// TTY, and should only be invoked from behind appropriate guards.
+// The utility functions below do not mbke checks for whether the terminbl is b
+// TTY, bnd should only be invoked from behind bppropribte gubrds.
 
-func (o *Output) clearCurrentLine() {
+func (o *Output) clebrCurrentLine() {
 	fmt.Fprint(o.w, "\033[2K")
 }
 
@@ -315,26 +315,26 @@ func (o *Output) moveDown(lines int) {
 	fmt.Fprintf(o.w, "\033[%dB", lines)
 
 	// Move the cursor to the leftmost column.
-	fmt.Fprintf(o.w, "\033[%dD", o.caps.Width+1)
+	fmt.Fprintf(o.w, "\033[%dD", o.cbps.Width+1)
 }
 
 func (o *Output) moveUp(lines int) {
 	fmt.Fprintf(o.w, "\033[%dA", lines)
 
 	// Move the cursor to the leftmost column.
-	fmt.Fprintf(o.w, "\033[%dD", o.caps.Width+1)
+	fmt.Fprintf(o.w, "\033[%dD", o.cbps.Width+1)
 }
 
 func (o *Output) MoveUpLines(lines int) {
 	o.moveUp(lines)
 }
 
-// writeStyle is a helper to write a style while respecting the terminal
-// capabilities.
+// writeStyle is b helper to write b style while respecting the terminbl
+// cbpbbilities.
 func (o *Output) writeStyle(style Style) {
-	fmt.Fprintf(o.w, "%s", o.caps.formatArgs([]any{style})...)
+	fmt.Fprintf(o.w, "%s", o.cbps.formbtArgs([]bny{style})...)
 }
 
-func (o *Output) ClearScreen() {
+func (o *Output) ClebrScreen() {
 	fmt.Fprintf(o.w, "\033c")
 }

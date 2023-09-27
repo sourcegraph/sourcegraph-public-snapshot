@@ -1,5 +1,5 @@
-package dataloader
+pbckbge dbtblobder
 
-type Identifier[T any] interface {
+type Identifier[T bny] interfbce {
 	RecordID() T
 }

@@ -1,522 +1,522 @@
-package rewirer
+pbckbge rewirer
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/global"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/globbl"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestRewirer_Rewire(t *testing.T) {
-	testBatchChangeID := int64(123)
-	testChangesetSpecID := int64(512)
-	testRepoID := api.RepoID(128)
+	testBbtchChbngeID := int64(123)
+	testChbngesetSpecID := int64(512)
+	testRepoID := bpi.RepoID(128)
 	testRepo := &types.Repo{
 		ID: testRepoID,
-		ExternalRepo: api.ExternalRepoSpec{
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ServiceType: extsvc.TypeGitHub,
 		},
 	}
-	unsupportedTestRepoID := api.RepoID(256)
+	unsupportedTestRepoID := bpi.RepoID(256)
 	unsupportedTestRepo := &types.Repo{
 		ID: unsupportedTestRepoID,
-		ExternalRepo: api.ExternalRepoSpec{
+		ExternblRepo: bpi.ExternblRepoSpec{
 			ServiceType: extsvc.TypeOther,
 		},
 	}
-	testCases := []struct {
-		name                  string
-		mappings              btypes.RewirerMappings
-		wantNewChangesets     []bt.ChangesetAssertions
-		wantUpdatedChangesets []bt.ChangesetAssertions
-		wantErr               error
+	testCbses := []struct {
+		nbme                  string
+		mbppings              btypes.RewirerMbppings
+		wbntNewChbngesets     []bt.ChbngesetAssertions
+		wbntUpdbtedChbngesets []bt.ChbngesetAssertions
+		wbntErr               error
 	}{
 		{
-			name:     "empty mappings",
-			mappings: btypes.RewirerMappings{},
+			nbme:     "empty mbppings",
+			mbppings: btypes.RewirerMbppings{},
 		},
 		// NO CHANGESET SPEC
 		{
-			name: "no spec matching existing imported changeset",
-			mappings: btypes.RewirerMappings{{
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+			nbme: "no spec mbtching existing imported chbngeset",
+			mbppings: btypes.RewirerMbppings{{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:         testRepoID,
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
 
-					// Imported changeset:
-					OwnedByBatchChange: 0,
+					// Imported chbngeset:
+					OwnedByBbtchChbnge: 0,
 					CurrentSpec:        0,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
-				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
+				// No mbtch, should be re-enqueued bnd detbched from the bbtch chbnge.
+				bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 					Repo:       testRepoID,
-					DetachFrom: []int64{testBatchChangeID},
+					DetbchFrom: []int64{testBbtchChbngeID},
 				}),
 			},
 		},
 		{
-			name: "no spec matching existing unpublished branch changeset owned by this batch change",
-			mappings: btypes.RewirerMappings{{
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+			nbme: "no spec mbtching existing unpublished brbnch chbngeset owned by this bbtch chbnge",
+			mbppings: btypes.RewirerMbppings{{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:         testRepoID,
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
 
-					// Owned unpublished branch changeset:
-					PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
+					// Owned unpublished brbnch chbngeset:
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
-				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(bt.ChangesetAssertions{
-					PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
+				// No mbtch, should be re-enqueued bnd detbched from the bbtch chbnge.
+				bssertResetReconcilerStbte(bt.ChbngesetAssertions{
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
 					Repo:               testRepoID,
-					DetachFrom:         []int64{testBatchChangeID},
+					DetbchFrom:         []int64{testBbtchChbngeID},
 				}),
 			},
 		},
 		{
-			name: "no spec matching existing published and open branch changeset owned by this batch change",
-			mappings: btypes.RewirerMappings{{
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+			nbme: "no spec mbtching existing published bnd open brbnch chbngeset owned by this bbtch chbnge",
+			mbppings: btypes.RewirerMbppings{{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:         testRepoID,
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
 
-					// Owned, published branch changeset:
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ExternalState:      btypes.ChangesetExternalStateOpen,
-					// Publication succeeded
-					ReconcilerState: btypes.ReconcilerStateCompleted,
+					// Owned, published brbnch chbngeset:
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+					// Publicbtion succeeded
+					ReconcilerStbte: btypes.ReconcilerStbteCompleted,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
-				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(bt.ChangesetAssertions{
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ExternalState:      btypes.ChangesetExternalStateOpen,
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
+				// No mbtch, should be re-enqueued bnd detbched from the bbtch chbnge.
+				bssertResetReconcilerStbte(bt.ChbngesetAssertions{
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
 					Repo:               testRepoID,
-					// Current spec should have been made the previous spec.
-					PreviousSpec: testChangesetSpecID,
-					// The changeset should be closed on the code host.
+					// Current spec should hbve been mbde the previous spec.
+					PreviousSpec: testChbngesetSpecID,
+					// The chbngeset should be closed on the code host.
 					Closing: true,
-					// And still attached to the batch change but archived
-					ArchiveIn:  testBatchChangeID,
-					AttachedTo: []int64{testBatchChangeID},
+					// And still bttbched to the bbtch chbnge but brchived
+					ArchiveIn:  testBbtchChbngeID,
+					AttbchedTo: []int64{testBbtchChbngeID},
 				}),
 			},
 		},
 		{
-			name: "no spec matching existing published and merged branch changeset owned by this batch change",
-			mappings: btypes.RewirerMappings{{
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+			nbme: "no spec mbtching existing published bnd merged brbnch chbngeset owned by this bbtch chbnge",
+			mbppings: btypes.RewirerMbppings{{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:         testRepoID,
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
 
-					// Owned, published branch changeset:
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ExternalState:      btypes.ChangesetExternalStateMerged,
-					// Publication succeeded
-					ReconcilerState: btypes.ReconcilerStateCompleted,
+					// Owned, published brbnch chbngeset:
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ExternblStbte:      btypes.ChbngesetExternblStbteMerged,
+					// Publicbtion succeeded
+					ReconcilerStbte: btypes.ReconcilerStbteCompleted,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
-				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(bt.ChangesetAssertions{
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ExternalState:      btypes.ChangesetExternalStateMerged,
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
+				// No mbtch, should be re-enqueued bnd detbched from the bbtch chbnge.
+				bssertResetReconcilerStbte(bt.ChbngesetAssertions{
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ExternblStbte:      btypes.ChbngesetExternblStbteMerged,
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
 					Repo:               testRepoID,
-					// Current spec should have been made the previous spec.
-					PreviousSpec: testChangesetSpecID,
-					// The changeset should NOT be closed on the code host, since it's already merged
-					Closing: false,
-					// And still attached to the batch change but archived
-					ArchiveIn:  testBatchChangeID,
-					AttachedTo: []int64{testBatchChangeID},
+					// Current spec should hbve been mbde the previous spec.
+					PreviousSpec: testChbngesetSpecID,
+					// The chbngeset should NOT be closed on the code host, since it's blrebdy merged
+					Closing: fblse,
+					// And still bttbched to the bbtch chbnge but brchived
+					ArchiveIn:  testBbtchChbngeID,
+					AttbchedTo: []int64{testBbtchChbngeID},
 				}),
 			},
 		},
 		{
-			name: "no spec matching existing published and closed branch changeset owned by this batch change",
-			mappings: btypes.RewirerMappings{{
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+			nbme: "no spec mbtching existing published bnd closed brbnch chbngeset owned by this bbtch chbnge",
+			mbppings: btypes.RewirerMbppings{{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:         testRepoID,
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
 
-					// Owned, published branch changeset:
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ExternalState:      btypes.ChangesetExternalStateClosed,
-					// Publication succeeded
-					ReconcilerState: btypes.ReconcilerStateCompleted,
+					// Owned, published brbnch chbngeset:
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ExternblStbte:      btypes.ChbngesetExternblStbteClosed,
+					// Publicbtion succeeded
+					ReconcilerStbte: btypes.ReconcilerStbteCompleted,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
-				// No match, should be re-enqueued and detached from the batch change.
-				assertResetReconcilerState(bt.ChangesetAssertions{
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ExternalState:      btypes.ChangesetExternalStateClosed,
-					OwnedByBatchChange: testBatchChangeID,
-					CurrentSpec:        testChangesetSpecID,
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
+				// No mbtch, should be re-enqueued bnd detbched from the bbtch chbnge.
+				bssertResetReconcilerStbte(bt.ChbngesetAssertions{
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ExternblStbte:      btypes.ChbngesetExternblStbteClosed,
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					CurrentSpec:        testChbngesetSpecID,
 					Repo:               testRepoID,
-					// Current spec should have been made the previous spec.
-					PreviousSpec: testChangesetSpecID,
-					// The changeset should NOT be closed on the code host, since it's already closed
-					Closing: false,
-					// And still attached to the batch change but archived
-					ArchiveIn:  testBatchChangeID,
-					AttachedTo: []int64{testBatchChangeID},
+					// Current spec should hbve been mbde the previous spec.
+					PreviousSpec: testChbngesetSpecID,
+					// The chbngeset should NOT be closed on the code host, since it's blrebdy closed
+					Closing: fblse,
+					// And still bttbched to the bbtch chbnge but brchived
+					ArchiveIn:  testBbtchChbngeID,
+					AttbchedTo: []int64{testBbtchChbngeID},
 				}),
 			},
 		},
 		{
-			name: "no spec matching existing changeset, no repo perms",
-			mappings: btypes.RewirerMappings{{
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+			nbme: "no spec mbtching existing chbngeset, no repo perms",
+			mbppings: btypes.RewirerMbppings{{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:         0,
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
 				}),
-				// No access to repo.
+				// No bccess to repo.
 				Repo: nil,
 			}},
 			// Nothing should be done.
-			wantUpdatedChangesets: []bt.ChangesetAssertions{},
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{},
 		},
 		// END NO CHANGESET SPEC
 		// NO CHANGESET
 		{
-			name: "new importing spec",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+			nbme: "new importing spec",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					ExternalID: "123",
-					Typ:        btypes.ChangesetSpecTypeExisting,
+					ExternblID: "123",
+					Typ:        btypes.ChbngesetSpecTypeExisting,
 				}),
 				Repo: testRepo,
 			}},
-			wantNewChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntNewChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:       testRepoID,
-				ExternalID: "123",
-				// Imported changesets always start as unpublished and will be set to published once the import succeeded.
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:       []int64{testBatchChangeID},
+				ExternblID: "123",
+				// Imported chbngesets blwbys stbrt bs unpublished bnd will be set to published once the import succeeded.
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:       []int64{testBbtchChbngeID},
 			})},
 		},
 		{
-			name: "new branch spec",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
-					ID:   testChangesetSpecID,
+			nbme: "new brbnch spec",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
+					ID:   testChbngesetSpecID,
 					Repo: testRepoID,
 
-					HeadRef: "refs/heads/test-branch",
-					Typ:     btypes.ChangesetSpecTypeBranch,
+					HebdRef: "refs/hebds/test-brbnch",
+					Typ:     btypes.ChbngesetSpecTypeBrbnch,
 				}),
 				Repo: testRepo,
 			}},
-			wantNewChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntNewChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:               testRepoID,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:         []int64{testBatchChangeID},
-				OwnedByBatchChange: testBatchChangeID,
-				CurrentSpec:        testChangesetSpecID,
-				// Diff stat is copied over from changeset spec
-				DiffStat: bt.TestChangsetSpecDiffStat,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:         []int64{testBbtchChbngeID},
+				OwnedByBbtchChbnge: testBbtchChbngeID,
+				CurrentSpec:        testChbngesetSpecID,
+				// Diff stbt is copied over from chbngeset spec
+				DiffStbt: bt.TestChbngsetSpecDiffStbt,
 			})},
 		},
 		{
-			name: "unsupported repo",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+			nbme: "unsupported repo",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 					Repo:       unsupportedTestRepoID,
-					ExternalID: "123",
-					Typ:        btypes.ChangesetSpecTypeExisting,
+					ExternblID: "123",
+					Typ:        btypes.ChbngesetSpecTypeExisting,
 				}),
 				RepoID: unsupportedTestRepoID,
 				Repo:   unsupportedTestRepo,
 			}},
-			wantErr: &ErrRepoNotSupported{
-				ServiceType: unsupportedTestRepo.ExternalRepo.ServiceType,
-				RepoName:    string(unsupportedTestRepo.Name),
+			wbntErr: &ErrRepoNotSupported{
+				ServiceType: unsupportedTestRepo.ExternblRepo.ServiceType,
+				RepoNbme:    string(unsupportedTestRepo.Nbme),
 			},
 		},
 		{
-			name: "inaccessible repo",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+			nbme: "inbccessible repo",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 					Repo:       testRepoID,
-					ExternalID: "123",
-					Typ:        btypes.ChangesetSpecTypeExisting,
+					ExternblID: "123",
+					Typ:        btypes.ChbngesetSpecTypeExisting,
 				}),
 				RepoID: testRepoID,
 				Repo:   nil,
 			}},
-			wantErr: &database.RepoNotFoundErr{ID: testRepoID},
+			wbntErr: &dbtbbbse.RepoNotFoundErr{ID: testRepoID},
 		},
 		// END NO CHANGESET
 		// CHANGESET SPEC AND CHANGESET
 		{
-			name: "update importing spec: imported by other",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+			nbme: "updbte importing spec: imported by other",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					ExternalID: "123",
-					Typ:        btypes.ChangesetSpecTypeExisting,
+					ExternblID: "123",
+					Typ:        btypes.ChbngesetSpecTypeExisting,
 				}),
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:       testRepoID,
-					ExternalID: "123",
-					// Already attached to another batch change
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID + 1}},
+					ExternblID: "123",
+					// Alrebdy bttbched to bnother bbtch chbnge
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID + 1}},
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
 				// Should not be reenqueued
 				{
 					Repo:       testRepoID,
-					ExternalID: "123",
-					// Now should be attached to both btypes.
-					AttachedTo: []int64{testBatchChangeID + 1, testBatchChangeID},
+					ExternblID: "123",
+					// Now should be bttbched to both btypes.
+					AttbchedTo: []int64{testBbtchChbngeID + 1, testBbtchChbngeID},
 				},
 			},
 		},
 		{
-			name: "update importing spec: failed before",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+			nbme: "updbte importing spec: fbiled before",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					ExternalID: "123",
-					Typ:        btypes.ChangesetSpecTypeExisting,
+					ExternblID: "123",
+					Typ:        btypes.ChbngesetSpecTypeExisting,
 				}),
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:       testRepoID,
-					ExternalID: "123",
-					// Already attached to another batch change
-					BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID + 1}},
-					ReconcilerState: btypes.ReconcilerStateFailed,
+					ExternblID: "123",
+					// Alrebdy bttbched to bnother bbtch chbnge
+					BbtchChbnges:    []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID + 1}},
+					ReconcilerStbte: btypes.ReconcilerStbteFbiled,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:       testRepoID,
-				ExternalID: "123",
-				// Now should be attached to both btypes.
-				AttachedTo: []int64{testBatchChangeID + 1, testBatchChangeID},
+				ExternblID: "123",
+				// Now should be bttbched to both btypes.
+				AttbchedTo: []int64{testBbtchChbngeID + 1, testBbtchChbngeID},
 			})},
 		},
 		{
-			name: "update importing spec: created by other batch change",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
+			nbme: "updbte importing spec: crebted by other bbtch chbnge",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
 					Repo: testRepoID,
 
-					ExternalID: "123",
-					Typ:        btypes.ChangesetSpecTypeExisting,
+					ExternblID: "123",
+					Typ:        btypes.ChbngesetSpecTypeExisting,
 				}),
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:       testRepoID,
-					ExternalID: "123",
-					// Already attached to another batch change
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID + 1}},
-					// Other batch change created this changeset.
-					OwnedByBatchChange: testBatchChangeID + 1,
+					ExternblID: "123",
+					// Alrebdy bttbched to bnother bbtch chbnge
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID + 1}},
+					// Other bbtch chbnge crebted this chbngeset.
+					OwnedByBbtchChbnge: testBbtchChbngeID + 1,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{
-				// Changeset owned by another batch change should not be retried.
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{
+				// Chbngeset owned by bnother bbtch chbnge should not be retried.
 				{
 					Repo:               testRepoID,
-					ExternalID:         "123",
-					OwnedByBatchChange: testBatchChangeID + 1,
-					// Now should be attached to both btypes.
-					AttachedTo: []int64{testBatchChangeID + 1, testBatchChangeID},
+					ExternblID:         "123",
+					OwnedByBbtchChbnge: testBbtchChbngeID + 1,
+					// Now should be bttbched to both btypes.
+					AttbchedTo: []int64{testBbtchChbngeID + 1, testBbtchChbngeID},
 				}},
 		},
 		{
-			name: "update branch spec",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
-					ID:   testChangesetSpecID + 1,
+			nbme: "updbte brbnch spec",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
+					ID:   testChbngesetSpecID + 1,
 					Repo: testRepoID,
 
-					HeadRef: "refs/heads/test-branch",
-					Typ:     btypes.ChangesetSpecTypeBranch,
+					HebdRef: "refs/hebds/test-brbnch",
+					Typ:     btypes.ChbngesetSpecTypeBrbnch,
 				}),
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:               testRepoID,
-					ExternalID:         "123",
-					CurrentSpec:        testChangesetSpecID,
-					BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
-					OwnedByBatchChange: testBatchChangeID,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ReconcilerState:    btypes.ReconcilerStateCompleted,
+					ExternblID:         "123",
+					CurrentSpec:        testChbngesetSpecID,
+					BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:               testRepoID,
-				ExternalID:         "123",
-				OwnedByBatchChange: testBatchChangeID,
-				AttachedTo:         []int64{testBatchChangeID},
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				CurrentSpec:        testChangesetSpecID + 1,
-				// The changeset was reconciled successfully before, so the previous spec should have been recorded.
-				PreviousSpec: testChangesetSpecID,
-				// Diff stat is copied over from changeset spec
-				DiffStat: bt.TestChangsetSpecDiffStat,
+				ExternblID:         "123",
+				OwnedByBbtchChbnge: testBbtchChbngeID,
+				AttbchedTo:         []int64{testBbtchChbngeID},
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				CurrentSpec:        testChbngesetSpecID + 1,
+				// The chbngeset wbs reconciled successfully before, so the previous spec should hbve been recorded.
+				PreviousSpec: testChbngesetSpecID,
+				// Diff stbt is copied over from chbngeset spec
+				DiffStbt: bt.TestChbngsetSpecDiffStbt,
 			})},
 		},
 		{
-			name: "update branch spec - failed before",
-			mappings: btypes.RewirerMappings{{
-				ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
-					ID:   testChangesetSpecID + 1,
+			nbme: "updbte brbnch spec - fbiled before",
+			mbppings: btypes.RewirerMbppings{{
+				ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
+					ID:   testChbngesetSpecID + 1,
 					Repo: testRepoID,
 
-					HeadRef: "refs/heads/test-branch",
-					Typ:     btypes.ChangesetSpecTypeBranch,
+					HebdRef: "refs/hebds/test-brbnch",
+					Typ:     btypes.ChbngesetSpecTypeBrbnch,
 				}),
-				Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+				Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 					Repo:               testRepoID,
-					ExternalID:         "123",
-					CurrentSpec:        testChangesetSpecID,
-					BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
-					OwnedByBatchChange: testBatchChangeID,
-					PublicationState:   btypes.ChangesetPublicationStatePublished,
-					ReconcilerState:    btypes.ReconcilerStateFailed,
+					ExternblID:         "123",
+					CurrentSpec:        testChbngesetSpecID,
+					BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
+					OwnedByBbtchChbnge: testBbtchChbngeID,
+					PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+					ReconcilerStbte:    btypes.ReconcilerStbteFbiled,
 				}),
 				Repo: testRepo,
 			}},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:               testRepoID,
-				ExternalID:         "123",
-				OwnedByBatchChange: testBatchChangeID,
-				AttachedTo:         []int64{testBatchChangeID},
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				CurrentSpec:        testChangesetSpecID + 1,
-				// The changeset was not reconciled successfully before, so the previous spec should have remained unset.
+				ExternblID:         "123",
+				OwnedByBbtchChbnge: testBbtchChbngeID,
+				AttbchedTo:         []int64{testBbtchChbngeID},
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				CurrentSpec:        testChbngesetSpecID + 1,
+				// The chbngeset wbs not reconciled successfully before, so the previous spec should hbve rembined unset.
 				PreviousSpec: 0,
-				// Diff stat is copied over from changeset spec
-				DiffStat: bt.TestChangsetSpecDiffStat,
+				// Diff stbt is copied over from chbngeset spec
+				DiffStbt: bt.TestChbngsetSpecDiffStbt,
 			})},
 		},
 		// END CHANGESET SPEC AND CHANGESET
 		{
-			name: "new and updated",
-			mappings: btypes.RewirerMappings{
+			nbme: "new bnd updbted",
+			mbppings: btypes.RewirerMbppings{
 				{
-					ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
-						ID:   testChangesetSpecID,
+					ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
+						ID:   testChbngesetSpecID,
 						Repo: testRepoID,
 
-						HeadRef: "refs/heads/test-branch",
-						Typ:     btypes.ChangesetSpecTypeBranch,
+						HebdRef: "refs/hebds/test-brbnch",
+						Typ:     btypes.ChbngesetSpecTypeBrbnch,
 					}),
 					Repo: testRepo,
 				},
 				{
-					ChangesetSpec: bt.BuildChangesetSpec(t, bt.TestSpecOpts{
-						ID:   testChangesetSpecID + 1,
+					ChbngesetSpec: bt.BuildChbngesetSpec(t, bt.TestSpecOpts{
+						ID:   testChbngesetSpecID + 1,
 						Repo: testRepoID,
 
-						HeadRef: "refs/heads/test-branch",
-						Typ:     btypes.ChangesetSpecTypeBranch,
+						HebdRef: "refs/hebds/test-brbnch",
+						Typ:     btypes.ChbngesetSpecTypeBrbnch,
 					}),
-					Changeset: bt.BuildChangeset(bt.TestChangesetOpts{
+					Chbngeset: bt.BuildChbngeset(bt.TestChbngesetOpts{
 						Repo:               testRepoID,
-						ExternalID:         "123",
-						CurrentSpec:        testChangesetSpecID,
-						BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: testBatchChangeID}},
-						OwnedByBatchChange: testBatchChangeID,
-						PublicationState:   btypes.ChangesetPublicationStatePublished,
-						ReconcilerState:    btypes.ReconcilerStateCompleted,
+						ExternblID:         "123",
+						CurrentSpec:        testChbngesetSpecID,
+						BbtchChbnges:       []btypes.BbtchChbngeAssoc{{BbtchChbngeID: testBbtchChbngeID}},
+						OwnedByBbtchChbnge: testBbtchChbngeID,
+						PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+						ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
 					}),
 					Repo: testRepo,
 				},
 			},
-			wantNewChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntNewChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:               testRepoID,
-				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-				AttachedTo:         []int64{testBatchChangeID},
-				OwnedByBatchChange: testBatchChangeID,
-				CurrentSpec:        testChangesetSpecID,
-				// Diff stat is copied over from changeset spec
-				DiffStat: bt.TestChangsetSpecDiffStat,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+				AttbchedTo:         []int64{testBbtchChbngeID},
+				OwnedByBbtchChbnge: testBbtchChbngeID,
+				CurrentSpec:        testChbngesetSpecID,
+				// Diff stbt is copied over from chbngeset spec
+				DiffStbt: bt.TestChbngsetSpecDiffStbt,
 			})},
-			wantUpdatedChangesets: []bt.ChangesetAssertions{assertResetReconcilerState(bt.ChangesetAssertions{
+			wbntUpdbtedChbngesets: []bt.ChbngesetAssertions{bssertResetReconcilerStbte(bt.ChbngesetAssertions{
 				Repo:               testRepoID,
-				ExternalID:         "123",
-				OwnedByBatchChange: testBatchChangeID,
-				AttachedTo:         []int64{testBatchChangeID},
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				CurrentSpec:        testChangesetSpecID + 1,
-				// The changeset was reconciled successfully before, so the previous spec should have been recorded.
-				PreviousSpec: testChangesetSpecID,
-				// Diff stat is copied over from changeset spec
-				DiffStat: bt.TestChangsetSpecDiffStat,
+				ExternblID:         "123",
+				OwnedByBbtchChbnge: testBbtchChbngeID,
+				AttbchedTo:         []int64{testBbtchChbngeID},
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				CurrentSpec:        testChbngesetSpecID + 1,
+				// The chbngeset wbs reconciled successfully before, so the previous spec should hbve been recorded.
+				PreviousSpec: testChbngesetSpecID,
+				// Diff stbt is copied over from chbngeset spec
+				DiffStbt: bt.TestChbngsetSpecDiffStbt,
 			})},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			r := New(tc.mappings, testBatchChangeID)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			r := New(tc.mbppings, testBbtchChbngeID)
 
-			newChangesets, updatedChangesets, err := r.Rewire()
-			if tc.wantErr == nil {
+			newChbngesets, updbtedChbngesets, err := r.Rewire()
+			if tc.wbntErr == nil {
 				require.NoError(t, err)
 			} else {
 				require.Error(t, err)
-				assert.Equal(t, tc.wantErr.Error(), err.Error())
+				bssert.Equbl(t, tc.wbntErr.Error(), err.Error())
 			}
-			require.Len(t, newChangesets, len(tc.wantNewChangesets))
-			require.Len(t, updatedChangesets, len(tc.wantUpdatedChangesets))
-			for i, changeset := range newChangesets {
-				bt.AssertChangeset(t, changeset, tc.wantNewChangesets[i])
+			require.Len(t, newChbngesets, len(tc.wbntNewChbngesets))
+			require.Len(t, updbtedChbngesets, len(tc.wbntUpdbtedChbngesets))
+			for i, chbngeset := rbnge newChbngesets {
+				bt.AssertChbngeset(t, chbngeset, tc.wbntNewChbngesets[i])
 			}
-			for i, changeset := range updatedChangesets {
-				bt.AssertChangeset(t, changeset, tc.wantUpdatedChangesets[i])
+			for i, chbngeset := rbnge updbtedChbngesets {
+				bt.AssertChbngeset(t, chbngeset, tc.wbntUpdbtedChbngesets[i])
 			}
 		})
 	}
 }
 
-func assertResetReconcilerState(a bt.ChangesetAssertions) bt.ChangesetAssertions {
-	a.ReconcilerState = global.DefaultReconcilerEnqueueState()
-	a.NumFailures = 0
-	a.NumResets = 0
-	a.FailureMessage = nil
-	a.SyncErrorMessage = nil
-	return a
+func bssertResetReconcilerStbte(b bt.ChbngesetAssertions) bt.ChbngesetAssertions {
+	b.ReconcilerStbte = globbl.DefbultReconcilerEnqueueStbte()
+	b.NumFbilures = 0
+	b.NumResets = 0
+	b.FbilureMessbge = nil
+	b.SyncErrorMessbge = nil
+	return b
 }

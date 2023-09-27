@@ -1,49 +1,49 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"time"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
-func buildGithubPR(now time.Time, externalState btypes.ChangesetExternalState) *github.PullRequest {
-	state := string(externalState)
+func buildGithubPR(now time.Time, externblStbte btypes.ChbngesetExternblStbte) *github.PullRequest {
+	stbte := string(externblStbte)
 
 	pr := &github.PullRequest{
 		ID:          "12345",
 		Number:      12345,
-		Title:       state + " GitHub PR",
-		Body:        state + " GitHub PR",
-		State:       state,
-		HeadRefName: gitdomain.AbbreviateRef("head-ref-on-github"),
+		Title:       stbte + " GitHub PR",
+		Body:        stbte + " GitHub PR",
+		Stbte:       stbte,
+		HebdRefNbme: gitdombin.AbbrevibteRef("hebd-ref-on-github"),
 		TimelineItems: []github.TimelineItem{
 			{Type: "PullRequestCommit", Item: &github.PullRequestCommit{
 				Commit: github.Commit{
-					OID:           "new-f00bar",
-					PushedDate:    now,
-					CommittedDate: now,
+					OID:           "new-f00bbr",
+					PushedDbte:    now,
+					CommittedDbte: now,
 				},
 			}},
 		},
-		CreatedAt: now,
-		UpdatedAt: now,
+		CrebtedAt: now,
+		UpdbtedAt: now,
 	}
 
-	if externalState == btypes.ChangesetExternalStateDraft {
-		pr.State = "OPEN"
-		pr.IsDraft = true
+	if externblStbte == btypes.ChbngesetExternblStbteDrbft {
+		pr.Stbte = "OPEN"
+		pr.IsDrbft = true
 	}
 
-	if externalState == btypes.ChangesetExternalStateClosed {
-		// We add a "ClosedEvent" so that the SyncChangesets call that happens after closing
-		// the PR has the "correct" state to set the ExternalState
-		pr.TimelineItems = append(pr.TimelineItems, github.TimelineItem{
+	if externblStbte == btypes.ChbngesetExternblStbteClosed {
+		// We bdd b "ClosedEvent" so thbt the SyncChbngesets cbll thbt hbppens bfter closing
+		// the PR hbs the "correct" stbte to set the ExternblStbte
+		pr.TimelineItems = bppend(pr.TimelineItems, github.TimelineItem{
 			Type: "ClosedEvent",
-			Item: &github.ClosedEvent{CreatedAt: now.Add(1 * time.Hour)},
+			Item: &github.ClosedEvent{CrebtedAt: now.Add(1 * time.Hour)},
 		})
-		pr.UpdatedAt = now.Add(1 * time.Hour)
+		pr.UpdbtedAt = now.Add(1 * time.Hour)
 	}
 
 	return pr

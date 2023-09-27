@@ -1,4 +1,4 @@
-package auth
+pbckbge buth
 
 import (
 	"fmt"
@@ -7,42 +7,42 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestForbidAllMiddleware(t *testing.T) {
-	handler := ForbidAllRequestsMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+func TestForbidAllMiddlewbre(t *testing.T) {
+	hbndler := ForbidAllRequestsMiddlewbre(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprint(w, "hello")
 	}))
 
-	t.Run("disabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{Type: "builtin"}}}}})
+	t.Run("disbbled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthProviders: []schemb.AuthProviders{{Builtin: &schemb.BuiltinAuthProvider{Type: "builtin"}}}}})
 		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		handler.ServeHTTP(rr, req)
-		if want := http.StatusOK; rr.Code != want {
-			t.Errorf("got %d, want %d", rr.Code, want)
+		hbndler.ServeHTTP(rr, req)
+		if wbnt := http.StbtusOK; rr.Code != wbnt {
+			t.Errorf("got %d, wbnt %d", rr.Code, wbnt)
 		}
-		if got, want := rr.Body.String(), "hello"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		if got, wbnt := rr.Body.String(), "hello"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("enabled", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{}})
+	t.Run("enbbled", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{}})
 		defer conf.Mock(nil)
 
 		rr := httptest.NewRecorder()
 		req, _ := http.NewRequest("GET", "/", nil)
-		handler.ServeHTTP(rr, req)
-		if want := http.StatusForbidden; rr.Code != want {
-			t.Errorf("got %d, want %d", rr.Code, want)
+		hbndler.ServeHTTP(rr, req)
+		if wbnt := http.StbtusForbidden; rr.Code != wbnt {
+			t.Errorf("got %d, wbnt %d", rr.Code, wbnt)
 		}
-		if got, want := rr.Body.String(), "Access to Sourcegraph is forbidden"; !strings.Contains(got, want) {
-			t.Errorf("got %q, want %q", got, want)
+		if got, wbnt := rr.Body.String(), "Access to Sourcegrbph is forbidden"; !strings.Contbins(got, wbnt) {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 }

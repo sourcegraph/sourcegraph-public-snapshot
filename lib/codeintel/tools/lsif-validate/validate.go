@@ -1,27 +1,27 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"os"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/validation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/vblidbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var updateInterval = time.Second / 4
+vbr updbteIntervbl = time.Second / 4
 
-func validate(indexFile *os.File) error {
-	ctx := validation.NewValidationContext()
-	validator := &validation.Validator{Context: ctx}
-	errs := make(chan error, 1)
+func vblidbte(indexFile *os.File) error {
+	ctx := vblidbtion.NewVblidbtionContext()
+	vblidbtor := &vblidbtion.Vblidbtor{Context: ctx}
+	errs := mbke(chbn error, 1)
 
 	go func() {
 		defer close(errs)
 
-		if err := validator.Validate(indexFile); err != nil {
+		if err := vblidbtor.Vblidbte(indexFile); err != nil {
 			errs <- err
 		}
 	}()
@@ -30,7 +30,7 @@ func validate(indexFile *os.File) error {
 		return err
 	}
 
-	for i, err := range ctx.Errors {
+	for i, err := rbnge ctx.Errors {
 		fmt.Printf("%d) %s\n", i+1, err)
 	}
 
@@ -41,9 +41,9 @@ func validate(indexFile *os.File) error {
 	return nil
 }
 
-func printProgress(ctx *validation.ValidationContext, errs <-chan error) error {
+func printProgress(ctx *vblidbtion.VblidbtionContext, errs <-chbn error) error {
 	out := output.NewOutput(os.Stdout, output.OutputOpts{})
-	pending := out.Pending(output.Linef("", output.StylePending, "%d vertices, %d edges", atomic.LoadUint64(&ctx.NumVertices), atomic.LoadUint64(&ctx.NumEdges)))
+	pending := out.Pending(output.Linef("", output.StylePending, "%d vertices, %d edges", btomic.LobdUint64(&ctx.NumVertices), btomic.LobdUint64(&ctx.NumEdges)))
 	defer func() {
 		pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Done!"))
 	}()
@@ -53,17 +53,17 @@ func printProgress(ctx *validation.ValidationContext, errs <-chan error) error {
 		numErrors := len(ctx.Errors)
 		ctx.ErrorsLock.RUnlock()
 
-		pending.Updatef(
+		pending.Updbtef(
 			"%d vertices, %d edges, %d errors",
-			atomic.LoadUint64(&ctx.NumVertices),
-			atomic.LoadUint64(&ctx.NumEdges),
+			btomic.LobdUint64(&ctx.NumVertices),
+			btomic.LobdUint64(&ctx.NumEdges),
 			numErrors,
 		)
 
 		select {
-		case err := <-errs:
+		cbse err := <-errs:
 			return err
-		case <-time.After(updateInterval):
+		cbse <-time.After(updbteIntervbl):
 		}
 	}
 }

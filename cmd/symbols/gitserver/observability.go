@@ -1,35 +1,35 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	fetchTar *observation.Operation
-	gitDiff  *observation.Operation
+type operbtions struct {
+	fetchTbr *observbtion.Operbtion
+	gitDiff  *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
+		observbtionCtx.Registerer,
 		"codeintel_symbols_gitserver",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.symbols.gitserver.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.symbols.gitserver.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		fetchTar: op("FetchTar"),
+	return &operbtions{
+		fetchTbr: op("FetchTbr"),
 		gitDiff:  op("GitDiff"),
 	}
 }

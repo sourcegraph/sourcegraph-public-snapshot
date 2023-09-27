@@ -1,46 +1,46 @@
-package urlredactor
+pbckbge urlredbctor
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
 )
 
-func TestUrlRedactor(t *testing.T) {
-	testCases := []struct {
+func TestUrlRedbctor(t *testing.T) {
+	testCbses := []struct {
 		url      string
-		message  string
-		redacted string
+		messbge  string
+		redbcted string
 	}{
 		{
-			url:      "http://token@github.com/foo/bar/",
-			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
+			url:      "http://token@github.com/foo/bbr/",
+			messbge:  "fbtbl: repository 'http://token@github.com/foo/bbr/' not found",
+			redbcted: "fbtbl: repository 'http://<redbcted>@github.com/foo/bbr/' not found",
 		},
 		{
-			url:      "http://user:password@github.com/foo/bar/",
-			message:  "fatal: repository 'http://user:password@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://user:<redacted>@github.com/foo/bar/' not found",
+			url:      "http://user:pbssword@github.com/foo/bbr/",
+			messbge:  "fbtbl: repository 'http://user:pbssword@github.com/foo/bbr/' not found",
+			redbcted: "fbtbl: repository 'http://user:<redbcted>@github.com/foo/bbr/' not found",
 		},
 		{
-			url:      "http://git:password@github.com/foo/bar/",
-			message:  "fatal: repository 'http://git:password@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://git:<redacted>@github.com/foo/bar/' not found",
+			url:      "http://git:pbssword@github.com/foo/bbr/",
+			messbge:  "fbtbl: repository 'http://git:pbssword@github.com/foo/bbr/' not found",
+			redbcted: "fbtbl: repository 'http://git:<redbcted>@github.com/foo/bbr/' not found",
 		},
 		{
 			url:      "http://token@github.com///repo//nick/",
-			message:  "fatal: repository 'http://token@github.com/foo/bar/' not found",
-			redacted: "fatal: repository 'http://<redacted>@github.com/foo/bar/' not found",
+			messbge:  "fbtbl: repository 'http://token@github.com/foo/bbr/' not found",
+			redbcted: "fbtbl: repository 'http://<redbcted>@github.com/foo/bbr/' not found",
 		},
 	}
-	for _, testCase := range testCases {
+	for _, testCbse := rbnge testCbses {
 		t.Run("", func(t *testing.T) {
-			remoteURL, err := vcs.ParseURL(testCase.url)
+			remoteURL, err := vcs.PbrseURL(testCbse.url)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if actual := New(remoteURL).Redact(testCase.message); actual != testCase.redacted {
-				t.Fatalf("newUrlRedactor(%q).redact(%q) got %q; want %q", testCase.url, testCase.message, actual, testCase.redacted)
+			if bctubl := New(remoteURL).Redbct(testCbse.messbge); bctubl != testCbse.redbcted {
+				t.Fbtblf("newUrlRedbctor(%q).redbct(%q) got %q; wbnt %q", testCbse.url, testCbse.messbge, bctubl, testCbse.redbcted)
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -8,237 +8,237 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/log/logtest"
+	godiff "github.com/sourcegrbph/go-diff/diff"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	bcs := make([]*btypes.BatchChange, 0, 5)
+func testStoreBbtchChbnges(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	bcs := mbke([]*btypes.BbtchChbnge, 0, 5)
 
 	logger := logtest.Scoped(t)
 
-	// Set up users and organisations for later tests.
-	var (
-		adminUser  = bt.CreateTestUser(t, s.DatabaseDB(), true)
-		orgUser    = bt.CreateTestUser(t, s.DatabaseDB(), false)
-		nonOrgUser = bt.CreateTestUser(t, s.DatabaseDB(), false)
-		org        = bt.CreateTestOrg(t, s.DatabaseDB(), "org", orgUser.ID)
+	// Set up users bnd orgbnisbtions for lbter tests.
+	vbr (
+		bdminUser  = bt.CrebteTestUser(t, s.DbtbbbseDB(), true)
+		orgUser    = bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
+		nonOrgUser = bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
+		org        = bt.CrebteTestOrg(t, s.DbtbbbseDB(), "org", orgUser.ID)
 	)
 
-	t.Run("Create", func(t *testing.T) {
-		// We're going to create five batch changes, both to unit test the
-		// Create method here and for use in sub-tests further down.
+	t.Run("Crebte", func(t *testing.T) {
+		// We're going to crebte five bbtch chbnges, both to unit test the
+		// Crebte method here bnd for use in sub-tests further down.
 		//
-		// 0: draft, owned by org
+		// 0: drbft, owned by org
 		// 1: open, owned by orgUser
 		// 2: open, owned by org
-		// 3: open, owned by adminUser
+		// 3: open, owned by bdminUser
 		// 4: closed, owned by org
-		for i, tc := range []struct {
-			draft           bool
+		for i, tc := rbnge []struct {
+			drbft           bool
 			closed          bool
 			nonNilTimes     bool
-			creatorID       int32
-			namespaceUserID int32
-			namespaceOrgID  int32
+			crebtorID       int32
+			nbmespbceUserID int32
+			nbmespbceOrgID  int32
 		}{
-			{namespaceOrgID: org.ID, creatorID: orgUser.ID, draft: true, nonNilTimes: true},
-			{namespaceUserID: orgUser.ID, creatorID: orgUser.ID},
-			{namespaceOrgID: org.ID, creatorID: orgUser.ID},
-			{namespaceUserID: adminUser.ID, creatorID: adminUser.ID},
-			{namespaceOrgID: org.ID, creatorID: orgUser.ID, closed: true},
+			{nbmespbceOrgID: org.ID, crebtorID: orgUser.ID, drbft: true, nonNilTimes: true},
+			{nbmespbceUserID: orgUser.ID, crebtorID: orgUser.ID},
+			{nbmespbceOrgID: org.ID, crebtorID: orgUser.ID},
+			{nbmespbceUserID: bdminUser.ID, crebtorID: bdminUser.ID},
+			{nbmespbceOrgID: org.ID, crebtorID: orgUser.ID, closed: true},
 		} {
-			c := &btypes.BatchChange{
-				Name:        fmt.Sprintf("test-batch-change-%d", i),
-				Description: "All the Javascripts are belong to us",
+			c := &btypes.BbtchChbnge{
+				Nbme:        fmt.Sprintf("test-bbtch-chbnge-%d", i),
+				Description: "All the Jbvbscripts bre belong to us",
 
-				BatchSpecID:     1742 + int64(i),
-				NamespaceUserID: tc.namespaceUserID,
-				NamespaceOrgID:  tc.namespaceOrgID,
+				BbtchSpecID:     1742 + int64(i),
+				NbmespbceUserID: tc.nbmespbceUserID,
+				NbmespbceOrgID:  tc.nbmespbceOrgID,
 			}
 
-			// Check for nullability of fields by setting them to a non-nil,
-			// zero value.
+			// Check for nullbbility of fields by setting them to b non-nil,
+			// zero vblue.
 			if tc.nonNilTimes {
 				c.ClosedAt = time.Time{}
-				c.LastAppliedAt = time.Time{}
+				c.LbstAppliedAt = time.Time{}
 			}
 
-			if !tc.draft {
-				c.CreatorID = tc.creatorID
-				c.LastAppliedAt = clock.Now()
-				c.LastApplierID = tc.creatorID
+			if !tc.drbft {
+				c.CrebtorID = tc.crebtorID
+				c.LbstAppliedAt = clock.Now()
+				c.LbstApplierID = tc.crebtorID
 			}
 
 			if tc.closed {
 				c.ClosedAt = clock.Now()
 			}
 
-			want := c.Clone()
-			have := c
+			wbnt := c.Clone()
+			hbve := c
 
-			err := s.CreateBatchChange(ctx, have)
-			assert.NoError(t, err)
-			assert.NotZero(t, have.ID)
+			err := s.CrebteBbtchChbnge(ctx, hbve)
+			bssert.NoError(t, err)
+			bssert.NotZero(t, hbve.ID)
 
-			want.ID = have.ID
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
-			assert.Equal(t, want, have)
+			wbnt.ID = hbve.ID
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
+			bssert.Equbl(t, wbnt, hbve)
 
-			bcs = append(bcs, c)
+			bcs = bppend(bcs, c)
 		}
 
-		t.Run("invalid name", func(t *testing.T) {
-			c := &btypes.BatchChange{
-				Name:        "Invalid name",
-				Description: "All the Javascripts are belong to us",
+		t.Run("invblid nbme", func(t *testing.T) {
+			c := &btypes.BbtchChbnge{
+				Nbme:        "Invblid nbme",
+				Description: "All the Jbvbscripts bre belong to us",
 
-				NamespaceUserID: adminUser.ID,
+				NbmespbceUserID: bdminUser.ID,
 			}
-			tx, err := s.Transact(ctx)
-			assert.NoError(t, err)
-			defer tx.Done(errors.New("always rollback"))
-			err = tx.CreateBatchChange(ctx, c)
-			if err != ErrInvalidBatchChangeName {
-				t.Fatal("invalid error returned", err)
+			tx, err := s.Trbnsbct(ctx)
+			bssert.NoError(t, err)
+			defer tx.Done(errors.New("blwbys rollbbck"))
+			err = tx.CrebteBbtchChbnge(ctx, c)
+			if err != ErrInvblidBbtchChbngeNbme {
+				t.Fbtbl("invblid error returned", err)
 			}
 		})
 	})
 
 	t.Run("Upsert", func(t *testing.T) {
-		c := &btypes.BatchChange{
-			Name:        fmt.Sprintf("test-batch-change-upsert"),
-			Description: "All the Javascripts are belong to us",
+		c := &btypes.BbtchChbnge{
+			Nbme:        fmt.Sprintf("test-bbtch-chbnge-upsert"),
+			Description: "All the Jbvbscripts bre belong to us",
 
-			NamespaceUserID: adminUser.ID,
+			NbmespbceUserID: bdminUser.ID,
 		}
 
-		c.BatchSpecID = 1742
-		c.CreatorID = adminUser.ID
-		c.LastAppliedAt = clock.Now()
-		c.LastApplierID = adminUser.ID
+		c.BbtchSpecID = 1742
+		c.CrebtorID = bdminUser.ID
+		c.LbstAppliedAt = clock.Now()
+		c.LbstApplierID = bdminUser.ID
 
-		want := c.Clone()
-		have := c
+		wbnt := c.Clone()
+		hbve := c
 
-		err := s.UpsertBatchChange(ctx, have)
-		assert.NoError(t, err)
-		assert.NotZero(t, have.ID)
+		err := s.UpsertBbtchChbnge(ctx, hbve)
+		bssert.NoError(t, err)
+		bssert.NotZero(t, hbve.ID)
 
-		t.Cleanup(func() {
-			// Cleanup.
-			assert.NoError(t, s.DeleteBatchChange(ctx, c.ID))
+		t.Clebnup(func() {
+			// Clebnup.
+			bssert.NoError(t, s.DeleteBbtchChbnge(ctx, c.ID))
 		})
 
-		want.ID = have.ID
-		want.CreatedAt = clock.Now()
-		want.UpdatedAt = clock.Now()
-		assert.Equal(t, want, have)
+		wbnt.ID = hbve.ID
+		wbnt.CrebtedAt = clock.Now()
+		wbnt.UpdbtedAt = clock.Now()
+		bssert.Equbl(t, wbnt, hbve)
 
 		c.ClosedAt = clock.Now()
-		want = c.Clone()
-		err = s.UpsertBatchChange(ctx, have)
-		assert.NoError(t, err)
-		assert.NotZero(t, have.ID)
+		wbnt = c.Clone()
+		err = s.UpsertBbtchChbnge(ctx, hbve)
+		bssert.NoError(t, err)
+		bssert.NotZero(t, hbve.ID)
 
-		want.ID = have.ID
-		want.CreatedAt = clock.Now()
-		want.UpdatedAt = clock.Now()
-		assert.Equal(t, want, have)
+		wbnt.ID = hbve.ID
+		wbnt.CrebtedAt = clock.Now()
+		wbnt.UpdbtedAt = clock.Now()
+		bssert.Equbl(t, wbnt, hbve)
 
-		// Invalid name:
-		t.Run("Invalid name", func(t *testing.T) {
-			tx, err := s.Transact(ctx)
-			assert.NoError(t, err)
-			defer tx.Done(errors.New("always rollback"))
-			c.Name = "invalid name"
-			err = tx.UpsertBatchChange(ctx, have)
-			if err != ErrInvalidBatchChangeName {
-				t.Fatal("Invalid error returned for invalid name")
+		// Invblid nbme:
+		t.Run("Invblid nbme", func(t *testing.T) {
+			tx, err := s.Trbnsbct(ctx)
+			bssert.NoError(t, err)
+			defer tx.Done(errors.New("blwbys rollbbck"))
+			c.Nbme = "invblid nbme"
+			err = tx.UpsertBbtchChbnge(ctx, hbve)
+			if err != ErrInvblidBbtchChbngeNbme {
+				t.Fbtbl("Invblid error returned for invblid nbme")
 			}
 		})
 	})
 
 	t.Run("Count", func(t *testing.T) {
-		count, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{})
+		count, err := s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if have, want := count, len(bcs); have != want {
-			t.Fatalf("have count: %d, want: %d", have, want)
+		if hbve, wbnt := count, len(bcs); hbve != wbnt {
+			t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 		}
 
-		t.Run("Global", func(t *testing.T) {
-			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{})
+		t.Run("Globbl", func(t *testing.T) {
+			count, err = s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(bcs); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bcs); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("ChangesetID", func(t *testing.T) {
-			changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
+		t.Run("ChbngesetID", func(t *testing.T) {
+			chbngeset := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[0].ID}},
 			})
 
-			count, err = s.CountBatchChanges(ctx, CountBatchChangesOpts{ChangesetID: changeset.ID})
+			count, err = s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{ChbngesetID: chbngeset.ID})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, 1; have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, 1; hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
 		t.Run("RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(logger, s)
-			esStore := database.ExternalServicesWith(logger, s)
+			repoStore := dbtbbbse.ReposWith(logger, s)
+			esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
 			repo1 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-			if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
-				t.Fatal(err)
+			if err := repoStore.Crebte(ctx, repo1, repo2, repo3); err != nil {
+				t.Fbtbl(err)
 			}
 
-			// 1 batch change + changeset is associated with the first repo
-			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			// 1 bbtch chbnge + chbngeset is bssocibted with the first repo
+			bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 				Repo:         repo1.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[0].ID}},
 			})
 
-			// 2 batch changes, each with 1 changeset, are associated with the second repo
-			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			// 2 bbtch chbnges, ebch with 1 chbngeset, bre bssocibted with the second repo
+			bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[0].ID}},
 			})
-			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[1].ID}},
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[1].ID}},
 			})
 
-			// no batch changes are associated with the third repo
+			// no bbtch chbnges bre bssocibted with the third repo
 
 			{
 				tcs := []struct {
-					repoID api.RepoID
+					repoID bpi.RepoID
 					count  int
 				}{
 					{
@@ -255,17 +255,17 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 					},
 				}
 
-				for i, tc := range tcs {
-					t.Run(strconv.Itoa(i), func(t *testing.T) {
-						opts := CountBatchChangesOpts{RepoID: tc.repoID}
+				for i, tc := rbnge tcs {
+					t.Run(strconv.Itob(i), func(t *testing.T) {
+						opts := CountBbtchChbngesOpts{RepoID: tc.repoID}
 
-						count, err := s.CountBatchChanges(ctx, opts)
+						count, err := s.CountBbtchChbnges(ctx, opts)
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 
 						if count != tc.count {
-							t.Fatalf("listed the wrong number of batch changes: have %d, want %d", count, tc.count)
+							t.Fbtblf("listed the wrong number of bbtch chbnges: hbve %d, wbnt %d", count, tc.count)
 						}
 					})
 				}
@@ -273,180 +273,180 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		t.Run("OnlyAdministeredByUserID set", func(t *testing.T) {
-			for name, tc := range map[string]struct {
+			for nbme, tc := rbnge mbp[string]struct {
 				userID int32
-				want   int
+				wbnt   int
 			}{
-				// No adminUser test case because the store layer doesn't
-				// actually know that site admins have access to everything.
+				// No bdminUser test cbse becbuse the store lbyer doesn't
+				// bctublly know thbt site bdmins hbve bccess to everything.
 
-				// orgUser has access to batch changes 0, 1, 2, and 4.
-				"orgUser": {userID: orgUser.ID, want: 4},
+				// orgUser hbs bccess to bbtch chbnges 0, 1, 2, bnd 4.
+				"orgUser": {userID: orgUser.ID, wbnt: 4},
 
-				// nonOrgUser has access to no batch changes.
-				"nonOrgUser": {userID: nonOrgUser.ID, want: 0},
+				// nonOrgUser hbs bccess to no bbtch chbnges.
+				"nonOrgUser": {userID: nonOrgUser.ID, wbnt: 0},
 			} {
-				t.Run(name, func(t *testing.T) {
-					count, err := s.CountBatchChanges(
+				t.Run(nbme, func(t *testing.T) {
+					count, err := s.CountBbtchChbnges(
 						ctx,
-						CountBatchChangesOpts{OnlyAdministeredByUserID: tc.userID},
+						CountBbtchChbngesOpts{OnlyAdministeredByUserID: tc.userID},
 					)
-					assert.NoError(t, err)
-					assert.EqualValues(t, tc.want, count)
+					bssert.NoError(t, err)
+					bssert.EqublVblues(t, tc.wbnt, count)
 				})
 			}
 		})
 
-		t.Run("NamespaceUserID", func(t *testing.T) {
-			wantCounts := map[int32]int{}
-			for _, c := range bcs {
-				if c.NamespaceUserID == 0 {
+		t.Run("NbmespbceUserID", func(t *testing.T) {
+			wbntCounts := mbp[int32]int{}
+			for _, c := rbnge bcs {
+				if c.NbmespbceUserID == 0 {
 					continue
 				}
-				wantCounts[c.NamespaceUserID] += 1
+				wbntCounts[c.NbmespbceUserID] += 1
 			}
-			if len(wantCounts) == 0 {
-				t.Fatalf("No batch changes with NamespaceUserID")
+			if len(wbntCounts) == 0 {
+				t.Fbtblf("No bbtch chbnges with NbmespbceUserID")
 			}
 
-			for userID, want := range wantCounts {
-				have, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{NamespaceUserID: userID})
+			for userID, wbnt := rbnge wbntCounts {
+				hbve, err := s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{NbmespbceUserID: userID})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have != want {
-					t.Fatalf("batch changes count for NamespaceUserID=%d wrong. want=%d, have=%d", userID, want, have)
+				if hbve != wbnt {
+					t.Fbtblf("bbtch chbnges count for NbmespbceUserID=%d wrong. wbnt=%d, hbve=%d", userID, wbnt, hbve)
 				}
 			}
 		})
 
-		t.Run("NamespaceOrgID", func(t *testing.T) {
-			wantCounts := map[int32]int{}
-			for _, c := range bcs {
-				if c.NamespaceOrgID == 0 {
+		t.Run("NbmespbceOrgID", func(t *testing.T) {
+			wbntCounts := mbp[int32]int{}
+			for _, c := rbnge bcs {
+				if c.NbmespbceOrgID == 0 {
 					continue
 				}
-				wantCounts[c.NamespaceOrgID] += 1
+				wbntCounts[c.NbmespbceOrgID] += 1
 			}
-			if len(wantCounts) == 0 {
-				t.Fatalf("No batch changes with NamespaceOrgID")
+			if len(wbntCounts) == 0 {
+				t.Fbtblf("No bbtch chbnges with NbmespbceOrgID")
 			}
 
-			for orgID, want := range wantCounts {
-				have, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{NamespaceOrgID: orgID})
+			for orgID, wbnt := rbnge wbntCounts {
+				hbve, err := s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{NbmespbceOrgID: orgID})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have != want {
-					t.Fatalf("batch changes count for NamespaceOrgID=%d wrong. want=%d, have=%d", orgID, want, have)
+				if hbve != wbnt {
+					t.Fbtblf("bbtch chbnges count for NbmespbceOrgID=%d wrong. wbnt=%d, hbve=%d", orgID, wbnt, hbve)
 				}
 			}
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("By ChangesetID", func(t *testing.T) {
+		t.Run("By ChbngesetID", func(t *testing.T) {
 			for i := 1; i <= len(bcs); i++ {
-				changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-					BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[i-1].ID}},
+				chbngeset := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
+					BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[i-1].ID}},
 				})
-				opts := ListBatchChangesOpts{ChangesetID: changeset.ID}
+				opts := ListBbtchChbngesOpts{ChbngesetID: chbngeset.ID}
 
-				ts, next, err := s.ListBatchChanges(ctx, opts)
+				ts, next, err := s.ListBbtchChbnges(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if hbve, wbnt := next, int64(0); hbve != wbnt {
+					t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 				}
 
-				have, want := ts, bcs[i-1:i]
-				if len(have) != len(want) {
-					t.Fatalf("listed %d batch changes, want: %d", len(have), len(want))
+				hbve, wbnt := ts, bcs[i-1:i]
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d bbtch chbnges, wbnt: %d", len(hbve), len(wbnt))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 		})
 
 		t.Run("By RepoID", func(t *testing.T) {
-			repoStore := database.ReposWith(logger, s)
-			esStore := database.ExternalServicesWith(logger, s)
+			repoStore := dbtbbbse.ReposWith(logger, s)
+			esStore := dbtbbbse.ExternblServicesWith(logger, s)
 
 			repo1 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 			repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-			if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
-				t.Fatal(err)
+			if err := repoStore.Crebte(ctx, repo1, repo2, repo3); err != nil {
+				t.Fbtbl(err)
 			}
 
-			// 1 batch change + changeset is associated with the first repo
-			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			// 1 bbtch chbnge + chbngeset is bssocibted with the first repo
+			bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 				Repo:         repo1.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[0].ID}},
 			})
 
-			// 2 batch changes, each with 1 changeset, are associated with the second repo
-			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			// 2 bbtch chbnges, ebch with 1 chbngeset, bre bssocibted with the second repo
+			bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[0].ID}},
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[0].ID}},
 			})
-			bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+			bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 				Repo:         repo2.ID,
-				BatchChanges: []btypes.BatchChangeAssoc{{BatchChangeID: bcs[1].ID}},
+				BbtchChbnges: []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bcs[1].ID}},
 			})
 
-			// no batch changes are associated with the third repo
+			// no bbtch chbnges bre bssocibted with the third repo
 
 			{
 				tcs := []struct {
-					repoID        api.RepoID
+					repoID        bpi.RepoID
 					listLen       int
-					batchChangeID *int64
+					bbtchChbngeID *int64
 				}{
 					{
 						repoID:        repo1.ID,
 						listLen:       1,
-						batchChangeID: &bcs[0].ID,
+						bbtchChbngeID: &bcs[0].ID,
 					},
 					{
 						repoID:        repo2.ID,
 						listLen:       2,
-						batchChangeID: &bcs[1].ID,
+						bbtchChbngeID: &bcs[1].ID,
 					},
 					{
 						repoID:        repo3.ID,
 						listLen:       0,
-						batchChangeID: nil,
+						bbtchChbngeID: nil,
 					},
 				}
 
-				for i, tc := range tcs {
-					t.Run(strconv.Itoa(i), func(t *testing.T) {
-						opts := ListBatchChangesOpts{RepoID: tc.repoID}
+				for i, tc := rbnge tcs {
+					t.Run(strconv.Itob(i), func(t *testing.T) {
+						opts := ListBbtchChbngesOpts{RepoID: tc.repoID}
 
-						ts, next, err := s.ListBatchChanges(ctx, opts)
+						ts, next, err := s.ListBbtchChbnges(ctx, opts)
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 
-						if have, want := next, int64(0); have != want {
-							t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+						if hbve, wbnt := next, int64(0); hbve != wbnt {
+							t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 						}
 
 						if len(ts) != tc.listLen {
-							t.Fatalf("listed the wrong number of batch changes: have %v, want %v", len(ts), tc.listLen)
+							t.Fbtblf("listed the wrong number of bbtch chbnges: hbve %v, wbnt %v", len(ts), tc.listLen)
 						}
 
 						if len(ts) > 0 {
-							have, want := ts[0].ID, *tc.batchChangeID
-							if have != want {
-								t.Fatalf("listed batch change with id %d, wanted %d", have, want)
+							hbve, wbnt := ts[0].ID, *tc.bbtchChbngeID
+							if hbve != wbnt {
+								t.Fbtblf("listed bbtch chbnge with id %d, wbnted %d", hbve, wbnt)
 							}
 						}
 					})
@@ -454,55 +454,55 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 			}
 		})
 
-		// The batch changes store returns the batch changes in reversed order.
-		reversedBatchChanges := make([]*btypes.BatchChange, len(bcs))
-		for i, c := range bcs {
-			reversedBatchChanges[len(bcs)-i-1] = c
+		// The bbtch chbnges store returns the bbtch chbnges in reversed order.
+		reversedBbtchChbnges := mbke([]*btypes.BbtchChbnge, len(bcs))
+		for i, c := rbnge bcs {
+			reversedBbtchChbnges[len(bcs)-i-1] = c
 		}
 
 		t.Run("With Limit", func(t *testing.T) {
-			for i := 1; i <= len(reversedBatchChanges); i++ {
-				cs, next, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{LimitOpts: LimitOpts{Limit: i}})
+			for i := 1; i <= len(reversedBbtchChbnges); i++ {
+				cs, next, err := s.ListBbtchChbnges(ctx, ListBbtchChbngesOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				{
-					have, want := next, int64(0)
-					if i < len(reversedBatchChanges) {
-						want = reversedBatchChanges[i].ID
+					hbve, wbnt := next, int64(0)
+					if i < len(reversedBbtchChbnges) {
+						wbnt = reversedBbtchChbnges[i].ID
 					}
 
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					if hbve != wbnt {
+						t.Fbtblf("limit: %v: hbve next %v, wbnt %v", i, hbve, wbnt)
 					}
 				}
 
 				{
-					have, want := cs, reversedBatchChanges[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d batch changes, want: %d", len(have), len(want))
+					hbve, wbnt := cs, reversedBbtchChbnges[:i]
+					if len(hbve) != len(wbnt) {
+						t.Fbtblf("listed %d bbtch chbnges, wbnt: %d", len(hbve), len(wbnt))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, wbnt); diff != "" {
+						t.Fbtbl(diff)
 					}
 				}
 			}
 		})
 
 		t.Run("With Cursor", func(t *testing.T) {
-			var cursor int64
-			for i := 1; i <= len(reversedBatchChanges); i++ {
-				opts := ListBatchChangesOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListBatchChanges(ctx, opts)
+			vbr cursor int64
+			for i := 1; i <= len(reversedBbtchChbnges); i++ {
+				opts := ListBbtchChbngesOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				hbve, next, err := s.ListBbtchChbnges(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := reversedBatchChanges[i-1 : i]
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := reversedBbtchChbnges[i-1 : i]
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 
 				cursor = next
@@ -510,623 +510,623 @@ func testStoreBatchChanges(t *testing.T, ctx context.Context, s *Store, clock bt
 		})
 
 		filterTests := []struct {
-			name  string
-			state btypes.BatchChangeState
-			want  []*btypes.BatchChange
+			nbme  string
+			stbte btypes.BbtchChbngeStbte
+			wbnt  []*btypes.BbtchChbnge
 		}{
 			{
-				name:  "Any",
-				state: "",
-				want:  reversedBatchChanges,
+				nbme:  "Any",
+				stbte: "",
+				wbnt:  reversedBbtchChbnges,
 			},
 			{
-				name:  "Closed",
-				state: btypes.BatchChangeStateClosed,
-				want:  []*btypes.BatchChange{bcs[4]},
+				nbme:  "Closed",
+				stbte: btypes.BbtchChbngeStbteClosed,
+				wbnt:  []*btypes.BbtchChbnge{bcs[4]},
 			},
 			{
-				name:  "Open",
-				state: btypes.BatchChangeStateOpen,
-				want:  []*btypes.BatchChange{bcs[3], bcs[2], bcs[1]},
+				nbme:  "Open",
+				stbte: btypes.BbtchChbngeStbteOpen,
+				wbnt:  []*btypes.BbtchChbnge{bcs[3], bcs[2], bcs[1]},
 			},
 			{
-				name:  "Draft",
-				state: btypes.BatchChangeStateDraft,
-				want:  []*btypes.BatchChange{bcs[0]},
+				nbme:  "Drbft",
+				stbte: btypes.BbtchChbngeStbteDrbft,
+				wbnt:  []*btypes.BbtchChbnge{bcs[0]},
 			},
 		}
 
-		for _, tc := range filterTests {
-			t.Run("ListBatchChanges Single State "+tc.name, func(t *testing.T) {
-				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{States: []btypes.BatchChangeState{tc.state}})
+		for _, tc := rbnge filterTests {
+			t.Run("ListBbtchChbnges Single Stbte "+tc.nbme, func(t *testing.T) {
+				hbve, _, err := s.ListBbtchChbnges(ctx, ListBbtchChbngesOpts{Stbtes: []btypes.BbtchChbngeStbte{tc.stbte}})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff := cmp.Diff(have, tc.want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 			})
 		}
 
 		multiFilterTests := []struct {
-			name   string
-			states []btypes.BatchChangeState
-			want   []*btypes.BatchChange
+			nbme   string
+			stbtes []btypes.BbtchChbngeStbte
+			wbnt   []*btypes.BbtchChbnge
 		}{
 			{
-				name:   "Any",
-				states: []btypes.BatchChangeState{},
-				want:   reversedBatchChanges,
+				nbme:   "Any",
+				stbtes: []btypes.BbtchChbngeStbte{},
+				wbnt:   reversedBbtchChbnges,
 			},
 			{
-				name:   "All",
-				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateClosed, btypes.BatchChangeStateDraft},
-				want:   reversedBatchChanges,
+				nbme:   "All",
+				stbtes: []btypes.BbtchChbngeStbte{btypes.BbtchChbngeStbteOpen, btypes.BbtchChbngeStbteClosed, btypes.BbtchChbngeStbteDrbft},
+				wbnt:   reversedBbtchChbnges,
 			},
 			{
-				name:   "Open + Draft",
-				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateDraft},
-				want:   []*btypes.BatchChange{bcs[3], bcs[2], bcs[1], bcs[0]},
+				nbme:   "Open + Drbft",
+				stbtes: []btypes.BbtchChbngeStbte{btypes.BbtchChbngeStbteOpen, btypes.BbtchChbngeStbteDrbft},
+				wbnt:   []*btypes.BbtchChbnge{bcs[3], bcs[2], bcs[1], bcs[0]},
 			},
 			{
-				name:   "Open + Closed",
-				states: []btypes.BatchChangeState{btypes.BatchChangeStateOpen, btypes.BatchChangeStateClosed},
-				want:   []*btypes.BatchChange{bcs[4], bcs[3], bcs[2], bcs[1]},
+				nbme:   "Open + Closed",
+				stbtes: []btypes.BbtchChbngeStbte{btypes.BbtchChbngeStbteOpen, btypes.BbtchChbngeStbteClosed},
+				wbnt:   []*btypes.BbtchChbnge{bcs[4], bcs[3], bcs[2], bcs[1]},
 			},
 			{
-				name:   "Draft + Closed",
-				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateClosed},
-				want:   []*btypes.BatchChange{bcs[4], bcs[0]},
+				nbme:   "Drbft + Closed",
+				stbtes: []btypes.BbtchChbngeStbte{btypes.BbtchChbngeStbteDrbft, btypes.BbtchChbngeStbteClosed},
+				wbnt:   []*btypes.BbtchChbnge{bcs[4], bcs[0]},
 			},
-			// Multiple of the same state should behave as if it were only one
+			// Multiple of the sbme stbte should behbve bs if it were only one
 			{
-				name:   "Draft, multiple times",
-				states: []btypes.BatchChangeState{btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft, btypes.BatchChangeStateDraft},
-				want:   []*btypes.BatchChange{bcs[0]},
+				nbme:   "Drbft, multiple times",
+				stbtes: []btypes.BbtchChbngeStbte{btypes.BbtchChbngeStbteDrbft, btypes.BbtchChbngeStbteDrbft, btypes.BbtchChbngeStbteDrbft},
+				wbnt:   []*btypes.BbtchChbnge{bcs[0]},
 			},
 		}
 
-		for _, tc := range multiFilterTests {
-			t.Run("ListBatchChanges Multiple States "+tc.name, func(t *testing.T) {
+		for _, tc := rbnge multiFilterTests {
+			t.Run("ListBbtchChbnges Multiple Stbtes "+tc.nbme, func(t *testing.T) {
 
-				have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{States: tc.states})
+				hbve, _, err := s.ListBbtchChbnges(ctx, ListBbtchChbngesOpts{Stbtes: tc.stbtes})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if diff := cmp.Diff(have, tc.want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 			})
 		}
 
-		t.Run("ListBatchChanges OnlyAdministeredByUserID set", func(t *testing.T) {
-			for name, tc := range map[string]struct {
+		t.Run("ListBbtchChbnges OnlyAdministeredByUserID set", func(t *testing.T) {
+			for nbme, tc := rbnge mbp[string]struct {
 				userID int32
-				want   []*btypes.BatchChange
+				wbnt   []*btypes.BbtchChbnge
 			}{
-				// No adminUser test case because the store layer doesn't
-				// actually know that site admins have access to everything.
+				// No bdminUser test cbse becbuse the store lbyer doesn't
+				// bctublly know thbt site bdmins hbve bccess to everything.
 
-				// orgUser has access to batch changes 0, 1, 2, and 4.
+				// orgUser hbs bccess to bbtch chbnges 0, 1, 2, bnd 4.
 				"orgUser": {
 					userID: orgUser.ID,
-					want:   []*btypes.BatchChange{bcs[4], bcs[2], bcs[1], bcs[0]},
+					wbnt:   []*btypes.BbtchChbnge{bcs[4], bcs[2], bcs[1], bcs[0]},
 				},
 
-				// nonOrgUser has access to no batch changes.
+				// nonOrgUser hbs bccess to no bbtch chbnges.
 				"nonOrgUser": {
 					userID: nonOrgUser.ID,
-					want:   []*btypes.BatchChange{},
+					wbnt:   []*btypes.BbtchChbnge{},
 				},
 			} {
-				t.Run(name, func(t *testing.T) {
-					have, _, err := s.ListBatchChanges(
+				t.Run(nbme, func(t *testing.T) {
+					hbve, _, err := s.ListBbtchChbnges(
 						ctx,
-						ListBatchChangesOpts{OnlyAdministeredByUserID: tc.userID},
+						ListBbtchChbngesOpts{OnlyAdministeredByUserID: tc.userID},
 					)
-					assert.NoError(t, err)
-					assert.Equal(t, tc.want, have)
+					bssert.NoError(t, err)
+					bssert.Equbl(t, tc.wbnt, hbve)
 				})
 			}
 		})
 
-		t.Run("ListBatchChanges by NamespaceUserID", func(t *testing.T) {
-			for _, c := range bcs {
-				if c.NamespaceUserID == 0 {
+		t.Run("ListBbtchChbnges by NbmespbceUserID", func(t *testing.T) {
+			for _, c := rbnge bcs {
+				if c.NbmespbceUserID == 0 {
 					continue
 				}
-				opts := ListBatchChangesOpts{NamespaceUserID: c.NamespaceUserID}
-				have, _, err := s.ListBatchChanges(ctx, opts)
+				opts := ListBbtchChbngesOpts{NbmespbceUserID: c.NbmespbceUserID}
+				hbve, _, err := s.ListBbtchChbnges(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				for _, haveBatchChange := range have {
-					if have, want := haveBatchChange.NamespaceUserID, opts.NamespaceUserID; have != want {
-						t.Fatalf("batch change has wrong NamespaceUserID. want=%d, have=%d", want, have)
+				for _, hbveBbtchChbnge := rbnge hbve {
+					if hbve, wbnt := hbveBbtchChbnge.NbmespbceUserID, opts.NbmespbceUserID; hbve != wbnt {
+						t.Fbtblf("bbtch chbnge hbs wrong NbmespbceUserID. wbnt=%d, hbve=%d", wbnt, hbve)
 					}
 				}
 			}
 		})
 
-		t.Run("ListBatchChanges by NamespaceOrgID", func(t *testing.T) {
-			want := []*btypes.BatchChange{bcs[4], bcs[2], bcs[0]}
-			have, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{
-				NamespaceOrgID: org.ID,
+		t.Run("ListBbtchChbnges by NbmespbceOrgID", func(t *testing.T) {
+			wbnt := []*btypes.BbtchChbnge{bcs[4], bcs[2], bcs[0]}
+			hbve, _, err := s.ListBbtchChbnges(ctx, ListBbtchChbngesOpts{
+				NbmespbceOrgID: org.ID,
 			})
-			assert.NoError(t, err)
-			assert.Equal(t, want, have)
+			bssert.NoError(t, err)
+			bssert.Equbl(t, wbnt, hbve)
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
-		for _, c := range bcs {
-			c.Name += "-updated"
-			c.Description += "-updated"
-			c.CreatorID++
+	t.Run("Updbte", func(t *testing.T) {
+		for _, c := rbnge bcs {
+			c.Nbme += "-updbted"
+			c.Description += "-updbted"
+			c.CrebtorID++
 			c.ClosedAt = c.ClosedAt.Add(5 * time.Second)
 
-			if c.NamespaceUserID != 0 {
-				c.NamespaceUserID++
+			if c.NbmespbceUserID != 0 {
+				c.NbmespbceUserID++
 			}
 
-			if c.NamespaceOrgID != 0 {
-				c.NamespaceOrgID++
+			if c.NbmespbceOrgID != 0 {
+				c.NbmespbceOrgID++
 			}
 
 			clock.Add(1 * time.Second)
 
-			want := c
-			want.UpdatedAt = clock.Now()
+			wbnt := c
+			wbnt.UpdbtedAt = clock.Now()
 
-			have := c.Clone()
-			if err := s.UpdateBatchChange(ctx, have); err != nil {
-				t.Fatal(err)
+			hbve := c.Clone()
+			if err := s.UpdbteBbtchChbnge(ctx, hbve); err != nil {
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 
-		t.Run("invalid name", func(t *testing.T) {
+		t.Run("invblid nbme", func(t *testing.T) {
 			c := bcs[1].Clone()
 
-			c.Name = "Invalid name"
-			tx, err := s.Transact(ctx)
-			assert.NoError(t, err)
-			defer tx.Done(errors.New("always rollback"))
-			err = tx.UpdateBatchChange(ctx, c)
-			if err != ErrInvalidBatchChangeName {
-				t.Fatal("invalid error returned", err)
+			c.Nbme = "Invblid nbme"
+			tx, err := s.Trbnsbct(ctx)
+			bssert.NoError(t, err)
+			defer tx.Done(errors.New("blwbys rollbbck"))
+			err = tx.UpdbteBbtchChbnge(ctx, c)
+			if err != ErrInvblidBbtchChbngeNbme {
+				t.Fbtbl("invblid error returned", err)
 			}
 		})
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			want := bcs[0]
-			opts := GetBatchChangeOpts{ID: want.ID}
+			wbnt := bcs[0]
+			opts := GetBbtchChbngeOpts{ID: wbnt.ID}
 
-			have, err := s.GetBatchChange(ctx, opts)
+			hbve, err := s.GetBbtchChbnge(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("ByBatchSpecID", func(t *testing.T) {
-			want := bcs[1]
-			opts := GetBatchChangeOpts{BatchSpecID: want.BatchSpecID}
+		t.Run("ByBbtchSpecID", func(t *testing.T) {
+			wbnt := bcs[1]
+			opts := GetBbtchChbngeOpts{BbtchSpecID: wbnt.BbtchSpecID}
 
-			have, err := s.GetBatchChange(ctx, opts)
+			hbve, err := s.GetBbtchChbnge(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("ByName", func(t *testing.T) {
-			want := bcs[0]
+		t.Run("ByNbme", func(t *testing.T) {
+			wbnt := bcs[0]
 
-			have, err := s.GetBatchChange(ctx, GetBatchChangeOpts{Name: want.Name})
+			hbve, err := s.GetBbtchChbnge(ctx, GetBbtchChbngeOpts{Nbme: wbnt.Nbme})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("ByNamespaceUserID", func(t *testing.T) {
-			for _, c := range bcs {
-				if c.NamespaceUserID == 0 {
+		t.Run("ByNbmespbceUserID", func(t *testing.T) {
+			for _, c := rbnge bcs {
+				if c.NbmespbceUserID == 0 {
 					continue
 				}
 
-				want := c
-				opts := GetBatchChangeOpts{NamespaceUserID: c.NamespaceUserID}
+				wbnt := c
+				opts := GetBbtchChbngeOpts{NbmespbceUserID: c.NbmespbceUserID}
 
-				have, err := s.GetBatchChange(ctx, opts)
+				hbve, err := s.GetBbtchChbnge(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 			}
 		})
 
-		t.Run("ByNamespaceOrgID", func(t *testing.T) {
-			have, err := s.GetBatchChange(ctx, GetBatchChangeOpts{
-				// The organisation ID was changed by the Update test above.
-				NamespaceOrgID: org.ID + 1,
+		t.Run("ByNbmespbceOrgID", func(t *testing.T) {
+			hbve, err := s.GetBbtchChbnge(ctx, GetBbtchChbngeOpts{
+				// The orgbnisbtion ID wbs chbnged by the Updbte test bbove.
+				NbmespbceOrgID: org.ID + 1,
 			})
-			assert.NoError(t, err)
-			assert.Equal(t, bcs[4], have)
+			bssert.NoError(t, err)
+			bssert.Equbl(t, bcs[4], hbve)
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetBatchChangeOpts{ID: 0xdeadbeef}
+			opts := GetBbtchChbngeOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetBatchChange(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetBbtchChbnge(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 	})
 
-	t.Run("GetBatchChangeDiffStat", func(t *testing.T) {
-		userID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
-		otherUserID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
-		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(logger, s)
-		esStore := database.ExternalServicesWith(logger, s)
+	t.Run("GetBbtchChbngeDiffStbt", func(t *testing.T) {
+		userID := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse).ID
+		otherUserID := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse).ID
+		userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		repoStore := dbtbbbse.ReposWith(logger, s)
+		esStore := dbtbbbse.ExternblServicesWith(logger, s)
 		repo := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-		repo.Private = true
-		if err := repoStore.Create(ctx, repo); err != nil {
-			t.Fatal(err)
+		repo.Privbte = true
+		if err := repoStore.Crebte(ctx, repo); err != nil {
+			t.Fbtbl(err)
 		}
 
-		batchChangeID := bcs[0].ID
-		var testDiffStatCount int32 = 10
-		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+		bbtchChbngeID := bcs[0].ID
+		vbr testDiffStbtCount int32 = 10
+		bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 			Repo:            repo.ID,
-			BatchChanges:    []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}},
-			DiffStatAdded:   testDiffStatCount,
-			DiffStatDeleted: testDiffStatCount,
+			BbtchChbnges:    []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbngeID}},
+			DiffStbtAdded:   testDiffStbtCount,
+			DiffStbtDeleted: testDiffStbtCount,
 		})
 
 		{
-			want := &godiff.Stat{
-				Added:   testDiffStatCount,
-				Deleted: testDiffStatCount,
+			wbnt := &godiff.Stbt{
+				Added:   testDiffStbtCount,
+				Deleted: testDiffStbtCount,
 			}
-			opts := GetBatchChangeDiffStatOpts{BatchChangeID: batchChangeID}
-			have, err := s.GetBatchChangeDiffStat(userCtx, opts)
+			opts := GetBbtchChbngeDiffStbtOpts{BbtchChbngeID: bbtchChbngeID}
+			hbve, err := s.GetBbtchChbngeDiffStbt(userCtx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 
-		// Now give repo access only to otherUserID, and check that
-		// userID cannot see it in the diff stat anymore.
-		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo.ID)
+		// Now give repo bccess only to otherUserID, bnd check thbt
+		// userID cbnnot see it in the diff stbt bnymore.
+		bt.MockRepoPermissions(t, s.DbtbbbseDB(), otherUserID, repo.ID)
 		{
-			want := &godiff.Stat{
+			wbnt := &godiff.Stbt{
 				Added:   0,
-				Changed: 0,
+				Chbnged: 0,
 				Deleted: 0,
 			}
-			opts := GetBatchChangeDiffStatOpts{BatchChangeID: batchChangeID}
-			have, err := s.GetBatchChangeDiffStat(userCtx, opts)
+			opts := GetBbtchChbngeDiffStbtOpts{BbtchChbngeID: bbtchChbngeID}
+			hbve, err := s.GetBbtchChbngeDiffStbt(userCtx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
-	t.Run("GetRepoDiffStat", func(t *testing.T) {
-		userID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
-		otherUserID := bt.CreateTestUser(t, s.DatabaseDB(), false).ID
-		userCtx := actor.WithActor(ctx, actor.FromUser(userID))
-		repoStore := database.ReposWith(logger, s)
-		esStore := database.ExternalServicesWith(logger, s)
+	t.Run("GetRepoDiffStbt", func(t *testing.T) {
+		userID := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse).ID
+		otherUserID := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse).ID
+		userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
+		repoStore := dbtbbbse.ReposWith(logger, s)
+		esStore := dbtbbbse.ExternblServicesWith(logger, s)
 		repo1 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo2 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
 		repo3 := bt.TestRepo(t, esStore, extsvc.KindGitHub)
-		if err := repoStore.Create(ctx, repo1, repo2, repo3); err != nil {
-			t.Fatal(err)
+		if err := repoStore.Crebte(ctx, repo1, repo2, repo3); err != nil {
+			t.Fbtbl(err)
 		}
 
-		batchChangeID := bcs[0].ID
-		var testDiffStatCount1 int32 = 10
-		var testDiffStatCount2 int32 = 20
+		bbtchChbngeID := bcs[0].ID
+		vbr testDiffStbtCount1 int32 = 10
+		vbr testDiffStbtCount2 int32 = 20
 
-		// two changesets on the first repo
-		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+		// two chbngesets on the first repo
+		bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 			Repo:            repo1.ID,
-			BatchChange:     batchChangeID,
-			DiffStatAdded:   testDiffStatCount1,
-			DiffStatDeleted: testDiffStatCount1,
+			BbtchChbnge:     bbtchChbngeID,
+			DiffStbtAdded:   testDiffStbtCount1,
+			DiffStbtDeleted: testDiffStbtCount1,
 		})
-		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+		bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 			Repo:            repo1.ID,
-			BatchChange:     batchChangeID,
-			DiffStatAdded:   testDiffStatCount2,
-			DiffStatDeleted: testDiffStatCount2,
+			BbtchChbnge:     bbtchChbngeID,
+			DiffStbtAdded:   testDiffStbtCount2,
+			DiffStbtDeleted: testDiffStbtCount2,
 		})
 
-		// one changeset on the second repo
-		bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+		// one chbngeset on the second repo
+		bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 			Repo:            repo2.ID,
-			BatchChange:     batchChangeID,
-			DiffStatAdded:   testDiffStatCount2,
-			DiffStatDeleted: testDiffStatCount2,
+			BbtchChbnge:     bbtchChbngeID,
+			DiffStbtAdded:   testDiffStbtCount2,
+			DiffStbtDeleted: testDiffStbtCount2,
 		})
 
-		// no changesets on the third repo
+		// no chbngesets on the third repo
 
 		{
 			tcs := []struct {
-				repoID api.RepoID
-				want   *godiff.Stat
+				repoID bpi.RepoID
+				wbnt   *godiff.Stbt
 			}{
 				{
 					repoID: repo1.ID,
-					want: &godiff.Stat{
-						Added:   testDiffStatCount1 + testDiffStatCount2,
-						Deleted: testDiffStatCount1 + testDiffStatCount2,
+					wbnt: &godiff.Stbt{
+						Added:   testDiffStbtCount1 + testDiffStbtCount2,
+						Deleted: testDiffStbtCount1 + testDiffStbtCount2,
 					},
 				},
 				{
 					repoID: repo2.ID,
-					want: &godiff.Stat{
-						Added:   testDiffStatCount2,
-						Deleted: testDiffStatCount2,
+					wbnt: &godiff.Stbt{
+						Added:   testDiffStbtCount2,
+						Deleted: testDiffStbtCount2,
 					},
 				},
 				{
 					repoID: repo3.ID,
-					want: &godiff.Stat{
+					wbnt: &godiff.Stbt{
 						Added:   0,
 						Deleted: 0,
 					},
 				},
 			}
 
-			for i, tc := range tcs {
-				t.Run(strconv.Itoa(i), func(t *testing.T) {
-					have, err := s.GetRepoDiffStat(userCtx, tc.repoID)
+			for i, tc := rbnge tcs {
+				t.Run(strconv.Itob(i), func(t *testing.T) {
+					hbve, err := s.GetRepoDiffStbt(userCtx, tc.repoID)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					if diff := cmp.Diff(have, tc.want); diff != "" {
-						t.Errorf("wrong diff returned. have=%+v want=%+v", have, tc.want)
+					if diff := cmp.Diff(hbve, tc.wbnt); diff != "" {
+						t.Errorf("wrong diff returned. hbve=%+v wbnt=%+v", hbve, tc.wbnt)
 					}
 				})
 			}
 
 		}
 
-		// Now give repo access only to otherUserID, and check that
-		// userID cannot see it in the diff stat anymore.
-		bt.MockRepoPermissions(t, s.DatabaseDB(), otherUserID, repo1.ID)
+		// Now give repo bccess only to otherUserID, bnd check thbt
+		// userID cbnnot see it in the diff stbt bnymore.
+		bt.MockRepoPermissions(t, s.DbtbbbseDB(), otherUserID, repo1.ID)
 		{
-			want := &godiff.Stat{
+			wbnt := &godiff.Stbt{
 				Added:   0,
-				Changed: 0,
+				Chbnged: 0,
 				Deleted: 0,
 			}
-			have, err := s.GetRepoDiffStat(userCtx, repo1.ID)
+			hbve, err := s.GetRepoDiffStbt(userCtx, repo1.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
 	t.Run("Delete", func(t *testing.T) {
-		for i := range bcs {
-			err := s.DeleteBatchChange(ctx, bcs[i].ID)
+		for i := rbnge bcs {
+			err := s.DeleteBbtchChbnge(ctx, bcs[i].ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			count, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{})
+			count, err := s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(bcs)-(i+1); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(bcs)-(i+1); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		}
 	})
 }
 
-func testUserDeleteCascades(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "user-delete-cascades").ID
-	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+func testUserDeleteCbscbdes(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	orgID := bt.CrebteTestOrg(t, s.DbtbbbseDB(), "user-delete-cbscbdes").ID
+	user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
 
 	logger := logtest.Scoped(t)
 
 	t.Run("User delete", func(t *testing.T) {
-		// Set up two batch changes and specs: one in the user's namespace (which
-		// should be deleted when the user is hard deleted), and one that is
-		// merely created by the user (which should remain).
-		ownedSpec := &btypes.BatchSpec{
-			NamespaceUserID: user.ID,
+		// Set up two bbtch chbnges bnd specs: one in the user's nbmespbce (which
+		// should be deleted when the user is hbrd deleted), bnd one thbt is
+		// merely crebted by the user (which should rembin).
+		ownedSpec := &btypes.BbtchSpec{
+			NbmespbceUserID: user.ID,
 			UserID:          user.ID,
 		}
-		if err := s.CreateBatchSpec(ctx, ownedSpec); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpec(ctx, ownedSpec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		unownedSpec := &btypes.BatchSpec{
-			NamespaceOrgID: orgID,
+		unownedSpec := &btypes.BbtchSpec{
+			NbmespbceOrgID: orgID,
 			UserID:         user.ID,
 		}
-		if err := s.CreateBatchSpec(ctx, unownedSpec); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpec(ctx, unownedSpec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		ownedBatchChange := &btypes.BatchChange{
-			Name:            "owned",
-			NamespaceUserID: user.ID,
-			CreatorID:       user.ID,
-			LastApplierID:   user.ID,
-			LastAppliedAt:   clock.Now(),
-			BatchSpecID:     ownedSpec.ID,
+		ownedBbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:            "owned",
+			NbmespbceUserID: user.ID,
+			CrebtorID:       user.ID,
+			LbstApplierID:   user.ID,
+			LbstAppliedAt:   clock.Now(),
+			BbtchSpecID:     ownedSpec.ID,
 		}
-		if err := s.CreateBatchChange(ctx, ownedBatchChange); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchChbnge(ctx, ownedBbtchChbnge); err != nil {
+			t.Fbtbl(err)
 		}
 
-		unownedBatchChange := &btypes.BatchChange{
-			Name:           "unowned",
-			NamespaceOrgID: orgID,
-			CreatorID:      user.ID,
-			LastApplierID:  user.ID,
-			LastAppliedAt:  clock.Now(),
-			BatchSpecID:    ownedSpec.ID,
+		unownedBbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:           "unowned",
+			NbmespbceOrgID: orgID,
+			CrebtorID:      user.ID,
+			LbstApplierID:  user.ID,
+			LbstAppliedAt:  clock.Now(),
+			BbtchSpecID:    ownedSpec.ID,
 		}
-		if err := s.CreateBatchChange(ctx, unownedBatchChange); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchChbnge(ctx, unownedBbtchChbnge); err != nil {
+			t.Fbtbl(err)
 		}
 
 		// Now we soft-delete the user.
-		if err := database.UsersWith(logger, s).Delete(ctx, user.ID); err != nil {
-			t.Fatal(err)
+		if err := dbtbbbse.UsersWith(logger, s).Delete(ctx, user.ID); err != nil {
+			t.Fbtbl(err)
 		}
 
-		var testBatchChangeIsGone = func(expectedErr error) {
-			// We should now have the unowned batch change still be valid, but the
-			// owned batch change should have gone away.
-			cs, _, err := s.ListBatchChanges(ctx, ListBatchChangesOpts{})
+		vbr testBbtchChbngeIsGone = func(expectedErr error) {
+			// We should now hbve the unowned bbtch chbnge still be vblid, but the
+			// owned bbtch chbnge should hbve gone bwby.
+			cs, _, err := s.ListBbtchChbnges(ctx, ListBbtchChbngesOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if len(cs) != 1 {
-				t.Errorf("unexpected number of batch changes: have %d; want %d", len(cs), 1)
+				t.Errorf("unexpected number of bbtch chbnges: hbve %d; wbnt %d", len(cs), 1)
 			}
-			if cs[0].ID != unownedBatchChange.ID {
-				t.Errorf("unexpected batch change: %+v", cs[0])
+			if cs[0].ID != unownedBbtchChbnge.ID {
+				t.Errorf("unexpected bbtch chbnge: %+v", cs[0])
 			}
 
-			// The count of batch changes should also respect it.
-			count, err := s.CountBatchChanges(ctx, CountBatchChangesOpts{})
+			// The count of bbtch chbnges should blso respect it.
+			count, err := s.CountBbtchChbnges(ctx, CountBbtchChbngesOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(cs); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(cs); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			// And getting the batch change by its ID also shouldn't work.
-			if _, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: ownedBatchChange.ID}); err == nil || err != expectedErr {
-				t.Fatalf("got invalid error, want=%+v have=%+v", expectedErr, err)
+			// And getting the bbtch chbnge by its ID blso shouldn't work.
+			if _, err := s.GetBbtchChbnge(ctx, GetBbtchChbngeOpts{ID: ownedBbtchChbnge.ID}); err == nil || err != expectedErr {
+				t.Fbtblf("got invblid error, wbnt=%+v hbve=%+v", expectedErr, err)
 			}
 
-			// Both batch specs should still be in place, at least until we add
-			// a foreign key constraint to batch_specs.namespace_user_id.
-			specs, _, err := s.ListBatchSpecs(ctx, ListBatchSpecsOpts{
-				IncludeLocallyExecutedSpecs: true,
+			// Both bbtch specs should still be in plbce, bt lebst until we bdd
+			// b foreign key constrbint to bbtch_specs.nbmespbce_user_id.
+			specs, _, err := s.ListBbtchSpecs(ctx, ListBbtchSpecsOpts{
+				IncludeLocbllyExecutedSpecs: true,
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if len(specs) != 2 {
-				t.Errorf("unexpected number of batch specs: have %d; want %d", len(specs), 2)
+				t.Errorf("unexpected number of bbtch specs: hbve %d; wbnt %d", len(specs), 2)
 			}
 		}
 
-		testBatchChangeIsGone(ErrDeletedNamespace)
+		testBbtchChbngeIsGone(ErrDeletedNbmespbce)
 
-		// Now we hard-delete the user.
-		if err := database.UsersWith(logger, s).HardDelete(ctx, user.ID); err != nil {
-			t.Fatal(err)
+		// Now we hbrd-delete the user.
+		if err := dbtbbbse.UsersWith(logger, s).HbrdDelete(ctx, user.ID); err != nil {
+			t.Fbtbl(err)
 		}
 
-		testBatchChangeIsGone(ErrNoResults)
+		testBbtchChbngeIsGone(ErrNoResults)
 	})
 }
 
-func testBatchChangesDeletedNamespace(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testBbtchChbngesDeletedNbmespbce(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 
 	t.Run("User Deleted", func(t *testing.T) {
-		user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+		user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
 
-		bc := &btypes.BatchChange{
-			Name:            "my-batch-change",
-			NamespaceUserID: user.ID,
-			CreatorID:       user.ID,
-			LastApplierID:   user.ID,
-			LastAppliedAt:   clock.Now(),
+		bc := &btypes.BbtchChbnge{
+			Nbme:            "my-bbtch-chbnge",
+			NbmespbceUserID: user.ID,
+			CrebtorID:       user.ID,
+			LbstApplierID:   user.ID,
+			LbstAppliedAt:   clock.Now(),
 		}
-		err := s.CreateBatchChange(ctx, bc)
+		err := s.CrebteBbtchChbnge(ctx, bc)
 		require.NoError(t, err)
 
-		t.Cleanup(func() {
-			database.UsersWith(logger, s).HardDelete(ctx, user.ID)
-			s.DeleteBatchChange(ctx, bc.ID)
+		t.Clebnup(func() {
+			dbtbbbse.UsersWith(logger, s).HbrdDelete(ctx, user.ID)
+			s.DeleteBbtchChbnge(ctx, bc.ID)
 		})
 
-		err = database.UsersWith(logger, s).Delete(ctx, user.ID)
+		err = dbtbbbse.UsersWith(logger, s).Delete(ctx, user.ID)
 		require.NoError(t, err)
 
-		actual, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: bc.ID})
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, ErrDeletedNamespace)
-		assert.Nil(t, actual)
+		bctubl, err := s.GetBbtchChbnge(ctx, GetBbtchChbngeOpts{ID: bc.ID})
+		bssert.Error(t, err)
+		bssert.ErrorIs(t, err, ErrDeletedNbmespbce)
+		bssert.Nil(t, bctubl)
 	})
 
 	t.Run("Org Deleted", func(t *testing.T) {
-		orgID := bt.CreateTestOrg(t, s.DatabaseDB(), "my-org").ID
+		orgID := bt.CrebteTestOrg(t, s.DbtbbbseDB(), "my-org").ID
 
-		bc := &btypes.BatchChange{
-			Name:           "my-batch-change",
-			NamespaceOrgID: orgID,
-			LastAppliedAt:  clock.Now(),
+		bc := &btypes.BbtchChbnge{
+			Nbme:           "my-bbtch-chbnge",
+			NbmespbceOrgID: orgID,
+			LbstAppliedAt:  clock.Now(),
 		}
-		err := s.CreateBatchChange(ctx, bc)
+		err := s.CrebteBbtchChbnge(ctx, bc)
 		require.NoError(t, err)
 
-		t.Cleanup(func() {
-			database.OrgsWith(s).HardDelete(ctx, orgID)
-			s.DeleteBatchChange(ctx, bc.ID)
+		t.Clebnup(func() {
+			dbtbbbse.OrgsWith(s).HbrdDelete(ctx, orgID)
+			s.DeleteBbtchChbnge(ctx, bc.ID)
 		})
 
-		err = database.OrgsWith(s).Delete(ctx, orgID)
+		err = dbtbbbse.OrgsWith(s).Delete(ctx, orgID)
 		require.NoError(t, err)
 
-		actual, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: bc.ID})
-		assert.Error(t, err)
-		assert.ErrorIs(t, err, ErrDeletedNamespace)
-		assert.Nil(t, actual)
+		bctubl, err := s.GetBbtchChbnge(ctx, GetBbtchChbngeOpts{ID: bc.ID})
+		bssert.Error(t, err)
+		bssert.ErrorIs(t, err, ErrDeletedNbmespbce)
+		bssert.Nil(t, bctubl)
 	})
 }

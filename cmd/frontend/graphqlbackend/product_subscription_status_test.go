@@ -1,51 +1,51 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestMaximumAllowedUserCount(t *testing.T) {
-	var MaxFreeUsers int32 = 10
-	NoLicenseMaximumAllowedUserCount = &MaxFreeUsers
+func TestMbximumAllowedUserCount(t *testing.T) {
+	vbr MbxFreeUsers int32 = 10
+	NoLicenseMbximumAllowedUserCount = &MbxFreeUsers
 
-	subscriptionStatus := productSubscriptionStatus{}
+	subscriptionStbtus := productSubscriptionStbtus{}
 
 	t.Run("free license", func(t *testing.T) {
-		var expectedUsers uint = 10
+		vbr expectedUsers uint = 10
 		GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
 			return &ProductLicenseInfo{
-				TagsValue:      []string{"plan:free-0"},
-				UserCountValue: expectedUsers,
-				ExpiresAtValue: time.Now().Add(time.Hour * 8600),
+				TbgsVblue:      []string{"plbn:free-0"},
+				UserCountVblue: expectedUsers,
+				ExpiresAtVblue: time.Now().Add(time.Hour * 8600),
 			}, nil
 		}
 
-		IsFreePlan = func(*ProductLicenseInfo) bool {
+		IsFreePlbn = func(*ProductLicenseInfo) bool {
 			return true
 		}
-		users, err := subscriptionStatus.MaximumAllowedUserCount(context.Background())
-		assert.NoError(t, err)
-		assert.Equal(t, MaxFreeUsers, *users)
+		users, err := subscriptionStbtus.MbximumAllowedUserCount(context.Bbckground())
+		bssert.NoError(t, err)
+		bssert.Equbl(t, MbxFreeUsers, *users)
 	})
 
 	t.Run("Free users exceeded", func(t *testing.T) {
-		var expectedUsers uint = 20
+		vbr expectedUsers uint = 20
 		GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
 			return &ProductLicenseInfo{
-				TagsValue:      []string{"plan:business-0"},
-				UserCountValue: expectedUsers,
-				ExpiresAtValue: time.Now().Add(time.Hour * 8600),
+				TbgsVblue:      []string{"plbn:business-0"},
+				UserCountVblue: expectedUsers,
+				ExpiresAtVblue: time.Now().Add(time.Hour * 8600),
 			}, nil
 		}
-		IsFreePlan = func(*ProductLicenseInfo) bool {
-			return false
+		IsFreePlbn = func(*ProductLicenseInfo) bool {
+			return fblse
 		}
-		users, err := subscriptionStatus.MaximumAllowedUserCount(context.Background())
-		assert.NoError(t, err)
-		assert.Equal(t, int32(expectedUsers), *users)
+		users, err := subscriptionStbtus.MbximumAllowedUserCount(context.Bbckground())
+		bssert.NoError(t, err)
+		bssert.Equbl(t, int32(expectedUsers), *users)
 	})
 }

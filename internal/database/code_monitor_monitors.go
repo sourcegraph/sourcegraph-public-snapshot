@@ -1,130 +1,130 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
 type Monitor struct {
 	ID          int64
-	CreatedBy   int32
-	CreatedAt   time.Time
-	ChangedBy   int32
-	ChangedAt   time.Time
+	CrebtedBy   int32
+	CrebtedAt   time.Time
+	ChbngedBy   int32
+	ChbngedAt   time.Time
 	Description string
-	Enabled     bool
+	Enbbled     bool
 	UserID      int32
 }
 
-// monitorColumns are the columns needed to fill out a Monitor.
-// Its fields and order must be kept in sync with scanMonitor.
-var monitorColumns = []*sqlf.Query{
+// monitorColumns bre the columns needed to fill out b Monitor.
+// Its fields bnd order must be kept in sync with scbnMonitor.
+vbr monitorColumns = []*sqlf.Query{
 	sqlf.Sprintf("cm_monitors.id"),
-	sqlf.Sprintf("cm_monitors.created_by"),
-	sqlf.Sprintf("cm_monitors.created_at"),
-	sqlf.Sprintf("cm_monitors.changed_by"),
-	sqlf.Sprintf("cm_monitors.changed_at"),
+	sqlf.Sprintf("cm_monitors.crebted_by"),
+	sqlf.Sprintf("cm_monitors.crebted_bt"),
+	sqlf.Sprintf("cm_monitors.chbnged_by"),
+	sqlf.Sprintf("cm_monitors.chbnged_bt"),
 	sqlf.Sprintf("cm_monitors.description"),
-	sqlf.Sprintf("cm_monitors.enabled"),
-	sqlf.Sprintf("cm_monitors.namespace_user_id"),
+	sqlf.Sprintf("cm_monitors.enbbled"),
+	sqlf.Sprintf("cm_monitors.nbmespbce_user_id"),
 }
 
 type MonitorArgs struct {
 	Description     string
-	Enabled         bool
-	NamespaceUserID *int32
-	NamespaceOrgID  *int32
+	Enbbled         bool
+	NbmespbceUserID *int32
+	NbmespbceOrgID  *int32
 }
 
 const insertCodeMonitorFmtStr = `
 INSERT INTO cm_monitors
-(created_at, created_by, changed_at, changed_by, description, enabled, namespace_user_id, namespace_org_id)
+(crebted_bt, crebted_by, chbnged_bt, chbnged_by, description, enbbled, nbmespbce_user_id, nbmespbce_org_id)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s -- monitorColumns
 `
 
-func (s *codeMonitorStore) CreateMonitor(ctx context.Context, args MonitorArgs) (*Monitor, error) {
+func (s *codeMonitorStore) CrebteMonitor(ctx context.Context, brgs MonitorArgs) (*Monitor, error) {
 	now := s.Now()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 	q := sqlf.Sprintf(
 		insertCodeMonitorFmtStr,
 		now,
-		a.UID,
+		b.UID,
 		now,
-		a.UID,
-		args.Description,
-		args.Enabled,
-		args.NamespaceUserID,
-		args.NamespaceOrgID,
+		b.UID,
+		brgs.Description,
+		brgs.Enbbled,
+		brgs.NbmespbceUserID,
+		brgs.NbmespbceOrgID,
 		sqlf.Join(monitorColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanMonitor(row)
+	return scbnMonitor(row)
 }
 
-const updateCodeMonitorFmtStr = `
+const updbteCodeMonitorFmtStr = `
 UPDATE cm_monitors
 SET description = %s,
-	enabled = %s,
-	namespace_user_id = %s,
-	namespace_org_id = %s,
-	changed_by = %s,
-	changed_at = %s
+	enbbled = %s,
+	nbmespbce_user_id = %s,
+	nbmespbce_org_id = %s,
+	chbnged_by = %s,
+	chbnged_bt = %s
 WHERE
 	id = %s
-	AND namespace_user_id = %s
+	AND nbmespbce_user_id = %s
 RETURNING %s; -- monitorColumns
 `
 
-func (s *codeMonitorStore) UpdateMonitor(ctx context.Context, id int64, args MonitorArgs) (*Monitor, error) {
-	a := actor.FromContext(ctx)
+func (s *codeMonitorStore) UpdbteMonitor(ctx context.Context, id int64, brgs MonitorArgs) (*Monitor, error) {
+	b := bctor.FromContext(ctx)
 
 	q := sqlf.Sprintf(
-		updateCodeMonitorFmtStr,
-		args.Description,
-		args.Enabled,
-		args.NamespaceUserID,
-		args.NamespaceOrgID,
-		a.UID,
+		updbteCodeMonitorFmtStr,
+		brgs.Description,
+		brgs.Enbbled,
+		brgs.NbmespbceUserID,
+		brgs.NbmespbceOrgID,
+		b.UID,
 		s.Now(),
 		id,
-		args.NamespaceUserID,
+		brgs.NbmespbceUserID,
 		sqlf.Join(monitorColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanMonitor(row)
+	return scbnMonitor(row)
 }
 
 const toggleCodeMonitorFmtStr = `
 UPDATE cm_monitors
-SET enabled = %s,
-	changed_by = %s,
-	changed_at = %s
+SET enbbled = %s,
+	chbnged_by = %s,
+	chbnged_bt = %s
 WHERE id = %s
 RETURNING %s -- monitorColumns
 `
 
-func (s *codeMonitorStore) UpdateMonitorEnabled(ctx context.Context, id int64, enabled bool) (*Monitor, error) {
-	actorUID := actor.FromContext(ctx).UID
+func (s *codeMonitorStore) UpdbteMonitorEnbbled(ctx context.Context, id int64, enbbled bool) (*Monitor, error) {
+	bctorUID := bctor.FromContext(ctx).UID
 	q := sqlf.Sprintf(
 		toggleCodeMonitorFmtStr,
-		enabled,
-		actorUID,
+		enbbled,
+		bctorUID,
 		s.Now(),
 		id,
 		sqlf.Join(monitorColumns, ", "),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanMonitor(row)
+	return scbnMonitor(row)
 }
 
 const deleteMonitorFmtStr = `
@@ -146,10 +146,10 @@ type ListMonitorsOpts struct {
 func (o ListMonitorsOpts) Conds() *sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if o.UserID != nil {
-		conds = append(conds, sqlf.Sprintf("namespace_user_id = %s", *o.UserID))
+		conds = bppend(conds, sqlf.Sprintf("nbmespbce_user_id = %s", *o.UserID))
 	}
 	if o.After != nil {
-		conds = append(conds, sqlf.Sprintf("id > %s", *o.After))
+		conds = bppend(conds, sqlf.Sprintf("id > %s", *o.After))
 	}
 	return sqlf.Join(conds, "AND")
 }
@@ -182,7 +182,7 @@ func (s *codeMonitorStore) ListMonitors(ctx context.Context, opts ListMonitorsOp
 		return nil, err
 	}
 	defer rows.Close()
-	return scanMonitors(rows)
+	return scbnMonitors(rows)
 }
 
 const monitorByIDFmtStr = `
@@ -199,51 +199,51 @@ func (s *codeMonitorStore) GetMonitor(ctx context.Context, monitorID int64) (*Mo
 		monitorID,
 	)
 	row := s.QueryRow(ctx, q)
-	return scanMonitor(row)
+	return scbnMonitor(row)
 }
 
-const totalCountMonitorsFmtStr = `
+const totblCountMonitorsFmtStr = `
 SELECT COUNT(*)
 FROM cm_monitors
 %s
 `
 
 func (s *codeMonitorStore) CountMonitors(ctx context.Context, userID *int32) (int32, error) {
-	var count int32
-	var query *sqlf.Query
+	vbr count int32
+	vbr query *sqlf.Query
 	if userID != nil {
-		query = sqlf.Sprintf(totalCountMonitorsFmtStr, sqlf.Sprintf("WHERE namespace_user_id = %s", *userID))
+		query = sqlf.Sprintf(totblCountMonitorsFmtStr, sqlf.Sprintf("WHERE nbmespbce_user_id = %s", *userID))
 	} else {
-		query = sqlf.Sprintf(totalCountMonitorsFmtStr, sqlf.Sprintf(""))
+		query = sqlf.Sprintf(totblCountMonitorsFmtStr, sqlf.Sprintf(""))
 	}
-	err := s.QueryRow(ctx, query).Scan(&count)
+	err := s.QueryRow(ctx, query).Scbn(&count)
 	return count, err
 }
 
-func scanMonitors(rows *sql.Rows) ([]*Monitor, error) {
-	var ms []*Monitor
+func scbnMonitors(rows *sql.Rows) ([]*Monitor, error) {
+	vbr ms []*Monitor
 	for rows.Next() {
-		m, err := scanMonitor(rows)
+		m, err := scbnMonitor(rows)
 		if err != nil {
 			return nil, err
 		}
-		ms = append(ms, m)
+		ms = bppend(ms, m)
 	}
 	return ms, rows.Err()
 }
 
-// scanMonitor scans a monitor from either a *sql.Row or *sql.Rows.
+// scbnMonitor scbns b monitor from either b *sql.Row or *sql.Rows.
 // It must be kept in sync with monitorColumns.
-func scanMonitor(scanner dbutil.Scanner) (*Monitor, error) {
+func scbnMonitor(scbnner dbutil.Scbnner) (*Monitor, error) {
 	m := &Monitor{}
-	err := scanner.Scan(
+	err := scbnner.Scbn(
 		&m.ID,
-		&m.CreatedBy,
-		&m.CreatedAt,
-		&m.ChangedBy,
-		&m.ChangedAt,
+		&m.CrebtedBy,
+		&m.CrebtedAt,
+		&m.ChbngedBy,
+		&m.ChbngedAt,
 		&m.Description,
-		&m.Enabled,
+		&m.Enbbled,
 		&m.UserID,
 	)
 	return m, err

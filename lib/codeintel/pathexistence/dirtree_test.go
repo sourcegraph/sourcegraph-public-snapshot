@@ -1,4 +1,4 @@
-package pathexistence
+pbckbge pbthexistence
 
 import (
 	"sort"
@@ -8,22 +8,22 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestMakeTree(t *testing.T) {
-	root := makeTree("projects/lsif-go", []string{
+func TestMbkeTree(t *testing.T) {
+	root := mbkeTree("projects/lsif-go", []string{
 		"go.mod",
 		"go.sum",
 		"LICENSE",
 		"README.md",
-		"cmd/lsif-go/main.go",
-		"internal/gomod/module.go",
-		"internal/index/astutil.go",
-		"internal/index/helper.go",
-		"internal/index/indexer.go",
-		"internal/index/types.go",
+		"cmd/lsif-go/mbin.go",
+		"internbl/gomod/module.go",
+		"internbl/index/bstutil.go",
+		"internbl/index/helper.go",
+		"internbl/index/indexer.go",
+		"internbl/index/types.go",
 		"protocol/protocol.go",
 		"protocol/writer.go",
 	})
-	canonicalizeDirTreeNode(root)
+	cbnonicblizeDirTreeNode(root)
 
 	expected := DirTreeNode{
 		"", []DirTreeNode{
@@ -37,7 +37,7 @@ func TestMakeTree(t *testing.T) {
 								},
 							},
 							{
-								"internal", []DirTreeNode{
+								"internbl", []DirTreeNode{
 									{"gomod", nil},
 									{"index", nil},
 								},
@@ -51,19 +51,19 @@ func TestMakeTree(t *testing.T) {
 	}
 
 	if diff := cmp.Diff(expected, root); diff != "" {
-		t.Errorf("unexpected file tree (-want +got):\n%s", diff)
+		t.Errorf("unexpected file tree (-wbnt +got):\n%s", diff)
 	}
 }
 
-// canonicalizeDirTreeNode sorts children of each node in the given
-// subtree by the directory name. This is necessary for tests as the
-// order of slices matters in comparison, but not in dirtree usage.
-func canonicalizeDirTreeNode(n DirTreeNode) {
-	for _, child := range n.Children {
-		canonicalizeDirTreeNode(child)
+// cbnonicblizeDirTreeNode sorts children of ebch node in the given
+// subtree by the directory nbme. This is necessbry for tests bs the
+// order of slices mbtters in compbrison, but not in dirtree usbge.
+func cbnonicblizeDirTreeNode(n DirTreeNode) {
+	for _, child := rbnge n.Children {
+		cbnonicblizeDirTreeNode(child)
 	}
 
 	sort.Slice(n.Children, func(i, j int) bool {
-		return strings.Compare(n.Children[i].Name, n.Children[j].Name) < 0
+		return strings.Compbre(n.Children[i].Nbme, n.Children[j].Nbme) < 0
 	})
 }

@@ -1,180 +1,180 @@
-package main
+pbckbge mbin
 
 import (
 	"testing"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/build"
+	"github.com/sourcegrbph/sourcegrbph/dev/build-trbcker/build"
 )
 
-func TestToBuildNotification(t *testing.T) {
+func TestToBuildNotificbtion(t *testing.T) {
 	num := 160000
 	url := "http://www.google.com"
-	commit := "78926a5b3b836a8a104a5d5adf891e5626b1e405"
-	pipelineID := "sourcegraph"
+	commit := "78926b5b3b836b8b104b5d5bdf891e5626b1e405"
+	pipelineID := "sourcegrbph"
 	exit := 999
-	msg := "this is a test"
-	t.Run("2 failed jobs", func(t *testing.T) {
+	msg := "this is b test"
+	t.Run("2 fbiled jobs", func(t *testing.T) {
 		b := &build.Build{
 			Build: buildkite.Build{
-				Message: &msg,
+				Messbge: &msg,
 				WebURL:  &url,
-				Creator: &buildkite.Creator{
-					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+				Crebtor: &buildkite.Crebtor{
+					AvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/7d4f6781b10e48b94d1052c443d13149",
 				},
 				Pipeline: &buildkite.Pipeline{
 					ID:   &pipelineID,
-					Name: &pipelineID,
+					Nbme: &pipelineID,
 				},
 				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
+					Nbme:  "Willibm Bezuidenhout",
+					Embil: "willibm.bezuidenhout@sourcegrbph.com",
 				},
 				Number: &num,
 				URL:    &url,
 				Commit: &commit,
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			}},
-			Steps: map[string]*build.Step{
-				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
+			Steps: mbp[string]*build.Step{
+				":one: fbke step": build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
+				":two: fbke step": build.NewStepFromJob(newJob(t, ":two: fbke step", exit)),
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
+		notificbtion := determineBuildStbtusNotificbtion(b)
 
-		if len(notification.Failed) != 2 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
+		if len(notificbtion.Fbiled) != 2 {
+			t.Errorf("got %d, wbnted %d for fbiled jobs in BuildNotificbtion", len(notificbtion.Fbiled), 2)
 		}
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		if notificbtion.BuildStbtus != string(build.BuildFbiled) {
+			t.Errorf("got %s, wbnted %s for Build Stbtus in Notificbtion", notificbtion.BuildStbtus, build.BuildFbiled)
 		}
 	})
-	t.Run("2 failed jobs initially and a late job should be 3 total jobs", func(t *testing.T) {
+	t.Run("2 fbiled jobs initiblly bnd b lbte job should be 3 totbl jobs", func(t *testing.T) {
 		b := &build.Build{
 			Build: buildkite.Build{
-				Message: &msg,
+				Messbge: &msg,
 				WebURL:  &url,
-				Creator: &buildkite.Creator{
-					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+				Crebtor: &buildkite.Crebtor{
+					AvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/7d4f6781b10e48b94d1052c443d13149",
 				},
 				Pipeline: &buildkite.Pipeline{
 					ID:   &pipelineID,
-					Name: &pipelineID,
+					Nbme: &pipelineID,
 				},
 				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
+					Nbme:  "Willibm Bezuidenhout",
+					Embil: "willibm.bezuidenhout@sourcegrbph.com",
 				},
 				Number: &num,
 				URL:    &url,
 				Commit: &commit,
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			}},
-			Steps: map[string]*build.Step{
-				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", exit)),
-				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", exit)),
+			Steps: mbp[string]*build.Step{
+				":one: fbke step": build.NewStepFromJob(newJob(t, ":one: fbke step", exit)),
+				":two: fbke step": build.NewStepFromJob(newJob(t, ":two: fbke step", exit)),
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
-		if len(notification.Failed) != 2 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
+		notificbtion := determineBuildStbtusNotificbtion(b)
+		if len(notificbtion.Fbiled) != 2 {
+			t.Errorf("got %d, wbnted %d for fbiled jobs in BuildNotificbtion", len(notificbtion.Fbiled), 2)
 		}
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		if notificbtion.BuildStbtus != string(build.BuildFbiled) {
+			t.Errorf("got %s, wbnted %s for Build Stbtus in Notificbtion", notificbtion.BuildStbtus, build.BuildFbiled)
 		}
 
-		err := b.AddJob(newJob(t, ":three: fake step", exit))
+		err := b.AddJob(newJob(t, ":three: fbke step", exit))
 		if err != nil {
-			t.Fatalf("failed to add job to build: %v", err)
+			t.Fbtblf("fbiled to bdd job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
-		if len(notification.Failed) != 3 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 3)
+		notificbtion = determineBuildStbtusNotificbtion(b)
+		if len(notificbtion.Fbiled) != 3 {
+			t.Errorf("got %d, wbnted %d for fbiled jobs in BuildNotificbtion", len(notificbtion.Fbiled), 3)
 		}
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		if notificbtion.BuildStbtus != string(build.BuildFbiled) {
+			t.Errorf("got %s, wbnted %s for Build Stbtus in Notificbtion", notificbtion.BuildStbtus, build.BuildFbiled)
 		}
 	})
-	t.Run("2 failed jobs initially and both jobs passed should a fixed build", func(t *testing.T) {
+	t.Run("2 fbiled jobs initiblly bnd both jobs pbssed should b fixed build", func(t *testing.T) {
 		b := &build.Build{
 			Build: buildkite.Build{
-				Message: &msg,
+				Messbge: &msg,
 				WebURL:  &url,
-				Creator: &buildkite.Creator{
-					AvatarURL: "https://www.gravatar.com/avatar/7d4f6781b10e48a94d1052c443d13149",
+				Crebtor: &buildkite.Crebtor{
+					AvbtbrURL: "https://www.grbvbtbr.com/bvbtbr/7d4f6781b10e48b94d1052c443d13149",
 				},
 				Pipeline: &buildkite.Pipeline{
 					ID:   &pipelineID,
-					Name: &pipelineID,
+					Nbme: &pipelineID,
 				},
 				Author: &buildkite.Author{
-					Name:  "William Bezuidenhout",
-					Email: "william.bezuidenhout@sourcegraph.com",
+					Nbme:  "Willibm Bezuidenhout",
+					Embil: "willibm.bezuidenhout@sourcegrbph.com",
 				},
 				Number: &num,
 				URL:    &url,
 				Commit: &commit,
 			},
 			Pipeline: &build.Pipeline{buildkite.Pipeline{
-				Name: &pipelineID,
+				Nbme: &pipelineID,
 			}},
-			Steps: map[string]*build.Step{
-				":one: fake step": build.NewStepFromJob(newJob(t, ":one: fake step", 999)),
-				":two: fake step": build.NewStepFromJob(newJob(t, ":two: fake step", 999)),
+			Steps: mbp[string]*build.Step{
+				":one: fbke step": build.NewStepFromJob(newJob(t, ":one: fbke step", 999)),
+				":two: fbke step": build.NewStepFromJob(newJob(t, ":two: fbke step", 999)),
 			},
 		}
 
-		notification := determineBuildStatusNotification(b)
-		if len(notification.Failed) != 2 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
+		notificbtion := determineBuildStbtusNotificbtion(b)
+		if len(notificbtion.Fbiled) != 2 {
+			t.Errorf("got %d, wbnted %d for fbiled jobs in BuildNotificbtion", len(notificbtion.Fbiled), 2)
 		}
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		if notificbtion.BuildStbtus != string(build.BuildFbiled) {
+			t.Errorf("got %s, wbnted %s for Build Stbtus in Notificbtion", notificbtion.BuildStbtus, build.BuildFbiled)
 		}
 
 		// Add the fixed job
-		err := b.AddJob(newJob(t, ":one: fake step", 0))
+		err := b.AddJob(newJob(t, ":one: fbke step", 0))
 		if err != nil {
-			t.Fatalf("failed to add job to build: %v", err)
+			t.Fbtblf("fbiled to bdd job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
-		if len(notification.Failed) != 1 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 1)
+		notificbtion = determineBuildStbtusNotificbtion(b)
+		if len(notificbtion.Fbiled) != 1 {
+			t.Errorf("got %d, wbnted %d for fbiled jobs in BuildNotificbtion", len(notificbtion.Fbiled), 1)
 		}
-		if len(notification.Fixed) != 1 {
-			t.Errorf("got %d, wanted %d for fixed jobs in BuildNotification", len(notification.Fixed), 1)
+		if len(notificbtion.Fixed) != 1 {
+			t.Errorf("got %d, wbnted %d for fixed jobs in BuildNotificbtion", len(notificbtion.Fixed), 1)
 		}
-		// Build should still be in a failed state ... since on job is still failing
-		if notification.BuildStatus != string(build.BuildFailed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFailed)
+		// Build should still be in b fbiled stbte ... since on job is still fbiling
+		if notificbtion.BuildStbtus != string(build.BuildFbiled) {
+			t.Errorf("got %s, wbnted %s for Build Stbtus in Notificbtion", notificbtion.BuildStbtus, build.BuildFbiled)
 		}
 
 		// Add the fixed job
-		err = b.AddJob(newJob(t, ":two: fake step", 0))
+		err = b.AddJob(newJob(t, ":two: fbke step", 0))
 		if err != nil {
-			t.Fatalf("failed to add job to build: %v", err)
+			t.Fbtblf("fbiled to bdd job to build: %v", err)
 		}
 
-		notification = determineBuildStatusNotification(b)
+		notificbtion = determineBuildStbtusNotificbtion(b)
 		// All jobs should be fixed now
-		if len(notification.Failed) != 0 {
-			t.Errorf("got %d, wanted %d for failed jobs in BuildNotification", len(notification.Failed), 2)
+		if len(notificbtion.Fbiled) != 0 {
+			t.Errorf("got %d, wbnted %d for fbiled jobs in BuildNotificbtion", len(notificbtion.Fbiled), 2)
 		}
-		if len(notification.Fixed) != 2 {
-			t.Errorf("got %d, wanted %d for fixed jobs in BuildNotification", len(notification.Fixed), 2)
+		if len(notificbtion.Fixed) != 2 {
+			t.Errorf("got %d, wbnted %d for fixed jobs in BuildNotificbtion", len(notificbtion.Fixed), 2)
 		}
-		// All Jobs are fixed, so build should be in fixed state
-		if notification.BuildStatus != string(build.BuildFixed) {
-			t.Errorf("got %s, wanted %s for Build Status in Notification", notification.BuildStatus, build.BuildFixed)
+		// All Jobs bre fixed, so build should be in fixed stbte
+		if notificbtion.BuildStbtus != string(build.BuildFixed) {
+			t.Errorf("got %s, wbnted %s for Build Stbtus in Notificbtion", notificbtion.BuildStbtus, build.BuildFixed)
 		}
 	})
 }

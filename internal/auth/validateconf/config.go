@@ -1,23 +1,23 @@
-package auth
+pbckbge buth
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-// TODO: explicit validateconf.Init call instead of implicit
+// TODO: explicit vblidbteconf.Init cbll instebd of implicit
 func init() {
-	conf.ContributeValidator(validateConfig)
+	conf.ContributeVblidbtor(vblidbteConfig)
 }
 
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+func vblidbteConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
 	if len(c.SiteConfig().AuthProviders) == 0 {
-		problems = append(problems, conf.NewSiteProblem("no auth providers set (all access will be forbidden)"))
+		problems = bppend(problems, conf.NewSiteProblem("no buth providers set (bll bccess will be forbidden)"))
 	}
 
-	// Validate that `auth.enableUsernameChanges` is not set if SSO is configured
-	if conf.HasExternalAuthProvider(c) && c.SiteConfig().AuthEnableUsernameChanges {
-		problems = append(problems, conf.NewSiteProblem("`auth.enableUsernameChanges` must not be true if external auth providers are set in `auth.providers`"))
+	// Vblidbte thbt `buth.enbbleUsernbmeChbnges` is not set if SSO is configured
+	if conf.HbsExternblAuthProvider(c) && c.SiteConfig().AuthEnbbleUsernbmeChbnges {
+		problems = bppend(problems, conf.NewSiteProblem("`buth.enbbleUsernbmeChbnges` must not be true if externbl buth providers bre set in `buth.providers`"))
 	}
 
 	return problems

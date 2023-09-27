@@ -1,78 +1,78 @@
-package filter
+pbckbge filter
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/scim2/filter-parser/v2"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/scim2/filter-pbrser/v2"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func cmpBool(ref bool, cmp func(v, ref bool) error) func(interface{}) error {
-	return func(i interface{}) error {
-		value, ok := i.(bool)
+func cmpBool(ref bool, cmp func(v, ref bool) error) func(interfbce{}) error {
+	return func(i interfbce{}) error {
+		vblue, ok := i.(bool)
 		if !ok {
-			panic(fmt.Sprintf("given value is not a boolean: %v", i))
+			pbnic(fmt.Sprintf("given vblue is not b boolebn: %v", i))
 		}
-		return cmp(value, ref)
+		return cmp(vblue, ref)
 	}
 }
 
-func cmpBoolStr(ref bool, cmp func(v, ref string) error) (func(interface{}) error, error) {
-	return func(i interface{}) error {
+func cmpBoolStr(ref bool, cmp func(v, ref string) error) (func(interfbce{}) error, error) {
+	return func(i interfbce{}) error {
 		if _, ok := i.(bool); !ok {
-			panic(fmt.Sprintf("given value is not a boolean: %v", i))
+			pbnic(fmt.Sprintf("given vblue is not b boolebn: %v", i))
 		}
 		return cmp(fmt.Sprintf("%t", i), fmt.Sprintf("%t", ref))
 	}, nil
 }
 
-// cmpBoolean returns a compare function that compares a given value to the reference boolean based on the given
-// attribute expression and string/reference attribute. The filter operators gt, lt, ge and le are not supported on
-// boolean attributes.
+// cmpBoolebn returns b compbre function thbt compbres b given vblue to the reference boolebn bbsed on the given
+// bttribute expression bnd string/reference bttribute. The filter operbtors gt, lt, ge bnd le bre not supported on
+// boolebn bttributes.
 //
-// Expects a boolean attribute. Will panic on unknown filter operator.
-// Known operators: eq, ne, co, sw, ew, gt, lt, ge and le.
-func cmpBoolean(e *filter.AttributeExpression, ref bool) (func(interface{}) error, error) {
-	switch op := e.Operator; op {
-	case filter.EQ:
+// Expects b boolebn bttribute. Will pbnic on unknown filter operbtor.
+// Known operbtors: eq, ne, co, sw, ew, gt, lt, ge bnd le.
+func cmpBoolebn(e *filter.AttributeExpression, ref bool) (func(interfbce{}) error, error) {
+	switch op := e.Operbtor; op {
+	cbse filter.EQ:
 		return cmpBool(ref, func(v, ref bool) error {
 			if v != ref {
-				return errors.Newf("%t is not equal to %t", v, ref)
+				return errors.Newf("%t is not equbl to %t", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.NE:
+	cbse filter.NE:
 		return cmpBool(ref, func(v, ref bool) error {
 			if v == ref {
-				return errors.Newf("%t is equal to %t", v, ref)
+				return errors.Newf("%t is equbl to %t", v, ref)
 			}
 			return nil
 		}), nil
-	case filter.CO:
+	cbse filter.CO:
 		return cmpBoolStr(ref, func(v, ref string) error {
-			if !strings.Contains(v, ref) {
-				return errors.Newf("%s does not contain %s", v, ref)
+			if !strings.Contbins(v, ref) {
+				return errors.Newf("%s does not contbin %s", v, ref)
 			}
 			return nil
 		})
-	case filter.SW:
+	cbse filter.SW:
 		return cmpBoolStr(ref, func(v, ref string) error {
-			if !strings.HasPrefix(v, ref) {
-				return errors.Newf("%s does not start with %s", v, ref)
+			if !strings.HbsPrefix(v, ref) {
+				return errors.Newf("%s does not stbrt with %s", v, ref)
 			}
 			return nil
 		})
-	case filter.EW:
+	cbse filter.EW:
 		return cmpBoolStr(ref, func(v, ref string) error {
-			if !strings.HasSuffix(v, ref) {
+			if !strings.HbsSuffix(v, ref) {
 				return errors.Newf("%s does not end with %s", v, ref)
 			}
 			return nil
 		})
-	case filter.GT, filter.LT, filter.GE, filter.LE:
-		return nil, errors.Newf("can not use op %q on boolean values", op)
-	default:
-		panic(fmt.Sprintf("unknown operator in expression: %s", e))
+	cbse filter.GT, filter.LT, filter.GE, filter.LE:
+		return nil, errors.Newf("cbn not use op %q on boolebn vblues", op)
+	defbult:
+		pbnic(fmt.Sprintf("unknown operbtor in expression: %s", e))
 	}
 }

@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,19 +7,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestCodeHostConnectionResolver(t *testing.T) {
@@ -28,270 +28,270 @@ func TestCodeHostConnectionResolver(t *testing.T) {
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	pruneUserCredentials(t, db, nil)
+	pruneUserCredentibls(t, db, nil)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	userAPIID := string(graphqlbackend.MarshalUserID(userID))
+	userID := bt.CrebteTestUser(t, db, true).ID
+	userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	ghRepo, _ := bt.CreateTestRepo(t, ctx, db)
-	glRepos, _ := bt.CreateGitlabTestRepos(t, ctx, db, 1)
+	ghRepo, _ := bt.CrebteTestRepo(t, ctx, db)
+	glRepos, _ := bt.CrebteGitlbbTestRepos(t, ctx, db, 1)
 	glRepo := glRepos[0]
-	bbsRepos, _ := bt.CreateBbsTestRepos(t, ctx, db, 1)
+	bbsRepos, _ := bt.CrebteBbsTestRepos(t, ctx, db, 1)
 	bbsRepo := bbsRepos[0]
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("Query.BatchChangesCodeHosts", func(t *testing.T) {
-		cred := &btypes.SiteCredential{
-			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
-			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
+	t.Run("Query.BbtchChbngesCodeHosts", func(t *testing.T) {
+		cred := &btypes.SiteCredentibl{
+			ExternblServiceID:   ghRepo.ExternblRepo.ServiceID,
+			ExternblServiceType: ghRepo.ExternblRepo.ServiceType,
 		}
-		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-		if err := bstore.CreateSiteCredential(ctx, cred, token); err != nil {
-			t.Fatal(err)
+		token := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+		if err := bstore.CrebteSiteCredentibl(ctx, cred, token); err != nil {
+			t.Fbtbl(err)
 		}
 
-		nodes := []apitest.BatchChangesCodeHost{
+		nodes := []bpitest.BbtchChbngesCodeHost{
 			{
-				ExternalServiceURL:  bbsRepo.ExternalRepo.ServiceID,
-				ExternalServiceKind: extsvc.TypeToKind(bbsRepo.ExternalRepo.ServiceType),
+				ExternblServiceURL:  bbsRepo.ExternblRepo.ServiceID,
+				ExternblServiceKind: extsvc.TypeToKind(bbsRepo.ExternblRepo.ServiceType),
 			},
 			{
-				ExternalServiceURL:  ghRepo.ExternalRepo.ServiceID,
-				ExternalServiceKind: extsvc.TypeToKind(ghRepo.ExternalRepo.ServiceType),
-				Credential: apitest.BatchChangesCredential{
-					ID:                  string(marshalBatchChangesCredentialID(cred.ID, true)),
-					ExternalServiceKind: extsvc.TypeToKind(cred.ExternalServiceType),
-					ExternalServiceURL:  cred.ExternalServiceID,
-					CreatedAt:           marshalDateTime(t, cred.CreatedAt),
-					IsSiteCredential:    true,
+				ExternblServiceURL:  ghRepo.ExternblRepo.ServiceID,
+				ExternblServiceKind: extsvc.TypeToKind(ghRepo.ExternblRepo.ServiceType),
+				Credentibl: bpitest.BbtchChbngesCredentibl{
+					ID:                  string(mbrshblBbtchChbngesCredentiblID(cred.ID, true)),
+					ExternblServiceKind: extsvc.TypeToKind(cred.ExternblServiceType),
+					ExternblServiceURL:  cred.ExternblServiceID,
+					CrebtedAt:           mbrshblDbteTime(t, cred.CrebtedAt),
+					IsSiteCredentibl:    true,
 				},
 			},
 			{
-				ExternalServiceURL:  glRepo.ExternalRepo.ServiceID,
-				ExternalServiceKind: extsvc.TypeToKind(glRepo.ExternalRepo.ServiceType),
+				ExternblServiceURL:  glRepo.ExternblRepo.ServiceID,
+				ExternblServiceKind: extsvc.TypeToKind(glRepo.ExternblRepo.ServiceType),
 			},
 		}
 
 		tests := []struct {
-			firstParam      int
-			wantHasNextPage bool
-			wantEndCursor   string
-			wantTotalCount  int
-			wantNodes       []apitest.BatchChangesCodeHost
+			firstPbrbm      int
+			wbntHbsNextPbge bool
+			wbntEndCursor   string
+			wbntTotblCount  int
+			wbntNodes       []bpitest.BbtchChbngesCodeHost
 		}{
-			{firstParam: 1, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 3, wantNodes: nodes[:1]},
-			{firstParam: 2, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 3, wantNodes: nodes[:2]},
-			{firstParam: 3, wantHasNextPage: false, wantTotalCount: 3, wantNodes: nodes[:3]},
+			{firstPbrbm: 1, wbntHbsNextPbge: true, wbntEndCursor: "1", wbntTotblCount: 3, wbntNodes: nodes[:1]},
+			{firstPbrbm: 2, wbntHbsNextPbge: true, wbntEndCursor: "2", wbntTotblCount: 3, wbntNodes: nodes[:2]},
+			{firstPbrbm: 3, wbntHbsNextPbge: fblse, wbntTotblCount: 3, wbntNodes: nodes[:3]},
 		}
 
-		for _, tc := range tests {
-			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-				input := map[string]any{"user": userAPIID, "first": int64(tc.firstParam)}
-				var response struct {
-					BatchChangesCodeHosts apitest.BatchChangesCodeHostsConnection
+		for _, tc := rbnge tests {
+			t.Run(fmt.Sprintf("First %d", tc.firstPbrbm), func(t *testing.T) {
+				input := mbp[string]bny{"user": userAPIID, "first": int64(tc.firstPbrbm)}
+				vbr response struct {
+					BbtchChbngesCodeHosts bpitest.BbtchChbngesCodeHostsConnection
 				}
-				apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
+				bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
 
-				var wantEndCursor *string
-				if tc.wantEndCursor != "" {
-					wantEndCursor = &tc.wantEndCursor
+				vbr wbntEndCursor *string
+				if tc.wbntEndCursor != "" {
+					wbntEndCursor = &tc.wbntEndCursor
 				}
 
-				wantChangesets := apitest.BatchChangesCodeHostsConnection{
-					TotalCount: tc.wantTotalCount,
-					PageInfo: apitest.PageInfo{
-						EndCursor:   wantEndCursor,
-						HasNextPage: tc.wantHasNextPage,
+				wbntChbngesets := bpitest.BbtchChbngesCodeHostsConnection{
+					TotblCount: tc.wbntTotblCount,
+					PbgeInfo: bpitest.PbgeInfo{
+						EndCursor:   wbntEndCursor,
+						HbsNextPbge: tc.wbntHbsNextPbge,
 					},
-					Nodes: tc.wantNodes,
+					Nodes: tc.wbntNodes,
 				}
 
-				if diff := cmp.Diff(wantChangesets, response.BatchChangesCodeHosts); diff != "" {
-					t.Fatalf("wrong changesets response (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntChbngesets, response.BbtchChbngesCodeHosts); diff != "" {
+					t.Fbtblf("wrong chbngesets response (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
 
-		var endCursor *string
-		for i := range nodes {
-			input := map[string]any{"user": userAPIID, "first": 1}
+		vbr endCursor *string
+		for i := rbnge nodes {
+			input := mbp[string]bny{"user": userAPIID, "first": 1}
 			if endCursor != nil {
-				input["after"] = *endCursor
+				input["bfter"] = *endCursor
 			}
-			wantHasNextPage := i != len(nodes)-1
+			wbntHbsNextPbge := i != len(nodes)-1
 
-			var response struct {
-				BatchChangesCodeHosts apitest.BatchChangesCodeHostsConnection
+			vbr response struct {
+				BbtchChbngesCodeHosts bpitest.BbtchChbngesCodeHostsConnection
 			}
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryCodeHostConnection)
 
-			hosts := response.BatchChangesCodeHosts
+			hosts := response.BbtchChbngesCodeHosts
 			if diff := cmp.Diff(1, len(hosts.Nodes)); diff != "" {
-				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+				t.Fbtblf("unexpected number of nodes (-wbnt +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(len(nodes), hosts.TotalCount); diff != "" {
-				t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+			if diff := cmp.Diff(len(nodes), hosts.TotblCount); diff != "" {
+				t.Fbtblf("unexpected totbl count (-wbnt +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(wantHasNextPage, hosts.PageInfo.HasNextPage); diff != "" {
-				t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntHbsNextPbge, hosts.PbgeInfo.HbsNextPbge); diff != "" {
+				t.Fbtblf("unexpected hbsNextPbge (-wbnt +got):\n%s", diff)
 			}
 
-			endCursor = hosts.PageInfo.EndCursor
-			if want, have := wantHasNextPage, endCursor != nil; have != want {
-				t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+			endCursor = hosts.PbgeInfo.EndCursor
+			if wbnt, hbve := wbntHbsNextPbge, endCursor != nil; hbve != wbnt {
+				t.Fbtblf("unexpected endCursor existence. wbnt=%t, hbve=%t", wbnt, hbve)
 			}
 		}
 	})
 
-	t.Run("User.BatchChangesCodeHosts", func(t *testing.T) {
-		userCred, err := bstore.UserCredentials().Create(ctx, database.UserCredentialScope{
-			Domain:              database.UserCredentialDomainBatches,
-			ExternalServiceID:   ghRepo.ExternalRepo.ServiceID,
-			ExternalServiceType: ghRepo.ExternalRepo.ServiceType,
+	t.Run("User.BbtchChbngesCodeHosts", func(t *testing.T) {
+		userCred, err := bstore.UserCredentibls().Crebte(ctx, dbtbbbse.UserCredentiblScope{
+			Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
+			ExternblServiceID:   ghRepo.ExternblRepo.ServiceID,
+			ExternblServiceType: ghRepo.ExternblRepo.ServiceType,
 			UserID:              userID,
-		}, &auth.OAuthBearerToken{Token: "SOSECRET"})
+		}, &buth.OAuthBebrerToken{Token: "SOSECRET"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		siteCred := &btypes.SiteCredential{
-			ExternalServiceID:   bbsRepo.ExternalRepo.ServiceID,
-			ExternalServiceType: bbsRepo.ExternalRepo.ServiceType,
+		siteCred := &btypes.SiteCredentibl{
+			ExternblServiceID:   bbsRepo.ExternblRepo.ServiceID,
+			ExternblServiceType: bbsRepo.ExternblRepo.ServiceType,
 		}
-		token := &auth.OAuthBearerToken{Token: "SOSECRET"}
-		if err := bstore.CreateSiteCredential(ctx, siteCred, token); err != nil {
-			t.Fatal(err)
+		token := &buth.OAuthBebrerToken{Token: "SOSECRET"}
+		if err := bstore.CrebteSiteCredentibl(ctx, siteCred, token); err != nil {
+			t.Fbtbl(err)
 		}
 
-		nodes := []apitest.BatchChangesCodeHost{
+		nodes := []bpitest.BbtchChbngesCodeHost{
 			{
-				ExternalServiceURL:  bbsRepo.ExternalRepo.ServiceID,
-				ExternalServiceKind: extsvc.TypeToKind(bbsRepo.ExternalRepo.ServiceType),
-				Credential: apitest.BatchChangesCredential{
-					ID:                  string(marshalBatchChangesCredentialID(siteCred.ID, true)),
-					ExternalServiceKind: extsvc.TypeToKind(siteCred.ExternalServiceType),
-					ExternalServiceURL:  siteCred.ExternalServiceID,
-					CreatedAt:           marshalDateTime(t, siteCred.CreatedAt),
-					IsSiteCredential:    true,
+				ExternblServiceURL:  bbsRepo.ExternblRepo.ServiceID,
+				ExternblServiceKind: extsvc.TypeToKind(bbsRepo.ExternblRepo.ServiceType),
+				Credentibl: bpitest.BbtchChbngesCredentibl{
+					ID:                  string(mbrshblBbtchChbngesCredentiblID(siteCred.ID, true)),
+					ExternblServiceKind: extsvc.TypeToKind(siteCred.ExternblServiceType),
+					ExternblServiceURL:  siteCred.ExternblServiceID,
+					CrebtedAt:           mbrshblDbteTime(t, siteCred.CrebtedAt),
+					IsSiteCredentibl:    true,
 				},
 			},
 			{
-				ExternalServiceURL:  ghRepo.ExternalRepo.ServiceID,
-				ExternalServiceKind: extsvc.TypeToKind(ghRepo.ExternalRepo.ServiceType),
-				Credential: apitest.BatchChangesCredential{
-					ID:                  string(marshalBatchChangesCredentialID(userCred.ID, false)),
-					ExternalServiceKind: extsvc.TypeToKind(userCred.ExternalServiceType),
-					ExternalServiceURL:  userCred.ExternalServiceID,
-					CreatedAt:           marshalDateTime(t, userCred.CreatedAt),
-					IsSiteCredential:    false,
+				ExternblServiceURL:  ghRepo.ExternblRepo.ServiceID,
+				ExternblServiceKind: extsvc.TypeToKind(ghRepo.ExternblRepo.ServiceType),
+				Credentibl: bpitest.BbtchChbngesCredentibl{
+					ID:                  string(mbrshblBbtchChbngesCredentiblID(userCred.ID, fblse)),
+					ExternblServiceKind: extsvc.TypeToKind(userCred.ExternblServiceType),
+					ExternblServiceURL:  userCred.ExternblServiceID,
+					CrebtedAt:           mbrshblDbteTime(t, userCred.CrebtedAt),
+					IsSiteCredentibl:    fblse,
 				},
 			},
 			{
-				ExternalServiceURL:  glRepo.ExternalRepo.ServiceID,
-				ExternalServiceKind: extsvc.TypeToKind(glRepo.ExternalRepo.ServiceType),
+				ExternblServiceURL:  glRepo.ExternblRepo.ServiceID,
+				ExternblServiceKind: extsvc.TypeToKind(glRepo.ExternblRepo.ServiceType),
 			},
 		}
 
 		tests := []struct {
-			firstParam      int
-			wantHasNextPage bool
-			wantEndCursor   string
-			wantTotalCount  int
-			wantNodes       []apitest.BatchChangesCodeHost
+			firstPbrbm      int
+			wbntHbsNextPbge bool
+			wbntEndCursor   string
+			wbntTotblCount  int
+			wbntNodes       []bpitest.BbtchChbngesCodeHost
 		}{
-			{firstParam: 1, wantHasNextPage: true, wantEndCursor: "1", wantTotalCount: 3, wantNodes: nodes[:1]},
-			{firstParam: 2, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 3, wantNodes: nodes[:2]},
-			{firstParam: 3, wantHasNextPage: false, wantTotalCount: 3, wantNodes: nodes[:3]},
+			{firstPbrbm: 1, wbntHbsNextPbge: true, wbntEndCursor: "1", wbntTotblCount: 3, wbntNodes: nodes[:1]},
+			{firstPbrbm: 2, wbntHbsNextPbge: true, wbntEndCursor: "2", wbntTotblCount: 3, wbntNodes: nodes[:2]},
+			{firstPbrbm: 3, wbntHbsNextPbge: fblse, wbntTotblCount: 3, wbntNodes: nodes[:3]},
 		}
 
-		for _, tc := range tests {
-			t.Run(fmt.Sprintf("First %d", tc.firstParam), func(t *testing.T) {
-				input := map[string]any{"user": userAPIID, "first": int64(tc.firstParam)}
-				var response struct{ Node apitest.User }
-				apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
+		for _, tc := rbnge tests {
+			t.Run(fmt.Sprintf("First %d", tc.firstPbrbm), func(t *testing.T) {
+				input := mbp[string]bny{"user": userAPIID, "first": int64(tc.firstPbrbm)}
+				vbr response struct{ Node bpitest.User }
+				bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
 
-				var wantEndCursor *string
-				if tc.wantEndCursor != "" {
-					wantEndCursor = &tc.wantEndCursor
+				vbr wbntEndCursor *string
+				if tc.wbntEndCursor != "" {
+					wbntEndCursor = &tc.wbntEndCursor
 				}
 
-				wantChangesets := apitest.BatchChangesCodeHostsConnection{
-					TotalCount: tc.wantTotalCount,
-					PageInfo: apitest.PageInfo{
-						EndCursor:   wantEndCursor,
-						HasNextPage: tc.wantHasNextPage,
+				wbntChbngesets := bpitest.BbtchChbngesCodeHostsConnection{
+					TotblCount: tc.wbntTotblCount,
+					PbgeInfo: bpitest.PbgeInfo{
+						EndCursor:   wbntEndCursor,
+						HbsNextPbge: tc.wbntHbsNextPbge,
 					},
-					Nodes: tc.wantNodes,
+					Nodes: tc.wbntNodes,
 				}
 
-				if diff := cmp.Diff(wantChangesets, response.Node.BatchChangesCodeHosts); diff != "" {
-					t.Fatalf("wrong changesets response (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntChbngesets, response.Node.BbtchChbngesCodeHosts); diff != "" {
+					t.Fbtblf("wrong chbngesets response (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
 
-		var endCursor *string
-		for i := range nodes {
-			input := map[string]any{"user": userAPIID, "first": 1}
+		vbr endCursor *string
+		for i := rbnge nodes {
+			input := mbp[string]bny{"user": userAPIID, "first": 1}
 			if endCursor != nil {
-				input["after"] = *endCursor
+				input["bfter"] = *endCursor
 			}
-			wantHasNextPage := i != len(nodes)-1
+			wbntHbsNextPbge := i != len(nodes)-1
 
-			var response struct{ Node apitest.User }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
+			vbr response struct{ Node bpitest.User }
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryUserCodeHostConnection)
 
-			hosts := response.Node.BatchChangesCodeHosts
+			hosts := response.Node.BbtchChbngesCodeHosts
 			if diff := cmp.Diff(1, len(hosts.Nodes)); diff != "" {
-				t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
+				t.Fbtblf("unexpected number of nodes (-wbnt +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(len(nodes), hosts.TotalCount); diff != "" {
-				t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+			if diff := cmp.Diff(len(nodes), hosts.TotblCount); diff != "" {
+				t.Fbtblf("unexpected totbl count (-wbnt +got):\n%s", diff)
 			}
 
-			if diff := cmp.Diff(wantHasNextPage, hosts.PageInfo.HasNextPage); diff != "" {
-				t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntHbsNextPbge, hosts.PbgeInfo.HbsNextPbge); diff != "" {
+				t.Fbtblf("unexpected hbsNextPbge (-wbnt +got):\n%s", diff)
 			}
 
-			endCursor = hosts.PageInfo.EndCursor
-			if want, have := wantHasNextPage, endCursor != nil; have != want {
-				t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+			endCursor = hosts.PbgeInfo.EndCursor
+			if wbnt, hbve := wbntHbsNextPbge, endCursor != nil; hbve != wbnt {
+				t.Fbtblf("unexpected endCursor existence. wbnt=%t, hbve=%t", wbnt, hbve)
 			}
 		}
 	})
 }
 
 const queryUserCodeHostConnection = `
-query($user: ID!, $first: Int, $after: String){
+query($user: ID!, $first: Int, $bfter: String){
   node(id: $user) {
     ... on User {
-      batchChangesCodeHosts(first: $first, after: $after) {
-        totalCount
+      bbtchChbngesCodeHosts(first: $first, bfter: $bfter) {
+        totblCount
         nodes {
-          externalServiceKind
-          externalServiceURL
-          credential {
+          externblServiceKind
+          externblServiceURL
+          credentibl {
               id
-              externalServiceKind
-              externalServiceURL
-              createdAt
-              isSiteCredential
+              externblServiceKind
+              externblServiceURL
+              crebtedAt
+              isSiteCredentibl
           }
         }
-        pageInfo {
+        pbgeInfo {
           endCursor
-          hasNextPage
+          hbsNextPbge
         }
       }
     }
@@ -300,23 +300,23 @@ query($user: ID!, $first: Int, $after: String){
 `
 
 const queryCodeHostConnection = `
-query($first: Int, $after: String){
-  batchChangesCodeHosts(first: $first, after: $after) {
-    totalCount
+query($first: Int, $bfter: String){
+  bbtchChbngesCodeHosts(first: $first, bfter: $bfter) {
+    totblCount
     nodes {
-      externalServiceKind
-      externalServiceURL
-      credential {
+      externblServiceKind
+      externblServiceURL
+      credentibl {
         id
-        externalServiceKind
-        externalServiceURL
-        createdAt
-        isSiteCredential
+        externblServiceKind
+        externblServiceURL
+        crebtedAt
+        isSiteCredentibl
       }
     }
-    pageInfo {
+    pbgeInfo {
       endCursor
-      hasNextPage
+      hbsNextPbge
     }
   }
 }

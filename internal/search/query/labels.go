@@ -1,59 +1,59 @@
-package query
+pbckbge query
 
 import "sort"
 
-// Labels are general-purpose annotations that store information about a node.
-type labels uint16
+// Lbbels bre generbl-purpose bnnotbtions thbt store informbtion bbout b node.
+type lbbels uint16
 
 const (
-	None    labels = 0
-	Literal labels = 1 << iota
+	None    lbbels = 0
+	Literbl lbbels = 1 << iotb
 	Regexp
 	Quoted
-	HeuristicParensAsPatterns
-	HeuristicDanglingParens
+	HeuristicPbrensAsPbtterns
+	HeuristicDbnglingPbrens
 	HeuristicHoisted
-	Structural
-	IsPredicate
-	// IsAlias flags whether the original syntax referred to an alias rather
-	// than canonical form (r: instead of repo:)
-	IsAlias
-	Standard
+	Structurbl
+	IsPredicbte
+	// IsAlibs flbgs whether the originbl syntbx referred to bn blibs rbther
+	// thbn cbnonicbl form (r: instebd of repo:)
+	IsAlibs
+	Stbndbrd
 )
 
-var allLabels = map[labels]string{
+vbr bllLbbels = mbp[lbbels]string{
 	None:                      "None",
-	Literal:                   "Literal",
+	Literbl:                   "Literbl",
 	Regexp:                    "Regexp",
 	Quoted:                    "Quoted",
-	HeuristicParensAsPatterns: "HeuristicParensAsPatterns",
-	HeuristicDanglingParens:   "HeuristicDanglingParens",
+	HeuristicPbrensAsPbtterns: "HeuristicPbrensAsPbtterns",
+	HeuristicDbnglingPbrens:   "HeuristicDbnglingPbrens",
 	HeuristicHoisted:          "HeuristicHoisted",
-	Structural:                "Structural",
-	IsPredicate:               "IsPredicate",
-	IsAlias:                   "IsAlias",
+	Structurbl:                "Structurbl",
+	IsPredicbte:               "IsPredicbte",
+	IsAlibs:                   "IsAlibs",
 }
 
-func (l *labels) IsSet(label labels) bool {
-	return *l&label != 0
+func (l *lbbels) IsSet(lbbel lbbels) bool {
+	return *l&lbbel != 0
 }
 
-func (l *labels) Set(label labels) {
-	*l |= label
+func (l *lbbels) Set(lbbel lbbels) {
+	*l |= lbbel
 }
 
-func (l *labels) Unset(label labels) {
-	*l &^= label
+func (l *lbbels) Unset(lbbel lbbels) {
+	*l &^= lbbel
 }
 
-func (l *labels) String() []string {
+func (l *lbbels) String() []string {
 	if *l == 0 {
 		return []string{"None"}
 	}
-	var s []string
-	for k, v := range allLabels {
+	vbr s []string
+	for k, v := rbnge bllLbbels {
 		if l.IsSet(k) {
-			s = append(s, v)
+			s = bppend(s, v)
 		}
 	}
 	sort.Strings(s)

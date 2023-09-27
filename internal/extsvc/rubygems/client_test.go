@@ -1,64 +1,64 @@
-package rubygems
+pbckbge rubygems
 
 import (
 	"bytes"
 	"context"
-	"flag"
+	"flbg"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
 )
 
-// Run go test ./internal/extsvc/rubygems -update to update snapshots.
-func TestMain(m *testing.M) {
-	flag.Parse()
+// Run go test ./internbl/extsvc/rubygems -updbte to updbte snbpshots.
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	os.Exit(m.Run())
 }
 
-var updateRecordings = flag.Bool("update", false, "make npm API calls, record and save data")
+vbr updbteRecordings = flbg.Bool("updbte", fblse, "mbke npm API cblls, record bnd sbve dbtb")
 
 func newTestHTTPClient(t *testing.T) (client *Client, stop func()) {
 	t.Helper()
-	recorderFactory, stop := httptestutil.NewRecorderFactory(t, *updateRecordings, t.Name())
+	recorderFbctory, stop := httptestutil.NewRecorderFbctory(t, *updbteRecordings, t.Nbme())
 
-	client, _ = NewClient("rubygems_urn", "https://rubygems.org", recorderFactory)
-	client.limiter = ratelimit.NewInstrumentedLimiter("rubygems", rate.NewLimiter(100, 10))
+	client, _ = NewClient("rubygems_urn", "https://rubygems.org", recorderFbctory)
+	client.limiter = rbtelimit.NewInstrumentedLimiter("rubygems", rbte.NewLimiter(100, 10))
 	return client, stop
 }
 
-func TestGetPackageContents(t *testing.T) {
-	ctx := context.Background()
+func TestGetPbckbgeContents(t *testing.T) {
+	ctx := context.Bbckground()
 	client, stop := newTestHTTPClient(t)
 	defer stop()
-	dep := reposource.ParseRubyVersionedPackage("hola@0.1.0")
-	readCloser, err := client.GetPackageContents(ctx, dep)
+	dep := reposource.PbrseRubyVersionedPbckbge("holb@0.1.0")
+	rebdCloser, err := client.GetPbckbgeContents(ctx, dep)
 	require.Nil(t, err)
-	defer readCloser.Close()
+	defer rebdCloser.Close()
 
 	tmpDir, err := os.MkdirTemp("", "test-rubygems-")
 	require.Nil(t, err)
-	err = unpack.Tar(readCloser, tmpDir, unpack.Opts{})
+	err = unpbck.Tbr(rebdCloser, tmpDir, unpbck.Opts{})
 	require.Nil(t, err)
-	dataTgz, err := os.ReadFile(filepath.Join(tmpDir, "data.tar.gz"))
+	dbtbTgz, err := os.RebdFile(filepbth.Join(tmpDir, "dbtb.tbr.gz"))
 	require.Nil(t, err)
-	dataFiles, err := unpack.ListTgzUnsorted(bytes.NewReader(dataTgz))
+	dbtbFiles, err := unpbck.ListTgzUnsorted(bytes.NewRebder(dbtbTgz))
 	require.Nil(t, err)
-	sort.Strings(dataFiles)
+	sort.Strings(dbtbFiles)
 
-	require.Equal(t, dataFiles, []string{
-		"Rakefile",
-		"bin/hola",
-		"lib/hola.rb",
-		"lib/hola/translator.rb",
-		"test/test_hola.rb",
+	require.Equbl(t, dbtbFiles, []string{
+		"Rbkefile",
+		"bin/holb",
+		"lib/holb.rb",
+		"lib/holb/trbnslbtor.rb",
+		"test/test_holb.rb",
 	})
 }

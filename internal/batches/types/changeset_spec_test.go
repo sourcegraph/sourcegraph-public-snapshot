@@ -1,51 +1,51 @@
-package types
+pbckbge types
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestChangesetSpec_ForkGetters(t *testing.T) {
-	for name, tc := range map[string]struct {
-		spec      *ChangesetSpec
+func TestChbngesetSpec_ForkGetters(t *testing.T) {
+	for nbme, tc := rbnge mbp[string]struct {
+		spec      *ChbngesetSpec
 		isFork    bool
-		namespace *string
+		nbmespbce *string
 	}{
 		"no fork": {
-			spec:      &ChangesetSpec{ForkNamespace: nil},
-			isFork:    false,
-			namespace: nil,
+			spec:      &ChbngesetSpec{ForkNbmespbce: nil},
+			isFork:    fblse,
+			nbmespbce: nil,
 		},
 		"fork to user": {
-			spec:      &ChangesetSpec{ForkNamespace: pointers.Ptr(changesetSpecForkNamespaceUser)},
+			spec:      &ChbngesetSpec{ForkNbmespbce: pointers.Ptr(chbngesetSpecForkNbmespbceUser)},
 			isFork:    true,
-			namespace: nil,
+			nbmespbce: nil,
 		},
-		"fork to namespace": {
-			spec:      &ChangesetSpec{ForkNamespace: pointers.Ptr("org")},
+		"fork to nbmespbce": {
+			spec:      &ChbngesetSpec{ForkNbmespbce: pointers.Ptr("org")},
 			isFork:    true,
-			namespace: pointers.Ptr("org"),
+			nbmespbce: pointers.Ptr("org"),
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.isFork, tc.spec.IsFork())
-			if tc.namespace == nil {
-				assert.Nil(t, tc.spec.GetForkNamespace())
+		t.Run(nbme, func(t *testing.T) {
+			bssert.Equbl(t, tc.isFork, tc.spec.IsFork())
+			if tc.nbmespbce == nil {
+				bssert.Nil(t, tc.spec.GetForkNbmespbce())
 			} else {
-				have := tc.spec.GetForkNamespace()
-				assert.NotNil(t, have)
-				assert.Equal(t, *tc.namespace, *have)
+				hbve := tc.spec.GetForkNbmespbce()
+				bssert.NotNil(t, hbve)
+				bssert.Equbl(t, *tc.nbmespbce, *hbve)
 			}
 		})
 	}
 }
 
-func TestChangesetSpec_SetForkToUser(t *testing.T) {
-	cs := &ChangesetSpec{ForkNamespace: nil}
+func TestChbngesetSpec_SetForkToUser(t *testing.T) {
+	cs := &ChbngesetSpec{ForkNbmespbce: nil}
 	cs.setForkToUser()
-	assert.NotNil(t, cs.ForkNamespace)
-	assert.Equal(t, changesetSpecForkNamespaceUser, *cs.ForkNamespace)
+	bssert.NotNil(t, cs.ForkNbmespbce)
+	bssert.Equbl(t, chbngesetSpecForkNbmespbceUser, *cs.ForkNbmespbce)
 }

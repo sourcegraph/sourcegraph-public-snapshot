@@ -1,61 +1,61 @@
-package authz
+pbckbge buthz
 
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"flbg"
 	"fmt"
 	"net/url"
 	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbfbnb/regexp"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	authzGitHub "github.com/sourcegraph/sourcegraph/internal/authz/providers/github"
-	authzGitLab "github.com/sourcegraph/sourcegraph/internal/authz/providers/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	extsvcGitHub "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	buthzGitHub "github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/github"
+	buthzGitLbb "github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	extsvcGitHub "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var updateRegex = flag.String("update-integration", "", "Update testdata of tests matching the given regex")
+vbr updbteRegex = flbg.String("updbte-integrbtion", "", "Updbte testdbtb of tests mbtching the given regex")
 
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+func updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }
 
-// NOTE: To update VCR for these tests, please use the token of "sourcegraph-vcr"
-// for GITHUB_TOKEN, which can be found in 1Password.
+// NOTE: To updbte VCR for these tests, plebse use the token of "sourcegrbph-vcr"
+// for GITHUB_TOKEN, which cbn be found in 1Pbssword.
 //
-// We also recommend setting up a new token for "sourcegraph-vcr" using the auth scope
-// guidelines https://docs.sourcegraph.com/admin/external_service/github#github-api-token-and-access
-// to ensure everything works, in case of new scopes being required.
-func TestIntegration_GitHubPermissions(t *testing.T) {
+// We blso recommend setting up b new token for "sourcegrbph-vcr" using the buth scope
+// guidelines https://docs.sourcegrbph.com/bdmin/externbl_service/github#github-bpi-token-bnd-bccess
+// to ensure everything works, in cbse of new scopes being required.
+func TestIntegrbtion_GitHubPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	github.SetupForTest(t)
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
 	logger := logtest.Scoped(t)
 	token := os.Getenv("GITHUB_TOKEN")
@@ -65,439 +65,439 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		ServiceID:   "https://github.com/",
 		AccountID:   "66464926",
 	}
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		Kind:      extsvc.KindGitHub,
-		CreatedAt: timeutil.Now(),
-		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "authorization": {}, "token": "abc", "repos": ["owner/name"]}`),
+		CrebtedAt: timeutil.Now(),
+		Config:    extsvc.NewUnencryptedConfig(`{"url": "https://github.com", "buthorizbtion": {}, "token": "bbc", "repos": ["owner/nbme"]}`),
 	}
-	uri, err := url.Parse("https://github.com")
+	uri, err := url.Pbrse("https://github.com")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// This integration tests performs a repository-centric permissions syncing against
-	// https://github.com, then check if permissions are correctly granted for the test
-	// user "sourcegraph-vcr-bob", who is a outside collaborator of the repository
-	// "sourcegraph-vcr-repos/private-org-repo-1".
+	// This integrbtion tests performs b repository-centric permissions syncing bgbinst
+	// https://github.com, then check if permissions bre correctly grbnted for the test
+	// user "sourcegrbph-vcr-bob", who is b outside collbborbtor of the repository
+	// "sourcegrbph-vcr-repos/privbte-org-repo-1".
 	t.Run("repo-centric", func(t *testing.T) {
-		newUser := database.NewUser{
-			Email:           "sourcegraph-vcr-bob@sourcegraph.com",
-			Username:        "sourcegraph-vcr-bob",
-			EmailIsVerified: true,
+		newUser := dbtbbbse.NewUser{
+			Embil:           "sourcegrbph-vcr-bob@sourcegrbph.com",
+			Usernbme:        "sourcegrbph-vcr-bob",
+			EmbilIsVerified: true,
 		}
 		t.Run("no-groups", func(t *testing.T) {
-			name := t.Name()
-			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-			defer save()
+			nbme := t.Nbme()
+			cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, updbte(nbme), nbme)
+			defer sbve()
 
 			doer, err := cf.Doer()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &buth.OAuthBebrerToken{Token: token}, doer)
 
-			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-			ctx := actor.WithInternalActor(context.Background())
+			testDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := bctor.WithInternblActor(context.Bbckground())
 
 			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
-			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+			err = reposStore.ExternblServiceStore().Upsert(ctx, &svc)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+			provider := buthzGitHub.NewProvider(svc.URN(), buthzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseAuther:     &auth.OAuthBearerToken{Token: token},
-				GroupsCacheTTL: -1,
+				BbseAuther:     &buth.OAuthBebrerToken{Token: token},
+				GroupsCbcheTTL: -1,
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			buthz.SetProviders(fblse, []buthz.Provider{provider})
+			defer buthz.SetProviders(true, nil)
 
 			repo := types.Repo{
-				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				Private: true,
-				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+				Nbme:    "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				Privbte: true,
+				URI:     "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          "MDEwOlJlcG9zbXRvcnkzOTk4OTQyODY=",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Sources: map[string]*types.SourceInfo{
+				Sources: mbp[string]*types.SourceInfo{
 					svc.URN(): {
 						ID: svc.URN(),
 					},
 				},
 			}
-			err = reposStore.RepoStore().Create(ctx, &repo)
+			err = reposStore.RepoStore().Crebte(ctx, &repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternblAccounts().CrebteUserAndSbve(ctx, newUser, spec, extsvc.AccountDbtb{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			permsStore := database.Perms(logger, testDB, timeutil.Now)
+			permsStore := dbtbbbse.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
-			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStbtes, err := syncer.syncRepoPerms(ctx, repo.ID, fblse, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, database.CodeHostStatusesSet{{
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchRepoPerms",
-			}}, providerStates)
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchRepoPerms",
+			}}, providerStbtes)
 
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err := permsStore.LobdUserPermissions(ctx, user.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs := mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			wbntIDs := []int32{1}
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("groups-enabled", func(t *testing.T) {
-			name := t.Name()
-			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-			defer save()
+		t.Run("groups-enbbled", func(t *testing.T) {
+			nbme := t.Nbme()
+			cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, updbte(nbme), nbme)
+			defer sbve()
 
 			doer, err := cf.Doer()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &buth.OAuthBebrerToken{Token: token}, doer)
 
-			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-			ctx := actor.WithInternalActor(context.Background())
+			testDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := bctor.WithInternblActor(context.Bbckground())
 
 			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
-			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+			err = reposStore.ExternblServiceStore().Upsert(ctx, &svc)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+			provider := buthzGitHub.NewProvider(svc.URN(), buthzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseAuther:     &auth.OAuthBearerToken{Token: token},
-				GroupsCacheTTL: 72,
+				BbseAuther:     &buth.OAuthBebrerToken{Token: token},
+				GroupsCbcheTTL: 72,
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			buthz.SetProviders(fblse, []buthz.Provider{provider})
+			defer buthz.SetProviders(true, nil)
 
 			repo := types.Repo{
-				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				Private: true,
-				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+				Nbme:    "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				Privbte: true,
+				URI:     "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          "MDEwOlJlcG9zbXRvcnkzOTk4OTQyODY=",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Sources: map[string]*types.SourceInfo{
+				Sources: mbp[string]*types.SourceInfo{
 					svc.URN(): {
 						ID: svc.URN(),
 					},
 				},
 			}
-			err = reposStore.RepoStore().Create(ctx, &repo)
+			err = reposStore.RepoStore().Crebte(ctx, &repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{})
+			user, err := testDB.UserExternblAccounts().CrebteUserAndSbve(ctx, newUser, spec, extsvc.AccountDbtb{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			permsStore := database.Perms(logger, testDB, timeutil.Now)
+			permsStore := dbtbbbse.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
-			_, providerStates, err := syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			_, providerStbtes, err := syncer.syncRepoPerms(ctx, repo.ID, fblse, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, database.CodeHostStatusesSet{{
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchRepoPerms",
-			}}, providerStates)
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchRepoPerms",
+			}}, providerStbtes)
 
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err := permsStore.LobdUserPermissions(ctx, user.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs := mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			wbntIDs := []int32{1}
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 
-			// sync again and check
-			_, providerStates, err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
+			// sync bgbin bnd check
+			_, providerStbtes, err = syncer.syncRepoPerms(ctx, repo.ID, fblse, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, database.CodeHostStatusesSet{{
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchRepoPerms",
-			}}, providerStates)
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchRepoPerms",
+			}}, providerStbtes)
 
-			p, err = permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err = permsStore.LobdUserPermissions(ctx, user.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			gotIDs = make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs = mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	})
 
-	// This integration tests performs a repository-centric permissions syncing against
-	// https://github.com, then check if permissions are correctly granted for the test
-	// user "sourcegraph-vcr", who is a collaborator of "sourcegraph-vcr-repos/private-org-repo-1".
+	// This integrbtion tests performs b repository-centric permissions syncing bgbinst
+	// https://github.com, then check if permissions bre correctly grbnted for the test
+	// user "sourcegrbph-vcr", who is b collbborbtor of "sourcegrbph-vcr-repos/privbte-org-repo-1".
 	t.Run("user-centric", func(t *testing.T) {
-		newUser := database.NewUser{
-			Email:           "sourcegraph-vcr@sourcegraph.com",
-			Username:        "sourcegraph-vcr",
-			EmailIsVerified: true,
+		newUser := dbtbbbse.NewUser{
+			Embil:           "sourcegrbph-vcr@sourcegrbph.com",
+			Usernbme:        "sourcegrbph-vcr",
+			EmbilIsVerified: true,
 		}
 		t.Run("no-groups", func(t *testing.T) {
-			name := t.Name()
+			nbme := t.Nbme()
 
-			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-			defer save()
+			cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, updbte(nbme), nbme)
+			defer sbve()
 			doer, err := cf.Doer()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &buth.OAuthBebrerToken{Token: token}, doer)
 
-			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-			ctx := actor.WithInternalActor(context.Background())
+			testDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := bctor.WithInternblActor(context.Bbckground())
 
 			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
-			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+			err = reposStore.ExternblServiceStore().Upsert(ctx, &svc)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+			provider := buthzGitHub.NewProvider(svc.URN(), buthzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseAuther:     &auth.OAuthBearerToken{Token: token},
-				GroupsCacheTTL: -1,
+				BbseAuther:     &buth.OAuthBebrerToken{Token: token},
+				GroupsCbcheTTL: -1,
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			buthz.SetProviders(fblse, []buthz.Provider{provider})
+			defer buthz.SetProviders(true, nil)
 
 			repo := types.Repo{
-				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				Private: true,
-				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+				Nbme:    "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				Privbte: true,
+				URI:     "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          "MDEwOlJlcG9zbXRvcnkzOTk4OTQyODY=",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Sources: map[string]*types.SourceInfo{
+				Sources: mbp[string]*types.SourceInfo{
 					svc.URN(): {
 						ID: svc.URN(),
 					},
 				},
 			}
-			err = reposStore.RepoStore().Create(ctx, &repo)
+			err = reposStore.RepoStore().Crebte(ctx, &repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-				AuthData: extsvc.NewUnencryptedData(authData),
+			buthDbtb := json.RbwMessbge(fmt.Sprintf(`{"bccess_token": "%s"}`, token))
+			user, err := testDB.UserExternblAccounts().CrebteUserAndSbve(ctx, newUser, spec, extsvc.AccountDbtb{
+				AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			permsStore := database.Perms(logger, testDB, timeutil.Now)
+			permsStore := dbtbbbse.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
-			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+			_, providerStbtes, err := syncer.syncUserPerms(ctx, user.ID, fblse, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, database.CodeHostStatusesSet{{
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchUserPerms",
-			}}, providerStates)
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchUserPerms",
+			}}, providerStbtes)
 
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err := permsStore.LobdUserPermissions(ctx, user.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs := mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			wbntIDs := []int32{1}
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 
-		t.Run("groups-enabled", func(t *testing.T) {
-			name := t.Name()
+		t.Run("groups-enbbled", func(t *testing.T) {
+			nbme := t.Nbme()
 
-			cf, save := httptestutil.NewGitHubRecorderFactory(t, update(name), name)
-			defer save()
+			cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, updbte(nbme), nbme)
+			defer sbve()
 			doer, err := cf.Doer()
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
+			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &buth.OAuthBebrerToken{Token: token}, doer)
 
-			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-			ctx := actor.WithInternalActor(context.Background())
+			testDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+			ctx := bctor.WithInternblActor(context.Bbckground())
 
 			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
-			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+			err = reposStore.ExternblServiceStore().Upsert(ctx, &svc)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			provider := authzGitHub.NewProvider(svc.URN(), authzGitHub.ProviderOptions{
+			provider := buthzGitHub.NewProvider(svc.URN(), buthzGitHub.ProviderOptions{
 				GitHubClient:   cli,
 				GitHubURL:      uri,
-				BaseAuther:     &auth.OAuthBearerToken{Token: token},
-				GroupsCacheTTL: 72,
+				BbseAuther:     &buth.OAuthBebrerToken{Token: token},
+				GroupsCbcheTTL: 72,
 				DB:             testDB,
 			})
 
-			authz.SetProviders(false, []authz.Provider{provider})
-			defer authz.SetProviders(true, nil)
+			buthz.SetProviders(fblse, []buthz.Provider{provider})
+			defer buthz.SetProviders(true, nil)
 
 			repo := types.Repo{
-				Name:    "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				Private: true,
-				URI:     "github.com/sourcegraph-vcr-repos/private-org-repo-1",
-				ExternalRepo: api.ExternalRepoSpec{
-					ID:          "MDEwOlJlcG9zaXRvcnkzOTk4OTQyODY=",
+				Nbme:    "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				Privbte: true,
+				URI:     "github.com/sourcegrbph-vcr-repos/privbte-org-repo-1",
+				ExternblRepo: bpi.ExternblRepoSpec{
+					ID:          "MDEwOlJlcG9zbXRvcnkzOTk4OTQyODY=",
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
-				Sources: map[string]*types.SourceInfo{
+				Sources: mbp[string]*types.SourceInfo{
 					svc.URN(): {
 						ID: svc.URN(),
 					},
 				},
 			}
-			err = reposStore.RepoStore().Create(ctx, &repo)
+			err = reposStore.RepoStore().Crebte(ctx, &repo)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
-			user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-				AuthData: extsvc.NewUnencryptedData(authData),
+			buthDbtb := json.RbwMessbge(fmt.Sprintf(`{"bccess_token": "%s"}`, token))
+			user, err := testDB.UserExternblAccounts().CrebteUserAndSbve(ctx, newUser, spec, extsvc.AccountDbtb{
+				AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			permsStore := database.Perms(logger, testDB, timeutil.Now)
+			permsStore := dbtbbbse.Perms(logger, testDB, timeutil.Now)
 			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
-			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+			_, providerStbtes, err := syncer.syncUserPerms(ctx, user.ID, fblse, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, database.CodeHostStatusesSet{{
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchUserPerms",
-			}}, providerStates)
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchUserPerms",
+			}}, providerStbtes)
 
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err := permsStore.LobdUserPermissions(ctx, user.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs := mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			wantIDs := []int32{1}
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			wbntIDs := []int32{1}
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 
-			// sync again and check
-			_, providerStates, err = syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+			// sync bgbin bnd check
+			_, providerStbtes, err = syncer.syncUserPerms(ctx, user.ID, fblse, buthz.FetchPermsOptions{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, database.CodeHostStatusesSet{{
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
 				ProviderID:   "https://github.com/",
 				ProviderType: "github",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchUserPerms",
-			}}, providerStates)
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchUserPerms",
+			}}, providerStbtes)
 
-			p, err = permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err = permsStore.LobdUserPermissions(ctx, user.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			gotIDs = make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs = mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	})
 }
 
-func TestIntegration_GitLabPermissions(t *testing.T) {
+func TestIntegrbtion_GitLbbPermissions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -506,59 +506,59 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 	token := os.Getenv("GITLAB_TOKEN")
 
 	spec := extsvc.AccountSpec{
-		ServiceType: extsvc.TypeGitLab,
-		ServiceID:   "https://gitlab.sgdev.org/",
+		ServiceType: extsvc.TypeGitLbb,
+		ServiceID:   "https://gitlbb.sgdev.org/",
 		AccountID:   "107564",
 	}
-	svc := types.ExternalService{
-		Kind:   extsvc.KindGitLab,
-		Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlab.sgdev.org", "authorization": {"identityProvider": {"type": "oauth"}}, "token": "abc", "projectQuery": [ "projects?membership=true&archived=no" ]}`),
+	svc := types.ExternblService{
+		Kind:   extsvc.KindGitLbb,
+		Config: extsvc.NewUnencryptedConfig(`{"url": "https://gitlbb.sgdev.org", "buthorizbtion": {"identityProvider": {"type": "obuth"}}, "token": "bbc", "projectQuery": [ "projects?membership=true&brchived=no" ]}`),
 	}
-	uri, err := url.Parse("https://gitlab.sgdev.org")
+	uri, err := url.Pbrse("https://gitlbb.sgdev.org")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	newUser := database.NewUser{
-		Email:           "sourcegraph-vcr@sourcegraph.com",
-		Username:        "sourcegraph-vcr",
-		EmailIsVerified: true,
+	newUser := dbtbbbse.NewUser{
+		Embil:           "sourcegrbph-vcr@sourcegrbph.com",
+		Usernbme:        "sourcegrbph-vcr",
+		EmbilIsVerified: true,
 	}
 
 	// These tests require two repos to be set up:
-	// Both schwifty2 and getschwifty are internal projects.
-	// The user is an explicit collaborator on getschwifty, so
-	// should have access to getschwifty regardless of the feature flag.
-	// The user does not have explicit access to schwifty2, however
-	// schwifty2 is configured so that anyone on the instance has read
-	// access, so when the feature flag is enabled, the user should
-	// see this repo as well.
+	// Both schwifty2 bnd getschwifty bre internbl projects.
+	// The user is bn explicit collbborbtor on getschwifty, so
+	// should hbve bccess to getschwifty regbrdless of the febture flbg.
+	// The user does not hbve explicit bccess to schwifty2, however
+	// schwifty2 is configured so thbt bnyone on the instbnce hbs rebd
+	// bccess, so when the febture flbg is enbbled, the user should
+	// see this repo bs well.
 	testRepos := []types.Repo{
 		{
-			Name:    "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-			Private: true,
-			URI:     "gitlab.sgdev.org/petrissupercoolgroup/schwifty2",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme:    "gitlbb.sgdev.org/petrissupercoolgroup/schwifty2",
+			Privbte: true,
+			URI:     "gitlbb.sgdev.org/petrissupercoolgroup/schwifty2",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ID:          "371335",
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "https://gitlab.sgdev.org/",
+				ServiceType: extsvc.TypeGitLbb,
+				ServiceID:   "https://gitlbb.sgdev.org/",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				svc.URN(): {
 					ID: svc.URN(),
 				},
 			},
 		},
 		{
-			Name:    "gitlab.sgdev.org/petri.last/getschwifty",
-			Private: true,
-			URI:     "gitlab.sgdev.org/petri.last/getschwifty",
-			ExternalRepo: api.ExternalRepoSpec{
+			Nbme:    "gitlbb.sgdev.org/petri.lbst/getschwifty",
+			Privbte: true,
+			URI:     "gitlbb.sgdev.org/petri.lbst/getschwifty",
+			ExternblRepo: bpi.ExternblRepoSpec{
 				ID:          "371334",
-				ServiceType: extsvc.TypeGitLab,
-				ServiceID:   "https://gitlab.sgdev.org/",
+				ServiceType: extsvc.TypeGitLbb,
+				ServiceID:   "https://gitlbb.sgdev.org/",
 			},
-			Sources: map[string]*types.SourceInfo{
+			Sources: mbp[string]*types.SourceInfo{
 				svc.URN(): {
 					ID: svc.URN(),
 				},
@@ -566,81 +566,81 @@ func TestIntegration_GitLabPermissions(t *testing.T) {
 		},
 	}
 
-	authData := json.RawMessage(fmt.Sprintf(`{"access_token": "%s"}`, token))
+	buthDbtb := json.RbwMessbge(fmt.Sprintf(`{"bccess_token": "%s"}`, token))
 
-	// This integration tests performs a user-centric permissions syncing against
-	// https://gitlab.sgdev.org, then check if permissions are correctly granted for the test
-	// user "sourcegraph-vcr".
-	t.Run("test gitLabProjectVisibilityExperimental feature flag", func(t *testing.T) {
-		name := t.Name()
+	// This integrbtion tests performs b user-centric permissions syncing bgbinst
+	// https://gitlbb.sgdev.org, then check if permissions bre correctly grbnted for the test
+	// user "sourcegrbph-vcr".
+	t.Run("test gitLbbProjectVisibilityExperimentbl febture flbg", func(t *testing.T) {
+		nbme := t.Nbme()
 
-		cf, save := httptestutil.NewRecorderFactory(t, update(name), name)
-		defer save()
+		cf, sbve := httptestutil.NewRecorderFbctory(t, updbte(nbme), nbme)
+		defer sbve()
 		doer, err := cf.Doer()
 		require.NoError(t, err)
 
-		testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+		testDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-		ctx := actor.WithInternalActor(context.Background())
+		ctx := bctor.WithInternblActor(context.Bbckground())
 
 		reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
-		err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
+		err = reposStore.ExternblServiceStore().Upsert(ctx, &svc)
 		require.NoError(t, err)
 
-		provider := authzGitLab.NewOAuthProvider(authzGitLab.OAuthProviderOp{
-			BaseURL: uri,
+		provider := buthzGitLbb.NewOAuthProvider(buthzGitLbb.OAuthProviderOp{
+			BbseURL: uri,
 			DB:      testDB,
 			CLI:     doer,
 		})
 
-		authz.SetProviders(false, []authz.Provider{provider})
-		defer authz.SetProviders(true, nil)
-		for _, repo := range testRepos {
-			err = reposStore.RepoStore().Create(ctx, &repo)
+		buthz.SetProviders(fblse, []buthz.Provider{provider})
+		defer buthz.SetProviders(true, nil)
+		for _, repo := rbnge testRepos {
+			err = reposStore.RepoStore().Crebte(ctx, &repo)
 			require.NoError(t, err)
 		}
 
-		user, err := testDB.UserExternalAccounts().CreateUserAndSave(ctx, newUser, spec, extsvc.AccountData{
-			AuthData: extsvc.NewUnencryptedData(authData),
+		user, err := testDB.UserExternblAccounts().CrebteUserAndSbve(ctx, newUser, spec, extsvc.AccountDbtb{
+			AuthDbtb: extsvc.NewUnencryptedDbtb(buthDbtb),
 		})
 		require.NoError(t, err)
 
-		permsStore := database.Perms(logger, testDB, timeutil.Now)
+		permsStore := dbtbbbse.Perms(logger, testDB, timeutil.Now)
 		syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now)
 
-		assertUserPermissions := func(t *testing.T, wantIDs []int32) {
+		bssertUserPermissions := func(t *testing.T, wbntIDs []int32) {
 			t.Helper()
-			_, providerStates, err := syncer.syncUserPerms(ctx, user.ID, false, authz.FetchPermsOptions{})
+			_, providerStbtes, err := syncer.syncUserPerms(ctx, user.ID, fblse, buthz.FetchPermsOptions{})
 			require.NoError(t, err)
 
-			assert.Equal(t, database.CodeHostStatusesSet{{
-				ProviderID:   "https://gitlab.sgdev.org/",
-				ProviderType: "gitlab",
-				Status:       database.CodeHostStatusSuccess,
-				Message:      "FetchUserPerms",
-			}}, providerStates)
+			bssert.Equbl(t, dbtbbbse.CodeHostStbtusesSet{{
+				ProviderID:   "https://gitlbb.sgdev.org/",
+				ProviderType: "gitlbb",
+				Stbtus:       dbtbbbse.CodeHostStbtusSuccess,
+				Messbge:      "FetchUserPerms",
+			}}, providerStbtes)
 
-			p, err := permsStore.LoadUserPermissions(ctx, user.ID)
+			p, err := permsStore.LobdUserPermissions(ctx, user.ID)
 			require.NoError(t, err)
 
-			gotIDs := make([]int32, len(p))
-			for i, perm := range p {
+			gotIDs := mbke([]int32, len(p))
+			for i, perm := rbnge p {
 				gotIDs[i] = perm.RepoID
 			}
 
-			if diff := cmp.Diff(wantIDs, gotIDs); diff != "" {
-				t.Fatalf("IDs mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntIDs, gotIDs); diff != "" {
+				t.Fbtblf("IDs mismbtch (-wbnt +got):\n%s", diff)
 			}
 		}
 
-		// With the feature flag disabled (default state) the user should only have access to one repo
-		assertUserPermissions(t, []int32{2})
+		// With the febture flbg disbbled (defbult stbte) the user should only hbve bccess to one repo
+		bssertUserPermissions(t, []int32{2})
 
-		// With the feature flag enabled the user should have access to both repositories
-		_, err = testDB.FeatureFlags().CreateBool(ctx, "gitLabProjectVisibilityExperimental", true)
-		require.NoError(t, err, "feature flag creation failed")
+		// With the febture flbg enbbled the user should hbve bccess to both repositories
+		_, err = testDB.FebtureFlbgs().CrebteBool(ctx, "gitLbbProjectVisibilityExperimentbl", true)
+		require.NoError(t, err, "febture flbg crebtion fbiled")
 
-		assertUserPermissions(t, []int32{1, 2})
+		bssertUserPermissions(t, []int32{1, 2})
 	})
 }

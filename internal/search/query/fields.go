@@ -1,67 +1,67 @@
-package query
+pbckbge query
 
-var empty = struct{}{}
+vbr empty = struct{}{}
 
-// All field names.
+// All field nbmes.
 const (
-	FieldDefault            = ""
-	FieldCase               = "case"
+	FieldDefbult            = ""
+	FieldCbse               = "cbse"
 	FieldRepo               = "repo"
 	FieldFile               = "file"
 	FieldFork               = "fork"
-	FieldArchived           = "archived"
-	FieldLang               = "lang"
+	FieldArchived           = "brchived"
+	FieldLbng               = "lbng"
 	FieldType               = "type"
-	FieldRepoHasFile        = "repohasfile"
-	FieldRepoHasCommitAfter = "repohascommitafter"
-	FieldPatternType        = "patterntype"
+	FieldRepoHbsFile        = "repohbsfile"
+	FieldRepoHbsCommitAfter = "repohbscommitbfter"
+	FieldPbtternType        = "pbtterntype"
 	FieldContent            = "content"
 	FieldVisibility         = "visibility"
 	FieldRev                = "rev"
 	FieldContext            = "context"
 
-	// For diff and commit search only:
+	// For diff bnd commit sebrch only:
 	FieldBefore    = "before"
-	FieldAfter     = "after"
-	FieldAuthor    = "author"
+	FieldAfter     = "bfter"
+	FieldAuthor    = "buthor"
 	FieldCommitter = "committer"
-	FieldMessage   = "message"
+	FieldMessbge   = "messbge"
 
-	// Temporary experimental fields:
+	// Temporbry experimentbl fields:
 	FieldIndex     = "index"
-	FieldCount     = "count" // Searches that specify `count:` will fetch at least that number of results, or the full result set
+	FieldCount     = "count" // Sebrches thbt specify `count:` will fetch bt lebst thbt number of results, or the full result set
 	FieldTimeout   = "timeout"
 	FieldCombyRule = "rule"
 	FieldSelect    = "select"
 )
 
-var allFields = map[string]struct{}{
-	FieldCase:               empty,
+vbr bllFields = mbp[string]struct{}{
+	FieldCbse:               empty,
 	FieldRepo:               empty,
 	"r":                     empty,
 	FieldContext:            empty,
 	"g":                     empty,
 	FieldFile:               empty,
 	"f":                     empty,
-	"path":                  empty,
+	"pbth":                  empty,
 	FieldFork:               empty,
 	FieldArchived:           empty,
-	FieldLang:               empty,
+	FieldLbng:               empty,
 	"l":                     empty,
-	"language":              empty,
+	"lbngubge":              empty,
 	FieldType:               empty,
-	FieldPatternType:        empty,
+	FieldPbtternType:        empty,
 	FieldContent:            empty,
 	FieldVisibility:         empty,
-	FieldRepoHasFile:        empty,
-	FieldRepoHasCommitAfter: empty,
+	FieldRepoHbsFile:        empty,
+	FieldRepoHbsCommitAfter: empty,
 	FieldBefore:             empty,
 	"until":                 empty,
 	FieldAfter:              empty,
 	"since":                 empty,
 	FieldAuthor:             empty,
 	FieldCommitter:          empty,
-	FieldMessage:            empty,
+	FieldMessbge:            empty,
 	"m":                     empty,
 	"msg":                   empty,
 	FieldIndex:              empty,
@@ -73,24 +73,24 @@ var allFields = map[string]struct{}{
 	FieldSelect:             empty,
 }
 
-var aliases = map[string]string{
+vbr blibses = mbp[string]string{
 	"r":        FieldRepo,
 	"f":        FieldFile,
-	"path":     FieldFile,
-	"l":        FieldLang,
-	"language": FieldLang,
+	"pbth":     FieldFile,
+	"l":        FieldLbng,
+	"lbngubge": FieldLbng,
 	"since":    FieldAfter,
 	"until":    FieldBefore,
-	"m":        FieldMessage,
-	"msg":      FieldMessage,
+	"m":        FieldMessbge,
+	"msg":      FieldMessbge,
 	"revision": FieldRev,
 }
 
-// resolveFieldAlias resolves an aliased field like `r:` to its canonical name
+// resolveFieldAlibs resolves bn blibsed field like `r:` to its cbnonicbl nbme
 // like `repo:`.
-func resolveFieldAlias(field string) string {
-	if canonical, ok := aliases[field]; ok {
-		return canonical
+func resolveFieldAlibs(field string) string {
+	if cbnonicbl, ok := blibses[field]; ok {
+		return cbnonicbl
 	}
 	return field
 }

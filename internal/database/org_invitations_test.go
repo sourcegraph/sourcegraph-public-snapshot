@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -7,66 +7,66 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
 )
 
-// 🚨 SECURITY: This tests the routine that creates org invitations and returns the invitation secret value
+// 🚨 SECURITY: This tests the routine thbt crebtes org invitbtions bnd returns the invitbtion secret vblue
 // to the user.
-func TestOrgInvitations(t *testing.T) {
+func TestOrgInvitbtions(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	sender, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p1",
-		EmailVerificationCode: "c1",
+	sender, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b1@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p1",
+		EmbilVerificbtionCode: "c1",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	recipient, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c2",
+	recipient, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c2",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	email := "a3@example.com"
-	recipient2, err := db.Users().Create(ctx, NewUser{
-		Email:                 email,
-		Username:              "u3",
-		Password:              "p3",
-		EmailVerificationCode: "c3",
+	embil := "b3@exbmple.com"
+	recipient2, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 embil,
+		Usernbme:              "u3",
+		Pbssword:              "p3",
+		EmbilVerificbtionCode: "c3",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	org1, err := db.Orgs().Create(ctx, "o1", nil)
+	org1, err := db.Orgs().Crebte(ctx, "o1", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	org2, err := db.Orgs().Create(ctx, "o2", nil)
+	org2, err := db.Orgs().Crebte(ctx, "o2", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	now := time.Now()
 	fiveMinutesAgo := now.Add(-5 * time.Minute)
-	invitationsConfig := []OrgInvitation{
+	invitbtionsConfig := []OrgInvitbtion{
 		{
 			OrgID:           org1.ID,
 			RecipientUserID: recipient.ID,
@@ -79,7 +79,7 @@ func TestOrgInvitations(t *testing.T) {
 		{
 			OrgID:           org2.ID,
 			RecipientUserID: recipient.ID,
-			RecipientEmail:  email,
+			RecipientEmbil:  embil,
 		},
 		{
 			OrgID:           org2.ID,
@@ -93,50 +93,50 @@ func TestOrgInvitations(t *testing.T) {
 		},
 		{
 			OrgID:          org2.ID,
-			RecipientEmail: email,
+			RecipientEmbil: embil,
 			ExpiresAt:      &fiveMinutesAgo,
 		},
 		{
 			OrgID:          org2.ID,
-			RecipientEmail: email,
+			RecipientEmbil: embil,
 		},
 	}
-	var invitations []*OrgInvitation
-	for _, oi := range invitationsConfig {
-		var expiryTime = time.Now().Add(48 * time.Hour)
+	vbr invitbtions []*OrgInvitbtion
+	for _, oi := rbnge invitbtionsConfig {
+		vbr expiryTime = time.Now().Add(48 * time.Hour)
 		if oi.ExpiresAt != nil {
 			expiryTime = *oi.ExpiresAt
 		}
-		i, err := db.OrgInvitations().Create(ctx, oi.OrgID, sender.ID, oi.RecipientUserID, oi.RecipientEmail, expiryTime)
+		i, err := db.OrgInvitbtions().Crebte(ctx, oi.OrgID, sender.ID, oi.RecipientUserID, oi.RecipientEmbil, expiryTime)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if oi.RevokedAt != nil {
-			err = db.OrgInvitations().Revoke(ctx, i.ID)
+			err = db.OrgInvitbtions().Revoke(ctx, i.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 		if oi.RespondedAt != nil {
-			_, err := db.OrgInvitations().Respond(ctx, i.ID, oi.RecipientUserID, false)
+			_, err := db.OrgInvitbtions().Respond(ctx, i.ID, oi.RecipientUserID, fblse)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
-		i, err = db.OrgInvitations().GetByID(ctx, i.ID)
+		i, err = db.OrgInvitbtions().GetByID(ctx, i.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		invitations = append(invitations, i)
+		invitbtions = bppend(invitbtions, i)
 	}
-	oi1, oi2Expired, oi2, oi3, oi4, expiredInvite, emailInvite := invitations[0], invitations[1], invitations[2], invitations[3], invitations[4], invitations[5], invitations[6]
+	oi1, oi2Expired, oi2, oi3, oi4, expiredInvite, embilInvite := invitbtions[0], invitbtions[1], invitbtions[2], invitbtions[3], invitbtions[4], invitbtions[5], invitbtions[6]
 
-	testGetByID := func(t *testing.T, id int64, want *OrgInvitation) {
+	testGetByID := func(t *testing.T, id int64, wbnt *OrgInvitbtion) {
 		t.Helper()
-		if oi, err := db.OrgInvitations().GetByID(ctx, id); err != nil {
-			t.Fatal(err)
-		} else if !reflect.DeepEqual(oi, want) {
-			t.Errorf("got %+v, want %+v", oi, want)
+		if oi, err := db.OrgInvitbtions().GetByID(ctx, id); err != nil {
+			t.Fbtbl(err)
+		} else if !reflect.DeepEqubl(oi, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", oi, wbnt)
 		}
 	}
 	t.Run("GetByID", func(t *testing.T) {
@@ -145,228 +145,228 @@ func TestOrgInvitations(t *testing.T) {
 		testGetByID(t, oi2.ID, oi2)
 		testGetByID(t, oi3.ID, oi3)
 		testGetByID(t, oi4.ID, oi4)
-		testGetByID(t, emailInvite.ID, emailInvite)
+		testGetByID(t, embilInvite.ID, embilInvite)
 		testGetByID(t, expiredInvite.ID, expiredInvite)
 
-		if _, err := db.OrgInvitations().GetByID(ctx, 12345 /* doesn't exist */); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
+		if _, err := db.OrgInvitbtions().GetByID(ctx, 12345 /* doesn't exist */); !errcode.IsNotFound(err) {
+			t.Errorf("got err %v, wbnt errcode.IsNotFound", err)
 		}
 	})
 
-	testPending := func(t *testing.T, orgID int32, userID int32, want *OrgInvitation, errorMessageFormat string) {
+	testPending := func(t *testing.T, orgID int32, userID int32, wbnt *OrgInvitbtion, errorMessbgeFormbt string) {
 		t.Helper()
-		if oi, err := db.OrgInvitations().GetPending(ctx, orgID, userID); err != nil {
-			errorMessage := fmt.Sprintf(errorMessageFormat, orgID, userID)
-			if err.Error() == errorMessage {
+		if oi, err := db.OrgInvitbtions().GetPending(ctx, orgID, userID); err != nil {
+			errorMessbge := fmt.Sprintf(errorMessbgeFormbt, orgID, userID)
+			if err.Error() == errorMessbge {
 				return
 			}
-			t.Fatal(err)
-		} else if !reflect.DeepEqual(oi, want) {
-			t.Errorf("got %+v, want %+v", oi, want)
+			t.Fbtbl(err)
+		} else if !reflect.DeepEqubl(oi, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", oi, wbnt)
 		}
 	}
 	t.Run("GetPending", func(t *testing.T) {
 		testPending(t, org1.ID, recipient.ID, oi1, "")
 		testPending(t, org2.ID, recipient.ID, oi2, "")
 
-		errorMessageFormat := "org invitation not found: [pending for org %d recipient %d]"
-		// was revoked, so should not be returned
-		testPending(t, org2.ID, recipient2.ID, oi3, errorMessageFormat)
-		// was responded, so should not be returned
-		testPending(t, org2.ID, recipient2.ID, oi4, errorMessageFormat)
-		// is based on email, so should not be found by user ID
-		testPending(t, org2.ID, recipient2.ID, emailInvite, errorMessageFormat)
+		errorMessbgeFormbt := "org invitbtion not found: [pending for org %d recipient %d]"
+		// wbs revoked, so should not be returned
+		testPending(t, org2.ID, recipient2.ID, oi3, errorMessbgeFormbt)
+		// wbs responded, so should not be returned
+		testPending(t, org2.ID, recipient2.ID, oi4, errorMessbgeFormbt)
+		// is bbsed on embil, so should not be found by user ID
+		testPending(t, org2.ID, recipient2.ID, embilInvite, errorMessbgeFormbt)
 		// does not exist
-		testPending(t, 12345, recipient2.ID, nil, errorMessageFormat)
+		testPending(t, 12345, recipient2.ID, nil, errorMessbgeFormbt)
 	})
 
-	testPendingByID := func(t *testing.T, id int64, want *OrgInvitation, errorMessage string) {
+	testPendingByID := func(t *testing.T, id int64, wbnt *OrgInvitbtion, errorMessbge string) {
 		t.Helper()
-		if oi, err := db.OrgInvitations().GetPendingByID(ctx, id); err != nil {
-			if err.Error() == errorMessage {
+		if oi, err := db.OrgInvitbtions().GetPendingByID(ctx, id); err != nil {
+			if err.Error() == errorMessbge {
 				return
 			}
-			t.Fatal(err)
-		} else if !reflect.DeepEqual(oi, want) {
-			t.Errorf("got %+v, want %+v", oi, want)
+			t.Fbtbl(err)
+		} else if !reflect.DeepEqubl(oi, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", oi, wbnt)
 		}
 	}
 	t.Run("GetPendingByID", func(t *testing.T) {
 		testPendingByID(t, oi1.ID, oi1, "")
 		testPendingByID(t, oi2.ID, oi2, "")
-		testPendingByID(t, emailInvite.ID, emailInvite, "")
+		testPendingByID(t, embilInvite.ID, embilInvite, "")
 
-		errorMessageFormat := "org invitation not found: [%d]"
-		// was revoked, so should not be returned
-		testPendingByID(t, oi3.ID, oi3, fmt.Sprintf(errorMessageFormat, oi3.ID))
-		// was responded, so should not be returned
-		testPendingByID(t, oi4.ID, oi4, fmt.Sprintf(errorMessageFormat, oi4.ID))
+		errorMessbgeFormbt := "org invitbtion not found: [%d]"
+		// wbs revoked, so should not be returned
+		testPendingByID(t, oi3.ID, oi3, fmt.Sprintf(errorMessbgeFormbt, oi3.ID))
+		// wbs responded, so should not be returned
+		testPendingByID(t, oi4.ID, oi4, fmt.Sprintf(errorMessbgeFormbt, oi4.ID))
 		// is expired, so should not be returned
-		testPendingByID(t, expiredInvite.ID, expiredInvite, fmt.Sprintf("invitation with id %d is expired", expiredInvite.ID))
+		testPendingByID(t, expiredInvite.ID, expiredInvite, fmt.Sprintf("invitbtion with id %d is expired", expiredInvite.ID))
 		// does not exist
-		testPendingByID(t, 12345, nil, fmt.Sprintf(errorMessageFormat, 12345))
+		testPendingByID(t, 12345, nil, fmt.Sprintf(errorMessbgeFormbt, 12345))
 	})
 
-	testPendingByOrgID := func(t *testing.T, orgID int32, want []*OrgInvitation) {
+	testPendingByOrgID := func(t *testing.T, orgID int32, wbnt []*OrgInvitbtion) {
 		t.Helper()
-		ois, err := db.OrgInvitations().GetPendingByOrgID(ctx, orgID)
+		ois, err := db.OrgInvitbtions().GetPendingByOrgID(ctx, orgID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 			return
 		}
-		if len(want) == 0 && len(ois) != 0 {
-			t.Errorf("want empty list, got %v", ois)
-		} else if len(want) != 0 && !reflect.DeepEqual(ois, want) {
-			t.Errorf("got %+v, want %+v", ois, want)
+		if len(wbnt) == 0 && len(ois) != 0 {
+			t.Errorf("wbnt empty list, got %v", ois)
+		} else if len(wbnt) != 0 && !reflect.DeepEqubl(ois, wbnt) {
+			t.Errorf("got %+v, wbnt %+v", ois, wbnt)
 		}
 	}
 	t.Run("GetPendingByOrgID", func(t *testing.T) {
-		testPendingByOrgID(t, oi1.OrgID, []*OrgInvitation{oi1})
-		testPendingByOrgID(t, oi2.OrgID, []*OrgInvitation{oi2, emailInvite})
+		testPendingByOrgID(t, oi1.OrgID, []*OrgInvitbtion{oi1})
+		testPendingByOrgID(t, oi2.OrgID, []*OrgInvitbtion{oi2, embilInvite})
 
 		// returns empty list if nothing is found
-		testPendingByOrgID(t, 42, []*OrgInvitation{})
+		testPendingByOrgID(t, 42, []*OrgInvitbtion{})
 	})
 
-	testListCount := func(t *testing.T, opt OrgInvitationsListOptions, want []*OrgInvitation) {
+	testListCount := func(t *testing.T, opt OrgInvitbtionsListOptions, wbnt []*OrgInvitbtion) {
 		t.Helper()
-		if ois, err := db.OrgInvitations().List(ctx, opt); err != nil {
-			t.Fatal(err)
-		} else if !reflect.DeepEqual(ois, want) {
-			t.Errorf("got %v, want %v", ois, want)
+		if ois, err := db.OrgInvitbtions().List(ctx, opt); err != nil {
+			t.Fbtbl(err)
+		} else if !reflect.DeepEqubl(ois, wbnt) {
+			t.Errorf("got %v, wbnt %v", ois, wbnt)
 		}
-		if n, err := db.OrgInvitations().Count(ctx, opt); err != nil {
-			t.Fatal(err)
-		} else if want := len(want); n != want {
-			t.Errorf("got %d, want %d", n, want)
+		if n, err := db.OrgInvitbtions().Count(ctx, opt); err != nil {
+			t.Fbtbl(err)
+		} else if wbnt := len(wbnt); n != wbnt {
+			t.Errorf("got %d, wbnt %d", n, wbnt)
 		}
 	}
-	t.Run("List/Count all", func(t *testing.T) {
-		testListCount(t, OrgInvitationsListOptions{}, invitations)
+	t.Run("List/Count bll", func(t *testing.T) {
+		testListCount(t, OrgInvitbtionsListOptions{}, invitbtions)
 	})
 	t.Run("List/Count by OrgID", func(t *testing.T) {
-		testListCount(t, OrgInvitationsListOptions{OrgID: org1.ID}, []*OrgInvitation{oi1})
+		testListCount(t, OrgInvitbtionsListOptions{OrgID: org1.ID}, []*OrgInvitbtion{oi1})
 	})
 	t.Run("List/Count by RecipientUserID", func(t *testing.T) {
-		testListCount(t, OrgInvitationsListOptions{RecipientUserID: recipient.ID}, []*OrgInvitation{oi1, oi2Expired, oi2})
+		testListCount(t, OrgInvitbtionsListOptions{RecipientUserID: recipient.ID}, []*OrgInvitbtion{oi1, oi2Expired, oi2})
 	})
 
-	t.Run("UpdateEmailSentTimestamp", func(t *testing.T) {
+	t.Run("UpdbteEmbilSentTimestbmp", func(t *testing.T) {
 		if oi1.NotifiedAt != nil {
-			t.Fatalf("failed precondition: oi.NotifiedAt == %q, want nil", *oi1.NotifiedAt)
+			t.Fbtblf("fbiled precondition: oi.NotifiedAt == %q, wbnt nil", *oi1.NotifiedAt)
 		}
-		if err := db.OrgInvitations().UpdateEmailSentTimestamp(ctx, oi1.ID); err != nil {
-			t.Fatal(err)
+		if err := db.OrgInvitbtions().UpdbteEmbilSentTimestbmp(ctx, oi1.ID); err != nil {
+			t.Fbtbl(err)
 		}
-		oi, err := db.OrgInvitations().GetByID(ctx, oi1.ID)
+		oi, err := db.OrgInvitbtions().GetByID(ctx, oi1.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if oi.NotifiedAt == nil || time.Since(*oi.NotifiedAt) > 1*time.Minute {
-			t.Fatalf("got NotifiedAt %v, want recent", oi.NotifiedAt)
+			t.Fbtblf("got NotifiedAt %v, wbnt recent", oi.NotifiedAt)
 		}
 
-		// Update it again.
+		// Updbte it bgbin.
 		prevNotifiedAt := *oi.NotifiedAt
-		if err := db.OrgInvitations().UpdateEmailSentTimestamp(ctx, oi1.ID); err != nil {
-			t.Fatal(err)
+		if err := db.OrgInvitbtions().UpdbteEmbilSentTimestbmp(ctx, oi1.ID); err != nil {
+			t.Fbtbl(err)
 		}
-		oi, err = db.OrgInvitations().GetByID(ctx, oi1.ID)
+		oi, err = db.OrgInvitbtions().GetByID(ctx, oi1.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if oi.NotifiedAt == nil || !oi.NotifiedAt.After(prevNotifiedAt) {
-			t.Errorf("got NotifiedAt %v, want after %v", oi.NotifiedAt, prevNotifiedAt)
+			t.Errorf("got NotifiedAt %v, wbnt bfter %v", oi.NotifiedAt, prevNotifiedAt)
 		}
 	})
 
-	testRespond := func(t *testing.T, oi *OrgInvitation, recipientUserID int32, accepted bool, expectedError string) {
-		orgID, err := db.OrgInvitations().Respond(ctx, oi.ID, recipientUserID, accepted)
+	testRespond := func(t *testing.T, oi *OrgInvitbtion, recipientUserID int32, bccepted bool, expectedError string) {
+		orgID, err := db.OrgInvitbtions().Respond(ctx, oi.ID, recipientUserID, bccepted)
 		if err != nil && err.Error() != expectedError {
-			t.Fatalf("received error: %v, want %s", err, expectedError)
+			t.Fbtblf("received error: %v, wbnt %s", err, expectedError)
 		} else if expectedError == "" && orgID != oi.OrgID {
-			t.Errorf("got %v, want %v", orgID, oi.OrgID)
+			t.Errorf("got %v, wbnt %v", orgID, oi.OrgID)
 		}
 
 		if expectedError != "" {
 			return
 		}
 
-		dbInvitation, err := db.OrgInvitations().GetByID(ctx, oi.ID)
+		dbInvitbtion, err := db.OrgInvitbtions().GetByID(ctx, oi.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if dbInvitation.RespondedAt == nil || time.Since(*dbInvitation.RespondedAt) > 1*time.Minute {
-			t.Errorf("got RespondedAt %v, want recent", dbInvitation.RespondedAt)
+		if dbInvitbtion.RespondedAt == nil || time.Since(*dbInvitbtion.RespondedAt) > 1*time.Minute {
+			t.Errorf("got RespondedAt %v, wbnt recent", dbInvitbtion.RespondedAt)
 		}
-		if dbInvitation.ResponseType == nil || *dbInvitation.ResponseType != accepted {
-			t.Errorf("got ResponseType %v, want %v", dbInvitation.ResponseType, accepted)
+		if dbInvitbtion.ResponseType == nil || *dbInvitbtion.ResponseType != bccepted {
+			t.Errorf("got ResponseType %v, wbnt %v", dbInvitbtion.ResponseType, bccepted)
 		}
 
-		// After responding, these should fail.
-		_, err = db.OrgInvitations().GetPendingByID(ctx, dbInvitation.ID)
+		// After responding, these should fbil.
+		_, err = db.OrgInvitbtions().GetPendingByID(ctx, dbInvitbtion.ID)
 		if !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
+			t.Errorf("got err %v, wbnt errcode.IsNotFound", err)
 		}
-		if _, err := db.OrgInvitations().Respond(ctx, oi.ID, recipientUserID, accepted); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
+		if _, err := db.OrgInvitbtions().Respond(ctx, oi.ID, recipientUserID, bccepted); !errcode.IsNotFound(err) {
+			t.Errorf("got err %v, wbnt errcode.IsNotFound", err)
 		}
 	}
 	t.Run("Respond true", func(t *testing.T) {
 		testRespond(t, oi1, oi1.RecipientUserID, true, "")
-		testRespond(t, emailInvite, recipient2.ID, true, "")
-		testRespond(t, expiredInvite, recipient2.ID, true, fmt.Sprintf("org invitation not found: [id %d recipient %d]", expiredInvite.ID, recipient2.ID))
+		testRespond(t, embilInvite, recipient2.ID, true, "")
+		testRespond(t, expiredInvite, recipient2.ID, true, fmt.Sprintf("org invitbtion not found: [id %d recipient %d]", expiredInvite.ID, recipient2.ID))
 	})
-	t.Run("Respond false", func(t *testing.T) {
-		testRespond(t, oi2, oi2.RecipientUserID, false, "")
-		testRespond(t, expiredInvite, recipient2.ID, false, fmt.Sprintf("org invitation not found: [id %d recipient %d]", expiredInvite.ID, recipient2.ID))
+	t.Run("Respond fblse", func(t *testing.T) {
+		testRespond(t, oi2, oi2.RecipientUserID, fblse, "")
+		testRespond(t, expiredInvite, recipient2.ID, fblse, fmt.Sprintf("org invitbtion not found: [id %d recipient %d]", expiredInvite.ID, recipient2.ID))
 	})
 
 	t.Run("Revoke", func(t *testing.T) {
-		org3, err := db.Orgs().Create(ctx, "o3", nil)
+		org3, err := db.Orgs().Crebte(ctx, "o3", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		toRevokeInvite, err := db.OrgInvitations().Create(ctx, org3.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		toRevokeInvite, err := db.OrgInvitbtions().Crebte(ctx, org3.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := db.OrgInvitations().Revoke(ctx, toRevokeInvite.ID); err != nil {
-			t.Fatal(err)
+		if err := db.OrgInvitbtions().Revoke(ctx, toRevokeInvite.ID); err != nil {
+			t.Fbtbl(err)
 		}
 
-		// After revoking, these should fail.
-		if _, err := db.OrgInvitations().GetPending(ctx, toRevokeInvite.OrgID, toRevokeInvite.RecipientUserID); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
+		// After revoking, these should fbil.
+		if _, err := db.OrgInvitbtions().GetPending(ctx, toRevokeInvite.OrgID, toRevokeInvite.RecipientUserID); !errcode.IsNotFound(err) {
+			t.Errorf("got err %v, wbnt errcode.IsNotFound", err)
 		}
-		if _, err := db.OrgInvitations().Respond(ctx, toRevokeInvite.ID, recipient.ID, true); !errcode.IsNotFound(err) {
-			t.Errorf("got err %v, want errcode.IsNotFound", err)
+		if _, err := db.OrgInvitbtions().Respond(ctx, toRevokeInvite.ID, recipient.ID, true); !errcode.IsNotFound(err) {
+			t.Errorf("got err %v, wbnt errcode.IsNotFound", err)
 		}
 	})
 
-	t.Run("UpdateExpiryTime", func(t *testing.T) {
-		org4, err := db.Orgs().Create(ctx, "o4", nil)
+	t.Run("UpdbteExpiryTime", func(t *testing.T) {
+		org4, err := db.Orgs().Crebte(ctx, "o4", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		toUpdateInvite, err := db.OrgInvitations().Create(ctx, org4.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
+		toUpdbteInvite, err := db.OrgInvitbtions().Crebte(ctx, org4.ID, sender.ID, recipient.ID, "", timeNow().Add(time.Hour))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		newExpiry := timeNow().Add(2 * time.Hour)
-		if err := db.OrgInvitations().UpdateExpiryTime(ctx, toUpdateInvite.ID, newExpiry); err != nil {
-			t.Fatal(err)
+		if err := db.OrgInvitbtions().UpdbteExpiryTime(ctx, toUpdbteInvite.ID, newExpiry); err != nil {
+			t.Fbtbl(err)
 		}
 
-		// After updating, the new expiry time on invite should be the same as we expect
-		updatedInvite, err := db.OrgInvitations().GetByID(ctx, toUpdateInvite.ID)
+		// After updbting, the new expiry time on invite should be the sbme bs we expect
+		updbtedInvite, err := db.OrgInvitbtions().GetByID(ctx, toUpdbteInvite.ID)
 		if err != nil {
-			t.Fatalf("cannot get invite by id %d", toUpdateInvite.ID)
+			t.Fbtblf("cbnnot get invite by id %d", toUpdbteInvite.ID)
 		}
-		if updatedInvite.ExpiresAt == nil && *updatedInvite.ExpiresAt != newExpiry {
-			t.Fatalf("expiry time differs, expected %v, got %v", newExpiry, updatedInvite.ExpiresAt)
+		if updbtedInvite.ExpiresAt == nil && *updbtedInvite.ExpiresAt != newExpiry {
+			t.Fbtblf("expiry time differs, expected %v, got %v", newExpiry, updbtedInvite.ExpiresAt)
 		}
 	})
 }

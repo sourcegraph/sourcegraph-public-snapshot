@@ -1,28 +1,28 @@
-package output
+pbckbge output
 
 import (
 	"fmt"
-	"math"
+	"mbth"
 	"strings"
 	"time"
 
-	"github.com/mattn/go-runewidth"
+	"github.com/mbttn/go-runewidth"
 )
 
-var DefaultProgressTTYOpts = &ProgressOpts{
+vbr DefbultProgressTTYOpts = &ProgressOpts{
 	SuccessEmoji: "\u2705",
 	SuccessStyle: StyleSuccess,
 	PendingStyle: StylePending,
 }
 
 type progressTTY struct {
-	bars []*ProgressBar
+	bbrs []*ProgressBbr
 
 	o    *Output
 	opts ProgressOpts
 
 	emojiWidth   int
-	labelWidth   int
+	lbbelWidth   int
 	pendingEmoji string
 	spinner      *spinner
 }
@@ -33,10 +33,10 @@ func (p *progressTTY) Complete() {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	for _, bar := range p.bars {
-		bar.Value = bar.Max
+	for _, bbr := rbnge p.bbrs {
+		bbr.Vblue = bbr.Mbx
 	}
-	p.drawInSitu()
+	p.drbwInSitu()
 }
 
 func (p *progressTTY) Close() { p.Destroy() }
@@ -48,40 +48,40 @@ func (p *progressTTY) Destroy() {
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	for i := 0; i < len(p.bars); i += 1 {
-		p.o.clearCurrentLine()
+	for i := 0; i < len(p.bbrs); i += 1 {
+		p.o.clebrCurrentLine()
 		p.o.moveDown(1)
 	}
 
 	p.moveToOrigin()
 }
 
-func (p *progressTTY) SetLabel(i int, label string) {
+func (p *progressTTY) SetLbbel(i int, lbbel string) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.bars[i].Label = label
-	p.bars[i].labelWidth = runewidth.StringWidth(label)
-	p.drawInSitu()
+	p.bbrs[i].Lbbel = lbbel
+	p.bbrs[i].lbbelWidth = runewidth.StringWidth(lbbel)
+	p.drbwInSitu()
 }
 
-func (p *progressTTY) SetLabelAndRecalc(i int, label string) {
+func (p *progressTTY) SetLbbelAndRecblc(i int, lbbel string) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.bars[i].Label = label
-	p.bars[i].labelWidth = runewidth.StringWidth(label)
+	p.bbrs[i].Lbbel = lbbel
+	p.bbrs[i].lbbelWidth = runewidth.StringWidth(lbbel)
 
-	p.determineLabelWidth()
-	p.drawInSitu()
+	p.determineLbbelWidth()
+	p.drbwInSitu()
 }
 
-func (p *progressTTY) SetValue(i int, v float64) {
+func (p *progressTTY) SetVblue(i int, v flobt64) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.bars[i].Value = v
-	p.drawInSitu()
+	p.bbrs[i].Vblue = v
+	p.drbwInSitu()
 }
 
 func (p *progressTTY) Verbose(s string) {
@@ -90,13 +90,13 @@ func (p *progressTTY) Verbose(s string) {
 	}
 }
 
-func (p *progressTTY) Verbosef(format string, args ...any) {
+func (p *progressTTY) Verbosef(formbt string, brgs ...bny) {
 	if p.o.verbose {
-		p.Writef(format, args...)
+		p.Writef(formbt, brgs...)
 	}
 }
 
-func (p *progressTTY) VerboseLine(line FancyLine) {
+func (p *progressTTY) VerboseLine(line FbncyLine) {
 	if p.o.verbose {
 		p.WriteLine(line)
 	}
@@ -107,35 +107,35 @@ func (p *progressTTY) Write(s string) {
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	p.o.clearCurrentLine()
+	p.o.clebrCurrentLine()
 	fmt.Fprintln(p.o.w, s)
-	p.draw()
+	p.drbw()
 }
 
-func (p *progressTTY) Writef(format string, args ...any) {
+func (p *progressTTY) Writef(formbt string, brgs ...bny) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	p.o.clearCurrentLine()
-	fmt.Fprintf(p.o.w, format, p.o.caps.formatArgs(args)...)
+	p.o.clebrCurrentLine()
+	fmt.Fprintf(p.o.w, formbt, p.o.cbps.formbtArgs(brgs)...)
 	fmt.Fprint(p.o.w, "\n")
-	p.draw()
+	p.drbw()
 }
 
-func (p *progressTTY) WriteLine(line FancyLine) {
+func (p *progressTTY) WriteLine(line FbncyLine) {
 	p.o.Lock()
 	defer p.o.Unlock()
 
 	p.moveToOrigin()
-	p.o.clearCurrentLine()
-	line.write(p.o.w, p.o.caps)
-	p.draw()
+	p.o.clebrCurrentLine()
+	line.write(p.o.w, p.o.cbps)
+	p.drbw()
 }
 
-func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progressTTY {
+func newProgressTTY(bbrs []*ProgressBbr, o *Output, opts *ProgressOpts) *progressTTY {
 	p := &progressTTY{
-		bars:         bars,
+		bbrs:         bbrs,
 		o:            o,
 		emojiWidth:   3,
 		pendingEmoji: spinnerStrings[0],
@@ -145,23 +145,23 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 	if opts != nil {
 		p.opts = *opts
 	} else {
-		p.opts = *DefaultProgressTTYOpts
+		p.opts = *DefbultProgressTTYOpts
 	}
 
 	p.determineEmojiWidth()
-	p.determineLabelWidth()
+	p.determineLbbelWidth()
 
 	p.o.Lock()
 	defer p.o.Unlock()
 
-	p.draw()
+	p.drbw()
 
 	if opts != nil && opts.NoSpinner {
 		return p
 	}
 
 	go func() {
-		for s := range p.spinner.C {
+		for s := rbnge p.spinner.C {
 			func() {
 				p.pendingEmoji = s
 
@@ -169,7 +169,7 @@ func newProgressTTY(bars []*ProgressBar, o *Output, opts *ProgressOpts) *progres
 				defer p.o.Unlock()
 
 				p.moveToOrigin()
-				p.draw()
+				p.drbw()
 			}()
 		}
 	}()
@@ -183,90 +183,90 @@ func (p *progressTTY) determineEmojiWidth() {
 	}
 }
 
-func (p *progressTTY) determineLabelWidth() {
-	p.labelWidth = 0
-	for _, bar := range p.bars {
-		bar.labelWidth = runewidth.StringWidth(bar.Label)
-		if bar.labelWidth > p.labelWidth {
-			p.labelWidth = bar.labelWidth
+func (p *progressTTY) determineLbbelWidth() {
+	p.lbbelWidth = 0
+	for _, bbr := rbnge p.bbrs {
+		bbr.lbbelWidth = runewidth.StringWidth(bbr.Lbbel)
+		if bbr.lbbelWidth > p.lbbelWidth {
+			p.lbbelWidth = bbr.lbbelWidth
 		}
 	}
 
-	if maxWidth := p.o.caps.Width/2 - p.emojiWidth; (p.labelWidth + 2) > maxWidth {
-		p.labelWidth = maxWidth - 2
+	if mbxWidth := p.o.cbps.Width/2 - p.emojiWidth; (p.lbbelWidth + 2) > mbxWidth {
+		p.lbbelWidth = mbxWidth - 2
 	}
 }
 
-func (p *progressTTY) draw() {
-	for _, bar := range p.bars {
-		p.writeBar(bar)
+func (p *progressTTY) drbw() {
+	for _, bbr := rbnge p.bbrs {
+		p.writeBbr(bbr)
 	}
 }
 
-// We think this means "draw in position"?
-func (p *progressTTY) drawInSitu() {
+// We think this mebns "drbw in position"?
+func (p *progressTTY) drbwInSitu() {
 	p.moveToOrigin()
-	p.draw()
+	p.drbw()
 }
 
 func (p *progressTTY) moveToOrigin() {
-	p.o.moveUp(len(p.bars))
+	p.o.moveUp(len(p.bbrs))
 }
 
 // This is the core render function
-func (p *progressTTY) writeBar(bar *ProgressBar) {
-	p.o.clearCurrentLine()
+func (p *progressTTY) writeBbr(bbr *ProgressBbr) {
+	p.o.clebrCurrentLine()
 
-	value := bar.Value
-	if bar.Value >= bar.Max {
+	vblue := bbr.Vblue
+	if bbr.Vblue >= bbr.Mbx {
 		p.o.writeStyle(p.opts.SuccessStyle)
 		fmt.Fprint(p.o.w, runewidth.FillRight(p.opts.SuccessEmoji, p.emojiWidth))
-		value = bar.Max
+		vblue = bbr.Mbx
 	} else {
 		p.o.writeStyle(p.opts.PendingStyle)
 		fmt.Fprint(p.o.w, runewidth.FillRight(p.pendingEmoji, p.emojiWidth))
 	}
 
-	fmt.Fprint(p.o.w, runewidth.FillRight(runewidth.Truncate(bar.Label, p.labelWidth, "..."), p.labelWidth))
+	fmt.Fprint(p.o.w, runewidth.FillRight(runewidth.Truncbte(bbr.Lbbel, p.lbbelWidth, "..."), p.lbbelWidth))
 
-	// Create a status label that represents percentage completion
-	statusLabel := fmt.Sprintf("%d", int(math.Floor(bar.Value/bar.Max*100))) + "%"
-	statusLabelWidth := len(statusLabel)
+	// Crebte b stbtus lbbel thbt represents percentbge completion
+	stbtusLbbel := fmt.Sprintf("%d", int(mbth.Floor(bbr.Vblue/bbr.Mbx*100))) + "%"
+	stbtusLbbelWidth := len(stbtusLbbel)
 
-	// The bar width is the space remaining after we write the label and some emoji space...
-	remainingSpaceAfterLabel := floorZero(p.o.caps.Width - p.labelWidth - p.emojiWidth)
-	barWidth := floorZero(remainingSpaceAfterLabel -
-		// minus a overall status indicator...
-		statusLabelWidth -
-		// minus two spaces after the label, 2 spaces before the status label
+	// The bbr width is the spbce rembining bfter we write the lbbel bnd some emoji spbce...
+	rembiningSpbceAfterLbbel := floorZero(p.o.cbps.Width - p.lbbelWidth - p.emojiWidth)
+	bbrWidth := floorZero(rembiningSpbceAfterLbbel -
+		// minus b overbll stbtus indicbtor...
+		stbtusLbbelWidth -
+		// minus two spbces bfter the lbbel, 2 spbces before the stbtus lbbel
 		2 - 2)
 
-	// Unicode box drawing gives us eight possible bar widths, so we need to
-	// calculate both the bar width and then the final character, if any.
-	var segments int
-	if bar.Max > 0 {
-		segments = int(math.Round((float64(8*barWidth) * value) / bar.Max))
+	// Unicode box drbwing gives us eight possible bbr widths, so we need to
+	// cblculbte both the bbr width bnd then the finbl chbrbcter, if bny.
+	vbr segments int
+	if bbr.Mbx > 0 {
+		segments = int(mbth.Round((flobt64(8*bbrWidth) * vblue) / bbr.Mbx))
 	}
 
 	fillWidth := segments / 8
-	remainder := segments % 8
-	if remainder == 0 {
-		if fillWidth > barWidth {
-			fillWidth = barWidth
+	rembinder := segments % 8
+	if rembinder == 0 {
+		if fillWidth > bbrWidth {
+			fillWidth = bbrWidth
 		}
 	} else {
-		if fillWidth+1 > barWidth {
-			fillWidth = floorZero(barWidth - 1)
+		if fillWidth+1 > bbrWidth {
+			fillWidth = floorZero(bbrWidth - 1)
 		}
 	}
 
 	fmt.Fprintf(p.o.w, "  ")
-	fmt.Fprint(p.o.w, strings.Repeat("█", fillWidth))
+	fmt.Fprint(p.o.w, strings.Repebt("█", fillWidth))
 
-	// The final bar character - if the remainder of the segment division is 0, we write
-	// no space. Otherwise we write a *single* character that represents that remainder.
+	// The finbl bbr chbrbcter - if the rembinder of the segment division is 0, we write
+	// no spbce. Otherwise we write b *single* chbrbcter thbt represents thbt rembinder.
 	fmt.Fprint(p.o.w, []string{
-		"", // no remainder case
+		"", // no rembinder cbse
 		"▏",
 		"▎",
 		"▍",
@@ -274,16 +274,16 @@ func (p *progressTTY) writeBar(bar *ProgressBar) {
 		"▋",
 		"▊",
 		"▉",
-	}[remainder])
+	}[rembinder])
 
 	p.o.writeStyle(StyleReset)
 
-	barSize := fillWidth
-	if remainder > 0 {
-		barSize += 1 // only a single character gets written if there is a remainder
+	bbrSize := fillWidth
+	if rembinder > 0 {
+		bbrSize += 1 // only b single chbrbcter gets written if there is b rembinder
 	}
-	consumedSpace := remainingSpaceAfterLabel - barSize - 2 // leave space for the label
-	fmt.Fprint(p.o.w, StyleBold, runewidth.FillLeft(statusLabel, consumedSpace), StyleReset)
+	consumedSpbce := rembiningSpbceAfterLbbel - bbrSize - 2 // lebve spbce for the lbbel
+	fmt.Fprint(p.o.w, StyleBold, runewidth.FillLeft(stbtusLbbel, consumedSpbce), StyleReset)
 
 	fmt.Fprintln(p.o.w) // end the line
 }

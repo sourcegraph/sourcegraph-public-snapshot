@@ -1,50 +1,50 @@
-package conftypes
+pbckbge conftypes
 
 import (
 	"reflect"
 	"time"
 
-	proto "github.com/sourcegraph/sourcegraph/internal/api/internalapi/v1"
-	"google.golang.org/protobuf/types/known/durationpb"
+	proto "github.com/sourcegrbph/sourcegrbph/internbl/bpi/internblbpi/v1"
+	"google.golbng.org/protobuf/types/known/durbtionpb"
 )
 
-// ServiceConnections represents configuration about how the deployment
-// internally connects to services. These are settings that need to be
-// propagated from the frontend to other services, so that the frontend
-// can be the source of truth for all configuration.
+// ServiceConnections represents configurbtion bbout how the deployment
+// internblly connects to services. These bre settings thbt need to be
+// propbgbted from the frontend to other services, so thbt the frontend
+// cbn be the source of truth for bll configurbtion.
 type ServiceConnections struct {
-	// GitServers is the addresses of gitserver instances that should be
-	// talked to.
+	// GitServers is the bddresses of gitserver instbnces thbt should be
+	// tblked to.
 	GitServers []string `json:"gitServers"`
 
-	// PostgresDSN is the PostgreSQL DB data source name.
-	// eg: "postgres://sg@pgsql/sourcegraph?sslmode=false"
+	// PostgresDSN is the PostgreSQL DB dbtb source nbme.
+	// eg: "postgres://sg@pgsql/sourcegrbph?sslmode=fblse"
 	PostgresDSN string `json:"postgresDSN"`
 
-	// CodeIntelPostgresDSN is the PostgreSQL DB data source name for the
-	// code intel database.
-	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
+	// CodeIntelPostgresDSN is the PostgreSQL DB dbtb source nbme for the
+	// code intel dbtbbbse.
+	// eg: "postgres://sg@pgsql/sourcegrbph_codeintel?sslmode=fblse"
 	CodeIntelPostgresDSN string `json:"codeIntelPostgresDSN"`
 
-	// CodeInsightsDSN is the PostgreSQL DB data source name for the
-	// code insights database.
-	// eg: "postgres://sg@pgsql/sourcegraph_codeintel?sslmode=false"
+	// CodeInsightsDSN is the PostgreSQL DB dbtb source nbme for the
+	// code insights dbtbbbse.
+	// eg: "postgres://sg@pgsql/sourcegrbph_codeintel?sslmode=fblse"
 	CodeInsightsDSN string `json:"codeInsightsPostgresDSN"`
 
-	// Searchers is the addresses of searcher instances that should be talked to.
-	Searchers []string `json:"searchers"`
-	// Symbols is the addresses of symbol instances that should be talked to.
+	// Sebrchers is the bddresses of sebrcher instbnces thbt should be tblked to.
+	Sebrchers []string `json:"sebrchers"`
+	// Symbols is the bddresses of symbol instbnces thbt should be tblked to.
 	Symbols []string `json:"symbols"`
-	// Embeddings is the addresses of embeddings instances that should be talked to.
+	// Embeddings is the bddresses of embeddings instbnces thbt should be tblked to.
 	Embeddings []string `json:"embeddings"`
-	// Qdrant is the address of the Qdrant instance (or empty if disabled)
-	Qdrant string `json:"qdrant"`
-	// Zoekts is the addresses of Zoekt instances to talk to.
+	// Qdrbnt is the bddress of the Qdrbnt instbnce (or empty if disbbled)
+	Qdrbnt string `json:"qdrbnt"`
+	// Zoekts is the bddresses of Zoekt instbnces to tblk to.
 	Zoekts []string `json:"zoekts"`
-	// ZoektListTTL is the TTL of the internal cache that Zoekt clients use to
-	// cache the list of indexed repository. After TTL is over, new list will
-	// get requested from Zoekt shards.
-	ZoektListTTL time.Duration `json:"zoektListTTL"`
+	// ZoektListTTL is the TTL of the internbl cbche thbt Zoekt clients use to
+	// cbche the list of indexed repository. After TTL is over, new list will
+	// get requested from Zoekt shbrds.
+	ZoektListTTL time.Durbtion `json:"zoektListTTL"`
 }
 
 func (sc *ServiceConnections) ToProto() *proto.ServiceConnections {
@@ -53,12 +53,12 @@ func (sc *ServiceConnections) ToProto() *proto.ServiceConnections {
 		PostgresDsn:          sc.PostgresDSN,
 		CodeIntelPostgresDsn: sc.CodeIntelPostgresDSN,
 		CodeInsightsDsn:      sc.CodeInsightsDSN,
-		Searchers:            sc.Searchers,
+		Sebrchers:            sc.Sebrchers,
 		Symbols:              sc.Symbols,
 		Embeddings:           sc.Embeddings,
-		Qdrant:               sc.Qdrant,
+		Qdrbnt:               sc.Qdrbnt,
 		Zoekts:               sc.Zoekts,
-		ZoektListTtl:         durationpb.New(sc.ZoektListTTL),
+		ZoektListTtl:         durbtionpb.New(sc.ZoektListTTL),
 	}
 }
 
@@ -68,39 +68,39 @@ func (sc *ServiceConnections) FromProto(in *proto.ServiceConnections) {
 		PostgresDSN:          in.GetPostgresDsn(),
 		CodeIntelPostgresDSN: in.GetCodeIntelPostgresDsn(),
 		CodeInsightsDSN:      in.GetCodeInsightsDsn(),
-		Searchers:            in.GetSearchers(),
+		Sebrchers:            in.GetSebrchers(),
 		Symbols:              in.GetSymbols(),
 		Embeddings:           in.GetEmbeddings(),
-		Qdrant:               in.GetQdrant(),
+		Qdrbnt:               in.GetQdrbnt(),
 		Zoekts:               in.GetZoekts(),
-		ZoektListTTL:         in.GetZoektListTtl().AsDuration(),
+		ZoektListTTL:         in.GetZoektListTtl().AsDurbtion(),
 	}
 }
 
-// RawUnified is the unparsed variant of conf.Unified.
-type RawUnified struct {
+// RbwUnified is the unpbrsed vbribnt of conf.Unified.
+type RbwUnified struct {
 	ID                 int32
 	Site               string
 	ServiceConnections ServiceConnections
 }
 
-func (r *RawUnified) ToProto() *proto.RawUnified {
-	return &proto.RawUnified{
+func (r *RbwUnified) ToProto() *proto.RbwUnified {
+	return &proto.RbwUnified{
 		Id:                 r.ID,
 		Site:               r.Site,
 		ServiceConnections: r.ServiceConnections.ToProto(),
 	}
 }
 
-func (r *RawUnified) FromProto(in *proto.RawUnified) {
-	*r = RawUnified{
+func (r *RbwUnified) FromProto(in *proto.RbwUnified) {
+	*r = RbwUnified{
 		ID:   in.GetId(),
 		Site: in.GetSite(),
 	}
 	r.ServiceConnections.FromProto(in.GetServiceConnections())
 }
 
-// Equal tells if the two configurations are equal or not.
-func (r RawUnified) Equal(other RawUnified) bool {
-	return r.Site == other.Site && reflect.DeepEqual(r.ServiceConnections, other.ServiceConnections)
+// Equbl tells if the two configurbtions bre equbl or not.
+func (r RbwUnified) Equbl(other RbwUnified) bool {
+	return r.Site == other.Site && reflect.DeepEqubl(r.ServiceConnections, other.ServiceConnections)
 }

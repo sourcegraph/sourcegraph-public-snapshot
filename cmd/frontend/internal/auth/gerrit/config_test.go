@@ -1,83 +1,83 @@
-package gerrit
+pbckbge gerrit
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestParseConfig(t *testing.T) {
-	testCases := map[string]struct {
+func TestPbrseConfig(t *testing.T) {
+	testCbses := mbp[string]struct {
 		cfg           *conf.Unified
-		wantProviders []Provider
-		wantProblems  []string
+		wbntProviders []Provider
+		wbntProblems  []string
 	}{
 		"no configs": {
 			cfg:           &conf.Unified{},
-			wantProviders: []Provider(nil),
+			wbntProviders: []Provider(nil),
 		},
 		"1 gerrit config": {
-			cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{{
-					Gerrit: &schema.GerritAuthProvider{
-						Url:  "https://gerrit.example.com",
+			cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{{
+					Gerrit: &schemb.GerritAuthProvider{
+						Url:  "https://gerrit.exbmple.com",
 						Type: extsvc.TypeGerrit,
 					},
 				}},
 			}},
-			wantProviders: []Provider{{
-				ServiceID:   "https://gerrit.example.com",
+			wbntProviders: []Provider{{
+				ServiceID:   "https://gerrit.exbmple.com",
 				ServiceType: extsvc.TypeGerrit,
 			}},
 		},
-		"2 gerrit configs with same URL causes conflict": {
-			cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+		"2 gerrit configs with sbme URL cbuses conflict": {
+			cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Gerrit: &schema.GerritAuthProvider{
-							Url:  "https://gerrit.example.com",
+						Gerrit: &schemb.GerritAuthProvider{
+							Url:  "https://gerrit.exbmple.com",
 							Type: extsvc.TypeGerrit,
 						},
 					},
 					{
-						Gerrit: &schema.GerritAuthProvider{
-							Url:  "https://gerrit.example.com",
+						Gerrit: &schemb.GerritAuthProvider{
+							Url:  "https://gerrit.exbmple.com",
 							Type: extsvc.TypeGerrit,
 						},
 					},
 				},
 			}},
-			wantProviders: []Provider{{
-				ServiceID:   "https://gerrit.example.com",
+			wbntProviders: []Provider{{
+				ServiceID:   "https://gerrit.exbmple.com",
 				ServiceType: extsvc.TypeGerrit,
 			}},
-			wantProblems: []string{
-				`Cannot have more than one Gerrit auth provider with url "https://gerrit.example.com"`,
+			wbntProblems: []string{
+				`Cbnnot hbve more thbn one Gerrit buth provider with url "https://gerrit.exbmple.com"`,
 			},
 		},
-		"2 gerrit configs with different URLs is okay": {
-			cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+		"2 gerrit configs with different URLs is okby": {
+			cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Gerrit: &schema.GerritAuthProvider{
-							Url:  "https://gerrit.example.com",
+						Gerrit: &schemb.GerritAuthProvider{
+							Url:  "https://gerrit.exbmple.com",
 							Type: extsvc.TypeGerrit,
 						},
 					},
 					{
-						Gerrit: &schema.GerritAuthProvider{
+						Gerrit: &schemb.GerritAuthProvider{
 							Url:  "https://gerrit.different.com",
 							Type: extsvc.TypeGerrit,
 						},
 					},
 				},
 			}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					ServiceID:   "https://gerrit.example.com",
+					ServiceID:   "https://gerrit.exbmple.com",
 					ServiceType: extsvc.TypeGerrit,
 				},
 				{
@@ -88,14 +88,14 @@ func TestParseConfig(t *testing.T) {
 		},
 	}
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			gotProviders, gotProblems := parseConfig(tc.cfg)
-			if diff := cmp.Diff(tc.wantProviders, gotProviders); diff != "" {
-				t.Errorf("providers mismatch (-want +got):\n%s", diff)
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			gotProviders, gotProblems := pbrseConfig(tc.cfg)
+			if diff := cmp.Diff(tc.wbntProviders, gotProviders); diff != "" {
+				t.Errorf("providers mismbtch (-wbnt +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.wantProblems, gotProblems.Messages()); diff != "" {
-				t.Errorf("problems mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(tc.wbntProblems, gotProblems.Messbges()); diff != "" {
+				t.Errorf("problems mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

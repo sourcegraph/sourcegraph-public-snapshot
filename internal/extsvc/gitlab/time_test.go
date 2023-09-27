@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"encoding/json"
@@ -6,65 +6,65 @@ import (
 	"time"
 )
 
-func TestTimeUnmarshal(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
-		loc, err := time.LoadLocation("Europe/Berlin")
+func TestTimeUnmbrshbl(t *testing.T) {
+	t.Run("vblid", func(t *testing.T) {
+		loc, err := time.LobdLocbtion("Europe/Berlin")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		for _, tc := range []struct {
+		for _, tc := rbnge []struct {
 			input string
-			want  time.Time
+			wbnt  time.Time
 		}{
 			{
 				input: "2020-06-26T20:54:05+00:00",
-				want:  time.Date(2020, 6, 26, 20, 54, 05, 0, time.UTC),
+				wbnt:  time.Dbte(2020, 6, 26, 20, 54, 05, 0, time.UTC),
 			},
 			{
 				input: "2019-06-05T14:32:20.211Z",
-				want:  time.Date(2019, 6, 5, 14, 32, 20, 211000000, time.UTC),
+				wbnt:  time.Dbte(2019, 6, 5, 14, 32, 20, 211000000, time.UTC),
 			},
 			{
 				input: "2020-06-24 00:05:18 UTC",
-				want:  time.Date(2020, 6, 24, 0, 5, 18, 0, time.UTC),
+				wbnt:  time.Dbte(2020, 6, 24, 0, 5, 18, 0, time.UTC),
 			},
 			{
 				input: "2022-07-05 20:52:49 +0200",
-				want:  time.Date(2022, 7, 5, 20, 52, 49, 0, loc),
+				wbnt:  time.Dbte(2022, 7, 5, 20, 52, 49, 0, loc),
 			},
 		} {
 			t.Run(tc.input, func(t *testing.T) {
-				js, err := json.Marshal(tc.input)
+				js, err := json.Mbrshbl(tc.input)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				var have Time
-				if err := json.Unmarshal(js, &have); err != nil {
+				vbr hbve Time
+				if err := json.Unmbrshbl(js, &hbve); err != nil {
 					t.Errorf("unexpected non-nil error: %+v", err)
 				}
-				if !have.Time.Equal(tc.want) {
-					t.Errorf("incorrect time: have %s; want %s", have, tc.want)
+				if !hbve.Time.Equbl(tc.wbnt) {
+					t.Errorf("incorrect time: hbve %s; wbnt %s", hbve, tc.wbnt)
 				}
 			})
 		}
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		for _, input := range []string{
+	t.Run("invblid", func(t *testing.T) {
+		for _, input := rbnge []string{
 			``,
 			`42`,
-			`false`,
+			`fblse`,
 			`[]`,
 			`{}`,
 			`""`,
-			`"not a valid date"`,
+			`"not b vblid dbte"`,
 			`"2020-06-24"`,
 		} {
 			t.Run(input, func(t *testing.T) {
-				var out Time
-				if err := json.Unmarshal([]byte(input), &out); err == nil {
+				vbr out Time
+				if err := json.Unmbrshbl([]byte(input), &out); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})

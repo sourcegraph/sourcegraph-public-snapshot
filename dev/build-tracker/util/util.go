@@ -1,4 +1,4 @@
-package util
+pbckbge util
 
 func Strp(v *string) string {
 	if v == nil {

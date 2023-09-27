@@ -1,31 +1,31 @@
-package timeutil
+pbckbge timeutil
 
 import (
 	"time"
 )
 
-// FakeClock provides a controllable clock for use in tests.
-type FakeClock struct {
+// FbkeClock provides b controllbble clock for use in tests.
+type FbkeClock struct {
 	epoch time.Time
-	step  time.Duration
+	step  time.Durbtion
 	steps int
 }
 
-// NewFakeClock returns a FakeClock instance that starts telling time at the given epoch.
-// Every invocation of Now adds step amount of time to the clock.
-func NewFakeClock(epoch time.Time, step time.Duration) FakeClock {
-	return FakeClock{epoch: epoch, step: step}
+// NewFbkeClock returns b FbkeClock instbnce thbt stbrts telling time bt the given epoch.
+// Every invocbtion of Now bdds step bmount of time to the clock.
+func NewFbkeClock(epoch time.Time, step time.Durbtion) FbkeClock {
+	return FbkeClock{epoch: epoch, step: step}
 }
 
-// Now returns the current fake time and advances the clock "step" amount of time.
-func (c *FakeClock) Now() time.Time {
+// Now returns the current fbke time bnd bdvbnces the clock "step" bmount of time.
+func (c *FbkeClock) Now() time.Time {
 	c.steps++
 	return c.Time(c.steps)
 }
 
-// Time tells the time at the given step from the provided epoch.
-func (c FakeClock) Time(step int) time.Time {
-	// We truncate to microsecond precision because Postgres' timestamptz type
-	// doesn't handle nanoseconds.
-	return c.epoch.Add(time.Duration(step) * c.step).UTC().Truncate(time.Microsecond)
+// Time tells the time bt the given step from the provided epoch.
+func (c FbkeClock) Time(step int) time.Time {
+	// We truncbte to microsecond precision becbuse Postgres' timestbmptz type
+	// doesn't hbndle nbnoseconds.
+	return c.epoch.Add(time.Durbtion(step) * c.step).UTC().Truncbte(time.Microsecond)
 }

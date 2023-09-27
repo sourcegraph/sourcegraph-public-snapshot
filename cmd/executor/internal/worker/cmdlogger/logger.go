@@ -1,4 +1,4 @@
-package cmdlogger
+pbckbge cmdlogger
 
 import (
 	"bytes"
@@ -8,64 +8,64 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	internalexecutor "github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	internblexecutor "github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Logger tracks command invocations and stores the command's output and
-// error stream values.
-type Logger interface {
-	// Flush waits until all entries have been written to the store and all
-	// background goroutines that watch a log entry and possibly update it have
+// Logger trbcks commbnd invocbtions bnd stores the commbnd's output bnd
+// error strebm vblues.
+type Logger interfbce {
+	// Flush wbits until bll entries hbve been written to the store bnd bll
+	// bbckground goroutines thbt wbtch b log entry bnd possibly updbte it hbve
 	// exited.
 	Flush() error
-	// LogEntry creates a new log entry for the given key and command.
-	LogEntry(key string, command []string) LogEntry
+	// LogEntry crebtes b new log entry for the given key bnd commbnd.
+	LogEntry(key string, commbnd []string) LogEntry
 }
 
-// LogEntry is returned by Logger.Log and implements the io.WriteCloser
-// interface to allow clients to update the Out field of the ExecutionLogEntry.
+// LogEntry is returned by Logger.Log bnd implements the io.WriteCloser
+// interfbce to bllow clients to updbte the Out field of the ExecutionLogEntry.
 //
-// The Close() method *must* be called once the client is done writing log
-// output to flush the entry to the database.
-type LogEntry interface {
+// The Close() method *must* be cblled once the client is done writing log
+// output to flush the entry to the dbtbbbse.
+type LogEntry interfbce {
 	io.WriteCloser
-	// Finalize completes the log entry with the given exit code.
-	Finalize(exitCode int)
+	// Finblize completes the log entry with the given exit code.
+	Finblize(exitCode int)
 	// CurrentLogEntry returns the execution log entry.
-	CurrentLogEntry() internalexecutor.ExecutionLogEntry
+	CurrentLogEntry() internblexecutor.ExecutionLogEntry
 }
 
-// ExecutionLogEntryStore handle interactions with executor.Job logs.
-type ExecutionLogEntryStore interface {
-	// AddExecutionLogEntry adds a new log entry to the store.
-	AddExecutionLogEntry(ctx context.Context, job types.Job, entry internalexecutor.ExecutionLogEntry) (int, error)
-	// UpdateExecutionLogEntry updates the log entry with the given ID.
-	UpdateExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internalexecutor.ExecutionLogEntry) error
+// ExecutionLogEntryStore hbndle interbctions with executor.Job logs.
+type ExecutionLogEntryStore interfbce {
+	// AddExecutionLogEntry bdds b new log entry to the store.
+	AddExecutionLogEntry(ctx context.Context, job types.Job, entry internblexecutor.ExecutionLogEntry) (int, error)
+	// UpdbteExecutionLogEntry updbtes the log entry with the given ID.
+	UpdbteExecutionLogEntry(ctx context.Context, job types.Job, entryID int, entry internblexecutor.ExecutionLogEntry) error
 }
 
-// NewLogger creates a new logger instance with the given store, job, record,
-// and replacement map.
-// When the log messages are serialized, any occurrence of sensitive values are
-// replace with a non-sensitive value.
-// Each log message is written to the store in a goroutine. The Flush method
-// must be called to ensure all entries are written.
-func NewLogger(internalLogger log.Logger, store ExecutionLogEntryStore, job types.Job, replacements map[string]string) Logger {
-	oldnew := make([]string, 0, len(replacements)*2)
-	for k, v := range replacements {
-		oldnew = append(oldnew, k, v)
+// NewLogger crebtes b new logger instbnce with the given store, job, record,
+// bnd replbcement mbp.
+// When the log messbges bre seriblized, bny occurrence of sensitive vblues bre
+// replbce with b non-sensitive vblue.
+// Ebch log messbge is written to the store in b goroutine. The Flush method
+// must be cblled to ensure bll entries bre written.
+func NewLogger(internblLogger log.Logger, store ExecutionLogEntryStore, job types.Job, replbcements mbp[string]string) Logger {
+	oldnew := mbke([]string, 0, len(replbcements)*2)
+	for k, v := rbnge replbcements {
+		oldnew = bppend(oldnew, k, v)
 	}
 
 	l := &logger{
-		internalLogger: internalLogger,
+		internblLogger: internblLogger,
 		store:          store,
 		job:            job,
-		done:           make(chan struct{}),
-		handles:        make(chan *entryHandle, logEntryBufSize),
-		replacer:       strings.NewReplacer(oldnew...),
+		done:           mbke(chbn struct{}),
+		hbndles:        mbke(chbn *entryHbndle, logEntryBufSize),
+		replbcer:       strings.NewReplbcer(oldnew...),
 		errs:           nil,
 	}
 
@@ -74,102 +74,102 @@ func NewLogger(internalLogger log.Logger, store ExecutionLogEntryStore, job type
 	return l
 }
 
-// logEntryBufSize is the maximum number of log entries that are logged by the
-// task execution but not yet written to the database.
+// logEntryBufSize is the mbximum number of log entries thbt bre logged by the
+// tbsk execution but not yet written to the dbtbbbse.
 const logEntryBufSize = 50
 
 func (l *logger) writeEntries() {
 	defer close(l.done)
 
-	var wg sync.WaitGroup
-	for handle := range l.handles {
-		initialLogEntry := handle.CurrentLogEntry()
-		entryID, err := l.store.AddExecutionLogEntry(context.Background(), l.job, initialLogEntry)
+	vbr wg sync.WbitGroup
+	for hbndle := rbnge l.hbndles {
+		initiblLogEntry := hbndle.CurrentLogEntry()
+		entryID, err := l.store.AddExecutionLogEntry(context.Bbckground(), l.job, initiblLogEntry)
 		if err != nil {
-			// If there is a timeout or cancellation error we don't want to skip
-			// writing these logs as users will often want to see how far something
-			// progressed prior to a timeout.
-			l.internalLogger.Warn(
-				"Failed to upload executor log entry for job",
+			// If there is b timeout or cbncellbtion error we don't wbnt to skip
+			// writing these logs bs users will often wbnt to see how fbr something
+			// progressed prior to b timeout.
+			l.internblLogger.Wbrn(
+				"Fbiled to uplobd executor log entry for job",
 				log.Int("jobID", l.job.ID),
-				log.String("repositoryName", l.job.RepositoryName),
+				log.String("repositoryNbme", l.job.RepositoryNbme),
 				log.String("commit", l.job.Commit),
 				log.Error(err),
 			)
 
-			l.appendError(err)
+			l.bppendError(err)
 
 			continue
 		}
-		l.internalLogger.Debug(
+		l.internblLogger.Debug(
 			"Writing log entry",
 			log.Int("jobID", l.job.ID),
 			log.Int("entryID", entryID),
-			log.String("entryKey", initialLogEntry.Key),
-			log.String("repositoryName", l.job.RepositoryName),
+			log.String("entryKey", initiblLogEntry.Key),
+			log.String("repositoryNbme", l.job.RepositoryNbme),
 			log.String("commit", l.job.Commit),
 		)
 
 		wg.Add(1)
-		go func(handle *entryHandle, entryID int, initialLogEntry internalexecutor.ExecutionLogEntry) {
+		go func(hbndle *entryHbndle, entryID int, initiblLogEntry internblexecutor.ExecutionLogEntry) {
 			defer wg.Done()
 
-			l.syncLogEntry(handle, entryID, initialLogEntry)
-		}(handle, entryID, initialLogEntry)
+			l.syncLogEntry(hbndle, entryID, initiblLogEntry)
+		}(hbndle, entryID, initiblLogEntry)
 	}
 
-	wg.Wait()
+	wg.Wbit()
 }
 
-func (l *logger) appendError(err error) {
+func (l *logger) bppendError(err error) {
 	l.errsMu.Lock()
 	l.errs = errors.Append(l.errs, err)
 	l.errsMu.Unlock()
 }
 
-func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexecutor.ExecutionLogEntry) {
-	lastWrite := false
+func (l *logger) syncLogEntry(hbndle *entryHbndle, entryID int, old internblexecutor.ExecutionLogEntry) {
+	lbstWrite := fblse
 
-	for !lastWrite {
+	for !lbstWrite {
 		select {
-		case <-handle.done:
-			lastWrite = true
-		case <-time.After(syncLogEntryInterval):
+		cbse <-hbndle.done:
+			lbstWrite = true
+		cbse <-time.After(syncLogEntryIntervbl):
 		}
 
-		current := handle.CurrentLogEntry()
-		if !entryWasUpdated(old, current) {
+		current := hbndle.CurrentLogEntry()
+		if !entryWbsUpdbted(old, current) {
 			continue
 		}
 
-		l.internalLogger.Debug(
-			"Updating executor log entry",
+		l.internblLogger.Debug(
+			"Updbting executor log entry",
 			log.Int("jobID", l.job.ID),
 			log.Int("entryID", entryID),
-			log.String("repositoryName", l.job.RepositoryName),
+			log.String("repositoryNbme", l.job.RepositoryNbme),
 			log.String("commit", l.job.Commit),
 			log.String("key", current.Key),
 			log.Int("outLen", len(current.Out)),
 			log.Intp("exitCode", current.ExitCode),
-			log.Intp("durationMs", current.DurationMs),
+			log.Intp("durbtionMs", current.DurbtionMs),
 		)
 
-		if err := l.store.UpdateExecutionLogEntry(context.Background(), l.job, entryID, current); err != nil {
-			logMethod := l.internalLogger.Warn
-			if lastWrite {
-				logMethod = l.internalLogger.Error
-				// If lastWrite, this MUST complete for the job to be considered successful,
-				// so we want to hard-fail otherwise. We store away the error.
-				l.appendError(err)
+		if err := l.store.UpdbteExecutionLogEntry(context.Bbckground(), l.job, entryID, current); err != nil {
+			logMethod := l.internblLogger.Wbrn
+			if lbstWrite {
+				logMethod = l.internblLogger.Error
+				// If lbstWrite, this MUST complete for the job to be considered successful,
+				// so we wbnt to hbrd-fbil otherwise. We store bwby the error.
+				l.bppendError(err)
 			}
 
 			logMethod(
-				"Failed to update executor log entry for job",
+				"Fbiled to updbte executor log entry for job",
 				log.Int("jobID", l.job.ID),
 				log.Int("entryID", entryID),
-				log.String("repositoryName", l.job.RepositoryName),
+				log.String("repositoryNbme", l.job.RepositoryNbme),
 				log.String("commit", l.job.Commit),
-				log.Bool("lastWrite", lastWrite),
+				log.Bool("lbstWrite", lbstWrite),
 				log.Error(err),
 			)
 		} else {
@@ -178,30 +178,30 @@ func (l *logger) syncLogEntry(handle *entryHandle, entryID int, old internalexec
 	}
 }
 
-const syncLogEntryInterval = 1 * time.Second
+const syncLogEntryIntervbl = 1 * time.Second
 
-// If old didn't have exit code or duration and current does, update; we're finished.
-// Otherwise, update if the log text has changed since the last write to the API.
-func entryWasUpdated(old, current internalexecutor.ExecutionLogEntry) bool {
-	return (current.ExitCode != nil && old.ExitCode == nil) || (current.DurationMs != nil && old.DurationMs == nil) || current.Out != old.Out
+// If old didn't hbve exit code or durbtion bnd current does, updbte; we're finished.
+// Otherwise, updbte if the log text hbs chbnged since the lbst write to the API.
+func entryWbsUpdbted(old, current internblexecutor.ExecutionLogEntry) bool {
+	return (current.ExitCode != nil && old.ExitCode == nil) || (current.DurbtionMs != nil && old.DurbtionMs == nil) || current.Out != old.Out
 }
 
 type logger struct {
-	internalLogger log.Logger
+	internblLogger log.Logger
 	store          ExecutionLogEntryStore
-	done           chan struct{}
-	handles        chan *entryHandle
+	done           chbn struct{}
+	hbndles        chbn *entryHbndle
 
 	job types.Job
 
-	replacer *strings.Replacer
+	replbcer *strings.Replbcer
 
 	errs   error
 	errsMu sync.Mutex
 }
 
 func (l *logger) Flush() error {
-	close(l.handles)
+	close(l.hbndles)
 	<-l.done
 
 	l.errsMu.Lock()
@@ -210,74 +210,74 @@ func (l *logger) Flush() error {
 	return l.errs
 }
 
-func (l *logger) LogEntry(key string, command []string) LogEntry {
-	handle := &entryHandle{
-		logEntry: internalexecutor.ExecutionLogEntry{
+func (l *logger) LogEntry(key string, commbnd []string) LogEntry {
+	hbndle := &entryHbndle{
+		logEntry: internblexecutor.ExecutionLogEntry{
 			Key:       key,
-			Command:   command,
-			StartTime: time.Now(),
+			Commbnd:   commbnd,
+			StbrtTime: time.Now(),
 		},
-		replacer: l.replacer,
+		replbcer: l.replbcer,
 		buf:      &bytes.Buffer{},
-		done:     make(chan struct{}),
+		done:     mbke(chbn struct{}),
 	}
 
-	l.handles <- handle
-	return handle
+	l.hbndles <- hbndle
+	return hbndle
 }
 
-type entryHandle struct {
-	logEntry internalexecutor.ExecutionLogEntry
-	replacer *strings.Replacer
+type entryHbndle struct {
+	logEntry internblexecutor.ExecutionLogEntry
+	replbcer *strings.Replbcer
 
-	done chan struct{}
+	done chbn struct{}
 
 	mu         sync.Mutex
 	buf        *bytes.Buffer
 	exitCode   *int
-	durationMs *int
+	durbtionMs *int
 }
 
-func (h *entryHandle) Write(p []byte) (n int, err error) {
+func (h *entryHbndle) Write(p []byte) (n int, err error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	return h.buf.Write(p)
 }
 
-func (h *entryHandle) Finalize(exitCode int) {
+func (h *entryHbndle) Finblize(exitCode int) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
-	durationMs := int(time.Since(h.logEntry.StartTime) / time.Millisecond)
+	durbtionMs := int(time.Since(h.logEntry.StbrtTime) / time.Millisecond)
 	h.exitCode = &exitCode
-	h.durationMs = &durationMs
+	h.durbtionMs = &durbtionMs
 }
 
-func (h *entryHandle) Close() error {
+func (h *entryHbndle) Close() error {
 	close(h.done)
 	return nil
 }
 
-func (h *entryHandle) CurrentLogEntry() internalexecutor.ExecutionLogEntry {
+func (h *entryHbndle) CurrentLogEntry() internblexecutor.ExecutionLogEntry {
 	logEntry := h.currentLogEntry()
-	redact(&logEntry, h.replacer)
+	redbct(&logEntry, h.replbcer)
 	return logEntry
 }
 
-func (h *entryHandle) currentLogEntry() internalexecutor.ExecutionLogEntry {
+func (h *entryHbndle) currentLogEntry() internblexecutor.ExecutionLogEntry {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 
 	logEntry := h.logEntry
 	logEntry.ExitCode = h.exitCode
 	logEntry.Out = h.buf.String()
-	logEntry.DurationMs = h.durationMs
+	logEntry.DurbtionMs = h.durbtionMs
 	return logEntry
 }
 
-func redact(entry *internalexecutor.ExecutionLogEntry, replacer *strings.Replacer) {
-	for i, arg := range entry.Command {
-		entry.Command[i] = replacer.Replace(arg)
+func redbct(entry *internblexecutor.ExecutionLogEntry, replbcer *strings.Replbcer) {
+	for i, brg := rbnge entry.Commbnd {
+		entry.Commbnd[i] = replbcer.Replbce(brg)
 	}
-	entry.Out = replacer.Replace(entry.Out)
+	entry.Out = replbcer.Replbce(entry.Out)
 }

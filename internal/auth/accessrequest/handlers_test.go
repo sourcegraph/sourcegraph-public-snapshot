@@ -1,4 +1,4 @@
-package accessrequest
+pbckbge bccessrequest
 
 import (
 	"context"
@@ -8,16 +8,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
+	"gotest.tools/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestRequestAccess(t *testing.T) {
@@ -26,35 +26,35 @@ func TestRequestAccess(t *testing.T) {
 	}
 
 	logger := logtest.NoOp(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	handler := HandleRequestAccess(logger, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	hbndler := HbndleRequestAccess(logger, db)
 
-	t.Run("accessRequest feature is disabled", func(t *testing.T) {
-		falseVal := false
+	t.Run("bccessRequest febture is disbbled", func(t *testing.T) {
+		fblseVbl := fblse
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthAccessRequest: &schema.AuthAccessRequest{
-					Enabled: &falseVal,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthAccessRequest: &schemb.AuthAccessRequest{
+					Enbbled: &fblseVbl,
 				},
 			},
 		})
-		t.Cleanup(func() { conf.Mock(nil) })
+		t.Clebnup(func() { conf.Mock(nil) })
 
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		res := httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusForbidden, res.Code)
-		assert.Equal(t, "experimental feature accessRequests is disabled, but received request\n", res.Body.String())
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusForbidden, res.Code)
+		bssert.Equbl(t, "experimentbl febture bccessRequests is disbbled, but received request\n", res.Body.String())
 	})
 
-	t.Run("builtin signup enabled", func(t *testing.T) {
+	t.Run("builtin signup enbbled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{
 					{
-						Builtin: &schema.BuiltinAuthProvider{
+						Builtin: &schemb.BuiltinAuthProvider{
 							Type:        "builtin",
 							AllowSignup: true,
 						},
@@ -62,82 +62,82 @@ func TestRequestAccess(t *testing.T) {
 				},
 			},
 		})
-		t.Cleanup(func() { conf.Mock(nil) })
+		t.Clebnup(func() { conf.Mock(nil) })
 
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{}`))
+		req, err := http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(`{}`))
 		require.NoError(t, err)
 
 		res := httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusConflict, res.Code)
-		assert.Equal(t, "Use sign up instead.\n", res.Body.String())
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusConflict, res.Code)
+		bssert.Equbl(t, "Use sign up instebd.\n", res.Body.String())
 	})
 
-	t.Run("invalid email", func(t *testing.T) {
-		// test incorrect email
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"email": "a1-example.com", "name": "a1", "additionalInfo": "a1"}`))
+	t.Run("invblid embil", func(t *testing.T) {
+		// test incorrect embil
+		req, err := http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(`{"embil": "b1-exbmple.com", "nbme": "b1", "bdditionblInfo": "b1"}`))
 		require.NoError(t, err)
 		res := httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusUnprocessableEntity, res.Code)
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusUnprocessbbleEntity, res.Code)
 
-		// test empty email
-		req, err = http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"name": "a1", "additionalInfo": "a1"}}`))
+		// test empty embil
+		req, err = http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(`{"nbme": "b1", "bdditionblInfo": "b1"}}`))
 		require.NoError(t, err)
 		res = httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusUnprocessableEntity, res.Code)
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusUnprocessbbleEntity, res.Code)
 	})
 
-	t.Run("existing user's email", func(t *testing.T) {
-		// test that no explicit error is returned if the email is already in the users table
-		newUser := database.NewUser{
-			Username:        "u1",
-			Email:           "u1@example.com",
-			EmailIsVerified: true,
+	t.Run("existing user's embil", func(t *testing.T) {
+		// test thbt no explicit error is returned if the embil is blrebdy in the users tbble
+		newUser := dbtbbbse.NewUser{
+			Usernbme:        "u1",
+			Embil:           "u1@exbmple.com",
+			EmbilIsVerified: true,
 		}
-		db.Users().Create(context.Background(), newUser)
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "u1", "additionalInfo": "u1"}`, newUser.Email)))
+		db.Users().Crebte(context.Bbckground(), newUser)
+		req, err := http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(fmt.Sprintf(`{"embil": "%s", "nbme": "u1", "bdditionblInfo": "u1"}`, newUser.Embil)))
 		require.NoError(t, err)
 		res := httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusCreated, res.Code)
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusCrebted, res.Code)
 
-		_, err = db.AccessRequests().GetByEmail(context.Background(), newUser.Email)
+		_, err = db.AccessRequests().GetByEmbil(context.Bbckground(), newUser.Embil)
 		require.Error(t, err)
-		require.Equal(t, errcode.IsNotFound(err), true)
+		require.Equbl(t, errcode.IsNotFound(err), true)
 	})
 
-	t.Run("existing access requests's email", func(t *testing.T) {
-		// test that no explicit error is returned if the email is already in the access requests table
-		accessRequest := types.AccessRequest{
-			Name:  "a1",
-			Email: "a1@example.com",
+	t.Run("existing bccess requests's embil", func(t *testing.T) {
+		// test thbt no explicit error is returned if the embil is blrebdy in the bccess requests tbble
+		bccessRequest := types.AccessRequest{
+			Nbme:  "b1",
+			Embil: "b1@exbmple.com",
 		}
-		db.AccessRequests().Create(context.Background(), &accessRequest)
-		_, err := db.AccessRequests().GetByEmail(context.Background(), accessRequest.Email)
+		db.AccessRequests().Crebte(context.Bbckground(), &bccessRequest)
+		_, err := db.AccessRequests().GetByEmbil(context.Bbckground(), bccessRequest.Embil)
 		require.NoError(t, err)
 
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(fmt.Sprintf(`{"email": "%s", "name": "%s", "additionalInfo": "%s"}`, accessRequest.Email, accessRequest.Name, accessRequest.AdditionalInfo)))
+		req, err := http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(fmt.Sprintf(`{"embil": "%s", "nbme": "%s", "bdditionblInfo": "%s"}`, bccessRequest.Embil, bccessRequest.Nbme, bccessRequest.AdditionblInfo)))
 		require.NoError(t, err)
 		res := httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusCreated, res.Code)
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusCrebted, res.Code)
 	})
 
 	t.Run("correct inputs", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodPost, "/-/request-access", strings.NewReader(`{"email": "a2@example.com", "name": "a2", "additionalInfo": "af2"}`))
-		req = req.WithContext(context.Background())
+		req, err := http.NewRequest(http.MethodPost, "/-/request-bccess", strings.NewRebder(`{"embil": "b2@exbmple.com", "nbme": "b2", "bdditionblInfo": "bf2"}`))
+		req = req.WithContext(context.Bbckground())
 		require.NoError(t, err)
 
 		res := httptest.NewRecorder()
-		handler(res, req)
-		assert.Equal(t, http.StatusCreated, res.Code)
+		hbndler(res, req)
+		bssert.Equbl(t, http.StbtusCrebted, res.Code)
 
-		accessRequest, err := db.AccessRequests().GetByEmail(context.Background(), "a2@example.com")
+		bccessRequest, err := db.AccessRequests().GetByEmbil(context.Bbckground(), "b2@exbmple.com")
 		require.NoError(t, err)
-		assert.Equal(t, "a2", accessRequest.Name)
-		assert.Equal(t, "a2@example.com", accessRequest.Email)
-		assert.Equal(t, "af2", accessRequest.AdditionalInfo)
+		bssert.Equbl(t, "b2", bccessRequest.Nbme)
+		bssert.Equbl(t, "b2@exbmple.com", bccessRequest.Embil)
+		bssert.Equbl(t, "bf2", bccessRequest.AdditionblInfo)
 	})
 }

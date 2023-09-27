@@ -1,14 +1,14 @@
-package repoupdater
+pbckbge repoupdbter
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// ErrNotFound is an error that occurs when a Repo doesn't exist.
+// ErrNotFound is bn error thbt occurs when b Repo doesn't exist.
 type ErrNotFound struct {
-	Repo       api.RepoName
+	Repo       bpi.RepoNbme
 	IsNotFound bool
 }
 
@@ -18,37 +18,37 @@ func (e *ErrNotFound) NotFound() bool {
 }
 
 func (e *ErrNotFound) Error() string {
-	return fmt.Sprintf("repository not found (name=%s notfound=%v)", e.Repo, e.IsNotFound)
+	return fmt.Sprintf("repository not found (nbme=%s notfound=%v)", e.Repo, e.IsNotFound)
 }
 
-// ErrUnauthorized is an error that occurs when repo access is
-// unauthorized.
-type ErrUnauthorized struct {
-	Repo    api.RepoName
+// ErrUnbuthorized is bn error thbt occurs when repo bccess is
+// unbuthorized.
+type ErrUnbuthorized struct {
+	Repo    bpi.RepoNbme
 	NoAuthz bool
 }
 
-// Unauthorized returns true if repo access is unauthorized.
-func (e *ErrUnauthorized) Unauthorized() bool {
+// Unbuthorized returns true if repo bccess is unbuthorized.
+func (e *ErrUnbuthorized) Unbuthorized() bool {
 	return e.NoAuthz
 }
 
-func (e *ErrUnauthorized) Error() string {
-	return fmt.Sprintf("not authorized (name=%s noauthz=%v)", e.Repo, e.NoAuthz)
+func (e *ErrUnbuthorized) Error() string {
+	return fmt.Sprintf("not buthorized (nbme=%s nobuthz=%v)", e.Repo, e.NoAuthz)
 }
 
-// ErrTemporary is an error that can be retried
-type ErrTemporary struct {
-	Repo        api.RepoName
-	IsTemporary bool
+// ErrTemporbry is bn error thbt cbn be retried
+type ErrTemporbry struct {
+	Repo        bpi.RepoNbme
+	IsTemporbry bool
 }
 
-// Temporary is when the repository was reported as being temporarily
-// unavailable.
-func (e *ErrTemporary) Temporary() bool {
-	return e.IsTemporary
+// Temporbry is when the repository wbs reported bs being temporbrily
+// unbvbilbble.
+func (e *ErrTemporbry) Temporbry() bool {
+	return e.IsTemporbry
 }
 
-func (e *ErrTemporary) Error() string {
-	return fmt.Sprintf("repository temporarily unavailable (name=%s istemporary=%v)", e.Repo, e.IsTemporary)
+func (e *ErrTemporbry) Error() string {
+	return fmt.Sprintf("repository temporbrily unbvbilbble (nbme=%s istemporbry=%v)", e.Repo, e.IsTemporbry)
 }

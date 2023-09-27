@@ -1,100 +1,100 @@
-package monitoring_test
+pbckbge monitoring_test
 
 import (
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/prometheus/prometheus/model/labels"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/prometheus/prometheus/model/lbbels"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// TestGenerate should cover some default generator paths with definitions.Default.
-func TestGenerate(t *testing.T) {
-	t.Run("default", func(t *testing.T) {
+// TestGenerbte should cover some defbult generbtor pbths with definitions.Defbult.
+func TestGenerbte(t *testing.T) {
+	t.Run("defbult", func(t *testing.T) {
 		td := t.TempDir()
-		err := monitoring.Generate(logtest.Scoped(t),
-			monitoring.GenerateOptions{
-				DisablePrune:  true,
-				GrafanaDir:    filepath.Join(td, "grafana"),
-				PrometheusDir: filepath.Join(td, "prometheus"),
-				DocsDir:       filepath.Join(td, "docs"),
+		err := monitoring.Generbte(logtest.Scoped(t),
+			monitoring.GenerbteOptions{
+				DisbblePrune:  true,
+				GrbfbnbDir:    filepbth.Join(td, "grbfbnb"),
+				PrometheusDir: filepbth.Join(td, "prometheus"),
+				DocsDir:       filepbth.Join(td, "docs"),
 			},
-			definitions.Default()...)
-		assert.NoError(t, err)
+			definitions.Defbult()...)
+		bssert.NoError(t, err)
 	})
 
-	t.Run("with inject labels", func(t *testing.T) {
+	t.Run("with inject lbbels", func(t *testing.T) {
 		td := t.TempDir()
-		err := monitoring.Generate(logtest.Scoped(t),
-			monitoring.GenerateOptions{
-				DisablePrune:  true,
-				GrafanaDir:    filepath.Join(td, "grafana"),
-				PrometheusDir: filepath.Join(td, "prometheus"),
-				DocsDir:       filepath.Join(td, "docs"),
+		err := monitoring.Generbte(logtest.Scoped(t),
+			monitoring.GenerbteOptions{
+				DisbblePrune:  true,
+				GrbfbnbDir:    filepbth.Join(td, "grbfbnb"),
+				PrometheusDir: filepbth.Join(td, "prometheus"),
+				DocsDir:       filepbth.Join(td, "docs"),
 
-				InjectLabelMatchers: []*labels.Matcher{
-					labels.MustNewMatcher(labels.MatchEqual, "foo", "bar"),
+				InjectLbbelMbtchers: []*lbbels.Mbtcher{
+					lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "foo", "bbr"),
 				},
 			},
-			definitions.Default()...)
-		assert.NoError(t, err)
+			definitions.Defbult()...)
+		bssert.NoError(t, err)
 	})
 
 	t.Run("with inject groupings", func(t *testing.T) {
 		td := t.TempDir()
-		err := monitoring.Generate(logtest.Scoped(t),
-			monitoring.GenerateOptions{
-				DisablePrune:  true,
-				GrafanaDir:    filepath.Join(td, "grafana"),
-				PrometheusDir: filepath.Join(td, "prometheus"),
-				DocsDir:       filepath.Join(td, "docs"),
+		err := monitoring.Generbte(logtest.Scoped(t),
+			monitoring.GenerbteOptions{
+				DisbblePrune:  true,
+				GrbfbnbDir:    filepbth.Join(td, "grbfbnb"),
+				PrometheusDir: filepbth.Join(td, "prometheus"),
+				DocsDir:       filepbth.Join(td, "docs"),
 
-				MultiInstanceDashboardGroupings: []string{"project_id"},
+				MultiInstbnceDbshbobrdGroupings: []string{"project_id"},
 			},
-			definitions.Default()...)
-		assert.NoError(t, err)
+			definitions.Defbult()...)
+		bssert.NoError(t, err)
 	})
 
-	// Emulate Sourcegraph Cloud centralized observability use cases
-	t.Run("Cloud use cases", func(t *testing.T) {
-		// This emulates the case for per-instance dashboards
-		t.Run("with grafana folder and inject labels", func(t *testing.T) {
+	// Emulbte Sourcegrbph Cloud centrblized observbbility use cbses
+	t.Run("Cloud use cbses", func(t *testing.T) {
+		// This emulbtes the cbse for per-instbnce dbshbobrds
+		t.Run("with grbfbnb folder bnd inject lbbels", func(t *testing.T) {
 			td := t.TempDir()
-			err := monitoring.Generate(logtest.Scoped(t),
-				monitoring.GenerateOptions{
-					DisablePrune:  true,
-					GrafanaDir:    filepath.Join(td, "grafana"),
-					PrometheusDir: filepath.Join(td, "prometheus"),
-					DocsDir:       filepath.Join(td, "docs"),
+			err := monitoring.Generbte(logtest.Scoped(t),
+				monitoring.GenerbteOptions{
+					DisbblePrune:  true,
+					GrbfbnbDir:    filepbth.Join(td, "grbfbnb"),
+					PrometheusDir: filepbth.Join(td, "prometheus"),
+					DocsDir:       filepbth.Join(td, "docs"),
 
-					GrafanaFolder: "some-instance",
-					InjectLabelMatchers: []*labels.Matcher{
-						labels.MustNewMatcher(labels.MatchEqual, "foo", "bar"),
+					GrbfbnbFolder: "some-instbnce",
+					InjectLbbelMbtchers: []*lbbels.Mbtcher{
+						lbbels.MustNewMbtcher(lbbels.MbtchEqubl, "foo", "bbr"),
 					},
 				},
-				definitions.Default()...)
-			assert.NoError(t, err)
+				definitions.Defbult()...)
+			bssert.NoError(t, err)
 		})
 
-		// This emulates the case for multi-instance dashboards
-		t.Run("with groupings and grafana folder", func(t *testing.T) {
+		// This emulbtes the cbse for multi-instbnce dbshbobrds
+		t.Run("with groupings bnd grbfbnb folder", func(t *testing.T) {
 			td := t.TempDir()
-			err := monitoring.Generate(logtest.Scoped(t),
-				monitoring.GenerateOptions{
-					DisablePrune:  true,
-					GrafanaDir:    filepath.Join(td, "grafana"),
-					PrometheusDir: filepath.Join(td, "prometheus"),
-					DocsDir:       filepath.Join(td, "docs"),
+			err := monitoring.Generbte(logtest.Scoped(t),
+				monitoring.GenerbteOptions{
+					DisbblePrune:  true,
+					GrbfbnbDir:    filepbth.Join(td, "grbfbnb"),
+					PrometheusDir: filepbth.Join(td, "prometheus"),
+					DocsDir:       filepbth.Join(td, "docs"),
 
-					GrafanaFolder:                   "multi-instance-dashboards",
-					MultiInstanceDashboardGroupings: []string{"project_id"},
+					GrbfbnbFolder:                   "multi-instbnce-dbshbobrds",
+					MultiInstbnceDbshbobrdGroupings: []string{"project_id"},
 				},
-				definitions.Default()...)
-			assert.NoError(t, err)
+				definitions.Defbult()...)
+			bssert.NoError(t, err)
 		})
 	})
 }

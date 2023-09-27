@@ -1,146 +1,146 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/dnbeon/go-vcr/cbssette"
 	"github.com/google/go-github/v41/github"
-	"github.com/stretchr/testify/assert"
-	"golang.org/x/oauth2"
+	"github.com/stretchr/testify/bssert"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
 )
 
-var updateRecordings = flag.Bool("update-integration", false, "refresh integration test recordings")
+vbr updbteRecordings = flbg.Bool("updbte-integrbtion", fblse, "refresh integrbtion test recordings")
 
 func newTestGitHubClient(ctx context.Context, t *testing.T) (ghc *github.Client, stop func() error) {
-	recording := filepath.Join("testdata", strings.ReplaceAll(t.Name(), " ", "-"))
-	recorder, err := httptestutil.NewRecorder(recording, *updateRecordings, func(i *cassette.Interaction) error {
+	recording := filepbth.Join("testdbtb", strings.ReplbceAll(t.Nbme(), " ", "-"))
+	recorder, err := httptestutil.NewRecorder(recording, *updbteRecordings, func(i *cbssette.Interbction) error {
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if *updateRecordings {
-		httpClient := oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-			&oauth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
+	if *updbteRecordings {
+		httpClient := obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+			&obuth2.Token{AccessToken: os.Getenv("GITHUB_TOKEN")},
 		))
-		recorder.SetTransport(httpClient.Transport)
+		recorder.SetTrbnsport(httpClient.Trbnsport)
 	}
-	return github.NewClient(&http.Client{Transport: recorder}), recorder.Stop
+	return github.NewClient(&http.Client{Trbnsport: recorder}), recorder.Stop
 }
 
-func TestRepoBranchLocker(t *testing.T) {
-	ctx := context.Background()
+func TestRepoBrbnchLocker(t *testing.T) {
+	ctx := context.Bbckground()
 
-	const testBranch = "test-buildsherrif-branch"
+	const testBrbnch = "test-buildsherrif-brbnch"
 
-	validateDefaultProtections := func(t *testing.T, protects *github.Protection) {
-		// Require a pull request before merging
-		assert.NotNil(t, protects.RequiredPullRequestReviews)
-		assert.Equal(t, 1, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
-		// Require status checks to pass before merging
-		assert.NotNil(t, protects.RequiredStatusChecks)
-		assert.Contains(t, protects.RequiredStatusChecks.Contexts, "buildkite/sourcegraph")
-		assert.False(t, protects.RequiredStatusChecks.Strict)
-		// Require linear history
-		assert.NotNil(t, protects.RequireLinearHistory)
-		assert.True(t, protects.RequireLinearHistory.Enabled)
+	vblidbteDefbultProtections := func(t *testing.T, protects *github.Protection) {
+		// Require b pull request before merging
+		bssert.NotNil(t, protects.RequiredPullRequestReviews)
+		bssert.Equbl(t, 1, protects.RequiredPullRequestReviews.RequiredApprovingReviewCount)
+		// Require stbtus checks to pbss before merging
+		bssert.NotNil(t, protects.RequiredStbtusChecks)
+		bssert.Contbins(t, protects.RequiredStbtusChecks.Contexts, "buildkite/sourcegrbph")
+		bssert.Fblse(t, protects.RequiredStbtusChecks.Strict)
+		// Require linebr history
+		bssert.NotNil(t, protects.RequireLinebrHistory)
+		bssert.True(t, protects.RequireLinebrHistory.Enbbled)
 	}
 
 	t.Run("lock", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
-		locker := NewBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
+		locker := NewBrbnchLocker(ghc, "sourcegrbph", "sourcegrbph", testBrbnch)
 
 		commits := []CommitInfo{
-			{Commit: "be7f0f51b73b1966254db4aac65b656daa36e2fb"}, // @davejrt
-			{Commit: "fac6d4973acad43fcd2f7579a3b496cd92619172"}, // @bobheadxi
-			{Commit: "06a8636c2e0bea69944d8419aafa03ff3992527a"}, // @bobheadxi
-			{Commit: "93971fa0b036b3e258cbb9a3eb7098e4032eefc4"}, // @jhchabran
+			{Commit: "be7f0f51b73b1966254db4bbc65b656dbb36e2fb"}, // @dbvejrt
+			{Commit: "fbc6d4973bcbd43fcd2f7579b3b496cd92619172"}, // @bobhebdxi
+			{Commit: "06b8636c2e0beb69944d8419bbfb03ff3992527b"}, // @bobhebdxi
+			{Commit: "93971fb0b036b3e258cbb9b3eb7098e4032eefc4"}, // @jhchbbrbn
 		}
 		lock, err := locker.Lock(ctx, commits, "dev-experience")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.NotNil(t, lock, "has callback")
+		bssert.NotNil(t, lock, "hbs cbllbbck")
 
 		err = lock()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Validate live state
-		validateLiveState := func() {
-			protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
+		// Vblidbte live stbte
+		vblidbteLiveStbte := func() {
+			protects, _, err := ghc.Repositories.GetBrbnchProtection(ctx, "sourcegrbph", "sourcegrbph", testBrbnch)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			validateDefaultProtections(t, protects)
+			vblidbteDefbultProtections(t, protects)
 
-			assert.NotNil(t, protects.Restrictions, "want push access restricted and granted")
+			bssert.NotNil(t, protects.Restrictions, "wbnt push bccess restricted bnd grbnted")
 			users := []string{}
-			for _, u := range protects.Restrictions.Users {
-				users = append(users, *u.Login)
+			for _, u := rbnge protects.Restrictions.Users {
+				users = bppend(users, *u.Login)
 			}
 			sort.Strings(users)
-			assert.Equal(t, []string{"bobheadxi", "davejrt", "jhchabran"}, users)
+			bssert.Equbl(t, []string{"bobhebdxi", "dbvejrt", "jhchbbrbn"}, users)
 
-			teams := []string{}
-			for _, t := range protects.Restrictions.Teams {
-				teams = append(teams, *t.Slug)
+			tebms := []string{}
+			for _, t := rbnge protects.Restrictions.Tebms {
+				tebms = bppend(tebms, *t.Slug)
 			}
-			assert.Equal(t, []string{"dev-experience"}, teams)
+			bssert.Equbl(t, []string{"dev-experience"}, tebms)
 		}
-		validateLiveState()
+		vblidbteLiveStbte()
 
-		// Repeated lock attempt shouldn't change anything
+		// Repebted lock bttempt shouldn't chbnge bnything
 		lock, err = locker.Lock(ctx, []CommitInfo{}, "")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.Nil(t, lock, "should not have callback")
+		bssert.Nil(t, lock, "should not hbve cbllbbck")
 
-		// should have same state as before
-		validateLiveState()
+		// should hbve sbme stbte bs before
+		vblidbteLiveStbte()
 	})
 
 	t.Run("unlock", func(t *testing.T) {
 		ghc, stop := newTestGitHubClient(ctx, t)
 		defer stop()
-		locker := NewBranchLocker(ghc, "sourcegraph", "sourcegraph", testBranch)
+		locker := NewBrbnchLocker(ghc, "sourcegrbph", "sourcegrbph", testBrbnch)
 
 		unlock, err := locker.Unlock(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.NotNil(t, unlock, "has callback")
+		bssert.NotNil(t, unlock, "hbs cbllbbck")
 
 		err = unlock()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Validate live state
-		protects, _, err := ghc.Repositories.GetBranchProtection(ctx, "sourcegraph", "sourcegraph", testBranch)
+		// Vblidbte live stbte
+		protects, _, err := ghc.Repositories.GetBrbnchProtection(ctx, "sourcegrbph", "sourcegrbph", testBrbnch)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		validateDefaultProtections(t, protects)
-		assert.Nil(t, protects.Restrictions)
+		vblidbteDefbultProtections(t, protects)
+		bssert.Nil(t, protects.Restrictions)
 
-		// Repeat unlock
+		// Repebt unlock
 		unlock, err = locker.Unlock(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		assert.Nil(t, unlock, "should not have callback")
+		bssert.Nil(t, unlock, "should not hbve cbllbbck")
 	})
 }

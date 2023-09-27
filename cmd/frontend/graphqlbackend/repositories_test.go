@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -8,27 +8,27 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func buildCursor(node *types.Repo) *string {
-	cursor := MarshalRepositoryCursor(
+	cursor := MbrshblRepositoryCursor(
 		&types.Cursor{
-			Column: "name",
-			Value:  fmt.Sprintf("%s@%d", node.Name, node.ID),
+			Column: "nbme",
+			Vblue:  fmt.Sprintf("%s@%d", node.Nbme, node.ID),
 		},
 	)
 
@@ -36,10 +36,10 @@ func buildCursor(node *types.Repo) *string {
 }
 
 func buildCursorBySize(node *types.Repo, size int64) *string {
-	cursor := MarshalRepositoryCursor(
+	cursor := MbrshblRepositoryCursor(
 		&types.Cursor{
 			Column: "gr.repo_size_bytes",
-			Value:  fmt.Sprintf("%d@%d", size, node.ID),
+			Vblue:  fmt.Sprintf("%d@%d", size, node.ID),
 		},
 	)
 
@@ -49,18 +49,18 @@ func buildCursorBySize(node *types.Repo, size int64) *string {
 func TestRepositoriesSourceType(t *testing.T) {
 	r1 := types.Repo{
 		ID:           1,
-		Name:         "repo1",
-		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypeGitHub},
+		Nbme:         "repo1",
+		ExternblRepo: bpi.ExternblRepoSpec{ServiceType: extsvc.TypeGitHub},
 	}
 	r2 := types.Repo{
 		ID:           2,
-		Name:         "repo2",
-		ExternalRepo: api.ExternalRepoSpec{ServiceType: extsvc.TypePerforce},
+		Nbme:         "repo2",
+		ExternblRepo: bpi.ExternblRepoSpec{ServiceType: extsvc.TypePerforce},
 	}
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListFunc.SetDefaultReturn([]*types.Repo{&r1, &r2}, nil)
-	repos.GetFunc.SetDefaultHook(func(ctx context.Context, repoID api.RepoID) (*types.Repo, error) {
+	repos.ListFunc.SetDefbultReturn([]*types.Repo{&r1, &r2}, nil)
+	repos.GetFunc.SetDefbultHook(func(ctx context.Context, repoID bpi.RepoID) (*types.Repo, error) {
 		if repoID == 1 {
 			return &r1, nil
 		}
@@ -69,16 +69,16 @@ func TestRepositoriesSourceType(t *testing.T) {
 	})
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					repositories(first: 10) {
 						nodes {
-						  name
+						  nbme
 						  sourceType
 						}
 					}
@@ -89,11 +89,11 @@ func TestRepositoriesSourceType(t *testing.T) {
 				  "repositories": {
 					"nodes": [
 					  {
-						"name": "repo1",
+						"nbme": "repo1",
 						"sourceType": "GIT_REPOSITORY"
 					  },
 					  {
-						"name": "repo2",
+						"nbme": "repo2",
 						"sourceType": "PERFORCE_DEPOT"
 					  }
 					]
@@ -104,15 +104,15 @@ func TestRepositoriesSourceType(t *testing.T) {
 	})
 }
 
-func TestRepositoriesCloneStatusFiltering(t *testing.T) {
+func TestRepositoriesCloneStbtusFiltering(t *testing.T) {
 	mockRepos := []*types.Repo{
-		{ID: 1, Name: "repo1"}, // not_cloned
-		{ID: 2, Name: "repo2"}, // cloning
-		{ID: 3, Name: "repo3"}, // cloned
+		{ID: 1, Nbme: "repo1"}, // not_cloned
+		{ID: 2, Nbme: "repo2"}, // cloning
+		{ID: 3, Nbme: "repo3"}, // cloned
 	}
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListFunc.SetDefaultHook(func(ctx context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
+	repos.ListFunc.SetDefbultHook(func(ctx context.Context, opt dbtbbbse.ReposListOptions) ([]*types.Repo, error) {
 		if opt.NoCloned {
 			return mockRepos[0:2], nil
 		}
@@ -120,40 +120,40 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 			return mockRepos[2:], nil
 		}
 
-		if opt.CloneStatus == types.CloneStatusNotCloned {
+		if opt.CloneStbtus == types.CloneStbtusNotCloned {
 			return mockRepos[:1], nil
 		}
-		if opt.CloneStatus == types.CloneStatusCloning {
+		if opt.CloneStbtus == types.CloneStbtusCloning {
 			return mockRepos[1:2], nil
 		}
-		if opt.CloneStatus == types.CloneStatusCloned {
+		if opt.CloneStbtus == types.CloneStbtusCloned {
 			return mockRepos[2:], nil
 		}
 
 		return mockRepos, nil
 	})
-	repos.CountFunc.SetDefaultReturn(len(mockRepos), nil)
+	repos.CountFunc.SetDefbultReturn(len(mockRepos), nil)
 
 	users := dbmocks.NewMockUserStore()
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefbultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
 
-	schema := mustParseGraphQLSchema(t, db)
+	schemb := mustPbrseGrbphQLSchemb(t, db)
 
-	t.Run("not as a site admin", func(t *testing.T) {
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	t.Run("not bs b site bdmin", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
 		RunTests(t, []*Test{
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
 					repositories(first: 3) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -161,12 +161,12 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo1" },
-							{ "name": "repo2" },
-							{ "name": "repo3" }
+							{ "nbme": "repo1" },
+							{ "nbme": "repo2" },
+							{ "nbme": "repo3" }
 						],
-						"totalCount": 0,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 0,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
@@ -174,18 +174,18 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 		})
 	})
 
-	t.Run("as a site admin", func(t *testing.T) {
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	t.Run("bs b site bdmin", func(t *testing.T) {
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 		RunTests(t, []*Test{
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
 					repositories(first: 3) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -193,27 +193,27 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo1" },
-							{ "name": "repo2" },
-							{ "name": "repo3" }
+							{ "nbme": "repo1" },
+							{ "nbme": "repo2" },
+							{ "nbme": "repo3" }
 						],
-						"totalCount": 3,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 3,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
-				// cloned and notCloned are true by default
-				// this test ensures the behavior is the same
+				Schemb: schemb,
+				// cloned bnd notCloned bre true by defbult
+				// this test ensures the behbvior is the sbme
 				// when setting them explicitly
 				Query: `
 				{
 					repositories(first: 3, cloned: true, notCloned: true) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -221,23 +221,23 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo1" },
-							{ "name": "repo2" },
-							{ "name": "repo3" }
+							{ "nbme": "repo1" },
+							{ "nbme": "repo2" },
+							{ "nbme": "repo3" }
 						],
-						"totalCount": 3,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 3,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
 					repositories(first: 2) {
-						nodes { name }
-						pageInfo { hasNextPage }
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -245,21 +245,21 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo1" },
-							{ "name": "repo2" }
+							{ "nbme": "repo1" },
+							{ "nbme": "repo2" }
 						],
-						"pageInfo": {"hasNextPage": true}
+						"pbgeInfo": {"hbsNextPbge": true}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
-					repositories(first: 3, cloned: false) {
-						nodes { name }
-						pageInfo { hasNextPage }
+					repositories(first: 3, cloned: fblse) {
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -267,21 +267,21 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo1" },
-							{ "name": "repo2" }
+							{ "nbme": "repo1" },
+							{ "nbme": "repo2" }
 						],
-						"pageInfo": {"hasNextPage": false}
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
-					repositories(first: 3, notCloned: false) {
-						nodes { name }
-						pageInfo { hasNextPage }
+					repositories(first: 3, notCloned: fblse) {
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -289,39 +289,39 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo3" }
+							{ "nbme": "repo3" }
 						],
-						"pageInfo": {"hasNextPage": false}
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
-					repositories(first: 3, notCloned: false, cloned: false) {
-						nodes { name }
-						pageInfo { hasNextPage }
+					repositories(first: 3, notCloned: fblse, cloned: fblse) {
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
 				ExpectedResult: "null",
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []any{"repositories"},
-						Message:       "excluding cloned and not cloned repos leaves an empty set",
-						ResolverError: errors.New("excluding cloned and not cloned repos leaves an empty set"),
+						Pbth:          []bny{"repositories"},
+						Messbge:       "excluding cloned bnd not cloned repos lebves bn empty set",
+						ResolverError: errors.New("excluding cloned bnd not cloned repos lebves bn empty set"),
 					},
 				},
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
-					repositories(first: 3, cloneStatus: CLONED) {
-						nodes { name }
-						pageInfo { hasNextPage }
+					repositories(first: 3, cloneStbtus: CLONED) {
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -329,20 +329,20 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo3" }
+							{ "nbme": "repo3" }
 						],
-						"pageInfo": {"hasNextPage": false}
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
-					repositories(first: 3, cloneStatus: CLONING) {
-						nodes { name }
-						pageInfo { hasNextPage }
+					repositories(first: 3, cloneStbtus: CLONING) {
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -350,20 +350,20 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo2" }
+							{ "nbme": "repo2" }
 						],
-						"pageInfo": {"hasNextPage": false}
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 			},
 			{
-				Schema: schema,
+				Schemb: schemb,
 				Query: `
 				{
-					repositories(first: 3, cloneStatus: NOT_CLONED) {
-						nodes { name }
-						pageInfo { hasNextPage }
+					repositories(first: 3, cloneStbtus: NOT_CLONED) {
+						nodes { nbme }
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -371,9 +371,9 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo1" }
+							{ "nbme": "repo1" }
 						],
-						"pageInfo": {"hasNextPage": false}
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
@@ -383,33 +383,33 @@ func TestRepositoriesCloneStatusFiltering(t *testing.T) {
 }
 
 func TestRepositoriesIndexingFiltering(t *testing.T) {
-	mockRepos := map[string]bool{
+	mockRepos := mbp[string]bool{
 		"repo-indexed-1":     true,
 		"repo-indexed-2":     true,
-		"repo-not-indexed-3": false,
-		"repo-not-indexed-4": false,
+		"repo-not-indexed-3": fblse,
+		"repo-not-indexed-4": fblse,
 	}
 
-	filterRepos := func(t *testing.T, opt database.ReposListOptions) []*types.Repo {
+	filterRepos := func(t *testing.T, opt dbtbbbse.ReposListOptions) []*types.Repo {
 		t.Helper()
-		var repos types.Repos
-		for n, idx := range mockRepos {
+		vbr repos types.Repos
+		for n, idx := rbnge mockRepos {
 			if opt.NoIndexed && idx {
 				continue
 			}
 			if opt.OnlyIndexed && !idx {
 				continue
 			}
-			repos = append(repos, &types.Repo{Name: api.RepoName(n)})
+			repos = bppend(repos, &types.Repo{Nbme: bpi.RepoNbme(n)})
 		}
 		sort.Sort(repos)
 		return repos
 	}
 	repos := dbmocks.NewMockRepoStore()
-	repos.ListFunc.SetDefaultHook(func(_ context.Context, opt database.ReposListOptions) ([]*types.Repo, error) {
+	repos.ListFunc.SetDefbultHook(func(_ context.Context, opt dbtbbbse.ReposListOptions) ([]*types.Repo, error) {
 		return filterRepos(t, opt), nil
 	})
-	repos.CountFunc.SetDefaultHook(func(_ context.Context, opt database.ReposListOptions) (int, error) {
+	repos.CountFunc.SetDefbultHook(func(_ context.Context, opt dbtbbbse.ReposListOptions) (int, error) {
 		repos := filterRepos(t, opt)
 		return len(repos), nil
 	})
@@ -417,22 +417,22 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.UsersFunc.SetDefaultReturn(users)
+	db.ReposFunc.SetDefbultReturn(repos)
+	db.UsersFunc.SetDefbultReturn(users)
 
-	schema := mustParseGraphQLSchema(t, db)
+	schemb := mustPbrseGrbphQLSchemb(t, db)
 
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
 
 	RunTests(t, []*Test{
 		{
-			Schema: schema,
+			Schemb: schemb,
 			Query: `
 				{
 					repositories(first: 5) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -440,28 +440,28 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo-indexed-1" },
-							{ "name": "repo-indexed-2" },
-							{ "name": "repo-not-indexed-3" },
-							{ "name": "repo-not-indexed-4" }
+							{ "nbme": "repo-indexed-1" },
+							{ "nbme": "repo-indexed-2" },
+							{ "nbme": "repo-not-indexed-3" },
+							{ "nbme": "repo-not-indexed-4" }
 						],
-						"totalCount": 4,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 4,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 		},
 		{
-			Schema: schema,
-			// indexed and notIndexed are true by default
-			// this test ensures the behavior is the same
+			Schemb: schemb,
+			// indexed bnd notIndexed bre true by defbult
+			// this test ensures the behbvior is the sbme
 			// when setting them explicitly
 			Query: `
 				{
 					repositories(first: 5, indexed: true, notIndexed: true) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -469,25 +469,25 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo-indexed-1" },
-							{ "name": "repo-indexed-2" },
-							{ "name": "repo-not-indexed-3" },
-							{ "name": "repo-not-indexed-4" }
+							{ "nbme": "repo-indexed-1" },
+							{ "nbme": "repo-indexed-2" },
+							{ "nbme": "repo-not-indexed-3" },
+							{ "nbme": "repo-not-indexed-4" }
 						],
-						"totalCount": 4,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 4,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 		},
 		{
-			Schema: schema,
+			Schemb: schemb,
 			Query: `
 				{
-					repositories(first: 5, indexed: false) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+					repositories(first: 5, indexed: fblse) {
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -495,23 +495,23 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo-not-indexed-3" },
-							{ "name": "repo-not-indexed-4" }
+							{ "nbme": "repo-not-indexed-3" },
+							{ "nbme": "repo-not-indexed-4" }
 						],
-						"totalCount": 2,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 2,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 		},
 		{
-			Schema: schema,
+			Schemb: schemb,
 			Query: `
 				{
-					repositories(first: 5, notIndexed: false) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+					repositories(first: 5, notIndexed: fblse) {
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
@@ -519,74 +519,74 @@ func TestRepositoriesIndexingFiltering(t *testing.T) {
 				{
 					"repositories": {
 						"nodes": [
-							{ "name": "repo-indexed-1" },
-							{ "name": "repo-indexed-2" }
+							{ "nbme": "repo-indexed-1" },
+							{ "nbme": "repo-indexed-2" }
 						],
-						"totalCount": 2,
-						"pageInfo": {"hasNextPage": false}
+						"totblCount": 2,
+						"pbgeInfo": {"hbsNextPbge": fblse}
 					}
 				}
 			`,
 		},
 		{
-			Schema: schema,
+			Schemb: schemb,
 			Query: `
 				{
-					repositories(first: 5, notIndexed: false, indexed: false) {
-						nodes { name }
-						totalCount
-						pageInfo { hasNextPage }
+					repositories(first: 5, notIndexed: fblse, indexed: fblse) {
+						nodes { nbme }
+						totblCount
+						pbgeInfo { hbsNextPbge }
 					}
 				}
 			`,
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"repositories"},
-					Message:       "excluding indexed and not indexed repos leaves an empty set",
-					ResolverError: errors.New("excluding indexed and not indexed repos leaves an empty set"),
+					Pbth:          []bny{"repositories"},
+					Messbge:       "excluding indexed bnd not indexed repos lebves bn empty set",
+					ResolverError: errors.New("excluding indexed bnd not indexed repos lebves bn empty set"),
 				},
 			},
 		},
 	})
 }
 
-func TestRepositories_CursorPagination(t *testing.T) {
+func TestRepositories_CursorPbginbtion(t *testing.T) {
 	mockRepos := []*types.Repo{
-		{ID: 0, Name: "repo1"},
-		{ID: 1, Name: "repo2"},
-		{ID: 2, Name: "repo3"},
+		{ID: 0, Nbme: "repo1"},
+		{ID: 1, Nbme: "repo2"},
+		{ID: 2, Nbme: "repo3"},
 	}
 
 	repos := dbmocks.NewMockRepoStore()
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
-	buildQuery := func(first int, after string) string {
-		var args []string
+	buildQuery := func(first int, bfter string) string {
+		vbr brgs []string
 		if first != 0 {
-			args = append(args, fmt.Sprintf("first: %d", first))
+			brgs = bppend(brgs, fmt.Sprintf("first: %d", first))
 		}
-		if after != "" {
-			args = append(args, fmt.Sprintf("after: %q", after))
+		if bfter != "" {
+			brgs = bppend(brgs, fmt.Sprintf("bfter: %q", bfter))
 		}
 
-		return fmt.Sprintf(`{ repositories(%s) { nodes { name } pageInfo { endCursor } } }`, strings.Join(args, ", "))
+		return fmt.Sprintf(`{ repositories(%s) { nodes { nbme } pbgeInfo { endCursor } } }`, strings.Join(brgs, ", "))
 	}
 
-	t.Run("Initial page without a cursor present", func(t *testing.T) {
-		repos.ListFunc.SetDefaultReturn(mockRepos[0:2], nil)
+	t.Run("Initibl pbge without b cursor present", func(t *testing.T) {
+		repos.ListFunc.SetDefbultReturn(mockRepos[0:2], nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  buildQuery(1, ""),
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
-							"name": "repo1"
+							"nbme": "repo1"
 						}],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "%s"
 						}
 					}
@@ -595,19 +595,19 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("Second page in ascending order", func(t *testing.T) {
-		repos.ListFunc.SetDefaultReturn(mockRepos[1:], nil)
+	t.Run("Second pbge in bscending order", func(t *testing.T) {
+		repos.ListFunc.SetDefbultReturn(mockRepos[1:], nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  buildQuery(1, *buildCursor(mockRepos[0])),
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
-							"name": "repo2"
+							"nbme": "repo2"
 						}],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "%s"
 						}
 					}
@@ -616,19 +616,19 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("Second page in descending order", func(t *testing.T) {
-		repos.ListFunc.SetDefaultReturn(mockRepos[1:], nil)
+	t.Run("Second pbge in descending order", func(t *testing.T) {
+		repos.ListFunc.SetDefbultReturn(mockRepos[1:], nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  buildQuery(1, *buildCursor(mockRepos[0])),
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
-							"name": "repo2"
+							"nbme": "repo2"
 						}],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "%s"
 						}
 					}
@@ -637,23 +637,23 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("Initial page with no further rows to fetch", func(t *testing.T) {
-		repos.ListFunc.SetDefaultReturn(mockRepos, nil)
+	t.Run("Initibl pbge with no further rows to fetch", func(t *testing.T) {
+		repos.ListFunc.SetDefbultReturn(mockRepos, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  buildQuery(3, ""),
 			ExpectedResult: fmt.Sprintf(`
 				{
 					"repositories": {
 						"nodes": [{
-							"name": "repo1"
+							"nbme": "repo1"
 						}, {
-							"name": "repo2"
+							"nbme": "repo2"
 						}, {
-							"name": "repo3"
+							"nbme": "repo3"
 						}],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": "%s"
 						}
 					}
@@ -663,16 +663,16 @@ func TestRepositories_CursorPagination(t *testing.T) {
 	})
 
 	t.Run("With no repositories present", func(t *testing.T) {
-		repos.ListFunc.SetDefaultReturn(nil, nil)
+		repos.ListFunc.SetDefbultReturn(nil, nil)
 
 		RunTest(t, &Test{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query:  buildQuery(1, ""),
 			ExpectedResult: `
 				{
 					"repositories": {
 						"nodes": [],
-						"pageInfo": {
+						"pbgeInfo": {
 						  "endCursor": null
 						}
 					}
@@ -681,469 +681,469 @@ func TestRepositories_CursorPagination(t *testing.T) {
 		})
 	})
 
-	t.Run("With an invalid cursor provided", func(t *testing.T) {
-		repos.ListFunc.SetDefaultReturn(nil, nil)
+	t.Run("With bn invblid cursor provided", func(t *testing.T) {
+		repos.ListFunc.SetDefbultReturn(nil, nil)
 
 		RunTest(t, &Test{
-			Schema:         mustParseGraphQLSchema(t, db),
-			Query:          buildQuery(1, "invalid-cursor-value"),
+			Schemb:         mustPbrseGrbphQLSchemb(t, db),
+			Query:          buildQuery(1, "invblid-cursor-vblue"),
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Path:          []any{"repositories", "nodes"},
-					Message:       `cannot unmarshal repository cursor type: ""`,
-					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
+					Pbth:          []bny{"repositories", "nodes"},
+					Messbge:       `cbnnot unmbrshbl repository cursor type: ""`,
+					ResolverError: errors.New(`cbnnot unmbrshbl repository cursor type: ""`),
 				},
 				{
-					Path:          []any{"repositories", "pageInfo"},
-					Message:       `cannot unmarshal repository cursor type: ""`,
-					ResolverError: errors.New(`cannot unmarshal repository cursor type: ""`),
+					Pbth:          []bny{"repositories", "pbgeInfo"},
+					Messbge:       `cbnnot unmbrshbl repository cursor type: ""`,
+					ResolverError: errors.New(`cbnnot unmbrshbl repository cursor type: ""`),
 				},
 			},
 		})
 	})
 }
 
-func TestRepositories_Integration(t *testing.T) {
+func TestRepositories_Integrbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	schema := mustParseGraphQLSchema(t, db)
+	schemb := mustPbrseGrbphQLSchemb(t, db)
 
 	repos := []struct {
 		repo        *types.Repo
 		size        int64
-		cloneStatus types.CloneStatus
+		cloneStbtus types.CloneStbtus
 		indexed     bool
-		lastError   string
+		lbstError   string
 	}{
-		{repo: &types.Repo{Name: "repo0"}, size: 20, cloneStatus: types.CloneStatusNotCloned},
-		{repo: &types.Repo{Name: "repo1"}, size: 30, cloneStatus: types.CloneStatusNotCloned, lastError: "repo1 error"},
-		{repo: &types.Repo{Name: "repo2"}, size: 40, cloneStatus: types.CloneStatusCloning},
-		{repo: &types.Repo{Name: "repo3"}, size: 50, cloneStatus: types.CloneStatusCloning, lastError: "repo3 error"},
-		{repo: &types.Repo{Name: "repo4"}, size: 60, cloneStatus: types.CloneStatusCloned},
-		{repo: &types.Repo{Name: "repo5"}, size: 10, cloneStatus: types.CloneStatusCloned, lastError: "repo5 error"},
-		{repo: &types.Repo{Name: "repo6"}, size: 70, cloneStatus: types.CloneStatusCloned, indexed: false},
-		{repo: &types.Repo{Name: "repo7"}, size: 80, cloneStatus: types.CloneStatusCloned, indexed: true},
+		{repo: &types.Repo{Nbme: "repo0"}, size: 20, cloneStbtus: types.CloneStbtusNotCloned},
+		{repo: &types.Repo{Nbme: "repo1"}, size: 30, cloneStbtus: types.CloneStbtusNotCloned, lbstError: "repo1 error"},
+		{repo: &types.Repo{Nbme: "repo2"}, size: 40, cloneStbtus: types.CloneStbtusCloning},
+		{repo: &types.Repo{Nbme: "repo3"}, size: 50, cloneStbtus: types.CloneStbtusCloning, lbstError: "repo3 error"},
+		{repo: &types.Repo{Nbme: "repo4"}, size: 60, cloneStbtus: types.CloneStbtusCloned},
+		{repo: &types.Repo{Nbme: "repo5"}, size: 10, cloneStbtus: types.CloneStbtusCloned, lbstError: "repo5 error"},
+		{repo: &types.Repo{Nbme: "repo6"}, size: 70, cloneStbtus: types.CloneStbtusCloned, indexed: fblse},
+		{repo: &types.Repo{Nbme: "repo7"}, size: 80, cloneStbtus: types.CloneStbtusCloned, indexed: true},
 	}
 
-	for _, rsc := range repos {
-		if err := db.Repos().Create(ctx, rsc.repo); err != nil {
-			t.Fatal(err)
+	for _, rsc := rbnge repos {
+		if err := db.Repos().Crebte(ctx, rsc.repo); err != nil {
+			t.Fbtbl(err)
 		}
 
 		gitserverRepos := db.GitserverRepos()
-		if err := gitserverRepos.SetRepoSize(ctx, rsc.repo.Name, rsc.size, "shard-1"); err != nil {
-			t.Fatal(err)
+		if err := gitserverRepos.SetRepoSize(ctx, rsc.repo.Nbme, rsc.size, "shbrd-1"); err != nil {
+			t.Fbtbl(err)
 		}
-		if err := gitserverRepos.SetCloneStatus(ctx, rsc.repo.Name, rsc.cloneStatus, "shard-1"); err != nil {
-			t.Fatal(err)
+		if err := gitserverRepos.SetCloneStbtus(ctx, rsc.repo.Nbme, rsc.cloneStbtus, "shbrd-1"); err != nil {
+			t.Fbtbl(err)
 		}
 
 		if rsc.indexed {
-			err := db.ZoektRepos().UpdateIndexStatuses(ctx, zoekt.ReposMap{
+			err := db.ZoektRepos().UpdbteIndexStbtuses(ctx, zoekt.ReposMbp{
 				uint32(rsc.repo.ID): {},
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
-		if msg := rsc.lastError; msg != "" {
-			if err := gitserverRepos.SetLastError(ctx, rsc.repo.Name, msg, "shard-1"); err != nil {
-				t.Fatal(err)
+		if msg := rsc.lbstError; msg != "" {
+			if err := gitserverRepos.SetLbstError(ctx, rsc.repo.Nbme, msg, "shbrd-1"); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 	}
 
-	admin, err := db.Users().Create(ctx, database.NewUser{Username: "admin", Password: "admin"})
+	bdmin, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "bdmin", Pbssword: "bdmin"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
+	ctx = bctor.WithActor(ctx, bctor.FromUser(bdmin.ID))
 
 	tests := []repositoriesQueryTest{
 		// first
 		{
-			args:             "first: 2",
-			wantRepos:        []string{"repo0", "repo1"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[1].repo),
+			brgs:             "first: 2",
+			wbntRepos:        []string{"repo0", "repo1"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[1].repo),
 		},
-		// second page with first, after args
+		// second pbge with first, bfter brgs
 		{
-			args:             fmt.Sprintf(`first: 2, after: "%s"`, *buildCursor(repos[0].repo)),
-			wantRepos:        []string{"repo1", "repo2"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[1].repo),
-			wantEndCursor:    buildCursor(repos[2].repo),
+			brgs:             fmt.Sprintf(`first: 2, bfter: "%s"`, *buildCursor(repos[0].repo)),
+			wbntRepos:        []string{"repo1", "repo2"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[1].repo),
+			wbntEndCursor:    buildCursor(repos[2].repo),
 		},
-		// last page with first, after args
+		// lbst pbge with first, bfter brgs
 		{
-			args:             fmt.Sprintf(`first: 2, after: "%s"`, *buildCursor(repos[5].repo)),
-			wantRepos:        []string{"repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[6].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             fmt.Sprintf(`first: 2, bfter: "%s"`, *buildCursor(repos[5].repo)),
+			wbntRepos:        []string{"repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[6].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
-		// last
+		// lbst
 		{
-			args:             "last: 2",
-			wantRepos:        []string{"repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[6].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             "lbst: 2",
+			wbntRepos:        []string{"repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[6].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
-		// second last page with last, before args
+		// second lbst pbge with lbst, before brgs
 		{
-			args:             fmt.Sprintf(`last: 2, before: "%s"`, *buildCursor(repos[6].repo)),
-			wantRepos:        []string{"repo4", "repo5"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[4].repo),
-			wantEndCursor:    buildCursor(repos[5].repo),
+			brgs:             fmt.Sprintf(`lbst: 2, before: "%s"`, *buildCursor(repos[6].repo)),
+			wbntRepos:        []string{"repo4", "repo5"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[4].repo),
+			wbntEndCursor:    buildCursor(repos[5].repo),
 		},
-		// back to first page with last, before args
+		// bbck to first pbge with lbst, before brgs
 		{
-			args:             fmt.Sprintf(`last: 2, before: "%s"`, *buildCursor(repos[2].repo)),
-			wantRepos:        []string{"repo0", "repo1"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[1].repo),
+			brgs:             fmt.Sprintf(`lbst: 2, before: "%s"`, *buildCursor(repos[2].repo)),
+			wbntRepos:        []string{"repo0", "repo1"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[1].repo),
 		},
 		// descending first
 		{
-			args:             "first: 2, descending: true",
-			wantRepos:        []string{"repo7", "repo6"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[7].repo),
-			wantEndCursor:    buildCursor(repos[6].repo),
+			brgs:             "first: 2, descending: true",
+			wbntRepos:        []string{"repo7", "repo6"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[7].repo),
+			wbntEndCursor:    buildCursor(repos[6].repo),
 		},
-		// descending second page with first, after args
+		// descending second pbge with first, bfter brgs
 		{
-			args:             fmt.Sprintf(`first: 2, descending: true, after: "%s"`, *buildCursor(repos[6].repo)),
-			wantRepos:        []string{"repo5", "repo4"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[5].repo),
-			wantEndCursor:    buildCursor(repos[4].repo),
+			brgs:             fmt.Sprintf(`first: 2, descending: true, bfter: "%s"`, *buildCursor(repos[6].repo)),
+			wbntRepos:        []string{"repo5", "repo4"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[5].repo),
+			wbntEndCursor:    buildCursor(repos[4].repo),
 		},
-		// descending last page with first, after args
+		// descending lbst pbge with first, bfter brgs
 		{
-			args:             fmt.Sprintf(`first: 2, descending: true, after: "%s"`, *buildCursor(repos[2].repo)),
-			wantRepos:        []string{"repo1", "repo0"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[1].repo),
-			wantEndCursor:    buildCursor(repos[0].repo),
+			brgs:             fmt.Sprintf(`first: 2, descending: true, bfter: "%s"`, *buildCursor(repos[2].repo)),
+			wbntRepos:        []string{"repo1", "repo0"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[1].repo),
+			wbntEndCursor:    buildCursor(repos[0].repo),
 		},
-		// descending last
+		// descending lbst
 		{
-			args:             "last: 2, descending: true",
-			wantRepos:        []string{"repo1", "repo0"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[1].repo),
-			wantEndCursor:    buildCursor(repos[0].repo),
+			brgs:             "lbst: 2, descending: true",
+			wbntRepos:        []string{"repo1", "repo0"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[1].repo),
+			wbntEndCursor:    buildCursor(repos[0].repo),
 		},
-		// descending second last page with last, before args
+		// descending second lbst pbge with lbst, before brgs
 		{
-			args:             fmt.Sprintf(`last: 2, descending: true, before: "%s"`, *buildCursor(repos[3].repo)),
-			wantRepos:        []string{"repo5", "repo4"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: true,
-			wantStartCursor:  buildCursor(repos[5].repo),
-			wantEndCursor:    buildCursor(repos[4].repo),
+			brgs:             fmt.Sprintf(`lbst: 2, descending: true, before: "%s"`, *buildCursor(repos[3].repo)),
+			wbntRepos:        []string{"repo5", "repo4"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: true,
+			wbntStbrtCursor:  buildCursor(repos[5].repo),
+			wbntEndCursor:    buildCursor(repos[4].repo),
 		},
-		// descending back to first page with last, before args
+		// descending bbck to first pbge with lbst, before brgs
 		{
-			args:             fmt.Sprintf(`last: 2, descending: true, before: "%s"`, *buildCursor(repos[5].repo)),
-			wantRepos:        []string{"repo7", "repo6"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[7].repo),
-			wantEndCursor:    buildCursor(repos[6].repo),
+			brgs:             fmt.Sprintf(`lbst: 2, descending: true, before: "%s"`, *buildCursor(repos[5].repo)),
+			wbntRepos:        []string{"repo7", "repo6"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[7].repo),
+			wbntEndCursor:    buildCursor(repos[6].repo),
 		},
 		// cloned
 		{
-			// cloned only says whether to "Include cloned repositories.", it doesn't exclude non-cloned.
-			args:             "first: 10, cloned: true",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			// cloned only sbys whether to "Include cloned repositories.", it doesn't exclude non-cloned.
+			brgs:             "first: 10, cloned: true",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:             "first: 10, cloned: false",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3"},
-			wantTotalCount:   4,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[3].repo),
+			brgs:             "first: 10, cloned: fblse",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3"},
+			wbntTotblCount:   4,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[3].repo),
 		},
 		{
-			args:             "cloned: false, first: 2",
-			wantRepos:        []string{"repo0", "repo1"},
-			wantTotalCount:   4,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[1].repo),
+			brgs:             "cloned: fblse, first: 2",
+			wbntRepos:        []string{"repo0", "repo1"},
+			wbntTotblCount:   4,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[1].repo),
 		},
 		// notCloned
 		{
-			args:             "first: 10, notCloned: true",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             "first: 10, notCloned: true",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:             "first: 10, notCloned: false",
-			wantRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   4,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[4].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             "first: 10, notCloned: fblse",
+			wbntRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   4,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[4].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
-		// failedFetch
+		// fbiledFetch
 		{
-			args:             "first: 10, failedFetch: true",
-			wantRepos:        []string{"repo1", "repo3", "repo5"},
-			wantTotalCount:   3,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[1].repo),
-			wantEndCursor:    buildCursor(repos[5].repo),
-		},
-		{
-			args:             "failedFetch: true, first: 2",
-			wantRepos:        []string{"repo1", "repo3"},
-			wantTotalCount:   3,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[1].repo),
-			wantEndCursor:    buildCursor(repos[3].repo),
+			brgs:             "first: 10, fbiledFetch: true",
+			wbntRepos:        []string{"repo1", "repo3", "repo5"},
+			wbntTotblCount:   3,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[1].repo),
+			wbntEndCursor:    buildCursor(repos[5].repo),
 		},
 		{
-			args:             "first: 10, failedFetch: false",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
-		},
-		// cloneStatus
-		{
-			args:             "first: 10, cloneStatus:NOT_CLONED",
-			wantRepos:        []string{"repo0", "repo1"},
-			wantTotalCount:   2,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[1].repo),
+			brgs:             "fbiledFetch: true, first: 2",
+			wbntRepos:        []string{"repo1", "repo3"},
+			wbntTotblCount:   3,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[1].repo),
+			wbntEndCursor:    buildCursor(repos[3].repo),
 		},
 		{
-			args:             "first: 10, cloneStatus:CLONING",
-			wantRepos:        []string{"repo2", "repo3"},
-			wantTotalCount:   2,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[2].repo),
-			wantEndCursor:    buildCursor(repos[3].repo),
+			brgs:             "first: 10, fbiledFetch: fblse",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
+		},
+		// cloneStbtus
+		{
+			brgs:             "first: 10, cloneStbtus:NOT_CLONED",
+			wbntRepos:        []string{"repo0", "repo1"},
+			wbntTotblCount:   2,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[1].repo),
 		},
 		{
-			args:             "first: 10, cloneStatus:CLONED",
-			wantRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   4,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[4].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             "first: 10, cloneStbtus:CLONING",
+			wbntRepos:        []string{"repo2", "repo3"},
+			wbntTotblCount:   2,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[2].repo),
+			wbntEndCursor:    buildCursor(repos[3].repo),
 		},
 		{
-			args:             "cloneStatus:NOT_CLONED, first: 1",
-			wantRepos:        []string{"repo0"},
-			wantTotalCount:   2,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[0].repo),
+			brgs:             "first: 10, cloneStbtus:CLONED",
+			wbntRepos:        []string{"repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   4,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[4].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
+		},
+		{
+			brgs:             "cloneStbtus:NOT_CLONED, first: 1",
+			wbntRepos:        []string{"repo0"},
+			wbntTotblCount:   2,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[0].repo),
 		},
 		// indexed
 		{
-			// indexed only says whether to "Include indexed repositories.", it doesn't exclude non-indexed.
-			args:             "first: 10, indexed: true",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			// indexed only sbys whether to "Include indexed repositories.", it doesn't exclude non-indexed.
+			brgs:             "first: 10, indexed: true",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:             "first: 10, indexed: false",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
-			wantTotalCount:   7,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[6].repo),
+			brgs:             "first: 10, indexed: fblse",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6"},
+			wbntTotblCount:   7,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[6].repo),
 		},
 		{
-			args:             "indexed: false, first: 2",
-			wantRepos:        []string{"repo0", "repo1"},
-			wantTotalCount:   7,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[1].repo),
+			brgs:             "indexed: fblse, first: 2",
+			wbntRepos:        []string{"repo0", "repo1"},
+			wbntTotblCount:   7,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[1].repo),
 		},
 		// notIndexed
 		{
-			args:             "first: 10, notIndexed: true",
-			wantRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
-			wantTotalCount:   8,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[0].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             "first: 10, notIndexed: true",
+			wbntRepos:        []string{"repo0", "repo1", "repo2", "repo3", "repo4", "repo5", "repo6", "repo7"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[0].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:             "first: 10, notIndexed: false",
-			wantRepos:        []string{"repo7"},
-			wantTotalCount:   1,
-			wantNextPage:     false,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursor(repos[7].repo),
-			wantEndCursor:    buildCursor(repos[7].repo),
+			brgs:             "first: 10, notIndexed: fblse",
+			wbntRepos:        []string{"repo7"},
+			wbntTotblCount:   1,
+			wbntNextPbge:     fblse,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursor(repos[7].repo),
+			wbntEndCursor:    buildCursor(repos[7].repo),
 		},
 		{
-			args:             "orderBy:SIZE, descending:false, first: 5",
-			wantRepos:        []string{"repo5", "repo0", "repo1", "repo2", "repo3"},
-			wantTotalCount:   8,
-			wantNextPage:     true,
-			wantPreviousPage: false,
-			wantStartCursor:  buildCursorBySize(repos[5].repo, repos[5].size),
-			wantEndCursor:    buildCursorBySize(repos[3].repo, repos[3].size),
+			brgs:             "orderBy:SIZE, descending:fblse, first: 5",
+			wbntRepos:        []string{"repo5", "repo0", "repo1", "repo2", "repo3"},
+			wbntTotblCount:   8,
+			wbntNextPbge:     true,
+			wbntPreviousPbge: fblse,
+			wbntStbrtCursor:  buildCursorBySize(repos[5].repo, repos[5].size),
+			wbntEndCursor:    buildCursorBySize(repos[3].repo, repos[3].size),
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.args, func(t *testing.T) {
-			runRepositoriesQuery(t, ctx, schema, tt)
+	for _, tt := rbnge tests {
+		t.Run(tt.brgs, func(t *testing.T) {
+			runRepositoriesQuery(t, ctx, schemb, tt)
 		})
 	}
 }
 
 type repositoriesQueryTest struct {
-	args             string
-	wantRepos        []string
-	wantTotalCount   int
-	wantEndCursor    *string
-	wantStartCursor  *string
-	wantNextPage     bool
-	wantPreviousPage bool
+	brgs             string
+	wbntRepos        []string
+	wbntTotblCount   int
+	wbntEndCursor    *string
+	wbntStbrtCursor  *string
+	wbntNextPbge     bool
+	wbntPreviousPbge bool
 }
 
-func runRepositoriesQuery(t *testing.T, ctx context.Context, schema *graphql.Schema, want repositoriesQueryTest) {
+func runRepositoriesQuery(t *testing.T, ctx context.Context, schemb *grbphql.Schemb, wbnt repositoriesQueryTest) {
 	t.Helper()
 
 	type node struct {
-		Name string `json:"name"`
+		Nbme string `json:"nbme"`
 	}
 
-	type pageInfo struct {
-		HasNextPage     bool    `json:"hasNextPage"`
-		HasPreviousPage bool    `json:"hasPreviousPage"`
-		StartCursor     *string `json:"startCursor"`
+	type pbgeInfo struct {
+		HbsNextPbge     bool    `json:"hbsNextPbge"`
+		HbsPreviousPbge bool    `json:"hbsPreviousPbge"`
+		StbrtCursor     *string `json:"stbrtCursor"`
 		EndCursor       *string `json:"endCursor"`
 	}
 
 	type repositories struct {
 		Nodes      []node   `json:"nodes"`
-		TotalCount *int     `json:"totalCount"`
-		PageInfo   pageInfo `json:"pageInfo"`
+		TotblCount *int     `json:"totblCount"`
+		PbgeInfo   pbgeInfo `json:"pbgeInfo"`
 	}
 
 	type expected struct {
 		Repositories repositories `json:"repositories"`
 	}
 
-	nodes := make([]node, 0, len(want.wantRepos))
-	for _, name := range want.wantRepos {
-		nodes = append(nodes, node{Name: name})
+	nodes := mbke([]node, 0, len(wbnt.wbntRepos))
+	for _, nbme := rbnge wbnt.wbntRepos {
+		nodes = bppend(nodes, node{Nbme: nbme})
 	}
 
 	ex := expected{
 		Repositories: repositories{
 			Nodes:      nodes,
-			TotalCount: &want.wantTotalCount,
-			PageInfo: pageInfo{
-				HasNextPage:     want.wantNextPage,
-				HasPreviousPage: want.wantPreviousPage,
-				StartCursor:     want.wantStartCursor,
-				EndCursor:       want.wantEndCursor,
+			TotblCount: &wbnt.wbntTotblCount,
+			PbgeInfo: pbgeInfo{
+				HbsNextPbge:     wbnt.wbntNextPbge,
+				HbsPreviousPbge: wbnt.wbntPreviousPbge,
+				StbrtCursor:     wbnt.wbntStbrtCursor,
+				EndCursor:       wbnt.wbntEndCursor,
 			},
 		},
 	}
 
-	marshaled, err := json.Marshal(ex)
+	mbrshbled, err := json.Mbrshbl(ex)
 	if err != nil {
-		t.Fatalf("failed to marshal expected repositories query result: %s", err)
+		t.Fbtblf("fbiled to mbrshbl expected repositories query result: %s", err)
 	}
 
 	query := fmt.Sprintf(`
 	{ 
 		repositories(%s) { 
 			nodes { 
-				name 
+				nbme 
 			} 
-			totalCount 
-			pageInfo { 
-				hasNextPage 
-				hasPreviousPage 
-				startCursor 
+			totblCount 
+			pbgeInfo { 
+				hbsNextPbge 
+				hbsPreviousPbge 
+				stbrtCursor 
 				endCursor 
 			}
 		}
-	}`, want.args)
+	}`, wbnt.brgs)
 
 	RunTest(t, &Test{
 		Context:        ctx,
-		Schema:         schema,
+		Schemb:         schemb,
 		Query:          query,
-		ExpectedResult: string(marshaled),
+		ExpectedResult: string(mbrshbled),
 	})
 }

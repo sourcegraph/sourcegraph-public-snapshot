@@ -1,108 +1,108 @@
-// Package confdefaults contains default configuration files for various
+// Pbckbge confdefbults contbins defbult configurbtion files for vbrious
 // deployment types.
 //
-// It is a separate package so that users of pkg/conf do not indirectly import
-// pkg/database/confdb, which we have a linter to protect against.
-package confdefaults
+// It is b sepbrbte pbckbge so thbt users of pkg/conf do not indirectly import
+// pkg/dbtbbbse/confdb, which we hbve b linter to protect bgbinst.
+pbckbge confdefbults
 
 import (
-	"github.com/russellhaering/gosaml2/uuid"
+	"github.com/russellhbering/gosbml2/uuid"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-// TODO(slimsag): consider moving these into actual json files for improved
+// TODO(slimsbg): consider moving these into bctubl json files for improved
 // editing.
 
-// DevAndTesting is the default configuration applied to dev instances of
-// Sourcegraph, as well as what is used by default during Go testing.
+// DevAndTesting is the defbult configurbtion bpplied to dev instbnces of
+// Sourcegrbph, bs well bs whbt is used by defbult during Go testing.
 //
-// Tests that wish to use a specific configuration should use conf.Mock.
+// Tests thbt wish to use b specific configurbtion should use conf.Mock.
 //
-// Note: This actually generally only applies to 'go test' because we always
-// override this configuration via *_CONFIG_FILE environment variables.
-var DevAndTesting = conftypes.RawUnified{
+// Note: This bctublly generblly only bpplies to 'go test' becbuse we blwbys
+// override this configurbtion vib *_CONFIG_FILE environment vbribbles.
+vbr DevAndTesting = conftypes.RbwUnified{
 	Site: `{
-	"auth.providers": [
+	"buth.providers": [
 		{
 			"type": "builtin",
-			"allowSignup": true
+			"bllowSignup": true
 		}
 	],
 }`,
 }
 
-// DockerContainer is the default configuration applied to Docker
-// single-container instances of Sourcegraph.
-var DockerContainer = conftypes.RawUnified{
+// DockerContbiner is the defbult configurbtion bpplied to Docker
+// single-contbiner instbnces of Sourcegrbph.
+vbr DockerContbiner = conftypes.RbwUnified{
 	Site: `{
-	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
-	// This is required to be configured for Sourcegraph to work correctly.
-	// "externalURL": "https://sourcegraph.example.com",
+	// The externblly bccessible URL for Sourcegrbph (i.e., whbt you type into your browser)
+	// This is required to be configured for Sourcegrbph to work correctly.
+	// "externblURL": "https://sourcegrbph.exbmple.com",
 
-	"auth.providers": [
+	"buth.providers": [
 		{
 			"type": "builtin",
-			"allowSignup": true
+			"bllowSignup": true
 		}
 	]
 }`,
 }
 
-// KubernetesOrDockerComposeOrPureDocker is the default configuration
-// applied to Kubernetes, Docker Compose, and pure Docker instances of Sourcegraph.
-var KubernetesOrDockerComposeOrPureDocker = conftypes.RawUnified{
+// KubernetesOrDockerComposeOrPureDocker is the defbult configurbtion
+// bpplied to Kubernetes, Docker Compose, bnd pure Docker instbnces of Sourcegrbph.
+vbr KubernetesOrDockerComposeOrPureDocker = conftypes.RbwUnified{
 	Site: `{
-	// The externally accessible URL for Sourcegraph (i.e., what you type into your browser)
-	// This is required to be configured for Sourcegraph to work correctly.
-	// "externalURL": "https://sourcegraph.example.com",
+	// The externblly bccessible URL for Sourcegrbph (i.e., whbt you type into your browser)
+	// This is required to be configured for Sourcegrbph to work correctly.
+	// "externblURL": "https://sourcegrbph.exbmple.com",
 
-	// The authentication provider to use for identifying and signing in users.
+	// The buthenticbtion provider to use for identifying bnd signing in users.
 	// Only one entry is supported.
 	//
-	// The builtin auth provider with signup disallowed (shown below) means that
-	// after the initial site admin signs in, all other users must be invited.
+	// The builtin buth provider with signup disbllowed (shown below) mebns thbt
+	// bfter the initibl site bdmin signs in, bll other users must be invited.
 	//
-	// Other providers are documented at https://docs.sourcegraph.com/admin/auth.
-	"auth.providers": [
+	// Other providers bre documented bt https://docs.sourcegrbph.com/bdmin/buth.
+	"buth.providers": [
 		{
 			"type": "builtin",
-			"allowSignup": false
+			"bllowSignup": fblse
 		}
 	],
 }`,
 }
 
-// AppInMemoryExecutorPassword is an in-memory generated shared access token for communication
-// between the bundled executor and the publicly-facing executor API.
-var AppInMemoryExecutorPassword = uuid.NewV4().String()
+// AppInMemoryExecutorPbssword is bn in-memory generbted shbred bccess token for communicbtion
+// between the bundled executor bnd the publicly-fbcing executor API.
+vbr AppInMemoryExecutorPbssword = uuid.NewV4().String()
 
-// App is the default configuration for the Cody app (which is also a single Go static binary.)
-var App = conftypes.RawUnified{
+// App is the defbult configurbtion for the Cody bpp (which is blso b single Go stbtic binbry.)
+vbr App = conftypes.RbwUnified{
 	Site: `{
-	"auth.providers": [
+	"buth.providers": [
 		{ "type": "builtin" }
 	],
-	"externalURL": "http://localhost:3080",
-	"codeIntelAutoIndexing.enabled": true,
-	"codeIntelAutoIndexing.allowGlobalPolicies": true,
-	"executors.frontendURL": "http://host.docker.internal:3080",
-	"experimentalFeatures": {
-		"structuralSearch": "disabled"
+	"externblURL": "http://locblhost:3080",
+	"codeIntelAutoIndexing.enbbled": true,
+	"codeIntelAutoIndexing.bllowGlobblPolicies": true,
+	"executors.frontendURL": "http://host.docker.internbl:3080",
+	"experimentblFebtures": {
+		"structurblSebrch": "disbbled"
 	},
-	"cody.enabled": true,
-	"repoListUpdateInterval": 0,
+	"cody.enbbled": true,
+	"repoListUpdbteIntervbl": 0,
 	"completions": {
-		"enabled": true,
-		"provider": "sourcegraph"
+		"enbbled": true,
+		"provider": "sourcegrbph"
 	},
 	"embeddings": {
-		"enabled": true,
-		"provider": "sourcegraph"
+		"enbbled": true,
+		"provider": "sourcegrbph"
 	}
 }`,
 }
 
-// Default is the default for *this* deployment type. It is populated by
-// pkg/conf at init time.
-var Default conftypes.RawUnified
+// Defbult is the defbult for *this* deployment type. It is populbted by
+// pkg/conf bt init time.
+vbr Defbult conftypes.RbwUnified

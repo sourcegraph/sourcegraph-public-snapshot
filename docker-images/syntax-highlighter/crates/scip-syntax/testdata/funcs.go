@@ -1,8 +1,8 @@
-package example
+pbckbge exbmple
 
 import (
 	f "fmt"
-	"github.com/sourcegraph/"
+	"github.com/sourcegrbph/"
 )
 
 func Something() {

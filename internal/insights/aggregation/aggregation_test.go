@@ -1,754 +1,754 @@
-package aggregation
+pbckbge bggregbtion
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	dTypes "github.com/sourcegraph/sourcegraph/internal/types"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	dTypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func newTestSearchResultsAggregator(ctx context.Context, tabulator AggregationTabulator, countFunc AggregationCountFunc, mode types.SearchAggregationMode, db database.DB) SearchResultsAggregator {
+func newTestSebrchResultsAggregbtor(ctx context.Context, tbbulbtor AggregbtionTbbulbtor, countFunc AggregbtionCountFunc, mode types.SebrchAggregbtionMode, db dbtbbbse.DB) SebrchResultsAggregbtor {
 	if db == nil {
 		db = dbmocks.NewMockDB()
 	}
-	return &searchAggregationResults{
+	return &sebrchAggregbtionResults{
 		db:        db,
 		mode:      mode,
 		ctx:       ctx,
-		tabulator: tabulator,
+		tbbulbtor: tbbulbtor,
 		countFunc: countFunc,
 	}
 }
 
-type testAggregator struct {
-	results map[string]int
+type testAggregbtor struct {
+	results mbp[string]int
 	errors  []error
 }
 
-func (r *testAggregator) AddResult(result *AggregationMatchResult, err error) {
+func (r *testAggregbtor) AddResult(result *AggregbtionMbtchResult, err error) {
 	if err != nil {
-		r.errors = append(r.errors, err)
+		r.errors = bppend(r.errors, err)
 		return
 	}
 	current, _ := r.results[result.Key.Group]
 	r.results[result.Key.Group] = result.Count + current
 }
 
-func contentMatch(repo, path string, repoID int32, chunks ...string) result.Match {
-	matches := make([]result.ChunkMatch, 0, len(chunks))
-	for _, content := range chunks {
-		matches = append(matches, result.ChunkMatch{
+func contentMbtch(repo, pbth string, repoID int32, chunks ...string) result.Mbtch {
+	mbtches := mbke([]result.ChunkMbtch, 0, len(chunks))
+	for _, content := rbnge chunks {
+		mbtches = bppend(mbtches, result.ChunkMbtch{
 			Content:      content,
-			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
-			Ranges: result.Ranges{{
-				Start: result.Location{Offset: 0, Line: 1, Column: 0},
-				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
+			ContentStbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+			Rbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+				End:   result.Locbtion{Offset: len(content), Line: 1, Column: len(content)},
 			}},
 		})
 	}
 
-	return &result.FileMatch{
+	return &result.FileMbtch{
 		File: result.File{
-			Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
-			Path: path,
+			Repo: internbltypes.MinimblRepo{Nbme: bpi.RepoNbme(repo), ID: bpi.RepoID(repoID)},
+			Pbth: pbth,
 		},
-		ChunkMatches: matches,
+		ChunkMbtches: mbtches,
 	}
 }
 
-func repoMatch(repo string, repoID int32) result.Match {
-	return &result.RepoMatch{
-		Name: api.RepoName(repo),
-		ID:   api.RepoID(repoID),
+func repoMbtch(repo string, repoID int32) result.Mbtch {
+	return &result.RepoMbtch{
+		Nbme: bpi.RepoNbme(repo),
+		ID:   bpi.RepoID(repoID),
 	}
 }
 
-func pathMatch(repo, path string, repoID int32) result.Match {
-	return &result.FileMatch{
+func pbthMbtch(repo, pbth string, repoID int32) result.Mbtch {
+	return &result.FileMbtch{
 		File: result.File{
-			Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
-			Path: path,
+			Repo: internbltypes.MinimblRepo{Nbme: bpi.RepoNbme(repo), ID: bpi.RepoID(repoID)},
+			Pbth: pbth,
 		},
 	}
 }
 
-func symbolMatch(repo, path string, repoID int32, symbols ...string) result.Match {
-	symbolMatches := make([]*result.SymbolMatch, 0, len(symbols))
-	for _, s := range symbols {
-		symbolMatches = append(symbolMatches, &result.SymbolMatch{Symbol: result.Symbol{Name: s}})
+func symbolMbtch(repo, pbth string, repoID int32, symbols ...string) result.Mbtch {
+	symbolMbtches := mbke([]*result.SymbolMbtch, 0, len(symbols))
+	for _, s := rbnge symbols {
+		symbolMbtches = bppend(symbolMbtches, &result.SymbolMbtch{Symbol: result.Symbol{Nbme: s}})
 	}
 
-	return &result.FileMatch{
+	return &result.FileMbtch{
 		File: result.File{
-			Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
-			Path: path,
+			Repo: internbltypes.MinimblRepo{Nbme: bpi.RepoNbme(repo), ID: bpi.RepoID(repoID)},
+			Pbth: pbth,
 		},
-		Symbols: symbolMatches,
+		Symbols: symbolMbtches,
 	}
 }
 
-func commitMatch(repo, author string, date time.Time, repoID, numRanges int32, content string) result.Match {
+func commitMbtch(repo, buthor string, dbte time.Time, repoID, numRbnges int32, content string) result.Mbtch {
 
-	return &result.CommitMatch{
-		Commit: gitdomain.Commit{
-			Author:    gitdomain.Signature{Name: author},
-			Committer: &gitdomain.Signature{},
-			Message:   gitdomain.Message(content),
+	return &result.CommitMbtch{
+		Commit: gitdombin.Commit{
+			Author:    gitdombin.Signbture{Nbme: buthor},
+			Committer: &gitdombin.Signbture{},
+			Messbge:   gitdombin.Messbge(content),
 		},
-		Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
-		MessagePreview: &result.MatchedString{
+		Repo: internbltypes.MinimblRepo{Nbme: bpi.RepoNbme(repo), ID: bpi.RepoID(repoID)},
+		MessbgePreview: &result.MbtchedString{
 			Content: content,
-			MatchedRanges: result.Ranges{
+			MbtchedRbnges: result.Rbnges{
 				{
-					Start: result.Location{Line: 1, Offset: 0, Column: 1},
-					End:   result.Location{Line: 1, Offset: 1, Column: 1},
+					Stbrt: result.Locbtion{Line: 1, Offset: 0, Column: 1},
+					End:   result.Locbtion{Line: 1, Offset: 1, Column: 1},
 				},
 				{
-					Start: result.Location{Line: 2, Offset: 0, Column: 1},
-					End:   result.Location{Line: 2, Offset: 1, Column: 1},
+					Stbrt: result.Locbtion{Line: 2, Offset: 0, Column: 1},
+					End:   result.Locbtion{Line: 2, Offset: 1, Column: 1},
 				}},
 		},
 	}
 }
 
-func diffMatch(repo, author string, repoID int) result.Match {
-	return &result.CommitMatch{
-		Repo: internaltypes.MinimalRepo{Name: api.RepoName(repo), ID: api.RepoID(repoID)},
-		Commit: gitdomain.Commit{
-			Author: gitdomain.Signature{Name: author},
+func diffMbtch(repo, buthor string, repoID int) result.Mbtch {
+	return &result.CommitMbtch{
+		Repo: internbltypes.MinimblRepo{Nbme: bpi.RepoNbme(repo), ID: bpi.RepoID(repoID)},
+		Commit: gitdombin.Commit{
+			Author: gitdombin.Signbture{Nbme: buthor},
 		},
-		DiffPreview: &result.MatchedString{
+		DiffPreview: &result.MbtchedString{
 			Content: "file3 file4\n@@ -3,4 +1,6 @@\n+needle\n-needle\n",
-			MatchedRanges: result.Ranges{{
-				Start: result.Location{Offset: 29, Line: 2, Column: 1},
-				End:   result.Location{Offset: 35, Line: 2, Column: 7},
+			MbtchedRbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Offset: 29, Line: 2, Column: 1},
+				End:   result.Locbtion{Offset: 35, Line: 2, Column: 7},
 			}, {
-				Start: result.Location{Offset: 37, Line: 3, Column: 1},
-				End:   result.Location{Offset: 43, Line: 3, Column: 7},
+				Stbrt: result.Locbtion{Offset: 37, Line: 3, Column: 1},
+				End:   result.Locbtion{Offset: 43, Line: 3, Column: 7},
 			}},
 		},
 		Diff: []result.DiffFile{{
-			OrigName: "file3",
-			NewName:  "file4",
+			OrigNbme: "file3",
+			NewNbme:  "file4",
 			Hunks: []result.Hunk{{
-				OldStart: 3,
-				NewStart: 1,
+				OldStbrt: 3,
+				NewStbrt: 1,
 				OldCount: 4,
 				NewCount: 6,
-				Header:   "",
+				Hebder:   "",
 				Lines:    []string{"+needle", "-needle"},
 			}},
 		}},
 	}
 }
 
-var sampleDate = time.Date(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
+vbr sbmpleDbte = time.Dbte(2022, time.April, 1, 0, 0, 0, 0, time.UTC)
 
-func TestRepoAggregation(t *testing.T) {
-	testCases := []struct {
-		name        string
-		mode        types.SearchAggregationMode
-		searchEvent streaming.SearchEvent
-		want        autogold.Value
+func TestRepoAggregbtion(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
+		mode        types.SebrchAggregbtionMode
+		sebrchEvent strebming.SebrchEvent
+		wbnt        butogold.Vblue
 	}{
 		{
 			"No results",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{Results: []result.Match{}},
-			autogold.Expect(map[string]int{})},
+			strebming.SebrchEvent{Results: []result.Mbtch{}},
+			butogold.Expect(mbp[string]int{})},
 		{
-			"Single file match multiple results",
+			"Single file mbtch multiple results",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "a", "b")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "b", "b")},
 			},
-			autogold.Expect(map[string]int{"myRepo": 2}),
+			butogold.Expect(mbp[string]int{"myRepo": 2}),
 		},
 		{
-			"Multiple file match multiple results",
+			"Multiple file mbtch multiple results",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "a", "b"),
-					contentMatch("myRepo", "file2.go", 1, "d", "e"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "b", "b"),
+					contentMbtch("myRepo", "file2.go", 1, "d", "e"),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 4}),
+			butogold.Expect(mbp[string]int{"myRepo": 4}),
 		},
 		{
-			"Multiple repo multiple match",
+			"Multiple repo multiple mbtch",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "a", "b"),
-					contentMatch("myRepo2", "file2.go", 2, "a", "b"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "b", "b"),
+					contentMbtch("myRepo2", "file2.go", 2, "b", "b"),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 2, "myRepo2": 2}),
+			butogold.Expect(mbp[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 		{
-			"Count repos on commit matches",
+			"Count repos on commit mbtches",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "a"),
-					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "b"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					commitMbtch("myRepo", "Author A", sbmpleDbte, 1, 2, "b"),
+					commitMbtch("myRepo", "Author B", sbmpleDbte, 1, 2, "b"),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 4}),
+			butogold.Expect(mbp[string]int{"myRepo": 4}),
 		},
 		{
-			"Count repos on repo match",
+			"Count repos on repo mbtch",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					repoMatch("myRepo", 1),
-					repoMatch("myRepo2", 2),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					repoMbtch("myRepo", 1),
+					repoMbtch("myRepo2", 2),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 1, "myRepo2": 1}),
+			butogold.Expect(mbp[string]int{"myRepo": 1, "myRepo2": 1}),
 		},
 		{
-			"Count repos on path matches",
+			"Count repos on pbth mbtches",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					pathMatch("myRepo", "file1.go", 1),
-					pathMatch("myRepo", "file2.go", 1),
-					pathMatch("myRepoB", "file3.go", 2),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					pbthMbtch("myRepo", "file1.go", 1),
+					pbthMbtch("myRepo", "file2.go", 1),
+					pbthMbtch("myRepoB", "file3.go", 2),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 2, "myRepoB": 1}),
+			butogold.Expect(mbp[string]int{"myRepo": 2, "myRepoB": 1}),
 		},
 		{
-			"Count repos on symbol matches",
+			"Count repos on symbol mbtches",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					symbolMatch("myRepo", "file1.go", 1, "a", "b"),
-					symbolMatch("myRepo", "file2.go", 1, "c", "d"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					symbolMbtch("myRepo", "file1.go", 1, "b", "b"),
+					symbolMbtch("myRepo", "file2.go", 1, "c", "d"),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 4}),
+			butogold.Expect(mbp[string]int{"myRepo": 4}),
 		},
 		{
-			"Count repos on diff matches",
+			"Count repos on diff mbtches",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					diffMatch("myRepo", "author-a", 1),
-					diffMatch("myRepo", "author-b", 1),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					diffMbtch("myRepo", "buthor-b", 1),
+					diffMbtch("myRepo", "buthor-b", 1),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 4}),
+			butogold.Expect(mbp[string]int{"myRepo": 4}),
 		},
 		{
-			"Count multiple repos on diff matches",
+			"Count multiple repos on diff mbtches",
 			types.REPO_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					diffMatch("myRepo", "author-a", 1),
-					diffMatch("myRepo2", "author-b", 2),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					diffMbtch("myRepo", "buthor-b", 1),
+					diffMbtch("myRepo2", "buthor-b", 2),
 				}},
-			autogold.Expect(map[string]int{"myRepo": 2, "myRepo2": 2}),
+			butogold.Expect(mbp[string]int{"myRepo": 2, "myRepo2": 2}),
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			aggregator := testAggregator{results: make(map[string]int)}
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bggregbtor := testAggregbtor{results: mbke(mbp[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
-			sra.Send(tc.searchEvent)
-			tc.want.Equal(t, aggregator.results)
+			srb := newTestSebrchResultsAggregbtor(context.Bbckground(), bggregbtor.AddResult, countFunc, tc.mode, nil)
+			srb.Send(tc.sebrchEvent)
+			tc.wbnt.Equbl(t, bggregbtor.results)
 		})
 	}
 }
 
-func TestAuthorAggregation(t *testing.T) {
-	testCases := []struct {
-		name        string
-		mode        types.SearchAggregationMode
-		searchEvent streaming.SearchEvent
-		want        autogold.Value
+func TestAuthorAggregbtion(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
+		mode        types.SebrchAggregbtionMode
+		sebrchEvent strebming.SebrchEvent
+		wbnt        butogold.Vblue
 	}{
 		{
 			"No results",
-			types.AUTHOR_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Expect(map[string]int{})},
+			types.AUTHOR_AGGREGATION_MODE, strebming.SebrchEvent{}, butogold.Expect(mbp[string]int{})},
 		{
-			"No author for content match",
+			"No buthor for content mbtch",
 			types.AUTHOR_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "a", "b")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "b", "b")},
 			},
-			autogold.Expect(map[string]int{}),
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"No author for symbol match",
+			"No buthor for symbol mbtch",
 			types.AUTHOR_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{symbolMatch("myRepo", "file.go", 1, "a", "b")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{symbolMbtch("myRepo", "file.go", 1, "b", "b")},
 			},
-			autogold.Expect(map[string]int{}),
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"No author for path match",
+			"No buthor for pbth mbtch",
 			types.AUTHOR_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{pathMatch("myRepo", "file.go", 1)},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{pbthMbtch("myRepo", "file.go", 1)},
 			},
-			autogold.Expect(map[string]int{}),
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"counts by author",
+			"counts by buthor",
 			types.AUTHOR_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					commitMatch("repoA", "Author A", sampleDate, 1, 2, "a"),
-					commitMatch("repoA", "Author B", sampleDate, 1, 2, "a"),
-					commitMatch("repoB", "Author B", sampleDate, 2, 2, "a"),
-					commitMatch("repoB", "Author C", sampleDate, 2, 2, "a"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					commitMbtch("repoA", "Author A", sbmpleDbte, 1, 2, "b"),
+					commitMbtch("repoA", "Author B", sbmpleDbte, 1, 2, "b"),
+					commitMbtch("repoB", "Author B", sbmpleDbte, 2, 2, "b"),
+					commitMbtch("repoB", "Author C", sbmpleDbte, 2, 2, "b"),
 				},
 			},
-			autogold.Expect(map[string]int{"Author A": 2, "Author B": 4, "Author C": 2}),
+			butogold.Expect(mbp[string]int{"Author A": 2, "Author B": 4, "Author C": 2}),
 		},
 		{
-			"Count authors on diff matches",
+			"Count buthors on diff mbtches",
 			types.AUTHOR_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					diffMatch("myRepo", "author-a", 1),
-					diffMatch("myRepo2", "author-a", 2),
-					diffMatch("myRepo2", "author-b", 2),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					diffMbtch("myRepo", "buthor-b", 1),
+					diffMbtch("myRepo2", "buthor-b", 2),
+					diffMbtch("myRepo2", "buthor-b", 2),
 				}},
-			autogold.Expect(map[string]int{"author-a": 4, "author-b": 2}),
+			butogold.Expect(mbp[string]int{"buthor-b": 4, "buthor-b": 2}),
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			aggregator := testAggregator{results: make(map[string]int)}
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bggregbtor := testAggregbtor{results: mbke(mbp[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
-			sra.Send(tc.searchEvent)
-			tc.want.Equal(t, aggregator.results)
+			srb := newTestSebrchResultsAggregbtor(context.Bbckground(), bggregbtor.AddResult, countFunc, tc.mode, nil)
+			srb.Send(tc.sebrchEvent)
+			tc.wbnt.Equbl(t, bggregbtor.results)
 		})
 	}
 }
 
-func TestPathAggregation(t *testing.T) {
-	testCases := []struct {
-		name        string
-		mode        types.SearchAggregationMode
-		searchEvent streaming.SearchEvent
-		want        autogold.Value
+func TestPbthAggregbtion(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
+		mode        types.SebrchAggregbtionMode
+		sebrchEvent strebming.SebrchEvent
+		wbnt        butogold.Vblue
 	}{
 		{
 			"No results",
-			types.PATH_AGGREGATION_MODE, streaming.SearchEvent{}, autogold.Expect(map[string]int{})},
+			types.PATH_AGGREGATION_MODE, strebming.SebrchEvent{}, butogold.Expect(mbp[string]int{})},
 		{
-			"no path for commit",
+			"no pbth for commit",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					commitMatch("repoA", "Author A", sampleDate, 1, 2, "a"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					commitMbtch("repoA", "Author A", sbmpleDbte, 1, 2, "b"),
 				},
 			},
-			autogold.Expect(map[string]int{}),
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"no path on repo match",
+			"no pbth on repo mbtch",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					repoMatch("myRepo", 1),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					repoMbtch("myRepo", 1),
 				},
 			},
-			autogold.Expect(map[string]int{}),
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"Single file match multiple results",
+			"Single file mbtch multiple results",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "a", "b")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "b", "b")},
 			},
-			autogold.Expect(map[string]int{"file.go": 2}),
+			butogold.Expect(mbp[string]int{"file.go": 2}),
 		},
 		{
-			"Multiple file match multiple results",
+			"Multiple file mbtch multiple results",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "a", "b"),
-					contentMatch("myRepo", "file2.go", 1, "d", "e"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "b", "b"),
+					contentMbtch("myRepo", "file2.go", 1, "d", "e"),
 				},
 			},
-			autogold.Expect(map[string]int{"file.go": 2, "file2.go": 2}),
+			butogold.Expect(mbp[string]int{"file.go": 2, "file2.go": 2}),
 		},
 		{
-			"Multiple repos same file",
+			"Multiple repos sbme file",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "a", "b"),
-					contentMatch("myRepo2", "file.go", 2, "a", "b"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "b", "b"),
+					contentMbtch("myRepo2", "file.go", 2, "b", "b"),
 				},
 			},
-			autogold.Expect(map[string]int{"file.go": 4}),
+			butogold.Expect(mbp[string]int{"file.go": 4}),
 		},
 		{
-			"Count paths on path matches",
+			"Count pbths on pbth mbtches",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					pathMatch("myRepo", "file1.go", 1),
-					pathMatch("myRepo", "file2.go", 1),
-					pathMatch("myRepoB", "file3.go", 2),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					pbthMbtch("myRepo", "file1.go", 1),
+					pbthMbtch("myRepo", "file2.go", 1),
+					pbthMbtch("myRepoB", "file3.go", 2),
 				},
 			},
-			autogold.Expect(map[string]int{"file1.go": 1, "file2.go": 1, "file3.go": 1}),
+			butogold.Expect(mbp[string]int{"file1.go": 1, "file2.go": 1, "file3.go": 1}),
 		},
 		{
-			"Count paths on symbol matches",
+			"Count pbths on symbol mbtches",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					symbolMatch("myRepo", "file1.go", 1, "a", "b"),
-					symbolMatch("myRepo", "file2.go", 1, "c", "d"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					symbolMbtch("myRepo", "file1.go", 1, "b", "b"),
+					symbolMbtch("myRepo", "file2.go", 1, "c", "d"),
 				},
 			},
-			autogold.Expect(map[string]int{"file1.go": 2, "file2.go": 2}),
+			butogold.Expect(mbp[string]int{"file1.go": 2, "file2.go": 2}),
 		},
 		{
-			"Count paths on multiple matche types",
+			"Count pbths on multiple mbtche types",
 			types.PATH_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					repoMatch("myRepo", 1),
-					pathMatch("myRepo", "file1.go", 1),
-					symbolMatch("myRepo", "file1.go", 1, "c", "d"),
-					contentMatch("myRepo", "file.go", 1, "a", "b"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					repoMbtch("myRepo", 1),
+					pbthMbtch("myRepo", "file1.go", 1),
+					symbolMbtch("myRepo", "file1.go", 1, "c", "d"),
+					contentMbtch("myRepo", "file.go", 1, "b", "b"),
 				},
 			},
-			autogold.Expect(map[string]int{"file.go": 2, "file1.go": 3}),
+			butogold.Expect(mbp[string]int{"file.go": 2, "file1.go": 3}),
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			aggregator := testAggregator{results: make(map[string]int)}
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bggregbtor := testAggregbtor{results: mbke(mbp[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
-			sra.Send(tc.searchEvent)
-			tc.want.Equal(t, aggregator.results)
+			srb := newTestSebrchResultsAggregbtor(context.Bbckground(), bggregbtor.AddResult, countFunc, tc.mode, nil)
+			srb.Send(tc.sebrchEvent)
+			tc.wbnt.Equbl(t, bggregbtor.results)
 		})
 	}
 }
 
-func TestCaptureGroupAggregation(t *testing.T) {
-	longCaptureGroup := "111111111|222222222|333333333|444444444|555555555|666666666|777777777|888888888|999999999|000000000|"
-	testCases := []struct {
-		name        string
-		mode        types.SearchAggregationMode
-		searchEvent streaming.SearchEvent
+func TestCbptureGroupAggregbtion(t *testing.T) {
+	longCbptureGroup := "111111111|222222222|333333333|444444444|555555555|666666666|777777777|888888888|999999999|000000000|"
+	testCbses := []struct {
+		nbme        string
+		mode        types.SebrchAggregbtionMode
+		sebrchEvent strebming.SebrchEvent
 		query       string
-		want        autogold.Value
+		wbnt        butogold.Vblue
 	}{
 		{
 			"no results",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{},
+			strebming.SebrchEvent{},
 			"TEST",
-			autogold.Expect(map[string]int{})},
+			butogold.Expect(mbp[string]int{})},
 		{
 			"two keys from 1 chunk",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python3.9")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "python2.7 python3.9")},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Expect(map[string]int{"2.7": 1, "3.9": 1}),
+			butogold.Expect(mbp[string]int{"2.7": 1, "3.9": 1}),
 		},
 		{
 			"count 2 from 1 chunk",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "python2.7 python2.7")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "python2.7 python2.7")},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Expect(map[string]int{"2.7": 2}),
+			butogold.Expect(mbp[string]int{"2.7": 2}),
 		},
 		{
 			"count multiple results",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
-					contentMatch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "python2.7 python3.9"),
+					contentMbtch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
 				},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Expect(map[string]int{"2.7": 2, "3.9": 2}),
+			butogold.Expect(mbp[string]int{"2.7": 2, "3.9": 2}),
 		},
 		{
-			"skips non capturing group",
+			"skips non cbpturing group",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "python2.7 python3.9"),
 				},
 			},
 			`python(?:[0-9])\.([0-9])`,
-			autogold.Expect(map[string]int{"7": 1, "9": 1}),
+			butogold.Expect(mbp[string]int{"7": 1, "9": 1}),
 		},
 		{
-			"capture match respects case:no",
+			"cbpture mbtch respects cbse:no",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
 			},
-			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:no`,
-			autogold.Expect(map[string]int{"2.7": 1}),
+			`repo:^github\.com/sourcegrbph/sourcegrbph python([0-9]\.[0-9]) cbse:no`,
+			butogold.Expect(mbp[string]int{"2.7": 1}),
 		},
 		{
-			"capture match respects case:yes",
+			"cbpture mbtch respects cbse:yes",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{contentMatch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{contentMbtch("myRepo", "file.go", 1, "Python.7 PyThoN2.7")},
 			},
-			`repo:^github\.com/sourcegraph/sourcegraph python([0-9]\.[0-9]) case:yes`,
-			autogold.Expect(map[string]int{}),
+			`repo:^github\.com/sourcegrbph/sourcegrbph python([0-9]\.[0-9]) cbse:yes`,
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"only get values from first capture group",
+			"only get vblues from first cbpture group",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "python2.7 python2.7"),
-					contentMatch("myRepo", "file2.go", 1, "python2.8 python2.9"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "python2.7 python2.7"),
+					contentMbtch("myRepo", "file2.go", 1, "python2.8 python2.9"),
 				},
 			},
 			`python([0-9])\.([0-9])`,
-			autogold.Expect(map[string]int{"2": 4}),
+			butogold.Expect(mbp[string]int{"2": 4}),
 		},
 		{
-			"whole match only",
+			"whole mbtch only",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "2.7"),
-					contentMatch("myRepo", "file2.go", 1, "2.9"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "2.7"),
+					contentMbtch("myRepo", "file2.go", 1, "2.9"),
 				},
 			},
 			`([0-9]\.[0-9])`,
-			autogold.Expect(map[string]int{"2.7": 1, "2.9": 1}),
+			butogold.Expect(mbp[string]int{"2.7": 1, "2.9": 1}),
 		},
 		{
-			"no more than 100 characters",
+			"no more thbn 100 chbrbcters",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "z"+longCaptureGroup+"extraz"),
-					contentMatch("myRepo", "file2.go", 1, "zsmallMatchz"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "z"+longCbptureGroup+"extrbz"),
+					contentMbtch("myRepo", "file2.go", 1, "zsmbllMbtchz"),
 				},
 			},
 			`z(.*)z`,
-			autogold.Expect(map[string]int{longCaptureGroup: 1, "smallMatch": 1}),
+			butogold.Expect(mbp[string]int{longCbptureGroup: 1, "smbllMbtch": 1}),
 		},
 		{
-			"accepts exactly 100 characters",
+			"bccepts exbctly 100 chbrbcters",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "z"+longCaptureGroup+"z"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "z"+longCbptureGroup+"z"),
 				},
 			},
 			`z(.*)z`,
-			autogold.Expect(map[string]int{longCaptureGroup: 1}),
+			butogold.Expect(mbp[string]int{longCbptureGroup: 1}),
 		},
 		{
-			"capture groups against whole file matches",
+			"cbpture groups bgbinst whole file mbtches",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					pathMatch("myRepo", "dir1/file1.go", 1),
-					pathMatch("myRepo", "dir2/file2.go", 1),
-					pathMatch("myRepo", "dir2/file3.go", 1),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					pbthMbtch("myRepo", "dir1/file1.go", 1),
+					pbthMbtch("myRepo", "dir2/file2.go", 1),
+					pbthMbtch("myRepo", "dir2/file3.go", 1),
 				},
 			},
 			`(.*?)\/`,
-			autogold.Expect(map[string]int{"dir1": 1, "dir2": 2}),
+			butogold.Expect(mbp[string]int{"dir1": 1, "dir2": 2}),
 		},
 		{
-			"capture groups against repo matches",
+			"cbpture groups bgbinst repo mbtches",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					repoMatch("myRepo-a", 1),
-					repoMatch("myRepo-a", 1),
-					repoMatch("myRepo-b", 2),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					repoMbtch("myRepo-b", 1),
+					repoMbtch("myRepo-b", 1),
+					repoMbtch("myRepo-b", 2),
 				},
 			},
 			`myrepo-(.*)`,
-			autogold.Expect(map[string]int{"a": 2, "b": 1}),
+			butogold.Expect(mbp[string]int{"b": 2, "b": 1}),
 		},
 		{
-			"capture groups against commit matches",
+			"cbpture groups bgbinst commit mbtches",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "python2.7 python2.7"),
-					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "python2.7 python2.8"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					commitMbtch("myRepo", "Author A", sbmpleDbte, 1, 2, "python2.7 python2.7"),
+					commitMbtch("myRepo", "Author B", sbmpleDbte, 1, 2, "python2.7 python2.8"),
 				},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Expect(map[string]int{"2.7": 3, "2.8": 1}),
+			butogold.Expect(mbp[string]int{"2.7": 3, "2.8": 1}),
 		},
 		{
-			"capture groups against commit matches case sensitive",
+			"cbpture groups bgbinst commit mbtches cbse sensitive",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					commitMatch("myRepo", "Author A", sampleDate, 1, 2, "Python2.7 Python2.7"),
-					commitMatch("myRepo", "Author B", sampleDate, 1, 2, "python2.7 Python2.8"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					commitMbtch("myRepo", "Author A", sbmpleDbte, 1, 2, "Python2.7 Python2.7"),
+					commitMbtch("myRepo", "Author B", sbmpleDbte, 1, 2, "python2.7 Python2.8"),
 				},
 			},
-			`python([0-9]\.[0-9]) case:yes`,
-			autogold.Expect(map[string]int{"2.7": 1}),
+			`python([0-9]\.[0-9]) cbse:yes`,
+			butogold.Expect(mbp[string]int{"2.7": 1}),
 		},
 		{
-			"capture groups against multiple match types",
+			"cbpture groups bgbinst multiple mbtch types",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					repoMatch("sourcegraph-repo1", 1),
-					repoMatch("sourcegraph-repo2", 2),
-					pathMatch("sourcegraph-repo1", "/dir/sourcegraph-test/file1.go", 1),
-					pathMatch("sourcegraph-repo1", "/dir/sourcegraph-client/file1.go", 1),
-					contentMatch("sourcegraph-repo1", "/dir/sourcegraph-client/app.css", 1, ".sourcegraph-notifications {", ".sourcegraph-alerts {"),
-					contentMatch("sourcegraph-repo1", "/dir/sourcegraph-client-legacy/app.css", 1, ".sourcegraph-notifications {"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					repoMbtch("sourcegrbph-repo1", 1),
+					repoMbtch("sourcegrbph-repo2", 2),
+					pbthMbtch("sourcegrbph-repo1", "/dir/sourcegrbph-test/file1.go", 1),
+					pbthMbtch("sourcegrbph-repo1", "/dir/sourcegrbph-client/file1.go", 1),
+					contentMbtch("sourcegrbph-repo1", "/dir/sourcegrbph-client/bpp.css", 1, ".sourcegrbph-notificbtions {", ".sourcegrbph-blerts {"),
+					contentMbtch("sourcegrbph-repo1", "/dir/sourcegrbph-client-legbcy/bpp.css", 1, ".sourcegrbph-notificbtions {"),
 				},
 			},
-			`/sourcegraph-(\\w+)/ patterntype:standard`,
-			autogold.Expect(map[string]int{"repo1": 1, "repo2": 1, "test": 1, "client": 1, "notifications": 2, "alerts": 1}),
+			`/sourcegrbph-(\\w+)/ pbtterntype:stbndbrd`,
+			butogold.Expect(mbp[string]int{"repo1": 1, "repo2": 1, "test": 1, "client": 1, "notificbtions": 2, "blerts": 1}),
 		},
 		{
-			"capture groups ignores diff types",
+			"cbpture groups ignores diff types",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					diffMatch("sourcegraph-repo1", "author-a", 1),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					diffMbtch("sourcegrbph-repo1", "buthor-b", 1),
 				},
 			},
-			`/need(.)/ patterntype:standard`,
-			autogold.Expect(map[string]int{}),
+			`/need(.)/ pbtterntype:stbndbrd`,
+			butogold.Expect(mbp[string]int{}),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			aggregator := testAggregator{results: make(map[string]int)}
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bggregbtor := testAggregbtor{results: mbke(mbp[string]int)}
 			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
 			if err != nil {
 				t.Errorf("expected test not to error, got %v", err)
-				t.FailNow()
+				t.FbilNow()
 			}
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, nil)
-			sra.Send(tc.searchEvent)
-			tc.want.Equal(t, aggregator.results)
+			srb := newTestSebrchResultsAggregbtor(context.Bbckground(), bggregbtor.AddResult, countFunc, tc.mode, nil)
+			srb.Send(tc.sebrchEvent)
+			tc.wbnt.Equbl(t, bggregbtor.results)
 		})
 	}
 }
 
-func TestRepoMetadataAggregation(t *testing.T) {
-	testCases := []struct {
-		name        string
-		mode        types.SearchAggregationMode
-		searchEvent streaming.SearchEvent
-		want        autogold.Value
+func TestRepoMetbdbtbAggregbtion(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
+		mode        types.SebrchAggregbtionMode
+		sebrchEvent strebming.SebrchEvent
+		wbnt        butogold.Vblue
 	}{
 		{
 			"No results",
 			types.REPO_METADATA_AGGREGATION_MODE,
-			streaming.SearchEvent{Results: []result.Match{}},
-			autogold.Expect(map[string]int{}),
+			strebming.SebrchEvent{Results: []result.Mbtch{}},
+			butogold.Expect(mbp[string]int{}),
 		},
 		{
-			"Single repo match no metadata",
+			"Single repo mbtch no metbdbtb",
 			types.REPO_METADATA_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{repoMatch("myRepo2", 1)},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{repoMbtch("myRepo2", 1)},
 			},
-			autogold.Expect(map[string]int{"No metadata": 1}),
+			butogold.Expect(mbp[string]int{"No metbdbtb": 1}),
 		},
 		{
-			"Single repo match multiple metadata",
+			"Single repo mbtch multiple metbdbtb",
 			types.REPO_METADATA_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{repoMatch("myRepo", 1), repoMatch("myRepo2", 2), repoMatch("myRepo3", 3)},
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{repoMbtch("myRepo", 1), repoMbtch("myRepo2", 2), repoMbtch("myRepo3", 3)},
 			},
-			autogold.Expect(map[string]int{"open-source": 1, "No metadata": 1, "team:sourcegraph": 1}),
+			butogold.Expect(mbp[string]int{"open-source": 1, "No metbdbtb": 1, "tebm:sourcegrbph": 1}),
 		},
 	}
 	db := dbmocks.NewMockDB()
 	repos := dbmocks.NewMockRepoStore()
-	sgString := "sourcegraph"
-	repos.ListFunc.SetDefaultReturn([]*dTypes.Repo{
-		{Name: "myRepo", ID: 1},
-		{Name: "myRepo2", ID: 2, KeyValuePairs: map[string]*string{"open-source": nil}},
-		{Name: "myRepo3", ID: 3, KeyValuePairs: map[string]*string{"team": &sgString}},
+	sgString := "sourcegrbph"
+	repos.ListFunc.SetDefbultReturn([]*dTypes.Repo{
+		{Nbme: "myRepo", ID: 1},
+		{Nbme: "myRepo2", ID: 2, KeyVbluePbirs: mbp[string]*string{"open-source": nil}},
+		{Nbme: "myRepo3", ID: 3, KeyVbluePbirs: mbp[string]*string{"tebm": &sgString}},
 	}, nil)
-	db.ReposFunc.SetDefaultReturn(repos)
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			aggregator := testAggregator{results: make(map[string]int)}
+	db.ReposFunc.SetDefbultReturn(repos)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bggregbtor := testAggregbtor{results: mbke(mbp[string]int)}
 			countFunc, _ := GetCountFuncForMode("", "", tc.mode)
-			sra := newTestSearchResultsAggregator(context.Background(), aggregator.AddResult, countFunc, tc.mode, db)
-			sra.Send(tc.searchEvent)
-			tc.want.Equal(t, aggregator.results)
+			srb := newTestSebrchResultsAggregbtor(context.Bbckground(), bggregbtor.AddResult, countFunc, tc.mode, db)
+			srb.Send(tc.sebrchEvent)
+			tc.wbnt.Equbl(t, bggregbtor.results)
 		})
 	}
 }
 
-func TestAggregationCancelation(t *testing.T) {
-	testCases := []struct {
-		name        string
-		mode        types.SearchAggregationMode
-		searchEvent streaming.SearchEvent
+func TestAggregbtionCbncelbtion(t *testing.T) {
+	testCbses := []struct {
+		nbme        string
+		mode        types.SebrchAggregbtionMode
+		sebrchEvent strebming.SebrchEvent
 		query       string
-		want        autogold.Value
+		wbnt        butogold.Vblue
 	}{
 		{
-			"aggregator stops counting if context canceled",
+			"bggregbtor stops counting if context cbnceled",
 			types.CAPTURE_GROUP_AGGREGATION_MODE,
-			streaming.SearchEvent{
-				Results: []result.Match{
-					contentMatch("myRepo", "file.go", 1, "python2.7 python3.9"),
-					contentMatch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
+			strebming.SebrchEvent{
+				Results: []result.Mbtch{
+					contentMbtch("myRepo", "file.go", 1, "python2.7 python3.9"),
+					contentMbtch("myRepo2", "file2.go", 2, "python2.7 python3.9"),
 				},
 			},
 			`python([0-9]\.[0-9])`,
-			autogold.Expect(map[string]int{"2.7": 2, "3.9": 2}),
+			butogold.Expect(mbp[string]int{"2.7": 2, "3.9": 2}),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			aggregator := testAggregator{results: make(map[string]int)}
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			bggregbtor := testAggregbtor{results: mbke(mbp[string]int)}
 			countFunc, err := GetCountFuncForMode(tc.query, "regexp", tc.mode)
 			if err != nil {
 				t.Errorf("expected test not to error, got %v", err)
-				t.FailNow()
+				t.FbilNow()
 			}
-			ctx, cancel := context.WithCancel(context.Background())
-			sra := newTestSearchResultsAggregator(ctx, aggregator.AddResult, countFunc, tc.mode, nil)
-			sra.Send(tc.searchEvent)
-			cancel()
-			sra.Send(tc.searchEvent)
-			tc.want.Equal(t, aggregator.results)
-			if len(aggregator.errors) != 1 {
-				t.Errorf("context cancel should be captured as an error")
+			ctx, cbncel := context.WithCbncel(context.Bbckground())
+			srb := newTestSebrchResultsAggregbtor(ctx, bggregbtor.AddResult, countFunc, tc.mode, nil)
+			srb.Send(tc.sebrchEvent)
+			cbncel()
+			srb.Send(tc.sebrchEvent)
+			tc.wbnt.Equbl(t, bggregbtor.results)
+			if len(bggregbtor.errors) != 1 {
+				t.Errorf("context cbncel should be cbptured bs bn error")
 			}
 		})
 	}

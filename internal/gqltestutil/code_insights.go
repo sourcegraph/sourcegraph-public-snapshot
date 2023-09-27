@@ -1,7 +1,7 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func (c *Client) GetInsights() ([]string, error) {
@@ -12,90 +12,90 @@ func (c *Client) GetInsights() ([]string, error) {
 			}
 		}
 	`
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			InsightViews struct {
 				Nodes []struct {
 					Id string `json:"id"`
 				} `json:"nodes"`
 			} `json:"insightviews"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, map[string]any{}, &resp)
+	err := c.GrbphQL("", query, mbp[string]bny{}, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
 	ids := []string{}
-	for _, node := range resp.Data.InsightViews.Nodes {
-		ids = append(ids, node.Id)
+	for _, node := rbnge resp.Dbtb.InsightViews.Nodes {
+		ids = bppend(ids, node.Id)
 	}
 
 	return ids, nil
 }
 
-type GetDashboardArgs struct {
+type GetDbshbobrdArgs struct {
 	First *int
 	After *string
 	Id    *string
 }
 
-type DashboardInputArgs struct {
+type DbshbobrdInputArgs struct {
 	Title       string
-	UserGrant   string
-	OrgGrant    string
-	GlobalGrant bool
+	UserGrbnt   string
+	OrgGrbnt    string
+	GlobblGrbnt bool
 }
 
-type DashboardResponse struct {
+type DbshbobrdResponse struct {
 	Id     string         `json:"id"`
 	Title  string         `json:"title"`
-	Grants GrantsResponse `json:"grants"`
+	Grbnts GrbntsResponse `json:"grbnts"`
 }
 
-type GrantsResponse struct {
+type GrbntsResponse struct {
 	Users         []string `json:"users"`
-	Organizations []string `json:"organizations"`
-	Global        bool     `json:"global"`
+	Orgbnizbtions []string `json:"orgbnizbtions"`
+	Globbl        bool     `json:"globbl"`
 }
 
-func (c *Client) CreateDashboard(args DashboardInputArgs) (DashboardResponse, error) {
+func (c *Client) CrebteDbshbobrd(brgs DbshbobrdInputArgs) (DbshbobrdResponse, error) {
 	const query = `
-		mutation CreateInsightsDashboard($input: CreateInsightsDashboardInput!) {
-			createInsightsDashboard(input: $input) {
-				dashboard {
-					id, title, grants { users, organizations, global }
+		mutbtion CrebteInsightsDbshbobrd($input: CrebteInsightsDbshbobrdInput!) {
+			crebteInsightsDbshbobrd(input: $input) {
+				dbshbobrd {
+					id, title, grbnts { users, orgbnizbtions, globbl }
 				}
 			}
 		}
 	`
 
-	variables := map[string]any{
-		"input": map[string]any{
-			"title":  args.Title,
-			"grants": buildGrants(args.UserGrant, args.OrgGrant, args.GlobalGrant),
+	vbribbles := mbp[string]bny{
+		"input": mbp[string]bny{
+			"title":  brgs.Title,
+			"grbnts": buildGrbnts(brgs.UserGrbnt, brgs.OrgGrbnt, brgs.GlobblGrbnt),
 		},
 	}
 
-	var resp struct {
-		Data struct {
-			CreateInsightsDashboard struct {
-				Dashboard DashboardResponse `json:"dashboard"`
-			} `json:"createInsightsDashboard"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			CrebteInsightsDbshbobrd struct {
+				Dbshbobrd DbshbobrdResponse `json:"dbshbobrd"`
+			} `json:"crebteInsightsDbshbobrd"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return DashboardResponse{}, errors.Wrap(err, "request GraphQL")
+		return DbshbobrdResponse{}, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.CreateInsightsDashboard.Dashboard, nil
+	return resp.Dbtb.CrebteInsightsDbshbobrd.Dbshbobrd, nil
 }
 
-func (c *Client) GetDashboards(args GetDashboardArgs) ([]DashboardResponse, error) {
+func (c *Client) GetDbshbobrds(brgs GetDbshbobrdArgs) ([]DbshbobrdResponse, error) {
 	const query = `
-		query CreateInsightsDashboard($first: Int, $after: String, $id: ID) {
-			insightsDashboards(first: $first, after: $after, id: $id) {
+		query CrebteInsightsDbshbobrd($first: Int, $bfter: String, $id: ID) {
+			insightsDbshbobrds(first: $first, bfter: $bfter, id: $id) {
 				nodes {
 					id, title
 				}
@@ -103,122 +103,122 @@ func (c *Client) GetDashboards(args GetDashboardArgs) ([]DashboardResponse, erro
 		}
 	`
 
-	variables := map[string]any{}
-	if args.First != nil {
-		variables["first"] = args.First
+	vbribbles := mbp[string]bny{}
+	if brgs.First != nil {
+		vbribbles["first"] = brgs.First
 	}
-	if args.After != nil {
-		variables["after"] = args.After
+	if brgs.After != nil {
+		vbribbles["bfter"] = brgs.After
 	}
-	if args.Id != nil {
-		variables["id"] = args.Id
-	}
-
-	var resp struct {
-		Data struct {
-			InsightsDashboards struct {
-				Nodes []DashboardResponse
-			} `json:"insightsDashboards"`
-		} `json:"data"`
+	if brgs.Id != nil {
+		vbribbles["id"] = brgs.Id
 	}
 
-	err := c.GraphQL("", query, variables, &resp)
+	vbr resp struct {
+		Dbtb struct {
+			InsightsDbshbobrds struct {
+				Nodes []DbshbobrdResponse
+			} `json:"insightsDbshbobrds"`
+		} `json:"dbtb"`
+	}
+
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return []DashboardResponse{}, errors.Wrap(err, "request GraphQL")
+		return []DbshbobrdResponse{}, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.InsightsDashboards.Nodes, nil
+	return resp.Dbtb.InsightsDbshbobrds.Nodes, nil
 }
 
-func (c *Client) UpdateDashboard(id string, args DashboardInputArgs) (DashboardResponse, error) {
+func (c *Client) UpdbteDbshbobrd(id string, brgs DbshbobrdInputArgs) (DbshbobrdResponse, error) {
 	const query = `
-		mutation UpdateInsightsDashboard($id: ID!, $input: UpdateInsightsDashboardInput!) {
-			updateInsightsDashboard(id: $id, input: $input) {
-				dashboard {
-					id, title, grants { users, organizations, global }
+		mutbtion UpdbteInsightsDbshbobrd($id: ID!, $input: UpdbteInsightsDbshbobrdInput!) {
+			updbteInsightsDbshbobrd(id: $id, input: $input) {
+				dbshbobrd {
+					id, title, grbnts { users, orgbnizbtions, globbl }
 				}
 			}
 		}
 	`
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id": id,
-		"input": map[string]any{
-			"title":  args.Title,
-			"grants": buildGrants(args.UserGrant, args.OrgGrant, args.GlobalGrant),
+		"input": mbp[string]bny{
+			"title":  brgs.Title,
+			"grbnts": buildGrbnts(brgs.UserGrbnt, brgs.OrgGrbnt, brgs.GlobblGrbnt),
 		},
 	}
 
-	var resp struct {
-		Data struct {
-			UpdateInsightsDashboard struct {
-				Dashboard DashboardResponse `json:"dashboard"`
-			} `json:"updateInsightsDashboard"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			UpdbteInsightsDbshbobrd struct {
+				Dbshbobrd DbshbobrdResponse `json:"dbshbobrd"`
+			} `json:"updbteInsightsDbshbobrd"`
+		} `json:"dbtb"`
 	}
 
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return DashboardResponse{}, errors.Wrap(err, "request GraphQL")
+		return DbshbobrdResponse{}, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	return resp.Data.UpdateInsightsDashboard.Dashboard, nil
+	return resp.Dbtb.UpdbteInsightsDbshbobrd.Dbshbobrd, nil
 }
 
-func (c *Client) DeleteDashboard(id string) error {
+func (c *Client) DeleteDbshbobrd(id string) error {
 	const query = `
-		mutation DeleteInsightsDashboard($id: ID!) {
-			deleteInsightsDashboard(id: $id) {
-				alwaysNil
+		mutbtion DeleteInsightsDbshbobrd($id: ID!) {
+			deleteInsightsDbshbobrd(id: $id) {
+				blwbysNil
 			}
 		}
 	`
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id": id,
 	}
-	var resp struct {
-		Data struct {
-			DeleteInsightsDashboard struct {
-				AlwaysNil string `json:"alwaysNil"`
-			} `json:"deleteInsightsDashboard"`
-		} `json:"data"`
+	vbr resp struct {
+		Dbtb struct {
+			DeleteInsightsDbshbobrd struct {
+				AlwbysNil string `json:"blwbysNil"`
+			} `json:"deleteInsightsDbshbobrd"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-func buildGrants(userGrant string, orgGrant string, globalGrant bool) map[string]any {
-	userGrants := []string{}
-	orgGrants := []string{}
+func buildGrbnts(userGrbnt string, orgGrbnt string, globblGrbnt bool) mbp[string]bny {
+	userGrbnts := []string{}
+	orgGrbnts := []string{}
 
-	if userGrant != "" {
-		userGrants = []string{userGrant}
+	if userGrbnt != "" {
+		userGrbnts = []string{userGrbnt}
 	}
-	if orgGrant != "" {
-		orgGrants = []string{orgGrant}
+	if orgGrbnt != "" {
+		orgGrbnts = []string{orgGrbnt}
 	}
 
-	return map[string]any{
-		"users":         userGrants,
-		"organizations": orgGrants,
-		"global":        globalGrant,
+	return mbp[string]bny{
+		"users":         userGrbnts,
+		"orgbnizbtions": orgGrbnts,
+		"globbl":        globblGrbnt,
 	}
 }
 
-func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRepoScope map[string]any, viewTimeScope map[string]any) (SearchInsight, error) {
+func (c *Client) CrebteSebrchInsight(title string, series mbp[string]bny, viewRepoScope mbp[string]bny, viewTimeScope mbp[string]bny) (SebrchInsight, error) {
 	const query = `
-	mutation CreateSearchBasedInsight($input: LineChartSearchInsightInput!) {
-		createLineChartSearchInsight(input: $input) {
+	mutbtion CrebteSebrchBbsedInsight($input: LineChbrtSebrchInsightInput!) {
+		crebteLineChbrtSebrchInsight(input: $input) {
 		  view {
 			id
-			presentation {
-			  ... on LineChartInsightViewPresentation {
-				seriesPresentation {
+			presentbtion {
+			  ... on LineChbrtInsightViewPresentbtion {
+				seriesPresentbtion {
 				  seriesId
-				  label
+				  lbbel
 				  color
 				}
 			  }
@@ -229,9 +229,9 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRe
 			  }
 			}
 			timeScope {
-			  ... on InsightIntervalTimeScope {
+			  ... on InsightIntervblTimeScope {
 				unit
-				value
+				vblue
 			  }
 			}
 		  }
@@ -239,21 +239,21 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRe
 	  }
 	`
 
-	variables := map[string]any{
-		"input": map[string]any{
-			"options": map[string]any{
+	vbribbles := mbp[string]bny{
+		"input": mbp[string]bny{
+			"options": mbp[string]bny{
 				"title": title,
 			},
-			"dataSeries": []any{
+			"dbtbSeries": []bny{
 				series,
 			},
 			"repositoryScope": viewRepoScope,
 			"timeScope":       viewTimeScope,
 		},
 	}
-	var resp struct {
-		Data struct {
-			CreateLineChartSearchInsight struct {
+	vbr resp struct {
+		Dbtb struct {
+			CrebteLineChbrtSebrchInsight struct {
 				View struct {
 					Id                   string `json:"id"`
 					RepositoryDefinition struct {
@@ -261,60 +261,60 @@ func (c *Client) CreateSearchInsight(title string, series map[string]any, viewRe
 					} `json:"repositoryDefinition"`
 					TimeScope struct {
 						Unit  string `json:"Unit"`
-						Value int32  `json:"Value"`
+						Vblue int32  `json:"Vblue"`
 					} `json:"timeScope"`
-					Presentation struct {
-						SeriesPresentation []struct {
+					Presentbtion struct {
+						SeriesPresentbtion []struct {
 							SeriesId string `json:"SeriesId"`
-							Label    string `json:"Label"`
+							Lbbel    string `json:"Lbbel"`
 							Color    string `json:"Color"`
-						} `json:"SeriesPresentation"`
-					} `json:"Presentation"`
+						} `json:"SeriesPresentbtion"`
+					} `json:"Presentbtion"`
 				} `json:"View"`
-			} `json:"createLineChartSearchInsight"`
-		} `json:"data"`
+			} `json:"crebteLineChbrtSebrchInsight"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return SearchInsight{}, errors.Wrap(err, "request GraphQL")
+		return SebrchInsight{}, errors.Wrbp(err, "request GrbphQL")
 	}
-	singleSeries := resp.Data.CreateLineChartSearchInsight.View.Presentation.SeriesPresentation
+	singleSeries := resp.Dbtb.CrebteLineChbrtSebrchInsight.View.Presentbtion.SeriesPresentbtion
 	if len(singleSeries) != 1 {
-		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
+		return SebrchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
 	}
-	return SearchInsight{
-		InsightViewId: resp.Data.CreateLineChartSearchInsight.View.Id,
+	return SebrchInsight{
+		InsightViewId: resp.Dbtb.CrebteLineChbrtSebrchInsight.View.Id,
 		SeriesId:      singleSeries[0].SeriesId,
-		Label:         singleSeries[0].Label,
+		Lbbel:         singleSeries[0].Lbbel,
 		Color:         singleSeries[0].Color,
-		Repos:         resp.Data.CreateLineChartSearchInsight.View.RepositoryDefinition.Repositories,
-		IntervalUnit:  resp.Data.CreateLineChartSearchInsight.View.TimeScope.Unit,
-		IntervalValue: resp.Data.CreateLineChartSearchInsight.View.TimeScope.Value,
+		Repos:         resp.Dbtb.CrebteLineChbrtSebrchInsight.View.RepositoryDefinition.Repositories,
+		IntervblUnit:  resp.Dbtb.CrebteLineChbrtSebrchInsight.View.TimeScope.Unit,
+		IntervblVblue: resp.Dbtb.CrebteLineChbrtSebrchInsight.View.TimeScope.Vblue,
 	}, nil
 }
 
-type SearchInsight struct {
+type SebrchInsight struct {
 	InsightViewId string
 	SeriesId      string
-	Label         string
+	Lbbel         string
 	Color         string
 	Repos         []string
-	IntervalUnit  string
-	IntervalValue int32
-	NumSamples    int32
+	IntervblUnit  string
+	IntervblVblue int32
+	NumSbmples    int32
 }
 
-func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any) (SearchInsight, error) {
+func (c *Client) UpdbteSebrchInsight(insightViewID string, input mbp[string]bny) (SebrchInsight, error) {
 	const query = `
-		mutation UpdateLineChartSearchInsight($input: UpdateLineChartSearchInsightInput!, $id: ID!) {
-			updateLineChartSearchInsight(input: $input, id: $id) {
+		mutbtion UpdbteLineChbrtSebrchInsight($input: UpdbteLineChbrtSebrchInsightInput!, $id: ID!) {
+			updbteLineChbrtSebrchInsight(input: $input, id: $id) {
 				view {
                   id
-				  presentation {
-					... on LineChartInsightViewPresentation {
-					  seriesPresentation {
+				  presentbtion {
+					... on LineChbrtInsightViewPresentbtion {
+					  seriesPresentbtion {
 						seriesId
-						label
+						lbbel
 						color
 					  }
 					}
@@ -325,26 +325,26 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 					}
 				  }
 				  timeScope {
-					... on InsightIntervalTimeScope {
+					... on InsightIntervblTimeScope {
 					  unit
-					  value
+					  vblue
 					}
 				  }
-				  defaultSeriesDisplayOptions {
-					numSamples
+				  defbultSeriesDisplbyOptions {
+					numSbmples
 				  }
 				}
 			}
 		}
 	`
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id":    insightViewID,
 		"input": input,
 	}
-	var resp struct {
-		Data struct {
-			UpdateLineChartSearchInsight struct {
+	vbr resp struct {
+		Dbtb struct {
+			UpdbteLineChbrtSebrchInsight struct {
 				View struct {
 					Id                   string `json:"id"`
 					RepositoryDefinition struct {
@@ -353,49 +353,49 @@ func (c *Client) UpdateSearchInsight(insightViewID string, input map[string]any)
 						} `json:"InsightRepositoryScope"`
 					} `json:"RepositoryDefinition"`
 					TimeScope struct {
-						InsightIntervalTimeScope struct {
+						InsightIntervblTimeScope struct {
 							Unit  string `json:"unit"`
-							Value int32  `json:"value"`
-						} `json:"InsightIntervalTimeScope"`
+							Vblue int32  `json:"vblue"`
+						} `json:"InsightIntervblTimeScope"`
 					} `json:"TimeScope"`
-					Presentation struct {
-						SeriesPresentation []struct {
+					Presentbtion struct {
+						SeriesPresentbtion []struct {
 							SeriesId string `json:"SeriesId"`
-							Label    string `json:"Label"`
+							Lbbel    string `json:"Lbbel"`
 							Color    string `json:"Color"`
-						} `json:"SeriesPresentation"`
-					} `json:"Presentation"`
-					DefaultSeriesDisplayOptions struct {
-						NumSamples int32 `json:"NumSamples"`
-					} `json:"DefaultSeriesDisplayOptions"`
+						} `json:"SeriesPresentbtion"`
+					} `json:"Presentbtion"`
+					DefbultSeriesDisplbyOptions struct {
+						NumSbmples int32 `json:"NumSbmples"`
+					} `json:"DefbultSeriesDisplbyOptions"`
 				} `json:"View"`
-			} `json:"updateLineChartSearchInsight"`
-		} `json:"data"`
+			} `json:"updbteLineChbrtSebrchInsight"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return SearchInsight{}, errors.Wrap(err, "request GraphQL")
+		return SebrchInsight{}, errors.Wrbp(err, "request GrbphQL")
 	}
-	singleSeries := resp.Data.UpdateLineChartSearchInsight.View.Presentation.SeriesPresentation
+	singleSeries := resp.Dbtb.UpdbteLineChbrtSebrchInsight.View.Presentbtion.SeriesPresentbtion
 	if len(singleSeries) != 1 {
-		return SearchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
+		return SebrchInsight{}, errors.Newf("Received %d insight series when expecting 1: resp [%v]", len(singleSeries), resp)
 	}
-	return SearchInsight{
-		InsightViewId: resp.Data.UpdateLineChartSearchInsight.View.Id,
+	return SebrchInsight{
+		InsightViewId: resp.Dbtb.UpdbteLineChbrtSebrchInsight.View.Id,
 		SeriesId:      singleSeries[0].SeriesId,
-		Label:         singleSeries[0].Label,
+		Lbbel:         singleSeries[0].Lbbel,
 		Color:         singleSeries[0].Color,
-		NumSamples:    resp.Data.UpdateLineChartSearchInsight.View.DefaultSeriesDisplayOptions.NumSamples,
+		NumSbmples:    resp.Dbtb.UpdbteLineChbrtSebrchInsight.View.DefbultSeriesDisplbyOptions.NumSbmples,
 	}, nil
 }
 
-func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, error) {
+func (c *Client) SbveInsightAsNewView(input mbp[string]bny) ([]SebrchInsight, error) {
 	const query = `
-		mutation saveAsNewView($new: SaveInsightAsNewViewInput!) {
-		  saveInsightAsNewView(input:$new) {
+		mutbtion sbveAsNewView($new: SbveInsightAsNewViewInput!) {
+		  sbveInsightAsNewView(input:$new) {
 			view {
 			  id
-			  dataSeries {
+			  dbtbSeries {
 				seriesId
 			  }
 			}
@@ -403,30 +403,30 @@ func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, er
 		}
 	`
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"new": input,
 	}
-	var resp struct {
-		Data struct {
-			SaveInsightAsNewView struct {
+	vbr resp struct {
+		Dbtb struct {
+			SbveInsightAsNewView struct {
 				View struct {
 					Id         string `json:"id"`
-					DataSeries []struct {
+					DbtbSeries []struct {
 						SeriesId string `json:"seriesId"`
-					} `json:"dataSeries"`
+					} `json:"dbtbSeries"`
 				} `json:"view"`
-			} `json:"saveInsightAsNewView"`
-		} `json:"data"`
+			} `json:"sbveInsightAsNewView"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	insights := []SearchInsight{}
-	for _, series := range resp.Data.SaveInsightAsNewView.View.DataSeries {
-		insights = append(insights, SearchInsight{
-			InsightViewId: resp.Data.SaveInsightAsNewView.View.Id,
+	insights := []SebrchInsight{}
+	for _, series := rbnge resp.Dbtb.SbveInsightAsNewView.View.DbtbSeries {
+		insights = bppend(insights, SebrchInsight{
+			InsightViewId: resp.Dbtb.SbveInsightAsNewView.View.Id,
 			SeriesId:      series.SeriesId,
 		})
 	}
@@ -435,25 +435,25 @@ func (c *Client) SaveInsightAsNewView(input map[string]any) ([]SearchInsight, er
 
 func (c *Client) DeleteInsightView(insightViewId string) error {
 	const query = `
-		mutation DeleteInsightView ($id: ID!) {
+		mutbtion DeleteInsightView ($id: ID!) {
 		  deleteInsightView(id: $id){
-			alwaysNil
+			blwbysNil
 		  }
 		}
 	`
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id": insightViewId,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			DeleteInsightView struct {
-				AlwaysNil string `json:"alwaysNil"`
+				AlwbysNil string `json:"blwbysNil"`
 			} `json:"deleteInsightView"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }

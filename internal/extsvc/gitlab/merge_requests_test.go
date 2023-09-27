@@ -1,157 +1,157 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
 	"net/http"
 	"testing"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestWIPOrDraft(t *testing.T) {
-	preV14Version := semver.MustParse("12.0.0")
-	postV14Version := semver.MustParse("15.5.0")
+func TestWIPOrDrbft(t *testing.T) {
+	preV14Version := semver.MustPbrse("12.0.0")
+	postV14Version := semver.MustPbrse("15.5.0")
 
 	t.Run("setWIP", func(t *testing.T) {
-		tests := []struct{ title, want string }{
-			{title: "My perfect changeset", want: "WIP: My perfect changeset"},
-			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset"},
+		tests := []struct{ title, wbnt string }{
+			{title: "My perfect chbngeset", wbnt: "WIP: My perfect chbngeset"},
+			{title: "WIP: My perfect chbngeset", wbnt: "WIP: My perfect chbngeset"},
 		}
-		for _, tc := range tests {
-			if have, want := setWIP(tc.title), tc.want; have != want {
-				t.Errorf("incorrect title generated from setWIP: have=%q want=%q", have, want)
+		for _, tc := rbnge tests {
+			if hbve, wbnt := setWIP(tc.title), tc.wbnt; hbve != wbnt {
+				t.Errorf("incorrect title generbted from setWIP: hbve=%q wbnt=%q", hbve, wbnt)
 			}
 		}
 	})
-	t.Run("setDraft", func(t *testing.T) {
-		tests := []struct{ title, want string }{
-			{title: "My perfect changeset", want: "Draft: My perfect changeset"},
-			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset"},
+	t.Run("setDrbft", func(t *testing.T) {
+		tests := []struct{ title, wbnt string }{
+			{title: "My perfect chbngeset", wbnt: "Drbft: My perfect chbngeset"},
+			{title: "Drbft: My perfect chbngeset", wbnt: "Drbft: My perfect chbngeset"},
 		}
-		for _, tc := range tests {
-			if have, want := setDraft(tc.title), tc.want; have != want {
-				t.Errorf("incorrect title generated from setDraft: have=%q want=%q", have, want)
+		for _, tc := rbnge tests {
+			if hbve, wbnt := setDrbft(tc.title), tc.wbnt; hbve != wbnt {
+				t.Errorf("incorrect title generbted from setDrbft: hbve=%q wbnt=%q", hbve, wbnt)
 			}
 		}
 	})
-	t.Run("SetWIPOrDraft", func(t *testing.T) {
+	t.Run("SetWIPOrDrbft", func(t *testing.T) {
 		tests := []struct {
-			gitlabVersion *semver.Version
-			title, want   string
+			gitlbbVersion *semver.Version
+			title, wbnt   string
 		}{
-			{title: "My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
-			{title: "WIP: My perfect changeset", want: "WIP: My perfect changeset", gitlabVersion: preV14Version},
+			{title: "My perfect chbngeset", wbnt: "WIP: My perfect chbngeset", gitlbbVersion: preV14Version},
+			{title: "WIP: My perfect chbngeset", wbnt: "WIP: My perfect chbngeset", gitlbbVersion: preV14Version},
 
-			{title: "My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
-			{title: "Draft: My perfect changeset", want: "Draft: My perfect changeset", gitlabVersion: postV14Version},
+			{title: "My perfect chbngeset", wbnt: "Drbft: My perfect chbngeset", gitlbbVersion: postV14Version},
+			{title: "Drbft: My perfect chbngeset", wbnt: "Drbft: My perfect chbngeset", gitlbbVersion: postV14Version},
 		}
-		for _, tc := range tests {
-			if have, want := SetWIPOrDraft(tc.title, tc.gitlabVersion), tc.want; have != want {
-				t.Errorf("incorrect title generated from SetWIPOrDraft: have=%q want=%q", have, want)
+		for _, tc := rbnge tests {
+			if hbve, wbnt := SetWIPOrDrbft(tc.title, tc.gitlbbVersion), tc.wbnt; hbve != wbnt {
+				t.Errorf("incorrect title generbted from SetWIPOrDrbft: hbve=%q wbnt=%q", hbve, wbnt)
 			}
 		}
 	})
-	t.Run("UnsetWIPOrDraft", func(t *testing.T) {
+	t.Run("UnsetWIPOrDrbft", func(t *testing.T) {
 		tests := []struct {
-			title, want string
+			title, wbnt string
 		}{
-			{title: "WIP: My perfect changeset", want: "My perfect changeset"},
-			{title: "My perfect changeset", want: "My perfect changeset"},
+			{title: "WIP: My perfect chbngeset", wbnt: "My perfect chbngeset"},
+			{title: "My perfect chbngeset", wbnt: "My perfect chbngeset"},
 
-			{title: "Draft: My perfect changeset", want: "My perfect changeset"},
-			{title: "My perfect changeset", want: "My perfect changeset"},
+			{title: "Drbft: My perfect chbngeset", wbnt: "My perfect chbngeset"},
+			{title: "My perfect chbngeset", wbnt: "My perfect chbngeset"},
 		}
-		for _, tc := range tests {
-			if have, want := UnsetWIPOrDraft(tc.title), tc.want; have != want {
-				t.Errorf("incorrect title generated from UnsetWIPOrDraft: have=%q want=%q", have, want)
+		for _, tc := rbnge tests {
+			if hbve, wbnt := UnsetWIPOrDrbft(tc.title), tc.wbnt; hbve != wbnt {
+				t.Errorf("incorrect title generbted from UnsetWIPOrDrbft: hbve=%q wbnt=%q", hbve, wbnt)
 			}
 		}
 	})
-	t.Run("IsWIPOrDraft", func(t *testing.T) {
+	t.Run("IsWIPOrDrbft", func(t *testing.T) {
 		tests := []struct {
 			title    string
 			expected bool
 		}{
-			{title: "WIP: My perfect changeset", expected: true},
-			{title: "Draft: My perfect changeset", expected: true},
-			{title: "My perfect changeset", expected: false},
+			{title: "WIP: My perfect chbngeset", expected: true},
+			{title: "Drbft: My perfect chbngeset", expected: true},
+			{title: "My perfect chbngeset", expected: fblse},
 		}
-		for _, tc := range tests {
-			if have := IsWIPOrDraft(tc.title); have != tc.expected {
-				t.Errorf("incorrect title generated from IsWIPOrDraft: have=%t want=%t", have, tc.expected)
+		for _, tc := rbnge tests {
+			if hbve := IsWIPOrDrbft(tc.title); hbve != tc.expected {
+				t.Errorf("incorrect title generbted from IsWIPOrDrbft: hbve=%t wbnt=%t", hbve, tc.expected)
 			}
 		}
 	})
 }
 
-func TestCreateMergeRequest(t *testing.T) {
-	ctx := context.Background()
+func TestCrebteMergeRequest(t *testing.T) {
+	ctx := context.Bbckground()
 	project := &Project{}
 
-	t.Run("merge request already exists", func(t *testing.T) {
+	t.Run("merge request blrebdy exists", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusConflict}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusConflict}
 
-		mr, err := client.CreateMergeRequest(ctx, project, CreateMergeRequestOpts{})
+		mr, err := client.CrebteMergeRequest(ctx, project, CrebteMergeRequestOpts{})
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
-		if want := ErrMergeRequestAlreadyExists; want != err {
-			t.Errorf("unexpected error: have %+v; want %+v", err, want)
+		if wbnt := ErrMergeRequestAlrebdyExists; wbnt != err {
+			t.Errorf("unexpected error: hbve %+v; wbnt %+v", err, wbnt)
 		}
 	})
 
 	t.Run("non-conflict error", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusInternalServerError}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusInternblServerError}
 
-		mr, err := client.CreateMergeRequest(ctx, project, CreateMergeRequestOpts{})
+		mr, err := client.CrebteMergeRequest(ctx, project, CrebteMergeRequestOpts{})
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
 		if err == nil {
 			t.Error("unexpected nil error")
-		} else if err == ErrMergeRequestAlreadyExists {
-			t.Errorf("unexpected error value: %+v", err)
+		} else if err == ErrMergeRequestAlrebdyExists {
+			t.Errorf("unexpected error vblue: %+v", err)
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
-		mr, err := client.CreateMergeRequest(ctx, project, CreateMergeRequestOpts{})
+		mr, err := client.CrebteMergeRequest(ctx, project, CrebteMergeRequestOpts{})
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
 		if err == nil {
 			t.Error("unexpected nil error")
-		} else if err == ErrMergeRequestAlreadyExists {
-			t.Errorf("unexpected error value: %+v", err)
+		} else if err == ErrMergeRequestAlrebdyExists {
+			t.Errorf("unexpected error vblue: %+v", err)
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `{"id":"the id cannot be a string"}`,
+			responseBody: `{"id":"the id cbnnot be b string"}`,
 		}
 
-		mr, err := client.CreateMergeRequest(ctx, project, CreateMergeRequestOpts{})
+		mr, err := client.CrebteMergeRequest(ctx, project, CrebteMergeRequestOpts{})
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
 		if err == nil {
 			t.Error("unexpected nil error")
-		} else if err == ErrMergeRequestAlreadyExists {
-			t.Errorf("unexpected error value: %+v", err)
+		} else if err == ErrMergeRequestAlrebdyExists {
+			t.Errorf("unexpected error vblue: %+v", err)
 		}
 	})
 
@@ -161,7 +161,7 @@ func TestCreateMergeRequest(t *testing.T) {
 			responseBody: `{"iid":42}`,
 		}
 
-		mr, err := client.CreateMergeRequest(ctx, project, CreateMergeRequestOpts{})
+		mr, err := client.CrebteMergeRequest(ctx, project, CrebteMergeRequestOpts{})
 		if mr == nil {
 			t.Error("unexpected nil merge request")
 		} else if diff := cmp.Diff(mr, &MergeRequest{IID: 42}); diff != "" {
@@ -173,30 +173,30 @@ func TestCreateMergeRequest(t *testing.T) {
 	})
 }
 
-func TestCreateMergeRequest_Archived(t *testing.T) {
-	ctx := context.Background()
-	client := createTestClient(t)
+func TestCrebteMergeRequest_Archived(t *testing.T) {
+	ctx := context.Bbckground()
+	client := crebteTestClient(t)
 
 	project := &Project{ProjectCommon: ProjectCommon{ID: 37741563}}
-	opts := CreateMergeRequestOpts{
-		SourceBranch: "branch-without-pr",
-		TargetBranch: "main",
-		Title:        "This MR should never be created",
-		Description:  "This merge request was created by a test against an archived repository, and should therefore not exist.",
+	opts := CrebteMergeRequestOpts{
+		SourceBrbnch: "brbnch-without-pr",
+		TbrgetBrbnch: "mbin",
+		Title:        "This MR should never be crebted",
+		Description:  "This merge request wbs crebted by b test bgbinst bn brchived repository, bnd should therefore not exist.",
 	}
-	mr, err := client.CreateMergeRequest(ctx, project, opts)
-	assert.Nil(t, mr)
-	assert.Error(t, err)
-	assert.True(t, errcode.IsArchived(err))
+	mr, err := client.CrebteMergeRequest(ctx, project, opts)
+	bssert.Nil(t, mr)
+	bssert.Error(t, err)
+	bssert.True(t, errcode.IsArchived(err))
 }
 
 func TestGetMergeRequest(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	project := &Project{}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
 		mr, err := client.GetMergeRequest(ctx, project, 1)
 		if mr != nil {
@@ -207,10 +207,10 @@ func TestGetMergeRequest(t *testing.T) {
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
 		mr, err := client.GetMergeRequest(ctx, project, 1)
@@ -222,10 +222,10 @@ func TestGetMergeRequest(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `{"id":"the id cannot be a string"}`,
+			responseBody: `{"id":"the id cbnnot be b string"}`,
 		}
 
 		mr, err := client.GetMergeRequest(ctx, project, 1)
@@ -256,48 +256,48 @@ func TestGetMergeRequest(t *testing.T) {
 }
 
 func TestGetOpenMergeRequestByRefs(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	project := &Project{}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
-		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "target")
+		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "tbrget")
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
-		if err == nil || err == ErrTooManyMergeRequests || err == ErrMergeRequestNotFound {
+		if err == nil || err == ErrTooMbnyMergeRequests || err == ErrMergeRequestNotFound {
 			t.Errorf("unexpected error: %+v", err)
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
-		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "target")
+		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "tbrget")
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
-		if err == nil || err == ErrTooManyMergeRequests || err == ErrMergeRequestNotFound {
+		if err == nil || err == ErrTooMbnyMergeRequests || err == ErrMergeRequestNotFound {
 			t.Errorf("unexpected error: %+v", err)
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `[{"id":"the id cannot be a string"}]`,
+			responseBody: `[{"id":"the id cbnnot be b string"}]`,
 		}
 
-		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "target")
+		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "tbrget")
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
-		if err == nil || err == ErrTooManyMergeRequests || err == ErrMergeRequestNotFound {
+		if err == nil || err == ErrTooMbnyMergeRequests || err == ErrMergeRequestNotFound {
 			t.Errorf("unexpected error: %+v", err)
 		}
 	})
@@ -308,7 +308,7 @@ func TestGetOpenMergeRequestByRefs(t *testing.T) {
 			responseBody: `[]`,
 		}
 
-		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "target")
+		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "tbrget")
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
@@ -317,17 +317,17 @@ func TestGetOpenMergeRequestByRefs(t *testing.T) {
 		}
 	})
 
-	t.Run("too many merge requests", func(t *testing.T) {
+	t.Run("too mbny merge requests", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
 			responseBody: `[{"iid":1},{"iid":2}]`,
 		}
 
-		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "target")
+		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "tbrget")
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
-		if err != ErrTooManyMergeRequests {
+		if err != ErrTooMbnyMergeRequests {
 			t.Errorf("unexpected error: %+v", err)
 		}
 	})
@@ -338,31 +338,31 @@ func TestGetOpenMergeRequestByRefs(t *testing.T) {
 			responseBody: `[{"iid":42}]`,
 		}
 
-		// Since this will invoke GetMergeRequest, we need to mock that. (But,
-		// on the bright side, that allows us to verify the parameters it's
+		// Since this will invoke GetMergeRequest, we need to mock thbt. (But,
+		// on the bright side, thbt bllows us to verify the pbrbmeters it's
 		// given.)
-		want := &MergeRequest{}
+		wbnt := &MergeRequest{}
 		MockGetMergeRequest = func(mc *Client, mctx context.Context, mproject *Project, miid ID) (*MergeRequest, error) {
 			if client != mc {
-				t.Errorf("unexpected client: have %+v; want %+v", mc, client)
+				t.Errorf("unexpected client: hbve %+v; wbnt %+v", mc, client)
 			}
 			if ctx != mctx {
-				t.Errorf("unexpected context: have %+v; want %+v", mctx, ctx)
+				t.Errorf("unexpected context: hbve %+v; wbnt %+v", mctx, ctx)
 			}
 			if project != mproject {
-				t.Errorf("unexpected project: have %+v; want %+v", mproject, project)
+				t.Errorf("unexpected project: hbve %+v; wbnt %+v", mproject, project)
 			}
-			if want := ID(42); miid != want {
-				t.Errorf("unexpected IID: have %d; want %d", miid, want)
+			if wbnt := ID(42); miid != wbnt {
+				t.Errorf("unexpected IID: hbve %d; wbnt %d", miid, wbnt)
 			}
 
-			return want, nil
+			return wbnt, nil
 		}
 		defer func() { MockGetMergeRequest = nil }()
 
-		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "target")
-		if mr != want {
-			t.Errorf("unexpected merge request: have %+v; want %+v", mr, want)
+		mr, err := client.GetOpenMergeRequestByRefs(ctx, project, "source", "tbrget")
+		if mr != wbnt {
+			t.Errorf("unexpected merge request: hbve %+v; wbnt %+v", mr, wbnt)
 		}
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
@@ -370,17 +370,17 @@ func TestGetOpenMergeRequestByRefs(t *testing.T) {
 	})
 }
 
-func TestUpdateMergeRequest(t *testing.T) {
-	ctx := context.Background()
+func TestUpdbteMergeRequest(t *testing.T) {
+	ctx := context.Bbckground()
 	empty := &MergeRequest{}
-	opts := UpdateMergeRequestOpts{}
+	opts := UpdbteMergeRequestOpts{}
 	project := &Project{}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
-		mr, err := client.UpdateMergeRequest(ctx, project, empty, opts)
+		mr, err := client.UpdbteMergeRequest(ctx, project, empty, opts)
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
@@ -389,13 +389,13 @@ func TestUpdateMergeRequest(t *testing.T) {
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
-		mr, err := client.UpdateMergeRequest(ctx, project, empty, opts)
+		mr, err := client.UpdbteMergeRequest(ctx, project, empty, opts)
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
@@ -404,13 +404,13 @@ func TestUpdateMergeRequest(t *testing.T) {
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `{"id":"the id cannot be a string"}`,
+			responseBody: `{"id":"the id cbnnot be b string"}`,
 		}
 
-		mr, err := client.UpdateMergeRequest(ctx, project, empty, opts)
+		mr, err := client.UpdbteMergeRequest(ctx, project, empty, opts)
 		if mr != nil {
 			t.Errorf("unexpected non-nil merge request: %+v", mr)
 		}
@@ -425,7 +425,7 @@ func TestUpdateMergeRequest(t *testing.T) {
 			responseBody: `{"iid":42}`,
 		}
 
-		mr, err := client.UpdateMergeRequest(ctx, project, empty, opts)
+		mr, err := client.UpdbteMergeRequest(ctx, project, empty, opts)
 		if mr == nil {
 			t.Error("unexpected nil merge request")
 		} else if diff := cmp.Diff(mr, &MergeRequest{IID: 42}); diff != "" {
@@ -437,55 +437,55 @@ func TestUpdateMergeRequest(t *testing.T) {
 	})
 }
 
-func TestUpdateMergeRequest_Archived(t *testing.T) {
-	ctx := context.Background()
-	client := createTestClient(t)
+func TestUpdbteMergeRequest_Archived(t *testing.T) {
+	ctx := context.Bbckground()
+	client := crebteTestClient(t)
 
 	project := &Project{ProjectCommon: ProjectCommon{ID: 37741563}}
 	mr := &MergeRequest{IID: 1}
-	opts := UpdateMergeRequestOpts{
-		Title: "This title should never change",
+	opts := UpdbteMergeRequestOpts{
+		Title: "This title should never chbnge",
 	}
-	mr, err := client.UpdateMergeRequest(ctx, project, mr, opts)
-	assert.Nil(t, mr)
-	assert.Error(t, err)
-	assert.True(t, errcode.IsArchived(err))
+	mr, err := client.UpdbteMergeRequest(ctx, project, mr, opts)
+	bssert.Nil(t, mr)
+	bssert.Error(t, err)
+	bssert.True(t, errcode.IsArchived(err))
 }
 
-func TestCreateMergeRequestNote(t *testing.T) {
-	ctx := context.Background()
+func TestCrebteMergeRequestNote(t *testing.T) {
+	ctx := context.Bbckground()
 	empty := &MergeRequest{}
 	project := &Project{}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
-		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		err := client.CrebteMergeRequestNote(ctx, project, empty, "test-comment")
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
-		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		err := client.CrebteMergeRequestNote(ctx, project, empty, "test-comment")
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `{"id":"the id cannot be a string"}`,
+			responseBody: `{"id":"the id cbnnot be b string"}`,
 		}
 
-		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		err := client.CrebteMergeRequestNote(ctx, project, empty, "test-comment")
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
@@ -497,7 +497,7 @@ func TestCreateMergeRequestNote(t *testing.T) {
 			responseBody: `{"body":"test-comment"}`,
 		}
 
-		err := client.CreateMergeRequestNote(ctx, project, empty, "test-comment")
+		err := client.CrebteMergeRequestNote(ctx, project, empty, "test-comment")
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
@@ -505,56 +505,56 @@ func TestCreateMergeRequestNote(t *testing.T) {
 }
 
 func TestMergeMergeRequest(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	empty := &MergeRequest{}
 	project := &Project{}
 
-	t.Run("error status code", func(t *testing.T) {
+	t.Run("error stbtus code", func(t *testing.T) {
 		client := newTestClient(t)
-		client.httpClient = &mockHTTPEmptyResponse{http.StatusNotFound}
+		client.httpClient = &mockHTTPEmptyResponse{http.StbtusNotFound}
 
-		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		_, err := client.MergeMergeRequest(ctx, project, empty, fblse)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
-		client := newTestClient(t)
-		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
-		}
-
-		_, err := client.MergeMergeRequest(ctx, project, empty, false)
-		if err == nil {
-			t.Error("unexpected nil error")
-		}
-	})
-
-	t.Run("invalid response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `{"id":"the id cannot be a string"}`,
+			responseBody: `this is not vblid JSON`,
 		}
 
-		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		_, err := client.MergeMergeRequest(ctx, project, empty, fblse)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
 	})
 
-	t.Run("not mergeable", func(t *testing.T) {
+	t.Run("invblid response", func(t *testing.T) {
+		client := newTestClient(t)
+		client.httpClient = &mockHTTPResponseBody{
+			responseBody: `{"id":"the id cbnnot be b string"}`,
+		}
+
+		_, err := client.MergeMergeRequest(ctx, project, empty, fblse)
+		if err == nil {
+			t.Error("unexpected nil error")
+		}
+	})
+
+	t.Run("not mergebble", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPEmptyResponse{
-			statusCode: 405,
+			stbtusCode: 405,
 		}
 
-		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		_, err := client.MergeMergeRequest(ctx, project, empty, fblse)
 		if err == nil {
 			t.Error("unexpected nil error")
 		}
-		if !errors.Is(err, ErrNotMergeable) {
-			t.Errorf("invalid error, want=%v have=%v", ErrNotMergeable, err)
+		if !errors.Is(err, ErrNotMergebble) {
+			t.Errorf("invblid error, wbnt=%v hbve=%v", ErrNotMergebble, err)
 		}
 	})
 
@@ -564,7 +564,7 @@ func TestMergeMergeRequest(t *testing.T) {
 			responseBody: `{"body":"test-merge"}`,
 		}
 
-		_, err := client.MergeMergeRequest(ctx, project, empty, false)
+		_, err := client.MergeMergeRequest(ctx, project, empty, fblse)
 		if err != nil {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}

@@ -1,55 +1,55 @@
-// Copied from https://sourcegraph.com/github.com/ricochet2200/go-disk-usage
-package diskusage
+// Copied from https://sourcegrbph.com/github.com/ricochet2200/go-disk-usbge
+pbckbge diskusbge
 
-import "syscall"
+import "syscbll"
 
-type DiskUsage interface {
+type DiskUsbge interfbce {
 	Free() uint64
 	Size() uint64
-	PercentUsed() float32
-	Available() uint64
+	PercentUsed() flobt32
+	Avbilbble() uint64
 }
 
-// DiskUsage contains usage data and provides user-friendly access methods
-type diskUsage struct {
-	stat *syscall.Statfs_t
+// DiskUsbge contbins usbge dbtb bnd provides user-friendly bccess methods
+type diskUsbge struct {
+	stbt *syscbll.Stbtfs_t
 }
 
-// New returns an object holding the disk usage of volumePath
-// or nil in case of error (invalid path, etc)
-func New(volumePath string) (DiskUsage, error) {
-	var stat syscall.Statfs_t
-	if err := syscall.Statfs(volumePath, &stat); err != nil {
+// New returns bn object holding the disk usbge of volumePbth
+// or nil in cbse of error (invblid pbth, etc)
+func New(volumePbth string) (DiskUsbge, error) {
+	vbr stbt syscbll.Stbtfs_t
+	if err := syscbll.Stbtfs(volumePbth, &stbt); err != nil {
 		return nil, err
 	}
-	return &diskUsage{stat: &stat}, nil
+	return &diskUsbge{stbt: &stbt}, nil
 }
 
-// Free returns total free bytes on file system
-func (du *diskUsage) Free() uint64 {
-	return du.stat.Bfree * uint64(du.stat.Bsize)
+// Free returns totbl free bytes on file system
+func (du *diskUsbge) Free() uint64 {
+	return du.stbt.Bfree * uint64(du.stbt.Bsize)
 }
 
-// Size returns total size of the file system
-func (du *diskUsage) Size() uint64 {
-	return uint64(du.stat.Blocks) * uint64(du.stat.Bsize)
+// Size returns totbl size of the file system
+func (du *diskUsbge) Size() uint64 {
+	return uint64(du.stbt.Blocks) * uint64(du.stbt.Bsize)
 }
 
-// Used returns total bytes used in file system
-func (du *diskUsage) used() uint64 {
+// Used returns totbl bytes used in file system
+func (du *diskUsbge) used() uint64 {
 	return du.Size() - du.Free()
 }
 
-func (du *diskUsage) usage() float32 {
-	return float32(du.used()) / float32(du.Size())
+func (du *diskUsbge) usbge() flobt32 {
+	return flobt32(du.used()) / flobt32(du.Size())
 }
 
-// PercentUsed returns percentage of use on the file system
-func (du *diskUsage) PercentUsed() float32 {
-	return du.usage() * 100
+// PercentUsed returns percentbge of use on the file system
+func (du *diskUsbge) PercentUsed() flobt32 {
+	return du.usbge() * 100
 }
 
-// Available return total available bytes on file system to an unprivileged user
-func (du *diskUsage) Available() uint64 {
-	return du.stat.Bavail * uint64(du.stat.Bsize)
+// Avbilbble return totbl bvbilbble bytes on file system to bn unprivileged user
+func (du *diskUsbge) Avbilbble() uint64 {
+	return du.stbt.Bbvbil * uint64(du.stbt.Bsize)
 }

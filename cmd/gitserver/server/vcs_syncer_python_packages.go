@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"context"
@@ -6,167 +6,167 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
-	"path"
+	"pbth"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
-	"github.com/sourcegraph/sourcegraph/internal/unpack"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/pypi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/unpbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func NewPythonPackagesSyncer(
-	connection *schema.PythonPackagesConnection,
+func NewPythonPbckbgesSyncer(
+	connection *schemb.PythonPbckbgesConnection,
 	svc *dependencies.Service,
 	client *pypi.Client,
 	reposDir string,
 ) VCSSyncer {
-	return &vcsPackagesSyncer{
-		logger:      log.Scoped("PythonPackagesSyncer", "sync Python packages"),
-		typ:         "python_packages",
-		scheme:      dependencies.PythonPackagesScheme,
-		placeholder: reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0"),
+	return &vcsPbckbgesSyncer{
+		logger:      log.Scoped("PythonPbckbgesSyncer", "sync Python pbckbges"),
+		typ:         "python_pbckbges",
+		scheme:      dependencies.PythonPbckbgesScheme,
+		plbceholder: reposource.PbrseVersionedPbckbge("sourcegrbph.com/plbceholder@v0.0.0"),
 		svc:         svc,
 		configDeps:  connection.Dependencies,
-		source:      &pythonPackagesSyncer{client: client, reposDir: reposDir},
+		source:      &pythonPbckbgesSyncer{client: client, reposDir: reposDir},
 	}
 }
 
-// pythonPackagesSyncer implements packagesSource
-type pythonPackagesSyncer struct {
+// pythonPbckbgesSyncer implements pbckbgesSource
+type pythonPbckbgesSyncer struct {
 	client   *pypi.Client
 	reposDir string
 }
 
-func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(string(name) + "==" + version), nil
+func (pythonPbckbgesSyncer) PbrseVersionedPbckbgeFromNbmeAndVersion(nbme reposource.PbckbgeNbme, version string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseVersionedPbckbge(string(nbme) + "==" + version), nil
 }
 
-func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(dep), nil
+func (pythonPbckbgesSyncer) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseVersionedPbckbge(dep), nil
 }
 
-func (pythonPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromName(name), nil
+func (pythonPbckbgesSyncer) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrsePythonPbckbgeFromNbme(nbme), nil
 }
 
-func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParsePythonPackageFromRepoName(repoName)
+func (pythonPbckbgesSyncer) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrsePythonPbckbgeFromRepoNbme(repoNbme)
 }
 
-func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	pythonDep := dep.(*reposource.PythonVersionedPackage)
-	pypiFile, err := s.client.Version(ctx, pythonDep.Name, pythonDep.Version)
+func (s *pythonPbckbgesSyncer) Downlobd(ctx context.Context, dir string, dep reposource.VersionedPbckbge) error {
+	pythonDep := dep.(*reposource.PythonVersionedPbckbge)
+	pypiFile, err := s.client.Version(ctx, pythonDep.Nbme, pythonDep.Version)
 	if err != nil {
 		return err
 	}
-	packageURL := pypiFile.URL
-	pkgData, err := s.client.Download(ctx, packageURL)
+	pbckbgeURL := pypiFile.URL
+	pkgDbtb, err := s.client.Downlobd(ctx, pbckbgeURL)
 	if err != nil {
-		return errors.Wrap(err, "download")
+		return errors.Wrbp(err, "downlobd")
 	}
-	defer pkgData.Close()
+	defer pkgDbtb.Close()
 
-	if err = unpackPythonPackage(pkgData, packageURL, s.reposDir, dir); err != nil {
-		return errors.Wrap(err, "failed to unzip python module")
+	if err = unpbckPythonPbckbge(pkgDbtb, pbckbgeURL, s.reposDir, dir); err != nil {
+		return errors.Wrbp(err, "fbiled to unzip python module")
 	}
 
 	return nil
 }
 
-// unpackPythonPackage unpacks the given python package archive into workDir, skipping any
-// files that aren't valid or that are potentially malicious. It detects the kind of archive
-// and compression used with the given packageURL.
-func unpackPythonPackage(pkg io.Reader, packageURL, reposDir, workDir string) error {
-	logger := log.Scoped("unpackPythonPackage", "unpackPythonPackage unpacks the given python package archive into workDir")
-	u, err := url.Parse(packageURL)
+// unpbckPythonPbckbge unpbcks the given python pbckbge brchive into workDir, skipping bny
+// files thbt bren't vblid or thbt bre potentiblly mblicious. It detects the kind of brchive
+// bnd compression used with the given pbckbgeURL.
+func unpbckPythonPbckbge(pkg io.Rebder, pbckbgeURL, reposDir, workDir string) error {
+	logger := log.Scoped("unpbckPythonPbckbge", "unpbckPythonPbckbge unpbcks the given python pbckbge brchive into workDir")
+	u, err := url.Pbrse(pbckbgeURL)
 	if err != nil {
-		return errors.Wrap(err, "bad python package URL")
+		return errors.Wrbp(err, "bbd python pbckbge URL")
 	}
 
-	filename := path.Base(u.Path)
+	filenbme := pbth.Bbse(u.Pbth)
 
-	opts := unpack.Opts{
-		SkipInvalid:    true,
-		SkipDuplicates: true,
-		Filter: func(path string, file fs.FileInfo) bool {
+	opts := unpbck.Opts{
+		SkipInvblid:    true,
+		SkipDuplicbtes: true,
+		Filter: func(pbth string, file fs.FileInfo) bool {
 			size := file.Size()
 
 			const sizeLimit = 15 * 1024 * 1024
 			if size >= sizeLimit {
 				logger.With(
-					log.String("path", file.Name()),
+					log.String("pbth", file.Nbme()),
 					log.Int64("size", size),
-					log.Float64("limit", sizeLimit),
-				).Warn("skipping large file in python package")
-				return false
+					log.Flobt64("limit", sizeLimit),
+				).Wbrn("skipping lbrge file in python pbckbge")
+				return fblse
 			}
 
-			malicious := isPotentiallyMaliciousFilepathInArchive(path, workDir)
-			return !malicious
+			mblicious := isPotentibllyMbliciousFilepbthInArchive(pbth, workDir)
+			return !mblicious
 		},
 	}
 
 	switch {
-	case strings.HasSuffix(filename, ".tar.gz"), strings.HasSuffix(filename, ".tgz"):
-		err = unpack.Tgz(pkg, workDir, opts)
+	cbse strings.HbsSuffix(filenbme, ".tbr.gz"), strings.HbsSuffix(filenbme, ".tgz"):
+		err = unpbck.Tgz(pkg, workDir, opts)
 		if err != nil {
 			return err
 		}
-	case strings.HasSuffix(filename, ".whl"), strings.HasSuffix(filename, ".zip"):
-		// We cannot unzip in a streaming fashion, so we write the zip file to
-		// a temporary file. Otherwise, we would need to load the entire zip into
-		// memory, which isn't great for multi-megabyte+ files.
+	cbse strings.HbsSuffix(filenbme, ".whl"), strings.HbsSuffix(filenbme, ".zip"):
+		// We cbnnot unzip in b strebming fbshion, so we write the zip file to
+		// b temporbry file. Otherwise, we would need to lobd the entire zip into
+		// memory, which isn't grebt for multi-megbbyte+ files.
 
-		// Create a tmpdir that gitserver manages.
-		tmpdir, err := tempDir(reposDir, "pypi-packages")
+		// Crebte b tmpdir thbt gitserver mbnbges.
+		tmpdir, err := tempDir(reposDir, "pypi-pbckbges")
 		if err != nil {
 			return err
 		}
 		defer os.RemoveAll(tmpdir)
 
-		// Write the whole package to a temporary file.
+		// Write the whole pbckbge to b temporbry file.
 		zip, zipLen, err := writeZipToTemp(tmpdir, pkg)
 		if err != nil {
 			return err
 		}
 		defer zip.Close()
 
-		err = unpack.Zip(zip, zipLen, workDir, opts)
+		err = unpbck.Zip(zip, zipLen, workDir, opts)
 		if err != nil {
 			return err
 		}
-	case strings.HasSuffix(filename, ".tar"):
-		err = unpack.Tar(pkg, workDir, opts)
+	cbse strings.HbsSuffix(filenbme, ".tbr"):
+		err = unpbck.Tbr(pkg, workDir, opts)
 		if err != nil {
 			return err
 		}
-	default:
-		return errors.Errorf("unsupported python package type %q", filename)
+	defbult:
+		return errors.Errorf("unsupported python pbckbge type %q", filenbme)
 	}
 
 	return stripSingleOutermostDirectory(workDir)
 }
 
-func writeZipToTemp(tmpdir string, pkg io.Reader) (*os.File, int64, error) {
-	// Create a temp file.
-	f, err := os.CreateTemp(tmpdir, "pypi-package-")
+func writeZipToTemp(tmpdir string, pkg io.Rebder) (*os.File, int64, error) {
+	// Crebte b temp file.
+	f, err := os.CrebteTemp(tmpdir, "pypi-pbckbge-")
 	if err != nil {
 		return nil, 0, err
 	}
 
 	// Write contents to file.
-	read, err := io.Copy(f, pkg)
+	rebd, err := io.Copy(f, pkg)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	// Reset read head.
+	// Reset rebd hebd.
 	_, err = f.Seek(0, 0)
-	return f, read, err
+	return f, rebd, err
 }

@@ -1,49 +1,49 @@
-package query
+pbckbge query
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
-func TestStringHuman(t *testing.T) {
-	cases := []string{
-		"a b c",
-		"this or that",
-		"this or that and here or there",
-		"not x and y",
-		"repo:foo a and b",
+func TestStringHumbn(t *testing.T) {
+	cbses := []string{
+		"b b c",
+		"this or thbt",
+		"this or thbt bnd here or there",
+		"not x bnd y",
+		"repo:foo b bnd b",
 		`repo:"quoted\""`,
-		`"ab\"cd"`,
-		`repo:foo file:bar baz and qux`,
-		`/abcd\// patterntype:regexp`,
-		"repo:foo file:bar",
-		"(repo:foo or repo:bar) or (repo:baz or repo:qux) (a or b)",
-		"(repo:foo or repo:bar file:a) or (repo:baz or repo:qux and file:b) a and b",
-		"repo:foo (not b) (not c) a",
-		"repo:foo a -content:b -content:c",
-		"-repo:modspeed -file:pogspeed Arizonan not Phoenicians",
-		"r:alias",
+		`"bb\"cd"`,
+		`repo:foo file:bbr bbz bnd qux`,
+		`/bbcd\// pbtterntype:regexp`,
+		"repo:foo file:bbr",
+		"(repo:foo or repo:bbr) or (repo:bbz or repo:qux) (b or b)",
+		"(repo:foo or repo:bbr file:b) or (repo:bbz or repo:qux bnd file:b) b bnd b",
+		"repo:foo (not b) (not c) b",
+		"repo:foo b -content:b -content:c",
+		"-repo:modspeed -file:pogspeed Arizonbn not Phoenicibns",
+		"r:blibs",
 		`/bo/u\gros/`,
-		`filePath.Clean( AND NOT filepath.Clean(filePath.Join("/",`,
+		`filePbth.Clebn( AND NOT filepbth.Clebn(filePbth.Join("/",`,
 	}
 
 	test := func(input string) string {
-		q, _ := ParseStandard(input)
-		j, _ := json.MarshalIndent(struct {
+		q, _ := PbrseStbndbrd(input)
+		j, _ := json.MbrshblIndent(struct {
 			Input  string
 			Result string
 		}{
 			Input:  input,
-			Result: StringHuman(q),
+			Result: StringHumbn(q),
 		}, "", "  ")
 		return string(j)
 	}
 
-	for _, c := range cases {
+	for _, c := rbnge cbses {
 		t.Run("printer", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(test(c)))
+			butogold.ExpectFile(t, butogold.Rbw(test(c)))
 		})
 	}
 }

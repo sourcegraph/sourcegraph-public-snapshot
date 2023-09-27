@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,112 +6,112 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestCodeMonitorStoreLastSearched(t *testing.T) {
-	t.Parallel()
+func TestCodeMonitorStoreLbstSebrched(t *testing.T) {
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	t.Run("insert get upsert get", func(t *testing.T) {
-		t.Parallel()
-		ctx := context.Background()
+		t.Pbrbllel()
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		fixtures := populateCodeMonitorFixtures(t, db)
+		fixtures := populbteCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
 		// Insert
-		insertLastSearched := []string{"commit1", "commit2"}
-		err := cm.UpsertLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, insertLastSearched)
+		insertLbstSebrched := []string{"commit1", "commit2"}
+		err := cm.UpsertLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, insertLbstSebrched)
 		require.NoError(t, err)
 
 		// Get
-		lastSearched, err := cm.GetLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
+		lbstSebrched, err := cm.GetLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
 		require.NoError(t, err)
-		require.Equal(t, insertLastSearched, lastSearched)
+		require.Equbl(t, insertLbstSebrched, lbstSebrched)
 
-		// Update
-		updateLastSearched := []string{"commit3", "commit4"}
-		err = cm.UpsertLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, updateLastSearched)
+		// Updbte
+		updbteLbstSebrched := []string{"commit3", "commit4"}
+		err = cm.UpsertLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, updbteLbstSebrched)
 		require.NoError(t, err)
 
 		// Get
-		lastSearched, err = cm.GetLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
+		lbstSebrched, err = cm.GetLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
 		require.NoError(t, err)
-		require.Equal(t, updateLastSearched, lastSearched)
+		require.Equbl(t, updbteLbstSebrched, lbstSebrched)
 	})
 
 	t.Run("no error for missing get", func(t *testing.T) {
-		t.Parallel()
-		ctx := context.Background()
+		t.Pbrbllel()
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		fixtures := populateCodeMonitorFixtures(t, db)
+		fixtures := populbteCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
-		// GetLastSearched should not return an error for a monitor that hasn't
-		// been run yet. It should just return an empty value for lastSearched
-		lastSearched, err := cm.GetLastSearched(ctx, fixtures.Monitor.ID+1, 19793)
+		// GetLbstSebrched should not return bn error for b monitor thbt hbsn't
+		// been run yet. It should just return bn empty vblue for lbstSebrched
+		lbstSebrched, err := cm.GetLbstSebrched(ctx, fixtures.Monitor.ID+1, 19793)
 		require.NoError(t, err)
-		require.Empty(t, lastSearched)
+		require.Empty(t, lbstSebrched)
 	})
 
 	t.Run("no error for missing get", func(t *testing.T) {
-		t.Parallel()
-		ctx := context.Background()
+		t.Pbrbllel()
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		fixtures := populateCodeMonitorFixtures(t, db)
+		fixtures := populbteCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
-		// Insert with nil last searched
-		err := cm.UpsertLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, nil)
+		// Insert with nil lbst sebrched
+		err := cm.UpsertLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, nil)
 		require.NoError(t, err)
 
-		// Get nil last searched
-		lastSearched, err := cm.GetLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
+		// Get nil lbst sebrched
+		lbstSebrched, err := cm.GetLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
 		require.NoError(t, err)
-		require.Empty(t, lastSearched)
+		require.Empty(t, lbstSebrched)
 
-		// Insert with empty last searched
-		err = cm.UpsertLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, []string{})
+		// Insert with empty lbst sebrched
+		err = cm.UpsertLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, []string{})
 		require.NoError(t, err)
 
-		// Get nil last searched
-		lastSearched, err = cm.GetLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
+		// Get nil lbst sebrched
+		lbstSebrched, err = cm.GetLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID)
 		require.NoError(t, err)
-		require.Empty(t, lastSearched)
+		require.Empty(t, lbstSebrched)
 	})
 }
 
-func TestCodeMonitorHasAnyLastSearched(t *testing.T) {
-	t.Parallel()
+func TestCodeMonitorHbsAnyLbstSebrched(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 
-	t.Run("has none", func(t *testing.T) {
-		t.Parallel()
-		ctx := context.Background()
+	t.Run("hbs none", func(t *testing.T) {
+		t.Pbrbllel()
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		fixtures := populateCodeMonitorFixtures(t, db)
+		fixtures := populbteCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
-		hasLastSearched, err := cm.HasAnyLastSearched(ctx, fixtures.Monitor.ID)
+		hbsLbstSebrched, err := cm.HbsAnyLbstSebrched(ctx, fixtures.Monitor.ID)
 		require.NoError(t, err)
-		require.False(t, hasLastSearched)
+		require.Fblse(t, hbsLbstSebrched)
 	})
 
-	t.Run("has some", func(t *testing.T) {
-		t.Parallel()
-		ctx := context.Background()
+	t.Run("hbs some", func(t *testing.T) {
+		t.Pbrbllel()
+		ctx := context.Bbckground()
 		db := NewDB(logger, dbtest.NewDB(logger, t))
-		fixtures := populateCodeMonitorFixtures(t, db)
+		fixtures := populbteCodeMonitorFixtures(t, db)
 		cm := db.CodeMonitors()
 
-		err := cm.UpsertLastSearched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, []string{"a", "b"})
+		err := cm.UpsertLbstSebrched(ctx, fixtures.Monitor.ID, fixtures.Repo.ID, []string{"b", "b"})
 		require.NoError(t, err)
 
-		hasLastSearched, err := cm.HasAnyLastSearched(ctx, fixtures.Monitor.ID)
+		hbsLbstSebrched, err := cm.HbsAnyLbstSebrched(ctx, fixtures.Monitor.ID)
 		require.NoError(t, err)
-		require.True(t, hasLastSearched)
+		require.True(t, hbsLbstSebrched)
 	})
 }

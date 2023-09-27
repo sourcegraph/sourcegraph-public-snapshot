@@ -1,63 +1,63 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings/background/repo"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings/bbckground/repo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestEmbeddingSearchResolver(t *testing.T) {
+func TestEmbeddingSebrchResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	oldMock := licensing.MockCheckFeature
-	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+	oldMock := licensing.MockCheckFebture
+	licensing.MockCheckFebture = func(febture licensing.Febture) error {
 		return nil
 	}
-	t.Cleanup(func() {
-		licensing.MockCheckFeature = oldMock
+	t.Clebnup(func() {
+		licensing.MockCheckFebture = oldMock
 	})
 
 	mockDB := dbmocks.NewMockDB()
 	mockRepos := dbmocks.NewMockRepoStore()
-	mockRepos.GetByIDsFunc.SetDefaultReturn([]*types.Repo{{ID: 1, Name: "repo1"}}, nil)
-	mockDB.ReposFunc.SetDefaultReturn(mockRepos)
+	mockRepos.GetByIDsFunc.SetDefbultReturn([]*types.Repo{{ID: 1, Nbme: "repo1"}}, nil)
+	mockDB.ReposFunc.SetDefbultReturn(mockRepos)
 
 	mockGitserver := gitserver.NewMockClient()
-	mockGitserver.ReadFileFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, _ api.RepoName, _ api.CommitID, fileName string) ([]byte, error) {
-		if fileName == "testfile" {
+	mockGitserver.RebdFileFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, _ bpi.RepoNbme, _ bpi.CommitID, fileNbme string) ([]byte, error) {
+		if fileNbme == "testfile" {
 			return []byte("test\nfirst\nfour\nlines\nplus\nsome\nmore"), nil
 		}
 		return nil, os.ErrNotExist
 	})
 
 	mockEmbeddingsClient := embeddings.NewMockClient()
-	mockEmbeddingsClient.SearchFunc.SetDefaultReturn(&embeddings.EmbeddingCombinedSearchResults{
-		CodeResults: embeddings.EmbeddingSearchResults{{
-			FileName:  "testfile",
-			StartLine: 0,
+	mockEmbeddingsClient.SebrchFunc.SetDefbultReturn(&embeddings.EmbeddingCombinedSebrchResults{
+		CodeResults: embeddings.EmbeddingSebrchResults{{
+			FileNbme:  "testfile",
+			StbrtLine: 0,
 			EndLine:   4,
 		}, {
-			FileName:  "censored",
-			StartLine: 0,
+			FileNbme:  "censored",
+			StbrtLine: 0,
 			EndLine:   4,
 		}},
 	}, nil)
@@ -73,18 +73,18 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	)
 
 	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			CodyEnabled: pointers.Ptr(true),
-			LicenseKey:  "asdf",
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			CodyEnbbled: pointers.Ptr(true),
+			LicenseKey:  "bsdf",
 		},
 	})
 
-	ctx := actor.WithActor(context.Background(), actor.FromMockUser(1))
-	ffs := featureflag.NewMemoryStore(map[string]bool{"cody": true}, nil, nil)
-	ctx = featureflag.WithFlags(ctx, ffs)
+	ctx := bctor.WithActor(context.Bbckground(), bctor.FromMockUser(1))
+	ffs := febtureflbg.NewMemoryStore(mbp[string]bool{"cody": true}, nil, nil)
+	ctx = febtureflbg.WithFlbgs(ctx, ffs)
 
-	results, err := resolver.EmbeddingsMultiSearch(ctx, graphqlbackend.EmbeddingsMultiSearchInputArgs{
-		Repos:            []graphql.ID{graphqlbackend.MarshalRepositoryID(3)},
+	results, err := resolver.EmbeddingsMultiSebrch(ctx, grbphqlbbckend.EmbeddingsMultiSebrchInputArgs{
+		Repos:            []grbphql.ID{grbphqlbbckend.MbrshblRepositoryID(3)},
 		Query:            "test",
 		CodeResultsCount: 1,
 		TextResultsCount: 1,
@@ -94,13 +94,13 @@ func TestEmbeddingSearchResolver(t *testing.T) {
 	codeResults, err := results.CodeResults(ctx)
 	require.NoError(t, err)
 	require.Len(t, codeResults, 1)
-	require.Equal(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
+	require.Equbl(t, "test\nfirst\nfour\nlines", codeResults[0].Content(ctx))
 }
 
-func Test_extractLineRange(t *testing.T) {
-	cases := []struct {
+func Test_extrbctLineRbnge(t *testing.T) {
+	cbses := []struct {
 		input      []byte
-		start, end int
+		stbrt, end int
 		output     []byte
 	}{{
 		[]byte("zero\none\ntwo\nthree\n"),
@@ -120,10 +120,10 @@ func Test_extractLineRange(t *testing.T) {
 		[]byte(""),
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			got := extractLineRange(tc.input, tc.start, tc.end)
-			require.Equal(t, tc.output, got)
+			got := extrbctLineRbnge(tc.input, tc.stbrt, tc.end)
+			require.Equbl(t, tc.output, got)
 		})
 	}
 }

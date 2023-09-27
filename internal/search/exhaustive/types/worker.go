@@ -1,36 +1,36 @@
-package types
+pbckbge types
 
 import (
 	"strings"
 	"time"
 )
 
-// WorkerJob contains the common fields for all worker jobs.
+// WorkerJob contbins the common fields for bll worker jobs.
 type WorkerJob struct {
-	State           JobState
-	FailureMessage  string
-	StartedAt       time.Time
+	Stbte           JobStbte
+	FbilureMessbge  string
+	StbrtedAt       time.Time
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
-	NumFailures     int64
-	LastHeartbeatAt time.Time
-	WorkerHostname  string
-	Cancel          bool
+	NumFbilures     int64
+	LbstHebrtbebtAt time.Time
+	WorkerHostnbme  string
+	Cbncel          bool
 }
 
-// JobState defines the possible states of a workerutil.Worker.
-type JobState string
+// JobStbte defines the possible stbtes of b workerutil.Worker.
+type JobStbte string
 
-// JobState constants.
+// JobStbte constbnts.
 const (
-	JobStateQueued     JobState = "queued"
-	JobStateProcessing JobState = "processing"
-	JobStateErrored    JobState = "errored"
-	JobStateFailed     JobState = "failed"
-	JobStateCompleted  JobState = "completed"
-	JobStateCanceled   JobState = "canceled"
+	JobStbteQueued     JobStbte = "queued"
+	JobStbteProcessing JobStbte = "processing"
+	JobStbteErrored    JobStbte = "errored"
+	JobStbteFbiled     JobStbte = "fbiled"
+	JobStbteCompleted  JobStbte = "completed"
+	JobStbteCbnceled   JobStbte = "cbnceled"
 )
 
-// ToGraphQL returns the GraphQL representation of the worker state.
-func (s JobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+// ToGrbphQL returns the GrbphQL representbtion of the worker stbte.
+func (s JobStbte) ToGrbphQL() string { return strings.ToUpper(string(s)) }

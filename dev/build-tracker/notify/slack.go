@@ -1,4 +1,4 @@
-package notify
+pbckbge notify
 
 import (
 	"context"
@@ -9,125 +9,125 @@ import (
 	"time"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/slack-go/slack"
-	"github.com/sourcegraph/log"
+	"github.com/slbck-go/slbck"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const StepShowLimit = 5
 
-type cacheItem[T any] struct {
-	Value     T
-	Timestamp time.Time
+type cbcheItem[T bny] struct {
+	Vblue     T
+	Timestbmp time.Time
 }
 
-func newCacheItem[T any](value T) *cacheItem[T] {
-	return &cacheItem[T]{
-		Value:     value,
-		Timestamp: time.Now(),
+func newCbcheItem[T bny](vblue T) *cbcheItem[T] {
+	return &cbcheItem[T]{
+		Vblue:     vblue,
+		Timestbmp: time.Now(),
 	}
 }
 
-type NotificationClient interface {
-	Send(info *BuildNotification) error
-	GetNotification(buildNumber int) *SlackNotification
+type NotificbtionClient interfbce {
+	Send(info *BuildNotificbtion) error
+	GetNotificbtion(buildNumber int) *SlbckNotificbtion
 }
 
 type Client struct {
-	slack   slack.Client
-	team    team.TeammateResolver
-	history map[int]*SlackNotification
+	slbck   slbck.Client
+	tebm    tebm.TebmmbteResolver
+	history mbp[int]*SlbckNotificbtion
 	logger  log.Logger
-	channel string
+	chbnnel string
 }
 
-type BuildNotification struct {
+type BuildNotificbtion struct {
 	BuildNumber        int
-	ConsecutiveFailure int
-	PipelineName       string
-	AuthorEmail        string
-	Message            string
+	ConsecutiveFbilure int
+	PipelineNbme       string
+	AuthorEmbil        string
+	Messbge            string
 	Commit             string
 	BuildURL           string
-	BuildStatus        string
+	BuildStbtus        string
 	Fixed              []JobLine
-	Failed             []JobLine
+	Fbiled             []JobLine
 }
 
-type JobLine interface {
+type JobLine interfbce {
 	Title() string
 	LogURL() string
 }
 
-type SlackNotification struct {
-	// SentAt is the time the notification got sent.
+type SlbckNotificbtion struct {
+	// SentAt is the time the notificbtion got sent.
 	SentAt time.Time
-	// ID is the unique idenfifier which represents this notification in Slack. Typically this is the timestamp as
-	// is returned by the Slack API upon successful send of a notification.
+	// ID is the unique idenfifier which represents this notificbtion in Slbck. Typicblly this is the timestbmp bs
+	// is returned by the Slbck API upon successful send of b notificbtion.
 	ID string
-	// ChannelID is the channelID as returned by the Slack API after successful sending of a notification. It is NOT
-	// the traditional channel you're use to that starts with a '#'. Instead it's the global ID for that channel used by
-	// Slack.
-	ChannelID string
+	// ChbnnelID is the chbnnelID bs returned by the Slbck API bfter successful sending of b notificbtion. It is NOT
+	// the trbditionbl chbnnel you're use to thbt stbrts with b '#'. Instebd it's the globbl ID for thbt chbnnel used by
+	// Slbck.
+	ChbnnelID string
 
-	// BuildNotification is the BuildNotification that was used to send this SlackNotification
-	BuildNotification *BuildNotification
+	// BuildNotificbtion is the BuildNotificbtion thbt wbs used to send this SlbckNotificbtion
+	BuildNotificbtion *BuildNotificbtion
 
-	// AuthorMention is the author mention used for notify the teammate for this notification
+	// AuthorMention is the buthor mention used for notify the tebmmbte for this notificbtion
 	//
-	// Ideally we should not store the mentionn but the actual Teammate. But a teammate
+	// Ideblly we should not store the mentionn but the bctubl Tebmmbte. But b tebmmbte
 	AuthorMention string
 }
 
-func (n *SlackNotification) Equals(o *SlackNotification) bool {
+func (n *SlbckNotificbtion) Equbls(o *SlbckNotificbtion) bool {
 	if o == nil {
-		return false
+		return fblse
 	}
 
-	return n.ID == o.ID && n.ChannelID == o.ChannelID && n.SentAt.Equal(o.SentAt)
+	return n.ID == o.ID && n.ChbnnelID == o.ChbnnelID && n.SentAt.Equbl(o.SentAt)
 }
 
-func NewSlackNotification(id, channel string, info *BuildNotification, author string) *SlackNotification {
-	return &SlackNotification{
+func NewSlbckNotificbtion(id, chbnnel string, info *BuildNotificbtion, buthor string) *SlbckNotificbtion {
+	return &SlbckNotificbtion{
 		SentAt:            time.Now(),
 		ID:                id,
-		ChannelID:         channel,
-		BuildNotification: info,
-		AuthorMention:     author,
+		ChbnnelID:         chbnnel,
+		BuildNotificbtion: info,
+		AuthorMention:     buthor,
 	}
 }
 
-func NewClient(logger log.Logger, slackToken, githubToken, channel string) *Client {
+func NewClient(logger log.Logger, slbckToken, githubToken, chbnnel string) *Client {
 	debug := os.Getenv("BUILD_TRACKER_SLACK_DEBUG") == "1"
-	slackClient := slack.New(slackToken, slack.OptionDebug(debug))
+	slbckClient := slbck.New(slbckToken, slbck.OptionDebug(debug))
 
 	httpClient := http.Client{
 		Timeout: 5 * time.Second,
 	}
 	githubClient := github.NewClient(&httpClient)
-	teamResolver := team.NewTeammateResolver(githubClient, slackClient)
+	tebmResolver := tebm.NewTebmmbteResolver(githubClient, slbckClient)
 
-	history := make(map[int]*SlackNotification)
+	history := mbke(mbp[int]*SlbckNotificbtion)
 
 	return &Client{
-		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
-		slack:   *slackClient,
-		team:    teamResolver,
-		channel: channel,
+		logger:  logger.Scoped("notificbtionClient", "client which interbcts with Slbck bnd Github to send notificbtions"),
+		slbck:   *slbckClient,
+		tebm:    tebmResolver,
+		chbnnel: chbnnel,
 		history: history,
 	}
 }
 
-func (c *Client) Send(info *BuildNotification) error {
-	if prev := c.GetNotification(info.BuildNumber); prev != nil {
-		if sent, err := c.sendUpdatedMessage(info, prev); err == nil {
+func (c *Client) Send(info *BuildNotificbtion) error {
+	if prev := c.GetNotificbtion(info.BuildNumber); prev != nil {
+		if sent, err := c.sendUpdbtedMessbge(info, prev); err == nil {
 			c.history[info.BuildNumber] = sent
 		} else {
 			return err
 		}
-	} else if sent, err := c.sendNewMessage(info); err != nil {
+	} else if sent, err := c.sendNewMessbge(info); err != nil {
 		return err
 	} else {
 		c.history[info.BuildNumber] = sent
@@ -136,97 +136,97 @@ func (c *Client) Send(info *BuildNotification) error {
 	return nil
 }
 
-func (c *Client) GetNotification(buildNumber int) *SlackNotification {
-	notification, ok := c.history[buildNumber]
+func (c *Client) GetNotificbtion(buildNumber int) *SlbckNotificbtion {
+	notificbtion, ok := c.history[buildNumber]
 	if !ok {
 		return nil
 	}
-	return notification
+	return notificbtion
 }
 
-func (c *Client) sendUpdatedMessage(info *BuildNotification, previous *SlackNotification) (*SlackNotification, error) {
+func (c *Client) sendUpdbtedMessbge(info *BuildNotificbtion, previous *SlbckNotificbtion) (*SlbckNotificbtion, error) {
 	if previous == nil {
-		return nil, errors.New("cannot update message with nil notification")
+		return nil, errors.New("cbnnot updbte messbge with nil notificbtion")
 	}
-	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
-	logger.Debug("creating slack json")
+	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("chbnnel", c.chbnnel))
+	logger.Debug("crebting slbck json")
 
-	blocks := c.createMessageBlocks(info, previous.AuthorMention)
-	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
-	var id, channel string
-	logger.Debug("sending updated notification")
-	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
-	// Note: for UpdateMessage using the #channel-name format doesn't work, you need the Slack ChannelID.
-	channel, id, _, err := c.slack.UpdateMessage(previous.ChannelID, previous.ID, msgOptBlocks)
+	blocks := c.crebteMessbgeBlocks(info, previous.AuthorMention)
+	// Slbck responds with the messbge timestbmp bnd b chbnnel, which you hbve to use when you wbnt to updbte the messbge.
+	vbr id, chbnnel string
+	logger.Debug("sending updbted notificbtion")
+	msgOptBlocks := slbck.MsgOptionBlocks(blocks...)
+	// Note: for UpdbteMessbge using the #chbnnel-nbme formbt doesn't work, you need the Slbck ChbnnelID.
+	chbnnel, id, _, err := c.slbck.UpdbteMessbge(previous.ChbnnelID, previous.ID, msgOptBlocks)
 	if err != nil {
-		logger.Error("failed to update message", log.Error(err))
+		logger.Error("fbiled to updbte messbge", log.Error(err))
 		return previous, err
 	}
 
-	return NewSlackNotification(id, channel, info, previous.AuthorMention), nil
+	return NewSlbckNotificbtion(id, chbnnel, info, previous.AuthorMention), nil
 }
 
-func (c *Client) sendNewMessage(info *BuildNotification) (*SlackNotification, error) {
-	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("channel", c.channel))
-	logger.Debug("creating slack json")
+func (c *Client) sendNewMessbge(info *BuildNotificbtion) (*SlbckNotificbtion, error) {
+	logger := c.logger.With(log.Int("buildNumber", info.BuildNumber), log.String("chbnnel", c.chbnnel))
+	logger.Debug("crebting slbck json")
 
-	author := ""
-	teammate, err := c.GetTeammateForCommit(info.Commit)
+	buthor := ""
+	tebmmbte, err := c.GetTebmmbteForCommit(info.Commit)
 	if err != nil {
-		c.logger.Error("failed to find teammate", log.Error(err))
-		// the error has some guidance on how to fix it so that teammate resolver can figure out who you are from the commit!
-		// so we set author here to that msg, so that the message can be conveyed to the person in slack
-		author = err.Error()
+		c.logger.Error("fbiled to find tebmmbte", log.Error(err))
+		// the error hbs some guidbnce on how to fix it so thbt tebmmbte resolver cbn figure out who you bre from the commit!
+		// so we set buthor here to thbt msg, so thbt the messbge cbn be conveyed to the person in slbck
+		buthor = err.Error()
 	} else {
-		logger.Debug("teammate found", log.Object("teammate",
-			log.String("slackID", teammate.SlackID),
-			log.String("key", teammate.Key),
-			log.String("email", teammate.Email),
-			log.String("handbook", teammate.HandbookLink),
-			log.String("slackName", teammate.SlackName),
-			log.String("github", teammate.GitHub),
+		logger.Debug("tebmmbte found", log.Object("tebmmbte",
+			log.String("slbckID", tebmmbte.SlbckID),
+			log.String("key", tebmmbte.Key),
+			log.String("embil", tebmmbte.Embil),
+			log.String("hbndbook", tebmmbte.HbndbookLink),
+			log.String("slbckNbme", tebmmbte.SlbckNbme),
+			log.String("github", tebmmbte.GitHub),
 		))
-		author = SlackMention(teammate)
+		buthor = SlbckMention(tebmmbte)
 	}
 
-	blocks := c.createMessageBlocks(info, author)
-	// Slack responds with the message timestamp and a channel, which you have to use when you want to update the message.
-	var id, channel string
+	blocks := c.crebteMessbgeBlocks(info, buthor)
+	// Slbck responds with the messbge timestbmp bnd b chbnnel, which you hbve to use when you wbnt to updbte the messbge.
+	vbr id, chbnnel string
 
-	logger.Debug("sending new notification")
-	msgOptBlocks := slack.MsgOptionBlocks(blocks...)
-	channel, id, err = c.slack.PostMessage(c.channel, msgOptBlocks)
+	logger.Debug("sending new notificbtion")
+	msgOptBlocks := slbck.MsgOptionBlocks(blocks...)
+	chbnnel, id, err = c.slbck.PostMessbge(c.chbnnel, msgOptBlocks)
 	if err != nil {
-		logger.Error("failed to post message", log.Error(err))
+		logger.Error("fbiled to post messbge", log.Error(err))
 		return nil, err
 	}
 
-	logger.Info("notification posted")
-	return NewSlackNotification(id, channel, info, author), nil
+	logger.Info("notificbtion posted")
+	return NewSlbckNotificbtion(id, chbnnel, info, buthor), nil
 }
 
 func commitLink(msg, commit string) string {
-	repo := "http://github.com/sourcegraph/sourcegraph"
+	repo := "http://github.com/sourcegrbph/sourcegrbph"
 	sgURL := fmt.Sprintf("%s/commit/%s", repo, commit)
 	return fmt.Sprintf("<%s|%s>", sgURL, msg)
 }
 
-func SlackMention(teammate *team.Teammate) string {
-	if teammate.SlackID == "" {
-		return fmt.Sprintf("%s (%s) - We could not locate your Slack ID. Please check that your information in the Handbook team.yml file is correct", teammate.Name, teammate.Email)
+func SlbckMention(tebmmbte *tebm.Tebmmbte) string {
+	if tebmmbte.SlbckID == "" {
+		return fmt.Sprintf("%s (%s) - We could not locbte your Slbck ID. Plebse check thbt your informbtion in the Hbndbook tebm.yml file is correct", tebmmbte.Nbme, tebmmbte.Embil)
 	}
-	return fmt.Sprintf("<@%s>", teammate.SlackID)
+	return fmt.Sprintf("<@%s>", tebmmbte.SlbckID)
 }
 
-func createStepsSection(status string, items []JobLine, showLimit int) string {
+func crebteStepsSection(stbtus string, items []JobLine, showLimit int) string {
 	if len(items) == 0 {
 		return ""
 	}
-	section := fmt.Sprintf("*%s jobs:*\n\n", status)
-	// if there are more than JobShowLimit of failed jobs, we cannot print all of it
-	// since the message will to big and slack will reject the message with "invalid_blocks"
+	section := fmt.Sprintf("*%s jobs:*\n\n", stbtus)
+	// if there bre more thbn JobShowLimit of fbiled jobs, we cbnnot print bll of it
+	// since the messbge will to big bnd slbck will reject the messbge with "invblid_blocks"
 	if len(items) > StepShowLimit {
-		section = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(items), status, showLimit)
+		section = fmt.Sprintf("* %d %s jobs (showing %d):*\n\n", len(items), stbtus, showLimit)
 	}
 	for i := 0; i < showLimit && i < len(items); i++ {
 		item := items[i]
@@ -242,8 +242,8 @@ func createStepsSection(status string, items []JobLine, showLimit int) string {
 	return section + "\n"
 }
 
-func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
-	result, err := c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", commit)
+func (c *Client) GetTebmmbteForCommit(commit string) (*tebm.Tebmmbte, error) {
+	result, err := c.tebm.ResolveByCommitAuthor(context.Bbckground(), "sourcegrbph", "sourcegrbph", commit)
 	if err != nil {
 		return nil, err
 	}
@@ -251,58 +251,58 @@ func (c *Client) GetTeammateForCommit(commit string) (*team.Teammate, error) {
 
 }
 
-func (c *Client) createMessageBlocks(info *BuildNotification, author string) []slack.Block {
-	msg, _, _ := strings.Cut(info.Message, "\n")
+func (c *Client) crebteMessbgeBlocks(info *BuildNotificbtion, buthor string) []slbck.Block {
+	msg, _, _ := strings.Cut(info.Messbge, "\n")
 	msg += fmt.Sprintf(" (%s)", info.Commit[:7])
 
 	section := fmt.Sprintf("> %s\n\n", commitLink(msg, info.Commit))
 
-	// create a bulleted list of all the failed jobs
-	jobSection := createStepsSection("Fixed", info.Fixed, StepShowLimit)
-	jobSection += createStepsSection("Failed", info.Failed, StepShowLimit)
+	// crebte b bulleted list of bll the fbiled jobs
+	jobSection := crebteStepsSection("Fixed", info.Fixed, StepShowLimit)
+	jobSection += crebteStepsSection("Fbiled", info.Fbiled, StepShowLimit)
 	section += jobSection
 
-	blocks := []slack.Block{
-		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, generateSlackHeader(info), true, false),
+	blocks := []slbck.Block{
+		slbck.NewHebderBlock(
+			slbck.NewTextBlockObject(slbck.PlbinTextType, generbteSlbckHebder(info), true, fblse),
 		),
-		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: section}, nil, nil),
-		slack.NewSectionBlock(
+		slbck.NewSectionBlock(&slbck.TextBlockObject{Type: slbck.MbrkdownType, Text: section}, nil, nil),
+		slbck.NewSectionBlock(
 			nil,
-			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Author:* %s", author)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline:* %s", info.PipelineName)},
+			[]*slbck.TextBlockObject{
+				{Type: slbck.MbrkdownType, Text: fmt.Sprintf("*Author:* %s", buthor)},
+				{Type: slbck.MbrkdownType, Text: fmt.Sprintf("*Pipeline:* %s", info.PipelineNbme)},
 			},
 			nil,
 		),
-		slack.NewActionBlock(
+		slbck.NewActionBlock(
 			"",
-			[]slack.BlockElement{
-				&slack.ButtonBlockElement{
-					Type:  slack.METButton,
-					Style: slack.StylePrimary,
+			[]slbck.BlockElement{
+				&slbck.ButtonBlockElement{
+					Type:  slbck.METButton,
+					Style: slbck.StylePrimbry,
 					URL:   info.BuildURL,
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
+					Text:  &slbck.TextBlockObject{Type: slbck.PlbinTextType, Text: "Go to build"},
 				},
-				&slack.ButtonBlockElement{
-					Type: slack.METButton,
-					URL:  "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake?"},
+				&slbck.ButtonBlockElement{
+					Type: slbck.METButton,
+					URL:  "https://www.loom.com/shbre/58cedf44d44c45b292f650ddd3547337",
+					Text: &slbck.TextBlockObject{Type: slbck.PlbinTextType, Text: "Is this b flbke?"},
 				},
 			}...,
 		),
 
-		&slack.DividerBlock{Type: slack.MBTDivider},
+		&slbck.DividerBlock{Type: slbck.MBTDivider},
 
-		slack.NewSectionBlock(
-			&slack.TextBlockObject{
-				Type: slack.MarkdownType,
-				Text: `:books: *More information on flakes*
-• <https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flaky tests>
-• <https://github.com/sourcegraph/sourcegraph/issues/new/choose|Create a flaky test issue>
-• <https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flaky client steps and how to fix them>
+		slbck.NewSectionBlock(
+			&slbck.TextBlockObject{
+				Type: slbck.MbrkdownType,
+				Text: `:books: *More informbtion on flbkes*
+• <https://docs.sourcegrbph.com/dev/bbckground-informbtion/ci#flbkes|How to disbble flbky tests>
+• <https://github.com/sourcegrbph/sourcegrbph/issues/new/choose|Crebte b flbky test issue>
+• <https://docs.sourcegrbph.com/dev/how-to/testing#bssessing-flbky-client-steps|Recognizing flbky client steps bnd how to fix them>
 
-_Disable flakes on sight and save your fellow teammate some time!_`,
+_Disbble flbkes on sight bnd sbve your fellow tebmmbte some time!_`,
 			},
 			nil,
 			nil,
@@ -312,19 +312,19 @@ _Disable flakes on sight and save your fellow teammate some time!_`,
 	return blocks
 }
 
-func generateSlackHeader(info *BuildNotification) string {
-	if len(info.Failed) == 0 && len(info.Fixed) > 0 {
-		return fmt.Sprintf(":large_green_circle: Build %d fixed", info.BuildNumber)
+func generbteSlbckHebder(info *BuildNotificbtion) string {
+	if len(info.Fbiled) == 0 && len(info.Fixed) > 0 {
+		return fmt.Sprintf(":lbrge_green_circle: Build %d fixed", info.BuildNumber)
 	}
-	header := fmt.Sprintf(":red_circle: Build %d failed", info.BuildNumber)
-	switch info.ConsecutiveFailure {
-	case 0, 1: // no suffix
-	case 2:
-		header += " (2nd failure)"
-	case 3:
-		header += " (:exclamation: 3rd failure)"
-	default:
-		header += fmt.Sprintf(" (:bangbang: %dth failure)", info.ConsecutiveFailure)
+	hebder := fmt.Sprintf(":red_circle: Build %d fbiled", info.BuildNumber)
+	switch info.ConsecutiveFbilure {
+	cbse 0, 1: // no suffix
+	cbse 2:
+		hebder += " (2nd fbilure)"
+	cbse 3:
+		hebder += " (:exclbmbtion: 3rd fbilure)"
+	defbult:
+		hebder += fmt.Sprintf(" (:bbngbbng: %dth fbilure)", info.ConsecutiveFbilure)
 	}
-	return header
+	return hebder
 }

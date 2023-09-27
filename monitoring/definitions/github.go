@@ -1,76 +1,76 @@
-package definitions
+pbckbge definitions
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func GitHub() *monitoring.Dashboard {
-	return &monitoring.Dashboard{
-		Name:        "github",
+func GitHub() *monitoring.Dbshbobrd {
+	return &monitoring.Dbshbobrd{
+		Nbme:        "github",
 		Title:       "GitHub",
-		Description: "Dashboard to track requests and global concurrency locks for talking to github.com.",
+		Description: "Dbshbobrd to trbck requests bnd globbl concurrency locks for tblking to github.com.",
 		Groups: []monitoring.Group{
 			{
 				Title: "GitHub API monitoring",
 				Rows: []monitoring.Row{
 					{
 						{
-							Name:        "src_githubcom_concurrency_lock_waiting_requests",
-							Description: "number of requests waiting on the global mutex",
-							Query:       `max(src_githubcom_concurrency_lock_waiting_requests)`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("requests waiting"),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "src_githubcom_concurrency_lock_wbiting_requests",
+							Description: "number of requests wbiting on the globbl mutex",
+							Query:       `mbx(src_githubcom_concurrency_lock_wbiting_requests)`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("requests wbiting"),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-								- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-								- **Check redis-store health.
-								- **Check GitHub status.`,
+								- **Check contbiner logs for network connection issues bnd log entries from the githubcom-concurrency-limiter logger.
+								- **Check redis-store heblth.
+								- **Check GitHub stbtus.`,
 						},
 					},
 					{
 						{
-							Name:        "src_githubcom_concurrency_lock_failed_lock_requests",
-							Description: "number of lock failures",
-							Query:       `sum(rate(src_githubcom_concurrency_lock_failed_lock_requests[5m]))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("failed lock requests"),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "src_githubcom_concurrency_lock_fbiled_lock_requests",
+							Description: "number of lock fbilures",
+							Query:       `sum(rbte(src_githubcom_concurrency_lock_fbiled_lock_requests[5m]))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("fbiled lock requests"),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-							- **Check redis-store health.`,
+							- **Check contbiner logs for network connection issues bnd log entries from the githubcom-concurrency-limiter logger.
+							- **Check redis-store heblth.`,
 						},
 						{
-							Name:        "src_githubcom_concurrency_lock_failed_unlock_requests",
-							Description: "number of unlock failures",
-							Query:       `sum(rate(src_githubcom_concurrency_lock_failed_unlock_requests[5m]))`,
-							Warning:     monitoring.Alert().GreaterOrEqual(100).For(5 * time.Minute),
-							Panel:       monitoring.Panel().LegendFormat("failed unlock requests"),
-							Owner:       monitoring.ObservableOwnerSource,
+							Nbme:        "src_githubcom_concurrency_lock_fbiled_unlock_requests",
+							Description: "number of unlock fbilures",
+							Query:       `sum(rbte(src_githubcom_concurrency_lock_fbiled_unlock_requests[5m]))`,
+							Wbrning:     monitoring.Alert().GrebterOrEqubl(100).For(5 * time.Minute),
+							Pbnel:       monitoring.Pbnel().LegendFormbt("fbiled unlock requests"),
+							Owner:       monitoring.ObservbbleOwnerSource,
 							NextSteps: `
-							- **Check container logs for network connection issues and log entries from the githubcom-concurrency-limiter logger.
-							- **Check redis-store health.`,
+							- **Check contbiner logs for network connection issues bnd log entries from the githubcom-concurrency-limiter logger.
+							- **Check redis-store heblth.`,
 						},
 					},
 					{
 						{
-							Name:           "src_githubcom_concurrency_lock_requests",
-							Description:    "number of locks taken global mutex",
-							Query:          `sum(rate(src_githubcom_concurrency_lock_requests[5m]))`,
+							Nbme:           "src_githubcom_concurrency_lock_requests",
+							Description:    "number of locks tbken globbl mutex",
+							Query:          `sum(rbte(src_githubcom_concurrency_lock_requests[5m]))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("number of requests"),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: "A high number of locks indicates heavy usage of the GitHub API. This might not be a problem, but you should check if request counts are expected.",
+							Pbnel:          monitoring.Pbnel().LegendFormbt("number of requests"),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: "A high number of locks indicbtes hebvy usbge of the GitHub API. This might not be b problem, but you should check if request counts bre expected.",
 						},
 						{
-							Name:           "src_githubcom_concurrency_lock_acquire_duration_seconds_latency_p75",
-							Description:    "75 percentile latency of src_githubcom_concurrency_lock_acquire_duration_seconds",
-							Query:          `histogram_quantile(0.75, sum(rate(src_githubcom_concurrency_lock_acquire_duration_seconds_bucket[5m])) by (le))`,
+							Nbme:           "src_githubcom_concurrency_lock_bcquire_durbtion_seconds_lbtency_p75",
+							Description:    "75 percentile lbtency of src_githubcom_concurrency_lock_bcquire_durbtion_seconds",
+							Query:          `histogrbm_qubntile(0.75, sum(rbte(src_githubcom_concurrency_lock_bcquire_durbtion_seconds_bucket[5m])) by (le))`,
 							NoAlert:        true,
-							Panel:          monitoring.Panel().LegendFormat("lock acquire latency").Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerSource,
-							Interpretation: `99 percentile latency of acquiring the global GitHub concurrency lock.`,
+							Pbnel:          monitoring.Pbnel().LegendFormbt("lock bcquire lbtency").Unit(monitoring.Milliseconds),
+							Owner:          monitoring.ObservbbleOwnerSource,
+							Interpretbtion: `99 percentile lbtency of bcquiring the globbl GitHub concurrency lock.`,
 						},
 					},
 				},

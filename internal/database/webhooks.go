@@ -1,45 +1,45 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type WebhookStore interface {
-	basestore.ShareableStore
+type WebhookStore interfbce {
+	bbsestore.ShbrebbleStore
 
-	Create(ctx context.Context, name, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error)
+	Crebte(ctx context.Context, nbme, kind, urn string, bctorUID int32, secret *types.EncryptbbleSecret) (*types.Webhook, error)
 	GetByID(ctx context.Context, id int32) (*types.Webhook, error)
 	GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webhook, error)
 	Delete(ctx context.Context, opts DeleteWebhookOpts) error
-	Update(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error)
+	Updbte(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error)
 	List(ctx context.Context, opts WebhookListOptions) ([]*types.Webhook, error)
 	Count(ctx context.Context, opts WebhookListOptions) (int, error)
 }
 
 type webhookStore struct {
-	*basestore.Store
+	*bbsestore.Store
 
 	key encryption.Key
 }
 
-var _ WebhookStore = &webhookStore{}
+vbr _ WebhookStore = &webhookStore{}
 
-func WebhooksWith(other basestore.ShareableStore, key encryption.Key) WebhookStore {
+func WebhooksWith(other bbsestore.ShbrebbleStore, key encryption.Key) WebhookStore {
 	return &webhookStore{
-		Store: basestore.NewWithHandle(other.Handle()),
+		Store: bbsestore.NewWithHbndle(other.Hbndle()),
 		key:   key,
 	}
 }
@@ -54,18 +54,18 @@ type (
 	GetWebhookOpts    WebhookOpts
 )
 
-// Create the webhook
+// Crebte the webhook
 //
-// secret is optional since some code hosts do not support signing payloads.
-// Also, encryption at the instance level is also optional. If encryption is
-// disabled then the secret value will be stored in plain text in the secret
-// column and encryption_key_id will be blank.
+// secret is optionbl since some code hosts do not support signing pbylobds.
+// Also, encryption bt the instbnce level is blso optionbl. If encryption is
+// disbbled then the secret vblue will be stored in plbin text in the secret
+// column bnd encryption_key_id will be blbnk.
 //
-// If encryption IS enabled then the encrypted value will be stored in secret and
-// the encryption_key_id field will also be populated so that we can decrypt the
-// value later.
-func (s *webhookStore) Create(ctx context.Context, name, kind, urn string, actorUID int32, secret *types.EncryptableSecret) (*types.Webhook, error) {
-	var (
+// If encryption IS enbbled then the encrypted vblue will be stored in secret bnd
+// the encryption_key_id field will blso be populbted so thbt we cbn decrypt the
+// vblue lbter.
+func (s *webhookStore) Crebte(ctx context.Context, nbme, kind, urn string, bctorUID int32, secret *types.EncryptbbleSecret) (*types.Webhook, error) {
+	vbr (
 		err             error
 		encryptedSecret string
 		keyID           string
@@ -74,41 +74,41 @@ func (s *webhookStore) Create(ctx context.Context, name, kind, urn string, actor
 	if secret != nil {
 		encryptedSecret, keyID, err = secret.Encrypt(ctx, s.key)
 		if err != nil {
-			return nil, errors.Wrap(err, "encrypting secret")
+			return nil, errors.Wrbp(err, "encrypting secret")
 		}
 		if encryptedSecret == "" && keyID == "" {
-			return nil, errors.New("empty secret and key provided")
+			return nil, errors.New("empty secret bnd key provided")
 		}
 	}
 
-	q := sqlf.Sprintf(webhookCreateQueryFmtstr,
-		name,
+	q := sqlf.Sprintf(webhookCrebteQueryFmtstr,
+		nbme,
 		kind,
 		urn,
 		dbutil.NullStringColumn(encryptedSecret),
 		dbutil.NullStringColumn(keyID),
-		dbutil.NullInt32Column(actorUID),
+		dbutil.NullInt32Column(bctorUID),
 		// Returning
 		sqlf.Join(webhookColumns, ", "),
 	)
 
-	created, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	crebted, err := scbnWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
-		return nil, errors.Wrap(err, "scanning webhook")
+		return nil, errors.Wrbp(err, "scbnning webhook")
 	}
 
-	return created, nil
+	return crebted, nil
 }
 
-const webhookCreateQueryFmtstr = `
+const webhookCrebteQueryFmtstr = `
 INSERT INTO
 	webhooks (
-        name,
+        nbme,
 		code_host_kind,
 		code_host_urn,
 		secret,
 		encryption_key_id,
-		created_by_user_id
+		crebted_by_user_id
 	)
 	VALUES (
 		%s,
@@ -121,18 +121,18 @@ INSERT INTO
 	RETURNING %s
 `
 
-var webhookColumns = []*sqlf.Query{
+vbr webhookColumns = []*sqlf.Query{
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("uuid"),
 	sqlf.Sprintf("code_host_kind"),
 	sqlf.Sprintf("code_host_urn"),
 	sqlf.Sprintf("secret"),
-	sqlf.Sprintf("created_at"),
-	sqlf.Sprintf("updated_at"),
+	sqlf.Sprintf("crebted_bt"),
+	sqlf.Sprintf("updbted_bt"),
 	sqlf.Sprintf("encryption_key_id"),
-	sqlf.Sprintf("created_by_user_id"),
-	sqlf.Sprintf("updated_by_user_id"),
-	sqlf.Sprintf("name"),
+	sqlf.Sprintf("crebted_by_user_id"),
+	sqlf.Sprintf("updbted_by_user_id"),
+	sqlf.Sprintf("nbme"),
 }
 
 const webhookGetFmtstr = `
@@ -149,30 +149,30 @@ func (s *webhookStore) GetByUUID(ctx context.Context, id uuid.UUID) (*types.Webh
 }
 
 func (s *webhookStore) getBy(ctx context.Context, opts GetWebhookOpts) (*types.Webhook, error) {
-	var whereClause *sqlf.Query
+	vbr whereClbuse *sqlf.Query
 	if opts.ID > 0 {
-		whereClause = sqlf.Sprintf("ID = %d", opts.ID)
+		whereClbuse = sqlf.Sprintf("ID = %d", opts.ID)
 	}
 
 	if opts.UUID != uuid.Nil {
-		whereClause = sqlf.Sprintf("UUID = %s", opts.UUID)
+		whereClbuse = sqlf.Sprintf("UUID = %s", opts.UUID)
 	}
 
-	if whereClause == nil {
+	if whereClbuse == nil {
 		return nil, errors.New("not enough conditions to build query to delete webhook")
 	}
 
 	q := sqlf.Sprintf(webhookGetFmtstr,
 		sqlf.Join(webhookColumns, ", "),
-		whereClause,
+		whereClbuse,
 	)
 
-	webhook, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	webhook, err := scbnWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &WebhookNotFoundError{UUID: opts.UUID, ID: opts.ID}
 		}
-		return nil, errors.Wrap(err, "scanning webhook")
+		return nil, errors.Wrbp(err, "scbnning webhook")
 	}
 
 	return webhook, nil
@@ -185,11 +185,11 @@ WHERE %s
 
 // Delete the webhook with given options.
 //
-// Either ID or UUID can be provided.
+// Either ID or UUID cbn be provided.
 //
-// No error is returned if both ID and UUID are provided, ID is used in this
-// case. Error is returned when the webhook is not found or something went wrong
-// during an SQL query.
+// No error is returned if both ID bnd UUID bre provided, ID is used in this
+// cbse. Error is returned when the webhook is not found or something went wrong
+// during bn SQL query.
 func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error {
 	query, err := buildDeleteWebhookQuery(opts)
 	if err != nil {
@@ -198,14 +198,14 @@ func (s *webhookStore) Delete(ctx context.Context, opts DeleteWebhookOpts) error
 
 	result, err := s.ExecResult(ctx, query)
 	if err != nil {
-		return errors.Wrap(err, "running delete SQL query")
+		return errors.Wrbp(err, "running delete SQL query")
 	}
 	rowsAffected, err := result.RowsAffected()
 	if err != nil {
-		return errors.Wrap(err, "checking rows affected after deletion")
+		return errors.Wrbp(err, "checking rows bffected bfter deletion")
 	}
 	if rowsAffected == 0 {
-		return errors.Wrap(NewWebhookNotFoundErrorFromOpts(opts), "failed to delete webhook")
+		return errors.Wrbp(NewWebhookNotFoundErrorFromOpts(opts), "fbiled to delete webhook")
 	}
 	return nil
 }
@@ -222,7 +222,7 @@ func buildDeleteWebhookQuery(opts DeleteWebhookOpts) (*sqlf.Query, error) {
 	return nil, errors.New("not enough conditions to build query to delete webhook")
 }
 
-// WebhookNotFoundError occurs when a webhook is not found.
+// WebhookNotFoundError occurs when b webhook is not found.
 type WebhookNotFoundError struct {
 	ID   int32
 	UUID uuid.UUID
@@ -247,9 +247,9 @@ func NewWebhookNotFoundErrorFromOpts(opts DeleteWebhookOpts) *WebhookNotFoundErr
 	}
 }
 
-// Update the webhook
-func (s *webhookStore) Update(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
-	var (
+// Updbte the webhook
+func (s *webhookStore) Updbte(ctx context.Context, webhook *types.Webhook) (*types.Webhook, error) {
+	vbr (
 		err             error
 		encryptedSecret string
 		keyID           string
@@ -258,56 +258,56 @@ func (s *webhookStore) Update(ctx context.Context, webhook *types.Webhook) (*typ
 	if webhook.Secret != nil {
 		encryptedSecret, keyID, err = webhook.Secret.Encrypt(ctx, s.key)
 		if err != nil {
-			return nil, errors.Wrap(err, "encrypting secret")
+			return nil, errors.Wrbp(err, "encrypting secret")
 		}
 		if encryptedSecret == "" && keyID == "" {
-			return nil, errors.New("empty secret and key provided")
+			return nil, errors.New("empty secret bnd key provided")
 		}
 	}
 
-	q := sqlf.Sprintf(webhookUpdateQueryFmtstr,
-		webhook.Name, webhook.CodeHostURN.String(), webhook.CodeHostKind, encryptedSecret, keyID, dbutil.NullInt32Column(actor.FromContext(ctx).UID), webhook.ID,
+	q := sqlf.Sprintf(webhookUpdbteQueryFmtstr,
+		webhook.Nbme, webhook.CodeHostURN.String(), webhook.CodeHostKind, encryptedSecret, keyID, dbutil.NullInt32Column(bctor.FromContext(ctx).UID), webhook.ID,
 		sqlf.Join(webhookColumns, ", "))
 
-	updated, err := scanWebhook(s.QueryRow(ctx, q), s.key)
+	updbted, err := scbnWebhook(s.QueryRow(ctx, q), s.key)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, &WebhookNotFoundError{ID: webhook.ID, UUID: webhook.UUID}
 		}
-		return nil, errors.Wrap(err, "scanning webhook")
+		return nil, errors.Wrbp(err, "scbnning webhook")
 	}
 
-	return updated, nil
+	return updbted, nil
 }
 
-const webhookUpdateQueryFmtstr = `
+const webhookUpdbteQueryFmtstr = `
 UPDATE webhooks
 SET
-    name = %s,
+    nbme = %s,
 	code_host_urn = %s,
     code_host_kind = %s,
 	secret = %s,
 	encryption_key_id = %s,
-	updated_at = NOW(),
-	updated_by_user_id = %s
+	updbted_bt = NOW(),
+	updbted_by_user_id = %s
 WHERE
 	id = %s
 RETURNING
 	%s
 `
 
-func (s *webhookStore) list(ctx context.Context, opt WebhookListOptions, selects *sqlf.Query, scanWebhook func(rows *sql.Rows) error) error {
+func (s *webhookStore) list(ctx context.Context, opt WebhookListOptions, selects *sqlf.Query, scbnWebhook func(rows *sql.Rows) error) error {
 	q := sqlf.Sprintf(webhookListQueryFmtstr, selects)
-	wheres := make([]*sqlf.Query, 0, 2)
+	wheres := mbke([]*sqlf.Query, 0, 2)
 	if opt.Kind != "" {
-		wheres = append(wheres, sqlf.Sprintf("code_host_kind = %s", opt.Kind))
+		wheres = bppend(wheres, sqlf.Sprintf("code_host_kind = %s", opt.Kind))
 	}
-	cond, err := parseWebhookCursorCond(opt.Cursor)
+	cond, err := pbrseWebhookCursorCond(opt.Cursor)
 	if err != nil {
-		return errors.Wrap(err, "parsing webhook cursor")
+		return errors.Wrbp(err, "pbrsing webhook cursor")
 	}
 	if cond != nil {
-		wheres = append(wheres, cond)
+		wheres = bppend(wheres, cond)
 	}
 	if len(wheres) != 0 {
 		where := sqlf.Join(wheres, "AND")
@@ -318,11 +318,11 @@ func (s *webhookStore) list(ctx context.Context, opt WebhookListOptions, selects
 	}
 	rows, err := s.Query(ctx, q)
 	if err != nil {
-		return errors.Wrap(err, "error running query")
+		return errors.Wrbp(err, "error running query")
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err := scanWebhook(rows); err != nil {
+		if err := scbnWebhook(rows); err != nil {
 			return err
 		}
 	}
@@ -332,18 +332,18 @@ func (s *webhookStore) list(ctx context.Context, opt WebhookListOptions, selects
 
 // List the webhooks
 func (s *webhookStore) List(ctx context.Context, opt WebhookListOptions) ([]*types.Webhook, error) {
-	res := make([]*types.Webhook, 0, 20)
+	res := mbke([]*types.Webhook, 0, 20)
 
-	scanFunc := func(rows *sql.Rows) error {
-		webhook, err := scanWebhook(rows, s.key)
+	scbnFunc := func(rows *sql.Rows) error {
+		webhook, err := scbnWebhook(rows, s.key)
 		if err != nil {
 			return err
 		}
-		res = append(res, webhook)
+		res = bppend(res, webhook)
 		return nil
 	}
 
-	err := s.list(ctx, opt, sqlf.Join(webhookColumns, ", "), scanFunc)
+	err := s.list(ctx, opt, sqlf.Join(webhookColumns, ", "), scbnFunc)
 	return res, err
 }
 
@@ -353,27 +353,27 @@ type WebhookListOptions struct {
 	*LimitOffset
 }
 
-// parseWebhookCursorCond returns the WHERE conditions for the given cursor
-func parseWebhookCursorCond(cursor *types.Cursor) (cond *sqlf.Query, err error) {
-	if cursor == nil || cursor.Column == "" || cursor.Value == "" {
+// pbrseWebhookCursorCond returns the WHERE conditions for the given cursor
+func pbrseWebhookCursorCond(cursor *types.Cursor) (cond *sqlf.Query, err error) {
+	if cursor == nil || cursor.Column == "" || cursor.Vblue == "" {
 		return nil, nil
 	}
 
-	var operator string
+	vbr operbtor string
 	switch cursor.Direction {
-	case "next":
-		operator = ">="
-	case "prev":
-		operator = "<="
-	default:
-		return nil, errors.Errorf("missing or invalid cursor direction: %q", cursor.Direction)
+	cbse "next":
+		operbtor = ">="
+	cbse "prev":
+		operbtor = "<="
+	defbult:
+		return nil, errors.Errorf("missing or invblid cursor direction: %q", cursor.Direction)
 	}
 
 	if cursor.Column != "id" {
-		return nil, errors.Errorf("missing or invalid cursor: %q %q", cursor.Column, cursor.Value)
+		return nil, errors.Errorf("missing or invblid cursor: %q %q", cursor.Column, cursor.Vblue)
 	}
 
-	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", cursor.Column, operator), cursor.Value), nil
+	return sqlf.Sprintf(fmt.Sprintf("(%s) %s (%%s)", cursor.Column, operbtor), cursor.Vblue), nil
 }
 
 const webhookListQueryFmtstr = `
@@ -385,46 +385,46 @@ FROM webhooks
 func (s *webhookStore) Count(ctx context.Context, opts WebhookListOptions) (ct int, err error) {
 	opts.LimitOffset = nil
 	err = s.list(ctx, opts, sqlf.Sprintf("COUNT(*)"), func(rows *sql.Rows) error {
-		return rows.Scan(&ct)
+		return rows.Scbn(&ct)
 	})
 	return ct, err
 }
 
-func scanWebhook(sc dbutil.Scanner, key encryption.Key) (*types.Webhook, error) {
-	var (
+func scbnWebhook(sc dbutil.Scbnner, key encryption.Key) (*types.Webhook, error) {
+	vbr (
 		hook      types.Webhook
 		keyID     string
-		rawSecret string
+		rbwSecret string
 	)
 
-	var codeHostURL string
-	if err := sc.Scan(
+	vbr codeHostURL string
+	if err := sc.Scbn(
 		&hook.ID,
 		&hook.UUID,
 		&hook.CodeHostKind,
 		&codeHostURL,
-		&dbutil.NullString{S: &rawSecret},
-		&hook.CreatedAt,
-		&hook.UpdatedAt,
+		&dbutil.NullString{S: &rbwSecret},
+		&hook.CrebtedAt,
+		&hook.UpdbtedAt,
 		&dbutil.NullString{S: &keyID},
-		&dbutil.NullInt32{N: &hook.CreatedByUserID},
-		&dbutil.NullInt32{N: &hook.UpdatedByUserID},
-		&hook.Name,
+		&dbutil.NullInt32{N: &hook.CrebtedByUserID},
+		&dbutil.NullInt32{N: &hook.UpdbtedByUserID},
+		&hook.Nbme,
 	); err != nil {
 		return nil, err
 	}
 
-	if keyID == "" && rawSecret != "" {
-		// We have an unencrypted secret
-		hook.Secret = types.NewUnencryptedSecret(rawSecret)
-	} else if keyID != "" && rawSecret != "" {
-		// We have an encrypted secret
-		hook.Secret = types.NewEncryptedSecret(rawSecret, keyID, key)
+	if keyID == "" && rbwSecret != "" {
+		// We hbve bn unencrypted secret
+		hook.Secret = types.NewUnencryptedSecret(rbwSecret)
+	} else if keyID != "" && rbwSecret != "" {
+		// We hbve bn encrypted secret
+		hook.Secret = types.NewEncryptedSecret(rbwSecret, keyID, key)
 	}
-	// If both keyID and rawSecret are empty then we didn't set a secret and we leave
-	// hook.Secret as nil
+	// If both keyID bnd rbwSecret bre empty then we didn't set b secret bnd we lebve
+	// hook.Secret bs nil
 
-	codeHostURN, err := extsvc.NewCodeHostBaseURL(codeHostURL)
+	codeHostURN, err := extsvc.NewCodeHostBbseURL(codeHostURL)
 	if err != nil {
 		return nil, err
 	}

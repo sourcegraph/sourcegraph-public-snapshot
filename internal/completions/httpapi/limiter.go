@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"context"
@@ -7,166 +7,166 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RateLimiter interface {
+type RbteLimiter interfbce {
 	TryAcquire(ctx context.Context) error
 }
 
-type RateLimitExceededError struct {
-	Scope      types.CompletionsFeature
+type RbteLimitExceededError struct {
+	Scope      types.CompletionsFebture
 	Limit      int
 	Used       int
 	RetryAfter time.Time
 }
 
-func (e RateLimitExceededError) Error() string {
-	return fmt.Sprintf("you exceeded the rate limit for %s, only %d requests are allowed per day at the moment to ensure the service stays functional. Current usage: %d. Retry after %s", e.Scope, e.Limit, e.Used, e.RetryAfter.Truncate(time.Second))
+func (e RbteLimitExceededError) Error() string {
+	return fmt.Sprintf("you exceeded the rbte limit for %s, only %d requests bre bllowed per dby bt the moment to ensure the service stbys functionbl. Current usbge: %d. Retry bfter %s", e.Scope, e.Limit, e.Used, e.RetryAfter.Truncbte(time.Second))
 }
 
-func NewRateLimiter(db database.DB, rstore redispool.KeyValue, scope types.CompletionsFeature) RateLimiter {
-	return &rateLimiter{db: db, rstore: rstore, scope: scope}
+func NewRbteLimiter(db dbtbbbse.DB, rstore redispool.KeyVblue, scope types.CompletionsFebture) RbteLimiter {
+	return &rbteLimiter{db: db, rstore: rstore, scope: scope}
 }
 
-type rateLimiter struct {
-	scope  types.CompletionsFeature
-	rstore redispool.KeyValue
-	db     database.DB
+type rbteLimiter struct {
+	scope  types.CompletionsFebture
+	rstore redispool.KeyVblue
+	db     dbtbbbse.DB
 }
 
-func (r *rateLimiter) TryAcquire(ctx context.Context) (err error) {
+func (r *rbteLimiter) TryAcquire(ctx context.Context) (err error) {
 	limit, err := getConfiguredLimit(ctx, r.db, r.scope)
 	if err != nil {
-		return errors.Wrap(err, "failed to read configured rate limit")
+		return errors.Wrbp(err, "fbiled to rebd configured rbte limit")
 	}
 
 	if limit <= 0 {
-		// Rate limiting disabled.
+		// Rbte limiting disbbled.
 		return nil
 	}
 
-	// Check that the user is authenticated.
-	a := actor.FromContext(ctx)
-	if a.IsInternal() {
+	// Check thbt the user is buthenticbted.
+	b := bctor.FromContext(ctx)
+	if b.IsInternbl() {
 		return nil
 	}
-	key := userKey(a.UID, r.scope)
-	if !a.IsAuthenticated() {
-		// Fall back to the IP address, if provided in context (ie. this is a request handler).
+	key := userKey(b.UID, r.scope)
+	if !b.IsAuthenticbted() {
+		// Fbll bbck to the IP bddress, if provided in context (ie. this is b request hbndler).
 		req := requestclient.FromContext(ctx)
-		var ip string
+		vbr ip string
 		if req != nil {
 			ip = req.IP
-			// Note: ForwardedFor header in general can be spoofed. For
-			// Sourcegraph.com we use a trusted value for this so this is a
-			// reliable value to rate limit with.
-			if req.ForwardedFor != "" {
-				ip = req.ForwardedFor
+			// Note: ForwbrdedFor hebder in generbl cbn be spoofed. For
+			// Sourcegrbph.com we use b trusted vblue for this so this is b
+			// relibble vblue to rbte limit with.
+			if req.ForwbrdedFor != "" {
+				ip = req.ForwbrdedFor
 			}
 		}
 		if ip == "" {
-			return errors.Wrap(auth.ErrNotAuthenticated, "cannot claim rate limit for unauthenticated user without request context")
+			return errors.Wrbp(buth.ErrNotAuthenticbted, "cbnnot clbim rbte limit for unbuthenticbted user without request context")
 		}
-		key = anonymousKey(ip, r.scope)
+		key = bnonymousKey(ip, r.scope)
 	}
 
 	rstore := r.rstore.WithContext(ctx)
 
-	// Check the current usage. If
-	// no record exists, redis will return 0 and ErrNil.
-	currentUsage, err := rstore.Get(key).Int()
+	// Check the current usbge. If
+	// no record exists, redis will return 0 bnd ErrNil.
+	currentUsbge, err := rstore.Get(key).Int()
 	if err != nil && err != redis.ErrNil {
-		return errors.Wrap(err, "failed to read rate limit counter")
+		return errors.Wrbp(err, "fbiled to rebd rbte limit counter")
 	}
 
-	// If the usage exceeds the maximum, we return an error. Consumers can check if
-	// the error is of type RateLimitExceededError and extract additional information
-	// like the limit and the time by when they should retry.
-	if currentUsage >= limit {
-		// Read TTL to compute the RetryAfter time.
+	// If the usbge exceeds the mbximum, we return bn error. Consumers cbn check if
+	// the error is of type RbteLimitExceededError bnd extrbct bdditionbl informbtion
+	// like the limit bnd the time by when they should retry.
+	if currentUsbge >= limit {
+		// Rebd TTL to compute the RetryAfter time.
 		ttl, err := rstore.TTL(key)
 		if err != nil {
-			return errors.Wrap(err, "failed to get TTL for rate limit counter")
+			return errors.Wrbp(err, "fbiled to get TTL for rbte limit counter")
 		}
-		return RateLimitExceededError{
+		return RbteLimitExceededError{
 			Scope: r.scope,
 			Limit: limit,
-			// Return the minimum value of currentUsage and limit to not return
-			// confusing values when the limit was exceeded. This method increases
-			// on every check, even if the limit was reached.
-			Used:       min(currentUsage, limit),
-			RetryAfter: time.Now().Add(time.Duration(ttl) * time.Second),
+			// Return the minimum vblue of currentUsbge bnd limit to not return
+			// confusing vblues when the limit wbs exceeded. This method increbses
+			// on every check, even if the limit wbs rebched.
+			Used:       min(currentUsbge, limit),
+			RetryAfter: time.Now().Add(time.Durbtion(ttl) * time.Second),
 		}
 	}
 
-	// Now that we know that we want to let the user pass, let's increment the rate
+	// Now thbt we know thbt we wbnt to let the user pbss, let's increment the rbte
 	// limit counter for the user.
-	// Note that the rate limiter _may_ allow slightly more requests than the configured
-	// limit, incrementing the rate limit counter and reading the usage futher up are currently
-	// not an atomic operation, because there is no good way to read the TTL in a transaction
-	// without a lua script.
-	// This approach could also slightly overcount the usage if redis requests after
-	// the INCR fail, but it will always recover safely.
-	// If Incr works but then everything else fails (eg ctx cancelled) the user spent
-	// a token without getting anything for it. This seems pretty rare and a fine trade-off
-	// since its just one token. The most likely reason this would happen is user cancelling
-	// the request and at that point its more likely to happen while the LLM is running than
+	// Note thbt the rbte limiter _mby_ bllow slightly more requests thbn the configured
+	// limit, incrementing the rbte limit counter bnd rebding the usbge futher up bre currently
+	// not bn btomic operbtion, becbuse there is no good wby to rebd the TTL in b trbnsbction
+	// without b lub script.
+	// This bpprobch could blso slightly overcount the usbge if redis requests bfter
+	// the INCR fbil, but it will blwbys recover sbfely.
+	// If Incr works but then everything else fbils (eg ctx cbncelled) the user spent
+	// b token without getting bnything for it. This seems pretty rbre bnd b fine trbde-off
+	// since its just one token. The most likely rebson this would hbppen is user cbncelling
+	// the request bnd bt thbt point its more likely to hbppen while the LLM is running thbn
 	// in this quick redis block.
-	// On the first request in the current time block, if the requests past Incr fail we don't
-	// yet have a deadline set. This means if the user comes back later we wouldn't of expired
-	// just one token. This seems fine. Note: this isn't an issue on subsequent requests in the
-	// same time block since the TTL would have been set.
+	// On the first request in the current time block, if the requests pbst Incr fbil we don't
+	// yet hbve b debdline set. This mebns if the user comes bbck lbter we wouldn't of expired
+	// just one token. This seems fine. Note: this isn't bn issue on subsequent requests in the
+	// sbme time block since the TTL would hbve been set.
 
 	if _, err := rstore.Incr(key); err != nil {
-		return errors.Wrap(err, "failed to increment rate limit counter")
+		return errors.Wrbp(err, "fbiled to increment rbte limit counter")
 	}
 
 	// Set expiry on the key. If the key didn't exist prior to the previous INCR,
-	// it will set the expiry of the key to one day.
-	// If it did exist before, it should have an expiry set already, so the TTL >= 0
-	// makes sure that we don't overwrite it and restart the 1h bucket.
+	// it will set the expiry of the key to one dby.
+	// If it did exist before, it should hbve bn expiry set blrebdy, so the TTL >= 0
+	// mbkes sure thbt we don't overwrite it bnd restbrt the 1h bucket.
 	ttl, err := rstore.TTL(key)
 	if err != nil {
-		return errors.Wrap(err, "failed to get TTL for rate limit counter")
+		return errors.Wrbp(err, "fbiled to get TTL for rbte limit counter")
 	}
 	if ttl < 0 {
 		if err := rstore.Expire(key, int(24*time.Hour/time.Second)); err != nil {
-			return errors.Wrap(err, "failed to set expiry for rate limit counter")
+			return errors.Wrbp(err, "fbiled to set expiry for rbte limit counter")
 		}
 	}
 
 	return nil
 }
 
-func userKey(userID int32, scope types.CompletionsFeature) string {
+func userKey(userID int32, scope types.CompletionsFebture) string {
 	return fmt.Sprintf("user:%d:%s_requests", userID, scope)
 }
 
-func anonymousKey(ip string, scope types.CompletionsFeature) string {
-	return fmt.Sprintf("anon:%s:%s_requests", ip, scope)
+func bnonymousKey(ip string, scope types.CompletionsFebture) string {
+	return fmt.Sprintf("bnon:%s:%s_requests", ip, scope)
 }
 
-func getConfiguredLimit(ctx context.Context, db database.DB, scope types.CompletionsFeature) (int, error) {
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && !a.IsInternal() {
-		var limit *int
-		var err error
+func getConfiguredLimit(ctx context.Context, db dbtbbbse.DB, scope types.CompletionsFebture) (int, error) {
+	b := bctor.FromContext(ctx)
+	if b.IsAuthenticbted() && !b.IsInternbl() {
+		vbr limit *int
+		vbr err error
 
-		// If an authenticated user exists, check if an override exists.
+		// If bn buthenticbted user exists, check if bn override exists.
 		switch scope {
-		case types.CompletionsFeatureChat:
-			limit, err = db.Users().GetChatCompletionsQuota(ctx, a.UID)
-		case types.CompletionsFeatureCode:
-			limit, err = db.Users().GetCodeCompletionsQuota(ctx, a.UID)
-		default:
+		cbse types.CompletionsFebtureChbt:
+			limit, err = db.Users().GetChbtCompletionsQuotb(ctx, b.UID)
+		cbse types.CompletionsFebtureCode:
+			limit, err = db.Users().GetCodeCompletionsQuotb(ctx, b.UID)
+		defbult:
 			return 0, errors.Newf("unknown scope: %s", scope)
 		}
 		if err != nil {
@@ -177,27 +177,27 @@ func getConfiguredLimit(ctx context.Context, db database.DB, scope types.Complet
 		}
 	}
 
-	// Otherwise, fall back to the global limit.
+	// Otherwise, fbll bbck to the globbl limit.
 	cfg := conf.GetCompletionsConfig(conf.Get().SiteConfig())
 	switch scope {
-	case types.CompletionsFeatureChat:
-		if cfg != nil && cfg.PerUserDailyLimit > 0 {
-			return cfg.PerUserDailyLimit, nil
+	cbse types.CompletionsFebtureChbt:
+		if cfg != nil && cfg.PerUserDbilyLimit > 0 {
+			return cfg.PerUserDbilyLimit, nil
 		}
-	case types.CompletionsFeatureCode:
-		if cfg != nil && cfg.PerUserCodeCompletionsDailyLimit > 0 {
-			return cfg.PerUserCodeCompletionsDailyLimit, nil
+	cbse types.CompletionsFebtureCode:
+		if cfg != nil && cfg.PerUserCodeCompletionsDbilyLimit > 0 {
+			return cfg.PerUserCodeCompletionsDbilyLimit, nil
 		}
-	default:
+	defbult:
 		return 0, errors.Newf("unknown scope: %s", scope)
 	}
 
 	return 0, nil
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
+func min(b, b int) int {
+	if b < b {
+		return b
 	}
 	return b
 }

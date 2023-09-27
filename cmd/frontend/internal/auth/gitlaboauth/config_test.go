@@ -1,388 +1,388 @@
-package gitlaboauth
+pbckbge gitlbbobuth
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
-	"github.com/sergi/go-diff/diffmatchpatch"
-	"golang.org/x/oauth2"
+	"github.com/dbvecgh/go-spew/spew"
+	"github.com/sergi/go-diff/diffmbtchpbtch"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestParseConfig(t *testing.T) {
+func TestPbrseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	spew.Config.DisablePointerAddresses = true
+	spew.Config.DisbblePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
 
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	type args struct {
+	type brgs struct {
 		cfg *conf.Unified
 	}
 	tests := []struct {
-		name          string
-		args          args
+		nbme          string
+		brgs          brgs
 		dotcom        bool
-		wantProviders []Provider
-		wantProblems  []string
+		wbntProviders []Provider
+		wbntProblems  []string
 	}{
 		{
-			name:          "No configs",
-			args:          args{cfg: &conf.Unified{}},
-			wantProviders: []Provider(nil),
+			nbme:          "No configs",
+			brgs:          brgs{cfg: &conf.Unified{}},
+			wbntProviders: []Provider(nil),
 		},
 		{
-			name: "1 GitLab.com config",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "https://sourcegraph.example.com",
-				AuthProviders: []schema.AuthProviders{{
-					Gitlab: &schema.GitLabAuthProvider{
+			nbme: "1 GitLbb.com config",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "https://sourcegrbph.exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 						AllowGroups:  []string{"mygroup"},
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 						AllowGroups:  []string{"mygroup"},
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 			},
 		},
 		{
-			name: "1 GitLab.com config with scope override",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "https://sourcegraph.example.com",
-				AuthProviders: []schema.AuthProviders{{
-					Gitlab: &schema.GitLabAuthProvider{
-						ApiScope:     "read_api",
+			nbme: "1 GitLbb.com config with scope override",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "https://sourcegrbph.exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					Gitlbb: &schemb.GitLbbAuthProvider{
+						ApiScope:     "rebd_bpi",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
-						ApiScope:     "read_api",
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
+						ApiScope:     "rebd_bpi",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "read_api"},
+						Scopes: []string{"rebd_user", "rebd_bpi"},
 					}),
 				},
 			},
 		},
 		{
-			name:   "1 GitLab.com config, Sourcegraph.com",
+			nbme:   "1 GitLbb.com config, Sourcegrbph.com",
 			dotcom: true,
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "https://sourcegraph.example.com",
-				AuthProviders: []schema.AuthProviders{{
-					Gitlab: &schema.GitLabAuthProvider{
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "https://sourcegrbph.exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 			},
 		},
 		{
-			name: "2 GitLab configs",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "https://sourcegraph.example.com",
-				AuthProviders: []schema.AuthProviders{{
-					Gitlab: &schema.GitLabAuthProvider{
+			nbme: "2 GitLbb configs",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "https://sourcegrbph.exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}, {
-					Gitlab: &schema.GitLabAuthProvider{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						DisplayName:  "GitLab Enterprise",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://mycompany.com",
+						DisplbyNbme:  "GitLbb Enterprise",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://mycompbny.com",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						DisplayName:  "GitLab Enterprise",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://mycompany.com",
+						DisplbyNbme:  "GitLbb Enterprise",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://mycompbny.com",
 					},
-					Provider: provider("https://mycompany.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://mycompbny.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://mycompany.com/oauth/authorize",
-							TokenURL: "https://mycompany.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://mycompbny.com/obuth/buthorize",
+							TokenURL: "https://mycompbny.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 			},
 		},
 		{
-			name: "2 GitLab configs with the same URL and client ID",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "https://sourcegraph.example.com",
-				AuthProviders: []schema.AuthProviders{{
-					Gitlab: &schema.GitLabAuthProvider{
+			nbme: "2 GitLbb configs with the sbme URL bnd client ID",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "https://sourcegrbph.exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}, {
-					Gitlab: &schema.GitLabAuthProvider{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret-2",
-						DisplayName:  "GitLab Duplicate",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb Duplicbte",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 			},
-			wantProblems: []string{
-				`Cannot have more than one GitLab auth provider with url "https://gitlab.com/" and client ID "my-client-id", only the first one will be used`,
+			wbntProblems: []string{
+				`Cbnnot hbve more thbn one GitLbb buth provider with url "https://gitlbb.com/" bnd client ID "my-client-id", only the first one will be used`,
 			},
 		},
 		{
-			name: "2 GitLab configs with the same URL but different client IDs",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				ExternalURL: "https://sourcegraph.example.com",
-				AuthProviders: []schema.AuthProviders{{
-					Gitlab: &schema.GitLabAuthProvider{
+			nbme: "2 GitLbb configs with the sbme URL but different client IDs",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				ExternblURL: "https://sourcegrbph.exbmple.com",
+				AuthProviders: []schemb.AuthProviders{{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}, {
-					Gitlab: &schema.GitLabAuthProvider{
+					Gitlbb: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						DisplayName:  "GitLab Duplicate",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb Duplicbte",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						DisplayName:  "GitLab",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id",
 						ClientSecret: "my-client-secret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 				{
-					GitLabAuthProvider: &schema.GitLabAuthProvider{
+					GitLbbAuthProvider: &schemb.GitLbbAuthProvider{
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						DisplayName:  "GitLab Duplicate",
-						Type:         extsvc.TypeGitLab,
-						Url:          "https://gitlab.com",
+						DisplbyNbme:  "GitLbb Duplicbte",
+						Type:         extsvc.TypeGitLbb,
+						Url:          "https://gitlbb.com",
 					},
-					Provider: provider("https://gitlab.com/", oauth2.Config{
-						RedirectURL:  "https://sourcegraph.example.com/.auth/gitlab/callback",
+					Provider: provider("https://gitlbb.com/", obuth2.Config{
+						RedirectURL:  "https://sourcegrbph.exbmple.com/.buth/gitlbb/cbllbbck",
 						ClientID:     "my-client-id-2",
 						ClientSecret: "my-client-secret-2",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://gitlab.com/oauth/authorize",
-							TokenURL: "https://gitlab.com/oauth/token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://gitlbb.com/obuth/buthorize",
+							TokenURL: "https://gitlbb.com/obuth/token",
 						},
-						Scopes: []string{"read_user", "api"},
+						Scopes: []string{"rebd_user", "bpi"},
 					}),
 				},
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			old := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(tt.dotcom)
-			t.Cleanup(func() {
-				envvar.MockSourcegraphDotComMode(old)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			old := envvbr.SourcegrbphDotComMode()
+			envvbr.MockSourcegrbphDotComMode(tt.dotcom)
+			t.Clebnup(func() {
+				envvbr.MockSourcegrbphDotComMode(old)
 			})
 
-			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tt.args.cfg, db)
-			gotConfigs := make([]oauth2.Config, len(gotProviders))
-			for k, p := range gotProviders {
-				if p, ok := p.Provider.(*oauth.Provider); ok {
-					p.Login, p.Callback = nil, nil
+			gotProviders, gotProblems := pbrseConfig(logtest.Scoped(t), tt.brgs.cfg, db)
+			gotConfigs := mbke([]obuth2.Config, len(gotProviders))
+			for k, p := rbnge gotProviders {
+				if p, ok := p.Provider.(*obuth.Provider); ok {
+					p.Login, p.Cbllbbck = nil, nil
 					gotConfigs[k] = p.OAuth2Config()
 					p.OAuth2Config = nil
-					p.ProviderOp.Login, p.ProviderOp.Callback = nil, nil
+					p.ProviderOp.Login, p.ProviderOp.Cbllbbck = nil, nil
 				}
 			}
-			wantConfigs := make([]oauth2.Config, len(tt.wantProviders))
-			for k, p := range tt.wantProviders {
+			wbntConfigs := mbke([]obuth2.Config, len(tt.wbntProviders))
+			for k, p := rbnge tt.wbntProviders {
 				k := k
-				if q, ok := p.Provider.(*oauth.Provider); ok {
-					q.SourceConfig = schema.AuthProviders{Gitlab: p.GitLabAuthProvider}
-					wantConfigs[k] = q.OAuth2Config()
+				if q, ok := p.Provider.(*obuth.Provider); ok {
+					q.SourceConfig = schemb.AuthProviders{Gitlbb: p.GitLbbAuthProvider}
+					wbntConfigs[k] = q.OAuth2Config()
 					q.OAuth2Config = nil
 				}
 			}
-			if !reflect.DeepEqual(gotProviders, tt.wantProviders) {
-				dmp := diffmatchpatch.New()
-				t.Errorf("parseConfig() gotProviders != tt.wantProviders, diff:\n%s",
-					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(tt.wantProviders), spew.Sdump(gotProviders), false)),
+			if !reflect.DeepEqubl(gotProviders, tt.wbntProviders) {
+				dmp := diffmbtchpbtch.New()
+				t.Errorf("pbrseConfig() gotProviders != tt.wbntProviders, diff:\n%s",
+					dmp.DiffPrettyText(dmp.DiffMbin(spew.Sdump(tt.wbntProviders), spew.Sdump(gotProviders), fblse)),
 				)
 			}
-			if !reflect.DeepEqual(gotProblems.Messages(), tt.wantProblems) {
-				t.Errorf("parseConfig() gotProblems = %v, want %v", gotProblems, tt.wantProblems)
+			if !reflect.DeepEqubl(gotProblems.Messbges(), tt.wbntProblems) {
+				t.Errorf("pbrseConfig() gotProblems = %v, wbnt %v", gotProblems, tt.wbntProblems)
 			}
 
-			if !reflect.DeepEqual(gotConfigs, wantConfigs) {
-				dmp := diffmatchpatch.New()
-				t.Errorf("parseConfig() gotConfigs != wantConfigs, diff:\n%s",
-					dmp.DiffPrettyText(dmp.DiffMain(spew.Sdump(gotConfigs), spew.Sdump(wantConfigs), false)),
+			if !reflect.DeepEqubl(gotConfigs, wbntConfigs) {
+				dmp := diffmbtchpbtch.New()
+				t.Errorf("pbrseConfig() gotConfigs != wbntConfigs, diff:\n%s",
+					dmp.DiffPrettyText(dmp.DiffMbin(spew.Sdump(gotConfigs), spew.Sdump(wbntConfigs), fblse)),
 				)
 			}
 		})
 	}
 }
 
-func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
-	op := oauth.ProviderOp{
-		AuthPrefix:   authPrefix,
-		OAuth2Config: func() oauth2.Config { return oauth2Config },
-		StateConfig:  getStateConfig(),
+func provider(serviceID string, obuth2Config obuth2.Config) *obuth.Provider {
+	op := obuth.ProviderOp{
+		AuthPrefix:   buthPrefix,
+		OAuth2Config: func() obuth2.Config { return obuth2Config },
+		StbteConfig:  getStbteConfig(),
 		ServiceID:    serviceID,
-		ServiceType:  extsvc.TypeGitLab,
+		ServiceType:  extsvc.TypeGitLbb,
 	}
-	return &oauth.Provider{ProviderOp: op}
+	return &obuth.Provider{ProviderOp: op}
 }

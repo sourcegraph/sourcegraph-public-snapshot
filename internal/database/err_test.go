@@ -1,28 +1,28 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"reflect"
 	"runtime"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
 )
 
-func TestErrorsInterface(t *testing.T) {
-	cases := []struct {
+func TestErrorsInterfbce(t *testing.T) {
+	cbses := []struct {
 		Err       error
-		Predicate func(error) bool
+		Predicbte func(error) bool
 	}{
 		{&RepoNotFoundErr{}, errcode.IsNotFound},
 		{userNotFoundErr{}, errcode.IsNotFound},
 	}
-	for _, c := range cases {
-		if !c.Predicate(c.Err) {
-			t.Errorf("%s does not match predicate %s", c.Err.Error(), functionName(c.Predicate))
+	for _, c := rbnge cbses {
+		if !c.Predicbte(c.Err) {
+			t.Errorf("%s does not mbtch predicbte %s", c.Err.Error(), functionNbme(c.Predicbte))
 		}
 	}
 }
 
-func functionName(i any) string {
-	return runtime.FuncForPC(reflect.ValueOf(i).Pointer()).Name()
+func functionNbme(i bny) string {
+	return runtime.FuncForPC(reflect.VblueOf(i).Pointer()).Nbme()
 }

@@ -1,4 +1,4 @@
-package wrexec_test
+pbckbge wrexec_test
 
 import (
 	"context"
@@ -8,288 +8,288 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func listSize(t *testing.T, store *rcache.FIFOList) int {
+func listSize(t *testing.T, store *rcbche.FIFOList) int {
 	t.Helper()
 	size, err := store.Size()
 	if err != nil {
-		t.Fatalf("failed to get size of FIFOList: %s", err)
+		t.Fbtblf("fbiled to get size of FIFOList: %s", err)
 	}
 	return size
 }
 
-func isRecordingForCmd(t *testing.T, recording *wrexec.RecordedCommand, cmd *osexec.Cmd) bool {
+func isRecordingForCmd(t *testing.T, recording *wrexec.RecordedCommbnd, cmd *osexec.Cmd) bool {
 	t.Helper()
 	if cmd == nil || recording == nil {
-		return false
+		return fblse
 	}
 
-	if !cmp.Equal(cmd.Dir, recording.Dir) {
-		return false
+	if !cmp.Equbl(cmd.Dir, recording.Dir) {
+		return fblse
 	}
 
-	if !cmp.Equal(cmd.Path, recording.Path) {
-		return false
+	if !cmp.Equbl(cmd.Pbth, recording.Pbth) {
+		return fblse
 	}
 
-	if !cmp.Equal(cmd.Args, recording.Args) {
-		return false
+	if !cmp.Equbl(cmd.Args, recording.Args) {
+		return fblse
 	}
 
 	return true
 
 }
 
-func isValidRecording(t *testing.T, cmd *osexec.Cmd, recording *wrexec.RecordedCommand) (bool, error) {
+func isVblidRecording(t *testing.T, cmd *osexec.Cmd, recording *wrexec.RecordedCommbnd) (bool, error) {
 	t.Helper()
 	if cmd == nil || recording == nil {
-		return false, nil
+		return fblse, nil
 	}
 
 	if !isRecordingForCmd(t, recording, cmd) {
-		return false, errors.Errorf("incorrect recording cmd: %s", cmp.Diff(recording, cmd))
+		return fblse, errors.Errorf("incorrect recording cmd: %s", cmp.Diff(recording, cmd))
 	}
 
-	if recording.Start.IsZero() {
-		return false, errors.Errorf("recording has zero start time")
+	if recording.Stbrt.IsZero() {
+		return fblse, errors.Errorf("recording hbs zero stbrt time")
 	}
 
-	if recording.Duration == 0 {
-		return false, errors.Errorf("recording has no duration")
+	if recording.Durbtion == 0 {
+		return fblse, errors.Errorf("recording hbs no durbtion")
 	}
 
 	return true, nil
 }
 
-func getFirst(t *testing.T, store *rcache.FIFOList) *wrexec.RecordedCommand {
+func getFirst(t *testing.T, store *rcbche.FIFOList) *wrexec.RecordedCommbnd {
 	t.Helper()
 	return getRecordingAt(t, store, 0)
 }
 
-func getRecordingAt(t *testing.T, store *rcache.FIFOList, idx int) *wrexec.RecordedCommand {
+func getRecordingAt(t *testing.T, store *rcbche.FIFOList, idx int) *wrexec.RecordedCommbnd {
 	t.Helper()
-	data, err := store.Slice(context.Background(), idx, idx+1)
+	dbtb, err := store.Slice(context.Bbckground(), idx, idx+1)
 	if err != nil {
-		t.Fatalf("failed to get slice from %d to %d", idx, idx+1)
+		t.Fbtblf("fbiled to get slice from %d to %d", idx, idx+1)
 	}
-	if len(data) == 0 {
+	if len(dbtb) == 0 {
 		return nil
 	}
 
-	var recording wrexec.RecordedCommand
-	if err := json.Unmarshal(data[0], &recording); err != nil {
-		t.Fatalf("failed to unmarshal recording: %v", err)
+	vbr recording wrexec.RecordedCommbnd
+	if err := json.Unmbrshbl(dbtb[0], &recording); err != nil {
+		t.Fbtblf("fbiled to unmbrshbl recording: %v", err)
 	}
 	return &recording
 }
 
 func TestRecordingCmd(t *testing.T) {
-	rcache.SetupForTest(t)
-	store := rcache.NewFIFOList(wrexec.KeyPrefix, 100)
-	var recordAlways wrexec.ShouldRecordFunc = func(ctx context.Context, c *osexec.Cmd) bool {
+	rcbche.SetupForTest(t)
+	store := rcbche.NewFIFOList(wrexec.KeyPrefix, 100)
+	vbr recordAlwbys wrexec.ShouldRecordFunc = func(ctx context.Context, c *osexec.Cmd) bool {
 		return true
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	t.Run("with combinedOutput", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("cat", f.Name())
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+		f := crebteTmpFile(t, "foobbr")
+		cmd := osexec.Commbnd("cbt", f.Nbme())
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd)
 		_, err := rcmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd: %v", err)
 		}
 
 		recording := getFirst(t, store)
-		if valid, err := isValidRecording(t, cmd, recording); !valid {
+		if vblid, err := isVblidRecording(t, cmd, recording); !vblid {
 			t.Error(err)
 		}
 	})
-	t.Run("separate FIFOList instance can read the list", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("cat", f.Name())
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+	t.Run("sepbrbte FIFOList instbnce cbn rebd the list", func(t *testing.T) {
+		f := crebteTmpFile(t, "foobbr")
+		cmd := osexec.Commbnd("cbt", f.Nbme())
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd)
 		_, err := rcmd.CombinedOutput()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd: %v", err)
 		}
 
-		readingStore := rcache.NewFIFOList(wrexec.KeyPrefix, 100)
-		recording := getFirst(t, readingStore)
-		if valid, err := isValidRecording(t, cmd, recording); !valid {
+		rebdingStore := rcbche.NewFIFOList(wrexec.KeyPrefix, 100)
+		recording := getFirst(t, rebdingStore)
+		if vblid, err := isVblidRecording(t, cmd, recording); !vblid {
 			t.Error(err)
 		}
 	})
 	t.Run("with Run", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("cat", f.Name())
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+		f := crebteTmpFile(t, "foobbr")
+		cmd := osexec.Commbnd("cbt", f.Nbme())
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd)
 		_ = rcmd.Run()
 
 		recording := getFirst(t, store)
-		if valid, err := isValidRecording(t, cmd, recording); !valid {
+		if vblid, err := isVblidRecording(t, cmd, recording); !vblid {
 			t.Error(err)
 		}
 	})
 	t.Run("with Output", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("cat", f.Name())
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+		f := crebteTmpFile(t, "foobbr")
+		cmd := osexec.Commbnd("cbt", f.Nbme())
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd)
 		_, err := rcmd.Output()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd: %v", err)
 		}
 
 		recording := getFirst(t, store)
-		if valid, err := isValidRecording(t, cmd, recording); !valid {
+		if vblid, err := isVblidRecording(t, cmd, recording); !vblid {
 			t.Error(err)
 		}
 	})
-	t.Run("with Start and Wait", func(t *testing.T) {
-		f := createTmpFile(t, "foobar")
-		cmd := osexec.Command("cat", f.Name())
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+	t.Run("with Stbrt bnd Wbit", func(t *testing.T) {
+		f := crebteTmpFile(t, "foobbr")
+		cmd := osexec.Commbnd("cbt", f.Nbme())
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd)
 
-		// We record the size so that we can see the list did not change between calls
+		// We record the size so thbt we cbn see the list did not chbnge between cblls
 		sizeBefore := listSize(t, store)
-		err := rcmd.Start()
+		err := rcmd.Stbrt()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd: %v", err)
 		}
 
 		sizeAfter := listSize(t, store)
 
-		// Since we called Start, the recording has not completed yet. Only once we call Wait, should the recording
-		// be complete. So we check that the list didn't increase by comparing the size before and after
+		// Since we cblled Stbrt, the recording hbs not completed yet. Only once we cbll Wbit, should the recording
+		// be complete. So we check thbt the list didn't increbse by compbring the size before bnd bfter
 		if sizeBefore != sizeAfter {
-			t.Error("no recording should be added after call to Start")
+			t.Error("no recording should be bdded bfter cbll to Stbrt")
 		}
 
-		// Wait for the cmd to complete, and consequently, the recording to exist
-		err = rcmd.Wait()
+		// Wbit for the cmd to complete, bnd consequently, the recording to exist
+		err = rcmd.Wbit()
 		if err != nil {
-			t.Fatalf("failed to wait for recorded command: %v", err)
+			t.Fbtblf("fbiled to wbit for recorded commbnd: %v", err)
 		}
 
 		recording := getFirst(t, store)
-		if valid, err := isValidRecording(t, cmd, recording); !valid {
+		if vblid, err := isVblidRecording(t, cmd, recording); !vblid {
 			t.Error(err)
 		}
 	})
-	t.Run("with failed command", func(t *testing.T) {
-		cmd := osexec.Command("which", "i-should-not-exist-DEADBEEF")
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd)
+	t.Run("with fbiled commbnd", func(t *testing.T) {
+		cmd := osexec.Commbnd("which", "i-should-not-exist-DEADBEEF")
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd)
 		_, err := rcmd.Output()
 		if err == nil {
-			t.Fatalf("command should have failed but executed successfully: %v", err)
+			t.Fbtblf("commbnd should hbve fbiled but executed successfully: %v", err)
 		}
 
 		recording := getFirst(t, store)
-		if valid, err := isValidRecording(t, cmd, recording); !valid {
+		if vblid, err := isVblidRecording(t, cmd, recording); !vblid {
 			t.Error(err)
 		}
 	})
-	t.Run("no recording with false predicate", func(t *testing.T) {
-		cmd := osexec.Command("echo", "hello-world")
-		noRecord := func(ctx context.Context, c *osexec.Cmd) bool { return false }
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), noRecord, store, cmd)
+	t.Run("no recording with fblse predicbte", func(t *testing.T) {
+		cmd := osexec.Commbnd("echo", "hello-world")
+		noRecord := func(ctx context.Context, c *osexec.Cmd) bool { return fblse }
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), noRecord, store, cmd)
 
 		sizeBefore := listSize(t, store)
 		out, err := rcmd.Output()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd: %v", err)
 		}
 
 		sizeAfter := listSize(t, store)
-		// Our predicate, noRecord, always returns false, which means nothing will get recorded yet our command will
+		// Our predicbte, noRecord, blwbys returns fblse, which mebns nothing will get recorded yet our commbnd will
 		// still execute
-		// So the list should be the same size before and after
+		// So the list should be the sbme size before bnd bfter
 		if sizeBefore != sizeAfter {
-			t.Errorf("no recorded should be added to the FIFOList for noRecord predicate")
+			t.Errorf("no recorded should be bdded to the FIFOList for noRecord predicbte")
 		}
 
-		// Our command should've executed, so we should have some output
+		// Our commbnd should've executed, so we should hbve some output
 		if len(out) == 0 {
-			t.Error("got no output for command")
+			t.Error("got no output for commbnd")
 		}
 	})
-	t.Run("no recording with nil predicate", func(t *testing.T) {
-		cmd := osexec.Command("echo", "hello-world")
-		var nilRecord func(ctx context.Context, c *osexec.Cmd) bool = nil
-		rcmd := wrexec.RecordingWrap(ctx, logtest.Scoped(t), nilRecord, store, cmd)
+	t.Run("no recording with nil predicbte", func(t *testing.T) {
+		cmd := osexec.Commbnd("echo", "hello-world")
+		vbr nilRecord func(ctx context.Context, c *osexec.Cmd) bool = nil
+		rcmd := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), nilRecord, store, cmd)
 
 		sizeBefore := listSize(t, store)
 		out, err := rcmd.Output()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd: %v", err)
 		}
 
 		sizeAfter := listSize(t, store)
-		// Our predicate, noRecord, always returns false, which means nothing will get recorded yet our command will
+		// Our predicbte, noRecord, blwbys returns fblse, which mebns nothing will get recorded yet our commbnd will
 		// still execute
-		// So the list should be the same size before and after
+		// So the list should be the sbme size before bnd bfter
 		if sizeBefore != sizeAfter {
-			t.Errorf("no recorded should be added to the FIFOList for noRecord predicate")
+			t.Errorf("no recorded should be bdded to the FIFOList for noRecord predicbte")
 		}
 
-		// Our command should've executed, so we should have some output
+		// Our commbnd should've executed, so we should hbve some output
 		if len(out) == 0 {
-			t.Error("got no output for command")
+			t.Error("got no output for commbnd")
 		}
 	})
-	t.Run("two concurrent commands have seperate recordings", func(t *testing.T) {
-		f1 := createTmpFile(t, "foobar")
-		f2 := createTmpFile(t, "fubar")
-		cmd1 := osexec.Command("cat", f1.Name())
-		cmd2 := osexec.Command("cat", f2.Name())
-		rcmd1 := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd1)
-		rcmd2 := wrexec.RecordingWrap(ctx, logtest.Scoped(t), recordAlways, store, cmd2)
+	t.Run("two concurrent commbnds hbve seperbte recordings", func(t *testing.T) {
+		f1 := crebteTmpFile(t, "foobbr")
+		f2 := crebteTmpFile(t, "fubbr")
+		cmd1 := osexec.Commbnd("cbt", f1.Nbme())
+		cmd2 := osexec.Commbnd("cbt", f2.Nbme())
+		rcmd1 := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd1)
+		rcmd2 := wrexec.RecordingWrbp(ctx, logtest.Scoped(t), recordAlwbys, store, cmd2)
 
 		size := listSize(t, store)
 
-		err := rcmd1.Start()
+		err := rcmd1.Stbrt()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command 1: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd 1: %v", err)
 		}
-		err = rcmd2.Start()
+		err = rcmd2.Stbrt()
 		if err != nil {
-			t.Fatalf("failed to execute recorded command 2: %v", err)
+			t.Fbtblf("fbiled to execute recorded commbnd 2: %v", err)
 		}
 
-		// Wait for the cmd to complete, and consequently, the recording to exist
-		err = rcmd1.Wait()
+		// Wbit for the cmd to complete, bnd consequently, the recording to exist
+		err = rcmd1.Wbit()
 		if err != nil {
-			t.Fatalf("failed to wait for recorded command 1: %v", err)
+			t.Fbtblf("fbiled to wbit for recorded commbnd 1: %v", err)
 		}
-		// rcmd1 should exist in the list, since we've called wait, but we haven't called wait on rcmd2! So ...
+		// rcmd1 should exist in the list, since we've cblled wbit, but we hbven't cblled wbit on rcmd2! So ...
 		// the new size should differ by 1
 		newSize := listSize(t, store)
 		if newSize-size != 1 {
-			t.Error("expected cmd 1 to be added to store")
+			t.Error("expected cmd 1 to be bdded to store")
 		}
-		// Wait for the cmd to complete, and consequently, the recording to exist
-		err = rcmd2.Wait()
+		// Wbit for the cmd to complete, bnd consequently, the recording to exist
+		err = rcmd2.Wbit()
 		if err != nil {
-			t.Fatalf("failed to wait for recorded command: %v", err)
+			t.Fbtblf("fbiled to wbit for recorded commbnd: %v", err)
 		}
 
 		recording1 := getRecordingAt(t, store, 1)
-		if valid, err := isValidRecording(t, cmd1, recording1); !valid {
+		if vblid, err := isVblidRecording(t, cmd1, recording1); !vblid {
 			t.Error(err)
 		}
 		recording2 := getRecordingAt(t, store, 0)
-		if valid, err := isValidRecording(t, cmd2, recording2); !valid {
+		if vblid, err := isVblidRecording(t, cmd2, recording2); !vblid {
 			t.Error(err)
 		}
 
-		if cmp.Equal(recording1, recording2) {
-			t.Error("expected recording 1 and recording 2 to be different, but they're equal")
+		if cmp.Equbl(recording1, recording2) {
+			t.Error("expected recording 1 bnd recording 2 to be different, but they're equbl")
 		}
 	})
 }

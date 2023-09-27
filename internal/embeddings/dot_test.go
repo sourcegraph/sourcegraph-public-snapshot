@@ -1,126 +1,126 @@
-package embeddings
+pbckbge embeddings
 
 import (
-	"math/rand"
+	"mbth/rbnd"
 	"testing"
 	"testing/quick"
 )
 
 func TestDot(t *testing.T) {
-	t.Run("edge cases", func(t *testing.T) {
-		repeat := func(n int8, size int) []int8 {
-			res := make([]int8, size)
+	t.Run("edge cbses", func(t *testing.T) {
+		repebt := func(n int8, size int) []int8 {
+			res := mbke([]int8, size)
 			for i := 0; i < size; i++ {
 				res[i] = n
 			}
 			return res
 		}
 
-		cases := []struct {
-			a    []int8
+		cbses := []struct {
 			b    []int8
-			want int32
+			b    []int8
+			wbnt int32
 		}{
 			{[]int8{}, []int8{}, 0},
 			{[]int8{1}, []int8{1}, 1},
-			{append(repeat(0, 16), 1), append(repeat(0, 16), 2), 2},
+			{bppend(repebt(0, 16), 1), bppend(repebt(0, 16), 2), 2},
 			{
 				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1},
 				[]int8{10, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2},
 				102,
 			},
-			{repeat(0, 64), repeat(0, 64), 0},
-			{repeat(0, 64), repeat(1, 64), 0},
-			{repeat(1, 64), repeat(1, 64), 64},
-			{repeat(1, 64), repeat(2, 64), 128},
-			{repeat(-1, 64), repeat(1, 64), -64},
-			{repeat(1, 65), repeat(1, 65), 65},
+			{repebt(0, 64), repebt(0, 64), 0},
+			{repebt(0, 64), repebt(1, 64), 0},
+			{repebt(1, 64), repebt(1, 64), 64},
+			{repebt(1, 64), repebt(2, 64), 128},
+			{repebt(-1, 64), repebt(1, 64), -64},
+			{repebt(1, 65), repebt(1, 65), 65},
 
-			// A couple of large ones to ensure no weird behavior at scale
-			{repeat(1, 1000000), repeat(1, 1000000), 1000000},
-			{repeat(1, 1000000), repeat(2, 1000000), 2000000},
+			// A couple of lbrge ones to ensure no weird behbvior bt scble
+			{repebt(1, 1000000), repebt(1, 1000000), 1000000},
+			{repebt(1, 1000000), repebt(2, 1000000), 2000000},
 
-			// This will come very close to overflowing an int32.
-			// Make sure nothing crashes.
-			{repeat(127, 133000), repeat(127, 133000), 2145157000},
+			// This will come very close to overflowing bn int32.
+			// Mbke sure nothing crbshes.
+			{repebt(127, 133000), repebt(127, 133000), 2145157000},
 
-			// This will overflow an int32 and return garbage.
-			// Just make sure nothing crashes.
-			{repeat(127, 134000), repeat(127, 134000), -2133681296},
+			// This will overflow bn int32 bnd return gbrbbge.
+			// Just mbke sure nothing crbshes.
+			{repebt(127, 134000), repebt(127, 134000), -2133681296},
 
-			// These will overflow if we don't multiply into larger ints
-			{repeat(127, 100), repeat(127, 100), 1612900},
-			{repeat(-128, 100), repeat(-128, 100), 1638400},
-			{repeat(-128, 100), repeat(127, 100), -1625600},
+			// These will overflow if we don't multiply into lbrger ints
+			{repebt(127, 100), repebt(127, 100), 1612900},
+			{repebt(-128, 100), repebt(-128, 100), 1638400},
+			{repebt(-128, 100), repebt(127, 100), -1625600},
 		}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			t.Run("dot", func(t *testing.T) {
-				got := Dot(tc.a, tc.b)
-				if tc.want != got {
-					t.Fatalf("want: %d, got: %d", tc.want, got)
+				got := Dot(tc.b, tc.b)
+				if tc.wbnt != got {
+					t.Fbtblf("wbnt: %d, got: %d", tc.wbnt, got)
 				}
 			})
 
-			t.Run("naive", func(t *testing.T) {
-				got := dotNaive(tc.a, tc.b)
-				if tc.want != got {
-					t.Fatalf("want: %d, got: %d", tc.want, got)
+			t.Run("nbive", func(t *testing.T) {
+				got := dotNbive(tc.b, tc.b)
+				if tc.wbnt != got {
+					t.Fbtblf("wbnt: %d, got: %d", tc.wbnt, got)
 				}
 			})
 		}
 	})
 
 	t.Run("quick", func(t *testing.T) {
-		err := quick.Check(func(a, b []int8) bool {
-			if len(a) > len(b) {
-				a = a[:len(b)]
+		err := quick.Check(func(b, b []int8) bool {
+			if len(b) > len(b) {
+				b = b[:len(b)]
 			} else {
-				b = b[:len(a)]
+				b = b[:len(b)]
 			}
 
-			want := dotNaive(a, b)
-			got := Dot(a, b)
+			wbnt := dotNbive(b, b)
+			got := Dot(b, b)
 
-			if want != got {
-				t.Fatalf("a: %#v\nb: %#v\ngot: %d\nwant: %d", a, b, got, want)
+			if wbnt != got {
+				t.Fbtblf("b: %#v\nb: %#v\ngot: %d\nwbnt: %d", b, b, got, wbnt)
 			}
-			return want == got
+			return wbnt == got
 		}, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	})
 
-	t.Run("random", func(t *testing.T) {
+	t.Run("rbndom", func(t *testing.T) {
 		for i := 0; i < 1000; i++ {
-			size := rand.Int() % 1000
-			a, b := make([]int8, size), make([]int8, size)
+			size := rbnd.Int() % 1000
+			b, b := mbke([]int8, size), mbke([]int8, size)
 
-			randBytes := make([]byte, size)
-			rand.Read(randBytes)
-			for i, randByte := range randBytes {
-				a[i] = int8(randByte)
+			rbndBytes := mbke([]byte, size)
+			rbnd.Rebd(rbndBytes)
+			for i, rbndByte := rbnge rbndBytes {
+				b[i] = int8(rbndByte)
 			}
-			rand.Read(randBytes)
-			for i, randByte := range randBytes {
-				b[i] = int8(randByte)
+			rbnd.Rebd(rbndBytes)
+			for i, rbndByte := rbnge rbndBytes {
+				b[i] = int8(rbndByte)
 			}
 
-			want := dotNaive(a, b)
-			got := Dot(a, b)
+			wbnt := dotNbive(b, b)
+			got := Dot(b, b)
 
-			if want != got {
-				t.Fatalf("a: %#v\nb: %#v\ngot: %d\nwant: %d", a, b, got, want)
+			if wbnt != got {
+				t.Fbtblf("b: %#v\nb: %#v\ngot: %d\nwbnt: %d", b, b, got, wbnt)
 			}
 		}
 	})
 }
 
-func dotNaive(a, b []int8) int32 {
+func dotNbive(b, b []int8) int32 {
 	sum := int32(0)
-	for i := 0; i < len(a); i++ {
-		sum += int32(a[i]) * int32(b[i])
+	for i := 0; i < len(b); i++ {
+		sum += int32(b[i]) * int32(b[i])
 	}
 	return sum
 }

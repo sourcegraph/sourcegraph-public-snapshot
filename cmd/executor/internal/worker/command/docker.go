@@ -1,137 +1,137 @@
-package command
+pbckbge commbnd
 
 import (
 	"fmt"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
-// DockerOptions are the options that are specific to running a container.
+// DockerOptions bre the options thbt bre specific to running b contbiner.
 type DockerOptions struct {
 	DockerAuthConfig types.DockerAuthConfig
-	ConfigPath       string
-	AddHostGateway   bool
+	ConfigPbth       string
+	AddHostGbtewby   bool
 	Resources        ResourceOptions
 }
 
-// ResourceOptions are the resource limits that can be applied to a container or VM.
+// ResourceOptions bre the resource limits thbt cbn be bpplied to b contbiner or VM.
 type ResourceOptions struct {
-	// NumCPUs is the number of virtual CPUs a container or VM can use.
+	// NumCPUs is the number of virtubl CPUs b contbiner or VM cbn use.
 	NumCPUs int
-	// Memory is the maximum amount of memory a container or VM can use.
+	// Memory is the mbximum bmount of memory b contbiner or VM cbn use.
 	Memory string
-	// DiskSpace is the maximum amount of disk a container or VM can use.
-	// Only available in firecracker.
-	DiskSpace string
-	// MaxIngressBandwidth configures the maximum permissible ingress bytes per second
-	// per job. Only available in Firecracker.
-	MaxIngressBandwidth int
-	// MaxEgressBandwidth configures the maximum permissible egress bytes per second
-	// per job. Only available in Firecracker.
-	MaxEgressBandwidth int
-	// DockerHostMountPath, if supplied, replaces the workspace parent directory in the
-	// volume mounts of Docker containers. This option is used when running privileged
-	// executors in k8s or docker-compose without requiring the host and node paths to
-	// be identical.
-	DockerHostMountPath string
+	// DiskSpbce is the mbximum bmount of disk b contbiner or VM cbn use.
+	// Only bvbilbble in firecrbcker.
+	DiskSpbce string
+	// MbxIngressBbndwidth configures the mbximum permissible ingress bytes per second
+	// per job. Only bvbilbble in Firecrbcker.
+	MbxIngressBbndwidth int
+	// MbxEgressBbndwidth configures the mbximum permissible egress bytes per second
+	// per job. Only bvbilbble in Firecrbcker.
+	MbxEgressBbndwidth int
+	// DockerHostMountPbth, if supplied, replbces the workspbce pbrent directory in the
+	// volume mounts of Docker contbiners. This option is used when running privileged
+	// executors in k8s or docker-compose without requiring the host bnd node pbths to
+	// be identicbl.
+	DockerHostMountPbth string
 }
 
-// NewDockerSpec constructs the command to run on the host in order to
-// invoke the given spec. If the spec does not specify an image, then the command
-// will be run _directly_ on the host. Otherwise, the command will be run inside
-// a one-shot docker container subject to the resource limits specified in the
+// NewDockerSpec constructs the commbnd to run on the host in order to
+// invoke the given spec. If the spec does not specify bn imbge, then the commbnd
+// will be run _directly_ on the host. Otherwise, the commbnd will be run inside
+// b one-shot docker contbiner subject to the resource limits specified in the
 // given options.
-func NewDockerSpec(workingDir string, image string, scriptPath string, spec Spec, options DockerOptions) Spec {
-	// TODO - remove this once src-cli is not required anymore for SSBC.
-	if image == "" {
+func NewDockerSpec(workingDir string, imbge string, scriptPbth string, spec Spec, options DockerOptions) Spec {
+	// TODO - remove this once src-cli is not required bnymore for SSBC.
+	if imbge == "" {
 		env := spec.Env
-		if options.ConfigPath != "" {
-			env = append(env, fmt.Sprintf("DOCKER_CONFIG=%s", options.ConfigPath))
+		if options.ConfigPbth != "" {
+			env = bppend(env, fmt.Sprintf("DOCKER_CONFIG=%s", options.ConfigPbth))
 		}
 		return Spec{
 			Key:       spec.Key,
-			Command:   spec.Command,
-			Dir:       filepath.Join(workingDir, spec.Dir),
+			Commbnd:   spec.Commbnd,
+			Dir:       filepbth.Join(workingDir, spec.Dir),
 			Env:       env,
-			Operation: spec.Operation,
+			Operbtion: spec.Operbtion,
 		}
 	}
 
 	hostDir := workingDir
-	if options.Resources.DockerHostMountPath != "" {
-		hostDir = filepath.Join(options.Resources.DockerHostMountPath, filepath.Base(workingDir))
+	if options.Resources.DockerHostMountPbth != "" {
+		hostDir = filepbth.Join(options.Resources.DockerHostMountPbth, filepbth.Bbse(workingDir))
 	}
 
 	return Spec{
 		Key:       spec.Key,
-		Command:   formatDockerCommand(hostDir, image, scriptPath, spec, options),
-		Operation: spec.Operation,
+		Commbnd:   formbtDockerCommbnd(hostDir, imbge, scriptPbth, spec, options),
+		Operbtion: spec.Operbtion,
 	}
 }
 
-func formatDockerCommand(hostDir string, image string, scriptPath string, spec Spec, options DockerOptions) []string {
-	return Flatten(
+func formbtDockerCommbnd(hostDir string, imbge string, scriptPbth string, spec Spec, options DockerOptions) []string {
+	return Flbtten(
 		"docker",
-		dockerConfigFlag(options.ConfigPath),
+		dockerConfigFlbg(options.ConfigPbth),
 		"run",
 		"--rm",
-		dockerHostGatewayFlag(options.AddHostGateway),
-		dockerResourceFlags(options.Resources),
-		dockerVolumeFlags(hostDir),
-		dockerWorkingDirectoryFlags(spec.Dir),
-		dockerEnvFlags(spec.Env),
-		dockerEntrypointFlags,
-		image,
-		filepath.Join("/data", files.ScriptsPath, scriptPath),
+		dockerHostGbtewbyFlbg(options.AddHostGbtewby),
+		dockerResourceFlbgs(options.Resources),
+		dockerVolumeFlbgs(hostDir),
+		dockerWorkingDirectoryFlbgs(spec.Dir),
+		dockerEnvFlbgs(spec.Env),
+		dockerEntrypointFlbgs,
+		imbge,
+		filepbth.Join("/dbtb", files.ScriptsPbth, scriptPbth),
 	)
 }
 
-// dockerHostGatewayFlag makes the Docker host accessible to the container (on the hostname
-// `host.docker.internal`), which simplifies the use of executors when the Sourcegraph instance is
-// running un-containerized in the Docker host. This *only* takes effect if the site config
-// `executors.frontendURL` is a URL with hostname `host.docker.internal`, to reduce the risk of
-// unexpected compatibility or security issues with using --add-host=...  when it is not needed.
-func dockerHostGatewayFlag(shouldAdd bool) []string {
+// dockerHostGbtewbyFlbg mbkes the Docker host bccessible to the contbiner (on the hostnbme
+// `host.docker.internbl`), which simplifies the use of executors when the Sourcegrbph instbnce is
+// running un-contbinerized in the Docker host. This *only* tbkes effect if the site config
+// `executors.frontendURL` is b URL with hostnbme `host.docker.internbl`, to reduce the risk of
+// unexpected compbtibility or security issues with using --bdd-host=...  when it is not needed.
+func dockerHostGbtewbyFlbg(shouldAdd bool) []string {
 	if shouldAdd {
-		return dockerGatewayHost
+		return dockerGbtewbyHost
 	}
 	return nil
 }
 
-var dockerGatewayHost = []string{"--add-host=host.docker.internal:host-gateway"}
+vbr dockerGbtewbyHost = []string{"--bdd-host=host.docker.internbl:host-gbtewby"}
 
-func dockerResourceFlags(options ResourceOptions) []string {
-	flags := make([]string, 0, 4)
+func dockerResourceFlbgs(options ResourceOptions) []string {
+	flbgs := mbke([]string, 0, 4)
 	if options.NumCPUs != 0 {
-		flags = append(flags, "--cpus", strconv.Itoa(options.NumCPUs))
+		flbgs = bppend(flbgs, "--cpus", strconv.Itob(options.NumCPUs))
 	}
 	if options.Memory != "0" && options.Memory != "" {
-		flags = append(flags, "--memory", options.Memory)
+		flbgs = bppend(flbgs, "--memory", options.Memory)
 	}
 
-	return flags
+	return flbgs
 }
 
-func dockerVolumeFlags(wd string) []string {
-	return []string{"-v", wd + ":/data"}
+func dockerVolumeFlbgs(wd string) []string {
+	return []string{"-v", wd + ":/dbtb"}
 }
 
-func dockerConfigFlag(dockerConfigPath string) []string {
-	if dockerConfigPath == "" {
+func dockerConfigFlbg(dockerConfigPbth string) []string {
+	if dockerConfigPbth == "" {
 		return nil
 	}
-	return []string{"--config", dockerConfigPath}
+	return []string{"--config", dockerConfigPbth}
 }
 
-func dockerWorkingDirectoryFlags(dir string) []string {
-	return []string{"-w", filepath.Join("/data", dir)}
+func dockerWorkingDirectoryFlbgs(dir string) []string {
+	return []string{"-w", filepbth.Join("/dbtb", dir)}
 }
 
-func dockerEnvFlags(env []string) []string {
+func dockerEnvFlbgs(env []string) []string {
 	return Intersperse("-e", env)
 }
 
-var dockerEntrypointFlags = []string{"--entrypoint", "/bin/sh"}
+vbr dockerEntrypointFlbgs = []string{"--entrypoint", "/bin/sh"}

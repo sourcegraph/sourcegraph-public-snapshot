@@ -1,65 +1,65 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RepoKVPStore interface {
-	basestore.ShareableStore
-	WithTransact(context.Context, func(RepoKVPStore) error) error
-	With(basestore.ShareableStore) RepoKVPStore
-	Get(context.Context, api.RepoID, string) (KeyValuePair, error)
+type RepoKVPStore interfbce {
+	bbsestore.ShbrebbleStore
+	WithTrbnsbct(context.Context, func(RepoKVPStore) error) error
+	With(bbsestore.ShbrebbleStore) RepoKVPStore
+	Get(context.Context, bpi.RepoID, string) (KeyVbluePbir, error)
 	CountKeys(context.Context, RepoKVPListKeysOptions) (int, error)
-	ListKeys(context.Context, RepoKVPListKeysOptions, PaginationArgs) ([]string, error)
-	CountValues(context.Context, RepoKVPListValuesOptions) (int, error)
-	ListValues(context.Context, RepoKVPListValuesOptions, PaginationArgs) ([]string, error)
-	Create(context.Context, api.RepoID, KeyValuePair) error
-	Update(context.Context, api.RepoID, KeyValuePair) (KeyValuePair, error)
-	Delete(context.Context, api.RepoID, string) error
+	ListKeys(context.Context, RepoKVPListKeysOptions, PbginbtionArgs) ([]string, error)
+	CountVblues(context.Context, RepoKVPListVbluesOptions) (int, error)
+	ListVblues(context.Context, RepoKVPListVbluesOptions, PbginbtionArgs) ([]string, error)
+	Crebte(context.Context, bpi.RepoID, KeyVbluePbir) error
+	Updbte(context.Context, bpi.RepoID, KeyVbluePbir) (KeyVbluePbir, error)
+	Delete(context.Context, bpi.RepoID, string) error
 }
 type repoKVPStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-var _ RepoKVPStore = (*repoKVPStore)(nil)
+vbr _ RepoKVPStore = (*repoKVPStore)(nil)
 
-func (s *repoKVPStore) WithTransact(ctx context.Context, f func(RepoKVPStore) error) error {
-	return s.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *repoKVPStore) WithTrbnsbct(ctx context.Context, f func(RepoKVPStore) error) error {
+	return s.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&repoKVPStore{Store: tx})
 	})
 }
 
-func (s *repoKVPStore) With(other basestore.ShareableStore) RepoKVPStore {
+func (s *repoKVPStore) With(other bbsestore.ShbrebbleStore) RepoKVPStore {
 	return &repoKVPStore{Store: s.Store.With(other)}
 }
 
-var (
+vbr (
 	RepoKVPListKeyColumn   = "key"
-	RepoKVPListValueColumn = "value"
+	RepoKVPListVblueColumn = "vblue"
 )
 
-type KeyValuePair struct {
+type KeyVbluePbir struct {
 	Key   string
-	Value *string
+	Vblue *string
 }
 
-func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) error {
+func (s *repoKVPStore) Crebte(ctx context.Context, repoID bpi.RepoID, kvp KeyVbluePbir) error {
 	q := `
-	INSERT INTO repo_kvps (repo_id, key, value)
+	INSERT INTO repo_kvps (repo_id, key, vblue)
 	VALUES (%s, %s, %s)
 	`
 
-	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Value)); err != nil {
+	if err := s.Exec(ctx, sqlf.Sprintf(q, repoID, kvp.Key, kvp.Vblue)); err != nil {
 		if dbutil.IsPostgresError(err, "23505") {
-			return errors.Newf(`metadata key %q already exists for the given repository`, kvp.Key)
+			return errors.Newf(`metbdbtb key %q blrebdy exists for the given repository`, kvp.Key)
 		}
 		return err
 	}
@@ -67,15 +67,15 @@ func (s *repoKVPStore) Create(ctx context.Context, repoID api.RepoID, kvp KeyVal
 	return nil
 }
 
-func (s *repoKVPStore) Get(ctx context.Context, repoID api.RepoID, key string) (KeyValuePair, error) {
+func (s *repoKVPStore) Get(ctx context.Context, repoID bpi.RepoID, key string) (KeyVbluePbir, error) {
 	q := `
-	SELECT key, value
+	SELECT key, vblue
 	FROM repo_kvps
 	WHERE repo_id = %s
 		AND key = %s
 	`
 
-	return scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, repoID, key)))
+	return scbnKVP(s.QueryRow(ctx, sqlf.Sprintf(q, repoID, key)))
 }
 
 type RepoKVPListKeysOptions struct {
@@ -85,7 +85,7 @@ type RepoKVPListKeysOptions struct {
 func (r *RepoKVPListKeysOptions) SQL() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if r.Query != nil {
-		conds = append(conds, sqlf.Sprintf("key ILIKE %s", "%"+*r.Query+"%"))
+		conds = bppend(conds, sqlf.Sprintf("key ILIKE %s", "%"+*r.Query+"%"))
 	}
 	return conds
 }
@@ -98,73 +98,73 @@ func (s *repoKVPStore) CountKeys(ctx context.Context, options RepoKVPListKeysOpt
 	SELECT COUNT(*) FROM kvps
 	`
 	where := options.SQL()
-	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
+	return bbsestore.ScbnInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
 }
 
-func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOptions, orderOptions PaginationArgs) ([]string, error) {
+func (s *repoKVPStore) ListKeys(ctx context.Context, options RepoKVPListKeysOptions, orderOptions PbginbtionArgs) ([]string, error) {
 	where := options.SQL()
 	p := orderOptions.SQL()
 	if p.Where != nil {
-		where = append(where, p.Where)
+		where = bppend(where, p.Where)
 	}
 	q := sqlf.Sprintf(`SELECT key FROM repo_kvps WHERE (%s) GROUP BY key`, sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
-	return basestore.ScanStrings(s.Query(ctx, q))
+	return bbsestore.ScbnStrings(s.Query(ctx, q))
 }
 
-type RepoKVPListValuesOptions struct {
+type RepoKVPListVbluesOptions struct {
 	Key   string
 	Query *string
 }
 
-func (r *RepoKVPListValuesOptions) SQL() []*sqlf.Query {
-	conds := []*sqlf.Query{sqlf.Sprintf("key = %s", r.Key), sqlf.Sprintf("value IS NOT NULL")}
+func (r *RepoKVPListVbluesOptions) SQL() []*sqlf.Query {
+	conds := []*sqlf.Query{sqlf.Sprintf("key = %s", r.Key), sqlf.Sprintf("vblue IS NOT NULL")}
 	if r.Query != nil {
-		conds = append(conds, sqlf.Sprintf("value ILIKE %s", "%"+*r.Query+"%"))
+		conds = bppend(conds, sqlf.Sprintf("vblue ILIKE %s", "%"+*r.Query+"%"))
 	}
 	return conds
 }
 
-func (s *repoKVPStore) CountValues(ctx context.Context, options RepoKVPListValuesOptions) (int, error) {
-	q := `SELECT COUNT(DISTINCT value) FROM repo_kvps WHERE (%s)`
+func (s *repoKVPStore) CountVblues(ctx context.Context, options RepoKVPListVbluesOptions) (int, error) {
+	q := `SELECT COUNT(DISTINCT vblue) FROM repo_kvps WHERE (%s)`
 	where := options.SQL()
-	return basestore.ScanInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
+	return bbsestore.ScbnInt(s.QueryRow(ctx, sqlf.Sprintf(q, sqlf.Join(where, ") AND ("))))
 }
 
-func (s *repoKVPStore) ListValues(ctx context.Context, options RepoKVPListValuesOptions, orderOptions PaginationArgs) ([]string, error) {
+func (s *repoKVPStore) ListVblues(ctx context.Context, options RepoKVPListVbluesOptions, orderOptions PbginbtionArgs) ([]string, error) {
 	where := options.SQL()
 	p := orderOptions.SQL()
 	if p.Where != nil {
-		where = append(where, p.Where)
+		where = bppend(where, p.Where)
 	}
-	q := sqlf.Sprintf(`SELECT DISTINCT value FROM repo_kvps WHERE (%s)`, sqlf.Join(where, ") AND ("))
+	q := sqlf.Sprintf(`SELECT DISTINCT vblue FROM repo_kvps WHERE (%s)`, sqlf.Join(where, ") AND ("))
 	q = p.AppendOrderToQuery(q)
 	q = p.AppendLimitToQuery(q)
-	return basestore.ScanStrings(s.Query(ctx, q))
+	return bbsestore.ScbnStrings(s.Query(ctx, q))
 }
 
-func (s *repoKVPStore) Update(ctx context.Context, repoID api.RepoID, kvp KeyValuePair) (KeyValuePair, error) {
+func (s *repoKVPStore) Updbte(ctx context.Context, repoID bpi.RepoID, kvp KeyVbluePbir) (KeyVbluePbir, error) {
 	q := `
 	UPDATE repo_kvps
-	SET value = %s
+	SET vblue = %s
 	WHERE repo_id = %s
 		AND key = %s
-	RETURNING key, value
+	RETURNING key, vblue
 	`
 
-	kvp, err := scanKVP(s.QueryRow(ctx, sqlf.Sprintf(q, kvp.Value, repoID, kvp.Key)))
+	kvp, err := scbnKVP(s.QueryRow(ctx, sqlf.Sprintf(q, kvp.Vblue, repoID, kvp.Key)))
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return kvp, errors.Newf(`metadata key %q does not exist for the given repository`, kvp.Key)
+			return kvp, errors.Newf(`metbdbtb key %q does not exist for the given repository`, kvp.Key)
 		}
-		return kvp, errors.Wrap(err, "scanning role")
+		return kvp, errors.Wrbp(err, "scbnning role")
 	}
 	return kvp, nil
 }
 
-func (s *repoKVPStore) Delete(ctx context.Context, repoID api.RepoID, key string) error {
+func (s *repoKVPStore) Delete(ctx context.Context, repoID bpi.RepoID, key string) error {
 	q := `
 	DELETE FROM repo_kvps
 	WHERE repo_id = %s
@@ -174,7 +174,7 @@ func (s *repoKVPStore) Delete(ctx context.Context, repoID api.RepoID, key string
 	return s.Exec(ctx, sqlf.Sprintf(q, repoID, key))
 }
 
-func scanKVP(scanner dbutil.Scanner) (KeyValuePair, error) {
-	var kvp KeyValuePair
-	return kvp, scanner.Scan(&kvp.Key, &kvp.Value)
+func scbnKVP(scbnner dbutil.Scbnner) (KeyVbluePbir, error) {
+	vbr kvp KeyVbluePbir
+	return kvp, scbnner.Scbn(&kvp.Key, &kvp.Vblue)
 }

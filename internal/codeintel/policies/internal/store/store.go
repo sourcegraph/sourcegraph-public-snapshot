@@ -1,44 +1,44 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	logger "github.com/sourcegraph/log"
+	logger "github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	policiesshared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	policiesshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Store interface {
-	// Global metadata
+type Store interfbce {
+	// Globbl metbdbtb
 	RepoCount(ctx context.Context) (int, error)
 
-	// Configurations
-	GetConfigurationPolicies(ctx context.Context, opts policiesshared.GetConfigurationPoliciesOptions) ([]shared.ConfigurationPolicy, int, error)
-	GetConfigurationPolicyByID(ctx context.Context, id int) (shared.ConfigurationPolicy, bool, error)
-	CreateConfigurationPolicy(ctx context.Context, configurationPolicy shared.ConfigurationPolicy) (shared.ConfigurationPolicy, error)
-	UpdateConfigurationPolicy(ctx context.Context, policy shared.ConfigurationPolicy) error
-	DeleteConfigurationPolicyByID(ctx context.Context, id int) error
+	// Configurbtions
+	GetConfigurbtionPolicies(ctx context.Context, opts policiesshbred.GetConfigurbtionPoliciesOptions) ([]shbred.ConfigurbtionPolicy, int, error)
+	GetConfigurbtionPolicyByID(ctx context.Context, id int) (shbred.ConfigurbtionPolicy, bool, error)
+	CrebteConfigurbtionPolicy(ctx context.Context, configurbtionPolicy shbred.ConfigurbtionPolicy) (shbred.ConfigurbtionPolicy, error)
+	UpdbteConfigurbtionPolicy(ctx context.Context, policy shbred.ConfigurbtionPolicy) error
+	DeleteConfigurbtionPolicyByID(ctx context.Context, id int) error
 
-	// Repository matches
-	GetRepoIDsByGlobPatterns(ctx context.Context, patterns []string, limit, offset int) ([]int, int, error)
-	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) error
-	SelectPoliciesForRepositoryMembershipUpdate(ctx context.Context, batchSize int) ([]shared.ConfigurationPolicy, error)
+	// Repository mbtches
+	GetRepoIDsByGlobPbtterns(ctx context.Context, pbtterns []string, limit, offset int) ([]int, int, error)
+	UpdbteReposMbtchingPbtterns(ctx context.Context, pbtterns []string, policyID int, repositoryMbtchLimit *int) error
+	SelectPoliciesForRepositoryMembershipUpdbte(ctx context.Context, bbtchSize int) ([]shbred.ConfigurbtionPolicy, error)
 }
 
 type store struct {
-	db         *basestore.Store
+	db         *bbsestore.Store
 	logger     logger.Logger
-	operations *operations
+	operbtions *operbtions
 }
 
-func New(observationCtx *observation.Context, db database.DB) Store {
+func New(observbtionCtx *observbtion.Context, db dbtbbbse.DB) Store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
+		db:         bbsestore.NewWithHbndle(db.Hbndle()),
 		logger:     logger.Scoped("policies.store", ""),
-		operations: newOperations(observationCtx),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }

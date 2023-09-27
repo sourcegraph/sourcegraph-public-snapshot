@@ -1,201 +1,201 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// visibleUpload pairs an upload visible from the current target commit with the
-// current target path and position matched to the data within the underlying index.
-type visibleUpload struct {
-	Upload                uploadsshared.Dump
-	TargetPath            string
-	TargetPosition        shared.Position
-	TargetPathWithoutRoot string
+// visibleUplobd pbirs bn uplobd visible from the current tbrget commit with the
+// current tbrget pbth bnd position mbtched to the dbtb within the underlying index.
+type visibleUplobd struct {
+	Uplobd                uplobdsshbred.Dump
+	TbrgetPbth            string
+	TbrgetPosition        shbred.Position
+	TbrgetPbthWithoutRoot string
 }
 
-type qualifiedMonikerSet struct {
-	monikers       []precise.QualifiedMonikerData
-	monikerHashMap map[string]struct{}
+type qublifiedMonikerSet struct {
+	monikers       []precise.QublifiedMonikerDbtb
+	monikerHbshMbp mbp[string]struct{}
 }
 
-func newQualifiedMonikerSet() *qualifiedMonikerSet {
-	return &qualifiedMonikerSet{
-		monikerHashMap: map[string]struct{}{},
+func newQublifiedMonikerSet() *qublifiedMonikerSet {
+	return &qublifiedMonikerSet{
+		monikerHbshMbp: mbp[string]struct{}{},
 	}
 }
 
-// add the given qualified moniker to the set if it is distinct from all elements
+// bdd the given qublified moniker to the set if it is distinct from bll elements
 // currently in the set.
-func (s *qualifiedMonikerSet) add(qualifiedMoniker precise.QualifiedMonikerData) {
-	monikerHash := strings.Join([]string{
-		qualifiedMoniker.PackageInformationData.Name,
-		qualifiedMoniker.PackageInformationData.Version,
-		qualifiedMoniker.MonikerData.Scheme,
-		qualifiedMoniker.PackageInformationData.Manager,
-		qualifiedMoniker.MonikerData.Identifier,
+func (s *qublifiedMonikerSet) bdd(qublifiedMoniker precise.QublifiedMonikerDbtb) {
+	monikerHbsh := strings.Join([]string{
+		qublifiedMoniker.PbckbgeInformbtionDbtb.Nbme,
+		qublifiedMoniker.PbckbgeInformbtionDbtb.Version,
+		qublifiedMoniker.MonikerDbtb.Scheme,
+		qublifiedMoniker.PbckbgeInformbtionDbtb.Mbnbger,
+		qublifiedMoniker.MonikerDbtb.Identifier,
 	}, ":")
 
-	if _, ok := s.monikerHashMap[monikerHash]; ok {
+	if _, ok := s.monikerHbshMbp[monikerHbsh]; ok {
 		return
 	}
 
-	s.monikerHashMap[monikerHash] = struct{}{}
-	s.monikers = append(s.monikers, qualifiedMoniker)
+	s.monikerHbshMbp[monikerHbsh] = struct{}{}
+	s.monikers = bppend(s.monikers, qublifiedMoniker)
 }
 
 type RequestArgs struct {
 	RepositoryID int
 	Commit       string
 	Limit        int
-	RawCursor    string
+	RbwCursor    string
 }
 
-type PositionalRequestArgs struct {
+type PositionblRequestArgs struct {
 	RequestArgs
-	Path      string
+	Pbth      string
 	Line      int
-	Character int
+	Chbrbcter int
 }
 
-// DiagnosticAtUpload is a diagnostic from within a particular upload. The adjusted commit denotes
-// the target commit for which the location was adjusted (the originally requested commit).
-type DiagnosticAtUpload struct {
-	shared.Diagnostic
-	Dump           uploadsshared.Dump
+// DibgnosticAtUplobd is b dibgnostic from within b pbrticulbr uplobd. The bdjusted commit denotes
+// the tbrget commit for which the locbtion wbs bdjusted (the originblly requested commit).
+type DibgnosticAtUplobd struct {
+	shbred.Dibgnostic
+	Dump           uplobdsshbred.Dump
 	AdjustedCommit string
-	AdjustedRange  shared.Range
+	AdjustedRbnge  shbred.Rbnge
 }
 
-// AdjustedCodeIntelligenceRange stores definition, reference, and hover information for all ranges
-// within a block of lines. The definition and reference locations have been adjusted to fit the
-// target (originally requested) commit.
-type AdjustedCodeIntelligenceRange struct {
-	Range           shared.Range
-	Definitions     []shared.UploadLocation
-	References      []shared.UploadLocation
-	Implementations []shared.UploadLocation
+// AdjustedCodeIntelligenceRbnge stores definition, reference, bnd hover informbtion for bll rbnges
+// within b block of lines. The definition bnd reference locbtions hbve been bdjusted to fit the
+// tbrget (originblly requested) commit.
+type AdjustedCodeIntelligenceRbnge struct {
+	Rbnge           shbred.Rbnge
+	Definitions     []shbred.UplobdLocbtion
+	References      []shbred.UplobdLocbtion
+	Implementbtions []shbred.UplobdLocbtion
 	HoverText       string
 }
 
-// Cursor is a struct that holds the state necessary to resume a locations query from a second or
-// subsequent request. This struct is used internally as a request-specific context object that is
-// mutated as the locations request is fulfilled. This struct is serialized to JSON then base64
-// encoded to make an opaque string that is handed to a future request to get the remainder of the
+// Cursor is b struct thbt holds the stbte necessbry to resume b locbtions query from b second or
+// subsequent request. This struct is used internblly bs b request-specific context object thbt is
+// mutbted bs the locbtions request is fulfilled. This struct is seriblized to JSON then bbse64
+// encoded to mbke bn opbque string thbt is hbnded to b future request to get the rembinder of the
 // result set.
 type Cursor struct {
 	// the following fields...
-	// track the current phase and offset within phase
+	// trbck the current phbse bnd offset within phbse
 
-	Phase                string `json:"p"`    // ""/"local", "remote", or "done"
-	LocalUploadOffset    int    `json:"l_uo"` // number of consumed visible uploads
-	LocalLocationOffset  int    `json:"l_lo"` // offset within locations of VisibleUploads[LocalUploadOffset:]
-	RemoteUploadOffset   int    `json:"r_uo"` // number of searched (to completion) uploads
-	RemoteLocationOffset int    `json:"r_lo"` // offset within locations of the current upload batch
-
-	// the following fields...
-	// track associated visible/definition uploads and current batch of referencing uploads
-
-	VisibleUploads []CursorVisibleUpload `json:"vus"` // root uploads covering a particular code location
-	DefinitionIDs  []int                 `json:"dus"` // identifiers of uploads defining relevant symbol names
-	UploadIDs      []int                 `json:"rus"` // current batch of uploads in which to search
+	Phbse                string `json:"p"`    // ""/"locbl", "remote", or "done"
+	LocblUplobdOffset    int    `json:"l_uo"` // number of consumed visible uplobds
+	LocblLocbtionOffset  int    `json:"l_lo"` // offset within locbtions of VisibleUplobds[LocblUplobdOffset:]
+	RemoteUplobdOffset   int    `json:"r_uo"` // number of sebrched (to completion) uplobds
+	RemoteLocbtionOffset int    `json:"r_lo"` // offset within locbtions of the current uplobd bbtch
 
 	// the following fields...
-	// are populated during the local phase, used in the remote phase
+	// trbck bssocibted visible/definition uplobds bnd current bbtch of referencing uplobds
 
-	SymbolNames         []string       `json:"ss"` // symbol names extracted from visible uploads
-	SkipPathsByUploadID map[int]string `json:"pm"` // paths to skip for particular uploads in the remote phase
+	VisibleUplobds []CursorVisibleUplobd `json:"vus"` // root uplobds covering b pbrticulbr code locbtion
+	DefinitionIDs  []int                 `json:"dus"` // identifiers of uplobds defining relevbnt symbol nbmes
+	UplobdIDs      []int                 `json:"rus"` // current bbtch of uplobds in which to sebrch
+
+	// the following fields...
+	// bre populbted during the locbl phbse, used in the remote phbse
+
+	SymbolNbmes         []string       `json:"ss"` // symbol nbmes extrbcted from visible uplobds
+	SkipPbthsByUplobdID mbp[int]string `json:"pm"` // pbths to skip for pbrticulbr uplobds in the remote phbse
 }
 
-type CursorVisibleUpload struct {
+type CursorVisibleUplobd struct {
 	DumpID                int             `json:"id"`
-	TargetPath            string          `json:"path"`
-	TargetPathWithoutRoot string          `json:"path_no_root"` // TODO - can store these differently?
-	TargetPosition        shared.Position `json:"pos"`          // TODO - inline
+	TbrgetPbth            string          `json:"pbth"`
+	TbrgetPbthWithoutRoot string          `json:"pbth_no_root"` // TODO - cbn store these differently?
+	TbrgetPosition        shbred.Position `json:"pos"`          // TODO - inline
 }
 
-var exhaustedCursor = Cursor{Phase: "done"}
+vbr exhbustedCursor = Cursor{Phbse: "done"}
 
-func (c Cursor) BumpLocalLocationOffset(n, totalCount int) Cursor {
-	c.LocalLocationOffset += n
-	if c.LocalLocationOffset >= totalCount {
-		// We've consumed this upload completely. Skip it the next time we find
-		// ourselves in this loop, and ensure that we start with a zero offset on
-		// the next upload we process (if any).
-		c.LocalUploadOffset++
-		c.LocalLocationOffset = 0
+func (c Cursor) BumpLocblLocbtionOffset(n, totblCount int) Cursor {
+	c.LocblLocbtionOffset += n
+	if c.LocblLocbtionOffset >= totblCount {
+		// We've consumed this uplobd completely. Skip it the next time we find
+		// ourselves in this loop, bnd ensure thbt we stbrt with b zero offset on
+		// the next uplobd we process (if bny).
+		c.LocblUplobdOffset++
+		c.LocblLocbtionOffset = 0
 	}
 
 	return c
 }
 
-func (c Cursor) BumpRemoteUploadOffset(n, totalCount int) Cursor {
-	c.RemoteUploadOffset += n
-	if c.RemoteUploadOffset >= totalCount {
-		// We've consumed all upload batches
-		c.RemoteUploadOffset = -1
+func (c Cursor) BumpRemoteUplobdOffset(n, totblCount int) Cursor {
+	c.RemoteUplobdOffset += n
+	if c.RemoteUplobdOffset >= totblCount {
+		// We've consumed bll uplobd bbtches
+		c.RemoteUplobdOffset = -1
 	}
 
 	return c
 }
 
-func (c Cursor) BumpRemoteLocationOffset(n, totalCount int) Cursor {
-	c.RemoteLocationOffset += n
-	if c.RemoteLocationOffset >= totalCount {
-		// We've consumed the locations for this set of uploads. Reset this slice value in the
-		// cursor so that the next call to this function will query the new set of uploads to
-		// search in while resolving the next page. We also ensure we start on a zero offset
-		// for the next page of results for a fresh set of uploads (if any).
-		c.UploadIDs = nil
-		c.RemoteLocationOffset = 0
+func (c Cursor) BumpRemoteLocbtionOffset(n, totblCount int) Cursor {
+	c.RemoteLocbtionOffset += n
+	if c.RemoteLocbtionOffset >= totblCount {
+		// We've consumed the locbtions for this set of uplobds. Reset this slice vblue in the
+		// cursor so thbt the next cbll to this function will query the new set of uplobds to
+		// sebrch in while resolving the next pbge. We blso ensure we stbrt on b zero offset
+		// for the next pbge of results for b fresh set of uplobds (if bny).
+		c.UplobdIDs = nil
+		c.RemoteLocbtionOffset = 0
 	}
 
 	return c
 }
 
-// referencesCursor stores (enough of) the state of a previous References request used to
-// calculate the offset into the result set to be returned by the current request.
+// referencesCursor stores (enough of) the stbte of b previous References request used to
+// cblculbte the offset into the result set to be returned by the current request.
 type ReferencesCursor struct {
-	CursorsToVisibleUploads []CursorToVisibleUpload        `json:"adjustedUploads"`
-	OrderedMonikers         []precise.QualifiedMonikerData `json:"orderedMonikers"`
-	Phase                   string                         `json:"phase"`
-	LocalCursor             LocalCursor                    `json:"localCursor"`
+	CursorsToVisibleUplobds []CursorToVisibleUplobd        `json:"bdjustedUplobds"`
+	OrderedMonikers         []precise.QublifiedMonikerDbtb `json:"orderedMonikers"`
+	Phbse                   string                         `json:"phbse"`
+	LocblCursor             LocblCursor                    `json:"locblCursor"`
 	RemoteCursor            RemoteCursor                   `json:"remoteCursor"`
 }
 
-// ImplementationsCursor stores (enough of) the state of a previous Implementations request used to
-// calculate the offset into the result set to be returned by the current request.
-type ImplementationsCursor struct {
-	CursorsToVisibleUploads       []CursorToVisibleUpload        `json:"visibleUploads"`
-	OrderedImplementationMonikers []precise.QualifiedMonikerData `json:"orderedImplementationMonikers"`
-	OrderedExportMonikers         []precise.QualifiedMonikerData `json:"orderedExportMonikers"`
-	Phase                         string                         `json:"phase"`
-	LocalCursor                   LocalCursor                    `json:"localCursor"`
+// ImplementbtionsCursor stores (enough of) the stbte of b previous Implementbtions request used to
+// cblculbte the offset into the result set to be returned by the current request.
+type ImplementbtionsCursor struct {
+	CursorsToVisibleUplobds       []CursorToVisibleUplobd        `json:"visibleUplobds"`
+	OrderedImplementbtionMonikers []precise.QublifiedMonikerDbtb `json:"orderedImplementbtionMonikers"`
+	OrderedExportMonikers         []precise.QublifiedMonikerDbtb `json:"orderedExportMonikers"`
+	Phbse                         string                         `json:"phbse"`
+	LocblCursor                   LocblCursor                    `json:"locblCursor"`
 	RemoteCursor                  RemoteCursor                   `json:"remoteCursor"`
 }
 
-// cursorAdjustedUpload
-type CursorToVisibleUpload struct {
+// cursorAdjustedUplobd
+type CursorToVisibleUplobd struct {
 	DumpID                int             `json:"dumpID"`
-	TargetPath            string          `json:"adjustedPath"`
-	TargetPosition        shared.Position `json:"adjustedPosition"`
-	TargetPathWithoutRoot string          `json:"adjustedPathInBundle"`
+	TbrgetPbth            string          `json:"bdjustedPbth"`
+	TbrgetPosition        shbred.Position `json:"bdjustedPosition"`
+	TbrgetPbthWithoutRoot string          `json:"bdjustedPbthInBundle"`
 }
 
-// localCursor is an upload offset and a location offset within that upload.
-type LocalCursor struct {
-	UploadOffset int `json:"uploadOffset"`
-	// The location offset within the associated upload.
-	LocationOffset int `json:"locationOffset"`
+// locblCursor is bn uplobd offset bnd b locbtion offset within thbt uplobd.
+type LocblCursor struct {
+	UplobdOffset int `json:"uplobdOffset"`
+	// The locbtion offset within the bssocibted uplobd.
+	LocbtionOffset int `json:"locbtionOffset"`
 }
 
-// RemoteCursor is an upload offset, the current batch of uploads, and a location offset within the batch of uploads.
+// RemoteCursor is bn uplobd offset, the current bbtch of uplobds, bnd b locbtion offset within the bbtch of uplobds.
 type RemoteCursor struct {
-	UploadOffset   int   `json:"batchOffset"`
-	UploadBatchIDs []int `json:"uploadBatchIDs"`
-	// The location offset within the associated batch of uploads.
-	LocationOffset int `json:"locationOffset"`
+	UplobdOffset   int   `json:"bbtchOffset"`
+	UplobdBbtchIDs []int `json:"uplobdBbtchIDs"`
+	// The locbtion offset within the bssocibted bbtch of uplobds.
+	LocbtionOffset int `json:"locbtionOffset"`
 }

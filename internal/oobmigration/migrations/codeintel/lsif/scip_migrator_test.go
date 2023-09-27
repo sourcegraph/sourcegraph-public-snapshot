@@ -1,80 +1,80 @@
-package lsif
+pbckbge lsif
 
 import (
 	"context"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	stores "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	stores "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 )
 
 func init() {
-	scipMigratorUploadReaderBatchSize = 1
-	scipMigratorDocumentReaderBatchSize = 4
-	scipMigratorResultChunkReaderCacheSize = 16
+	scipMigrbtorUplobdRebderBbtchSize = 1
+	scipMigrbtorDocumentRebderBbtchSize = 4
+	scipMigrbtorResultChunkRebderCbcheSize = 16
 }
 
-func TestSCIPMigrator(t *testing.T) {
+func TestSCIPMigrbtor(t *testing.T) {
 	logger := logtest.Scoped(t)
-	rawDB := lastDBWithLSIF(logger, t)
-	db := database.NewDB(logger, rawDB)
-	codeIntelDB := stores.NewCodeIntelDB(logger, rawDB)
-	store := basestore.NewWithHandle(db.Handle())
-	codeIntelStore := basestore.NewWithHandle(codeIntelDB.Handle())
-	migrator := NewSCIPMigrator(store, codeIntelStore)
-	ctx := context.Background()
+	rbwDB := lbstDBWithLSIF(logger, t)
+	db := dbtbbbse.NewDB(logger, rbwDB)
+	codeIntelDB := stores.NewCodeIntelDB(logger, rbwDB)
+	store := bbsestore.NewWithHbndle(db.Hbndle())
+	codeIntelStore := bbsestore.NewWithHbndle(codeIntelDB.Hbndle())
+	migrbtor := NewSCIPMigrbtor(store, codeIntelStore)
+	ctx := context.Bbckground()
 
-	contents, err := os.ReadFile("./testdata/lsif.sql")
+	contents, err := os.RebdFile("./testdbtb/lsif.sql")
 	if err != nil {
-		t.Fatalf("unexpected error reading file: %s", err)
+		t.Fbtblf("unexpected error rebding file: %s", err)
 	}
 	if _, err := codeIntelDB.ExecContext(ctx, string(contents)); err != nil {
-		t.Fatalf("unexpected error executing test file: %s", err)
+		t.Fbtblf("unexpected error executing test file: %s", err)
 	}
 
-	assertProgress := func(expectedProgress float64, applyReverse bool) {
-		if progress, err := migrator.Progress(context.Background(), applyReverse); err != nil {
-			t.Fatalf("unexpected error querying progress: %s", err)
+	bssertProgress := func(expectedProgress flobt64, bpplyReverse bool) {
+		if progress, err := migrbtor.Progress(context.Bbckground(), bpplyReverse); err != nil {
+			t.Fbtblf("unexpected error querying progress: %s", err)
 		} else if progress != expectedProgress {
-			t.Errorf("unexpected progress. want=%.2f have=%.2f", expectedProgress, progress)
+			t.Errorf("unexpected progress. wbnt=%.2f hbve=%.2f", expectedProgress, progress)
 		}
 	}
 
-	// Initial state
-	assertProgress(0, false)
+	// Initibl stbte
+	bssertProgress(0, fblse)
 
-	// Migrate first upload record
-	if err := migrator.Up(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
+	// Migrbte first uplobd record
+	if err := migrbtor.Up(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing up migrbtion: %s", err)
 	}
-	assertProgress(0.5, false)
+	bssertProgress(0.5, fblse)
 
-	// Migrate second upload record
-	if err := migrator.Up(context.Background()); err != nil {
-		t.Fatalf("unexpected error performing up migration: %s", err)
+	// Migrbte second uplobd record
+	if err := migrbtor.Up(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error performing up migrbtion: %s", err)
 	}
-	assertProgress(1, false)
+	bssertProgress(1, fblse)
 
-	// Assert no-op downwards progress
-	assertProgress(0, true)
+	// Assert no-op downwbrds progress
+	bssertProgress(0, true)
 
-	// Assert migrated state
-	documentsCount, _, err := basestore.ScanFirstInt(codeIntelDB.QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_documents`))
+	// Assert migrbted stbte
+	documentsCount, _, err := bbsestore.ScbnFirstInt(codeIntelDB.QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_documents`))
 	if err != nil {
-		t.Fatalf("unexpected error counting documents: %s", err)
+		t.Fbtblf("unexpected error counting documents: %s", err)
 	}
 	if expected := 59; documentsCount != expected {
-		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, documentsCount)
+		t.Fbtblf("unexpected number of documents. wbnt=%d hbve=%d", expected, documentsCount)
 	}
-	symbolsCount, _, err := basestore.ScanFirstInt(codeIntelDB.QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_symbols`))
+	symbolsCount, _, err := bbsestore.ScbnFirstInt(codeIntelDB.QueryContext(ctx, `SELECT COUNT(*) FROM codeintel_scip_symbols`))
 	if err != nil {
-		t.Fatalf("unexpected error counting symbols: %s", err)
+		t.Fbtblf("unexpected error counting symbols: %s", err)
 	}
 	if expected := 4221; symbolsCount != expected {
-		t.Fatalf("unexpected number of documents. want=%d have=%d", expected, symbolsCount)
+		t.Fbtblf("unexpected number of documents. wbnt=%d hbve=%d", expected, symbolsCount)
 	}
 }

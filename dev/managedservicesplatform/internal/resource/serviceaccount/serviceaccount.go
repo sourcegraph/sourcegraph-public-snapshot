@@ -1,18 +1,18 @@
-package serviceaccount
+pbckbge servicebccount
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/projectiammember"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/serviceaccount"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/projectibmmember"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/servicebccount"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Role struct {
-	// ID is used to generate a resource ID for the role grant. Must be provided
+	// ID is used to generbte b resource ID for the role grbnt. Must be provided
 	ID string
-	// Role is sourced from https://cloud.google.com/iam/docs/understanding-roles#predefined
+	// Role is sourced from https://cloud.google.com/ibm/docs/understbnding-roles#predefined
 	Role string
 }
 
@@ -20,28 +20,28 @@ type Config struct {
 	ProjectID string
 
 	AccountID   string
-	DisplayName string
+	DisplbyNbme string
 	Roles       []Role
 }
 
 type Output struct {
-	Email string
+	Embil string
 }
 
-// New provisions a service account, including roles for it to inherit.
+// New provisions b service bccount, including roles for it to inherit.
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	serviceAccount := serviceaccount.NewServiceAccount(scope,
-		id.ResourceID("account"),
-		&serviceaccount.ServiceAccountConfig{
+	serviceAccount := servicebccount.NewServiceAccount(scope,
+		id.ResourceID("bccount"),
+		&servicebccount.ServiceAccountConfig{
 			Project: pointers.Ptr(config.ProjectID),
 
 			AccountId:   pointers.Ptr(config.AccountID),
-			DisplayName: pointers.Ptr(config.DisplayName),
+			DisplbyNbme: pointers.Ptr(config.DisplbyNbme),
 		})
-	for _, role := range config.Roles {
-		_ = projectiammember.NewProjectIamMember(scope,
+	for _, role := rbnge config.Roles {
+		_ = projectibmmember.NewProjectIbmMember(scope,
 			id.ResourceID("member_%s", role.ID),
-			&projectiammember.ProjectIamMemberConfig{
+			&projectibmmember.ProjectIbmMemberConfig{
 				Project: pointers.Ptr(config.ProjectID),
 
 				Role:   pointers.Ptr(role.Role),
@@ -49,6 +49,6 @@ func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
 			})
 	}
 	return &Output{
-		Email: *serviceAccount.Email(),
+		Embil: *serviceAccount.Embil(),
 	}
 }

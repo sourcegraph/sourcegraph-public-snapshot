@@ -1,659 +1,659 @@
-package smartsearch
+pbckbge smbrtsebrch
 
 import (
 	"fmt"
 	"net/url"
-	"regexp/syntax" //nolint:depguard // using the grafana fork of regexp clashes with zoekt, which uses the std regexp/syntax.
+	"regexp/syntbx" //nolint:depgubrd // using the grbfbnb fork of regexp clbshes with zoekt, which uses the std regexp/syntbx.
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
 )
 
-// rule represents a transformation function on a Basic query. Transformation
-// cannot fail: either they apply in sequence and produce a valid, non-nil,
-// Basic query, or they do not apply, in which case they return nil. See the
-// `unquotePatterns` rule for an example.
+// rule represents b trbnsformbtion function on b Bbsic query. Trbnsformbtion
+// cbnnot fbil: either they bpply in sequence bnd produce b vblid, non-nil,
+// Bbsic query, or they do not bpply, in which cbse they return nil. See the
+// `unquotePbtterns` rule for bn exbmple.
 type rule struct {
 	description string
-	transform   []transform
+	trbnsform   []trbnsform
 }
 
-type transform func(query.Basic) *query.Basic
+type trbnsform func(query.Bbsic) *query.Bbsic
 
-var rulesNarrow = []rule{
+vbr rulesNbrrow = []rule{
 	{
-		description: "unquote patterns",
-		transform:   []transform{unquotePatterns},
+		description: "unquote pbtterns",
+		trbnsform:   []trbnsform{unquotePbtterns},
 	},
 	{
-		description: "apply search type for pattern",
-		transform:   []transform{typePatterns},
+		description: "bpply sebrch type for pbttern",
+		trbnsform:   []trbnsform{typePbtterns},
 	},
 	{
-		description: "apply language filter for pattern",
-		transform:   []transform{langPatterns},
+		description: "bpply lbngubge filter for pbttern",
+		trbnsform:   []trbnsform{lbngPbtterns},
 	},
 	{
-		description: "apply symbol select for pattern",
-		transform:   []transform{symbolPatterns},
+		description: "bpply symbol select for pbttern",
+		trbnsform:   []trbnsform{symbolPbtterns},
 	},
 	{
-		description: "expand URL to filters",
-		transform:   []transform{patternsToCodeHostFilters},
+		description: "expbnd URL to filters",
+		trbnsform:   []trbnsform{pbtternsToCodeHostFilters},
 	},
 	{
 		description: "rewrite repo URLs",
-		transform:   []transform{rewriteRepoFilter},
+		trbnsform:   []trbnsform{rewriteRepoFilter},
 	},
 }
 
-var rulesWiden = []rule{
+vbr rulesWiden = []rule{
 	{
-		description: "patterns as regular expressions",
-		transform:   []transform{regexpPatterns},
+		description: "pbtterns bs regulbr expressions",
+		trbnsform:   []trbnsform{regexpPbtterns},
 	},
 	{
-		description: "AND patterns together",
-		transform:   []transform{unorderedPatterns},
+		description: "AND pbtterns together",
+		trbnsform:   []trbnsform{unorderedPbtterns},
 	},
 }
 
-// unquotePatterns is a rule that unquotes all patterns in the input query (it
-// removes quotes, and honors escape sequences inside quoted values).
-func unquotePatterns(b query.Basic) *query.Basic {
-	// Go back all the way to the raw tree representation :-). We just parse
-	// the string as regex, since parsing with regex annotates quoted
-	// patterns.
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeRegex)
+// unquotePbtterns is b rule thbt unquotes bll pbtterns in the input query (it
+// removes quotes, bnd honors escbpe sequences inside quoted vblues).
+func unquotePbtterns(b query.Bbsic) *query.Bbsic {
+	// Go bbck bll the wby to the rbw tree representbtion :-). We just pbrse
+	// the string bs regex, since pbrsing with regex bnnotbtes quoted
+	// pbtterns.
+	rbwPbrseTree, err := query.Pbrse(query.StringHumbn(b.ToPbrseTree()), query.SebrchTypeRegex)
 	if err != nil {
 		return nil
 	}
 
-	changed := false // track whether we've successfully changed any pattern, which means this rule applies.
-	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if annotation.Labels.IsSet(query.Quoted) && !annotation.Labels.IsSet(query.IsAlias) {
-			changed = true
-			annotation.Labels.Unset(query.Quoted)
-			annotation.Labels.Set(query.Literal)
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+	chbnged := fblse // trbck whether we've successfully chbnged bny pbttern, which mebns this rule bpplies.
+	newPbrseTree := query.MbpPbttern(rbwPbrseTree, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) query.Node {
+		if bnnotbtion.Lbbels.IsSet(query.Quoted) && !bnnotbtion.Lbbels.IsSet(query.IsAlibs) {
+			chbnged = true
+			bnnotbtion.Lbbels.Unset(query.Quoted)
+			bnnotbtion.Lbbels.Set(query.Literbl)
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+		return query.Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 
-	if !changed {
-		// No unquoting happened, so we don't run the search.
+	if !chbnged {
+		// No unquoting hbppened, so we don't run the sebrch.
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbrseTree)
 	if err != nil {
 		return nil
 	}
 
-	newBasic, err := query.ToBasicQuery(newNodes)
+	newBbsic, err := query.ToBbsicQuery(newNodes)
 	if err != nil {
 		return nil
 	}
 
-	return &newBasic
+	return &newBbsic
 }
 
-// regexpPatterns converts literal patterns into regular expression patterns.
-// The conversion is a heuristic and happens based on whether the pattern has
-// indicative regular expression metasyntax. It would be overly aggressive to
-// convert patterns containing _any_ potential metasyntax, since a pattern like
-// my.config.yaml contains two `.` (match any character in regexp).
-func regexpPatterns(b query.Basic) *query.Basic {
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
+// regexpPbtterns converts literbl pbtterns into regulbr expression pbtterns.
+// The conversion is b heuristic bnd hbppens bbsed on whether the pbttern hbs
+// indicbtive regulbr expression metbsyntbx. It would be overly bggressive to
+// convert pbtterns contbining _bny_ potentibl metbsyntbx, since b pbttern like
+// my.config.ybml contbins two `.` (mbtch bny chbrbcter in regexp).
+func regexpPbtterns(b query.Bbsic) *query.Bbsic {
+	rbwPbrseTree, err := query.Pbrse(query.StringHumbn(b.ToPbrseTree()), query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil
 	}
 
-	// we decide to interpret patterns as regular expressions if the number of
-	// significant metasyntax operators exceed this threshold
+	// we decide to interpret pbtterns bs regulbr expressions if the number of
+	// significbnt metbsyntbx operbtors exceed this threshold
 	METASYNTAX_THRESHOLD := 2
 
-	// countMetaSyntax counts the number of significant regular expression
-	// operators in string when it is interpreted as a regular expression. A
-	// rough map of operators to syntax can be found here:
-	// https://sourcegraph.com/github.com/golang/go@bf5898ef53d1693aa572da0da746c05e9a6f15c5/-/blob/src/regexp/syntax/regexp.go?L116-244
-	var countMetaSyntax func([]*syntax.Regexp) int
-	countMetaSyntax = func(res []*syntax.Regexp) int {
+	// countMetbSyntbx counts the number of significbnt regulbr expression
+	// operbtors in string when it is interpreted bs b regulbr expression. A
+	// rough mbp of operbtors to syntbx cbn be found here:
+	// https://sourcegrbph.com/github.com/golbng/go@bf5898ef53d1693bb572db0db746c05e9b6f15c5/-/blob/src/regexp/syntbx/regexp.go?L116-244
+	vbr countMetbSyntbx func([]*syntbx.Regexp) int
+	countMetbSyntbx = func(res []*syntbx.Regexp) int {
 		count := 0
-		for _, r := range res {
+		for _, r := rbnge res {
 			switch r.Op {
-			case
-				// operators that are weighted 0 on their own
-				syntax.OpAnyCharNotNL,
-				syntax.OpAnyChar,
-				syntax.OpNoMatch,
-				syntax.OpEmptyMatch,
-				syntax.OpLiteral,
-				syntax.OpConcat:
-				count += countMetaSyntax(r.Sub)
-			case
-				// operators that are weighted 1 on their own
-				syntax.OpCharClass,
-				syntax.OpBeginLine,
-				syntax.OpEndLine,
-				syntax.OpBeginText,
-				syntax.OpEndText,
-				syntax.OpWordBoundary,
-				syntax.OpNoWordBoundary,
-				syntax.OpAlternate:
-				count += countMetaSyntax(r.Sub) + 1
+			cbse
+				// operbtors thbt bre weighted 0 on their own
+				syntbx.OpAnyChbrNotNL,
+				syntbx.OpAnyChbr,
+				syntbx.OpNoMbtch,
+				syntbx.OpEmptyMbtch,
+				syntbx.OpLiterbl,
+				syntbx.OpConcbt:
+				count += countMetbSyntbx(r.Sub)
+			cbse
+				// operbtors thbt bre weighted 1 on their own
+				syntbx.OpChbrClbss,
+				syntbx.OpBeginLine,
+				syntbx.OpEndLine,
+				syntbx.OpBeginText,
+				syntbx.OpEndText,
+				syntbx.OpWordBoundbry,
+				syntbx.OpNoWordBoundbry,
+				syntbx.OpAlternbte:
+				count += countMetbSyntbx(r.Sub) + 1
 
-			case
-				// quantifiers *, +, ?, {...} on metasyntax like
-				// `.` or `(...)` are weighted 2. If the
-				// quantifier applies to other syntax like
-				// literals (not metasyntax) it's weighted 1.
-				syntax.OpStar,
-				syntax.OpPlus,
-				syntax.OpQuest,
-				syntax.OpRepeat:
+			cbse
+				// qubntifiers *, +, ?, {...} on metbsyntbx like
+				// `.` or `(...)` bre weighted 2. If the
+				// qubntifier bpplies to other syntbx like
+				// literbls (not metbsyntbx) it's weighted 1.
+				syntbx.OpStbr,
+				syntbx.OpPlus,
+				syntbx.OpQuest,
+				syntbx.OpRepebt:
 				switch r.Sub[0].Op {
-				case
-					syntax.OpAnyChar,
-					syntax.OpAnyCharNotNL,
-					syntax.OpCapture:
-					count += countMetaSyntax(r.Sub) + 2
-				default:
-					count += countMetaSyntax(r.Sub) + 1
+				cbse
+					syntbx.OpAnyChbr,
+					syntbx.OpAnyChbrNotNL,
+					syntbx.OpCbpture:
+					count += countMetbSyntbx(r.Sub) + 2
+				defbult:
+					count += countMetbSyntbx(r.Sub) + 1
 				}
-			case
-				// capture groups over an alternate like (a|b)
-				// are weighted one. All other capture groups
-				// are weighted zero on their own because parens
-				// are very common in code.
-				syntax.OpCapture:
+			cbse
+				// cbpture groups over bn blternbte like (b|b)
+				// bre weighted one. All other cbpture groups
+				// bre weighted zero on their own becbuse pbrens
+				// bre very common in code.
+				syntbx.OpCbpture:
 				switch r.Sub[0].Op {
-				case syntax.OpAlternate:
-					count += countMetaSyntax(r.Sub) + 1
-				default:
-					count += countMetaSyntax(r.Sub)
+				cbse syntbx.OpAlternbte:
+					count += countMetbSyntbx(r.Sub) + 1
+				defbult:
+					count += countMetbSyntbx(r.Sub)
 				}
 			}
 		}
 		return count
 	}
 
-	changed := false
-	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if annotation.Labels.IsSet(query.Regexp) {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+	chbnged := fblse
+	newPbrseTree := query.MbpPbttern(rbwPbrseTree, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) query.Node {
+		if bnnotbtion.Lbbels.IsSet(query.Regexp) {
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
 
-		re, err := syntax.Parse(value, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		re, err := syntbx.Pbrse(vblue, syntbx.ClbssNL|syntbx.PerlX|syntbx.UnicodeGroups)
 		if err != nil {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
 
-		count := countMetaSyntax([]*syntax.Regexp{re})
+		count := countMetbSyntbx([]*syntbx.Regexp{re})
 		if count < METASYNTAX_THRESHOLD {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
 
-		changed = true
-		annotation.Labels.Unset(query.Literal)
-		annotation.Labels.Set(query.Regexp)
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+		chbnged = true
+		bnnotbtion.Lbbels.Unset(query.Literbl)
+		bnnotbtion.Lbbels.Set(query.Regexp)
+		return query.Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 
-	if !changed {
+	if !chbnged {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbrseTree)
 	if err != nil {
 		return nil
 	}
 
-	newBasic, err := query.ToBasicQuery(newNodes)
+	newBbsic, err := query.ToBbsicQuery(newNodes)
 	if err != nil {
 		return nil
 	}
 
-	return &newBasic
+	return &newBbsic
 }
 
-// UnorderedPatterns generates a query that interprets all recognized patterns
-// as unordered terms (`and`-ed terms). The implementation detail is that we
-// simply map all `concat` nodes (after a raw parse) to `and` nodes. This works
-// because parsing maintains the invariant that `concat` nodes only ever have
-// pattern children.
-func unorderedPatterns(b query.Basic) *query.Basic {
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
+// UnorderedPbtterns generbtes b query thbt interprets bll recognized pbtterns
+// bs unordered terms (`bnd`-ed terms). The implementbtion detbil is thbt we
+// simply mbp bll `concbt` nodes (bfter b rbw pbrse) to `bnd` nodes. This works
+// becbuse pbrsing mbintbins the invbribnt thbt `concbt` nodes only ever hbve
+// pbttern children.
+func unorderedPbtterns(b query.Bbsic) *query.Bbsic {
+	rbwPbrseTree, err := query.Pbrse(query.StringHumbn(b.ToPbrseTree()), query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil
 	}
 
-	newParseTree, changed := mapConcat(rawParseTree)
-	if !changed {
+	newPbrseTree, chbnged := mbpConcbt(rbwPbrseTree)
+	if !chbnged {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbrseTree)
 	if err != nil {
 		return nil
 	}
 
-	newBasic, err := query.ToBasicQuery(newNodes)
+	newBbsic, err := query.ToBbsicQuery(newNodes)
 	if err != nil {
 		return nil
 	}
 
-	return &newBasic
+	return &newBbsic
 }
 
-func mapConcat(q []query.Node) ([]query.Node, bool) {
-	mapped := make([]query.Node, 0, len(q))
-	changed := false
-	for _, node := range q {
-		if n, ok := node.(query.Operator); ok {
-			if n.Kind != query.Concat {
+func mbpConcbt(q []query.Node) ([]query.Node, bool) {
+	mbpped := mbke([]query.Node, 0, len(q))
+	chbnged := fblse
+	for _, node := rbnge q {
+		if n, ok := node.(query.Operbtor); ok {
+			if n.Kind != query.Concbt {
 				// recurse
-				operands, newChanged := mapConcat(n.Operands)
-				mapped = append(mapped, query.Operator{
+				operbnds, newChbnged := mbpConcbt(n.Operbnds)
+				mbpped = bppend(mbpped, query.Operbtor{
 					Kind:     n.Kind,
-					Operands: operands,
+					Operbnds: operbnds,
 				})
-				changed = changed || newChanged
+				chbnged = chbnged || newChbnged
 				continue
 			}
-			// no need to recurse: `concat` nodes only have patterns.
-			mapped = append(mapped, query.Operator{
+			// no need to recurse: `concbt` nodes only hbve pbtterns.
+			mbpped = bppend(mbpped, query.Operbtor{
 				Kind:     query.And,
-				Operands: n.Operands,
+				Operbnds: n.Operbnds,
 			})
-			changed = true
+			chbnged = true
 			continue
 		}
-		mapped = append(mapped, node)
+		mbpped = bppend(mbpped, node)
 	}
-	return mapped, changed
+	return mbpped, chbnged
 }
 
-var symbolTypes = map[string]string{
+vbr symbolTypes = mbp[string]string{
 	"function":       "function",
 	"func":           "function",
 	"module":         "module",
-	"namespace":      "namespace",
-	"package":        "package",
-	"class":          "class",
+	"nbmespbce":      "nbmespbce",
+	"pbckbge":        "pbckbge",
+	"clbss":          "clbss",
 	"method":         "method",
 	"property":       "property",
 	"field":          "field",
 	"constructor":    "constructor",
-	"interface":      "interface",
-	"variable":       "variable",
-	"var":            "variable",
-	"constant":       "constant",
-	"const":          "constant",
+	"interfbce":      "interfbce",
+	"vbribble":       "vbribble",
+	"vbr":            "vbribble",
+	"constbnt":       "constbnt",
+	"const":          "constbnt",
 	"string":         "string",
 	"number":         "number",
-	"boolean":        "boolean",
-	"bool":           "boolean",
-	"array":          "array",
+	"boolebn":        "boolebn",
+	"bool":           "boolebn",
+	"brrby":          "brrby",
 	"object":         "object",
 	"key":            "key",
 	"enum":           "enum-member",
 	"struct":         "struct",
-	"type-parameter": "type-parameter",
+	"type-pbrbmeter": "type-pbrbmeter",
 }
 
-func symbolPatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+func symbolPbtterns(b query.Bbsic) *query.Bbsic {
+	rbwPbtternTree, err := query.Pbrse(query.StringHumbn([]query.Node{b.Pbttern}), query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil
 	}
 
-	changed := false
-	var symbolType string // store the first pattern that matches a recognized symbol type.
-	isNegated := false
-	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		symbolAlias, ok := symbolTypes[value]
-		if !ok || changed {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+	chbnged := fblse
+	vbr symbolType string // store the first pbttern thbt mbtches b recognized symbol type.
+	isNegbted := fblse
+	newPbttern := query.MbpPbttern(rbwPbtternTree, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) query.Node {
+		symbolAlibs, ok := symbolTypes[vblue]
+		if !ok || chbnged {
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
-		changed = true
-		symbolType = symbolAlias
-		isNegated = negated
+		chbnged = true
+		symbolType = symbolAlibs
+		isNegbted = negbted
 		// remove this node
 		return nil
 	})
 
-	if !changed {
+	if !chbnged {
 		return nil
 	}
 
-	selectParam := query.Parameter{
+	selectPbrbm := query.Pbrbmeter{
 		Field:      query.FieldSelect,
-		Value:      fmt.Sprintf("symbol.%s", symbolType),
-		Negated:    isNegated,
-		Annotation: query.Annotation{},
+		Vblue:      fmt.Sprintf("symbol.%s", symbolType),
+		Negbted:    isNegbted,
+		Annotbtion: query.Annotbtion{},
 	}
-	symbolParam := query.Parameter{
+	symbolPbrbm := query.Pbrbmeter{
 		Field:      query.FieldType,
-		Value:      "symbol",
-		Negated:    false,
-		Annotation: query.Annotation{},
+		Vblue:      "symbol",
+		Negbted:    fblse,
+		Annotbtion: query.Annotbtion{},
 	}
 
-	var pattern query.Node
-	if len(newPattern) > 0 {
-		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
+	vbr pbttern query.Node
+	if len(newPbttern) > 0 {
+		// Process concbt nodes
+		nodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbttern)
 		if err != nil {
 			return nil
 		}
-		pattern = nodes[0] // guaranteed root at first node
+		pbttern = nodes[0] // gubrbnteed root bt first node
 	}
 
-	return &query.Basic{
-		Parameters: append(b.Parameters, selectParam, symbolParam),
-		Pattern:    pattern,
+	return &query.Bbsic{
+		Pbrbmeters: bppend(b.Pbrbmeters, selectPbrbm, symbolPbrbm),
+		Pbttern:    pbttern,
 	}
 }
 
-type repoFilterReplacement struct {
-	match   *regexp.Regexp
-	replace string
+type repoFilterReplbcement struct {
+	mbtch   *regexp.Regexp
+	replbce string
 }
 
-var repoFilterReplacements = []repoFilterReplacement{
+vbr repoFilterReplbcements = []repoFilterReplbcement{
 	{
-		match:   regexp.MustCompile(`^(?:https?:\/\/)github\.com\/([^\/]+)\/([^\/\?#]+)(?:.+)?$`),
-		replace: "^github.com/$1/$2$",
+		mbtch:   regexp.MustCompile(`^(?:https?:\/\/)github\.com\/([^\/]+)\/([^\/\?#]+)(?:.+)?$`),
+		replbce: "^github.com/$1/$2$",
 	},
 }
 
-func rewriteRepoFilter(b query.Basic) *query.Basic {
-	newParams := make([]query.Parameter, 0, len(b.Parameters))
-	anyParamChanged := false
-	for _, param := range b.Parameters {
-		if param.Field != "repo" {
-			newParams = append(newParams, param)
+func rewriteRepoFilter(b query.Bbsic) *query.Bbsic {
+	newPbrbms := mbke([]query.Pbrbmeter, 0, len(b.Pbrbmeters))
+	bnyPbrbmChbnged := fblse
+	for _, pbrbm := rbnge b.Pbrbmeters {
+		if pbrbm.Field != "repo" {
+			newPbrbms = bppend(newPbrbms, pbrbm)
 			continue
 		}
 
-		changed := false
-		for _, replacer := range repoFilterReplacements {
-			if replacer.match.MatchString(param.Value) {
-				newParams = append(newParams, query.Parameter{
-					Field:      param.Field,
-					Value:      replacer.match.ReplaceAllString(param.Value, replacer.replace),
-					Negated:    param.Negated,
-					Annotation: param.Annotation,
+		chbnged := fblse
+		for _, replbcer := rbnge repoFilterReplbcements {
+			if replbcer.mbtch.MbtchString(pbrbm.Vblue) {
+				newPbrbms = bppend(newPbrbms, query.Pbrbmeter{
+					Field:      pbrbm.Field,
+					Vblue:      replbcer.mbtch.ReplbceAllString(pbrbm.Vblue, replbcer.replbce),
+					Negbted:    pbrbm.Negbted,
+					Annotbtion: pbrbm.Annotbtion,
 				})
-				changed = true
-				anyParamChanged = true
-				break
+				chbnged = true
+				bnyPbrbmChbnged = true
+				brebk
 			}
 		}
-		if !changed {
-			newParams = append(newParams, param)
+		if !chbnged {
+			newPbrbms = bppend(newPbrbms, pbrbm)
 		}
 	}
-	if !anyParamChanged {
+	if !bnyPbrbmChbnged {
 		return nil
 	}
-	newQuery := b.MapParameters(newParams)
+	newQuery := b.MbpPbrbmeters(newPbrbms)
 	return &newQuery
 }
 
-func langPatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+func lbngPbtterns(b query.Bbsic) *query.Bbsic {
+	rbwPbtternTree, err := query.Pbrse(query.StringHumbn([]query.Node{b.Pbttern}), query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil
 	}
 
-	changed := false
-	var lang string // store the first pattern that matches a recognized language.
-	isNegated := false
-	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		langAlias, ok := enry.GetLanguageByAlias(value)
-		if !ok || changed {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+	chbnged := fblse
+	vbr lbng string // store the first pbttern thbt mbtches b recognized lbngubge.
+	isNegbted := fblse
+	newPbttern := query.MbpPbttern(rbwPbtternTree, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) query.Node {
+		lbngAlibs, ok := enry.GetLbngubgeByAlibs(vblue)
+		if !ok || chbnged {
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
-		changed = true
-		lang = langAlias
-		isNegated = negated
+		chbnged = true
+		lbng = lbngAlibs
+		isNegbted = negbted
 		// remove this node
 		return nil
 	})
 
-	if !changed {
+	if !chbnged {
 		return nil
 	}
 
-	langParam := query.Parameter{
-		Field:      query.FieldLang,
-		Value:      lang,
-		Negated:    isNegated,
-		Annotation: query.Annotation{},
+	lbngPbrbm := query.Pbrbmeter{
+		Field:      query.FieldLbng,
+		Vblue:      lbng,
+		Negbted:    isNegbted,
+		Annotbtion: query.Annotbtion{},
 	}
 
-	var pattern query.Node
-	if len(newPattern) > 0 {
-		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
+	vbr pbttern query.Node
+	if len(newPbttern) > 0 {
+		// Process concbt nodes
+		nodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbttern)
 		if err != nil {
 			return nil
 		}
-		pattern = nodes[0] // guaranteed root at first node
+		pbttern = nodes[0] // gubrbnteed root bt first node
 	}
 
-	return &query.Basic{
-		Parameters: append(b.Parameters, langParam),
-		Pattern:    pattern,
+	return &query.Bbsic{
+		Pbrbmeters: bppend(b.Pbrbmeters, lbngPbrbm),
+		Pbttern:    pbttern,
 	}
 }
 
-func typePatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+func typePbtterns(b query.Bbsic) *query.Bbsic {
+	rbwPbtternTree, err := query.Pbrse(query.StringHumbn([]query.Node{b.Pbttern}), query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil
 	}
 
-	changed := false
-	var typ string // store the first pattern that matches a recognized `type:`.
-	newPattern := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if changed {
-			return query.Pattern{
-				Value:      value,
-				Negated:    negated,
-				Annotation: annotation,
+	chbnged := fblse
+	vbr typ string // store the first pbttern thbt mbtches b recognized `type:`.
+	newPbttern := query.MbpPbttern(rbwPbtternTree, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) query.Node {
+		if chbnged {
+			return query.Pbttern{
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: bnnotbtion,
 			}
 		}
 
-		switch strings.ToLower(value) {
-		case "symbol", "commit", "diff", "path":
-			typ = value
-			changed = true
+		switch strings.ToLower(vblue) {
+		cbse "symbol", "commit", "diff", "pbth":
+			typ = vblue
+			chbnged = true
 			// remove this node
 			return nil
 		}
 
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+		return query.Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 
-	if !changed {
+	if !chbnged {
 		return nil
 	}
 
-	typParam := query.Parameter{
+	typPbrbm := query.Pbrbmeter{
 		Field:      query.FieldType,
-		Value:      typ,
-		Negated:    false,
-		Annotation: query.Annotation{},
+		Vblue:      typ,
+		Negbted:    fblse,
+		Annotbtion: query.Annotbtion{},
 	}
 
-	var pattern query.Node
-	if len(newPattern) > 0 {
-		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
+	vbr pbttern query.Node
+	if len(newPbttern) > 0 {
+		// Process concbt nodes
+		nodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbttern)
 		if err != nil {
 			return nil
 		}
-		pattern = nodes[0] // guaranteed root at first node
+		pbttern = nodes[0] // gubrbnteed root bt first node
 	}
 
-	return &query.Basic{
-		Parameters: append(b.Parameters, typParam),
-		Pattern:    pattern,
+	return &query.Bbsic{
+		Pbrbmeters: bppend(b.Pbrbmeters, typPbrbm),
+		Pbttern:    pbttern,
 	}
 }
 
-var lookup = map[string]struct{}{
+vbr lookup = mbp[string]struct{}{
 	"github.com": {},
-	"gitlab.com": {},
+	"gitlbb.com": {},
 }
 
-// patternToCodeHostFilters checks if a pattern contains a code host URL and
-// extracts the org/repo/branch and path and lifts these to filters, as
-// applicable.
-func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
-	if !strings.HasPrefix(v, "https://") {
-		// normalize v with https:// prefix.
+// pbtternToCodeHostFilters checks if b pbttern contbins b code host URL bnd
+// extrbcts the org/repo/brbnch bnd pbth bnd lifts these to filters, bs
+// bpplicbble.
+func pbtternToCodeHostFilters(v string, negbted bool) *[]query.Node {
+	if !strings.HbsPrefix(v, "https://") {
+		// normblize v with https:// prefix.
 		v = "https://" + v
 	}
 
-	u, err := url.Parse(v)
+	u, err := url.Pbrse(v)
 	if err != nil {
 		return nil
 	}
 
-	domain := strings.TrimPrefix(u.Host, "www.")
-	if _, ok := lookup[domain]; !ok {
+	dombin := strings.TrimPrefix(u.Host, "www.")
+	if _, ok := lookup[dombin]; !ok {
 		return nil
 	}
 
-	var value string
-	path := strings.Trim(u.Path, "/")
-	pathElems := strings.Split(path, "/")
-	if len(pathElems) == 0 {
-		value = regexp.QuoteMeta(domain)
-		value = fmt.Sprintf("^%s", value)
+	vbr vblue string
+	pbth := strings.Trim(u.Pbth, "/")
+	pbthElems := strings.Split(pbth, "/")
+	if len(pbthElems) == 0 {
+		vblue = regexp.QuoteMetb(dombin)
+		vblue = fmt.Sprintf("^%s", vblue)
 		return &[]query.Node{
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRepo,
-				Value:      value,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			}}
-	} else if len(pathElems) == 1 {
-		value = regexp.QuoteMeta(domain)
-		value = fmt.Sprintf("^%s/%s", value, strings.Join(pathElems, "/"))
+	} else if len(pbthElems) == 1 {
+		vblue = regexp.QuoteMetb(dombin)
+		vblue = fmt.Sprintf("^%s/%s", vblue, strings.Join(pbthElems, "/"))
 		return &[]query.Node{
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRepo,
-				Value:      value,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			}}
-	} else if len(pathElems) == 2 {
-		value = regexp.QuoteMeta(domain)
-		value = fmt.Sprintf("^%s/%s$", value, strings.Join(pathElems, "/"))
+	} else if len(pbthElems) == 2 {
+		vblue = regexp.QuoteMetb(dombin)
+		vblue = fmt.Sprintf("^%s/%s$", vblue, strings.Join(pbthElems, "/"))
 		return &[]query.Node{
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRepo,
-				Value:      value,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      vblue,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			}}
-	} else if len(pathElems) == 4 && (pathElems[2] == "tree" || pathElems[2] == "commit") {
-		repoValue := regexp.QuoteMeta(domain)
-		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))
-		revision := pathElems[3]
+	} else if len(pbthElems) == 4 && (pbthElems[2] == "tree" || pbthElems[2] == "commit") {
+		repoVblue := regexp.QuoteMetb(dombin)
+		repoVblue = fmt.Sprintf("^%s/%s$", repoVblue, strings.Join(pbthElems[:2], "/"))
+		revision := pbthElems[3]
 		return &[]query.Node{
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRepo,
-				Value:      repoValue,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      repoVblue,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			},
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRev,
-				Value:      revision,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      revision,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			},
 		}
-	} else if len(pathElems) >= 5 {
-		repoValue := regexp.QuoteMeta(domain)
-		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))
+	} else if len(pbthElems) >= 5 {
+		repoVblue := regexp.QuoteMetb(dombin)
+		repoVblue = fmt.Sprintf("^%s/%s$", repoVblue, strings.Join(pbthElems[:2], "/"))
 
-		revision := pathElems[3]
+		revision := pbthElems[3]
 
-		pathValue := strings.Join(pathElems[4:], "/")
-		pathValue = regexp.QuoteMeta(pathValue)
+		pbthVblue := strings.Join(pbthElems[4:], "/")
+		pbthVblue = regexp.QuoteMetb(pbthVblue)
 
-		if pathElems[2] == "blob" {
-			pathValue = fmt.Sprintf("^%s$", pathValue)
-		} else if pathElems[2] == "tree" {
-			pathValue = fmt.Sprintf("^%s", pathValue)
+		if pbthElems[2] == "blob" {
+			pbthVblue = fmt.Sprintf("^%s$", pbthVblue)
+		} else if pbthElems[2] == "tree" {
+			pbthVblue = fmt.Sprintf("^%s", pbthVblue)
 		} else {
-			// We don't know what this is.
+			// We don't know whbt this is.
 			return nil
 		}
 
 		return &[]query.Node{
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRepo,
-				Value:      repoValue,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      repoVblue,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			},
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldRev,
-				Value:      revision,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      revision,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			},
-			query.Parameter{
+			query.Pbrbmeter{
 				Field:      query.FieldFile,
-				Value:      pathValue,
-				Negated:    negated,
-				Annotation: query.Annotation{},
+				Vblue:      pbthVblue,
+				Negbted:    negbted,
+				Annotbtion: query.Annotbtion{},
 			},
 		}
 	}
@@ -661,48 +661,48 @@ func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
 	return nil
 }
 
-// patternsToCodeHostFilters converts patterns to `repo` or `path` filters if they
-// can be interpreted as URIs.
-func patternsToCodeHostFilters(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+// pbtternsToCodeHostFilters converts pbtterns to `repo` or `pbth` filters if they
+// cbn be interpreted bs URIs.
+func pbtternsToCodeHostFilters(b query.Bbsic) *query.Bbsic {
+	rbwPbtternTree, err := query.Pbrse(query.StringHumbn([]query.Node{b.Pbttern}), query.SebrchTypeStbndbrd)
 	if err != nil {
 		return nil
 	}
 
-	filterParams := []query.Node{}
-	changed := false
-	newParseTree := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if params := patternToCodeHostFilters(value, negated); params != nil {
-			changed = true
-			filterParams = append(filterParams, *params...)
-			// Collect the param and delete pattern. We're going to
-			// add those parameters after. We can't map patterns
-			// in-place because that might create parameters in
-			// concat nodes.
+	filterPbrbms := []query.Node{}
+	chbnged := fblse
+	newPbrseTree := query.MbpPbttern(rbwPbtternTree, func(vblue string, negbted bool, bnnotbtion query.Annotbtion) query.Node {
+		if pbrbms := pbtternToCodeHostFilters(vblue, negbted); pbrbms != nil {
+			chbnged = true
+			filterPbrbms = bppend(filterPbrbms, *pbrbms...)
+			// Collect the pbrbm bnd delete pbttern. We're going to
+			// bdd those pbrbmeters bfter. We cbn't mbp pbtterns
+			// in-plbce becbuse thbt might crebte pbrbmeters in
+			// concbt nodes.
 			return nil
 		}
 
-		return query.Pattern{
-			Value:      value,
-			Negated:    negated,
-			Annotation: annotation,
+		return query.Pbttern{
+			Vblue:      vblue,
+			Negbted:    negbted,
+			Annotbtion: bnnotbtion,
 		}
 	})
 
-	if !changed {
+	if !chbnged {
 		return nil
 	}
 
-	newParseTree = query.NewOperator(append(newParseTree, filterParams...), query.And) // Reduce with NewOperator to obtain valid partitioning.
-	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	newPbrseTree = query.NewOperbtor(bppend(newPbrseTree, filterPbrbms...), query.And) // Reduce with NewOperbtor to obtbin vblid pbrtitioning.
+	newNodes, err := query.Sequence(query.For(query.SebrchTypeStbndbrd))(newPbrseTree)
 	if err != nil {
 		return nil
 	}
 
-	newBasic, err := query.ToBasicQuery(newNodes)
+	newBbsic, err := query.ToBbsicQuery(newNodes)
 	if err != nil {
 		return nil
 	}
 
-	return &newBasic
+	return &newBbsic
 }

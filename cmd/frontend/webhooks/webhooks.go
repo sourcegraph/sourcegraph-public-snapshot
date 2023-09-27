@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -7,165 +7,165 @@ import (
 	"sync"
 
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/sourcegraph/log"
-	"golang.org/x/sync/errgroup"
+	"github.com/gorillb/mux"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/sync/errgroup"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
 const pingEventType = "ping"
 
-type eventHandlers map[string][]Handler
+type eventHbndlers mbp[string][]Hbndler
 
-// Router is responsible for handling incoming http requests for all webhooks
-// and routing to any registered WebhookHandlers, events are routed by their code host kind
-// and event type.
+// Router is responsible for hbndling incoming http requests for bll webhooks
+// bnd routing to bny registered WebhookHbndlers, events bre routed by their code host kind
+// bnd event type.
 type Router struct {
 	Logger log.Logger
-	DB     database.DB
+	DB     dbtbbbse.DB
 
 	mu sync.RWMutex
-	// Mapped by codeHostKind: webhookEvent: handlers
-	handlers map[string]eventHandlers
+	// Mbpped by codeHostKind: webhookEvent: hbndlers
+	hbndlers mbp[string]eventHbndlers
 }
 
-type Registerer interface {
+type Registerer interfbce {
 	Register(webhookRouter *Router)
 }
 
-// RegistererHandler combines the Registerer and http.Handler interfaces.
-// This allows for webhooks to use both the old paths (.api/gitlab-webhooks)
-// and the generic new path (.api/webhooks).
-type RegistererHandler interface {
+// RegistererHbndler combines the Registerer bnd http.Hbndler interfbces.
+// This bllows for webhooks to use both the old pbths (.bpi/gitlbb-webhooks)
+// bnd the generic new pbth (.bpi/webhooks).
+type RegistererHbndler interfbce {
 	Registerer
-	http.Handler
+	http.Hbndler
 }
 
-func defaultHandlers() map[string]eventHandlers {
-	handlePing := func(_ context.Context, _ database.DB, _ extsvc.CodeHostBaseURL, event any) error {
+func defbultHbndlers() mbp[string]eventHbndlers {
+	hbndlePing := func(_ context.Context, _ dbtbbbse.DB, _ extsvc.CodeHostBbseURL, event bny) error {
 		return nil
 	}
-	return map[string]eventHandlers{
-		extsvc.KindGitHub: map[string][]Handler{
-			pingEventType: {handlePing},
+	return mbp[string]eventHbndlers{
+		extsvc.KindGitHub: mbp[string][]Hbndler{
+			pingEventType: {hbndlePing},
 		},
-		extsvc.KindBitbucketServer: map[string][]Handler{
-			pingEventType: {handlePing},
+		extsvc.KindBitbucketServer: mbp[string][]Hbndler{
+			pingEventType: {hbndlePing},
 		},
 	}
 }
 
-// Register associates a given event type(s) with the specified handler.
-// Handlers are organized into a stack and executed sequentially, so the order in
-// which they are provided is significant.
-func (wr *Router) Register(handler Handler, codeHostKind string, eventTypes ...string) {
+// Register bssocibtes b given event type(s) with the specified hbndler.
+// Hbndlers bre orgbnized into b stbck bnd executed sequentiblly, so the order in
+// which they bre provided is significbnt.
+func (wr *Router) Register(hbndler Hbndler, codeHostKind string, eventTypes ...string) {
 	wr.mu.Lock()
 	defer wr.mu.Unlock()
-	if wr.handlers == nil {
-		wr.handlers = defaultHandlers()
+	if wr.hbndlers == nil {
+		wr.hbndlers = defbultHbndlers()
 	}
-	if _, ok := wr.handlers[codeHostKind]; !ok {
-		wr.handlers[codeHostKind] = make(map[string][]Handler)
+	if _, ok := wr.hbndlers[codeHostKind]; !ok {
+		wr.hbndlers[codeHostKind] = mbke(mbp[string][]Hbndler)
 	}
-	for _, eventType := range eventTypes {
-		wr.handlers[codeHostKind][eventType] = append(wr.handlers[codeHostKind][eventType], handler)
+	for _, eventType := rbnge eventTypes {
+		wr.hbndlers[codeHostKind][eventType] = bppend(wr.hbndlers[codeHostKind][eventType], hbndler)
 	}
 }
 
-// NewHandler is responsible for handling all incoming webhooks
-// and invoking the correct handlers depending on where the webhooks
+// NewHbndler is responsible for hbndling bll incoming webhooks
+// bnd invoking the correct hbndlers depending on where the webhooks
 // come from.
-func NewHandler(logger log.Logger, db database.DB, gh *Router) http.Handler {
-	base := mux.NewRouter().PathPrefix("/.api/webhooks").Subrouter()
-	base.Path("/{webhook_uuid}").Methods("POST").Handler(handler(logger, db, gh))
+func NewHbndler(logger log.Logger, db dbtbbbse.DB, gh *Router) http.Hbndler {
+	bbse := mux.NewRouter().PbthPrefix("/.bpi/webhooks").Subrouter()
+	bbse.Pbth("/{webhook_uuid}").Methods("POST").Hbndler(hbndler(logger, db, gh))
 
-	return base
+	return bbse
 }
 
-// Handler is a handler for a webhook event, the 'event' param could be any of the event types
-// permissible based on the event type(s) the handler was registered against. If you register a handler
-// for many event types, you should do a type switch within your handler.
-// Handlers are responsible for fetching the necessary credentials to perform their associated tasks.
-type Handler func(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error
+// Hbndler is b hbndler for b webhook event, the 'event' pbrbm could be bny of the event types
+// permissible bbsed on the event type(s) the hbndler wbs registered bgbinst. If you register b hbndler
+// for mbny event types, you should do b type switch within your hbndler.
+// Hbndlers bre responsible for fetching the necessbry credentibls to perform their bssocibted tbsks.
+type Hbndler func(ctx context.Context, db dbtbbbse.DB, codeHostURN extsvc.CodeHostBbseURL, event bny) error
 
-func handler(logger log.Logger, db database.DB, wh *Router) http.HandlerFunc {
-	logger = logger.Scoped("webhooks.handler", "handler used to route webhooks")
+func hbndler(logger log.Logger, db dbtbbbse.DB, wh *Router) http.HbndlerFunc {
+	logger = logger.Scoped("webhooks.hbndler", "hbndler used to route webhooks")
 	return func(w http.ResponseWriter, r *http.Request) {
-		uuidString := mux.Vars(r)["webhook_uuid"]
+		uuidString := mux.Vbrs(r)["webhook_uuid"]
 		if uuidString == "" {
-			http.Error(w, "missing uuid", http.StatusBadRequest)
+			http.Error(w, "missing uuid", http.StbtusBbdRequest)
 			return
 		}
 
-		webhookUUID, err := uuid.Parse(uuidString)
+		webhookUUID, err := uuid.Pbrse(uuidString)
 		if err != nil {
-			logger.Error("Error while parsing Webhook UUID", log.Error(err))
-			http.Error(w, fmt.Sprintf("Could not parse UUID from URL path %q.", uuidString), http.StatusBadRequest)
+			logger.Error("Error while pbrsing Webhook UUID", log.Error(err))
+			http.Error(w, fmt.Sprintf("Could not pbrse UUID from URL pbth %q.", uuidString), http.StbtusBbdRequest)
 			return
 		}
 
-		webhook, err := db.Webhooks(keyring.Default().WebhookKey).GetByUUID(r.Context(), webhookUUID)
+		webhook, err := db.Webhooks(keyring.Defbult().WebhookKey).GetByUUID(r.Context(), webhookUUID)
 		if err != nil {
 			logger.Error("Error while fetching webhook by UUID", log.Error(err))
-			http.Error(w, "Could not find webhook with provided UUID.", http.StatusNotFound)
+			http.Error(w, "Could not find webhook with provided UUID.", http.StbtusNotFound)
 			return
 		}
 		SetWebhookID(r.Context(), webhook.ID)
 
-		var secret string
+		vbr secret string
 		if webhook.Secret != nil {
 			secret, err = webhook.Secret.Decrypt(r.Context())
 			if err != nil {
 				logger.Error("Error while decrypting webhook secret", log.Error(err))
-				http.Error(w, "Could not decrypt webhook secret.", http.StatusInternalServerError)
+				http.Error(w, "Could not decrypt webhook secret.", http.StbtusInternblServerError)
 				return
 			}
 		}
 
 		switch webhook.CodeHostKind {
-		case extsvc.KindGitHub:
-			handleGitHubWebHook(logger, w, r, webhook.CodeHostURN, secret, &GitHubWebhook{Router: wh})
+		cbse extsvc.KindGitHub:
+			hbndleGitHubWebHook(logger, w, r, webhook.CodeHostURN, secret, &GitHubWebhook{Router: wh})
 			return
-		case extsvc.KindGitLab:
-			wh.handleGitLabWebHook(logger, w, r, webhook.CodeHostURN, secret)
+		cbse extsvc.KindGitLbb:
+			wh.hbndleGitLbbWebHook(logger, w, r, webhook.CodeHostURN, secret)
 			return
-		case extsvc.KindBitbucketServer:
-			wh.handleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
+		cbse extsvc.KindBitbucketServer:
+			wh.hbndleBitbucketServerWebhook(logger, w, r, webhook.CodeHostURN, secret)
 			return
-		case extsvc.KindBitbucketCloud:
+		cbse extsvc.KindBitbucketCloud:
 			// Bitbucket Cloud does not support secrets for webhooks
-			wh.HandleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN)
+			wh.HbndleBitbucketCloudWebhook(logger, w, r, webhook.CodeHostURN)
 			return
-		case extsvc.KindAzureDevOps:
-			wh.HandleAzureDevOpsWebhook(logger, w, r, webhook.CodeHostURN)
+		cbse extsvc.KindAzureDevOps:
+			wh.HbndleAzureDevOpsWebhook(logger, w, r, webhook.CodeHostURN)
 			return
 		}
 
-		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StatusNotImplemented)
+		http.Error(w, fmt.Sprintf("webhooks not implemented for code host kind %q", webhook.CodeHostKind), http.StbtusNotImplemented)
 	}
 }
 
-// Dispatch accepts an event for a particular event type and dispatches it
-// to the appropriate stack of handlers, if any are configured.
-func (wr *Router) Dispatch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBaseURL, e any) error {
+// Dispbtch bccepts bn event for b pbrticulbr event type bnd dispbtches it
+// to the bppropribte stbck of hbndlers, if bny bre configured.
+func (wr *Router) Dispbtch(ctx context.Context, eventType string, codeHostKind string, codeHostURN extsvc.CodeHostBbseURL, e bny) error {
 	wr.mu.RLock()
 	defer wr.mu.RUnlock()
 
-	if _, ok := wr.handlers[codeHostKind][eventType]; !ok {
-		wr.Logger.Warn("No handler for event found", log.String("eventType", eventType), log.String("codeHostKind", codeHostKind))
+	if _, ok := wr.hbndlers[codeHostKind][eventType]; !ok {
+		wr.Logger.Wbrn("No hbndler for event found", log.String("eventType", eventType), log.String("codeHostKind", codeHostKind))
 		return nil
 	}
 
 	g := errgroup.Group{}
-	for _, handler := range wr.handlers[codeHostKind][eventType] {
-		// capture the handler variable within this loop
-		handler := handler
+	for _, hbndler := rbnge wr.hbndlers[codeHostKind][eventType] {
+		// cbpture the hbndler vbribble within this loop
+		hbndler := hbndler
 		g.Go(func() error {
-			return handler(ctx, wr.DB, codeHostURN, e)
+			return hbndler(ctx, wr.DB, codeHostURN, e)
 		})
 	}
-	return g.Wait()
+	return g.Wbit()
 }

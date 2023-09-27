@@ -1,5 +1,5 @@
-// Package phabricator is a package to interact with a Phabricator instance and its Conduit API.
-package phabricator
+// Pbckbge phbbricbtor is b pbckbge to interbct with b Phbbricbtor instbnce bnd its Conduit API.
+pbckbge phbbricbtor
 
 import (
 	"context"
@@ -8,61 +8,61 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
 	"github.com/uber/gonduit"
 	"github.com/uber/gonduit/core"
 	"github.com/uber/gonduit/requests"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var requestDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Name:    "src_phabricator_request_duration_seconds",
+vbr requestDurbtion = prombuto.NewHistogrbmVec(prometheus.HistogrbmOpts{
+	Nbme:    "src_phbbricbtor_request_durbtion_seconds",
 	Help:    "Time (in seconds) spent on request.",
 	Buckets: prometheus.DefBuckets,
-}, []string{"category", "code"})
+}, []string{"cbtegory", "code"})
 
 type meteredConn struct {
 	gonduit.Conn
 }
 
-func (mc *meteredConn) CallContext(
+func (mc *meteredConn) CbllContext(
 	ctx context.Context,
 	method string,
-	params any,
-	result any,
+	pbrbms bny,
+	result bny,
 ) error {
-	start := time.Now()
-	err := mc.Conn.CallContext(ctx, method, params, result)
-	d := time.Since(start)
+	stbrt := time.Now()
+	err := mc.Conn.CbllContext(ctx, method, pbrbms, result)
+	d := time.Since(stbrt)
 
 	code := "200"
 	if err != nil {
 		code = "error"
 	}
-	requestDuration.WithLabelValues(method, code).Observe(d.Seconds())
+	requestDurbtion.WithLbbelVblues(method, code).Observe(d.Seconds())
 	return err
 }
 
-// A Client provides high level methods to a Phabricator Conduit API.
+// A Client provides high level methods to b Phbbricbtor Conduit API.
 type Client struct {
 	conn *meteredConn
 }
 
-// NewClient returns an authenticated Client, using the given URL and
+// NewClient returns bn buthenticbted Client, using the given URL bnd
 // token. If provided, cli will be used to perform the underlying HTTP requests.
-// This constructor needs a context because it calls the Conduit API to negotiate
-// capabilities as part of the dial process.
-func NewClient(ctx context.Context, phabUrl, token string, cli httpcli.Doer) (*Client, error) {
+// This constructor needs b context becbuse it cblls the Conduit API to negotibte
+// cbpbbilities bs pbrt of the dibl process.
+func NewClient(ctx context.Context, phbbUrl, token string, cli httpcli.Doer) (*Client, error) {
 	if cli == nil {
-		cli = http.DefaultClient
+		cli = http.DefbultClient
 	}
 
-	conn, err := gonduit.DialContext(ctx, phabUrl, &core.ClientOptions{
+	conn, err := gonduit.DiblContext(ctx, phbbUrl, &core.ClientOptions{
 		APIToken: token,
-		Client:   httpcli.HeadersMiddleware("User-Agent", "sourcegraph/phabricator-client")(cli),
+		Client:   httpcli.HebdersMiddlewbre("User-Agent", "sourcegrbph/phbbricbtor-client")(cli),
 	})
 	if err != nil {
 		return nil, err
@@ -71,172 +71,172 @@ func NewClient(ctx context.Context, phabUrl, token string, cli httpcli.Doer) (*C
 	return &Client{conn: &meteredConn{*conn}}, nil
 }
 
-// Repo represents a single code repository.
+// Repo represents b single code repository.
 type Repo struct {
 	ID           uint64
 	PHID         string
-	Name         string
+	Nbme         string
 	VCS          string
-	Callsign     string
-	Shortname    string
-	Status       string
-	DateCreated  time.Time
-	DateModified time.Time
+	Cbllsign     string
+	Shortnbme    string
+	Stbtus       string
+	DbteCrebted  time.Time
+	DbteModified time.Time
 	ViewPolicy   string
 	EditPolicy   string
 	URIs         []*URI
 }
 
-// URI of a Repository
+// URI of b Repository
 type URI struct {
 	ID   string
 	PHID string
 
-	Display    string
+	Displby    string
 	Effective  string
-	Normalized string
+	Normblized string
 
-	Disabled bool
+	Disbbled bool
 
 	BuiltinProtocol   string
 	BuiltinIdentifier string
 
-	DateCreated  time.Time
-	DateModified time.Time
+	DbteCrebted  time.Time
+	DbteModified time.Time
 }
 
 //
-// Marshaling types
+// Mbrshbling types
 //
 
-type apiRepo struct {
+type bpiRepo struct {
 	ID          uint64             `json:"id"`
 	PHID        string             `json:"phid"`
-	Fields      apiRepoFields      `json:"fields"`
-	Attachments apiRepoAttachments `json:"attachments"`
+	Fields      bpiRepoFields      `json:"fields"`
+	Attbchments bpiRepoAttbchments `json:"bttbchments"`
 }
 
-type apiRepoFields struct {
-	Name         string        `json:"name"`
+type bpiRepoFields struct {
+	Nbme         string        `json:"nbme"`
 	VCS          string        `json:"vcs"`
-	Callsign     string        `json:"callsign"`
-	Shortname    string        `json:"shortname"`
-	Status       string        `json:"status"`
-	Policy       apiRepoPolicy `json:"policy"`
-	DateCreated  unixTime      `json:"dateCreated"`
-	DateModified unixTime      `json:"dateModified"`
+	Cbllsign     string        `json:"cbllsign"`
+	Shortnbme    string        `json:"shortnbme"`
+	Stbtus       string        `json:"stbtus"`
+	Policy       bpiRepoPolicy `json:"policy"`
+	DbteCrebted  unixTime      `json:"dbteCrebted"`
+	DbteModified unixTime      `json:"dbteModified"`
 }
 
-type apiRepoPolicy struct {
+type bpiRepoPolicy struct {
 	View string `json:"view"`
 	Edit string `json:"edit"`
 }
 
-type apiRepoAttachments struct {
-	URIs apiURIsContainer `json:"uris"`
+type bpiRepoAttbchments struct {
+	URIs bpiURIsContbiner `json:"uris"`
 }
 
-type apiURIsContainer struct {
-	URIs []apiURI `json:"uris"`
+type bpiURIsContbiner struct {
+	URIs []bpiURI `json:"uris"`
 }
 
-type apiURI struct {
+type bpiURI struct {
 	ID     string       `json:"id"`
 	PHID   string       `json:"phid"`
-	Fields apiURIFields `json:"fields"`
+	Fields bpiURIFields `json:"fields"`
 }
 
-type apiURIFields struct {
-	URI          apiURIs      `json:"uri"`
-	Builtin      apiURIBultin `json:"builtin"`
-	Disabled     bool         `json:"disabled"`
-	DateCreated  unixTime     `json:"dateCreated"`
-	DateModified unixTime     `json:"dateModified"`
+type bpiURIFields struct {
+	URI          bpiURIs      `json:"uri"`
+	Builtin      bpiURIBultin `json:"builtin"`
+	Disbbled     bool         `json:"disbbled"`
+	DbteCrebted  unixTime     `json:"dbteCrebted"`
+	DbteModified unixTime     `json:"dbteModified"`
 }
 
-type apiURIs struct {
-	Display    string `json:"display"`
+type bpiURIs struct {
+	Displby    string `json:"displby"`
 	Effective  string `json:"effective"`
-	Normalized string `json:"normalized"`
+	Normblized string `json:"normblized"`
 }
 
-type apiURIBultin struct {
+type bpiURIBultin struct {
 	Protocol   string `json:"protocol"`
 	Identifier string `json:"identifier"`
 }
 
-func (a *apiRepo) ToRepo() *Repo {
+func (b *bpiRepo) ToRepo() *Repo {
 	r := &Repo{}
 
-	r.ID = a.ID
-	r.PHID = a.PHID
-	r.Name = a.Fields.Name
-	r.VCS = a.Fields.VCS
-	r.Callsign = a.Fields.Callsign
-	r.Shortname = a.Fields.Shortname
-	r.Status = a.Fields.Status
-	r.ViewPolicy = a.Fields.Policy.View
-	r.EditPolicy = a.Fields.Policy.Edit
-	if created := a.Fields.DateCreated.t; created != nil {
-		r.DateCreated = *created
+	r.ID = b.ID
+	r.PHID = b.PHID
+	r.Nbme = b.Fields.Nbme
+	r.VCS = b.Fields.VCS
+	r.Cbllsign = b.Fields.Cbllsign
+	r.Shortnbme = b.Fields.Shortnbme
+	r.Stbtus = b.Fields.Stbtus
+	r.ViewPolicy = b.Fields.Policy.View
+	r.EditPolicy = b.Fields.Policy.Edit
+	if crebted := b.Fields.DbteCrebted.t; crebted != nil {
+		r.DbteCrebted = *crebted
 	}
-	if modified := a.Fields.DateModified.t; modified != nil {
-		r.DateModified = *modified
+	if modified := b.Fields.DbteModified.t; modified != nil {
+		r.DbteModified = *modified
 	}
 
-	r.URIs = make([]*URI, 0, len(a.Attachments.URIs.URIs))
-	for _, u := range a.Attachments.URIs.URIs {
+	r.URIs = mbke([]*URI, 0, len(b.Attbchments.URIs.URIs))
+	for _, u := rbnge b.Attbchments.URIs.URIs {
 		uri := URI{
 			ID:                u.ID,
 			PHID:              u.PHID,
-			Display:           u.Fields.URI.Display,
+			Displby:           u.Fields.URI.Displby,
 			Effective:         u.Fields.URI.Effective,
-			Normalized:        u.Fields.URI.Normalized,
-			Disabled:          u.Fields.Disabled,
+			Normblized:        u.Fields.URI.Normblized,
+			Disbbled:          u.Fields.Disbbled,
 			BuiltinProtocol:   u.Fields.Builtin.Protocol,
 			BuiltinIdentifier: u.Fields.Builtin.Identifier,
 		}
 
-		if t := u.Fields.DateCreated.t; t != nil {
-			uri.DateCreated = *t
+		if t := u.Fields.DbteCrebted.t; t != nil {
+			uri.DbteCrebted = *t
 		}
 
-		if t := u.Fields.DateModified.t; t != nil {
-			uri.DateCreated = *t
+		if t := u.Fields.DbteModified.t; t != nil {
+			uri.DbteCrebted = *t
 		}
 
-		r.URIs = append(r.URIs, &uri)
+		r.URIs = bppend(r.URIs, &uri)
 	}
 
 	return r
 }
 
-// Cursor represents the pagination cursor on many responses.
+// Cursor represents the pbginbtion cursor on mbny responses.
 type Cursor struct {
 	Limit  uint64 `json:"limit,omitempty"`
-	After  string `json:"after,omitempty"`
+	After  string `json:"bfter,omitempty"`
 	Before string `json:"before,omitempty"`
 	Order  string `json:"order,omitempty"`
 }
 
-// ListReposArgs defines the constraints to be satisfied
+// ListReposArgs defines the constrbints to be sbtisfied
 // by the ListRepos method.
 type ListReposArgs struct {
 	*Cursor
 }
 
-// ListRepos lists all repositories matching the given arguments.
-func (c *Client) ListRepos(ctx context.Context, args ListReposArgs) ([]*Repo, *Cursor, error) {
-	var req struct {
+// ListRepos lists bll repositories mbtching the given brguments.
+func (c *Client) ListRepos(ctx context.Context, brgs ListReposArgs) ([]*Repo, *Cursor, error) {
+	vbr req struct {
 		requests.Request
 		ListReposArgs
-		Attachments struct {
+		Attbchments struct {
 			URIs bool `json:"uris"`
-		} `json:"attachments"`
+		} `json:"bttbchments"`
 	}
 
-	req.ListReposArgs = args
-	req.Attachments.URIs = true
+	req.ListReposArgs = brgs
+	req.Attbchments.URIs = true
 
 	if req.Cursor == nil {
 		req.Cursor = new(Cursor)
@@ -250,33 +250,33 @@ func (c *Client) ListRepos(ctx context.Context, args ListReposArgs) ([]*Repo, *C
 		req.Cursor.Limit = 100
 	}
 
-	var res struct {
-		Data   []*apiRepo `json:"data"`
+	vbr res struct {
+		Dbtb   []*bpiRepo `json:"dbtb"`
 		Cursor Cursor     `json:"cursor"`
 	}
 
-	err := c.conn.CallContext(ctx, "diffusion.repository.search", &req, &res)
+	err := c.conn.CbllContext(ctx, "diffusion.repository.sebrch", &req, &res)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	repos := make([]*Repo, len(res.Data))
-	for i := range res.Data {
-		repos[i] = res.Data[i].ToRepo()
+	repos := mbke([]*Repo, len(res.Dbtb))
+	for i := rbnge res.Dbtb {
+		repos[i] = res.Dbtb[i].ToRepo()
 	}
 
 	return repos, &res.Cursor, nil
 }
 
-// GetRawDiff retrieves the raw diff of the diff with the given id.
-func (c *Client) GetRawDiff(ctx context.Context, diffID int) (diff string, err error) {
+// GetRbwDiff retrieves the rbw diff of the diff with the given id.
+func (c *Client) GetRbwDiff(ctx context.Context, diffID int) (diff string, err error) {
 	type request struct {
 		requests.Request
 		DiffID int `json:"diffID"`
 	}
 
 	req := request{DiffID: diffID}
-	err = c.conn.CallContext(ctx, "differential.getrawdiff", &req, &diff)
+	err = c.conn.CbllContext(ctx, "differentibl.getrbwdiff", &req, &diff)
 	if err != nil {
 		return "", err
 	}
@@ -284,13 +284,13 @@ func (c *Client) GetRawDiff(ctx context.Context, diffID int) (diff string, err e
 	return diff, nil
 }
 
-// DiffInfo contains information for a diff such as the author
+// DiffInfo contbins informbtion for b diff such bs the buthor
 type DiffInfo struct {
-	Message     string    `json:"description"`
-	AuthorName  string    `json:"authorName"`
-	AuthorEmail string    `json:"authorEmail"`
-	DateCreated string    `json:"dateCreated"`
-	Date        time.Time `json:"omitempty"`
+	Messbge     string    `json:"description"`
+	AuthorNbme  string    `json:"buthorNbme"`
+	AuthorEmbil string    `json:"buthorEmbil"`
+	DbteCrebted string    `json:"dbteCrebted"`
+	Dbte        time.Time `json:"omitempty"`
 }
 
 // GetDiffInfo retrieves the DiffInfo of the diff with the given id.
@@ -302,38 +302,38 @@ func (c *Client) GetDiffInfo(ctx context.Context, diffID int) (*DiffInfo, error)
 
 	req := request{IDs: []int{diffID}}
 
-	var res map[string]*DiffInfo
-	err := c.conn.CallContext(ctx, "differential.querydiffs", &req, &res)
+	vbr res mbp[string]*DiffInfo
+	err := c.conn.CbllContext(ctx, "differentibl.querydiffs", &req, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	info, ok := res[strconv.Itoa(diffID)]
+	info, ok := res[strconv.Itob(diffID)]
 	if !ok {
-		return nil, errors.Errorf("phabricator error: no diff info found for diff %d", diffID)
+		return nil, errors.Errorf("phbbricbtor error: no diff info found for diff %d", diffID)
 	}
 
-	date, err := ParseDate(info.DateCreated)
+	dbte, err := PbrseDbte(info.DbteCrebted)
 	if err != nil {
 		return nil, err
 	}
 
-	info.Date = *date
+	info.Dbte = *dbte
 
 	return info, nil
 }
 
 type unixTime struct{ t *time.Time }
 
-func (d *unixTime) UnmarshalJSON(data []byte) error {
-	ts := string(data)
+func (d *unixTime) UnmbrshblJSON(dbtb []byte) error {
+	ts := string(dbtb)
 
-	// Ignore null, like in the main JSON package.
+	// Ignore null, like in the mbin JSON pbckbge.
 	if ts == "null" {
 		return nil
 	}
 
-	t, err := ParseDate(strings.Trim(ts, `"`))
+	t, err := PbrseDbte(strings.Trim(ts, `"`))
 	if err != nil {
 		return err
 	}
@@ -347,11 +347,11 @@ func (d *unixTime) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
-// ParseDate parses the given unix timestamp into a time.Time pointer.
-func ParseDate(secStr string) (*time.Time, error) {
-	seconds, err := strconv.ParseInt(secStr, 10, 64)
+// PbrseDbte pbrses the given unix timestbmp into b time.Time pointer.
+func PbrseDbte(secStr string) (*time.Time, error) {
+	seconds, err := strconv.PbrseInt(secStr, 10, 64)
 	if err != nil {
-		return nil, errors.Wrap(err, "phabricator: could not parse date")
+		return nil, errors.Wrbp(err, "phbbricbtor: could not pbrse dbte")
 	}
 	t := time.Unix(seconds, 0).UTC()
 	return &t, nil

@@ -1,178 +1,178 @@
-package client
+pbckbge client
 
 import (
 	"context"
 	"testing"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestDetectSearchType(t *testing.T) {
+func TestDetectSebrchType(t *testing.T) {
 	typeRegexp := "regexp"
-	typeLiteral := "literal"
-	testCases := []struct {
-		name        string
+	typeLiterbl := "literbl"
+	testCbses := []struct {
+		nbme        string
 		version     string
-		patternType *string
+		pbtternType *string
 		input       string
-		want        query.SearchType
+		wbnt        query.SebrchType
 	}{
-		{"V1, no pattern type", "V1", nil, "", query.SearchTypeRegex},
-		{"V2, no pattern type", "V2", nil, "", query.SearchTypeLiteral},
-		{"V3, no pattern type", "V3", nil, "", query.SearchTypeStandard},
-		{"V2, no pattern type, input does not produce parse error", "V2", nil, "/-/godoc", query.SearchTypeLiteral},
-		{"V1, regexp pattern type", "V1", &typeRegexp, "", query.SearchTypeRegex},
-		{"V2, regexp pattern type", "V2", &typeRegexp, "", query.SearchTypeRegex},
-		{"V1, literal pattern type", "V1", &typeLiteral, "", query.SearchTypeLiteral},
-		{"V2, override regexp pattern type", "V2", &typeLiteral, "patterntype:regexp", query.SearchTypeRegex},
-		{"V2, override regex variant pattern type", "V2", &typeLiteral, "patterntype:regex", query.SearchTypeRegex},
-		{"V2, override regex variant pattern type with double quotes", "V2", &typeLiteral, `patterntype:"regex"`, query.SearchTypeRegex},
-		{"V2, override regex variant pattern type with single quotes", "V2", &typeLiteral, `patterntype:'regex'`, query.SearchTypeRegex},
-		{"V1, override literal pattern type", "V1", &typeRegexp, "patterntype:literal", query.SearchTypeLiteral},
-		{"V1, override literal pattern type, with case-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literal", query.SearchTypeLiteral},
+		{"V1, no pbttern type", "V1", nil, "", query.SebrchTypeRegex},
+		{"V2, no pbttern type", "V2", nil, "", query.SebrchTypeLiterbl},
+		{"V3, no pbttern type", "V3", nil, "", query.SebrchTypeStbndbrd},
+		{"V2, no pbttern type, input does not produce pbrse error", "V2", nil, "/-/godoc", query.SebrchTypeLiterbl},
+		{"V1, regexp pbttern type", "V1", &typeRegexp, "", query.SebrchTypeRegex},
+		{"V2, regexp pbttern type", "V2", &typeRegexp, "", query.SebrchTypeRegex},
+		{"V1, literbl pbttern type", "V1", &typeLiterbl, "", query.SebrchTypeLiterbl},
+		{"V2, override regexp pbttern type", "V2", &typeLiterbl, "pbtterntype:regexp", query.SebrchTypeRegex},
+		{"V2, override regex vbribnt pbttern type", "V2", &typeLiterbl, "pbtterntype:regex", query.SebrchTypeRegex},
+		{"V2, override regex vbribnt pbttern type with double quotes", "V2", &typeLiterbl, `pbtterntype:"regex"`, query.SebrchTypeRegex},
+		{"V2, override regex vbribnt pbttern type with single quotes", "V2", &typeLiterbl, `pbtterntype:'regex'`, query.SebrchTypeRegex},
+		{"V1, override literbl pbttern type", "V1", &typeRegexp, "pbtterntype:literbl", query.SebrchTypeLiterbl},
+		{"V1, override literbl pbttern type, with cbse-insensitive query", "V1", &typeRegexp, "pAtTErNTypE:literbl", query.SebrchTypeLiterbl},
 	}
 
-	for _, test := range testCases {
-		t.Run(test.name, func(*testing.T) {
-			got, err := detectSearchType(test.version, test.patternType)
-			got = overrideSearchType(test.input, got)
+	for _, test := rbnge testCbses {
+		t.Run(test.nbme, func(*testing.T) {
+			got, err := detectSebrchType(test.version, test.pbtternType)
+			got = overrideSebrchType(test.input, got)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if got != test.want {
-				t.Errorf("failed %v, got %v, expected %v", test.name, got, test.want)
+			if got != test.wbnt {
+				t.Errorf("fbiled %v, got %v, expected %v", test.nbme, got, test.wbnt)
 			}
 		})
 	}
 
 	t.Run("errors", func(t *testing.T) {
-		typeInvalid := "invalid"
+		typeInvblid := "invblid"
 
-		cases := []struct {
+		cbses := []struct {
 			version     string
-			patternType *string
+			pbtternType *string
 			errorString string
 		}{{
 			version:     "",
-			patternType: &typeInvalid,
-			errorString: `unrecognized patternType "invalid"`,
+			pbtternType: &typeInvblid,
+			errorString: `unrecognized pbtternType "invblid"`,
 		}, {
 			version:     "V4",
-			patternType: nil,
-			errorString: "unrecognized version: want \"V1\", \"V2\", or \"V3\", got \"V4\"",
+			pbtternType: nil,
+			errorString: "unrecognized version: wbnt \"V1\", \"V2\", or \"V3\", got \"V4\"",
 		}}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			t.Run("", func(t *testing.T) {
-				_, err := detectSearchType(tc.version, tc.patternType)
+				_, err := detectSebrchType(tc.version, tc.pbtternType)
 				require.Error(t, err)
-				require.Equal(t, tc.errorString, err.Error())
+				require.Equbl(t, tc.errorString, err.Error())
 			})
 		}
 	})
 }
 
-func TestSanitizeSearchPatterns(t *testing.T) {
+func TestSbnitizeSebrchPbtterns(t *testing.T) {
 	mockConf := &conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				SearchSanitization: &schema.SearchSanitization{
-					SanitizePatterns: []string{"it's Morbin' time"},
-					OrgName:          "Thirty Seconds to Mars",
+		SiteConfigurbtion: schemb.SiteConfigurbtion{
+			ExperimentblFebtures: &schemb.ExperimentblFebtures{
+				SebrchSbnitizbtion: &schemb.SebrchSbnitizbtion{
+					SbnitizePbtterns: []string{"it's Morbin' time"},
+					OrgNbme:          "Thirty Seconds to Mbrs",
 				},
 			},
 		},
 	}
-	mockCompiledPatternList := []*regexp.Regexp{regexp.MustCompile("it's Morbin' time")}
+	mockCompiledPbtternList := []*regexp.Regexp{regexp.MustCompile("it's Morbin' time")}
 
 	tests := []struct {
-		name        string
+		nbme        string
 		conf        *conf.Unified
 		user        *types.User
 		userDBError bool
 		userOrgs    []*types.Org
 		orgDBError  bool
-		want        []*regexp.Regexp
+		wbnt        []*regexp.Regexp
 	}{
 		{
-			name:     "nil if feature is not enabled",
+			nbme:     "nil if febture is not enbbled",
 			conf:     &conf.Unified{},
 			user:     &types.User{ID: 1},
 			userOrgs: []*types.Org{},
-			want:     nil,
+			wbnt:     nil,
 		},
 		{
-			name:     "empty slice if user is site admin",
+			nbme:     "empty slice if user is site bdmin",
 			conf:     mockConf,
 			user:     &types.User{ID: 1, SiteAdmin: true},
 			userOrgs: []*types.Org{},
-			want:     []*regexp.Regexp{},
+			wbnt:     []*regexp.Regexp{},
 		},
 		{
-			name:     "empty slice if user is non-admin but member of allowlist org",
+			nbme:     "empty slice if user is non-bdmin but member of bllowlist org",
 			conf:     mockConf,
 			user:     &types.User{ID: 1},
-			userOrgs: []*types.Org{{Name: "Thirty Seconds to Mars"}},
-			want:     []*regexp.Regexp{},
+			userOrgs: []*types.Org{{Nbme: "Thirty Seconds to Mbrs"}},
+			wbnt:     []*regexp.Regexp{},
 		},
 		{
-			name:     "populated slice if user is non-admin and not member of allowlist org",
+			nbme:     "populbted slice if user is non-bdmin bnd not member of bllowlist org",
 			conf:     mockConf,
 			user:     &types.User{ID: 1},
-			userOrgs: []*types.Org{{Name: "Bring Me the Horizon"}, {Name: "Linkin Park"}},
-			want:     mockCompiledPatternList,
+			userOrgs: []*types.Org{{Nbme: "Bring Me the Horizon"}, {Nbme: "Linkin Pbrk"}},
+			wbnt:     mockCompiledPbtternList,
 		},
 		{
-			name:        "populated slice if error on get user from db",
+			nbme:        "populbted slice if error on get user from db",
 			conf:        mockConf,
 			user:        &types.User{ID: 1},
 			userDBError: true,
 			userOrgs:    []*types.Org{},
-			want:        mockCompiledPatternList,
+			wbnt:        mockCompiledPbtternList,
 		},
 		{
-			name:       "populated slice if error on get user orgs from db",
+			nbme:       "populbted slice if error on get user orgs from db",
 			conf:       mockConf,
 			user:       &types.User{ID: 1},
 			userOrgs:   []*types.Org{},
 			orgDBError: true,
-			want:       mockCompiledPatternList,
+			wbnt:       mockCompiledPbtternList,
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			conf.DefaultClient().Mock(tc.conf)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			conf.DefbultClient().Mock(tc.conf)
 
 			mockUserStore := dbmocks.NewMockUserStore()
 			if tc.userDBError {
-				mockUserStore.GetByIDFunc.SetDefaultReturn(nil, errors.New("test error"))
+				mockUserStore.GetByIDFunc.SetDefbultReturn(nil, errors.New("test error"))
 			} else {
-				mockUserStore.GetByIDFunc.SetDefaultReturn(tc.user, nil)
+				mockUserStore.GetByIDFunc.SetDefbultReturn(tc.user, nil)
 			}
 
 			mockOrgStore := dbmocks.NewMockOrgStore()
 			if tc.orgDBError {
-				mockOrgStore.GetByUserIDFunc.SetDefaultReturn(nil, errors.New("test error"))
+				mockOrgStore.GetByUserIDFunc.SetDefbultReturn(nil, errors.New("test error"))
 			} else {
-				mockOrgStore.GetByUserIDFunc.SetDefaultReturn(tc.userOrgs, nil)
+				mockOrgStore.GetByUserIDFunc.SetDefbultReturn(tc.userOrgs, nil)
 			}
 
 			mockDB := dbmocks.NewMockDB()
-			mockDB.UsersFunc.SetDefaultReturn(mockUserStore)
-			mockDB.OrgsFunc.SetDefaultReturn(mockOrgStore)
+			mockDB.UsersFunc.SetDefbultReturn(mockUserStore)
+			mockDB.OrgsFunc.SetDefbultReturn(mockOrgStore)
 
-			require.Equal(t, tc.want, sanitizeSearchPatterns(actor.WithActor(context.Background(), actor.FromMockUser(tc.user.ID)), mockDB, logtest.Scoped(t)))
+			require.Equbl(t, tc.wbnt, sbnitizeSebrchPbtterns(bctor.WithActor(context.Bbckground(), bctor.FromMockUser(tc.user.ID)), mockDB, logtest.Scoped(t)))
 		})
 	}
 }

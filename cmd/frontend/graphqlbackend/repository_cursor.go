@@ -1,32 +1,32 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// This constant defines the cursor prefix, which disambiguates a repository
+// This constbnt defines the cursor prefix, which disbmbigubtes b repository
 // cursor from other types of cursors in the system.
 const repositoryCursorKind = "RepositoryCursor"
 
-// MarshalRepositoryCursor marshals a repository pagination cursor.
-func MarshalRepositoryCursor(cursor *types.Cursor) string {
-	return string(relay.MarshalID(repositoryCursorKind, cursor))
+// MbrshblRepositoryCursor mbrshbls b repository pbginbtion cursor.
+func MbrshblRepositoryCursor(cursor *types.Cursor) string {
+	return string(relby.MbrshblID(repositoryCursorKind, cursor))
 }
 
-// UnmarshalRepositoryCursor unmarshals a repository pagination cursor.
-func UnmarshalRepositoryCursor(cursor *string) (*types.Cursor, error) {
+// UnmbrshblRepositoryCursor unmbrshbls b repository pbginbtion cursor.
+func UnmbrshblRepositoryCursor(cursor *string) (*types.Cursor, error) {
 	if cursor == nil {
 		return nil, nil
 	}
-	if kind := relay.UnmarshalKind(graphql.ID(*cursor)); kind != repositoryCursorKind {
-		return nil, errors.Errorf("cannot unmarshal repository cursor type: %q", kind)
+	if kind := relby.UnmbrshblKind(grbphql.ID(*cursor)); kind != repositoryCursorKind {
+		return nil, errors.Errorf("cbnnot unmbrshbl repository cursor type: %q", kind)
 	}
-	var spec *types.Cursor
-	if err := relay.UnmarshalSpec(graphql.ID(*cursor), &spec); err != nil {
+	vbr spec *types.Cursor
+	if err := relby.UnmbrshblSpec(grbphql.ID(*cursor), &spec); err != nil {
 		return nil, err
 	}
 	return spec, nil

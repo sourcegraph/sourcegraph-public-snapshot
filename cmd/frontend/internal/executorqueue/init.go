@@ -1,47 +1,47 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/confdefaults"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/confdefbults"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
 )
 
-// Init initializes the executor endpoints required for use with the executor service.
+// Init initiblizes the executor endpoints required for use with the executor service.
 func Init(
-	observationCtx *observation.Context,
-	db database.DB,
-	conf conftypes.UnifiedWatchable,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
+	conf conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	codeintelUploadHandler := enterpriseServices.NewCodeIntelUploadHandler(false)
-	batchesWorkspaceFileGetHandler := enterpriseServices.BatchesChangesFileGetHandler
-	batchesWorkspaceFileExistsHandler := enterpriseServices.BatchesChangesFileGetHandler
+	codeintelUplobdHbndler := enterpriseServices.NewCodeIntelUplobdHbndler(fblse)
+	bbtchesWorkspbceFileGetHbndler := enterpriseServices.BbtchesChbngesFileGetHbndler
+	bbtchesWorkspbceFileExistsHbndler := enterpriseServices.BbtchesChbngesFileGetHbndler
 
-	accessToken := func() string {
+	bccessToken := func() string {
 		if deploy.IsApp() {
-			return confdefaults.AppInMemoryExecutorPassword
+			return confdefbults.AppInMemoryExecutorPbssword
 		}
 		return conf.SiteConfig().ExecutorsAccessToken
 	}
 
 	logger := log.Scoped("executorqueue", "")
 
-	queueHandler := newExecutorQueuesHandler(
-		observationCtx,
+	queueHbndler := newExecutorQueuesHbndler(
+		observbtionCtx,
 		db,
 		logger,
-		accessToken,
-		codeintelUploadHandler,
-		batchesWorkspaceFileGetHandler,
-		batchesWorkspaceFileExistsHandler,
+		bccessToken,
+		codeintelUplobdHbndler,
+		bbtchesWorkspbceFileGetHbndler,
+		bbtchesWorkspbceFileExistsHbndler,
 	)
 
-	enterpriseServices.NewExecutorProxyHandler = queueHandler
+	enterpriseServices.NewExecutorProxyHbndler = queueHbndler
 	return nil
 }

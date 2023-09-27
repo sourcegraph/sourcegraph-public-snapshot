@@ -1,56 +1,56 @@
-package runtime
+pbckbge runtime
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
-type firecrackerRuntime struct {
+type firecrbckerRuntime struct {
 	cmdRunner       util.CmdRunner
-	cmd             command.Command
-	operations      *command.Operations
+	cmd             commbnd.Commbnd
+	operbtions      *commbnd.Operbtions
 	filesStore      files.Store
-	cloneOptions    workspace.CloneOptions
-	firecrackerOpts runner.FirecrackerOptions
+	cloneOptions    workspbce.CloneOptions
+	firecrbckerOpts runner.FirecrbckerOptions
 }
 
-var _ Runtime = &firecrackerRuntime{}
+vbr _ Runtime = &firecrbckerRuntime{}
 
-func (r *firecrackerRuntime) Name() Name {
-	return NameFirecracker
+func (r *firecrbckerRuntime) Nbme() Nbme {
+	return NbmeFirecrbcker
 }
 
-func (r *firecrackerRuntime) PrepareWorkspace(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspace.Workspace, error) {
-	return workspace.NewFirecrackerWorkspace(
+func (r *firecrbckerRuntime) PrepbreWorkspbce(ctx context.Context, logger cmdlogger.Logger, job types.Job) (workspbce.Workspbce, error) {
+	return workspbce.NewFirecrbckerWorkspbce(
 		ctx,
 		r.filesStore,
 		job,
-		r.firecrackerOpts.DockerOptions.Resources.DiskSpace,
-		r.firecrackerOpts.KeepWorkspaces,
+		r.firecrbckerOpts.DockerOptions.Resources.DiskSpbce,
+		r.firecrbckerOpts.KeepWorkspbces,
 		r.cmdRunner,
 		r.cmd,
 		logger,
 		r.cloneOptions,
-		r.operations,
+		r.operbtions,
 	)
 }
 
-func (r *firecrackerRuntime) NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
-	run := runner.NewFirecrackerRunner(
+func (r *firecrbckerRuntime) NewRunner(ctx context.Context, logger cmdlogger.Logger, filesStore files.Store, options RunnerOptions) (runner.Runner, error) {
+	run := runner.NewFirecrbckerRunner(
 		r.cmd,
 		logger,
-		options.Path,
-		options.Name,
-		r.firecrackerOpts,
+		options.Pbth,
+		options.Nbme,
+		r.firecrbckerOpts,
 		options.DockerAuthConfig,
-		r.operations,
+		r.operbtions,
 	)
 	if err := run.Setup(ctx); err != nil {
 		return nil, err
@@ -58,22 +58,22 @@ func (r *firecrackerRuntime) NewRunner(ctx context.Context, logger cmdlogger.Log
 	return run, nil
 }
 
-func (r *firecrackerRuntime) NewRunnerSpecs(ws workspace.Workspace, job types.Job) ([]runner.Spec, error) {
-	runnerSpecs := make([]runner.Spec, len(job.DockerSteps))
-	for i, step := range job.DockerSteps {
+func (r *firecrbckerRuntime) NewRunnerSpecs(ws workspbce.Workspbce, job types.Job) ([]runner.Spec, error) {
+	runnerSpecs := mbke([]runner.Spec, len(job.DockerSteps))
+	for i, step := rbnge job.DockerSteps {
 		runnerSpecs[i] = runner.Spec{
 			Job: job,
-			CommandSpecs: []command.Spec{
+			CommbndSpecs: []commbnd.Spec{
 				{
 					Key:       dockerKey(step.Key, i),
-					Command:   nil,
+					Commbnd:   nil,
 					Dir:       step.Dir,
 					Env:       step.Env,
-					Operation: r.operations.Exec,
+					Operbtion: r.operbtions.Exec,
 				},
 			},
-			Image:      step.Image,
-			ScriptPath: ws.ScriptFilenames()[i],
+			Imbge:      step.Imbge,
+			ScriptPbth: ws.ScriptFilenbmes()[i],
 		}
 	}
 

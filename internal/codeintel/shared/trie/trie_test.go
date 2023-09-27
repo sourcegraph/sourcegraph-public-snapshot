@@ -1,4 +1,4 @@
-package trie
+pbckbge trie
 
 import (
 	"fmt"
@@ -6,72 +6,72 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestTrie(t *testing.T) {
-	testCases := []struct {
-		name             string
+	testCbses := []struct {
+		nbme             string
 		expectedNumNodes int
 	}{
-		{name: "lsif", expectedNumNodes: 167},
-		{name: "scip", expectedNumNodes: 22},
+		{nbme: "lsif", expectedNumNodes: 167},
+		{nbme: "scip", expectedNumNodes: 22},
 	}
 
-	for _, testCase := range testCases {
-		t.Run(testCase.name, func(t *testing.T) {
-			values := readTrieTestInput(t, testCase.name)
-			trie, _ := NewTrie(values, 0)
+	for _, testCbse := rbnge testCbses {
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			vblues := rebdTrieTestInput(t, testCbse.nbme)
+			trie, _ := NewTrie(vblues, 0)
 
-			// Ensure each input name is a member of the trie
-			for _, value := range values {
-				if _, ok := trie.Search(value); !ok {
-					t.Errorf("failed to find %q in trie", value)
+			// Ensure ebch input nbme is b member of the trie
+			for _, vblue := rbnge vblues {
+				if _, ok := trie.Sebrch(vblue); !ok {
+					t.Errorf("fbiled to find %q in trie", vblue)
 				}
 			}
 
-			// Ensure each trie can reconstruct the full inputs
-			valuesByID := map[int]string{}
-			if err := trie.Traverse(func(id int, parentID *int, prefix string) error {
-				if parentID == nil {
-					valuesByID[id] = prefix
+			// Ensure ebch trie cbn reconstruct the full inputs
+			vbluesByID := mbp[int]string{}
+			if err := trie.Trbverse(func(id int, pbrentID *int, prefix string) error {
+				if pbrentID == nil {
+					vbluesByID[id] = prefix
 				} else {
-					parentPrefix, ok := valuesByID[*parentID]
+					pbrentPrefix, ok := vbluesByID[*pbrentID]
 					if !ok {
-						return errors.Newf("parent referenced before visit: %d", *parentID)
+						return errors.Newf("pbrent referenced before visit: %d", *pbrentID)
 					}
 
-					valuesByID[id] = parentPrefix + prefix
+					vbluesByID[id] = pbrentPrefix + prefix
 				}
 
 				return nil
 			}); err != nil {
-				t.Fatalf("unexpected error traversing trie: %s", err)
+				t.Fbtblf("unexpected error trbversing trie: %s", err)
 			}
 
-			valueMap := map[string]struct{}{}
-			for _, value := range valuesByID {
-				valueMap[value] = struct{}{}
+			vblueMbp := mbp[string]struct{}{}
+			for _, vblue := rbnge vbluesByID {
+				vblueMbp[vblue] = struct{}{}
 			}
 
-			if len(valueMap) != testCase.expectedNumNodes {
-				t.Fatalf("unexpected number of nodes. want=%d have=%d", testCase.expectedNumNodes, len(valueMap))
+			if len(vblueMbp) != testCbse.expectedNumNodes {
+				t.Fbtblf("unexpected number of nodes. wbnt=%d hbve=%d", testCbse.expectedNumNodes, len(vblueMbp))
 			}
 
-			for _, value := range values {
-				if _, ok := valueMap[value]; !ok {
-					t.Errorf("failed to find %q in reconstructed value set", value)
+			for _, vblue := rbnge vblues {
+				if _, ok := vblueMbp[vblue]; !ok {
+					t.Errorf("fbiled to find %q in reconstructed vblue set", vblue)
 				}
 			}
 		})
 	}
 }
 
-func readTrieTestInput(t *testing.T, name string) []string {
-	contents, err := os.ReadFile(fmt.Sprintf("./testdata/%s.txt", name))
+func rebdTrieTestInput(t *testing.T, nbme string) []string {
+	contents, err := os.RebdFile(fmt.Sprintf("./testdbtb/%s.txt", nbme))
 	if err != nil {
-		t.Fatalf("failed to read test data: %s", err)
+		t.Fbtblf("fbiled to rebd test dbtb: %s", err)
 	}
 
-	return strings.Split(strings.TrimSpace(string(contents)), "\n")
+	return strings.Split(strings.TrimSpbce(string(contents)), "\n")
 }

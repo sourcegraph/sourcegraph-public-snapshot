@@ -1,148 +1,148 @@
-package saml
+pbckbge sbml
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"fmt"
 	"strings"
 
-	saml2 "github.com/russellhaering/gosaml2"
+	sbml2 "github.com/russellhbering/gosbml2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type authnResponseInfo struct {
+type buthnResponseInfo struct {
 	spec                 extsvc.AccountSpec
-	email, displayName   string
-	unnormalizedUsername string
-	groups               map[string]bool
-	accountData          any
+	embil, displbyNbme   string
+	unnormblizedUsernbme string
+	groups               mbp[string]bool
+	bccountDbtb          bny
 }
 
-func readAuthnResponse(p *provider, encodedResp string) (*authnResponseInfo, error) {
+func rebdAuthnResponse(p *provider, encodedResp string) (*buthnResponseInfo, error) {
 	{
-		if raw, err := base64.StdEncoding.DecodeString(encodedResp); err == nil {
-			traceLog(fmt.Sprintf("AuthnResponse: %s", p.ConfigID().ID), string(raw))
+		if rbw, err := bbse64.StdEncoding.DecodeString(encodedResp); err == nil {
+			trbceLog(fmt.Sprintf("AuthnResponse: %s", p.ConfigID().ID), string(rbw))
 		}
 	}
 
-	assertions, err := p.samlSP.RetrieveAssertionInfo(encodedResp)
+	bssertions, err := p.sbmlSP.RetrieveAssertionInfo(encodedResp)
 	if err != nil {
-		return nil, errors.WithMessage(err, "reading AuthnResponse assertions")
+		return nil, errors.WithMessbge(err, "rebding AuthnResponse bssertions")
 	}
-	if wi := assertions.WarningInfo; wi.InvalidTime || wi.NotInAudience {
-		return nil, errors.Errorf("invalid SAML AuthnResponse: %+v", wi)
+	if wi := bssertions.WbrningInfo; wi.InvblidTime || wi.NotInAudience {
+		return nil, errors.Errorf("invblid SAML AuthnResponse: %+v", wi)
 	}
 
-	pi, err := p.getCachedInfoAndError()
+	pi, err := p.getCbchedInfoAndError()
 	if err != nil {
 		return nil, err
 	}
 
 	firstNonempty := func(ss ...string) string {
-		for _, s := range ss {
-			if s := strings.TrimSpace(s); s != "" {
+		for _, s := rbnge ss {
+			if s := strings.TrimSpbce(s); s != "" {
 				return s
 			}
 		}
 		return ""
 	}
-	attr := samlAssertionValues(assertions.Values)
-	email := firstNonempty(attr.Get("email"), attr.Get("emailaddress"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"), attr.Get("http://schemas.xmlsoap.org/claims/EmailAddress"))
-	if email == "" && mightBeEmail(assertions.NameID) {
-		email = assertions.NameID
+	bttr := sbmlAssertionVblues(bssertions.Vblues)
+	embil := firstNonempty(bttr.Get("embil"), bttr.Get("embilbddress"), bttr.Get("http://schembs.xmlsobp.org/ws/2005/05/identity/clbims/embilbddress"), bttr.Get("http://schembs.xmlsobp.org/clbims/EmbilAddress"))
+	if embil == "" && mightBeEmbil(bssertions.NbmeID) {
+		embil = bssertions.NbmeID
 	}
-	if pn := attr.Get("eduPersonPrincipalName"); email == "" && mightBeEmail(pn) {
-		email = pn
+	if pn := bttr.Get("eduPersonPrincipblNbme"); embil == "" && mightBeEmbil(pn) {
+		embil = pn
 	}
 	groupsAttr := "groups"
-	if p.config.GroupsAttributeName != "" {
-		groupsAttr = p.config.GroupsAttributeName
+	if p.config.GroupsAttributeNbme != "" {
+		groupsAttr = p.config.GroupsAttributeNbme
 	}
-	info := authnResponseInfo{
+	info := buthnResponseInfo{
 		spec: extsvc.AccountSpec{
 			ServiceType: providerType,
 			ServiceID:   pi.ServiceID,
 			ClientID:    pi.ClientID,
-			AccountID:   assertions.NameID,
+			AccountID:   bssertions.NbmeID,
 		},
-		email:                email,
-		unnormalizedUsername: firstNonempty(attr.Get("login"), attr.Get("uid"), attr.Get("username"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"), email),
-		displayName:          firstNonempty(attr.Get("displayName"), attr.Get("givenName")+" "+attr.Get("surname"), attr.Get("http://schemas.xmlsoap.org/claims/CommonName"), attr.Get("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname")),
-		groups:               attr.GetMap(groupsAttr),
-		accountData:          assertions,
+		embil:                embil,
+		unnormblizedUsernbme: firstNonempty(bttr.Get("login"), bttr.Get("uid"), bttr.Get("usernbme"), bttr.Get("http://schembs.xmlsobp.org/ws/2005/05/identity/clbims/nbme"), embil),
+		displbyNbme:          firstNonempty(bttr.Get("displbyNbme"), bttr.Get("givenNbme")+" "+bttr.Get("surnbme"), bttr.Get("http://schembs.xmlsobp.org/clbims/CommonNbme"), bttr.Get("http://schembs.xmlsobp.org/ws/2005/05/identity/clbims/givennbme")),
+		groups:               bttr.GetMbp(groupsAttr),
+		bccountDbtb:          bssertions,
 	}
-	if assertions.NameID == "" {
-		return nil, errors.New("the SAML response did not contain a valid NameID")
+	if bssertions.NbmeID == "" {
+		return nil, errors.New("the SAML response did not contbin b vblid NbmeID")
 	}
-	if info.email == "" {
-		return nil, errors.New("the SAML response did not contain an email attribute")
+	if info.embil == "" {
+		return nil, errors.New("the SAML response did not contbin bn embil bttribute")
 	}
-	if info.unnormalizedUsername == "" {
-		return nil, errors.New("the SAML response did not contain a username attribute")
+	if info.unnormblizedUsernbme == "" {
+		return nil, errors.New("the SAML response did not contbin b usernbme bttribute")
 	}
 	return &info, nil
 }
 
-// getOrCreateUser gets or creates a user account based on the SAML claims. It returns the
-// authenticated actor if successful; otherwise it returns an friendly error message (safeErrMsg)
-// that is safe to display to users, and a non-nil err with lower-level error details.
-func getOrCreateUser(ctx context.Context, db database.DB, allowSignup bool, info *authnResponseInfo) (_ *actor.Actor, safeErrMsg string, err error) {
-	var data extsvc.AccountData
-	if err := SetExternalAccountData(&data, info); err != nil {
+// getOrCrebteUser gets or crebtes b user bccount bbsed on the SAML clbims. It returns the
+// buthenticbted bctor if successful; otherwise it returns bn friendly error messbge (sbfeErrMsg)
+// thbt is sbfe to displby to users, bnd b non-nil err with lower-level error detbils.
+func getOrCrebteUser(ctx context.Context, db dbtbbbse.DB, bllowSignup bool, info *buthnResponseInfo) (_ *bctor.Actor, sbfeErrMsg string, err error) {
+	vbr dbtb extsvc.AccountDbtb
+	if err := SetExternblAccountDbtb(&dbtb, info); err != nil {
 		return nil, "", err
 	}
 
-	username, err := auth.NormalizeUsername(info.unnormalizedUsername)
+	usernbme, err := buth.NormblizeUsernbme(info.unnormblizedUsernbme)
 	if err != nil {
-		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", info.unnormalizedUsername), err
+		return nil, fmt.Sprintf("Error normblizing the usernbme %q. See https://docs.sourcegrbph.com/bdmin/buth/#usernbme-normblizbtion.", info.unnormblizedUsernbme), err
 	}
 
-	userID, safeErrMsg, err := auth.GetAndSaveUser(ctx, db, auth.GetAndSaveUserOp{
-		UserProps: database.NewUser{
-			Username:        username,
-			Email:           info.email,
-			EmailIsVerified: info.email != "", // SAML emails are assumed to be verified
-			DisplayName:     info.displayName,
-			// SAML has no standard way of providing an avatar URL.
+	userID, sbfeErrMsg, err := buth.GetAndSbveUser(ctx, db, buth.GetAndSbveUserOp{
+		UserProps: dbtbbbse.NewUser{
+			Usernbme:        usernbme,
+			Embil:           info.embil,
+			EmbilIsVerified: info.embil != "", // SAML embils bre bssumed to be verified
+			DisplbyNbme:     info.displbyNbme,
+			// SAML hbs no stbndbrd wby of providing bn bvbtbr URL.
 		},
-		ExternalAccount:     info.spec,
-		ExternalAccountData: data,
-		CreateIfNotExist:    allowSignup,
+		ExternblAccount:     info.spec,
+		ExternblAccountDbtb: dbtb,
+		CrebteIfNotExist:    bllowSignup,
 	})
 	if err != nil {
-		return nil, safeErrMsg, err
+		return nil, sbfeErrMsg, err
 	}
-	return actor.FromUser(userID), "", nil
+	return bctor.FromUser(userID), "", nil
 }
 
-func mightBeEmail(s string) bool {
+func mightBeEmbil(s string) bool {
 	return strings.Count(s, "@") == 1
 }
 
-type samlAssertionValues saml2.Values
+type sbmlAssertionVblues sbml2.Vblues
 
-func (v samlAssertionValues) Get(key string) string {
-	for _, a := range v {
-		if a.Name == key || a.FriendlyName == key {
-			return a.Values[0].Value
+func (v sbmlAssertionVblues) Get(key string) string {
+	for _, b := rbnge v {
+		if b.Nbme == key || b.FriendlyNbme == key {
+			return b.Vblues[0].Vblue
 		}
 	}
 	return ""
 }
 
-func (v samlAssertionValues) GetMap(key string) map[string]bool {
-	for _, a := range v {
-		if a.Name == key || a.FriendlyName == key {
-			output := make(map[string]bool)
-			for _, v := range a.Values {
-				output[v.Value] = true
+func (v sbmlAssertionVblues) GetMbp(key string) mbp[string]bool {
+	for _, b := rbnge v {
+		if b.Nbme == key || b.FriendlyNbme == key {
+			output := mbke(mbp[string]bool)
+			for _, v := rbnge b.Vblues {
+				output[v.Vblue] = true
 			}
 			return output
 		}
@@ -150,87 +150,87 @@ func (v samlAssertionValues) GetMap(key string) map[string]bool {
 	return nil
 }
 
-type SAMLValues struct {
-	Values map[string]SAMLAttribute `json:"Values,omitempty"`
+type SAMLVblues struct {
+	Vblues mbp[string]SAMLAttribute `json:"Vblues,omitempty"`
 }
 
 type SAMLAttribute struct {
-	Values []SAMLValue `json:"Values"`
+	Vblues []SAMLVblue `json:"Vblues"`
 }
 
-type SAMLValue struct {
-	Value string
+type SAMLVblue struct {
+	Vblue string
 }
 
-// GetExternalAccountData returns the deserialized JSON blob from user external accounts table
-func GetExternalAccountData(ctx context.Context, data *extsvc.AccountData) (val *SAMLValues, err error) {
-	if data.Data != nil {
-		val, err = encryption.DecryptJSON[SAMLValues](ctx, data.Data)
+// GetExternblAccountDbtb returns the deseriblized JSON blob from user externbl bccounts tbble
+func GetExternblAccountDbtb(ctx context.Context, dbtb *extsvc.AccountDbtb) (vbl *SAMLVblues, err error) {
+	if dbtb.Dbtb != nil {
+		vbl, err = encryption.DecryptJSON[SAMLVblues](ctx, dbtb.Dbtb)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if val == nil {
-		return nil, errors.New("could not find data for the external account")
+	if vbl == nil {
+		return nil, errors.New("could not find dbtb for the externbl bccount")
 	}
 
-	return val, nil
+	return vbl, nil
 }
 
-func GetPublicExternalAccountData(ctx context.Context, accountData *extsvc.AccountData) (*extsvc.PublicAccountData, error) {
-	data, err := GetExternalAccountData(ctx, accountData)
+func GetPublicExternblAccountDbtb(ctx context.Context, bccountDbtb *extsvc.AccountDbtb) (*extsvc.PublicAccountDbtb, error) {
+	dbtb, err := GetExternblAccountDbtb(ctx, bccountDbtb)
 	if err != nil {
 		return nil, err
 	}
 
-	values := data.Values
-	if values == nil {
-		return nil, errors.New("could not find data values for external account")
+	vblues := dbtb.Vblues
+	if vblues == nil {
+		return nil, errors.New("could not find dbtb vblues for externbl bccount")
 	}
 
-	// convert keys to lower case for case insensitive matching of candidates
-	lowerCaseValues := make(map[string]SAMLAttribute, len(values))
-	for k, v := range values {
-		lowerCaseValues[strings.ToLower(k)] = v
+	// convert keys to lower cbse for cbse insensitive mbtching of cbndidbtes
+	lowerCbseVblues := mbke(mbp[string]SAMLAttribute, len(vblues))
+	for k, v := rbnge vblues {
+		lowerCbseVblues[strings.ToLower(k)] = v
 	}
 
-	var displayName string
-	// all candidates are lower case
-	candidates := []string{
-		"nickname",
+	vbr displbyNbme string
+	// bll cbndidbtes bre lower cbse
+	cbndidbtes := []string{
+		"nicknbme",
 		"login",
-		"username",
-		"name",
-		"http://schemas.xmlsoap.org/claims/name",
-		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name",
-		"email",
-		"emailaddress",
-		"http://schemas.xmlsoap.org/claims/emailaddress",
-		"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+		"usernbme",
+		"nbme",
+		"http://schembs.xmlsobp.org/clbims/nbme",
+		"http://schembs.xmlsobp.org/ws/2005/05/identity/clbims/nbme",
+		"embil",
+		"embilbddress",
+		"http://schembs.xmlsobp.org/clbims/embilbddress",
+		"http://schembs.xmlsobp.org/ws/2005/05/identity/clbims/embilbddress",
 	}
-	for _, key := range candidates {
-		candidate, ok := lowerCaseValues[key]
-		if ok && len(candidate.Values) > 0 && candidate.Values[0].Value != "" {
-			displayName = candidate.Values[0].Value
-			break
+	for _, key := rbnge cbndidbtes {
+		cbndidbte, ok := lowerCbseVblues[key]
+		if ok && len(cbndidbte.Vblues) > 0 && cbndidbte.Vblues[0].Vblue != "" {
+			displbyNbme = cbndidbte.Vblues[0].Vblue
+			brebk
 		}
 	}
-	if displayName == "" {
+	if displbyNbme == "" {
 		return nil, nil
 	}
-	return &extsvc.PublicAccountData{
-		DisplayName: displayName,
+	return &extsvc.PublicAccountDbtb{
+		DisplbyNbme: displbyNbme,
 	}, nil
 }
 
-// SetExternalAccountData sets the user and token into the external account data blob.
-func SetExternalAccountData(data *extsvc.AccountData, info *authnResponseInfo) error {
-	// TODO: leverage the whole info object instead of just storing JSON blob without any structure
-	serializedData, err := json.Marshal(info.accountData)
+// SetExternblAccountDbtb sets the user bnd token into the externbl bccount dbtb blob.
+func SetExternblAccountDbtb(dbtb *extsvc.AccountDbtb, info *buthnResponseInfo) error {
+	// TODO: leverbge the whole info object instebd of just storing JSON blob without bny structure
+	seriblizedDbtb, err := json.Mbrshbl(info.bccountDbtb)
 	if err != nil {
 		return err
 	}
 
-	data.Data = extsvc.NewUnencryptedData(serializedData)
+	dbtb.Dbtb = extsvc.NewUnencryptedDbtb(seriblizedDbtb)
 	return nil
 }

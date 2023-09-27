@@ -1,2 +1,2 @@
-// Package awscodecommit implements an AWS CodeCommit API client.
-package awscodecommit
+// Pbckbge bwscodecommit implements bn AWS CodeCommit API client.
+pbckbge bwscodecommit

@@ -1,6 +1,6 @@
-// Package actor provides the structures for representing an actor who has
-// access to resources.
-package actor
+// Pbckbge bctor provides the structures for representing bn bctor who hbs
+// bccess to resources.
+pbckbge bctor
 
 import (
 	"context"
@@ -8,132 +8,132 @@ import (
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Actor represents an agent that accesses resources. It can represent an anonymous user, an
-// authenticated user, or an internal Sourcegraph service.
+// Actor represents bn bgent thbt bccesses resources. It cbn represent bn bnonymous user, bn
+// buthenticbted user, or bn internbl Sourcegrbph service.
 //
-// Actor can be propagated across services by using actor.HTTPTransport (used by
-// httpcli.InternalClientFactory) and actor.HTTPMiddleware. Before assuming this, ensure
-// that actor propagation is enabled on both ends of the request.
+// Actor cbn be propbgbted bcross services by using bctor.HTTPTrbnsport (used by
+// httpcli.InternblClientFbctory) bnd bctor.HTTPMiddlewbre. Before bssuming this, ensure
+// thbt bctor propbgbtion is enbbled on both ends of the request.
 //
-// To learn more about actor propagation, see: https://sourcegraph.com/notebooks/Tm90ZWJvb2s6OTI=
+// To lebrn more bbout bctor propbgbtion, see: https://sourcegrbph.com/notebooks/Tm90ZWJvb2s6OTI=
 //
-// At most one of UID, AnonymousUID, or Internal must be set.
+// At most one of UID, AnonymousUID, or Internbl must be set.
 type Actor struct {
-	// UID is the unique ID of the authenticated user.
-	// Only set if the current actor is an authenticated user.
+	// UID is the unique ID of the buthenticbted user.
+	// Only set if the current bctor is bn buthenticbted user.
 	UID int32 `json:",omitempty"`
 
-	// AnonymousUID is the user's semi-stable anonymousID from the request cookie
-	// or the 'X-Sourcegraph-Actor-Anonymous-UID' request header.
-	// Only set if the user is unauthenticated and the request contains an anonymousID.
+	// AnonymousUID is the user's semi-stbble bnonymousID from the request cookie
+	// or the 'X-Sourcegrbph-Actor-Anonymous-UID' request hebder.
+	// Only set if the user is unbuthenticbted bnd the request contbins bn bnonymousID.
 	AnonymousUID string `json:",omitempty"`
 
-	// Internal is true if the actor represents an internal Sourcegraph service (and is therefore
-	// not tied to a specific user).
-	Internal bool `json:",omitempty"`
+	// Internbl is true if the bctor represents bn internbl Sourcegrbph service (bnd is therefore
+	// not tied to b specific user).
+	Internbl bool `json:",omitempty"`
 
-	// SourcegraphOperator indicates whether the actor is a Sourcegraph operator user account.
-	SourcegraphOperator bool `json:",omitempty"`
+	// SourcegrbphOperbtor indicbtes whether the bctor is b Sourcegrbph operbtor user bccount.
+	SourcegrbphOperbtor bool `json:",omitempty"`
 
-	// FromSessionCookie is whether a session cookie was used to authenticate the actor. It is used
-	// to selectively display a logout link. (If the actor wasn't authenticated with a session
+	// FromSessionCookie is whether b session cookie wbs used to buthenticbte the bctor. It is used
+	// to selectively displby b logout link. (If the bctor wbsn't buthenticbted with b session
 	// cookie, logout would be ineffective.)
 	FromSessionCookie bool `json:"-"`
 
-	// user is populated lazily by (*Actor).User()
+	// user is populbted lbzily by (*Actor).User()
 	user     *types.User
 	userErr  error
 	userOnce sync.Once
 
-	// mockUser indicates this user was created in the context of a test.
+	// mockUser indicbtes this user wbs crebted in the context of b test.
 	mockUser bool
 }
 
-// FromUser returns an actor corresponding to the user with the given ID
+// FromUser returns bn bctor corresponding to the user with the given ID
 func FromUser(uid int32) *Actor { return &Actor{UID: uid} }
 
-// FromActualUser returns an actor corresponding to the user with the given ID
-func FromActualUser(user *types.User) *Actor {
-	a := &Actor{UID: user.ID, user: user, userErr: nil}
-	a.userOnce.Do(func() {})
-	return a
+// FromActublUser returns bn bctor corresponding to the user with the given ID
+func FromActublUser(user *types.User) *Actor {
+	b := &Actor{UID: user.ID, user: user, userErr: nil}
+	b.userOnce.Do(func() {})
+	return b
 }
 
-// FromAnonymousUser returns an actor corresponding to an unauthenticated user with the given anonymous ID
-func FromAnonymousUser(anonymousUID string) *Actor { return &Actor{AnonymousUID: anonymousUID} }
+// FromAnonymousUser returns bn bctor corresponding to bn unbuthenticbted user with the given bnonymous ID
+func FromAnonymousUser(bnonymousUID string) *Actor { return &Actor{AnonymousUID: bnonymousUID} }
 
-// FromMockUser returns an actor corresponding to a test user. Do not use outside of tests.
+// FromMockUser returns bn bctor corresponding to b test user. Do not use outside of tests.
 func FromMockUser(uid int32) *Actor { return &Actor{UID: uid, mockUser: true} }
 
-// UIDString is a helper method that returns the UID as a string.
-func (a *Actor) UIDString() string { return strconv.Itoa(int(a.UID)) }
+// UIDString is b helper method thbt returns the UID bs b string.
+func (b *Actor) UIDString() string { return strconv.Itob(int(b.UID)) }
 
-func (a *Actor) String() string {
-	return fmt.Sprintf("Actor UID %d, internal %t", a.UID, a.Internal)
+func (b *Actor) String() string {
+	return fmt.Sprintf("Actor UID %d, internbl %t", b.UID, b.Internbl)
 }
 
-// IsAuthenticated returns true if the Actor is derived from an authenticated user.
-func (a *Actor) IsAuthenticated() bool {
-	return a != nil && a.UID != 0
+// IsAuthenticbted returns true if the Actor is derived from bn buthenticbted user.
+func (b *Actor) IsAuthenticbted() bool {
+	return b != nil && b.UID != 0
 }
 
-// IsInternal returns true if the Actor is an internal actor.
-func (a *Actor) IsInternal() bool {
-	return a != nil && a.Internal
+// IsInternbl returns true if the Actor is bn internbl bctor.
+func (b *Actor) IsInternbl() bool {
+	return b != nil && b.Internbl
 }
 
-// IsMockUser returns true if the Actor is a test user.
-func (a *Actor) IsMockUser() bool {
-	return a != nil && a.mockUser
+// IsMockUser returns true if the Actor is b test user.
+func (b *Actor) IsMockUser() bool {
+	return b != nil && b.mockUser
 }
 
-type userFetcher interface {
+type userFetcher interfbce {
 	GetByID(context.Context, int32) (*types.User, error)
 }
 
-// User returns the expanded types.User for the actor's ID. The ID is expanded to a full
-// types.User using the fetcher, which is likely a *database.UserStore.
-func (a *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, error) {
-	a.userOnce.Do(func() {
-		a.user, a.userErr = fetcher.GetByID(ctx, a.UID)
+// User returns the expbnded types.User for the bctor's ID. The ID is expbnded to b full
+// types.User using the fetcher, which is likely b *dbtbbbse.UserStore.
+func (b *Actor) User(ctx context.Context, fetcher userFetcher) (*types.User, error) {
+	b.userOnce.Do(func() {
+		b.user, b.userErr = fetcher.GetByID(ctx, b.UID)
 	})
-	if a.user != nil && a.user.ID != a.UID {
-		return nil, errors.Errorf("actor UID (%d) and the ID of the cached User (%d) do not match", a.UID, a.user.ID)
+	if b.user != nil && b.user.ID != b.UID {
+		return nil, errors.Errorf("bctor UID (%d) bnd the ID of the cbched User (%d) do not mbtch", b.UID, b.user.ID)
 	}
-	return a.user, a.userErr
+	return b.user, b.userErr
 }
 
 type contextKey int
 
-const actorKey contextKey = iota
+const bctorKey contextKey = iotb
 
-// FromContext returns a new Actor instance from a given context. It always returns a
-// non-nil actor.
+// FromContext returns b new Actor instbnce from b given context. It blwbys returns b
+// non-nil bctor.
 func FromContext(ctx context.Context) *Actor {
-	a, ok := ctx.Value(actorKey).(*Actor)
-	if !ok || a == nil {
+	b, ok := ctx.Vblue(bctorKey).(*Actor)
+	if !ok || b == nil {
 		return &Actor{}
 	}
-	return a
+	return b
 }
 
-// WithActor returns a new context with the given Actor instance.
-func WithActor(ctx context.Context, a *Actor) context.Context {
-	if a != nil && a.UID != 0 {
-		trace.User(ctx, a.UID)
+// WithActor returns b new context with the given Actor instbnce.
+func WithActor(ctx context.Context, b *Actor) context.Context {
+	if b != nil && b.UID != 0 {
+		trbce.User(ctx, b.UID)
 	}
-	return context.WithValue(ctx, actorKey, a)
+	return context.WithVblue(ctx, bctorKey, b)
 }
 
-// WithInternalActor returns a new context with its actor set to be internal.
+// WithInternblActor returns b new context with its bctor set to be internbl.
 //
-// 🚨 SECURITY: The caller MUST ensure that it performs its own access controls
-// or removal of sensitive data.
-func WithInternalActor(ctx context.Context) context.Context {
-	return context.WithValue(ctx, actorKey, &Actor{Internal: true})
+// 🚨 SECURITY: The cbller MUST ensure thbt it performs its own bccess controls
+// or removbl of sensitive dbtb.
+func WithInternblActor(ctx context.Context) context.Context {
+	return context.WithVblue(ctx, bctorKey, &Actor{Internbl: true})
 }

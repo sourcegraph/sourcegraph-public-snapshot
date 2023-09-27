@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"bytes"
@@ -9,163 +9,163 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/slack-go/slack"
+	"github.com/slbck-go/slbck"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	searchresult "github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	sebrchresult "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func sendSlackNotification(ctx context.Context, url string, args actionArgs) error {
-	return postSlackWebhook(ctx, httpcli.ExternalDoer, url, slackPayload(args))
+func sendSlbckNotificbtion(ctx context.Context, url string, brgs bctionArgs) error {
+	return postSlbckWebhook(ctx, httpcli.ExternblDoer, url, slbckPbylobd(brgs))
 }
 
-func slackPayload(args actionArgs) *slack.WebhookMessage {
-	newMarkdownSection := func(s string) slack.Block {
-		return slack.NewSectionBlock(slack.NewTextBlockObject("mrkdwn", s, false, false), nil, nil)
+func slbckPbylobd(brgs bctionArgs) *slbck.WebhookMessbge {
+	newMbrkdownSection := func(s string) slbck.Block {
+		return slbck.NewSectionBlock(slbck.NewTextBlockObject("mrkdwn", s, fblse, fblse), nil, nil)
 	}
 
-	truncatedResults, totalCount, truncatedCount := truncateResults(args.Results, 5)
+	truncbtedResults, totblCount, truncbtedCount := truncbteResults(brgs.Results, 5)
 
-	blocks := []slack.Block{
-		newMarkdownSection(fmt.Sprintf(
-			"%s's Sourcegraph Code monitor, *%s*, detected *%d* new matches.",
-			args.MonitorOwnerName,
-			args.MonitorDescription,
-			totalCount,
+	blocks := []slbck.Block{
+		newMbrkdownSection(fmt.Sprintf(
+			"%s's Sourcegrbph Code monitor, *%s*, detected *%d* new mbtches.",
+			brgs.MonitorOwnerNbme,
+			brgs.MonitorDescription,
+			totblCount,
 		)),
 	}
 
-	if args.IncludeResults {
-		for _, result := range truncatedResults {
-			resultType := "Message"
+	if brgs.IncludeResults {
+		for _, result := rbnge truncbtedResults {
+			resultType := "Messbge"
 			if result.DiffPreview != nil {
 				resultType = "Diff"
 			}
-			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
-				"%s match: <%s|%s@%s>",
+			blocks = bppend(blocks, newMbrkdownSection(fmt.Sprintf(
+				"%s mbtch: <%s|%s@%s>",
 				resultType,
-				getCommitURL(args.ExternalURL, string(result.Repo.Name), string(result.Commit.ID), args.UTMSource),
-				result.Repo.Name,
+				getCommitURL(brgs.ExternblURL, string(result.Repo.Nbme), string(result.Commit.ID), brgs.UTMSource),
+				result.Repo.Nbme,
 				result.Commit.ID.Short(),
 			)))
 
-			contentRaw := truncateMatchContent(result)
-			blocks = append(blocks, newMarkdownSection(formatCodeBlock(contentRaw)))
+			contentRbw := truncbteMbtchContent(result)
+			blocks = bppend(blocks, newMbrkdownSection(formbtCodeBlock(contentRbw)))
 		}
-		if truncatedCount > 0 {
-			blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
-				"...and <%s|%d more matches>.",
-				getSearchURL(args.ExternalURL, args.Query, args.UTMSource),
-				truncatedCount,
+		if truncbtedCount > 0 {
+			blocks = bppend(blocks, newMbrkdownSection(fmt.Sprintf(
+				"...bnd <%s|%d more mbtches>.",
+				getSebrchURL(brgs.ExternblURL, brgs.Query, brgs.UTMSource),
+				truncbtedCount,
 			)))
 		}
 	} else {
-		blocks = append(blocks, newMarkdownSection(fmt.Sprintf(
+		blocks = bppend(blocks, newMbrkdownSection(fmt.Sprintf(
 			"<%s|View results>",
-			getSearchURL(args.ExternalURL, args.Query, args.UTMSource),
+			getSebrchURL(brgs.ExternblURL, brgs.Query, brgs.UTMSource),
 		)))
 	}
 
-	blocks = append(blocks,
-		newMarkdownSection(fmt.Sprintf(
-			`If you are %s, you can <%s|edit your code monitor>`,
-			args.MonitorOwnerName,
-			getCodeMonitorURL(args.ExternalURL, args.MonitorID, args.UTMSource),
+	blocks = bppend(blocks,
+		newMbrkdownSection(fmt.Sprintf(
+			`If you bre %s, you cbn <%s|edit your code monitor>`,
+			brgs.MonitorOwnerNbme,
+			getCodeMonitorURL(brgs.ExternblURL, brgs.MonitorID, brgs.UTMSource),
 		)),
 	)
-	return &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: blocks}}
+	return &slbck.WebhookMessbge{Blocks: &slbck.Blocks{BlockSet: blocks}}
 }
 
-func formatCodeBlock(s string) string {
-	return fmt.Sprintf("```%s```", strings.ReplaceAll(s, "```", "\\`\\`\\`"))
+func formbtCodeBlock(s string) string {
+	return fmt.Sprintf("```%s```", strings.ReplbceAll(s, "```", "\\`\\`\\`"))
 }
 
-// truncateMatchContent truncates the match to at most 10 lines, and also
-// truncates lines once the content length exceeds 2500 bytes.
+// truncbteMbtchContent truncbtes the mbtch to bt most 10 lines, bnd blso
+// truncbtes lines once the content length exceeds 2500 bytes.
 //
-// We limit the bytes to ensure we don't hit Slack's max block size of 3000
-// characters. To be conservative, we truncate to 2500 bytes. We also limit
-// the number of lines to 10 to ensure the content is easy to read.
-func truncateMatchContent(result *searchresult.CommitMatch) string {
-	const maxBytes = 2500
-	const maxLines = 10
+// We limit the bytes to ensure we don't hit Slbck's mbx block size of 3000
+// chbrbcters. To be conservbtive, we truncbte to 2500 bytes. We blso limit
+// the number of lines to 10 to ensure the content is ebsy to rebd.
+func truncbteMbtchContent(result *sebrchresult.CommitMbtch) string {
+	const mbxBytes = 2500
+	const mbxLines = 10
 
-	var matchedString *searchresult.MatchedString
+	vbr mbtchedString *sebrchresult.MbtchedString
 	switch {
-	case result.DiffPreview != nil:
-		matchedString = result.DiffPreview
-	case result.MessagePreview != nil:
-		matchedString = result.MessagePreview
-	default:
-		panic("exactly one of DiffPreview or MessagePreview must be set")
+	cbse result.DiffPreview != nil:
+		mbtchedString = result.DiffPreview
+	cbse result.MessbgePreview != nil:
+		mbtchedString = result.MessbgePreview
+	defbult:
+		pbnic("exbctly one of DiffPreview or MessbgePreview must be set")
 	}
 
-	splitLines := strings.SplitAfter(matchedString.Content, "\n")
+	splitLines := strings.SplitAfter(mbtchedString.Content, "\n")
 	limit := len(splitLines)
-	if limit > maxLines {
-		limit = maxLines
+	if limit > mbxLines {
+		limit = mbxLines
 	}
 
-	chars, index := 0, 0
+	chbrs, index := 0, 0
 	for ; index < limit; index++ {
-		chars += len(splitLines[index])
-		if chars > maxBytes {
-			break
+		chbrs += len(splitLines[index])
+		if chbrs > mbxBytes {
+			brebk
 		}
 	}
 
 	if len(splitLines) > index {
 		splitLines = splitLines[:index]
-		splitLines = append(splitLines, "...\n")
+		splitLines = bppend(splitLines, "...\n")
 	}
 	return strings.Join(splitLines, "")
 }
 
-func truncateResults(results []*searchresult.CommitMatch, maxResults int) (_ []*searchresult.CommitMatch, totalCount, truncatedCount int) {
-	// Convert to type result.Matches
-	matches := make(searchresult.Matches, len(results))
-	for i, res := range results {
-		matches[i] = res
+func truncbteResults(results []*sebrchresult.CommitMbtch, mbxResults int) (_ []*sebrchresult.CommitMbtch, totblCount, truncbtedCount int) {
+	// Convert to type result.Mbtches
+	mbtches := mbke(sebrchresult.Mbtches, len(results))
+	for i, res := rbnge results {
+		mbtches[i] = res
 	}
 
-	totalCount = matches.ResultCount()
-	matches.Limit(maxResults)
-	outputCount := matches.ResultCount()
+	totblCount = mbtches.ResultCount()
+	mbtches.Limit(mbxResults)
+	outputCount := mbtches.ResultCount()
 
-	// Convert back type []*result.CommitMatch
-	output := make([]*searchresult.CommitMatch, len(matches))
-	for i, match := range matches {
-		output[i] = match.(*searchresult.CommitMatch)
+	// Convert bbck type []*result.CommitMbtch
+	output := mbke([]*sebrchresult.CommitMbtch, len(mbtches))
+	for i, mbtch := rbnge mbtches {
+		output[i] = mbtch.(*sebrchresult.CommitMbtch)
 	}
 
-	return output, totalCount, totalCount - outputCount
+	return output, totblCount, totblCount - outputCount
 }
 
-// adapted from slack.PostWebhookCustomHTTPContext
-func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *slack.WebhookMessage) error {
-	raw, err := json.Marshal(msg)
+// bdbpted from slbck.PostWebhookCustomHTTPContext
+func postSlbckWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *slbck.WebhookMessbge) error {
+	rbw, err := json.Mbrshbl(msg)
 	if err != nil {
-		return errors.Wrap(err, "marshal failed")
+		return errors.Wrbp(err, "mbrshbl fbiled")
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(raw))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewRebder(rbw))
 	if err != nil {
-		return errors.Wrap(err, "failed new request")
+		return errors.Wrbp(err, "fbiled new request")
 	}
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 
 	resp, err := doer.Do(req)
 	if err != nil {
-		return errors.Wrap(err, "failed to post webhook")
+		return errors.Wrbp(err, "fbiled to post webhook")
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return StatusCodeError{
-			Code:   resp.StatusCode,
-			Status: resp.Status,
+	if resp.StbtusCode != http.StbtusOK {
+		body, _ := io.RebdAll(resp.Body)
+		return StbtusCodeError{
+			Code:   resp.StbtusCode,
+			Stbtus: resp.Stbtus,
 			Body:   string(body),
 		}
 	}
@@ -173,21 +173,21 @@ func postSlackWebhook(ctx context.Context, doer httpcli.Doer, url string, msg *s
 	return nil
 }
 
-func SendTestSlackWebhook(ctx context.Context, doer httpcli.Doer, description, url string) error {
-	testMessage := &slack.WebhookMessage{Blocks: &slack.Blocks{BlockSet: []slack.Block{
-		slack.NewSectionBlock(
-			slack.NewTextBlockObject("mrkdwn",
+func SendTestSlbckWebhook(ctx context.Context, doer httpcli.Doer, description, url string) error {
+	testMessbge := &slbck.WebhookMessbge{Blocks: &slbck.Blocks{BlockSet: []slbck.Block{
+		slbck.NewSectionBlock(
+			slbck.NewTextBlockObject("mrkdwn",
 				fmt.Sprintf(
-					"Test message for Code Monitor '%s'",
+					"Test messbge for Code Monitor '%s'",
 					description,
 				),
-				false,
-				false,
+				fblse,
+				fblse,
 			),
 			nil,
 			nil,
 		),
 	}}}
 
-	return postSlackWebhook(ctx, doer, url, testMessage)
+	return postSlbckWebhook(ctx, doer, url, testMessbge)
 }

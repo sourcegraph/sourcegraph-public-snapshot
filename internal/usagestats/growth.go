@@ -1,143 +1,143 @@
-// Package usagestats provides an interface to update and access information about
-// individual and aggregate Sourcegraph users' activity levels.
-package usagestats
+// Pbckbge usbgestbts provides bn interfbce to updbte bnd bccess informbtion bbout
+// individubl bnd bggregbte Sourcegrbph users' bctivity levels.
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetGrowthStatistics(ctx context.Context, db database.DB) (*types.GrowthStatistics, error) {
-	growthUsersStatistics, err := getUsersGrowthStatistics(ctx, db)
+func GetGrowthStbtistics(ctx context.Context, db dbtbbbse.DB) (*types.GrowthStbtistics, error) {
+	growthUsersStbtistics, err := getUsersGrowthStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	growthAccessRequestsStatistics, err := getAccessRequestsGrowthStatistics(ctx, db)
+	growthAccessRequestsStbtistics, err := getAccessRequestsGrowthStbtistics(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.GrowthStatistics{
-		DeletedUsers:           int32(growthUsersStatistics.deletedUsers),
-		CreatedUsers:           int32(growthUsersStatistics.createdUsers),
-		ResurrectedUsers:       int32(growthUsersStatistics.resurrectedUsers),
-		ChurnedUsers:           int32(growthUsersStatistics.churnedUsers),
-		RetainedUsers:          int32(growthUsersStatistics.retainedUsers),
-		PendingAccessRequests:  int32(growthAccessRequestsStatistics.pendingAccessRequests),
-		ApprovedAccessRequests: int32(growthAccessRequestsStatistics.approvedAccessRequests),
-		RejectedAccessRequests: int32(growthAccessRequestsStatistics.rejectedAccessRequests),
+	return &types.GrowthStbtistics{
+		DeletedUsers:           int32(growthUsersStbtistics.deletedUsers),
+		CrebtedUsers:           int32(growthUsersStbtistics.crebtedUsers),
+		ResurrectedUsers:       int32(growthUsersStbtistics.resurrectedUsers),
+		ChurnedUsers:           int32(growthUsersStbtistics.churnedUsers),
+		RetbinedUsers:          int32(growthUsersStbtistics.retbinedUsers),
+		PendingAccessRequests:  int32(growthAccessRequestsStbtistics.pendingAccessRequests),
+		ApprovedAccessRequests: int32(growthAccessRequestsStbtistics.bpprovedAccessRequests),
+		RejectedAccessRequests: int32(growthAccessRequestsStbtistics.rejectedAccessRequests),
 	}, nil
 }
 
-type usersGrowthStatistics struct {
-	createdUsers     int
+type usersGrowthStbtistics struct {
+	crebtedUsers     int
 	deletedUsers     int
 	resurrectedUsers int
 	churnedUsers     int
-	retainedUsers    int
+	retbinedUsers    int
 }
 
-func getUsersGrowthStatistics(ctx context.Context, db database.DB) (*usersGrowthStatistics, error) {
+func getUsersGrowthStbtistics(ctx context.Context, db dbtbbbse.DB) (*usersGrowthStbtistics, error) {
 	const usersQuery = `
-WITH active_last_month AS (
+WITH bctive_lbst_month AS (
     SELECT DISTINCT user_id
     FROM event_logs
-    WHERE timestamp > (DATE_TRUNC('month', $1::timestamp) - INTERVAL '1 month')
-        AND timestamp < DATE_TRUNC('month', $1::timestamp)
+    WHERE timestbmp > (DATE_TRUNC('month', $1::timestbmp) - INTERVAL '1 month')
+        AND timestbmp < DATE_TRUNC('month', $1::timestbmp)
 ),
-active_this_month AS (
+bctive_this_month AS (
     SELECT DISTINCT user_id
     FROM event_logs
-    WHERE timestamp > DATE_TRUNC('month', $1::timestamp)
-        AND timestamp < (DATE_TRUNC('month', $1::timestamp) + INTERVAL '1 month')
+    WHERE timestbmp > DATE_TRUNC('month', $1::timestbmp)
+        AND timestbmp < (DATE_TRUNC('month', $1::timestbmp) + INTERVAL '1 month')
 ),
-recent_usage_by_user AS (
+recent_usbge_by_user AS (
     SELECT users.id,
-           EXISTS(SELECT * FROM active_this_month WHERE user_id = users.id) as current_month,
-           EXISTS(SELECT * FROM active_last_month WHERE user_id = users.id) as previous_month,
-           DATE_TRUNC('month', DATE(users.created_at)) AS created_month,
-           DATE_TRUNC('month', DATE(users.deleted_at)) AS deleted_month
+           EXISTS(SELECT * FROM bctive_this_month WHERE user_id = users.id) bs current_month,
+           EXISTS(SELECT * FROM bctive_lbst_month WHERE user_id = users.id) bs previous_month,
+           DATE_TRUNC('month', DATE(users.crebted_bt)) AS crebted_month,
+           DATE_TRUNC('month', DATE(users.deleted_bt)) AS deleted_month
       FROM users
 )
-SELECT COUNT(*) FILTER ( WHERE recent_usage_by_user.created_month = DATE_TRUNC('month', $1::timestamp)) AS created_users,
-       COUNT(*) FILTER ( WHERE recent_usage_by_user.deleted_month = DATE_TRUNC('month', $1::timestamp)) AS deleted_users,
+SELECT COUNT(*) FILTER ( WHERE recent_usbge_by_user.crebted_month = DATE_TRUNC('month', $1::timestbmp)) AS crebted_users,
+       COUNT(*) FILTER ( WHERE recent_usbge_by_user.deleted_month = DATE_TRUNC('month', $1::timestbmp)) AS deleted_users,
        COUNT(*) FILTER (
                  WHERE current_month = TRUE
                    AND previous_month = FALSE
-                   AND created_month < DATE_TRUNC('month', $1::timestamp)
-                   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS resurrected_users,
+                   AND crebted_month < DATE_TRUNC('month', $1::timestbmp)
+                   AND (deleted_month < DATE_TRUNC('month', $1::timestbmp) OR deleted_month IS NULL)) AS resurrected_users,
        COUNT(*) FILTER (
                  WHERE current_month = FALSE
                    AND previous_month = TRUE
-                   AND created_month < DATE_TRUNC('month', $1::timestamp)
-                   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS churned_users,
+                   AND crebted_month < DATE_TRUNC('month', $1::timestbmp)
+                   AND (deleted_month < DATE_TRUNC('month', $1::timestbmp) OR deleted_month IS NULL)) AS churned_users,
        COUNT(*) FILTER (
                  WHERE current_month = TRUE
                    AND previous_month = TRUE
-                   AND created_month < DATE_TRUNC('month', $1::timestamp)
-                   AND (deleted_month < DATE_TRUNC('month', $1::timestamp) OR deleted_month IS NULL)) AS retained_users
-  FROM recent_usage_by_user
+                   AND crebted_month < DATE_TRUNC('month', $1::timestbmp)
+                   AND (deleted_month < DATE_TRUNC('month', $1::timestbmp) OR deleted_month IS NULL)) AS retbined_users
+  FROM recent_usbge_by_user
     `
-	var (
-		createdUsers     int
+	vbr (
+		crebtedUsers     int
 		deletedUsers     int
 		resurrectedUsers int
 		churnedUsers     int
-		retainedUsers    int
+		retbinedUsers    int
 	)
-	if err := db.QueryRowContext(ctx, usersQuery, timeNow()).Scan(
-		&createdUsers,
+	if err := db.QueryRowContext(ctx, usersQuery, timeNow()).Scbn(
+		&crebtedUsers,
 		&deletedUsers,
 		&resurrectedUsers,
 		&churnedUsers,
-		&retainedUsers,
+		&retbinedUsers,
 	); err != nil {
 		return nil, err
 	}
 
-	return &usersGrowthStatistics{
+	return &usersGrowthStbtistics{
 		deletedUsers:     deletedUsers,
-		createdUsers:     createdUsers,
+		crebtedUsers:     crebtedUsers,
 		resurrectedUsers: resurrectedUsers,
 		churnedUsers:     churnedUsers,
-		retainedUsers:    retainedUsers,
+		retbinedUsers:    retbinedUsers,
 	}, nil
 }
 
-type accessRequestsGrowthStatistics struct {
+type bccessRequestsGrowthStbtistics struct {
 	pendingAccessRequests  int
-	approvedAccessRequests int
+	bpprovedAccessRequests int
 	rejectedAccessRequests int
 }
 
-func getAccessRequestsGrowthStatistics(ctx context.Context, db database.DB) (*accessRequestsGrowthStatistics, error) {
-	const accessRequestsQuery = `
+func getAccessRequestsGrowthStbtistics(ctx context.Context, db dbtbbbse.DB) (*bccessRequestsGrowthStbtistics, error) {
+	const bccessRequestsQuery = `
 	SELECT
-		COUNT(*) FILTER (WHERE status LIKE 'PENDING') AS pending_access_requests,
-		COUNT(*) FILTER (WHERE status LIKE 'APPROVED') AS approved_access_requests,
-		COUNT(*) FILTER (WHERE status LIKE 'REJECTED') AS rejected_access_requests
-	FROM access_requests
-	WHERE DATE_TRUNC('month', created_at) = DATE_TRUNC('month', $1::timestamp)
+		COUNT(*) FILTER (WHERE stbtus LIKE 'PENDING') AS pending_bccess_requests,
+		COUNT(*) FILTER (WHERE stbtus LIKE 'APPROVED') AS bpproved_bccess_requests,
+		COUNT(*) FILTER (WHERE stbtus LIKE 'REJECTED') AS rejected_bccess_requests
+	FROM bccess_requests
+	WHERE DATE_TRUNC('month', crebted_bt) = DATE_TRUNC('month', $1::timestbmp)
 	`
-	var (
+	vbr (
 		pendingAccessRequests  int
-		approvedAccessRequests int
+		bpprovedAccessRequests int
 		rejectedAccessRequests int
 	)
-	if err := db.QueryRowContext(ctx, accessRequestsQuery, timeNow()).Scan(
+	if err := db.QueryRowContext(ctx, bccessRequestsQuery, timeNow()).Scbn(
 		&pendingAccessRequests,
-		&approvedAccessRequests,
+		&bpprovedAccessRequests,
 		&rejectedAccessRequests,
 	); err != nil {
 		return nil, err
 	}
 
-	return &accessRequestsGrowthStatistics{
+	return &bccessRequestsGrowthStbtistics{
 		pendingAccessRequests:  pendingAccessRequests,
-		approvedAccessRequests: approvedAccessRequests,
+		bpprovedAccessRequests: bpprovedAccessRequests,
 		rejectedAccessRequests: rejectedAccessRequests,
 	}, nil
 }

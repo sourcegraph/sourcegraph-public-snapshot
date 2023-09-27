@@ -1,162 +1,162 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-var MockStatusMessages func(context.Context) ([]StatusMessage, error)
+vbr MockStbtusMessbges func(context.Context) ([]StbtusMessbge, error)
 
-// FetchStatusMessages fetches repo related status messages.
-func FetchStatusMessages(ctx context.Context, db database.DB, gitserverClient gitserver.Client) ([]StatusMessage, error) {
-	if MockStatusMessages != nil {
-		return MockStatusMessages(ctx)
+// FetchStbtusMessbges fetches repo relbted stbtus messbges.
+func FetchStbtusMessbges(ctx context.Context, db dbtbbbse.DB, gitserverClient gitserver.Client) ([]StbtusMessbge, error) {
+	if MockStbtusMessbges != nil {
+		return MockStbtusMessbges(ctx)
 	}
-	var messages []StatusMessage
+	vbr messbges []StbtusMessbge
 
-	if conf.Get().DisableAutoGitUpdates {
-		messages = append(messages, StatusMessage{
-			GitUpdatesDisabled: &GitUpdatesDisabled{
-				Message: "Repositories will not be cloned or updated.",
+	if conf.Get().DisbbleAutoGitUpdbtes {
+		messbges = bppend(messbges, StbtusMessbge{
+			GitUpdbtesDisbbled: &GitUpdbtesDisbbled{
+				Messbge: "Repositories will not be cloned or updbted.",
 			},
 		})
 	}
 
-	// We first fetch affiliated sync errors since this will also find all the
-	// external services the user cares about.
-	externalServiceSyncErrors, err := db.ExternalServices().GetLatestSyncErrors(ctx)
+	// We first fetch bffilibted sync errors since this will blso find bll the
+	// externbl services the user cbres bbout.
+	externblServiceSyncErrors, err := db.ExternblServices().GetLbtestSyncErrors(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching sync errors")
+		return nil, errors.Wrbp(err, "fetching sync errors")
 	}
 
-	stats, err := db.RepoStatistics().GetRepoStatistics(ctx)
+	stbts, err := db.RepoStbtistics().GetRepoStbtistics(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading repo statistics")
+		return nil, errors.Wrbp(err, "lobding repo stbtistics")
 	}
 
-	// Return early since we don't have any affiliated external services
-	if len(externalServiceSyncErrors) == 0 {
-		// Explicit no repository message
-		if stats.Total == 0 {
-			messages = append(messages, StatusMessage{
+	// Return ebrly since we don't hbve bny bffilibted externbl services
+	if len(externblServiceSyncErrors) == 0 {
+		// Explicit no repository messbge
+		if stbts.Totbl == 0 {
+			messbges = bppend(messbges, StbtusMessbge{
 				NoRepositoriesDetected: &NoRepositoriesDetected{
-					Message: "No repositories have been added to Sourcegraph.",
+					Messbge: "No repositories hbve been bdded to Sourcegrbph.",
 				},
 			})
 		}
-		return messages, nil
+		return messbges, nil
 	}
 
-	for _, syncError := range externalServiceSyncErrors {
-		if syncError.Message != "" {
-			messages = append(messages, StatusMessage{
-				ExternalServiceSyncError: &ExternalServiceSyncError{
-					Message:           syncError.Message,
-					ExternalServiceId: syncError.ServiceID,
+	for _, syncError := rbnge externblServiceSyncErrors {
+		if syncError.Messbge != "" {
+			messbges = bppend(messbges, StbtusMessbge{
+				ExternblServiceSyncError: &ExternblServiceSyncError{
+					Messbge:           syncError.Messbge,
+					ExternblServiceId: syncError.ServiceID,
 				},
 			})
 		}
 	}
 
-	if stats.FailedFetch > 0 {
-		messages = append(messages, StatusMessage{
+	if stbts.FbiledFetch > 0 {
+		messbges = bppend(messbges, StbtusMessbge{
 			SyncError: &SyncError{
-				Message: fmt.Sprintf("%d %s failed last attempt to sync content from code host", stats.FailedFetch, pluralize(stats.FailedFetch, "repository", "repositories")),
+				Messbge: fmt.Sprintf("%d %s fbiled lbst bttempt to sync content from code host", stbts.FbiledFetch, plurblize(stbts.FbiledFetch, "repository", "repositories")),
 			},
 		})
 	}
 
-	if uncloned := stats.NotCloned + stats.Cloning; uncloned > 0 {
-		var sentences []string
-		if stats.NotCloned > 0 {
-			sentences = append(sentences, fmt.Sprintf("%d %s enqueued for cloning.", stats.NotCloned, pluralize(stats.NotCloned, "repository", "repositories")))
+	if uncloned := stbts.NotCloned + stbts.Cloning; uncloned > 0 {
+		vbr sentences []string
+		if stbts.NotCloned > 0 {
+			sentences = bppend(sentences, fmt.Sprintf("%d %s enqueued for cloning.", stbts.NotCloned, plurblize(stbts.NotCloned, "repository", "repositories")))
 		}
-		if stats.Cloning > 0 {
-			sentences = append(sentences, fmt.Sprintf("%d %s currently cloning...", stats.Cloning, pluralize(stats.Cloning, "repository", "repositories")))
+		if stbts.Cloning > 0 {
+			sentences = bppend(sentences, fmt.Sprintf("%d %s currently cloning...", stbts.Cloning, plurblize(stbts.Cloning, "repository", "repositories")))
 		}
-		messages = append(messages, StatusMessage{
+		messbges = bppend(messbges, StbtusMessbge{
 			Cloning: &CloningProgress{
-				Message: strings.Join(sentences, " "),
+				Messbge: strings.Join(sentences, " "),
 			},
 		})
 	}
 
-	// On Sourcegraph.com we don't index all repositories, which makes
-	// determining the index status a bit more complicated than for other
-	// instances.
-	// So for now we don't return the indexing message on sourcegraph.com.
-	if !envvar.SourcegraphDotComMode() {
-		zoektRepoStats, err := db.ZoektRepos().GetStatistics(ctx)
+	// On Sourcegrbph.com we don't index bll repositories, which mbkes
+	// determining the index stbtus b bit more complicbted thbn for other
+	// instbnces.
+	// So for now we don't return the indexing messbge on sourcegrbph.com.
+	if !envvbr.SourcegrbphDotComMode() {
+		zoektRepoStbts, err := db.ZoektRepos().GetStbtistics(ctx)
 		if err != nil {
-			return nil, errors.Wrap(err, "loading repo statistics")
+			return nil, errors.Wrbp(err, "lobding repo stbtistics")
 		}
-		if zoektRepoStats.NotIndexed > 0 {
-			messages = append(messages, StatusMessage{
+		if zoektRepoStbts.NotIndexed > 0 {
+			messbges = bppend(messbges, StbtusMessbge{
 				Indexing: &IndexingProgress{
-					NotIndexed: zoektRepoStats.NotIndexed,
-					Indexed:    zoektRepoStats.Indexed,
+					NotIndexed: zoektRepoStbts.NotIndexed,
+					Indexed:    zoektRepoStbts.Indexed,
 				},
 			})
 		}
 	}
 
-	diskUsageThreshold := conf.Get().SiteConfig().GitserverDiskUsageWarningThreshold
-	if diskUsageThreshold == nil {
-		// This is the default threshold if not configured
-		diskUsageThreshold = pointers.Ptr(90)
+	diskUsbgeThreshold := conf.Get().SiteConfig().GitserverDiskUsbgeWbrningThreshold
+	if diskUsbgeThreshold == nil {
+		// This is the defbult threshold if not configured
+		diskUsbgeThreshold = pointers.Ptr(90)
 	}
 
-	si, err := gitserverClient.SystemsInfo(context.Background())
+	si, err := gitserverClient.SystemsInfo(context.Bbckground())
 	if err != nil {
-		return nil, errors.Wrap(err, "fetching gitserver disk info")
+		return nil, errors.Wrbp(err, "fetching gitserver disk info")
 	}
 
-	for _, s := range si {
-		if s.PercentUsed >= float32(*diskUsageThreshold) {
-			messages = append(messages, StatusMessage{
-				GitserverDiskThresholdReached: &GitserverDiskThresholdReached{
-					Message: fmt.Sprintf("The disk usage on gitserver %q is over %d%% (%.2f%% used).", s.Address, *diskUsageThreshold, s.PercentUsed),
+	for _, s := rbnge si {
+		if s.PercentUsed >= flobt32(*diskUsbgeThreshold) {
+			messbges = bppend(messbges, StbtusMessbge{
+				GitserverDiskThresholdRebched: &GitserverDiskThresholdRebched{
+					Messbge: fmt.Sprintf("The disk usbge on gitserver %q is over %d%% (%.2f%% used).", s.Address, *diskUsbgeThreshold, s.PercentUsed),
 				},
 			})
 		}
 	}
 
-	return messages, nil
+	return messbges, nil
 }
 
-func pluralize(count int, singularNoun, pluralNoun string) string {
+func plurblize(count int, singulbrNoun, plurblNoun string) string {
 	if count == 1 {
-		return singularNoun
+		return singulbrNoun
 	}
-	return pluralNoun
+	return plurblNoun
 }
 
-type GitUpdatesDisabled struct {
-	Message string
+type GitUpdbtesDisbbled struct {
+	Messbge string
 }
 type NoRepositoriesDetected struct {
-	Message string
+	Messbge string
 }
 
 type CloningProgress struct {
-	Message string
+	Messbge string
 }
 
-type ExternalServiceSyncError struct {
-	Message           string
-	ExternalServiceId int64
+type ExternblServiceSyncError struct {
+	Messbge           string
+	ExternblServiceId int64
 }
 
 type SyncError struct {
-	Message string
+	Messbge string
 }
 
 type IndexingProgress struct {
@@ -164,16 +164,16 @@ type IndexingProgress struct {
 	Indexed    int
 }
 
-type GitserverDiskThresholdReached struct {
-	Message string
+type GitserverDiskThresholdRebched struct {
+	Messbge string
 }
 
-type StatusMessage struct {
-	GitUpdatesDisabled            *GitUpdatesDisabled            `json:"git_updates_disabled"`
+type StbtusMessbge struct {
+	GitUpdbtesDisbbled            *GitUpdbtesDisbbled            `json:"git_updbtes_disbbled"`
 	NoRepositoriesDetected        *NoRepositoriesDetected        `json:"no_repositories_detected"`
 	Cloning                       *CloningProgress               `json:"cloning"`
-	ExternalServiceSyncError      *ExternalServiceSyncError      `json:"external_service_sync_error"`
+	ExternblServiceSyncError      *ExternblServiceSyncError      `json:"externbl_service_sync_error"`
 	SyncError                     *SyncError                     `json:"sync_error"`
 	Indexing                      *IndexingProgress              `json:"indexing"`
-	GitserverDiskThresholdReached *GitserverDiskThresholdReached `json:"gitserver_disk_threshold_reached"`
+	GitserverDiskThresholdRebched *GitserverDiskThresholdRebched `json:"gitserver_disk_threshold_rebched"`
 }

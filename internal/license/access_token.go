@@ -1,45 +1,45 @@
-package license
+pbckbge license
 
 import (
 	"encoding/hex"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/hashutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hbshutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// LicenseKeyBasedAccessTokenPrefix is the prefix used for identifying tokens
-// generated for product subscriptions based on a Sourcegraph license key.
-const LicenseKeyBasedAccessTokenPrefix = "slk_" // "(S)ourcegraph (L)icense (K)ey"
+// LicenseKeyBbsedAccessTokenPrefix is the prefix used for identifying tokens
+// generbted for product subscriptions bbsed on b Sourcegrbph license key.
+const LicenseKeyBbsedAccessTokenPrefix = "slk_" // "(S)ourcegrbph (L)icense (K)ey"
 
-// GenerateLicenseKeyBasedAccessToken creates a prefixed, encoded token based on a
-// Sourcegraph license key.
+// GenerbteLicenseKeyBbsedAccessToken crebtes b prefixed, encoded token bbsed on b
+// Sourcegrbph license key.
 //
-// More specifically, the format goes:
+// More specificblly, the formbt goes:
 //
-//	slk_$hex($sha256(licenseKey))
+//	slk_$hex($shb256(licenseKey))
 //	└─┬┘     └───────┬─────────┘
-//	  |        "contents" extracted by ExtractLicenseKeyBasedAccessTokenContents
-//	  └──> licensing.LicenseKeyBasedAccessTokenPrefix
-func GenerateLicenseKeyBasedAccessToken(licenseKey string) string {
-	return LicenseKeyBasedAccessTokenPrefix + hex.EncodeToString(hashutil.ToSHA256Bytes([]byte(licenseKey)))
+//	  |        "contents" extrbcted by ExtrbctLicenseKeyBbsedAccessTokenContents
+//	  └──> licensing.LicenseKeyBbsedAccessTokenPrefix
+func GenerbteLicenseKeyBbsedAccessToken(licenseKey string) string {
+	return LicenseKeyBbsedAccessTokenPrefix + hex.EncodeToString(hbshutil.ToSHA256Bytes([]byte(licenseKey)))
 }
 
-// ExtractLicenseKeyBasedAccessTokenContents extracts the $sha256(licenseKey)
-// portion of a license-key-based access token.
+// ExtrbctLicenseKeyBbsedAccessTokenContents extrbcts the $shb256(licenseKey)
+// portion of b license-key-bbsed bccess token.
 //
-//	slk_$hex($sha256(licenseKey))
+//	slk_$hex($shb256(licenseKey))
 //	         └───────┬─────────┘
-//	             "contents" extracted by ExtractLicenseKeyBasedAccessTokenContents
+//	             "contents" extrbcted by ExtrbctLicenseKeyBbsedAccessTokenContents
 //
-// See GenerateLicenseKeyBasedAccessToken
-func ExtractLicenseKeyBasedAccessTokenContents(accessToken string) (string, error) {
-	if !strings.HasPrefix(accessToken, LicenseKeyBasedAccessTokenPrefix) {
-		return "", errors.New("invalid token prefix")
+// See GenerbteLicenseKeyBbsedAccessToken
+func ExtrbctLicenseKeyBbsedAccessTokenContents(bccessToken string) (string, error) {
+	if !strings.HbsPrefix(bccessToken, LicenseKeyBbsedAccessTokenPrefix) {
+		return "", errors.New("invblid token prefix")
 	}
-	contents, err := hex.DecodeString(strings.TrimPrefix(accessToken, LicenseKeyBasedAccessTokenPrefix))
+	contents, err := hex.DecodeString(strings.TrimPrefix(bccessToken, LicenseKeyBbsedAccessTokenPrefix))
 	if err != nil {
-		return "", errors.Wrap(err, "invalid token encoding")
+		return "", errors.Wrbp(err, "invblid token encoding")
 	}
 	return string(contents), nil
 }

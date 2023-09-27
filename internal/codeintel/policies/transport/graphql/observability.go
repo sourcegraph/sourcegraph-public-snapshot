@@ -1,45 +1,45 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	configurationPolicies     *observation.Operation
-	configurationPolicyByID   *observation.Operation
-	createConfigurationPolicy *observation.Operation
-	deleteConfigurationPolicy *observation.Operation
-	previewGitObjectFilter    *observation.Operation
-	previewRepoFilter         *observation.Operation
-	updateConfigurationPolicy *observation.Operation
+type operbtions struct {
+	configurbtionPolicies     *observbtion.Operbtion
+	configurbtionPolicyByID   *observbtion.Operbtion
+	crebteConfigurbtionPolicy *observbtion.Operbtion
+	deleteConfigurbtionPolicy *observbtion.Operbtion
+	previewGitObjectFilter    *observbtion.Operbtion
+	previewRepoFilter         *observbtion.Operbtion
+	updbteConfigurbtionPolicy *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_policies_transport_graphql",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"codeintel_policies_trbnsport_grbphql",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.policies.transport.graphql.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.policies.trbnsport.grbphql.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		configurationPolicies:     op("ConfigurationPolicies"),
-		configurationPolicyByID:   op("ConfigurationPolicyByID"),
-		createConfigurationPolicy: op("CreateConfigurationPolicy"),
-		deleteConfigurationPolicy: op("DeleteConfigurationPolicy"),
+	return &operbtions{
+		configurbtionPolicies:     op("ConfigurbtionPolicies"),
+		configurbtionPolicyByID:   op("ConfigurbtionPolicyByID"),
+		crebteConfigurbtionPolicy: op("CrebteConfigurbtionPolicy"),
+		deleteConfigurbtionPolicy: op("DeleteConfigurbtionPolicy"),
 		previewGitObjectFilter:    op("PreviewGitObjectFilter"),
 		previewRepoFilter:         op("PreviewRepoFilter"),
-		updateConfigurationPolicy: op("UpdateConfigurationPolicy"),
+		updbteConfigurbtionPolicy: op("UpdbteConfigurbtionPolicy"),
 	}
 }

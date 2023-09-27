@@ -1,4 +1,4 @@
-package enforcement
+pbckbge enforcement
 
 import (
 	"context"
@@ -6,248 +6,248 @@ import (
 	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/cloud"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestEnforcement_PreCreateUser(t *testing.T) {
+func TestEnforcement_PreCrebteUser(t *testing.T) {
 	expiresAt := time.Now().Add(time.Hour)
 	tests := []struct {
-		name            string
+		nbme            string
 		license         *license.Info
-		activeUserCount int
+		bctiveUserCount int
 		mockSetup       func(*testing.T)
 		spec            *extsvc.AccountSpec
-		wantErr         bool
+		wbntErr         bool
 	}{
-		// See the impl for why we treat UserCount == 0 as unlimited.
+		// See the impl for why we trebt UserCount == 0 bs unlimited.
 		{
-			name:            "unlimited",
+			nbme:            "unlimited",
 			license:         &license.Info{UserCount: 0, ExpiresAt: expiresAt},
-			activeUserCount: 5,
-			wantErr:         false,
+			bctiveUserCount: 5,
+			wbntErr:         fblse,
 		},
 
 		{
-			name:            "no true-up",
+			nbme:            "no true-up",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 0,
-			wantErr:         false,
+			bctiveUserCount: 0,
+			wbntErr:         fblse,
 		},
 		{
-			name:            "no true-up and not exceeded user count",
+			nbme:            "no true-up bnd not exceeded user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 5,
-			wantErr:         false,
+			bctiveUserCount: 5,
+			wbntErr:         fblse,
 		},
 		{
-			name:            "no true-up and exceeding user count",
+			nbme:            "no true-up bnd exceeding user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 10,
-			wantErr:         true,
+			bctiveUserCount: 10,
+			wbntErr:         true,
 		},
 		{
-			name:            "no true-up and exceeded user count",
+			nbme:            "no true-up bnd exceeded user count",
 			license:         &license.Info{UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 11,
-			wantErr:         true,
+			bctiveUserCount: 11,
+			wbntErr:         true,
 		},
 
 		{
-			name:            "true-up and not exceeded user count",
-			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 5,
-			wantErr:         false,
+			nbme:            "true-up bnd not exceeded user count",
+			license:         &license.Info{Tbgs: []string{licensing.TrueUpUserCountTbg}, UserCount: 10, ExpiresAt: expiresAt},
+			bctiveUserCount: 5,
+			wbntErr:         fblse,
 		},
 		{
-			name:            "true-up and exceeded user count",
-			license:         &license.Info{Tags: []string{licensing.TrueUpUserCountTag}, UserCount: 10, ExpiresAt: expiresAt},
-			activeUserCount: 15,
-			wantErr:         false,
+			nbme:            "true-up bnd exceeded user count",
+			license:         &license.Info{Tbgs: []string{licensing.TrueUpUserCountTbg}, UserCount: 10, ExpiresAt: expiresAt},
+			bctiveUserCount: 15,
+			wbntErr:         fblse,
 		},
 
 		{
-			name:    "license expired",
+			nbme:    "license expired",
 			license: &license.Info{ExpiresAt: time.Now().Add(-1 * time.Minute)},
-			wantErr: true,
+			wbntErr: true,
 		},
 
 		{
-			name:            "exempt SOAP users",
+			nbme:            "exempt SOAP users",
 			license:         &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Minute)}, // An expired license
-			activeUserCount: 15,                                                                        // Exceeded free plan user count
+			bctiveUserCount: 15,                                                                        // Exceeded free plbn user count
 			mockSetup: func(t *testing.T) {
 				cloud.MockSiteConfig(
 					t,
-					&cloud.SchemaSiteConfig{
-						AuthProviders: &cloud.SchemaAuthProviders{
-							SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{},
+					&cloud.SchembSiteConfig{
+						AuthProviders: &cloud.SchembAuthProviders{
+							SourcegrbphOperbtor: &cloud.SchembAuthProviderSourcegrbphOperbtor{},
 						},
 					},
 				)
 			},
 			spec: &extsvc.AccountSpec{
-				ServiceType: auth.SourcegraphOperatorProviderType,
+				ServiceType: buth.SourcegrbphOperbtorProviderType,
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return test.license, "test-signature", nil
+				return test.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 			users := dbmocks.NewStrictMockUserStore()
-			users.CountFunc.SetDefaultReturn(test.activeUserCount, nil)
+			users.CountFunc.SetDefbultReturn(test.bctiveUserCount, nil)
 
 			db := dbmocks.NewStrictMockDB()
-			db.UsersFunc.SetDefaultReturn(users)
+			db.UsersFunc.SetDefbultReturn(users)
 
 			if test.mockSetup != nil {
 				test.mockSetup(t)
 			}
 
-			err := NewBeforeCreateUserHook()(context.Background(), db, test.spec)
-			if test.wantErr {
-				assert.Error(t, err)
+			err := NewBeforeCrebteUserHook()(context.Bbckground(), db, test.spec)
+			if test.wbntErr {
+				bssert.Error(t, err)
 			} else {
-				assert.NoError(t, err)
+				bssert.NoError(t, err)
 			}
 		})
 	}
 }
 
-func TestEnforcement_AfterCreateUser(t *testing.T) {
+func TestEnforcement_AfterCrebteUser(t *testing.T) {
 	tests := []struct {
-		name         string
+		nbme         string
 		setup        func(t *testing.T)
 		license      *license.Info
 		setSiteAdmin bool
 	}{
 		{
-			name:         "with a valid license",
+			nbme:         "with b vblid license",
 			license:      &license.Info{UserCount: 10},
-			setSiteAdmin: false,
+			setSiteAdmin: fblse,
 		},
 		{
-			name: "dotcom mode should always do nothing",
+			nbme: "dotcom mode should blwbys do nothing",
 			setup: func(t *testing.T) {
-				orig := envvar.SourcegraphDotComMode()
-				envvar.MockSourcegraphDotComMode(true)
-				t.Cleanup(func() {
-					envvar.MockSourcegraphDotComMode(orig)
+				orig := envvbr.SourcegrbphDotComMode()
+				envvbr.MockSourcegrbphDotComMode(true)
+				t.Clebnup(func() {
+					envvbr.MockSourcegrbphDotComMode(orig)
 				})
 			},
-			setSiteAdmin: false,
+			setSiteAdmin: fblse,
 		},
 		{
-			name:         "free license sets new user to be site admin",
+			nbme:         "free license sets new user to be site bdmin",
 			license:      &licensing.GetFreeLicenseInfo().Info,
 			setSiteAdmin: true,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			if test.setup != nil {
 				test.setup(t)
 			}
 
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return test.license, "test-signature", nil
+				return test.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 
 			db, usersStore := mockDBAndStores(t)
 			user := new(types.User)
 
-			hook := NewAfterCreateUserHook()
+			hook := NewAfterCrebteUserHook()
 			if hook != nil {
-				err := NewAfterCreateUserHook()(context.Background(), db, user)
+				err := NewAfterCrebteUserHook()(context.Bbckground(), db, user)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 			}
 
 			if test.setSiteAdmin {
-				mockrequire.CalledOnce(t, usersStore.SetIsSiteAdminFunc)
+				mockrequire.CblledOnce(t, usersStore.SetIsSiteAdminFunc)
 			}
 		})
 	}
 }
 
 func TestEnforcement_PreSetUserIsSiteAdmin(t *testing.T) {
-	// Enable SOAP
-	cloud.MockSiteConfig(t, &cloud.SchemaSiteConfig{
-		AuthProviders: &cloud.SchemaAuthProviders{
-			SourcegraphOperator: &cloud.SchemaAuthProviderSourcegraphOperator{
-				ClientID: "foobar",
+	// Enbble SOAP
+	cloud.MockSiteConfig(t, &cloud.SchembSiteConfig{
+		AuthProviders: &cloud.SchembAuthProviders{
+			SourcegrbphOperbtor: &cloud.SchembAuthProviderSourcegrbphOperbtor{
+				ClientID: "foobbr",
 			},
 		},
 	})
 	defer cloud.MockSiteConfig(t, nil)
 
 	tests := []struct {
-		name        string
+		nbme        string
 		license     *license.Info
 		ctx         context.Context
 		isSiteAdmin bool
-		wantErr     bool
+		wbntErr     bool
 	}{
 		{
-			name:        "promote to site admin with a valid license is OK",
+			nbme:        "promote to site bdmin with b vblid license is OK",
 			license:     &license.Info{ExpiresAt: time.Now().Add(1 * time.Hour)},
-			ctx:         context.Background(),
+			ctx:         context.Bbckground(),
 			isSiteAdmin: true,
-			wantErr:     false,
+			wbntErr:     fblse,
 		},
 		{
-			name:        "revoke site admin with a valid license is OK",
+			nbme:        "revoke site bdmin with b vblid license is OK",
 			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(1 * time.Hour)},
-			ctx:         context.Background(),
-			isSiteAdmin: false,
-			wantErr:     false,
+			ctx:         context.Bbckground(),
+			isSiteAdmin: fblse,
+			wbntErr:     fblse,
 		},
 		{
-			name:        "revoke site admin without a license is not OK",
-			ctx:         context.Background(),
-			isSiteAdmin: false,
-			wantErr:     true,
+			nbme:        "revoke site bdmin without b license is not OK",
+			ctx:         context.Bbckground(),
+			isSiteAdmin: fblse,
+			wbntErr:     true,
 		},
 		{
-			name:        "promote to site admin with expired license is not OK",
+			nbme:        "promote to site bdmin with expired license is not OK",
 			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
-			ctx:         context.Background(),
+			ctx:         context.Bbckground(),
 			isSiteAdmin: true,
-			wantErr:     true,
+			wbntErr:     true,
 		},
 
 		{
-			name:        "promote to site admin with expired license is OK with Sourcegraph operators",
+			nbme:        "promote to site bdmin with expired license is OK with Sourcegrbph operbtors",
 			license:     &license.Info{UserCount: 10, ExpiresAt: time.Now().Add(-1 * time.Hour)},
-			ctx:         actor.WithActor(context.Background(), &actor.Actor{SourcegraphOperator: true}),
+			ctx:         bctor.WithActor(context.Bbckground(), &bctor.Actor{SourcegrbphOperbtor: true}),
 			isSiteAdmin: true,
-			wantErr:     false,
+			wbntErr:     fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
-				return test.license, "test-signature", nil
+				return test.license, "test-signbture", nil
 			}
 			defer func() { licensing.MockGetConfiguredProductLicenseInfo = nil }()
 			err := NewBeforeSetUserIsSiteAdmin()(test.ctx, test.isSiteAdmin)
-			if gotErr := err != nil; gotErr != test.wantErr {
-				t.Errorf("got error %v, want %v", gotErr, test.wantErr)
+			if gotErr := err != nil; gotErr != test.wbntErr {
+				t.Errorf("got error %v, wbnt %v", gotErr, test.wbntErr)
 			}
 		})
 	}
@@ -257,10 +257,10 @@ func mockDBAndStores(t *testing.T) (*dbmocks.MockDB, *dbmocks.MockUserStore) {
 	t.Helper()
 
 	usersStore := dbmocks.NewMockUserStore()
-	usersStore.SetIsSiteAdminFunc.SetDefaultReturn(nil)
+	usersStore.SetIsSiteAdminFunc.SetDefbultReturn(nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(usersStore)
+	db.UsersFunc.SetDefbultReturn(usersStore)
 
 	return db, usersStore
 }

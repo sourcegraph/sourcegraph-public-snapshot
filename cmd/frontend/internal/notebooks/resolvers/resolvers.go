@@ -1,32 +1,32 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/notebooks"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/notebooks"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewResolver(db database.DB) graphqlbackend.NotebooksResolver {
+func NewResolver(db dbtbbbse.DB) grbphqlbbckend.NotebooksResolver {
 	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	db database.DB
+	db dbtbbbse.DB
 }
 
-func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
-	return map[string]graphqlbackend.NodeByIDFunc{
-		"Notebook": func(ctx context.Context, id graphql.ID) (graphqlbackend.Node, error) {
+func (r *Resolver) NodeResolvers() mbp[string]grbphqlbbckend.NodeByIDFunc {
+	return mbp[string]grbphqlbbckend.NodeByIDFunc{
+		"Notebook": func(ctx context.Context, id grbphql.ID) (grbphqlbbckend.Node, error) {
 			return r.NotebookByID(ctx, id)
 		},
 	}
@@ -34,21 +34,21 @@ func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
 
 const notebookIDKind = "Notebook"
 
-func marshalNotebookID(notebookID int64) graphql.ID {
-	return relay.MarshalID(notebookIDKind, notebookID)
+func mbrshblNotebookID(notebookID int64) grbphql.ID {
+	return relby.MbrshblID(notebookIDKind, notebookID)
 }
 
-func unmarshalNotebookID(id graphql.ID) (notebookID int64, err error) {
-	if kind := relay.UnmarshalKind(id); kind != notebookIDKind {
-		err = errors.Errorf("expected graphql ID to have kind %q; got %q", notebookIDKind, kind)
+func unmbrshblNotebookID(id grbphql.ID) (notebookID int64, err error) {
+	if kind := relby.UnmbrshblKind(id); kind != notebookIDKind {
+		err = errors.Errorf("expected grbphql ID to hbve kind %q; got %q", notebookIDKind, kind)
 		return
 	}
-	err = relay.UnmarshalSpec(id, &notebookID)
+	err = relby.UnmbrshblSpec(id, &notebookID)
 	return
 }
 
-func (r *Resolver) NotebookByID(ctx context.Context, id graphql.ID) (graphqlbackend.NotebookResolver, error) {
-	notebookID, err := unmarshalNotebookID(id)
+func (r *Resolver) NotebookByID(ctx context.Context, id grbphql.ID) (grbphqlbbckend.NotebookResolver, error) {
+	notebookID, err := unmbrshblNotebookID(id)
 	if err != nil {
 		return nil, err
 	}
@@ -61,105 +61,105 @@ func (r *Resolver) NotebookByID(ctx context.Context, id graphql.ID) (graphqlback
 	return &notebookResolver{notebook, r.db}, nil
 }
 
-func convertLineRangeInput(inputLineRage *graphqlbackend.CreateFileBlockLineRangeInput) *notebooks.LineRange {
-	if inputLineRage == nil {
+func convertLineRbngeInput(inputLineRbge *grbphqlbbckend.CrebteFileBlockLineRbngeInput) *notebooks.LineRbnge {
+	if inputLineRbge == nil {
 		return nil
 	}
-	return &notebooks.LineRange{StartLine: inputLineRage.StartLine, EndLine: inputLineRage.EndLine}
+	return &notebooks.LineRbnge{StbrtLine: inputLineRbge.StbrtLine, EndLine: inputLineRbge.EndLine}
 }
 
-func convertNotebookBlockInput(inputBlock graphqlbackend.CreateNotebookBlockInputArgs) (*notebooks.NotebookBlock, error) {
+func convertNotebookBlockInput(inputBlock grbphqlbbckend.CrebteNotebookBlockInputArgs) (*notebooks.NotebookBlock, error) {
 	block := &notebooks.NotebookBlock{ID: inputBlock.ID}
 	switch inputBlock.Type {
-	case graphqlbackend.NotebookMarkdownBlockType:
-		if inputBlock.MarkdownInput == nil {
-			return nil, errors.Errorf("markdown block with id %s is missing input", inputBlock.ID)
+	cbse grbphqlbbckend.NotebookMbrkdownBlockType:
+		if inputBlock.MbrkdownInput == nil {
+			return nil, errors.Errorf("mbrkdown block with id %s is missing input", inputBlock.ID)
 		}
-		block.Type = notebooks.NotebookMarkdownBlockType
-		block.MarkdownInput = &notebooks.NotebookMarkdownBlockInput{Text: *inputBlock.MarkdownInput}
-	case graphqlbackend.NotebookQueryBlockType:
+		block.Type = notebooks.NotebookMbrkdownBlockType
+		block.MbrkdownInput = &notebooks.NotebookMbrkdownBlockInput{Text: *inputBlock.MbrkdownInput}
+	cbse grbphqlbbckend.NotebookQueryBlockType:
 		if inputBlock.QueryInput == nil {
 			return nil, errors.Errorf("query block with id %s is missing input", inputBlock.ID)
 		}
 		block.Type = notebooks.NotebookQueryBlockType
 		block.QueryInput = &notebooks.NotebookQueryBlockInput{Text: *inputBlock.QueryInput}
-	case graphqlbackend.NotebookFileBlockType:
+	cbse grbphqlbbckend.NotebookFileBlockType:
 		if inputBlock.FileInput == nil {
 			return nil, errors.Errorf("file block with id %s is missing input", inputBlock.ID)
 		}
 		block.Type = notebooks.NotebookFileBlockType
 		block.FileInput = &notebooks.NotebookFileBlockInput{
-			RepositoryName: inputBlock.FileInput.RepositoryName,
-			FilePath:       inputBlock.FileInput.FilePath,
+			RepositoryNbme: inputBlock.FileInput.RepositoryNbme,
+			FilePbth:       inputBlock.FileInput.FilePbth,
 			Revision:       inputBlock.FileInput.Revision,
-			LineRange:      convertLineRangeInput(inputBlock.FileInput.LineRange),
+			LineRbnge:      convertLineRbngeInput(inputBlock.FileInput.LineRbnge),
 		}
-	case graphqlbackend.NotebookSymbolBlockType:
+	cbse grbphqlbbckend.NotebookSymbolBlockType:
 		if inputBlock.SymbolInput == nil {
 			return nil, errors.Errorf("symbol block with id %s is missing input", inputBlock.ID)
 		}
 		block.Type = notebooks.NotebookSymbolBlockType
 		block.SymbolInput = &notebooks.NotebookSymbolBlockInput{
-			RepositoryName:      inputBlock.SymbolInput.RepositoryName,
-			FilePath:            inputBlock.SymbolInput.FilePath,
+			RepositoryNbme:      inputBlock.SymbolInput.RepositoryNbme,
+			FilePbth:            inputBlock.SymbolInput.FilePbth,
 			Revision:            inputBlock.SymbolInput.Revision,
 			LineContext:         inputBlock.SymbolInput.LineContext,
-			SymbolName:          inputBlock.SymbolInput.SymbolName,
-			SymbolContainerName: inputBlock.SymbolInput.SymbolContainerName,
+			SymbolNbme:          inputBlock.SymbolInput.SymbolNbme,
+			SymbolContbinerNbme: inputBlock.SymbolInput.SymbolContbinerNbme,
 			SymbolKind:          inputBlock.SymbolInput.SymbolKind,
 		}
-	default:
-		return nil, errors.Newf("invalid block type: %s", inputBlock.Type)
+	defbult:
+		return nil, errors.Newf("invblid block type: %s", inputBlock.Type)
 	}
 	return block, nil
 }
 
-func (r *Resolver) CreateNotebook(ctx context.Context, args graphqlbackend.CreateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
+func (r *Resolver) CrebteNotebook(ctx context.Context, brgs grbphqlbbckend.CrebteNotebookInputArgs) (grbphqlbbckend.NotebookResolver, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	notebookInput := args.Notebook
-	blocks := make(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
-	for _, inputBlock := range notebookInput.Blocks {
+	notebookInput := brgs.Notebook
+	blocks := mbke(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
+	for _, inputBlock := rbnge notebookInput.Blocks {
 		block, err := convertNotebookBlockInput(inputBlock)
 		if err != nil {
 			return nil, err
 		}
-		blocks = append(blocks, *block)
+		blocks = bppend(blocks, *block)
 	}
 
 	notebook := &notebooks.Notebook{
 		Title:         notebookInput.Title,
 		Public:        notebookInput.Public,
-		CreatorUserID: user.ID,
-		UpdaterUserID: user.ID,
+		CrebtorUserID: user.ID,
+		UpdbterUserID: user.ID,
 		Blocks:        blocks,
 	}
-	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &notebook.NamespaceUserID, &notebook.NamespaceOrgID)
+	err = grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Notebook.Nbmespbce, &notebook.NbmespbceUserID, &notebook.NbmespbceOrgID)
 	if err != nil {
 		return nil, err
 	}
-	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	err = vblidbteNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	createdNotebook, err := notebooks.Notebooks(r.db).CreateNotebook(ctx, notebook)
+	crebtedNotebook, err := notebooks.Notebooks(r.db).CrebteNotebook(ctx, notebook)
 	if err != nil {
 		return nil, err
 	}
-	return &notebookResolver{createdNotebook, r.db}, nil
+	return &notebookResolver{crebtedNotebook, r.db}, nil
 }
 
-func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.UpdateNotebookInputArgs) (graphqlbackend.NotebookResolver, error) {
+func (r *Resolver) UpdbteNotebook(ctx context.Context, brgs grbphqlbbckend.UpdbteNotebookInputArgs) (grbphqlbbckend.NotebookResolver, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalNotebookID(args.ID)
+	id, err := unmbrshblNotebookID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,52 +170,52 @@ func (r *Resolver) UpdateNotebook(ctx context.Context, args graphqlbackend.Updat
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	err = vblidbteNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	notebookInput := args.Notebook
-	blocks := make(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
-	for _, inputBlock := range notebookInput.Blocks {
+	notebookInput := brgs.Notebook
+	blocks := mbke(notebooks.NotebookBlocks, 0, len(notebookInput.Blocks))
+	for _, inputBlock := rbnge notebookInput.Blocks {
 		block, err := convertNotebookBlockInput(inputBlock)
 		if err != nil {
 			return nil, err
 		}
-		blocks = append(blocks, *block)
+		blocks = bppend(blocks, *block)
 	}
 
 	notebook.Title = notebookInput.Title
 	notebook.Public = notebookInput.Public
 	notebook.Blocks = blocks
-	notebook.UpdaterUserID = user.ID
-	var namespaceUserID, namespaceOrgID int32
-	err = graphqlbackend.UnmarshalNamespaceID(args.Notebook.Namespace, &namespaceUserID, &namespaceOrgID)
+	notebook.UpdbterUserID = user.ID
+	vbr nbmespbceUserID, nbmespbceOrgID int32
+	err = grbphqlbbckend.UnmbrshblNbmespbceID(brgs.Notebook.Nbmespbce, &nbmespbceUserID, &nbmespbceOrgID)
 	if err != nil {
 		return nil, err
 	}
-	notebook.NamespaceUserID = namespaceUserID
-	notebook.NamespaceOrgID = namespaceOrgID
-	// Current user has to have write permissions for both the old and the new namespace.
-	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	notebook.NbmespbceUserID = nbmespbceUserID
+	notebook.NbmespbceOrgID = nbmespbceOrgID
+	// Current user hbs to hbve write permissions for both the old bnd the new nbmespbce.
+	err = vblidbteNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	updatedNotebook, err := store.UpdateNotebook(ctx, notebook)
+	updbtedNotebook, err := store.UpdbteNotebook(ctx, notebook)
 	if err != nil {
 		return nil, err
 	}
-	return &notebookResolver{updatedNotebook, r.db}, nil
+	return &notebookResolver{updbtedNotebook, r.db}, nil
 }
 
-func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.DeleteNotebookArgs) (*graphqlbackend.EmptyResponse, error) {
+func (r *Resolver) DeleteNotebook(ctx context.Context, brgs grbphqlbbckend.DeleteNotebookArgs) (*grbphqlbbckend.EmptyResponse, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	id, err := unmarshalNotebookID(args.ID)
+	id, err := unmbrshblNotebookID(brgs.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +226,7 @@ func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.Delet
 		return nil, err
 	}
 
-	err = validateNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
+	err = vblidbteNotebookWritePermissionsForUser(ctx, r.db, notebook, user.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -236,78 +236,78 @@ func (r *Resolver) DeleteNotebook(ctx context.Context, args graphqlbackend.Delet
 		return nil, err
 	}
 
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }
 
-func marshalNotebookCursor(cursor int64) string {
-	return string(relay.MarshalID("NotebookCursor", cursor))
+func mbrshblNotebookCursor(cursor int64) string {
+	return string(relby.MbrshblID("NotebookCursor", cursor))
 }
 
-func unmarshalNotebookCursor(cursor *string) (int64, error) {
+func unmbrshblNotebookCursor(cursor *string) (int64, error) {
 	if cursor == nil {
 		return 0, nil
 	}
-	var after int64
-	err := relay.UnmarshalSpec(graphql.ID(*cursor), &after)
+	vbr bfter int64
+	err := relby.UnmbrshblSpec(grbphql.ID(*cursor), &bfter)
 	if err != nil {
 		return -1, err
 	}
-	return after, nil
+	return bfter, nil
 }
 
-func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebooksArgs) (graphqlbackend.NotebookConnectionResolver, error) {
-	orderBy := notebooks.NotebooksOrderByUpdatedAt
-	if args.OrderBy == graphqlbackend.NotebookOrderByCreatedAt {
-		orderBy = notebooks.NotebooksOrderByCreatedAt
-	} else if args.OrderBy == graphqlbackend.NotebookOrderByStarCount {
-		orderBy = notebooks.NotebooksOrderByStarCount
+func (r *Resolver) Notebooks(ctx context.Context, brgs grbphqlbbckend.ListNotebooksArgs) (grbphqlbbckend.NotebookConnectionResolver, error) {
+	orderBy := notebooks.NotebooksOrderByUpdbtedAt
+	if brgs.OrderBy == grbphqlbbckend.NotebookOrderByCrebtedAt {
+		orderBy = notebooks.NotebooksOrderByCrebtedAt
+	} else if brgs.OrderBy == grbphqlbbckend.NotebookOrderByStbrCount {
+		orderBy = notebooks.NotebooksOrderByStbrCount
 	}
 
-	// Request one extra to determine if there are more pages
-	newArgs := args
+	// Request one extrb to determine if there bre more pbges
+	newArgs := brgs
 	newArgs.First += 1
 
-	afterCursor, err := unmarshalNotebookCursor(newArgs.After)
+	bfterCursor, err := unmbrshblNotebookCursor(newArgs.After)
 	if err != nil {
 		return nil, err
 	}
 
-	var userID, starredByUserID int32
-	if args.CreatorUserID != nil {
-		userID, err = graphqlbackend.UnmarshalUserID(*args.CreatorUserID)
+	vbr userID, stbrredByUserID int32
+	if brgs.CrebtorUserID != nil {
+		userID, err = grbphqlbbckend.UnmbrshblUserID(*brgs.CrebtorUserID)
 		if err != nil {
 			return nil, err
 		}
 	}
-	if args.StarredByUserID != nil {
-		starredByUserID, err = graphqlbackend.UnmarshalUserID(*args.StarredByUserID)
+	if brgs.StbrredByUserID != nil {
+		stbrredByUserID, err = grbphqlbbckend.UnmbrshblUserID(*brgs.StbrredByUserID)
 		if err != nil {
 			return nil, err
 		}
 	}
-	var query string
-	if args.Query != nil {
-		query = *args.Query
+	vbr query string
+	if brgs.Query != nil {
+		query = *brgs.Query
 	}
 
 	opts := notebooks.ListNotebooksOptions{
 		Query:             query,
-		CreatorUserID:     userID,
-		StarredByUserID:   starredByUserID,
+		CrebtorUserID:     userID,
+		StbrredByUserID:   stbrredByUserID,
 		OrderBy:           orderBy,
-		OrderByDescending: args.Descending,
+		OrderByDescending: brgs.Descending,
 	}
-	pageOpts := notebooks.ListNotebooksPageOptions{First: newArgs.First, After: afterCursor}
+	pbgeOpts := notebooks.ListNotebooksPbgeOptions{First: newArgs.First, After: bfterCursor}
 
-	if args.Namespace != nil {
-		err = graphqlbackend.UnmarshalNamespaceID(*args.Namespace, &opts.NamespaceUserID, &opts.NamespaceOrgID)
+	if brgs.Nbmespbce != nil {
+		err = grbphqlbbckend.UnmbrshblNbmespbceID(*brgs.Nbmespbce, &opts.NbmespbceUserID, &opts.NbmespbceOrgID)
 		if err != nil {
 			return nil, err
 		}
 	}
 
 	store := notebooks.Notebooks(r.db)
-	nbs, err := store.ListNotebooks(ctx, pageOpts, opts)
+	nbs, err := store.ListNotebooks(ctx, pbgeOpts, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -317,79 +317,79 @@ func (r *Resolver) Notebooks(ctx context.Context, args graphqlbackend.ListNotebo
 		return nil, err
 	}
 
-	hasNextPage := false
-	if len(nbs) == int(args.First)+1 {
-		hasNextPage = true
+	hbsNextPbge := fblse
+	if len(nbs) == int(brgs.First)+1 {
+		hbsNextPbge = true
 		nbs = nbs[:len(nbs)-1]
 	}
 
 	return &notebookConnectionResolver{
-		afterCursor: afterCursor,
+		bfterCursor: bfterCursor,
 		notebooks:   r.notebooksToResolvers(nbs),
-		totalCount:  int32(count),
-		hasNextPage: hasNextPage,
+		totblCount:  int32(count),
+		hbsNextPbge: hbsNextPbge,
 	}, nil
 }
 
-func (r *Resolver) notebooksToResolvers(notebooks []*notebooks.Notebook) []graphqlbackend.NotebookResolver {
-	notebookResolvers := make([]graphqlbackend.NotebookResolver, len(notebooks))
-	for idx, notebook := range notebooks {
+func (r *Resolver) notebooksToResolvers(notebooks []*notebooks.Notebook) []grbphqlbbckend.NotebookResolver {
+	notebookResolvers := mbke([]grbphqlbbckend.NotebookResolver, len(notebooks))
+	for idx, notebook := rbnge notebooks {
 		notebookResolvers[idx] = &notebookResolver{notebook, r.db}
 	}
 	return notebookResolvers
 }
 
 type notebookConnectionResolver struct {
-	afterCursor int64
-	notebooks   []graphqlbackend.NotebookResolver
-	totalCount  int32
-	hasNextPage bool
+	bfterCursor int64
+	notebooks   []grbphqlbbckend.NotebookResolver
+	totblCount  int32
+	hbsNextPbge bool
 }
 
-func (n *notebookConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.NotebookResolver {
+func (n *notebookConnectionResolver) Nodes(ctx context.Context) []grbphqlbbckend.NotebookResolver {
 	return n.notebooks
 }
 
-func (n *notebookConnectionResolver) TotalCount(ctx context.Context) int32 {
-	return n.totalCount
+func (n *notebookConnectionResolver) TotblCount(ctx context.Context) int32 {
+	return n.totblCount
 }
 
-func (n *notebookConnectionResolver) PageInfo(ctx context.Context) *graphqlutil.PageInfo {
-	if len(n.notebooks) == 0 || !n.hasNextPage {
-		return graphqlutil.HasNextPage(false)
+func (n *notebookConnectionResolver) PbgeInfo(ctx context.Context) *grbphqlutil.PbgeInfo {
+	if len(n.notebooks) == 0 || !n.hbsNextPbge {
+		return grbphqlutil.HbsNextPbge(fblse)
 	}
-	// The after value (offset) for the next page is computed from the current after value + the number of retrieved notebooks
-	return graphqlutil.NextPageCursor(marshalNotebookCursor(n.afterCursor + int64(len(n.notebooks))))
+	// The bfter vblue (offset) for the next pbge is computed from the current bfter vblue + the number of retrieved notebooks
+	return grbphqlutil.NextPbgeCursor(mbrshblNotebookCursor(n.bfterCursor + int64(len(n.notebooks))))
 }
 
 type notebookResolver struct {
 	notebook *notebooks.Notebook
-	db       database.DB
+	db       dbtbbbse.DB
 }
 
-func (r *notebookResolver) ID() graphql.ID {
-	return marshalNotebookID(r.notebook.ID)
+func (r *notebookResolver) ID() grbphql.ID {
+	return mbrshblNotebookID(r.notebook.ID)
 }
 
 func (r *notebookResolver) Title(ctx context.Context) string {
 	return r.notebook.Title
 }
 
-func (r *notebookResolver) Blocks(ctx context.Context) []graphqlbackend.NotebookBlockResolver {
-	blockResolvers := make([]graphqlbackend.NotebookBlockResolver, 0, len(r.notebook.Blocks))
-	for _, block := range r.notebook.Blocks {
-		blockResolvers = append(blockResolvers, &notebookBlockResolver{block})
+func (r *notebookResolver) Blocks(ctx context.Context) []grbphqlbbckend.NotebookBlockResolver {
+	blockResolvers := mbke([]grbphqlbbckend.NotebookBlockResolver, 0, len(r.notebook.Blocks))
+	for _, block := rbnge r.notebook.Blocks {
+		blockResolvers = bppend(blockResolvers, &notebookBlockResolver{block})
 	}
 	return blockResolvers
 }
 
-func (r *notebookResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	if r.notebook.CreatorUserID == 0 {
+func (r *notebookResolver) Crebtor(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	if r.notebook.CrebtorUserID == 0 {
 		return nil, nil
 	}
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.CreatorUserID)
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.db, r.notebook.CrebtorUserID)
 	if err != nil {
-		// Handle soft-deleted users
+		// Hbndle soft-deleted users
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
@@ -398,13 +398,13 @@ func (r *notebookResolver) Creator(ctx context.Context) (*graphqlbackend.UserRes
 	return user, nil
 }
 
-func (r *notebookResolver) Updater(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	if r.notebook.UpdaterUserID == 0 {
+func (r *notebookResolver) Updbter(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	if r.notebook.UpdbterUserID == 0 {
 		return nil, nil
 	}
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.UpdaterUserID)
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.db, r.notebook.UpdbterUserID)
 	if err != nil {
-		// Handle soft-deleted users
+		// Hbndle soft-deleted users
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
@@ -413,30 +413,30 @@ func (r *notebookResolver) Updater(ctx context.Context) (*graphqlbackend.UserRes
 	return user, nil
 }
 
-func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
-	if r.notebook.NamespaceUserID != 0 {
-		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalUserID(r.notebook.NamespaceUserID))
+func (r *notebookResolver) Nbmespbce(ctx context.Context) (*grbphqlbbckend.NbmespbceResolver, error) {
+	if r.notebook.NbmespbceUserID != 0 {
+		n, err := grbphqlbbckend.NbmespbceByID(ctx, r.db, grbphqlbbckend.MbrshblUserID(r.notebook.NbmespbceUserID))
 		if err != nil {
-			// Handle soft-deleted users
+			// Hbndle soft-deleted users
 			if errcode.IsNotFound(err) {
 				return nil, nil
 			}
 			return nil, err
 		}
-		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+		return &grbphqlbbckend.NbmespbceResolver{Nbmespbce: n}, nil
 	}
-	if r.notebook.NamespaceOrgID != 0 {
-		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalOrgID(r.notebook.NamespaceOrgID))
+	if r.notebook.NbmespbceOrgID != 0 {
+		n, err := grbphqlbbckend.NbmespbceByID(ctx, r.db, grbphqlbbckend.MbrshblOrgID(r.notebook.NbmespbceOrgID))
 		if err != nil {
-			// On Cloud, the user can have access to an org notebook if it is public. But if the user is not a member of
-			// that org, then he does not have access to further information about the org. Instead of returning an error
-			// (which would prevent the user from viewing the notebook) we return an empty namespace.
-			if envvar.SourcegraphDotComMode() && errors.HasType(err, &database.OrgNotFoundError{}) {
+			// On Cloud, the user cbn hbve bccess to bn org notebook if it is public. But if the user is not b member of
+			// thbt org, then he does not hbve bccess to further informbtion bbout the org. Instebd of returning bn error
+			// (which would prevent the user from viewing the notebook) we return bn empty nbmespbce.
+			if envvbr.SourcegrbphDotComMode() && errors.HbsType(err, &dbtbbbse.OrgNotFoundError{}) {
 				return nil, nil
 			}
 			return nil, err
 		}
-		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
+		return &grbphqlbbckend.NbmespbceResolver{Nbmespbce: n}, nil
 	}
 	return nil, nil
 }
@@ -445,85 +445,85 @@ func (r *notebookResolver) Public(ctx context.Context) bool {
 	return r.notebook.Public
 }
 
-func (r *notebookResolver) UpdatedAt(ctx context.Context) gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.notebook.UpdatedAt}
+func (r *notebookResolver) UpdbtedAt(ctx context.Context) gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.notebook.UpdbtedAt}
 }
 
-func (r *notebookResolver) CreatedAt(ctx context.Context) gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.notebook.CreatedAt}
+func (r *notebookResolver) CrebtedAt(ctx context.Context) gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.notebook.CrebtedAt}
 }
 
-func (r *notebookResolver) ViewerCanManage(ctx context.Context) (bool, error) {
+func (r *notebookResolver) ViewerCbnMbnbge(ctx context.Context) (bool, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if errors.Is(err, database.ErrNoCurrentUser) {
-		return false, nil
+	if errors.Is(err, dbtbbbse.ErrNoCurrentUser) {
+		return fblse, nil
 	} else if err != nil {
-		return false, err
+		return fblse, err
 	}
-	return validateNotebookWritePermissionsForUser(ctx, r.db, r.notebook, user.ID) == nil, nil
+	return vblidbteNotebookWritePermissionsForUser(ctx, r.db, r.notebook, user.ID) == nil, nil
 }
 
-func (r *notebookResolver) ViewerHasStarred(ctx context.Context) (bool, error) {
+func (r *notebookResolver) ViewerHbsStbrred(ctx context.Context) (bool, error) {
 	user, err := r.db.Users().GetByCurrentAuthUser(ctx)
-	if errors.Is(err, database.ErrNoCurrentUser) {
-		return false, nil
+	if errors.Is(err, dbtbbbse.ErrNoCurrentUser) {
+		return fblse, nil
 	} else if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	star, err := notebooks.Notebooks(r.db).GetNotebookStar(ctx, r.notebook.ID, user.ID)
-	if errors.Is(err, notebooks.ErrNotebookStarNotFound) {
-		return false, nil
+	stbr, err := notebooks.Notebooks(r.db).GetNotebookStbr(ctx, r.notebook.ID, user.ID)
+	if errors.Is(err, notebooks.ErrNotebookStbrNotFound) {
+		return fblse, nil
 	} else if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	return star != nil, nil
+	return stbr != nil, nil
 }
 
 type notebookBlockResolver struct {
 	block notebooks.NotebookBlock
 }
 
-func (r *notebookBlockResolver) ToMarkdownBlock() (graphqlbackend.MarkdownBlockResolver, bool) {
-	if r.block.Type == notebooks.NotebookMarkdownBlockType {
-		return &markdownBlockResolver{r.block}, true
+func (r *notebookBlockResolver) ToMbrkdownBlock() (grbphqlbbckend.MbrkdownBlockResolver, bool) {
+	if r.block.Type == notebooks.NotebookMbrkdownBlockType {
+		return &mbrkdownBlockResolver{r.block}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *notebookBlockResolver) ToQueryBlock() (graphqlbackend.QueryBlockResolver, bool) {
+func (r *notebookBlockResolver) ToQueryBlock() (grbphqlbbckend.QueryBlockResolver, bool) {
 	if r.block.Type == notebooks.NotebookQueryBlockType {
 		return &queryBlockResolver{r.block}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *notebookBlockResolver) ToFileBlock() (graphqlbackend.FileBlockResolver, bool) {
+func (r *notebookBlockResolver) ToFileBlock() (grbphqlbbckend.FileBlockResolver, bool) {
 	if r.block.Type == notebooks.NotebookFileBlockType {
 		return &fileBlockResolver{r.block}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-func (r *notebookBlockResolver) ToSymbolBlock() (graphqlbackend.SymbolBlockResolver, bool) {
+func (r *notebookBlockResolver) ToSymbolBlock() (grbphqlbbckend.SymbolBlockResolver, bool) {
 	if r.block.Type == notebooks.NotebookSymbolBlockType {
 		return &symbolBlockResolver{r.block}, true
 	}
-	return nil, false
+	return nil, fblse
 }
 
-type markdownBlockResolver struct {
-	// block.type == NotebookMarkdownBlockType
+type mbrkdownBlockResolver struct {
+	// block.type == NotebookMbrkdownBlockType
 	block notebooks.NotebookBlock
 }
 
-func (r *markdownBlockResolver) ID() string {
+func (r *mbrkdownBlockResolver) ID() string {
 	return r.block.ID
 }
 
-func (r *markdownBlockResolver) MarkdownInput() string {
-	return r.block.MarkdownInput.Text
+func (r *mbrkdownBlockResolver) MbrkdownInput() string {
+	return r.block.MbrkdownInput.Text
 }
 
 type queryBlockResolver struct {
@@ -548,7 +548,7 @@ func (r *fileBlockResolver) ID() string {
 	return r.block.ID
 }
 
-func (r *fileBlockResolver) FileInput() graphqlbackend.FileBlockInputResolver {
+func (r *fileBlockResolver) FileInput() grbphqlbbckend.FileBlockInputResolver {
 	return &fileBlockInputResolver{*r.block.FileInput}
 }
 
@@ -556,35 +556,35 @@ type fileBlockInputResolver struct {
 	input notebooks.NotebookFileBlockInput
 }
 
-func (r *fileBlockInputResolver) RepositoryName() string {
-	return r.input.RepositoryName
+func (r *fileBlockInputResolver) RepositoryNbme() string {
+	return r.input.RepositoryNbme
 }
 
-func (r *fileBlockInputResolver) FilePath() string {
-	return r.input.FilePath
+func (r *fileBlockInputResolver) FilePbth() string {
+	return r.input.FilePbth
 }
 
 func (r *fileBlockInputResolver) Revision() *string {
 	return r.input.Revision
 }
 
-func (r *fileBlockInputResolver) LineRange() graphqlbackend.FileBlockLineRangeResolver {
-	if r.input.LineRange == nil {
+func (r *fileBlockInputResolver) LineRbnge() grbphqlbbckend.FileBlockLineRbngeResolver {
+	if r.input.LineRbnge == nil {
 		return nil
 	}
-	return &fileBlockLineRangeResolver{*r.input.LineRange}
+	return &fileBlockLineRbngeResolver{*r.input.LineRbnge}
 }
 
-type fileBlockLineRangeResolver struct {
-	lineRange notebooks.LineRange
+type fileBlockLineRbngeResolver struct {
+	lineRbnge notebooks.LineRbnge
 }
 
-func (r *fileBlockLineRangeResolver) StartLine() int32 {
-	return r.lineRange.StartLine
+func (r *fileBlockLineRbngeResolver) StbrtLine() int32 {
+	return r.lineRbnge.StbrtLine
 }
 
-func (r *fileBlockLineRangeResolver) EndLine() int32 {
-	return r.lineRange.EndLine
+func (r *fileBlockLineRbngeResolver) EndLine() int32 {
+	return r.lineRbnge.EndLine
 }
 
 type symbolBlockResolver struct {
@@ -596,7 +596,7 @@ func (r *symbolBlockResolver) ID() string {
 	return r.block.ID
 }
 
-func (r *symbolBlockResolver) SymbolInput() graphqlbackend.SymbolBlockInputResolver {
+func (r *symbolBlockResolver) SymbolInput() grbphqlbbckend.SymbolBlockInputResolver {
 	return &symbolBlockInputResolver{*r.block.SymbolInput}
 }
 
@@ -604,12 +604,12 @@ type symbolBlockInputResolver struct {
 	input notebooks.NotebookSymbolBlockInput
 }
 
-func (r *symbolBlockInputResolver) RepositoryName() string {
-	return r.input.RepositoryName
+func (r *symbolBlockInputResolver) RepositoryNbme() string {
+	return r.input.RepositoryNbme
 }
 
-func (r *symbolBlockInputResolver) FilePath() string {
-	return r.input.FilePath
+func (r *symbolBlockInputResolver) FilePbth() string {
+	return r.input.FilePbth
 }
 
 func (r *symbolBlockInputResolver) Revision() *string {
@@ -620,12 +620,12 @@ func (r *symbolBlockInputResolver) LineContext() int32 {
 	return r.input.LineContext
 }
 
-func (r *symbolBlockInputResolver) SymbolName() string {
-	return r.input.SymbolName
+func (r *symbolBlockInputResolver) SymbolNbme() string {
+	return r.input.SymbolNbme
 }
 
-func (r *symbolBlockInputResolver) SymbolContainerName() string {
-	return r.input.SymbolContainerName
+func (r *symbolBlockInputResolver) SymbolContbinerNbme() string {
+	return r.input.SymbolContbinerNbme
 }
 
 func (r *symbolBlockInputResolver) SymbolKind() string {

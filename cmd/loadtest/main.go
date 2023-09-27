@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
@@ -9,38 +9,38 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	FrontendHost     = env.Get("LOAD_TEST_FRONTEND_URL", "http://sourcegraph-frontend-internal", "URL to the Sourcegraph frontend host to load test")
-	FrontendPort     = env.Get("loadTestFrontendPort", "80", "Port that the Sourcegraph frontend is listening on")
-	SearchQueriesEnv = env.Get("loadTestSearches", "[]", "Search queries to use in load testing")
-	QueryPeriodMSEnv = env.Get("loadTestSearchPeriod", "2000", "Period of search query issuance (milliseconds). E.g., a value of 200 corresponds to 200ms or 5 QPS")
+vbr (
+	FrontendHost     = env.Get("LOAD_TEST_FRONTEND_URL", "http://sourcegrbph-frontend-internbl", "URL to the Sourcegrbph frontend host to lobd test")
+	FrontendPort     = env.Get("lobdTestFrontendPort", "80", "Port thbt the Sourcegrbph frontend is listening on")
+	SebrchQueriesEnv = env.Get("lobdTestSebrches", "[]", "Sebrch queries to use in lobd testing")
+	QueryPeriodMSEnv = env.Get("lobdTestSebrchPeriod", "2000", "Period of sebrch query issubnce (milliseconds). E.g., b vblue of 200 corresponds to 200ms or 5 QPS")
 )
 
-type GQLSearchVars struct {
+type GQLSebrchVbrs struct {
 	Query string `json:"query"`
 }
 
-func main() {
-	sanitycheck.Pass()
+func mbin() {
+	sbnitycheck.Pbss()
 	if err := run(); err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 }
 
-func frontendURL(thePath string) string {
-	return fmt.Sprintf("%s:%s%s", FrontendHost, FrontendPort, thePath)
+func frontendURL(thePbth string) string {
+	return fmt.Sprintf("%s:%s%s", FrontendHost, FrontendPort, thePbth)
 }
 
 func run() error {
-	var searchQueries []GQLSearchVars
-	if err := json.Unmarshal([]byte(SearchQueriesEnv), &searchQueries); err != nil {
+	vbr sebrchQueries []GQLSebrchVbrs
+	if err := json.Unmbrshbl([]byte(SebrchQueriesEnv), &sebrchQueries); err != nil {
 		return err
 	}
 
@@ -49,105 +49,105 @@ func run() error {
 		return err
 	}
 
-	if len(searchQueries) == 0 {
-		log.Printf("No search queries specified. Hanging indefinitely")
+	if len(sebrchQueries) == 0 {
+		log.Printf("No sebrch queries specified. Hbnging indefinitely")
 		select {}
 	}
 
-	ticker := time.NewTicker(time.Duration(qps) * time.Millisecond)
+	ticker := time.NewTicker(time.Durbtion(qps) * time.Millisecond)
 	for {
-		for _, v := range searchQueries {
+		for _, v := rbnge sebrchQueries {
 			<-ticker.C
-			go func(v GQLSearchVars) {
-				if count, err := search(v); err != nil {
-					log15.Error("Error issuing search query", "query", v.Query, "error", err)
+			go func(v GQLSebrchVbrs) {
+				if count, err := sebrch(v); err != nil {
+					log15.Error("Error issuing sebrch query", "query", v.Query, "error", err)
 				} else {
-					log15.Info("Search results", "query", v.Query, "matchCount", count)
+					log15.Info("Sebrch results", "query", v.Query, "mbtchCount", count)
 				}
 			}(v)
 		}
 	}
 }
 
-func search(v GQLSearchVars) (int, error) {
-	gqlQuery := GraphQLQuery{Query: gqlSearch, Variables: v}
-	b, err := json.Marshal(gqlQuery)
+func sebrch(v GQLSebrchVbrs) (int, error) {
+	gqlQuery := GrbphQLQuery{Query: gqlSebrch, Vbribbles: v}
+	b, err := json.Mbrshbl(gqlQuery)
 	if err != nil {
-		return 0, errors.Errorf("failed to marshal query: %s", err)
+		return 0, errors.Errorf("fbiled to mbrshbl query: %s", err)
 	}
-	resp, err := http.Post(frontendURL("/.api/graphql?Search"), "application/json", bytes.NewReader(b))
+	resp, err := http.Post(frontendURL("/.bpi/grbphql?Sebrch"), "bpplicbtion/json", bytes.NewRebder(b))
 	if err != nil {
 		return 0, errors.Errorf("response error: %s", err)
 	}
 	defer resp.Body.Close()
-	var res GraphQLResponseSearch
+	vbr res GrbphQLResponseSebrch
 	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
 		return 0, errors.Errorf("could not decode response body: %s", err)
 	}
-	return len(res.Data.Search.Results.Results), nil
+	return len(res.Dbtb.Sebrch.Results.Results), nil
 }
 
-type GraphQLResponseSearch struct {
-	Data struct {
-		Search struct {
+type GrbphQLResponseSebrch struct {
+	Dbtb struct {
+		Sebrch struct {
 			Results struct {
-				Results []any `json:"results"`
+				Results []bny `json:"results"`
 			} `json:"results"`
-		} `json:"search"`
-	} `json:"data"`
+		} `json:"sebrch"`
+	} `json:"dbtb"`
 }
 
-type GraphQLQuery struct {
+type GrbphQLQuery struct {
 	Query     string `json:"query"`
-	Variables any    `json:"variables"`
+	Vbribbles bny    `json:"vbribbles"`
 }
 
-const gqlSearch = `query Search(
+const gqlSebrch = `query Sebrch(
 	$query: String!,
 ) {
-	search(query: $query) {
+	sebrch(query: $query) {
 		results {
 			limitHit
 			missing { uri }
 			cloning { uri }
 			timedout { uri }
 			results {
-				__typename
-				... on FileMatch {
+				__typenbme
+				... on FileMbtch {
 					resource
 					limitHit
-					lineMatches {
+					lineMbtches {
 						preview
 						lineNumber
 						offsetAndLengths
 					}
 				}
-				... on CommitSearchResult {
+				... on CommitSebrchResult {
 					refs {
-						name
-						displayName
+						nbme
+						displbyNbme
 						prefix
 						repository { uri }
 					}
 					sourceRefs {
-						name
-						displayName
+						nbme
+						displbyNbme
 						prefix
 						repository { uri }
 					}
-					messagePreview {
-						value
+					messbgePreview {
+						vblue
 						highlights {
 							line
-							character
+							chbrbcter
 							length
 						}
 					}
 					diffPreview {
-						value
+						vblue
 						highlights {
 							line
-							character
+							chbrbcter
 							length
 						}
 					}
@@ -156,19 +156,19 @@ const gqlSearch = `query Search(
 							uri
 						}
 						oid
-						abbreviatedOID
-						author {
+						bbbrevibtedOID
+						buthor {
 							person {
-								displayName
-								avatarURL
+								displbyNbme
+								bvbtbrURL
 							}
-							date
+							dbte
 						}
-						message
+						messbge
 					}
 				}
 			}
-			alert {
+			blert {
 				title
 				description
 				proposedQueries {

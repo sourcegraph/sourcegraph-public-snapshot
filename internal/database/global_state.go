@@ -1,174 +1,174 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type GlobalStateStore interface {
-	Get(context.Context) (GlobalState, error)
-	SiteInitialized(context.Context) (bool, error)
+type GlobblStbteStore interfbce {
+	Get(context.Context) (GlobblStbte, error)
+	SiteInitiblized(context.Context) (bool, error)
 
-	// EnsureInitialized ensures the site is marked as having been initialized. If the site was already
-	// initialized, it does nothing. It returns whether the site was already initialized prior to the
-	// call.
+	// EnsureInitiblized ensures the site is mbrked bs hbving been initiblized. If the site wbs blrebdy
+	// initiblized, it does nothing. It returns whether the site wbs blrebdy initiblized prior to the
+	// cbll.
 	//
-	// 🚨 SECURITY: Initialization is an important security measure. If a new account is created on a
-	// site that is not initialized, and no other accounts exist, it is granted site admin
-	// privileges. If the site *has* been initialized, then a new account is not granted site admin
-	// privileges (even if all other users are deleted). This reduces the risk of (1) a site admin
-	// accidentally deleting all user accounts and opening up their site to any attacker becoming a site
-	// admin and (2) a bug in user account creation code letting attackers create site admin accounts.
-	EnsureInitialized(context.Context) (bool, error)
+	// 🚨 SECURITY: Initiblizbtion is bn importbnt security mebsure. If b new bccount is crebted on b
+	// site thbt is not initiblized, bnd no other bccounts exist, it is grbnted site bdmin
+	// privileges. If the site *hbs* been initiblized, then b new bccount is not grbnted site bdmin
+	// privileges (even if bll other users bre deleted). This reduces the risk of (1) b site bdmin
+	// bccidentblly deleting bll user bccounts bnd opening up their site to bny bttbcker becoming b site
+	// bdmin bnd (2) b bug in user bccount crebtion code letting bttbckers crebte site bdmin bccounts.
+	EnsureInitiblized(context.Context) (bool, error)
 }
 
-func GlobalStateWith(other basestore.ShareableStore) GlobalStateStore {
-	return &globalStateStore{Store: basestore.NewWithHandle(other.Handle())}
+func GlobblStbteWith(other bbsestore.ShbrebbleStore) GlobblStbteStore {
+	return &globblStbteStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-type GlobalState struct {
+type GlobblStbte struct {
 	SiteID      string
-	Initialized bool // whether the initial site admin account has been created
+	Initiblized bool // whether the initibl site bdmin bccount hbs been crebted
 }
 
-func scanGlobalState(s dbutil.Scanner) (value GlobalState, err error) {
-	err = s.Scan(&value.SiteID, &value.Initialized)
+func scbnGlobblStbte(s dbutil.Scbnner) (vblue GlobblStbte, err error) {
+	err = s.Scbn(&vblue.SiteID, &vblue.Initiblized)
 	return
 }
 
-var scanFirstGlobalState = basestore.NewFirstScanner(scanGlobalState)
+vbr scbnFirstGlobblStbte = bbsestore.NewFirstScbnner(scbnGlobblStbte)
 
-type globalStateStore struct {
-	*basestore.Store
+type globblStbteStore struct {
+	*bbsestore.Store
 }
 
-func (g *globalStateStore) Transact(ctx context.Context) (*globalStateStore, error) {
-	tx, err := g.Store.Transact(ctx)
+func (g *globblStbteStore) Trbnsbct(ctx context.Context) (*globblStbteStore, error) {
+	tx, err := g.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	return &globalStateStore{Store: tx}, nil
+	return &globblStbteStore{Store: tx}, nil
 }
 
-func (g *globalStateStore) Get(ctx context.Context) (GlobalState, error) {
-	if err := g.initializeDBState(ctx); err != nil {
-		return GlobalState{}, err
+func (g *globblStbteStore) Get(ctx context.Context) (GlobblStbte, error) {
+	if err := g.initiblizeDBStbte(ctx); err != nil {
+		return GlobblStbte{}, err
 	}
 
-	state, found, err := scanFirstGlobalState(g.Query(ctx, sqlf.Sprintf(globalStateGetQuery)))
+	stbte, found, err := scbnFirstGlobblStbte(g.Query(ctx, sqlf.Sprintf(globblStbteGetQuery)))
 	if err != nil {
-		return GlobalState{}, err
+		return GlobblStbte{}, err
 	}
 	if !found {
-		return GlobalState{}, errors.New("expected global_state to be initialized - no rows found")
+		return GlobblStbte{}, errors.New("expected globbl_stbte to be initiblized - no rows found")
 	}
 
-	return state, nil
+	return stbte, nil
 }
 
-var globalStateSiteIDFragment = `
-SELECT site_id FROM global_state ORDER BY ctid LIMIT 1
+vbr globblStbteSiteIDFrbgment = `
+SELECT site_id FROM globbl_stbte ORDER BY ctid LIMIT 1
 `
 
-var globalStateInitializedFragment = `
-SELECT coalesce(bool_or(gs.initialized), false) FROM global_state gs
+vbr globblStbteInitiblizedFrbgment = `
+SELECT coblesce(bool_or(gs.initiblized), fblse) FROM globbl_stbte gs
 `
 
-var globalStateGetQuery = fmt.Sprintf(`
-SELECT (%s) AS site_id, (%s) AS initialized
+vbr globblStbteGetQuery = fmt.Sprintf(`
+SELECT (%s) AS site_id, (%s) AS initiblized
 `,
-	globalStateSiteIDFragment,
-	globalStateInitializedFragment,
+	globblStbteSiteIDFrbgment,
+	globblStbteInitiblizedFrbgment,
 )
 
-func (g *globalStateStore) SiteInitialized(ctx context.Context) (bool, error) {
-	alreadyInitialized, _, err := basestore.ScanFirstBool(g.Query(ctx, sqlf.Sprintf(globalStateSiteInitializedQuery)))
-	return alreadyInitialized, err
+func (g *globblStbteStore) SiteInitiblized(ctx context.Context) (bool, error) {
+	blrebdyInitiblized, _, err := bbsestore.ScbnFirstBool(g.Query(ctx, sqlf.Sprintf(globblStbteSiteInitiblizedQuery)))
+	return blrebdyInitiblized, err
 }
 
-var globalStateSiteInitializedQuery = globalStateInitializedFragment
+vbr globblStbteSiteInitiblizedQuery = globblStbteInitiblizedFrbgment
 
-func (g *globalStateStore) EnsureInitialized(ctx context.Context) (_ bool, err error) {
-	if err := g.initializeDBState(ctx); err != nil {
-		return false, err
+func (g *globblStbteStore) EnsureInitiblized(ctx context.Context) (_ bool, err error) {
+	if err := g.initiblizeDBStbte(ctx); err != nil {
+		return fblse, err
 	}
 
-	tx, err := g.Transact(ctx)
+	tx, err := g.Trbnsbct(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	alreadyInitialized, err := tx.SiteInitialized(ctx)
+	blrebdyInitiblized, err := tx.SiteInitiblized(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
-	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateEnsureInitializedQuery)); err != nil {
-		return false, err
+	if err := tx.Exec(ctx, sqlf.Sprintf(globblStbteEnsureInitiblizedQuery)); err != nil {
+		return fblse, err
 	}
 
-	return alreadyInitialized, nil
+	return blrebdyInitiblized, nil
 }
 
-var globalStateEnsureInitializedQuery = `
-UPDATE global_state SET initialized = true
+vbr globblStbteEnsureInitiblizedQuery = `
+UPDATE globbl_stbte SET initiblized = true
 `
 
-func (g *globalStateStore) initializeDBState(ctx context.Context) (err error) {
-	tx, err := g.Transact(ctx)
+func (g *globblStbteStore) initiblizeDBStbte(ctx context.Context) (err error) {
+	tx, err := g.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
-	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStateUpdateQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(globblStbteInitiblizeDBStbteUpdbteQuery)); err != nil {
 		return err
 	}
-	if err := tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStatePruneQuery)); err != nil {
+	if err := tx.Exec(ctx, sqlf.Sprintf(globblStbteInitiblizeDBStbtePruneQuery)); err != nil {
 		return err
 	}
 
-	siteID, err := uuid.NewRandom()
+	siteID, err := uuid.NewRbndom()
 	if err != nil {
 		return err
 	}
-	return tx.Exec(ctx, sqlf.Sprintf(globalStateInitializeDBStateInsertIfNotExistsQuery, siteID))
+	return tx.Exec(ctx, sqlf.Sprintf(globblStbteInitiblizeDBStbteInsertIfNotExistsQuery, siteID))
 }
 
-var globalStateInitializeDBStateUpdateQuery = fmt.Sprintf(`
-UPDATE global_state SET initialized = (%s)
+vbr globblStbteInitiblizeDBStbteUpdbteQuery = fmt.Sprintf(`
+UPDATE globbl_stbte SET initiblized = (%s)
 `,
-	globalStateInitializedFragment,
+	globblStbteInitiblizedFrbgment,
 )
 
-var globalStateInitializeDBStatePruneQuery = fmt.Sprintf(`
-DELETE FROM global_state WHERE site_id NOT IN (%s)
+vbr globblStbteInitiblizeDBStbtePruneQuery = fmt.Sprintf(`
+DELETE FROM globbl_stbte WHERE site_id NOT IN (%s)
 `,
-	globalStateSiteIDFragment,
+	globblStbteSiteIDFrbgment,
 )
 
-var globalStateInitializeDBStateInsertIfNotExistsQuery = `
-INSERT INTO global_state(
+vbr globblStbteInitiblizeDBStbteInsertIfNotExistsQuery = `
+INSERT INTO globbl_stbte(
 	site_id,
-	initialized
+	initiblized
 )
 SELECT
 	%s AS site_id,
 	EXISTS (
 		SELECT 1
 		FROM users
-		WHERE deleted_at IS NULL
-	) AS initialized
+		WHERE deleted_bt IS NULL
+	) AS initiblized
 WHERE
 	NOT EXISTS (
-		SELECT 1 FROM global_state
+		SELECT 1 FROM globbl_stbte
 	)
 `

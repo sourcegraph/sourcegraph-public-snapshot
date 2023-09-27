@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"fmt"
@@ -7,186 +7,186 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/gorilla/mux"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/gorillb/mux"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/handlerutil"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/hbndlerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// handleStreamBlame returns a HTTP handler that streams back the results of running
-// git blame with the --incremental flag. It will stream back to the client the most
-// recent hunks first and will gradually reach the oldests, or not if we timeout
-// before that.
-func handleStreamBlame(logger log.Logger, db database.DB, gitserverClient gitserver.Client) http.HandlerFunc {
+// hbndleStrebmBlbme returns b HTTP hbndler thbt strebms bbck the results of running
+// git blbme with the --incrementbl flbg. It will strebm bbck to the client the most
+// recent hunks first bnd will grbdublly rebch the oldests, or not if we timeout
+// before thbt.
+func hbndleStrebmBlbme(logger log.Logger, db dbtbbbse.DB, gitserverClient gitserver.Client) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		flags := featureflag.FromContext(r.Context())
-		if !flags.GetBoolOr("enable-streaming-git-blame", false) {
-			w.WriteHeader(404)
+		flbgs := febtureflbg.FromContext(r.Context())
+		if !flbgs.GetBoolOr("enbble-strebming-git-blbme", fblse) {
+			w.WriteHebder(404)
 			return
 		}
-		tr, ctx := trace.New(r.Context(), "blame.Stream")
+		tr, ctx := trbce.New(r.Context(), "blbme.Strebm")
 		defer tr.End()
 		r = r.WithContext(ctx)
 
-		if _, ok := mux.Vars(r)["Repo"]; !ok {
-			w.WriteHeader(http.StatusUnprocessableEntity)
+		if _, ok := mux.Vbrs(r)["Repo"]; !ok {
+			w.WriteHebder(http.StbtusUnprocessbbleEntity)
 			return
 		}
 
-		repo, commitID, err := handlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vars(r))
+		repo, commitID, err := hbndlerutil.GetRepoAndRev(r.Context(), logger, db, mux.Vbrs(r))
 		if err != nil {
-			if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-				w.WriteHeader(http.StatusNotFound)
-			} else if errors.HasType(err, &gitserver.RepoNotCloneableErr{}) && errcode.IsNotFound(err) {
-				w.WriteHeader(http.StatusNotFound)
+			if errors.HbsType(err, &gitdombin.RevisionNotFoundError{}) {
+				w.WriteHebder(http.StbtusNotFound)
+			} else if errors.HbsType(err, &gitserver.RepoNotClonebbleErr{}) && errcode.IsNotFound(err) {
+				w.WriteHebder(http.StbtusNotFound)
 			} else if errcode.IsNotFound(err) || errcode.IsBlocked(err) {
-				w.WriteHeader(http.StatusNotFound)
-			} else if errcode.IsUnauthorized(err) {
-				w.WriteHeader(http.StatusUnauthorized)
+				w.WriteHebder(http.StbtusNotFound)
+			} else if errcode.IsUnbuthorized(err) {
+				w.WriteHebder(http.StbtusUnbuthorized)
 			} else {
-				w.WriteHeader(http.StatusInternalServerError)
+				w.WriteHebder(http.StbtusInternblServerError)
 			}
 			return
 		}
 
-		requestedPath := mux.Vars(r)["Path"]
-		streamWriter, err := streamhttp.NewWriter(w)
+		requestedPbth := mux.Vbrs(r)["Pbth"]
+		strebmWriter, err := strebmhttp.NewWriter(w)
 		if err != nil {
 			tr.SetError(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
-		// Log events to trace
-		streamWriter.StatHook = func(stat streamhttp.WriterStat) {
-			attrs := []attribute.KeyValue{
-				attribute.String("streamhttp.Event", stat.Event),
-				attribute.Int("bytes", stat.Bytes),
-				attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
+		// Log events to trbce
+		strebmWriter.StbtHook = func(stbt strebmhttp.WriterStbt) {
+			bttrs := []bttribute.KeyVblue{
+				bttribute.String("strebmhttp.Event", stbt.Event),
+				bttribute.Int("bytes", stbt.Bytes),
+				bttribute.Int64("durbtion_ms", stbt.Durbtion.Milliseconds()),
 			}
-			if stat.Error != nil {
-				attrs = append(attrs, trace.Error(stat.Error))
+			if stbt.Error != nil {
+				bttrs = bppend(bttrs, trbce.Error(stbt.Error))
 			}
-			tr.AddEvent("write", attrs...)
+			tr.AddEvent("write", bttrs...)
 		}
 
-		requestedPath = strings.TrimPrefix(requestedPath, "/")
+		requestedPbth = strings.TrimPrefix(requestedPbth, "/")
 
-		hunkReader, err := gitserverClient.StreamBlameFile(r.Context(), authz.DefaultSubRepoPermsChecker, repo.Name, requestedPath, &gitserver.BlameOptions{
+		hunkRebder, err := gitserverClient.StrebmBlbmeFile(r.Context(), buthz.DefbultSubRepoPermsChecker, repo.Nbme, requestedPbth, &gitserver.BlbmeOptions{
 			NewestCommit: commitID,
 		})
 		if err != nil {
 			tr.SetError(err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
-		defer hunkReader.Close()
+		defer hunkRebder.Close()
 
-		parentsCache := map[api.CommitID][]api.CommitID{}
+		pbrentsCbche := mbp[bpi.CommitID][]bpi.CommitID{}
 
 		for {
-			h, err := hunkReader.Read()
+			h, err := hunkRebder.Rebd()
 			if errors.Is(err, io.EOF) {
-				streamWriter.Event("done", map[string]any{})
+				strebmWriter.Event("done", mbp[string]bny{})
 				return
 			} else if err != nil {
 				tr.SetError(err)
-				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+				http.Error(w, html.EscbpeString(err.Error()), http.StbtusInternblServerError)
 				return
 			}
 
-			var parents []api.CommitID
-			if p, ok := parentsCache[h.CommitID]; ok {
-				parents = p
+			vbr pbrents []bpi.CommitID
+			if p, ok := pbrentsCbche[h.CommitID]; ok {
+				pbrents = p
 			} else {
-				c, err := gitserverClient.GetCommit(ctx, authz.DefaultSubRepoPermsChecker, repo.Name, h.CommitID, gitserver.ResolveRevisionOptions{})
+				c, err := gitserverClient.GetCommit(ctx, buthz.DefbultSubRepoPermsChecker, repo.Nbme, h.CommitID, gitserver.ResolveRevisionOptions{})
 				if err != nil {
 					tr.SetError(err)
-					http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+					http.Error(w, html.EscbpeString(err.Error()), http.StbtusInternblServerError)
 					return
 				}
-				parents = c.Parents
-				parentsCache[h.CommitID] = c.Parents
+				pbrents = c.Pbrents
+				pbrentsCbche[h.CommitID] = c.Pbrents
 			}
 
-			user, err := db.Users().GetByVerifiedEmail(ctx, h.Author.Email)
+			user, err := db.Users().GetByVerifiedEmbil(ctx, h.Author.Embil)
 			if err != nil && !errcode.IsNotFound(err) {
 				tr.SetError(err)
-				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+				http.Error(w, html.EscbpeString(err.Error()), http.StbtusInternblServerError)
 				return
 			}
 
-			var blameHunkUserResponse *BlameHunkUserResponse
+			vbr blbmeHunkUserResponse *BlbmeHunkUserResponse
 			if user != nil {
-				displayName := &user.DisplayName
-				if *displayName == "" {
-					displayName = nil
+				displbyNbme := &user.DisplbyNbme
+				if *displbyNbme == "" {
+					displbyNbme = nil
 				}
-				avatarURL := &user.AvatarURL
-				if *avatarURL == "" {
-					avatarURL = nil
+				bvbtbrURL := &user.AvbtbrURL
+				if *bvbtbrURL == "" {
+					bvbtbrURL = nil
 				}
 
-				blameHunkUserResponse = &BlameHunkUserResponse{
-					Username:    user.Username,
-					DisplayName: displayName,
-					AvatarURL:   avatarURL,
+				blbmeHunkUserResponse = &BlbmeHunkUserResponse{
+					Usernbme:    user.Usernbme,
+					DisplbyNbme: displbyNbme,
+					AvbtbrURL:   bvbtbrURL,
 				}
 			}
 
-			blameResponse := BlameHunkResponse{
-				StartLine: h.StartLine,
+			blbmeResponse := BlbmeHunkResponse{
+				StbrtLine: h.StbrtLine,
 				EndLine:   h.EndLine,
 				CommitID:  h.CommitID,
 				Author:    h.Author,
-				Message:   h.Message,
-				Filename:  h.Filename,
-				Commit: BlameHunkCommitResponse{
-					Parents: parents,
-					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Name, h.CommitID),
+				Messbge:   h.Messbge,
+				Filenbme:  h.Filenbme,
+				Commit: BlbmeHunkCommitResponse{
+					Pbrents: pbrents,
+					URL:     fmt.Sprintf("%s/-/commit/%s", repo.Nbme, h.CommitID),
 				},
-				User: blameHunkUserResponse,
+				User: blbmeHunkUserResponse,
 			}
 
-			if err := streamWriter.Event("hunk", []BlameHunkResponse{blameResponse}); err != nil {
+			if err := strebmWriter.Event("hunk", []BlbmeHunkResponse{blbmeResponse}); err != nil {
 				tr.SetError(err)
-				http.Error(w, html.EscapeString(err.Error()), http.StatusInternalServerError)
+				http.Error(w, html.EscbpeString(err.Error()), http.StbtusInternblServerError)
 				return
 			}
 		}
 	}
 }
 
-type BlameHunkResponse struct {
-	api.CommitID `json:"commitID"`
+type BlbmeHunkResponse struct {
+	bpi.CommitID `json:"commitID"`
 
-	StartLine int                     `json:"startLine"` // 1-indexed start line number
+	StbrtLine int                     `json:"stbrtLine"` // 1-indexed stbrt line number
 	EndLine   int                     `json:"endLine"`   // 1-indexed end line number
-	Author    gitdomain.Signature     `json:"author"`
-	Message   string                  `json:"message"`
-	Filename  string                  `json:"filename"`
-	Commit    BlameHunkCommitResponse `json:"commit"`
-	User      *BlameHunkUserResponse  `json:"user,omitempty"`
+	Author    gitdombin.Signbture     `json:"buthor"`
+	Messbge   string                  `json:"messbge"`
+	Filenbme  string                  `json:"filenbme"`
+	Commit    BlbmeHunkCommitResponse `json:"commit"`
+	User      *BlbmeHunkUserResponse  `json:"user,omitempty"`
 }
 
-type BlameHunkCommitResponse struct {
-	Parents []api.CommitID `json:"parents"`
+type BlbmeHunkCommitResponse struct {
+	Pbrents []bpi.CommitID `json:"pbrents"`
 	URL     string         `json:"url"`
 }
 
-type BlameHunkUserResponse struct {
-	Username    string  `json:"username"`
-	DisplayName *string `json:"displayName"`
-	AvatarURL   *string `json:"avatarURL"`
+type BlbmeHunkUserResponse struct {
+	Usernbme    string  `json:"usernbme"`
+	DisplbyNbme *string `json:"displbyNbme"`
+	AvbtbrURL   *string `json:"bvbtbrURL"`
 }

@@ -1,108 +1,108 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegrbph/go-lbngserver/pkg/lsp"
 )
 
-type LocationResolver interface {
+type LocbtionResolver interfbce {
 	Resource() *GitTreeEntryResolver
-	Range() *rangeResolver
+	Rbnge() *rbngeResolver
 	URL(ctx context.Context) (string, error)
-	CanonicalURL() string
+	CbnonicblURL() string
 }
 
-type locationResolver struct {
+type locbtionResolver struct {
 	resource *GitTreeEntryResolver
-	lspRange *lsp.Range
+	lspRbnge *lsp.Rbnge
 }
 
-var _ LocationResolver = &locationResolver{}
+vbr _ LocbtionResolver = &locbtionResolver{}
 
-func NewLocationResolver(resource *GitTreeEntryResolver, lspRange *lsp.Range) LocationResolver {
-	return &locationResolver{
+func NewLocbtionResolver(resource *GitTreeEntryResolver, lspRbnge *lsp.Rbnge) LocbtionResolver {
+	return &locbtionResolver{
 		resource: resource,
-		lspRange: lspRange,
+		lspRbnge: lspRbnge,
 	}
 }
 
-func (r *locationResolver) Resource() *GitTreeEntryResolver { return r.resource }
+func (r *locbtionResolver) Resource() *GitTreeEntryResolver { return r.resource }
 
-func (r *locationResolver) Range() *rangeResolver {
-	if r.lspRange == nil {
+func (r *locbtionResolver) Rbnge() *rbngeResolver {
+	if r.lspRbnge == nil {
 		return nil
 	}
-	return &rangeResolver{*r.lspRange}
+	return &rbngeResolver{*r.lspRbnge}
 }
 
-func (r *locationResolver) URL(ctx context.Context) (string, error) {
+func (r *locbtionResolver) URL(ctx context.Context) (string, error) {
 	url, err := r.resource.URL(ctx)
 	if err != nil {
 		return "", err
 	}
-	return r.urlPath(url), nil
+	return r.urlPbth(url), nil
 }
 
-func (r *locationResolver) CanonicalURL() string {
-	url := r.resource.CanonicalURL()
-	return r.urlPath(url)
+func (r *locbtionResolver) CbnonicblURL() string {
+	url := r.resource.CbnonicblURL()
+	return r.urlPbth(url)
 }
 
-func (r *locationResolver) urlPath(prefix string) string {
+func (r *locbtionResolver) urlPbth(prefix string) string {
 	url := prefix
-	if r.lspRange != nil {
-		url += "?L" + r.Range().urlFragment()
+	if r.lspRbnge != nil {
+		url += "?L" + r.Rbnge().urlFrbgment()
 	}
 	return url
 }
 
-type RangeResolver interface {
-	Start() PositionResolver
+type RbngeResolver interfbce {
+	Stbrt() PositionResolver
 	End() PositionResolver
 }
 
-type rangeResolver struct{ lspRange lsp.Range }
+type rbngeResolver struct{ lspRbnge lsp.Rbnge }
 
-var _ RangeResolver = &rangeResolver{}
+vbr _ RbngeResolver = &rbngeResolver{}
 
-func NewRangeResolver(lspRange lsp.Range) RangeResolver {
-	return &rangeResolver{
-		lspRange: lspRange,
+func NewRbngeResolver(lspRbnge lsp.Rbnge) RbngeResolver {
+	return &rbngeResolver{
+		lspRbnge: lspRbnge,
 	}
 }
 
-func (r *rangeResolver) Start() PositionResolver { return r.start() }
-func (r *rangeResolver) End() PositionResolver   { return r.end() }
+func (r *rbngeResolver) Stbrt() PositionResolver { return r.stbrt() }
+func (r *rbngeResolver) End() PositionResolver   { return r.end() }
 
-func (r *rangeResolver) start() *positionResolver { return &positionResolver{r.lspRange.Start} }
-func (r *rangeResolver) end() *positionResolver   { return &positionResolver{r.lspRange.End} }
+func (r *rbngeResolver) stbrt() *positionResolver { return &positionResolver{r.lspRbnge.Stbrt} }
+func (r *rbngeResolver) end() *positionResolver   { return &positionResolver{r.lspRbnge.End} }
 
-func (r *rangeResolver) urlFragment() string {
-	if r.lspRange.Start == r.lspRange.End {
-		return r.start().urlFragment(false)
+func (r *rbngeResolver) urlFrbgment() string {
+	if r.lspRbnge.Stbrt == r.lspRbnge.End {
+		return r.stbrt().urlFrbgment(fblse)
 	}
-	hasCharacter := r.lspRange.Start.Character != 0 || r.lspRange.End.Character != 0
-	return r.start().urlFragment(hasCharacter) + "-" + r.end().urlFragment(hasCharacter)
+	hbsChbrbcter := r.lspRbnge.Stbrt.Chbrbcter != 0 || r.lspRbnge.End.Chbrbcter != 0
+	return r.stbrt().urlFrbgment(hbsChbrbcter) + "-" + r.end().urlFrbgment(hbsChbrbcter)
 }
 
-type PositionResolver interface {
+type PositionResolver interfbce {
 	Line() int32
-	Character() int32
+	Chbrbcter() int32
 }
 
 type positionResolver struct{ pos lsp.Position }
 
-var _ PositionResolver = &positionResolver{}
+vbr _ PositionResolver = &positionResolver{}
 
 func (r *positionResolver) Line() int32      { return int32(r.pos.Line) }
-func (r *positionResolver) Character() int32 { return int32(r.pos.Character) }
+func (r *positionResolver) Chbrbcter() int32 { return int32(r.pos.Chbrbcter) }
 
-func (r *positionResolver) urlFragment(forceIncludeCharacter bool) string {
-	if !forceIncludeCharacter && r.pos.Character == 0 {
-		return strconv.Itoa(r.pos.Line + 1)
+func (r *positionResolver) urlFrbgment(forceIncludeChbrbcter bool) string {
+	if !forceIncludeChbrbcter && r.pos.Chbrbcter == 0 {
+		return strconv.Itob(r.pos.Line + 1)
 	}
-	return fmt.Sprintf("%d:%d", r.pos.Line+1, r.pos.Character+1)
+	return fmt.Sprintf("%d:%d", r.pos.Line+1, r.pos.Chbrbcter+1)
 }

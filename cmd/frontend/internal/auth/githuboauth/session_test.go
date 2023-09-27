@@ -1,4 +1,4 @@
-package githuboauth
+pbckbge githubobuth
 
 import (
 	"context"
@@ -7,140 +7,140 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/dbvecgh/go-spew/spew"
 	githublogin "github.com/dghubble/gologin/github"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-github/github"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	githubsvc "github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	githubsvc "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func init() {
-	spew.Config.DisablePointerAddresses = true
+	spew.Config.DisbblePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
 }
 
-func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
-	ghURL, _ := url.Parse("https://github.com")
+func TestSessionIssuerHelper_GetOrCrebteUser(t *testing.T) {
+	ghURL, _ := url.Pbrse("https://github.com")
 	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
 	clientID := "client-id"
 
-	// Top-level mock data
+	// Top-level mock dbtb
 	//
-	// authSaveableUsers that will be accepted by auth.GetAndSaveUser
-	authSaveableUsers := map[string]int32{
-		"alice": 1,
+	// buthSbvebbleUsers thbt will be bccepted by buth.GetAndSbveUser
+	buthSbvebbleUsers := mbp[string]int32{
+		"blice": 1,
 	}
 
 	type input struct {
 		description     string
 		ghUser          *github.User
-		ghUserEmails    []*githubsvc.UserEmail
+		ghUserEmbils    []*githubsvc.UserEmbil
 		ghUserOrgs      []*githubsvc.Org
-		ghUserTeams     []*githubsvc.Team
-		ghUserEmailsErr error
+		ghUserTebms     []*githubsvc.Tebm
+		ghUserEmbilsErr error
 		ghUserOrgsErr   error
-		ghUserTeamsErr  error
-		allowSignup     bool
-		allowOrgs       []string
-		allowOrgsMap    map[string][]string
+		ghUserTebmsErr  error
+		bllowSignup     bool
+		bllowOrgs       []string
+		bllowOrgsMbp    mbp[string][]string
 	}
-	cases := []struct {
+	cbses := []struct {
 		inputs        []input
-		expActor      *actor.Actor
+		expActor      *bctor.Actor
 		expErr        bool
-		expAuthUserOp *auth.GetAndSaveUserOp
+		expAuthUserOp *buth.GetAndSbveUserOp
 	}{
 		{
 			inputs: []input{{
-				description: "ghUser, verified email -> session created",
-				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				description: "ghUser, verified embil -> session crebted",
+				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("blice")},
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
 			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			expActor: &bctor.Actor{UID: 1},
+			expAuthUserOp: &buth.GetAndSbveUserOp{
+				UserProps:       u("blice", "blice@exbmple.com", true),
+				ExternblAccount: bcct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, primary email not verified but another is -> no session created",
-				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example1.com",
-					Primary:  true,
-					Verified: false,
+				description: "ghUser, primbry embil not verified but bnother is -> no session crebted",
+				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("blice")},
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple1.com",
+					Primbry:  true,
+					Verified: fblse,
 				}, {
-					Email:    "alice@example2.com",
-					Primary:  false,
-					Verified: false,
+					Embil:    "blice@exbmple2.com",
+					Primbry:  fblse,
+					Verified: fblse,
 				}, {
-					Email:    "alice@example3.com",
-					Primary:  false,
+					Embil:    "blice@exbmple3.com",
+					Primbry:  fblse,
 					Verified: true,
 				}},
 			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example3.com", true),
-				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			expActor: &bctor.Actor{UID: 1},
+			expAuthUserOp: &buth.GetAndSbveUserOp{
+				UserProps:       u("blice", "blice@exbmple3.com", true),
+				ExternblAccount: bcct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, no emails -> no session created",
-				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
+				description: "ghUser, no embils -> no session crebted",
+				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("blice")},
 			}, {
-				description:     "ghUser, email fetching err -> no session created",
-				ghUser:          &github.User{ID: github.Int64(101), Login: github.String("alice")},
-				ghUserEmailsErr: errors.New("x"),
+				description:     "ghUser, embil fetching err -> no session crebted",
+				ghUser:          &github.User{ID: github.Int64(101), Login: github.String("blice")},
+				ghUserEmbilsErr: errors.New("x"),
 			}, {
-				description: "ghUser, plenty of emails but none verified -> no session created",
-				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("alice")},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example1.com",
-					Primary:  true,
-					Verified: false,
+				description: "ghUser, plenty of embils but none verified -> no session crebted",
+				ghUser:      &github.User{ID: github.Int64(101), Login: github.String("blice")},
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple1.com",
+					Primbry:  true,
+					Verified: fblse,
 				}, {
-					Email:    "alice@example2.com",
-					Primary:  false,
-					Verified: false,
+					Embil:    "blice@exbmple2.com",
+					Primbry:  fblse,
+					Verified: fblse,
 				}, {
-					Email:    "alice@example3.com",
-					Primary:  false,
-					Verified: false,
+					Embil:    "blice@exbmple3.com",
+					Primbry:  fblse,
+					Verified: fblse,
 				}},
 			}, {
-				description: "no ghUser -> no session created",
+				description: "no ghUser -> no session crebted",
 			}, {
-				description: "ghUser, verified email, unsaveable -> no session created",
+				description: "ghUser, verified embil, unsbvebble -> no session crebted",
 				ghUser:      &github.User{ID: github.Int64(102), Login: github.String("bob")},
 			}},
 			expErr: true,
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, verified email, not in allowed orgs -> no session created",
-				allowOrgs:   []string{"sourcegraph"},
+				description: "ghUser, verified embil, not in bllowed orgs -> no session crebted",
+				bllowOrgs:   []string{"sourcegrbph"},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
-					Login: github.String("alice"),
+					Login: github.String("blice"),
 				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
 			}},
@@ -148,20 +148,20 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, verified email, error getting user orgs -> no session created",
-				allowOrgs:   []string{"sourcegraph"},
+				description: "ghUser, verified embil, error getting user orgs -> no session crebted",
+				bllowOrgs:   []string{"sourcegrbph"},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
-					Login: github.String("alice"),
+					Login: github.String("blice"),
 				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
 				ghUserOrgs: []*githubsvc.Org{
-					{Login: "sourcegraph"},
-					{Login: "example"},
+					{Login: "sourcegrbph"},
+					{Login: "exbmple"},
 				},
 				ghUserOrgsErr: errors.New("boom"),
 			}},
@@ -169,144 +169,144 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 		},
 		{
 			inputs: []input{{
-				description: "ghUser, verified email, allowed orgs -> session created",
-				allowOrgs:   []string{"sourcegraph"},
+				description: "ghUser, verified embil, bllowed orgs -> session crebted",
+				bllowOrgs:   []string{"sourcegrbph"},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
-					Login: github.String("alice"),
+					Login: github.String("blice"),
 				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
 				ghUserOrgs: []*githubsvc.Org{
-					{Login: "sourcegraph"},
-					{Login: "example"},
+					{Login: "sourcegrbph"},
+					{Login: "exbmple"},
 				},
 			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			expActor: &bctor.Actor{UID: 1},
+			expAuthUserOp: &buth.GetAndSbveUserOp{
+				UserProps:       u("blice", "blice@exbmple.com", true),
+				ExternblAccount: bcct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 		{
 			inputs: []input{{
-				description:  "ghUser, verified email, team name matches, org name doesn't match -> no session created",
-				allowOrgsMap: map[string][]string{"org1": {"team1"}},
+				description:  "ghUser, verified embil, tebm nbme mbtches, org nbme doesn't mbtch -> no session crebted",
+				bllowOrgsMbp: mbp[string][]string{"org1": {"tebm1"}},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
-					Login: github.String("alice"),
+					Login: github.String("blice"),
 				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
-				ghUserTeams: []*githubsvc.Team{
-					{Name: "team1", Organization: &githubsvc.Org{Login: "org2"}},
+				ghUserTebms: []*githubsvc.Tebm{
+					{Nbme: "tebm1", Orgbnizbtion: &githubsvc.Org{Login: "org2"}},
 				},
 			}},
 			expErr: true,
 		},
 		{
 			inputs: []input{{
-				description:  "ghUser, verified email, team name doesn't match, org name matches -> no session created",
-				allowOrgsMap: map[string][]string{"org1": {"team1"}},
+				description:  "ghUser, verified embil, tebm nbme doesn't mbtch, org nbme mbtches -> no session crebted",
+				bllowOrgsMbp: mbp[string][]string{"org1": {"tebm1"}},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
-					Login: github.String("alice"),
+					Login: github.String("blice"),
 				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
-				ghUserTeams: []*githubsvc.Team{
-					{Name: "team2", Organization: &githubsvc.Org{Login: "org1"}},
+				ghUserTebms: []*githubsvc.Tebm{
+					{Nbme: "tebm2", Orgbnizbtion: &githubsvc.Org{Login: "org1"}},
 				},
 			}},
 			expErr: true,
 		},
 		{
 			inputs: []input{{
-				description:  "ghUser, verified email, in allowed org > teams -> session created",
-				allowOrgsMap: map[string][]string{"org1": {"team1"}},
+				description:  "ghUser, verified embil, in bllowed org > tebms -> session crebted",
+				bllowOrgsMbp: mbp[string][]string{"org1": {"tebm1"}},
 				ghUser: &github.User{
 					ID:    github.Int64(101),
-					Login: github.String("alice"),
+					Login: github.String("blice"),
 				},
-				ghUserEmails: []*githubsvc.UserEmail{{
-					Email:    "alice@example.com",
-					Primary:  true,
+				ghUserEmbils: []*githubsvc.UserEmbil{{
+					Embil:    "blice@exbmple.com",
+					Primbry:  true,
 					Verified: true,
 				}},
-				ghUserTeams: []*githubsvc.Team{
-					{Name: "team1", Organization: &githubsvc.Org{Login: "org1"}},
+				ghUserTebms: []*githubsvc.Tebm{
+					{Nbme: "tebm1", Orgbnizbtion: &githubsvc.Org{Login: "org1"}},
 				},
 			}},
-			expActor: &actor.Actor{UID: 1},
-			expAuthUserOp: &auth.GetAndSaveUserOp{
-				UserProps:       u("alice", "alice@example.com", true),
-				ExternalAccount: acct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
+			expActor: &bctor.Actor{UID: 1},
+			expAuthUserOp: &buth.GetAndSbveUserOp{
+				UserProps:       u("blice", "blice@exbmple.com", true),
+				ExternblAccount: bcct(extsvc.TypeGitHub, "https://github.com/", clientID, "101"),
 			},
 		},
 	}
-	for _, c := range cases {
-		for _, ci := range c.inputs {
+	for _, c := rbnge cbses {
+		for _, ci := rbnge c.inputs {
 			c, ci := c, ci
 			t.Run(ci.description, func(t *testing.T) {
-				githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
-					return ci.ghUserEmails, ci.ghUserEmailsErr
+				githubsvc.MockGetAuthenticbtedUserEmbils = func(ctx context.Context) ([]*githubsvc.UserEmbil, error) {
+					return ci.ghUserEmbils, ci.ghUserEmbilsErr
 				}
-				githubsvc.MockGetAuthenticatedUserOrgs.FnMock = func(ctx context.Context) ([]*githubsvc.Org, bool, int, error) {
-					return ci.ghUserOrgs, false, 1, ci.ghUserOrgsErr
+				githubsvc.MockGetAuthenticbtedUserOrgs.FnMock = func(ctx context.Context) ([]*githubsvc.Org, bool, int, error) {
+					return ci.ghUserOrgs, fblse, 1, ci.ghUserOrgsErr
 				}
-				githubsvc.MockGetAuthenticatedUserTeams = func(ctx context.Context, page int) ([]*githubsvc.Team, bool, int, error) {
-					return ci.ghUserTeams, false, 0, ci.ghUserTeamsErr
+				githubsvc.MockGetAuthenticbtedUserTebms = func(ctx context.Context, pbge int) ([]*githubsvc.Tebm, bool, int, error) {
+					return ci.ghUserTebms, fblse, 0, ci.ghUserTebmsErr
 				}
-				var gotAuthUserOp *auth.GetAndSaveUserOp
-				auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
+				vbr gotAuthUserOp *buth.GetAndSbveUserOp
+				buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
 					if gotAuthUserOp != nil {
-						t.Fatal("GetAndSaveUser called more than once")
+						t.Fbtbl("GetAndSbveUser cblled more thbn once")
 					}
-					op.ExternalAccountData = extsvc.AccountData{} // ignore AccountData value
+					op.ExternblAccountDbtb = extsvc.AccountDbtb{} // ignore AccountDbtb vblue
 					gotAuthUserOp = &op
 
-					if uid, ok := authSaveableUsers[op.UserProps.Username]; ok {
+					if uid, ok := buthSbvebbleUsers[op.UserProps.Usernbme]; ok {
 						return uid, "", nil
 					}
-					return 0, "safeErr", errors.New("auth.GetAndSaveUser error")
+					return 0, "sbfeErr", errors.New("buth.GetAndSbveUser error")
 				}
 				defer func() {
-					auth.MockGetAndSaveUser = nil
-					githubsvc.MockGetAuthenticatedUserEmails = nil
-					githubsvc.MockGetAuthenticatedUserTeams = nil
-					githubsvc.MockGetAuthenticatedUserOrgs.FnMock = nil
+					buth.MockGetAndSbveUser = nil
+					githubsvc.MockGetAuthenticbtedUserEmbils = nil
+					githubsvc.MockGetAuthenticbtedUserTebms = nil
+					githubsvc.MockGetAuthenticbtedUserOrgs.FnMock = nil
 				}()
 
-				ctx := githublogin.WithUser(context.Background(), ci.ghUser)
+				ctx := githublogin.WithUser(context.Bbckground(), ci.ghUser)
 				s := &sessionIssuerHelper{
 					CodeHost:     codeHost,
 					clientID:     clientID,
-					allowSignup:  ci.allowSignup,
-					allowOrgs:    ci.allowOrgs,
-					allowOrgsMap: ci.allowOrgsMap,
+					bllowSignup:  ci.bllowSignup,
+					bllowOrgs:    ci.bllowOrgs,
+					bllowOrgsMbp: ci.bllowOrgsMbp,
 				}
 
-				tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-				actr, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
-				if got, exp := actr, c.expActor; !reflect.DeepEqual(got, exp) {
-					t.Errorf("expected actor %v, got %v", exp, got)
+				tok := &obuth2.Token{AccessToken: "dummy-vblue-thbt-isnt-relevbnt-to-unit-correctness"}
+				bctr, _, err := s.GetOrCrebteUser(ctx, tok, "", "", "")
+				if got, exp := bctr, c.expActor; !reflect.DeepEqubl(got, exp) {
+					t.Errorf("expected bctor %v, got %v", exp, got)
 				}
 
 				if c.expErr && err == nil {
-					t.Errorf("expected err %v, but was nil", c.expErr)
+					t.Errorf("expected err %v, but wbs nil", c.expErr)
 				} else if !c.expErr && err != nil {
-					t.Errorf("expected no error, but was %v", err)
+					t.Errorf("expected no error, but wbs %v", err)
 				}
-				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqual(got, exp) {
+				if got, exp := gotAuthUserOp, c.expAuthUserOp; !reflect.DeepEqubl(got, exp) {
 					t.Error(cmp.Diff(got, exp))
 				}
 			})
@@ -314,168 +314,168 @@ func TestSessionIssuerHelper_GetOrCreateUser(t *testing.T) {
 	}
 }
 
-func TestSessionIssuerHelper_SignupMatchesSecondaryAccount(t *testing.T) {
-	githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
-		return []*githubsvc.UserEmail{
+func TestSessionIssuerHelper_SignupMbtchesSecondbryAccount(t *testing.T) {
+	githubsvc.MockGetAuthenticbtedUserEmbils = func(ctx context.Context) ([]*githubsvc.UserEmbil, error) {
+		return []*githubsvc.UserEmbil{
 			{
-				Email:    "primary@example.com",
-				Primary:  true,
+				Embil:    "primbry@exbmple.com",
+				Primbry:  true,
 				Verified: true,
 			},
 			{
-				Email:    "secondary@example.com",
-				Primary:  false,
+				Embil:    "secondbry@exbmple.com",
+				Primbry:  fblse,
 				Verified: true,
 			},
 		}, nil
 	}
-	// We just want to make sure that we end up getting to the secondary email
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.CreateIfNotExist {
-			// We should not get here as we should hit the second email address
-			// before trying again with creation enabled.
-			t.Fatal("Should not get here")
+	// We just wbnt to mbke sure thbt we end up getting to the secondbry embil
+	buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+		if op.CrebteIfNotExist {
+			// We should not get here bs we should hit the second embil bddress
+			// before trying bgbin with crebtion enbbled.
+			t.Fbtbl("Should not get here")
 		}
-		// Mock the second email address matching
-		if op.UserProps.Email == "secondary@example.com" {
+		// Mock the second embil bddress mbtching
+		if op.UserProps.Embil == "secondbry@exbmple.com" {
 			return 1, "", nil
 		}
-		return 0, "no match", errors.New("no match")
+		return 0, "no mbtch", errors.New("no mbtch")
 	}
 	defer func() {
-		githubsvc.MockGetAuthenticatedUserEmails = nil
-		auth.MockGetAndSaveUser = nil
+		githubsvc.MockGetAuthenticbtedUserEmbils = nil
+		buth.MockGetAndSbveUser = nil
 	}()
 
-	ghURL, _ := url.Parse("https://github.com")
+	ghURL, _ := url.Pbrse("https://github.com")
 	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
 	clientID := "client-id"
 	ghUser := &github.User{
 		ID:    github.Int64(101),
-		Login: github.String("alice"),
+		Login: github.String("blice"),
 	}
 
-	ctx := githublogin.WithUser(context.Background(), ghUser)
+	ctx := githublogin.WithUser(context.Bbckground(), ghUser)
 	s := &sessionIssuerHelper{
 		CodeHost:    codeHost,
 		clientID:    clientID,
-		allowSignup: true,
-		allowOrgs:   nil,
+		bllowSignup: true,
+		bllowOrgs:   nil,
 	}
-	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	tok := &obuth2.Token{AccessToken: "dummy-vblue-thbt-isnt-relevbnt-to-unit-correctness"}
+	_, _, err := s.GetOrCrebteUser(ctx, tok, "", "", "")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func TestSessionIssuerHelper_SignupFailsWithLastError(t *testing.T) {
-	githubsvc.MockGetAuthenticatedUserEmails = func(ctx context.Context) ([]*githubsvc.UserEmail, error) {
-		return []*githubsvc.UserEmail{
+func TestSessionIssuerHelper_SignupFbilsWithLbstError(t *testing.T) {
+	githubsvc.MockGetAuthenticbtedUserEmbils = func(ctx context.Context) ([]*githubsvc.UserEmbil, error) {
+		return []*githubsvc.UserEmbil{
 			{
-				Email:    "primary@example.com",
-				Primary:  true,
+				Embil:    "primbry@exbmple.com",
+				Primbry:  true,
 				Verified: true,
 			},
 			{
-				Email:    "secondary@example.com",
-				Primary:  false,
+				Embil:    "secondbry@exbmple.com",
+				Primbry:  fblse,
 				Verified: true,
 			},
 		}, nil
 	}
-	errorMessage := "could not create new user account, license limit has been reached"
+	errorMessbge := "could not crebte new user bccount, license limit hbs been rebched"
 
-	// We just want to make sure that we end up getting to the signup part
-	auth.MockGetAndSaveUser = func(ctx context.Context, op auth.GetAndSaveUserOp) (userID int32, safeErrMsg string, err error) {
-		if op.CreateIfNotExist {
-			// We should not get here as we should hit the second email address
-			// before trying again with creation enabled.
-			return 0, errorMessage, errors.New(errorMessage)
+	// We just wbnt to mbke sure thbt we end up getting to the signup pbrt
+	buth.MockGetAndSbveUser = func(ctx context.Context, op buth.GetAndSbveUserOp) (userID int32, sbfeErrMsg string, err error) {
+		if op.CrebteIfNotExist {
+			// We should not get here bs we should hit the second embil bddress
+			// before trying bgbin with crebtion enbbled.
+			return 0, errorMessbge, errors.New(errorMessbge)
 		}
-		return 0, "no match", errors.New("no match")
+		return 0, "no mbtch", errors.New("no mbtch")
 	}
 	defer func() {
-		githubsvc.MockGetAuthenticatedUserEmails = nil
-		auth.MockGetAndSaveUser = nil
+		githubsvc.MockGetAuthenticbtedUserEmbils = nil
+		buth.MockGetAndSbveUser = nil
 	}()
 
-	ghURL, _ := url.Parse("https://github.com")
+	ghURL, _ := url.Pbrse("https://github.com")
 	codeHost := extsvc.NewCodeHost(ghURL, extsvc.TypeGitHub)
 	clientID := "client-id"
 	ghUser := &github.User{
 		ID:    github.Int64(101),
-		Login: github.String("alice"),
+		Login: github.String("blice"),
 	}
 
-	ctx := githublogin.WithUser(context.Background(), ghUser)
+	ctx := githublogin.WithUser(context.Bbckground(), ghUser)
 	s := &sessionIssuerHelper{
 		CodeHost:    codeHost,
 		clientID:    clientID,
-		allowSignup: true,
-		allowOrgs:   nil,
+		bllowSignup: true,
+		bllowOrgs:   nil,
 	}
-	tok := &oauth2.Token{AccessToken: "dummy-value-that-isnt-relevant-to-unit-correctness"}
-	_, _, err := s.GetOrCreateUser(ctx, tok, "", "", "")
+	tok := &obuth2.Token{AccessToken: "dummy-vblue-thbt-isnt-relevbnt-to-unit-correctness"}
+	_, _, err := s.GetOrCrebteUser(ctx, tok, "", "", "")
 	if err == nil {
-		t.Fatal("expected error, got nil")
+		t.Fbtbl("expected error, got nil")
 	}
-	if err.Error() != errorMessage {
-		t.Fatalf("expected error message to be %s, got %s", errorMessage, err.Error())
+	if err.Error() != errorMessbge {
+		t.Fbtblf("expected error messbge to be %s, got %s", errorMessbge, err.Error())
 	}
 }
 
-func TestVerifyUserOrgs_UserHasMoreThan100Orgs(t *testing.T) {
-	// mock calls to get user orgs
-	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = make(map[int][]*githubsvc.Org, 2)
-	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock[1] = generate100Orgs(1)
-	githubsvc.MockGetAuthenticatedUserOrgs.PagesMock[2] = generate100Orgs(101)
+func TestVerifyUserOrgs_UserHbsMoreThbn100Orgs(t *testing.T) {
+	// mock cblls to get user orgs
+	githubsvc.MockGetAuthenticbtedUserOrgs.PbgesMock = mbke(mbp[int][]*githubsvc.Org, 2)
+	githubsvc.MockGetAuthenticbtedUserOrgs.PbgesMock[1] = generbte100Orgs(1)
+	githubsvc.MockGetAuthenticbtedUserOrgs.PbgesMock[2] = generbte100Orgs(101)
 
 	defer func() {
-		githubsvc.MockGetAuthenticatedUserOrgs.PagesMock = nil
+		githubsvc.MockGetAuthenticbtedUserOrgs.PbgesMock = nil
 	}()
 
 	s := &sessionIssuerHelper{
 		CodeHost:     nil,
 		clientID:     "clientID",
-		allowSignup:  true,
-		allowOrgs:    []string{"1337"},
-		allowOrgsMap: nil,
+		bllowSignup:  true,
+		bllowOrgs:    []string{"1337"},
+		bllowOrgsMbp: nil,
 	}
 
-	allowed := s.verifyUserOrgs(context.Background(), nil)
-	if allowed {
-		t.Fatal("User doesn't have an org he is allowed into, but verifyUserOrgs returned true")
+	bllowed := s.verifyUserOrgs(context.Bbckground(), nil)
+	if bllowed {
+		t.Fbtbl("User doesn't hbve bn org he is bllowed into, but verifyUserOrgs returned true")
 	}
 
-	s.allowOrgs = append(s.allowOrgs, "123")
+	s.bllowOrgs = bppend(s.bllowOrgs, "123")
 
-	allowed = s.verifyUserOrgs(context.Background(), nil)
-	if !allowed {
-		t.Fatal("User has an org he is allowed into, but verifyUserOrgs returned false")
+	bllowed = s.verifyUserOrgs(context.Bbckground(), nil)
+	if !bllowed {
+		t.Fbtbl("User hbs bn org he is bllowed into, but verifyUserOrgs returned fblse")
 	}
 }
 
-func generate100Orgs(startIdx int) (orgs []*githubsvc.Org) {
-	for i := startIdx; i < startIdx+100; i++ {
-		orgs = append(orgs, &githubsvc.Org{Login: strconv.Itoa(i)})
+func generbte100Orgs(stbrtIdx int) (orgs []*githubsvc.Org) {
+	for i := stbrtIdx; i < stbrtIdx+100; i++ {
+		orgs = bppend(orgs, &githubsvc.Org{Login: strconv.Itob(i)})
 	}
 	return
 }
 
-func u(username, email string, emailIsVerified bool) database.NewUser {
-	return database.NewUser{
-		Username:        username,
-		Email:           email,
-		EmailIsVerified: emailIsVerified,
+func u(usernbme, embil string, embilIsVerified bool) dbtbbbse.NewUser {
+	return dbtbbbse.NewUser{
+		Usernbme:        usernbme,
+		Embil:           embil,
+		EmbilIsVerified: embilIsVerified,
 	}
 }
 
-func acct(serviceType, serviceID, clientID, accountID string) extsvc.AccountSpec {
+func bcct(serviceType, serviceID, clientID, bccountID string) extsvc.AccountSpec {
 	return extsvc.AccountSpec{
 		ServiceType: serviceType,
 		ServiceID:   serviceID,
 		ClientID:    clientID,
-		AccountID:   accountID,
+		AccountID:   bccountID,
 	}
 }

@@ -1,88 +1,88 @@
-package testing
+pbckbge testing
 
 import (
 	"encoding/json"
 	"fmt"
 	"testing"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-const TestRawBatchSpec = `{
-  "name": "my-unique-name",
+const TestRbwBbtchSpec = `{
+  "nbme": "my-unique-nbme",
   "description": "My description",
   "on": [
-    {"repositoriesMatchingQuery": "lang:go func main"},
-    {"repository": "github.com/sourcegraph/src-cli"}
+    {"repositoriesMbtchingQuery": "lbng:go func mbin"},
+    {"repository": "github.com/sourcegrbph/src-cli"}
   ],
   "steps": [
     {
-      "run": "echo 'foobar'",
-      "container": "alpine",
+      "run": "echo 'foobbr'",
+      "contbiner": "blpine",
       "env": [
-		{ "PATH": "/work/foobar:$PATH" },
+		{ "PATH": "/work/foobbr:$PATH" },
 		"FOO"
 	  ]
     }
   ],
-  "changesetTemplate": {
+  "chbngesetTemplbte": {
     "title": "Hello World",
-    "body": "My first batch change!",
-    "branch": "hello-world",
+    "body": "My first bbtch chbnge!",
+    "brbnch": "hello-world",
     "commit": {
-      "message": "Append Hello World to all README.md files"
+      "messbge": "Append Hello World to bll README.md files"
     },
-    "published": false
+    "published": fblse
   }
 }`
 
-const TestRawBatchSpecYAML = `
-name: my-unique-name
+const TestRbwBbtchSpecYAML = `
+nbme: my-unique-nbme
 description: My description
 'on':
-- repositoriesMatchingQuery: lang:go func main
-- repository: github.com/sourcegraph/src-cli
+- repositoriesMbtchingQuery: lbng:go func mbin
+- repository: github.com/sourcegrbph/src-cli
 steps:
-- run: echo 'foobar'
-  container: alpine
+- run: echo 'foobbr'
+  contbiner: blpine
   env:
-    - PATH: "/work/foobar:$PATH"
+    - PATH: "/work/foobbr:$PATH"
     - FOO
-changesetTemplate:
+chbngesetTemplbte:
   title: Hello World
-  body: My first batch change!
-  branch: hello-world
+  body: My first bbtch chbnge!
+  brbnch: hello-world
   commit:
-    message: Append Hello World to all README.md files
-  published: false
+    messbge: Append Hello World to bll README.md files
+  published: fblse
 `
 
-func BuildRawBatchSpecWithImportChangesets(t *testing.T, imports []batcheslib.ImportChangeset) string {
+func BuildRbwBbtchSpecWithImportChbngesets(t *testing.T, imports []bbtcheslib.ImportChbngeset) string {
 	t.Helper()
 
-	spec := batcheslib.BatchSpec{
-		Name:             "test-batch-change",
+	spec := bbtcheslib.BbtchSpec{
+		Nbme:             "test-bbtch-chbnge",
 		Description:      "only importing",
-		ImportChangesets: imports,
+		ImportChbngesets: imports,
 	}
 
-	marshaledRawSpec, err := json.Marshal(spec)
+	mbrshbledRbwSpec, err := json.Mbrshbl(spec)
 	if err != nil {
-		t.Fatalf("failed to marshal BatchSpec: %s", err)
+		t.Fbtblf("fbiled to mbrshbl BbtchSpec: %s", err)
 	}
 
-	return string(marshaledRawSpec)
+	return string(mbrshbledRbwSpec)
 }
 
-var ChangesetSpecDiffStat = &diff.Stat{Added: 3, Deleted: 3}
+vbr ChbngesetSpecDiffStbt = &diff.Stbt{Added: 3, Deleted: 3}
 
-const ChangesetSpecAuthorEmail = "mary@example.com"
+const ChbngesetSpecAuthorEmbil = "mbry@exbmple.com"
 
-var ChangesetSpecDiff = []byte(`diff --git INSTALL.md INSTALL.md
-index e5af166..d44c3fc 100644
+vbr ChbngesetSpecDiff = []byte(`diff --git INSTALL.md INSTALL.md
+index e5bf166..d44c3fc 100644
 --- INSTALL.md
 +++ INSTALL.md
 @@ -3,10 +3,10 @@
@@ -96,74 +96,74 @@ index e5af166..d44c3fc 100644
 -Line 7
 -Line 8
 +Another Line 7
-+Foobar Line 8
++Foobbr Line 8
  Line 9
  Line 10
 `)
 
-var baseChangesetSpecGitBranch = batcheslib.ChangesetSpec{
-	BaseRef: "refs/heads/master",
+vbr bbseChbngesetSpecGitBrbnch = bbtcheslib.ChbngesetSpec{
+	BbseRef: "refs/hebds/mbster",
 
-	HeadRef: "refs/heads/my-branch",
+	HebdRef: "refs/hebds/my-brbnch",
 	Title:   "the title",
 	Body:    "the body of the PR",
 
-	Published: batcheslib.PublishedValue{Val: false},
+	Published: bbtcheslib.PublishedVblue{Vbl: fblse},
 
-	Commits: []batcheslib.GitCommitDescription{
+	Commits: []bbtcheslib.GitCommitDescription{
 		{
 			Version:     2,
-			Message:     "git commit message\n\nand some more content in a second paragraph.",
-			Diff:        ChangesetSpecDiff,
-			AuthorName:  "Mary McButtons",
-			AuthorEmail: ChangesetSpecAuthorEmail,
+			Messbge:     "git commit messbge\n\nbnd some more content in b second pbrbgrbph.",
+			Diff:        ChbngesetSpecDiff,
+			AuthorNbme:  "Mbry McButtons",
+			AuthorEmbil: ChbngesetSpecAuthorEmbil,
 		},
 	},
 }
 
-func NewRawChangesetSpecGitBranch(repo graphql.ID, baseRev string) string {
-	spec := baseChangesetSpecGitBranch
-	spec.BaseRepository = string(repo)
-	spec.BaseRev = baseRev
-	spec.HeadRepository = string(repo)
+func NewRbwChbngesetSpecGitBrbnch(repo grbphql.ID, bbseRev string) string {
+	spec := bbseChbngesetSpecGitBrbnch
+	spec.BbseRepository = string(repo)
+	spec.BbseRev = bbseRev
+	spec.HebdRepository = string(repo)
 
-	rawSpec, err := json.Marshal(spec)
+	rbwSpec, err := json.Mbrshbl(spec)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
-	return string(rawSpec)
+	return string(rbwSpec)
 }
 
-func NewPublishedRawChangesetSpecGitBranch(repo graphql.ID, baseRev string, published batcheslib.PublishedValue) string {
-	spec := baseChangesetSpecGitBranch
-	spec.BaseRepository = string(repo)
-	spec.BaseRev = baseRev
-	spec.HeadRepository = string(repo)
+func NewPublishedRbwChbngesetSpecGitBrbnch(repo grbphql.ID, bbseRev string, published bbtcheslib.PublishedVblue) string {
+	spec := bbseChbngesetSpecGitBrbnch
+	spec.BbseRepository = string(repo)
+	spec.BbseRev = bbseRev
+	spec.HebdRepository = string(repo)
 
 	spec.Published = published
 
-	rawSpec, err := json.Marshal(spec)
+	rbwSpec, err := json.Mbrshbl(spec)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
-	return string(rawSpec)
+	return string(rbwSpec)
 }
 
-func NewRawChangesetSpecExisting(repo graphql.ID, externalID string) string {
+func NewRbwChbngesetSpecExisting(repo grbphql.ID, externblID string) string {
 	tmpl := `{
-		"baseRepository": %q,
-		"externalID": %q
+		"bbseRepository": %q,
+		"externblID": %q
 	}`
 
-	return fmt.Sprintf(tmpl, repo, externalID)
+	return fmt.Sprintf(tmpl, repo, externblID)
 }
 
-func MarshalJSON(t testing.TB, v any) string {
+func MbrshblJSON(t testing.TB, v bny) string {
 	t.Helper()
 
-	bs, err := json.Marshal(v)
+	bs, err := json.Mbrshbl(v)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return string(bs)

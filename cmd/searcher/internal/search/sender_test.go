@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
@@ -6,148 +6,148 @@ import (
 	"testing"
 	"testing/quick"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
 )
 
-func TestLimitedStream(t *testing.T) {
-	cases := []struct {
+func TestLimitedStrebm(t *testing.T) {
+	cbses := []struct {
 		limit   int
-		inputs  []protocol.FileMatch
-		outputs []protocol.FileMatch
+		inputs  []protocol.FileMbtch
+		outputs []protocol.FileMbtch
 	}{{
 		limit: 1,
-		inputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		inputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 		}},
-		outputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		outputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 		}},
 	}, {
 		limit: 1,
-		inputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 2),
+		inputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 2),
 			}},
 		}},
-		outputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		outputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 			LimitHit: true,
 		}},
 	}, {
 		limit: 2,
-		inputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		inputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 		}, {
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 2),
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 2),
 			}},
 		}},
-		outputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		outputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 		}, {
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 			LimitHit: true,
 		}},
 	}, {
 		limit: 2,
-		inputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		inputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}, {
-				Ranges: make([]protocol.Range, 2),
+				Rbnges: mbke([]protocol.Rbnge, 2),
 			}},
 		}},
-		outputs: []protocol.FileMatch{{
-			ChunkMatches: []protocol.ChunkMatch{{
-				Ranges: make([]protocol.Range, 1),
+		outputs: []protocol.FileMbtch{{
+			ChunkMbtches: []protocol.ChunkMbtch{{
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}, {
-				Ranges: make([]protocol.Range, 1),
+				Rbnges: mbke([]protocol.Rbnge, 1),
 			}},
 			LimitHit: true,
 		}},
 	}, {
 		limit:   1,
-		inputs:  make([]protocol.FileMatch, 2),
-		outputs: make([]protocol.FileMatch, 1),
+		inputs:  mbke([]protocol.FileMbtch, 2),
+		outputs: mbke([]protocol.FileMbtch, 1),
 	}}
 
-	for _, tt := range cases {
+	for _, tt := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			ctx := context.Background()
-			var got []protocol.FileMatch
-			_, _, s := newLimitedStream(ctx, tt.limit, func(m protocol.FileMatch) {
-				got = append(got, m)
+			ctx := context.Bbckground()
+			vbr got []protocol.FileMbtch
+			_, _, s := newLimitedStrebm(ctx, tt.limit, func(m protocol.FileMbtch) {
+				got = bppend(got, m)
 			})
 
-			for _, input := range tt.inputs {
+			for _, input := rbnge tt.inputs {
 				s.Send(input)
 			}
 
-			require.Equal(t, tt.outputs, got)
+			require.Equbl(t, tt.outputs, got)
 		})
 	}
 
-	t.Run("parallel", func(t *testing.T) {
-		quick.Check(func(matchSizes [][]uint16, limit uint16) bool {
-			inputs := make([]protocol.FileMatch, 0, len(matchSizes))
-			totalSize := 0
-			for _, chunkSizes := range matchSizes {
-				chunks := make([]protocol.ChunkMatch, 0, len(chunkSizes))
-				for _, chunkSize := range chunkSizes {
-					chunks = append(chunks, protocol.ChunkMatch{
-						Ranges: make([]protocol.Range, chunkSize),
+	t.Run("pbrbllel", func(t *testing.T) {
+		quick.Check(func(mbtchSizes [][]uint16, limit uint16) bool {
+			inputs := mbke([]protocol.FileMbtch, 0, len(mbtchSizes))
+			totblSize := 0
+			for _, chunkSizes := rbnge mbtchSizes {
+				chunks := mbke([]protocol.ChunkMbtch, 0, len(chunkSizes))
+				for _, chunkSize := rbnge chunkSizes {
+					chunks = bppend(chunks, protocol.ChunkMbtch{
+						Rbnges: mbke([]protocol.Rbnge, chunkSize),
 					})
-					totalSize += int(chunkSize)
+					totblSize += int(chunkSize)
 				}
 				if len(chunks) == 0 {
-					totalSize += 1
+					totblSize += 1
 				}
-				inputs = append(inputs, protocol.FileMatch{})
+				inputs = bppend(inputs, protocol.FileMbtch{})
 			}
 
-			var (
-				ctx           = context.Background()
+			vbr (
+				ctx           = context.Bbckground()
 				mux           sync.Mutex
-				outputMatches []protocol.FileMatch
+				outputMbtches []protocol.FileMbtch
 			)
-			_, _, s := newLimitedStream(ctx, int(limit), func(m protocol.FileMatch) {
+			_, _, s := newLimitedStrebm(ctx, int(limit), func(m protocol.FileMbtch) {
 				mux.Lock()
-				outputMatches = append(outputMatches, m)
+				outputMbtches = bppend(outputMbtches, m)
 				mux.Unlock()
 			})
 
 			p := pool.New()
-			for _, input := range inputs {
+			for _, input := rbnge inputs {
 				input := input
 				p.Go(func() {
 					s.Send(input)
 				})
 			}
-			p.Wait()
+			p.Wbit()
 
 			outputSize := 0
-			for _, outputMatch := range outputMatches {
-				outputSize += outputMatch.MatchCount()
+			for _, outputMbtch := rbnge outputMbtches {
+				outputSize += outputMbtch.MbtchCount()
 			}
-			if totalSize < int(limit) && outputSize != totalSize {
-				return false
-			} else if totalSize >= int(limit) && outputSize != int(limit) {
-				return false
+			if totblSize < int(limit) && outputSize != totblSize {
+				return fblse
+			} else if totblSize >= int(limit) && outputSize != int(limit) {
+				return fblse
 			}
 			return true
 		}, nil)

@@ -1,4 +1,4 @@
-package uploadstore
+pbckbge uplobdstore
 
 import (
 	"bytes"
@@ -8,156 +8,156 @@ import (
 	"testing"
 	"time"
 
-	"cloud.google.com/go/storage"
+	"cloud.google.com/go/storbge"
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/api/iterator"
+	"google.golbng.org/bpi/iterbtor"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestGCSInit(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.AttrsFunc.SetDefaultReturn(nil, storage.ErrBucketNotExist)
+	bucketHbndle := NewMockGcsBucketHbndle()
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	bucketHbndle.AttrsFunc.SetDefbultReturn(nil, storbge.ErrBucketNotExist)
 
 	client := testGCSClient(gcsClient, true)
-	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err)
+	if err := client.Init(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error initiblizing client: %s", err)
 	}
 
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	if cblls := gcsClient.BucketFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Bucket cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg0; vblue != "test-bucket" {
+		t.Errorf("unexpected bucket brgument. wbnt=%s hbve=%s", "test-bucket", vblue)
 	}
 
-	if calls := bucketHandle.CreateFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Create calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg1; value != "pid" {
-		t.Errorf("unexpected projectId argument. want=%s have=%s", "pid", value)
+	if cblls := bucketHbndle.CrebteFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Crebte cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg1; vblue != "pid" {
+		t.Errorf("unexpected projectId brgument. wbnt=%s hbve=%s", "pid", vblue)
 	}
 }
 
 func TestGCSInitBucketExists(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
+	bucketHbndle := NewMockGcsBucketHbndle()
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
 
 	client := testGCSClient(gcsClient, true)
-	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err)
+	if err := client.Init(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error initiblizing client: %s", err)
 	}
 
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	if cblls := gcsClient.BucketFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Bucket cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg0; vblue != "test-bucket" {
+		t.Errorf("unexpected bucket brgument. wbnt=%s hbve=%s", "test-bucket", vblue)
 	}
 
-	if calls := bucketHandle.CreateFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of Create calls. want=%d have=%d", 0, len(calls))
+	if cblls := bucketHbndle.CrebteFunc.History(); len(cblls) != 0 {
+		t.Fbtblf("unexpected number of Crebte cblls. wbnt=%d hbve=%d", 0, len(cblls))
 	}
 }
 
-func TestGCSUnmanagedInit(t *testing.T) {
+func TestGCSUnmbnbgedInit(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.AttrsFunc.SetDefaultReturn(nil, storage.ErrBucketNotExist)
+	bucketHbndle := NewMockGcsBucketHbndle()
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	bucketHbndle.AttrsFunc.SetDefbultReturn(nil, storbge.ErrBucketNotExist)
 
-	client := testGCSClient(gcsClient, false)
-	if err := client.Init(context.Background()); err != nil {
-		t.Fatalf("unexpected error initializing client: %s", err)
+	client := testGCSClient(gcsClient, fblse)
+	if err := client.Init(context.Bbckground()); err != nil {
+		t.Fbtblf("unexpected error initiblizing client: %s", err)
 	}
 
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 0, len(calls))
+	if cblls := gcsClient.BucketFunc.History(); len(cblls) != 0 {
+		t.Fbtblf("unexpected number of Bucket cblls. wbnt=%d hbve=%d", 0, len(cblls))
 	}
-	if calls := bucketHandle.CreateFunc.History(); len(calls) != 0 {
-		t.Fatalf("unexpected number of Create calls. want=%d have=%d", 0, len(calls))
+	if cblls := bucketHbndle.CrebteFunc.History(); len(cblls) != 0 {
+		t.Fbtblf("unexpected number of Crebte cblls. wbnt=%d hbve=%d", 0, len(cblls))
 	}
 }
 
 func TestGCSGet(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle := NewMockGcsObjectHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewRangeReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
+	bucketHbndle := NewMockGcsBucketHbndle()
+	objectHbndle := NewMockGcsObjectHbndle()
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	bucketHbndle.ObjectFunc.SetDefbultReturn(objectHbndle)
+	objectHbndle.NewRbngeRebderFunc.SetDefbultReturn(io.NopCloser(bytes.NewRebder([]byte("TEST PAYLOAD"))), nil)
 
-	client := testGCSClient(gcsClient, false)
-	rc, err := client.Get(context.Background(), "test-key")
+	client := testGCSClient(gcsClient, fblse)
+	rc, err := client.Get(context.Bbckground(), "test-key")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err)
+		t.Fbtblf("unexpected error getting key: %s", err)
 	}
 
 	defer rc.Close()
-	contents, err := io.ReadAll(rc)
+	contents, err := io.RebdAll(rc)
 	if err != nil {
-		t.Fatalf("unexpected error reading object: %s", err)
+		t.Fbtblf("unexpected error rebding object: %s", err)
 	}
 
 	if string(contents) != "TEST PAYLOAD" {
-		t.Fatalf("unexpected contents. want=%s have=%s", "TEST PAYLOAD", contents)
+		t.Fbtblf("unexpected contents. wbnt=%s hbve=%s", "TEST PAYLOAD", contents)
 	}
 
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	if cblls := gcsClient.BucketFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Bucket cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg0; vblue != "test-bucket" {
+		t.Errorf("unexpected bucket brgument. wbnt=%s hbve=%s", "test-bucket", vblue)
 	}
 
-	if calls := objectHandle.NewRangeReaderFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of NewRangeReader calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg1; value != 0 {
-		t.Errorf("unexpected offset argument. want=%d have=%d", 0, value)
-	} else if value := calls[0].Arg2; value != -1 {
-		t.Errorf("unexpected length argument. want=%d have=%d", -1, value)
+	if cblls := objectHbndle.NewRbngeRebderFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of NewRbngeRebder cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg1; vblue != 0 {
+		t.Errorf("unexpected offset brgument. wbnt=%d hbve=%d", 0, vblue)
+	} else if vblue := cblls[0].Arg2; vblue != -1 {
+		t.Errorf("unexpected length brgument. wbnt=%d hbve=%d", -1, vblue)
 	}
 }
 
-func TestGCSUpload(t *testing.T) {
+func TestGCSUplobd(t *testing.T) {
 	buf := &bytes.Buffer{}
 
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle := NewMockGcsObjectHandle()
+	bucketHbndle := NewMockGcsBucketHbndle()
+	objectHbndle := NewMockGcsObjectHbndle()
 
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	bucketHbndle.ObjectFunc.SetDefbultReturn(objectHbndle)
+	objectHbndle.NewWriterFunc.SetDefbultReturn(nopCloser{buf})
 
-	client := testGCSClient(gcsClient, false)
+	client := testGCSClient(gcsClient, fblse)
 
-	size, err := client.Upload(context.Background(), "test-key", bytes.NewReader([]byte("TEST PAYLOAD")))
+	size, err := client.Uplobd(context.Bbckground(), "test-key", bytes.NewRebder([]byte("TEST PAYLOAD")))
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err)
+		t.Fbtblf("unexpected error getting key: %s", err)
 	} else if size != 12 {
-		t.Errorf("unexpected size`. want=%d have=%d", 12, size)
+		t.Errorf("unexpected size`. wbnt=%d hbve=%d", 12, size)
 	}
 
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	if cblls := gcsClient.BucketFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Bucket cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg0; vblue != "test-bucket" {
+		t.Errorf("unexpected bucket brgument. wbnt=%s hbve=%s", "test-bucket", vblue)
 	}
 
-	if calls := objectHandle.NewWriterFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of NewWriter calls. want=%d have=%d", 1, len(calls))
-	} else if value := buf.String(); value != "TEST PAYLOAD" {
-		t.Errorf("unexpected payload. want=%s have=%s", "TEST PAYLOAD", value)
+	if cblls := objectHbndle.NewWriterFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of NewWriter cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := buf.String(); vblue != "TEST PAYLOAD" {
+		t.Errorf("unexpected pbylobd. wbnt=%s hbve=%s", "TEST PAYLOAD", vblue)
 	}
 }
 
-type mockGCSObjectsIterator struct {
-	objects []storage.ObjectAttrs
+type mockGCSObjectsIterbtor struct {
+	objects []storbge.ObjectAttrs
 }
 
-func (m *mockGCSObjectsIterator) Next() (*storage.ObjectAttrs, error) {
+func (m *mockGCSObjectsIterbtor) Next() (*storbge.ObjectAttrs, error) {
 	if len(m.objects) == 0 {
-		return nil, iterator.Done
+		return nil, iterbtor.Done
 	}
 
 	obj := m.objects[0]
@@ -165,7 +165,7 @@ func (m *mockGCSObjectsIterator) Next() (*storage.ObjectAttrs, error) {
 	return &obj, nil
 }
 
-func (m *mockGCSObjectsIterator) PageInfo() *iterator.PageInfo {
+func (m *mockGCSObjectsIterbtor) PbgeInfo() *iterbtor.PbgeInfo {
 	return nil
 }
 
@@ -173,142 +173,142 @@ func TestGCSList(t *testing.T) {
 	buf := &bytes.Buffer{}
 
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle := NewMockGcsObjectHandle()
+	bucketHbndle := NewMockGcsBucketHbndle()
+	objectHbndle := NewMockGcsObjectHbndle()
 
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewWriterFunc.SetDefaultReturn(nopCloser{buf})
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	bucketHbndle.ObjectFunc.SetDefbultReturn(objectHbndle)
+	objectHbndle.NewWriterFunc.SetDefbultReturn(nopCloser{buf})
 
-	objects := []storage.ObjectAttrs{{Name: "test-key1"}, {Name: "test-key2"}, {Name: "other-key"}}
-	bucketHandle.ObjectsFunc.SetDefaultHook(func(ctx context.Context, query *storage.Query) gcsObjectIterator {
+	objects := []storbge.ObjectAttrs{{Nbme: "test-key1"}, {Nbme: "test-key2"}, {Nbme: "other-key"}}
+	bucketHbndle.ObjectsFunc.SetDefbultHook(func(ctx context.Context, query *storbge.Query) gcsObjectIterbtor {
 		j := 0
-		for i, obj := range objects {
-			if strings.HasPrefix(obj.Name, query.Prefix) {
+		for i, obj := rbnge objects {
+			if strings.HbsPrefix(obj.Nbme, query.Prefix) {
 				objects[j] = objects[i]
 				j++
 			}
 		}
 		objects = objects[:j]
 
-		return &mockGCSObjectsIterator{objects}
+		return &mockGCSObjectsIterbtor{objects}
 	})
 
-	client := testGCSClient(gcsClient, false)
+	client := testGCSClient(gcsClient, fblse)
 
-	iter, err := client.List(context.Background(), "test-")
+	iter, err := client.List(context.Bbckground(), "test-")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var names []string
+	vbr nbmes []string
 	for iter.Next() {
-		names = append(names, iter.Current())
+		nbmes = bppend(nbmes, iter.Current())
 	}
 
-	if d := cmp.Diff([]string{"test-key1", "test-key2"}, names); d != "" {
-		t.Fatalf("-want, +got: %s\n", d)
+	if d := cmp.Diff([]string{"test-key1", "test-key2"}, nbmes); d != "" {
+		t.Fbtblf("-wbnt, +got: %s\n", d)
 	}
 }
 
 func TestGCSCombine(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle1 := NewMockGcsObjectHandle()
-	objectHandle2 := NewMockGcsObjectHandle()
-	objectHandle3 := NewMockGcsObjectHandle()
-	objectHandle4 := NewMockGcsObjectHandle()
+	bucketHbndle := NewMockGcsBucketHbndle()
+	objectHbndle1 := NewMockGcsObjectHbndle()
+	objectHbndle2 := NewMockGcsObjectHbndle()
+	objectHbndle3 := NewMockGcsObjectHbndle()
+	objectHbndle4 := NewMockGcsObjectHbndle()
 	composer := NewMockGcsComposer()
-	composer.RunFunc.SetDefaultReturn(&storage.ObjectAttrs{Size: 42}, nil)
+	composer.RunFunc.SetDefbultReturn(&storbge.ObjectAttrs{Size: 42}, nil)
 
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	objectHandle1.ComposerFromFunc.SetDefaultReturn(composer)
-	bucketHandle.ObjectFunc.SetDefaultHook(func(name string) gcsObjectHandle {
-		return map[string]gcsObjectHandle{
-			"test-key":  objectHandle1,
-			"test-src1": objectHandle2,
-			"test-src2": objectHandle3,
-			"test-src3": objectHandle4,
-		}[name]
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	objectHbndle1.ComposerFromFunc.SetDefbultReturn(composer)
+	bucketHbndle.ObjectFunc.SetDefbultHook(func(nbme string) gcsObjectHbndle {
+		return mbp[string]gcsObjectHbndle{
+			"test-key":  objectHbndle1,
+			"test-src1": objectHbndle2,
+			"test-src2": objectHbndle3,
+			"test-src3": objectHbndle4,
+		}[nbme]
 	})
 
-	client := testGCSClient(gcsClient, false)
+	client := testGCSClient(gcsClient, fblse)
 
-	size, err := client.Compose(context.Background(), "test-key", "test-src1", "test-src2", "test-src3")
+	size, err := client.Compose(context.Bbckground(), "test-key", "test-src1", "test-src2", "test-src3")
 	if err != nil {
-		t.Fatalf("unexpected error getting key: %s", err)
+		t.Fbtblf("unexpected error getting key: %s", err)
 	} else if size != 42 {
-		t.Errorf("unexpected size`. want=%d have=%d", 42, size)
+		t.Errorf("unexpected size`. wbnt=%d hbve=%d", 42, size)
 	}
 
-	if calls := objectHandle1.ComposerFromFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of ComposerFrom calls. want=%d have=%d", 1, len(calls))
+	if cblls := objectHbndle1.ComposerFromFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of ComposerFrom cblls. wbnt=%d hbve=%d", 1, len(cblls))
 	} else {
-		expectedHandles := []gcsObjectHandle{
-			objectHandle2,
-			objectHandle3,
-			objectHandle4,
+		expectedHbndles := []gcsObjectHbndle{
+			objectHbndle2,
+			objectHbndle3,
+			objectHbndle4,
 		}
 
-		matches := 0
-		for _, candidate := range expectedHandles {
-			for _, handle := range calls[0].Arg0 {
-				if handle == candidate {
-					matches++
+		mbtches := 0
+		for _, cbndidbte := rbnge expectedHbndles {
+			for _, hbndle := rbnge cblls[0].Arg0 {
+				if hbndle == cbndidbte {
+					mbtches++
 				}
 			}
 		}
 
-		if matches != len(calls[0].Arg0) {
-			t.Errorf("unexpected instances. want=%d to match but have=%d", len(calls[0].Arg0), matches)
+		if mbtches != len(cblls[0].Arg0) {
+			t.Errorf("unexpected instbnces. wbnt=%d to mbtch but hbve=%d", len(cblls[0].Arg0), mbtches)
 		}
 	}
 
-	if calls := composer.RunFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Run calls. want=%d have=%d", 1, len(calls))
+	if cblls := composer.RunFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Run cblls. wbnt=%d hbve=%d", 1, len(cblls))
 	}
 
-	if calls := objectHandle2.DeleteFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Delete calls. want=%d have=%d", 1, len(calls))
+	if cblls := objectHbndle2.DeleteFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Delete cblls. wbnt=%d hbve=%d", 1, len(cblls))
 	}
-	if calls := objectHandle3.DeleteFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Delete calls. want=%d have=%d", 1, len(calls))
+	if cblls := objectHbndle3.DeleteFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Delete cblls. wbnt=%d hbve=%d", 1, len(cblls))
 	}
-	if calls := objectHandle4.DeleteFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Delete calls. want=%d have=%d", 1, len(calls))
+	if cblls := objectHbndle4.DeleteFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Delete cblls. wbnt=%d hbve=%d", 1, len(cblls))
 	}
 }
 
 func TestGCSDelete(t *testing.T) {
 	gcsClient := NewMockGcsAPI()
-	bucketHandle := NewMockGcsBucketHandle()
-	objectHandle := NewMockGcsObjectHandle()
-	gcsClient.BucketFunc.SetDefaultReturn(bucketHandle)
-	bucketHandle.ObjectFunc.SetDefaultReturn(objectHandle)
-	objectHandle.NewRangeReaderFunc.SetDefaultReturn(io.NopCloser(bytes.NewReader([]byte("TEST PAYLOAD"))), nil)
+	bucketHbndle := NewMockGcsBucketHbndle()
+	objectHbndle := NewMockGcsObjectHbndle()
+	gcsClient.BucketFunc.SetDefbultReturn(bucketHbndle)
+	bucketHbndle.ObjectFunc.SetDefbultReturn(objectHbndle)
+	objectHbndle.NewRbngeRebderFunc.SetDefbultReturn(io.NopCloser(bytes.NewRebder([]byte("TEST PAYLOAD"))), nil)
 
-	client := testGCSClient(gcsClient, false)
-	if err := client.Delete(context.Background(), "test-key"); err != nil {
-		t.Fatalf("unexpected error getting key: %s", err)
+	client := testGCSClient(gcsClient, fblse)
+	if err := client.Delete(context.Bbckground(), "test-key"); err != nil {
+		t.Fbtblf("unexpected error getting key: %s", err)
 	}
 
-	if calls := gcsClient.BucketFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Bucket calls. want=%d have=%d", 1, len(calls))
-	} else if value := calls[0].Arg0; value != "test-bucket" {
-		t.Errorf("unexpected bucket argument. want=%s have=%s", "test-bucket", value)
+	if cblls := gcsClient.BucketFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Bucket cblls. wbnt=%d hbve=%d", 1, len(cblls))
+	} else if vblue := cblls[0].Arg0; vblue != "test-bucket" {
+		t.Errorf("unexpected bucket brgument. wbnt=%s hbve=%s", "test-bucket", vblue)
 	}
 
-	if calls := objectHandle.DeleteFunc.History(); len(calls) != 1 {
-		t.Fatalf("unexpected number of Delete calls. want=%d have=%d", 1, len(calls))
+	if cblls := objectHbndle.DeleteFunc.History(); len(cblls) != 1 {
+		t.Fbtblf("unexpected number of Delete cblls. wbnt=%d hbve=%d", 1, len(cblls))
 	}
 }
 
-func testGCSClient(client gcsAPI, manageBucket bool) Store {
-	return newLazyStore(rawGCSClient(client, manageBucket))
+func testGCSClient(client gcsAPI, mbnbgeBucket bool) Store {
+	return newLbzyStore(rbwGCSClient(client, mbnbgeBucket))
 }
 
-func rawGCSClient(client gcsAPI, manageBucket bool) *gcsStore {
-	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, manageBucket, GCSConfig{ProjectID: "pid"}, NewOperations(&observation.TestContext, "test", "brittlestore"))
+func rbwGCSClient(client gcsAPI, mbnbgeBucket bool) *gcsStore {
+	return newGCSWithClient(client, "test-bucket", time.Hour*24*3, mbnbgeBucket, GCSConfig{ProjectID: "pid"}, NewOperbtions(&observbtion.TestContext, "test", "brittlestore"))
 }
 
 type nopCloser struct {

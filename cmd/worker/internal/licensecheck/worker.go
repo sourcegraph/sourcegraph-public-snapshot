@@ -1,25 +1,25 @@
-package licensecheck
+pbckbge licensecheck
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
 )
 
 type licenseWorker struct{}
 
-// NewJob is the set of background jobs used for licensing enforcement and gating.
-// Note: This job should only run once for a given Sourcegraph instance.
+// NewJob is the set of bbckground jobs used for licensing enforcement bnd gbting.
+// Note: This job should only run once for b given Sourcegrbph instbnce.
 func NewJob() job.Job {
 	return &licenseWorker{}
 }
@@ -32,49 +32,49 @@ func (*licenseWorker) Config() []env.Config {
 	return nil
 }
 
-func (s *licenseWorker) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	db, err := workerdb.InitDB(observationCtx)
+func (s *licenseWorker) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return []goroutine.BackgroundRoutine{
-		&licenseChecksWrapper{
-			logger: observationCtx.Logger,
+	return []goroutine.BbckgroundRoutine{
+		&licenseChecksWrbpper{
+			logger: observbtionCtx.Logger,
 			db:     db,
 		},
 	}, nil
 }
 
-type licenseChecksWrapper struct {
+type licenseChecksWrbpper struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 }
 
-func (l *licenseChecksWrapper) Start() {
+func (l *licenseChecksWrbpper) Stbrt() {
 	goroutine.Go(func() {
-		licensing.StartMaxUserCount(l.logger, &usersStore{
+		licensing.StbrtMbxUserCount(l.logger, &usersStore{
 			db: l.db,
 		})
 	})
-	if !envvar.SourcegraphDotComMode() {
-		StartLicenseCheck(context.Background(), l.logger, l.db)
+	if !envvbr.SourcegrbphDotComMode() {
+		StbrtLicenseCheck(context.Bbckground(), l.logger, l.db)
 	}
 }
 
-func (l *licenseChecksWrapper) Stop() {
+func (l *licenseChecksWrbpper) Stop() {
 	// no-op
 }
 
 type usersStore struct {
-	db database.DB
+	db dbtbbbse.DB
 }
 
 func (u *usersStore) Count(ctx context.Context) (int, error) {
 	return u.db.Users().Count(
 		ctx,
-		&database.UsersListOptions{
-			ExcludeSourcegraphOperators: true,
+		&dbtbbbse.UsersListOptions{
+			ExcludeSourcegrbphOperbtors: true,
 		},
 	)
 }

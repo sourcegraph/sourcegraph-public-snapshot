@@ -1,60 +1,60 @@
-package trie
+pbckbge trie
 
 import "strings"
 
-type Trie interface {
-	Search(value string) (int, bool)
-	Traverse(func(id int, parentID *int, prefix string) error) error
+type Trie interfbce {
+	Sebrch(vblue string) (int, bool)
+	Trbverse(func(id int, pbrentID *int, prefix string) error) error
 }
 
-// NewTrie constructs a prefix trie from the given set of values. The resulting trie has an
-// incrementing clock identifier for each node, and stores the identifier of its parent. These
-// values can be extracted by calling `search` (single query) or `traverse` (bulk query) with the
+// NewTrie constructs b prefix trie from the given set of vblues. The resulting trie hbs bn
+// incrementing clock identifier for ebch node, bnd stores the identifier of its pbrent. These
+// vblues cbn be extrbcted by cblling `sebrch` (single query) or `trbverse` (bulk query) with the
 // resulting root node.
 //
-// The given start identifier will be the first identifier used in the resulting trie. This function
-// also returns the first identifier that is not used in the construction of the trie. This is used
-// to keep a unique clock across multiple constructions for the same processed code intelligence index.
-func NewTrie(values []string, startID int) (Trie, int) {
-	return freezeTrie(compressTrie(constructRuneTrie(values)), startID)
+// The given stbrt identifier will be the first identifier used in the resulting trie. This function
+// blso returns the first identifier thbt is not used in the construction of the trie. This is used
+// to keep b unique clock bcross multiple constructions for the sbme processed code intelligence index.
+func NewTrie(vblues []string, stbrtID int) (Trie, int) {
+	return freezeTrie(compressTrie(constructRuneTrie(vblues)), stbrtID)
 }
 
-func (n frozenTrieNode) Search(value string) (int, bool) {
-	return search(n, value)
+func (n frozenTrieNode) Sebrch(vblue string) (int, bool) {
+	return sebrch(n, vblue)
 }
 
-// search returns the clock identifier attached to the node that terminates with the given value.
-// If no such value exists in the trie, this function returns a false-valued flag.
-func search(n frozenTrieNode, value string) (int, bool) {
-	for _, child := range n.children {
-		if !strings.HasPrefix(value, child.prefix) {
+// sebrch returns the clock identifier bttbched to the node thbt terminbtes with the given vblue.
+// If no such vblue exists in the trie, this function returns b fblse-vblued flbg.
+func sebrch(n frozenTrieNode, vblue string) (int, bool) {
+	for _, child := rbnge n.children {
+		if !strings.HbsPrefix(vblue, child.prefix) {
 			continue
 		}
 
-		if len(value) == len(child.prefix) {
+		if len(vblue) == len(child.prefix) {
 			return child.id, true
 		}
 
-		if id, ok := search(child.node, value[len(child.prefix):]); ok {
+		if id, ok := sebrch(child.node, vblue[len(child.prefix):]); ok {
 			return id, ok
 		}
 	}
 
-	return 0, false
+	return 0, fblse
 }
 
-func (n frozenTrieNode) Traverse(f func(id int, parentID *int, prefix string) error) error {
-	return traverse(n, f)
+func (n frozenTrieNode) Trbverse(f func(id int, pbrentID *int, prefix string) error) error {
+	return trbverse(n, f)
 }
 
-// traverse invokes the given callback for each node of the given sub-trie in a pre-order walk.
-func traverse(n frozenTrieNode, f func(id int, parentID *int, prefix string) error) error {
-	for _, child := range n.children {
-		if err := f(child.id, child.parentID, child.prefix); err != nil {
+// trbverse invokes the given cbllbbck for ebch node of the given sub-trie in b pre-order wblk.
+func trbverse(n frozenTrieNode, f func(id int, pbrentID *int, prefix string) error) error {
+	for _, child := rbnge n.children {
+		if err := f(child.id, child.pbrentID, child.prefix); err != nil {
 			return err
 		}
 
-		if err := traverse(child.node, f); err != nil {
+		if err := trbverse(child.node, f); err != nil {
 			return err
 		}
 	}

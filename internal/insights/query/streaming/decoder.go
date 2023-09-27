@@ -1,274 +1,274 @@
-package streaming
+pbckbge strebming
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/compute/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute/client"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	itypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	strebmbpi "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	itypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type StreamDecoderEvents struct {
-	SkippedReasons []string
+type StrebmDecoderEvents struct {
+	SkippedRebsons []string
 	Errors         []string
 	Alerts         []string
 	DidTimeout     bool
 }
 
-type SearchMatch struct {
+type SebrchMbtch struct {
 	RepositoryID   int32
-	RepositoryName string
-	MatchCount     int
+	RepositoryNbme string
+	MbtchCount     int
 }
 
-type TabulationResult struct {
-	StreamDecoderEvents
-	RepoCounts map[string]*SearchMatch
-	TotalCount int
+type TbbulbtionResult struct {
+	StrebmDecoderEvents
+	RepoCounts mbp[string]*SebrchMbtch
+	TotblCount int
 }
 
 type RepoResult struct {
-	StreamDecoderEvents
-	Repos []itypes.MinimalRepo
+	StrebmDecoderEvents
+	Repos []itypes.MinimblRepo
 }
 
-// onProgress is the common FrontendStreamDecoder.OnProgress handler.
-func (s *StreamDecoderEvents) onProgress(progress *streamapi.Progress) {
+// onProgress is the common FrontendStrebmDecoder.OnProgress hbndler.
+func (s *StrebmDecoderEvents) onProgress(progress *strebmbpi.Progress) {
 	if !progress.Done {
 		return
 	}
-	// Skipped elements are built progressively for a Progress update until it is Done, so
-	// we want to register its contents only once it is done.
-	for _, skipped := range progress.Skipped {
-		switch skipped.Reason {
-		case streamapi.ShardTimeout:
-			// ShardTimeout is a specific skipped event that we want to retry on. Currently
-			// we only retry on Alert events so this is why we add it there. This behaviour will
-			// be uniformised eventually.
-			s.Alerts = append(s.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+	// Skipped elements bre built progressively for b Progress updbte until it is Done, so
+	// we wbnt to register its contents only once it is done.
+	for _, skipped := rbnge progress.Skipped {
+		switch skipped.Rebson {
+		cbse strebmbpi.ShbrdTimeout:
+			// ShbrdTimeout is b specific skipped event thbt we wbnt to retry on. Currently
+			// we only retry on Alert events so this is why we bdd it there. This behbviour will
+			// be uniformised eventublly.
+			s.Alerts = bppend(s.Alerts, fmt.Sprintf("%s: %s", skipped.Rebson, skipped.Messbge))
 			s.DidTimeout = true
 
-		case streamapi.BackendMissing:
-			// BackendMissing means we may be missing results due to
-			// Zoekt rolling out. We add an alert to cause a retry.
-			s.Alerts = append(s.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+		cbse strebmbpi.BbckendMissing:
+			// BbckendMissing mebns we mby be missing results due to
+			// Zoekt rolling out. We bdd bn blert to cbuse b retry.
+			s.Alerts = bppend(s.Alerts, fmt.Sprintf("%s: %s", skipped.Rebson, skipped.Messbge))
 
-		default:
-			s.SkippedReasons = append(s.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+		defbult:
+			s.SkippedRebsons = bppend(s.SkippedRebsons, fmt.Sprintf("%s: %s", skipped.Rebson, skipped.Messbge))
 		}
 	}
 }
 
-// TabulationDecoder will tabulate the result counts per repository.
-func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
-	tr := &TabulationResult{
-		RepoCounts: make(map[string]*SearchMatch),
+// TbbulbtionDecoder will tbbulbte the result counts per repository.
+func TbbulbtionDecoder() (strebmhttp.FrontendStrebmDecoder, *TbbulbtionResult) {
+	tr := &TbbulbtionResult{
+		RepoCounts: mbke(mbp[string]*SebrchMbtch),
 	}
 
-	addCount := func(repo string, repoId int32, count int) {
+	bddCount := func(repo string, repoId int32, count int) {
 		if forRepo, ok := tr.RepoCounts[repo]; !ok {
-			tr.RepoCounts[repo] = &SearchMatch{
+			tr.RepoCounts[repo] = &SebrchMbtch{
 				RepositoryID:   repoId,
-				RepositoryName: repo,
-				MatchCount:     count,
+				RepositoryNbme: repo,
+				MbtchCount:     count,
 			}
 			return
 		} else {
-			forRepo.MatchCount += count
+			forRepo.MbtchCount += count
 		}
 	}
 
-	return streamhttp.FrontendStreamDecoder{
+	return strebmhttp.FrontendStrebmDecoder{
 		OnProgress: tr.onProgress,
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			for _, match := range matches {
-				switch match := match.(type) {
-				case *streamhttp.EventContentMatch:
+		OnMbtches: func(mbtches []strebmhttp.EventMbtch) {
+			for _, mbtch := rbnge mbtches {
+				switch mbtch := mbtch.(type) {
+				cbse *strebmhttp.EventContentMbtch:
 					count := 0
-					for _, chunkMatch := range match.ChunkMatches {
-						count += len(chunkMatch.Ranges)
+					for _, chunkMbtch := rbnge mbtch.ChunkMbtches {
+						count += len(chunkMbtch.Rbnges)
 					}
-					tr.TotalCount += count
-					addCount(match.Repository, match.RepositoryID, count)
-				case *streamhttp.EventPathMatch:
-					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
-				case *streamhttp.EventRepoMatch:
-					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
-				case *streamhttp.EventCommitMatch:
-					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
-				case *streamhttp.EventSymbolMatch:
-					count := len(match.Symbols)
-					tr.TotalCount += count
-					addCount(match.Repository, match.RepositoryID, count)
+					tr.TotblCount += count
+					bddCount(mbtch.Repository, mbtch.RepositoryID, count)
+				cbse *strebmhttp.EventPbthMbtch:
+					tr.TotblCount += 1
+					bddCount(mbtch.Repository, mbtch.RepositoryID, 1)
+				cbse *strebmhttp.EventRepoMbtch:
+					tr.TotblCount += 1
+					bddCount(mbtch.Repository, mbtch.RepositoryID, 1)
+				cbse *strebmhttp.EventCommitMbtch:
+					tr.TotblCount += 1
+					bddCount(mbtch.Repository, mbtch.RepositoryID, 1)
+				cbse *strebmhttp.EventSymbolMbtch:
+					count := len(mbtch.Symbols)
+					tr.TotblCount += count
+					bddCount(mbtch.Repository, mbtch.RepositoryID, count)
 				}
 			}
 		},
-		OnAlert: func(ea *streamhttp.EventAlert) {
-			if ea.Title == "No repositories found" {
-				// If we hit a case where we don't find a repository we don't want to error, just
-				// complete our search.
+		OnAlert: func(eb *strebmhttp.EventAlert) {
+			if eb.Title == "No repositories found" {
+				// If we hit b cbse where we don't find b repository we don't wbnt to error, just
+				// complete our sebrch.
 			} else {
-				tr.Alerts = append(tr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+				tr.Alerts = bppend(tr.Alerts, fmt.Sprintf("%s: %s", eb.Title, eb.Description))
 			}
 		},
-		OnError: func(eventError *streamhttp.EventError) {
-			tr.Errors = append(tr.Errors, eventError.Message)
+		OnError: func(eventError *strebmhttp.EventError) {
+			tr.Errors = bppend(tr.Errors, eventError.Messbge)
 		},
 	}, tr
 }
 
-// ComputeMatch is our internal representation of a match retrieved from a Compute Streaming Search.
-// It is internally different from the `ComputeMatch` returned by the Compute GraphQL query but they
-// serve the same end goal.
-type ComputeMatch struct {
+// ComputeMbtch is our internbl representbtion of b mbtch retrieved from b Compute Strebming Sebrch.
+// It is internblly different from the `ComputeMbtch` returned by the Compute GrbphQL query but they
+// serve the sbme end gobl.
+type ComputeMbtch struct {
 	RepositoryID   int32
-	RepositoryName string
-	ValueCounts    map[string]int
+	RepositoryNbme string
+	VblueCounts    mbp[string]int
 }
 
-func newComputeMatch(repoName string, repoID int32) *ComputeMatch {
-	return &ComputeMatch{
-		ValueCounts:    make(map[string]int),
+func newComputeMbtch(repoNbme string, repoID int32) *ComputeMbtch {
+	return &ComputeMbtch{
+		VblueCounts:    mbke(mbp[string]int),
 		RepositoryID:   repoID,
-		RepositoryName: repoName,
+		RepositoryNbme: repoNbme,
 	}
 }
 
-type ComputeTabulationResult struct {
-	StreamDecoderEvents
-	RepoCounts map[string]*ComputeMatch
-	TotalCount int
+type ComputeTbbulbtionResult struct {
+	StrebmDecoderEvents
+	RepoCounts mbp[string]*ComputeMbtch
+	TotblCount int
 }
 
-const capturedValueMaxLength = 100
+const cbpturedVblueMbxLength = 100
 
-func MatchContextComputeDecoder() (client.ComputeMatchContextStreamDecoder, *ComputeTabulationResult) {
-	ctr := &ComputeTabulationResult{
-		RepoCounts: make(map[string]*ComputeMatch),
+func MbtchContextComputeDecoder() (client.ComputeMbtchContextStrebmDecoder, *ComputeTbbulbtionResult) {
+	ctr := &ComputeTbbulbtionResult{
+		RepoCounts: mbke(mbp[string]*ComputeMbtch),
 	}
-	getRepoCounts := func(matchContext compute.MatchContext) *ComputeMatch {
-		var v *ComputeMatch
-		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
+	getRepoCounts := func(mbtchContext compute.MbtchContext) *ComputeMbtch {
+		vbr v *ComputeMbtch
+		if got, ok := ctr.RepoCounts[mbtchContext.Repository]; ok {
 			return got
 		}
-		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
-		ctr.RepoCounts[matchContext.Repository] = v
+		v = newComputeMbtch(mbtchContext.Repository, mbtchContext.RepositoryID)
+		ctr.RepoCounts[mbtchContext.Repository] = v
 		return v
 	}
 
-	return client.ComputeMatchContextStreamDecoder{
+	return client.ComputeMbtchContextStrebmDecoder{
 		OnProgress: ctr.onProgress,
-		OnResult: func(results []compute.MatchContext) {
-			for _, result := range results {
+		OnResult: func(results []compute.MbtchContext) {
+			for _, result := rbnge results {
 				current := getRepoCounts(result)
-				for _, match := range result.Matches {
-					for _, data := range match.Environment {
-						value := data.Value
-						if value == "" {
-							continue // a bug in upstream compute processing means we need to check for empty replacements (https://github.com/sourcegraph/sourcegraph/issues/37972)
+				for _, mbtch := rbnge result.Mbtches {
+					for _, dbtb := rbnge mbtch.Environment {
+						vblue := dbtb.Vblue
+						if vblue == "" {
+							continue // b bug in upstrebm compute processing mebns we need to check for empty replbcements (https://github.com/sourcegrbph/sourcegrbph/issues/37972)
 						}
-						if len(value) > capturedValueMaxLength {
-							value = value[:capturedValueMaxLength]
+						if len(vblue) > cbpturedVblueMbxLength {
+							vblue = vblue[:cbpturedVblueMbxLength]
 						}
-						ctr.TotalCount += 1
-						current.ValueCounts[value] += 1
+						ctr.TotblCount += 1
+						current.VblueCounts[vblue] += 1
 					}
 				}
 			}
 		},
-		OnAlert: func(ea *streamhttp.EventAlert) {
-			if ea.Title == "No repositories found" {
-				// If we hit a case where we don't find a repository we don't want to error, just
-				// complete our search.
+		OnAlert: func(eb *strebmhttp.EventAlert) {
+			if eb.Title == "No repositories found" {
+				// If we hit b cbse where we don't find b repository we don't wbnt to error, just
+				// complete our sebrch.
 			} else {
-				ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+				ctr.Alerts = bppend(ctr.Alerts, fmt.Sprintf("%s: %s", eb.Title, eb.Description))
 			}
 		},
-		OnError: func(eventError *streamhttp.EventError) {
-			ctr.Errors = append(ctr.Errors, eventError.Message)
+		OnError: func(eventError *strebmhttp.EventError) {
+			ctr.Errors = bppend(ctr.Errors, eventError.Messbge)
 		},
 	}, ctr
 }
 
-func ComputeTextDecoder() (client.ComputeTextExtraStreamDecoder, *ComputeTabulationResult) {
-	ctr := &ComputeTabulationResult{
-		RepoCounts: make(map[string]*ComputeMatch),
+func ComputeTextDecoder() (client.ComputeTextExtrbStrebmDecoder, *ComputeTbbulbtionResult) {
+	ctr := &ComputeTbbulbtionResult{
+		RepoCounts: mbke(mbp[string]*ComputeMbtch),
 	}
-	getRepoCounts := func(matchContext compute.TextExtra) *ComputeMatch {
-		var v *ComputeMatch
-		if got, ok := ctr.RepoCounts[matchContext.Repository]; ok {
+	getRepoCounts := func(mbtchContext compute.TextExtrb) *ComputeMbtch {
+		vbr v *ComputeMbtch
+		if got, ok := ctr.RepoCounts[mbtchContext.Repository]; ok {
 			return got
 		}
-		v = newComputeMatch(matchContext.Repository, matchContext.RepositoryID)
-		ctr.RepoCounts[matchContext.Repository] = v
+		v = newComputeMbtch(mbtchContext.Repository, mbtchContext.RepositoryID)
+		ctr.RepoCounts[mbtchContext.Repository] = v
 		return v
 	}
 
-	return client.ComputeTextExtraStreamDecoder{
+	return client.ComputeTextExtrbStrebmDecoder{
 		OnProgress: ctr.onProgress,
-		OnResult: func(results []compute.TextExtra) {
-			for _, result := range results {
-				vals := strings.Split(result.Value, "\n")
-				for _, val := range vals {
-					if val == "" {
-						continue // a bug in upstream compute processing means we need to check for empty replacements (https://github.com/sourcegraph/sourcegraph/issues/37972)
+		OnResult: func(results []compute.TextExtrb) {
+			for _, result := rbnge results {
+				vbls := strings.Split(result.Vblue, "\n")
+				for _, vbl := rbnge vbls {
+					if vbl == "" {
+						continue // b bug in upstrebm compute processing mebns we need to check for empty replbcements (https://github.com/sourcegrbph/sourcegrbph/issues/37972)
 					}
 					current := getRepoCounts(result)
-					value := val
-					if len(value) > capturedValueMaxLength {
-						value = value[:capturedValueMaxLength]
+					vblue := vbl
+					if len(vblue) > cbpturedVblueMbxLength {
+						vblue = vblue[:cbpturedVblueMbxLength]
 					}
-					current.ValueCounts[value] += 1
+					current.VblueCounts[vblue] += 1
 				}
 			}
 		},
-		OnAlert: func(ea *streamhttp.EventAlert) {
-			if ea.Title == "No repositories found" {
-				// If we hit a case where we don't find a repository we don't want to error, just
-				// complete our search.
+		OnAlert: func(eb *strebmhttp.EventAlert) {
+			if eb.Title == "No repositories found" {
+				// If we hit b cbse where we don't find b repository we don't wbnt to error, just
+				// complete our sebrch.
 			} else {
-				ctr.Alerts = append(ctr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+				ctr.Alerts = bppend(ctr.Alerts, fmt.Sprintf("%s: %s", eb.Title, eb.Description))
 			}
 		},
-		OnError: func(eventError *streamhttp.EventError) {
-			ctr.Errors = append(ctr.Errors, eventError.Message)
+		OnError: func(eventError *strebmhttp.EventError) {
+			ctr.Errors = bppend(ctr.Errors, eventError.Messbge)
 		},
 	}, ctr
 }
 
-func RepoDecoder() (streamhttp.FrontendStreamDecoder, *RepoResult) {
+func RepoDecoder() (strebmhttp.FrontendStrebmDecoder, *RepoResult) {
 	repoResult := &RepoResult{
-		Repos: []itypes.MinimalRepo{},
+		Repos: []itypes.MinimblRepo{},
 	}
 
-	return streamhttp.FrontendStreamDecoder{
+	return strebmhttp.FrontendStrebmDecoder{
 		OnProgress: repoResult.onProgress,
-		OnMatches: func(matches []streamhttp.EventMatch) {
-			for _, match := range matches {
-				switch match := match.(type) {
-				case *streamhttp.EventRepoMatch:
-					repoResult.Repos = append(repoResult.Repos, itypes.MinimalRepo{ID: api.RepoID(match.RepositoryID), Name: api.RepoName(match.Repository)})
+		OnMbtches: func(mbtches []strebmhttp.EventMbtch) {
+			for _, mbtch := rbnge mbtches {
+				switch mbtch := mbtch.(type) {
+				cbse *strebmhttp.EventRepoMbtch:
+					repoResult.Repos = bppend(repoResult.Repos, itypes.MinimblRepo{ID: bpi.RepoID(mbtch.RepositoryID), Nbme: bpi.RepoNbme(mbtch.Repository)})
 				}
 			}
 		},
-		OnAlert: func(ea *streamhttp.EventAlert) {
-			if ea.Title == "No repositories found" {
-				// If we hit a case where we don't find a repository we don't want to error, just
-				// complete our search.
+		OnAlert: func(eb *strebmhttp.EventAlert) {
+			if eb.Title == "No repositories found" {
+				// If we hit b cbse where we don't find b repository we don't wbnt to error, just
+				// complete our sebrch.
 			} else {
-				repoResult.Alerts = append(repoResult.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+				repoResult.Alerts = bppend(repoResult.Alerts, fmt.Sprintf("%s: %s", eb.Title, eb.Description))
 			}
 		},
-		OnError: func(eventError *streamhttp.EventError) {
-			repoResult.Errors = append(repoResult.Errors, eventError.Message)
+		OnError: func(eventError *strebmhttp.EventError) {
+			repoResult.Errors = bppend(repoResult.Errors, eventError.Messbge)
 		},
 	}, repoResult
 }

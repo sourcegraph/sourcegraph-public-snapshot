@@ -1,4 +1,4 @@
-package cloneurls
+pbckbge cloneurls
 
 import (
 	"context"
@@ -6,64 +6,64 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestReposourceCloneURLToRepoName(t *testing.T) {
-	ctx := context.Background()
+func TestReposourceCloneURLToRepoNbme(t *testing.T) {
+	ctx := context.Bbckground()
 
-	externalServices := dbmocks.NewMockExternalServiceStore()
-	externalServices.ListFunc.SetDefaultReturn(
-		[]*types.ExternalService{{
+	externblServices := dbmocks.NewMockExternblServiceStore()
+	externblServices.ListFunc.SetDefbultReturn(
+		[]*types.ExternblService{{
 			ID:          1,
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "GITHUB #1",
-			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.example.com", "repositoryQuery": ["none"], "token": "abc"}`),
+			DisplbyNbme: "GITHUB #1",
+			Config:      extsvc.NewUnencryptedConfig(`{"url": "https://github.exbmple.com", "repositoryQuery": ["none"], "token": "bbc"}`),
 		}},
 		nil,
 	)
 
 	db := dbmocks.NewMockDB()
-	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
-	db.ReposFunc.SetDefaultReturn(dbmocks.NewMockRepoStore())
+	db.ExternblServicesFunc.SetDefbultReturn(externblServices)
+	db.ReposFunc.SetDefbultReturn(dbmocks.NewMockRepoStore())
 
 	tests := []struct {
-		name         string
+		nbme         string
 		cloneURL     string
-		wantRepoName api.RepoName
+		wbntRepoNbme bpi.RepoNbme
 	}{
 		{
-			name:     "no match",
-			cloneURL: "https://gitlab.com/user/repo",
+			nbme:     "no mbtch",
+			cloneURL: "https://gitlbb.com/user/repo",
 		},
 		{
-			name:         "match existing external service",
-			cloneURL:     "https://github.example.com/user/repo.git",
-			wantRepoName: api.RepoName("github.example.com/user/repo"),
+			nbme:         "mbtch existing externbl service",
+			cloneURL:     "https://github.exbmple.com/user/repo.git",
+			wbntRepoNbme: bpi.RepoNbme("github.exbmple.com/user/repo"),
 		},
 		{
-			name:         "fallback for github.com",
+			nbme:         "fbllbbck for github.com",
 			cloneURL:     "https://github.com/user/repo",
-			wantRepoName: api.RepoName("github.com/user/repo"),
+			wbntRepoNbme: bpi.RepoNbme("github.com/user/repo"),
 		},
 		{
-			name:         "relatively-pathed submodule",
-			cloneURL:     "../../a/b/c.git",
-			wantRepoName: api.RepoName("github.example.com/a/b/c"),
+			nbme:         "relbtively-pbthed submodule",
+			cloneURL:     "../../b/b/c.git",
+			wbntRepoNbme: bpi.RepoNbme("github.exbmple.com/b/b/c"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			repoName, err := RepoSourceCloneURLToRepoName(ctx, db, test.cloneURL)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			repoNbme, err := RepoSourceCloneURLToRepoNbme(ctx, db, test.cloneURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(test.wantRepoName, repoName); diff != "" {
-				t.Fatalf("RepoName mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(test.wbntRepoNbme, repoNbme); diff != "" {
+				t.Fbtblf("RepoNbme mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}

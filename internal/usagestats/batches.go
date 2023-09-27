@@ -1,143 +1,143 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// GetBatchChangesUsageStatistics returns the current site's batch changes usage.
-func GetBatchChangesUsageStatistics(ctx context.Context, db database.DB) (*types.BatchChangesUsageStatistics, error) {
-	stats := types.BatchChangesUsageStatistics{}
+// GetBbtchChbngesUsbgeStbtistics returns the current site's bbtch chbnges usbge.
+func GetBbtchChbngesUsbgeStbtistics(ctx context.Context, db dbtbbbse.DB) (*types.BbtchChbngesUsbgeStbtistics, error) {
+	stbts := types.BbtchChbngesUsbgeStbtistics{}
 
-	const batchChangesCountsQuery = `
+	const bbtchChbngesCountsQuery = `
 SELECT
-    COUNT(*)                                      AS batch_changes_count,
-    COUNT(*) FILTER (WHERE closed_at IS NOT NULL) AS batch_changes_closed_count
-FROM batch_changes;
+    COUNT(*)                                      AS bbtch_chbnges_count,
+    COUNT(*) FILTER (WHERE closed_bt IS NOT NULL) AS bbtch_chbnges_closed_count
+FROM bbtch_chbnges;
 `
 
-	if err := db.QueryRowContext(ctx, batchChangesCountsQuery).Scan(
-		&stats.BatchChangesCount,
-		&stats.BatchChangesClosedCount,
+	if err := db.QueryRowContext(ctx, bbtchChbngesCountsQuery).Scbn(
+		&stbts.BbtchChbngesCount,
+		&stbts.BbtchChbngesClosedCount,
 	); err != nil {
 		return nil, err
 	}
 
-	const changesetCountsQuery = `
+	const chbngesetCountsQuery = `
 SELECT
-    COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'UNPUBLISHED') AS action_changesets_unpublished,
-    COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED') AS action_changesets,
-    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_added_sum,
-    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED'), 0) AS action_changesets_diff_stat_deleted_sum,
-    COUNT(*)                        FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED') AS action_changesets_merged,
-    COALESCE(SUM(diff_stat_added)   FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_added_sum,
-    COALESCE(SUM(diff_stat_deleted) FILTER (WHERE owned_by_batch_change_id IS NOT NULL AND publication_state = 'PUBLISHED' AND external_state = 'MERGED'), 0) AS action_changesets_merged_diff_stat_deleted_sum,
-    COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL) AS manual_changesets,
-    COUNT(*) FILTER (WHERE owned_by_batch_change_id IS NULL AND external_state = 'MERGED') AS manual_changesets_merged
-FROM changesets;
+    COUNT(*)                        FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'UNPUBLISHED') AS bction_chbngesets_unpublished,
+    COUNT(*)                        FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'PUBLISHED') AS bction_chbngesets,
+    COALESCE(SUM(diff_stbt_bdded)   FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'PUBLISHED'), 0) AS bction_chbngesets_diff_stbt_bdded_sum,
+    COALESCE(SUM(diff_stbt_deleted) FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'PUBLISHED'), 0) AS bction_chbngesets_diff_stbt_deleted_sum,
+    COUNT(*)                        FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'PUBLISHED' AND externbl_stbte = 'MERGED') AS bction_chbngesets_merged,
+    COALESCE(SUM(diff_stbt_bdded)   FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'PUBLISHED' AND externbl_stbte = 'MERGED'), 0) AS bction_chbngesets_merged_diff_stbt_bdded_sum,
+    COALESCE(SUM(diff_stbt_deleted) FILTER (WHERE owned_by_bbtch_chbnge_id IS NOT NULL AND publicbtion_stbte = 'PUBLISHED' AND externbl_stbte = 'MERGED'), 0) AS bction_chbngesets_merged_diff_stbt_deleted_sum,
+    COUNT(*) FILTER (WHERE owned_by_bbtch_chbnge_id IS NULL) AS mbnubl_chbngesets,
+    COUNT(*) FILTER (WHERE owned_by_bbtch_chbnge_id IS NULL AND externbl_stbte = 'MERGED') AS mbnubl_chbngesets_merged
+FROM chbngesets;
 `
-	if err := db.QueryRowContext(ctx, changesetCountsQuery).Scan(
-		&stats.PublishedChangesetsUnpublishedCount,
-		&stats.PublishedChangesetsCount,
-		&stats.PublishedChangesetsDiffStatAddedSum,
-		&stats.PublishedChangesetsDiffStatDeletedSum,
-		&stats.PublishedChangesetsMergedCount,
-		&stats.PublishedChangesetsMergedDiffStatAddedSum,
-		&stats.PublishedChangesetsMergedDiffStatDeletedSum,
-		&stats.ImportedChangesetsCount,
-		&stats.ImportedChangesetsMergedCount,
+	if err := db.QueryRowContext(ctx, chbngesetCountsQuery).Scbn(
+		&stbts.PublishedChbngesetsUnpublishedCount,
+		&stbts.PublishedChbngesetsCount,
+		&stbts.PublishedChbngesetsDiffStbtAddedSum,
+		&stbts.PublishedChbngesetsDiffStbtDeletedSum,
+		&stbts.PublishedChbngesetsMergedCount,
+		&stbts.PublishedChbngesetsMergedDiffStbtAddedSum,
+		&stbts.PublishedChbngesetsMergedDiffStbtDeletedSum,
+		&stbts.ImportedChbngesetsCount,
+		&stbts.ImportedChbngesetsMergedCount,
 	); err != nil {
 		return nil, err
 	}
 
 	const eventLogsCountsQuery = `
 SELECT
-    COUNT(*)                                                FILTER (WHERE name = 'BatchSpecCreated')                       AS batch_specs_created,
-    COALESCE(SUM((argument->>'changeset_specs_count')::int) FILTER (WHERE name = 'BatchSpecCreated'), 0)                   AS changeset_specs_created_count,
-    COUNT(*)                                                FILTER (WHERE name = 'ViewBatchChangeApplyPage')               AS view_batch_change_apply_page_count,
-    COUNT(*)                                                FILTER (WHERE name = 'ViewBatchChangeDetailsPageAfterCreate')  AS view_batch_change_details_page_after_create_count,
-    COUNT(*)                                                FILTER (WHERE name = 'ViewBatchChangeDetailsPageAfterUpdate')  AS view_batch_change_details_page_after_update_count
+    COUNT(*)                                                FILTER (WHERE nbme = 'BbtchSpecCrebted')                       AS bbtch_specs_crebted,
+    COALESCE(SUM((brgument->>'chbngeset_specs_count')::int) FILTER (WHERE nbme = 'BbtchSpecCrebted'), 0)                   AS chbngeset_specs_crebted_count,
+    COUNT(*)                                                FILTER (WHERE nbme = 'ViewBbtchChbngeApplyPbge')               AS view_bbtch_chbnge_bpply_pbge_count,
+    COUNT(*)                                                FILTER (WHERE nbme = 'ViewBbtchChbngeDetbilsPbgeAfterCrebte')  AS view_bbtch_chbnge_detbils_pbge_bfter_crebte_count,
+    COUNT(*)                                                FILTER (WHERE nbme = 'ViewBbtchChbngeDetbilsPbgeAfterUpdbte')  AS view_bbtch_chbnge_detbils_pbge_bfter_updbte_count
 FROM event_logs
-WHERE name IN ('BatchSpecCreated', 'ViewBatchChangeApplyPage', 'ViewBatchChangeDetailsPageAfterCreate', 'ViewBatchChangeDetailsPageAfterUpdate');
+WHERE nbme IN ('BbtchSpecCrebted', 'ViewBbtchChbngeApplyPbge', 'ViewBbtchChbngeDetbilsPbgeAfterCrebte', 'ViewBbtchChbngeDetbilsPbgeAfterUpdbte');
 `
 
-	if err := db.QueryRowContext(ctx, eventLogsCountsQuery).Scan(
-		&stats.BatchSpecsCreatedCount,
-		&stats.ChangesetSpecsCreatedCount,
-		&stats.ViewBatchChangeApplyPageCount,
-		&stats.ViewBatchChangeDetailsPageAfterCreateCount,
-		&stats.ViewBatchChangeDetailsPageAfterUpdateCount,
+	if err := db.QueryRowContext(ctx, eventLogsCountsQuery).Scbn(
+		&stbts.BbtchSpecsCrebtedCount,
+		&stbts.ChbngesetSpecsCrebtedCount,
+		&stbts.ViewBbtchChbngeApplyPbgeCount,
+		&stbts.ViewBbtchChbngeDetbilsPbgeAfterCrebteCount,
+		&stbts.ViewBbtchChbngeDetbilsPbgeAfterUpdbteCount,
 	); err != nil {
 		return nil, err
 	}
 
-	const activeExecutorsCountQuery = `SELECT COUNT(id) FROM executor_heartbeats WHERE last_seen_at >= (NOW() - interval '15 seconds');`
+	const bctiveExecutorsCountQuery = `SELECT COUNT(id) FROM executor_hebrtbebts WHERE lbst_seen_bt >= (NOW() - intervbl '15 seconds');`
 
-	if err := db.QueryRowContext(ctx, activeExecutorsCountQuery).Scan(
-		&stats.ActiveExecutorsCount,
+	if err := db.QueryRowContext(ctx, bctiveExecutorsCountQuery).Scbn(
+		&stbts.ActiveExecutorsCount,
 	); err != nil {
 		return nil, err
 	}
 
-	const changesetDistributionQuery = `
+	const chbngesetDistributionQuery = `
 SELECT
 	COUNT(*),
-	batch_changes_range.range,
-	created_from_raw
+	bbtch_chbnges_rbnge.rbnge,
+	crebted_from_rbw
 FROM (
 	SELECT
 		CASE
-			WHEN COUNT(changesets.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
-			ELSE '1000+ changesets'
-		END AS range,
-		batch_specs.created_from_raw
-	FROM batch_changes
-	LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
-	LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
-	GROUP BY batch_changes.id, batch_specs.created_from_raw
-) AS batch_changes_range
-GROUP BY batch_changes_range.range, created_from_raw;
+			WHEN COUNT(chbngesets.id) BETWEEN 0 AND 9 THEN '0-9 chbngesets'
+			WHEN COUNT(chbngesets.id) BETWEEN 10 AND 49 THEN '10-49 chbngesets'
+			WHEN COUNT(chbngesets.id) BETWEEN 50 AND 99 THEN '50-99 chbngesets'
+			WHEN COUNT(chbngesets.id) BETWEEN 100 AND 199 THEN '100-199 chbngesets'
+			WHEN COUNT(chbngesets.id) BETWEEN 200 AND 999 THEN '200-999 chbngesets'
+			ELSE '1000+ chbngesets'
+		END AS rbnge,
+		bbtch_specs.crebted_from_rbw
+	FROM bbtch_chbnges
+	LEFT JOIN bbtch_specs AS bbtch_specs ON bbtch_chbnges.bbtch_spec_id = bbtch_specs.id
+	LEFT JOIN chbngesets ON chbngesets.bbtch_chbnge_ids ? bbtch_chbnges.id::TEXT
+	GROUP BY bbtch_chbnges.id, bbtch_specs.crebted_from_rbw
+) AS bbtch_chbnges_rbnge
+GROUP BY bbtch_chbnges_rbnge.rbnge, crebted_from_rbw;
 `
 
-	rows, err := db.QueryContext(ctx, changesetDistributionQuery)
+	rows, err := db.QueryContext(ctx, chbngesetDistributionQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var (
+		vbr (
 			count          int32
-			changesetRange string
-			createdFromRaw bool
+			chbngesetRbnge string
+			crebtedFromRbw bool
 		)
-		if err = rows.Scan(&count, &changesetRange, &createdFromRaw); err != nil {
+		if err = rows.Scbn(&count, &chbngesetRbnge, &crebtedFromRbw); err != nil {
 			return nil, err
 		}
 
-		var batchChangeSource types.BatchChangeSource
-		if createdFromRaw {
-			batchChangeSource = types.ExecutorBatchChangeSource
+		vbr bbtchChbngeSource types.BbtchChbngeSource
+		if crebtedFromRbw {
+			bbtchChbngeSource = types.ExecutorBbtchChbngeSource
 		} else {
-			batchChangeSource = types.LocalBatchChangeSource
+			bbtchChbngeSource = types.LocblBbtchChbngeSource
 		}
 
-		stats.ChangesetDistribution = append(stats.ChangesetDistribution, &types.ChangesetDistribution{
-			Range:             changesetRange,
-			BatchChangesCount: count,
-			Source:            batchChangeSource,
+		stbts.ChbngesetDistribution = bppend(stbts.ChbngesetDistribution, &types.ChbngesetDistribution{
+			Rbnge:             chbngesetRbnge,
+			BbtchChbngesCount: count,
+			Source:            bbtchChbngeSource,
 		})
 	}
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 
@@ -149,40 +149,40 @@ FROM (
 	SELECT
 		DISTINCT user_id
 	FROM event_logs
-	WHERE name IN (%s) AND anonymous_user_id != 'backend' AND timestamp >= date_trunc('month', CURRENT_DATE)
+	WHERE nbme IN (%s) AND bnonymous_user_id != 'bbckend' AND timestbmp >= dbte_trunc('month', CURRENT_DATE)
 		UNION
 	SELECT
 		DISTINCT user_id
-	FROM changeset_jobs
-) AS contributor_activities_union;`,
+	FROM chbngeset_jobs
+) AS contributor_bctivities_union;`,
 			sqlf.Join(events, ","),
 		)
 
-		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	}
 
-	var contributorEvents = []*sqlf.Query{
-		sqlf.Sprintf("%q", "BatchSpecCreated"),
-		sqlf.Sprintf("%q", "BatchChangeCreated"),
-		sqlf.Sprintf("%q", "BatchChangeCreatedOrUpdated"),
-		sqlf.Sprintf("%q", "BatchChangeClosed"),
-		sqlf.Sprintf("%q", "BatchChangeDeleted"),
-		sqlf.Sprintf("%q", "ViewBatchChangeApplyPage"),
+	vbr contributorEvents = []*sqlf.Query{
+		sqlf.Sprintf("%q", "BbtchSpecCrebted"),
+		sqlf.Sprintf("%q", "BbtchChbngeCrebted"),
+		sqlf.Sprintf("%q", "BbtchChbngeCrebtedOrUpdbted"),
+		sqlf.Sprintf("%q", "BbtchChbngeClosed"),
+		sqlf.Sprintf("%q", "BbtchChbngeDeleted"),
+		sqlf.Sprintf("%q", "ViewBbtchChbngeApplyPbge"),
 	}
 
-	if err := queryUniqueContributorCurrentMonth(contributorEvents).Scan(&stats.CurrentMonthContributorsCount); err != nil {
+	if err := queryUniqueContributorCurrentMonth(contributorEvents).Scbn(&stbts.CurrentMonthContributorsCount); err != nil {
 		return nil, err
 	}
 
-	var usersEvents = []*sqlf.Query{
-		sqlf.Sprintf("%q", "BatchSpecCreated"),
-		sqlf.Sprintf("%q", "BatchChangeCreated"),
-		sqlf.Sprintf("%q", "BatchChangeCreatedOrUpdated"),
-		sqlf.Sprintf("%q", "BatchChangeClosed"),
-		sqlf.Sprintf("%q", "BatchChangeDeleted"),
-		sqlf.Sprintf("%q", "ViewBatchChangeApplyPage"),
-		sqlf.Sprintf("%q", "ViewBatchChangeDetailsPagePage"),
-		sqlf.Sprintf("%q", "ViewBatchChangesListPage"),
+	vbr usersEvents = []*sqlf.Query{
+		sqlf.Sprintf("%q", "BbtchSpecCrebted"),
+		sqlf.Sprintf("%q", "BbtchChbngeCrebted"),
+		sqlf.Sprintf("%q", "BbtchChbngeCrebtedOrUpdbted"),
+		sqlf.Sprintf("%q", "BbtchChbngeClosed"),
+		sqlf.Sprintf("%q", "BbtchChbngeDeleted"),
+		sqlf.Sprintf("%q", "ViewBbtchChbngeApplyPbge"),
+		sqlf.Sprintf("%q", "ViewBbtchChbngeDetbilsPbgePbge"),
+		sqlf.Sprintf("%q", "ViewBbtchChbngesListPbge"),
 	}
 
 	queryUniqueEventLogUsersCurrentMonth := func(events []*sqlf.Query) *sql.Row {
@@ -190,232 +190,232 @@ FROM (
 SELECT
 	COUNT(DISTINCT user_id)
 FROM event_logs
-WHERE name IN (%s) AND anonymous_user_id != 'backend' AND timestamp >= date_trunc('month', CURRENT_DATE)
+WHERE nbme IN (%s) AND bnonymous_user_id != 'bbckend' AND timestbmp >= dbte_trunc('month', CURRENT_DATE)
 `,
 			sqlf.Join(events, ","),
 		)
 
-		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+		return db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...)
 	}
 
-	if err := queryUniqueEventLogUsersCurrentMonth(usersEvents).Scan(&stats.CurrentMonthUsersCount); err != nil {
+	if err := queryUniqueEventLogUsersCurrentMonth(usersEvents).Scbn(&stbts.CurrentMonthUsersCount); err != nil {
 		return nil, err
 	}
 
-	const batchChangesCohortQuery = `
+	const bbtchChbngesCohortQuery = `
 WITH
-cohort_batch_changes as (
+cohort_bbtch_chbnges bs (
   SELECT
-    date_trunc('week', batch_changes.created_at)::date AS creation_week,
+    dbte_trunc('week', bbtch_chbnges.crebted_bt)::dbte AS crebtion_week,
     id
   FROM
-    batch_changes
+    bbtch_chbnges
   WHERE
-    created_at >= NOW() - (INTERVAL '12 months')
+    crebted_bt >= NOW() - (INTERVAL '12 months')
 ),
-changeset_counts AS (
+chbngeset_counts AS (
   SELECT
-    cohort_batch_changes.creation_week,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id IS NULL OR changesets.owned_by_batch_change_id != cohort_batch_changes.id)  AS changesets_imported,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND publication_state = 'UNPUBLISHED')  AS changesets_unpublished,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND publication_state != 'UNPUBLISHED') AS changesets_published,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND external_state = 'OPEN') AS changesets_published_open,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND external_state = 'DRAFT') AS changesets_published_draft,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND external_state = 'MERGED') AS changesets_published_merged,
-    COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND external_state = 'CLOSED') AS changesets_published_closed
-  FROM changesets
-  JOIN cohort_batch_changes ON changesets.batch_change_ids ? cohort_batch_changes.id::text
-  GROUP BY cohort_batch_changes.creation_week
+    cohort_bbtch_chbnges.crebtion_week,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id IS NULL OR chbngesets.owned_by_bbtch_chbnge_id != cohort_bbtch_chbnges.id)  AS chbngesets_imported,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id = cohort_bbtch_chbnges.id AND publicbtion_stbte = 'UNPUBLISHED')  AS chbngesets_unpublished,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id = cohort_bbtch_chbnges.id AND publicbtion_stbte != 'UNPUBLISHED') AS chbngesets_published,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id = cohort_bbtch_chbnges.id AND externbl_stbte = 'OPEN') AS chbngesets_published_open,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id = cohort_bbtch_chbnges.id AND externbl_stbte = 'DRAFT') AS chbngesets_published_drbft,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id = cohort_bbtch_chbnges.id AND externbl_stbte = 'MERGED') AS chbngesets_published_merged,
+    COUNT(chbngesets) FILTER (WHERE chbngesets.owned_by_bbtch_chbnge_id = cohort_bbtch_chbnges.id AND externbl_stbte = 'CLOSED') AS chbngesets_published_closed
+  FROM chbngesets
+  JOIN cohort_bbtch_chbnges ON chbngesets.bbtch_chbnge_ids ? cohort_bbtch_chbnges.id::text
+  GROUP BY cohort_bbtch_chbnges.crebtion_week
 ),
-batch_change_counts AS (
+bbtch_chbnge_counts AS (
   SELECT
-    date_trunc('week', batch_changes.created_at)::date      AS creation_week,
-    COUNT(distinct id) FILTER (WHERE closed_at IS NOT NULL) AS closed,
-    COUNT(distinct id) FILTER (WHERE closed_at IS NULL)     AS open
-  FROM batch_changes
+    dbte_trunc('week', bbtch_chbnges.crebted_bt)::dbte      AS crebtion_week,
+    COUNT(distinct id) FILTER (WHERE closed_bt IS NOT NULL) AS closed,
+    COUNT(distinct id) FILTER (WHERE closed_bt IS NULL)     AS open
+  FROM bbtch_chbnges
   WHERE
-    created_at >= NOW() - (INTERVAL '12 months')
-  GROUP BY date_trunc('week', batch_changes.created_at)::date
+    crebted_bt >= NOW() - (INTERVAL '12 months')
+  GROUP BY dbte_trunc('week', bbtch_chbnges.crebted_bt)::dbte
 )
-SELECT to_char(batch_change_counts.creation_week, 'yyyy-mm-dd')           AS creation_week,
-       COALESCE(SUM(batch_change_counts.closed), 0)                       AS batch_changes_closed,
-       COALESCE(SUM(batch_change_counts.open), 0)                         AS batch_changes_open,
-       COALESCE(SUM(changeset_counts.changesets_imported), 0)         AS changesets_imported,
-       COALESCE(SUM(changeset_counts.changesets_unpublished), 0)      AS changesets_unpublished,
-       COALESCE(SUM(changeset_counts.changesets_published), 0)        AS changesets_published,
-       COALESCE(SUM(changeset_counts.changesets_published_open), 0)   AS changesets_published_open,
-       COALESCE(SUM(changeset_counts.changesets_published_draft), 0)  AS changesets_published_draft,
-       COALESCE(SUM(changeset_counts.changesets_published_merged), 0) AS changesets_published_merged,
-       COALESCE(SUM(changeset_counts.changesets_published_closed), 0) AS changesets_published_closed
-FROM batch_change_counts
-LEFT JOIN changeset_counts ON batch_change_counts.creation_week = changeset_counts.creation_week
-GROUP BY batch_change_counts.creation_week
-ORDER BY batch_change_counts.creation_week ASC
+SELECT to_chbr(bbtch_chbnge_counts.crebtion_week, 'yyyy-mm-dd')           AS crebtion_week,
+       COALESCE(SUM(bbtch_chbnge_counts.closed), 0)                       AS bbtch_chbnges_closed,
+       COALESCE(SUM(bbtch_chbnge_counts.open), 0)                         AS bbtch_chbnges_open,
+       COALESCE(SUM(chbngeset_counts.chbngesets_imported), 0)         AS chbngesets_imported,
+       COALESCE(SUM(chbngeset_counts.chbngesets_unpublished), 0)      AS chbngesets_unpublished,
+       COALESCE(SUM(chbngeset_counts.chbngesets_published), 0)        AS chbngesets_published,
+       COALESCE(SUM(chbngeset_counts.chbngesets_published_open), 0)   AS chbngesets_published_open,
+       COALESCE(SUM(chbngeset_counts.chbngesets_published_drbft), 0)  AS chbngesets_published_drbft,
+       COALESCE(SUM(chbngeset_counts.chbngesets_published_merged), 0) AS chbngesets_published_merged,
+       COALESCE(SUM(chbngeset_counts.chbngesets_published_closed), 0) AS chbngesets_published_closed
+FROM bbtch_chbnge_counts
+LEFT JOIN chbngeset_counts ON bbtch_chbnge_counts.crebtion_week = chbngeset_counts.crebtion_week
+GROUP BY bbtch_chbnge_counts.crebtion_week
+ORDER BY bbtch_chbnge_counts.crebtion_week ASC
 `
 
-	stats.BatchChangesCohorts = []*types.BatchChangesCohort{}
-	rows, err = db.QueryContext(ctx, batchChangesCohortQuery)
+	stbts.BbtchChbngesCohorts = []*types.BbtchChbngesCohort{}
+	rows, err = db.QueryContext(ctx, bbtchChbngesCohortQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var cohort types.BatchChangesCohort
+		vbr cohort types.BbtchChbngesCohort
 
-		if err := rows.Scan(
+		if err := rows.Scbn(
 			&cohort.Week,
-			&cohort.BatchChangesClosed,
-			&cohort.BatchChangesOpen,
-			&cohort.ChangesetsImported,
-			&cohort.ChangesetsUnpublished,
-			&cohort.ChangesetsPublished,
-			&cohort.ChangesetsPublishedOpen,
-			&cohort.ChangesetsPublishedDraft,
-			&cohort.ChangesetsPublishedMerged,
-			&cohort.ChangesetsPublishedClosed,
+			&cohort.BbtchChbngesClosed,
+			&cohort.BbtchChbngesOpen,
+			&cohort.ChbngesetsImported,
+			&cohort.ChbngesetsUnpublished,
+			&cohort.ChbngesetsPublished,
+			&cohort.ChbngesetsPublishedOpen,
+			&cohort.ChbngesetsPublishedDrbft,
+			&cohort.ChbngesetsPublishedMerged,
+			&cohort.ChbngesetsPublishedClosed,
 		); err != nil {
 			return nil, err
 		}
 
-		stats.BatchChangesCohorts = append(stats.BatchChangesCohorts, &cohort)
+		stbts.BbtchChbngesCohorts = bppend(stbts.BbtchChbngesCohorts, &cohort)
 	}
 
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 
-	const batchChangeSourceStatQuery = `
+	const bbtchChbngeSourceStbtQuery = `
 SELECT
-	batch_specs.created_from_raw,
-	COUNT(changesets.id) AS published_changesets_count,
-	COUNT(distinct batch_changes.id) AS batch_changes_count
-FROM batch_changes
-INNER JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id
-LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
-WHERE changesets.publication_state = 'PUBLISHED'
-GROUP BY batch_specs.created_from_raw;
+	bbtch_specs.crebted_from_rbw,
+	COUNT(chbngesets.id) AS published_chbngesets_count,
+	COUNT(distinct bbtch_chbnges.id) AS bbtch_chbnges_count
+FROM bbtch_chbnges
+INNER JOIN bbtch_specs ON bbtch_specs.id = bbtch_chbnges.bbtch_spec_id
+LEFT JOIN chbngesets ON chbngesets.bbtch_chbnge_ids ? bbtch_chbnges.id::TEXT
+WHERE chbngesets.publicbtion_stbte = 'PUBLISHED'
+GROUP BY bbtch_specs.crebted_from_rbw;
 `
-	rows, err = db.QueryContext(ctx, batchChangeSourceStatQuery)
+	rows, err = db.QueryContext(ctx, bbtchChbngeSourceStbtQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var (
-			publishedChangesetsCount, batchChangeCount int32
-			createdFromRaw                             bool
+		vbr (
+			publishedChbngesetsCount, bbtchChbngeCount int32
+			crebtedFromRbw                             bool
 		)
 
-		if err = rows.Scan(&createdFromRaw, &publishedChangesetsCount, &batchChangeCount); err != nil {
+		if err = rows.Scbn(&crebtedFromRbw, &publishedChbngesetsCount, &bbtchChbngeCount); err != nil {
 			return nil, err
 		}
 
-		var batchChangeSource types.BatchChangeSource
-		if createdFromRaw {
-			batchChangeSource = types.ExecutorBatchChangeSource
+		vbr bbtchChbngeSource types.BbtchChbngeSource
+		if crebtedFromRbw {
+			bbtchChbngeSource = types.ExecutorBbtchChbngeSource
 		} else {
-			batchChangeSource = types.LocalBatchChangeSource
+			bbtchChbngeSource = types.LocblBbtchChbngeSource
 		}
 
-		stats.BatchChangeStatsBySource = append(stats.BatchChangeStatsBySource, &types.BatchChangeStatsBySource{
-			PublishedChangesetsCount: publishedChangesetsCount,
-			BatchChangesCount:        batchChangeCount,
-			Source:                   batchChangeSource,
+		stbts.BbtchChbngeStbtsBySource = bppend(stbts.BbtchChbngeStbtsBySource, &types.BbtchChbngeStbtsBySource{
+			PublishedChbngesetsCount: publishedChbngesetsCount,
+			BbtchChbngesCount:        bbtchChbngeCount,
+			Source:                   bbtchChbngeSource,
 		})
 	}
 
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 
-	const monthlyExecutorUsageQuery = `
+	const monthlyExecutorUsbgeQuery = `
 SELECT
-	DATE_TRUNC('month', batch_specs.created_at)::date as month,
-	COUNT(DISTINCT batch_specs.user_id),
-	-- Sum of the durations of every execution job, rounded up to the nearest minute
-	CEIL(COALESCE(SUM(EXTRACT(EPOCH FROM (exec_jobs.finished_at - exec_jobs.started_at))), 0) / 60) AS minutes
-FROM batch_specs
-LEFT JOIN batch_spec_workspaces AS ws ON ws.batch_spec_id = batch_specs.id
-LEFT JOIN batch_spec_workspace_execution_jobs AS exec_jobs ON exec_jobs.batch_spec_workspace_id = ws.id
-WHERE batch_specs.created_from_raw IS TRUE
-GROUP BY date_trunc('month', batch_specs.created_at)::date;
+	DATE_TRUNC('month', bbtch_specs.crebted_bt)::dbte bs month,
+	COUNT(DISTINCT bbtch_specs.user_id),
+	-- Sum of the durbtions of every execution job, rounded up to the nebrest minute
+	CEIL(COALESCE(SUM(EXTRACT(EPOCH FROM (exec_jobs.finished_bt - exec_jobs.stbrted_bt))), 0) / 60) AS minutes
+FROM bbtch_specs
+LEFT JOIN bbtch_spec_workspbces AS ws ON ws.bbtch_spec_id = bbtch_specs.id
+LEFT JOIN bbtch_spec_workspbce_execution_jobs AS exec_jobs ON exec_jobs.bbtch_spec_workspbce_id = ws.id
+WHERE bbtch_specs.crebted_from_rbw IS TRUE
+GROUP BY dbte_trunc('month', bbtch_specs.crebted_bt)::dbte;
 `
 
-	rows, err = db.QueryContext(ctx, monthlyExecutorUsageQuery)
+	rows, err = db.QueryContext(ctx, monthlyExecutorUsbgeQuery)
 	if err != nil {
 		return nil, err
 	}
 
 	for rows.Next() {
-		var (
+		vbr (
 			month      string
 			usersCount int32
 			minutes    int64
 		)
 
-		if err = rows.Scan(&month, &usersCount, &minutes); err != nil {
+		if err = rows.Scbn(&month, &usersCount, &minutes); err != nil {
 			return nil, err
 		}
 
-		stats.MonthlyBatchChangesExecutorUsage = append(stats.MonthlyBatchChangesExecutorUsage, &types.MonthlyBatchChangesExecutorUsage{
+		stbts.MonthlyBbtchChbngesExecutorUsbge = bppend(stbts.MonthlyBbtchChbngesExecutorUsbge, &types.MonthlyBbtchChbngesExecutorUsbge{
 			Month:   month,
 			Count:   usersCount,
 			Minutes: minutes,
 		})
 	}
 
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 
-	const weeklyBulkOperationsStatQuery = `
+	const weeklyBulkOperbtionsStbtQuery = `
 SELECT
 	job_type,
 	COUNT(DISTINCT bulk_group),
-	date_trunc('week', created_at)::date
-FROM changeset_jobs
-GROUP BY date_trunc('week', created_at)::date, job_type;
+	dbte_trunc('week', crebted_bt)::dbte
+FROM chbngeset_jobs
+GROUP BY dbte_trunc('week', crebted_bt)::dbte, job_type;
 `
 
-	rows, err = db.QueryContext(ctx, weeklyBulkOperationsStatQuery)
+	rows, err = db.QueryContext(ctx, weeklyBulkOperbtionsStbtQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	totalBulkOperation := make(map[string]int32)
+	totblBulkOperbtion := mbke(mbp[string]int32)
 	for rows.Next() {
-		var (
-			bulkOperation, week string
+		vbr (
+			bulkOperbtion, week string
 			count               int32
 		)
 
-		if err = rows.Scan(&bulkOperation, &count, &week); err != nil {
+		if err = rows.Scbn(&bulkOperbtion, &count, &week); err != nil {
 			return nil, err
 		}
 
-		if bulkOperation == "commentatore" {
-			bulkOperation = "comment"
+		if bulkOperbtion == "commentbtore" {
+			bulkOperbtion = "comment"
 		}
 
-		totalBulkOperation[bulkOperation] += count
+		totblBulkOperbtion[bulkOperbtion] += count
 
-		stats.WeeklyBulkOperationStats = append(stats.WeeklyBulkOperationStats, &types.WeeklyBulkOperationStats{
-			BulkOperation: bulkOperation,
+		stbts.WeeklyBulkOperbtionStbts = bppend(stbts.WeeklyBulkOperbtionStbts, &types.WeeklyBulkOperbtionStbts{
+			BulkOperbtion: bulkOperbtion,
 			Week:          week,
 			Count:         count,
 		})
 	}
 
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 
-	for name, count := range totalBulkOperation {
-		stats.BulkOperationsCount = append(stats.BulkOperationsCount, &types.BulkOperationsCount{
-			Name:  name,
+	for nbme, count := rbnge totblBulkOperbtion {
+		stbts.BulkOperbtionsCount = bppend(stbts.BulkOperbtionsCount, &types.BulkOperbtionsCount{
+			Nbme:  nbme,
 			Count: count,
 		})
 	}
 
-	return &stats, nil
+	return &stbts, nil
 }

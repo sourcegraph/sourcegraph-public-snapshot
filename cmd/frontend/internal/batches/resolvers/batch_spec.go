@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,480 +7,480 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const batchSpecIDKind = "BatchSpec"
+const bbtchSpecIDKind = "BbtchSpec"
 
-func marshalBatchSpecRandID(id string) graphql.ID {
-	return relay.MarshalID(batchSpecIDKind, id)
+func mbrshblBbtchSpecRbndID(id string) grbphql.ID {
+	return relby.MbrshblID(bbtchSpecIDKind, id)
 }
 
-func unmarshalBatchSpecID(id graphql.ID) (batchSpecRandID string, err error) {
-	err = relay.UnmarshalSpec(id, &batchSpecRandID)
+func unmbrshblBbtchSpecID(id grbphql.ID) (bbtchSpecRbndID string, err error) {
+	err = relby.UnmbrshblSpec(id, &bbtchSpecRbndID)
 	return
 }
 
-var _ graphqlbackend.BatchSpecResolver = &batchSpecResolver{}
+vbr _ grbphqlbbckend.BbtchSpecResolver = &bbtchSpecResolver{}
 
-type batchSpecResolver struct {
+type bbtchSpecResolver struct {
 	store           *store.Store
 	gitserverClient gitserver.Client
 	logger          log.Logger
 
-	batchSpec          *btypes.BatchSpec
-	preloadedNamespace *graphqlbackend.NamespaceResolver
+	bbtchSpec          *btypes.BbtchSpec
+	prelobdedNbmespbce *grbphqlbbckend.NbmespbceResolver
 
-	// We cache the namespace on the resolver, since it's accessed more than once.
-	namespaceOnce sync.Once
-	namespace     *graphqlbackend.NamespaceResolver
-	namespaceErr  error
+	// We cbche the nbmespbce on the resolver, since it's bccessed more thbn once.
+	nbmespbceOnce sync.Once
+	nbmespbce     *grbphqlbbckend.NbmespbceResolver
+	nbmespbceErr  error
 
 	resolutionOnce sync.Once
-	resolution     *btypes.BatchSpecResolutionJob
+	resolution     *btypes.BbtchSpecResolutionJob
 	resolutionErr  error
 
-	validateSpecsOnce sync.Once
-	validateSpecsErr  error
+	vblidbteSpecsOnce sync.Once
+	vblidbteSpecsErr  error
 
-	statsOnce sync.Once
-	stats     btypes.BatchSpecStats
-	statsErr  error
+	stbtsOnce sync.Once
+	stbts     btypes.BbtchSpecStbts
+	stbtsErr  error
 
-	stateOnce sync.Once
-	state     btypes.BatchSpecState
-	stateErr  error
+	stbteOnce sync.Once
+	stbte     btypes.BbtchSpecStbte
+	stbteErr  error
 
-	canAdministerOnce sync.Once
-	canAdminister     bool
-	canAdministerErr  error
+	cbnAdministerOnce sync.Once
+	cbnAdminister     bool
+	cbnAdministerErr  error
 }
 
-func (r *batchSpecResolver) ID() graphql.ID {
-	// 🚨 SECURITY: This needs to be the RandID! We can't expose the
-	// sequential, guessable ID.
-	return marshalBatchSpecRandID(r.batchSpec.RandID)
+func (r *bbtchSpecResolver) ID() grbphql.ID {
+	// 🚨 SECURITY: This needs to be the RbndID! We cbn't expose the
+	// sequentibl, guessbble ID.
+	return mbrshblBbtchSpecRbndID(r.bbtchSpec.RbndID)
 }
 
-func (r *batchSpecResolver) OriginalInput() (string, error) {
-	return r.batchSpec.RawSpec, nil
+func (r *bbtchSpecResolver) OriginblInput() (string, error) {
+	return r.bbtchSpec.RbwSpec, nil
 }
 
-func (r *batchSpecResolver) ParsedInput() (graphqlbackend.JSONValue, error) {
-	return graphqlbackend.JSONValue{Value: r.batchSpec.Spec}, nil
+func (r *bbtchSpecResolver) PbrsedInput() (grbphqlbbckend.JSONVblue, error) {
+	return grbphqlbbckend.JSONVblue{Vblue: r.bbtchSpec.Spec}, nil
 }
 
-func (r *batchSpecResolver) ChangesetSpecs(ctx context.Context, args *graphqlbackend.ChangesetSpecsConnectionArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := store.ListChangesetSpecsOpts{
-		BatchSpecID: r.batchSpec.ID,
+func (r *bbtchSpecResolver) ChbngesetSpecs(ctx context.Context, brgs *grbphqlbbckend.ChbngesetSpecsConnectionArgs) (grbphqlbbckend.ChbngesetSpecConnectionResolver, error) {
+	opts := store.ListChbngesetSpecsOpts{
+		BbtchSpecID: r.bbtchSpec.ID,
 	}
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts.Limit = int(args.First)
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	opts.Limit = int(brgs.First)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	return &changesetSpecConnectionResolver{
+	return &chbngesetSpecConnectionResolver{
 		store: r.store,
 		opts:  opts,
 	}, nil
 }
 
-func (r *batchSpecResolver) ApplyPreview(ctx context.Context, args *graphqlbackend.ChangesetApplyPreviewConnectionArgs) (graphqlbackend.ChangesetApplyPreviewConnectionResolver, error) {
-	if args.CurrentState != nil {
-		if !btypes.ChangesetState(*args.CurrentState).Valid() {
-			return nil, errors.Errorf("invalid currentState %q", *args.CurrentState)
+func (r *bbtchSpecResolver) ApplyPreview(ctx context.Context, brgs *grbphqlbbckend.ChbngesetApplyPreviewConnectionArgs) (grbphqlbbckend.ChbngesetApplyPreviewConnectionResolver, error) {
+	if brgs.CurrentStbte != nil {
+		if !btypes.ChbngesetStbte(*brgs.CurrentStbte).Vblid() {
+			return nil, errors.Errorf("invblid currentStbte %q", *brgs.CurrentStbte)
 		}
 	}
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts := store.GetRewirerMappingsOpts{
-		LimitOffset: &database.LimitOffset{
-			Limit: int(args.First),
+	opts := store.GetRewirerMbppingsOpts{
+		LimitOffset: &dbtbbbse.LimitOffset{
+			Limit: int(brgs.First),
 		},
-		CurrentState: (*btypes.ChangesetState)(args.CurrentState),
+		CurrentStbte: (*btypes.ChbngesetStbte)(brgs.CurrentStbte),
 	}
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.LimitOffset.Offset = id
 	}
-	if args.Search != nil {
-		var err error
-		opts.TextSearch, err = search.ParseTextSearch(*args.Search)
+	if brgs.Sebrch != nil {
+		vbr err error
+		opts.TextSebrch, err = sebrch.PbrseTextSebrch(*brgs.Sebrch)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing search")
+			return nil, errors.Wrbp(err, "pbrsing sebrch")
 		}
 	}
-	if args.Action != nil {
-		if !btypes.ReconcilerOperation(*args.Action).Valid() {
-			return nil, errors.Errorf("invalid action %q", *args.Action)
+	if brgs.Action != nil {
+		if !btypes.ReconcilerOperbtion(*brgs.Action).Vblid() {
+			return nil, errors.Errorf("invblid bction %q", *brgs.Action)
 		}
 	}
-	publicationStates, err := newPublicationStateMap(args.PublicationStates)
+	publicbtionStbtes, err := newPublicbtionStbteMbp(brgs.PublicbtionStbtes)
 	if err != nil {
 		return nil, err
 	}
 
-	return &changesetApplyPreviewConnectionResolver{
+	return &chbngesetApplyPreviewConnectionResolver{
 		store:             r.store,
 		gitserverClient:   r.gitserverClient,
 		logger:            r.logger,
 		opts:              opts,
-		action:            (*btypes.ReconcilerOperation)(args.Action),
-		batchSpecID:       r.batchSpec.ID,
-		publicationStates: publicationStates,
+		bction:            (*btypes.ReconcilerOperbtion)(brgs.Action),
+		bbtchSpecID:       r.bbtchSpec.ID,
+		publicbtionStbtes: publicbtionStbtes,
 	}, nil
 }
 
-func (r *batchSpecResolver) Description() graphqlbackend.BatchChangeDescriptionResolver {
-	return &batchChangeDescriptionResolver{
-		name:        r.batchSpec.Spec.Name,
-		description: r.batchSpec.Spec.Description,
+func (r *bbtchSpecResolver) Description() grbphqlbbckend.BbtchChbngeDescriptionResolver {
+	return &bbtchChbngeDescriptionResolver{
+		nbme:        r.bbtchSpec.Spec.Nbme,
+		description: r.bbtchSpec.Spec.Description,
 	}
 }
 
-func (r *batchSpecResolver) Creator(ctx context.Context) (*graphqlbackend.UserResolver, error) {
-	user, err := graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchSpec.UserID)
+func (r *bbtchSpecResolver) Crebtor(ctx context.Context) (*grbphqlbbckend.UserResolver, error) {
+	user, err := grbphqlbbckend.UserByIDInt32(ctx, r.store.DbtbbbseDB(), r.bbtchSpec.UserID)
 	if errcode.IsNotFound(err) {
 		return nil, nil
 	}
 	return user, err
 }
 
-func (r *batchSpecResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
-	return r.computeNamespace(ctx)
+func (r *bbtchSpecResolver) Nbmespbce(ctx context.Context) (*grbphqlbbckend.NbmespbceResolver, error) {
+	return r.computeNbmespbce(ctx)
 }
 
-func (r *batchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
-	if r.batchSpec.CreatedFromRaw && !r.finishedExecutionWithoutValidationErrors(ctx) {
+func (r *bbtchSpecResolver) ApplyURL(ctx context.Context) (*string, error) {
+	if r.bbtchSpec.CrebtedFromRbw && !r.finishedExecutionWithoutVblidbtionErrors(ctx) {
 		return nil, nil
 	}
 
-	n, err := r.computeNamespace(ctx)
+	n, err := r.computeNbmespbce(ctx)
 	if err != nil {
 		return nil, err
 	}
-	url := batchChangesApplyURL(n, r)
+	url := bbtchChbngesApplyURL(n, r)
 	return &url, nil
 }
 
-func (r *batchSpecResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.batchSpec.CreatedAt}
+func (r *bbtchSpecResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.bbtchSpec.CrebtedAt}
 }
 
-func (r *batchSpecResolver) ExpiresAt() *gqlutil.DateTime {
-	return &gqlutil.DateTime{Time: r.batchSpec.ExpiresAt()}
+func (r *bbtchSpecResolver) ExpiresAt() *gqlutil.DbteTime {
+	return &gqlutil.DbteTime{Time: r.bbtchSpec.ExpiresAt()}
 }
 
-func (r *batchSpecResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return r.computeCanAdminister(ctx)
+func (r *bbtchSpecResolver) ViewerCbnAdminister(ctx context.Context) (bool, error) {
+	return r.computeCbnAdminister(ctx)
 }
 
-type batchChangeDescriptionResolver struct {
-	name, description string
+type bbtchChbngeDescriptionResolver struct {
+	nbme, description string
 }
 
-func (r *batchChangeDescriptionResolver) Name() string {
-	return r.name
+func (r *bbtchChbngeDescriptionResolver) Nbme() string {
+	return r.nbme
 }
 
-func (r *batchChangeDescriptionResolver) Description() string {
+func (r *bbtchChbngeDescriptionResolver) Description() string {
 	return r.description
 }
 
-func (r *batchSpecResolver) DiffStat(ctx context.Context) (*graphqlbackend.DiffStat, error) {
-	added, deleted, err := r.store.GetBatchSpecDiffStat(ctx, r.batchSpec.ID)
+func (r *bbtchSpecResolver) DiffStbt(ctx context.Context) (*grbphqlbbckend.DiffStbt, error) {
+	bdded, deleted, err := r.store.GetBbtchSpecDiffStbt(ctx, r.bbtchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	return graphqlbackend.NewDiffStat(diff.Stat{
-		Added:   int32(added),
+	return grbphqlbbckend.NewDiffStbt(diff.Stbt{
+		Added:   int32(bdded),
 		Deleted: int32(deleted),
 	}), nil
 }
 
-func (r *batchSpecResolver) AppliesToBatchChange(ctx context.Context) (graphqlbackend.BatchChangeResolver, error) {
+func (r *bbtchSpecResolver) AppliesToBbtchChbnge(ctx context.Context) (grbphqlbbckend.BbtchChbngeResolver, error) {
 	svc := service.New(r.store)
-	batchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, r.batchSpec)
+	bbtchChbnge, err := svc.GetBbtchChbngeMbtchingBbtchSpec(ctx, r.bbtchSpec)
 	if err != nil {
 		return nil, err
 	}
-	if batchChange == nil {
+	if bbtchChbnge == nil {
 		return nil, nil
 	}
 
-	return &batchChangeResolver{
+	return &bbtchChbngeResolver{
 		store:           r.store,
 		gitserverClient: r.gitserverClient,
-		batchChange:     batchChange,
+		bbtchChbnge:     bbtchChbnge,
 		logger:          r.logger,
 	}, nil
 }
 
-func (r *batchSpecResolver) SupersedingBatchSpec(ctx context.Context) (graphqlbackend.BatchSpecResolver, error) {
-	namespace, err := r.computeNamespace(ctx)
+func (r *bbtchSpecResolver) SupersedingBbtchSpec(ctx context.Context) (grbphqlbbckend.BbtchSpecResolver, error) {
+	nbmespbce, err := r.computeNbmespbce(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	actor := sgactor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, errors.New("user is not authenticated")
+	bctor := sgbctor.FromContext(ctx)
+	if !bctor.IsAuthenticbted() {
+		return nil, errors.New("user is not buthenticbted")
 	}
 
 	svc := service.New(r.store)
-	newest, err := svc.GetNewestBatchSpec(ctx, r.store, r.batchSpec, actor.UID)
+	newest, err := svc.GetNewestBbtchSpec(ctx, r.store, r.bbtchSpec, bctor.UID)
 	if err != nil {
 		return nil, err
 	}
 
-	// If this is the newest spec, then we can just return nil.
-	if newest == nil || newest.ID == r.batchSpec.ID {
+	// If this is the newest spec, then we cbn just return nil.
+	if newest == nil || newest.ID == r.bbtchSpec.ID {
 		return nil, nil
 	}
 
-	// If this spec and the new spec have different creators, we shouldn't
-	// return this as a superseding spec.
-	if newest.UserID != r.batchSpec.UserID {
+	// If this spec bnd the new spec hbve different crebtors, we shouldn't
+	// return this bs b superseding spec.
+	if newest.UserID != r.bbtchSpec.UserID {
 		return nil, nil
 	}
 
-	// Create our new resolver, reusing as many fields as we can from this one.
-	resolver := &batchSpecResolver{
+	// Crebte our new resolver, reusing bs mbny fields bs we cbn from this one.
+	resolver := &bbtchSpecResolver{
 		store:              r.store,
 		logger:             r.logger,
-		batchSpec:          newest,
-		preloadedNamespace: namespace,
+		bbtchSpec:          newest,
+		prelobdedNbmespbce: nbmespbce,
 	}
 
 	return resolver, nil
 }
 
-func (r *batchSpecResolver) ViewerBatchChangesCodeHosts(ctx context.Context, args *graphqlbackend.ListViewerBatchChangesCodeHostsArgs) (graphqlbackend.BatchChangesCodeHostConnectionResolver, error) {
-	actor := sgactor.FromContext(ctx)
-	if !actor.IsAuthenticated() {
-		return nil, auth.ErrNotAuthenticated
+func (r *bbtchSpecResolver) ViewerBbtchChbngesCodeHosts(ctx context.Context, brgs *grbphqlbbckend.ListViewerBbtchChbngesCodeHostsArgs) (grbphqlbbckend.BbtchChbngesCodeHostConnectionResolver, error) {
+	bctor := sgbctor.FromContext(ctx)
+	if !bctor.IsAuthenticbted() {
+		return nil, buth.ErrNotAuthenticbted
 	}
 
-	repoIDs, err := r.store.ListBatchSpecRepoIDs(ctx, r.batchSpec.ID)
+	repoIDs, err := r.store.ListBbtchSpecRepoIDs(ctx, r.bbtchSpec.ID)
 	if err != nil {
 		return nil, err
 	}
 
-	// If there are no code hosts, then we don't have to compute anything
+	// If there bre no code hosts, then we don't hbve to compute bnything
 	// further.
 	if len(repoIDs) == 0 {
-		return &emptyBatchChangesCodeHostConnectionResolver{}, nil
+		return &emptyBbtchChbngesCodeHostConnectionResolver{}, nil
 	}
 
 	offset := 0
-	if args.After != nil {
-		offset, err = strconv.Atoi(*args.After)
+	if brgs.After != nil {
+		offset, err = strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 	}
 
-	return &batchChangesCodeHostConnectionResolver{
-		userID:                &actor.UID,
-		onlyWithoutCredential: args.OnlyWithoutCredential,
+	return &bbtchChbngesCodeHostConnectionResolver{
+		userID:                &bctor.UID,
+		onlyWithoutCredentibl: brgs.OnlyWithoutCredentibl,
 		store:                 r.store,
 		logger:                r.logger,
 		opts: store.ListCodeHostsOpts{
 			RepoIDs:             repoIDs,
-			OnlyWithoutWebhooks: args.OnlyWithoutWebhooks,
+			OnlyWithoutWebhooks: brgs.OnlyWithoutWebhooks,
 		},
-		limitOffset: database.LimitOffset{
-			Limit:  int(args.First),
+		limitOffset: dbtbbbse.LimitOffset{
+			Limit:  int(brgs.First),
 			Offset: offset,
 		},
 	}, nil
 }
 
-func (r *batchSpecResolver) AllowUnsupported() *bool {
-	if r.batchSpec.CreatedFromRaw {
-		return &r.batchSpec.AllowUnsupported
+func (r *bbtchSpecResolver) AllowUnsupported() *bool {
+	if r.bbtchSpec.CrebtedFromRbw {
+		return &r.bbtchSpec.AllowUnsupported
 	}
 	return nil
 }
 
-func (r *batchSpecResolver) AllowIgnored() *bool {
-	if r.batchSpec.CreatedFromRaw {
-		return &r.batchSpec.AllowIgnored
+func (r *bbtchSpecResolver) AllowIgnored() *bool {
+	if r.bbtchSpec.CrebtedFromRbw {
+		return &r.bbtchSpec.AllowIgnored
 	}
 	return nil
 }
 
-func (r *batchSpecResolver) NoCache() *bool {
-	if r.batchSpec.CreatedFromRaw {
-		return &r.batchSpec.NoCache
+func (r *bbtchSpecResolver) NoCbche() *bool {
+	if r.bbtchSpec.CrebtedFromRbw {
+		return &r.bbtchSpec.NoCbche
 	}
 	return nil
 }
 
-func (r *batchSpecResolver) AutoApplyEnabled() bool {
+func (r *bbtchSpecResolver) AutoApplyEnbbled() bool {
 	// TODO(ssbc): not implemented
-	return false
+	return fblse
 }
 
-func (r *batchSpecResolver) State(ctx context.Context) (string, error) {
-	state, err := r.computeState(ctx)
+func (r *bbtchSpecResolver) Stbte(ctx context.Context) (string, error) {
+	stbte, err := r.computeStbte(ctx)
 	if err != nil {
 		return "", err
 	}
-	return state.ToGraphQL(), nil
+	return stbte.ToGrbphQL(), nil
 }
 
-func (r *batchSpecResolver) StartedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	if !r.batchSpec.CreatedFromRaw {
+func (r *bbtchSpecResolver) StbrtedAt(ctx context.Context) (*gqlutil.DbteTime, error) {
+	if !r.bbtchSpec.CrebtedFromRbw {
 		return nil, nil
 	}
 
-	state, err := r.computeState(ctx)
+	stbte, err := r.computeStbte(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if !state.Started() {
+	if !stbte.Stbrted() {
 		return nil, nil
 	}
 
-	stats, err := r.computeStats(ctx)
+	stbts, err := r.computeStbts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if stats.StartedAt.IsZero() {
+	if stbts.StbrtedAt.IsZero() {
 		return nil, nil
 	}
 
-	return &gqlutil.DateTime{Time: stats.StartedAt}, nil
+	return &gqlutil.DbteTime{Time: stbts.StbrtedAt}, nil
 }
 
-func (r *batchSpecResolver) FinishedAt(ctx context.Context) (*gqlutil.DateTime, error) {
-	if !r.batchSpec.CreatedFromRaw {
+func (r *bbtchSpecResolver) FinishedAt(ctx context.Context) (*gqlutil.DbteTime, error) {
+	if !r.bbtchSpec.CrebtedFromRbw {
 		return nil, nil
 	}
 
-	state, err := r.computeState(ctx)
+	stbte, err := r.computeStbte(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	if !state.Finished() {
+	if !stbte.Finished() {
 		return nil, nil
 	}
 
-	stats, err := r.computeStats(ctx)
+	stbts, err := r.computeStbts(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if stats.FinishedAt.IsZero() {
+	if stbts.FinishedAt.IsZero() {
 		return nil, nil
 	}
 
-	return &gqlutil.DateTime{Time: stats.FinishedAt}, nil
+	return &gqlutil.DbteTime{Time: stbts.FinishedAt}, nil
 }
 
-func (r *batchSpecResolver) FailureMessage(ctx context.Context) (*string, error) {
+func (r *bbtchSpecResolver) FbilureMessbge(ctx context.Context) (*string, error) {
 	resolution, err := r.computeResolutionJob(ctx)
 	if err != nil {
 		return nil, err
 	}
-	if resolution != nil && resolution.FailureMessage != nil {
-		return resolution.FailureMessage, nil
+	if resolution != nil && resolution.FbilureMessbge != nil {
+		return resolution.FbilureMessbge, nil
 	}
 
-	validationErr := r.validateChangesetSpecs(ctx)
-	if validationErr != nil {
-		message := validationErr.Error()
-		return &message, nil
+	vblidbtionErr := r.vblidbteChbngesetSpecs(ctx)
+	if vblidbtionErr != nil {
+		messbge := vblidbtionErr.Error()
+		return &messbge, nil
 	}
 
-	f := false
-	failedJobs, err := r.store.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
-		OnlyWithFailureMessage: true,
-		BatchSpecID:            r.batchSpec.ID,
-		// Omit canceled, they don't contain useful error messages.
-		Cancel:      &f,
-		ExcludeRank: true,
+	f := fblse
+	fbiledJobs, err := r.store.ListBbtchSpecWorkspbceExecutionJobs(ctx, store.ListBbtchSpecWorkspbceExecutionJobsOpts{
+		OnlyWithFbilureMessbge: true,
+		BbtchSpecID:            r.bbtchSpec.ID,
+		// Omit cbnceled, they don't contbin useful error messbges.
+		Cbncel:      &f,
+		ExcludeRbnk: true,
 	})
 	if err != nil {
 		return nil, err
 	}
-	if len(failedJobs) == 0 {
+	if len(fbiledJobs) == 0 {
 		return nil, nil
 	}
 
-	var message strings.Builder
-	message.WriteString("Failures:\n\n")
-	for i, job := range failedJobs {
-		message.WriteString("* " + *job.FailureMessage + "\n")
+	vbr messbge strings.Builder
+	messbge.WriteString("Fbilures:\n\n")
+	for i, job := rbnge fbiledJobs {
+		messbge.WriteString("* " + *job.FbilureMessbge + "\n")
 
 		if i == 4 {
-			break
+			brebk
 		}
 	}
-	if len(failedJobs) > 5 {
-		message.WriteString(fmt.Sprintf("\nand %d more", len(failedJobs)-5))
+	if len(fbiledJobs) > 5 {
+		messbge.WriteString(fmt.Sprintf("\nbnd %d more", len(fbiledJobs)-5))
 	}
 
-	str := message.String()
+	str := messbge.String()
 	return &str, nil
 }
 
-func (r *batchSpecResolver) ImportingChangesets(ctx context.Context, args *graphqlbackend.ListImportingChangesetsArgs) (graphqlbackend.ChangesetSpecConnectionResolver, error) {
-	opts := store.ListChangesetSpecsOpts{
-		BatchSpecID: r.batchSpec.ID,
-		Type:        batches.ChangesetSpecDescriptionTypeExisting,
+func (r *bbtchSpecResolver) ImportingChbngesets(ctx context.Context, brgs *grbphqlbbckend.ListImportingChbngesetsArgs) (grbphqlbbckend.ChbngesetSpecConnectionResolver, error) {
+	opts := store.ListChbngesetSpecsOpts{
+		BbtchSpecID: r.bbtchSpec.ID,
+		Type:        bbtches.ChbngesetSpecDescriptionTypeExisting,
 	}
-	if err := validateFirstParamDefaults(args.First); err != nil {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts.Limit = int(args.First)
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	opts.Limit = int(brgs.First)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	return &changesetSpecConnectionResolver{store: r.store, opts: opts}, nil
+	return &chbngesetSpecConnectionResolver{store: r.store, opts: opts}, nil
 }
 
-func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbackend.BatchSpecWorkspaceResolutionResolver, error) {
-	if !r.batchSpec.CreatedFromRaw {
+func (r *bbtchSpecResolver) WorkspbceResolution(ctx context.Context) (grbphqlbbckend.BbtchSpecWorkspbceResolutionResolver, error) {
+	if !r.bbtchSpec.CrebtedFromRbw {
 		return nil, nil
 	}
 
@@ -492,75 +492,75 @@ func (r *batchSpecResolver) WorkspaceResolution(ctx context.Context) (graphqlbac
 		return nil, nil
 	}
 
-	return &batchSpecWorkspaceResolutionResolver{store: r.store, logger: r.logger, resolution: resolution}, nil
+	return &bbtchSpecWorkspbceResolutionResolver{store: r.store, logger: r.logger, resolution: resolution}, nil
 }
 
-func (r *batchSpecResolver) ViewerCanRetry(ctx context.Context) (bool, error) {
-	if !r.batchSpec.CreatedFromRaw {
-		return false, nil
+func (r *bbtchSpecResolver) ViewerCbnRetry(ctx context.Context) (bool, error) {
+	if !r.bbtchSpec.CrebtedFromRbw {
+		return fblse, nil
 	}
 
-	ok, err := r.computeCanAdminister(ctx)
+	ok, err := r.computeCbnAdminister(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	if !ok {
-		return false, nil
+		return fblse, nil
 	}
 
-	state, err := r.computeState(ctx)
+	stbte, err := r.computeStbte(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	// If the spec finished successfully, there's nothing to retry.
-	if state == btypes.BatchSpecStateCompleted {
-		return false, nil
+	if stbte == btypes.BbtchSpecStbteCompleted {
+		return fblse, nil
 	}
 
-	return state.Finished(), nil
+	return stbte.Finished(), nil
 }
 
-func (r *batchSpecResolver) Source() string {
-	if r.batchSpec.CreatedFromRaw {
-		return btypes.BatchSpecSourceRemote.ToGraphQL()
+func (r *bbtchSpecResolver) Source() string {
+	if r.bbtchSpec.CrebtedFromRbw {
+		return btypes.BbtchSpecSourceRemote.ToGrbphQL()
 	}
-	return btypes.BatchSpecSourceLocal.ToGraphQL()
+	return btypes.BbtchSpecSourceLocbl.ToGrbphQL()
 }
 
-func (r *batchSpecResolver) computeNamespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
-	r.namespaceOnce.Do(func() {
-		if r.preloadedNamespace != nil {
-			r.namespace = r.preloadedNamespace
+func (r *bbtchSpecResolver) computeNbmespbce(ctx context.Context) (*grbphqlbbckend.NbmespbceResolver, error) {
+	r.nbmespbceOnce.Do(func() {
+		if r.prelobdedNbmespbce != nil {
+			r.nbmespbce = r.prelobdedNbmespbce
 			return
 		}
-		var (
+		vbr (
 			err error
-			n   = &graphqlbackend.NamespaceResolver{}
+			n   = &grbphqlbbckend.NbmespbceResolver{}
 		)
 
-		if r.batchSpec.NamespaceUserID != 0 {
-			n.Namespace, err = graphqlbackend.UserByIDInt32(ctx, r.store.DatabaseDB(), r.batchSpec.NamespaceUserID)
+		if r.bbtchSpec.NbmespbceUserID != 0 {
+			n.Nbmespbce, err = grbphqlbbckend.UserByIDInt32(ctx, r.store.DbtbbbseDB(), r.bbtchSpec.NbmespbceUserID)
 		} else {
-			n.Namespace, err = graphqlbackend.OrgByIDInt32(ctx, r.store.DatabaseDB(), r.batchSpec.NamespaceOrgID)
+			n.Nbmespbce, err = grbphqlbbckend.OrgByIDInt32(ctx, r.store.DbtbbbseDB(), r.bbtchSpec.NbmespbceOrgID)
 		}
 
 		if errcode.IsNotFound(err) {
-			r.namespace = nil
-			r.namespaceErr = errors.New("namespace of batch spec has been deleted")
+			r.nbmespbce = nil
+			r.nbmespbceErr = errors.New("nbmespbce of bbtch spec hbs been deleted")
 			return
 		}
 
-		r.namespace = n
-		r.namespaceErr = err
+		r.nbmespbce = n
+		r.nbmespbceErr = err
 	})
-	return r.namespace, r.namespaceErr
+	return r.nbmespbce, r.nbmespbceErr
 }
 
-func (r *batchSpecResolver) computeResolutionJob(ctx context.Context) (*btypes.BatchSpecResolutionJob, error) {
+func (r *bbtchSpecResolver) computeResolutionJob(ctx context.Context) (*btypes.BbtchSpecResolutionJob, error) {
 	r.resolutionOnce.Do(func() {
-		var err error
-		r.resolution, err = r.store.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{BatchSpecID: r.batchSpec.ID})
+		vbr err error
+		r.resolution, err = r.store.GetBbtchSpecResolutionJob(ctx, store.GetBbtchSpecResolutionJobOpts{BbtchSpecID: r.bbtchSpec.ID})
 		if err != nil {
 			if err == store.ErrNoResults {
 				return
@@ -571,87 +571,87 @@ func (r *batchSpecResolver) computeResolutionJob(ctx context.Context) (*btypes.B
 	return r.resolution, r.resolutionErr
 }
 
-func (r *batchSpecResolver) finishedExecutionWithoutValidationErrors(ctx context.Context) bool {
-	state, err := r.computeState(ctx)
+func (r *bbtchSpecResolver) finishedExecutionWithoutVblidbtionErrors(ctx context.Context) bool {
+	stbte, err := r.computeStbte(ctx)
 	if err != nil {
-		return false
+		return fblse
 	}
 
-	if !state.FinishedAndNotCanceled() {
-		return false
+	if !stbte.FinishedAndNotCbnceled() {
+		return fblse
 	}
 
-	validationErr := r.validateChangesetSpecs(ctx)
-	return validationErr == nil
+	vblidbtionErr := r.vblidbteChbngesetSpecs(ctx)
+	return vblidbtionErr == nil
 }
 
-func (r *batchSpecResolver) validateChangesetSpecs(ctx context.Context) error {
-	r.validateSpecsOnce.Do(func() {
+func (r *bbtchSpecResolver) vblidbteChbngesetSpecs(ctx context.Context) error {
+	r.vblidbteSpecsOnce.Do(func() {
 		svc := service.New(r.store)
-		r.validateSpecsErr = svc.ValidateChangesetSpecs(ctx, r.batchSpec.ID)
+		r.vblidbteSpecsErr = svc.VblidbteChbngesetSpecs(ctx, r.bbtchSpec.ID)
 	})
-	return r.validateSpecsErr
+	return r.vblidbteSpecsErr
 }
 
-func (r *batchSpecResolver) computeStats(ctx context.Context) (btypes.BatchSpecStats, error) {
-	r.statsOnce.Do(func() {
+func (r *bbtchSpecResolver) computeStbts(ctx context.Context) (btypes.BbtchSpecStbts, error) {
+	r.stbtsOnce.Do(func() {
 		svc := service.New(r.store)
-		r.stats, r.statsErr = svc.LoadBatchSpecStats(ctx, r.batchSpec)
+		r.stbts, r.stbtsErr = svc.LobdBbtchSpecStbts(ctx, r.bbtchSpec)
 	})
-	return r.stats, r.statsErr
+	return r.stbts, r.stbtsErr
 }
 
-func (r *batchSpecResolver) computeState(ctx context.Context) (btypes.BatchSpecState, error) {
-	r.stateOnce.Do(func() {
-		r.state, r.stateErr = func() (btypes.BatchSpecState, error) {
-			stats, err := r.computeStats(ctx)
+func (r *bbtchSpecResolver) computeStbte(ctx context.Context) (btypes.BbtchSpecStbte, error) {
+	r.stbteOnce.Do(func() {
+		r.stbte, r.stbteErr = func() (btypes.BbtchSpecStbte, error) {
+			stbts, err := r.computeStbts(ctx)
 			if err != nil {
 				return "", err
 			}
 
-			state := btypes.ComputeBatchSpecState(r.batchSpec, stats)
+			stbte := btypes.ComputeBbtchSpecStbte(r.bbtchSpec, stbts)
 
-			// If the BatchSpec finished execution successfully, we validate
-			// the changeset specs.
-			if state == btypes.BatchSpecStateCompleted {
-				validationErr := r.validateChangesetSpecs(ctx)
-				if validationErr != nil {
-					return btypes.BatchSpecStateFailed, nil
+			// If the BbtchSpec finished execution successfully, we vblidbte
+			// the chbngeset specs.
+			if stbte == btypes.BbtchSpecStbteCompleted {
+				vblidbtionErr := r.vblidbteChbngesetSpecs(ctx)
+				if vblidbtionErr != nil {
+					return btypes.BbtchSpecStbteFbiled, nil
 				}
 			}
 
-			return state, nil
+			return stbte, nil
 		}()
 	})
-	return r.state, r.stateErr
+	return r.stbte, r.stbteErr
 }
 
-func (r *batchSpecResolver) computeCanAdminister(ctx context.Context) (bool, error) {
-	r.canAdministerOnce.Do(func() {
+func (r *bbtchSpecResolver) computeCbnAdminister(ctx context.Context) (bool, error) {
+	r.cbnAdministerOnce.Do(func() {
 		svc := service.New(r.store)
-		r.canAdminister, r.canAdministerErr = svc.CheckViewerCanAdminister(ctx, r.batchSpec.NamespaceUserID, r.batchSpec.NamespaceOrgID)
+		r.cbnAdminister, r.cbnAdministerErr = svc.CheckViewerCbnAdminister(ctx, r.bbtchSpec.NbmespbceUserID, r.bbtchSpec.NbmespbceOrgID)
 	})
-	return r.canAdminister, r.canAdministerErr
+	return r.cbnAdminister, r.cbnAdministerErr
 }
 
-func (r *batchSpecResolver) Files(ctx context.Context, args *graphqlbackend.ListBatchSpecWorkspaceFilesArgs) (_ graphqlbackend.BatchSpecWorkspaceFileConnectionResolver, err error) {
-	if err := validateFirstParamDefaults(args.First); err != nil {
+func (r *bbtchSpecResolver) Files(ctx context.Context, brgs *grbphqlbbckend.ListBbtchSpecWorkspbceFilesArgs) (_ grbphqlbbckend.BbtchSpecWorkspbceFileConnectionResolver, err error) {
+	if err := vblidbteFirstPbrbmDefbults(brgs.First); err != nil {
 		return nil, err
 	}
-	opts := store.ListBatchSpecWorkspaceFileOpts{
+	opts := store.ListBbtchSpecWorkspbceFileOpts{
 		LimitOpts: store.LimitOpts{
-			Limit: int(args.First),
+			Limit: int(brgs.First),
 		},
-		BatchSpecRandID: r.batchSpec.RandID,
+		BbtchSpecRbndID: r.bbtchSpec.RbndID,
 	}
 
-	if args.After != nil {
-		id, err := strconv.Atoi(*args.After)
+	if brgs.After != nil {
+		id, err := strconv.Atoi(*brgs.After)
 		if err != nil {
 			return nil, err
 		}
 		opts.Cursor = int64(id)
 	}
 
-	return &batchSpecWorkspaceFileConnectionResolver{store: r.store, opts: opts}, nil
+	return &bbtchSpecWorkspbceFileConnectionResolver{store: r.store, opts: opts}, nil
 }

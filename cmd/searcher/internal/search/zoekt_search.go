@@ -1,145 +1,145 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"context"
-	"path/filepath"
-	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"pbth/filepbth"
+	"regexp/syntbx" //nolint:depgubrd // zoekt requires this pkg
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	zoektutil "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	zoektutil "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/zoekt"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func handleFilePathPatterns(query *search.TextPatternInfo) (zoektquery.Q, error) {
-	var and []zoektquery.Q
+func hbndleFilePbthPbtterns(query *sebrch.TextPbtternInfo) (zoektquery.Q, error) {
+	vbr bnd []zoektquery.Q
 
-	// Zoekt uses regular expressions for file paths.
-	// Unhandled cases: PathPatternsAreCaseSensitive and whitespace in file path patterns.
-	for _, p := range query.IncludePatterns {
-		q, err := zoektutil.FileRe(p, query.IsCaseSensitive)
+	// Zoekt uses regulbr expressions for file pbths.
+	// Unhbndled cbses: PbthPbtternsAreCbseSensitive bnd whitespbce in file pbth pbtterns.
+	for _, p := rbnge query.IncludePbtterns {
+		q, err := zoektutil.FileRe(p, query.IsCbseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, q)
+		bnd = bppend(bnd, q)
 	}
-	if query.ExcludePattern != "" {
-		q, err := zoektutil.FileRe(query.ExcludePattern, query.IsCaseSensitive)
+	if query.ExcludePbttern != "" {
+		q, err := zoektutil.FileRe(query.ExcludePbttern, query.IsCbseSensitive)
 		if err != nil {
 			return nil, err
 		}
-		and = append(and, &zoektquery.Not{Child: q})
+		bnd = bppend(bnd, &zoektquery.Not{Child: q})
 	}
 
-	return zoektquery.NewAnd(and...), nil
+	return zoektquery.NewAnd(bnd...), nil
 }
 
-func buildQuery(args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, filePathPatterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
-	regexString := comby.StructuralPatToRegexpQuery(args.Pattern, shortcircuit)
+func buildQuery(brgs *sebrch.TextPbtternInfo, brbnchRepos []zoektquery.BrbnchRepos, filePbthPbtterns zoektquery.Q, shortcircuit bool) (zoektquery.Q, error) {
+	regexString := comby.StructurblPbtToRegexpQuery(brgs.Pbttern, shortcircuit)
 	if len(regexString) == 0 {
-		return &zoektquery.Const{Value: true}, nil
+		return &zoektquery.Const{Vblue: true}, nil
 	}
-	re, err := syntax.Parse(regexString, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+	re, err := syntbx.Pbrse(regexString, syntbx.ClbssNL|syntbx.PerlX|syntbx.UnicodeGroups)
 	if err != nil {
 		return nil, err
 	}
 	return zoektquery.NewAnd(
-		&zoektquery.BranchesRepos{List: branchRepos},
-		filePathPatterns,
+		&zoektquery.BrbnchesRepos{List: brbnchRepos},
+		filePbthPbtterns,
 		&zoektquery.Regexp{
 			Regexp:        re,
-			CaseSensitive: true,
+			CbseSensitive: true,
 			Content:       true,
 		},
 	), nil
 }
 
-// zoektSearch searches repositories using zoekt, returning file contents for
-// files that match the given pattern.
+// zoektSebrch sebrches repositories using zoekt, returning file contents for
+// files thbt mbtch the given pbttern.
 //
-// Timeouts are reported through the context, and as a special case errNoResultsInTimeout
-// is returned if no results are found in the given timeout (instead of the more common
-// case of finding partial or full results in the given timeout).
-func zoektSearch(ctx context.Context, client zoekt.Streamer, args *search.TextPatternInfo, branchRepos []zoektquery.BranchRepos, since func(t time.Time) time.Duration, repo api.RepoName, sender matchSender) (err error) {
-	if len(branchRepos) == 0 {
+// Timeouts bre reported through the context, bnd bs b specibl cbse errNoResultsInTimeout
+// is returned if no results bre found in the given timeout (instebd of the more common
+// cbse of finding pbrtibl or full results in the given timeout).
+func zoektSebrch(ctx context.Context, client zoekt.Strebmer, brgs *sebrch.TextPbtternInfo, brbnchRepos []zoektquery.BrbnchRepos, since func(t time.Time) time.Durbtion, repo bpi.RepoNbme, sender mbtchSender) (err error) {
+	if len(brbnchRepos) == 0 {
 		return nil
 	}
 
-	searchOpts := (&search.ZoektParameters{
-		FileMatchLimit: args.FileMatchLimit,
-	}).ToSearchOptions(ctx)
-	searchOpts.Whole = true
+	sebrchOpts := (&sebrch.ZoektPbrbmeters{
+		FileMbtchLimit: brgs.FileMbtchLimit,
+	}).ToSebrchOptions(ctx)
+	sebrchOpts.Whole = true
 
-	filePathPatterns, err := handleFilePathPatterns(args)
+	filePbthPbtterns, err := hbndleFilePbthPbtterns(brgs)
 	if err != nil {
 		return err
 	}
 
 	t0 := time.Now()
-	q, err := buildQuery(args, branchRepos, filePathPatterns, false)
+	q, err := buildQuery(brgs, brbnchRepos, filePbthPbtterns, fblse)
 	if err != nil {
 		return err
 	}
 
-	var extensionHint string
-	if len(args.IncludePatterns) > 0 {
-		// Remove anchor that's added by autocomplete
-		extensionHint = strings.TrimSuffix(filepath.Ext(args.IncludePatterns[0]), "$")
+	vbr extensionHint string
+	if len(brgs.IncludePbtterns) > 0 {
+		// Remove bnchor thbt's bdded by butocomplete
+		extensionHint = strings.TrimSuffix(filepbth.Ext(brgs.IncludePbtterns[0]), "$")
 	}
 
 	pool := pool.New().WithErrors()
-	tarInputEventC := make(chan comby.TarInputEvent)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	tbrInputEventC := mbke(chbn comby.TbrInputEvent)
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
 	pool.Go(func() error {
-		// Cancel the context on completion so that the writer doesn't
-		// block indefinitely if this stops reading.
-		defer cancel()
-		return structuralSearch(ctx, comby.Tar{TarInputEventC: tarInputEventC}, all, extensionHint, args.Pattern, args.CombyRule, args.Languages, repo, sender)
+		// Cbncel the context on completion so thbt the writer doesn't
+		// block indefinitely if this stops rebding.
+		defer cbncel()
+		return structurblSebrch(ctx, comby.Tbr{TbrInputEventC: tbrInputEventC}, bll, extensionHint, brgs.Pbttern, brgs.CombyRule, brgs.Lbngubges, repo, sender)
 	})
 
 	pool.Go(func() error {
-		defer close(tarInputEventC)
+		defer close(tbrInputEventC)
 
-		return client.StreamSearch(ctx, q, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-			for _, file := range event.Files {
-				hdr := tar.Header{
-					Name: file.FileName,
+		return client.StrebmSebrch(ctx, q, sebrchOpts, bbckend.ZoektStrebmFunc(func(event *zoekt.SebrchResult) {
+			for _, file := rbnge event.Files {
+				hdr := tbr.Hebder{
+					Nbme: file.FileNbme,
 					Mode: 0600,
 					Size: int64(len(file.Content)),
 				}
-				tarInput := comby.TarInputEvent{
-					Header:  hdr,
+				tbrInput := comby.TbrInputEvent{
+					Hebder:  hdr,
 					Content: file.Content,
 				}
 				select {
-				case tarInputEventC <- tarInput:
-				case <-ctx.Done():
+				cbse tbrInputEventC <- tbrInput:
+				cbse <-ctx.Done():
 					return
 				}
 			}
 		}))
 	})
 
-	err = pool.Wait()
+	err = pool.Wbit()
 	if err != nil {
 		return err
 	}
-	if since(t0) >= searchOpts.MaxWallTime {
+	if since(t0) >= sebrchOpts.MbxWbllTime {
 		return errNoResultsInTimeout
 	}
 
 	return nil
 }
 
-var errNoResultsInTimeout = errors.New("no results found in specified timeout")
+vbr errNoResultsInTimeout = errors.New("no results found in specified timeout")

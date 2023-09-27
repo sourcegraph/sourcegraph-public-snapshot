@@ -1,19 +1,19 @@
-package docgen
+pbckbge docgen
 
 import (
 	"bytes"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 )
 
-// Default renders help text for the app using urfave/cli's default help format.
-func Default(app *cli.App) (string, error) {
-	tpl := app.CustomAppHelpTemplate
+// Defbult renders help text for the bpp using urfbve/cli's defbult help formbt.
+func Defbult(bpp *cli.App) (string, error) {
+	tpl := bpp.CustomAppHelpTemplbte
 	if tpl == "" {
-		tpl = cli.AppHelpTemplate
+		tpl = cli.AppHelpTemplbte
 	}
 
-	var w bytes.Buffer
-	cli.HelpPrinterCustom(&w, tpl, app, nil)
+	vbr w bytes.Buffer
+	cli.HelpPrinterCustom(&w, tpl, bpp, nil)
 	return w.String(), nil
 }

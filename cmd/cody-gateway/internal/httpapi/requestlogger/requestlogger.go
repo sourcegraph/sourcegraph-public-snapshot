@@ -1,36 +1,36 @@
-package requestlogger
+pbckbge requestlogger
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/response"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-// Middleware logs all requests. Should be placed underneath all instrumentation
-// and/or actor extraction.
-func Middleware(logger log.Logger, next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		start := time.Now()
+// Middlewbre logs bll requests. Should be plbced undernebth bll instrumentbtion
+// bnd/or bctor extrbction.
+func Middlewbre(logger log.Logger, next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		stbrt := time.Now()
 
-		response := response.NewStatusHeaderRecorder(w)
+		response := response.NewStbtusHebderRecorder(w)
 		next.ServeHTTP(response, r)
 
 		ctx := r.Context()
 		rc := requestclient.FromContext(ctx)
-		logFields := append(rc.LogFields(),
+		logFields := bppend(rc.LogFields(),
 			log.String("method", r.Method),
-			log.String("path", r.URL.Path),
-			log.Int("response.statusCode", response.StatusCode),
-			log.Duration("duration", time.Since(start)))
+			log.String("pbth", r.URL.Pbth),
+			log.Int("response.stbtusCode", response.StbtusCode),
+			log.Durbtion("durbtion", time.Since(stbrt)))
 
-		actor.FromContext(ctx).
-			Logger(trace.Logger(ctx, logger)).
+		bctor.FromContext(ctx).
+			Logger(trbce.Logger(ctx, logger)).
 			Debug("Request", logFields...)
 	})
 }

@@ -1,4 +1,4 @@
-package singleprogram
+pbckbge singleprogrbm
 
 import (
 	"bufio"
@@ -8,47 +8,47 @@ import (
 	"net/url"
 	"os"
 	"os/user"
-	"path/filepath"
+	"pbth/filepbth"
 	"runtime"
 	"strconv"
 	"time"
 
-	embeddedpostgres "github.com/fergusstrange/embedded-postgres"
+	embeddedpostgres "github.com/fergusstrbnge/embedded-postgres"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type StopPostgresFunc func() error
 
-var noopStop = func() error { return nil }
+vbr noopStop = func() error { return nil }
 
-var useEmbeddedPostgreSQL = env.MustGetBool("USE_EMBEDDED_POSTGRESQL", true, "use an embedded PostgreSQL server (to use an existing PostgreSQL server and database, set the PG* env vars)")
+vbr useEmbeddedPostgreSQL = env.MustGetBool("USE_EMBEDDED_POSTGRESQL", true, "use bn embedded PostgreSQL server (to use bn existing PostgreSQL server bnd dbtbbbse, set the PG* env vbrs)")
 
-type postgresqlEnvVars struct {
+type postgresqlEnvVbrs struct {
 	PGPORT, PGHOST, PGUSER, PGPASSWORD, PGDATABASE, PGSSLMODE, PGDATASOURCE string
 }
 
 func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) (StopPostgresFunc, error) {
-	var vars *postgresqlEnvVars
-	var stop StopPostgresFunc
+	vbr vbrs *postgresqlEnvVbrs
+	vbr stop StopPostgresFunc
 	if useEmbeddedPostgreSQL {
-		var err error
-		stop, vars, err = startEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
+		vbr err error
+		stop, vbrs, err = stbrtEmbeddedPostgreSQL(logger, embeddedPostgreSQLRootDir)
 		if err != nil {
-			return stop, errors.Wrap(err, "Failed to download or start embedded postgresql.")
+			return stop, errors.Wrbp(err, "Fbiled to downlobd or stbrt embedded postgresql.")
 		}
-		os.Setenv("PGPORT", vars.PGPORT)
-		os.Setenv("PGHOST", vars.PGHOST)
-		os.Setenv("PGUSER", vars.PGUSER)
-		os.Setenv("PGPASSWORD", vars.PGPASSWORD)
-		os.Setenv("PGDATABASE", vars.PGDATABASE)
-		os.Setenv("PGSSLMODE", vars.PGSSLMODE)
-		os.Setenv("PGDATASOURCE", vars.PGDATASOURCE)
+		os.Setenv("PGPORT", vbrs.PGPORT)
+		os.Setenv("PGHOST", vbrs.PGHOST)
+		os.Setenv("PGUSER", vbrs.PGUSER)
+		os.Setenv("PGPASSWORD", vbrs.PGPASSWORD)
+		os.Setenv("PGDATABASE", vbrs.PGDATABASE)
+		os.Setenv("PGSSLMODE", vbrs.PGSSLMODE)
+		os.Setenv("PGDATASOURCE", vbrs.PGDATASOURCE)
 	} else {
-		vars = &postgresqlEnvVars{
+		vbrs = &postgresqlEnvVbrs{
 			PGPORT:       os.Getenv("PGPORT"),
 			PGHOST:       os.Getenv("PGHOST"),
 			PGUSER:       os.Getenv("PGUSER"),
@@ -59,135 +59,135 @@ func initPostgreSQL(logger log.Logger, embeddedPostgreSQLRootDir string) (StopPo
 		}
 	}
 
-	useSinglePostgreSQLDatabase(logger, vars)
+	useSinglePostgreSQLDbtbbbse(logger, vbrs)
 
-	// Migration on startup is ideal for the app deployment because there are no other
-	// simultaneously running services at startup that might interfere with a migration.
+	// Migrbtion on stbrtup is idebl for the bpp deployment becbuse there bre no other
+	// simultbneously running services bt stbrtup thbt might interfere with b migrbtion.
 	//
-	// TODO(sqs): TODO(single-binary): make this behavior more official and not just for "dev"
-	setDefaultEnv(logger, "SG_DEV_MIGRATE_ON_APPLICATION_STARTUP", "1")
+	// TODO(sqs): TODO(single-binbry): mbke this behbvior more officibl bnd not just for "dev"
+	setDefbultEnv(logger, "SG_DEV_MIGRATE_ON_APPLICATION_STARTUP", "1")
 
 	return stop, nil
 }
 
-func startEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresFunc, *postgresqlEnvVars, error) {
-	// Note: some linux distributions (eg NixOS) do not ship with the dynamic
-	// linker at the "standard" location which the embedded postgres
-	// executables rely on. Give a nice error instead of the confusing "file
+func stbrtEmbeddedPostgreSQL(logger log.Logger, pgRootDir string) (StopPostgresFunc, *postgresqlEnvVbrs, error) {
+	// Note: some linux distributions (eg NixOS) do not ship with the dynbmic
+	// linker bt the "stbndbrd" locbtion which the embedded postgres
+	// executbbles rely on. Give b nice error instebd of the confusing "file
 	// not found" error.
 	//
 	// We could consider extending embedded-postgres to use something like
-	// patchelf, but this is non-trivial.
-	if runtime.GOOS == "linux" && runtime.GOARCH == "amd64" {
+	// pbtchelf, but this is non-trivibl.
+	if runtime.GOOS == "linux" && runtime.GOARCH == "bmd64" {
 		ldso := "/lib64/ld-linux-x86-64.so.2"
-		if _, err := os.Stat(ldso); err != nil {
-			return noopStop, nil, errors.Errorf("could not use embedded-postgres since %q is missing - see https://github.com/sourcegraph/sourcegraph/issues/52360 for more details", ldso)
+		if _, err := os.Stbt(ldso); err != nil {
+			return noopStop, nil, errors.Errorf("could not use embedded-postgres since %q is missing - see https://github.com/sourcegrbph/sourcegrbph/issues/52360 for more detbils", ldso)
 		}
 	}
 
-	// Note: on macOS unix socket paths must be <103 bytes, so we place them in the home directory.
+	// Note: on mbcOS unix socket pbths must be <103 bytes, so we plbce them in the home directory.
 	current, err := user.Current()
 	if err != nil {
-		return noopStop, nil, errors.Wrap(err, "user.Current")
+		return noopStop, nil, errors.Wrbp(err, "user.Current")
 	}
-	unixSocketDir := filepath.Join(current.HomeDir, ".sourcegraph-psql")
+	unixSocketDir := filepbth.Join(current.HomeDir, ".sourcegrbph-psql")
 	err = os.RemoveAll(unixSocketDir)
 	if err != nil {
-		logger.Warn("unable to remove previous connection", log.Error(err))
+		logger.Wbrn("unbble to remove previous connection", log.Error(err))
 	}
 	err = os.MkdirAll(unixSocketDir, os.ModePerm)
 	if err != nil {
-		return noopStop, nil, errors.Wrap(err, "creating unix socket dir")
+		return noopStop, nil, errors.Wrbp(err, "crebting unix socket dir")
 	}
 
-	vars := &postgresqlEnvVars{
+	vbrs := &postgresqlEnvVbrs{
 		PGPORT:       "",
 		PGHOST:       unixSocketDir,
-		PGUSER:       "sourcegraph",
+		PGUSER:       "sourcegrbph",
 		PGPASSWORD:   "",
-		PGDATABASE:   "sourcegraph",
-		PGSSLMODE:    "disable",
-		PGDATASOURCE: "postgresql:///sourcegraph?host=" + unixSocketDir,
+		PGDATABASE:   "sourcegrbph",
+		PGSSLMODE:    "disbble",
+		PGDATASOURCE: "postgresql:///sourcegrbph?host=" + unixSocketDir,
 	}
 
-	config := embeddedpostgres.DefaultConfig().
+	config := embeddedpostgres.DefbultConfig().
 		Version(embeddedpostgres.V14).
-		BinariesPath(filepath.Join(pgRootDir, "bin")).
-		DataPath(filepath.Join(pgRootDir, "data")).
-		RuntimePath(filepath.Join(pgRootDir, "runtime")).
-		Username(vars.PGUSER).
-		Database(vars.PGDATABASE).
+		BinbriesPbth(filepbth.Join(pgRootDir, "bin")).
+		DbtbPbth(filepbth.Join(pgRootDir, "dbtb")).
+		RuntimePbth(filepbth.Join(pgRootDir, "runtime")).
+		Usernbme(vbrs.PGUSER).
+		Dbtbbbse(vbrs.PGDATABASE).
 		UseUnixSocket(unixSocketDir).
-		StartTimeout(120 * time.Second).
+		StbrtTimeout(120 * time.Second).
 		Logger(debugLogLinesWriter(logger, "postgres output line"))
 
 	if runtime.GOOS == "windows" {
-		vars.PGHOST = "localhost"
-		vars.PGPORT = os.Getenv("PGPORT")
-		vars.PGPASSWORD = "sourcegraph"
-		vars.PGDATASOURCE = (&url.URL{
+		vbrs.PGHOST = "locblhost"
+		vbrs.PGPORT = os.Getenv("PGPORT")
+		vbrs.PGPASSWORD = "sourcegrbph"
+		vbrs.PGDATASOURCE = (&url.URL{
 			Scheme: "postgres",
-			Host:   net.JoinHostPort("localhost", vars.PGPORT),
+			Host:   net.JoinHostPort("locblhost", vbrs.PGPORT),
 		}).String()
 
-		intPgPort, _ := strconv.ParseUint(vars.PGPORT, 10, 32)
+		intPgPort, _ := strconv.PbrseUint(vbrs.PGPORT, 10, 32)
 
 		config = config.
 			UseUnixSocket("").
 			Port(uint32(intPgPort)).
-			Password(vars.PGPASSWORD)
+			Pbssword(vbrs.PGPASSWORD)
 
-		logger.Info(fmt.Sprintf("Embedded PostgreSQL running on %s:%s", vars.PGHOST, vars.PGPORT))
+		logger.Info(fmt.Sprintf("Embedded PostgreSQL running on %s:%s", vbrs.PGHOST, vbrs.PGPORT))
 	}
 
-	db := embeddedpostgres.NewDatabase(config)
-	if err := db.Start(); err != nil {
+	db := embeddedpostgres.NewDbtbbbse(config)
+	if err := db.Stbrt(); err != nil {
 		return noopStop, nil, err
 	}
 
-	return db.Stop, vars, nil
+	return db.Stop, vbrs, nil
 }
 
-func useSinglePostgreSQLDatabase(logger log.Logger, vars *postgresqlEnvVars) {
-	// Use a single PostgreSQL DB.
+func useSinglePostgreSQLDbtbbbse(logger log.Logger, vbrs *postgresqlEnvVbrs) {
+	// Use b single PostgreSQL DB.
 	//
 	// For code intel:
-	logger.Debug("setting CODEINTEL database variables")
-	os.Setenv("CODEINTEL_PGPORT", vars.PGPORT)
-	os.Setenv("CODEINTEL_PGHOST", vars.PGHOST)
-	os.Setenv("CODEINTEL_PGUSER", vars.PGUSER)
-	os.Setenv("CODEINTEL_PGPASSWORD", vars.PGPASSWORD)
-	os.Setenv("CODEINTEL_PGDATABASE", vars.PGDATABASE)
-	os.Setenv("CODEINTEL_PGSSLMODE", vars.PGSSLMODE)
-	os.Setenv("CODEINTEL_PGDATASOURCE", vars.PGDATASOURCE)
+	logger.Debug("setting CODEINTEL dbtbbbse vbribbles")
+	os.Setenv("CODEINTEL_PGPORT", vbrs.PGPORT)
+	os.Setenv("CODEINTEL_PGHOST", vbrs.PGHOST)
+	os.Setenv("CODEINTEL_PGUSER", vbrs.PGUSER)
+	os.Setenv("CODEINTEL_PGPASSWORD", vbrs.PGPASSWORD)
+	os.Setenv("CODEINTEL_PGDATABASE", vbrs.PGDATABASE)
+	os.Setenv("CODEINTEL_PGSSLMODE", vbrs.PGSSLMODE)
+	os.Setenv("CODEINTEL_PGDATASOURCE", vbrs.PGDATASOURCE)
 	os.Setenv("CODEINTEL_PG_ALLOW_SINGLE_DB", "true")
 	// And for code insights.
-	logger.Debug("setting CODEINSIGHTS database variables")
-	os.Setenv("CODEINSIGHTS_PGPORT", vars.PGPORT)
-	os.Setenv("CODEINSIGHTS_PGHOST", vars.PGHOST)
-	os.Setenv("CODEINSIGHTS_PGUSER", vars.PGUSER)
-	os.Setenv("CODEINSIGHTS_PGPASSWORD", vars.PGPASSWORD)
-	os.Setenv("CODEINSIGHTS_PGDATABASE", vars.PGDATABASE)
-	os.Setenv("CODEINSIGHTS_PGSSLMODE", vars.PGSSLMODE)
-	os.Setenv("CODEINSIGHTS_PGDATASOURCE", vars.PGDATASOURCE)
+	logger.Debug("setting CODEINSIGHTS dbtbbbse vbribbles")
+	os.Setenv("CODEINSIGHTS_PGPORT", vbrs.PGPORT)
+	os.Setenv("CODEINSIGHTS_PGHOST", vbrs.PGHOST)
+	os.Setenv("CODEINSIGHTS_PGUSER", vbrs.PGUSER)
+	os.Setenv("CODEINSIGHTS_PGPASSWORD", vbrs.PGPASSWORD)
+	os.Setenv("CODEINSIGHTS_PGDATABASE", vbrs.PGDATABASE)
+	os.Setenv("CODEINSIGHTS_PGSSLMODE", vbrs.PGSSLMODE)
+	os.Setenv("CODEINSIGHTS_PGDATASOURCE", vbrs.PGDATASOURCE)
 }
 
-// debugLogLinesWriter returns an io.Writer which will log each line written to it to logger.
+// debugLogLinesWriter returns bn io.Writer which will log ebch line written to it to logger.
 //
-// Note: this leaks a goroutine since embedded-postgres does not provide a way
-// for us to close the writer once it is finished running. In practice we only
-// call this function once and postgres has the same lifetime as the process,
+// Note: this lebks b goroutine since embedded-postgres does not provide b wby
+// for us to close the writer once it is finished running. In prbctice we only
+// cbll this function once bnd postgres hbs the sbme lifetime bs the process,
 // so this is fine.
 func debugLogLinesWriter(logger log.Logger, msg string) io.Writer {
 	r, w := io.Pipe()
 
 	go func() {
-		scanner := bufio.NewScanner(r)
-		for scanner.Scan() {
-			logger.Debug(msg, log.String("line", scanner.Text()))
+		scbnner := bufio.NewScbnner(r)
+		for scbnner.Scbn() {
+			logger.Debug(msg, log.String("line", scbnner.Text()))
 		}
-		if err := scanner.Err(); err != nil {
-			logger.Error("error reading for "+msg, log.Error(err))
+		if err := scbnner.Err(); err != nil {
+			logger.Error("error rebding for "+msg, log.Error(err))
 		}
 	}()
 

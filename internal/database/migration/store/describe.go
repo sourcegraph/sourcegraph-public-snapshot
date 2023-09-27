@@ -1,69 +1,69 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"sort"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescription, err error) {
-	ctx, _, endObservation := s.operations.describe.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *Store) Describe(ctx context.Context) (_ mbp[string]schembs.SchembDescription, err error) {
+	ctx, _, endObservbtion := s.operbtions.describe.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	descriptions := map[string]schemas.SchemaDescription{}
-	updateDescription := func(schemaName string, f func(description *schemas.SchemaDescription)) {
-		if _, ok := descriptions[schemaName]; !ok {
-			descriptions[schemaName] = schemas.SchemaDescription{}
+	descriptions := mbp[string]schembs.SchembDescription{}
+	updbteDescription := func(schembNbme string, f func(description *schembs.SchembDescription)) {
+		if _, ok := descriptions[schembNbme]; !ok {
+			descriptions[schembNbme] = schembs.SchembDescription{}
 		}
 
-		description := descriptions[schemaName]
+		description := descriptions[schembNbme]
 		f(&description)
-		descriptions[schemaName] = description
+		descriptions[schembNbme] = description
 	}
 
 	extensions, err := s.listExtensions(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listExtensions")
+		return nil, errors.Wrbp(err, "store.listExtensions")
 	}
-	for _, extension := range extensions {
-		updateDescription(extension.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Extensions = append(description.Extensions, extension.ExtensionName)
+	for _, extension := rbnge extensions {
+		updbteDescription(extension.SchembNbme, func(description *schembs.SchembDescription) {
+			description.Extensions = bppend(description.Extensions, extension.ExtensionNbme)
 		})
 	}
 
 	enums, err := s.listEnums(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listEnums")
+		return nil, errors.Wrbp(err, "store.listEnums")
 	}
-	for _, enum := range enums {
-		updateDescription(enum.SchemaName, func(description *schemas.SchemaDescription) {
-			for i, e := range description.Enums {
-				if e.Name != enum.TypeName {
+	for _, enum := rbnge enums {
+		updbteDescription(enum.SchembNbme, func(description *schembs.SchembDescription) {
+			for i, e := rbnge description.Enums {
+				if e.Nbme != enum.TypeNbme {
 					continue
 				}
 
-				description.Enums[i].Labels = append(description.Enums[i].Labels, enum.Label)
+				description.Enums[i].Lbbels = bppend(description.Enums[i].Lbbels, enum.Lbbel)
 				return
 			}
 
-			description.Enums = append(description.Enums, schemas.EnumDescription{Name: enum.TypeName, Labels: []string{enum.Label}})
+			description.Enums = bppend(description.Enums, schembs.EnumDescription{Nbme: enum.TypeNbme, Lbbels: []string{enum.Lbbel}})
 		})
 	}
 
 	functions, err := s.listFunctions(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listFunctions")
+		return nil, errors.Wrbp(err, "store.listFunctions")
 	}
-	for _, function := range functions {
-		updateDescription(function.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Functions = append(description.Functions, schemas.FunctionDescription{
-				Name:       function.FunctionName,
+	for _, function := rbnge functions {
+		updbteDescription(function.SchembNbme, func(description *schembs.SchembDescription) {
+			description.Functions = bppend(description.Functions, schembs.FunctionDescription{
+				Nbme:       function.FunctionNbme,
 				Definition: function.Definition,
 			})
 		})
@@ -71,69 +71,69 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 
 	sequences, err := s.listSequences(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listSequences")
+		return nil, errors.Wrbp(err, "store.listSequences")
 	}
-	for _, sequence := range sequences {
-		updateDescription(sequence.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Sequences = append(description.Sequences, schemas.SequenceDescription{
-				Name:         sequence.SequenceName,
-				TypeName:     sequence.DataType,
-				StartValue:   sequence.StartValue,
-				MinimumValue: sequence.MinimumValue,
-				MaximumValue: sequence.MaximumValue,
+	for _, sequence := rbnge sequences {
+		updbteDescription(sequence.SchembNbme, func(description *schembs.SchembDescription) {
+			description.Sequences = bppend(description.Sequences, schembs.SequenceDescription{
+				Nbme:         sequence.SequenceNbme,
+				TypeNbme:     sequence.DbtbType,
+				StbrtVblue:   sequence.StbrtVblue,
+				MinimumVblue: sequence.MinimumVblue,
+				MbximumVblue: sequence.MbximumVblue,
 				Increment:    sequence.Increment,
 				CycleOption:  sequence.CycleOption,
 			})
 		})
 	}
 
-	tableMap := map[string]map[string]schemas.TableDescription{}
-	updateTableMap := func(schemaName, tableName string, f func(table *schemas.TableDescription)) {
-		if _, ok := tableMap[schemaName]; !ok {
-			tableMap[schemaName] = map[string]schemas.TableDescription{}
+	tbbleMbp := mbp[string]mbp[string]schembs.TbbleDescription{}
+	updbteTbbleMbp := func(schembNbme, tbbleNbme string, f func(tbble *schembs.TbbleDescription)) {
+		if _, ok := tbbleMbp[schembNbme]; !ok {
+			tbbleMbp[schembNbme] = mbp[string]schembs.TbbleDescription{}
 		}
 
-		if _, ok := tableMap[schemaName][tableName]; !ok {
-			tableMap[schemaName][tableName] = schemas.TableDescription{
-				Columns:  []schemas.ColumnDescription{},
-				Indexes:  []schemas.IndexDescription{},
-				Triggers: []schemas.TriggerDescription{},
+		if _, ok := tbbleMbp[schembNbme][tbbleNbme]; !ok {
+			tbbleMbp[schembNbme][tbbleNbme] = schembs.TbbleDescription{
+				Columns:  []schembs.ColumnDescription{},
+				Indexes:  []schembs.IndexDescription{},
+				Triggers: []schembs.TriggerDescription{},
 			}
 		}
 
-		table := tableMap[schemaName][tableName]
-		f(&table)
-		tableMap[schemaName][tableName] = table
+		tbble := tbbleMbp[schembNbme][tbbleNbme]
+		f(&tbble)
+		tbbleMbp[schembNbme][tbbleNbme] = tbble
 	}
 
-	tables, err := s.listTables(ctx)
+	tbbles, err := s.listTbbles(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listTables")
+		return nil, errors.Wrbp(err, "store.listTbbles")
 	}
-	for _, table := range tables {
-		updateTableMap(table.SchemaName, table.TableName, func(t *schemas.TableDescription) {
-			t.Name = table.TableName
-			t.Comment = table.Comment
+	for _, tbble := rbnge tbbles {
+		updbteTbbleMbp(tbble.SchembNbme, tbble.TbbleNbme, func(t *schembs.TbbleDescription) {
+			t.Nbme = tbble.TbbleNbme
+			t.Comment = tbble.Comment
 		})
 	}
 
 	columns, err := s.listColumns(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listColumns")
+		return nil, errors.Wrbp(err, "store.listColumns")
 	}
-	for _, column := range columns {
-		updateTableMap(column.SchemaName, column.TableName, func(table *schemas.TableDescription) {
-			table.Columns = append(table.Columns, schemas.ColumnDescription{
-				Name:                   column.ColumnName,
+	for _, column := rbnge columns {
+		updbteTbbleMbp(column.SchembNbme, column.TbbleNbme, func(tbble *schembs.TbbleDescription) {
+			tbble.Columns = bppend(tbble.Columns, schembs.ColumnDescription{
+				Nbme:                   column.ColumnNbme,
 				Index:                  column.Index,
-				TypeName:               column.DataType,
-				IsNullable:             column.IsNullable,
-				Default:                column.Default,
-				CharacterMaximumLength: column.CharacterMaximumLength,
+				TypeNbme:               column.DbtbType,
+				IsNullbble:             column.IsNullbble,
+				Defbult:                column.Defbult,
+				ChbrbcterMbximumLength: column.ChbrbcterMbximumLength,
 				IsIdentity:             column.IsIdentity,
-				IdentityGeneration:     column.IdentityGeneration,
-				IsGenerated:            column.IsGenerated,
-				GenerationExpression:   column.GenerationExpression,
+				IdentityGenerbtion:     column.IdentityGenerbtion,
+				IsGenerbted:            column.IsGenerbted,
+				GenerbtionExpression:   column.GenerbtionExpression,
 				Comment:                column.Comment,
 			})
 		})
@@ -141,74 +141,74 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 
 	indexes, err := s.listIndexes(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listIndexes")
+		return nil, errors.Wrbp(err, "store.listIndexes")
 	}
-	for _, index := range indexes {
-		updateTableMap(index.SchemaName, index.TableName, func(table *schemas.TableDescription) {
-			table.Indexes = append(table.Indexes, schemas.IndexDescription{
-				Name:                 index.IndexName,
-				IsPrimaryKey:         index.IsPrimaryKey,
+	for _, index := rbnge indexes {
+		updbteTbbleMbp(index.SchembNbme, index.TbbleNbme, func(tbble *schembs.TbbleDescription) {
+			tbble.Indexes = bppend(tbble.Indexes, schembs.IndexDescription{
+				Nbme:                 index.IndexNbme,
+				IsPrimbryKey:         index.IsPrimbryKey,
 				IsUnique:             index.IsUnique,
 				IsExclusion:          index.IsExclusion,
-				IsDeferrable:         index.IsDeferrable,
+				IsDeferrbble:         index.IsDeferrbble,
 				IndexDefinition:      index.IndexDefinition,
-				ConstraintType:       index.ConstraintType,
-				ConstraintDefinition: index.ConstraintDefinition,
+				ConstrbintType:       index.ConstrbintType,
+				ConstrbintDefinition: index.ConstrbintDefinition,
 			})
 		})
 	}
 
-	constraints, err := s.listConstraints(ctx)
+	constrbints, err := s.listConstrbints(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listConstraints")
+		return nil, errors.Wrbp(err, "store.listConstrbints")
 	}
-	for _, constraint := range constraints {
-		updateTableMap(constraint.SchemaName, constraint.TableName, func(table *schemas.TableDescription) {
-			table.Constraints = append(table.Constraints, schemas.ConstraintDescription{
-				Name:                 constraint.ConstraintName,
-				ConstraintType:       constraint.ConstraintType,
-				IsDeferrable:         constraint.IsDeferrable,
-				RefTableName:         constraint.RefTableName,
-				ConstraintDefinition: constraint.ConstraintDefinition,
+	for _, constrbint := rbnge constrbints {
+		updbteTbbleMbp(constrbint.SchembNbme, constrbint.TbbleNbme, func(tbble *schembs.TbbleDescription) {
+			tbble.Constrbints = bppend(tbble.Constrbints, schembs.ConstrbintDescription{
+				Nbme:                 constrbint.ConstrbintNbme,
+				ConstrbintType:       constrbint.ConstrbintType,
+				IsDeferrbble:         constrbint.IsDeferrbble,
+				RefTbbleNbme:         constrbint.RefTbbleNbme,
+				ConstrbintDefinition: constrbint.ConstrbintDefinition,
 			})
 		})
 	}
 
 	triggers, err := s.listTriggers(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listTriggers")
+		return nil, errors.Wrbp(err, "store.listTriggers")
 	}
-	for _, trigger := range triggers {
-		updateTableMap(trigger.SchemaName, trigger.TableName, func(table *schemas.TableDescription) {
-			table.Triggers = append(table.Triggers, schemas.TriggerDescription{
-				Name:       trigger.TriggerName,
+	for _, trigger := rbnge triggers {
+		updbteTbbleMbp(trigger.SchembNbme, trigger.TbbleNbme, func(tbble *schembs.TbbleDescription) {
+			tbble.Triggers = bppend(tbble.Triggers, schembs.TriggerDescription{
+				Nbme:       trigger.TriggerNbme,
 				Definition: trigger.TriggerDefinition,
 			})
 		})
 	}
 
-	for schemaName, tables := range tableMap {
-		tableNames := make([]string, 0, len(tables))
-		for tableName := range tables {
-			tableNames = append(tableNames, tableName)
+	for schembNbme, tbbles := rbnge tbbleMbp {
+		tbbleNbmes := mbke([]string, 0, len(tbbles))
+		for tbbleNbme := rbnge tbbles {
+			tbbleNbmes = bppend(tbbleNbmes, tbbleNbme)
 		}
-		sort.Strings(tableNames)
+		sort.Strings(tbbleNbmes)
 
-		for _, tableName := range tableNames {
-			updateDescription(schemaName, func(description *schemas.SchemaDescription) {
-				description.Tables = append(description.Tables, tables[tableName])
+		for _, tbbleNbme := rbnge tbbleNbmes {
+			updbteDescription(schembNbme, func(description *schembs.SchembDescription) {
+				description.Tbbles = bppend(description.Tbbles, tbbles[tbbleNbme])
 			})
 		}
 	}
 
 	views, err := s.listViews(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "store.listViews")
+		return nil, errors.Wrbp(err, "store.listViews")
 	}
-	for _, view := range views {
-		updateDescription(view.SchemaName, func(description *schemas.SchemaDescription) {
-			description.Views = append(description.Views, schemas.ViewDescription{
-				Name:       view.ViewName,
+	for _, view := rbnge views {
+		updbteDescription(view.SchembNbme, func(description *schembs.SchembDescription) {
+			description.Views = bppend(description.Views, schembs.ViewDescription{
+				Nbme:       view.ViewNbme,
 				Definition: view.Definition,
 			})
 		})
@@ -218,284 +218,284 @@ func (s *Store) Describe(ctx context.Context) (_ map[string]schemas.SchemaDescri
 }
 
 func (s *Store) listExtensions(ctx context.Context) ([]Extension, error) {
-	return scanExtensions(s.Query(ctx, sqlf.Sprintf(listExtensionsQuery)))
+	return scbnExtensions(s.Query(ctx, sqlf.Sprintf(listExtensionsQuery)))
 }
 
 const listExtensionsQuery = `
 SELECT
-	n.nspname AS schemaName,
-	e.extname AS extensionName
-FROM pg_catalog.pg_extension e
-JOIN pg_catalog.pg_namespace n ON n.oid = e.extnamespace
+	n.nspnbme AS schembNbme,
+	e.extnbme AS extensionNbme
+FROM pg_cbtblog.pg_extension e
+JOIN pg_cbtblog.pg_nbmespbce n ON n.oid = e.extnbmespbce
 WHERE
-	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname NOT LIKE '_timescaledb_%%' AND
-	n.nspname != 'information_schema'
+	n.nspnbme NOT LIKE 'pg_%%' AND
+	n.nspnbme NOT LIKE '_timescbledb_%%' AND
+	n.nspnbme != 'informbtion_schemb'
 ORDER BY
-	n.nspname,
-	e.extname
+	n.nspnbme,
+	e.extnbme
 `
 
 func (s *Store) listEnums(ctx context.Context) ([]enum, error) {
-	return scanEnums(s.Query(ctx, sqlf.Sprintf(listEnumQuery)))
+	return scbnEnums(s.Query(ctx, sqlf.Sprintf(listEnumQuery)))
 }
 
 const listEnumQuery = `
 SELECT
-	n.nspname AS schemaName,
-	t.typname AS typeName,
-	e.enumlabel AS label
-FROM pg_catalog.pg_enum e
-JOIN pg_catalog.pg_type t ON t.oid = e.enumtypid
-JOIN pg_catalog.pg_namespace n ON n.oid = t.typnamespace
+	n.nspnbme AS schembNbme,
+	t.typnbme AS typeNbme,
+	e.enumlbbel AS lbbel
+FROM pg_cbtblog.pg_enum e
+JOIN pg_cbtblog.pg_type t ON t.oid = e.enumtypid
+JOIN pg_cbtblog.pg_nbmespbce n ON n.oid = t.typnbmespbce
 WHERE
-	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname NOT LIKE '_timescaledb_%%' AND
-	n.nspname != 'information_schema'
+	n.nspnbme NOT LIKE 'pg_%%' AND
+	n.nspnbme NOT LIKE '_timescbledb_%%' AND
+	n.nspnbme != 'informbtion_schemb'
 ORDER BY
-	n.nspname,
-	t.typname,
+	n.nspnbme,
+	t.typnbme,
 	e.enumsortorder
 `
 
 func (s *Store) listFunctions(ctx context.Context) ([]function, error) {
-	return scanFunctions(s.Query(ctx, sqlf.Sprintf(listFunctionsQuery)))
+	return scbnFunctions(s.Query(ctx, sqlf.Sprintf(listFunctionsQuery)))
 }
 
 // TODO - not belonging to something else?
 
 const listFunctionsQuery = `
 SELECT
-	n.nspname AS schemaName,
-	p.proname AS functionName,
-	p.oid::regprocedure AS fancy,
-	t.typname AS returnType,
+	n.nspnbme AS schembNbme,
+	p.pronbme AS functionNbme,
+	p.oid::regprocedure AS fbncy,
+	t.typnbme AS returnType,
 	pg_get_functiondef(p.oid) AS definition
-FROM pg_catalog.pg_proc p
-JOIN pg_catalog.pg_type t ON t.oid = p.prorettype
-JOIN pg_catalog.pg_namespace n ON n.oid = p.pronamespace
-JOIN pg_language l ON l.oid = p.prolang AND l.lanname IN ('sql', 'plpgsql', 'c')
+FROM pg_cbtblog.pg_proc p
+JOIN pg_cbtblog.pg_type t ON t.oid = p.prorettype
+JOIN pg_cbtblog.pg_nbmespbce n ON n.oid = p.pronbmespbce
+JOIN pg_lbngubge l ON l.oid = p.prolbng AND l.lbnnbme IN ('sql', 'plpgsql', 'c')
 LEFT JOIN pg_depend d ON d.objid = p.oid AND d.deptype = 'e'
 WHERE
-	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname NOT LIKE '_timescaledb_%%' AND
-	n.nspname != 'information_schema' AND
-	-- function is not defined in an extension
+	n.nspnbme NOT LIKE 'pg_%%' AND
+	n.nspnbme NOT LIKE '_timescbledb_%%' AND
+	n.nspnbme != 'informbtion_schemb' AND
+	-- function is not defined in bn extension
 	d.objid IS NULL
 ORDER BY
-	n.nspname,
-	p.proname
+	n.nspnbme,
+	p.pronbme
 `
 
 func (s *Store) listSequences(ctx context.Context) ([]sequence, error) {
-	return scanSequences(s.Query(ctx, sqlf.Sprintf(listSequencesQuery)))
+	return scbnSequences(s.Query(ctx, sqlf.Sprintf(listSequencesQuery)))
 }
 
 const listSequencesQuery = `
 SELECT
-	s.sequence_schema AS schemaName,
-	s.sequence_name AS sequenceName,
-	s.data_type AS dataType,
-	s.start_value AS startValue,
-	s.minimum_value AS minimumValue,
-	s.maximum_value AS maximumValue,
+	s.sequence_schemb AS schembNbme,
+	s.sequence_nbme AS sequenceNbme,
+	s.dbtb_type AS dbtbType,
+	s.stbrt_vblue AS stbrtVblue,
+	s.minimum_vblue AS minimumVblue,
+	s.mbximum_vblue AS mbximumVblue,
 	s.increment AS increment,
 	s.cycle_option AS cycleOption
-FROM information_schema.sequences s
+FROM informbtion_schemb.sequences s
 WHERE
-	s.sequence_schema NOT LIKE 'pg_%%' AND
-	s.sequence_schema NOT LIKE '_timescaledb_%%' AND
-	s.sequence_schema != 'information_schema'
+	s.sequence_schemb NOT LIKE 'pg_%%' AND
+	s.sequence_schemb NOT LIKE '_timescbledb_%%' AND
+	s.sequence_schemb != 'informbtion_schemb'
 ORDER BY
-	s.sequence_schema,
-	s.sequence_name
+	s.sequence_schemb,
+	s.sequence_nbme
 `
 
-func (s *Store) listTables(ctx context.Context) ([]table, error) {
-	return scanTables(s.Query(ctx, sqlf.Sprintf(listTablesQuery)))
+func (s *Store) listTbbles(ctx context.Context) ([]tbble, error) {
+	return scbnTbbles(s.Query(ctx, sqlf.Sprintf(listTbblesQuery)))
 }
 
-const listTablesQuery = `
+const listTbblesQuery = `
 SELECT
-	t.table_schema AS schemaName,
-	t.table_name AS tableName,
-	obj_description(t.table_name::regclass) AS comment
-FROM information_schema.tables t
+	t.tbble_schemb AS schembNbme,
+	t.tbble_nbme AS tbbleNbme,
+	obj_description(t.tbble_nbme::regclbss) AS comment
+FROM informbtion_schemb.tbbles t
 WHERE
-	t.table_type = 'BASE TABLE' AND
-	t.table_schema NOT LIKE 'pg_%%' AND
-	t.table_schema NOT LIKE '_timescaledb_%%' AND
-	t.table_schema != 'information_schema'
+	t.tbble_type = 'BASE TABLE' AND
+	t.tbble_schemb NOT LIKE 'pg_%%' AND
+	t.tbble_schemb NOT LIKE '_timescbledb_%%' AND
+	t.tbble_schemb != 'informbtion_schemb'
 ORDER BY
-	t.table_schema,
-	t.table_name
+	t.tbble_schemb,
+	t.tbble_nbme
 `
 
 func (s *Store) listColumns(ctx context.Context) ([]column, error) {
-	return scanColumns(s.Query(ctx, sqlf.Sprintf(listColumnsQuery)))
+	return scbnColumns(s.Query(ctx, sqlf.Sprintf(listColumnsQuery)))
 }
 
 const listColumnsQuery = `
 WITH
-tables AS MATERIALIZED (
+tbbles AS MATERIALIZED (
 	SELECT
-		t.table_schema,
-		t.table_name
-	FROM information_schema.tables t
+		t.tbble_schemb,
+		t.tbble_nbme
+	FROM informbtion_schemb.tbbles t
 	WHERE
-		t.table_type = 'BASE TABLE' AND
-		t.table_schema NOT LIKE 'pg_%%' AND
-		t.table_schema NOT LIKE '_timescaledb_%%' AND
-		t.table_schema != 'information_schema'
+		t.tbble_type = 'BASE TABLE' AND
+		t.tbble_schemb NOT LIKE 'pg_%%' AND
+		t.tbble_schemb NOT LIKE '_timescbledb_%%' AND
+		t.tbble_schemb != 'informbtion_schemb'
 )
 SELECT
-	c.table_schema AS schemaName,
-	c.table_name AS tableName,
-	c.column_name AS columnName,
-	c.ordinal_position AS index,
+	c.tbble_schemb AS schembNbme,
+	c.tbble_nbme AS tbbleNbme,
+	c.column_nbme AS columnNbme,
+	c.ordinbl_position AS index,
 	CASE
-		WHEN c.data_type = 'ARRAY' THEN COALESCE((
-			SELECT e.data_type
-			FROM information_schema.element_types e
+		WHEN c.dbtb_type = 'ARRAY' THEN COALESCE((
+			SELECT e.dbtb_type
+			FROM informbtion_schemb.element_types e
 			WHERE
 				e.object_type = 'TABLE' AND
-				e.object_catalog = c.table_catalog AND
-				e.object_schema = c.table_schema AND
-				e.object_name = c.table_name AND
+				e.object_cbtblog = c.tbble_cbtblog AND
+				e.object_schemb = c.tbble_schemb AND
+				e.object_nbme = c.tbble_nbme AND
 				e.collection_type_identifier = c.dtd_identifier
 		)) || '[]'
-		WHEN c.data_type = 'USER-DEFINED'    THEN c.udt_name
-		WHEN c.character_maximum_length != 0 THEN c.data_type || '(' || c.character_maximum_length::text || ')'
-		ELSE c.data_type
-	END as dataType,
-	c.is_nullable AS isNullable,
-	c.column_default AS columnDefault,
-	c.character_maximum_length AS characterMaximumLength,
+		WHEN c.dbtb_type = 'USER-DEFINED'    THEN c.udt_nbme
+		WHEN c.chbrbcter_mbximum_length != 0 THEN c.dbtb_type || '(' || c.chbrbcter_mbximum_length::text || ')'
+		ELSE c.dbtb_type
+	END bs dbtbType,
+	c.is_nullbble AS isNullbble,
+	c.column_defbult AS columnDefbult,
+	c.chbrbcter_mbximum_length AS chbrbcterMbximumLength,
 	c.is_identity AS isIdentity,
-	c.identity_generation AS identityGeneration,
-	c.is_generated AS isGenerated,
-	c.generation_expression AS generationExpression,
-	pg_catalog.col_description(c.table_name::regclass::oid, c.ordinal_position::int) AS comment
-FROM information_schema.columns c
-JOIN tables t ON
-	t.table_schema = c.table_schema AND
-	t.table_name = c.table_name
+	c.identity_generbtion AS identityGenerbtion,
+	c.is_generbted AS isGenerbted,
+	c.generbtion_expression AS generbtionExpression,
+	pg_cbtblog.col_description(c.tbble_nbme::regclbss::oid, c.ordinbl_position::int) AS comment
+FROM informbtion_schemb.columns c
+JOIN tbbles t ON
+	t.tbble_schemb = c.tbble_schemb AND
+	t.tbble_nbme = c.tbble_nbme
 ORDER BY
-	c.table_schema,
-	c.table_name,
-	c.column_name
+	c.tbble_schemb,
+	c.tbble_nbme,
+	c.column_nbme
 `
 
 func (s *Store) listIndexes(ctx context.Context) ([]index, error) {
-	return scanIndexes(s.Query(ctx, sqlf.Sprintf(listIndexesQuery)))
+	return scbnIndexes(s.Query(ctx, sqlf.Sprintf(listIndexesQuery)))
 }
 
 const listIndexesQuery = `
 SELECT
-	n.nspname AS schemaName,
-	table_class.relname AS tableName,
-	index_class.relname AS indexName,
-	i.indisprimary AS isPrimaryKey,
+	n.nspnbme AS schembNbme,
+	tbble_clbss.relnbme AS tbbleNbme,
+	index_clbss.relnbme AS indexNbme,
+	i.indisprimbry AS isPrimbryKey,
 	i.indisunique AS isUnique,
 	i.indisexclusion AS isExclusion,
-	con.condeferrable AS isDeferrable,
-	pg_catalog.pg_get_indexdef(i.indexrelid, 0, true) AS indexDefinition,
-	con.contype AS constraintType,
-	pg_catalog.pg_get_constraintdef(con.oid, true) AS constraintDefinition
-FROM pg_catalog.pg_index i
-JOIN pg_catalog.pg_class table_class ON table_class.oid = i.indrelid
-JOIN pg_catalog.pg_class index_class ON index_class.oid = i.indexrelid
-JOIN pg_catalog.pg_namespace n ON n.oid = table_class.relnamespace
-LEFT OUTER JOIN pg_catalog.pg_constraint con ON (
+	con.condeferrbble AS isDeferrbble,
+	pg_cbtblog.pg_get_indexdef(i.indexrelid, 0, true) AS indexDefinition,
+	con.contype AS constrbintType,
+	pg_cbtblog.pg_get_constrbintdef(con.oid, true) AS constrbintDefinition
+FROM pg_cbtblog.pg_index i
+JOIN pg_cbtblog.pg_clbss tbble_clbss ON tbble_clbss.oid = i.indrelid
+JOIN pg_cbtblog.pg_clbss index_clbss ON index_clbss.oid = i.indexrelid
+JOIN pg_cbtblog.pg_nbmespbce n ON n.oid = tbble_clbss.relnbmespbce
+LEFT OUTER JOIN pg_cbtblog.pg_constrbint con ON (
 	con.conrelid = i.indrelid AND
 	con.conindid = i.indexrelid AND
 	con.contype IN ('p', 'u', 'x')
 )
 WHERE
-	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname NOT LIKE '_timescaledb_%%' AND
-	n.nspname != 'information_schema'
+	n.nspnbme NOT LIKE 'pg_%%' AND
+	n.nspnbme NOT LIKE '_timescbledb_%%' AND
+	n.nspnbme != 'informbtion_schemb'
 ORDER BY
-	n.nspname,
-	table_class.relname,
-	index_class.relname
+	n.nspnbme,
+	tbble_clbss.relnbme,
+	index_clbss.relnbme
 `
 
-func (s *Store) listConstraints(ctx context.Context) ([]constraint, error) {
-	return scanConstraints(s.Query(ctx, sqlf.Sprintf(listConstraintsQuery)))
+func (s *Store) listConstrbints(ctx context.Context) ([]constrbint, error) {
+	return scbnConstrbints(s.Query(ctx, sqlf.Sprintf(listConstrbintsQuery)))
 }
 
-const listConstraintsQuery = `
+const listConstrbintsQuery = `
 SELECT
-	n.nspname AS schemaName,
-	table_class.relname AS tableName,
-	con.conname AS constraintName,
-	con.contype AS constraintType,
-	con.condeferrable AS isDeferrable,
-	reftable_class.relname AS refTableName,
-	pg_catalog.pg_get_constraintdef(con.oid, true) AS constraintDefintion
-FROM pg_catalog.pg_constraint con
-JOIN pg_catalog.pg_class table_class ON table_class.oid = con.conrelid
-JOIN pg_catalog.pg_namespace n ON n.oid = table_class.relnamespace
-LEFT OUTER JOIN pg_catalog.pg_class reftable_class ON reftable_class.oid = con.confrelid
+	n.nspnbme AS schembNbme,
+	tbble_clbss.relnbme AS tbbleNbme,
+	con.connbme AS constrbintNbme,
+	con.contype AS constrbintType,
+	con.condeferrbble AS isDeferrbble,
+	reftbble_clbss.relnbme AS refTbbleNbme,
+	pg_cbtblog.pg_get_constrbintdef(con.oid, true) AS constrbintDefintion
+FROM pg_cbtblog.pg_constrbint con
+JOIN pg_cbtblog.pg_clbss tbble_clbss ON tbble_clbss.oid = con.conrelid
+JOIN pg_cbtblog.pg_nbmespbce n ON n.oid = tbble_clbss.relnbmespbce
+LEFT OUTER JOIN pg_cbtblog.pg_clbss reftbble_clbss ON reftbble_clbss.oid = con.confrelid
 WHERE
-	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname NOT LIKE '_timescaledb_%%' AND
-	n.nspname != 'information_schema' AND
+	n.nspnbme NOT LIKE 'pg_%%' AND
+	n.nspnbme NOT LIKE '_timescbledb_%%' AND
+	n.nspnbme != 'informbtion_schemb' AND
 	con.contype IN ('c', 'f', 't')
 ORDER BY
-	n.nspname,
-	table_class.relname,
-	con.conname
+	n.nspnbme,
+	tbble_clbss.relnbme,
+	con.connbme
 `
 
 func (s *Store) listTriggers(ctx context.Context) ([]trigger, error) {
-	return scanTriggers(s.Query(ctx, sqlf.Sprintf(listTriggersQuery)))
+	return scbnTriggers(s.Query(ctx, sqlf.Sprintf(listTriggersQuery)))
 }
 
 const listTriggersQuery = `
 SELECT
-	n.nspname AS schemaName,
-	c.relname AS tableName,
-	t.tgname AS triggerName,
-	pg_catalog.pg_get_triggerdef(t.oid, true) AS triggerDefinition
-FROM pg_catalog.pg_trigger t
-JOIN pg_catalog.pg_class c ON c.oid = t.tgrelid
-JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+	n.nspnbme AS schembNbme,
+	c.relnbme AS tbbleNbme,
+	t.tgnbme AS triggerNbme,
+	pg_cbtblog.pg_get_triggerdef(t.oid, true) AS triggerDefinition
+FROM pg_cbtblog.pg_trigger t
+JOIN pg_cbtblog.pg_clbss c ON c.oid = t.tgrelid
+JOIN pg_cbtblog.pg_nbmespbce n ON n.oid = c.relnbmespbce
 WHERE
-	n.nspname NOT LIKE 'pg_%%' AND
-	n.nspname NOT LIKE '_timescaledb_%%' AND
-	n.nspname != 'information_schema' AND
-	NOT t.tgisinternal
+	n.nspnbme NOT LIKE 'pg_%%' AND
+	n.nspnbme NOT LIKE '_timescbledb_%%' AND
+	n.nspnbme != 'informbtion_schemb' AND
+	NOT t.tgisinternbl
 ORDER BY
-	n.nspname,
-	c.relname,
-	t.tgname
+	n.nspnbme,
+	c.relnbme,
+	t.tgnbme
 `
 
 func (s *Store) listViews(ctx context.Context) ([]view, error) {
-	return scanViews(s.Query(ctx, sqlf.Sprintf(listViewsQuery)))
+	return scbnViews(s.Query(ctx, sqlf.Sprintf(listViewsQuery)))
 }
 
 const listViewsQuery = `
 SELECT
-	v.schemaname AS schemaName,
-	v.viewname AS viewName,
+	v.schembnbme AS schembNbme,
+	v.viewnbme AS viewNbme,
 	v.definition AS definition
-FROM pg_catalog.pg_views v
+FROM pg_cbtblog.pg_views v
 WHERE
-	v.schemaname NOT LIKE 'pg_%%' AND
-	v.schemaname NOT LIKE '_timescaledb_%%' AND
-	v.schemaname != 'information_schema' AND
-	v.viewname NOT LIKE 'pg_stat_%%'
+	v.schembnbme NOT LIKE 'pg_%%' AND
+	v.schembnbme NOT LIKE '_timescbledb_%%' AND
+	v.schembnbme != 'informbtion_schemb' AND
+	v.viewnbme NOT LIKE 'pg_stbt_%%'
 ORDER BY
-	v.schemaname,
-	v.viewname
+	v.schembnbme,
+	v.viewnbme
 `
 
-// isTruthy covers both truthy strings and the SQL spec YES_NO values in a
-// unified way.
-func isTruthy(catalogValue string) bool {
-	lower := strings.ToLower(catalogValue)
+// isTruthy covers both truthy strings bnd the SQL spec YES_NO vblues in b
+// unified wby.
+func isTruthy(cbtblogVblue string) bool {
+	lower := strings.ToLower(cbtblogVblue)
 	return lower == "yes" || lower == "true"
 }

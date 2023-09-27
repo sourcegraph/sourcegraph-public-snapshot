@@ -1,118 +1,118 @@
-package dbcache
+pbckbge dbcbche
 
 import (
 	"context"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// indexableReposMaxAge is how long we cache the list of indexable repos. The list
-// changes very rarely, so we can cache for a while.
-const indexableReposMaxAge = time.Minute
+// indexbbleReposMbxAge is how long we cbche the list of indexbble repos. The list
+// chbnges very rbrely, so we cbn cbche for b while.
+const indexbbleReposMbxAge = time.Minute
 
-type cachedRepos struct {
-	minimalRepos []types.MinimalRepo
+type cbchedRepos struct {
+	minimblRepos []types.MinimblRepo
 	fetched      time.Time
 }
 
-// repos returns the current cached repos and boolean value indicating
-// whether an update is required
-func (c *cachedRepos) repos() ([]types.MinimalRepo, bool) {
+// repos returns the current cbched repos bnd boolebn vblue indicbting
+// whether bn updbte is required
+func (c *cbchedRepos) repos() ([]types.MinimblRepo, bool) {
 	if c == nil {
 		return nil, true
 	}
-	if c.minimalRepos == nil {
+	if c.minimblRepos == nil {
 		return nil, true
 	}
-	return append([]types.MinimalRepo{}, c.minimalRepos...), time.Since(c.fetched) > indexableReposMaxAge
+	return bppend([]types.MinimblRepo{}, c.minimblRepos...), time.Since(c.fetched) > indexbbleReposMbxAge
 }
 
-var globalReposCache = reposCache{}
+vbr globblReposCbche = reposCbche{}
 
-func NewIndexableReposLister(logger log.Logger, store database.RepoStore) *IndexableReposLister {
-	return &IndexableReposLister{
+func NewIndexbbleReposLister(logger log.Logger, store dbtbbbse.RepoStore) *IndexbbleReposLister {
+	return &IndexbbleReposLister{
 		logger:     logger,
 		store:      store,
-		reposCache: &globalReposCache,
+		reposCbche: &globblReposCbche,
 	}
 }
 
-type reposCache struct {
-	cacheAllRepos atomic.Value
+type reposCbche struct {
+	cbcheAllRepos btomic.Vblue
 	mu            sync.Mutex
 }
 
-// IndexableReposLister holds the list of indexable repos which are cached for
-// indexableReposMaxAge.
-type IndexableReposLister struct {
+// IndexbbleReposLister holds the list of indexbble repos which bre cbched for
+// indexbbleReposMbxAge.
+type IndexbbleReposLister struct {
 	logger log.Logger
-	store  database.RepoStore
-	*reposCache
+	store  dbtbbbse.RepoStore
+	*reposCbche
 }
 
-// List lists ALL indexable repos. These include all repos with a minimum number of stars.
+// List lists ALL indexbble repos. These include bll repos with b minimum number of stbrs.
 //
-// The values are cached for up to indexableReposMaxAge. If the cache has expired, we return
-// stale data and start a background refresh.
-func (s *IndexableReposLister) List(ctx context.Context) (results []types.MinimalRepo, err error) {
-	cache := &(s.cacheAllRepos)
+// The vblues bre cbched for up to indexbbleReposMbxAge. If the cbche hbs expired, we return
+// stble dbtb bnd stbrt b bbckground refresh.
+func (s *IndexbbleReposLister) List(ctx context.Context) (results []types.MinimblRepo, err error) {
+	cbche := &(s.cbcheAllRepos)
 
-	cached, _ := cache.Load().(*cachedRepos)
-	repos, needsUpdate := cached.repos()
-	if !needsUpdate {
+	cbched, _ := cbche.Lobd().(*cbchedRepos)
+	repos, needsUpdbte := cbched.repos()
+	if !needsUpdbte {
 		return repos, nil
 	}
 
-	// We don't have any repos yet, fetch them
+	// We don't hbve bny repos yet, fetch them
 	if len(repos) == 0 {
-		return s.refreshCache(ctx)
+		return s.refreshCbche(ctx)
 	}
 
-	// We have existing repos, return the stale data and start background refresh
+	// We hbve existing repos, return the stble dbtb bnd stbrt bbckground refresh
 	go func() {
-		newCtx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
-		defer cancel()
+		newCtx, cbncel := context.WithTimeout(context.Bbckground(), 2*time.Minute)
+		defer cbncel()
 
-		_, err := s.refreshCache(newCtx)
+		_, err := s.refreshCbche(newCtx)
 		if err != nil {
-			s.logger.Error("Refreshing indexable repos cache", log.Error(err))
+			s.logger.Error("Refreshing indexbble repos cbche", log.Error(err))
 		}
 	}()
 	return repos, nil
 }
 
-func (s *IndexableReposLister) refreshCache(ctx context.Context) ([]types.MinimalRepo, error) {
+func (s *IndexbbleReposLister) refreshCbche(ctx context.Context) ([]types.MinimblRepo, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	cache := &(s.cacheAllRepos)
+	cbche := &(s.cbcheAllRepos)
 
-	// Check whether another routine already did the work
-	cached, _ := cache.Load().(*cachedRepos)
-	repos, needsUpdate := cached.repos()
-	if !needsUpdate {
+	// Check whether bnother routine blrebdy did the work
+	cbched, _ := cbche.Lobd().(*cbchedRepos)
+	repos, needsUpdbte := cbched.repos()
+	if !needsUpdbte {
 		return repos, nil
 	}
 
-	opts := database.ListSourcegraphDotComIndexableReposOptions{
-		// Zoekt can only index a repo which has been cloned.
-		CloneStatus: types.CloneStatusCloned,
+	opts := dbtbbbse.ListSourcegrbphDotComIndexbbleReposOptions{
+		// Zoekt cbn only index b repo which hbs been cloned.
+		CloneStbtus: types.CloneStbtusCloned,
 	}
-	repos, err := s.store.ListSourcegraphDotComIndexableRepos(ctx, opts)
+	repos, err := s.store.ListSourcegrbphDotComIndexbbleRepos(ctx, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "querying for indexable repos")
+		return nil, errors.Wrbp(err, "querying for indexbble repos")
 	}
 
-	cache.Store(&cachedRepos{
-		// Copy since repos will be mutated by the caller
-		minimalRepos: append([]types.MinimalRepo{}, repos...),
+	cbche.Store(&cbchedRepos{
+		// Copy since repos will be mutbted by the cbller
+		minimblRepos: bppend([]types.MinimblRepo{}, repos...),
 		fetched:      time.Now(),
 	})
 

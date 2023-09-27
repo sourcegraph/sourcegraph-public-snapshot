@@ -1,114 +1,114 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"crypto/sha1"
+	"crypto/shb1"
 	"encoding/hex"
 	"fmt"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestRecentContributionSignalStore(t *testing.T) {
+func TestRecentContributionSignblStore(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	store := RecentContributionSignalStoreWith(db)
+	store := RecentContributionSignblStoreWith(db)
 
-	ctx := context.Background()
-	repo := mustCreate(ctx, t, db, &types.Repo{Name: "a/b"})
+	ctx := context.Bbckground()
+	repo := mustCrebte(ctx, t, db, &types.Repo{Nbme: "b/b"})
 
-	for i, commit := range []Commit{
+	for i, commit := rbnge []Commit{
 		{
 			RepoID:       repo.ID,
-			AuthorName:   "alice",
-			AuthorEmail:  "alice@example.com",
-			FilesChanged: []string{"file1.txt", "dir/file2.txt"},
+			AuthorNbme:   "blice",
+			AuthorEmbil:  "blice@exbmple.com",
+			FilesChbnged: []string{"file1.txt", "dir/file2.txt"},
 		},
 		{
 			RepoID:       repo.ID,
-			AuthorName:   "alice",
-			AuthorEmail:  "alice@example.com",
-			FilesChanged: []string{"file1.txt", "dir/file3.txt"},
+			AuthorNbme:   "blice",
+			AuthorEmbil:  "blice@exbmple.com",
+			FilesChbnged: []string{"file1.txt", "dir/file3.txt"},
 		},
 		{
 			RepoID:       repo.ID,
-			AuthorName:   "alice",
-			AuthorEmail:  "alice@example.com",
-			FilesChanged: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
+			AuthorNbme:   "blice",
+			AuthorEmbil:  "blice@exbmple.com",
+			FilesChbnged: []string{"file1.txt", "dir/file2.txt", "dir/subdir/file.txt"},
 		},
 		{
 			RepoID:       repo.ID,
-			AuthorName:   "bob",
-			AuthorEmail:  "bob@example.com",
-			FilesChanged: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
+			AuthorNbme:   "bob",
+			AuthorEmbil:  "bob@exbmple.com",
+			FilesChbnged: []string{"file1.txt", "dir2/file2.txt", "dir2/subdir/file.txt"},
 		},
 	} {
-		commit.Timestamp = time.Now()
-		commit.CommitSHA = gitSha(fmt.Sprintf("%d", i))
+		commit.Timestbmp = time.Now()
+		commit.CommitSHA = gitShb(fmt.Sprintf("%d", i))
 		if err := store.AddCommit(ctx, commit); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	for p, w := range map[string][]RecentContributorSummary{
+	for p, w := rbnge mbp[string][]RecentContributorSummbry{
 		"dir": {
 			{
-				AuthorName:        "alice",
-				AuthorEmail:       "alice@example.com",
+				AuthorNbme:        "blice",
+				AuthorEmbil:       "blice@exbmple.com",
 				ContributionCount: 4,
 			},
 		},
 		"file1.txt": {
 			{
-				AuthorName:        "alice",
-				AuthorEmail:       "alice@example.com",
+				AuthorNbme:        "blice",
+				AuthorEmbil:       "blice@exbmple.com",
 				ContributionCount: 3,
 			},
 			{
-				AuthorName:        "bob",
-				AuthorEmail:       "bob@example.com",
+				AuthorNbme:        "bob",
+				AuthorEmbil:       "bob@exbmple.com",
 				ContributionCount: 1,
 			},
 		},
 		"": {
 			{
-				AuthorName:        "alice",
-				AuthorEmail:       "alice@example.com",
+				AuthorNbme:        "blice",
+				AuthorEmbil:       "blice@exbmple.com",
 				ContributionCount: 7,
 			},
 			{
-				AuthorName:        "bob",
-				AuthorEmail:       "bob@example.com",
+				AuthorNbme:        "bob",
+				AuthorEmbil:       "bob@exbmple.com",
 				ContributionCount: 3,
 			},
 		},
 	} {
-		path := p
-		want := w
-		t.Run(path, func(t *testing.T) {
-			got, err := store.FindRecentAuthors(ctx, repo.ID, path)
+		pbth := p
+		wbnt := w
+		t.Run(pbth, func(t *testing.T) {
+			got, err := store.FindRecentAuthors(ctx, repo.ID, pbth)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			assert.Equal(t, want, got)
+			bssert.Equbl(t, wbnt, got)
 		})
 	}
 }
 
-func gitSha(val string) string {
-	writer := sha1.New()
-	writer.Write([]byte(val))
+func gitShb(vbl string) string {
+	writer := shb1.New()
+	writer.Write([]byte(vbl))
 	return hex.EncodeToString(writer.Sum(nil))
 }

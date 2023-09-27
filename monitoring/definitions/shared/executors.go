@@ -1,34 +1,34 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Executors exports available shared observable and group constructors related to
+// Executors exports bvbilbble shbred observbble bnd group constructors relbted to
 // executors.
 //
-// TODO: Maybe move more shared.CodeIntelligence group builders here.
-var Executors executors
+// TODO: Mbybe move more shbred.CodeIntelligence group builders here.
+vbr Executors executors
 
 type executors struct{}
 
-// src_executor_total
-// src_executor_processor_total
-// src_executor_queued_duration_seconds_total
+// src_executor_totbl
+// src_executor_processor_totbl
+// src_executor_queued_durbtion_seconds_totbl
 //
-// If queueFilter is not a variable, this group is opted-in to centralized observability.
-func (executors) NewExecutorQueueGroup(namespace, containerName, queueFilter string) monitoring.Group {
+// If queueFilter is not b vbribble, this group is opted-in to centrblized observbbility.
+func (executors) NewExecutorQueueGroup(nbmespbce, contbinerNbme, queueFilter string) monitoring.Group {
 	opts := QueueSizeGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       namespace,
+			Nbmespbce:       nbmespbce,
 			DescriptionRoot: "Executor jobs",
 
-			// if updating this, also update in NewExecutorProcessorGroup
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "executor",
+			// if updbting this, blso updbte in NewExecutorProcessorGroup
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
 				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
 				By:                    []string{"queue"},
@@ -36,38 +36,38 @@ func (executors) NewExecutorQueueGroup(namespace, containerName, queueFilter str
 		},
 
 		QueueSize:   NoAlertsOption("none"),
-		QueueMaxAge: NoAlertsOption("none"),
-		QueueGrowthRate: NoAlertsOption(`
-			This value compares the rate of enqueues against the rate of finished jobs for the selected queue.
+		QueueMbxAge: NoAlertsOption("none"),
+		QueueGrowthRbte: NoAlertsOption(`
+			This vblue compbres the rbte of enqueues bgbinst the rbte of finished jobs for the selected queue.
 
-				- A value < than 1 indicates that process rate > enqueue rate
-				- A value = than 1 indicates that process rate = enqueue rate
-				- A value > than 1 indicates that process rate < enqueue rate
+				- A vblue < thbn 1 indicbtes thbt process rbte > enqueue rbte
+				- A vblue = thbn 1 indicbtes thbt process rbte = enqueue rbte
+				- A vblue > thbn 1 indicbtes thbt process rbte < enqueue rbte
 		`),
 	}
-	if !strings.Contains(queueFilter, "$") {
-		opts.QueueSize = opts.QueueSize.and(MultiInstanceOption())
-		opts.QueueMaxAge = opts.QueueMaxAge.and(MultiInstanceOption())
-		opts.QueueGrowthRate = opts.QueueGrowthRate.and(MultiInstanceOption())
+	if !strings.Contbins(queueFilter, "$") {
+		opts.QueueSize = opts.QueueSize.bnd(MultiInstbnceOption())
+		opts.QueueMbxAge = opts.QueueMbxAge.bnd(MultiInstbnceOption())
+		opts.QueueGrowthRbte = opts.QueueGrowthRbte.bnd(MultiInstbnceOption())
 	}
-	return Queue.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, opts)
+	return Queue.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, opts)
 }
 
-func (executors) NewExecutorMultiqueueGroup(namespace, containerName, queueFilter string) monitoring.Group {
+func (executors) NewExecutorMultiqueueGroup(nbmespbce, contbinerNbme, queueFilter string) monitoring.Group {
 	opts := MultiqueueGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       namespace,
+			Nbmespbce:       nbmespbce,
 			DescriptionRoot: "Executor jobs",
 
-			// if updating this, also update in NewExecutorProcessorGroup
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "executor",
+			// if updbting this, blso updbte in NewExecutorProcessorGroup
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "executor",
 				MetricDescriptionRoot: "unprocessed executor job",
 				Filters:               []string{fmt.Sprintf(`queue=~%q`, queueFilter)},
 				By:                    []string{"queue"},
 			},
 		},
-		QueueDequeueCacheSize: NoAlertsOption("none"),
+		QueueDequeueCbcheSize: NoAlertsOption("none"),
 	}
-	return Queue.NewMultiqueueGroup(containerName, monitoring.ObservableOwnerCodeIntel, opts)
+	return Queue.NewMultiqueueGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, opts)
 }

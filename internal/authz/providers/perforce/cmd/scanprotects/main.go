@@ -1,66 +1,66 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"os"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz/providers/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/providers/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-var depot = flag.String("d", "", "depot name")
-var ignoreRulesWithHostFlag = flag.Bool("i", false, "ignore protects rules with a non-wildcard Host field")
+vbr depot = flbg.String("d", "", "depot nbme")
+vbr ignoreRulesWithHostFlbg = flbg.Bool("i", fblse, "ignore protects rules with b non-wildcbrd Host field")
 
-func main() {
-	flag.Parse()
+func mbin() {
+	flbg.Pbrse()
 	if depot == nil || *depot == "" {
-		fail("required: -d DEPOT")
+		fbil("required: -d DEPOT")
 	}
 
 	if err := os.Setenv(log.EnvLogLevel, "DEBUG"); err != nil {
-		fail(fmt.Sprintf("Setting %s", log.EnvLogLevel))
+		fbil(fmt.Sprintf("Setting %s", log.EnvLogLevel))
 	}
 	if err := os.Setenv(log.EnvDevelopment, "true"); err != nil {
-		fail(fmt.Sprintf("Setting %s", log.EnvDevelopment))
+		fbil(fmt.Sprintf("Setting %s", log.EnvDevelopment))
 	}
 	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
+		Nbme:       env.MyNbme,
 		Version:    version.Version(),
-		InstanceID: hostname.Get(),
+		InstbnceID: hostnbme.Get(),
 	})
 	defer liblog.Sync()
 
-	ignoreRulesWithHost := ignoreRulesWithHostFlag == nil || *ignoreRulesWithHostFlag
+	ignoreRulesWithHost := ignoreRulesWithHostFlbg == nil || *ignoreRulesWithHostFlbg
 
-	logger := log.Scoped("scanprotects", "")
+	logger := log.Scoped("scbnprotects", "")
 	run(logger, *depot, os.Stdin, ignoreRulesWithHost)
 }
 
-func run(logger log.Logger, depot string, input io.Reader, ignoreRulesWithHost bool) {
-	perms, err := perforce.PerformDebugScan(logger, input, extsvc.RepoID(depot), ignoreRulesWithHost)
+func run(logger log.Logger, depot string, input io.Rebder, ignoreRulesWithHost bool) {
+	perms, err := perforce.PerformDebugScbn(logger, input, extsvc.RepoID(depot), ignoreRulesWithHost)
 	if err != nil {
-		fail(fmt.Sprintf("Error parsing permissions: %s", err))
+		fbil(fmt.Sprintf("Error pbrsing permissions: %s", err))
 	}
 
-	for _, exact := range perms.Exacts {
-		logger.Debug("Depot", log.String("depot", string(exact)))
+	for _, exbct := rbnge perms.Exbcts {
+		logger.Debug("Depot", log.String("depot", string(exbct)))
 	}
-	for depot, subRepo := range perms.SubRepoPermissions {
+	for depot, subRepo := rbnge perms.SubRepoPermissions {
 		logger.Debug("Sub repo permissions", log.String("depot", string(depot)))
-		for _, path := range subRepo.Paths {
-			logger.Debug("Include rule", log.String("rule", path))
+		for _, pbth := rbnge subRepo.Pbths {
+			logger.Debug("Include rule", log.String("rule", pbth))
 		}
 	}
 }
 
-func fail(reason string) {
-	fmt.Println(reason)
+func fbil(rebson string) {
+	fmt.Println(rebson)
 	os.Exit(1)
 }

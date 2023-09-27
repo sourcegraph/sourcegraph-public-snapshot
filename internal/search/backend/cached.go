@@ -1,106 +1,106 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 	"fmt"
-	"math/rand"
+	"mbth/rbnd"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 )
 
-// cachedSearcher wraps a zoekt.Searcher with caching of List call results.
-type cachedSearcher struct {
-	zoekt.Streamer
+// cbchedSebrcher wrbps b zoekt.Sebrcher with cbching of List cbll results.
+type cbchedSebrcher struct {
+	zoekt.Strebmer
 
-	ttl   time.Duration
+	ttl   time.Durbtion
 	now   func() time.Time
 	mu    sync.RWMutex
-	cache map[listCacheKey]*listCacheValue
+	cbche mbp[listCbcheKey]*listCbcheVblue
 }
 
-func NewCachedSearcher(ttl time.Duration, z zoekt.Streamer) zoekt.Streamer {
-	return &cachedSearcher{
-		Streamer: z,
+func NewCbchedSebrcher(ttl time.Durbtion, z zoekt.Strebmer) zoekt.Strebmer {
+	return &cbchedSebrcher{
+		Strebmer: z,
 		ttl:      ttl,
 		now:      time.Now,
-		cache:    map[listCacheKey]*listCacheValue{},
+		cbche:    mbp[listCbcheKey]*listCbcheVblue{},
 	}
 }
 
-type listCacheKey struct {
+type listCbcheKey struct {
 	opts zoekt.ListOptions
 }
 
-type listCacheValue struct {
+type listCbcheVblue struct {
 	list *zoekt.RepoList
 	err  error
 	ts   time.Time
 	now  func() time.Time
-	ttl  time.Duration
+	ttl  time.Durbtion
 }
 
-func (v *listCacheValue) stale() bool {
-	return v.now().Sub(v.ts) >= randInterval(v.ttl, 5*time.Second)
+func (v *listCbcheVblue) stble() bool {
+	return v.now().Sub(v.ts) >= rbndIntervbl(v.ttl, 5*time.Second)
 }
 
-func (c *cachedSearcher) String() string {
-	return fmt.Sprintf("cachedSearcher(%s, %v)", c.ttl, c.Streamer)
+func (c *cbchedSebrcher) String() string {
+	return fmt.Sprintf("cbchedSebrcher(%s, %v)", c.ttl, c.Strebmer)
 }
 
-func (c *cachedSearcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
+func (c *cbchedSebrcher) List(ctx context.Context, q zoektquery.Q, opts *zoekt.ListOptions) (*zoekt.RepoList, error) {
 	if !isTrueQuery(q) {
-		// cache pass-through for anything that isn't "ListAll", either minimal or not
-		return c.Streamer.List(ctx, q, opts)
+		// cbche pbss-through for bnything thbt isn't "ListAll", either minimbl or not
+		return c.Strebmer.List(ctx, q, opts)
 	}
 
-	k := listCacheKey{}
+	k := listCbcheKey{}
 	if opts != nil {
 		k.opts = *opts
 	}
 
 	c.mu.RLock()
-	v := c.cache[k]
+	v := c.cbche[k]
 	c.mu.RUnlock()
 
 	switch {
-	case v == nil || v.err != nil:
-		v = c.update(ctx, q, k) // no cached value, block.
-	case v.stale():
+	cbse v == nil || v.err != nil:
+		v = c.updbte(ctx, q, k) // no cbched vblue, block.
+	cbse v.stble():
 		go func() {
-			ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
-			c.update(ctx, q, k) // start async update, return stale version
-			cancel()
+			ctx, cbncel := context.WithTimeout(context.Bbckground(), time.Minute)
+			c.updbte(ctx, q, k) // stbrt bsync updbte, return stble version
+			cbncel()
 		}()
 	}
 
 	return v.list, v.err
 }
 
-// isTrueQuery returns true if q will always match all shards.
+// isTrueQuery returns true if q will blwbys mbtch bll shbrds.
 func isTrueQuery(q zoektquery.Q) bool {
-	// the query is probably wrapped to avoid extra RPC work.
-	q = zoektquery.RPCUnwrap(q)
+	// the query is probbbly wrbpped to bvoid extrb RPC work.
+	q = zoektquery.RPCUnwrbp(q)
 
 	v, ok := q.(*zoektquery.Const)
-	return ok && v.Value
+	return ok && v.Vblue
 }
 
-func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCacheKey) *listCacheValue {
+func (c *cbchedSebrcher) updbte(ctx context.Context, q zoektquery.Q, k listCbcheKey) *listCbcheVblue {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	v := c.cache[k]
-	if v != nil && v.err == nil && !v.stale() {
-		// someone beat us to the update
+	v := c.cbche[k]
+	if v != nil && v.err == nil && !v.stble() {
+		// someone bebt us to the updbte
 		return v
 	}
 
-	list, err := c.Streamer.List(ctx, q, &k.opts)
+	list, err := c.Strebmer.List(ctx, q, &k.opts)
 
-	v = &listCacheValue{
+	v = &listCbcheVblue{
 		list: list,
 		err:  err,
 		ttl:  c.ttl,
@@ -108,20 +108,20 @@ func (c *cachedSearcher) update(ctx context.Context, q zoektquery.Q, k listCache
 		ts:   c.now(),
 	}
 
-	// If we encountered an error or a crash, shorten how long we wait before
-	// refreshing the cache.
-	if err != nil || list.Crashes > 0 {
+	// If we encountered bn error or b crbsh, shorten how long we wbit before
+	// refreshing the cbche.
+	if err != nil || list.Crbshes > 0 {
 		v.ttl /= 4
 	}
 
-	c.cache[k] = v
+	c.cbche[k] = v
 
 	return v
 }
 
-// randInterval returns an expected d duration with a jitter in [-jitter /
+// rbndIntervbl returns bn expected d durbtion with b jitter in [-jitter /
 // 2, jitter / 2].
-func randInterval(d, jitter time.Duration) time.Duration {
-	delta := time.Duration(rand.Int63n(int64(jitter))) - (jitter / 2)
-	return d + delta
+func rbndIntervbl(d, jitter time.Durbtion) time.Durbtion {
+	deltb := time.Durbtion(rbnd.Int63n(int64(jitter))) - (jitter / 2)
+	return d + deltb
 }

@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"bytes"
@@ -16,130 +16,130 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/zoekt"
-	"google.golang.org/protobuf/testing/protocmp"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/zoekt"
+	"google.golbng.org/protobuf/testing/protocmp"
 
-	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+	proto "github.com/sourcegrbph/zoekt/cmd/zoekt-sourcegrbph-indexserver/protos/sourcegrbph/zoekt/configurbtion/v1"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	citypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	citypes "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/ctbgs_config"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestServeConfiguration(t *testing.T) {
-	repos := []types.MinimalRepo{{
+func TestServeConfigurbtion(t *testing.T) {
+	repos := []types.MinimblRepo{{
 		ID:    5,
-		Name:  "5",
-		Stars: 5,
+		Nbme:  "5",
+		Stbrs: 5,
 	}, {
 		ID:    6,
-		Name:  "6",
-		Stars: 6,
+		Nbme:  "6",
+		Stbrs: 6,
 	}}
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID("!" + spec), nil
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID("!" + spec), nil
 	})
 
-	repoStore := &fakeRepoStore{Repos: repos}
-	searchContextRepoRevsFunc := func(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID][]string, error) {
-		return map[api.RepoID][]string{6: {"a", "b"}}, nil
+	repoStore := &fbkeRepoStore{Repos: repos}
+	sebrchContextRepoRevsFunc := func(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID][]string, error) {
+		return mbp[bpi.RepoID][]string{6: {"b", "b"}}, nil
 	}
-	rankingService := &fakeRankingService{}
+	rbnkingService := &fbkeRbnkingService{}
 
 	t.Run("gRPC", func(t *testing.T) {
 
 		// Set up the GRPC server
-		grpcServer := searchIndexerGRPCServer{
-			server: &searchIndexerServer{
+		grpcServer := sebrchIndexerGRPCServer{
+			server: &sebrchIndexerServer{
 				RepoStore:              repoStore,
 				gitserverClient:        gsClient,
-				Ranking:                rankingService,
-				SearchContextsRepoRevs: searchContextRepoRevsFunc,
+				Rbnking:                rbnkingService,
+				SebrchContextsRepoRevs: sebrchContextRepoRevsFunc,
 			},
 		}
 
-		// Setup: create a request for repos 5 and 6, and the non-existent repo 1
+		// Setup: crebte b request for repos 5 bnd 6, bnd the non-existent repo 1
 		requestedRepoIDs := []int32{1, 5, 6}
 
 		// Execute the first request (no fingerprint)
-		var initialRequest proto.SearchConfigurationRequest
-		initialRequest.RepoIds = requestedRepoIDs
-		initialRequest.Fingerprint = nil
+		vbr initiblRequest proto.SebrchConfigurbtionRequest
+		initiblRequest.RepoIds = requestedRepoIDs
+		initiblRequest.Fingerprint = nil
 
-		initialResponse, err := grpcServer.SearchConfiguration(context.Background(), &initialRequest)
+		initiblResponse, err := grpcServer.SebrchConfigurbtion(context.Bbckground(), &initiblRequest)
 		if err != nil {
-			t.Fatalf("SearchConfiguration: %s", err)
+			t.Fbtblf("SebrchConfigurbtion: %s", err)
 		}
 
-		// Verify: Check to see that the response contains an error
+		// Verify: Check to see thbt the response contbins bn error
 		// for the non-existent repo 1
-		var responseRepo1 *proto.ZoektIndexOptions
-		foundRepo1 := false
+		vbr responseRepo1 *proto.ZoektIndexOptions
+		foundRepo1 := fblse
 
-		var receivedRepositories []*proto.ZoektIndexOptions
+		vbr receivedRepositories []*proto.ZoektIndexOptions
 
-		for _, repo := range initialResponse.GetUpdatedOptions() {
+		for _, repo := rbnge initiblResponse.GetUpdbtedOptions() {
 			if repo.RepoId == 1 {
 				responseRepo1 = repo
 				foundRepo1 = true
 				continue
 			}
 
-			sort.Slice(repo.LanguageMap, func(i, j int) bool {
-				return repo.LanguageMap[i].Language > repo.LanguageMap[j].Language
+			sort.Slice(repo.LbngubgeMbp, func(i, j int) bool {
+				return repo.LbngubgeMbp[i].Lbngubge > repo.LbngubgeMbp[j].Lbngubge
 			})
-			receivedRepositories = append(receivedRepositories, repo)
+			receivedRepositories = bppend(receivedRepositories, repo)
 		}
 
 		if !foundRepo1 {
 			t.Errorf("expected to find repo ID 1 in response: %v", receivedRepositories)
 		}
 
-		if foundRepo1 && !strings.Contains(responseRepo1.Error, "repo not found") {
+		if foundRepo1 && !strings.Contbins(responseRepo1.Error, "repo not found") {
 			t.Errorf("expected to find repo not found error in repo 1: %v", responseRepo1)
 		}
 
-		languageMap := make([]*proto.LanguageMapping, 0)
-		for lang, engine := range ctags_config.DefaultEngines {
-			languageMap = append(languageMap, &proto.LanguageMapping{Language: lang, Ctags: proto.CTagsParserType(engine)})
+		lbngubgeMbp := mbke([]*proto.LbngubgeMbpping, 0)
+		for lbng, engine := rbnge ctbgs_config.DefbultEngines {
+			lbngubgeMbp = bppend(lbngubgeMbp, &proto.LbngubgeMbpping{Lbngubge: lbng, Ctbgs: proto.CTbgsPbrserType(engine)})
 		}
 
-		sort.Slice(languageMap, func(i, j int) bool {
-			return languageMap[i].Language > languageMap[j].Language
+		sort.Slice(lbngubgeMbp, func(i, j int) bool {
+			return lbngubgeMbp[i].Lbngubge > lbngubgeMbp[j].Lbngubge
 		})
 
-		// Verify: Check to see that the response the expected repos 5 and 6
+		// Verify: Check to see thbt the response the expected repos 5 bnd 6
 		expectedRepo5 := &proto.ZoektIndexOptions{
 			RepoId:      5,
-			Name:        "5",
+			Nbme:        "5",
 			Priority:    5,
 			Public:      true,
 			Symbols:     true,
-			Branches:    []*proto.ZoektRepositoryBranch{{Name: "HEAD", Version: "!HEAD"}},
-			LanguageMap: languageMap,
+			Brbnches:    []*proto.ZoektRepositoryBrbnch{{Nbme: "HEAD", Version: "!HEAD"}},
+			LbngubgeMbp: lbngubgeMbp,
 		}
 
 		expectedRepo6 := &proto.ZoektIndexOptions{
 			RepoId:   6,
-			Name:     "6",
+			Nbme:     "6",
 			Priority: 6,
 			Public:   true,
 			Symbols:  true,
-			Branches: []*proto.ZoektRepositoryBranch{
-				{Name: "HEAD", Version: "!HEAD"},
-				{Name: "a", Version: "!a"},
-				{Name: "b", Version: "!b"},
+			Brbnches: []*proto.ZoektRepositoryBrbnch{
+				{Nbme: "HEAD", Version: "!HEAD"},
+				{Nbme: "b", Version: "!b"},
+				{Nbme: "b", Version: "!b"},
 			},
-			LanguageMap: languageMap,
+			LbngubgeMbp: lbngubgeMbp,
 		}
 
 		expectedRepos := []*proto.ZoektIndexOptions{
@@ -154,270 +154,270 @@ func TestServeConfiguration(t *testing.T) {
 			return expectedRepos[i].RepoId < expectedRepos[j].RepoId
 		})
 
-		if diff := cmp.Diff(expectedRepos, receivedRepositories, protocmp.Transform()); diff != "" {
-			t.Fatalf("mismatch in response repositories (-want, +got):\n%s", diff)
+		if diff := cmp.Diff(expectedRepos, receivedRepositories, protocmp.Trbnsform()); diff != "" {
+			t.Fbtblf("mismbtch in response repositories (-wbnt, +got):\n%s", diff)
 		}
 
-		if initialResponse.GetFingerprint() == nil {
-			t.Fatalf("expected fingerprint to be set in initial response")
+		if initiblResponse.GetFingerprint() == nil {
+			t.Fbtblf("expected fingerprint to be set in initibl response")
 		}
 
-		// Setup: run a second request with the fingerprint from the first response
-		// Note: when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
-		grpcServer.server.RepoStore = &fakeRepoStore{Repos: repos[:1]}
+		// Setup: run b second request with the fingerprint from the first response
+		// Note: when fingerprint is set we only return b subset. We simulbte this by setting RepoStore to only list repo number 5
+		grpcServer.server.RepoStore = &fbkeRepoStore{Repos: repos[:1]}
 
-		var fingerprintedRequest proto.SearchConfigurationRequest
+		vbr fingerprintedRequest proto.SebrchConfigurbtionRequest
 		fingerprintedRequest.RepoIds = requestedRepoIDs
-		fingerprintedRequest.Fingerprint = initialResponse.GetFingerprint()
+		fingerprintedRequest.Fingerprint = initiblResponse.GetFingerprint()
 
 		// Execute the seconds request
-		fingerprintedResponse, err := grpcServer.SearchConfiguration(context.Background(), &fingerprintedRequest)
+		fingerprintedResponse, err := grpcServer.SebrchConfigurbtion(context.Bbckground(), &fingerprintedRequest)
 		if err != nil {
-			t.Fatalf("SearchConfiguration: %s", err)
+			t.Fbtblf("SebrchConfigurbtion: %s", err)
 		}
 
-		fingerprintedResponses := fingerprintedResponse.GetUpdatedOptions()
+		fingerprintedResponses := fingerprintedResponse.GetUpdbtedOptions()
 
-		for _, res := range fingerprintedResponses {
-			sort.Slice(res.LanguageMap, func(i, j int) bool {
-				return res.LanguageMap[i].Language > res.LanguageMap[j].Language
+		for _, res := rbnge fingerprintedResponses {
+			sort.Slice(res.LbngubgeMbp, func(i, j int) bool {
+				return res.LbngubgeMbp[i].Lbngubge > res.LbngubgeMbp[j].Lbngubge
 			})
 		}
 
-		// Verify that the response contains the expected repo 5
-		if diff := cmp.Diff(fingerprintedResponses, []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Transform()); diff != "" {
-			t.Errorf("mismatch in fingerprinted repositories (-want, +got):\n%s", diff)
+		// Verify thbt the response contbins the expected repo 5
+		if diff := cmp.Diff(fingerprintedResponses, []*proto.ZoektIndexOptions{expectedRepo5}, protocmp.Trbnsform()); diff != "" {
+			t.Errorf("mismbtch in fingerprinted repositories (-wbnt, +got):\n%s", diff)
 		}
 
 		if fingerprintedResponse.GetFingerprint() == nil {
-			t.Fatalf("expected fingerprint to be set in fingerprinted response")
+			t.Fbtblf("expected fingerprint to be set in fingerprinted response")
 		}
 	})
 
 	t.Run("REST", func(t *testing.T) {
-		srv := &searchIndexerServer{
+		srv := &sebrchIndexerServer{
 			RepoStore:              repoStore,
 			gitserverClient:        gsClient,
-			Ranking:                rankingService,
-			SearchContextsRepoRevs: searchContextRepoRevsFunc,
+			Rbnking:                rbnkingService,
+			SebrchContextsRepoRevs: sebrchContextRepoRevsFunc,
 		}
 
-		data := url.Values{
+		dbtb := url.Vblues{
 			"repoID": []string{"1", "5", "6"},
 		}
-		req := httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+		req := httptest.NewRequest("POST", "/", strings.NewRebder(dbtb.Encode()))
+		req.Hebder.Set("Content-Type", "bpplicbtion/x-www-form-urlencoded")
 		w := httptest.NewRecorder()
-		if err := srv.serveConfiguration(w, req); err != nil {
-			t.Fatal(err)
+		if err := srv.serveConfigurbtion(w, req); err != nil {
+			t.Fbtbl(err)
 		}
 
 		resp := w.Result()
-		body, _ := io.ReadAll(resp.Body)
+		body, _ := io.RebdAll(resp.Body)
 
-		// This is a very fragile test since it will depend on changes to
-		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
-		// more robust by shifting around responsibilities.
-		want := `{"Name":"","RepoID":1,"Public":false,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":false,"Error":"repo not found: id=1","LanguageMap":null}
-{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5,"LanguageMap":{"c_sharp":3,"go":3,"javascript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scala":3,"typescript":3,"zig":3}}
-{"Name":"6","RepoID":6,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"},{"Name":"a","Version":"!a"},{"Name":"b","Version":"!b"}],"Priority":6,"LanguageMap":{"c_sharp":3,"go":3,"javascript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scala":3,"typescript":3,"zig":3}}`
+		// This is b very frbgile test since it will depend on chbnges to
+		// sebrchbbckend.GetIndexOptions. If this becomes b problem we cbn mbke it
+		// more robust by shifting bround responsibilities.
+		wbnt := `{"Nbme":"","RepoID":1,"Public":fblse,"Fork":fblse,"Archived":fblse,"LbrgeFiles":null,"Symbols":fblse,"Error":"repo not found: id=1","LbngubgeMbp":null}
+{"Nbme":"5","RepoID":5,"Public":true,"Fork":fblse,"Archived":fblse,"LbrgeFiles":null,"Symbols":true,"Brbnches":[{"Nbme":"HEAD","Version":"!HEAD"}],"Priority":5,"LbngubgeMbp":{"c_shbrp":3,"go":3,"jbvbscript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scblb":3,"typescript":3,"zig":3}}
+{"Nbme":"6","RepoID":6,"Public":true,"Fork":fblse,"Archived":fblse,"LbrgeFiles":null,"Symbols":true,"Brbnches":[{"Nbme":"HEAD","Version":"!HEAD"},{"Nbme":"b","Version":"!b"},{"Nbme":"b","Version":"!b"}],"Priority":6,"LbngubgeMbp":{"c_shbrp":3,"go":3,"jbvbscript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scblb":3,"typescript":3,"zig":3}}`
 
-		if d := cmp.Diff(want, string(body)); d != "" {
-			t.Fatalf("mismatch (-want, +got):\n%s", d)
+		if d := cmp.Diff(wbnt, string(body)); d != "" {
+			t.Fbtblf("mismbtch (-wbnt, +got):\n%s", d)
 		}
 
-		// when fingerprint is set we only return a subset. We simulate this by setting RepoStore to only list repo number 5
-		srv.RepoStore = &fakeRepoStore{Repos: repos[:1]}
-		req = httptest.NewRequest("POST", "/", strings.NewReader(data.Encode()))
-		req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-		req.Header.Set("X-Sourcegraph-Config-Fingerprint", resp.Header.Get("X-Sourcegraph-Config-Fingerprint"))
+		// when fingerprint is set we only return b subset. We simulbte this by setting RepoStore to only list repo number 5
+		srv.RepoStore = &fbkeRepoStore{Repos: repos[:1]}
+		req = httptest.NewRequest("POST", "/", strings.NewRebder(dbtb.Encode()))
+		req.Hebder.Set("Content-Type", "bpplicbtion/x-www-form-urlencoded")
+		req.Hebder.Set("X-Sourcegrbph-Config-Fingerprint", resp.Hebder.Get("X-Sourcegrbph-Config-Fingerprint"))
 
 		w = httptest.NewRecorder()
-		if err := srv.serveConfiguration(w, req); err != nil {
-			t.Fatal(err)
+		if err := srv.serveConfigurbtion(w, req); err != nil {
+			t.Fbtbl(err)
 		}
 
 		resp = w.Result()
-		body, _ = io.ReadAll(resp.Body)
+		body, _ = io.RebdAll(resp.Body)
 
-		// We want the same as before, except we only want to get back 5.
+		// We wbnt the sbme bs before, except we only wbnt to get bbck 5.
 		//
-		// This is a very fragile test since it will depend on changes to
-		// searchbackend.GetIndexOptions. If this becomes a problem we can make it
-		// more robust by shifting around responsibilities.
-		want = `{"Name":"5","RepoID":5,"Public":true,"Fork":false,"Archived":false,"LargeFiles":null,"Symbols":true,"Branches":[{"Name":"HEAD","Version":"!HEAD"}],"Priority":5,"LanguageMap":{"c_sharp":3,"go":3,"javascript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scala":3,"typescript":3,"zig":3}}`
+		// This is b very frbgile test since it will depend on chbnges to
+		// sebrchbbckend.GetIndexOptions. If this becomes b problem we cbn mbke it
+		// more robust by shifting bround responsibilities.
+		wbnt = `{"Nbme":"5","RepoID":5,"Public":true,"Fork":fblse,"Archived":fblse,"LbrgeFiles":null,"Symbols":true,"Brbnches":[{"Nbme":"HEAD","Version":"!HEAD"}],"Priority":5,"LbngubgeMbp":{"c_shbrp":3,"go":3,"jbvbscript":3,"kotlin":3,"python":3,"ruby":3,"rust":3,"scblb":3,"typescript":3,"zig":3}}`
 
-		if d := cmp.Diff(want, string(body)); d != "" {
-			t.Fatalf("mismatch (-want, +got):\n%s", d)
+		if d := cmp.Diff(wbnt, string(body)); d != "" {
+			t.Fbtblf("mismbtch (-wbnt, +got):\n%s", d)
 		}
 	})
 
 }
 
 func TestReposIndex(t *testing.T) {
-	allRepos := []types.MinimalRepo{
-		{ID: 1, Name: "github.com/popular/foo"},
-		{ID: 2, Name: "github.com/popular/bar"},
-		{ID: 3, Name: "github.com/alice/foo"},
-		{ID: 4, Name: "github.com/alice/bar"},
+	bllRepos := []types.MinimblRepo{
+		{ID: 1, Nbme: "github.com/populbr/foo"},
+		{ID: 2, Nbme: "github.com/populbr/bbr"},
+		{ID: 3, Nbme: "github.com/blice/foo"},
+		{ID: 4, Nbme: "github.com/blice/bbr"},
 	}
 
-	indexableRepos := allRepos[:2]
+	indexbbleRepos := bllRepos[:2]
 
-	type parameters struct {
+	type pbrbmeters struct {
 		restBody    string
 		grpcRequest *proto.ListRequest
 	}
 
-	type testCase struct {
-		name       string
-		indexable  []types.MinimalRepo
-		parameters parameters
-		want       []string
+	type testCbse struct {
+		nbme       string
+		indexbble  []types.MinimblRepo
+		pbrbmeters pbrbmeters
+		wbnt       []string
 	}
 
-	cases := []testCase{{
-		name:      "indexers",
-		indexable: allRepos,
-		parameters: parameters{
-			restBody:    `{"Hostname": "foo"}`,
-			grpcRequest: &proto.ListRequest{Hostname: "foo"},
+	cbses := []testCbse{{
+		nbme:      "indexers",
+		indexbble: bllRepos,
+		pbrbmeters: pbrbmeters{
+			restBody:    `{"Hostnbme": "foo"}`,
+			grpcRequest: &proto.ListRequest{Hostnbme: "foo"},
 		},
-		want: []string{"github.com/popular/foo", "github.com/alice/foo"},
+		wbnt: []string{"github.com/populbr/foo", "github.com/blice/foo"},
 	}, {
-		name:      "indexedids",
-		indexable: allRepos,
-		parameters: parameters{
-			restBody:    `{"Hostname": "foo", "IndexedIDs": [4]}`,
-			grpcRequest: &proto.ListRequest{Hostname: "foo", IndexedIds: []int32{4}},
+		nbme:      "indexedids",
+		indexbble: bllRepos,
+		pbrbmeters: pbrbmeters{
+			restBody:    `{"Hostnbme": "foo", "IndexedIDs": [4]}`,
+			grpcRequest: &proto.ListRequest{Hostnbme: "foo", IndexedIds: []int32{4}},
 		},
-		want: []string{"github.com/popular/foo", "github.com/alice/foo", "github.com/alice/bar"},
+		wbnt: []string{"github.com/populbr/foo", "github.com/blice/foo", "github.com/blice/bbr"},
 	}, {
-		name:      "dot-com indexers",
-		indexable: indexableRepos,
-		parameters: parameters{
-			restBody:    `{"Hostname": "foo"}`,
-			grpcRequest: &proto.ListRequest{Hostname: "foo"},
+		nbme:      "dot-com indexers",
+		indexbble: indexbbleRepos,
+		pbrbmeters: pbrbmeters{
+			restBody:    `{"Hostnbme": "foo"}`,
+			grpcRequest: &proto.ListRequest{Hostnbme: "foo"},
 		},
-		want: []string{"github.com/popular/foo"},
+		wbnt: []string{"github.com/populbr/foo"},
 	}, {
-		name:      "dot-com indexedids",
-		indexable: indexableRepos,
-		parameters: parameters{
-			restBody:    `{"Hostname": "foo", "IndexedIDs": [2]}`,
-			grpcRequest: &proto.ListRequest{Hostname: "foo", IndexedIds: []int32{2}},
+		nbme:      "dot-com indexedids",
+		indexbble: indexbbleRepos,
+		pbrbmeters: pbrbmeters{
+			restBody:    `{"Hostnbme": "foo", "IndexedIDs": [2]}`,
+			grpcRequest: &proto.ListRequest{Hostnbme: "foo", IndexedIds: []int32{2}},
 		},
-		want: []string{"github.com/popular/foo", "github.com/popular/bar"},
+		wbnt: []string{"github.com/populbr/foo", "github.com/populbr/bbr"},
 	}, {
-		name:      "none",
-		indexable: allRepos,
-		parameters: parameters{
-			restBody:    `{"Hostname": "baz"}`,
-			grpcRequest: &proto.ListRequest{Hostname: "baz"},
+		nbme:      "none",
+		indexbble: bllRepos,
+		pbrbmeters: pbrbmeters{
+			restBody:    `{"Hostnbme": "bbz"}`,
+			grpcRequest: &proto.ListRequest{Hostnbme: "bbz"},
 		},
-		want: []string{},
+		wbnt: []string{},
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			t.Run("gRPC", func(t *testing.T) {
-				grpcServer := &searchIndexerGRPCServer{
-					server: &searchIndexerServer{
-						ListIndexable: fakeListIndexable(tc.indexable),
-						RepoStore: &fakeRepoStore{
-							Repos: allRepos,
+				grpcServer := &sebrchIndexerGRPCServer{
+					server: &sebrchIndexerServer{
+						ListIndexbble: fbkeListIndexbble(tc.indexbble),
+						RepoStore: &fbkeRepoStore{
+							Repos: bllRepos,
 						},
 						Indexers: suffixIndexers(true),
 					},
 				}
 
-				resp, err := grpcServer.List(context.Background(), tc.parameters.grpcRequest)
+				resp, err := grpcServer.List(context.Bbckground(), tc.pbrbmeters.grpcRequest)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				expectedRepoIDs := make([]api.RepoID, len(tc.want))
-				for i, name := range tc.want {
-					for _, repo := range allRepos {
-						if string(repo.Name) == name {
+				expectedRepoIDs := mbke([]bpi.RepoID, len(tc.wbnt))
+				for i, nbme := rbnge tc.wbnt {
+					for _, repo := rbnge bllRepos {
+						if string(repo.Nbme) == nbme {
 							expectedRepoIDs[i] = repo.ID
 						}
 					}
 				}
 
-				var receivedRepoIDs []api.RepoID
-				for _, id := range resp.GetRepoIds() {
-					receivedRepoIDs = append(receivedRepoIDs, api.RepoID(id))
+				vbr receivedRepoIDs []bpi.RepoID
+				for _, id := rbnge resp.GetRepoIds() {
+					receivedRepoIDs = bppend(receivedRepoIDs, bpi.RepoID(id))
 				}
 
-				if d := cmp.Diff(expectedRepoIDs, receivedRepoIDs, cmpopts.EquateEmpty()); d != "" {
-					t.Fatalf("ids mismatch (-want +got):\n%s", d)
+				if d := cmp.Diff(expectedRepoIDs, receivedRepoIDs, cmpopts.EqubteEmpty()); d != "" {
+					t.Fbtblf("ids mismbtch (-wbnt +got):\n%s", d)
 				}
 
 			})
 
 			t.Run("REST", func(t *testing.T) {
 
-				srv := &searchIndexerServer{
-					ListIndexable: fakeListIndexable(tc.indexable),
-					RepoStore: &fakeRepoStore{
-						Repos: allRepos,
+				srv := &sebrchIndexerServer{
+					ListIndexbble: fbkeListIndexbble(tc.indexbble),
+					RepoStore: &fbkeRepoStore{
+						Repos: bllRepos,
 					},
 					Indexers: suffixIndexers(true),
 				}
 
-				req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(tc.parameters.restBody)))
+				req := httptest.NewRequest("POST", "/", bytes.NewRebder([]byte(tc.pbrbmeters.restBody)))
 				w := httptest.NewRecorder()
 				if err := srv.serveList(w, req); err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				resp := w.Result()
-				body, _ := io.ReadAll(resp.Body)
+				body, _ := io.RebdAll(resp.Body)
 
-				if resp.StatusCode != http.StatusOK {
-					t.Errorf("got status %v", resp.StatusCode)
+				if resp.StbtusCode != http.StbtusOK {
+					t.Errorf("got stbtus %v", resp.StbtusCode)
 				}
 
-				var data struct {
-					RepoIDs []api.RepoID
+				vbr dbtb struct {
+					RepoIDs []bpi.RepoID
 				}
-				if err := json.Unmarshal(body, &data); err != nil {
-					t.Fatal(err)
+				if err := json.Unmbrshbl(body, &dbtb); err != nil {
+					t.Fbtbl(err)
 				}
 
-				wantIDs := make([]api.RepoID, len(tc.want))
-				for i, name := range tc.want {
-					for _, repo := range allRepos {
-						if string(repo.Name) == name {
-							wantIDs[i] = repo.ID
+				wbntIDs := mbke([]bpi.RepoID, len(tc.wbnt))
+				for i, nbme := rbnge tc.wbnt {
+					for _, repo := rbnge bllRepos {
+						if string(repo.Nbme) == nbme {
+							wbntIDs[i] = repo.ID
 						}
 					}
 				}
-				if d := cmp.Diff(wantIDs, data.RepoIDs); d != "" {
-					t.Fatalf("ids mismatch (-want +got):\n%s", d)
+				if d := cmp.Diff(wbntIDs, dbtb.RepoIDs); d != "" {
+					t.Fbtblf("ids mismbtch (-wbnt +got):\n%s", d)
 				}
 			})
 		})
 	}
 }
 
-func fakeListIndexable(indexable []types.MinimalRepo) func(context.Context) ([]types.MinimalRepo, error) {
-	return func(context.Context) ([]types.MinimalRepo, error) {
-		return indexable, nil
+func fbkeListIndexbble(indexbble []types.MinimblRepo) func(context.Context) ([]types.MinimblRepo, error) {
+	return func(context.Context) ([]types.MinimblRepo, error) {
+		return indexbble, nil
 	}
 }
 
-type fakeRepoStore struct {
-	Repos []types.MinimalRepo
+type fbkeRepoStore struct {
+	Repos []types.MinimblRepo
 }
 
-func (f *fakeRepoStore) List(_ context.Context, opts database.ReposListOptions) ([]*types.Repo, error) {
-	var repos []*types.Repo
-	for _, r := range f.Repos {
-		for _, id := range opts.IDs {
+func (f *fbkeRepoStore) List(_ context.Context, opts dbtbbbse.ReposListOptions) ([]*types.Repo, error) {
+	vbr repos []*types.Repo
+	for _, r := rbnge f.Repos {
+		for _, id := rbnge opts.IDs {
 			if id == r.ID {
-				repos = append(repos, r.ToRepo())
+				repos = bppend(repos, r.ToRepo())
 			}
 		}
 	}
@@ -425,20 +425,20 @@ func (f *fakeRepoStore) List(_ context.Context, opts database.ReposListOptions) 
 	return repos, nil
 }
 
-func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.ReposListOptions, cb func(*types.MinimalRepo)) error {
-	names := make(map[string]bool, len(opt.Names))
-	for _, name := range opt.Names {
-		names[name] = true
+func (f *fbkeRepoStore) StrebmMinimblRepos(ctx context.Context, opt dbtbbbse.ReposListOptions, cb func(*types.MinimblRepo)) error {
+	nbmes := mbke(mbp[string]bool, len(opt.Nbmes))
+	for _, nbme := rbnge opt.Nbmes {
+		nbmes[nbme] = true
 	}
 
-	ids := make(map[api.RepoID]bool, len(opt.IDs))
-	for _, id := range opt.IDs {
+	ids := mbke(mbp[bpi.RepoID]bool, len(opt.IDs))
+	for _, id := rbnge opt.IDs {
 		ids[id] = true
 	}
 
-	for i := range f.Repos {
+	for i := rbnge f.Repos {
 		r := &f.Repos[i]
-		if names[string(r.Name)] || ids[r.ID] {
+		if nbmes[string(r.Nbme)] || ids[r.ID] {
 			cb(&f.Repos[i])
 		}
 	}
@@ -446,171 +446,171 @@ func (f *fakeRepoStore) StreamMinimalRepos(ctx context.Context, opt database.Rep
 	return nil
 }
 
-type fakeRankingService struct{}
+type fbkeRbnkingService struct{}
 
-func (*fakeRankingService) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (map[api.RepoID]time.Time, error) {
-	return map[api.RepoID]time.Time{}, nil
+func (*fbkeRbnkingService) LbstUpdbtedAt(ctx context.Context, repoIDs []bpi.RepoID) (mbp[bpi.RepoID]time.Time, error) {
+	return mbp[bpi.RepoID]time.Time{}, nil
 }
-func (*fakeRankingService) GetRepoRank(ctx context.Context, repoName api.RepoName) (_ []float64, err error) {
+func (*fbkeRbnkingService) GetRepoRbnk(ctx context.Context, repoNbme bpi.RepoNbme) (_ []flobt64, err error) {
 	return nil, nil
 }
-func (*fakeRankingService) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ citypes.RepoPathRanks, err error) {
-	return citypes.RepoPathRanks{}, nil
+func (*fbkeRbnkingService) GetDocumentRbnks(ctx context.Context, repoNbme bpi.RepoNbme) (_ citypes.RepoPbthRbnks, err error) {
+	return citypes.RepoPbthRbnks{}, nil
 }
 
-// suffixIndexers mocks Indexers. ReposSubset will return all repoNames with
-// the suffix of hostname.
+// suffixIndexers mocks Indexers. ReposSubset will return bll repoNbmes with
+// the suffix of hostnbme.
 type suffixIndexers bool
 
-func (b suffixIndexers) ReposSubset(ctx context.Context, hostname string, indexed zoekt.ReposMap, indexable []types.MinimalRepo) ([]types.MinimalRepo, error) {
-	if !b.Enabled() {
-		return nil, errors.New("indexers disabled")
+func (b suffixIndexers) ReposSubset(ctx context.Context, hostnbme string, indexed zoekt.ReposMbp, indexbble []types.MinimblRepo) ([]types.MinimblRepo, error) {
+	if !b.Enbbled() {
+		return nil, errors.New("indexers disbbled")
 	}
-	if hostname == "" {
-		return nil, errors.New("empty hostname")
+	if hostnbme == "" {
+		return nil, errors.New("empty hostnbme")
 	}
 
-	var filter []types.MinimalRepo
-	for _, r := range indexable {
-		if strings.HasSuffix(string(r.Name), hostname) {
-			filter = append(filter, r)
+	vbr filter []types.MinimblRepo
+	for _, r := rbnge indexbble {
+		if strings.HbsSuffix(string(r.Nbme), hostnbme) {
+			filter = bppend(filter, r)
 		} else if _, ok := indexed[uint32(r.ID)]; ok {
-			filter = append(filter, r)
+			filter = bppend(filter, r)
 		}
 	}
 	return filter, nil
 }
 
-func (b suffixIndexers) Enabled() bool {
+func (b suffixIndexers) Enbbled() bool {
 	return bool(b)
 }
 
-func TestRepoRankFromConfig(t *testing.T) {
-	cases := []struct {
-		name       string
-		rankScores map[string]float64
-		want       float64
+func TestRepoRbnkFromConfig(t *testing.T) {
+	cbses := []struct {
+		nbme       string
+		rbnkScores mbp[string]flobt64
+		wbnt       flobt64
 	}{
 		{"gh.test/sg/sg", nil, 0},
-		{"gh.test/sg/sg", map[string]float64{"gh.test": 100}, 100},
-		{"gh.test/sg/sg", map[string]float64{"gh.test": 100, "gh.test/sg": 50}, 150},
-		{"gh.test/sg/sg", map[string]float64{"gh.test": 100, "gh.test/sg": 50, "gh.test/sg/sg": -20}, 130},
-		{"gh.test/sg/ex", map[string]float64{"gh.test": 100, "gh.test/sg": 50, "gh.test/sg/sg": -20}, 150},
+		{"gh.test/sg/sg", mbp[string]flobt64{"gh.test": 100}, 100},
+		{"gh.test/sg/sg", mbp[string]flobt64{"gh.test": 100, "gh.test/sg": 50}, 150},
+		{"gh.test/sg/sg", mbp[string]flobt64{"gh.test": 100, "gh.test/sg": 50, "gh.test/sg/sg": -20}, 130},
+		{"gh.test/sg/ex", mbp[string]flobt64{"gh.test": 100, "gh.test/sg": 50, "gh.test/sg/sg": -20}, 150},
 	}
-	for _, tc := range cases {
-		config := schema.SiteConfiguration{ExperimentalFeatures: &schema.ExperimentalFeatures{
-			Ranking: &schema.Ranking{
-				RepoScores: tc.rankScores,
+	for _, tc := rbnge cbses {
+		config := schemb.SiteConfigurbtion{ExperimentblFebtures: &schemb.ExperimentblFebtures{
+			Rbnking: &schemb.Rbnking{
+				RepoScores: tc.rbnkScores,
 			},
 		}}
-		got := repoRankFromConfig(config, tc.name)
-		if got != tc.want {
-			t.Errorf("got score %v, want %v, repo %q config %v", got, tc.want, tc.name, tc.rankScores)
+		got := repoRbnkFromConfig(config, tc.nbme)
+		if got != tc.wbnt {
+			t.Errorf("got score %v, wbnt %v, repo %q config %v", got, tc.wbnt, tc.nbme, tc.rbnkScores)
 		}
 	}
 }
 
-func TestIndexStatusUpdate(t *testing.T) {
+func TestIndexStbtusUpdbte(t *testing.T) {
 
 	t.Run("REST", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 
-		body := `{"Repositories": [{"RepoID": 1234, "Branches": [{"Name": "main", "Version": "f00b4r"}]}]}`
-		wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
-		called := false
+		body := `{"Repositories": [{"RepoID": 1234, "Brbnches": [{"Nbme": "mbin", "Version": "f00b4r"}]}]}`
+		wbntBrbnches := []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "f00b4r"}}
+		cblled := fblse
 
 		zoektReposStore := dbmocks.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
+		zoektReposStore.UpdbteIndexStbtusesFunc.SetDefbultHook(func(_ context.Context, indexed zoekt.ReposMbp) error {
 			entry, ok := indexed[1234]
 			if !ok {
-				t.Fatalf("wrong repo ID")
+				t.Fbtblf("wrong repo ID")
 			}
-			if d := cmp.Diff(entry.Branches, wantBranches); d != "" {
-				t.Fatalf("ids mismatch (-want +got):\n%s", d)
+			if d := cmp.Diff(entry.Brbnches, wbntBrbnches); d != "" {
+				t.Fbtblf("ids mismbtch (-wbnt +got):\n%s", d)
 			}
-			called = true
+			cblled = true
 			return nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
+		db.ZoektReposFunc.SetDefbultReturn(zoektReposStore)
 
-		srv := &searchIndexerServer{db: db, logger: logger}
+		srv := &sebrchIndexerServer{db: db, logger: logger}
 
-		req := httptest.NewRequest("POST", "/", bytes.NewReader([]byte(body)))
+		req := httptest.NewRequest("POST", "/", bytes.NewRebder([]byte(body)))
 		w := httptest.NewRecorder()
 
-		if err := srv.handleIndexStatusUpdate(w, req); err != nil {
-			t.Fatal(err)
+		if err := srv.hbndleIndexStbtusUpdbte(w, req); err != nil {
+			t.Fbtbl(err)
 		}
 
 		resp := w.Result()
-		if resp.StatusCode != http.StatusOK {
-			t.Errorf("got status %v", resp.StatusCode)
+		if resp.StbtusCode != http.StbtusOK {
+			t.Errorf("got stbtus %v", resp.StbtusCode)
 		}
 
-		if !called {
-			t.Fatalf("not called")
+		if !cblled {
+			t.Fbtblf("not cblled")
 		}
 	})
 
 	t.Run("gRPC", func(t *testing.T) {
 		logger := logtest.Scoped(t)
 
-		wantRepoID := uint32(1234)
-		wantBranches := []zoekt.RepositoryBranch{{Name: "main", Version: "f00b4r"}}
+		wbntRepoID := uint32(1234)
+		wbntBrbnches := []zoekt.RepositoryBrbnch{{Nbme: "mbin", Version: "f00b4r"}}
 
-		called := false
+		cblled := fblse
 
 		zoektReposStore := dbmocks.NewMockZoektReposStore()
-		zoektReposStore.UpdateIndexStatusesFunc.SetDefaultHook(func(_ context.Context, indexed zoekt.ReposMap) error {
-			entry, ok := indexed[wantRepoID]
+		zoektReposStore.UpdbteIndexStbtusesFunc.SetDefbultHook(func(_ context.Context, indexed zoekt.ReposMbp) error {
+			entry, ok := indexed[wbntRepoID]
 			if !ok {
-				t.Fatalf("wrong repo ID")
+				t.Fbtblf("wrong repo ID")
 			}
-			if d := cmp.Diff(entry.Branches, wantBranches); d != "" {
-				t.Fatalf("ids mismatch (-want +got):\n%s", d)
+			if d := cmp.Diff(entry.Brbnches, wbntBrbnches); d != "" {
+				t.Fbtblf("ids mismbtch (-wbnt +got):\n%s", d)
 			}
-			called = true
+			cblled = true
 			return nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.ZoektReposFunc.SetDefaultReturn(zoektReposStore)
+		db.ZoektReposFunc.SetDefbultReturn(zoektReposStore)
 
-		parameters := indexStatusUpdateArgs{
-			Repositories: []indexStatusUpdateRepository{
-				{RepoID: wantRepoID, Branches: wantBranches},
+		pbrbmeters := indexStbtusUpdbteArgs{
+			Repositories: []indexStbtusUpdbteRepository{
+				{RepoID: wbntRepoID, Brbnches: wbntBrbnches},
 			},
 		}
 
-		srv := &searchIndexerGRPCServer{server: &searchIndexerServer{db: db, logger: logger}}
+		srv := &sebrchIndexerGRPCServer{server: &sebrchIndexerServer{db: db, logger: logger}}
 
-		_, err := srv.UpdateIndexStatus(context.Background(), parameters.ToProto())
+		_, err := srv.UpdbteIndexStbtus(context.Bbckground(), pbrbmeters.ToProto())
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if !called {
-			t.Fatalf("not called")
+		if !cblled {
+			t.Fbtblf("not cblled")
 		}
 	})
 }
 
-func TestRepoPathRanks_RoundTrip(t *testing.T) {
-	var diff string
+func TestRepoPbthRbnks_RoundTrip(t *testing.T) {
+	vbr diff string
 
-	f := func(original citypes.RepoPathRanks) bool {
-		converted := repoPathRanksFromProto(repoPathRanksToProto(&original))
+	f := func(originbl citypes.RepoPbthRbnks) bool {
+		converted := repoPbthRbnksFromProto(repoPbthRbnksToProto(&originbl))
 
-		if diff = cmp.Diff(&original, converted); diff != "" {
-			return false
+		if diff = cmp.Diff(&originbl, converted); diff != "" {
+			return fblse
 		}
 
 		return true
 	}
 
 	if err := quick.Check(f, nil); err != nil {
-		t.Errorf("mismatch (-want +got):\n%s", diff)
+		t.Errorf("mismbtch (-wbnt +got):\n%s", diff)
 	}
 }

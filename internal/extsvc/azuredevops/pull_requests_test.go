@@ -1,169 +1,169 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 )
 
-func TestClient_CreatePullRequest(t *testing.T) {
-	cli, save := NewTestClient(t, "CreatePullRequest", *update)
-	t.Cleanup(save)
+func TestClient_CrebtePullRequest(t *testing.T) {
+	cli, sbve := NewTestClient(t, "CrebtePullRequest", *updbte)
+	t.Clebnup(sbve)
 
-	args := OrgProjectRepoArgs{
-		Org:          "sgtestazure",
-		Project:      "sgtestazure",
-		RepoNameOrID: "c4d186ef-18a6-4de4-a610-aa9ebd4e1faa",
+	brgs := OrgProjectRepoArgs{
+		Org:          "sgtestbzure",
+		Project:      "sgtestbzure",
+		RepoNbmeOrID: "c4d186ef-18b6-4de4-b610-bb9ebd4e1fbb",
 	}
 
-	input := CreatePullRequestInput{
-		SourceRefName: "refs/heads/add-codeowners",
-		TargetRefName: "refs/heads/main",
+	input := CrebtePullRequestInput{
+		SourceRefNbme: "refs/hebds/bdd-codeowners",
+		TbrgetRefNbme: "refs/hebds/mbin",
 		Title:         "Test PR",
 		Description:   "test description",
 	}
 
-	resp, err := cli.CreatePullRequest(context.Background(), args, input)
+	resp, err := cli.CrebtePullRequest(context.Bbckground(), brgs, input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/CreatePullRequest.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/CrebtePullRequest.json", *updbte, resp)
 }
 
-func TestClient_AbandonPullRequest(t *testing.T) {
-	cli, save := NewTestClient(t, "AbandonPullRequest", *update)
-	t.Cleanup(save)
+func TestClient_AbbndonPullRequest(t *testing.T) {
+	cli, sbve := NewTestClient(t, "AbbndonPullRequest", *updbte)
+	t.Clebnup(sbve)
 
-	// When updating this test make sure you point these args to an active PR.
-	args := PullRequestCommonArgs{
+	// When updbting this test mbke sure you point these brgs to bn bctive PR.
+	brgs := PullRequestCommonArgs{
 		PullRequestID: "40",
-		Org:           "sgtestazure",
-		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure",
+		Org:           "sgtestbzure",
+		Project:       "sgtestbzure",
+		RepoNbmeOrID:  "sgtestbzure",
 	}
 
-	resp, err := cli.AbandonPullRequest(context.Background(), args)
+	resp, err := cli.AbbndonPullRequest(context.Bbckground(), brgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/AbandonPullRequest.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/AbbndonPullRequest.json", *updbte, resp)
 }
 
 func TestClient_GetPullRequest(t *testing.T) {
-	cli, save := NewTestClient(t, "GetPullRequest", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "GetPullRequest", *updbte)
+	t.Clebnup(sbve)
 
-	// When updating this test make sure you point these args to an active PR.
-	args := PullRequestCommonArgs{
+	// When updbting this test mbke sure you point these brgs to bn bctive PR.
+	brgs := PullRequestCommonArgs{
 		PullRequestID: "36",
-		Org:           "sgtestazure",
-		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure",
+		Org:           "sgtestbzure",
+		Project:       "sgtestbzure",
+		RepoNbmeOrID:  "sgtestbzure",
 	}
 
-	resp, err := cli.GetPullRequest(context.Background(), args)
+	resp, err := cli.GetPullRequest(context.Bbckground(), brgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/GetPullRequest.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/GetPullRequest.json", *updbte, resp)
 }
 
-func TestClient_GetPullRequestStatuses(t *testing.T) {
-	cli, save := NewTestClient(t, "GetPullRequestStatuses", *update)
-	t.Cleanup(save)
+func TestClient_GetPullRequestStbtuses(t *testing.T) {
+	cli, sbve := NewTestClient(t, "GetPullRequestStbtuses", *updbte)
+	t.Clebnup(sbve)
 
-	// When updating this test make sure you point these args to an active PR.
-	args := PullRequestCommonArgs{
+	// When updbting this test mbke sure you point these brgs to bn bctive PR.
+	brgs := PullRequestCommonArgs{
 		PullRequestID: "49",
-		Org:           "sgtestazure",
-		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure3",
+		Org:           "sgtestbzure",
+		Project:       "sgtestbzure",
+		RepoNbmeOrID:  "sgtestbzure3",
 	}
 
-	resp, err := cli.GetPullRequestStatuses(context.Background(), args)
+	resp, err := cli.GetPullRequestStbtuses(context.Bbckground(), brgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/GetPullRequestStatuses.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/GetPullRequestStbtuses.json", *updbte, resp)
 }
 
-func TestClient_UpdatePullRequest(t *testing.T) {
-	cli, save := NewTestClient(t, "UpdatePullRequest", *update)
-	t.Cleanup(save)
+func TestClient_UpdbtePullRequest(t *testing.T) {
+	cli, sbve := NewTestClient(t, "UpdbtePullRequest", *updbte)
+	t.Clebnup(sbve)
 
-	// When updating this test make sure you point these args to an active PR.
+	// When updbting this test mbke sure you point these brgs to bn bctive PR.
 	title := "new title"
 	description := "new description"
-	args := PullRequestCommonArgs{
+	brgs := PullRequestCommonArgs{
 		PullRequestID: "38",
-		Org:           "sgtestazure",
-		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure",
+		Org:           "sgtestbzure",
+		Project:       "sgtestbzure",
+		RepoNbmeOrID:  "sgtestbzure",
 	}
-	input := PullRequestUpdateInput{
+	input := PullRequestUpdbteInput{
 		Title:       &title,
 		Description: &description,
 	}
 
-	resp, err := cli.UpdatePullRequest(context.Background(), args, input)
+	resp, err := cli.UpdbtePullRequest(context.Bbckground(), brgs, input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/UpdatePullRequest.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/UpdbtePullRequest.json", *updbte, resp)
 }
 
-func TestClient_CreatePullRequestCommentThread(t *testing.T) {
-	cli, save := NewTestClient(t, "CreatePullRequestCommentThread", *update)
-	t.Cleanup(save)
+func TestClient_CrebtePullRequestCommentThrebd(t *testing.T) {
+	cli, sbve := NewTestClient(t, "CrebtePullRequestCommentThrebd", *updbte)
+	t.Clebnup(sbve)
 
-	// When updating this test make sure you point these args to an active PR.
-	args := PullRequestCommonArgs{
+	// When updbting this test mbke sure you point these brgs to bn bctive PR.
+	brgs := PullRequestCommonArgs{
 		PullRequestID: "5",
-		Org:           "sgtestazure",
-		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure3",
+		Org:           "sgtestbzure",
+		Project:       "sgtestbzure",
+		RepoNbmeOrID:  "sgtestbzure3",
 	}
 	input := PullRequestCommentInput{
 		Comments: []PullRequestCommentForInput{{
-			ParentCommentID: 0,
+			PbrentCommentID: 0,
 			Content:         "new comment",
 			CommentType:     1,
 		}},
 	}
 
-	resp, err := cli.CreatePullRequestCommentThread(context.Background(), args, input)
+	resp, err := cli.CrebtePullRequestCommentThrebd(context.Bbckground(), brgs, input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/CreatePullRequestCommentThread.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/CrebtePullRequestCommentThrebd.json", *updbte, resp)
 }
 
 func TestClient_CompletePullRequest(t *testing.T) {
-	cli, save := NewTestClient(t, "CompletePullRequest", *update)
-	t.Cleanup(save)
+	cli, sbve := NewTestClient(t, "CompletePullRequest", *updbte)
+	t.Clebnup(sbve)
 
-	// When updating this test make sure you point these args to an active PR.
-	args := PullRequestCommonArgs{
+	// When updbting this test mbke sure you point these brgs to bn bctive PR.
+	brgs := PullRequestCommonArgs{
 		PullRequestID: "40",
-		Org:           "sgtestazure",
-		Project:       "sgtestazure",
-		RepoNameOrID:  "sgtestazure",
+		Org:           "sgtestbzure",
+		Project:       "sgtestbzure",
+		RepoNbmeOrID:  "sgtestbzure",
 	}
 	input := PullRequestCompleteInput{
 		CommitID: "0c8e8dfe907c724f785cdc818e0400ec0d68cb0b",
 	}
 
-	resp, err := cli.CompletePullRequest(context.Background(), args, input)
+	resp, err := cli.CompletePullRequest(context.Bbckground(), brgs, input)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/CompletePullRequest.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/CompletePullRequest.json", *updbte, resp)
 }

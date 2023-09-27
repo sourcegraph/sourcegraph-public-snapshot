@@ -1,20 +1,20 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var MigrationPollInterval = time.Second
+vbr MigrbtionPollIntervbl = time.Second
 
-// PollMigration will invoke the given function periodically with the current progress of the
-// given migration. The loop will break once the function returns true or the given context
-// is canceled.
-func (c *Client) PollMigration(ctx context.Context, id string, f func(float64) bool) error {
+// PollMigrbtion will invoke the given function periodicblly with the current progress of the
+// given migrbtion. The loop will brebk once the function returns true or the given context
+// is cbnceled.
+func (c *Client) PollMigrbtion(ctx context.Context, id string, f func(flobt64) bool) error {
 	for {
-		progress, err := c.GetMigrationProgress(id)
+		progress, err := c.GetMigrbtionProgress(id)
 		if err != nil {
 			return err
 		}
@@ -23,59 +23,59 @@ func (c *Client) PollMigration(ctx context.Context, id string, f func(float64) b
 		}
 
 		select {
-		case <-time.After(MigrationPollInterval):
-		case <-ctx.Done():
+		cbse <-time.After(MigrbtionPollIntervbl):
+		cbse <-ctx.Done():
 			return ctx.Err()
 		}
 	}
 }
 
-func (c *Client) GetMigrationProgress(id string) (float64, error) {
+func (c *Client) GetMigrbtionProgress(id string) (flobt64, error) {
 	const query = `
-		query GetMigrationStatus {
-			outOfBandMigrations {
+		query GetMigrbtionStbtus {
+			outOfBbndMigrbtions {
 				id
 				progress
 			}
 		}
 	`
 
-	var envelope struct {
-		Data struct {
-			OutOfBandMigrations []struct {
+	vbr envelope struct {
+		Dbtb struct {
+			OutOfBbndMigrbtions []struct {
 				ID       string
-				Progress float64
+				Progress flobt64
 			}
 		}
 	}
-	if err := c.GraphQL("", query, nil, &envelope); err != nil {
-		return 0, errors.Wrap(err, "request GraphQL")
+	if err := c.GrbphQL("", query, nil, &envelope); err != nil {
+		return 0, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	for _, migration := range envelope.Data.OutOfBandMigrations {
-		if migration.ID == id {
-			return migration.Progress, nil
+	for _, migrbtion := rbnge envelope.Dbtb.OutOfBbndMigrbtions {
+		if migrbtion.ID == id {
+			return migrbtion.Progress, nil
 		}
 	}
 
-	return 0, errors.Newf("unknown oobmigration %q", id)
+	return 0, errors.Newf("unknown oobmigrbtion %q", id)
 }
 
-func (c *Client) SetMigrationDirection(id string, up bool) error {
+func (c *Client) SetMigrbtionDirection(id string, up bool) error {
 	const query = `
-		mutation SetMigrationDirection($id: ID!, $applyReverse: Boolean!) {
-			setMigrationDirection(id: $id, applyReverse: $applyReverse) {
-				alwaysNil
+		mutbtion SetMigrbtionDirection($id: ID!, $bpplyReverse: Boolebn!) {
+			setMigrbtionDirection(id: $id, bpplyReverse: $bpplyReverse) {
+				blwbysNil
 			}
 		}
 	`
 
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"id":           id,
-		"applyReverse": !up,
+		"bpplyReverse": !up,
 	}
-	if err := c.GraphQL("", query, variables, nil); err != nil {
-		return errors.Wrap(err, "request GraphQL")
+	if err := c.GrbphQL("", query, vbribbles, nil); err != nil {
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 
 	return nil

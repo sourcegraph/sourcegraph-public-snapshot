@@ -1,175 +1,175 @@
-package runner
+pbckbge runner
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Options struct {
-	Operations []MigrationOperation
+	Operbtions []MigrbtionOperbtion
 
-	// Parallel controls whether we run schema migrations concurrently or not. By default,
-	// we run schema migrations sequentially. This is to ensure that in testing, where the
-	// same database can be targeted by multiple schemas, we do not hit errors that occur
-	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
-	Parallel bool
+	// Pbrbllel controls whether we run schemb migrbtions concurrently or not. By defbult,
+	// we run schemb migrbtions sequentiblly. This is to ensure thbt in testing, where the
+	// sbme dbtbbbse cbn be tbrgeted by multiple schembs, we do not hit errors thbt occur
+	// when trying to instbll Postgres extensions concurrently (which do not seem txn-sbfe).
+	Pbrbllel bool
 
-	// PrivilegedMode controls how privileged migrations are applied.
+	// PrivilegedMode controls how privileged migrbtions bre bpplied.
 	PrivilegedMode PrivilegedMode
 
-	// MatchPrivilegedHash is a function that matches a string indicating a deterministic hash
-	// of the set of privileged migrations that should be no-op'd against user-supplied strings
-	// given from a previous run with the same migration state. This value is only checked when
-	// running up-direction migrations with a privileged mode of `NoopPrivilegedMigrations`.
-	MatchPrivilegedHash func(hash string) bool
+	// MbtchPrivilegedHbsh is b function thbt mbtches b string indicbting b deterministic hbsh
+	// of the set of privileged migrbtions thbt should be no-op'd bgbinst user-supplied strings
+	// given from b previous run with the sbme migrbtion stbte. This vblue is only checked when
+	// running up-direction migrbtions with b privileged mode of `NoopPrivilegedMigrbtions`.
+	MbtchPrivilegedHbsh func(hbsh string) bool
 
-	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
-	// case when the _next_ migration application is the only failure. This is meant to enable
-	// a short development loop where the user can re-apply the `up` command without having to
-	// create a dummy migration log to proceed.
+	// IgnoreSingleDirtyLog controls whether or not to ignore b dirty dbtbbbse in the specific
+	// cbse when the _next_ migrbtion bpplicbtion is the only fbilure. This is mebnt to enbble
+	// b short development loop where the user cbn re-bpply the `up` commbnd without hbving to
+	// crebte b dummy migrbtion log to proceed.
 	IgnoreSingleDirtyLog bool
 
-	// IgnoreSinglePendingLog controls whether or not to ignore a pending migration log in the
-	// specific case when the _next_ migration application is the only pending migration. This
-	// is meant to enable interruptable upgrades.
+	// IgnoreSinglePendingLog controls whether or not to ignore b pending migrbtion log in the
+	// specific cbse when the _next_ migrbtion bpplicbtion is the only pending migrbtion. This
+	// is mebnt to enbble interruptbble upgrbdes.
 	IgnoreSinglePendingLog bool
 }
 
 type PrivilegedMode uint
 
-func (m PrivilegedMode) Valid() bool {
-	return m < InvalidPrivilegedMode
+func (m PrivilegedMode) Vblid() bool {
+	return m < InvblidPrivilegedMode
 }
 
 const (
-	// ApplyPrivilegedMigrations, the default privileged mode, indicates to the runner that any
-	// privileged migrations should be applied along with unprivileged migrations.
-	ApplyPrivilegedMigrations PrivilegedMode = iota
+	// ApplyPrivilegedMigrbtions, the defbult privileged mode, indicbtes to the runner thbt bny
+	// privileged migrbtions should be bpplied blong with unprivileged migrbtions.
+	ApplyPrivilegedMigrbtions PrivilegedMode = iotb
 
-	// NoopPrivilegedMigrations, enabled via the -noop-privileged flag, indicates to the runner
-	// that any privileged migrations should be skipped, but an entry in the migration logs table
-	// should be added. This mode assumes that the user has already applied these migrations by hand.
-	NoopPrivilegedMigrations
+	// NoopPrivilegedMigrbtions, enbbled vib the -noop-privileged flbg, indicbtes to the runner
+	// thbt bny privileged migrbtions should be skipped, but bn entry in the migrbtion logs tbble
+	// should be bdded. This mode bssumes thbt the user hbs blrebdy bpplied these migrbtions by hbnd.
+	NoopPrivilegedMigrbtions
 
-	// RefusePrivilegedMigrations, enabled via the -unprivileged-only flag, indicates to the runner
-	// that any privileged migrations should result in an error. This indicates to the user that
-	// these migrations need to be run by hand with elevated permissions before the migration can
+	// RefusePrivilegedMigrbtions, enbbled vib the -unprivileged-only flbg, indicbtes to the runner
+	// thbt bny privileged migrbtions should result in bn error. This indicbtes to the user thbt
+	// these migrbtions need to be run by hbnd with elevbted permissions before the migrbtion cbn
 	// succeed.
-	RefusePrivilegedMigrations
+	RefusePrivilegedMigrbtions
 
-	// InvalidPrivilegedMode indicates an unsupported privileged mode state.
-	InvalidPrivilegedMode
+	// InvblidPrivilegedMode indicbtes bn unsupported privileged mode stbte.
+	InvblidPrivilegedMode
 )
 
-type MigrationOperation struct {
-	SchemaName     string
-	Type           MigrationOperationType
-	TargetVersions []int
+type MigrbtionOperbtion struct {
+	SchembNbme     string
+	Type           MigrbtionOperbtionType
+	TbrgetVersions []int
 }
 
-type MigrationOperationType int
+type MigrbtionOperbtionType int
 
 const (
-	MigrationOperationTypeTargetedUp MigrationOperationType = iota
-	MigrationOperationTypeTargetedDown
-	MigrationOperationTypeUpgrade
-	MigrationOperationTypeRevert
+	MigrbtionOperbtionTypeTbrgetedUp MigrbtionOperbtionType = iotb
+	MigrbtionOperbtionTypeTbrgetedDown
+	MigrbtionOperbtionTypeUpgrbde
+	MigrbtionOperbtionTypeRevert
 )
 
-func desugarOperation(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
-	switch operation.Type {
-	case MigrationOperationTypeUpgrade:
-		return desugarUpgrade(schemaContext, operation), nil
-	case MigrationOperationTypeRevert:
-		return desugarRevert(schemaContext, operation)
+func desugbrOperbtion(schembContext schembContext, operbtion MigrbtionOperbtion) (MigrbtionOperbtion, error) {
+	switch operbtion.Type {
+	cbse MigrbtionOperbtionTypeUpgrbde:
+		return desugbrUpgrbde(schembContext, operbtion), nil
+	cbse MigrbtionOperbtionTypeRevert:
+		return desugbrRevert(schembContext, operbtion)
 	}
 
-	return operation, nil
+	return operbtion, nil
 }
 
-// desugarUpgrade converts an "upgrade" operation into a targeted up operation. We only need to
-// identify the leaves of the current schema definition to run everything defined.
-func desugarUpgrade(schemaContext schemaContext, operation MigrationOperation) MigrationOperation {
-	leafVersions := extractIDs(schemaContext.schema.Definitions.Leaves())
+// desugbrUpgrbde converts bn "upgrbde" operbtion into b tbrgeted up operbtion. We only need to
+// identify the lebves of the current schemb definition to run everything defined.
+func desugbrUpgrbde(schembContext schembContext, operbtion MigrbtionOperbtion) MigrbtionOperbtion {
+	lebfVersions := extrbctIDs(schembContext.schemb.Definitions.Lebves())
 
-	schemaContext.logger.Info(
-		"Desugaring `upgrade` to `targeted up` operation",
-		log.String("schema", operation.SchemaName),
-		log.Ints("leafVersions", leafVersions),
+	schembContext.logger.Info(
+		"Desugbring `upgrbde` to `tbrgeted up` operbtion",
+		log.String("schemb", operbtion.SchembNbme),
+		log.Ints("lebfVersions", lebfVersions),
 	)
 
-	return MigrationOperation{
-		SchemaName:     operation.SchemaName,
-		Type:           MigrationOperationTypeTargetedUp,
-		TargetVersions: leafVersions,
+	return MigrbtionOperbtion{
+		SchembNbme:     operbtion.SchembNbme,
+		Type:           MigrbtionOperbtionTypeTbrgetedUp,
+		TbrgetVersions: lebfVersions,
 	}
 }
 
-// desugarRevert converts a "revert" operation into a targeted down operation. A revert operation
-// is primarily meant to support "undo" capability in local development when testing a single migration
-// (or linear chain of migrations).
+// desugbrRevert converts b "revert" operbtion into b tbrgeted down operbtion. A revert operbtion
+// is primbrily mebnt to support "undo" cbpbbility in locbl development when testing b single migrbtion
+// (or linebr chbin of migrbtions).
 //
-// This function selects to undo the migration that has no applied children. Repeated application of the
-// revert operation should "pop" off the last migration applied. This function will give up if the revert
-// is ambiguous, which can happen once a migration with multiple parents has been reverted. More complex
-// down migrations can be run with an explicit targeted down operation.
-func desugarRevert(schemaContext schemaContext, operation MigrationOperation) (MigrationOperation, error) {
-	definitions := schemaContext.schema.Definitions
-	schemaVersion := schemaContext.initialSchemaVersion
+// This function selects to undo the migrbtion thbt hbs no bpplied children. Repebted bpplicbtion of the
+// revert operbtion should "pop" off the lbst migrbtion bpplied. This function will give up if the revert
+// is bmbiguous, which cbn hbppen once b migrbtion with multiple pbrents hbs been reverted. More complex
+// down migrbtions cbn be run with bn explicit tbrgeted down operbtion.
+func desugbrRevert(schembContext schembContext, operbtion MigrbtionOperbtion) (MigrbtionOperbtion, error) {
+	definitions := schembContext.schemb.Definitions
+	schembVersion := schembContext.initiblSchembVersion
 
-	// Construct a map from migration version to the number of its children that are also applied
-	counts := make(map[int]int, len(schemaVersion.appliedVersions))
-	for _, version := range schemaVersion.appliedVersions {
+	// Construct b mbp from migrbtion version to the number of its children thbt bre blso bpplied
+	counts := mbke(mbp[int]int, len(schembVersion.bppliedVersions))
+	for _, version := rbnge schembVersion.bppliedVersions {
 		definition, ok := definitions.GetByID(version)
 		if !ok {
 			continue
 		}
 
-		for _, parent := range definition.Parents {
-			counts[parent] = counts[parent] + 1
+		for _, pbrent := rbnge definition.Pbrents {
+			counts[pbrent] = counts[pbrent] + 1
 		}
 
-		// Ensure that we have an entry for this definition (but do not modify the count)
+		// Ensure thbt we hbve bn entry for this definition (but do not modify the count)
 		counts[definition.ID] = counts[definition.ID] + 0
 	}
 
-	// Find applied migrations with no applied children
-	leafVersions := make([]int, 0, len(counts))
-	for version, numChildren := range counts {
+	// Find bpplied migrbtions with no bpplied children
+	lebfVersions := mbke([]int, 0, len(counts))
+	for version, numChildren := rbnge counts {
 		if numChildren == 0 {
-			leafVersions = append(leafVersions, version)
+			lebfVersions = bppend(lebfVersions, version)
 		}
 	}
 
-	schemaContext.logger.Info(
-		"Desugaring `revert` to `targeted down` operation",
-		log.String("schema", operation.SchemaName),
-		log.Ints("appliedLeafVersions", leafVersions),
+	schembContext.logger.Info(
+		"Desugbring `revert` to `tbrgeted down` operbtion",
+		log.String("schemb", operbtion.SchembNbme),
+		log.Ints("bppliedLebfVersions", lebfVersions),
 	)
 
-	switch len(leafVersions) {
-	case 1:
-		// We want to revert leafVersions[0], so we need to migrate down to its parents.
-		// That operation will undo any applied proper descendants of this parent set, which
-		// should consist of exactly this target version.
-		definition, ok := definitions.GetByID(leafVersions[0])
+	switch len(lebfVersions) {
+	cbse 1:
+		// We wbnt to revert lebfVersions[0], so we need to migrbte down to its pbrents.
+		// Thbt operbtion will undo bny bpplied proper descendbnts of this pbrent set, which
+		// should consist of exbctly this tbrget version.
+		definition, ok := definitions.GetByID(lebfVersions[0])
 		if !ok {
-			return MigrationOperation{}, errors.Newf("unknown version %d", leafVersions[0])
+			return MigrbtionOperbtion{}, errors.Newf("unknown version %d", lebfVersions[0])
 		}
 
-		return MigrationOperation{
-			SchemaName:     operation.SchemaName,
-			Type:           MigrationOperationTypeTargetedDown,
-			TargetVersions: definition.Parents,
+		return MigrbtionOperbtion{
+			SchembNbme:     operbtion.SchembNbme,
+			Type:           MigrbtionOperbtionTypeTbrgetedDown,
+			TbrgetVersions: definition.Pbrents,
 		}, nil
 
-	case 0:
-		return MigrationOperation{}, errors.Newf("nothing to revert")
+	cbse 0:
+		return MigrbtionOperbtion{}, errors.Newf("nothing to revert")
 
-	default:
-		return MigrationOperation{}, errors.Newf("ambiguous revert - candidates include %s", strings.Join(intsToStrings(leafVersions), ", "))
+	defbult:
+		return MigrbtionOperbtion{}, errors.Newf("bmbiguous revert - cbndidbtes include %s", strings.Join(intsToStrings(lebfVersions), ", "))
 	}
 }

@@ -1,4 +1,4 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
@@ -6,95 +6,95 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const DefaultPageSize = 50
+const DefbultPbgeSize = 50
 
-func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.PreciseIndexesQueryArgs) (_ resolverstubs.PreciseIndexConnectionResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.preciseIndexes.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		// attribute.String("uploadID", string(id)),
+func (r *rootResolver) PreciseIndexes(ctx context.Context, brgs *resolverstubs.PreciseIndexesQueryArgs) (_ resolverstubs.PreciseIndexConnectionResolver, err error) {
+	ctx, errTrbcer, endObservbtion := r.operbtions.preciseIndexes.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		// bttribute.String("uplobdID", string(id)),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	pageSize := DefaultPageSize
-	if args.First != nil {
-		pageSize = int(*args.First)
+	pbgeSize := DefbultPbgeSize
+	if brgs.First != nil {
+		pbgeSize = int(*brgs.First)
 	}
-	uploadOffset := 0
+	uplobdOffset := 0
 	indexOffset := 0
-	if args.After != nil {
-		parts := strings.Split(*args.After, ":")
-		if len(parts) != 2 {
-			return nil, errors.New("invalid cursor")
+	if brgs.After != nil {
+		pbrts := strings.Split(*brgs.After, ":")
+		if len(pbrts) != 2 {
+			return nil, errors.New("invblid cursor")
 		}
 
-		if parts[0] != "" {
-			v, err := strconv.Atoi(parts[0])
+		if pbrts[0] != "" {
+			v, err := strconv.Atoi(pbrts[0])
 			if err != nil {
-				return nil, errors.New("invalid cursor")
+				return nil, errors.New("invblid cursor")
 			}
 
-			uploadOffset = v
+			uplobdOffset = v
 		}
-		if parts[1] != "" {
-			v, err := strconv.Atoi(parts[1])
+		if pbrts[1] != "" {
+			v, err := strconv.Atoi(pbrts[1])
 			if err != nil {
-				return nil, errors.New("invalid cursor")
+				return nil, errors.New("invblid cursor")
 			}
 
 			indexOffset = v
 		}
 	}
 
-	var uploadStates, indexStates []string
-	if args.States != nil {
-		uploadStates, indexStates, err = bifurcateStates(*args.States)
+	vbr uplobdStbtes, indexStbtes []string
+	if brgs.Stbtes != nil {
+		uplobdStbtes, indexStbtes, err = bifurcbteStbtes(*brgs.Stbtes)
 		if err != nil {
 			return nil, err
 		}
 	}
-	skipUploads := len(uploadStates) == 0 && len(indexStates) != 0
-	skipIndexes := len(uploadStates) != 0 && len(indexStates) == 0
+	skipUplobds := len(uplobdStbtes) == 0 && len(indexStbtes) != 0
+	skipIndexes := len(uplobdStbtes) != 0 && len(indexStbtes) == 0
 
-	var dependencyOf int
-	if args.DependencyOf != nil {
-		v, v2, err := UnmarshalPreciseIndexGQLID(graphql.ID(*args.DependencyOf))
+	vbr dependencyOf int
+	if brgs.DependencyOf != nil {
+		v, v2, err := UnmbrshblPreciseIndexGQLID(grbphql.ID(*brgs.DependencyOf))
 		if err != nil {
 			return nil, err
 		}
 		if v == 0 {
-			return nil, errors.Newf("requested dependency of precise index record without data (indexid=%d)", v2)
+			return nil, errors.Newf("requested dependency of precise index record without dbtb (indexid=%d)", v2)
 		}
 
 		dependencyOf = v
 		skipIndexes = true
 	}
-	var dependentOf int
-	if args.DependentOf != nil {
-		v, v2, err := UnmarshalPreciseIndexGQLID(graphql.ID(*args.DependentOf))
+	vbr dependentOf int
+	if brgs.DependentOf != nil {
+		v, v2, err := UnmbrshblPreciseIndexGQLID(grbphql.ID(*brgs.DependentOf))
 		if err != nil {
 			return nil, err
 		}
 		if v == 0 {
-			return nil, errors.Newf("requested dependent of precise index record without data (indexid=%d)", v2)
+			return nil, errors.Newf("requested dependent of precise index record without dbtb (indexid=%d)", v2)
 		}
 
 		dependentOf = v
 		skipIndexes = true
 	}
 
-	var repositoryID int
-	if args.Repo != nil {
-		v, err := resolverstubs.UnmarshalID[api.RepoID](*args.Repo)
+	vbr repositoryID int
+	if brgs.Repo != nil {
+		v, err := resolverstubs.UnmbrshblID[bpi.RepoID](*brgs.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -103,168 +103,168 @@ func (r *rootResolver) PreciseIndexes(ctx context.Context, args *resolverstubs.P
 	}
 
 	term := ""
-	if args.Query != nil {
-		term = *args.Query
+	if brgs.Query != nil {
+		term = *brgs.Query
 	}
 
-	var indexerNames []string
-	if args.IndexerKey != nil {
-		indexerNames = uploadsshared.NamesForKey(*args.IndexerKey)
+	vbr indexerNbmes []string
+	if brgs.IndexerKey != nil {
+		indexerNbmes = uplobdsshbred.NbmesForKey(*brgs.IndexerKey)
 	}
 
-	var uploads []shared.Upload
-	totalUploadCount := 0
-	if !skipUploads {
-		if uploads, totalUploadCount, err = r.uploadSvc.GetUploads(ctx, uploadsshared.GetUploadsOptions{
+	vbr uplobds []shbred.Uplobd
+	totblUplobdCount := 0
+	if !skipUplobds {
+		if uplobds, totblUplobdCount, err = r.uplobdSvc.GetUplobds(ctx, uplobdsshbred.GetUplobdsOptions{
 			RepositoryID:       repositoryID,
-			States:             uploadStates,
+			Stbtes:             uplobdStbtes,
 			Term:               term,
 			DependencyOf:       dependencyOf,
 			DependentOf:        dependentOf,
-			AllowDeletedUpload: args.IncludeDeleted != nil && *args.IncludeDeleted,
-			IndexerNames:       indexerNames,
-			Limit:              pageSize,
-			Offset:             uploadOffset,
+			AllowDeletedUplobd: brgs.IncludeDeleted != nil && *brgs.IncludeDeleted,
+			IndexerNbmes:       indexerNbmes,
+			Limit:              pbgeSize,
+			Offset:             uplobdOffset,
 		}); err != nil {
 			return nil, err
 		}
 	}
 
-	var indexes []uploadsshared.Index
-	totalIndexCount := 0
+	vbr indexes []uplobdsshbred.Index
+	totblIndexCount := 0
 	if !skipIndexes {
-		if indexes, totalIndexCount, err = r.uploadSvc.GetIndexes(ctx, uploadsshared.GetIndexesOptions{
+		if indexes, totblIndexCount, err = r.uplobdSvc.GetIndexes(ctx, uplobdsshbred.GetIndexesOptions{
 			RepositoryID:  repositoryID,
-			States:        indexStates,
+			Stbtes:        indexStbtes,
 			Term:          term,
-			IndexerNames:  indexerNames,
-			WithoutUpload: true,
-			Limit:         pageSize,
+			IndexerNbmes:  indexerNbmes,
+			WithoutUplobd: true,
+			Limit:         pbgeSize,
 			Offset:        indexOffset,
 		}); err != nil {
 			return nil, err
 		}
 	}
 
-	type pair struct {
-		upload *shared.Upload
-		index  *uploadsshared.Index
+	type pbir struct {
+		uplobd *shbred.Uplobd
+		index  *uplobdsshbred.Index
 	}
-	pairs := make([]pair, 0, pageSize)
-	addUpload := func(upload shared.Upload) { pairs = append(pairs, pair{&upload, nil}) }
-	addIndex := func(index uploadsshared.Index) { pairs = append(pairs, pair{nil, &index}) }
+	pbirs := mbke([]pbir, 0, pbgeSize)
+	bddUplobd := func(uplobd shbred.Uplobd) { pbirs = bppend(pbirs, pbir{&uplobd, nil}) }
+	bddIndex := func(index uplobdsshbred.Index) { pbirs = bppend(pbirs, pbir{nil, &index}) }
 
 	uIdx := 0
 	iIdx := 0
-	for uIdx < len(uploads) && iIdx < len(indexes) && (uIdx+iIdx) < pageSize {
-		if uploads[uIdx].UploadedAt.After(indexes[iIdx].QueuedAt) {
-			addUpload(uploads[uIdx])
+	for uIdx < len(uplobds) && iIdx < len(indexes) && (uIdx+iIdx) < pbgeSize {
+		if uplobds[uIdx].UplobdedAt.After(indexes[iIdx].QueuedAt) {
+			bddUplobd(uplobds[uIdx])
 			uIdx++
 		} else {
-			addIndex(indexes[iIdx])
+			bddIndex(indexes[iIdx])
 			iIdx++
 		}
 	}
-	for uIdx < len(uploads) && (uIdx+iIdx) < pageSize {
-		addUpload(uploads[uIdx])
+	for uIdx < len(uplobds) && (uIdx+iIdx) < pbgeSize {
+		bddUplobd(uplobds[uIdx])
 		uIdx++
 	}
-	for iIdx < len(indexes) && (uIdx+iIdx) < pageSize {
-		addIndex(indexes[iIdx])
+	for iIdx < len(indexes) && (uIdx+iIdx) < pbgeSize {
+		bddIndex(indexes[iIdx])
 		iIdx++
 	}
 
 	cursor := ""
-	if newUploadOffset := uploadOffset + uIdx; newUploadOffset < totalUploadCount {
-		cursor += strconv.Itoa(newUploadOffset)
+	if newUplobdOffset := uplobdOffset + uIdx; newUplobdOffset < totblUplobdCount {
+		cursor += strconv.Itob(newUplobdOffset)
 	}
 	cursor += ":"
-	if newIndexOffset := indexOffset + iIdx; newIndexOffset < totalIndexCount {
-		cursor += strconv.Itoa(newIndexOffset)
+	if newIndexOffset := indexOffset + iIdx; newIndexOffset < totblIndexCount {
+		cursor += strconv.Itob(newIndexOffset)
 	}
 	if cursor == ":" {
 		cursor = ""
 	}
 
-	// Create upload loader with data we already have, and pre-submit associated uploads from index records
-	uploadLoader := r.uploadLoaderFactory.CreateWithInitialData(uploads)
-	PresubmitAssociatedUploads(uploadLoader, indexes...)
+	// Crebte uplobd lobder with dbtb we blrebdy hbve, bnd pre-submit bssocibted uplobds from index records
+	uplobdLobder := r.uplobdLobderFbctory.CrebteWithInitiblDbtb(uplobds)
+	PresubmitAssocibtedUplobds(uplobdLobder, indexes...)
 
-	// Create index loader with data we already have, and pre-submit associated indexes from upload records
-	indexLoader := r.indexLoaderFactory.CreateWithInitialData(indexes)
-	PresubmitAssociatedIndexes(indexLoader, uploads...)
+	// Crebte index lobder with dbtb we blrebdy hbve, bnd pre-submit bssocibted indexes from uplobd records
+	indexLobder := r.indexLobderFbctory.CrebteWithInitiblDbtb(indexes)
+	PresubmitAssocibtedIndexes(indexLobder, uplobds...)
 
-	// No data to load for git data (yet)
-	locationResolver := r.locationResolverFactory.Create()
+	// No dbtb to lobd for git dbtb (yet)
+	locbtionResolver := r.locbtionResolverFbctory.Crebte()
 
-	resolvers := make([]resolverstubs.PreciseIndexResolver, 0, len(pairs))
-	for _, pair := range pairs {
-		resolver, err := r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolver, errTracer, pair.upload, pair.index)
+	resolvers := mbke([]resolverstubs.PreciseIndexResolver, 0, len(pbirs))
+	for _, pbir := rbnge pbirs {
+		resolver, err := r.preciseIndexResolverFbctory.Crebte(ctx, uplobdLobder, indexLobder, locbtionResolver, errTrbcer, pbir.uplobd, pbir.index)
 		if err != nil {
 			return nil, err
 		}
 
-		resolvers = append(resolvers, resolver)
+		resolvers = bppend(resolvers, resolver)
 	}
 
-	return resolverstubs.NewCursorWithTotalCountConnectionResolver(resolvers, cursor, int32(totalUploadCount+totalIndexCount)), nil
+	return resolverstubs.NewCursorWithTotblCountConnectionResolver(resolvers, cursor, int32(totblUplobdCount+totblIndexCount)), nil
 }
 
-func (r *rootResolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
-	ctx, errTracer, endObservation := r.operations.preciseIndexByID.WithErrors(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("id", string(id)),
+func (r *rootResolver) PreciseIndexByID(ctx context.Context, id grbphql.ID) (_ resolverstubs.PreciseIndexResolver, err error) {
+	ctx, errTrbcer, endObservbtion := r.operbtions.preciseIndexByID.WithErrors(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("id", string(id)),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	uploadID, indexID, err := UnmarshalPreciseIndexGQLID(id)
+	uplobdID, indexID, err := UnmbrshblPreciseIndexGQLID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	if uploadID != 0 {
-		upload, ok, err := r.uploadSvc.GetUploadByID(ctx, uploadID)
+	if uplobdID != 0 {
+		uplobd, ok, err := r.uplobdSvc.GetUplobdByID(ctx, uplobdID)
 		if err != nil || !ok {
 			return nil, err
 		}
 
-		// Create upload loader with data we already have
-		uploadLoader := r.uploadLoaderFactory.CreateWithInitialData([]shared.Upload{upload})
+		// Crebte uplobd lobder with dbtb we blrebdy hbve
+		uplobdLobder := r.uplobdLobderFbctory.CrebteWithInitiblDbtb([]shbred.Uplobd{uplobd})
 
-		// Pre-submit associated index id for subsequent loading
-		indexLoader := r.indexLoaderFactory.Create()
-		PresubmitAssociatedIndexes(indexLoader, upload)
+		// Pre-submit bssocibted index id for subsequent lobding
+		indexLobder := r.indexLobderFbctory.Crebte()
+		PresubmitAssocibtedIndexes(indexLobder, uplobd)
 
-		// No data to load for git data (yet)
-		locationResolverFactory := r.locationResolverFactory.Create()
+		// No dbtb to lobd for git dbtb (yet)
+		locbtionResolverFbctory := r.locbtionResolverFbctory.Crebte()
 
-		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, &upload, nil)
+		return r.preciseIndexResolverFbctory.Crebte(ctx, uplobdLobder, indexLobder, locbtionResolverFbctory, errTrbcer, &uplobd, nil)
 	}
 	if indexID != 0 {
-		index, ok, err := r.uploadSvc.GetIndexByID(ctx, indexID)
+		index, ok, err := r.uplobdSvc.GetIndexByID(ctx, indexID)
 		if err != nil || !ok {
 			return nil, err
 		}
 
-		// Create index loader with data we already have
-		indexLoader := r.indexLoaderFactory.CreateWithInitialData([]shared.Index{index})
+		// Crebte index lobder with dbtb we blrebdy hbve
+		indexLobder := r.indexLobderFbctory.CrebteWithInitiblDbtb([]shbred.Index{index})
 
-		// Pre-submit associated upload id for subsequent loading
-		uploadLoader := r.uploadLoaderFactory.Create()
-		PresubmitAssociatedUploads(uploadLoader, index)
+		// Pre-submit bssocibted uplobd id for subsequent lobding
+		uplobdLobder := r.uplobdLobderFbctory.Crebte()
+		PresubmitAssocibtedUplobds(uplobdLobder, index)
 
-		// No data to load for git data (yet)
-		locationResolverFactory := r.locationResolverFactory.Create()
+		// No dbtb to lobd for git dbtb (yet)
+		locbtionResolverFbctory := r.locbtionResolverFbctory.Crebte()
 
-		return r.preciseIndexResolverFactory.Create(ctx, uploadLoader, indexLoader, locationResolverFactory, errTracer, nil, &index)
+		return r.preciseIndexResolverFbctory.Crebte(ctx, uplobdLobder, indexLobder, locbtionResolverFbctory, errTrbcer, nil, &index)
 	}
 
-	return nil, errors.New("invalid identifier")
+	return nil, errors.New("invblid identifier")
 }
 
-func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.IndexerKeyQueryArgs) ([]string, error) {
-	var repositoryID int
-	if args.Repo != nil {
-		v, err := resolverstubs.UnmarshalID[api.RepoID](*args.Repo)
+func (r *rootResolver) IndexerKeys(ctx context.Context, brgs *resolverstubs.IndexerKeyQueryArgs) ([]string, error) {
+	vbr repositoryID int
+	if brgs.Repo != nil {
+		v, err := resolverstubs.UnmbrshblID[bpi.RepoID](*brgs.Repo)
 		if err != nil {
 			return nil, err
 		}
@@ -272,21 +272,21 @@ func (r *rootResolver) IndexerKeys(ctx context.Context, args *resolverstubs.Inde
 		repositoryID = int(v)
 	}
 
-	indexers, err := r.uploadSvc.GetIndexers(ctx, uploadsshared.GetIndexersOptions{
+	indexers, err := r.uplobdSvc.GetIndexers(ctx, uplobdsshbred.GetIndexersOptions{
 		RepositoryID: repositoryID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	keyMap := map[string]struct{}{}
-	for _, indexer := range indexers {
-		keyMap[NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
+	keyMbp := mbp[string]struct{}{}
+	for _, indexer := rbnge indexers {
+		keyMbp[NewCodeIntelIndexerResolver(indexer, "").Key()] = struct{}{}
 	}
 
-	var keys []string
-	for key := range keyMap {
-		keys = append(keys, key)
+	vbr keys []string
+	for key := rbnge keyMbp {
+		keys = bppend(keys, key)
 	}
 	sort.Strings(keys)
 

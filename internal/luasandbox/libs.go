@@ -1,25 +1,25 @@
-package luasandbox
+pbckbge lubsbndbox
 
 import (
-	lua "github.com/yuin/gopher-lua"
+	lub "github.com/yuin/gopher-lub"
 
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/libs"
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/libs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/memo"
 )
 
-type LuaLib interface {
-	LuaAPI() map[string]lua.LGFunction
+type LubLib interfbce {
+	LubAPI() mbp[string]lub.LGFunction
 }
 
-var defaultAPIs = map[string]LuaLib{
-	"internal_path": libs.Path,
+vbr defbultAPIs = mbp[string]LubLib{
+	"internbl_pbth": libs.Pbth,
 }
 
-var DefaultGoModules = memo.NewMemoizedConstructor(func() (map[string]lua.LGFunction, error) {
-	modules := map[string]lua.LGFunction{}
-	for name, api := range defaultAPIs {
-		modules[name] = util.CreateModule(api.LuaAPI())
+vbr DefbultGoModules = memo.NewMemoizedConstructor(func() (mbp[string]lub.LGFunction, error) {
+	modules := mbp[string]lub.LGFunction{}
+	for nbme, bpi := rbnge defbultAPIs {
+		modules[nbme] = util.CrebteModule(bpi.LubAPI())
 	}
 
 	return modules, nil

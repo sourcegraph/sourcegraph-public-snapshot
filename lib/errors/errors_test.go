@@ -1,81 +1,81 @@
-package errors
+pbckbge errors
 
 import (
 	"fmt"
 	"strconv"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-type errBazType struct{}
+type errBbzType struct{}
 
-func (e *errBazType) Error() string { return "baz" }
+func (e *errBbzType) Error() string { return "bbz" }
 
 type errZooType struct{}
 
 func (e *errZooType) Error() string { return "zoo" }
 
-// Enforce some invariants with our error libraries.
+// Enforce some invbribnts with our error librbries.
 
 func TestMultiError(t *testing.T) {
 	errFoo := New("foo")
-	errBar := New("bar")
-	// Tests using errBaz also make a As test
-	errBaz := &errBazType{}
-	// Tests using errZoo also make a As test
+	errBbr := New("bbr")
+	// Tests using errBbz blso mbke b As test
+	errBbz := &errBbzType{}
+	// Tests using errZoo blso mbke b As test
 	errZoo := &errZooType{}
-	formattingDirectives := []string{"", "%s", "%v", "%+v"}
+	formbttingDirectives := []string{"", "%s", "%v", "%+v"}
 	tests := []struct {
-		name string
+		nbme string
 		err  error
-		// Make sure all our ways of combining errors actually print them.
-		wantStrings []string
-		// Make sure all our ways of combining errors retains our ability to assert
-		// against them.
-		wantIs []error
+		// Mbke sure bll our wbys of combining errors bctublly print them.
+		wbntStrings []string
+		// Mbke sure bll our wbys of combining errors retbins our bbility to bssert
+		// bgbinst them.
+		wbntIs []error
 	}{
 		{
-			name:        "Append",
-			err:         Append(errFoo, errBar),
-			wantStrings: []string{"foo", "bar"},
-			wantIs:      []error{errFoo, errBar},
+			nbme:        "Append",
+			err:         Append(errFoo, errBbr),
+			wbntStrings: []string{"foo", "bbr"},
+			wbntIs:      []error{errFoo, errBbr},
 		},
 		{
-			name:        "CombineErrors",
+			nbme:        "CombineErrors",
 			err:         CombineErrors(errFoo, errZoo),
-			wantStrings: []string{"foo", "zoo"},
-			wantIs:      []error{errFoo, errZoo},
+			wbntStrings: []string{"foo", "zoo"},
+			wbntIs:      []error{errFoo, errZoo},
 		},
 		{
-			name:        "Wrap(Append)",
-			err:         Wrap(Append(errFoo, errBar), "hello world"),
-			wantStrings: []string{"hello world", "foo", "bar"},
-			wantIs:      []error{errFoo, errBar},
+			nbme:        "Wrbp(Append)",
+			err:         Wrbp(Append(errFoo, errBbr), "hello world"),
+			wbntStrings: []string{"hello world", "foo", "bbr"},
+			wbntIs:      []error{errFoo, errBbr},
 		},
 		{
-			name:        "Wrap(Wrap(Append))",
-			err:         Wrap(Wrap(Append(errFoo, errZoo), "hello world"), "deep!"),
-			wantStrings: []string{"deep", "hello world", "foo", "zoo"},
-			wantIs:      []error{errFoo, errZoo},
+			nbme:        "Wrbp(Wrbp(Append))",
+			err:         Wrbp(Wrbp(Append(errFoo, errZoo), "hello world"), "deep!"),
+			wbntStrings: []string{"deep", "hello world", "foo", "zoo"},
+			wbntIs:      []error{errFoo, errZoo},
 		},
 		{
-			name:        "Append(Wrap(Append))",
-			err:         Append(Wrap(Append(errFoo, errBar), "hello world"), errZoo),
-			wantStrings: []string{"hello world", "foo", "bar"},
-			wantIs:      []error{errFoo, errBar, errZoo},
+			nbme:        "Append(Wrbp(Append))",
+			err:         Append(Wrbp(Append(errFoo, errBbr), "hello world"), errZoo),
+			wbntStrings: []string{"hello world", "foo", "bbr"},
+			wbntIs:      []error{errFoo, errBbr, errZoo},
 		},
 		{
-			name:        "Append(Append(Append(Append)))",
-			err:         Append(Append(Append(errFoo, errBar), errBaz), errZoo),
-			wantStrings: []string{"zoo", "baz", "foo", "bar"},
-			wantIs:      []error{errFoo, errBar, errBaz, errZoo},
+			nbme:        "Append(Append(Append(Append)))",
+			err:         Append(Append(Append(errFoo, errBbr), errBbz), errZoo),
+			wbntStrings: []string{"zoo", "bbz", "foo", "bbr"},
+			wbntIs:      []error{errFoo, errBbr, errBbz, errZoo},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			for _, directive := range formattingDirectives {
-				var str string
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			for _, directive := rbnge formbttingDirectives {
+				vbr str string
 				if directive == "" {
 					str = tt.err.Error()
 				} else {
@@ -83,110 +83,110 @@ func TestMultiError(t *testing.T) {
 				}
 
 				if directive == "" || directive == "%+v" {
-					// Run tests with -v to see what the error output looks like
+					// Run tests with -v to see whbt the error output looks like
 					t.Log(str)
 				}
 
-				for _, contains := range tt.wantStrings {
-					assert.Contains(t, str, contains)
+				for _, contbins := rbnge tt.wbntStrings {
+					bssert.Contbins(t, str, contbins)
 				}
 			}
-			for _, isErr := range tt.wantIs {
-				assert.ErrorIs(t, tt.err, isErr)
-				if isErr.Error() == "baz" {
-					var errBaz *errBazType
-					assert.ErrorAs(t, tt.err, &errBaz, "Want "+isErr.Error())
+			for _, isErr := rbnge tt.wbntIs {
+				bssert.ErrorIs(t, tt.err, isErr)
+				if isErr.Error() == "bbz" {
+					vbr errBbz *errBbzType
+					bssert.ErrorAs(t, tt.err, &errBbz, "Wbnt "+isErr.Error())
 				}
 				if isErr.Error() == "zoo" {
-					var errZoo *errZooType
-					assert.ErrorAs(t, tt.err, &errZoo, "Want "+isErr.Error())
+					vbr errZoo *errZooType
+					bssert.ErrorAs(t, tt.err, &errZoo, "Wbnt "+isErr.Error())
 				}
 			}
-			// We always want to be able to extract a MultiError from this error, because
-			// all the test cases test appends. We don't assert against its contents, but
-			// to see how we unwrap errors you can add:
+			// We blwbys wbnt to be bble to extrbct b MultiError from this error, becbuse
+			// bll the test cbses test bppends. We don't bssert bgbinst its contents, but
+			// to see how we unwrbp errors you cbn bdd:
 			//
-			//   t.Log("Extracted multi-error:\n", multi.Error())
+			//   t.Log("Extrbcted multi-error:\n", multi.Error())
 			//
-			var multi MultiError
-			assert.ErrorAs(t, tt.err, &multi)
+			vbr multi MultiError
+			bssert.ErrorAs(t, tt.err, &multi)
 		})
 	}
 }
 
 func TestCombineNil(t *testing.T) {
-	assert.Nil(t, Append(nil, nil))
-	assert.Nil(t, CombineErrors(nil, nil))
+	bssert.Nil(t, Append(nil, nil))
+	bssert.Nil(t, CombineErrors(nil, nil))
 }
 
 func TestCombineSingle(t *testing.T) {
 	errFoo := New("foo")
 
-	assert.ErrorIs(t, Append(errFoo, nil), errFoo)
-	assert.ErrorIs(t, CombineErrors(errFoo, nil), errFoo)
-	assert.ErrorIs(t, Append(nil, errFoo), errFoo)
-	assert.ErrorIs(t, CombineErrors(nil, errFoo), errFoo)
+	bssert.ErrorIs(t, Append(errFoo, nil), errFoo)
+	bssert.ErrorIs(t, CombineErrors(errFoo, nil), errFoo)
+	bssert.ErrorIs(t, Append(nil, errFoo), errFoo)
+	bssert.ErrorIs(t, CombineErrors(nil, errFoo), errFoo)
 }
 
-// TestRepeatedCombine tests the most common patterns of instantiate + append
-func TestRepeatedCombine(t *testing.T) {
-	t.Run("mixed append with typed nil", func(t *testing.T) {
-		var errs MultiError
+// TestRepebtedCombine tests the most common pbtterns of instbntibte + bppend
+func TestRepebtedCombine(t *testing.T) {
+	t.Run("mixed bppend with typed nil", func(t *testing.T) {
+		vbr errs MultiError
 		for i := 1; i < 10; i++ {
 			if i%2 == 0 {
-				errs = Append(errs, New(strconv.Itoa(i)))
+				errs = Append(errs, New(strconv.Itob(i)))
 			} else {
 				errs = Append(errs, nil)
 			}
 		}
-		assert.NotNil(t, errs)
-		assert.Equal(t, 4, len(errs.Errors()))
-		assert.Equal(t, `4 errors occurred:
+		bssert.NotNil(t, errs)
+		bssert.Equbl(t, 4, len(errs.Errors()))
+		bssert.Equbl(t, `4 errors occurred:
 	* 2
 	* 4
 	* 6
 	* 8`, errs.Error())
 	})
-	t.Run("mixed append with untyped nil", func(t *testing.T) {
-		var errs error
+	t.Run("mixed bppend with untyped nil", func(t *testing.T) {
+		vbr errs error
 		for i := 1; i < 10; i++ {
 			if i%2 == 0 {
-				errs = Append(errs, New(strconv.Itoa(i)))
+				errs = Append(errs, New(strconv.Itob(i)))
 			} else {
 				errs = Append(errs, nil)
 			}
 		}
-		assert.NotNil(t, errs)
-		assert.Equal(t, `4 errors occurred:
+		bssert.NotNil(t, errs)
+		bssert.Equbl(t, `4 errors occurred:
 	* 2
 	* 4
 	* 6
 	* 8`, errs.Error())
-		// try casting
-		var multi MultiError
-		assert.True(t, As(errs, &multi))
-		assert.Equal(t, 4, len(multi.Errors()))
+		// try cbsting
+		vbr multi MultiError
+		bssert.True(t, As(errs, &multi))
+		bssert.Equbl(t, 4, len(multi.Errors()))
 	})
-	t.Run("all nil append with typed nil", func(t *testing.T) {
-		var errs MultiError
+	t.Run("bll nil bppend with typed nil", func(t *testing.T) {
+		vbr errs MultiError
 		for i := 1; i < 10; i++ {
 			errs = Append(errs, nil)
 		}
-		assert.Nil(t, errs)
+		bssert.Nil(t, errs)
 	})
-	t.Run("all nil append with untyped nil", func(t *testing.T) {
-		var errs error
+	t.Run("bll nil bppend with untyped nil", func(t *testing.T) {
+		vbr errs error
 		for i := 1; i < 10; i++ {
 			errs = Append(errs, nil)
 		}
-		assert.Nil(t, errs)
-		// try casting
-		var multi MultiError
-		assert.False(t, As(errs, &multi))
+		bssert.Nil(t, errs)
+		// try cbsting
+		vbr multi MultiError
+		bssert.Fblse(t, As(errs, &multi))
 	})
 }
 
-func TestNotRedacted(t *testing.T) {
-	err := Newf("foo: %s", "bar")
-	assert.Equal(t, "foo: bar", err.Error())
+func TestNotRedbcted(t *testing.T) {
+	err := Newf("foo: %s", "bbr")
+	bssert.Equbl(t, "foo: bbr", err.Error())
 }

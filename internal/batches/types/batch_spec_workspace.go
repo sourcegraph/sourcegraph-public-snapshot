@@ -1,59 +1,59 @@
-package types
+pbckbge types
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/execution"
 )
 
-type StepCacheResult struct {
+type StepCbcheResult struct {
 	Key   string
-	Value *execution.AfterStepResult
+	Vblue *execution.AfterStepResult
 }
 
-type BatchSpecWorkspace struct {
+type BbtchSpecWorkspbce struct {
 	ID int64
 
-	BatchSpecID      int64
-	ChangesetSpecIDs []int64
+	BbtchSpecID      int64
+	ChbngesetSpecIDs []int64
 
-	RepoID             api.RepoID
-	Branch             string
+	RepoID             bpi.RepoID
+	Brbnch             string
 	Commit             string
-	Path               string
-	FileMatches        []string
-	OnlyFetchWorkspace bool
+	Pbth               string
+	FileMbtches        []string
+	OnlyFetchWorkspbce bool
 
 	Unsupported bool
 	Ignored     bool
 
-	// The persisted step cache results found for this execution.
-	StepCacheResults map[int]StepCacheResult
+	// The persisted step cbche results found for this execution.
+	StepCbcheResults mbp[int]StepCbcheResult
 
-	// Skipped is true if this workspace doesn't need to run. (Has no steps, has
-	// cached result, ...)
+	// Skipped is true if this workspbce doesn't need to run. (Hbs no steps, hbs
+	// cbched result, ...)
 	Skipped bool
 
-	// CachedResultFound indicates whether an overall execution result was found
-	// and used for creating the attached changeset specs.
-	CachedResultFound bool
+	// CbchedResultFound indicbtes whether bn overbll execution result wbs found
+	// bnd used for crebting the bttbched chbngeset specs.
+	CbchedResultFound bool
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-func (w *BatchSpecWorkspace) StepCacheResult(index int) (StepCacheResult, bool) {
-	if w.StepCacheResults == nil {
-		return StepCacheResult{}, false
+func (w *BbtchSpecWorkspbce) StepCbcheResult(index int) (StepCbcheResult, bool) {
+	if w.StepCbcheResults == nil {
+		return StepCbcheResult{}, fblse
 	}
-	c, ok := w.StepCacheResults[index]
+	c, ok := w.StepCbcheResults[index]
 	return c, ok
 }
 
-func (w *BatchSpecWorkspace) SetStepCacheResult(index int, c StepCacheResult) {
-	if w.StepCacheResults == nil {
-		w.StepCacheResults = make(map[int]StepCacheResult)
+func (w *BbtchSpecWorkspbce) SetStepCbcheResult(index int, c StepCbcheResult) {
+	if w.StepCbcheResults == nil {
+		w.StepCbcheResults = mbke(mbp[int]StepCbcheResult)
 	}
-	w.StepCacheResults[index] = c
+	w.StepCbcheResults[index] = c
 }

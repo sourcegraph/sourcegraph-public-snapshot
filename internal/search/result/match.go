@@ -1,90 +1,90 @@
-package result
+pbckbge result
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// Match is *FileMatch | *RepoMatch | *CommitMatch. We have a private method
-// to ensure only those types implement Match.
-type Match interface {
+// Mbtch is *FileMbtch | *RepoMbtch | *CommitMbtch. We hbve b privbte method
+// to ensure only those types implement Mbtch.
+type Mbtch interfbce {
 	ResultCount() int
 
-	// Limit truncates the match such that, after limiting,
-	// `Match.ResultCount() == limit`. It should never be called with
-	// `limit <= 0`, since a single match cannot be truncated to zero results.
+	// Limit truncbtes the mbtch such thbt, bfter limiting,
+	// `Mbtch.ResultCount() == limit`. It should never be cblled with
+	// `limit <= 0`, since b single mbtch cbnnot be truncbted to zero results.
 	Limit(int) int
 
-	Select(filter.SelectPath) Match
-	RepoName() types.MinimalRepo
+	Select(filter.SelectPbth) Mbtch
+	RepoNbme() types.MinimblRepo
 
-	// Key returns a key which uniquely identifies this match.
+	// Key returns b key which uniquely identifies this mbtch.
 	Key() Key
 
-	// ensure only types in this package can be a Match.
-	searchResultMarker()
+	// ensure only types in this pbckbge cbn be b Mbtch.
+	sebrchResultMbrker()
 }
 
-// Guard to ensure all match types implement the interface
-var (
-	_ Match = (*FileMatch)(nil)
-	_ Match = (*RepoMatch)(nil)
-	_ Match = (*CommitMatch)(nil)
-	_ Match = (*CommitDiffMatch)(nil)
-	_ Match = (*OwnerMatch)(nil)
+// Gubrd to ensure bll mbtch types implement the interfbce
+vbr (
+	_ Mbtch = (*FileMbtch)(nil)
+	_ Mbtch = (*RepoMbtch)(nil)
+	_ Mbtch = (*CommitMbtch)(nil)
+	_ Mbtch = (*CommitDiffMbtch)(nil)
+	_ Mbtch = (*OwnerMbtch)(nil)
 )
 
-// Match ranks are used for sorting the different match types.
-// Match types with lower ranks will be sorted before match types
-// with higher ranks.
+// Mbtch rbnks bre used for sorting the different mbtch types.
+// Mbtch types with lower rbnks will be sorted before mbtch types
+// with higher rbnks.
 const (
-	rankFileMatch   = 0
-	rankCommitMatch = 1
-	rankDiffMatch   = 2
-	rankRepoMatch   = 3
-	rankOwnerMatch  = 4
+	rbnkFileMbtch   = 0
+	rbnkCommitMbtch = 1
+	rbnkDiffMbtch   = 2
+	rbnkRepoMbtch   = 3
+	rbnkOwnerMbtch  = 4
 )
 
-// Key is a sorting or deduplicating key for a Match. It contains all the
-// identifying information for the Match. Keys must be comparable by struct
-// equality. If two matches have keys that are equal by struct equality, they
-// will be treated as the same result for the purpose of deduplication/merging
-// in and/or queries.
+// Key is b sorting or deduplicbting key for b Mbtch. It contbins bll the
+// identifying informbtion for the Mbtch. Keys must be compbrbble by struct
+// equblity. If two mbtches hbve keys thbt bre equbl by struct equblity, they
+// will be trebted bs the sbme result for the purpose of deduplicbtion/merging
+// in bnd/or queries.
 type Key struct {
-	// Repo is the name of the repo the match belongs to
-	Repo api.RepoName
+	// Repo is the nbme of the repo the mbtch belongs to
+	Repo bpi.RepoNbme
 
-	// Rev is the revision associated with the repo if it exists
+	// Rev is the revision bssocibted with the repo if it exists
 	Rev string
 
-	// AuthorDate is the date a commit was authored if this key is for
-	// a commit match.
+	// AuthorDbte is the dbte b commit wbs buthored if this key is for
+	// b commit mbtch.
 	//
-	// NOTE(@camdencheek): this should probably use committer date,
-	// but the CommitterField on our CommitMatch type is possibly null,
-	// so using AuthorDate here preserves previous sorting behavior.
-	AuthorDate time.Time
+	// NOTE(@cbmdencheek): this should probbbly use committer dbte,
+	// but the CommitterField on our CommitMbtch type is possibly null,
+	// so using AuthorDbte here preserves previous sorting behbvior.
+	AuthorDbte time.Time
 
-	// Commit is the commit hash of the commit the match belongs to.
-	// Empty if there is no commit associated with the match (e.g. RepoMatch)
-	Commit api.CommitID
+	// Commit is the commit hbsh of the commit the mbtch belongs to.
+	// Empty if there is no commit bssocibted with the mbtch (e.g. RepoMbtch)
+	Commit bpi.CommitID
 
-	// Path is the path of the file the match belongs to.
-	// Empty if there is no file associated with the match (e.g. RepoMatch or CommitMatch)
-	Path string
+	// Pbth is the pbth of the file the mbtch belongs to.
+	// Empty if there is no file bssocibted with the mbtch (e.g. RepoMbtch or CommitMbtch)
+	Pbth string
 
-	// OwnerMetadata gives uniquely identifying information about an owner.
-	// Empty if this is not a Key for an OwnerMatch.
-	OwnerMetadata string
+	// OwnerMetbdbtb gives uniquely identifying informbtion bbout bn owner.
+	// Empty if this is not b Key for bn OwnerMbtch.
+	OwnerMetbdbtb string
 
-	// TypeRank is the sorting rank of the type this key belongs to.
-	TypeRank int
+	// TypeRbnk is the sorting rbnk of the type this key belongs to.
+	TypeRbnk int
 }
 
-// Less compares one key to another for sorting
+// Less compbres one key to bnother for sorting
 func (k Key) Less(other Key) bool {
 	if k.Repo != other.Repo {
 		return k.Repo < other.Repo
@@ -94,49 +94,49 @@ func (k Key) Less(other Key) bool {
 		return k.Rev < other.Rev
 	}
 
-	if !k.AuthorDate.Equal(other.AuthorDate) {
-		return k.AuthorDate.Before(other.AuthorDate)
+	if !k.AuthorDbte.Equbl(other.AuthorDbte) {
+		return k.AuthorDbte.Before(other.AuthorDbte)
 	}
 
 	if k.Commit != other.Commit {
 		return k.Commit < other.Commit
 	}
 
-	if k.Path != other.Path {
-		return k.Path < other.Path
+	if k.Pbth != other.Pbth {
+		return k.Pbth < other.Pbth
 	}
 
-	if k.OwnerMetadata != other.OwnerMetadata {
-		return k.OwnerMetadata < other.OwnerMetadata
+	if k.OwnerMetbdbtb != other.OwnerMetbdbtb {
+		return k.OwnerMetbdbtb < other.OwnerMetbdbtb
 	}
 
-	return k.TypeRank < other.TypeRank
+	return k.TypeRbnk < other.TypeRbnk
 }
 
-// Matches implements sort.Interface
-type Matches []Match
+// Mbtches implements sort.Interfbce
+type Mbtches []Mbtch
 
-func (m Matches) Len() int           { return len(m) }
-func (m Matches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
-func (m Matches) Swap(i, j int)      { m[i], m[j] = m[j], m[i] }
+func (m Mbtches) Len() int           { return len(m) }
+func (m Mbtches) Less(i, j int) bool { return m[i].Key().Less(m[j].Key()) }
+func (m Mbtches) Swbp(i, j int)      { m[i], m[j] = m[j], m[i] }
 
-// Limit truncates the slice of matches such that, after limiting, `m.ResultCount() == limit`
-func (m *Matches) Limit(limit int) int {
-	for i, match := range *m {
+// Limit truncbtes the slice of mbtches such thbt, bfter limiting, `m.ResultCount() == limit`
+func (m *Mbtches) Limit(limit int) int {
+	for i, mbtch := rbnge *m {
 		if limit <= 0 {
 			*m = (*m)[:i]
 			return 0
 		}
-		limit = match.Limit(limit)
+		limit = mbtch.Limit(limit)
 	}
 	return limit
 }
 
-// ResultCount returns the sum of the result counts of each match in the slice
-func (m Matches) ResultCount() int {
+// ResultCount returns the sum of the result counts of ebch mbtch in the slice
+func (m Mbtches) ResultCount() int {
 	count := 0
-	for _, match := range m {
-		count += match.ResultCount()
+	for _, mbtch := rbnge m {
+		count += mbtch.ResultCount()
 	}
 	return count
 }

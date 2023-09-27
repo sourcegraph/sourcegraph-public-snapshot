@@ -1,4 +1,4 @@
-package alert
+pbckbge blert
 
 import (
 	"context"
@@ -6,126 +6,126 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/comby"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/comby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	sebrchrepos "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrchcontexts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Observer struct {
 	Logger   log.Logger
-	Db       database.DB
-	Zoekt    zoekt.Streamer
-	Searcher *endpoint.Map
+	Db       dbtbbbse.DB
+	Zoekt    zoekt.Strebmer
+	Sebrcher *endpoint.Mbp
 
-	// Inputs are used to generate alert messages based on the query.
-	*search.Inputs
+	// Inputs bre used to generbte blert messbges bbsed on the query.
+	*sebrch.Inputs
 
-	// Update state.
-	HasResults bool
+	// Updbte stbte.
+	HbsResults bool
 
-	// Error state. Can be called concurrently.
+	// Error stbte. Cbn be cblled concurrently.
 	mu    sync.Mutex
-	alert *search.Alert
+	blert *sebrch.Alert
 	err   error
 }
 
-// reposExist returns true if one or more repos resolve. If the attempt
-// returns 0 repos or fails, it returns false. It is a helper function for
-// raising NoResolvedRepos alerts with suggestions when we know the original
-// query does not contain any repos to search.
-func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(), o.Searcher, o.Zoekt)
-	it := repositoryResolver.Iterator(ctx, options)
+// reposExist returns true if one or more repos resolve. If the bttempt
+// returns 0 repos or fbils, it returns fblse. It is b helper function for
+// rbising NoResolvedRepos blerts with suggestions when we know the originbl
+// query does not contbin bny repos to sebrch.
+func (o *Observer) reposExist(ctx context.Context, options sebrch.RepoOptions) bool {
+	repositoryResolver := sebrchrepos.NewResolver(o.Logger, o.Db, gitserver.NewClient(), o.Sebrcher, o.Zoekt)
+	it := repositoryResolver.Iterbtor(ctx, options)
 	for it.Next() {
 		resolved := it.Current()
-		// Due to filtering (eg hasCommitAfter) this page of results may be
-		// empty, so we only return early if we find a repo that exists.
+		// Due to filtering (eg hbsCommitAfter) this pbge of results mby be
+		// empty, so we only return ebrly if we find b repo thbt exists.
 		if len(resolved.RepoRevs) > 0 {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *search.Alert {
+func (o *Observer) blertForNoResolvedRepos(ctx context.Context, q query.Q) *sebrch.Alert {
 	repoFilters, minusRepoFilters := q.Repositories()
-	contextFilters, _ := q.StringValues(query.FieldContext)
-	onlyForks, noForks, forksNotSet := false, false, true
+	contextFilters, _ := q.StringVblues(query.FieldContext)
+	onlyForks, noForks, forksNotSet := fblse, fblse, true
 	if fork := q.Fork(); fork != nil {
 		onlyForks = *fork == query.Only
 		noForks = *fork == query.No
-		forksNotSet = false
+		forksNotSet = fblse
 	}
-	archived := q.Archived()
-	archivedNotSet := archived == nil
+	brchived := q.Archived()
+	brchivedNotSet := brchived == nil
 
-	if len(contextFilters) == 1 && !searchcontexts.IsGlobalSearchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
+	if len(contextFilters) == 1 && !sebrchcontexts.IsGlobblSebrchContextSpec(contextFilters[0]) && len(repoFilters) > 0 {
 		withoutContextFilter := query.OmitField(q, query.FieldContext)
-		proposedQueries := []*search.QueryDescription{
+		proposedQueries := []*sebrch.QueryDescription{
 			{
-				Description: "search in the global context",
-				Query:       fmt.Sprintf("context:%s %s", searchcontexts.GlobalSearchContextName, withoutContextFilter),
-				PatternType: o.PatternType,
+				Description: "sebrch in the globbl context",
+				Query:       fmt.Sprintf("context:%s %s", sebrchcontexts.GlobblSebrchContextNbme, withoutContextFilter),
+				PbtternType: o.PbtternType,
 			},
 		}
 
-		return &search.Alert{
+		return &sebrch.Alert{
 			PrometheusType:  "no_resolved_repos__context_none_in_common",
 			Title:           fmt.Sprintf("No repositories found for your query within the context %s", contextFilters[0]),
 			ProposedQueries: proposedQueries,
 		}
 	}
 
-	isSiteAdmin := auth.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
-	if !envvar.SourcegraphDotComMode() {
-		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
+	isSiteAdmin := buth.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
+	if !envvbr.SourcegrbphDotComMode() {
+		if needsRepoConfig, err := needsRepositoryConfigurbtion(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
-				return &search.Alert{
+				return &sebrch.Alert{
 					Title:       "No repositories or code hosts configured",
-					Description: "To start searching code, first go to site admin to configure repositories and code hosts.",
+					Description: "To stbrt sebrching code, first go to site bdmin to configure repositories bnd code hosts.",
 				}
 			} else {
-				return &search.Alert{
+				return &sebrch.Alert{
 					Title:       "No repositories or code hosts configured",
-					Description: "To start searching code, ask the site admin to configure and enable repositories.",
+					Description: "To stbrt sebrching code, bsk the site bdmin to configure bnd enbble repositories.",
 				}
 			}
 		}
 	}
 
-	var proposedQueries []*search.QueryDescription
+	vbr proposedQueries []*sebrch.QueryDescription
 	if forksNotSet {
-		tryIncludeForks := search.RepoOptions{
+		tryIncludeForks := sebrch.RepoOptions{
 			RepoFilters:      repoFilters,
 			MinusRepoFilters: minusRepoFilters,
-			NoForks:          false,
+			NoForks:          fblse,
 		}
 		if o.reposExist(ctx, tryIncludeForks) {
-			proposedQueries = append(proposedQueries,
-				&search.QueryDescription{
+			proposedQueries = bppend(proposedQueries,
+				&sebrch.QueryDescription{
 					Description: "include forked repositories in your query.",
-					Query:       o.OriginalQuery + " fork:yes",
-					PatternType: o.PatternType,
+					Query:       o.OriginblQuery + " fork:yes",
+					PbtternType: o.PbtternType,
 				},
 			)
 		}
 	}
 
-	if archivedNotSet {
-		tryIncludeArchived := search.RepoOptions{
+	if brchivedNotSet {
+		tryIncludeArchived := sebrch.RepoOptions{
 			RepoFilters:      repoFilters,
 			MinusRepoFilters: minusRepoFilters,
 			OnlyForks:        onlyForks,
@@ -133,39 +133,39 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 			OnlyArchived:     true,
 		}
 		if o.reposExist(ctx, tryIncludeArchived) {
-			proposedQueries = append(proposedQueries,
-				&search.QueryDescription{
-					Description: "include archived repositories in your query.",
-					Query:       o.OriginalQuery + " archived:yes",
-					PatternType: o.PatternType,
+			proposedQueries = bppend(proposedQueries,
+				&sebrch.QueryDescription{
+					Description: "include brchived repositories in your query.",
+					Query:       o.OriginblQuery + " brchived:yes",
+					PbtternType: o.PbtternType,
 				},
 			)
 		}
 	}
 
 	if len(proposedQueries) > 0 {
-		return &search.Alert{
-			PrometheusType:  "no_resolved_repos__repos_exist_when_altered",
+		return &sebrch.Alert{
+			PrometheusType:  "no_resolved_repos__repos_exist_when_bltered",
 			Title:           "No repositories found",
-			Description:     "Try altering the query or use a different `repo:<regexp>` filter to see results",
+			Description:     "Try bltering the query or use b different `repo:<regexp>` filter to see results",
 			ProposedQueries: proposedQueries,
 		}
 	}
 
-	return &search.Alert{
+	return &sebrch.Alert{
 		PrometheusType: "no_resolved_repos__generic",
 		Title:          "No repositories found",
-		Description:    "Try using a different `repo:<regexp>` filter to see results",
+		Description:    "Try using b different `repo:<regexp>` filter to see results",
 	}
 }
 
-// multierrorToAlert converts an error.MultiError into the highest priority alert
-// for the errors contained in it, and a new error with all the errors that could
-// not be converted to alerts.
-func (o *Observer) multierrorToAlert(ctx context.Context, me errors.MultiError) (resAlert *search.Alert, resErr error) {
-	for _, err := range me.Errors() {
-		alert, err := o.errorToAlert(ctx, err)
-		resAlert = maxAlertByPriority(resAlert, alert)
+// multierrorToAlert converts bn error.MultiError into the highest priority blert
+// for the errors contbined in it, bnd b new error with bll the errors thbt could
+// not be converted to blerts.
+func (o *Observer) multierrorToAlert(ctx context.Context, me errors.MultiError) (resAlert *sebrch.Alert, resErr error) {
+	for _, err := rbnge me.Errors() {
+		blert, err := o.errorToAlert(ctx, err)
+		resAlert = mbxAlertByPriority(resAlert, blert)
 		resErr = errors.Append(resErr, err)
 	}
 
@@ -173,113 +173,113 @@ func (o *Observer) multierrorToAlert(ctx context.Context, me errors.MultiError) 
 }
 
 func (o *Observer) Error(ctx context.Context, err error) {
-	// Timeouts are reported through Stats so don't report an error for them.
+	// Timeouts bre reported through Stbts so don't report bn error for them.
 	if err == nil || isContextError(ctx, err) {
 		return
 	}
 
-	// We can compute the alert outside of the critical section.
-	alert, _ := o.errorToAlert(ctx, err)
+	// We cbn compute the blert outside of the criticbl section.
+	blert, _ := o.errorToAlert(ctx, err)
 
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	// The error can be converted into an alert.
-	if alert != nil {
-		o.update(alert)
+	// The error cbn be converted into bn blert.
+	if blert != nil {
+		o.updbte(blert)
 		return
 	}
 
-	// Track the unexpected error for reporting when calling Done.
+	// Trbck the unexpected error for reporting when cblling Done.
 	o.err = errors.Append(o.err, err)
 }
 
-// update to alert if it is more important than our current alert.
-func (o *Observer) update(alert *search.Alert) {
-	if o.alert == nil || alert.Priority > o.alert.Priority {
-		o.alert = alert
+// updbte to blert if it is more importbnt thbn our current blert.
+func (o *Observer) updbte(blert *sebrch.Alert) {
+	if o.blert == nil || blert.Priority > o.blert.Priority {
+		o.blert = blert
 	}
 }
 
-// Done returns the highest priority alert and an error.MultiError containing
-// all errors that could not be converted to alerts.
-func (o *Observer) Done() (*search.Alert, error) {
-	if !o.HasResults && o.PatternType != query.SearchTypeStructural && comby.MatchHoleRegexp.MatchString(o.OriginalQuery) {
-		o.update(search.AlertForStructuralSearchNotSet(o.OriginalQuery))
+// Done returns the highest priority blert bnd bn error.MultiError contbining
+// bll errors thbt could not be converted to blerts.
+func (o *Observer) Done() (*sebrch.Alert, error) {
+	if !o.HbsResults && o.PbtternType != query.SebrchTypeStructurbl && comby.MbtchHoleRegexp.MbtchString(o.OriginblQuery) {
+		o.updbte(sebrch.AlertForStructurblSebrchNotSet(o.OriginblQuery))
 	}
 
-	if o.HasResults && o.err != nil {
-		o.Logger.Warn("Errors during search", log.Error(o.err))
-		return o.alert, nil
+	if o.HbsResults && o.err != nil {
+		o.Logger.Wbrn("Errors during sebrch", log.Error(o.err))
+		return o.blert, nil
 	}
 
-	return o.alert, o.err
+	return o.blert, o.err
 }
 
-type alertKind string
+type blertKind string
 
 const (
-	smartSearchAdditionalResults alertKind = "smart-search-additional-results"
-	smartSearchPureResults       alertKind = "smart-search-pure-results"
+	smbrtSebrchAdditionblResults blertKind = "smbrt-sebrch-bdditionbl-results"
+	smbrtSebrchPureResults       blertKind = "smbrt-sebrch-pure-results"
 )
 
-func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, error) {
+func (o *Observer) errorToAlert(ctx context.Context, err error) (*sebrch.Alert, error) {
 	if err == nil {
 		return nil, nil
 	}
 
-	var e errors.MultiError
+	vbr e errors.MultiError
 	if errors.As(err, &e) {
 		return o.multierrorToAlert(ctx, e)
 	}
 
-	var (
-		mErr *searchrepos.MissingRepoRevsError
+	vbr (
+		mErr *sebrchrepos.MissingRepoRevsError
 		oErr *errOverRepoLimit
 		lErr *ErrLuckyQueries
 	)
 
-	if errors.HasType(err, authz.ErrStalePermissions{}) {
-		return search.AlertForStalePermissions(), nil
+	if errors.HbsType(err, buthz.ErrStblePermissions{}) {
+		return sebrch.AlertForStblePermissions(), nil
 	}
 
 	{
-		var e *gitdomain.BadCommitError
+		vbr e *gitdombin.BbdCommitError
 		if errors.As(err, &e) {
-			return search.AlertForInvalidRevision(e.Spec), nil
+			return sebrch.AlertForInvblidRevision(e.Spec), nil
 		}
 	}
 
-	if !o.HasResults && errors.Is(err, searchrepos.ErrNoResolvedRepos) {
-		return o.alertForNoResolvedRepos(ctx, o.Query), nil
+	if !o.HbsResults && errors.Is(err, sebrchrepos.ErrNoResolvedRepos) {
+		return o.blertForNoResolvedRepos(ctx, o.Query), nil
 	}
 
 	if errors.As(err, &oErr) {
-		return &search.Alert{
+		return &sebrch.Alert{
 			PrometheusType:  "over_repo_limit",
-			Title:           "Too many matching repositories",
+			Title:           "Too mbny mbtching repositories",
 			ProposedQueries: oErr.ProposedQueries,
 			Description:     oErr.Description,
 		}, nil
 	}
 
 	if errors.As(err, &mErr) {
-		a := AlertForMissingRepoRevs(mErr.Missing)
-		a.Priority = 6
-		return a, nil
+		b := AlertForMissingRepoRevs(mErr.Missing)
+		b.Priority = 6
+		return b, nil
 	}
 
 	if errors.As(err, &lErr) {
-		title := "Also showing additional results"
-		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
-		kind := string(smartSearchAdditionalResults)
+		title := "Also showing bdditionbl results"
+		description := "We returned bll the results for your query. We blso bdded results for similbr queries thbt might interest you."
+		kind := string(smbrtSebrchAdditionblResults)
 		if lErr.Type == LuckyAlertPure {
-			title = "No results for original query. Showing related results instead"
-			description = "The original query returned no results. Below are results for similar queries that might interest you."
-			kind = string(smartSearchPureResults)
+			title = "No results for originbl query. Showing relbted results instebd"
+			description = "The originbl query returned no results. Below bre results for similbr queries thbt might interest you."
+			kind = string(smbrtSebrchPureResults)
 		}
-		return &search.Alert{
-			PrometheusType:  "smart_search_notice",
+		return &sebrch.Alert{
+			PrometheusType:  "smbrt_sebrch_notice",
 			Title:           title,
 			Kind:            kind,
 			Description:     description,
@@ -287,20 +287,20 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		}, nil
 	}
 
-	if strings.Contains(err.Error(), "Worker_oomed") || strings.Contains(err.Error(), "Worker_exited_abnormally") {
-		return &search.Alert{
-			PrometheusType: "structural_search_needs_more_memory",
-			Title:          "Structural search needs more memory",
-			Description:    "Running your structural search may require more memory. If you are running the query on many repositories, try reducing the number of repositories with the `repo:` filter.",
+	if strings.Contbins(err.Error(), "Worker_oomed") || strings.Contbins(err.Error(), "Worker_exited_bbnormblly") {
+		return &sebrch.Alert{
+			PrometheusType: "structurbl_sebrch_needs_more_memory",
+			Title:          "Structurbl sebrch needs more memory",
+			Description:    "Running your structurbl sebrch mby require more memory. If you bre running the query on mbny repositories, try reducing the number of repositories with the `repo:` filter.",
 			Priority:       5,
 		}, nil
 	}
 
-	if strings.Contains(err.Error(), "Out of memory") {
-		return &search.Alert{
-			PrometheusType: "structural_search_needs_more_memory__give_searcher_more_memory",
-			Title:          "Structural search needs more memory",
-			Description:    `Running your structural search requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you are an administrator, try double the memory allocated for the "searcher" service. If you're unsure, reach out to us at support@sourcegraph.com.`,
+	if strings.Contbins(err.Error(), "Out of memory") {
+		return &sebrch.Alert{
+			PrometheusType: "structurbl_sebrch_needs_more_memory__give_sebrcher_more_memory",
+			Title:          "Structurbl sebrch needs more memory",
+			Description:    `Running your structurbl sebrch requires more memory. You could try reducing the number of repositories with the "repo:" filter. If you bre bn bdministrbtor, try double the memory bllocbted for the "sebrcher" service. If you're unsure, rebch out to us bt support@sourcegrbph.com.`,
 			Priority:       4,
 		}, nil
 	}
@@ -308,99 +308,99 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	return nil, err
 }
 
-func maxAlertByPriority(a, b *search.Alert) *search.Alert {
-	if a == nil {
+func mbxAlertByPriority(b, b *sebrch.Alert) *sebrch.Alert {
+	if b == nil {
 		return b
 	}
 	if b == nil {
-		return a
-	}
-
-	if a.Priority < b.Priority {
 		return b
 	}
 
-	return a
+	if b.Priority < b.Priority {
+		return b
+	}
+
+	return b
 }
 
-func needsRepositoryConfiguration(ctx context.Context, db database.DB) (bool, error) {
-	kinds := make([]string, 0, len(database.ExternalServiceKinds))
-	for kind, config := range database.ExternalServiceKinds {
+func needsRepositoryConfigurbtion(ctx context.Context, db dbtbbbse.DB) (bool, error) {
+	kinds := mbke([]string, 0, len(dbtbbbse.ExternblServiceKinds))
+	for kind, config := rbnge dbtbbbse.ExternblServiceKinds {
 		if config.CodeHost {
-			kinds = append(kinds, kind)
+			kinds = bppend(kinds, kind)
 		}
 	}
 
-	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
+	count, err := db.ExternblServices().Count(ctx, dbtbbbse.ExternblServicesListOptions{
 		Kinds: kinds,
 	})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return count == 0, nil
 }
 
 type errOverRepoLimit struct {
-	ProposedQueries []*search.QueryDescription
+	ProposedQueries []*sebrch.QueryDescription
 	Description     string
 }
 
 func (e *errOverRepoLimit) Error() string {
-	return "Too many matching repositories"
+	return "Too mbny mbtching repositories"
 }
 
 type LuckyAlertType int
 
 const (
-	LuckyAlertAdded LuckyAlertType = iota
+	LuckyAlertAdded LuckyAlertType = iotb
 	LuckyAlertPure
 )
 
 type ErrLuckyQueries struct {
 	Type            LuckyAlertType
-	ProposedQueries []*search.QueryDescription
+	ProposedQueries []*sebrch.QueryDescription
 }
 
 func (e *ErrLuckyQueries) Error() string {
-	return "Showing results for lucky search"
+	return "Showing results for lucky sebrch"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
-// is an error caused by context cancelation or timeout.
+// is bn error cbused by context cbncelbtion or timeout.
 func isContextError(ctx context.Context, err error) bool {
-	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
+	return ctx.Err() != nil || errors.IsAny(err, context.Cbnceled, context.DebdlineExceeded)
 }
 
-func AlertForMissingRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search.Alert {
-	var description string
+func AlertForMissingRepoRevs(missingRepoRevs []sebrchrepos.RepoRevSpecs) *sebrch.Alert {
+	vbr description string
 	if len(missingRepoRevs) == 1 {
 		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
+			description = fmt.Sprintf("The repository %s mbtched by your repo: filter could not be sebrched becbuse it does not contbin the revision %q.", missingRepoRevs[0].Repo.Nbme, missingRepoRevs[0].RevSpecs()[0])
 		} else {
-			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+			description = fmt.Sprintf("The repository %s mbtched by your repo: filter could not be sebrched becbuse it hbs multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Nbme, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
 		}
 	} else {
-		sampleSize := 10
-		if sampleSize > len(missingRepoRevs) {
-			sampleSize = len(missingRepoRevs)
+		sbmpleSize := 10
+		if sbmpleSize > len(missingRepoRevs) {
+			sbmpleSize = len(missingRepoRevs)
 		}
-		repoRevs := make([]string, 0, sampleSize)
-		for _, r := range missingRepoRevs[:sampleSize] {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
+		repoRevs := mbke([]string, 0, sbmpleSize)
+		for _, r := rbnge missingRepoRevs[:sbmpleSize] {
+			repoRevs = bppend(repoRevs, string(r.Repo.Nbme)+"@"+strings.Join(r.RevSpecs(), ","))
 		}
 		b := strings.Builder{}
-		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
-		for _, rr := range repoRevs {
+		_, _ = fmt.Fprintf(&b, "%d repositories mbtched by your repo: filter could not be sebrched becbuse the following revisions do not exist, or differ but were specified for the sbme repository:", len(missingRepoRevs))
+		for _, rr := rbnge repoRevs {
 			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
 		}
-		if sampleSize < len(missingRepoRevs) {
+		if sbmpleSize < len(missingRepoRevs) {
 			b.WriteString("\n* ...")
 		}
 		description = b.String()
 	}
-	return &search.Alert{
+	return &sebrch.Alert{
 		PrometheusType: "missing_repo_revs",
-		Title:          "Some repositories could not be searched",
+		Title:          "Some repositories could not be sebrched",
 		Description:    description,
 	}
 }

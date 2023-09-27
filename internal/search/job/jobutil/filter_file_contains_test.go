@@ -1,4 +1,4 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
@@ -8,240 +8,240 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/mockjob"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/sebrcher"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
 )
 
-func TestFileContainsFilterJob(t *testing.T) {
-	cm := func(matchedStrings ...string) result.ChunkMatch {
-		ranges := make([]result.Range, 0, len(matchedStrings))
+func TestFileContbinsFilterJob(t *testing.T) {
+	cm := func(mbtchedStrings ...string) result.ChunkMbtch {
+		rbnges := mbke([]result.Rbnge, 0, len(mbtchedStrings))
 		currOffset := 0
-		for _, matchedString := range matchedStrings {
-			ranges = append(ranges, result.Range{
-				Start: result.Location{Offset: currOffset},
-				End:   result.Location{Offset: currOffset + len(matchedString)},
+		for _, mbtchedString := rbnge mbtchedStrings {
+			rbnges = bppend(rbnges, result.Rbnge{
+				Stbrt: result.Locbtion{Offset: currOffset},
+				End:   result.Locbtion{Offset: currOffset + len(mbtchedString)},
 			})
-			currOffset += len(matchedString)
+			currOffset += len(mbtchedString)
 		}
-		return result.ChunkMatch{
-			Content: strings.Join(matchedStrings, ""),
-			Ranges:  ranges,
+		return result.ChunkMbtch{
+			Content: strings.Join(mbtchedStrings, ""),
+			Rbnges:  rbnges,
 		}
 	}
-	fm := func(cms ...result.ChunkMatch) *result.FileMatch {
+	fm := func(cms ...result.ChunkMbtch) *result.FileMbtch {
 		if len(cms) == 0 {
-			cms = result.ChunkMatches{}
+			cms = result.ChunkMbtches{}
 		}
-		return &result.FileMatch{
-			ChunkMatches: cms,
+		return &result.FileMbtch{
+			ChunkMbtches: cms,
 		}
 	}
-	r := func(ms ...result.Match) (res result.Matches) {
-		for _, m := range ms {
-			res = append(res, m)
+	r := func(ms ...result.Mbtch) (res result.Mbtches) {
+		for _, m := rbnge ms {
+			res = bppend(res, m)
 		}
 		return res
 	}
-	cases := []struct {
-		name            string
-		includePatterns []string
-		originalPattern query.Node
-		caseSensitive   bool
-		inputEvent      streaming.SearchEvent
-		outputEvent     streaming.SearchEvent
+	cbses := []struct {
+		nbme            string
+		includePbtterns []string
+		originblPbttern query.Node
+		cbseSensitive   bool
+		inputEvent      strebming.SebrchEvent
+		outputEvent     strebming.SebrchEvent
 	}{{
-		name:            "no matches in streamed event",
-		includePatterns: []string{"unused"},
-		originalPattern: nil,
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
-			Stats: streaming.Stats{
+		nbme:            "no mbtches in strebmed event",
+		includePbtterns: []string{"unused"},
+		originblPbttern: nil,
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
+			Stbts: strebming.Stbts{
 				IsLimitHit: true,
 			},
 		},
-		outputEvent: streaming.SearchEvent{
-			Stats: streaming.Stats{
+		outputEvent: strebming.SebrchEvent{
+			Stbts: strebming.Stbts{
 				IsLimitHit: true,
 			},
 		},
 	}, {
-		name:            "no original pattern",
-		includePatterns: []string{"needle"},
-		originalPattern: nil,
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
+		nbme:            "no originbl pbttern",
+		includePbtterns: []string{"needle"},
+		originblPbttern: nil,
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
 			Results: r(fm(cm("needle"))),
 		},
-		outputEvent: streaming.SearchEvent{
+		outputEvent: strebming.SebrchEvent{
 			Results: r(fm()),
 		},
 	}, {
-		name:            "overlapping original pattern",
-		includePatterns: []string{"needle"},
-		originalPattern: query.Pattern{Value: "needle"},
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
+		nbme:            "overlbpping originbl pbttern",
+		includePbtterns: []string{"needle"},
+		originblPbttern: query.Pbttern{Vblue: "needle"},
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
 			Results: r(fm(cm("needle"))),
 		},
-		outputEvent: streaming.SearchEvent{
+		outputEvent: strebming.SebrchEvent{
 			Results: r(fm(cm("needle"))),
 		},
 	}, {
-		name:            "nonoverlapping original pattern",
-		includePatterns: []string{"needle"},
-		originalPattern: query.Pattern{Value: "pin"},
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
+		nbme:            "nonoverlbpping originbl pbttern",
+		includePbtterns: []string{"needle"},
+		originblPbttern: query.Pbttern{Vblue: "pin"},
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
 			Results: r(fm(cm("needle", "pin"))),
 		},
-		outputEvent: streaming.SearchEvent{
-			Results: r(fm(result.ChunkMatch{
+		outputEvent: strebming.SebrchEvent{
+			Results: r(fm(result.ChunkMbtch{
 				Content: "needlepin",
-				Ranges: result.Ranges{{
-					Start: result.Location{Offset: len("needle")},
-					End:   result.Location{Offset: len("needlepin")},
+				Rbnges: result.Rbnges{{
+					Stbrt: result.Locbtion{Offset: len("needle")},
+					End:   result.Locbtion{Offset: len("needlepin")},
 				}},
 			})),
 		},
 	}, {
-		name:            "multiple include patterns",
-		includePatterns: []string{"minimum", "viable", "product"},
-		originalPattern: query.Pattern{Value: "predicates"},
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
-			Results: r(fm(cm("minimum", "viable"), cm("predicates", "product"))),
+		nbme:            "multiple include pbtterns",
+		includePbtterns: []string{"minimum", "vibble", "product"},
+		originblPbttern: query.Pbttern{Vblue: "predicbtes"},
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
+			Results: r(fm(cm("minimum", "vibble"), cm("predicbtes", "product"))),
 		},
-		outputEvent: streaming.SearchEvent{
-			Results: r(fm(result.ChunkMatch{
-				Content: "predicatesproduct",
-				Ranges: result.Ranges{{
-					Start: result.Location{Offset: 0},
-					End:   result.Location{Offset: len("predicates")},
+		outputEvent: strebming.SebrchEvent{
+			Results: r(fm(result.ChunkMbtch{
+				Content: "predicbtesproduct",
+				Rbnges: result.Rbnges{{
+					Stbrt: result.Locbtion{Offset: 0},
+					End:   result.Locbtion{Offset: len("predicbtes")},
 				}},
 			})),
 		},
 	}, {
-		name:            "match that is not a file match",
-		includePatterns: []string{"minimum", "viable", "product"},
-		originalPattern: query.Pattern{Value: "predicates"},
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
-			Results: result.Matches{&result.RepoMatch{Name: "test"}},
+		nbme:            "mbtch thbt is not b file mbtch",
+		includePbtterns: []string{"minimum", "vibble", "product"},
+		originblPbttern: query.Pbttern{Vblue: "predicbtes"},
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
+			Results: result.Mbtches{&result.RepoMbtch{Nbme: "test"}},
 		},
-		outputEvent: streaming.SearchEvent{
-			Results: result.Matches{},
+		outputEvent: strebming.SebrchEvent{
+			Results: result.Mbtches{},
 		},
 	}, {
-		name:            "tree shaped pattern",
-		includePatterns: []string{"predicate"},
-		originalPattern: query.Operator{
+		nbme:            "tree shbped pbttern",
+		includePbtterns: []string{"predicbte"},
+		originblPbttern: query.Operbtor{
 			Kind: query.Or,
-			Operands: []query.Node{
-				query.Pattern{Value: "outer"},
-				query.Operator{
+			Operbnds: []query.Node{
+				query.Pbttern{Vblue: "outer"},
+				query.Operbtor{
 					Kind: query.And,
-					Operands: []query.Node{
-						query.Pattern{Value: "inner1"},
-						query.Pattern{Value: "inner2"},
+					Operbnds: []query.Node{
+						query.Pbttern{Vblue: "inner1"},
+						query.Pbttern{Vblue: "inner2"},
 					},
 				},
 			},
 		},
-		caseSensitive: false,
-		inputEvent: streaming.SearchEvent{
-			Results: r(fm(cm("inner1", "inner2", "predicate", "outer"))),
+		cbseSensitive: fblse,
+		inputEvent: strebming.SebrchEvent{
+			Results: r(fm(cm("inner1", "inner2", "predicbte", "outer"))),
 		},
-		outputEvent: streaming.SearchEvent{
-			Results: r(fm(result.ChunkMatch{
-				Content: "inner1inner2predicateouter",
-				Ranges: result.Ranges{{
-					Start: result.Location{Offset: 0},
-					End:   result.Location{Offset: len("inner1")},
+		outputEvent: strebming.SebrchEvent{
+			Results: r(fm(result.ChunkMbtch{
+				Content: "inner1inner2predicbteouter",
+				Rbnges: result.Rbnges{{
+					Stbrt: result.Locbtion{Offset: 0},
+					End:   result.Locbtion{Offset: len("inner1")},
 				}, {
-					Start: result.Location{Offset: len("inner1")},
-					End:   result.Location{Offset: len("inner1inner2")},
+					Stbrt: result.Locbtion{Offset: len("inner1")},
+					End:   result.Locbtion{Offset: len("inner1inner2")},
 				}, {
-					Start: result.Location{Offset: len("inner1inner2predicate")},
-					End:   result.Location{Offset: len("inner1inner2predicateouter")},
+					Stbrt: result.Locbtion{Offset: len("inner1inner2predicbte")},
+					End:   result.Locbtion{Offset: len("inner1inner2predicbteouter")},
 				}},
 			})),
 		},
 	}, {
-		name:            "diff search",
-		includePatterns: []string{"predicate"},
-		originalPattern: query.Pattern{Value: "needle"},
-		caseSensitive:   false,
-		inputEvent: streaming.SearchEvent{
-			Results: r(&result.CommitMatch{
-				DiffPreview: &result.MatchedString{
+		nbme:            "diff sebrch",
+		includePbtterns: []string{"predicbte"},
+		originblPbttern: query.Pbttern{Vblue: "needle"},
+		cbseSensitive:   fblse,
+		inputEvent: strebming.SebrchEvent{
+			Results: r(&result.CommitMbtch{
+				DiffPreview: &result.MbtchedString{
 					Content: "file1 file2\n@@ -1,2 +1,6 @@\n+needle\n-needle\nfile3 file4\n@@ -3,4 +1,6 @@\n+needle\n-needle\n",
-					MatchedRanges: result.Ranges{{
-						Start: result.Location{Offset: 29, Line: 2, Column: 1},
-						End:   result.Location{Offset: 35, Line: 2, Column: 7},
+					MbtchedRbnges: result.Rbnges{{
+						Stbrt: result.Locbtion{Offset: 29, Line: 2, Column: 1},
+						End:   result.Locbtion{Offset: 35, Line: 2, Column: 7},
 					}, {
-						Start: result.Location{Offset: 37, Line: 3, Column: 1},
-						End:   result.Location{Offset: 43, Line: 3, Column: 7},
+						Stbrt: result.Locbtion{Offset: 37, Line: 3, Column: 1},
+						End:   result.Locbtion{Offset: 43, Line: 3, Column: 7},
 					}, {
-						Start: result.Location{Offset: 73, Line: 6, Column: 1},
-						End:   result.Location{Offset: 79, Line: 6, Column: 7},
+						Stbrt: result.Locbtion{Offset: 73, Line: 6, Column: 1},
+						End:   result.Locbtion{Offset: 79, Line: 6, Column: 7},
 					}, {
-						Start: result.Location{Offset: 81, Line: 7, Column: 1},
-						End:   result.Location{Offset: 87, Line: 7, Column: 7},
+						Stbrt: result.Locbtion{Offset: 81, Line: 7, Column: 1},
+						End:   result.Locbtion{Offset: 87, Line: 7, Column: 7},
 					}},
 				},
 				Diff: []result.DiffFile{{
-					OrigName: "file1",
-					NewName:  "file2",
+					OrigNbme: "file1",
+					NewNbme:  "file2",
 					Hunks: []result.Hunk{{
-						OldStart: 1,
-						NewStart: 1,
+						OldStbrt: 1,
+						NewStbrt: 1,
 						OldCount: 2,
 						NewCount: 6,
-						Header:   "",
+						Hebder:   "",
 						Lines:    []string{"+needle", "-needle"},
 					}},
 				}, {
-					OrigName: "file3",
-					NewName:  "file4",
+					OrigNbme: "file3",
+					NewNbme:  "file4",
 					Hunks: []result.Hunk{{
-						OldStart: 3,
-						NewStart: 1,
+						OldStbrt: 3,
+						NewStbrt: 1,
 						OldCount: 4,
 						NewCount: 6,
-						Header:   "",
+						Hebder:   "",
 						Lines:    []string{"+needle", "-needle"},
 					}},
 				}},
 			}),
 		},
-		outputEvent: streaming.SearchEvent{
-			Results: r(&result.CommitMatch{
-				DiffPreview: &result.MatchedString{
+		outputEvent: strebming.SebrchEvent{
+			Results: r(&result.CommitMbtch{
+				DiffPreview: &result.MbtchedString{
 					Content: "file3 file4\n@@ -3,4 +1,6 @@\n+needle\n-needle\n",
-					MatchedRanges: result.Ranges{{
-						Start: result.Location{Offset: 29, Line: 2, Column: 1},
-						End:   result.Location{Offset: 35, Line: 2, Column: 7},
+					MbtchedRbnges: result.Rbnges{{
+						Stbrt: result.Locbtion{Offset: 29, Line: 2, Column: 1},
+						End:   result.Locbtion{Offset: 35, Line: 2, Column: 7},
 					}, {
-						Start: result.Location{Offset: 37, Line: 3, Column: 1},
-						End:   result.Location{Offset: 43, Line: 3, Column: 7},
+						Stbrt: result.Locbtion{Offset: 37, Line: 3, Column: 1},
+						End:   result.Locbtion{Offset: 43, Line: 3, Column: 7},
 					}},
 				},
 				Diff: []result.DiffFile{{
-					OrigName: "file3",
-					NewName:  "file4",
+					OrigNbme: "file3",
+					NewNbme:  "file4",
 					Hunks: []result.Hunk{{
-						OldStart: 3,
-						NewStart: 1,
+						OldStbrt: 3,
+						NewStbrt: 1,
 						OldCount: 4,
 						NewCount: 6,
-						Header:   "",
+						Hebder:   "",
 						Lines:    []string{"+needle", "-needle"},
 					}},
 				}},
@@ -249,29 +249,29 @@ func TestFileContainsFilterJob(t *testing.T) {
 		},
 	}}
 
-	for _, tc := range cases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge cbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			childJob := mockjob.NewMockJob()
-			childJob.RunFunc.SetDefaultHook(func(_ context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+			childJob.RunFunc.SetDefbultHook(func(_ context.Context, _ job.RuntimeClients, s strebming.Sender) (*sebrch.Alert, error) {
 				s.Send(tc.inputEvent)
 				return nil, nil
 			})
-			searcher.MockSearch = func(_ context.Context, _ api.RepoName, _ api.RepoID, _ api.CommitID, p *search.TextPatternInfo, _ time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
-				if len(p.IncludePatterns) > 0 {
-					onMatches([]*protocol.FileMatch{{Path: "file4"}})
+			sebrcher.MockSebrch = func(_ context.Context, _ bpi.RepoNbme, _ bpi.RepoID, _ bpi.CommitID, p *sebrch.TextPbtternInfo, _ time.Durbtion, onMbtches func([]*protocol.FileMbtch)) (limitHit bool, err error) {
+				if len(p.IncludePbtterns) > 0 {
+					onMbtches([]*protocol.FileMbtch{{Pbth: "file4"}})
 				}
-				return false, nil
+				return fblse, nil
 			}
-			var resultEvent streaming.SearchEvent
-			streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
+			vbr resultEvent strebming.SebrchEvent
+			strebmCollector := strebming.StrebmFunc(func(ev strebming.SebrchEvent) {
 				resultEvent = ev
 			})
-			j, err := NewFileContainsFilterJob(tc.includePatterns, tc.originalPattern, tc.caseSensitive, childJob)
+			j, err := NewFileContbinsFilterJob(tc.includePbtterns, tc.originblPbttern, tc.cbseSensitive, childJob)
 			require.NoError(t, err)
-			alert, err := j.Run(context.Background(), job.RuntimeClients{}, streamCollector)
-			require.Nil(t, alert)
+			blert, err := j.Run(context.Bbckground(), job.RuntimeClients{}, strebmCollector)
+			require.Nil(t, blert)
 			require.NoError(t, err)
-			require.Equal(t, tc.outputEvent, resultEvent)
+			require.Equbl(t, tc.outputEvent, resultEvent)
 		})
 	}
 }

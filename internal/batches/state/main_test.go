@@ -1,23 +1,23 @@
-package state
+pbckbge stbte
 
 import (
 	"time"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
 )
 
-func setDraft(c *btypes.Changeset) *btypes.Changeset {
-	switch m := c.Metadata.(type) {
-	case *github.PullRequest:
-		m.IsDraft = true
-	case *gitlab.MergeRequest:
+func setDrbft(c *btypes.Chbngeset) *btypes.Chbngeset {
+	switch m := c.Metbdbtb.(type) {
+	cbse *github.PullRequest:
+		m.IsDrbft = true
+	cbse *gitlbb.MergeRequest:
 		m.WorkInProgress = true
 	}
 	return c
 }
 
 func timeToUnixMilli(t time.Time) int {
-	return int(t.UnixNano()) / int(time.Millisecond)
+	return int(t.UnixNbno()) / int(time.Millisecond)
 }

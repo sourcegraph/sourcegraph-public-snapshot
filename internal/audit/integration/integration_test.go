@@ -1,4 +1,4 @@
-package integration
+pbckbge integrbtion
 
 import (
 	"context"
@@ -6,39 +6,39 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/run"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/run"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestIntegration(t *testing.T) {
+func TestIntegrbtion(t *testing.T) {
 	if os.Getenv("BAZEL_TEST") == "1" {
-		t.Skip("Don't run test due to running commands in bazel sandbox.")
+		t.Skip("Don't run test due to running commbnds in bbzel sbndbox.")
 	}
 
-	// audit logs are logged under INFO severity
+	// budit logs bre logged under INFO severity
 	t.Setenv("SRC_LOG_LEVEL", "info")
 
-	// start sampling after 5 messages
+	// stbrt sbmpling bfter 5 messbges
 	t.Setenv("SRC_LOG_SAMPLING_INITIAL", "5")
 
-	// create 10 log messages, none of them should be sampled
-	output, _ := run.Cmd(context.Background(), "go", "run", "./cmd/", "10").Run().String()
+	// crebte 10 log messbges, none of them should be sbmpled
+	output, _ := run.Cmd(context.Bbckground(), "go", "run", "./cmd/", "10").Run().String()
 
-	logMessages := filterAuditLogs(output)
-	if len(logMessages) == 0 {
-		t.Fatal("no log output captured")
+	logMessbges := filterAuditLogs(output)
+	if len(logMessbges) == 0 {
+		t.Fbtbl("no log output cbptured")
 	}
 
-	// capture all 10 despite the sampling setting (5)
-	assert.Equal(t, 10, len(logMessages))
+	// cbpture bll 10 despite the sbmpling setting (5)
+	bssert.Equbl(t, 10, len(logMessbges))
 }
 
 func filterAuditLogs(output string) []string {
 	lines := strings.Split(output, "\n")
-	var filtered []string
-	for _, line := range lines {
-		if strings.Contains(line, "{\"audit\"") {
-			filtered = append(filtered, line)
+	vbr filtered []string
+	for _, line := rbnge lines {
+		if strings.Contbins(line, "{\"budit\"") {
+			filtered = bppend(filtered, line)
 		}
 	}
 	return filtered

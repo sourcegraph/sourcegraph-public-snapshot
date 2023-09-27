@@ -1,46 +1,46 @@
-package register
+pbckbge register
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	workerCodeIntel "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	internalinsights "github.com/sourcegraph/sourcegraph/internal/insights"
-	insightsdb "github.com/sourcegraph/sourcegraph/internal/insights/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/batches"
-	lsifMigrations "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/codeintel/lsif"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/iam"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights"
-	insightsBackfiller "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/backfillv2"
-	insightsrecordingtimes "github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/insights/recording_times"
+	workerCodeIntel "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	internblinsights "github.com/sourcegrbph/sourcegrbph/internbl/insights"
+	insightsdb "github.com/sourcegrbph/sourcegrbph/internbl/insights/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/bbtches"
+	lsifMigrbtions "github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/codeintel/lsif"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/ibm"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/insights"
+	insightsBbckfiller "github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/insights/bbckfillv2"
+	insightsrecordingtimes "github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/insights/recording_times"
 )
 
-func RegisterOSSMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	defaultKeyring := keyring.Default()
+func RegisterOSSMigrbtors(ctx context.Context, db dbtbbbse.DB, runner *oobmigrbtion.Runner) error {
+	defbultKeyring := keyring.Defbult()
 
-	return registerOSSMigrators(runner, false, migratorDependencies{
-		store:   basestore.NewWithHandle(db.Handle()),
-		keyring: &defaultKeyring,
+	return registerOSSMigrbtors(runner, fblse, migrbtorDependencies{
+		store:   bbsestore.NewWithHbndle(db.Hbndle()),
+		keyring: &defbultKeyring,
 	})
 }
 
-func RegisterOSSMigratorsUsingConfAndStoreFactory(
+func RegisterOSSMigrbtorsUsingConfAndStoreFbctory(
 	ctx context.Context,
-	db database.DB,
-	runner *oobmigration.Runner,
+	db dbtbbbse.DB,
+	runner *oobmigrbtion.Runner,
 	conf conftypes.UnifiedQuerier,
-	_ migrations.StoreFactory,
+	_ migrbtions.StoreFbctory,
 ) error {
 	keys, err := keyring.NewRing(ctx, conf.SiteConfig().EncryptionKeys)
 	if err != nil {
@@ -50,38 +50,38 @@ func RegisterOSSMigratorsUsingConfAndStoreFactory(
 		keys = &keyring.Ring{}
 	}
 
-	return registerOSSMigrators(runner, true, migratorDependencies{
-		store:   basestore.NewWithHandle(db.Handle()),
+	return registerOSSMigrbtors(runner, true, migrbtorDependencies{
+		store:   bbsestore.NewWithHbndle(db.Hbndle()),
 		keyring: keys,
 	})
 }
 
-type migratorDependencies struct {
-	store   *basestore.Store
+type migrbtorDependencies struct {
+	store   *bbsestore.Store
 	keyring *keyring.Ring
 }
 
-func registerOSSMigrators(runner *oobmigration.Runner, noDelay bool, deps migratorDependencies) error {
-	return RegisterAll(runner, noDelay, []TaggedMigrator{
-		batches.NewExternalServiceWebhookMigratorWithDB(deps.store, deps.keyring.ExternalServiceKey, 50),
-		batches.NewUserRoleAssignmentMigrator(deps.store, 250),
+func registerOSSMigrbtors(runner *oobmigrbtion.Runner, noDelby bool, deps migrbtorDependencies) error {
+	return RegisterAll(runner, noDelby, []TbggedMigrbtor{
+		bbtches.NewExternblServiceWebhookMigrbtorWithDB(deps.store, deps.keyring.ExternblServiceKey, 50),
+		bbtches.NewUserRoleAssignmentMigrbtor(deps.store, 250),
 	})
 }
 
-type TaggedMigrator interface {
-	oobmigration.Migrator
+type TbggedMigrbtor interfbce {
+	oobmigrbtion.Migrbtor
 	ID() int
-	Interval() time.Duration
+	Intervbl() time.Durbtion
 }
 
-func RegisterAll(runner *oobmigration.Runner, noDelay bool, migrators []TaggedMigrator) error {
-	for _, migrator := range migrators {
-		options := oobmigration.MigratorOptions{Interval: migrator.Interval()}
-		if noDelay {
-			options.Interval = time.Nanosecond
+func RegisterAll(runner *oobmigrbtion.Runner, noDelby bool, migrbtors []TbggedMigrbtor) error {
+	for _, migrbtor := rbnge migrbtors {
+		options := oobmigrbtion.MigrbtorOptions{Intervbl: migrbtor.Intervbl()}
+		if noDelby {
+			options.Intervbl = time.Nbnosecond
 		}
 
-		if err := runner.Register(migrator.ID(), migrator, options); err != nil {
+		if err := runner.Register(migrbtor.ID(), migrbtor, options); err != nil {
 			return err
 		}
 	}
@@ -89,44 +89,44 @@ func RegisterAll(runner *oobmigration.Runner, noDelay bool, migrators []TaggedMi
 	return nil
 }
 
-func RegisterEnterpriseMigrators(ctx context.Context, db database.DB, runner *oobmigration.Runner) error {
-	codeIntelDB, err := workerCodeIntel.InitRawDB(&observation.TestContext)
+func RegisterEnterpriseMigrbtors(ctx context.Context, db dbtbbbse.DB, runner *oobmigrbtion.Runner) error {
+	codeIntelDB, err := workerCodeIntel.InitRbwDB(&observbtion.TestContext)
 	if err != nil {
 		return err
 	}
 
-	var insightsStore *basestore.Store
-	if internalinsights.IsEnabled() {
-		codeInsightsDB, err := insightsdb.InitializeCodeInsightsDB(&observation.TestContext, "worker-oobmigrator")
+	vbr insightsStore *bbsestore.Store
+	if internblinsights.IsEnbbled() {
+		codeInsightsDB, err := insightsdb.InitiblizeCodeInsightsDB(&observbtion.TestContext, "worker-oobmigrbtor")
 		if err != nil {
 			return err
 		}
 
-		insightsStore = basestore.NewWithHandle(codeInsightsDB.Handle())
+		insightsStore = bbsestore.NewWithHbndle(codeInsightsDB.Hbndle())
 	}
 
-	defaultKeyring := keyring.Default()
+	defbultKeyring := keyring.Defbult()
 
-	return registerEnterpriseMigrators(runner, false, dependencies{
-		store:          basestore.NewWithHandle(db.Handle()),
-		codeIntelStore: basestore.NewWithHandle(basestore.NewHandleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
+	return registerEnterpriseMigrbtors(runner, fblse, dependencies{
+		store:          bbsestore.NewWithHbndle(db.Hbndle()),
+		codeIntelStore: bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(log.NoOp(), codeIntelDB, sql.TxOptions{})),
 		insightsStore:  insightsStore,
-		keyring:        &defaultKeyring,
+		keyring:        &defbultKeyring,
 	})
 }
 
-func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
+func RegisterEnterpriseMigrbtorsUsingConfAndStoreFbctory(
 	ctx context.Context,
-	db database.DB,
-	runner *oobmigration.Runner,
+	db dbtbbbse.DB,
+	runner *oobmigrbtion.Runner,
 	conf conftypes.UnifiedQuerier,
-	storeFactory migrations.StoreFactory,
+	storeFbctory migrbtions.StoreFbctory,
 ) error {
-	codeIntelStore, err := storeFactory.Store(ctx, "codeintel")
+	codeIntelStore, err := storeFbctory.Store(ctx, "codeintel")
 	if err != nil {
 		return err
 	}
-	insightsStore, err := storeFactory.Store(ctx, "codeinsights")
+	insightsStore, err := storeFbctory.Store(ctx, "codeinsights")
 	if err != nil {
 		return err
 	}
@@ -139,8 +139,8 @@ func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
 		keys = &keyring.Ring{}
 	}
 
-	return registerEnterpriseMigrators(runner, true, dependencies{
-		store:          basestore.NewWithHandle(db.Handle()),
+	return registerEnterpriseMigrbtors(runner, true, dependencies{
+		store:          bbsestore.NewWithHbndle(db.Hbndle()),
 		codeIntelStore: codeIntelStore,
 		insightsStore:  insightsStore,
 		keyring:        keys,
@@ -148,32 +148,32 @@ func RegisterEnterpriseMigratorsUsingConfAndStoreFactory(
 }
 
 type dependencies struct {
-	store          *basestore.Store
-	codeIntelStore *basestore.Store
-	insightsStore  *basestore.Store
+	store          *bbsestore.Store
+	codeIntelStore *bbsestore.Store
+	insightsStore  *bbsestore.Store
 	keyring        *keyring.Ring
 }
 
-func registerEnterpriseMigrators(runner *oobmigration.Runner, noDelay bool, deps dependencies) error {
-	migrators := []TaggedMigrator{
-		iam.NewSubscriptionAccountNumberMigrator(deps.store, 500),
-		iam.NewLicenseKeyFieldsMigrator(deps.store, 500),
-		iam.NewUnifiedPermissionsMigrator(deps.store),
-		batches.NewSSHMigratorWithDB(deps.store, deps.keyring.BatchChangesCredentialKey, 5),
-		batches.NewExternalForkNameMigrator(deps.store, 500),
-		batches.NewEmptySpecIDMigrator(deps.store),
-		lsifMigrations.NewDiagnosticsCountMigrator(deps.codeIntelStore, 1000, 0),
-		lsifMigrations.NewDefinitionLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
-		lsifMigrations.NewReferencesLocationsCountMigrator(deps.codeIntelStore, 1000, 0),
-		lsifMigrations.NewDocumentColumnSplitMigrator(deps.codeIntelStore, 100, 0),
-		lsifMigrations.NewSCIPMigrator(deps.store, deps.codeIntelStore),
+func registerEnterpriseMigrbtors(runner *oobmigrbtion.Runner, noDelby bool, deps dependencies) error {
+	migrbtors := []TbggedMigrbtor{
+		ibm.NewSubscriptionAccountNumberMigrbtor(deps.store, 500),
+		ibm.NewLicenseKeyFieldsMigrbtor(deps.store, 500),
+		ibm.NewUnifiedPermissionsMigrbtor(deps.store),
+		bbtches.NewSSHMigrbtorWithDB(deps.store, deps.keyring.BbtchChbngesCredentiblKey, 5),
+		bbtches.NewExternblForkNbmeMigrbtor(deps.store, 500),
+		bbtches.NewEmptySpecIDMigrbtor(deps.store),
+		lsifMigrbtions.NewDibgnosticsCountMigrbtor(deps.codeIntelStore, 1000, 0),
+		lsifMigrbtions.NewDefinitionLocbtionsCountMigrbtor(deps.codeIntelStore, 1000, 0),
+		lsifMigrbtions.NewReferencesLocbtionsCountMigrbtor(deps.codeIntelStore, 1000, 0),
+		lsifMigrbtions.NewDocumentColumnSplitMigrbtor(deps.codeIntelStore, 100, 0),
+		lsifMigrbtions.NewSCIPMigrbtor(deps.store, deps.codeIntelStore),
 	}
 	if deps.insightsStore != nil {
-		migrators = append(migrators,
-			insights.NewMigrator(deps.store, deps.insightsStore),
-			insightsrecordingtimes.NewRecordingTimesMigrator(deps.insightsStore, 500),
-			insightsBackfiller.NewMigrator(deps.insightsStore, glock.NewRealClock(), 10),
+		migrbtors = bppend(migrbtors,
+			insights.NewMigrbtor(deps.store, deps.insightsStore),
+			insightsrecordingtimes.NewRecordingTimesMigrbtor(deps.insightsStore, 500),
+			insightsBbckfiller.NewMigrbtor(deps.insightsStore, glock.NewReblClock(), 10),
 		)
 	}
-	return RegisterAll(runner, noDelay, migrators)
+	return RegisterAll(runner, noDelby, migrbtors)
 }

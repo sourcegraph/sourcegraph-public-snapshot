@@ -1,69 +1,69 @@
-package definitions
+pbckbge definitions
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions/shared"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions/shbred"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-func Symbols() *monitoring.Dashboard {
+func Symbols() *monitoring.Dbshbobrd {
 	const (
-		containerName   = "symbols"
-		grpcServiceName = "symbols.v1.SymbolsService"
+		contbinerNbme   = "symbols"
+		grpcServiceNbme = "symbols.v1.SymbolsService"
 	)
 
-	grpcMethodVariable := shared.GRPCMethodVariable("symbols", grpcServiceName)
+	grpcMethodVbribble := shbred.GRPCMethodVbribble("symbols", grpcServiceNbme)
 
-	return &monitoring.Dashboard{
-		Name:        "symbols",
+	return &monitoring.Dbshbobrd{
+		Nbme:        "symbols",
 		Title:       "Symbols",
-		Description: "Handles symbol searches for unindexed branches.",
-		Variables: []monitoring.ContainerVariable{
+		Description: "Hbndles symbol sebrches for unindexed brbnches.",
+		Vbribbles: []monitoring.ContbinerVbribble{
 			{
-				Label: "instance",
-				Name:  "instance",
-				OptionsLabelValues: monitoring.ContainerVariableOptionsLabelValues{
+				Lbbel: "instbnce",
+				Nbme:  "instbnce",
+				OptionsLbbelVblues: monitoring.ContbinerVbribbleOptionsLbbelVblues{
 					Query:         "src_codeintel_symbols_fetching",
-					LabelName:     "instance",
-					ExampleOption: "symbols-0:3184",
+					LbbelNbme:     "instbnce",
+					ExbmpleOption: "symbols-0:3184",
 				},
 				Multi: true,
 			},
-			grpcMethodVariable,
+			grpcMethodVbribble,
 		},
 		Groups: []monitoring.Group{
-			shared.CodeIntelligence.NewSymbolsAPIGroup(containerName),
-			shared.CodeIntelligence.NewSymbolsParserGroup(containerName),
-			shared.CodeIntelligence.NewSymbolsCacheJanitorGroup(containerName),
-			shared.CodeIntelligence.NewSymbolsRepositoryFetcherGroup(containerName),
-			shared.CodeIntelligence.NewSymbolsGitserverClientGroup(containerName),
+			shbred.CodeIntelligence.NewSymbolsAPIGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewSymbolsPbrserGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewSymbolsCbcheJbnitorGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewSymbolsRepositoryFetcherGroup(contbinerNbme),
+			shbred.CodeIntelligence.NewSymbolsGitserverClientGroup(contbinerNbme),
 
-			shared.NewGRPCServerMetricsGroup(
-				shared.GRPCServerMetricsOptions{
-					HumanServiceName:   containerName,
-					RawGRPCServiceName: grpcServiceName,
+			shbred.NewGRPCServerMetricsGroup(
+				shbred.GRPCServerMetricsOptions{
+					HumbnServiceNbme:   contbinerNbme,
+					RbwGRPCServiceNbme: grpcServiceNbme,
 
-					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-					InstanceFilterRegex:  `${instance:regex}`,
-					MessageSizeNamespace: "src",
-				}, monitoring.ObservableOwnerCodeIntel),
+					MethodFilterRegex:    fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+					InstbnceFilterRegex:  `${instbnce:regex}`,
+					MessbgeSizeNbmespbce: "src",
+				}, monitoring.ObservbbleOwnerCodeIntel),
 
-			shared.NewGRPCInternalErrorMetricsGroup(
-				shared.GRPCInternalErrorMetricsOptions{
-					HumanServiceName:   containerName,
-					RawGRPCServiceName: grpcServiceName,
-					Namespace:          "src",
+			shbred.NewGRPCInternblErrorMetricsGroup(
+				shbred.GRPCInternblErrorMetricsOptions{
+					HumbnServiceNbme:   contbinerNbme,
+					RbwGRPCServiceNbme: grpcServiceNbme,
+					Nbmespbce:          "src",
 
-					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVariable.Name),
-				}, monitoring.ObservableOwnerCodeIntel),
+					MethodFilterRegex: fmt.Sprintf("${%s:regex}", grpcMethodVbribble.Nbme),
+				}, monitoring.ObservbbleOwnerCodeIntel),
 
-			shared.NewDatabaseConnectionsMonitoringGroup(containerName),
-			shared.NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewContainerMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewProvisioningIndicatorsGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
-			shared.NewKubernetesMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, nil),
+			shbred.NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme),
+			shbred.NewFrontendInternblAPIErrorResponseMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewContbinerMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewProvisioningIndicbtorsGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewGolbngMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
+			shbred.NewKubernetesMonitoringGroup(contbinerNbme, monitoring.ObservbbleOwnerCodeIntel, nil),
 		},
 	}
 }

@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -6,65 +6,65 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 func TestGetIndexers(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
+	ctx := context.Bbckground()
 
-	insertUploads(t, db,
-		shared.Upload{ID: 1, Indexer: "scip-typescript"},
-		shared.Upload{ID: 2, Indexer: "scip-typescript"},
-		shared.Upload{ID: 3, Indexer: "scip-typescript"},
-		shared.Upload{ID: 4, Indexer: "scip-typescript"},
-		shared.Upload{ID: 5, Indexer: "scip-typescript"},
-		shared.Upload{ID: 6, Indexer: "lsif-ocaml", RepositoryID: 51},
-		shared.Upload{ID: 7, Indexer: "lsif-ocaml", RepositoryID: 51},
-		shared.Upload{ID: 8, Indexer: "third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef", RepositoryID: 51},
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 1, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 2, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 3, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 4, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 5, Indexer: "scip-typescript"},
+		shbred.Uplobd{ID: 6, Indexer: "lsif-ocbml", RepositoryID: 51},
+		shbred.Uplobd{ID: 7, Indexer: "lsif-ocbml", RepositoryID: 51},
+		shbred.Uplobd{ID: 8, Indexer: "third-pbrty/scip-python@shb256:debdbeefdebdbeefdebdbeef", RepositoryID: 51},
 	)
 
-	// Global
-	indexers, err := store.GetIndexers(ctx, shared.GetIndexersOptions{})
+	// Globbl
+	indexers, err := store.GetIndexers(ctx, shbred.GetIndexersOptions{})
 	if err != nil {
-		t.Fatalf("unexpected error getting indexers: %s", err)
+		t.Fbtblf("unexpected error getting indexers: %s", err)
 	}
 	expectedIndexers := []string{
-		"lsif-ocaml",
+		"lsif-ocbml",
 		"scip-typescript",
-		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+		"third-pbrty/scip-python@shb256:debdbeefdebdbeefdebdbeef",
 	}
 	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
-		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexers (-wbnt +got):\n%s", diff)
 	}
 
 	// Repo-specific
-	indexers, err = store.GetIndexers(ctx, shared.GetIndexersOptions{RepositoryID: 51})
+	indexers, err = store.GetIndexers(ctx, shbred.GetIndexersOptions{RepositoryID: 51})
 	if err != nil {
-		t.Fatalf("unexpected error getting indexers: %s", err)
+		t.Fbtblf("unexpected error getting indexers: %s", err)
 	}
 	expectedIndexers = []string{
-		"lsif-ocaml",
-		"third-party/scip-python@sha256:deadbeefdeadbeefdeadbeef",
+		"lsif-ocbml",
+		"third-pbrty/scip-python@shb256:debdbeefdebdbeefdebdbeef",
 	}
 	if diff := cmp.Diff(expectedIndexers, indexers); diff != "" {
-		t.Errorf("unexpected indexers (-want +got):\n%s", diff)
+		t.Errorf("unexpected indexers (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestRecentUploadsSummary(t *testing.T) {
-	ctx := context.Background()
+func TestRecentUplobdsSummbry(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
 	t1 := t0.Add(-time.Minute * 1)
@@ -80,50 +80,50 @@ func TestRecentUploadsSummary(t *testing.T) {
 	r1 := 1
 	r2 := 2
 
-	addDefaults := func(upload shared.Upload) shared.Upload {
-		upload.Commit = makeCommit(upload.ID)
-		upload.RepositoryID = 50
-		upload.RepositoryName = "n-50"
-		upload.IndexerVersion = "latest"
-		upload.UploadedParts = []int{}
-		return upload
+	bddDefbults := func(uplobd shbred.Uplobd) shbred.Uplobd {
+		uplobd.Commit = mbkeCommit(uplobd.ID)
+		uplobd.RepositoryID = 50
+		uplobd.RepositoryNbme = "n-50"
+		uplobd.IndexerVersion = "lbtest"
+		uplobd.UplobdedPbrts = []int{}
+		return uplobd
 	}
 
-	uploads := []shared.Upload{
-		addDefaults(shared.Upload{ID: 150, UploadedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
-		addDefaults(shared.Upload{ID: 151, UploadedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
-		addDefaults(shared.Upload{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),          // visible (group 1)
-		addDefaults(shared.Upload{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),        // visible (group 2)
-		addDefaults(shared.Upload{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),        // visible (group 3)
-		addDefaults(shared.Upload{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),          // shadowed
-		addDefaults(shared.Upload{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),        // visible (group 4)
-		addDefaults(shared.Upload{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
-		addDefaults(shared.Upload{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
-		addDefaults(shared.Upload{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),          // shadowed
+	uplobds := []shbred.Uplobd{
+		bddDefbults(shbred.Uplobd{ID: 150, UplobdedAt: t0, Root: "r1", Indexer: "i1", Stbte: "queued", Rbnk: &r2}), // visible (group 1)
+		bddDefbults(shbred.Uplobd{ID: 151, UplobdedAt: t1, Root: "r1", Indexer: "i1", Stbte: "queued", Rbnk: &r1}), // visible (group 1)
+		bddDefbults(shbred.Uplobd{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", Stbte: "errored"}),          // visible (group 1)
+		bddDefbults(shbred.Uplobd{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", Stbte: "completed"}),        // visible (group 2)
+		bddDefbults(shbred.Uplobd{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", Stbte: "completed"}),        // visible (group 3)
+		bddDefbults(shbred.Uplobd{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", Stbte: "errored"}),          // shbdowed
+		bddDefbults(shbred.Uplobd{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", Stbte: "completed"}),        // visible (group 4)
+		bddDefbults(shbred.Uplobd{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", Stbte: "errored"}),          // shbdowed
+		bddDefbults(shbred.Uplobd{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", Stbte: "errored"}),          // shbdowed
+		bddDefbults(shbred.Uplobd{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", Stbte: "errored"}),          // shbdowed
 	}
-	insertUploads(t, db, uploads...)
+	insertUplobds(t, db, uplobds...)
 
-	summary, err := store.GetRecentUploadsSummary(ctx, 50)
+	summbry, err := store.GetRecentUplobdsSummbry(ctx, 50)
 	if err != nil {
-		t.Fatalf("unexpected error querying recent upload summary: %s", err)
+		t.Fbtblf("unexpected error querying recent uplobd summbry: %s", err)
 	}
 
-	expected := []shared.UploadsWithRepositoryNamespace{
-		{Root: "r1", Indexer: "i1", Uploads: []shared.Upload{uploads[0], uploads[1], uploads[2]}},
-		{Root: "r1", Indexer: "i2", Uploads: []shared.Upload{uploads[3]}},
-		{Root: "r2", Indexer: "i1", Uploads: []shared.Upload{uploads[4]}},
-		{Root: "r2", Indexer: "i2", Uploads: []shared.Upload{uploads[6]}},
+	expected := []shbred.UplobdsWithRepositoryNbmespbce{
+		{Root: "r1", Indexer: "i1", Uplobds: []shbred.Uplobd{uplobds[0], uplobds[1], uplobds[2]}},
+		{Root: "r1", Indexer: "i2", Uplobds: []shbred.Uplobd{uplobds[3]}},
+		{Root: "r2", Indexer: "i1", Uplobds: []shbred.Uplobd{uplobds[4]}},
+		{Root: "r2", Indexer: "i2", Uplobds: []shbred.Uplobd{uplobds[6]}},
 	}
-	if diff := cmp.Diff(expected, summary); diff != "" {
-		t.Errorf("unexpected upload summary (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, summbry); diff != "" {
+		t.Errorf("unexpected uplobd summbry (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestRecentIndexesSummary(t *testing.T) {
-	ctx := context.Background()
+func TestRecentIndexesSummbry(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
 	t0 := time.Unix(1587396557, 0).UTC()
 	t1 := t0.Add(-time.Minute * 1)
@@ -139,156 +139,156 @@ func TestRecentIndexesSummary(t *testing.T) {
 	r1 := 1
 	r2 := 2
 
-	addDefaults := func(index uploadsshared.Index) uploadsshared.Index {
-		index.Commit = makeCommit(index.ID)
+	bddDefbults := func(index uplobdsshbred.Index) uplobdsshbred.Index {
+		index.Commit = mbkeCommit(index.ID)
 		index.RepositoryID = 50
-		index.RepositoryName = "n-50"
-		index.DockerSteps = []uploadsshared.DockerStep{}
+		index.RepositoryNbme = "n-50"
+		index.DockerSteps = []uplobdsshbred.DockerStep{}
 		index.IndexerArgs = []string{}
-		index.LocalSteps = []string{}
+		index.LocblSteps = []string{}
 		return index
 	}
 
-	indexes := []uploadsshared.Index{
-		addDefaults(uploadsshared.Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", State: "queued", Rank: &r2}), // visible (group 1)
-		addDefaults(uploadsshared.Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", State: "queued", Rank: &r1}), // visible (group 1)
-		addDefaults(uploadsshared.Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", State: "errored"}),        // visible (group 1)
-		addDefaults(uploadsshared.Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", State: "completed"}),      // visible (group 2)
-		addDefaults(uploadsshared.Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", State: "completed"}),      // visible (group 3)
-		addDefaults(uploadsshared.Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", State: "errored"}),        // shadowed
-		addDefaults(uploadsshared.Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", State: "completed"}),      // visible (group 4)
-		addDefaults(uploadsshared.Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
-		addDefaults(uploadsshared.Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
-		addDefaults(uploadsshared.Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", State: "errored"}),        // shadowed
+	indexes := []uplobdsshbred.Index{
+		bddDefbults(uplobdsshbred.Index{ID: 150, QueuedAt: t0, Root: "r1", Indexer: "i1", Stbte: "queued", Rbnk: &r2}), // visible (group 1)
+		bddDefbults(uplobdsshbred.Index{ID: 151, QueuedAt: t1, Root: "r1", Indexer: "i1", Stbte: "queued", Rbnk: &r1}), // visible (group 1)
+		bddDefbults(uplobdsshbred.Index{ID: 152, FinishedAt: &t2, Root: "r1", Indexer: "i1", Stbte: "errored"}),        // visible (group 1)
+		bddDefbults(uplobdsshbred.Index{ID: 153, FinishedAt: &t3, Root: "r1", Indexer: "i2", Stbte: "completed"}),      // visible (group 2)
+		bddDefbults(uplobdsshbred.Index{ID: 154, FinishedAt: &t4, Root: "r2", Indexer: "i1", Stbte: "completed"}),      // visible (group 3)
+		bddDefbults(uplobdsshbred.Index{ID: 155, FinishedAt: &t5, Root: "r2", Indexer: "i1", Stbte: "errored"}),        // shbdowed
+		bddDefbults(uplobdsshbred.Index{ID: 156, FinishedAt: &t6, Root: "r2", Indexer: "i2", Stbte: "completed"}),      // visible (group 4)
+		bddDefbults(uplobdsshbred.Index{ID: 157, FinishedAt: &t7, Root: "r2", Indexer: "i2", Stbte: "errored"}),        // shbdowed
+		bddDefbults(uplobdsshbred.Index{ID: 158, FinishedAt: &t8, Root: "r2", Indexer: "i2", Stbte: "errored"}),        // shbdowed
+		bddDefbults(uplobdsshbred.Index{ID: 159, FinishedAt: &t9, Root: "r2", Indexer: "i2", Stbte: "errored"}),        // shbdowed
 	}
 	insertIndexes(t, db, indexes...)
 
-	summary, err := store.GetRecentIndexesSummary(ctx, 50)
+	summbry, err := store.GetRecentIndexesSummbry(ctx, 50)
 	if err != nil {
-		t.Fatalf("unexpected error querying recent index summary: %s", err)
+		t.Fbtblf("unexpected error querying recent index summbry: %s", err)
 	}
 
-	expected := []uploadsshared.IndexesWithRepositoryNamespace{
-		{Root: "r1", Indexer: "i1", Indexes: []uploadsshared.Index{indexes[0], indexes[1], indexes[2]}},
-		{Root: "r1", Indexer: "i2", Indexes: []uploadsshared.Index{indexes[3]}},
-		{Root: "r2", Indexer: "i1", Indexes: []uploadsshared.Index{indexes[4]}},
-		{Root: "r2", Indexer: "i2", Indexes: []uploadsshared.Index{indexes[6]}},
+	expected := []uplobdsshbred.IndexesWithRepositoryNbmespbce{
+		{Root: "r1", Indexer: "i1", Indexes: []uplobdsshbred.Index{indexes[0], indexes[1], indexes[2]}},
+		{Root: "r1", Indexer: "i2", Indexes: []uplobdsshbred.Index{indexes[3]}},
+		{Root: "r2", Indexer: "i1", Indexes: []uplobdsshbred.Index{indexes[4]}},
+		{Root: "r2", Indexer: "i2", Indexes: []uplobdsshbred.Index{indexes[6]}},
 	}
-	if diff := cmp.Diff(expected, summary); diff != "" {
-		t.Errorf("unexpected index summary (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, summbry); diff != "" {
+		t.Errorf("unexpected index summbry (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestRepositoryIDsWithErrors(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
 	now := time.Now()
 	t1 := now.Add(-time.Minute * 1)
 	t2 := now.Add(-time.Minute * 2)
 	t3 := now.Add(-time.Minute * 3)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 100, RepositoryID: 50},                  // Repo 50 = success (no index)
-		shared.Upload{ID: 101, RepositoryID: 51},                  // Repo 51 = success (+ successful index)
-		shared.Upload{ID: 103, RepositoryID: 53, State: "failed"}, // Repo 53 = failed
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 100, RepositoryID: 50},                  // Repo 50 = success (no index)
+		shbred.Uplobd{ID: 101, RepositoryID: 51},                  // Repo 51 = success (+ successful index)
+		shbred.Uplobd{ID: 103, RepositoryID: 53, Stbte: "fbiled"}, // Repo 53 = fbiled
 
-		// Repo 54 = multiple failures for same project
-		shared.Upload{ID: 150, RepositoryID: 54, State: "failed", FinishedAt: &t1},
-		shared.Upload{ID: 151, RepositoryID: 54, State: "failed", FinishedAt: &t2},
-		shared.Upload{ID: 152, RepositoryID: 54, State: "failed", FinishedAt: &t3},
+		// Repo 54 = multiple fbilures for sbme project
+		shbred.Uplobd{ID: 150, RepositoryID: 54, Stbte: "fbiled", FinishedAt: &t1},
+		shbred.Uplobd{ID: 151, RepositoryID: 54, Stbte: "fbiled", FinishedAt: &t2},
+		shbred.Uplobd{ID: 152, RepositoryID: 54, Stbte: "fbiled", FinishedAt: &t3},
 
-		// Repo 55 = multiple failures for different projects
-		shared.Upload{ID: 160, RepositoryID: 55, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		shared.Upload{ID: 161, RepositoryID: 55, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		shared.Upload{ID: 162, RepositoryID: 55, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		// Repo 55 = multiple fbilures for different projects
+		shbred.Uplobd{ID: 160, RepositoryID: 55, Stbte: "fbiled", FinishedAt: &t1, Root: "proj1"},
+		shbred.Uplobd{ID: 161, RepositoryID: 55, Stbte: "fbiled", FinishedAt: &t2, Root: "proj2"},
+		shbred.Uplobd{ID: 162, RepositoryID: 55, Stbte: "fbiled", FinishedAt: &t3, Root: "proj3"},
 
-		// Repo 58 = multiple failures with later success (not counted)
-		shared.Upload{ID: 170, RepositoryID: 58, State: "completed", FinishedAt: &t1},
-		shared.Upload{ID: 171, RepositoryID: 58, State: "failed", FinishedAt: &t2},
-		shared.Upload{ID: 172, RepositoryID: 58, State: "failed", FinishedAt: &t3},
+		// Repo 58 = multiple fbilures with lbter success (not counted)
+		shbred.Uplobd{ID: 170, RepositoryID: 58, Stbte: "completed", FinishedAt: &t1},
+		shbred.Uplobd{ID: 171, RepositoryID: 58, Stbte: "fbiled", FinishedAt: &t2},
+		shbred.Uplobd{ID: 172, RepositoryID: 58, Stbte: "fbiled", FinishedAt: &t3},
 	)
 	insertIndexes(t, db,
-		uploadsshared.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
-		uploadsshared.Index{ID: 202, RepositoryID: 52, State: "failed"}, // Repo 52 = failing index
-		uploadsshared.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ failing upload)
+		uplobdsshbred.Index{ID: 201, RepositoryID: 51},                  // Repo 51 = success
+		uplobdsshbred.Index{ID: 202, RepositoryID: 52, Stbte: "fbiled"}, // Repo 52 = fbiling index
+		uplobdsshbred.Index{ID: 203, RepositoryID: 53},                  // Repo 53 = success (+ fbiling uplobd)
 
-		// Repo 56 = multiple failures for same project
-		uploadsshared.Index{ID: 250, RepositoryID: 56, State: "failed", FinishedAt: &t1},
-		uploadsshared.Index{ID: 251, RepositoryID: 56, State: "failed", FinishedAt: &t2},
-		uploadsshared.Index{ID: 252, RepositoryID: 56, State: "failed", FinishedAt: &t3},
+		// Repo 56 = multiple fbilures for sbme project
+		uplobdsshbred.Index{ID: 250, RepositoryID: 56, Stbte: "fbiled", FinishedAt: &t1},
+		uplobdsshbred.Index{ID: 251, RepositoryID: 56, Stbte: "fbiled", FinishedAt: &t2},
+		uplobdsshbred.Index{ID: 252, RepositoryID: 56, Stbte: "fbiled", FinishedAt: &t3},
 
-		// Repo 57 = multiple failures for different projects
-		uploadsshared.Index{ID: 260, RepositoryID: 57, State: "failed", FinishedAt: &t1, Root: "proj1"},
-		uploadsshared.Index{ID: 261, RepositoryID: 57, State: "failed", FinishedAt: &t2, Root: "proj2"},
-		uploadsshared.Index{ID: 262, RepositoryID: 57, State: "failed", FinishedAt: &t3, Root: "proj3"},
+		// Repo 57 = multiple fbilures for different projects
+		uplobdsshbred.Index{ID: 260, RepositoryID: 57, Stbte: "fbiled", FinishedAt: &t1, Root: "proj1"},
+		uplobdsshbred.Index{ID: 261, RepositoryID: 57, Stbte: "fbiled", FinishedAt: &t2, Root: "proj2"},
+		uplobdsshbred.Index{ID: 262, RepositoryID: 57, Stbte: "fbiled", FinishedAt: &t3, Root: "proj3"},
 	)
 
-	// Query page 1
-	repositoriesWithCount, totalCount, err := store.RepositoryIDsWithErrors(ctx, 0, 4)
+	// Query pbge 1
+	repositoriesWithCount, totblCount, err := store.RepositoryIDsWithErrors(ctx, 0, 4)
 	if err != nil {
-		t.Fatalf("unexpected error getting repositories with errors: %s", err)
+		t.Fbtblf("unexpected error getting repositories with errors: %s", err)
 	}
-	if expected := 6; totalCount != expected {
-		t.Fatalf("unexpected total number of repositories. want=%d have=%d", expected, totalCount)
+	if expected := 6; totblCount != expected {
+		t.Fbtblf("unexpected totbl number of repositories. wbnt=%d hbve=%d", expected, totblCount)
 	}
-	expected := []uploadsshared.RepositoryWithCount{
+	expected := []uplobdsshbred.RepositoryWithCount{
 		{RepositoryID: 55, Count: 3},
 		{RepositoryID: 57, Count: 3},
 		{RepositoryID: 52, Count: 1},
 		{RepositoryID: 53, Count: 1},
 	}
 	if diff := cmp.Diff(expected, repositoriesWithCount); diff != "" {
-		t.Errorf("unexpected repositories (-want +got):\n%s", diff)
+		t.Errorf("unexpected repositories (-wbnt +got):\n%s", diff)
 	}
 
-	// Query page 2
+	// Query pbge 2
 	repositoriesWithCount, _, err = store.RepositoryIDsWithErrors(ctx, 4, 4)
 	if err != nil {
-		t.Fatalf("unexpected error getting repositories with errors: %s", err)
+		t.Fbtblf("unexpected error getting repositories with errors: %s", err)
 	}
-	expected = []uploadsshared.RepositoryWithCount{
+	expected = []uplobdsshbred.RepositoryWithCount{
 		{RepositoryID: 54, Count: 1},
 		{RepositoryID: 56, Count: 1},
 	}
 	if diff := cmp.Diff(expected, repositoriesWithCount); diff != "" {
-		t.Errorf("unexpected repositories (-want +got):\n%s", diff)
+		t.Errorf("unexpected repositories (-wbnt +got):\n%s", diff)
 	}
 }
 
 func TestNumRepositoriesWithCodeIntelligence(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	sqlDB := dbtest.NewDB(logger, t)
-	db := database.NewDB(logger, sqlDB)
-	store := New(&observation.TestContext, db)
+	db := dbtbbbse.NewDB(logger, sqlDB)
+	store := New(&observbtion.TestContext, db)
 
-	insertUploads(t, db,
-		shared.Upload{ID: 100, RepositoryID: 50},
-		shared.Upload{ID: 101, RepositoryID: 51},
-		shared.Upload{ID: 102, RepositoryID: 52}, // Not in commit graph
-		shared.Upload{ID: 103, RepositoryID: 53}, // Not on default branch
+	insertUplobds(t, db,
+		shbred.Uplobd{ID: 100, RepositoryID: 50},
+		shbred.Uplobd{ID: 101, RepositoryID: 51},
+		shbred.Uplobd{ID: 102, RepositoryID: 52}, // Not in commit grbph
+		shbred.Uplobd{ID: 103, RepositoryID: 53}, // Not on defbult brbnch
 	)
 
 	if _, err := db.ExecContext(ctx, `
-		INSERT INTO lsif_uploads_visible_at_tip
-			(repository_id, upload_id, is_default_branch)
+		INSERT INTO lsif_uplobds_visible_bt_tip
+			(repository_id, uplobd_id, is_defbult_brbnch)
 		VALUES
 			(50, 100, true),
 			(51, 101, true),
-			(53, 103, false)
+			(53, 103, fblse)
 	`); err != nil {
-		t.Fatalf("unexpected error inserting visible uploads: %s", err)
+		t.Fbtblf("unexpected error inserting visible uplobds: %s", err)
 	}
 
 	count, err := store.NumRepositoriesWithCodeIntelligence(ctx)
 	if err != nil {
-		t.Fatalf("unexpected error getting top repositories to configure: %s", err)
+		t.Fbtblf("unexpected error getting top repositories to configure: %s", err)
 	}
 	if expected := 2; count != expected {
-		t.Fatalf("unexpected number of repositories. want=%d have=%d", expected, count)
+		t.Fbtblf("unexpected number of repositories. wbnt=%d hbve=%d", expected, count)
 	}
 }

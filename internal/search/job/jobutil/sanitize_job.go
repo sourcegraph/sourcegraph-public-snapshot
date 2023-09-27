@@ -1,133 +1,133 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
 
-	"github.com/grafana/regexp"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbfbnb/regexp"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
 )
 
-func NewSanitizeJob(sanitizePatterns []*regexp.Regexp, child job.Job) job.Job {
-	return &sanitizeJob{
-		sanitizePatterns: sanitizePatterns,
+func NewSbnitizeJob(sbnitizePbtterns []*regexp.Regexp, child job.Job) job.Job {
+	return &sbnitizeJob{
+		sbnitizePbtterns: sbnitizePbtterns,
 		child:            child,
 	}
 }
 
-type sanitizeJob struct {
-	sanitizePatterns []*regexp.Regexp
+type sbnitizeJob struct {
+	sbnitizePbtterns []*regexp.Regexp
 	child            job.Job
 }
 
-func (j *sanitizeJob) Name() string {
-	return "SanitizeJob"
+func (j *sbnitizeJob) Nbme() string {
+	return "SbnitizeJob"
 }
 
-func (j *sanitizeJob) Attributes(job.Verbosity) []attribute.KeyValue {
+func (j *sbnitizeJob) Attributes(job.Verbosity) []bttribute.KeyVblue {
 	return nil
 }
 
-func (j *sanitizeJob) Children() []job.Describer {
+func (j *sbnitizeJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *sanitizeJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *sbnitizeJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *j
-	cp.child = job.Map(j.child, fn)
+	cp.child = job.Mbp(j.child, fn)
 	return &cp
 }
 
-func (j *sanitizeJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, s, j)
-	defer func() { finish(alert, err) }()
+func (j *sbnitizeJob) Run(ctx context.Context, clients job.RuntimeClients, s strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, s, j)
+	defer func() { finish(blert, err) }()
 
-	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event = j.sanitizeEvent(event)
-		stream.Send(event)
+	filteredStrebm := strebming.StrebmFunc(func(event strebming.SebrchEvent) {
+		event = j.sbnitizeEvent(event)
+		strebm.Send(event)
 	})
 
-	return j.child.Run(ctx, clients, filteredStream)
+	return j.child.Run(ctx, clients, filteredStrebm)
 }
 
-func (j *sanitizeJob) sanitizeEvent(event streaming.SearchEvent) streaming.SearchEvent {
-	sanitized := event.Results[:0]
+func (j *sbnitizeJob) sbnitizeEvent(event strebming.SebrchEvent) strebming.SebrchEvent {
+	sbnitized := event.Results[:0]
 
-	for _, res := range event.Results {
+	for _, res := rbnge event.Results {
 		switch v := res.(type) {
-		case *result.FileMatch:
-			if sanitizedFileMatch := j.sanitizeFileMatch(v); sanitizedFileMatch != nil {
-				sanitized = append(sanitized, sanitizedFileMatch)
+		cbse *result.FileMbtch:
+			if sbnitizedFileMbtch := j.sbnitizeFileMbtch(v); sbnitizedFileMbtch != nil {
+				sbnitized = bppend(sbnitized, sbnitizedFileMbtch)
 			}
-		case *result.CommitMatch:
-			if sanitizedCommitMatch := j.sanitizeCommitMatch(v); sanitizedCommitMatch != nil {
-				sanitized = append(sanitized, sanitizedCommitMatch)
+		cbse *result.CommitMbtch:
+			if sbnitizedCommitMbtch := j.sbnitizeCommitMbtch(v); sbnitizedCommitMbtch != nil {
+				sbnitized = bppend(sbnitized, sbnitizedCommitMbtch)
 			}
-		case *result.RepoMatch:
-			sanitized = append(sanitized, v)
-		default:
-			// default to dropping this result
+		cbse *result.RepoMbtch:
+			sbnitized = bppend(sbnitized, v)
+		defbult:
+			// defbult to dropping this result
 		}
 	}
 
-	event.Results = sanitized
+	event.Results = sbnitized
 	return event
 }
 
-func (j *sanitizeJob) sanitizeFileMatch(fm *result.FileMatch) result.Match {
+func (j *sbnitizeJob) sbnitizeFileMbtch(fm *result.FileMbtch) result.Mbtch {
 	if len(fm.Symbols) > 0 {
 		return fm
 	}
 
-	sanitizedChunks := fm.ChunkMatches[:0]
-	for _, chunk := range fm.ChunkMatches {
-		chunk = j.sanitizeChunk(chunk)
-		if len(chunk.Ranges) == 0 {
+	sbnitizedChunks := fm.ChunkMbtches[:0]
+	for _, chunk := rbnge fm.ChunkMbtches {
+		chunk = j.sbnitizeChunk(chunk)
+		if len(chunk.Rbnges) == 0 {
 			continue
 		}
-		sanitizedChunks = append(sanitizedChunks, chunk)
+		sbnitizedChunks = bppend(sbnitizedChunks, chunk)
 	}
 
-	if len(sanitizedChunks) == 0 {
+	if len(sbnitizedChunks) == 0 {
 		return nil
 	}
-	fm.ChunkMatches = sanitizedChunks
+	fm.ChunkMbtches = sbnitizedChunks
 	return fm
 }
 
-func (j *sanitizeJob) sanitizeChunk(chunk result.ChunkMatch) result.ChunkMatch {
-	sanitizedRanges := chunk.Ranges[:0]
+func (j *sbnitizeJob) sbnitizeChunk(chunk result.ChunkMbtch) result.ChunkMbtch {
+	sbnitizedRbnges := chunk.Rbnges[:0]
 
-	for i, val := range chunk.MatchedContent() {
-		if j.matchesAnySanitizePattern(val) {
+	for i, vbl := rbnge chunk.MbtchedContent() {
+		if j.mbtchesAnySbnitizePbttern(vbl) {
 			continue
 		}
-		sanitizedRanges = append(sanitizedRanges, chunk.Ranges[i])
+		sbnitizedRbnges = bppend(sbnitizedRbnges, chunk.Rbnges[i])
 	}
 
-	chunk.Ranges = sanitizedRanges
+	chunk.Rbnges = sbnitizedRbnges
 	return chunk
 }
 
-func (j *sanitizeJob) sanitizeCommitMatch(cm *result.CommitMatch) result.Match {
+func (j *sbnitizeJob) sbnitizeCommitMbtch(cm *result.CommitMbtch) result.Mbtch {
 	if cm.DiffPreview == nil {
 		return cm
 	}
-	if j.matchesAnySanitizePattern(cm.DiffPreview.Content) {
+	if j.mbtchesAnySbnitizePbttern(cm.DiffPreview.Content) {
 		return nil
 	}
 	return cm
 }
 
-func (j *sanitizeJob) matchesAnySanitizePattern(val string) bool {
-	for _, re := range j.sanitizePatterns {
-		if re.MatchString(val) {
+func (j *sbnitizeJob) mbtchesAnySbnitizePbttern(vbl string) bool {
+	for _, re := rbnge j.sbnitizePbtterns {
+		if re.MbtchString(vbl) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }

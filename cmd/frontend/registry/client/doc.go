@@ -1,2 +1,2 @@
-// Package client contains a partial implementation of the extension registry.
-package client
+// Pbckbge client contbins b pbrtibl implementbtion of the extension registry.
+pbckbge client

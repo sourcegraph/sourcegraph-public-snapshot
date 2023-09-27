@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,45 +7,45 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbph-gophers/grbphql-go"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestUsers(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	users.ListFunc.SetDefaultReturn([]*types.User{{Username: "user1"}, {Username: "user2"}}, nil)
-	users.CountFunc.SetDefaultReturn(2, nil)
-	users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+	users.ListFunc.SetDefbultReturn([]*types.User{{Usernbme: "user1"}, {Usernbme: "user2"}}, nil)
+	users.CountFunc.SetDefbultReturn(2, nil)
+	users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 		if id == 1 {
 			return &types.User{ID: 1, SiteAdmin: true}, nil
 		}
-		return nil, database.NewUserNotFoundError(id)
+		return nil, dbtbbbse.NewUserNotFoundError(id)
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	RunTests(t, []*Test{
 		{
-			Context: actor.WithActor(context.Background(), actor.FromMockUser(1)),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), bctor.FromMockUser(1)),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					users {
 						nodes {
-							username
+							usernbme
 							siteAdmin
 						}
-						totalCount
+						totblCount
 					}
 				}
 			`,
@@ -54,15 +54,15 @@ func TestUsers(t *testing.T) {
 					"users": {
 						"nodes": [
 							{
-								"username": "user1",
-								"siteAdmin": false
+								"usernbme": "user1",
+								"siteAdmin": fblse
 							},
 							{
-								"username": "user2",
-								"siteAdmin": false
+								"usernbme": "user2",
+								"siteAdmin": fblse
 							}
 						],
-						"totalCount": 2
+						"totblCount": 2
 					}
 				}
 			`,
@@ -70,35 +70,35 @@ func TestUsers(t *testing.T) {
 	})
 }
 
-func TestUsers_Pagination(t *testing.T) {
+func TestUsers_Pbginbtion(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-	users.ListFunc.SetDefaultHook(func(ctx context.Context, opt *database.UsersListOptions) ([]*types.User, error) {
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+	users.ListFunc.SetDefbultHook(func(ctx context.Context, opt *dbtbbbse.UsersListOptions) ([]*types.User, error) {
 		if opt.LimitOffset.Offset == 2 {
 			return []*types.User{
-				{Username: "user3"},
-				{Username: "user4"},
+				{Usernbme: "user3"},
+				{Usernbme: "user4"},
 			}, nil
 		}
 		return []*types.User{
-			{Username: "user1"},
-			{Username: "user2"},
+			{Usernbme: "user1"},
+			{Usernbme: "user2"},
 		}, nil
 	})
-	users.CountFunc.SetDefaultReturn(4, nil)
+	users.CountFunc.SetDefbultReturn(4, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					users(first: 2) {
-						nodes { username }
-						totalCount
-						pageInfo { hasNextPage, endCursor }
+						nodes { usernbme }
+						totblCount
+						pbgeInfo { hbsNextPbge, endCursor }
 					}
 				}
 			`,
@@ -107,15 +107,15 @@ func TestUsers_Pagination(t *testing.T) {
 					"users": {
 						"nodes": [
 							{
-								"username": "user1"
+								"usernbme": "user1"
 							},
 							{
-								"username": "user2"
+								"usernbme": "user2"
 							}
 						],
-						"totalCount": 4,
-						"pageInfo": {
-							"hasNextPage": true,
+						"totblCount": 4,
+						"pbgeInfo": {
+							"hbsNextPbge": true,
 							"endCursor": "2"
 						 }
 					}
@@ -123,13 +123,13 @@ func TestUsers_Pagination(t *testing.T) {
 			`,
 		},
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					users(first: 2, after: "2") {
-						nodes { username }
-						totalCount
-						pageInfo { hasNextPage, endCursor }
+					users(first: 2, bfter: "2") {
+						nodes { usernbme }
+						totblCount
+						pbgeInfo { hbsNextPbge, endCursor }
 					}
 				}
 			`,
@@ -138,15 +138,15 @@ func TestUsers_Pagination(t *testing.T) {
 					"users": {
 						"nodes": [
 							{
-								"username": "user3"
+								"usernbme": "user3"
 							},
 							{
-								"username": "user4"
+								"usernbme": "user4"
 							}
 						],
-						"totalCount": 4,
-						"pageInfo": {
-							"hasNextPage": false,
+						"totblCount": 4,
+						"pbgeInfo": {
+							"hbsNextPbge": fblse,
 							"endCursor": null
 						 }
 					}
@@ -156,239 +156,239 @@ func TestUsers_Pagination(t *testing.T) {
 	})
 }
 
-func TestUsers_Pagination_Integration(t *testing.T) {
+func TestUsers_Pbginbtion_Integrbtion(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	schema := mustParseGraphQLSchema(t, db)
+	schemb := mustPbrseGrbphQLSchemb(t, db)
 
-	org, err := db.Orgs().Create(ctx, "acme", nil)
+	org, err := db.Orgs().Crebte(ctx, "bcme", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 		return
 	}
 
-	newUsers := []struct{ username string }{
-		{username: "user1"},
-		{username: "user2"},
-		{username: "user3"},
-		{username: "user4"},
+	newUsers := []struct{ usernbme string }{
+		{usernbme: "user1"},
+		{usernbme: "user2"},
+		{usernbme: "user3"},
+		{usernbme: "user4"},
 	}
-	users := make([]*types.User, len(newUsers))
-	for i, newUser := range newUsers {
-		user, err := db.Users().Create(ctx, database.NewUser{Username: newUser.username})
+	users := mbke([]*types.User, len(newUsers))
+	for i, newUser := rbnge newUsers {
+		user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: newUser.usernbme})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 			return
 		}
 		users[i] = user
-		_, err = db.OrgMembers().Create(ctx, org.ID, user.ID)
+		_, err = db.OrgMembers().Crebte(ctx, org.ID, user.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 			return
 		}
 	}
 
-	admin := users[0]
-	nonadmin := users[1]
+	bdmin := users[0]
+	nonbdmin := users[1]
 
 	tests := []usersQueryTest{
-		// no args
+		// no brgs
 		{
-			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
-			wantUsers:      []string{"user1", "user2", "user3", "user4"},
-			wantTotalCount: 4,
+			ctx:            bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)),
+			wbntUsers:      []string{"user1", "user2", "user3", "user4"},
+			wbntTotblCount: 4,
 		},
 		// first: 1
 		{
-			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
-			args:           "first: 1",
-			wantUsers:      []string{"user1"},
-			wantTotalCount: 4,
+			ctx:            bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)),
+			brgs:           "first: 1",
+			wbntUsers:      []string{"user1"},
+			wbntTotblCount: 4,
 		},
 		// first: 2
 		{
-			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
-			args:           "first: 2",
-			wantUsers:      []string{"user1", "user2"},
-			wantTotalCount: 4,
+			ctx:            bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)),
+			brgs:           "first: 2",
+			wbntUsers:      []string{"user1", "user2"},
+			wbntTotblCount: 4,
 		},
-		// first: 2, after: 2
+		// first: 2, bfter: 2
 		{
-			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
-			args:           "first: 2, after: \"2\"",
-			wantUsers:      []string{"user3", "user4"},
-			wantTotalCount: 4,
+			ctx:            bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)),
+			brgs:           "first: 2, bfter: \"2\"",
+			wbntUsers:      []string{"user3", "user4"},
+			wbntTotblCount: 4,
 		},
-		// first: 1, after: 2
+		// first: 1, bfter: 2
 		{
-			ctx:            actor.WithActor(ctx, actor.FromUser(admin.ID)),
-			args:           "first: 1, after: \"2\"",
-			wantUsers:      []string{"user3"},
-			wantTotalCount: 4,
+			ctx:            bctor.WithActor(ctx, bctor.FromUser(bdmin.ID)),
+			brgs:           "first: 1, bfter: \"2\"",
+			wbntUsers:      []string{"user3"},
+			wbntTotblCount: 4,
 		},
-		// no admin on dotcom
+		// no bdmin on dotcom
 		{
-			ctx:       actor.WithActor(ctx, actor.FromUser(nonadmin.ID)),
-			wantError: "must be site admin",
+			ctx:       bctor.WithActor(ctx, bctor.FromUser(nonbdmin.ID)),
+			wbntError: "must be site bdmin",
 			dotcom:    true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.args, func(t *testing.T) {
-			runUsersQuery(t, schema, tt)
+	for _, tt := rbnge tests {
+		t.Run(tt.brgs, func(t *testing.T) {
+			runUsersQuery(t, schemb, tt)
 		})
 	}
 }
 
 type usersQueryTest struct {
-	args string
+	brgs string
 	ctx  context.Context
 
-	wantError string
+	wbntError string
 
-	wantUsers []string
+	wbntUsers []string
 
-	wantNoTotalCount bool
-	wantTotalCount   int
+	wbntNoTotblCount bool
+	wbntTotblCount   int
 	dotcom           bool
 }
 
-func runUsersQuery(t *testing.T, schema *graphql.Schema, want usersQueryTest) {
+func runUsersQuery(t *testing.T, schemb *grbphql.Schemb, wbnt usersQueryTest) {
 	t.Helper()
 
-	if want.dotcom {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(orig)
+	if wbnt.dotcom {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		t.Clebnup(func() {
+			envvbr.MockSourcegrbphDotComMode(orig)
 		})
 	}
 
 	type node struct {
-		Username string `json:"username"`
+		Usernbme string `json:"usernbme"`
 	}
 
-	type pageInfo struct {
-		HasNextPage bool `json:"hasNextPage"`
+	type pbgeInfo struct {
+		HbsNextPbge bool `json:"hbsNextPbge"`
 	}
 
 	type users struct {
 		Nodes      []node `json:"nodes"`
-		TotalCount *int   `json:"totalCount"`
+		TotblCount *int   `json:"totblCount"`
 	}
 
 	type expected struct {
 		Users users `json:"users"`
 	}
 
-	nodes := make([]node, 0, len(want.wantUsers))
-	for _, username := range want.wantUsers {
-		nodes = append(nodes, node{Username: username})
+	nodes := mbke([]node, 0, len(wbnt.wbntUsers))
+	for _, usernbme := rbnge wbnt.wbntUsers {
+		nodes = bppend(nodes, node{Usernbme: usernbme})
 	}
 
 	ex := expected{
 		Users: users{
 			Nodes:      nodes,
-			TotalCount: &want.wantTotalCount,
+			TotblCount: &wbnt.wbntTotblCount,
 		},
 	}
 
-	if want.wantNoTotalCount {
-		ex.Users.TotalCount = nil
+	if wbnt.wbntNoTotblCount {
+		ex.Users.TotblCount = nil
 	}
 
-	marshaled, err := json.Marshal(ex)
+	mbrshbled, err := json.Mbrshbl(ex)
 	if err != nil {
-		t.Fatalf("failed to marshal expected repositories query result: %s", err)
+		t.Fbtblf("fbiled to mbrshbl expected repositories query result: %s", err)
 	}
 
-	var query string
-	if want.args != "" {
-		query = fmt.Sprintf(`{ users(%s) { nodes { username } totalCount } } `, want.args)
+	vbr query string
+	if wbnt.brgs != "" {
+		query = fmt.Sprintf(`{ users(%s) { nodes { usernbme } totblCount } } `, wbnt.brgs)
 	} else {
-		query = `{ users { nodes { username } totalCount } }`
+		query = `{ users { nodes { usernbme } totblCount } }`
 	}
 
-	if want.wantError != "" {
+	if wbnt.wbntError != "" {
 		RunTest(t, &Test{
-			Context:        want.ctx,
-			Schema:         schema,
+			Context:        wbnt.ctx,
+			Schemb:         schemb,
 			Query:          query,
 			ExpectedResult: `null`,
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: want.wantError,
-					Path:    []any{"users"},
+					Messbge: wbnt.wbntError,
+					Pbth:    []bny{"users"},
 				},
 			},
 		})
 	} else {
 		RunTest(t, &Test{
-			Context:        want.ctx,
-			Schema:         schema,
+			Context:        wbnt.ctx,
+			Schemb:         schemb,
 			Query:          query,
-			ExpectedResult: string(marshaled),
+			ExpectedResult: string(mbrshbled),
 		})
 	}
 }
 
-func TestUsers_InactiveSince(t *testing.T) {
+func TestUsers_InbctiveSince(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	schema := mustParseGraphQLSchema(t, db)
+	schemb := mustPbrseGrbphQLSchemb(t, db)
 
 	now := time.Now()
-	daysAgo := func(days int) time.Time {
-		return now.Add(-time.Duration(days) * 24 * time.Hour)
+	dbysAgo := func(dbys int) time.Time {
+		return now.Add(-time.Durbtion(dbys) * 24 * time.Hour)
 	}
 
 	users := []struct {
-		user        database.NewUser
-		lastEventAt time.Time
+		user        dbtbbbse.NewUser
+		lbstEventAt time.Time
 	}{
-		{user: database.NewUser{Username: "user-1", Password: "user-1"}, lastEventAt: daysAgo(1)},
-		{user: database.NewUser{Username: "user-2", Password: "user-2"}, lastEventAt: daysAgo(2)},
-		{user: database.NewUser{Username: "user-3", Password: "user-3"}, lastEventAt: daysAgo(3)},
-		{user: database.NewUser{Username: "user-4", Password: "user-4"}, lastEventAt: daysAgo(4)},
+		{user: dbtbbbse.NewUser{Usernbme: "user-1", Pbssword: "user-1"}, lbstEventAt: dbysAgo(1)},
+		{user: dbtbbbse.NewUser{Usernbme: "user-2", Pbssword: "user-2"}, lbstEventAt: dbysAgo(2)},
+		{user: dbtbbbse.NewUser{Usernbme: "user-3", Pbssword: "user-3"}, lbstEventAt: dbysAgo(3)},
+		{user: dbtbbbse.NewUser{Usernbme: "user-4", Pbssword: "user-4"}, lbstEventAt: dbysAgo(4)},
 	}
 
-	for _, newUser := range users {
-		u, err := db.Users().Create(ctx, newUser.user)
+	for _, newUser := rbnge users {
+		u, err := db.Users().Crebte(ctx, newUser.user)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		event := &database.Event{
+		event := &dbtbbbse.Event{
 			UserID:    uint32(u.ID),
-			Timestamp: newUser.lastEventAt,
-			Name:      "testevent",
+			Timestbmp: newUser.lbstEventAt,
+			Nbme:      "testevent",
 			Source:    "test",
 		}
 		if err := db.EventLogs().Insert(ctx, event); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
-	ctx = actor.WithInternalActor(ctx)
+	ctx = bctor.WithInternblActor(ctx)
 
 	query := `
-		query InactiveUsers($since: DateTime) {
-			users(inactiveSince: $since) {
-				nodes { username }
-				totalCount
+		query InbctiveUsers($since: DbteTime) {
+			users(inbctiveSince: $since) {
+				nodes { usernbme }
+				totblCount
 			}
 		}
 	`
@@ -396,56 +396,56 @@ func TestUsers_InactiveSince(t *testing.T) {
 	RunTests(t, []*Test{
 		{
 			Context:   ctx,
-			Schema:    schema,
+			Schemb:    schemb,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(4).Format(time.RFC3339Nano)},
+			Vbribbles: mbp[string]bny{"since": dbysAgo(4).Formbt(time.RFC3339Nbno)},
 			ExpectedResult: `
-			{"users": { "nodes": [], "totalCount": 0 }}
+			{"users": { "nodes": [], "totblCount": 0 }}
 			`,
 		},
 		{
 			Context:   ctx,
-			Schema:    schema,
+			Schemb:    schemb,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(3).Format(time.RFC3339Nano)},
+			Vbribbles: mbp[string]bny{"since": dbysAgo(3).Formbt(time.RFC3339Nbno)},
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-4" }], "totalCount": 1 }}
+			{"users": { "nodes": [{ "usernbme": "user-4" }], "totblCount": 1 }}
 			`,
 		},
 		{
 			Context:   ctx,
-			Schema:    schema,
+			Schemb:    schemb,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(2).Format(time.RFC3339Nano)},
+			Vbribbles: mbp[string]bny{"since": dbysAgo(2).Formbt(time.RFC3339Nbno)},
 			ExpectedResult: `
-			{"users": { "nodes": [{ "username": "user-3" }, { "username": "user-4" }], "totalCount": 2 }}
+			{"users": { "nodes": [{ "usernbme": "user-3" }, { "usernbme": "user-4" }], "totblCount": 2 }}
 			`,
 		},
 		{
 			Context:   ctx,
-			Schema:    schema,
+			Schemb:    schemb,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(1).Format(time.RFC3339Nano)},
+			Vbribbles: mbp[string]bny{"since": dbysAgo(1).Formbt(time.RFC3339Nbno)},
 			ExpectedResult: `
 			{"users": { "nodes": [
-				{ "username": "user-2" },
-				{ "username": "user-3" },
-				{ "username": "user-4" }
-			], "totalCount": 3 }}
+				{ "usernbme": "user-2" },
+				{ "usernbme": "user-3" },
+				{ "usernbme": "user-4" }
+			], "totblCount": 3 }}
 			`,
 		},
 		{
 			Context:   ctx,
-			Schema:    schema,
+			Schemb:    schemb,
 			Query:     query,
-			Variables: map[string]any{"since": daysAgo(0).Format(time.RFC3339Nano)},
+			Vbribbles: mbp[string]bny{"since": dbysAgo(0).Formbt(time.RFC3339Nbno)},
 			ExpectedResult: `
 			{"users": { "nodes": [
-				{ "username": "user-1" },
-				{ "username": "user-2" },
-				{ "username": "user-3" },
-				{ "username": "user-4" }
-			], "totalCount": 4 }}
+				{ "usernbme": "user-1" },
+				{ "usernbme": "user-2" },
+				{ "usernbme": "user-3" },
+				{ "usernbme": "user-4" }
+			], "totblCount": 4 }}
 			`,
 		},
 	})

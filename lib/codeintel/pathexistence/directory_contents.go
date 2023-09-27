@@ -1,34 +1,34 @@
-package pathexistence
+pbckbge pbthexistence
 
 import (
 	"context"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 )
 
-type StringSet map[string]struct{}
+type StringSet mbp[string]struct{}
 
-// GetChildrenFunc returns a map of directory contents for a set of directory names.
-type GetChildrenFunc func(ctx context.Context, dirnames []string) (map[string][]string, error)
+// GetChildrenFunc returns b mbp of directory contents for b set of directory nbmes.
+type GetChildrenFunc func(ctx context.Context, dirnbmes []string) (mbp[string][]string, error)
 
-// directoryContents takes in a list of files present in an LSIF index and constructs a mapping from
-// directory  names to sets containing that directory's contents. This function calls the given
-// GetChildrenFunc a minimal number of times (and with minimal argument lengths) by pruning missing
-// subtrees from subsequent request batches. This can save a lot of work for large uncommitted subtrees
+// directoryContents tbkes in b list of files present in bn LSIF index bnd constructs b mbpping from
+// directory  nbmes to sets contbining thbt directory's contents. This function cblls the given
+// GetChildrenFunc b minimbl number of times (bnd with minimbl brgument lengths) by pruning missing
+// subtrees from subsequent request bbtches. This cbn sbve b lot of work for lbrge uncommitted subtrees
 // (e.g. node_modules).
-func directoryContents(ctx context.Context, root string, paths []string, getChildren GetChildrenFunc) (map[string]StringSet, error) {
-	contents := map[string]StringSet{}
+func directoryContents(ctx context.Context, root string, pbths []string, getChildren GetChildrenFunc) (mbp[string]StringSet, error) {
+	contents := mbp[string]StringSet{}
 
-	for batch := makeInitialRequestBatch(root, paths); len(batch) > 0; batch = batch.next(contents) {
-		batchResults, err := getChildren(ctx, batch.dirnames())
+	for bbtch := mbkeInitiblRequestBbtch(root, pbths); len(bbtch) > 0; bbtch = bbtch.next(contents) {
+		bbtchResults, err := getChildren(ctx, bbtch.dirnbmes())
 		if err != nil {
 			return nil, err
 		}
 
-		for directory, children := range batchResults {
+		for directory, children := rbnge bbtchResults {
 			if len(children) > 0 {
 				v := StringSet{}
-				for _, c := range children {
+				for _, c := rbnge children {
 					v[c] = struct{}{}
 				}
 				contents[directory] = v
@@ -39,51 +39,51 @@ func directoryContents(ctx context.Context, root string, paths []string, getChil
 	return contents, nil
 }
 
-// RequestBatch is a complete set of directory subtrees whose contents can be requested
-// from gitserver onn the next request. Each chunk of directory subtrees are keyed by the
-// full path to that subtree in the batch.
-type RequestBatch map[string][]DirTreeNode
+// RequestBbtch is b complete set of directory subtrees whose contents cbn be requested
+// from gitserver onn the next request. Ebch chunk of directory subtrees bre keyed by the
+// full pbth to thbt subtree in the bbtch.
+type RequestBbtch mbp[string][]DirTreeNode
 
-// makeInitialRequestBatch constructs the first batch to request from gitserver.
-func makeInitialRequestBatch(root string, paths []string) RequestBatch {
-	node := makeTree(root, paths)
+// mbkeInitiblRequestBbtch constructs the first bbtch to request from gitserver.
+func mbkeInitiblRequestBbtch(root string, pbths []string) RequestBbtch {
+	node := mbkeTree(root, pbths)
 	if root != "" {
-		// Skip requesting "" if a root is supplied
-		return RequestBatch{"": node.Children}
+		// Skip requesting "" if b root is supplied
+		return RequestBbtch{"": node.Children}
 	}
 
-	return RequestBatch{"": []DirTreeNode{node}}
+	return RequestBbtch{"": []DirTreeNode{node}}
 }
 
-// dirnames returns a sorted set of directories (as full paths) from the batch.
-func (batch RequestBatch) dirnames() []string {
-	var dirnames []string
-	for nodeGroupParentPath, nodes := range batch {
-		for _, node := range nodes {
-			dirnames = append(dirnames, filepath.Join(nodeGroupParentPath, node.Name))
+// dirnbmes returns b sorted set of directories (bs full pbths) from the bbtch.
+func (bbtch RequestBbtch) dirnbmes() []string {
+	vbr dirnbmes []string
+	for nodeGroupPbrentPbth, nodes := rbnge bbtch {
+		for _, node := rbnge nodes {
+			dirnbmes = bppend(dirnbmes, filepbth.Join(nodeGroupPbrentPbth, node.Nbme))
 		}
 	}
-	sort.Strings(dirnames)
-	return dirnames
+	sort.Strings(dirnbmes)
+	return dirnbmes
 }
 
-// next creates a new batch of requests from the current batch. The subsequent batch will
-// contain all children of the first batch that are known to be visible from processing
-// the previous batch. The given directory contents map is used to determine if the new
-// batch files are visible.
-func (batch RequestBatch) next(contents map[string]StringSet) RequestBatch {
-	nextBatch := RequestBatch{}
-	for nodeGroupPath, nodes := range batch {
-		for _, node := range nodes {
-			// Determine new map key
-			newNodeGroupPath := filepath.Join(nodeGroupPath, node.Name)
+// next crebtes b new bbtch of requests from the current bbtch. The subsequent bbtch will
+// contbin bll children of the first bbtch thbt bre known to be visible from processing
+// the previous bbtch. The given directory contents mbp is used to determine if the new
+// bbtch files bre visible.
+func (bbtch RequestBbtch) next(contents mbp[string]StringSet) RequestBbtch {
+	nextBbtch := RequestBbtch{}
+	for nodeGroupPbth, nodes := rbnge bbtch {
+		for _, node := rbnge nodes {
+			// Determine new mbp key
+			newNodeGroupPbth := filepbth.Join(nodeGroupPbth, node.Nbme)
 
-			if len(node.Children) > 0 && len(contents[newNodeGroupPath]) > 0 {
-				// Has visible children, include in next batch
-				nextBatch[newNodeGroupPath] = node.Children
+			if len(node.Children) > 0 && len(contents[newNodeGroupPbth]) > 0 {
+				// Hbs visible children, include in next bbtch
+				nextBbtch[newNodeGroupPbth] = node.Children
 			}
 		}
 	}
 
-	return nextBatch
+	return nextBbtch
 }

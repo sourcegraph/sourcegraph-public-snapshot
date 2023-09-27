@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -7,437 +7,437 @@ import (
 
 	"github.com/elimity-com/scim"
 	scimerrors "github.com/elimity-com/scim/errors"
-	"github.com/scim2/filter-parser/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/scim2/filter-pbrser/v2"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-const sampleAccountData = `{
-	"active": true,
-	"emails": [
+const sbmpleAccountDbtb = `{
+	"bctive": true,
+	"embils": [
 	  {
 		"type": "work",
-		"value": "primary@work.com",
-		"primary": true
+		"vblue": "primbry@work.com",
+		"primbry": true
 	  },
 	  {
 		"type": "work",
-		"value": "secondary@work.com",
-		"primary": false
+		"vblue": "secondbry@work.com",
+		"primbry": fblse
 	  }
 	],
-	"name": {
-	  "givenName": "Nannie",
-	  "familyName": "Krystina",
-	  "formatted": "Reilly",
-	  "middleName": "Camren"
+	"nbme": {
+	  "givenNbme": "Nbnnie",
+	  "fbmilyNbme": "Krystinb",
+	  "formbtted": "Reilly",
+	  "middleNbme": "Cbmren"
 	},
-	"displayName": "N0LBQ9P0TTH4",
-	"userName": "faye@rippinkozey.com"
+	"displbyNbme": "N0LBQ9P0TTH4",
+	"userNbme": "fbye@rippinkozey.com"
   }`
 
-func Test_UserResourceHandler_PatchUsername(t *testing.T) {
-	testCases := []struct{ op string }{{op: "replace"}, {op: "add"}}
+func Test_UserResourceHbndler_PbtchUsernbme(t *testing.T) {
+	testCbses := []struct{ op string }{{op: "replbce"}, {op: "bdd"}}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		t.Run(tc.op, func(t *testing.T) {
-			user := types.UserForSCIM{User: types.User{ID: 1, Username: "test-user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"}
-			db := getMockDB([]*types.UserForSCIM{&user}, map[int32][]*database.UserEmail{1: {makeEmail(1, "a@example.com", true, true)}})
-			userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-			operations := []scim.PatchOperation{{Op: tc.op, Path: createPath(AttrUserName, nil), Value: "test-user1-patched"}}
+			user := types.UserForSCIM{User: types.User{ID: 1, Usernbme: "test-user1", DisplbyNbme: "First Lbst"}, Embils: []string{"b@exbmple.com"}, SCIMExternblID: "id1"}
+			db := getMockDB([]*types.UserForSCIM{&user}, mbp[int32][]*dbtbbbse.UserEmbil{1: {mbkeEmbil(1, "b@exbmple.com", true, true)}})
+			userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+			operbtions := []scim.PbtchOperbtion{{Op: tc.op, Pbth: crebtePbth(AttrUserNbme, nil), Vblue: "test-user1-pbtched"}}
 
-			userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
+			userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
 
-			assert.NoError(t, err)
-			assert.Equal(t, "test-user1-patched", userRes.Attributes[AttrUserName])
+			bssert.NoError(t, err)
+			bssert.Equbl(t, "test-user1-pbtched", userRes.Attributes[AttrUserNbme])
 			userID, _ := strconv.Atoi(userRes.ID)
-			resultUser, err := db.Users().GetByID(context.Background(), int32(userID))
-			assert.NoError(t, err)
-			assert.Equal(t, "test-user1-patched", resultUser.Username)
+			resultUser, err := db.Users().GetByID(context.Bbckground(), int32(userID))
+			bssert.NoError(t, err)
+			bssert.Equbl(t, "test-user1-pbtched", resultUser.Usernbme)
 		})
 	}
 }
 
-func Test_UserResourceHandler_PatchReplaceWithFilter(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "nicolas@breitenbergbartell.uk"},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq false].type"), Value: "home"},
-		{Op: "replace", Value: map[string]interface{}{
-			"userName":        "updatedUN",
-			"name.givenName":  "Gertrude",
-			"name.familyName": "Everett",
-			"name.formatted":  "Manuela",
-			"name.middleName": "Ismael",
+func Test_UserResourceHbndler_PbtchReplbceWithFilter(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"work\" bnd primbry eq true].vblue"), Vblue: "nicolbs@breitenbergbbrtell.uk"},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"work\" bnd primbry eq fblse].type"), Vblue: "home"},
+		{Op: "replbce", Vblue: mbp[string]interfbce{}{
+			"userNbme":        "updbtedUN",
+			"nbme.givenNbme":  "Gertrude",
+			"nbme.fbmilyNbme": "Everett",
+			"nbme.formbtted":  "Mbnuelb",
+			"nbme.middleNbme": "Ismbel",
 		}},
-		{Op: "replace", Path: createPath(AttrNickName, nil), Value: "nickName"},
+		{Op: "replbce", Pbth: crebtePbth(AttrNickNbme, nil), Vblue: "nickNbme"},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
 
-	assert.NoError(t, err)
+	bssert.NoError(t, err)
 
-	// Check toplevel attributes
-	assert.Equal(t, "updatedUN", userRes.Attributes[AttrUserName])
-	assert.Equal(t, "N0LBQ9P0TTH4", userRes.Attributes["displayName"])
+	// Check toplevel bttributes
+	bssert.Equbl(t, "updbtedUN", userRes.Attributes[AttrUserNbme])
+	bssert.Equbl(t, "N0LBQ9P0TTH4", userRes.Attributes["displbyNbme"])
 
-	// Check filtered email changes
-	emails := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Contains(t, emails, map[string]interface{}{"value": "nicolas@breitenbergbartell.uk", "primary": true, "type": "work"})
-	assert.Contains(t, emails, map[string]interface{}{"value": "secondary@work.com", "primary": false, "type": "home"})
+	// Check filtered embil chbnges
+	embils := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "nicolbs@breitenbergbbrtell.uk", "primbry": true, "type": "work"})
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "secondbry@work.com", "primbry": fblse, "type": "home"})
 
-	// Check name attributes
-	name := userRes.Attributes[AttrName].(map[string]interface{})
-	assert.Equal(t, "Gertrude", name[AttrNameGiven])
-	assert.Equal(t, "Everett", name[AttrNameFamily])
-	assert.Equal(t, "Manuela", name[AttrNameFormatted])
-	assert.Equal(t, "Ismael", name[AttrNameMiddle])
+	// Check nbme bttributes
+	nbme := userRes.Attributes[AttrNbme].(mbp[string]interfbce{})
+	bssert.Equbl(t, "Gertrude", nbme[AttrNbmeGiven])
+	bssert.Equbl(t, "Everett", nbme[AttrNbmeFbmily])
+	bssert.Equbl(t, "Mbnuelb", nbme[AttrNbmeFormbtted])
+	bssert.Equbl(t, "Ismbel", nbme[AttrNbmeMiddle])
 
-	// Check nickName added
-	assert.Equal(t, "nickName", userRes.Attributes[AttrNickName])
+	// Check nickNbme bdded
+	bssert.Equbl(t, "nickNbme", userRes.Attributes[AttrNickNbme])
 
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	user, err := db.Users().GetByID(context.Background(), int32(userID))
-	assert.NoError(t, err)
-	assert.Equal(t, "updatedUN", user.Username)
+	user, err := db.Users().GetByID(context.Bbckground(), int32(userID))
+	bssert.NoError(t, err)
+	bssert.Equbl(t, "updbtedUN", user.Usernbme)
 
-	// Check db email changes
-	dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-	assert.Len(t, dbEmails, 2)
-	assert.True(t, containsEmail(dbEmails, "nicolas@breitenbergbartell.uk", true, true))
-	assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, false))
+	// Check db embil chbnges
+	dbEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+	bssert.Len(t, dbEmbils, 2)
+	bssert.True(t, contbinsEmbil(dbEmbils, "nicolbs@breitenbergbbrtell.uk", true, true))
+	bssert.True(t, contbinsEmbil(dbEmbils, "secondbry@work.com", true, fblse))
 }
 
-func Test_UserResourceHandler_PatchRemoveWithFilter(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "remove", Path: parseStringPath("emails[type eq \"work\" and primary eq false]")},
-		{Op: "remove", Path: createPath(AttrName, pointers.Ptr(AttrNameMiddle))},
+func Test_UserResourceHbndler_PbtchRemoveWithFilter(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "remove", Pbth: pbrseStringPbth("embils[type eq \"work\" bnd primbry eq fblse]")},
+		{Op: "remove", Pbth: crebtePbth(AttrNbme, pointers.Ptr(AttrNbmeMiddle))},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
 
-	// Check only one email remains
-	emails := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Len(t, emails, 1)
-	assert.Contains(t, emails, map[string]interface{}{"value": "primary@work.com", "primary": true, "type": "work"})
+	// Check only one embil rembins
+	embils := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Len(t, embils, 1)
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "primbry@work.com", "primbry": true, "type": "work"})
 
-	// Check name attributes
-	name := userRes.Attributes[AttrName].(map[string]interface{})
-	assert.Nil(t, name[AttrNameMiddle])
+	// Check nbme bttributes
+	nbme := userRes.Attributes[AttrNbme].(mbp[string]interfbce{})
+	bssert.Nil(t, nbme[AttrNbmeMiddle])
 
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	user, err := db.Users().GetByID(context.Background(), int32(userID))
-	assert.NoError(t, err)
+	user, err := db.Users().GetByID(context.Bbckground(), int32(userID))
+	bssert.NoError(t, err)
 
-	// Check DB email changes
-	dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-	assert.Len(t, dbEmails, 1)
-	assert.True(t, containsEmail(dbEmails, "primary@work.com", true, true))
+	// Check DB embil chbnges
+	dbEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+	bssert.Len(t, dbEmbils, 1)
+	bssert.True(t, contbinsEmbil(dbEmbils, "primbry@work.com", true, true))
 }
 
-func Test_UserResourceHandler_PatchReplaceWholeArrayField(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath("emails"), Value: toInterfaceSlice(map[string]interface{}{"value": "replaced@work.com", "type": "home", "primary": true})},
+func Test_UserResourceHbndler_PbtchReplbceWholeArrbyField(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth("embils"), Vblue: toInterfbceSlice(mbp[string]interfbce{}{"vblue": "replbced@work.com", "type": "home", "primbry": true})},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
 
-	// Check if it has only one email
-	emails := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Len(t, emails, 1)
-	assert.Contains(t, emails, map[string]interface{}{"value": "replaced@work.com", "primary": true, "type": "home"})
+	// Check if it hbs only one embil
+	embils := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Len(t, embils, 1)
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "replbced@work.com", "primbry": true, "type": "home"})
 
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	user, err := db.Users().GetByID(context.Background(), int32(userID))
-	assert.NoError(t, err)
+	user, err := db.Users().GetByID(context.Bbckground(), int32(userID))
+	bssert.NoError(t, err)
 
-	// Check db email changes
-	dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-	assert.Len(t, dbEmails, 1)
-	assert.True(t, containsEmail(dbEmails, "replaced@work.com", true, true))
+	// Check db embil chbnges
+	dbEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+	bssert.Len(t, dbEmbils, 1)
+	bssert.True(t, contbinsEmbil(dbEmbils, "replbced@work.com", true, true))
 }
 
-func Test_UserResourceHandler_PatchRemoveNonExistingField(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "remove", Path: createPath(AttrNickName, nil)},
+func Test_UserResourceHbndler_PbtchRemoveNonExistingField(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "remove", Pbth: crebtePbth(AttrNickNbme, nil)},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	// Check nickname still empty
-	assert.Nil(t, userRes.Attributes[AttrNickName])
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	// Check nicknbme still empty
+	bssert.Nil(t, userRes.Attributes[AttrNickNbme])
 }
 
-func Test_UserResourceHandler_PatchAddPrimaryEmail(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "add", Path: createPath(AttrEmails, nil), Value: toInterfaceSlice(map[string]interface{}{"value": "new@work.com", "type": "home", "primary": true})},
+func Test_UserResourceHbndler_PbtchAddPrimbryEmbil(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "bdd", Pbth: crebtePbth(AttrEmbils, nil), Vblue: toInterfbceSlice(mbp[string]interfbce{}{"vblue": "new@work.com", "type": "home", "primbry": true})},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	// Check emails
-	emails := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Len(t, emails, 3)
-	assert.False(t, emails[0].(map[string]interface{})["primary"].(bool))
-	assert.False(t, emails[1].(map[string]interface{})["primary"].(bool))
-	assert.True(t, emails[2].(map[string]interface{})["primary"].(bool))
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	// Check embils
+	embils := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Len(t, embils, 3)
+	bssert.Fblse(t, embils[0].(mbp[string]interfbce{})["primbry"].(bool))
+	bssert.Fblse(t, embils[1].(mbp[string]interfbce{})["primbry"].(bool))
+	bssert.True(t, embils[2].(mbp[string]interfbce{})["primbry"].(bool))
 }
 
-func Test_UserResourceHandler_PatchReplacePrimaryEmailWithFilter(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
+func Test_UserResourceHbndler_PbtchReplbcePrimbryEmbilWithFilter(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[vblue eq \"secondbry@work.com\"].primbry"), Vblue: true},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	// Check emails
-	emails := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Len(t, emails, 2)
-	assert.False(t, emails[0].(map[string]interface{})["primary"].(bool))
-	assert.True(t, emails[1].(map[string]interface{})["primary"].(bool))
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	// Check embils
+	embils := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Len(t, embils, 2)
+	bssert.Fblse(t, embils[0].(mbp[string]interfbce{})["primbry"].(bool))
+	bssert.True(t, embils[1].(mbp[string]interfbce{})["primbry"].(bool))
 }
 
-func Test_UserResourceHandler_PatchAddNonExistingField(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "add", Path: createPath(AttrNickName, nil), Value: "sampleNickName"},
+func Test_UserResourceHbndler_PbtchAddNonExistingField(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "bdd", Pbth: crebtePbth(AttrNickNbme, nil), Vblue: "sbmpleNickNbme"},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	// Check nickname
-	assert.Equal(t, "sampleNickName", userRes.Attributes[AttrNickName])
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	// Check nicknbme
+	bssert.Equbl(t, "sbmpleNickNbme", userRes.Attributes[AttrNickNbme])
 }
 
-func Test_UserResourceHandler_PatchNoChange(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: createPath(AttrName, pointers.Ptr(AttrNameGiven)), Value: "Nannie"},
+func Test_UserResourceHbndler_PbtchNoChbnge(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: crebtePbth(AttrNbme, pointers.Ptr(AttrNbmeGiven)), Vblue: "Nbnnie"},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	// Check name the same
-	name := userRes.Attributes[AttrName].(map[string]interface{})
-	assert.Equal(t, "Nannie", name[AttrNameGiven])
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	// Check nbme the sbme
+	nbme := userRes.Attributes[AttrNbme].(mbp[string]interfbce{})
+	bssert.Equbl(t, "Nbnnie", nbme[AttrNbmeGiven])
 }
 
-func Test_UserResourceHandler_PatchMoveUnverifiedEmailToPrimaryWithFilter(t *testing.T) {
-	user1 := types.UserForSCIM{User: types.User{ID: 1, Username: "test-user1"}, Emails: []string{"primary@work.com", "secondary@work.com"}, SCIMExternalID: "id1", SCIMAccountData: sampleAccountData}
-	usersEmails := map[int32][]*database.UserEmail{1: {makeEmail(1, "primary@work.com", true, true), makeEmail(1, "secondary@work.com", false, false)}}
-	db := getMockDB([]*types.UserForSCIM{&user1}, usersEmails)
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath("emails[value eq \"primary@work.com\"].primary"), Value: false},
-		{Op: "replace", Path: parseStringPath("emails[value eq \"secondary@work.com\"].primary"), Value: true},
+func Test_UserResourceHbndler_PbtchMoveUnverifiedEmbilToPrimbryWithFilter(t *testing.T) {
+	user1 := types.UserForSCIM{User: types.User{ID: 1, Usernbme: "test-user1"}, Embils: []string{"primbry@work.com", "secondbry@work.com"}, SCIMExternblID: "id1", SCIMAccountDbtb: sbmpleAccountDbtb}
+	usersEmbils := mbp[int32][]*dbtbbbse.UserEmbil{1: {mbkeEmbil(1, "primbry@work.com", true, true), mbkeEmbil(1, "secondbry@work.com", fblse, fblse)}}
+	db := getMockDB([]*types.UserForSCIM{&user1}, usersEmbils)
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[vblue eq \"primbry@work.com\"].primbry"), Vblue: fblse},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[vblue eq \"secondbry@work.com\"].primbry"), Vblue: true},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	// Check both emails remain and primary value flipped
-	emails := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Len(t, emails, 2)
-	assert.Contains(t, emails, map[string]interface{}{"value": "primary@work.com", "primary": false, "type": "work"})
-	assert.Contains(t, emails, map[string]interface{}{"value": "secondary@work.com", "primary": true, "type": "work"})
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	// Check both embils rembin bnd primbry vblue flipped
+	embils := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Len(t, embils, 2)
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "primbry@work.com", "primbry": fblse, "type": "work"})
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "secondbry@work.com", "primbry": true, "type": "work"})
 
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	user, err := db.Users().GetByID(context.Background(), int32(userID))
-	assert.NoError(t, err)
+	user, err := db.Users().GetByID(context.Bbckground(), int32(userID))
+	bssert.NoError(t, err)
 
-	// Check db email changes and both marked verified
-	dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-	assert.Len(t, dbEmails, 2)
-	assert.True(t, containsEmail(dbEmails, "primary@work.com", true, false))
-	assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, true))
+	// Check db embil chbnges bnd both mbrked verified
+	dbEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+	bssert.Len(t, dbEmbils, 2)
+	bssert.True(t, contbinsEmbil(dbEmbils, "primbry@work.com", true, fblse))
+	bssert.True(t, contbinsEmbil(dbEmbils, "secondbry@work.com", true, true))
 }
 
-func Test_UserResourceHandler_PatchSoftDelete(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath(AttrActive), Value: false},
+func Test_UserResourceHbndler_PbtchSoftDelete(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth(AttrActive), Vblue: fblse},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	assert.Equal(t, userRes.Attributes[AttrActive], false)
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	bssert.Equbl(t, userRes.Attributes[AttrActive], fblse)
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	users, err := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{int32(userID)}})
-	assert.NoError(t, err)
-	assert.Len(t, users, 1, "1 user should be found")
-	assert.False(t, users[0].Active, "user should not be active")
+	users, err := db.Users().ListForSCIM(context.Bbckground(), &dbtbbbse.UsersListOptions{UserIDs: []int32{int32(userID)}})
+	bssert.NoError(t, err)
+	bssert.Len(t, users, 1, "1 user should be found")
+	bssert.Fblse(t, users[0].Active, "user should not be bctive")
 }
 
-func Test_UserResourceHandler_PatchReactiveUser(t *testing.T) {
-	scimData := `{
-		"active": false,
-		"emails": [
+func Test_UserResourceHbndler_PbtchRebctiveUser(t *testing.T) {
+	scimDbtb := `{
+		"bctive": fblse,
+		"embils": [
 		  {
 			"type": "work",
-			"value": "primary@work.com",
-			"primary": true
+			"vblue": "primbry@work.com",
+			"primbry": true
 		  },
 		],
-		"name": {
-		  "givenName": "Nannie",
-		  "familyName": "Krystina",
-		  "formatted": "Reilly",
-		  "middleName": "Camren"
+		"nbme": {
+		  "givenNbme": "Nbnnie",
+		  "fbmilyNbme": "Krystinb",
+		  "formbtted": "Reilly",
+		  "middleNbme": "Cbmren"
 		},
-		"displayName": "N0LBQ9P0TTH4",
-		"userName": "faye@rippinkozey.com"
+		"displbyNbme": "N0LBQ9P0TTH4",
+		"userNbme": "fbye@rippinkozey.com"
 	  }`
 	user := &types.UserForSCIM{
-		User:            types.User{ID: 1, Username: "test-user1"},
-		Emails:          []string{"primary@work.com"},
-		SCIMExternalID:  "id1",
-		SCIMAccountData: scimData,
-		Active:          false,
+		User:            types.User{ID: 1, Usernbme: "test-user1"},
+		Embils:          []string{"primbry@work.com"},
+		SCIMExternblID:  "id1",
+		SCIMAccountDbtb: scimDbtb,
+		Active:          fblse,
 	}
-	emails := map[int32][]*database.UserEmail{1: {
-		makeEmail(1, "primary@work.com", true, true),
-		makeEmail(1, "secondary@work.com", false, true),
+	embils := mbp[int32][]*dbtbbbse.UserEmbil{1: {
+		mbkeEmbil(1, "primbry@work.com", true, true),
+		mbkeEmbil(1, "secondbry@work.com", fblse, true),
 	}}
-	db := getMockDB([]*types.UserForSCIM{user}, emails)
+	db := getMockDB([]*types.UserForSCIM{user}, embils)
 
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath(AttrActive), Value: true},
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth(AttrActive), Vblue: true},
 	}
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
-	assert.NoError(t, err)
-	assert.Equal(t, userRes.Attributes[AttrActive], true)
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
+	bssert.NoError(t, err)
+	bssert.Equbl(t, userRes.Attributes[AttrActive], true)
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	users, err := db.Users().ListForSCIM(context.Background(), &database.UsersListOptions{UserIDs: []int32{int32(userID)}})
-	assert.NoError(t, err)
-	assert.Len(t, users, 1, "1 user should be found")
-	assert.True(t, users[0].Active, "user should be active")
+	users, err := db.Users().ListForSCIM(context.Bbckground(), &dbtbbbse.UsersListOptions{UserIDs: []int32{int32(userID)}})
+	bssert.NoError(t, err)
+	bssert.Len(t, users, 1, "1 user should be found")
+	bssert.True(t, users[0].Active, "user should be bctive")
 }
 
-func Test_UserResourceHandler_Patch_ReplaceStrategies_Azure(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	config := &conf.Unified{SiteConfiguration: schema.SiteConfiguration{ScimIdentityProvider: string(IDPAzureAd)}}
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].primary"), Value: false},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].display"), Value: "home email"},
+func Test_UserResourceHbndler_Pbtch_ReplbceStrbtegies_Azure(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	config := &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{ScimIdentityProvider: string(IDPAzureAd)}}
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"work\" bnd primbry eq true].vblue"), Vblue: "work@work.com"},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"home\"].vblue"), Vblue: "home@work.com"},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"home\"].primbry"), Vblue: fblse},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"home\"].displby"), Vblue: "home embil"},
 	}
 	conf.Mock(config)
 	defer conf.Mock(nil)
 
-	userRes, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
+	userRes, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
 
-	// Check both emails remain and primary value flipped
-	assert.NoError(t, err)
-	emails, _ := userRes.Attributes[AttrEmails].([]interface{})
-	assert.Len(t, emails, 3)
-	assert.Contains(t, emails, map[string]interface{}{"value": "work@work.com", "primary": true, "type": "work"})
-	assert.Contains(t, emails, map[string]interface{}{"value": "secondary@work.com", "primary": false, "type": "work"})
-	assert.Contains(t, emails, map[string]interface{}{"value": "home@work.com", "primary": false, "type": "home", "display": "home email"})
+	// Check both embils rembin bnd primbry vblue flipped
+	bssert.NoError(t, err)
+	embils, _ := userRes.Attributes[AttrEmbils].([]interfbce{})
+	bssert.Len(t, embils, 3)
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "work@work.com", "primbry": true, "type": "work"})
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "secondbry@work.com", "primbry": fblse, "type": "work"})
+	bssert.Contbins(t, embils, mbp[string]interfbce{}{"vblue": "home@work.com", "primbry": fblse, "type": "home", "displby": "home embil"})
 
 	// Check user in DB
 	userID, _ := strconv.Atoi(userRes.ID)
-	user, err := db.Users().GetByID(context.Background(), int32(userID))
-	assert.NoError(t, err)
+	user, err := db.Users().GetByID(context.Bbckground(), int32(userID))
+	bssert.NoError(t, err)
 
-	// Check db email changes and both marked verified
-	dbEmails, _ := db.UserEmails().ListByUser(context.Background(), database.UserEmailsListOptions{UserID: user.ID, OnlyVerified: false})
-	assert.Len(t, dbEmails, 3)
-	assert.True(t, containsEmail(dbEmails, "work@work.com", true, true))
-	assert.True(t, containsEmail(dbEmails, "secondary@work.com", true, false))
-	assert.True(t, containsEmail(dbEmails, "home@work.com", true, false))
+	// Check db embil chbnges bnd both mbrked verified
+	dbEmbils, _ := db.UserEmbils().ListByUser(context.Bbckground(), dbtbbbse.UserEmbilsListOptions{UserID: user.ID, OnlyVerified: fblse})
+	bssert.Len(t, dbEmbils, 3)
+	bssert.True(t, contbinsEmbil(dbEmbils, "work@work.com", true, true))
+	bssert.True(t, contbinsEmbil(dbEmbils, "secondbry@work.com", true, fblse))
+	bssert.True(t, contbinsEmbil(dbEmbils, "home@work.com", true, fblse))
 }
 
-func Test_UserResourceHandler_Patch_ReplaceStrategies_Standard(t *testing.T) {
-	db := createMockDB()
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	operations := []scim.PatchOperation{
-		{Op: "replace", Path: parseStringPath("emails[type eq \"work\" and primary eq true].value"), Value: "work@work.com"},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].value"), Value: "home@work.com"},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].primary"), Value: false},
-		{Op: "replace", Path: parseStringPath("emails[type eq \"home\"].display"), Value: "home email"},
+func Test_UserResourceHbndler_Pbtch_ReplbceStrbtegies_Stbndbrd(t *testing.T) {
+	db := crebteMockDB()
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	operbtions := []scim.PbtchOperbtion{
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"work\" bnd primbry eq true].vblue"), Vblue: "work@work.com"},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"home\"].vblue"), Vblue: "home@work.com"},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"home\"].primbry"), Vblue: fblse},
+		{Op: "replbce", Pbth: pbrseStringPbth("embils[type eq \"home\"].displby"), Vblue: "home embil"},
 	}
 
-	_, err := userResourceHandler.Patch(createDummyRequest(), "1", operations)
+	_, err := userResourceHbndler.Pbtch(crebteDummyRequest(), "1", operbtions)
 
-	assert.Error(t, err)
-	assert.True(t, errors.Is(err, scimerrors.ScimErrorNoTarget))
+	bssert.Error(t, err)
+	bssert.True(t, errors.Is(err, scimerrors.ScimErrorNoTbrget))
 }
 
-// createMockDB creates a mock database with the given number of users and two emails for each user.
-func createMockDB() *dbmocks.MockDB {
+// crebteMockDB crebtes b mock dbtbbbse with the given number of users bnd two embils for ebch user.
+func crebteMockDB() *dbmocks.MockDB {
 	user := &types.UserForSCIM{
-		User:            types.User{ID: 1, Username: "test-user1"},
-		Emails:          []string{"primary@work.com", "secondary@work.com"},
-		SCIMExternalID:  "id1",
-		SCIMAccountData: sampleAccountData,
+		User:            types.User{ID: 1, Usernbme: "test-user1"},
+		Embils:          []string{"primbry@work.com", "secondbry@work.com"},
+		SCIMExternblID:  "id1",
+		SCIMAccountDbtb: sbmpleAccountDbtb,
 	}
-	emails := map[int32][]*database.UserEmail{1: {
-		makeEmail(1, "primary@work.com", true, true),
-		makeEmail(1, "secondary@work.com", false, true),
+	embils := mbp[int32][]*dbtbbbse.UserEmbil{1: {
+		mbkeEmbil(1, "primbry@work.com", true, true),
+		mbkeEmbil(1, "secondbry@work.com", fblse, true),
 	}}
-	return getMockDB([]*types.UserForSCIM{user}, emails)
+	return getMockDB([]*types.UserForSCIM{user}, embils)
 }
 
-// createPath creates a path for a given attribute and sub-attribute.
-func createPath(attr string, subAttr *string) *filter.Path {
-	return &filter.Path{AttributePath: filter.AttributePath{AttributeName: attr, SubAttribute: subAttr}}
+// crebtePbth crebtes b pbth for b given bttribute bnd sub-bttribute.
+func crebtePbth(bttr string, subAttr *string) *filter.Pbth {
+	return &filter.Pbth{AttributePbth: filter.AttributePbth{AttributeNbme: bttr, SubAttribute: subAttr}}
 }
 
-// parseStringPath parses a string path into a filter.Path.
-func parseStringPath(path string) *filter.Path {
-	f, _ := filter.ParsePath([]byte(path))
+// pbrseStringPbth pbrses b string pbth into b filter.Pbth.
+func pbrseStringPbth(pbth string) *filter.Pbth {
+	f, _ := filter.PbrsePbth([]byte(pbth))
 	return &f
 }
 
-// toInterfaceSlice converts a slice of maps to a slice of interfaces.
-func toInterfaceSlice(maps ...map[string]interface{}) []interface{} {
-	s := make([]interface{}, 0, len(maps))
-	for _, m := range maps {
-		s = append(s, m)
+// toInterfbceSlice converts b slice of mbps to b slice of interfbces.
+func toInterfbceSlice(mbps ...mbp[string]interfbce{}) []interfbce{} {
+	s := mbke([]interfbce{}, 0, len(mbps))
+	for _, m := rbnge mbps {
+		s = bppend(s, m)
 	}
 	return s
 }
 
-// containsEmail returns true if the given slice of emails contains an email with the given properties.
-func containsEmail(emails []*database.UserEmail, email string, verified bool, primary bool) bool {
-	for _, e := range emails {
-		if e.Email == email && ((e.VerifiedAt != nil) == verified && e.Primary == primary) {
+// contbinsEmbil returns true if the given slice of embils contbins bn embil with the given properties.
+func contbinsEmbil(embils []*dbtbbbse.UserEmbil, embil string, verified bool, primbry bool) bool {
+	for _, e := rbnge embils {
+		if e.Embil == embil && ((e.VerifiedAt != nil) == verified && e.Primbry == primbry) {
 			return true
 		}
 	}
-	return false
+	return fblse
 }

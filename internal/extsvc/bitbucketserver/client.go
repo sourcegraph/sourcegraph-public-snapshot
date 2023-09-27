@@ -1,11 +1,11 @@
-//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide access to the headers
-package bitbucketserver
+//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide bccess to the hebders
+pbckbge bitbucketserver
 
 import (
 	"bytes"
 	"context"
 	"crypto/x509"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/json"
 	"encoding/pem"
 	"fmt"
@@ -15,144 +15,144 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/RoaringBitmap/roaring"
-	"github.com/gomodule/oauth1/oauth"
-	"github.com/inconshreveable/log15"
-	"github.com/segmentio/fasthash/fnv1"
+	"github.com/RobringBitmbp/robring"
+	"github.com/gomodule/obuth1/obuth"
+	"github.com/inconshrevebble/log15"
+	"github.com/segmentio/fbsthbsh/fnv1"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// The metric generated here will be named as "src_bitbucket_requests_total".
-var requestCounter = metrics.NewRequestMeter("bitbucket", "Total number of requests sent to the Bitbucket API.")
+// The metric generbted here will be nbmed bs "src_bitbucket_requests_totbl".
+vbr requestCounter = metrics.NewRequestMeter("bitbucket", "Totbl number of requests sent to the Bitbucket API.")
 
-// Client access a Bitbucket Server via the REST API.
+// Client bccess b Bitbucket Server vib the REST API.
 type Client struct {
-	// URL is the base URL of Bitbucket Server.
+	// URL is the bbse URL of Bitbucket Server.
 	URL *url.URL
 
-	// Auth is the authentication method used when accessing the server.
-	// Supported types are:
-	// * auth.OAuthBearerToken for a personal access token; see also
-	//   https://bitbucket.example.com/plugins/servlet/access-tokens/manage
-	// * auth.BasicAuth for a username and password combination. Typically
-	//   these are only used when the server doesn't support personal access
-	//   tokens (such as Bitbucket Server 5.4 and older).
-	// * SudoableClient for an OAuth 1 client used to authenticate requests.
-	//   This is generally set using SetOAuth.
-	Auth auth.Authenticator
+	// Auth is the buthenticbtion method used when bccessing the server.
+	// Supported types bre:
+	// * buth.OAuthBebrerToken for b personbl bccess token; see blso
+	//   https://bitbucket.exbmple.com/plugins/servlet/bccess-tokens/mbnbge
+	// * buth.BbsicAuth for b usernbme bnd pbssword combinbtion. Typicblly
+	//   these bre only used when the server doesn't support personbl bccess
+	//   tokens (such bs Bitbucket Server 5.4 bnd older).
+	// * SudobbleClient for bn OAuth 1 client used to buthenticbte requests.
+	//   This is generblly set using SetOAuth.
+	Auth buth.Authenticbtor
 
-	// HTTP Client used to communicate with the API
+	// HTTP Client used to communicbte with the API
 	httpClient httpcli.Doer
 
-	// RateLimit is the self-imposed rate limiter (since Bitbucket does not have a
-	// concept of rate limiting in HTTP response headers). Default limits are defined
+	// RbteLimit is the self-imposed rbte limiter (since Bitbucket does not hbve b
+	// concept of rbte limiting in HTTP response hebders). Defbult limits bre defined
 	// in extsvc.GetLimitFromConfig
-	rateLimit *ratelimit.InstrumentedLimiter
+	rbteLimit *rbtelimit.InstrumentedLimiter
 }
 
-// NewClient returns an authenticated Bitbucket Server API client with
-// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// NewClient returns bn buthenticbted Bitbucket Server API client with
+// the provided configurbtion. If b nil httpClient is provided, http.DefbultClient
 // will be used.
-func NewClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+func NewClient(urn string, config *schemb.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
 	client, err := newClient(urn, config, httpClient)
 	if err != nil {
 		return nil, err
 	}
 
-	if config.Authorization == nil {
+	if config.Authorizbtion == nil {
 		if config.Token != "" {
-			client.Auth = &auth.OAuthBearerToken{Token: config.Token}
+			client.Auth = &buth.OAuthBebrerToken{Token: config.Token}
 		} else {
-			client.Auth = &auth.BasicAuth{
-				Username: config.Username,
-				Password: config.Password,
+			client.Auth = &buth.BbsicAuth{
+				Usernbme: config.Usernbme,
+				Pbssword: config.Pbssword,
 			}
 		}
 	} else {
 		err := client.SetOAuth(
-			config.Authorization.Oauth.ConsumerKey,
-			config.Authorization.Oauth.SigningKey,
+			config.Authorizbtion.Obuth.ConsumerKey,
+			config.Authorizbtion.Obuth.SigningKey,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "authorization.oauth.signingKey")
+			return nil, errors.Wrbp(err, "buthorizbtion.obuth.signingKey")
 		}
 	}
 
 	return client, nil
 }
 
-func newClient(urn string, config *schema.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
-	u, err := url.Parse(config.Url)
+func newClient(urn string, config *schemb.BitbucketServerConnection, httpClient httpcli.Doer) (*Client, error) {
+	u, err := url.Pbrse(config.Url)
 	if err != nil {
 		return nil, err
 	}
 
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternblDoer
 	}
-	httpClient = requestCounter.Doer(httpClient, categorize)
+	httpClient = requestCounter.Doer(httpClient, cbtegorize)
 
 	return &Client{
 		httpClient: httpClient,
 		URL:        u,
-		// Default limits are defined in extsvc.GetLimitFromConfig
-		rateLimit: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("BitbucketServerClient", ""), urn)),
+		// Defbult limits bre defined in extsvc.GetLimitFromConfig
+		rbteLimit: rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("BitbucketServerClient", ""), urn)),
 	}, nil
 }
 
-// WithAuthenticator returns a new Client that uses the same configuration,
-// HTTPClient, and RateLimiter as the current Client, except authenticated user
-// with the given authenticator instance.
-func (c *Client) WithAuthenticator(a auth.Authenticator) *Client {
+// WithAuthenticbtor returns b new Client thbt uses the sbme configurbtion,
+// HTTPClient, bnd RbteLimiter bs the current Client, except buthenticbted user
+// with the given buthenticbtor instbnce.
+func (c *Client) WithAuthenticbtor(b buth.Authenticbtor) *Client {
 	return &Client{
 		httpClient: c.httpClient,
 		URL:        c.URL,
-		rateLimit:  c.rateLimit,
-		Auth:       a,
+		rbteLimit:  c.rbteLimit,
+		Auth:       b,
 	}
 }
 
-// SetOAuth enables OAuth authentication in a Client, using the given consumer
-// key to identify with the Bitbucket Server API and the request signing RSA key
-// to authenticate requests. It parses the given Base64 encoded PEM encoded private key,
-// returning an error in case of failure.
+// SetOAuth enbbles OAuth buthenticbtion in b Client, using the given consumer
+// key to identify with the Bitbucket Server API bnd the request signing RSA key
+// to buthenticbte requests. It pbrses the given Bbse64 encoded PEM encoded privbte key,
+// returning bn error in cbse of fbilure.
 //
-// When using OAuth authentication, it's possible to impersonate any Bitbucket
-// Server API user by passing a ?user_id=$username query parameter. This requires
-// the Application Link in the Bitbucket Server API to be configured with 2 legged
-// OAuth and for it to allow user impersonation.
+// When using OAuth buthenticbtion, it's possible to impersonbte bny Bitbucket
+// Server API user by pbssing b ?user_id=$usernbme query pbrbmeter. This requires
+// the Applicbtion Link in the Bitbucket Server API to be configured with 2 legged
+// OAuth bnd for it to bllow user impersonbtion.
 func (c *Client) SetOAuth(consumerKey, signingKey string) error {
-	pemKey, err := base64.StdEncoding.DecodeString(signingKey)
+	pemKey, err := bbse64.StdEncoding.DecodeString(signingKey)
 	if err != nil {
 		return err
 	}
 
 	block, _ := pem.Decode(pemKey)
 	if block == nil {
-		return errors.New("failed to parse PEM block containing the signing key")
+		return errors.New("fbiled to pbrse PEM block contbining the signing key")
 	}
 
-	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
+	key, err := x509.PbrsePKCS1PrivbteKey(block.Bytes)
 	if err != nil {
 		return err
 	}
 
-	c.Auth = &SudoableOAuthClient{
-		Client: auth.OAuthClient{
-			Client: &oauth.Client{
-				Credentials:     oauth.Credentials{Token: consumerKey},
-				PrivateKey:      key,
-				SignatureMethod: oauth.RSASHA1,
+	c.Auth = &SudobbleOAuthClient{
+		Client: buth.OAuthClient{
+			Client: &obuth.Client{
+				Credentibls:     obuth.Credentibls{Token: consumerKey},
+				PrivbteKey:      key,
+				SignbtureMethod: obuth.RSASHA1,
 			},
 		},
 	}
@@ -160,44 +160,44 @@ func (c *Client) SetOAuth(consumerKey, signingKey string) error {
 	return nil
 }
 
-// Sudo returns a copy of the Client authenticated as the Bitbucket Server user with
-// the given username. This only works when using OAuth authentication and if the
-// Application Link in Bitbucket Server is configured to allow user impersonation,
-// returning an error otherwise.
-func (c *Client) Sudo(username string) (*Client, error) {
-	a, ok := c.Auth.(*SudoableOAuthClient)
-	if !ok || a == nil {
+// Sudo returns b copy of the Client buthenticbted bs the Bitbucket Server user with
+// the given usernbme. This only works when using OAuth buthenticbtion bnd if the
+// Applicbtion Link in Bitbucket Server is configured to bllow user impersonbtion,
+// returning bn error otherwise.
+func (c *Client) Sudo(usernbme string) (*Client, error) {
+	b, ok := c.Auth.(*SudobbleOAuthClient)
+	if !ok || b == nil {
 		return nil, errors.New("bitbucketserver.Client: OAuth not configured")
 	}
 
-	authCopy := *a
-	authCopy.Username = username
+	buthCopy := *b
+	buthCopy.Usernbme = usernbme
 
 	sudo := *c
-	sudo.Auth = &authCopy
+	sudo.Auth = &buthCopy
 	return &sudo, nil
 }
 
-// Username returns the username that will be used when communicating with
-// Bitbucket Server, if the authentication method includes a username.
-func (c *Client) Username() (string, error) {
-	switch a := c.Auth.(type) {
-	case *SudoableOAuthClient:
-		return a.Username, nil
-	case *auth.BasicAuth:
-		return a.Username, nil
-	default:
-		return "", errors.New("bitbucketserver.Client: authentication method does not include a username")
+// Usernbme returns the usernbme thbt will be used when communicbting with
+// Bitbucket Server, if the buthenticbtion method includes b usernbme.
+func (c *Client) Usernbme() (string, error) {
+	switch b := c.Auth.(type) {
+	cbse *SudobbleOAuthClient:
+		return b.Usernbme, nil
+	cbse *buth.BbsicAuth:
+		return b.Usernbme, nil
+	defbult:
+		return "", errors.New("bitbucketserver.Client: buthenticbtion method does not include b usernbme")
 	}
 }
 
-// UserFilters is a list of UserFilter that is ANDed together.
+// UserFilters is b list of UserFilter thbt is ANDed together.
 type UserFilters []UserFilter
 
-// EncodeTo encodes the UserFilter to the given url.Values.
-func (fs UserFilters) EncodeTo(qry url.Values) {
-	var perm int
-	for _, f := range fs {
+// EncodeTo encodes the UserFilter to the given url.Vblues.
+func (fs UserFilters) EncodeTo(qry url.Vblues) {
+	vbr perm int
+	for _, f := rbnge fs {
 		if f.Permission != (PermissionFilter{}) {
 			perm++
 			f.Permission.index = perm
@@ -206,21 +206,21 @@ func (fs UserFilters) EncodeTo(qry url.Values) {
 	}
 }
 
-// UserFilter defines a sum type of filters to be used when listing users.
+// UserFilter defines b sum type of filters to be used when listing users.
 type UserFilter struct {
-	// Filter filters the returned users to those whose username,
-	// name or email address contain this value.
-	// The API doesn't support exact matches.
+	// Filter filters the returned users to those whose usernbme,
+	// nbme or embil bddress contbin this vblue.
+	// The API doesn't support exbct mbtches.
 	Filter string
-	// Group filters the returned users to those who are in the give group.
+	// Group filters the returned users to those who bre in the give group.
 	Group string
-	// Permission filters the returned users to those having the given
+	// Permission filters the returned users to those hbving the given
 	// permissions.
 	Permission PermissionFilter
 }
 
-// EncodeTo encodes the UserFilter to the given url.Values.
-func (f UserFilter) EncodeTo(qry url.Values) {
+// EncodeTo encodes the UserFilter to the given url.Vblues.
+func (f UserFilter) EncodeTo(qry url.Vblues) {
 	if f.Filter != "" {
 		qry.Set("filter", f.Filter)
 	}
@@ -234,7 +234,7 @@ func (f UserFilter) EncodeTo(qry url.Values) {
 	}
 }
 
-// A PermissionFilter is a filter used to list users that have specific
+// A PermissionFilter is b filter used to list users thbt hbve specific
 // permissions.
 type PermissionFilter struct {
 	Root           Perm
@@ -246,12 +246,12 @@ type PermissionFilter struct {
 	index int
 }
 
-// EncodeTo encodes the PermissionFilter to the given url.Values.
-func (p PermissionFilter) EncodeTo(qry url.Values) {
+// EncodeTo encodes the PermissionFilter to the given url.Vblues.
+func (p PermissionFilter) EncodeTo(qry url.Vblues) {
 	q := "permission"
 
 	if p.index != 0 {
-		q += "." + strconv.Itoa(p.index)
+		q += "." + strconv.Itob(p.index)
 	}
 
 	qry.Set(q, string(p.Root))
@@ -274,178 +274,178 @@ func (p PermissionFilter) EncodeTo(qry url.Values) {
 }
 
 // ErrUserFiltersLimit is returned by Client.Users when the UserFiltersLimit is exceeded.
-var ErrUserFiltersLimit = errors.Errorf("maximum of %d user filters exceeded", userFiltersLimit)
+vbr ErrUserFiltersLimit = errors.Errorf("mbximum of %d user filters exceeded", userFiltersLimit)
 
-// userFiltersLimit defines the maximum number of UserFilters that can
-// be passed to a single Client.Users call.
+// userFiltersLimit defines the mbximum number of UserFilters thbt cbn
+// be pbssed to b single Client.Users cbll.
 const userFiltersLimit = 50
 
-// Users retrieves a page of users, optionally run through provided filters.
-func (c *Client) Users(ctx context.Context, pageToken *PageToken, fs ...UserFilter) ([]*User, *PageToken, error) {
+// Users retrieves b pbge of users, optionblly run through provided filters.
+func (c *Client) Users(ctx context.Context, pbgeToken *PbgeToken, fs ...UserFilter) ([]*User, *PbgeToken, error) {
 	if len(fs) > userFiltersLimit {
 		return nil, nil, ErrUserFiltersLimit
 	}
 
-	qry := make(url.Values)
+	qry := mbke(url.Vblues)
 	UserFilters(fs).EncodeTo(qry)
 
-	var users []*User
-	next, err := c.page(ctx, "rest/api/1.0/users", qry, pageToken, &users)
+	vbr users []*User
+	next, err := c.pbge(ctx, "rest/bpi/1.0/users", qry, pbgeToken, &users)
 	return users, next, err
 }
 
-// UserPermissions retrieves the global permissions assigned to the user with the given
-// username. Used to validate that the client is authenticated as an admin.
-func (c *Client) UserPermissions(ctx context.Context, username string) (perms []Perm, _ error) {
-	qry := url.Values{"filter": {username}}
+// UserPermissions retrieves the globbl permissions bssigned to the user with the given
+// usernbme. Used to vblidbte thbt the client is buthenticbted bs bn bdmin.
+func (c *Client) UserPermissions(ctx context.Context, usernbme string) (perms []Perm, _ error) {
+	qry := url.Vblues{"filter": {usernbme}}
 
 	type permission struct {
 		User       *User `json:"user"`
 		Permission Perm  `json:"permission"`
 	}
 
-	var ps []permission
-	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/permissions/users", qry, nil, &struct {
-		Values []permission `json:"values"`
+	vbr ps []permission
+	_, err := c.send(ctx, "GET", "rest/bpi/1.0/bdmin/permissions/users", qry, nil, &struct {
+		Vblues []permission `json:"vblues"`
 	}{
-		Values: ps,
+		Vblues: ps,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	for _, p := range ps {
-		if p.User.Name == username {
-			perms = append(perms, p.Permission)
+	for _, p := rbnge ps {
+		if p.User.Nbme == usernbme {
+			perms = bppend(perms, p.Permission)
 		}
 	}
 
 	return perms, nil
 }
 
-// CreateUser creates the given User returning an error in case of failure.
-func (c *Client) CreateUser(ctx context.Context, u *User) error {
-	qry := url.Values{
-		"name":              {u.Name},
-		"password":          {u.Password},
-		"displayName":       {u.DisplayName},
-		"emailAddress":      {u.EmailAddress},
-		"addToDefaultGroup": {"true"},
+// CrebteUser crebtes the given User returning bn error in cbse of fbilure.
+func (c *Client) CrebteUser(ctx context.Context, u *User) error {
+	qry := url.Vblues{
+		"nbme":              {u.Nbme},
+		"pbssword":          {u.Pbssword},
+		"displbyNbme":       {u.DisplbyNbme},
+		"embilAddress":      {u.EmbilAddress},
+		"bddToDefbultGroup": {"true"},
 	}
 
-	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/users", qry, nil, nil)
+	_, err := c.send(ctx, "POST", "rest/bpi/1.0/bdmin/users", qry, nil, nil)
 	return err
 }
 
-// LoadUser loads the given User returning an error in case of failure.
-func (c *Client) LoadUser(ctx context.Context, u *User) error {
-	_, err := c.send(ctx, "GET", "rest/api/1.0/users/"+u.Slug, nil, nil, u)
+// LobdUser lobds the given User returning bn error in cbse of fbilure.
+func (c *Client) LobdUser(ctx context.Context, u *User) error {
+	_, err := c.send(ctx, "GET", "rest/bpi/1.0/users/"+u.Slug, nil, nil, u)
 	return err
 }
 
-// LoadGroup loads the given Group returning an error in case of failure.
-func (c *Client) LoadGroup(ctx context.Context, g *Group) error {
-	qry := url.Values{"filter": {g.Name}}
-	var groups struct {
-		Values []*Group `json:"values"`
+// LobdGroup lobds the given Group returning bn error in cbse of fbilure.
+func (c *Client) LobdGroup(ctx context.Context, g *Group) error {
+	qry := url.Vblues{"filter": {g.Nbme}}
+	vbr groups struct {
+		Vblues []*Group `json:"vblues"`
 	}
 
-	_, err := c.send(ctx, "GET", "rest/api/1.0/admin/groups", qry, nil, &groups)
+	_, err := c.send(ctx, "GET", "rest/bpi/1.0/bdmin/groups", qry, nil, &groups)
 	if err != nil {
 		return err
 	}
 
-	if len(groups.Values) != 1 {
+	if len(groups.Vblues) != 1 {
 		return errors.New("group not found")
 	}
 
-	*g = *groups.Values[0]
+	*g = *groups.Vblues[0]
 
 	return nil
 }
 
-// CreateGroup creates the given Group returning an error in case of failure.
-func (c *Client) CreateGroup(ctx context.Context, g *Group) error {
-	qry := url.Values{"name": {g.Name}}
-	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/groups", qry, g, g)
+// CrebteGroup crebtes the given Group returning bn error in cbse of fbilure.
+func (c *Client) CrebteGroup(ctx context.Context, g *Group) error {
+	qry := url.Vblues{"nbme": {g.Nbme}}
+	_, err := c.send(ctx, "POST", "rest/bpi/1.0/bdmin/groups", qry, g, g)
 	return err
 }
 
-// CreateGroupMembership creates the given Group's membership returning an error in case of failure.
-func (c *Client) CreateGroupMembership(ctx context.Context, g *Group) error {
+// CrebteGroupMembership crebtes the given Group's membership returning bn error in cbse of fbilure.
+func (c *Client) CrebteGroupMembership(ctx context.Context, g *Group) error {
 	type membership struct {
 		Group string   `json:"group"`
 		Users []string `json:"users"`
 	}
-	m := &membership{Group: g.Name, Users: g.Users}
-	_, err := c.send(ctx, "POST", "rest/api/1.0/admin/groups/add-users", nil, m, nil)
+	m := &membership{Group: g.Nbme, Users: g.Users}
+	_, err := c.send(ctx, "POST", "rest/bpi/1.0/bdmin/groups/bdd-users", nil, m, nil)
 	return err
 }
 
-// CreateUserRepoPermission creates the given permission returning an error in case of failure.
-func (c *Client) CreateUserRepoPermission(ctx context.Context, p *UserRepoPermission) error {
-	path := "rest/api/1.0/projects/" + p.Repo.Project.Key + "/repos/" + p.Repo.Slug + "/permissions/users"
-	return c.createPermission(ctx, path, p.User.Name, p.Perm)
+// CrebteUserRepoPermission crebtes the given permission returning bn error in cbse of fbilure.
+func (c *Client) CrebteUserRepoPermission(ctx context.Context, p *UserRepoPermission) error {
+	pbth := "rest/bpi/1.0/projects/" + p.Repo.Project.Key + "/repos/" + p.Repo.Slug + "/permissions/users"
+	return c.crebtePermission(ctx, pbth, p.User.Nbme, p.Perm)
 }
 
-// CreateUserProjectPermission creates the given permission returning an error in case of failure.
-func (c *Client) CreateUserProjectPermission(ctx context.Context, p *UserProjectPermission) error {
-	path := "rest/api/1.0/projects/" + p.Project.Key + "/permissions/users"
-	return c.createPermission(ctx, path, p.User.Name, p.Perm)
+// CrebteUserProjectPermission crebtes the given permission returning bn error in cbse of fbilure.
+func (c *Client) CrebteUserProjectPermission(ctx context.Context, p *UserProjectPermission) error {
+	pbth := "rest/bpi/1.0/projects/" + p.Project.Key + "/permissions/users"
+	return c.crebtePermission(ctx, pbth, p.User.Nbme, p.Perm)
 }
 
-// CreateGroupProjectPermission creates the given permission returning an error in case of failure.
-func (c *Client) CreateGroupProjectPermission(ctx context.Context, p *GroupProjectPermission) error {
-	path := "rest/api/1.0/projects/" + p.Project.Key + "/permissions/groups"
-	return c.createPermission(ctx, path, p.Group.Name, p.Perm)
+// CrebteGroupProjectPermission crebtes the given permission returning bn error in cbse of fbilure.
+func (c *Client) CrebteGroupProjectPermission(ctx context.Context, p *GroupProjectPermission) error {
+	pbth := "rest/bpi/1.0/projects/" + p.Project.Key + "/permissions/groups"
+	return c.crebtePermission(ctx, pbth, p.Group.Nbme, p.Perm)
 }
 
-// CreateGroupRepoPermission creates the given permission returning an error in case of failure.
-func (c *Client) CreateGroupRepoPermission(ctx context.Context, p *GroupRepoPermission) error {
-	path := "rest/api/1.0/projects/" + p.Repo.Project.Key + "/repos/" + p.Repo.Slug + "/permissions/groups"
-	return c.createPermission(ctx, path, p.Group.Name, p.Perm)
+// CrebteGroupRepoPermission crebtes the given permission returning bn error in cbse of fbilure.
+func (c *Client) CrebteGroupRepoPermission(ctx context.Context, p *GroupRepoPermission) error {
+	pbth := "rest/bpi/1.0/projects/" + p.Repo.Project.Key + "/repos/" + p.Repo.Slug + "/permissions/groups"
+	return c.crebtePermission(ctx, pbth, p.Group.Nbme, p.Perm)
 }
 
-func (c *Client) createPermission(ctx context.Context, path, name string, p Perm) error {
-	qry := url.Values{
-		"name":       {name},
+func (c *Client) crebtePermission(ctx context.Context, pbth, nbme string, p Perm) error {
+	qry := url.Vblues{
+		"nbme":       {nbme},
 		"permission": {string(p)},
 	}
-	_, err := c.send(ctx, "PUT", path, qry, nil, nil)
+	_, err := c.send(ctx, "PUT", pbth, qry, nil, nil)
 	return err
 }
 
-// CreateRepo creates the given Repo returning an error in case of failure.
-func (c *Client) CreateRepo(ctx context.Context, r *Repo) error {
-	path := "rest/api/1.0/projects/" + r.Project.Key + "/repos"
-	_, err := c.send(ctx, "POST", path, nil, r, &struct {
-		Values []*Repo `json:"values"`
+// CrebteRepo crebtes the given Repo returning bn error in cbse of fbilure.
+func (c *Client) CrebteRepo(ctx context.Context, r *Repo) error {
+	pbth := "rest/bpi/1.0/projects/" + r.Project.Key + "/repos"
+	_, err := c.send(ctx, "POST", pbth, nil, r, &struct {
+		Vblues []*Repo `json:"vblues"`
 	}{
-		Values: []*Repo{r},
+		Vblues: []*Repo{r},
 	})
 	return err
 }
 
-// LoadProject loads the given Project returning an error in case of failure.
-func (c *Client) LoadProject(ctx context.Context, p *Project) error {
-	_, err := c.send(ctx, "GET", "rest/api/1.0/projects/"+p.Key, nil, nil, p)
+// LobdProject lobds the given Project returning bn error in cbse of fbilure.
+func (c *Client) LobdProject(ctx context.Context, p *Project) error {
+	_, err := c.send(ctx, "GET", "rest/bpi/1.0/projects/"+p.Key, nil, nil, p)
 	return err
 }
 
-// CreateProject creates the given Project returning an error in case of failure.
-func (c *Client) CreateProject(ctx context.Context, p *Project) error {
-	_, err := c.send(ctx, "POST", "rest/api/1.0/projects", nil, p, p)
+// CrebteProject crebtes the given Project returning bn error in cbse of fbilure.
+func (c *Client) CrebteProject(ctx context.Context, p *Project) error {
+	_, err := c.send(ctx, "POST", "rest/bpi/1.0/projects", nil, p, p)
 	return err
 }
 
-// ErrPullRequestNotFound is returned by LoadPullRequest when the pull request has
-// been deleted on upstream, or never existed. It will NOT be thrown, if it can't
-// be determined whether the pull request exists, because the credential used
-// cannot view the repository.
-var ErrPullRequestNotFound = errors.New("pull request not found")
+// ErrPullRequestNotFound is returned by LobdPullRequest when the pull request hbs
+// been deleted on upstrebm, or never existed. It will NOT be thrown, if it cbn't
+// be determined whether the pull request exists, becbuse the credentibl used
+// cbnnot view the repository.
+vbr ErrPullRequestNotFound = errors.New("pull request not found")
 
-// LoadPullRequest loads the given PullRequest returning an error in case of failure.
-func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
+// LobdPullRequest lobds the given PullRequest returning bn error in cbse of fbilure.
+func (c *Client) LobdPullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
 	}
@@ -453,15 +453,15 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
-	_, err := c.send(ctx, "GET", path, nil, nil, pr)
+	_, err := c.send(ctx, "GET", pbth, nil, nil, pr)
 	if err != nil {
-		var e *httpError
+		vbr e *httpError
 		if errors.As(err, &e) && e.NoSuchPullRequestException() {
 			return ErrPullRequestNotFound
 		}
@@ -471,7 +471,7 @@ func (c *Client) LoadPullRequest(ctx context.Context, pr *PullRequest) error {
 	return nil
 }
 
-type UpdatePullRequestInput struct {
+type UpdbtePullRequestInput struct {
 	PullRequestID string `json:"-"`
 	Version       int    `json:"version"`
 
@@ -481,60 +481,60 @@ type UpdatePullRequestInput struct {
 	Reviewers   []Reviewer `json:"reviewers"`
 }
 
-func (c *Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestInput) (*PullRequest, error) {
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%s",
+func (c *Client) UpdbtePullRequest(ctx context.Context, in *UpdbtePullRequestInput) (*PullRequest, error) {
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%s",
 		in.ToRef.Repository.Project.Key,
 		in.ToRef.Repository.Slug,
 		in.PullRequestID,
 	)
 
 	pr := &PullRequest{}
-	_, err := c.send(ctx, "PUT", path, nil, in, pr)
+	_, err := c.send(ctx, "PUT", pbth, nil, in, pr)
 	return pr, err
 }
 
-// ErrAlreadyExists is returned by Client.CreatePullRequest when a Pull Request
-// for the given FromRef and ToRef already exists.
-type ErrAlreadyExists struct {
+// ErrAlrebdyExists is returned by Client.CrebtePullRequest when b Pull Request
+// for the given FromRef bnd ToRef blrebdy exists.
+type ErrAlrebdyExists struct {
 	Existing *PullRequest
 }
 
-func (e ErrAlreadyExists) Error() string {
-	return "A pull request with the given to and from refs already exists"
+func (e ErrAlrebdyExists) Error() string {
+	return "A pull request with the given to bnd from refs blrebdy exists"
 }
 
-// CreatePullRequest creates the given PullRequest returning an error in case of failure.
-func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
-	for _, namedRef := range [...]struct {
-		name string
+// CrebtePullRequest crebtes the given PullRequest returning bn error in cbse of fbilure.
+func (c *Client) CrebtePullRequest(ctx context.Context, pr *PullRequest) error {
+	for _, nbmedRef := rbnge [...]struct {
+		nbme string
 		ref  Ref
 	}{
 		{"ToRef", pr.ToRef},
 		{"FromRef", pr.FromRef},
 	} {
-		if namedRef.ref.ID == "" {
-			return errors.Errorf("%s id empty", namedRef.name)
+		if nbmedRef.ref.ID == "" {
+			return errors.Errorf("%s id empty", nbmedRef.nbme)
 		}
-		if namedRef.ref.Repository.Slug == "" {
-			return errors.Errorf("%s repository slug empty", namedRef.name)
+		if nbmedRef.ref.Repository.Slug == "" {
+			return errors.Errorf("%s repository slug empty", nbmedRef.nbme)
 		}
-		if namedRef.ref.Repository.Project.Key == "" {
-			return errors.Errorf("%s project key empty", namedRef.name)
+		if nbmedRef.ref.Repository.Project.Key == "" {
+			return errors.Errorf("%s project key empty", nbmedRef.nbme)
 		}
 	}
 
-	// Minimal version of Reviewer, to reduce payload size sent.
+	// Minimbl version of Reviewer, to reduce pbylobd size sent.
 	type reviewer struct {
 		User struct {
-			Name string `json:"name"`
+			Nbme string `json:"nbme"`
 		} `json:"user"`
 	}
 
 	type requestBody struct {
 		Title       string     `json:"title"`
 		Description string     `json:"description"`
-		State       string     `json:"state"`
+		Stbte       string     `json:"stbte"`
 		Open        bool       `json:"open"`
 		Closed      bool       `json:"closed"`
 		FromRef     Ref        `json:"fromRef"`
@@ -543,115 +543,115 @@ func (c *Client) CreatePullRequest(ctx context.Context, pr *PullRequest) error {
 		Reviewers   []reviewer `json:"reviewers"`
 	}
 
-	defaultReviewers, err := c.FetchDefaultReviewers(ctx, pr)
+	defbultReviewers, err := c.FetchDefbultReviewers(ctx, pr)
 	if err != nil {
-		log15.Error("Failed to fetch default reviewers", "err", err)
-		// TODO: Once validated this works alright, we want to properly throw
-		// an error here. For now, we log an error and continue.
-		// return errors.Wrap(err, "fetching default reviewers")
+		log15.Error("Fbiled to fetch defbult reviewers", "err", err)
+		// TODO: Once vblidbted this works blright, we wbnt to properly throw
+		// bn error here. For now, we log bn error bnd continue.
+		// return errors.Wrbp(err, "fetching defbult reviewers")
 	}
 
-	reviewers := make([]reviewer, 0, len(defaultReviewers))
-	for _, r := range defaultReviewers {
-		reviewers = append(reviewers, reviewer{User: struct {
-			Name string `json:"name"`
-		}{Name: r}})
+	reviewers := mbke([]reviewer, 0, len(defbultReviewers))
+	for _, r := rbnge defbultReviewers {
+		reviewers = bppend(reviewers, reviewer{User: struct {
+			Nbme string `json:"nbme"`
+		}{Nbme: r}})
 	}
 
-	// Bitbucket Server doesn't support GFM taskitems. But since we might add
-	// those to a PR description for certain batch changes, we have to
-	// "downgrade" here and for now, removing taskitems is enough.
-	description := strings.ReplaceAll(pr.Description, "- [ ] ", "- ")
+	// Bitbucket Server doesn't support GFM tbskitems. But since we might bdd
+	// those to b PR description for certbin bbtch chbnges, we hbve to
+	// "downgrbde" here bnd for now, removing tbskitems is enough.
+	description := strings.ReplbceAll(pr.Description, "- [ ] ", "- ")
 
-	payload := requestBody{
+	pbylobd := requestBody{
 		Title:       pr.Title,
 		Description: description,
-		State:       "OPEN",
+		Stbte:       "OPEN",
 		Open:        true,
-		Closed:      false,
+		Closed:      fblse,
 		FromRef:     pr.FromRef,
 		ToRef:       pr.ToRef,
-		Locked:      false,
+		Locked:      fblse,
 		Reviewers:   reviewers,
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 	)
 
-	resp, err := c.send(ctx, "POST", path, nil, payload, pr)
+	resp, err := c.send(ctx, "POST", pbth, nil, pbylobd, pr)
 
 	if err != nil {
-		var code int
+		vbr code int
 		if resp != nil {
-			code = resp.StatusCode
+			code = resp.StbtusCode
 		}
-		if IsDuplicatePullRequest(err) {
-			pr, extractErr := ExtractExistingPullRequest(err)
-			if extractErr != nil {
-				log15.Error("Extracting existing PR", "err", extractErr)
+		if IsDuplicbtePullRequest(err) {
+			pr, extrbctErr := ExtrbctExistingPullRequest(err)
+			if extrbctErr != nil {
+				log15.Error("Extrbcting existing PR", "err", extrbctErr)
 			}
-			return &ErrAlreadyExists{
+			return &ErrAlrebdyExists{
 				Existing: pr,
 			}
 		}
-		return errcode.MaybeMakeNonRetryable(code, err)
+		return errcode.MbybeMbkeNonRetrybble(code, err)
 	}
 	return nil
 }
 
-// FetchDefaultReviewers loads the suggested default reviewers for the given PR.
-func (c *Client) FetchDefaultReviewers(ctx context.Context, pr *PullRequest) ([]string, error) {
-	// Validate input.
-	for _, namedRef := range [...]struct {
-		name string
+// FetchDefbultReviewers lobds the suggested defbult reviewers for the given PR.
+func (c *Client) FetchDefbultReviewers(ctx context.Context, pr *PullRequest) ([]string, error) {
+	// Vblidbte input.
+	for _, nbmedRef := rbnge [...]struct {
+		nbme string
 		ref  Ref
 	}{
 		{"ToRef", pr.ToRef},
 		{"FromRef", pr.FromRef},
 	} {
-		if namedRef.ref.ID == "" {
-			return nil, errors.Errorf("%s id empty", namedRef.name)
+		if nbmedRef.ref.ID == "" {
+			return nil, errors.Errorf("%s id empty", nbmedRef.nbme)
 		}
-		if namedRef.ref.Repository.ID == 0 {
-			return nil, errors.Errorf("%s repository id empty", namedRef.name)
+		if nbmedRef.ref.Repository.ID == 0 {
+			return nil, errors.Errorf("%s repository id empty", nbmedRef.nbme)
 		}
-		if namedRef.ref.Repository.Slug == "" {
-			return nil, errors.Errorf("%s repository slug empty", namedRef.name)
+		if nbmedRef.ref.Repository.Slug == "" {
+			return nil, errors.Errorf("%s repository slug empty", nbmedRef.nbme)
 		}
-		if namedRef.ref.Repository.Project.Key == "" {
-			return nil, errors.Errorf("%s project key empty", namedRef.name)
+		if nbmedRef.ref.Repository.Project.Key == "" {
+			return nil, errors.Errorf("%s project key empty", nbmedRef.nbme)
 		}
 	}
 
-	path := fmt.Sprintf(
-		"rest/default-reviewers/1.0/projects/%s/repos/%s/reviewers",
+	pbth := fmt.Sprintf(
+		"rest/defbult-reviewers/1.0/projects/%s/repos/%s/reviewers",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 	)
-	queryParams := url.Values{
-		"sourceRepoId": []string{strconv.Itoa(pr.FromRef.Repository.ID)},
-		"targetRepoId": []string{strconv.Itoa(pr.ToRef.Repository.ID)},
+	queryPbrbms := url.Vblues{
+		"sourceRepoId": []string{strconv.Itob(pr.FromRef.Repository.ID)},
+		"tbrgetRepoId": []string{strconv.Itob(pr.ToRef.Repository.ID)},
 		"sourceRefId":  []string{pr.FromRef.ID},
-		"targetRefId":  []string{pr.ToRef.ID},
+		"tbrgetRefId":  []string{pr.ToRef.ID},
 	}
 
-	var resp []User
-	_, err := c.send(ctx, "GET", path, queryParams, nil, &resp)
+	vbr resp []User
+	_, err := c.send(ctx, "GET", pbth, queryPbrbms, nil, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	reviewerNames := make([]string, 0, len(resp))
-	for _, r := range resp {
-		reviewerNames = append(reviewerNames, r.Name)
+	reviewerNbmes := mbke([]string, 0, len(resp))
+	for _, r := rbnge resp {
+		reviewerNbmes = bppend(reviewerNbmes, r.Nbme)
 	}
-	return reviewerNames, nil
+	return reviewerNbmes, nil
 }
 
-// DeclinePullRequest declines and closes the given PullRequest, returning an error in case of failure.
+// DeclinePullRequest declines bnd closes the given PullRequest, returning bn error in cbse of fbilure.
 func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -661,21 +661,21 @@ func (c *Client) DeclinePullRequest(ctx context.Context, pr *PullRequest) error 
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/decline",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d/decline",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
 
-	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+	qry := url.Vblues{"version": {strconv.Itob(pr.Version)}}
 
-	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", pbth, qry, nil, pr)
 	return err
 }
 
-// ReopenPullRequest reopens a previously declined & closed PullRequest,
-// returning an error in case of failure.
+// ReopenPullRequest reopens b previously declined & closed PullRequest,
+// returning bn error in cbse of fbilure.
 func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
@@ -685,49 +685,49 @@ func (c *Client) ReopenPullRequest(ctx context.Context, pr *PullRequest) error {
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/reopen",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d/reopen",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
 
-	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+	qry := url.Vblues{"version": {strconv.Itob(pr.Version)}}
 
-	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", pbth, qry, nil, pr)
 	return err
 }
 
-type DeleteBranchInput struct {
-	// Don't actually delete the ref name, just do a dry run
+type DeleteBrbnchInput struct {
+	// Don't bctublly delete the ref nbme, just do b dry run
 	DryRun bool `json:"dryRun,omitempty"`
-	// Commit ID that the provided ref name is expected to point to. Should the ref point
-	// to a different commit ID, a 400 response will be returned with appropriate error
-	// details.
+	// Commit ID thbt the provided ref nbme is expected to point to. Should the ref point
+	// to b different commit ID, b 400 response will be returned with bppropribte error
+	// detbils.
 	EndPoint *string `json:"endPoint,omitempty"`
-	// Name of the ref to be deleted
-	Name string `json:"name,omitempty"`
+	// Nbme of the ref to be deleted
+	Nbme string `json:"nbme,omitempty"`
 }
 
-// DeleteBranch deletes a branch on the given repo.
-func (c *Client) DeleteBranch(ctx context.Context, projectKey, repoSlug string, input DeleteBranchInput) error {
-	path := fmt.Sprintf(
-		"rest/branch-utils/latest/projects/%s/repos/%s/branches",
+// DeleteBrbnch deletes b brbnch on the given repo.
+func (c *Client) DeleteBrbnch(ctx context.Context, projectKey, repoSlug string, input DeleteBrbnchInput) error {
+	pbth := fmt.Sprintf(
+		"rest/brbnch-utils/lbtest/projects/%s/repos/%s/brbnches",
 		projectKey,
 		repoSlug,
 	)
 
-	resp, err := c.send(ctx, "DELETE", path, nil, input, nil)
-	if resp != nil && resp.StatusCode != http.StatusNoContent {
-		return errors.Newf("unexpected status code: %d", resp.StatusCode)
+	resp, err := c.send(ctx, "DELETE", pbth, nil, input, nil)
+	if resp != nil && resp.StbtusCode != http.StbtusNoContent {
+		return errors.Newf("unexpected stbtus code: %d", resp.StbtusCode)
 	}
 
 	return err
 }
 
-// LoadPullRequestActivities loads the given PullRequest's timeline of activities,
-// returning an error in case of failure.
-func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
+// LobdPullRequestActivities lobds the given PullRequest's timeline of bctivities,
+// returning bn error in cbse of fbilure.
+func (c *Client) LobdPullRequestActivities(ctx context.Context, pr *PullRequest) (err error) {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
 	}
@@ -736,29 +736,29 @@ func (c *Client) LoadPullRequestActivities(ctx context.Context, pr *PullRequest)
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/activities",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d/bctivities",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
 
-	t := &PageToken{Limit: 1000}
+	t := &PbgeToken{Limit: 1000}
 
-	var activities []*Activity
-	for t.HasMore() {
-		var page []*Activity
-		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+	vbr bctivities []*Activity
+	for t.HbsMore() {
+		vbr pbge []*Activity
+		if t, err = c.pbge(ctx, pbth, nil, t, &pbge); err != nil {
 			return err
 		}
-		activities = append(activities, page...)
+		bctivities = bppend(bctivities, pbge...)
 	}
 
-	pr.Activities = activities
+	pr.Activities = bctivities
 	return nil
 }
 
-func (c *Client) LoadPullRequestCommits(ctx context.Context, pr *PullRequest) (err error) {
+func (c *Client) LobdPullRequestCommits(ctx context.Context, pr *PullRequest) (err error) {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
 	}
@@ -767,184 +767,184 @@ func (c *Client) LoadPullRequestCommits(ctx context.Context, pr *PullRequest) (e
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/commits",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d/commits",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
 
-	t := &PageToken{Limit: 1000}
+	t := &PbgeToken{Limit: 1000}
 
-	var commits []*Commit
-	for t.HasMore() {
-		var page []*Commit
-		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+	vbr commits []*Commit
+	for t.HbsMore() {
+		vbr pbge []*Commit
+		if t, err = c.pbge(ctx, pbth, nil, t, &pbge); err != nil {
 			return err
 		}
-		commits = append(commits, page...)
+		commits = bppend(commits, pbge...)
 	}
 
 	pr.Commits = commits
 	return nil
 }
 
-func (c *Client) LoadPullRequestBuildStatuses(ctx context.Context, pr *PullRequest) (err error) {
+func (c *Client) LobdPullRequestBuildStbtuses(ctx context.Context, pr *PullRequest) (err error) {
 	if len(pr.Commits) == 0 {
 		return nil
 	}
 
-	var latestCommit Commit
-	for _, c := range pr.Commits {
-		if latestCommit.CommitterTimestamp < c.CommitterTimestamp {
-			latestCommit = *c
+	vbr lbtestCommit Commit
+	for _, c := rbnge pr.Commits {
+		if lbtestCommit.CommitterTimestbmp < c.CommitterTimestbmp {
+			lbtestCommit = *c
 		}
 	}
 
-	path := fmt.Sprintf("rest/build-status/1.0/commits/%s", latestCommit.ID)
+	pbth := fmt.Sprintf("rest/build-stbtus/1.0/commits/%s", lbtestCommit.ID)
 
-	t := &PageToken{Limit: 1000}
+	t := &PbgeToken{Limit: 1000}
 
-	var statuses []*CommitStatus
-	for t.HasMore() {
-		var page []*BuildStatus
-		if t, err = c.page(ctx, path, nil, t, &page); err != nil {
+	vbr stbtuses []*CommitStbtus
+	for t.HbsMore() {
+		vbr pbge []*BuildStbtus
+		if t, err = c.pbge(ctx, pbth, nil, t, &pbge); err != nil {
 			return err
 		}
-		for i := range page {
-			status := &CommitStatus{
-				Commit: latestCommit.ID,
-				Status: *page[i],
+		for i := rbnge pbge {
+			stbtus := &CommitStbtus{
+				Commit: lbtestCommit.ID,
+				Stbtus: *pbge[i],
 			}
-			statuses = append(statuses, status)
+			stbtuses = bppend(stbtuses, stbtus)
 		}
 	}
 
-	pr.CommitStatus = statuses
+	pr.CommitStbtus = stbtuses
 	return nil
 }
 
-// ProjectRepos returns all repos of a project with a given projectKey
+// ProjectRepos returns bll repos of b project with b given projectKey
 func (c *Client) ProjectRepos(ctx context.Context, projectKey string) (repos []*Repo, err error) {
 	if projectKey == "" {
 		return nil, errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf("rest/api/1.0/projects/%s/repos", projectKey)
+	pbth := fmt.Sprintf("rest/bpi/1.0/projects/%s/repos", projectKey)
 
-	pageToken := &PageToken{Limit: 1000}
+	pbgeToken := &PbgeToken{Limit: 1000}
 
-	for pageToken.HasMore() {
-		var page []*Repo
-		if pageToken, err = c.page(ctx, path, nil, pageToken, &page); err != nil {
+	for pbgeToken.HbsMore() {
+		vbr pbge []*Repo
+		if pbgeToken, err = c.pbge(ctx, pbth, nil, pbgeToken, &pbge); err != nil {
 			return nil, err
 		}
-		repos = append(repos, page...)
+		repos = bppend(repos, pbge...)
 	}
 
 	return repos, nil
 }
 
 func (c *Client) Repo(ctx context.Context, projectKey, repoSlug string) (*Repo, error) {
-	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
+	u := fmt.Sprintf("rest/bpi/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
-	var resp Repo
+	vbr resp Repo
 	_, err = c.do(ctx, req, &resp)
 	return &resp, err
 }
 
-func (c *Client) Repos(ctx context.Context, pageToken *PageToken, searchQueries ...string) ([]*Repo, *PageToken, error) {
-	qry, err := parseQueryStrings(searchQueries...)
+func (c *Client) Repos(ctx context.Context, pbgeToken *PbgeToken, sebrchQueries ...string) ([]*Repo, *PbgeToken, error) {
+	qry, err := pbrseQueryStrings(sebrchQueries...)
 	if err != nil {
-		return nil, pageToken, err
+		return nil, pbgeToken, err
 	}
 
-	var repos []*Repo
-	next, err := c.page(ctx, "rest/api/1.0/repos", qry, pageToken, &repos)
+	vbr repos []*Repo
+	next, err := c.pbge(ctx, "rest/bpi/1.0/repos", qry, pbgeToken, &repos)
 	return repos, next, err
 }
 
-func (c *Client) LabeledRepos(ctx context.Context, pageToken *PageToken, label string) ([]*Repo, *PageToken, error) {
-	u := fmt.Sprintf("rest/api/1.0/labels/%s/labeled", label)
-	qry := url.Values{
+func (c *Client) LbbeledRepos(ctx context.Context, pbgeToken *PbgeToken, lbbel string) ([]*Repo, *PbgeToken, error) {
+	u := fmt.Sprintf("rest/bpi/1.0/lbbels/%s/lbbeled", lbbel)
+	qry := url.Vblues{
 		"REPOSITORY": []string{""},
 	}
 
-	var repos []*Repo
-	next, err := c.page(ctx, u, qry, pageToken, &repos)
+	vbr repos []*Repo
+	next, err := c.pbge(ctx, u, qry, pbgeToken, &repos)
 	return repos, next, err
 }
 
-// RepoIDs fetches a list of repository IDs that the user token has permission for.
-// Permission: ["admin", "read", "write"]
+// RepoIDs fetches b list of repository IDs thbt the user token hbs permission for.
+// Permission: ["bdmin", "rebd", "write"]
 func (c *Client) RepoIDs(ctx context.Context, permission string) ([]uint32, error) {
-	u := fmt.Sprintf("rest/sourcegraph-admin/1.0/permissions/repositories?permission=%s", permission)
+	u := fmt.Sprintf("rest/sourcegrbph-bdmin/1.0/permissions/repositories?permission=%s", permission)
 	req, err := http.NewRequest("GET", u, nil)
 	if err != nil {
 		return nil, err
 	}
-	var resp []byte
+	vbr resp []byte
 	_, err = c.do(ctx, req, &resp)
 	if err != nil {
 		return nil, err
 	}
 
-	bitmap := roaring.New()
-	if err := bitmap.UnmarshalBinary(resp); err != nil {
+	bitmbp := robring.New()
+	if err := bitmbp.UnmbrshblBinbry(resp); err != nil {
 		return nil, err
 	}
-	return bitmap.ToArray(), nil
+	return bitmbp.ToArrby(), nil
 }
 
-func (c *Client) RecentRepos(ctx context.Context, pageToken *PageToken) ([]*Repo, *PageToken, error) {
-	var repos []*Repo
-	next, err := c.page(ctx, "rest/api/1.0/profile/recent/repos", nil, pageToken, &repos)
+func (c *Client) RecentRepos(ctx context.Context, pbgeToken *PbgeToken) ([]*Repo, *PbgeToken, error) {
+	vbr repos []*Repo
+	next, err := c.pbge(ctx, "rest/bpi/1.0/profile/recent/repos", nil, pbgeToken, &repos)
 	return repos, next, err
 }
 
-type CreateForkInput struct {
-	Name          *string                 `json:"name,omitempty"`
-	DefaultBranch *string                 `json:"defaultBranch,omitempty"`
-	Project       *CreateForkInputProject `json:"project,omitempty"`
+type CrebteForkInput struct {
+	Nbme          *string                 `json:"nbme,omitempty"`
+	DefbultBrbnch *string                 `json:"defbultBrbnch,omitempty"`
+	Project       *CrebteForkInputProject `json:"project,omitempty"`
 }
 
-type CreateForkInputProject struct {
+type CrebteForkInputProject struct {
 	Key string `json:"key"`
 }
 
-func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input CreateForkInput) (*Repo, error) {
-	u := fmt.Sprintf("rest/api/1.0/projects/%s/repos/%s", projectKey, repoSlug)
+func (c *Client) Fork(ctx context.Context, projectKey, repoSlug string, input CrebteForkInput) (*Repo, error) {
+	u := fmt.Sprintf("rest/bpi/1.0/projects/%s/repos/%s", projectKey, repoSlug)
 
-	var resp Repo
+	vbr resp Repo
 	_, err := c.send(ctx, "POST", u, nil, input, &resp)
 	return &resp, err
 }
 
-func (c *Client) page(ctx context.Context, path string, qry url.Values, token *PageToken, results any) (*PageToken, error) {
+func (c *Client) pbge(ctx context.Context, pbth string, qry url.Vblues, token *PbgeToken, results bny) (*PbgeToken, error) {
 	if qry == nil {
-		qry = make(url.Values)
+		qry = mbke(url.Vblues)
 	}
 
-	for k, vs := range token.Values() {
-		qry[k] = append(qry[k], vs...)
+	for k, vs := rbnge token.Vblues() {
+		qry[k] = bppend(qry[k], vs...)
 	}
 
-	u := url.URL{Path: path, RawQuery: qry.Encode()}
+	u := url.URL{Pbth: pbth, RbwQuery: qry.Encode()}
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	var next PageToken
+	vbr next PbgeToken
 	_, err = c.do(ctx, req, &struct {
-		*PageToken
-		Values any `json:"values"`
+		*PbgeToken
+		Vblues bny `json:"vblues"`
 	}{
-		PageToken: &next,
-		Values:    results,
+		PbgeToken: &next,
+		Vblues:    results,
 	})
 
 	if err != nil {
@@ -954,20 +954,20 @@ func (c *Client) page(ctx context.Context, path string, qry url.Values, token *P
 	return &next, nil
 }
 
-func (c *Client) send(ctx context.Context, method, path string, qry url.Values, payload, result any) (*http.Response, error) {
+func (c *Client) send(ctx context.Context, method, pbth string, qry url.Vblues, pbylobd, result bny) (*http.Response, error) {
 	if qry == nil {
-		qry = make(url.Values)
+		qry = mbke(url.Vblues)
 	}
 
-	var body io.ReadWriter
-	if payload != nil {
+	vbr body io.RebdWriter
+	if pbylobd != nil {
 		body = new(bytes.Buffer)
-		if err := json.NewEncoder(body).Encode(payload); err != nil {
+		if err := json.NewEncoder(body).Encode(pbylobd); err != nil {
 			return nil, err
 		}
 	}
 
-	u := url.URL{Path: path, RawQuery: qry.Encode()}
+	u := url.URL{Pbth: pbth, RbwQuery: qry.Encode()}
 	req, err := http.NewRequest(method, u.String(), body)
 	if err != nil {
 		return nil, err
@@ -976,26 +976,26 @@ func (c *Client) send(ctx context.Context, method, path string, qry url.Values, 
 	return c.do(ctx, req, result)
 }
 
-func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http.Response, err error) {
-	tr, ctx := trace.New(ctx, "BitbucketServer.do")
+func (c *Client) do(ctx context.Context, req *http.Request, result bny) (_ *http.Response, err error) {
+	tr, ctx := trbce.New(ctx, "BitbucketServer.do")
 	defer tr.EndWithErr(&err)
 	req = req.WithContext(ctx)
 
-	req.URL.Path, err = url.JoinPath(c.URL.Path, req.URL.Path) // First join paths so that base path is kept
+	req.URL.Pbth, err = url.JoinPbth(c.URL.Pbth, req.URL.Pbth) // First join pbths so thbt bbse pbth is kept
 	if err != nil {
 		return nil, err
 	}
 	req.URL = c.URL.ResolveReference(req.URL)
 
-	if req.Header.Get("Content-Type") == "" {
-		req.Header.Set("Content-Type", "application/json; charset=utf-8")
+	if req.Hebder.Get("Content-Type") == "" {
+		req.Hebder.Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
 	}
 
-	if err := c.Auth.Authenticate(req); err != nil {
+	if err := c.Auth.Authenticbte(req); err != nil {
 		return nil, err
 	}
 
-	if err := c.rateLimit.Wait(ctx); err != nil {
+	if err := c.rbteLimit.Wbit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -1006,173 +1006,173 @@ func (c *Client) do(ctx context.Context, req *http.Request, result any) (_ *http
 
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return resp, err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return resp, errors.WithStack(&httpError{
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
+		return resp, errors.WithStbck(&httpError{
 			URL:        req.URL,
-			StatusCode: resp.StatusCode,
+			StbtusCode: resp.StbtusCode,
 			Body:       bs,
 		})
 	}
 
-	// handle binary response
+	// hbndle binbry response
 	if s, ok := result.(*[]byte); ok {
 		*s = bs
 	} else if result != nil {
-		return resp, errors.Wrap(json.Unmarshal(bs, result), "failed to unmarshal response to JSON")
+		return resp, errors.Wrbp(json.Unmbrshbl(bs, result), "fbiled to unmbrshbl response to JSON")
 	}
 
 	return resp, nil
 }
 
-func parseQueryStrings(qs ...string) (url.Values, error) {
-	vals := make(url.Values)
-	for _, q := range qs {
-		query, err := url.ParseQuery(strings.TrimPrefix(q, "?"))
+func pbrseQueryStrings(qs ...string) (url.Vblues, error) {
+	vbls := mbke(url.Vblues)
+	for _, q := rbnge qs {
+		query, err := url.PbrseQuery(strings.TrimPrefix(q, "?"))
 		if err != nil {
 			return nil, err
 		}
-		for k, vs := range query {
-			vals[k] = append(vals[k], vs...)
+		for k, vs := rbnge query {
+			vbls[k] = bppend(vbls[k], vs...)
 		}
 	}
-	return vals, nil
+	return vbls, nil
 }
 
-// categorize returns a category for an API URL. Used by metrics.
-func categorize(u *url.URL) string {
-	// API to URL mapping looks like this:
+// cbtegorize returns b cbtegory for bn API URL. Used by metrics.
+func cbtegorize(u *url.URL) string {
+	// API to URL mbpping looks like this:
 	//
-	// 	Repo -> rest/api/1.0/profile/recent/repos%s
-	// 	Repos -> rest/api/1.0/projects/%s/repos/%s
-	// 	RecentRepos -> rest/api/1.0/repos%s
+	// 	Repo -> rest/bpi/1.0/profile/recent/repos%s
+	// 	Repos -> rest/bpi/1.0/projects/%s/repos/%s
+	// 	RecentRepos -> rest/bpi/1.0/repos%s
 	//
-	// We guess the category based on the fourth path component ("profile", "projects", "repos%s").
-	var category string
-	if parts := strings.SplitN(u.Path, "/", 3); len(parts) >= 4 {
-		category = parts[3]
+	// We guess the cbtegory bbsed on the fourth pbth component ("profile", "projects", "repos%s").
+	vbr cbtegory string
+	if pbrts := strings.SplitN(u.Pbth, "/", 3); len(pbrts) >= 4 {
+		cbtegory = pbrts[3]
 	}
 	switch {
-	case category == "profile":
+	cbse cbtegory == "profile":
 		return "Repo"
-	case category == "projects":
+	cbse cbtegory == "projects":
 		return "Repos"
-	case strings.HasPrefix(category, "repos"):
+	cbse strings.HbsPrefix(cbtegory, "repos"):
 		return "RecentRepos"
-	default:
-		// don't return category directly as that could introduce too much dimensionality
+	defbult:
+		// don't return cbtegory directly bs thbt could introduce too much dimensionblity
 		return "unknown"
 	}
 }
 
-type PageToken struct {
+type PbgeToken struct {
 	Size          int  `json:"size"`
 	Limit         int  `json:"limit"`
-	IsLastPage    bool `json:"isLastPage"`
-	Start         int  `json:"start"`
-	NextPageStart int  `json:"nextPageStart"`
+	IsLbstPbge    bool `json:"isLbstPbge"`
+	Stbrt         int  `json:"stbrt"`
+	NextPbgeStbrt int  `json:"nextPbgeStbrt"`
 }
 
-func (t *PageToken) HasMore() bool {
+func (t *PbgeToken) HbsMore() bool {
 	if t == nil {
 		return true
 	}
-	return !t.IsLastPage
+	return !t.IsLbstPbge
 }
 
-func (t *PageToken) Query() string {
+func (t *PbgeToken) Query() string {
 	if t == nil {
 		return ""
 	}
-	v := t.Values()
+	v := t.Vblues()
 	if len(v) == 0 {
 		return ""
 	}
 	return "?" + v.Encode()
 }
 
-func (t *PageToken) Values() url.Values {
-	v := url.Values{}
+func (t *PbgeToken) Vblues() url.Vblues {
+	v := url.Vblues{}
 	if t == nil {
 		return v
 	}
-	if t.NextPageStart != 0 {
-		v.Set("start", strconv.Itoa(t.NextPageStart))
+	if t.NextPbgeStbrt != 0 {
+		v.Set("stbrt", strconv.Itob(t.NextPbgeStbrt))
 	}
 	if t.Limit != 0 {
-		v.Set("limit", strconv.Itoa(t.Limit))
+		v.Set("limit", strconv.Itob(t.Limit))
 	}
 	return v
 }
 
-// Perm represents a Bitbucket Server permission.
+// Perm represents b Bitbucket Server permission.
 type Perm string
 
-// Permission constants.
+// Permission constbnts.
 const (
 	PermSysAdmin      Perm = "SYS_ADMIN"
 	PermAdmin         Perm = "ADMIN"
 	PermLicensedUser  Perm = "LICENSED_USER"
-	PermProjectCreate Perm = "PROJECT_CREATE"
+	PermProjectCrebte Perm = "PROJECT_CREATE"
 
 	PermProjectAdmin Perm = "PROJECT_ADMIN"
 	PermProjectWrite Perm = "PROJECT_WRITE"
 	PermProjectView  Perm = "PROJECT_VIEW"
-	PermProjectRead  Perm = "PROJECT_READ"
+	PermProjectRebd  Perm = "PROJECT_READ"
 
 	PermRepoAdmin Perm = "REPO_ADMIN"
-	PermRepoRead  Perm = "REPO_READ"
+	PermRepoRebd  Perm = "REPO_READ"
 	PermRepoWrite Perm = "REPO_WRITE"
 )
 
-// User account in a Bitbucket Server instance.
+// User bccount in b Bitbucket Server instbnce.
 type User struct {
-	Name         string `json:"name,omitempty"`
-	Password     string `json:"-"`
-	EmailAddress string `json:"emailAddress,omitempty"`
+	Nbme         string `json:"nbme,omitempty"`
+	Pbssword     string `json:"-"`
+	EmbilAddress string `json:"embilAddress,omitempty"`
 	ID           int    `json:"id,omitempty"`
-	DisplayName  string `json:"displayName,omitempty"`
-	Active       bool   `json:"active,omitempty"`
+	DisplbyNbme  string `json:"displbyNbme,omitempty"`
+	Active       bool   `json:"bctive,omitempty"`
 	Slug         string `json:"slug,omitempty"`
 	Type         string `json:"type,omitempty"`
 }
 
-// Group of users in a Bitbucket Server instance.
+// Group of users in b Bitbucket Server instbnce.
 type Group struct {
-	Name  string   `json:"name,omitempty"`
+	Nbme  string   `json:"nbme,omitempty"`
 	Users []string `json:"users,omitempty"`
 }
 
-// A UserRepoPermission of a User to perform certain actions
-// on a Repo.
+// A UserRepoPermission of b User to perform certbin bctions
+// on b Repo.
 type UserRepoPermission struct {
 	User *User
 	Perm Perm
 	Repo *Repo
 }
 
-// A GroupRepoPermission of a Group to perform certain actions
-// on a Repo.
+// A GroupRepoPermission of b Group to perform certbin bctions
+// on b Repo.
 type GroupRepoPermission struct {
 	Group *Group
 	Perm  Perm
 	Repo  *Repo
 }
 
-// A UserProjectPermission of a User to perform certain actions
-// on a Project.
+// A UserProjectPermission of b User to perform certbin bctions
+// on b Project.
 type UserProjectPermission struct {
 	User    *User
 	Perm    Perm
 	Project *Project
 }
 
-// A GroupProjectPermission of a Group to perform certain actions
-// on a Project.
+// A GroupProjectPermission of b Group to perform certbin bctions
+// on b Project.
 type GroupProjectPermission struct {
 	Group   *Group
 	Perm    Perm
@@ -1181,7 +1181,7 @@ type GroupProjectPermission struct {
 
 type Link struct {
 	Href string `json:"href"`
-	Name string `json:"name"`
+	Nbme string `json:"nbme"`
 }
 
 type RepoLinks struct {
@@ -1194,27 +1194,27 @@ type RepoLinks struct {
 type Repo struct {
 	Slug          string    `json:"slug"`
 	ID            int       `json:"id"`
-	Name          string    `json:"name"`
+	Nbme          string    `json:"nbme"`
 	Description   string    `json:"description"`
 	SCMID         string    `json:"scmId"`
-	State         string    `json:"state"`
-	StatusMessage string    `json:"statusMessage"`
-	Forkable      bool      `json:"forkable"`
+	Stbte         string    `json:"stbte"`
+	StbtusMessbge string    `json:"stbtusMessbge"`
+	Forkbble      bool      `json:"forkbble"`
 	Origin        *Repo     `json:"origin"`
 	Project       *Project  `json:"project"`
 	Public        bool      `json:"public"`
 	Links         RepoLinks `json:"links"`
 }
 
-// IsPersonalRepository tells if the repository is a personal one.
-func (r *Repo) IsPersonalRepository() bool {
+// IsPersonblRepository tells if the repository is b personbl one.
+func (r *Repo) IsPersonblRepository() bool {
 	return r.Project.Type == "PERSONAL"
 }
 
 type Project struct {
 	Key    string `json:"key"`
 	ID     int    `json:"id"`
-	Name   string `json:"name"`
+	Nbme   string `json:"nbme"`
 	Public bool   `json:"public"`
 	Type   string `json:"type"`
 	Links  struct {
@@ -1244,288 +1244,288 @@ type PullRequest struct {
 	Version      int               `json:"version"`
 	Title        string            `json:"title"`
 	Description  string            `json:"description"`
-	State        string            `json:"state"`
+	Stbte        string            `json:"stbte"`
 	Open         bool              `json:"open"`
 	Closed       bool              `json:"closed"`
-	CreatedDate  int               `json:"createdDate"`
-	UpdatedDate  int               `json:"updatedDate"`
+	CrebtedDbte  int               `json:"crebtedDbte"`
+	UpdbtedDbte  int               `json:"updbtedDbte"`
 	FromRef      Ref               `json:"fromRef"`
 	ToRef        Ref               `json:"toRef"`
 	Locked       bool              `json:"locked"`
-	Author       PullRequestAuthor `json:"author"`
+	Author       PullRequestAuthor `json:"buthor"`
 	Reviewers    []Reviewer        `json:"reviewers"`
-	Participants []Participant     `json:"participants"`
+	Pbrticipbnts []Pbrticipbnt     `json:"pbrticipbnts"`
 	Links        struct {
 		Self []struct {
 			Href string `json:"href"`
 		} `json:"self"`
 	} `json:"links"`
 
-	Activities   []*Activity     `json:"activities,omitempty"`
+	Activities   []*Activity     `json:"bctivities,omitempty"`
 	Commits      []*Commit       `json:"commits,omitempty"`
-	CommitStatus []*CommitStatus `json:"commit_status,omitempty"`
+	CommitStbtus []*CommitStbtus `json:"commit_stbtus,omitempty"`
 
-	// Deprecated, use CommitStatus instead. BuildStatus was not tied to individual commits
-	BuildStatuses []*BuildStatus `json:"buildstatuses,omitempty"`
+	// Deprecbted, use CommitStbtus instebd. BuildStbtus wbs not tied to individubl commits
+	BuildStbtuses []*BuildStbtus `json:"buildstbtuses,omitempty"`
 }
 
-// PullRequestAuthor is the author of a pull request.
+// PullRequestAuthor is the buthor of b pull request.
 type PullRequestAuthor struct {
 	User     *User  `json:"user"`
 	Role     string `json:"role"`
-	Approved bool   `json:"approved"`
-	Status   string `json:"status"`
+	Approved bool   `json:"bpproved"`
+	Stbtus   string `json:"stbtus"`
 }
 
-// Reviewer is a user that left feedback on a pull request.
+// Reviewer is b user thbt left feedbbck on b pull request.
 type Reviewer struct {
 	User               *User  `json:"user"`
-	LastReviewedCommit string `json:"lastReviewedCommit"`
+	LbstReviewedCommit string `json:"lbstReviewedCommit"`
 	Role               string `json:"role"`
-	Approved           bool   `json:"approved"`
-	Status             string `json:"status"`
+	Approved           bool   `json:"bpproved"`
+	Stbtus             string `json:"stbtus"`
 }
 
-// Participant is a user that was involved in a pull request.
-type Participant struct {
+// Pbrticipbnt is b user thbt wbs involved in b pull request.
+type Pbrticipbnt struct {
 	User     *User  `json:"user"`
 	Role     string `json:"role"`
-	Approved bool   `json:"approved"`
-	Status   string `json:"status"`
+	Approved bool   `json:"bpproved"`
+	Stbtus   string `json:"stbtus"`
 }
 
-// Activity is a union type of all supported pull request activity items.
+// Activity is b union type of bll supported pull request bctivity items.
 type Activity struct {
 	ID          int            `json:"id"`
-	CreatedDate int            `json:"createdDate"`
+	CrebtedDbte int            `json:"crebtedDbte"`
 	User        User           `json:"user"`
-	Action      ActivityAction `json:"action"`
+	Action      ActivityAction `json:"bction"`
 
-	// Comment activity fields.
+	// Comment bctivity fields.
 	CommentAction string         `json:"commentAction,omitempty"`
 	Comment       *Comment       `json:"comment,omitempty"`
 	CommentAnchor *CommentAnchor `json:"commentAnchor,omitempty"`
 
-	// Reviewers change fields.
-	AddedReviewers   []User `json:"addedReviewers,omitempty"`
+	// Reviewers chbnge fields.
+	AddedReviewers   []User `json:"bddedReviewers,omitempty"`
 	RemovedReviewers []User `json:"removedReviewers,omitempty"`
 
 	// Merged event fields.
 	Commit *Commit `json:"commit,omitempty"`
 }
 
-// Key is a unique key identifying this activity in the context of its pull request.
-func (a *Activity) Key() string { return strconv.Itoa(a.ID) }
+// Key is b unique key identifying this bctivity in the context of its pull request.
+func (b *Activity) Key() string { return strconv.Itob(b.ID) }
 
-// BuildStatus represents the build status of a commit
-type BuildStatus struct {
-	State       string `json:"state,omitempty"`
+// BuildStbtus represents the build stbtus of b commit
+type BuildStbtus struct {
+	Stbte       string `json:"stbte,omitempty"`
 	Key         string `json:"key,omitempty"`
-	Name        string `json:"name,omitempty"`
+	Nbme        string `json:"nbme,omitempty"`
 	Url         string `json:"url,omitempty"`
 	Description string `json:"description,omitempty"`
-	DateAdded   int64  `json:"dateAdded,omitempty"`
+	DbteAdded   int64  `json:"dbteAdded,omitempty"`
 }
 
-// Commit status is the build status for a specific commit
-type CommitStatus struct {
+// Commit stbtus is the build stbtus for b specific commit
+type CommitStbtus struct {
 	Commit string      `json:"commit,omitempty"`
-	Status BuildStatus `json:"status,omitempty"`
+	Stbtus BuildStbtus `json:"stbtus,omitempty"`
 }
 
-func (s *CommitStatus) Key() string {
-	key := fmt.Sprintf("%s:%s:%s:%s", s.Commit, s.Status.Key, s.Status.Name, s.Status.Url)
-	return strconv.FormatInt(int64(fnv1.HashString64(key)), 16)
+func (s *CommitStbtus) Key() string {
+	key := fmt.Sprintf("%s:%s:%s:%s", s.Commit, s.Stbtus.Key, s.Stbtus.Nbme, s.Stbtus.Url)
+	return strconv.FormbtInt(int64(fnv1.HbshString64(key)), 16)
 }
 
-// ActivityAction defines the action taken in an Activity.
+// ActivityAction defines the bction tbken in bn Activity.
 type ActivityAction string
 
 // Known ActivityActions
 const (
 	ApprovedActivityAction   ActivityAction = "APPROVED"
-	UnapprovedActivityAction ActivityAction = "UNAPPROVED"
+	UnbpprovedActivityAction ActivityAction = "UNAPPROVED"
 	DeclinedActivityAction   ActivityAction = "DECLINED"
 	ReviewedActivityAction   ActivityAction = "REVIEWED"
 	OpenedActivityAction     ActivityAction = "OPENED"
 	ReopenedActivityAction   ActivityAction = "REOPENED"
 	RescopedActivityAction   ActivityAction = "RESCOPED"
-	UpdatedActivityAction    ActivityAction = "UPDATED"
+	UpdbtedActivityAction    ActivityAction = "UPDATED"
 	CommentedActivityAction  ActivityAction = "COMMENTED"
 	MergedActivityAction     ActivityAction = "MERGED"
 )
 
-// A Comment in a PullRequest.
+// A Comment in b PullRequest.
 type Comment struct {
 	ID                  int                 `json:"id"`
 	Version             int                 `json:"version"`
 	Text                string              `json:"text"`
-	Author              User                `json:"author"`
-	CreatedDate         int                 `json:"createdDate"`
-	UpdatedDate         int                 `json:"updatedDate"`
+	Author              User                `json:"buthor"`
+	CrebtedDbte         int                 `json:"crebtedDbte"`
+	UpdbtedDbte         int                 `json:"updbtedDbte"`
 	Comments            []Comment           `json:"comments"` // Replies to the comment
-	Tasks               []Task              `json:"tasks"`
-	PermittedOperations PermittedOperations `json:"permittedOperations"`
+	Tbsks               []Tbsk              `json:"tbsks"`
+	PermittedOperbtions PermittedOperbtions `json:"permittedOperbtions"`
 }
 
-// A CommentAnchor captures the location of a code comment in a PullRequest.
+// A CommentAnchor cbptures the locbtion of b code comment in b PullRequest.
 type CommentAnchor struct {
-	FromHash string `json:"fromHash"`
-	ToHash   string `json:"toHash"`
+	FromHbsh string `json:"fromHbsh"`
+	ToHbsh   string `json:"toHbsh"`
 	Line     int    `json:"line"`
 	LineType string `json:"lineType"`
 	FileType string `json:"fileType"`
-	Path     string `json:"path"`
+	Pbth     string `json:"pbth"`
 	DiffType string `json:"diffType"`
-	Orphaned bool   `json:"orphaned"`
+	Orphbned bool   `json:"orphbned"`
 }
 
-// A Task in a PullRequest.
-type Task struct {
+// A Tbsk in b PullRequest.
+type Tbsk struct {
 	ID                  int                 `json:"id"`
-	Author              User                `json:"author"`
+	Author              User                `json:"buthor"`
 	Text                string              `json:"text"`
-	State               string              `json:"state"`
-	CreatedDate         int                 `json:"createdDate"`
-	PermittedOperations PermittedOperations `json:"permittedOperations"`
+	Stbte               string              `json:"stbte"`
+	CrebtedDbte         int                 `json:"crebtedDbte"`
+	PermittedOperbtions PermittedOperbtions `json:"permittedOperbtions"`
 }
 
-// PermittedOperations of a Comment or Task.
-type PermittedOperations struct {
-	Editable       bool `json:"editable,omitempty"`
-	Deletable      bool `json:"deletable,omitempty"`
-	Transitionable bool `json:"transitionable,omitempty"`
+// PermittedOperbtions of b Comment or Tbsk.
+type PermittedOperbtions struct {
+	Editbble       bool `json:"editbble,omitempty"`
+	Deletbble      bool `json:"deletbble,omitempty"`
+	Trbnsitionbble bool `json:"trbnsitionbble,omitempty"`
 }
 
-// A Commit in a Repository.
+// A Commit in b Repository.
 type Commit struct {
 	ID                 string   `json:"id,omitempty"`
-	DisplayID          string   `json:"displayId,omitempty"`
+	DisplbyID          string   `json:"displbyId,omitempty"`
 	Author             *User    `json:"user,omitempty"`
-	AuthorTimestamp    int64    `json:"authorTimestamp,omitempty"`
+	AuthorTimestbmp    int64    `json:"buthorTimestbmp,omitempty"`
 	Committer          *User    `json:"committer,omitempty"`
-	CommitterTimestamp int64    `json:"committerTimestamp,omitempty"`
-	Message            string   `json:"message,omitempty"`
-	Parents            []Commit `json:"parents,omitempty"`
+	CommitterTimestbmp int64    `json:"committerTimestbmp,omitempty"`
+	Messbge            string   `json:"messbge,omitempty"`
+	Pbrents            []Commit `json:"pbrents,omitempty"`
 }
 
-// IsNotFound reports whether err is a Bitbucket Server API not found error.
+// IsNotFound reports whether err is b Bitbucket Server API not found error.
 func IsNotFound(err error) bool {
 	return errcode.IsNotFound(err)
 }
 
-// IsUnauthorized reports whether err is a Bitbucket Server API 401 error.
-func IsUnauthorized(err error) bool {
-	return errcode.IsUnauthorized(err)
+// IsUnbuthorized reports whether err is b Bitbucket Server API 401 error.
+func IsUnbuthorized(err error) bool {
+	return errcode.IsUnbuthorized(err)
 }
 
-// IsNoSuchLabel reports whether err is a Bitbucket Server API "No Such Label"
+// IsNoSuchLbbel reports whether err is b Bitbucket Server API "No Such Lbbel"
 // error.
-func IsNoSuchLabel(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.NoSuchLabelException()
+func IsNoSuchLbbel(err error) bool {
+	vbr e *httpError
+	return errors.As(err, &e) && e.NoSuchLbbelException()
 }
 
-// IsDuplicatePullRequest reports whether err is a Bitbucket Server API
-// "Duplicate Pull Request" error.
-func IsDuplicatePullRequest(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.DuplicatePullRequest()
+// IsDuplicbtePullRequest reports whether err is b Bitbucket Server API
+// "Duplicbte Pull Request" error.
+func IsDuplicbtePullRequest(err error) bool {
+	vbr e *httpError
+	return errors.As(err, &e) && e.DuplicbtePullRequest()
 }
 
-func IsPullRequestOutOfDate(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.PullRequestOutOfDateException()
+func IsPullRequestOutOfDbte(err error) bool {
+	vbr e *httpError
+	return errors.As(err, &e) && e.PullRequestOutOfDbteException()
 }
 
-func IsMergePreconditionFailedException(err error) bool {
-	var e *httpError
-	return errors.As(err, &e) && e.MergePreconditionFailedException()
+func IsMergePreconditionFbiledException(err error) bool {
+	vbr e *httpError
+	return errors.As(err, &e) && e.MergePreconditionFbiledException()
 }
 
-// ExtractExistingPullRequest will attempt to extract the existing PR returned with an error.
-func ExtractExistingPullRequest(err error) (*PullRequest, error) {
-	var e *httpError
+// ExtrbctExistingPullRequest will bttempt to extrbct the existing PR returned with bn error.
+func ExtrbctExistingPullRequest(err error) (*PullRequest, error) {
+	vbr e *httpError
 	if errors.As(err, &e) {
-		return e.ExtractExistingPullRequest()
+		return e.ExtrbctExistingPullRequest()
 	}
 
-	return nil, errors.Errorf("error does not contain existing PR")
+	return nil, errors.Errorf("error does not contbin existing PR")
 }
 
-// ExtractPullRequest will attempt to extract the PR returned with an error.
-func ExtractPullRequest(err error) (*PullRequest, error) {
-	var e *httpError
+// ExtrbctPullRequest will bttempt to extrbct the PR returned with bn error.
+func ExtrbctPullRequest(err error) (*PullRequest, error) {
+	vbr e *httpError
 	if errors.As(err, &e) {
-		return e.ExtractPullRequest()
+		return e.ExtrbctPullRequest()
 	}
 
-	return nil, errors.Errorf("error does not contain existing PR")
+	return nil, errors.Errorf("error does not contbin existing PR")
 }
 
 type httpError struct {
-	StatusCode int
+	StbtusCode int
 	URL        *url.URL
 	Body       []byte
 }
 
 func (e *httpError) Error() string {
-	return fmt.Sprintf("Bitbucket API HTTP error: code=%d url=%q body=%q", e.StatusCode, e.URL, e.Body)
+	return fmt.Sprintf("Bitbucket API HTTP error: code=%d url=%q body=%q", e.StbtusCode, e.URL, e.Body)
 }
 
-func (e *httpError) Unauthorized() bool {
-	return e.StatusCode == http.StatusUnauthorized
+func (e *httpError) Unbuthorized() bool {
+	return e.StbtusCode == http.StbtusUnbuthorized
 }
 
 func (e *httpError) NotFound() bool {
-	return e.StatusCode == http.StatusNotFound
+	return e.StbtusCode == http.StbtusNotFound
 }
 
-func (e *httpError) DuplicatePullRequest() bool {
-	return strings.Contains(string(e.Body), bitbucketDuplicatePRException)
+func (e *httpError) DuplicbtePullRequest() bool {
+	return strings.Contbins(string(e.Body), bitbucketDuplicbtePRException)
 }
 
 func (e *httpError) NoSuchPullRequestException() bool {
-	return strings.Contains(string(e.Body), bitbucketNoSuchPullRequestException)
+	return strings.Contbins(string(e.Body), bitbucketNoSuchPullRequestException)
 }
 
-func (e *httpError) NoSuchLabelException() bool {
-	return strings.Contains(string(e.Body), bitbucketNoSuchLabelException)
+func (e *httpError) NoSuchLbbelException() bool {
+	return strings.Contbins(string(e.Body), bitbucketNoSuchLbbelException)
 }
 
-func (e *httpError) MergePreconditionFailedException() bool {
-	return strings.Contains(string(e.Body), bitbucketPullRequestMergeVetoedException)
+func (e *httpError) MergePreconditionFbiledException() bool {
+	return strings.Contbins(string(e.Body), bitbucketPullRequestMergeVetoedException)
 }
 
-func (e *httpError) PullRequestOutOfDateException() bool {
-	return strings.Contains(string(e.Body), bitbucketPullRequestOutOfDateException)
+func (e *httpError) PullRequestOutOfDbteException() bool {
+	return strings.Contbins(string(e.Body), bitbucketPullRequestOutOfDbteException)
 }
 
 const (
-	bitbucketDuplicatePRException            = "com.atlassian.bitbucket.pull.DuplicatePullRequestException"
-	bitbucketNoSuchLabelException            = "com.atlassian.bitbucket.label.NoSuchLabelException"
-	bitbucketNoSuchPullRequestException      = "com.atlassian.bitbucket.pull.NoSuchPullRequestException"
-	bitbucketPullRequestOutOfDateException   = "com.atlassian.bitbucket.pull.PullRequestOutOfDateException"
-	bitbucketPullRequestMergeVetoedException = "com.atlassian.bitbucket.pull.PullRequestMergeVetoedException"
+	bitbucketDuplicbtePRException            = "com.btlbssibn.bitbucket.pull.DuplicbtePullRequestException"
+	bitbucketNoSuchLbbelException            = "com.btlbssibn.bitbucket.lbbel.NoSuchLbbelException"
+	bitbucketNoSuchPullRequestException      = "com.btlbssibn.bitbucket.pull.NoSuchPullRequestException"
+	bitbucketPullRequestOutOfDbteException   = "com.btlbssibn.bitbucket.pull.PullRequestOutOfDbteException"
+	bitbucketPullRequestMergeVetoedException = "com.btlbssibn.bitbucket.pull.PullRequestMergeVetoedException"
 )
 
-// ExtractExistingPullRequest will try to extract a PullRequest from the
+// ExtrbctExistingPullRequest will try to extrbct b PullRequest from the
 // ExistingPullRequest field of the first Error in the response body.
-func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
-	var dest struct {
+func (e *httpError) ExtrbctExistingPullRequest() (*PullRequest, error) {
+	vbr dest struct {
 		Errors []struct {
-			ExceptionName       string
+			ExceptionNbme       string
 			ExistingPullRequest PullRequest
 		}
 	}
 
-	err := json.Unmarshal(e.Body, &dest)
+	err := json.Unmbrshbl(e.Body, &dest)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmarshalling error")
+		return nil, errors.Wrbp(err, "unmbrshblling error")
 	}
 
-	for _, e := range dest.Errors {
-		if e.ExceptionName == bitbucketDuplicatePRException {
+	for _, e := rbnge dest.Errors {
+		if e.ExceptionNbme == bitbucketDuplicbtePRException {
 			return &e.ExistingPullRequest, nil
 		}
 	}
@@ -1533,20 +1533,20 @@ func (e *httpError) ExtractExistingPullRequest() (*PullRequest, error) {
 	return nil, errors.New("existing PR not found")
 }
 
-// ExtractPullRequest will try to extract a PullRequest from the
+// ExtrbctPullRequest will try to extrbct b PullRequest from the
 // PullRequest field of the first Error in the response body.
-func (e *httpError) ExtractPullRequest() (*PullRequest, error) {
-	var dest struct {
+func (e *httpError) ExtrbctPullRequest() (*PullRequest, error) {
+	vbr dest struct {
 		Errors []struct {
-			ExceptionName string
+			ExceptionNbme string
 			// This is different from ExistingPullRequest
 			PullRequest PullRequest
 		}
 	}
 
-	err := json.Unmarshal(e.Body, &dest)
+	err := json.Unmbrshbl(e.Body, &dest)
 	if err != nil {
-		return nil, errors.Wrap(err, "unmarshalling error")
+		return nil, errors.Wrbp(err, "unmbrshblling error")
 	}
 
 	if len(dest.Errors) == 0 {
@@ -1556,28 +1556,28 @@ func (e *httpError) ExtractPullRequest() (*PullRequest, error) {
 	return &dest.Errors[0].PullRequest, nil
 }
 
-// AuthenticatedUsername returns the username associated with the credentials
+// AuthenticbtedUsernbme returns the usernbme bssocibted with the credentibls
 // used by the client.
-// Since BitbucketServer doesn't offer an endpoint in their API to query the
-// currently-authenticated user, we send a request to list a single user on the
-// instance and then inspect the response headers in which BitbucketServer sets
-// the username in X-Ausername.
-// If no username is found in the response headers, an error is returned.
-func (c *Client) AuthenticatedUsername(ctx context.Context) (username string, err error) {
-	resp, err := c.send(ctx, "GET", "rest/api/1.0/users", url.Values{"limit": []string{"1"}}, nil, nil)
+// Since BitbucketServer doesn't offer bn endpoint in their API to query the
+// currently-buthenticbted user, we send b request to list b single user on the
+// instbnce bnd then inspect the response hebders in which BitbucketServer sets
+// the usernbme in X-Ausernbme.
+// If no usernbme is found in the response hebders, bn error is returned.
+func (c *Client) AuthenticbtedUsernbme(ctx context.Context) (usernbme string, err error) {
+	resp, err := c.send(ctx, "GET", "rest/bpi/1.0/users", url.Vblues{"limit": []string{"1"}}, nil, nil)
 	if err != nil {
 		return "", err
 	}
 
-	username = resp.Header.Get("X-Ausername")
-	if username == "" {
-		return "", errors.New("no username in X-Ausername header")
+	usernbme = resp.Hebder.Get("X-Ausernbme")
+	if usernbme == "" {
+		return "", errors.New("no usernbme in X-Ausernbme hebder")
 	}
 
-	return username, nil
+	return usernbme, nil
 }
 
-func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, body string) error {
+func (c *Client) CrebtePullRequestComment(ctx context.Context, pr *PullRequest, body string) error {
 	if pr.ToRef.Repository.Slug == "" {
 		return errors.New("repository slug empty")
 	}
@@ -1586,21 +1586,21 @@ func (c *Client) CreatePullRequestComment(ctx context.Context, pr *PullRequest, 
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/comments",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d/comments",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
 
-	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+	qry := url.Vblues{"version": {strconv.Itob(pr.Version)}}
 
-	payload := map[string]any{
+	pbylobd := mbp[string]bny{
 		"text": body,
 	}
 
-	var resp *Comment
-	_, err := c.send(ctx, "POST", path, qry, &payload, &resp)
+	vbr resp *Comment
+	_, err := c.send(ctx, "POST", pbth, qry, &pbylobd, &resp)
 	return err
 }
 
@@ -1613,16 +1613,16 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 		return errors.New("project key empty")
 	}
 
-	path := fmt.Sprintf(
-		"rest/api/1.0/projects/%s/repos/%s/pull-requests/%d/merge",
+	pbth := fmt.Sprintf(
+		"rest/bpi/1.0/projects/%s/repos/%s/pull-requests/%d/merge",
 		pr.ToRef.Repository.Project.Key,
 		pr.ToRef.Repository.Slug,
 		pr.ID,
 	)
 
-	qry := url.Values{"version": {strconv.Itoa(pr.Version)}}
+	qry := url.Vblues{"version": {strconv.Itob(pr.Version)}}
 
-	_, err := c.send(ctx, "POST", path, qry, nil, pr)
+	_, err := c.send(ctx, "POST", pbth, qry, nil, pr)
 	if err != nil {
 		return err
 	}
@@ -1630,13 +1630,13 @@ func (c *Client) MergePullRequest(ctx context.Context, pr *PullRequest) error {
 }
 
 func (c *Client) GetVersion(ctx context.Context) (string, error) {
-	var v struct {
+	vbr v struct {
 		Version     string
 		BuildNumber string
-		BuildDate   string
-		DisplayName string
+		BuildDbte   string
+		DisplbyNbme string
 	}
 
-	_, err := c.send(ctx, "GET", "/rest/api/1.0/application-properties", nil, nil, &v)
+	_, err := c.send(ctx, "GET", "/rest/bpi/1.0/bpplicbtion-properties", nil, nil, &v)
 	return v.Version, err
 }

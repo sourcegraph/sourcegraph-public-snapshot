@@ -1,26 +1,26 @@
-package workspace
+pbckbge workspbce
 
 import "context"
 
-// CloneOptions holds the options for cloning a workspace.
+// CloneOptions holds the options for cloning b workspbce.
 type CloneOptions struct {
-	ExecutorName   string
+	ExecutorNbme   string
 	EndpointURL    string
-	GitServicePath string
+	GitServicePbth string
 	ExecutorToken  string
 }
 
-// Workspace represents a workspace that can be used to execute a job.
-type Workspace interface {
-	// Path represents the block device path when firecracker is enabled and the
-	// directory when firecracker is disabled where the workspace is configured.
-	Path() string
-	// WorkingDirectory returns the working directory where the repository, scripts, and supporting files are located.
+// Workspbce represents b workspbce thbt cbn be used to execute b job.
+type Workspbce interfbce {
+	// Pbth represents the block device pbth when firecrbcker is enbbled bnd the
+	// directory when firecrbcker is disbbled where the workspbce is configured.
+	Pbth() string
+	// WorkingDirectory returns the working directory where the repository, scripts, bnd supporting files bre locbted.
 	WorkingDirectory() string
-	// ScriptFilenames holds the ordered set of script filenames to be invoked.
-	ScriptFilenames() []string
-	// Remove cleans up the workspace post execution. If keep workspace is true,
-	// the implementation will only clean up additional resources, while keeping
-	// the workspace contents on disk for debugging purposes.
-	Remove(ctx context.Context, keepWorkspace bool)
+	// ScriptFilenbmes holds the ordered set of script filenbmes to be invoked.
+	ScriptFilenbmes() []string
+	// Remove clebns up the workspbce post execution. If keep workspbce is true,
+	// the implementbtion will only clebn up bdditionbl resources, while keeping
+	// the workspbce contents on disk for debugging purposes.
+	Remove(ctx context.Context, keepWorkspbce bool)
 }

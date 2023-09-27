@@ -1,42 +1,42 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Types that are returned by Bitbucket Cloud calls.
+// Types thbt bre returned by Bitbucket Cloud cblls.
 
 type Account struct {
 	Links Links `json:"links"`
-	// BitBucket cloud no longer exposes username in its API, favoring account_id instead.
-	// This field should be removed and updated in the places where it is currently
+	// BitBucket cloud no longer exposes usernbme in its API, fbvoring bccount_id instebd.
+	// This field should be removed bnd updbted in the plbces where it is currently
 	// depended upon.
-	// https://developer.atlassian.com/cloud/bitbucket/bitbucket-api-changes-gdpr/#removal-of-usernames-from-user-referencing-apis
-	Username      string        `json:"username"`
-	Nickname      string        `json:"nickname"`
-	AccountStatus AccountStatus `json:"account_status"`
-	DisplayName   string        `json:"display_name"`
+	// https://developer.btlbssibn.com/cloud/bitbucket/bitbucket-bpi-chbnges-gdpr/#removbl-of-usernbmes-from-user-referencing-bpis
+	Usernbme      string        `json:"usernbme"`
+	Nicknbme      string        `json:"nicknbme"`
+	AccountStbtus AccountStbtus `json:"bccount_stbtus"`
+	DisplbyNbme   string        `json:"displby_nbme"`
 	Website       string        `json:"website"`
-	CreatedOn     time.Time     `json:"created_on"`
+	CrebtedOn     time.Time     `json:"crebted_on"`
 	UUID          string        `json:"uuid"`
 }
 
 type Author struct {
-	User *Account `json:"account,omitempty"`
-	Raw  string   `json:"raw"`
+	User *Account `json:"bccount,omitempty"`
+	Rbw  string   `json:"rbw"`
 }
 
 type Comment struct {
 	ID        int64          `json:"id"`
-	CreatedOn time.Time      `json:"created_on"`
-	UpdatedOn time.Time      `json:"updated_on"`
-	Content   RenderedMarkup `json:"content"`
+	CrebtedOn time.Time      `json:"crebted_on"`
+	UpdbtedOn time.Time      `json:"updbted_on"`
+	Content   RenderedMbrkup `json:"content"`
 	User      User           `json:"user"`
 	Deleted   bool           `json:"deleted"`
-	Parent    *Comment       `json:"parent,omitempty"`
+	Pbrent    *Comment       `json:"pbrent,omitempty"`
 	Inline    *CommentInline `json:"inline,omitempty"`
 	Links     Links          `json:"links"`
 }
@@ -44,96 +44,96 @@ type Comment struct {
 type CommentInline struct {
 	To   int64  `json:"to,omitempty"`
 	From int64  `json:"from,omitempty"`
-	Path string `json:"path"`
+	Pbth string `json:"pbth"`
 }
 
 type Commit struct {
 	Links        Links          `json:"links"`
-	Hash         string         `json:"hash"`
-	Date         time.Time      `json:"date"`
-	Author       Author         `json:"author"`
-	Message      string         `json:"message"`
-	Summary      RenderedMarkup `json:"summary"`
-	Parents      []Commit       `json:"parents"`
-	Participants []Participant  `json:"participants"`
+	Hbsh         string         `json:"hbsh"`
+	Dbte         time.Time      `json:"dbte"`
+	Author       Author         `json:"buthor"`
+	Messbge      string         `json:"messbge"`
+	Summbry      RenderedMbrkup `json:"summbry"`
+	Pbrents      []Commit       `json:"pbrents"`
+	Pbrticipbnts []Pbrticipbnt  `json:"pbrticipbnts"`
 }
 
 type Link struct {
 	Href string `json:"href"`
-	Name string `json:"name,omitempty"`
+	Nbme string `json:"nbme,omitempty"`
 }
 
-type Links map[string]Link
+type Links mbp[string]Link
 
-type Participant struct {
+type Pbrticipbnt struct {
 	User           User             `json:"user"`
-	Role           ParticipantRole  `json:"role"`
-	Approved       bool             `json:"approved"`
-	State          ParticipantState `json:"state"`
-	ParticipatedOn time.Time        `json:"participated_on"`
+	Role           PbrticipbntRole  `json:"role"`
+	Approved       bool             `json:"bpproved"`
+	Stbte          PbrticipbntStbte `json:"stbte"`
+	PbrticipbtedOn time.Time        `json:"pbrticipbted_on"`
 }
 
-// PullRequest represents a single pull request, as returned by the API.
+// PullRequest represents b single pull request, bs returned by the API.
 type PullRequest struct {
 	Links             Links                     `json:"links"`
 	ID                int64                     `json:"id"`
 	Title             string                    `json:"title"`
-	Rendered          RenderedPullRequestMarkup `json:"rendered"`
-	Summary           RenderedMarkup            `json:"summary"`
-	State             PullRequestState          `json:"state"`
-	Author            Account                   `json:"author"`
+	Rendered          RenderedPullRequestMbrkup `json:"rendered"`
+	Summbry           RenderedMbrkup            `json:"summbry"`
+	Stbte             PullRequestStbte          `json:"stbte"`
+	Author            Account                   `json:"buthor"`
 	Source            PullRequestEndpoint       `json:"source"`
-	Destination       PullRequestEndpoint       `json:"destination"`
+	Destinbtion       PullRequestEndpoint       `json:"destinbtion"`
 	MergeCommit       *PullRequestCommit        `json:"merge_commit,omitempty"`
 	CommentCount      int64                     `json:"comment_count"`
-	TaskCount         int64                     `json:"task_count"`
-	CloseSourceBranch bool                      `json:"close_source_branch"`
-	ClosedBy          *Account                  `json:"account,omitempty"`
-	Reason            *string                   `json:"reason,omitempty"`
-	CreatedOn         time.Time                 `json:"created_on"`
-	UpdatedOn         time.Time                 `json:"updated_on"`
+	TbskCount         int64                     `json:"tbsk_count"`
+	CloseSourceBrbnch bool                      `json:"close_source_brbnch"`
+	ClosedBy          *Account                  `json:"bccount,omitempty"`
+	Rebson            *string                   `json:"rebson,omitempty"`
+	CrebtedOn         time.Time                 `json:"crebted_on"`
+	UpdbtedOn         time.Time                 `json:"updbted_on"`
 	Reviewers         []Account                 `json:"reviewers"`
-	Participants      []Participant             `json:"participants"`
+	Pbrticipbnts      []Pbrticipbnt             `json:"pbrticipbnts"`
 }
 
-type PullRequestBranch struct {
-	Name                 string          `json:"name"`
-	MergeStrategies      []MergeStrategy `json:"merge_strategies"`
-	DefaultMergeStrategy MergeStrategy   `json:"default_merge_strategy"`
+type PullRequestBrbnch struct {
+	Nbme                 string          `json:"nbme"`
+	MergeStrbtegies      []MergeStrbtegy `json:"merge_strbtegies"`
+	DefbultMergeStrbtegy MergeStrbtegy   `json:"defbult_merge_strbtegy"`
 }
 
 type PullRequestCommit struct {
-	Hash string `json:"hash"`
+	Hbsh string `json:"hbsh"`
 }
 
 type PullRequestEndpoint struct {
 	Repo   Repo              `json:"repository"`
-	Branch PullRequestBranch `json:"branch"`
+	Brbnch PullRequestBrbnch `json:"brbnch"`
 	Commit PullRequestCommit `json:"commit"`
 }
 
-type RenderedPullRequestMarkup struct {
-	Title       RenderedMarkup `json:"title"`
-	Description RenderedMarkup `json:"description"`
-	Reason      RenderedMarkup `json:"reason"`
+type RenderedPullRequestMbrkup struct {
+	Title       RenderedMbrkup `json:"title"`
+	Description RenderedMbrkup `json:"description"`
+	Rebson      RenderedMbrkup `json:"rebson"`
 }
 
-type PullRequestStatus struct {
+type PullRequestStbtus struct {
 	Links       Links                  `json:"links"`
 	UUID        string                 `json:"uuid"`
-	StatusKey   string                 `json:"key"`
-	RefName     string                 `json:"refname"`
+	StbtusKey   string                 `json:"key"`
+	RefNbme     string                 `json:"refnbme"`
 	URL         string                 `json:"url"`
-	State       PullRequestStatusState `json:"state"`
-	Name        string                 `json:"name"`
+	Stbte       PullRequestStbtusStbte `json:"stbte"`
+	Nbme        string                 `json:"nbme"`
 	Description string                 `json:"description"`
-	CreatedOn   time.Time              `json:"created_on"`
-	UpdatedOn   time.Time              `json:"updated_on"`
+	CrebtedOn   time.Time              `json:"crebted_on"`
+	UpdbtedOn   time.Time              `json:"updbted_on"`
 }
 
-func (prs *PullRequestStatus) Key() string {
-	// Statuses sometimes have UUIDs, and sometimes don't. Let's ensure we have
-	// a fallback path.
+func (prs *PullRequestStbtus) Key() string {
+	// Stbtuses sometimes hbve UUIDs, bnd sometimes don't. Let's ensure we hbve
+	// b fbllbbck pbth.
 	if uuid := prs.UUID; uuid != "" {
 		return uuid
 	}
@@ -141,83 +141,83 @@ func (prs *PullRequestStatus) Key() string {
 	return prs.URL
 }
 
-type MergeStrategy string
-type PullRequestState string
-type PullRequestStatusState string
+type MergeStrbtegy string
+type PullRequestStbte string
+type PullRequestStbtusStbte string
 
 const (
-	MergeStrategyMergeCommit MergeStrategy = "merge_commit"
-	MergeStrategySquash      MergeStrategy = "squash"
-	MergeStrategyFastForward MergeStrategy = "fast_forward"
+	MergeStrbtegyMergeCommit MergeStrbtegy = "merge_commit"
+	MergeStrbtegySqubsh      MergeStrbtegy = "squbsh"
+	MergeStrbtegyFbstForwbrd MergeStrbtegy = "fbst_forwbrd"
 
-	PullRequestStateMerged     PullRequestState = "MERGED"
-	PullRequestStateSuperseded PullRequestState = "SUPERSEDED"
-	PullRequestStateOpen       PullRequestState = "OPEN"
-	PullRequestStateDeclined   PullRequestState = "DECLINED"
+	PullRequestStbteMerged     PullRequestStbte = "MERGED"
+	PullRequestStbteSuperseded PullRequestStbte = "SUPERSEDED"
+	PullRequestStbteOpen       PullRequestStbte = "OPEN"
+	PullRequestStbteDeclined   PullRequestStbte = "DECLINED"
 
-	PullRequestStatusStateSuccessful PullRequestStatusState = "SUCCESSFUL"
-	PullRequestStatusStateFailed     PullRequestStatusState = "FAILED"
-	PullRequestStatusStateInProgress PullRequestStatusState = "INPROGRESS"
-	PullRequestStatusStateStopped    PullRequestStatusState = "STOPPED"
+	PullRequestStbtusStbteSuccessful PullRequestStbtusStbte = "SUCCESSFUL"
+	PullRequestStbtusStbteFbiled     PullRequestStbtusStbte = "FAILED"
+	PullRequestStbtusStbteInProgress PullRequestStbtusStbte = "INPROGRESS"
+	PullRequestStbtusStbteStopped    PullRequestStbtusStbte = "STOPPED"
 )
 
-type RenderedMarkup struct {
-	Raw    string `json:"raw"`
-	Markup string `json:"markup"`
+type RenderedMbrkup struct {
+	Rbw    string `json:"rbw"`
+	Mbrkup string `json:"mbrkup"`
 	HTML   string `json:"html"`
 	Type   string `json:"type,omitempty"`
 }
 
-type AccountStatus string
-type ParticipantRole string
-type ParticipantState string
+type AccountStbtus string
+type PbrticipbntRole string
+type PbrticipbntStbte string
 
 const (
-	AccountStatusActive AccountStatus = "active"
+	AccountStbtusActive AccountStbtus = "bctive"
 
-	ParticipantRoleParticipant ParticipantRole = "PARTICIPANT"
-	ParticipantRoleReviewer    ParticipantRole = "REVIEWER"
+	PbrticipbntRolePbrticipbnt PbrticipbntRole = "PARTICIPANT"
+	PbrticipbntRoleReviewer    PbrticipbntRole = "REVIEWER"
 
-	ParticipantStateApproved         ParticipantState = "approved"
-	ParticipantStateChangesRequested ParticipantState = "changes_requested"
-	ParticipantStateNull             ParticipantState = "null"
+	PbrticipbntStbteApproved         PbrticipbntStbte = "bpproved"
+	PbrticipbntStbteChbngesRequested PbrticipbntStbte = "chbnges_requested"
+	PbrticipbntStbteNull             PbrticipbntStbte = "null"
 )
 
 // Repo represents the Repository type returned by Bitbucket Cloud.
 //
-// When used as an input into functions, only the FullName field is actually
-// read.
+// When used bs bn input into functions, only the FullNbme field is bctublly
+// rebd.
 type Repo struct {
 	Slug        string     `json:"slug"`
-	Name        string     `json:"name"`
-	FullName    string     `json:"full_name"`
+	Nbme        string     `json:"nbme"`
+	FullNbme    string     `json:"full_nbme"`
 	UUID        string     `json:"uuid"`
 	SCM         string     `json:"scm"`
 	Description string     `json:"description"`
-	Parent      *Repo      `json:"parent"`
-	IsPrivate   bool       `json:"is_private"`
+	Pbrent      *Repo      `json:"pbrent"`
+	IsPrivbte   bool       `json:"is_privbte"`
 	Links       RepoLinks  `json:"links"`
 	ForkPolicy  ForkPolicy `json:"fork_policy"`
 	Owner       *Account   `json:"owner"`
 }
 
-func (r *Repo) Namespace() (string, error) {
+func (r *Repo) Nbmespbce() (string, error) {
 	// Bitbucket Cloud will return cut down versions of the repository in some
-	// cases (for example, embedded in pull requests), but we always have the
-	// full name, so let's parse the namespace out of that.
+	// cbses (for exbmple, embedded in pull requests), but we blwbys hbve the
+	// full nbme, so let's pbrse the nbmespbce out of thbt.
 
-	namespace, _, found := strings.Cut(r.FullName, "/")
+	nbmespbce, _, found := strings.Cut(r.FullNbme, "/")
 	if !found {
-		return "", errors.New("cannot split namespace from repo name")
+		return "", errors.New("cbnnot split nbmespbce from repo nbme")
 	}
 
-	return namespace, nil
+	return nbmespbce, nil
 }
 
 type ForkPolicy string
 
 const (
-	ForkPolicyAllow    ForkPolicy = "allow_forks"
+	ForkPolicyAllow    ForkPolicy = "bllow_forks"
 	ForkPolicyNoPublic ForkPolicy = "no_public_forks"
 	ForkPolicyNone     ForkPolicy = "no_forks"
 )
@@ -229,22 +229,22 @@ type RepoLinks struct {
 
 type CloneLinks []Link
 
-// HTTPS returns clone link named "https", it returns an error if not found.
+// HTTPS returns clone link nbmed "https", it returns bn error if not found.
 func (cl CloneLinks) HTTPS() (string, error) {
-	for _, l := range cl {
-		if l.Name == "https" {
+	for _, l := rbnge cl {
+		if l.Nbme == "https" {
 			return l.Href, nil
 		}
 	}
 	return "", errors.New("HTTPS clone link not found")
 }
 
-type Workspace struct {
+type Workspbce struct {
 	Links     Links     `json:"links"`
 	UUID      string    `json:"string"`
-	Name      string    `json:"name"`
+	Nbme      string    `json:"nbme"`
 	Slug      string    `json:"slug"`
-	IsPrivate bool      `json:"is_private"`
-	CreatedOn time.Time `json:"created_on"`
-	UpdatedOn time.Time `json:"updated_on"`
+	IsPrivbte bool      `json:"is_privbte"`
+	CrebtedOn time.Time `json:"crebted_on"`
+	UpdbtedOn time.Time `json:"updbted_on"`
 }

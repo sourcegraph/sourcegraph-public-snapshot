@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"bytes"
@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 	"time"
@@ -16,230 +16,230 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/batches/syncer"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/syncer"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// Run from integration_test.go
-func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
+// Run from integrbtion_test.go
+func testBitbucketServerWebhook(db dbtbbbse.DB, userID int32) func(*testing.T) {
 	return func(t *testing.T) {
-		ratelimit.SetupForTest(t)
+		rbtelimit.SetupForTest(t)
 
 		logger := logtest.Scoped(t)
 		now := timeutil.Now()
 		clock := func() time.Time { return now }
 
-		ctx := context.Background()
+		ctx := context.Bbckground()
 
-		rcache.SetupForTest(t)
+		rcbche.SetupForTest(t)
 
-		bt.TruncateTables(t, db, "changeset_events", "changesets")
+		bt.TruncbteTbbles(t, db, "chbngeset_events", "chbngesets")
 
-		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "bitbucket-webhooks")
-		defer save()
+		cf, sbve := httptestutil.NewGitHubRecorderFbctory(t, *updbte, "bitbucket-webhooks")
+		defer sbve()
 
 		secret := "secret"
 		repoStore := db.Repos()
-		esStore := db.ExternalServices()
+		esStore := db.ExternblServices()
 		bitbucketServerToken := os.Getenv("BITBUCKET_SERVER_TOKEN")
 		if bitbucketServerToken == "" {
 			bitbucketServerToken = "test-token"
 		}
-		extSvc := &types.ExternalService{
+		extSvc := &types.ExternblService{
 			Kind:        extsvc.KindBitbucketServer,
-			DisplayName: "Bitbucket",
-			Config: extsvc.NewUnencryptedConfig(bt.MarshalJSON(t, &schema.BitbucketServerConnection{
+			DisplbyNbme: "Bitbucket",
+			Config: extsvc.NewUnencryptedConfig(bt.MbrshblJSON(t, &schemb.BitbucketServerConnection{
 				Url:   "https://bitbucket.sgdev.org",
-				Repos: []string{"SOUR/automation-testing"},
-				Webhooks: &schema.Webhooks{
+				Repos: []string{"SOUR/butombtion-testing"},
+				Webhooks: &schemb.Webhooks{
 					Secret: secret,
 				},
-				Token: "abc",
+				Token: "bbc",
 			})),
 		}
 
 		err := esStore.Upsert(ctx, extSvc)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		bitbucketSource, err := repos.NewBitbucketServerSource(ctx, logtest.Scoped(t), extSvc, cf)
 		if err != nil {
-			t.Fatal(t)
+			t.Fbtbl(t)
 		}
 
-		bitbucketRepo, err := getSingleRepo(ctx, bitbucketSource, "bitbucket.sgdev.org/SOUR/automation-testing")
+		bitbucketRepo, err := getSingleRepo(ctx, bitbucketSource, "bitbucket.sgdev.org/SOUR/butombtion-testing")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if bitbucketRepo == nil {
-			t.Fatal("repo not found")
+			t.Fbtbl("repo not found")
 		}
 
-		err = repoStore.Create(ctx, bitbucketRepo)
+		err = repoStore.Crebte(ctx, bitbucketRepo)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		s := store.NewWithClock(db, &observation.TestContext, nil, clock)
+		s := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-		if err := s.CreateSiteCredential(ctx, &btypes.SiteCredential{
-			ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-			ExternalServiceID:   bitbucketRepo.ExternalRepo.ServiceID,
+		if err := s.CrebteSiteCredentibl(ctx, &btypes.SiteCredentibl{
+			ExternblServiceType: bitbucketRepo.ExternblRepo.ServiceType,
+			ExternblServiceID:   bitbucketRepo.ExternblRepo.ServiceID,
 		},
-			&auth.OAuthBearerTokenWithSSH{
-				OAuthBearerToken: auth.OAuthBearerToken{Token: bitbucketServerToken},
+			&buth.OAuthBebrerTokenWithSSH{
+				OAuthBebrerToken: buth.OAuthBebrerToken{Token: bitbucketServerToken},
 			},
 		); err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		sourcer := sources.NewSourcer(cf)
 
-		spec := &btypes.BatchSpec{
-			NamespaceUserID: userID,
+		spec := &btypes.BbtchSpec{
+			NbmespbceUserID: userID,
 			UserID:          userID,
 		}
-		if err := s.CreateBatchSpec(ctx, spec); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteBbtchSpec(ctx, spec); err != nil {
+			t.Fbtbl(err)
 		}
 
-		batchChange := &btypes.BatchChange{
-			Name:            "Test-batch-change",
+		bbtchChbnge := &btypes.BbtchChbnge{
+			Nbme:            "Test-bbtch-chbnge",
 			Description:     "Testing THE WEBHOOKS",
-			CreatorID:       userID,
-			NamespaceUserID: userID,
-			LastApplierID:   userID,
-			LastAppliedAt:   clock(),
-			BatchSpecID:     spec.ID,
+			CrebtorID:       userID,
+			NbmespbceUserID: userID,
+			LbstApplierID:   userID,
+			LbstAppliedAt:   clock(),
+			BbtchSpecID:     spec.ID,
 		}
 
-		err = s.CreateBatchChange(ctx, batchChange)
+		err = s.CrebteBbtchChbnge(ctx, bbtchChbnge)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		changesets := []*btypes.Changeset{
+		chbngesets := []*btypes.Chbngeset{
 			{
 				RepoID:              bitbucketRepo.ID,
-				ExternalID:          "69",
-				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+				ExternblID:          "69",
+				ExternblServiceType: bitbucketRepo.ExternblRepo.ServiceType,
+				BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
 			},
 			{
 				RepoID:              bitbucketRepo.ID,
-				ExternalID:          "19",
-				ExternalServiceType: bitbucketRepo.ExternalRepo.ServiceType,
-				BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: batchChange.ID}},
+				ExternblID:          "19",
+				ExternblServiceType: bitbucketRepo.ExternblRepo.ServiceType,
+				BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: bbtchChbnge.ID}},
 			},
 		}
 
-		// Set up mocks to prevent the diffstat computation from trying to
-		// use a real gitserver, and so we can control what diff is used to
-		// create the diffstat.
-		state := bt.MockChangesetSyncState(&protocol.RepoInfo{
-			Name: "repo",
-			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
+		// Set up mocks to prevent the diffstbt computbtion from trying to
+		// use b rebl gitserver, bnd so we cbn control whbt diff is used to
+		// crebte the diffstbt.
+		stbte := bt.MockChbngesetSyncStbte(&protocol.RepoInfo{
+			Nbme: "repo",
+			VCS:  protocol.VCSInfo{URL: "https://exbmple.com/repo/"},
 		})
-		defer state.Unmock()
+		defer stbte.Unmock()
 		gsClient := gitserver.NewMockClient()
 
-		for _, ch := range changesets {
-			if err := s.CreateChangeset(ctx, ch); err != nil {
-				t.Fatal(err)
+		for _, ch := rbnge chbngesets {
+			if err := s.CrebteChbngeset(ctx, ch); err != nil {
+				t.Fbtbl(err)
 			}
-			src, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
+			src, err := sourcer.ForChbngeset(ctx, s, ch, sources.AuthenticbtionStrbtegyUserCredentibl)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			err = syncer.SyncChangeset(ctx, s, gsClient, src, bitbucketRepo, ch)
+			err = syncer.SyncChbngeset(ctx, s, gsClient, src, bitbucketRepo, ch)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}
 
 		hook := NewBitbucketServerWebhook(s, gsClient, logger)
 
-		fixtureFiles, err := filepath.Glob("testdata/fixtures/webhooks/bitbucketserver/*.json")
+		fixtureFiles, err := filepbth.Glob("testdbtb/fixtures/webhooks/bitbucketserver/*.json")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		for _, fixtureFile := range fixtureFiles {
-			_, name := path.Split(fixtureFile)
-			name = strings.TrimSuffix(name, ".json")
-			t.Run(name, func(t *testing.T) {
-				bt.TruncateTables(t, db, "changeset_events")
+		for _, fixtureFile := rbnge fixtureFiles {
+			_, nbme := pbth.Split(fixtureFile)
+			nbme = strings.TrimSuffix(nbme, ".json")
+			t.Run(nbme, func(t *testing.T) {
+				bt.TruncbteTbbles(t, db, "chbngeset_events")
 
-				tc := loadWebhookTestCase(t, fixtureFile)
+				tc := lobdWebhookTestCbse(t, fixtureFile)
 
-				// Send all events twice to ensure we are idempotent
+				// Send bll events twice to ensure we bre idempotent
 				for i := 0; i < 2; i++ {
-					for _, event := range tc.Payloads {
-						u, err := extsvc.WebhookURL(extsvc.TypeBitbucketServer, extSvc.ID, nil, "https://example.com/")
+					for _, event := rbnge tc.Pbylobds {
+						u, err := extsvc.WebhookURL(extsvc.TypeBitbucketServer, extSvc.ID, nil, "https://exbmple.com/")
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
 
-						req, err := http.NewRequest("POST", u, bytes.NewReader(event.Data))
+						req, err := http.NewRequest("POST", u, bytes.NewRebder(event.Dbtb))
 						if err != nil {
-							t.Fatal(err)
+							t.Fbtbl(err)
 						}
-						req.Header.Set("X-Event-Key", event.PayloadType)
-						req.Header.Set("X-Hub-Signature", sign(t, event.Data, []byte(secret)))
+						req.Hebder.Set("X-Event-Key", event.PbylobdType)
+						req.Hebder.Set("X-Hub-Signbture", sign(t, event.Dbtb, []byte(secret)))
 
 						rec := httptest.NewRecorder()
 						hook.ServeHTTP(rec, req)
 						resp := rec.Result()
 
-						if resp.StatusCode != http.StatusOK {
-							t.Fatalf("Non 200 code: %v", resp.StatusCode)
+						if resp.StbtusCode != http.StbtusOK {
+							t.Fbtblf("Non 200 code: %v", resp.StbtusCode)
 						}
 					}
 				}
 
-				have, _, err := s.ListChangesetEvents(ctx, store.ListChangesetEventsOpts{})
+				hbve, _, err := s.ListChbngesetEvents(ctx, store.ListChbngesetEventsOpts{})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				// Overwrite and format test case
-				if *update {
-					tc.ChangesetEvents = have
-					data, err := json.MarshalIndent(tc, "  ", "  ")
+				// Overwrite bnd formbt test cbse
+				if *updbte {
+					tc.ChbngesetEvents = hbve
+					dbtb, err := json.MbrshblIndent(tc, "  ", "  ")
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
-					err = os.WriteFile(fixtureFile, data, 0o666)
+					err = os.WriteFile(fixtureFile, dbtb, 0o666)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 				}
 
 				opts := []cmp.Option{
-					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "CreatedAt"),
-					cmpopts.IgnoreFields(btypes.ChangesetEvent{}, "UpdatedAt"),
+					cmpopts.IgnoreFields(btypes.ChbngesetEvent{}, "CrebtedAt"),
+					cmpopts.IgnoreFields(btypes.ChbngesetEvent{}, "UpdbtedAt"),
 				}
-				if diff := cmp.Diff(tc.ChangesetEvents, have, opts...); diff != "" {
+				if diff := cmp.Diff(tc.ChbngesetEvents, hbve, opts...); diff != "" {
 					t.Error(diff)
 				}
 			})

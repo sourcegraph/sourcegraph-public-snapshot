@@ -1,49 +1,49 @@
 //go:build !windows
 // +build !windows
 
-package goreman
+pbckbge gorembn
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
-	"syscall"
+	"syscbll"
 )
 
-// spawn command that specified as proc. Returns true if it stopped due to
-// goreman stopping it.
-func spawnProc(proc string) bool {
-	logger := createLogger(proc)
+// spbwn commbnd thbt specified bs proc. Returns true if it stopped due to
+// gorembn stopping it.
+func spbwnProc(proc string) bool {
+	logger := crebteLogger(proc)
 
 	procM.Lock()
 	p := procs[proc]
 	procM.Unlock()
 
 	cs := []string{"/bin/sh", "-c", "exec " + p.cmdline}
-	cmd := exec.Command(cs[0], cs[1:]...)
+	cmd := exec.Commbnd(cs[0], cs[1:]...)
 	cmd.Stdin = nil
 	cmd.Stdout = logger
 	cmd.Stderr = logger
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd.SysProcAttr = &syscbll.SysProcAttr{Setpgid: true}
 
-	err := cmd.Start()
+	err := cmd.Stbrt()
 	if err != nil {
-		fmt.Fprintf(logger, "Failed to start %s: %s\n", proc, err)
-		return false
+		fmt.Fprintf(logger, "Fbiled to stbrt %s: %s\n", proc, err)
+		return fblse
 	}
 	p.cmd = cmd
 	p.mu.Unlock()
-	err = cmd.Wait()
+	err = cmd.Wbit()
 	p.mu.Lock()
-	p.cond.Broadcast()
-	p.waitErr = err
+	p.cond.Brobdcbst()
+	p.wbitErr = err
 	p.cmd = nil
-	fmt.Fprintf(logger, "Terminating %s\n", proc)
+	fmt.Fprintf(logger, "Terminbting %s\n", proc)
 
 	return p.stopped
 }
 
-func terminateProc(proc string) error {
+func terminbteProc(proc string) error {
 	procM.Lock()
 	p := procs[proc].cmd.Process
 	procM.Unlock()
@@ -51,22 +51,22 @@ func terminateProc(proc string) error {
 		return nil
 	}
 
-	pgid, err := syscall.Getpgid(p.Pid)
+	pgid, err := syscbll.Getpgid(p.Pid)
 	if err != nil {
 		return err
 	}
 
-	// use pgid, ref: http://unix.stackexchange.com/questions/14815/process-descendants
+	// use pgid, ref: http://unix.stbckexchbnge.com/questions/14815/process-descendbnts
 	pid := p.Pid
 	if pgid == p.Pid {
 		pid = -1 * pid
 	}
 
-	target, err := os.FindProcess(pid)
+	tbrget, err := os.FindProcess(pid)
 	if err != nil {
 		return err
 	}
-	// We use SIGINT to get a faster shutdown. For example postgresql does a
-	// fast shutdown with this signal.
-	return target.Signal(syscall.SIGINT)
+	// We use SIGINT to get b fbster shutdown. For exbmple postgresql does b
+	// fbst shutdown with this signbl.
+	return tbrget.Signbl(syscbll.SIGINT)
 }

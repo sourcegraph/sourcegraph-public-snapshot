@@ -1,39 +1,39 @@
-package sources
+pbckbge sources
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-// UnsupportedAuthenticatorError is returned by WithAuthenticator if the
-// authenticator isn't supported on that code host.
-type UnsupportedAuthenticatorError struct {
-	have   string
+// UnsupportedAuthenticbtorError is returned by WithAuthenticbtor if the
+// buthenticbtor isn't supported on thbt code host.
+type UnsupportedAuthenticbtorError struct {
+	hbve   string
 	source string
 }
 
-func (e UnsupportedAuthenticatorError) Error() string {
-	return fmt.Sprintf("authenticator type unsupported for %s sources: %s", e.source, e.have)
+func (e UnsupportedAuthenticbtorError) Error() string {
+	return fmt.Sprintf("buthenticbtor type unsupported for %s sources: %s", e.source, e.hbve)
 }
 
-func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) UnsupportedAuthenticatorError {
-	return UnsupportedAuthenticatorError{
-		have:   fmt.Sprintf("%T", a),
+func newUnsupportedAuthenticbtorError(source string, b buth.Authenticbtor) UnsupportedAuthenticbtorError {
+	return UnsupportedAuthenticbtorError{
+		hbve:   fmt.Sprintf("%T", b),
 		source: source,
 	}
 }
 
-// httpClientCertificateOptions creates a httpcli.Opt slice based on the default
-// options provided and a valid certificate pool option if the certificate
+// httpClientCertificbteOptions crebtes b httpcli.Opt slice bbsed on the defbult
+// options provided bnd b vblid certificbte pool option if the certificbte
 // string isn't empty.
 //
-// It is valid to pass in nil for the default options.
-func httpClientCertificateOptions(defaultOpts []httpcli.Opt, certificate string) []httpcli.Opt {
-	opts := defaultOpts
-	if certificate != "" {
-		opts = append(opts, httpcli.NewCertPoolOpt(certificate))
+// It is vblid to pbss in nil for the defbult options.
+func httpClientCertificbteOptions(defbultOpts []httpcli.Opt, certificbte string) []httpcli.Opt {
+	opts := defbultOpts
+	if certificbte != "" {
+		opts = bppend(opts, httpcli.NewCertPoolOpt(certificbte))
 	}
 	return opts
 }

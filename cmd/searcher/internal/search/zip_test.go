@@ -1,18 +1,18 @@
-package search
+pbckbge sebrch
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"os"
 	"testing"
 )
 
-func createZip(files map[string]string) ([]byte, error) {
+func crebteZip(files mbp[string]string) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	zw := zip.NewWriter(buf)
-	for name, body := range files {
-		w, err := zw.CreateHeader(&zip.FileHeader{
-			Name:   name,
+	for nbme, body := rbnge files {
+		w, err := zw.CrebteHebder(&zip.FileHebder{
+			Nbme:   nbme,
 			Method: zip.Store,
 		})
 		if err != nil {
@@ -28,38 +28,38 @@ func createZip(files map[string]string) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-func mockZipFile(data []byte) (*zipFile, error) {
-	r, err := zip.NewReader(bytes.NewReader(data), int64(len(data)))
+func mockZipFile(dbtb []byte) (*zipFile, error) {
+	r, err := zip.NewRebder(bytes.NewRebder(dbtb), int64(len(dbtb)))
 	if err != nil {
 		return nil, err
 	}
 	zf := new(zipFile)
-	if err := zf.PopulateFiles(r); err != nil {
+	if err := zf.PopulbteFiles(r); err != nil {
 		return nil, err
 	}
-	// Make a copy of data to avoid accidental alias/re-use bugs.
-	// This method is only for testing, so don't sweat the performance.
-	zf.Data = make([]byte, len(data))
-	copy(zf.Data, data)
-	// zf.f is intentionally left nil;
-	// this is an indicator that this is a mock ZipFile.
+	// Mbke b copy of dbtb to bvoid bccidentbl blibs/re-use bugs.
+	// This method is only for testing, so don't swebt the performbnce.
+	zf.Dbtb = mbke([]byte, len(dbtb))
+	copy(zf.Dbtb, dbtb)
+	// zf.f is intentionblly left nil;
+	// this is bn indicbtor thbt this is b mock ZipFile.
 	return zf, nil
 }
 
-func tempZipFileOnDisk(t *testing.T, data []byte) string {
+func tempZipFileOnDisk(t *testing.T, dbtb []byte) string {
 	t.Helper()
-	z, err := mockZipFile(data)
+	z, err := mockZipFile(dbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	d := t.TempDir()
-	f, err := os.CreateTemp(d, "temp_zip")
+	f, err := os.CrebteTemp(d, "temp_zip")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, err = f.Write(z.Data)
+	_, err = f.Write(z.Dbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return f.Name()
+	return f.Nbme()
 }

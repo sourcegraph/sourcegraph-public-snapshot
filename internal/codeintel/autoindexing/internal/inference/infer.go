@@ -1,18 +1,18 @@
-package inference
+pbckbge inference
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
 )
 
-func InferRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (repoName api.RepoName, gitTagOrCommit string, ok bool) {
-	for _, fn := range []func(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool){
+func InferRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (repoNbme bpi.RepoNbme, gitTbgOrCommit string, ok bool) {
+	for _, fn := rbnge []func(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool){
 		inferGoRepositoryAndRevision,
 		inferJVMRepositoryAndRevision,
 		inferNpmRepositoryAndRevision,
@@ -20,82 +20,82 @@ func InferRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (
 		inferPythonRepositoryAndRevision,
 		inferRubyRepositoryAndRevision,
 	} {
-		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
-			return repoName, gitTagOrCommit, true
+		if repoNbme, gitTbgOrCommit, ok := fn(pkg); ok {
+			return repoNbme, gitTbgOrCommit, true
 		}
 	}
 
-	return "", "", false
+	return "", "", fblse
 }
 
 const GitHubScheme = "https://"
 
-var goVersionPattern = lazyregexp.New(`^v?[\d\.]+-([a-f0-9]+)`)
+vbr goVersionPbttern = lbzyregexp.New(`^v?[\d\.]+-([b-f0-9]+)`)
 
-func inferGoRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
-	if pkg.Scheme != "gomod" || !strings.HasPrefix(string(pkg.Name), GitHubScheme+"github.com/") {
-		return "", "", false
+func inferGoRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool) {
+	if pkg.Scheme != "gomod" || !strings.HbsPrefix(string(pkg.Nbme), GitHubScheme+"github.com/") {
+		return "", "", fblse
 	}
 
-	repoParts := strings.Split(string(pkg.Name[len(GitHubScheme):]), "/")[:3]
-	if len(repoParts) > 3 {
-		repoParts = repoParts[:3]
+	repoPbrts := strings.Split(string(pkg.Nbme[len(GitHubScheme):]), "/")[:3]
+	if len(repoPbrts) > 3 {
+		repoPbrts = repoPbrts[:3]
 	}
 
 	version := pkg.Version
-	if match := goVersionPattern.FindAllStringSubmatch(version, 1); len(match) > 0 {
-		version = match[0][1]
+	if mbtch := goVersionPbttern.FindAllStringSubmbtch(version, 1); len(mbtch) > 0 {
+		version = mbtch[0][1]
 	}
 
-	return api.RepoName(strings.Join(repoParts, "/")), version, true
+	return bpi.RepoNbme(strings.Join(repoPbrts, "/")), version, true
 }
 
-func inferJVMRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependencies.JVMPackagesScheme {
-		return "", "", false
+func inferJVMRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool) {
+	if pkg.Scheme != dependencies.JVMPbckbgesScheme {
+		return "", "", fblse
 	}
-	return api.RepoName(pkg.Name), "v" + pkg.Version, true
+	return bpi.RepoNbme(pkg.Nbme), "v" + pkg.Version, true
 }
 
-func inferNpmRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependencies.NpmPackagesScheme {
-		return "", "", false
+func inferNpmRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool) {
+	if pkg.Scheme != dependencies.NpmPbckbgesScheme {
+		return "", "", fblse
 	}
 
 	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
-	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
+	npmPkg, err := reposource.PbrseNpmPbckbgeFromPbckbgeSyntbx(pkg.Nbme)
 	if err != nil {
-		logger.Error("invalid npm package name in database", log.Error(err))
-		return "", "", false
+		logger.Error("invblid npm pbckbge nbme in dbtbbbse", log.Error(err))
+		return "", "", fblse
 	}
-	return npmPkg.RepoName(), "v" + pkg.Version, true
+	return npmPkg.RepoNbme(), "v" + pkg.Version, true
 }
 
-func inferRustRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependencies.RustPackagesScheme {
-		return "", "", false
+func inferRustRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool) {
+	if pkg.Scheme != dependencies.RustPbckbgesScheme {
+		return "", "", fblse
 	}
 
-	rustPkg := reposource.ParseRustVersionedPackage(string(pkg.Name))
-	return rustPkg.RepoName(), "v" + pkg.Version, true
+	rustPkg := reposource.PbrseRustVersionedPbckbge(string(pkg.Nbme))
+	return rustPkg.RepoNbme(), "v" + pkg.Version, true
 }
 
-func inferPythonRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependencies.PythonPackagesScheme {
-		return "", "", false
+func inferPythonRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool) {
+	if pkg.Scheme != dependencies.PythonPbckbgesScheme {
+		return "", "", fblse
 	}
 
-	pythonPkg := reposource.ParsePythonPackageFromName(pkg.Name)
+	pythonPkg := reposource.PbrsePythonPbckbgeFromNbme(pkg.Nbme)
 
-	return pythonPkg.RepoName(), pkg.Version, true
+	return pythonPkg.RepoNbme(), pkg.Version, true
 }
 
-func inferRubyRepositoryAndRevision(pkg dependencies.MinimialVersionedPackageRepo) (api.RepoName, string, bool) {
-	if pkg.Scheme != dependencies.RubyPackagesScheme {
-		return "", "", false
+func inferRubyRepositoryAndRevision(pkg dependencies.MinimiblVersionedPbckbgeRepo) (bpi.RepoNbme, string, bool) {
+	if pkg.Scheme != dependencies.RubyPbckbgesScheme {
+		return "", "", fblse
 	}
 
-	rubyPkg := reposource.ParseRubyPackageFromName(pkg.Name)
+	rubyPkg := reposource.PbrseRubyPbckbgeFromNbme(pkg.Nbme)
 
-	return rubyPkg.RepoName(), pkg.Version, true
+	return rubyPkg.RepoNbme(), pkg.Version, true
 }

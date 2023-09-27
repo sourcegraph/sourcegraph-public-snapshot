@@ -1,116 +1,116 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestOrgMembers_CreateMembershipInOrgsForAllUsers(t *testing.T) {
+func TestOrgMembers_CrebteMembershipInOrgsForAllUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create fixtures.
-	org1, err := db.Orgs().Create(ctx, "org1", nil)
+	// Crebte fixtures.
+	org1, err := db.Orgs().Crebte(ctx, "org1", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	org2, err := db.Orgs().Create(ctx, "org2", nil)
+	org2, err := db.Orgs().Crebte(ctx, "org2", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	org3, err := db.Orgs().Create(ctx, "org3", nil)
+	org3, err := db.Orgs().Crebte(ctx, "org3", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user1, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
+	user1, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b1@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	_, err = db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p",
-		EmailVerificationCode: "c",
+	_, err = db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if _, err := db.OrgMembers().Create(ctx, org1.ID, user1.ID); err != nil {
-		t.Fatal(err)
+	if _, err := db.OrgMembers().Crebte(ctx, org1.ID, user1.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
 	check := func() error {
-		want := map[string][]int32{
+		wbnt := mbp[string][]int32{
 			"org1": {1, 2},
 			"org2": {},
 			"org3": {1, 2},
 		}
-		got := map[string][]int32{}
-		for _, org := range []*types.Org{org1, org2, org3} {
+		got := mbp[string][]int32{}
+		for _, org := rbnge []*types.Org{org1, org2, org3} {
 			members, err := db.OrgMembers().GetByOrgID(ctx, org.ID)
 			if err != nil {
 				return err
 			}
 			if len(members) == 0 {
-				got[org.Name] = []int32{}
+				got[org.Nbme] = []int32{}
 			}
-			for _, member := range members {
-				got[org.Name] = append(got[org.Name], member.UserID)
+			for _, member := rbnge members {
+				got[org.Nbme] = bppend(got[org.Nbme], member.UserID)
 			}
 		}
-		if !reflect.DeepEqual(got, want) {
-			return errors.Errorf("got membership %+v, want %+v", got, want)
+		if !reflect.DeepEqubl(got, wbnt) {
+			return errors.Errorf("got membership %+v, wbnt %+v", got, wbnt)
 		}
 		return nil
 	}
 
 	// Try twice; it should be idempotent.
-	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
-		t.Fatal(err)
+	if err := db.OrgMembers().CrebteMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := check(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
-		t.Fatal(err)
+	if err := db.OrgMembers().CrebteMembershipInOrgsForAllUsers(ctx, []string{"org1", "org3"}); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := check(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Passing an org that does not exist should not be an error.
-	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{"doesntexist"}); err != nil {
-		t.Fatal(err)
+	// Pbssing bn org thbt does not exist should not be bn error.
+	if err := db.OrgMembers().CrebteMembershipInOrgsForAllUsers(ctx, []string{"doesntexist"}); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := check(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// An empty list shouldn't be an error.
-	if err := db.OrgMembers().CreateMembershipInOrgsForAllUsers(ctx, []string{}); err != nil {
-		t.Fatal(err)
+	// An empty list shouldn't be bn error.
+	if err := db.OrgMembers().CrebteMembershipInOrgsForAllUsers(ctx, []string{}); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := check(); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
@@ -120,71 +120,71 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-	// Create fixtures.
-	org1, err := db.Orgs().Create(ctx, "org1", nil)
+	ctx := context.Bbckground()
+	// Crebte fixtures.
+	org1, err := db.Orgs().Crebte(ctx, "org1", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	org2, err := db.Orgs().Create(ctx, "org2", nil)
+	org2, err := db.Orgs().Crebte(ctx, "org2", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	org3, err := db.Orgs().Create(ctx, "org3", nil)
+	org3, err := db.Orgs().Crebte(ctx, "org3", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user1, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a1@example.com",
-		Username:              "u1",
-		Password:              "p",
-		EmailVerificationCode: "c",
+	user1, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b1@exbmple.com",
+		Usernbme:              "u1",
+		Pbssword:              "p",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user2, err := db.Users().Create(ctx, NewUser{
-		Email:                 "a2@example.com",
-		Username:              "u2",
-		Password:              "p2",
-		EmailVerificationCode: "c",
+	user2, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "b2@exbmple.com",
+		Usernbme:              "u2",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	deletedUser, err := db.Users().Create(ctx, NewUser{
-		Email:                 "deleted@example.com",
-		Username:              "deleted",
-		Password:              "p2",
-		EmailVerificationCode: "c",
+	deletedUser, err := db.Users().Crebte(ctx, NewUser{
+		Embil:                 "deleted@exbmple.com",
+		Usernbme:              "deleted",
+		Pbssword:              "p2",
+		EmbilVerificbtionCode: "c",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	db.OrgMembers().Create(ctx, org1.ID, user1.ID)
-	db.OrgMembers().Create(ctx, org2.ID, user1.ID)
-	db.OrgMembers().Create(ctx, org2.ID, user2.ID)
-	db.OrgMembers().Create(ctx, org3.ID, user1.ID)
-	db.OrgMembers().Create(ctx, org3.ID, deletedUser.ID)
+	db.OrgMembers().Crebte(ctx, org1.ID, user1.ID)
+	db.OrgMembers().Crebte(ctx, org2.ID, user1.ID)
+	db.OrgMembers().Crebte(ctx, org2.ID, user2.ID)
+	db.OrgMembers().Crebte(ctx, org3.ID, user1.ID)
+	db.OrgMembers().Crebte(ctx, org3.ID, deletedUser.ID)
 	err = db.Users().Delete(ctx, deletedUser.ID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, test := range []struct {
-		name  string
+	for _, test := rbnge []struct {
+		nbme  string
 		orgID int32
-		want  int
+		wbnt  int
 	}{
 		{"org with single member", org1.ID, 1},
 		{"org with two members", org2.ID, 2},
 		{"org with one deleted member", org3.ID, 1}} {
-		t.Run(test.name, func(*testing.T) {
+		t.Run(test.nbme, func(*testing.T) {
 			got, err := db.OrgMembers().MemberCount(ctx, test.orgID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if test.want != got {
-				t.Errorf("want %v, got %v", test.want, got)
+			if test.wbnt != got {
+				t.Errorf("wbnt %v, got %v", test.wbnt, got)
 			}
 		})
 
@@ -192,125 +192,125 @@ func TestOrgMembers_MemberCount(t *testing.T) {
 
 }
 
-func TestOrgMembers_AutocompleteMembersSearch(t *testing.T) {
+func TestOrgMembers_AutocompleteMembersSebrch(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	tests := []struct {
-		name     string
-		username string
-		email    string
+		nbme     string
+		usernbme string
+		embil    string
 	}{
 		{
-			name:     "test user1",
-			username: "testuser1",
-			email:    "em1@test.com",
+			nbme:     "test user1",
+			usernbme: "testuser1",
+			embil:    "em1@test.com",
 		},
 		{
-			name:     "user maximum",
-			username: "testuser2",
-			email:    "em2@test.com",
+			nbme:     "user mbximum",
+			usernbme: "testuser2",
+			embil:    "em2@test.com",
 		},
 
 		{
-			name:     "user fancy",
-			username: "testuser3",
-			email:    "em3@test.com",
+			nbme:     "user fbncy",
+			usernbme: "testuser3",
+			embil:    "em3@test.com",
 		},
 		{
-			name:     "user notsofancy",
-			username: "testuser4",
-			email:    "em4@test.com",
+			nbme:     "user notsofbncy",
+			usernbme: "testuser4",
+			embil:    "em4@test.com",
 		},
 		{
-			name:     "display name",
-			username: "testuser5",
-			email:    "em5@test.com",
+			nbme:     "displby nbme",
+			usernbme: "testuser5",
+			embil:    "em5@test.com",
 		},
 		{
-			name:     "another name",
-			username: "testuser6",
-			email:    "em6@test.com",
+			nbme:     "bnother nbme",
+			usernbme: "testuser6",
+			embil:    "em6@test.com",
 		},
 		{
-			name:     "test user7",
-			username: "testuser7",
-			email:    "em14@test.com",
+			nbme:     "test user7",
+			usernbme: "testuser7",
+			embil:    "em14@test.com",
 		},
 		{
-			name:     "test user8",
-			username: "testuser8",
-			email:    "em13@test.com",
+			nbme:     "test user8",
+			usernbme: "testuser8",
+			embil:    "em13@test.com",
 		},
 		{
-			name:     "test user9",
-			username: "testuser9",
-			email:    "em18@test.com",
+			nbme:     "test user9",
+			usernbme: "testuser9",
+			embil:    "em18@test.com",
 		},
 		{
-			name:     "test user10",
-			username: "testuser10",
-			email:    "em19@test.com",
+			nbme:     "test user10",
+			usernbme: "testuser10",
+			embil:    "em19@test.com",
 		},
 		{
-			name:     "test user11",
-			username: "testuser11",
-			email:    "em119@test.com",
+			nbme:     "test user11",
+			usernbme: "testuser11",
+			embil:    "em119@test.com",
 		},
 		{
-			name:     "searchabletrue",
-			username: "testuser12",
-			email:    "em19@test.com",
+			nbme:     "sebrchbbletrue",
+			usernbme: "testuser12",
+			embil:    "em19@test.com",
 		},
 		{
-			name:     "test user12",
-			username: "searchablefalse",
-			email:    "em19@test.com",
+			nbme:     "test user12",
+			usernbme: "sebrchbblefblse",
+			embil:    "em19@test.com",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			_, err := db.Users().Create(ctx, NewUser{
-				Username:              test.username,
-				DisplayName:           test.name,
-				Email:                 test.email,
-				Password:              "p",
-				EmailVerificationCode: "c",
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			_, err := db.Users().Crebte(ctx, NewUser{
+				Usernbme:              test.usernbme,
+				DisplbyNbme:           test.nbme,
+				Embil:                 test.embil,
+				Pbssword:              "p",
+				EmbilVerificbtionCode: "c",
 			})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		})
 	}
 
-	users, err := db.OrgMembers().AutocompleteMembersSearch(ctx, 1, "testus")
+	users, err := db.OrgMembers().AutocompleteMembersSebrch(ctx, 1, "testus")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if want := 10; len(users) != want {
-		t.Errorf("got %d, want %d", len(users), want)
+	if wbnt := 10; len(users) != wbnt {
+		t.Errorf("got %d, wbnt %d", len(users), wbnt)
 	}
 
-	user, err := db.Users().GetByUsername(ctx, "searchablefalse")
+	user, err := db.Users().GetByUsernbme(ctx, "sebrchbblefblse")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if err := db.Users().Update(ctx, user.ID, UserUpdate{Searchable: pointers.Ptr(false)}); err != nil {
-		t.Fatal(err)
+	if err := db.Users().Updbte(ctx, user.ID, UserUpdbte{Sebrchbble: pointers.Ptr(fblse)}); err != nil {
+		t.Fbtbl(err)
 	}
 
-	users2, err := db.OrgMembers().AutocompleteMembersSearch(ctx, 1, "searchable")
+	users2, err := db.OrgMembers().AutocompleteMembersSebrch(ctx, 1, "sebrchbble")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if want := 1; len(users2) != want {
-		t.Errorf("got %d, want %d", len(users2), want)
+	if wbnt := 1; len(users2) != wbnt {
+		t.Errorf("got %d, wbnt %d", len(users2), wbnt)
 	}
 }

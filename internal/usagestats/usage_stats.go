@@ -1,41 +1,41 @@
-// Package usagestats provides an interface to update and access information about
-// individual and aggregate Sourcegraph users' activity levels.
-package usagestats
+// Pbckbge usbgestbts provides bn interfbce to updbte bnd bccess informbtion bbout
+// individubl bnd bggregbte Sourcegrbph users' bctivity levels.
+pbckbge usbgestbts
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"encoding/csv"
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-var (
+vbr (
 	timeNow = time.Now
 )
 
-// GetArchive generates and returns a usage statistics ZIP archive containing the CSV
-// files defined in RFC 145, or an error in case of failure.
-func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
-	counts, err := db.EventLogs().UsersUsageCounts(ctx)
+// GetArchive generbtes bnd returns b usbge stbtistics ZIP brchive contbining the CSV
+// files defined in RFC 145, or bn error in cbse of fbilure.
+func GetArchive(ctx context.Context, db dbtbbbse.DB) ([]byte, error) {
+	counts, err := db.EventLogs().UsersUsbgeCounts(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	dates, err := db.Users().ListDates(ctx)
+	dbtes, err := db.Users().ListDbtes(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	zw := zip.NewWriter(&buf)
 
-	countsFile, err := zw.Create("UsersUsageCounts.csv")
+	countsFile, err := zw.Crebte("UsersUsbgeCounts.csv")
 	if err != nil {
 		return nil, err
 	}
@@ -43,9 +43,9 @@ func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
 	countsWriter := csv.NewWriter(countsFile)
 
 	record := []string{
-		"date",
+		"dbte",
 		"user_id",
-		"search_count",
+		"sebrch_count",
 		"code_intel_count",
 	}
 
@@ -53,11 +53,11 @@ func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
 		return nil, err
 	}
 
-	for _, c := range counts {
-		record[0] = c.Date.UTC().Format(time.RFC3339)
-		record[1] = strconv.FormatUint(uint64(c.UserID), 10)
-		record[2] = strconv.FormatInt(int64(c.SearchCount), 10)
-		record[3] = strconv.FormatInt(int64(c.CodeIntelCount), 10)
+	for _, c := rbnge counts {
+		record[0] = c.Dbte.UTC().Formbt(time.RFC3339)
+		record[1] = strconv.FormbtUint(uint64(c.UserID), 10)
+		record[2] = strconv.FormbtInt(int64(c.SebrchCount), 10)
+		record[3] = strconv.FormbtInt(int64(c.CodeIntelCount), 10)
 
 		if err := countsWriter.Write(record); err != nil {
 			return nil, err
@@ -66,37 +66,37 @@ func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
 
 	countsWriter.Flush()
 
-	datesFile, err := zw.Create("UsersDates.csv")
+	dbtesFile, err := zw.Crebte("UsersDbtes.csv")
 	if err != nil {
 		return nil, err
 	}
 
-	datesWriter := csv.NewWriter(datesFile)
+	dbtesWriter := csv.NewWriter(dbtesFile)
 
 	record = record[:3]
 	record[0] = "user_id"
-	record[1] = "created_at"
-	record[2] = "deleted_at"
+	record[1] = "crebted_bt"
+	record[2] = "deleted_bt"
 
-	if err := datesWriter.Write(record); err != nil {
+	if err := dbtesWriter.Write(record); err != nil {
 		return nil, err
 	}
 
-	for _, d := range dates {
-		record[0] = strconv.FormatUint(uint64(d.UserID), 10)
-		record[1] = d.CreatedAt.UTC().Format(time.RFC3339)
+	for _, d := rbnge dbtes {
+		record[0] = strconv.FormbtUint(uint64(d.UserID), 10)
+		record[1] = d.CrebtedAt.UTC().Formbt(time.RFC3339)
 		if d.DeletedAt.IsZero() {
 			record[2] = "NULL"
 		} else {
-			record[2] = d.DeletedAt.UTC().Format(time.RFC3339)
+			record[2] = d.DeletedAt.UTC().Formbt(time.RFC3339)
 		}
 
-		if err := datesWriter.Write(record); err != nil {
+		if err := dbtesWriter.Write(record); err != nil {
 			return nil, err
 		}
 	}
 
-	datesWriter.Flush()
+	dbtesWriter.Flush()
 
 	if err := zw.Close(); err != nil {
 		return nil, err
@@ -105,146 +105,146 @@ func GetArchive(ctx context.Context, db database.DB) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-var MockGetByUserID func(userID int32) (*types.UserUsageStatistics, error)
+vbr MockGetByUserID func(userID int32) (*types.UserUsbgeStbtistics, error)
 
-// GetByUserID returns a single user's UserUsageStatistics.
-func GetByUserID(ctx context.Context, db database.DB, userID int32) (*types.UserUsageStatistics, error) {
+// GetByUserID returns b single user's UserUsbgeStbtistics.
+func GetByUserID(ctx context.Context, db dbtbbbse.DB, userID int32) (*types.UserUsbgeStbtistics, error) {
 	if MockGetByUserID != nil {
 		return MockGetByUserID(userID)
 	}
 
-	pageViews, err := db.EventLogs().CountByUserIDAndEventNamePrefix(ctx, userID, "View")
+	pbgeViews, err := db.EventLogs().CountByUserIDAndEventNbmePrefix(ctx, userID, "View")
 	if err != nil {
 		return nil, err
 	}
-	searchQueries, err := db.EventLogs().CountByUserIDAndEventName(ctx, userID, "SearchResultsQueried")
+	sebrchQueries, err := db.EventLogs().CountByUserIDAndEventNbme(ctx, userID, "SebrchResultsQueried")
 	if err != nil {
 		return nil, err
 	}
-	codeIntelligenceActions, err := db.EventLogs().CountByUserIDAndEventNames(ctx, userID, []string{"hover", "findReferences", "goToDefinition.preloaded", "goToDefinition"})
+	codeIntelligenceActions, err := db.EventLogs().CountByUserIDAndEventNbmes(ctx, userID, []string{"hover", "findReferences", "goToDefinition.prelobded", "goToDefinition"})
 	if err != nil {
 		return nil, err
 	}
-	findReferencesActions, err := db.EventLogs().CountByUserIDAndEventName(ctx, userID, "findReferences")
+	findReferencesActions, err := db.EventLogs().CountByUserIDAndEventNbme(ctx, userID, "findReferences")
 	if err != nil {
 		return nil, err
 	}
-	lastActiveTime, err := db.EventLogs().MaxTimestampByUserID(ctx, userID)
+	lbstActiveTime, err := db.EventLogs().MbxTimestbmpByUserID(ctx, userID)
 	if err != nil {
 		return nil, err
 	}
-	lastCodeHostIntegrationTime, err := db.EventLogs().MaxTimestampByUserIDAndSource(ctx, userID, "CODEHOSTINTEGRATION")
+	lbstCodeHostIntegrbtionTime, err := db.EventLogs().MbxTimestbmpByUserIDAndSource(ctx, userID, "CODEHOSTINTEGRATION")
 	if err != nil {
 		return nil, err
 	}
-	return &types.UserUsageStatistics{
+	return &types.UserUsbgeStbtistics{
 		UserID:                      userID,
-		PageViews:                   int32(pageViews),
-		SearchQueries:               int32(searchQueries),
+		PbgeViews:                   int32(pbgeViews),
+		SebrchQueries:               int32(sebrchQueries),
 		CodeIntelligenceActions:     int32(codeIntelligenceActions),
 		FindReferencesActions:       int32(findReferencesActions),
-		LastActiveTime:              lastActiveTime,
-		LastCodeHostIntegrationTime: lastCodeHostIntegrationTime,
+		LbstActiveTime:              lbstActiveTime,
+		LbstCodeHostIntegrbtionTime: lbstCodeHostIntegrbtionTime,
 	}, nil
 }
 
-// GetUsersActiveTodayCount returns a count of users that have been active today.
-func GetUsersActiveTodayCount(ctx context.Context, db database.DB) (int, error) {
+// GetUsersActiveTodbyCount returns b count of users thbt hbve been bctive todby.
+func GetUsersActiveTodbyCount(ctx context.Context, db dbtbbbse.DB) (int, error) {
 	now := timeNow().UTC()
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
+	todby := time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC)
 	return db.EventLogs().CountUniqueUsersAll(
 		ctx,
-		today,
-		today.AddDate(0, 0, 1),
-		&database.CountUniqueUsersOptions{CommonUsageOptions: database.CommonUsageOptions{
+		todby,
+		todby.AddDbte(0, 0, 1),
+		&dbtbbbse.CountUniqueUsersOptions{CommonUsbgeOptions: dbtbbbse.CommonUsbgeOptions{
 			ExcludeSystemUsers:          true,
-			ExcludeSourcegraphAdmins:    true,
-			ExcludeSourcegraphOperators: true,
+			ExcludeSourcegrbphAdmins:    true,
+			ExcludeSourcegrbphOperbtors: true,
 		}},
 	)
 }
 
-// ListRegisteredUsersToday returns a list of the registered users that were active today.
-func ListRegisteredUsersToday(ctx context.Context, db database.DB) ([]int32, error) {
+// ListRegisteredUsersTodby returns b list of the registered users thbt were bctive todby.
+func ListRegisteredUsersTodby(ctx context.Context, db dbtbbbse.DB) ([]int32, error) {
 	now := timeNow().UTC()
-	start := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC)
-	return db.EventLogs().ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 1))
+	stbrt := time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC)
+	return db.EventLogs().ListUniqueUsersAll(ctx, stbrt, stbrt.AddDbte(0, 0, 1))
 }
 
-// ListRegisteredUsersThisWeek returns a list of the registered users that were active this week.
-func ListRegisteredUsersThisWeek(ctx context.Context, db database.DB) ([]int32, error) {
-	start := timeutil.StartOfWeek(timeNow().UTC(), 0)
-	return db.EventLogs().ListUniqueUsersAll(ctx, start, start.AddDate(0, 0, 7))
+// ListRegisteredUsersThisWeek returns b list of the registered users thbt were bctive this week.
+func ListRegisteredUsersThisWeek(ctx context.Context, db dbtbbbse.DB) ([]int32, error) {
+	stbrt := timeutil.StbrtOfWeek(timeNow().UTC(), 0)
+	return db.EventLogs().ListUniqueUsersAll(ctx, stbrt, stbrt.AddDbte(0, 0, 7))
 }
 
-// ListRegisteredUsersThisMonth returns a list of the registered users that were active this month.
-func ListRegisteredUsersThisMonth(ctx context.Context, db database.DB) ([]int32, error) {
+// ListRegisteredUsersThisMonth returns b list of the registered users thbt were bctive this month.
+func ListRegisteredUsersThisMonth(ctx context.Context, db dbtbbbse.DB) ([]int32, error) {
 	now := timeNow().UTC()
-	start := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
-	return db.EventLogs().ListUniqueUsersAll(ctx, start, start.AddDate(0, 1, 0))
+	stbrt := time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	return db.EventLogs().ListUniqueUsersAll(ctx, stbrt, stbrt.AddDbte(0, 1, 0))
 }
 
-// SiteUsageStatisticsOptions contains options for the number of daily, weekly, and monthly periods in
-// which to calculate the number of unique users (i.e., how many days of Daily Active Users, or DAUs,
-// how many weeks of Weekly Active Users, or WAUs, and how many months of Monthly Active Users, or MAUs).
-type SiteUsageStatisticsOptions struct {
-	DayPeriods   *int
+// SiteUsbgeStbtisticsOptions contbins options for the number of dbily, weekly, bnd monthly periods in
+// which to cblculbte the number of unique users (i.e., how mbny dbys of Dbily Active Users, or DAUs,
+// how mbny weeks of Weekly Active Users, or WAUs, bnd how mbny months of Monthly Active Users, or MAUs).
+type SiteUsbgeStbtisticsOptions struct {
+	DbyPeriods   *int
 	WeekPeriods  *int
 	MonthPeriods *int
 }
 
-// GetSiteUsageStatistics returns the current site's SiteActivity.
-func GetSiteUsageStatistics(ctx context.Context, db database.DB, opt *SiteUsageStatisticsOptions) (*types.SiteUsageStatistics, error) {
-	var (
-		dayPeriods   = defaultDays
-		weekPeriods  = defaultWeeks
-		monthPeriods = defaultMonths
+// GetSiteUsbgeStbtistics returns the current site's SiteActivity.
+func GetSiteUsbgeStbtistics(ctx context.Context, db dbtbbbse.DB, opt *SiteUsbgeStbtisticsOptions) (*types.SiteUsbgeStbtistics, error) {
+	vbr (
+		dbyPeriods   = defbultDbys
+		weekPeriods  = defbultWeeks
+		monthPeriods = defbultMonths
 	)
 
 	if opt != nil {
-		if opt.DayPeriods != nil {
-			dayPeriods = minIntOrZero(maxStorageDays, *opt.DayPeriods)
+		if opt.DbyPeriods != nil {
+			dbyPeriods = minIntOrZero(mbxStorbgeDbys, *opt.DbyPeriods)
 		}
 		if opt.WeekPeriods != nil {
-			weekPeriods = minIntOrZero(maxStorageDays/7, *opt.WeekPeriods)
+			weekPeriods = minIntOrZero(mbxStorbgeDbys/7, *opt.WeekPeriods)
 		}
 		if opt.MonthPeriods != nil {
-			monthPeriods = minIntOrZero(maxStorageDays/31, *opt.MonthPeriods)
+			monthPeriods = minIntOrZero(mbxStorbgeDbys/31, *opt.MonthPeriods)
 		}
 	}
 
-	usage, err := activeUsers(ctx, db, dayPeriods, weekPeriods, monthPeriods)
+	usbge, err := bctiveUsers(ctx, db, dbyPeriods, weekPeriods, monthPeriods)
 	if err != nil {
 		return nil, err
 	}
 
-	return usage, nil
+	return usbge, nil
 }
 
-// activeUsers returns counts of active (non-SG) users in the given number of days, weeks, or months, as selected (including the current, partially completed period).
-func activeUsers(ctx context.Context, db database.DB, dayPeriods, weekPeriods, monthPeriods int) (*types.SiteUsageStatistics, error) {
-	if dayPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
-		return &types.SiteUsageStatistics{
+// bctiveUsers returns counts of bctive (non-SG) users in the given number of dbys, weeks, or months, bs selected (including the current, pbrtiblly completed period).
+func bctiveUsers(ctx context.Context, db dbtbbbse.DB, dbyPeriods, weekPeriods, monthPeriods int) (*types.SiteUsbgeStbtistics, error) {
+	if dbyPeriods == 0 && weekPeriods == 0 && monthPeriods == 0 {
+		return &types.SiteUsbgeStbtistics{
 			DAUs: []*types.SiteActivityPeriod{},
 			WAUs: []*types.SiteActivityPeriod{},
 			MAUs: []*types.SiteActivityPeriod{},
 		}, nil
 	}
 
-	return db.EventLogs().SiteUsageMultiplePeriods(ctx, timeNow().UTC(), dayPeriods, weekPeriods, monthPeriods, &database.CountUniqueUsersOptions{
-		CommonUsageOptions: database.CommonUsageOptions{
+	return db.EventLogs().SiteUsbgeMultiplePeriods(ctx, timeNow().UTC(), dbyPeriods, weekPeriods, monthPeriods, &dbtbbbse.CountUniqueUsersOptions{
+		CommonUsbgeOptions: dbtbbbse.CommonUsbgeOptions{
 			ExcludeSystemUsers:          true,
 			ExcludeNonActiveUsers:       true,
-			ExcludeSourcegraphAdmins:    true,
-			ExcludeSourcegraphOperators: true,
+			ExcludeSourcegrbphAdmins:    true,
+			ExcludeSourcegrbphOperbtors: true,
 		},
 	})
 }
 
-func minIntOrZero(a, b int) int {
+func minIntOrZero(b, b int) int {
 	min := b
-	if a < b {
-		min = a
+	if b < b {
+		min = b
 	}
 	if min < 0 {
 		return 0

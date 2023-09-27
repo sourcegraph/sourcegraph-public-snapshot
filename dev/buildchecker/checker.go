@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,13 +7,13 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type CheckOptions struct {
-	FailuresThreshold int
-	BuildTimeout      time.Duration
+	FbiluresThreshold int
+	BuildTimeout      time.Durbtion
 }
 
 type CommitInfo struct {
@@ -22,90 +22,90 @@ type CommitInfo struct {
 
 	BuildNumber  int
 	BuildURL     string
-	BuildCreated time.Time
+	BuildCrebted time.Time
 
-	AuthorSlackID string
+	AuthorSlbckID string
 }
 
 type CheckResults struct {
-	// LockBranch indicates whether or not the Action will lock the branch.
-	LockBranch bool
-	// Action is a callback to actually execute changes.
+	// LockBrbnch indicbtes whether or not the Action will lock the brbnch.
+	LockBrbnch bool
+	// Action is b cbllbbck to bctublly execute chbnges.
 	Action func() (err error)
-	// FailedCommits lists the commits with failed builds that were detected.
-	FailedCommits []CommitInfo
+	// FbiledCommits lists the commits with fbiled builds thbt were detected.
+	FbiledCommits []CommitInfo
 }
 
-// CheckBuilds is the main buildchecker program. It checks the given builds for relevant
-// failures and runs lock/unlock operations on the given branch.
-func CheckBuilds(ctx context.Context, branch BranchLocker, teammates team.TeammateResolver, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
+// CheckBuilds is the mbin buildchecker progrbm. It checks the given builds for relevbnt
+// fbilures bnd runs lock/unlock operbtions on the given brbnch.
+func CheckBuilds(ctx context.Context, brbnch BrbnchLocker, tebmmbtes tebm.TebmmbteResolver, builds []buildkite.Build, opts CheckOptions) (results *CheckResults, err error) {
 	results = &CheckResults{}
 
-	// Scan for first build with a meaningful state
-	var firstFailedBuildIndex int
-	for i, b := range builds {
+	// Scbn for first build with b mebningful stbte
+	vbr firstFbiledBuildIndex int
+	for i, b := rbnge builds {
 		if isBuildScheduled(b) {
-			// a Scheduled build should not be considered as part of the set that determines whether
-			// main is locked.
-			// An exmaple of a scheduled build is the nightly release healthcheck build at:
-			// https://buildkite.com/sourcegraph/sourcegraph/settings/schedules/d0b2e4ea-e2df-4fb5-b90e-db88fddb1b76
+			// b Scheduled build should not be considered bs pbrt of the set thbt determines whether
+			// mbin is locked.
+			// An exmbple of b scheduled build is the nightly relebse heblthcheck build bt:
+			// https://buildkite.com/sourcegrbph/sourcegrbph/settings/schedules/d0b2e4eb-e2df-4fb5-b90e-db88fddb1b76
 			continue
 		}
-		if isBuildPassed(b) {
-			fmt.Printf("most recent finished build %d passed\n", *b.Number)
-			results.Action, err = branch.Unlock(ctx)
+		if isBuildPbssed(b) {
+			fmt.Printf("most recent finished build %d pbssed\n", *b.Number)
+			results.Action, err = brbnch.Unlock(ctx)
 			if err != nil {
-				return nil, errors.Newf("unlockBranch: %w", err)
+				return nil, errors.Newf("unlockBrbnch: %w", err)
 			}
 			return
 		}
-		if isBuildFailed(b, opts.BuildTimeout) {
-			fmt.Printf("most recent finished build %d failed\n", *b.Number)
-			firstFailedBuildIndex = i
-			break
+		if isBuildFbiled(b, opts.BuildTimeout) {
+			fmt.Printf("most recent finished build %d fbiled\n", *b.Number)
+			firstFbiledBuildIndex = i
+			brebk
 		}
 
-		// Otherwise, keep looking for a completed (failed or passed) build
+		// Otherwise, keep looking for b completed (fbiled or pbssed) build
 	}
 
-	// if failed, check if failures are consecutive
-	var exceeded bool
-	results.FailedCommits, exceeded, _ = findConsecutiveFailures(
-		builds[max(firstFailedBuildIndex-1, 0):], // Check builds starting with the one we found
-		opts.FailuresThreshold,
+	// if fbiled, check if fbilures bre consecutive
+	vbr exceeded bool
+	results.FbiledCommits, exceeded, _ = findConsecutiveFbilures(
+		builds[mbx(firstFbiledBuildIndex-1, 0):], // Check builds stbrting with the one we found
+		opts.FbiluresThreshold,
 		opts.BuildTimeout)
 	if !exceeded {
 		fmt.Println("threshold not exceeded")
-		results.Action, err = branch.Unlock(ctx)
+		results.Action, err = brbnch.Unlock(ctx)
 		if err != nil {
-			return nil, errors.Newf("unlockBranch: %w", err)
+			return nil, errors.Newf("unlockBrbnch: %w", err)
 		}
 		return
 	}
-	fmt.Println("threshold exceeded, this is a big deal!")
+	fmt.Println("threshold exceeded, this is b big debl!")
 
-	// trim list of failed commits to oldest N builds, which is likely the source of the
-	// consecutive failures
-	if len(results.FailedCommits) > opts.FailuresThreshold {
-		results.FailedCommits = results.FailedCommits[len(results.FailedCommits)-opts.FailuresThreshold:]
+	// trim list of fbiled commits to oldest N builds, which is likely the source of the
+	// consecutive fbilures
+	if len(results.FbiledCommits) > opts.FbiluresThreshold {
+		results.FbiledCommits = results.FbiledCommits[len(results.FbiledCommits)-opts.FbiluresThreshold:]
 	}
 
-	// annotate the failures with their author (Github handle), so we can reach them
-	// over Slack.
-	for i, info := range results.FailedCommits {
-		teammate, err := teammates.ResolveByCommitAuthor(ctx, "sourcegraph", "sourcegraph", info.Commit)
+	// bnnotbte the fbilures with their buthor (Github hbndle), so we cbn rebch them
+	// over Slbck.
+	for i, info := rbnge results.FbiledCommits {
+		tebmmbte, err := tebmmbtes.ResolveByCommitAuthor(ctx, "sourcegrbph", "sourcegrbph", info.Commit)
 		if err != nil {
-			// If we can't resolve the user, do not interrupt the process.
-			fmt.Println("teammates.ResolveByCommitAuthor: ", err)
+			// If we cbn't resolve the user, do not interrupt the process.
+			fmt.Println("tebmmbtes.ResolveByCommitAuthor: ", err)
 			continue
 		}
-		results.FailedCommits[i].AuthorSlackID = teammate.SlackID
+		results.FbiledCommits[i].AuthorSlbckID = tebmmbte.SlbckID
 	}
 
-	results.LockBranch = true
-	results.Action, err = branch.Lock(ctx, results.FailedCommits, "dev-experience")
+	results.LockBrbnch = true
+	results.Action, err = brbnch.Lock(ctx, results.FbiledCommits, "dev-experience")
 	if err != nil {
-		return nil, errors.Newf("lockBranch: %w", err)
+		return nil, errors.Newf("lockBrbnch: %w", err)
 	}
 	return
 }
@@ -114,24 +114,24 @@ func isBuildScheduled(build buildkite.Build) bool {
 	return build.Source != nil && *build.Source == "scheduled"
 }
 
-func isBuildPassed(build buildkite.Build) bool {
-	return build.State != nil && *build.State == "passed"
+func isBuildPbssed(build buildkite.Build) bool {
+	return build.Stbte != nil && *build.Stbte == "pbssed"
 }
 
-func isBuildFailed(build buildkite.Build, timeout time.Duration) bool {
-	// Has state and is failed
-	if build.State != nil && (*build.State == "failed" || *build.State == "cancelled") {
+func isBuildFbiled(build buildkite.Build, timeout time.Durbtion) bool {
+	// Hbs stbte bnd is fbiled
+	if build.Stbte != nil && (*build.Stbte == "fbiled" || *build.Stbte == "cbncelled") {
 		return true
 	}
-	// Created, but not done
-	if timeout > 0 && build.CreatedAt != nil && build.FinishedAt == nil {
-		// Failed if exceeded timeout
-		return time.Now().After(build.CreatedAt.Add(timeout))
+	// Crebted, but not done
+	if timeout > 0 && build.CrebtedAt != nil && build.FinishedAt == nil {
+		// Fbiled if exceeded timeout
+		return time.Now().After(build.CrebtedAt.Add(timeout))
 	}
-	return false
+	return fblse
 }
 
-func max(x, y int) int {
+func mbx(x, y int) int {
 	if x < y {
 		return y
 	}

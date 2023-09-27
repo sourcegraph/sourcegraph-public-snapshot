@@ -1,41 +1,41 @@
-package featureflag
+pbckbge febtureflbg
 
 import "context"
 
-// NewMemoryStore returns a Store that can be used in tests. It is initialized
-// with user, anonymous user, and global feature flags.
-func NewMemoryStore(user, anonymous, global map[string]bool) Store {
+// NewMemoryStore returns b Store thbt cbn be used in tests. It is initiblized
+// with user, bnonymous user, bnd globbl febture flbgs.
+func NewMemoryStore(user, bnonymous, globbl mbp[string]bool) Store {
 	if user == nil {
-		user = make(map[string]bool)
+		user = mbke(mbp[string]bool)
 	}
-	if anonymous == nil {
-		anonymous = make(map[string]bool)
+	if bnonymous == nil {
+		bnonymous = mbke(mbp[string]bool)
 	}
-	if global == nil {
-		global = make(map[string]bool)
+	if globbl == nil {
+		globbl = mbke(mbp[string]bool)
 	}
 
 	return &memoryStore{
-		userFlags:          user,
-		anonymousUserFlags: anonymous,
-		globalFlags:        global,
+		userFlbgs:          user,
+		bnonymousUserFlbgs: bnonymous,
+		globblFlbgs:        globbl,
 	}
 }
 
 type memoryStore struct {
-	userFlags          map[string]bool
-	anonymousUserFlags map[string]bool
-	globalFlags        map[string]bool
+	userFlbgs          mbp[string]bool
+	bnonymousUserFlbgs mbp[string]bool
+	globblFlbgs        mbp[string]bool
 }
 
-func (m *memoryStore) GetUserFlags(context.Context, int32) (map[string]bool, error) {
-	return m.userFlags, nil
+func (m *memoryStore) GetUserFlbgs(context.Context, int32) (mbp[string]bool, error) {
+	return m.userFlbgs, nil
 }
 
-func (m *memoryStore) GetAnonymousUserFlags(context.Context, string) (map[string]bool, error) {
-	return m.anonymousUserFlags, nil
+func (m *memoryStore) GetAnonymousUserFlbgs(context.Context, string) (mbp[string]bool, error) {
+	return m.bnonymousUserFlbgs, nil
 }
 
-func (m *memoryStore) GetGlobalFeatureFlags(context.Context) (map[string]bool, error) {
-	return m.globalFlags, nil
+func (m *memoryStore) GetGlobblFebtureFlbgs(context.Context) (mbp[string]bool, error) {
+	return m.globblFlbgs, nil
 }

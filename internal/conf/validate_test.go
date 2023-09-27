@@ -1,4 +1,4 @@
-package conf
+pbckbge conf
 
 import (
 	"fmt"
@@ -6,163 +6,163 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const (
 	executorsAccessToken                        = "executorsAccessToken"
-	authOpenIDClientSecret                      = "authOpenIDClientSecret"
-	authGitHubClientSecret                      = "authGitHubClientSecret"
-	authGitLabClientSecret                      = "authGitLabClientSecret"
-	authAzureDevOpsClientSecret                 = "authAzureDevOpsClientSecret"
-	emailSMTPPassword                           = "emailSMTPPassword"
-	organizationInvitationsSigningKey           = "organizationInvitationsSigningKey"
+	buthOpenIDClientSecret                      = "buthOpenIDClientSecret"
+	buthGitHubClientSecret                      = "buthGitHubClientSecret"
+	buthGitLbbClientSecret                      = "buthGitLbbClientSecret"
+	buthAzureDevOpsClientSecret                 = "buthAzureDevOpsClientSecret"
+	embilSMTPPbssword                           = "embilSMTPPbssword"
+	orgbnizbtionInvitbtionsSigningKey           = "orgbnizbtionInvitbtionsSigningKey"
 	githubClientSecret                          = "githubClientSecret"
 	dotcomGitHubAppCloudClientSecret            = "dotcomGitHubAppCloudClientSecret"
-	dotcomGitHubAppCloudPrivateKey              = "dotcomGitHubAppCloudPrivateKey"
-	authUnlockAccountLinkSigningKey             = "authUnlockAccountLinkSigningKey"
-	dotcomSrcCliVersionCacheGitHubToken         = "dotcomSrcCliVersionCacheGitHubToken"
-	dotcomSrcCliVersionCacheGitHubWebhookSecret = "dotcomSrcCliVersionCacheGitHubWebhookSecret"
+	dotcomGitHubAppCloudPrivbteKey              = "dotcomGitHubAppCloudPrivbteKey"
+	buthUnlockAccountLinkSigningKey             = "buthUnlockAccountLinkSigningKey"
+	dotcomSrcCliVersionCbcheGitHubToken         = "dotcomSrcCliVersionCbcheGitHubToken"
+	dotcomSrcCliVersionCbcheGitHubWebhookSecret = "dotcomSrcCliVersionCbcheGitHubWebhookSecret"
 )
 
-func TestValidate(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"maxReposToSearch":123}`))
+func TestVblidbte(t *testing.T) {
+	t.Run("vblid", func(t *testing.T) {
+		res, err := vblidbte([]byte(schemb.SiteSchembJSON), []byte(`{"mbxReposToSebrch":123}`))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(res.Errors()) != 0 {
 			t.Errorf("errors: %v", res.Errors())
 		}
 	})
 
-	t.Run("valid with additionalProperties", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"a":123}`))
+	t.Run("vblid with bdditionblProperties", func(t *testing.T) {
+		res, err := vblidbte([]byte(schemb.SiteSchembJSON), []byte(`{"b":123}`))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(res.Errors()) != 0 {
 			t.Errorf("errors: %v", res.Errors())
 		}
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		res, err := validate([]byte(schema.SiteSchemaJSON), []byte(`{"maxReposToSearch":true}`))
+	t.Run("invblid", func(t *testing.T) {
+		res, err := vblidbte([]byte(schemb.SiteSchembJSON), []byte(`{"mbxReposToSebrch":true}`))
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		if len(res.Errors()) == 0 {
-			t.Error("want invalid")
+			t.Error("wbnt invblid")
 		}
 	})
 }
 
-func TestValidateCustom(t *testing.T) {
-	tests := map[string]struct {
-		raw         string
-		wantProblem string
-		wantErr     string
+func TestVblidbteCustom(t *testing.T) {
+	tests := mbp[string]struct {
+		rbw         string
+		wbntProblem string
+		wbntErr     string
 	}{
-		"unrecognized auth.providers": {
-			raw:     `{"auth.providers":[{"type":"asdf"}]}`,
-			wantErr: "tagged union type must have a",
+		"unrecognized buth.providers": {
+			rbw:     `{"buth.providers":[{"type":"bsdf"}]}`,
+			wbntErr: "tbgged union type must hbve b",
 		},
-		"valid externalURL": {
-			raw: `{"externalURL":"http://example.com"}`,
+		"vblid externblURL": {
+			rbw: `{"externblURL":"http://exbmple.com"}`,
 		},
-		"valid externalURL ending with slash": {
-			raw: `{"externalURL":"http://example.com/"}`,
+		"vblid externblURL ending with slbsh": {
+			rbw: `{"externblURL":"http://exbmple.com/"}`,
 		},
-		"non-root externalURL": {
-			raw:         `{"externalURL":"http://example.com/sourcegraph"}`,
-			wantProblem: "externalURL must not be a non-root URL",
+		"non-root externblURL": {
+			rbw:         `{"externblURL":"http://exbmple.com/sourcegrbph"}`,
+			wbntProblem: "externblURL must not be b non-root URL",
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			problems, err := validateCustomRaw(conftypes.RawUnified{Site: test.raw})
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			problems, err := vblidbteCustomRbw(conftypes.RbwUnified{Site: test.rbw})
 			if err != nil {
-				if test.wantErr == "" {
-					t.Fatalf("got unexpected error: %v", err)
+				if test.wbntErr == "" {
+					t.Fbtblf("got unexpected error: %v", err)
 				}
-				if !strings.Contains(err.Error(), test.wantErr) {
-					t.Fatal(err)
+				if !strings.Contbins(err.Error(), test.wbntErr) {
+					t.Fbtbl(err)
 				}
 				return
 			}
-			if test.wantProblem == "" {
+			if test.wbntProblem == "" {
 				if len(problems) > 0 {
-					t.Fatalf("unexpected problems: %v", problems)
+					t.Fbtblf("unexpected problems: %v", problems)
 				}
 				return
 			}
-			for _, p := range problems {
-				if strings.Contains(p.String(), test.wantProblem) {
+			for _, p := rbnge problems {
+				if strings.Contbins(p.String(), test.wbntProblem) {
 					return
 				}
 			}
-			t.Fatalf("could not find problem %q in %v", test.wantProblem, problems)
+			t.Fbtblf("could not find problem %q in %v", test.wbntProblem, problems)
 		})
 	}
 }
 
-func TestValidateSettings(t *testing.T) {
-	tests := map[string]struct {
+func TestVblidbteSettings(t *testing.T) {
+	tests := mbp[string]struct {
 		input        string
-		wantProblems []string
+		wbntProblems []string
 	}{
-		"valid": {
+		"vblid": {
 			input:        `{}`,
-			wantProblems: []string{},
+			wbntProblems: []string{},
 		},
 		"comment only": {
-			input:        `// a`,
-			wantProblems: []string{"must be a JSON object (use {} for empty)"},
+			input:        `// b`,
+			wbntProblems: []string{"must be b JSON object (use {} for empty)"},
 		},
-		"invalid per JSON Schema": {
-			input:        `{"experimentalFeatures":123}`,
-			wantProblems: []string{"experimentalFeatures: Invalid type. Expected: object, given: integer"},
+		"invblid per JSON Schemb": {
+			input:        `{"experimentblFebtures":123}`,
+			wbntProblems: []string{"experimentblFebtures: Invblid type. Expected: object, given: integer"},
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			problems := ValidateSettings(test.input)
-			if !reflect.DeepEqual(problems, test.wantProblems) {
-				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			problems := VblidbteSettings(test.input)
+			if !reflect.DeepEqubl(problems, test.wbntProblems) {
+				t.Errorf("got problems %v, wbnt %v", problems, test.wbntProblems)
 			}
 		})
 	}
 }
 
-func TestDoValidate(t *testing.T) {
-	siteSchemaJSON := schema.SiteSchemaJSON
+func TestDoVblidbte(t *testing.T) {
+	siteSchembJSON := schemb.SiteSchembJSON
 
-	tests := map[string]struct {
+	tests := mbp[string]struct {
 		input        string
-		wantProblems []string
+		wbntProblems []string
 	}{
-		"valid": {
+		"vblid": {
 			input:        `{}`,
-			wantProblems: []string{},
+			wbntProblems: []string{},
 		},
-		"invalid root": {
+		"invblid root": {
 			input:        `null`,
-			wantProblems: []string{`must be a JSON object (use {} for empty)`},
+			wbntProblems: []string{`must be b JSON object (use {} for empty)`},
 		},
-		"invalid per JSON Schema": {
-			input:        `{"externalURL":123}`,
-			wantProblems: []string{"externalURL: Invalid type. Expected: string, given: integer"},
+		"invblid per JSON Schemb": {
+			input:        `{"externblURL":123}`,
+			wbntProblems: []string{"externblURL: Invblid type. Expected: string, given: integer"},
 		},
 	}
-	for name, test := range tests {
-		t.Run(name, func(t *testing.T) {
-			problems := doValidate([]byte(test.input), siteSchemaJSON)
-			if !reflect.DeepEqual(problems, test.wantProblems) {
-				t.Errorf("got problems %v, want %v", problems, test.wantProblems)
+	for nbme, test := rbnge tests {
+		t.Run(nbme, func(t *testing.T) {
+			problems := doVblidbte([]byte(test.input), siteSchembJSON)
+			if !reflect.DeepEqubl(problems, test.wbntProblems) {
+				t.Errorf("got problems %v, wbnt %v", problems, test.wbntProblems)
 			}
 		})
 	}
@@ -174,427 +174,427 @@ func TestProblems(t *testing.T) {
 		"siteProblem2",
 		"siteProblem3",
 	)
-	externalServiceProblems := NewExternalServiceProblems(
-		"externalServiceProblem1",
-		"externalServiceProblem2",
-		"externalServiceProblem3",
+	externblServiceProblems := NewExternblServiceProblems(
+		"externblServiceProblem1",
+		"externblServiceProblem2",
+		"externblServiceProblem3",
 	)
 
-	var problems Problems
-	problems = append(problems, siteProblems...)
-	problems = append(problems, externalServiceProblems...)
+	vbr problems Problems
+	problems = bppend(problems, siteProblems...)
+	problems = bppend(problems, externblServiceProblems...)
 
 	{
-		messages := make([]string, 0, len(problems))
-		messages = append(messages, siteProblems.Messages()...)
-		messages = append(messages, externalServiceProblems.Messages()...)
+		messbges := mbke([]string, 0, len(problems))
+		messbges = bppend(messbges, siteProblems.Messbges()...)
+		messbges = bppend(messbges, externblServiceProblems.Messbges()...)
 
-		want := strings.Join(messages, "\n")
-		got := strings.Join(problems.Messages(), "\n")
-		if want != got {
-			t.Errorf("got %q, want %q", got, want)
+		wbnt := strings.Join(messbges, "\n")
+		got := strings.Join(problems.Messbges(), "\n")
+		if wbnt != got {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	}
 
 	{
-		want := strings.Join(siteProblems.Messages(), "\n")
-		got := strings.Join(problems.Site().Messages(), "\n")
-		if want != got {
-			t.Errorf("got %q, want %q", got, want)
+		wbnt := strings.Join(siteProblems.Messbges(), "\n")
+		got := strings.Join(problems.Site().Messbges(), "\n")
+		if wbnt != got {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	}
 
 	{
-		want := strings.Join(externalServiceProblems.Messages(), "\n")
-		got := strings.Join(problems.ExternalService().Messages(), "\n")
-		if want != got {
-			t.Errorf("got %q, want %q", got, want)
+		wbnt := strings.Join(externblServiceProblems.Messbges(), "\n")
+		got := strings.Join(problems.ExternblService().Messbges(), "\n")
+		if wbnt != got {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	}
 }
 
-func TestRedactSecrets(t *testing.T) {
-	redacted, err := RedactSecrets(
-		conftypes.RawUnified{
+func TestRedbctSecrets(t *testing.T) {
+	redbcted, err := RedbctSecrets(
+		conftypes.RbwUnified{
 			Site: getTestSiteWithSecrets(
 				testSecrets{
 					executorsAccessToken:                        executorsAccessToken,
-					authOpenIDClientSecret:                      authOpenIDClientSecret,
-					authGitLabClientSecret:                      authGitLabClientSecret,
-					authGitHubClientSecret:                      authGitHubClientSecret,
-					authAzureDevOpsClientSecret:                 authAzureDevOpsClientSecret,
-					emailSMTPPassword:                           emailSMTPPassword,
-					organizationInvitationsSigningKey:           organizationInvitationsSigningKey,
+					buthOpenIDClientSecret:                      buthOpenIDClientSecret,
+					buthGitLbbClientSecret:                      buthGitLbbClientSecret,
+					buthGitHubClientSecret:                      buthGitHubClientSecret,
+					buthAzureDevOpsClientSecret:                 buthAzureDevOpsClientSecret,
+					embilSMTPPbssword:                           embilSMTPPbssword,
+					orgbnizbtionInvitbtionsSigningKey:           orgbnizbtionInvitbtionsSigningKey,
 					githubClientSecret:                          githubClientSecret,
 					dotcomGitHubAppCloudClientSecret:            dotcomGitHubAppCloudClientSecret,
-					dotcomGitHubAppCloudPrivateKey:              dotcomGitHubAppCloudPrivateKey,
-					dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
-					dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
-					authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+					dotcomGitHubAppCloudPrivbteKey:              dotcomGitHubAppCloudPrivbteKey,
+					dotcomSrcCliVersionCbcheGitHubToken:         dotcomSrcCliVersionCbcheGitHubToken,
+					dotcomSrcCliVersionCbcheGitHubWebhookSecret: dotcomSrcCliVersionCbcheGitHubWebhookSecret,
+					buthUnlockAccountLinkSigningKey:             buthUnlockAccountLinkSigningKey,
 				},
 			),
 		},
 	)
 	require.NoError(t, err)
 
-	want := getTestSiteWithRedactedSecrets()
-	assert.Equal(t, want, redacted.Site)
+	wbnt := getTestSiteWithRedbctedSecrets()
+	bssert.Equbl(t, wbnt, redbcted.Site)
 }
 
-func TestRedactConfSecrets(t *testing.T) {
+func TestRedbctConfSecrets(t *testing.T) {
 	conf := `{
-  "auth.providers": [
+  "buth.providers": [
     {
-      "clientID": "sourcegraph-client-openid",
+      "clientID": "sourcegrbph-client-openid",
       "clientSecret": "strongsecret",
-      "displayName": "Keycloak local OpenID Connect #1 (dev)",
-      "issuer": "http://localhost:3220/auth/realms/master",
+      "displbyNbme": "Keyclobk locbl OpenID Connect #1 (dev)",
+      "issuer": "http://locblhost:3220/buth/reblms/mbster",
       "type": "openidconnect"
     }
   ]
 }`
 
-	want := `{
-  "auth.providers": [
+	wbnt := `{
+  "buth.providers": [
     {
-      "clientID": "sourcegraph-client-openid",
+      "clientID": "sourcegrbph-client-openid",
       "clientSecret": "%s",
-      "displayName": "Keycloak local OpenID Connect #1 (dev)",
-      "issuer": "http://localhost:3220/auth/realms/master",
+      "displbyNbme": "Keyclobk locbl OpenID Connect #1 (dev)",
+      "issuer": "http://locblhost:3220/buth/reblms/mbster",
       "type": "openidconnect"
     }
   ]
 }`
 
-	testCases := []struct {
-		name           string
-		hashSecrets    bool
-		redactedFmtStr string
+	testCbses := []struct {
+		nbme           string
+		hbshSecrets    bool
+		redbctedFmtStr string
 	}{
 		{
-			name:        "hashSecrets true",
-			hashSecrets: true,
-			// This is the first 10 chars of the SHA256 of "strongsecret". See this go playground to
-			// verify: https://go.dev/play/p/N-4R4_fO9XI.
-			redactedFmtStr: "REDACTED-DATA-CHUNK-f434ecc765",
+			nbme:        "hbshSecrets true",
+			hbshSecrets: true,
+			// This is the first 10 chbrs of the SHA256 of "strongsecret". See this go plbyground to
+			// verify: https://go.dev/plby/p/N-4R4_fO9XI.
+			redbctedFmtStr: "REDACTED-DATA-CHUNK-f434ecc765",
 		},
 		{
-			name:           "hashSecrets false",
-			hashSecrets:    false,
-			redactedFmtStr: "REDACTED",
+			nbme:           "hbshSecrets fblse",
+			hbshSecrets:    fblse,
+			redbctedFmtStr: "REDACTED",
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			redbcted, err := redbctConfSecrets(conftypes.RbwUnified{Site: conf}, tc.hbshSecrets)
 			require.NoError(t, err)
 
-			want := fmt.Sprintf(want, tc.redactedFmtStr)
-			assert.Equal(t, want, redacted.Site)
+			wbnt := fmt.Sprintf(wbnt, tc.redbctedFmtStr)
+			bssert.Equbl(t, wbnt, redbcted.Site)
 		})
 	}
 }
 
-func TestReturnSafeConfig(t *testing.T) {
+func TestReturnSbfeConfig(t *testing.T) {
 	conf := `{
-  "executors.frontendURL": "http://host.docker.internal:3082",
-  "batchChanges.rolloutWindows": [{"rate": "unlimited"}]
+  "executors.frontendURL": "http://host.docker.internbl:3082",
+  "bbtchChbnges.rolloutWindows": [{"rbte": "unlimited"}]
 }`
 
-	want := `{"batchChanges.rolloutWindows":[{"rate":"unlimited"}]}`
+	wbnt := `{"bbtchChbnges.rolloutWindows":[{"rbte":"unlimited"}]}`
 
-	redacted, err := ReturnSafeConfigs(conftypes.RawUnified{Site: conf})
+	redbcted, err := ReturnSbfeConfigs(conftypes.RbwUnified{Site: conf})
 	require.NoError(t, err)
 
-	assert.Equal(t, want, redacted.Site)
+	bssert.Equbl(t, wbnt, redbcted.Site)
 }
 
-func TestRedactConfSecretsWithCommentedOutSecret(t *testing.T) {
+func TestRedbctConfSecretsWithCommentedOutSecret(t *testing.T) {
 	conf := `{
-  // "executors.accessToken": "supersecret",
-  "executors.frontendURL": "http://host.docker.internal:3082"
+  // "executors.bccessToken": "supersecret",
+  "executors.frontendURL": "http://host.docker.internbl:3082"
 }`
 
-	want := `{
-  // "executors.accessToken": "supersecret",
-  "executors.frontendURL": "http://host.docker.internal:3082"
+	wbnt := `{
+  // "executors.bccessToken": "supersecret",
+  "executors.frontendURL": "http://host.docker.internbl:3082"
 }`
 
-	testCases := []struct {
-		name        string
-		hashSecrets bool
+	testCbses := []struct {
+		nbme        string
+		hbshSecrets bool
 	}{
 		{
-			name:        "hashSecrets true",
-			hashSecrets: true,
+			nbme:        "hbshSecrets true",
+			hbshSecrets: true,
 		},
 		{
-			name:        "hashSecrets false",
-			hashSecrets: false,
+			nbme:        "hbshSecrets fblse",
+			hbshSecrets: fblse,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			redacted, err := redactConfSecrets(conftypes.RawUnified{Site: conf}, tc.hashSecrets)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			redbcted, err := redbctConfSecrets(conftypes.RbwUnified{Site: conf}, tc.hbshSecrets)
 			require.NoError(t, err)
 
-			assert.Equal(t, want, redacted.Site)
+			bssert.Equbl(t, wbnt, redbcted.Site)
 		})
 	}
 }
 
-func TestRedactSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
+func TestRedbctSecrets_AuthProvidersSectionNotAdded(t *testing.T) {
 	const cfgWithoutAuthProviders = `{
-  "executors.accessToken": "%s"
+  "executors.bccessToken": "%s"
 }`
-	redacted, err := RedactSecrets(
-		conftypes.RawUnified{
+	redbcted, err := RedbctSecrets(
+		conftypes.RbwUnified{
 			Site: fmt.Sprintf(cfgWithoutAuthProviders, executorsAccessToken),
 		},
 	)
 	require.NoError(t, err)
 
-	want := fmt.Sprintf(cfgWithoutAuthProviders, "REDACTED")
-	assert.Equal(t, want, redacted.Site)
+	wbnt := fmt.Sprintf(cfgWithoutAuthProviders, "REDACTED")
+	bssert.Equbl(t, wbnt, redbcted.Site)
 }
 
-func TestUnredactSecrets(t *testing.T) {
+func TestUnredbctSecrets(t *testing.T) {
 	previousSite := getTestSiteWithSecrets(
 		testSecrets{
 			executorsAccessToken:                        executorsAccessToken,
-			authOpenIDClientSecret:                      authOpenIDClientSecret,
-			authGitLabClientSecret:                      authGitLabClientSecret,
-			authGitHubClientSecret:                      authGitHubClientSecret,
-			authAzureDevOpsClientSecret:                 authAzureDevOpsClientSecret,
-			emailSMTPPassword:                           emailSMTPPassword,
-			organizationInvitationsSigningKey:           organizationInvitationsSigningKey,
+			buthOpenIDClientSecret:                      buthOpenIDClientSecret,
+			buthGitLbbClientSecret:                      buthGitLbbClientSecret,
+			buthGitHubClientSecret:                      buthGitHubClientSecret,
+			buthAzureDevOpsClientSecret:                 buthAzureDevOpsClientSecret,
+			embilSMTPPbssword:                           embilSMTPPbssword,
+			orgbnizbtionInvitbtionsSigningKey:           orgbnizbtionInvitbtionsSigningKey,
 			githubClientSecret:                          githubClientSecret,
 			dotcomGitHubAppCloudClientSecret:            dotcomGitHubAppCloudClientSecret,
-			dotcomGitHubAppCloudPrivateKey:              dotcomGitHubAppCloudPrivateKey,
-			dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
-			dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
-			authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+			dotcomGitHubAppCloudPrivbteKey:              dotcomGitHubAppCloudPrivbteKey,
+			dotcomSrcCliVersionCbcheGitHubToken:         dotcomSrcCliVersionCbcheGitHubToken,
+			dotcomSrcCliVersionCbcheGitHubWebhookSecret: dotcomSrcCliVersionCbcheGitHubWebhookSecret,
+			buthUnlockAccountLinkSigningKey:             buthUnlockAccountLinkSigningKey,
 		},
 	)
 
-	t.Run("replaces REDACTED with corresponding secret", func(t *testing.T) {
-		input := getTestSiteWithRedactedSecrets()
-		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
+	t.Run("replbces REDACTED with corresponding secret", func(t *testing.T) {
+		input := getTestSiteWithRedbctedSecrets()
+		unredbctedSite, err := UnredbctSecrets(input, conftypes.RbwUnified{Site: previousSite})
 		require.NoError(t, err)
-		assert.NotContains(t, unredactedSite, redactedSecret)
-		assert.Equal(t, previousSite, unredactedSite)
+		bssert.NotContbins(t, unredbctedSite, redbctedSecret)
+		bssert.Equbl(t, previousSite, unredbctedSite)
 	})
 
-	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
+	t.Run("unredbcts secrets AND respects specified edits to secret", func(t *testing.T) {
 		input := getTestSiteWithSecrets(
 			testSecrets{
 				executorsAccessToken:                        "new" + executorsAccessToken,
-				authOpenIDClientSecret:                      redactedSecret,
-				authGitLabClientSecret:                      "new" + authGitLabClientSecret,
-				authGitHubClientSecret:                      redactedSecret,
-				authAzureDevOpsClientSecret:                 redactedSecret,
-				emailSMTPPassword:                           redactedSecret,
-				organizationInvitationsSigningKey:           redactedSecret,
-				githubClientSecret:                          redactedSecret,
-				dotcomGitHubAppCloudClientSecret:            redactedSecret,
-				dotcomGitHubAppCloudPrivateKey:              redactedSecret,
-				dotcomSrcCliVersionCacheGitHubToken:         redactedSecret,
-				dotcomSrcCliVersionCacheGitHubWebhookSecret: redactedSecret,
-				authUnlockAccountLinkSigningKey:             redactedSecret,
+				buthOpenIDClientSecret:                      redbctedSecret,
+				buthGitLbbClientSecret:                      "new" + buthGitLbbClientSecret,
+				buthGitHubClientSecret:                      redbctedSecret,
+				buthAzureDevOpsClientSecret:                 redbctedSecret,
+				embilSMTPPbssword:                           redbctedSecret,
+				orgbnizbtionInvitbtionsSigningKey:           redbctedSecret,
+				githubClientSecret:                          redbctedSecret,
+				dotcomGitHubAppCloudClientSecret:            redbctedSecret,
+				dotcomGitHubAppCloudPrivbteKey:              redbctedSecret,
+				dotcomSrcCliVersionCbcheGitHubToken:         redbctedSecret,
+				dotcomSrcCliVersionCbcheGitHubWebhookSecret: redbctedSecret,
+				buthUnlockAccountLinkSigningKey:             redbctedSecret,
 			},
 		)
-		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
+		unredbctedSite, err := UnredbctSecrets(input, conftypes.RbwUnified{Site: previousSite})
 		require.NoError(t, err)
 
-		// Expect to have newly-specified secrets and to fill in "REDACTED" secrets with secrets from previous site
-		want := getTestSiteWithSecrets(
+		// Expect to hbve newly-specified secrets bnd to fill in "REDACTED" secrets with secrets from previous site
+		wbnt := getTestSiteWithSecrets(
 			testSecrets{
 				executorsAccessToken:                        "new" + executorsAccessToken,
-				authOpenIDClientSecret:                      authOpenIDClientSecret,
-				authGitLabClientSecret:                      "new" + authGitLabClientSecret,
-				authGitHubClientSecret:                      authGitHubClientSecret,
-				authAzureDevOpsClientSecret:                 authAzureDevOpsClientSecret,
-				emailSMTPPassword:                           emailSMTPPassword,
-				organizationInvitationsSigningKey:           organizationInvitationsSigningKey,
+				buthOpenIDClientSecret:                      buthOpenIDClientSecret,
+				buthGitLbbClientSecret:                      "new" + buthGitLbbClientSecret,
+				buthGitHubClientSecret:                      buthGitHubClientSecret,
+				buthAzureDevOpsClientSecret:                 buthAzureDevOpsClientSecret,
+				embilSMTPPbssword:                           embilSMTPPbssword,
+				orgbnizbtionInvitbtionsSigningKey:           orgbnizbtionInvitbtionsSigningKey,
 				githubClientSecret:                          githubClientSecret,
 				dotcomGitHubAppCloudClientSecret:            dotcomGitHubAppCloudClientSecret,
-				dotcomGitHubAppCloudPrivateKey:              dotcomGitHubAppCloudPrivateKey,
-				dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
-				dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
-				authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+				dotcomGitHubAppCloudPrivbteKey:              dotcomGitHubAppCloudPrivbteKey,
+				dotcomSrcCliVersionCbcheGitHubToken:         dotcomSrcCliVersionCbcheGitHubToken,
+				dotcomSrcCliVersionCbcheGitHubWebhookSecret: dotcomSrcCliVersionCbcheGitHubWebhookSecret,
+				buthUnlockAccountLinkSigningKey:             buthUnlockAccountLinkSigningKey,
 			},
 		)
-		assert.Equal(t, want, unredactedSite)
+		bssert.Equbl(t, wbnt, unredbctedSite)
 	})
 
-	t.Run("unredacts secrets and respects edits to config", func(t *testing.T) {
-		const newEmail = "new_email@example.com"
+	t.Run("unredbcts secrets bnd respects edits to config", func(t *testing.T) {
+		const newEmbil = "new_embil@exbmple.com"
 		input := getTestSiteWithSecrets(
 			testSecrets{
 				executorsAccessToken:                        "new" + executorsAccessToken,
-				authOpenIDClientSecret:                      redactedSecret,
-				authGitLabClientSecret:                      "new" + authGitLabClientSecret,
-				authGitHubClientSecret:                      redactedSecret,
-				authAzureDevOpsClientSecret:                 redactedSecret,
-				emailSMTPPassword:                           redactedSecret,
-				organizationInvitationsSigningKey:           redactedSecret,
-				githubClientSecret:                          redactedSecret,
-				dotcomGitHubAppCloudClientSecret:            redactedSecret,
-				dotcomGitHubAppCloudPrivateKey:              redactedSecret,
-				dotcomSrcCliVersionCacheGitHubToken:         redactedSecret,
-				dotcomSrcCliVersionCacheGitHubWebhookSecret: redactedSecret,
-				authUnlockAccountLinkSigningKey:             redactedSecret,
+				buthOpenIDClientSecret:                      redbctedSecret,
+				buthGitLbbClientSecret:                      "new" + buthGitLbbClientSecret,
+				buthGitHubClientSecret:                      redbctedSecret,
+				buthAzureDevOpsClientSecret:                 redbctedSecret,
+				embilSMTPPbssword:                           redbctedSecret,
+				orgbnizbtionInvitbtionsSigningKey:           redbctedSecret,
+				githubClientSecret:                          redbctedSecret,
+				dotcomGitHubAppCloudClientSecret:            redbctedSecret,
+				dotcomGitHubAppCloudPrivbteKey:              redbctedSecret,
+				dotcomSrcCliVersionCbcheGitHubToken:         redbctedSecret,
+				dotcomSrcCliVersionCbcheGitHubWebhookSecret: redbctedSecret,
+				buthUnlockAccountLinkSigningKey:             redbctedSecret,
 			},
-			newEmail,
+			newEmbil,
 		)
-		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
+		unredbctedSite, err := UnredbctSecrets(input, conftypes.RbwUnified{Site: previousSite})
 		require.NoError(t, err)
 
-		// Expect new secrets and new email to show up in the unredacted version
-		want := getTestSiteWithSecrets(
+		// Expect new secrets bnd new embil to show up in the unredbcted version
+		wbnt := getTestSiteWithSecrets(
 			testSecrets{
 				executorsAccessToken:                        "new" + executorsAccessToken,
-				authOpenIDClientSecret:                      authOpenIDClientSecret,
-				authGitLabClientSecret:                      "new" + authGitLabClientSecret,
-				authGitHubClientSecret:                      authGitHubClientSecret,
-				authAzureDevOpsClientSecret:                 authAzureDevOpsClientSecret,
-				emailSMTPPassword:                           emailSMTPPassword,
-				organizationInvitationsSigningKey:           organizationInvitationsSigningKey,
+				buthOpenIDClientSecret:                      buthOpenIDClientSecret,
+				buthGitLbbClientSecret:                      "new" + buthGitLbbClientSecret,
+				buthGitHubClientSecret:                      buthGitHubClientSecret,
+				buthAzureDevOpsClientSecret:                 buthAzureDevOpsClientSecret,
+				embilSMTPPbssword:                           embilSMTPPbssword,
+				orgbnizbtionInvitbtionsSigningKey:           orgbnizbtionInvitbtionsSigningKey,
 				githubClientSecret:                          githubClientSecret,
 				dotcomGitHubAppCloudClientSecret:            dotcomGitHubAppCloudClientSecret,
-				dotcomGitHubAppCloudPrivateKey:              dotcomGitHubAppCloudPrivateKey,
-				dotcomSrcCliVersionCacheGitHubToken:         dotcomSrcCliVersionCacheGitHubToken,
-				dotcomSrcCliVersionCacheGitHubWebhookSecret: dotcomSrcCliVersionCacheGitHubWebhookSecret,
-				authUnlockAccountLinkSigningKey:             authUnlockAccountLinkSigningKey,
+				dotcomGitHubAppCloudPrivbteKey:              dotcomGitHubAppCloudPrivbteKey,
+				dotcomSrcCliVersionCbcheGitHubToken:         dotcomSrcCliVersionCbcheGitHubToken,
+				dotcomSrcCliVersionCbcheGitHubWebhookSecret: dotcomSrcCliVersionCbcheGitHubWebhookSecret,
+				buthUnlockAccountLinkSigningKey:             buthUnlockAccountLinkSigningKey,
 			},
-			newEmail,
+			newEmbil,
 		)
-		assert.Equal(t, want, unredactedSite)
+		bssert.Equbl(t, wbnt, unredbctedSite)
 	})
 }
 
-func getTestSiteWithRedactedSecrets() string {
+func getTestSiteWithRedbctedSecrets() string {
 	return getTestSiteWithSecrets(
 		testSecrets{
-			executorsAccessToken:                        redactedSecret,
-			authOpenIDClientSecret:                      redactedSecret,
-			authGitLabClientSecret:                      redactedSecret,
-			authGitHubClientSecret:                      redactedSecret,
-			authAzureDevOpsClientSecret:                 redactedSecret,
-			emailSMTPPassword:                           redactedSecret,
-			organizationInvitationsSigningKey:           redactedSecret,
-			githubClientSecret:                          redactedSecret,
-			dotcomGitHubAppCloudClientSecret:            redactedSecret,
-			dotcomGitHubAppCloudPrivateKey:              redactedSecret,
-			dotcomSrcCliVersionCacheGitHubToken:         redactedSecret,
-			dotcomSrcCliVersionCacheGitHubWebhookSecret: redactedSecret,
-			authUnlockAccountLinkSigningKey:             redactedSecret,
+			executorsAccessToken:                        redbctedSecret,
+			buthOpenIDClientSecret:                      redbctedSecret,
+			buthGitLbbClientSecret:                      redbctedSecret,
+			buthGitHubClientSecret:                      redbctedSecret,
+			buthAzureDevOpsClientSecret:                 redbctedSecret,
+			embilSMTPPbssword:                           redbctedSecret,
+			orgbnizbtionInvitbtionsSigningKey:           redbctedSecret,
+			githubClientSecret:                          redbctedSecret,
+			dotcomGitHubAppCloudClientSecret:            redbctedSecret,
+			dotcomGitHubAppCloudPrivbteKey:              redbctedSecret,
+			dotcomSrcCliVersionCbcheGitHubToken:         redbctedSecret,
+			dotcomSrcCliVersionCbcheGitHubWebhookSecret: redbctedSecret,
+			buthUnlockAccountLinkSigningKey:             redbctedSecret,
 		},
 	)
 }
 
 type testSecrets struct {
 	executorsAccessToken                        string
-	authOpenIDClientSecret                      string
-	authGitHubClientSecret                      string
-	authGitLabClientSecret                      string
-	authAzureDevOpsClientSecret                 string
-	emailSMTPPassword                           string
-	organizationInvitationsSigningKey           string
+	buthOpenIDClientSecret                      string
+	buthGitHubClientSecret                      string
+	buthGitLbbClientSecret                      string
+	buthAzureDevOpsClientSecret                 string
+	embilSMTPPbssword                           string
+	orgbnizbtionInvitbtionsSigningKey           string
 	githubClientSecret                          string
 	dotcomGitHubAppCloudClientSecret            string
-	dotcomGitHubAppCloudPrivateKey              string
-	dotcomSrcCliVersionCacheGitHubToken         string
-	dotcomSrcCliVersionCacheGitHubWebhookSecret string
-	authUnlockAccountLinkSigningKey             string
+	dotcomGitHubAppCloudPrivbteKey              string
+	dotcomSrcCliVersionCbcheGitHubToken         string
+	dotcomSrcCliVersionCbcheGitHubWebhookSecret string
+	buthUnlockAccountLinkSigningKey             string
 }
 
-func getTestSiteWithSecrets(testSecrets testSecrets, optionalEdit ...string) string {
-	email := "noreply+dev@sourcegraph.com"
-	if len(optionalEdit) > 0 {
-		email = optionalEdit[0]
+func getTestSiteWithSecrets(testSecrets testSecrets, optionblEdit ...string) string {
+	embil := "noreply+dev@sourcegrbph.com"
+	if len(optionblEdit) > 0 {
+		embil = optionblEdit[0]
 	}
 	return fmt.Sprintf(`{
-  "repoListUpdateInterval": 1,
-  "email.address": "%s",
-  "executors.accessToken": "%s",
-  "externalURL": "https://sourcegraph.test:3443",
-  "update.channel": "release",
-  "auth.providers": [
+  "repoListUpdbteIntervbl": 1,
+  "embil.bddress": "%s",
+  "executors.bccessToken": "%s",
+  "externblURL": "https://sourcegrbph.test:3443",
+  "updbte.chbnnel": "relebse",
+  "buth.providers": [
     {
-      "allowSignup": true,
+      "bllowSignup": true,
       "type": "builtin"
     },
     {
-      "clientID": "sourcegraph-client-openid",
+      "clientID": "sourcegrbph-client-openid",
       "clientSecret": "%s",
-      "displayName": "Keycloak local OpenID Connect #1 (dev)",
-      "issuer": "http://localhost:3220/auth/realms/master",
+      "displbyNbme": "Keyclobk locbl OpenID Connect #1 (dev)",
+      "issuer": "http://locblhost:3220/buth/reblms/mbster",
       "type": "openidconnect"
     },
     {
-      "clientID": "sourcegraph-client-github",
+      "clientID": "sourcegrbph-client-github",
       "clientSecret": "%s",
-      "displayName": "GitHub.com (dev)",
+      "displbyNbme": "GitHub.com (dev)",
       "type": "github"
     },
     {
-      "clientID": "sourcegraph-client-gitlab",
+      "clientID": "sourcegrbph-client-gitlbb",
       "clientSecret": "%s",
-      "displayName": "GitLab.com",
-      "type": "gitlab",
-      "url": "https://gitlab.com"
+      "displbyNbme": "GitLbb.com",
+      "type": "gitlbb",
+      "url": "https://gitlbb.com"
     },
     {
-      "apiScope": "vso.code,vso.identity,vso.project,vso.work",
-      "clientID": "sourcegraph-client-azuredevops",
+      "bpiScope": "vso.code,vso.identity,vso.project,vso.work",
+      "clientID": "sourcegrbph-client-bzuredevops",
       "clientSecret": "%s",
-      "displayName": "Azure DevOps",
-      "type": "azureDevOps"
+      "displbyNbme": "Azure DevOps",
+      "type": "bzureDevOps"
     }
   ],
-  "observability.tracing": {
-    "sampling": "selective"
+  "observbbility.trbcing": {
+    "sbmpling": "selective"
   },
-  "externalService.userMode": "all",
-  "email.smtp": {
-    "username": "%s",
-    "password": "%s"
+  "externblService.userMode": "bll",
+  "embil.smtp": {
+    "usernbme": "%s",
+    "pbssword": "%s"
   },
-  "organizationInvitations": {
+  "orgbnizbtionInvitbtions": {
     "signingKey": "%s"
   },
   "githubClientSecret": "%s",
   "dotcom": {
     "githubApp.cloud": {
       "clientSecret": "%s",
-      "privateKey": "%s"
+      "privbteKey": "%s"
     },
-    "srcCliVersionCache": {
+    "srcCliVersionCbche": {
       "github": {
         "token": "%s",
         "webhookSecret": "%s"
       }
     }
   },
-  "auth.unlockAccountLinkSigningKey": "%s",
+  "buth.unlockAccountLinkSigningKey": "%s",
 }`,
-		email,
+		embil,
 		testSecrets.executorsAccessToken,
-		testSecrets.authOpenIDClientSecret,
-		testSecrets.authGitHubClientSecret,
-		testSecrets.authGitLabClientSecret,
-		testSecrets.authAzureDevOpsClientSecret,
-		testSecrets.emailSMTPPassword, // used again as username
-		testSecrets.emailSMTPPassword,
-		testSecrets.organizationInvitationsSigningKey,
+		testSecrets.buthOpenIDClientSecret,
+		testSecrets.buthGitHubClientSecret,
+		testSecrets.buthGitLbbClientSecret,
+		testSecrets.buthAzureDevOpsClientSecret,
+		testSecrets.embilSMTPPbssword, // used bgbin bs usernbme
+		testSecrets.embilSMTPPbssword,
+		testSecrets.orgbnizbtionInvitbtionsSigningKey,
 		testSecrets.githubClientSecret,
 		testSecrets.dotcomGitHubAppCloudClientSecret,
-		testSecrets.dotcomGitHubAppCloudPrivateKey,
-		testSecrets.dotcomSrcCliVersionCacheGitHubToken,
-		testSecrets.dotcomSrcCliVersionCacheGitHubWebhookSecret,
-		testSecrets.authUnlockAccountLinkSigningKey,
+		testSecrets.dotcomGitHubAppCloudPrivbteKey,
+		testSecrets.dotcomSrcCliVersionCbcheGitHubToken,
+		testSecrets.dotcomSrcCliVersionCbcheGitHubWebhookSecret,
+		testSecrets.buthUnlockAccountLinkSigningKey,
 	)
 }

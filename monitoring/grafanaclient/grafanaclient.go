@@ -1,22 +1,22 @@
-package grafanaclient
+pbckbge grbfbnbclient
 
 import (
-	grafanasdk "github.com/grafana-tools/sdk"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/grafanaclient/headertransport"
+	grbfbnbsdk "github.com/grbfbnb-tools/sdk"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/grbfbnbclient/hebdertrbnsport"
 )
 
-func New(url, credentials string, headers map[string]string) (*grafanasdk.Client, error) {
-	// DefaultHTTPClient is used unless additional headers are requested
-	httpClient := grafanasdk.DefaultHTTPClient
-	if len(headers) > 0 {
-		httpClient.Transport = headertransport.New(httpClient.Transport, headers)
+func New(url, credentibls string, hebders mbp[string]string) (*grbfbnbsdk.Client, error) {
+	// DefbultHTTPClient is used unless bdditionbl hebders bre requested
+	httpClient := grbfbnbsdk.DefbultHTTPClient
+	if len(hebders) > 0 {
+		httpClient.Trbnsport = hebdertrbnsport.New(httpClient.Trbnsport, hebders)
 	}
 
-	// Init Grafana client
-	grafanaClient, err := grafanasdk.NewClient(url, credentials, httpClient)
+	// Init Grbfbnb client
+	grbfbnbClient, err := grbfbnbsdk.NewClient(url, credentibls, httpClient)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to initialize Grafana client")
+		return nil, errors.Wrbp(err, "Fbiled to initiblize Grbfbnb client")
 	}
-	return grafanaClient, nil
+	return grbfbnbClient, nil
 }

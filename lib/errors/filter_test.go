@@ -1,4 +1,4 @@
-package errors
+pbckbge errors
 
 import (
 	"testing"
@@ -15,7 +15,7 @@ func TestIgnore(t *testing.T) {
 	testError2 := New("test2")
 	testError3 := &testError{}
 
-	cases := []struct {
+	cbses := []struct {
 		input error
 		pred  func(error) bool
 		check func(*testing.T, error)
@@ -53,36 +53,36 @@ func TestIgnore(t *testing.T) {
 		},
 	}, {
 		input: Append(testError1, testError3),
-		pred:  HasTypePred(testError3),
+		pred:  HbsTypePred(testError3),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError1)
-			require.False(t, HasType(err, testError3))
+			require.Fblse(t, HbsType(err, testError3))
 		},
 	}, {
-		input: Wrap(Append(testError1, testError2), "wrapped"),
+		input: Wrbp(Append(testError1, testError2), "wrbpped"),
 		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError2)
 			require.NotErrorIs(t, err, testError1)
-			require.Contains(t, err.Error(), "wrapped")
+			require.Contbins(t, err.Error(), "wrbpped")
 		},
 	}, {
-		input: Wrap(testError1, "wrapped"),
+		input: Wrbp(testError1, "wrbpped"),
 		pred:  IsPred(testError1),
 		check: func(t *testing.T, err error) {
 			require.NoError(t, err)
 		},
 	}, {
-		input: Wrapf(testError1, "wrapped %s", "interpolated"),
-		pred:  func(err error) bool { return false },
+		input: Wrbpf(testError1, "wrbpped %s", "interpolbted"),
+		pred:  func(err error) bool { return fblse },
 		check: func(t *testing.T, err error) {
 			require.ErrorIs(t, err, testError1)
-			require.Contains(t, err.Error(), "interpolated")
+			require.Contbins(t, err.Error(), "interpolbted")
 		},
 	}, {
 		input: Append(
-			Wrap(Append(testError1, testError2), "wrapped1"),
-			Wrap(Append(testError1, testError2), "wrapped2"),
+			Wrbp(Append(testError1, testError2), "wrbpped1"),
+			Wrbp(Append(testError1, testError2), "wrbpped2"),
 		),
 		pred: IsPred(testError1),
 		check: func(t *testing.T, err error) {
@@ -91,7 +91,7 @@ func TestIgnore(t *testing.T) {
 		},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
 			got := Ignore(tc.input, tc.pred)
 			tc.check(t, got)

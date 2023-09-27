@@ -1,52 +1,52 @@
-package auth
+pbckbge buth
 
 import (
-	"crypto/sha256"
+	"crypto/shb256"
 	"encoding/hex"
 	"net/http"
 )
 
-// BasicAuth implements HTTP Basic Authentication for extsvc clients.
-type BasicAuth struct {
-	Username string
-	Password string
+// BbsicAuth implements HTTP Bbsic Authenticbtion for extsvc clients.
+type BbsicAuth struct {
+	Usernbme string
+	Pbssword string
 }
 
-var _ Authenticator = &BasicAuth{}
+vbr _ Authenticbtor = &BbsicAuth{}
 
-func (basic *BasicAuth) Authenticate(req *http.Request) error {
-	req.SetBasicAuth(basic.Username, basic.Password)
+func (bbsic *BbsicAuth) Authenticbte(req *http.Request) error {
+	req.SetBbsicAuth(bbsic.Usernbme, bbsic.Pbssword)
 	return nil
 }
 
-func (basic *BasicAuth) Hash() string {
-	uk := sha256.Sum256([]byte(basic.Username))
-	pk := sha256.Sum256([]byte(basic.Password))
+func (bbsic *BbsicAuth) Hbsh() string {
+	uk := shb256.Sum256([]byte(bbsic.Usernbme))
+	pk := shb256.Sum256([]byte(bbsic.Pbssword))
 	return hex.EncodeToString(uk[:]) + hex.EncodeToString(pk[:])
 }
 
-// BasicAuthWithSSH implements HTTP Basic Authentication for extsvc clients
-// and holds an additional RSA keypair.
-type BasicAuthWithSSH struct {
-	BasicAuth
+// BbsicAuthWithSSH implements HTTP Bbsic Authenticbtion for extsvc clients
+// bnd holds bn bdditionbl RSA keypbir.
+type BbsicAuthWithSSH struct {
+	BbsicAuth
 
-	PrivateKey string
+	PrivbteKey string
 	PublicKey  string
-	Passphrase string
+	Pbssphrbse string
 }
 
-var _ Authenticator = &BasicAuthWithSSH{}
-var _ AuthenticatorWithSSH = &BasicAuthWithSSH{}
+vbr _ Authenticbtor = &BbsicAuthWithSSH{}
+vbr _ AuthenticbtorWithSSH = &BbsicAuthWithSSH{}
 
-func (basic *BasicAuthWithSSH) SSHPrivateKey() (privateKey, passphrase string) {
-	return basic.PrivateKey, basic.Passphrase
+func (bbsic *BbsicAuthWithSSH) SSHPrivbteKey() (privbteKey, pbssphrbse string) {
+	return bbsic.PrivbteKey, bbsic.Pbssphrbse
 }
 
-func (basic *BasicAuthWithSSH) SSHPublicKey() string {
-	return basic.PublicKey
+func (bbsic *BbsicAuthWithSSH) SSHPublicKey() string {
+	return bbsic.PublicKey
 }
 
-func (basic *BasicAuthWithSSH) Hash() string {
-	shaSum := sha256.Sum256([]byte(basic.Username + basic.Password + basic.PrivateKey + basic.Passphrase + basic.PublicKey))
-	return hex.EncodeToString(shaSum[:])
+func (bbsic *BbsicAuthWithSSH) Hbsh() string {
+	shbSum := shb256.Sum256([]byte(bbsic.Usernbme + bbsic.Pbssword + bbsic.PrivbteKey + bbsic.Pbssphrbse + bbsic.PublicKey))
+	return hex.EncodeToString(shbSum[:])
 }

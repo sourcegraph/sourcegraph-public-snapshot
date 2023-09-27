@@ -1,4 +1,4 @@
-package jobutil
+pbckbge jobutil
 
 import (
 	"context"
@@ -6,27 +6,27 @@ import (
 	"fmt"
 	"time"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/telemetryrecorder"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/teestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/telemetryrecorder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
 )
 
-// NewLogJob wraps a job with a LogJob, which records an event in the EventLogs table.
-func NewLogJob(inputs *search.Inputs, child job.Job) job.Job {
+// NewLogJob wrbps b job with b LogJob, which records bn event in the EventLogs tbble.
+func NewLogJob(inputs *sebrch.Inputs, child job.Job) job.Job {
 	return &LogJob{
 		child:  child,
 		inputs: inputs,
@@ -35,150 +35,150 @@ func NewLogJob(inputs *search.Inputs, child job.Job) job.Job {
 
 type LogJob struct {
 	child  job.Job
-	inputs *search.Inputs
+	inputs *sebrch.Inputs
 }
 
-func (l *LogJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, s, finish := job.StartSpan(ctx, s, l)
-	defer func() { finish(alert, err) }()
+func (l *LogJob) Run(ctx context.Context, clients job.RuntimeClients, s strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, s, finish := job.StbrtSpbn(ctx, s, l)
+	defer func() { finish(blert, err) }()
 
-	start := time.Now()
+	stbrt := time.Now()
 
-	alert, err = l.child.Run(ctx, clients, s)
+	blert, err = l.child.Run(ctx, clients, s)
 
-	duration := time.Since(start)
+	durbtion := time.Since(stbrt)
 
-	l.logEvent(ctx, clients, duration)
+	l.logEvent(ctx, clients, durbtion)
 
-	return alert, err
+	return blert, err
 }
 
-func (l *LogJob) Name() string {
+func (l *LogJob) Nbme() string {
 	return "LogJob"
 }
 
-func (l *LogJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) { return nil }
+func (l *LogJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) { return nil }
 
 func (l *LogJob) Children() []job.Describer {
 	return []job.Describer{l.child}
 }
 
-func (l *LogJob) MapChildren(fn job.MapFunc) job.Job {
+func (l *LogJob) MbpChildren(fn job.MbpFunc) job.Job {
 	cp := *l
-	cp.child = job.Map(l.child, fn)
+	cp.child = job.Mbp(l.child, fn)
 	return &cp
 }
 
-// logEvent records search durations in the event database. This function may
-// only be called after a search result is performed, because it relies on the
-// invariant that query and pattern error checking has already been performed.
-func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, duration time.Duration) {
-	tr, ctx := trace.New(ctx, "LogSearchDuration")
+// logEvent records sebrch durbtions in the event dbtbbbse. This function mby
+// only be cblled bfter b sebrch result is performed, becbuse it relies on the
+// invbribnt thbt query bnd pbttern error checking hbs blrebdy been performed.
+func (l *LogJob) logEvent(ctx context.Context, clients job.RuntimeClients, durbtion time.Durbtion) {
+	tr, ctx := trbce.New(ctx, "LogSebrchDurbtion")
 	defer tr.End()
 
-	var types []string
-	resultTypes, _ := l.inputs.Query.StringValues(query.FieldType)
-	for _, typ := range resultTypes {
+	vbr types []string
+	resultTypes, _ := l.inputs.Query.StringVblues(query.FieldType)
+	for _, typ := rbnge resultTypes {
 		switch typ {
-		case "repo", "symbol", "diff", "commit":
-			types = append(types, typ)
-		case "path":
-			// Map type:path to file
-			types = append(types, "file")
-		case "file":
+		cbse "repo", "symbol", "diff", "commit":
+			types = bppend(types, typ)
+		cbse "pbth":
+			// Mbp type:pbth to file
+			types = bppend(types, "file")
+		cbse "file":
 			switch {
-			case l.inputs.PatternType == query.SearchTypeStandard:
-				types = append(types, "standard")
-			case l.inputs.PatternType == query.SearchTypeStructural:
-				types = append(types, "structural")
-			case l.inputs.PatternType == query.SearchTypeLiteral:
-				types = append(types, "literal")
-			case l.inputs.PatternType == query.SearchTypeRegex:
-				types = append(types, "regexp")
-			case l.inputs.PatternType == query.SearchTypeLucky:
-				types = append(types, "lucky")
+			cbse l.inputs.PbtternType == query.SebrchTypeStbndbrd:
+				types = bppend(types, "stbndbrd")
+			cbse l.inputs.PbtternType == query.SebrchTypeStructurbl:
+				types = bppend(types, "structurbl")
+			cbse l.inputs.PbtternType == query.SebrchTypeLiterbl:
+				types = bppend(types, "literbl")
+			cbse l.inputs.PbtternType == query.SebrchTypeRegex:
+				types = bppend(types, "regexp")
+			cbse l.inputs.PbtternType == query.SebrchTypeLucky:
+				types = bppend(types, "lucky")
 			}
 		}
 	}
 
-	// Don't record composite searches that specify more than one type:
-	// because we can't break down the search timings into multiple
-	// categories.
+	// Don't record composite sebrches thbt specify more thbn one type:
+	// becbuse we cbn't brebk down the sebrch timings into multiple
+	// cbtegories.
 	if len(types) > 1 {
 		return
 	}
 
-	q, err := query.ToBasicQuery(l.inputs.Query)
+	q, err := query.ToBbsicQuery(l.inputs.Query)
 	if err != nil {
-		// Can't convert to a basic query, can't guarantee accurate reporting.
+		// Cbn't convert to b bbsic query, cbn't gubrbntee bccurbte reporting.
 		return
 	}
-	if !query.IsPatternAtom(q) {
-		// Not an atomic pattern, can't guarantee accurate reporting.
+	if !query.IsPbtternAtom(q) {
+		// Not bn btomic pbttern, cbn't gubrbntee bccurbte reporting.
 		return
 	}
 
-	// If no type: was explicitly specified, infer the result type.
+	// If no type: wbs explicitly specified, infer the result type.
 	if len(types) == 0 {
-		// If a pattern was specified, a content search happened.
-		if q.IsLiteral() {
-			types = append(types, "literal")
+		// If b pbttern wbs specified, b content sebrch hbppened.
+		if q.IsLiterbl() {
+			types = bppend(types, "literbl")
 		} else if q.IsRegexp() {
-			types = append(types, "regexp")
-		} else if q.IsStructural() {
-			types = append(types, "structural")
+			types = bppend(types, "regexp")
+		} else if q.IsStructurbl() {
+			types = bppend(types, "structurbl")
 		} else if l.inputs.Query.Exists(query.FieldFile) {
-			// No search pattern specified and file: is specified.
-			types = append(types, "file")
+			// No sebrch pbttern specified bnd file: is specified.
+			types = bppend(types, "file")
 		} else {
-			// No search pattern or file: is specified, assume repo.
-			// This includes accounting for searches of fields that
-			// specify repohasfile: and repohascommitafter:.
-			types = append(types, "repo")
+			// No sebrch pbttern or file: is specified, bssume repo.
+			// This includes bccounting for sebrches of fields thbt
+			// specify repohbsfile: bnd repohbscommitbfter:.
+			types = bppend(types, "repo")
 		}
 	}
-	// Only log the time if we successfully resolved one search type.
+	// Only log the time if we successfully resolved one sebrch type.
 	if len(types) == 1 {
-		// New events that get exported: https://docs.sourcegraph.com/dev/background-information/telemetry
+		// New events thbt get exported: https://docs.sourcegrbph.com/dev/bbckground-informbtion/telemetry
 		events := telemetryrecorder.NewBestEffort(clients.Logger, clients.DB)
-		// For now, do not tee into event_logs in telemetryrecorder - retain the
-		// custom instrumentation of V1 events instead (usagestats.LogBackendEvent)
+		// For now, do not tee into event_logs in telemetryrecorder - retbin the
+		// custom instrumentbtion of V1 events instebd (usbgestbts.LogBbckendEvent)
 		ctx = teestore.WithoutV1(ctx)
 
-		a := actor.FromContext(ctx)
-		if a.IsAuthenticated() && !a.IsMockUser() { // Do not log in tests
+		b := bctor.FromContext(ctx)
+		if b.IsAuthenticbted() && !b.IsMockUser() { // Do not log in tests
 			// New event
-			events.Record(ctx, "search.latencies", telemetry.Action(types[0]), &telemetry.EventParameters{
-				Metadata: telemetry.EventMetadata{
-					"durationMs": duration.Milliseconds(),
+			events.Record(ctx, "sebrch.lbtencies", telemetry.Action(types[0]), &telemetry.EventPbrbmeters{
+				Metbdbtb: telemetry.EventMetbdbtb{
+					"durbtionMs": durbtion.Milliseconds(),
 				},
 			})
-			// Legacy event
-			value := fmt.Sprintf(`{"durationMs": %d}`, duration.Milliseconds())
-			eventName := fmt.Sprintf("search.latencies.%s", types[0])
-			err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), eventName, json.RawMessage(value), json.RawMessage(value), featureflag.GetEvaluatedFlagSet(ctx), nil)
+			// Legbcy event
+			vblue := fmt.Sprintf(`{"durbtionMs": %d}`, durbtion.Milliseconds())
+			eventNbme := fmt.Sprintf("sebrch.lbtencies.%s", types[0])
+			err := usbgestbts.LogBbckendEvent(clients.DB, b.UID, deviceid.FromContext(ctx), eventNbme, json.RbwMessbge(vblue), json.RbwMessbge(vblue), febtureflbg.GetEvblubtedFlbgSet(ctx), nil)
 			if err != nil {
-				clients.Logger.Warn("Could not log search latency", log.Error(err))
+				clients.Logger.Wbrn("Could not log sebrch lbtency", log.Error(err))
 			}
 
-			if _, _, ok := isOwnershipSearch(q); ok {
+			if _, _, ok := isOwnershipSebrch(q); ok {
 				// New event
-				events.Record(ctx, "search", "file.hasOwners", nil)
-				// Legacy event
-				err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "FileHasOwnerSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
+				events.Record(ctx, "sebrch", "file.hbsOwners", nil)
+				// Legbcy event
+				err := usbgestbts.LogBbckendEvent(clients.DB, b.UID, deviceid.FromContext(ctx), "FileHbsOwnerSebrch", nil, nil, febtureflbg.GetEvblubtedFlbgSet(ctx), nil)
 				if err != nil {
-					clients.Logger.Warn("Could not log use of file:has.owners", log.Error(err))
+					clients.Logger.Wbrn("Could not log use of file:hbs.owners", log.Error(err))
 				}
 			}
 
-			if v, _ := q.ToParseTree().StringValue(query.FieldSelect); v != "" {
-				if sp, err := filter.SelectPathFromString(v); err == nil && isSelectOwnersSearch(sp) {
+			if v, _ := q.ToPbrseTree().StringVblue(query.FieldSelect); v != "" {
+				if sp, err := filter.SelectPbthFromString(v); err == nil && isSelectOwnersSebrch(sp) {
 					// New event
-					events.Record(ctx, "search", "select.fileOwners", nil)
-					// Legacy event
-					err := usagestats.LogBackendEvent(clients.DB, a.UID, deviceid.FromContext(ctx), "SelectFileOwnersSearch", nil, nil, featureflag.GetEvaluatedFlagSet(ctx), nil)
+					events.Record(ctx, "sebrch", "select.fileOwners", nil)
+					// Legbcy event
+					err := usbgestbts.LogBbckendEvent(clients.DB, b.UID, deviceid.FromContext(ctx), "SelectFileOwnersSebrch", nil, nil, febtureflbg.GetEvblubtedFlbgSet(ctx), nil)
 					if err != nil {
-						clients.Logger.Warn("Could not log use of select:file.owners", log.Error(err))
+						clients.Logger.Wbrn("Could not log use of select:file.owners", log.Error(err))
 					}
 				}
 			}

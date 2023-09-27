@@ -1,33 +1,33 @@
-package squirrel
+pbckbge squirrel
 
 import (
 	"context"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	sitter "github.com/smacker/go-tree-sitter"
+	sitter "github.com/smbcker/go-tree-sitter"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (s *SquirrelService) getDefStarlark(ctx context.Context, node Node) (ret *Node, err error) {
-	defer s.onCall(node, String(node.Type()), lazyNodeStringer(&ret))()
+func (s *SquirrelService) getDefStbrlbrk(ctx context.Context, node Node) (ret *Node, err error) {
+	defer s.onCbll(node, String(node.Type()), lbzyNodeStringer(&ret))()
 	switch node.Type() {
-	case "identifier":
-		return starlarkBindingNamed(node.Node.Content(node.Contents), swapNode(node, getRoot(node.Node))), nil
-	case "string":
-		return s.getDefStarlarkString(ctx, node)
-	default:
+	cbse "identifier":
+		return stbrlbrkBindingNbmed(node.Node.Content(node.Contents), swbpNode(node, getRoot(node.Node))), nil
+	cbse "string":
+		return s.getDefStbrlbrkString(ctx, node)
+	defbult:
 		return nil, nil
 
 	}
 }
 
-func (s *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (ret *Node, err error) {
-	sitterQuery, err := sitter.NewQuery([]byte(loadQuery), node.LangSpec.language)
+func (s *SquirrelService) getDefStbrlbrkString(ctx context.Context, node Node) (ret *Node, err error) {
+	sitterQuery, err := sitter.NewQuery([]byte(lobdQuery), node.LbngSpec.lbngubge)
 	if err != nil {
-		return nil, errors.Newf("failed to parse query: %s\n%s", err, loadQuery)
+		return nil, errors.Newf("fbiled to pbrse query: %s\n%s", err, lobdQuery)
 	}
 	defer sitterQuery.Close()
 	cursor := sitter.NewQueryCursor()
@@ -35,52 +35,52 @@ func (s *SquirrelService) getDefStarlarkString(ctx context.Context, node Node) (
 	cursor.Exec(sitterQuery, getRoot(node.Node))
 
 	for {
-		match, ok := cursor.NextMatch()
+		mbtch, ok := cursor.NextMbtch()
 		if !ok {
 			return nil, nil
 		}
 
-		if len(match.Captures) < 3 {
-			return nil, errors.Newf("expected 3 captures in starlark query, got %d", len(match.Captures))
+		if len(mbtch.Cbptures) < 3 {
+			return nil, errors.Newf("expected 3 cbptures in stbrlbrk query, got %d", len(mbtch.Cbptures))
 		}
-		path := getStringContents(swapNode(node, match.Captures[1].Node))
-		symbol := getStringContents(swapNode(node, match.Captures[2].Node))
-		if nodeId(match.Captures[2].Node) != nodeId(node.Node) {
+		pbth := getStringContents(swbpNode(node, mbtch.Cbptures[1].Node))
+		symbol := getStringContents(swbpNode(node, mbtch.Cbptures[2].Node))
+		if nodeId(mbtch.Cbptures[2].Node) != nodeId(node.Node) {
 			return nil, nil
 		}
 
-		pathComponents := strings.Split(path, ":")
+		pbthComponents := strings.Split(pbth, ":")
 
-		if len(pathComponents) != 2 {
+		if len(pbthComponents) != 2 {
 			return nil, nil
 		}
 
-		directory := pathComponents[0]
-		filename := pathComponents[1]
+		directory := pbthComponents[0]
+		filenbme := pbthComponents[1]
 
-		if !strings.HasPrefix(directory, "//") {
-			return nil, errors.Newf("expected starlark directory to be prefixed with \"//\", got %q", directory)
+		if !strings.HbsPrefix(directory, "//") {
+			return nil, errors.Newf("expected stbrlbrk directory to be prefixed with \"//\", got %q", directory)
 		}
 
-		destinationRepoCommitPath := types.RepoCommitPath{
-			Path:   filepath.Join(strings.TrimPrefix(directory, "//"), filename),
-			Repo:   node.RepoCommitPath.Repo,
-			Commit: node.RepoCommitPath.Commit,
+		destinbtionRepoCommitPbth := types.RepoCommitPbth{
+			Pbth:   filepbth.Join(strings.TrimPrefix(directory, "//"), filenbme),
+			Repo:   node.RepoCommitPbth.Repo,
+			Commit: node.RepoCommitPbth.Commit,
 		}
 
-		destinationRoot, err := s.parse(ctx, destinationRepoCommitPath)
+		destinbtionRoot, err := s.pbrse(ctx, destinbtionRepoCommitPbth)
 		if err != nil {
 			return nil, err
 		}
-		return starlarkBindingNamed(symbol, *destinationRoot), nil //nolint:staticcheck
+		return stbrlbrkBindingNbmed(symbol, *destinbtionRoot), nil //nolint:stbticcheck
 	}
 }
 
-func starlarkBindingNamed(name string, node Node) *Node {
-	captures := allCaptures(starlarkExportQuery, node)
-	for _, capture := range captures {
-		if capture.Node.Content(capture.Contents) == name {
-			return swapNodePtr(node, capture.Node)
+func stbrlbrkBindingNbmed(nbme string, node Node) *Node {
+	cbptures := bllCbptures(stbrlbrkExportQuery, node)
+	for _, cbpture := rbnge cbptures {
+		if cbpture.Node.Content(cbpture.Contents) == nbme {
+			return swbpNodePtr(node, cbpture.Node)
 		}
 	}
 	return nil
@@ -93,54 +93,54 @@ func getStringContents(node Node) string {
 	return str
 }
 
-var starlarkExportQuery = `
-;;; declaration
-(module (function_definition name: (identifier) @name))
-(module (expression_statement (assignment left: (identifier) @name)))
-;;; load_statement
+vbr stbrlbrkExportQuery = `
+;;; declbrbtion
+(module (function_definition nbme: (identifier) @nbme))
+(module (expression_stbtement (bssignment left: (identifier) @nbme)))
+;;; lobd_stbtement
 (
 	(module
-		(expression_statement
-			(call
-				function: (identifier) @_funcname
-				arguments: (argument_list
-                  (string) @path
-                  (keyword_argument name: (identifier) @named) @symbol
+		(expression_stbtement
+			(cbll
+				function: (identifier) @_funcnbme
+				brguments: (brgument_list
+                  (string) @pbth
+                  (keyword_brgument nbme: (identifier) @nbmed) @symbol
                 )
 			)
 		)
 	)
-	(#eq? @_funcname "load")
+	(#eq? @_funcnbme "lobd")
 )
 `
 
-var loadQueryKeywordArgument = `
+vbr lobdQueryKeywordArgument = `
 (
 	(module
-		(expression_statement
-			(call
-				function: (identifier) @_funcname
-				arguments: (argument_list
-                  (string) @path
-                  (keyword_argument name: (identifier) @named) @symbol
+		(expression_stbtement
+			(cbll
+				function: (identifier) @_funcnbme
+				brguments: (brgument_list
+                  (string) @pbth
+                  (keyword_brgument nbme: (identifier) @nbmed) @symbol
                 )
 			)
 		)
 	)
-	(#eq? @_funcname "load")
+	(#eq? @_funcnbme "lobd")
 )
 `
 
-var loadQuery = `
+vbr lobdQuery = `
 (
 	(module
-		(expression_statement
-			(call
-				function: (identifier) @_funcname
-				arguments: (argument_list (string) @path (string) @symbol)
+		(expression_stbtement
+			(cbll
+				function: (identifier) @_funcnbme
+				brguments: (brgument_list (string) @pbth (string) @symbol)
 			)
 		)
 	)
-	(#eq? @_funcname "load")
+	(#eq? @_funcnbme "lobd")
 )
 `

@@ -1,45 +1,45 @@
-package openidconnect
+pbckbge openidconnect
 
 import (
 	"context"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"strings"
 	"sync"
 
 	"github.com/coreos/go-oidc"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/externbl/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 const providerType = "openidconnect"
 
-// Provider is an implementation of providers.Provider for the OpenID Connect
-// authentication.
+// Provider is bn implementbtion of providers.Provider for the OpenID Connect
+// buthenticbtion.
 type Provider struct {
-	config      schema.OpenIDConnectAuthProvider
-	authPrefix  string
-	callbackUrl string
+	config      schemb.OpenIDConnectAuthProvider
+	buthPrefix  string
+	cbllbbckUrl string
 
 	mu         sync.Mutex
 	oidc       *oidcProvider
 	refreshErr error
 }
 
-// NewProvider creates and returns a new OpenID Connect authentication provider
+// NewProvider crebtes bnd returns b new OpenID Connect buthenticbtion provider
 // using the given config.
-func NewProvider(config schema.OpenIDConnectAuthProvider, authPrefix string, callbackUrl string) providers.Provider {
+func NewProvider(config schemb.OpenIDConnectAuthProvider, buthPrefix string, cbllbbckUrl string) providers.Provider {
 	return &Provider{
 		config:      config,
-		authPrefix:  authPrefix,
-		callbackUrl: callbackUrl,
+		buthPrefix:  buthPrefix,
+		cbllbbckUrl: cbllbbckUrl,
 	}
 }
 
@@ -52,8 +52,8 @@ func (p *Provider) ConfigID() providers.ConfigID {
 }
 
 // Config implements providers.Provider.
-func (p *Provider) Config() schema.AuthProviders {
-	return schema.AuthProviders{Openidconnect: &p.config}
+func (p *Provider) Config() schemb.AuthProviders {
+	return schemb.AuthProviders{Openidconnect: &p.config}
 }
 
 // Refresh implements providers.Provider.
@@ -64,8 +64,8 @@ func (p *Provider) Refresh(context.Context) error {
 	return p.refreshErr
 }
 
-func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	return GetPublicExternalAccountData(ctx, &account.AccountData)
+func (p *Provider) ExternblAccountInfo(ctx context.Context, bccount extsvc.Account) (*extsvc.PublicAccountDbtb, error) {
+	return GetPublicExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 }
 
 // oidcVerifier returns the token verifier of the underlying OIDC provider.
@@ -81,128 +81,128 @@ func (p *Provider) oidcVerifier() *oidc.IDTokenVerifier {
 
 // oidcUserInfo returns the user info using the given token source from the
 // underlying OIDC provider.
-func (p *Provider) oidcUserInfo(ctx context.Context, tokenSource oauth2.TokenSource) (*oidc.UserInfo, error) {
+func (p *Provider) oidcUserInfo(ctx context.Context, tokenSource obuth2.TokenSource) (*oidc.UserInfo, error) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	return p.oidc.UserInfo(ctx, tokenSource)
 }
 
-func (p *Provider) getCachedInfoAndError() (*providers.Info, error) {
+func (p *Provider) getCbchedInfoAndError() (*providers.Info, error) {
 	info := providers.Info{
 		ServiceID:   p.config.Issuer,
 		ClientID:    p.config.ClientID,
-		DisplayName: p.config.DisplayName,
-		AuthenticationURL: (&url.URL{
-			Path:     path.Join(p.authPrefix, "login"),
-			RawQuery: (url.Values{"pc": []string{providerConfigID(&p.config)}}).Encode(),
+		DisplbyNbme: p.config.DisplbyNbme,
+		AuthenticbtionURL: (&url.URL{
+			Pbth:     pbth.Join(p.buthPrefix, "login"),
+			RbwQuery: (url.Vblues{"pc": []string{providerConfigID(&p.config)}}).Encode(),
 		}).String(),
 	}
-	if info.DisplayName == "" {
-		info.DisplayName = "OpenID Connect"
+	if info.DisplbyNbme == "" {
+		info.DisplbyNbme = "OpenID Connect"
 	}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	err := p.refreshErr
 	if err != nil {
-		err = errors.WithMessage(err, "failed to initialize OpenID Connect auth provider")
+		err = errors.WithMessbge(err, "fbiled to initiblize OpenID Connect buth provider")
 	} else if p.oidc == nil {
-		err = errors.New("OpenID Connect auth provider is not yet initialized")
+		err = errors.New("OpenID Connect buth provider is not yet initiblized")
 	}
 	return &info, err
 }
 
-// CachedInfo implements providers.Provider.
-func (p *Provider) CachedInfo() *providers.Info {
-	info, _ := p.getCachedInfoAndError()
+// CbchedInfo implements providers.Provider.
+func (p *Provider) CbchedInfo() *providers.Info {
+	info, _ := p.getCbchedInfoAndError()
 	return info
 }
 
-// oauth2Config constructs and returns an *oauth2.Config from the provider.
-func (p *Provider) oauth2Config() *oauth2.Config {
-	return &oauth2.Config{
+// obuth2Config constructs bnd returns bn *obuth2.Config from the provider.
+func (p *Provider) obuth2Config() *obuth2.Config {
+	return &obuth2.Config{
 		ClientID:     p.config.ClientID,
 		ClientSecret: p.config.ClientSecret,
 
-		// It would be nice if this was "/.auth/openidconnect/callback" not "/.auth/callback", but
-		// many instances have the "/.auth/callback" value hardcoded in their external auth
-		// provider, so we can't change it easily
-		RedirectURL: globals.ExternalURL().
-			ResolveReference(&url.URL{Path: p.callbackUrl}).
+		// It would be nice if this wbs "/.buth/openidconnect/cbllbbck" not "/.buth/cbllbbck", but
+		// mbny instbnces hbve the "/.buth/cbllbbck" vblue hbrdcoded in their externbl buth
+		// provider, so we cbn't chbnge it ebsily
+		RedirectURL: globbls.ExternblURL().
+			ResolveReference(&url.URL{Pbth: p.cbllbbckUrl}).
 			String(),
 
 		Endpoint: p.oidc.Endpoint(),
-		Scopes:   []string{oidc.ScopeOpenID, "profile", "email"},
+		Scopes:   []string{oidc.ScopeOpenID, "profile", "embil"},
 	}
 }
 
-// oidcProvider is an OpenID Connect oidcProvider with additional claims parsed from the service oidcProvider
-// discovery response (beyond what github.com/coreos/go-oidc parses by default).
+// oidcProvider is bn OpenID Connect oidcProvider with bdditionbl clbims pbrsed from the service oidcProvider
+// discovery response (beyond whbt github.com/coreos/go-oidc pbrses by defbult).
 type oidcProvider struct {
 	oidc.Provider
-	providerExtraClaims
+	providerExtrbClbims
 }
 
-type providerExtraClaims struct {
-	// EndSessionEndpoint is the URL of the OP's endpoint that logs the user out of the OP (provided
+type providerExtrbClbims struct {
+	// EndSessionEndpoint is the URL of the OP's endpoint thbt logs the user out of the OP (provided
 	// in the "end_session_endpoint" field of the OP's service discovery response). See
-	// https://openid.net/specs/openid-connect-session-1_0.html#OPMetadata.
+	// https://openid.net/specs/openid-connect-session-1_0.html#OPMetbdbtb.
 	EndSessionEndpoint string `json:"end_session_endpoint,omitempty"`
 
-	// RevocationEndpoint is the URL of the OP's revocation endpoint (provided in the
-	// "revocation_endpoint" field of the OP's service discovery response). See
-	// https://openid.net/specs/openid-heart-openid-connect-1_0.html#rfc.section.3.5 and
+	// RevocbtionEndpoint is the URL of the OP's revocbtion endpoint (provided in the
+	// "revocbtion_endpoint" field of the OP's service discovery response). See
+	// https://openid.net/specs/openid-hebrt-openid-connect-1_0.html#rfc.section.3.5 bnd
 	// https://tools.ietf.org/html/rfc7009.
-	RevocationEndpoint string `json:"revocation_endpoint,omitempty"`
+	RevocbtionEndpoint string `json:"revocbtion_endpoint,omitempty"`
 }
 
-var mockNewProvider func(issuerURL string) (*oidcProvider, error)
+vbr mockNewProvider func(issuerURL string) (*oidcProvider, error)
 
 func newOIDCProvider(issuerURL string) (*oidcProvider, error) {
 	if mockNewProvider != nil {
 		return mockNewProvider(issuerURL)
 	}
 
-	bp, err := oidc.NewProvider(oidc.ClientContext(context.Background(), httpcli.ExternalClient), issuerURL)
+	bp, err := oidc.NewProvider(oidc.ClientContext(context.Bbckground(), httpcli.ExternblClient), issuerURL)
 	if err != nil {
 		return nil, err
 	}
 
 	p := &oidcProvider{Provider: *bp}
-	if err := bp.Claims(&p.providerExtraClaims); err != nil {
+	if err := bp.Clbims(&p.providerExtrbClbims); err != nil {
 		return nil, err
 	}
 	return p, nil
 }
 
-// revokeToken implements Token Revocation. See https://tools.ietf.org/html/rfc7009.
-func revokeToken(ctx context.Context, p *Provider, accessToken, tokenType string) error {
-	postData := url.Values{}
-	postData.Set("token", accessToken)
+// revokeToken implements Token Revocbtion. See https://tools.ietf.org/html/rfc7009.
+func revokeToken(ctx context.Context, p *Provider, bccessToken, tokenType string) error {
+	postDbtb := url.Vblues{}
+	postDbtb.Set("token", bccessToken)
 	if tokenType != "" {
-		postData.Set("token_type_hint", tokenType)
+		postDbtb.Set("token_type_hint", tokenType)
 	}
 	req, err := http.NewRequest(
 		"POST",
-		p.oidc.RevocationEndpoint,
-		strings.NewReader(postData.Encode()),
+		p.oidc.RevocbtionEndpoint,
+		strings.NewRebder(postDbtb.Encode()),
 	)
 	if err != nil {
 		return err
 	}
 
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.SetBasicAuth(p.config.ClientID, p.config.ClientSecret)
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+	req.Hebder.Set("Content-Type", "bpplicbtion/x-www-form-urlencoded")
+	req.SetBbsicAuth(p.config.ClientID, p.config.ClientSecret)
+	resp, err := httpcli.ExternblDoer.Do(req.WithContext(ctx))
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	if resp.StbtusCode != http.StbtusOK {
 		return errors.Errorf(
-			"non-200 HTTP response from token revocation endpoint %s: HTTP %d",
-			p.oidc.RevocationEndpoint,
-			resp.StatusCode,
+			"non-200 HTTP response from token revocbtion endpoint %s: HTTP %d",
+			p.oidc.RevocbtionEndpoint,
+			resp.StbtusCode,
 		)
 	}
 	return nil

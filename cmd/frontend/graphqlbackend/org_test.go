@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,55 +6,55 @@ import (
 	"testing"
 
 	"github.com/gofrs/uuid"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/stretchr/testify/assert"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz/permssync"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz/permssync"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestOrganization(t *testing.T) {
+func TestOrgbnizbtion(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, nil)
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(nil, nil)
 
 	orgs := dbmocks.NewMockOrgStore()
-	mockedOrg := types.Org{ID: 1, Name: "acme"}
-	orgs.GetByNameFunc.SetDefaultReturn(&mockedOrg, nil)
-	orgs.GetByIDFunc.SetDefaultReturn(&mockedOrg, nil)
+	mockedOrg := types.Org{ID: 1, Nbme: "bcme"}
+	orgs.GetByNbmeFunc.SetDefbultReturn(&mockedOrg, nil)
+	orgs.GetByIDFunc.SetDefbultReturn(&mockedOrg, nil)
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
 
-	t.Run("anyone can access by default", func(t *testing.T) {
+	t.Run("bnyone cbn bccess by defbult", func(t *testing.T) {
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					organization(name: "acme") {
-						name
+					orgbnizbtion(nbme: "bcme") {
+						nbme
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"organization": {
-						"name": "acme"
+					"orgbnizbtion": {
+						"nbme": "bcme"
 					}
 				}
 			`,
@@ -62,68 +62,68 @@ func TestOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("users not invited or not a member cannot access on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	t.Run("users not invited or not b member cbnnot bccess on Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 				{
-					organization(name: "acme") {
-						name
+					orgbnizbtion(nbme: "bcme") {
+						nbme
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"organization": null
+					"orgbnizbtion": null
 				}
 				`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Message: "org not found: name acme",
-						Path:    []any{"organization"},
+						Messbge: "org not found: nbme bcme",
+						Pbth:    []bny{"orgbnizbtion"},
 					},
 				},
 			},
 		})
 	})
 
-	t.Run("org members can access on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	t.Run("org members cbn bccess on Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
 
 		orgMembers := dbmocks.NewMockOrgMemberStore()
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(&types.OrgMembership{OrgID: 1, UserID: 1}, nil)
 
 		db := dbmocks.NewMockDBFrom(db)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.OrgMembersFunc.SetDefbultReturn(orgMembers)
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
 				{
-					organization(name: "acme") {
-						name
+					orgbnizbtion(nbme: "bcme") {
+						nbme
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"organization": {
-						"name": "acme"
+					"orgbnizbtion": {
+						"nbme": "bcme"
 					}
 				}
 				`,
@@ -131,43 +131,43 @@ func TestOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("invited users can access on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	t.Run("invited users cbn bccess on Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
 
 		orgMembers := dbmocks.NewMockOrgMemberStore()
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(nil, &dbtbbbse.ErrOrgMemberNotFound{})
 
-		orgInvites := dbmocks.NewMockOrgInvitationStore()
-		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
+		orgInvites := dbmocks.NewMockOrgInvitbtionStore()
+		orgInvites.GetPendingFunc.SetDefbultReturn(nil, nil)
 
 		db := dbmocks.NewMockDBFrom(db)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
+		db.OrgsFunc.SetDefbultReturn(orgs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+		db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvites)
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
 				{
-					organization(name: "acme") {
-						name
+					orgbnizbtion(nbme: "bcme") {
+						nbme
 					}
 				}
 			`,
 				ExpectedResult: `
 				{
-					"organization": {
-						"name": "acme"
+					"orgbnizbtion": {
+						"nbme": "bcme"
 					}
 				}
 				`,
@@ -175,39 +175,39 @@ func TestOrganization(t *testing.T) {
 		})
 	})
 
-	t.Run("invited users can access org by ID on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	t.Run("invited users cbn bccess org by ID on Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: false}, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: fblse}, nil)
 
 		orgMembers := dbmocks.NewMockOrgMemberStore()
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(nil, &dbtbbbse.ErrOrgMemberNotFound{})
 
-		orgInvites := dbmocks.NewMockOrgInvitationStore()
-		orgInvites.GetPendingFunc.SetDefaultReturn(nil, nil)
+		orgInvites := dbmocks.NewMockOrgInvitbtionStore()
+		orgInvites.GetPendingFunc.SetDefbultReturn(nil, nil)
 
 		db := dbmocks.NewMockDBFrom(db)
-		db.OrgsFunc.SetDefaultReturn(orgs)
-		db.UsersFunc.SetDefaultReturn(users)
-		db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-		db.OrgInvitationsFunc.SetDefaultReturn(orgInvites)
+		db.OrgsFunc.SetDefbultReturn(orgs)
+		db.UsersFunc.SetDefbultReturn(users)
+		db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+		db.OrgInvitbtionsFunc.SetDefbultReturn(orgInvites)
 
 		RunTests(t, []*Test{
 			{
-				Schema:  mustParseGraphQLSchema(t, db),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Context: ctx,
 				Query: `
 				{
 					node(id: "T3JnOjE=") {
-						__typename
+						__typenbme
 						id
 						... on Org {
-						  name
+						  nbme
 						}
 					}
 				}
@@ -215,8 +215,8 @@ func TestOrganization(t *testing.T) {
 				ExpectedResult: `
 				{
 					"node": {
-						"__typename":"Org",
-						"id":"T3JnOjE=", "name":"acme"
+						"__typenbme":"Org",
+						"id":"T3JnOjE=", "nbme":"bcme"
 					}
 				}
 				`,
@@ -225,283 +225,283 @@ func TestOrganization(t *testing.T) {
 	})
 }
 
-func TestCreateOrganization(t *testing.T) {
+func TestCrebteOrgbnizbtion(t *testing.T) {
 	userID := int32(1)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: userID, SiteAdmin: false}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: userID, SiteAdmin: fblse}, nil)
 
-	mockedOrg := types.Org{ID: 42, Name: "acme"}
+	mockedOrg := types.Org{ID: 42, Nbme: "bcme"}
 	orgs := dbmocks.NewMockOrgStore()
-	orgs.CreateFunc.SetDefaultReturn(&mockedOrg, nil)
+	orgs.CrebteFunc.SetDefbultReturn(&mockedOrg, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: mockedOrg.ID, UserID: userID}, nil)
+	orgMembers.CrebteFunc.SetDefbultReturn(&types.OrgMembership{OrgID: mockedOrg.ID, UserID: userID}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: userID})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: userID})
 
-	t.Run("Creates organization", func(t *testing.T) {
+	t.Run("Crebtes orgbnizbtion", func(t *testing.T) {
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
-				createOrganization(name: $name, displayName: $displayName) {
+			Query: `mutbtion CrebteOrgbnizbtion($nbme: String!, $displbyNbme: String) {
+				crebteOrgbnizbtion(nbme: $nbme, displbyNbme: $displbyNbme) {
 					id
-                    name
+                    nbme
 				}
 			}`,
 			ExpectedResult: fmt.Sprintf(`
 			{
-				"createOrganization": {
+				"crebteOrgbnizbtion": {
 					"id": "%s",
-					"name": "%s"
+					"nbme": "%s"
 				}
 			}
-			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
-			Variables: map[string]any{
-				"name": "acme",
+			`, MbrshblOrgID(mockedOrg.ID), mockedOrg.Nbme),
+			Vbribbles: mbp[string]bny{
+				"nbme": "bcme",
 			},
 		})
 	})
 
-	t.Run("Creates organization and sets statistics", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+	t.Run("Crebtes orgbnizbtion bnd sets stbtistics", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 		id, err := uuid.NewV4()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		orgs.UpdateOrgsOpenBetaStatsFunc.SetDefaultReturn(nil)
+		orgs.UpdbteOrgsOpenBetbStbtsFunc.SetDefbultReturn(nil)
 		defer func() {
-			orgs.UpdateOrgsOpenBetaStatsFunc = nil
+			orgs.UpdbteOrgsOpenBetbStbtsFunc = nil
 		}()
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query: `mutation CreateOrganization($name: String!, $displayName: String, $statsID: ID) {
-				createOrganization(name: $name, displayName: $displayName, statsID: $statsID) {
+			Query: `mutbtion CrebteOrgbnizbtion($nbme: String!, $displbyNbme: String, $stbtsID: ID) {
+				crebteOrgbnizbtion(nbme: $nbme, displbyNbme: $displbyNbme, stbtsID: $stbtsID) {
 					id
-                    name
+                    nbme
 				}
 			}`,
 			ExpectedResult: fmt.Sprintf(`
 			{
-				"createOrganization": {
+				"crebteOrgbnizbtion": {
 					"id": "%s",
-					"name": "%s"
+					"nbme": "%s"
 				}
 			}
-			`, MarshalOrgID(mockedOrg.ID), mockedOrg.Name),
-			Variables: map[string]any{
-				"name":    "acme",
-				"statsID": id.String(),
+			`, MbrshblOrgID(mockedOrg.ID), mockedOrg.Nbme),
+			Vbribbles: mbp[string]bny{
+				"nbme":    "bcme",
+				"stbtsID": id.String(),
 			},
 		})
 	})
 
-	t.Run("Fails for unauthenticated user", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+	t.Run("Fbils for unbuthenticbted user", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
-			Context: context.Background(),
-			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
-				createOrganization(name: $name, displayName: $displayName) {
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
+			Context: context.Bbckground(),
+			Query: `mutbtion CrebteOrgbnizbtion($nbme: String!, $displbyNbme: String) {
+				crebteOrgbnizbtion(nbme: $nbme, displbyNbme: $displbyNbme) {
 					id
-                    name
+                    nbme
 				}
 			}`,
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: "no current user",
-					Path:    []any{"createOrganization"},
+					Messbge: "no current user",
+					Pbth:    []bny{"crebteOrgbnizbtion"},
 				},
 			},
-			Variables: map[string]any{
-				"name": "test",
+			Vbribbles: mbp[string]bny{
+				"nbme": "test",
 			},
 		})
 	})
 
-	t.Run("Fails for suspicious organization name", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+	t.Run("Fbils for suspicious orgbnizbtion nbme", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query: `mutation CreateOrganization($name: String!, $displayName: String) {
-				createOrganization(name: $name, displayName: $displayName) {
+			Query: `mutbtion CrebteOrgbnizbtion($nbme: String!, $displbyNbme: String) {
+				crebteOrgbnizbtion(nbme: $nbme, displbyNbme: $displbyNbme) {
 					id
-                    name
+                    nbme
 				}
 			}`,
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: `rejected suspicious name "test"`,
-					Path:    []any{"createOrganization"},
+					Messbge: `rejected suspicious nbme "test"`,
+					Pbth:    []bny{"crebteOrgbnizbtion"},
 				},
 			},
-			Variables: map[string]any{
-				"name": "test",
+			Vbribbles: mbp[string]bny{
+				"nbme": "test",
 			},
 		})
 	})
 }
 
-func TestAddOrganizationMember(t *testing.T) {
+func TestAddOrgbnizbtionMember(t *testing.T) {
 	userID := int32(2)
-	userName := "add-org-member"
+	userNbme := "bdd-org-member"
 	orgID := int32(1)
-	orgIDString := string(MarshalOrgID(orgID))
+	orgIDString := string(MbrshblOrgID(orgID))
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgs.GetByNameFunc.SetDefaultReturn(&types.Org{ID: orgID, Name: "acme"}, nil)
+	orgs.GetByNbmeFunc.SetDefbultReturn(&types.Org{ID: orgID, Nbme: "bcme"}, nil)
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
-	users.GetByUsernameFunc.SetDefaultReturn(&types.User{ID: 2, Username: userName}, nil)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1, SiteAdmin: true}, nil)
+	users.GetByUsernbmeFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: userNbme}, nil)
 
 	orgMembers := dbmocks.NewMockOrgMemberStore()
-	orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
-	orgMembers.CreateFunc.SetDefaultReturn(&types.OrgMembership{OrgID: orgID, UserID: userID}, nil)
+	orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(nil, &dbtbbbse.ErrOrgMemberNotFound{})
+	orgMembers.CrebteFunc.SetDefbultReturn(&types.OrgMembership{OrgID: orgID, UserID: userID}, nil)
 
-	featureFlags := dbmocks.NewMockFeatureFlagStore()
-	featureFlags.GetOrgFeatureFlagFunc.SetDefaultReturn(true, nil)
+	febtureFlbgs := dbmocks.NewMockFebtureFlbgStore()
+	febtureFlbgs.GetOrgFebtureFlbgFunc.SetDefbultReturn(true, nil)
 
 	// tests below depend on config being there
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{AuthProviders: []schema.AuthProviders{{Builtin: &schema.BuiltinAuthProvider{}}}, EmailSmtp: nil}})
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{AuthProviders: []schemb.AuthProviders{{Builtin: &schemb.BuiltinAuthProvider{}}}, EmbilSmtp: nil}})
 
 	// mock permission sync scheduling
-	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ database.DB, _ protocol.PermsSyncRequest) {}
+	permssync.MockSchedulePermsSync = func(_ context.Context, logger log.Logger, _ dbtbbbse.DB, _ protocol.PermsSyncRequest) {}
 	defer func() { permssync.MockSchedulePermsSync = nil }()
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgMembersFunc.SetDefaultReturn(orgMembers)
-	db.FeatureFlagsFunc.SetDefaultReturn(featureFlags)
+	db.OrgsFunc.SetDefbultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgMembersFunc.SetDefbultReturn(orgMembers)
+	db.FebtureFlbgsFunc.SetDefbultReturn(febtureFlbgs)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
-	t.Run("Works for site admin if not on Cloud", func(t *testing.T) {
+	t.Run("Works for site bdmin if not on Cloud", func(t *testing.T) {
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
+			Query: `mutbtion AddUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String!) {
+				bddUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+					blwbysNil
 				}
 			}`,
 			ExpectedResult: `{
-				"addUserToOrganization": {
-					"alwaysNil": null
+				"bddUserToOrgbnizbtion": {
+					"blwbysNil": null
 				}
 			}`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
+			Vbribbles: mbp[string]bny{
+				"orgbnizbtion": orgIDString,
+				"usernbme":     userNbme,
 			},
 		})
 	})
 
-	t.Run("Does not work for site admin on Cloud", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(false)
+	t.Run("Does not work for site bdmin on Cloud", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(fblse)
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
+			Query: `mutbtion AddUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String!) {
+				bddUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+					blwbysNil
 				}
 			}`,
 			ExpectedResult: "null",
 			ExpectedErrors: []*gqlerrors.QueryError{
 				{
-					Message: "Must be a member of the organization to add members%!(EXTRA *withstack.withStack=current user is not an org member)",
-					Path:    []any{"addUserToOrganization"},
+					Messbge: "Must be b member of the orgbnizbtion to bdd members%!(EXTRA *withstbck.withStbck=current user is not bn org member)",
+					Pbth:    []bny{"bddUserToOrgbnizbtion"},
 				},
 			},
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
+			Vbribbles: mbp[string]bny{
+				"orgbnizbtion": orgIDString,
+				"usernbme":     userNbme,
 			},
 		})
 	})
 
-	t.Run("Works on Cloud if site admin is org member", func(t *testing.T) {
-		envvar.MockSourcegraphDotComMode(true)
-		orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultHook(func(ctx context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
+	t.Run("Works on Cloud if site bdmin is org member", func(t *testing.T) {
+		envvbr.MockSourcegrbphDotComMode(true)
+		orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultHook(func(ctx context.Context, orgID int32, userID int32) (*types.OrgMembership, error) {
 			if userID == 1 {
 				return &types.OrgMembership{OrgID: orgID, UserID: 1}, nil
 			} else if userID == 2 {
-				return nil, &database.ErrOrgMemberNotFound{}
+				return nil, &dbtbbbse.ErrOrgMemberNotFound{}
 			}
-			t.Fatalf("Unexpected user ID received for OrgMembers.GetByOrgIDAndUserID: %d", userID)
+			t.Fbtblf("Unexpected user ID received for OrgMembers.GetByOrgIDAndUserID: %d", userID)
 			return nil, nil
 		})
 
 		defer func() {
-			envvar.MockSourcegraphDotComMode(false)
-			orgMembers.GetByOrgIDAndUserIDFunc.SetDefaultReturn(nil, &database.ErrOrgMemberNotFound{})
+			envvbr.MockSourcegrbphDotComMode(fblse)
+			orgMembers.GetByOrgIDAndUserIDFunc.SetDefbultReturn(nil, &dbtbbbse.ErrOrgMemberNotFound{})
 		}()
 
 		RunTest(t, &Test{
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Context: ctx,
-			Query: `mutation AddUserToOrganization($organization: ID!, $username: String!) {
-				addUserToOrganization(organization: $organization, username: $username) {
-					alwaysNil
+			Query: `mutbtion AddUserToOrgbnizbtion($orgbnizbtion: ID!, $usernbme: String!) {
+				bddUserToOrgbnizbtion(orgbnizbtion: $orgbnizbtion, usernbme: $usernbme) {
+					blwbysNil
 				}
 			}`,
 			ExpectedResult: `{
-				"addUserToOrganization": {
-					"alwaysNil": null
+				"bddUserToOrgbnizbtion": {
+					"blwbysNil": null
 				}
 			}`,
-			Variables: map[string]any{
-				"organization": orgIDString,
-				"username":     userName,
+			Vbribbles: mbp[string]bny{
+				"orgbnizbtion": orgIDString,
+				"usernbme":     userNbme,
 			},
 		})
 	})
 }
 
-func TestOrganizationRepositories_OSS(t *testing.T) {
+func TestOrgbnizbtionRepositories_OSS(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
-					organization(name: "acme") {
-						name,
+					orgbnizbtion(nbme: "bcme") {
+						nbme,
 						repositories {
 							nodes {
-								name
+								nbme
 							}
 						}
 					}
 				}
 			`,
 			ExpectedErrors: []*gqlerrors.QueryError{{
-				Message:   `Cannot query field "repositories" on type "Org".`,
-				Locations: []gqlerrors.Location{{Line: 5, Column: 7}},
+				Messbge:   `Cbnnot query field "repositories" on type "Org".`,
+				Locbtions: []gqlerrors.Locbtion{{Line: 5, Column: 7}},
 				Rule:      "FieldsOnCorrectType",
 			}},
 			Context: ctx,
@@ -511,20 +511,20 @@ func TestOrganizationRepositories_OSS(t *testing.T) {
 
 func TestNode_Org(t *testing.T) {
 	orgs := dbmocks.NewMockOrgStore()
-	orgs.GetByIDFunc.SetDefaultReturn(&types.Org{ID: 1, Name: "acme"}, nil)
+	orgs.GetByIDFunc.SetDefbultReturn(&types.Org{ID: 1, Nbme: "bcme"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.OrgsFunc.SetDefbultReturn(orgs)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					node(id: "T3JnOjE=") {
 						id
 						... on Org {
-							name
+							nbme
 						}
 					}
 				}
@@ -533,7 +533,7 @@ func TestNode_Org(t *testing.T) {
 				{
 					"node": {
 						"id": "T3JnOjE=",
-						"name": "acme"
+						"nbme": "bcme"
 					}
 				}
 			`,
@@ -541,19 +541,19 @@ func TestNode_Org(t *testing.T) {
 	})
 }
 
-func TestUnmarshalOrgID(t *testing.T) {
-	t.Run("Valid org ID is parsed correctly", func(t *testing.T) {
+func TestUnmbrshblOrgID(t *testing.T) {
+	t.Run("Vblid org ID is pbrsed correctly", func(t *testing.T) {
 		const id = int32(1)
-		namespaceOrgID := relay.MarshalID("Org", id)
-		orgID, err := UnmarshalOrgID(namespaceOrgID)
-		assert.NoError(t, err)
-		assert.Equal(t, id, orgID)
+		nbmespbceOrgID := relby.MbrshblID("Org", id)
+		orgID, err := UnmbrshblOrgID(nbmespbceOrgID)
+		bssert.NoError(t, err)
+		bssert.Equbl(t, id, orgID)
 	})
 
-	t.Run("Returns error for invalid org ID", func(t *testing.T) {
+	t.Run("Returns error for invblid org ID", func(t *testing.T) {
 		const id = 1
-		namespaceOrgID := relay.MarshalID("User", id)
-		_, err := UnmarshalOrgID(namespaceOrgID)
-		assert.Error(t, err)
+		nbmespbceOrgID := relby.MbrshblID("User", id)
+		_, err := UnmbrshblOrgID(nbmespbceOrgID)
+		bssert.Error(t, err)
 	})
 }

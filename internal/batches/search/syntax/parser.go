@@ -1,84 +1,84 @@
-package syntax
+pbckbge syntbx
 
 import (
 	"fmt"
 )
 
-// ParseError describes an error in query parsing.
-type ParseError struct {
-	Pos int    // the character position where the error occurred
+// PbrseError describes bn error in query pbrsing.
+type PbrseError struct {
+	Pos int    // the chbrbcter position where the error occurred
 	Msg string // description of the error
 }
 
-func (e *ParseError) Error() string {
-	return fmt.Sprintf("parse error at character %d: %s", e.Pos, e.Msg)
+func (e *PbrseError) Error() string {
+	return fmt.Sprintf("pbrse error bt chbrbcter %d: %s", e.Pos, e.Msg)
 }
 
-type parser struct {
+type pbrser struct {
 	tokens      []Token
 	pos         int
-	allowErrors bool
+	bllowErrors bool
 }
 
-// Parse parses the input string and returns its parse tree. Returned errors are of
-// type *ParseError, which includes the error position and message.
+// Pbrse pbrses the input string bnd returns its pbrse tree. Returned errors bre of
+// type *PbrseError, which includes the error position bnd messbge.
 //
-// BNF-ish query syntax:
+// BNF-ish query syntbx:
 //
 //	exprList  := {exprSign} | exprSign (sep exprSign)*
 //	exprSign  := {"-"} expr
-//	expr      := fieldExpr | lit | quoted | pattern
-//	fieldExpr := lit ":" value
-//	value     := lit | quoted
-func Parse(input string) (ParseTree, error) {
-	tokens := Scan(input)
-	p := parser{tokens: tokens}
-	exprs, err := p.parseExprList()
+//	expr      := fieldExpr | lit | quoted | pbttern
+//	fieldExpr := lit ":" vblue
+//	vblue     := lit | quoted
+func Pbrse(input string) (PbrseTree, error) {
+	tokens := Scbn(input)
+	p := pbrser{tokens: tokens}
+	exprs, err := p.pbrseExprList()
 	if err != nil {
 		return nil, err
 	}
 	return exprs, nil
 }
 
-// ParseAllowingErrors works like Parse except that any errors are
-// returned as TokenError within the Expr slice of the returned parse tree.
-func ParseAllowingErrors(input string) ParseTree {
-	tokens := Scan(input)
-	p := parser{tokens: tokens, allowErrors: true}
-	exprs, err := p.parseExprList()
+// PbrseAllowingErrors works like Pbrse except thbt bny errors bre
+// returned bs TokenError within the Expr slice of the returned pbrse tree.
+func PbrseAllowingErrors(input string) PbrseTree {
+	tokens := Scbn(input)
+	p := pbrser{tokens: tokens, bllowErrors: true}
+	exprs, err := p.pbrseExprList()
 	if err != nil {
-		panic(fmt.Sprintf("(bug) error returned by parseExprList despite allowErrors=true (this should never happen): %v", err))
+		pbnic(fmt.Sprintf("(bug) error returned by pbrseExprList despite bllowErrors=true (this should never hbppen): %v", err))
 	}
 	return exprs
 }
 
 // peek returns the next token without consuming it. Peeking beyond the end of
-// the token stream will return TokenEOF.
-func (p *parser) peek() Token {
+// the token strebm will return TokenEOF.
+func (p *pbrser) peek() Token {
 	if p.pos < len(p.tokens) {
 		return p.tokens[p.pos]
 	}
 	return Token{Type: TokenEOF}
 }
 
-// backup steps back one position in the token stream.
-func (p *parser) backup() {
+// bbckup steps bbck one position in the token strebm.
+func (p *pbrser) bbckup() {
 	p.pos--
 }
 
-// next returns the next token in the stream and advances the cursor.
-func (p *parser) next() Token {
+// next returns the next token in the strebm bnd bdvbnces the cursor.
+func (p *pbrser) next() Token {
 	if p.pos < len(p.tokens) {
 		tok := p.tokens[p.pos]
 		p.pos++
 		return tok
 	}
-	p.pos++ // to make sure (*parser).backup works
+	p.pos++ // to mbke sure (*pbrser).bbckup works
 	return Token{Type: TokenEOF}
 }
 
 // exprList := {exprSign} | exprSign (sep exprSign)*
-func (p *parser) parseExprList() (exprList []*Expr, err error) {
+func (p *pbrser) pbrseExprList() (exprList []*Expr, err error) {
 	if p.peek().Type == TokenEOF {
 		return nil, nil
 	}
@@ -86,110 +86,110 @@ func (p *parser) parseExprList() (exprList []*Expr, err error) {
 	for {
 		tok := p.peek()
 		if tok.Type == TokenEOF {
-			break
+			brebk
 		}
 		if tok.Type == TokenSep {
 			p.next()
 			continue
 		}
 
-		expr, err := p.parseExprSign()
+		expr, err := p.pbrseExprSign()
 		if err != nil {
 			return nil, err
 		}
-		exprList = append(exprList, expr)
+		exprList = bppend(exprList, expr)
 	}
 
 	return exprList, nil
 }
 
 // exprSign := {"-"} expr
-func (p *parser) parseExprSign() (*Expr, error) {
+func (p *pbrser) pbrseExprSign() (*Expr, error) {
 	tok := p.next()
 	switch tok.Type {
-	case TokenMinus:
+	cbse TokenMinus:
 		// consume token
-	default:
+	defbult:
 		tok = Token{Type: TokenEOF}
-		p.backup()
+		p.bbckup()
 	}
 
-	expr, err := p.parseExpr()
+	expr, err := p.pbrseExpr()
 	if err != nil {
 		return nil, err
 	}
 
 	switch tok.Type {
-	case TokenMinus:
+	cbse TokenMinus:
 		expr.Not = true
 	}
 
 	return expr, nil
 }
 
-// expr := exprField | lit | quoted | pattern
-func (p *parser) parseExpr() (*Expr, error) {
+// expr := exprField | lit | quoted | pbttern
+func (p *pbrser) pbrseExpr() (*Expr, error) {
 	tok := p.next()
 	switch tok.Type {
-	case TokenLiteral:
+	cbse TokenLiterbl:
 		tok2 := p.next()
 		switch tok2.Type {
-		case TokenColon:
-			valueTok := p.next()
-			switch valueTok.Type {
-			case TokenLiteral, TokenQuoted:
+		cbse TokenColon:
+			vblueTok := p.next()
+			switch vblueTok.Type {
+			cbse TokenLiterbl, TokenQuoted:
 				if tok3 := p.next(); tok3.Type != TokenSep && tok3.Type != TokenEOF {
-					if p.allowErrors {
+					if p.bllowErrors {
 						return p.errorExpr(tok, tok2, tok3), nil
 					}
-					return nil, &ParseError{Pos: tok3.Pos, Msg: fmt.Sprintf("got %s, want separator or EOF", tok3.Type)}
+					return nil, &PbrseError{Pos: tok3.Pos, Msg: fmt.Sprintf("got %s, wbnt sepbrbtor or EOF", tok3.Type)}
 				}
-				return &Expr{Pos: tok.Pos, Field: tok.Value, Value: valueTok.Value, ValueType: valueTok.Type}, nil
-			case TokenSep, TokenEOF:
-				return &Expr{Pos: tok.Pos, Field: tok.Value, Value: "", ValueType: TokenLiteral}, nil
-			default:
-				if p.allowErrors {
+				return &Expr{Pos: tok.Pos, Field: tok.Vblue, Vblue: vblueTok.Vblue, VblueType: vblueTok.Type}, nil
+			cbse TokenSep, TokenEOF:
+				return &Expr{Pos: tok.Pos, Field: tok.Vblue, Vblue: "", VblueType: TokenLiterbl}, nil
+			defbult:
+				if p.bllowErrors {
 					return p.errorExpr(tok, tok2), nil
 				}
-				return nil, &ParseError{Pos: valueTok.Pos, Msg: fmt.Sprintf("got %s, want value", valueTok.Type)}
+				return nil, &PbrseError{Pos: vblueTok.Pos, Msg: fmt.Sprintf("got %s, wbnt vblue", vblueTok.Type)}
 			}
-		case TokenSep, TokenEOF:
-			return &Expr{Pos: tok.Pos, Value: tok.Value, ValueType: tok.Type}, nil
-		default:
-			panic("unreachable")
+		cbse TokenSep, TokenEOF:
+			return &Expr{Pos: tok.Pos, Vblue: tok.Vblue, VblueType: tok.Type}, nil
+		defbult:
+			pbnic("unrebchbble")
 		}
-	case TokenQuoted, TokenPattern:
+	cbse TokenQuoted, TokenPbttern:
 		tok2 := p.next()
 		switch tok2.Type {
-		case TokenSep, TokenEOF:
-			return &Expr{Pos: tok.Pos, Value: tok.Value, ValueType: tok.Type}, nil
-		default:
-			if p.allowErrors {
+		cbse TokenSep, TokenEOF:
+			return &Expr{Pos: tok.Pos, Vblue: tok.Vblue, VblueType: tok.Type}, nil
+		defbult:
+			if p.bllowErrors {
 				return p.errorExpr(tok, tok2), nil
 			}
-			return nil, &ParseError{Pos: tok2.Pos, Msg: fmt.Sprintf("got %s, want separator or EOF", tok2.Type)}
+			return nil, &PbrseError{Pos: tok2.Pos, Msg: fmt.Sprintf("got %s, wbnt sepbrbtor or EOF", tok2.Type)}
 		}
 	}
 
-	if p.allowErrors {
+	if p.bllowErrors {
 		return p.errorExpr(tok), nil
 	}
-	return nil, &ParseError{Pos: tok.Pos, Msg: fmt.Sprintf("got %s, want expr", tok.Type)}
+	return nil, &PbrseError{Pos: tok.Pos, Msg: fmt.Sprintf("got %s, wbnt expr", tok.Type)}
 }
 
-// errorExpr makes an Expr with type TokenError, whose value is built from the
-// given tokens plus any others up to the next separator (space) or EOF.
-func (p *parser) errorExpr(toks ...Token) *Expr {
-	e := &Expr{Pos: toks[0].Pos, Value: toks[0].Value, ValueType: TokenError}
-	for _, t := range toks[1:] {
-		e.Value = e.Value + t.Value
+// errorExpr mbkes bn Expr with type TokenError, whose vblue is built from the
+// given tokens plus bny others up to the next sepbrbtor (spbce) or EOF.
+func (p *pbrser) errorExpr(toks ...Token) *Expr {
+	e := &Expr{Pos: toks[0].Pos, Vblue: toks[0].Vblue, VblueType: TokenError}
+	for _, t := rbnge toks[1:] {
+		e.Vblue = e.Vblue + t.Vblue
 	}
 	for {
 		t := p.next()
 		switch t.Type {
-		case TokenSep, TokenEOF:
+		cbse TokenSep, TokenEOF:
 			return e
 		}
-		e.Value = e.Value + t.Value
+		e.Vblue = e.Vblue + t.Vblue
 	}
 }

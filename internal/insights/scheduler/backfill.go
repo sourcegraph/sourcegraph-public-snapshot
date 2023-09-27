@@ -1,509 +1,509 @@
-package scheduler
+pbckbge scheduler
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/derision-test/glock"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/insights/scheduler/iterator"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/scheduler/iterbtor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type BackfillStore struct {
-	*basestore.Store
+type BbckfillStore struct {
+	*bbsestore.Store
 	clock glock.Clock
 }
 
-func NewBackfillStore(edb edb.InsightsDB) *BackfillStore {
-	return newBackfillStoreWithClock(edb, glock.NewRealClock())
+func NewBbckfillStore(edb edb.InsightsDB) *BbckfillStore {
+	return newBbckfillStoreWithClock(edb, glock.NewReblClock())
 }
-func newBackfillStoreWithClock(edb edb.InsightsDB, clock glock.Clock) *BackfillStore {
-	return &BackfillStore{Store: basestore.NewWithHandle(edb.Handle()), clock: clock}
-}
-
-func (s *BackfillStore) With(other basestore.ShareableStore) *BackfillStore {
-	return &BackfillStore{Store: s.Store.With(other), clock: s.clock}
+func newBbckfillStoreWithClock(edb edb.InsightsDB, clock glock.Clock) *BbckfillStore {
+	return &BbckfillStore{Store: bbsestore.NewWithHbndle(edb.Hbndle()), clock: clock}
 }
 
-func (s *BackfillStore) Transact(ctx context.Context) (*BackfillStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &BackfillStore{Store: txBase, clock: s.clock}, err
+func (s *BbckfillStore) With(other bbsestore.ShbrebbleStore) *BbckfillStore {
+	return &BbckfillStore{Store: s.Store.With(other), clock: s.clock}
 }
 
-type SeriesBackfill struct {
+func (s *BbckfillStore) Trbnsbct(ctx context.Context) (*BbckfillStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &BbckfillStore{Store: txBbse, clock: s.clock}, err
+}
+
+type SeriesBbckfill struct {
 	Id             int
 	SeriesId       int
-	repoIteratorId int
-	EstimatedCost  float64
-	State          BackfillState
+	repoIterbtorId int
+	EstimbtedCost  flobt64
+	Stbte          BbckfillStbte
 }
 
-type BackfillState string
+type BbckfillStbte string
 
 const (
-	BackfillStateNew        BackfillState = "new"
-	BackfillStateProcessing BackfillState = "processing"
-	BackfillStateCompleted  BackfillState = "completed"
-	BackfillStateFailed     BackfillState = "failed"
+	BbckfillStbteNew        BbckfillStbte = "new"
+	BbckfillStbteProcessing BbckfillStbte = "processing"
+	BbckfillStbteCompleted  BbckfillStbte = "completed"
+	BbckfillStbteFbiled     BbckfillStbte = "fbiled"
 )
 
-func (s *BackfillStore) NewBackfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBackfill, err error) {
-	q := "INSERT INTO insight_series_backfill (series_id, state) VALUES(%s, %s) RETURNING %s;"
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, series.ID, string(BackfillStateNew), backfillColumnsJoin))
-	return scanBackfill(row)
+func (s *BbckfillStore) NewBbckfill(ctx context.Context, series types.InsightSeries) (_ *SeriesBbckfill, err error) {
+	q := "INSERT INTO insight_series_bbckfill (series_id, stbte) VALUES(%s, %s) RETURNING %s;"
+	row := s.QueryRow(ctx, sqlf.Sprintf(q, series.ID, string(BbckfillStbteNew), bbckfillColumnsJoin))
+	return scbnBbckfill(row)
 }
 
-func (s *BackfillStore) LoadBackfill(ctx context.Context, id int) (*SeriesBackfill, error) {
-	q := "SELECT %s FROM insight_series_backfill WHERE id = %s"
-	row := s.QueryRow(ctx, sqlf.Sprintf(q, backfillColumnsJoin, id))
-	return scanBackfill(row)
+func (s *BbckfillStore) LobdBbckfill(ctx context.Context, id int) (*SeriesBbckfill, error) {
+	q := "SELECT %s FROM insight_series_bbckfill WHERE id = %s"
+	row := s.QueryRow(ctx, sqlf.Sprintf(q, bbckfillColumnsJoin, id))
+	return scbnBbckfill(row)
 }
 
-func (s *BackfillStore) LoadSeriesBackfills(ctx context.Context, seriesID int) ([]SeriesBackfill, error) {
-	q := "SELECT %s FROM insight_series_backfill where series_id = %s"
-	return scanAllBackfills(s.Query(ctx, sqlf.Sprintf(q, backfillColumnsJoin, seriesID)))
+func (s *BbckfillStore) LobdSeriesBbckfills(ctx context.Context, seriesID int) ([]SeriesBbckfill, error) {
+	q := "SELECT %s FROM insight_series_bbckfill where series_id = %s"
+	return scbnAllBbckfills(s.Query(ctx, sqlf.Sprintf(q, bbckfillColumnsJoin, seriesID)))
 }
 
-func scanBackfill(scanner dbutil.Scanner) (*SeriesBackfill, error) {
-	var tmp SeriesBackfill
-	var cost *float64
-	if err := scanner.Scan(
+func scbnBbckfill(scbnner dbutil.Scbnner) (*SeriesBbckfill, error) {
+	vbr tmp SeriesBbckfill
+	vbr cost *flobt64
+	if err := scbnner.Scbn(
 		&tmp.Id,
 		&tmp.SeriesId,
-		&dbutil.NullInt{N: &tmp.repoIteratorId},
+		&dbutil.NullInt{N: &tmp.repoIterbtorId},
 		&cost,
-		&tmp.State,
+		&tmp.Stbte,
 	); err != nil {
 		return nil, err
 	}
 	if cost != nil {
-		tmp.EstimatedCost = *cost
+		tmp.EstimbtedCost = *cost
 	}
 	return &tmp, nil
 }
 
-func (b *SeriesBackfill) SetScope(ctx context.Context, store *BackfillStore, repos []int32, cost float64) (*SeriesBackfill, error) {
+func (b *SeriesBbckfill) SetScope(ctx context.Context, store *BbckfillStore, repos []int32, cost flobt64) (*SeriesBbckfill, error) {
 	if b == nil || b.Id == 0 {
-		return nil, errors.New("invalid series backfill")
+		return nil, errors.New("invblid series bbckfill")
 	}
 
-	tx, err := store.Transact(ctx)
+	tx, err := store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	itr, err := iterator.NewWithClock(ctx, tx.Store, store.clock, repos)
+	itr, err := iterbtor.NewWithClock(ctx, tx.Store, store.clock, repos)
 	if err != nil {
-		return nil, errors.Wrap(err, "iterator.New")
+		return nil, errors.Wrbp(err, "iterbtor.New")
 	}
 
-	q := "UPDATE insight_series_backfill set repo_iterator_id = %s, estimated_cost = %s, state = %s where id = %s RETURNING %s"
-	row := tx.QueryRow(ctx, sqlf.Sprintf(q, itr.Id, cost, string(BackfillStateProcessing), b.Id, backfillColumnsJoin))
-	return scanBackfill(row)
+	q := "UPDATE insight_series_bbckfill set repo_iterbtor_id = %s, estimbted_cost = %s, stbte = %s where id = %s RETURNING %s"
+	row := tx.QueryRow(ctx, sqlf.Sprintf(q, itr.Id, cost, string(BbckfillStbteProcessing), b.Id, bbckfillColumnsJoin))
+	return scbnBbckfill(row)
 }
 
-func (b *SeriesBackfill) SetCompleted(ctx context.Context, store *BackfillStore) error {
-	return b.setState(ctx, store, BackfillStateCompleted)
+func (b *SeriesBbckfill) SetCompleted(ctx context.Context, store *BbckfillStore) error {
+	return b.setStbte(ctx, store, BbckfillStbteCompleted)
 }
 
-func (b *SeriesBackfill) SetFailed(ctx context.Context, store *BackfillStore) error {
-	return b.setState(ctx, store, BackfillStateFailed)
+func (b *SeriesBbckfill) SetFbiled(ctx context.Context, store *BbckfillStore) error {
+	return b.setStbte(ctx, store, BbckfillStbteFbiled)
 }
 
-func (b *SeriesBackfill) SetLowestPriority(ctx context.Context, store *BackfillStore) error {
-	tx, err := store.Transact(ctx)
+func (b *SeriesBbckfill) SetLowestPriority(ctx context.Context, store *BbckfillStore) error {
+	tx, err := store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
-	currentMax, _, err := basestore.ScanFirstFloat(tx.Query(ctx,
+	currentMbx, _, err := bbsestore.ScbnFirstFlobt(tx.Query(ctx,
 		sqlf.Sprintf(`
-		SELECT coalesce(max(estimated_cost), 0)
-		FROM insight_series_backfill
-		WHERE state in ('new','processing') AND id != %s`, b.Id)))
+		SELECT coblesce(mbx(estimbted_cost), 0)
+		FROM insight_series_bbckfill
+		WHERE stbte in ('new','processing') AND id != %s`, b.Id)))
 	if err != nil {
 		return err
 	}
 
-	// If this item is already the lowest priority there is nothing to do here
-	if b.EstimatedCost >= currentMax {
+	// If this item is blrebdy the lowest priority there is nothing to do here
+	if b.EstimbtedCost >= currentMbx {
 		return nil
 	}
-	newCost := currentMax * 2
-	defer func(ic float64) {
+	newCost := currentMbx * 2
+	defer func(ic flobt64) {
 		err = tx.Done(err)
 		if err != nil {
-			b.EstimatedCost = ic
+			b.EstimbtedCost = ic
 		}
-	}(b.EstimatedCost)
+	}(b.EstimbtedCost)
 	err = b.setCost(ctx, tx, newCost)
 	return err
 }
 
-func (b *SeriesBackfill) SetHighestPriority(ctx context.Context, store *BackfillStore) (err error) {
-	tx, err := store.Transact(ctx)
+func (b *SeriesBbckfill) SetHighestPriority(ctx context.Context, store *BbckfillStore) (err error) {
+	tx, err := store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
-	defer func(ic float64) {
+	defer func(ic flobt64) {
 		err = tx.Done(err)
 		if err != nil {
-			b.EstimatedCost = ic
+			b.EstimbtedCost = ic
 		}
-	}(b.EstimatedCost)
+	}(b.EstimbtedCost)
 	err = b.setCost(ctx, tx, 0)
 	return err
 }
 
-func (b *SeriesBackfill) RetryBackfillAttempt(ctx context.Context, store *BackfillStore) (err error) {
-	tx, err := store.Transact(ctx)
+func (b *SeriesBbckfill) RetryBbckfillAttempt(ctx context.Context, store *BbckfillStore) (err error) {
+	tx, err := store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
-	iterator, err := b.repoIterator(ctx, tx)
+	iterbtor, err := b.repoIterbtor(ctx, tx)
 	if err != nil {
 		return err
 	}
-	err = iterator.Restart(ctx, tx.Store)
+	err = iterbtor.Restbrt(ctx, tx.Store)
 	if err != nil {
 		return err
 	}
-	err = b.setState(ctx, tx, BackfillStateProcessing)
+	err = b.setStbte(ctx, tx, BbckfillStbteProcessing)
 	if err != nil {
 		return err
 	}
-	// enqueue backfill for next step in processing
-	err = enqueueBackfill(ctx, tx.Handle(), b)
+	// enqueue bbckfill for next step in processing
+	err = enqueueBbckfill(ctx, tx.Hbndle(), b)
 	if err != nil {
-		return errors.Wrap(err, "backfill.enqueueBackfill")
+		return errors.Wrbp(err, "bbckfill.enqueueBbckfill")
 	}
 	return nil
 }
 
-func (b *SeriesBackfill) setCost(ctx context.Context, store *BackfillStore, newCost float64) (err error) {
-	err = store.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set estimated_cost = %s where id = %s;", newCost, b.Id))
+func (b *SeriesBbckfill) setCost(ctx context.Context, store *BbckfillStore, newCost flobt64) (err error) {
+	err = store.Exec(ctx, sqlf.Sprintf("updbte insight_series_bbckfill set estimbted_cost = %s where id = %s;", newCost, b.Id))
 	if err != nil {
 		return err
 	}
-	b.EstimatedCost = 0
+	b.EstimbtedCost = 0
 	return nil
 }
 
-func (b *SeriesBackfill) setState(ctx context.Context, store *BackfillStore, newState BackfillState) error {
-	err := store.Exec(ctx, sqlf.Sprintf("update insight_series_backfill set state = %s where id = %s;", string(newState), b.Id))
+func (b *SeriesBbckfill) setStbte(ctx context.Context, store *BbckfillStore, newStbte BbckfillStbte) error {
+	err := store.Exec(ctx, sqlf.Sprintf("updbte insight_series_bbckfill set stbte = %s where id = %s;", string(newStbte), b.Id))
 	if err != nil {
 		return err
 	}
-	b.State = newState
+	b.Stbte = newStbte
 	return nil
 }
 
-func (b *SeriesBackfill) IsTerminalState() bool {
-	return b.State == BackfillStateCompleted || b.State == BackfillStateFailed
+func (b *SeriesBbckfill) IsTerminblStbte() bool {
+	return b.Stbte == BbckfillStbteCompleted || b.Stbte == BbckfillStbteFbiled
 }
 
-func (sb *SeriesBackfill) repoIterator(ctx context.Context, store *BackfillStore) (*iterator.PersistentRepoIterator, error) {
-	if sb.repoIteratorId == 0 {
-		return nil, errors.Newf("invalid repo_iterator_id on backfill_id: %d", sb.Id)
+func (sb *SeriesBbckfill) repoIterbtor(ctx context.Context, store *BbckfillStore) (*iterbtor.PersistentRepoIterbtor, error) {
+	if sb.repoIterbtorId == 0 {
+		return nil, errors.Newf("invblid repo_iterbtor_id on bbckfill_id: %d", sb.Id)
 	}
-	return iterator.LoadWithClock(ctx, store.Store, sb.repoIteratorId, store.clock)
+	return iterbtor.LobdWithClock(ctx, store.Store, sb.repoIterbtorId, store.clock)
 }
 
-var backfillColumns = []*sqlf.Query{
-	sqlf.Sprintf("insight_series_backfill.id"),
-	sqlf.Sprintf("insight_series_backfill.series_id"),
-	sqlf.Sprintf("insight_series_backfill.repo_iterator_id"),
-	sqlf.Sprintf("insight_series_backfill.estimated_cost"),
-	sqlf.Sprintf("insight_series_backfill.state"),
+vbr bbckfillColumns = []*sqlf.Query{
+	sqlf.Sprintf("insight_series_bbckfill.id"),
+	sqlf.Sprintf("insight_series_bbckfill.series_id"),
+	sqlf.Sprintf("insight_series_bbckfill.repo_iterbtor_id"),
+	sqlf.Sprintf("insight_series_bbckfill.estimbted_cost"),
+	sqlf.Sprintf("insight_series_bbckfill.stbte"),
 }
 
-var backfillColumnsJoin = sqlf.Join(backfillColumns, ", ")
+vbr bbckfillColumnsJoin = sqlf.Join(bbckfillColumns, ", ")
 
-func scanAllBackfills(rows *sql.Rows, queryErr error) (_ []SeriesBackfill, err error) {
+func scbnAllBbckfills(rows *sql.Rows, queryErr error) (_ []SeriesBbckfill, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var results []SeriesBackfill
+	vbr results []SeriesBbckfill
 	for rows.Next() {
-		var cost *float64
-		var temp SeriesBackfill
-		if err := rows.Scan(
+		vbr cost *flobt64
+		vbr temp SeriesBbckfill
+		if err := rows.Scbn(
 			&temp.Id,
 			&temp.SeriesId,
-			&dbutil.NullInt{N: &temp.repoIteratorId},
+			&dbutil.NullInt{N: &temp.repoIterbtorId},
 			&cost,
-			&temp.State,
+			&temp.Stbte,
 		); err != nil {
-			return []SeriesBackfill{}, err
+			return []SeriesBbckfill{}, err
 		}
 		if cost != nil {
-			temp.EstimatedCost = *cost
+			temp.EstimbtedCost = *cost
 		}
-		results = append(results, temp)
+		results = bppend(results, temp)
 	}
 	return results, nil
 }
 
-type SeriesBackfillDebug struct {
-	Info   BackfillDebugInfo
-	Errors []iterator.IterationError
+type SeriesBbckfillDebug struct {
+	Info   BbckfillDebugInfo
+	Errors []iterbtor.IterbtionError
 }
 
-type BackfillDebugInfo struct {
+type BbckfillDebugInfo struct {
 	Id              int
-	RepoIteratorId  int
-	EstimatedCost   float64
-	State           BackfillState
-	StartedAt       *time.Time
+	RepoIterbtorId  int
+	EstimbtedCost   flobt64
+	Stbte           BbckfillStbte
+	StbrtedAt       *time.Time
 	CompletedAt     *time.Time
-	RuntimeDuration *int64
-	PercentComplete *float64
+	RuntimeDurbtion *int64
+	PercentComplete *flobt64
 	NumRepos        *int
 }
 
-func (s *BackfillStore) LoadSeriesBackfillsDebugInfo(ctx context.Context, seriesID int) ([]SeriesBackfillDebug, error) {
-	backfills, err := s.LoadSeriesBackfills(ctx, seriesID)
+func (s *BbckfillStore) LobdSeriesBbckfillsDebugInfo(ctx context.Context, seriesID int) ([]SeriesBbckfillDebug, error) {
+	bbckfills, err := s.LobdSeriesBbckfills(ctx, seriesID)
 	if err != nil {
 		return nil, err
 	}
-	results := make([]SeriesBackfillDebug, 0, len(backfills))
-	for _, backfill := range backfills {
-		info := BackfillDebugInfo{
-			Id:            backfill.Id,
-			EstimatedCost: backfill.EstimatedCost,
-			State:         backfill.State,
+	results := mbke([]SeriesBbckfillDebug, 0, len(bbckfills))
+	for _, bbckfill := rbnge bbckfills {
+		info := BbckfillDebugInfo{
+			Id:            bbckfill.Id,
+			EstimbtedCost: bbckfill.EstimbtedCost,
+			Stbte:         bbckfill.Stbte,
 		}
-		backfillErrors := []iterator.IterationError{}
-		if backfill.repoIteratorId != 0 {
-			it, err := iterator.Load(ctx, s.Store, backfill.repoIteratorId)
+		bbckfillErrors := []iterbtor.IterbtionError{}
+		if bbckfill.repoIterbtorId != 0 {
+			it, err := iterbtor.Lobd(ctx, s.Store, bbckfill.repoIterbtorId)
 			if err != nil {
 				return nil, err
 			}
-			info.RepoIteratorId = backfill.repoIteratorId
-			info.StartedAt = &it.StartedAt
+			info.RepoIterbtorId = bbckfill.repoIterbtorId
+			info.StbrtedAt = &it.StbrtedAt
 			info.CompletedAt = &it.CompletedAt
 			info.PercentComplete = &it.PercentComplete
-			info.NumRepos = &it.TotalCount
-			backfillErrors = it.Errors()
+			info.NumRepos = &it.TotblCount
+			bbckfillErrors = it.Errors()
 		}
-		results = append(results, SeriesBackfillDebug{
+		results = bppend(results, SeriesBbckfillDebug{
 			Info:   info,
-			Errors: backfillErrors,
+			Errors: bbckfillErrors,
 		})
 
 	}
 	return results, nil
 }
 
-type BackfillQueueArgs struct {
-	PaginationArgs *database.PaginationArgs
-	States         *[]string
-	TextSearch     *string
+type BbckfillQueueArgs struct {
+	PbginbtionArgs *dbtbbbse.PbginbtionArgs
+	Stbtes         *[]string
+	TextSebrch     *string
 	ID             *int
 }
-type BackfillQueueItem struct {
+type BbckfillQueueItem struct {
 	ID                  int
 	InsightTitle        string
 	SeriesID            int
 	InsightUniqueID     string
-	SeriesLabel         string
-	SeriesSearchQuery   string
-	BackfillState       string
+	SeriesLbbel         string
+	SeriesSebrchQuery   string
+	BbckfillStbte       string
 	PercentComplete     *int
-	BackfillCost        *int
-	RuntimeDuration     *time.Duration
-	BackfillCreatedAt   *time.Time
-	BackfillStartedAt   *time.Time
-	BackfillCompletedAt *time.Time
+	BbckfillCost        *int
+	RuntimeDurbtion     *time.Durbtion
+	BbckfillCrebtedAt   *time.Time
+	BbckfillStbrtedAt   *time.Time
+	BbckfillCompletedAt *time.Time
 	QueuePosition       *int
 	Errors              *[]string
-	CreatorID           *int32
+	CrebtorID           *int32
 }
 
-func (s *BackfillStore) GetBackfillQueueTotalCount(ctx context.Context, args BackfillQueueArgs) (int, error) {
-	where := backfillWhere(args)
-	query := sqlf.Sprintf(backfillCountSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, query))
+func (s *BbckfillStore) GetBbckfillQueueTotblCount(ctx context.Context, brgs BbckfillQueueArgs) (int, error) {
+	where := bbckfillWhere(brgs)
+	query := sqlf.Sprintf(bbckfillCountSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, query))
 	return count, err
 }
 
-func backfillWhere(args BackfillQueueArgs) []*sqlf.Query {
-	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_at IS NULL")}
-	if args.TextSearch != nil && len(*args.TextSearch) > 0 {
-		likeStr := "%" + *args.TextSearch + "%"
-		where = append(where, sqlf.Sprintf("(title ILIKE %s OR label ILIKE %s)", likeStr, likeStr))
+func bbckfillWhere(brgs BbckfillQueueArgs) []*sqlf.Query {
+	where := []*sqlf.Query{sqlf.Sprintf("s.deleted_bt IS NULL")}
+	if brgs.TextSebrch != nil && len(*brgs.TextSebrch) > 0 {
+		likeStr := "%" + *brgs.TextSebrch + "%"
+		where = bppend(where, sqlf.Sprintf("(title ILIKE %s OR lbbel ILIKE %s)", likeStr, likeStr))
 	}
 
-	if args.States != nil && len(*args.States) > 0 {
-		states := make([]string, 0, len(*args.States))
-		for _, s := range *args.States {
-			states = append(states, fmt.Sprintf("'%s'", strings.ToLower(s)))
+	if brgs.Stbtes != nil && len(*brgs.Stbtes) > 0 {
+		stbtes := mbke([]string, 0, len(*brgs.Stbtes))
+		for _, s := rbnge *brgs.Stbtes {
+			stbtes = bppend(stbtes, fmt.Sprintf("'%s'", strings.ToLower(s)))
 		}
-		where = append(where, sqlf.Sprintf(fmt.Sprintf("state.backfill_state in (%s)", strings.Join(states, ","))))
+		where = bppend(where, sqlf.Sprintf(fmt.Sprintf("stbte.bbckfill_stbte in (%s)", strings.Join(stbtes, ","))))
 	}
 
-	if args.ID != nil {
-		where = append(where, sqlf.Sprintf("isb.id = %s", *args.ID))
+	if brgs.ID != nil {
+		where = bppend(where, sqlf.Sprintf("isb.id = %s", *brgs.ID))
 	}
 	return where
 }
 
-func (s *BackfillStore) GetBackfillQueueInfo(ctx context.Context, args BackfillQueueArgs) (results []BackfillQueueItem, err error) {
-	where := backfillWhere(args)
-	pagination := database.PaginationArgs{
-		OrderBy: database.OrderBy{
+func (s *BbckfillStore) GetBbckfillQueueInfo(ctx context.Context, brgs BbckfillQueueArgs) (results []BbckfillQueueItem, err error) {
+	where := bbckfillWhere(brgs)
+	pbginbtion := dbtbbbse.PbginbtionArgs{
+		OrderBy: dbtbbbse.OrderBy{
 			{
-				Field: string(BackfillID),
+				Field: string(BbckfillID),
 			},
 		}}
-	if args.PaginationArgs != nil {
-		pagination = *args.PaginationArgs
+	if brgs.PbginbtionArgs != nil {
+		pbginbtion = *brgs.PbginbtionArgs
 	}
-	p := pagination.SQL()
+	p := pbginbtion.SQL()
 
-	// The underlying pagination helper makes the assumption that any sorted column is both non null and unique
-	// therefore we can't use the where clause it generates.  Below builds the correct where from the before or after
+	// The underlying pbginbtion helper mbkes the bssumption thbt bny sorted column is both non null bnd unique
+	// therefore we cbn't use the where clbuse it generbtes.  Below builds the correct where from the before or bfter
 	// from the cursor
 
-	if pagination.After != nil {
-		where = append(where, sqlf.Sprintf("isb.id > %s", *pagination.After))
+	if pbginbtion.After != nil {
+		where = bppend(where, sqlf.Sprintf("isb.id > %s", *pbginbtion.After))
 	}
-	if pagination.Before != nil {
-		where = append(where, sqlf.Sprintf(" isb.id < %s", *pagination.Before))
+	if pbginbtion.Before != nil {
+		where = bppend(where, sqlf.Sprintf(" isb.id < %s", *pbginbtion.Before))
 	}
-	query := sqlf.Sprintf(backfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
+	query := sqlf.Sprintf(bbckfillQueueSQL, sqlf.Sprintf("WHERE %s", sqlf.Join(where, " AND ")))
 	query = p.AppendOrderToQuery(query)
 	query = p.AppendLimitToQuery(query)
-	results, err = scanAllBackfillQueueItems(s.Query(ctx, query))
+	results, err = scbnAllBbckfillQueueItems(s.Query(ctx, query))
 	if err != nil {
 		return nil, err
 	}
 	return results, nil
 }
 
-func scanAllBackfillQueueItems(rows *sql.Rows, queryErr error) (_ []BackfillQueueItem, err error) {
+func scbnAllBbckfillQueueItems(rows *sql.Rows, queryErr error) (_ []BbckfillQueueItem, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var results []BackfillQueueItem
+	vbr results []BbckfillQueueItem
 	for rows.Next() {
-		var temp BackfillQueueItem
-		var iteratorErrors []string
-		if err := rows.Scan(
+		vbr temp BbckfillQueueItem
+		vbr iterbtorErrors []string
+		if err := rows.Scbn(
 			&temp.ID,
 			&temp.InsightTitle,
 			&temp.SeriesID,
 			&temp.InsightUniqueID,
-			&temp.SeriesLabel,
-			&temp.SeriesSearchQuery,
-			&temp.BackfillState,
+			&temp.SeriesLbbel,
+			&temp.SeriesSebrchQuery,
+			&temp.BbckfillStbte,
 			&temp.PercentComplete,
-			&temp.BackfillCost,
-			&temp.RuntimeDuration,
-			&temp.BackfillCreatedAt,
-			&temp.BackfillStartedAt,
-			&temp.BackfillCompletedAt,
+			&temp.BbckfillCost,
+			&temp.RuntimeDurbtion,
+			&temp.BbckfillCrebtedAt,
+			&temp.BbckfillStbrtedAt,
+			&temp.BbckfillCompletedAt,
 			&temp.QueuePosition,
-			pq.Array(&iteratorErrors),
-			&temp.CreatorID,
+			pq.Arrby(&iterbtorErrors),
+			&temp.CrebtorID,
 		); err != nil {
-			return []BackfillQueueItem{}, err
+			return []BbckfillQueueItem{}, err
 		}
-		if iteratorErrors != nil {
-			temp.Errors = &iteratorErrors
+		if iterbtorErrors != nil {
+			temp.Errors = &iterbtorErrors
 		}
 
-		results = append(results, temp)
+		results = bppend(results, temp)
 	}
 	return results, nil
 }
 
-var backfillCountSQL = `
-WITH state as (
+vbr bbckfillCountSQL = `
+WITH stbte bs (
 select isb.id, CASE
-  WHEN ijbip.state IS NULL THEN isb.state
-  ELSE ijbip.state
-END backfill_state
-    from insight_series_backfill isb
-    left join insights_jobs_backfill_in_progress ijbip on isb.id = ijbip.backfill_id and ijbip.state = 'queued'
+  WHEN ijbip.stbte IS NULL THEN isb.stbte
+  ELSE ijbip.stbte
+END bbckfill_stbte
+    from insight_series_bbckfill isb
+    left join insights_jobs_bbckfill_in_progress ijbip on isb.id = ijbip.bbckfill_id bnd ijbip.stbte = 'queued'
     )
 select count(*)
-from insight_series_backfill isb
-    left join repo_iterator ri on isb.repo_iterator_id = ri.id
+from insight_series_bbckfill isb
+    left join repo_iterbtor ri on isb.repo_iterbtor_id = ri.id
     join insight_view_series ivs on ivs.insight_series_id = isb.series_id
     join insight_series s on isb.series_id = s.id
     join insight_view iv on ivs.insight_view_id = iv.id
-    join state  on isb.id = state.id
+    join stbte  on isb.id = stbte.id
 %s
 `
 
-type BackfillQueueColumn string
+type BbckfillQueueColumn string
 
 const (
-	InsightTitle  BackfillQueueColumn = "title"
-	SeriesLabel   BackfillQueueColumn = "label"
-	State         BackfillQueueColumn = "state.backfill_state"
-	BackfillID    BackfillQueueColumn = "isb.id"
-	QueuePosition BackfillQueueColumn = "jq.queue_position"
+	InsightTitle  BbckfillQueueColumn = "title"
+	SeriesLbbel   BbckfillQueueColumn = "lbbel"
+	Stbte         BbckfillQueueColumn = "stbte.bbckfill_stbte"
+	BbckfillID    BbckfillQueueColumn = "isb.id"
+	QueuePosition BbckfillQueueColumn = "jq.queue_position"
 )
 
-var backfillQueueSQL = `
-WITH job_queue as (
-    select backfill_id, state, row_number() over (ORDER BY estimated_cost, backfill_id)  queue_position
-    from insights_jobs_backfill_in_progress where state = 'queued'
+vbr bbckfillQueueSQL = `
+WITH job_queue bs (
+    select bbckfill_id, stbte, row_number() over (ORDER BY estimbted_cost, bbckfill_id)  queue_position
+    from insights_jobs_bbckfill_in_progress where stbte = 'queued'
 ),
-errors as (
-    select repo_iterator_id, array_agg(err_msg) error_messages
-    from repo_iterator_errors, unnest(error_message[:25]) err_msg
-    group by  repo_iterator_id
+errors bs (
+    select repo_iterbtor_id, brrby_bgg(err_msg) error_messbges
+    from repo_iterbtor_errors, unnest(error_messbge[:25]) err_msg
+    group by  repo_iterbtor_id
 ),
-state as (
+stbte bs (
 select isb.id, CASE
-  WHEN ijbip.state IS NULL THEN isb.state
-  ELSE ijbip.state
-END backfill_state
-    from insight_series_backfill isb
-    left join insights_jobs_backfill_in_progress ijbip on isb.id = ijbip.backfill_id and ijbip.state = 'queued'
+  WHEN ijbip.stbte IS NULL THEN isb.stbte
+  ELSE ijbip.stbte
+END bbckfill_stbte
+    from insight_series_bbckfill isb
+    left join insights_jobs_bbckfill_in_progress ijbip on isb.id = ijbip.bbckfill_id bnd ijbip.stbte = 'queued'
     )
 select isb.id,
        title,
        s.id,
 	   iv.unique_id insight_id,
-       label,
+       lbbel,
        query,
-       state.backfill_state,
+       stbte.bbckfill_stbte,
        round(ri.percent_complete *100) percent_complete,
-       round(isb.estimated_cost),
-       ri.runtime_duration runtime_duration,
-       ri.created_at backfill_created_at,
-       ri.started_at backfill_started_at,
-       ri.completed_at backfill_completed_at,
+       round(isb.estimbted_cost),
+       ri.runtime_durbtion runtime_durbtion,
+       ri.crebted_bt bbckfill_crebted_bt,
+       ri.stbrted_bt bbckfill_stbrted_bt,
+       ri.completed_bt bbckfill_completed_bt,
        jq.queue_position,
-       e.error_messages,
-	   (SELECT user_id FROM insight_view_grants WHERE insight_view_id = iv.id ORDER BY id LIMIT 1) creator_id
-from insight_series_backfill isb
-    left join repo_iterator ri on isb.repo_iterator_id = ri.id
-    left join errors e on isb.repo_iterator_id = e.repo_iterator_id
-    left join job_queue jq on jq.backfill_id = isb.id
+       e.error_messbges,
+	   (SELECT user_id FROM insight_view_grbnts WHERE insight_view_id = iv.id ORDER BY id LIMIT 1) crebtor_id
+from insight_series_bbckfill isb
+    left join repo_iterbtor ri on isb.repo_iterbtor_id = ri.id
+    left join errors e on isb.repo_iterbtor_id = e.repo_iterbtor_id
+    left join job_queue jq on jq.bbckfill_id = isb.id
     join insight_view_series ivs on ivs.insight_series_id = isb.series_id
     join insight_series s on isb.series_id = s.id
     join insight_view iv on ivs.insight_view_id = iv.id
-    join state  on isb.id = state.id
+    join stbte  on isb.id = stbte.id
 	%s
 `

@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -12,175 +12,175 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	gql "github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestMarshalChangeset(t *testing.T) {
+func TestMbrshblChbngeset(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, true).ID
+	userID := bt.CrebteTestUser(t, db, true).ID
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
-	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	bstore := store.NewWithClock(db, &observbtion.TestContext, nil, clock)
 
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, "test", userID, 0)
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, "test", userID, 0)
 
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, "test", userID, batchSpec.ID)
-	mbID := bgql.MarshalBatchChangeID(batchChange.ID)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, "test", userID, bbtchSpec.ID)
+	mbID := bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID)
 
-	repos, _ := bt.CreateTestRepos(t, ctx, db, 3)
+	repos, _ := bt.CrebteTestRepos(t, ctx, db, 3)
 
 	repoOne := repos[0]
-	repoOneID := gql.MarshalRepositoryID(repoOne.ID)
+	repoOneID := gql.MbrshblRepositoryID(repoOne.ID)
 
 	repoTwo := repos[1]
-	repoTwoID := gql.MarshalRepositoryID(repoTwo.ID)
+	repoTwoID := gql.MbrshblRepositoryID(repoTwo.ID)
 
-	uc := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	uc := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:               repoOne.ID,
-		BatchChange:        batchChange.ID,
-		PublicationState:   btypes.ChangesetPublicationStatePublished,
-		OwnedByBatchChange: batchChange.ID,
+		BbtchChbnge:        bbtchChbnge.ID,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
 	})
-	// associate changeset with batch change
-	addChangeset(t, ctx, bstore, uc, batchChange.ID)
-	mucID := bgql.MarshalChangesetID(uc.ID)
+	// bssocibte chbngeset with bbtch chbnge
+	bddChbngeset(t, ctx, bstore, uc, bbtchChbnge.ID)
+	mucID := bgql.MbrshblChbngesetID(uc.ID)
 	ucTitle, err := uc.Title()
 	require.NoError(t, err)
 	ucBody, err := uc.Body()
 	require.NoError(t, err)
-	ucExternalURL := "https://github.com/test/test/pull/62"
-	ucReviewState := string(btypes.ChangesetReviewStateApproved)
+	ucExternblURL := "https://github.com/test/test/pull/62"
+	ucReviewStbte := string(btypes.ChbngesetReviewStbteApproved)
 
-	ic := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	ic := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             repos[1].ID,
-		BatchChange:      batchChange.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
-	// associate changeset with batch change
-	addChangeset(t, ctx, bstore, uc, batchChange.ID)
-	micID := bgql.MarshalChangesetID(ic.ID)
+	// bssocibte chbngeset with bbtch chbnge
+	bddChbngeset(t, ctx, bstore, uc, bbtchChbnge.ID)
+	micID := bgql.MbrshblChbngesetID(ic.ID)
 	icTitle, err := ic.Title()
 	require.NoError(t, err)
 	icBody, err := ic.Body()
 	require.NoError(t, err)
-	icExternalURL := "https://github.com/test/test-2/pull/62"
-	icReviewState := string(btypes.ChangesetReviewStateChangesRequested)
+	icExternblURL := "https://github.com/test/test-2/pull/62"
+	icReviewStbte := string(btypes.ChbngesetReviewStbteChbngesRequested)
 
-	authorName := "TestUser"
-	authorEmail := "test@sourcegraph.com"
+	buthorNbme := "TestUser"
+	buthorEmbil := "test@sourcegrbph.com"
 
-	testcases := []struct {
-		changeset    *btypes.Changeset
-		name         string
+	testcbses := []struct {
+		chbngeset    *btypes.Chbngeset
+		nbme         string
 		httpResponse string
-		want         *changeset
+		wbnt         *chbngeset
 	}{
 		{
-			changeset: uc,
-			name:      "unimported changeset",
+			chbngeset: uc,
+			nbme:      "unimported chbngeset",
 			httpResponse: fmt.Sprintf(
-				`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": "%s"}}}`,
+				`{"dbtb": {"node": {"id": "%s","externblID": "%s","bbtchChbnges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","nbme": "github.com/test/test"},"crebtedAt": "2023-02-25T00:53:50Z","updbtedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","buthor": {"nbme": "%s", "embil": "%s"},"stbte": "%s","lbbels": [],"externblURL": {"url": "%s"},"forkNbmespbce": null,"reviewStbte": "%s","checkStbte": null,"error": null,"syncerError": null,"forkNbme": null,"ownedByBbtchChbnge": "%s"}}}`,
 				mucID,
-				uc.ExternalID,
+				uc.ExternblID,
 				mbID,
 				repoOneID,
 				ucTitle,
 				ucBody,
-				authorName,
-				authorEmail,
-				uc.State,
-				ucExternalURL,
-				ucReviewState,
+				buthorNbme,
+				buthorEmbil,
+				uc.Stbte,
+				ucExternblURL,
+				ucReviewStbte,
 				mbID,
 			),
-			want: &changeset{
+			wbnt: &chbngeset{
 				ID:                 mucID,
-				ExternalID:         uc.ExternalID,
-				RepositoryID:       gql.MarshalRepositoryID(uc.RepoID),
-				CreatedAt:          now,
-				UpdatedAt:          now,
-				BatchChangeIDs:     []graphql.ID{mbID},
-				State:              string(uc.State),
-				OwnedByBatchChange: &mbID,
+				ExternblID:         uc.ExternblID,
+				RepositoryID:       gql.MbrshblRepositoryID(uc.RepoID),
+				CrebtedAt:          now,
+				UpdbtedAt:          now,
+				BbtchChbngeIDs:     []grbphql.ID{mbID},
+				Stbte:              string(uc.Stbte),
+				OwnedByBbtchChbnge: &mbID,
 				Title:              &ucTitle,
 				Body:               &ucBody,
-				AuthorName:         &authorName,
-				AuthorEmail:        &authorEmail,
-				ExternalURL:        &ucExternalURL,
-				ReviewState:        &ucReviewState,
+				AuthorNbme:         &buthorNbme,
+				AuthorEmbil:        &buthorEmbil,
+				ExternblURL:        &ucExternblURL,
+				ReviewStbte:        &ucReviewStbte,
 			},
 		},
 		{
-			changeset: ic,
-			name:      "imported changeset",
+			chbngeset: ic,
+			nbme:      "imported chbngeset",
 			httpResponse: fmt.Sprintf(
-				`{"data": {"node": {"id": "%s","externalID": "%s","batchChanges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","name": "github.com/test/test"},"createdAt": "2023-02-25T00:53:50Z","updatedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","author": {"name": "%s", "email": "%s"},"state": "%s","labels": [],"externalURL": {"url": "%s"},"forkNamespace": null,"reviewState": "%s","checkState": null,"error": null,"syncerError": null,"forkName": null,"ownedByBatchChange": null}}}`,
+				`{"dbtb": {"node": {"id": "%s","externblID": "%s","bbtchChbnges": {"nodes": [{"id": "%s"}]},"repository": {"id": "%s","nbme": "github.com/test/test"},"crebtedAt": "2023-02-25T00:53:50Z","updbtedAt": "2023-02-25T00:53:50Z","title": "%s","body": "%s","buthor": {"nbme": "%s", "embil": "%s"},"stbte": "%s","lbbels": [],"externblURL": {"url": "%s"},"forkNbmespbce": null,"reviewStbte": "%s","checkStbte": null,"error": null,"syncerError": null,"forkNbme": null,"ownedByBbtchChbnge": null}}}`,
 				micID,
-				ic.ExternalID,
+				ic.ExternblID,
 				mbID,
 				repoTwoID,
 				icTitle,
 				icBody,
-				authorName,
-				authorEmail,
-				ic.State,
-				icExternalURL,
-				icReviewState,
+				buthorNbme,
+				buthorEmbil,
+				ic.Stbte,
+				icExternblURL,
+				icReviewStbte,
 			),
-			want: &changeset{
+			wbnt: &chbngeset{
 				ID:                 micID,
-				ExternalID:         uc.ExternalID,
-				RepositoryID:       gql.MarshalRepositoryID(ic.RepoID),
-				CreatedAt:          now,
-				UpdatedAt:          now,
-				BatchChangeIDs:     []graphql.ID{mbID},
-				State:              string(ic.State),
-				OwnedByBatchChange: nil,
+				ExternblID:         uc.ExternblID,
+				RepositoryID:       gql.MbrshblRepositoryID(ic.RepoID),
+				CrebtedAt:          now,
+				UpdbtedAt:          now,
+				BbtchChbngeIDs:     []grbphql.ID{mbID},
+				Stbte:              string(ic.Stbte),
+				OwnedByBbtchChbnge: nil,
 				Title:              &icTitle,
 				Body:               &icBody,
-				AuthorName:         &authorName,
-				AuthorEmail:        &authorEmail,
-				ExternalURL:        &icExternalURL,
-				ReviewState:        &icReviewState,
+				AuthorNbme:         &buthorNbme,
+				AuthorEmbil:        &buthorEmbil,
+				ExternblURL:        &icExternblURL,
+				ReviewStbte:        &icReviewStbte,
 			},
 		},
 	}
 
-	for _, tc := range testcases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testcbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			client := new(mockDoer)
 			client.On("Do", mock.Anything).Return(tc.httpResponse)
 
-			response, err := marshalChangeset(ctx, client, bgql.MarshalChangesetID(tc.changeset.ID))
+			response, err := mbrshblChbngeset(ctx, client, bgql.MbrshblChbngesetID(tc.chbngeset.ID))
 			require.NoError(t, err)
 
-			var have = &changeset{}
-			err = json.Unmarshal(response, have)
+			vbr hbve = &chbngeset{}
+			err = json.Unmbrshbl(response, hbve)
 			require.NoError(t, err)
 
-			cmpIgnored := cmpopts.IgnoreFields(changeset{}, "CreatedAt", "UpdatedAt")
-			if diff := cmp.Diff(have, tc.want, cmpIgnored); diff != "" {
-				t.Errorf("mismatched response from changeset marshal, got != want, diff(-got, +want):\n%s", diff)
+			cmpIgnored := cmpopts.IgnoreFields(chbngeset{}, "CrebtedAt", "UpdbtedAt")
+			if diff := cmp.Diff(hbve, tc.wbnt, cmpIgnored); diff != "" {
+				t.Errorf("mismbtched response from chbngeset mbrshbl, got != wbnt, diff(-got, +wbnt):\n%s", diff)
 			}
 
-			client.AssertExpectations(t)
+			client.AssertExpectbtions(t)
 		})
 	}
 }
@@ -190,18 +190,18 @@ type mockDoer struct {
 }
 
 func (m *mockDoer) Do(req *http.Request) (*http.Response, error) {
-	args := m.Called(req)
+	brgs := m.Cblled(req)
 	return &http.Response{
-		StatusCode: 200,
-		Body:       io.NopCloser(strings.NewReader(args.Get(0).(string))),
+		StbtusCode: 200,
+		Body:       io.NopCloser(strings.NewRebder(brgs.Get(0).(string))),
 	}, nil
 }
 
-func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Changeset, batchChange int64) {
+func bddChbngeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.Chbngeset, bbtchChbnge int64) {
 	t.Helper()
 
-	c.BatchChanges = append(c.BatchChanges, btypes.BatchChangeAssoc{BatchChangeID: batchChange})
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatal(err)
+	c.BbtchChbnges = bppend(c.BbtchChbnges, btypes.BbtchChbngeAssoc{BbtchChbngeID: bbtchChbnge})
+	if err := s.UpdbteChbngeset(ctx, c); err != nil {
+		t.Fbtbl(err)
 	}
 }

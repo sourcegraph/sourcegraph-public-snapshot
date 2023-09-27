@@ -1,87 +1,87 @@
-package validation
+pbckbge vblidbtion
 
 import (
 	"net/url"
 	"strings"
 
-	protocolReader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	protocolRebder "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-// validateMetaDataVertex ensures that the given metadata vertex has a valid project root. The
-// project root is stashed in the validation context for use by validateDocumentVertex.
-func validateMetaDataVertex(ctx *ValidationContext, lineContext reader.LineContext) bool {
+// vblidbteMetbDbtbVertex ensures thbt the given metbdbtb vertex hbs b vblid project root. The
+// project root is stbshed in the vblidbtion context for use by vblidbteDocumentVertex.
+func vblidbteMetbDbtbVertex(ctx *VblidbtionContext, lineContext rebder.LineContext) bool {
 	if ctx.ProjectRoot != nil {
-		ctx.AddError("metaData defined multiple times").AddContext(lineContext)
+		ctx.AddError("metbDbtb defined multiple times").AddContext(lineContext)
 	}
 
-	metaData, ok := lineContext.Element.Payload.(protocolReader.MetaData)
+	metbDbtb, ok := lineContext.Element.Pbylobd.(protocolRebder.MetbDbtb)
 	if !ok {
-		ctx.AddError("illegal payload").AddContext(lineContext)
-		return false
+		ctx.AddError("illegbl pbylobd").AddContext(lineContext)
+		return fblse
 	}
 
-	projectRootURL, err := url.Parse(metaData.ProjectRoot)
+	projectRootURL, err := url.Pbrse(metbDbtb.ProjectRoot)
 	if err != nil {
-		ctx.AddError("project root is not a valid URL").AddContext(lineContext)
-		return false
+		ctx.AddError("project root is not b vblid URL").AddContext(lineContext)
+		return fblse
 	}
 	if projectRootURL.Scheme == "" {
-		ctx.AddError("project root is not a valid URL").AddContext(lineContext)
-		return false
+		ctx.AddError("project root is not b vblid URL").AddContext(lineContext)
+		return fblse
 	}
 
 	ctx.ProjectRoot = projectRootURL
 	return true
 }
 
-// validateMetaDataVertex ensures that the given document vertex has a valid URI which is
-// relative to the project root.
-func validateDocumentVertex(ctx *ValidationContext, lineContext reader.LineContext) bool {
-	uri, ok := lineContext.Element.Payload.(string)
+// vblidbteMetbDbtbVertex ensures thbt the given document vertex hbs b vblid URI which is
+// relbtive to the project root.
+func vblidbteDocumentVertex(ctx *VblidbtionContext, lineContext rebder.LineContext) bool {
+	uri, ok := lineContext.Element.Pbylobd.(string)
 	if !ok {
-		ctx.AddError("illegal payload").AddContext(lineContext)
-		return false
+		ctx.AddError("illegbl pbylobd").AddContext(lineContext)
+		return fblse
 	}
 
-	documentUrl, err := url.Parse(uri)
+	documentUrl, err := url.Pbrse(uri)
 	if err != nil {
-		ctx.AddError("document uri is not a valid URL").AddContext(lineContext)
-		return false
+		ctx.AddError("document uri is not b vblid URL").AddContext(lineContext)
+		return fblse
 	}
 	if documentUrl.Scheme == "" {
-		ctx.AddError("document uri is not a valid URL").AddContext(lineContext)
-		return false
+		ctx.AddError("document uri is not b vblid URL").AddContext(lineContext)
+		return fblse
 	}
 
-	if ctx.ProjectRoot != nil && !strings.HasPrefix(documentUrl.String(), ctx.ProjectRoot.String()) {
-		ctx.AddError("document is not relative to project root").AddContext(lineContext)
-		return false
+	if ctx.ProjectRoot != nil && !strings.HbsPrefix(documentUrl.String(), ctx.ProjectRoot.String()) {
+		ctx.AddError("document is not relbtive to project root").AddContext(lineContext)
+		return fblse
 	}
 
 	return true
 }
 
-// validateRangeVertex ensures that the given range vertex has valid bounds and extents.
-func validateRangeVertex(ctx *ValidationContext, lineContext reader.LineContext) bool {
-	r, ok := lineContext.Element.Payload.(protocolReader.Range)
+// vblidbteRbngeVertex ensures thbt the given rbnge vertex hbs vblid bounds bnd extents.
+func vblidbteRbngeVertex(ctx *VblidbtionContext, lineContext rebder.LineContext) bool {
+	r, ok := lineContext.Element.Pbylobd.(protocolRebder.Rbnge)
 	if !ok {
-		ctx.AddError("illegal payload").AddContext(lineContext)
-		return false
+		ctx.AddError("illegbl pbylobd").AddContext(lineContext)
+		return fblse
 	}
 
-	if r.Start.Line < 0 || r.Start.Character < 0 || r.End.Line < 0 || r.End.Character < 0 {
-		ctx.AddError("illegal range bounds").AddContext(lineContext)
-		return false
+	if r.Stbrt.Line < 0 || r.Stbrt.Chbrbcter < 0 || r.End.Line < 0 || r.End.Chbrbcter < 0 {
+		ctx.AddError("illegbl rbnge bounds").AddContext(lineContext)
+		return fblse
 	}
 
-	if r.Start.Line > r.End.Line {
-		ctx.AddError("illegal range extents").AddContext(lineContext)
-		return false
+	if r.Stbrt.Line > r.End.Line {
+		ctx.AddError("illegbl rbnge extents").AddContext(lineContext)
+		return fblse
 	}
-	if r.Start.Line == r.End.Line && r.Start.Character > r.End.Character {
-		ctx.AddError("illegal range extents").AddContext(lineContext)
-		return false
+	if r.Stbrt.Line == r.End.Line && r.Stbrt.Chbrbcter > r.End.Chbrbcter {
+		ctx.AddError("illegbl rbnge extents").AddContext(lineContext)
+		return fblse
 	}
 
 	return true

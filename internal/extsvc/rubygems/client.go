@@ -1,4 +1,4 @@
-package rubygems
+pbckbge rubygems
 
 import (
 	"context"
@@ -7,39 +7,39 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type Client struct {
 	registryURL string
 
-	uncachedClient httpcli.Doer
+	uncbchedClient httpcli.Doer
 
-	// Self-imposed rate-limiter.
-	limiter *ratelimit.InstrumentedLimiter
+	// Self-imposed rbte-limiter.
+	limiter *rbtelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, registryURL string, httpfactory *httpcli.Factory) (*Client, error) {
-	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+func NewClient(urn string, registryURL string, httpfbctory *httpcli.Fbctory) (*Client, error) {
+	uncbched, err := httpfbctory.Doer(httpcli.NewCbchedTrbnsportOpt(httpcli.NoopCbche{}, fblse))
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
 		registryURL:    registryURL,
-		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RubyGemsClient", ""), urn)),
+		uncbchedClient: uncbched,
+		limiter:        rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("RubyGemsClient", ""), urn)),
 	}, nil
 }
 
-func (c *Client) GetPackageContents(ctx context.Context, dep reposource.VersionedPackage) (body io.ReadCloser, err error) {
-	url := fmt.Sprintf("%s/gems/%s-%s.gem", strings.TrimSuffix(c.registryURL, "/"), dep.PackageSyntax(), dep.PackageVersion())
+func (c *Client) GetPbckbgeContents(ctx context.Context, dep reposource.VersionedPbckbge) (body io.RebdCloser, err error) {
+	url := fmt.Sprintf("%s/gems/%s-%s.gem", strings.TrimSuffix(c.registryURL, "/"), dep.PbckbgeSyntbx(), dep.PbckbgeVersion())
 
-	if err := c.limiter.Wait(ctx); err != nil {
+	if err := c.limiter.Wbit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -47,9 +47,9 @@ func (c *Client) GetPackageContents(ctx context.Context, dep reposource.Versione
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("User-Agent", "sourcegraph-rubygems-syncer (sourcegraph.com)")
+	req.Hebder.Add("User-Agent", "sourcegrbph-rubygems-syncer (sourcegrbph.com)")
 
-	body, err = c.do(c.uncachedClient, req)
+	body, err = c.do(c.uncbchedClient, req)
 	if err != nil {
 		return nil, err
 	}
@@ -57,30 +57,30 @@ func (c *Client) GetPackageContents(ctx context.Context, dep reposource.Versione
 }
 
 type Error struct {
-	path    string
+	pbth    string
 	code    int
-	message string
+	messbge string
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("bad response with status code %d for %s: %s", e.code, e.path, e.message)
+	return fmt.Sprintf("bbd response with stbtus code %d for %s: %s", e.code, e.pbth, e.messbge)
 }
 
 func (e *Error) NotFound() bool {
-	return e.code == http.StatusNotFound
+	return e.code == http.StbtusNotFound
 }
 
-func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {
+func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.RebdCloser, error) {
 	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, err
 	}
-	if resp.StatusCode != http.StatusOK {
-		bs, err := io.ReadAll(resp.Body)
+	if resp.StbtusCode != http.StbtusOK {
+		bs, err := io.RebdAll(resp.Body)
 		if err != nil {
-			bs = []byte(errors.Wrap(err, "failed to read body").Error())
+			bs = []byte(errors.Wrbp(err, "fbiled to rebd body").Error())
 		}
-		return nil, &Error{path: req.URL.Path, code: resp.StatusCode, message: string(bs)}
+		return nil, &Error{pbth: req.URL.Pbth, code: resp.StbtusCode, messbge: string(bs)}
 	}
 	return resp.Body, nil
 }

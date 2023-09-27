@@ -1,68 +1,68 @@
-package cliutil
+pbckbge cliutil
 
 import (
 	"context"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-func Validate(commandName string, factory RunnerFactory, outFactory OutputFactory) *cli.Command {
-	schemaNamesFlag := &cli.StringSliceFlag{
-		Name:    "schema",
-		Usage:   "The target `schema(s)` to validate. Comma-separated values are accepted. Possible values are 'frontend', 'codeintel', 'codeinsights' and 'all'.",
-		Value:   cli.NewStringSlice("all"),
-		Aliases: []string{"db"},
+func Vblidbte(commbndNbme string, fbctory RunnerFbctory, outFbctory OutputFbctory) *cli.Commbnd {
+	schembNbmesFlbg := &cli.StringSliceFlbg{
+		Nbme:    "schemb",
+		Usbge:   "The tbrget `schemb(s)` to vblidbte. Commb-sepbrbted vblues bre bccepted. Possible vblues bre 'frontend', 'codeintel', 'codeinsights' bnd 'bll'.",
+		Vblue:   cli.NewStringSlice("bll"),
+		Alibses: []string{"db"},
 	}
-	skipOutOfBandMigrationsFlag := &cli.BoolFlag{
-		Name:  "skip-out-of-band-migrations",
-		Usage: "Do not attempt to validate out-of-band migration status.",
-		Value: false,
+	skipOutOfBbndMigrbtionsFlbg := &cli.BoolFlbg{
+		Nbme:  "skip-out-of-bbnd-migrbtions",
+		Usbge: "Do not bttempt to vblidbte out-of-bbnd migrbtion stbtus.",
+		Vblue: fblse,
 	}
 
-	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
-		schemaNames := sanitizeSchemaNames(schemaNamesFlag.Get(cmd), out)
-		if len(schemaNames) == 0 {
-			return flagHelp(out, "supply a schema via -db")
+	bction := mbkeAction(outFbctory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
+		schembNbmes := sbnitizeSchembNbmes(schembNbmesFlbg.Get(cmd), out)
+		if len(schembNbmes) == 0 {
+			return flbgHelp(out, "supply b schemb vib -db")
 		}
-		r, err := setupRunner(factory, schemaNames...)
+		r, err := setupRunner(fbctory, schembNbmes...)
 		if err != nil {
 			return err
 		}
 
-		if err := r.Validate(ctx, schemaNames...); err != nil {
+		if err := r.Vblidbte(ctx, schembNbmes...); err != nil {
 			return err
 		}
 
-		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
+		out.WriteLine(output.Emoji(output.EmojiSuccess, "schemb okby!"))
 
-		if !skipOutOfBandMigrationsFlag.Get(cmd) {
-			db, err := store.ExtractDatabase(ctx, r)
+		if !skipOutOfBbndMigrbtionsFlbg.Get(cmd) {
+			db, err := store.ExtrbctDbtbbbse(ctx, r)
 			if err != nil {
 				return err
 			}
 
-			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner(db)); err != nil {
+			if err := oobmigrbtion.VblidbteOutOfBbndMigrbtionRunner(ctx, db, outOfBbndMigrbtionRunner(db)); err != nil {
 				return err
 			}
 
-			out.WriteLine(output.Emoji(output.EmojiSuccess, "oobmigrations okay!"))
+			out.WriteLine(output.Emoji(output.EmojiSuccess, "oobmigrbtions okby!"))
 		}
 
 		return nil
 	})
 
-	return &cli.Command{
-		Name:        "validate",
-		Usage:       "Validate the current schema",
+	return &cli.Commbnd{
+		Nbme:        "vblidbte",
+		Usbge:       "Vblidbte the current schemb",
 		Description: ConstructLongHelp(),
-		Action:      action,
-		Flags: []cli.Flag{
-			schemaNamesFlag,
-			skipOutOfBandMigrationsFlag,
+		Action:      bction,
+		Flbgs: []cli.Flbg{
+			schembNbmesFlbg,
+			skipOutOfBbndMigrbtionsFlbg,
 		},
 	}
 }

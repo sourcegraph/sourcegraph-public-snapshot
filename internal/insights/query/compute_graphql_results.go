@@ -1,84 +1,84 @@
-package query
+pbckbge query
 
 import (
 	"time"
 )
 
-type ComputeResult interface {
-	RepoName() string
+type ComputeResult interfbce {
+	RepoNbme() string
 	RepoID() string
-	Revhash() string
-	FilePath() string
-	MatchValues() []string
-	Counts() map[string]int
+	Revhbsh() string
+	FilePbth() string
+	MbtchVblues() []string
+	Counts() mbp[string]int
 }
 
 type GroupedResultsByRepository struct {
 	RepoID      string
-	RepoName    string
-	MatchValues []string
+	RepoNbme    string
+	MbtchVblues []string
 }
 
 type GroupedResults struct {
-	Value string
+	Vblue string
 	Count int
 }
 
-type TimeDataPoint struct {
+type TimeDbtbPoint struct {
 	Time  time.Time
 	Count int
 }
 
-type ComputeMatchContext struct {
+type ComputeMbtchContext struct {
 	Commit     string
 	Repository struct {
-		Name string
+		Nbme string
 		Id   string
 	}
-	Path    string
-	Matches []ComputeMatch
+	Pbth    string
+	Mbtches []ComputeMbtch
 }
 
-func (c ComputeMatchContext) RepoID() string {
+func (c ComputeMbtchContext) RepoID() string {
 	return c.Repository.Id
 }
 
-func (c ComputeMatchContext) Counts() map[string]int {
-	distinct := make(map[string]int)
-	for _, value := range c.MatchValues() {
-		distinct[value] = distinct[value] + 1
+func (c ComputeMbtchContext) Counts() mbp[string]int {
+	distinct := mbke(mbp[string]int)
+	for _, vblue := rbnge c.MbtchVblues() {
+		distinct[vblue] = distinct[vblue] + 1
 	}
 	return distinct
 }
 
-func (c ComputeMatchContext) RepoName() string {
-	return c.Repository.Name
+func (c ComputeMbtchContext) RepoNbme() string {
+	return c.Repository.Nbme
 }
 
-func (c ComputeMatchContext) Revhash() string {
+func (c ComputeMbtchContext) Revhbsh() string {
 	return c.Commit
 }
 
-func (c ComputeMatchContext) FilePath() string {
-	return c.Path
+func (c ComputeMbtchContext) FilePbth() string {
+	return c.Pbth
 }
 
-func (c ComputeMatchContext) MatchValues() []string {
-	var results []string
-	for _, match := range c.Matches {
-		for _, entry := range match.Environment {
-			results = append(results, entry.Value)
+func (c ComputeMbtchContext) MbtchVblues() []string {
+	vbr results []string
+	for _, mbtch := rbnge c.Mbtches {
+		for _, entry := rbnge mbtch.Environment {
+			results = bppend(results, entry.Vblue)
 		}
 	}
 	return results
 }
 
-type ComputeMatch struct {
-	Value       string
+type ComputeMbtch struct {
+	Vblue       string
 	Environment []ComputeEnvironmentEntry
 }
 
 type ComputeEnvironmentEntry struct {
-	Variable string
-	Value    string
+	Vbribble string
+	Vblue    string
 }

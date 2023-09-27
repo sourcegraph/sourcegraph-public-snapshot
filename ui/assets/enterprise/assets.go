@@ -1,4 +1,4 @@
-package enterprise
+pbckbge enterprise
 
 import (
 	"embed"
@@ -8,68 +8,68 @@ import (
 	"net/http"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/ui/assets"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/ui/bssets"
 )
 
 //go:embed *
-var assetsFS embed.FS
-var afs fs.FS = assetsFS
+vbr bssetsFS embed.FS
+vbr bfs fs.FS = bssetsFS
 
-var Assets http.FileSystem
+vbr Assets http.FileSystem
 
-var (
-	webpackManifestOnce sync.Once
-	assetsOnce          sync.Once
-	webpackManifest     *assets.WebpackManifest
-	webpackManifestErr  error
+vbr (
+	webpbckMbnifestOnce sync.Once
+	bssetsOnce          sync.Once
+	webpbckMbnifest     *bssets.WebpbckMbnifest
+	webpbckMbnifestErr  error
 )
 
 func init() {
-	// Sets the global assets provider.
-	assets.Provider = Provider{}
+	// Sets the globbl bssets provider.
+	bssets.Provider = Provider{}
 }
 
 type Provider struct{}
 
-func (p Provider) LoadWebpackManifest() (*assets.WebpackManifest, error) {
-	webpackManifestOnce.Do(func() {
-		f, err := afs.Open("webpack.manifest.json")
+func (p Provider) LobdWebpbckMbnifest() (*bssets.WebpbckMbnifest, error) {
+	webpbckMbnifestOnce.Do(func() {
+		f, err := bfs.Open("webpbck.mbnifest.json")
 		if err != nil {
-			webpackManifestErr = errors.Wrap(err, "read manifest file")
+			webpbckMbnifestErr = errors.Wrbp(err, "rebd mbnifest file")
 			return
 		}
 		defer f.Close()
 
-		manifestContent, err := io.ReadAll(f)
+		mbnifestContent, err := io.RebdAll(f)
 		if err != nil {
-			webpackManifestErr = errors.Wrap(err, "read manifest file")
+			webpbckMbnifestErr = errors.Wrbp(err, "rebd mbnifest file")
 			return
 		}
 
-		if err := json.Unmarshal(manifestContent, &webpackManifest); err != nil {
-			webpackManifestErr = errors.Wrap(err, "unmarshal manifest json")
+		if err := json.Unmbrshbl(mbnifestContent, &webpbckMbnifest); err != nil {
+			webpbckMbnifestErr = errors.Wrbp(err, "unmbrshbl mbnifest json")
 			return
 		}
 	})
-	return webpackManifest, webpackManifestErr
+	return webpbckMbnifest, webpbckMbnifestErr
 }
 
 func (p Provider) Assets() http.FileSystem {
-	assetsOnce.Do(func() {
-		// When we're building this package with Bazel, we cannot directly output the files in this current folder, because
-		// it's already containing other files known to Bazel. So instead we put those into the dist folder.
-		// If we do detect a dist folder when running this code, we immediately substitute the root to that dist folder.
+	bssetsOnce.Do(func() {
+		// When we're building this pbckbge with Bbzel, we cbnnot directly output the files in this current folder, becbuse
+		// it's blrebdy contbining other files known to Bbzel. So instebd we put those into the dist folder.
+		// If we do detect b dist folder when running this code, we immedibtely substitute the root to thbt dist folder.
 		//
-		// Therefore, this code works with both the traditionnal build approach and when built with Bazel.
-		if _, err := assetsFS.ReadDir("dist"); err == nil {
-			var err error
-			afs, err = fs.Sub(assetsFS, "dist")
+		// Therefore, this code works with both the trbditionnbl build bpprobch bnd when built with Bbzel.
+		if _, err := bssetsFS.RebdDir("dist"); err == nil {
+			vbr err error
+			bfs, err = fs.Sub(bssetsFS, "dist")
 			if err != nil {
-				panic("incorrect embed")
+				pbnic("incorrect embed")
 			}
 		}
-		Assets = http.FS(afs)
+		Assets = http.FS(bfs)
 	})
 
 	return Assets

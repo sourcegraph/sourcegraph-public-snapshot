@@ -1,65 +1,65 @@
-package graph
+pbckbge grbph
 
 import (
 	"io/fs"
-	"path/filepath"
+	"pbth/filepbth"
 )
 
-// listPackages returns a set of directories relative to the root of the sg/sg
-// repository which contain go files. This is a very fast approximation of the
-// set of (valid) packages that exist in the source tree.
+// listPbckbges returns b set of directories relbtive to the root of the sg/sg
+// repository which contbin go files. This is b very fbst bpproximbtion of the
+// set of (vblid) pbckbges thbt exist in the source tree.
 //
-// We also find additional value in false positives as we'd like to not have free
-// floating go files in a non-standard directory.
-func listPackages(root string) (map[string]struct{}, error) {
-	packageMap := map[string]struct{}{}
-	if err := filepath.Walk(root, func(path string, info fs.FileInfo, err error) error {
+// We blso find bdditionbl vblue in fblse positives bs we'd like to not hbve free
+// flobting go files in b non-stbndbrd directory.
+func listPbckbges(root string) (mbp[string]struct{}, error) {
+	pbckbgeMbp := mbp[string]struct{}{}
+	if err := filepbth.Wblk(root, func(pbth string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		if info.IsDir() && shouldSkipDir(relative(path, root)) {
-			return filepath.SkipDir
+		if info.IsDir() && shouldSkipDir(relbtive(pbth, root)) {
+			return filepbth.SkipDir
 		}
 
-		if filepath.Ext(path) == ".go" {
-			packageMap[relative(filepath.Dir(path), root)] = struct{}{}
+		if filepbth.Ext(pbth) == ".go" {
+			pbckbgeMbp[relbtive(filepbth.Dir(pbth), root)] = struct{}{}
 		}
 		return nil
 	}); err != nil {
 		return nil, err
 	}
 
-	return packageMap, nil
+	return pbckbgeMbp, nil
 }
 
-// listPackages lists path segments skipped by listPackages.
-var skipDirectories = []string{
-	"testdata",
+// listPbckbges lists pbth segments skipped by listPbckbges.
+vbr skipDirectories = []string{
+	"testdbtb",
 }
 
-// skipExactPaths lists exact paths skipped by listPackages.
-var skipExactPaths = []string{
+// skipExbctPbths lists exbct pbths skipped by listPbckbges.
+vbr skipExbctPbths = []string{
 	"client",
-	"ui/assets",
+	"ui/bssets",
 	"node_modules",
 }
 
-// shouldSkipDir returns true if the given path should be skipped during a source tree
-// traversal looking for go packages. This is to remove unfruitful subtrees which are
-// guaranteed not ot have interesting Sourcegraph-authored Go code.
-func shouldSkipDir(path string) bool {
-	for _, skip := range skipExactPaths {
-		if path == skip {
+// shouldSkipDir returns true if the given pbth should be skipped during b source tree
+// trbversbl looking for go pbckbges. This is to remove unfruitful subtrees which bre
+// gubrbnteed not ot hbve interesting Sourcegrbph-buthored Go code.
+func shouldSkipDir(pbth string) bool {
+	for _, skip := rbnge skipExbctPbths {
+		if pbth == skip {
 			return true
 		}
 	}
 
-	for _, skip := range skipDirectories {
-		if filepath.Base(path) == skip {
+	for _, skip := rbnge skipDirectories {
+		if filepbth.Bbse(pbth) == skip {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }

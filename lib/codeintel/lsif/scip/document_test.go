@@ -1,4 +1,4 @@
-package scip
+pbckbge scip
 
 import (
 	"sort"
@@ -6,120 +6,120 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
 func TestConvertLSIFDocument(t *testing.T) {
-	r0 := precise.RangeData{
-		StartLine:              50,
-		StartCharacter:         25,
+	r0 := precise.RbngeDbtb{
+		StbrtLine:              50,
+		StbrtChbrbcter:         25,
 		EndLine:                50,
-		EndCharacter:           35,
+		EndChbrbcter:           35,
 		DefinitionResultID:     "d0",
 		ReferenceResultID:      "",
-		ImplementationResultID: "",
+		ImplementbtionResultID: "",
 		HoverResultID:          "h0",
 		MonikerIDs:             []precise.ID{"m0"},
 	}
-	r1 := precise.RangeData{
-		StartLine:              51,
-		StartCharacter:         25,
+	r1 := precise.RbngeDbtb{
+		StbrtLine:              51,
+		StbrtChbrbcter:         25,
 		EndLine:                51,
-		EndCharacter:           35,
+		EndChbrbcter:           35,
 		DefinitionResultID:     "d0",
 		ReferenceResultID:      "",
-		ImplementationResultID: "",
+		ImplementbtionResultID: "",
 		HoverResultID:          "h0",
 		MonikerIDs:             []precise.ID{"m0"},
 	}
-	r2 := precise.RangeData{
-		StartLine:              52,
-		StartCharacter:         25,
+	r2 := precise.RbngeDbtb{
+		StbrtLine:              52,
+		StbrtChbrbcter:         25,
 		EndLine:                52,
-		EndCharacter:           35,
+		EndChbrbcter:           35,
 		DefinitionResultID:     "d0",
 		ReferenceResultID:      "",
-		ImplementationResultID: "",
+		ImplementbtionResultID: "",
 		HoverResultID:          "h0",
 		MonikerIDs:             []precise.ID{"m0"},
 	}
-	m0 := precise.MonikerData{
+	m0 := precise.MonikerDbtb{
 		Kind:                 "import",
 		Scheme:               "node",
-		Identifier:           "padItUp",
-		PackageInformationID: "p0",
+		Identifier:           "pbdItUp",
+		PbckbgeInformbtionID: "p0",
 	}
-	p0 := precise.PackageInformationData{
-		Manager: "npm",
-		Name:    "left-pad",
+	p0 := precise.PbckbgeInformbtionDbtb{
+		Mbnbger: "npm",
+		Nbme:    "left-pbd",
 		Version: "0.1.0",
 	}
-	document := precise.DocumentData{
-		Ranges: map[precise.ID]precise.RangeData{
+	document := precise.DocumentDbtb{
+		Rbnges: mbp[precise.ID]precise.RbngeDbtb{
 			"r0": r0,
 			"r1": r1,
 			"r2": r2,
 		},
-		HoverResults: map[precise.ID]string{
+		HoverResults: mbp[precise.ID]string{
 			"h0": "hello world",
 		},
-		Monikers: map[precise.ID]precise.MonikerData{
+		Monikers: mbp[precise.ID]precise.MonikerDbtb{
 			"m0": m0,
 		},
-		PackageInformation: map[precise.ID]precise.PackageInformationData{
+		PbckbgeInformbtion: mbp[precise.ID]precise.PbckbgeInformbtionDbtb{
 			"p0": p0,
 		},
-		Diagnostics: []precise.DiagnosticData{},
+		Dibgnostics: []precise.DibgnosticDbtb{},
 	}
 
-	targetRangeFetcher := func(resultID precise.ID) []precise.ID {
+	tbrgetRbngeFetcher := func(resultID precise.ID) []precise.ID {
 		if resultID == "d0" {
 			return []precise.ID{"r0"}
 		}
 
 		return nil
 	}
-	scipDocument := ConvertLSIFDocument(42, targetRangeFetcher, "lsif-sml", "src/main.ml", document)
+	scipDocument := ConvertLSIFDocument(42, tbrgetRbngeFetcher, "lsif-sml", "src/mbin.ml", document)
 
-	if expected := "src/main.ml"; scipDocument.RelativePath != expected {
-		t.Fatalf("unexpected path. want=%s have=%s", expected, scipDocument.RelativePath)
+	if expected := "src/mbin.ml"; scipDocument.RelbtivePbth != expected {
+		t.Fbtblf("unexpected pbth. wbnt=%s hbve=%s", expected, scipDocument.RelbtivePbth)
 	}
-	if expected := "SML"; scipDocument.Language != expected {
-		t.Fatalf("unexpected language. want=%s have=%s", expected, scipDocument.Language)
+	if expected := "SML"; scipDocument.Lbngubge != expected {
+		t.Fbtblf("unexpected lbngubge. wbnt=%s hbve=%s", expected, scipDocument.Lbngubge)
 	}
 
 	expectedOccurrences := []*scip.Occurrence{
-		{Range: []int32{50, 25, 50, 35}, Symbol: "lsif . 42 . `r0`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
-		{Range: []int32{50, 25, 50, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
-		{Range: []int32{51, 25, 51, 35}, Symbol: "lsif . 42 . `r0`."},
-		{Range: []int32{51, 25, 51, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`."},
-		{Range: []int32{52, 25, 52, 35}, Symbol: "lsif . 42 . `r0`."},
-		{Range: []int32{52, 25, 52, 35}, Symbol: "node npm left-pad 0.1.0 `padItUp`."},
+		{Rbnge: []int32{50, 25, 50, 35}, Symbol: "lsif . 42 . `r0`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
+		{Rbnge: []int32{50, 25, 50, 35}, Symbol: "node npm left-pbd 0.1.0 `pbdItUp`.", SymbolRoles: int32(scip.SymbolRole_Definition)},
+		{Rbnge: []int32{51, 25, 51, 35}, Symbol: "lsif . 42 . `r0`."},
+		{Rbnge: []int32{51, 25, 51, 35}, Symbol: "node npm left-pbd 0.1.0 `pbdItUp`."},
+		{Rbnge: []int32{52, 25, 52, 35}, Symbol: "lsif . 42 . `r0`."},
+		{Rbnge: []int32{52, 25, 52, 35}, Symbol: "node npm left-pbd 0.1.0 `pbdItUp`."},
 	}
 	sort.Slice(scipDocument.Occurrences, func(i, j int) bool {
 		oi := scipDocument.Occurrences[i]
 		oj := scipDocument.Occurrences[j]
 
-		if oi.Range[0] == oj.Range[0] {
+		if oi.Rbnge[0] == oj.Rbnge[0] {
 			return oi.Symbol[0] < oj.Symbol[0]
 		}
 
-		return oi.Range[0] < oj.Range[0]
+		return oi.Rbnge[0] < oj.Rbnge[0]
 	})
 	if diff := cmp.Diff(expectedOccurrences, scipDocument.Occurrences, cmpopts.IgnoreUnexported(scip.Occurrence{})); diff != "" {
-		t.Errorf("unexpected occurrences (-want +got):\n%s", diff)
+		t.Errorf("unexpected occurrences (-wbnt +got):\n%s", diff)
 	}
 
-	expectedSymbols := []*scip.SymbolInformation{
-		{Symbol: "lsif . 42 . `r0`.", Documentation: []string{"hello world"}, Relationships: nil},
-		{Symbol: "node npm left-pad 0.1.0 `padItUp`.", Documentation: []string{"hello world"}, Relationships: nil},
+	expectedSymbols := []*scip.SymbolInformbtion{
+		{Symbol: "lsif . 42 . `r0`.", Documentbtion: []string{"hello world"}, Relbtionships: nil},
+		{Symbol: "node npm left-pbd 0.1.0 `pbdItUp`.", Documentbtion: []string{"hello world"}, Relbtionships: nil},
 	}
 	sort.Slice(scipDocument.Symbols, func(i, j int) bool {
 		return scipDocument.Symbols[i].Symbol < scipDocument.Symbols[j].Symbol
 	})
-	if diff := cmp.Diff(expectedSymbols, scipDocument.Symbols, cmpopts.IgnoreUnexported(scip.SymbolInformation{})); diff != "" {
-		t.Errorf("unexpected symbols (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedSymbols, scipDocument.Symbols, cmpopts.IgnoreUnexported(scip.SymbolInformbtion{})); diff != "" {
+		t.Errorf("unexpected symbols (-wbnt +got):\n%s", diff)
 	}
 }

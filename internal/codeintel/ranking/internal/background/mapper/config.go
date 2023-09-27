@@ -1,19 +1,19 @@
-package mapper
+pbckbge mbpper
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	Interval  time.Duration
-	BatchSize int
+	Intervbl  time.Durbtion
+	BbtchSize int
 }
 
-func (c *Config) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_RANKING_MAPPER_INTERVAL", "1s", "How frequently to run the ranking mapper.")
-	c.BatchSize = c.GetInt("CODEINTEL_RANKING_MAPPER_BATCH_SIZE", "100", "How many definitions and references to map at once.")
+func (c *Config) Lobd() {
+	c.Intervbl = c.GetIntervbl("CODEINTEL_RANKING_MAPPER_INTERVAL", "1s", "How frequently to run the rbnking mbpper.")
+	c.BbtchSize = c.GetInt("CODEINTEL_RANKING_MAPPER_BATCH_SIZE", "100", "How mbny definitions bnd references to mbp bt once.")
 }

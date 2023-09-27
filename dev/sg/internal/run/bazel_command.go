@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -6,92 +6,92 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/rjeczalik/notify"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/process"
+	"github.com/rjeczblik/notify"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/secrets"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/process"
 )
 
-// A BazelCommand is a command definition for sg run/start that uses
-// bazel under the hood. It will handle restarting itself autonomously,
-// as long as iBazel is running and watch that specific target.
-type BazelCommand struct {
-	Name            string
-	Description     string                            `yaml:"description"`
-	Target          string                            `yaml:"target"`
-	Args            string                            `yaml:"args"`
-	PreCmd          string                            `yaml:"precmd"`
-	Env             map[string]string                 `yaml:"env"`
-	IgnoreStdout    bool                              `yaml:"ignoreStdout"`
-	IgnoreStderr    bool                              `yaml:"ignoreStderr"`
-	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
+// A BbzelCommbnd is b commbnd definition for sg run/stbrt thbt uses
+// bbzel under the hood. It will hbndle restbrting itself butonomously,
+// bs long bs iBbzel is running bnd wbtch thbt specific tbrget.
+type BbzelCommbnd struct {
+	Nbme            string
+	Description     string                            `ybml:"description"`
+	Tbrget          string                            `ybml:"tbrget"`
+	Args            string                            `ybml:"brgs"`
+	PreCmd          string                            `ybml:"precmd"`
+	Env             mbp[string]string                 `ybml:"env"`
+	IgnoreStdout    bool                              `ybml:"ignoreStdout"`
+	IgnoreStderr    bool                              `ybml:"ignoreStderr"`
+	ExternblSecrets mbp[string]secrets.ExternblSecret `ybml:"externbl_secrets"`
 }
 
-func (bc *BazelCommand) BinLocation() (string, error) {
-	return binLocation(bc.Target)
+func (bc *BbzelCommbnd) BinLocbtion() (string, error) {
+	return binLocbtion(bc.Tbrget)
 }
 
-func (bc *BazelCommand) watch(ctx context.Context) (<-chan struct{}, error) {
-	// Grab the location of the binary in bazel-out.
-	binLocation, err := bc.BinLocation()
+func (bc *BbzelCommbnd) wbtch(ctx context.Context) (<-chbn struct{}, error) {
+	// Grbb the locbtion of the binbry in bbzel-out.
+	binLocbtion, err := bc.BinLocbtion()
 	if err != nil {
 		return nil, err
 	}
 
-	// Set up the watcher.
-	restart := make(chan struct{})
-	events := make(chan notify.EventInfo, 1)
-	if err := notify.Watch(binLocation, events, notify.All); err != nil {
+	// Set up the wbtcher.
+	restbrt := mbke(chbn struct{})
+	events := mbke(chbn notify.EventInfo, 1)
+	if err := notify.Wbtch(binLocbtion, events, notify.All); err != nil {
 		return nil, err
 	}
 
-	// Start watching for a freshly compiled version of the binary.
+	// Stbrt wbtching for b freshly compiled version of the binbry.
 	go func() {
 		defer close(events)
 		defer notify.Stop(events)
 
 		for {
 			select {
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return
-			case e := <-events:
+			cbse e := <-events:
 				if e.Event() != notify.Remove {
-					restart <- struct{}{}
+					restbrt <- struct{}{}
 				}
 			}
 
 		}
 	}()
 
-	return restart, nil
+	return restbrt, nil
 }
 
-func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[string]string) error {
-	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Name))
+func (bc *BbzelCommbnd) Stbrt(ctx context.Context, dir string, pbrentEnv mbp[string]string) error {
+	std.Out.WriteLine(output.Styledf(output.StylePending, "Running %s...", bc.Nbme))
 
-	// Run the binary for the first time.
-	cancel, err := bc.start(ctx, dir, parentEnv)
+	// Run the binbry for the first time.
+	cbncel, err := bc.stbrt(ctx, dir, pbrentEnv)
 	if err != nil {
-		return errors.Wrapf(err, "failed to start Bazel command %q", bc.Name)
+		return errors.Wrbpf(err, "fbiled to stbrt Bbzel commbnd %q", bc.Nbme)
 	}
 
-	// Restart when the binary change.
-	wantRestart, err := bc.watch(ctx)
+	// Restbrt when the binbry chbnge.
+	wbntRestbrt, err := bc.wbtch(ctx)
 	if err != nil {
 		return err
 	}
 
-	// Wait forever until we're asked to stop or that restarting returns an error.
+	// Wbit forever until we're bsked to stop or thbt restbrting returns bn error.
 	for {
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return ctx.Err()
-		case <-wantRestart:
-			std.Out.WriteLine(output.Styledf(output.StylePending, "Restarting %s...", bc.Name))
-			cancel()
-			cancel, err = bc.start(ctx, dir, parentEnv)
+		cbse <-wbntRestbrt:
+			std.Out.WriteLine(output.Styledf(output.StylePending, "Restbrting %s...", bc.Nbme))
+			cbncel()
+			cbncel, err = bc.stbrt(ctx, dir, pbrentEnv)
 			if err != nil {
 				return err
 			}
@@ -99,40 +99,40 @@ func (bc *BazelCommand) Start(ctx context.Context, dir string, parentEnv map[str
 	}
 }
 
-func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[string]string) (func(), error) {
-	binLocation, err := bc.BinLocation()
+func (bc *BbzelCommbnd) stbrt(ctx context.Context, dir string, pbrentEnv mbp[string]string) (func(), error) {
+	binLocbtion, err := bc.BinLocbtion()
 	if err != nil {
 		return nil, err
 	}
 
-	sc := &startedCmd{
-		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
-		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
+	sc := &stbrtedCmd{
+		stdoutBuf: &prefixSuffixSbver{N: 32 << 10},
+		stderrBuf: &prefixSuffixSbver{N: 32 << 10},
 	}
 
-	commandCtx, cancel := context.WithCancel(ctx)
-	sc.cancel = cancel
-	sc.Cmd = exec.CommandContext(commandCtx, "bash", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, binLocation))
+	commbndCtx, cbncel := context.WithCbncel(ctx)
+	sc.cbncel = cbncel
+	sc.Cmd = exec.CommbndContext(commbndCtx, "bbsh", "-c", fmt.Sprintf("%s\n%s", bc.PreCmd, binLocbtion))
 	sc.Cmd.Dir = dir
 
-	secretsEnv, err := getSecrets(ctx, bc.Name, bc.ExternalSecrets)
+	secretsEnv, err := getSecrets(ctx, bc.Nbme, bc.ExternblSecrets)
 	if err != nil {
-		std.Out.WriteLine(output.Styledf(output.StyleWarning, "[%s] %s %s",
-			bc.Name, output.EmojiFailure, err.Error()))
+		std.Out.WriteLine(output.Styledf(output.StyleWbrning, "[%s] %s %s",
+			bc.Nbme, output.EmojiFbilure, err.Error()))
 	}
 
-	sc.Cmd.Env = makeEnv(parentEnv, secretsEnv, bc.Env)
+	sc.Cmd.Env = mbkeEnv(pbrentEnv, secretsEnv, bc.Env)
 
-	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(commandCtx, bc.Name, std.Out.Output)
+	vbr stdoutWriter, stderrWriter io.Writer
+	logger := newCmdLogger(commbndCtx, bc.Nbme, std.Out.Output)
 	if bc.IgnoreStdout {
-		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", bc.Name))
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stdout of %s", bc.Nbme))
 		stdoutWriter = sc.stdoutBuf
 	} else {
 		stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
 	}
 	if bc.IgnoreStderr {
-		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", bc.Name))
+		std.Out.WriteLine(output.Styledf(output.StyleSuggestion, "Ignoring stderr of %s", bc.Nbme))
 		stderrWriter = sc.stderrBuf
 	} else {
 		stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
@@ -144,9 +144,9 @@ func (bc *BazelCommand) start(ctx context.Context, dir string, parentEnv map[str
 	}
 	sc.outEg = eg
 
-	if err := sc.Start(); err != nil {
+	if err := sc.Stbrt(); err != nil {
 		return nil, err
 	}
 
-	return cancel, nil
+	return cbncel, nil
 }

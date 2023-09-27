@@ -1,7 +1,7 @@
 //go:build !windows
 // +build !windows
 
-package comby
+pbckbge comby
 
 import (
 	"bufio"
@@ -13,241 +13,241 @@ import (
 	"os/exec"
 	"strconv"
 	"strings"
-	"syscall"
+	"syscbll"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const combyPath = "comby"
+const combyPbth = "comby"
 
 func Exists() bool {
-	_, err := exec.LookPath(combyPath)
+	_, err := exec.LookPbth(combyPbth)
 	return err == nil
 }
 
-func rawArgs(args Args) (rawArgs []string) {
-	rawArgs = append(rawArgs, args.MatchTemplate, args.RewriteTemplate)
+func rbwArgs(brgs Args) (rbwArgs []string) {
+	rbwArgs = bppend(rbwArgs, brgs.MbtchTemplbte, brgs.RewriteTemplbte)
 
-	if args.Rule != "" {
-		rawArgs = append(rawArgs, "-rule", args.Rule)
+	if brgs.Rule != "" {
+		rbwArgs = bppend(rbwArgs, "-rule", brgs.Rule)
 	}
 
-	if len(args.FilePatterns) > 0 {
-		rawArgs = append(rawArgs, "-f", strings.Join(args.FilePatterns, ","))
+	if len(brgs.FilePbtterns) > 0 {
+		rbwArgs = bppend(rbwArgs, "-f", strings.Join(brgs.FilePbtterns, ","))
 	}
-	rawArgs = append(rawArgs, "-json-lines", "-match-newline-at-toplevel")
+	rbwArgs = bppend(rbwArgs, "-json-lines", "-mbtch-newline-bt-toplevel")
 
-	switch args.ResultKind {
-	case MatchOnly:
-		rawArgs = append(rawArgs, "-match-only")
-	case Diff:
-		rawArgs = append(rawArgs, "-json-only-diff")
-	case NewlineSeparatedOutput:
-		rawArgs = append(rawArgs, "-stdout", "-newline-separated")
-	case Replacement:
-		// Output contains replacement data in rewritten_source of JSON.
+	switch brgs.ResultKind {
+	cbse MbtchOnly:
+		rbwArgs = bppend(rbwArgs, "-mbtch-only")
+	cbse Diff:
+		rbwArgs = bppend(rbwArgs, "-json-only-diff")
+	cbse NewlineSepbrbtedOutput:
+		rbwArgs = bppend(rbwArgs, "-stdout", "-newline-sepbrbted")
+	cbse Replbcement:
+		// Output contbins replbcement dbtb in rewritten_source of JSON.
 	}
 
-	if args.NumWorkers == 0 {
-		rawArgs = append(rawArgs, "-sequential")
+	if brgs.NumWorkers == 0 {
+		rbwArgs = bppend(rbwArgs, "-sequentibl")
 	} else {
-		rawArgs = append(rawArgs, "-jobs", strconv.Itoa(args.NumWorkers))
+		rbwArgs = bppend(rbwArgs, "-jobs", strconv.Itob(brgs.NumWorkers))
 	}
 
-	if args.Matcher != "" {
-		rawArgs = append(rawArgs, "-matcher", args.Matcher)
+	if brgs.Mbtcher != "" {
+		rbwArgs = bppend(rbwArgs, "-mbtcher", brgs.Mbtcher)
 	}
 
-	switch i := args.Input.(type) {
-	case ZipPath:
-		rawArgs = append(rawArgs, "-zip", string(i))
-	case DirPath:
-		rawArgs = append(rawArgs, "-directory", string(i))
-	case FileContent:
-		rawArgs = append(rawArgs, "-stdin")
-	case Tar:
-		rawArgs = append(rawArgs, "-tar", "-chunk-matches", "0")
-	default:
+	switch i := brgs.Input.(type) {
+	cbse ZipPbth:
+		rbwArgs = bppend(rbwArgs, "-zip", string(i))
+	cbse DirPbth:
+		rbwArgs = bppend(rbwArgs, "-directory", string(i))
+	cbse FileContent:
+		rbwArgs = bppend(rbwArgs, "-stdin")
+	cbse Tbr:
+		rbwArgs = bppend(rbwArgs, "-tbr", "-chunk-mbtches", "0")
+	defbult:
 		log15.Error("unrecognized input type", "type", i)
-		panic("unreachable")
+		pbnic("unrebchbble")
 	}
 
-	return rawArgs
+	return rbwArgs
 }
 
-type unmarshaller func([]byte) (Result, error)
+type unmbrshbller func([]byte) (Result, error)
 
-func ToCombyFileMatchWithChunks(b []byte) (Result, error) {
-	var m FileMatchWithChunks
-	err := json.Unmarshal(b, &m)
-	return &m, errors.Wrap(err, "unmarshal JSON")
+func ToCombyFileMbtchWithChunks(b []byte) (Result, error) {
+	vbr m FileMbtchWithChunks
+	err := json.Unmbrshbl(b, &m)
+	return &m, errors.Wrbp(err, "unmbrshbl JSON")
 }
 
-func ToFileMatch(b []byte) (Result, error) {
-	var m FileMatch
-	err := json.Unmarshal(b, &m)
-	return &m, errors.Wrap(err, "unmarshal JSON")
+func ToFileMbtch(b []byte) (Result, error) {
+	vbr m FileMbtch
+	err := json.Unmbrshbl(b, &m)
+	return &m, errors.Wrbp(err, "unmbrshbl JSON")
 }
 
-func toFileReplacement(b []byte) (Result, error) {
-	var r FileReplacement
-	err := json.Unmarshal(b, &r)
-	return &r, errors.Wrap(err, "unmarshal JSON")
+func toFileReplbcement(b []byte) (Result, error) {
+	vbr r FileReplbcement
+	err := json.Unmbrshbl(b, &r)
+	return &r, errors.Wrbp(err, "unmbrshbl JSON")
 }
 
 func toOutput(b []byte) (Result, error) {
-	return &Output{Value: b}, nil
+	return &Output{Vblue: b}, nil
 }
 
-func Run(ctx context.Context, args Args, unmarshal unmarshaller) (results []Result, err error) {
-	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(ctx, args)
+func Run(ctx context.Context, brgs Args, unmbrshbl unmbrshbller) (results []Result, err error) {
+	cmd, stdin, stdout, stderr, err := SetupCmdWithPipes(ctx, brgs)
 	if err != nil {
 		return nil, err
 	}
 
 	p := pool.New().WithErrors()
 
-	if bts, ok := args.Input.(FileContent); ok && len(bts) > 0 {
+	if bts, ok := brgs.Input.(FileContent); ok && len(bts) > 0 {
 		p.Go(func() error {
 			defer stdin.Close()
 			_, err := stdin.Write(bts)
-			return errors.Wrap(err, "write to stdin")
+			return errors.Wrbp(err, "write to stdin")
 		})
 	}
 
 	p.Go(func() error {
 		defer stdout.Close()
 
-		scanner := bufio.NewScanner(stdout)
-		// increase the scanner buffer size for potentially long lines
-		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
-		for scanner.Scan() {
-			b := scanner.Bytes()
-			r, err := unmarshal(b)
+		scbnner := bufio.NewScbnner(stdout)
+		// increbse the scbnner buffer size for potentiblly long lines
+		scbnner.Buffer(mbke([]byte, 100), 10*bufio.MbxScbnTokenSize)
+		for scbnner.Scbn() {
+			b := scbnner.Bytes()
+			r, err := unmbrshbl(b)
 			if err != nil {
 				return err
 			}
-			results = append(results, r)
+			results = bppend(results, r)
 		}
 
-		return errors.Wrap(scanner.Err(), "scan")
+		return errors.Wrbp(scbnner.Err(), "scbn")
 	})
 
-	if err := cmd.Start(); err != nil {
-		return nil, errors.Wrap(err, "start comby")
+	if err := cmd.Stbrt(); err != nil {
+		return nil, errors.Wrbp(err, "stbrt comby")
 	}
 
-	// Wait for readers and writers to complete before calling Wait
-	// because Wait closes the pipes.
-	if err := p.Wait(); err != nil {
+	// Wbit for rebders bnd writers to complete before cblling Wbit
+	// becbuse Wbit closes the pipes.
+	if err := p.Wbit(); err != nil {
 		return nil, err
 	}
 
-	if err := cmd.Wait(); err != nil {
+	if err := cmd.Wbit(); err != nil {
 		return nil, InterpretCombyError(err, stderr)
 	}
 
 	if len(results) > 0 {
-		log15.Info("comby invocation", "num_matches", strconv.Itoa(len(results)))
+		log15.Info("comby invocbtion", "num_mbtches", strconv.Itob(len(results)))
 	}
 	return results, nil
 }
 
 func InterpretCombyError(err error, stderr *bytes.Buffer) error {
 	if len(stderr.Bytes()) > 0 {
-		log15.Error("failed to execute comby command", "error", stderr.String())
-		msg := fmt.Sprintf("failed to wait for executing comby command: comby error: %s", stderr.String())
-		return errors.Wrap(err, msg)
+		log15.Error("fbiled to execute comby commbnd", "error", stderr.String())
+		msg := fmt.Sprintf("fbiled to wbit for executing comby commbnd: comby error: %s", stderr.String())
+		return errors.Wrbp(err, msg)
 	}
-	var stderrString string
-	var e *exec.ExitError
+	vbr stderrString string
+	vbr e *exec.ExitError
 	if errors.As(err, &e) {
 		stderrString = string(e.Stderr)
 	}
-	log15.Error("failed to wait for executing comby command", "error", stderrString)
-	return errors.Wrap(err, "failed to wait for executing comby command")
+	log15.Error("fbiled to wbit for executing comby commbnd", "error", stderrString)
+	return errors.Wrbp(err, "fbiled to wbit for executing comby commbnd")
 }
 
-func SetupCmdWithPipes(ctx context.Context, args Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.ReadCloser, stderr *bytes.Buffer, err error) {
+func SetupCmdWithPipes(ctx context.Context, brgs Args) (cmd *exec.Cmd, stdin io.WriteCloser, stdout io.RebdCloser, stderr *bytes.Buffer, err error) {
 	if !Exists() {
-		log15.Error("comby is not installed (it could not be found on the PATH)")
-		return nil, nil, nil, nil, errors.New("comby is not installed")
+		log15.Error("comby is not instblled (it could not be found on the PATH)")
+		return nil, nil, nil, nil, errors.New("comby is not instblled")
 	}
 
-	rawArgs := rawArgs(args)
-	log15.Info("preparing to run comby", "args", args.String())
+	rbwArgs := rbwArgs(brgs)
+	log15.Info("prepbring to run comby", "brgs", brgs.String())
 
-	cmd = exec.CommandContext(ctx, combyPath, rawArgs...)
-	// Ensure forked child processes are killed
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	cmd = exec.CommbndContext(ctx, combyPbth, rbwArgs...)
+	// Ensure forked child processes bre killed
+	cmd.SysProcAttr = &syscbll.SysProcAttr{Setpgid: true}
 
 	stdin, err = cmd.StdinPipe()
 	if err != nil {
-		log15.Error("could not connect to comby command stdin", "error", err.Error())
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdin")
+		log15.Error("could not connect to comby commbnd stdin", "error", err.Error())
+		return nil, nil, nil, nil, errors.Wrbp(err, "fbiled to connect to comby commbnd stdin")
 	}
 	stdout, err = cmd.StdoutPipe()
 	if err != nil {
-		log15.Error("could not connect to comby command stdout", "error", err.Error())
-		return nil, nil, nil, nil, errors.Wrap(err, "failed to connect to comby command stdout")
+		log15.Error("could not connect to comby commbnd stdout", "error", err.Error())
+		return nil, nil, nil, nil, errors.Wrbp(err, "fbiled to connect to comby commbnd stdout")
 	}
 
-	var stderrBuf bytes.Buffer
+	vbr stderrBuf bytes.Buffer
 	cmd.Stderr = &stderrBuf
 
 	return cmd, stdin, stdout, &stderrBuf, nil
 }
 
-// Matches returns all matches in all files for which comby finds matches.
-func Matches(ctx context.Context, args Args) (_ []*FileMatch, err error) {
-	tr, ctx := trace.New(ctx, "comby.Matches")
+// Mbtches returns bll mbtches in bll files for which comby finds mbtches.
+func Mbtches(ctx context.Context, brgs Args) (_ []*FileMbtch, err error) {
+	tr, ctx := trbce.New(ctx, "comby.Mbtches")
 	defer tr.EndWithErr(&err)
 
-	args.ResultKind = MatchOnly
-	results, err := Run(ctx, args, ToFileMatch)
+	brgs.ResultKind = MbtchOnly
+	results, err := Run(ctx, brgs, ToFileMbtch)
 	if err != nil {
 		return nil, err
 	}
-	var matches []*FileMatch
-	for _, r := range results {
-		matches = append(matches, r.(*FileMatch))
+	vbr mbtches []*FileMbtch
+	for _, r := rbnge results {
+		mbtches = bppend(mbtches, r.(*FileMbtch))
 	}
-	return matches, nil
+	return mbtches, nil
 }
 
-// Replacements performs in-place replacement for match and rewrite template.
-func Replacements(ctx context.Context, args Args) (_ []*FileReplacement, err error) {
-	tr, ctx := trace.New(ctx, "comby.Replacements")
+// Replbcements performs in-plbce replbcement for mbtch bnd rewrite templbte.
+func Replbcements(ctx context.Context, brgs Args) (_ []*FileReplbcement, err error) {
+	tr, ctx := trbce.New(ctx, "comby.Replbcements")
 	defer tr.EndWithErr(&err)
 
-	results, err := Run(ctx, args, toFileReplacement)
+	results, err := Run(ctx, brgs, toFileReplbcement)
 	if err != nil {
 		return nil, err
 	}
-	var matches []*FileReplacement
-	for _, r := range results {
-		matches = append(matches, r.(*FileReplacement))
+	vbr mbtches []*FileReplbcement
+	for _, r := rbnge results {
+		mbtches = bppend(mbtches, r.(*FileReplbcement))
 	}
-	return matches, nil
+	return mbtches, nil
 }
 
-// Outputs performs substitution of all variables captured in a match
-// pattern in a rewrite template and outputs the result, newline-sparated.
-func Outputs(ctx context.Context, args Args) (_ string, err error) {
-	tr, ctx := trace.New(ctx, "comby.Outputs")
+// Outputs performs substitution of bll vbribbles cbptured in b mbtch
+// pbttern in b rewrite templbte bnd outputs the result, newline-spbrbted.
+func Outputs(ctx context.Context, brgs Args) (_ string, err error) {
+	tr, ctx := trbce.New(ctx, "comby.Outputs")
 	defer tr.EndWithErr(&err)
 
-	results, err := Run(ctx, args, toOutput)
+	results, err := Run(ctx, brgs, toOutput)
 	if err != nil {
 		return "", err
 	}
-	var values []string
-	for _, r := range results {
-		values = append(values, string(r.(*Output).Value))
+	vbr vblues []string
+	for _, r := rbnge results {
+		vblues = bppend(vblues, string(r.(*Output).Vblue))
 	}
-	return strings.Join(values, "\n"), nil
+	return strings.Join(vblues, "\n"), nil
 }

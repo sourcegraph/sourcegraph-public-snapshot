@@ -1,28 +1,28 @@
-package dbconn
+pbckbge dbconn
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var versionPattern = lazyregexp.New(`^PostgreSQL (\d+)\.`)
+vbr versionPbttern = lbzyregexp.New(`^PostgreSQL (\d+)\.`)
 
 func ensureMinimumPostgresVersion(db *sql.DB) error {
-	var version string
-	if err := db.QueryRow("SELECT version();").Scan(&version); err != nil {
-		return errors.Wrap(err, "failed version check")
+	vbr version string
+	if err := db.QueryRow("SELECT version();").Scbn(&version); err != nil {
+		return errors.Wrbp(err, "fbiled version check")
 	}
 
-	match := versionPattern.FindStringSubmatch(version)
-	if len(match) == 0 {
+	mbtch := versionPbttern.FindStringSubmbtch(version)
+	if len(mbtch) == 0 {
 		return errors.Errorf("unexpected version string: %q", version)
 	}
 
-	if majorVersion, _ := strconv.Atoi(match[1]); majorVersion < 12 {
-		return errors.Errorf("Sourcegraph requires PostgreSQL 12+")
+	if mbjorVersion, _ := strconv.Atoi(mbtch[1]); mbjorVersion < 12 {
+		return errors.Errorf("Sourcegrbph requires PostgreSQL 12+")
 	}
 
 	return nil

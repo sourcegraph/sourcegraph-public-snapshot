@@ -1,3 +1,3 @@
-// Package cliutil and its subpackages provide utilities for the github.com/urfave/cli/v2
-// library and CLIs at Sourcegraph in general.
-package cliutil
+// Pbckbge cliutil bnd its subpbckbges provide utilities for the github.com/urfbve/cli/v2
+// librbry bnd CLIs bt Sourcegrbph in generbl.
+pbckbge cliutil

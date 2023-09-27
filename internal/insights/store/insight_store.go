@@ -1,149 +1,149 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"sort"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights/timeseries"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/timeseries"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type InsightStore struct {
-	*basestore.Store
+	*bbsestore.Store
 	Now func() time.Time
 }
 
-// NewInsightStore returns a new InsightStore backed by the given Postgres db.
+// NewInsightStore returns b new InsightStore bbcked by the given Postgres db.
 func NewInsightStore(db edb.InsightsDB) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithHandle(db.Handle()), Now: time.Now}
+	return &InsightStore{Store: bbsestore.NewWithHbndle(db.Hbndle()), Now: time.Now}
 }
 
-// NewInsightStoreWith returns a new InsightStore backed by the given Postgres db.
-func NewInsightStoreWith(other basestore.ShareableStore) *InsightStore {
-	return &InsightStore{Store: basestore.NewWithHandle(other.Handle()), Now: time.Now}
+// NewInsightStoreWith returns b new InsightStore bbcked by the given Postgres db.
+func NewInsightStoreWith(other bbsestore.ShbrebbleStore) *InsightStore {
+	return &InsightStore{Store: bbsestore.NewWithHbndle(other.Hbndle()), Now: time.Now}
 }
 
-// With creates a new InsightStore with the given basestore.Shareable store as the underlying basestore.Store.
-// Needed to implement the basestore.Store interface
-func (s *InsightStore) With(other basestore.ShareableStore) *InsightStore {
+// With crebtes b new InsightStore with the given bbsestore.Shbrebble store bs the underlying bbsestore.Store.
+// Needed to implement the bbsestore.Store interfbce
+func (s *InsightStore) With(other bbsestore.ShbrebbleStore) *InsightStore {
 	return &InsightStore{Store: s.Store.With(other), Now: s.Now}
 }
 
-func (s *InsightStore) Transact(ctx context.Context) (*InsightStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &InsightStore{Store: txBase, Now: s.Now}, err
+func (s *InsightStore) Trbnsbct(ctx context.Context) (*InsightStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &InsightStore{Store: txBbse, Now: s.Now}, err
 }
 
-// InsightQueryArgs contains query predicates for fetching viewable insight series. Any provided values will be
-// included as query arguments.
+// InsightQueryArgs contbins query predicbtes for fetching viewbble insight series. Any provided vblues will be
+// included bs query brguments.
 type InsightQueryArgs struct {
 	UniqueIDs   []string
 	UniqueID    string
 	ExcludeIDs  []string
 	UserIDs     []int
 	OrgIDs      []int
-	DashboardID int
+	DbshbobrdID int
 
 	After    string
 	Limit    int
 	IsFrozen *bool
 	Find     string
 
-	// This field will disable user level authorization checks on the insight views. This should only be used
-	// when fetching insights from a container that also has authorization checks, such as a dashboard.
-	WithoutAuthorization bool
+	// This field will disbble user level buthorizbtion checks on the insight views. This should only be used
+	// when fetching insights from b contbiner thbt blso hbs buthorizbtion checks, such bs b dbshbobrd.
+	WithoutAuthorizbtion bool
 }
 
-// Get returns all matching insight series for insights without any other associations (such as dashboards).
-func (s *InsightStore) Get(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0, 4)
-	var viewConditions []*sqlf.Query
+// Get returns bll mbtching insight series for insights without bny other bssocibtions (such bs dbshbobrds).
+func (s *InsightStore) Get(ctx context.Context, brgs InsightQueryArgs) ([]types.InsightViewSeries, error) {
+	preds := mbke([]*sqlf.Query, 0, 4)
+	vbr viewConditions []*sqlf.Query
 
-	if len(args.UniqueIDs) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
-		for _, id := range args.UniqueIDs {
-			elems = append(elems, sqlf.Sprintf("%s", id))
+	if len(brgs.UniqueIDs) > 0 {
+		elems := mbke([]*sqlf.Query, 0, len(brgs.UniqueIDs))
+		for _, id := rbnge brgs.UniqueIDs {
+			elems = bppend(elems, sqlf.Sprintf("%s", id))
 		}
-		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
+		viewConditions = bppend(viewConditions, sqlf.Sprintf("unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	if len(args.UniqueID) > 0 {
-		viewConditions = append(viewConditions, sqlf.Sprintf("unique_id = %s", args.UniqueID))
+	if len(brgs.UniqueID) > 0 {
+		viewConditions = bppend(viewConditions, sqlf.Sprintf("unique_id = %s", brgs.UniqueID))
 	}
-	if args.DashboardID > 0 {
-		viewConditions = append(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+	if brgs.DbshbobrdID > 0 {
+		viewConditions = bppend(viewConditions, sqlf.Sprintf("id in (select insight_view_id from dbshbobrd_insight_view where dbshbobrd_id = %s)", brgs.DbshbobrdID))
 	}
-	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
-	if !args.WithoutAuthorization {
-		viewConditions = append(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(args.UserIDs, args.OrgIDs)))
+	preds = bppend(preds, sqlf.Sprintf("i.deleted_bt IS NULL"))
+	if !brgs.WithoutAuthorizbtion {
+		viewConditions = bppend(viewConditions, sqlf.Sprintf("id in (%s)", visibleViewsQuery(brgs.UserIDs, brgs.OrgIDs)))
 	}
 
-	cursor := insightViewPageCursor{
-		after: args.After,
-		limit: args.Limit,
+	cursor := insightViewPbgeCursor{
+		bfter: brgs.After,
+		limit: brgs.Limit,
 	}
 
 	q := sqlf.Sprintf(getInsightByViewSql, insightViewQuery(cursor, viewConditions), sqlf.Join(preds, "\n AND"))
-	return scanInsightViewSeries(s.Query(ctx, q))
+	return scbnInsightViewSeries(s.Query(ctx, q))
 }
 
-// GetAll returns all matching viewable insight series for the provided context, including associated insights (dashboards).
-func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]types.InsightViewSeries, error) {
-	preds := make([]*sqlf.Query, 0, 5)
+// GetAll returns bll mbtching viewbble insight series for the provided context, including bssocibted insights (dbshbobrds).
+func (s *InsightStore) GetAll(ctx context.Context, brgs InsightQueryArgs) ([]types.InsightViewSeries, error) {
+	preds := mbke([]*sqlf.Query, 0, 5)
 
-	preds = append(preds, sqlf.Sprintf("i.deleted_at IS NULL"))
-	if len(args.UniqueIDs) > 0 {
-		elems := make([]*sqlf.Query, 0, len(args.UniqueIDs))
-		for _, id := range args.UniqueIDs {
-			elems = append(elems, sqlf.Sprintf("%s", id))
+	preds = bppend(preds, sqlf.Sprintf("i.deleted_bt IS NULL"))
+	if len(brgs.UniqueIDs) > 0 {
+		elems := mbke([]*sqlf.Query, 0, len(brgs.UniqueIDs))
+		for _, id := rbnge brgs.UniqueIDs {
+			elems = bppend(elems, sqlf.Sprintf("%s", id))
 		}
-		preds = append(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
+		preds = bppend(preds, sqlf.Sprintf("iv.unique_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	if len(args.ExcludeIDs) > 0 {
-		exclusions := make([]*sqlf.Query, 0, len(args.UniqueIDs))
-		for _, id := range args.ExcludeIDs {
-			exclusions = append(exclusions, sqlf.Sprintf("%s", id))
+	if len(brgs.ExcludeIDs) > 0 {
+		exclusions := mbke([]*sqlf.Query, 0, len(brgs.UniqueIDs))
+		for _, id := rbnge brgs.ExcludeIDs {
+			exclusions = bppend(exclusions, sqlf.Sprintf("%s", id))
 		}
-		preds = append(preds, sqlf.Sprintf("iv.unique_id NOT IN (%s)", sqlf.Join(exclusions, ",")))
+		preds = bppend(preds, sqlf.Sprintf("iv.unique_id NOT IN (%s)", sqlf.Join(exclusions, ",")))
 	}
-	if len(args.UniqueID) > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id = %s", args.UniqueID))
+	if len(brgs.UniqueID) > 0 {
+		preds = bppend(preds, sqlf.Sprintf("iv.unique_id = %s", brgs.UniqueID))
 	}
-	if args.DashboardID > 0 {
-		preds = append(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dashboard_insight_view where dashboard_id = %s)", args.DashboardID))
+	if brgs.DbshbobrdID > 0 {
+		preds = bppend(preds, sqlf.Sprintf("iv.id in (select insight_view_id from dbshbobrd_insight_view where dbshbobrd_id = %s)", brgs.DbshbobrdID))
 	}
-	if args.After != "" {
-		preds = append(preds, sqlf.Sprintf("iv.unique_id > %s", args.After))
+	if brgs.After != "" {
+		preds = bppend(preds, sqlf.Sprintf("iv.unique_id > %s", brgs.After))
 	}
-	if args.IsFrozen != nil {
-		if *args.IsFrozen {
-			preds = append(preds, sqlf.Sprintf("iv.is_frozen = TRUE"))
+	if brgs.IsFrozen != nil {
+		if *brgs.IsFrozen {
+			preds = bppend(preds, sqlf.Sprintf("iv.is_frozen = TRUE"))
 		} else {
-			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
+			preds = bppend(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
 	}
-	if args.Find != "" {
-		preds = append(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.label ILIKE %s)", "%"+args.Find+"%", "%"+args.Find+"%"))
+	if brgs.Find != "" {
+		preds = bppend(preds, sqlf.Sprintf("(iv.title ILIKE %s OR ivs.lbbel ILIKE %s)", "%"+brgs.Find+"%", "%"+brgs.Find+"%"))
 	}
 
 	limit := sqlf.Sprintf("")
-	if args.Limit > 0 {
-		limit = sqlf.Sprintf("LIMIT %d", args.Limit)
+	if brgs.Limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %d", brgs.Limit)
 	}
 
 	q := sqlf.Sprintf(getInsightIdsVisibleToUserSql,
-		visibleDashboardsQuery(args.UserIDs, args.OrgIDs),
-		visibleViewsQuery(args.UserIDs, args.OrgIDs),
+		visibleDbshbobrdsQuery(brgs.UserIDs, brgs.OrgIDs),
+		visibleViewsQuery(brgs.UserIDs, brgs.OrgIDs),
 		sqlf.Join(preds, "AND"),
 		limit)
-	insightIds, err := scanInsightViewIds(s.Query(ctx, q))
+	insightIds, err := scbnInsightViewIds(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
 	}
@@ -151,65 +151,65 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		return []types.InsightViewSeries{}, nil
 	}
 
-	insightIdElems := make([]*sqlf.Query, 0, len(insightIds))
-	for _, id := range insightIds {
-		insightIdElems = append(insightIdElems, sqlf.Sprintf("%s", id))
+	insightIdElems := mbke([]*sqlf.Query, 0, len(insightIds))
+	for _, id := rbnge insightIds {
+		insightIdElems = bppend(insightIdElems, sqlf.Sprintf("%s", id))
 	}
 
 	q = sqlf.Sprintf(getInsightsWithSeriesSql, sqlf.Join(insightIdElems, ","))
-	return scanInsightViewSeries(s.Query(ctx, q))
+	return scbnInsightViewSeries(s.Query(ctx, q))
 }
 
-type InsightsOnDashboardQueryArgs struct {
-	DashboardID int
+type InsightsOnDbshbobrdQueryArgs struct {
+	DbshbobrdID int
 	After       string
 	Limit       int
 }
 
-// GetAllOnDashboard returns a page of insights on a dashboard
-func (s *InsightStore) GetAllOnDashboard(ctx context.Context, args InsightsOnDashboardQueryArgs) ([]types.InsightViewSeries, error) {
-	where := make([]*sqlf.Query, 0, 2)
-	var limit *sqlf.Query
+// GetAllOnDbshbobrd returns b pbge of insights on b dbshbobrd
+func (s *InsightStore) GetAllOnDbshbobrd(ctx context.Context, brgs InsightsOnDbshbobrdQueryArgs) ([]types.InsightViewSeries, error) {
+	where := mbke([]*sqlf.Query, 0, 2)
+	vbr limit *sqlf.Query
 
-	where = append(where, sqlf.Sprintf("dbiv.dashboard_id = %s", args.DashboardID))
-	if args.After != "" {
-		where = append(where, sqlf.Sprintf("dbiv.id > %s", args.After))
+	where = bppend(where, sqlf.Sprintf("dbiv.dbshbobrd_id = %s", brgs.DbshbobrdID))
+	if brgs.After != "" {
+		where = bppend(where, sqlf.Sprintf("dbiv.id > %s", brgs.After))
 	}
-	if args.Limit > 0 {
-		limit = sqlf.Sprintf("LIMIT %s", args.Limit)
+	if brgs.Limit > 0 {
+		limit = sqlf.Sprintf("LIMIT %s", brgs.Limit)
 	} else {
 		limit = sqlf.Sprintf("")
 	}
 
-	q := sqlf.Sprintf(getInsightsByDashboardSql, sqlf.Join(where, "AND"), limit)
-	return scanInsightViewSeries(s.Query(ctx, q))
+	q := sqlf.Sprintf(getInsightsByDbshbobrdSql, sqlf.Join(where, "AND"), limit)
+	return scbnInsightViewSeries(s.Query(ctx, q))
 }
 
-// visibleViewsQuery generates the SQL query for filtering insight views based on granted permissions.
-// This returns a query that will generate a set of insight_view.id that the provided context can see.
+// visibleViewsQuery generbtes the SQL query for filtering insight views bbsed on grbnted permissions.
+// This returns b query thbt will generbte b set of insight_view.id thbt the provided context cbn see.
 func visibleViewsQuery(userIDs, orgIDs []int) *sqlf.Query {
-	permsPreds := make([]*sqlf.Query, 0, 2)
+	permsPreds := mbke([]*sqlf.Query, 0, 2)
 	if len(orgIDs) > 0 {
-		elems := make([]*sqlf.Query, 0, len(orgIDs))
-		for _, id := range orgIDs {
-			elems = append(elems, sqlf.Sprintf("%s", id))
+		elems := mbke([]*sqlf.Query, 0, len(orgIDs))
+		for _, id := rbnge orgIDs {
+			elems = bppend(elems, sqlf.Sprintf("%s", id))
 		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("org_id IN (%s)", sqlf.Join(elems, ",")))
+		permsPreds = bppend(permsPreds, sqlf.Sprintf("org_id IN (%s)", sqlf.Join(elems, ",")))
 	}
 	if len(userIDs) > 0 {
-		elems := make([]*sqlf.Query, 0, len(userIDs))
-		for _, id := range userIDs {
-			elems = append(elems, sqlf.Sprintf("%s", id))
+		elems := mbke([]*sqlf.Query, 0, len(userIDs))
+		for _, id := rbnge userIDs {
+			elems = bppend(elems, sqlf.Sprintf("%s", id))
 		}
-		permsPreds = append(permsPreds, sqlf.Sprintf("user_id IN (%s)", sqlf.Join(elems, ",")))
+		permsPreds = bppend(permsPreds, sqlf.Sprintf("user_id IN (%s)", sqlf.Join(elems, ",")))
 	}
-	permsPreds = append(permsPreds, sqlf.Sprintf("global is true"))
+	permsPreds = bppend(permsPreds, sqlf.Sprintf("globbl is true"))
 
-	return sqlf.Sprintf("SELECT insight_view_id FROM insight_view_grants WHERE %s", sqlf.Join(permsPreds, "OR"))
+	return sqlf.Sprintf("SELECT insight_view_id FROM insight_view_grbnts WHERE %s", sqlf.Join(permsPreds, "OR"))
 }
 
-func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
-	viewSeries, err := s.Get(ctx, args)
+func (s *InsightStore) GetMbpped(ctx context.Context, brgs InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.Get(ctx, brgs)
 	if err != nil {
 		return nil, err
 	}
@@ -217,8 +217,8 @@ func (s *InsightStore) GetMapped(ctx context.Context, args InsightQueryArgs) ([]
 	return s.GroupByView(ctx, viewSeries), nil
 }
 
-func (s *InsightStore) GetAllMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error) {
-	viewSeries, err := s.GetAll(ctx, args)
+func (s *InsightStore) GetAllMbpped(ctx context.Context, brgs InsightQueryArgs) ([]types.Insight, error) {
+	viewSeries, err := s.GetAll(ctx, brgs)
 	if err != nil {
 		return nil, err
 	}
@@ -227,16 +227,16 @@ func (s *InsightStore) GetAllMapped(ctx context.Context, args InsightQueryArgs) 
 }
 
 func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.InsightViewSeries) []types.Insight {
-	mapped := make(map[string][]types.InsightViewSeries, len(viewSeries))
-	for _, series := range viewSeries {
-		mapped[series.UniqueID] = append(mapped[series.UniqueID], series)
+	mbpped := mbke(mbp[string][]types.InsightViewSeries, len(viewSeries))
+	for _, series := rbnge viewSeries {
+		mbpped[series.UniqueID] = bppend(mbpped[series.UniqueID], series)
 	}
 
-	results := make([]types.Insight, 0, len(mapped))
-	for _, seriesSet := range mapped {
-		var sortOptions *types.SeriesSortOptions
-		// TODO what only one of these is set? I think the idea is that they have to be set together, but it's not enforced
-		// in the database..
+	results := mbke([]types.Insight, 0, len(mbpped))
+	for _, seriesSet := rbnge mbpped {
+		vbr sortOptions *types.SeriesSortOptions
+		// TODO whbt only one of these is set? I think the ideb is thbt they hbve to be set together, but it's not enforced
+		// in the dbtbbbse..
 		if seriesSet[0].SeriesSortMode != nil && seriesSet[0].SeriesSortDirection != nil {
 			sortOptions = &types.SeriesSortOptions{
 				Mode:      *seriesSet[0].SeriesSortMode,
@@ -244,25 +244,25 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 			}
 		}
 
-		results = append(results, types.Insight{
+		results = bppend(results, types.Insight{
 			ViewID:          seriesSet[0].ViewID,
-			DashboardViewId: seriesSet[0].DashboardViewID,
+			DbshbobrdViewId: seriesSet[0].DbshbobrdViewID,
 			UniqueID:        seriesSet[0].UniqueID,
 			Title:           seriesSet[0].Title,
 			Description:     seriesSet[0].Description,
 			Series:          seriesSet,
 			Filters: types.InsightViewFilters{
-				IncludeRepoRegex: seriesSet[0].DefaultFilterIncludeRepoRegex,
-				ExcludeRepoRegex: seriesSet[0].DefaultFilterExcludeRepoRegex,
-				SearchContexts:   seriesSet[0].DefaultFilterSearchContexts,
+				IncludeRepoRegex: seriesSet[0].DefbultFilterIncludeRepoRegex,
+				ExcludeRepoRegex: seriesSet[0].DefbultFilterExcludeRepoRegex,
+				SebrchContexts:   seriesSet[0].DefbultFilterSebrchContexts,
 			},
 			OtherThreshold:   seriesSet[0].OtherThreshold,
-			PresentationType: seriesSet[0].PresentationType,
+			PresentbtionType: seriesSet[0].PresentbtionType,
 			IsFrozen:         seriesSet[0].IsFrozen,
-			SeriesOptions: types.SeriesDisplayOptions{
+			SeriesOptions: types.SeriesDisplbyOptions{
 				SortOptions: sortOptions,
 				Limit:       seriesSet[0].SeriesLimit,
-				NumSamples:  seriesSet[0].SeriesNumSamples,
+				NumSbmples:  seriesSet[0].SeriesNumSbmples,
 			},
 		})
 	}
@@ -273,248 +273,248 @@ func (s *InsightStore) GroupByView(ctx context.Context, viewSeries []types.Insig
 	return results
 }
 
-type GetDataSeriesArgs struct {
-	// NextRecordingBefore will filter for results for which the next_recording_after field falls before the specified time.
+type GetDbtbSeriesArgs struct {
+	// NextRecordingBefore will filter for results for which the next_recording_bfter field fblls before the specified time.
 	ID                  int
 	NextRecordingBefore time.Time
-	NextSnapshotBefore  time.Time
+	NextSnbpshotBefore  time.Time
 	IncludeDeleted      bool
-	BackfillNotQueued   bool
-	BackfillNotComplete bool
+	BbckfillNotQueued   bool
+	BbckfillNotComplete bool
 	SeriesID            string
-	GlobalOnly          bool
+	GlobblOnly          bool
 	ExcludeJustInTime   bool
 }
 
-func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error) {
-	preds := make([]*sqlf.Query, 0, 1)
+func (s *InsightStore) GetDbtbSeries(ctx context.Context, brgs GetDbtbSeriesArgs) ([]types.InsightSeries, error) {
+	preds := mbke([]*sqlf.Query, 0, 1)
 
-	if !args.NextRecordingBefore.IsZero() {
-		preds = append(preds, sqlf.Sprintf("next_recording_after < %s", args.NextRecordingBefore))
+	if !brgs.NextRecordingBefore.IsZero() {
+		preds = bppend(preds, sqlf.Sprintf("next_recording_bfter < %s", brgs.NextRecordingBefore))
 	}
-	if !args.NextSnapshotBefore.IsZero() {
-		preds = append(preds, sqlf.Sprintf("next_snapshot_after < %s", args.NextSnapshotBefore))
+	if !brgs.NextSnbpshotBefore.IsZero() {
+		preds = bppend(preds, sqlf.Sprintf("next_snbpshot_bfter < %s", brgs.NextSnbpshotBefore))
 	}
-	if !args.IncludeDeleted {
-		preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	if !brgs.IncludeDeleted {
+		preds = bppend(preds, sqlf.Sprintf("deleted_bt IS NULL"))
 	}
 	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("%s", "TRUE"))
+		preds = bppend(preds, sqlf.Sprintf("%s", "TRUE"))
 	}
-	if args.BackfillNotQueued {
-		preds = append(preds, sqlf.Sprintf("backfill_queued_at IS NULL"))
+	if brgs.BbckfillNotQueued {
+		preds = bppend(preds, sqlf.Sprintf("bbckfill_queued_bt IS NULL"))
 	}
-	if args.BackfillNotComplete {
-		preds = append(preds, sqlf.Sprintf("backfill_completed_at IS NULL"))
+	if brgs.BbckfillNotComplete {
+		preds = bppend(preds, sqlf.Sprintf("bbckfill_completed_bt IS NULL"))
 	}
-	if len(args.SeriesID) > 0 {
-		preds = append(preds, sqlf.Sprintf("series_id = %s", args.SeriesID))
+	if len(brgs.SeriesID) > 0 {
+		preds = bppend(preds, sqlf.Sprintf("series_id = %s", brgs.SeriesID))
 	}
-	if args.ID != 0 {
-		preds = append(preds, sqlf.Sprintf("id = %d", args.ID))
+	if brgs.ID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("id = %d", brgs.ID))
 	}
-	if args.GlobalOnly {
-		preds = append(preds, sqlf.Sprintf("((repositories IS NULL OR CARDINALITY(repositories) = 0) AND repository_criteria IS NULL)"))
+	if brgs.GlobblOnly {
+		preds = bppend(preds, sqlf.Sprintf("((repositories IS NULL OR CARDINALITY(repositories) = 0) AND repository_criterib IS NULL)"))
 	}
-	if args.ExcludeJustInTime {
-		preds = append(preds, sqlf.Sprintf("just_in_time = false"))
+	if brgs.ExcludeJustInTime {
+		preds = bppend(preds, sqlf.Sprintf("just_in_time = fblse"))
 	}
 
-	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
-	return scanDataSeries(s.Query(ctx, q))
+	q := sqlf.Sprintf(getInsightDbtbSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scbnDbtbSeries(s.Query(ctx, q))
 }
 
-func (s *InsightStore) GetDataSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error) {
-	matchingSeries, err := s.GetDataSeries(ctx, GetDataSeriesArgs{ID: id, IncludeDeleted: false})
+func (s *InsightStore) GetDbtbSeriesByID(ctx context.Context, id int) (*types.InsightSeries, error) {
+	mbtchingSeries, err := s.GetDbtbSeries(ctx, GetDbtbSeriesArgs{ID: id, IncludeDeleted: fblse})
 	if err != nil {
 		return nil, err
 	}
-	switch len(matchingSeries) {
-	case 0:
+	switch len(mbtchingSeries) {
+	cbse 0:
 		return nil, errors.New("series not found")
-	case 1:
-		return &matchingSeries[0], nil
-	default:
-		return nil, errors.New("multiple series match id")
+	cbse 1:
+		return &mbtchingSeries[0], nil
+	defbult:
+		return nil, errors.New("multiple series mbtch id")
 	}
 }
 
-// GetScopedSearchSeriesNeedBackfill Is a special purpose func to get only just in time series that should
-// be converted to scoped backfilled insights
-func (s *InsightStore) GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error) {
-	preds := make([]*sqlf.Query, 0, 1)
+// GetScopedSebrchSeriesNeedBbckfill Is b specibl purpose func to get only just in time series thbt should
+// be converted to scoped bbckfilled insights
+func (s *InsightStore) GetScopedSebrchSeriesNeedBbckfill(ctx context.Context) ([]types.InsightSeries, error) {
+	preds := mbke([]*sqlf.Query, 0, 1)
 
-	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
-	preds = append(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
-	preds = append(preds, sqlf.Sprintf("backfill_attempts < 10"))
-	preds = append(preds, sqlf.Sprintf("generation_method !=  %s", "language-stats"))
-	preds = append(preds, sqlf.Sprintf("needs_migration = true"))
+	preds = bppend(preds, sqlf.Sprintf("deleted_bt IS NULL"))
+	preds = bppend(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
+	preds = bppend(preds, sqlf.Sprintf("bbckfill_bttempts < 10"))
+	preds = bppend(preds, sqlf.Sprintf("generbtion_method !=  %s", "lbngubge-stbts"))
+	preds = bppend(preds, sqlf.Sprintf("needs_migrbtion = true"))
 
-	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
-	return scanDataSeries(s.Query(ctx, q))
+	q := sqlf.Sprintf(getInsightDbtbSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scbnDbtbSeries(s.Query(ctx, q))
 }
 
-// CompleteJustInTimeConversionAttempt is a special purpose func to convert a Just In Time search insight
-// to a scoped backfilled search insight
+// CompleteJustInTimeConversionAttempt is b specibl purpose func to convert b Just In Time sebrch insight
+// to b scoped bbckfilled sebrch insight
 func (s *InsightStore) CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
+	intervbl := timeseries.TimeIntervbl{
+		Unit:  types.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
 	}
-	if !interval.IsValid() {
-		interval = timeseries.DefaultInterval
+	if !intervbl.IsVblid() {
+		intervbl = timeseries.DefbultIntervbl
 	}
-	nextRecording := interval.StepForwards(s.Now())
-	nextSnapshot := NextSnapshot(s.Now())
+	nextRecording := intervbl.StepForwbrds(s.Now())
+	nextSnbpshot := NextSnbpshot(s.Now())
 
-	return s.Exec(ctx, sqlf.Sprintf(completeJustInTimeConversionAttemptSql, nextRecording, nextSnapshot, series.ID))
+	return s.Exec(ctx, sqlf.Sprintf(completeJustInTimeConversionAttemptSql, nextRecording, nextSnbpshot, series.ID))
 
 }
 
 const completeJustInTimeConversionAttemptSql = `
 UPDATE insight_series
-SET just_in_time = false,
-    next_recording_after = %s,
-	next_snapshot_after = %s,
-	backfill_queued_at = now(),
-	needs_migration = false
+SET just_in_time = fblse,
+    next_recording_bfter = %s,
+	next_snbpshot_bfter = %s,
+	bbckfill_queued_bt = now(),
+	needs_migrbtion = fblse
 WHERE
 	id = %d
-	AND generation_method !='language-stats'
-	AND deleted_at is null;
+	AND generbtion_method !='lbngubge-stbts'
+	AND deleted_bt is null;
 `
 
-func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
+func scbnDbtbSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	results := make([]types.InsightSeries, 0)
+	results := mbke([]types.InsightSeries, 0)
 	for rows.Next() {
-		var temp types.InsightSeries
-		if err := rows.Scan(
+		vbr temp types.InsightSeries
+		if err := rows.Scbn(
 			&temp.ID,
 			&temp.SeriesID,
 			&temp.Query,
-			&temp.CreatedAt,
-			&temp.OldestHistoricalAt,
-			&temp.LastRecordedAt,
+			&temp.CrebtedAt,
+			&temp.OldestHistoricblAt,
+			&temp.LbstRecordedAt,
 			&temp.NextRecordingAfter,
-			&temp.LastSnapshotAt,
-			&temp.NextSnapshotAfter,
-			&temp.Enabled,
-			&temp.SampleIntervalUnit,
-			&temp.SampleIntervalValue,
-			&temp.GeneratedFromCaptureGroups,
+			&temp.LbstSnbpshotAt,
+			&temp.NextSnbpshotAfter,
+			&temp.Enbbled,
+			&temp.SbmpleIntervblUnit,
+			&temp.SbmpleIntervblVblue,
+			&temp.GenerbtedFromCbptureGroups,
 			&temp.JustInTime,
-			&temp.GenerationMethod,
-			pq.Array(&temp.Repositories),
+			&temp.GenerbtionMethod,
+			pq.Arrby(&temp.Repositories),
 			&temp.GroupBy,
-			&temp.BackfillAttempts,
-			&temp.SupportsAugmentation,
-			&temp.RepositoryCriteria,
+			&temp.BbckfillAttempts,
+			&temp.SupportsAugmentbtion,
+			&temp.RepositoryCriterib,
 		); err != nil {
 			return []types.InsightSeries{}, err
 		}
-		results = append(results, temp)
+		results = bppend(results, temp)
 	}
 	return results, nil
 }
 
-func scanInsightViewIds(rows *sql.Rows, queryErr error) (_ []string, err error) {
+func scbnInsightViewIds(rows *sql.Rows, queryErr error) (_ []string, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	results := make([]string, 0)
+	results := mbke([]string, 0)
 	for rows.Next() {
-		var temp types.InsightViewSeries
-		if err := rows.Scan(
+		vbr temp types.InsightViewSeries
+		if err := rows.Scbn(
 			&temp.UniqueID,
 		); err != nil {
 			return nil, err
 		}
-		results = append(results, temp.UniqueID)
+		results = bppend(results, temp.UniqueID)
 	}
 	return results, nil
 }
 
-func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightViewSeries, err error) {
+func scbnInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightViewSeries, err error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	results := make([]types.InsightViewSeries, 0)
+	results := mbke([]types.InsightViewSeries, 0)
 	for rows.Next() {
-		var temp types.InsightViewSeries
-		if err := rows.Scan(
+		vbr temp types.InsightViewSeries
+		if err := rows.Scbn(
 			&temp.ViewID,
-			&temp.DashboardViewID,
+			&temp.DbshbobrdViewID,
 			&temp.UniqueID,
 			&temp.Title,
 			&temp.Description,
-			&temp.Label,
+			&temp.Lbbel,
 			&temp.LineColor,
 			&temp.InsightSeriesID,
 			&temp.SeriesID,
 			&temp.Query,
-			&temp.CreatedAt,
-			&temp.OldestHistoricalAt,
-			&temp.LastRecordedAt,
+			&temp.CrebtedAt,
+			&temp.OldestHistoricblAt,
+			&temp.LbstRecordedAt,
 			&temp.NextRecordingAfter,
-			&temp.BackfillQueuedAt,
-			&temp.LastSnapshotAt,
-			&temp.NextSnapshotAfter,
-			pq.Array(&temp.Repositories),
-			&temp.SampleIntervalUnit,
-			&temp.SampleIntervalValue,
-			&temp.DefaultFilterIncludeRepoRegex,
-			&temp.DefaultFilterExcludeRepoRegex,
+			&temp.BbckfillQueuedAt,
+			&temp.LbstSnbpshotAt,
+			&temp.NextSnbpshotAfter,
+			pq.Arrby(&temp.Repositories),
+			&temp.SbmpleIntervblUnit,
+			&temp.SbmpleIntervblVblue,
+			&temp.DefbultFilterIncludeRepoRegex,
+			&temp.DefbultFilterExcludeRepoRegex,
 			&temp.OtherThreshold,
-			&temp.PresentationType,
-			&temp.GeneratedFromCaptureGroups,
+			&temp.PresentbtionType,
+			&temp.GenerbtedFromCbptureGroups,
 			&temp.JustInTime,
-			&temp.GenerationMethod,
+			&temp.GenerbtionMethod,
 			&temp.IsFrozen,
-			pq.Array(&temp.DefaultFilterSearchContexts),
+			pq.Arrby(&temp.DefbultFilterSebrchContexts),
 			&temp.SeriesSortMode,
 			&temp.SeriesSortDirection,
 			&temp.SeriesLimit,
-			&temp.SeriesNumSamples,
+			&temp.SeriesNumSbmples,
 			&temp.GroupBy,
-			&temp.BackfillAttempts,
-			&temp.SupportsAugmentation,
-			&temp.RepositoryCriteria,
+			&temp.BbckfillAttempts,
+			&temp.SupportsAugmentbtion,
+			&temp.RepositoryCriterib,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
 		}
-		results = append(results, temp)
+		results = bppend(results, temp)
 	}
 	return results, nil
 }
 
-type insightViewPageCursor struct {
-	after string
+type insightViewPbgeCursor struct {
+	bfter string
 	limit int
 }
 
-func insightViewQuery(cursor insightViewPageCursor, viewConditions []*sqlf.Query) *sqlf.Query {
-	var cond []*sqlf.Query
-	if cursor.after != "" {
-		cond = append(cond, sqlf.Sprintf("unique_id > %s", cursor.after))
+func insightViewQuery(cursor insightViewPbgeCursor, viewConditions []*sqlf.Query) *sqlf.Query {
+	vbr cond []*sqlf.Query
+	if cursor.bfter != "" {
+		cond = bppend(cond, sqlf.Sprintf("unique_id > %s", cursor.bfter))
 	} else {
-		cond = append(cond, sqlf.Sprintf("TRUE"))
+		cond = bppend(cond, sqlf.Sprintf("TRUE"))
 	}
-	var limit *sqlf.Query
+	vbr limit *sqlf.Query
 	if cursor.limit > 0 {
 		limit = sqlf.Sprintf("LIMIT %s", cursor.limit)
 	} else {
 		limit = sqlf.Sprintf("")
 	}
-	cond = append(cond, viewConditions...)
+	cond = bppend(cond, viewConditions...)
 
 	q := sqlf.Sprintf(insightViewQuerySql, sqlf.Join(cond, "AND"), limit)
 	return q
@@ -524,21 +524,21 @@ const insightViewQuerySql = `
 SELECT * FROM insight_view WHERE %s ORDER BY unique_id %s
 `
 
-// AttachSeriesToView will associate a given insight data series with a given insight view.
-func (s *InsightStore) AttachSeriesToView(ctx context.Context,
+// AttbchSeriesToView will bssocibte b given insight dbtb series with b given insight view.
+func (s *InsightStore) AttbchSeriesToView(ctx context.Context,
 	series types.InsightSeries,
 	view types.InsightView,
-	metadata types.InsightViewSeriesMetadata,
+	metbdbtb types.InsightViewSeriesMetbdbtb,
 ) error {
 	if series.ID == 0 || view.ID == 0 {
 		return errors.New("input series or view not found")
 	}
-	err := s.Exec(ctx, sqlf.Sprintf(attachSeriesToViewSql, series.ID, view.ID, metadata.Label, metadata.Stroke))
+	err := s.Exec(ctx, sqlf.Sprintf(bttbchSeriesToViewSql, series.ID, view.ID, metbdbtb.Lbbel, metbdbtb.Stroke))
 	if err != nil {
 		return err
 	}
-	// Enable the series in case it had previously been soft-deleted.
-	err = s.SetSeriesEnabled(ctx, series.SeriesID, true)
+	// Enbble the series in cbse it hbd previously been soft-deleted.
+	err = s.SetSeriesEnbbled(ctx, series.SeriesID, true)
 	if err != nil {
 		return err
 	}
@@ -550,101 +550,101 @@ func (s *InsightStore) RemoveSeriesFromView(ctx context.Context, seriesId string
 	if err != nil {
 		return err
 	}
-	// Delete the series if there are no longer any references to it.
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(countSeriesReferencesSql, seriesId)))
+	// Delete the series if there bre no longer bny references to it.
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf(countSeriesReferencesSql, seriesId)))
 	if err != nil {
 		return err
 	}
 	if count != 0 {
 		return nil
 	}
-	err = s.SetSeriesEnabled(ctx, seriesId, false)
+	err = s.SetSeriesEnbbled(ctx, seriesId, fblse)
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-// CreateView will create a new insight view with no associated data series. This view must have a unique identifier.
-func (s *InsightStore) CreateView(ctx context.Context, view types.InsightView, grants []InsightViewGrant) (_ types.InsightView, err error) {
-	tx, err := s.Transact(ctx)
+// CrebteView will crebte b new insight view with no bssocibted dbtb series. This view must hbve b unique identifier.
+func (s *InsightStore) CrebteView(ctx context.Context, view types.InsightView, grbnts []InsightViewGrbnt) (_ types.InsightView, err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return types.InsightView{}, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	row := tx.QueryRow(ctx, sqlf.Sprintf(createInsightViewSql,
+	row := tx.QueryRow(ctx, sqlf.Sprintf(crebteInsightViewSql,
 		view.Title,
 		view.Description,
 		view.UniqueID,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
-		pq.Array(view.Filters.SearchContexts),
+		pq.Arrby(view.Filters.SebrchContexts),
 		view.OtherThreshold,
-		view.PresentationType,
+		view.PresentbtionType,
 	))
 	if row.Err() != nil {
 		return types.InsightView{}, row.Err()
 	}
-	var id int
-	err = row.Scan(&id)
+	vbr id int
+	err = row.Scbn(&id)
 	if err != nil {
-		return types.InsightView{}, errors.Wrap(err, "failed to insert insight view")
+		return types.InsightView{}, errors.Wrbp(err, "fbiled to insert insight view")
 	}
 	view.ID = id
-	err = tx.AddViewGrants(ctx, view, grants)
+	err = tx.AddViewGrbnts(ctx, view, grbnts)
 	if err != nil {
-		return types.InsightView{}, errors.Wrap(err, "failed to attach view grants")
+		return types.InsightView{}, errors.Wrbp(err, "fbiled to bttbch view grbnts")
 	}
 	return view, nil
 }
 
-func (s *InsightStore) UpdateView(ctx context.Context, view types.InsightView) (_ types.InsightView, err error) {
-	tx, err := s.Transact(ctx)
+func (s *InsightStore) UpdbteView(ctx context.Context, view types.InsightView) (_ types.InsightView, err error) {
+	tx, err := s.Trbnsbct(ctx)
 	if err != nil {
 		return types.InsightView{}, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	row := tx.QueryRow(ctx, sqlf.Sprintf(updateInsightViewSql,
+	row := tx.QueryRow(ctx, sqlf.Sprintf(updbteInsightViewSql,
 		view.Title,
 		view.Description,
 		view.Filters.IncludeRepoRegex,
 		view.Filters.ExcludeRepoRegex,
-		pq.Array(view.Filters.SearchContexts),
+		pq.Arrby(view.Filters.SebrchContexts),
 		view.OtherThreshold,
-		view.PresentationType,
+		view.PresentbtionType,
 		view.SeriesSortMode,
 		view.SeriesSortDirection,
 		view.SeriesLimit,
-		view.SeriesNumSamples,
+		view.SeriesNumSbmples,
 		view.UniqueID,
 	))
-	var id int
-	err = row.Scan(&id)
+	vbr id int
+	err = row.Scbn(&id)
 	if err != nil {
-		return types.InsightView{}, errors.Wrap(err, "failed to update insight view")
+		return types.InsightView{}, errors.Wrbp(err, "fbiled to updbte insight view")
 	}
 	view.ID = id
 	return view, nil
 }
 
-func (s *InsightStore) UpdateViewSeries(ctx context.Context, seriesId string, viewId int, metadata types.InsightViewSeriesMetadata) error {
-	return s.Exec(ctx, sqlf.Sprintf(updateInsightViewSeries, metadata.Label, metadata.Stroke, seriesId, viewId))
+func (s *InsightStore) UpdbteViewSeries(ctx context.Context, seriesId string, viewId int, metbdbtb types.InsightViewSeriesMetbdbtb) error {
+	return s.Exec(ctx, sqlf.Sprintf(updbteInsightViewSeries, metbdbtb.Lbbel, metbdbtb.Stroke, seriesId, viewId))
 }
 
-func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView, grants []InsightViewGrant) error {
+func (s *InsightStore) AddViewGrbnts(ctx context.Context, view types.InsightView, grbnts []InsightViewGrbnt) error {
 	if view.ID == 0 {
-		return errors.New("unable to grant view permissions invalid insight view id")
-	} else if len(grants) == 0 {
+		return errors.New("unbble to grbnt view permissions invblid insight view id")
+	} else if len(grbnts) == 0 {
 		return nil
 	}
 
-	values := make([]*sqlf.Query, 0, len(grants))
-	for _, grant := range grants {
-		values = append(values, grant.toQuery(view.ID))
+	vblues := mbke([]*sqlf.Query, 0, len(grbnts))
+	for _, grbnt := rbnge grbnts {
+		vblues = bppend(vblues, grbnt.toQuery(view.ID))
 	}
-	q := sqlf.Sprintf(addViewGrantsSql, sqlf.Join(values, ",\n"))
+	q := sqlf.Sprintf(bddViewGrbntsSql, sqlf.Join(vblues, ",\n"))
 	err := s.Exec(ctx, q)
 	if err != nil {
 		return err
@@ -652,16 +652,16 @@ func (s *InsightStore) AddViewGrants(ctx context.Context, view types.InsightView
 	return nil
 }
 
-const addViewGrantsSql = `
-INSERT INTO insight_view_grants (insight_view_id, org_id, user_id, global)
+const bddViewGrbntsSql = `
+INSERT INTO insight_view_grbnts (insight_view_id, org_id, user_id, globbl)
 VALUES %s;
 `
 
-// DeleteViewByUniqueID deletes an insight view (cascading to dependent child tables) given a unique ID. This operation
-// is idempotent and can be executed many times with only one effect or error.
+// DeleteViewByUniqueID deletes bn insight view (cbscbding to dependent child tbbles) given b unique ID. This operbtion
+// is idempotent bnd cbn be executed mbny times with only one effect or error.
 func (s *InsightStore) DeleteViewByUniqueID(ctx context.Context, uniqueID string) error {
 	if len(uniqueID) == 0 {
-		return errors.New("unable to delete view invalid view ID")
+		return errors.New("unbble to delete view invblid view ID")
 	}
 	conds := sqlf.Sprintf("unique_id = %s", uniqueID)
 	q := sqlf.Sprintf(deleteViewSql, conds)
@@ -676,195 +676,195 @@ const deleteViewSql = `
 delete from insight_view where %s;
 `
 
-// IncrementBackfillAttempts increments backfill_attempts to track how many attempts at backfilling a series has taken.
-func (s *InsightStore) IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error {
-	return s.Exec(ctx, sqlf.Sprintf(incrementSeriesBackfillAttemptsSql, series.SeriesID))
+// IncrementBbckfillAttempts increments bbckfill_bttempts to trbck how mbny bttempts bt bbckfilling b series hbs tbken.
+func (s *InsightStore) IncrementBbckfillAttempts(ctx context.Context, series types.InsightSeries) error {
+	return s.Exec(ctx, sqlf.Sprintf(incrementSeriesBbckfillAttemptsSql, series.SeriesID))
 }
 
-const incrementSeriesBackfillAttemptsSql = `
-update insight_series set backfill_attempts = backfill_attempts + 1 where series_id = %s;
+const incrementSeriesBbckfillAttemptsSql = `
+updbte insight_series set bbckfill_bttempts = bbckfill_bttempts + 1 where series_id = %s;
 `
 
-// StartJustInTimeConversionAttempt increments backfill_attempts and updates the created date and seriesID.
-func (s *InsightStore) StartJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
-	return s.Exec(ctx, sqlf.Sprintf(startJustInTimeConversionAttemptSql, series.CreatedAt, series.SeriesID, series.ID))
+// StbrtJustInTimeConversionAttempt increments bbckfill_bttempts bnd updbtes the crebted dbte bnd seriesID.
+func (s *InsightStore) StbrtJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error {
+	return s.Exec(ctx, sqlf.Sprintf(stbrtJustInTimeConversionAttemptSql, series.CrebtedAt, series.SeriesID, series.ID))
 }
 
-const startJustInTimeConversionAttemptSql = `
-update insight_series set backfill_attempts = backfill_attempts + 1, created_at=%s, series_id = %s where id = %d;
+const stbrtJustInTimeConversionAttemptSql = `
+updbte insight_series set bbckfill_bttempts = bbckfill_bttempts + 1, crebted_bt=%s, series_id = %s where id = %d;
 `
 
-// CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
-func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
-	if series.CreatedAt.IsZero() {
-		series.CreatedAt = s.Now()
+// CrebteSeries will crebte b new insight dbtb series. This series must be uniquely identified by the series ID.
+func (s *InsightStore) CrebteSeries(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+	if series.CrebtedAt.IsZero() {
+		series.CrebtedAt = s.Now()
 	}
-	interval := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
+	intervbl := timeseries.TimeIntervbl{
+		Unit:  types.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
 	}
-	if !interval.IsValid() {
-		interval = timeseries.DefaultInterval
+	if !intervbl.IsVblid() {
+		intervbl = timeseries.DefbultIntervbl
 	}
 
 	if series.NextRecordingAfter.IsZero() {
-		series.NextRecordingAfter = interval.StepForwards(s.Now())
+		series.NextRecordingAfter = intervbl.StepForwbrds(s.Now())
 	}
-	if series.NextSnapshotAfter.IsZero() {
-		series.NextSnapshotAfter = NextSnapshot(s.Now())
+	if series.NextSnbpshotAfter.IsZero() {
+		series.NextSnbpshotAfter = NextSnbpshot(s.Now())
 	}
-	if series.OldestHistoricalAt.IsZero() {
-		// TODO(insights): this value should probably somewhere more discoverable / obvious than here
-		series.OldestHistoricalAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
+	if series.OldestHistoricblAt.IsZero() {
+		// TODO(insights): this vblue should probbbly somewhere more discoverbble / obvious thbn here
+		series.OldestHistoricblAt = s.Now().Add(-time.Hour * 24 * 7 * 26)
 	}
-	row := s.QueryRow(ctx, sqlf.Sprintf(createInsightSeriesSql,
+	row := s.QueryRow(ctx, sqlf.Sprintf(crebteInsightSeriesSql,
 		series.SeriesID,
 		series.Query,
-		series.CreatedAt,
-		series.OldestHistoricalAt,
-		series.LastRecordedAt,
+		series.CrebtedAt,
+		series.OldestHistoricblAt,
+		series.LbstRecordedAt,
 		series.NextRecordingAfter,
-		series.LastSnapshotAt,
-		series.NextSnapshotAfter,
-		pq.Array(series.Repositories),
-		series.SampleIntervalUnit,
-		series.SampleIntervalValue,
-		series.GeneratedFromCaptureGroups,
+		series.LbstSnbpshotAt,
+		series.NextSnbpshotAfter,
+		pq.Arrby(series.Repositories),
+		series.SbmpleIntervblUnit,
+		series.SbmpleIntervblVblue,
+		series.GenerbtedFromCbptureGroups,
 		series.JustInTime,
-		series.GenerationMethod,
+		series.GenerbtionMethod,
 		series.GroupBy,
-		series.RepositoryCriteria,
+		series.RepositoryCriterib,
 	))
-	var id int
-	err := row.Scan(&id)
+	vbr id int
+	err := row.Scbn(&id)
 	if err != nil {
 		return types.InsightSeries{}, err
 	}
 	series.ID = id
-	series.Enabled = true
-	series.SupportsAugmentation = true
+	series.Enbbled = true
+	series.SupportsAugmentbtion = true
 	return series, nil
 }
 
-type DataSeriesStore interface {
-	GetDataSeries(ctx context.Context, args GetDataSeriesArgs) ([]types.InsightSeries, error)
-	StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
-	StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
-	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
-	StartJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
-	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
-	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
-	GetScopedSearchSeriesNeedBackfill(ctx context.Context) ([]types.InsightSeries, error)
+type DbtbSeriesStore interfbce {
+	GetDbtbSeries(ctx context.Context, brgs GetDbtbSeriesArgs) ([]types.InsightSeries, error)
+	StbmpRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StbmpSnbpshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StbmpBbckfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
+	StbrtJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
+	SetSeriesEnbbled(ctx context.Context, seriesId string, enbbled bool) error
+	IncrementBbckfillAttempts(ctx context.Context, series types.InsightSeries) error
+	GetScopedSebrchSeriesNeedBbckfill(ctx context.Context) ([]types.InsightSeries, error)
 	CompleteJustInTimeConversionAttempt(ctx context.Context, series types.InsightSeries) error
 }
 
-type InsightMetadataStore interface {
-	GetMapped(ctx context.Context, args InsightQueryArgs) ([]types.Insight, error)
+type InsightMetbdbtbStore interfbce {
+	GetMbpped(ctx context.Context, brgs InsightQueryArgs) ([]types.Insight, error)
 }
 
-// StampRecording will update the recording metadata for this series and return the InsightSeries struct with updated values.
-func (s *InsightStore) StampRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+// StbmpRecording will updbte the recording metbdbtb for this series bnd return the InsightSeries struct with updbted vblues.
+func (s *InsightStore) StbmpRecording(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := timeseries.TimeInterval{
-		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
-		Value: series.SampleIntervalValue,
-	}.StepForwards(current)
-	if err := s.Exec(ctx, sqlf.Sprintf(stampRecordingSql, current, next, series.ID)); err != nil {
+	next := timeseries.TimeIntervbl{
+		Unit:  types.IntervblUnit(series.SbmpleIntervblUnit),
+		Vblue: series.SbmpleIntervblVblue,
+	}.StepForwbrds(current)
+	if err := s.Exec(ctx, sqlf.Sprintf(stbmpRecordingSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
-	series.LastRecordedAt = current
+	series.LbstRecordedAt = current
 	series.NextRecordingAfter = next
 	return series, nil
 }
 
-func NextSnapshot(current time.Time) time.Time {
-	year, month, day := current.In(time.UTC).Date()
-	return time.Date(year, month, day+1, 0, 0, 0, 0, time.UTC)
+func NextSnbpshot(current time.Time) time.Time {
+	yebr, month, dby := current.In(time.UTC).Dbte()
+	return time.Dbte(yebr, month, dby+1, 0, 0, 0, 0, time.UTC)
 }
 
-// StampSnapshot will update the recording metadata for this series and return the InsightSeries struct with updated values.
-func (s *InsightStore) StampSnapshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+// StbmpSnbpshot will updbte the recording metbdbtb for this series bnd return the InsightSeries struct with updbted vblues.
+func (s *InsightStore) StbmpSnbpshot(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	next := NextSnapshot(current)
-	if err := s.Exec(ctx, sqlf.Sprintf(stampSnapshotSql, current, next, series.ID)); err != nil {
+	next := NextSnbpshot(current)
+	if err := s.Exec(ctx, sqlf.Sprintf(stbmpSnbpshotSql, current, next, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
-	series.LastRecordedAt = current
+	series.LbstRecordedAt = current
 	series.NextRecordingAfter = next
 	return series, nil
 }
 
-// StampBackfill will update the backfill queued time for this series and return the InsightSeries struct with updated values.
-func (s *InsightStore) StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
+// StbmpBbckfill will updbte the bbckfill queued time for this series bnd return the InsightSeries struct with updbted vblues.
+func (s *InsightStore) StbmpBbckfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error) {
 	current := s.Now()
-	if err := s.Exec(ctx, sqlf.Sprintf(stampBackfillSql, current, series.ID)); err != nil {
+	if err := s.Exec(ctx, sqlf.Sprintf(stbmpBbckfillSql, current, series.ID)); err != nil {
 		return types.InsightSeries{}, err
 	}
-	series.BackfillQueuedAt = current
+	series.BbckfillQueuedAt = current
 	return series, nil
 }
 
-func (s *InsightStore) SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error {
-	var arg *sqlf.Query
-	if enabled {
-		arg = sqlf.Sprintf("null")
+func (s *InsightStore) SetSeriesEnbbled(ctx context.Context, seriesId string, enbbled bool) error {
+	vbr brg *sqlf.Query
+	if enbbled {
+		brg = sqlf.Sprintf("null")
 	} else {
-		arg = sqlf.Sprintf("%s", s.Now())
+		brg = sqlf.Sprintf("%s", s.Now())
 	}
-	return s.Exec(ctx, sqlf.Sprintf(setSeriesStatusSql, arg, seriesId))
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesStbtusSql, brg, seriesId))
 }
 
-type MatchSeriesArgs struct {
+type MbtchSeriesArgs struct {
 	Query                     string
-	StepIntervalUnit          string
-	StepIntervalValue         int
-	GenerateFromCaptureGroups bool
+	StepIntervblUnit          string
+	StepIntervblVblue         int
+	GenerbteFromCbptureGroups bool
 	GroupBy                   *string
 }
 
-func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
-	groupByClause := sqlf.Sprintf("group_by IS NULL")
-	if args.GroupBy != nil {
-		groupByClause = sqlf.Sprintf("group_by = %s", *args.GroupBy)
+func (s *InsightStore) FindMbtchingSeries(ctx context.Context, brgs MbtchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
+	groupByClbuse := sqlf.Sprintf("group_by IS NULL")
+	if brgs.GroupBy != nil {
+		groupByClbuse = sqlf.Sprintf("group_by = %s", *brgs.GroupBy)
 	}
 	where := sqlf.Sprintf(
-		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s AND %s",
-		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups, groupByClause,
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sbmple_intervbl_unit = %s AND sbmple_intervbl_vblue = %s AND generbted_from_cbpture_groups = %s AND %s",
+		brgs.Query, brgs.StepIntervblUnit, brgs.StepIntervblVblue, brgs.GenerbteFromCbptureGroups, groupByClbuse,
 	)
 
-	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
-	rows, err := scanDataSeries(s.Query(ctx, q))
+	q := sqlf.Sprintf(getInsightDbtbSeriesSql, where)
+	rows, err := scbnDbtbSeries(s.Query(ctx, q))
 	if err != nil {
-		return types.InsightSeries{}, false, err
+		return types.InsightSeries{}, fblse, err
 	}
 	if len(rows) == 0 {
-		return types.InsightSeries{}, false, nil
+		return types.InsightSeries{}, fblse, nil
 	}
 	return rows[0], true, nil
 }
 
-type UpdateFrontendSeriesArgs struct {
+type UpdbteFrontendSeriesArgs struct {
 	SeriesID          string
 	Query             string
 	Repositories      []string
-	StepIntervalUnit  string
-	StepIntervalValue int
+	StepIntervblUnit  string
+	StepIntervblVblue int
 	GroupBy           *string
 }
 
-func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
-	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql,
-		args.Query,
-		pq.Array(args.Repositories),
-		args.StepIntervalUnit,
-		args.StepIntervalValue,
-		args.GroupBy,
-		args.SeriesID,
+func (s *InsightStore) UpdbteFrontendSeries(ctx context.Context, brgs UpdbteFrontendSeriesArgs) error {
+	return s.Exec(ctx, sqlf.Sprintf(updbteFrontendSeriesSql,
+		brgs.Query,
+		pq.Arrby(brgs.Repositories),
+		brgs.StepIntervblUnit,
+		brgs.StepIntervblVblue,
+		brgs.GroupBy,
+		brgs.SeriesID,
 	))
 }
 
 func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
-	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCountSql, id)))
+	count, _, err := bbsestore.ScbnFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCountSql, id)))
 	if err != nil {
 		return 0, nil
 	}
@@ -872,24 +872,24 @@ func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, erro
 }
 
 func (s *InsightStore) GetSoftDeletedSeries(ctx context.Context, deletedBefore time.Time) ([]string, error) {
-	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getSoftDeletedSeries, deletedBefore)))
+	return bbsestore.ScbnStrings(s.Query(ctx, sqlf.Sprintf(getSoftDeletedSeries, deletedBefore)))
 }
 
-func (s *InsightStore) HardDeleteSeries(ctx context.Context, seriesId string) error {
-	return s.Exec(ctx, sqlf.Sprintf(hardDeleteSeries, seriesId))
+func (s *InsightStore) HbrdDeleteSeries(ctx context.Context, seriesId string) error {
+	return s.Exec(ctx, sqlf.Sprintf(hbrdDeleteSeries, seriesId))
 }
 
-func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globalCount int, totalCount int, err error) {
+func (s *InsightStore) GetUnfrozenInsightCount(ctx context.Context) (globblCount int, totblCount int, err error) {
 	rows := s.QueryRow(ctx, sqlf.Sprintf(getUnfrozenInsightCountSql))
-	err = rows.Scan(
-		&globalCount,
-		&totalCount,
+	err = rows.Scbn(
+		&globblCount,
+		&totblCount,
 	)
 	return
 }
 
 func (s *InsightStore) GetUnfrozenInsightUniqueIds(ctx context.Context) ([]string, error) {
-	return basestore.ScanStrings(s.Query(ctx, sqlf.Sprintf(getUnfrozenInsightUniqueIdsSql)))
+	return bbsestore.ScbnStrings(s.Query(ctx, sqlf.Sprintf(getUnfrozenInsightUniqueIdsSql)))
 }
 
 func (s *InsightStore) FreezeAllInsights(ctx context.Context) error {
@@ -900,42 +900,42 @@ func (s *InsightStore) UnfreezeAllInsights(ctx context.Context) error {
 	return s.Exec(ctx, sqlf.Sprintf(unfreezeAllInsightsSql))
 }
 
-func (s *InsightStore) UnfreezeGlobalInsights(ctx context.Context, count int) error {
-	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobalInsightsSql, count))
+func (s *InsightStore) UnfreezeGlobblInsights(ctx context.Context, count int) error {
+	return s.Exec(ctx, sqlf.Sprintf(unfreezeGlobblInsightsSql, count))
 }
 
-func (s *InsightStore) SetSeriesBackfillComplete(ctx context.Context, seriesId string, timestamp time.Time) error {
-	return s.Exec(ctx, sqlf.Sprintf(setSeriesBackfillComplete, timestamp, seriesId))
+func (s *InsightStore) SetSeriesBbckfillComplete(ctx context.Context, seriesId string, timestbmp time.Time) error {
+	return s.Exec(ctx, sqlf.Sprintf(setSeriesBbckfillComplete, timestbmp, seriesId))
 }
 
-const setSeriesStatusSql = `
+const setSeriesStbtusSql = `
 UPDATE insight_series
-SET deleted_at = %s
+SET deleted_bt = %s
 WHERE series_id = %s;
 `
 
-const stampBackfillSql = `
+const stbmpBbckfillSql = `
 UPDATE insight_series
-SET backfill_queued_at = %s
+SET bbckfill_queued_bt = %s
 WHERE id = %s;
 `
 
-const stampRecordingSql = `
+const stbmpRecordingSql = `
 UPDATE insight_series
-SET last_recorded_at = %s,
-    next_recording_after = %s
+SET lbst_recorded_bt = %s,
+    next_recording_bfter = %s
 WHERE id = %s;
 `
 
-const stampSnapshotSql = `
+const stbmpSnbpshotSql = `
 UPDATE insight_series
-SET last_snapshot_at = %s,
-    next_snapshot_after = %s
+SET lbst_snbpshot_bt = %s,
+    next_snbpshot_bfter = %s
 WHERE id = %s;
 `
 
-const attachSeriesToViewSql = `
-INSERT INTO insight_view_series (insight_series_id, insight_view_id, label, stroke)
+const bttbchSeriesToViewSql = `
+INSERT INTO insight_view_series (insight_series_id, insight_view_id, lbbel, stroke)
 VALUES (%s, %s, %s, %s);
 `
 
@@ -945,42 +945,42 @@ USING insight_series s
 WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s;
 `
 
-const updateInsightViewSeries = `
+const updbteInsightViewSeries = `
 UPDATE insight_view_series vs
-SET label = %s, stroke = %s
+SET lbbel = %s, stroke = %s
 FROM insight_series s
 WHERE s.series_id = %s AND vs.insight_series_id = s.id AND vs.insight_view_id = %s
 `
 
-const createInsightViewSql = `
-INSERT INTO insight_view (title, description, unique_id, default_filter_include_repo_regex, default_filter_exclude_repo_regex,
-default_filter_search_contexts, other_threshold, presentation_type)
+const crebteInsightViewSql = `
+INSERT INTO insight_view (title, description, unique_id, defbult_filter_include_repo_regex, defbult_filter_exclude_repo_regex,
+defbult_filter_sebrch_contexts, other_threshold, presentbtion_type)
 VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
 returning id;`
 
-const updateInsightViewSql = `
-UPDATE insight_view SET title = %s, description = %s, default_filter_include_repo_regex = %s, default_filter_exclude_repo_regex = %s,
-default_filter_search_contexts = %s, other_threshold = %s, presentation_type = %s, series_sort_mode = %s, series_sort_direction = %s,
-series_limit = %s, series_num_samples = %s
+const updbteInsightViewSql = `
+UPDATE insight_view SET title = %s, description = %s, defbult_filter_include_repo_regex = %s, defbult_filter_exclude_repo_regex = %s,
+defbult_filter_sebrch_contexts = %s, other_threshold = %s, presentbtion_type = %s, series_sort_mode = %s, series_sort_direction = %s,
+series_limit = %s, series_num_sbmples = %s
 WHERE unique_id = %s
 RETURNING id;`
 
-const createInsightSeriesSql = `
-INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
-                            next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
-							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method, group_by, needs_migration, repository_criteria)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, false, %s)
+const crebteInsightSeriesSql = `
+INSERT INTO insight_series (series_id, query, crebted_bt, oldest_historicbl_bt, lbst_recorded_bt,
+                            next_recording_bfter, lbst_snbpshot_bt, next_snbpshot_bfter, repositories,
+							sbmple_intervbl_unit, sbmple_intervbl_vblue, generbted_from_cbpture_groups,
+							just_in_time, generbtion_method, group_by, needs_migrbtion, repository_criterib)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, fblse, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
-SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
-i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
-i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
+SELECT iv.id, 0 bs dbshbobrd_insight_id, iv.unique_id, iv.title, iv.description, ivs.lbbel, ivs.stroke,
+i.id, i.series_id, i.query, i.crebted_bt, i.oldest_historicbl_bt, i.lbst_recorded_bt,
+i.next_recording_bfter, i.bbckfill_queued_bt, i.lbst_snbpshot_bt, i.next_snbpshot_bfter, i.repositories,
+i.sbmple_intervbl_unit, i.sbmple_intervbl_vblue, iv.defbult_filter_include_repo_regex, iv.defbult_filter_exclude_repo_regex,
+iv.other_threshold, iv.presentbtion_type, i.generbted_from_cbpture_groups, i.just_in_time, i.generbtion_method, iv.is_frozen,
+defbult_filter_sebrch_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_sbmples,
+i.group_by, i.bbckfill_bttempts, i.supports_bugmentbtion, i.repository_criterib
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -988,15 +988,15 @@ WHERE %s
 ORDER BY iv.id, i.series_id
 `
 
-const getInsightsByDashboardSql = `
-SELECT iv.id, dbiv.id as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
-i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
-i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
-FROM dashboard_insight_view as dbiv
+const getInsightsByDbshbobrdSql = `
+SELECT iv.id, dbiv.id bs dbshbobrd_insight_id, iv.unique_id, iv.title, iv.description, ivs.lbbel, ivs.stroke,
+i.id, i.series_id, i.query, i.crebted_bt, i.oldest_historicbl_bt, i.lbst_recorded_bt,
+i.next_recording_bfter, i.bbckfill_queued_bt, i.lbst_snbpshot_bt, i.next_snbpshot_bfter, i.repositories,
+i.sbmple_intervbl_unit, i.sbmple_intervbl_vblue, iv.defbult_filter_include_repo_regex, iv.defbult_filter_exclude_repo_regex,
+iv.other_threshold, iv.presentbtion_type, i.generbted_from_cbpture_groups, i.just_in_time, i.generbtion_method, iv.is_frozen,
+defbult_filter_sebrch_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_sbmples,
+i.group_by, i.bbckfill_bttempts, i.supports_bugmentbtion, i.repository_criterib
+FROM dbshbobrd_insight_view bs dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -1005,11 +1005,11 @@ ORDER BY dbiv.id
 %s;
 `
 
-const getInsightDataSeriesSql = `
-SELECT id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
-last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
-sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method, repositories, group_by, backfill_attempts, supports_augmentation, repository_criteria
+const getInsightDbtbSeriesSql = `
+SELECT id, series_id, query, crebted_bt, oldest_historicbl_bt, lbst_recorded_bt, next_recording_bfter,
+lbst_snbpshot_bt, next_snbpshot_bfter, (CASE WHEN deleted_bt IS NULL THEN TRUE ELSE FALSE END) AS enbbled,
+sbmple_intervbl_unit, sbmple_intervbl_vblue, generbted_from_cbpture_groups,
+just_in_time, generbtion_method, repositories, group_by, bbckfill_bttempts, supports_bugmentbtion, repository_criterib
 FROM insight_series
 WHERE %s
 `
@@ -1020,9 +1020,9 @@ FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id
 WHERE (iv.id IN (SELECT insight_view_id
-			 FROM dashboard db
-			 JOIN dashboard_insight_view div ON db.id = div.dashboard_id
-				 WHERE deleted_at IS NULL AND db.id IN (%s))
+			 FROM dbshbobrd db
+			 JOIN dbshbobrd_insight_view div ON db.id = div.dbshbobrd_id
+				 WHERE deleted_bt IS NULL AND db.id IN (%s))
    OR iv.id IN (%s))
 AND %s
 ORDER BY iv.unique_id
@@ -1030,13 +1030,13 @@ ORDER BY iv.unique_id
 `
 
 const getInsightsWithSeriesSql = `
-SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description, ivs.label, ivs.stroke,
-       i.id, i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
-       i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
-       i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
-	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-	   default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_samples,
-	   i.group_by, i.backfill_attempts, i.supports_augmentation, i.repository_criteria
+SELECT iv.id, 0 bs dbshbobrd_insight_id, iv.unique_id, iv.title, iv.description, ivs.lbbel, ivs.stroke,
+       i.id, i.series_id, i.query, i.crebted_bt, i.oldest_historicbl_bt, i.lbst_recorded_bt,
+       i.next_recording_bfter, i.bbckfill_queued_bt, i.lbst_snbpshot_bt, i.next_snbpshot_bfter, i.repositories,
+       i.sbmple_intervbl_unit, i.sbmple_intervbl_vblue, iv.defbult_filter_include_repo_regex, iv.defbult_filter_exclude_repo_regex,
+	   iv.other_threshold, iv.presentbtion_type, i.generbted_from_cbpture_groups, i.just_in_time, i.generbtion_method, iv.is_frozen,
+	   defbult_filter_sebrch_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, iv.series_num_sbmples,
+	   i.group_by, i.bbckfill_bttempts, i.supports_bugmentbtion, i.repository_criterib
 
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -1051,14 +1051,14 @@ SELECT COUNT(*) FROM insight_view_series viewSeries
 WHERE series.series_id = %s
 `
 
-const updateFrontendSeriesSql = `
+const updbteFrontendSeriesSql = `
 UPDATE insight_series
-SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s, group_by = %s
+SET query = %s, repositories = %s, sbmple_intervbl_unit = %s, sbmple_intervbl_vblue = %s, group_by = %s
 WHERE series_id = %s
 `
 
 const getReferenceCountSql = `
-SELECT COUNT(*) from dashboard_insight_view
+SELECT COUNT(*) from dbshbobrd_insight_view
 WHERE insight_view_id = %s
 `
 
@@ -1066,12 +1066,12 @@ const getSoftDeletedSeries = `
 SELECT series_id
 FROM insight_series i
 LEFT JOIN insight_view_series ivs ON i.id = ivs.insight_series_id
-WHERE i.deleted_at IS NOT NULL
-  AND i.deleted_at < %s
+WHERE i.deleted_bt IS NOT NULL
+  AND i.deleted_bt < %s
   AND ivs.insight_series_id IS NULL;
 `
 
-const hardDeleteSeries = `
+const hbrdDeleteSeries = `
 DELETE FROM insight_series WHERE series_id = %s;
 `
 
@@ -1084,26 +1084,26 @@ UPDATE insight_view SET is_frozen = FALSE
 `
 
 const getUnfrozenInsightCountSql = `
-SELECT unfrozenGlobal.total as unfrozenGlobal, unfrozenTotal.total as unfrozenTotal FROM (
-	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
-	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
-	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
-	WHERE iv.is_frozen = FALSE AND dg.global = TRUE
-) as unfrozenGlobal
+SELECT unfrozenGlobbl.totbl bs unfrozenGlobbl, unfrozenTotbl.totbl bs unfrozenTotbl FROM (
+	SELECT COUNT(DISTINCT(iv.id)) bs totbl from insight_view bs iv
+	JOIN dbshbobrd_insight_view bs d on iv.id = d.insight_view_id
+	JOIN dbshbobrd_grbnts bs dg on d.dbshbobrd_id = dg.dbshbobrd_id
+	WHERE iv.is_frozen = FALSE AND dg.globbl = TRUE
+) bs unfrozenGlobbl
 CROSS JOIN
 (
-	SELECT COUNT(DISTINCT(iv.id)) as total from insight_view as iv
+	SELECT COUNT(DISTINCT(iv.id)) bs totbl from insight_view bs iv
 	WHERE iv.is_frozen = FALSE
-) as unfrozenTotal;
+) bs unfrozenTotbl;
 `
 
-const unfreezeGlobalInsightsSql = `
+const unfreezeGlobblInsightsSql = `
 UPDATE insight_view SET is_frozen = FALSE
 WHERE id IN (
-	SELECT DISTINCT(iv.id) from insight_view as iv
-	JOIN dashboard_insight_view as d on iv.id = d.insight_view_id
-	JOIN dashboard_grants as dg on d.dashboard_id = dg.dashboard_id
-	WHERE dg.global = TRUE
+	SELECT DISTINCT(iv.id) from insight_view bs iv
+	JOIN dbshbobrd_insight_view bs d on iv.id = d.insight_view_id
+	JOIN dbshbobrd_grbnts bs dg on d.dbshbobrd_id = dg.dbshbobrd_id
+	WHERE dg.globbl = TRUE
 	ORDER BY iv.id ASC
 	LIMIT %s
 )
@@ -1113,6 +1113,6 @@ const getUnfrozenInsightUniqueIdsSql = `
 SELECT unique_id FROM insight_view WHERE is_frozen = FALSE;
 `
 
-const setSeriesBackfillComplete = `
-UPDATE insight_series SET backfill_completed_at = %s WHERE series_id = %s;
+const setSeriesBbckfillComplete = `
+UPDATE insight_series SET bbckfill_completed_bt = %s WHERE series_id = %s;
 `

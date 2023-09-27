@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -8,18 +8,18 @@ import (
 )
 
 func TestListGroups(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	mockedGroups := []*Group{
 		{
 			ID:       1,
-			FullPath: "group1",
+			FullPbth: "group1",
 		},
 	}
 
 	t.Run("success", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `[{"id": 1,"full_path": "group1"}]`,
+			responseBody: `[{"id": 1,"full_pbth": "group1"}]`,
 		}
 
 		groupsResponse, _, err := client.ListGroups(ctx, 1)
@@ -36,10 +36,10 @@ func TestListGroups(t *testing.T) {
 		}
 	})
 
-	t.Run("malformed response", func(t *testing.T) {
+	t.Run("mblformed response", func(t *testing.T) {
 		client := newTestClient(t)
 		client.httpClient = &mockHTTPResponseBody{
-			responseBody: `this is not valid JSON`,
+			responseBody: `this is not vblid JSON`,
 		}
 
 		groupsResponse, _, err := client.ListGroups(ctx, 1)

@@ -1,121 +1,121 @@
-package extsvc
+pbckbge extsvc
 
 import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
 type CodeHost struct {
 	ServiceID   string
 	ServiceType string
-	BaseURL     *url.URL
+	BbseURL     *url.URL
 }
 
-func (c *CodeHost) IsPackageHost() bool {
+func (c *CodeHost) IsPbckbgeHost() bool {
 	switch c.ServiceType {
-	case TypeNpmPackages, TypeJVMPackages, TypeGoModules, TypePythonPackages, TypeRustPackages, TypeRubyPackages:
+	cbse TypeNpmPbckbges, TypeJVMPbckbges, TypeGoModules, TypePythonPbckbges, TypeRustPbckbges, TypeRubyPbckbges:
 		return true
 	}
-	return false
+	return fblse
 }
 
-// Known public code hosts and their URLs
-var (
-	GitHubDotComURL = mustParseURL("https://github.com")
+// Known public code hosts bnd their URLs
+vbr (
+	GitHubDotComURL = mustPbrseURL("https://github.com")
 	GitHubDotCom    = NewCodeHost(GitHubDotComURL, TypeGitHub)
 
-	GitLabDotComURL = mustParseURL("https://gitlab.com")
-	GitLabDotCom    = NewCodeHost(GitLabDotComURL, TypeGitLab)
+	GitLbbDotComURL = mustPbrseURL("https://gitlbb.com")
+	GitLbbDotCom    = NewCodeHost(GitLbbDotComURL, TypeGitLbb)
 
-	BitbucketOrgURL = mustParseURL("https://bitbucket.org")
+	BitbucketOrgURL = mustPbrseURL("https://bitbucket.org")
 
-	MavenURL    = &url.URL{Host: "maven"}
-	JVMPackages = NewCodeHost(MavenURL, TypeJVMPackages)
+	MbvenURL    = &url.URL{Host: "mbven"}
+	JVMPbckbges = NewCodeHost(MbvenURL, TypeJVMPbckbges)
 
 	NpmURL      = &url.URL{Host: "npm"}
-	NpmPackages = NewCodeHost(NpmURL, TypeNpmPackages)
+	NpmPbckbges = NewCodeHost(NpmURL, TypeNpmPbckbges)
 
 	GoURL     = &url.URL{Host: "go"}
 	GoModules = NewCodeHost(GoURL, TypeGoModules)
 
 	PythonURL      = &url.URL{Host: "python"}
-	PythonPackages = NewCodeHost(PythonURL, TypePythonPackages)
+	PythonPbckbges = NewCodeHost(PythonURL, TypePythonPbckbges)
 
-	RustURL      = &url.URL{Host: "crates"}
-	RustPackages = NewCodeHost(RustURL, TypeRustPackages)
+	RustURL      = &url.URL{Host: "crbtes"}
+	RustPbckbges = NewCodeHost(RustURL, TypeRustPbckbges)
 
 	RubyURL      = &url.URL{Host: "rubygems"}
-	RubyPackages = NewCodeHost(RubyURL, TypeRubyPackages)
+	RubyPbckbges = NewCodeHost(RubyURL, TypeRubyPbckbges)
 
 	PublicCodeHosts = []*CodeHost{
 		GitHubDotCom,
-		GitLabDotCom,
-		JVMPackages,
-		NpmPackages,
+		GitLbbDotCom,
+		JVMPbckbges,
+		NpmPbckbges,
 		GoModules,
-		PythonPackages,
-		RustPackages,
-		RubyPackages,
+		PythonPbckbges,
+		RustPbckbges,
+		RubyPbckbges,
 	}
 )
 
-func NewCodeHost(baseURL *url.URL, serviceType string) *CodeHost {
+func NewCodeHost(bbseURL *url.URL, serviceType string) *CodeHost {
 	return &CodeHost{
-		ServiceID:   NormalizeBaseURL(baseURL).String(),
+		ServiceID:   NormblizeBbseURL(bbseURL).String(),
 		ServiceType: serviceType,
-		BaseURL:     baseURL,
+		BbseURL:     bbseURL,
 	}
 }
 
 // IsHostOfRepo returns true if the repository belongs to given code host.
-func IsHostOfRepo(c *CodeHost, repo *api.ExternalRepoSpec) bool {
+func IsHostOfRepo(c *CodeHost, repo *bpi.ExternblRepoSpec) bool {
 	return c.ServiceID == repo.ServiceID && c.ServiceType == repo.ServiceType
 }
 
-// IsHostOfAccount returns true if the account belongs to given code host.
-func IsHostOfAccount(c *CodeHost, account *Account) bool {
-	return c.ServiceID == account.ServiceID && c.ServiceType == account.ServiceType
+// IsHostOfAccount returns true if the bccount belongs to given code host.
+func IsHostOfAccount(c *CodeHost, bccount *Account) bool {
+	return c.ServiceID == bccount.ServiceID && c.ServiceType == bccount.ServiceType
 }
 
-// NormalizeBaseURL modifies the input and returns a normalized form of the a base URL with insignificant
-// differences (such as in presence of a trailing slash, or hostname case) eliminated. Its return value should be
-// used for the (ExternalRepoSpec).ServiceID field (and passed to XyzExternalRepoSpec) instead of a non-normalized
-// base URL.
-func NormalizeBaseURL(baseURL *url.URL) *url.URL {
-	baseURL.Host = strings.ToLower(baseURL.Host)
-	if !strings.HasSuffix(baseURL.Path, "/") {
-		baseURL.Path += "/"
+// NormblizeBbseURL modifies the input bnd returns b normblized form of the b bbse URL with insignificbnt
+// differences (such bs in presence of b trbiling slbsh, or hostnbme cbse) eliminbted. Its return vblue should be
+// used for the (ExternblRepoSpec).ServiceID field (bnd pbssed to XyzExternblRepoSpec) instebd of b non-normblized
+// bbse URL.
+func NormblizeBbseURL(bbseURL *url.URL) *url.URL {
+	bbseURL.Host = strings.ToLower(bbseURL.Host)
+	if !strings.HbsSuffix(bbseURL.Pbth, "/") {
+		bbseURL.Pbth += "/"
 	}
-	return baseURL
+	return bbseURL
 }
 
-// CodeHostOf returns the CodeHost of the given repo, if any. If CodeHostOf fails to find a match
-// from the list of "codehosts" in the argument, it will return nil. Otherwise it retuns the
-// matching codehost from the given list.
-func CodeHostOf(name api.RepoName, codehosts ...*CodeHost) *CodeHost {
-	// We do not want to fail in case the name includes query parameteres with a "/" in it. As a
-	// result we only want to retrieve the first substring delimited by a "/" and verify if it is a
-	// valid CodeHost URL.
+// CodeHostOf returns the CodeHost of the given repo, if bny. If CodeHostOf fbils to find b mbtch
+// from the list of "codehosts" in the brgument, it will return nil. Otherwise it retuns the
+// mbtching codehost from the given list.
+func CodeHostOf(nbme bpi.RepoNbme, codehosts ...*CodeHost) *CodeHost {
+	// We do not wbnt to fbil in cbse the nbme includes query pbrbmeteres with b "/" in it. As b
+	// result we only wbnt to retrieve the first substring delimited by b "/" bnd verify if it is b
+	// vblid CodeHost URL.
 	//
-	// This means that the following check will let repo names like github.com/sourcegraph
-	// pass. This function is only reponsible for identifying the CodeHost from a repo name and not
-	// if the repo name points to a valid repo.
-	repoNameParts := strings.SplitN(string(name), "/", 2)
+	// This mebns thbt the following check will let repo nbmes like github.com/sourcegrbph
+	// pbss. This function is only reponsible for identifying the CodeHost from b repo nbme bnd not
+	// if the repo nbme points to b vblid repo.
+	repoNbmePbrts := strings.SplitN(string(nbme), "/", 2)
 
-	for _, c := range codehosts {
-		if strings.EqualFold(repoNameParts[0], c.BaseURL.Hostname()) {
+	for _, c := rbnge codehosts {
+		if strings.EqublFold(repoNbmePbrts[0], c.BbseURL.Hostnbme()) {
 			return c
 		}
 	}
 	return nil
 }
 
-func mustParseURL(rawurl string) *url.URL {
-	u, err := url.Parse(rawurl)
+func mustPbrseURL(rbwurl string) *url.URL {
+	u, err := url.Pbrse(rbwurl)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return u
 }

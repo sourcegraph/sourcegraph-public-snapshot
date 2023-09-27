@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -8,689 +8,689 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/batches/schema"
-	"github.com/sourcegraph/sourcegraph/lib/batches/yaml"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/schemb"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/ybml"
 )
 
-func TestBatchSpecResolver(t *testing.T) {
+func TestBbtchSpecResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/batch-spec-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/bbtch-spec-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
-	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
+	repoID := grbphqlbbckend.MbrshblRepositoryID(repo.ID)
 
-	orgname := "test-org"
-	userID := bt.CreateTestUser(t, db, false).ID
-	adminID := bt.CreateTestUser(t, db, true).ID
-	orgID := bt.CreateTestOrg(t, db, orgname, userID).ID
+	orgnbme := "test-org"
+	userID := bt.CrebteTestUser(t, db, fblse).ID
+	bdminID := bt.CrebteTestUser(t, db, true).ID
+	orgID := bt.CrebteTestOrg(t, db, orgnbme, userID).ID
 
-	spec, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	spec, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	spec.UserID = userID
-	spec.NamespaceOrgID = orgID
-	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-		t.Fatal(err)
+	spec.NbmespbceOrgID = orgID
+	if err := bstore.CrebteBbtchSpec(ctx, spec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	changesetSpec, err := btypes.NewChangesetSpecFromRaw(bt.NewRawChangesetSpecGitBranch(repoID, "deadb33f"))
+	chbngesetSpec, err := btypes.NewChbngesetSpecFromRbw(bt.NewRbwChbngesetSpecGitBrbnch(repoID, "debdb33f"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	changesetSpec.BatchSpecID = spec.ID
-	changesetSpec.UserID = userID
-	changesetSpec.BaseRepoID = repo.ID
+	chbngesetSpec.BbtchSpecID = spec.ID
+	chbngesetSpec.UserID = userID
+	chbngesetSpec.BbseRepoID = repo.ID
 
-	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
-		t.Fatal(err)
-	}
-
-	matchingBatchChange := &btypes.BatchChange{
-		Name:           spec.Spec.Name,
-		NamespaceOrgID: orgID,
-		CreatorID:      userID,
-		LastApplierID:  userID,
-		LastAppliedAt:  time.Now(),
-		BatchSpecID:    spec.ID,
-	}
-	if err := bstore.CreateBatchChange(ctx, matchingBatchChange); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteChbngesetSpec(ctx, chbngesetSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	mbtchingBbtchChbnge := &btypes.BbtchChbnge{
+		Nbme:           spec.Spec.Nbme,
+		NbmespbceOrgID: orgID,
+		CrebtorID:      userID,
+		LbstApplierID:  userID,
+		LbstAppliedAt:  time.Now(),
+		BbtchSpecID:    spec.ID,
+	}
+	if err := bstore.CrebteBbtchChbnge(ctx, mbtchingBbtchChbnge); err != nil {
+		t.Fbtbl(err)
+	}
+
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(spec.RandID))
-	userAPIID := string(graphqlbackend.MarshalUserID(userID))
-	orgAPIID := string(graphqlbackend.MarshalOrgID(orgID))
+	bpiID := string(mbrshblBbtchSpecRbndID(spec.RbndID))
+	userAPIID := string(grbphqlbbckend.MbrshblUserID(userID))
+	orgAPIID := string(grbphqlbbckend.MbrshblOrgID(orgID))
 
-	var unmarshaled any
-	err = json.Unmarshal([]byte(spec.RawSpec), &unmarshaled)
+	vbr unmbrshbled bny
+	err = json.Unmbrshbl([]byte(spec.RbwSpec), &unmbrshbled)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	applyUrl := fmt.Sprintf("/organizations/%s/batch-changes/apply/%s", orgname, apiID)
-	want := apitest.BatchSpec{
-		Typename: "BatchSpec",
-		ID:       apiID,
+	bpplyUrl := fmt.Sprintf("/orgbnizbtions/%s/bbtch-chbnges/bpply/%s", orgnbme, bpiID)
+	wbnt := bpitest.BbtchSpec{
+		Typenbme: "BbtchSpec",
+		ID:       bpiID,
 
-		OriginalInput: spec.RawSpec,
-		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+		OriginblInput: spec.RbwSpec,
+		PbrsedInput:   grbphqlbbckend.JSONVblue{Vblue: unmbrshbled},
 
-		ApplyURL:            &applyUrl,
-		Namespace:           apitest.UserOrg{ID: orgAPIID, Name: orgname},
-		Creator:             &apitest.User{ID: userAPIID, DatabaseID: userID},
-		ViewerCanAdminister: true,
+		ApplyURL:            &bpplyUrl,
+		Nbmespbce:           bpitest.UserOrg{ID: orgAPIID, Nbme: orgnbme},
+		Crebtor:             &bpitest.User{ID: userAPIID, DbtbbbseID: userID},
+		ViewerCbnAdminister: true,
 
-		CreatedAt: gqlutil.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		CrebtedAt: gqlutil.DbteTime{Time: spec.CrebtedAt.Truncbte(time.Second)},
+		ExpiresAt: &gqlutil.DbteTime{Time: spec.ExpiresAt().Truncbte(time.Second)},
 
-		ChangesetSpecs: apitest.ChangesetSpecConnection{
-			TotalCount: 1,
-			Nodes: []apitest.ChangesetSpec{
+		ChbngesetSpecs: bpitest.ChbngesetSpecConnection{
+			TotblCount: 1,
+			Nodes: []bpitest.ChbngesetSpec{
 				{
-					ID:       string(marshalChangesetSpecRandID(changesetSpec.RandID)),
-					Typename: "VisibleChangesetSpec",
-					Description: apitest.ChangesetSpecDescription{
-						BaseRepository: apitest.Repository{
+					ID:       string(mbrshblChbngesetSpecRbndID(chbngesetSpec.RbndID)),
+					Typenbme: "VisibleChbngesetSpec",
+					Description: bpitest.ChbngesetSpecDescription{
+						BbseRepository: bpitest.Repository{
 							ID:   string(repoID),
-							Name: string(repo.Name),
+							Nbme: string(repo.Nbme),
 						},
 					},
 				},
 			},
 		},
 
-		DiffStat: apitest.DiffStat{
-			Added:   changesetSpec.DiffStatAdded,
-			Deleted: changesetSpec.DiffStatDeleted,
+		DiffStbt: bpitest.DiffStbt{
+			Added:   chbngesetSpec.DiffStbtAdded,
+			Deleted: chbngesetSpec.DiffStbtDeleted,
 		},
 
-		AppliesToBatchChange: apitest.BatchChange{
-			ID: string(bgql.MarshalBatchChangeID(matchingBatchChange.ID)),
+		AppliesToBbtchChbnge: bpitest.BbtchChbnge{
+			ID: string(bgql.MbrshblBbtchChbngeID(mbtchingBbtchChbnge.ID)),
 		},
 
-		AllCodeHosts: apitest.BatchChangesCodeHostsConnection{
-			TotalCount: 1,
-			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+		AllCodeHosts: bpitest.BbtchChbngesCodeHostsConnection{
+			TotblCount: 1,
+			Nodes:      []bpitest.BbtchChbngesCodeHost{{ExternblServiceKind: extsvc.KindGitHub, ExternblServiceURL: "https://github.com/"}},
 		},
-		OnlyWithoutCredential: apitest.BatchChangesCodeHostsConnection{
-			TotalCount: 1,
-			Nodes:      []apitest.BatchChangesCodeHost{{ExternalServiceKind: extsvc.KindGitHub, ExternalServiceURL: "https://github.com/"}},
+		OnlyWithoutCredentibl: bpitest.BbtchChbngesCodeHostsConnection{
+			TotblCount: 1,
+			Nodes:      []bpitest.BbtchChbngesCodeHost{{ExternblServiceKind: extsvc.KindGitHub, ExternblServiceURL: "https://github.com/"}},
 		},
 
-		State: "COMPLETED",
+		Stbte: "COMPLETED",
 	}
 
-	input := map[string]any{"batchSpec": apiID}
+	input := mbp[string]bny{"bbtchSpec": bpiID}
 	{
-		var response struct{ Node apitest.BatchSpec }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
+		vbr response struct{ Node bpitest.BbtchSpec }
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryBbtchSpecNode)
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	// Now create an updated changeset spec and check that we get a superseding
-	// batch spec.
-	sup, err := btypes.NewBatchSpecFromRaw(bt.TestRawBatchSpec)
+	// Now crebte bn updbted chbngeset spec bnd check thbt we get b superseding
+	// bbtch spec.
+	sup, err := btypes.NewBbtchSpecFromRbw(bt.TestRbwBbtchSpec)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	sup.UserID = userID
-	sup.NamespaceOrgID = orgID
-	if err := bstore.CreateBatchSpec(ctx, sup); err != nil {
-		t.Fatal(err)
+	sup.NbmespbceOrgID = orgID
+	if err := bstore.CrebteBbtchSpec(ctx, sup); err != nil {
+		t.Fbtbl(err)
 	}
 
 	{
-		var response struct{ Node apitest.BatchSpec }
+		vbr response struct{ Node bpitest.BbtchSpec }
 
-		// Note that we have to execute as the actual user, since a superseding
-		// spec isn't returned for an admin.
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
+		// Note thbt we hbve to execute bs the bctubl user, since b superseding
+		// spec isn't returned for bn bdmin.
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryBbtchSpecNode)
 
-		// Expect an ID on the superseding batch spec.
-		want.SupersedingBatchSpec = &apitest.BatchSpec{
-			ID: string(marshalBatchSpecRandID(sup.RandID)),
+		// Expect bn ID on the superseding bbtch spec.
+		wbnt.SupersedingBbtchSpec = &bpitest.BbtchSpec{
+			ID: string(mbrshblBbtchSpecRbndID(sup.RbndID)),
 		}
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	// If the superseding batch spec was created by a different user, then we
+	// If the superseding bbtch spec wbs crebted by b different user, then we
 	// shouldn't return it.
-	sup.UserID = adminID
-	if err := bstore.UpdateBatchSpec(ctx, sup); err != nil {
-		t.Fatal(err)
+	sup.UserID = bdminID
+	if err := bstore.UpdbteBbtchSpec(ctx, sup); err != nil {
+		t.Fbtbl(err)
 	}
 
 	{
-		var response struct{ Node apitest.BatchSpec }
+		vbr response struct{ Node bpitest.BbtchSpec }
 
-		// Note that we have to execute as the actual user, since a superseding
-		// spec isn't returned for an admin.
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryBatchSpecNode)
+		// Note thbt we hbve to execute bs the bctubl user, since b superseding
+		// spec isn't returned for bn bdmin.
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryBbtchSpecNode)
 
-		// Expect no superseding batch spec, since this request is run as a
+		// Expect no superseding bbtch spec, since this request is run bs b
 		// different user.
-		want.SupersedingBatchSpec = nil
+		wbnt.SupersedingBbtchSpec = nil
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	// Now soft-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(logger, bstore).Delete(ctx, userID)
+	// Now soft-delete the crebtor bnd check thbt the bbtch spec is still retrievbble.
+	err = dbtbbbse.UsersWith(logger, bstore).Delete(ctx, userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	{
-		var response struct{ Node apitest.BatchSpec }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryBatchSpecNode)
+		vbr response struct{ Node bpitest.BbtchSpec }
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(bdminID)), t, s, input, &response, queryBbtchSpecNode)
 
-		// Expect creator to not be returned anymore.
-		want.Creator = nil
-		// Expect no superseding batch spec, since this request is run as a
+		// Expect crebtor to not be returned bnymore.
+		wbnt.Crebtor = nil
+		// Expect no superseding bbtch spec, since this request is run bs b
 		// different user.
-		want.SupersedingBatchSpec = nil
+		wbnt.SupersedingBbtchSpec = nil
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	}
 
-	// Now hard-delete the creator and check that the batch spec is still retrievable.
-	err = database.UsersWith(logger, bstore).HardDelete(ctx, userID)
+	// Now hbrd-delete the crebtor bnd check thbt the bbtch spec is still retrievbble.
+	err = dbtbbbse.UsersWith(logger, bstore).HbrdDelete(ctx, userID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	{
-		var response struct{ Node apitest.BatchSpec }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(adminID)), t, s, input, &response, queryBatchSpecNode)
+		vbr response struct{ Node bpitest.BbtchSpec }
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(bdminID)), t, s, input, &response, queryBbtchSpecNode)
 
-		// Expect creator to not be returned anymore.
-		want.Creator = nil
+		// Expect crebtor to not be returned bnymore.
+		wbnt.Crebtor = nil
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("unexpected response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 		}
 	}
 }
 
-func TestBatchSpecResolver_BatchSpecCreatedFromRaw(t *testing.T) {
+func TestBbtchSpecResolver_BbtchSpecCrebtedFromRbw(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	now := timeutil.Now().Truncate(time.Second)
-	minAgo := func(min int) time.Time { return now.Add(time.Duration(-min) * time.Minute) }
+	now := timeutil.Now().Truncbte(time.Second)
+	minAgo := func(min int) time.Time { return now.Add(time.Durbtion(-min) * time.Minute) }
 
-	user := bt.CreateTestUser(t, db, false)
-	userCtx := actor.WithActor(ctx, actor.FromUser(user.ID))
+	user := bt.CrebteTestUser(t, db, fblse)
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(user.ID))
 
-	rs, extSvc := bt.CreateTestRepos(t, ctx, db, 3)
+	rs, extSvc := bt.CrebteTestRepos(t, ctx, db, 3)
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
 	svc := service.New(bstore)
-	spec, err := svc.CreateBatchSpecFromRaw(userCtx, service.CreateBatchSpecFromRawOpts{
-		RawSpec:         bt.TestRawBatchSpecYAML,
-		NamespaceUserID: user.ID,
+	spec, err := svc.CrebteBbtchSpecFromRbw(userCtx, service.CrebteBbtchSpecFromRbwOpts{
+		RbwSpec:         bt.TestRbwBbtchSpecYAML,
+		NbmespbceUserID: user.ID,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	resolutionJob, err := bstore.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
-		BatchSpecID: spec.ID,
+	resolutionJob, err := bstore.GetBbtchSpecResolutionJob(ctx, store.GetBbtchSpecResolutionJobOpts{
+		BbtchSpecID: spec.ID,
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	var unmarshaled any
-	err = yaml.UnmarshalValidate(schema.BatchSpecJSON, []byte(spec.RawSpec), &unmarshaled)
+	vbr unmbrshbled bny
+	err = ybml.UnmbrshblVblidbte(schemb.BbtchSpecJSON, []byte(spec.RbwSpec), &unmbrshbled)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(spec.RandID))
-	adminAPIID := string(graphqlbackend.MarshalUserID(user.ID))
+	bpiID := string(mbrshblBbtchSpecRbndID(spec.RbndID))
+	bdminAPIID := string(grbphqlbbckend.MbrshblUserID(user.ID))
 
-	applyUrl := fmt.Sprintf("/users/%s/batch-changes/apply/%s", user.Username, apiID)
-	codeHosts := apitest.BatchChangesCodeHostsConnection{
-		TotalCount: 0,
-		Nodes:      []apitest.BatchChangesCodeHost{},
+	bpplyUrl := fmt.Sprintf("/users/%s/bbtch-chbnges/bpply/%s", user.Usernbme, bpiID)
+	codeHosts := bpitest.BbtchChbngesCodeHostsConnection{
+		TotblCount: 0,
+		Nodes:      []bpitest.BbtchChbngesCodeHost{},
 	}
-	want := apitest.BatchSpec{
-		Typename: "BatchSpec",
-		ID:       apiID,
+	wbnt := bpitest.BbtchSpec{
+		Typenbme: "BbtchSpec",
+		ID:       bpiID,
 
-		OriginalInput: spec.RawSpec,
-		ParsedInput:   graphqlbackend.JSONValue{Value: unmarshaled},
+		OriginblInput: spec.RbwSpec,
+		PbrsedInput:   grbphqlbbckend.JSONVblue{Vblue: unmbrshbled},
 
-		Namespace:           apitest.UserOrg{ID: adminAPIID, DatabaseID: user.ID, SiteAdmin: false},
-		Creator:             &apitest.User{ID: adminAPIID, DatabaseID: user.ID, SiteAdmin: false},
-		ViewerCanAdminister: true,
+		Nbmespbce:           bpitest.UserOrg{ID: bdminAPIID, DbtbbbseID: user.ID, SiteAdmin: fblse},
+		Crebtor:             &bpitest.User{ID: bdminAPIID, DbtbbbseID: user.ID, SiteAdmin: fblse},
+		ViewerCbnAdminister: true,
 
 		AllCodeHosts:          codeHosts,
-		OnlyWithoutCredential: codeHosts,
+		OnlyWithoutCredentibl: codeHosts,
 
-		CreatedAt: gqlutil.DateTime{Time: spec.CreatedAt.Truncate(time.Second)},
-		ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+		CrebtedAt: gqlutil.DbteTime{Time: spec.CrebtedAt.Truncbte(time.Second)},
+		ExpiresAt: &gqlutil.DbteTime{Time: spec.ExpiresAt().Truncbte(time.Second)},
 
-		ChangesetSpecs: apitest.ChangesetSpecConnection{
-			Nodes: []apitest.ChangesetSpec{},
+		ChbngesetSpecs: bpitest.ChbngesetSpecConnection{
+			Nodes: []bpitest.ChbngesetSpec{},
 		},
 
-		State: "PENDING",
-		WorkspaceResolution: apitest.BatchSpecWorkspaceResolution{
-			State: resolutionJob.State.ToGraphQL(),
+		Stbte: "PENDING",
+		WorkspbceResolution: bpitest.BbtchSpecWorkspbceResolution{
+			Stbte: resolutionJob.Stbte.ToGrbphQL(),
 		},
 	}
 
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// Complete the workspace resolution
-	var workspaces []*btypes.BatchSpecWorkspace
-	for _, repo := range rs {
-		ws := &btypes.BatchSpecWorkspace{BatchSpecID: spec.ID, RepoID: repo.ID}
-		if err := bstore.CreateBatchSpecWorkspace(ctx, ws); err != nil {
-			t.Fatal(err)
+	// Complete the workspbce resolution
+	vbr workspbces []*btypes.BbtchSpecWorkspbce
+	for _, repo := rbnge rs {
+		ws := &btypes.BbtchSpecWorkspbce{BbtchSpecID: spec.ID, RepoID: repo.ID}
+		if err := bstore.CrebteBbtchSpecWorkspbce(ctx, ws); err != nil {
+			t.Fbtbl(err)
 		}
-		workspaces = append(workspaces, ws)
+		workspbces = bppend(workspbces, ws)
 	}
 
-	setResolutionJobState(t, ctx, bstore, resolutionJob, btypes.BatchSpecResolutionJobStateCompleted)
-	want.WorkspaceResolution.State = btypes.BatchSpecResolutionJobStateCompleted.ToGraphQL()
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	setResolutionJobStbte(t, ctx, bstore, resolutionJob, btypes.BbtchSpecResolutionJobStbteCompleted)
+	wbnt.WorkspbceResolution.Stbte = btypes.BbtchSpecResolutionJobStbteCompleted.ToGrbphQL()
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
 	// Now enqueue jobs
-	var jobs []*btypes.BatchSpecWorkspaceExecutionJob
-	for _, ws := range workspaces {
-		job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: user.ID}
-		if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
-			t.Fatal(err)
+	vbr jobs []*btypes.BbtchSpecWorkspbceExecutionJob
+	for _, ws := rbnge workspbces {
+		job := &btypes.BbtchSpecWorkspbceExecutionJob{BbtchSpecWorkspbceID: ws.ID, UserID: user.ID}
+		if err := bt.CrebteBbtchSpecWorkspbceExecutionJob(ctx, bstore, store.ScbnBbtchSpecWorkspbceExecutionJob, job); err != nil {
+			t.Fbtbl(err)
 		}
-		jobs = append(jobs, job)
+		jobs = bppend(jobs, job)
 	}
 
-	want.State = "QUEUED"
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.Stbte = "QUEUED"
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
 	// 1/3 jobs processing
-	jobs[1].StartedAt = minAgo(99)
+	jobs[1].StbrtedAt = minAgo(99)
 	setJobProcessing(t, ctx, bstore, jobs[1])
-	want.State = "PROCESSING"
-	want.StartedAt = gqlutil.DateTime{Time: jobs[1].StartedAt}
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.Stbte = "PROCESSING"
+	wbnt.StbrtedAt = gqlutil.DbteTime{Time: jobs[1].StbrtedAt}
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
 	// 3/3 processing
 	setJobProcessing(t, ctx, bstore, jobs[0])
 	setJobProcessing(t, ctx, bstore, jobs[2])
-	// Expect same state
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	// Expect sbme stbte
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
 	// 1/3 jobs complete, 2/3 processing
 	jobs[2].FinishedAt = minAgo(30)
 	setJobCompleted(t, ctx, bstore, jobs[2])
-	// Expect same state
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	// Expect sbme stbte
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
 	// 3/3 jobs complete
 	jobs[0].FinishedAt = minAgo(9)
 	jobs[1].FinishedAt = minAgo(15)
 	setJobCompleted(t, ctx, bstore, jobs[0])
 	setJobCompleted(t, ctx, bstore, jobs[1])
-	want.State = "COMPLETED"
-	want.ApplyURL = &applyUrl
-	want.FinishedAt = gqlutil.DateTime{Time: jobs[0].FinishedAt}
+	wbnt.Stbte = "COMPLETED"
+	wbnt.ApplyURL = &bpplyUrl
+	wbnt.FinishedAt = gqlutil.DbteTime{Time: jobs[0].FinishedAt}
 	// Nothing to retry
-	want.ViewerCanRetry = false
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.ViewerCbnRetry = fblse
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// 1/3 jobs is failed, 2/3 completed
-	message1 := "failure message"
-	jobs[1].FailureMessage = &message1
-	setJobFailed(t, ctx, bstore, jobs[1])
-	want.State = "FAILED"
-	want.FailureMessage = fmt.Sprintf("Failures:\n\n* %s\n", message1)
-	// We still want users to be able to apply batch specs that executed with errors
-	want.ApplyURL = &applyUrl
-	want.ViewerCanRetry = true
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	// 1/3 jobs is fbiled, 2/3 completed
+	messbge1 := "fbilure messbge"
+	jobs[1].FbilureMessbge = &messbge1
+	setJobFbiled(t, ctx, bstore, jobs[1])
+	wbnt.Stbte = "FAILED"
+	wbnt.FbilureMessbge = fmt.Sprintf("Fbilures:\n\n* %s\n", messbge1)
+	// We still wbnt users to be bble to bpply bbtch specs thbt executed with errors
+	wbnt.ApplyURL = &bpplyUrl
+	wbnt.ViewerCbnRetry = true
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// 1/3 jobs is failed, 2/3 still processing
+	// 1/3 jobs is fbiled, 2/3 still processing
 	setJobProcessing(t, ctx, bstore, jobs[0])
 	setJobProcessing(t, ctx, bstore, jobs[2])
-	want.State = "PROCESSING"
-	want.FinishedAt = gqlutil.DateTime{}
-	want.ApplyURL = nil
-	want.ViewerCanRetry = false
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.Stbte = "PROCESSING"
+	wbnt.FinishedAt = gqlutil.DbteTime{}
+	wbnt.ApplyURL = nil
+	wbnt.ViewerCbnRetry = fblse
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// 3/3 jobs canceling and processing
-	setJobCanceling(t, ctx, bstore, jobs[0])
-	setJobCanceling(t, ctx, bstore, jobs[1])
-	setJobCanceling(t, ctx, bstore, jobs[2])
+	// 3/3 jobs cbnceling bnd processing
+	setJobCbnceling(t, ctx, bstore, jobs[0])
+	setJobCbnceling(t, ctx, bstore, jobs[1])
+	setJobCbnceling(t, ctx, bstore, jobs[2])
 
-	want.State = "CANCELING"
-	want.FailureMessage = ""
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.Stbte = "CANCELING"
+	wbnt.FbilureMessbge = ""
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// 3/3 canceled
+	// 3/3 cbnceled
 	jobs[0].FinishedAt = minAgo(9)
 	jobs[1].FinishedAt = minAgo(15)
 	jobs[2].FinishedAt = minAgo(30)
-	setJobCanceled(t, ctx, bstore, jobs[0])
-	setJobCanceled(t, ctx, bstore, jobs[1])
-	setJobCanceled(t, ctx, bstore, jobs[2])
+	setJobCbnceled(t, ctx, bstore, jobs[0])
+	setJobCbnceled(t, ctx, bstore, jobs[1])
+	setJobCbnceled(t, ctx, bstore, jobs[2])
 
-	want.State = "CANCELED"
-	want.FinishedAt = gqlutil.DateTime{Time: jobs[0].FinishedAt}
-	want.ViewerCanRetry = true
-	want.FailureMessage = ""
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.Stbte = "CANCELED"
+	wbnt.FinishedAt = gqlutil.DbteTime{Time: jobs[0].FinishedAt}
+	wbnt.ViewerCbnRetry = true
+	wbnt.FbilureMessbge = ""
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// 1/3 jobs is failed, 2/3 completed, but produced invalid changeset specs
+	// 1/3 jobs is fbiled, 2/3 completed, but produced invblid chbngeset specs
 	jobs[0].FinishedAt = minAgo(9)
 	jobs[1].FinishedAt = minAgo(15)
-	jobs[1].FailureMessage = &message1
+	jobs[1].FbilureMessbge = &messbge1
 	jobs[2].FinishedAt = minAgo(30)
 	setJobCompleted(t, ctx, bstore, jobs[0])
-	setJobFailed(t, ctx, bstore, jobs[1])
+	setJobFbiled(t, ctx, bstore, jobs[1])
 	setJobCompleted(t, ctx, bstore, jobs[2])
 
-	conflictingRef := "refs/heads/conflicting-head-ref"
-	for _, opts := range []bt.TestSpecOpts{
-		{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: spec.ID},
-		{HeadRef: conflictingRef, Typ: btypes.ChangesetSpecTypeBranch, Repo: rs[0].ID, BatchSpec: spec.ID},
+	conflictingRef := "refs/hebds/conflicting-hebd-ref"
+	for _, opts := rbnge []bt.TestSpecOpts{
+		{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: rs[0].ID, BbtchSpec: spec.ID},
+		{HebdRef: conflictingRef, Typ: btypes.ChbngesetSpecTypeBrbnch, Repo: rs[0].ID, BbtchSpec: spec.ID},
 	} {
-		spec := bt.CreateChangesetSpec(t, ctx, bstore, opts)
+		spec := bt.CrebteChbngesetSpec(t, ctx, bstore, opts)
 
-		want.ChangesetSpecs.TotalCount += 1
-		want.ChangesetSpecs.Nodes = append(want.ChangesetSpecs.Nodes, apitest.ChangesetSpec{
-			ID:       string(marshalChangesetSpecRandID(spec.RandID)),
-			Typename: "VisibleChangesetSpec",
-			Description: apitest.ChangesetSpecDescription{
-				BaseRepository: apitest.Repository{
-					ID:   string(graphqlbackend.MarshalRepositoryID(rs[0].ID)),
-					Name: string(rs[0].Name),
+		wbnt.ChbngesetSpecs.TotblCount += 1
+		wbnt.ChbngesetSpecs.Nodes = bppend(wbnt.ChbngesetSpecs.Nodes, bpitest.ChbngesetSpec{
+			ID:       string(mbrshblChbngesetSpecRbndID(spec.RbndID)),
+			Typenbme: "VisibleChbngesetSpec",
+			Description: bpitest.ChbngesetSpecDescription{
+				BbseRepository: bpitest.Repository{
+					ID:   string(grbphqlbbckend.MbrshblRepositoryID(rs[0].ID)),
+					Nbme: string(rs[0].Nbme),
 				},
 			},
 		})
 	}
 
-	want.State = "FAILED"
-	want.FailureMessage = fmt.Sprintf("Validating changeset specs resulted in an error:\n* 2 changeset specs in %s use the same branch: %s\n", rs[0].Name, conflictingRef)
-	want.ApplyURL = nil
-	want.DiffStat.Added = 30
-	want.DiffStat.Deleted = 14
-	want.ViewerCanRetry = true
+	wbnt.Stbte = "FAILED"
+	wbnt.FbilureMessbge = fmt.Sprintf("Vblidbting chbngeset specs resulted in bn error:\n* 2 chbngeset specs in %s use the sbme brbnch: %s\n", rs[0].Nbme, conflictingRef)
+	wbnt.ApplyURL = nil
+	wbnt.DiffStbt.Added = 30
+	wbnt.DiffStbt.Deleted = 14
+	wbnt.ViewerCbnRetry = true
 
-	codeHosts = apitest.BatchChangesCodeHostsConnection{
-		TotalCount: 1,
-		Nodes: []apitest.BatchChangesCodeHost{
-			{ExternalServiceKind: extSvc.Kind, ExternalServiceURL: "https://github.com/"},
+	codeHosts = bpitest.BbtchChbngesCodeHostsConnection{
+		TotblCount: 1,
+		Nodes: []bpitest.BbtchChbngesCodeHost{
+			{ExternblServiceKind: extSvc.Kind, ExternblServiceURL: "https://github.com/"},
 		},
 	}
-	want.AllCodeHosts = codeHosts
-	want.OnlyWithoutCredential = codeHosts
-	queryAndAssertBatchSpec(t, userCtx, s, apiID, want)
+	wbnt.AllCodeHosts = codeHosts
+	wbnt.OnlyWithoutCredentibl = codeHosts
+	queryAndAssertBbtchSpec(t, userCtx, s, bpiID, wbnt)
 
-	// PERMISSIONS: Now we view the same batch spec but as another non-admin user, for
-	// example if a user is sharing a preview link with another user. This should still
+	// PERMISSIONS: Now we view the sbme bbtch spec but bs bnother non-bdmin user, for
+	// exbmple if b user is shbring b preview link with bnother user. This should still
 	// work.
-	want.ViewerCanAdminister = false
-	want.ViewerCanRetry = false
-	otherUser := bt.CreateTestUser(t, db, false)
-	otherUserCtx := actor.WithActor(ctx, actor.FromUser(otherUser.ID))
-	queryAndAssertBatchSpec(t, otherUserCtx, s, apiID, want)
+	wbnt.ViewerCbnAdminister = fblse
+	wbnt.ViewerCbnRetry = fblse
+	otherUser := bt.CrebteTestUser(t, db, fblse)
+	otherUserCtx := bctor.WithActor(ctx, bctor.FromUser(otherUser.ID))
+	queryAndAssertBbtchSpec(t, otherUserCtx, s, bpiID, wbnt)
 }
 
-func TestBatchSpecResolver_Files(t *testing.T) {
+func TestBbtchSpecResolver_Files(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	bstore := store.New(db, &observation.TestContext, nil)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	resolver := batchSpecResolver{
+	resolver := bbtchSpecResolver{
 		store:     bstore,
-		batchSpec: &btypes.BatchSpec{RandID: "123"},
+		bbtchSpec: &btypes.BbtchSpec{RbndID: "123"},
 		logger:    logger,
 	}
 
-	after := "1"
-	connectionResolver, err := resolver.Files(ctx, &graphqlbackend.ListBatchSpecWorkspaceFilesArgs{
+	bfter := "1"
+	connectionResolver, err := resolver.Files(ctx, &grbphqlbbckend.ListBbtchSpecWorkspbceFilesArgs{
 		First: int32(10),
-		After: &after,
+		After: &bfter,
 	})
 	require.NoError(t, err)
-	assert.NotNil(t, connectionResolver)
+	bssert.NotNil(t, connectionResolver)
 }
 
-func queryAndAssertBatchSpec(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpec) {
+func queryAndAssertBbtchSpec(t *testing.T, ctx context.Context, s *grbphql.Schemb, id string, wbnt bpitest.BbtchSpec) {
 	t.Helper()
 
-	input := map[string]any{"batchSpec": id}
+	input := mbp[string]bny{"bbtchSpec": id}
 
-	var response struct{ Node apitest.BatchSpec }
+	vbr response struct{ Node bpitest.BbtchSpec }
 
-	apitest.MustExec(ctx, t, s, input, &response, queryBatchSpecNode)
+	bpitest.MustExec(ctx, t, s, input, &response, queryBbtchSpecNode)
 
-	if diff := cmp.Diff(want, response.Node); diff != "" {
-		t.Fatalf("unexpected batch spec (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+		t.Fbtblf("unexpected bbtch spec (-wbnt +got):\n%s", diff)
 	}
 }
 
-func setJobProcessing(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+func setJobProcessing(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BbtchSpecWorkspbceExecutionJob) {
 	t.Helper()
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-	if job.StartedAt.IsZero() {
-		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing
+	if job.StbrtedAt.IsZero() {
+		job.StbrtedAt = time.Now().Add(-5 * time.Minute)
 	}
 	job.FinishedAt = time.Time{}
-	job.Cancel = false
-	job.FailureMessage = nil
-	bt.UpdateJobState(t, ctx, s, job)
+	job.Cbncel = fblse
+	job.FbilureMessbge = nil
+	bt.UpdbteJobStbte(t, ctx, s, job)
 }
 
-func setJobCompleted(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+func setJobCompleted(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BbtchSpecWorkspbceExecutionJob) {
 	t.Helper()
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateCompleted
-	if job.StartedAt.IsZero() {
-		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteCompleted
+	if job.StbrtedAt.IsZero() {
+		job.StbrtedAt = time.Now().Add(-5 * time.Minute)
 	}
 	if job.FinishedAt.IsZero() {
 		job.FinishedAt = time.Now()
 	}
-	job.Cancel = false
-	job.FailureMessage = nil
-	bt.UpdateJobState(t, ctx, s, job)
+	job.Cbncel = fblse
+	job.FbilureMessbge = nil
+	bt.UpdbteJobStbte(t, ctx, s, job)
 }
 
-func setJobFailed(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+func setJobFbiled(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BbtchSpecWorkspbceExecutionJob) {
 	t.Helper()
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
-	if job.StartedAt.IsZero() {
-		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteFbiled
+	if job.StbrtedAt.IsZero() {
+		job.StbrtedAt = time.Now().Add(-5 * time.Minute)
 	}
 	if job.FinishedAt.IsZero() {
 		job.FinishedAt = time.Now()
 	}
-	job.Cancel = false
-	if job.FailureMessage == nil {
-		failed := "job failed"
-		job.FailureMessage = &failed
+	job.Cbncel = fblse
+	if job.FbilureMessbge == nil {
+		fbiled := "job fbiled"
+		job.FbilureMessbge = &fbiled
 	}
-	bt.UpdateJobState(t, ctx, s, job)
+	bt.UpdbteJobStbte(t, ctx, s, job)
 }
 
-func setJobCanceling(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+func setJobCbnceling(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BbtchSpecWorkspbceExecutionJob) {
 	t.Helper()
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateProcessing
-	if job.StartedAt.IsZero() {
-		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteProcessing
+	if job.StbrtedAt.IsZero() {
+		job.StbrtedAt = time.Now().Add(-5 * time.Minute)
 	}
 	job.FinishedAt = time.Time{}
-	job.Cancel = true
-	job.FailureMessage = nil
-	bt.UpdateJobState(t, ctx, s, job)
+	job.Cbncel = true
+	job.FbilureMessbge = nil
+	bt.UpdbteJobStbte(t, ctx, s, job)
 }
 
-func setJobCanceled(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
+func setJobCbnceled(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BbtchSpecWorkspbceExecutionJob) {
 	t.Helper()
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateCanceled
-	if job.StartedAt.IsZero() {
-		job.StartedAt = time.Now().Add(-5 * time.Minute)
+	job.Stbte = btypes.BbtchSpecWorkspbceExecutionJobStbteCbnceled
+	if job.StbrtedAt.IsZero() {
+		job.StbrtedAt = time.Now().Add(-5 * time.Minute)
 	}
 	if job.FinishedAt.IsZero() {
 		job.FinishedAt = time.Now()
 	}
-	job.Cancel = true
-	canceled := "canceled"
-	job.FailureMessage = &canceled
-	bt.UpdateJobState(t, ctx, s, job)
+	job.Cbncel = true
+	cbnceled := "cbnceled"
+	job.FbilureMessbge = &cbnceled
+	bt.UpdbteJobStbte(t, ctx, s, job)
 }
 
-func setResolutionJobState(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecResolutionJob, state btypes.BatchSpecResolutionJobState) {
+func setResolutionJobStbte(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BbtchSpecResolutionJob, stbte btypes.BbtchSpecResolutionJobStbte) {
 	t.Helper()
 
-	job.State = state
+	job.Stbte = stbte
 
-	err := s.Exec(ctx, sqlf.Sprintf("UPDATE batch_spec_resolution_jobs SET state = %s WHERE id = %s", job.State, job.ID))
+	err := s.Exec(ctx, sqlf.Sprintf("UPDATE bbtch_spec_resolution_jobs SET stbte = %s WHERE id = %s", job.Stbte, job.ID))
 	if err != nil {
-		t.Fatalf("failed to set resolution job state: %s", err)
+		t.Fbtblf("fbiled to set resolution job stbte: %s", err)
 	}
 }
 
-const queryBatchSpecNode = `
-fragment u on User { id, databaseID }
-fragment o on Org  { id, name }
+const queryBbtchSpecNode = `
+frbgment u on User { id, dbtbbbseID }
+frbgment o on Org  { id, nbme }
 
-query($batchSpec: ID!) {
-  node(id: $batchSpec) {
-    __typename
+query($bbtchSpec: ID!) {
+  node(id: $bbtchSpec) {
+    __typenbme
 
-    ... on BatchSpec {
+    ... on BbtchSpec {
       id
-      originalInput
-      parsedInput
+      originblInput
+      pbrsedInput
 
-      creator { ...u }
-      namespace {
+      crebtor { ...u }
+      nbmespbce {
         ... on User { ...u }
         ... on Org  { ...o }
       }
 
-      applyURL
-      viewerCanAdminister
+      bpplyURL
+      viewerCbnAdminister
 
-      createdAt
+      crebtedAt
       expiresAt
 
-      diffStat { added, deleted }
+      diffStbt { bdded, deleted }
 
-	  appliesToBatchChange { id }
-	  supersedingBatchSpec { id }
+	  bppliesToBbtchChbnge { id }
+	  supersedingBbtchSpec { id }
 
-	  allCodeHosts: viewerBatchChangesCodeHosts {
-		totalCount
+	  bllCodeHosts: viewerBbtchChbngesCodeHosts {
+		totblCount
 		  nodes {
-			  externalServiceKind
-			  externalServiceURL
+			  externblServiceKind
+			  externblServiceURL
 		  }
 	  }
 
-	  onlyWithoutCredential: viewerBatchChangesCodeHosts(onlyWithoutCredential: true) {
-		  totalCount
+	  onlyWithoutCredentibl: viewerBbtchChbngesCodeHosts(onlyWithoutCredentibl: true) {
+		  totblCount
 		  nodes {
-			  externalServiceKind
-			  externalServiceURL
+			  externblServiceKind
+			  externblServiceURL
 		  }
 	  }
 
-      changesetSpecs(first: 100) {
-        totalCount
+      chbngesetSpecs(first: 100) {
+        totblCount
 
         nodes {
-          __typename
+          __typenbme
           type
 
-          ... on HiddenChangesetSpec {
+          ... on HiddenChbngesetSpec {
             id
           }
 
-          ... on VisibleChangesetSpec {
+          ... on VisibleChbngesetSpec {
             id
 
             description {
-              ... on ExistingChangesetReference {
-                baseRepository {
+              ... on ExistingChbngesetReference {
+                bbseRepository {
                   id
-                  name
+                  nbme
                 }
               }
 
-              ... on GitBranchChangesetDescription {
-                baseRepository {
+              ... on GitBrbnchChbngesetDescription {
+                bbseRepository {
                   id
-                  name
+                  nbme
                 }
               }
             }
@@ -698,14 +698,14 @@ query($batchSpec: ID!) {
         }
 	  }
 
-      state
-      workspaceResolution {
-        state
+      stbte
+      workspbceResolution {
+        stbte
       }
-      startedAt
+      stbrtedAt
       finishedAt
-      failureMessage
-      viewerCanRetry
+      fbilureMessbge
+      viewerCbnRetry
     }
   }
 }

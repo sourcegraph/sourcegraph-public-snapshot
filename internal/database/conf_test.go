@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -8,231 +8,231 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestSiteGetLatestDefault(t *testing.T) {
+func TestSiteGetLbtestDefbult(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
-	ctx := context.Background()
-	latest, err := db.Conf().SiteGetLatest(ctx)
+	ctx := context.Bbckground()
+	lbtest, err := db.Conf().SiteGetLbtest(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if latest == nil {
-		t.Errorf("expected non-nil latest config since default config should be created, got: %+v", latest)
+	if lbtest == nil {
+		t.Errorf("expected non-nil lbtest config since defbult config should be crebted, got: %+v", lbtest)
 	}
 }
 
-func TestSiteCreate_RejectInvalidJSON(t *testing.T) {
+func TestSiteCrebte_RejectInvblidJSON(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	malformedJSON := "[This is malformed.}"
+	mblformedJSON := "[This is mblformed.}"
 
-	_, err := db.Conf().SiteCreateIfUpToDate(ctx, nil, 0, malformedJSON, false)
+	_, err := db.Conf().SiteCrebteIfUpToDbte(ctx, nil, 0, mblformedJSON, fblse)
 
-	if err == nil || !strings.Contains(err.Error(), "failed to parse JSON") {
-		t.Fatalf("expected parse error after creating configuration with malformed JSON, got: %+v", err)
+	if err == nil || !strings.Contbins(err.Error(), "fbiled to pbrse JSON") {
+		t.Fbtblf("expected pbrse error bfter crebting configurbtion with mblformed JSON, got: %+v", err)
 	}
 }
 
-func TestSiteCreateIfUpToDate(t *testing.T) {
-	t.Parallel()
+func TestSiteCrebteIfUpToDbte(t *testing.T) {
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 
 	type input struct {
-		lastID       int32
-		authorUserID int32
+		lbstID       int32
+		buthorUserID int32
 		contents     string
 	}
 
 	type output struct {
 		ID               int32
-		authorUserID     int32
+		buthorUserID     int32
 		contents         string
-		redactedContents string
+		redbctedContents string
 		err              error
 	}
 
-	type pair struct {
+	type pbir struct {
 		input    input
 		expected output
 	}
 
 	type test struct {
-		name     string
-		sequence []pair
+		nbme     string
+		sequence []pbir
 	}
 
-	configRateLimitZero := `{"defaultRateLimit": 0,"auth.providers": []}`
-	configRateLimitOne := `{"defaultRateLimit": 1,"auth.providers": []}`
+	configRbteLimitZero := `{"defbultRbteLimit": 0,"buth.providers": []}`
+	configRbteLimitOne := `{"defbultRbteLimit": 1,"buth.providers": []}`
 
-	jsonConfigRateLimitZero := `{
-  "defaultRateLimit": 0,
-  "auth.providers": []
+	jsonConfigRbteLimitZero := `{
+  "defbultRbteLimit": 0,
+  "buth.providers": []
 }`
 
-	jsonConfigRateLimitOne := `{
-  "defaultRateLimit": 1,
-  "auth.providers": []
+	jsonConfigRbteLimitOne := `{
+  "defbultRbteLimit": 1,
+  "buth.providers": []
 }`
 
-	for _, test := range []test{
+	for _, test := rbnge []test{
 		{
-			name: "create_with_author_user_id",
-			sequence: []pair{
+			nbme: "crebte_with_buthor_user_id",
+			sequence: []pbir{
 				{
 					input{
-						lastID:       0,
-						authorUserID: 1,
-						contents:     configRateLimitZero,
+						lbstID:       0,
+						buthorUserID: 1,
+						contents:     configRbteLimitZero,
 					},
 					output{
 						ID:               2,
-						authorUserID:     1,
-						contents:         configRateLimitZero,
-						redactedContents: jsonConfigRateLimitZero,
+						buthorUserID:     1,
+						contents:         configRbteLimitZero,
+						redbctedContents: jsonConfigRbteLimitZero,
 					},
 				},
 			},
 		},
 		{
-			name: "create_one",
-			sequence: []pair{
+			nbme: "crebte_one",
+			sequence: []pbir{
 				{
 					input{
-						lastID:   0,
-						contents: configRateLimitZero,
+						lbstID:   0,
+						contents: configRbteLimitZero,
 					},
 					output{
 						ID:               2,
-						contents:         configRateLimitZero,
-						redactedContents: jsonConfigRateLimitZero,
+						contents:         configRbteLimitZero,
+						redbctedContents: jsonConfigRbteLimitZero,
 					},
 				},
 			},
 		},
 		{
-			name: "create_two",
-			sequence: []pair{
+			nbme: "crebte_two",
+			sequence: []pbir{
 				{
 					input{
-						lastID:   0,
-						contents: configRateLimitZero,
+						lbstID:   0,
+						contents: configRbteLimitZero,
 					},
 					output{
 						ID:               2,
-						contents:         configRateLimitZero,
-						redactedContents: jsonConfigRateLimitZero,
+						contents:         configRbteLimitZero,
+						redbctedContents: jsonConfigRbteLimitZero,
 					},
 				},
 				{
 					input{
-						lastID:   2,
-						contents: configRateLimitOne,
+						lbstID:   2,
+						contents: configRbteLimitOne,
 					},
 					output{
 						ID:               3,
-						contents:         configRateLimitOne,
-						redactedContents: jsonConfigRateLimitOne,
+						contents:         configRbteLimitOne,
+						redbctedContents: jsonConfigRbteLimitOne,
 					},
 				},
 			},
 		},
 		{
-			name: "do_not_update_if_outdated",
-			sequence: []pair{
+			nbme: "do_not_updbte_if_outdbted",
+			sequence: []pbir{
 				{
 					input{
-						lastID:   0,
-						contents: configRateLimitZero,
+						lbstID:   0,
+						contents: configRbteLimitZero,
 					},
 					output{
 						ID:               2,
-						contents:         configRateLimitZero,
-						redactedContents: jsonConfigRateLimitZero,
+						contents:         configRbteLimitZero,
+						redbctedContents: jsonConfigRbteLimitZero,
 					},
 				},
 				{
 					input{
-						lastID: 0,
-						// This configuration is now behind the first one, so it shouldn't be saved
-						contents: configRateLimitOne,
+						lbstID: 0,
+						// This configurbtion is now behind the first one, so it shouldn't be sbved
+						contents: configRbteLimitOne,
 					},
 					output{
 						ID:               2,
-						contents:         configRateLimitOne,
-						redactedContents: jsonConfigRateLimitOne,
+						contents:         configRbteLimitOne,
+						redbctedContents: jsonConfigRbteLimitOne,
 						err:              errors.Append(ErrNewerEdit),
 					},
 				},
 			},
 		},
 		{
-			name: "maintain_commments_and_whitespace",
-			sequence: []pair{
+			nbme: "mbintbin_commments_bnd_whitespbce",
+			sequence: []pbir{
 				{
 					input{
-						lastID: 0,
-						contents: `{"disableAutoGitUpdates": true,
+						lbstID: 0,
+						contents: `{"disbbleAutoGitUpdbtes": true,
 
-// This is a comment.
-             "defaultRateLimit": 42,
-             "auth.providers": [],
+// This is b comment.
+             "defbultRbteLimit": 42,
+             "buth.providers": [],
 						}`,
 					},
 					output{
 						ID: 2,
-						contents: `{"disableAutoGitUpdates": true,
+						contents: `{"disbbleAutoGitUpdbtes": true,
 
-// This is a comment.
-             "defaultRateLimit": 42,
-             "auth.providers": [],
+// This is b comment.
+             "defbultRbteLimit": 42,
+             "buth.providers": [],
 						}`,
-						redactedContents: `{
-  "disableAutoGitUpdates": true,
-  // This is a comment.
-  "defaultRateLimit": 42,
-  "auth.providers": [],
+						redbctedContents: `{
+  "disbbleAutoGitUpdbtes": true,
+  // This is b comment.
+  "defbultRbteLimit": 42,
+  "buth.providers": [],
 }`,
 					},
 				},
 			},
 		},
 		{
-			name: "redact_sensitive_data",
-			sequence: []pair{
+			nbme: "redbct_sensitive_dbtb",
+			sequence: []pbir{
 				{
 					input{
-						lastID: 0,
-						contents: `{"disableAutoGitUpdates": true,
+						lbstID: 0,
+						contents: `{"disbbleAutoGitUpdbtes": true,
 
-		// This is a comment.
-		             "defaultRateLimit": 42,
-					 "auth.providers": [
+		// This is b comment.
+		             "defbultRbteLimit": 42,
+					 "buth.providers": [
 					   {
-						 "clientID": "sourcegraph-client-openid",
+						 "clientID": "sourcegrbph-client-openid",
 						 "clientSecret": "strongsecret",
-						 "displayName": "Keycloak local OpenID Connect #1 (dev)",
-						 "issuer": "http://localhost:3220/auth/realms/master",
+						 "displbyNbme": "Keyclobk locbl OpenID Connect #1 (dev)",
+						 "issuer": "http://locblhost:3220/buth/reblms/mbster",
 						 "type": "openidconnect"
 					   }
 					 ]
@@ -240,30 +240,30 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 					},
 					output{
 						ID: 2,
-						contents: `{"disableAutoGitUpdates": true,
+						contents: `{"disbbleAutoGitUpdbtes": true,
 
-		// This is a comment.
-		             "defaultRateLimit": 42,
-					 "auth.providers": [
+		// This is b comment.
+		             "defbultRbteLimit": 42,
+					 "buth.providers": [
 					   {
-						 "clientID": "sourcegraph-client-openid",
+						 "clientID": "sourcegrbph-client-openid",
 						 "clientSecret": "strongsecret",
-						 "displayName": "Keycloak local OpenID Connect #1 (dev)",
-						 "issuer": "http://localhost:3220/auth/realms/master",
+						 "displbyNbme": "Keyclobk locbl OpenID Connect #1 (dev)",
+						 "issuer": "http://locblhost:3220/buth/reblms/mbster",
 						 "type": "openidconnect"
 					   }
 					 ]
 								}`,
-						redactedContents: `{
-  "disableAutoGitUpdates": true,
-  // This is a comment.
-  "defaultRateLimit": 42,
-  "auth.providers": [
+						redbctedContents: `{
+  "disbbleAutoGitUpdbtes": true,
+  // This is b comment.
+  "defbultRbteLimit": 42,
+  "buth.providers": [
     {
-      "clientID": "sourcegraph-client-openid",
+      "clientID": "sourcegrbph-client-openid",
       "clientSecret": "REDACTED-DATA-CHUNK-f434ecc765",
-      "displayName": "Keycloak local OpenID Connect #1 (dev)",
-      "issuer": "http://localhost:3220/auth/realms/master",
+      "displbyNbme": "Keyclobk locbl OpenID Connect #1 (dev)",
+      "issuer": "http://locblhost:3220/buth/reblms/mbster",
       "type": "openidconnect"
     }
   ]
@@ -273,90 +273,90 @@ func TestSiteCreateIfUpToDate(t *testing.T) {
 			},
 		},
 	} {
-		// we were running the same test all the time, see this gist for more information
-		// https://gist.github.com/posener/92a55c4cd441fc5e5e85f27bca008721
+		// we were running the sbme test bll the time, see this gist for more informbtion
+		// https://gist.github.com/posener/92b55c4cd441fc5e5e85f27bcb008721
 		test := test
-		t.Run(test.name, func(t *testing.T) {
-			t.Parallel()
+		t.Run(test.nbme, func(t *testing.T) {
+			t.Pbrbllel()
 			db := NewDB(logger, dbtest.NewDB(logger, t))
-			ctx := context.Background()
-			for _, p := range test.sequence {
-				output, err := db.Conf().SiteCreateIfUpToDate(ctx, &p.input.lastID, 0, p.input.contents, false)
+			ctx := context.Bbckground()
+			for _, p := rbnge test.sequence {
+				output, err := db.Conf().SiteCrebteIfUpToDbte(ctx, &p.input.lbstID, 0, p.input.contents, fblse)
 				if err != nil {
 					if errors.Is(err, p.expected.err) {
 						continue
 					}
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				if output == nil {
-					t.Fatal("got unexpected nil configuration after creation")
+					t.Fbtbl("got unexpected nil configurbtion bfter crebtion")
 				}
 
 				if diff := cmp.Diff(p.expected.contents, output.Contents); diff != "" {
-					t.Fatalf("mismatched configuration contents after creation, (-want +got):\n%s", diff)
+					t.Fbtblf("mismbtched configurbtion contents bfter crebtion, (-wbnt +got):\n%s", diff)
 				}
 
-				if diff := cmp.Diff(p.expected.redactedContents, output.RedactedContents); diff != "" {
-					t.Fatalf("mismatched redacted_contents after creation, %v", diff)
+				if diff := cmp.Diff(p.expected.redbctedContents, output.RedbctedContents); diff != "" {
+					t.Fbtblf("mismbtched redbcted_contents bfter crebtion, %v", diff)
 				}
 
 				if output.ID != p.expected.ID {
-					t.Fatalf("returned configuration ID after creation - expected: %v, got:%v", p.expected.ID, output.ID)
+					t.Fbtblf("returned configurbtion ID bfter crebtion - expected: %v, got:%v", p.expected.ID, output.ID)
 				}
 
-				latest, err := db.Conf().SiteGetLatest(ctx)
+				lbtest, err := db.Conf().SiteGetLbtest(ctx)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if latest == nil {
-					t.Fatalf("got unexpected nil configuration after GetLatest")
+				if lbtest == nil {
+					t.Fbtblf("got unexpected nil configurbtion bfter GetLbtest")
 				}
 
-				if latest.Contents != p.expected.contents {
-					t.Fatalf("returned configuration contents after GetLatest - expected: %q, got:%q", p.expected.contents, latest.Contents)
+				if lbtest.Contents != p.expected.contents {
+					t.Fbtblf("returned configurbtion contents bfter GetLbtest - expected: %q, got:%q", p.expected.contents, lbtest.Contents)
 				}
-				if latest.ID != p.expected.ID {
-					t.Fatalf("returned configuration ID after GetLatest - expected: %v, got:%v", p.expected.ID, latest.ID)
+				if lbtest.ID != p.expected.ID {
+					t.Fbtblf("returned configurbtion ID bfter GetLbtest - expected: %v, got:%v", p.expected.ID, lbtest.ID)
 				}
 			}
 		})
 	}
 }
 
-func createDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
-	config := `{"disableAutoGitUpdates": true, "auth.Providers": []}`
+func crebteDummySiteConfigs(t *testing.T, ctx context.Context, s ConfStore) {
+	config := `{"disbbleAutoGitUpdbtes": true, "buth.Providers": []}`
 
-	siteConfig, err := s.SiteCreateIfUpToDate(ctx, nil, 0, config, false)
-	require.NoError(t, err, "failed to create site config")
+	siteConfig, err := s.SiteCrebteIfUpToDbte(ctx, nil, 0, config, fblse)
+	require.NoError(t, err, "fbiled to crebte site config")
 
-	// The first call to SiteCreatedIfUpToDate will always create a default entry if there are no
-	// rows in the table yet and then eventually create another entry.
+	// The first cbll to SiteCrebtedIfUpToDbte will blwbys crebte b defbult entry if there bre no
+	// rows in the tbble yet bnd then eventublly crebte bnother entry.
 	//
-	// lastID will be 2 here.
-	lastID := siteConfig.ID
+	// lbstID will be 2 here.
+	lbstID := siteConfig.ID
 
-	// Change config so that we have a new entry in the DB - ID: 3
-	config = `{"auth.Providers": []}`
-	siteConfig, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
-	require.NoError(t, err, "failed to create site config")
+	// Chbnge config so thbt we hbve b new entry in the DB - ID: 3
+	config = `{"buth.Providers": []}`
+	siteConfig, err = s.SiteCrebteIfUpToDbte(ctx, &lbstID, 1, config, fblse)
+	require.NoError(t, err, "fbiled to crebte site config")
 
-	lastID = siteConfig.ID
+	lbstID = siteConfig.ID
 
-	//  Create another entry with the same config - ID: 4
-	siteConfig, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
-	require.NoError(t, err, "failed to create site config")
+	//  Crebte bnother entry with the sbme config - ID: 4
+	siteConfig, err = s.SiteCrebteIfUpToDbte(ctx, &lbstID, 1, config, fblse)
+	require.NoError(t, err, "fbiled to crebte site config")
 
-	lastID = siteConfig.ID
+	lbstID = siteConfig.ID
 
-	// Change config again one last time, so that we have a new entry in the DB - ID: 5
-	config = `{"disableAutoGitUpdates": true, "auth.Providers": []}`
-	_, err = s.SiteCreateIfUpToDate(ctx, &lastID, 1, config, false)
-	require.NoError(t, err, "failed to create site config")
+	// Chbnge config bgbin one lbst time, so thbt we hbve b new entry in the DB - ID: 5
+	config = `{"disbbleAutoGitUpdbtes": true, "buth.Providers": []}`
+	_, err = s.SiteCrebteIfUpToDbte(ctx, &lbstID, 1, config, fblse)
+	require.NoError(t, err, "fbiled to crebte site config")
 
-	// By this point we have 5 entries instead of 4.
-	// 3 and 4 are identical.
+	// By this point we hbve 5 entries instebd of 4.
+	// 3 bnd 4 bre identicbl.
 	// The unique list of configs is:
 	// 5, 3, 2, 1
 }
@@ -368,19 +368,19 @@ func TestGetSiteConfigCount(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	s := db.Conf()
-	createDummySiteConfigs(t, ctx, s)
+	crebteDummySiteConfigs(t, ctx, s)
 
 	count, err := s.GetSiteConfigCount(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We have 5 entries in the DB, but we skip redundant ones so this returns 4.
+	// We hbve 5 entries in the DB, but we skip redundbnt ones so this returns 4.
 	if count != 4 {
-		t.Fatalf("Expected 4 site config entries, but got %d", count)
+		t.Fbtblf("Expected 4 site config entries, but got %d", count)
 	}
 }
 
@@ -391,144 +391,144 @@ func TestListSiteConfigs(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
 	s := db.Conf()
-	createDummySiteConfigs(t, ctx, s)
+	crebteDummySiteConfigs(t, ctx, s)
 
-	if _, err := s.ListSiteConfigs(ctx, &PaginationArgs{}); err != nil {
+	if _, err := s.ListSiteConfigs(ctx, &PbginbtionArgs{}); err != nil {
 		t.Error("Expected non-nil error but got nil")
 	}
 
-	testCases := []struct {
-		name        string
-		listOptions *PaginationArgs
+	testCbses := []struct {
+		nbme        string
+		listOptions *PbginbtionArgs
 		expectedIDs []int32
 	}{
 		{
-			name:        "nil pagination args",
+			nbme:        "nil pbginbtion brgs",
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
-			name: "first: 2 (subset of data)",
-			listOptions: &PaginationArgs{
+			nbme: "first: 2 (subset of dbtb)",
+			listOptions: &PbginbtionArgs{
 				First: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{5, 3},
 		},
 		{
-			name: "last: 2 (subset of data)",
-			listOptions: &PaginationArgs{
-				Last: pointers.Ptr(2),
+			nbme: "lbst: 2 (subset of dbtb)",
+			listOptions: &PbginbtionArgs{
+				Lbst: pointers.Ptr(2),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
-			name: "first: 5 (all of data)",
-			listOptions: &PaginationArgs{
+			nbme: "first: 5 (bll of dbtb)",
+			listOptions: &PbginbtionArgs{
 				First: pointers.Ptr(5),
 			},
 			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
-			name: "last: 5 (all of data)",
-			listOptions: &PaginationArgs{
-				Last: pointers.Ptr(5),
+			nbme: "lbst: 5 (bll of dbtb)",
+			listOptions: &PbginbtionArgs{
+				Lbst: pointers.Ptr(5),
 			},
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
-			name: "first: 10 (more than data)",
-			listOptions: &PaginationArgs{
+			nbme: "first: 10 (more thbn dbtb)",
+			listOptions: &PbginbtionArgs{
 				First: pointers.Ptr(10),
 			},
 			expectedIDs: []int32{5, 3, 2, 1},
 		},
 		{
-			name: "last: 10 (more than data)",
-			listOptions: &PaginationArgs{
-				Last: pointers.Ptr(10),
+			nbme: "lbst: 10 (more thbn dbtb)",
+			listOptions: &PbginbtionArgs{
+				Lbst: pointers.Ptr(10),
 			},
 			expectedIDs: []int32{1, 2, 3, 5},
 		},
 		{
-			name: "first: 2, after: 5",
-			listOptions: &PaginationArgs{
+			nbme: "first: 2, bfter: 5",
+			listOptions: &PbginbtionArgs{
 				First: pointers.Ptr(2),
 				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{3, 2},
 		},
 		{
-			name: "first: 6, after: 5 (overflow)",
-			listOptions: &PaginationArgs{
+			nbme: "first: 6, bfter: 5 (overflow)",
+			listOptions: &PbginbtionArgs{
 				First: pointers.Ptr(6),
 				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{3, 2, 1},
 		},
 		{
-			name: "last: 2, after: 5",
-			listOptions: &PaginationArgs{
-				Last:  pointers.Ptr(2),
+			nbme: "lbst: 2, bfter: 5",
+			listOptions: &PbginbtionArgs{
+				Lbst:  pointers.Ptr(2),
 				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{1, 2},
 		},
 		{
-			name: "last: 6, after: 5 (overflow)",
-			listOptions: &PaginationArgs{
-				Last:  pointers.Ptr(6),
+			nbme: "lbst: 6, bfter: 5 (overflow)",
+			listOptions: &PbginbtionArgs{
+				Lbst:  pointers.Ptr(6),
 				After: pointers.Ptr("5"),
 			},
 			expectedIDs: []int32{1, 2, 3},
 		},
 		{
-			name: "first: 2, before: 1",
-			listOptions: &PaginationArgs{
+			nbme: "first: 2, before: 1",
+			listOptions: &PbginbtionArgs{
 				First:  pointers.Ptr(2),
 				Before: pointers.Ptr("1"),
 			},
 			expectedIDs: []int32{5, 3},
 		},
 		{
-			name: "first: 6, before: 1 (overflow)",
-			listOptions: &PaginationArgs{
+			nbme: "first: 6, before: 1 (overflow)",
+			listOptions: &PbginbtionArgs{
 				First:  pointers.Ptr(6),
 				Before: pointers.Ptr("1"),
 			},
 			expectedIDs: []int32{5, 3, 2},
 		},
 		{
-			name: "last: 2, before: 2",
-			listOptions: &PaginationArgs{
-				Last:   pointers.Ptr(2),
+			nbme: "lbst: 2, before: 2",
+			listOptions: &PbginbtionArgs{
+				Lbst:   pointers.Ptr(2),
 				Before: pointers.Ptr("2"),
 			},
 			expectedIDs: []int32{3, 5},
 		},
 		{
-			name: "last: 6, before: 2 (overflow)",
-			listOptions: &PaginationArgs{
-				Last:   pointers.Ptr(6),
+			nbme: "lbst: 6, before: 2 (overflow)",
+			listOptions: &PbginbtionArgs{
+				Lbst:   pointers.Ptr(6),
 				Before: pointers.Ptr("2"),
 			},
 			expectedIDs: []int32{3, 5},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			siteConfigs, err := s.ListSiteConfigs(ctx, tc.listOptions)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(siteConfigs) != len(tc.expectedIDs) {
-				t.Fatalf("Expected %d site config entries but got %d", len(tc.expectedIDs), len(siteConfigs))
+				t.Fbtblf("Expected %d site config entries but got %d", len(tc.expectedIDs), len(siteConfigs))
 			}
 
-			for i, siteConfig := range siteConfigs {
+			for i, siteConfig := rbnge siteConfigs {
 				if tc.expectedIDs[i] != siteConfig.ID {
 					t.Errorf("Expected ID %d, but got %d", tc.expectedIDs[i], siteConfig.ID)
 				}

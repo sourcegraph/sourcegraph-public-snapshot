@@ -1,39 +1,39 @@
-package codeintel
+pbckbge codeintel
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
-	"github.com/sourcegraph/sourcegraph/internal/memo"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/live"
+	"github.com/sourcegrbph/sourcegrbph/internbl/memo"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// InitRawDB initializes and returns a connection to the codeintel db.
-func InitRawDB(observationCtx *observation.Context) (*sql.DB, error) {
-	return initDBMemo.Init(observationCtx)
+// InitRbwDB initiblizes bnd returns b connection to the codeintel db.
+func InitRbwDB(observbtionCtx *observbtion.Context) (*sql.DB, error) {
+	return initDBMemo.Init(observbtionCtx)
 }
 
-func InitDB(observationCtx *observation.Context) (codeintelshared.CodeIntelDB, error) {
-	rawDB, err := InitRawDB(observationCtx)
+func InitDB(observbtionCtx *observbtion.Context) (codeintelshbred.CodeIntelDB, error) {
+	rbwDB, err := InitRbwDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return codeintelshared.NewCodeIntelDB(observationCtx.Logger, rawDB), nil
+	return codeintelshbred.NewCodeIntelDB(observbtionCtx.Logger, rbwDB), nil
 }
 
-var initDBMemo = memo.NewMemoizedConstructorWithArg(func(observationCtx *observation.Context) (*sql.DB, error) {
-	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+vbr initDBMemo = memo.NewMemoizedConstructorWithArg(func(observbtionCtx *observbtion.Context) (*sql.DB, error) {
+	dsn := conf.GetServiceConnectionVblueAndRestbrtOnChbnge(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
 
-	db, err := connections.EnsureNewCodeIntelDB(observationCtx, dsn, "worker")
+	db, err := connections.EnsureNewCodeIntelDB(observbtionCtx, dsn, "worker")
 	if err != nil {
-		return nil, errors.Errorf("failed to connect to codeintel database: %s", err)
+		return nil, errors.Errorf("fbiled to connect to codeintel dbtbbbse: %s", err)
 	}
 
 	return db, nil

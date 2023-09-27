@@ -1,56 +1,56 @@
-package executorqueue
+pbckbge executorqueue
 
 import (
 	"context"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path"
+	"pbth"
 	"runtime"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-type GitserverClient interface {
-	// AddrForRepo returns the gitserver address to use for the given repo name.
-	AddrForRepo(context.Context, api.RepoName) string
+type GitserverClient interfbce {
+	// AddrForRepo returns the gitserver bddress to use for the given repo nbme.
+	AddrForRepo(context.Context, bpi.RepoNbme) string
 }
 
-// gitserverProxy creates an HTTP handler that will proxy requests to the correct
-// gitserver at the given gitPath.
-func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPath string) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		repo := getRepoName(r)
+// gitserverProxy crebtes bn HTTP hbndler thbt will proxy requests to the correct
+// gitserver bt the given gitPbth.
+func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPbth string) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		repo := getRepoNbme(r)
 
-		addrForRepo := gitserverClient.AddrForRepo(r.Context(), api.RepoName(repo))
+		bddrForRepo := gitserverClient.AddrForRepo(r.Context(), bpi.RepoNbme(repo))
 
 		p := httputil.ReverseProxy{
 			Director: func(r *http.Request) {
 				u := &url.URL{
 					Scheme:   "http",
-					Host:     addrForRepo,
-					Path:     path.Join("/git", repo, gitPath),
-					RawQuery: r.URL.RawQuery,
+					Host:     bddrForRepo,
+					Pbth:     pbth.Join("/git", repo, gitPbth),
+					RbwQuery: r.URL.RbwQuery,
 				}
 				r.URL = u
 			},
-			Transport: httpcli.InternalClient.Transport,
+			Trbnsport: httpcli.InternblClient.Trbnsport,
 		}
 		defer func() {
 			e := recover()
 			if e != nil {
-				if e == http.ErrAbortHandler {
-					logger.Warn("failed to read gitserver response")
+				if e == http.ErrAbortHbndler {
+					logger.Wbrn("fbiled to rebd gitserver response")
 				} else {
 					const size = 64 << 10
-					buf := make([]byte, size)
-					buf = buf[:runtime.Stack(buf, false)]
-					logger.Error("reverseproxy: panic reading response", log.String("stack", string(buf)))
+					buf := mbke([]byte, size)
+					buf = buf[:runtime.Stbck(buf, fblse)]
+					logger.Error("reverseproxy: pbnic rebding response", log.String("stbck", string(buf)))
 				}
 			}
 		}()
@@ -58,10 +58,10 @@ func gitserverProxy(logger log.Logger, gitserverClient GitserverClient, gitPath 
 	})
 }
 
-// getRepoName returns the "RepoName" segment of the request's URL. This is a function variable so
-// we can swap it out easily during testing. The gorilla/mux does have a testing function to
-// set variables on a request context, but the context gets lost somewhere between construction
-// of the request and the default client's handling of the request.
-var getRepoName = func(r *http.Request) string {
-	return mux.Vars(r)["RepoName"]
+// getRepoNbme returns the "RepoNbme" segment of the request's URL. This is b function vbribble so
+// we cbn swbp it out ebsily during testing. The gorillb/mux does hbve b testing function to
+// set vbribbles on b request context, but the context gets lost somewhere between construction
+// of the request bnd the defbult client's hbndling of the request.
+vbr getRepoNbme = func(r *http.Request) string {
+	return mux.Vbrs(r)["RepoNbme"]
 }

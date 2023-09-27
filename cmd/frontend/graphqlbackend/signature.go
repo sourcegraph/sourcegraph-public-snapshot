@@ -1,36 +1,36 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
-type signatureResolver struct {
+type signbtureResolver struct {
 	person *PersonResolver
-	date   time.Time
+	dbte   time.Time
 }
 
-func (r signatureResolver) Person() *PersonResolver {
+func (r signbtureResolver) Person() *PersonResolver {
 	return r.person
 }
 
-func (r signatureResolver) Date() string {
-	return r.date.Format(time.RFC3339)
+func (r signbtureResolver) Dbte() string {
+	return r.dbte.Formbt(time.RFC3339)
 }
 
-func toSignatureResolver(db database.DB, sig *gitdomain.Signature, includeUserInfo bool) *signatureResolver {
+func toSignbtureResolver(db dbtbbbse.DB, sig *gitdombin.Signbture, includeUserInfo bool) *signbtureResolver {
 	if sig == nil {
 		return nil
 	}
-	return &signatureResolver{
+	return &signbtureResolver{
 		person: &PersonResolver{
 			db:              db,
-			name:            sig.Name,
-			email:           sig.Email,
+			nbme:            sig.Nbme,
+			embil:           sig.Embil,
 			includeUserInfo: includeUserInfo,
 		},
-		date: sig.Date,
+		dbte: sig.Dbte,
 	}
 }

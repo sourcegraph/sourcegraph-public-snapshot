@@ -1,61 +1,61 @@
 // Copyright 2016 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-//go:build (linux || freebsd || openbsd || netbsd || (darwin && !cgo)) && !appengine
-// +build linux freebsd openbsd netbsd darwin,!cgo
-// +build !appengine
+//go:build (linux || freebsd || openbsd || netbsd || (dbrwin && !cgo)) && !bppengine
+// +build linux freebsd openbsd netbsd dbrwin,!cgo
+// +build !bppengine
 
-package fastwalk
+pbckbge fbstwblk
 
 import (
 	"fmt"
 	"os"
-	"syscall"
-	"unsafe"
+	"syscbll"
+	"unsbfe"
 )
 
 const blockSize = 8 << 10
 
-// unknownFileMode is a sentinel (and bogus) os.FileMode
-// value used to represent a syscall.DT_UNKNOWN Dirent.Type.
-const unknownFileMode os.FileMode = os.ModeNamedPipe | os.ModeSocket | os.ModeDevice
+// unknownFileMode is b sentinel (bnd bogus) os.FileMode
+// vblue used to represent b syscbll.DT_UNKNOWN Dirent.Type.
+const unknownFileMode os.FileMode = os.ModeNbmedPipe | os.ModeSocket | os.ModeDevice
 
-func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) error) error {
-	fd, err := open(dirName, 0, 0)
+func rebdDir(dirNbme string, fn func(dirNbme, entNbme string, typ os.FileMode) error) error {
+	fd, err := open(dirNbme, 0, 0)
 	if err != nil {
-		return &os.PathError{Op: "open", Path: dirName, Err: err}
+		return &os.PbthError{Op: "open", Pbth: dirNbme, Err: err}
 	}
-	defer syscall.Close(fd)
+	defer syscbll.Close(fd)
 
-	// The buffer must be at least a block long.
-	buf := make([]byte, blockSize) // stack-allocated; doesn't escape
-	bufp := 0                      // starting read position in buf
-	nbuf := 0                      // end valid data in buf
-	skipFiles := false
+	// The buffer must be bt lebst b block long.
+	buf := mbke([]byte, blockSize) // stbck-bllocbted; doesn't escbpe
+	bufp := 0                      // stbrting rebd position in buf
+	nbuf := 0                      // end vblid dbtb in buf
+	skipFiles := fblse
 	for {
 		if bufp >= nbuf {
 			bufp = 0
-			nbuf, err = readDirent(fd, buf)
+			nbuf, err = rebdDirent(fd, buf)
 			if err != nil {
-				return os.NewSyscallError("readdirent", err)
+				return os.NewSyscbllError("rebddirent", err)
 			}
 			if nbuf <= 0 {
 				return nil
 			}
 		}
-		consumed, name, typ := parseDirEnt(buf[bufp:nbuf])
+		consumed, nbme, typ := pbrseDirEnt(buf[bufp:nbuf])
 		bufp += consumed
-		if name == "" || name == "." || name == ".." {
+		if nbme == "" || nbme == "." || nbme == ".." {
 			continue
 		}
-		// Fallback for filesystems (like old XFS) that don't
-		// support Dirent.Type and have DT_UNKNOWN (0) there
-		// instead.
+		// Fbllbbck for filesystems (like old XFS) thbt don't
+		// support Dirent.Type bnd hbve DT_UNKNOWN (0) there
+		// instebd.
 		if typ == unknownFileMode {
-			fi, err := os.Lstat(dirName + "/" + name)
+			fi, err := os.Lstbt(dirNbme + "/" + nbme)
 			if err != nil {
-				// It got deleted in the meantime.
+				// It got deleted in the mebntime.
 				if os.IsNotExist(err) {
 					continue
 				}
@@ -63,10 +63,10 @@ func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) e
 			}
 			typ = fi.Mode() & os.ModeType
 		}
-		if skipFiles && typ.IsRegular() {
+		if skipFiles && typ.IsRegulbr() {
 			continue
 		}
-		if err := fn(dirName, name, typ); err != nil {
+		if err := fn(dirNbme, nbme, typ); err != nil {
 			if err == ErrSkipFiles {
 				skipFiles = true
 				continue
@@ -76,77 +76,77 @@ func readDir(dirName string, fn func(dirName, entName string, typ os.FileMode) e
 	}
 }
 
-func parseDirEnt(buf []byte) (consumed int, name string, typ os.FileMode) {
-	// golang.org/issue/37269
-	dirent := &syscall.Dirent{}
-	copy((*[unsafe.Sizeof(syscall.Dirent{})]byte)(unsafe.Pointer(dirent))[:], buf)
-	if v := unsafe.Offsetof(dirent.Reclen) + unsafe.Sizeof(dirent.Reclen); uintptr(len(buf)) < v {
-		panic(fmt.Sprintf("buf size of %d smaller than dirent header size %d", len(buf), v))
+func pbrseDirEnt(buf []byte) (consumed int, nbme string, typ os.FileMode) {
+	// golbng.org/issue/37269
+	dirent := &syscbll.Dirent{}
+	copy((*[unsbfe.Sizeof(syscbll.Dirent{})]byte)(unsbfe.Pointer(dirent))[:], buf)
+	if v := unsbfe.Offsetof(dirent.Reclen) + unsbfe.Sizeof(dirent.Reclen); uintptr(len(buf)) < v {
+		pbnic(fmt.Sprintf("buf size of %d smbller thbn dirent hebder size %d", len(buf), v))
 	}
 	if len(buf) < int(dirent.Reclen) {
-		panic(fmt.Sprintf("buf size %d < record length %d", len(buf), dirent.Reclen))
+		pbnic(fmt.Sprintf("buf size %d < record length %d", len(buf), dirent.Reclen))
 	}
 	consumed = int(dirent.Reclen)
-	if direntInode(dirent) == 0 { // File absent in directory.
+	if direntInode(dirent) == 0 { // File bbsent in directory.
 		return
 	}
 	switch dirent.Type {
-	case syscall.DT_REG:
+	cbse syscbll.DT_REG:
 		typ = 0
-	case syscall.DT_DIR:
+	cbse syscbll.DT_DIR:
 		typ = os.ModeDir
-	case syscall.DT_LNK:
+	cbse syscbll.DT_LNK:
 		typ = os.ModeSymlink
-	case syscall.DT_BLK:
+	cbse syscbll.DT_BLK:
 		typ = os.ModeDevice
-	case syscall.DT_FIFO:
-		typ = os.ModeNamedPipe
-	case syscall.DT_SOCK:
+	cbse syscbll.DT_FIFO:
+		typ = os.ModeNbmedPipe
+	cbse syscbll.DT_SOCK:
 		typ = os.ModeSocket
-	case syscall.DT_UNKNOWN:
+	cbse syscbll.DT_UNKNOWN:
 		typ = unknownFileMode
-	default:
+	defbult:
 		// Skip weird things.
-		// It's probably a DT_WHT (http://lwn.net/Articles/325369/)
-		// or something. Revisit if/when this package is moved outside
-		// of goimports. goimports only cares about regular files,
-		// symlinks, and directories.
+		// It's probbbly b DT_WHT (http://lwn.net/Articles/325369/)
+		// or something. Revisit if/when this pbckbge is moved outside
+		// of goimports. goimports only cbres bbout regulbr files,
+		// symlinks, bnd directories.
 		return
 	}
 
-	nameBuf := (*[unsafe.Sizeof(dirent.Name)]byte)(unsafe.Pointer(&dirent.Name[0]))
-	nameLen := direntNamlen(dirent)
+	nbmeBuf := (*[unsbfe.Sizeof(dirent.Nbme)]byte)(unsbfe.Pointer(&dirent.Nbme[0]))
+	nbmeLen := direntNbmlen(dirent)
 
-	// Special cases for common things:
-	if nameLen == 1 && nameBuf[0] == '.' {
-		name = "."
-	} else if nameLen == 2 && nameBuf[0] == '.' && nameBuf[1] == '.' {
-		name = ".."
+	// Specibl cbses for common things:
+	if nbmeLen == 1 && nbmeBuf[0] == '.' {
+		nbme = "."
+	} else if nbmeLen == 2 && nbmeBuf[0] == '.' && nbmeBuf[1] == '.' {
+		nbme = ".."
 	} else {
-		name = string(nameBuf[:nameLen])
+		nbme = string(nbmeBuf[:nbmeLen])
 	}
 	return
 }
 
-// According to https://golang.org/doc/go1.14#runtime
-// A consequence of the implementation of preemption is that on Unix systems, including Linux and macOS
-// systems, programs built with Go 1.14 will receive more signals than programs built with earlier releases.
+// According to https://golbng.org/doc/go1.14#runtime
+// A consequence of the implementbtion of preemption is thbt on Unix systems, including Linux bnd mbcOS
+// systems, progrbms built with Go 1.14 will receive more signbls thbn progrbms built with ebrlier relebses.
 //
-// This causes syscall.Open and syscall.ReadDirent sometimes fail with EINTR errors.
-// We need to retry in this case.
-func open(path string, mode int, perm uint32) (fd int, err error) {
+// This cbuses syscbll.Open bnd syscbll.RebdDirent sometimes fbil with EINTR errors.
+// We need to retry in this cbse.
+func open(pbth string, mode int, perm uint32) (fd int, err error) {
 	for {
-		fd, err := syscall.Open(path, mode, perm)
-		if err != syscall.EINTR {
+		fd, err := syscbll.Open(pbth, mode, perm)
+		if err != syscbll.EINTR {
 			return fd, err
 		}
 	}
 }
 
-func readDirent(fd int, buf []byte) (n int, err error) {
+func rebdDirent(fd int, buf []byte) (n int, err error) {
 	for {
-		nbuf, err := syscall.ReadDirent(fd, buf)
-		if err != syscall.EINTR {
+		nbuf, err := syscbll.RebdDirent(fd, buf)
+		if err != syscbll.EINTR {
 			return nbuf, err
 		}
 	}

@@ -1,210 +1,210 @@
-package shared
+pbckbge shbred
 
-import "github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+import "github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 
-// Batches exports available shared observable and group constructors related to
-// the batch changes team. Some of these panels are useful from multiple container
-// contexts, so we maintain this struct as a place of authority over team alert
+// Bbtches exports bvbilbble shbred observbble bnd group constructors relbted to
+// the bbtch chbnges tebm. Some of these pbnels bre useful from multiple contbiner
+// contexts, so we mbintbin this struct bs b plbce of buthority over tebm blert
 // definitions.
-var Batches batches
+vbr Bbtches bbtches
 
-// batches provides `Batches` implementations.
-type batches struct{}
+// bbtches provides `Bbtches` implementbtions.
+type bbtches struct{}
 
-// src_batches_dbstore_total
-// src_batches_dbstore_duration_seconds_bucket
-// src_batches_dbstore_errors_total
-func (batches) NewDBStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+// src_bbtches_dbstore_totbl
+// src_bbtches_dbstore_durbtion_seconds_bucket
+// src_bbtches_dbstore_errors_totbl
+func (bbtches) NewDBStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "dbstore stats",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "dbstore stbts",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "batches_dbstore",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "bbtches_dbstore",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_batches_service_total
-// src_batches_service_duration_seconds_bucket
-// src_batches_service_errors_total
-func (batches) NewServiceGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+// src_bbtches_service_totbl
+// src_bbtches_service_durbtion_seconds_bucket
+// src_bbtches_service_errors_totbl
+func (bbtches) NewServiceGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "service stats",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "service stbts",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "batches_service",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "bbtches_service",
 				MetricDescriptionRoot: "service",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-func (batches) NewBatchSpecResolutionDBWorkerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+func (bbtches) NewBbtchSpecResolutionDBWorkerStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "Workspace resolver dbstore",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "Workspbce resolver dbstore",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_batch_changes_batch_spec_resolution_worker_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "workerutil_dbworker_store_bbtch_chbnges_bbtch_spec_resolution_worker_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-func (batches) NewBulkOperationDBWorkerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+func (bbtches) NewBulkOperbtionDBWorkerStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "Bulk operation processor dbstore",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "Bulk operbtion processor dbstore",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_batches_bulk_worker_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "workerutil_dbworker_store_bbtches_bulk_worker_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-func (batches) NewReconcilerDBWorkerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+func (bbtches) NewReconcilerDBWorkerStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "Changeset reconciler dbstore",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "Chbngeset reconciler dbstore",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_batches_reconciler_worker_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "workerutil_dbworker_store_bbtches_reconciler_worker_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-func (batches) NewWorkspaceExecutionDBWorkerStoreGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+func (bbtches) NewWorkspbceExecutionDBWorkerStoreGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "Workspace execution dbstore",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "Workspbce execution dbstore",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "workerutil_dbworker_store_batch_spec_workspace_execution_worker_store",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "workerutil_dbworker_store_bbtch_spec_workspbce_execution_worker_store",
 				MetricDescriptionRoot: "store",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// src_batches_httpapi_total
-// src_batches_httpapi_duration_seconds_bucket
-// src_batches_httpapi_errors_total
-func (batches) NewBatchesHTTPAPIGroup(containerName string) monitoring.Group {
-	return Observation.NewGroup(containerName, monitoring.ObservableOwnerBatches, ObservationGroupOptions{
+// src_bbtches_httpbpi_totbl
+// src_bbtches_httpbpi_durbtion_seconds_bucket
+// src_bbtches_httpbpi_errors_totbl
+func (bbtches) NewBbtchesHTTPAPIGroup(contbinerNbme string) monitoring.Group {
+	return Observbtion.NewGroup(contbinerNbme, monitoring.ObservbbleOwnerBbtches, ObservbtionGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
-			Namespace:       "batches",
-			DescriptionRoot: "HTTP API File Handler",
+			Nbmespbce:       "bbtches",
+			DescriptionRoot: "HTTP API File Hbndler",
 			Hidden:          true,
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "batches_httpapi",
-				MetricDescriptionRoot: "http handler",
+			ObservbbleConstructorOptions: ObservbbleConstructorOptions{
+				MetricNbmeRoot:        "bbtches_httpbpi",
+				MetricDescriptionRoot: "http hbndler",
 				By:                    []string{"op"},
 			},
 		},
 
-		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		ShbredObservbtionGroupOptions: ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
-		Aggregate: &SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
+		Aggregbte: &ShbredObservbtionGroupOptions{
+			Totbl:     NoAlertsOption("none"),
+			Durbtion:  NoAlertsOption("none"),
 			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			ErrorRbte: NoAlertsOption("none"),
 		},
 	})
 }
 
-// NewExecutorQueueGroup creates a Executors.NewExecutorQueueGroup tailored for batches
-// workloads.
-func (batches) NewExecutorQueueGroup() monitoring.Group {
-	// queueContainerName is the set of potential sources of executor queue metrics,
-	// copied from CodeIntelligence.NewAutoindexingSummaryGroup
-	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
+// NewExecutorQueueGroup crebtes b Executors.NewExecutorQueueGroup tbilored for bbtches
+// worklobds.
+func (bbtches) NewExecutorQueueGroup() monitoring.Group {
+	// queueContbinerNbme is the set of potentibl sources of executor queue metrics,
+	// copied from CodeIntelligence.NewAutoindexingSummbryGroup
+	const queueContbinerNbme = "(executor|sourcegrbph-code-intel-indexers|executor-bbtches|frontend|sourcegrbph-frontend|worker|sourcegrbph-executors)"
 
-	return Executors.NewExecutorQueueGroup("batches", queueContainerName, "batches")
+	return Executors.NewExecutorQueueGroup("bbtches", queueContbinerNbme, "bbtches")
 }

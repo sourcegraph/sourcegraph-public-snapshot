@@ -1,31 +1,31 @@
-package validation
+pbckbge vblidbtion
 
 import (
-	protocolReader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
+	protocolRebder "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
 )
 
-// forEachInV calls the given function on each sink vertex adjacent to the given
-// edge. If any invocation returns false, iteration of the adjacent vertices will
-// not complete and false will be returned immediately.
-func forEachInV(edge protocolReader.Edge, f func(inV int) bool) bool {
+// forEbchInV cblls the given function on ebch sink vertex bdjbcent to the given
+// edge. If bny invocbtion returns fblse, iterbtion of the bdjbcent vertices will
+// not complete bnd fblse will be returned immedibtely.
+func forEbchInV(edge protocolRebder.Edge, f func(inV int) bool) bool {
 	if edge.InV != 0 {
 		if !f(edge.InV) {
-			return false
+			return fblse
 		}
 	}
-	for _, inV := range edge.InVs {
+	for _, inV := rbnge edge.InVs {
 		if !f(inV) {
-			return false
+			return fblse
 		}
 	}
 
 	return true
 }
 
-// eachInV returns a slice containing the InV/InVs values of the given edge.
-func eachInV(edge protocolReader.Edge) (inVs []int) {
-	_ = forEachInV(edge, func(inV int) bool {
-		inVs = append(inVs, inV)
+// ebchInV returns b slice contbining the InV/InVs vblues of the given edge.
+func ebchInV(edge protocolRebder.Edge) (inVs []int) {
+	_ = forEbchInV(edge, func(inV int) bool {
+		inVs = bppend(inVs, inV)
 		return true
 	})
 

@@ -1,57 +1,57 @@
-package validation
+pbckbge vblidbtion
 
 import (
-	protocolReader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	protocolRebder "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-// OwnershipContext bundles an document identifier and a contains edge that refers to that
-// document via its OutV property.
+// OwnershipContext bundles bn document identifier bnd b contbins edge thbt refers to thbt
+// document vib its OutV property.
 type OwnershipContext struct {
 	DocumentID  int
-	LineContext reader.LineContext
+	LineContext rebder.LineContext
 }
 
-// ownershipMap uses the given context's Stasher to create a mapping from range identifiers
-// to an OwnershipContext value, which bundles a document identifier as well as the parsed
-// edge element that ties them together.
-func ownershipMap(ctx *ValidationContext) map[int]OwnershipContext {
-	ownershipMap := map[int]OwnershipContext{}
+// ownershipMbp uses the given context's Stbsher to crebte b mbpping from rbnge identifiers
+// to bn OwnershipContext vblue, which bundles b document identifier bs well bs the pbrsed
+// edge element thbt ties them together.
+func ownershipMbp(ctx *VblidbtionContext) mbp[int]OwnershipContext {
+	ownershipMbp := mbp[int]OwnershipContext{}
 
-	if !ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
-		if lineContext.Element.Label != "contains" {
+	if !ctx.Stbsher.Edges(func(lineContext rebder.LineContext, edge protocolRebder.Edge) bool {
+		if lineContext.Element.Lbbel != "contbins" {
 			return true
 		}
-		edge, ok := lineContext.Element.Payload.(protocolReader.Edge)
+		edge, ok := lineContext.Element.Pbylobd.(protocolRebder.Edge)
 		if !ok {
 			return true
 		}
-		if outContext, ok := ctx.Stasher.Vertex(edge.OutV); !ok || outContext.Element.Label != "document" {
+		if outContext, ok := ctx.Stbsher.Vertex(edge.OutV); !ok || outContext.Element.Lbbel != "document" {
 			return true
 		}
 
-		return forEachInV(edge, func(inV int) bool {
-			if other, ok := ownershipMap[inV]; ok {
-				ctx.AddError("range %d already claimed by document %d", inV, other.DocumentID).AddContext(lineContext, other.LineContext)
-				return false
+		return forEbchInV(edge, func(inV int) bool {
+			if other, ok := ownershipMbp[inV]; ok {
+				ctx.AddError("rbnge %d blrebdy clbimed by document %d", inV, other.DocumentID).AddContext(lineContext, other.LineContext)
+				return fblse
 			}
 
-			ownershipMap[inV] = OwnershipContext{DocumentID: edge.OutV, LineContext: lineContext}
+			ownershipMbp[inV] = OwnershipContext{DocumentID: edge.OutV, LineContext: lineContext}
 			return true
 		})
 	}) {
 		return nil
 	}
 
-	return ownershipMap
+	return ownershipMbp
 }
 
-// invertOwnershipMap converts the given ownership map to return a map from document
-// identifiers to the set of range identifiers that document contains.
-func invertOwnershipMap(m map[int]OwnershipContext) map[int][]int {
-	inverted := map[int][]int{}
-	for rangeID, ownershipContext := range m {
-		inverted[ownershipContext.DocumentID] = append(inverted[ownershipContext.DocumentID], rangeID)
+// invertOwnershipMbp converts the given ownership mbp to return b mbp from document
+// identifiers to the set of rbnge identifiers thbt document contbins.
+func invertOwnershipMbp(m mbp[int]OwnershipContext) mbp[int][]int {
+	inverted := mbp[int][]int{}
+	for rbngeID, ownershipContext := rbnge m {
+		inverted[ownershipContext.DocumentID] = bppend(inverted[ownershipContext.DocumentID], rbngeID)
 	}
 
 	return inverted

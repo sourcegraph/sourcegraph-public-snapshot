@@ -1,66 +1,66 @@
-package compute
+pbckbge compute
 
 import (
 	"fmt"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
-func Test_scanTemplate(t *testing.T) {
+func Test_scbnTemplbte(t *testing.T) {
 	test := func(input string) string {
-		t := scanTemplate([]byte(input))
+		t := scbnTemplbte([]byte(input))
 		return toJSONString(t)
 	}
 
-	autogold.Expect(`[{"constant":"artifcats: "},{"variable":"$repo"}]`).
-		Equal(t, test("artifcats: $repo"))
+	butogold.Expect(`[{"constbnt":"brtifcbts: "},{"vbribble":"$repo"}]`).
+		Equbl(t, test("brtifcbts: $repo"))
 
-	autogold.Expect(`[{"constant":"$"},{"variable":"$foo"},{"constant":" $"},{"variable":"$bar"}]`).
-		Equal(t, test("$$foo $$bar"))
+	butogold.Expect(`[{"constbnt":"$"},{"vbribble":"$foo"},{"constbnt":" $"},{"vbribble":"$bbr"}]`).
+		Equbl(t, test("$$foo $$bbr"))
 
-	autogold.Expect(`[{"variable":"$repo"},{"constant":"(derp)"}]`).
-		Equal(t, test(`$repo(derp)`))
+	butogold.Expect(`[{"vbribble":"$repo"},{"constbnt":"(derp)"}]`).
+		Equbl(t, test(`$repo(derp)`))
 
-	autogold.Expect(`[{"variable":"$repo"},{"constant":":"},{"variable":"$file"},{"constant":" "},{"variable":"$content"}]`).
-		Equal(t, test(`$repo:$file $content`))
+	butogold.Expect(`[{"vbribble":"$repo"},{"constbnt":":"},{"vbribble":"$file"},{"constbnt":" "},{"vbribble":"$content"}]`).
+		Equbl(t, test(`$repo:$file $content`))
 
-	autogold.Expect(`[{"variable":"$repo"},{"variable":"$file"}]`).
-		Equal(t, test("$repo$file"))
+	butogold.Expect(`[{"vbribble":"$repo"},{"vbribble":"$file"}]`).
+		Equbl(t, test("$repo$file"))
 
-	autogold.Expect(`[{"constant":"$"},{"variable":"$foo"},{"variable":"$bar"},{"constant":"$"}]`).
-		Equal(t, test("$$foo$bar$"))
+	butogold.Expect(`[{"constbnt":"$"},{"vbribble":"$foo"},{"vbribble":"$bbr"},{"constbnt":"$"}]`).
+		Equbl(t, test("$$foo$bbr$"))
 
-	autogold.Expect(`[{"variable":"$bar"}]`).
-		Equal(t, test("$bar"))
+	butogold.Expect(`[{"vbribble":"$bbr"}]`).
+		Equbl(t, test("$bbr"))
 
-	autogold.Expect(`[{"variable":"$repo"},{"constant":" "}]`).
-		Equal(t, test(`$repo\ `))
+	butogold.Expect(`[{"vbribble":"$repo"},{"constbnt":" "}]`).
+		Equbl(t, test(`$repo\ `))
 
-	autogold.Expect(`[{"constant":"$repo "}]`).
-		Equal(t, test(`\$repo `))
+	butogold.Expect(`[{"constbnt":"$repo "}]`).
+		Equbl(t, test(`\$repo `))
 }
 
-func Test_templatize(t *testing.T) {
-	autogold.Expect("artifcats: {{.Repo}}").
-		Equal(t, templatize("artifcats: $repo", &MetaEnvironment{}))
+func Test_templbtize(t *testing.T) {
+	butogold.Expect("brtifcbts: {{.Repo}}").
+		Equbl(t, templbtize("brtifcbts: $repo", &MetbEnvironment{}))
 
-	autogold.Expect("artifcats: {{.Repo}} $1").
-		Equal(t, templatize("artifcats: $repo $1", &MetaEnvironment{}))
+	butogold.Expect("brtifcbts: {{.Repo}} $1").
+		Equbl(t, templbtize("brtifcbts: $repo $1", &MetbEnvironment{}))
 }
 
-func Test_substituteMetaVariables(t *testing.T) {
-	test := func(input string, env *MetaEnvironment) string {
-		t, err := substituteMetaVariables(input, env)
+func Test_substituteMetbVbribbles(t *testing.T) {
+	test := func(input string, env *MetbEnvironment) string {
+		t, err := substituteMetbVbribbles(input, env)
 		if err != nil {
 			return fmt.Sprintf("Error: %s", err)
 		}
 		return t
 	}
 
-	autogold.Expect("artifcats: $1 $foo hi").
-		Equal(t, test(
-			"artifcats: $1 $foo $author",
-			&MetaEnvironment{Author: "hi"},
+	butogold.Expect("brtifcbts: $1 $foo hi").
+		Equbl(t, test(
+			"brtifcbts: $1 $foo $buthor",
+			&MetbEnvironment{Author: "hi"},
 		))
 }

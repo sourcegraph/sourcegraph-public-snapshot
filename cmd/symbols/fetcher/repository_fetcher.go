@@ -1,98 +1,98 @@
-package fetcher
+pbckbge fetcher
 
 import (
-	"archive/tar"
+	"brchive/tbr"
 	"context"
 	"io"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type RepositoryFetcher interface {
-	FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan ParseRequestOrError
+type RepositoryFetcher interfbce {
+	FetchRepositoryArchive(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) <-chbn PbrseRequestOrError
 }
 
 type repositoryFetcher struct {
 	gitserverClient     gitserver.GitserverClient
-	operations          *operations
-	maxTotalPathsLength int
-	maxFileSize         int64
+	operbtions          *operbtions
+	mbxTotblPbthsLength int
+	mbxFileSize         int64
 }
 
-type ParseRequest struct {
-	Path string
-	Data []byte
+type PbrseRequest struct {
+	Pbth string
+	Dbtb []byte
 }
 
-type ParseRequestOrError struct {
-	ParseRequest ParseRequest
+type PbrseRequestOrError struct {
+	PbrseRequest PbrseRequest
 	Err          error
 }
 
-func NewRepositoryFetcher(observationCtx *observation.Context, gitserverClient gitserver.GitserverClient, maxTotalPathsLength int, maxFileSize int64) RepositoryFetcher {
+func NewRepositoryFetcher(observbtionCtx *observbtion.Context, gitserverClient gitserver.GitserverClient, mbxTotblPbthsLength int, mbxFileSize int64) RepositoryFetcher {
 	return &repositoryFetcher{
 		gitserverClient:     gitserverClient,
-		operations:          newOperations(observationCtx),
-		maxTotalPathsLength: maxTotalPathsLength,
-		maxFileSize:         maxFileSize,
+		operbtions:          newOperbtions(observbtionCtx),
+		mbxTotblPbthsLength: mbxTotblPbthsLength,
+		mbxFileSize:         mbxFileSize,
 	}
 }
 
-func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) <-chan ParseRequestOrError {
-	requestCh := make(chan ParseRequestOrError)
+func (f *repositoryFetcher) FetchRepositoryArchive(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) <-chbn PbrseRequestOrError {
+	requestCh := mbke(chbn PbrseRequestOrError)
 
 	go func() {
 		defer close(requestCh)
 
-		if err := f.fetchRepositoryArchive(ctx, repo, commit, paths, func(request ParseRequest) {
-			requestCh <- ParseRequestOrError{ParseRequest: request}
+		if err := f.fetchRepositoryArchive(ctx, repo, commit, pbths, func(request PbrseRequest) {
+			requestCh <- PbrseRequestOrError{PbrseRequest: request}
 		}); err != nil {
-			requestCh <- ParseRequestOrError{Err: err}
+			requestCh <- PbrseRequestOrError{Err: err}
 		}
 	}()
 
 	return requestCh
 }
 
-func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string, callback func(request ParseRequest)) (err error) {
-	ctx, trace, endObservation := f.operations.fetchRepositoryArchive.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string, cbllbbck func(request PbrseRequest)) (err error) {
+	ctx, trbce, endObservbtion := f.operbtions.fetchRepositoryArchive.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 		commit.Attr(),
-		attribute.Int("paths", len(paths)),
+		bttribute.Int("pbths", len(pbths)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	f.operations.fetching.Inc()
-	defer f.operations.fetching.Dec()
+	f.operbtions.fetching.Inc()
+	defer f.operbtions.fetching.Dec()
 
-	fetchAndRead := func(paths []string) error {
-		rc, err := f.gitserverClient.FetchTar(ctx, repo, commit, paths)
+	fetchAndRebd := func(pbths []string) error {
+		rc, err := f.gitserverClient.FetchTbr(ctx, repo, commit, pbths)
 		if err != nil {
-			return errors.Wrap(err, "gitserverClient.FetchTar")
+			return errors.Wrbp(err, "gitserverClient.FetchTbr")
 		}
 		defer rc.Close()
 
-		err = readTar(ctx, tar.NewReader(rc), callback, trace, f.maxFileSize)
+		err = rebdTbr(ctx, tbr.NewRebder(rc), cbllbbck, trbce, f.mbxFileSize)
 		if err != nil {
-			return errors.Wrap(err, "readTar")
+			return errors.Wrbp(err, "rebdTbr")
 		}
 
 		return nil
 	}
 
-	if len(paths) == 0 {
-		// Full archive
-		return fetchAndRead(nil)
+	if len(pbths) == 0 {
+		// Full brchive
+		return fetchAndRebd(nil)
 	}
 
-	// Partial archive
-	for _, pathBatch := range batchByTotalLength(paths, f.maxTotalPathsLength) {
-		err = fetchAndRead(pathBatch)
+	// Pbrtibl brchive
+	for _, pbthBbtch := rbnge bbtchByTotblLength(pbths, f.mbxTotblPbthsLength) {
+		err = fetchAndRebd(pbthBbtch)
 		if err != nil {
 			return err
 		}
@@ -101,58 +101,58 @@ func (f *repositoryFetcher) fetchRepositoryArchive(ctx context.Context, repo api
 	return nil
 }
 
-// batchByTotalLength returns batches of paths where each batch contains at most maxTotalLength
-// characters, except when a single path exceeds the soft max, in which case that long path will be put
-// into its own batch.
-func batchByTotalLength(paths []string, maxTotalLength int) [][]string {
-	batches := [][]string{}
-	currentBatch := []string{}
+// bbtchByTotblLength returns bbtches of pbths where ebch bbtch contbins bt most mbxTotblLength
+// chbrbcters, except when b single pbth exceeds the soft mbx, in which cbse thbt long pbth will be put
+// into its own bbtch.
+func bbtchByTotblLength(pbths []string, mbxTotblLength int) [][]string {
+	bbtches := [][]string{}
+	currentBbtch := []string{}
 	currentLength := 0
 
-	for _, path := range paths {
-		if len(currentBatch) > 0 && currentLength+len(path) > maxTotalLength {
-			batches = append(batches, currentBatch)
-			currentBatch = []string{}
+	for _, pbth := rbnge pbths {
+		if len(currentBbtch) > 0 && currentLength+len(pbth) > mbxTotblLength {
+			bbtches = bppend(bbtches, currentBbtch)
+			currentBbtch = []string{}
 			currentLength = 0
 		}
 
-		currentBatch = append(currentBatch, path)
-		currentLength += len(path)
+		currentBbtch = bppend(currentBbtch, pbth)
+		currentLength += len(pbth)
 	}
 
-	batches = append(batches, currentBatch)
+	bbtches = bppend(bbtches, currentBbtch)
 
-	return batches
+	return bbtches
 }
 
-func readTar(ctx context.Context, tarReader *tar.Reader, callback func(request ParseRequest), traceLog observation.TraceLogger, maxFileSize int64) error {
+func rebdTbr(ctx context.Context, tbrRebder *tbr.Rebder, cbllbbck func(request PbrseRequest), trbceLog observbtion.TrbceLogger, mbxFileSize int64) error {
 	for {
 		if ctx.Err() != nil {
 			return ctx.Err()
 		}
 
-		tarHeader, err := tarReader.Next()
+		tbrHebder, err := tbrRebder.Next()
 		if err == io.EOF {
 			return nil
 		} else if err != nil {
 			return err
 		}
 
-		if tarHeader.FileInfo().IsDir() || tarHeader.Typeflag == tar.TypeXGlobalHeader {
+		if tbrHebder.FileInfo().IsDir() || tbrHebder.Typeflbg == tbr.TypeXGlobblHebder {
 			continue
 		}
 
-		if tarHeader.Size > maxFileSize {
-			callback(ParseRequest{Path: tarHeader.Name, Data: []byte{}})
+		if tbrHebder.Size > mbxFileSize {
+			cbllbbck(PbrseRequest{Pbth: tbrHebder.Nbme, Dbtb: []byte{}})
 			continue
 		}
 
-		data := make([]byte, int(tarHeader.Size))
-		traceLog.AddEvent("readTar", attribute.String("event", "reading tar file contents"))
-		if _, err := io.ReadFull(tarReader, data); err != nil {
+		dbtb := mbke([]byte, int(tbrHebder.Size))
+		trbceLog.AddEvent("rebdTbr", bttribute.String("event", "rebding tbr file contents"))
+		if _, err := io.RebdFull(tbrRebder, dbtb); err != nil {
 			return err
 		}
-		traceLog.AddEvent("readTar", attribute.Int64("size", tarHeader.Size))
-		callback(ParseRequest{Path: tarHeader.Name, Data: data})
+		trbceLog.AddEvent("rebdTbr", bttribute.Int64("size", tbrHebder.Size))
+		cbllbbck(PbrseRequest{Pbth: tbrHebder.Nbme, Dbtb: dbtb})
 	}
 }

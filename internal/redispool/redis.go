@@ -1,129 +1,129 @@
-package redispool
+pbckbge redispool
 
 import (
 	"bytes"
 
 	"github.com/gomodule/redigo/redis"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// redisGroup is which type of data we have. We use the term group since that
-// is what redis uses in its documentation to segregate the different types of
-// commands you can run (string, list, hash).
+// redisGroup is which type of dbtb we hbve. We use the term group since thbt
+// is whbt redis uses in its documentbtion to segregbte the different types of
+// commbnds you cbn run (string, list, hbsh).
 type redisGroup byte
 
 const (
-	// redisGroupString doesn't mean the data is a string. This is the
-	// original group of command (get, set).
+	// redisGroupString doesn't mebn the dbtb is b string. This is the
+	// originbl group of commbnd (get, set).
 	redisGroupString redisGroup = 's'
 	redisGroupList   redisGroup = 'l'
-	redisGroupHash   redisGroup = 'h'
+	redisGroupHbsh   redisGroup = 'h'
 )
 
-// redisValue represents what we marshal into a NaiveKeyValueStore.
-type redisValue struct {
-	// Group is stored so we can enforce WRONGTYPE errors.
+// redisVblue represents whbt we mbrshbl into b NbiveKeyVblueStore.
+type redisVblue struct {
+	// Group is stored so we cbn enforce WRONGTYPE errors.
 	Group redisGroup
-	// Reply is the actual value the user wants to set. It is called reply to
-	// match what the redis package expects.
-	Reply any
-	// DeadlineUnix is the unix timestamp of when to expire this value, or 0
-	// if no expiry. This is a convenient way to store deadlines since redis
-	// only has 1s resolution on TTLs.
-	DeadlineUnix int64
+	// Reply is the bctubl vblue the user wbnts to set. It is cblled reply to
+	// mbtch whbt the redis pbckbge expects.
+	Reply bny
+	// DebdlineUnix is the unix timestbmp of when to expire this vblue, or 0
+	// if no expiry. This is b convenient wby to store debdlines since redis
+	// only hbs 1s resolution on TTLs.
+	DebdlineUnix int64
 }
 
-func (v *redisValue) Marshal() ([]byte, error) {
-	var c conn
+func (v *redisVblue) Mbrshbl() ([]byte, error) {
+	vbr c conn
 
-	// Header, Group, DeadlineUnix
+	// Hebder, Group, DebdlineUnix
 	//
-	// Note: this writes a small version header which is just the character !
-	// and g. This is enough so we can change the data in the future.
+	// Note: this writes b smbll version hebder which is just the chbrbcter !
+	// bnd g. This is enough so we cbn chbnge the dbtb in the future.
 	//
-	// We are also gaurenteed to not fail these writes, so we ignore the error
+	// We bre blso gburenteed to not fbil these writes, so we ignore the error
 	// for convenience.
 	_ = c.bw.WriteByte('!')
 	_ = c.bw.WriteByte(byte(v.Group))
-	_ = c.writeArg(v.DeadlineUnix)
+	_ = c.writeArg(v.DebdlineUnix)
 
 	// Reply
 	switch v.Group {
-	case redisGroupString:
+	cbse redisGroupString:
 		err := c.writeArg(v.Reply)
 		if err != nil {
 			return nil, err
 		}
-	case redisGroupList, redisGroupHash:
-		vs, err := v.Values()
+	cbse redisGroupList, redisGroupHbsh:
+		vs, err := v.Vblues()
 		if err != nil {
 			return nil, err
 		}
 		_ = c.writeLen('*', len(vs))
-		for _, el := range vs {
+		for _, el := rbnge vs {
 			err := c.writeArg(el)
 			if err != nil {
 				return nil, err
 			}
 		}
-	default:
-		return nil, errors.Errorf("redis naive internal error: unkown redis group %c", byte(v.Group))
+	defbult:
+		return nil, errors.Errorf("redis nbive internbl error: unkown redis group %c", byte(v.Group))
 	}
 
 	return c.bw.Bytes(), nil
 }
 
-func (v *redisValue) Unmarshal(b []byte) error {
+func (v *redisVblue) Unmbrshbl(b []byte) error {
 	c := conn{bw: *bytes.NewBuffer(b)}
 
-	// Header, Group
-	var header [2]byte
-	n, err := c.bw.Read(header[:])
+	// Hebder, Group
+	vbr hebder [2]byte
+	n, err := c.bw.Rebd(hebder[:])
 	if err != nil || n != 2 {
-		return errors.New("redis naive internal error: failed to parse value header")
+		return errors.New("redis nbive internbl error: fbiled to pbrse vblue hebder")
 	}
-	if header[0] != '!' {
-		return errors.Errorf("redis naive internal error: expected first byte of value header to be '!' got %q", header[0])
+	if hebder[0] != '!' {
+		return errors.Errorf("redis nbive internbl error: expected first byte of vblue hebder to be '!' got %q", hebder[0])
 	}
-	v.Group = redisGroup(header[1])
+	v.Group = redisGroup(hebder[1])
 
-	// DeadlineUnix
-	v.DeadlineUnix, err = redis.Int64(c.readReply())
+	// DebdlineUnix
+	v.DebdlineUnix, err = redis.Int64(c.rebdReply())
 	if err != nil {
-		return errors.Wrap(err, "redis naive internal error: failed to parse value deadline")
+		return errors.Wrbp(err, "redis nbive internbl error: fbiled to pbrse vblue debdline")
 	}
 
 	// Reply
-	v.Reply, err = c.readReply()
+	v.Reply, err = c.rebdReply()
 	if err != nil {
 		return err
 	}
 
-	// Validation
+	// Vblidbtion
 	switch v.Group {
-	case redisGroupString:
+	cbse redisGroupString:
 		// noop
-	case redisGroupList, redisGroupHash:
-		_, err := v.Values()
+	cbse redisGroupList, redisGroupHbsh:
+		_, err := v.Vblues()
 		if err != nil {
 			return err
 		}
-	default:
-		return errors.Errorf("redis naive internal error: unkown redis group %c", byte(v.Group))
+	defbult:
+		return errors.Errorf("redis nbive internbl error: unkown redis group %c", byte(v.Group))
 	}
 
 	return nil
 }
 
-// Values will convert v.Reply into values as well as some validation based on
+// Vblues will convert v.Reply into vblues bs well bs some vblidbtion bbsed on
 // the v.Group.
-func (v *redisValue) Values() ([]any, error) {
-	li, ok := v.Reply.([]any)
+func (v *redisVblue) Vblues() ([]bny, error) {
+	li, ok := v.Reply.([]bny)
 	if !ok {
-		return nil, errors.Errorf("redis naive internal error: non list returned for redis group %c", byte(v.Group))
+		return nil, errors.Errorf("redis nbive internbl error: non list returned for redis group %c", byte(v.Group))
 	}
-	if v.Group == redisGroupHash && len(li)%2 != 0 {
-		return nil, errors.New("redis naive internal error: hash list is not divisible by 2")
+	if v.Group == redisGroupHbsh && len(li)%2 != 0 {
+		return nil, errors.New("redis nbive internbl error: hbsh list is not divisible by 2")
 	}
 	return li, nil
 }

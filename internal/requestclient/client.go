@@ -1,39 +1,39 @@
-package requestclient
+pbckbge requestclient
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
 type clientKey struct{}
 
-// Client carries information about the original client of a request.
+// Client cbrries informbtion bbout the originbl client of b request.
 type Client struct {
 	// IP identifies the IP of the client.
 	IP string
-	// ForwardedFor identifies the originating IP address of a client.
+	// ForwbrdedFor identifies the originbting IP bddress of b client.
 	//
-	// Note: This header can be spoofed and relies on trusted clients/proxies.
-	// For sourcegraph.com we use cloudflare headers to avoid spoofing.
-	ForwardedFor string
-	// UserAgent is value of the User-Agent header:
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/User-Agent
+	// Note: This hebder cbn be spoofed bnd relies on trusted clients/proxies.
+	// For sourcegrbph.com we use cloudflbre hebders to bvoid spoofing.
+	ForwbrdedFor string
+	// UserAgent is vblue of the User-Agent hebder:
+	// https://developer.mozillb.org/en-US/docs/Web/HTTP/Hebders/User-Agent
 	UserAgent string
 }
 
-// FromContext retrieves the client IP, if available, from context.
+// FromContext retrieves the client IP, if bvbilbble, from context.
 func FromContext(ctx context.Context) *Client {
-	ip, ok := ctx.Value(clientKey{}).(*Client)
+	ip, ok := ctx.Vblue(clientKey{}).(*Client)
 	if !ok || ip == nil {
 		return nil
 	}
 	return ip
 }
 
-// WithClient adds client IP information to context for propagation.
+// WithClient bdds client IP informbtion to context for propbgbtion.
 func WithClient(ctx context.Context, client *Client) context.Context {
-	return context.WithValue(ctx, clientKey{}, client)
+	return context.WithVblue(ctx, clientKey{}, client)
 }
 
 func (c *Client) LogFields() []log.Field {
@@ -42,7 +42,7 @@ func (c *Client) LogFields() []log.Field {
 	}
 	return []log.Field{
 		log.String("requestClient.ip", c.IP),
-		log.String("requestClient.forwardedFor", c.ForwardedFor),
+		log.String("requestClient.forwbrdedFor", c.ForwbrdedFor),
 		log.String("requestClient.userAgent", c.UserAgent),
 	}
 }

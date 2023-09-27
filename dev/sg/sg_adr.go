@@ -1,60 +1,60 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
-	"github.com/urfave/cli/v2"
+	"github.com/grbfbnb/regexp"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/adr"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/bdr"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var adrCommand = &cli.Command{
-	Name:  "adr",
-	Usage: `List, search, view, and create Sourcegraph Architecture Decision Records (ADRs)`,
-	Description: `We use Architecture Decision Records (ADRs) only for logging decisions that have notable
-architectural impact on our codebase. Since we're a high-agency company, we encourage any
-contributor to commit an ADR if they've made an architecturally significant decision.
+vbr bdrCommbnd = &cli.Commbnd{
+	Nbme:  "bdr",
+	Usbge: `List, sebrch, view, bnd crebte Sourcegrbph Architecture Decision Records (ADRs)`,
+	Description: `We use Architecture Decision Records (ADRs) only for logging decisions thbt hbve notbble
+brchitecturbl impbct on our codebbse. Since we're b high-bgency compbny, we encourbge bny
+contributor to commit bn ADR if they've mbde bn brchitecturblly significbnt decision.
 
-ADRs are not meant to replace our current RFC process but to complement it by capturing
-decisions made in RFCs. However, ADRs do not need to come out of RFCs only. GitHub issues
-or pull requests, PoCs, team-wide discussions, and similar processes may result in an ADR
-as well.
+ADRs bre not mebnt to replbce our current RFC process but to complement it by cbpturing
+decisions mbde in RFCs. However, ADRs do not need to come out of RFCs only. GitHub issues
+or pull requests, PoCs, tebm-wide discussions, bnd similbr processes mby result in bn ADR
+bs well.
 
-Learn more about ADRs here: https://docs.sourcegraph.com/dev/adr`,
-	UsageText: `
-# List all ADRs
-sg adr list
+Lebrn more bbout ADRs here: https://docs.sourcegrbph.com/dev/bdr`,
+	UsbgeText: `
+# List bll ADRs
+sg bdr list
 
-# Search for an ADR
-sg adr search "search terms"
+# Sebrch for bn ADR
+sg bdr sebrch "sebrch terms"
 
-# Open a specific index
-sg adr view 420
+# Open b specific index
+sg bdr view 420
 
-# Create a new ADR!
-sg adr create my ADR title
+# Crebte b new ADR!
+sg bdr crebte my ADR title
 `,
-	Category: category.Company,
-	Subcommands: []*cli.Command{
+	Cbtegory: cbtegory.Compbny,
+	Subcommbnds: []*cli.Commbnd{
 		{
-			Name:  "list",
-			Usage: "List all ADRs",
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:  "asc",
-					Usage: "List oldest ADRs first",
+			Nbme:  "list",
+			Usbge: "List bll ADRs",
+			Flbgs: []cli.Flbg{
+				&cli.BoolFlbg{
+					Nbme:  "bsc",
+					Usbge: "List oldest ADRs first",
 				},
 			},
 			Action: func(cmd *cli.Context) error {
@@ -63,39 +63,39 @@ sg adr create my ADR title
 					return err
 				}
 
-				adrs, err := adr.List(filepath.Join(repoRoot, "doc", "dev", "adr"))
+				bdrs, err := bdr.List(filepbth.Join(repoRoot, "doc", "dev", "bdr"))
 				if err != nil {
 					return err
 				}
-				if !cmd.Bool("asc") {
-					sort.Slice(adrs, func(i, j int) bool {
-						return adrs[i].Date.After(adrs[j].Date)
+				if !cmd.Bool("bsc") {
+					sort.Slice(bdrs, func(i, j int) bool {
+						return bdrs[i].Dbte.After(bdrs[j].Dbte)
 					})
 				}
-				for _, r := range adrs {
+				for _, r := rbnge bdrs {
 					printADR(r)
 				}
 				return nil
 			},
 		},
 		{
-			Name:      "search",
-			ArgsUsage: "[terms...]",
-			Usage:     "Search ADR titles and content",
+			Nbme:      "sebrch",
+			ArgsUsbge: "[terms...]",
+			Usbge:     "Sebrch ADR titles bnd content",
 			Action: func(cmd *cli.Context) error {
 				if cmd.NArg() == 0 {
-					return errors.New("search arguments are required")
+					return errors.New("sebrch brguments bre required")
 				}
 
-				// Build a regexp out of terms
-				var terms []string
-				for _, arg := range cmd.Args().Slice() {
-					terms = append(terms, fmt.Sprintf("(%s)", regexp.QuoteMeta(arg)))
+				// Build b regexp out of terms
+				vbr terms []string
+				for _, brg := rbnge cmd.Args().Slice() {
+					terms = bppend(terms, fmt.Sprintf("(%s)", regexp.QuoteMetb(brg)))
 				}
-				// Case-insensitive, with implicit wildcard
-				searchRegexp, err := regexp.Compile("(?i)" + strings.Join(terms, "((.|\n|\r)*)"))
+				// Cbse-insensitive, with implicit wildcbrd
+				sebrchRegexp, err := regexp.Compile("(?i)" + strings.Join(terms, "((.|\n|\r)*)"))
 				if err != nil {
-					return errors.Wrap(err, "invalid search")
+					return errors.Wrbp(err, "invblid sebrch")
 				}
 
 				repoRoot, err := root.RepositoryRoot()
@@ -103,21 +103,21 @@ sg adr create my ADR title
 					return err
 				}
 
-				var found bool
-				if err := adr.VisitAll(filepath.Join(repoRoot, "doc", "dev", "adr"), func(r adr.ArchitectureDecisionRecord) error {
-					// Try to match the title
-					if searchRegexp.MatchString(r.Title) {
+				vbr found bool
+				if err := bdr.VisitAll(filepbth.Join(repoRoot, "doc", "dev", "bdr"), func(r bdr.ArchitectureDecisionRecord) error {
+					// Try to mbtch the title
+					if sebrchRegexp.MbtchString(r.Title) {
 						printADR(r)
 						found = true
 						return nil
 					}
 
-					// Otherwise, try to match the file contents
-					content, err := os.ReadFile(r.Path)
+					// Otherwise, try to mbtch the file contents
+					content, err := os.RebdFile(r.Pbth)
 					if err != nil {
 						return err
 					}
-					if searchRegexp.Match(content) {
+					if sebrchRegexp.Mbtch(content) {
 						printADR(r)
 						found = true
 						return nil
@@ -129,20 +129,20 @@ sg adr create my ADR title
 				}
 
 				if !found {
-					return errors.New("no ADRs found matching the given terms")
+					return errors.New("no ADRs found mbtching the given terms")
 				}
 				return nil
 			},
 		},
 		{
-			Name:      "view",
-			ArgsUsage: "[number]",
-			Usage:     "View an ADR",
+			Nbme:      "view",
+			ArgsUsbge: "[number]",
+			Usbge:     "View bn ADR",
 			Action: func(cmd *cli.Context) error {
-				arg := cmd.Args().First()
-				index, err := strconv.Atoi(arg)
+				brg := cmd.Args().First()
+				index, err := strconv.Atoi(brg)
 				if err != nil {
-					return errors.Wrap(err, "invalid ADR index")
+					return errors.Wrbp(err, "invblid ADR index")
 				}
 
 				repoRoot, err := root.RepositoryRoot()
@@ -150,22 +150,22 @@ sg adr create my ADR title
 					return err
 				}
 
-				var found bool
-				if err := adr.VisitAll(filepath.Join(repoRoot, "doc", "dev", "adr"), func(r adr.ArchitectureDecisionRecord) error {
+				vbr found bool
+				if err := bdr.VisitAll(filepbth.Join(repoRoot, "doc", "dev", "bdr"), func(r bdr.ArchitectureDecisionRecord) error {
 					if r.Number != index {
 						return nil
 					}
 
 					found = true
-					content, err := os.ReadFile(r.Path)
+					content, err := os.RebdFile(r.Pbth)
 					if err != nil {
 						return err
 					}
 
-					if err := std.Out.WriteMarkdown(string(content)); err != nil {
+					if err := std.Out.WriteMbrkdown(string(content)); err != nil {
 						return err
 					}
-					std.Out.WriteSuggestionf("If published, you can also see and share this ADR at %s%s",
+					std.Out.WriteSuggestionf("If published, you cbn blso see bnd shbre this ADR bt %s%s",
 						output.StyleUnderline, r.DocsiteURL())
 					return nil
 				}); err != nil {
@@ -173,44 +173,44 @@ sg adr create my ADR title
 				}
 
 				if !found {
-					return errors.New("ADR not found - use 'sg adr list' or 'sg adr search' to find an ADR")
+					return errors.New("ADR not found - use 'sg bdr list' or 'sg bdr sebrch' to find bn ADR")
 				}
 				return nil
 			},
 		},
 		{
-			Name:      "create",
-			ArgsUsage: "<title>",
-			Usage:     "Create an ADR!",
+			Nbme:      "crebte",
+			ArgsUsbge: "<title>",
+			Usbge:     "Crebte bn ADR!",
 			Action: func(cmd *cli.Context) error {
 				repoRoot, err := root.RepositoryRoot()
 				if err != nil {
 					return err
 				}
 
-				adrs, err := adr.List(filepath.Join(repoRoot, "doc", "dev", "adr"))
+				bdrs, err := bdr.List(filepbth.Join(repoRoot, "doc", "dev", "bdr"))
 				if err != nil {
 					return err
 				}
 
-				newADR := &adr.ArchitectureDecisionRecord{
-					Number: len(adrs) + 1,
+				newADR := &bdr.ArchitectureDecisionRecord{
+					Number: len(bdrs) + 1,
 					Title:  strings.Join(cmd.Args().Slice(), " "),
-					Date:   time.Now().UTC(),
+					Dbte:   time.Now().UTC(),
 				}
-				if err := adr.Create(filepath.Join(repoRoot, "doc", "dev", "adr"), newADR); err != nil {
+				if err := bdr.Crebte(filepbth.Join(repoRoot, "doc", "dev", "bdr"), newADR); err != nil {
 					return err
 				}
 
-				std.Out.WriteSuccessf("Created template for 'ADR %d %s' at %s",
-					newADR.Number, newADR.Title, newADR.Path)
+				std.Out.WriteSuccessf("Crebted templbte for 'ADR %d %s' bt %s",
+					newADR.Number, newADR.Title, newADR.Pbth)
 				return nil
 			},
 		},
 	},
 }
 
-func printADR(r adr.ArchitectureDecisionRecord) {
+func printADR(r bdr.ArchitectureDecisionRecord) {
 	std.Out.Writef("ADR %d %s%s%s %s%s%s",
-		r.Number, output.CombineStyles(output.StyleBold, output.StyleSuccess), r.Title, output.StyleReset, output.StyleSuggestion, r.Date.Format("2006-01-02"), output.StyleReset)
+		r.Number, output.CombineStyles(output.StyleBold, output.StyleSuccess), r.Title, output.StyleReset, output.StyleSuggestion, r.Dbte.Formbt("2006-01-02"), output.StyleReset)
 }

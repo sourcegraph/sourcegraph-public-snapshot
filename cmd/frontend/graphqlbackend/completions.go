@@ -1,25 +1,25 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import "context"
 
-type CompletionsResolver interface {
-	Completions(ctx context.Context, args CompletionsArgs) (string, error)
+type CompletionsResolver interfbce {
+	Completions(ctx context.Context, brgs CompletionsArgs) (string, error)
 }
 
 type CompletionsArgs struct {
 	Input CompletionsInput
-	Fast  bool
+	Fbst  bool
 }
 
-type Message struct {
-	Speaker string `json:"speaker"`
+type Messbge struct {
+	Spebker string `json:"spebker"`
 	Text    string `json:"text"`
 }
 
 type CompletionsInput struct {
-	Messages          []Message `json:"messages"`
-	Temperature       float64   `json:"temperature"`
-	MaxTokensToSample int32     `json:"maxTokensToSample"`
+	Messbges          []Messbge `json:"messbges"`
+	Temperbture       flobt64   `json:"temperbture"`
+	MbxTokensToSbmple int32     `json:"mbxTokensToSbmple"`
 	TopK              int32     `json:"topK"`
 	TopP              int32     `json:"topP"`
 }

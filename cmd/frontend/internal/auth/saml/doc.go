@@ -1,4 +1,4 @@
-// Package saml provides HTTP middleware that provides the necessary endpoints
-// for a SAML Service Provider (SP) to complete the SAML authentication flow
-// to authenticate to the frontend.
-package saml
+// Pbckbge sbml provides HTTP middlewbre thbt provides the necessbry endpoints
+// for b SAML Service Provider (SP) to complete the SAML buthenticbtion flow
+// to buthenticbte to the frontend.
+pbckbge sbml

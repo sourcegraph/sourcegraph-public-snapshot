@@ -1,32 +1,32 @@
-package conf
+pbckbge conf
 
 import (
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
 )
 
 func TestAuthPublic(t *testing.T) {
-	orig := envvar.SourcegraphDotComMode()
-	envvar.MockSourcegraphDotComMode(false)
-	defer envvar.MockSourcegraphDotComMode(orig) // reset
+	orig := envvbr.SourcegrbphDotComMode()
+	envvbr.MockSourcegrbphDotComMode(fblse)
+	defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 
-	t.Run("Default, self-hosted instance non-public auth", func(t *testing.T) {
+	t.Run("Defbult, self-hosted instbnce non-public buth", func(t *testing.T) {
 		got := AuthPublic()
-		want := false
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("got %v, want %v", got, want)
+		wbnt := fblse
+		if !reflect.DeepEqubl(got, wbnt) {
+			t.Errorf("got %v, wbnt %v", got, wbnt)
 		}
 	})
 
-	envvar.MockSourcegraphDotComMode(true)
+	envvbr.MockSourcegrbphDotComMode(true)
 
-	t.Run("Sourcegraph.com public auth", func(t *testing.T) {
+	t.Run("Sourcegrbph.com public buth", func(t *testing.T) {
 		got := AuthPublic()
-		want := true
-		if !reflect.DeepEqual(got, want) {
-			t.Errorf("got %v, want %v", got, want)
+		wbnt := true
+		if !reflect.DeepEqubl(got, wbnt) {
+			t.Errorf("got %v, wbnt %v", got, wbnt)
 		}
 	})
 }

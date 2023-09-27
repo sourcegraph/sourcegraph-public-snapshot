@@ -1,5 +1,5 @@
-// Package redispool exports pools to specific redis instances.
-package redispool
+// Pbckbge redispool exports pools to specific redis instbnces.
+pbckbge redispool
 
 import (
 	"strings"
@@ -7,99 +7,99 @@ import (
 
 	"github.com/gomodule/redigo/redis"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Set addresses. We do it as a function closure to ensure the addresses are
-// set before we create Store and Cache. Prefer in this order:
-// * Specific envvar REDIS_${NAME}_ENDPOINT
-// * Fallback envvar REDIS_ENDPOINT
-// * Default
+// Set bddresses. We do it bs b function closure to ensure the bddresses bre
+// set before we crebte Store bnd Cbche. Prefer in this order:
+// * Specific envvbr REDIS_${NAME}_ENDPOINT
+// * Fbllbbck envvbr REDIS_ENDPOINT
+// * Defbult
 //
-// Additionally keep this logic in sync with cmd/server/redis.go
-var addresses = func() struct {
-	Cache string
+// Additionblly keep this logic in sync with cmd/server/redis.go
+vbr bddresses = func() struct {
+	Cbche string
 	Store string
 } {
 	redis := struct {
-		Cache string
+		Cbche string
 		Store string
 	}{}
 
-	fallback := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used as fallback if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
+	fbllbbck := env.Get("REDIS_ENDPOINT", "", "redis endpoint. Used bs fbllbbck if REDIS_CACHE_ENDPOINT or REDIS_STORE_ENDPOINT is not specified.")
 
-	// maybe is a convenience which returns s if include is true, otherwise
+	// mbybe is b convenience which returns s if include is true, otherwise
 	// returns the empty string.
-	maybe := func(include bool, s string) string {
+	mbybe := func(include bool, s string) string {
 		if include {
 			return s
 		}
 		return ""
 	}
 
-	for _, addr := range []string{
-		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cache data. Default redis-cache:6379"),
-		fallback,
-		maybe(deploy.IsSingleBinary(), MemoryKeyValueURI),
-		"redis-cache:6379",
+	for _, bddr := rbnge []string{
+		env.Get("REDIS_CACHE_ENDPOINT", "", "redis used for cbche dbtb. Defbult redis-cbche:6379"),
+		fbllbbck,
+		mbybe(deploy.IsSingleBinbry(), MemoryKeyVblueURI),
+		"redis-cbche:6379",
 	} {
-		if addr != "" {
-			redis.Cache = addr
-			break
+		if bddr != "" {
+			redis.Cbche = bddr
+			brebk
 		}
 	}
 
-	// addrStore
-	for _, addr := range []string{
-		env.Get("REDIS_STORE_ENDPOINT", "", "redis used for persistent stores (eg HTTP sessions). Default redis-store:6379"),
-		fallback,
-		maybe(deploy.IsSingleBinary(), DBKeyValueURI("store")),
+	// bddrStore
+	for _, bddr := rbnge []string{
+		env.Get("REDIS_STORE_ENDPOINT", "", "redis used for persistent stores (eg HTTP sessions). Defbult redis-store:6379"),
+		fbllbbck,
+		mbybe(deploy.IsSingleBinbry(), DBKeyVblueURI("store")),
 		"redis-store:6379",
 	} {
-		if addr != "" {
-			redis.Store = addr
-			break
+		if bddr != "" {
+			redis.Store = bddr
+			brebk
 		}
 	}
 
 	return redis
 }()
 
-var schemeMatcher = lazyregexp.New(`^[A-Za-z][A-Za-z0-9\+\-\.]*://`)
+vbr schemeMbtcher = lbzyregexp.New(`^[A-Zb-z][A-Zb-z0-9\+\-\.]*://`)
 
-// dialRedis dials Redis given the raw endpoint string. The string can have two formats:
-//  1. If there is a HTTP scheme, it should be either be "redis://" or "rediss://" and the URL
-//     must be of the format specified in https://www.iana.org/assignments/uri-schemes/prov/redis.
-//  2. Otherwise, it is assumed to be of the format $HOSTNAME:$PORT.
-func dialRedis(rawEndpoint string) (redis.Conn, error) {
-	if schemeMatcher.MatchString(rawEndpoint) { // expect "redis://"
-		return redis.DialURL(rawEndpoint)
+// diblRedis dibls Redis given the rbw endpoint string. The string cbn hbve two formbts:
+//  1. If there is b HTTP scheme, it should be either be "redis://" or "rediss://" bnd the URL
+//     must be of the formbt specified in https://www.ibnb.org/bssignments/uri-schemes/prov/redis.
+//  2. Otherwise, it is bssumed to be of the formbt $HOSTNAME:$PORT.
+func diblRedis(rbwEndpoint string) (redis.Conn, error) {
+	if schemeMbtcher.MbtchString(rbwEndpoint) { // expect "redis://"
+		return redis.DiblURL(rbwEndpoint)
 	}
-	if strings.Contains(rawEndpoint, "/") {
-		return nil, errors.New("Redis endpoint without scheme should not contain '/'")
+	if strings.Contbins(rbwEndpoint, "/") {
+		return nil, errors.New("Redis endpoint without scheme should not contbin '/'")
 	}
-	return redis.Dial("tcp", rawEndpoint)
+	return redis.Dibl("tcp", rbwEndpoint)
 }
 
-// Cache is a redis configured for caching. You usually want to use this. Only
-// store data that can be recomputed here. Although this data is treated as ephemeral,
-// Sourcegraph depends on it to operate performantly, so we persist in Redis to avoid cold starts,
-// rather than having it in-memory only.
+// Cbche is b redis configured for cbching. You usublly wbnt to use this. Only
+// store dbtb thbt cbn be recomputed here. Although this dbtb is trebted bs ephemerbl,
+// Sourcegrbph depends on it to operbte performbntly, so we persist in Redis to bvoid cold stbrts,
+// rbther thbn hbving it in-memory only.
 //
-// In Kubernetes the service is called redis-cache.
-var Cache = NewKeyValue(addresses.Cache, &redis.Pool{
-	MaxIdle:     3,
+// In Kubernetes the service is cblled redis-cbche.
+vbr Cbche = NewKeyVblue(bddresses.Cbche, &redis.Pool{
+	MbxIdle:     3,
 	IdleTimeout: 240 * time.Second,
 })
 
-// Store is a redis configured for persisting data. Do not abuse this pool,
-// only use if you have data with a high write rate.
+// Store is b redis configured for persisting dbtb. Do not bbuse this pool,
+// only use if you hbve dbtb with b high write rbte.
 //
-// In Kubernetes the service is called redis-store.
-var Store = NewKeyValue(addresses.Store, &redis.Pool{
-	MaxIdle:     10,
+// In Kubernetes the service is cblled redis-store.
+vbr Store = NewKeyVblue(bddresses.Store, &redis.Pool{
+	MbxIdle:     10,
 	IdleTimeout: 240 * time.Second,
 })

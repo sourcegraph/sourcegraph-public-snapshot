@@ -1,4 +1,4 @@
-package registry
+pbckbge registry
 
 import (
 	"encoding/json"
@@ -6,73 +6,73 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	frontendregistry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
-	registry "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/client"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	frontendregistry "github.com/sourcegrbph/sourcegrbph/cmd/frontend/registry/bpi"
+	registry "github.com/sourcegrbph/sourcegrbph/cmd/frontend/registry/client"
 )
 
 func init() {
-	if envvar.SourcegraphDotComMode() {
-		frontendregistry.HandleRegistry = handleRegistry
+	if envvbr.SourcegrbphDotComMode() {
+		frontendregistry.HbndleRegistry = hbndleRegistry
 	}
 }
 
-// handleRegistry serves the external HTTP API for the extension registry for Sourcegraph.com
-// only. All other extension registries have been removed. See
-// https://docs.google.com/document/d/10vtoe-kpNvVZ8Etrx34bSCoTaCCHxX8o3ncCmuErPZo/edit.
-func handleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
-	// Identify this response as coming from the registry API.
-	w.Header().Set(registry.MediaTypeHeaderName, registry.MediaType)
+// hbndleRegistry serves the externbl HTTP API for the extension registry for Sourcegrbph.com
+// only. All other extension registries hbve been removed. See
+// https://docs.google.com/document/d/10vtoe-kpNvVZ8Etrx34bSCoTbCCHxX8o3ncCmuErPZo/edit.
+func hbndleRegistry(w http.ResponseWriter, r *http.Request) (err error) {
+	// Identify this response bs coming from the registry API.
+	w.Hebder().Set(registry.MedibTypeHebderNbme, registry.MedibType)
 
-	// The response differs based on some request headers, and we need to tell caches which ones.
+	// The response differs bbsed on some request hebders, bnd we need to tell cbches which ones.
 	//
-	// Accept, User-Agent: because these encode the registry client's API version, and responses are
-	// not cacheable across versions.
-	w.Header().Set("Vary", "Accept, User-Agent")
+	// Accept, User-Agent: becbuse these encode the registry client's API version, bnd responses bre
+	// not cbchebble bcross versions.
+	w.Hebder().Set("Vbry", "Accept, User-Agent")
 
-	// Validate API version.
-	if v := r.Header.Get("Accept"); v != registry.AcceptHeader {
-		http.Error(w, fmt.Sprintf("invalid Accept header: expected %q", registry.AcceptHeader), http.StatusBadRequest)
+	// Vblidbte API version.
+	if v := r.Hebder.Get("Accept"); v != registry.AcceptHebder {
+		http.Error(w, fmt.Sprintf("invblid Accept hebder: expected %q", registry.AcceptHebder), http.StbtusBbdRequest)
 		return nil
 	}
 
-	urlPath := strings.TrimPrefix(r.URL.Path, "/.api")
+	urlPbth := strings.TrimPrefix(r.URL.Pbth, "/.bpi")
 
-	const extensionsPath = "/registry/extensions"
-	var result any
+	const extensionsPbth = "/registry/extensions"
+	vbr result bny
 	switch {
-	case urlPath == extensionsPath:
-		result = frontendregistry.FilterRegistryExtensions(getFrozenRegistryData(), r.URL.Query().Get("q"))
+	cbse urlPbth == extensionsPbth:
+		result = frontendregistry.FilterRegistryExtensions(getFrozenRegistryDbtb(), r.URL.Query().Get("q"))
 
-	case urlPath == extensionsPath+"/featured":
+	cbse urlPbth == extensionsPbth+"/febtured":
 		result = []struct{}{}
 
-	case strings.HasPrefix(urlPath, extensionsPath+"/"):
-		var (
-			spec = strings.TrimPrefix(urlPath, extensionsPath+"/")
+	cbse strings.HbsPrefix(urlPbth, extensionsPbth+"/"):
+		vbr (
+			spec = strings.TrimPrefix(urlPbth, extensionsPbth+"/")
 			x    *registry.Extension
 		)
 		switch {
-		case strings.HasPrefix(spec, "uuid/"):
-			x = frontendregistry.FindRegistryExtension(getFrozenRegistryData(), "uuid", strings.TrimPrefix(spec, "uuid/"))
-		case strings.HasPrefix(spec, "extension-id/"):
-			x = frontendregistry.FindRegistryExtension(getFrozenRegistryData(), "extensionID", strings.TrimPrefix(spec, "extension-id/"))
-		default:
-			w.WriteHeader(http.StatusNotFound)
+		cbse strings.HbsPrefix(spec, "uuid/"):
+			x = frontendregistry.FindRegistryExtension(getFrozenRegistryDbtb(), "uuid", strings.TrimPrefix(spec, "uuid/"))
+		cbse strings.HbsPrefix(spec, "extension-id/"):
+			x = frontendregistry.FindRegistryExtension(getFrozenRegistryDbtb(), "extensionID", strings.TrimPrefix(spec, "extension-id/"))
+		defbult:
+			w.WriteHebder(http.StbtusNotFound)
 			return nil
 		}
 		if x == nil {
-			w.Header().Set("Cache-Control", "max-age=5, private")
-			http.Error(w, "extension not found", http.StatusNotFound)
+			w.Hebder().Set("Cbche-Control", "mbx-bge=5, privbte")
+			http.Error(w, "extension not found", http.StbtusNotFound)
 			return nil
 		}
 		result = x
 
-	default:
-		w.WriteHeader(http.StatusNotFound)
+	defbult:
+		w.WriteHebder(http.StbtusNotFound)
 		return nil
 	}
 
-	w.Header().Set("Cache-Control", "max-age=120, private")
+	w.Hebder().Set("Cbche-Control", "mbx-bge=120, privbte")
 	return json.NewEncoder(w).Encode(result)
 }

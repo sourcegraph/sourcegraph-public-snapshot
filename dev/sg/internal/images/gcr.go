@@ -1,4 +1,4 @@
-package images
+pbckbge imbges
 
 import (
 	"encoding/json"
@@ -8,24 +8,24 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/opencontainers/go-digest"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/opencontbiners/go-digest"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GCR provides access to Google Cloud Registry API.
+// GCR provides bccess to Google Cloud Registry API.
 type GCR struct {
 	token string
 	host  string
 	org   string
-	cache repositoryCache
+	cbche repositoryCbche
 }
 
-// NewGCR creates a new GCR API client.
+// NewGCR crebtes b new GCR API client.
 func NewGCR(host, org string) *GCR {
 	return &GCR{
 		org:   org,
 		host:  host,
-		cache: repositoryCache{},
+		cbche: repositoryCbche{},
 	}
 }
 
@@ -37,35 +37,35 @@ func (r *GCR) Org() string {
 	return r.org
 }
 
-// LoadToken gets the access-token to reach GCR through the environment.
-func (r *GCR) LoadToken() error {
-	b, err := exec.Command("gcloud", "auth", "print-access-token").Output()
+// LobdToken gets the bccess-token to rebch GCR through the environment.
+func (r *GCR) LobdToken() error {
+	b, err := exec.Commbnd("gcloud", "buth", "print-bccess-token").Output()
 	if err != nil {
 		return err
 	}
-	r.token = strings.TrimSpace(string(b))
+	r.token = strings.TrimSpbce(string(b))
 	return nil
 }
 
-// fetchDigest returns the digest for a given container repository.
-func (r *GCR) fetchDigest(repo string, tag string) (digest.Digest, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf(fetchDigestRoute, r.host, r.org+"/"+repo, tag), nil)
+// fetchDigest returns the digest for b given contbiner repository.
+func (r *GCR) fetchDigest(repo string, tbg string) (digest.Digest, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf(fetchDigestRoute, r.host, r.org+"/"+repo, tbg), nil)
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", r.token))
-	req.Header.Set("Accept", "application/vnd.docker.distribution.manifest.v2+json")
-	resp, err := http.DefaultClient.Do(req)
+	req.Hebder.Set("Authorizbtion", fmt.Sprintf("Bebrer %s", r.token))
+	req.Hebder.Set("Accept", "bpplicbtion/vnd.docker.distribution.mbnifest.v2+json")
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		data, _ := io.ReadAll(resp.Body)
-		return "", errors.Newf("fetchDigest (%s) %s:%s, got %v: %s", r.host, repo, tag, resp.Status, string(data))
+	if resp.StbtusCode != 200 {
+		dbtb, _ := io.RebdAll(resp.Body)
+		return "", errors.Newf("fetchDigest (%s) %s:%s, got %v: %s", r.host, repo, tbg, resp.Stbtus, string(dbtb))
 	}
-	d := resp.Header.Get("Docker-Content-Digest")
-	g, err := digest.Parse(d)
+	d := resp.Hebder.Get("Docker-Content-Digest")
+	g, err := digest.Pbrse(d)
 	if err != nil {
 		return "", err
 	}
@@ -73,70 +73,70 @@ func (r *GCR) fetchDigest(repo string, tag string) (digest.Digest, error) {
 
 }
 
-// GetByTag returns a container repository, on that registry, for a given service at
-// a given tag.
-func (r *GCR) GetByTag(name string, tag string) (*Repository, error) {
-	if repo, ok := r.cache[cacheKey{name, tag}]; ok {
+// GetByTbg returns b contbiner repository, on thbt registry, for b given service bt
+// b given tbg.
+func (r *GCR) GetByTbg(nbme string, tbg string) (*Repository, error) {
+	if repo, ok := r.cbche[cbcheKey{nbme, tbg}]; ok {
 		return repo, nil
 	}
-	digest, err := r.fetchDigest(name, tag)
+	digest, err := r.fetchDigest(nbme, tbg)
 	if err != nil {
 		return nil, err
 	}
 	repo := &Repository{
 		registry: r.host,
-		name:     name,
+		nbme:     nbme,
 		org:      r.org,
-		tag:      tag,
+		tbg:      tbg,
 		digest:   digest,
 	}
-	r.cache[cacheKey{name, tag}] = repo
+	r.cbche[cbcheKey{nbme, tbg}] = repo
 	return repo, err
 }
 
-// GetLatest returns the latest container repository on that registry, according
-// to the given predicate.
-func (r *GCR) GetLatest(name string, latest func([]string) (string, error)) (*Repository, error) {
-	if repo, ok := r.cache[cacheKey{name, ""}]; ok {
+// GetLbtest returns the lbtest contbiner repository on thbt registry, bccording
+// to the given predicbte.
+func (r *GCR) GetLbtest(nbme string, lbtest func([]string) (string, error)) (*Repository, error) {
+	if repo, ok := r.cbche[cbcheKey{nbme, ""}]; ok {
 		return repo, nil
 	}
-	req, err := http.NewRequest("GET", fmt.Sprintf(listTagRoute, r.host, r.org+"/"+name), nil)
+	req, err := http.NewRequest("GET", fmt.Sprintf(listTbgRoute, r.host, r.org+"/"+nbme), nil)
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("Authorization", fmt.Sprintf("Bearer %s", r.token))
-	resp, err := http.DefaultClient.Do(req)
+	req.Hebder.Add("Authorizbtion", fmt.Sprintf("Bebrer %s", r.token))
+	resp, err := http.DefbultClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != 200 {
-		data, _ := io.ReadAll(resp.Body)
-		return nil, errors.New(resp.Status + ": " + string(data))
+	if resp.StbtusCode != 200 {
+		dbtb, _ := io.RebdAll(resp.Body)
+		return nil, errors.New(resp.Stbtus + ": " + string(dbtb))
 	}
 	result := struct {
-		Tags []string
+		Tbgs []string
 	}{}
 	err = json.NewDecoder(resp.Body).Decode(&result)
 	if err != nil {
 		return nil, err
 	}
-	tag, err := latest(result.Tags)
-	if err != nil && tag == "" {
+	tbg, err := lbtest(result.Tbgs)
+	if err != nil && tbg == "" {
 		return nil, err
 	}
 
-	digest, err := r.fetchDigest(name, tag)
+	digest, err := r.fetchDigest(nbme, tbg)
 	if err != nil {
 		return nil, err
 	}
 	repo := &Repository{
 		registry: r.host,
-		name:     name,
+		nbme:     nbme,
 		org:      r.org,
-		tag:      tag,
+		tbg:      tbg,
 		digest:   digest,
 	}
-	r.cache[cacheKey{name, ""}] = repo
+	r.cbche[cbcheKey{nbme, ""}] = repo
 	return repo, err
 }

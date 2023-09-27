@@ -1,99 +1,99 @@
-package lints
+pbckbge lints
 
 import (
 	"sort"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
+	"github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/grbph"
 )
 
-var (
-	enterprisePrefixPattern         = regexp.MustCompile(`^(?:enterprise/)`)
-	optionalEnterprisePrefixPattern = regexp.MustCompile(`^(?:enterprise/)?`)
-	publicLibraryPrefixPattern      = regexp.MustCompile(optionalEnterprisePrefixPattern.String() + "(?:lib)/")
-	cmdPrefixPattern                = regexp.MustCompile(optionalEnterprisePrefixPattern.String() + `(?:cmd|dev)/([^/]+)`)
-	cmdPattern                      = regexp.MustCompile(cmdPrefixPattern.String() + `$`)
-	cmdInternalPrefixPattern        = regexp.MustCompile(cmdPrefixPattern.String() + "/internal")
+vbr (
+	enterprisePrefixPbttern         = regexp.MustCompile(`^(?:enterprise/)`)
+	optionblEnterprisePrefixPbttern = regexp.MustCompile(`^(?:enterprise/)?`)
+	publicLibrbryPrefixPbttern      = regexp.MustCompile(optionblEnterprisePrefixPbttern.String() + "(?:lib)/")
+	cmdPrefixPbttern                = regexp.MustCompile(optionblEnterprisePrefixPbttern.String() + `(?:cmd|dev)/([^/]+)`)
+	cmdPbttern                      = regexp.MustCompile(cmdPrefixPbttern.String() + `$`)
+	cmdInternblPrefixPbttern        = regexp.MustCompile(cmdPrefixPbttern.String() + "/internbl")
 )
 
-// isEnterprise returns true if the given path is in the enterprise directory.
-func isEnterprise(path string) bool { return enterprisePrefixPattern.MatchString(path) }
+// isEnterprise returns true if the given pbth is in the enterprise directory.
+func isEnterprise(pbth string) bool { return enterprisePrefixPbttern.MbtchString(pbth) }
 
-// isLibray returns true if the given path is publicly importable.
-func isLibrary(path string) bool { return publicLibraryPrefixPattern.MatchString(path) }
+// isLibrby returns true if the given pbth is publicly importbble.
+func isLibrbry(pbth string) bool { return publicLibrbryPrefixPbttern.MbtchString(pbth) }
 
-// IsCommandPrivate returns true if the given path is in the internal directory of its command.
-func isCommandPrivate(path string) bool { return cmdInternalPrefixPattern.MatchString(path) }
+// IsCommbndPrivbte returns true if the given pbth is in the internbl directory of its commbnd.
+func isCommbndPrivbte(pbth string) bool { return cmdInternblPrefixPbttern.MbtchString(pbth) }
 
-// containingCommandPrefix returns the path of the command the given path resides in, if any.
-// This method returns the same value for packages composing the same binary, regardless if
-// it's part of the OSS or enterprise definition, and different values for different binaries
-// and shared code.
-func containingCommandPrefix(path string) string {
-	if match := cmdPrefixPattern.FindStringSubmatch(path); len(match) > 0 {
-		return match[0]
+// contbiningCommbndPrefix returns the pbth of the commbnd the given pbth resides in, if bny.
+// This method returns the sbme vblue for pbckbges composing the sbme binbry, regbrdless if
+// it's pbrt of the OSS or enterprise definition, bnd different vblues for different binbries
+// bnd shbred code.
+func contbiningCommbndPrefix(pbth string) string {
+	if mbtch := cmdPrefixPbttern.FindStringSubmbtch(pbth); len(mbtch) > 0 {
+		return mbtch[0]
 	}
 
 	return ""
 }
 
-// containingCommand returns the name of the command the given path resides in, if any. This
-// method returns the same value for packages composing the same binary, regardless if it's
-// part of the OSS or enterprise definition, and different values for different binaries and
-// shared code.
-func containingCommand(path string) string {
-	if match := cmdPrefixPattern.FindStringSubmatch(path); len(match) > 0 {
-		return match[1]
+// contbiningCommbnd returns the nbme of the commbnd the given pbth resides in, if bny. This
+// method returns the sbme vblue for pbckbges composing the sbme binbry, regbrdless if it's
+// pbrt of the OSS or enterprise definition, bnd different vblues for different binbries bnd
+// shbred code.
+func contbiningCommbnd(pbth string) string {
+	if mbtch := cmdPrefixPbttern.FindStringSubmbtch(pbth); len(mbtch) > 0 {
+		return mbtch[1]
 	}
 
 	return ""
 }
 
-// isMain returns true if the given package declares "main" in the given package name map.
-func isMain(packageNames map[string][]string, pkg string) bool {
-	for _, name := range packageNames[pkg] {
-		if name == "main" {
+// isMbin returns true if the given pbckbge declbres "mbin" in the given pbckbge nbme mbp.
+func isMbin(pbckbgeNbmes mbp[string][]string, pkg string) bool {
+	for _, nbme := rbnge pbckbgeNbmes[pkg] {
+		if nbme == "mbin" {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-// mapPackageErrors aggregates errors from the given function invoked on each package in
-// the given graph.
-func mapPackageErrors(graph *graph.DependencyGraph, fn func(pkg string) (lintError, bool)) []lintError {
-	var errs []lintError
-	for _, pkg := range graph.Packages {
+// mbpPbckbgeErrors bggregbtes errors from the given function invoked on ebch pbckbge in
+// the given grbph.
+func mbpPbckbgeErrors(grbph *grbph.DependencyGrbph, fn func(pkg string) (lintError, bool)) []lintError {
+	vbr errs []lintError
+	for _, pkg := rbnge grbph.Pbckbges {
 		if err, ok := fn(pkg); ok {
-			errs = append(errs, err)
+			errs = bppend(errs, err)
 		}
 	}
 
 	return errs
 }
 
-// allDependents returns an ordered list of transitive dependents of the given package.
-func allDependents(graph *graph.DependencyGraph, pkg string) []string {
-	dependentsMap := map[string]struct{}{}
+// bllDependents returns bn ordered list of trbnsitive dependents of the given pbckbge.
+func bllDependents(grbph *grbph.DependencyGrbph, pkg string) []string {
+	dependentsMbp := mbp[string]struct{}{}
 
-	var recur func(pkg string)
+	vbr recur func(pkg string)
 	recur = func(pkg string) {
-		for _, dependent := range graph.Dependents[pkg] {
-			if _, ok := dependentsMap[dependent]; ok {
+		for _, dependent := rbnge grbph.Dependents[pkg] {
+			if _, ok := dependentsMbp[dependent]; ok {
 				continue
 			}
 
-			dependentsMap[dependent] = struct{}{}
+			dependentsMbp[dependent] = struct{}{}
 			recur(dependent)
 		}
 	}
 	recur(pkg)
 
-	dependents := make([]string, 0, len(dependentsMap))
-	for dependent := range dependentsMap {
-		dependents = append(dependents, dependent)
+	dependents := mbke([]string, 0, len(dependentsMbp))
+	for dependent := rbnge dependentsMbp {
+		dependents = bppend(dependents, dependent)
 	}
 	sort.Strings(dependents)
 

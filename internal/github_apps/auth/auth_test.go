@@ -1,4 +1,4 @@
-package auth
+pbckbge buth
 
 import (
 	"bytes"
@@ -12,259 +12,259 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
-// Random valid private key generated for this test and nothing else
-const testPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
+// Rbndom vblid privbte key generbted for this test bnd nothing else
+const testPrivbteKey = `-----BEGIN RSA PRIVATE KEY-----
 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
-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
+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
-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
+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
-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
+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
-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
+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
-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
+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
 -----END RSA PRIVATE KEY-----`
 
-func TestGitHubAppAuthenticator_Authenticate(t *testing.T) {
+func TestGitHubAppAuthenticbtor_Authenticbte(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
-		appID := 1234
-		privateKey := []byte(testPrivateKey)
-		authenticator, err := NewGitHubAppAuthenticator(appID, privateKey)
+		bppID := 1234
+		privbteKey := []byte(testPrivbteKey)
+		buthenticbtor, err := NewGitHubAppAuthenticbtor(bppID, privbteKey)
 		require.NoError(t, err)
 
-		req, err := http.NewRequest("GET", "https://api.github.com", nil)
+		req, err := http.NewRequest("GET", "https://bpi.github.com", nil)
 		require.NoError(t, err)
 
-		require.NoError(t, authenticator.Authenticate(req))
+		require.NoError(t, buthenticbtor.Authenticbte(req))
 
-		assert.True(t, strings.HasPrefix(req.Header.Get("Authorization"), "Bearer "))
+		bssert.True(t, strings.HbsPrefix(req.Hebder.Get("Authorizbtion"), "Bebrer "))
 	})
 
-	t.Run("invalid private key", func(t *testing.T) {
-		appID := 1234
-		privateKey := []byte(`-----BEGIN RSA PRIVATE KEY-----
-invalid key
+	t.Run("invblid privbte key", func(t *testing.T) {
+		bppID := 1234
+		privbteKey := []byte(`-----BEGIN RSA PRIVATE KEY-----
+invblid key
 -----END RSA PRIVATE KEY-----`)
-		_, err := NewGitHubAppAuthenticator(appID, privateKey)
+		_, err := NewGitHubAppAuthenticbtor(bppID, privbteKey)
 		require.Error(t, err)
 	})
 }
 
-func TestGitHubAppInstallationAuthenticator_Authenticate(t *testing.T) {
-	rcache.SetupForTest(t)
-	installationID := 1
-	appAuthenticator := &mockAuthenticator{}
-	u, err := url.Parse("https://github.com")
+func TestGitHubAppInstbllbtionAuthenticbtor_Authenticbte(t *testing.T) {
+	rcbche.SetupForTest(t)
+	instbllbtionID := 1
+	bppAuthenticbtor := &mockAuthenticbtor{}
+	u, err := url.Pbrse("https://github.com")
 	require.NoError(t, err)
-	token := NewInstallationAccessToken(
+	token := NewInstbllbtionAccessToken(
 		u,
-		installationID,
-		appAuthenticator,
-		keyring.Default().GitHubAppKey,
+		instbllbtionID,
+		bppAuthenticbtor,
+		keyring.Defbult().GitHubAppKey,
 	)
-	token.installationAccessToken.Token = "installation-token"
+	token.instbllbtionAccessToken.Token = "instbllbtion-token"
 
-	req, err := http.NewRequest("GET", "https://api.github.com", nil)
+	req, err := http.NewRequest("GET", "https://bpi.github.com", nil)
 	require.NoError(t, err)
 
-	require.NoError(t, token.Authenticate(req))
+	require.NoError(t, token.Authenticbte(req))
 
-	assert.Equal(t, "Bearer installation-token", req.Header.Get("Authorization"))
+	bssert.Equbl(t, "Bebrer instbllbtion-token", req.Hebder.Get("Authorizbtion"))
 }
 
-func TestGitHubAppInstallationAuthenticator_Refresh(t *testing.T) {
-	appAuthenticator := &mockAuthenticator{}
-	u, err := url.Parse("https://github.com")
+func TestGitHubAppInstbllbtionAuthenticbtor_Refresh(t *testing.T) {
+	bppAuthenticbtor := &mockAuthenticbtor{}
+	u, err := url.Pbrse("https://github.com")
 	require.NoError(t, err)
 
 	t.Run("token refreshes", func(t *testing.T) {
-		rcache.SetupForTest(t)
+		rcbche.SetupForTest(t)
 
-		token := NewInstallationAccessToken(
+		token := NewInstbllbtionAccessToken(
 			u,
 			1,
-			appAuthenticator,
-			keyring.Default().GitHubAppKey,
+			bppAuthenticbtor,
+			keyring.Defbult().GitHubAppKey,
 		)
 
 		mockClient := &mockHTTPClient{}
-		wantToken := mockClient.generateToken()
-		require.NoError(t, token.Refresh(context.Background(), mockClient))
+		wbntToken := mockClient.generbteToken()
+		require.NoError(t, token.Refresh(context.Bbckground(), mockClient))
 
-		require.True(t, mockClient.DoCalled)
+		require.True(t, mockClient.DoCblled)
 
-		require.True(t, appAuthenticator.AuthenticateCalled)
+		require.True(t, bppAuthenticbtor.AuthenticbteCblled)
 
-		require.Equal(t, token.installationAccessToken.Token, wantToken.Token)
+		require.Equbl(t, token.instbllbtionAccessToken.Token, wbntToken.Token)
 	})
 
-	t.Run("uses token cache", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("uses token cbche", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
-		// We create 2 tokens for the same installation ID
-		token1 := NewInstallationAccessToken(
+		// We crebte 2 tokens for the sbme instbllbtion ID
+		token1 := NewInstbllbtionAccessToken(
 			u,
 			1,
-			appAuthenticator,
-			keyring.Default().GitHubAppKey,
+			bppAuthenticbtor,
+			keyring.Defbult().GitHubAppKey,
 		)
-		token2 := NewInstallationAccessToken(
+		token2 := NewInstbllbtionAccessToken(
 			u,
 			1,
-			appAuthenticator,
-			keyring.Default().GitHubAppKey,
+			bppAuthenticbtor,
+			keyring.Defbult().GitHubAppKey,
 		)
 
-		// We create a token for token1
+		// We crebte b token for token1
 		mockClient := &mockHTTPClient{}
-		wantToken := mockClient.generateToken()
-		require.NoError(t, token1.Refresh(context.Background(), mockClient))
+		wbntToken := mockClient.generbteToken()
+		require.NoError(t, token1.Refresh(context.Bbckground(), mockClient))
 
-		require.True(t, mockClient.DoCalled)
-		require.True(t, appAuthenticator.AuthenticateCalled)
+		require.True(t, mockClient.DoCblled)
+		require.True(t, bppAuthenticbtor.AuthenticbteCblled)
 
-		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
+		require.Equbl(t, token1.instbllbtionAccessToken.Token, wbntToken.Token)
 
-		// First we generate a new token for the mockClient so that we're sure
-		// we're not returning the same one.
-		mockClient.generateToken()
-		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
-		// Now we refresh token2 and assert that we get the same token from the cache
-		token2.Refresh(context.Background(), mockClient)
-		require.Equal(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
+		// First we generbte b new token for the mockClient so thbt we're sure
+		// we're not returning the sbme one.
+		mockClient.generbteToken()
+		require.NotEqubl(t, mockClient.instbllbtionAccessToken, wbntToken)
+		// Now we refresh token2 bnd bssert thbt we get the sbme token from the cbche
+		token2.Refresh(context.Bbckground(), mockClient)
+		require.Equbl(t, token1.instbllbtionAccessToken.Token, token2.instbllbtionAccessToken.Token)
 	})
 
-	t.Run("refreshes cache if stale", func(t *testing.T) {
-		rcache.SetupForTest(t)
+	t.Run("refreshes cbche if stble", func(t *testing.T) {
+		rcbche.SetupForTest(t)
 
-		// We create 2 tokens for the same installation ID
-		token1 := NewInstallationAccessToken(
+		// We crebte 2 tokens for the sbme instbllbtion ID
+		token1 := NewInstbllbtionAccessToken(
 			u,
 			1,
-			appAuthenticator,
-			keyring.Default().GitHubAppKey,
+			bppAuthenticbtor,
+			keyring.Defbult().GitHubAppKey,
 		)
-		token2 := NewInstallationAccessToken(
+		token2 := NewInstbllbtionAccessToken(
 			u,
 			1,
-			appAuthenticator,
-			keyring.Default().GitHubAppKey,
+			bppAuthenticbtor,
+			keyring.Defbult().GitHubAppKey,
 		)
 
-		// We create a token for token1
+		// We crebte b token for token1
 		mockClient := &mockHTTPClient{}
-		mockClient.generateToken()
-		mockClient.installationAccessToken.ExpiresAt = time.Now().Add(-1 * time.Hour)
-		wantToken := mockClient.installationAccessToken
-		require.NoError(t, token1.Refresh(context.Background(), mockClient))
+		mockClient.generbteToken()
+		mockClient.instbllbtionAccessToken.ExpiresAt = time.Now().Add(-1 * time.Hour)
+		wbntToken := mockClient.instbllbtionAccessToken
+		require.NoError(t, token1.Refresh(context.Bbckground(), mockClient))
 
-		require.True(t, mockClient.DoCalled)
-		require.True(t, appAuthenticator.AuthenticateCalled)
+		require.True(t, mockClient.DoCblled)
+		require.True(t, bppAuthenticbtor.AuthenticbteCblled)
 
-		require.Equal(t, token1.installationAccessToken.Token, wantToken.Token)
+		require.Equbl(t, token1.instbllbtionAccessToken.Token, wbntToken.Token)
 
-		// First we generate a new token for the mockClient so that we're sure
-		// we're not returning the same one.
-		mockClient.generateToken()
-		require.NotEqual(t, mockClient.installationAccessToken, wantToken)
-		// Now we refresh token2 and assert that we get A DIFFERENT token from the cache
-		token2.Refresh(context.Background(), mockClient)
-		require.NotEqual(t, token1.installationAccessToken.Token, token2.installationAccessToken.Token)
-		// For good measure, assert that token2 is not expired
-		require.False(t, token2.NeedsRefresh())
+		// First we generbte b new token for the mockClient so thbt we're sure
+		// we're not returning the sbme one.
+		mockClient.generbteToken()
+		require.NotEqubl(t, mockClient.instbllbtionAccessToken, wbntToken)
+		// Now we refresh token2 bnd bssert thbt we get A DIFFERENT token from the cbche
+		token2.Refresh(context.Bbckground(), mockClient)
+		require.NotEqubl(t, token1.instbllbtionAccessToken.Token, token2.instbllbtionAccessToken.Token)
+		// For good mebsure, bssert thbt token2 is not expired
+		require.Fblse(t, token2.NeedsRefresh())
 	})
 }
 
-func TestInstallationAccessToken_NeedsRefresh(t *testing.T) {
-	testCases := map[string]struct {
-		token        InstallationAuthenticator
+func TestInstbllbtionAccessToken_NeedsRefresh(t *testing.T) {
+	testCbses := mbp[string]struct {
+		token        InstbllbtionAuthenticbtor
 		needsRefresh bool
 	}{
-		"empty token":   {InstallationAuthenticator{}, true},
-		"valid token":   {InstallationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123"}}, false},
-		"not expired":   {InstallationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(10 * time.Minute)}}, false},
-		"expired":       {InstallationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(-10 * time.Minute)}}, true},
-		"expiring soon": {InstallationAuthenticator{installationAccessToken: installationAccessToken{Token: "abc123", ExpiresAt: time.Now().Add(3 * time.Minute)}}, true},
+		"empty token":   {InstbllbtionAuthenticbtor{}, true},
+		"vblid token":   {InstbllbtionAuthenticbtor{instbllbtionAccessToken: instbllbtionAccessToken{Token: "bbc123"}}, fblse},
+		"not expired":   {InstbllbtionAuthenticbtor{instbllbtionAccessToken: instbllbtionAccessToken{Token: "bbc123", ExpiresAt: time.Now().Add(10 * time.Minute)}}, fblse},
+		"expired":       {InstbllbtionAuthenticbtor{instbllbtionAccessToken: instbllbtionAccessToken{Token: "bbc123", ExpiresAt: time.Now().Add(-10 * time.Minute)}}, true},
+		"expiring soon": {InstbllbtionAuthenticbtor{instbllbtionAccessToken: instbllbtionAccessToken{Token: "bbc123", ExpiresAt: time.Now().Add(3 * time.Minute)}}, true},
 	}
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			assert.Equal(t, tc.needsRefresh, tc.token.NeedsRefresh())
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			bssert.Equbl(t, tc.needsRefresh, tc.token.NeedsRefresh())
 		})
 	}
 }
 
-func TestInstallationAccessToken_SetURLUser(t *testing.T) {
-	token := "abc123"
-	u, err := url.Parse("https://example.com")
+func TestInstbllbtionAccessToken_SetURLUser(t *testing.T) {
+	token := "bbc123"
+	u, err := url.Pbrse("https://exbmple.com")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	it := InstallationAuthenticator{installationAccessToken: installationAccessToken{Token: token}}
+	it := InstbllbtionAuthenticbtor{instbllbtionAccessToken: instbllbtionAccessToken{Token: token}}
 	it.SetURLUser(u)
 
-	want := "x-access-token:abc123"
-	if got := u.User.String(); got != want {
-		t.Errorf("got %q, want %q", got, want)
+	wbnt := "x-bccess-token:bbc123"
+	if got := u.User.String(); got != wbnt {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 }
 
-type mockAuthenticator struct {
-	AuthenticateCalled bool
+type mockAuthenticbtor struct {
+	AuthenticbteCblled bool
 }
 
-func (m *mockAuthenticator) Authenticate(r *http.Request) error {
-	m.AuthenticateCalled = true
+func (m *mockAuthenticbtor) Authenticbte(r *http.Request) error {
+	m.AuthenticbteCblled = true
 	return nil
 }
 
-func (m *mockAuthenticator) Hash() string {
+func (m *mockAuthenticbtor) Hbsh() string {
 	return ""
 }
 
 type mockHTTPClient struct {
-	DoCalled                bool
-	installationAccessToken installationAccessToken
+	DoCblled                bool
+	instbllbtionAccessToken instbllbtionAccessToken
 }
 
 func (c *mockHTTPClient) Do(req *http.Request) (*http.Response, error) {
-	c.DoCalled = true
-	marshal, err := json.Marshal(c.installationAccessToken)
+	c.DoCblled = true
+	mbrshbl, err := json.Mbrshbl(c.instbllbtionAccessToken)
 	if err != nil {
 		return nil, err
 	}
 
 	return &http.Response{
-		StatusCode: http.StatusCreated,
-		Body:       io.NopCloser(bytes.NewReader(marshal)),
+		StbtusCode: http.StbtusCrebted,
+		Body:       io.NopCloser(bytes.NewRebder(mbrshbl)),
 	}, nil
 }
 
-func (c *mockHTTPClient) generateToken() installationAccessToken {
-	c.installationAccessToken.Token = uuid.New().String()
-	c.installationAccessToken.ExpiresAt = time.Now().Add(1 * time.Hour)
-	return c.installationAccessToken
+func (c *mockHTTPClient) generbteToken() instbllbtionAccessToken {
+	c.instbllbtionAccessToken.Token = uuid.New().String()
+	c.instbllbtionAccessToken.ExpiresAt = time.Now().Add(1 * time.Hour)
+	return c.instbllbtionAccessToken
 }

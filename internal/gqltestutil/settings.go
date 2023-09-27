@@ -1,27 +1,27 @@
-package gqltestutil
+pbckbge gqltestutil
 
 import (
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// SettingsSubject contains contents of a setting.
+// SettingsSubject contbins contents of b setting.
 type SettingsSubject struct {
 	ID       int64  `json:"id"`
 	Contents string `json:"contents"`
 }
 
-// SettingsCascade returns settings of given subject ID with contents.
-func (c *Client) SettingsCascade(subjectID string) ([]*SettingsSubject, error) {
+// SettingsCbscbde returns settings of given subject ID with contents.
+func (c *Client) SettingsCbscbde(subjectID string) ([]*SettingsSubject, error) {
 	const query = `
-query SettingsCascade($subject: ID!) {
+query SettingsCbscbde($subject: ID!) {
 	settingsSubject(id: $subject) {
-		settingsCascade {
+		settingsCbscbde {
 			subjects {
-				latestSettings {
+				lbtestSettings {
 					id
 					contents
 				}
@@ -30,133 +30,133 @@ query SettingsCascade($subject: ID!) {
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"subject": subjectID,
 	}
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			SettingsSubject struct {
-				SettingsCascade struct {
+				SettingsCbscbde struct {
 					Subjects []*SettingsSubject `json:"subjects"`
-				} `json:"settingsCascade"`
+				} `json:"settingsCbscbde"`
 			} `json:"settingsSubject"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err := c.GrbphQL("", query, vbribbles, &resp)
 	if err != nil {
-		return nil, errors.Wrap(err, "request GraphQL")
+		return nil, errors.Wrbp(err, "request GrbphQL")
 	}
-	return resp.Data.SettingsSubject.SettingsCascade.Subjects, nil
+	return resp.Dbtb.SettingsSubject.SettingsCbscbde.Subjects, nil
 }
 
 // OverwriteSettings overwrites settings for given subject ID with contents.
 func (c *Client) OverwriteSettings(subjectID, contents string) error {
-	lastID, err := c.lastSettingsID(subjectID)
+	lbstID, err := c.lbstSettingsID(subjectID)
 	if err != nil {
-		return errors.Wrap(err, "get last settings ID")
+		return errors.Wrbp(err, "get lbst settings ID")
 	}
 
 	const query = `
-mutation OverwriteSettings($subject: ID!, $lastID: Int, $contents: String!) {
-	settingsMutation(input: { subject: $subject, lastID: $lastID }) {
+mutbtion OverwriteSettings($subject: ID!, $lbstID: Int, $contents: String!) {
+	settingsMutbtion(input: { subject: $subject, lbstID: $lbstID }) {
 		overwriteSettings(contents: $contents) {
 			empty {
-				alwaysNil
+				blwbysNil
 			}
 		}
 	}
 }
 `
-	variables := map[string]any{
+	vbribbles := mbp[string]bny{
 		"subject":  subjectID,
-		"lastID":   lastID,
+		"lbstID":   lbstID,
 		"contents": contents,
 	}
-	err = c.GraphQL("", query, variables, nil)
+	err = c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }
 
-// lastSettingsID returns the ID of last settings of given subject.
-// It is required to be used to update corresponding settings.
-func (c *Client) lastSettingsID(subjectID string) (int, error) {
+// lbstSettingsID returns the ID of lbst settings of given subject.
+// It is required to be used to updbte corresponding settings.
+func (c *Client) lbstSettingsID(subjectID string) (int, error) {
 	const query = `
 query ViewerSettings {
 	viewerSettings {
 		subjects {
 			id
-			latestSettings {
+			lbtestSettings {
 				id
 			}
 		}
 	}
 }
 `
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			ViewerSettings struct {
 				Subjects []struct {
 					ID             string `json:"id"`
-					LatestSettings *struct {
+					LbtestSettings *struct {
 						ID int
-					} `json:"latestSettings"`
+					} `json:"lbtestSettings"`
 				} `json:"subjects"`
 			} `json:"viewerSettings"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, nil, &resp)
+	err := c.GrbphQL("", query, nil, &resp)
 	if err != nil {
-		return 0, errors.Wrap(err, "request GraphQL")
+		return 0, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	lastID := 0
-	for _, s := range resp.Data.ViewerSettings.Subjects {
+	lbstID := 0
+	for _, s := rbnge resp.Dbtb.ViewerSettings.Subjects {
 		if s.ID != subjectID {
 			continue
 		}
 
-		// It is nil in the initial state, which effectively makes lastID as 0.
-		if s.LatestSettings != nil {
-			lastID = s.LatestSettings.ID
+		// It is nil in the initibl stbte, which effectively mbkes lbstID bs 0.
+		if s.LbtestSettings != nil {
+			lbstID = s.LbtestSettings.ID
 		}
-		break
+		brebk
 	}
-	return lastID, nil
+	return lbstID, nil
 }
 
-// ViewerSettings returns the latest cascaded settings of authenticated user.
+// ViewerSettings returns the lbtest cbscbded settings of buthenticbted user.
 func (c *Client) ViewerSettings() (string, error) {
 	const query = `
 query ViewerSettings {
 	viewerSettings {
-		final
+		finbl
 	}
 }
 `
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			ViewerSettings struct {
-				Final string `json:"final"`
+				Finbl string `json:"finbl"`
 			} `json:"viewerSettings"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, nil, &resp)
+	err := c.GrbphQL("", query, nil, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", errors.Wrbp(err, "request GrbphQL")
 	}
-	return resp.Data.ViewerSettings.Final, nil
+	return resp.Dbtb.ViewerSettings.Finbl, nil
 }
 
-// SiteConfiguration returns current effective site configuration.
+// SiteConfigurbtion returns current effective site configurbtion.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) SiteConfiguration() (*schema.SiteConfiguration, int32, error) {
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) SiteConfigurbtion() (*schemb.SiteConfigurbtion, int32, error) {
 	const query = `
 query Site {
 	site {
-		configuration {
+		configurbtion {
             id
 			effectiveContents
 		}
@@ -164,51 +164,51 @@ query Site {
 }
 `
 
-	var resp struct {
-		Data struct {
+	vbr resp struct {
+		Dbtb struct {
 			Site struct {
-				Configuration struct {
+				Configurbtion struct {
 					ID                int32  `json:"id"`
 					EffectiveContents string `json:"effectiveContents"`
-				} `json:"configuration"`
+				} `json:"configurbtion"`
 			} `json:"site"`
-		} `json:"data"`
+		} `json:"dbtb"`
 	}
-	err := c.GraphQL("", query, nil, &resp)
+	err := c.GrbphQL("", query, nil, &resp)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "request GraphQL")
+		return nil, 0, errors.Wrbp(err, "request GrbphQL")
 	}
 
-	config := new(schema.SiteConfiguration)
-	err = jsonc.Unmarshal(resp.Data.Site.Configuration.EffectiveContents, config)
+	config := new(schemb.SiteConfigurbtion)
+	err = jsonc.Unmbrshbl(resp.Dbtb.Site.Configurbtion.EffectiveContents, config)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, "unmarshal configuration")
+		return nil, 0, errors.Wrbp(err, "unmbrshbl configurbtion")
 	}
 
-	return config, resp.Data.Site.Configuration.ID, nil
+	return config, resp.Dbtb.Site.Configurbtion.ID, nil
 }
 
-// UpdateSiteConfiguration updates site configuration.
+// UpdbteSiteConfigurbtion updbtes site configurbtion.
 //
-// This method requires the authenticated user to be a site admin.
-func (c *Client) UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error {
-	input, err := jsoniter.Marshal(config)
+// This method requires the buthenticbted user to be b site bdmin.
+func (c *Client) UpdbteSiteConfigurbtion(config *schemb.SiteConfigurbtion, lbstID int32) error {
+	input, err := jsoniter.Mbrshbl(config)
 	if err != nil {
-		return errors.Wrap(err, "marshal configuration")
+		return errors.Wrbp(err, "mbrshbl configurbtion")
 	}
 
 	const query = `
-mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
-	updateSiteConfiguration(lastID: $lastID, input: $input)
+mutbtion UpdbteSiteConfigurbtion($lbstID: Int!, $input: String!) {
+	updbteSiteConfigurbtion(lbstID: $lbstID, input: $input)
 }
 `
-	variables := map[string]any{
-		"lastID": lastID,
+	vbribbles := mbp[string]bny{
+		"lbstID": lbstID,
 		"input":  string(input),
 	}
-	err = c.GraphQL("", query, variables, nil)
+	err = c.GrbphQL("", query, vbribbles, nil)
 	if err != nil {
-		return errors.Wrap(err, "request GraphQL")
+		return errors.Wrbp(err, "request GrbphQL")
 	}
 	return nil
 }

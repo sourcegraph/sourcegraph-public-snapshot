@@ -1,47 +1,47 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 )
 
-// GitserverLocalCloneStore is used to migrate repos from one gitserver to another asynchronously.
-type GitserverLocalCloneStore interface {
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) GitserverLocalCloneStore
-	Enqueue(ctx context.Context, repoID int, sourceHostname, destHostname string, deleteSource bool) (int, error)
+// GitserverLocblCloneStore is used to migrbte repos from one gitserver to bnother bsynchronously.
+type GitserverLocblCloneStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(other bbsestore.ShbrebbleStore) GitserverLocblCloneStore
+	Enqueue(ctx context.Context, repoID int, sourceHostnbme, destHostnbme string, deleteSource bool) (int, error)
 }
 
-type gitserverLocalCloneStore struct {
-	*basestore.Store
+type gitserverLocblCloneStore struct {
+	*bbsestore.Store
 }
 
-// GitserverLocalCloneStoreWith instantiates and returns a new gitserverLocalCloneStore using
-// the other store handle.
-func GitserverLocalCloneStoreWith(other basestore.ShareableStore) GitserverLocalCloneStore {
-	return &gitserverLocalCloneStore{Store: basestore.NewWithHandle(other.Handle())}
+// GitserverLocblCloneStoreWith instbntibtes bnd returns b new gitserverLocblCloneStore using
+// the other store hbndle.
+func GitserverLocblCloneStoreWith(other bbsestore.ShbrebbleStore) GitserverLocblCloneStore {
+	return &gitserverLocblCloneStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *gitserverLocalCloneStore) With(other basestore.ShareableStore) GitserverLocalCloneStore {
-	return &gitserverLocalCloneStore{Store: s.Store.With(other)}
+func (s *gitserverLocblCloneStore) With(other bbsestore.ShbrebbleStore) GitserverLocblCloneStore {
+	return &gitserverLocblCloneStore{Store: s.Store.With(other)}
 }
 
-func (s *gitserverLocalCloneStore) Transact(ctx context.Context) (GitserverLocalCloneStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &gitserverLocalCloneStore{Store: txBase}, err
+func (s *gitserverLocblCloneStore) Trbnsbct(ctx context.Context) (GitserverLocblCloneStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &gitserverLocblCloneStore{Store: txBbse}, err
 }
 
-// Enqueue a local clone request.
-func (s *gitserverLocalCloneStore) Enqueue(ctx context.Context, repoID int, sourceHostname string, destHostname string, deleteSource bool) (int, error) {
-	var jobId int
+// Enqueue b locbl clone request.
+func (s *gitserverLocblCloneStore) Enqueue(ctx context.Context, repoID int, sourceHostnbme string, destHostnbme string, deleteSource bool) (int, error) {
+	vbr jobId int
 	err := s.QueryRow(ctx, sqlf.Sprintf(`
 INSERT INTO
-	gitserver_relocator_jobs (repo_id, source_hostname, dest_hostname, delete_source)
+	gitserver_relocbtor_jobs (repo_id, source_hostnbme, dest_hostnbme, delete_source)
 VALUES (%s, %s, %s, %s) RETURNING id
-	`, repoID, sourceHostname, destHostname, deleteSource)).Scan(&jobId)
+	`, repoID, sourceHostnbme, destHostnbme, deleteSource)).Scbn(&jobId)
 	if err != nil {
 		return 0, err
 	}

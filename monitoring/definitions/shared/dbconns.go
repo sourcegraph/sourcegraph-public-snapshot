@@ -1,115 +1,115 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Database connections monitoring overview.
-const TitleDatabaseConnectionsMonitoring = "Database connections"
+// Dbtbbbse connections monitoring overview.
+const TitleDbtbbbseConnectionsMonitoring = "Dbtbbbse connections"
 
-func DatabaseConnectionsMonitoring(app string) []monitoring.Row {
+func DbtbbbseConnectionsMonitoring(bpp string) []monitoring.Row {
 	return []monitoring.Row{
 		{
 			{
-				Name:           "max_open_conns",
-				Description:    "maximum open",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_max_open{app_name=%q})`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Nbme:           "mbx_open_conns",
+				Description:    "mbximum open",
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (src_pgsql_conns_mbx_open{bpp_nbme=%q})`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 			{
-				Name:           "open_conns",
-				Description:    "established",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_open{app_name=%q})`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Nbme:           "open_conns",
+				Description:    "estbblished",
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (src_pgsql_conns_open{bpp_nbme=%q})`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 		},
 		{
 			{
-				Name:           "in_use",
+				Nbme:           "in_use",
 				Description:    "used",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_in_use{app_name=%q})`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (src_pgsql_conns_in_use{bpp_nbme=%q})`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 			{
-				Name:           "idle",
+				Nbme:           "idle",
 				Description:    "idle",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (src_pgsql_conns_idle{app_name=%q})`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (src_pgsql_conns_idle{bpp_nbme=%q})`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 		},
 		{
 			{
-				// The stats produced by the database/sql package don't allow us to maintain a histogram of blocked
-				// durations. The best we can do with two ever increasing counters is an average / mean, which alright
-				// to detect trends, although it doesn't give us a good sense of outliers (which we'd want to use high
+				// The stbts produced by the dbtbbbse/sql pbckbge don't bllow us to mbintbin b histogrbm of blocked
+				// durbtions. The best we cbn do with two ever increbsing counters is bn bverbge / mebn, which blright
+				// to detect trends, blthough it doesn't give us b good sense of outliers (which we'd wbnt to use high
 				// percentiles for).
-				Name:        "mean_blocked_seconds_per_conn_request",
-				Description: "mean blocked seconds per conn request",
-				Query: fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_blocked_seconds{app_name=%q}[5m])) / `+
-					`sum by (app_name, db_name) (increase(src_pgsql_conns_waited_for{app_name=%q}[5m]))`, app, app),
-				Panel:    monitoring.Panel().LegendFormat("dbname={{db_name}}").Unit(monitoring.Seconds),
-				Warning:  monitoring.Alert().GreaterOrEqual(0.05).For(10 * time.Minute),
-				Critical: monitoring.Alert().GreaterOrEqual(0.10).For(15 * time.Minute),
-				Owner:    monitoring.ObservableOwnerDevOps,
+				Nbme:        "mebn_blocked_seconds_per_conn_request",
+				Description: "mebn blocked seconds per conn request",
+				Query: fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (increbse(src_pgsql_conns_blocked_seconds{bpp_nbme=%q}[5m])) / `+
+					`sum by (bpp_nbme, db_nbme) (increbse(src_pgsql_conns_wbited_for{bpp_nbme=%q}[5m]))`, bpp, bpp),
+				Pbnel:    monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}").Unit(monitoring.Seconds),
+				Wbrning:  monitoring.Alert().GrebterOrEqubl(0.05).For(10 * time.Minute),
+				Criticbl: monitoring.Alert().GrebterOrEqubl(0.10).For(15 * time.Minute),
+				Owner:    monitoring.ObservbbleOwnerDevOps,
 				NextSteps: `
-					- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
-					- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+					- Increbse SRC_PGSQL_MAX_OPEN together with giving more memory to the dbtbbbse if needed
+					- Scble up Postgres memory / cpus [See our scbling guide](https://docs.sourcegrbph.com/bdmin/config/postgres-conf)
 				`,
 			},
 		},
 		{
 			{
-				Name:           "closed_max_idle",
-				Description:    "closed by SetMaxIdleConns",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle{app_name=%q}[5m]))`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Nbme:           "closed_mbx_idle",
+				Description:    "closed by SetMbxIdleConns",
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (increbse(src_pgsql_conns_closed_mbx_idle{bpp_nbme=%q}[5m]))`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 			{
-				Name:           "closed_max_lifetime",
-				Description:    "closed by SetConnMaxLifetime",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_lifetime{app_name=%q}[5m]))`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Nbme:           "closed_mbx_lifetime",
+				Description:    "closed by SetConnMbxLifetime",
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (increbse(src_pgsql_conns_closed_mbx_lifetime{bpp_nbme=%q}[5m]))`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 			{
-				Name:           "closed_max_idle_time",
-				Description:    "closed by SetConnMaxIdleTime",
-				Query:          fmt.Sprintf(`sum by (app_name, db_name) (increase(src_pgsql_conns_closed_max_idle_time{app_name=%q}[5m]))`, app),
-				Panel:          monitoring.Panel().LegendFormat("dbname={{db_name}}"),
+				Nbme:           "closed_mbx_idle_time",
+				Description:    "closed by SetConnMbxIdleTime",
+				Query:          fmt.Sprintf(`sum by (bpp_nbme, db_nbme) (increbse(src_pgsql_conns_closed_mbx_idle_time{bpp_nbme=%q}[5m]))`, bpp),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("dbnbme={{db_nbme}}"),
 				NoAlert:        true,
-				Owner:          monitoring.ObservableOwnerDevOps,
-				Interpretation: "none",
+				Owner:          monitoring.ObservbbleOwnerDevOps,
+				Interpretbtion: "none",
 			},
 		},
 	}
 }
 
-// NewDatabaseConnectionsMonitoringGroup creates a group containing panels displaying
-// database monitoring metrics for the given container.
-func NewDatabaseConnectionsMonitoringGroup(containerName string) monitoring.Group {
+// NewDbtbbbseConnectionsMonitoringGroup crebtes b group contbining pbnels displbying
+// dbtbbbse monitoring metrics for the given contbiner.
+func NewDbtbbbseConnectionsMonitoringGroup(contbinerNbme string) monitoring.Group {
 	return monitoring.Group{
-		Title:  TitleDatabaseConnectionsMonitoring,
+		Title:  TitleDbtbbbseConnectionsMonitoring,
 		Hidden: true,
-		Rows:   DatabaseConnectionsMonitoring(containerName),
+		Rows:   DbtbbbseConnectionsMonitoring(contbinerNbme),
 	}
 }

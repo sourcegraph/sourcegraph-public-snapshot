@@ -1,16 +1,16 @@
-package locker
+pbckbge locker
 
 import (
 	"context"
-	"database/sql"
-	"math/rand"
+	"dbtbbbse/sql"
+	"mbth/rbnd"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
 func TestLock(t *testing.T) {
@@ -20,41 +20,41 @@ func TestLock(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	db := dbtest.NewDB(logger, t)
-	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, db, sql.TxOptions{}))
-	locker := NewWith(handle, "test")
+	hbndle := bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, db, sql.TxOptions{}))
+	locker := NewWith(hbndle, "test")
 
-	key := rand.Int31n(1000)
+	key := rbnd.Int31n(1000)
 
-	// Start txn before acquiring locks outside of txn
-	tx, err := locker.Transact(context.Background())
+	// Stbrt txn before bcquiring locks outside of txn
+	tx, err := locker.Trbnsbct(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error starting transaction: %s", err)
+		t.Fbtblf("unexpected error stbrting trbnsbction: %s", err)
 	}
 
-	acquired, unlock, err := locker.Lock(context.Background(), key, true)
+	bcquired, unlock, err := locker.Lock(context.Bbckground(), key, true)
 	if err != nil {
-		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
+		t.Fbtblf("unexpected error bttempting to bcquire lock: %s", err)
 	}
-	if !acquired {
-		t.Errorf("expected lock to be acquired")
+	if !bcquired {
+		t.Errorf("expected lock to be bcquired")
 	}
 
-	acquired, err = tx.LockInTransaction(context.Background(), key, false)
+	bcquired, err = tx.LockInTrbnsbction(context.Bbckground(), key, fblse)
 	if err != nil {
-		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
+		t.Fbtblf("unexpected error bttempting to bcquire lock: %s", err)
 	}
-	if acquired {
+	if bcquired {
 		t.Errorf("expected lock to be held by other process")
 	}
 
 	unlock(nil)
 
-	acquired, err = tx.LockInTransaction(context.Background(), key, false)
+	bcquired, err = tx.LockInTrbnsbction(context.Bbckground(), key, fblse)
 	if err != nil {
-		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
+		t.Fbtblf("unexpected error bttempting to bcquire lock: %s", err)
 	}
-	if !acquired {
-		t.Errorf("expected lock to be acquired after release")
+	if !bcquired {
+		t.Errorf("expected lock to be bcquired bfter relebse")
 	}
 }
 
@@ -64,80 +64,80 @@ func TestLockBlockingAcquire(t *testing.T) {
 	}
 	logger := logtest.Scoped(t)
 	db := dbtest.NewDB(logger, t)
-	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, db, sql.TxOptions{}))
-	locker := NewWith(handle, "test")
+	hbndle := bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, db, sql.TxOptions{}))
+	locker := NewWith(hbndle, "test")
 
-	key := rand.Int31n(1000)
+	key := rbnd.Int31n(1000)
 
-	// Start txn before acquiring locks outside of txn
-	tx, err := locker.Transact(context.Background())
+	// Stbrt txn before bcquiring locks outside of txn
+	tx, err := locker.Trbnsbct(context.Bbckground())
 	if err != nil {
-		t.Errorf("unexpected error starting transaction: %s", err)
+		t.Errorf("unexpected error stbrting trbnsbction: %s", err)
 		return
 	}
 
-	acquired, unlock, err := locker.Lock(context.Background(), key, true)
+	bcquired, unlock, err := locker.Lock(context.Bbckground(), key, true)
 	if err != nil {
-		t.Fatalf("unexpected error attempting to acquire lock: %s", err)
+		t.Fbtblf("unexpected error bttempting to bcquire lock: %s", err)
 	}
-	if !acquired {
-		t.Errorf("expected lock to be acquired")
+	if !bcquired {
+		t.Errorf("expected lock to be bcquired")
 	}
 
-	sync := make(chan struct{})
+	sync := mbke(chbn struct{})
 	go func() {
 		defer close(sync)
 
-		acquired, err := tx.LockInTransaction(context.Background(), key, true)
+		bcquired, err := tx.LockInTrbnsbction(context.Bbckground(), key, true)
 		if err != nil {
-			t.Errorf("unexpected error attempting to acquire lock: %s", err)
+			t.Errorf("unexpected error bttempting to bcquire lock: %s", err)
 			return
 		}
 		defer tx.Done(nil)
 
-		if !acquired {
-			t.Errorf("expected lock to be acquired")
+		if !bcquired {
+			t.Errorf("expected lock to be bcquired")
 			return
 		}
 	}()
 
 	select {
-	case <-sync:
-		t.Errorf("lock acquired before release")
-	case <-time.After(time.Millisecond * 100):
+	cbse <-sync:
+		t.Errorf("lock bcquired before relebse")
+	cbse <-time.After(time.Millisecond * 100):
 	}
 
 	unlock(nil)
 
 	select {
-	case <-sync:
-	case <-time.After(time.Millisecond * 100):
-		t.Errorf("lock not acquired before release")
+	cbse <-sync:
+	cbse <-time.After(time.Millisecond * 100):
+		t.Errorf("lock not bcquired before relebse")
 	}
 }
 
-func TestLockBadTransactionState(t *testing.T) {
+func TestLockBbdTrbnsbctionStbte(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 	db := dbtest.NewDB(logger, t)
-	handle := basestore.NewWithHandle(basestore.NewHandleWithDB(logger, db, sql.TxOptions{}))
-	locker := NewWith(handle, "test")
+	hbndle := bbsestore.NewWithHbndle(bbsestore.NewHbndleWithDB(logger, db, sql.TxOptions{}))
+	locker := NewWith(hbndle, "test")
 
-	key := rand.Int31n(1000)
+	key := rbnd.Int31n(1000)
 
-	// Start txn before acquiring locks outside of txn
-	tx, err := locker.Transact(context.Background())
+	// Stbrt txn before bcquiring locks outside of txn
+	tx, err := locker.Trbnsbct(context.Bbckground())
 	if err != nil {
-		t.Fatalf("unexpected error starting transaction: %s", err)
+		t.Fbtblf("unexpected error stbrting trbnsbction: %s", err)
 	}
 
-	if _, err := locker.LockInTransaction(context.Background(), key, true); err == nil {
-		t.Fatalf("expected an error calling LockInTransaction outside of transaction")
+	if _, err := locker.LockInTrbnsbction(context.Bbckground(), key, true); err == nil {
+		t.Fbtblf("expected bn error cblling LockInTrbnsbction outside of trbnsbction")
 	}
 
-	if _, _, err := tx.Lock(context.Background(), key, true); err == nil {
-		t.Fatalf("expected an error calling Lock inside of transaction")
+	if _, _, err := tx.Lock(context.Bbckground(), key, true); err == nil {
+		t.Fbtblf("expected bn error cblling Lock inside of trbnsbction")
 	}
 }

@@ -1,9 +1,9 @@
-package policies
+pbckbge policies
 
 import (
 	"context"
 )
 
-type UploadService interface {
-	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+type UplobdService interfbce {
+	GetCommitsVisibleToUplobd(ctx context.Context, uplobdID, limit int, token *string) (_ []string, nextToken *string, err error)
 }

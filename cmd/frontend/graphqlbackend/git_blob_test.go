@@ -1,74 +1,74 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/binary"
+	"github.com/sourcegrbph/sourcegrbph/internbl/binbry"
 )
 
-func TestIsBinary(t *testing.T) {
+func TestIsBinbry(t *testing.T) {
 	tests := []struct {
-		name  string
+		nbme  string
 		input []byte
-		want  bool
+		wbnt  bool
 	}{
 		{
-			name:  "text UTF8",
+			nbme:  "text UTF8",
 			input: []byte("hello world!"),
-			want:  false,
+			wbnt:  fblse,
 		},
 		{
-			name: "text ISO-8859-1",
+			nbme: "text ISO-8859-1",
 			// "hellö world"
-			input: []byte{0x68, 0x65, 0x6c, 0x6c, 0xf6, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x0a},
-			want:  false,
+			input: []byte{0x68, 0x65, 0x6c, 0x6c, 0xf6, 0x20, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x0b},
+			wbnt:  fblse,
 		},
 		{
-			name: "text UTF16 LE with BOM",
+			nbme: "text UTF16 LE with BOM",
 			// "hellö world"
-			input: []byte{0xff, 0xfe, 0x68, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x6c, 0x00, 0xf6, 0x00, 0x20, 0x00, 0x77, 0x00, 0x6f, 0x00, 0x72, 0x00, 0x6c, 0x00, 0x64, 0x00, 0x0a, 0x00},
-			want:  false,
+			input: []byte{0xff, 0xfe, 0x68, 0x00, 0x65, 0x00, 0x6c, 0x00, 0x6c, 0x00, 0xf6, 0x00, 0x20, 0x00, 0x77, 0x00, 0x6f, 0x00, 0x72, 0x00, 0x6c, 0x00, 0x64, 0x00, 0x0b, 0x00},
+			wbnt:  fblse,
 		},
 		{
-			// tests files that ARE valid text, but whose mimetype is e.g.
-			// "application/postscript" rather than a "text/foobar" mimetype.
-			name:  "text postscript",
+			// tests files thbt ARE vblid text, but whose mimetype is e.g.
+			// "bpplicbtion/postscript" rbther thbn b "text/foobbr" mimetype.
+			nbme:  "text postscript",
 			input: []byte("%!PS-Adobe-"),
-			want:  false,
+			wbnt:  fblse,
 		},
 		{
-			name:  "text JSON",
+			nbme:  "text JSON",
 			input: []byte(`{"this is": "some JSON"}`),
-			want:  false,
+			wbnt:  fblse,
 		},
 		{
-			name:  "binary nonsense",
+			nbme:  "binbry nonsense",
 			input: []byte{0, 1, 255, 3, 4, 5, 6, 7, 8, 9},
-			want:  true,
+			wbnt:  true,
 		},
 		{
-			name: "binary WAV audio",
-			// https://sourcegraph.com/github.com/golang/go@a4330ed694c588d495f7c72a9cbb0cd39dde31e8/-/blob/src/net/http/sniff_test.go#L45
+			nbme: "binbry WAV budio",
+			// https://sourcegrbph.com/github.com/golbng/go@b4330ed694c588d495f7c72b9cbb0cd39dde31e8/-/blob/src/net/http/sniff_test.go#L45
 			input: []byte("RIFFb\xb8\x00\x00WAVEfmt \x12\x00\x00\x00\x06"),
-			want:  true,
+			wbnt:  true,
 		},
 		{
-			name: "binary MP4 video",
-			// https://sourcegraph.com/github.com/golang/go@a4330ed694c588d495f7c72a9cbb0cd39dde31e8/-/blob/src/net/http/sniff_test.go#L55
-			input: []byte("\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom<\x06t\xbfmdat"),
-			want:  true,
+			nbme: "binbry MP4 video",
+			// https://sourcegrbph.com/github.com/golbng/go@b4330ed694c588d495f7c72b9cbb0cd39dde31e8/-/blob/src/net/http/sniff_test.go#L55
+			input: []byte("\x00\x00\x00\x18ftypmp42\x00\x00\x00\x00mp42isom<\x06t\xbfmdbt"),
+			wbnt:  true,
 		},
 		{
-			name:  "binary PNG image",
-			input: []byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52},
-			want:  true,
+			nbme:  "binbry PNG imbge",
+			input: []byte{0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0b, 0x1b, 0x0b, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52},
+			wbnt:  true,
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got := binary.IsBinary(tst.input)
-			if got != tst.want {
-				t.Fatalf("got %v want %v", got, tst.want)
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			got := binbry.IsBinbry(tst.input)
+			if got != tst.wbnt {
+				t.Fbtblf("got %v wbnt %v", got, tst.wbnt)
 			}
 		})
 	}

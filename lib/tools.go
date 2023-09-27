@@ -1,9 +1,9 @@
 //go:build tools
 // +build tools
 
-package main
+pbckbge mbin
 
 import (
-	// go-mockgen is used to codegen mockable interfaces, used in precise code intel tests
+	// go-mockgen is used to codegen mockbble interfbces, used in precise code intel tests
 	_ "github.com/derision-test/go-mockgen/cmd/go-mockgen"
 )

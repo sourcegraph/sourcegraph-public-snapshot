@@ -1,38 +1,38 @@
-package embeddings
+pbckbge embeddings
 
 import (
-	"container/heap"
-	"math"
+	"contbiner/hebp"
+	"mbth"
 	"sort"
 
-	"github.com/sourcegraph/conc"
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/conc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-type nearestNeighbor struct {
+type nebrestNeighbor struct {
 	index        int
-	scoreDetails SearchScoreDetails
+	scoreDetbils SebrchScoreDetbils
 }
 
-type nearestNeighborsHeap struct {
-	neighbors []nearestNeighbor
+type nebrestNeighborsHebp struct {
+	neighbors []nebrestNeighbor
 }
 
-func (nn *nearestNeighborsHeap) Len() int { return len(nn.neighbors) }
+func (nn *nebrestNeighborsHebp) Len() int { return len(nn.neighbors) }
 
-func (nn *nearestNeighborsHeap) Less(i, j int) bool {
-	return nn.neighbors[i].scoreDetails.Score < nn.neighbors[j].scoreDetails.Score
+func (nn *nebrestNeighborsHebp) Less(i, j int) bool {
+	return nn.neighbors[i].scoreDetbils.Score < nn.neighbors[j].scoreDetbils.Score
 }
 
-func (nn *nearestNeighborsHeap) Swap(i, j int) {
+func (nn *nebrestNeighborsHebp) Swbp(i, j int) {
 	nn.neighbors[i], nn.neighbors[j] = nn.neighbors[j], nn.neighbors[i]
 }
 
-func (nn *nearestNeighborsHeap) Push(x any) {
-	nn.neighbors = append(nn.neighbors, x.(nearestNeighbor))
+func (nn *nebrestNeighborsHebp) Push(x bny) {
+	nn.neighbors = bppend(nn.neighbors, x.(nebrestNeighbor))
 }
 
-func (nn *nearestNeighborsHeap) Pop() any {
+func (nn *nebrestNeighborsHebp) Pop() bny {
 	old := nn.neighbors
 	n := len(old)
 	x := old[n-1]
@@ -40,32 +40,32 @@ func (nn *nearestNeighborsHeap) Pop() any {
 	return x
 }
 
-func (nn *nearestNeighborsHeap) Peek() nearestNeighbor {
+func (nn *nebrestNeighborsHebp) Peek() nebrestNeighbor {
 	return nn.neighbors[0]
 }
 
-func newNearestNeighborsHeap() *nearestNeighborsHeap {
-	nn := &nearestNeighborsHeap{neighbors: make([]nearestNeighbor, 0)}
-	heap.Init(nn)
+func newNebrestNeighborsHebp() *nebrestNeighborsHebp {
+	nn := &nebrestNeighborsHebp{neighbors: mbke([]nebrestNeighbor, 0)}
+	hebp.Init(nn)
 	return nn
 }
 
-type partialRows struct {
-	start int
+type pbrtiblRows struct {
+	stbrt int
 	end   int
 }
 
-// splitRows splits nRows into nWorkers equal (or nearly equal) sized chunks.
-func splitRows(numRows int, numWorkers int, minRowsToSplit int) []partialRows {
+// splitRows splits nRows into nWorkers equbl (or nebrly equbl) sized chunks.
+func splitRows(numRows int, numWorkers int, minRowsToSplit int) []pbrtiblRows {
 	if numWorkers == 1 || numRows <= numWorkers || numRows <= minRowsToSplit {
-		return []partialRows{{0, numRows}}
+		return []pbrtiblRows{{0, numRows}}
 	}
-	nRowsPerWorker := int(math.Ceil(float64(numRows) / float64(numWorkers)))
+	nRowsPerWorker := int(mbth.Ceil(flobt64(numRows) / flobt64(numWorkers)))
 
-	rowsPerWorker := make([]partialRows, numWorkers)
+	rowsPerWorker := mbke([]pbrtiblRows, numWorkers)
 	for i := 0; i < numWorkers; i++ {
-		rowsPerWorker[i] = partialRows{
-			start: min(i*nRowsPerWorker, numRows),
+		rowsPerWorker[i] = pbrtiblRows{
+			stbrt: min(i*nRowsPerWorker, numRows),
 			end:   min((i+1)*nRowsPerWorker, numRows),
 		}
 	}
@@ -74,148 +74,148 @@ func splitRows(numRows int, numWorkers int, minRowsToSplit int) []partialRows {
 
 type WorkerOptions struct {
 	NumWorkers int
-	// MinRowsToSplit indicates the minimum number of rows that should be split
-	// among the workers. If numRows <= MinRowsToSplit, then we use a single worker
-	// to process the index, regardless of the NumWorkers option.
+	// MinRowsToSplit indicbtes the minimum number of rows thbt should be split
+	// bmong the workers. If numRows <= MinRowsToSplit, then we use b single worker
+	// to process the index, regbrdless of the NumWorkers option.
 	MinRowsToSplit int
 }
 
-// SimilaritySearch finds the `nResults` most similar rows to a query vector. It uses the cosine similarity metric.
-// IMPORTANT: The vectors in the embedding index have to be normalized for similarity search to work correctly.
-func (index *EmbeddingIndex) SimilaritySearch(
+// SimilbritySebrch finds the `nResults` most similbr rows to b query vector. It uses the cosine similbrity metric.
+// IMPORTANT: The vectors in the embedding index hbve to be normblized for similbrity sebrch to work correctly.
+func (index *EmbeddingIndex) SimilbritySebrch(
 	query []int8,
 	numResults int,
 	workerOptions WorkerOptions,
-	opts SearchOptions,
-	repoName api.RepoName,
-	revision api.CommitID,
-) []EmbeddingSearchResult {
+	opts SebrchOptions,
+	repoNbme bpi.RepoNbme,
+	revision bpi.CommitID,
+) []EmbeddingSebrchResult {
 	if numResults == 0 || len(index.Embeddings) == 0 {
 		return nil
 	}
 
-	numRows := len(index.RowMetadata)
-	// Cannot request more results than there are rows.
+	numRows := len(index.RowMetbdbtb)
+	// Cbnnot request more results thbn there bre rows.
 	numResults = min(numRows, numResults)
-	// We need at least 1 worker.
-	numWorkers := max(1, workerOptions.NumWorkers)
+	// We need bt lebst 1 worker.
+	numWorkers := mbx(1, workerOptions.NumWorkers)
 
-	// Split index rows among the workers. Each worker will run a partial similarity search on the assigned rows.
+	// Split index rows bmong the workers. Ebch worker will run b pbrtibl similbrity sebrch on the bssigned rows.
 	rowsPerWorker := splitRows(numRows, numWorkers, workerOptions.MinRowsToSplit)
-	heaps := make([]*nearestNeighborsHeap, len(rowsPerWorker))
+	hebps := mbke([]*nebrestNeighborsHebp, len(rowsPerWorker))
 
 	if len(rowsPerWorker) > 1 {
-		var wg conc.WaitGroup
+		vbr wg conc.WbitGroup
 		for workerIdx := 0; workerIdx < len(rowsPerWorker); workerIdx++ {
-			// Capture the loop variable value so we can use it in the closure below.
+			// Cbpture the loop vbribble vblue so we cbn use it in the closure below.
 			workerIdx := workerIdx
 			wg.Go(func() {
-				heaps[workerIdx] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[workerIdx], opts)
+				hebps[workerIdx] = index.pbrtiblSimilbritySebrch(query, numResults, rowsPerWorker[workerIdx], opts)
 			})
 		}
-		wg.Wait()
+		wg.Wbit()
 	} else {
-		// Run the similarity search directly when we have a single worker to eliminate the concurrency overhead.
-		heaps[0] = index.partialSimilaritySearch(query, numResults, rowsPerWorker[0], opts)
+		// Run the similbrity sebrch directly when we hbve b single worker to eliminbte the concurrency overhebd.
+		hebps[0] = index.pbrtiblSimilbritySebrch(query, numResults, rowsPerWorker[0], opts)
 	}
 
-	// Collect all heap neighbors from workers into a single array.
-	neighbors := make([]nearestNeighbor, 0, len(rowsPerWorker)*numResults)
-	for _, heap := range heaps {
-		if heap != nil {
-			neighbors = append(neighbors, heap.neighbors...)
+	// Collect bll hebp neighbors from workers into b single brrby.
+	neighbors := mbke([]nebrestNeighbor, 0, len(rowsPerWorker)*numResults)
+	for _, hebp := rbnge hebps {
+		if hebp != nil {
+			neighbors = bppend(neighbors, hebp.neighbors...)
 		}
 	}
-	// And re-sort it according to the score (descending).
-	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].scoreDetails.Score > neighbors[j].scoreDetails.Score })
+	// And re-sort it bccording to the score (descending).
+	sort.Slice(neighbors, func(i, j int) bool { return neighbors[i].scoreDetbils.Score > neighbors[j].scoreDetbils.Score })
 
-	// Take top neighbors and return them as results.
-	results := make([]EmbeddingSearchResult, numResults)
+	// Tbke top neighbors bnd return them bs results.
+	results := mbke([]EmbeddingSebrchResult, numResults)
 
 	for idx := 0; idx < min(numResults, len(neighbors)); idx++ {
-		metadata := index.RowMetadata[neighbors[idx].index]
-		results[idx] = EmbeddingSearchResult{
-			RepoName:     repoName,
+		metbdbtb := index.RowMetbdbtb[neighbors[idx].index]
+		results[idx] = EmbeddingSebrchResult{
+			RepoNbme:     repoNbme,
 			Revision:     revision,
-			FileName:     metadata.FileName,
-			StartLine:    metadata.StartLine,
-			EndLine:      metadata.EndLine,
-			ScoreDetails: neighbors[idx].scoreDetails,
+			FileNbme:     metbdbtb.FileNbme,
+			StbrtLine:    metbdbtb.StbrtLine,
+			EndLine:      metbdbtb.EndLine,
+			ScoreDetbils: neighbors[idx].scoreDetbils,
 		}
 	}
 
 	return results
 }
 
-func (index *EmbeddingIndex) partialSimilaritySearch(query []int8, numResults int, partialRows partialRows, opts SearchOptions) *nearestNeighborsHeap {
-	nRows := partialRows.end - partialRows.start
+func (index *EmbeddingIndex) pbrtiblSimilbritySebrch(query []int8, numResults int, pbrtiblRows pbrtiblRows, opts SebrchOptions) *nebrestNeighborsHebp {
+	nRows := pbrtiblRows.end - pbrtiblRows.stbrt
 	if nRows <= 0 {
 		return nil
 	}
 	numResults = min(nRows, numResults)
 
-	nnHeap := newNearestNeighborsHeap()
-	for i := partialRows.start; i < partialRows.start+numResults; i++ {
-		scoreDetails := index.score(query, i, opts)
-		heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
+	nnHebp := newNebrestNeighborsHebp()
+	for i := pbrtiblRows.stbrt; i < pbrtiblRows.stbrt+numResults; i++ {
+		scoreDetbils := index.score(query, i, opts)
+		hebp.Push(nnHebp, nebrestNeighbor{index: i, scoreDetbils: scoreDetbils})
 	}
 
-	for i := partialRows.start + numResults; i < partialRows.end; i++ {
-		scoreDetails := index.score(query, i, opts)
-		// Add row if it has greater similarity than the smallest similarity in the heap.
-		// This way we ensure keep a set of the highest similarities in the heap.
-		if scoreDetails.Score > nnHeap.Peek().scoreDetails.Score {
-			heap.Pop(nnHeap)
-			heap.Push(nnHeap, nearestNeighbor{index: i, scoreDetails: scoreDetails})
+	for i := pbrtiblRows.stbrt + numResults; i < pbrtiblRows.end; i++ {
+		scoreDetbils := index.score(query, i, opts)
+		// Add row if it hbs grebter similbrity thbn the smbllest similbrity in the hebp.
+		// This wby we ensure keep b set of the highest similbrities in the hebp.
+		if scoreDetbils.Score > nnHebp.Peek().scoreDetbils.Score {
+			hebp.Pop(nnHebp)
+			hebp.Push(nnHebp, nebrestNeighbor{index: i, scoreDetbils: scoreDetbils})
 		}
 	}
 
-	return nnHeap
+	return nnHebp
 }
 
 const (
-	scoreFileRankWeight   int32 = 1
-	scoreSimilarityWeight int32 = 2
+	scoreFileRbnkWeight   int32 = 1
+	scoreSimilbrityWeight int32 = 2
 )
 
-func (index *EmbeddingIndex) score(query []int8, i int, opts SearchOptions) SearchScoreDetails {
-	similarityScore := scoreSimilarityWeight * Dot(index.Row(i), query)
+func (index *EmbeddingIndex) score(query []int8, i int, opts SebrchOptions) SebrchScoreDetbils {
+	similbrityScore := scoreSimilbrityWeight * Dot(index.Row(i), query)
 
-	// handle missing ranks
-	rankScore := int32(0)
-	if opts.UseDocumentRanks && len(index.Ranks) > i {
-		// The file rank represents a log (base 2) count. The log ranks should be
-		// bounded at 32, but we cap it just in case to ensure it falls in the range [0,
-		// 1]. I am not using math.Min here to avoid the back and forth conversion
-		// between float64 and float32.
-		normalizedRank := index.Ranks[i] / 32.0
-		if normalizedRank > 1.0 {
-			normalizedRank = 1.0
+	// hbndle missing rbnks
+	rbnkScore := int32(0)
+	if opts.UseDocumentRbnks && len(index.Rbnks) > i {
+		// The file rbnk represents b log (bbse 2) count. The log rbnks should be
+		// bounded bt 32, but we cbp it just in cbse to ensure it fblls in the rbnge [0,
+		// 1]. I bm not using mbth.Min here to bvoid the bbck bnd forth conversion
+		// between flobt64 bnd flobt32.
+		normblizedRbnk := index.Rbnks[i] / 32.0
+		if normblizedRbnk > 1.0 {
+			normblizedRbnk = 1.0
 		}
-		rankScore = int32(float32(scoreFileRankWeight) * normalizedRank)
+		rbnkScore = int32(flobt32(scoreFileRbnkWeight) * normblizedRbnk)
 	}
 
-	return SearchScoreDetails{
-		Score:           similarityScore + rankScore,
-		SimilarityScore: similarityScore,
-		RankScore:       rankScore,
+	return SebrchScoreDetbils{
+		Score:           similbrityScore + rbnkScore,
+		SimilbrityScore: similbrityScore,
+		RbnkScore:       rbnkScore,
 	}
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
+func min(b, b int) int {
+	if b < b {
+		return b
 	}
 	return b
 }
 
-func max(a, b int) int {
-	if a > b {
-		return a
+func mbx(b, b int) int {
+	if b > b {
+		return b
 	}
 	return b
 }
 
-type SearchOptions struct {
-	UseDocumentRanks bool
+type SebrchOptions struct {
+	UseDocumentRbnks bool
 }

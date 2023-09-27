@@ -1,233 +1,233 @@
-package runtime
+pbckbge runtime
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestKubernetesRuntime_Name(t *testing.T) {
+func TestKubernetesRuntime_Nbme(t *testing.T) {
 	r := kubernetesRuntime{}
-	assert.Equal(t, "kubernetes", string(r.Name()))
+	bssert.Equbl(t, "kubernetes", string(r.Nbme()))
 }
 
 func TestKubernetesRuntime_NewRunnerSpecs(t *testing.T) {
-	operations := command.NewOperations(&observation.TestContext)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name           string
+		nbme           string
 		job            types.Job
 		singleJob      bool
-		mockFunc       func(ws *MockWorkspace)
+		mockFunc       func(ws *MockWorkspbce)
 		expected       []runner.Spec
 		expectedErr    error
-		assertMockFunc func(t *testing.T, ws *MockWorkspace)
+		bssertMockFunc func(t *testing.T, ws *MockWorkspbce)
 	}{
 		{
-			name:     "No steps",
+			nbme:     "No steps",
 			job:      types.Job{},
 			expected: []runner.Spec{},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 0)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 0)
 			},
 		},
 		{
-			name: "Single step",
+			nbme: "Single step",
 			job: types.Job{
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "key-1",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpecs: []command.Spec{
+				CommbndSpecs: []commbnd.Spec{
 					{
 						Key:       "step.kubernetes.key-1",
-						Name:      "step-kubernetes-key-1",
-						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
+						Nbme:      "step-kubernetes-key-1",
+						Commbnd:   []string{"/bin/sh", "-c", "/job/.sourcegrbph-executor/script.sh"},
 						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+						Env:       []string{"FOO=bbr"},
+						Operbtion: operbtions.Exec,
 					},
 				},
-				Image: "my-image",
+				Imbge: "my-imbge",
 			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 1)
 			},
 		},
 		{
-			name: "Multiple steps",
+			nbme: "Multiple steps",
 			job: types.Job{
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "key-1",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 					{
 						Key:      "key-2",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script1.sh", "script2.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script1.sh", "script2.sh"})
 			},
 			expected: []runner.Spec{
 				{
-					CommandSpecs: []command.Spec{
+					CommbndSpecs: []commbnd.Spec{
 						{
 							Key:       "step.kubernetes.key-1",
-							Name:      "step-kubernetes-key-1",
-							Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script1.sh"},
+							Nbme:      "step-kubernetes-key-1",
+							Commbnd:   []string{"/bin/sh", "-c", "/job/.sourcegrbph-executor/script1.sh"},
 							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+							Env:       []string{"FOO=bbr"},
+							Operbtion: operbtions.Exec,
 						},
 					},
-					Image: "my-image",
+					Imbge: "my-imbge",
 				},
 				{
-					CommandSpecs: []command.Spec{
+					CommbndSpecs: []commbnd.Spec{
 						{
 							Key:       "step.kubernetes.key-2",
-							Name:      "step-kubernetes-key-2",
-							Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script2.sh"},
+							Nbme:      "step-kubernetes-key-2",
+							Commbnd:   []string{"/bin/sh", "-c", "/job/.sourcegrbph-executor/script2.sh"},
 							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+							Env:       []string{"FOO=bbr"},
+							Operbtion: operbtions.Exec,
 						},
 					},
-					Image: "my-image",
+					Imbge: "my-imbge",
 				},
 			},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 2)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 2)
 			},
 		},
 		{
-			name: "Default key",
+			nbme: "Defbult key",
 			job: types.Job{
 				DockerSteps: []types.DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpecs: []command.Spec{
+				CommbndSpecs: []commbnd.Spec{
 					{
 						Key:       "step.kubernetes.0",
-						Name:      "step-kubernetes-0",
-						Command:   []string{"/bin/sh", "-c", "/job/.sourcegraph-executor/script.sh"},
+						Nbme:      "step-kubernetes-0",
+						Commbnd:   []string{"/bin/sh", "-c", "/job/.sourcegrbph-executor/script.sh"},
 						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+						Env:       []string{"FOO=bbr"},
+						Operbtion: operbtions.Exec,
 					},
 				},
-				Image: "my-image",
+				Imbge: "my-imbge",
 			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 1)
 			},
 		},
 		{
-			name:      "Single job",
+			nbme:      "Single job",
 			singleJob: true,
 			job: types.Job{
 				ID:             42,
-				RepositoryName: "github.com/sourcegraph/sourcegraph",
-				Commit:         "deadbeef",
+				RepositoryNbme: "github.com/sourcegrbph/sourcegrbph",
+				Commit:         "debdbeef",
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "my-key",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpecs: []command.Spec{
+				CommbndSpecs: []commbnd.Spec{
 					{
 						Key:     "step.kubernetes.my-key",
-						Name:    "step-kubernetes-my-key",
-						Command: []string{"/bin/sh -c /job/.sourcegraph-executor/42.0_github.com_sourcegraph_sourcegraph@deadbeef.sh"},
+						Nbme:    "step-kubernetes-my-key",
+						Commbnd: []string{"/bin/sh -c /job/.sourcegrbph-executor/42.0_github.com_sourcegrbph_sourcegrbph@debdbeef.sh"},
 						Dir:     ".",
-						Env:     []string{"FOO=bar"},
-						Image:   "my-image",
+						Env:     []string{"FOO=bbr"},
+						Imbge:   "my-imbge",
 					},
 				},
 			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 0)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 0)
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ws := NewMockWorkspace()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			ws := NewMockWorkspbce()
 
 			if test.mockFunc != nil {
 				test.mockFunc(ws)
 			}
 
-			r := &kubernetesRuntime{options: command.KubernetesContainerOptions{SingleJobPod: test.singleJob}, operations: operations}
-			actual, err := r.NewRunnerSpecs(ws, test.job)
+			r := &kubernetesRuntime{options: commbnd.KubernetesContbinerOptions{SingleJobPod: test.singleJob}, operbtions: operbtions}
+			bctubl, err := r.NewRunnerSpecs(ws, test.job)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				require.Len(t, actual, len(test.expected))
-				for _, expected := range test.expected {
-					// find the matching actual spec based on the command spec key. There will only ever be one command spec per spec.
-					var actualSpec runner.Spec
-					for _, spec := range actual {
-						if spec.CommandSpecs[0].Key == expected.CommandSpecs[0].Key {
-							actualSpec = spec
-							break
+				require.Len(t, bctubl, len(test.expected))
+				for _, expected := rbnge test.expected {
+					// find the mbtching bctubl spec bbsed on the commbnd spec key. There will only ever be one commbnd spec per spec.
+					vbr bctublSpec runner.Spec
+					for _, spec := rbnge bctubl {
+						if spec.CommbndSpecs[0].Key == expected.CommbndSpecs[0].Key {
+							bctublSpec = spec
+							brebk
 						}
 					}
-					require.Greater(t, len(actualSpec.CommandSpecs), 0)
+					require.Grebter(t, len(bctublSpec.CommbndSpecs), 0)
 
-					assert.Equal(t, expected.Image, actualSpec.Image)
-					assert.Equal(t, expected.ScriptPath, actualSpec.ScriptPath)
-					assert.Equal(t, expected.CommandSpecs[0], actualSpec.CommandSpecs[0])
+					bssert.Equbl(t, expected.Imbge, bctublSpec.Imbge)
+					bssert.Equbl(t, expected.ScriptPbth, bctublSpec.ScriptPbth)
+					bssert.Equbl(t, expected.CommbndSpecs[0], bctublSpec.CommbndSpecs[0])
 				}
 			}
 
-			test.assertMockFunc(t, ws)
+			test.bssertMockFunc(t, ws)
 		})
 	}
 }

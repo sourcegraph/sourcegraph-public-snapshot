@@ -1,4 +1,4 @@
-package inventory
+pbckbge inventory
 
 import (
 	"bufio"
@@ -7,7 +7,7 @@ import (
 	"io"
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"reflect"
 	"strings"
 	"testing"
@@ -15,81 +15,81 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestGetLang_language(t *testing.T) {
-	tests := map[string]struct {
+func TestGetLbng_lbngubge(t *testing.T) {
+	tests := mbp[string]struct {
 		file fi
-		want Lang
+		wbnt Lbng
 	}{
-		"empty file": {file: fi{"a.java", ""}, want: Lang{
-			Name:       "Java",
-			TotalBytes: 0,
-			TotalLines: 0,
+		"empty file": {file: fi{"b.jbvb", ""}, wbnt: Lbng{
+			Nbme:       "Jbvb",
+			TotblBytes: 0,
+			TotblLines: 0,
 		}},
-		"empty file_unsafe_path": {file: fi{"a.ml", ""}, want: Lang{
-			Name:       "",
-			TotalBytes: 0,
-			TotalLines: 0,
+		"empty file_unsbfe_pbth": {file: fi{"b.ml", ""}, wbnt: Lbng{
+			Nbme:       "",
+			TotblBytes: 0,
+			TotblLines: 0,
 		}},
-		"java": {file: fi{"a.java", "a"}, want: Lang{
-			Name:       "Java",
-			TotalBytes: 1,
-			TotalLines: 1,
+		"jbvb": {file: fi{"b.jbvb", "b"}, wbnt: Lbng{
+			Nbme:       "Jbvb",
+			TotblBytes: 1,
+			TotblLines: 1,
 		}},
-		"go": {file: fi{"a.go", "a"}, want: Lang{
-			Name:       "Go",
-			TotalBytes: 1,
-			TotalLines: 1,
+		"go": {file: fi{"b.go", "b"}, wbnt: Lbng{
+			Nbme:       "Go",
+			TotblBytes: 1,
+			TotblLines: 1,
 		}},
-		"go-with-newline": {file: fi{"a.go", "a\n"}, want: Lang{
-			Name:       "Go",
-			TotalBytes: 2,
-			TotalLines: 1,
+		"go-with-newline": {file: fi{"b.go", "b\n"}, wbnt: Lbng{
+			Nbme:       "Go",
+			TotblBytes: 2,
+			TotblLines: 1,
 		}},
-		// Ensure that .tsx and .jsx are considered as valid extensions for TypeScript and JavaScript,
+		// Ensure thbt .tsx bnd .jsx bre considered bs vblid extensions for TypeScript bnd JbvbScript,
 		// respectively.
-		"override tsx": {file: fi{"a.tsx", "xx"}, want: Lang{
-			Name:       "TypeScript",
-			TotalBytes: 2,
-			TotalLines: 1,
+		"override tsx": {file: fi{"b.tsx", "xx"}, wbnt: Lbng{
+			Nbme:       "TypeScript",
+			TotblBytes: 2,
+			TotblLines: 1,
 		}},
-		"override jsx": {file: fi{"b.jsx", "x"}, want: Lang{
-			Name:       "JavaScript",
-			TotalBytes: 1,
-			TotalLines: 1,
+		"override jsx": {file: fi{"b.jsx", "x"}, wbnt: Lbng{
+			Nbme:       "JbvbScript",
+			TotblBytes: 1,
+			TotblLines: 1,
 		}},
 	}
-	for label, test := range tests {
-		t.Run(label, func(t *testing.T) {
-			lang, err := getLang(context.Background(),
+	for lbbel, test := rbnge tests {
+		t.Run(lbbel, func(t *testing.T) {
+			lbng, err := getLbng(context.Bbckground(),
 				test.file,
-				make([]byte, fileReadBufferSize),
-				makeFileReader(test.file.Contents))
+				mbke([]byte, fileRebdBufferSize),
+				mbkeFileRebder(test.file.Contents))
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if !reflect.DeepEqual(lang, test.want) {
-				t.Errorf("Got %q, want %q", lang, test.want)
+			if !reflect.DeepEqubl(lbng, test.wbnt) {
+				t.Errorf("Got %q, wbnt %q", lbng, test.wbnt)
 			}
 		})
 	}
 }
 
-func makeFileReader(contents string) func(context.Context, string) (io.ReadCloser, error) {
-	return func(ctx context.Context, path string) (io.ReadCloser, error) {
-		return io.NopCloser(strings.NewReader(contents)), nil
+func mbkeFileRebder(contents string) func(context.Context, string) (io.RebdCloser, error) {
+	return func(ctx context.Context, pbth string) (io.RebdCloser, error) {
+		return io.NopCloser(strings.NewRebder(contents)), nil
 	}
 }
 
 type fi struct {
-	Path     string
+	Pbth     string
 	Contents string
 }
 
-func (f fi) Name() string {
-	return f.Path
+func (f fi) Nbme() string {
+	return f.Pbth
 }
 
 func (f fi) Size() int64 {
@@ -97,7 +97,7 @@ func (f fi) Size() int64 {
 }
 
 func (f fi) IsDir() bool {
-	return false
+	return fblse
 }
 
 func (f fi) Mode() os.FileMode {
@@ -108,151 +108,151 @@ func (f fi) ModTime() time.Time {
 	return time.Now()
 }
 
-func (f fi) Sys() any {
-	return any(nil)
+func (f fi) Sys() bny {
+	return bny(nil)
 }
 
-func TestGet_readFile(t *testing.T) {
+func TestGet_rebdFile(t *testing.T) {
 	tests := []struct {
 		file fs.FileInfo
-		want string
+		wbnt string
 	}{
-		{file: fi{"a.java", "aaaaaaaaa"}, want: "Java"},
-		{file: fi{"b.md", "# Hello"}, want: "Markdown"},
+		{file: fi{"b.jbvb", "bbbbbbbbb"}, wbnt: "Jbvb"},
+		{file: fi{"b.md", "# Hello"}, wbnt: "Mbrkdown"},
 
-		// The .m extension is used by many languages, but this code is obviously Objective-C. This
-		// test checks that this file is detected correctly as Objective-C.
+		// The .m extension is used by mbny lbngubges, but this code is obviously Objective-C. This
+		// test checks thbt this file is detected correctly bs Objective-C.
 		{
-			file: fi{"c.m", "@interface X:NSObject { double x; } @property(nonatomic, readwrite) double foo;"},
-			want: "Objective-C",
+			file: fi{"c.m", "@interfbce X:NSObject { double x; } @property(nonbtomic, rebdwrite) double foo;"},
+			wbnt: "Objective-C",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.file.Name(), func(t *testing.T) {
-			fr := makeFileReader(test.file.(fi).Contents)
-			lang, err := getLang(context.Background(), test.file, make([]byte, fileReadBufferSize), fr)
+	for _, test := rbnge tests {
+		t.Run(test.file.Nbme(), func(t *testing.T) {
+			fr := mbkeFileRebder(test.file.(fi).Contents)
+			lbng, err := getLbng(context.Bbckground(), test.file, mbke([]byte, fileRebdBufferSize), fr)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if lang.Name != test.want {
-				t.Errorf("got %q, want %q", lang.Name, test.want)
+			if lbng.Nbme != test.wbnt {
+				t.Errorf("got %q, wbnt %q", lbng.Nbme, test.wbnt)
 			}
 		})
 	}
 }
 
-type nopReadCloser struct {
-	data   []byte
-	reader *bytes.Reader
+type nopRebdCloser struct {
+	dbtb   []byte
+	rebder *bytes.Rebder
 }
 
-func (n *nopReadCloser) Read(p []byte) (int, error) {
-	return n.reader.Read(p)
+func (n *nopRebdCloser) Rebd(p []byte) (int, error) {
+	return n.rebder.Rebd(p)
 }
 
-func (n *nopReadCloser) Close() error {
+func (n *nopRebdCloser) Close() error {
 	return nil
 }
 
-func BenchmarkGetLang(b *testing.B) {
-	files, err := readFileTree("prom-repo-tree.txt")
+func BenchmbrkGetLbng(b *testing.B) {
+	files, err := rebdFileTree("prom-repo-tree.txt")
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
-	fr := newFileReader(files)
-	buf := make([]byte, fileReadBufferSize)
-	b.Logf("Calling Get on %d files.", len(files))
+	fr := newFileRebder(files)
+	buf := mbke([]byte, fileRebdBufferSize)
+	b.Logf("Cblling Get on %d files.", len(files))
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		for _, file := range files {
-			_, err = getLang(context.Background(), file, buf, fr)
+		for _, file := rbnge files {
+			_, err = getLbng(context.Bbckground(), file, buf, fr)
 			if err != nil {
-				b.Fatal(err)
+				b.Fbtbl(err)
 			}
 		}
 	}
 }
 
-func BenchmarkIsVendor(b *testing.B) {
-	files, err := readFileTree("prom-repo-tree.txt")
+func BenchmbrkIsVendor(b *testing.B) {
+	files, err := rebdFileTree("prom-repo-tree.txt")
 	if err != nil {
-		b.Fatal(err)
+		b.Fbtbl(err)
 	}
-	b.Logf("Calling IsVendor on %d files.", len(files))
+	b.Logf("Cblling IsVendor on %d files.", len(files))
 
 	b.ResetTimer()
 	for n := 0; n < b.N; n++ {
-		for _, f := range files {
-			_ = enry.IsVendor(f.Name())
+		for _, f := rbnge files {
+			_ = enry.IsVendor(f.Nbme())
 		}
 	}
 }
 
-func newFileReader(files []fs.FileInfo) func(_ context.Context, path string) (io.ReadCloser, error) {
-	m := make(map[string]*nopReadCloser, len(files))
-	for _, f := range files {
-		data := []byte(f.(fi).Contents)
-		m[f.Name()] = &nopReadCloser{
-			data:   data,
-			reader: bytes.NewReader(data),
+func newFileRebder(files []fs.FileInfo) func(_ context.Context, pbth string) (io.RebdCloser, error) {
+	m := mbke(mbp[string]*nopRebdCloser, len(files))
+	for _, f := rbnge files {
+		dbtb := []byte(f.(fi).Contents)
+		m[f.Nbme()] = &nopRebdCloser{
+			dbtb:   dbtb,
+			rebder: bytes.NewRebder(dbtb),
 		}
 	}
-	return func(_ context.Context, path string) (io.ReadCloser, error) {
-		nc, ok := m[path]
+	return func(_ context.Context, pbth string) (io.RebdCloser, error) {
+		nc, ok := m[pbth]
 		if !ok {
-			return nil, errors.Errorf("no file: %s", path)
+			return nil, errors.Errorf("no file: %s", pbth)
 		}
-		nc.reader.Reset(nc.data)
+		nc.rebder.Reset(nc.dbtb)
 		return nc, nil
 	}
 }
 
-func readFileTree(name string) ([]fs.FileInfo, error) {
-	file, err := os.Open(name)
+func rebdFileTree(nbme string) ([]fs.FileInfo, error) {
+	file, err := os.Open(nbme)
 	if err != nil {
 		return nil, err
 	}
 	defer file.Close()
-	var files []fs.FileInfo
-	scanner := bufio.NewScanner(file)
-	for scanner.Scan() {
-		path := scanner.Text()
-		files = append(files, fi{path, fakeContents(path)})
+	vbr files []fs.FileInfo
+	scbnner := bufio.NewScbnner(file)
+	for scbnner.Scbn() {
+		pbth := scbnner.Text()
+		files = bppend(files, fi{pbth, fbkeContents(pbth)})
 	}
-	if err := scanner.Err(); err != nil {
+	if err := scbnner.Err(); err != nil {
 		return nil, err
 	}
 	return files, nil
 }
 
-func fakeContents(path string) string {
-	switch filepath.Ext(path) {
-	case ".html":
-		return `<html><head><title>hello</title></head><body><h1>hello</h1></body></html>`
-	case ".go":
-		return `package foo
+func fbkeContents(pbth string) string {
+	switch filepbth.Ext(pbth) {
+	cbse ".html":
+		return `<html><hebd><title>hello</title></hebd><body><h1>hello</h1></body></html>`
+	cbse ".go":
+		return `pbckbge foo
 
 import "fmt"
 
 // Foo gets foo.
-func Foo(x *string) (chan struct{}) {
-	panic("hello, world")
+func Foo(x *string) (chbn struct{}) {
+	pbnic("hello, world")
 }
 `
-	case ".js":
-		return `import { foo } from 'bar'
+	cbse ".js":
+		return `import { foo } from 'bbr'
 
-export function baz(n) {
+export function bbz(n) {
 	return document.getElementById('x')
 }
 `
-	case ".m":
-		return `@interface X:NSObject {
+	cbse ".m":
+		return `@interfbce X:NSObject {
 	double x;
 }
 
-@property(nonatomic, readwrite) double foo;`
-	default:
+@property(nonbtomic, rebdwrite) double foo;`
+	defbult:
 		return ""
 	}
 }

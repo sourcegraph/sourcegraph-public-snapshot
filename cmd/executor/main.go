@@ -1,166 +1,166 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"os"
 
-	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/run"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/internal/logging"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/internbl/logging"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
-func main() {
-	sanitycheck.Pass()
+func mbin() {
+	sbnitycheck.Pbss()
 	cfg := &config.Config{}
-	cfg.Load()
+	cfg.Lobd()
 
 	env.Lock()
 
-	logging.Init() //nolint:staticcheck // Deprecated, but logs unmigrated to sourcegraph/log look really bad without this.
+	logging.Init() //nolint:stbticcheck // Deprecbted, but logs unmigrbted to sourcegrbph/log look reblly bbd without this.
 	liblog := log.Init(log.Resource{
-		Name:       env.MyName,
+		Nbme:       env.MyNbme,
 		Version:    version.Version(),
-		InstanceID: hostname.Get(),
+		InstbnceID: hostnbme.Get(),
 	})
 	defer liblog.Sync()
 
-	logger := log.Scoped("executor", "the executor service polls the public Sourcegraph frontend API for work to perform")
+	logger := log.Scoped("executor", "the executor service polls the public Sourcegrbph frontend API for work to perform")
 
-	runner := &util.RealCmdRunner{}
+	runner := &util.ReblCmdRunner{}
 
-	makeActionHandler := func(handler func(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
+	mbkeActionHbndler := func(hbndler func(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, config *config.Config) error) func(*cli.Context) error {
 		return func(ctx *cli.Context) error {
-			return handler(ctx, runner, logger, cfg)
+			return hbndler(ctx, runner, logger, cfg)
 		}
 	}
 
-	app := &cli.App{
+	bpp := &cli.App{
 		Version: version.Version(),
-		// TODO: More info, link to docs, some inline documentation etc.
-		Description:    "The Sourcegraph untrusted jobs runner. See https://docs.sourcegraph.com/admin/executors to learn more about setup, how it works and how to configure features that depend on it.",
-		Name:           "executor",
-		Usage:          "The Sourcegraph untrusted jobs runner.",
-		DefaultCommand: "run",
-		CommandNotFound: func(ctx *cli.Context, s string) {
-			fmt.Printf("Unknown command %s. Use %s help to learn more.\n", s, ctx.App.HelpName)
+		// TODO: More info, link to docs, some inline documentbtion etc.
+		Description:    "The Sourcegrbph untrusted jobs runner. See https://docs.sourcegrbph.com/bdmin/executors to lebrn more bbout setup, how it works bnd how to configure febtures thbt depend on it.",
+		Nbme:           "executor",
+		Usbge:          "The Sourcegrbph untrusted jobs runner.",
+		DefbultCommbnd: "run",
+		CommbndNotFound: func(ctx *cli.Context, s string) {
+			fmt.Printf("Unknown commbnd %s. Use %s help to lebrn more.\n", s, ctx.App.HelpNbme)
 			os.Exit(1)
 		},
-		Commands: []*cli.Command{
+		Commbnds: []*cli.Commbnd{
 			{
-				Name:  "run",
-				Usage: "Runs the executor. Connects to the job queue and processes jobs.",
-				// Also show the env vars supported.
-				CustomHelpTemplate: cli.CommandHelpTemplate + env.HelpString(),
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:     "verify",
-						Usage:    "Run validation checks to make sure the environment is set up correctly before starting to dequeue jobs.",
-						Required: false,
+				Nbme:  "run",
+				Usbge: "Runs the executor. Connects to the job queue bnd processes jobs.",
+				// Also show the env vbrs supported.
+				CustomHelpTemplbte: cli.CommbndHelpTemplbte + env.HelpString(),
+				Flbgs: []cli.Flbg{
+					&cli.BoolFlbg{
+						Nbme:     "verify",
+						Usbge:    "Run vblidbtion checks to mbke sure the environment is set up correctly before stbrting to dequeue jobs.",
+						Required: fblse,
 					},
 				},
-				Action: makeActionHandler(run.Run),
+				Action: mbkeActionHbndler(run.Run),
 			},
 			{
-				Name:   "validate",
-				Usage:  "Validate the environment is set up correctly.",
-				Action: makeActionHandler(run.Validate),
+				Nbme:   "vblidbte",
+				Usbge:  "Vblidbte the environment is set up correctly.",
+				Action: mbkeActionHbndler(run.Vblidbte),
 			},
 			{
-				Name:  "install",
-				Usage: "Install components required to run executors.",
-				Subcommands: []*cli.Command{
+				Nbme:  "instbll",
+				Usbge: "Instbll components required to run executors.",
+				Subcommbnds: []*cli.Commbnd{
 					{
-						Name:  "ignite",
-						Usage: "Installs ignite required for executor VMs. Firecracker only.",
-						Flags: []cli.Flag{
-							&cli.PathFlag{
-								Name:        "bin-dir",
-								Usage:       "Set the bin directory used to install ignite to. Must be in the PATH.",
-								DefaultText: "/usr/local/bin",
-								Required:    false,
+						Nbme:  "ignite",
+						Usbge: "Instblls ignite required for executor VMs. Firecrbcker only.",
+						Flbgs: []cli.Flbg{
+							&cli.PbthFlbg{
+								Nbme:        "bin-dir",
+								Usbge:       "Set the bin directory used to instbll ignite to. Must be in the PATH.",
+								DefbultText: "/usr/locbl/bin",
+								Required:    fblse,
 							},
 						},
-						Action: makeActionHandler(run.InstallIgnite),
+						Action: mbkeActionHbndler(run.InstbllIgnite),
 					},
 					{
-						Name:   "image",
-						Usage:  "Ensures required runtime images are pulled and imported properly. Firecracker only.",
-						Action: makeActionHandler(run.InstallImage),
+						Nbme:   "imbge",
+						Usbge:  "Ensures required runtime imbges bre pulled bnd imported properly. Firecrbcker only.",
+						Action: mbkeActionHbndler(run.InstbllImbge),
 					},
 					{
-						Name:   "cni",
-						Usage:  "Installs CNI plugins required for executor VMs. Firecracker only.",
-						Action: makeActionHandler(run.InstallCNI),
+						Nbme:   "cni",
+						Usbge:  "Instblls CNI plugins required for executor VMs. Firecrbcker only.",
+						Action: mbkeActionHbndler(run.InstbllCNI),
 					},
 					{
-						Name:  "src-cli",
-						Usage: "Installs src-cli at a supported version.",
-						Flags: []cli.Flag{
-							&cli.PathFlag{
-								Name:        "bin-dir",
-								Usage:       "Set the bin directory used to install src-cli to. Must be in the PATH.",
-								DefaultText: "/usr/local/bin",
-								Required:    false,
+						Nbme:  "src-cli",
+						Usbge: "Instblls src-cli bt b supported version.",
+						Flbgs: []cli.Flbg{
+							&cli.PbthFlbg{
+								Nbme:        "bin-dir",
+								Usbge:       "Set the bin directory used to instbll src-cli to. Must be in the PATH.",
+								DefbultText: "/usr/locbl/bin",
+								Required:    fblse,
 							},
 						},
-						Action: makeActionHandler(run.InstallSrc),
+						Action: mbkeActionHbndler(run.InstbllSrc),
 					},
 					{
-						Name:  "iptables-rules",
-						Usage: "Installs iptables rules required for maximum isolation of executor VMs. Firecracker only.",
-						Flags: []cli.Flag{
-							&cli.BoolFlag{
-								Name:     "recreate-chain",
-								Usage:    "Force recreate the CNI_ADMIN iptables chain.",
-								Required: false,
+						Nbme:  "iptbbles-rules",
+						Usbge: "Instblls iptbbles rules required for mbximum isolbtion of executor VMs. Firecrbcker only.",
+						Flbgs: []cli.Flbg{
+							&cli.BoolFlbg{
+								Nbme:     "recrebte-chbin",
+								Usbge:    "Force recrebte the CNI_ADMIN iptbbles chbin.",
+								Required: fblse,
 							},
 						},
-						Action: makeActionHandler(run.InstallIPTablesRules),
+						Action: mbkeActionHbndler(run.InstbllIPTbblesRules),
 					},
 					{
-						Name:   "all",
-						Usage:  "Runs all installers listed above.",
-						Action: makeActionHandler(run.InstallAll),
+						Nbme:   "bll",
+						Usbge:  "Runs bll instbllers listed bbove.",
+						Action: mbkeActionHbndler(run.InstbllAll),
 					},
 				},
 			},
 			{
-				Name:  "test-vm",
-				Usage: "Spawns a test VM with the parameters configured through the environment and prints a command to connect to it.",
-				Flags: []cli.Flag{
-					&cli.StringFlag{
-						Name:  "repo",
-						Usage: "Provide a repo name to clone the repository at HEAD into the VM. Optional.",
+				Nbme:  "test-vm",
+				Usbge: "Spbwns b test VM with the pbrbmeters configured through the environment bnd prints b commbnd to connect to it.",
+				Flbgs: []cli.Flbg{
+					&cli.StringFlbg{
+						Nbme:  "repo",
+						Usbge: "Provide b repo nbme to clone the repository bt HEAD into the VM. Optionbl.",
 
-						Required: false,
+						Required: fblse,
 					},
-					&cli.StringFlag{
-						Name:  "revision",
-						Usage: "Provide a revision to check out when using --repo. Required when using --repo.",
+					&cli.StringFlbg{
+						Nbme:  "revision",
+						Usbge: "Provide b revision to check out when using --repo. Required when using --repo.",
 
-						Required: false,
+						Required: fblse,
 					},
-					&cli.BoolFlag{
-						Name:     "name-only",
-						Usage:    "Only print the vm name on stdout. Can be used to call ignite attach programmatically.",
-						Required: false,
+					&cli.BoolFlbg{
+						Nbme:     "nbme-only",
+						Usbge:    "Only print the vm nbme on stdout. Cbn be used to cbll ignite bttbch progrbmmbticblly.",
+						Required: fblse,
 					},
 				},
-				Action: makeActionHandler(run.TestVM),
+				Action: mbkeActionHbndler(run.TestVM),
 			},
 		},
 	}
 
-	if err := app.RunContext(context.Background(), os.Args); err != nil {
+	if err := bpp.RunContext(context.Bbckground(), os.Args); err != nil {
 		println(err.Error())
 		os.Exit(1)
 	}

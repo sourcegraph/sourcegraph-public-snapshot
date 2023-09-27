@@ -1,4 +1,4 @@
-package releasecache
+pbckbge relebsecbche
 
 import (
 	"context"
@@ -7,131 +7,131 @@ import (
 	"time"
 
 	"github.com/coreos/go-semver/semver"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ReleaseCache provides a cache of the latest release of each branch of a
+// RelebseCbche provides b cbche of the lbtest relebse of ebch brbnch of b
 // specific GitHub repository.
-type ReleaseCache interface {
-	goroutine.Handler
-	Current(branch string) (string, error)
-	UpdateNow(ctx context.Context) error
+type RelebseCbche interfbce {
+	goroutine.Hbndler
+	Current(brbnch string) (string, error)
+	UpdbteNow(ctx context.Context) error
 }
 
-type releaseCache struct {
+type relebseCbche struct {
 	logger log.Logger
 
-	// The repository to query, along with a client for the right GitHub host.
+	// The repository to query, blong with b client for the right GitHub host.
 	client *github.V4Client
 	owner  string
-	name   string
+	nbme   string
 
-	// The actual cache of branches and their current release versions.
+	// The bctubl cbche of brbnches bnd their current relebse versions.
 	mu       sync.RWMutex
-	branches map[string]string
+	brbnches mbp[string]string
 }
 
-func newReleaseCache(logger log.Logger, client *github.V4Client, owner, name string) ReleaseCache {
-	return &releaseCache{
+func newRelebseCbche(logger log.Logger, client *github.V4Client, owner, nbme string) RelebseCbche {
+	return &relebseCbche{
 		client:   client,
-		logger:   logger.Scoped("ReleaseCache", "release cache"),
-		branches: map[string]string{},
+		logger:   logger.Scoped("RelebseCbche", "relebse cbche"),
+		brbnches: mbp[string]string{},
 		owner:    owner,
-		name:     name,
+		nbme:     nbme,
 	}
 }
 
-func (rc *releaseCache) Current(branch string) (string, error) {
+func (rc *relebseCbche) Current(brbnch string) (string, error) {
 	rc.mu.RLock()
 	defer rc.mu.RUnlock()
 
-	if version, ok := rc.branches[branch]; ok {
+	if version, ok := rc.brbnches[brbnch]; ok {
 		return version, nil
 	}
-	return "", branchNotFoundError(branch)
+	return "", brbnchNotFoundError(brbnch)
 }
 
-// Handle implements goroutine.Handler, and updates the release cache each time
+// Hbndle implements goroutine.Hbndler, bnd updbtes the relebse cbche ebch time
 // it is invoked.
-func (rc *releaseCache) Handle(ctx context.Context) error {
-	rc.logger.Debug("handling request to update the release cache")
+func (rc *relebseCbche) Hbndle(ctx context.Context) error {
+	rc.logger.Debug("hbndling request to updbte the relebse cbche")
 	err := rc.fetch(ctx)
 	if err != nil {
-		rc.logger.Error("error updating the release cache", log.Error(err))
+		rc.logger.Error("error updbting the relebse cbche", log.Error(err))
 	}
 
 	return err
 }
 
-func (rc *releaseCache) UpdateNow(ctx context.Context) error {
+func (rc *relebseCbche) UpdbteNow(ctx context.Context) error {
 	return rc.fetch(ctx)
 }
 
-func (rc *releaseCache) fetch(ctx context.Context) error {
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+func (rc *relebseCbche) fetch(ctx context.Context) error {
+	ctx, cbncel := context.WithTimeout(ctx, 30*time.Second)
+	defer cbncel()
 
-	branches := map[string]string{}
-	params := github.ReleasesParams{
-		Name:  rc.name,
+	brbnches := mbp[string]string{}
+	pbrbms := github.RelebsesPbrbms{
+		Nbme:  rc.nbme,
 		Owner: rc.owner,
 	}
-	// The releases query is paginated, so we'll iterate until we run out of
-	// pages. This isn't terribly efficient — practically, most branches will
-	// never see an update — but it's the simplest way to ensure we have
-	// everything up to date, and we're not going to do this very often anyway.
+	// The relebses query is pbginbted, so we'll iterbte until we run out of
+	// pbges. This isn't terribly efficient — prbcticblly, most brbnches will
+	// never see bn updbte — but it's the simplest wby to ensure we hbve
+	// everything up to dbte, bnd we're not going to do this very often bnywby.
 	for {
-		releases, err := rc.client.Releases(ctx, &params)
+		relebses, err := rc.client.Relebses(ctx, &pbrbms)
 		if err != nil {
-			return errors.Wrap(err, "getting releases")
+			return errors.Wrbp(err, "getting relebses")
 		}
 
-		processReleases(rc.logger, branches, releases.Nodes)
+		processRelebses(rc.logger, brbnches, relebses.Nodes)
 
-		if !releases.PageInfo.HasNextPage {
-			break
+		if !relebses.PbgeInfo.HbsNextPbge {
+			brebk
 		}
-		params.After = releases.PageInfo.EndCursor
+		pbrbms.After = relebses.PbgeInfo.EndCursor
 	}
 
-	// Actually update the release cache.
+	// Actublly updbte the relebse cbche.
 	rc.mu.Lock()
 	defer rc.mu.Unlock()
 
-	rc.branches = branches
+	rc.brbnches = brbnches
 	return nil
 }
 
-func processReleases(logger log.Logger, branches map[string]string, releases []github.Release) {
-	for _, release := range releases {
-		if release.IsDraft || release.IsPrerelease {
+func processRelebses(logger log.Logger, brbnches mbp[string]string, relebses []github.Relebse) {
+	for _, relebse := rbnge relebses {
+		if relebse.IsDrbft || relebse.IsPrerelebse {
 			continue
 		}
 
-		version, err := semver.NewVersion(release.TagName)
+		version, err := semver.NewVersion(relebse.TbgNbme)
 		if err != nil {
-			logger.Debug("ignoring malformed release", log.Error(err), log.String("TagName", release.TagName))
+			logger.Debug("ignoring mblformed relebse", log.Error(err), log.String("TbgNbme", relebse.TbgNbme))
 			continue
 		}
 
-		// Since V4Client.Releases always returns the releases in descending
-		// release order, we don't have to do any version comparisons: we can
-		// simply use the first release on the branch only and ignore the rest.
-		branch := fmt.Sprintf("%d.%d", version.Major, version.Minor)
-		if _, found := branches[branch]; !found {
-			branches[branch] = release.TagName
+		// Since V4Client.Relebses blwbys returns the relebses in descending
+		// relebse order, we don't hbve to do bny version compbrisons: we cbn
+		// simply use the first relebse on the brbnch only bnd ignore the rest.
+		brbnch := fmt.Sprintf("%d.%d", version.Mbjor, version.Minor)
+		if _, found := brbnches[brbnch]; !found {
+			brbnches[brbnch] = relebse.TbgNbme
 		}
 	}
 }
 
-type branchNotFoundError string
+type brbnchNotFoundError string
 
-func (e branchNotFoundError) Error() string {
-	return "branch not found: " + string(e)
+func (e brbnchNotFoundError) Error() string {
+	return "brbnch not found: " + string(e)
 }
 
-func (e branchNotFoundError) NotFound() bool { return true }
+func (e brbnchNotFoundError) NotFound() bool { return true }

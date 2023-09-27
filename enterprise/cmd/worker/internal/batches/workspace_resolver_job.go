@@ -1,52 +1,52 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/batches/workers"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/worker/internbl/bbtches/workers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type workspaceResolverJob struct{}
+type workspbceResolverJob struct{}
 
-func NewWorkspaceResolverJob() job.Job {
-	return &workspaceResolverJob{}
+func NewWorkspbceResolverJob() job.Job {
+	return &workspbceResolverJob{}
 }
 
-func (j *workspaceResolverJob) Description() string {
+func (j *workspbceResolverJob) Description() string {
 	return ""
 }
 
-func (j *workspaceResolverJob) Config() []env.Config {
+func (j *workspbceResolverJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *workspaceResolverJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	observationCtx = observation.NewContext(observationCtx.Logger.Scoped("routines", "workspace resolver job routines"))
-	workCtx := actor.WithInternalActor(context.Background())
+func (j *workspbceResolverJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	observbtionCtx = observbtion.NewContext(observbtionCtx.Logger.Scoped("routines", "workspbce resolver job routines"))
+	workCtx := bctor.WithInternblActor(context.Bbckground())
 
 	bstore, err := InitStore()
 	if err != nil {
 		return nil, err
 	}
 
-	resStore, err := InitBatchSpecResolutionWorkerStore()
+	resStore, err := InitBbtchSpecResolutionWorkerStore()
 	if err != nil {
 		return nil, err
 	}
 
-	resolverWorker := workers.NewBatchSpecResolutionWorker(
+	resolverWorker := workers.NewBbtchSpecResolutionWorker(
 		workCtx,
-		observationCtx,
+		observbtionCtx,
 		bstore,
 		resStore,
 	)
 
-	routines := []goroutine.BackgroundRoutine{
+	routines := []goroutine.BbckgroundRoutine{
 		resolverWorker,
 	}
 

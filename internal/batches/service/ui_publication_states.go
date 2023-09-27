@@ -1,87 +1,87 @@
-package service
+pbckbge service
 
 import (
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UiPublicationStates takes the publicationStates input from the
-// applyBatchChange mutation, and applies the required validation and processing
-// logic to calculate the eventual publication state for each changeset spec.
+// UiPublicbtionStbtes tbkes the publicbtionStbtes input from the
+// bpplyBbtchChbnge mutbtion, bnd bpplies the required vblidbtion bnd processing
+// logic to cblculbte the eventubl publicbtion stbte for ebch chbngeset spec.
 //
-// External users must call Add() to add changeset spec random IDs to the
-// struct, then process() must be called before publication states can be
+// Externbl users must cbll Add() to bdd chbngeset spec rbndom IDs to the
+// struct, then process() must be cblled before publicbtion stbtes cbn be
 // retrieved using get().
-type UiPublicationStates struct {
-	rand map[string]batches.PublishedValue
-	id   map[int64]*btypes.ChangesetUiPublicationState
+type UiPublicbtionStbtes struct {
+	rbnd mbp[string]bbtches.PublishedVblue
+	id   mbp[int64]*btypes.ChbngesetUiPublicbtionStbte
 }
 
-// Add adds a changeset spec random ID to the publication states.
-func (ps *UiPublicationStates) Add(rand string, value batches.PublishedValue) error {
-	if ps.rand == nil {
-		ps.rand = map[string]batches.PublishedValue{rand: value}
+// Add bdds b chbngeset spec rbndom ID to the publicbtion stbtes.
+func (ps *UiPublicbtionStbtes) Add(rbnd string, vblue bbtches.PublishedVblue) error {
+	if ps.rbnd == nil {
+		ps.rbnd = mbp[string]bbtches.PublishedVblue{rbnd: vblue}
 		return nil
 	}
 
-	if _, ok := ps.rand[rand]; ok {
-		return errors.Newf("duplicate changeset spec: %s", rand)
+	if _, ok := ps.rbnd[rbnd]; ok {
+		return errors.Newf("duplicbte chbngeset spec: %s", rbnd)
 	}
 
-	ps.rand[rand] = value
+	ps.rbnd[rbnd] = vblue
 	return nil
 }
 
-func (ps *UiPublicationStates) get(id int64) *btypes.ChangesetUiPublicationState {
+func (ps *UiPublicbtionStbtes) get(id int64) *btypes.ChbngesetUiPublicbtionStbte {
 	if ps.id != nil {
 		return ps.id[id]
 	}
 	return nil
 }
 
-// prepareAndValidate looks up the random changeset spec IDs, and ensures that
-// the changeset specs are included in the current rewirer mappings and are
-// eligible for a UI publication state.
-func (ps *UiPublicationStates) prepareAndValidate(mappings btypes.RewirerMappings) error {
-	// If there are no publication states -- which is the normal case -- there's
-	// nothing to do here, and we can bail early.
-	if len(ps.rand) == 0 {
+// prepbreAndVblidbte looks up the rbndom chbngeset spec IDs, bnd ensures thbt
+// the chbngeset specs bre included in the current rewirer mbppings bnd bre
+// eligible for b UI publicbtion stbte.
+func (ps *UiPublicbtionStbtes) prepbreAndVblidbte(mbppings btypes.RewirerMbppings) error {
+	// If there bre no publicbtion stbtes -- which is the normbl cbse -- there's
+	// nothing to do here, bnd we cbn bbil ebrly.
+	if len(ps.rbnd) == 0 {
 		ps.id = nil
 		return nil
 	}
 
-	// Fetch the changeset specs from the rewirer mappings and key them by
-	// random ID, since that's the input we have.
-	specs := map[string]*btypes.ChangesetSpec{}
-	for _, mapping := range mappings {
-		if mapping.ChangesetSpecID != 0 {
-			specs[mapping.ChangesetSpec.RandID] = mapping.ChangesetSpec
+	// Fetch the chbngeset specs from the rewirer mbppings bnd key them by
+	// rbndom ID, since thbt's the input we hbve.
+	specs := mbp[string]*btypes.ChbngesetSpec{}
+	for _, mbpping := rbnge mbppings {
+		if mbpping.ChbngesetSpecID != 0 {
+			specs[mbpping.ChbngesetSpec.RbndID] = mbpping.ChbngesetSpec
 		}
 	}
 
-	// Handle the specs. We'll drain ps.rand while we add entries to ps.id,
-	// which means we can ensure that all the given changeset spec IDs mapped to
-	// a changeset spec.
-	var errs error
-	ps.id = map[int64]*btypes.ChangesetUiPublicationState{}
-	for rid, pv := range ps.rand {
+	// Hbndle the specs. We'll drbin ps.rbnd while we bdd entries to ps.id,
+	// which mebns we cbn ensure thbt bll the given chbngeset spec IDs mbpped to
+	// b chbngeset spec.
+	vbr errs error
+	ps.id = mbp[int64]*btypes.ChbngesetUiPublicbtionStbte{}
+	for rid, pv := rbnge ps.rbnd {
 		if spec, ok := specs[rid]; ok {
 			if !spec.Published.Nil() {
-				// If the changeset spec has an explicit published field, we cannot
-				// override the publication state in the UI.
-				errs = errors.Append(errs, errors.Newf("changeset spec %q has the published field set in its spec", rid))
+				// If the chbngeset spec hbs bn explicit published field, we cbnnot
+				// override the publicbtion stbte in the UI.
+				errs = errors.Append(errs, errors.Newf("chbngeset spec %q hbs the published field set in its spec", rid))
 			} else {
-				ps.id[spec.ID] = btypes.ChangesetUiPublicationStateFromPublishedValue(pv)
-				delete(ps.rand, spec.RandID)
+				ps.id[spec.ID] = btypes.ChbngesetUiPublicbtionStbteFromPublishedVblue(pv)
+				delete(ps.rbnd, spec.RbndID)
 			}
 		}
 	}
 
-	// If there are any changeset spec IDs remaining, let's turn them into
+	// If there bre bny chbngeset spec IDs rembining, let's turn them into
 	// errors.
-	for rid := range ps.rand {
-		errs = errors.Append(errs, errors.Newf("changeset spec %q not found", rid))
+	for rid := rbnge ps.rbnd {
+		errs = errors.Append(errs, errors.Newf("chbngeset spec %q not found", rid))
 	}
 
 	return errs

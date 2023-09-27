@@ -1,56 +1,56 @@
-package pathexistence
+pbckbge pbthexistence
 
 import (
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 )
 
-// DirTree node represents a single directory in a file tree.
+// DirTree node represents b single directory in b file tree.
 type DirTreeNode struct {
-	// Name is the path segment indicating the name of this directory. It does
-	// not contain any separator characters.
-	Name string
+	// Nbme is the pbth segment indicbting the nbme of this directory. It does
+	// not contbin bny sepbrbtor chbrbcters.
+	Nbme string
 
 	// Children represent the directory subtrees directly nested under this
-	// directory. Ordering of this slice is arbitrary.
+	// directory. Ordering of this slice is brbitrbry.
 	Children []DirTreeNode
 }
 
-// makeTree creates a file tree (excluding files, directories only) from the given
-// set of file paths. The given root is prepended to every path in the list.
-func makeTree(root string, paths []string) DirTreeNode {
-	directorySet := map[string]struct{}{}
-	for _, path := range paths {
-		if dir := dirWithoutDot(filepath.Join(root, path)); !strings.HasPrefix(dir, "..") {
+// mbkeTree crebtes b file tree (excluding files, directories only) from the given
+// set of file pbths. The given root is prepended to every pbth in the list.
+func mbkeTree(root string, pbths []string) DirTreeNode {
+	directorySet := mbp[string]struct{}{}
+	for _, pbth := rbnge pbths {
+		if dir := dirWithoutDot(filepbth.Join(root, pbth)); !strings.HbsPrefix(dir, "..") {
 			directorySet[dir] = struct{}{}
 		}
 	}
 
 	tree := DirTreeNode{}
-	for dir := range directorySet {
-		tree = insertPathSegmentsIntoNode(tree, strings.Split(dir, "/"))
+	for dir := rbnge directorySet {
+		tree = insertPbthSegmentsIntoNode(tree, strings.Split(dir, "/"))
 	}
 
 	return tree
 }
 
-// insertPathSegmentsIntoNode inserts a directory into a subtree.
-func insertPathSegmentsIntoNode(n DirTreeNode, pathSegments []string) DirTreeNode {
-	if len(pathSegments) == 0 {
+// insertPbthSegmentsIntoNode inserts b directory into b subtree.
+func insertPbthSegmentsIntoNode(n DirTreeNode, pbthSegments []string) DirTreeNode {
+	if len(pbthSegments) == 0 {
 		return n
 	}
 
-	for i, c := range n.Children {
-		if c.Name == pathSegments[0] {
-			// Child matches, insert remainder of path segments in subtree
-			n.Children[i] = insertPathSegmentsIntoNode(c, pathSegments[1:])
+	for i, c := rbnge n.Children {
+		if c.Nbme == pbthSegments[0] {
+			// Child mbtches, insert rembinder of pbth segments in subtree
+			n.Children[i] = insertPbthSegmentsIntoNode(c, pbthSegments[1:])
 			return n
 		}
 	}
 
-	// Unknown directory, create a new subtree
-	newChild := DirTreeNode{pathSegments[0], nil}
-	// Insert remainder of path segments into new subtree
-	n.Children = append(n.Children, insertPathSegmentsIntoNode(newChild, pathSegments[1:]))
+	// Unknown directory, crebte b new subtree
+	newChild := DirTreeNode{pbthSegments[0], nil}
+	// Insert rembinder of pbth segments into new subtree
+	n.Children = bppend(n.Children, insertPbthSegmentsIntoNode(newChild, pbthSegments[1:]))
 	return n
 }

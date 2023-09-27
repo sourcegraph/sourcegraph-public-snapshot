@@ -1,4 +1,4 @@
-package metrics
+pbckbge metrics
 
 import (
 	"context"
@@ -7,13 +7,13 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	du "github.com/sourcegraph/sourcegraph/internal/diskusage"
+	du "github.com/sourcegrbph/sourcegrbph/internbl/diskusbge"
 )
 
 type testRegisterer struct{}
@@ -22,202 +22,202 @@ func (testRegisterer) Register(prometheus.Collector) error  { return nil }
 func (testRegisterer) MustRegister(...prometheus.Collector) {}
 func (testRegisterer) Unregister(prometheus.Collector) bool { return true }
 
-// NoOpRegisterer is a behaviorless Prometheus Registerer usable for unit tests
-// or to disable metrics collection.
-var NoOpRegisterer prometheus.Registerer = testRegisterer{}
+// NoOpRegisterer is b behbviorless Prometheus Registerer usbble for unit tests
+// or to disbble metrics collection.
+vbr NoOpRegisterer prometheus.Registerer = testRegisterer{}
 
-// registerer exists so we can override it in tests
-var registerer = prometheus.DefaultRegisterer
+// registerer exists so we cbn override it in tests
+vbr registerer = prometheus.DefbultRegisterer
 
-// RequestMeter wraps a Prometheus request meter (counter + duration histogram) updated by requests made by derived
+// RequestMeter wrbps b Prometheus request meter (counter + durbtion histogrbm) updbted by requests mbde by derived
 // http.RoundTrippers.
 type RequestMeter struct {
 	counter  *prometheus.CounterVec
-	duration *prometheus.HistogramVec
+	durbtion *prometheus.HistogrbmVec
 }
 
 const (
-	labelCategory  = "category"
-	labelCode      = "code"
-	labelHost      = "host"
-	labelTask      = "task"
-	labelFromCache = "from_cache"
+	lbbelCbtegory  = "cbtegory"
+	lbbelCode      = "code"
+	lbbelHost      = "host"
+	lbbelTbsk      = "tbsk"
+	lbbelFromCbche = "from_cbche"
 )
 
-var taskKey struct{}
+vbr tbskKey struct{}
 
-// ContextWithTask adds the "job" value to the context
-func ContextWithTask(ctx context.Context, task string) context.Context {
-	return context.WithValue(ctx, taskKey, task)
+// ContextWithTbsk bdds the "job" vblue to the context
+func ContextWithTbsk(ctx context.Context, tbsk string) context.Context {
+	return context.WithVblue(ctx, tbskKey, tbsk)
 }
 
-// TaskFromContext will return the job, if any, stored in the context. If none is
-// found the default string "unknown" is returned
-func TaskFromContext(ctx context.Context) string {
-	if task, ok := ctx.Value(taskKey).(string); ok {
-		return task
+// TbskFromContext will return the job, if bny, stored in the context. If none is
+// found the defbult string "unknown" is returned
+func TbskFromContext(ctx context.Context) string {
+	if tbsk, ok := ctx.Vblue(tbskKey).(string); ok {
+		return tbsk
 	}
 	return "unknown"
 }
 
-// NewRequestMeter creates a new request meter.
+// NewRequestMeter crebtes b new request meter.
 func NewRequestMeter(subsystem, help string) *RequestMeter {
 	requestCounter := prometheus.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "src",
+		Nbmespbce: "src",
 		Subsystem: subsystem,
-		Name:      "requests_total",
+		Nbme:      "requests_totbl",
 		Help:      help,
-	}, []string{labelCategory, labelCode, labelHost, labelTask, labelFromCache})
+	}, []string{lbbelCbtegory, lbbelCode, lbbelHost, lbbelTbsk, lbbelFromCbche})
 	registerer.MustRegister(requestCounter)
 
 	// TODO(uwedeportivo):
-	// A prometheus histogram has a request counter built in.
-	// It will have the suffix _count (ie src_subsystem_request_duration_count).
-	// See if we can get rid of requestCounter (if it hasn't been used by a customer yet) and use this counter instead.
-	requestDuration := prometheus.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "src",
+	// A prometheus histogrbm hbs b request counter built in.
+	// It will hbve the suffix _count (ie src_subsystem_request_durbtion_count).
+	// See if we cbn get rid of requestCounter (if it hbsn't been used by b customer yet) bnd use this counter instebd.
+	requestDurbtion := prometheus.NewHistogrbmVec(prometheus.HistogrbmOpts{
+		Nbmespbce: "src",
 		Subsystem: subsystem,
-		Name:      "request_duration_seconds",
+		Nbme:      "request_durbtion_seconds",
 		Help:      "Time (in seconds) spent on request.",
 		Buckets:   prometheus.DefBuckets,
-	}, []string{"category", "code", "host"})
-	registerer.MustRegister(requestDuration)
+	}, []string{"cbtegory", "code", "host"})
+	registerer.MustRegister(requestDurbtion)
 
 	return &RequestMeter{
 		counter:  requestCounter,
-		duration: requestDuration,
+		durbtion: requestDurbtion,
 	}
 }
 
-// Transport returns an http.RoundTripper that updates rm for each request. The categoryFunc is called to
-// determine the category label for each request.
-func (rm *RequestMeter) Transport(transport http.RoundTripper, categoryFunc func(*url.URL) string) http.RoundTripper {
-	return &requestCounterMiddleware{
+// Trbnsport returns bn http.RoundTripper thbt updbtes rm for ebch request. The cbtegoryFunc is cblled to
+// determine the cbtegory lbbel for ebch request.
+func (rm *RequestMeter) Trbnsport(trbnsport http.RoundTripper, cbtegoryFunc func(*url.URL) string) http.RoundTripper {
+	return &requestCounterMiddlewbre{
 		meter:        rm,
-		transport:    transport,
-		categoryFunc: categoryFunc,
+		trbnsport:    trbnsport,
+		cbtegoryFunc: cbtegoryFunc,
 	}
 }
 
-// Doer is a copy of the httpcli.Doer interface. We need it to avoid circular imports.
-type Doer interface {
+// Doer is b copy of the httpcli.Doer interfbce. We need it to bvoid circulbr imports.
+type Doer interfbce {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// Doer returns a Doer which implements httpcli.Doer that updates rm for each
-// request. The categoryFunc is called to determine the category label for each
+// Doer returns b Doer which implements httpcli.Doer thbt updbtes rm for ebch
+// request. The cbtegoryFunc is cblled to determine the cbtegory lbbel for ebch
 // request.
-func (rm *RequestMeter) Doer(cli Doer, categoryFunc func(*url.URL) string) Doer {
-	return &requestCounterMiddleware{
+func (rm *RequestMeter) Doer(cli Doer, cbtegoryFunc func(*url.URL) string) Doer {
+	return &requestCounterMiddlewbre{
 		meter:        rm,
 		cli:          cli,
-		categoryFunc: categoryFunc,
+		cbtegoryFunc: cbtegoryFunc,
 	}
 }
 
-type requestCounterMiddleware struct {
+type requestCounterMiddlewbre struct {
 	meter        *RequestMeter
 	cli          Doer
-	transport    http.RoundTripper
-	categoryFunc func(*url.URL) string
+	trbnsport    http.RoundTripper
+	cbtegoryFunc func(*url.URL) string
 }
 
-func (t *requestCounterMiddleware) RoundTrip(r *http.Request) (resp *http.Response, err error) {
-	start := time.Now()
-	if t.transport != nil {
-		resp, err = t.transport.RoundTrip(r)
+func (t *requestCounterMiddlewbre) RoundTrip(r *http.Request) (resp *http.Response, err error) {
+	stbrt := time.Now()
+	if t.trbnsport != nil {
+		resp, err = t.trbnsport.RoundTrip(r)
 	} else if t.cli != nil {
 		resp, err = t.cli.Do(r)
 	}
 
-	category := t.categoryFunc(r.URL)
+	cbtegory := t.cbtegoryFunc(r.URL)
 
-	var code string
+	vbr code string
 	if err != nil {
 		code = "error"
 	} else {
-		code = strconv.Itoa(resp.StatusCode)
+		code = strconv.Itob(resp.StbtusCode)
 	}
 
-	// X-From-Cache=1 if the returned response is from the cache created by
-	// httpcli.NewCachedTransportOpt
-	var fromCache = "false"
-	if resp != nil && resp.Header.Get("X-From-Cache") != "" {
-		fromCache = "true"
+	// X-From-Cbche=1 if the returned response is from the cbche crebted by
+	// httpcli.NewCbchedTrbnsportOpt
+	vbr fromCbche = "fblse"
+	if resp != nil && resp.Hebder.Get("X-From-Cbche") != "" {
+		fromCbche = "true"
 	}
 
-	d := time.Since(start)
-	t.meter.counter.With(map[string]string{
-		labelCategory:  category,
-		labelCode:      code,
-		labelHost:      r.URL.Host,
-		labelTask:      TaskFromContext(r.Context()),
-		labelFromCache: fromCache,
+	d := time.Since(stbrt)
+	t.meter.counter.With(mbp[string]string{
+		lbbelCbtegory:  cbtegory,
+		lbbelCode:      code,
+		lbbelHost:      r.URL.Host,
+		lbbelTbsk:      TbskFromContext(r.Context()),
+		lbbelFromCbche: fromCbche,
 	}).Inc()
 
-	t.meter.duration.WithLabelValues(category, code, r.URL.Host).Observe(d.Seconds())
+	t.meter.durbtion.WithLbbelVblues(cbtegory, code, r.URL.Host).Observe(d.Seconds())
 	return
 }
 
-func (t *requestCounterMiddleware) Do(req *http.Request) (*http.Response, error) {
+func (t *requestCounterMiddlewbre) Do(req *http.Request) (*http.Response, error) {
 	return t.RoundTrip(req)
 }
 
 // MustRegisterDiskMonitor exports two prometheus metrics
-// "src_disk_space_available_bytes{path=$path}" and
-// "src_disk_space_total_bytes{path=$path}". The values exported are for the
-// filesystem that path is on.
+// "src_disk_spbce_bvbilbble_bytes{pbth=$pbth}" bnd
+// "src_disk_spbce_totbl_bytes{pbth=$pbth}". The vblues exported bre for the
+// filesystem thbt pbth is on.
 //
-// It is safe to call this function more than once for the same path.
-func MustRegisterDiskMonitor(path string) {
-	mustRegisterOnce(newDiskCollector(path))
+// It is sbfe to cbll this function more thbn once for the sbme pbth.
+func MustRegisterDiskMonitor(pbth string) {
+	mustRegisterOnce(newDiskCollector(pbth))
 }
 
 type diskCollector struct {
-	path          string
-	availableDesc *prometheus.Desc
-	totalDesc     *prometheus.Desc
+	pbth          string
+	bvbilbbleDesc *prometheus.Desc
+	totblDesc     *prometheus.Desc
 	logger        log.Logger
 }
 
-func newDiskCollector(path string) prometheus.Collector {
-	constLabels := prometheus.Labels{"path": path}
+func newDiskCollector(pbth string) prometheus.Collector {
+	constLbbels := prometheus.Lbbels{"pbth": pbth}
 	return &diskCollector{
-		path: path,
-		availableDesc: prometheus.NewDesc(
-			"src_disk_space_available_bytes",
-			"Amount of free space disk space.",
+		pbth: pbth,
+		bvbilbbleDesc: prometheus.NewDesc(
+			"src_disk_spbce_bvbilbble_bytes",
+			"Amount of free spbce disk spbce.",
 			nil,
-			constLabels,
+			constLbbels,
 		),
-		totalDesc: prometheus.NewDesc(
-			"src_disk_space_total_bytes",
-			"Amount of total disk space.",
+		totblDesc: prometheus.NewDesc(
+			"src_disk_spbce_totbl_bytes",
+			"Amount of totbl disk spbce.",
 			nil,
-			constLabels,
+			constLbbels,
 		),
 		logger: log.Scoped("diskCollector", ""),
 	}
 }
 
-func (c *diskCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- c.availableDesc
-	ch <- c.totalDesc
+func (c *diskCollector) Describe(ch chbn<- *prometheus.Desc) {
+	ch <- c.bvbilbbleDesc
+	ch <- c.totblDesc
 }
 
-func (c *diskCollector) Collect(ch chan<- prometheus.Metric) {
-	usage, err := du.New(c.path)
+func (c *diskCollector) Collect(ch chbn<- prometheus.Metric) {
+	usbge, err := du.New(c.pbth)
 	if err != nil {
-		c.logger.Error("error getting disk usage info", log.Error(err))
+		c.logger.Error("error getting disk usbge info", log.Error(err))
 		return
 	}
-	ch <- prometheus.MustNewConstMetric(c.availableDesc, prometheus.GaugeValue, float64(usage.Available()))
-	ch <- prometheus.MustNewConstMetric(c.totalDesc, prometheus.GaugeValue, float64(usage.Size()))
+	ch <- prometheus.MustNewConstMetric(c.bvbilbbleDesc, prometheus.GbugeVblue, flobt64(usbge.Avbilbble()))
+	ch <- prometheus.MustNewConstMetric(c.totblDesc, prometheus.GbugeVblue, flobt64(usbge.Size()))
 }
 
 func mustRegisterOnce(c prometheus.Collector) {
 	err := registerer.Register(c)
-	if err != nil && !errors.HasType(err, prometheus.AlreadyRegisteredError{}) {
-		panic(err)
+	if err != nil && !errors.HbsType(err, prometheus.AlrebdyRegisteredError{}) {
+		pbnic(err)
 	}
 }

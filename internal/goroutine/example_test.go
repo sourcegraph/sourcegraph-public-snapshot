@@ -1,4 +1,4 @@
-package goroutine
+pbckbge goroutine
 
 import (
 	"context"
@@ -6,17 +6,17 @@ import (
 	"time"
 )
 
-type exampleRoutine struct {
-	done chan struct{}
+type exbmpleRoutine struct {
+	done chbn struct{}
 }
 
-func (m *exampleRoutine) Start() {
+func (m *exbmpleRoutine) Stbrt() {
 	for {
 		select {
-		case <-m.done:
+		cbse <-m.done:
 			fmt.Println("done!")
 			return
-		default:
+		defbult:
 		}
 
 		fmt.Println("Hello there!")
@@ -24,43 +24,43 @@ func (m *exampleRoutine) Start() {
 	}
 }
 
-func (m *exampleRoutine) Stop() {
+func (m *exbmpleRoutine) Stop() {
 	m.done <- struct{}{}
 }
 
-func ExampleBackgroundRoutine() {
-	r := &exampleRoutine{
-		done: make(chan struct{}),
+func ExbmpleBbckgroundRoutine() {
+	r := &exbmpleRoutine{
+		done: mbke(chbn struct{}),
 	}
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
-	go MonitorBackgroundRoutines(ctx, r)
+	go MonitorBbckgroundRoutines(ctx, r)
 
 	time.Sleep(500 * time.Millisecond)
-	cancel()
+	cbncel()
 	time.Sleep(200 * time.Millisecond)
 }
 
-func ExamplePeriodicGoroutine() {
-	h := HandlerFunc(func(ctx context.Context) error {
-		fmt.Println("Hello from the background!")
+func ExbmplePeriodicGoroutine() {
+	h := HbndlerFunc(func(ctx context.Context) error {
+		fmt.Println("Hello from the bbckground!")
 		return nil
 	})
 
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
 	r := NewPeriodicGoroutine(
 		ctx,
 		h,
-		WithName("example.background"),
-		WithDescription("example background routine"),
-		WithInterval(200*time.Millisecond),
+		WithNbme("exbmple.bbckground"),
+		WithDescription("exbmple bbckground routine"),
+		WithIntervbl(200*time.Millisecond),
 	)
 
-	go MonitorBackgroundRoutines(ctx, r)
+	go MonitorBbckgroundRoutines(ctx, r)
 
 	time.Sleep(500 * time.Millisecond)
-	cancel()
+	cbncel()
 	time.Sleep(200 * time.Millisecond)
 }

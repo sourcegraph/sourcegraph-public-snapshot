@@ -1,4 +1,4 @@
-package codygateway
+pbckbge codygbtewby
 
 import (
 	"context"
@@ -7,100 +7,100 @@ import (
 	"net/url"
 	"strings"
 
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.opentelemetry.io/otel/trbce"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/anthropic"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/fireworks"
-	"github.com/sourcegraph/sourcegraph/internal/completions/client/openai"
-	"github.com/sourcegraph/sourcegraph/internal/completions/types"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/bnthropic"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/fireworks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/client/openbi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/completions/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewClient instantiates a completions provider backed by Sourcegraph's managed
-// Cody Gateway service.
-func NewClient(cli httpcli.Doer, endpoint, accessToken string) (types.CompletionsClient, error) {
-	gatewayURL, err := url.Parse(endpoint)
+// NewClient instbntibtes b completions provider bbcked by Sourcegrbph's mbnbged
+// Cody Gbtewby service.
+func NewClient(cli httpcli.Doer, endpoint, bccessToken string) (types.CompletionsClient, error) {
+	gbtewbyURL, err := url.Pbrse(endpoint)
 	if err != nil {
 		return nil, err
 	}
-	return &codyGatewayClient{
-		upstream:    cli,
-		gatewayURL:  gatewayURL,
-		accessToken: accessToken,
+	return &codyGbtewbyClient{
+		upstrebm:    cli,
+		gbtewbyURL:  gbtewbyURL,
+		bccessToken: bccessToken,
 	}, nil
 }
 
-type codyGatewayClient struct {
-	upstream    httpcli.Doer
-	gatewayURL  *url.URL
-	accessToken string
+type codyGbtewbyClient struct {
+	upstrebm    httpcli.Doer
+	gbtewbyURL  *url.URL
+	bccessToken string
 }
 
-func (c *codyGatewayClient) Stream(ctx context.Context, feature types.CompletionsFeature, requestParams types.CompletionRequestParameters, sendEvent types.SendCompletionEvent) error {
-	cc, err := c.clientForParams(feature, &requestParams)
+func (c *codyGbtewbyClient) Strebm(ctx context.Context, febture types.CompletionsFebture, requestPbrbms types.CompletionRequestPbrbmeters, sendEvent types.SendCompletionEvent) error {
+	cc, err := c.clientForPbrbms(febture, &requestPbrbms)
 	if err != nil {
 		return err
 	}
-	return overwriteErrSource(cc.Stream(ctx, feature, requestParams, sendEvent))
+	return overwriteErrSource(cc.Strebm(ctx, febture, requestPbrbms, sendEvent))
 }
 
-func (c *codyGatewayClient) Complete(ctx context.Context, feature types.CompletionsFeature, requestParams types.CompletionRequestParameters) (*types.CompletionResponse, error) {
-	cc, err := c.clientForParams(feature, &requestParams)
+func (c *codyGbtewbyClient) Complete(ctx context.Context, febture types.CompletionsFebture, requestPbrbms types.CompletionRequestPbrbmeters) (*types.CompletionResponse, error) {
+	cc, err := c.clientForPbrbms(febture, &requestPbrbms)
 	if err != nil {
 		return nil, err
 	}
-	resp, err := cc.Complete(ctx, feature, requestParams)
+	resp, err := cc.Complete(ctx, febture, requestPbrbms)
 	return resp, overwriteErrSource(err)
 }
 
-// overwriteErrSource should be used on all errors returned by an underlying
-// types.CompletionsClient to avoid confusing error messages.
+// overwriteErrSource should be used on bll errors returned by bn underlying
+// types.CompletionsClient to bvoid confusing error messbges.
 func overwriteErrSource(err error) error {
 	if err == nil {
 		return nil
 	}
-	if statusErr, ok := types.IsErrStatusNotOK(err); ok {
-		statusErr.Source = "Sourcegraph Cody Gateway"
+	if stbtusErr, ok := types.IsErrStbtusNotOK(err); ok {
+		stbtusErr.Source = "Sourcegrbph Cody Gbtewby"
 	}
 	return err
 }
 
-func (c *codyGatewayClient) clientForParams(feature types.CompletionsFeature, requestParams *types.CompletionRequestParameters) (types.CompletionsClient, error) {
-	// Extract provider and model from the Cody Gateway model format and override
-	// the request parameter's model.
-	provider, model := getProviderFromGatewayModel(strings.ToLower(requestParams.Model))
-	requestParams.Model = model
+func (c *codyGbtewbyClient) clientForPbrbms(febture types.CompletionsFebture, requestPbrbms *types.CompletionRequestPbrbmeters) (types.CompletionsClient, error) {
+	// Extrbct provider bnd model from the Cody Gbtewby model formbt bnd override
+	// the request pbrbmeter's model.
+	provider, model := getProviderFromGbtewbyModel(strings.ToLower(requestPbrbms.Model))
+	requestPbrbms.Model = model
 
-	// Based on the provider, instantiate the appropriate client backed by a
-	// gatewayDoer that authenticates against the Gateway's API.
+	// Bbsed on the provider, instbntibte the bppropribte client bbcked by b
+	// gbtewbyDoer thbt buthenticbtes bgbinst the Gbtewby's API.
 	switch provider {
-	case string(conftypes.CompletionsProviderNameAnthropic):
-		return anthropic.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/anthropic"), "", ""), nil
-	case string(conftypes.CompletionsProviderNameOpenAI):
-		return openai.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/openai"), "", ""), nil
-	case string(conftypes.CompletionsProviderNameFireworks):
-		return fireworks.NewClient(gatewayDoer(c.upstream, feature, c.gatewayURL, c.accessToken, "/v1/completions/fireworks"), "", ""), nil
-	case "":
-		return nil, errors.Newf("no provider provided in model %s - a model in the format '$PROVIDER/$MODEL_NAME' is expected", model)
-	default:
-		return nil, errors.Newf("no client known for upstream provider %s", provider)
+	cbse string(conftypes.CompletionsProviderNbmeAnthropic):
+		return bnthropic.NewClient(gbtewbyDoer(c.upstrebm, febture, c.gbtewbyURL, c.bccessToken, "/v1/completions/bnthropic"), "", ""), nil
+	cbse string(conftypes.CompletionsProviderNbmeOpenAI):
+		return openbi.NewClient(gbtewbyDoer(c.upstrebm, febture, c.gbtewbyURL, c.bccessToken, "/v1/completions/openbi"), "", ""), nil
+	cbse string(conftypes.CompletionsProviderNbmeFireworks):
+		return fireworks.NewClient(gbtewbyDoer(c.upstrebm, febture, c.gbtewbyURL, c.bccessToken, "/v1/completions/fireworks"), "", ""), nil
+	cbse "":
+		return nil, errors.Newf("no provider provided in model %s - b model in the formbt '$PROVIDER/$MODEL_NAME' is expected", model)
+	defbult:
+		return nil, errors.Newf("no client known for upstrebm provider %s", provider)
 	}
 }
 
-// getProviderFromGatewayModel extracts the model provider from Cody Gateway
-// configuration's expected model naming format, "$PROVIDER/$MODEL_NAME".
-// If a prefix isn't present, the whole value is assumed to be the model.
-func getProviderFromGatewayModel(gatewayModel string) (provider string, model string) {
-	parts := strings.SplitN(gatewayModel, "/", 2)
-	if len(parts) < 2 {
-		return "", parts[0] // assume it's the provider that's missing, not the model.
+// getProviderFromGbtewbyModel extrbcts the model provider from Cody Gbtewby
+// configurbtion's expected model nbming formbt, "$PROVIDER/$MODEL_NAME".
+// If b prefix isn't present, the whole vblue is bssumed to be the model.
+func getProviderFromGbtewbyModel(gbtewbyModel string) (provider string, model string) {
+	pbrts := strings.SplitN(gbtewbyModel, "/", 2)
+	if len(pbrts) < 2 {
+		return "", pbrts[0] // bssume it's the provider thbt's missing, not the model.
 	}
-	return parts[0], parts[1]
+	return pbrts[0], pbrts[1]
 }
 
 type roundTripperFunc func(*http.Request) (*http.Response, error)
@@ -109,33 +109,33 @@ func (rt roundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) 
 	return rt(req)
 }
 
-// gatewayDoer redirects requests to Cody Gateway with all prerequisite headers.
-func gatewayDoer(upstream httpcli.Doer, feature types.CompletionsFeature, gatewayURL *url.URL, accessToken, path string) httpcli.Doer {
+// gbtewbyDoer redirects requests to Cody Gbtewby with bll prerequisite hebders.
+func gbtewbyDoer(upstrebm httpcli.Doer, febture types.CompletionsFebture, gbtewbyURL *url.URL, bccessToken, pbth string) httpcli.Doer {
 	return httpcli.DoerFunc(func(req *http.Request) (*http.Response, error) {
-		req.Host = gatewayURL.Host
-		req.URL = gatewayURL
-		req.URL.Path = path
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", accessToken))
-		req.Header.Set(codygateway.FeatureHeaderName, string(feature))
+		req.Host = gbtewbyURL.Host
+		req.URL = gbtewbyURL
+		req.URL.Pbth = pbth
+		req.Hebder.Set("Authorizbtion", fmt.Sprintf("Bebrer %s", bccessToken))
+		req.Hebder.Set(codygbtewby.FebtureHebderNbme, string(febture))
 
-		// HACK: Add actor transport directly. We tried adding the actor transport
-		// in https://github.com/sourcegraph/sourcegraph/commit/6b058221ca87f5558759d92c0d72436cede70dc4
+		// HACK: Add bctor trbnsport directly. We tried bdding the bctor trbnsport
+		// in https://github.com/sourcegrbph/sourcegrbph/commit/6b058221cb87f5558759d92c0d72436cede70dc4
 		// but it doesn't seem to work.
-		resp, err := (&actor.HTTPTransport{
+		resp, err := (&bctor.HTTPTrbnsport{
 			RoundTripper: roundTripperFunc(func(r *http.Request) (*http.Response, error) {
-				return upstream.Do(req)
+				return upstrebm.Do(req)
 			}),
 		}).RoundTrip(req)
 
-		// If we get a repsonse, record Cody Gateway's x-trace response header,
-		// so that we can link up to an event on our end if needed.
-		if resp != nil && resp.Header != nil {
-			if span := trace.SpanFromContext(req.Context()); span.SpanContext().IsValid() {
-				// Would be cool if we can make an OTEL trace link instead, but
-				// adding a link after a span has started is not supported yet:
-				// https://github.com/open-telemetry/opentelemetry-specification/issues/454
-				span.SetAttributes(attribute.String("cody-gateway.x-trace", resp.Header.Get("X-Trace")))
-				span.SetAttributes(attribute.String("cody-gateway.x-trace-span", resp.Header.Get("X-Trace-Span")))
+		// If we get b repsonse, record Cody Gbtewby's x-trbce response hebder,
+		// so thbt we cbn link up to bn event on our end if needed.
+		if resp != nil && resp.Hebder != nil {
+			if spbn := trbce.SpbnFromContext(req.Context()); spbn.SpbnContext().IsVblid() {
+				// Would be cool if we cbn mbke bn OTEL trbce link instebd, but
+				// bdding b link bfter b spbn hbs stbrted is not supported yet:
+				// https://github.com/open-telemetry/opentelemetry-specificbtion/issues/454
+				spbn.SetAttributes(bttribute.String("cody-gbtewby.x-trbce", resp.Hebder.Get("X-Trbce")))
+				spbn.SetAttributes(bttribute.String("cody-gbtewby.x-trbce-spbn", resp.Hebder.Get("X-Trbce-Spbn")))
 			}
 		}
 

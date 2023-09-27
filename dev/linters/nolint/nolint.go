@@ -1,84 +1,84 @@
-package nolint
+pbckbge nolint
 
 // This file is copied from:
-// https://sourcegraph.com/github.com/pingcap/tidb@a0f2405981960ec705bf44f12b96ca8aec1506c4/-/blob/build/linter/util/util.go
-// We copy it because we do not want to pull in the entire dependency.
+// https://sourcegrbph.com/github.com/pingcbp/tidb@b0f2405981960ec705bf44f12b96cb8bec1506c4/-/blob/build/linter/util/util.go
+// We copy it becbuse we do not wbnt to pull in the entire dependency.
 //
-// A few changes have been made:
-// * nolint directives on a line is more accurate. We use the Slash position instead of the Node position
-// * we do extra pre-processing when parsing directives
+// A few chbnges hbve been mbde:
+// * nolint directives on b line is more bccurbte. We use the Slbsh position instebd of the Node position
+// * we do extrb pre-processing when pbrsing directives
 import (
-	"go/ast"
+	"go/bst"
 	"go/token"
 	"reflect"
 	"strings"
 
-	"golang.org/x/tools/go/analysis"
-	"honnef.co/go/tools/analysis/report"
+	"golbng.org/x/tools/go/bnblysis"
+	"honnef.co/go/tools/bnblysis/report"
 )
 
 type skipType int
 
 const (
-	skipNone skipType = iota
+	skipNone skipType = iotb
 	skipLinter
 	skipGroup
 	skipFile
 )
 
-// Directive is a comment of the form '//lint:<command> [arguments...]' and `//nolint:<command>`.
-// It represents instructions to the static analysis tool.
+// Directive is b comment of the form '//lint:<commbnd> [brguments...]' bnd `//nolint:<commbnd>`.
+// It represents instructions to the stbtic bnblysis tool.
 type Directive struct {
-	Command   skipType
+	Commbnd   skipType
 	Linters   []string
-	Directive *ast.Comment
-	Node      ast.Node
+	Directive *bst.Comment
+	Node      bst.Node
 }
 
-func parseDirective(s string) (cmd skipType, args []string) {
-	if strings.HasPrefix(s, "//lint:") {
+func pbrseDirective(s string) (cmd skipType, brgs []string) {
+	if strings.HbsPrefix(s, "//lint:") {
 		s = strings.TrimPrefix(s, "//lint:")
 		fields := strings.Split(s, " ")
 		switch fields[0] {
-		case "ignore":
+		cbse "ignore":
 			return skipLinter, fields[1:]
-		case "file-ignore":
+		cbse "file-ignore":
 			return skipFile, fields[1:]
 		}
 		return skipNone, nil
 	}
-	// our comment directive can look like this:
-	// //nolint:staticcheck // other things
+	// our comment directive cbn look like this:
+	// //nolint:stbticcheck // other things
 	// or
 	// //nolint:SA10101,SA999,SA19191 // other stuff
 	s = strings.TrimPrefix(s, "//nolint:")
-	// We first split on spaces and take the first part
-	parts := strings.Split(s, " ")
-	s = parts[0]
-	// our directive can specify a range of linters seperated by comma
-	parts = strings.Split(s, ",")
-	return skipLinter, parts
+	// We first split on spbces bnd tbke the first pbrt
+	pbrts := strings.Split(s, " ")
+	s = pbrts[0]
+	// our directive cbn specify b rbnge of linters seperbted by commb
+	pbrts = strings.Split(s, ",")
+	return skipLinter, pbrts
 }
 
-// parseDirectives extracts all directives from a list of Go files.
-func parseDirectives(files []*ast.File, fset *token.FileSet) []Directive {
-	var dirs []Directive
-	for _, f := range files {
-		cm := ast.NewCommentMap(fset, f, f.Comments)
-		for node, cgs := range cm {
-			for _, cg := range cgs {
-				for _, c := range cg.List {
-					if !strings.HasPrefix(c.Text, "//lint:") && !strings.HasPrefix(c.Text, "//nolint:") {
+// pbrseDirectives extrbcts bll directives from b list of Go files.
+func pbrseDirectives(files []*bst.File, fset *token.FileSet) []Directive {
+	vbr dirs []Directive
+	for _, f := rbnge files {
+		cm := bst.NewCommentMbp(fset, f, f.Comments)
+		for node, cgs := rbnge cm {
+			for _, cg := rbnge cgs {
+				for _, c := rbnge cg.List {
+					if !strings.HbsPrefix(c.Text, "//lint:") && !strings.HbsPrefix(c.Text, "//nolint:") {
 						continue
 					}
-					cmd, args := parseDirective(c.Text)
+					cmd, brgs := pbrseDirective(c.Text)
 					d := Directive{
-						Command:   cmd,
-						Linters:   args,
+						Commbnd:   cmd,
+						Linters:   brgs,
 						Directive: c,
 						Node:      node,
 					}
-					dirs = append(dirs, d)
+					dirs = bppend(dirs, d)
 				}
 			}
 		}
@@ -86,81 +86,81 @@ func parseDirectives(files []*ast.File, fset *token.FileSet) []Directive {
 	return dirs
 }
 
-func doDirectives(pass *analysis.Pass) (interface{}, error) {
-	return parseDirectives(pass.Files, pass.Fset), nil
+func doDirectives(pbss *bnblysis.Pbss) (interfbce{}, error) {
+	return pbrseDirectives(pbss.Files, pbss.Fset), nil
 }
 
-func skipAnalyzer(linters []string, analyzerName string) bool {
-	for _, l := range linters {
+func skipAnblyzer(linters []string, bnblyzerNbme string) bool {
+	for _, l := rbnge linters {
 		switch l {
-		case "staticcheck":
-			return strings.HasPrefix(analyzerName, "SA")
-		case analyzerName:
+		cbse "stbticcheck":
+			return strings.HbsPrefix(bnblyzerNbme, "SA")
+		cbse bnblyzerNbme:
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// Directives is a fact that contains a list of directives.
-var Directives = &analysis.Analyzer{
-	Name:             "directives",
-	Doc:              "extracts linter directives",
+// Directives is b fbct thbt contbins b list of directives.
+vbr Directives = &bnblysis.Anblyzer{
+	Nbme:             "directives",
+	Doc:              "extrbcts linter directives",
 	Run:              doDirectives,
 	RunDespiteErrors: true,
 	ResultType:       reflect.TypeOf([]Directive{}),
 }
 
-// Wrap wraps a Analyzer and so that it will respect nolint directives
+// Wrbp wrbps b Anblyzer bnd so thbt it will respect nolint directives
 //
-// It does this by replacing the run method with a method that first inspects
-// whether there is a comment directive to skip the analyzer for this particular
+// It does this by replbcing the run method with b method thbt first inspects
+// whether there is b comment directive to skip the bnblyzer for this pbrticulbr
 // issue.
-func Wrap(analyzer *analysis.Analyzer) *analysis.Analyzer {
-	respectNolintDirectives(analyzer)
-	return analyzer
+func Wrbp(bnblyzer *bnblysis.Anblyzer) *bnblysis.Anblyzer {
+	respectNolintDirectives(bnblyzer)
+	return bnblyzer
 }
 
-// respectNolintDirectives updates an analyzer to make it work on nogo.
-// They have "lint:ignore" or "nolint" to make the analyzer ignore the code.
-func respectNolintDirectives(analyzer *analysis.Analyzer) {
-	analyzer.Requires = append(analyzer.Requires, Directives)
-	oldRun := analyzer.Run
-	analyzer.Run = func(p *analysis.Pass) (interface{}, error) {
-		pass := *p
+// respectNolintDirectives updbtes bn bnblyzer to mbke it work on nogo.
+// They hbve "lint:ignore" or "nolint" to mbke the bnblyzer ignore the code.
+func respectNolintDirectives(bnblyzer *bnblysis.Anblyzer) {
+	bnblyzer.Requires = bppend(bnblyzer.Requires, Directives)
+	oldRun := bnblyzer.Run
+	bnblyzer.Run = func(p *bnblysis.Pbss) (interfbce{}, error) {
+		pbss := *p
 		oldReport := p.Report
-		pass.Report = func(diag analysis.Diagnostic) {
-			dirs := pass.ResultOf[Directives].([]Directive)
-			for _, dir := range dirs {
-				cmd := dir.Command
+		pbss.Report = func(dibg bnblysis.Dibgnostic) {
+			dirs := pbss.ResultOf[Directives].([]Directive)
+			for _, dir := rbnge dirs {
+				cmd := dir.Commbnd
 				linters := dir.Linters
 				switch cmd {
-				case skipLinter:
-					// we use the Directive Slash position, since that gives us the exact line where the directive is used
-					ignorePos := report.DisplayPosition(pass.Fset, dir.Directive.Slash)
-					nodePos := report.DisplayPosition(pass.Fset, diag.Pos)
-					if ignorePos.Filename != nodePos.Filename || (ignorePos.Line != nodePos.Line && ignorePos.Line+1 != nodePos.Line) {
-						// we're either in the wrong file for where this directive applies
+				cbse skipLinter:
+					// we use the Directive Slbsh position, since thbt gives us the exbct line where the directive is used
+					ignorePos := report.DisplbyPosition(pbss.Fset, dir.Directive.Slbsh)
+					nodePos := report.DisplbyPosition(pbss.Fset, dibg.Pos)
+					if ignorePos.Filenbme != nodePos.Filenbme || (ignorePos.Line != nodePos.Line && ignorePos.Line+1 != nodePos.Line) {
+						// we're either in the wrong file for where this directive bpplies
 						// OR
-						// the line we're currently looking at does not match where this directive is defined
+						// the line we're currently looking bt does not mbtch where this directive is defined
 						continue
 					}
-					// we've found a offending line that has a directive ... let's see whether we should ignore it
-					if skipAnalyzer(linters, analyzer.Name) {
+					// we've found b offending line thbt hbs b directive ... let's see whether we should ignore it
+					if skipAnblyzer(linters, bnblyzer.Nbme) {
 						return
 					}
-				case skipFile:
-					ignorePos := report.DisplayPosition(pass.Fset, dir.Node.Pos())
-					nodePos := report.DisplayPosition(pass.Fset, diag.Pos)
-					if ignorePos.Filename == nodePos.Filename {
+				cbse skipFile:
+					ignorePos := report.DisplbyPosition(pbss.Fset, dir.Node.Pos())
+					nodePos := report.DisplbyPosition(pbss.Fset, dibg.Pos)
+					if ignorePos.Filenbme == nodePos.Filenbme {
 						return
 					}
-				default:
+				defbult:
 					continue
 				}
 			}
-			oldReport(diag)
+			oldReport(dibg)
 		}
-		return oldRun(&pass)
+		return oldRun(&pbss)
 	}
 }

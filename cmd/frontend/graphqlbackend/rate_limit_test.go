@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -8,20 +8,20 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/throttled/throttled/v2/store/memstore"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
 )
 
-func TestEstimateQueryCost(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
+func TestEstimbteQueryCost(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme      string
 		query     string
-		variables map[string]any
-		want      QueryCost
+		vbribbles mbp[string]bny
+		wbnt      QueryCost
 	}{
 		{
-			name: "Multiple top level queries",
+			nbme: "Multiple top level queries",
 			query: `query {
   thing
 }
@@ -29,178 +29,178 @@ query{
   thing
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 2,
-				MaxDepth:   1,
+				MbxDepth:   1,
 			},
 		},
 		{
-			name: "Simple query, no variables",
+			nbme: "Simple query, no vbribbles",
 			query: `
 query SiteProductVersion {
                 site {
                     productVersion
                     buildVersion
-                    hasCodeIntelligence
+                    hbsCodeIntelligence
                 }
             }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 4,
-				MaxDepth:   2,
+				MbxDepth:   2,
 			},
 		},
 		{
-			name: "nodes field should not be counted",
+			nbme: "nodes field should not be counted",
 			query: `
 query{
-  externalServices(first: 10){
+  externblServices(first: 10){
     nodes{
-      displayName
+      displbyNbme
       webhookURL
     }
   }
   somethingElse
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 22,
-				MaxDepth:   3,
+				MbxDepth:   3,
 			},
 		},
 		{
-			name: "Query with default variables",
+			nbme: "Query with defbult vbribbles",
 			query: `
-query fetchExternalServices($first: Int = 10){
-  externalServices(first: $first){
+query fetchExternblServices($first: Int = 10){
+  externblServices(first: $first){
     nodes{
-      displayName
+      displbyNbme
       webhookURL
     }
   }
 }
 `,
-			variables: map[string]any{
+			vbribbles: mbp[string]bny{
 				"first": 5,
 			},
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 11,
-				MaxDepth:   3,
+				MbxDepth:   3,
 			},
 		},
 		{
-			name: "Query with default variables, non supplied",
+			nbme: "Query with defbult vbribbles, non supplied",
 			query: `
-query fetchExternalServices($first: Int = 10){
-  externalServices(first: $first){
+query fetchExternblServices($first: Int = 10){
+  externblServices(first: $first){
     nodes{
-      displayName
+      displbyNbme
       webhookURL
     }
   }
 }
 `,
-			variables: map[string]any{},
-			want: QueryCost{
+			vbribbles: mbp[string]bny{},
+			wbnt: QueryCost{
 				FieldCount: 21,
-				MaxDepth:   3,
+				MbxDepth:   3,
 			},
 		},
 		{
-			name: "Query with fragments",
+			nbme: "Query with frbgments",
 			query: `
-query StatusMessages {
-	 statusMessages {
-		 ...StatusMessageFields
+query StbtusMessbges {
+	 stbtusMessbges {
+		 ...StbtusMessbgeFields
 	 }
  }
- fragment StatusMessageFields on StatusMessage {
-	 __typename
+ frbgment StbtusMessbgeFields on StbtusMessbge {
+	 __typenbme
 	 ... on CloningProgress {
-		 message
+		 messbge
 	 }
 	 ... on SyncError {
-		 message
+		 messbge
 	 }
-	 ... on ExternalServiceSyncError {
-		 message
-		 externalService {
+	 ... on ExternblServiceSyncError {
+		 messbge
+		 externblService {
 			 id
-			 displayName
+			 displbyNbme
 		 }
 	 }
  }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 5,
-				MaxDepth:   2,
+				MbxDepth:   2,
 			},
 		},
 		{
-			name: "Simple inline fragments",
+			nbme: "Simple inline frbgments",
 			query: `
 query{
-    __typename
+    __typenbme
 	... on Foo {
          one
          two
      }
-     ... on Bar {
+     ... on Bbr {
          one
      }
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 2,
-				MaxDepth:   2,
+				MbxDepth:   2,
 			},
 		},
 		{
-			name: "Search query",
+			nbme: "Sebrch query",
 			query: `
-query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatternType!) {
-  search(
+query Sebrch($query: String!, $version: SebrchVersion!, $pbtternType: SebrchPbtternType!) {
+  sebrch(
     query: $query
     version: $version
-    patternType: $patternType
+    pbtternType: $pbtternType
   ) {
     results {
-      __typename
+      __typenbme
       limitHit
-      matchCount
-      approximateResultCount
+      mbtchCount
+      bpproximbteResultCount
       missing {
-        name
+        nbme
       }
       cloning {
-        name
+        nbme
       }
       repositoriesCount
       timedout {
-        name
+        nbme
       }
-      indexUnavailable
-      dynamicFilters {
-        value
-        label
+      indexUnbvbilbble
+      dynbmicFilters {
+        vblue
+        lbbel
         count
         limitHit
         kind
       }
       results {
-        __typename
+        __typenbme
         ... on Repository {
           id
-          name
-          label {
+          nbme
+          lbbel {
             html
           }
           url
           icon
-          detail {
+          detbil {
             html
           }
-          matches {
+          mbtches {
             url
             body {
               text
@@ -208,27 +208,27 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
             }
             highlights {
               line
-              character
+              chbrbcter
               length
             }
           }
         }
-        ... on FileMatch {
+        ... on FileMbtch {
           file {
-            path
+            pbth
             url
             commit {
               oid
             }
           }
           repository {
-            name
+            nbme
             url
           }
           revSpec {
-            __typename
+            __typenbme
             ... on GitRef {
-              displayName
+              displbyNbme
               url
             }
             ... on GitRevSpecExpr {
@@ -240,7 +240,7 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
               }
             }
             ... on GitObject {
-              abbreviatedOID
+              bbbrevibtedOID
               commit {
                 url
               }
@@ -248,27 +248,27 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
           }
           limitHit
           symbols {
-            name
-            containerName
+            nbme
+            contbinerNbme
             url
             kind
           }
-          lineMatches {
+          lineMbtches {
             preview
             lineNumber
             offsetAndLengths
           }
         }
-        ... on CommitSearchResult {
-          label {
+        ... on CommitSebrchResult {
+          lbbel {
             html
           }
           url
           icon
-          detail {
+          detbil {
             html
           }
-          matches {
+          mbtches {
             url
             body {
               text
@@ -276,13 +276,13 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
             }
             highlights {
               line
-              character
+              chbrbcter
               length
             }
           }
         }
       }
-      alert {
+      blert {
         title
         description
         proposedQueries {
@@ -290,189 +290,189 @@ query Search($query: String!, $version: SearchVersion!, $patternType: SearchPatt
           query
         }
       }
-      elapsedMilliseconds
+      elbpsedMilliseconds
     }
   }
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 50,
-				MaxDepth:   9,
+				MbxDepth:   9,
 			},
 		},
 		{
-			name: "Allow null variables",
-			// NOTE: $first is nullable
+			nbme: "Allow null vbribbles",
+			// NOTE: $first is nullbble
 			query: `
-query RepositoryComparisonDiff($repo: String!, $base: String, $head: String, $first: Int) {
-  repository(name: $repo) {
-    comparison(base: $base, head: $head) {
+query RepositoryCompbrisonDiff($repo: String!, $bbse: String, $hebd: String, $first: Int) {
+  repository(nbme: $repo) {
+    compbrison(bbse: $bbse, hebd: $hebd) {
       fileDiffs(first: $first) {
         nodes {
           ...FileDiffFields
         }
-        totalCount
+        totblCount
       }
     }
   }
 }
 
-fragment FileDiffFields on FileDiff {
-  oldPath
-  newPath
-  internalID
+frbgment FileDiffFields on FileDiff {
+  oldPbth
+  newPbth
+  internblID
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 7,
-				MaxDepth:   5,
+				MbxDepth:   5,
 			},
-			variables: map[string]any{
-				"base": "a46cf4a8b6dc42ea7b7b716e53c49dd3508a8678",
-				"head": "0fd3fb1f4e41ae1f95970beeec1c1f7b2d8a7d06",
-				"repo": "github.com/presslabs/mysql-operator",
+			vbribbles: mbp[string]bny{
+				"bbse": "b46cf4b8b6dc42eb7b7b716e53c49dd3508b8678",
+				"hebd": "0fd3fb1f4e41be1f95970beeec1c1f7b2d8b7d06",
+				"repo": "github.com/presslbbs/mysql-operbtor",
 			},
 		},
 		{
-			name: "Nested named fragments",
+			nbme: "Nested nbmed frbgments",
 			query: `
 query{
-    __typename
+    __typenbme
 	...FooFields
 }
-fragment FooFields on Foo {
-	...BarFields
+frbgment FooFields on Foo {
+	...BbrFields
 }
-fragment BarFields on Bar {
+frbgment BbrFields on Bbr {
 	one
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 1,
-				MaxDepth:   1,
+				MbxDepth:   1,
 			},
 		},
 		{
-			name: "More nested fragments",
+			nbme: "More nested frbgments",
 			query: `
 {
   node {
-    ...FileFragment
+    ...FileFrbgment
   }
 }
 
-fragment FileFragment on File {
-  ... on Usable {
-    ...UsableFields
+frbgment FileFrbgment on File {
+  ... on Usbble {
+    ...UsbbleFields
   }
 }
 
-fragment UsableFields on Usable {
-  isUsable
+frbgment UsbbleFields on Usbble {
+  isUsbble
 }
 `,
-			want: QueryCost{
+			wbnt: QueryCost{
 				FieldCount: 3,
-				MaxDepth:   2,
+				MbxDepth:   2,
 			},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			want := tc.want
-			want.Version = costEstimateVersion
-			have, err := EstimateQueryCost(tc.query, tc.variables)
+		t.Run(tc.nbme, func(t *testing.T) {
+			wbnt := tc.wbnt
+			wbnt.Version = costEstimbteVersion
+			hbve, err := EstimbteQueryCost(tc.query, tc.vbribbles)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(want, *have); diff != "" {
+			if diff := cmp.Diff(wbnt, *hbve); diff != "" {
 				t.Errorf(diff)
 			}
 		})
 	}
 }
 
-func TestBasicLimiterEnabled(t *testing.T) {
+func TestBbsicLimiterEnbbled(t *testing.T) {
 	tests := []struct {
 		limit       int
-		wantEnabled bool
+		wbntEnbbled bool
 	}{
 		{
 			limit:       1,
-			wantEnabled: true,
+			wbntEnbbled: true,
 		},
 		{
 			limit:       100,
-			wantEnabled: true,
+			wbntEnbbled: true,
 		},
 		{
 			limit:       0,
-			wantEnabled: false,
+			wbntEnbbled: fblse,
 		},
 		{
 			limit:       -1,
-			wantEnabled: false,
+			wbntEnbbled: fblse,
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := rbnge tests {
 		t.Run(fmt.Sprintf("limit:%d", tt.limit), func(t *testing.T) {
 			store, err := memstore.NewCtx(1)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			logger := logtest.Scoped(t)
 
-			bl := NewBasicLimitWatcher(logger, store)
-			bl.updateFromConfig(logger, tt.limit)
+			bl := NewBbsicLimitWbtcher(logger, store)
+			bl.updbteFromConfig(logger, tt.limit)
 
-			_, enabled := bl.Get()
+			_, enbbled := bl.Get()
 
-			if got := enabled; got != tt.wantEnabled {
-				t.Fatalf("got %t, want %t", got, tt.wantEnabled)
+			if got := enbbled; got != tt.wbntEnbbled {
+				t.Fbtblf("got %t, wbnt %t", got, tt.wbntEnbbled)
 			}
 		})
 	}
 }
 
-func TestBasicLimiter(t *testing.T) {
+func TestBbsicLimiter(t *testing.T) {
 	store, err := memstore.NewCtx(1)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	logger := logtest.Scoped(t)
 
-	bl := NewBasicLimitWatcher(logger, store)
-	bl.updateFromConfig(logger, 1)
+	bl := NewBbsicLimitWbtcher(logger, store)
+	bl.updbteFromConfig(logger, 1)
 
-	limiter, enabled := bl.Get()
-	if !enabled {
-		t.Fatalf("got %t, want true", enabled)
+	limiter, enbbled := bl.Get()
+	if !enbbled {
+		t.Fbtblf("got %t, wbnt true", enbbled)
 	}
 
-	// These arguments correspond to call we want to limit.
+	// These brguments correspond to cbll we wbnt to limit.
 	limiterArgs := LimiterArgs{
 		Anonymous:     true,
-		RequestName:   "unknown",
-		RequestSource: trace.SourceOther,
+		RequestNbme:   "unknown",
+		RequestSource: trbce.SourceOther,
 	}
 
-	// 1st call should not be limited.
-	limited, _, err := limiter.RateLimit(context.Background(), "", 1, limiterArgs)
+	// 1st cbll should not be limited.
+	limited, _, err := limiter.RbteLimit(context.Bbckground(), "", 1, limiterArgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if limited {
-		t.Fatalf("got %t, want false", limited)
+		t.Fbtblf("got %t, wbnt fblse", limited)
 	}
 
-	// 2nd call should be limited.
-	limited, _, err = limiter.RateLimit(context.Background(), "", 1, limiterArgs)
+	// 2nd cbll should be limited.
+	limited, _, err = limiter.RbteLimit(context.Bbckground(), "", 1, limiterArgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if !limited {
-		t.Fatalf("got %t, want true", limited)
+		t.Fbtblf("got %t, wbnt true", limited)
 	}
 }

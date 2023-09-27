@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -7,339 +7,339 @@ import (
 	"strconv"
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/dbvecgh/go-spew/spew"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func init() {
-	spew.Config.DisablePointerAddresses = true
+	spew.Config.DisbblePointerAddresses = true
 	spew.Config.SortKeys = true
 	spew.Config.SpewKeys = true
 }
 
-// mockGitLab is a mock for the GitLab client that can be used by tests. Instantiating a mockGitLab
-// instance itself does nothing, but its methods can be used to replace the mock functions (e.g.,
+// mockGitLbb is b mock for the GitLbb client thbt cbn be used by tests. Instbntibting b mockGitLbb
+// instbnce itself does nothing, but its methods cbn be used to replbce the mock functions (e.g.,
 // MockListProjects).
 //
-// We prefer to do it this way, instead of defining an interface for the GitLab client, because this
-// preserves the ability to jump-to-def around the actual implementation.
-type mockGitLab struct {
+// We prefer to do it this wby, instebd of defining bn interfbce for the GitLbb client, becbuse this
+// preserves the bbility to jump-to-def bround the bctubl implementbtion.
+type mockGitLbb struct {
 	t *testing.T
 
-	// projs is a map of all projects on the instance, keyed by project ID
-	projs map[int]*gitlab.Project
+	// projs is b mbp of bll projects on the instbnce, keyed by project ID
+	projs mbp[int]*gitlbb.Project
 
-	// users is a list of all users
-	users []*gitlab.AuthUser
+	// users is b list of bll users
+	users []*gitlbb.AuthUser
 
-	// privateGuest is a map from GitLab user ID to list of metadata-accessible private project IDs on GitLab
-	privateGuest map[int32][]int
+	// privbteGuest is b mbp from GitLbb user ID to list of metbdbtb-bccessible privbte project IDs on GitLbb
+	privbteGuest mbp[int32][]int
 
-	// privateRepo is a map from GitLab user ID to list of repo-content-accessible private project IDs on GitLab.
-	// Projects in each list are also metadata-accessible.
-	privateRepo map[int32][]int
+	// privbteRepo is b mbp from GitLbb user ID to list of repo-content-bccessible privbte project IDs on GitLbb.
+	// Projects in ebch list bre blso metbdbtb-bccessible.
+	privbteRepo mbp[int32][]int
 
-	// oauthToks is a map from OAuth token to GitLab user account ID
-	oauthToks map[string]int32
+	// obuthToks is b mbp from OAuth token to GitLbb user bccount ID
+	obuthToks mbp[string]int32
 
 	// sudoTok is the sudo token, if there is one
 	sudoTok string
 
-	// madeGetProject records what GetProject calls have been made. It's a map from oauth token -> GetProjectOp -> count.
-	madeGetProject map[string]map[gitlab.GetProjectOp]int
+	// mbdeGetProject records whbt GetProject cblls hbve been mbde. It's b mbp from obuth token -> GetProjectOp -> count.
+	mbdeGetProject mbp[string]mbp[gitlbb.GetProjectOp]int
 
-	// madeListProjects records what ListProjects calls have been made. It's a map from oauth token -> string (urlStr) -> count.
-	madeListProjects map[string]map[string]int
+	// mbdeListProjects records whbt ListProjects cblls hbve been mbde. It's b mbp from obuth token -> string (urlStr) -> count.
+	mbdeListProjects mbp[string]mbp[string]int
 
-	// madeListTree records what ListTree calls have been made. It's a map from oauth token -> ListTreeOp -> count.
-	madeListTree map[string]map[gitlab.ListTreeOp]int
+	// mbdeListTree records whbt ListTree cblls hbve been mbde. It's b mbp from obuth token -> ListTreeOp -> count.
+	mbdeListTree mbp[string]mbp[gitlbb.ListTreeOp]int
 
-	// madeUsers records what ListUsers calls have been made. It's a map from oauth token -> URL string -> count
-	madeUsers map[string]map[string]int
+	// mbdeUsers records whbt ListUsers cblls hbve been mbde. It's b mbp from obuth token -> URL string -> count
+	mbdeUsers mbp[string]mbp[string]int
 }
 
-type mockGitLabOp struct {
+type mockGitLbbOp struct {
 	t *testing.T
 
-	// users is a list of users on the GitLab instance
-	users []*gitlab.AuthUser
+	// users is b list of users on the GitLbb instbnce
+	users []*gitlbb.AuthUser
 
 	// publicProjs is the list of public project IDs
 	publicProjs []int
 
-	// internalProjs is the list of internal project IDs
-	internalProjs []int
+	// internblProjs is the list of internbl project IDs
+	internblProjs []int
 
-	// privateProjs is a map from { privateProjectID -> [ guestUserIDs, contentUserIDs ] } It
-	// determines the structure of private project permissions. A "guest" user can access private
-	// project metadata, but not project repository contents. A "content" user can access both.
-	privateProjs map[int][2][]int32
+	// privbteProjs is b mbp from { privbteProjectID -> [ guestUserIDs, contentUserIDs ] } It
+	// determines the structure of privbte project permissions. A "guest" user cbn bccess privbte
+	// project metbdbtb, but not project repository contents. A "content" user cbn bccess both.
+	privbteProjs mbp[int][2][]int32
 
-	// oauthToks is a map from OAuth tokens to the corresponding GitLab user ID
-	oauthToks map[string]int32
+	// obuthToks is b mbp from OAuth tokens to the corresponding GitLbb user ID
+	obuthToks mbp[string]int32
 
-	// sudoTok, if non-empty, is the personal access token accepted with sudo permissions on this
-	// instance. The mock implementation only supports having one such token value.
+	// sudoTok, if non-empty, is the personbl bccess token bccepted with sudo permissions on this
+	// instbnce. The mock implementbtion only supports hbving one such token vblue.
 	sudoTok string
 }
 
-// newMockGitLab returns a new mockGitLab instance
-func newMockGitLab(op mockGitLabOp) mockGitLab {
-	projs := make(map[int]*gitlab.Project)
-	privateGuest := make(map[int32][]int)
-	privateRepo := make(map[int32][]int)
-	for _, p := range op.publicProjs {
-		projs[p] = &gitlab.Project{Visibility: gitlab.Public, ProjectCommon: gitlab.ProjectCommon{ID: p}}
+// newMockGitLbb returns b new mockGitLbb instbnce
+func newMockGitLbb(op mockGitLbbOp) mockGitLbb {
+	projs := mbke(mbp[int]*gitlbb.Project)
+	privbteGuest := mbke(mbp[int32][]int)
+	privbteRepo := mbke(mbp[int32][]int)
+	for _, p := rbnge op.publicProjs {
+		projs[p] = &gitlbb.Project{Visibility: gitlbb.Public, ProjectCommon: gitlbb.ProjectCommon{ID: p}}
 	}
-	for _, p := range op.internalProjs {
-		projs[p] = &gitlab.Project{Visibility: gitlab.Internal, ProjectCommon: gitlab.ProjectCommon{ID: p}}
+	for _, p := rbnge op.internblProjs {
+		projs[p] = &gitlbb.Project{Visibility: gitlbb.Internbl, ProjectCommon: gitlbb.ProjectCommon{ID: p}}
 	}
-	for p, userAccess := range op.privateProjs {
-		projs[p] = &gitlab.Project{Visibility: gitlab.Private, ProjectCommon: gitlab.ProjectCommon{ID: p}}
+	for p, userAccess := rbnge op.privbteProjs {
+		projs[p] = &gitlbb.Project{Visibility: gitlbb.Privbte, ProjectCommon: gitlbb.ProjectCommon{ID: p}}
 
 		guestUsers, contentUsers := userAccess[0], userAccess[1]
-		for _, u := range guestUsers {
-			privateGuest[u] = append(privateGuest[u], p)
+		for _, u := rbnge guestUsers {
+			privbteGuest[u] = bppend(privbteGuest[u], p)
 		}
-		for _, u := range contentUsers {
-			privateRepo[u] = append(privateRepo[u], p)
+		for _, u := rbnge contentUsers {
+			privbteRepo[u] = bppend(privbteRepo[u], p)
 		}
 	}
-	return mockGitLab{
+	return mockGitLbb{
 		t:                op.t,
 		projs:            projs,
 		users:            op.users,
-		privateGuest:     privateGuest,
-		privateRepo:      privateRepo,
-		oauthToks:        op.oauthToks,
+		privbteGuest:     privbteGuest,
+		privbteRepo:      privbteRepo,
+		obuthToks:        op.obuthToks,
 		sudoTok:          op.sudoTok,
-		madeGetProject:   map[string]map[gitlab.GetProjectOp]int{},
-		madeListProjects: map[string]map[string]int{},
-		madeListTree:     map[string]map[gitlab.ListTreeOp]int{},
-		madeUsers:        map[string]map[string]int{},
+		mbdeGetProject:   mbp[string]mbp[gitlbb.GetProjectOp]int{},
+		mbdeListProjects: mbp[string]mbp[string]int{},
+		mbdeListTree:     mbp[string]mbp[gitlbb.ListTreeOp]int{},
+		mbdeUsers:        mbp[string]mbp[string]int{},
 	}
 }
 
-func (m *mockGitLab) GetProject(c *gitlab.Client, ctx context.Context, op gitlab.GetProjectOp) (*gitlab.Project, error) {
-	if _, ok := m.madeGetProject[c.Auth.Hash()]; !ok {
-		m.madeGetProject[c.Auth.Hash()] = map[gitlab.GetProjectOp]int{}
+func (m *mockGitLbb) GetProject(c *gitlbb.Client, ctx context.Context, op gitlbb.GetProjectOp) (*gitlbb.Project, error) {
+	if _, ok := m.mbdeGetProject[c.Auth.Hbsh()]; !ok {
+		m.mbdeGetProject[c.Auth.Hbsh()] = mbp[gitlbb.GetProjectOp]int{}
 	}
-	m.madeGetProject[c.Auth.Hash()][op]++
+	m.mbdeGetProject[c.Auth.Hbsh()][op]++
 
 	proj, ok := m.projs[op.ID]
 	if !ok {
-		return nil, gitlab.ErrProjectNotFound
+		return nil, gitlbb.ErrProjectNotFound
 	}
-	if proj.Visibility == gitlab.Public {
+	if proj.Visibility == gitlbb.Public {
 		return proj, nil
 	}
-	if proj.Visibility == gitlab.Internal && m.isClientAuthenticated(c) {
+	if proj.Visibility == gitlbb.Internbl && m.isClientAuthenticbted(c) {
 		return proj, nil
 	}
 
-	acctID := m.getAcctID(c)
-	for _, accessibleProjID := range append(m.privateGuest[acctID], m.privateRepo[acctID]...) {
-		if accessibleProjID == op.ID {
+	bcctID := m.getAcctID(c)
+	for _, bccessibleProjID := rbnge bppend(m.privbteGuest[bcctID], m.privbteRepo[bcctID]...) {
+		if bccessibleProjID == op.ID {
 			return proj, nil
 		}
 	}
 
-	return nil, gitlab.ErrProjectNotFound
+	return nil, gitlbb.ErrProjectNotFound
 }
 
-func (m *mockGitLab) ListProjects(c *gitlab.Client, ctx context.Context, urlStr string) (projs []*gitlab.Project, nextPageURL *string, err error) {
-	if _, ok := m.madeListProjects[c.Auth.Hash()]; !ok {
-		m.madeListProjects[c.Auth.Hash()] = map[string]int{}
+func (m *mockGitLbb) ListProjects(c *gitlbb.Client, ctx context.Context, urlStr string) (projs []*gitlbb.Project, nextPbgeURL *string, err error) {
+	if _, ok := m.mbdeListProjects[c.Auth.Hbsh()]; !ok {
+		m.mbdeListProjects[c.Auth.Hbsh()] = mbp[string]int{}
 	}
-	m.madeListProjects[c.Auth.Hash()][urlStr]++
+	m.mbdeListProjects[c.Auth.Hbsh()][urlStr]++
 
-	u, err := url.Parse(urlStr)
+	u, err := url.Pbrse(urlStr)
 	if err != nil {
 		return nil, nil, err
 	}
 	query := u.Query()
-	if query.Get("pagination") == "keyset" {
-		return nil, nil, errors.New("This mock does not support keyset pagination")
+	if query.Get("pbginbtion") == "keyset" {
+		return nil, nil, errors.New("This mock does not support keyset pbginbtion")
 	}
-	perPage, err := strconv.Atoi(query.Get("per_page"))
+	perPbge, err := strconv.Atoi(query.Get("per_pbge"))
 	if err != nil {
 		return nil, nil, err
 	}
-	page := 1
-	if p := query.Get("page"); p != "" {
-		page, err = strconv.Atoi(p)
+	pbge := 1
+	if p := query.Get("pbge"); p != "" {
+		pbge, err = strconv.Atoi(p)
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	acctID := m.getAcctID(c)
-	for _, proj := range m.projs {
-		if proj.Visibility == gitlab.Public || (proj.Visibility == gitlab.Internal && acctID != 0) {
-			projs = append(projs, proj)
+	bcctID := m.getAcctID(c)
+	for _, proj := rbnge m.projs {
+		if proj.Visibility == gitlbb.Public || (proj.Visibility == gitlbb.Internbl && bcctID != 0) {
+			projs = bppend(projs, proj)
 		}
 	}
-	for _, pid := range m.privateGuest[acctID] {
-		projs = append(projs, m.projs[pid])
+	for _, pid := rbnge m.privbteGuest[bcctID] {
+		projs = bppend(projs, m.projs[pid])
 	}
-	for _, pid := range m.privateRepo[acctID] {
-		projs = append(projs, m.projs[pid])
+	for _, pid := rbnge m.privbteRepo[bcctID] {
+		projs = bppend(projs, m.projs[pid])
 	}
 
 	sort.Sort(projSort(projs))
-	if (page-1)*perPage >= len(projs) {
+	if (pbge-1)*perPbge >= len(projs) {
 		return nil, nil, nil
 	}
-	if page*perPage < len(projs) {
-		nextURL, _ := url.Parse(urlStr)
+	if pbge*perPbge < len(projs) {
+		nextURL, _ := url.Pbrse(urlStr)
 		q := nextURL.Query()
-		q.Set("page", strconv.Itoa(page+1))
-		nextURL.RawQuery = q.Encode()
+		q.Set("pbge", strconv.Itob(pbge+1))
+		nextURL.RbwQuery = q.Encode()
 		nextURLStr := nextURL.String()
-		return projs[(page-1)*perPage : page*perPage], &nextURLStr, nil
+		return projs[(pbge-1)*perPbge : pbge*perPbge], &nextURLStr, nil
 	}
-	return projs[(page-1)*perPage:], nil, nil
+	return projs[(pbge-1)*perPbge:], nil, nil
 }
 
-func (m *mockGitLab) ListTree(c *gitlab.Client, ctx context.Context, op gitlab.ListTreeOp) ([]*gitlab.Tree, error) {
-	if _, ok := m.madeListTree[c.Auth.Hash()]; !ok {
-		m.madeListTree[c.Auth.Hash()] = map[gitlab.ListTreeOp]int{}
+func (m *mockGitLbb) ListTree(c *gitlbb.Client, ctx context.Context, op gitlbb.ListTreeOp) ([]*gitlbb.Tree, error) {
+	if _, ok := m.mbdeListTree[c.Auth.Hbsh()]; !ok {
+		m.mbdeListTree[c.Auth.Hbsh()] = mbp[gitlbb.ListTreeOp]int{}
 	}
-	m.madeListTree[c.Auth.Hash()][op]++
+	m.mbdeListTree[c.Auth.Hbsh()][op]++
 
-	ret := []*gitlab.Tree{
+	ret := []*gitlbb.Tree{
 		{
 			ID:   "123",
-			Name: "file.txt",
+			Nbme: "file.txt",
 			Type: "blob",
-			Path: "dir/file.txt",
+			Pbth: "dir/file.txt",
 			Mode: "100644",
 		},
 	}
 
 	proj, ok := m.projs[op.ProjID]
 	if !ok {
-		return nil, gitlab.ErrProjectNotFound
+		return nil, gitlbb.ErrProjectNotFound
 	}
-	if proj.Visibility == gitlab.Public {
+	if proj.Visibility == gitlbb.Public {
 		return ret, nil
 	}
-	if proj.Visibility == gitlab.Internal && m.isClientAuthenticated(c) {
+	if proj.Visibility == gitlbb.Internbl && m.isClientAuthenticbted(c) {
 		return ret, nil
 	}
 
-	acctID := m.getAcctID(c)
-	for _, accessibleProjID := range m.privateRepo[acctID] {
-		if accessibleProjID == op.ProjID {
+	bcctID := m.getAcctID(c)
+	for _, bccessibleProjID := rbnge m.privbteRepo[bcctID] {
+		if bccessibleProjID == op.ProjID {
 			return ret, nil
 		}
 	}
 
-	return nil, gitlab.ErrProjectNotFound
+	return nil, gitlbb.ErrProjectNotFound
 }
 
-// isClientAuthenticated returns true if the client is authenticated. User is authenticated if OAuth
-// token is non-empty (note: this mock impl doesn't verify validity of the OAuth token) or if the
-// personal access token is non-empty (note: this mock impl requires that the PAT be equivalent to
-// the mock GitLab sudo token).
-func (m *mockGitLab) isClientAuthenticated(c *gitlab.Client) bool {
-	return c.Auth.Hash() != "" || (m.sudoTok != "" && c.Auth.(*gitlab.SudoableToken).Token == m.sudoTok)
+// isClientAuthenticbted returns true if the client is buthenticbted. User is buthenticbted if OAuth
+// token is non-empty (note: this mock impl doesn't verify vblidity of the OAuth token) or if the
+// personbl bccess token is non-empty (note: this mock impl requires thbt the PAT be equivblent to
+// the mock GitLbb sudo token).
+func (m *mockGitLbb) isClientAuthenticbted(c *gitlbb.Client) bool {
+	return c.Auth.Hbsh() != "" || (m.sudoTok != "" && c.Auth.(*gitlbb.SudobbleToken).Token == m.sudoTok)
 }
 
-func (m *mockGitLab) getAcctID(c *gitlab.Client) int32 {
-	if a, ok := c.Auth.(*auth.OAuthBearerToken); ok {
-		return m.oauthToks[a.Hash()]
+func (m *mockGitLbb) getAcctID(c *gitlbb.Client) int32 {
+	if b, ok := c.Auth.(*buth.OAuthBebrerToken); ok {
+		return m.obuthToks[b.Hbsh()]
 	}
 
-	pat := c.Auth.(*gitlab.SudoableToken)
-	if m.sudoTok != "" && m.sudoTok == pat.Token && pat.Sudo != "" {
-		sudo, err := strconv.Atoi(pat.Sudo)
+	pbt := c.Auth.(*gitlbb.SudobbleToken)
+	if m.sudoTok != "" && m.sudoTok == pbt.Token && pbt.Sudo != "" {
+		sudo, err := strconv.Atoi(pbt.Sudo)
 		if err != nil {
-			m.t.Fatalf("mockGitLab requires all Sudo params to be numerical: %s", err)
+			m.t.Fbtblf("mockGitLbb requires bll Sudo pbrbms to be numericbl: %s", err)
 		}
 		return int32(sudo)
 	}
 	return 0
 }
 
-func (m *mockGitLab) ListUsers(c *gitlab.Client, ctx context.Context, urlStr string) (users []*gitlab.AuthUser, nextPageURL *string, err error) {
+func (m *mockGitLbb) ListUsers(c *gitlbb.Client, ctx context.Context, urlStr string) (users []*gitlbb.AuthUser, nextPbgeURL *string, err error) {
 	key := ""
 	if c.Auth != nil {
-		key = c.Auth.Hash()
+		key = c.Auth.Hbsh()
 	}
 
-	if _, ok := m.madeUsers[key]; !ok {
-		m.madeUsers[key] = map[string]int{}
+	if _, ok := m.mbdeUsers[key]; !ok {
+		m.mbdeUsers[key] = mbp[string]int{}
 	}
-	m.madeUsers[key][urlStr]++
+	m.mbdeUsers[key][urlStr]++
 
-	u, err := url.Parse(urlStr)
+	u, err := url.Pbrse(urlStr)
 	if err != nil {
-		m.t.Fatalf("could not parse ListUsers urlStr %q: %s", urlStr, err)
+		m.t.Fbtblf("could not pbrse ListUsers urlStr %q: %s", urlStr, err)
 	}
 
-	var matchingUsers []*gitlab.AuthUser
-	for _, user := range m.users {
-		userMatches := true
+	vbr mbtchingUsers []*gitlbb.AuthUser
+	for _, user := rbnge m.users {
+		userMbtches := true
 		if qExternUID := u.Query().Get("extern_uid"); qExternUID != "" {
 			qProvider := u.Query().Get("provider")
 
-			match := false
-			for _, identity := range user.Identities {
+			mbtch := fblse
+			for _, identity := rbnge user.Identities {
 				if identity.ExternUID == qExternUID && identity.Provider == qProvider {
-					match = true
-					break
+					mbtch = true
+					brebk
 				}
 			}
-			if !match {
-				userMatches = false
+			if !mbtch {
+				userMbtches = fblse
 			}
 		}
-		if qUsername := u.Query().Get("username"); qUsername != "" {
-			if user.Username != qUsername {
-				userMatches = false
+		if qUsernbme := u.Query().Get("usernbme"); qUsernbme != "" {
+			if user.Usernbme != qUsernbme {
+				userMbtches = fblse
 			}
 		}
-		if userMatches {
-			matchingUsers = append(matchingUsers, user)
+		if userMbtches {
+			mbtchingUsers = bppend(mbtchingUsers, user)
 		}
 	}
 
-	// pagination
-	perPage, err := getIntOrDefault(u.Query().Get("per_page"), 10)
+	// pbginbtion
+	perPbge, err := getIntOrDefbult(u.Query().Get("per_pbge"), 10)
 	if err != nil {
 		return nil, nil, err
 	}
-	page, err := getIntOrDefault(u.Query().Get("page"), 1)
+	pbge, err := getIntOrDefbult(u.Query().Get("pbge"), 1)
 	if err != nil {
 		return nil, nil, err
 	}
-	p := page - 1
+	p := pbge - 1
 
-	var pagedUsers []*gitlab.AuthUser
+	vbr pbgedUsers []*gitlbb.AuthUser
 
-	if perPage*p > len(matchingUsers)-1 {
-		pagedUsers = nil
-	} else if perPage*(p+1) > len(matchingUsers)-1 {
-		pagedUsers = matchingUsers[perPage*p:]
+	if perPbge*p > len(mbtchingUsers)-1 {
+		pbgedUsers = nil
+	} else if perPbge*(p+1) > len(mbtchingUsers)-1 {
+		pbgedUsers = mbtchingUsers[perPbge*p:]
 	} else {
-		pagedUsers = matchingUsers[perPage*p : perPage*(p+1)]
-		if perPage*(p+1) <= len(matchingUsers)-1 {
+		pbgedUsers = mbtchingUsers[perPbge*p : perPbge*(p+1)]
+		if perPbge*(p+1) <= len(mbtchingUsers)-1 {
 			newU := *u
 			q := u.Query()
-			q.Set("page", strconv.Itoa(page+1))
-			newU.RawQuery = q.Encode()
+			q.Set("pbge", strconv.Itob(pbge+1))
+			newU.RbwQuery = q.Encode()
 			s := newU.String()
-			nextPageURL = &s
+			nextPbgeURL = &s
 		}
 	}
-	return pagedUsers, nextPageURL, nil
+	return pbgedUsers, nextPbgeURL, nil
 }
 
 type mockAuthnProvider struct {
@@ -351,38 +351,38 @@ func (m mockAuthnProvider) ConfigID() providers.ConfigID {
 	return m.configID
 }
 
-func (m mockAuthnProvider) Config() schema.AuthProviders {
-	return schema.AuthProviders{
-		Gitlab: &schema.GitLabAuthProvider{
+func (m mockAuthnProvider) Config() schemb.AuthProviders {
+	return schemb.AuthProviders{
+		Gitlbb: &schemb.GitLbbAuthProvider{
 			Type: m.configID.Type,
 			Url:  m.configID.ID,
 		},
 	}
 }
 
-func (m mockAuthnProvider) CachedInfo() *providers.Info {
+func (m mockAuthnProvider) CbchedInfo() *providers.Info {
 	return &providers.Info{ServiceID: m.serviceID}
 }
 
 func (m mockAuthnProvider) Refresh(ctx context.Context) error {
-	panic("should not be called")
+	pbnic("should not be cblled")
 }
 
-func (m mockAuthnProvider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	panic("should not be called")
+func (m mockAuthnProvider) ExternblAccountInfo(ctx context.Context, bccount extsvc.Account) (*extsvc.PublicAccountDbtb, error) {
+	pbnic("should not be cblled")
 }
 
-func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) *extsvc.Account {
-	var data extsvc.AccountData
+func bcct(t *testing.T, userID int32, serviceType, serviceID, bccountID string) *extsvc.Account {
+	vbr dbtb extsvc.AccountDbtb
 
-	if serviceType == extsvc.TypeGitLab {
-		gitlabAcctID, err := strconv.Atoi(accountID)
+	if serviceType == extsvc.TypeGitLbb {
+		gitlbbAcctID, err := strconv.Atoi(bccountID)
 		if err != nil {
-			t.Fatalf("Could not convert accountID to number: %s", err)
+			t.Fbtblf("Could not convert bccountID to number: %s", err)
 		}
 
-		if err := gitlab.SetExternalAccountData(&data, &gitlab.AuthUser{ID: int32(gitlabAcctID)}, nil); err != nil {
-			t.Fatalf("unexpected error: %s", err)
+		if err := gitlbb.SetExternblAccountDbtb(&dbtb, &gitlbb.AuthUser{ID: int32(gitlbbAcctID)}, nil); err != nil {
+			t.Fbtblf("unexpected error: %s", err)
 		}
 	}
 
@@ -391,21 +391,21 @@ func acct(t *testing.T, userID int32, serviceType, serviceID, accountID string) 
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: serviceType,
 			ServiceID:   serviceID,
-			AccountID:   accountID,
+			AccountID:   bccountID,
 		},
-		AccountData: data,
+		AccountDbtb: dbtb,
 	}
 }
 
 func mustURL(t *testing.T, u string) *url.URL {
-	parsed, err := url.Parse(u)
+	pbrsed, err := url.Pbrse(u)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return parsed
+	return pbrsed
 }
 
-func getIntOrDefault(str string, def int) (int, error) {
+func getIntOrDefbult(str string, def int) (int, error) {
 	if str == "" {
 		return def, nil
 	}
@@ -413,8 +413,8 @@ func getIntOrDefault(str string, def int) (int, error) {
 }
 
 // projSort sorts Projects in order of ID
-type projSort []*gitlab.Project
+type projSort []*gitlbb.Project
 
 func (p projSort) Len() int           { return len(p) }
 func (p projSort) Less(i, j int) bool { return p[i].ID < p[j].ID }
-func (p projSort) Swap(i, j int)      { p[i], p[j] = p[j], p[i] }
+func (p projSort) Swbp(i, j int)      { p[i], p[j] = p[j], p[i] }

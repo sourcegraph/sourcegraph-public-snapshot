@@ -1,71 +1,71 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
-	"github.com/sourcegraph/log"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/sourcegrbph/log"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func TestOutboundWebhookJobs(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
+	t.Pbrbllel()
+	ctx := context.Bbckground()
 
-	runBothEncryptionStates(t, func(t *testing.T, logger log.Logger, db DB, key encryption.Key) {
+	runBothEncryptionStbtes(t, func(t *testing.T, logger log.Logger, db DB, key encryption.Key) {
 		store := db.OutboundWebhookJobs(key)
 
-		var (
+		vbr (
 			scopedJob   *types.OutboundWebhookJob
 			unscopedJob *types.OutboundWebhookJob
 		)
-		payload := []byte(`"TEST"`)
+		pbylobd := []byte(`"TEST"`)
 
-		t.Run("Create", func(t *testing.T) {
+		t.Run("Crebte", func(t *testing.T) {
 
-			t.Run("bad key", func(t *testing.T) {
-				want := errors.New("bad key")
-				key := &et.BadKey{Err: want}
+			t.Run("bbd key", func(t *testing.T) {
+				wbnt := errors.New("bbd key")
+				key := &et.BbdKey{Err: wbnt}
 
-				_, have := OutboundWebhookJobsWith(store, key).Create(ctx, "foo", nil, payload)
-				assert.ErrorIs(t, have, want)
+				_, hbve := OutboundWebhookJobsWith(store, key).Crebte(ctx, "foo", nil, pbylobd)
+				bssert.ErrorIs(t, hbve, wbnt)
 			})
 
 			t.Run("success", func(t *testing.T) {
-				for name, tc := range map[string]struct {
+				for nbme, tc := rbnge mbp[string]struct {
 					scope  *string
-					target **types.OutboundWebhookJob
+					tbrget **types.OutboundWebhookJob
 				}{
 					"scoped": {
 						scope:  pointers.Ptr("scope"),
-						target: &scopedJob,
+						tbrget: &scopedJob,
 					},
 					"unscoped": {
 						scope:  nil,
-						target: &unscopedJob,
+						tbrget: &unscopedJob,
 					},
 				} {
-					t.Run(name, func(t *testing.T) {
-						job, err := store.Create(ctx, "foo", tc.scope, payload)
-						assert.NoError(t, err)
-						assert.NotNil(t, job)
-						assert.Equal(t, job.EventType, "foo")
-						assert.Equal(t, tc.scope, job.Scope)
+					t.Run(nbme, func(t *testing.T) {
+						job, err := store.Crebte(ctx, "foo", tc.scope, pbylobd)
+						bssert.NoError(t, err)
+						bssert.NotNil(t, job)
+						bssert.Equbl(t, job.EventType, "foo")
+						bssert.Equbl(t, tc.scope, job.Scope)
 
-						assertOutboundWebhookJobFieldsEncrypted(t, ctx, store, job, payload)
+						bssertOutboundWebhookJobFieldsEncrypted(t, ctx, store, job, pbylobd)
 
-						*tc.target = job
+						*tc.tbrget = job
 					})
 				}
 			})
@@ -74,89 +74,89 @@ func TestOutboundWebhookJobs(t *testing.T) {
 		t.Run("GetByID", func(t *testing.T) {
 			t.Run("not found", func(t *testing.T) {
 				job, err := store.GetByID(ctx, 0)
-				assert.True(t, errcode.IsNotFound(err))
-				assert.Nil(t, job)
+				bssert.True(t, errcode.IsNotFound(err))
+				bssert.Nil(t, job)
 			})
 
 			t.Run("found", func(t *testing.T) {
 				job, err := store.GetByID(ctx, scopedJob.ID)
-				assert.NoError(t, err)
-				assertEqualOutboundWebhookJobs(t, ctx, scopedJob, job)
+				bssert.NoError(t, err)
+				bssertEqublOutboundWebhookJobs(t, ctx, scopedJob, job)
 			})
 		})
 
 		t.Run("DeleteBefore", func(t *testing.T) {
 			t.Run("nothing to delete due to no records before the time", func(t *testing.T) {
 				err := store.DeleteBefore(ctx, time.Time{})
-				assert.NoError(t, err)
-				assert.Len(t, listOutboundWebhookJobs(t, ctx, store), 2)
+				bssert.NoError(t, err)
+				bssert.Len(t, listOutboundWebhookJobs(t, ctx, store), 2)
 			})
 
 			before := scopedJob.QueuedAt.Add(time.Hour)
 
 			t.Run("nothing to delete due to unfinished jobs", func(t *testing.T) {
 				err := store.DeleteBefore(ctx, before)
-				assert.NoError(t, err)
-				assert.Len(t, listOutboundWebhookJobs(t, ctx, store), 2)
+				bssert.NoError(t, err)
+				bssert.Len(t, listOutboundWebhookJobs(t, ctx, store), 2)
 			})
 
-			store.Handle().ExecContext(ctx, "UPDATE outbound_webhook_jobs SET finished_at = queued_at")
+			store.Hbndle().ExecContext(ctx, "UPDATE outbound_webhook_jobs SET finished_bt = queued_bt")
 
 			t.Run("everything to delete", func(t *testing.T) {
 				err := store.DeleteBefore(ctx, before)
-				assert.NoError(t, err)
-				assert.Len(t, listOutboundWebhookJobs(t, ctx, store), 0)
+				bssert.NoError(t, err)
+				bssert.Len(t, listOutboundWebhookJobs(t, ctx, store), 0)
 			})
 		})
 	})
 }
 
-func assertEqualOutboundWebhookJobs(t *testing.T, ctx context.Context, want, have *types.OutboundWebhookJob) {
+func bssertEqublOutboundWebhookJobs(t *testing.T, ctx context.Context, wbnt, hbve *types.OutboundWebhookJob) {
 	t.Helper()
 
-	valueOf := func(e *encryption.Encryptable) string {
+	vblueOf := func(e *encryption.Encryptbble) string {
 		t.Helper()
-		return decryptedValue(t, ctx, e)
+		return decryptedVblue(t, ctx, e)
 	}
 
-	assert.Equal(t, want.ID, have.ID)
-	assert.Equal(t, want.EventType, have.EventType)
-	assert.Equal(t, want.Scope, have.Scope)
-	assert.Equal(t, want.State, have.State)
-	assert.Equal(t, want.FailureMessage, have.FailureMessage)
-	assert.Equal(t, want.QueuedAt, have.QueuedAt)
-	assert.Equal(t, want.StartedAt, have.StartedAt)
-	assert.Equal(t, want.FinishedAt, have.FinishedAt)
-	assert.Equal(t, want.ProcessAfter, have.ProcessAfter)
-	assert.Equal(t, want.NumResets, have.NumResets)
-	assert.Equal(t, want.NumFailures, have.NumFailures)
-	assert.Equal(t, want.LastHeartbeatAt, have.LastHeartbeatAt)
-	assert.Equal(t, want.ExecutionLogs, have.ExecutionLogs)
-	assert.Equal(t, want.WorkerHostname, have.WorkerHostname)
-	assert.Equal(t, want.Cancel, have.Cancel)
-	assert.Equal(t, valueOf(want.Payload), valueOf(have.Payload))
+	bssert.Equbl(t, wbnt.ID, hbve.ID)
+	bssert.Equbl(t, wbnt.EventType, hbve.EventType)
+	bssert.Equbl(t, wbnt.Scope, hbve.Scope)
+	bssert.Equbl(t, wbnt.Stbte, hbve.Stbte)
+	bssert.Equbl(t, wbnt.FbilureMessbge, hbve.FbilureMessbge)
+	bssert.Equbl(t, wbnt.QueuedAt, hbve.QueuedAt)
+	bssert.Equbl(t, wbnt.StbrtedAt, hbve.StbrtedAt)
+	bssert.Equbl(t, wbnt.FinishedAt, hbve.FinishedAt)
+	bssert.Equbl(t, wbnt.ProcessAfter, hbve.ProcessAfter)
+	bssert.Equbl(t, wbnt.NumResets, hbve.NumResets)
+	bssert.Equbl(t, wbnt.NumFbilures, hbve.NumFbilures)
+	bssert.Equbl(t, wbnt.LbstHebrtbebtAt, hbve.LbstHebrtbebtAt)
+	bssert.Equbl(t, wbnt.ExecutionLogs, hbve.ExecutionLogs)
+	bssert.Equbl(t, wbnt.WorkerHostnbme, hbve.WorkerHostnbme)
+	bssert.Equbl(t, wbnt.Cbncel, hbve.Cbncel)
+	bssert.Equbl(t, vblueOf(wbnt.Pbylobd), vblueOf(hbve.Pbylobd))
 }
 
-func assertOutboundWebhookJobFieldsEncrypted(t *testing.T, ctx context.Context, store basestore.ShareableStore, job *types.OutboundWebhookJob, payload []byte) {
+func bssertOutboundWebhookJobFieldsEncrypted(t *testing.T, ctx context.Context, store bbsestore.ShbrebbleStore, job *types.OutboundWebhookJob, pbylobd []byte) {
 	t.Helper()
 
 	if store.(*outboundWebhookJobStore).key == nil {
 		return
 	}
 
-	decryptPayload, err := job.Payload.Decrypt(ctx)
+	decryptPbylobd, err := job.Pbylobd.Decrypt(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, payload, []byte(decryptPayload))
+	bssert.Equbl(t, pbylobd, []byte(decryptPbylobd))
 
-	row := store.Handle().QueryRowContext(
+	row := store.Hbndle().QueryRowContext(
 		ctx,
-		"SELECT payload FROM outbound_webhook_jobs WHERE id = $1",
+		"SELECT pbylobd FROM outbound_webhook_jobs WHERE id = $1",
 		job.ID,
 	)
-	var dbPayload string
-	err = row.Scan(&dbPayload)
-	assert.NoError(t, err)
-	assert.NotEqual(t, dbPayload, decryptPayload)
+	vbr dbPbylobd string
+	err = row.Scbn(&dbPbylobd)
+	bssert.NoError(t, err)
+	bssert.NotEqubl(t, dbPbylobd, decryptPbylobd)
 }
 
 func listOutboundWebhookJobs(t *testing.T, ctx context.Context, store OutboundWebhookJobStore) []*types.OutboundWebhookJob {
@@ -173,9 +173,9 @@ func listOutboundWebhookJobs(t *testing.T, ctx context.Context, store OutboundWe
 
 	jobs := []*types.OutboundWebhookJob{}
 	for rows.Next() {
-		var job types.OutboundWebhookJob
-		require.NoError(t, s.scanOutboundWebhookJob(&job, rows))
-		jobs = append(jobs, &job)
+		vbr job types.OutboundWebhookJob
+		require.NoError(t, s.scbnOutboundWebhookJob(&job, rows))
+		jobs = bppend(jobs, &job)
 	}
 
 	return jobs

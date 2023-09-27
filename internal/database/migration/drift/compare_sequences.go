@@ -1,48 +1,48 @@
-package drift
+pbckbge drift
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 )
 
-func compareSequences(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(actual.Sequences, expected.Sequences, compareSequencesCallbackFor(schemaName, version))
+func compbreSequences(schembNbme, version string, bctubl, expected schembs.SchembDescription) []Summbry {
+	return compbreNbmedLists(bctubl.Sequences, expected.Sequences, compbreSequencesCbllbbckFor(schembNbme, version))
 }
 
-func compareSequencesCallbackFor(schemaName, version string) func(_ *schemas.SequenceDescription, _ schemas.SequenceDescription) Summary {
-	return func(sequence *schemas.SequenceDescription, expectedSequence schemas.SequenceDescription) Summary {
+func compbreSequencesCbllbbckFor(schembNbme, version string) func(_ *schembs.SequenceDescription, _ schembs.SequenceDescription) Summbry {
+	return func(sequence *schembs.SequenceDescription, expectedSequence schembs.SequenceDescription) Summbry {
 		if sequence == nil {
-			return newDriftSummary(
-				expectedSequence.GetName(),
-				fmt.Sprintf("Missing sequence %q", expectedSequence.GetName()),
+			return newDriftSummbry(
+				expectedSequence.GetNbme(),
+				fmt.Sprintf("Missing sequence %q", expectedSequence.GetNbme()),
 				"define the sequence",
-			).withStatements(
-				expectedSequence.CreateStatement(),
+			).withStbtements(
+				expectedSequence.CrebteStbtement(),
 			)
 		}
 
-		if alterStatements, ok := (*sequence).AlterToTarget(expectedSequence); ok {
-			return newDriftSummary(
-				expectedSequence.GetName(),
-				fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.GetName()),
-				"alter the sequence",
-			).withStatements(
-				alterStatements...,
+		if blterStbtements, ok := (*sequence).AlterToTbrget(expectedSequence); ok {
+			return newDriftSummbry(
+				expectedSequence.GetNbme(),
+				fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.GetNbme()),
+				"blter the sequence",
+			).withStbtements(
+				blterStbtements...,
 			)
 		}
 
-		return newDriftSummary(
-			expectedSequence.GetName(),
-			fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.GetName()),
+		return newDriftSummbry(
+			expectedSequence.GetNbme(),
+			fmt.Sprintf("Unexpected properties of sequence %q", expectedSequence.GetNbme()),
 			"redefine the sequence",
 		).withDiff(
 			expectedSequence,
 			*sequence,
 		).withURLHint(
-			makeSearchURL(schemaName, version,
-				fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.GetName()),
-				fmt.Sprintf("nextval('%s'::regclass);", expectedSequence.GetName()),
+			mbkeSebrchURL(schembNbme, version,
+				fmt.Sprintf("CREATE SEQUENCE %s", expectedSequence.GetNbme()),
+				fmt.Sprintf("nextvbl('%s'::regclbss);", expectedSequence.GetNbme()),
 			),
 		)
 	}

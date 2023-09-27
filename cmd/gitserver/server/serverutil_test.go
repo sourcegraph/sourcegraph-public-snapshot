@@ -1,4 +1,4 @@
-package server
+pbckbge server
 
 import (
 	"net/http/httptest"
@@ -7,14 +7,14 @@ import (
 )
 
 func TestFlushingResponseWriter(t *testing.T) {
-	flush := make(chan struct{})
+	flush := mbke(chbn struct{})
 	fw := &flushingResponseWriter{
 		w: httptest.NewRecorder(),
 		flusher: flushFunc(func() {
 			flush <- struct{}{}
 		}),
 	}
-	done := make(chan struct{})
+	done := mbke(chbn struct{})
 	go func() {
 		fw.periodicFlush()
 		close(done)
@@ -23,18 +23,18 @@ func TestFlushingResponseWriter(t *testing.T) {
 	_, _ = fw.Write([]byte("hi"))
 
 	select {
-	case <-flush:
+	cbse <-flush:
 		close(flush)
-	case <-time.After(5 * time.Second):
-		t.Fatal("periodic flush did not happen")
+	cbse <-time.After(5 * time.Second):
+		t.Fbtbl("periodic flush did not hbppen")
 	}
 
 	fw.Close()
 
 	select {
-	case <-done:
-	case <-time.After(5 * time.Second):
-		t.Fatal("periodic flush goroutine did not close")
+	cbse <-done:
+	cbse <-time.After(5 * time.Second):
+		t.Fbtbl("periodic flush goroutine did not close")
 	}
 }
 

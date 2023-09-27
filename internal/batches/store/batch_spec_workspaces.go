@@ -1,124 +1,124 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"sort"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// batchSpecWorkspaceInsertColumns is the list of batch_spec_workspaces columns
-// that are modified in CreateBatchSpecWorkspace
-var batchSpecWorkspaceInsertColumns = []string{
-	"batch_spec_id",
-	"changeset_spec_ids",
+// bbtchSpecWorkspbceInsertColumns is the list of bbtch_spec_workspbces columns
+// thbt bre modified in CrebteBbtchSpecWorkspbce
+vbr bbtchSpecWorkspbceInsertColumns = []string{
+	"bbtch_spec_id",
+	"chbngeset_spec_ids",
 
 	"repo_id",
-	"branch",
+	"brbnch",
 	"commit",
-	"path",
-	"file_matches",
-	"only_fetch_workspace",
+	"pbth",
+	"file_mbtches",
+	"only_fetch_workspbce",
 	"unsupported",
 	"ignored",
 	"skipped",
-	"cached_result_found",
-	"step_cache_results",
+	"cbched_result_found",
+	"step_cbche_results",
 
-	"created_at",
-	"updated_at",
+	"crebted_bt",
+	"updbted_bt",
 }
 
-// BatchSpecWorkspaceColums are used by the changeset job related Store methods to query
-// and create changeset jobs.
-var BatchSpecWorkspaceColums = SQLColumns{
-	"batch_spec_workspaces.id",
+// BbtchSpecWorkspbceColums bre used by the chbngeset job relbted Store methods to query
+// bnd crebte chbngeset jobs.
+vbr BbtchSpecWorkspbceColums = SQLColumns{
+	"bbtch_spec_workspbces.id",
 
-	"batch_spec_workspaces.batch_spec_id",
-	"batch_spec_workspaces.changeset_spec_ids",
+	"bbtch_spec_workspbces.bbtch_spec_id",
+	"bbtch_spec_workspbces.chbngeset_spec_ids",
 
-	"batch_spec_workspaces.repo_id",
-	"batch_spec_workspaces.branch",
-	"batch_spec_workspaces.commit",
-	"batch_spec_workspaces.path",
-	"batch_spec_workspaces.file_matches",
-	"batch_spec_workspaces.only_fetch_workspace",
-	"batch_spec_workspaces.unsupported",
-	"batch_spec_workspaces.ignored",
-	"batch_spec_workspaces.skipped",
-	"batch_spec_workspaces.cached_result_found",
-	"batch_spec_workspaces.step_cache_results",
+	"bbtch_spec_workspbces.repo_id",
+	"bbtch_spec_workspbces.brbnch",
+	"bbtch_spec_workspbces.commit",
+	"bbtch_spec_workspbces.pbth",
+	"bbtch_spec_workspbces.file_mbtches",
+	"bbtch_spec_workspbces.only_fetch_workspbce",
+	"bbtch_spec_workspbces.unsupported",
+	"bbtch_spec_workspbces.ignored",
+	"bbtch_spec_workspbces.skipped",
+	"bbtch_spec_workspbces.cbched_result_found",
+	"bbtch_spec_workspbces.step_cbche_results",
 
-	"batch_spec_workspaces.created_at",
-	"batch_spec_workspaces.updated_at",
+	"bbtch_spec_workspbces.crebted_bt",
+	"bbtch_spec_workspbces.updbted_bt",
 }
 
-// CreateBatchSpecWorkspace creates the given batch spec workspace jobs.
-func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.BatchSpecWorkspace) (err error) {
-	ctx, _, endObservation := s.operations.createBatchSpecWorkspace.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("count", len(ws)),
+// CrebteBbtchSpecWorkspbce crebtes the given bbtch spec workspbce jobs.
+func (s *Store) CrebteBbtchSpecWorkspbce(ctx context.Context, ws ...*btypes.BbtchSpecWorkspbce) (err error) {
+	ctx, _, endObservbtion := s.operbtions.crebteBbtchSpecWorkspbce.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("count", len(ws)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	inserter := func(inserter *batch.Inserter) error {
-		for _, wj := range ws {
-			if wj.CreatedAt.IsZero() {
-				wj.CreatedAt = s.now()
+	inserter := func(inserter *bbtch.Inserter) error {
+		for _, wj := rbnge ws {
+			if wj.CrebtedAt.IsZero() {
+				wj.CrebtedAt = s.now()
 			}
 
-			if wj.UpdatedAt.IsZero() {
-				wj.UpdatedAt = wj.CreatedAt
+			if wj.UpdbtedAt.IsZero() {
+				wj.UpdbtedAt = wj.CrebtedAt
 			}
 
-			changesetSpecIDs := make(map[int64]struct{}, len(wj.ChangesetSpecIDs))
-			for _, id := range wj.ChangesetSpecIDs {
-				changesetSpecIDs[id] = struct{}{}
+			chbngesetSpecIDs := mbke(mbp[int64]struct{}, len(wj.ChbngesetSpecIDs))
+			for _, id := rbnge wj.ChbngesetSpecIDs {
+				chbngesetSpecIDs[id] = struct{}{}
 			}
 
-			marshaledIDs, err := json.Marshal(changesetSpecIDs)
+			mbrshbledIDs, err := json.Mbrshbl(chbngesetSpecIDs)
 			if err != nil {
 				return err
 			}
 
-			if wj.FileMatches == nil {
-				wj.FileMatches = []string{}
+			if wj.FileMbtches == nil {
+				wj.FileMbtches = []string{}
 			}
 
-			marshaledStepCacheResults, err := json.Marshal(wj.StepCacheResults)
+			mbrshbledStepCbcheResults, err := json.Mbrshbl(wj.StepCbcheResults)
 			if err != nil {
 				return err
 			}
 
 			if err := inserter.Insert(
 				ctx,
-				wj.BatchSpecID,
-				marshaledIDs,
+				wj.BbtchSpecID,
+				mbrshbledIDs,
 				wj.RepoID,
-				wj.Branch,
+				wj.Brbnch,
 				wj.Commit,
-				wj.Path,
-				pq.Array(wj.FileMatches),
-				wj.OnlyFetchWorkspace,
+				wj.Pbth,
+				pq.Arrby(wj.FileMbtches),
+				wj.OnlyFetchWorkspbce,
 				wj.Unsupported,
 				wj.Ignored,
 				wj.Skipped,
-				wj.CachedResultFound,
-				marshaledStepCacheResults,
-				wj.CreatedAt,
-				wj.UpdatedAt,
+				wj.CbchedResultFound,
+				mbrshbledStepCbcheResults,
+				wj.CrebtedAt,
+				wj.UpdbtedAt,
 			); err != nil {
 				return err
 			}
@@ -127,38 +127,38 @@ func (s *Store) CreateBatchSpecWorkspace(ctx context.Context, ws ...*btypes.Batc
 		return nil
 	}
 	i := -1
-	return batch.WithInserterWithReturn(
+	return bbtch.WithInserterWithReturn(
 		ctx,
-		s.Handle(),
-		"batch_spec_workspaces",
-		batch.MaxNumPostgresParameters,
-		batchSpecWorkspaceInsertColumns,
+		s.Hbndle(),
+		"bbtch_spec_workspbces",
+		bbtch.MbxNumPostgresPbrbmeters,
+		bbtchSpecWorkspbceInsertColumns,
 		"",
-		BatchSpecWorkspaceColums,
-		func(rows dbutil.Scanner) error {
+		BbtchSpecWorkspbceColums,
+		func(rows dbutil.Scbnner) error {
 			i++
-			return scanBatchSpecWorkspace(ws[i], rows)
+			return scbnBbtchSpecWorkspbce(ws[i], rows)
 		},
 		inserter,
 	)
 }
 
-// GetBatchSpecWorkspaceOpts captures the query options needed for getting a BatchSpecWorkspace
-type GetBatchSpecWorkspaceOpts struct {
+// GetBbtchSpecWorkspbceOpts cbptures the query options needed for getting b BbtchSpecWorkspbce
+type GetBbtchSpecWorkspbceOpts struct {
 	ID int64
 }
 
-// GetBatchSpecWorkspace gets a BatchSpecWorkspace matching the given options.
-func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWorkspaceOpts) (job *btypes.BatchSpecWorkspace, err error) {
-	ctx, _, endObservation := s.operations.getBatchSpecWorkspace.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("ID", int(opts.ID)),
+// GetBbtchSpecWorkspbce gets b BbtchSpecWorkspbce mbtching the given options.
+func (s *Store) GetBbtchSpecWorkspbce(ctx context.Context, opts GetBbtchSpecWorkspbceOpts) (job *btypes.BbtchSpecWorkspbce, err error) {
+	ctx, _, endObservbtion := s.operbtions.getBbtchSpecWorkspbce.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("ID", int(opts.ID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getBatchSpecWorkspaceQuery(&opts)
-	var c btypes.BatchSpecWorkspace
-	err = s.query(ctx, q, func(sc dbutil.Scanner) (err error) {
-		return scanBatchSpecWorkspace(&c, sc)
+	q := getBbtchSpecWorkspbceQuery(&opts)
+	vbr c btypes.BbtchSpecWorkspbce
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) (err error) {
+		return scbnBbtchSpecWorkspbce(&c, sc)
 	})
 	if err != nil {
 		return nil, err
@@ -171,133 +171,133 @@ func (s *Store) GetBatchSpecWorkspace(ctx context.Context, opts GetBatchSpecWork
 	return &c, nil
 }
 
-var getBatchSpecWorkspacesQueryFmtstr = `
-SELECT %s FROM batch_spec_workspaces
-INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+vbr getBbtchSpecWorkspbcesQueryFmtstr = `
+SELECT %s FROM bbtch_spec_workspbces
+INNER JOIN repo ON repo.id = bbtch_spec_workspbces.repo_id
 WHERE %s
 LIMIT 1
 `
 
-func getBatchSpecWorkspaceQuery(opts *GetBatchSpecWorkspaceOpts) *sqlf.Query {
+func getBbtchSpecWorkspbceQuery(opts *GetBbtchSpecWorkspbceOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
-		sqlf.Sprintf("batch_spec_workspaces.id = %s", opts.ID),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
+		sqlf.Sprintf("bbtch_spec_workspbces.id = %s", opts.ID),
 	}
 
 	return sqlf.Sprintf(
-		getBatchSpecWorkspacesQueryFmtstr,
-		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
+		getBbtchSpecWorkspbcesQueryFmtstr,
+		sqlf.Join(BbtchSpecWorkspbceColums.ToSqlf(), ", "),
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-// ListBatchSpecWorkspacesOpts captures the query options needed for
-// listing batch spec workspace jobs.
-type ListBatchSpecWorkspacesOpts struct {
+// ListBbtchSpecWorkspbcesOpts cbptures the query options needed for
+// listing bbtch spec workspbce jobs.
+type ListBbtchSpecWorkspbcesOpts struct {
 	LimitOpts
 	Cursor      int64
-	BatchSpecID int64
+	BbtchSpecID int64
 	IDs         []int64
 
-	State                            btypes.BatchSpecWorkspaceExecutionJobState
-	OnlyWithoutExecutionAndNotCached bool
-	OnlyCachedOrCompleted            bool
-	Cancel                           *bool
+	Stbte                            btypes.BbtchSpecWorkspbceExecutionJobStbte
+	OnlyWithoutExecutionAndNotCbched bool
+	OnlyCbchedOrCompleted            bool
+	Cbncel                           *bool
 	Skipped                          *bool
-	TextSearch                       []search.TextSearchTerm
+	TextSebrch                       []sebrch.TextSebrchTerm
 }
 
-func (opts ListBatchSpecWorkspacesOpts) SQLConds(ctx context.Context, db database.DB, forCount bool) (where *sqlf.Query, joinStatements *sqlf.Query, err error) {
+func (opts ListBbtchSpecWorkspbcesOpts) SQLConds(ctx context.Context, db dbtbbbse.DB, forCount bool) (where *sqlf.Query, joinStbtements *sqlf.Query, err error) {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
 	}
 	joins := []*sqlf.Query{}
 
 	if len(opts.IDs) != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id = ANY(%s)", pq.Array(opts.IDs)))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbces.id = ANY(%s)", pq.Arrby(opts.IDs)))
 	}
 
-	if opts.BatchSpecID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %d", opts.BatchSpecID))
+	if opts.BbtchSpecID != 0 {
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbces.bbtch_spec_id = %d", opts.BbtchSpecID))
 	}
 
 	if !forCount && opts.Cursor > 0 {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.id >= %s", opts.Cursor))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbces.id >= %s", opts.Cursor))
 	}
 
-	joinedExecution := false
+	joinedExecution := fblse
 	ensureJoinExecution := func() {
 		if joinedExecution {
 			return
 		}
-		joins = append(joins, sqlf.Sprintf("LEFT JOIN batch_spec_workspace_execution_jobs ON batch_spec_workspace_execution_jobs.batch_spec_workspace_id = batch_spec_workspaces.id"))
+		joins = bppend(joins, sqlf.Sprintf("LEFT JOIN bbtch_spec_workspbce_execution_jobs ON bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id = bbtch_spec_workspbces.id"))
 		joinedExecution = true
 	}
 
-	if opts.State != "" {
+	if opts.Stbte != "" {
 		ensureJoinExecution()
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state = %s", opts.State))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.stbte = %s", opts.Stbte))
 	}
 
-	if opts.OnlyWithoutExecutionAndNotCached {
+	if opts.OnlyWithoutExecutionAndNotCbched {
 		ensureJoinExecution()
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id IS NULL AND NOT batch_spec_workspaces.cached_result_found"))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.id IS NULL AND NOT bbtch_spec_workspbces.cbched_result_found"))
 	}
 
-	if opts.OnlyCachedOrCompleted {
+	if opts.OnlyCbchedOrCompleted {
 		ensureJoinExecution()
-		preds = append(preds, sqlf.Sprintf("(batch_spec_workspaces.cached_result_found OR batch_spec_workspace_execution_jobs.state = %s)", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+		preds = bppend(preds, sqlf.Sprintf("(bbtch_spec_workspbces.cbched_result_found OR bbtch_spec_workspbce_execution_jobs.stbte = %s)", btypes.BbtchSpecWorkspbceExecutionJobStbteCompleted))
 	}
 
-	if opts.Cancel != nil {
+	if opts.Cbncel != nil {
 		ensureJoinExecution()
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.cancel = %s", *opts.Cancel))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.cbncel = %s", *opts.Cbncel))
 	}
 
 	if opts.Skipped != nil {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspaces.skipped = %s", *opts.Skipped))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbces.skipped = %s", *opts.Skipped))
 	}
 
-	if len(opts.TextSearch) != 0 {
-		for _, term := range opts.TextSearch {
-			preds = append(preds, textSearchTermToClause(
+	if len(opts.TextSebrch) != 0 {
+		for _, term := rbnge opts.TextSebrch {
+			preds = bppend(preds, textSebrchTermToClbuse(
 				term,
-				// TODO: Add more terms here later.
-				sqlf.Sprintf("repo.name"),
+				// TODO: Add more terms here lbter.
+				sqlf.Sprintf("repo.nbme"),
 			))
 
-			// If we do text-search, we need to only consider workspaces in repos that are visible to the user.
-			// Otherwise we would leak the existance of repos.
+			// If we do text-sebrch, we need to only consider workspbces in repos thbt bre visible to the user.
+			// Otherwise we would lebk the existbnce of repos.
 
-			repoAuthzConds, err := database.AuthzQueryConds(ctx, db)
+			repoAuthzConds, err := dbtbbbse.AuthzQueryConds(ctx, db)
 			if err != nil {
-				return nil, nil, errors.Wrap(err, "ListBatchSpecWorkspacesOpts.SQLConds generating authz query conds")
+				return nil, nil, errors.Wrbp(err, "ListBbtchSpecWorkspbcesOpts.SQLConds generbting buthz query conds")
 			}
 
-			preds = append(preds, repoAuthzConds)
+			preds = bppend(preds, repoAuthzConds)
 		}
 	}
 
 	return sqlf.Join(preds, "\n AND "), sqlf.Join(joins, "\n"), nil
 }
 
-// ListBatchSpecWorkspaces lists batch spec workspaces with the given filters.
-func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
-	ctx, _, endObservation := s.operations.listBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// ListBbtchSpecWorkspbces lists bbtch spec workspbces with the given filters.
+func (s *Store) ListBbtchSpecWorkspbces(ctx context.Context, opts ListBbtchSpecWorkspbcesOpts) (cs []*btypes.BbtchSpecWorkspbce, next int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.listBbtchSpecWorkspbces.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q, err := listBatchSpecWorkspacesQuery(ctx, s.DatabaseDB(), opts)
+	q, err := listBbtchSpecWorkspbcesQuery(ctx, s.DbtbbbseDB(), opts)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	cs = make([]*btypes.BatchSpecWorkspace, 0)
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c btypes.BatchSpecWorkspace
-		if err := scanBatchSpecWorkspace(&c, sc); err != nil {
+	cs = mbke([]*btypes.BbtchSpecWorkspbce, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c btypes.BbtchSpecWorkspbce
+		if err := scbnBbtchSpecWorkspbce(&c, sc); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		cs = bppend(cs, &c)
 		return nil
 	})
 
@@ -309,286 +309,286 @@ func (s *Store) ListBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecW
 	return cs, next, err
 }
 
-var listBatchSpecWorkspacesQueryFmtstr = `
-SELECT %s FROM batch_spec_workspaces
-INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+vbr listBbtchSpecWorkspbcesQueryFmtstr = `
+SELECT %s FROM bbtch_spec_workspbces
+INNER JOIN repo ON repo.id = bbtch_spec_workspbces.repo_id
 %s
 WHERE %s
 ORDER BY id ASC
 `
 
-func listBatchSpecWorkspacesQuery(ctx context.Context, db database.DB, opts ListBatchSpecWorkspacesOpts) (*sqlf.Query, error) {
-	where, joins, err := opts.SQLConds(ctx, db, false)
+func listBbtchSpecWorkspbcesQuery(ctx context.Context, db dbtbbbse.DB, opts ListBbtchSpecWorkspbcesOpts) (*sqlf.Query, error) {
+	where, joins, err := opts.SQLConds(ctx, db, fblse)
 	if err != nil {
 		return nil, err
 	}
 	return sqlf.Sprintf(
-		listBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
-		sqlf.Join(BatchSpecWorkspaceColums.ToSqlf(), ", "),
+		listBbtchSpecWorkspbcesQueryFmtstr+opts.LimitOpts.ToDB(),
+		sqlf.Join(BbtchSpecWorkspbceColums.ToSqlf(), ", "),
 		joins,
 		where,
 	), nil
 }
 
-// CountBatchSpecWorkspaces counts batch spec workspaces with the given filters.
-func (s *Store) CountBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (count int64, err error) {
-	ctx, _, endObservation := s.operations.countBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// CountBbtchSpecWorkspbces counts bbtch spec workspbces with the given filters.
+func (s *Store) CountBbtchSpecWorkspbces(ctx context.Context, opts ListBbtchSpecWorkspbcesOpts) (count int64, err error) {
+	ctx, _, endObservbtion := s.operbtions.countBbtchSpecWorkspbces.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q, err := countBatchSpecWorkspacesQuery(ctx, s.DatabaseDB(), opts)
+	q, err := countBbtchSpecWorkspbcesQuery(ctx, s.DbtbbbseDB(), opts)
 	if err != nil {
 		return 0, err
 	}
 
-	count, _, err = basestore.ScanFirstInt64(s.Query(ctx, q))
+	count, _, err = bbsestore.ScbnFirstInt64(s.Query(ctx, q))
 	return count, err
 }
 
-var countBatchSpecWorkspacesQueryFmtstr = `
+vbr countBbtchSpecWorkspbcesQueryFmtstr = `
 SELECT
 	COUNT(1)
 FROM
-	batch_spec_workspaces
-INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+	bbtch_spec_workspbces
+INNER JOIN repo ON repo.id = bbtch_spec_workspbces.repo_id
 %s
 WHERE %s
 `
 
-func countBatchSpecWorkspacesQuery(ctx context.Context, db database.DB, opts ListBatchSpecWorkspacesOpts) (*sqlf.Query, error) {
+func countBbtchSpecWorkspbcesQuery(ctx context.Context, db dbtbbbse.DB, opts ListBbtchSpecWorkspbcesOpts) (*sqlf.Query, error) {
 	where, joins, err := opts.SQLConds(ctx, db, true)
 	if err != nil {
 		return nil, err
 	}
 
 	return sqlf.Sprintf(
-		countBatchSpecWorkspacesQueryFmtstr+opts.LimitOpts.ToDB(),
+		countBbtchSpecWorkspbcesQueryFmtstr+opts.LimitOpts.ToDB(),
 		joins,
 		where,
 	), nil
 }
 
-const markSkippedBatchSpecWorkspacesQueryFmtstr = `
+const mbrkSkippedBbtchSpecWorkspbcesQueryFmtstr = `
 UPDATE
-	batch_spec_workspaces
+	bbtch_spec_workspbces
 SET skipped = TRUE
-FROM batch_specs
+FROM bbtch_specs
 WHERE
-	batch_spec_workspaces.batch_spec_id = %s
+	bbtch_spec_workspbces.bbtch_spec_id = %s
 AND
-    batch_specs.id = batch_spec_workspaces.batch_spec_id
+    bbtch_specs.id = bbtch_spec_workspbces.bbtch_spec_id
 AND NOT %s
 `
 
-// MarkSkippedBatchSpecWorkspaces marks the workspace that were skipped in
-// CreateBatchSpecWorkspaceExecutionJobs as skipped.
-func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, _, endObservation := s.operations.markSkippedBatchSpecWorkspaces.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSpecID", int(batchSpecID)),
+// MbrkSkippedBbtchSpecWorkspbces mbrks the workspbce thbt were skipped in
+// CrebteBbtchSpecWorkspbceExecutionJobs bs skipped.
+func (s *Store) MbrkSkippedBbtchSpecWorkspbces(ctx context.Context, bbtchSpecID int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.mbrkSkippedBbtchSpecWorkspbces.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSpecID", int(bbtchSpecID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	q := sqlf.Sprintf(
-		markSkippedBatchSpecWorkspacesQueryFmtstr,
-		batchSpecID,
-		sqlf.Sprintf(executableWorkspaceJobsConditionFmtstr),
+		mbrkSkippedBbtchSpecWorkspbcesQueryFmtstr,
+		bbtchSpecID,
+		sqlf.Sprintf(executbbleWorkspbceJobsConditionFmtstr),
 	)
 	return s.Exec(ctx, q)
 }
 
-// ListRetryBatchSpecWorkspacesOpts options to determine which btypes.BatchSpecWorkspace to retrieve for retrying.
-type ListRetryBatchSpecWorkspacesOpts struct {
-	BatchSpecID      int64
+// ListRetryBbtchSpecWorkspbcesOpts options to determine which btypes.BbtchSpecWorkspbce to retrieve for retrying.
+type ListRetryBbtchSpecWorkspbcesOpts struct {
+	BbtchSpecID      int64
 	IncludeCompleted bool
 }
 
-// ListRetryBatchSpecWorkspaces lists all btypes.BatchSpecWorkspace to retry.
-func (s *Store) ListRetryBatchSpecWorkspaces(ctx context.Context, opts ListRetryBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
-	ctx, _, endObservation := s.operations.listRetryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+// ListRetryBbtchSpecWorkspbces lists bll btypes.BbtchSpecWorkspbce to retry.
+func (s *Store) ListRetryBbtchSpecWorkspbces(ctx context.Context, opts ListRetryBbtchSpecWorkspbcesOpts) (cs []*btypes.BbtchSpecWorkspbce, err error) {
+	ctx, _, endObservbtion := s.operbtions.listRetryBbtchSpecWorkspbces.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := getListRetryBatchSpecWorkspacesQuery(&opts)
-	cs = make([]*btypes.BatchSpecWorkspace, 0)
-	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
-		var c btypes.BatchSpecWorkspace
-		if err := sc.Scan(
+	q := getListRetryBbtchSpecWorkspbcesQuery(&opts)
+	cs = mbke([]*btypes.BbtchSpecWorkspbce, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scbnner) error {
+		vbr c btypes.BbtchSpecWorkspbce
+		if err := sc.Scbn(
 			&c.ID,
-			&jsonIDsSet{Assocs: &c.ChangesetSpecIDs},
+			&jsonIDsSet{Assocs: &c.ChbngesetSpecIDs},
 		); err != nil {
 			return err
 		}
-		cs = append(cs, &c)
+		cs = bppend(cs, &c)
 		return nil
 	})
 
 	return cs, err
 }
 
-func getListRetryBatchSpecWorkspacesQuery(opts *ListRetryBatchSpecWorkspacesOpts) *sqlf.Query {
+func getListRetryBbtchSpecWorkspbcesQuery(opts *ListRetryBbtchSpecWorkspbcesOpts) *sqlf.Query {
 	preds := []*sqlf.Query{
-		sqlf.Sprintf("repo.deleted_at IS NULL"),
-		sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %s", opts.BatchSpecID),
+		sqlf.Sprintf("repo.deleted_bt IS NULL"),
+		sqlf.Sprintf("bbtch_spec_workspbces.bbtch_spec_id = %s", opts.BbtchSpecID),
 	}
 
 	if !opts.IncludeCompleted {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state != %s", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+		preds = bppend(preds, sqlf.Sprintf("bbtch_spec_workspbce_execution_jobs.stbte != %s", btypes.BbtchSpecWorkspbceExecutionJobStbteCompleted))
 	}
 
 	return sqlf.Sprintf(
-		listRetryBatchSpecWorkspacesFmtstr,
+		listRetryBbtchSpecWorkspbcesFmtstr,
 		sqlf.Join(preds, "\n AND "),
 	)
 }
 
-const listRetryBatchSpecWorkspacesFmtstr = `
-SELECT batch_spec_workspaces.id, batch_spec_workspaces.changeset_spec_ids
-FROM batch_spec_workspaces
-		 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
-		 INNER JOIN batch_spec_workspace_execution_jobs
-					ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
+const listRetryBbtchSpecWorkspbcesFmtstr = `
+SELECT bbtch_spec_workspbces.id, bbtch_spec_workspbces.chbngeset_spec_ids
+FROM bbtch_spec_workspbces
+		 INNER JOIN repo ON repo.id = bbtch_spec_workspbces.repo_id
+		 INNER JOIN bbtch_spec_workspbce_execution_jobs
+					ON bbtch_spec_workspbces.id = bbtch_spec_workspbce_execution_jobs.bbtch_spec_workspbce_id
 WHERE %s
 `
 
-const disableBatchSpecWorkspaceExecutionCacheQueryFmtstr = `
-WITH batch_spec AS (
+const disbbleBbtchSpecWorkspbceExecutionCbcheQueryFmtstr = `
+WITH bbtch_spec AS (
 	SELECT
 		id
 	FROM
-		batch_specs
+		bbtch_specs
 	WHERE
 		id = %s
 		AND
-		no_cache
+		no_cbche
 ),
-candidate_batch_spec_workspaces AS (
+cbndidbte_bbtch_spec_workspbces AS (
 	SELECT
-		id, changeset_spec_ids
+		id, chbngeset_spec_ids
 	FROM
-		batch_spec_workspaces
+		bbtch_spec_workspbces
 	WHERE
-		batch_spec_workspaces.batch_spec_id = (SELECT id FROM batch_spec)
+		bbtch_spec_workspbces.bbtch_spec_id = (SELECT id FROM bbtch_spec)
 	ORDER BY id
 ),
-removable_changeset_specs AS (
+removbble_chbngeset_specs AS (
 	SELECT
 		id
 	FROM
-		changeset_specs
+		chbngeset_specs
 	WHERE
-		id IN (SELECT jsonb_object_keys(changeset_spec_ids)::bigint FROM candidate_batch_spec_workspaces)
+		id IN (SELECT jsonb_object_keys(chbngeset_spec_ids)::bigint FROM cbndidbte_bbtch_spec_workspbces)
 	ORDER BY id
 ),
-removed_changeset_specs AS (
-	DELETE FROM changeset_specs
+removed_chbngeset_specs AS (
+	DELETE FROM chbngeset_specs
 	WHERE
-		id IN (SELECT id FROM removable_changeset_specs)
+		id IN (SELECT id FROM removbble_chbngeset_specs)
 )
 UPDATE
-	batch_spec_workspaces
+	bbtch_spec_workspbces
 SET
-	cached_result_found = FALSE,
-	changeset_spec_ids = '{}',
-	step_cache_results = '{}'
+	cbched_result_found = FALSE,
+	chbngeset_spec_ids = '{}',
+	step_cbche_results = '{}'
 WHERE
-	id IN (SELECT id FROM candidate_batch_spec_workspaces)
+	id IN (SELECT id FROM cbndidbte_bbtch_spec_workspbces)
 `
 
-// DisableBatchSpecWorkspaceExecutionCache removes caching information from workspaces prior to execution.
-func (s *Store) DisableBatchSpecWorkspaceExecutionCache(ctx context.Context, batchSpecID int64) (err error) {
-	ctx, _, endObservation := s.operations.disableBatchSpecWorkspaceExecutionCache.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("batchSpecID", int(batchSpecID)),
+// DisbbleBbtchSpecWorkspbceExecutionCbche removes cbching informbtion from workspbces prior to execution.
+func (s *Store) DisbbleBbtchSpecWorkspbceExecutionCbche(ctx context.Context, bbtchSpecID int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.disbbleBbtchSpecWorkspbceExecutionCbche.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bbtchSpecID", int(bbtchSpecID)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	q := sqlf.Sprintf(disableBatchSpecWorkspaceExecutionCacheQueryFmtstr, batchSpecID)
+	q := sqlf.Sprintf(disbbleBbtchSpecWorkspbceExecutionCbcheQueryFmtstr, bbtchSpecID)
 	return s.Exec(ctx, q)
 }
 
-func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
-	var stepCacheResults json.RawMessage
+func scbnBbtchSpecWorkspbce(wj *btypes.BbtchSpecWorkspbce, s dbutil.Scbnner) error {
+	vbr stepCbcheResults json.RbwMessbge
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&wj.ID,
-		&wj.BatchSpecID,
-		&jsonIDsSet{Assocs: &wj.ChangesetSpecIDs},
+		&wj.BbtchSpecID,
+		&jsonIDsSet{Assocs: &wj.ChbngesetSpecIDs},
 		&wj.RepoID,
-		&wj.Branch,
+		&wj.Brbnch,
 		&wj.Commit,
-		&wj.Path,
-		pq.Array(&wj.FileMatches),
-		&wj.OnlyFetchWorkspace,
+		&wj.Pbth,
+		pq.Arrby(&wj.FileMbtches),
+		&wj.OnlyFetchWorkspbce,
 		&wj.Unsupported,
 		&wj.Ignored,
 		&wj.Skipped,
-		&wj.CachedResultFound,
-		&stepCacheResults,
-		&wj.CreatedAt,
-		&wj.UpdatedAt,
+		&wj.CbchedResultFound,
+		&stepCbcheResults,
+		&wj.CrebtedAt,
+		&wj.UpdbtedAt,
 	); err != nil {
 		return err
 	}
 
-	if err := json.Unmarshal(stepCacheResults, &wj.StepCacheResults); err != nil {
-		return errors.Wrap(err, "scanBatchSpecWorkspace: failed to unmarshal StepCacheResults")
+	if err := json.Unmbrshbl(stepCbcheResults, &wj.StepCbcheResults); err != nil {
+		return errors.Wrbp(err, "scbnBbtchSpecWorkspbce: fbiled to unmbrshbl StepCbcheResults")
 	}
 
 	return nil
 }
 
-func ScanFirstBatchSpecWorkspace(rows *sql.Rows, err error) (*btypes.BatchSpecWorkspace, bool, error) {
-	jobs, err := scanBatchSpecWorkspaces(rows, err)
+func ScbnFirstBbtchSpecWorkspbce(rows *sql.Rows, err error) (*btypes.BbtchSpecWorkspbce, bool, error) {
+	jobs, err := scbnBbtchSpecWorkspbces(rows, err)
 	if err != nil || len(jobs) == 0 {
-		return nil, false, err
+		return nil, fblse, err
 	}
 	return jobs[0], true, nil
 }
 
-func scanBatchSpecWorkspaces(rows *sql.Rows, queryErr error) ([]*btypes.BatchSpecWorkspace, error) {
+func scbnBbtchSpecWorkspbces(rows *sql.Rows, queryErr error) ([]*btypes.BbtchSpecWorkspbce, error) {
 	if queryErr != nil {
 		return nil, queryErr
 	}
 
-	var jobs []*btypes.BatchSpecWorkspace
+	vbr jobs []*btypes.BbtchSpecWorkspbce
 
-	return jobs, scanAll(rows, func(sc dbutil.Scanner) (err error) {
-		var j btypes.BatchSpecWorkspace
-		if err = scanBatchSpecWorkspace(&j, sc); err != nil {
+	return jobs, scbnAll(rows, func(sc dbutil.Scbnner) (err error) {
+		vbr j btypes.BbtchSpecWorkspbce
+		if err = scbnBbtchSpecWorkspbce(&j, sc); err != nil {
 			return err
 		}
-		jobs = append(jobs, &j)
+		jobs = bppend(jobs, &j)
 		return nil
 	})
 }
 
-// jsonIDsSet represents a "join table" set as a JSONB object where the keys
-// are the ids and the values are json objects. It implements the sql.Scanner
-// interface so it can be used as a scan destination, similar to
+// jsonIDsSet represents b "join tbble" set bs b JSONB object where the keys
+// bre the ids bnd the vblues bre json objects. It implements the sql.Scbnner
+// interfbce so it cbn be used bs b scbn destinbtion, similbr to
 // sql.NullString.
 type jsonIDsSet struct {
 	Assocs *[]int64
 }
 
-// Scan implements the Scanner interface.
-func (n *jsonIDsSet) Scan(value any) error {
-	m := make(map[int64]struct{})
+// Scbn implements the Scbnner interfbce.
+func (n *jsonIDsSet) Scbn(vblue bny) error {
+	m := mbke(mbp[int64]struct{})
 
-	switch value := value.(type) {
-	case nil:
-	case []byte:
-		if err := json.Unmarshal(value, &m); err != nil {
+	switch vblue := vblue.(type) {
+	cbse nil:
+	cbse []byte:
+		if err := json.Unmbrshbl(vblue, &m); err != nil {
 			return err
 		}
-	default:
-		return errors.Errorf("value is not []byte: %T", value)
+	defbult:
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
 	if *n.Assocs == nil {
-		*n.Assocs = make([]int64, 0, len(m))
+		*n.Assocs = mbke([]int64, 0, len(m))
 	} else {
 		*n.Assocs = (*n.Assocs)[:0]
 	}
 
-	for id := range m {
-		*n.Assocs = append(*n.Assocs, id)
+	for id := rbnge m {
+		*n.Assocs = bppend(*n.Assocs, id)
 	}
 
 	sort.Slice(*n.Assocs, func(i, j int) bool {

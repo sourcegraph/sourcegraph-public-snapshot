@@ -1,19 +1,19 @@
-package summary
+pbckbge summbry
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
-	Interval                   time.Duration
+	Intervbl                   time.Durbtion
 	NumRepositoriesToConfigure int
 }
 
-func (c *Config) Load() {
-	c.Interval = c.GetInterval("CODEINTEL_AUTOINDEXING_SUMMARY_BUILDER_INTERVAL", "30m", "How frequently to run the auto-indexing summary builder routine.")
-	c.NumRepositoriesToConfigure = c.GetInt("CODEINTEL_AUTOINDEXING_DASHBOARD_NUM_REPOSITORIES", "100", "The number of repositories to use to populate the global code intelligence edashboard.")
+func (c *Config) Lobd() {
+	c.Intervbl = c.GetIntervbl("CODEINTEL_AUTOINDEXING_SUMMARY_BUILDER_INTERVAL", "30m", "How frequently to run the buto-indexing summbry builder routine.")
+	c.NumRepositoriesToConfigure = c.GetInt("CODEINTEL_AUTOINDEXING_DASHBOARD_NUM_REPOSITORIES", "100", "The number of repositories to use to populbte the globbl code intelligence edbshbobrd.")
 }

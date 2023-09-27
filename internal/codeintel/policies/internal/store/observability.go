@@ -1,53 +1,53 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	repoCount                                   *observation.Operation
-	getConfigurationPolicies                    *observation.Operation
-	getConfigurationPolicyByID                  *observation.Operation
-	createConfigurationPolicy                   *observation.Operation
-	updateConfigurationPolicy                   *observation.Operation
-	deleteConfigurationPolicyByID               *observation.Operation
-	getRepoIDsByGlobPatterns                    *observation.Operation
-	updateReposMatchingPatterns                 *observation.Operation
-	selectPoliciesForRepositoryMembershipUpdate *observation.Operation
+type operbtions struct {
+	repoCount                                   *observbtion.Operbtion
+	getConfigurbtionPolicies                    *observbtion.Operbtion
+	getConfigurbtionPolicyByID                  *observbtion.Operbtion
+	crebteConfigurbtionPolicy                   *observbtion.Operbtion
+	updbteConfigurbtionPolicy                   *observbtion.Operbtion
+	deleteConfigurbtionPolicyByID               *observbtion.Operbtion
+	getRepoIDsByGlobPbtterns                    *observbtion.Operbtion
+	updbteReposMbtchingPbtterns                 *observbtion.Operbtion
+	selectPoliciesForRepositoryMembershipUpdbte *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
+			observbtionCtx.Registerer,
 			"codeintel_policies_store",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.policies.store.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.policies.store.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
+	return &operbtions{
 		repoCount:                                   op("RepoCount"),
-		getConfigurationPolicies:                    op("GetConfigurationPolicies"),
-		getConfigurationPolicyByID:                  op("GetConfigurationPolicyByID"),
-		createConfigurationPolicy:                   op("CreateConfigurationPolicy"),
-		updateConfigurationPolicy:                   op("UpdateConfigurationPolicy"),
-		deleteConfigurationPolicyByID:               op("DeleteConfigurationPolicyByID"),
-		getRepoIDsByGlobPatterns:                    op("GetRepoIDsByGlobPatterns"),
-		updateReposMatchingPatterns:                 op("UpdateReposMatchingPatterns"),
-		selectPoliciesForRepositoryMembershipUpdate: op("SelectPoliciesForRepositoryMembershipUpdate"),
+		getConfigurbtionPolicies:                    op("GetConfigurbtionPolicies"),
+		getConfigurbtionPolicyByID:                  op("GetConfigurbtionPolicyByID"),
+		crebteConfigurbtionPolicy:                   op("CrebteConfigurbtionPolicy"),
+		updbteConfigurbtionPolicy:                   op("UpdbteConfigurbtionPolicy"),
+		deleteConfigurbtionPolicyByID:               op("DeleteConfigurbtionPolicyByID"),
+		getRepoIDsByGlobPbtterns:                    op("GetRepoIDsByGlobPbtterns"),
+		updbteReposMbtchingPbtterns:                 op("UpdbteReposMbtchingPbtterns"),
+		selectPoliciesForRepositoryMembershipUpdbte: op("SelectPoliciesForRepositoryMembershipUpdbte"),
 	}
 }

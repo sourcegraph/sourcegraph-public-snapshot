@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"context"
@@ -9,63 +9,63 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/oauthtoken"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthtoken"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Provider implements authz.Provider for GitHub repository permissions.
+// Provider implements buthz.Provider for GitHub repository permissions.
 type Provider struct {
 	urn      string
 	client   func() (client, error)
 	codeHost *extsvc.CodeHost
-	// groupsCache may be nil if group caching is disabled (negative TTL)
-	groupsCache *cachedGroups
+	// groupsCbche mby be nil if group cbching is disbbled (negbtive TTL)
+	groupsCbche *cbchedGroups
 
-	// enableGithubInternalRepoVisibility is a feature flag to optionally enable a fix for
-	// internal repos on GithHub Enterprise. At the moment we do not handle internal repos
-	// explicitly and allow all org members to read it irrespective of repo permissions. We have
-	// this as a temporary feature flag here to guard against any regressions. This will go away as
-	// soon as we have verified our approach works and is reliable, at which point the fix will
-	// become the default behaviour.
-	enableGithubInternalRepoVisibility bool
+	// enbbleGithubInternblRepoVisibility is b febture flbg to optionblly enbble b fix for
+	// internbl repos on GithHub Enterprise. At the moment we do not hbndle internbl repos
+	// explicitly bnd bllow bll org members to rebd it irrespective of repo permissions. We hbve
+	// this bs b temporbry febture flbg here to gubrd bgbinst bny regressions. This will go bwby bs
+	// soon bs we hbve verified our bpprobch works bnd is relibble, bt which point the fix will
+	// become the defbult behbviour.
+	enbbleGithubInternblRepoVisibility bool
 
-	db database.DB
+	db dbtbbbse.DB
 }
 
 type ProviderOptions struct {
-	// If a GitHubClient is not provided, one is constructed from GitHubURL
+	// If b GitHubClient is not provided, one is constructed from GitHubURL
 	GitHubClient *github.V3Client
 	GitHubURL    *url.URL
 
-	BaseAuther     auth.Authenticator
-	GroupsCacheTTL time.Duration
+	BbseAuther     buth.Authenticbtor
+	GroupsCbcheTTL time.Durbtion
 	IsApp          bool
-	DB             database.DB
+	DB             dbtbbbse.DB
 }
 
 func NewProvider(urn string, opts ProviderOptions) *Provider {
 	if opts.GitHubClient == nil {
-		apiURL, _ := github.APIRoot(opts.GitHubURL)
+		bpiURL, _ := github.APIRoot(opts.GitHubURL)
 		opts.GitHubClient = github.NewV3Client(log.Scoped("provider.github.v3", "provider github client"),
-			urn, apiURL, opts.BaseAuther, nil)
+			urn, bpiURL, opts.BbseAuther, nil)
 	}
 
 	codeHost := extsvc.NewCodeHost(opts.GitHubURL, extsvc.TypeGitHub)
 
-	var cg *cachedGroups
-	if opts.GroupsCacheTTL >= 0 {
-		cg = &cachedGroups{
-			cache: rcache.NewWithTTL(
-				fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(opts.GroupsCacheTTL.Seconds()),
+	vbr cg *cbchedGroups
+	if opts.GroupsCbcheTTL >= 0 {
+		cg = &cbchedGroups{
+			cbche: rcbche.NewWithTTL(
+				fmt.Sprintf("gh_groups_perms:%s:%s", codeHost.ServiceID, urn), int(opts.GroupsCbcheTTL.Seconds()),
 			),
 		}
 	}
@@ -73,18 +73,18 @@ func NewProvider(urn string, opts ProviderOptions) *Provider {
 	return &Provider{
 		urn:         urn,
 		codeHost:    codeHost,
-		groupsCache: cg,
+		groupsCbche: cg,
 		client: func() (client, error) {
-			return &ClientAdapter{V3Client: opts.GitHubClient}, nil
+			return &ClientAdbpter{V3Client: opts.GitHubClient}, nil
 		},
 		db: opts.DB,
 	}
 }
 
-var _ authz.Provider = (*Provider)(nil)
+vbr _ buthz.Provider = (*Provider)(nil)
 
-// FetchAccount implements the authz.Provider interface. It always returns nil, because the GitHub
-// API doesn't currently provide a way to fetch user by external SSO account.
+// FetchAccount implements the buthz.Provider interfbce. It blwbys returns nil, becbuse the GitHub
+// API doesn't currently provide b wby to fetch user by externbl SSO bccount.
 func (p *Provider) FetchAccount(context.Context, *types.User, []*extsvc.Account, []string) (mine *extsvc.Account, err error) {
 	return nil, nil
 }
@@ -101,7 +101,7 @@ func (p *Provider) ServiceType() string {
 	return p.codeHost.ServiceType
 }
 
-func (p *Provider) ValidateConnection(ctx context.Context) error {
+func (p *Provider) VblidbteConnection(ctx context.Context) error {
 	required, ok := p.requiredAuthScopes()
 	if !ok {
 		return nil
@@ -109,455 +109,455 @@ func (p *Provider) ValidateConnection(ctx context.Context) error {
 
 	client, err := p.client()
 	if err != nil {
-		return errors.Wrap(err, "unable to get client")
+		return errors.Wrbp(err, "unbble to get client")
 	}
 
-	scopes, err := client.GetAuthenticatedOAuthScopes(ctx)
+	scopes, err := client.GetAuthenticbtedOAuthScopes(ctx)
 	if err != nil {
-		return errors.Wrap(err, "additional OAuth scopes are required, but failed to get available scopes")
+		return errors.Wrbp(err, "bdditionbl OAuth scopes bre required, but fbiled to get bvbilbble scopes")
 	}
 
-	gotScopes := make(map[string]struct{})
-	for _, gotScope := range scopes {
+	gotScopes := mbke(mbp[string]struct{})
+	for _, gotScope := rbnge scopes {
 		gotScopes[gotScope] = struct{}{}
 	}
 
-	// check if required scopes are satisfied
-	satisfiesScope := false
-	for _, s := range required.oneOf {
+	// check if required scopes bre sbtisfied
+	sbtisfiesScope := fblse
+	for _, s := rbnge required.oneOf {
 		if _, found := gotScopes[s]; found {
-			satisfiesScope = true
-			break
+			sbtisfiesScope = true
+			brebk
 		}
 	}
-	if !satisfiesScope {
-		return errors.New(required.message)
+	if !sbtisfiesScope {
+		return errors.New(required.messbge)
 	}
 
 	return nil
 }
 
 type requiredAuthScope struct {
-	// at least one of these scopes is required
+	// bt lebst one of these scopes is required
 	oneOf []string
-	// message to display if this required auth scope is not satisfied
-	message string
+	// messbge to displby if this required buth scope is not sbtisfied
+	messbge string
 }
 
 func (p *Provider) requiredAuthScopes() (requiredAuthScope, bool) {
-	if p.groupsCache == nil {
-		return requiredAuthScope{}, false
+	if p.groupsCbche == nil {
+		return requiredAuthScope{}, fblse
 	}
 
-	// Needs extra scope to pull group permissions
+	// Needs extrb scope to pull group permissions
 	return requiredAuthScope{
-		oneOf: []string{"read:org", "write:org", "admin:org"},
-		message: "Scope `read:org`, `write:org`, or `admin:org` is required to enable `authorization.groupsCacheTTL` - " +
-			"please provide a `token` with the required scopes, or try updating the [**site configuration**](/site-admin/configuration)'s " +
-			"corresponding entry in [`auth.providers`](https://docs.sourcegraph.com/admin/auth) to enable `allowGroupsPermissionsSync`.",
+		oneOf: []string{"rebd:org", "write:org", "bdmin:org"},
+		messbge: "Scope `rebd:org`, `write:org`, or `bdmin:org` is required to enbble `buthorizbtion.groupsCbcheTTL` - " +
+			"plebse provide b `token` with the required scopes, or try updbting the [**site configurbtion**](/site-bdmin/configurbtion)'s " +
+			"corresponding entry in [`buth.providers`](https://docs.sourcegrbph.com/bdmin/buth) to enbble `bllowGroupsPermissionsSync`.",
 	}, true
 }
 
-// fetchUserPermsByToken fetches all the private repo ids that the token can access.
+// fetchUserPermsByToken fetches bll the privbte repo ids thbt the token cbn bccess.
 //
-// This may return a partial result if an error is encountered, e.g. via rate limits.
-func (p *Provider) fetchUserPermsByToken(ctx context.Context, accountID extsvc.AccountID, token *auth.OAuthBearerToken, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	// 🚨 SECURITY: Use user token is required to only list repositories the user has access to.
-	logger := log.Scoped("fetchUserPermsByToken", "fetches all the private repo ids that the token can access.")
+// This mby return b pbrtibl result if bn error is encountered, e.g. vib rbte limits.
+func (p *Provider) fetchUserPermsByToken(ctx context.Context, bccountID extsvc.AccountID, token *buth.OAuthBebrerToken, opts buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	// 🚨 SECURITY: Use user token is required to only list repositories the user hbs bccess to.
+	logger := log.Scoped("fetchUserPermsByToken", "fetches bll the privbte repo ids thbt the token cbn bccess.")
 
 	client, err := p.client()
 	if err != nil {
-		return nil, errors.Wrap(err, "get client")
+		return nil, errors.Wrbp(err, "get client")
 	}
 
-	client = client.WithAuthenticator(token)
+	client = client.WithAuthenticbtor(token)
 
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
+	// 100 mbtches the mbximum pbge size, thus b good defbult to bvoid multiple bllocbtions
+	// when bppending the first 100 results to the slice.
 	const repoSetSize = 100
 
-	var (
-		// perms tracks repos this user has access to
-		perms = &authz.ExternalUserPermissions{
-			Exacts: make([]extsvc.RepoID, 0, repoSetSize),
+	vbr (
+		// perms trbcks repos this user hbs bccess to
+		perms = &buthz.ExternblUserPermissions{
+			Exbcts: mbke([]extsvc.RepoID, 0, repoSetSize),
 		}
-		// seenRepos helps prevent duplication if necessary for groupsCache. Left unset
-		// indicates it is unused.
-		seenRepos map[extsvc.RepoID]struct{}
-		// addRepoToUserPerms checks if the given repos are already tracked before adding
-		// it to perms for groupsCache, otherwise just adds directly
-		addRepoToUserPerms func(repos ...extsvc.RepoID)
-		// Repository affiliations to list for - groupsCache only lists for a subset. Left
-		// unset indicates all affiliations should be sync'd.
-		affiliations []github.RepositoryAffiliation
+		// seenRepos helps prevent duplicbtion if necessbry for groupsCbche. Left unset
+		// indicbtes it is unused.
+		seenRepos mbp[extsvc.RepoID]struct{}
+		// bddRepoToUserPerms checks if the given repos bre blrebdy trbcked before bdding
+		// it to perms for groupsCbche, otherwise just bdds directly
+		bddRepoToUserPerms func(repos ...extsvc.RepoID)
+		// Repository bffilibtions to list for - groupsCbche only lists for b subset. Left
+		// unset indicbtes bll bffilibtions should be sync'd.
+		bffilibtions []github.RepositoryAffilibtion
 	)
 
-	// If cache is disabled the code path is simpler, avoid allocating memory
-	if p.groupsCache == nil { // Groups cache is disabled
-		// addRepoToUserPerms just appends
-		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
-			perms.Exacts = append(perms.Exacts, repos...)
+	// If cbche is disbbled the code pbth is simpler, bvoid bllocbting memory
+	if p.groupsCbche == nil { // Groups cbche is disbbled
+		// bddRepoToUserPerms just bppends
+		bddRepoToUserPerms = func(repos ...extsvc.RepoID) {
+			perms.Exbcts = bppend(perms.Exbcts, repos...)
 		}
-	} else { // Groups cache is enabled
-		// Instantiate map for deduplicating repos
-		seenRepos = make(map[extsvc.RepoID]struct{}, repoSetSize)
-		// addRepoToUserPerms checks for duplicates before appending
-		addRepoToUserPerms = func(repos ...extsvc.RepoID) {
-			for _, repo := range repos {
+	} else { // Groups cbche is enbbled
+		// Instbntibte mbp for deduplicbting repos
+		seenRepos = mbke(mbp[extsvc.RepoID]struct{}, repoSetSize)
+		// bddRepoToUserPerms checks for duplicbtes before bppending
+		bddRepoToUserPerms = func(repos ...extsvc.RepoID) {
+			for _, repo := rbnge repos {
 				if _, exists := seenRepos[repo]; !exists {
 					seenRepos[repo] = struct{}{}
-					perms.Exacts = append(perms.Exacts, repo)
+					perms.Exbcts = bppend(perms.Exbcts, repo)
 				}
 			}
 		}
-		// We sync just a subset of direct affiliations - we let other permissions
-		// ('organization' affiliation) be sync'd by teams/orgs.
-		affiliations = []github.RepositoryAffiliation{github.AffiliationOwner, github.AffiliationCollaborator}
+		// We sync just b subset of direct bffilibtions - we let other permissions
+		// ('orgbnizbtion' bffilibtion) be sync'd by tebms/orgs.
+		bffilibtions = []github.RepositoryAffilibtion{github.AffilibtionOwner, github.AffilibtionCollbborbtor}
 	}
 
-	// Sync direct affiliations
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var err error
-		var repos []*github.Repository
-		repos, hasNextPage, _, err = client.ListAffiliatedRepositories(ctx, github.VisibilityPrivate, page, 100, affiliations...)
+	// Sync direct bffilibtions
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr err error
+		vbr repos []*github.Repository
+		repos, hbsNextPbge, _, err = client.ListAffilibtedRepositories(ctx, github.VisibilityPrivbte, pbge, 100, bffilibtions...)
 		if err != nil {
-			return perms, errors.Wrap(err, "list repos for user")
+			return perms, errors.Wrbp(err, "list repos for user")
 		}
 
-		for _, r := range repos {
-			addRepoToUserPerms(extsvc.RepoID(r.ID))
+		for _, r := rbnge repos {
+			bddRepoToUserPerms(extsvc.RepoID(r.ID))
 		}
 	}
 
-	// We're done if groups caching is disabled or no accountID is available.
-	if p.groupsCache == nil || accountID == "" {
+	// We're done if groups cbching is disbbled or no bccountID is bvbilbble.
+	if p.groupsCbche == nil || bccountID == "" {
 		return perms, nil
 	}
 
-	// Now, we look for groups this user belongs to that give access to additional
+	// Now, we look for groups this user belongs to thbt give bccess to bdditionbl
 	// repositories.
-	groups, err := p.getUserAffiliatedGroups(ctx, client, opts)
+	groups, err := p.getUserAffilibtedGroups(ctx, client, opts)
 	if err != nil {
-		return perms, errors.Wrap(err, "get groups affiliated with user")
+		return perms, errors.Wrbp(err, "get groups bffilibted with user")
 	}
 
-	// Get repos from groups, cached if possible.
-	for _, group := range groups {
-		// If this is a partial cache, add self to group
+	// Get repos from groups, cbched if possible.
+	for _, group := rbnge groups {
+		// If this is b pbrtibl cbche, bdd self to group
 		if len(group.Users) > 0 {
-			hasUser := false
-			for _, user := range group.Users {
-				if user == accountID {
-					hasUser = true
-					break
+			hbsUser := fblse
+			for _, user := rbnge group.Users {
+				if user == bccountID {
+					hbsUser = true
+					brebk
 				}
 			}
-			if !hasUser {
-				group.Users = append(group.Users, accountID)
-				if err := p.groupsCache.setGroup(group); err != nil {
-					logger.Warn("setting group", log.Error(err))
+			if !hbsUser {
+				group.Users = bppend(group.Users, bccountID)
+				if err := p.groupsCbche.setGroup(group); err != nil {
+					logger.Wbrn("setting group", log.Error(err))
 				}
 			}
 		}
 
-		// If a valid cached value was found, use it and continue. Check for a nil,
-		// because it is possible this cached group does not have any repositories, in
-		// which case it should have a non-nil length 0 slice of repositories.
+		// If b vblid cbched vblue wbs found, use it bnd continue. Check for b nil,
+		// becbuse it is possible this cbched group does not hbve bny repositories, in
+		// which cbse it should hbve b non-nil length 0 slice of repositories.
 		if group.Repositories != nil {
-			addRepoToUserPerms(group.Repositories...)
+			bddRepoToUserPerms(group.Repositories...)
 			continue
 		}
 
-		// Perform full sync. Start with instantiating the repos slice.
-		group.Repositories = make([]extsvc.RepoID, 0, repoSetSize)
-		isOrg := group.Team == ""
-		hasNextPage = true
-		for page := 1; hasNextPage; page++ {
-			var repos []*github.Repository
+		// Perform full sync. Stbrt with instbntibting the repos slice.
+		group.Repositories = mbke([]extsvc.RepoID, 0, repoSetSize)
+		isOrg := group.Tebm == ""
+		hbsNextPbge = true
+		for pbge := 1; hbsNextPbge; pbge++ {
+			vbr repos []*github.Repository
 			if isOrg {
-				repos, hasNextPage, _, err = client.ListOrgRepositories(ctx, group.Org, page, "")
+				repos, hbsNextPbge, _, err = client.ListOrgRepositories(ctx, group.Org, pbge, "")
 			} else {
-				repos, hasNextPage, _, err = client.ListTeamRepositories(ctx, group.Org, group.Team, page)
+				repos, hbsNextPbge, _, err = client.ListTebmRepositories(ctx, group.Org, group.Tebm, pbge)
 			}
-			if github.IsNotFound(err) || github.HTTPErrorCode(err) == http.StatusForbidden {
-				// If we get a 403/404 here, something funky is going on and this is very
-				// unexpected. Since this is likely not transient, instead of bailing out and
-				// potentially causing unbounded retries later, we let this result proceed to
-				// cache. This is safe because the cache will eventually get invalidated, at
-				// which point we can retry this group, or a sync can be triggered that marks the
-				// cached group as invalidated. GitHub sometimes returns 403 when requesting team
-				// or org information when the token is not allowed to see it, so we treat it the
-				// same as 404.
-				logger.Debug("list repos for group: unexpected 403/404, persisting to cache",
+			if github.IsNotFound(err) || github.HTTPErrorCode(err) == http.StbtusForbidden {
+				// If we get b 403/404 here, something funky is going on bnd this is very
+				// unexpected. Since this is likely not trbnsient, instebd of bbiling out bnd
+				// potentiblly cbusing unbounded retries lbter, we let this result proceed to
+				// cbche. This is sbfe becbuse the cbche will eventublly get invblidbted, bt
+				// which point we cbn retry this group, or b sync cbn be triggered thbt mbrks the
+				// cbched group bs invblidbted. GitHub sometimes returns 403 when requesting tebm
+				// or org informbtion when the token is not bllowed to see it, so we trebt it the
+				// sbme bs 404.
+				logger.Debug("list repos for group: unexpected 403/404, persisting to cbche",
 					log.Error(err))
 			} else if err != nil {
-				// Add and return what we've found on this page but don't persist group
-				// to cache
-				for _, r := range repos {
-					addRepoToUserPerms(extsvc.RepoID(r.ID))
+				// Add bnd return whbt we've found on this pbge but don't persist group
+				// to cbche
+				for _, r := rbnge repos {
+					bddRepoToUserPerms(extsvc.RepoID(r.ID))
 				}
-				return perms, errors.Wrap(err, "list repos for group")
+				return perms, errors.Wrbp(err, "list repos for group")
 			}
-			// Add results to both group (for persistence) and permissions for user
-			for _, r := range repos {
+			// Add results to both group (for persistence) bnd permissions for user
+			for _, r := rbnge repos {
 				repoID := extsvc.RepoID(r.ID)
-				group.Repositories = append(group.Repositories, repoID)
-				addRepoToUserPerms(repoID)
+				group.Repositories = bppend(group.Repositories, repoID)
+				bddRepoToUserPerms(repoID)
 			}
 		}
 
-		// Persist repos affiliated with group to cache
-		if err := p.groupsCache.setGroup(group); err != nil {
-			logger.Warn("setting group", log.Error(err))
+		// Persist repos bffilibted with group to cbche
+		if err := p.groupsCbche.setGroup(group); err != nil {
+			logger.Wbrn("setting group", log.Error(err))
 		}
 	}
 
 	return perms, nil
 }
 
-// FetchUserPerms returns a list of repository IDs (on code host) that the given account
-// has read access on the code host. The repository ID has the same value as it would be
-// used as api.ExternalRepoSpec.ID. The returned list only includes private repository IDs.
+// FetchUserPerms returns b list of repository IDs (on code host) thbt the given bccount
+// hbs rebd bccess on the code host. The repository ID hbs the sbme vblue bs it would be
+// used bs bpi.ExternblRepoSpec.ID. The returned list only includes privbte repository IDs.
 //
-// This method may return partial but valid results in case of error, and it is up to
-// callers to decide whether to discard.
+// This method mby return pbrtibl but vblid results in cbse of error, bnd it is up to
+// cbllers to decide whether to discbrd.
 //
-// API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-authenticated-user
-func (p *Provider) FetchUserPerms(ctx context.Context, account *extsvc.Account, opts authz.FetchPermsOptions) (*authz.ExternalUserPermissions, error) {
-	if account == nil {
-		return nil, errors.New("no account provided")
-	} else if !extsvc.IsHostOfAccount(p.codeHost, account) {
-		return nil, errors.Errorf("not a code host of the account: want %q but have %q",
-			account.AccountSpec.ServiceID, p.codeHost.ServiceID)
+// API docs: https://developer.github.com/v3/repos/#list-repositories-for-the-buthenticbted-user
+func (p *Provider) FetchUserPerms(ctx context.Context, bccount *extsvc.Account, opts buthz.FetchPermsOptions) (*buthz.ExternblUserPermissions, error) {
+	if bccount == nil {
+		return nil, errors.New("no bccount provided")
+	} else if !extsvc.IsHostOfAccount(p.codeHost, bccount) {
+		return nil, errors.Errorf("not b code host of the bccount: wbnt %q but hbve %q",
+			bccount.AccountSpec.ServiceID, p.codeHost.ServiceID)
 	}
 
-	_, tok, err := github.GetExternalAccountData(ctx, &account.AccountData)
+	_, tok, err := github.GetExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 	if err != nil {
-		return nil, errors.Wrap(err, "get external account data")
+		return nil, errors.Wrbp(err, "get externbl bccount dbtb")
 	} else if tok == nil {
-		return nil, errors.New("no token found in the external account data")
+		return nil, errors.New("no token found in the externbl bccount dbtb")
 	}
 
-	oauthToken := &auth.OAuthBearerToken{
+	obuthToken := &buth.OAuthBebrerToken{
 		Token:              tok.AccessToken,
 		RefreshToken:       tok.RefreshToken,
 		Expiry:             tok.Expiry,
-		RefreshFunc:        oauthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternalAccounts(), account.ID, github.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
+		RefreshFunc:        obuthtoken.GetAccountRefreshAndStoreOAuthTokenFunc(p.db.UserExternblAccounts(), bccount.ID, github.GetOAuthContext(strings.TrimSuffix(p.ServiceID(), "/"))),
 		NeedsRefreshBuffer: 5,
 	}
 
-	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(account.AccountID), oauthToken, opts)
+	return p.fetchUserPermsByToken(ctx, extsvc.AccountID(bccount.AccountID), obuthToken, opts)
 }
 
-// FetchRepoPerms returns a list of user IDs (on code host) who have read access to
-// the given project on the code host. The user ID has the same value as it would
-// be used as extsvc.Account.AccountID. The returned list includes both direct access
-// and inherited from the organization membership.
+// FetchRepoPerms returns b list of user IDs (on code host) who hbve rebd bccess to
+// the given project on the code host. The user ID hbs the sbme vblue bs it would
+// be used bs extsvc.Account.AccountID. The returned list includes both direct bccess
+// bnd inherited from the orgbnizbtion membership.
 //
-// This method may return partial but valid results in case of error, and it is up to
-// callers to decide whether to discard.
+// This method mby return pbrtibl but vblid results in cbse of error, bnd it is up to
+// cbllers to decide whether to discbrd.
 //
-// API docs: https://developer.github.com/v4/object/repositorycollaboratorconnection/
-func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts authz.FetchPermsOptions) ([]extsvc.AccountID, error) {
+// API docs: https://developer.github.com/v4/object/repositorycollbborbtorconnection/
+func (p *Provider) FetchRepoPerms(ctx context.Context, repo *extsvc.Repository, opts buthz.FetchPermsOptions) ([]extsvc.AccountID, error) {
 	if repo == nil {
 		return nil, errors.New("no repository provided")
-	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternalRepoSpec) {
-		return nil, errors.Errorf("not a code host of the repository: want %q but have %q",
+	} else if !extsvc.IsHostOfRepo(p.codeHost, &repo.ExternblRepoSpec) {
+		return nil, errors.Errorf("not b code host of the repository: wbnt %q but hbve %q",
 			repo.ServiceID, p.codeHost.ServiceID)
 	}
 
-	// NOTE: We do not store port or scheme in our URI, so stripping the hostname alone is enough.
-	nameWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BaseURL.Hostname())
-	nameWithOwner = strings.TrimPrefix(nameWithOwner, "/")
+	// NOTE: We do not store port or scheme in our URI, so stripping the hostnbme blone is enough.
+	nbmeWithOwner := strings.TrimPrefix(repo.URI, p.codeHost.BbseURL.Hostnbme())
+	nbmeWithOwner = strings.TrimPrefix(nbmeWithOwner, "/")
 
-	owner, name, err := github.SplitRepositoryNameWithOwner(nameWithOwner)
+	owner, nbme, err := github.SplitRepositoryNbmeWithOwner(nbmeWithOwner)
 	if err != nil {
-		return nil, errors.Wrap(err, "split nameWithOwner")
+		return nil, errors.Wrbp(err, "split nbmeWithOwner")
 	}
 
-	// 100 matches the maximum page size, thus a good default to avoid multiple allocations
-	// when appending the first 100 results to the slice.
-	const userPageSize = 100
+	// 100 mbtches the mbximum pbge size, thus b good defbult to bvoid multiple bllocbtions
+	// when bppending the first 100 results to the slice.
+	const userPbgeSize = 100
 
-	var (
-		// userIDs tracks users with access to this repo
-		userIDs = make([]extsvc.AccountID, 0, userPageSize)
-		// seenUsers helps deduplication of userIDs for groupsCache. Left unset indicates
+	vbr (
+		// userIDs trbcks users with bccess to this repo
+		userIDs = mbke([]extsvc.AccountID, 0, userPbgeSize)
+		// seenUsers helps deduplicbtion of userIDs for groupsCbche. Left unset indicbtes
 		// it is unused.
-		seenUsers map[extsvc.AccountID]struct{}
-		// addUserToRepoPerms checks if the given users are already tracked before adding
-		// it to perms for groupsCache, otherwise just adds directly
-		addUserToRepoPerms func(users ...extsvc.AccountID)
-		// affiliations to list for - groupCache only lists for a subset. Left unset indicates
-		// all affiliations should be sync'd.
-		affiliation github.CollaboratorAffiliation
+		seenUsers mbp[extsvc.AccountID]struct{}
+		// bddUserToRepoPerms checks if the given users bre blrebdy trbcked before bdding
+		// it to perms for groupsCbche, otherwise just bdds directly
+		bddUserToRepoPerms func(users ...extsvc.AccountID)
+		// bffilibtions to list for - groupCbche only lists for b subset. Left unset indicbtes
+		// bll bffilibtions should be sync'd.
+		bffilibtion github.CollbborbtorAffilibtion
 	)
 
-	// If cache is disabled the code path is simpler, avoid allocating memory
-	if p.groupsCache == nil { // groups cache is disabled
-		// addUserToRepoPerms just adds to perms.
-		addUserToRepoPerms = func(users ...extsvc.AccountID) {
-			userIDs = append(userIDs, users...)
+	// If cbche is disbbled the code pbth is simpler, bvoid bllocbting memory
+	if p.groupsCbche == nil { // groups cbche is disbbled
+		// bddUserToRepoPerms just bdds to perms.
+		bddUserToRepoPerms = func(users ...extsvc.AccountID) {
+			userIDs = bppend(userIDs, users...)
 		}
-	} else { // groups cache is enabled
-		// instantiate map to help with deduplication
-		seenUsers = make(map[extsvc.AccountID]struct{}, userPageSize)
-		// addUserToRepoPerms checks if the given users are already tracked before adding it to perms.
-		addUserToRepoPerms = func(users ...extsvc.AccountID) {
-			for _, user := range users {
+	} else { // groups cbche is enbbled
+		// instbntibte mbp to help with deduplicbtion
+		seenUsers = mbke(mbp[extsvc.AccountID]struct{}, userPbgeSize)
+		// bddUserToRepoPerms checks if the given users bre blrebdy trbcked before bdding it to perms.
+		bddUserToRepoPerms = func(users ...extsvc.AccountID) {
+			for _, user := rbnge users {
 				if _, exists := seenUsers[user]; !exists {
 					seenUsers[user] = struct{}{}
-					userIDs = append(userIDs, user)
+					userIDs = bppend(userIDs, user)
 				}
 			}
 		}
-		// If groups caching is enabled, we sync just direct affiliations, and sync org/team
-		// collaborators separately from cache
-		affiliation = github.AffiliationDirect
+		// If groups cbching is enbbled, we sync just direct bffilibtions, bnd sync org/tebm
+		// collbborbtors sepbrbtely from cbche
+		bffilibtion = github.AffilibtionDirect
 	}
 
 	client, err := p.client()
 	if err != nil {
-		return nil, errors.Wrap(err, "get client")
+		return nil, errors.Wrbp(err, "get client")
 	}
 
-	// Sync collaborators
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var err error
-		var users []*github.Collaborator
-		users, hasNextPage, err = client.ListRepositoryCollaborators(ctx, owner, name, page, affiliation)
+	// Sync collbborbtors
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr err error
+		vbr users []*github.Collbborbtor
+		users, hbsNextPbge, err = client.ListRepositoryCollbborbtors(ctx, owner, nbme, pbge, bffilibtion)
 		if err != nil {
-			return userIDs, errors.Wrap(err, "list users for repo")
+			return userIDs, errors.Wrbp(err, "list users for repo")
 		}
 
-		for _, u := range users {
-			userID := strconv.FormatInt(u.DatabaseID, 10)
+		for _, u := rbnge users {
+			userID := strconv.FormbtInt(u.DbtbbbseID, 10)
 
-			addUserToRepoPerms(extsvc.AccountID(userID))
+			bddUserToRepoPerms(extsvc.AccountID(userID))
 		}
 	}
 
-	// If groups caching is disabled, we are done.
-	if p.groupsCache == nil {
+	// If groups cbching is disbbled, we bre done.
+	if p.groupsCbche == nil {
 		return userIDs, nil
 	}
 
-	// Get groups affiliated with this repo.
-	groups, err := p.getRepoAffiliatedGroups(ctx, owner, name, opts)
+	// Get groups bffilibted with this repo.
+	groups, err := p.getRepoAffilibtedGroups(ctx, owner, nbme, opts)
 	if err != nil {
-		return userIDs, errors.Wrap(err, "get groups affiliated with repo")
+		return userIDs, errors.Wrbp(err, "get groups bffilibted with repo")
 	}
 
-	// Perform a fresh sync with groups that need a sync.
+	// Perform b fresh sync with groups thbt need b sync.
 	repoID := extsvc.RepoID(repo.ID)
-	for _, group := range groups {
-		// If this is a partial cache, add self to group
+	for _, group := rbnge groups {
+		// If this is b pbrtibl cbche, bdd self to group
 		if len(group.Repositories) > 0 {
-			hasRepo := false
-			for _, repo := range group.Repositories {
+			hbsRepo := fblse
+			for _, repo := rbnge group.Repositories {
 				if repo == repoID {
-					hasRepo = true
-					break
+					hbsRepo = true
+					brebk
 				}
 			}
-			if !hasRepo {
-				group.Repositories = append(group.Repositories, repoID)
-				p.groupsCache.setGroup(group.cachedGroup)
+			if !hbsRepo {
+				group.Repositories = bppend(group.Repositories, repoID)
+				p.groupsCbche.setGroup(group.cbchedGroup)
 			}
 		}
 
-		// Just use cache if available and not invalidated and continue
+		// Just use cbche if bvbilbble bnd not invblidbted bnd continue
 		if len(group.Users) > 0 {
-			addUserToRepoPerms(group.Users...)
+			bddUserToRepoPerms(group.Users...)
 			continue
 		}
 
 		// Perform full sync
-		hasNextPage := true
-		for page := 1; hasNextPage; page++ {
-			var members []*github.Collaborator
-			if group.Team == "" {
-				members, hasNextPage, err = client.ListOrganizationMembers(ctx, owner, page, group.adminsOnly)
+		hbsNextPbge := true
+		for pbge := 1; hbsNextPbge; pbge++ {
+			vbr members []*github.Collbborbtor
+			if group.Tebm == "" {
+				members, hbsNextPbge, err = client.ListOrgbnizbtionMembers(ctx, owner, pbge, group.bdminsOnly)
 			} else {
-				members, hasNextPage, err = client.ListTeamMembers(ctx, owner, group.Team, page)
+				members, hbsNextPbge, err = client.ListTebmMembers(ctx, owner, group.Tebm, pbge)
 			}
 			if err != nil {
-				return userIDs, errors.Wrap(err, "list users for group")
+				return userIDs, errors.Wrbp(err, "list users for group")
 			}
-			for _, u := range members {
-				// Add results to both group (for persistence) and permissions for user
-				accountID := extsvc.AccountID(strconv.FormatInt(u.DatabaseID, 10))
-				group.Users = append(group.Users, accountID)
-				addUserToRepoPerms(accountID)
+			for _, u := rbnge members {
+				// Add results to both group (for persistence) bnd permissions for user
+				bccountID := extsvc.AccountID(strconv.FormbtInt(u.DbtbbbseID, 10))
+				group.Users = bppend(group.Users, bccountID)
+				bddUserToRepoPerms(bccountID)
 			}
 		}
 
 		// Persist group
-		p.groupsCache.setGroup(group.cachedGroup)
+		p.groupsCbche.setGroup(group.cbchedGroup)
 	}
 
 	return userIDs, nil
 }
 
-// getUserAffiliatedGroups retrieves affiliated organizations and teams for the given client
-// with token. Returned groups are populated from cache if a valid value is available.
+// getUserAffilibtedGroups retrieves bffilibted orgbnizbtions bnd tebms for the given client
+// with token. Returned groups bre populbted from cbche if b vblid vblue is bvbilbble.
 //
-// 🚨 SECURITY: clientWithToken must be authenticated with a user token.
-func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken client, opts authz.FetchPermsOptions) ([]cachedGroup, error) {
-	groups := make([]cachedGroup, 0)
-	seenGroups := make(map[string]struct{})
+// 🚨 SECURITY: clientWithToken must be buthenticbted with b user token.
+func (p *Provider) getUserAffilibtedGroups(ctx context.Context, clientWithToken client, opts buthz.FetchPermsOptions) ([]cbchedGroup, error) {
+	groups := mbke([]cbchedGroup, 0)
+	seenGroups := mbke(mbp[string]struct{})
 
-	// syncGroup adds the given group to the list of groups to cache, pulling values from
-	// cache where available.
-	syncGroup := func(org, team string) {
-		if team != "" {
-			// If a team's repos is a subset of an organization's, don't sync. Because when an organization
-			// has at least default read permissions, a team's repos will always be a strict subset
-			// of the organization's.
-			if _, exists := seenGroups[team]; exists {
+	// syncGroup bdds the given group to the list of groups to cbche, pulling vblues from
+	// cbche where bvbilbble.
+	syncGroup := func(org, tebm string) {
+		if tebm != "" {
+			// If b tebm's repos is b subset of bn orgbnizbtion's, don't sync. Becbuse when bn orgbnizbtion
+			// hbs bt lebst defbult rebd permissions, b tebm's repos will blwbys be b strict subset
+			// of the orgbnizbtion's.
+			if _, exists := seenGroups[tebm]; exists {
 				return
 			}
 		}
-		cachedPerms, exists := p.groupsCache.getGroup(org, team)
-		if exists && opts.InvalidateCaches {
-			// invalidate this cache
-			p.groupsCache.invalidateGroup(&cachedPerms)
+		cbchedPerms, exists := p.groupsCbche.getGroup(org, tebm)
+		if exists && opts.InvblidbteCbches {
+			// invblidbte this cbche
+			p.groupsCbche.invblidbteGroup(&cbchedPerms)
 		}
-		seenGroups[cachedPerms.key()] = struct{}{}
-		groups = append(groups, cachedPerms)
+		seenGroups[cbchedPerms.key()] = struct{}{}
+		groups = bppend(groups, cbchedPerms)
 	}
-	var err error
+	vbr err error
 
 	// Get orgs
-	hasNextPage := true
-	for page := 1; hasNextPage; page++ {
-		var orgs []github.OrgDetailsAndMembership
-		orgs, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserOrgsDetailsAndMembership(ctx, page)
+	hbsNextPbge := true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr orgs []github.OrgDetbilsAndMembership
+		orgs, hbsNextPbge, _, err = clientWithToken.GetAuthenticbtedUserOrgsDetbilsAndMembership(ctx, pbge)
 		if err != nil {
 			return groups, err
 		}
-		for _, org := range orgs {
-			// 🚨 SECURITY: Iff THIS USER can view this org's repos, we add the entire org to the sync list
-			if canViewOrgRepos(&org) {
+		for _, org := rbnge orgs {
+			// 🚨 SECURITY: Iff THIS USER cbn view this org's repos, we bdd the entire org to the sync list
+			if cbnViewOrgRepos(&org) {
 				syncGroup(org.Login, "")
 			}
 		}
 	}
 
-	// Get teams
-	hasNextPage = true
-	for page := 1; hasNextPage; page++ {
-		var teams []*github.Team
-		teams, hasNextPage, _, err = clientWithToken.GetAuthenticatedUserTeams(ctx, page)
+	// Get tebms
+	hbsNextPbge = true
+	for pbge := 1; hbsNextPbge; pbge++ {
+		vbr tebms []*github.Tebm
+		tebms, hbsNextPbge, _, err = clientWithToken.GetAuthenticbtedUserTebms(ctx, pbge)
 		if err != nil {
 			return groups, err
 		}
-		for _, team := range teams {
-			// only sync teams with repos
-			if team.ReposCount > 0 && team.Organization != nil {
-				syncGroup(team.Organization.Login, team.Slug)
+		for _, tebm := rbnge tebms {
+			// only sync tebms with repos
+			if tebm.ReposCount > 0 && tebm.Orgbnizbtion != nil {
+				syncGroup(tebm.Orgbnizbtion.Login, tebm.Slug)
 			}
 		}
 	}
@@ -565,81 +565,81 @@ func (p *Provider) getUserAffiliatedGroups(ctx context.Context, clientWithToken 
 	return groups, nil
 }
 
-type repoAffiliatedGroup struct {
-	cachedGroup
-	// Whether this affiliation is an admin-only affiliation rather than a group-wide
-	// affiliation - affects how a sync is conducted.
-	adminsOnly bool
+type repoAffilibtedGroup struct {
+	cbchedGroup
+	// Whether this bffilibtion is bn bdmin-only bffilibtion rbther thbn b group-wide
+	// bffilibtion - bffects how b sync is conducted.
+	bdminsOnly bool
 }
 
-// getRepoAffiliatedGroups retrieves affiliated organizations and teams for the given repository.
-// Returned groups are populated from cache if a valid value is available.
-func (p *Provider) getRepoAffiliatedGroups(ctx context.Context, owner, name string, opts authz.FetchPermsOptions) (groups []repoAffiliatedGroup, err error) {
+// getRepoAffilibtedGroups retrieves bffilibted orgbnizbtions bnd tebms for the given repository.
+// Returned groups bre populbted from cbche if b vblid vblue is bvbilbble.
+func (p *Provider) getRepoAffilibtedGroups(ctx context.Context, owner, nbme string, opts buthz.FetchPermsOptions) (groups []repoAffilibtedGroup, err error) {
 	client, err := p.client()
 	if err != nil {
-		return nil, errors.Wrap(err, "get client")
+		return nil, errors.Wrbp(err, "get client")
 	}
 
-	// Check if repo belongs in an org
-	org, err := client.GetOrganization(ctx, owner)
+	// Check if repo belongs in bn org
+	org, err := client.GetOrgbnizbtion(ctx, owner)
 	if err != nil {
 		if github.IsNotFound(err) {
-			// Owner is most likely not an org. User repos don't have teams or org permissions,
-			// so we are done - this is fine, so don't propagate error.
+			// Owner is most likely not bn org. User repos don't hbve tebms or org permissions,
+			// so we bre done - this is fine, so don't propbgbte error.
 			return groups, nil
 		}
 		return
 	}
 
-	// indicate if a group should be sync'd
-	syncGroup := func(owner, team string, adminsOnly bool) {
-		group, exists := p.groupsCache.getGroup(owner, team)
-		if exists && opts.InvalidateCaches {
-			// invalidate this cache
-			p.groupsCache.invalidateGroup(&group)
+	// indicbte if b group should be sync'd
+	syncGroup := func(owner, tebm string, bdminsOnly bool) {
+		group, exists := p.groupsCbche.getGroup(owner, tebm)
+		if exists && opts.InvblidbteCbches {
+			// invblidbte this cbche
+			p.groupsCbche.invblidbteGroup(&group)
 		}
-		groups = append(groups, repoAffiliatedGroup{cachedGroup: group, adminsOnly: adminsOnly})
+		groups = bppend(groups, repoAffilibtedGroup{cbchedGroup: group, bdminsOnly: bdminsOnly})
 	}
 
-	// If this repo is an internal repo, we want to allow everyone in the org to read this repo
-	// (provided the temporary feature flag is set) irrespective of the user being an admin or not.
-	isRepoInternallyVisible := false
+	// If this repo is bn internbl repo, we wbnt to bllow everyone in the org to rebd this repo
+	// (provided the temporbry febture flbg is set) irrespective of the user being bn bdmin or not.
+	isRepoInternbllyVisible := fblse
 
-	// The visibility field on a repo is only returned if this feature flag is set. As a result
-	// there's no point in making an extra API call if this feature flag is not set explicitly.
-	if p.enableGithubInternalRepoVisibility {
-		var r *github.Repository
-		r, err = client.GetRepository(ctx, owner, name)
+	// The visibility field on b repo is only returned if this febture flbg is set. As b result
+	// there's no point in mbking bn extrb API cbll if this febture flbg is not set explicitly.
+	if p.enbbleGithubInternblRepoVisibility {
+		vbr r *github.Repository
+		r, err = client.GetRepository(ctx, owner, nbme)
 		if err != nil {
-			// Maybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
-			// repo. Either way, we are not going to syncGroup for this repo.
+			// Mbybe the repo doesn't belong to this org? Or Another error occurred in trying to get the
+			// repo. Either wby, we bre not going to syncGroup for this repo.
 			return
 		}
 
-		if org != nil && r.Visibility == github.VisibilityInternal {
-			isRepoInternallyVisible = true
+		if org != nil && r.Visibility == github.VisibilityInternbl {
+			isRepoInternbllyVisible = true
 		}
 	}
 
-	allOrgMembersCanRead := isRepoInternallyVisible || canViewOrgRepos(&github.OrgDetailsAndMembership{OrgDetails: org})
-	if allOrgMembersCanRead {
-		// 🚨 SECURITY: Iff all members of this org can view this repo, indicate that all members should
+	bllOrgMembersCbnRebd := isRepoInternbllyVisible || cbnViewOrgRepos(&github.OrgDetbilsAndMembership{OrgDetbils: org})
+	if bllOrgMembersCbnRebd {
+		// 🚨 SECURITY: Iff bll members of this org cbn view this repo, indicbte thbt bll members should
 		// be sync'd.
-		syncGroup(owner, "", false)
+		syncGroup(owner, "", fblse)
 	} else {
-		// 🚨 SECURITY: Sync *only admins* of this org
+		// 🚨 SECURITY: Sync *only bdmins* of this org
 		syncGroup(owner, "", true)
 
-		// Also check for teams involved in repo, and indicate all groups should be sync'd.
-		hasNextPage := true
-		for page := 1; hasNextPage; page++ {
-			var teams []*github.Team
-			teams, hasNextPage, err = client.ListRepositoryTeams(ctx, owner, name, page)
+		// Also check for tebms involved in repo, bnd indicbte bll groups should be sync'd.
+		hbsNextPbge := true
+		for pbge := 1; hbsNextPbge; pbge++ {
+			vbr tebms []*github.Tebm
+			tebms, hbsNextPbge, err = client.ListRepositoryTebms(ctx, owner, nbme, pbge)
 			if err != nil {
 				return
 			}
-			for _, t := range teams {
-				syncGroup(owner, t.Slug, false)
+			for _, t := rbnge tebms {
+				syncGroup(owner, t.Slug, fblse)
 			}
 		}
 	}

@@ -1,28 +1,28 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func lintGoDirectives() *linter {
-	return runCheck("Lint Go directives", func(ctx context.Context, out *std.Output, state *repo.State) error {
-		directivesRegexp := regexp.MustCompile("^// go:[a-z]+")
+	return runCheck("Lint Go directives", func(ctx context.Context, out *std.Output, stbte *repo.Stbte) error {
+		directivesRegexp := regexp.MustCompile("^// go:[b-z]+")
 
-		diff, err := state.GetDiff("**/*.go")
+		diff, err := stbte.GetDiff("**/*.go")
 		if err != nil {
 			return err
 		}
 
-		return diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
-			if directivesRegexp.MatchString(strings.Join(hunk.AddedLines, "\n")) {
-				return errors.New("Go compiler directives must have no spaces between the // and 'go'")
+		return diff.IterbteHunks(func(file string, hunk repo.DiffHunk) error {
+			if directivesRegexp.MbtchString(strings.Join(hunk.AddedLines, "\n")) {
+				return errors.New("Go compiler directives must hbve no spbces between the // bnd 'go'")
 			}
 			return nil
 		})

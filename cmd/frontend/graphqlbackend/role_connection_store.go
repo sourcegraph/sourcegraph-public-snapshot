@@ -1,52 +1,52 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strconv"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
 type roleConnectionStore struct {
-	db     database.DB
+	db     dbtbbbse.DB
 	system bool
 	userID int32
 }
 
-func (rcs *roleConnectionStore) MarshalCursor(node RoleResolver, _ database.OrderBy) (*string, error) {
+func (rcs *roleConnectionStore) MbrshblCursor(node RoleResolver, _ dbtbbbse.OrderBy) (*string, error) {
 	cursor := string(node.ID())
 
 	return &cursor, nil
 }
 
-func (rcs *roleConnectionStore) UnmarshalCursor(cursor string, _ database.OrderBy) (*string, error) {
-	nodeID, err := UnmarshalRoleID(graphql.ID(cursor))
+func (rcs *roleConnectionStore) UnmbrshblCursor(cursor string, _ dbtbbbse.OrderBy) (*string, error) {
+	nodeID, err := UnmbrshblRoleID(grbphql.ID(cursor))
 	if err != nil {
 		return nil, err
 	}
 
-	id := strconv.Itoa(int(nodeID))
+	id := strconv.Itob(int(nodeID))
 
 	return &id, nil
 }
 
-func (rcs *roleConnectionStore) ComputeTotal(ctx context.Context) (*int32, error) {
-	count, err := rcs.db.Roles().Count(ctx, database.RolesListOptions{
+func (rcs *roleConnectionStore) ComputeTotbl(ctx context.Context) (*int32, error) {
+	count, err := rcs.db.Roles().Count(ctx, dbtbbbse.RolesListOptions{
 		UserID: rcs.userID,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	total := int32(count)
-	return &total, nil
+	totbl := int32(count)
+	return &totbl, nil
 }
 
-func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database.PaginationArgs) ([]RoleResolver, error) {
-	roles, err := rcs.db.Roles().List(ctx, database.RolesListOptions{
-		PaginationArgs: args,
+func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, brgs *dbtbbbse.PbginbtionArgs) ([]RoleResolver, error) {
+	roles, err := rcs.db.Roles().List(ctx, dbtbbbse.RolesListOptions{
+		PbginbtionArgs: brgs,
 		System:         rcs.system,
 		UserID:         rcs.userID,
 	})
@@ -54,9 +54,9 @@ func (rcs *roleConnectionStore) ComputeNodes(ctx context.Context, args *database
 		return nil, err
 	}
 
-	var roleResolvers []RoleResolver
-	for _, role := range roles {
-		roleResolvers = append(roleResolvers, &roleResolver{role: role, db: rcs.db})
+	vbr roleResolvers []RoleResolver
+	for _, role := rbnge roles {
+		roleResolvers = bppend(roleResolvers, &roleResolver{role: role, db: rcs.db})
 	}
 
 	return roleResolvers, nil

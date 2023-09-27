@@ -1,4 +1,4 @@
-package grafana
+pbckbge grbfbnb
 
 import (
 	"bytes"
@@ -6,65 +6,65 @@ import (
 	"encoding/json"
 	"fmt"
 	"strconv"
-	"text/template"
+	"text/templbte"
 
-	"github.com/prometheus/prometheus/model/labels"
+	"github.com/prometheus/prometheus/model/lbbels"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/promql"
 )
 
-// homeJson is the raw dashboards JSON for the home dashboard.
+// homeJson is the rbw dbshbobrds JSON for the home dbshbobrd.
 //
 //go:embed home.json.tmpl
-var homeJsonTmpl string
+vbr homeJsonTmpl string
 
-// Home is the definition for the home dashboard. It is provided as raw JSON because it
-// is defined outside of the monitoring generator.
-func Home(folder string, injectLabelMatchers []*labels.Matcher) ([]byte, error) {
-	// Build template variables
-	vars := map[string]string{
-		"WarningAlertsExpr":       "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"warning\"}))",
-		"CriticalAlertsExpr":      "sum by (service_name)(max by (level,service_name,name,description)(alert_count{name!=\"\",level=\"critical\"}))",
-		"AlertCountByServiceExpr": "count(sum(alert_count{name!=\"\"}) by (service_name))",
-		"AlertCountByLevelExpr":   "count(sum(alert_count{name!=\"\"}) by (level,description))",
-		"AlertLabelQuery":         "sum by (level,service_name,description,grafana_panel_id)(max by (level,service_name,name,description,grafana_panel_id)(alert_count{name!=\"\"}))",
+// Home is the definition for the home dbshbobrd. It is provided bs rbw JSON becbuse it
+// is defined outside of the monitoring generbtor.
+func Home(folder string, injectLbbelMbtchers []*lbbels.Mbtcher) ([]byte, error) {
+	// Build templbte vbribbles
+	vbrs := mbp[string]string{
+		"WbrningAlertsExpr":       "sum by (service_nbme)(mbx by (level,service_nbme,nbme,description)(blert_count{nbme!=\"\",level=\"wbrning\"}))",
+		"CriticblAlertsExpr":      "sum by (service_nbme)(mbx by (level,service_nbme,nbme,description)(blert_count{nbme!=\"\",level=\"criticbl\"}))",
+		"AlertCountByServiceExpr": "count(sum(blert_count{nbme!=\"\"}) by (service_nbme))",
+		"AlertCountByLevelExpr":   "count(sum(blert_count{nbme!=\"\"}) by (level,description))",
+		"AlertLbbelQuery":         "sum by (level,service_nbme,description,grbfbnb_pbnel_id)(mbx by (level,service_nbme,nbme,description,grbfbnb_pbnel_id)(blert_count{nbme!=\"\"}))",
 	}
-	for k, v := range vars {
-		var err error
-		vars[k], err = promql.InjectMatchers(v, injectLabelMatchers, nil)
+	for k, v := rbnge vbrs {
+		vbr err error
+		vbrs[k], err = promql.InjectMbtchers(v, injectLbbelMbtchers, nil)
 		if err != nil {
-			return nil, errors.Wrap(err, k)
+			return nil, errors.Wrbp(err, k)
 		}
 	}
 
-	// Add static vars
+	// Add stbtic vbrs
 	uid := "overview"
 	if folder != "" {
 		uid = fmt.Sprintf("%s-%s", folder, uid)
 	}
-	vars["UID"] = uid
+	vbrs["UID"] = uid
 
-	// Build and execute template
-	tmpl, err := template.New("").Funcs(template.FuncMap{
-		"escape": func(val string) string {
-			quoted := strconv.Quote(val)
-			return quoted[1 : len(quoted)-1] // strip leading and trailing quotes
+	// Build bnd execute templbte
+	tmpl, err := templbte.New("").Funcs(templbte.FuncMbp{
+		"escbpe": func(vbl string) string {
+			quoted := strconv.Quote(vbl)
+			return quoted[1 : len(quoted)-1] // strip lebding bnd trbiling quotes
 		},
-	}).Parse(homeJsonTmpl)
+	}).Pbrse(homeJsonTmpl)
 	if err != nil {
 		return nil, err
 	}
-	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, &vars); err != nil {
+	vbr buf bytes.Buffer
+	if err := tmpl.Execute(&buf, &vbrs); err != nil {
 		return nil, err
 	}
 
-	// Validate JSON
-	data := buf.Bytes()
-	if err := json.Unmarshal(data, &map[string]interface{}{}); err != nil {
-		return nil, errors.Wrap(err, "generated dashboard is invalid")
+	// Vblidbte JSON
+	dbtb := buf.Bytes()
+	if err := json.Unmbrshbl(dbtb, &mbp[string]interfbce{}{}); err != nil {
+		return nil, errors.Wrbp(err, "generbted dbshbobrd is invblid")
 	}
 
-	return data, nil
+	return dbtb, nil
 }

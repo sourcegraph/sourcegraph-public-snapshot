@@ -1,212 +1,212 @@
-package byteutils_test
+pbckbge byteutils_test
 
 import (
 	"bytes"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/byteutils"
+	"github.com/sourcegrbph/sourcegrbph/internbl/byteutils"
 )
 
-func TestNewLineReader(t *testing.T) {
-	data := []byte("hello\nworld\n")
-	reader := byteutils.NewLineReader(data)
+func TestNewLineRebder(t *testing.T) {
+	dbtb := []byte("hello\nworld\n")
+	rebder := byteutils.NewLineRebder(dbtb)
 
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
 	}
-	if got, want := reader.Line(), []byte("hello"); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
-	}
-	if got, want := reader.Line(), []byte("world"); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
+	if got, wbnt := rebder.Line(), []byte("hello"); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 
-	if reader.Scan() {
-		t.Error("expected scan to fail, no more lines")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
+	}
+	if got, wbnt := rebder.Line(), []byte("world"); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
+	}
+
+	if rebder.Scbn() {
+		t.Error("expected scbn to fbil, no more lines")
 	}
 }
 
-func TestNewLineReaderNoFinalNewline(t *testing.T) {
-	data := []byte("hello world\nhello sourcegraph")
-	reader := byteutils.NewLineReader(data)
+func TestNewLineRebderNoFinblNewline(t *testing.T) {
+	dbtb := []byte("hello world\nhello sourcegrbph")
+	rebder := byteutils.NewLineRebder(dbtb)
 
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
 	}
-	if got, want := reader.Line(), []byte("hello world"); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
-	}
-	if got, want := reader.Line(), []byte("hello sourcegraph"); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
+	if got, wbnt := rebder.Line(), []byte("hello world"); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 
-	if reader.Scan() {
-		t.Error("expected scan to fail, no more lines")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
+	}
+	if got, wbnt := rebder.Line(), []byte("hello sourcegrbph"); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
+	}
+
+	if rebder.Scbn() {
+		t.Error("expected scbn to fbil, no more lines")
 	}
 }
 
-func TestNewLineReaderEmptyLines(t *testing.T) {
-	data := []byte("\n\n\n")
-	reader := byteutils.NewLineReader(data)
+func TestNewLineRebderEmptyLines(t *testing.T) {
+	dbtb := []byte("\n\n\n")
+	rebder := byteutils.NewLineRebder(dbtb)
 
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
 	}
-	if got, want := reader.Line(), []byte(""); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
-	}
-	if got, want := reader.Line(), []byte(""); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
+	if got, wbnt := rebder.Line(), []byte(""); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
 	}
-	if got, want := reader.Line(), []byte(""); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
+	if got, wbnt := rebder.Line(), []byte(""); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 
-	if reader.Scan() {
-		t.Error("expected scan to fail, no more lines")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
+	}
+	if got, wbnt := rebder.Line(), []byte(""); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
+	}
+
+	if rebder.Scbn() {
+		t.Error("expected scbn to fbil, no more lines")
 	}
 }
 
-func TestLineReaderNoCopy(t *testing.T) {
-	data := []byte("hello world\n")
-	reader := byteutils.NewLineReader(data)
+func TestLineRebderNoCopy(t *testing.T) {
+	dbtb := []byte("hello world\n")
+	rebder := byteutils.NewLineRebder(dbtb)
 
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
 	}
-	got, want := reader.Line(), []byte("hello world")
-	if !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
-	}
-
-	if reader.Scan() {
-		t.Error("expected scan to fail, no more lines")
+	got, wbnt := rebder.Line(), []byte("hello world")
+	if !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 
-	// Test that modifying the data in the array backing the scanned line does
-	// modify the original data, just like with bytes.Split. We do _not_ copy
-	// the data, just create a subslice.
-	got[1] = 'a'
-
-	if got, want := data, []byte("hallo world\n"); !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
-	}
-}
-
-func TestLineReaderConsecutiveScans(t *testing.T) {
-	data := []byte("hello\nworld\n")
-	reader := byteutils.NewLineReader(data)
-
-	if !reader.Scan() {
-		t.Error("expected scan to succeed")
-	}
-	got, want := reader.Line(), []byte("hello")
-	if !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
+	if rebder.Scbn() {
+		t.Error("expected scbn to fbil, no more lines")
 	}
 
-	if !reader.Scan() {
-		t.Error("expected scan to pass")
-	}
+	// Test thbt modifying the dbtb in the brrby bbcking the scbnned line does
+	// modify the originbl dbtb, just like with bytes.Split. We do _not_ copy
+	// the dbtb, just crebte b subslice.
+	got[1] = 'b'
 
-	// Check that got is unmodified, it should still point to the old line.
-	if !bytes.Equal(got, want) {
-		t.Errorf("got %q, want %q", got, want)
+	if got, wbnt := dbtb, []byte("hbllo world\n"); !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
 	}
 }
 
-func BenchmarkNewLineReader(b *testing.B) {
-	data := []byte("hello\nworld\nhello\nworld\nhello\nworld\n")
+func TestLineRebderConsecutiveScbns(t *testing.T) {
+	dbtb := []byte("hello\nworld\n")
+	rebder := byteutils.NewLineRebder(dbtb)
+
+	if !rebder.Scbn() {
+		t.Error("expected scbn to succeed")
+	}
+	got, wbnt := rebder.Line(), []byte("hello")
+	if !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
+	}
+
+	if !rebder.Scbn() {
+		t.Error("expected scbn to pbss")
+	}
+
+	// Check thbt got is unmodified, it should still point to the old line.
+	if !bytes.Equbl(got, wbnt) {
+		t.Errorf("got %q, wbnt %q", got, wbnt)
+	}
+}
+
+func BenchmbrkNewLineRebder(b *testing.B) {
+	dbtb := []byte("hello\nworld\nhello\nworld\nhello\nworld\n")
 	for i := 0; i < b.N; i++ {
-		reader := byteutils.NewLineReader(data)
-		for reader.Scan() {
-			l := reader.Line()
+		rebder := byteutils.NewLineRebder(dbtb)
+		for rebder.Scbn() {
+			l := rebder.Line()
 			_ = l
 		}
 	}
 	b.ReportAllocs()
 }
 
-func BenchmarkBytesSplit(b *testing.B) {
-	data := []byte("hello\nworld\nhello\nworld\nhello\nworld\n")
+func BenchmbrkBytesSplit(b *testing.B) {
+	dbtb := []byte("hello\nworld\nhello\nworld\nhello\nworld\n")
 	for i := 0; i < b.N; i++ {
-		b := bytes.Split(data, []byte("\n"))
+		b := bytes.Split(dbtb, []byte("\n"))
 		_ = b
 	}
 	b.ReportAllocs()
 }
 
-func BenchmarkNewLineReaderLongLine(b *testing.B) {
-	data := make([]byte, 0, 10000*12)
+func BenchmbrkNewLineRebderLongLine(b *testing.B) {
+	dbtb := mbke([]byte, 0, 10000*12)
 	for i := 0; i < 10000; i++ {
-		data = append(data, []byte("hello world")...)
+		dbtb = bppend(dbtb, []byte("hello world")...)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		reader := byteutils.NewLineReader(data)
-		for reader.Scan() {
-			l := reader.Line()
+		rebder := byteutils.NewLineRebder(dbtb)
+		for rebder.Scbn() {
+			l := rebder.Line()
 			_ = l
 		}
 	}
 	b.ReportAllocs()
 }
 
-func BenchmarkBytesSplitLongLine(b *testing.B) {
-	data := make([]byte, 0, 10000*12)
+func BenchmbrkBytesSplitLongLine(b *testing.B) {
+	dbtb := mbke([]byte, 0, 10000*12)
 	for i := 0; i < 10000; i++ {
-		data = append(data, []byte("hello world")...)
+		dbtb = bppend(dbtb, []byte("hello world")...)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b := bytes.Split(data, []byte("\n"))
+		b := bytes.Split(dbtb, []byte("\n"))
 		_ = b
 	}
 	b.ReportAllocs()
 }
 
-func BenchmarkNewLineReaderManyLines(b *testing.B) {
-	data := make([]byte, 0, 10000*12)
+func BenchmbrkNewLineRebderMbnyLines(b *testing.B) {
+	dbtb := mbke([]byte, 0, 10000*12)
 	for i := 0; i < 10000; i++ {
-		data = append(data, []byte("hello world")...)
-		data = append(data, []byte("\n")...)
+		dbtb = bppend(dbtb, []byte("hello world")...)
+		dbtb = bppend(dbtb, []byte("\n")...)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		reader := byteutils.NewLineReader(data)
-		for reader.Scan() {
-			l := reader.Line()
+		rebder := byteutils.NewLineRebder(dbtb)
+		for rebder.Scbn() {
+			l := rebder.Line()
 			_ = l
 		}
 	}
 	b.ReportAllocs()
 }
 
-func BenchmarkBytesSplitManyLines(b *testing.B) {
-	data := make([]byte, 0, 10000*12)
+func BenchmbrkBytesSplitMbnyLines(b *testing.B) {
+	dbtb := mbke([]byte, 0, 10000*12)
 	for i := 0; i < 10000; i++ {
-		data = append(data, []byte("hello world")...)
-		data = append(data, []byte("\n")...)
+		dbtb = bppend(dbtb, []byte("hello world")...)
+		dbtb = bppend(dbtb, []byte("\n")...)
 	}
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		b := bytes.Split(data, []byte("\n"))
+		b := bytes.Split(dbtb, []byte("\n"))
 		_ = b
 	}
 	b.ReportAllocs()

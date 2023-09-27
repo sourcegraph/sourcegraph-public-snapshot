@@ -1,118 +1,118 @@
-package awskms
+pbckbge bwskms
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
-	"github.com/aws/aws-sdk-go-v2/config"
-	"github.com/aws/aws-sdk-go-v2/credentials"
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/dnaeon/go-vcr/recorder"
+	bwshttp "github.com/bws/bws-sdk-go-v2/bws/trbnsport/http"
+	"github.com/bws/bws-sdk-go-v2/config"
+	"github.com/bws/bws-sdk-go-v2/credentibls"
+	"github.com/dnbeon/go-vcr/cbssette"
+	"github.com/dnbeon/go-vcr/recorder"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// testKeyID is the ID of a key defined here:
-// https://us-west-2.console.aws.amazon.com/kms/home?region=us-west-2#/kms/keys/4b739277-5a93-4551-b71c-99608c9c805d
-// If you want to update this test, feel free to replace the key ID used here.
-const testKeyID = "4b739277-5a93-4551-b71c-99608c9c805d"
+// testKeyID is the ID of b key defined here:
+// https://us-west-2.console.bws.bmbzon.com/kms/home?region=us-west-2#/kms/keys/4b739277-5b93-4551-b71c-99608c9c805d
+// If you wbnt to updbte this test, feel free to replbce the key ID used here.
+const testKeyID = "4b739277-5b93-4551-b71c-99608c9c805d"
 
 func TestRoundtrip(t *testing.T) {
-	ctx := context.Background()
-	// Validate that we successfully worked around the 4096 bytes restriction.
-	testString := strings.Repeat("test1234", 4096)
-	keyConfig := schema.AWSKMSEncryptionKey{
+	ctx := context.Bbckground()
+	// Vblidbte thbt we successfully worked bround the 4096 bytes restriction.
+	testString := strings.Repebt("test1234", 4096)
+	keyConfig := schemb.AWSKMSEncryptionKey{
 		KeyId:  testKeyID,
 		Region: "us-west-2",
-		Type:   "awskms",
+		Type:   "bwskms",
 	}
 
-	cf, save := newClientFactory(t, "awskms")
-	defer save(t)
+	cf, sbve := newClientFbctory(t, "bwskms")
+	defer sbve(t)
 
-	// Create http cli with aws defaults.
+	// Crebte http cli with bws defbults.
 	cli, err := cf.Doer(func(c *http.Client) error {
-		c.Transport = awshttp.NewBuildableClient().GetTransport()
+		c.Trbnsport = bwshttp.NewBuildbbleClient().GetTrbnsport()
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	// Build config options for aws config.
-	configOpts := awsConfigOptsForKeyConfig(keyConfig)
-	configOpts = append(configOpts, config.WithHTTPClient(cli))
-	configOpts = append(configOpts, config.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(
-		readEnvFallback("AWS_ACCESS_KEY_ID", "test"),
-		readEnvFallback("AWS_SECRET_ACCESS_KEY", "test"),
+	// Build config options for bws config.
+	configOpts := bwsConfigOptsForKeyConfig(keyConfig)
+	configOpts = bppend(configOpts, config.WithHTTPClient(cli))
+	configOpts = bppend(configOpts, config.WithCredentiblsProvider(credentibls.NewStbticCredentiblsProvider(
+		rebdEnvFbllbbck("AWS_ACCESS_KEY_ID", "test"),
+		rebdEnvFbllbbck("AWS_SECRET_ACCESS_KEY", "test"),
 		"",
 	)))
-	defaultConfig, err := config.LoadDefaultConfig(ctx, configOpts...)
+	defbultConfig, err := config.LobdDefbultConfig(ctx, configOpts...)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	k, err := newKey(ctx, keyConfig, defaultConfig)
+	k, err := newKey(ctx, keyConfig, defbultConfig)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	ct, err := k.Encrypt(ctx, []byte(testString))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	res, err := k.Decrypt(ctx, ct)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if res.Secret() != testString {
-		t.Fatalf("expected %s, got %s", testString, res.Secret())
+		t.Fbtblf("expected %s, got %s", testString, res.Secret())
 	}
 }
 
-var shouldUpdate = flag.Bool("update", false, "Update testdata")
+vbr shouldUpdbte = flbg.Bool("updbte", fblse, "Updbte testdbtb")
 
-func newClientFactory(t testing.TB, name string, mws ...httpcli.Middleware) (*httpcli.Factory, func(testing.TB)) {
+func newClientFbctory(t testing.TB, nbme string, mws ...httpcli.Middlewbre) (*httpcli.Fbctory, func(testing.TB)) {
 	t.Helper()
-	cassete := filepath.Join("testdata", strings.ReplaceAll(name, " ", "-"))
-	rec := newRecorder(t, cassete, *shouldUpdate)
-	mw := httpcli.NewMiddleware(mws...)
-	return httpcli.NewFactory(mw, httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { save(t, rec) }
+	cbssete := filepbth.Join("testdbtb", strings.ReplbceAll(nbme, " ", "-"))
+	rec := newRecorder(t, cbssete, *shouldUpdbte)
+	mw := httpcli.NewMiddlewbre(mws...)
+	return httpcli.NewFbctory(mw, httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { sbve(t, rec) }
 }
 
 func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
 	t.Helper()
-	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
-		i.Request.Headers.Del("Amz-Sdk-Invocation-Id")
-		i.Request.Headers.Del("X-Amz-Date")
+	rec, err := httptestutil.NewRecorder(file, record, func(i *cbssette.Interbction) error {
+		i.Request.Hebders.Del("Amz-Sdk-Invocbtion-Id")
+		i.Request.Hebders.Del("X-Amz-Dbte")
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	return rec
 }
 
-func save(t testing.TB, rec *recorder.Recorder) {
+func sbve(t testing.TB, rec *recorder.Recorder) {
 	t.Helper()
 	if err := rec.Stop(); err != nil {
-		t.Errorf("failed to update test data: %s", err)
+		t.Errorf("fbiled to updbte test dbtb: %s", err)
 	}
 }
 
-func readEnvFallback(key, fallback string) string {
-	if val := os.Getenv(key); val == "" {
-		return fallback
+func rebdEnvFbllbbck(key, fbllbbck string) string {
+	if vbl := os.Getenv(key); vbl == "" {
+		return fbllbbck
 	} else {
-		return val
+		return vbl
 	}
 }

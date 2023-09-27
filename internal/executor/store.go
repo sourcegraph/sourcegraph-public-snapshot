@@ -1,32 +1,32 @@
-package executor
+pbckbge executor
 
 import (
-	"database/sql/driver"
+	"dbtbbbse/sql/driver"
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ExecutionLogEntry represents a command run by the executor.
+// ExecutionLogEntry represents b commbnd run by the executor.
 type ExecutionLogEntry struct {
 	Key        string    `json:"key"`
-	Command    []string  `json:"command"`
-	StartTime  time.Time `json:"startTime"`
+	Commbnd    []string  `json:"commbnd"`
+	StbrtTime  time.Time `json:"stbrtTime"`
 	ExitCode   *int      `json:"exitCode,omitempty"`
 	Out        string    `json:"out,omitempty"`
-	DurationMs *int      `json:"durationMs,omitempty"`
+	DurbtionMs *int      `json:"durbtionMs,omitempty"`
 }
 
-func (e *ExecutionLogEntry) Scan(value any) error {
-	b, ok := value.([]byte)
+func (e *ExecutionLogEntry) Scbn(vblue bny) error {
+	b, ok := vblue.([]byte)
 	if !ok {
-		return errors.Errorf("value is not []byte: %T", value)
+		return errors.Errorf("vblue is not []byte: %T", vblue)
 	}
 
-	return json.Unmarshal(b, &e)
+	return json.Unmbrshbl(b, &e)
 }
 
-func (e ExecutionLogEntry) Value() (driver.Value, error) {
-	return json.Marshal(e)
+func (e ExecutionLogEntry) Vblue() (driver.Vblue, error) {
+	return json.Mbrshbl(e)
 }

@@ -1,35 +1,35 @@
-package drift
+pbckbge drift
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 )
 
-func compareViews(schemaName, version string, actual, expected schemas.SchemaDescription) []Summary {
-	return compareNamedLists(actual.Views, expected.Views, compareViewsCallback)
+func compbreViews(schembNbme, version string, bctubl, expected schembs.SchembDescription) []Summbry {
+	return compbreNbmedLists(bctubl.Views, expected.Views, compbreViewsCbllbbck)
 }
 
-func compareViewsCallback(view *schemas.ViewDescription, expectedView schemas.ViewDescription) Summary {
+func compbreViewsCbllbbck(view *schembs.ViewDescription, expectedView schembs.ViewDescription) Summbry {
 	if view == nil {
-		return newDriftSummary(
-			expectedView.GetName(),
-			fmt.Sprintf("Missing view %q", expectedView.GetName()),
+		return newDriftSummbry(
+			expectedView.GetNbme(),
+			fmt.Sprintf("Missing view %q", expectedView.GetNbme()),
 			"define the view",
-		).withStatements(
-			expectedView.CreateStatement(),
+		).withStbtements(
+			expectedView.CrebteStbtement(),
 		)
 	}
 
-	return newDriftSummary(
-		expectedView.GetName(),
-		fmt.Sprintf("Unexpected definition of view %q", expectedView.GetName()),
+	return newDriftSummbry(
+		expectedView.GetNbme(),
+		fmt.Sprintf("Unexpected definition of view %q", expectedView.GetNbme()),
 		"redefine the view",
 	).withDiff(
 		expectedView.Definition,
 		view.Definition,
-	).withStatements(
-		expectedView.DropStatement(),
-		expectedView.CreateStatement(),
+	).withStbtements(
+		expectedView.DropStbtement(),
+		expectedView.CrebteStbtement(),
 	)
 }

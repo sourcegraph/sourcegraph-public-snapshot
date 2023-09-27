@@ -1,8 +1,8 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/json"
 	"fmt"
 	"net/url"
@@ -10,205 +10,205 @@ import (
 	"time"
 
 	"github.com/gofrs/uuid"
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	sgactor "github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/eventlogger"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	sgbctor "github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/eventlogger"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type EventLogStore interface {
-	// AggregatedCodeIntelEvents calculates CodeIntelAggregatedEvent for each unique event type related to code intel.
-	AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error)
+type EventLogStore interfbce {
+	// AggregbtedCodeIntelEvents cblculbtes CodeIntelAggregbtedEvent for ebch unique event type relbted to code intel.
+	AggregbtedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregbtedEvent, error)
 
-	// AggregatedCodeIntelInvestigationEvents calculates CodeIntelAggregatedInvestigationEvent for each unique investigation type.
-	AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error)
+	// AggregbtedCodeIntelInvestigbtionEvents cblculbtes CodeIntelAggregbtedInvestigbtionEvent for ebch unique investigbtion type.
+	AggregbtedCodeIntelInvestigbtionEvents(ctx context.Context) ([]types.CodeIntelAggregbtedInvestigbtionEvent, error)
 
-	// AggregatedCodyEvents calculates CodyAggregatedEvent for each every unique event type related to Cody.
-	AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error)
+	// AggregbtedCodyEvents cblculbtes CodyAggregbtedEvent for ebch every unique event type relbted to Cody.
+	AggregbtedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregbtedEvent, error)
 
-	// AggregatedRepoMetadataEvents calculates RepoMetadataAggregatedEvent for each every unique event type related to RepoMetadata.
-	AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error)
+	// AggregbtedRepoMetbdbtbEvents cblculbtes RepoMetbdbtbAggregbtedEvent for ebch every unique event type relbted to RepoMetbdbtb.
+	AggregbtedRepoMetbdbtbEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetbdbtbAggregbtedEvents, error)
 
-	// AggregatedSearchEvents calculates SearchAggregatedEvent for each every unique event type related to search.
-	AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error)
+	// AggregbtedSebrchEvents cblculbtes SebrchAggregbtedEvent for ebch every unique event type relbted to sebrch.
+	AggregbtedSebrchEvents(ctx context.Context, now time.Time) ([]types.SebrchAggregbtedEvent, error)
 
 	BulkInsert(ctx context.Context, events []*Event) error
 
-	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with any (precise or search-based) cross-repository code intelligence event.
+	// CodeIntelligenceCrossRepositoryWAUs returns the WAU (current week) with bny (precise or sebrch-bbsed) cross-repository code intelligence event.
 	CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error)
 
-	// CodeIntelligencePreciseCrossRepositoryWAUs returns the WAU (current week) with precise-based cross-repository code intelligence events.
+	// CodeIntelligencePreciseCrossRepositoryWAUs returns the WAU (current week) with precise-bbsed cross-repository code intelligence events.
 	CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error)
 
-	// CodeIntelligencePreciseWAUs returns the WAU (current week) with precise-based code intelligence events.
+	// CodeIntelligencePreciseWAUs returns the WAU (current week) with precise-bbsed code intelligence events.
 	CodeIntelligencePreciseWAUs(ctx context.Context) (int, error)
 
 	// CodeIntelligenceRepositoryCounts returns the counts of repositories with code intelligence
-	// properties (number of repositories with intel, with automatic/manual index configuration, etc).
+	// properties (number of repositories with intel, with butombtic/mbnubl index configurbtion, etc).
 	CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error)
 
-	// CodeIntelligenceRepositoryCountsByLanguage returns the counts of repositories with code intelligence
-	// properties (number of repositories with intel, with automatic/manual index configuration, etc), grouped
-	// by language.
-	CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error)
+	// CodeIntelligenceRepositoryCountsByLbngubge returns the counts of repositories with code intelligence
+	// properties (number of repositories with intel, with butombtic/mbnubl index configurbtion, etc), grouped
+	// by lbngubge.
+	CodeIntelligenceRepositoryCountsByLbngubge(ctx context.Context) (_ mbp[string]CodeIntelligenceRepositoryCountsForLbngubge, err error)
 
-	// CodeIntelligenceSearchBasedCrossRepositoryWAUs returns the WAU (current week) with searched-base cross-repository code intelligence events.
-	CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error)
+	// CodeIntelligenceSebrchBbsedCrossRepositoryWAUs returns the WAU (current week) with sebrched-bbse cross-repository code intelligence events.
+	CodeIntelligenceSebrchBbsedCrossRepositoryWAUs(ctx context.Context) (int, error)
 
-	// CodeIntelligenceSearchBasedWAUs returns the WAU (current week) with searched-base code intelligence events.
-	CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error)
+	// CodeIntelligenceSebrchBbsedWAUs returns the WAU (current week) with sebrched-bbse code intelligence events.
+	CodeIntelligenceSebrchBbsedWAUs(ctx context.Context) (int, error)
 
-	// CodeIntelligenceSettingsPageViewCount returns the number of view of pages related code intelligence
-	// administration (upload, index records, index configuration, etc) in the past week.
-	CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error)
+	// CodeIntelligenceSettingsPbgeViewCount returns the number of view of pbges relbted code intelligence
+	// bdministrbtion (uplobd, index records, index configurbtion, etc) in the pbst week.
+	CodeIntelligenceSettingsPbgeViewCount(ctx context.Context) (int, error)
 
-	// RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
-	RequestsByLanguage(ctx context.Context) (map[string]int, error)
+	// RequestsByLbngubge returns b mbp of lbngubge nbmes to the number of requests of precise support for thbt lbngubge.
+	RequestsByLbngubge(ctx context.Context) (mbp[string]int, error)
 
-	// CodeIntelligenceWAUs returns the WAU (current week) with any (precise or search-based) code intelligence event.
+	// CodeIntelligenceWAUs returns the WAU (current week) with bny (precise or sebrch-bbsed) code intelligence event.
 	CodeIntelligenceWAUs(ctx context.Context) (int, error)
 
-	// CountByUserID gets a count of events logged by a given user.
+	// CountByUserID gets b count of events logged by b given user.
 	CountByUserID(ctx context.Context, userID int32) (int, error)
 
-	// CountByUserIDAndEventName gets a count of events logged by a given user and with a given event name.
-	CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error)
+	// CountByUserIDAndEventNbme gets b count of events logged by b given user bnd with b given event nbme.
+	CountByUserIDAndEventNbme(ctx context.Context, userID int32, nbme string) (int, error)
 
-	// CountByUserIDAndEventNamePrefix gets a count of events logged by a given user and with a given event name prefix.
-	CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error)
+	// CountByUserIDAndEventNbmePrefix gets b count of events logged by b given user bnd with b given event nbme prefix.
+	CountByUserIDAndEventNbmePrefix(ctx context.Context, userID int32, nbmePrefix string) (int, error)
 
-	// CountByUserIDAndEventNames gets a count of events logged by a given user that match a list of given event names.
-	CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error)
+	// CountByUserIDAndEventNbmes gets b count of events logged by b given user thbt mbtch b list of given event nbmes.
+	CountByUserIDAndEventNbmes(ctx context.Context, userID int32, nbmes []string) (int, error)
 
-	// CountUniqueUsersAll provides a count of unique active users in a given time span.
-	CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error)
+	// CountUniqueUsersAll provides b count of unique bctive users in b given time spbn.
+	CountUniqueUsersAll(ctx context.Context, stbrtDbte, endDbte time.Time, opt *CountUniqueUsersOptions) (int, error)
 
-	// CountUniqueUsersByEventName provides a count of unique active users in a given time span that logged a given event.
-	CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error)
+	// CountUniqueUsersByEventNbme provides b count of unique bctive users in b given time spbn thbt logged b given event.
+	CountUniqueUsersByEventNbme(ctx context.Context, stbrtDbte, endDbte time.Time, nbme string) (int, error)
 
-	// CountUniqueUsersByEventNamePrefix provides a count of unique active users in a given time span that logged an event with a given prefix.
-	CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error)
+	// CountUniqueUsersByEventNbmePrefix provides b count of unique bctive users in b given time spbn thbt logged bn event with b given prefix.
+	CountUniqueUsersByEventNbmePrefix(ctx context.Context, stbrtDbte, endDbte time.Time, nbmePrefix string) (int, error)
 
-	// CountUniqueUsersByEventNames provides a count of unique active users in a given time span that logged any event that matches a list of given event names
-	CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error)
+	// CountUniqueUsersByEventNbmes provides b count of unique bctive users in b given time spbn thbt logged bny event thbt mbtches b list of given event nbmes
+	CountUniqueUsersByEventNbmes(ctx context.Context, stbrtDbte, endDbte time.Time, nbmes []string) (int, error)
 
-	// SiteUsageMultiplePeriods provides a count of unique active users in given time spans, broken up into periods of
-	// a given type. The value of `now` should be the current time in UTC.
-	SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error)
+	// SiteUsbgeMultiplePeriods provides b count of unique bctive users in given time spbns, broken up into periods of
+	// b given type. The vblue of `now` should be the current time in UTC.
+	SiteUsbgeMultiplePeriods(ctx context.Context, now time.Time, dbyPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsbgeStbtistics, error)
 
-	// CountUsersWithSetting returns the number of users wtih the given temporary setting set to the given value.
-	CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error)
+	// CountUsersWithSetting returns the number of users wtih the given temporbry setting set to the given vblue.
+	CountUsersWithSetting(ctx context.Context, setting string, vblue bny) (int, error)
 
-	// ❗ DEPRECATED: Use event recorders from internal/telemetryrecorder instead.
+	// ❗ DEPRECATED: Use event recorders from internbl/telemetryrecorder instebd.
 	Insert(ctx context.Context, e *Event) error
 
-	// LatestPing returns the most recently recorded ping event.
-	LatestPing(ctx context.Context) (*Event, error)
+	// LbtestPing returns the most recently recorded ping event.
+	LbtestPing(ctx context.Context) (*Event, error)
 
-	// ListAll gets all event logs in descending order of timestamp.
+	// ListAll gets bll event logs in descending order of timestbmp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*Event, error)
 
-	// ListExportableEvents gets a batch of event logs that are allowed to be exported.
-	ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error)
+	// ListExportbbleEvents gets b bbtch of event logs thbt bre bllowed to be exported.
+	ListExportbbleEvents(ctx context.Context, bfter, limit int) ([]*Event, error)
 
-	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
+	ListUniqueUsersAll(ctx context.Context, stbrtDbte, endDbte time.Time) ([]int32, error)
 
-	// MaxTimestampByUserID gets the max timestamp among event logs for a given user.
-	MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error)
+	// MbxTimestbmpByUserID gets the mbx timestbmp bmong event logs for b given user.
+	MbxTimestbmpByUserID(ctx context.Context, userID int32) (*time.Time, error)
 
-	// MaxTimestampByUserIDAndSource gets the max timestamp among event logs for a given user and event source.
-	MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error)
+	// MbxTimestbmpByUserIDAndSource gets the mbx timestbmp bmong event logs for b given user bnd event source.
+	MbxTimestbmpByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error)
 
-	SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error)
+	SiteUsbgeCurrentPeriods(ctx context.Context) (types.SiteUsbgeSummbry, error)
 
-	// UsersUsageCounts returns a list of UserUsageCounts for all active users that produced 'SearchResultsQueried' and any
-	// '%codeintel%' events in the event_logs table.
-	UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error)
+	// UsersUsbgeCounts returns b list of UserUsbgeCounts for bll bctive users thbt produced 'SebrchResultsQueried' bnd bny
+	// '%codeintel%' events in the event_logs tbble.
+	UsersUsbgeCounts(ctx context.Context) (counts []types.UserUsbgeCounts, err error)
 
-	// OwnershipFeatureActivity returns (M|W|D)AUs for the most recent of each period
-	// for each of given event names.
-	OwnershipFeatureActivity(ctx context.Context, now time.Time, eventNames ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error)
+	// OwnershipFebtureActivity returns (M|W|D)AUs for the most recent of ebch period
+	// for ebch of given event nbmes.
+	OwnershipFebtureActivity(ctx context.Context, now time.Time, eventNbmes ...string) (mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers, error)
 
-	WithTransact(context.Context, func(EventLogStore) error) error
-	With(other basestore.ShareableStore) EventLogStore
-	basestore.ShareableStore
+	WithTrbnsbct(context.Context, func(EventLogStore) error) error
+	With(other bbsestore.ShbrebbleStore) EventLogStore
+	bbsestore.ShbrebbleStore
 }
 
 type eventLogStore struct {
-	*basestore.Store
+	*bbsestore.Store
 }
 
-// EventLogsWith instantiates and returns a new EventLogStore using the other store handle.
-func EventLogsWith(other basestore.ShareableStore) EventLogStore {
-	return &eventLogStore{Store: basestore.NewWithHandle(other.Handle())}
+// EventLogsWith instbntibtes bnd returns b new EventLogStore using the other store hbndle.
+func EventLogsWith(other bbsestore.ShbrebbleStore) EventLogStore {
+	return &eventLogStore{Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (l *eventLogStore) With(other basestore.ShareableStore) EventLogStore {
+func (l *eventLogStore) With(other bbsestore.ShbrebbleStore) EventLogStore {
 	return &eventLogStore{Store: l.Store.With(other)}
 }
 
-func (l *eventLogStore) WithTransact(ctx context.Context, f func(EventLogStore) error) error {
-	return l.Store.WithTransact(ctx, func(tx *basestore.Store) error {
+func (l *eventLogStore) WithTrbnsbct(ctx context.Context, f func(EventLogStore) error) error {
+	return l.Store.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&eventLogStore{Store: tx})
 	})
 }
 
-// SanitizeEventURL makes the given URL is using HTTP/HTTPS scheme and within
-// the current site determined by `conf.ExternalURL()`.
-func SanitizeEventURL(raw string) string {
-	if raw == "" {
+// SbnitizeEventURL mbkes the given URL is using HTTP/HTTPS scheme bnd within
+// the current site determined by `conf.ExternblURL()`.
+func SbnitizeEventURL(rbw string) string {
+	if rbw == "" {
 		return ""
 	}
 
-	// Check if the URL looks like a real URL
-	u, err := url.Parse(raw)
+	// Check if the URL looks like b rebl URL
+	u, err := url.Pbrse(rbw)
 	if err != nil ||
 		(u.Scheme != "http" && u.Scheme != "https") {
 		return ""
 	}
 
 	// Check if the URL belongs to the current site
-	normalized := u.String()
-	if strings.HasPrefix(normalized, conf.ExternalURL()) || strings.HasSuffix(u.Host, "sourcegraph.com") {
-		return normalized
+	normblized := u.String()
+	if strings.HbsPrefix(normblized, conf.ExternblURL()) || strings.HbsSuffix(u.Host, "sourcegrbph.com") {
+		return normblized
 	}
 	return ""
 }
 
-// Event contains information needed for logging an event.
+// Event contbins informbtion needed for logging bn event.
 type Event struct {
 	ID                     int32
-	Name                   string
+	Nbme                   string
 	URL                    string
 	UserID                 uint32
 	AnonymousUserID        string
-	Argument               json.RawMessage
-	PublicArgument         json.RawMessage
+	Argument               json.RbwMessbge
+	PublicArgument         json.RbwMessbge
 	Source                 string
 	Version                string
-	Timestamp              time.Time
-	EvaluatedFlagSet       featureflag.EvaluatedFlagSet
-	CohortID               *string // date in YYYY-MM-DD format
+	Timestbmp              time.Time
+	EvblubtedFlbgSet       febtureflbg.EvblubtedFlbgSet
+	CohortID               *string // dbte in YYYY-MM-DD formbt
 	FirstSourceURL         *string
-	LastSourceURL          *string
+	LbstSourceURL          *string
 	Referrer               *string
 	DeviceID               *string
 	InsertID               *string
 	Client                 *string
-	BillingProductCategory *string
+	BillingProductCbtegory *string
 	BillingEventID         *string
 }
 
@@ -216,20 +216,20 @@ func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
 	return l.BulkInsert(ctx, []*Event{e})
 }
 
-const EventLogsSourcegraphOperatorKey = "sourcegraph_operator"
+const EventLogsSourcegrbphOperbtorKey = "sourcegrbph_operbtor"
 
 func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
-	var tr trace.Trace
-	tr, ctx = trace.New(ctx, "eventLogs.BulkInsert",
-		attribute.Int("events", len(events)))
+	vbr tr trbce.Trbce
+	tr, ctx = trbce.New(ctx, "eventLogs.BulkInsert",
+		bttribute.Int("events", len(events)))
 	defer tr.End()
 
-	coalesce := func(v json.RawMessage) json.RawMessage {
+	coblesce := func(v json.RbwMessbge) json.RbwMessbge {
 		if v != nil {
 			return v
 		}
 
-		return json.RawMessage(`{}`)
+		return json.RbwMessbge(`{}`)
 	}
 
 	ensureUuid := func(in *string) string {
@@ -240,87 +240,87 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 		return *in
 	}
 
-	actor := sgactor.FromContext(ctx)
-	rowValues := make(chan []any, len(events))
-	for _, event := range events {
-		featureFlags, err := json.Marshal(event.EvaluatedFlagSet)
+	bctor := sgbctor.FromContext(ctx)
+	rowVblues := mbke(chbn []bny, len(events))
+	for _, event := rbnge events {
+		febtureFlbgs, err := json.Mbrshbl(event.EvblubtedFlbgSet)
 		if err != nil {
 			return err
 		}
 
-		// Add an attribution for Sourcegraph operator to be distinguished in our analytics pipelines
-		publicArgument := coalesce(event.PublicArgument)
-		if actor.SourcegraphOperator {
+		// Add bn bttribution for Sourcegrbph operbtor to be distinguished in our bnblytics pipelines
+		publicArgument := coblesce(event.PublicArgument)
+		if bctor.SourcegrbphOperbtor {
 			result, err := jsonc.Edit(
 				string(publicArgument),
 				true,
-				EventLogsSourcegraphOperatorKey,
+				EventLogsSourcegrbphOperbtorKey,
 			)
-			publicArgument = json.RawMessage(result)
+			publicArgument = json.RbwMessbge(result)
 			if err != nil {
-				return errors.Wrap(err, `edit "public_argument" for Sourcegraph operator`)
+				return errors.Wrbp(err, `edit "public_brgument" for Sourcegrbph operbtor`)
 			}
 		}
 
-		rowValues <- []any{
-			event.Name,
-			// 🚨 SECURITY: It is important to sanitize event URL before
-			// being stored to the database to help guarantee no malicious
-			// data at rest.
-			SanitizeEventURL(event.URL),
+		rowVblues <- []bny{
+			event.Nbme,
+			// 🚨 SECURITY: It is importbnt to sbnitize event URL before
+			// being stored to the dbtbbbse to help gubrbntee no mblicious
+			// dbtb bt rest.
+			SbnitizeEventURL(event.URL),
 			event.UserID,
 			event.AnonymousUserID,
 			event.Source,
-			coalesce(event.Argument),
+			coblesce(event.Argument),
 			publicArgument,
 			version.Version(),
-			event.Timestamp.UTC(),
-			featureFlags,
+			event.Timestbmp.UTC(),
+			febtureFlbgs,
 			event.CohortID,
 			event.FirstSourceURL,
-			event.LastSourceURL,
+			event.LbstSourceURL,
 			event.Referrer,
 			ensureUuid(event.DeviceID),
 			ensureUuid(event.InsertID),
 			event.Client,
-			event.BillingProductCategory,
+			event.BillingProductCbtegory,
 			event.BillingEventID,
 		}
 	}
-	close(rowValues)
+	close(rowVblues)
 
-	return batch.InsertValues(
+	return bbtch.InsertVblues(
 		ctx,
-		l.Handle(),
+		l.Hbndle(),
 		"event_logs",
-		batch.MaxNumPostgresParameters,
+		bbtch.MbxNumPostgresPbrbmeters,
 		[]string{
-			"name",
+			"nbme",
 			"url",
 			"user_id",
-			"anonymous_user_id",
+			"bnonymous_user_id",
 			"source",
-			"argument",
-			"public_argument",
+			"brgument",
+			"public_brgument",
 			"version",
-			"timestamp",
-			"feature_flags",
+			"timestbmp",
+			"febture_flbgs",
 			"cohort_id",
 			"first_source_url",
-			"last_source_url",
+			"lbst_source_url",
 			"referrer",
 			"device_id",
 			"insert_id",
 			"client",
-			"billing_product_category",
+			"billing_product_cbtegory",
 			"billing_event_id",
 		},
-		rowValues,
+		rowVblues,
 	)
 }
 
 func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) ([]*Event, error) {
-	q := sqlf.Sprintf("SELECT id, name, url, user_id, anonymous_user_id, source, argument, public_argument, version, timestamp, feature_flags, cohort_id, first_source_url, last_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
+	q := sqlf.Sprintf("SELECT id, nbme, url, user_id, bnonymous_user_id, source, brgument, public_brgument, version, timestbmp, febture_flbgs, cohort_id, first_source_url, lbst_source_url, referrer, device_id, insert_id FROM event_logs %s", querySuffix)
 	rows, err := l.Query(ctx, q)
 	if err != nil {
 		return nil, err
@@ -329,18 +329,18 @@ func (l *eventLogStore) getBySQL(ctx context.Context, querySuffix *sqlf.Query) (
 	events := []*Event{}
 	for rows.Next() {
 		r := Event{}
-		var rawFlags []byte
-		err := rows.Scan(&r.ID, &r.Name, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.PublicArgument, &r.Version, &r.Timestamp, &rawFlags, &r.CohortID, &r.FirstSourceURL, &r.LastSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
+		vbr rbwFlbgs []byte
+		err := rows.Scbn(&r.ID, &r.Nbme, &r.URL, &r.UserID, &r.AnonymousUserID, &r.Source, &r.Argument, &r.PublicArgument, &r.Version, &r.Timestbmp, &rbwFlbgs, &r.CohortID, &r.FirstSourceURL, &r.LbstSourceURL, &r.Referrer, &r.DeviceID, &r.InsertID)
 		if err != nil {
 			return nil, err
 		}
-		if rawFlags != nil {
-			marshalErr := json.Unmarshal(rawFlags, &r.EvaluatedFlagSet)
-			if marshalErr != nil {
-				return nil, errors.Wrap(marshalErr, "json.Unmarshal")
+		if rbwFlbgs != nil {
+			mbrshblErr := json.Unmbrshbl(rbwFlbgs, &r.EvblubtedFlbgSet)
+			if mbrshblErr != nil {
+				return nil, errors.Wrbp(mbrshblErr, "json.Unmbrshbl")
 			}
 		}
-		events = append(events, &r)
+		events = bppend(events, &r)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -353,8 +353,8 @@ type EventLogsListOptions struct {
 	// UserID specifies the user whose events should be included.
 	UserID int32
 	*LimitOffset
-	EventName *string
-	// AfterID specifies a minimum event ID of listed events.
+	EventNbme *string
+	// AfterID specifies b minimum event ID of listed events.
 	AfterID int
 }
 
@@ -362,26 +362,26 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	orderDirection := "DESC"
 	if opt.AfterID > 0 {
-		conds = append(conds, sqlf.Sprintf("id > %d", opt.AfterID))
+		conds = bppend(conds, sqlf.Sprintf("id > %d", opt.AfterID))
 		orderDirection = "ASC"
 	}
 	if opt.UserID != 0 {
-		conds = append(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
+		conds = bppend(conds, sqlf.Sprintf("user_id = %d", opt.UserID))
 	}
-	if opt.EventName != nil {
-		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
+	if opt.EventNbme != nil {
+		conds = bppend(conds, sqlf.Sprintf("nbme = %s", opt.EventNbme))
 	}
-	queryTemplate := fmt.Sprintf("WHERE %%s ORDER BY id %s %%s", orderDirection)
-	return l.getBySQL(ctx, sqlf.Sprintf(queryTemplate, sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+	queryTemplbte := fmt.Sprintf("WHERE %%s ORDER BY id %s %%s", orderDirection)
+	return l.getBySQL(ctx, sqlf.Sprintf(queryTemplbte, sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
 }
 
-func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*Event, error) {
-	suffix := "WHERE event_logs.id > %d AND name IN (SELECT event_name FROM event_logs_export_allowlist) ORDER BY event_logs.id LIMIT %d"
-	return l.getBySQL(ctx, sqlf.Sprintf(suffix, after, limit))
+func (l *eventLogStore) ListExportbbleEvents(ctx context.Context, bfter, limit int) ([]*Event, error) {
+	suffix := "WHERE event_logs.id > %d AND nbme IN (SELECT event_nbme FROM event_logs_export_bllowlist) ORDER BY event_logs.id LIMIT %d"
+	return l.getBySQL(ctx, sqlf.Sprintf(suffix, bfter, limit))
 }
 
-func (l *eventLogStore) LatestPing(ctx context.Context) (*Event, error) {
-	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE name='ping' ORDER BY id DESC LIMIT 1`))
+func (l *eventLogStore) LbtestPing(ctx context.Context) (*Event, error) {
+	rows, err := l.getBySQL(ctx, sqlf.Sprintf(`WHERE nbme='ping' ORDER BY id DESC LIMIT 1`))
 	if err != nil {
 		return nil, err
 	}
@@ -395,290 +395,290 @@ func (l *eventLogStore) CountByUserID(ctx context.Context, userID int32) (int, e
 	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
-func (l *eventLogStore) CountByUserIDAndEventName(ctx context.Context, userID int32, name string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name = %s", userID, name))
+func (l *eventLogStore) CountByUserIDAndEventNbme(ctx context.Context, userID int32, nbme string) (int, error) {
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND nbme = %s", userID, nbme))
 }
 
-func (l *eventLogStore) CountByUserIDAndEventNamePrefix(ctx context.Context, userID int32, namePrefix string) (int, error) {
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name LIKE %s", userID, namePrefix+"%"))
+func (l *eventLogStore) CountByUserIDAndEventNbmePrefix(ctx context.Context, userID int32, nbmePrefix string) (int, error) {
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND nbme LIKE %s", userID, nbmePrefix+"%"))
 }
 
-func (l *eventLogStore) CountByUserIDAndEventNames(ctx context.Context, userID int32, names []string) (int, error) {
+func (l *eventLogStore) CountByUserIDAndEventNbmes(ctx context.Context, userID int32, nbmes []string) (int, error) {
 	items := []*sqlf.Query{}
-	for _, v := range names {
-		items = append(items, sqlf.Sprintf("%s", v))
+	for _, v := rbnge nbmes {
+		items = bppend(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND name IN (%s)", userID, sqlf.Join(items, ",")))
+	return l.countBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND nbme IN (%s)", userID, sqlf.Join(items, ",")))
 }
 
-// countBySQL gets a count of event logs.
+// countBySQL gets b count of event logs.
 func (l *eventLogStore) countBySQL(ctx context.Context, querySuffix *sqlf.Query) (int, error) {
 	q := sqlf.Sprintf("SELECT COUNT(*) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
-	var count int
-	err := r.Scan(&count)
+	vbr count int
+	err := r.Scbn(&count)
 	return count, err
 }
 
-func (l *eventLogStore) MaxTimestampByUserID(ctx context.Context, userID int32) (*time.Time, error) {
-	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
+func (l *eventLogStore) MbxTimestbmpByUserID(ctx context.Context, userID int32) (*time.Time, error) {
+	return l.mbxTimestbmpBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d", userID))
 }
 
-func (l *eventLogStore) MaxTimestampByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
-	return l.maxTimestampBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND source = %s", userID, source))
+func (l *eventLogStore) MbxTimestbmpByUserIDAndSource(ctx context.Context, userID int32, source string) (*time.Time, error) {
+	return l.mbxTimestbmpBySQL(ctx, sqlf.Sprintf("WHERE user_id = %d AND source = %s", userID, source))
 }
 
-// maxTimestampBySQL gets the max timestamp among event logs.
-func (l *eventLogStore) maxTimestampBySQL(ctx context.Context, querySuffix *sqlf.Query) (*time.Time, error) {
-	q := sqlf.Sprintf("SELECT MAX(timestamp) FROM event_logs %s", querySuffix)
+// mbxTimestbmpBySQL gets the mbx timestbmp bmong event logs.
+func (l *eventLogStore) mbxTimestbmpBySQL(ctx context.Context, querySuffix *sqlf.Query) (*time.Time, error) {
+	q := sqlf.Sprintf("SELECT MAX(timestbmp) FROM event_logs %s", querySuffix)
 	r := l.QueryRow(ctx, q)
 
-	var t time.Time
-	err := r.Scan(&dbutil.NullTime{Time: &t})
+	vbr t time.Time
+	err := r.Scbn(&dbutil.NullTime{Time: &t})
 	if t.IsZero() {
 		return nil, err
 	}
 	return &t, err
 }
 
-// SiteUsageValues is a set of UsageValues representing usage on daily, weekly, and monthly bases.
-type SiteUsageValues struct {
-	DAUs []UsageValue
-	WAUs []UsageValue
-	MAUs []UsageValue
+// SiteUsbgeVblues is b set of UsbgeVblues representing usbge on dbily, weekly, bnd monthly bbses.
+type SiteUsbgeVblues struct {
+	DAUs []UsbgeVblue
+	WAUs []UsbgeVblue
+	MAUs []UsbgeVblue
 }
 
-// UsageValue is a single count of usage for a time period starting on a given date.
-type UsageValue struct {
-	Start           time.Time
+// UsbgeVblue is b single count of usbge for b time period stbrting on b given dbte.
+type UsbgeVblue struct {
+	Stbrt           time.Time
 	Type            PeriodType
 	Count           int
 	CountRegistered int
 }
 
-// PeriodType is the type of period in which to count events and unique users.
+// PeriodType is the type of period in which to count events bnd unique users.
 type PeriodType string
 
 const (
-	// Daily is used to get a count of events or unique users within a day.
-	Daily PeriodType = "daily"
-	// Weekly is used to get a count of events or unique users within a week.
+	// Dbily is used to get b count of events or unique users within b dby.
+	Dbily PeriodType = "dbily"
+	// Weekly is used to get b count of events or unique users within b week.
 	Weekly PeriodType = "weekly"
-	// Monthly is used to get a count of events or unique users within a month.
+	// Monthly is used to get b count of events or unique users within b month.
 	Monthly PeriodType = "monthly"
 )
 
-var ErrInvalidPeriodType = errors.New("invalid period type")
+vbr ErrInvblidPeriodType = errors.New("invblid period type")
 
-// calcStartDate calculates the the starting date of a number of periods given the period type.
-// from the current time supplied as `now`. Returns an error if the period type is
-// illegal.
-func calcStartDate(now time.Time, periodType PeriodType, periods int) (time.Time, error) {
+// cblcStbrtDbte cblculbtes the the stbrting dbte of b number of periods given the period type.
+// from the current time supplied bs `now`. Returns bn error if the period type is
+// illegbl.
+func cblcStbrtDbte(now time.Time, periodType PeriodType, periods int) (time.Time, error) {
 	periodsAgo := periods - 1
 
 	switch periodType {
-	case Daily:
-		return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.UTC).AddDate(0, 0, -periodsAgo), nil
-	case Weekly:
-		return timeutil.StartOfWeek(now, periodsAgo), nil
-	case Monthly:
-		return time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDate(0, -periodsAgo, 0), nil
+	cbse Dbily:
+		return time.Dbte(now.Yebr(), now.Month(), now.Dby(), 0, 0, 0, 0, time.UTC).AddDbte(0, 0, -periodsAgo), nil
+	cbse Weekly:
+		return timeutil.StbrtOfWeek(now, periodsAgo), nil
+	cbse Monthly:
+		return time.Dbte(now.Yebr(), now.Month(), 1, 0, 0, 0, 0, time.UTC).AddDbte(0, -periodsAgo, 0), nil
 	}
-	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
+	return time.Time{}, errors.Wrbpf(ErrInvblidPeriodType, "%q is not b vblid PeriodType", periodType)
 }
 
-// calcEndDate calculates the the ending date of a number of periods given the period type.
-// Returns a second false value if the period type is illegal.
-func calcEndDate(startDate time.Time, periodType PeriodType, periods int) (time.Time, error) {
+// cblcEndDbte cblculbtes the the ending dbte of b number of periods given the period type.
+// Returns b second fblse vblue if the period type is illegbl.
+func cblcEndDbte(stbrtDbte time.Time, periodType PeriodType, periods int) (time.Time, error) {
 	periodsAgo := periods - 1
 
 	switch periodType {
-	case Daily:
-		return startDate.AddDate(0, 0, periodsAgo), nil
-	case Weekly:
-		return startDate.AddDate(0, 0, 7*periodsAgo), nil
-	case Monthly:
-		return startDate.AddDate(0, periodsAgo, 0), nil
+	cbse Dbily:
+		return stbrtDbte.AddDbte(0, 0, periodsAgo), nil
+	cbse Weekly:
+		return stbrtDbte.AddDbte(0, 0, 7*periodsAgo), nil
+	cbse Monthly:
+		return stbrtDbte.AddDbte(0, periodsAgo, 0), nil
 	}
-	return time.Time{}, errors.Wrapf(ErrInvalidPeriodType, "%q is not a valid PeriodType", periodType)
+	return time.Time{}, errors.Wrbpf(ErrInvblidPeriodType, "%q is not b vblid PeriodType", periodType)
 }
 
-// CommonUsageOptions provides a set of options that are common across different usage calculations.
-type CommonUsageOptions struct {
-	// Exclude backend system users.
+// CommonUsbgeOptions provides b set of options thbt bre common bcross different usbge cblculbtions.
+type CommonUsbgeOptions struct {
+	// Exclude bbckend system users.
 	ExcludeSystemUsers bool
-	// Exclude events that don't meet the criteria of "active" usage of Sourcegraph. These
-	// are mostly actions taken by signed-out users.
+	// Exclude events thbt don't meet the criterib of "bctive" usbge of Sourcegrbph. These
+	// bre mostly bctions tbken by signed-out users.
 	ExcludeNonActiveUsers bool
-	// Exclude Sourcegraph (employee) admins.
+	// Exclude Sourcegrbph (employee) bdmins.
 	//
-	// Deprecated: Use ExcludeSourcegraphOperators instead. If you have to use this,
-	// then set both fields with the same value at the same time.
-	ExcludeSourcegraphAdmins bool
-	// ExcludeSourcegraphOperators indicates whether to exclude Sourcegraph Operator
-	// user accounts.
-	ExcludeSourcegraphOperators bool
+	// Deprecbted: Use ExcludeSourcegrbphOperbtors instebd. If you hbve to use this,
+	// then set both fields with the sbme vblue bt the sbme time.
+	ExcludeSourcegrbphAdmins bool
+	// ExcludeSourcegrbphOperbtors indicbtes whether to exclude Sourcegrbph Operbtor
+	// user bccounts.
+	ExcludeSourcegrbphOperbtors bool
 }
 
 // CountUniqueUsersOptions provides options for counting unique users.
 type CountUniqueUsersOptions struct {
-	CommonUsageOptions
-	// If set, adds additional restrictions on the event types.
+	CommonUsbgeOptions
+	// If set, bdds bdditionbl restrictions on the event types.
 	EventFilters *EventFilterOptions
 }
 
 // EventFilterOptions provides options for filtering events.
 type EventFilterOptions struct {
-	// If set, only include events with a given prefix.
-	ByEventNamePrefix string
-	// If set, only include events with the given name.
-	ByEventName string
-	// If not empty, only include events that matche a list of given event names
-	ByEventNames []string
-	// Must be used with ByEventName
+	// If set, only include events with b given prefix.
+	ByEventNbmePrefix string
+	// If set, only include events with the given nbme.
+	ByEventNbme string
+	// If not empty, only include events thbt mbtche b list of given event nbmes
+	ByEventNbmes []string
+	// Must be used with ByEventNbme
 	//
-	// If set, only include events that match a specified condition.
-	ByEventNameWithCondition *sqlf.Query
+	// If set, only include events thbt mbtch b specified condition.
+	ByEventNbmeWithCondition *sqlf.Query
 }
 
-// EventArgumentMatch provides the options for matching an event with
-// a specific JSON value passed as an argument.
-type EventArgumentMatch struct {
-	// The name of the JSON key to match against.
-	ArgumentName string
-	// The actual value passed to the JSON key to match.
-	ArgumentValue string
+// EventArgumentMbtch provides the options for mbtching bn event with
+// b specific JSON vblue pbssed bs bn brgument.
+type EventArgumentMbtch struct {
+	// The nbme of the JSON key to mbtch bgbinst.
+	ArgumentNbme string
+	// The bctubl vblue pbssed to the JSON key to mbtch.
+	ArgumentVblue string
 }
 
-// PercentileValue is a slice of Nth percentile values calculated from a field of events
-// in a time period starting on a given date.
-type PercentileValue struct {
-	Start  time.Time
-	Values []float64
+// PercentileVblue is b slice of Nth percentile vblues cblculbted from b field of events
+// in b time period stbrting on b given dbte.
+type PercentileVblue struct {
+	Stbrt  time.Time
+	Vblues []flobt64
 }
 
-func (l *eventLogStore) CountUsersWithSetting(ctx context.Context, setting string, value any) (int, error) {
-	count, _, err := basestore.ScanFirstInt(l.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM temporary_settings WHERE %s <@ contents`, jsonSettingFragment(setting, value))))
+func (l *eventLogStore) CountUsersWithSetting(ctx context.Context, setting string, vblue bny) (int, error) {
+	count, _, err := bbsestore.ScbnFirstInt(l.Store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM temporbry_settings WHERE %s <@ contents`, jsonSettingFrbgment(setting, vblue))))
 	return count, err
 }
 
-func jsonSettingFragment(setting string, value any) string {
-	raw, _ := json.Marshal(map[string]any{setting: value})
-	return string(raw)
+func jsonSettingFrbgment(setting string, vblue bny) string {
+	rbw, _ := json.Mbrshbl(mbp[string]bny{setting: vblue})
+	return string(rbw)
 }
 
 func buildCountUniqueUserConds(opt *CountUniqueUsersOptions) []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsbgeConds(&opt.CommonUsbgeOptions, conds)
 
 		if opt.EventFilters != nil {
-			if opt.EventFilters.ByEventNamePrefix != "" {
-				conds = append(conds, sqlf.Sprintf("name LIKE %s", opt.EventFilters.ByEventNamePrefix+"%"))
+			if opt.EventFilters.ByEventNbmePrefix != "" {
+				conds = bppend(conds, sqlf.Sprintf("nbme LIKE %s", opt.EventFilters.ByEventNbmePrefix+"%"))
 			}
-			if opt.EventFilters.ByEventName != "" {
-				conds = append(conds, sqlf.Sprintf("name = %s", opt.EventFilters.ByEventName))
+			if opt.EventFilters.ByEventNbme != "" {
+				conds = bppend(conds, sqlf.Sprintf("nbme = %s", opt.EventFilters.ByEventNbme))
 			}
-			if opt.EventFilters.ByEventNameWithCondition != nil {
-				conds = append(conds, opt.EventFilters.ByEventNameWithCondition)
+			if opt.EventFilters.ByEventNbmeWithCondition != nil {
+				conds = bppend(conds, opt.EventFilters.ByEventNbmeWithCondition)
 			}
-			if len(opt.EventFilters.ByEventNames) > 0 {
+			if len(opt.EventFilters.ByEventNbmes) > 0 {
 				items := []*sqlf.Query{}
-				for _, v := range opt.EventFilters.ByEventNames {
-					items = append(items, sqlf.Sprintf("%s", v))
+				for _, v := rbnge opt.EventFilters.ByEventNbmes {
+					items = bppend(items, sqlf.Sprintf("%s", v))
 				}
-				conds = append(conds, sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ",")))
+				conds = bppend(conds, sqlf.Sprintf("nbme IN (%s)", sqlf.Join(items, ",")))
 			}
 		}
 	}
 	return conds
 }
 
-func BuildCommonUsageConds(opt *CommonUsageOptions, conds []*sqlf.Query) []*sqlf.Query {
+func BuildCommonUsbgeConds(opt *CommonUsbgeOptions, conds []*sqlf.Query) []*sqlf.Query {
 	if opt != nil {
 		if opt.ExcludeSystemUsers {
-			conds = append(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.anonymous_user_id <> 'backend'"))
+			conds = bppend(conds, sqlf.Sprintf("event_logs.user_id > 0 OR event_logs.bnonymous_user_id <> 'bbckend'"))
 		}
 		if opt.ExcludeNonActiveUsers {
-			conds = append(conds, sqlf.Sprintf("event_logs.name NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
+			conds = bppend(conds, sqlf.Sprintf("event_logs.nbme NOT IN ('"+strings.Join(eventlogger.NonActiveUserEvents, "','")+"')"))
 		}
 
-		// NOTE: This is a hack which should be replaced when we have proper user types.
-		// However, for billing purposes and more accurate ping data, we need a way to
-		// exclude Sourcegraph (employee) admins when counting users. The following
-		// username patterns, in conjunction with the presence of a corresponding
-		// "@sourcegraph.com" email address, are used to filter out Sourcegraph admins:
+		// NOTE: This is b hbck which should be replbced when we hbve proper user types.
+		// However, for billing purposes bnd more bccurbte ping dbtb, we need b wby to
+		// exclude Sourcegrbph (employee) bdmins when counting users. The following
+		// usernbme pbtterns, in conjunction with the presence of b corresponding
+		// "@sourcegrbph.com" embil bddress, bre used to filter out Sourcegrbph bdmins:
 		//
-		// - managed-*
-		// - sourcegraph-management-*
-		// - sourcegraph-admin
+		// - mbnbged-*
+		// - sourcegrbph-mbnbgement-*
+		// - sourcegrbph-bdmin
 		//
-		// This method of filtering is imperfect and may still incur false positives, but
-		// the two together should help prevent that in the majority of cases, and we
-		// acknowledge this risk as we would prefer to undercount rather than overcount.
+		// This method of filtering is imperfect bnd mby still incur fblse positives, but
+		// the two together should help prevent thbt in the mbjority of cbses, bnd we
+		// bcknowledge this risk bs we would prefer to undercount rbther thbn overcount.
 		//
-		// TODO(jchen): This hack will be removed as part of https://github.com/sourcegraph/customer/issues/1531
-		if opt.ExcludeSourcegraphAdmins {
-			conds = append(conds, sqlf.Sprintf(`
--- No matching user exists
-users.username IS NULL
+		// TODO(jchen): This hbck will be removed bs pbrt of https://github.com/sourcegrbph/customer/issues/1531
+		if opt.ExcludeSourcegrbphAdmins {
+			conds = bppend(conds, sqlf.Sprintf(`
+-- No mbtching user exists
+users.usernbme IS NULL
 -- Or, the user does not...
 OR NOT(
-	-- ...have a known Sourcegraph admin username pattern
-	(users.username ILIKE 'managed-%%'
-		OR users.username ILIKE 'sourcegraph-management-%%'
-		OR users.username = 'sourcegraph-admin')
-	-- ...and have a matching sourcegraph email address
+	-- ...hbve b known Sourcegrbph bdmin usernbme pbttern
+	(users.usernbme ILIKE 'mbnbged-%%'
+		OR users.usernbme ILIKE 'sourcegrbph-mbnbgement-%%'
+		OR users.usernbme = 'sourcegrbph-bdmin')
+	-- ...bnd hbve b mbtching sourcegrbph embil bddress
 	AND EXISTS (
 		SELECT
-			1 FROM user_emails
+			1 FROM user_embils
 		WHERE
-			user_emails.user_id = users.id
-			AND user_emails.email ILIKE '%%@sourcegraph.com')
+			user_embils.user_id = users.id
+			AND user_embils.embil ILIKE '%%@sourcegrbph.com')
 )
 `))
 		}
 
-		if opt.ExcludeSourcegraphOperators {
-			conds = append(conds, sqlf.Sprintf(fmt.Sprintf(`NOT event_logs.public_argument @> '{"%s": true}'`, EventLogsSourcegraphOperatorKey)))
+		if opt.ExcludeSourcegrbphOperbtors {
+			conds = bppend(conds, sqlf.Sprintf(fmt.Sprintf(`NOT event_logs.public_brgument @> '{"%s": true}'`, EventLogsSourcegrbphOperbtorKey)))
 		}
 	}
 	return conds
 }
 
-func (l *eventLogStore) SiteUsageMultiplePeriods(ctx context.Context, now time.Time, dayPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsageStatistics, error) {
-	startDateDays, err := calcStartDate(now, Daily, dayPeriods)
+func (l *eventLogStore) SiteUsbgeMultiplePeriods(ctx context.Context, now time.Time, dbyPeriods int, weekPeriods int, monthPeriods int, opt *CountUniqueUsersOptions) (*types.SiteUsbgeStbtistics, error) {
+	stbrtDbteDbys, err := cblcStbrtDbte(now, Dbily, dbyPeriods)
 	if err != nil {
 		return nil, err
 	}
-	endDateDays, err := calcEndDate(startDateDays, Daily, dayPeriods)
+	endDbteDbys, err := cblcEndDbte(stbrtDbteDbys, Dbily, dbyPeriods)
 	if err != nil {
 		return nil, err
 	}
-	startDateWeeks, err := calcStartDate(now, Weekly, weekPeriods)
+	stbrtDbteWeeks, err := cblcStbrtDbte(now, Weekly, weekPeriods)
 	if err != nil {
 		return nil, err
 	}
-	endDateWeeks, err := calcEndDate(startDateWeeks, Weekly, weekPeriods)
+	endDbteWeeks, err := cblcEndDbte(stbrtDbteWeeks, Weekly, weekPeriods)
 	if err != nil {
 		return nil, err
 	}
-	startDateMonths, err := calcStartDate(now, Monthly, monthPeriods)
+	stbrtDbteMonths, err := cblcStbrtDbte(now, Monthly, monthPeriods)
 	if err != nil {
 		return nil, err
 	}
-	endDateMonths, err := calcEndDate(startDateMonths, Monthly, monthPeriods)
+	endDbteMonths, err := cblcEndDbte(stbrtDbteMonths, Monthly, monthPeriods)
 	if err != nil {
 		return nil, err
 	}
 
 	conds := buildCountUniqueUserConds(opt)
 
-	return l.siteUsageMultiplePeriodsBySQL(ctx, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, conds)
+	return l.siteUsbgeMultiplePeriodsBySQL(ctx, stbrtDbteDbys, endDbteDbys, stbrtDbteWeeks, endDbteWeeks, stbrtDbteMonths, endDbteMonths, conds)
 }
 
-func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths time.Time, conds []*sqlf.Query) (*types.SiteUsageStatistics, error) {
-	q := sqlf.Sprintf(siteUsageMultiplePeriodsQuery, startDateDays, endDateDays, startDateWeeks, endDateWeeks, startDateMonths, endDateMonths, sqlf.Join(conds, ") AND ("))
+func (l *eventLogStore) siteUsbgeMultiplePeriodsBySQL(ctx context.Context, stbrtDbteDbys, endDbteDbys, stbrtDbteWeeks, endDbteWeeks, stbrtDbteMonths, endDbteMonths time.Time, conds []*sqlf.Query) (*types.SiteUsbgeStbtistics, error) {
+	q := sqlf.Sprintf(siteUsbgeMultiplePeriodsQuery, stbrtDbteDbys, endDbteDbys, stbrtDbteWeeks, endDbteWeeks, stbrtDbteMonths, endDbteMonths, sqlf.Join(conds, ") AND ("))
 
 	rows, err := l.Query(ctx, q)
 	if err != nil {
@@ -686,177 +686,177 @@ func (l *eventLogStore) siteUsageMultiplePeriodsBySQL(ctx context.Context, start
 	}
 	defer rows.Close()
 
-	dauCounts := []*types.SiteActivityPeriod{}
-	wauCounts := []*types.SiteActivityPeriod{}
-	mauCounts := []*types.SiteActivityPeriod{}
+	dbuCounts := []*types.SiteActivityPeriod{}
+	wbuCounts := []*types.SiteActivityPeriod{}
+	mbuCounts := []*types.SiteActivityPeriod{}
 	for rows.Next() {
-		var v UsageValue
-		err := rows.Scan(&v.Start, &v.Type, &v.Count, &v.CountRegistered)
+		vbr v UsbgeVblue
+		err := rows.Scbn(&v.Stbrt, &v.Type, &v.Count, &v.CountRegistered)
 		if err != nil {
 			return nil, err
 		}
-		v.Start = v.Start.UTC()
-		if v.Type == "day" {
-			dauCounts = append(dauCounts, &types.SiteActivityPeriod{
-				StartTime:           v.Start,
+		v.Stbrt = v.Stbrt.UTC()
+		if v.Type == "dby" {
+			dbuCounts = bppend(dbuCounts, &types.SiteActivityPeriod{
+				StbrtTime:           v.Stbrt,
 				UserCount:           int32(v.Count),
 				RegisteredUserCount: int32(v.CountRegistered),
 				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
-				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
-				IntegrationUserCount: 0,
+				// No longer used in site bdmin usbge stbts views. Use GetSiteUsbgeStbts if you need this instebd.
+				IntegrbtionUserCount: 0,
 			})
 		}
 		if v.Type == "week" {
-			wauCounts = append(wauCounts, &types.SiteActivityPeriod{
-				StartTime:           v.Start,
+			wbuCounts = bppend(wbuCounts, &types.SiteActivityPeriod{
+				StbrtTime:           v.Stbrt,
 				UserCount:           int32(v.Count),
 				RegisteredUserCount: int32(v.CountRegistered),
 				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
-				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
-				IntegrationUserCount: 0,
+				// No longer used in site bdmin usbge stbts views. Use GetSiteUsbgeStbts if you need this instebd.
+				IntegrbtionUserCount: 0,
 			})
 		}
 		if v.Type == "month" {
-			mauCounts = append(mauCounts, &types.SiteActivityPeriod{
-				StartTime:           v.Start,
+			mbuCounts = bppend(mbuCounts, &types.SiteActivityPeriod{
+				StbrtTime:           v.Stbrt,
 				UserCount:           int32(v.Count),
 				RegisteredUserCount: int32(v.CountRegistered),
 				AnonymousUserCount:  int32(v.Count - v.CountRegistered),
-				// No longer used in site admin usage stats views. Use GetSiteUsageStats if you need this instead.
-				IntegrationUserCount: 0,
+				// No longer used in site bdmin usbge stbts views. Use GetSiteUsbgeStbts if you need this instebd.
+				IntegrbtionUserCount: 0,
 			})
 		}
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return &types.SiteUsageStatistics{
-		DAUs: dauCounts,
-		WAUs: wauCounts,
-		MAUs: mauCounts,
+	return &types.SiteUsbgeStbtistics{
+		DAUs: dbuCounts,
+		WAUs: wbuCounts,
+		MAUs: mbuCounts,
 	}, nil
 }
 
-var siteUsageMultiplePeriodsQuery = `
-WITH all_periods AS (
-  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 day')::interval)  AS period, 'day' AS type
+vbr siteUsbgeMultiplePeriodsQuery = `
+WITH bll_periods AS (
+  SELECT generbte_series((%s)::timestbmp, (%s)::timestbmp, ('1 dby')::intervbl)  AS period, 'dby' AS type
   UNION ALL
-  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 week')::interval) AS period, 'week' AS type
+  SELECT generbte_series((%s)::timestbmp, (%s)::timestbmp, ('1 week')::intervbl) AS period, 'week' AS type
   UNION ALL
-  SELECT generate_series((%s)::timestamp, (%s)::timestamp, ('1 month')::interval) AS period, 'month' AS type),
+  SELECT generbte_series((%s)::timestbmp, (%s)::timestbmp, ('1 month')::intervbl) AS period, 'month' AS type),
 unique_users_by_dwm AS (
   SELECT
-    ` + makeDateTruncExpression("day", "timestamp") + ` AS day_period,
-	` + makeDateTruncExpression("week", "timestamp") + ` AS week_period,
-	` + makeDateTruncExpression("month", "timestamp") + ` AS month_period,
+    ` + mbkeDbteTruncExpression("dby", "timestbmp") + ` AS dby_period,
+	` + mbkeDbteTruncExpression("week", "timestbmp") + ` AS week_period,
+	` + mbkeDbteTruncExpression("month", "timestbmp") + ` AS month_period,
 	event_logs.user_id > 0 AS registered,
-	` + aggregatedUserIDQueryFragment + ` as aggregated_user_id
+	` + bggregbtedUserIDQueryFrbgment + ` bs bggregbted_user_id
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (%s) AND anonymous_user_id != 'backend'
-  GROUP BY day_period, week_period, month_period, aggregated_user_id, registered
+  WHERE (%s) AND bnonymous_user_id != 'bbckend'
+  GROUP BY dby_period, week_period, month_period, bggregbted_user_id, registered
 ),
-unique_users_by_day AS (
+unique_users_by_dby AS (
   SELECT
-	day_period,
-	COUNT(DISTINCT aggregated_user_id) as count,
-	COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+	dby_period,
+	COUNT(DISTINCT bggregbted_user_id) bs count,
+	COUNT(DISTINCT bggregbted_user_id) FILTER (WHERE registered) bs count_registered
   FROM unique_users_by_dwm
-  GROUP BY day_period
+  GROUP BY dby_period
 ),
 unique_users_by_week AS (
   SELECT
 	week_period,
-	COUNT(DISTINCT aggregated_user_id) as count,
-	COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+	COUNT(DISTINCT bggregbted_user_id) bs count,
+	COUNT(DISTINCT bggregbted_user_id) FILTER (WHERE registered) bs count_registered
   FROM unique_users_by_dwm
   GROUP BY week_period
 ),
 unique_users_by_month AS (
   SELECT
     month_period,
-    COUNT(DISTINCT aggregated_user_id) as count,
-    COUNT(DISTINCT aggregated_user_id) FILTER (WHERE registered) as count_registered
+    COUNT(DISTINCT bggregbted_user_id) bs count,
+    COUNT(DISTINCT bggregbted_user_id) FILTER (WHERE registered) bs count_registered
   FROM unique_users_by_dwm
   GROUP BY month_period
 )
 SELECT
-  all_periods.period,
-  all_periods.type,
-  COALESCE(CASE WHEN all_periods.type = 'day'
-    THEN unique_users_by_day.count
-	ELSE CASE WHEN all_periods.type = 'week'
+  bll_periods.period,
+  bll_periods.type,
+  COALESCE(CASE WHEN bll_periods.type = 'dby'
+    THEN unique_users_by_dby.count
+	ELSE CASE WHEN bll_periods.type = 'week'
       THEN unique_users_by_week.count
       ELSE unique_users_by_month.count
     END
   END, 0) count,
-  COALESCE(CASE WHEN all_periods.type = 'day'
-    THEN unique_users_by_day.count_registered
-    ELSE CASE WHEN all_periods.type = 'week'
+  COALESCE(CASE WHEN bll_periods.type = 'dby'
+    THEN unique_users_by_dby.count_registered
+    ELSE CASE WHEN bll_periods.type = 'week'
       THEN unique_users_by_week.count_registered
       ELSE unique_users_by_month.count_registered
 	END
   END, 0) count_registered
-FROM all_periods
-LEFT OUTER JOIN unique_users_by_day ON all_periods.type = 'day' AND all_periods.period = (unique_users_by_day.day_period)::timestamp
-LEFT OUTER JOIN unique_users_by_week ON all_periods.type = 'week' AND all_periods.period = (unique_users_by_week.week_period)::timestamp
-LEFT OUTER JOIN unique_users_by_month ON all_periods.type = 'month' AND all_periods.period = (unique_users_by_month.month_period)::timestamp
+FROM bll_periods
+LEFT OUTER JOIN unique_users_by_dby ON bll_periods.type = 'dby' AND bll_periods.period = (unique_users_by_dby.dby_period)::timestbmp
+LEFT OUTER JOIN unique_users_by_week ON bll_periods.type = 'week' AND bll_periods.period = (unique_users_by_week.week_period)::timestbmp
+LEFT OUTER JOIN unique_users_by_month ON bll_periods.type = 'month' AND bll_periods.period = (unique_users_by_month.month_period)::timestbmp
 ORDER BY period DESC
 `
 
-func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, startDate, endDate time.Time, opt *CountUniqueUsersOptions) (int, error) {
+func (l *eventLogStore) CountUniqueUsersAll(ctx context.Context, stbrtDbte, endDbte time.Time, opt *CountUniqueUsersOptions) (int, error) {
 	conds := buildCountUniqueUserConds(opt)
 
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, conds)
+	return l.countUniqueUsersBySQL(ctx, stbrtDbte, endDbte, conds)
 }
 
-func (l *eventLogStore) CountUniqueUsersByEventNamePrefix(ctx context.Context, startDate, endDate time.Time, namePrefix string) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name LIKE %s ", namePrefix+"%")})
+func (l *eventLogStore) CountUniqueUsersByEventNbmePrefix(ctx context.Context, stbrtDbte, endDbte time.Time, nbmePrefix string) (int, error) {
+	return l.countUniqueUsersBySQL(ctx, stbrtDbte, endDbte, []*sqlf.Query{sqlf.Sprintf("nbme LIKE %s ", nbmePrefix+"%")})
 }
 
-func (l *eventLogStore) CountUniqueUsersByEventName(ctx context.Context, startDate, endDate time.Time, name string) (int, error) {
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name = %s", name)})
+func (l *eventLogStore) CountUniqueUsersByEventNbme(ctx context.Context, stbrtDbte, endDbte time.Time, nbme string) (int, error) {
+	return l.countUniqueUsersBySQL(ctx, stbrtDbte, endDbte, []*sqlf.Query{sqlf.Sprintf("nbme = %s", nbme)})
 }
 
-func (l *eventLogStore) CountUniqueUsersByEventNames(ctx context.Context, startDate, endDate time.Time, names []string) (int, error) {
+func (l *eventLogStore) CountUniqueUsersByEventNbmes(ctx context.Context, stbrtDbte, endDbte time.Time, nbmes []string) (int, error) {
 	items := []*sqlf.Query{}
-	for _, v := range names {
-		items = append(items, sqlf.Sprintf("%s", v))
+	for _, v := rbnge nbmes {
+		items = bppend(items, sqlf.Sprintf("%s", v))
 	}
-	return l.countUniqueUsersBySQL(ctx, startDate, endDate, []*sqlf.Query{sqlf.Sprintf("name IN (%s)", sqlf.Join(items, ","))})
+	return l.countUniqueUsersBySQL(ctx, stbrtDbte, endDbte, []*sqlf.Query{sqlf.Sprintf("nbme IN (%s)", sqlf.Join(items, ","))})
 }
 
-func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, startDate, endDate time.Time, conds []*sqlf.Query) (int, error) {
+func (l *eventLogStore) countUniqueUsersBySQL(ctx context.Context, stbrtDbte, endDbte time.Time, conds []*sqlf.Query) (int, error) {
 	if len(conds) == 0 {
 		conds = []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	}
-	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFragment+`)
+	q := sqlf.Sprintf(`SELECT COUNT(DISTINCT `+userIDQueryFrbgment+`)
 		FROM event_logs
 		LEFT OUTER JOIN users ON users.id = event_logs.user_id
-		WHERE (DATE(TIMEZONE('UTC'::text, timestamp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestamp)) <= %s) AND (%s)`, startDate, endDate, sqlf.Join(conds, ") AND ("))
+		WHERE (DATE(TIMEZONE('UTC'::text, timestbmp)) >= %s) AND (DATE(TIMEZONE('UTC'::text, timestbmp)) <= %s) AND (%s)`, stbrtDbte, endDbte, sqlf.Join(conds, ") AND ("))
 	r := l.QueryRow(ctx, q)
-	var count int
-	err := r.Scan(&count)
+	vbr count int
+	err := r.Scbn(&count)
 	return count, err
 }
 
-func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error) {
-	rows, err := l.Handle().QueryContext(ctx, `SELECT user_id
+func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, stbrtDbte, endDbte time.Time) ([]int32, error) {
+	rows, err := l.Hbndle().QueryContext(ctx, `SELECT user_id
 		FROM event_logs
-		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestamp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestamp)) <= $2
-		GROUP BY user_id`, startDate, endDate)
+		WHERE user_id > 0 AND DATE(TIMEZONE('UTC'::text, timestbmp)) >= $1 AND DATE(TIMEZONE('UTC'::text, timestbmp)) <= $2
+		GROUP BY user_id`, stbrtDbte, endDbte)
 	if err != nil {
 		return nil, err
 	}
-	var users []int32
+	vbr users []int32
 	defer rows.Close()
 	for rows.Next() {
-		var userID int32
-		err := rows.Scan(&userID)
+		vbr userID int32
+		err := rows.Scbn(&userID)
 		if err != nil {
 			return nil, err
 		}
-		users = append(users, userID)
+		users = bppend(users, userID)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -864,20 +864,20 @@ func (l *eventLogStore) ListUniqueUsersAll(ctx context.Context, startDate, endDa
 	return users, nil
 }
 
-func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.UserUsageCounts, err error) {
-	rows, err := l.Handle().QueryContext(ctx, usersUsageCountsQuery)
+func (l *eventLogStore) UsersUsbgeCounts(ctx context.Context) (counts []types.UserUsbgeCounts, err error) {
+	rows, err := l.Hbndle().QueryContext(ctx, usersUsbgeCountsQuery)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
 	for rows.Next() {
-		var c types.UserUsageCounts
+		vbr c types.UserUsbgeCounts
 
-		err := rows.Scan(
-			&c.Date,
+		err := rows.Scbn(
+			&c.Dbte,
 			&c.UserID,
-			&dbutil.NullInt32{N: &c.SearchCount},
+			&dbutil.NullInt32{N: &c.SebrchCount},
 			&dbutil.NullInt32{N: &c.CodeIntelCount},
 		)
 
@@ -885,7 +885,7 @@ func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.Us
 			return nil, err
 		}
 
-		counts = append(counts, c)
+		counts = bppend(counts, c)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -895,201 +895,201 @@ func (l *eventLogStore) UsersUsageCounts(ctx context.Context) (counts []types.Us
 	return counts, nil
 }
 
-const usersUsageCountsQuery = `
+const usersUsbgeCountsQuery = `
 SELECT
-  DATE(timestamp),
+  DATE(timestbmp),
   user_id,
-  COUNT(*) FILTER (WHERE event_logs.name ='SearchResultsQueried') as search_count,
-  COUNT(*) FILTER (WHERE event_logs.name LIKE '%codeintel%') as codeintel_count
+  COUNT(*) FILTER (WHERE event_logs.nbme ='SebrchResultsQueried') bs sebrch_count,
+  COUNT(*) FILTER (WHERE event_logs.nbme LIKE '%codeintel%') bs codeintel_count
 FROM event_logs
-WHERE anonymous_user_id != 'backend'
+WHERE bnonymous_user_id != 'bbckend'
 GROUP BY 1, 2
 ORDER BY 1 DESC, 2 ASC;
 `
 
-// SiteUsageOptions specifies the options for Site Usage calculations.
-type SiteUsageOptions struct {
-	CommonUsageOptions
+// SiteUsbgeOptions specifies the options for Site Usbge cblculbtions.
+type SiteUsbgeOptions struct {
+	CommonUsbgeOptions
 }
 
-func (l *eventLogStore) SiteUsageCurrentPeriods(ctx context.Context) (types.SiteUsageSummary, error) {
-	return l.siteUsageCurrentPeriods(ctx, time.Now().UTC(), &SiteUsageOptions{
-		CommonUsageOptions{
+func (l *eventLogStore) SiteUsbgeCurrentPeriods(ctx context.Context) (types.SiteUsbgeSummbry, error) {
+	return l.siteUsbgeCurrentPeriods(ctx, time.Now().UTC(), &SiteUsbgeOptions{
+		CommonUsbgeOptions{
 			ExcludeSystemUsers:          true,
 			ExcludeNonActiveUsers:       true,
-			ExcludeSourcegraphAdmins:    true,
-			ExcludeSourcegraphOperators: true,
+			ExcludeSourcegrbphAdmins:    true,
+			ExcludeSourcegrbphOperbtors: true,
 		},
 	})
 }
 
-func (l *eventLogStore) siteUsageCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsageOptions) (summary types.SiteUsageSummary, err error) {
+func (l *eventLogStore) siteUsbgeCurrentPeriods(ctx context.Context, now time.Time, opt *SiteUsbgeOptions) (summbry types.SiteUsbgeSummbry, err error) {
 	conds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
 	if opt != nil {
-		conds = BuildCommonUsageConds(&opt.CommonUsageOptions, conds)
+		conds = BuildCommonUsbgeConds(&opt.CommonUsbgeOptions, conds)
 	}
 
-	query := sqlf.Sprintf(siteUsageCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
+	query := sqlf.Sprintf(siteUsbgeCurrentPeriodsQuery, now, now, now, now, now, now, sqlf.Join(conds, ") AND ("))
 
-	err = l.QueryRow(ctx, query).Scan(
-		&summary.RollingMonth,
-		&summary.Month,
-		&summary.Week,
-		&summary.Day,
-		&summary.UniquesRollingMonth,
-		&summary.UniquesMonth,
-		&summary.UniquesWeek,
-		&summary.UniquesDay,
-		&summary.RegisteredUniquesRollingMonth,
-		&summary.RegisteredUniquesMonth,
-		&summary.RegisteredUniquesWeek,
-		&summary.RegisteredUniquesDay,
-		&summary.IntegrationUniquesRollingMonth,
-		&summary.IntegrationUniquesMonth,
-		&summary.IntegrationUniquesWeek,
-		&summary.IntegrationUniquesDay,
+	err = l.QueryRow(ctx, query).Scbn(
+		&summbry.RollingMonth,
+		&summbry.Month,
+		&summbry.Week,
+		&summbry.Dby,
+		&summbry.UniquesRollingMonth,
+		&summbry.UniquesMonth,
+		&summbry.UniquesWeek,
+		&summbry.UniquesDby,
+		&summbry.RegisteredUniquesRollingMonth,
+		&summbry.RegisteredUniquesMonth,
+		&summbry.RegisteredUniquesWeek,
+		&summbry.RegisteredUniquesDby,
+		&summbry.IntegrbtionUniquesRollingMonth,
+		&summbry.IntegrbtionUniquesMonth,
+		&summbry.IntegrbtionUniquesWeek,
+		&summbry.IntegrbtionUniquesDby,
 	)
 
-	return summary, err
+	return summbry, err
 }
 
-var siteUsageCurrentPeriodsQuery = `
+vbr siteUsbgeCurrentPeriodsQuery = `
 SELECT
   current_rolling_month,
   current_month,
   current_week,
-  current_day,
+  current_dby,
 
   COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month) AS uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE dby = current_dby) AS uniques_dby,
   COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month AND registered) AS registered_uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND registered) AS registered_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND registered) AS registered_uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND registered) AS registered_uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE dby = current_dby AND registered) AS registered_uniques_dby,
   COUNT(DISTINCT user_id) FILTER (WHERE rolling_month = current_rolling_month AND source = 'CODEHOSTINTEGRATION')
-  	AS integration_uniques_rolling_month,
+  	AS integrbtion_uniques_rolling_month,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month AND source = 'CODEHOSTINTEGRATION')
-  	AS integration_uniques_month,
+  	AS integrbtion_uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week AND source = 'CODEHOSTINTEGRATION')
-  	AS integration_uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day AND source = 'CODEHOSTINTEGRATION')
-  	AS integration_uniques_day
+  	AS integrbtion_uniques_week,
+  COUNT(DISTINCT user_id) FILTER (WHERE dby = current_dby AND source = 'CODEHOSTINTEGRATION')
+  	AS integrbtion_uniques_dby
 FROM (
-  -- This sub-query is here to avoid re-doing this work above on each aggregation.
-  -- rolling_month will always be the current_rolling_month, but is retained for clarity of the CTE
+  -- This sub-query is here to bvoid re-doing this work bbove on ebch bggregbtion.
+  -- rolling_month will blwbys be the current_rolling_month, but is retbined for clbrity of the CTE
   SELECT
-    name,
-    user_id != 0 as registered,
-    ` + aggregatedUserIDQueryFragment + ` AS user_id,
+    nbme,
+    user_id != 0 bs registered,
+    ` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
     source,
-    ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + ` as rolling_month,
-    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
-    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
-    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
-    ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + ` as current_rolling_month,
-    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
-    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+    ` + mbkeDbteTruncExpression("rolling_month", "%s::timestbmp") + ` bs rolling_month,
+    ` + mbkeDbteTruncExpression("month", "timestbmp") + ` bs month,
+    ` + mbkeDbteTruncExpression("week", "timestbmp") + ` bs week,
+    ` + mbkeDbteTruncExpression("dby", "timestbmp") + ` bs dby,
+    ` + mbkeDbteTruncExpression("rolling_month", "%s::timestbmp") + ` bs current_rolling_month,
+    ` + mbkeDbteTruncExpression("month", "%s::timestbmp") + ` bs current_month,
+    ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + ` bs current_week,
+    ` + mbkeDbteTruncExpression("dby", "%s::timestbmp") + ` bs current_dby
   FROM event_logs
   LEFT OUTER JOIN users ON users.id = event_logs.user_id
-  WHERE (timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `) AND (%s) AND anonymous_user_id != 'backend'
+  WHERE (timestbmp >= ` + mbkeDbteTruncExpression("rolling_month", "%s::timestbmp") + `) AND (%s) AND bnonymous_user_id != 'bbckend'
 ) events
 
-GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_day
+GROUP BY current_rolling_month, rolling_month, current_month, current_week, current_dby
 `
 
 func (l *eventLogStore) CodeIntelligencePreciseWAUs(ctx context.Context) (int, error) {
-	eventNames := []string{
+	eventNbmes := []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
 		"codeintel.lsifReferences",
 	}
 
-	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, time.Now().UTC())
 }
 
-func (l *eventLogStore) CodeIntelligenceSearchBasedWAUs(ctx context.Context) (int, error) {
-	eventNames := []string{
-		"codeintel.searchHover",
-		"codeintel.searchDefinitions",
-		"codeintel.searchReferences",
+func (l *eventLogStore) CodeIntelligenceSebrchBbsedWAUs(ctx context.Context) (int, error) {
+	eventNbmes := []string{
+		"codeintel.sebrchHover",
+		"codeintel.sebrchDefinitions",
+		"codeintel.sebrchReferences",
 	}
 
-	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, time.Now().UTC())
 }
 
 func (l *eventLogStore) CodeIntelligenceWAUs(ctx context.Context) (int, error) {
-	eventNames := []string{
+	eventNbmes := []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
 		"codeintel.lsifReferences",
-		"codeintel.searchHover",
-		"codeintel.searchDefinitions",
-		"codeintel.searchReferences",
+		"codeintel.sebrchHover",
+		"codeintel.sebrchDefinitions",
+		"codeintel.sebrchReferences",
 	}
 
-	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, time.Now().UTC())
 }
 
 func (l *eventLogStore) CodeIntelligenceCrossRepositoryWAUs(ctx context.Context) (int, error) {
-	eventNames := []string{
+	eventNbmes := []string{
 		"codeintel.lsifDefinitions.xrepo",
 		"codeintel.lsifReferences.xrepo",
-		"codeintel.searchDefinitions.xrepo",
-		"codeintel.searchReferences.xrepo",
+		"codeintel.sebrchDefinitions.xrepo",
+		"codeintel.sebrchReferences.xrepo",
 	}
 
-	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, time.Now().UTC())
 }
 
 func (l *eventLogStore) CodeIntelligencePreciseCrossRepositoryWAUs(ctx context.Context) (int, error) {
-	eventNames := []string{
+	eventNbmes := []string{
 		"codeintel.lsifDefinitions.xrepo",
 		"codeintel.lsifReferences.xrepo",
 	}
 
-	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, time.Now().UTC())
 }
 
-func (l *eventLogStore) CodeIntelligenceSearchBasedCrossRepositoryWAUs(ctx context.Context) (int, error) {
-	eventNames := []string{
-		"codeintel.searchDefinitions.xrepo",
-		"codeintel.searchReferences.xrepo",
+func (l *eventLogStore) CodeIntelligenceSebrchBbsedCrossRepositoryWAUs(ctx context.Context) (int, error) {
+	eventNbmes := []string{
+		"codeintel.sebrchDefinitions.xrepo",
+		"codeintel.sebrchReferences.xrepo",
 	}
 
-	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNames, time.Now().UTC())
+	return l.codeIntelligenceWeeklyUsersCount(ctx, eventNbmes, time.Now().UTC())
 }
 
-func (l *eventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, eventNames []string, now time.Time) (wau int, _ error) {
-	var names []*sqlf.Query
-	for _, name := range eventNames {
-		names = append(names, sqlf.Sprintf("%s", name))
+func (l *eventLogStore) codeIntelligenceWeeklyUsersCount(ctx context.Context, eventNbmes []string, now time.Time) (wbu int, _ error) {
+	vbr nbmes []*sqlf.Query
+	for _, nbme := rbnge eventNbmes {
+		nbmes = bppend(nbmes, sqlf.Sprintf("%s", nbme))
 	}
 
-	if err := l.QueryRow(ctx, sqlf.Sprintf(codeIntelWeeklyUsersQuery, now, sqlf.Join(names, ", "))).Scan(&wau); err != nil {
+	if err := l.QueryRow(ctx, sqlf.Sprintf(codeIntelWeeklyUsersQuery, now, sqlf.Join(nbmes, ", "))).Scbn(&wbu); err != nil {
 		return 0, err
 	}
 
-	return wau, nil
+	return wbu, nil
 }
 
-var codeIntelWeeklyUsersQuery = `
-SELECT COUNT(DISTINCT ` + userIDQueryFragment + `)
+vbr codeIntelWeeklyUsersQuery = `
+SELECT COUNT(DISTINCT ` + userIDQueryFrbgment + `)
 FROM event_logs
 WHERE
-  timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
-  AND name IN (%s);
+  timestbmp >= ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + `
+  AND nbme IN (%s);
 `
 
 type CodeIntelligenceRepositoryCounts struct {
 	NumRepositories                                  int
-	NumRepositoriesWithUploadRecords                 int
-	NumRepositoriesWithFreshUploadRecords            int
+	NumRepositoriesWithUplobdRecords                 int
+	NumRepositoriesWithFreshUplobdRecords            int
 	NumRepositoriesWithIndexRecords                  int
 	NumRepositoriesWithFreshIndexRecords             int
-	NumRepositoriesWithAutoIndexConfigurationRecords int
+	NumRepositoriesWithAutoIndexConfigurbtionRecords int
 }
 
 func (l *eventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (counts CodeIntelligenceRepositoryCounts, err error) {
@@ -1100,13 +1100,13 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (c
 	defer rows.Close()
 
 	for rows.Next() {
-		if err := rows.Scan(
+		if err := rows.Scbn(
 			&counts.NumRepositories,
-			&counts.NumRepositoriesWithUploadRecords,
-			&counts.NumRepositoriesWithFreshUploadRecords,
+			&counts.NumRepositoriesWithUplobdRecords,
+			&counts.NumRepositoriesWithFreshUplobdRecords,
 			&counts.NumRepositoriesWithIndexRecords,
 			&counts.NumRepositoriesWithFreshIndexRecords,
-			&counts.NumRepositoriesWithAutoIndexConfigurationRecords,
+			&counts.NumRepositoriesWithAutoIndexConfigurbtionRecords,
 		); err != nil {
 			return CodeIntelligenceRepositoryCounts{}, err
 		}
@@ -1118,71 +1118,71 @@ func (l *eventLogStore) CodeIntelligenceRepositoryCounts(ctx context.Context) (c
 	return counts, nil
 }
 
-var codeIntelligenceRepositoryCountsQuery = `
+vbr codeIntelligenceRepositoryCountsQuery = `
 SELECT
-	(SELECT COUNT(*) FROM repo r WHERE r.deleted_at IS NULL)
+	(SELECT COUNT(*) FROM repo r WHERE r.deleted_bt IS NULL)
 		AS num_repositories,
-	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_dumps_with_repository_name u)
-		AS num_repositories_with_upload_records,
-	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_dumps_with_repository_name u WHERE u.uploaded_at >= NOW() - '168 hours'::interval)
-		AS num_repositories_with_fresh_upload_records,
-	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_indexes_with_repository_name u WHERE u.state = 'completed')
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_dumps_with_repository_nbme u)
+		AS num_repositories_with_uplobd_records,
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_dumps_with_repository_nbme u WHERE u.uplobded_bt >= NOW() - '168 hours'::intervbl)
+		AS num_repositories_with_fresh_uplobd_records,
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_indexes_with_repository_nbme u WHERE u.stbte = 'completed')
 		AS num_repositories_with_index_records,
-	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_indexes_with_repository_name u WHERE u.state = 'completed' AND u.queued_at >= NOW() - '168 hours'::interval)
+	(SELECT COUNT(DISTINCT u.repository_id) FROM lsif_indexes_with_repository_nbme u WHERE u.stbte = 'completed' AND u.queued_bt >= NOW() - '168 hours'::intervbl)
 		AS num_repositories_with_fresh_index_records,
-	(SELECT COUNT(DISTINCT uc.repository_id) FROM lsif_index_configuration uc WHERE uc.autoindex_enabled IS TRUE AND data IS NOT NULL)
-		AS num_repositories_with_index_configuration_records
+	(SELECT COUNT(DISTINCT uc.repository_id) FROM lsif_index_configurbtion uc WHERE uc.butoindex_enbbled IS TRUE AND dbtb IS NOT NULL)
+		AS num_repositories_with_index_configurbtion_records
 `
 
-type CodeIntelligenceRepositoryCountsForLanguage struct {
-	NumRepositoriesWithUploadRecords      int
-	NumRepositoriesWithFreshUploadRecords int
+type CodeIntelligenceRepositoryCountsForLbngubge struct {
+	NumRepositoriesWithUplobdRecords      int
+	NumRepositoriesWithFreshUplobdRecords int
 	NumRepositoriesWithIndexRecords       int
 	NumRepositoriesWithFreshIndexRecords  int
 }
 
-func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLanguage(ctx context.Context) (_ map[string]CodeIntelligenceRepositoryCountsForLanguage, err error) {
-	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsByLanguageQuery))
+func (l *eventLogStore) CodeIntelligenceRepositoryCountsByLbngubge(ctx context.Context) (_ mbp[string]CodeIntelligenceRepositoryCountsForLbngubge, err error) {
+	rows, err := l.Query(ctx, sqlf.Sprintf(codeIntelligenceRepositoryCountsByLbngubgeQuery))
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 
-	var (
-		language string
-		numRepositoriesWithUploadRecords,
-		numRepositoriesWithFreshUploadRecords,
+	vbr (
+		lbngubge string
+		numRepositoriesWithUplobdRecords,
+		numRepositoriesWithFreshUplobdRecords,
 		numRepositoriesWithIndexRecords,
 		numRepositoriesWithFreshIndexRecords *int
 	)
 
-	byLanguage := map[string]CodeIntelligenceRepositoryCountsForLanguage{}
+	byLbngubge := mbp[string]CodeIntelligenceRepositoryCountsForLbngubge{}
 	for rows.Next() {
-		if err := rows.Scan(
-			&language,
-			&numRepositoriesWithUploadRecords,
-			&numRepositoriesWithFreshUploadRecords,
+		if err := rows.Scbn(
+			&lbngubge,
+			&numRepositoriesWithUplobdRecords,
+			&numRepositoriesWithFreshUplobdRecords,
 			&numRepositoriesWithIndexRecords,
 			&numRepositoriesWithFreshIndexRecords,
 		); err != nil {
 			return nil, err
 		}
 
-		byLanguage[language] = CodeIntelligenceRepositoryCountsForLanguage{
-			NumRepositoriesWithUploadRecords:      safeDerefIntPtr(numRepositoriesWithUploadRecords),
-			NumRepositoriesWithFreshUploadRecords: safeDerefIntPtr(numRepositoriesWithFreshUploadRecords),
-			NumRepositoriesWithIndexRecords:       safeDerefIntPtr(numRepositoriesWithIndexRecords),
-			NumRepositoriesWithFreshIndexRecords:  safeDerefIntPtr(numRepositoriesWithFreshIndexRecords),
+		byLbngubge[lbngubge] = CodeIntelligenceRepositoryCountsForLbngubge{
+			NumRepositoriesWithUplobdRecords:      sbfeDerefIntPtr(numRepositoriesWithUplobdRecords),
+			NumRepositoriesWithFreshUplobdRecords: sbfeDerefIntPtr(numRepositoriesWithFreshUplobdRecords),
+			NumRepositoriesWithIndexRecords:       sbfeDerefIntPtr(numRepositoriesWithIndexRecords),
+			NumRepositoriesWithFreshIndexRecords:  sbfeDerefIntPtr(numRepositoriesWithFreshIndexRecords),
 		}
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
 
-	return byLanguage, nil
+	return byLbngubge, nil
 }
 
-func safeDerefIntPtr(v *int) int {
+func sbfeDerefIntPtr(v *int) int {
 	if v != nil {
 		return *v
 	}
@@ -1190,209 +1190,209 @@ func safeDerefIntPtr(v *int) int {
 	return 0
 }
 
-var codeIntelligenceRepositoryCountsByLanguageQuery = `
+vbr codeIntelligenceRepositoryCountsByLbngubgeQuery = `
 SELECT
-	-- Clean up indexer by removing sourcegraph/ docker image prefix for auto-index
-	-- records, as well as any trailing git tag. This should make all of the in-house
-	-- indexer names the same on both lsif_uploads and lsif_indexes records.
-	REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegraph/', ''), ':\w+$', '') AS indexer,
-	max(num_repositories_with_upload_records) AS num_repositories_with_upload_records,
-	max(num_repositories_with_fresh_upload_records) AS num_repositories_with_fresh_upload_records,
-	max(num_repositories_with_index_records) AS num_repositories_with_index_records,
-	max(num_repositories_with_fresh_index_records) AS num_repositories_with_fresh_index_records
+	-- Clebn up indexer by removing sourcegrbph/ docker imbge prefix for buto-index
+	-- records, bs well bs bny trbiling git tbg. This should mbke bll of the in-house
+	-- indexer nbmes the sbme on both lsif_uplobds bnd lsif_indexes records.
+	REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegrbph/', ''), ':\w+$', '') AS indexer,
+	mbx(num_repositories_with_uplobd_records) AS num_repositories_with_uplobd_records,
+	mbx(num_repositories_with_fresh_uplobd_records) AS num_repositories_with_fresh_uplobd_records,
+	mbx(num_repositories_with_index_records) AS num_repositories_with_index_records,
+	mbx(num_repositories_with_fresh_index_records) AS num_repositories_with_fresh_index_records
 FROM (
 	(SELECT u.indexer, COUNT(DISTINCT u.repository_id), NULL::integer, NULL::integer, NULL::integer
-		FROM lsif_dumps_with_repository_name u GROUP BY u.indexer)
+		FROM lsif_dumps_with_repository_nbme u GROUP BY u.indexer)
 UNION
 	(SELECT u.indexer, NULL::integer, COUNT(DISTINCT u.repository_id), NULL::integer, NULL::integer
-		FROM lsif_dumps_with_repository_name u WHERE u.uploaded_at >= NOW() - '168 hours'::interval GROUP BY u.indexer)
+		FROM lsif_dumps_with_repository_nbme u WHERE u.uplobded_bt >= NOW() - '168 hours'::intervbl GROUP BY u.indexer)
 UNION
 	(SELECT u.indexer, NULL::integer, NULL::integer, COUNT(DISTINCT u.repository_id), NULL::integer
-		FROM lsif_indexes_with_repository_name u WHERE state = 'completed' GROUP BY u.indexer)
+		FROM lsif_indexes_with_repository_nbme u WHERE stbte = 'completed' GROUP BY u.indexer)
 UNION
 	(SELECT u.indexer, NULL::integer, NULL::integer, NULL::integer, COUNT(DISTINCT u.repository_id)
-		FROM lsif_indexes_with_repository_name u WHERE state = 'completed' AND u.queued_at >= NOW() - '168 hours'::interval GROUP BY u.indexer)
+		FROM lsif_indexes_with_repository_nbme u WHERE stbte = 'completed' AND u.queued_bt >= NOW() - '168 hours'::intervbl GROUP BY u.indexer)
 ) s(
 	indexer,
-	num_repositories_with_upload_records,
-	num_repositories_with_fresh_upload_records,
+	num_repositories_with_uplobd_records,
+	num_repositories_with_fresh_uplobd_records,
 	num_repositories_with_index_records,
 	num_repositories_with_fresh_index_records
 )
-GROUP BY REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegraph/', ''), ':\w+$', '')
+GROUP BY REGEXP_REPLACE(REGEXP_REPLACE(indexer, '^sourcegrbph/', ''), ':\w+$', '')
 `
 
-func (l *eventLogStore) CodeIntelligenceSettingsPageViewCount(ctx context.Context) (int, error) {
-	return l.codeIntelligenceSettingsPageViewCount(ctx, time.Now().UTC())
+func (l *eventLogStore) CodeIntelligenceSettingsPbgeViewCount(ctx context.Context) (int, error) {
+	return l.codeIntelligenceSettingsPbgeViewCount(ctx, time.Now().UTC())
 }
 
-func (l *eventLogStore) codeIntelligenceSettingsPageViewCount(ctx context.Context, now time.Time) (int, error) {
-	pageNames := []string{
-		"CodeIntelUploadsPage",
-		"CodeIntelUploadPage",
-		"CodeIntelIndexesPage",
-		"CodeIntelIndexPage",
-		"CodeIntelConfigurationPage",
-		"CodeIntelConfigurationPolicyPage",
+func (l *eventLogStore) codeIntelligenceSettingsPbgeViewCount(ctx context.Context, now time.Time) (int, error) {
+	pbgeNbmes := []string{
+		"CodeIntelUplobdsPbge",
+		"CodeIntelUplobdPbge",
+		"CodeIntelIndexesPbge",
+		"CodeIntelIndexPbge",
+		"CodeIntelConfigurbtionPbge",
+		"CodeIntelConfigurbtionPolicyPbge",
 	}
 
-	names := make([]*sqlf.Query, 0, len(pageNames))
-	for _, pageName := range pageNames {
-		names = append(names, sqlf.Sprintf("%s", fmt.Sprintf("View%s", pageName)))
+	nbmes := mbke([]*sqlf.Query, 0, len(pbgeNbmes))
+	for _, pbgeNbme := rbnge pbgeNbmes {
+		nbmes = bppend(nbmes, sqlf.Sprintf("%s", fmt.Sprintf("View%s", pbgeNbme)))
 	}
 
-	count, _, err := basestore.ScanFirstInt(l.Query(ctx, sqlf.Sprintf(codeIntelligenceSettingsPageViewCountQuery, sqlf.Join(names, ","), now)))
+	count, _, err := bbsestore.ScbnFirstInt(l.Query(ctx, sqlf.Sprintf(codeIntelligenceSettingsPbgeViewCountQuery, sqlf.Join(nbmes, ","), now)))
 	return count, err
 }
 
-var codeIntelligenceSettingsPageViewCountQuery = `
-SELECT COUNT(*) FROM event_logs WHERE name IN (%s) AND timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp")
+vbr codeIntelligenceSettingsPbgeViewCountQuery = `
+SELECT COUNT(*) FROM event_logs WHERE nbme IN (%s) AND timestbmp >= ` + mbkeDbteTruncExpression("week", "%s::timestbmp")
 
-func (l *eventLogStore) AggregatedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregatedEvent, error) {
-	return l.aggregatedCodeIntelEvents(ctx, time.Now().UTC())
+func (l *eventLogStore) AggregbtedCodeIntelEvents(ctx context.Context) ([]types.CodeIntelAggregbtedEvent, error) {
+	return l.bggregbtedCodeIntelEvents(ctx, time.Now().UTC())
 }
 
-func (l *eventLogStore) aggregatedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedEvent, err error) {
-	var eventNames = []string{
+func (l *eventLogStore) bggregbtedCodeIntelEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregbtedEvent, err error) {
+	vbr eventNbmes = []string{
 		"codeintel.lsifHover",
 		"codeintel.lsifDefinitions",
 		"codeintel.lsifDefinitions.xrepo",
 		"codeintel.lsifReferences",
 		"codeintel.lsifReferences.xrepo",
-		"codeintel.searchHover",
-		"codeintel.searchDefinitions",
-		"codeintel.searchDefinitions.xrepo",
-		"codeintel.searchReferences",
-		"codeintel.searchReferences.xrepo",
+		"codeintel.sebrchHover",
+		"codeintel.sebrchDefinitions",
+		"codeintel.sebrchDefinitions.xrepo",
+		"codeintel.sebrchReferences",
+		"codeintel.sebrchReferences.xrepo",
 	}
 
-	var eventNameQueries []*sqlf.Query
-	for _, name := range eventNames {
-		eventNameQueries = append(eventNameQueries, sqlf.Sprintf("%s", name))
+	vbr eventNbmeQueries []*sqlf.Query
+	for _, nbme := rbnge eventNbmes {
+		eventNbmeQueries = bppend(eventNbmeQueries, sqlf.Sprintf("%s", nbme))
 	}
 
-	query := sqlf.Sprintf(aggregatedCodeIntelEventsQuery, now, now, sqlf.Join(eventNameQueries, ", "))
+	query := sqlf.Sprintf(bggregbtedCodeIntelEventsQuery, now, now, sqlf.Join(eventNbmeQueries, ", "))
 
 	rows, err := l.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var event types.CodeIntelAggregatedEvent
-		err := rows.Scan(
-			&event.Name,
-			&event.LanguageID,
+		vbr event types.CodeIntelAggregbtedEvent
+		err := rows.Scbn(
+			&event.Nbme,
+			&event.LbngubgeID,
 			&event.Week,
-			&event.TotalWeek,
+			&event.TotblWeek,
 			&event.UniquesWeek,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		events = append(events, event)
+		events = bppend(events, event)
 	}
 
 	return events, nil
 }
 
-var aggregatedCodeIntelEventsQuery = `
+vbr bggregbtedCodeIntelEventsQuery = `
 WITH events AS (
   SELECT
-    name,
-    (argument->>'languageId')::text as language_id,
-    ` + aggregatedUserIDQueryFragment + ` AS user_id,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week
+    nbme,
+    (brgument->>'lbngubgeId')::text bs lbngubge_id,
+    ` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+    ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + ` bs current_week
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
-    AND name IN (%s)
+    timestbmp >= ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + `
+    AND nbme IN (%s)
 )
 SELECT
-  name,
-  language_id,
+  nbme,
+  lbngubge_id,
   current_week,
-  COUNT(*) AS total_week,
+  COUNT(*) AS totbl_week,
   COUNT(DISTINCT user_id) AS uniques_week
 FROM events
-GROUP BY name, current_week, language_id
-ORDER BY name;
+GROUP BY nbme, current_week, lbngubge_id
+ORDER BY nbme;
 `
 
-func (l *eventLogStore) AggregatedCodeIntelInvestigationEvents(ctx context.Context) ([]types.CodeIntelAggregatedInvestigationEvent, error) {
-	return l.aggregatedCodeIntelInvestigationEvents(ctx, time.Now().UTC())
+func (l *eventLogStore) AggregbtedCodeIntelInvestigbtionEvents(ctx context.Context) ([]types.CodeIntelAggregbtedInvestigbtionEvent, error) {
+	return l.bggregbtedCodeIntelInvestigbtionEvents(ctx, time.Now().UTC())
 }
 
-func (l *eventLogStore) aggregatedCodeIntelInvestigationEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregatedInvestigationEvent, err error) {
-	var eventNames = []string{
-		"CodeIntelligenceIndexerSetupInvestigated",
-		"CodeIntelligenceUploadErrorInvestigated",
-		"CodeIntelligenceIndexErrorInvestigated",
+func (l *eventLogStore) bggregbtedCodeIntelInvestigbtionEvents(ctx context.Context, now time.Time) (events []types.CodeIntelAggregbtedInvestigbtionEvent, err error) {
+	vbr eventNbmes = []string{
+		"CodeIntelligenceIndexerSetupInvestigbted",
+		"CodeIntelligenceUplobdErrorInvestigbted",
+		"CodeIntelligenceIndexErrorInvestigbted",
 	}
 
-	var eventNameQueries []*sqlf.Query
-	for _, name := range eventNames {
-		eventNameQueries = append(eventNameQueries, sqlf.Sprintf("%s", name))
+	vbr eventNbmeQueries []*sqlf.Query
+	for _, nbme := rbnge eventNbmes {
+		eventNbmeQueries = bppend(eventNbmeQueries, sqlf.Sprintf("%s", nbme))
 	}
 
-	query := sqlf.Sprintf(aggregatedCodeIntelInvestigationEventsQuery, now, now, sqlf.Join(eventNameQueries, ", "))
+	query := sqlf.Sprintf(bggregbtedCodeIntelInvestigbtionEventsQuery, now, now, sqlf.Join(eventNbmeQueries, ", "))
 
 	rows, err := l.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	for rows.Next() {
-		var event types.CodeIntelAggregatedInvestigationEvent
-		err := rows.Scan(
-			&event.Name,
+		vbr event types.CodeIntelAggregbtedInvestigbtionEvent
+		err := rows.Scbn(
+			&event.Nbme,
 			&event.Week,
-			&event.TotalWeek,
+			&event.TotblWeek,
 			&event.UniquesWeek,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		events = append(events, event)
+		events = bppend(events, event)
 	}
 
 	return events, nil
 }
 
-var aggregatedCodeIntelInvestigationEventsQuery = `
+vbr bggregbtedCodeIntelInvestigbtionEventsQuery = `
 WITH events AS (
   SELECT
-    name,
-    ` + aggregatedUserIDQueryFragment + ` AS user_id,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week
+    nbme,
+    ` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+    ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + ` bs current_week
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
-    AND name IN (%s)
+    timestbmp >= ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + `
+    AND nbme IN (%s)
 )
 SELECT
-  name,
+  nbme,
   current_week,
-  COUNT(*) AS total_week,
+  COUNT(*) AS totbl_week,
   COUNT(DISTINCT user_id) AS uniques_week
 FROM events
-GROUP BY name, current_week
-ORDER BY name;
+GROUP BY nbme, current_week
+ORDER BY nbme;
 `
 
-func (l *eventLogStore) AggregatedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregatedEvent, error) {
-	codyEvents, err := l.aggregatedCodyEvents(ctx, aggregatedCodyUsageEventsQuery, now)
+func (l *eventLogStore) AggregbtedCodyEvents(ctx context.Context, now time.Time) ([]types.CodyAggregbtedEvent, error) {
+	codyEvents, err := l.bggregbtedCodyEvents(ctx, bggregbtedCodyUsbgeEventsQuery, now)
 	if err != nil {
 		return nil, err
 	}
 	return codyEvents, nil
 }
 
-func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString string, now time.Time) (events []types.CodyAggregatedEvent, err error) {
+func (l *eventLogStore) bggregbtedCodyEvents(ctx context.Context, queryString string, now time.Time) (events []types.CodyAggregbtedEvent, err error) {
 	query := sqlf.Sprintf(queryString, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)
@@ -1402,33 +1402,33 @@ func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString st
 	defer rows.Close()
 
 	for rows.Next() {
-		var event types.CodyAggregatedEvent
-		err := rows.Scan(
-			&event.Name,
+		vbr event types.CodyAggregbtedEvent
+		err := rows.Scbn(
+			&event.Nbme,
 			&event.Month,
 			&event.Week,
-			&event.Day,
-			&event.TotalMonth,
-			&event.TotalWeek,
-			&event.TotalDay,
+			&event.Dby,
+			&event.TotblMonth,
+			&event.TotblWeek,
+			&event.TotblDby,
 			&event.UniquesMonth,
 			&event.UniquesWeek,
-			&event.UniquesDay,
-			&event.CodeGenerationMonth,
-			&event.CodeGenerationWeek,
-			&event.CodeGenerationDay,
-			&event.ExplanationMonth,
-			&event.ExplanationWeek,
-			&event.ExplanationDay,
-			&event.InvalidMonth,
-			&event.InvalidWeek,
-			&event.InvalidDay,
+			&event.UniquesDby,
+			&event.CodeGenerbtionMonth,
+			&event.CodeGenerbtionWeek,
+			&event.CodeGenerbtionDby,
+			&event.ExplbnbtionMonth,
+			&event.ExplbnbtionWeek,
+			&event.ExplbnbtionDby,
+			&event.InvblidMonth,
+			&event.InvblidWeek,
+			&event.InvblidDby,
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		events = append(events, event)
+		events = bppend(events, event)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -1438,111 +1438,111 @@ func (l *eventLogStore) aggregatedCodyEvents(ctx context.Context, queryString st
 	return events, nil
 }
 
-func buildAggregatedRepoMetadataEventsQuery(period PeriodType) (string, error) {
+func buildAggregbtedRepoMetbdbtbEventsQuery(period PeriodType) (string, error) {
 	unit := ""
 	switch period {
-	case Daily:
-		unit = "day"
-	case Weekly:
+	cbse Dbily:
+		unit = "dby"
+	cbse Weekly:
 		unit = "week"
-	case Monthly:
+	cbse Monthly:
 		unit = "month"
-	default:
-		return "", ErrInvalidPeriodType
+	defbult:
+		return "", ErrInvblidPeriodType
 	}
 	return `
 	WITH events AS (
 		SELECT
-			name,
-			` + aggregatedUserIDQueryFragment + ` AS user_id,
-			argument
+			nbme,
+			` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+			brgument
 		FROM event_logs
 		WHERE
-			timestamp >= ` + makeDateTruncExpression(unit, "%s::timestamp") + `
-			AND name IN ('RepoMetadataAdded', 'RepoMetadataUpdated', 'RepoMetadataDeleted', 'SearchSubmitted')
+			timestbmp >= ` + mbkeDbteTruncExpression(unit, "%s::timestbmp") + `
+			AND nbme IN ('RepoMetbdbtbAdded', 'RepoMetbdbtbUpdbted', 'RepoMetbdbtbDeleted', 'SebrchSubmitted')
 	)
 	SELECT
-		` + makeDateTruncExpression(unit, "%s::timestamp") + ` as start_time,
+		` + mbkeDbteTruncExpression(unit, "%s::timestbmp") + ` bs stbrt_time,
 
-		COUNT(*) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_count,
-		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataAdded')) AS added_unique_count,
+		COUNT(*) FILTER (WHERE nbme IN ('RepoMetbdbtbAdded')) AS bdded_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE nbme IN ('RepoMetbdbtbAdded')) AS bdded_unique_count,
 
-		COUNT(*) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_count,
-		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataUpdated')) AS updated_unique_count,
+		COUNT(*) FILTER (WHERE nbme IN ('RepoMetbdbtbUpdbted')) AS updbted_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE nbme IN ('RepoMetbdbtbUpdbted')) AS updbted_unique_count,
 
-		COUNT(*) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_count,
-		COUNT(DISTINCT user_id) FILTER (WHERE name IN ('RepoMetadataDeleted')) AS deleted_unique_count,
+		COUNT(*) FILTER (WHERE nbme IN ('RepoMetbdbtbDeleted')) AS deleted_count,
+		COUNT(DISTINCT user_id) FILTER (WHERE nbme IN ('RepoMetbdbtbDeleted')) AS deleted_unique_count,
 
 		COUNT(*) FILTER (
-			WHERE name IN ('SearchSubmitted')
+			WHERE nbme IN ('SebrchSubmitted')
 			AND (
-				argument->>'query' ILIKE '%%repo:has(%%'
-				OR argument->>'query' ILIKE '%%repo:has.key(%%'
-				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
-				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+				brgument->>'query' ILIKE '%%repo:hbs(%%'
+				OR brgument->>'query' ILIKE '%%repo:hbs.key(%%'
+				OR brgument->>'query' ILIKE '%%repo:hbs.tbg(%%'
+				OR brgument->>'query' ILIKE '%%repo:hbs.metb(%%'
 			)
-		) AS searches_count,
+		) AS sebrches_count,
 		COUNT(DISTINCT user_id) FILTER (
-			WHERE name IN ('SearchSubmitted')
+			WHERE nbme IN ('SebrchSubmitted')
 			AND (
-				argument->>'query' ILIKE '%%repo:has(%%'
-				OR argument->>'query' ILIKE '%%repo:has.key(%%'
-				OR argument->>'query' ILIKE '%%repo:has.tag(%%'
-				OR argument->>'query' ILIKE '%%repo:has.meta(%%'
+				brgument->>'query' ILIKE '%%repo:hbs(%%'
+				OR brgument->>'query' ILIKE '%%repo:hbs.key(%%'
+				OR brgument->>'query' ILIKE '%%repo:hbs.tbg(%%'
+				OR brgument->>'query' ILIKE '%%repo:hbs.metb(%%'
 			)
-		) AS searches_unique_count
+		) AS sebrches_unique_count
 	FROM events;
 	`, nil
 }
 
-func (l *eventLogStore) AggregatedRepoMetadataEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetadataAggregatedEvents, error) {
-	query, err := buildAggregatedRepoMetadataEventsQuery(period)
+func (l *eventLogStore) AggregbtedRepoMetbdbtbEvents(ctx context.Context, now time.Time, period PeriodType) (*types.RepoMetbdbtbAggregbtedEvents, error) {
+	query, err := buildAggregbtedRepoMetbdbtbEventsQuery(period)
 	if err != nil {
 		return nil, err
 	}
 	row := l.QueryRow(ctx, sqlf.Sprintf(query, now, now))
-	var startTime time.Time
-	var createEvent types.EventStats
-	var updateEvent types.EventStats
-	var deleteEvent types.EventStats
-	var searchEvent types.EventStats
-	if err := row.Scan(
-		&startTime,
-		&createEvent.EventsCount,
-		&createEvent.UsersCount,
-		&updateEvent.EventsCount,
-		&updateEvent.UsersCount,
+	vbr stbrtTime time.Time
+	vbr crebteEvent types.EventStbts
+	vbr updbteEvent types.EventStbts
+	vbr deleteEvent types.EventStbts
+	vbr sebrchEvent types.EventStbts
+	if err := row.Scbn(
+		&stbrtTime,
+		&crebteEvent.EventsCount,
+		&crebteEvent.UsersCount,
+		&updbteEvent.EventsCount,
+		&updbteEvent.UsersCount,
 		&deleteEvent.EventsCount,
 		&deleteEvent.UsersCount,
-		&searchEvent.EventsCount,
-		&searchEvent.UsersCount,
+		&sebrchEvent.EventsCount,
+		&sebrchEvent.UsersCount,
 	); err != nil {
 		return nil, err
 	}
 
-	return &types.RepoMetadataAggregatedEvents{
-		StartTime:          startTime,
-		CreateRepoMetadata: &createEvent,
-		UpdateRepoMetadata: &updateEvent,
-		DeleteRepoMetadata: &deleteEvent,
-		SearchFilterUsage:  &searchEvent,
+	return &types.RepoMetbdbtbAggregbtedEvents{
+		StbrtTime:          stbrtTime,
+		CrebteRepoMetbdbtb: &crebteEvent,
+		UpdbteRepoMetbdbtb: &updbteEvent,
+		DeleteRepoMetbdbtb: &deleteEvent,
+		SebrchFilterUsbge:  &sebrchEvent,
 	}, nil
 }
 
-func (l *eventLogStore) AggregatedSearchEvents(ctx context.Context, now time.Time) ([]types.SearchAggregatedEvent, error) {
-	latencyEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchLatencyEventsQuery, now)
+func (l *eventLogStore) AggregbtedSebrchEvents(ctx context.Context, now time.Time) ([]types.SebrchAggregbtedEvent, error) {
+	lbtencyEvents, err := l.bggregbtedSebrchEvents(ctx, bggregbtedSebrchLbtencyEventsQuery, now)
 	if err != nil {
 		return nil, err
 	}
 
-	usageEvents, err := l.aggregatedSearchEvents(ctx, aggregatedSearchUsageEventsQuery, now)
+	usbgeEvents, err := l.bggregbtedSebrchEvents(ctx, bggregbtedSebrchUsbgeEventsQuery, now)
 	if err != nil {
 		return nil, err
 	}
-	return append(latencyEvents, usageEvents...), nil
+	return bppend(lbtencyEvents, usbgeEvents...), nil
 }
 
-func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString string, now time.Time) (events []types.SearchAggregatedEvent, err error) {
+func (l *eventLogStore) bggregbtedSebrchEvents(ctx context.Context, queryString string, now time.Time) (events []types.SebrchAggregbtedEvent, err error) {
 	query := sqlf.Sprintf(queryString, now, now, now, now)
 
 	rows, err := l.Query(ctx, query)
@@ -1552,27 +1552,27 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 	defer rows.Close()
 
 	for rows.Next() {
-		var event types.SearchAggregatedEvent
-		err := rows.Scan(
-			&event.Name,
+		vbr event types.SebrchAggregbtedEvent
+		err := rows.Scbn(
+			&event.Nbme,
 			&event.Month,
 			&event.Week,
-			&event.Day,
-			&event.TotalMonth,
-			&event.TotalWeek,
-			&event.TotalDay,
+			&event.Dby,
+			&event.TotblMonth,
+			&event.TotblWeek,
+			&event.TotblDby,
 			&event.UniquesMonth,
 			&event.UniquesWeek,
-			&event.UniquesDay,
-			pq.Array(&event.LatenciesMonth),
-			pq.Array(&event.LatenciesWeek),
-			pq.Array(&event.LatenciesDay),
+			&event.UniquesDby,
+			pq.Arrby(&event.LbtenciesMonth),
+			pq.Arrby(&event.LbtenciesWeek),
+			pq.Arrby(&event.LbtenciesDby),
 		)
 		if err != nil {
 			return nil, err
 		}
 
-		events = append(events, event)
+		events = bppend(events, event)
 	}
 
 	if err = rows.Err(); err != nil {
@@ -1582,171 +1582,171 @@ func (l *eventLogStore) aggregatedSearchEvents(ctx context.Context, queryString 
 	return events, nil
 }
 
-// List of events that don't meet the criteria of "active" usage of Cody.
-var nonActiveCodyEvents = []string{
-	"CodyVSCodeExtension:CodySavedLogin:executed",
-	"web:codyChat:tryOnPublicCode",
+// List of events thbt don't meet the criterib of "bctive" usbge of Cody.
+vbr nonActiveCodyEvents = []string{
+	"CodyVSCodeExtension:CodySbvedLogin:executed",
+	"web:codyChbt:tryOnPublicCode",
 	"web:codyEditorWidget:viewed",
-	"web:codyChat:pageViewed",
-	"CodyConfigurationPageViewed",
-	"ClickedOnTryCodySearchCTA",
-	"TryCodyWebOnboardingDisplayed",
+	"web:codyChbt:pbgeViewed",
+	"CodyConfigurbtionPbgeViewed",
+	"ClickedOnTryCodySebrchCTA",
+	"TryCodyWebOnbobrdingDisplbyed",
 	"AboutGetCodyPopover",
 	"TryCodyWeb",
-	"CodySurveyToastViewed",
-	"SiteAdminCodyPageViewed",
-	"CodyUninstalled",
-	"SpeakToACodyEngineerCTA",
+	"CodySurveyTobstViewed",
+	"SiteAdminCodyPbgeViewed",
+	"CodyUninstblled",
+	"SpebkToACodyEngineerCTA",
 }
 
-var aggregatedCodyUsageEventsQuery = `
+vbr bggregbtedCodyUsbgeEventsQuery = `
 WITH events AS (
   SELECT
-    name AS key,
-    ` + aggregatedUserIDQueryFragment + ` AS user_id,
-    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
-    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
-    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
-    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
-    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+    nbme AS key,
+    ` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+    ` + mbkeDbteTruncExpression("month", "timestbmp") + ` bs month,
+    ` + mbkeDbteTruncExpression("week", "timestbmp") + ` bs week,
+    ` + mbkeDbteTruncExpression("dby", "timestbmp") + ` bs dby,
+    ` + mbkeDbteTruncExpression("month", "%s::timestbmp") + ` bs current_month,
+    ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + ` bs current_week,
+    ` + mbkeDbteTruncExpression("dby", "%s::timestbmp") + ` bs current_dby
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-    AND lower(name) like '%%cody%%'
-    AND name not like '%%CTA%%'
-    AND name not like '%%Cta%%'
-    AND (name NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
+    timestbmp >= ` + mbkeDbteTruncExpression("month", "%s::timestbmp") + `
+    AND lower(nbme) like '%%cody%%'
+    AND nbme not like '%%CTA%%'
+    AND nbme not like '%%Ctb%%'
+    AND (nbme NOT IN ('` + strings.Join(nonActiveCodyEvents, "','") + `'))
 ),
-code_generation_keys AS (
+code_generbtion_keys AS (
   SELECT * FROM unnest(ARRAY[
-    'CodyVSCodeExtension:recipe:rewrite-to-functional:executed',
-    'CodyVSCodeExtension:recipe:improve-variable-names:executed',
-    'CodyVSCodeExtension:recipe:replace:executed',
-    'CodyVSCodeExtension:recipe:generate-docstring:executed',
-    'CodyVSCodeExtension:recipe:generate-unit-test:executed',
-    'CodyVSCodeExtension:recipe:rewrite-functional:executed',
-    'CodyVSCodeExtension:recipe:code-refactor:executed',
+    'CodyVSCodeExtension:recipe:rewrite-to-functionbl:executed',
+    'CodyVSCodeExtension:recipe:improve-vbribble-nbmes:executed',
+    'CodyVSCodeExtension:recipe:replbce:executed',
+    'CodyVSCodeExtension:recipe:generbte-docstring:executed',
+    'CodyVSCodeExtension:recipe:generbte-unit-test:executed',
+    'CodyVSCodeExtension:recipe:rewrite-functionbl:executed',
+    'CodyVSCodeExtension:recipe:code-refbctor:executed',
     'CodyVSCodeExtension:recipe:fixup:executed',
-	'CodyVSCodeExtension:recipe:translate-to-language:executed'
+	'CodyVSCodeExtension:recipe:trbnslbte-to-lbngubge:executed'
   ]) AS key
 ),
-explanation_keys AS (
+explbnbtion_keys AS (
   SELECT * FROM unnest(ARRAY[
-    'CodyVSCodeExtension:recipe:explain-code-high-level:executed',
-    'CodyVSCodeExtension:recipe:explain-code-detailed:executed',
+    'CodyVSCodeExtension:recipe:explbin-code-high-level:executed',
+    'CodyVSCodeExtension:recipe:explbin-code-detbiled:executed',
     'CodyVSCodeExtension:recipe:find-code-smells:executed',
     'CodyVSCodeExtension:recipe:git-history:executed',
-    'CodyVSCodeExtension:recipe:rate-code:executed'
+    'CodyVSCodeExtension:recipe:rbte-code:executed'
   ]) AS key
 )
 SELECT
   key,
   current_month,
   current_week,
-  current_day,
-  SUM(case when month = current_month then 1 else 0 end) AS total_month,
-  SUM(case when week = current_week then 1 else 0 end) AS total_week,
-  SUM(case when day = current_day then 1 else 0 end) AS total_day,
+  current_dby,
+  SUM(cbse when month = current_month then 1 else 0 end) AS totbl_month,
+  SUM(cbse when week = current_week then 1 else 0 end) AS totbl_week,
+  SUM(cbse when dby = current_dby then 1 else 0 end) AS totbl_dby,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  SUM(case when month = current_month and key in
-  	(SELECT * FROM code_generation_keys)
-  	then 1 else 0 end) as code_generation_month,
-  SUM(case when week = current_week and key in
-  	(SELECT * FROM explanation_keys)
-	then 1 else 0 end) as code_generation_week,
-  SUM(case when day = current_day and key in (SELECT * FROM code_generation_keys)
-	then 1 else 0 end) as code_generation_day,
-  SUM(case when month = current_month and key in (SELECT * FROM explanation_keys)
-	then 1 else 0 end) as explanation_month,
-  SUM(case when week = current_week and key in (SELECT * FROM explanation_keys)
-	then 1 else 0 end) as explanation_week,
-  SUM(case when day = current_day and key in (SELECT * FROM explanation_keys)
-	then 1 else 0 end) as explanation_day,
-	0 as invalid_month,
-	0 as invalid_week,
-	0 as invalid_day
+  COUNT(DISTINCT user_id) FILTER (WHERE dby = current_dby) AS uniques_dby,
+  SUM(cbse when month = current_month bnd key in
+  	(SELECT * FROM code_generbtion_keys)
+  	then 1 else 0 end) bs code_generbtion_month,
+  SUM(cbse when week = current_week bnd key in
+  	(SELECT * FROM explbnbtion_keys)
+	then 1 else 0 end) bs code_generbtion_week,
+  SUM(cbse when dby = current_dby bnd key in (SELECT * FROM code_generbtion_keys)
+	then 1 else 0 end) bs code_generbtion_dby,
+  SUM(cbse when month = current_month bnd key in (SELECT * FROM explbnbtion_keys)
+	then 1 else 0 end) bs explbnbtion_month,
+  SUM(cbse when week = current_week bnd key in (SELECT * FROM explbnbtion_keys)
+	then 1 else 0 end) bs explbnbtion_week,
+  SUM(cbse when dby = current_dby bnd key in (SELECT * FROM explbnbtion_keys)
+	then 1 else 0 end) bs explbnbtion_dby,
+	0 bs invblid_month,
+	0 bs invblid_week,
+	0 bs invblid_dby
 FROM events
-GROUP BY key, current_month, current_week, current_day
+GROUP BY key, current_month, current_week, current_dby
 `
 
-var searchLatencyEventNames = []string{
-	"'search.latencies.literal'",
-	"'search.latencies.regexp'",
-	"'search.latencies.structural'",
-	"'search.latencies.file'",
-	"'search.latencies.repo'",
-	"'search.latencies.diff'",
-	"'search.latencies.commit'",
-	"'search.latencies.symbol'",
+vbr sebrchLbtencyEventNbmes = []string{
+	"'sebrch.lbtencies.literbl'",
+	"'sebrch.lbtencies.regexp'",
+	"'sebrch.lbtencies.structurbl'",
+	"'sebrch.lbtencies.file'",
+	"'sebrch.lbtencies.repo'",
+	"'sebrch.lbtencies.diff'",
+	"'sebrch.lbtencies.commit'",
+	"'sebrch.lbtencies.symbol'",
 }
 
-var aggregatedSearchLatencyEventsQuery = `
+vbr bggregbtedSebrchLbtencyEventsQuery = `
 WITH events AS (
   SELECT
-    name,
-    -- Postgres 9.6 needs to go from text to integer (i.e. can't go directly to integer)
-    (argument->'durationMs')::text::integer as latency,
-    ` + aggregatedUserIDQueryFragment + ` AS user_id,
-    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
-    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
-    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
-    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
-    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+    nbme,
+    -- Postgres 9.6 needs to go from text to integer (i.e. cbn't go directly to integer)
+    (brgument->'durbtionMs')::text::integer bs lbtency,
+    ` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+    ` + mbkeDbteTruncExpression("month", "timestbmp") + ` bs month,
+    ` + mbkeDbteTruncExpression("week", "timestbmp") + ` bs week,
+    ` + mbkeDbteTruncExpression("dby", "timestbmp") + ` bs dby,
+    ` + mbkeDbteTruncExpression("month", "%s::timestbmp") + ` bs current_month,
+    ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + ` bs current_week,
+    ` + mbkeDbteTruncExpression("dby", "%s::timestbmp") + ` bs current_dby
   FROM event_logs
   WHERE
-    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
-    AND name IN (` + strings.Join(searchLatencyEventNames, ", ") + `)
+    timestbmp >= ` + mbkeDbteTruncExpression("rolling_month", "%s::timestbmp") + `
+    AND nbme IN (` + strings.Join(sebrchLbtencyEventNbmes, ", ") + `)
 )
 SELECT
-  name,
+  nbme,
   current_month,
   current_week,
-  current_day,
-  COUNT(*) FILTER (WHERE month = current_month) AS total_month,
-  COUNT(*) FILTER (WHERE week = current_week) AS total_week,
-  COUNT(*) FILTER (WHERE day = current_day) AS total_day,
+  current_dby,
+  COUNT(*) FILTER (WHERE month = current_month) AS totbl_month,
+  COUNT(*) FILTER (WHERE week = current_week) AS totbl_week,
+  COUNT(*) FILTER (WHERE dby = current_dby) AS totbl_dby,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE month = current_month) AS latencies_month,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE week = current_week) AS latencies_week,
-  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY latency) FILTER (WHERE day = current_day) AS latencies_day
-FROM events GROUP BY name, current_month, current_week, current_day
+  COUNT(DISTINCT user_id) FILTER (WHERE dby = current_dby) AS uniques_dby,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY lbtency) FILTER (WHERE month = current_month) AS lbtencies_month,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY lbtency) FILTER (WHERE week = current_week) AS lbtencies_week,
+  PERCENTILE_CONT(ARRAY[0.50, 0.90, 0.99]) WITHIN GROUP (ORDER BY lbtency) FILTER (WHERE dby = current_dby) AS lbtencies_dby
+FROM events GROUP BY nbme, current_month, current_week, current_dby
 `
 
-var aggregatedSearchUsageEventsQuery = `
+vbr bggregbtedSebrchUsbgeEventsQuery = `
 WITH events AS (
   SELECT
     json.key::text,
-    json.value::text,
-    ` + aggregatedUserIDQueryFragment + ` AS user_id,
-    ` + makeDateTruncExpression("month", "timestamp") + ` as month,
-    ` + makeDateTruncExpression("week", "timestamp") + ` as week,
-    ` + makeDateTruncExpression("day", "timestamp") + ` as day,
-    ` + makeDateTruncExpression("month", "%s::timestamp") + ` as current_month,
-    ` + makeDateTruncExpression("week", "%s::timestamp") + ` as current_week,
-    ` + makeDateTruncExpression("day", "%s::timestamp") + ` as current_day
+    json.vblue::text,
+    ` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+    ` + mbkeDbteTruncExpression("month", "timestbmp") + ` bs month,
+    ` + mbkeDbteTruncExpression("week", "timestbmp") + ` bs week,
+    ` + mbkeDbteTruncExpression("dby", "timestbmp") + ` bs dby,
+    ` + mbkeDbteTruncExpression("month", "%s::timestbmp") + ` bs current_month,
+    ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + ` bs current_week,
+    ` + mbkeDbteTruncExpression("dby", "%s::timestbmp") + ` bs current_dby
   FROM event_logs
-  CROSS JOIN LATERAL jsonb_each(argument->'code_search'->'query_data'->'query') json
+  CROSS JOIN LATERAL jsonb_ebch(brgument->'code_sebrch'->'query_dbtb'->'query') json
   WHERE
-    timestamp >= ` + makeDateTruncExpression("rolling_month", "%s::timestamp") + `
-    AND name = 'SearchResultsQueried'
+    timestbmp >= ` + mbkeDbteTruncExpression("rolling_month", "%s::timestbmp") + `
+    AND nbme = 'SebrchResultsQueried'
 )
 SELECT
   key,
   current_month,
   current_week,
-  current_day,
-  SUM(case when month = current_month then value::int else 0 end) AS total_month,
-  SUM(case when week = current_week then value::int else 0 end) AS total_week,
-  SUM(case when day = current_day then value::int else 0 end) AS total_day,
+  current_dby,
+  SUM(cbse when month = current_month then vblue::int else 0 end) AS totbl_month,
+  SUM(cbse when week = current_week then vblue::int else 0 end) AS totbl_week,
+  SUM(cbse when dby = current_dby then vblue::int else 0 end) AS totbl_dby,
   COUNT(DISTINCT user_id) FILTER (WHERE month = current_month) AS uniques_month,
   COUNT(DISTINCT user_id) FILTER (WHERE week = current_week) AS uniques_week,
-  COUNT(DISTINCT user_id) FILTER (WHERE day = current_day) AS uniques_day,
+  COUNT(DISTINCT user_id) FILTER (WHERE dby = current_dby) AS uniques_dby,
   NULL,
   NULL,
   NULL
@@ -1754,209 +1754,209 @@ FROM events
 WHERE key IN
   (
 	'count_or',
-	'count_and',
+	'count_bnd',
 	'count_not',
 	'count_select_repo',
 	'count_select_file',
 	'count_select_content',
 	'count_select_symbol',
-	'count_select_commit_diff_added',
+	'count_select_commit_diff_bdded',
 	'count_select_commit_diff_removed',
-	'count_repo_contains',
-	'count_repo_contains_file',
-	'count_repo_contains_content',
-	'count_repo_contains_commit_after',
+	'count_repo_contbins',
+	'count_repo_contbins_file',
+	'count_repo_contbins_content',
+	'count_repo_contbins_commit_bfter',
 	'count_repo_dependencies',
-	'count_count_all',
-	'count_non_global_context',
-	'count_only_patterns',
-	'count_only_patterns_three_or_more'
+	'count_count_bll',
+	'count_non_globbl_context',
+	'count_only_pbtterns',
+	'count_only_pbtterns_three_or_more'
   )
-GROUP BY key, current_month, current_week, current_day
+GROUP BY key, current_month, current_week, current_dby
 `
 
-// userIDQueryFragment is a query fragment that can be used to return the anonymous user ID
+// userIDQueryFrbgment is b query frbgment thbt cbn be used to return the bnonymous user ID
 // when the user ID is not set (i.e. 0).
-const userIDQueryFragment = `
+const userIDQueryFrbgment = `
 CASE WHEN user_id = 0
-  THEN anonymous_user_id
+  THEN bnonymous_user_id
   ELSE CAST(user_id AS TEXT)
 END
 `
 
-// aggregatedUserIDQueryFragment is a query fragment that can be used to canonicalize the
-// values of the user_id and anonymous_user_id fields (assumed in scope) int a unified value.
-const aggregatedUserIDQueryFragment = `
+// bggregbtedUserIDQueryFrbgment is b query frbgment thbt cbn be used to cbnonicblize the
+// vblues of the user_id bnd bnonymous_user_id fields (bssumed in scope) int b unified vblue.
+const bggregbtedUserIDQueryFrbgment = `
 CASE WHEN user_id = 0
-  -- It's faster to group by an int rather than text, so we convert
-  -- the anonymous_user_id to an int, rather than the user_id to text.
-  THEN ('x' || substr(md5(anonymous_user_id), 1, 8))::bit(32)::int
+  -- It's fbster to group by bn int rbther thbn text, so we convert
+  -- the bnonymous_user_id to bn int, rbther thbn the user_id to text.
+  THEN ('x' || substr(md5(bnonymous_user_id), 1, 8))::bit(32)::int
   ELSE user_id
 END
 `
 
-// makeDateTruncExpression returns an expression that converts the given
-// SQL expression into the start of the containing date container specified
-// by the unit parameter (e.g. day, week, month, or rolling month [prior 1 month]).
-// Note: If unit is 'week', the function will truncate to the preceding Sunday.
-// This is because some locales start the week on Sunday, unlike the Postgres default
-// (and many parts of the world) which start the week on Monday.
-func makeDateTruncExpression(unit, expr string) string {
+// mbkeDbteTruncExpression returns bn expression thbt converts the given
+// SQL expression into the stbrt of the contbining dbte contbiner specified
+// by the unit pbrbmeter (e.g. dby, week, month, or rolling month [prior 1 month]).
+// Note: If unit is 'week', the function will truncbte to the preceding Sundby.
+// This is becbuse some locbles stbrt the week on Sundby, unlike the Postgres defbult
+// (bnd mbny pbrts of the world) which stbrt the week on Mondby.
+func mbkeDbteTruncExpression(unit, expr string) string {
 	if unit == "week" {
-		return fmt.Sprintf(`(DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 day'::interval) - '1 day'::interval)`, expr)
+		return fmt.Sprintf(`(DATE_TRUNC('week', TIMEZONE('UTC', %s) + '1 dby'::intervbl) - '1 dby'::intervbl)`, expr)
 	}
 	if unit == "rolling_month" {
-		return fmt.Sprintf(`(DATE_TRUNC('day', TIMEZONE('UTC', %s)) - '1 month'::interval)`, expr)
+		return fmt.Sprintf(`(DATE_TRUNC('dby', TIMEZONE('UTC', %s)) - '1 month'::intervbl)`, expr)
 	}
 
 	return fmt.Sprintf(`DATE_TRUNC('%s', TIMEZONE('UTC', %s))`, unit, expr)
 }
 
-// RequestsByLanguage returns a map of language names to the number of requests of precise support for that language.
-func (l *eventLogStore) RequestsByLanguage(ctx context.Context) (_ map[string]int, err error) {
-	rows, err := l.Query(ctx, sqlf.Sprintf(requestsByLanguageQuery))
+// RequestsByLbngubge returns b mbp of lbngubge nbmes to the number of requests of precise support for thbt lbngubge.
+func (l *eventLogStore) RequestsByLbngubge(ctx context.Context) (_ mbp[string]int, err error) {
+	rows, err := l.Query(ctx, sqlf.Sprintf(requestsByLbngubgeQuery))
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	requestsByLanguage := map[string]int{}
+	requestsByLbngubge := mbp[string]int{}
 	for rows.Next() {
-		var (
-			language string
+		vbr (
+			lbngubge string
 			count    int
 		)
-		if err := rows.Scan(&language, &count); err != nil {
+		if err := rows.Scbn(&lbngubge, &count); err != nil {
 			return nil, err
 		}
 
-		requestsByLanguage[language] = count
+		requestsByLbngubge[lbngubge] = count
 	}
 
-	return requestsByLanguage, nil
+	return requestsByLbngubge, nil
 }
 
-var requestsByLanguageQuery = `
+vbr requestsByLbngubgeQuery = `
 SELECT
-	language_id,
-	COUNT(*) as count
-FROM codeintel_langugage_support_requests
-GROUP BY language_id
+	lbngubge_id,
+	COUNT(*) bs count
+FROM codeintel_lbngugbge_support_requests
+GROUP BY lbngubge_id
 `
 
-func (l *eventLogStore) OwnershipFeatureActivity(ctx context.Context, now time.Time, eventNames ...string) (map[string]*types.OwnershipUsageStatisticsActiveUsers, error) {
-	if len(eventNames) == 0 {
-		return map[string]*types.OwnershipUsageStatisticsActiveUsers{}, nil
+func (l *eventLogStore) OwnershipFebtureActivity(ctx context.Context, now time.Time, eventNbmes ...string) (mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers, error) {
+	if len(eventNbmes) == 0 {
+		return mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{}, nil
 	}
-	var sqlEventNames []*sqlf.Query
-	for _, e := range eventNames {
-		sqlEventNames = append(sqlEventNames, sqlf.Sprintf("%s", e))
+	vbr sqlEventNbmes []*sqlf.Query
+	for _, e := rbnge eventNbmes {
+		sqlEventNbmes = bppend(sqlEventNbmes, sqlf.Sprintf("%s", e))
 	}
-	query := sqlf.Sprintf(eventActivityQuery, now, now, sqlf.Join(sqlEventNames, ","), now, now, now)
+	query := sqlf.Sprintf(eventActivityQuery, now, now, sqlf.Join(sqlEventNbmes, ","), now, now, now)
 	rows, err := l.Query(ctx, query)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-	stats := map[string]*types.OwnershipUsageStatisticsActiveUsers{}
-	for _, e := range eventNames {
-		var zero int32
-		stats[e] = &types.OwnershipUsageStatisticsActiveUsers{
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
+	stbts := mbp[string]*types.OwnershipUsbgeStbtisticsActiveUsers{}
+	for _, e := rbnge eventNbmes {
+		vbr zero int32
+		stbts[e] = &types.OwnershipUsbgeStbtisticsActiveUsers{
 			DAU: &zero,
 			WAU: &zero,
 			MAU: &zero,
 		}
 	}
 	for rows.Next() {
-		var (
+		vbr (
 			unit        string
-			eventName   string
-			timestamp   time.Time
-			activeUsers int32
+			eventNbme   string
+			timestbmp   time.Time
+			bctiveUsers int32
 		)
-		if err := rows.Scan(&unit, &eventName, &timestamp, &activeUsers); err != nil {
+		if err := rows.Scbn(&unit, &eventNbme, &timestbmp, &bctiveUsers); err != nil {
 			return nil, err
 		}
 		switch unit {
-		case "day":
-			stats[eventName].DAU = &activeUsers
-		case "week":
-			stats[eventName].WAU = &activeUsers
-		case "month":
-			stats[eventName].MAU = &activeUsers
-		default:
-			return nil, errors.Newf("unexpected unit %q, this is a bug", unit)
+		cbse "dby":
+			stbts[eventNbme].DAU = &bctiveUsers
+		cbse "week":
+			stbts[eventNbme].WAU = &bctiveUsers
+		cbse "month":
+			stbts[eventNbme].MAU = &bctiveUsers
+		defbult:
+			return nil, errors.Newf("unexpected unit %q, this is b bug", unit)
 		}
 	}
-	return stats, err
+	return stbts, err
 }
 
-// eventActivityQuery returns the most recent reading on (M|W|D)AU for given events.
+// eventActivityQuery returns the most recent rebding on (M|W|D)AU for given events.
 //
-// The query outputs one row per event name, per unit ("month", "week", "day" as strings).
-// Each row contains:
-//  1. "unit" which is either "month" or "week" or "day" indicating whether
-//     whether the associated user_activity referes to MAU, WAU or DAU.
-//  2. "name" which refers to the name of the event considered.
-//  2. "time_stamp" which indicates the beginning of unit time span (like the beginning
+// The query outputs one row per event nbme, per unit ("month", "week", "dby" bs strings).
+// Ebch row contbins:
+//  1. "unit" which is either "month" or "week" or "dby" indicbting whether
+//     whether the bssocibted user_bctivity referes to MAU, WAU or DAU.
+//  2. "nbme" which refers to the nbme of the event considered.
+//  2. "time_stbmp" which indicbtes the beginning of unit time spbn (like the beginning
 //     of week or month).
-//  3. "active_users" which is the count of distinct active users during
-//     the relevant time span.
+//  3. "bctive_users" which is the count of distinct bctive users during
+//     the relevbnt time spbn.
 //
-// There are 6 parameters (but just two values):
-//  1. Timestamp which truncated to this month is the time-based lower bound
-//     for events taken into account, twice.
-//  2. The list of event names to consider.
-//  3. The same timestamp again, three times.
-var eventActivityQuery = `
+// There bre 6 pbrbmeters (but just two vblues):
+//  1. Timestbmp which truncbted to this month is the time-bbsed lower bound
+//     for events tbken into bccount, twice.
+//  2. The list of event nbmes to consider.
+//  3. The sbme timestbmp bgbin, three times.
+vbr eventActivityQuery = `
 WITH events AS (
 	SELECT
-	` + aggregatedUserIDQueryFragment + ` AS user_id,
-	` + makeDateTruncExpression("day", "timestamp") + ` AS day,
-	` + makeDateTruncExpression("week", "timestamp") + ` AS week,
-	` + makeDateTruncExpression("month", "timestamp") + ` AS month,
-	name AS name
+	` + bggregbtedUserIDQueryFrbgment + ` AS user_id,
+	` + mbkeDbteTruncExpression("dby", "timestbmp") + ` AS dby,
+	` + mbkeDbteTruncExpression("week", "timestbmp") + ` AS week,
+	` + mbkeDbteTruncExpression("month", "timestbmp") + ` AS month,
+	nbme AS nbme
 	FROM event_logs
-	-- Either: the beginning of current week and current month
-	-- can come first, so take the earliest as timestamp lower bound.
-	WHERE timestamp >= LEAST(
-		` + makeDateTruncExpression("month", "%s::timestamp") + `,
-		` + makeDateTruncExpression("week", "%s::timestamp") + `
+	-- Either: the beginning of current week bnd current month
+	-- cbn come first, so tbke the ebrliest bs timestbmp lower bound.
+	WHERE timestbmp >= LEAST(
+		` + mbkeDbteTruncExpression("month", "%s::timestbmp") + `,
+		` + mbkeDbteTruncExpression("week", "%s::timestbmp") + `
 	)
-	AND name IN (%s)
+	AND nbme IN (%s)
 )
 (
-	SELECT DISTINCT ON (unit, name)
+	SELECT DISTINCT ON (unit, nbme)
 		'month' AS unit,
-		e.name AS name,
-		e.month AS time_stamp,
-		COUNT(DISTINCT e.user_id) AS active_users
+		e.nbme AS nbme,
+		e.month AS time_stbmp,
+		COUNT(DISTINCT e.user_id) AS bctive_users
 	FROM events AS e
-	WHERE e.month >= ` + makeDateTruncExpression("month", "%s::timestamp") + `
-	GROUP BY unit, name, time_stamp
-	ORDER BY unit, name, time_stamp DESC
+	WHERE e.month >= ` + mbkeDbteTruncExpression("month", "%s::timestbmp") + `
+	GROUP BY unit, nbme, time_stbmp
+	ORDER BY unit, nbme, time_stbmp DESC
 )
 UNION ALL
 (
-SELECT DISTINCT ON (unit, name)
+SELECT DISTINCT ON (unit, nbme)
 	'week' AS unit,
-	e.name AS name,
-	e.week AS time_stamp,
-	COUNT(DISTINCT e.user_id) AS active_users
+	e.nbme AS nbme,
+	e.week AS time_stbmp,
+	COUNT(DISTINCT e.user_id) AS bctive_users
 FROM events AS e
-WHERE e.week >= ` + makeDateTruncExpression("week", "%s::timestamp") + `
-GROUP BY unit, name, time_stamp
-ORDER BY unit, name, time_stamp DESC
+WHERE e.week >= ` + mbkeDbteTruncExpression("week", "%s::timestbmp") + `
+GROUP BY unit, nbme, time_stbmp
+ORDER BY unit, nbme, time_stbmp DESC
 )
 UNION ALL
 (
-SELECT DISTINCT ON (unit, name)
-	'day' AS unit,
-	e.name AS name,
-	e.day AS time_stamp,
-	COUNT(DISTINCT e.user_id) AS active_users
+SELECT DISTINCT ON (unit, nbme)
+	'dby' AS unit,
+	e.nbme AS nbme,
+	e.dby AS time_stbmp,
+	COUNT(DISTINCT e.user_id) AS bctive_users
 FROM events AS e
-WHERE e.day >= ` + makeDateTruncExpression("day", "%s::timestamp") + `
-GROUP BY unit, name, time_stamp
-ORDER BY unit, name, time_stamp DESC
+WHERE e.dby >= ` + mbkeDbteTruncExpression("dby", "%s::timestbmp") + `
+GROUP BY unit, nbme, time_stbmp
+ORDER BY unit, nbme, time_stbmp DESC
 )`

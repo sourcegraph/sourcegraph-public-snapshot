@@ -1,30 +1,30 @@
-package dbconn
+pbckbge dbconn
 
 import (
 	"context"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/qustavo/sqlhooks/v2"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/qustbvo/sqlhooks/v2"
 )
 
 type metricHooks struct {
-	metricSQLSuccessTotal prometheus.Counter
-	metricSQLErrorTotal   prometheus.Counter
+	metricSQLSuccessTotbl prometheus.Counter
+	metricSQLErrorTotbl   prometheus.Counter
 }
 
-var _ sqlhooks.Hooks = &metricHooks{}
-var _ sqlhooks.OnErrorer = &metricHooks{}
+vbr _ sqlhooks.Hooks = &metricHooks{}
+vbr _ sqlhooks.OnErrorer = &metricHooks{}
 
-func (h *metricHooks) Before(ctx context.Context, query string, args ...any) (context.Context, error) {
+func (h *metricHooks) Before(ctx context.Context, query string, brgs ...bny) (context.Context, error) {
 	return ctx, nil
 }
 
-func (h *metricHooks) After(ctx context.Context, query string, args ...any) (context.Context, error) {
-	h.metricSQLSuccessTotal.Inc()
+func (h *metricHooks) After(ctx context.Context, query string, brgs ...bny) (context.Context, error) {
+	h.metricSQLSuccessTotbl.Inc()
 	return ctx, nil
 }
 
-func (h *metricHooks) OnError(ctx context.Context, err error, query string, args ...any) error {
-	h.metricSQLErrorTotal.Inc()
+func (h *metricHooks) OnError(ctx context.Context, err error, query string, brgs ...bny) error {
+	h.metricSQLErrorTotbl.Inc()
 	return err
 }

@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,159 +6,159 @@ import (
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/rbac"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbbc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
-func TestRepositoryMetadata(t *testing.T) {
-	ctx := context.Background()
+func TestRepositoryMetbdbtb(t *testing.T) {
+	ctx := context.Bbckground()
 
 	logger := logtest.Scoped(t)
-	db := dbmocks.NewMockDBFrom(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := dbmocks.NewMockDBFrom(dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	users := dbmocks.NewMockUserStore()
-	users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{}, nil)
-	db.UsersFunc.SetDefaultReturn(users)
+	users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{}, nil)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	permissions := dbmocks.NewMockPermissionStore()
-	permissions.GetPermissionForUserFunc.SetDefaultReturn(&types.Permission{
+	permissions.GetPermissionForUserFunc.SetDefbultReturn(&types.Permission{
 		ID:        1,
-		Namespace: rtypes.RepoMetadataNamespace,
-		Action:    rtypes.RepoMetadataWriteAction,
-		CreatedAt: time.Now(),
+		Nbmespbce: rtypes.RepoMetbdbtbNbmespbce,
+		Action:    rtypes.RepoMetbdbtbWriteAction,
+		CrebtedAt: time.Now(),
 	}, nil)
-	db.PermissionsFunc.SetDefaultReturn(permissions)
+	db.PermissionsFunc.SetDefbultReturn(permissions)
 
-	err := db.Repos().Create(ctx, &types.Repo{
-		Name: "testrepo",
+	err := db.Repos().Crebte(ctx, &types.Repo{
+		Nbme: "testrepo",
 	})
 	require.NoError(t, err)
-	repo, err := db.Repos().GetByName(ctx, "testrepo")
+	repo, err := db.Repos().GetByNbme(ctx, "testrepo")
 	require.NoError(t, err)
 
-	schema := newSchemaResolver(db, gitserver.NewClient())
-	gqlID := MarshalRepositoryID(repo.ID)
+	schemb := newSchembResolver(db, gitserver.NewClient())
+	gqlID := MbrshblRepositoryID(repo.ID)
 
-	t.Run("add", func(t *testing.T) {
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+	t.Run("bdd", func(t *testing.T) {
+		_, err = schemb.AddRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: pointers.Ptr("val1"),
+			Vblue: pointers.Ptr("vbl1"),
 		})
 		require.NoError(t, err)
 
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		_, err = schemb.AddRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
-			Key:   "tag1",
-			Value: pointers.Ptr(" 	"),
+			Key:   "tbg1",
+			Vblue: pointers.Ptr(" 	"),
 		})
 		require.Error(t, err)
-		require.Equal(t, emptyNonNilValueError{value: " 	"}, err)
+		require.Equbl(t, emptyNonNilVblueError{vblue: " 	"}, err)
 
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		_, err = schemb.AddRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
-			Key:   "tag1",
-			Value: nil,
+			Key:   "tbg1",
+			Vblue: nil,
 		})
 		require.NoError(t, err)
 
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
+		repoResolver, err := schemb.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)
 
-		kvps, err := repoResolver.Metadata(ctx)
+		kvps, err := repoResolver.Metbdbtb(ctx)
 		require.NoError(t, err)
 		sort.Slice(kvps, func(i, j int) bool {
 			return kvps[i].key < kvps[j].key
 		})
-		require.Equal(t, []KeyValuePair{{
+		require.Equbl(t, []KeyVbluePbir{{
 			key:   "key1",
-			value: pointers.Ptr("val1"),
+			vblue: pointers.Ptr("vbl1"),
 		}, {
-			key:   "tag1",
-			value: nil,
+			key:   "tbg1",
+			vblue: nil,
 		}}, kvps)
 	})
 
-	t.Run("update", func(t *testing.T) {
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+	t.Run("updbte", func(t *testing.T) {
+		_, err = schemb.UpdbteRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: pointers.Ptr("val2"),
+			Vblue: pointers.Ptr("vbl2"),
 		})
 		require.NoError(t, err)
 
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		_, err = schemb.UpdbteRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
-			Key:   "tag1",
-			Value: pointers.Ptr("val3"),
+			Key:   "tbg1",
+			Vblue: pointers.Ptr("vbl3"),
 		})
 		require.NoError(t, err)
 
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		_, err = schemb.UpdbteRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
-			Key:   "tag1",
-			Value: pointers.Ptr("     "),
+			Key:   "tbg1",
+			Vblue: pointers.Ptr("     "),
 		})
 		require.Error(t, err)
-		require.Equal(t, emptyNonNilValueError{value: "     "}, err)
+		require.Equbl(t, emptyNonNilVblueError{vblue: "     "}, err)
 
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
+		repoResolver, err := schemb.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)
 
-		kvps, err := repoResolver.Metadata(ctx)
+		kvps, err := repoResolver.Metbdbtb(ctx)
 		require.NoError(t, err)
 		sort.Slice(kvps, func(i, j int) bool {
 			return kvps[i].key < kvps[j].key
 		})
-		require.Equal(t, []KeyValuePair{{
+		require.Equbl(t, []KeyVbluePbir{{
 			key:   "key1",
-			value: pointers.Ptr("val2"),
+			vblue: pointers.Ptr("vbl2"),
 		}, {
-			key:   "tag1",
-			value: pointers.Ptr("val3"),
+			key:   "tbg1",
+			vblue: pointers.Ptr("vbl3"),
 		}}, kvps)
 	})
 
 	t.Run("delete", func(t *testing.T) {
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
+		_, err = schemb.DeleteRepoMetbdbtb(ctx, struct {
+			Repo grbphql.ID
 			Key  string
 		}{
 			Repo: gqlID,
@@ -166,19 +166,19 @@ func TestRepositoryMetadata(t *testing.T) {
 		})
 		require.NoError(t, err)
 
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
+		_, err = schemb.DeleteRepoMetbdbtb(ctx, struct {
+			Repo grbphql.ID
 			Key  string
 		}{
 			Repo: gqlID,
-			Key:  "tag1",
+			Key:  "tbg1",
 		})
 		require.NoError(t, err)
 
-		repoResolver, err := schema.repositoryByID(ctx, gqlID)
+		repoResolver, err := schemb.repositoryByID(ctx, gqlID)
 		require.NoError(t, err)
 
-		kvps, err := repoResolver.Metadata(ctx)
+		kvps, err := repoResolver.Metbdbtb(ctx)
 		require.NoError(t, err)
 		sort.Slice(kvps, func(i, j int) bool {
 			return kvps[i].key < kvps[j].key
@@ -186,83 +186,83 @@ func TestRepositoryMetadata(t *testing.T) {
 		require.Empty(t, kvps)
 	})
 
-	t.Run("handles feature flag", func(t *testing.T) {
-		flags := map[string]bool{"repository-metadata": false}
-		ctx = featureflag.WithFlags(ctx, featureflag.NewMemoryStore(flags, flags, flags))
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+	t.Run("hbndles febture flbg", func(t *testing.T) {
+		flbgs := mbp[string]bool{"repository-metbdbtb": fblse}
+		ctx = febtureflbg.WithFlbgs(ctx, febtureflbg.NewMemoryStore(flbgs, flbgs, flbgs))
+		_, err = schemb.AddRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: pointers.Ptr("val1"),
+			Vblue: pointers.Ptr("vbl1"),
 		})
 		require.Error(t, err)
-		require.Equal(t, featureDisabledError, err)
+		require.Equbl(t, febtureDisbbledError, err)
 
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		_, err = schemb.UpdbteRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: pointers.Ptr("val2"),
+			Vblue: pointers.Ptr("vbl2"),
 		})
 		require.Error(t, err)
-		require.Equal(t, featureDisabledError, err)
+		require.Equbl(t, febtureDisbbledError, err)
 
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
+		_, err = schemb.DeleteRepoMetbdbtb(ctx, struct {
+			Repo grbphql.ID
 			Key  string
 		}{
 			Repo: gqlID,
 			Key:  "key1",
 		})
 		require.Error(t, err)
-		require.Equal(t, featureDisabledError, err)
+		require.Equbl(t, febtureDisbbledError, err)
 	})
 
-	t.Run("handles rbac", func(t *testing.T) {
-		permissions.GetPermissionForUserFunc.SetDefaultReturn(nil, nil)
+	t.Run("hbndles rbbc", func(t *testing.T) {
+		permissions.GetPermissionForUserFunc.SetDefbultReturn(nil, nil)
 
-		// add
-		_, err = schema.AddRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		// bdd
+		_, err = schemb.AddRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: pointers.Ptr("val1"),
+			Vblue: pointers.Ptr("vbl1"),
 		})
 		require.Error(t, err)
-		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
+		require.Equbl(t, err, &rbbc.ErrNotAuthorized{Permission: string(rbbc.RepoMetbdbtbWritePermission)})
 
-		// update
-		_, err = schema.UpdateRepoMetadata(ctx, struct {
-			Repo  graphql.ID
+		// updbte
+		_, err = schemb.UpdbteRepoMetbdbtb(ctx, struct {
+			Repo  grbphql.ID
 			Key   string
-			Value *string
+			Vblue *string
 		}{
 			Repo:  gqlID,
 			Key:   "key1",
-			Value: pointers.Ptr("val2"),
+			Vblue: pointers.Ptr("vbl2"),
 		})
 		require.Error(t, err)
-		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
+		require.Equbl(t, err, &rbbc.ErrNotAuthorized{Permission: string(rbbc.RepoMetbdbtbWritePermission)})
 
 		// delete
-		_, err = schema.DeleteRepoMetadata(ctx, struct {
-			Repo graphql.ID
+		_, err = schemb.DeleteRepoMetbdbtb(ctx, struct {
+			Repo grbphql.ID
 			Key  string
 		}{
 			Repo: gqlID,
 			Key:  "key1",
 		})
 		require.Error(t, err)
-		require.Equal(t, err, &rbac.ErrNotAuthorized{Permission: string(rbac.RepoMetadataWritePermission)})
+		require.Equbl(t, err, &rbbc.ErrNotAuthorized{Permission: string(rbbc.RepoMetbdbtbWritePermission)})
 	})
 
 }

@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -7,95 +7,95 @@ import (
 	"testing"
 
 	"github.com/elimity-com/scim"
-	"github.com/scim2/filter-parser/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/scim2/filter-pbrser/v2"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestUserResourceHandler_Get(t *testing.T) {
+func TestUserResourceHbndler_Get(t *testing.T) {
 	db := getMockDB([]*types.UserForSCIM{
-		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}, Emails: []string{"a@example.com"}, SCIMExternalID: "id1"},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}, Emails: []string{"b@example.com"}},
+		{User: types.User{ID: 1, Usernbme: "user1", DisplbyNbme: "First Lbst"}, Embils: []string{"b@exbmple.com"}, SCIMExternblID: "id1"},
+		{User: types.User{ID: 2, Usernbme: "user2", DisplbyNbme: "First Middle Lbst"}, Embils: []string{"b@exbmple.com"}},
 	},
-		map[int32][]*database.UserEmail{})
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	user1, err := userResourceHandler.Get(&http.Request{}, "1")
+		mbp[int32][]*dbtbbbse.UserEmbil{})
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	user1, err := userResourceHbndler.Get(&http.Request{}, "1")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	user2, err := userResourceHandler.Get(&http.Request{}, "2")
+	user2, err := userResourceHbndler.Get(&http.Request{}, "2")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// Assert that IDs are correct
-	assert.Equal(t, "1", user1.ID)
-	assert.Equal(t, "2", user2.ID)
-	assert.Equal(t, "id1", user1.ExternalID.Value())
-	assert.Equal(t, "", user2.ExternalID.Value())
-	// Assert that usernames are correct
-	assert.Equal(t, "user1", user1.Attributes[AttrUserName])
-	assert.Equal(t, "user2", user2.Attributes[AttrUserName])
-	// Assert that names are correct
-	assert.Equal(t, "First Last", user1.Attributes[AttrDisplayName])
-	assert.Equal(t, "First Middle Last", user2.Attributes[AttrDisplayName])
-	// Assert that emails are correct
-	assert.Equal(t, "a@example.com", user1.Attributes[AttrEmails].([]interface{})[0].(map[string]interface{})["value"])
+	// Assert thbt IDs bre correct
+	bssert.Equbl(t, "1", user1.ID)
+	bssert.Equbl(t, "2", user2.ID)
+	bssert.Equbl(t, "id1", user1.ExternblID.Vblue())
+	bssert.Equbl(t, "", user2.ExternblID.Vblue())
+	// Assert thbt usernbmes bre correct
+	bssert.Equbl(t, "user1", user1.Attributes[AttrUserNbme])
+	bssert.Equbl(t, "user2", user2.Attributes[AttrUserNbme])
+	// Assert thbt nbmes bre correct
+	bssert.Equbl(t, "First Lbst", user1.Attributes[AttrDisplbyNbme])
+	bssert.Equbl(t, "First Middle Lbst", user2.Attributes[AttrDisplbyNbme])
+	// Assert thbt embils bre correct
+	bssert.Equbl(t, "b@exbmple.com", user1.Attributes[AttrEmbils].([]interfbce{})[0].(mbp[string]interfbce{})["vblue"])
 }
 
-func TestUserResourceHandler_GetAll(t *testing.T) {
-	t.Parallel()
+func TestUserResourceHbndler_GetAll(t *testing.T) {
+	t.Pbrbllel()
 
 	db := getMockDB([]*types.UserForSCIM{
-		{User: types.User{ID: 1, Username: "user1", DisplayName: "First Last"}},
-		{User: types.User{ID: 2, Username: "user2", DisplayName: "First Middle Last"}},
-		{User: types.User{ID: 3, Username: "user3", DisplayName: "First Last"}},
-		{User: types.User{ID: 4, Username: "user4"}},
+		{User: types.User{ID: 1, Usernbme: "user1", DisplbyNbme: "First Lbst"}},
+		{User: types.User{ID: 2, Usernbme: "user2", DisplbyNbme: "First Middle Lbst"}},
+		{User: types.User{ID: 3, Usernbme: "user3", DisplbyNbme: "First Lbst"}},
+		{User: types.User{ID: 4, Usernbme: "user4"}},
 	},
-		map[int32][]*database.UserEmail{})
+		mbp[int32][]*dbtbbbse.UserEmbil{})
 
-	cases := []struct {
-		name             string
+	cbses := []struct {
+		nbme             string
 		count            int
-		startIndex       int
+		stbrtIndex       int
 		filter           string
-		wantTotalResults int
-		wantResults      int
-		wantFirstID      int
+		wbntTotblResults int
+		wbntResults      int
+		wbntFirstID      int
 	}{
-		{name: "no filter, count=0", count: 0, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 0, wantFirstID: 0},
-		{name: "no filter, count=2", count: 2, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 2, wantFirstID: 1},
-		{name: "no filter, offset=3", count: 999, startIndex: 4, filter: "", wantTotalResults: 4, wantResults: 1, wantFirstID: 4},
-		{name: "no filter, count=2, offset=1", count: 2, startIndex: 2, filter: "", wantTotalResults: 4, wantResults: 2, wantFirstID: 2},
-		{name: "no filter, count=999", count: 999, startIndex: 1, filter: "", wantTotalResults: 4, wantResults: 4, wantFirstID: 1},
-		{name: "filter, count=0", count: 0, startIndex: 1, filter: "userName eq \"user3\"", wantTotalResults: 1, wantResults: 0, wantFirstID: 0},
-		{name: "filter: userName", count: 999, startIndex: 1, filter: "userName eq \"user3\"", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
-		{name: "filter: OR", count: 999, startIndex: 1, filter: "(userName eq \"user3\") OR (displayName eq \"First Middle Last\")", wantTotalResults: 2, wantResults: 2, wantFirstID: 2},
-		{name: "filter: AND", count: 999, startIndex: 1, filter: "(userName eq \"user3\") AND (displayName eq \"First Last\")", wantTotalResults: 1, wantResults: 1, wantFirstID: 3},
+		{nbme: "no filter, count=0", count: 0, stbrtIndex: 1, filter: "", wbntTotblResults: 4, wbntResults: 0, wbntFirstID: 0},
+		{nbme: "no filter, count=2", count: 2, stbrtIndex: 1, filter: "", wbntTotblResults: 4, wbntResults: 2, wbntFirstID: 1},
+		{nbme: "no filter, offset=3", count: 999, stbrtIndex: 4, filter: "", wbntTotblResults: 4, wbntResults: 1, wbntFirstID: 4},
+		{nbme: "no filter, count=2, offset=1", count: 2, stbrtIndex: 2, filter: "", wbntTotblResults: 4, wbntResults: 2, wbntFirstID: 2},
+		{nbme: "no filter, count=999", count: 999, stbrtIndex: 1, filter: "", wbntTotblResults: 4, wbntResults: 4, wbntFirstID: 1},
+		{nbme: "filter, count=0", count: 0, stbrtIndex: 1, filter: "userNbme eq \"user3\"", wbntTotblResults: 1, wbntResults: 0, wbntFirstID: 0},
+		{nbme: "filter: userNbme", count: 999, stbrtIndex: 1, filter: "userNbme eq \"user3\"", wbntTotblResults: 1, wbntResults: 1, wbntFirstID: 3},
+		{nbme: "filter: OR", count: 999, stbrtIndex: 1, filter: "(userNbme eq \"user3\") OR (displbyNbme eq \"First Middle Lbst\")", wbntTotblResults: 2, wbntResults: 2, wbntFirstID: 2},
+		{nbme: "filter: AND", count: 999, stbrtIndex: 1, filter: "(userNbme eq \"user3\") AND (displbyNbme eq \"First Lbst\")", wbntTotblResults: 1, wbntResults: 1, wbntFirstID: 3},
 	}
 
-	userResourceHandler := NewUserResourceHandler(context.Background(), &observation.TestContext, db)
-	for _, c := range cases {
-		t.Run("TestUserResourceHandler_GetAll "+c.name, func(t *testing.T) {
-			var params scim.ListRequestParams
+	userResourceHbndler := NewUserResourceHbndler(context.Bbckground(), &observbtion.TestContext, db)
+	for _, c := rbnge cbses {
+		t.Run("TestUserResourceHbndler_GetAll "+c.nbme, func(t *testing.T) {
+			vbr pbrbms scim.ListRequestPbrbms
 			if c.filter != "" {
-				filterExpr, err := filter.ParseFilter([]byte(c.filter))
+				filterExpr, err := filter.PbrseFilter([]byte(c.filter))
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				params = scim.ListRequestParams{Count: c.count, StartIndex: c.startIndex, Filter: filterExpr}
+				pbrbms = scim.ListRequestPbrbms{Count: c.count, StbrtIndex: c.stbrtIndex, Filter: filterExpr}
 			} else {
-				params = scim.ListRequestParams{Count: c.count, StartIndex: c.startIndex, Filter: nil}
+				pbrbms = scim.ListRequestPbrbms{Count: c.count, StbrtIndex: c.stbrtIndex, Filter: nil}
 			}
-			page, err := userResourceHandler.GetAll(&http.Request{}, params)
-			assert.NoError(t, err)
-			assert.Equal(t, c.wantTotalResults, page.TotalResults)
-			assert.Equal(t, c.wantResults, len(page.Resources))
-			if c.wantResults > 0 {
-				assert.Equal(t, strconv.Itoa(c.wantFirstID), page.Resources[0].ID)
+			pbge, err := userResourceHbndler.GetAll(&http.Request{}, pbrbms)
+			bssert.NoError(t, err)
+			bssert.Equbl(t, c.wbntTotblResults, pbge.TotblResults)
+			bssert.Equbl(t, c.wbntResults, len(pbge.Resources))
+			if c.wbntResults > 0 {
+				bssert.Equbl(t, strconv.Itob(c.wbntFirstID), pbge.Resources[0].ID)
 			}
 		})
 	}

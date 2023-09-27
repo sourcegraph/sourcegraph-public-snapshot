@@ -1,4 +1,4 @@
-package store
+pbckbge store
 
 import (
 	"context"
@@ -10,2060 +10,2060 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/search"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sebrch"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreChbngesets(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
-	user := bt.CreateTestUser(t, s.DatabaseDB(), false)
+	user := bt.CrebteTestUser(t, s.DbtbbbseDB(), fblse)
 	githubActor := github.Actor{
-		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+		AvbtbrURL: "https://bvbtbrs2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
 		URL:       "https://github.com/mrnugget",
 	}
 	githubPR := &github.PullRequest{
 		ID:           "FOOBARID",
-		Title:        "Fix a bunch of bugs",
-		Body:         "This fixes a bunch of bugs",
-		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+		Title:        "Fix b bunch of bugs",
+		Body:         "This fixes b bunch of bugs",
+		URL:          "https://github.com/sourcegrbph/sourcegrbph/pull/12345",
 		Number:       12345,
 		Author:       githubActor,
-		Participants: []github.Actor{githubActor},
-		CreatedAt:    clock.Now(),
-		UpdatedAt:    clock.Now(),
-		HeadRefName:  "batch-changes/test",
+		Pbrticipbnts: []github.Actor{githubActor},
+		CrebtedAt:    clock.Now(),
+		UpdbtedAt:    clock.Now(),
+		HebdRefNbme:  "bbtch-chbnges/test",
 	}
 
-	rs := database.ReposWith(logger, s)
-	es := database.ExternalServicesWith(logger, s)
+	rs := dbtbbbse.ReposWith(logger, s)
+	es := dbtbbbse.ExternblServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
-	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	gitlbbRepo := bt.TestRepo(t, es, extsvc.KindGitLbb)
 	deletedRepo := bt.TestRepo(t, es, extsvc.KindBitbucketCloud)
 
-	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, deletedRepo); err != nil {
-		t.Fatal(err)
+	if err := rs.Crebte(ctx, repo, otherRepo, gitlbbRepo, deletedRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	updateForThisTest := func(t *testing.T, original *btypes.Changeset, mutate func(*btypes.Changeset)) *btypes.Changeset {
-		clone := original.Clone()
-		mutate(clone)
+	updbteForThisTest := func(t *testing.T, originbl *btypes.Chbngeset, mutbte func(*btypes.Chbngeset)) *btypes.Chbngeset {
+		clone := originbl.Clone()
+		mutbte(clone)
 
-		if err := s.UpdateChangeset(ctx, clone); err != nil {
-			t.Fatal(err)
+		if err := s.UpdbteChbngeset(ctx, clone); err != nil {
+			t.Fbtbl(err)
 		}
 
-		t.Cleanup(func() {
-			if err := s.UpdateChangeset(ctx, original); err != nil {
-				t.Fatal(err)
+		t.Clebnup(func() {
+			if err := s.UpdbteChbngeset(ctx, originbl); err != nil {
+				t.Fbtbl(err)
 			}
 		})
 		return clone
 	}
 
-	changesets := make(btypes.Changesets, 0, 3)
+	chbngesets := mbke(btypes.Chbngesets, 0, 3)
 
-	deletedRepoChangeset := &btypes.Changeset{
+	deletedRepoChbngeset := &btypes.Chbngeset{
 		RepoID:              deletedRepo.ID,
-		ExternalID:          fmt.Sprintf("foobar-%d", cap(changesets)),
-		ExternalServiceType: extsvc.TypeGitHub,
+		ExternblID:          fmt.Sprintf("foobbr-%d", cbp(chbngesets)),
+		ExternblServiceType: extsvc.TypeGitHub,
 	}
 
-	var (
-		added   int32 = 77
+	vbr (
+		bdded   int32 = 77
 		deleted int32 = 88
 	)
 
-	t.Run("Create", func(t *testing.T) {
-		var i int
-		for i = 0; i < cap(changesets); i++ {
-			failureMessage := fmt.Sprintf("failure-%d", i)
-			th := &btypes.Changeset{
+	t.Run("Crebte", func(t *testing.T) {
+		vbr i int
+		for i = 0; i < cbp(chbngesets); i++ {
+			fbilureMessbge := fmt.Sprintf("fbilure-%d", i)
+			th := &btypes.Chbngeset{
 				RepoID:              repo.ID,
-				CreatedAt:           clock.Now(),
-				UpdatedAt:           clock.Now(),
-				Metadata:            githubPR,
-				BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: int64(i) + 1}},
-				ExternalID:          fmt.Sprintf("foobar-%d", i),
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      fmt.Sprintf("refs/heads/batch-changes/test/%d", i),
-				ExternalUpdatedAt:   clock.Now(),
-				ExternalState:       btypes.ChangesetExternalStateOpen,
-				ExternalReviewState: btypes.ChangesetReviewStateApproved,
-				ExternalCheckState:  btypes.ChangesetCheckStatePassed,
+				CrebtedAt:           clock.Now(),
+				UpdbtedAt:           clock.Now(),
+				Metbdbtb:            githubPR,
+				BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: int64(i) + 1}},
+				ExternblID:          fmt.Sprintf("foobbr-%d", i),
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblBrbnch:      fmt.Sprintf("refs/hebds/bbtch-chbnges/test/%d", i),
+				ExternblUpdbtedAt:   clock.Now(),
+				ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+				ExternblReviewStbte: btypes.ChbngesetReviewStbteApproved,
+				ExternblCheckStbte:  btypes.ChbngesetCheckStbtePbssed,
 
 				CurrentSpecID:        int64(i) + 1,
 				PreviousSpecID:       int64(i) + 1,
-				OwnedByBatchChangeID: int64(i) + 1,
-				PublicationState:     btypes.ChangesetPublicationStatePublished,
+				OwnedByBbtchChbngeID: int64(i) + 1,
+				PublicbtionStbte:     btypes.ChbngesetPublicbtionStbtePublished,
 
-				ReconcilerState: btypes.ReconcilerStateCompleted,
-				FailureMessage:  &failureMessage,
+				ReconcilerStbte: btypes.ReconcilerStbteCompleted,
+				FbilureMessbge:  &fbilureMessbge,
 				NumResets:       18,
-				NumFailures:     25,
+				NumFbilures:     25,
 
 				Closing: true,
 			}
 
 			if i != 0 {
-				th.PublicationState = btypes.ChangesetPublicationStateUnpublished
+				th.PublicbtionStbte = btypes.ChbngesetPublicbtionStbteUnpublished
 			}
 
-			// Only set these fields on a subset to make sure that
-			// we handle nil pointers correctly
-			if i != cap(changesets)-1 {
-				th.DiffStatAdded = &added
-				th.DiffStatDeleted = &deleted
+			// Only set these fields on b subset to mbke sure thbt
+			// we hbndle nil pointers correctly
+			if i != cbp(chbngesets)-1 {
+				th.DiffStbtAdded = &bdded
+				th.DiffStbtDeleted = &deleted
 
-				th.StartedAt = clock.Now()
+				th.StbrtedAt = clock.Now()
 				th.FinishedAt = clock.Now()
 				th.ProcessAfter = clock.Now()
 			}
 
-			if err := s.CreateChangeset(ctx, th); err != nil {
-				t.Fatal(err)
+			if err := s.CrebteChbngeset(ctx, th); err != nil {
+				t.Fbtbl(err)
 			}
 
-			changesets = append(changesets, th)
+			chbngesets = bppend(chbngesets, th)
 		}
 
-		if err := s.CreateChangeset(ctx, deletedRepoChangeset); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteChbngeset(ctx, deletedRepoChbngeset); err != nil {
+			t.Fbtbl(err)
 		}
 
-		for _, have := range changesets {
-			if have.ID == 0 {
-				t.Fatal("id should not be zero")
+		for _, hbve := rbnge chbngesets {
+			if hbve.ID == 0 {
+				t.Fbtbl("id should not be zero")
 			}
 
-			if have.IsDeleted() {
-				t.Fatal("changeset is deleted")
+			if hbve.IsDeleted() {
+				t.Fbtbl("chbngeset is deleted")
 			}
 
-			if !have.ReconcilerState.Valid() {
-				t.Fatalf("reconciler state is invalid: %s", have.ReconcilerState)
+			if !hbve.ReconcilerStbte.Vblid() {
+				t.Fbtblf("reconciler stbte is invblid: %s", hbve.ReconcilerStbte)
 			}
 
-			want := have.Clone()
+			wbnt := hbve.Clone()
 
-			want.ID = have.ID
-			want.CreatedAt = clock.Now()
-			want.UpdatedAt = clock.Now()
+			wbnt.ID = hbve.ID
+			wbnt.CrebtedAt = clock.Now()
+			wbnt.UpdbtedAt = clock.Now()
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 	})
 
-	t.Run("UpdateForApply", func(t *testing.T) {
-		changeset := &btypes.Changeset{
+	t.Run("UpdbteForApply", func(t *testing.T) {
+		chbngeset := &btypes.Chbngeset{
 			RepoID:               repo.ID,
-			CreatedAt:            clock.Now(),
-			UpdatedAt:            clock.Now(),
-			Metadata:             githubPR,
-			BatchChanges:         []btypes.BatchChangeAssoc{{BatchChangeID: 1}},
-			ExternalID:           "foobar-123",
-			ExternalServiceType:  extsvc.TypeGitHub,
-			ExternalBranch:       "refs/heads/batch-changes/test",
-			ExternalUpdatedAt:    clock.Now(),
-			ExternalState:        btypes.ChangesetExternalStateOpen,
-			ExternalReviewState:  btypes.ChangesetReviewStateApproved,
-			ExternalCheckState:   btypes.ChangesetCheckStatePassed,
+			CrebtedAt:            clock.Now(),
+			UpdbtedAt:            clock.Now(),
+			Metbdbtb:             githubPR,
+			BbtchChbnges:         []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1}},
+			ExternblID:           "foobbr-123",
+			ExternblServiceType:  extsvc.TypeGitHub,
+			ExternblBrbnch:       "refs/hebds/bbtch-chbnges/test",
+			ExternblUpdbtedAt:    clock.Now(),
+			ExternblStbte:        btypes.ChbngesetExternblStbteOpen,
+			ExternblReviewStbte:  btypes.ChbngesetReviewStbteApproved,
+			ExternblCheckStbte:   btypes.ChbngesetCheckStbtePbssed,
 			PreviousSpecID:       1,
-			OwnedByBatchChangeID: 1,
-			PublicationState:     btypes.ChangesetPublicationStatePublished,
-			ReconcilerState:      btypes.ReconcilerStateCompleted,
-			StartedAt:            clock.Now(),
+			OwnedByBbtchChbngeID: 1,
+			PublicbtionStbte:     btypes.ChbngesetPublicbtionStbtePublished,
+			ReconcilerStbte:      btypes.ReconcilerStbteCompleted,
+			StbrtedAt:            clock.Now(),
 			FinishedAt:           clock.Now(),
 			ProcessAfter:         clock.Now(),
 		}
 
-		err := s.CreateChangeset(ctx, changeset)
+		err := s.CrebteChbngeset(ctx, chbngeset)
 		require.NoError(t, err)
 
-		assert.NotZero(t, changeset.ID)
+		bssert.NotZero(t, chbngeset.ID)
 
-		prev := changeset.Clone()
+		prev := chbngeset.Clone()
 
-		err = s.UpdateChangesetsForApply(ctx, []*btypes.Changeset{changeset})
+		err = s.UpdbteChbngesetsForApply(ctx, []*btypes.Chbngeset{chbngeset})
 		require.NoError(t, err)
 
-		if diff := cmp.Diff(changeset, prev); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(chbngeset, prev); diff != "" {
+			t.Fbtbl(diff)
 		}
 
-		err = s.DeleteChangeset(ctx, changeset.ID)
+		err = s.DeleteChbngeset(ctx, chbngeset.ID)
 		require.NoError(t, err)
 	})
 
-	t.Run("ReconcilerState database representation", func(t *testing.T) {
-		// btypes.ReconcilerStates are defined as "enum" string constants.
-		// The string values are uppercase, because that way they can easily be
-		// serialized/deserialized in the GraphQL resolvers, since GraphQL
-		// expects the `ChangesetReconcilerState` values to be uppercase.
+	t.Run("ReconcilerStbte dbtbbbse representbtion", func(t *testing.T) {
+		// btypes.ReconcilerStbtes bre defined bs "enum" string constbnts.
+		// The string vblues bre uppercbse, becbuse thbt wby they cbn ebsily be
+		// seriblized/deseriblized in the GrbphQL resolvers, since GrbphQL
+		// expects the `ChbngesetReconcilerStbte` vblues to be uppercbse.
 		//
-		// But workerutil.Worker expects those values to be lowercase.
+		// But workerutil.Worker expects those vblues to be lowercbse.
 		//
-		// So, what we do is to lowercase the Changeset.ReconcilerState value
-		// before it enters the database and uppercase it when it leaves the
+		// So, whbt we do is to lowercbse the Chbngeset.ReconcilerStbte vblue
+		// before it enters the dbtbbbse bnd uppercbse it when it lebves the
 		// DB.
 		//
-		// If workerutil.Worker supports custom mappings for the state-machine
-		// states, we can remove this.
+		// If workerutil.Worker supports custom mbppings for the stbte-mbchine
+		// stbtes, we cbn remove this.
 
-		// This test ensures that the database representation is lowercase.
+		// This test ensures thbt the dbtbbbse representbtion is lowercbse.
 
-		queryRawReconcilerState := func(ch *btypes.Changeset) (string, error) {
-			q := sqlf.Sprintf("SELECT reconciler_state FROM changesets WHERE id = %s", ch.ID)
-			rawState, ok, err := basestore.ScanFirstString(s.Query(ctx, q))
+		queryRbwReconcilerStbte := func(ch *btypes.Chbngeset) (string, error) {
+			q := sqlf.Sprintf("SELECT reconciler_stbte FROM chbngesets WHERE id = %s", ch.ID)
+			rbwStbte, ok, err := bbsestore.ScbnFirstString(s.Query(ctx, q))
 			if err != nil || !ok {
-				return rawState, err
+				return rbwStbte, err
 			}
-			return rawState, nil
+			return rbwStbte, nil
 		}
 
-		for _, ch := range changesets {
-			have, err := queryRawReconcilerState(ch)
+		for _, ch := rbnge chbngesets {
+			hbve, err := queryRbwReconcilerStbte(ch)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			want := strings.ToLower(string(ch.ReconcilerState))
-			if have != want {
-				t.Fatalf("wrong database representation. want=%q, have=%q", want, have)
+			wbnt := strings.ToLower(string(ch.ReconcilerStbte))
+			if hbve != wbnt {
+				t.Fbtblf("wrong dbtbbbse representbtion. wbnt=%q, hbve=%q", wbnt, hbve)
 			}
 		}
 	})
 
-	t.Run("GetChangesetExternalIDs", func(t *testing.T) {
-		refs := make([]string, len(changesets))
-		for i, c := range changesets {
-			refs[i] = c.ExternalBranch
+	t.Run("GetChbngesetExternblIDs", func(t *testing.T) {
+		refs := mbke([]string, len(chbngesets))
+		for i, c := rbnge chbngesets {
+			refs[i] = c.ExternblBrbnch
 		}
-		have, err := s.GetChangesetExternalIDs(ctx, repo.ExternalRepo, refs)
+		hbve, err := s.GetChbngesetExternblIDs(ctx, repo.ExternblRepo, refs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := []string{"foobar-0", "foobar-1", "foobar-2"}
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
+		wbnt := []string{"foobbr-0", "foobbr-1", "foobbr-2"}
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("GetChangesetExternalIDs no branch", func(t *testing.T) {
-		spec := api.ExternalRepoSpec{
-			ID:          "external-id",
+	t.Run("GetChbngesetExternblIDs no brbnch", func(t *testing.T) {
+		spec := bpi.ExternblRepoSpec{
+			ID:          "externbl-id",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
-		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"foo"})
+		hbve, err := s.GetChbngesetExternblIDs(ctx, spec, []string{"foo"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		var want []string
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
+		vbr wbnt []string
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("GetChangesetExternalIDs invalid external-id", func(t *testing.T) {
-		spec := api.ExternalRepoSpec{
-			ID:          "invalid",
+	t.Run("GetChbngesetExternblIDs invblid externbl-id", func(t *testing.T) {
+		spec := bpi.ExternblRepoSpec{
+			ID:          "invblid",
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com/",
 		}
-		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"batch-changes/test"})
+		hbve, err := s.GetChbngesetExternblIDs(ctx, spec, []string{"bbtch-chbnges/test"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		var want []string
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
+		vbr wbnt []string
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("GetChangesetExternalIDs invalid external service id", func(t *testing.T) {
-		spec := api.ExternalRepoSpec{
-			ID:          "external-id",
+	t.Run("GetChbngesetExternblIDs invblid externbl service id", func(t *testing.T) {
+		spec := bpi.ExternblRepoSpec{
+			ID:          "externbl-id",
 			ServiceType: extsvc.TypeGitHub,
-			ServiceID:   "invalid",
+			ServiceID:   "invblid",
 		}
-		have, err := s.GetChangesetExternalIDs(ctx, spec, []string{"batch-changes/test"})
+		hbve, err := s.GetChbngesetExternblIDs(ctx, spec, []string{"bbtch-chbnges/test"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		var want []string
-		if diff := cmp.Diff(want, have); diff != "" {
-			t.Fatal(diff)
+		vbr wbnt []string
+		if diff := cmp.Diff(wbnt, hbve); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
 	t.Run("Count", func(t *testing.T) {
 		t.Run("No options", func(t *testing.T) {
-			count, err := s.CountChangesets(ctx, CountChangesetsOpts{})
+			count, err := s.CountChbngesets(ctx, CountChbngesetsOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, len(changesets); have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, len(chbngesets); hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("BatchChangeID", func(t *testing.T) {
-			count, err := s.CountChangesets(ctx, CountChangesetsOpts{BatchChangeID: 1})
+		t.Run("BbtchChbngeID", func(t *testing.T) {
+			count, err := s.CountChbngesets(ctx, CountChbngesetsOpts{BbtchChbngeID: 1})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, 1; have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, 1; hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("ReconcilerState", func(t *testing.T) {
-			completed := btypes.ReconcilerStateCompleted
-			countCompleted, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []btypes.ReconcilerState{completed}})
+		t.Run("ReconcilerStbte", func(t *testing.T) {
+			completed := btypes.ReconcilerStbteCompleted
+			countCompleted, err := s.CountChbngesets(ctx, CountChbngesetsOpts{ReconcilerStbtes: []btypes.ReconcilerStbte{completed}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countCompleted, len(changesets); have != want {
-				t.Fatalf("have countCompleted: %d, want: %d", have, want)
+			if hbve, wbnt := countCompleted, len(chbngesets); hbve != wbnt {
+				t.Fbtblf("hbve countCompleted: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			processing := btypes.ReconcilerStateProcessing
-			countProcessing, err := s.CountChangesets(ctx, CountChangesetsOpts{ReconcilerStates: []btypes.ReconcilerState{processing}})
+			processing := btypes.ReconcilerStbteProcessing
+			countProcessing, err := s.CountChbngesets(ctx, CountChbngesetsOpts{ReconcilerStbtes: []btypes.ReconcilerStbte{processing}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countProcessing, 0; have != want {
-				t.Fatalf("have countProcessing: %d, want: %d", have, want)
+			if hbve, wbnt := countProcessing, 0; hbve != wbnt {
+				t.Fbtblf("hbve countProcessing: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("PublicationState", func(t *testing.T) {
-			published := btypes.ChangesetPublicationStatePublished
-			countPublished, err := s.CountChangesets(ctx, CountChangesetsOpts{PublicationState: &published})
+		t.Run("PublicbtionStbte", func(t *testing.T) {
+			published := btypes.ChbngesetPublicbtionStbtePublished
+			countPublished, err := s.CountChbngesets(ctx, CountChbngesetsOpts{PublicbtionStbte: &published})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countPublished, 1; have != want {
-				t.Fatalf("have countPublished: %d, want: %d", have, want)
+			if hbve, wbnt := countPublished, 1; hbve != wbnt {
+				t.Fbtblf("hbve countPublished: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			unpublished := btypes.ChangesetPublicationStateUnpublished
-			countUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{PublicationState: &unpublished})
+			unpublished := btypes.ChbngesetPublicbtionStbteUnpublished
+			countUnpublished, err := s.CountChbngesets(ctx, CountChbngesetsOpts{PublicbtionStbte: &unpublished})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countUnpublished, len(changesets)-1; have != want {
-				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			if hbve, wbnt := countUnpublished, len(chbngesets)-1; hbve != wbnt {
+				t.Fbtblf("hbve countUnpublished: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("State", func(t *testing.T) {
-			countOpen, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen}})
+		t.Run("Stbte", func(t *testing.T) {
+			countOpen, err := s.CountChbngesets(ctx, CountChbngesetsOpts{Stbtes: []btypes.ChbngesetStbte{btypes.ChbngesetStbteOpen}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countOpen, 1; have != want {
-				t.Fatalf("have countOpen: %d, want: %d", have, want)
+			if hbve, wbnt := countOpen, 1; hbve != wbnt {
+				t.Fbtblf("hbve countOpen: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			countClosed, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateClosed}})
+			countClosed, err := s.CountChbngesets(ctx, CountChbngesetsOpts{Stbtes: []btypes.ChbngesetStbte{btypes.ChbngesetStbteClosed}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countClosed, 0; have != want {
-				t.Fatalf("have countClosed: %d, want: %d", have, want)
+			if hbve, wbnt := countClosed, 0; hbve != wbnt {
+				t.Fbtblf("hbve countClosed: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			countUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateUnpublished}})
+			countUnpublished, err := s.CountChbngesets(ctx, CountChbngesetsOpts{Stbtes: []btypes.ChbngesetStbte{btypes.ChbngesetStbteUnpublished}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countUnpublished, 2; have != want {
-				t.Fatalf("have countUnpublished: %d, want: %d", have, want)
+			if hbve, wbnt := countUnpublished, 2; hbve != wbnt {
+				t.Fbtblf("hbve countUnpublished: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			countOpenAndUnpublished, err := s.CountChangesets(ctx, CountChangesetsOpts{States: []btypes.ChangesetState{btypes.ChangesetStateOpen, btypes.ChangesetStateUnpublished}})
+			countOpenAndUnpublished, err := s.CountChbngesets(ctx, CountChbngesetsOpts{Stbtes: []btypes.ChbngesetStbte{btypes.ChbngesetStbteOpen, btypes.ChbngesetStbteUnpublished}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countOpenAndUnpublished, 3; have != want {
-				t.Fatalf("have countOpenAndUnpublished: %d, want: %d", have, want)
+			if hbve, wbnt := countOpenAndUnpublished, 3; hbve != wbnt {
+				t.Fbtblf("hbve countOpenAndUnpublished: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("TextSearch", func(t *testing.T) {
-			countMatchingString, err := s.CountChangesets(ctx, CountChangesetsOpts{TextSearch: []search.TextSearchTerm{{Term: "Fix a bunch"}}})
+		t.Run("TextSebrch", func(t *testing.T) {
+			countMbtchingString, err := s.CountChbngesets(ctx, CountChbngesetsOpts{TextSebrch: []sebrch.TextSebrchTerm{{Term: "Fix b bunch"}}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countMatchingString, len(changesets); have != want {
-				t.Fatalf("have countMatchingString: %d, want: %d", have, want)
+			if hbve, wbnt := countMbtchingString, len(chbngesets); hbve != wbnt {
+				t.Fbtblf("hbve countMbtchingString: %d, wbnt: %d", hbve, wbnt)
 			}
 
-			countNotMatchingString, err := s.CountChangesets(ctx, CountChangesetsOpts{TextSearch: []search.TextSearchTerm{{Term: "Very not in the title"}}})
+			countNotMbtchingString, err := s.CountChbngesets(ctx, CountChbngesetsOpts{TextSebrch: []sebrch.TextSebrchTerm{{Term: "Very not in the title"}}})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countNotMatchingString, 0; have != want {
-				t.Fatalf("have countNotMatchingString: %d, want: %d", have, want)
+			if hbve, wbnt := countNotMbtchingString, 0; hbve != wbnt {
+				t.Fbtblf("hbve countNotMbtchingString: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
-			// No access to repos.
-			bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
-			countAccessible, err := s.CountChangesets(ctx, CountChangesetsOpts{EnforceAuthz: true})
+			// No bccess to repos.
+			bt.MockRepoPermissions(t, s.DbtbbbseDB(), user.ID)
+			countAccessible, err := s.CountChbngesets(ctx, CountChbngesetsOpts{EnforceAuthz: true})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := countAccessible, 0; have != want {
-				t.Fatalf("have countAccessible: %d, want: %d", have, want)
+			if hbve, wbnt := countAccessible, 0; hbve != wbnt {
+				t.Fbtblf("hbve countAccessible: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
-		t.Run("OwnedByBatchChangeID", func(t *testing.T) {
-			count, err := s.CountChangesets(ctx, CountChangesetsOpts{OwnedByBatchChangeID: int64(1)})
+		t.Run("OwnedByBbtchChbngeID", func(t *testing.T) {
+			count, err := s.CountChbngesets(ctx, CountChbngesetsOpts{OwnedByBbtchChbngeID: int64(1)})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have, want := count, 1; have != want {
-				t.Fatalf("have count: %d, want: %d", have, want)
+			if hbve, wbnt := count, 1; hbve != wbnt {
+				t.Fbtblf("hbve count: %d, wbnt: %d", hbve, wbnt)
 			}
 		})
 
 		t.Run("OnlyArchived", func(t *testing.T) {
-			// Changeset is archived
-			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].IsArchived = true
+			// Chbngeset is brchived
+			brchivedChbngeset := updbteForThisTest(t, chbngesets[0], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].IsArchived = true
 			})
 
-			// This changeset is marked as to-be-archived
-			_ = updateForThisTest(t, changesets[1], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
-				ch.BatchChanges[0].Archive = true
+			// This chbngeset is mbrked bs to-be-brchived
+			_ = updbteForThisTest(t, chbngesets[1], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].BbtchChbngeID = brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID
+				ch.BbtchChbnges[0].Archive = true
 			})
 
-			opts := CountChangesetsOpts{
+			opts := CountChbngesetsOpts{
 				OnlyArchived:  true,
-				BatchChangeID: archivedChangeset.BatchChanges[0].BatchChangeID,
+				BbtchChbngeID: brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID,
 			}
-			count, err := s.CountChangesets(ctx, opts)
+			count, err := s.CountChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if count != 2 {
-				t.Fatalf("got count %d, want: %d", count, 2)
+				t.Fbtblf("got count %d, wbnt: %d", count, 2)
 			}
 
-			opts.OnlyArchived = false
-			count, err = s.CountChangesets(ctx, opts)
+			opts.OnlyArchived = fblse
+			count, err = s.CountChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if count != 0 {
-				t.Fatalf("got count %d, want: %d", count, 1)
+				t.Fbtblf("got count %d, wbnt: %d", count, 1)
 			}
 		})
 
 		t.Run("IncludeArchived", func(t *testing.T) {
-			// Changeset is archived
-			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].IsArchived = true
+			// Chbngeset is brchived
+			brchivedChbngeset := updbteForThisTest(t, chbngesets[0], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].IsArchived = true
 			})
 
-			// Not archived, not marked as to-be-archived
-			_ = updateForThisTest(t, changesets[1], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
-				ch.BatchChanges[0].IsArchived = false
+			// Not brchived, not mbrked bs to-be-brchived
+			_ = updbteForThisTest(t, chbngesets[1], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].BbtchChbngeID = brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID
+				ch.BbtchChbnges[0].IsArchived = fblse
 			})
 
-			// Marked as to-be-archived
-			_ = updateForThisTest(t, changesets[2], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
-				ch.BatchChanges[0].Archive = true
+			// Mbrked bs to-be-brchived
+			_ = updbteForThisTest(t, chbngesets[2], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].BbtchChbngeID = brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID
+				ch.BbtchChbnges[0].Archive = true
 			})
 
-			opts := CountChangesetsOpts{
+			opts := CountChbngesetsOpts{
 				IncludeArchived: true,
-				BatchChangeID:   archivedChangeset.BatchChanges[0].BatchChangeID,
+				BbtchChbngeID:   brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID,
 			}
-			count, err := s.CountChangesets(ctx, opts)
+			count, err := s.CountChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if count != 3 {
-				t.Fatalf("got count %d, want: %d", count, 3)
+				t.Fbtblf("got count %d, wbnt: %d", count, 3)
 			}
 
-			opts.IncludeArchived = false
-			count, err = s.CountChangesets(ctx, opts)
+			opts.IncludeArchived = fblse
+			count, err = s.CountChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			if count != 1 {
-				t.Fatalf("got count %d, want: %d", count, 1)
+				t.Fbtblf("got count %d, wbnt: %d", count, 1)
 			}
 		})
 	})
 
 	t.Run("List", func(t *testing.T) {
-		t.Run("BatchChangeID", func(t *testing.T) {
-			for i := 1; i <= len(changesets); i++ {
-				opts := ListChangesetsOpts{BatchChangeID: int64(i)}
+		t.Run("BbtchChbngeID", func(t *testing.T) {
+			for i := 1; i <= len(chbngesets); i++ {
+				opts := ListChbngesetsOpts{BbtchChbngeID: int64(i)}
 
-				ts, next, err := s.ListChangesets(ctx, opts)
+				ts, next, err := s.ListChbngesets(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if have, want := next, int64(0); have != want {
-					t.Fatalf("opts: %+v: have next %v, want %v", opts, have, want)
+				if hbve, wbnt := next, int64(0); hbve != wbnt {
+					t.Fbtblf("opts: %+v: hbve next %v, wbnt %v", opts, hbve, wbnt)
 				}
 
-				have, want := ts, changesets[i-1:i]
-				if len(have) != len(want) {
-					t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
+				hbve, wbnt := ts, chbngesets[i-1:i]
+				if len(hbve) != len(wbnt) {
+					t.Fbtblf("listed %d chbngesets, wbnt: %d", len(hbve), len(wbnt))
 				}
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 			}
 		})
 
 		t.Run("OnlyArchived", func(t *testing.T) {
-			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].IsArchived = true
+			brchivedChbngeset := updbteForThisTest(t, chbngesets[0], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].IsArchived = true
 			})
 
-			opts := ListChangesetsOpts{
+			opts := ListChbngesetsOpts{
 				OnlyArchived:  true,
-				BatchChangeID: archivedChangeset.BatchChanges[0].BatchChangeID,
+				BbtchChbngeID: brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID,
 			}
-			cs, _, err := s.ListChangesets(ctx, opts)
+			cs, _, err := s.ListChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(cs) != 1 {
-				t.Fatalf("listed %d changesets, want: %d", len(cs), 1)
+				t.Fbtblf("listed %d chbngesets, wbnt: %d", len(cs), 1)
 			}
-			if cs[0].ID != archivedChangeset.ID {
-				t.Errorf("want changeset %d, but got %d", archivedChangeset.ID, cs[0].ID)
+			if cs[0].ID != brchivedChbngeset.ID {
+				t.Errorf("wbnt chbngeset %d, but got %d", brchivedChbngeset.ID, cs[0].ID)
 			}
 
-			// If OnlyArchived = false, archived changesets should not be included
-			opts.OnlyArchived = false
-			cs, _, err = s.ListChangesets(ctx, opts)
+			// If OnlyArchived = fblse, brchived chbngesets should not be included
+			opts.OnlyArchived = fblse
+			cs, _, err = s.ListChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(cs) != 0 {
-				t.Fatalf("listed %d changesets, want: %d", len(cs), 1)
+				t.Fbtblf("listed %d chbngesets, wbnt: %d", len(cs), 1)
 			}
 		})
 
 		t.Run("IncludeArchived", func(t *testing.T) {
-			archivedChangeset := updateForThisTest(t, changesets[0], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].IsArchived = true
+			brchivedChbngeset := updbteForThisTest(t, chbngesets[0], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].IsArchived = true
 			})
-			_ = updateForThisTest(t, changesets[1], func(ch *btypes.Changeset) {
-				ch.BatchChanges[0].BatchChangeID = archivedChangeset.BatchChanges[0].BatchChangeID
-				ch.BatchChanges[0].IsArchived = false
+			_ = updbteForThisTest(t, chbngesets[1], func(ch *btypes.Chbngeset) {
+				ch.BbtchChbnges[0].BbtchChbngeID = brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID
+				ch.BbtchChbnges[0].IsArchived = fblse
 			})
 
-			opts := ListChangesetsOpts{
+			opts := ListChbngesetsOpts{
 				IncludeArchived: true,
-				BatchChangeID:   archivedChangeset.BatchChanges[0].BatchChangeID,
+				BbtchChbngeID:   brchivedChbngeset.BbtchChbnges[0].BbtchChbngeID,
 			}
-			cs, _, err := s.ListChangesets(ctx, opts)
+			cs, _, err := s.ListChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(cs) != 2 {
-				t.Fatalf("listed %d changesets, want: %d", len(cs), 1)
+				t.Fbtblf("listed %d chbngesets, wbnt: %d", len(cs), 1)
 			}
 
-			opts.IncludeArchived = false
-			cs, _, err = s.ListChangesets(ctx, opts)
+			opts.IncludeArchived = fblse
+			cs, _, err = s.ListChbngesets(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			if len(cs) != 1 {
-				t.Fatalf("listed %d changesets, want: %d", len(cs), 1)
+				t.Fbtblf("listed %d chbngesets, wbnt: %d", len(cs), 1)
 			}
 		})
 
 		t.Run("Limit", func(t *testing.T) {
-			for i := 1; i <= len(changesets); i++ {
-				ts, next, err := s.ListChangesets(ctx, ListChangesetsOpts{LimitOpts: LimitOpts{Limit: i}})
+			for i := 1; i <= len(chbngesets); i++ {
+				ts, next, err := s.ListChbngesets(ctx, ListChbngesetsOpts{LimitOpts: LimitOpts{Limit: i}})
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				{
-					have, want := next, int64(0)
-					if i < len(changesets) {
-						want = changesets[i].ID
+					hbve, wbnt := next, int64(0)
+					if i < len(chbngesets) {
+						wbnt = chbngesets[i].ID
 					}
 
-					if have != want {
-						t.Fatalf("limit: %v: have next %v, want %v", i, have, want)
+					if hbve != wbnt {
+						t.Fbtblf("limit: %v: hbve next %v, wbnt %v", i, hbve, wbnt)
 					}
 				}
 
 				{
-					have, want := ts, changesets[:i]
-					if len(have) != len(want) {
-						t.Fatalf("listed %d changesets, want: %d", len(have), len(want))
+					hbve, wbnt := ts, chbngesets[:i]
+					if len(hbve) != len(wbnt) {
+						t.Fbtblf("listed %d chbngesets, wbnt: %d", len(hbve), len(wbnt))
 					}
 
-					if diff := cmp.Diff(have, want); diff != "" {
-						t.Fatal(diff)
+					if diff := cmp.Diff(hbve, wbnt); diff != "" {
+						t.Fbtbl(diff)
 					}
 				}
 			}
 		})
 
 		t.Run("IDs", func(t *testing.T) {
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{IDs: changesets.IDs()})
+			hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{IDs: chbngesets.IDs()})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			want := changesets
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			wbnt := chbngesets
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("Cursor pagination", func(t *testing.T) {
-			var cursor int64
-			for i := 1; i <= len(changesets); i++ {
-				opts := ListChangesetsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
-				have, next, err := s.ListChangesets(ctx, opts)
+		t.Run("Cursor pbginbtion", func(t *testing.T) {
+			vbr cursor int64
+			for i := 1; i <= len(chbngesets); i++ {
+				opts := ListChbngesetsOpts{Cursor: cursor, LimitOpts: LimitOpts{Limit: 1}}
+				hbve, next, err := s.ListChbngesets(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				want := changesets[i-1 : i]
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatalf("opts: %+v, diff: %s", opts, diff)
+				wbnt := chbngesets[i-1 : i]
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtblf("opts: %+v, diff: %s", opts, diff)
 				}
 
 				cursor = next
 			}
 		})
 
-		// No Limit should return all Changesets
+		// No Limit should return bll Chbngesets
 		t.Run("No limit", func(t *testing.T) {
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{})
+			hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if len(have) != 3 {
-				t.Fatalf("have %d changesets. want 3", len(have))
+			if len(hbve) != 3 {
+				t.Fbtblf("hbve %d chbngesets. wbnt 3", len(hbve))
 			}
 		})
 
 		t.Run("EnforceAuthz", func(t *testing.T) {
-			// No access to repos.
-			bt.MockRepoPermissions(t, s.DatabaseDB(), user.ID)
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{EnforceAuthz: true})
+			// No bccess to repos.
+			bt.MockRepoPermissions(t, s.DbtbbbseDB(), user.ID)
+			hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{EnforceAuthz: true})
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if len(have) != 0 {
-				t.Fatalf("have %d changesets. want 0", len(have))
+			if len(hbve) != 0 {
+				t.Fbtblf("hbve %d chbngesets. wbnt 0", len(hbve))
 			}
 		})
 
 		t.Run("RepoIDs", func(t *testing.T) {
-			// Insert two changesets temporarily that are attached to other repos.
-			createRepoChangeset := func(repo *types.Repo, baseChangeset *btypes.Changeset) *btypes.Changeset {
+			// Insert two chbngesets temporbrily thbt bre bttbched to other repos.
+			crebteRepoChbngeset := func(repo *types.Repo, bbseChbngeset *btypes.Chbngeset) *btypes.Chbngeset {
 				t.Helper()
 
-				c := baseChangeset.Clone()
+				c := bbseChbngeset.Clone()
 				c.RepoID = repo.ID
-				require.NoError(t, s.CreateChangeset(ctx, c))
-				t.Cleanup(func() { s.DeleteChangeset(ctx, c.ID) })
+				require.NoError(t, s.CrebteChbngeset(ctx, c))
+				t.Clebnup(func() { s.DeleteChbngeset(ctx, c.ID) })
 
 				return c
 			}
 
-			otherChangeset := createRepoChangeset(otherRepo, changesets[1])
-			gitlabChangeset := createRepoChangeset(gitlabRepo, changesets[1])
+			otherChbngeset := crebteRepoChbngeset(otherRepo, chbngesets[1])
+			gitlbbChbngeset := crebteRepoChbngeset(gitlbbRepo, chbngesets[1])
 
 			t.Run("single repo", func(t *testing.T) {
-				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-					RepoIDs: []api.RepoID{repo.ID},
+				hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{
+					RepoIDs: []bpi.RepoID{repo.ID},
 				})
-				assert.NoError(t, err)
-				assert.ElementsMatch(t, changesets, have)
+				bssert.NoError(t, err)
+				bssert.ElementsMbtch(t, chbngesets, hbve)
 			})
 
 			t.Run("multiple repos", func(t *testing.T) {
-				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-					RepoIDs: []api.RepoID{otherRepo.ID, gitlabRepo.ID},
+				hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{
+					RepoIDs: []bpi.RepoID{otherRepo.ID, gitlbbRepo.ID},
 				})
-				assert.NoError(t, err)
-				assert.ElementsMatch(t, []*btypes.Changeset{otherChangeset, gitlabChangeset}, have)
+				bssert.NoError(t, err)
+				bssert.ElementsMbtch(t, []*btypes.Chbngeset{otherChbngeset, gitlbbChbngeset}, hbve)
 			})
 
-			t.Run("repo without changesets", func(t *testing.T) {
-				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-					RepoIDs: []api.RepoID{deletedRepo.ID},
+			t.Run("repo without chbngesets", func(t *testing.T) {
+				hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{
+					RepoIDs: []bpi.RepoID{deletedRepo.ID},
 				})
-				assert.NoError(t, err)
-				assert.ElementsMatch(t, []*btypes.Changeset{}, have)
+				bssert.NoError(t, err)
+				bssert.ElementsMbtch(t, []*btypes.Chbngeset{}, hbve)
 			})
 		})
 
-		statePublished := btypes.ChangesetPublicationStatePublished
-		stateUnpublished := btypes.ChangesetPublicationStateUnpublished
-		stateQueued := btypes.ReconcilerStateQueued
-		stateCompleted := btypes.ReconcilerStateCompleted
-		stateOpen := btypes.ChangesetExternalStateOpen
-		stateClosed := btypes.ChangesetExternalStateClosed
-		stateApproved := btypes.ChangesetReviewStateApproved
-		stateChangesRequested := btypes.ChangesetReviewStateChangesRequested
-		statePassed := btypes.ChangesetCheckStatePassed
-		stateFailed := btypes.ChangesetCheckStateFailed
+		stbtePublished := btypes.ChbngesetPublicbtionStbtePublished
+		stbteUnpublished := btypes.ChbngesetPublicbtionStbteUnpublished
+		stbteQueued := btypes.ReconcilerStbteQueued
+		stbteCompleted := btypes.ReconcilerStbteCompleted
+		stbteOpen := btypes.ChbngesetExternblStbteOpen
+		stbteClosed := btypes.ChbngesetExternblStbteClosed
+		stbteApproved := btypes.ChbngesetReviewStbteApproved
+		stbteChbngesRequested := btypes.ChbngesetReviewStbteChbngesRequested
+		stbtePbssed := btypes.ChbngesetCheckStbtePbssed
+		stbteFbiled := btypes.ChbngesetCheckStbteFbiled
 
-		filterCases := []struct {
-			opts      ListChangesetsOpts
-			wantCount int
+		filterCbses := []struct {
+			opts      ListChbngesetsOpts
+			wbntCount int
 		}{
 			{
-				opts: ListChangesetsOpts{
-					PublicationState: &statePublished,
+				opts: ListChbngesetsOpts{
+					PublicbtionStbte: &stbtePublished,
 				},
-				wantCount: 1,
+				wbntCount: 1,
 			},
 			{
-				opts: ListChangesetsOpts{
-					States: []btypes.ChangesetState{btypes.ChangesetStateUnpublished},
+				opts: ListChbngesetsOpts{
+					Stbtes: []btypes.ChbngesetStbte{btypes.ChbngesetStbteUnpublished},
 				},
-				wantCount: 2,
+				wbntCount: 2,
 			},
 			{
-				opts: ListChangesetsOpts{
-					PublicationState: &stateUnpublished,
+				opts: ListChbngesetsOpts{
+					PublicbtionStbte: &stbteUnpublished,
 				},
-				wantCount: 2,
+				wbntCount: 2,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ReconcilerStates: []btypes.ReconcilerState{stateQueued},
+				opts: ListChbngesetsOpts{
+					ReconcilerStbtes: []btypes.ReconcilerStbte{stbteQueued},
 				},
-				wantCount: 0,
+				wbntCount: 0,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ReconcilerStates: []btypes.ReconcilerState{stateCompleted},
+				opts: ListChbngesetsOpts{
+					ReconcilerStbtes: []btypes.ReconcilerStbte{stbteCompleted},
 				},
-				wantCount: 3,
+				wbntCount: 3,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalStates: []btypes.ChangesetExternalState{stateOpen},
+				opts: ListChbngesetsOpts{
+					ExternblStbtes: []btypes.ChbngesetExternblStbte{stbteOpen},
 				},
-				wantCount: 3,
+				wbntCount: 3,
 			},
 			{
-				opts: ListChangesetsOpts{
-					States: []btypes.ChangesetState{btypes.ChangesetStateOpen},
+				opts: ListChbngesetsOpts{
+					Stbtes: []btypes.ChbngesetStbte{btypes.ChbngesetStbteOpen},
 				},
-				wantCount: 1,
+				wbntCount: 1,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalStates: []btypes.ChangesetExternalState{stateClosed},
+				opts: ListChbngesetsOpts{
+					ExternblStbtes: []btypes.ChbngesetExternblStbte{stbteClosed},
 				},
-				wantCount: 0,
+				wbntCount: 0,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalStates: []btypes.ChangesetExternalState{stateOpen, stateClosed},
+				opts: ListChbngesetsOpts{
+					ExternblStbtes: []btypes.ChbngesetExternblStbte{stbteOpen, stbteClosed},
 				},
-				wantCount: 3,
+				wbntCount: 3,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalReviewState: &stateApproved,
+				opts: ListChbngesetsOpts{
+					ExternblReviewStbte: &stbteApproved,
 				},
-				wantCount: 3,
+				wbntCount: 3,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalReviewState: &stateChangesRequested,
+				opts: ListChbngesetsOpts{
+					ExternblReviewStbte: &stbteChbngesRequested,
 				},
-				wantCount: 0,
+				wbntCount: 0,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalCheckState: &statePassed,
+				opts: ListChbngesetsOpts{
+					ExternblCheckStbte: &stbtePbssed,
 				},
-				wantCount: 3,
+				wbntCount: 3,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalCheckState: &stateFailed,
+				opts: ListChbngesetsOpts{
+					ExternblCheckStbte: &stbteFbiled,
 				},
-				wantCount: 0,
+				wbntCount: 0,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalStates:     []btypes.ChangesetExternalState{stateOpen},
-					ExternalCheckState: &stateFailed,
+				opts: ListChbngesetsOpts{
+					ExternblStbtes:     []btypes.ChbngesetExternblStbte{stbteOpen},
+					ExternblCheckStbte: &stbteFbiled,
 				},
-				wantCount: 0,
+				wbntCount: 0,
 			},
 			{
-				opts: ListChangesetsOpts{
-					ExternalStates:      []btypes.ChangesetExternalState{stateOpen},
-					ExternalReviewState: &stateChangesRequested,
+				opts: ListChbngesetsOpts{
+					ExternblStbtes:      []btypes.ChbngesetExternblStbte{stbteOpen},
+					ExternblReviewStbte: &stbteChbngesRequested,
 				},
-				wantCount: 0,
+				wbntCount: 0,
 			},
 			{
-				opts: ListChangesetsOpts{
-					OwnedByBatchChangeID: int64(1),
+				opts: ListChbngesetsOpts{
+					OwnedByBbtchChbngeID: int64(1),
 				},
-				wantCount: 1,
+				wbntCount: 1,
 			},
 		}
 
-		for i, tc := range filterCases {
-			t.Run("States_"+strconv.Itoa(i), func(t *testing.T) {
-				have, _, err := s.ListChangesets(ctx, tc.opts)
+		for i, tc := rbnge filterCbses {
+			t.Run("Stbtes_"+strconv.Itob(i), func(t *testing.T) {
+				hbve, _, err := s.ListChbngesets(ctx, tc.opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				if len(have) != tc.wantCount {
-					t.Fatalf("opts: %+v. have %d changesets. want %d", tc.opts, len(have), tc.wantCount)
+				if len(hbve) != tc.wbntCount {
+					t.Fbtblf("opts: %+v. hbve %d chbngesets. wbnt %d", tc.opts, len(hbve), tc.wbntCount)
 				}
 			})
 		}
 	})
 
-	t.Run("Null changeset external state", func(t *testing.T) {
-		cs := &btypes.Changeset{
+	t.Run("Null chbngeset externbl stbte", func(t *testing.T) {
+		cs := &btypes.Chbngeset{
 			RepoID:              repo.ID,
-			Metadata:            githubPR,
-			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: 1}},
-			ExternalID:          fmt.Sprintf("foobar-%d", 42),
-			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "refs/heads/batch-changes/test",
-			ExternalUpdatedAt:   clock.Now(),
-			ExternalState:       "",
-			ExternalReviewState: "",
-			ExternalCheckState:  "",
+			Metbdbtb:            githubPR,
+			BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 1}},
+			ExternblID:          fmt.Sprintf("foobbr-%d", 42),
+			ExternblServiceType: extsvc.TypeGitHub,
+			ExternblBrbnch:      "refs/hebds/bbtch-chbnges/test",
+			ExternblUpdbtedAt:   clock.Now(),
+			ExternblStbte:       "",
+			ExternblReviewStbte: "",
+			ExternblCheckStbte:  "",
 		}
 
-		err := s.CreateChangeset(ctx, cs)
+		err := s.CrebteChbngeset(ctx, cs)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer func() {
-			err := s.DeleteChangeset(ctx, cs.ID)
+			err := s.DeleteChbngeset(ctx, cs.ID)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 		}()
 
-		fromDB, err := s.GetChangeset(ctx, GetChangesetOpts{
+		fromDB, err := s.GetChbngeset(ctx, GetChbngesetOpts{
 			ID: cs.ID,
 		})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if diff := cmp.Diff(cs.ExternalState, fromDB.ExternalState); diff != "" {
+		if diff := cmp.Diff(cs.ExternblStbte, fromDB.ExternblStbte); diff != "" {
 			t.Error(diff)
 		}
-		if diff := cmp.Diff(cs.ExternalReviewState, fromDB.ExternalReviewState); diff != "" {
+		if diff := cmp.Diff(cs.ExternblReviewStbte, fromDB.ExternblReviewStbte); diff != "" {
 			t.Error(diff)
 		}
-		if diff := cmp.Diff(cs.ExternalCheckState, fromDB.ExternalCheckState); diff != "" {
+		if diff := cmp.Diff(cs.ExternblCheckStbte, fromDB.ExternblCheckStbte); diff != "" {
 			t.Error(diff)
 		}
 	})
 
 	t.Run("Get", func(t *testing.T) {
 		t.Run("ByID", func(t *testing.T) {
-			want := changesets[0]
-			opts := GetChangesetOpts{ID: want.ID}
+			wbnt := chbngesets[0]
+			opts := GetChbngesetOpts{ID: wbnt.ID}
 
-			have, err := s.GetChangeset(ctx, opts)
+			hbve, err := s.GetChbngeset(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
-		t.Run("ByExternalID", func(t *testing.T) {
-			want := changesets[0]
-			opts := GetChangesetOpts{
-				ExternalID:          want.ExternalID,
-				ExternalServiceType: want.ExternalServiceType,
+		t.Run("ByExternblID", func(t *testing.T) {
+			wbnt := chbngesets[0]
+			opts := GetChbngesetOpts{
+				ExternblID:          wbnt.ExternblID,
+				ExternblServiceType: wbnt.ExternblServiceType,
 			}
 
-			have, err := s.GetChangeset(ctx, opts)
+			hbve, err := s.GetChbngeset(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("ByRepoID", func(t *testing.T) {
-			want := changesets[0]
-			opts := GetChangesetOpts{
-				RepoID: want.RepoID,
+			wbnt := chbngesets[0]
+			opts := GetChbngesetOpts{
+				RepoID: wbnt.RepoID,
 			}
 
-			have, err := s.GetChangeset(ctx, opts)
+			hbve, err := s.GetChbngeset(ctx, opts)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if diff := cmp.Diff(have, want); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve, wbnt); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 
 		t.Run("NoResults", func(t *testing.T) {
-			opts := GetChangesetOpts{ID: 0xdeadbeef}
+			opts := GetChbngesetOpts{ID: 0xdebdbeef}
 
-			_, have := s.GetChangeset(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetChbngeset(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 
 		t.Run("RepoDeleted", func(t *testing.T) {
-			opts := GetChangesetOpts{ID: deletedRepoChangeset.ID}
+			opts := GetChbngesetOpts{ID: deletedRepoChbngeset.ID}
 
-			_, have := s.GetChangeset(ctx, opts)
-			want := ErrNoResults
+			_, hbve := s.GetChbngeset(ctx, opts)
+			wbnt := ErrNoResults
 
-			if have != want {
-				t.Fatalf("have err %v, want %v", have, want)
+			if hbve != wbnt {
+				t.Fbtblf("hbve err %v, wbnt %v", hbve, wbnt)
 			}
 		})
 
-		t.Run("ExternalBranch", func(t *testing.T) {
-			for _, c := range changesets {
-				opts := GetChangesetOpts{ExternalBranch: c.ExternalBranch}
+		t.Run("ExternblBrbnch", func(t *testing.T) {
+			for _, c := rbnge chbngesets {
+				opts := GetChbngesetOpts{ExternblBrbnch: c.ExternblBrbnch}
 
-				have, err := s.GetChangeset(ctx, opts)
+				hbve, err := s.GetChbngeset(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				want := c
+				wbnt := c
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 			}
 		})
 
-		t.Run("ReconcilerState", func(t *testing.T) {
-			for _, c := range changesets {
-				opts := GetChangesetOpts{ID: c.ID, ReconcilerState: c.ReconcilerState}
+		t.Run("ReconcilerStbte", func(t *testing.T) {
+			for _, c := rbnge chbngesets {
+				opts := GetChbngesetOpts{ID: c.ID, ReconcilerStbte: c.ReconcilerStbte}
 
-				have, err := s.GetChangeset(ctx, opts)
+				hbve, err := s.GetChbngeset(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				want := c
+				wbnt := c
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 
-				if c.ReconcilerState == btypes.ReconcilerStateErrored {
-					c.ReconcilerState = btypes.ReconcilerStateCompleted
+				if c.ReconcilerStbte == btypes.ReconcilerStbteErrored {
+					c.ReconcilerStbte = btypes.ReconcilerStbteCompleted
 				} else {
-					opts.ReconcilerState = btypes.ReconcilerStateErrored
+					opts.ReconcilerStbte = btypes.ReconcilerStbteErrored
 				}
-				_, err = s.GetChangeset(ctx, opts)
+				_, err = s.GetChbngeset(ctx, opts)
 				if err != ErrNoResults {
-					t.Fatalf("unexpected error, want=%q have=%q", ErrNoResults, err)
+					t.Fbtblf("unexpected error, wbnt=%q hbve=%q", ErrNoResults, err)
 				}
 			}
 		})
 
-		t.Run("PublicationState", func(t *testing.T) {
-			for _, c := range changesets {
-				opts := GetChangesetOpts{ID: c.ID, PublicationState: c.PublicationState}
+		t.Run("PublicbtionStbte", func(t *testing.T) {
+			for _, c := rbnge chbngesets {
+				opts := GetChbngesetOpts{ID: c.ID, PublicbtionStbte: c.PublicbtionStbte}
 
-				have, err := s.GetChangeset(ctx, opts)
+				hbve, err := s.GetChbngeset(ctx, opts)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				want := c
+				wbnt := c
 
-				if diff := cmp.Diff(have, want); diff != "" {
-					t.Fatal(diff)
+				if diff := cmp.Diff(hbve, wbnt); diff != "" {
+					t.Fbtbl(diff)
 				}
 
-				// Toggle publication state
-				if c.PublicationState == btypes.ChangesetPublicationStateUnpublished {
-					opts.PublicationState = btypes.ChangesetPublicationStatePublished
+				// Toggle publicbtion stbte
+				if c.PublicbtionStbte == btypes.ChbngesetPublicbtionStbteUnpublished {
+					opts.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
 				} else {
-					opts.PublicationState = btypes.ChangesetPublicationStateUnpublished
+					opts.PublicbtionStbte = btypes.ChbngesetPublicbtionStbteUnpublished
 				}
 
-				_, err = s.GetChangeset(ctx, opts)
+				_, err = s.GetChbngeset(ctx, opts)
 				if err != ErrNoResults {
-					t.Fatalf("unexpected error, want=%q have=%q", ErrNoResults, err)
+					t.Fbtblf("unexpected error, wbnt=%q hbve=%q", ErrNoResults, err)
 				}
 			}
 		})
 	})
 
-	t.Run("Update", func(t *testing.T) {
-		want := make([]*btypes.Changeset, 0, len(changesets))
-		have := make([]*btypes.Changeset, 0, len(changesets))
+	t.Run("Updbte", func(t *testing.T) {
+		wbnt := mbke([]*btypes.Chbngeset, 0, len(chbngesets))
+		hbve := mbke([]*btypes.Chbngeset, 0, len(chbngesets))
 
 		clock.Add(1 * time.Second)
-		for _, c := range changesets {
-			c.Metadata = &bitbucketserver.PullRequest{ID: 1234}
-			c.ExternalServiceType = extsvc.TypeBitbucketServer
+		for _, c := rbnge chbngesets {
+			c.Metbdbtb = &bitbucketserver.PullRequest{ID: 1234}
+			c.ExternblServiceType = extsvc.TypeBitbucketServer
 
 			c.CurrentSpecID = c.CurrentSpecID + 1
 			c.PreviousSpecID = c.PreviousSpecID + 1
-			c.OwnedByBatchChangeID = c.OwnedByBatchChangeID + 1
+			c.OwnedByBbtchChbngeID = c.OwnedByBbtchChbngeID + 1
 
-			c.PublicationState = btypes.ChangesetPublicationStatePublished
-			c.ReconcilerState = btypes.ReconcilerStateErrored
-			c.PreviousFailureMessage = c.FailureMessage
-			c.FailureMessage = nil
-			c.StartedAt = clock.Now()
+			c.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+			c.ReconcilerStbte = btypes.ReconcilerStbteErrored
+			c.PreviousFbilureMessbge = c.FbilureMessbge
+			c.FbilureMessbge = nil
+			c.StbrtedAt = clock.Now()
 			c.FinishedAt = clock.Now()
 			c.ProcessAfter = clock.Now()
 			c.NumResets = 987
-			c.NumFailures = 789
+			c.NumFbilures = 789
 
-			c.DetachedAt = clock.Now()
+			c.DetbchedAt = clock.Now()
 
 			clone := c.Clone()
-			have = append(have, clone)
+			hbve = bppend(hbve, clone)
 
-			c.UpdatedAt = clock.Now()
-			c.State = btypes.ChangesetStateRetrying
-			want = append(want, c)
+			c.UpdbtedAt = clock.Now()
+			c.Stbte = btypes.ChbngesetStbteRetrying
+			wbnt = bppend(wbnt, c)
 
-			if err := s.UpdateChangeset(ctx, clone); err != nil {
-				t.Fatal(err)
+			if err := s.UpdbteChbngeset(ctx, clone); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtbl(diff)
 		}
 
-		for i := range have {
-			// Test that duplicates are not introduced.
-			have[i].BatchChanges = append(have[i].BatchChanges, have[i].BatchChanges...)
+		for i := rbnge hbve {
+			// Test thbt duplicbtes bre not introduced.
+			hbve[i].BbtchChbnges = bppend(hbve[i].BbtchChbnges, hbve[i].BbtchChbnges...)
 
-			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
-				t.Fatal(err)
-			}
-
-		}
-
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
-		}
-
-		for i := range have {
-			// Test we can add to the set.
-			have[i].BatchChanges = append(have[i].BatchChanges, btypes.BatchChangeAssoc{BatchChangeID: 42})
-			want[i].BatchChanges = append(want[i].BatchChanges, btypes.BatchChangeAssoc{BatchChangeID: 42})
-
-			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
-				t.Fatal(err)
+			if err := s.UpdbteChbngeset(ctx, hbve[i]); err != nil {
+				t.Fbtbl(err)
 			}
 
 		}
 
-		for i := range have {
-			sort.Slice(have[i].BatchChanges, func(a, b int) bool {
-				return have[i].BatchChanges[a].BatchChangeID < have[i].BatchChanges[b].BatchChangeID
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtbl(diff)
+		}
+
+		for i := rbnge hbve {
+			// Test we cbn bdd to the set.
+			hbve[i].BbtchChbnges = bppend(hbve[i].BbtchChbnges, btypes.BbtchChbngeAssoc{BbtchChbngeID: 42})
+			wbnt[i].BbtchChbnges = bppend(wbnt[i].BbtchChbnges, btypes.BbtchChbngeAssoc{BbtchChbngeID: 42})
+
+			if err := s.UpdbteChbngeset(ctx, hbve[i]); err != nil {
+				t.Fbtbl(err)
+			}
+
+		}
+
+		for i := rbnge hbve {
+			sort.Slice(hbve[i].BbtchChbnges, func(b, b int) bool {
+				return hbve[i].BbtchChbnges[b].BbtchChbngeID < hbve[i].BbtchChbnges[b].BbtchChbngeID
 			})
 
-			if diff := cmp.Diff(have[i], want[i]); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(hbve[i], wbnt[i]); diff != "" {
+				t.Fbtbl(diff)
 			}
 		}
 
-		for i := range have {
-			// Test we can remove from the set.
-			have[i].BatchChanges = have[i].BatchChanges[:0]
-			want[i].BatchChanges = want[i].BatchChanges[:0]
+		for i := rbnge hbve {
+			// Test we cbn remove from the set.
+			hbve[i].BbtchChbnges = hbve[i].BbtchChbnges[:0]
+			wbnt[i].BbtchChbnges = wbnt[i].BbtchChbnges[:0]
 
-			if err := s.UpdateChangeset(ctx, have[i]); err != nil {
-				t.Fatal(err)
+			if err := s.UpdbteChbngeset(ctx, hbve[i]); err != nil {
+				t.Fbtbl(err)
 			}
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtbl(diff)
 		}
 
 		clock.Add(1 * time.Second)
-		want = want[0:0]
-		have = have[0:0]
-		for _, c := range changesets {
-			c.Metadata = &gitlab.MergeRequest{ID: 1234, IID: 123}
-			c.ExternalServiceType = extsvc.TypeGitLab
+		wbnt = wbnt[0:0]
+		hbve = hbve[0:0]
+		for _, c := rbnge chbngesets {
+			c.Metbdbtb = &gitlbb.MergeRequest{ID: 1234, IID: 123}
+			c.ExternblServiceType = extsvc.TypeGitLbb
 
 			clone := c.Clone()
-			have = append(have, clone)
+			hbve = bppend(hbve, clone)
 
-			c.UpdatedAt = clock.Now()
-			want = append(want, c)
+			c.UpdbtedAt = clock.Now()
+			wbnt = bppend(wbnt, c)
 
-			if err := s.UpdateChangeset(ctx, clone); err != nil {
-				t.Fatal(err)
+			if err := s.UpdbteChbngeset(ctx, clone); err != nil {
+				t.Fbtbl(err)
 			}
 
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("UpdateChangesetCodeHostState", func(t *testing.T) {
-		unpublished := btypes.ChangesetUiPublicationStateUnpublished
-		published := btypes.ChangesetUiPublicationStatePublished
-		cs := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	t.Run("UpdbteChbngesetCodeHostStbte", func(t *testing.T) {
+		unpublished := btypes.ChbngesetUiPublicbtionStbteUnpublished
+		published := btypes.ChbngesetUiPublicbtionStbtePublished
+		cs := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 			Repo:                repo.ID,
-			BatchChange:         123,
+			BbtchChbnge:         123,
 			CurrentSpec:         123,
 			PreviousSpec:        123,
-			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: 123}},
-			ExternalServiceType: "github",
-			ExternalID:          "123",
-			ExternalBranch:      "refs/heads/branch",
-			ExternalState:       btypes.ChangesetExternalStateOpen,
-			ExternalReviewState: btypes.ChangesetReviewStatePending,
-			ExternalCheckState:  btypes.ChangesetCheckStatePending,
-			DiffStatAdded:       10,
-			DiffStatDeleted:     10,
-			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-			UiPublicationState:  &unpublished,
-			ReconcilerState:     btypes.ReconcilerStateQueued,
-			FailureMessage:      "very bad",
-			NumFailures:         10,
-			OwnedByBatchChange:  123,
-			Metadata:            &github.PullRequest{Title: "Se titel"},
+			BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 123}},
+			ExternblServiceType: "github",
+			ExternblID:          "123",
+			ExternblBrbnch:      "refs/hebds/brbnch",
+			ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+			ExternblReviewStbte: btypes.ChbngesetReviewStbtePending,
+			ExternblCheckStbte:  btypes.ChbngesetCheckStbtePending,
+			DiffStbtAdded:       10,
+			DiffStbtDeleted:     10,
+			PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+			UiPublicbtionStbte:  &unpublished,
+			ReconcilerStbte:     btypes.ReconcilerStbteQueued,
+			FbilureMessbge:      "very bbd",
+			NumFbilures:         10,
+			OwnedByBbtchChbnge:  123,
+			Metbdbtb:            &github.PullRequest{Title: "Se titel"},
 		})
 
-		cs.ExternalBranch = "refs/heads/branch-2"
-		cs.ExternalState = btypes.ChangesetExternalStateDeleted
-		cs.ExternalReviewState = btypes.ChangesetReviewStateApproved
-		cs.ExternalCheckState = btypes.ChangesetCheckStateFailed
-		cs.DiffStatAdded = pointers.Ptr(int32(100))
-		cs.DiffStatDeleted = pointers.Ptr(int32(100))
-		cs.Metadata = &github.PullRequest{Title: "The title"}
-		want := cs.Clone()
+		cs.ExternblBrbnch = "refs/hebds/brbnch-2"
+		cs.ExternblStbte = btypes.ChbngesetExternblStbteDeleted
+		cs.ExternblReviewStbte = btypes.ChbngesetReviewStbteApproved
+		cs.ExternblCheckStbte = btypes.ChbngesetCheckStbteFbiled
+		cs.DiffStbtAdded = pointers.Ptr(int32(100))
+		cs.DiffStbtDeleted = pointers.Ptr(int32(100))
+		cs.Metbdbtb = &github.PullRequest{Title: "The title"}
+		wbnt := cs.Clone()
 
-		// These should not be updated.
-		cs.RepoID = gitlabRepo.ID
+		// These should not be updbted.
+		cs.RepoID = gitlbbRepo.ID
 		cs.CurrentSpecID = 234
 		cs.PreviousSpecID = 234
-		cs.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 234}}
-		cs.ExternalID = "234"
-		cs.PublicationState = btypes.ChangesetPublicationStatePublished
-		cs.UiPublicationState = &published
-		cs.ReconcilerState = btypes.ReconcilerStateCompleted
-		cs.FailureMessage = pointers.Ptr("very bad for real this time")
-		cs.NumFailures = 100
-		cs.OwnedByBatchChangeID = 234
+		cs.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 234}}
+		cs.ExternblID = "234"
+		cs.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		cs.UiPublicbtionStbte = &published
+		cs.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		cs.FbilureMessbge = pointers.Ptr("very bbd for rebl this time")
+		cs.NumFbilures = 100
+		cs.OwnedByBbtchChbngeID = 234
 		cs.Closing = true
 
-		// Expect some not changed after update:
-		if err := s.UpdateChangesetCodeHostState(ctx, cs); err != nil {
-			t.Fatal(err)
+		// Expect some not chbnged bfter updbte:
+		if err := s.UpdbteChbngesetCodeHostStbte(ctx, cs); err != nil {
+			t.Fbtbl(err)
 		}
-		have, err := s.GetChangesetByID(ctx, cs.ID)
+		hbve, err := s.GetChbngesetByID(ctx, cs.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("invalid changeset state in DB: %s", diff)
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtblf("invblid chbngeset stbte in DB: %s", diff)
 		}
 	})
 
-	t.Run("GetChangesetsStats", func(t *testing.T) {
-		var batchChangeID int64 = 191918
-		currentBatchChangeStats, err := s.GetChangesetsStats(ctx, batchChangeID)
+	t.Run("GetChbngesetsStbts", func(t *testing.T) {
+		vbr bbtchChbngeID int64 = 191918
+		currentBbtchChbngeStbts, err := s.GetChbngesetsStbts(ctx, bbtchChbngeID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		baseOpts := bt.TestChangesetOpts{Repo: repo.ID}
+		bbseOpts := bt.TestChbngesetOpts{Repo: repo.ID}
 
-		// Closed changeset
-		opts1 := baseOpts
-		opts1.BatchChange = batchChangeID
-		opts1.ExternalState = btypes.ChangesetExternalStateClosed
-		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts1)
+		// Closed chbngeset
+		opts1 := bbseOpts
+		opts1.BbtchChbnge = bbtchChbngeID
+		opts1.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+		opts1.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts1.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts1)
 
-		// Deleted changeset
-		opts2 := baseOpts
-		opts2.BatchChange = batchChangeID
-		opts2.ExternalState = btypes.ChangesetExternalStateDeleted
-		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts2)
+		// Deleted chbngeset
+		opts2 := bbseOpts
+		opts2.BbtchChbnge = bbtchChbngeID
+		opts2.ExternblStbte = btypes.ChbngesetExternblStbteDeleted
+		opts2.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts2.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts2)
 
-		// Open changeset
-		opts3 := baseOpts
-		opts3.BatchChange = batchChangeID
-		opts3.OwnedByBatchChange = batchChangeID
-		opts3.ExternalState = btypes.ChangesetExternalStateOpen
-		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts3)
+		// Open chbngeset
+		opts3 := bbseOpts
+		opts3.BbtchChbnge = bbtchChbngeID
+		opts3.OwnedByBbtchChbnge = bbtchChbngeID
+		opts3.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts3.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts3.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts3)
 
-		// Archived & closed changeset
-		opts4 := baseOpts
-		opts4.BatchChange = batchChangeID
+		// Archived & closed chbngeset
+		opts4 := bbseOpts
+		opts4.BbtchChbnge = bbtchChbngeID
 		opts4.IsArchived = true
-		opts4.OwnedByBatchChange = batchChangeID
-		opts4.ExternalState = btypes.ChangesetExternalStateClosed
-		opts4.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts4.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts4)
+		opts4.OwnedByBbtchChbnge = bbtchChbngeID
+		opts4.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+		opts4.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts4.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts4)
 
-		// Marked as to-be-archived
-		opts5 := baseOpts
-		opts5.BatchChange = batchChangeID
+		// Mbrked bs to-be-brchived
+		opts5 := bbseOpts
+		opts5.BbtchChbnge = bbtchChbngeID
 		opts5.Archive = true
-		opts5.OwnedByBatchChange = batchChangeID
-		opts5.ExternalState = btypes.ChangesetExternalStateOpen
-		opts5.ReconcilerState = btypes.ReconcilerStateProcessing
-		opts5.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts5)
+		opts5.OwnedByBbtchChbnge = bbtchChbngeID
+		opts5.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts5.ReconcilerStbte = btypes.ReconcilerStbteProcessing
+		opts5.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts5)
 
-		// Open changeset in a deleted repository
-		opts6 := baseOpts
-		// In a deleted repository.
+		// Open chbngeset in b deleted repository
+		opts6 := bbseOpts
+		// In b deleted repository.
 		opts6.Repo = deletedRepo.ID
-		opts6.BatchChange = batchChangeID
-		opts6.ExternalState = btypes.ChangesetExternalStateOpen
-		opts6.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts6.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts6)
+		opts6.BbtchChbnge = bbtchChbngeID
+		opts6.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts6.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts6.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts6)
 
-		// Open changeset in a different batch change
-		opts7 := baseOpts
-		opts7.BatchChange = batchChangeID + 999
-		opts7.ExternalState = btypes.ChangesetExternalStateOpen
-		opts7.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts7.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts7)
+		// Open chbngeset in b different bbtch chbnge
+		opts7 := bbseOpts
+		opts7.BbtchChbnge = bbtchChbngeID + 999
+		opts7.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts7.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts7.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts7)
 
 		// Processing
-		opts8 := baseOpts
-		opts8.BatchChange = batchChangeID
-		opts8.OwnedByBatchChange = batchChangeID
-		opts8.ExternalState = btypes.ChangesetExternalStateOpen
-		opts8.ReconcilerState = btypes.ReconcilerStateProcessing
-		opts8.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts8)
+		opts8 := bbseOpts
+		opts8.BbtchChbnge = bbtchChbngeID
+		opts8.OwnedByBbtchChbnge = bbtchChbngeID
+		opts8.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts8.ReconcilerStbte = btypes.ReconcilerStbteProcessing
+		opts8.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts8)
 
-		haveStats, err := s.GetChangesetsStats(ctx, batchChangeID)
+		hbveStbts, err := s.GetChbngesetsStbts(ctx, bbtchChbngeID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantStats := currentBatchChangeStats
-		wantStats.Open += 1
-		wantStats.Processing += 1
-		wantStats.Closed += 1
-		wantStats.Deleted += 1
-		wantStats.Archived += 2
-		wantStats.Total += 6
+		wbntStbts := currentBbtchChbngeStbts
+		wbntStbts.Open += 1
+		wbntStbts.Processing += 1
+		wbntStbts.Closed += 1
+		wbntStbts.Deleted += 1
+		wbntStbts.Archived += 2
+		wbntStbts.Totbl += 6
 
-		if diff := cmp.Diff(wantStats, haveStats); diff != "" {
-			t.Fatalf("wrong stats returned. diff=%s", diff)
+		if diff := cmp.Diff(wbntStbts, hbveStbts); diff != "" {
+			t.Fbtblf("wrong stbts returned. diff=%s", diff)
 		}
 	})
 
-	t.Run("GetRepoChangesetsStats", func(t *testing.T) {
+	t.Run("GetRepoChbngesetsStbts", func(t *testing.T) {
 		r := bt.TestRepo(t, es, extsvc.KindGitHub)
 
-		if err := rs.Create(ctx, r); err != nil {
-			t.Fatal(err)
+		if err := rs.Crebte(ctx, r); err != nil {
+			t.Fbtbl(err)
 		}
 
-		baseOpts := bt.TestChangesetOpts{Repo: r.ID, BatchChange: 4747, OwnedByBatchChange: 4747}
+		bbseOpts := bt.TestChbngesetOpts{Repo: r.ID, BbtchChbnge: 4747, OwnedByBbtchChbnge: 4747}
 
-		wantStats := btypes.RepoChangesetsStats{}
+		wbntStbts := btypes.RepoChbngesetsStbts{}
 
-		// Closed changeset
-		opts1 := baseOpts
-		opts1.ExternalState = btypes.ChangesetExternalStateClosed
-		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts1)
-		wantStats.Closed += 1
+		// Closed chbngeset
+		opts1 := bbseOpts
+		opts1.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+		opts1.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts1.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts1)
+		wbntStbts.Closed += 1
 
-		// Open changeset
-		opts2 := baseOpts
-		opts2.ExternalState = btypes.ChangesetExternalStateOpen
-		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts2)
-		wantStats.Open += 1
+		// Open chbngeset
+		opts2 := bbseOpts
+		opts2.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts2.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts2.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts2)
+		wbntStbts.Open += 1
 
-		// Archived & closed changeset
-		opts3 := baseOpts
+		// Archived & closed chbngeset
+		opts3 := bbseOpts
 		opts3.IsArchived = true
-		opts3.ExternalState = btypes.ChangesetExternalStateClosed
-		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts3)
+		opts3.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+		opts3.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts3.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts3)
 
-		// Marked as to-be-archived
-		opts4 := baseOpts
+		// Mbrked bs to-be-brchived
+		opts4 := bbseOpts
 		opts4.Archive = true
-		opts4.ExternalState = btypes.ChangesetExternalStateOpen
-		opts4.ReconcilerState = btypes.ReconcilerStateProcessing
-		opts4.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts4)
+		opts4.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts4.ReconcilerStbte = btypes.ReconcilerStbteProcessing
+		opts4.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts4)
 
-		// Open changeset belonging to a different batch change
-		opts5 := baseOpts
-		opts5.BatchChange = 999
-		opts5.ExternalState = btypes.ChangesetExternalStateOpen
-		opts5.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts5.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts5)
-		wantStats.Open += 1
+		// Open chbngeset belonging to b different bbtch chbnge
+		opts5 := bbseOpts
+		opts5.BbtchChbnge = 999
+		opts5.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts5.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts5.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts5)
+		wbntStbts.Open += 1
 
-		// Open changeset belonging to multiple batch changes
-		opts6 := bt.TestChangesetOpts{Repo: r.ID}
-		opts6.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747}, {BatchChangeID: 4748}, {BatchChangeID: 4749}}
-		opts6.ExternalState = btypes.ChangesetExternalStateOpen
-		opts6.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts6.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts6)
-		wantStats.Open += 1
+		// Open chbngeset belonging to multiple bbtch chbnges
+		opts6 := bt.TestChbngesetOpts{Repo: r.ID}
+		opts6.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 4747}, {BbtchChbngeID: 4748}, {BbtchChbngeID: 4749}}
+		opts6.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts6.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts6.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts6)
+		wbntStbts.Open += 1
 
-		// Open changeset archived on one batch change but not on another
-		opts7 := bt.TestChangesetOpts{Repo: r.ID}
-		opts7.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747, IsArchived: true}, {BatchChangeID: 4748, IsArchived: false}}
-		opts7.ExternalState = btypes.ChangesetExternalStateOpen
-		opts7.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts7.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts7)
-		wantStats.Open += 1
+		// Open chbngeset brchived on one bbtch chbnge but not on bnother
+		opts7 := bt.TestChbngesetOpts{Repo: r.ID}
+		opts7.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 4747, IsArchived: true}, {BbtchChbngeID: 4748, IsArchived: fblse}}
+		opts7.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts7.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts7.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts7)
+		wbntStbts.Open += 1
 
-		// Open changeset archived on multiple batch changes
-		opts8 := bt.TestChangesetOpts{Repo: r.ID}
-		opts8.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: 4747, IsArchived: true}, {BatchChangeID: 4748, IsArchived: true}}
-		opts8.ExternalState = btypes.ChangesetExternalStateOpen
-		opts8.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts8.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts8)
+		// Open chbngeset brchived on multiple bbtch chbnges
+		opts8 := bt.TestChbngesetOpts{Repo: r.ID}
+		opts8.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: 4747, IsArchived: true}, {BbtchChbngeID: 4748, IsArchived: true}}
+		opts8.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts8.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts8.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts8)
 
-		// Draft changeset
-		opts9 := baseOpts
-		opts9.ExternalState = btypes.ChangesetExternalStateDraft
-		opts9.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts9.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts9)
-		wantStats.Draft += 1
+		// Drbft chbngeset
+		opts9 := bbseOpts
+		opts9.ExternblStbte = btypes.ChbngesetExternblStbteDrbft
+		opts9.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts9.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts9)
+		wbntStbts.Drbft += 1
 
-		haveStats, err := s.GetRepoChangesetsStats(ctx, r.ID)
+		hbveStbts, err := s.GetRepoChbngesetsStbts(ctx, r.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantStats.Total = wantStats.Open + wantStats.Closed + wantStats.Draft
+		wbntStbts.Totbl = wbntStbts.Open + wbntStbts.Closed + wbntStbts.Drbft
 
-		if diff := cmp.Diff(wantStats, *haveStats); diff != "" {
-			t.Fatalf("wrong stats returned. diff=%s", diff)
+		if diff := cmp.Diff(wbntStbts, *hbveStbts); diff != "" {
+			t.Fbtblf("wrong stbts returned. diff=%s", diff)
 		}
 	})
 
-	t.Run("GetGlobalChangesetsStats", func(t *testing.T) {
-		var batchChangeID int64 = 191918
-		currentBatchChangeStats, err := s.GetGlobalChangesetsStats(ctx)
+	t.Run("GetGlobblChbngesetsStbts", func(t *testing.T) {
+		vbr bbtchChbngeID int64 = 191918
+		currentBbtchChbngeStbts, err := s.GetGlobblChbngesetsStbts(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		baseOpts := bt.TestChangesetOpts{Repo: repo.ID}
+		bbseOpts := bt.TestChbngesetOpts{Repo: repo.ID}
 
-		// Closed changeset
-		opts1 := baseOpts
-		opts1.BatchChange = batchChangeID
-		opts1.ExternalState = btypes.ChangesetExternalStateClosed
-		opts1.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts1.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts1)
+		// Closed chbngeset
+		opts1 := bbseOpts
+		opts1.BbtchChbnge = bbtchChbngeID
+		opts1.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+		opts1.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts1.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts1)
 
-		// Open changeset
-		opts2 := baseOpts
-		opts2.BatchChange = batchChangeID
-		opts2.ExternalState = btypes.ChangesetExternalStateOpen
-		opts2.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts2.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts2)
+		// Open chbngeset
+		opts2 := bbseOpts
+		opts2.BbtchChbnge = bbtchChbngeID
+		opts2.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+		opts2.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts2.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts2)
 
-		// Draft changeset
-		opts3 := baseOpts
-		opts3.BatchChange = batchChangeID
-		opts3.ExternalState = btypes.ChangesetExternalStateDraft
-		opts3.ReconcilerState = btypes.ReconcilerStateCompleted
-		opts3.PublicationState = btypes.ChangesetPublicationStatePublished
-		bt.CreateChangeset(t, ctx, s, opts3)
+		// Drbft chbngeset
+		opts3 := bbseOpts
+		opts3.BbtchChbnge = bbtchChbngeID
+		opts3.ExternblStbte = btypes.ChbngesetExternblStbteDrbft
+		opts3.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		opts3.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		bt.CrebteChbngeset(t, ctx, s, opts3)
 
-		haveStats, err := s.GetGlobalChangesetsStats(ctx)
+		hbveStbts, err := s.GetGlobblChbngesetsStbts(ctx)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantStats := currentBatchChangeStats
-		wantStats.Open += 1
-		wantStats.Closed += 1
-		wantStats.Draft += 1
-		wantStats.Total += 3
+		wbntStbts := currentBbtchChbngeStbts
+		wbntStbts.Open += 1
+		wbntStbts.Closed += 1
+		wbntStbts.Drbft += 1
+		wbntStbts.Totbl += 3
 
-		if diff := cmp.Diff(wantStats, haveStats); diff != "" {
-			t.Fatalf("wrong stats returned. diff=%s", diff)
+		if diff := cmp.Diff(wbntStbts, hbveStbts); diff != "" {
+			t.Fbtblf("wrong stbts returned. diff=%s", diff)
 		}
 	})
 
-	t.Run("EnqueueChangeset", func(t *testing.T) {
-		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-			ReconcilerState:  btypes.ReconcilerStateCompleted,
-			PublicationState: btypes.ChangesetPublicationStatePublished,
-			ExternalState:    btypes.ChangesetExternalStateOpen,
+	t.Run("EnqueueChbngeset", func(t *testing.T) {
+		c1 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
+			ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+			PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+			ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 			Repo:             repo.ID,
 			NumResets:        1234,
-			NumFailures:      4567,
-			FailureMessage:   "horse was here",
-			SyncErrorMessage: "horse was here",
+			NumFbilures:      4567,
+			FbilureMessbge:   "horse wbs here",
+			SyncErrorMessbge: "horse wbs here",
 		})
 
-		// Try with wrong `currentState` and expect error
-		err := s.EnqueueChangeset(ctx, c1, btypes.ReconcilerStateQueued, btypes.ReconcilerStateFailed)
+		// Try with wrong `currentStbte` bnd expect error
+		err := s.EnqueueChbngeset(ctx, c1, btypes.ReconcilerStbteQueued, btypes.ReconcilerStbteFbiled)
 		if err == nil {
-			t.Fatalf("expected error, received none")
+			t.Fbtblf("expected error, received none")
 		}
 
-		// Try with correct `currentState` and expected updated changeset
-		err = s.EnqueueChangeset(ctx, c1, btypes.ReconcilerStateQueued, c1.ReconcilerState)
+		// Try with correct `currentStbte` bnd expected updbted chbngeset
+		err = s.EnqueueChbngeset(ctx, c1, btypes.ReconcilerStbteQueued, c1.ReconcilerStbte)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		bt.ReloadAndAssertChangeset(t, ctx, s, c1, bt.ChangesetAssertions{
-			ReconcilerState:        btypes.ReconcilerStateQueued,
-			PublicationState:       btypes.ChangesetPublicationStatePublished,
-			ExternalState:          btypes.ChangesetExternalStateOpen,
+		bt.RelobdAndAssertChbngeset(t, ctx, s, c1, bt.ChbngesetAssertions{
+			ReconcilerStbte:        btypes.ReconcilerStbteQueued,
+			PublicbtionStbte:       btypes.ChbngesetPublicbtionStbtePublished,
+			ExternblStbte:          btypes.ChbngesetExternblStbteOpen,
 			Repo:                   repo.ID,
-			FailureMessage:         nil,
+			FbilureMessbge:         nil,
 			NumResets:              0,
-			NumFailures:            0,
-			SyncErrorMessage:       nil,
-			PreviousFailureMessage: pointers.Ptr("horse was here"),
+			NumFbilures:            0,
+			SyncErrorMessbge:       nil,
+			PreviousFbilureMessbge: pointers.Ptr("horse wbs here"),
 		})
 	})
 
-	t.Run("UpdateChangesetBatchChanges", func(t *testing.T) {
-		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-			ReconcilerState:  btypes.ReconcilerStateCompleted,
-			PublicationState: btypes.ChangesetPublicationStatePublished,
-			ExternalState:    btypes.ChangesetExternalStateOpen,
+	t.Run("UpdbteChbngesetBbtchChbnges", func(t *testing.T) {
+		c1 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
+			ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+			PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+			ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 			Repo:             repo.ID,
 		})
 
-		// Add 3 batch changes
-		c1.Attach(123)
-		c1.Attach(456)
-		c1.Attach(789)
+		// Add 3 bbtch chbnges
+		c1.Attbch(123)
+		c1.Attbch(456)
+		c1.Attbch(789)
 
-		// This is what we expect after the update
-		want := c1.Clone()
+		// This is whbt we expect bfter the updbte
+		wbnt := c1.Clone()
 
-		// These two and other columsn should not be updated in the DB
-		c1.ReconcilerState = btypes.ReconcilerStateErrored
-		c1.ExternalServiceType = "external-service-type"
+		// These two bnd other columsn should not be updbted in the DB
+		c1.ReconcilerStbte = btypes.ReconcilerStbteErrored
+		c1.ExternblServiceType = "externbl-service-type"
 
-		err := s.UpdateChangesetBatchChanges(ctx, c1)
+		err := s.UpdbteChbngesetBbtchChbnges(ctx, c1)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		have := c1
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("invalid changeset: %s", diff)
+		hbve := c1
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtblf("invblid chbngeset: %s", diff)
 		}
 	})
 
-	t.Run("UpdateChangesetUiPublicationState", func(t *testing.T) {
-		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
-			ReconcilerState:  btypes.ReconcilerStateCompleted,
-			PublicationState: btypes.ChangesetPublicationStateUnpublished,
+	t.Run("UpdbteChbngesetUiPublicbtionStbte", func(t *testing.T) {
+		c1 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
+			ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+			PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			Repo:             repo.ID,
 		})
 
-		// Update the UiPublicationState
-		c1.UiPublicationState = &btypes.ChangesetUiPublicationStateDraft
+		// Updbte the UiPublicbtionStbte
+		c1.UiPublicbtionStbte = &btypes.ChbngesetUiPublicbtionStbteDrbft
 
-		// This is what we expect after the update
-		want := c1.Clone()
+		// This is whbt we expect bfter the updbte
+		wbnt := c1.Clone()
 
-		// These two and other columsn should not be updated in the DB
-		c1.ReconcilerState = btypes.ReconcilerStateErrored
-		c1.ExternalServiceType = "external-service-type"
+		// These two bnd other columsn should not be updbted in the DB
+		c1.ReconcilerStbte = btypes.ReconcilerStbteErrored
+		c1.ExternblServiceType = "externbl-service-type"
 
-		err := s.UpdateChangesetUiPublicationState(ctx, c1)
+		err := s.UpdbteChbngesetUiPublicbtionStbte(ctx, c1)
 		if err != nil {
-			t.Fatalf("unexpected error: %s", err)
+			t.Fbtblf("unexpected error: %s", err)
 		}
 
-		have := c1
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("invalid changeset: %s", diff)
+		hbve := c1
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtblf("invblid chbngeset: %s", diff)
 		}
 	})
 
-	t.Run("UpdateChangesetCommitVerification", func(t *testing.T) {
-		c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{Repo: repo.ID})
+	t.Run("UpdbteChbngesetCommitVerificbtion", func(t *testing.T) {
+		c1 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{Repo: repo.ID})
 
-		// Once with a verified commit
-		commitVerification := github.Verification{
+		// Once with b verified commit
+		commitVerificbtion := github.Verificbtion{
 			Verified:  true,
-			Reason:    "valid",
-			Signature: "*********",
-			Payload:   "*********",
+			Rebson:    "vblid",
+			Signbture: "*********",
+			Pbylobd:   "*********",
 		}
 		commit := github.RestCommit{
-			URL:          "https://api.github.com/repos/Birth-control-tech/birth-control-tech-BE/git/commits/dabd9bb07fdb5b580f168e942f2160b1719fc98f",
-			SHA:          "dabd9bb07fdb5b580f168e942f2160b1719fc98f",
+			URL:          "https://bpi.github.com/repos/Birth-control-tech/birth-control-tech-BE/git/commits/dbbd9bb07fdb5b580f168e942f2160b1719fc98f",
+			SHA:          "dbbd9bb07fdb5b580f168e942f2160b1719fc98f",
 			NodeID:       "C_kwDOEW0OxtoAKGRhYmQ5YmIwN2ZkYjViNTgwZjE2OGU5NDJmMjE2MGIxNzE5ZmM5OGY",
-			Message:      "Append Hello World to all README.md files",
-			Verification: commitVerification,
+			Messbge:      "Append Hello World to bll README.md files",
+			Verificbtion: commitVerificbtion,
 		}
 
-		c1.CommitVerification = &commitVerification
-		want := c1.Clone()
+		c1.CommitVerificbtion = &commitVerificbtion
+		wbnt := c1.Clone()
 
-		if err := s.UpdateChangesetCommitVerification(ctx, c1, &commit); err != nil {
-			t.Fatal(err)
+		if err := s.UpdbteChbngesetCommitVerificbtion(ctx, c1, &commit); err != nil {
+			t.Fbtbl(err)
 		}
-		have, err := s.GetChangesetByID(ctx, c1.ID)
+		hbve, err := s.GetChbngesetByID(ctx, c1.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("found diff with signed commit: %s", diff)
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtblf("found diff with signed commit: %s", diff)
 		}
 
-		// Once with a commit that's not verified
-		commitVerification = github.Verification{
-			Verified: false,
-			Reason:   "unsigned",
+		// Once with b commit thbt's not verified
+		commitVerificbtion = github.Verificbtion{
+			Verified: fblse,
+			Rebson:   "unsigned",
 		}
-		commit.Verification = commitVerification
-		// A changeset spec with an unsigned commit should not have a commit
-		// verification set.
-		c1.CommitVerification = nil
-		want = c1.Clone()
+		commit.Verificbtion = commitVerificbtion
+		// A chbngeset spec with bn unsigned commit should not hbve b commit
+		// verificbtion set.
+		c1.CommitVerificbtion = nil
+		wbnt = c1.Clone()
 
-		if err := s.UpdateChangesetCommitVerification(ctx, c1, &commit); err != nil {
-			t.Fatal(err)
+		if err := s.UpdbteChbngesetCommitVerificbtion(ctx, c1, &commit); err != nil {
+			t.Fbtbl(err)
 		}
-		have, err = s.GetChangesetByID(ctx, c1.ID)
+		hbve, err = s.GetChbngesetByID(ctx, c1.ID)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Fatalf("found diff with unsigned commit: %s", diff)
+		if diff := cmp.Diff(hbve, wbnt); diff != "" {
+			t.Fbtblf("found diff with unsigned commit: %s", diff)
 		}
 	})
 }
 
-func testStoreListChangesetSyncData(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+func testStoreListChbngesetSyncDbtb(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
 	logger := logtest.Scoped(t)
 	githubActor := github.Actor{
-		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+		AvbtbrURL: "https://bvbtbrs2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
 		URL:       "https://github.com/mrnugget",
 	}
 	githubPR := &github.PullRequest{
 		ID:           "FOOBARID",
-		Title:        "Fix a bunch of bugs",
-		Body:         "This fixes a bunch of bugs",
-		URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+		Title:        "Fix b bunch of bugs",
+		Body:         "This fixes b bunch of bugs",
+		URL:          "https://github.com/sourcegrbph/sourcegrbph/pull/12345",
 		Number:       12345,
 		Author:       githubActor,
-		Participants: []github.Actor{githubActor},
-		CreatedAt:    clock.Now(),
-		UpdatedAt:    clock.Now(),
-		HeadRefName:  "batch-changes/test",
+		Pbrticipbnts: []github.Actor{githubActor},
+		CrebtedAt:    clock.Now(),
+		UpdbtedAt:    clock.Now(),
+		HebdRefNbme:  "bbtch-chbnges/test",
 	}
-	gitlabMR := &gitlab.MergeRequest{
-		ID:        gitlab.ID(1),
-		Title:     "Fix a bunch of bugs",
-		CreatedAt: gitlab.Time{Time: clock.Now()},
-		UpdatedAt: gitlab.Time{Time: clock.Now()},
+	gitlbbMR := &gitlbb.MergeRequest{
+		ID:        gitlbb.ID(1),
+		Title:     "Fix b bunch of bugs",
+		CrebtedAt: gitlbb.Time{Time: clock.Now()},
+		UpdbtedAt: gitlbb.Time{Time: clock.Now()},
 	}
 	issueComment := &github.IssueComment{
-		DatabaseID: 443827703,
+		DbtbbbseID: 443827703,
 		Author: github.Actor{
-			AvatarURL: "https://avatars0.githubusercontent.com/u/1976?v=4",
+			AvbtbrURL: "https://bvbtbrs0.githubusercontent.com/u/1976?v=4",
 			Login:     "sqs",
 			URL:       "https://github.com/sqs",
 		},
 		Editor:              nil,
-		AuthorAssociation:   "MEMBER",
-		Body:                "> Just to be sure: you mean the \"searchFilters\" \"Filters\" should be lowercase, not the \"Search Filters\" from the description, right?\r\n\r\nNo, the prose “Search Filters” should have the F lowercased to fit with our style guide preference for sentence case over title case. (Can’t find this comment on the GitHub mobile interface anymore so quoting the email.)",
-		URL:                 "https://github.com/sourcegraph/sourcegraph/pull/999#issuecomment-443827703",
-		CreatedAt:           clock.Now(),
-		UpdatedAt:           clock.Now(),
-		IncludesCreatedEdit: false,
+		AuthorAssocibtion:   "MEMBER",
+		Body:                "> Just to be sure: you mebn the \"sebrchFilters\" \"Filters\" should be lowercbse, not the \"Sebrch Filters\" from the description, right?\r\n\r\nNo, the prose “Sebrch Filters” should hbve the F lowercbsed to fit with our style guide preference for sentence cbse over title cbse. (Cbn’t find this comment on the GitHub mobile interfbce bnymore so quoting the embil.)",
+		URL:                 "https://github.com/sourcegrbph/sourcegrbph/pull/999#issuecomment-443827703",
+		CrebtedAt:           clock.Now(),
+		UpdbtedAt:           clock.Now(),
+		IncludesCrebtedEdit: fblse,
 	}
 
-	rs := database.ReposWith(logger, s)
-	es := database.ExternalServicesWith(logger, s)
+	rs := dbtbbbse.ReposWith(logger, s)
+	es := dbtbbbse.ExternblServicesWith(logger, s)
 
 	githubRepo := bt.TestRepo(t, es, extsvc.KindGitHub)
-	gitlabRepo := bt.TestRepo(t, es, extsvc.KindGitLab)
+	gitlbbRepo := bt.TestRepo(t, es, extsvc.KindGitLbb)
 
-	if err := rs.Create(ctx, githubRepo, gitlabRepo); err != nil {
-		t.Fatal(err)
+	if err := rs.Crebte(ctx, githubRepo, gitlbbRepo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	changesets := make(btypes.Changesets, 0, 3)
-	events := make([]*btypes.ChangesetEvent, 0)
+	chbngesets := mbke(btypes.Chbngesets, 0, 3)
+	events := mbke([]*btypes.ChbngesetEvent, 0)
 
-	for i := 0; i < cap(changesets); i++ {
-		ch := &btypes.Changeset{
+	for i := 0; i < cbp(chbngesets); i++ {
+		ch := &btypes.Chbngeset{
 			RepoID:              githubRepo.ID,
-			CreatedAt:           clock.Now(),
-			UpdatedAt:           clock.Now(),
-			Metadata:            githubPR,
-			BatchChanges:        []btypes.BatchChangeAssoc{{BatchChangeID: int64(i) + 1}},
-			ExternalID:          fmt.Sprintf("foobar-%d", i),
-			ExternalServiceType: extsvc.TypeGitHub,
-			ExternalBranch:      "refs/heads/batch-changes/test",
-			ExternalUpdatedAt:   clock.Now(),
-			ExternalState:       btypes.ChangesetExternalStateOpen,
-			ExternalReviewState: btypes.ChangesetReviewStateApproved,
-			ExternalCheckState:  btypes.ChangesetCheckStatePassed,
-			PublicationState:    btypes.ChangesetPublicationStatePublished,
-			ReconcilerState:     btypes.ReconcilerStateCompleted,
+			CrebtedAt:           clock.Now(),
+			UpdbtedAt:           clock.Now(),
+			Metbdbtb:            githubPR,
+			BbtchChbnges:        []btypes.BbtchChbngeAssoc{{BbtchChbngeID: int64(i) + 1}},
+			ExternblID:          fmt.Sprintf("foobbr-%d", i),
+			ExternblServiceType: extsvc.TypeGitHub,
+			ExternblBrbnch:      "refs/hebds/bbtch-chbnges/test",
+			ExternblUpdbtedAt:   clock.Now(),
+			ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+			ExternblReviewStbte: btypes.ChbngesetReviewStbteApproved,
+			ExternblCheckStbte:  btypes.ChbngesetCheckStbtePbssed,
+			PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+			ReconcilerStbte:     btypes.ReconcilerStbteCompleted,
 		}
 
-		if i == cap(changesets)-1 {
-			ch.Metadata = gitlabMR
-			ch.ExternalServiceType = extsvc.TypeGitLab
-			ch.RepoID = gitlabRepo.ID
+		if i == cbp(chbngesets)-1 {
+			ch.Metbdbtb = gitlbbMR
+			ch.ExternblServiceType = extsvc.TypeGitLbb
+			ch.RepoID = gitlbbRepo.ID
 		}
 
-		if err := s.CreateChangeset(ctx, ch); err != nil {
-			t.Fatal(err)
+		if err := s.CrebteChbngeset(ctx, ch); err != nil {
+			t.Fbtbl(err)
 		}
 
-		changesets = append(changesets, ch)
+		chbngesets = bppend(chbngesets, ch)
 	}
 
-	// We need batch changes attached to each changeset
-	for i, cs := range changesets {
-		c := &btypes.BatchChange{
-			Name:           fmt.Sprintf("ListChangesetSyncData-test-%d", i),
-			NamespaceOrgID: 23,
-			LastApplierID:  1,
-			LastAppliedAt:  time.Now(),
-			BatchSpecID:    42,
+	// We need bbtch chbnges bttbched to ebch chbngeset
+	for i, cs := rbnge chbngesets {
+		c := &btypes.BbtchChbnge{
+			Nbme:           fmt.Sprintf("ListChbngesetSyncDbtb-test-%d", i),
+			NbmespbceOrgID: 23,
+			LbstApplierID:  1,
+			LbstAppliedAt:  time.Now(),
+			BbtchSpecID:    42,
 		}
-		err := s.CreateBatchChange(ctx, c)
+		err := s.CrebteBbtchChbnge(ctx, c)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		cs.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: c.ID}}
+		cs.BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: c.ID}}
 
-		if err := s.UpdateChangeset(ctx, cs); err != nil {
-			t.Fatal(err)
+		if err := s.UpdbteChbngeset(ctx, cs); err != nil {
+			t.Fbtbl(err)
 		}
 	}
 
-	// The changesets, except one, get changeset events
-	for _, cs := range changesets[:len(changesets)-1] {
-		e := &btypes.ChangesetEvent{
-			ChangesetID: cs.ID,
-			Kind:        btypes.ChangesetEventKindGitHubCommented,
+	// The chbngesets, except one, get chbngeset events
+	for _, cs := rbnge chbngesets[:len(chbngesets)-1] {
+		e := &btypes.ChbngesetEvent{
+			ChbngesetID: cs.ID,
+			Kind:        btypes.ChbngesetEventKindGitHubCommented,
 			Key:         issueComment.Key(),
-			CreatedAt:   clock.Now(),
-			Metadata:    issueComment,
+			CrebtedAt:   clock.Now(),
+			Metbdbtb:    issueComment,
 		}
 
-		events = append(events, e)
+		events = bppend(events, e)
 	}
-	if err := s.UpsertChangesetEvents(ctx, events...); err != nil {
-		t.Fatal(err)
+	if err := s.UpsertChbngesetEvents(ctx, events...); err != nil {
+		t.Fbtbl(err)
 	}
 
-	checkChangesetIDs := func(t *testing.T, hs []*btypes.ChangesetSyncData, want []int64) {
+	checkChbngesetIDs := func(t *testing.T, hs []*btypes.ChbngesetSyncDbtb, wbnt []int64) {
 		t.Helper()
 
-		haveIDs := []int64{}
-		for _, sd := range hs {
-			haveIDs = append(haveIDs, sd.ChangesetID)
+		hbveIDs := []int64{}
+		for _, sd := rbnge hs {
+			hbveIDs = bppend(hbveIDs, sd.ChbngesetID)
 		}
-		if diff := cmp.Diff(want, haveIDs); diff != "" {
-			t.Fatalf("wrong changesetIDs in changeset sync data (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, hbveIDs); diff != "" {
+			t.Fbtblf("wrong chbngesetIDs in chbngeset sync dbtb (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	t.Run("success", func(t *testing.T) {
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		hs, err := s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := []*btypes.ChangesetSyncData{
+		wbnt := []*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:           changesets[0].ID,
-				UpdatedAt:             clock.Now(),
-				LatestEvent:           clock.Now(),
-				ExternalUpdatedAt:     clock.Now(),
-				RepoExternalServiceID: "https://github.com/",
+				ChbngesetID:           chbngesets[0].ID,
+				UpdbtedAt:             clock.Now(),
+				LbtestEvent:           clock.Now(),
+				ExternblUpdbtedAt:     clock.Now(),
+				RepoExternblServiceID: "https://github.com/",
 			},
 			{
-				ChangesetID:           changesets[1].ID,
-				UpdatedAt:             clock.Now(),
-				LatestEvent:           clock.Now(),
-				ExternalUpdatedAt:     clock.Now(),
-				RepoExternalServiceID: "https://github.com/",
+				ChbngesetID:           chbngesets[1].ID,
+				UpdbtedAt:             clock.Now(),
+				LbtestEvent:           clock.Now(),
+				ExternblUpdbtedAt:     clock.Now(),
+				RepoExternblServiceID: "https://github.com/",
 			},
 			{
 				// No events
-				ChangesetID:           changesets[2].ID,
-				UpdatedAt:             clock.Now(),
-				ExternalUpdatedAt:     clock.Now(),
-				RepoExternalServiceID: "https://gitlab.com/",
+				ChbngesetID:           chbngesets[2].ID,
+				UpdbtedAt:             clock.Now(),
+				ExternblUpdbtedAt:     clock.Now(),
+				RepoExternblServiceID: "https://gitlbb.com/",
 			},
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(wbnt, hs); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("only for specific external service", func(t *testing.T) {
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ExternalServiceID: "https://gitlab.com/"})
+	t.Run("only for specific externbl service", func(t *testing.T) {
+		hs, err := s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{ExternblServiceID: "https://gitlbb.com/"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := []*btypes.ChangesetSyncData{
+		wbnt := []*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:           changesets[2].ID,
-				UpdatedAt:             clock.Now(),
-				ExternalUpdatedAt:     clock.Now(),
-				RepoExternalServiceID: "https://gitlab.com/",
+				ChbngesetID:           chbngesets[2].ID,
+				UpdbtedAt:             clock.Now(),
+				ExternblUpdbtedAt:     clock.Now(),
+				RepoExternblServiceID: "https://gitlbb.com/",
 			},
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(wbnt, hs); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("only for subset of changesets", func(t *testing.T) {
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{ChangesetIDs: []int64{changesets[0].ID}})
+	t.Run("only for subset of chbngesets", func(t *testing.T) {
+		hs, err := s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{ChbngesetIDs: []int64{chbngesets[0].ID}})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		want := []*btypes.ChangesetSyncData{
+		wbnt := []*btypes.ChbngesetSyncDbtb{
 			{
-				ChangesetID:           changesets[0].ID,
-				UpdatedAt:             clock.Now(),
-				LatestEvent:           clock.Now(),
-				ExternalUpdatedAt:     clock.Now(),
-				RepoExternalServiceID: "https://github.com/",
+				ChbngesetID:           chbngesets[0].ID,
+				UpdbtedAt:             clock.Now(),
+				LbtestEvent:           clock.Now(),
+				ExternblUpdbtedAt:     clock.Now(),
+				RepoExternblServiceID: "https://github.com/",
 			},
 		}
-		if diff := cmp.Diff(want, hs); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(wbnt, hs); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 
-	t.Run("ignore closed batch change", func(t *testing.T) {
-		closedBatchChangeID := changesets[0].BatchChanges[0].BatchChangeID
-		c, err := s.GetBatchChange(ctx, GetBatchChangeOpts{ID: closedBatchChangeID})
+	t.Run("ignore closed bbtch chbnge", func(t *testing.T) {
+		closedBbtchChbngeID := chbngesets[0].BbtchChbnges[0].BbtchChbngeID
+		c, err := s.GetBbtchChbnge(ctx, GetBbtchChbngeOpts{ID: closedBbtchChbngeID})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		c.ClosedAt = clock.Now()
-		err = s.UpdateBatchChange(ctx, c)
+		err = s.UpdbteBbtchChbnge(ctx, c)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		hs, err := s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		checkChangesetIDs(t, hs, changesets[1:].IDs())
+		checkChbngesetIDs(t, hs, chbngesets[1:].IDs())
 
-		// If a changeset has ANY open batch changes we should list it
-		// Attach cs1 to both an open and closed batch change
-		openBatchChangeID := changesets[1].BatchChanges[0].BatchChangeID
-		changesets[0].BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: closedBatchChangeID}, {BatchChangeID: openBatchChangeID}}
-		err = s.UpdateChangeset(ctx, changesets[0])
+		// If b chbngeset hbs ANY open bbtch chbnges we should list it
+		// Attbch cs1 to both bn open bnd closed bbtch chbnge
+		openBbtchChbngeID := chbngesets[1].BbtchChbnges[0].BbtchChbngeID
+		chbngesets[0].BbtchChbnges = []btypes.BbtchChbngeAssoc{{BbtchChbngeID: closedBbtchChbngeID}, {BbtchChbngeID: openBbtchChbngeID}}
+		err = s.UpdbteChbngeset(ctx, chbngesets[0])
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		hs, err = s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		hs, err = s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		checkChangesetIDs(t, hs, changesets.IDs())
+		checkChbngesetIDs(t, hs, chbngesets.IDs())
 	})
 
-	t.Run("ignore processing changesets", func(t *testing.T) {
-		ch := changesets[0]
-		ch.PublicationState = btypes.ChangesetPublicationStatePublished
-		ch.ReconcilerState = btypes.ReconcilerStateProcessing
-		if err := s.UpdateChangeset(ctx, ch); err != nil {
-			t.Fatal(err)
+	t.Run("ignore processing chbngesets", func(t *testing.T) {
+		ch := chbngesets[0]
+		ch.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+		ch.ReconcilerStbte = btypes.ReconcilerStbteProcessing
+		if err := s.UpdbteChbngeset(ctx, ch); err != nil {
+			t.Fbtbl(err)
 		}
 
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		hs, err := s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		checkChangesetIDs(t, hs, changesets[1:].IDs())
+		checkChbngesetIDs(t, hs, chbngesets[1:].IDs())
 	})
 
-	t.Run("ignore unpublished changesets", func(t *testing.T) {
-		ch := changesets[0]
-		ch.PublicationState = btypes.ChangesetPublicationStateUnpublished
-		ch.ReconcilerState = btypes.ReconcilerStateCompleted
-		if err := s.UpdateChangeset(ctx, ch); err != nil {
-			t.Fatal(err)
+	t.Run("ignore unpublished chbngesets", func(t *testing.T) {
+		ch := chbngesets[0]
+		ch.PublicbtionStbte = btypes.ChbngesetPublicbtionStbteUnpublished
+		ch.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		if err := s.UpdbteChbngeset(ctx, ch); err != nil {
+			t.Fbtbl(err)
 		}
 
-		hs, err := s.ListChangesetSyncData(ctx, ListChangesetSyncDataOpts{})
+		hs, err := s.ListChbngesetSyncDbtb(ctx, ListChbngesetSyncDbtbOpts{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		checkChangesetIDs(t, hs, changesets[1:].IDs())
+		checkChbngesetIDs(t, hs, chbngesets[1:].IDs())
 	})
 }
 
-func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	// This is similar to the setup in testStoreChangesets(), but we need a more
-	// fine grained set of changesets to handle the different scenarios. Namely,
+func testStoreListChbngesetsTextSebrch(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	// This is similbr to the setup in testStoreChbngesets(), but we need b more
+	// fine grbined set of chbngesets to hbndle the different scenbrios. Nbmely,
 	// we need to cover:
 	//
-	// 1. Metadata from each code host type to test title search.
-	// 2. Unpublished changesets that don't have metadata to test the title
-	//    search fallback to the spec title.
-	// 3. Repo name search.
-	// 4. Negation of all of the above.
+	// 1. Metbdbtb from ebch code host type to test title sebrch.
+	// 2. Unpublished chbngesets thbt don't hbve metbdbtb to test the title
+	//    sebrch fbllbbck to the spec title.
+	// 3. Repo nbme sebrch.
+	// 4. Negbtion of bll of the bbove.
 
 	logger := logtest.Scoped(t)
 
 	// Let's define some helpers.
-	createChangesetSpec := func(title string) *btypes.ChangesetSpec {
-		spec := &btypes.ChangesetSpec{
+	crebteChbngesetSpec := func(title string) *btypes.ChbngesetSpec {
+		spec := &btypes.ChbngesetSpec{
 			Title:      title,
-			ExternalID: "123",
-			Type:       btypes.ChangesetSpecTypeExisting,
+			ExternblID: "123",
+			Type:       btypes.ChbngesetSpecTypeExisting,
 		}
-		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
-			t.Fatalf("creating changeset spec: %v", err)
+		if err := s.CrebteChbngesetSpec(ctx, spec); err != nil {
+			t.Fbtblf("crebting chbngeset spec: %v", err)
 		}
 		return spec
 	}
 
-	createChangeset := func(
+	crebteChbngeset := func(
 		esType string,
 		repo *types.Repo,
-		externalID string,
-		metadata any,
-		spec *btypes.ChangesetSpec,
-	) *btypes.Changeset {
-		var specID int64
+		externblID string,
+		metbdbtb bny,
+		spec *btypes.ChbngesetSpec,
+	) *btypes.Chbngeset {
+		vbr specID int64
 		if spec != nil {
 			specID = spec.ID
 		}
 
-		cs := &btypes.Changeset{
+		cs := &btypes.Chbngeset{
 			RepoID:              repo.ID,
-			CreatedAt:           clock.Now(),
-			UpdatedAt:           clock.Now(),
-			Metadata:            metadata,
-			ExternalID:          externalID,
-			ExternalServiceType: esType,
-			ExternalBranch:      "refs/heads/batch-changes/test",
-			ExternalUpdatedAt:   clock.Now(),
-			ExternalState:       btypes.ChangesetExternalStateOpen,
-			ExternalReviewState: btypes.ChangesetReviewStateApproved,
-			ExternalCheckState:  btypes.ChangesetCheckStatePassed,
+			CrebtedAt:           clock.Now(),
+			UpdbtedAt:           clock.Now(),
+			Metbdbtb:            metbdbtb,
+			ExternblID:          externblID,
+			ExternblServiceType: esType,
+			ExternblBrbnch:      "refs/hebds/bbtch-chbnges/test",
+			ExternblUpdbtedAt:   clock.Now(),
+			ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+			ExternblReviewStbte: btypes.ChbngesetReviewStbteApproved,
+			ExternblCheckStbte:  btypes.ChbngesetCheckStbtePbssed,
 
 			CurrentSpecID:    specID,
-			PublicationState: btypes.ChangesetPublicationStatePublished,
+			PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 		}
 
-		if err := s.CreateChangeset(ctx, cs); err != nil {
-			t.Fatalf("creating changeset:\nerr: %+v\nchangeset: %+v", err, cs)
+		if err := s.CrebteChbngeset(ctx, cs); err != nil {
+			t.Fbtblf("crebting chbngeset:\nerr: %+v\nchbngeset: %+v", err, cs)
 		}
 		return cs
 	}
 
-	rs := database.ReposWith(logger, s)
-	es := database.ExternalServicesWith(logger, s)
+	rs := dbtbbbse.ReposWith(logger, s)
+	es := dbtbbbse.ExternblServicesWith(logger, s)
 
-	// Set up repositories for each code host type we want to test.
-	var (
+	// Set up repositories for ebch code host type we wbnt to test.
+	vbr (
 		githubRepo = bt.TestRepo(t, es, extsvc.KindGitHub)
 		bbsRepo    = bt.TestRepo(t, es, extsvc.KindBitbucketServer)
-		gitlabRepo = bt.TestRepo(t, es, extsvc.KindGitLab)
+		gitlbbRepo = bt.TestRepo(t, es, extsvc.KindGitLbb)
 	)
-	if err := rs.Create(ctx, githubRepo, bbsRepo, gitlabRepo); err != nil {
-		t.Fatal(err)
+	if err := rs.Crebte(ctx, githubRepo, bbsRepo, gitlbbRepo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Now let's create ourselves some changesets to test against.
+	// Now let's crebte ourselves some chbngesets to test bgbinst.
 	githubActor := github.Actor{
-		AvatarURL: "https://avatars2.githubusercontent.com/u/1185253",
+		AvbtbrURL: "https://bvbtbrs2.githubusercontent.com/u/1185253",
 		Login:     "mrnugget",
 		URL:       "https://github.com/mrnugget",
 	}
 
-	githubChangeset := createChangeset(
+	githubChbngeset := crebteChbngeset(
 		extsvc.TypeGitHub,
 		githubRepo,
 		"12345",
 		&github.PullRequest{
 			ID:           "FOOBARID",
-			Title:        "Fix a bunch of bugs on GitHub",
-			Body:         "This fixes a bunch of bugs",
-			URL:          "https://github.com/sourcegraph/sourcegraph/pull/12345",
+			Title:        "Fix b bunch of bugs on GitHub",
+			Body:         "This fixes b bunch of bugs",
+			URL:          "https://github.com/sourcegrbph/sourcegrbph/pull/12345",
 			Number:       12345,
 			Author:       githubActor,
-			Participants: []github.Actor{githubActor},
-			CreatedAt:    clock.Now(),
-			UpdatedAt:    clock.Now(),
-			HeadRefName:  "batch-changes/test",
+			Pbrticipbnts: []github.Actor{githubActor},
+			CrebtedAt:    clock.Now(),
+			UpdbtedAt:    clock.Now(),
+			HebdRefNbme:  "bbtch-chbnges/test",
 		},
-		createChangesetSpec("Fix a bunch of bugs"),
+		crebteChbngesetSpec("Fix b bunch of bugs"),
 	)
 
-	gitlabChangeset := createChangeset(
-		extsvc.TypeGitLab,
-		gitlabRepo,
+	gitlbbChbngeset := crebteChbngeset(
+		extsvc.TypeGitLbb,
+		gitlbbRepo,
 		"12345",
-		&gitlab.MergeRequest{
+		&gitlbb.MergeRequest{
 			ID:           12345,
 			IID:          12345,
 			ProjectID:    123,
-			Title:        "Fix a bunch of bugs on GitLab",
-			Description:  "This fixes a bunch of bugs",
-			State:        gitlab.MergeRequestStateOpened,
-			WebURL:       "https://gitlab.org/sourcegraph/sourcegraph/pull/12345",
-			SourceBranch: "batch-changes/test",
+			Title:        "Fix b bunch of bugs on GitLbb",
+			Description:  "This fixes b bunch of bugs",
+			Stbte:        gitlbb.MergeRequestStbteOpened,
+			WebURL:       "https://gitlbb.org/sourcegrbph/sourcegrbph/pull/12345",
+			SourceBrbnch: "bbtch-chbnges/test",
 		},
-		createChangesetSpec("Fix a bunch of bugs"),
+		crebteChbngesetSpec("Fix b bunch of bugs"),
 	)
 
-	bbsChangeset := createChangeset(
+	bbsChbngeset := crebteChbngeset(
 		extsvc.TypeBitbucketServer,
 		bbsRepo,
 		"12345",
 		&bitbucketserver.PullRequest{
 			ID:          12345,
 			Version:     1,
-			Title:       "Fix a bunch of bugs on Bitbucket Server",
-			Description: "This fixes a bunch of bugs",
-			State:       "open",
+			Title:       "Fix b bunch of bugs on Bitbucket Server",
+			Description: "This fixes b bunch of bugs",
+			Stbte:       "open",
 			Open:        true,
-			Closed:      false,
-			FromRef:     bitbucketserver.Ref{ID: "batch-changes/test"},
+			Closed:      fblse,
+			FromRef:     bitbucketserver.Ref{ID: "bbtch-chbnges/test"},
 		},
-		createChangesetSpec("Fix a bunch of bugs"),
+		crebteChbngesetSpec("Fix b bunch of bugs"),
 	)
 
-	unpublishedChangeset := createChangeset(
+	unpublishedChbngeset := crebteChbngeset(
 		extsvc.TypeGitHub,
 		githubRepo,
 		"",
-		map[string]any{},
-		createChangesetSpec("Eventually fix some bugs, but not a bunch"),
+		mbp[string]bny{},
+		crebteChbngesetSpec("Eventublly fix some bugs, but not b bunch"),
 	)
 
-	importedChangeset := createChangeset(
+	importedChbngeset := crebteChbngeset(
 		extsvc.TypeGitHub,
 		githubRepo,
 		"123456",
@@ -2071,653 +2071,653 @@ func testStoreListChangesetsTextSearch(t *testing.T, ctx context.Context, s *Sto
 			ID:           "XYZ",
 			Title:        "Do some stuff",
 			Body:         "This does some stuff",
-			URL:          "https://github.com/sourcegraph/sourcegraph/pull/123456",
+			URL:          "https://github.com/sourcegrbph/sourcegrbph/pull/123456",
 			Number:       123456,
 			Author:       githubActor,
-			Participants: []github.Actor{githubActor},
-			CreatedAt:    clock.Now(),
-			UpdatedAt:    clock.Now(),
-			HeadRefName:  "batch-changes/stuff",
+			Pbrticipbnts: []github.Actor{githubActor},
+			CrebtedAt:    clock.Now(),
+			UpdbtedAt:    clock.Now(),
+			HebdRefNbme:  "bbtch-chbnges/stuff",
 		},
 		nil,
 	)
 
-	// All right, let's run some searches!
-	for name, tc := range map[string]struct {
-		textSearch []search.TextSearchTerm
-		want       btypes.Changesets
+	// All right, let's run some sebrches!
+	for nbme, tc := rbnge mbp[string]struct {
+		textSebrch []sebrch.TextSebrchTerm
+		wbnt       btypes.Chbngesets
 	}{
-		"single changeset based on GitHub metadata title": {
-			textSearch: []search.TextSearchTerm{
+		"single chbngeset bbsed on GitHub metbdbtb title": {
+			textSebrch: []sebrch.TextSebrchTerm{
 				{Term: "on GitHub"},
 			},
-			want: btypes.Changesets{githubChangeset},
+			wbnt: btypes.Chbngesets{githubChbngeset},
 		},
-		"single changeset based on GitLab metadata title": {
-			textSearch: []search.TextSearchTerm{
-				{Term: "on GitLab"},
+		"single chbngeset bbsed on GitLbb metbdbtb title": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: "on GitLbb"},
 			},
-			want: btypes.Changesets{gitlabChangeset},
+			wbnt: btypes.Chbngesets{gitlbbChbngeset},
 		},
-		"single changeset based on Bitbucket Server metadata title": {
-			textSearch: []search.TextSearchTerm{
+		"single chbngeset bbsed on Bitbucket Server metbdbtb title": {
+			textSebrch: []sebrch.TextSebrchTerm{
 				{Term: "on Bitbucket Server"},
 			},
-			want: btypes.Changesets{bbsChangeset},
+			wbnt: btypes.Chbngesets{bbsChbngeset},
 		},
-		"all published changesets based on metadata title": {
-			textSearch: []search.TextSearchTerm{
-				{Term: "Fix a bunch of bugs"},
+		"bll published chbngesets bbsed on metbdbtb title": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: "Fix b bunch of bugs"},
 			},
-			want: btypes.Changesets{
-				githubChangeset,
-				gitlabChangeset,
-				bbsChangeset,
+			wbnt: btypes.Chbngesets{
+				githubChbngeset,
+				gitlbbChbngeset,
+				bbsChbngeset,
 			},
 		},
-		"imported changeset based on metadata title": {
-			textSearch: []search.TextSearchTerm{
+		"imported chbngeset bbsed on metbdbtb title": {
+			textSebrch: []sebrch.TextSebrchTerm{
 				{Term: "Do some stuff"},
 			},
-			want: btypes.Changesets{importedChangeset},
+			wbnt: btypes.Chbngesets{importedChbngeset},
 		},
-		"unpublished changeset based on spec title": {
-			textSearch: []search.TextSearchTerm{
-				{Term: "Eventually"},
+		"unpublished chbngeset bbsed on spec title": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: "Eventublly"},
 			},
-			want: btypes.Changesets{unpublishedChangeset},
+			wbnt: btypes.Chbngesets{unpublishedChbngeset},
 		},
-		"negated metadata title": {
-			textSearch: []search.TextSearchTerm{
+		"negbted metbdbtb title": {
+			textSebrch: []sebrch.TextSebrchTerm{
 				{Term: "bunch of bugs", Not: true},
 			},
-			want: btypes.Changesets{
-				unpublishedChangeset,
-				importedChangeset,
+			wbnt: btypes.Chbngesets{
+				unpublishedChbngeset,
+				importedChbngeset,
 			},
 		},
-		"negated spec title": {
-			textSearch: []search.TextSearchTerm{
-				{Term: "Eventually", Not: true},
+		"negbted spec title": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: "Eventublly", Not: true},
 			},
-			want: btypes.Changesets{
-				githubChangeset,
-				gitlabChangeset,
-				bbsChangeset,
-				importedChangeset,
-			},
-		},
-		"repo name": {
-			textSearch: []search.TextSearchTerm{
-				{Term: string(githubRepo.Name)},
-			},
-			want: btypes.Changesets{
-				githubChangeset,
-				unpublishedChangeset,
-				importedChangeset,
+			wbnt: btypes.Chbngesets{
+				githubChbngeset,
+				gitlbbChbngeset,
+				bbsChbngeset,
+				importedChbngeset,
 			},
 		},
-		"title and repo name together": {
-			textSearch: []search.TextSearchTerm{
-				{Term: string(githubRepo.Name)},
-				{Term: "Eventually"},
+		"repo nbme": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: string(githubRepo.Nbme)},
 			},
-			want: btypes.Changesets{
-				unpublishedChangeset,
+			wbnt: btypes.Chbngesets{
+				githubChbngeset,
+				unpublishedChbngeset,
+				importedChbngeset,
 			},
 		},
-		"multiple title matches together": {
-			textSearch: []search.TextSearchTerm{
-				{Term: "Eventually"},
+		"title bnd repo nbme together": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: string(githubRepo.Nbme)},
+				{Term: "Eventublly"},
+			},
+			wbnt: btypes.Chbngesets{
+				unpublishedChbngeset,
+			},
+		},
+		"multiple title mbtches together": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: "Eventublly"},
 				{Term: "fix"},
 			},
-			want: btypes.Changesets{
-				unpublishedChangeset,
+			wbnt: btypes.Chbngesets{
+				unpublishedChbngeset,
 			},
 		},
-		"negated repo name": {
-			textSearch: []search.TextSearchTerm{
-				{Term: string(githubRepo.Name), Not: true},
+		"negbted repo nbme": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: string(githubRepo.Nbme), Not: true},
 			},
-			want: btypes.Changesets{
-				gitlabChangeset,
-				bbsChangeset,
+			wbnt: btypes.Chbngesets{
+				gitlbbChbngeset,
+				bbsChbngeset,
 			},
 		},
-		"combined negated repo names": {
-			textSearch: []search.TextSearchTerm{
-				{Term: string(githubRepo.Name), Not: true},
-				{Term: string(gitlabRepo.Name), Not: true},
+		"combined negbted repo nbmes": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: string(githubRepo.Nbme), Not: true},
+				{Term: string(gitlbbRepo.Nbme), Not: true},
 			},
-			want: btypes.Changesets{bbsChangeset},
+			wbnt: btypes.Chbngesets{bbsChbngeset},
 		},
 		"no results due to conflicting requirements": {
-			textSearch: []search.TextSearchTerm{
-				{Term: string(githubRepo.Name)},
-				{Term: string(gitlabRepo.Name)},
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: string(githubRepo.Nbme)},
+				{Term: string(gitlbbRepo.Nbme)},
 			},
-			want: btypes.Changesets{},
+			wbnt: btypes.Chbngesets{},
 		},
-		"no results due to a subset of a word": {
-			textSearch: []search.TextSearchTerm{
+		"no results due to b subset of b word": {
+			textSebrch: []sebrch.TextSebrchTerm{
 				{Term: "unch"},
 			},
-			want: btypes.Changesets{},
+			wbnt: btypes.Chbngesets{},
 		},
-		"no results due to text that doesn't exist in the search scope": {
-			textSearch: []search.TextSearchTerm{
-				{Term: "she dreamt she was a bulldozer, she dreamt she was in an empty field"},
+		"no results due to text thbt doesn't exist in the sebrch scope": {
+			textSebrch: []sebrch.TextSebrchTerm{
+				{Term: "she drebmt she wbs b bulldozer, she drebmt she wbs in bn empty field"},
 			},
-			want: btypes.Changesets{},
+			wbnt: btypes.Chbngesets{},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
-				TextSearch: tc.textSearch,
+		t.Run(nbme, func(t *testing.T) {
+			hbve, _, err := s.ListChbngesets(ctx, ListChbngesetsOpts{
+				TextSebrch: tc.textSebrch,
 			})
 			if err != nil {
 				t.Errorf("unexpected error: %+v", err)
 			}
 
-			if diff := cmp.Diff(tc.want, have); diff != "" {
-				t.Errorf("unexpected result (-want +have):\n%s", diff)
+			if diff := cmp.Diff(tc.wbnt, hbve); diff != "" {
+				t.Errorf("unexpected result (-wbnt +hbve):\n%s", diff)
 			}
 		})
 	}
 }
 
-// testStoreChangesetScheduling provides tests for schedule-related methods on
+// testStoreChbngesetScheduling provides tests for schedule-relbted methods on
 // the Store.
-func testStoreChangesetScheduling(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
-	// Like testStoreListChangesetsTextSearch(), this is similar to the setup
-	// in testStoreChangesets(), but we need a more fine grained set of
-	// changesets to handle the different scenarios.
+func testStoreChbngesetScheduling(t *testing.T, ctx context.Context, s *Store, clock bt.Clock) {
+	// Like testStoreListChbngesetsTextSebrch(), this is similbr to the setup
+	// in testStoreChbngesets(), but we need b more fine grbined set of
+	// chbngesets to hbndle the different scenbrios.
 
 	logger := logtest.Scoped(t)
-	rs := database.ReposWith(logger, s)
-	es := database.ExternalServicesWith(logger, s)
+	rs := dbtbbbse.ReposWith(logger, s)
+	es := dbtbbbse.ExternblServicesWith(logger, s)
 
-	// We can just pre-can a repo. The kind doesn't matter here.
+	// We cbn just pre-cbn b repo. The kind doesn't mbtter here.
 	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
-	if err := rs.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	if err := rs.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
 
-	// Let's define a quick and dirty helper to create changesets with a
-	// specific state and update time, since those are the key fields.
-	createChangeset := func(title string, lastUpdated time.Time, state btypes.ReconcilerState) *btypes.Changeset {
-		// First, we need to create a changeset spec.
-		spec := &btypes.ChangesetSpec{
-			Title:      "fake spec",
-			ExternalID: "123",
-			Type:       btypes.ChangesetSpecTypeExisting,
+	// Let's define b quick bnd dirty helper to crebte chbngesets with b
+	// specific stbte bnd updbte time, since those bre the key fields.
+	crebteChbngeset := func(title string, lbstUpdbted time.Time, stbte btypes.ReconcilerStbte) *btypes.Chbngeset {
+		// First, we need to crebte b chbngeset spec.
+		spec := &btypes.ChbngesetSpec{
+			Title:      "fbke spec",
+			ExternblID: "123",
+			Type:       btypes.ChbngesetSpecTypeExisting,
 		}
-		if err := s.CreateChangesetSpec(ctx, spec); err != nil {
-			t.Fatalf("creating changeset spec: %v", err)
+		if err := s.CrebteChbngesetSpec(ctx, spec); err != nil {
+			t.Fbtblf("crebting chbngeset spec: %v", err)
 		}
 
-		// Now we can use that to create a changeset.
-		cs := &btypes.Changeset{
+		// Now we cbn use thbt to crebte b chbngeset.
+		cs := &btypes.Chbngeset{
 			RepoID:              repo.ID,
-			CreatedAt:           clock.Now(),
-			UpdatedAt:           lastUpdated,
-			Metadata:            &github.PullRequest{Title: title},
-			ExternalServiceType: extsvc.TypeGitHub,
+			CrebtedAt:           clock.Now(),
+			UpdbtedAt:           lbstUpdbted,
+			Metbdbtb:            &github.PullRequest{Title: title},
+			ExternblServiceType: extsvc.TypeGitHub,
 			CurrentSpecID:       spec.ID,
-			PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-			ReconcilerState:     state,
+			PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+			ReconcilerStbte:     stbte,
 		}
 
-		if err := s.CreateChangeset(ctx, cs); err != nil {
-			t.Fatalf("creating changeset:\nerr: %+v\nchangeset: %+v", err, cs)
+		if err := s.CrebteChbngeset(ctx, cs); err != nil {
+			t.Fbtblf("crebting chbngeset:\nerr: %+v\nchbngeset: %+v", err, cs)
 		}
 		return cs
 	}
 
-	// Let's define two changesets that are scheduled out of their "natural"
-	// order, and one changeset that is already queued.
-	var (
-		second = createChangeset("after", time.Now().Add(1*time.Minute), btypes.ReconcilerStateScheduled)
-		first  = createChangeset("next", time.Now(), btypes.ReconcilerStateScheduled)
-		queued = createChangeset("queued", time.Now().Add(1*time.Minute), btypes.ReconcilerStateQueued)
+	// Let's define two chbngesets thbt bre scheduled out of their "nbturbl"
+	// order, bnd one chbngeset thbt is blrebdy queued.
+	vbr (
+		second = crebteChbngeset("bfter", time.Now().Add(1*time.Minute), btypes.ReconcilerStbteScheduled)
+		first  = crebteChbngeset("next", time.Now(), btypes.ReconcilerStbteScheduled)
+		queued = crebteChbngeset("queued", time.Now().Add(1*time.Minute), btypes.ReconcilerStbteQueued)
 	)
 
-	// first should be the first in line, and second the second in line.
-	if have, err := s.GetChangesetPlaceInSchedulerQueue(ctx, first.ID); err != nil {
+	// first should be the first in line, bnd second the second in line.
+	if hbve, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, first.ID); err != nil {
 		t.Errorf("unexpected error: %v", err)
-	} else if want := 0; have != want {
-		t.Errorf("unexpected place: have=%d want=%d", have, want)
+	} else if wbnt := 0; hbve != wbnt {
+		t.Errorf("unexpected plbce: hbve=%d wbnt=%d", hbve, wbnt)
 	}
 
-	if have, err := s.GetChangesetPlaceInSchedulerQueue(ctx, second.ID); err != nil {
+	if hbve, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, second.ID); err != nil {
 		t.Errorf("unexpected error: %v", err)
-	} else if want := 1; have != want {
-		t.Errorf("unexpected place: have=%d want=%d", have, want)
+	} else if wbnt := 1; hbve != wbnt {
+		t.Errorf("unexpected plbce: hbve=%d wbnt=%d", hbve, wbnt)
 	}
 
-	// queued should return an error.
-	if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, queued.ID); err != ErrNoResults {
+	// queued should return bn error.
+	if _, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, queued.ID); err != ErrNoResults {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	// By definition, the first changeset should be next, since it has the
-	// earliest update time and is in the right state.
-	have, err := s.EnqueueNextScheduledChangeset(ctx)
+	// By definition, the first chbngeset should be next, since it hbs the
+	// ebrliest updbte time bnd is in the right stbte.
+	hbve, err := s.EnqueueNextScheduledChbngeset(ctx)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if have == nil {
-		t.Errorf("unexpected nil changeset")
-	} else if have.ID != first.ID {
-		t.Errorf("unexpected changeset: have=%v want=%v", have, first)
+	if hbve == nil {
+		t.Errorf("unexpected nil chbngeset")
+	} else if hbve.ID != first.ID {
+		t.Errorf("unexpected chbngeset: hbve=%v wbnt=%v", hbve, first)
 	}
 
-	// Let's check that first's state was updated.
-	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
-		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
+	// Let's check thbt first's stbte wbs updbted.
+	if wbnt := btypes.ReconcilerStbteQueued; hbve.ReconcilerStbte != wbnt {
+		t.Errorf("unexpected reconciler stbte: hbve=%v wbnt=%v", hbve.ReconcilerStbte, wbnt)
 	}
 
 	// Now second should be the first in line. (Confused yet?)
-	if have, err := s.GetChangesetPlaceInSchedulerQueue(ctx, second.ID); err != nil {
+	if hbve, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, second.ID); err != nil {
 		t.Errorf("unexpected error: %v", err)
-	} else if want := 0; have != want {
-		t.Errorf("unexpected place: have=%d want=%d", have, want)
+	} else if wbnt := 0; hbve != wbnt {
+		t.Errorf("unexpected plbce: hbve=%d wbnt=%d", hbve, wbnt)
 	}
 
-	// Both queued and first should return errors, since they are not scheduled.
-	if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, first.ID); err != ErrNoResults {
-		t.Errorf("unexpected error: %v", err)
-	}
-
-	if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, queued.ID); err != ErrNoResults {
+	// Both queued bnd first should return errors, since they bre not scheduled.
+	if _, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, first.ID); err != ErrNoResults {
 		t.Errorf("unexpected error: %v", err)
 	}
 
-	// Given the updated state, second should be the next scheduled changeset.
-	have, err = s.EnqueueNextScheduledChangeset(ctx)
+	if _, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, queued.ID); err != ErrNoResults {
+		t.Errorf("unexpected error: %v", err)
+	}
+
+	// Given the updbted stbte, second should be the next scheduled chbngeset.
+	hbve, err = s.EnqueueNextScheduledChbngeset(ctx)
 	if err != nil {
 		t.Errorf("unexpected error: %v", err)
 	}
-	if have == nil {
-		t.Errorf("unexpected nil changeset")
-	} else if have.ID != second.ID {
-		t.Errorf("unexpected changeset: have=%v want=%v", have, second)
+	if hbve == nil {
+		t.Errorf("unexpected nil chbngeset")
+	} else if hbve.ID != second.ID {
+		t.Errorf("unexpected chbngeset: hbve=%v wbnt=%v", hbve, second)
 	}
 
-	// Let's check that second's state was updated.
-	if want := btypes.ReconcilerStateQueued; have.ReconcilerState != want {
-		t.Errorf("unexpected reconciler state: have=%v want=%v", have.ReconcilerState, want)
+	// Let's check thbt second's stbte wbs updbted.
+	if wbnt := btypes.ReconcilerStbteQueued; hbve.ReconcilerStbte != wbnt {
+		t.Errorf("unexpected reconciler stbte: hbve=%v wbnt=%v", hbve.ReconcilerStbte, wbnt)
 	}
 
-	// Now we've enqueued the two scheduled changesets, we shouldn't be able to
-	// enqueue another.
-	if _, err = s.EnqueueNextScheduledChangeset(ctx); err != ErrNoResults {
-		t.Errorf("unexpected error: have=%v want=%v", err, ErrNoResults)
+	// Now we've enqueued the two scheduled chbngesets, we shouldn't be bble to
+	// enqueue bnother.
+	if _, err = s.EnqueueNextScheduledChbngeset(ctx); err != ErrNoResults {
+		t.Errorf("unexpected error: hbve=%v wbnt=%v", err, ErrNoResults)
 	}
 
-	// None of our changesets should have a place in the scheduler queue at this
+	// None of our chbngesets should hbve b plbce in the scheduler queue bt this
 	// point.
-	for _, cs := range []*btypes.Changeset{first, second, queued} {
-		if _, err := s.GetChangesetPlaceInSchedulerQueue(ctx, cs.ID); err != ErrNoResults {
+	for _, cs := rbnge []*btypes.Chbngeset{first, second, queued} {
+		if _, err := s.GetChbngesetPlbceInSchedulerQueue(ctx, cs.ID); err != ErrNoResults {
 			t.Errorf("unexpected error: %v", err)
 		}
 	}
 }
 
-func TestCancelQueuedBatchChangeChangesets(t *testing.T) {
-	// We use a separate test for CancelQueuedBatchChangeChangesets because we
-	// want to access the database from different connections and the other
-	// integration/store tests all execute in a single transaction.
+func TestCbncelQueuedBbtchChbngeChbngesets(t *testing.T) {
+	// We use b sepbrbte test for CbncelQueuedBbtchChbngeChbngesets becbuse we
+	// wbnt to bccess the dbtbbbse from different connections bnd the other
+	// integrbtion/store tests bll execute in b single trbnsbction.
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	s := New(db, &observation.TestContext, nil)
+	s := New(db, &observbtion.TestContext, nil)
 
-	user := bt.CreateTestUser(t, db, true)
-	spec := bt.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	user := bt.CrebteTestUser(t, db, true)
+	spec := bt.CrebteBbtchSpec(t, ctx, s, "test-bbtch-chbnge", user.ID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, s, "test-bbtch-chbnge", user.ID, spec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
 
-	c1 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	c1 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:               repo.ID,
-		BatchChange:        batchChange.ID,
-		OwnedByBatchChange: batchChange.ID,
-		ReconcilerState:    btypes.ReconcilerStateQueued,
+		BbtchChbnge:        bbtchChbnge.ID,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		ReconcilerStbte:    btypes.ReconcilerStbteQueued,
 	})
 
-	c2 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	c2 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:               repo.ID,
-		BatchChange:        batchChange.ID,
-		OwnedByBatchChange: batchChange.ID,
-		ReconcilerState:    btypes.ReconcilerStateErrored,
-		NumFailures:        1,
+		BbtchChbnge:        bbtchChbnge.ID,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		ReconcilerStbte:    btypes.ReconcilerStbteErrored,
+		NumFbilures:        1,
 	})
 
-	c3 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	c3 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:               repo.ID,
-		BatchChange:        batchChange.ID,
-		OwnedByBatchChange: batchChange.ID,
-		ReconcilerState:    btypes.ReconcilerStateCompleted,
-		PublicationState:   btypes.ChangesetPublicationStatePublished,
-		ExternalState:      btypes.ChangesetExternalStateOpen,
+		BbtchChbnge:        bbtchChbnge.ID,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+		ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
 	})
 
-	c4 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	c4 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:               repo.ID,
-		BatchChange:        batchChange.ID,
-		OwnedByBatchChange: 0,
-		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-		ReconcilerState:    btypes.ReconcilerStateQueued,
+		BbtchChbnge:        bbtchChbnge.ID,
+		OwnedByBbtchChbnge: 0,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+		ReconcilerStbte:    btypes.ReconcilerStbteQueued,
 	})
 
-	// These two changesets will not be canceled in the first iteration of
-	// the loop in CancelQueuedBatchChangeChangesets, because they're both
+	// These two chbngesets will not be cbnceled in the first iterbtion of
+	// the loop in CbncelQueuedBbtchChbngeChbngesets, becbuse they're both
 	// processing.
-	c5 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	c5 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:               repo.ID,
-		BatchChange:        batchChange.ID,
-		OwnedByBatchChange: batchChange.ID,
-		ReconcilerState:    btypes.ReconcilerStateProcessing,
-		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+		BbtchChbnge:        bbtchChbnge.ID,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		ReconcilerStbte:    btypes.ReconcilerStbteProcessing,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
 	})
 
-	c6 := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
+	c6 := bt.CrebteChbngeset(t, ctx, s, bt.TestChbngesetOpts{
 		Repo:               repo.ID,
-		BatchChange:        batchChange.ID,
-		OwnedByBatchChange: batchChange.ID,
-		ReconcilerState:    btypes.ReconcilerStateProcessing,
-		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+		BbtchChbnge:        bbtchChbnge.ID,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		ReconcilerStbte:    btypes.ReconcilerStbteProcessing,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
 	})
 
-	// We start this goroutine to simulate the processing of these
-	// changesets to stop after 50ms
+	// We stbrt this goroutine to simulbte the processing of these
+	// chbngesets to stop bfter 50ms
 	go func(t *testing.T) {
 		time.Sleep(50 * time.Millisecond)
 
 		// c5 ends up errored, which would be retried, so it needs to be
-		// canceled
-		c5.ReconcilerState = btypes.ReconcilerStateErrored
-		if err := s.UpdateChangeset(ctx, c5); err != nil {
-			t.Errorf("update changeset failed: %s", err)
+		// cbnceled
+		c5.ReconcilerStbte = btypes.ReconcilerStbteErrored
+		if err := s.UpdbteChbngeset(ctx, c5); err != nil {
+			t.Errorf("updbte chbngeset fbiled: %s", err)
 		}
 
 		time.Sleep(50 * time.Millisecond)
 
-		// c6 ends up completed, so it does not need to be canceled
-		c6.ReconcilerState = btypes.ReconcilerStateCompleted
-		if err := s.UpdateChangeset(ctx, c6); err != nil {
-			t.Errorf("update changeset failed: %s", err)
+		// c6 ends up completed, so it does not need to be cbnceled
+		c6.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+		if err := s.UpdbteChbngeset(ctx, c6); err != nil {
+			t.Errorf("updbte chbngeset fbiled: %s", err)
 		}
 	}(t)
 
-	if err := s.CancelQueuedBatchChangeChangesets(ctx, batchChange.ID); err != nil {
-		t.Fatal(err)
+	if err := s.CbncelQueuedBbtchChbngeChbngesets(ctx, bbtchChbnge.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
-	bt.ReloadAndAssertChangeset(t, ctx, s, c1, bt.ChangesetAssertions{
+	bt.RelobdAndAssertChbngeset(t, ctx, s, c1, bt.ChbngesetAssertions{
 		Repo:               repo.ID,
-		ReconcilerState:    btypes.ReconcilerStateFailed,
-		OwnedByBatchChange: batchChange.ID,
-		FailureMessage:     &CanceledChangesetFailureMessage,
-		AttachedTo:         []int64{batchChange.ID},
+		ReconcilerStbte:    btypes.ReconcilerStbteFbiled,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		FbilureMessbge:     &CbnceledChbngesetFbilureMessbge,
+		AttbchedTo:         []int64{bbtchChbnge.ID},
 	})
 
-	bt.ReloadAndAssertChangeset(t, ctx, s, c2, bt.ChangesetAssertions{
+	bt.RelobdAndAssertChbngeset(t, ctx, s, c2, bt.ChbngesetAssertions{
 		Repo:               repo.ID,
-		ReconcilerState:    btypes.ReconcilerStateFailed,
-		OwnedByBatchChange: batchChange.ID,
-		FailureMessage:     &CanceledChangesetFailureMessage,
-		NumFailures:        1,
-		AttachedTo:         []int64{batchChange.ID},
+		ReconcilerStbte:    btypes.ReconcilerStbteFbiled,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		FbilureMessbge:     &CbnceledChbngesetFbilureMessbge,
+		NumFbilures:        1,
+		AttbchedTo:         []int64{bbtchChbnge.ID},
 	})
 
-	bt.ReloadAndAssertChangeset(t, ctx, s, c3, bt.ChangesetAssertions{
+	bt.RelobdAndAssertChbngeset(t, ctx, s, c3, bt.ChbngesetAssertions{
 		Repo:               repo.ID,
-		ReconcilerState:    btypes.ReconcilerStateCompleted,
-		PublicationState:   btypes.ChangesetPublicationStatePublished,
-		ExternalState:      btypes.ChangesetExternalStateOpen,
-		OwnedByBatchChange: batchChange.ID,
-		AttachedTo:         []int64{batchChange.ID},
+		ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+		ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		AttbchedTo:         []int64{bbtchChbnge.ID},
 	})
 
-	bt.ReloadAndAssertChangeset(t, ctx, s, c4, bt.ChangesetAssertions{
+	bt.RelobdAndAssertChbngeset(t, ctx, s, c4, bt.ChbngesetAssertions{
 		Repo:             repo.ID,
-		ReconcilerState:  btypes.ReconcilerStateQueued,
-		PublicationState: btypes.ChangesetPublicationStateUnpublished,
-		AttachedTo:       []int64{batchChange.ID},
+		ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
+		AttbchedTo:       []int64{bbtchChbnge.ID},
 	})
 
-	bt.ReloadAndAssertChangeset(t, ctx, s, c5, bt.ChangesetAssertions{
+	bt.RelobdAndAssertChbngeset(t, ctx, s, c5, bt.ChbngesetAssertions{
 		Repo:               repo.ID,
-		ReconcilerState:    btypes.ReconcilerStateFailed,
-		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-		FailureMessage:     &CanceledChangesetFailureMessage,
-		OwnedByBatchChange: batchChange.ID,
-		AttachedTo:         []int64{batchChange.ID},
+		ReconcilerStbte:    btypes.ReconcilerStbteFbiled,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+		FbilureMessbge:     &CbnceledChbngesetFbilureMessbge,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		AttbchedTo:         []int64{bbtchChbnge.ID},
 	})
 
-	bt.ReloadAndAssertChangeset(t, ctx, s, c6, bt.ChangesetAssertions{
+	bt.RelobdAndAssertChbngeset(t, ctx, s, c6, bt.ChbngesetAssertions{
 		Repo:               repo.ID,
-		ReconcilerState:    btypes.ReconcilerStateCompleted,
-		PublicationState:   btypes.ChangesetPublicationStateUnpublished,
-		OwnedByBatchChange: batchChange.ID,
-		AttachedTo:         []int64{batchChange.ID},
+		ReconcilerStbte:    btypes.ReconcilerStbteCompleted,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbteUnpublished,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		AttbchedTo:         []int64{bbtchChbnge.ID},
 	})
 }
 
-func TestEnqueueChangesetsToClose(t *testing.T) {
-	// We use a separate test for CancelQueuedBatchChangeChangesets because we
-	// want to access the database from different connections and the other
-	// integration/store tests all execute in a single transaction.
+func TestEnqueueChbngesetsToClose(t *testing.T) {
+	// We use b sepbrbte test for CbncelQueuedBbtchChbngeChbngesets becbuse we
+	// wbnt to bccess the dbtbbbse from different connections bnd the other
+	// integrbtion/store tests bll execute in b single trbnsbction.
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	s := New(db, &observation.TestContext, nil)
+	s := New(db, &observbtion.TestContext, nil)
 
-	user := bt.CreateTestUser(t, db, true)
-	spec := bt.CreateBatchSpec(t, ctx, s, "test-batch-change", user.ID, 0)
-	batchChange := bt.CreateBatchChange(t, ctx, s, "test-batch-change", user.ID, spec.ID)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	user := bt.CrebteTestUser(t, db, true)
+	spec := bt.CrebteBbtchSpec(t, ctx, s, "test-bbtch-chbnge", user.ID, 0)
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, s, "test-bbtch-chbnge", user.ID, spec.ID)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
 
-	wantEnqueued := bt.ChangesetAssertions{
+	wbntEnqueued := bt.ChbngesetAssertions{
 		Repo:               repo.ID,
-		OwnedByBatchChange: batchChange.ID,
-		ReconcilerState:    btypes.ReconcilerStateQueued,
-		PublicationState:   btypes.ChangesetPublicationStatePublished,
-		NumFailures:        0,
-		FailureMessage:     nil,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
+		ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+		NumFbilures:        0,
+		FbilureMessbge:     nil,
 		Closing:            true,
 	}
 
 	tests := []struct {
-		have bt.TestChangesetOpts
-		want bt.ChangesetAssertions
+		hbve bt.TestChbngesetOpts
+		wbnt bt.ChbngesetAssertions
 	}{
 		{
-			have: bt.TestChangesetOpts{
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			hbve: bt.TestChbngesetOpts{
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			want: wantEnqueued,
+			wbnt: wbntEnqueued,
 		},
 		{
-			have: bt.TestChangesetOpts{
-				ReconcilerState:  btypes.ReconcilerStateProcessing,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			hbve: bt.TestChbngesetOpts{
+				ReconcilerStbte:  btypes.ReconcilerStbteProcessing,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			want: bt.ChangesetAssertions{
+			wbnt: bt.ChbngesetAssertions{
 				Repo:               repo.ID,
-				OwnedByBatchChange: batchChange.ID,
-				ReconcilerState:    btypes.ReconcilerStateQueued,
-				PublicationState:   btypes.ChangesetPublicationStatePublished,
-				ExternalState:      btypes.ChangesetExternalStateOpen,
+				OwnedByBbtchChbnge: bbtchChbnge.ID,
+				ReconcilerStbte:    btypes.ReconcilerStbteQueued,
+				PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+				ExternblStbte:      btypes.ChbngesetExternblStbteOpen,
 				Closing:            true,
 			},
 		},
 		{
-			have: bt.TestChangesetOpts{
-				ReconcilerState:  btypes.ReconcilerStateErrored,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				FailureMessage:   "failed",
-				NumFailures:      1,
+			hbve: bt.TestChbngesetOpts{
+				ReconcilerStbte:  btypes.ReconcilerStbteErrored,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
+				FbilureMessbge:   "fbiled",
+				NumFbilures:      1,
 			},
-			want: wantEnqueued,
+			wbnt: wbntEnqueued,
 		},
 		{
-			have: bt.TestChangesetOpts{
-				ExternalState:    btypes.ChangesetExternalStateOpen,
-				ReconcilerState:  btypes.ReconcilerStateCompleted,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			hbve: bt.TestChbngesetOpts{
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
+				ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			want: bt.ChangesetAssertions{
-				ReconcilerState:  btypes.ReconcilerStateQueued,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			wbnt: bt.ChbngesetAssertions{
+				ReconcilerStbte:  btypes.ReconcilerStbteQueued,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 				Closing:          true,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+				ExternblStbte:    btypes.ChbngesetExternblStbteOpen,
 			},
 		},
 		{
-			have: bt.TestChangesetOpts{
-				ExternalState:    btypes.ChangesetExternalStateClosed,
-				ReconcilerState:  btypes.ReconcilerStateCompleted,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			hbve: bt.TestChbngesetOpts{
+				ExternblStbte:    btypes.ChbngesetExternblStbteClosed,
+				ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
-			want: bt.ChangesetAssertions{
-				ReconcilerState:  btypes.ReconcilerStateCompleted,
-				ExternalState:    btypes.ChangesetExternalStateClosed,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
+			wbnt: bt.ChbngesetAssertions{
+				ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+				ExternblStbte:    btypes.ChbngesetExternblStbteClosed,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 			},
 		},
 		{
-			have: bt.TestChangesetOpts{
-				ReconcilerState:  btypes.ReconcilerStateCompleted,
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			hbve: bt.TestChbngesetOpts{
+				ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
-			want: bt.ChangesetAssertions{
-				ReconcilerState:  btypes.ReconcilerStateCompleted,
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			wbnt: bt.ChbngesetAssertions{
+				ReconcilerStbte:  btypes.ReconcilerStbteCompleted,
+				PublicbtionStbte: btypes.ChbngesetPublicbtionStbteUnpublished,
 			},
 		},
 	}
 
-	changesets := make(map[*btypes.Changeset]bt.ChangesetAssertions)
-	for _, tc := range tests {
-		opts := tc.have
+	chbngesets := mbke(mbp[*btypes.Chbngeset]bt.ChbngesetAssertions)
+	for _, tc := rbnge tests {
+		opts := tc.hbve
 		opts.Repo = repo.ID
-		opts.BatchChange = batchChange.ID
-		opts.OwnedByBatchChange = batchChange.ID
+		opts.BbtchChbnge = bbtchChbnge.ID
+		opts.OwnedByBbtchChbnge = bbtchChbnge.ID
 
-		c := bt.CreateChangeset(t, ctx, s, opts)
-		changesets[c] = tc.want
+		c := bt.CrebteChbngeset(t, ctx, s, opts)
+		chbngesets[c] = tc.wbnt
 
-		// If we have a changeset that's still processing we need to make
-		// sure that we finish it, otherwise the loop in
-		// EnqueueChangesetsToClose will take 2min and then fail.
-		if c.ReconcilerState == btypes.ReconcilerStateProcessing {
+		// If we hbve b chbngeset thbt's still processing we need to mbke
+		// sure thbt we finish it, otherwise the loop in
+		// EnqueueChbngesetsToClose will tbke 2min bnd then fbil.
+		if c.ReconcilerStbte == btypes.ReconcilerStbteProcessing {
 			go func(t *testing.T) {
 				time.Sleep(50 * time.Millisecond)
 
-				c.ReconcilerState = btypes.ReconcilerStateCompleted
-				c.ExternalState = btypes.ChangesetExternalStateOpen
-				if err := s.UpdateChangeset(ctx, c); err != nil {
-					t.Errorf("update changeset failed: %s", err)
+				c.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+				c.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+				if err := s.UpdbteChbngeset(ctx, c); err != nil {
+					t.Errorf("updbte chbngeset fbiled: %s", err)
 				}
 			}(t)
 		}
 	}
 
-	if err := s.EnqueueChangesetsToClose(ctx, batchChange.ID); err != nil {
-		t.Fatal(err)
+	if err := s.EnqueueChbngesetsToClose(ctx, bbtchChbnge.ID); err != nil {
+		t.Fbtbl(err)
 	}
 
-	for changeset, want := range changesets {
-		want.Repo = repo.ID
-		want.OwnedByBatchChange = batchChange.ID
-		want.AttachedTo = []int64{batchChange.ID}
-		bt.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
+	for chbngeset, wbnt := rbnge chbngesets {
+		wbnt.Repo = repo.ID
+		wbnt.OwnedByBbtchChbnge = bbtchChbnge.ID
+		wbnt.AttbchedTo = []int64{bbtchChbnge.ID}
+		bt.RelobdAndAssertChbngeset(t, ctx, s, chbngeset, wbnt)
 	}
 }
 
-func TestCleanDetachedChangesets(t *testing.T) {
+func TestClebnDetbchedChbngesets(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	s := New(db, &observation.TestContext, nil)
-	rs := database.ReposWith(logger, s)
-	es := database.ExternalServicesWith(logger, s)
+	s := New(db, &observbtion.TestContext, nil)
+	rs := dbtbbbse.ReposWith(logger, s)
+	es := dbtbbbse.ExternblServicesWith(logger, s)
 
 	repo := bt.TestRepo(t, es, extsvc.KindGitHub)
-	err := rs.Create(ctx, repo)
+	err := rs.Crebte(ctx, repo)
 	require.NoError(t, err)
 
 	tests := []struct {
-		name        string
-		cs          *btypes.Changeset
-		wantDeleted bool
+		nbme        string
+		cs          *btypes.Chbngeset
+		wbntDeleted bool
 	}{
 		{
-			name: "old detached changeset deleted",
-			cs: &btypes.Changeset{
+			nbme: "old detbched chbngeset deleted",
+			cs: &btypes.Chbngeset{
 				RepoID:              repo.ID,
-				ExternalID:          fmt.Sprintf("foobar-%d", 42),
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "refs/heads/batch-changes/test",
+				ExternblID:          fmt.Sprintf("foobbr-%d", 42),
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblBrbnch:      "refs/hebds/bbtch-chbnges/test",
 				// Set beyond the retention period
-				DetachedAt: time.Now().Add(-48 * time.Hour),
+				DetbchedAt: time.Now().Add(-48 * time.Hour),
 			},
-			wantDeleted: true,
+			wbntDeleted: true,
 		},
 		{
-			name: "new detached changeset not deleted",
-			cs: &btypes.Changeset{
+			nbme: "new detbched chbngeset not deleted",
+			cs: &btypes.Chbngeset{
 				RepoID:              repo.ID,
-				ExternalID:          fmt.Sprintf("foobar-%d", 42),
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "refs/heads/batch-changes/test",
+				ExternblID:          fmt.Sprintf("foobbr-%d", 42),
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblBrbnch:      "refs/hebds/bbtch-chbnges/test",
 				// Set to now, within the retention period
-				DetachedAt: time.Now(),
+				DetbchedAt: time.Now(),
 			},
-			wantDeleted: false,
+			wbntDeleted: fblse,
 		},
 		{
-			name: "regular changeset not deleted",
-			cs: &btypes.Changeset{
+			nbme: "regulbr chbngeset not deleted",
+			cs: &btypes.Chbngeset{
 				RepoID:              repo.ID,
-				ExternalID:          fmt.Sprintf("foobar-%d", 42),
-				ExternalServiceType: extsvc.TypeGitHub,
-				ExternalBranch:      "refs/heads/batch-changes/test",
+				ExternblID:          fmt.Sprintf("foobbr-%d", 42),
+				ExternblServiceType: extsvc.TypeGitHub,
+				ExternblBrbnch:      "refs/hebds/bbtch-chbnges/test",
 			},
-			wantDeleted: false,
+			wbntDeleted: fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			// Create the changeset
-			err = s.CreateChangeset(ctx, test.cs)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			// Crebte the chbngeset
+			err = s.CrebteChbngeset(ctx, test.cs)
 			require.NoError(t, err)
 
-			// Attempt to delete old changesets
-			err = s.CleanDetachedChangesets(ctx, 24*time.Hour)
-			assert.NoError(t, err)
+			// Attempt to delete old chbngesets
+			err = s.ClebnDetbchedChbngesets(ctx, 24*time.Hour)
+			bssert.NoError(t, err)
 
 			// check if deleted
-			actual, err := s.GetChangesetByID(ctx, test.cs.ID)
+			bctubl, err := s.GetChbngesetByID(ctx, test.cs.ID)
 
-			if test.wantDeleted {
-				assert.Error(t, err)
-				assert.Nil(t, actual)
+			if test.wbntDeleted {
+				bssert.Error(t, err)
+				bssert.Nil(t, bctubl)
 			} else {
-				assert.NoError(t, err)
-				assert.NotNil(t, actual)
+				bssert.NoError(t, err)
+				bssert.NotNil(t, bctubl)
 			}
 
-			// cleanup for next test
-			err = s.DeleteChangeset(ctx, test.cs.ID)
+			// clebnup for next test
+			err = s.DeleteChbngeset(ctx, test.cs.ID)
 			require.NoError(t, err)
 		})
 	}

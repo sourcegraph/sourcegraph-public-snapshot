@@ -1,142 +1,142 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel"
-	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
-	codenavgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql"
-	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
-	rankinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	sentinelgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/lsifuploadstore"
-	sharedresolvers "github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
-	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel"
+	butoindexinggrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing/trbnsport/grbphql"
+	codenbvgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/trbnsport/grbphql"
+	policiesgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/policies/trbnsport/grbphql"
+	rbnkinggrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/trbnsport/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	sentinelgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/trbnsport/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/lsifuplobdstore"
+	shbredresolvers "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	uplobdgrbphql "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/grbphql"
+	uplobdshttp "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/trbnsport/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func LoadConfig() {
-	ConfigInst.Load()
+func LobdConfig() {
+	ConfigInst.Lobd()
 }
 
 func Init(
 	ctx context.Context,
-	observationCtx *observation.Context,
-	db database.DB,
+	observbtionCtx *observbtion.Context,
+	db dbtbbbse.DB,
 	codeIntelServices codeintel.Services,
-	conf conftypes.UnifiedWatchable,
+	conf conftypes.UnifiedWbtchbble,
 	enterpriseServices *enterprise.Services,
 ) error {
-	if err := ConfigInst.Validate(); err != nil {
+	if err := ConfigInst.Vblidbte(); err != nil {
 		return err
 	}
 
-	uploadStore, err := lsifuploadstore.New(context.Background(), observationCtx, ConfigInst.LSIFUploadStoreConfig)
+	uplobdStore, err := lsifuplobdstore.New(context.Bbckground(), observbtionCtx, ConfigInst.LSIFUplobdStoreConfig)
 	if err != nil {
 		return err
 	}
 
-	newUploadHandler := func(withCodeHostAuth bool) http.Handler {
-		return uploadshttp.GetHandler(codeIntelServices.UploadsService, db, codeIntelServices.GitserverClient, uploadStore, withCodeHostAuth)
+	newUplobdHbndler := func(withCodeHostAuth bool) http.Hbndler {
+		return uplobdshttp.GetHbndler(codeIntelServices.UplobdsService, db, codeIntelServices.GitserverClient, uplobdStore, withCodeHostAuth)
 	}
 
 	repoStore := db.Repos()
-	siteAdminChecker := sharedresolvers.NewSiteAdminChecker(db)
-	locationResolverFactory := gitresolvers.NewCachedLocationResolverFactory(repoStore, codeIntelServices.GitserverClient)
-	uploadLoaderFactory := uploadgraphql.NewUploadLoaderFactory(codeIntelServices.UploadsService)
-	indexLoaderFactory := uploadgraphql.NewIndexLoaderFactory(codeIntelServices.UploadsService)
-	preciseIndexResolverFactory := uploadgraphql.NewPreciseIndexResolverFactory(
-		codeIntelServices.UploadsService,
+	siteAdminChecker := shbredresolvers.NewSiteAdminChecker(db)
+	locbtionResolverFbctory := gitresolvers.NewCbchedLocbtionResolverFbctory(repoStore, codeIntelServices.GitserverClient)
+	uplobdLobderFbctory := uplobdgrbphql.NewUplobdLobderFbctory(codeIntelServices.UplobdsService)
+	indexLobderFbctory := uplobdgrbphql.NewIndexLobderFbctory(codeIntelServices.UplobdsService)
+	preciseIndexResolverFbctory := uplobdgrbphql.NewPreciseIndexResolverFbctory(
+		codeIntelServices.UplobdsService,
 		codeIntelServices.PoliciesService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
 	)
 
-	autoindexingRootResolver := autoindexinggraphql.NewRootResolver(
-		scopedContext("autoindexing"),
+	butoindexingRootResolver := butoindexinggrbphql.NewRootResolver(
+		scopedContext("butoindexing"),
 		codeIntelServices.AutoIndexingService,
 		siteAdminChecker,
-		uploadLoaderFactory,
-		indexLoaderFactory,
-		locationResolverFactory,
-		preciseIndexResolverFactory,
+		uplobdLobderFbctory,
+		indexLobderFbctory,
+		locbtionResolverFbctory,
+		preciseIndexResolverFbctory,
 	)
 
-	codenavRootResolver, err := codenavgraphql.NewRootResolver(
-		scopedContext("codenav"),
-		codeIntelServices.CodenavService,
+	codenbvRootResolver, err := codenbvgrbphql.NewRootResolver(
+		scopedContext("codenbv"),
+		codeIntelServices.CodenbvService,
 		codeIntelServices.AutoIndexingService,
 		codeIntelServices.GitserverClient,
 		siteAdminChecker,
 		repoStore,
-		uploadLoaderFactory,
-		indexLoaderFactory,
-		preciseIndexResolverFactory,
-		locationResolverFactory,
-		ConfigInst.HunkCacheSize,
-		ConfigInst.MaximumIndexesPerMonikerSearch,
+		uplobdLobderFbctory,
+		indexLobderFbctory,
+		preciseIndexResolverFbctory,
+		locbtionResolverFbctory,
+		ConfigInst.HunkCbcheSize,
+		ConfigInst.MbximumIndexesPerMonikerSebrch,
 	)
 	if err != nil {
 		return err
 	}
 
-	policyRootResolver := policiesgraphql.NewRootResolver(
+	policyRootResolver := policiesgrbphql.NewRootResolver(
 		scopedContext("policies"),
 		codeIntelServices.PoliciesService,
 		repoStore,
 		siteAdminChecker,
 	)
 
-	uploadRootResolver := uploadgraphql.NewRootResolver(
-		scopedContext("upload"),
-		codeIntelServices.UploadsService,
+	uplobdRootResolver := uplobdgrbphql.NewRootResolver(
+		scopedContext("uplobd"),
+		codeIntelServices.UplobdsService,
 		codeIntelServices.AutoIndexingService,
 		siteAdminChecker,
-		uploadLoaderFactory,
-		indexLoaderFactory,
-		locationResolverFactory,
-		preciseIndexResolverFactory,
+		uplobdLobderFbctory,
+		indexLobderFbctory,
+		locbtionResolverFbctory,
+		preciseIndexResolverFbctory,
 	)
 
-	sentinelRootResolver := sentinelgraphql.NewRootResolver(
+	sentinelRootResolver := sentinelgrbphql.NewRootResolver(
 		scopedContext("sentinel"),
 		codeIntelServices.SentinelService,
-		uploadLoaderFactory,
-		indexLoaderFactory,
-		locationResolverFactory,
-		preciseIndexResolverFactory,
+		uplobdLobderFbctory,
+		indexLobderFbctory,
+		locbtionResolverFbctory,
+		preciseIndexResolverFbctory,
 	)
 
-	rankingRootResolver := rankinggraphql.NewRootResolver(
-		scopedContext("ranking"),
-		codeIntelServices.RankingService,
+	rbnkingRootResolver := rbnkinggrbphql.NewRootResolver(
+		scopedContext("rbnking"),
+		codeIntelServices.RbnkingService,
 		siteAdminChecker,
 	)
 
-	enterpriseServices.CodeIntelResolver = graphqlbackend.NewCodeIntelResolver(resolvers.NewCodeIntelResolver(
-		autoindexingRootResolver,
-		codenavRootResolver,
+	enterpriseServices.CodeIntelResolver = grbphqlbbckend.NewCodeIntelResolver(resolvers.NewCodeIntelResolver(
+		butoindexingRootResolver,
+		codenbvRootResolver,
 		policyRootResolver,
-		uploadRootResolver,
+		uplobdRootResolver,
 		sentinelRootResolver,
-		rankingRootResolver,
+		rbnkingRootResolver,
 	))
-	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler
-	enterpriseServices.RankingService = codeIntelServices.RankingService
+	enterpriseServices.NewCodeIntelUplobdHbndler = newUplobdHbndler
+	enterpriseServices.RbnkingService = codeIntelServices.RbnkingService
 	return nil
 }
 
-func scopedContext(name string) *observation.Context {
-	return observation.NewContext(log.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"))
+func scopedContext(nbme string) *observbtion.Context {
+	return observbtion.NewContext(log.Scoped(nbme+".trbnsport.grbphql", "codeintel "+nbme+" grbphql trbnsport"))
 }

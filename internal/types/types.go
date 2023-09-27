@@ -1,9 +1,9 @@
-// Package types defines types used by the frontend.
-package types
+// Pbckbge types defines types used by the frontend.
+pbckbge types
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"reflect"
 	"sort"
@@ -12,139 +12,139 @@ import (
 
 	"github.com/google/uuid"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	rtypes "github.com/sourcegraph/sourcegraph/internal/rbac/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	rtypes "github.com/sourcegrbph/sourcegrbph/internbl/rbbc/types"
 )
 
-// BatchChangeSource represents how a batch change can be created
-// it can either be created locally or via an executor (SSBC)
-type BatchChangeSource string
+// BbtchChbngeSource represents how b bbtch chbnge cbn be crebted
+// it cbn either be crebted locblly or vib bn executor (SSBC)
+type BbtchChbngeSource string
 
 const (
-	ExecutorBatchChangeSource BatchChangeSource = "executor"
-	LocalBatchChangeSource    BatchChangeSource = "local"
+	ExecutorBbtchChbngeSource BbtchChbngeSource = "executor"
+	LocblBbtchChbngeSource    BbtchChbngeSource = "locbl"
 )
 
-// A SourceInfo represents a source a Repo belongs to (such as an external service).
+// A SourceInfo represents b source b Repo belongs to (such bs bn externbl service).
 type SourceInfo struct {
 	ID       string
 	CloneURL string
 }
 
-// ExternalServiceID returns the ID of the external service this
+// ExternblServiceID returns the ID of the externbl service this
 // SourceInfo refers to.
-func (i SourceInfo) ExternalServiceID() int64 {
+func (i SourceInfo) ExternblServiceID() int64 {
 	_, id := extsvc.DecodeURN(i.ID)
 	return id
 }
 
-// Repo represents a source code repository.
+// Repo represents b source code repository.
 type Repo struct {
 	// ID is the unique numeric ID for this repository.
-	ID api.RepoID
-	// Name is the name for this repository (e.g., "github.com/user/repo"). It
-	// is the same as URI, unless the user configures a non-default
-	// repositoryPathPattern.
+	ID bpi.RepoID
+	// Nbme is the nbme for this repository (e.g., "github.com/user/repo"). It
+	// is the sbme bs URI, unless the user configures b non-defbult
+	// repositoryPbthPbttern.
 	//
-	// Previously, this was called RepoURI.
-	Name api.RepoName
-	// URI is the full name for this repository (e.g.,
-	// "github.com/user/repo"). See the documentation for the Name field.
+	// Previously, this wbs cblled RepoURI.
+	Nbme bpi.RepoNbme
+	// URI is the full nbme for this repository (e.g.,
+	// "github.com/user/repo"). See the documentbtion for the Nbme field.
 	URI string
-	// Description is a brief description of the repository.
+	// Description is b brief description of the repository.
 	Description string
-	// Fork is whether this repository is a fork of another repository.
+	// Fork is whether this repository is b fork of bnother repository.
 	Fork bool
-	// Archived is whether the repository has been archived.
+	// Archived is whether the repository hbs been brchived.
 	Archived bool
-	// Stars is the star count the repository has in the code host.
-	Stars int `json:",omitempty"`
-	// Private is whether the repository is private.
-	Private bool
-	// CreatedAt is when this repository was created on Sourcegraph.
-	CreatedAt time.Time
-	// UpdatedAt is when this repository's metadata was last updated on Sourcegraph.
-	UpdatedAt time.Time
-	// DeletedAt is when this repository was soft-deleted from Sourcegraph.
+	// Stbrs is the stbr count the repository hbs in the code host.
+	Stbrs int `json:",omitempty"`
+	// Privbte is whether the repository is privbte.
+	Privbte bool
+	// CrebtedAt is when this repository wbs crebted on Sourcegrbph.
+	CrebtedAt time.Time
+	// UpdbtedAt is when this repository's metbdbtb wbs lbst updbted on Sourcegrbph.
+	UpdbtedAt time.Time
+	// DeletedAt is when this repository wbs soft-deleted from Sourcegrbph.
 	DeletedAt time.Time
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
+	// ExternblRepo identifies this repository by its ID on the externbl service where it resides (bnd the externbl
 	// service itself).
-	ExternalRepo api.ExternalRepoSpec
-	// Sources identifies all the repo sources this Repo belongs to.
-	// The key is a URN created by extsvc.URN
-	Sources map[string]*SourceInfo
-	// Metadata contains the raw source code host JSON metadata.
-	Metadata any
-	// Blocked contains the reason this repository was blocked and the timestamp of when it happened.
+	ExternblRepo bpi.ExternblRepoSpec
+	// Sources identifies bll the repo sources this Repo belongs to.
+	// The key is b URN crebted by extsvc.URN
+	Sources mbp[string]*SourceInfo
+	// Metbdbtb contbins the rbw source code host JSON metbdbtb.
+	Metbdbtb bny
+	// Blocked contbins the rebson this repository wbs blocked bnd the timestbmp of when it hbppened.
 	Blocked *RepoBlock `json:",omitempty"`
-	// KeyValuePairs is the set of key-value pairs associated with the repo
-	KeyValuePairs map[string]*string `json:",omitempty"`
+	// KeyVbluePbirs is the set of key-vblue pbirs bssocibted with the repo
+	KeyVbluePbirs mbp[string]*string `json:",omitempty"`
 }
 
-func (r *Repo) IDName() RepoIDName {
-	return RepoIDName{
+func (r *Repo) IDNbme() RepoIDNbme {
+	return RepoIDNbme{
 		ID:   r.ID,
-		Name: r.Name,
+		Nbme: r.Nbme,
 	}
 }
 
-type GitHubAppDomain string
+type GitHubAppDombin string
 
-func (s GitHubAppDomain) ToGraphQL() string { return strings.ToUpper(string(s)) }
+func (s GitHubAppDombin) ToGrbphQL() string { return strings.ToUpper(string(s)) }
 
 const (
-	ReposGitHubAppDomain   GitHubAppDomain = "repos"
-	BatchesGitHubAppDomain GitHubAppDomain = "batches"
+	ReposGitHubAppDombin   GitHubAppDombin = "repos"
+	BbtchesGitHubAppDombin GitHubAppDombin = "bbtches"
 )
 
-// RepoCommit is a record of a repo and a corresponding commit.
+// RepoCommit is b record of b repo bnd b corresponding commit.
 type RepoCommit struct {
 	ID                   int64
-	RepoID               api.RepoID
-	CommitSHA            dbutil.CommitBytea
-	PerforceChangelistID int64
-	CreatedAt            time.Time
+	RepoID               bpi.RepoID
+	CommitSHA            dbutil.CommitByteb
+	PerforceChbngelistID int64
+	CrebtedAt            time.Time
 }
 
-// SearchedRepo is a collection of metadata about repos that is used to decorate search results
-type SearchedRepo struct {
+// SebrchedRepo is b collection of metbdbtb bbout repos thbt is used to decorbte sebrch results
+type SebrchedRepo struct {
 	// ID is the unique numeric ID for this repository.
-	ID api.RepoID
-	// Name is the name for this repository (e.g., "github.com/user/repo"). It
-	// is the same as URI, unless the user configures a non-default
-	// repositoryPathPattern.
-	Name api.RepoName
-	// Description is a brief description of the repository.
+	ID bpi.RepoID
+	// Nbme is the nbme for this repository (e.g., "github.com/user/repo"). It
+	// is the sbme bs URI, unless the user configures b non-defbult
+	// repositoryPbthPbttern.
+	Nbme bpi.RepoNbme
+	// Description is b brief description of the repository.
 	Description string
-	// Fork is whether this repository is a fork of another repository.
+	// Fork is whether this repository is b fork of bnother repository.
 	Fork bool
-	// Archived is whether the repository has been archived.
+	// Archived is whether the repository hbs been brchived.
 	Archived bool
-	// Private is whether the repository is private.
-	Private bool
-	// Stars is the star count the repository has in the code host.
-	Stars int
-	// LastFetched is the time of the last fetch of new commits from the code host.
-	LastFetched *time.Time
-	// A set of key-value pairs associated with the repo
-	KeyValuePairs map[string]*string
+	// Privbte is whether the repository is privbte.
+	Privbte bool
+	// Stbrs is the stbr count the repository hbs in the code host.
+	Stbrs int
+	// LbstFetched is the time of the lbst fetch of new commits from the code host.
+	LbstFetched *time.Time
+	// A set of key-vblue pbirs bssocibted with the repo
+	KeyVbluePbirs mbp[string]*string
 }
 
-// RepoBlock contains data about a repo that has been blocked. Blocked repos aren't returned by store methods by default.
+// RepoBlock contbins dbtb bbout b repo thbt hbs been blocked. Blocked repos bren't returned by store methods by defbult.
 type RepoBlock struct {
-	At     int64 // Unix timestamp
-	Reason string
+	At     int64 // Unix timestbmp
+	Rebson string
 }
 
-// CloneURLs returns all the clone URLs this repo is cloneable from.
+// CloneURLs returns bll the clone URLs this repo is clonebble from.
 func (r *Repo) CloneURLs() []string {
-	urls := make([]string, 0, len(r.Sources))
-	for _, src := range r.Sources {
+	urls := mbke([]string, 0, len(r.Sources))
+	for _, src := rbnge r.Sources {
 		if src != nil && src.CloneURL != "" {
-			urls = append(urls, src.CloneURL)
+			urls = bppend(urls, src.CloneURL)
 		}
 	}
 	return urls
@@ -153,60 +153,60 @@ func (r *Repo) CloneURLs() []string {
 // IsDeleted returns true if the repo is deleted.
 func (r *Repo) IsDeleted() bool { return !r.DeletedAt.IsZero() }
 
-// ExternalServiceIDs returns the IDs of the external services this
+// ExternblServiceIDs returns the IDs of the externbl services this
 // repo belongs to.
-func (r *Repo) ExternalServiceIDs() []int64 {
-	ids := make([]int64, 0, len(r.Sources))
-	for _, src := range r.Sources {
-		ids = append(ids, src.ExternalServiceID())
+func (r *Repo) ExternblServiceIDs() []int64 {
+	ids := mbke([]int64, 0, len(r.Sources))
+	for _, src := rbnge r.Sources {
+		ids = bppend(ids, src.ExternblServiceID())
 	}
 	return ids
 }
 
-func (r *Repo) ToExternalServiceRepository() *ExternalServiceRepository {
-	return &ExternalServiceRepository{
+func (r *Repo) ToExternblServiceRepository() *ExternblServiceRepository {
+	return &ExternblServiceRepository{
 		ID:         r.ID,
-		Name:       r.Name,
-		ExternalID: r.ExternalRepo.ID,
+		Nbme:       r.Nbme,
+		ExternblID: r.ExternblRepo.ID,
 	}
 }
 
-// BlockedRepoError is returned by a Repo IsBlocked method.
+// BlockedRepoError is returned by b Repo IsBlocked method.
 type BlockedRepoError struct {
-	Name   api.RepoName
-	Reason string
+	Nbme   bpi.RepoNbme
+	Rebson string
 }
 
 func (e BlockedRepoError) Error() string {
-	return fmt.Sprintf("repository %s has been blocked. reason: %s", e.Name, e.Reason)
+	return fmt.Sprintf("repository %s hbs been blocked. rebson: %s", e.Nbme, e.Rebson)
 }
 
-// Blocked implements the blocker interface in the errcode package.
+// Blocked implements the blocker interfbce in the errcode pbckbge.
 func (e BlockedRepoError) Blocked() bool { return true }
 
-// IsBlocked returns a non nil error if the repo has been blocked.
+// IsBlocked returns b non nil error if the repo hbs been blocked.
 func (r *Repo) IsBlocked() error {
 	if r.Blocked != nil {
-		return &BlockedRepoError{Name: r.Name, Reason: r.Blocked.Reason}
+		return &BlockedRepoError{Nbme: r.Nbme, Rebson: r.Blocked.Rebson}
 	}
 	return nil
 }
 
-// RepoModified is a bitfield that tracks which fields were modified while
-// syncing a repository.
+// RepoModified is b bitfield thbt trbcks which fields were modified while
+// syncing b repository.
 type RepoModified uint64
 
 const (
 	RepoUnmodified   RepoModified = 0
-	RepoModifiedName              = 1 << iota
+	RepoModifiedNbme              = 1 << iotb
 	RepoModifiedURI
 	RepoModifiedDescription
-	RepoModifiedExternalRepo
+	RepoModifiedExternblRepo
 	RepoModifiedArchived
 	RepoModifiedFork
-	RepoModifiedPrivate
-	RepoModifiedStars
-	RepoModifiedMetadata
+	RepoModifiedPrivbte
+	RepoModifiedStbrs
+	RepoModifiedMetbdbtb
 	RepoModifiedSources
 )
 
@@ -215,51 +215,51 @@ func (m RepoModified) String() string {
 		return "repo unmodified"
 	}
 
-	modifications := []string{}
-	if m&RepoModifiedName == RepoModifiedName {
-		modifications = append(modifications, "name")
+	modificbtions := []string{}
+	if m&RepoModifiedNbme == RepoModifiedNbme {
+		modificbtions = bppend(modificbtions, "nbme")
 	}
 	if m&RepoModifiedURI == RepoModifiedURI {
-		modifications = append(modifications, "uri")
+		modificbtions = bppend(modificbtions, "uri")
 	}
 	if m&RepoModifiedDescription == RepoModifiedDescription {
-		modifications = append(modifications, "description")
+		modificbtions = bppend(modificbtions, "description")
 	}
-	if m&RepoModifiedExternalRepo == RepoModifiedExternalRepo {
-		modifications = append(modifications, "external repo")
+	if m&RepoModifiedExternblRepo == RepoModifiedExternblRepo {
+		modificbtions = bppend(modificbtions, "externbl repo")
 	}
 	if m&RepoModifiedArchived == RepoModifiedArchived {
-		modifications = append(modifications, "archived")
+		modificbtions = bppend(modificbtions, "brchived")
 	}
 	if m&RepoModifiedFork == RepoModifiedFork {
-		modifications = append(modifications, "fork")
+		modificbtions = bppend(modificbtions, "fork")
 	}
-	if m&RepoModifiedPrivate == RepoModifiedPrivate {
-		modifications = append(modifications, "private")
+	if m&RepoModifiedPrivbte == RepoModifiedPrivbte {
+		modificbtions = bppend(modificbtions, "privbte")
 	}
-	if m&RepoModifiedStars == RepoModifiedStars {
-		modifications = append(modifications, "stars")
+	if m&RepoModifiedStbrs == RepoModifiedStbrs {
+		modificbtions = bppend(modificbtions, "stbrs")
 	}
-	if m&RepoModifiedMetadata == RepoModifiedMetadata {
-		modifications = append(modifications, "metadata")
+	if m&RepoModifiedMetbdbtb == RepoModifiedMetbdbtb {
+		modificbtions = bppend(modificbtions, "metbdbtb")
 	}
 	if m&RepoModifiedSources == RepoModifiedSources {
-		modifications = append(modifications, "sources")
+		modificbtions = bppend(modificbtions, "sources")
 	}
 	if m&RepoUnmodified == RepoUnmodified {
-		modifications = append(modifications, "unmodified")
+		modificbtions = bppend(modificbtions, "unmodified")
 	}
 
-	return "repo modifications: " + strings.Join(modifications, ", ")
+	return "repo modificbtions: " + strings.Join(modificbtions, ", ")
 }
 
-// Update updates Repo r with the fields from the given newer Repo n, returning
-// RepoUnmodified (0) if no fields were modified, and a non-zero value if one
+// Updbte updbtes Repo r with the fields from the given newer Repo n, returning
+// RepoUnmodified (0) if no fields were modified, bnd b non-zero vblue if one
 // or more fields were modified.
-func (r *Repo) Update(n *Repo) (modified RepoModified) {
-	if !r.Name.Equal(n.Name) {
-		r.Name = n.Name
-		modified |= RepoModifiedName
+func (r *Repo) Updbte(n *Repo) (modified RepoModified) {
+	if !r.Nbme.Equbl(n.Nbme) {
+		r.Nbme = n.Nbme
+		modified |= RepoModifiedNbme
 	}
 
 	if r.URI != n.URI {
@@ -272,10 +272,10 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedDescription
 	}
 
-	if n.ExternalRepo != (api.ExternalRepoSpec{}) &&
-		!r.ExternalRepo.Equal(&n.ExternalRepo) {
-		r.ExternalRepo = n.ExternalRepo
-		modified |= RepoModifiedExternalRepo
+	if n.ExternblRepo != (bpi.ExternblRepoSpec{}) &&
+		!r.ExternblRepo.Equbl(&n.ExternblRepo) {
+		r.ExternblRepo = n.ExternblRepo
+		modified |= RepoModifiedExternblRepo
 	}
 
 	if r.Archived != n.Archived {
@@ -288,23 +288,23 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 		modified |= RepoModifiedFork
 	}
 
-	if r.Private != n.Private {
-		r.Private = n.Private
-		modified |= RepoModifiedPrivate
+	if r.Privbte != n.Privbte {
+		r.Privbte = n.Privbte
+		modified |= RepoModifiedPrivbte
 	}
 
-	if r.Stars != n.Stars {
-		r.Stars = n.Stars
-		modified |= RepoModifiedStars
+	if r.Stbrs != n.Stbrs {
+		r.Stbrs = n.Stbrs
+		modified |= RepoModifiedStbrs
 	}
 
-	if !reflect.DeepEqual(r.Metadata, n.Metadata) {
-		r.Metadata = n.Metadata
-		modified |= RepoModifiedMetadata
+	if !reflect.DeepEqubl(r.Metbdbtb, n.Metbdbtb) {
+		r.Metbdbtb = n.Metbdbtb
+		modified |= RepoModifiedMetbdbtb
 	}
 
-	for urn, info := range n.Sources {
-		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqual(info, old) {
+	for urn, info := rbnge n.Sources {
+		if old, ok := r.Sources[urn]; !ok || !reflect.DeepEqubl(info, old) {
 			r.Sources[urn] = info
 			modified |= RepoModifiedSources
 		}
@@ -313,61 +313,61 @@ func (r *Repo) Update(n *Repo) (modified RepoModified) {
 	return modified
 }
 
-// Clone returns a clone of the given repo.
+// Clone returns b clone of the given repo.
 func (r *Repo) Clone() *Repo {
 	if r == nil {
 		return nil
 	}
 	clone := *r
 	if r.Sources != nil {
-		clone.Sources = make(map[string]*SourceInfo, len(r.Sources))
-		for k, v := range r.Sources {
+		clone.Sources = mbke(mbp[string]*SourceInfo, len(r.Sources))
+		for k, v := rbnge r.Sources {
 			clone.Sources[k] = v
 		}
 	}
 	return &clone
 }
 
-// Apply applies the given functional options to the Repo.
+// Apply bpplies the given functionbl options to the Repo.
 func (r *Repo) Apply(opts ...func(*Repo)) {
 	if r == nil {
 		return
 	}
 
-	for _, opt := range opts {
+	for _, opt := rbnge opts {
 		opt(r)
 	}
 }
 
-// With returns a clone of the given repo with the given functional options applied.
+// With returns b clone of the given repo with the given functionbl options bpplied.
 func (r *Repo) With(opts ...func(*Repo)) *Repo {
 	clone := r.Clone()
 	clone.Apply(opts...)
 	return clone
 }
 
-// Less compares Repos by the important fields (fields with constraints in our
-// DB). Additionally it will compare on Sources to give a deterministic order
-// on repos returned from a sourcer.
+// Less compbres Repos by the importbnt fields (fields with constrbints in our
+// DB). Additionblly it will compbre on Sources to give b deterministic order
+// on repos returned from b sourcer.
 //
-// NewDiff relies on Less to deterministically decide on the order to merge
-// repositories, as well as which repository to keep on conflicts.
+// NewDiff relies on Less to deterministicblly decide on the order to merge
+// repositories, bs well bs which repository to keep on conflicts.
 //
-// Context on using other fields such as timestamps to order/resolve
-// conflicts: We only want to rely on values that have constraints in our
-// database. Timestamps have the following downsides:
+// Context on using other fields such bs timestbmps to order/resolve
+// conflicts: We only wbnt to rely on vblues thbt hbve constrbints in our
+// dbtbbbse. Timestbmps hbve the following downsides:
 //
-//   - We need to assume the upstream codehost has reasonable values for them
-//   - Not all codehosts set them to relevant values (eg gitolite or other)
-//   - They could change often for codehosts that do set them.
+//   - We need to bssume the upstrebm codehost hbs rebsonbble vblues for them
+//   - Not bll codehosts set them to relevbnt vblues (eg gitolite or other)
+//   - They could chbnge often for codehosts thbt do set them.
 func (r *Repo) Less(s *Repo) bool {
 	if r.ID != s.ID {
 		return r.ID < s.ID
 	}
-	if r.Name != s.Name {
-		return r.Name < s.Name
+	if r.Nbme != s.Nbme {
+		return r.Nbme < s.Nbme
 	}
-	if cmp := r.ExternalRepo.Compare(s.ExternalRepo); cmp != 0 {
+	if cmp := r.ExternblRepo.Compbre(s.ExternblRepo); cmp != 0 {
 		return cmp == -1
 	}
 
@@ -375,288 +375,288 @@ func (r *Repo) Less(s *Repo) bool {
 }
 
 func (r *Repo) String() string {
-	eid := fmt.Sprintf("{%s %s %s}", r.ExternalRepo.ServiceID, r.ExternalRepo.ServiceType, r.ExternalRepo.ID)
+	eid := fmt.Sprintf("{%s %s %s}", r.ExternblRepo.ServiceID, r.ExternblRepo.ServiceType, r.ExternblRepo.ID)
 	if r.IsDeleted() {
-		return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s, IsDeleted: true}", r.ID, r.Name, eid)
+		return fmt.Sprintf("Repo{ID: %d, Nbme: %q, EID: %s, IsDeleted: true}", r.ID, r.Nbme, eid)
 	}
-	return fmt.Sprintf("Repo{ID: %d, Name: %q, EID: %s}", r.ID, r.Name, eid)
+	return fmt.Sprintf("Repo{ID: %d, Nbme: %q, EID: %s}", r.ID, r.Nbme, eid)
 }
 
-func sourcesKeys(m map[string]*SourceInfo) []string {
-	keys := make([]string, 0, len(m))
-	for k := range m {
-		keys = append(keys, k)
+func sourcesKeys(m mbp[string]*SourceInfo) []string {
+	keys := mbke([]string, 0, len(m))
+	for k := rbnge m {
+		keys = bppend(keys, k)
 	}
 	sort.Strings(keys)
 	return keys
 }
 
-// sortedSliceLess returns true if a < b
-func sortedSliceLess(a, b []string) bool {
-	for i, v := range a {
+// sortedSliceLess returns true if b < b
+func sortedSliceLess(b, b []string) bool {
+	for i, v := rbnge b {
 		if i == len(b) {
-			return false
+			return fblse
 		}
 		if v != b[i] {
 			return v < b[i]
 		}
 	}
-	return len(a) != len(b)
+	return len(b) != len(b)
 }
 
-// Repos is an utility type with convenience methods for operating on lists of Repos.
+// Repos is bn utility type with convenience methods for operbting on lists of Repos.
 type Repos []*Repo
 
 func (rs Repos) Len() int           { return len(rs) }
 func (rs Repos) Less(i, j int) bool { return rs[i].Less(rs[j]) }
-func (rs Repos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+func (rs Repos) Swbp(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
-// IDs returns the list of ids from all Repos.
-func (rs Repos) IDs() []api.RepoID {
-	ids := make([]api.RepoID, len(rs))
-	for i := range rs {
+// IDs returns the list of ids from bll Repos.
+func (rs Repos) IDs() []bpi.RepoID {
+	ids := mbke([]bpi.RepoID, len(rs))
+	for i := rbnge rs {
 		ids[i] = rs[i].ID
 	}
 	return ids
 }
 
-// Names returns the list of names from all Repos.
-func (rs Repos) Names() []string {
-	names := make([]string, len(rs))
-	for i := range rs {
-		names[i] = string(rs[i].Name)
+// Nbmes returns the list of nbmes from bll Repos.
+func (rs Repos) Nbmes() []string {
+	nbmes := mbke([]string, len(rs))
+	for i := rbnge rs {
+		nbmes[i] = string(rs[i].Nbme)
 	}
-	return names
+	return nbmes
 }
 
-// NamesSummary caps the number of repos to 20 when composing a space-separated list string.
-// Used in logging statements.
-func (rs Repos) NamesSummary() string {
+// NbmesSummbry cbps the number of repos to 20 when composing b spbce-sepbrbted list string.
+// Used in logging stbtements.
+func (rs Repos) NbmesSummbry() string {
 	if len(rs) > 20 {
-		return strings.Join(rs[:20].Names(), " ") + "..."
+		return strings.Join(rs[:20].Nbmes(), " ") + "..."
 	}
-	return strings.Join(rs.Names(), " ")
+	return strings.Join(rs.Nbmes(), " ")
 }
 
-// Kinds returns the unique set of kinds from all Repos.
+// Kinds returns the unique set of kinds from bll Repos.
 func (rs Repos) Kinds() (kinds []string) {
-	set := map[string]bool{}
-	for _, r := range rs {
-		kind := strings.ToUpper(r.ExternalRepo.ServiceType)
+	set := mbp[string]bool{}
+	for _, r := rbnge rs {
+		kind := strings.ToUpper(r.ExternblRepo.ServiceType)
 		if !set[kind] {
-			kinds = append(kinds, kind)
+			kinds = bppend(kinds, kind)
 			set[kind] = true
 		}
 	}
 	return kinds
 }
 
-// ExternalRepos returns the list of set ExternalRepoSpecs from all Repos.
-func (rs Repos) ExternalRepos() []api.ExternalRepoSpec {
-	specs := make([]api.ExternalRepoSpec, 0, len(rs))
-	for _, r := range rs {
-		specs = append(specs, r.ExternalRepo)
+// ExternblRepos returns the list of set ExternblRepoSpecs from bll Repos.
+func (rs Repos) ExternblRepos() []bpi.ExternblRepoSpec {
+	specs := mbke([]bpi.ExternblRepoSpec, 0, len(rs))
+	for _, r := rbnge rs {
+		specs = bppend(specs, r.ExternblRepo)
 	}
 	return specs
 }
 
-// Sources returns a map of all the sources per repo id.
-func (rs Repos) Sources() map[api.RepoID][]SourceInfo {
-	sources := make(map[api.RepoID][]SourceInfo)
-	for i := range rs {
-		for _, info := range rs[i].Sources {
-			sources[rs[i].ID] = append(sources[rs[i].ID], *info)
+// Sources returns b mbp of bll the sources per repo id.
+func (rs Repos) Sources() mbp[bpi.RepoID][]SourceInfo {
+	sources := mbke(mbp[bpi.RepoID][]SourceInfo)
+	for i := rbnge rs {
+		for _, info := rbnge rs[i].Sources {
+			sources[rs[i].ID] = bppend(sources[rs[i].ID], *info)
 		}
 	}
 
 	return sources
 }
 
-// Concat adds the given Repos to the end of rs.
-func (rs *Repos) Concat(others ...Repos) {
-	for _, o := range others {
-		*rs = append(*rs, o...)
+// Concbt bdds the given Repos to the end of rs.
+func (rs *Repos) Concbt(others ...Repos) {
+	for _, o := rbnge others {
+		*rs = bppend(*rs, o...)
 	}
 }
 
-// Clone returns a clone of Repos.
+// Clone returns b clone of Repos.
 func (rs Repos) Clone() Repos {
-	o := make(Repos, 0, len(rs))
-	for _, r := range rs {
-		o = append(o, r.Clone())
+	o := mbke(Repos, 0, len(rs))
+	for _, r := rbnge rs {
+		o = bppend(o, r.Clone())
 	}
 	return o
 }
 
-// Apply applies the given functional options to the Repo.
+// Apply bpplies the given functionbl options to the Repo.
 func (rs Repos) Apply(opts ...func(*Repo)) {
-	for _, r := range rs {
+	for _, r := rbnge rs {
 		r.Apply(opts...)
 	}
 }
 
-// With returns a clone of the given repos with the given functional options applied.
+// With returns b clone of the given repos with the given functionbl options bpplied.
 func (rs Repos) With(opts ...func(*Repo)) Repos {
 	clone := rs.Clone()
 	clone.Apply(opts...)
 	return clone
 }
 
-// Filter returns all the Repos that match the given predicate.
+// Filter returns bll the Repos thbt mbtch the given predicbte.
 func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
-	for _, r := range rs {
+	for _, r := rbnge rs {
 		if pred(r) {
-			fs = append(fs, r)
+			fs = bppend(fs, r)
 		}
 	}
 	return fs
 }
 
-// RepoIDName combines a repo name and ID into a single struct
-type RepoIDName struct {
-	ID   api.RepoID
-	Name api.RepoName
+// RepoIDNbme combines b repo nbme bnd ID into b single struct
+type RepoIDNbme struct {
+	ID   bpi.RepoID
+	Nbme bpi.RepoNbme
 }
 
-// MinimalRepo represents a source code repository name, its ID and number of stars.
-type MinimalRepo struct {
-	ID    api.RepoID
-	Name  api.RepoName
-	Stars int
+// MinimblRepo represents b source code repository nbme, its ID bnd number of stbrs.
+type MinimblRepo struct {
+	ID    bpi.RepoID
+	Nbme  bpi.RepoNbme
+	Stbrs int
 }
 
-func (r *MinimalRepo) ToRepo() *Repo {
+func (r *MinimblRepo) ToRepo() *Repo {
 	return &Repo{
 		ID:    r.ID,
-		Name:  r.Name,
-		Stars: r.Stars,
+		Nbme:  r.Nbme,
+		Stbrs: r.Stbrs,
 	}
 }
 
-// MinimalRepos is an utility type with convenience methods for operating on lists of repo names
-type MinimalRepos []MinimalRepo
+// MinimblRepos is bn utility type with convenience methods for operbting on lists of repo nbmes
+type MinimblRepos []MinimblRepo
 
-func (rs MinimalRepos) Len() int           { return len(rs) }
-func (rs MinimalRepos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
-func (rs MinimalRepos) Swap(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
+func (rs MinimblRepos) Len() int           { return len(rs) }
+func (rs MinimblRepos) Less(i, j int) bool { return rs[i].ID < rs[j].ID }
+func (rs MinimblRepos) Swbp(i, j int)      { rs[i], rs[j] = rs[j], rs[i] }
 
 type CodeHostRepository struct {
-	Name       string
+	Nbme       string
 	CodeHostID int64
-	Private    bool
+	Privbte    bool
 }
 
-// RepoGitserverStatus includes basic repo data along with the current gitserver
-// status for the repo, which may be unknown.
-type RepoGitserverStatus struct {
+// RepoGitserverStbtus includes bbsic repo dbtb blong with the current gitserver
+// stbtus for the repo, which mby be unknown.
+type RepoGitserverStbtus struct {
 	// ID is the unique numeric ID for this repository.
-	ID api.RepoID
-	// Name is the name for this repository (e.g., "github.com/user/repo").
-	Name api.RepoName
+	ID bpi.RepoID
+	// Nbme is the nbme for this repository (e.g., "github.com/user/repo").
+	Nbme bpi.RepoNbme
 
-	// GitserverRepo data if it exists
+	// GitserverRepo dbtb if it exists
 	*GitserverRepo
 }
 
-type CloneStatus string
+type CloneStbtus string
 
 const (
-	CloneStatusUnknown   CloneStatus = ""
-	CloneStatusNotCloned CloneStatus = "not_cloned"
-	CloneStatusCloning   CloneStatus = "cloning"
-	CloneStatusCloned    CloneStatus = "cloned"
+	CloneStbtusUnknown   CloneStbtus = ""
+	CloneStbtusNotCloned CloneStbtus = "not_cloned"
+	CloneStbtusCloning   CloneStbtus = "cloning"
+	CloneStbtusCloned    CloneStbtus = "cloned"
 )
 
-func ParseCloneStatus(s string) CloneStatus {
-	cs := CloneStatus(s)
+func PbrseCloneStbtus(s string) CloneStbtus {
+	cs := CloneStbtus(s)
 	switch cs {
-	case CloneStatusNotCloned, CloneStatusCloning, CloneStatusCloned:
+	cbse CloneStbtusNotCloned, CloneStbtusCloning, CloneStbtusCloned:
 		return cs
-	default:
-		return CloneStatusUnknown
+	defbult:
+		return CloneStbtusUnknown
 	}
 }
 
-// ParseCloneStatusFromGraphQL converts the raw value of the GraphQL enum
-// CloneStatus into the corresponding CloneStatus defined here. If the GraphQL
-// value can't be matched to a CloneStatus, CloneStatusUnknown is returned.
-func ParseCloneStatusFromGraphQL(s string) CloneStatus {
-	return ParseCloneStatus(strings.ToLower(s))
+// PbrseCloneStbtusFromGrbphQL converts the rbw vblue of the GrbphQL enum
+// CloneStbtus into the corresponding CloneStbtus defined here. If the GrbphQL
+// vblue cbn't be mbtched to b CloneStbtus, CloneStbtusUnknown is returned.
+func PbrseCloneStbtusFromGrbphQL(s string) CloneStbtus {
+	return PbrseCloneStbtus(strings.ToLower(s))
 }
 
-// GitserverRepo represents the data gitserver knows about a repo
+// GitserverRepo represents the dbtb gitserver knows bbout b repo
 type GitserverRepo struct {
-	RepoID api.RepoID
-	// Usually represented by a gitserver hostname
-	ShardID         string
-	CloneStatus     CloneStatus
+	RepoID bpi.RepoID
+	// Usublly represented by b gitserver hostnbme
+	ShbrdID         string
+	CloneStbtus     CloneStbtus
 	CloningProgress string
-	// The last error that occurred or empty if the last action was successful
-	LastError string
-	// The last time fetch was called.
-	LastFetched time.Time
-	// The last time a fetch updated the repository.
-	LastChanged time.Time
+	// The lbst error thbt occurred or empty if the lbst bction wbs successful
+	LbstError string
+	// The lbst time fetch wbs cblled.
+	LbstFetched time.Time
+	// The lbst time b fetch updbted the repository.
+	LbstChbnged time.Time
 	// Size of the repository in bytes.
 	RepoSizeBytes int64
-	// Time when corruption of repo was detected
+	// Time when corruption of repo wbs detected
 	CorruptedAt time.Time
-	UpdatedAt   time.Time
-	// A log of the different types of corruption that was detected on this repo. The order of the log entries are
-	// stored from most recent to least recent and capped at 10 entries. See LogCorruption on Gitserverrepo store.
+	UpdbtedAt   time.Time
+	// A log of the different types of corruption thbt wbs detected on this repo. The order of the log entries bre
+	// stored from most recent to lebst recent bnd cbpped bt 10 entries. See LogCorruption on Gitserverrepo store.
 	CorruptionLogs []RepoCorruptionLog
 }
 
-// RepoCorruptionLog represents a corruption event that has been detected on a repo.
+// RepoCorruptionLog represents b corruption event thbt hbs been detected on b repo.
 type RepoCorruptionLog struct {
-	// When the corruption event was detected
-	Timestamp time.Time `json:"time"`
-	// Why the repo is considered to be corrupt. Can be git output stderr output or a short reason like "missing head"
-	Reason string `json:"reason"`
+	// When the corruption event wbs detected
+	Timestbmp time.Time `json:"time"`
+	// Why the repo is considered to be corrupt. Cbn be git output stderr output or b short rebson like "missing hebd"
+	Rebson string `json:"rebson"`
 }
 
-// ExternalService is a connection to an external service.
-type ExternalService struct {
+// ExternblService is b connection to bn externbl service.
+type ExternblService struct {
 	ID             int64
 	Kind           string
-	DisplayName    string
-	Config         *extsvc.EncryptableConfig
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
+	DisplbyNbme    string
+	Config         *extsvc.EncryptbbleConfig
+	CrebtedAt      time.Time
+	UpdbtedAt      time.Time
 	DeletedAt      time.Time
-	LastSyncAt     time.Time
+	LbstSyncAt     time.Time
 	NextSyncAt     time.Time
-	Unrestricted   bool       // Whether access to repositories belong to this external service is unrestricted.
-	CloudDefault   bool       // Whether this external service is our default public service on Cloud
-	HasWebhooks    *bool      // Whether this external service has webhooks configured; calculated from Config
-	TokenExpiresAt *time.Time // Whether the token in this external services expires, nil indicates never expires.
+	Unrestricted   bool       // Whether bccess to repositories belong to this externbl service is unrestricted.
+	CloudDefbult   bool       // Whether this externbl service is our defbult public service on Cloud
+	HbsWebhooks    *bool      // Whether this externbl service hbs webhooks configured; cblculbted from Config
+	TokenExpiresAt *time.Time // Whether the token in this externbl services expires, nil indicbtes never expires.
 	CodeHostID     *int32
 }
 
-type ExternalServiceRepo struct {
-	ExternalServiceID int64      `json:"externalServiceID"`
-	RepoID            api.RepoID `json:"repoID"`
+type ExternblServiceRepo struct {
+	ExternblServiceID int64      `json:"externblServiceID"`
+	RepoID            bpi.RepoID `json:"repoID"`
 	CloneURL          string     `json:"cloneURL"`
 	UserID            int32      `json:"userID"`
 	OrgID             int32      `json:"orgID"`
-	CreatedAt         time.Time  `json:"createdAt"`
+	CrebtedAt         time.Time  `json:"crebtedAt"`
 }
 
-// ExternalServiceSyncJob represents an sync job for an external service
-type ExternalServiceSyncJob struct {
-	ID                int64 // TODO: Why is this an int64, it's a 32 bit int in the database
-	State             string
-	FailureMessage    string
+// ExternblServiceSyncJob represents bn sync job for bn externbl service
+type ExternblServiceSyncJob struct {
+	ID                int64 // TODO: Why is this bn int64, it's b 32 bit int in the dbtbbbse
+	Stbte             string
+	FbilureMessbge    string
 	QueuedAt          time.Time
-	StartedAt         time.Time
+	StbrtedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
-	NumResets         int // TODO: This is a 32 bit int in the database
-	ExternalServiceID int64
-	NumFailures       int
-	Cancel            bool
+	NumResets         int // TODO: This is b 32 bit int in the dbtbbbse
+	ExternblServiceID int64
+	NumFbilures       int
+	Cbncel            bool
 
-	// Counters that show progress of a running job
+	// Counters thbt show progress of b running job
 	ReposSynced     int32
 	RepoSyncErrors  int32
 	ReposAdded      int32
@@ -665,1144 +665,1144 @@ type ExternalServiceSyncJob struct {
 	ReposUnmodified int32
 }
 
-// ExternalServiceNamespace represents a namespace on an external service that can have ownership over repositories
-type ExternalServiceNamespace struct {
+// ExternblServiceNbmespbce represents b nbmespbce on bn externbl service thbt cbn hbve ownership over repositories
+type ExternblServiceNbmespbce struct {
 	ID         int    `json:"id"`
-	Name       string `json:"name"`
-	ExternalID string `json:"external_id"`
+	Nbme       string `json:"nbme"`
+	ExternblID string `json:"externbl_id"`
 }
 
-// ExternalServiceRepository represents a repository on an external service that may not necessarily be sync'd with sourcegraph
-type ExternalServiceRepository struct {
-	ID         api.RepoID   `json:"id"`
-	Name       api.RepoName `json:"name"`
-	ExternalID string       `json:"external_id"`
+// ExternblServiceRepository represents b repository on bn externbl service thbt mby not necessbrily be sync'd with sourcegrbph
+type ExternblServiceRepository struct {
+	ID         bpi.RepoID   `json:"id"`
+	Nbme       bpi.RepoNbme `json:"nbme"`
+	ExternblID string       `json:"externbl_id"`
 }
 
-// URN returns a unique resource identifier of this external service,
-// used as the key in a repo's Sources map as well as the SourceInfo ID.
-func (e *ExternalService) URN() string {
+// URN returns b unique resource identifier of this externbl service,
+// used bs the key in b repo's Sources mbp bs well bs the SourceInfo ID.
+func (e *ExternblService) URN() string {
 	return extsvc.URN(e.Kind, e.ID)
 }
 
-// IsDeleted returns true if the external service is deleted.
-func (e *ExternalService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
+// IsDeleted returns true if the externbl service is deleted.
+func (e *ExternblService) IsDeleted() bool { return !e.DeletedAt.IsZero() }
 
-// Update updates ExternalService e with the fields from the given newer ExternalService n,
+// Updbte updbtes ExternblService e with the fields from the given newer ExternblService n,
 // returning true if modified.
-func (e *ExternalService) Update(ctx context.Context, n *ExternalService) (modified bool, _ error) {
+func (e *ExternblService) Updbte(ctx context.Context, n *ExternblService) (modified bool, _ error) {
 	if e.ID != n.ID {
-		return false, nil
+		return fblse, nil
 	}
 
-	if !strings.EqualFold(e.Kind, n.Kind) {
+	if !strings.EqublFold(e.Kind, n.Kind) {
 		e.Kind, modified = strings.ToUpper(n.Kind), true
 	}
 
-	if e.DisplayName != n.DisplayName {
-		e.DisplayName, modified = n.DisplayName, true
+	if e.DisplbyNbme != n.DisplbyNbme {
+		e.DisplbyNbme, modified = n.DisplbyNbme, true
 	}
 
 	eConfig, err := e.Config.Decrypt(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 
 	nConfig, err := n.Config.Decrypt(ctx)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	if eConfig != nConfig {
 		e.Config.Set(nConfig)
 		modified = true
 	}
 
-	if !e.UpdatedAt.Equal(n.UpdatedAt) {
-		e.UpdatedAt, modified = n.UpdatedAt, true
+	if !e.UpdbtedAt.Equbl(n.UpdbtedAt) {
+		e.UpdbtedAt, modified = n.UpdbtedAt, true
 	}
 
-	if !e.DeletedAt.Equal(n.DeletedAt) {
+	if !e.DeletedAt.Equbl(n.DeletedAt) {
 		e.DeletedAt, modified = n.DeletedAt, true
 	}
 
 	return modified, nil
 }
 
-// Configuration returns the external service config.
-func (e *ExternalService) Configuration(ctx context.Context) (cfg any, _ error) {
-	return extsvc.ParseEncryptableConfig(ctx, e.Kind, e.Config)
+// Configurbtion returns the externbl service config.
+func (e *ExternblService) Configurbtion(ctx context.Context) (cfg bny, _ error) {
+	return extsvc.PbrseEncryptbbleConfig(ctx, e.Kind, e.Config)
 }
 
-// Clone returns a clone of the given external service.
-func (e *ExternalService) Clone() *ExternalService {
+// Clone returns b clone of the given externbl service.
+func (e *ExternblService) Clone() *ExternblService {
 	clone := *e
 	return &clone
 }
 
-// Apply applies the given functional options to the ExternalService.
-func (e *ExternalService) Apply(opts ...func(*ExternalService)) {
+// Apply bpplies the given functionbl options to the ExternblService.
+func (e *ExternblService) Apply(opts ...func(*ExternblService)) {
 	if e == nil {
 		return
 	}
 
-	for _, opt := range opts {
+	for _, opt := rbnge opts {
 		opt(e)
 	}
 }
 
-// With returns a clone of the given repo with the given functional options applied.
-func (e *ExternalService) With(opts ...func(*ExternalService)) *ExternalService {
+// With returns b clone of the given repo with the given functionbl options bpplied.
+func (e *ExternblService) With(opts ...func(*ExternblService)) *ExternblService {
 	clone := e.Clone()
 	clone.Apply(opts...)
 	return clone
 }
 
-// SupportsRepoExclusion returns true when given external service supports repo
+// SupportsRepoExclusion returns true when given externbl service supports repo
 // exclusion.
-func (e *ExternalService) SupportsRepoExclusion() bool {
+func (e *ExternblService) SupportsRepoExclusion() bool {
 	return extsvc.SupportsRepoExclusion(e.Kind)
 }
 
-// ExternalServices is a utility type with convenience methods for operating on
-// lists of ExternalServices.
-type ExternalServices []*ExternalService
+// ExternblServices is b utility type with convenience methods for operbting on
+// lists of ExternblServices.
+type ExternblServices []*ExternblService
 
-// IDs returns the list of ids from all ExternalServices.
-func (es ExternalServices) IDs() []int64 {
-	ids := make([]int64, len(es))
-	for i := range es {
+// IDs returns the list of ids from bll ExternblServices.
+func (es ExternblServices) IDs() []int64 {
+	ids := mbke([]int64, len(es))
+	for i := rbnge es {
 		ids[i] = es[i].ID
 	}
 	return ids
 }
 
-// DisplayNames returns the list of display names from all ExternalServices.
-func (es ExternalServices) DisplayNames() []string {
-	names := make([]string, len(es))
-	for i := range es {
-		names[i] = es[i].DisplayName
+// DisplbyNbmes returns the list of displby nbmes from bll ExternblServices.
+func (es ExternblServices) DisplbyNbmes() []string {
+	nbmes := mbke([]string, len(es))
+	for i := rbnge es {
+		nbmes[i] = es[i].DisplbyNbme
 	}
-	return names
+	return nbmes
 }
 
-// Kinds returns the unique set of Kinds in the given external services list.
-func (es ExternalServices) Kinds() (kinds []string) {
-	set := make(map[string]bool, len(es))
-	for _, e := range es {
+// Kinds returns the unique set of Kinds in the given externbl services list.
+func (es ExternblServices) Kinds() (kinds []string) {
+	set := mbke(mbp[string]bool, len(es))
+	for _, e := rbnge es {
 		if !set[e.Kind] {
-			kinds = append(kinds, e.Kind)
+			kinds = bppend(kinds, e.Kind)
 			set[e.Kind] = true
 		}
 	}
 	return kinds
 }
 
-// URNs returns the list of URNs from all ExternalServices.
-func (es ExternalServices) URNs() []string {
-	urns := make([]string, len(es))
-	for i := range es {
+// URNs returns the list of URNs from bll ExternblServices.
+func (es ExternblServices) URNs() []string {
+	urns := mbke([]string, len(es))
+	for i := rbnge es {
 		urns[i] = es[i].URN()
 	}
 	return urns
 }
 
-func (es ExternalServices) Len() int {
+func (es ExternblServices) Len() int {
 	return len(es)
 }
 
-func (es ExternalServices) Swap(i, j int) {
+func (es ExternblServices) Swbp(i, j int) {
 	es[i], es[j] = es[j], es[i]
 }
 
-func (es ExternalServices) Less(i, j int) bool {
+func (es ExternblServices) Less(i, j int) bool {
 	return es[i].ID < es[j].ID
 }
 
-// Clone returns a clone of the given external services.
-func (es ExternalServices) Clone() ExternalServices {
-	o := make(ExternalServices, 0, len(es))
-	for _, r := range es {
-		o = append(o, r.Clone())
+// Clone returns b clone of the given externbl services.
+func (es ExternblServices) Clone() ExternblServices {
+	o := mbke(ExternblServices, 0, len(es))
+	for _, r := rbnge es {
+		o = bppend(o, r.Clone())
 	}
 	return o
 }
 
-// Apply applies the given functional options to the ExternalService.
-func (es ExternalServices) Apply(opts ...func(*ExternalService)) {
-	for _, r := range es {
+// Apply bpplies the given functionbl options to the ExternblService.
+func (es ExternblServices) Apply(opts ...func(*ExternblService)) {
+	for _, r := rbnge es {
 		r.Apply(opts...)
 	}
 }
 
-// With returns a clone of the given external services with the given functional options applied.
-func (es ExternalServices) With(opts ...func(*ExternalService)) ExternalServices {
+// With returns b clone of the given externbl services with the given functionbl options bpplied.
+func (es ExternblServices) With(opts ...func(*ExternblService)) ExternblServices {
 	clone := es.Clone()
 	clone.Apply(opts...)
 	return clone
 }
 
-type GlobalState struct {
+type GlobblStbte struct {
 	SiteID      string
-	Initialized bool // whether the initial site admin account has been created
+	Initiblized bool // whether the initibl site bdmin bccount hbs been crebted
 }
 
-// User represents a registered user.
+// User represents b registered user.
 type User struct {
 	ID                    int32
-	Username              string
-	DisplayName           string
-	AvatarURL             string
-	CreatedAt             time.Time
-	UpdatedAt             time.Time
+	Usernbme              string
+	DisplbyNbme           string
+	AvbtbrURL             string
+	CrebtedAt             time.Time
+	UpdbtedAt             time.Time
 	SiteAdmin             bool
 	BuiltinAuth           bool
-	InvalidatedSessionsAt time.Time
+	InvblidbtedSessionsAt time.Time
 	TosAccepted           bool
 	CompletedPostSignup   bool
-	Searchable            bool
+	Sebrchbble            bool
 	SCIMControlled        bool
 }
 
-// UserForSCIM extends user with email addresses and SCIM external ID.
+// UserForSCIM extends user with embil bddresses bnd SCIM externbl ID.
 type UserForSCIM struct {
 	User
-	Emails          []string
-	SCIMExternalID  string
-	SCIMAccountData string
+	Embils          []string
+	SCIMExternblID  string
+	SCIMAccountDbtb string
 	Active          bool
 }
 
 type SystemRole string
 
 const (
-	// UserSystemRole represents the role associated with all users on a Sourcegraph instance.
+	// UserSystemRole represents the role bssocibted with bll users on b Sourcegrbph instbnce.
 	UserSystemRole SystemRole = "USER"
 
-	// SiteAdministratorSystemRole represents the role associated with Site Administrators
-	// on a sourcegraph instance.
-	SiteAdministratorSystemRole SystemRole = "SITE_ADMINISTRATOR"
+	// SiteAdministrbtorSystemRole represents the role bssocibted with Site Administrbtors
+	// on b sourcegrbph instbnce.
+	SiteAdministrbtorSystemRole SystemRole = "SITE_ADMINISTRATOR"
 )
 
 type Role struct {
 	ID        int32
-	Name      string
+	Nbme      string
 	System    bool
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
 func (r Role) IsSiteAdmin() bool {
-	return r.Name == string(SiteAdministratorSystemRole)
+	return r.Nbme == string(SiteAdministrbtorSystemRole)
 }
 
 func (r Role) IsUser() bool {
-	return r.Name == string(UserSystemRole)
+	return r.Nbme == string(UserSystemRole)
 }
 
 type Permission struct {
 	ID        int32
-	Namespace rtypes.PermissionNamespace
-	Action    rtypes.NamespaceAction
-	CreatedAt time.Time
+	Nbmespbce rtypes.PermissionNbmespbce
+	Action    rtypes.NbmespbceAction
+	CrebtedAt time.Time
 }
 
-// DisplayName returns an human-readable string for permissions.
-func (p *Permission) DisplayName() string {
-	// Based on the zanzibar representation for data relations:
-	// <namespace>:<object_id>#<relation>@<user_id | user_group>
-	return fmt.Sprintf("%s#%s", p.Namespace, p.Action)
+// DisplbyNbme returns bn humbn-rebdbble string for permissions.
+func (p *Permission) DisplbyNbme() string {
+	// Bbsed on the zbnzibbr representbtion for dbtb relbtions:
+	// <nbmespbce>:<object_id>#<relbtion>@<user_id | user_group>
+	return fmt.Sprintf("%s#%s", p.Nbmespbce, p.Action)
 }
 
 type RolePermission struct {
 	RoleID       int32
 	PermissionID int32
-	CreatedAt    time.Time
+	CrebtedAt    time.Time
 }
 
 type UserRole struct {
 	RoleID    int32
 	UserID    int32
-	CreatedAt time.Time
+	CrebtedAt time.Time
 }
 
-type NamespacePermission struct {
+type NbmespbcePermission struct {
 	ID         int64
-	Namespace  rtypes.PermissionNamespace
+	Nbmespbce  rtypes.PermissionNbmespbce
 	ResourceID int64
 	UserID     int32
-	CreatedAt  time.Time
+	CrebtedAt  time.Time
 }
 
-func (n *NamespacePermission) DisplayName() string {
-	// Based on the zanzibar representation for data relations:
-	// <namespace>:<object_id>#@<user_id | user_group>
-	return fmt.Sprintf("%s:%d@%d", n.Namespace, n.ResourceID, n.UserID)
+func (n *NbmespbcePermission) DisplbyNbme() string {
+	// Bbsed on the zbnzibbr representbtion for dbtb relbtions:
+	// <nbmespbce>:<object_id>#@<user_id | user_group>
+	return fmt.Sprintf("%s:%d@%d", n.Nbmespbce, n.ResourceID, n.UserID)
 }
 
-type OrgMemberAutocompleteSearchItem struct {
+type OrgMemberAutocompleteSebrchItem struct {
 	ID          int32
-	Username    string
-	DisplayName string
-	AvatarURL   string
+	Usernbme    string
+	DisplbyNbme string
+	AvbtbrURL   string
 	InOrg       int32
 }
 
 type Org struct {
 	ID          int32
-	Name        string
-	DisplayName *string
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
+	Nbme        string
+	DisplbyNbme *string
+	CrebtedAt   time.Time
+	UpdbtedAt   time.Time
 }
 
 type OrgMembership struct {
 	ID        int32
 	OrgID     int32
 	UserID    int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-type PhabricatorRepo struct {
+type PhbbricbtorRepo struct {
 	ID       int32
-	Name     api.RepoName
+	Nbme     bpi.RepoNbme
 	URL      string
-	Callsign string
+	Cbllsign string
 }
 
-type UserUsageStatistics struct {
+type UserUsbgeStbtistics struct {
 	UserID                      int32
-	PageViews                   int32
-	SearchQueries               int32
+	PbgeViews                   int32
+	SebrchQueries               int32
 	CodeIntelligenceActions     int32
 	FindReferencesActions       int32
-	LastActiveTime              *time.Time
-	LastCodeHostIntegrationTime *time.Time
+	LbstActiveTime              *time.Time
+	LbstCodeHostIntegrbtionTime *time.Time
 }
 
-// UserUsageCounts captures the usage numbers of a user in a single day.
-type UserUsageCounts struct {
-	Date           time.Time
+// UserUsbgeCounts cbptures the usbge numbers of b user in b single dby.
+type UserUsbgeCounts struct {
+	Dbte           time.Time
 	UserID         uint32
-	SearchCount    int32
+	SebrchCount    int32
 	CodeIntelCount int32
 }
 
-// UserDates captures the created and deleted dates of a single user.
-type UserDates struct {
+// UserDbtes cbptures the crebted bnd deleted dbtes of b single user.
+type UserDbtes struct {
 	UserID    int32
-	CreatedAt time.Time
+	CrebtedAt time.Time
 	DeletedAt time.Time
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodyUsageStatistics struct {
-	Daily   []*CodyUsagePeriod
-	Weekly  []*CodyUsagePeriod
-	Monthly []*CodyUsagePeriod
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type CodyUsbgeStbtistics struct {
+	Dbily   []*CodyUsbgePeriod
+	Weekly  []*CodyUsbgePeriod
+	Monthly []*CodyUsbgePeriod
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type CodyUsagePeriod struct {
-	StartTime              time.Time
-	TotalUsers             *CodyCountStatistics
-	TotalRequests          *CodyCountStatistics
-	CodeGenerationRequests *CodyCountStatistics
-	ExplanationRequests    *CodyCountStatistics
-	InvalidRequests        *CodyCountStatistics
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type CodyUsbgePeriod struct {
+	StbrtTime              time.Time
+	TotblUsers             *CodyCountStbtistics
+	TotblRequests          *CodyCountStbtistics
+	CodeGenerbtionRequests *CodyCountStbtistics
+	ExplbnbtionRequests    *CodyCountStbtistics
+	InvblidRequests        *CodyCountStbtistics
 }
 
-type CodyCountStatistics struct {
+type CodyCountStbtistics struct {
 	UserCount   *int32
 	EventsCount *int32
 }
 
-// CodyAggregatedEvent represents the total requests, unique users, code
-// generation requests, explanation requests, and invalid requests over
-// the current month, week, and day for a single search event.
-type CodyAggregatedEvent struct {
-	Name                string
+// CodyAggregbtedEvent represents the totbl requests, unique users, code
+// generbtion requests, explbnbtion requests, bnd invblid requests over
+// the current month, week, bnd dby for b single sebrch event.
+type CodyAggregbtedEvent struct {
+	Nbme                string
 	Month               time.Time
 	Week                time.Time
-	Day                 time.Time
-	TotalMonth          int32
-	TotalWeek           int32
-	TotalDay            int32
+	Dby                 time.Time
+	TotblMonth          int32
+	TotblWeek           int32
+	TotblDby            int32
 	UniquesMonth        int32
 	UniquesWeek         int32
-	UniquesDay          int32
-	CodeGenerationMonth int32
-	CodeGenerationWeek  int32
-	CodeGenerationDay   int32
-	ExplanationMonth    int32
-	ExplanationWeek     int32
-	ExplanationDay      int32
-	InvalidMonth        int32
-	InvalidWeek         int32
-	InvalidDay          int32
+	UniquesDby          int32
+	CodeGenerbtionMonth int32
+	CodeGenerbtionWeek  int32
+	CodeGenerbtionDby   int32
+	ExplbnbtionMonth    int32
+	ExplbnbtionWeek     int32
+	ExplbnbtionDby      int32
+	InvblidMonth        int32
+	InvblidWeek         int32
+	InvblidDby          int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler.
-// RepoMetadataAggregatedStats represents the total number of repo metadata,
-// number of repositories with any metadata, total and unique number of
-// events for repo metadata usage related events over the current day, week, month.
-type RepoMetadataAggregatedStats struct {
-	Summary *RepoMetadataAggregatedSummary
-	Daily   *RepoMetadataAggregatedEvents
-	Weekly  *RepoMetadataAggregatedEvents
-	Monthly *RepoMetadataAggregatedEvents
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler.
+// RepoMetbdbtbAggregbtedStbts represents the totbl number of repo metbdbtb,
+// number of repositories with bny metbdbtb, totbl bnd unique number of
+// events for repo metbdbtb usbge relbted events over the current dby, week, month.
+type RepoMetbdbtbAggregbtedStbts struct {
+	Summbry *RepoMetbdbtbAggregbtedSummbry
+	Dbily   *RepoMetbdbtbAggregbtedEvents
+	Weekly  *RepoMetbdbtbAggregbtedEvents
+	Monthly *RepoMetbdbtbAggregbtedEvents
 }
 
-type RepoMetadataAggregatedSummary struct {
-	IsEnabled              bool
-	RepoMetadataCount      *int32
-	ReposWithMetadataCount *int32
+type RepoMetbdbtbAggregbtedSummbry struct {
+	IsEnbbled              bool
+	RepoMetbdbtbCount      *int32
+	ReposWithMetbdbtbCount *int32
 }
 
-type RepoMetadataAggregatedEvents struct {
-	StartTime          time.Time
-	CreateRepoMetadata *EventStats
-	UpdateRepoMetadata *EventStats
-	DeleteRepoMetadata *EventStats
-	SearchFilterUsage  *EventStats
+type RepoMetbdbtbAggregbtedEvents struct {
+	StbrtTime          time.Time
+	CrebteRepoMetbdbtb *EventStbts
+	UpdbteRepoMetbdbtb *EventStbts
+	DeleteRepoMetbdbtb *EventStbts
+	SebrchFilterUsbge  *EventStbts
 }
 
-type EventStats struct {
+type EventStbts struct {
 	UsersCount  *int32
 	EventsCount *int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type SiteUsageStatistics struct {
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type SiteUsbgeStbtistics struct {
 	DAUs  []*SiteActivityPeriod
 	WAUs  []*SiteActivityPeriod
 	MAUs  []*SiteActivityPeriod
 	RMAUs []*SiteActivityPeriod
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
 type SiteActivityPeriod struct {
-	StartTime            time.Time
+	StbrtTime            time.Time
 	UserCount            int32
 	RegisteredUserCount  int32
 	AnonymousUserCount   int32
-	IntegrationUserCount int32
+	IntegrbtionUserCount int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type BatchChangesUsageStatistics struct {
-	// ViewBatchChangeApplyPageCount is the number of page views on the apply page
-	// ("preview" page).
-	ViewBatchChangeApplyPageCount int32
-	// ViewBatchChangeDetailsPageAfterCreateCount is the number of page views on
-	// the batch changes details page *after creating* the batch change on the apply
-	// page by clicking "Apply".
-	ViewBatchChangeDetailsPageAfterCreateCount int32
-	// ViewBatchChangeDetailsPageAfterUpdateCount is the number of page views on
-	// the batch changes details page *after updating* a batch change on the apply page
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type BbtchChbngesUsbgeStbtistics struct {
+	// ViewBbtchChbngeApplyPbgeCount is the number of pbge views on the bpply pbge
+	// ("preview" pbge).
+	ViewBbtchChbngeApplyPbgeCount int32
+	// ViewBbtchChbngeDetbilsPbgeAfterCrebteCount is the number of pbge views on
+	// the bbtch chbnges detbils pbge *bfter crebting* the bbtch chbnge on the bpply
+	// pbge by clicking "Apply".
+	ViewBbtchChbngeDetbilsPbgeAfterCrebteCount int32
+	// ViewBbtchChbngeDetbilsPbgeAfterUpdbteCount is the number of pbge views on
+	// the bbtch chbnges detbils pbge *bfter updbting* b bbtch chbnge on the bpply pbge
 	// by clicking "Apply".
-	ViewBatchChangeDetailsPageAfterUpdateCount int32
+	ViewBbtchChbngeDetbilsPbgeAfterUpdbteCount int32
 
-	// BatchChangesCount is the number of batch changes on the instance. This can go
-	// down when users delete a batch change.
-	BatchChangesCount int32
-	// BatchChangesClosedCount is the number of *closed* batch changes on the
-	// instance. This can go down when users delete a batch change.
-	BatchChangesClosedCount int32
+	// BbtchChbngesCount is the number of bbtch chbnges on the instbnce. This cbn go
+	// down when users delete b bbtch chbnge.
+	BbtchChbngesCount int32
+	// BbtchChbngesClosedCount is the number of *closed* bbtch chbnges on the
+	// instbnce. This cbn go down when users delete b bbtch chbnge.
+	BbtchChbngesClosedCount int32
 
-	// BatchSpecsCreatedCount is the number of batch change specs that have been
-	// created by running `src batch [preview|apply]`. This number never
-	// goes down since it's based on event logs, even if the batch specs
-	// were not used and cleaned up.
-	BatchSpecsCreatedCount int32
-	// ChangesetSpecsCreatedCount is the number of changeset specs that have
-	// been created by running `src batch [preview|apply]`. This number
-	// never goes down since it's based on event logs, even if the changeset
-	// specs were not used and cleaned up.
-	ChangesetSpecsCreatedCount int32
+	// BbtchSpecsCrebtedCount is the number of bbtch chbnge specs thbt hbve been
+	// crebted by running `src bbtch [preview|bpply]`. This number never
+	// goes down since it's bbsed on event logs, even if the bbtch specs
+	// were not used bnd clebned up.
+	BbtchSpecsCrebtedCount int32
+	// ChbngesetSpecsCrebtedCount is the number of chbngeset specs thbt hbve
+	// been crebted by running `src bbtch [preview|bpply]`. This number
+	// never goes down since it's bbsed on event logs, even if the chbngeset
+	// specs were not used bnd clebned up.
+	ChbngesetSpecsCrebtedCount int32
 
-	// PublishedChangesetsUnpublishedCount is the number of changesets in the
-	// database that have not been published but belong to a batch change.
+	// PublishedChbngesetsUnpublishedCount is the number of chbngesets in the
+	// dbtbbbse thbt hbve not been published but belong to b bbtch chbnge.
 	// This number *could* go down, since it's not
-	// based on event logs, but so far (Mar 2021) we never cleaned up
-	// changesets in the database.
-	PublishedChangesetsUnpublishedCount int32
+	// bbsed on event logs, but so fbr (Mbr 2021) we never clebned up
+	// chbngesets in the dbtbbbse.
+	PublishedChbngesetsUnpublishedCount int32
 
-	// PublishedChangesetsCount is the number of changesets published on code hosts
-	// by batch changes. This number *could* go down, since it's not based on
-	// event logs, but so far (Mar 2021) we never cleaned up changesets in the
-	// database.
-	PublishedChangesetsCount int32
-	// PublishedChangesetsDiffStatAddedSum is the total sum of lines added by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatAddedSum int32
-	// PublishedChangesetsDiffStatDeletedSum is the total sum of lines deleted by
-	// changesets published on the code host by batch changes.
-	PublishedChangesetsDiffStatDeletedSum int32
+	// PublishedChbngesetsCount is the number of chbngesets published on code hosts
+	// by bbtch chbnges. This number *could* go down, since it's not bbsed on
+	// event logs, but so fbr (Mbr 2021) we never clebned up chbngesets in the
+	// dbtbbbse.
+	PublishedChbngesetsCount int32
+	// PublishedChbngesetsDiffStbtAddedSum is the totbl sum of lines bdded by
+	// chbngesets published on the code host by bbtch chbnges.
+	PublishedChbngesetsDiffStbtAddedSum int32
+	// PublishedChbngesetsDiffStbtDeletedSum is the totbl sum of lines deleted by
+	// chbngesets published on the code host by bbtch chbnges.
+	PublishedChbngesetsDiffStbtDeletedSum int32
 
-	// PublishedChangesetsMergedCount is the number of changesets published on
-	// code hosts by batch changes that have also been *merged*.
-	// This number *could* go down, since it's not based on event logs, but
-	// so far (Mar 2021) we never cleaned up changesets in the database.
-	PublishedChangesetsMergedCount int32
-	// PublishedChangesetsMergedDiffStatAddedSum is the total sum of lines added by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatAddedSum int32
-	// PublishedChangesetsMergedDiffStatDeletedSum is the total sum of lines deleted by
-	// changesets published on the code host by batch changes and merged.
-	PublishedChangesetsMergedDiffStatDeletedSum int32
+	// PublishedChbngesetsMergedCount is the number of chbngesets published on
+	// code hosts by bbtch chbnges thbt hbve blso been *merged*.
+	// This number *could* go down, since it's not bbsed on event logs, but
+	// so fbr (Mbr 2021) we never clebned up chbngesets in the dbtbbbse.
+	PublishedChbngesetsMergedCount int32
+	// PublishedChbngesetsMergedDiffStbtAddedSum is the totbl sum of lines bdded by
+	// chbngesets published on the code host by bbtch chbnges bnd merged.
+	PublishedChbngesetsMergedDiffStbtAddedSum int32
+	// PublishedChbngesetsMergedDiffStbtDeletedSum is the totbl sum of lines deleted by
+	// chbngesets published on the code host by bbtch chbnges bnd merged.
+	PublishedChbngesetsMergedDiffStbtDeletedSum int32
 
-	// ImportedChangesetsCount is the total number of changesets that have been
-	// imported by a batch change to be tracked.
-	// This number *could* go down, since it's not based on event logs, but
-	// so far (Mar 2021) we never cleaned up changesets in the database.
-	ImportedChangesetsCount int32
-	// ManualChangesetsCount is the total number of *merged* changesets that
-	// have been imported by a batch change to be tracked.
-	// This number *could* go down, since it's not based on event logs, but
-	// so far (Mar 2021) we never cleaned up changesets in the database.
-	ImportedChangesetsMergedCount int32
+	// ImportedChbngesetsCount is the totbl number of chbngesets thbt hbve been
+	// imported by b bbtch chbnge to be trbcked.
+	// This number *could* go down, since it's not bbsed on event logs, but
+	// so fbr (Mbr 2021) we never clebned up chbngesets in the dbtbbbse.
+	ImportedChbngesetsCount int32
+	// MbnublChbngesetsCount is the totbl number of *merged* chbngesets thbt
+	// hbve been imported by b bbtch chbnge to be trbcked.
+	// This number *could* go down, since it's not bbsed on event logs, but
+	// so fbr (Mbr 2021) we never clebned up chbngesets in the dbtbbbse.
+	ImportedChbngesetsMergedCount int32
 
-	// CurrentMonthContributorsCount is the count of unique users that have logged a
-	// "contributing" batch changes event, such as "BatchChangeCreated".
+	// CurrentMonthContributorsCount is the count of unique users thbt hbve logged b
+	// "contributing" bbtch chbnges event, such bs "BbtchChbngeCrebted".
 	//
-	// See `contributorsEvents` in `GetBatchChangesUsageStatistics` for a full list
+	// See `contributorsEvents` in `GetBbtchChbngesUsbgeStbtistics` for b full list
 	// of events.
 	CurrentMonthContributorsCount int64
 
-	// CurrentMonthUsersCount is the count of unique users that have logged a
-	// "using" batch changes event, such as "ViewBatchChangesListPage" and also "BatchChangeCreated".
+	// CurrentMonthUsersCount is the count of unique users thbt hbve logged b
+	// "using" bbtch chbnges event, such bs "ViewBbtchChbngesListPbge" bnd blso "BbtchChbngeCrebted".
 	//
-	// See `contributorsEvents` in `GetBatchChangesUsageStatistics` for a full
+	// See `contributorsEvents` in `GetBbtchChbngesUsbgeStbtistics` for b full
 	// list of events.
 	CurrentMonthUsersCount int64
 
-	BatchChangesCohorts []*BatchChangesCohort
+	BbtchChbngesCohorts []*BbtchChbngesCohort
 
-	// ActiveExecutorsCount is the count of executors that have had a heartbeat in the last
+	// ActiveExecutorsCount is the count of executors thbt hbve hbd b hebrtbebt in the lbst
 	// 15 seconds.
 	ActiveExecutorsCount int32
 
-	// BulkOperationsCount is the count of bulk operations used to manage changesets
-	BulkOperationsCount []*BulkOperationsCount
+	// BulkOperbtionsCount is the count of bulk operbtions used to mbnbge chbngesets
+	BulkOperbtionsCount []*BulkOperbtionsCount
 
-	// ChangesetDistribution is the distribution of batch changes per source and the amount of
-	// changesets created via the different sources
-	ChangesetDistribution []*ChangesetDistribution
+	// ChbngesetDistribution is the distribution of bbtch chbnges per source bnd the bmount of
+	// chbngesets crebted vib the different sources
+	ChbngesetDistribution []*ChbngesetDistribution
 
-	// BatchChangeStatsBySource is the distribution of batch change x changesets statistics
-	// across multiple sources
-	BatchChangeStatsBySource []*BatchChangeStatsBySource
+	// BbtchChbngeStbtsBySource is the distribution of bbtch chbnge x chbngesets stbtistics
+	// bcross multiple sources
+	BbtchChbngeStbtsBySource []*BbtchChbngeStbtsBySource
 
-	// MonthlyBatchChangesExecutorUsage is the number of users who ran a job on an
-	// executor in a given month
-	MonthlyBatchChangesExecutorUsage []*MonthlyBatchChangesExecutorUsage
+	// MonthlyBbtchChbngesExecutorUsbge is the number of users who rbn b job on bn
+	// executor in b given month
+	MonthlyBbtchChbngesExecutorUsbge []*MonthlyBbtchChbngesExecutorUsbge
 
-	WeeklyBulkOperationStats []*WeeklyBulkOperationStats
+	WeeklyBulkOperbtionStbts []*WeeklyBulkOperbtionStbts
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type BulkOperationsCount struct {
-	Name  string
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type BulkOperbtionsCount struct {
+	Nbme  string
 	Count int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type WeeklyBulkOperationStats struct {
-	// Week is the week of this cohort and is used to group batch changes by
-	// their creation date.
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type WeeklyBulkOperbtionStbts struct {
+	// Week is the week of this cohort bnd is used to group bbtch chbnges by
+	// their crebtion dbte.
 	Week string
 
-	// Count is the number of bulk operations carried out in a particular week.
+	// Count is the number of bulk operbtions cbrried out in b pbrticulbr week.
 	Count int32
 
-	BulkOperation string
+	BulkOperbtion string
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type MonthlyBatchChangesExecutorUsage struct {
-	// Month of the year corresponding to this executor usage data.
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type MonthlyBbtchChbngesExecutorUsbge struct {
+	// Month of the yebr corresponding to this executor usbge dbtb.
 	Month string
 
-	// The number of unique users who ran a job on an executor this month.
+	// The number of unique users who rbn b job on bn executor this month.
 	Count int32
 
-	// The cumulative number of minutes of executor usage for batch changes this month.
+	// The cumulbtive number of minutes of executor usbge for bbtch chbnges this month.
 	Minutes int64
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type BatchChangeStatsBySource struct {
-	// the source of the changesets belonging to the batch changes
-	// indicating whether the changeset was created via an executor or locally.
-	Source BatchChangeSource
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type BbtchChbngeStbtsBySource struct {
+	// the source of the chbngesets belonging to the bbtch chbnges
+	// indicbting whether the chbngeset wbs crebted vib bn executor or locblly.
+	Source BbtchChbngeSource
 
-	// the amount of changesets published using this batch change source.
-	PublishedChangesetsCount int32
+	// the bmount of chbngesets published using this bbtch chbnge source.
+	PublishedChbngesetsCount int32
 
-	// the amount of batch changes created from this source.
-	BatchChangesCount int32
+	// the bmount of bbtch chbnges crebted from this source.
+	BbtchChbngesCount int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type ChangesetDistribution struct {
-	// the source of the changesets belonging to the batch changes
-	// indicating whether the changeset was created via an executor or locally
-	Source BatchChangeSource
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type ChbngesetDistribution struct {
+	// the source of the chbngesets belonging to the bbtch chbnges
+	// indicbting whether the chbngeset wbs crebted vib bn executor or locblly
+	Source BbtchChbngeSource
 
-	// range of changeset distribution per batch_change
-	Range string
+	// rbnge of chbngeset distribution per bbtch_chbnge
+	Rbnge string
 
-	// number of batch changes with the range of changesets defined
-	BatchChangesCount int32
+	// number of bbtch chbnges with the rbnge of chbngesets defined
+	BbtchChbngesCount int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type BatchChangesCohort struct {
-	// Week is the week of this cohort and is used to group batch changes by
-	// their creation date.
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type BbtchChbngesCohort struct {
+	// Week is the week of this cohort bnd is used to group bbtch chbnges by
+	// their crebtion dbte.
 	Week string
 
-	// BatchChangesClosed is the number of batch changes that were created in Week and
-	// are currently closed.
-	BatchChangesClosed int64
+	// BbtchChbngesClosed is the number of bbtch chbnges thbt were crebted in Week bnd
+	// bre currently closed.
+	BbtchChbngesClosed int64
 
-	// BatchChangesOpen is the number of batch changes that were created in Week and
-	// are currently open.
-	BatchChangesOpen int64
+	// BbtchChbngesOpen is the number of bbtch chbnges thbt were crebted in Week bnd
+	// bre currently open.
+	BbtchChbngesOpen int64
 
-	// The following are the counts of the changesets that are currently
-	// attached to the batch changes in this cohort.
+	// The following bre the counts of the chbngesets thbt bre currently
+	// bttbched to the bbtch chbnges in this cohort.
 
-	ChangesetsImported        int64
-	ChangesetsUnpublished     int64
-	ChangesetsPublished       int64
-	ChangesetsPublishedOpen   int64
-	ChangesetsPublishedDraft  int64
-	ChangesetsPublishedMerged int64
-	ChangesetsPublishedClosed int64
+	ChbngesetsImported        int64
+	ChbngesetsUnpublished     int64
+	ChbngesetsPublished       int64
+	ChbngesetsPublishedOpen   int64
+	ChbngesetsPublishedDrbft  int64
+	ChbngesetsPublishedMerged int64
+	ChbngesetsPublishedClosed int64
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type SearchUsageStatistics struct {
-	Daily   []*SearchUsagePeriod
-	Weekly  []*SearchUsagePeriod
-	Monthly []*SearchUsagePeriod
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type SebrchUsbgeStbtistics struct {
+	Dbily   []*SebrchUsbgePeriod
+	Weekly  []*SebrchUsbgePeriod
+	Monthly []*SebrchUsbgePeriod
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type SearchUsagePeriod struct {
-	StartTime  time.Time
-	TotalUsers int32
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type SebrchUsbgePeriod struct {
+	StbrtTime  time.Time
+	TotblUsers int32
 
-	// Counts and latency statistics for different kinds of searches.
-	Literal    *SearchEventStatistics
-	Regexp     *SearchEventStatistics
-	Commit     *SearchEventStatistics
-	Diff       *SearchEventStatistics
-	File       *SearchEventStatistics
-	Structural *SearchEventStatistics
-	Symbol     *SearchEventStatistics
+	// Counts bnd lbtency stbtistics for different kinds of sebrches.
+	Literbl    *SebrchEventStbtistics
+	Regexp     *SebrchEventStbtistics
+	Commit     *SebrchEventStbtistics
+	Diff       *SebrchEventStbtistics
+	File       *SebrchEventStbtistics
+	Structurbl *SebrchEventStbtistics
+	Symbol     *SebrchEventStbtistics
 
-	// Counts of search query attributes. Ref: RFC 384.
-	OperatorOr              *SearchCountStatistics
-	OperatorAnd             *SearchCountStatistics
-	OperatorNot             *SearchCountStatistics
-	SelectRepo              *SearchCountStatistics
-	SelectFile              *SearchCountStatistics
-	SelectContent           *SearchCountStatistics
-	SelectSymbol            *SearchCountStatistics
-	SelectCommitDiffAdded   *SearchCountStatistics
-	SelectCommitDiffRemoved *SearchCountStatistics
-	RepoContains            *SearchCountStatistics
-	RepoContainsFile        *SearchCountStatistics
-	RepoContainsContent     *SearchCountStatistics
-	RepoContainsCommitAfter *SearchCountStatistics
-	RepoDependencies        *SearchCountStatistics
-	CountAll                *SearchCountStatistics
-	NonGlobalContext        *SearchCountStatistics
-	OnlyPatterns            *SearchCountStatistics
-	OnlyPatternsThreeOrMore *SearchCountStatistics
+	// Counts of sebrch query bttributes. Ref: RFC 384.
+	OperbtorOr              *SebrchCountStbtistics
+	OperbtorAnd             *SebrchCountStbtistics
+	OperbtorNot             *SebrchCountStbtistics
+	SelectRepo              *SebrchCountStbtistics
+	SelectFile              *SebrchCountStbtistics
+	SelectContent           *SebrchCountStbtistics
+	SelectSymbol            *SebrchCountStbtistics
+	SelectCommitDiffAdded   *SebrchCountStbtistics
+	SelectCommitDiffRemoved *SebrchCountStbtistics
+	RepoContbins            *SebrchCountStbtistics
+	RepoContbinsFile        *SebrchCountStbtistics
+	RepoContbinsContent     *SebrchCountStbtistics
+	RepoContbinsCommitAfter *SebrchCountStbtistics
+	RepoDependencies        *SebrchCountStbtistics
+	CountAll                *SebrchCountStbtistics
+	NonGlobblContext        *SebrchCountStbtistics
+	OnlyPbtterns            *SebrchCountStbtistics
+	OnlyPbtternsThreeOrMore *SebrchCountStbtistics
 
-	// DEPRECATED. Counts statistics for fields.
-	After              *SearchCountStatistics
-	Archived           *SearchCountStatistics
-	Author             *SearchCountStatistics
-	Before             *SearchCountStatistics
-	Case               *SearchCountStatistics
-	Committer          *SearchCountStatistics
-	Content            *SearchCountStatistics
-	Count              *SearchCountStatistics
-	Fork               *SearchCountStatistics
-	Index              *SearchCountStatistics
-	Lang               *SearchCountStatistics
-	Message            *SearchCountStatistics
-	PatternType        *SearchCountStatistics
-	Repo               *SearchEventStatistics
-	Repohascommitafter *SearchCountStatistics
-	Repohasfile        *SearchCountStatistics
-	Repogroup          *SearchCountStatistics
-	Timeout            *SearchCountStatistics
-	Type               *SearchCountStatistics
+	// DEPRECATED. Counts stbtistics for fields.
+	After              *SebrchCountStbtistics
+	Archived           *SebrchCountStbtistics
+	Author             *SebrchCountStbtistics
+	Before             *SebrchCountStbtistics
+	Cbse               *SebrchCountStbtistics
+	Committer          *SebrchCountStbtistics
+	Content            *SebrchCountStbtistics
+	Count              *SebrchCountStbtistics
+	Fork               *SebrchCountStbtistics
+	Index              *SebrchCountStbtistics
+	Lbng               *SebrchCountStbtistics
+	Messbge            *SebrchCountStbtistics
+	PbtternType        *SebrchCountStbtistics
+	Repo               *SebrchEventStbtistics
+	Repohbscommitbfter *SebrchCountStbtistics
+	Repohbsfile        *SebrchCountStbtistics
+	Repogroup          *SebrchCountStbtistics
+	Timeout            *SebrchCountStbtistics
+	Type               *SebrchCountStbtistics
 
-	// DEPRECATED. Search modes statistics refers to removed functionality.
-	SearchModes *SearchModeUsageStatistics
+	// DEPRECATED. Sebrch modes stbtistics refers to removed functionblity.
+	SebrchModes *SebrchModeUsbgeStbtistics
 }
 
-type SearchModeUsageStatistics struct {
-	Interactive *SearchCountStatistics
-	PlainText   *SearchCountStatistics
+type SebrchModeUsbgeStbtistics struct {
+	Interbctive *SebrchCountStbtistics
+	PlbinText   *SebrchCountStbtistics
 }
 
-type SearchCountStatistics struct {
+type SebrchCountStbtistics struct {
 	UserCount   *int32
 	EventsCount *int32
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type SearchEventStatistics struct {
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type SebrchEventStbtistics struct {
 	UserCount      *int32
 	EventsCount    *int32
-	EventLatencies *SearchEventLatencies
+	EventLbtencies *SebrchEventLbtencies
 }
 
-// NOTE: DO NOT alter this struct without making a symmetric change
-// to the updatecheck handler. This struct is marshalled and sent to
-// BigQuery, which requires the input match its schema exactly.
-type SearchEventLatencies struct {
-	P50 float64
-	P90 float64
-	P99 float64
+// NOTE: DO NOT blter this struct without mbking b symmetric chbnge
+// to the updbtecheck hbndler. This struct is mbrshblled bnd sent to
+// BigQuery, which requires the input mbtch its schemb exbctly.
+type SebrchEventLbtencies struct {
+	P50 flobt64
+	P90 flobt64
+	P99 flobt64
 }
 
-// SiteUsageSummary is an alternate view of SiteUsageStatistics which is
-// calculated in the database layer.
-type SiteUsageSummary struct {
+// SiteUsbgeSummbry is bn blternbte view of SiteUsbgeStbtistics which is
+// cblculbted in the dbtbbbse lbyer.
+type SiteUsbgeSummbry struct {
 	RollingMonth                   time.Time
 	Month                          time.Time
 	Week                           time.Time
-	Day                            time.Time
+	Dby                            time.Time
 	UniquesRollingMonth            int32
 	UniquesMonth                   int32
 	UniquesWeek                    int32
-	UniquesDay                     int32
+	UniquesDby                     int32
 	RegisteredUniquesRollingMonth  int32
 	RegisteredUniquesMonth         int32
 	RegisteredUniquesWeek          int32
-	RegisteredUniquesDay           int32
-	IntegrationUniquesRollingMonth int32
-	IntegrationUniquesMonth        int32
-	IntegrationUniquesWeek         int32
-	IntegrationUniquesDay          int32
+	RegisteredUniquesDby           int32
+	IntegrbtionUniquesRollingMonth int32
+	IntegrbtionUniquesMonth        int32
+	IntegrbtionUniquesWeek         int32
+	IntegrbtionUniquesDby          int32
 }
 
-// SearchAggregatedEvent represents the total events, unique users, and
-// latencies over the current month, week, and day for a single search event.
-type SearchAggregatedEvent struct {
-	Name           string
+// SebrchAggregbtedEvent represents the totbl events, unique users, bnd
+// lbtencies over the current month, week, bnd dby for b single sebrch event.
+type SebrchAggregbtedEvent struct {
+	Nbme           string
 	Month          time.Time
 	Week           time.Time
-	Day            time.Time
-	TotalMonth     int32
-	TotalWeek      int32
-	TotalDay       int32
+	Dby            time.Time
+	TotblMonth     int32
+	TotblWeek      int32
+	TotblDby       int32
 	UniquesMonth   int32
 	UniquesWeek    int32
-	UniquesDay     int32
-	LatenciesMonth []float64
-	LatenciesWeek  []float64
-	LatenciesDay   []float64
+	UniquesDby     int32
+	LbtenciesMonth []flobt64
+	LbtenciesWeek  []flobt64
+	LbtenciesDby   []flobt64
 }
 
 type SurveyResponse struct {
 	ID           int32
 	UserID       *int32
-	Email        *string
+	Embil        *string
 	Score        int32
-	Reason       *string
+	Rebson       *string
 	Better       *string
-	OtherUseCase *string
-	CreatedAt    time.Time
+	OtherUseCbse *string
+	CrebtedAt    time.Time
 }
 
 type Event struct {
 	ID              int32
-	Name            string
+	Nbme            string
 	URL             string
 	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string
 	Version         string
-	Timestamp       time.Time
+	Timestbmp       time.Time
 }
 
-// GrowthStatistics represents the total users that were created,
-// deleted, resurrected, churned and retained over the current month.
-type GrowthStatistics struct {
+// GrowthStbtistics represents the totbl users thbt were crebted,
+// deleted, resurrected, churned bnd retbined over the current month.
+type GrowthStbtistics struct {
 	DeletedUsers           int32
-	CreatedUsers           int32
+	CrebtedUsers           int32
 	ResurrectedUsers       int32
 	ChurnedUsers           int32
-	RetainedUsers          int32
+	RetbinedUsers          int32
 	PendingAccessRequests  int32
 	ApprovedAccessRequests int32
 	RejectedAccessRequests int32
 }
 
-// IDEExtensionsUsage represents the daily, weekly and monthly numbers
-// of search performed and user state events from all IDE extensions,
-// and all inbound traffic from the extension to Sourcegraph instance
-type IDEExtensionsUsage struct {
-	IDEs []*IDEExtensionsUsageStatistics
+// IDEExtensionsUsbge represents the dbily, weekly bnd monthly numbers
+// of sebrch performed bnd user stbte events from bll IDE extensions,
+// bnd bll inbound trbffic from the extension to Sourcegrbph instbnce
+type IDEExtensionsUsbge struct {
+	IDEs []*IDEExtensionsUsbgeStbtistics
 }
 
-// Usage statistics from each IDE extension
-type IDEExtensionsUsageStatistics struct {
+// Usbge stbtistics from ebch IDE extension
+type IDEExtensionsUsbgeStbtistics struct {
 	IdeKind string
-	Month   IDEExtensionsUsageRegularPeriod
-	Week    IDEExtensionsUsageRegularPeriod
-	Day     IDEExtensionsUsageDailyPeriod
+	Month   IDEExtensionsUsbgeRegulbrPeriod
+	Week    IDEExtensionsUsbgeRegulbrPeriod
+	Dby     IDEExtensionsUsbgeDbilyPeriod
 }
 
-// Monthly and Weekly usage from each IDE extension
-type IDEExtensionsUsageRegularPeriod struct {
-	StartTime         time.Time
-	SearchesPerformed IDEExtensionsUsageSearchesPerformed
+// Monthly bnd Weekly usbge from ebch IDE extension
+type IDEExtensionsUsbgeRegulbrPeriod struct {
+	StbrtTime         time.Time
+	SebrchesPerformed IDEExtensionsUsbgeSebrchesPerformed
 }
 
-// Daily usage from each IDE extension
-type IDEExtensionsUsageDailyPeriod struct {
-	StartTime         time.Time
-	SearchesPerformed IDEExtensionsUsageSearchesPerformed
-	UserState         IDEExtensionsUsageUserState
+// Dbily usbge from ebch IDE extension
+type IDEExtensionsUsbgeDbilyPeriod struct {
+	StbrtTime         time.Time
+	SebrchesPerformed IDEExtensionsUsbgeSebrchesPerformed
+	UserStbte         IDEExtensionsUsbgeUserStbte
 	RedirectsCount    int32
 }
 
-// Count of unique users who performed searches & total searches performed
-type IDEExtensionsUsageSearchesPerformed struct {
+// Count of unique users who performed sebrches & totbl sebrches performed
+type IDEExtensionsUsbgeSebrchesPerformed struct {
 	UniquesCount int32
-	TotalCount   int32
+	TotblCount   int32
 }
 
-// Count of unique users who installed & uninstalled each extension
-type IDEExtensionsUsageUserState struct {
-	Installs   int32
-	Uninstalls int32
+// Count of unique users who instblled & uninstblled ebch extension
+type IDEExtensionsUsbgeUserStbte struct {
+	Instblls   int32
+	Uninstblls int32
 }
 
-// MigratedExtensionsUsageStatistics repreents the numbers of interactions with
-// the migrated extensions (git blame, open in editor, search exports, and go
-// imports search).
-type MigratedExtensionsUsageStatistics struct {
-	GitBlameEnabled                 *int32
-	GitBlameEnabledUniqueUsers      *int32
-	GitBlameDisabled                *int32
-	GitBlameDisabledUniqueUsers     *int32
-	GitBlamePopupViewed             *int32
-	GitBlamePopupViewedUniqueUsers  *int32
-	GitBlamePopupClicked            *int32
-	GitBlamePopupClickedUniqueUsers *int32
+// MigrbtedExtensionsUsbgeStbtistics repreents the numbers of interbctions with
+// the migrbted extensions (git blbme, open in editor, sebrch exports, bnd go
+// imports sebrch).
+type MigrbtedExtensionsUsbgeStbtistics struct {
+	GitBlbmeEnbbled                 *int32
+	GitBlbmeEnbbledUniqueUsers      *int32
+	GitBlbmeDisbbled                *int32
+	GitBlbmeDisbbledUniqueUsers     *int32
+	GitBlbmePopupViewed             *int32
+	GitBlbmePopupViewedUniqueUsers  *int32
+	GitBlbmePopupClicked            *int32
+	GitBlbmePopupClickedUniqueUsers *int32
 
-	SearchExportPerformed            *int32
-	SearchExportPerformedUniqueUsers *int32
-	SearchExportFailed               *int32
-	SearchExportFailedUniqueUsers    *int32
+	SebrchExportPerformed            *int32
+	SebrchExportPerformedUniqueUsers *int32
+	SebrchExportFbiled               *int32
+	SebrchExportFbiledUniqueUsers    *int32
 
-	OpenInEditor []*MigratedExtensionsOpenInEditorUsageStatistics
+	OpenInEditor []*MigrbtedExtensionsOpenInEditorUsbgeStbtistics
 }
 
-type MigratedExtensionsOpenInEditorUsageStatistics struct {
+type MigrbtedExtensionsOpenInEditorUsbgeStbtistics struct {
 	IdeKind            string
 	Clicked            *int32
 	ClickedUniqueUsers *int32
 }
 
-// CodeHostIntegrationUsage represents the daily, weekly and monthly
-// number of unique users and events for code host integration usage
-// and inbound traffic from code host integration to Sourcegraph instance
-type CodeHostIntegrationUsage struct {
-	Month CodeHostIntegrationUsagePeriod
-	Week  CodeHostIntegrationUsagePeriod
-	Day   CodeHostIntegrationUsagePeriod
+// CodeHostIntegrbtionUsbge represents the dbily, weekly bnd monthly
+// number of unique users bnd events for code host integrbtion usbge
+// bnd inbound trbffic from code host integrbtion to Sourcegrbph instbnce
+type CodeHostIntegrbtionUsbge struct {
+	Month CodeHostIntegrbtionUsbgePeriod
+	Week  CodeHostIntegrbtionUsbgePeriod
+	Dby   CodeHostIntegrbtionUsbgePeriod
 }
 
-type CodeHostIntegrationUsagePeriod struct {
-	StartTime         time.Time
-	BrowserExtension  CodeHostIntegrationUsageType
-	NativeIntegration CodeHostIntegrationUsageType
+type CodeHostIntegrbtionUsbgePeriod struct {
+	StbrtTime         time.Time
+	BrowserExtension  CodeHostIntegrbtionUsbgeType
+	NbtiveIntegrbtion CodeHostIntegrbtionUsbgeType
 }
 
-type CodeHostIntegrationUsageType struct {
+type CodeHostIntegrbtionUsbgeType struct {
 	UniquesCount        int32
-	TotalCount          int32
-	InboundTrafficToWeb CodeHostIntegrationUsageInboundTrafficToWeb
+	TotblCount          int32
+	InboundTrbfficToWeb CodeHostIntegrbtionUsbgeInboundTrbfficToWeb
 }
 
-type CodeHostIntegrationUsageInboundTrafficToWeb struct {
+type CodeHostIntegrbtionUsbgeInboundTrbfficToWeb struct {
 	UniquesCount int32
-	TotalCount   int32
+	TotblCount   int32
 }
 
-// SavedSearches represents the total number of saved searches, users
-// using saved searches, and usage of saved searches.
-type SavedSearches struct {
-	TotalSavedSearches   int32
+// SbvedSebrches represents the totbl number of sbved sebrches, users
+// using sbved sebrches, bnd usbge of sbved sebrches.
+type SbvedSebrches struct {
+	TotblSbvedSebrches   int32
 	UniqueUsers          int32
-	NotificationsSent    int32
-	NotificationsClicked int32
-	UniqueUserPageViews  int32
-	OrgSavedSearches     int32
+	NotificbtionsSent    int32
+	NotificbtionsClicked int32
+	UniqueUserPbgeViews  int32
+	OrgSbvedSebrches     int32
 }
 
-// Panel homepage represents interaction data on the
-// enterprise homepage panels.
-type HomepagePanels struct {
-	RecentFilesClickedPercentage           *float64
-	RecentSearchClickedPercentage          *float64
-	RecentRepositoriesClickedPercentage    *float64
-	SavedSearchesClickedPercentage         *float64
-	NewSavedSearchesClickedPercentage      *float64
-	TotalPanelViews                        *float64
-	UsersFilesClickedPercentage            *float64
-	UsersSearchClickedPercentage           *float64
-	UsersRepositoriesClickedPercentage     *float64
-	UsersSavedSearchesClickedPercentage    *float64
-	UsersNewSavedSearchesClickedPercentage *float64
-	PercentUsersShown                      *float64
+// Pbnel homepbge represents interbction dbtb on the
+// enterprise homepbge pbnels.
+type HomepbgePbnels struct {
+	RecentFilesClickedPercentbge           *flobt64
+	RecentSebrchClickedPercentbge          *flobt64
+	RecentRepositoriesClickedPercentbge    *flobt64
+	SbvedSebrchesClickedPercentbge         *flobt64
+	NewSbvedSebrchesClickedPercentbge      *flobt64
+	TotblPbnelViews                        *flobt64
+	UsersFilesClickedPercentbge            *flobt64
+	UsersSebrchClickedPercentbge           *flobt64
+	UsersRepositoriesClickedPercentbge     *flobt64
+	UsersSbvedSebrchesClickedPercentbge    *flobt64
+	UsersNewSbvedSebrchesClickedPercentbge *flobt64
+	PercentUsersShown                      *flobt64
 }
 
-type WeeklyRetentionStats struct {
-	WeekStart  time.Time
+type WeeklyRetentionStbts struct {
+	WeekStbrt  time.Time
 	CohortSize *int32
-	Week0      *float64
-	Week1      *float64
-	Week2      *float64
-	Week3      *float64
-	Week4      *float64
-	Week5      *float64
-	Week6      *float64
-	Week7      *float64
-	Week8      *float64
-	Week9      *float64
-	Week10     *float64
-	Week11     *float64
+	Week0      *flobt64
+	Week1      *flobt64
+	Week2      *flobt64
+	Week3      *flobt64
+	Week4      *flobt64
+	Week5      *flobt64
+	Week6      *flobt64
+	Week7      *flobt64
+	Week8      *flobt64
+	Week9      *flobt64
+	Week10     *flobt64
+	Week11     *flobt64
 }
 
-type RetentionStats struct {
-	Weekly []*WeeklyRetentionStats
+type RetentionStbts struct {
+	Weekly []*WeeklyRetentionStbts
 }
 
-type SearchOnboarding struct {
-	TotalOnboardingTourViews   *int32
-	ViewedLangStep             *int32
+type SebrchOnbobrding struct {
+	TotblOnbobrdingTourViews   *int32
+	ViewedLbngStep             *int32
 	ViewedFilterRepoStep       *int32
 	ViewedAddQueryTermStep     *int32
-	ViewedSubmitSearchStep     *int32
-	ViewedSearchReferenceStep  *int32
-	CloseOnboardingTourClicked *int32
+	ViewedSubmitSebrchStep     *int32
+	ViewedSebrchReferenceStep  *int32
+	CloseOnbobrdingTourClicked *int32
 }
 
-// Weekly usage statistics for the extensions platform
-type ExtensionsUsageStatistics struct {
-	WeekStart                  time.Time
-	UsageStatisticsByExtension []*ExtensionUsageStatistics
-	// Average number of non-default extensions used by users
-	// that have used at least one non-default extension
-	AverageNonDefaultExtensions *float64
-	// The count of users that have activated a non-default extension this week
-	NonDefaultExtensionUsers *int32
+// Weekly usbge stbtistics for the extensions plbtform
+type ExtensionsUsbgeStbtistics struct {
+	WeekStbrt                  time.Time
+	UsbgeStbtisticsByExtension []*ExtensionUsbgeStbtistics
+	// Averbge number of non-defbult extensions used by users
+	// thbt hbve used bt lebst one non-defbult extension
+	AverbgeNonDefbultExtensions *flobt64
+	// The count of users thbt hbve bctivbted b non-defbult extension this week
+	NonDefbultExtensionUsers *int32
 }
 
-// Weekly statistics for an individual extension
-type ExtensionUsageStatistics struct {
-	// The count of users that have activated this extension
+// Weekly stbtistics for bn individubl extension
+type ExtensionUsbgeStbtistics struct {
+	// The count of users thbt hbve bctivbted this extension
 	UserCount *int32
-	// The average number of activations for users that have
-	// used this extension at least once
-	AverageActivations *float64
+	// The bverbge number of bctivbtions for users thbt hbve
+	// used this extension bt lebst once
+	AverbgeActivbtions *flobt64
 	ExtensionID        *string
 }
 
-type SearchJobsUsageStatistics struct {
-	WeeklySearchJobsPageViews            *int32
-	WeeklySearchJobsCreateClick          *int32
-	WeeklySearchJobsDownloadClicks       *int32
-	WeeklySearchJobsViewLogsClicks       *int32
-	WeeklySearchJobsUniquePageViews      *int32
-	WeeklySearchJobsUniqueDownloadClicks *int32
-	WeeklySearchJobsUniqueViewLogsClicks *int32
-	WeeklySearchJobsSearchFormShown      []SearchJobsSearchFormShownPing
-	WeeklySearchJobsValidationErrors     []SearchJobsValidationErrorPing
+type SebrchJobsUsbgeStbtistics struct {
+	WeeklySebrchJobsPbgeViews            *int32
+	WeeklySebrchJobsCrebteClick          *int32
+	WeeklySebrchJobsDownlobdClicks       *int32
+	WeeklySebrchJobsViewLogsClicks       *int32
+	WeeklySebrchJobsUniquePbgeViews      *int32
+	WeeklySebrchJobsUniqueDownlobdClicks *int32
+	WeeklySebrchJobsUniqueViewLogsClicks *int32
+	WeeklySebrchJobsSebrchFormShown      []SebrchJobsSebrchFormShownPing
+	WeeklySebrchJobsVblidbtionErrors     []SebrchJobsVblidbtionErrorPing
 }
 
-type SearchJobsSearchFormShownPing struct {
-	ValidState string
-	TotalCount int
+type SebrchJobsSebrchFormShownPing struct {
+	VblidStbte string
+	TotblCount int
 }
 
-type SearchJobsValidationErrorPing struct {
+type SebrchJobsVblidbtionErrorPing struct {
 	Errors     []string
-	TotalCount int
+	TotblCount int
 }
 
-type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight                 []*InsightUsageStatistics
-	WeeklyInsightsPageViews                        *int32
-	WeeklyStandaloneInsightPageViews               *int32
-	WeeklyStandaloneDashboardClicks                *int32
-	WeeklyStandaloneEditClicks                     *int32
-	WeeklyInsightsGetStartedPageViews              *int32
-	WeeklyInsightsUniquePageViews                  *int32
-	WeeklyInsightsGetStartedUniquePageViews        *int32
-	WeeklyStandaloneInsightUniquePageViews         *int32
-	WeeklyStandaloneInsightUniqueDashboardClicks   *int32
-	WeeklyStandaloneInsightUniqueEditClicks        *int32
+type CodeInsightsUsbgeStbtistics struct {
+	WeeklyUsbgeStbtisticsByInsight                 []*InsightUsbgeStbtistics
+	WeeklyInsightsPbgeViews                        *int32
+	WeeklyStbndbloneInsightPbgeViews               *int32
+	WeeklyStbndbloneDbshbobrdClicks                *int32
+	WeeklyStbndbloneEditClicks                     *int32
+	WeeklyInsightsGetStbrtedPbgeViews              *int32
+	WeeklyInsightsUniquePbgeViews                  *int32
+	WeeklyInsightsGetStbrtedUniquePbgeViews        *int32
+	WeeklyStbndbloneInsightUniquePbgeViews         *int32
+	WeeklyStbndbloneInsightUniqueDbshbobrdClicks   *int32
+	WeeklyStbndbloneInsightUniqueEditClicks        *int32
 	WeeklyInsightConfigureClick                    *int32
 	WeeklyInsightAddMoreClick                      *int32
-	WeekStart                                      time.Time
-	WeeklyInsightCreators                          *int32
-	WeeklyFirstTimeInsightCreators                 *int32
-	WeeklyAggregatedUsage                          []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab                  []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab              []InsightGetStartedTabClickPing
-	InsightTimeIntervals                           []InsightTimeIntervalPing
+	WeekStbrt                                      time.Time
+	WeeklyInsightCrebtors                          *int32
+	WeeklyFirstTimeInsightCrebtors                 *int32
+	WeeklyAggregbtedUsbge                          []AggregbtedPingStbts
+	WeeklyGetStbrtedTbbClickByTbb                  []InsightGetStbrtedTbbClickPing
+	WeeklyGetStbrtedTbbMoreClickByTbb              []InsightGetStbrtedTbbClickPing
+	InsightTimeIntervbls                           []InsightTimeIntervblPing
 	InsightOrgVisible                              []OrgVisibleInsightPing
-	InsightTotalCounts                             InsightTotalCounts
-	TotalOrgsWithDashboard                         *int32
-	TotalDashboardCount                            *int32
-	InsightsPerDashboard                           InsightsPerDashboardPing
+	InsightTotblCounts                             InsightTotblCounts
+	TotblOrgsWithDbshbobrd                         *int32
+	TotblDbshbobrdCount                            *int32
+	InsightsPerDbshbobrd                           InsightsPerDbshbobrdPing
 	WeeklyGroupResultsOpenSection                  *int32
-	WeeklyGroupResultsCollapseSection              *int32
+	WeeklyGroupResultsCollbpseSection              *int32
 	WeeklyGroupResultsInfoIconHover                *int32
-	WeeklyGroupResultsExpandedViewOpen             []GroupResultExpandedViewPing
-	WeeklyGroupResultsExpandedViewCollapse         []GroupResultExpandedViewPing
-	WeeklyGroupResultsChartBarHover                []GroupResultPing
-	WeeklyGroupResultsChartBarClick                []GroupResultPing
-	WeeklyGroupResultsAggregationModeClicked       []GroupResultPing
-	WeeklyGroupResultsAggregationModeDisabledHover []GroupResultPing
-	WeeklyGroupResultsSearches                     []GroupResultSearchPing
-	WeeklySeriesBackfillTime                       []InsightsBackfillTimePing
-	WeeklyDataExportClicks                         *int32
+	WeeklyGroupResultsExpbndedViewOpen             []GroupResultExpbndedViewPing
+	WeeklyGroupResultsExpbndedViewCollbpse         []GroupResultExpbndedViewPing
+	WeeklyGroupResultsChbrtBbrHover                []GroupResultPing
+	WeeklyGroupResultsChbrtBbrClick                []GroupResultPing
+	WeeklyGroupResultsAggregbtionModeClicked       []GroupResultPing
+	WeeklyGroupResultsAggregbtionModeDisbbledHover []GroupResultPing
+	WeeklyGroupResultsSebrches                     []GroupResultSebrchPing
+	WeeklySeriesBbckfillTime                       []InsightsBbckfillTimePing
+	WeeklyDbtbExportClicks                         *int32
 }
 
 type GroupResultPing struct {
-	AggregationMode *string
+	AggregbtionMode *string
 	UIMode          *string
 	Count           *int32
-	BarIndex        *int32
+	BbrIndex        *int32
 }
 
-type GroupResultExpandedViewPing struct {
-	AggregationMode *string
+type GroupResultExpbndedViewPing struct {
+	AggregbtionMode *string
 	Count           *int32
 }
 
-type GroupResultSearchPing struct {
-	Name            PingName
-	AggregationMode *string
+type GroupResultSebrchPing struct {
+	Nbme            PingNbme
+	AggregbtionMode *string
 	Count           *int32
 }
 
-type CodeInsightsCriticalTelemetry struct {
-	TotalInsights int32
+type CodeInsightsCriticblTelemetry struct {
+	TotblInsights int32
 }
 
-// Usage statistics for a type of code insight
-type InsightUsageStatistics struct {
+// Usbge stbtistics for b type of code insight
+type InsightUsbgeStbtistics struct {
 	InsightType      *string
 	Additions        *int32
 	Edits            *int32
-	Removals         *int32
+	Removbls         *int32
 	Hovers           *int32
-	UICustomizations *int32
-	DataPointClicks  *int32
-	FiltersChange    *int32
+	UICustomizbtions *int32
+	DbtbPointClicks  *int32
+	FiltersChbnge    *int32
 }
 
-type PingName string
+type PingNbme string
 
-// AggregatedPingStats is a generic representation of an aggregated ping statistic
-type AggregatedPingStats struct {
-	Name        PingName
-	TotalCount  int
+// AggregbtedPingStbts is b generic representbtion of bn bggregbted ping stbtistic
+type AggregbtedPingStbts struct {
+	Nbme        PingNbme
+	TotblCount  int
 	UniqueCount int
 }
 
-type InsightTimeIntervalPing struct {
-	IntervalDays int
-	TotalCount   int
+type InsightTimeIntervblPing struct {
+	IntervblDbys int
+	TotblCount   int
 }
 
 type OrgVisibleInsightPing struct {
 	Type       string
-	TotalCount int
+	TotblCount int
 }
 
 type InsightViewsCountPing struct {
 	ViewType   string
-	TotalCount int
+	TotblCount int
 }
 
 type InsightSeriesCountPing struct {
-	GenerationType string
-	TotalCount     int
+	GenerbtionType string
+	TotblCount     int
 }
 
 type InsightViewSeriesCountPing struct {
-	GenerationType string
+	GenerbtionType string
 	ViewType       string
-	TotalCount     int
+	TotblCount     int
 }
 
-type InsightGetStartedTabClickPing struct {
-	TabName    string
-	TotalCount int
+type InsightGetStbrtedTbbClickPing struct {
+	TbbNbme    string
+	TotblCount int
 }
 
-type InsightTotalCounts struct {
+type InsightTotblCounts struct {
 	ViewCounts       []InsightViewsCountPing
 	SeriesCounts     []InsightSeriesCountPing
 	ViewSeriesCounts []InsightViewSeriesCountPing
 }
 
-type InsightsPerDashboardPing struct {
-	Avg    float32
-	Max    int
+type InsightsPerDbshbobrdPing struct {
+	Avg    flobt32
+	Mbx    int
 	Min    int
-	StdDev float32
-	Median float32
+	StdDev flobt32
+	Medibn flobt32
 }
 
-type InsightsBackfillTimePing struct {
+type InsightsBbckfillTimePing struct {
 	AllRepos   bool
 	P99Seconds int
 	P90Seconds int
@@ -1810,291 +1810,291 @@ type InsightsBackfillTimePing struct {
 	Count      int
 }
 
-type CodeMonitoringUsageStatistics struct {
-	CodeMonitoringPageViews                       *int32
-	CreateCodeMonitorPageViews                    *int32
-	CreateCodeMonitorPageViewsWithTriggerQuery    *int32
-	CreateCodeMonitorPageViewsWithoutTriggerQuery *int32
-	ManageCodeMonitorPageViews                    *int32
-	CodeMonitorEmailLinkClicked                   *int32
-	ExampleMonitorClicked                         *int32
-	GettingStartedPageViewed                      *int32
-	CreateFormSubmitted                           *int32
-	ManageFormSubmitted                           *int32
-	ManageDeleteSubmitted                         *int32
-	LogsPageViewed                                *int32
-	EmailActionsTriggered                         *int32
-	EmailActionsErrored                           *int32
-	EmailActionsTriggeredUniqueUsers              *int32
-	EmailActionsEnabled                           *int32
-	EmailActionsEnabledUniqueUsers                *int32
-	SlackActionsTriggered                         *int32
-	SlackActionsErrored                           *int32
-	SlackActionsTriggeredUniqueUsers              *int32
-	SlackActionsEnabled                           *int32
-	SlackActionsEnabledUniqueUsers                *int32
+type CodeMonitoringUsbgeStbtistics struct {
+	CodeMonitoringPbgeViews                       *int32
+	CrebteCodeMonitorPbgeViews                    *int32
+	CrebteCodeMonitorPbgeViewsWithTriggerQuery    *int32
+	CrebteCodeMonitorPbgeViewsWithoutTriggerQuery *int32
+	MbnbgeCodeMonitorPbgeViews                    *int32
+	CodeMonitorEmbilLinkClicked                   *int32
+	ExbmpleMonitorClicked                         *int32
+	GettingStbrtedPbgeViewed                      *int32
+	CrebteFormSubmitted                           *int32
+	MbnbgeFormSubmitted                           *int32
+	MbnbgeDeleteSubmitted                         *int32
+	LogsPbgeViewed                                *int32
+	EmbilActionsTriggered                         *int32
+	EmbilActionsErrored                           *int32
+	EmbilActionsTriggeredUniqueUsers              *int32
+	EmbilActionsEnbbled                           *int32
+	EmbilActionsEnbbledUniqueUsers                *int32
+	SlbckActionsTriggered                         *int32
+	SlbckActionsErrored                           *int32
+	SlbckActionsTriggeredUniqueUsers              *int32
+	SlbckActionsEnbbled                           *int32
+	SlbckActionsEnbbledUniqueUsers                *int32
 	WebhookActionsTriggered                       *int32
 	WebhookActionsErrored                         *int32
 	WebhookActionsTriggeredUniqueUsers            *int32
-	WebhookActionsEnabled                         *int32
-	WebhookActionsEnabledUniqueUsers              *int32
-	MonitorsEnabled                               *int32
-	MonitorsEnabledUniqueUsers                    *int32
-	MonitorsEnabledLastRunErrored                 *int32
+	WebhookActionsEnbbled                         *int32
+	WebhookActionsEnbbledUniqueUsers              *int32
+	MonitorsEnbbled                               *int32
+	MonitorsEnbbledUniqueUsers                    *int32
+	MonitorsEnbbledLbstRunErrored                 *int32
 	ReposMonitored                                *int32
 	TriggerRuns                                   *int32
 	TriggerRunsErrored                            *int32
-	P50TriggerRunTimeSeconds                      *float32
-	P90TriggerRunTimeSeconds                      *float32
+	P50TriggerRunTimeSeconds                      *flobt32
+	P90TriggerRunTimeSeconds                      *flobt32
 }
 
-type NotebooksUsageStatistics struct {
-	NotebookPageViews                *int32
-	EmbeddedNotebookPageViews        *int32
-	NotebooksListPageViews           *int32
-	NotebooksCreatedCount            *int32
-	NotebookAddedStarsCount          *int32
-	NotebookAddedMarkdownBlocksCount *int32
+type NotebooksUsbgeStbtistics struct {
+	NotebookPbgeViews                *int32
+	EmbeddedNotebookPbgeViews        *int32
+	NotebooksListPbgeViews           *int32
+	NotebooksCrebtedCount            *int32
+	NotebookAddedStbrsCount          *int32
+	NotebookAddedMbrkdownBlocksCount *int32
 	NotebookAddedQueryBlocksCount    *int32
 	NotebookAddedFileBlocksCount     *int32
 	NotebookAddedSymbolBlocksCount   *int32
 }
 
-type OwnershipUsageStatistics struct {
-	// Statistics about ownership data in repositories
-	ReposCount *OwnershipUsageReposCounts `json:"repos_count,omitempty"`
+type OwnershipUsbgeStbtistics struct {
+	// Stbtistics bbout ownership dbtb in repositories
+	ReposCount *OwnershipUsbgeReposCounts `json:"repos_count,omitempty"`
 
-	// Activity of selecting owners as search results using
+	// Activity of selecting owners bs sebrch results using
 	// `select:file.owners`.
-	SelectFileOwnersSearch *OwnershipUsageStatisticsActiveUsers `json:"select_file_owners_search,omitempty"`
+	SelectFileOwnersSebrch *OwnershipUsbgeStbtisticsActiveUsers `json:"select_file_owners_sebrch,omitempty"`
 
-	// Activity of using a `file:has.owner` predicate in search.
-	FileHasOwnerSearch *OwnershipUsageStatisticsActiveUsers `json:"file_has_owner_search,omitempty"`
+	// Activity of using b `file:hbs.owner` predicbte in sebrch.
+	FileHbsOwnerSebrch *OwnershipUsbgeStbtisticsActiveUsers `json:"file_hbs_owner_sebrch,omitempty"`
 
-	// Opening ownership panel.
-	OwnershipPanelOpened *OwnershipUsageStatisticsActiveUsers `json:"ownership_panel_opened,omitempty"`
+	// Opening ownership pbnel.
+	OwnershipPbnelOpened *OwnershipUsbgeStbtisticsActiveUsers `json:"ownership_pbnel_opened,omitempty"`
 
-	// AssignedOwnersCount is the total number of assigned owners. For instance
-	// if an owner is assigned to a single file - that counts as one,
-	// for the whole repo - also counts as one.
-	AssignedOwnersCount *int32 `json:"assigned_owners_count"`
+	// AssignedOwnersCount is the totbl number of bssigned owners. For instbnce
+	// if bn owner is bssigned to b single file - thbt counts bs one,
+	// for the whole repo - blso counts bs one.
+	AssignedOwnersCount *int32 `json:"bssigned_owners_count"`
 }
 
-type OwnershipUsageReposCounts struct {
-	// Total number of repositories. Can be used in computing adoption
-	// ratio as denominator to number of repos with ownership.
-	Total *int32 `json:"total,omitempty"`
+type OwnershipUsbgeReposCounts struct {
+	// Totbl number of repositories. Cbn be used in computing bdoption
+	// rbtio bs denominbtor to number of repos with ownership.
+	Totbl *int32 `json:"totbl,omitempty"`
 
-	// Number of repos in an instance that have ownership
-	// data (of any source, either CODEOWNERS file or API).
+	// Number of repos in bn instbnce thbt hbve ownership
+	// dbtb (of bny source, either CODEOWNERS file or API).
 	WithOwnership *int32 `json:"with_ownership,omitempty"`
 
-	// Number of repos in an instance that have ownership
-	// data ingested through the API.
+	// Number of repos in bn instbnce thbt hbve ownership
+	// dbtb ingested through the API.
 	WithIngestedOwnership *int32 `json:"with_ingested_ownership,omitempty"`
 }
 
-type OwnershipUsageStatisticsActiveUsers struct {
-	// Daily-Active Users
-	DAU *int32 `json:"dau,omitempty"`
+type OwnershipUsbgeStbtisticsActiveUsers struct {
+	// Dbily-Active Users
+	DAU *int32 `json:"dbu,omitempty"`
 
 	// Weekly-Active Users
-	WAU *int32 `json:"wau,omitempty"`
+	WAU *int32 `json:"wbu,omitempty"`
 
 	// Monthly-Active Users
-	MAU *int32 `json:"mau,omitempty"`
+	MAU *int32 `json:"mbu,omitempty"`
 }
 
-// Secret represents the secrets table
+// Secret represents the secrets tbble
 type Secret struct {
 	ID int32
 
-	// The table containing an object whose token is being encrypted.
+	// The tbble contbining bn object whose token is being encrypted.
 	SourceType sql.NullString
 
-	// The ID of the object in the SourceType table.
+	// The ID of the object in the SourceType tbble.
 	SourceID sql.NullInt32
 
-	// KeyName represents a unique key for the case where we're storing key-value pairs.
-	KeyName sql.NullString
+	// KeyNbme represents b unique key for the cbse where we're storing key-vblue pbirs.
+	KeyNbme sql.NullString
 
-	// Value contains the encrypted string
-	Value string
+	// Vblue contbins the encrypted string
+	Vblue string
 }
 
-type SearchContext struct {
+type SebrchContext struct {
 	ID int64
-	// Name contains the non-prefixed part of the search context spec.
-	// The name is a substring of the spec and it should NOT be used as the spec itself.
-	// The spec contains additional information (such as the @ prefix and the context namespace)
-	// that helps differentiate between different search contexts.
-	// Example mappings from context spec to context name:
-	// global -> global, @user -> user, @org -> org,
+	// Nbme contbins the non-prefixed pbrt of the sebrch context spec.
+	// The nbme is b substring of the spec bnd it should NOT be used bs the spec itself.
+	// The spec contbins bdditionbl informbtion (such bs the @ prefix bnd the context nbmespbce)
+	// thbt helps differentibte between different sebrch contexts.
+	// Exbmple mbppings from context spec to context nbme:
+	// globbl -> globbl, @user -> user, @org -> org,
 	// @user/ctx1 -> ctx1, @org/ctx2 -> ctx2.
-	Name        string
+	Nbme        string
 	Description string
-	// Public property controls the visibility of the search context. Public search context is available to
-	// any user on the instance. If a public search context contains private repositories, those are filtered out
-	// for unauthorized users. Private search contexts are only available to their owners. Private user search context
-	// is available only to the user, private org search context is available only to the members of the org, and private
-	// instance-level search contexts is available only to site-admins.
+	// Public property controls the visibility of the sebrch context. Public sebrch context is bvbilbble to
+	// bny user on the instbnce. If b public sebrch context contbins privbte repositories, those bre filtered out
+	// for unbuthorized users. Privbte sebrch contexts bre only bvbilbble to their owners. Privbte user sebrch context
+	// is bvbilbble only to the user, privbte org sebrch context is bvbilbble only to the members of the org, bnd privbte
+	// instbnce-level sebrch contexts is bvbilbble only to site-bdmins.
 	Public          bool
-	NamespaceUserID int32 // if non-zero, the owner is this user. NamespaceUserID/NamespaceOrgID are mutually exclusive.
-	NamespaceOrgID  int32 // if non-zero, the owner is this organization. NamespaceUserID/NamespaceOrgID are mutually exclusive.
-	UpdatedAt       time.Time
+	NbmespbceUserID int32 // if non-zero, the owner is this user. NbmespbceUserID/NbmespbceOrgID bre mutublly exclusive.
+	NbmespbceOrgID  int32 // if non-zero, the owner is this orgbnizbtion. NbmespbceUserID/NbmespbceOrgID bre mutublly exclusive.
+	UpdbtedAt       time.Time
 
-	// We cache namespace names to avoid separate database lookups when constructing the search context spec
+	// We cbche nbmespbce nbmes to bvoid sepbrbte dbtbbbse lookups when constructing the sebrch context spec
 
-	// NamespaceUserName is the name of the user if NamespaceUserID is present.
-	NamespaceUserName string
-	// NamespaceOrgName is the name of the org if NamespaceOrgID is present.
-	NamespaceOrgName string
+	// NbmespbceUserNbme is the nbme of the user if NbmespbceUserID is present.
+	NbmespbceUserNbme string
+	// NbmespbceOrgNbme is the nbme of the org if NbmespbceOrgID is present.
+	NbmespbceOrgNbme string
 
-	// Query is the Sourcegraph query that defines this search context
-	// e.g. repo:^github\.com/org rev:bar archive:no f:sub/dir
+	// Query is the Sourcegrbph query thbt defines this sebrch context
+	// e.g. repo:^github\.com/org rev:bbr brchive:no f:sub/dir
 	Query string
 
-	// Whether the search context is auto-defined by Sourcegraph. Auto-defined search contexts are not editable by users.
+	// Whether the sebrch context is buto-defined by Sourcegrbph. Auto-defined sebrch contexts bre not editbble by users.
 	AutoDefined bool
 
-	// Whether the search context is the default for the user. If the user hasn't explicitly set a default or is not authenticated, the global search context is used.
-	Default bool
+	// Whether the sebrch context is the defbult for the user. If the user hbsn't explicitly set b defbult or is not buthenticbted, the globbl sebrch context is used.
+	Defbult bool
 
-	// Whether the user has starred the context. If the user is not authenticated, this field is always false.
-	Starred bool
+	// Whether the user hbs stbrred the context. If the user is not buthenticbted, this field is blwbys fblse.
+	Stbrred bool
 }
 
-// SearchContextRepositoryRevisions is a simple wrapper for a repository and its revisions
-// contained in a search context. It is made compatible with search.RepositoryRevisions, so it can be easily
-// converted when needed. We could use search.RepositoryRevisions directly instead, but it
-// introduces an import cycle with `internal/vcs/git` package when used in `internal/database/search_contexts.go`.
-type SearchContextRepositoryRevisions struct {
-	Repo      MinimalRepo
+// SebrchContextRepositoryRevisions is b simple wrbpper for b repository bnd its revisions
+// contbined in b sebrch context. It is mbde compbtible with sebrch.RepositoryRevisions, so it cbn be ebsily
+// converted when needed. We could use sebrch.RepositoryRevisions directly instebd, but it
+// introduces bn import cycle with `internbl/vcs/git` pbckbge when used in `internbl/dbtbbbse/sebrch_contexts.go`.
+type SebrchContextRepositoryRevisions struct {
+	Repo      MinimblRepo
 	Revisions []string
 }
 
-type EncryptableSecret = encryption.Encryptable
+type EncryptbbleSecret = encryption.Encryptbble
 
-// NewUnencryptedSecret creates an EncryptableSecret that *may* be encrypted in
-// the future, but the current value has not yet been encrypted.
-func NewUnencryptedSecret(value string) *EncryptableSecret {
-	return encryption.NewUnencrypted(value)
+// NewUnencryptedSecret crebtes bn EncryptbbleSecret thbt *mby* be encrypted in
+// the future, but the current vblue hbs not yet been encrypted.
+func NewUnencryptedSecret(vblue string) *EncryptbbleSecret {
+	return encryption.NewUnencrypted(vblue)
 }
 
-// NewEncryptedSecret creates an EncryptableSecret that has come from an
-// encrypted source. In this case you need to provide the keyID and key in order
-// to be able to decrypt it.
-func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptableSecret {
+// NewEncryptedSecret crebtes bn EncryptbbleSecret thbt hbs come from bn
+// encrypted source. In this cbse you need to provide the keyID bnd key in order
+// to be bble to decrypt it.
+func NewEncryptedSecret(cipher, keyID string, key encryption.Key) *EncryptbbleSecret {
 	return encryption.NewEncrypted(cipher, keyID, key)
 }
 
-// Webhook defines the information we need to handle incoming webhooks from a
+// Webhook defines the informbtion we need to hbndle incoming webhooks from b
 // code host.
 type Webhook struct {
-	// The primary key, used for sorting and pagination.
+	// The primbry key, used for sorting bnd pbginbtion.
 	ID int32
-	// UUID is the ID we display externally and will appear in the webhook URL.
+	// UUID is the ID we displby externblly bnd will bppebr in the webhook URL.
 	UUID uuid.UUID
-	// Name is a descriptive webhook name which is shown on the UI for convenience.
-	Name         string
+	// Nbme is b descriptive webhook nbme which is shown on the UI for convenience.
+	Nbme         string
 	CodeHostKind string
-	CodeHostURN  extsvc.CodeHostBaseURL
-	// Secret can be in one of three states:
+	CodeHostURN  extsvc.CodeHostBbseURL
+	// Secret cbn be in one of three stbtes:
 	//
 	// 1. nil, no secret provided.
 	// 2. Provided but not encrypted.
-	// 3. Provided and encrypted.
+	// 3. Provided bnd encrypted.
 	//
-	// For 2 and 3 you interact with it in the same way and just assume that it IS
-	// encrypted. All the methods on EncryptableSecret will just pass around the raw
-	// value and encryption / decryption methods are noops.
-	Secret          *EncryptableSecret
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	CreatedByUserID int32
-	UpdatedByUserID int32
+	// For 2 bnd 3 you interbct with it in the sbme wby bnd just bssume thbt it IS
+	// encrypted. All the methods on EncryptbbleSecret will just pbss bround the rbw
+	// vblue bnd encryption / decryption methods bre noops.
+	Secret          *EncryptbbleSecret
+	CrebtedAt       time.Time
+	UpdbtedAt       time.Time
+	CrebtedByUserID int32
+	UpdbtedByUserID int32
 }
 
-// OutboundRequestLogItem represents a single outbound request made by Sourcegraph.
+// OutboundRequestLogItem represents b single outbound request mbde by Sourcegrbph.
 type OutboundRequestLogItem struct {
 	ID                 string              `json:"id"`
-	StartedAt          time.Time           `json:"startedAt"`
+	StbrtedAt          time.Time           `json:"stbrtedAt"`
 	Method             string              `json:"method"` // The request method (GET, POST, etc.)
 	URL                string              `json:"url"`
-	RequestHeaders     map[string][]string `json:"requestHeaders"`
+	RequestHebders     mbp[string][]string `json:"requestHebders"`
 	RequestBody        string              `json:"requestBody"`
-	StatusCode         int32               `json:"statusCode"` // The response status code
-	ResponseHeaders    map[string][]string `json:"responseHeaders"`
-	Duration           float64             `json:"duration"`
-	ErrorMessage       string              `json:"errorMessage"`
-	CreationStackFrame string              `json:"creationStackFrame"`
-	CallStackFrame     string              `json:"callStackFrame"` // Should be "CallStack" once this is final
+	StbtusCode         int32               `json:"stbtusCode"` // The response stbtus code
+	ResponseHebders    mbp[string][]string `json:"responseHebders"`
+	Durbtion           flobt64             `json:"durbtion"`
+	ErrorMessbge       string              `json:"errorMessbge"`
+	CrebtionStbckFrbme string              `json:"crebtionStbckFrbme"`
+	CbllStbckFrbme     string              `json:"cbllStbckFrbme"` // Should be "CbllStbck" once this is finbl
 }
 
 type SlowRequest struct {
 	Index     string         `json:"index"`
-	Start     time.Time      `json:"start"`
-	Duration  time.Duration  `json:"duration"`
+	Stbrt     time.Time      `json:"stbrt"`
+	Durbtion  time.Durbtion  `json:"durbtion"`
 	UserID    int32          `json:"userId"`
-	Name      string         `json:"name"`
+	Nbme      string         `json:"nbme"`
 	Source    string         `json:"source"`
-	Variables map[string]any `json:"variables"`
+	Vbribbles mbp[string]bny `json:"vbribbles"`
 	Errors    []string       `json:"errors"`
 	Query     string         `json:"query"`
-	Filepath  string         `json:"filepath"`
+	Filepbth  string         `json:"filepbth"`
 }
 
-type Team struct {
+type Tebm struct {
 	ID           int32
-	Name         string
-	DisplayName  string
-	ReadOnly     bool
-	ParentTeamID int32
-	CreatorID    int32
-	CreatedAt    time.Time
-	UpdatedAt    time.Time
+	Nbme         string
+	DisplbyNbme  string
+	RebdOnly     bool
+	PbrentTebmID int32
+	CrebtorID    int32
+	CrebtedAt    time.Time
+	UpdbtedAt    time.Time
 }
 
-type TeamMember struct {
+type TebmMember struct {
 	UserID    int32
-	TeamID    int32
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	TebmID    int32
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 }
 
-type AccessRequestStatus string
+type AccessRequestStbtus string
 
 type AccessRequest struct {
 	ID               int32
-	Name             string
-	CreatedAt        time.Time
-	UpdatedAt        time.Time
-	Email            string
-	AdditionalInfo   string
-	Status           AccessRequestStatus
+	Nbme             string
+	CrebtedAt        time.Time
+	UpdbtedAt        time.Time
+	Embil            string
+	AdditionblInfo   string
+	Stbtus           AccessRequestStbtus
 	DecisionByUserID *int32
 }
 
 const (
-	AccessRequestStatusPending  AccessRequestStatus = "PENDING"
-	AccessRequestStatusApproved AccessRequestStatus = "APPROVED"
-	AccessRequestStatusRejected AccessRequestStatus = "REJECTED"
+	AccessRequestStbtusPending  AccessRequestStbtus = "PENDING"
+	AccessRequestStbtusApproved AccessRequestStbtus = "APPROVED"
+	AccessRequestStbtusRejected AccessRequestStbtus = "REJECTED"
 )
 
-type PerforceChangelist struct {
-	CommitSHA    api.CommitID
-	ChangelistID int64
+type PerforceChbngelist struct {
+	CommitSHA    bpi.CommitID
+	ChbngelistID int64
 }
 
-// CodeHost represents a signle code source, usually defined by url e.g. github.com, gitlab.com, bitbucket.sgdev.org.
+// CodeHost represents b signle code source, usublly defined by url e.g. github.com, gitlbb.com, bitbucket.sgdev.org.
 type CodeHost struct {
 	ID                          int32
 	Kind                        string
 	URL                         string
-	APIRateLimitQuota           *int32
-	APIRateLimitIntervalSeconds *int32
-	GitRateLimitQuota           *int32
-	GitRateLimitIntervalSeconds *int32
-	CreatedAt                   time.Time
-	UpdatedAt                   time.Time
+	APIRbteLimitQuotb           *int32
+	APIRbteLimitIntervblSeconds *int32
+	GitRbteLimitQuotb           *int32
+	GitRbteLimitIntervblSeconds *int32
+	CrebtedAt                   time.Time
+	UpdbtedAt                   time.Time
 }

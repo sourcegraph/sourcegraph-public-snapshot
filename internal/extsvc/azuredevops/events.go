@@ -1,4 +1,4 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"encoding/json"
@@ -7,74 +7,74 @@ import (
 	"time"
 )
 
-var (
-	PullRequestApprovedText                = "approved pull request"
-	PullRequestApprovedWithSuggestionsText = "has approved and left suggestions in pull request"
+vbr (
+	PullRequestApprovedText                = "bpproved pull request"
+	PullRequestApprovedWithSuggestionsText = "hbs bpproved bnd left suggestions in pull request"
 	PullRequestRejectedText                = "rejected pull request"
-	PullRequestWaitingForAuthorText        = "is waiting for the author in pull request"
+	PullRequestWbitingForAuthorText        = "is wbiting for the buthor in pull request"
 
 	PullRequestMergedEventType                  AzureDevOpsEvent = "git.pullrequest.merged"
-	PullRequestUpdatedEventType                 AzureDevOpsEvent = "git.pullrequest.updated"
-	PullRequestApprovedEventType                AzureDevOpsEvent = "git.pullrequest.approved"
-	PullRequestApprovedWithSuggestionsEventType AzureDevOpsEvent = "git.pullrequest.approved_with_suggestions"
+	PullRequestUpdbtedEventType                 AzureDevOpsEvent = "git.pullrequest.updbted"
+	PullRequestApprovedEventType                AzureDevOpsEvent = "git.pullrequest.bpproved"
+	PullRequestApprovedWithSuggestionsEventType AzureDevOpsEvent = "git.pullrequest.bpproved_with_suggestions"
 	PullRequestRejectedEventType                AzureDevOpsEvent = "git.pullrequest.rejected"
-	PullRequestWaitingForAuthorEventType        AzureDevOpsEvent = "git.pullrequest.waiting_for_author"
+	PullRequestWbitingForAuthorEventType        AzureDevOpsEvent = "git.pullrequest.wbiting_for_buthor"
 )
 
-func ParseWebhookEvent(eventKey AzureDevOpsEvent, payload []byte) (any, error) {
-	var target any
+func PbrseWebhookEvent(eventKey AzureDevOpsEvent, pbylobd []byte) (bny, error) {
+	vbr tbrget bny
 	switch eventKey {
-	case PullRequestMergedEventType:
-		target = &PullRequestMergedEvent{}
-	case PullRequestUpdatedEventType:
-		target = &PullRequestUpdatedEvent{}
-	default:
+	cbse PullRequestMergedEventType:
+		tbrget = &PullRequestMergedEvent{}
+	cbse PullRequestUpdbtedEventType:
+		tbrget = &PullRequestUpdbtedEvent{}
+	defbult:
 		return nil, webhookNotFoundErr{}
 	}
 
-	if err := json.Unmarshal(payload, target); err != nil {
+	if err := json.Unmbrshbl(pbylobd, tbrget); err != nil {
 		return nil, err
 	}
 
-	// Azure DevOps doesn't give us much in the way of differentiating webhook events, so we are going
-	// to try to parse the event message so that we can ideally simulate the different event types.
-	// In the case that we can't match this event to one of our simulated events, this will default
-	// to a regular PullRequestUpdatedEventType, which will just fetch the PullRequest from the API rather
-	// than deriving it from the event payload.
-	if eventKey == PullRequestUpdatedEventType {
-		newTarget := target.(*PullRequestUpdatedEvent)
-		text := newTarget.Message.Text
+	// Azure DevOps doesn't give us much in the wby of differentibting webhook events, so we bre going
+	// to try to pbrse the event messbge so thbt we cbn ideblly simulbte the different event types.
+	// In the cbse thbt we cbn't mbtch this event to one of our simulbted events, this will defbult
+	// to b regulbr PullRequestUpdbtedEventType, which will just fetch the PullRequest from the API rbther
+	// thbn deriving it from the event pbylobd.
+	if eventKey == PullRequestUpdbtedEventType {
+		newTbrget := tbrget.(*PullRequestUpdbtedEvent)
+		text := newTbrget.Messbge.Text
 
 		switch {
-		case strings.Contains(text, PullRequestApprovedText):
-			newTarget.EventType = PullRequestApprovedEventType
-			returnTarget := PullRequestApprovedEvent(*newTarget)
-			return &returnTarget, nil
-		case strings.Contains(text, PullRequestRejectedText):
-			newTarget.EventType = PullRequestRejectedEventType
-			returnTarget := PullRequestRejectedEvent(*newTarget)
-			return &returnTarget, nil
-		case strings.Contains(text, PullRequestWaitingForAuthorText):
-			newTarget.EventType = PullRequestWaitingForAuthorEventType
-			returnTarget := PullRequestWaitingForAuthorEvent(*newTarget)
-			return &returnTarget, nil
-		case strings.Contains(text, PullRequestApprovedWithSuggestionsText):
-			newTarget.EventType = PullRequestApprovedWithSuggestionsEventType
-			returnTarget := PullRequestApprovedWithSuggestionsEvent(*newTarget)
-			return &returnTarget, nil
-		default:
-			return target, nil
+		cbse strings.Contbins(text, PullRequestApprovedText):
+			newTbrget.EventType = PullRequestApprovedEventType
+			returnTbrget := PullRequestApprovedEvent(*newTbrget)
+			return &returnTbrget, nil
+		cbse strings.Contbins(text, PullRequestRejectedText):
+			newTbrget.EventType = PullRequestRejectedEventType
+			returnTbrget := PullRequestRejectedEvent(*newTbrget)
+			return &returnTbrget, nil
+		cbse strings.Contbins(text, PullRequestWbitingForAuthorText):
+			newTbrget.EventType = PullRequestWbitingForAuthorEventType
+			returnTbrget := PullRequestWbitingForAuthorEvent(*newTbrget)
+			return &returnTbrget, nil
+		cbse strings.Contbins(text, PullRequestApprovedWithSuggestionsText):
+			newTbrget.EventType = PullRequestApprovedWithSuggestionsEventType
+			returnTbrget := PullRequestApprovedWithSuggestionsEvent(*newTbrget)
+			return &returnTbrget, nil
+		defbult:
+			return tbrget, nil
 		}
 
 	}
 
-	return target, nil
+	return tbrget, nil
 }
 
 type AzureDevOpsEvent string
 
-// BaseEvent is used to parse Azure DevOps events into the correct event struct.
-type BaseEvent struct {
+// BbseEvent is used to pbrse Azure DevOps events into the correct event struct.
+type BbseEvent struct {
 	EventType AzureDevOpsEvent `json:"eventType"`
 }
 
@@ -82,61 +82,61 @@ type PullRequestEvent struct {
 	ID          string                  `json:"id"`
 	EventType   AzureDevOpsEvent        `json:"eventType"`
 	PullRequest PullRequest             `json:"resource"`
-	Message     PullRequestEventMessage `json:"message"`
-	CreatedDate time.Time               `json:"createdDate"`
+	Messbge     PullRequestEventMessbge `json:"messbge"`
+	CrebtedDbte time.Time               `json:"crebtedDbte"`
 }
 
 type PullRequestMergedEvent PullRequestEvent
-type PullRequestUpdatedEvent PullRequestEvent
+type PullRequestUpdbtedEvent PullRequestEvent
 type PullRequestApprovedEvent PullRequestEvent
 type PullRequestApprovedWithSuggestionsEvent PullRequestEvent
 type PullRequestRejectedEvent PullRequestEvent
-type PullRequestWaitingForAuthorEvent PullRequestEvent
+type PullRequestWbitingForAuthorEvent PullRequestEvent
 
-type PullRequestEventMessage struct {
+type PullRequestEventMessbge struct {
 	Text string `json:"text"`
 }
 
-// Widgetry to ensure all events are keyers.
+// Widgetry to ensure bll events bre keyers.
 //
-// Annoyingly, most of the pull request events don't have UUIDs associated with
-// anything we get, so we just have to do the best we can with what we have.
+// Annoyingly, most of the pull request events don't hbve UUIDs bssocibted with
+// bnything we get, so we just hbve to do the best we cbn with whbt we hbve.
 
-type keyer interface {
+type keyer interfbce {
 	Key() string
 }
 
-var (
-	_ keyer = &PullRequestUpdatedEvent{}
+vbr (
+	_ keyer = &PullRequestUpdbtedEvent{}
 	_ keyer = &PullRequestMergedEvent{}
 	_ keyer = &PullRequestApprovedEvent{}
 	_ keyer = &PullRequestApprovedWithSuggestionsEvent{}
 	_ keyer = &PullRequestRejectedEvent{}
-	_ keyer = &PullRequestWaitingForAuthorEvent{}
+	_ keyer = &PullRequestWbitingForAuthorEvent{}
 )
 
-func (e *PullRequestUpdatedEvent) Key() string {
-	return strconv.Itoa(e.PullRequest.ID) + ":updated:" + e.CreatedDate.String()
+func (e *PullRequestUpdbtedEvent) Key() string {
+	return strconv.Itob(e.PullRequest.ID) + ":updbted:" + e.CrebtedDbte.String()
 }
 
 func (e *PullRequestMergedEvent) Key() string {
-	return strconv.Itoa(e.PullRequest.ID) + ":merged:" + e.CreatedDate.String()
+	return strconv.Itob(e.PullRequest.ID) + ":merged:" + e.CrebtedDbte.String()
 }
 
 func (e *PullRequestApprovedEvent) Key() string {
-	return strconv.Itoa(e.PullRequest.ID) + ":approved:" + e.CreatedDate.String()
+	return strconv.Itob(e.PullRequest.ID) + ":bpproved:" + e.CrebtedDbte.String()
 }
 
 func (e *PullRequestApprovedWithSuggestionsEvent) Key() string {
-	return strconv.Itoa(e.PullRequest.ID) + ":approved_with_suggestions:" + e.CreatedDate.String()
+	return strconv.Itob(e.PullRequest.ID) + ":bpproved_with_suggestions:" + e.CrebtedDbte.String()
 }
 
 func (e *PullRequestRejectedEvent) Key() string {
-	return strconv.Itoa(e.PullRequest.ID) + ":rejected:" + e.CreatedDate.String()
+	return strconv.Itob(e.PullRequest.ID) + ":rejected:" + e.CrebtedDbte.String()
 }
 
-func (e *PullRequestWaitingForAuthorEvent) Key() string {
-	return strconv.Itoa(e.PullRequest.ID) + ":waiting_for_author:" + e.CreatedDate.String()
+func (e *PullRequestWbitingForAuthorEvent) Key() string {
+	return strconv.Itob(e.PullRequest.ID) + ":wbiting_for_buthor:" + e.CrebtedDbte.String()
 }
 
 type webhookNotFoundErr struct{}

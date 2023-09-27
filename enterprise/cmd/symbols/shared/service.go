@@ -1,27 +1,27 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 
-	symbols_shared "github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	symbols_shbred "github.com/sourcegrbph/sourcegrbph/cmd/symbols/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "symbols" }
+func (svc) Nbme() string { return "symbols" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	symbols_shared.LoadConfig()
-	config := loadRockskipConfig(env.BaseConfig{}, symbols_shared.CtagsConfig, symbols_shared.RepositoryFetcherConfig)
-	return &config, []debugserver.Endpoint{symbols_shared.GRPCWebUIDebugEndpoint()}
+	symbols_shbred.LobdConfig()
+	config := lobdRockskipConfig(env.BbseConfig{}, symbols_shbred.CtbgsConfig, symbols_shbred.RepositoryFetcherConfig)
+	return &config, []debugserver.Endpoint{symbols_shbred.GRPCWebUIDebugEndpoint()}
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return symbols_shared.Main(ctx, observationCtx, ready, CreateSetup(*config.(*rockskipConfig)))
+func (svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config env.Config) error {
+	return symbols_shbred.Mbin(ctx, observbtionCtx, rebdy, CrebteSetup(*config.(*rockskipConfig)))
 }
 
-var Service service.Service = svc{}
+vbr Service service.Service = svc{}

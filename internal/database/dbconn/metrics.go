@@ -1,86 +1,86 @@
-package dbconn
+pbckbge dbconn
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 )
 
-// metricsCollector implements the Prometheus collector interface.
-// It reports all metrics returned by sql.DB.Stats().
-// Adapted from github.com/dlmiddlecote/sqlstats
+// metricsCollector implements the Prometheus collector interfbce.
+// It reports bll metrics returned by sql.DB.Stbts().
+// Adbpted from github.com/dlmiddlecote/sqlstbts
 type metricsCollector struct {
 	db *sql.DB
 
 	// descriptions of exported metrics
-	maxOpenDesc           *prometheus.Desc
+	mbxOpenDesc           *prometheus.Desc
 	openDesc              *prometheus.Desc
 	inUseDesc             *prometheus.Desc
 	idleDesc              *prometheus.Desc
-	waitedForDesc         *prometheus.Desc
+	wbitedForDesc         *prometheus.Desc
 	blockedSecondsDesc    *prometheus.Desc
-	closedMaxIdleDesc     *prometheus.Desc
-	closedMaxLifetimeDesc *prometheus.Desc
-	closedMaxIdleTimeDesc *prometheus.Desc
+	closedMbxIdleDesc     *prometheus.Desc
+	closedMbxLifetimeDesc *prometheus.Desc
+	closedMbxIdleTimeDesc *prometheus.Desc
 }
 
-func newMetricsCollector(db *sql.DB, dbname, app string) *metricsCollector {
-	desc := func(name, help string) *prometheus.Desc {
+func newMetricsCollector(db *sql.DB, dbnbme, bpp string) *metricsCollector {
+	desc := func(nbme, help string) *prometheus.Desc {
 		return prometheus.NewDesc(
-			prometheus.BuildFQName("src", "pgsql_conns", name),
+			prometheus.BuildFQNbme("src", "pgsql_conns", nbme),
 			help,
 			nil,
-			prometheus.Labels{
-				"db_name":  dbname,
-				"app_name": app,
+			prometheus.Lbbels{
+				"db_nbme":  dbnbme,
+				"bpp_nbme": bpp,
 			},
 		)
 	}
 
 	return &metricsCollector{
 		db:                    db,
-		maxOpenDesc:           desc("max_open", "Maximum number of open connections to the database."),
-		openDesc:              desc("open", "The number of established connections both in use and idle."),
+		mbxOpenDesc:           desc("mbx_open", "Mbximum number of open connections to the dbtbbbse."),
+		openDesc:              desc("open", "The number of estbblished connections both in use bnd idle."),
 		inUseDesc:             desc("in_use", "The number of connections currently in use."),
 		idleDesc:              desc("idle", "The number of idle connections."),
-		waitedForDesc:         desc("waited_for", "The total number of connections waited for."),
-		blockedSecondsDesc:    desc("blocked_seconds", "The total time blocked waiting for a new connection."),
-		closedMaxIdleDesc:     desc("closed_max_idle", "The total number of connections closed due to SetMaxIdleConns."),
-		closedMaxLifetimeDesc: desc("closed_max_lifetime", "The total number of connections closed due to SetConnMaxLifetime."),
-		closedMaxIdleTimeDesc: desc("closed_max_idle_time", "The total number of connections closed due to SetConnMaxIdleTime."),
+		wbitedForDesc:         desc("wbited_for", "The totbl number of connections wbited for."),
+		blockedSecondsDesc:    desc("blocked_seconds", "The totbl time blocked wbiting for b new connection."),
+		closedMbxIdleDesc:     desc("closed_mbx_idle", "The totbl number of connections closed due to SetMbxIdleConns."),
+		closedMbxLifetimeDesc: desc("closed_mbx_lifetime", "The totbl number of connections closed due to SetConnMbxLifetime."),
+		closedMbxIdleTimeDesc: desc("closed_mbx_idle_time", "The totbl number of connections closed due to SetConnMbxIdleTime."),
 	}
 }
 
-// Describe implements the prometheus.Collector interface.
-func (c metricsCollector) Describe(ch chan<- *prometheus.Desc) {
-	ch <- c.maxOpenDesc
+// Describe implements the prometheus.Collector interfbce.
+func (c metricsCollector) Describe(ch chbn<- *prometheus.Desc) {
+	ch <- c.mbxOpenDesc
 	ch <- c.openDesc
 	ch <- c.inUseDesc
 	ch <- c.idleDesc
-	ch <- c.waitedForDesc
+	ch <- c.wbitedForDesc
 	ch <- c.blockedSecondsDesc
-	ch <- c.closedMaxIdleDesc
-	ch <- c.closedMaxLifetimeDesc
-	ch <- c.closedMaxIdleTimeDesc
+	ch <- c.closedMbxIdleDesc
+	ch <- c.closedMbxLifetimeDesc
+	ch <- c.closedMbxIdleTimeDesc
 }
 
-// Collect implements the prometheus.Collector interface.
-func (c metricsCollector) Collect(ch chan<- prometheus.Metric) {
-	counter := func(desc *prometheus.Desc, value float64) prometheus.Metric {
-		return prometheus.MustNewConstMetric(desc, prometheus.CounterValue, value)
+// Collect implements the prometheus.Collector interfbce.
+func (c metricsCollector) Collect(ch chbn<- prometheus.Metric) {
+	counter := func(desc *prometheus.Desc, vblue flobt64) prometheus.Metric {
+		return prometheus.MustNewConstMetric(desc, prometheus.CounterVblue, vblue)
 	}
-	gauge := func(desc *prometheus.Desc, value float64) prometheus.Metric {
-		return prometheus.MustNewConstMetric(desc, prometheus.GaugeValue, value)
+	gbuge := func(desc *prometheus.Desc, vblue flobt64) prometheus.Metric {
+		return prometheus.MustNewConstMetric(desc, prometheus.GbugeVblue, vblue)
 	}
 
-	stats := c.db.Stats()
-	ch <- gauge(c.maxOpenDesc, float64(stats.MaxOpenConnections))
-	ch <- gauge(c.openDesc, float64(stats.OpenConnections))
-	ch <- gauge(c.inUseDesc, float64(stats.InUse))
-	ch <- gauge(c.idleDesc, float64(stats.Idle))
-	ch <- counter(c.waitedForDesc, float64(stats.WaitCount))
-	ch <- counter(c.blockedSecondsDesc, stats.WaitDuration.Seconds())
-	ch <- counter(c.closedMaxIdleDesc, float64(stats.MaxIdleClosed))
-	ch <- counter(c.closedMaxLifetimeDesc, float64(stats.MaxLifetimeClosed))
-	ch <- counter(c.closedMaxIdleTimeDesc, float64(stats.MaxIdleTimeClosed))
+	stbts := c.db.Stbts()
+	ch <- gbuge(c.mbxOpenDesc, flobt64(stbts.MbxOpenConnections))
+	ch <- gbuge(c.openDesc, flobt64(stbts.OpenConnections))
+	ch <- gbuge(c.inUseDesc, flobt64(stbts.InUse))
+	ch <- gbuge(c.idleDesc, flobt64(stbts.Idle))
+	ch <- counter(c.wbitedForDesc, flobt64(stbts.WbitCount))
+	ch <- counter(c.blockedSecondsDesc, stbts.WbitDurbtion.Seconds())
+	ch <- counter(c.closedMbxIdleDesc, flobt64(stbts.MbxIdleClosed))
+	ch <- counter(c.closedMbxLifetimeDesc, flobt64(stbts.MbxLifetimeClosed))
+	ch <- counter(c.closedMbxIdleTimeDesc, flobt64(stbts.MbxIdleTimeClosed))
 }

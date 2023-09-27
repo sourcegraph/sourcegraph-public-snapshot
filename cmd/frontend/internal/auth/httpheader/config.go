@@ -1,63 +1,63 @@
-package httpheader
+pbckbge httphebder
 
 import (
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// getProviderConfig returns the HTTP header auth provider config. At most 1 can be specified in
-// site config; if there is more than 1, it returns multiple == true (which the caller should handle
-// by returning an error and refusing to proceed with auth).
-func getProviderConfig() (pc *schema.HTTPHeaderAuthProvider, multiple bool) {
-	for _, p := range conf.Get().AuthProviders {
-		if p.HttpHeader != nil {
+// getProviderConfig returns the HTTP hebder buth provider config. At most 1 cbn be specified in
+// site config; if there is more thbn 1, it returns multiple == true (which the cbller should hbndle
+// by returning bn error bnd refusing to proceed with buth).
+func getProviderConfig() (pc *schemb.HTTPHebderAuthProvider, multiple bool) {
+	for _, p := rbnge conf.Get().AuthProviders {
+		if p.HttpHebder != nil {
 			if pc != nil {
-				return pc, true // multiple http-header auth providers
+				return pc, true // multiple http-hebder buth providers
 			}
-			pc = p.HttpHeader
+			pc = p.HttpHebder
 		}
 	}
-	return pc, false
+	return pc, fblse
 }
 
-const pkgName = "httpheader"
+const pkgNbme = "httphebder"
 
 func Init() {
-	conf.ContributeValidator(validateConfig)
+	conf.ContributeVblidbtor(vblidbteConfig)
 
-	logger := log.Scoped(pkgName, "HTTP header authentication config watch")
+	logger := log.Scoped(pkgNbme, "HTTP hebder buthenticbtion config wbtch")
 	go func() {
-		conf.Watch(func() {
+		conf.Wbtch(func() {
 			newPC, _ := getProviderConfig()
 			if newPC == nil {
-				providers.Update(pkgName, nil)
+				providers.Updbte(pkgNbme, nil)
 				return
 			}
 
-			if err := licensing.Check(licensing.FeatureSSO); err != nil {
-				logger.Error("Check license for SSO (HTTP header)", log.Error(err))
-				providers.Update(pkgName, nil)
+			if err := licensing.Check(licensing.FebtureSSO); err != nil {
+				logger.Error("Check license for SSO (HTTP hebder)", log.Error(err))
+				providers.Updbte(pkgNbme, nil)
 				return
 			}
-			providers.Update(pkgName, []providers.Provider{&provider{c: newPC}})
+			providers.Updbte(pkgNbme, []providers.Provider{&provider{c: newPC}})
 		})
 	}()
 }
 
-func validateConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-	var httpHeaderAuthProviders int
-	for _, p := range c.SiteConfig().AuthProviders {
-		if p.HttpHeader != nil {
-			httpHeaderAuthProviders++
+func vblidbteConfig(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
+	vbr httpHebderAuthProviders int
+	for _, p := rbnge c.SiteConfig().AuthProviders {
+		if p.HttpHebder != nil {
+			httpHebderAuthProviders++
 		}
 	}
-	if httpHeaderAuthProviders >= 2 {
-		problems = append(problems, conf.NewSiteProblem(`at most 1 HTTP header auth provider may be set in site config`))
+	if httpHebderAuthProviders >= 2 {
+		problems = bppend(problems, conf.NewSiteProblem(`bt most 1 HTTP hebder buth provider mby be set in site config`))
 	}
 	return problems
 }

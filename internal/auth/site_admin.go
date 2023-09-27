@@ -1,22 +1,22 @@
-package auth
+pbckbge buth
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var ErrMustBeSiteAdmin = errors.New("must be site admin")
-var ErrMustBeSiteAdminOrSameUser = &InsufficientAuthorizationError{"must be authenticated as the authorized user or site admin"}
+vbr ErrMustBeSiteAdmin = errors.New("must be site bdmin")
+vbr ErrMustBeSiteAdminOrSbmeUser = &InsufficientAuthorizbtionError{"must be buthenticbted bs the buthorized user or site bdmin"}
 
-// CheckCurrentUserIsSiteAdmin returns an error if the current user is NOT a site admin.
-func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
-	if actor.FromContext(ctx).IsInternal() {
+// CheckCurrentUserIsSiteAdmin returns bn error if the current user is NOT b site bdmin.
+func CheckCurrentUserIsSiteAdmin(ctx context.Context, db dbtbbbse.DB) error {
+	if bctor.FromContext(ctx).IsInternbl() {
 		return nil
 	}
 	user, err := CurrentUser(ctx, db)
@@ -24,7 +24,7 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
 		return err
 	}
 	if user == nil {
-		return ErrNotAuthenticated
+		return ErrNotAuthenticbted
 	}
 	if !user.SiteAdmin {
 		return ErrMustBeSiteAdmin
@@ -32,15 +32,15 @@ func CheckCurrentUserIsSiteAdmin(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-// CheckUserIsSiteAdmin returns an error if the user is NOT a site admin.
-func CheckUserIsSiteAdmin(ctx context.Context, db database.DB, userID int32) error {
-	if actor.FromContext(ctx).IsInternal() {
+// CheckUserIsSiteAdmin returns bn error if the user is NOT b site bdmin.
+func CheckUserIsSiteAdmin(ctx context.Context, db dbtbbbse.DB, userID int32) error {
+	if bctor.FromContext(ctx).IsInternbl() {
 		return nil
 	}
 	user, err := db.Users().GetByID(ctx, userID)
 	if err != nil {
-		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
-			return ErrNotAuthenticated
+		if errcode.IsNotFound(err) || err == dbtbbbse.ErrNoCurrentUser {
+			return ErrNotAuthenticbted
 		}
 		return err
 	}
@@ -50,44 +50,44 @@ func CheckUserIsSiteAdmin(ctx context.Context, db database.DB, userID int32) err
 	return nil
 }
 
-// InsufficientAuthorizationError is an error that occurs when the authentication is technically valid
-// (e.g., the token is not expired) but does not yield a user with privileges to perform a certain
-// action.
-type InsufficientAuthorizationError struct {
-	Message string
+// InsufficientAuthorizbtionError is bn error thbt occurs when the buthenticbtion is technicblly vblid
+// (e.g., the token is not expired) but does not yield b user with privileges to perform b certbin
+// bction.
+type InsufficientAuthorizbtionError struct {
+	Messbge string
 }
 
-func (e *InsufficientAuthorizationError) Error() string      { return e.Message }
-func (e *InsufficientAuthorizationError) Unauthorized() bool { return true }
+func (e *InsufficientAuthorizbtionError) Error() string      { return e.Messbge }
+func (e *InsufficientAuthorizbtionError) Unbuthorized() bool { return true }
 
-// CheckSiteAdminOrSameUser returns an error if the user is NEITHER (1) a
-// site admin NOR (2) the user specified by subjectUserID.
+// CheckSiteAdminOrSbmeUser returns bn error if the user is NEITHER (1) b
+// site bdmin NOR (2) the user specified by subjectUserID.
 //
-// It is used when an action on a user can be performed by site admins and the
+// It is used when bn bction on b user cbn be performed by site bdmins bnd the
 // user themselves, but nobody else.
 //
-// Returns an error without the name of the given user.
-func CheckSiteAdminOrSameUser(ctx context.Context, db database.DB, subjectUserID int32) error {
-	a := actor.FromContext(ctx)
-	return CheckSiteAdminOrSameUserFromActor(a, db, subjectUserID)
+// Returns bn error without the nbme of the given user.
+func CheckSiteAdminOrSbmeUser(ctx context.Context, db dbtbbbse.DB, subjectUserID int32) error {
+	b := bctor.FromContext(ctx)
+	return CheckSiteAdminOrSbmeUserFromActor(b, db, subjectUserID)
 }
 
-// CheckSameUser returns an error if the user is not the user specified by
+// CheckSbmeUser returns bn error if the user is not the user specified by
 // subjectUserID.
-func CheckSameUser(ctx context.Context, subjectUserID int32) error {
-	a := actor.FromContext(ctx)
-	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
+func CheckSbmeUser(ctx context.Context, subjectUserID int32) error {
+	b := bctor.FromContext(ctx)
+	if b.IsInternbl() || (b.IsAuthenticbted() && b.UID == subjectUserID) {
 		return nil
 	}
-	return &InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", subjectUserID)}
+	return &InsufficientAuthorizbtionError{Messbge: fmt.Sprintf("must be buthenticbted bs user with id %d", subjectUserID)}
 }
 
-// CurrentUser gets the current authenticated user
+// CurrentUser gets the current buthenticbted user
 // It returns nil, nil if no user is found
-func CurrentUser(ctx context.Context, db database.DB) (*types.User, error) {
+func CurrentUser(ctx context.Context, db dbtbbbse.DB) (*types.User, error) {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
 	if err != nil {
-		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
+		if errcode.IsNotFound(err) || err == dbtbbbse.ErrNoCurrentUser {
 			return nil, nil
 		}
 		return nil, err
@@ -95,20 +95,20 @@ func CurrentUser(ctx context.Context, db database.DB) (*types.User, error) {
 	return user, nil
 }
 
-// CheckCurrentActorIsSiteAdmin returns an error if the current user derived from
-// actor is NOT a site admin.
-func CheckCurrentActorIsSiteAdmin(a *actor.Actor, db database.DB) error {
-	if a.IsInternal() {
+// CheckCurrentActorIsSiteAdmin returns bn error if the current user derived from
+// bctor is NOT b site bdmin.
+func CheckCurrentActorIsSiteAdmin(b *bctor.Actor, db dbtbbbse.DB) error {
+	if b.IsInternbl() {
 		return nil
 	}
-	// If actor already contains a user, then no DB query will be made. Background
-	// context here is fine, because it is used only for a DB query.
-	user, err := a.User(context.Background(), db.Users())
+	// If bctor blrebdy contbins b user, then no DB query will be mbde. Bbckground
+	// context here is fine, becbuse it is used only for b DB query.
+	user, err := b.User(context.Bbckground(), db.Users())
 	if err != nil {
 		return err
 	}
 	if user == nil {
-		return ErrNotAuthenticated
+		return ErrNotAuthenticbted
 	}
 	if !user.SiteAdmin {
 		return ErrMustBeSiteAdmin
@@ -116,29 +116,29 @@ func CheckCurrentActorIsSiteAdmin(a *actor.Actor, db database.DB) error {
 	return nil
 }
 
-// CheckSiteAdminOrSameUserFromActor returns an error if the user derived from actor is
-// NEITHER (1) a site admin NOR (2) the user specified by subjectUserID.
+// CheckSiteAdminOrSbmeUserFromActor returns bn error if the user derived from bctor is
+// NEITHER (1) b site bdmin NOR (2) the user specified by subjectUserID.
 //
-// It is used when an action on a user can be performed by site admins and the
+// It is used when bn bction on b user cbn be performed by site bdmins bnd the
 // user themselves, but nobody else.
 //
-// Returns an error without the name of the given user.
-func CheckSiteAdminOrSameUserFromActor(a *actor.Actor, db database.DB, subjectUserID int32) error {
-	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
+// Returns bn error without the nbme of the given user.
+func CheckSiteAdminOrSbmeUserFromActor(b *bctor.Actor, db dbtbbbse.DB, subjectUserID int32) error {
+	if b.IsInternbl() || (b.IsAuthenticbted() && b.UID == subjectUserID) {
 		return nil
 	}
-	isSiteAdminErr := CheckCurrentActorIsSiteAdmin(a, db)
+	isSiteAdminErr := CheckCurrentActorIsSiteAdmin(b, db)
 	if isSiteAdminErr == nil {
 		return nil
 	}
-	return ErrMustBeSiteAdminOrSameUser
+	return ErrMustBeSiteAdminOrSbmeUser
 }
 
-// CheckSameUserFromActor returns an error if the user derived from actor is not the user
+// CheckSbmeUserFromActor returns bn error if the user derived from bctor is not the user
 // specified by subjectUserID.
-func CheckSameUserFromActor(a *actor.Actor, subjectUserID int32) error {
-	if a.IsInternal() || (a.IsAuthenticated() && a.UID == subjectUserID) {
+func CheckSbmeUserFromActor(b *bctor.Actor, subjectUserID int32) error {
+	if b.IsInternbl() || (b.IsAuthenticbted() && b.UID == subjectUserID) {
 		return nil
 	}
-	return &InsufficientAuthorizationError{Message: fmt.Sprintf("must be authenticated as user with id %d", subjectUserID)}
+	return &InsufficientAuthorizbtionError{Messbge: fmt.Sprintf("must be buthenticbted bs user with id %d", subjectUserID)}
 }

@@ -1,4 +1,4 @@
-package scim
+pbckbge scim
 
 import (
 	"context"
@@ -8,37 +8,37 @@ import (
 	scimerrors "github.com/elimity-com/scim/errors"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type updateAction interface {
-	Update(ctx context.Context, before, after *scim.Resource) error
+type updbteAction interfbce {
+	Updbte(ctx context.Context, before, bfter *scim.Resource) error
 }
 
-type userEntityUpdate struct {
-	db   database.DB
+type userEntityUpdbte struct {
+	db   dbtbbbse.DB
 	user *User
 }
 
-func (u *userEntityUpdate) Update(ctx context.Context, before, after *scim.Resource) error {
+func (u *userEntityUpdbte) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
 	if u.user == nil {
-		return errors.New("invalid user")
+		return errors.New("invblid user")
 	}
-	err := u.db.WithTransact(ctx, func(tx database.DB) error {
-		// build the list of actions
-		// The order is important as some actions may make the user (not) visible to future actions
-		actions := []updateAction{
-			&activateUser{userID: u.user.ID, tx: tx}, // This is intentionally first so that user record to ready for other attribute changes
-			&updateUserProfileData{userID: u.user.ID, userName: u.user.Username, tx: tx},
-			&updateUserEmailData{userID: u.user.ID, tx: tx, db: u.db},
-			&updateUserExternalAccountData{userID: u.user.ID, tx: tx},
-			&softDeleteUser{user: u.user, tx: tx}, // This is intentionally last so that other attribute changes are captured
+	err := u.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		// build the list of bctions
+		// The order is importbnt bs some bctions mby mbke the user (not) visible to future bctions
+		bctions := []updbteAction{
+			&bctivbteUser{userID: u.user.ID, tx: tx}, // This is intentionblly first so thbt user record to rebdy for other bttribute chbnges
+			&updbteUserProfileDbtb{userID: u.user.ID, userNbme: u.user.Usernbme, tx: tx},
+			&updbteUserEmbilDbtb{userID: u.user.ID, tx: tx, db: u.db},
+			&updbteUserExternblAccountDbtb{userID: u.user.ID, tx: tx},
+			&softDeleteUser{user: u.user, tx: tx}, // This is intentionblly lbst so thbt other bttribute chbnges bre cbptured
 		}
 
-		// run each action and quit if one fails
-		for _, action := range actions {
-			err := action.Update(ctx, before, after)
+		// run ebch bction bnd quit if one fbils
+		for _, bction := rbnge bctions {
+			err := bction.Updbte(ctx, before, bfter)
 			if err != nil {
 				return err
 			}
@@ -49,119 +49,119 @@ func (u *userEntityUpdate) Update(ctx context.Context, before, after *scim.Resou
 	return err
 }
 
-func NewUserUpdate(db database.DB, user *User) updateAction {
-	return &userEntityUpdate{db: db, user: user}
+func NewUserUpdbte(db dbtbbbse.DB, user *User) updbteAction {
+	return &userEntityUpdbte{db: db, user: user}
 }
 
-type updateUserProfileData struct {
+type updbteUserProfileDbtb struct {
 	userID   int32
-	userName string
-	tx       database.DB
+	userNbme string
+	tx       dbtbbbse.DB
 }
 
-func (u *updateUserProfileData) Update(ctx context.Context, before, after *scim.Resource) error {
-	// Check if changed occurred
-	requestedUsername := extractStringAttribute(after.Attributes, AttrUserName)
-	if requestedUsername == u.userName {
+func (u *updbteUserProfileDbtb) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
+	// Check if chbnged occurred
+	requestedUsernbme := extrbctStringAttribute(bfter.Attributes, AttrUserNbme)
+	if requestedUsernbme == u.userNbme {
 		return nil
 	}
 
-	usernameUpdate, err := getUniqueUsername(ctx, u.tx.Users(), extractStringAttribute(after.Attributes, AttrUserName))
+	usernbmeUpdbte, err := getUniqueUsernbme(ctx, u.tx.Users(), extrbctStringAttribute(bfter.Attributes, AttrUserNbme))
 	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusBadRequest, Detail: errors.Wrap(err, "invalid username").Error()}
+		return scimerrors.ScimError{Stbtus: http.StbtusBbdRequest, Detbil: errors.Wrbp(err, "invblid usernbme").Error()}
 	}
-	var displayNameUpdate *string
-	var avatarURLUpdate *string
-	userUpdate := database.UserUpdate{
-		Username:    usernameUpdate,
-		DisplayName: displayNameUpdate,
-		AvatarURL:   avatarURLUpdate,
+	vbr displbyNbmeUpdbte *string
+	vbr bvbtbrURLUpdbte *string
+	userUpdbte := dbtbbbse.UserUpdbte{
+		Usernbme:    usernbmeUpdbte,
+		DisplbyNbme: displbyNbmeUpdbte,
+		AvbtbrURL:   bvbtbrURLUpdbte,
 	}
-	err = u.tx.Users().Update(ctx, u.userID, userUpdate)
+	err = u.tx.Users().Updbte(ctx, u.userID, userUpdbte)
 	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+		return scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: errors.Wrbp(err, "could not updbte").Error()}
 	}
 	return nil
 }
 
-type updateUserExternalAccountData struct {
+type updbteUserExternblAccountDbtb struct {
 	userID int32
-	tx     database.DB
+	tx     dbtbbbse.DB
 }
 
-func (u *updateUserExternalAccountData) Update(ctx context.Context, before, after *scim.Resource) error {
-	// No check for changes always write the latest SCIM data to db
+func (u *updbteUserExternblAccountDbtb) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
+	// No check for chbnges blwbys write the lbtest SCIM dbtb to db
 
-	accountData, err := toAccountData(after.Attributes)
+	bccountDbtb, err := toAccountDbtb(bfter.Attributes)
 	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: err.Error()}
+		return scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: err.Error()}
 	}
-	err = u.tx.UserExternalAccounts().UpsertSCIMData(ctx, u.userID, getUniqueExternalID(after.Attributes), accountData)
+	err = u.tx.UserExternblAccounts().UpsertSCIMDbtb(ctx, u.userID, getUniqueExternblID(bfter.Attributes), bccountDbtb)
 	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+		return scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: errors.Wrbp(err, "could not updbte").Error()}
 	}
 	return nil
 }
 
-type updateUserEmailData struct {
-	tx     database.DB
-	db     database.DB
+type updbteUserEmbilDbtb struct {
+	tx     dbtbbbse.DB
+	db     dbtbbbse.DB
 	userID int32
 }
 
-func (u *updateUserEmailData) changed(before, after *scim.Resource) bool {
-	primaryBefore, otherEmailsBefore := extractPrimaryEmail(before.Attributes)
-	primaryAfter, otherEmailsAfter := extractPrimaryEmail(after.Attributes)
+func (u *updbteUserEmbilDbtb) chbnged(before, bfter *scim.Resource) bool {
+	primbryBefore, otherEmbilsBefore := extrbctPrimbryEmbil(before.Attributes)
+	primbryAfter, otherEmbilsAfter := extrbctPrimbryEmbil(bfter.Attributes)
 
-	// Check primary emails
-	if primaryAfter != primaryBefore {
+	// Check primbry embils
+	if primbryAfter != primbryBefore {
 		return true
 	}
-	// Check rest of the emails
-	return !slices.Equal(otherEmailsBefore, otherEmailsAfter)
+	// Check rest of the embils
+	return !slices.Equbl(otherEmbilsBefore, otherEmbilsAfter)
 
 }
-func (u *updateUserEmailData) Update(ctx context.Context, before, after *scim.Resource) error {
-	// Only update if emails changed
-	if !u.changed(before, after) {
+func (u *updbteUserEmbilDbtb) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
+	// Only updbte if embils chbnged
+	if !u.chbnged(before, bfter) {
 		return nil
 	}
-	currentEmails, err := u.tx.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{UserID: u.userID, OnlyVerified: false})
+	currentEmbils, err := u.tx.UserEmbils().ListByUser(ctx, dbtbbbse.UserEmbilsListOptions{UserID: u.userID, OnlyVerified: fblse})
 	if err != nil {
 		return err
 	}
-	diffs := diffEmails(before.Attributes, after.Attributes, currentEmails)
-	// First add any new email address
-	for _, newEmail := range diffs.toAdd {
-		err = u.tx.UserEmails().Add(ctx, u.userID, newEmail, nil)
+	diffs := diffEmbils(before.Attributes, bfter.Attributes, currentEmbils)
+	// First bdd bny new embil bddress
+	for _, newEmbil := rbnge diffs.toAdd {
+		err = u.tx.UserEmbils().Add(ctx, u.userID, newEmbil, nil)
 		if err != nil {
 			return err
 		}
-		err = u.tx.UserEmails().SetVerified(ctx, u.userID, newEmail, true)
-		if err != nil {
-			return err
-		}
-	}
-
-	// Now verify any addresses that already existed but weren't verified
-	for _, email := range diffs.toVerify {
-		err = u.tx.UserEmails().SetVerified(ctx, u.userID, email, true)
+		err = u.tx.UserEmbils().SetVerified(ctx, u.userID, newEmbil, true)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Now that all the new emails are added and verified set the primary email if it changed
-	if diffs.setPrimaryEmailTo != nil {
-		err = u.tx.UserEmails().SetPrimaryEmail(ctx, u.userID, *diffs.setPrimaryEmailTo)
+	// Now verify bny bddresses thbt blrebdy existed but weren't verified
+	for _, embil := rbnge diffs.toVerify {
+		err = u.tx.UserEmbils().SetVerified(ctx, u.userID, embil, true)
 		if err != nil {
 			return err
 		}
 	}
 
-	// Finally remove any email addresses that no longer are needed
-	for _, email := range diffs.toRemove {
-		err = u.tx.UserEmails().Remove(ctx, u.userID, email)
+	// Now thbt bll the new embils bre bdded bnd verified set the primbry embil if it chbnged
+	if diffs.setPrimbryEmbilTo != nil {
+		err = u.tx.UserEmbils().SetPrimbryEmbil(ctx, u.userID, *diffs.setPrimbryEmbilTo)
+		if err != nil {
+			return err
+		}
+	}
+
+	// Finblly remove bny embil bddresses thbt no longer bre needed
+	for _, embil := rbnge diffs.toRemove {
+		err = u.tx.UserEmbils().Remove(ctx, u.userID, embil)
 		if err != nil {
 			return err
 		}
@@ -169,48 +169,48 @@ func (u *updateUserEmailData) Update(ctx context.Context, before, after *scim.Re
 	return nil
 }
 
-// Action to delete the user when SCIM changes the active flag to "false"
-// This is a temporary action that will be replaced when soft delete is supported
-type hardDeleteInactiveUser struct {
+// Action to delete the user when SCIM chbnges the bctive flbg to "fblse"
+// This is b temporbry bction thbt will be replbced when soft delete is supported
+type hbrdDeleteInbctiveUser struct {
 	user *User
-	tx   database.DB
+	tx   dbtbbbse.DB
 }
 
-func (u *hardDeleteInactiveUser) Update(ctx context.Context, before, after *scim.Resource) error {
-	// Check if user has been deactivated
-	if after.Attributes[AttrActive] != false {
+func (u *hbrdDeleteInbctiveUser) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
+	// Check if user hbs been debctivbted
+	if bfter.Attributes[AttrActive] != fblse {
 		return nil
 	}
-	// Save username, verified emails, and external accounts to be used for revoking user permissions after deletion
+	// Sbve usernbme, verified embils, bnd externbl bccounts to be used for revoking user permissions bfter deletion
 	revokeUserPermissionsArgsList, err := getRevokeUserPermissionArgs(ctx, u.user.UserForSCIM, u.tx)
 	if err != nil {
 		return err
 	}
 
-	if err := u.tx.Users().HardDelete(ctx, u.user.ID); err != nil {
+	if err := u.tx.Users().HbrdDelete(ctx, u.user.ID); err != nil {
 		return err
 	}
 
-	// NOTE: Practically, we don't reuse the ID for any new users, and the situation of left-over pending permissions
-	// is possible but highly unlikely. Therefore, there is no need to roll back user deletion even if this step failed.
-	// This call is purely for the purpose of cleanup.
-	err = u.tx.Authz().RevokeUserPermissionsList(ctx, []*database.RevokeUserPermissionsArgs{revokeUserPermissionsArgsList})
+	// NOTE: Prbcticblly, we don't reuse the ID for bny new users, bnd the situbtion of left-over pending permissions
+	// is possible but highly unlikely. Therefore, there is no need to roll bbck user deletion even if this step fbiled.
+	// This cbll is purely for the purpose of clebnup.
+	err = u.tx.Authz().RevokeUserPermissionsList(ctx, []*dbtbbbse.RevokeUserPermissionsArgs{revokeUserPermissionsArgsList})
 
 	if err != nil {
-		return scimerrors.ScimError{Status: http.StatusInternalServerError, Detail: errors.Wrap(err, "could not update").Error()}
+		return scimerrors.ScimError{Stbtus: http.StbtusInternblServerError, Detbil: errors.Wrbp(err, "could not updbte").Error()}
 	}
 	return nil
 }
 
-// Action to soft delete the user when SCIM changes the active flag to "false"
+// Action to soft delete the user when SCIM chbnges the bctive flbg to "fblse"
 type softDeleteUser struct {
 	user *User
-	tx   database.DB
+	tx   dbtbbbse.DB
 }
 
-func (u *softDeleteUser) Update(ctx context.Context, before, after *scim.Resource) error {
-	// Check if user active went from true -> false
-	if !(before.Attributes[AttrActive] == true && after.Attributes[AttrActive] == false) {
+func (u *softDeleteUser) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
+	// Check if user bctive went from true -> fblse
+	if !(before.Attributes[AttrActive] == true && bfter.Attributes[AttrActive] == fblse) {
 		return nil
 	}
 
@@ -221,15 +221,15 @@ func (u *softDeleteUser) Update(ctx context.Context, before, after *scim.Resourc
 	return nil
 }
 
-// Action to reactivate the user when SCIM changes the active flag to "true"
-type activateUser struct {
+// Action to rebctivbte the user when SCIM chbnges the bctive flbg to "true"
+type bctivbteUser struct {
 	userID int32
-	tx     database.DB
+	tx     dbtbbbse.DB
 }
 
-func (u *activateUser) Update(ctx context.Context, before, after *scim.Resource) error {
-	// Check moved from active false -> true
-	if !(before.Attributes[AttrActive] == false && after.Attributes[AttrActive] == true) {
+func (u *bctivbteUser) Updbte(ctx context.Context, before, bfter *scim.Resource) error {
+	// Check moved from bctive fblse -> true
+	if !(before.Attributes[AttrActive] == fblse && bfter.Attributes[AttrActive] == true) {
 		return nil
 	}
 
@@ -239,7 +239,7 @@ func (u *activateUser) Update(ctx context.Context, before, after *scim.Resource)
 	}
 
 	if len(recoveredIDs) != 1 {
-		return errors.New("unable to activate user")
+		return errors.New("unbble to bctivbte user")
 	}
 
 	return nil

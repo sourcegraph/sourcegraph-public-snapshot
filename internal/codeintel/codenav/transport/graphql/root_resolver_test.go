@@ -1,400 +1,400 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
-	"encoding/base64"
+	"encoding/bbse64"
 	"fmt"
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/shared/resolvers/gitresolvers"
-	uploadsshared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred/resolvers/gitresolvers"
+	uplobdsshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	sgtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestRanges(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
+func TestRbnges(t *testing.T) {
+	mockCodeNbvService := NewMockCodeNbvService()
 
-	mockRequestState := codenav.RequestState{
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
-	args := &resolverstubs.LSIFRangesArgs{StartLine: 10, EndLine: 20}
-	if _, err := resolver.Ranges(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	brgs := &resolverstubs.LSIFRbngesArgs{StbrtLine: 10, EndLine: 20}
+	if _, err := resolver.Rbnges(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetRangesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetRangesFunc.History()))
+	if len(mockCodeNbvService.GetRbngesFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.GetRbngesFunc.History()))
 	}
-	if val := mockCodeNavService.GetRangesFunc.History()[0].Arg3; val != 10 {
-		t.Fatalf("unexpected start line. want=%d have=%d", 10, val)
+	if vbl := mockCodeNbvService.GetRbngesFunc.History()[0].Arg3; vbl != 10 {
+		t.Fbtblf("unexpected stbrt line. wbnt=%d hbve=%d", 10, vbl)
 	}
-	if val := mockCodeNavService.GetRangesFunc.History()[0].Arg4; val != 20 {
-		t.Fatalf("unexpected end line. want=%d have=%d", 20, val)
+	if vbl := mockCodeNbvService.GetRbngesFunc.History()[0].Arg4; vbl != 20 {
+		t.Fbtblf("unexpected end line. wbnt=%d hbve=%d", 20, vbl)
 	}
 }
 
 func TestDefinitions(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
-	args := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Character: 15}
-	if _, err := resolver.Definitions(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	brgs := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Chbrbcter: 15}
+	if _, err := resolver.Definitions(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.NewGetDefinitionsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.NewGetDefinitionsFunc.History()))
+	if len(mockCodeNbvService.NewGetDefinitionsFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.NewGetDefinitionsFunc.History()))
 	}
-	if val := mockCodeNavService.NewGetDefinitionsFunc.History()[0].Arg1; val.Line != 10 {
-		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
+	if vbl := mockCodeNbvService.NewGetDefinitionsFunc.History()[0].Arg1; vbl.Line != 10 {
+		t.Fbtblf("unexpected line. wbnt=%v hbve=%v", 10, vbl)
 	}
-	if val := mockCodeNavService.NewGetDefinitionsFunc.History()[0].Arg1; val.Character != 15 {
-		t.Fatalf("unexpected character. want=%d have=%v", 15, val)
+	if vbl := mockCodeNbvService.NewGetDefinitionsFunc.History()[0].Arg1; vbl.Chbrbcter != 15 {
+		t.Fbtblf("unexpected chbrbcter. wbnt=%d hbve=%v", 15, vbl)
 	}
 }
 
 func TestReferences(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
 	offset := int32(25)
-	mockRefCursor := codenav.Cursor{Phase: "local"}
-	encodedCursor := encodeTraversalCursor(mockRefCursor)
-	mockCursor := base64.StdEncoding.EncodeToString([]byte(encodedCursor))
+	mockRefCursor := codenbv.Cursor{Phbse: "locbl"}
+	encodedCursor := encodeTrbversblCursor(mockRefCursor)
+	mockCursor := bbse64.StdEncoding.EncodeToString([]byte(encodedCursor))
 
-	args := &resolverstubs.LSIFPagedQueryPositionArgs{
+	brgs := &resolverstubs.LSIFPbgedQueryPositionArgs{
 		LSIFQueryPositionArgs: resolverstubs.LSIFQueryPositionArgs{
 			Line:      10,
-			Character: 15,
+			Chbrbcter: 15,
 		},
-		PagedConnectionArgs: resolverstubs.PagedConnectionArgs{ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset}, After: &mockCursor},
+		PbgedConnectionArgs: resolverstubs.PbgedConnectionArgs{ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset}, After: &mockCursor},
 	}
 
-	if _, err := resolver.References(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if _, err := resolver.References(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.NewGetReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.NewGetReferencesFunc.History()))
+	if len(mockCodeNbvService.NewGetReferencesFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.NewGetReferencesFunc.History()))
 	}
-	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Line != 10 {
-		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
+	if vbl := mockCodeNbvService.NewGetReferencesFunc.History()[0].Arg1; vbl.Line != 10 {
+		t.Fbtblf("unexpected line. wbnt=%v hbve=%v", 10, vbl)
 	}
-	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Character != 15 {
-		t.Fatalf("unexpected character. want=%v have=%v", 15, val)
+	if vbl := mockCodeNbvService.NewGetReferencesFunc.History()[0].Arg1; vbl.Chbrbcter != 15 {
+		t.Fbtblf("unexpected chbrbcter. wbnt=%v hbve=%v", 15, vbl)
 	}
-	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Limit != 25 {
-		t.Fatalf("unexpected character. want=%v have=%v", 25, val)
+	if vbl := mockCodeNbvService.NewGetReferencesFunc.History()[0].Arg1; vbl.Limit != 25 {
+		t.Fbtblf("unexpected chbrbcter. wbnt=%v hbve=%v", 25, vbl)
 	}
-	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.RawCursor != encodedCursor {
-		t.Fatalf("unexpected character. want=%v have=%v", "test-cursor", val)
+	if vbl := mockCodeNbvService.NewGetReferencesFunc.History()[0].Arg1; vbl.RbwCursor != encodedCursor {
+		t.Fbtblf("unexpected chbrbcter. wbnt=%v hbve=%v", "test-cursor", vbl)
 	}
 }
 
-func TestReferencesDefaultLimit(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+func TestReferencesDefbultLimit(t *testing.T) {
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
-	args := &resolverstubs.LSIFPagedQueryPositionArgs{
+	brgs := &resolverstubs.LSIFPbgedQueryPositionArgs{
 		LSIFQueryPositionArgs: resolverstubs.LSIFQueryPositionArgs{
 			Line:      10,
-			Character: 15,
+			Chbrbcter: 15,
 		},
-		PagedConnectionArgs: resolverstubs.PagedConnectionArgs{},
+		PbgedConnectionArgs: resolverstubs.PbgedConnectionArgs{},
 	}
 
-	if _, err := resolver.References(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if _, err := resolver.References(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.NewGetReferencesFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
+	if len(mockCodeNbvService.NewGetReferencesFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.GetDibgnosticsFunc.History()))
 	}
-	if val := mockCodeNavService.NewGetReferencesFunc.History()[0].Arg1; val.Limit != DefaultReferencesPageSize {
-		t.Fatalf("unexpected limit. want=%v have=%v", DefaultReferencesPageSize, val)
+	if vbl := mockCodeNbvService.NewGetReferencesFunc.History()[0].Arg1; vbl.Limit != DefbultReferencesPbgeSize {
+		t.Fbtblf("unexpected limit. wbnt=%v hbve=%v", DefbultReferencesPbgeSize, vbl)
 	}
 }
 
-func TestReferencesDefaultIllegalLimit(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+func TestReferencesDefbultIllegblLimit(t *testing.T) {
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
 	offset := int32(-1)
-	args := &resolverstubs.LSIFPagedQueryPositionArgs{
+	brgs := &resolverstubs.LSIFPbgedQueryPositionArgs{
 		LSIFQueryPositionArgs: resolverstubs.LSIFQueryPositionArgs{
 			Line:      10,
-			Character: 15,
+			Chbrbcter: 15,
 		},
-		PagedConnectionArgs: resolverstubs.PagedConnectionArgs{ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset}},
+		PbgedConnectionArgs: resolverstubs.PbgedConnectionArgs{ConnectionArgs: resolverstubs.ConnectionArgs{First: &offset}},
 	}
 
-	if _, err := resolver.References(context.Background(), args); err != ErrIllegalLimit {
-		t.Fatalf("unexpected error. want=%q have=%q", ErrIllegalLimit, err)
+	if _, err := resolver.References(context.Bbckground(), brgs); err != ErrIllegblLimit {
+		t.Fbtblf("unexpected error. wbnt=%q hbve=%q", ErrIllegblLimit, err)
 	}
 }
 
 func TestHover(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
-	mockCodeNavService.GetHoverFunc.SetDefaultReturn("text", shared.Range{}, true, nil)
-	args := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Character: 15}
-	if _, err := resolver.Hover(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	mockCodeNbvService.GetHoverFunc.SetDefbultReturn("text", shbred.Rbnge{}, true, nil)
+	brgs := &resolverstubs.LSIFQueryPositionArgs{Line: 10, Chbrbcter: 15}
+	if _, err := resolver.Hover(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetHoverFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetHoverFunc.History()))
+	if len(mockCodeNbvService.GetHoverFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.GetHoverFunc.History()))
 	}
-	if val := mockCodeNavService.GetHoverFunc.History()[0].Arg1; val.Line != 10 {
-		t.Fatalf("unexpected line. want=%v have=%v", 10, val)
+	if vbl := mockCodeNbvService.GetHoverFunc.History()[0].Arg1; vbl.Line != 10 {
+		t.Fbtblf("unexpected line. wbnt=%v hbve=%v", 10, vbl)
 	}
-	if val := mockCodeNavService.GetHoverFunc.History()[0].Arg1; val.Character != 15 {
-		t.Fatalf("unexpected character. want=%v have=%v", 15, val)
+	if vbl := mockCodeNbvService.GetHoverFunc.History()[0].Arg1; vbl.Chbrbcter != 15 {
+		t.Fbtblf("unexpected chbrbcter. wbnt=%v hbve=%v", 15, vbl)
 	}
 }
 
-func TestDiagnostics(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+func TestDibgnostics(t *testing.T) {
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
 	offset := int32(25)
-	args := &resolverstubs.LSIFDiagnosticsArgs{
+	brgs := &resolverstubs.LSIFDibgnosticsArgs{
 		First: &offset,
 	}
 
-	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if _, err := resolver.Dibgnostics(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetDiagnosticsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
+	if len(mockCodeNbvService.GetDibgnosticsFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.GetDibgnosticsFunc.History()))
 	}
-	if val := mockCodeNavService.GetDiagnosticsFunc.History()[0].Arg1; val.Limit != 25 {
-		t.Fatalf("unexpected limit. want=%v have=%v", 25, val)
+	if vbl := mockCodeNbvService.GetDibgnosticsFunc.History()[0].Arg1; vbl.Limit != 25 {
+		t.Fbtblf("unexpected limit. wbnt=%v hbve=%v", 25, vbl)
 	}
 }
 
-func TestDiagnosticsDefaultLimit(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+func TestDibgnosticsDefbultLimit(t *testing.T) {
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
-	args := &resolverstubs.LSIFDiagnosticsArgs{}
+	brgs := &resolverstubs.LSIFDibgnosticsArgs{}
 
-	if _, err := resolver.Diagnostics(context.Background(), args); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if _, err := resolver.Dibgnostics(context.Bbckground(), brgs); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	if len(mockCodeNavService.GetDiagnosticsFunc.History()) != 1 {
-		t.Fatalf("unexpected call count. want=%d have=%d", 1, len(mockCodeNavService.GetDiagnosticsFunc.History()))
+	if len(mockCodeNbvService.GetDibgnosticsFunc.History()) != 1 {
+		t.Fbtblf("unexpected cbll count. wbnt=%d hbve=%d", 1, len(mockCodeNbvService.GetDibgnosticsFunc.History()))
 	}
-	if val := mockCodeNavService.GetDiagnosticsFunc.History()[0].Arg1; val.Limit != DefaultDiagnosticsPageSize {
-		t.Fatalf("unexpected limit. want=%v have=%v", DefaultDiagnosticsPageSize, val)
+	if vbl := mockCodeNbvService.GetDibgnosticsFunc.History()[0].Arg1; vbl.Limit != DefbultDibgnosticsPbgeSize {
+		t.Fbtblf("unexpected limit. wbnt=%v hbve=%v", DefbultDibgnosticsPbgeSize, vbl)
 	}
 }
 
-func TestDiagnosticsDefaultIllegalLimit(t *testing.T) {
-	mockCodeNavService := NewMockCodeNavService()
-	mockRequestState := codenav.RequestState{
+func TestDibgnosticsDefbultIllegblLimit(t *testing.T) {
+	mockCodeNbvService := NewMockCodeNbvService()
+	mockRequestStbte := codenbv.RequestStbte{
 		RepositoryID: 1,
-		Commit:       "deadbeef1",
-		Path:         "/src/main",
+		Commit:       "debdbeef1",
+		Pbth:         "/src/mbin",
 	}
-	mockOperations := newOperations(&observation.TestContext)
+	mockOperbtions := newOperbtions(&observbtion.TestContext)
 
-	resolver := newGitBlobLSIFDataResolver(
-		mockCodeNavService,
+	resolver := newGitBlobLSIFDbtbResolver(
+		mockCodeNbvService,
 		nil,
-		mockRequestState,
+		mockRequestStbte,
 		nil,
 		nil,
 		nil,
-		mockOperations,
+		mockOperbtions,
 	)
 
 	offset := int32(-1)
-	args := &resolverstubs.LSIFDiagnosticsArgs{
+	brgs := &resolverstubs.LSIFDibgnosticsArgs{
 		First: &offset,
 	}
 
-	if _, err := resolver.Diagnostics(context.Background(), args); err != ErrIllegalLimit {
-		t.Fatalf("unexpected error. want=%q have=%q", ErrIllegalLimit, err)
+	if _, err := resolver.Dibgnostics(context.Bbckground(), brgs); err != ErrIllegblLimit {
+		t.Fbtblf("unexpected error. wbnt=%q hbve=%q", ErrIllegblLimit, err)
 	}
 }
 
-func TestResolveLocations(t *testing.T) {
+func TestResolveLocbtions(t *testing.T) {
 	repos := dbmocks.NewStrictMockRepoStore()
-	repos.GetFunc.SetDefaultHook(func(_ context.Context, id api.RepoID) (*sgtypes.Repo, error) {
-		return &sgtypes.Repo{ID: id, Name: api.RepoName(fmt.Sprintf("repo%d", id))}, nil
+	repos.GetFunc.SetDefbultHook(func(_ context.Context, id bpi.RepoID) (*sgtypes.Repo, error) {
+		return &sgtypes.Repo{ID: id, Nbme: bpi.RepoNbme(fmt.Sprintf("repo%d", id))}, nil
 	})
 
 	gsClient := gitserver.NewMockClient()
-	gsClient.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, _ gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		if spec == "deadbeef3" {
-			return "", &gitdomain.RevisionNotFoundError{}
+	gsClient.ResolveRevisionFunc.SetDefbultHook(func(_ context.Context, _ bpi.RepoNbme, spec string, _ gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		if spec == "debdbeef3" {
+			return "", &gitdombin.RevisionNotFoundError{}
 		}
-		return api.CommitID(spec), nil
+		return bpi.CommitID(spec), nil
 	})
 
-	factory := gitresolvers.NewCachedLocationResolverFactory(repos, gsClient)
-	locationResolver := factory.Create()
+	fbctory := gitresolvers.NewCbchedLocbtionResolverFbctory(repos, gsClient)
+	locbtionResolver := fbctory.Crebte()
 
-	r1 := shared.Range{Start: shared.Position{Line: 11, Character: 12}, End: shared.Position{Line: 13, Character: 14}}
-	r2 := shared.Range{Start: shared.Position{Line: 21, Character: 22}, End: shared.Position{Line: 23, Character: 24}}
-	r3 := shared.Range{Start: shared.Position{Line: 31, Character: 32}, End: shared.Position{Line: 33, Character: 34}}
-	r4 := shared.Range{Start: shared.Position{Line: 41, Character: 42}, End: shared.Position{Line: 43, Character: 44}}
+	r1 := shbred.Rbnge{Stbrt: shbred.Position{Line: 11, Chbrbcter: 12}, End: shbred.Position{Line: 13, Chbrbcter: 14}}
+	r2 := shbred.Rbnge{Stbrt: shbred.Position{Line: 21, Chbrbcter: 22}, End: shbred.Position{Line: 23, Chbrbcter: 24}}
+	r3 := shbred.Rbnge{Stbrt: shbred.Position{Line: 31, Chbrbcter: 32}, End: shbred.Position{Line: 33, Chbrbcter: 34}}
+	r4 := shbred.Rbnge{Stbrt: shbred.Position{Line: 41, Chbrbcter: 42}, End: shbred.Position{Line: 43, Chbrbcter: 44}}
 
-	locations, err := resolveLocations(context.Background(), locationResolver, []shared.UploadLocation{
-		{Dump: uploadsshared.Dump{RepositoryID: 50}, TargetCommit: "deadbeef1", TargetRange: r1, Path: "p1"},
-		{Dump: uploadsshared.Dump{RepositoryID: 51}, TargetCommit: "deadbeef2", TargetRange: r2, Path: "p2"},
-		{Dump: uploadsshared.Dump{RepositoryID: 52}, TargetCommit: "deadbeef3", TargetRange: r3, Path: "p3"},
-		{Dump: uploadsshared.Dump{RepositoryID: 53}, TargetCommit: "deadbeef4", TargetRange: r4, Path: "p4"},
+	locbtions, err := resolveLocbtions(context.Bbckground(), locbtionResolver, []shbred.UplobdLocbtion{
+		{Dump: uplobdsshbred.Dump{RepositoryID: 50}, TbrgetCommit: "debdbeef1", TbrgetRbnge: r1, Pbth: "p1"},
+		{Dump: uplobdsshbred.Dump{RepositoryID: 51}, TbrgetCommit: "debdbeef2", TbrgetRbnge: r2, Pbth: "p2"},
+		{Dump: uplobdsshbred.Dump{RepositoryID: 52}, TbrgetCommit: "debdbeef3", TbrgetRbnge: r3, Pbth: "p3"},
+		{Dump: uplobdsshbred.Dump{RepositoryID: 53}, TbrgetCommit: "debdbeef4", TbrgetRbnge: r4, Pbth: "p4"},
 	})
 	if err != nil {
-		t.Fatalf("Unexpected error: %s", err)
+		t.Fbtblf("Unexpected error: %s", err)
 	}
 
-	mockrequire.Called(t, repos.GetFunc)
+	mockrequire.Cblled(t, repos.GetFunc)
 
-	if len(locations) != 3 {
-		t.Fatalf("unexpected length. want=%d have=%d", 3, len(locations))
+	if len(locbtions) != 3 {
+		t.Fbtblf("unexpected length. wbnt=%d hbve=%d", 3, len(locbtions))
 	}
-	if url := locations[0].CanonicalURL(); url != "/repo50@deadbeef1/-/blob/p1?L12:13-14:15" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo50@deadbeef1/-/blob/p1?L12:13-14:15", url)
+	if url := locbtions[0].CbnonicblURL(); url != "/repo50@debdbeef1/-/blob/p1?L12:13-14:15" {
+		t.Errorf("unexpected cbnonicbl url. wbnt=%s hbve=%s", "/repo50@debdbeef1/-/blob/p1?L12:13-14:15", url)
 	}
-	if url := locations[1].CanonicalURL(); url != "/repo51@deadbeef2/-/blob/p2?L22:23-24:25" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo51@deadbeef2/-/blob/p2?L22:23-24:25", url)
+	if url := locbtions[1].CbnonicblURL(); url != "/repo51@debdbeef2/-/blob/p2?L22:23-24:25" {
+		t.Errorf("unexpected cbnonicbl url. wbnt=%s hbve=%s", "/repo51@debdbeef2/-/blob/p2?L22:23-24:25", url)
 	}
-	if url := locations[2].CanonicalURL(); url != "/repo53@deadbeef4/-/blob/p4?L42:43-44:45" {
-		t.Errorf("unexpected canonical url. want=%s have=%s", "/repo53@deadbeef4/-/blob/p4?L42:43-44:45", url)
+	if url := locbtions[2].CbnonicblURL(); url != "/repo53@debdbeef4/-/blob/p4?L42:43-44:45" {
+		t.Errorf("unexpected cbnonicbl url. wbnt=%s hbve=%s", "/repo53@debdbeef4/-/blob/p4?L42:43-44:45", url)
 	}
 }

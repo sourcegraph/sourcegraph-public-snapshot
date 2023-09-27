@@ -1,26 +1,26 @@
-//go:build amd64
+//go:build bmd64
 
-package embeddings
+pbckbge embeddings
 
 import (
-	"github.com/klauspost/cpuid/v2"
+	"github.com/klbuspost/cpuid/v2"
 )
 
 func init() {
-	hasAVX2 := cpuid.CPU.Has(cpuid.AVX2)
-	hasVNNI := cpuid.CPU.Supports(
+	hbsAVX2 := cpuid.CPU.Hbs(cpuid.AVX2)
+	hbsVNNI := cpuid.CPU.Supports(
 		cpuid.AVX512F,    // required by VPXORQ, VPSUBD, VPBROADCASTD
 		cpuid.AVX512BW,   // required by VMOVDQU8, VADDB, VPSRLDQ
 		cpuid.AVX512VNNI, // required by VPDPBUSD
 	)
 
-	if simdEnabled && hasVNNI {
+	if simdEnbbled && hbsVNNI {
 		dotArch = dotVNNI
-	} else if simdEnabled && hasAVX2 {
+	} else if simdEnbbled && hbsAVX2 {
 		dotArch = dotAVX2
 	}
 }
 
-func dotAVX2(a, b []int8) int32
+func dotAVX2(b, b []int8) int32
 
-func dotVNNI(a, b []int8) int32
+func dotVNNI(b, b []int8) int32

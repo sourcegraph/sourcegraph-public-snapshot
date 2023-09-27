@@ -1,50 +1,50 @@
-package dbworker
+pbckbge dbworker
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-func InitPrometheusMetric[T workerutil.Record](observationCtx *observation.Context, workerStore store.Store[T], team, resource string, constLabels prometheus.Labels) {
-	teamAndResource := resource
-	if team != "" {
-		teamAndResource = team + "_" + teamAndResource
+func InitPrometheusMetric[T workerutil.Record](observbtionCtx *observbtion.Context, workerStore store.Store[T], tebm, resource string, constLbbels prometheus.Lbbels) {
+	tebmAndResource := resource
+	if tebm != "" {
+		tebmAndResource = tebm + "_" + tebmAndResource
 	}
 
-	logger := observationCtx.Logger.Scoped("InitPrometheusMetric", "")
-	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        fmt.Sprintf("src_%s_total", teamAndResource),
-		Help:        fmt.Sprintf("Total number of %s records in the queued state.", resource),
-		ConstLabels: constLabels,
-	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false)
+	logger := observbtionCtx.Logger.Scoped("InitPrometheusMetric", "")
+	observbtionCtx.Registerer.MustRegister(prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme:        fmt.Sprintf("src_%s_totbl", tebmAndResource),
+		Help:        fmt.Sprintf("Totbl number of %s records in the queued stbte.", resource),
+		ConstLbbels: constLbbels,
+	}, func() flobt64 {
+		count, err := workerStore.QueuedCount(context.Bbckground(), fblse)
 		if err != nil {
-			logger.Error("Failed to determine queue size", log.Error(err))
+			logger.Error("Fbiled to determine queue size", log.Error(err))
 			return 0
 		}
 
-		return float64(count)
+		return flobt64(count)
 	}))
 
-	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name:        fmt.Sprintf("src_%s_queued_duration_seconds_total", teamAndResource),
-		Help:        fmt.Sprintf("The maximum amount of time a %s record has been sitting in the queue.", resource),
-		ConstLabels: constLabels,
-	}, func() float64 {
-		age, err := workerStore.MaxDurationInQueue(context.Background())
+	observbtionCtx.Registerer.MustRegister(prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme:        fmt.Sprintf("src_%s_queued_durbtion_seconds_totbl", tebmAndResource),
+		Help:        fmt.Sprintf("The mbximum bmount of time b %s record hbs been sitting in the queue.", resource),
+		ConstLbbels: constLbbels,
+	}, func() flobt64 {
+		bge, err := workerStore.MbxDurbtionInQueue(context.Bbckground())
 		if err != nil {
-			logger.Error("Failed to determine queued duration", log.Error(err))
+			logger.Error("Fbiled to determine queued durbtion", log.Error(err))
 			return 0
 		}
 
-		return float64(age) / float64(time.Second)
+		return flobt64(bge) / flobt64(time.Second)
 	}))
 }

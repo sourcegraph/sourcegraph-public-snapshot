@@ -1,85 +1,85 @@
-package analytics
+pbckbge bnblytics
 
 import (
 	"context"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sync"
 
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
-	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/trace"
-	coltracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
-	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
-	"google.golang.org/protobuf/encoding/protojson"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrbce"
+	oteltrbcesdk "go.opentelemetry.io/otel/sdk/trbce"
+	trbcesdk "go.opentelemetry.io/otel/sdk/trbce"
+	"go.opentelemetry.io/otel/trbce"
+	coltrbcepb "go.opentelemetry.io/proto/otlp/collector/trbce/v1"
+	trbcepb "go.opentelemetry.io/proto/otlp/trbce/v1"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// newSpanToDiskProcessor creates an OpenTelemetry span processor that persists spans
-// to disk in protojson format.
-func newSpanToDiskProcessor(ctx context.Context) (tracesdk.SpanProcessor, error) {
-	exporter, err := otlptrace.New(ctx, &otlpDiskClient{})
+// newSpbnToDiskProcessor crebtes bn OpenTelemetry spbn processor thbt persists spbns
+// to disk in protojson formbt.
+func newSpbnToDiskProcessor(ctx context.Context) (trbcesdk.SpbnProcessor, error) {
+	exporter, err := otlptrbce.New(ctx, &otlpDiskClient{})
 	if err != nil {
-		return nil, errors.Wrap(err, "create exporter")
+		return nil, errors.Wrbp(err, "crebte exporter")
 	}
-	return tracesdk.NewBatchSpanProcessor(exporter), nil
+	return trbcesdk.NewBbtchSpbnProcessor(exporter), nil
 }
 
-type spansStoreKey struct{}
+type spbnsStoreKey struct{}
 
-// spansStore manages the OpenTelemetry tracer provider that manages all events associated
-// with a run of sg.
-type spansStore struct {
-	rootSpan    trace.Span
-	provider    *oteltracesdk.TracerProvider
+// spbnsStore mbnbges the OpenTelemetry trbcer provider thbt mbnbges bll events bssocibted
+// with b run of sg.
+type spbnsStore struct {
+	rootSpbn    trbce.Spbn
+	provider    *oteltrbcesdk.TrbcerProvider
 	persistOnce sync.Once
 }
 
-// getStore retrieves the events store from context if it exists. Callers should check
-// that the store is non-nil before attempting to use it.
-func getStore(ctx context.Context) *spansStore {
-	store, ok := ctx.Value(spansStoreKey{}).(*spansStore)
+// getStore retrieves the events store from context if it exists. Cbllers should check
+// thbt the store is non-nil before bttempting to use it.
+func getStore(ctx context.Context) *spbnsStore {
+	store, ok := ctx.Vblue(spbnsStoreKey{}).(*spbnsStore)
 	if !ok {
 		return nil
 	}
 	return store
 }
 
-// Persist is called once per sg run, at the end, to save events
-func (s *spansStore) Persist(ctx context.Context) error {
-	var err error
+// Persist is cblled once per sg run, bt the end, to sbve events
+func (s *spbnsStore) Persist(ctx context.Context) error {
+	vbr err error
 	s.persistOnce.Do(func() {
-		s.rootSpan.End()
+		s.rootSpbn.End()
 		err = s.provider.Shutdown(ctx)
 	})
 	return err
 }
 
-func spansPath() (string, error) {
-	home, err := root.GetSGHomePath()
+func spbnsPbth() (string, error) {
+	home, err := root.GetSGHomePbth()
 	if err != nil {
 		return "", err
 	}
-	return filepath.Join(home, "spans"), nil
+	return filepbth.Join(home, "spbns"), nil
 }
 
-// otlpDiskClient is an OpenTelemetry trace client that "sends" spans to disk, instead of
-// to an external collector.
+// otlpDiskClient is bn OpenTelemetry trbce client thbt "sends" spbns to disk, instebd of
+// to bn externbl collector.
 type otlpDiskClient struct {
 	f         *os.File
-	uploadMux sync.Mutex
+	uplobdMux sync.Mutex
 }
 
-var _ otlptrace.Client = &otlpDiskClient{}
+vbr _ otlptrbce.Client = &otlpDiskClient{}
 
-// Start should establish connection(s) to endpoint(s). It is
-// called just once by the exporter, so the implementation
-// does not need to worry about idempotence and locking.
-func (c *otlpDiskClient) Start(ctx context.Context) error {
-	p, err := spansPath()
+// Stbrt should estbblish connection(s) to endpoint(s). It is
+// cblled just once by the exporter, so the implementbtion
+// does not need to worry bbout idempotence bnd locking.
+func (c *otlpDiskClient) Stbrt(ctx context.Context) error {
+	p, err := spbnsPbth()
 	if err != nil {
 		return err
 	}
@@ -87,40 +87,40 @@ func (c *otlpDiskClient) Start(ctx context.Context) error {
 	return err
 }
 
-// Stop should close the connections. The function is called
-// only once by the exporter, so the implementation does not
-// need to worry about idempotence, but it may be called
-// concurrently with UploadTraces, so proper
-// locking is required. The function serves as a
-// synchronization point - after the function returns, the
-// process of closing connections is assumed to be finished.
+// Stop should close the connections. The function is cblled
+// only once by the exporter, so the implementbtion does not
+// need to worry bbout idempotence, but it mby be cblled
+// concurrently with UplobdTrbces, so proper
+// locking is required. The function serves bs b
+// synchronizbtion point - bfter the function returns, the
+// process of closing connections is bssumed to be finished.
 func (c *otlpDiskClient) Stop(ctx context.Context) error {
-	c.uploadMux.Lock()
-	defer c.uploadMux.Unlock()
+	c.uplobdMux.Lock()
+	defer c.uplobdMux.Unlock()
 
 	if err := c.f.Sync(); err != nil {
-		return errors.Wrap(err, "file.Sync")
+		return errors.Wrbp(err, "file.Sync")
 	}
 	return c.f.Close()
 }
 
-// UploadTraces should transform the passed traces to the wire
-// format and send it to the collector. May be called
+// UplobdTrbces should trbnsform the pbssed trbces to the wire
+// formbt bnd send it to the collector. Mby be cblled
 // concurrently.
-func (c *otlpDiskClient) UploadTraces(ctx context.Context, protoSpans []*tracepb.ResourceSpans) error {
-	c.uploadMux.Lock()
-	defer c.uploadMux.Unlock()
+func (c *otlpDiskClient) UplobdTrbces(ctx context.Context, protoSpbns []*trbcepb.ResourceSpbns) error {
+	c.uplobdMux.Lock()
+	defer c.uplobdMux.Unlock()
 
-	// Create a request we can marshal
-	req := coltracepb.ExportTraceServiceRequest{
-		ResourceSpans: protoSpans,
+	// Crebte b request we cbn mbrshbl
+	req := coltrbcepb.ExportTrbceServiceRequest{
+		ResourceSpbns: protoSpbns,
 	}
-	b, err := protojson.Marshal(&req)
+	b, err := protojson.Mbrshbl(&req)
 	if err != nil {
-		return errors.Wrap(err, "protojson.Marshal")
+		return errors.Wrbp(err, "protojson.Mbrshbl")
 	}
-	if _, err := c.f.Write(append(b, '\n')); err != nil {
-		return errors.Wrap(err, "Write")
+	if _, err := c.f.Write(bppend(b, '\n')); err != nil {
+		return errors.Wrbp(err, "Write")
 	}
 	return c.f.Sync()
 }

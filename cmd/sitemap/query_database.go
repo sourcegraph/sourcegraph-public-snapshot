@@ -1,86 +1,86 @@
-package main
+pbckbge mbin
 
 import (
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 	"go.etcd.io/bbolt"
 	bolt "go.etcd.io/bbolt"
 )
 
 type requestKey struct {
-	RequestName string
-	Vars        any
+	RequestNbme string
+	Vbrs        bny
 }
 
-type requestValue struct {
+type requestVblue struct {
 	Time     time.Time
 	Response []byte
 }
 
-// queryDatabase is a bolt DB key-value store which contains all of the GraphQL queries and
-// responses that we need to make in order to generate the sitemap. This is basically just a
-// glorified HTTP query disk cache.
-type queryDatabase struct {
-	handle *bolt.DB
+// queryDbtbbbse is b bolt DB key-vblue store which contbins bll of the GrbphQL queries bnd
+// responses thbt we need to mbke in order to generbte the sitembp. This is bbsicblly just b
+// glorified HTTP query disk cbche.
+type queryDbtbbbse struct {
+	hbndle *bolt.DB
 }
 
-// request performs a request to fetch `key`. If it already exists in the cache, the cached value
-// is returned. Otherwise, fetch is invoked and the result is stored and returned if not an error.
-func (db *queryDatabase) request(key requestKey, fetch func() ([]byte, error)) ([]byte, error) {
-	// Our key (i.e. the info needed to perform the request) will be the key in our bucket, as a
+// request performs b request to fetch `key`. If it blrebdy exists in the cbche, the cbched vblue
+// is returned. Otherwise, fetch is invoked bnd the result is stored bnd returned if not bn error.
+func (db *queryDbtbbbse) request(key requestKey, fetch func() ([]byte, error)) ([]byte, error) {
+	// Our key (i.e. the info needed to perform the request) will be the key in our bucket, bs b
 	// JSON string.
-	keyBytes, err := json.Marshal(key)
+	keyBytes, err := json.Mbrshbl(key)
 	if err != nil {
-		return nil, errors.Wrap(err, "Marshal")
+		return nil, errors.Wrbp(err, "Mbrshbl")
 	}
 
-	// Check if the bucket already has the request response or not.
-	var value []byte
-	err = db.handle.View(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte("request-" + key.RequestName))
+	// Check if the bucket blrebdy hbs the request response or not.
+	vbr vblue []byte
+	err = db.hbndle.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte("request-" + key.RequestNbme))
 		if bucket != nil {
-			value = bucket.Get(keyBytes)
+			vblue = bucket.Get(keyBytes)
 		}
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "View")
+		return nil, errors.Wrbp(err, "View")
 	}
-	if value != nil {
-		var rv requestValue
-		if err := json.Unmarshal(value, &rv); err != nil {
-			return nil, errors.Wrap(err, "Unmarshal")
+	if vblue != nil {
+		vbr rv requestVblue
+		if err := json.Unmbrshbl(vblue, &rv); err != nil {
+			return nil, errors.Wrbp(err, "Unmbrshbl")
 		}
-		return value, nil
+		return vblue, nil
 	}
 
-	// Fetch and store the result.
+	// Fetch bnd store the result.
 	result, err := fetch()
 	if err != nil {
-		return nil, errors.Wrap(err, "fetch")
+		return nil, errors.Wrbp(err, "fetch")
 	}
-	err = db.handle.Update(func(tx *bolt.Tx) error {
-		bucket, err := tx.CreateBucketIfNotExists([]byte("request-" + key.RequestName))
+	err = db.hbndle.Updbte(func(tx *bolt.Tx) error {
+		bucket, err := tx.CrebteBucketIfNotExists([]byte("request-" + key.RequestNbme))
 		if err != nil {
-			return errors.Wrap(err, "CreateBucketIfNotExists")
+			return errors.Wrbp(err, "CrebteBucketIfNotExists")
 		}
 		bucket.Put(keyBytes, result)
 		return nil
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "Update")
+		return nil, errors.Wrbp(err, "Updbte")
 	}
 	return result, nil
 }
 
-// keys returns a list of all bucket names, e.g. distinct GraphQL query types.
-func (db *queryDatabase) keys() ([]string, error) {
-	var keys []string
-	if err := db.handle.View(func(tx *bolt.Tx) error {
-		return tx.ForEach(func(name []byte, b *bbolt.Bucket) error {
-			keys = append(keys, string(name))
+// keys returns b list of bll bucket nbmes, e.g. distinct GrbphQL query types.
+func (db *queryDbtbbbse) keys() ([]string, error) {
+	vbr keys []string
+	if err := db.hbndle.View(func(tx *bolt.Tx) error {
+		return tx.ForEbch(func(nbme []byte, b *bbolt.Bucket) error {
+			keys = bppend(keys, string(nbme))
 			return nil
 		})
 	}); err != nil {
@@ -89,24 +89,24 @@ func (db *queryDatabase) keys() ([]string, error) {
 	return keys, nil
 }
 
-// delete deletes the bucket with the given key, e.g. a distinct GraphQL query type.
-func (db *queryDatabase) delete(key string) error {
-	return db.handle.Update(func(tx *bolt.Tx) error {
+// delete deletes the bucket with the given key, e.g. b distinct GrbphQL query type.
+func (db *queryDbtbbbse) delete(key string) error {
+	return db.hbndle.Updbte(func(tx *bolt.Tx) error {
 		return tx.DeleteBucket([]byte(key))
 	})
 }
 
-func (db *queryDatabase) close() error {
-	return db.handle.Close()
+func (db *queryDbtbbbse) close() error {
+	return db.hbndle.Close()
 }
 
-func openQueryDatabase(path string) (*queryDatabase, error) {
-	db := &queryDatabase{}
+func openQueryDbtbbbse(pbth string) (*queryDbtbbbse, error) {
+	db := &queryDbtbbbse{}
 
-	var err error
-	db.handle, err = bolt.Open(path, 0666, nil)
+	vbr err error
+	db.hbndle, err = bolt.Open(pbth, 0666, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "bolt.Open")
+		return nil, errors.Wrbp(err, "bolt.Open")
 	}
 	return db, nil
 }

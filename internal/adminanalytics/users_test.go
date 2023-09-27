@@ -1,4 +1,4 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
@@ -7,32 +7,32 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type EventLogRow struct {
-	Name        string
+	Nbme        string
 	UserId      int32
 	AnonymousId string
 	Time        time.Time
 }
 
 func init() {
-	cacheDisabledInTest = true
+	cbcheDisbbledInTest = true
 }
 
-func createEventLogs(db database.DB, rows []EventLogRow) error {
-	for _, args := range rows {
-		_, err := db.ExecContext(context.Background(), `
+func crebteEventLogs(db dbtbbbse.DB, rows []EventLogRow) error {
+	for _, brgs := rbnge rows {
+		_, err := db.ExecContext(context.Bbckground(), `
       INSERT INTO event_logs
-        (name, argument, url, user_id, anonymous_user_id, source, version, timestamp)
+        (nbme, brgument, url, user_id, bnonymous_user_id, source, version, timestbmp)
       VALUES
         ($1, '{}', '', $2, $3, 'WEB', 'version', $4)
-    `, args.Name, args.UserId, args.AnonymousId, args.Time.Format(time.RFC3339))
+    `, brgs.Nbme, brgs.UserId, brgs.AnonymousId, brgs.Time.Formbt(time.RFC3339))
 
 		if err != nil {
 			return err
@@ -42,87 +42,87 @@ func createEventLogs(db database.DB, rows []EventLogRow) error {
 	return nil
 }
 
-var employeeDetails = []database.NewUser{
-	{Username: "managed-naman", Email: "naman@sourcegraph.com"},
-	{Username: "sourcegraph-management-sqs", Email: "sqs@sourcegraph.com"},
-	{Username: "sourcegraph-admin", Email: "john@sourcegraph.com"},
+vbr employeeDetbils = []dbtbbbse.NewUser{
+	{Usernbme: "mbnbged-nbmbn", Embil: "nbmbn@sourcegrbph.com"},
+	{Usernbme: "sourcegrbph-mbnbgement-sqs", Embil: "sqs@sourcegrbph.com"},
+	{Usernbme: "sourcegrbph-bdmin", Embil: "john@sourcegrbph.com"},
 }
 
-func createEmployees(db database.DB) ([]*types.User, error) {
-	ctx := context.Background()
+func crebteEmployees(db dbtbbbse.DB) ([]*types.User, error) {
+	ctx := context.Bbckground()
 
-	users := make([]*types.User, 0)
-	for _, detail := range employeeDetails {
-		user, err := db.Users().Create(ctx, database.NewUser{Username: detail.Username, Email: detail.Email, EmailVerificationCode: "abc"})
+	users := mbke([]*types.User, 0)
+	for _, detbil := rbnge employeeDetbils {
+		user, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: detbil.Usernbme, Embil: detbil.Embil, EmbilVerificbtionCode: "bbc"})
 		if err != nil {
 			return users, err
 		}
 
-		users = append(users, user)
+		users = bppend(users, user)
 	}
 
 	return users, nil
 }
 
-func TestUserActivityLastMonth(t *testing.T) {
+func TestUserActivityLbstMonth(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	now := bod(time.Now())
 
 	eventLogs := []EventLogRow{
-		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "4", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "6", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 0, "7", now.AddDate(0, 0, 1)},
-		{"SearchNotebookCreated", 0, "backend", now.AddDate(0, 0, -5)},
-		{"ViewSignIn", 300000, "8", now.AddDate(0, 0, -5)},
+		{"SebrchNotebookCrebted", 100000, "1", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 100000, "2", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 200000, "3", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "4", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "5", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "5", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "6", now.AddDbte(0, -2, 0)},
+		{"SebrchNotebookCrebted", 0, "7", now.AddDbte(0, 0, 1)},
+		{"SebrchNotebookCrebted", 0, "bbckend", now.AddDbte(0, 0, -5)},
+		{"ViewSignIn", 300000, "8", now.AddDbte(0, 0, -5)},
 	}
 
-	employeeUsers, err := createEmployees(db)
+	employeeUsers, err := crebteEmployees(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, user := range employeeUsers {
-		eventLogs = append(eventLogs, EventLogRow{"SearchNotebookCreated", user.ID, "abc", now.AddDate(0, 0, -5)})
+	for _, user := rbnge employeeUsers {
+		eventLogs = bppend(eventLogs, EventLogRow{"SebrchNotebookCrebted", user.ID, "bbc", now.AddDbte(0, 0, -5)})
 	}
 
-	err = createEventLogs(db, eventLogs)
+	err = crebteEventLogs(db, eventLogs)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	store := Users{
 		Ctx:       ctx,
-		DateRange: "LAST_MONTH",
+		DbteRbnge: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
-		Cache:     false,
+		Cbche:     fblse,
 	}
 
 	fetcher, err := store.Activity()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	results, err := fetcher.Nodes(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if len(results) < 28 {
-		t.Fatalf("only %d nodes returned", len(results))
+		t.Fbtblf("only %d nodes returned", len(results))
 	}
 
-	nodes := []*AnalyticsNode{
+	nodes := []*AnblyticsNode{
 		{
-			Data: AnalyticsNodeData{
-				Date:            now.AddDate(0, 0, -5),
+			Dbtb: AnblyticsNodeDbtb{
+				Dbte:            now.AddDbte(0, 0, -5),
 				Count:           6,
 				UniqueUsers:     4,
 				RegisteredUsers: 2,
@@ -130,210 +130,210 @@ func TestUserActivityLastMonth(t *testing.T) {
 		},
 	}
 
-	for _, node := range nodes {
-		var found *AnalyticsNode
+	for _, node := rbnge nodes {
+		vbr found *AnblyticsNode
 
-		for _, result := range results {
-			if bod(node.Data.Date).Equal(bod(result.Data.Date)) {
+		for _, result := rbnge results {
+			if bod(node.Dbtb.Dbte).Equbl(bod(result.Dbtb.Dbte)) {
 				found = result
 			}
 		}
 
 		if diff := cmp.Diff(node, found); diff != "" {
-			t.Fatal(diff)
+			t.Fbtbl(diff)
 		}
 	}
 
-	summaryResult, err := fetcher.Summary(ctx)
+	summbryResult, err := fetcher.Summbry(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	summary := &AnalyticsSummary{
-		Data: AnalyticsSummaryData{
-			TotalCount:           6,
-			TotalUniqueUsers:     4,
-			TotalRegisteredUsers: 2,
+	summbry := &AnblyticsSummbry{
+		Dbtb: AnblyticsSummbryDbtb{
+			TotblCount:           6,
+			TotblUniqueUsers:     4,
+			TotblRegisteredUsers: 2,
 		},
 	}
 
-	if diff := cmp.Diff(summary, summaryResult); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(summbry, summbryResult); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestUserFrequencyLastMonth(t *testing.T) {
+func TestUserFrequencyLbstMonth(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	now := bod(time.Now())
 
 	eventLogs := []EventLogRow{
-		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -4)},
-		{"SearchNotebookCreated", 100000, "2", now.AddDate(0, 0, -3)},
-		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "4", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -5)},
-		{"SearchNotebookCreated", 0, "5", now.AddDate(0, 0, -4)},
-		{"SearchNotebookCreated", 0, "6", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 0, "7", now.AddDate(0, 0, 1)},
-		{"SearchNotebookCreated", 0, "backend", now.AddDate(0, 0, -5)},
-		{"ViewSignIn", 300000, "8", now.AddDate(0, 0, -5)},
+		{"SebrchNotebookCrebted", 100000, "1", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 100000, "2", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 100000, "2", now.AddDbte(0, 0, -4)},
+		{"SebrchNotebookCrebted", 100000, "2", now.AddDbte(0, 0, -3)},
+		{"SebrchNotebookCrebted", 200000, "3", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 200000, "3", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "4", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "5", now.AddDbte(0, 0, -5)},
+		{"SebrchNotebookCrebted", 0, "5", now.AddDbte(0, 0, -4)},
+		{"SebrchNotebookCrebted", 0, "6", now.AddDbte(0, -2, 0)},
+		{"SebrchNotebookCrebted", 0, "7", now.AddDbte(0, 0, 1)},
+		{"SebrchNotebookCrebted", 0, "bbckend", now.AddDbte(0, 0, -5)},
+		{"ViewSignIn", 300000, "8", now.AddDbte(0, 0, -5)},
 	}
 
-	employeeUsers, err := createEmployees(db)
+	employeeUsers, err := crebteEmployees(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, user := range employeeUsers {
-		eventLogs = append(eventLogs, EventLogRow{"SearchNotebookCreated", user.ID, "abc", now.AddDate(0, 0, -5)})
+	for _, user := rbnge employeeUsers {
+		eventLogs = bppend(eventLogs, EventLogRow{"SebrchNotebookCrebted", user.ID, "bbc", now.AddDbte(0, 0, -5)})
 	}
 
-	err = createEventLogs(db, eventLogs)
+	err = crebteEventLogs(db, eventLogs)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	store := Users{
 		Ctx:       ctx,
-		DateRange: "LAST_MONTH",
+		DbteRbnge: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
-		Cache:     false,
+		Cbche:     fblse,
 	}
 
 	results, err := store.Frequencies(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	nodes := []*UsersFrequencyNode{
 		{
-			Data: UsersFrequencyNodeData{
-				DaysUsed:   1,
+			Dbtb: UsersFrequencyNodeDbtb{
+				DbysUsed:   1,
 				Frequency:  4,
-				Percentage: 100,
+				Percentbge: 100,
 			},
 		},
 		{
-			Data: UsersFrequencyNodeData{
-				DaysUsed:   2,
+			Dbtb: UsersFrequencyNodeDbtb{
+				DbysUsed:   2,
 				Frequency:  2,
-				Percentage: 50,
+				Percentbge: 50,
 			},
 		},
 		{
-			Data: UsersFrequencyNodeData{
-				DaysUsed:   3,
+			Dbtb: UsersFrequencyNodeDbtb{
+				DbysUsed:   3,
 				Frequency:  1,
-				Percentage: 25,
+				Percentbge: 25,
 			},
 		},
 	}
 
-	for _, node := range nodes {
-		var found *UsersFrequencyNode
+	for _, node := rbnge nodes {
+		vbr found *UsersFrequencyNode
 
-		for _, result := range results {
-			if node.Data.DaysUsed == result.Data.DaysUsed {
+		for _, result := rbnge results {
+			if node.Dbtb.DbysUsed == result.Dbtb.DbysUsed {
 				found = result
 			}
 		}
 
 		if diff := cmp.Diff(node, found); diff != "" {
-			t.Fatal(diff)
+			t.Fbtbl(diff)
 		}
 	}
 }
 
-func TestMonthlyActiveUsersLast3Month(t *testing.T) {
-	t.Skip("flaky test due to months rolling over")
+func TestMonthlyActiveUsersLbst3Month(t *testing.T) {
+	t.Skip("flbky test due to months rolling over")
 
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 	now := bod(time.Now())
 
 	eventLogs := []EventLogRow{
-		{"SearchNotebookCreated", 100000, "1", now},
-		{"SearchNotebookCreated", 100000, "1", now},
-		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, -1, 0)},
-		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, -1, 0)},
-		{"SearchNotebookCreated", 100000, "1", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 200000, "3", now},
-		{"SearchNotebookCreated", 200000, "3", now.AddDate(0, -1, 0)},
-		{"SearchNotebookCreated", 0, "4", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 0, "5", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 0, "5", now.AddDate(0, -2, 0)},
-		{"SearchNotebookCreated", 0, "6", now.AddDate(0, -3, 0)},
-		{"SearchNotebookCreated", 0, "7", now.AddDate(0, 0, 1)},
-		{"SearchNotebookCreated", 0, "backend", now},
+		{"SebrchNotebookCrebted", 100000, "1", now},
+		{"SebrchNotebookCrebted", 100000, "1", now},
+		{"SebrchNotebookCrebted", 100000, "1", now.AddDbte(0, -1, 0)},
+		{"SebrchNotebookCrebted", 100000, "1", now.AddDbte(0, -1, 0)},
+		{"SebrchNotebookCrebted", 100000, "1", now.AddDbte(0, -2, 0)},
+		{"SebrchNotebookCrebted", 200000, "3", now},
+		{"SebrchNotebookCrebted", 200000, "3", now.AddDbte(0, -1, 0)},
+		{"SebrchNotebookCrebted", 0, "4", now.AddDbte(0, -2, 0)},
+		{"SebrchNotebookCrebted", 0, "5", now.AddDbte(0, -2, 0)},
+		{"SebrchNotebookCrebted", 0, "5", now.AddDbte(0, -2, 0)},
+		{"SebrchNotebookCrebted", 0, "6", now.AddDbte(0, -3, 0)},
+		{"SebrchNotebookCrebted", 0, "7", now.AddDbte(0, 0, 1)},
+		{"SebrchNotebookCrebted", 0, "bbckend", now},
 		{"ViewSignIn", 300000, "8", now},
 	}
 
-	employeeUsers, err := createEmployees(db)
+	employeeUsers, err := crebteEmployees(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	for _, user := range employeeUsers {
-		eventLogs = append(eventLogs, EventLogRow{"SearchNotebookCreated", user.ID, "abc", now})
+	for _, user := rbnge employeeUsers {
+		eventLogs = bppend(eventLogs, EventLogRow{"SebrchNotebookCrebted", user.ID, "bbc", now})
 	}
 
-	err = createEventLogs(db, eventLogs)
+	err = crebteEventLogs(db, eventLogs)
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	store := Users{
 		Ctx:       ctx,
-		DateRange: "LAST_MONTH",
+		DbteRbnge: "LAST_MONTH",
 		Grouping:  "DAILY",
 		DB:        db,
-		Cache:     false,
+		Cbche:     fblse,
 	}
 
 	results, err := store.MonthlyActiveUsers(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	nodes := []*MonthlyActiveUsersRow{
 		{
-			Data: MonthlyActiveUsersRowData{
-				Date:  now.AddDate(0, -2, 0).Format("2006-01"),
+			Dbtb: MonthlyActiveUsersRowDbtb{
+				Dbte:  now.AddDbte(0, -2, 0).Formbt("2006-01"),
 				Count: 3,
 			},
 		},
 		{
-			Data: MonthlyActiveUsersRowData{
-				Date:  now.AddDate(0, -1, 0).Format("2006-01"),
+			Dbtb: MonthlyActiveUsersRowDbtb{
+				Dbte:  now.AddDbte(0, -1, 0).Formbt("2006-01"),
 				Count: 2,
 			},
 		},
 		{
-			Data: MonthlyActiveUsersRowData{
-				Date:  now.Format("2006-01"),
+			Dbtb: MonthlyActiveUsersRowDbtb{
+				Dbte:  now.Formbt("2006-01"),
 				Count: 2,
 			},
 		},
 	}
 
-	for _, node := range nodes {
-		var found *MonthlyActiveUsersRow
+	for _, node := rbnge nodes {
+		vbr found *MonthlyActiveUsersRow
 
-		for _, result := range results {
-			if node.Data.Date == result.Data.Date {
+		for _, result := rbnge results {
+			if node.Dbtb.Dbte == result.Dbtb.Dbte {
 				found = result
 			}
 		}
 
 		if diff := cmp.Diff(node, found); diff != "" {
-			t.Fatal(diff)
+			t.Fbtbl(diff)
 		}
 	}
 }

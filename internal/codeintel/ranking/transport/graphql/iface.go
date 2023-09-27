@@ -1,17 +1,17 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
 )
 
-type RankingService interface {
-	DerivativeGraphKey(ctx context.Context) (string, bool, error)
-	BumpDerivativeGraphKey(ctx context.Context) error
-	Summaries(ctx context.Context) ([]shared.Summary, error)
-	NextJobStartsAt(ctx context.Context) (time.Time, bool, error)
-	CoverageCounts(ctx context.Context, graphKey string) (shared.CoverageCounts, error)
-	DeleteRankingProgress(ctx context.Context, graphKey string) error
+type RbnkingService interfbce {
+	DerivbtiveGrbphKey(ctx context.Context) (string, bool, error)
+	BumpDerivbtiveGrbphKey(ctx context.Context) error
+	Summbries(ctx context.Context) ([]shbred.Summbry, error)
+	NextJobStbrtsAt(ctx context.Context) (time.Time, bool, error)
+	CoverbgeCounts(ctx context.Context, grbphKey string) (shbred.CoverbgeCounts, error)
+	DeleteRbnkingProgress(ctx context.Context, grbphKey string) error
 }

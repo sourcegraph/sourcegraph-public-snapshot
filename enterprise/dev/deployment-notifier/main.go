@@ -1,8 +1,8 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,188 +11,188 @@ import (
 
 	"github.com/google/go-github/v41/github"
 	"github.com/honeycombio/libhoney-go"
-	"github.com/honeycombio/libhoney-go/transmission"
-	"github.com/slack-go/slack"
-	"golang.org/x/oauth2"
+	"github.com/honeycombio/libhoney-go/trbnsmission"
+	"github.com/slbck-go/slbck"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type Flags struct {
+type Flbgs struct {
 	GitHubToken          string
 	DryRun               bool
 	Environment          string
-	SlackToken           string
-	SlackAnnounceWebhook string
+	SlbckToken           string
+	SlbckAnnounceWebhook string
 	HoneycombToken       string
-	OkayHQToken          string
-	BaseDir              string
+	OkbyHQToken          string
+	BbseDir              string
 }
 
-func (f *Flags) Parse() {
-	flag.StringVar(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mandatory github token")
-	flag.StringVar(&f.Environment, "environment", "production", "Environment being deployed")
-	flag.BoolVar(&f.DryRun, "dry", false, "Pretend to post notifications, printing to stdout instead")
-	flag.StringVar(&f.SlackToken, "slack.token", "", "mandatory slack api token")
-	flag.StringVar(&f.SlackAnnounceWebhook, "slack.webhook", "", "Slack Webhook URL to post the results on")
-	flag.StringVar(&f.HoneycombToken, "honeycomb.token", "", "mandatory honeycomb api token")
-	flag.Parse()
+func (f *Flbgs) Pbrse() {
+	flbg.StringVbr(&f.GitHubToken, "github.token", os.Getenv("GITHUB_TOKEN"), "mbndbtory github token")
+	flbg.StringVbr(&f.Environment, "environment", "production", "Environment being deployed")
+	flbg.BoolVbr(&f.DryRun, "dry", fblse, "Pretend to post notificbtions, printing to stdout instebd")
+	flbg.StringVbr(&f.SlbckToken, "slbck.token", "", "mbndbtory slbck bpi token")
+	flbg.StringVbr(&f.SlbckAnnounceWebhook, "slbck.webhook", "", "Slbck Webhook URL to post the results on")
+	flbg.StringVbr(&f.HoneycombToken, "honeycomb.token", "", "mbndbtory honeycomb bpi token")
+	flbg.Pbrse()
 }
 
-var logger log.Logger
+vbr logger log.Logger
 
-func main() {
-	ctx := context.Background()
-	liblog := log.Init(log.Resource{Name: "deployment-notifier"})
+func mbin() {
+	ctx := context.Bbckground()
+	liblog := log.Init(log.Resource{Nbme: "deployment-notifier"})
 	defer liblog.Sync()
-	logger = log.Scoped("main", "a script that checks for deployment notifications")
+	logger = log.Scoped("mbin", "b script thbt checks for deployment notificbtions")
 
-	flags := &Flags{}
-	flags.Parse()
-	if flags.Environment == "" {
-		logger.Fatal("-environment must be specified. 'production' is the only valid option")
+	flbgs := &Flbgs{}
+	flbgs.Pbrse()
+	if flbgs.Environment == "" {
+		logger.Fbtbl("-environment must be specified. 'production' is the only vblid option")
 	}
 
-	ghc := github.NewClient(oauth2.NewClient(ctx, oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: flags.GitHubToken},
+	ghc := github.NewClient(obuth2.NewClient(ctx, obuth2.StbticTokenSource(
+		&obuth2.Token{AccessToken: flbgs.GitHubToken},
 	)))
-	if flags.GitHubToken == "" {
-		logger.Warn("using unauthenticated github client")
-		ghc = github.NewClient(http.DefaultClient)
+	if flbgs.GitHubToken == "" {
+		logger.Wbrn("using unbuthenticbted github client")
+		ghc = github.NewClient(http.DefbultClient)
 	}
 
-	changedFiles, err := getChangedFiles()
+	chbngedFiles, err := getChbngedFiles()
 	if err != nil {
-		logger.Error("cannot get changed files", log.Error(err))
+		logger.Error("cbnnot get chbnged files", log.Error(err))
 	}
-	if len(changedFiles) == 0 {
-		logger.Info("No relevant changes, skipping notifications and exiting normally.")
+	if len(chbngedFiles) == 0 {
+		logger.Info("No relevbnt chbnges, skipping notificbtions bnd exiting normblly.")
 		return
 	}
 
-	manifestRevision, err := getRevision()
+	mbnifestRevision, err := getRevision()
 	if err != nil {
-		logger.Fatal("cannot get revision", log.Error(err))
+		logger.Fbtbl("cbnnot get revision", log.Error(err))
 	}
 
-	dd := NewManifestDeploymentDiffer(changedFiles)
+	dd := NewMbnifestDeploymentDiffer(chbngedFiles)
 	dn := NewDeploymentNotifier(
 		ghc,
 		dd,
-		flags.Environment,
-		manifestRevision,
+		flbgs.Environment,
+		mbnifestRevision,
 	)
 
 	report, err := dn.Report(ctx)
 	if err != nil {
-		if errors.Is(err, ErrNoRelevantChanges) {
-			logger.Info("No relevant changes, skipping notifications and exiting normally.")
+		if errors.Is(err, ErrNoRelevbntChbnges) {
+			logger.Info("No relevbnt chbnges, skipping notificbtions bnd exiting normblly.")
 			return
 		}
-		logger.Fatal("failed to generate report", log.Error(err))
+		logger.Fbtbl("fbiled to generbte report", log.Error(err))
 	}
 
-	// Tracing
-	var traceURL string
-	if flags.HoneycombToken != "" {
-		traceURL, err = reportDeployTrace(report, flags.HoneycombToken, flags.DryRun)
+	// Trbcing
+	vbr trbceURL string
+	if flbgs.HoneycombToken != "" {
+		trbceURL, err = reportDeployTrbce(report, flbgs.HoneycombToken, flbgs.DryRun)
 		if err != nil {
-			logger.Fatal("failed to generate a trace", log.Error(err))
+			logger.Fbtbl("fbiled to generbte b trbce", log.Error(err))
 		}
 	}
 
-	// Notifcations
-	slc := slack.New(flags.SlackToken)
-	teammates := team.NewTeammateResolver(ghc, slc)
-	if flags.DryRun {
+	// Notifcbtions
+	slc := slbck.New(flbgs.SlbckToken)
+	tebmmbtes := tebm.NewTebmmbteResolver(ghc, slc)
+	if flbgs.DryRun {
 		fmt.Println("Github\n---")
-		for _, pr := range report.PullRequests {
+		for _, pr := rbnge report.PullRequests {
 			fmt.Println("-", pr.GetNumber())
 		}
-		out, err := renderComment(report, traceURL)
+		out, err := renderComment(report, trbceURL)
 		if err != nil {
-			logger.Fatal("can't render GitHub comment", log.Error(err))
+			logger.Fbtbl("cbn't render GitHub comment", log.Error(err))
 		}
 		fmt.Println(out)
-		fmt.Println("Slack\n---")
-		presenter, err := slackSummary(ctx, teammates, report, traceURL)
+		fmt.Println("Slbck\n---")
+		presenter, err := slbckSummbry(ctx, tebmmbtes, report, trbceURL)
 		if err != nil {
-			logger.Fatal("can't render Slack post", log.Error(err))
+			logger.Fbtbl("cbn't render Slbck post", log.Error(err))
 		}
 
 		fmt.Println(presenter.toString())
 	} else {
-		presenter, err := slackSummary(ctx, teammates, report, traceURL)
+		presenter, err := slbckSummbry(ctx, tebmmbtes, report, trbceURL)
 		if err != nil {
-			logger.Fatal("can't render Slack post", log.Error(err))
+			logger.Fbtbl("cbn't render Slbck post", log.Error(err))
 		}
-		err = postSlackUpdate(flags.SlackAnnounceWebhook, presenter)
+		err = postSlbckUpdbte(flbgs.SlbckAnnounceWebhook, presenter)
 		if err != nil {
-			logger.Fatal("can't post Slack update", log.Error(err))
+			logger.Fbtbl("cbn't post Slbck updbte", log.Error(err))
 		}
 	}
 }
 
-func getChangedFiles() ([]string, error) {
-	diffCommand := []string{"diff", "--name-only", "@^"}
-	if output, err := exec.Command("git", diffCommand...).Output(); err != nil {
+func getChbngedFiles() ([]string, error) {
+	diffCommbnd := []string{"diff", "--nbme-only", "@^"}
+	if output, err := exec.Commbnd("git", diffCommbnd...).Output(); err != nil {
 		return nil, err
 	} else {
 		strOutput := string(output)
-		strOutput = strings.TrimSpace(strOutput)
+		strOutput = strings.TrimSpbce(strOutput)
 		if strOutput == "" {
 			return nil, nil
 		}
-		return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
+		return strings.Split(strings.TrimSpbce(string(output)), "\n"), nil
 	}
 }
 
 func getRevision() (string, error) {
-	diffCommand := []string{"rev-list", "-1", "HEAD", "."}
-	output, err := exec.Command("git", diffCommand...).Output()
+	diffCommbnd := []string{"rev-list", "-1", "HEAD", "."}
+	output, err := exec.Commbnd("git", diffCommbnd...).Output()
 	if err != nil {
 		return "", err
 	}
-	return strings.TrimSpace(string(output)), nil
+	return strings.TrimSpbce(string(output)), nil
 }
 
-func reportDeployTrace(report *DeploymentReport, token string, dryRun bool) (string, error) {
+func reportDeployTrbce(report *DeploymentReport, token string, dryRun bool) (string, error) {
 	honeyConfig := libhoney.Config{
 		APIKey:  token,
-		APIHost: "https://api.honeycomb.io/",
-		Dataset: "deploy-sourcegraph",
+		APIHost: "https://bpi.honeycomb.io/",
+		Dbtbset: "deploy-sourcegrbph",
 	}
 	if dryRun {
-		honeyConfig.Transmission = &transmission.WriterSender{} // prints events to stdout instead
+		honeyConfig.Trbnsmission = &trbnsmission.WriterSender{} // prints events to stdout instebd
 	}
 	if err := libhoney.Init(honeyConfig); err != nil {
-		return "", errors.Wrap(err, "libhoney.Init")
+		return "", errors.Wrbp(err, "libhoney.Init")
 	}
 	defer libhoney.Close()
-	trace, err := GenerateDeploymentTrace(report)
+	trbce, err := GenerbteDeploymentTrbce(report)
 	if err != nil {
-		return "", errors.Wrap(err, "GenerateDeploymentTrace")
+		return "", errors.Wrbp(err, "GenerbteDeploymentTrbce")
 	}
-	var sendErrs error
-	for _, event := range trace.Spans {
+	vbr sendErrs error
+	for _, event := rbnge trbce.Spbns {
 		if err := event.Send(); err != nil {
 			sendErrs = errors.Append(sendErrs, err)
 		}
 	}
 	if sendErrs != nil {
-		return "", errors.Wrap(err, "trace.Spans.Send")
+		return "", errors.Wrbp(err, "trbce.Spbns.Send")
 	}
-	if err := trace.Root.Send(); err != nil {
-		return "", errors.Wrap(err, "trace.Root.Send")
+	if err := trbce.Root.Send(); err != nil {
+		return "", errors.Wrbp(err, "trbce.Root.Send")
 	}
-	traceURL, err := buildTraceURL(&honeyConfig, trace.ID, trace.Root.Timestamp.Unix())
+	trbceURL, err := buildTrbceURL(&honeyConfig, trbce.ID, trbce.Root.Timestbmp.Unix())
 	if err != nil {
-		logger.Warn("failed to generate buildTraceURL", log.Error(err))
+		logger.Wbrn("fbiled to generbte buildTrbceURL", log.Error(err))
 	} else {
-		logger.Info("generated trace", log.String("trace", traceURL))
+		logger.Info("generbted trbce", log.String("trbce", trbceURL))
 	}
-	return traceURL, nil
+	return trbceURL, nil
 }

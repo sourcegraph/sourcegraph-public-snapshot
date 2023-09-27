@@ -1,4 +1,4 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"testing"
@@ -6,127 +6,127 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestGroupSiteUsageStats(t *testing.T) {
+func TestGroupSiteUsbgeStbts(t *testing.T) {
 	t1 := time.Now().Add(-30 * 24 * time.Hour).UTC()
 	t2 := time.Now().UTC()
 	t3 := t2.Add(time.Hour)
 	t4 := t3.Add(time.Hour)
 
-	summary := types.SiteUsageSummary{
+	summbry := types.SiteUsbgeSummbry{
 		RollingMonth:                   t1,
 		Month:                          t2,
 		Week:                           t3,
-		Day:                            t4,
+		Dby:                            t4,
 		UniquesRollingMonth:            4,
 		UniquesMonth:                   4,
 		UniquesWeek:                    5,
-		UniquesDay:                     6,
+		UniquesDby:                     6,
 		RegisteredUniquesRollingMonth:  1,
 		RegisteredUniquesMonth:         1,
 		RegisteredUniquesWeek:          2,
-		RegisteredUniquesDay:           3,
-		IntegrationUniquesRollingMonth: 7,
-		IntegrationUniquesMonth:        7,
-		IntegrationUniquesWeek:         8,
-		IntegrationUniquesDay:          9,
+		RegisteredUniquesDby:           3,
+		IntegrbtionUniquesRollingMonth: 7,
+		IntegrbtionUniquesMonth:        7,
+		IntegrbtionUniquesWeek:         8,
+		IntegrbtionUniquesDby:          9,
 	}
-	siteUsageStats := groupSiteUsageStats(summary, false)
+	siteUsbgeStbts := groupSiteUsbgeStbts(summbry, fblse)
 
-	expectedSiteUsageStats := &types.SiteUsageStatistics{
+	expectedSiteUsbgeStbts := &types.SiteUsbgeStbtistics{
 		DAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            t4,
+				StbrtTime:            t4,
 				UserCount:            6,
 				RegisteredUserCount:  3,
 				AnonymousUserCount:   3,
-				IntegrationUserCount: 9,
+				IntegrbtionUserCount: 9,
 			},
 		},
 		WAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            t3,
+				StbrtTime:            t3,
 				UserCount:            5,
 				RegisteredUserCount:  2,
 				AnonymousUserCount:   3,
-				IntegrationUserCount: 8,
+				IntegrbtionUserCount: 8,
 			},
 		},
 		MAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            t2,
+				StbrtTime:            t2,
 				UserCount:            4,
 				RegisteredUserCount:  1,
 				AnonymousUserCount:   3,
-				IntegrationUserCount: 7,
+				IntegrbtionUserCount: 7,
 			},
 		},
 		RMAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            t1,
+				StbrtTime:            t1,
 				UserCount:            4,
 				RegisteredUserCount:  1,
 				AnonymousUserCount:   3,
-				IntegrationUserCount: 7,
+				IntegrbtionUserCount: 7,
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedSiteUsageStats, siteUsageStats); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(expectedSiteUsbgeStbts, siteUsbgeStbts); diff != "" {
+		t.Fbtbl(diff)
 	}
 }
 
-func TestGroupSiteUsageStatsMonthsOnly(t *testing.T) {
+func TestGroupSiteUsbgeStbtsMonthsOnly(t *testing.T) {
 	t1 := time.Now().Add(-30 * 24 * time.Hour).UTC()
 	t2 := time.Now().UTC()
 	t3 := t2.Add(time.Hour)
 	t4 := t3.Add(time.Hour)
 
-	summary := types.SiteUsageSummary{
+	summbry := types.SiteUsbgeSummbry{
 		RollingMonth:                   t1,
 		Month:                          t2,
 		Week:                           t3,
-		Day:                            t4,
+		Dby:                            t4,
 		UniquesRollingMonth:            4,
 		UniquesMonth:                   4,
 		UniquesWeek:                    5,
-		UniquesDay:                     6,
+		UniquesDby:                     6,
 		RegisteredUniquesRollingMonth:  1,
 		RegisteredUniquesMonth:         1,
 		RegisteredUniquesWeek:          2,
-		RegisteredUniquesDay:           3,
-		IntegrationUniquesRollingMonth: 7,
-		IntegrationUniquesMonth:        7,
-		IntegrationUniquesWeek:         8,
-		IntegrationUniquesDay:          9,
+		RegisteredUniquesDby:           3,
+		IntegrbtionUniquesRollingMonth: 7,
+		IntegrbtionUniquesMonth:        7,
+		IntegrbtionUniquesWeek:         8,
+		IntegrbtionUniquesDby:          9,
 	}
-	siteUsageStats := groupSiteUsageStats(summary, true)
+	siteUsbgeStbts := groupSiteUsbgeStbts(summbry, true)
 
-	expectedSiteUsageStats := &types.SiteUsageStatistics{
+	expectedSiteUsbgeStbts := &types.SiteUsbgeStbtistics{
 		DAUs: []*types.SiteActivityPeriod{},
 		WAUs: []*types.SiteActivityPeriod{},
 		MAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            t2,
+				StbrtTime:            t2,
 				UserCount:            4,
 				RegisteredUserCount:  1,
 				AnonymousUserCount:   3,
-				IntegrationUserCount: 7,
+				IntegrbtionUserCount: 7,
 			},
 		},
 		RMAUs: []*types.SiteActivityPeriod{
 			{
-				StartTime:            t1,
+				StbrtTime:            t1,
 				UserCount:            4,
 				RegisteredUserCount:  1,
 				AnonymousUserCount:   3,
-				IntegrationUserCount: 7,
+				IntegrbtionUserCount: 7,
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedSiteUsageStats, siteUsageStats); diff != "" {
-		t.Fatal(diff)
+	if diff := cmp.Diff(expectedSiteUsbgeStbts, siteUsbgeStbts); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

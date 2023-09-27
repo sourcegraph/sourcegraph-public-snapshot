@@ -1,7 +1,7 @@
-package app
+pbckbge bpp
 
-import "github.com/sourcegraph/sourcegraph/internal/txemail"
+import "github.com/sourcegrbph/sourcegrbph/internbl/txembil"
 
 func init() {
-	txemail.DisableSilently()
+	txembil.DisbbleSilently()
 }

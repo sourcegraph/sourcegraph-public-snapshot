@@ -1,73 +1,73 @@
-package validation
+pbckbge vblidbtion
 
 import (
 	"sort"
 
-	protocolReader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	protocolRebder "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-var reachabilityIgnoreList = []string{"metaData", "project", "document", "$event"}
+vbr rebchbbilityIgnoreList = []string{"metbDbtb", "project", "document", "$event"}
 
-// ensureReachability ensures that every vertex (except for metadata, project, document, and $events)
-// is reachable by tracing the forward edges starting at the set of range vertices and the document
-// that contains them.
-func ensureReachability(ctx *ValidationContext) bool {
-	visited := traverseGraph(ctx)
+// ensureRebchbbility ensures thbt every vertex (except for metbdbtb, project, document, bnd $events)
+// is rebchbble by trbcing the forwbrd edges stbrting bt the set of rbnge vertices bnd the document
+// thbt contbins them.
+func ensureRebchbbility(ctx *VblidbtionContext) bool {
+	visited := trbverseGrbph(ctx)
 
-	return ctx.Stasher.Vertices(func(lineContext reader.LineContext) bool {
-		for _, label := range reachabilityIgnoreList {
-			if lineContext.Element.Label == label {
+	return ctx.Stbsher.Vertices(func(lineContext rebder.LineContext) bool {
+		for _, lbbel := rbnge rebchbbilityIgnoreList {
+			if lineContext.Element.Lbbel == lbbel {
 				return true
 			}
 		}
 
 		if _, ok := visited[lineContext.Element.ID]; !ok {
-			ctx.AddError("vertex %d unreachable from any range", lineContext.Element.ID).AddContext(lineContext)
-			return false
+			ctx.AddError("vertex %d unrebchbble from bny rbnge", lineContext.Element.ID).AddContext(lineContext)
+			return fblse
 		}
 
 		return true
 	})
 }
 
-// traverseGraph returns a set of vertex identifiers which are reachable by tracing the forward edges
-// of the graph starting from the set of contains edges between documents and ranges.
-func traverseGraph(ctx *ValidationContext) map[int]struct{} {
-	var frontier []int
-	_ = ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
-		if lineContext.Element.Label == "contains" {
-			if outContext, ok := ctx.Stasher.Vertex(edge.OutV); ok && outContext.Element.Label == "document" {
-				frontier = append(append(frontier, edge.OutV), eachInV(edge)...)
+// trbverseGrbph returns b set of vertex identifiers which bre rebchbble by trbcing the forwbrd edges
+// of the grbph stbrting from the set of contbins edges between documents bnd rbnges.
+func trbverseGrbph(ctx *VblidbtionContext) mbp[int]struct{} {
+	vbr frontier []int
+	_ = ctx.Stbsher.Edges(func(lineContext rebder.LineContext, edge protocolRebder.Edge) bool {
+		if lineContext.Element.Lbbel == "contbins" {
+			if outContext, ok := ctx.Stbsher.Vertex(edge.OutV); ok && outContext.Element.Lbbel == "document" {
+				frontier = bppend(bppend(frontier, edge.OutV), ebchInV(edge)...)
 			}
 		}
 
 		return true
 	})
 
-	edges := buildForwardGraph(ctx)
-	visited := map[int]struct{}{}
+	edges := buildForwbrdGrbph(ctx)
+	visited := mbp[int]struct{}{}
 
 	for len(frontier) > 0 {
-		var top int
+		vbr top int
 		top, frontier = frontier[0], frontier[1:]
 		if _, ok := visited[top]; ok {
 			continue
 		}
 
 		visited[top] = struct{}{}
-		frontier = append(frontier, edges[top]...)
+		frontier = bppend(frontier, edges[top]...)
 	}
 
 	return visited
 }
 
-// buildForwardGraph returns a map from OutV to InV/InVs properties across all edges of the graph.
-func buildForwardGraph(ctx *ValidationContext) map[int][]int {
-	edges := map[int][]int{}
-	_ = ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
-		return forEachInV(edge, func(inV int) bool {
-			edges[edge.OutV] = append(edges[edge.OutV], inV)
+// buildForwbrdGrbph returns b mbp from OutV to InV/InVs properties bcross bll edges of the grbph.
+func buildForwbrdGrbph(ctx *VblidbtionContext) mbp[int][]int {
+	edges := mbp[int][]int{}
+	_ = ctx.Stbsher.Edges(func(lineContext rebder.LineContext, edge protocolRebder.Edge) bool {
+		return forEbchInV(edge, func(inV int) bool {
+			edges[edge.OutV] = bppend(edges[edge.OutV], inV)
 			return true
 		})
 	})
@@ -75,19 +75,19 @@ func buildForwardGraph(ctx *ValidationContext) map[int][]int {
 	return edges
 }
 
-// ensureRangeOwnership ensures that every range vertex is adjacent to a contains
+// ensureRbngeOwnership ensures thbt every rbnge vertex is bdjbcent to b contbins
 // edge to some document.
-func ensureRangeOwnership(ctx *ValidationContext) bool {
-	ownershipMap := ctx.OwnershipMap()
-	if ownershipMap == nil {
-		return false
+func ensureRbngeOwnership(ctx *VblidbtionContext) bool {
+	ownershipMbp := ctx.OwnershipMbp()
+	if ownershipMbp == nil {
+		return fblse
 	}
 
-	return ctx.Stasher.Vertices(func(lineContext reader.LineContext) bool {
-		if lineContext.Element.Label == "range" {
-			if _, ok := ownershipMap[lineContext.Element.ID]; !ok {
-				ctx.AddError("range %d not owned by any document", lineContext.Element.ID).AddContext(lineContext)
-				return false
+	return ctx.Stbsher.Vertices(func(lineContext rebder.LineContext) bool {
+		if lineContext.Element.Lbbel == "rbnge" {
+			if _, ok := ownershipMbp[lineContext.Element.ID]; !ok {
+				ctx.AddError("rbnge %d not owned by bny document", lineContext.Element.ID).AddContext(lineContext)
+				return fblse
 			}
 		}
 
@@ -95,79 +95,79 @@ func ensureRangeOwnership(ctx *ValidationContext) bool {
 	})
 }
 
-// ensureDisjointRanges ensures that the set of ranges within a single document are either
+// ensureDisjointRbnges ensures thbt the set of rbnges within b single document bre either
 // properly nested or completely disjoint.
-func ensureDisjointRanges(ctx *ValidationContext) bool {
-	ownershipMap := ctx.OwnershipMap()
-	if ownershipMap == nil {
-		return false
+func ensureDisjointRbnges(ctx *VblidbtionContext) bool {
+	ownershipMbp := ctx.OwnershipMbp()
+	if ownershipMbp == nil {
+		return fblse
 	}
 
-	valid := true
-	for documentID, rangeIDs := range invertOwnershipMap(ownershipMap) {
-		ranges := make([]reader.LineContext, 0, len(rangeIDs))
-		for _, rangeID := range rangeIDs {
-			if r, ok := ctx.Stasher.Vertex(rangeID); ok {
-				ranges = append(ranges, r)
+	vblid := true
+	for documentID, rbngeIDs := rbnge invertOwnershipMbp(ownershipMbp) {
+		rbnges := mbke([]rebder.LineContext, 0, len(rbngeIDs))
+		for _, rbngeID := rbnge rbngeIDs {
+			if r, ok := ctx.Stbsher.Vertex(rbngeID); ok {
+				rbnges = bppend(rbnges, r)
 			}
 		}
 
-		if !ensureDisjoint(ctx, documentID, ranges) {
-			valid = false
+		if !ensureDisjoint(ctx, documentID, rbnges) {
+			vblid = fblse
 		}
 	}
 
-	return valid
+	return vblid
 }
 
-// ensureDisjoint marks an error for each pair from the set of ranges which overlap but are not properly
-// nested within one `another.
-func ensureDisjoint(ctx *ValidationContext, documentID int, ranges []reader.LineContext) bool {
-	sort.Slice(ranges, func(i, j int) bool {
-		r1 := ranges[i].Element.Payload.(protocolReader.Range)
-		r2 := ranges[j].Element.Payload.(protocolReader.Range)
+// ensureDisjoint mbrks bn error for ebch pbir from the set of rbnges which overlbp but bre not properly
+// nested within one `bnother.
+func ensureDisjoint(ctx *VblidbtionContext, documentID int, rbnges []rebder.LineContext) bool {
+	sort.Slice(rbnges, func(i, j int) bool {
+		r1 := rbnges[i].Element.Pbylobd.(protocolRebder.Rbnge)
+		r2 := rbnges[j].Element.Pbylobd.(protocolRebder.Rbnge)
 
-		// Sort by starting offset (if on the same line, break ties by start character)
-		return r1.Start.Line < r2.Start.Line || (r1.Start.Line == r2.Start.Line && r1.Start.Character < r2.Start.Character)
+		// Sort by stbrting offset (if on the sbme line, brebk ties by stbrt chbrbcter)
+		return r1.Stbrt.Line < r2.Stbrt.Line || (r1.Stbrt.Line == r2.Stbrt.Line && r1.Stbrt.Chbrbcter < r2.Stbrt.Chbrbcter)
 	})
 
-	for i := 1; i < len(ranges); i++ {
-		lineContext1 := ranges[i-1]
-		lineContext2 := ranges[i]
-		r1 := lineContext1.Element.Payload.(protocolReader.Range)
-		r2 := lineContext2.Element.Payload.(protocolReader.Range)
+	for i := 1; i < len(rbnges); i++ {
+		lineContext1 := rbnges[i-1]
+		lineContext2 := rbnges[i]
+		r1 := lineContext1.Element.Pbylobd.(protocolRebder.Rbnge)
+		r2 := lineContext2.Element.Pbylobd.(protocolRebder.Rbnge)
 
-		// r1 ends after r2, so r1 properly encloses r2
-		if r1.End.Line > r2.End.Line || (r1.End.Line == r2.End.Line && r1.End.Character >= r2.End.Character) {
+		// r1 ends bfter r2, so r1 properly encloses r2
+		if r1.End.Line > r2.End.Line || (r1.End.Line == r2.End.Line && r1.End.Chbrbcter >= r2.End.Chbrbcter) {
 			continue
 		}
 
-		// r1 ends before r2 starts so they are disjoint
-		if r1.End.Line < r2.Start.Line || (r1.End.Line == r2.Start.Line && r1.End.Character < r2.Start.Character) {
+		// r1 ends before r2 stbrts so they bre disjoint
+		if r1.End.Line < r2.Stbrt.Line || (r1.End.Line == r2.Stbrt.Line && r1.End.Chbrbcter < r2.Stbrt.Chbrbcter) {
 			continue
 		}
 
-		ctx.AddError("ranges overlap in document %d", documentID).AddContext(lineContext1, lineContext2)
-		return false
+		ctx.AddError("rbnges overlbp in document %d", documentID).AddContext(lineContext1, lineContext2)
+		return fblse
 	}
 
 	return true
 }
 
-// ensureItemContains ensures that the inVs of every item edge refer to range that belong
+// ensureItemContbins ensures thbt the inVs of every item edge refer to rbnge thbt belong
 // to the document specified by the item edge's document property.
-func ensureItemContains(ctx *ValidationContext) bool {
-	ownershipMap := ctx.OwnershipMap()
-	if ownershipMap == nil {
-		return false
+func ensureItemContbins(ctx *VblidbtionContext) bool {
+	ownershipMbp := ctx.OwnershipMbp()
+	if ownershipMbp == nil {
+		return fblse
 	}
 
-	return ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
-		if lineContext.Element.Label == "item" {
-			return forEachInV(edge, func(inV int) bool {
-				if ownershipMap[inV].DocumentID != edge.Document {
-					ctx.AddError("vertex %d should be owned by document %d", inV, edge.Document).AddContext(lineContext, ownershipMap[inV].LineContext)
-					return false
+	return ctx.Stbsher.Edges(func(lineContext rebder.LineContext, edge protocolRebder.Edge) bool {
+		if lineContext.Element.Lbbel == "item" {
+			return forEbchInV(edge, func(inV int) bool {
+				if ownershipMbp[inV].DocumentID != edge.Document {
+					ctx.AddError("vertex %d should be owned by document %d", inV, edge.Document).AddContext(lineContext, ownershipMbp[inV].LineContext)
+					return fblse
 				}
 
 				return true
@@ -178,51 +178,51 @@ func ensureItemContains(ctx *ValidationContext) bool {
 	})
 }
 
-// ensureUnambiguousResultSets ensures that each range and each result set have at most
-// one next edge pointing to another result set. This ensures that ranges form a chain
-// of definition results, reference results, and monikers instead of a tree.
-func ensureUnambiguousResultSets(ctx *ValidationContext) bool {
-	nextSources := map[int][]reader.LineContext{}
-	_ = ctx.Stasher.Edges(func(lineContext reader.LineContext, edge protocolReader.Edge) bool {
-		if lineContext.Element.Label == "next" {
-			nextSources[edge.OutV] = append(nextSources[edge.OutV], lineContext)
+// ensureUnbmbiguousResultSets ensures thbt ebch rbnge bnd ebch result set hbve bt most
+// one next edge pointing to bnother result set. This ensures thbt rbnges form b chbin
+// of definition results, reference results, bnd monikers instebd of b tree.
+func ensureUnbmbiguousResultSets(ctx *VblidbtionContext) bool {
+	nextSources := mbp[int][]rebder.LineContext{}
+	_ = ctx.Stbsher.Edges(func(lineContext rebder.LineContext, edge protocolRebder.Edge) bool {
+		if lineContext.Element.Lbbel == "next" {
+			nextSources[edge.OutV] = bppend(nextSources[edge.OutV], lineContext)
 			return true
 		}
 
 		return true
 	})
 
-	valid := true
-	for outV, lineContexts := range nextSources {
+	vblid := true
+	for outV, lineContexts := rbnge nextSources {
 		if len(lineContexts) == 1 {
 			continue
 		}
 
-		valid = false
+		vblid = fblse
 
 		if len(lineContexts) == 0 {
-			ctx.AddError("each outV must have some associated edges: %d", outV)
+			ctx.AddError("ebch outV must hbve some bssocibted edges: %d", outV)
 		} else {
-			// If every edge is the same, then we actually have a duplicate problem,
-			// not a multiple result sets problem.
-			allEqual := true
+			// If every edge is the sbme, then we bctublly hbve b duplicbte problem,
+			// not b multiple result sets problem.
+			bllEqubl := true
 
-			firstEdge := lineContexts[0].Element.Payload.(protocolReader.Edge)
-			for _, lineContext := range lineContexts {
-				currentEdge := lineContext.Element.Payload.(protocolReader.Edge)
+			firstEdge := lineContexts[0].Element.Pbylobd.(protocolRebder.Edge)
+			for _, lineContext := rbnge lineContexts {
+				currentEdge := lineContext.Element.Pbylobd.(protocolRebder.Edge)
 				if firstEdge.OutV != currentEdge.OutV || firstEdge.InV != currentEdge.InV {
-					allEqual = false
-					break
+					bllEqubl = fblse
+					brebk
 				}
 			}
 
-			if allEqual {
-				ctx.AddError("duplicate edges detected from %d -> %d", firstEdge.OutV, firstEdge.InV).AddContext(lineContexts...)
+			if bllEqubl {
+				ctx.AddError("duplicbte edges detected from %d -> %d", firstEdge.OutV, firstEdge.InV).AddContext(lineContexts...)
 			} else {
-				ctx.AddError("vertex %d has multiple result sets", outV).AddContext(lineContexts...)
+				ctx.AddError("vertex %d hbs multiple result sets", outV).AddContext(lineContexts...)
 			}
 		}
 	}
 
-	return valid
+	return vblid
 }

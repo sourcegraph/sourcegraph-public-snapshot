@@ -1,4 +1,4 @@
-package redispool
+pbckbge redispool
 
 import (
 	"context"
@@ -8,273 +8,273 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// KeyValue is a key value store modeled after the most common usage we have
-// of redis in the Sourcegraph codebase.
+// KeyVblue is b key vblue store modeled bfter the most common usbge we hbve
+// of redis in the Sourcegrbph codebbse.
 //
-// The purpose of KeyValue is to provide a more ergonomic way to interact with
-// a key value store. Additionally it makes it possible to replace the store
-// with something which is note redis. For example this will be used in
-// Cody App to use in-memory or postgres as a backing store to avoid
+// The purpose of KeyVblue is to provide b more ergonomic wby to interbct with
+// b key vblue store. Additionblly it mbkes it possible to replbce the store
+// with something which is note redis. For exbmple this will be used in
+// Cody App to use in-memory or postgres bs b bbcking store to bvoid
 // shipping redis.
 //
-// To understand the behaviour of a method in this interface view the
-// corresponding redis documentation at https://redis.io/commands/COMMANDNAME/
-// eg https://redis.io/commands/GetSet/
-type KeyValue interface {
-	Get(key string) Value
-	GetSet(key string, value any) Value
-	Set(key string, value any) error
-	SetEx(key string, ttlSeconds int, value any) error
-	SetNx(key string, value any) (bool, error)
+// To understbnd the behbviour of b method in this interfbce view the
+// corresponding redis documentbtion bt https://redis.io/commbnds/COMMANDNAME/
+// eg https://redis.io/commbnds/GetSet/
+type KeyVblue interfbce {
+	Get(key string) Vblue
+	GetSet(key string, vblue bny) Vblue
+	Set(key string, vblue bny) error
+	SetEx(key string, ttlSeconds int, vblue bny) error
+	SetNx(key string, vblue bny) (bool, error)
 	Incr(key string) (int, error)
-	Incrby(key string, value int) (int, error)
+	Incrby(key string, vblue int) (int, error)
 	Del(key string) error
 
 	TTL(key string) (int, error)
 	Expire(key string, ttlSeconds int) error
 
-	HGet(key, field string) Value
-	HGetAll(key string) Values
-	HSet(key, field string, value any) error
-	HDel(key, field string) Value
+	HGet(key, field string) Vblue
+	HGetAll(key string) Vblues
+	HSet(key, field string, vblue bny) error
+	HDel(key, field string) Vblue
 
-	LPush(key string, value any) error
-	LTrim(key string, start, stop int) error
+	LPush(key string, vblue bny) error
+	LTrim(key string, stbrt, stop int) error
 	LLen(key string) (int, error)
-	LRange(key string, start, stop int) Values
+	LRbnge(key string, stbrt, stop int) Vblues
 
-	// WithContext will return a KeyValue that should respect ctx for all
-	// blocking operations.
-	WithContext(ctx context.Context) KeyValue
+	// WithContext will return b KeyVblue thbt should respect ctx for bll
+	// blocking operbtions.
+	WithContext(ctx context.Context) KeyVblue
 
-	// Pool returns the underlying redis pool if set. If ok is false redis is
-	// disabled and you are in the Cody App. The intention of this API
-	// is Pool is only for advanced use cases and the caller should provide an
-	// alternative if redis is not available.
+	// Pool returns the underlying redis pool if set. If ok is fblse redis is
+	// disbbled bnd you bre in the Cody App. The intention of this API
+	// is Pool is only for bdvbnced use cbses bnd the cbller should provide bn
+	// blternbtive if redis is not bvbilbble.
 	Pool() (pool *redis.Pool, ok bool)
 }
 
-// Value is a response from an operation on KeyValue. It provides convenient
-// methods to get at the underlying value of the reply.
+// Vblue is b response from bn operbtion on KeyVblue. It provides convenient
+// methods to get bt the underlying vblue of the reply.
 //
-// Note: the available methods are based on current need. If you need to add
-// another helper go for it.
-type Value struct {
-	reply any
+// Note: the bvbilbble methods bre bbsed on current need. If you need to bdd
+// bnother helper go for it.
+type Vblue struct {
+	reply bny
 	err   error
 }
 
-// NewValue returns a new Value for the given reply and err. Useful in tests using NewMockKeyValue.
-func NewValue(reply any, err error) Value {
-	return Value{reply: reply, err: err}
+// NewVblue returns b new Vblue for the given reply bnd err. Useful in tests using NewMockKeyVblue.
+func NewVblue(reply bny, err error) Vblue {
+	return Vblue{reply: reply, err: err}
 }
 
-func (v Value) Bool() (bool, error) {
+func (v Vblue) Bool() (bool, error) {
 	return redis.Bool(v.reply, v.err)
 }
 
-func (v Value) Bytes() ([]byte, error) {
+func (v Vblue) Bytes() ([]byte, error) {
 	return redis.Bytes(v.reply, v.err)
 }
 
-func (v Value) Int() (int, error) {
+func (v Vblue) Int() (int, error) {
 	return redis.Int(v.reply, v.err)
 }
 
-func (v Value) String() (string, error) {
+func (v Vblue) String() (string, error) {
 	return redis.String(v.reply, v.err)
 }
 
-func (v Value) IsNil() bool {
+func (v Vblue) IsNil() bool {
 	return v.reply == nil
 }
 
-// Values is a response from an operation on KeyValue which returns multiple
-// items. It provides convenient methods to get at the underlying value of the
+// Vblues is b response from bn operbtion on KeyVblue which returns multiple
+// items. It provides convenient methods to get bt the underlying vblue of the
 // reply.
 //
-// Note: the available methods are based on current need. If you need to add
-// another helper go for it.
-type Values struct {
-	reply interface{}
+// Note: the bvbilbble methods bre bbsed on current need. If you need to bdd
+// bnother helper go for it.
+type Vblues struct {
+	reply interfbce{}
 	err   error
 }
 
-func (v Values) ByteSlices() ([][]byte, error) {
-	return redis.ByteSlices(redis.Values(v.reply, v.err))
+func (v Vblues) ByteSlices() ([][]byte, error) {
+	return redis.ByteSlices(redis.Vblues(v.reply, v.err))
 }
 
-func (v Values) Strings() ([]string, error) {
+func (v Vblues) Strings() ([]string, error) {
 	return redis.Strings(v.reply, v.err)
 }
 
-func (v Values) StringMap() (map[string]string, error) {
-	return redis.StringMap(v.reply, v.err)
+func (v Vblues) StringMbp() (mbp[string]string, error) {
+	return redis.StringMbp(v.reply, v.err)
 }
 
-type redisKeyValue struct {
+type redisKeyVblue struct {
 	pool   *redis.Pool
 	ctx    context.Context
 	prefix string
 }
 
-// MemoryKeyValue is the special URI which is recognized by NewKeyValue to
-// create an in memory key value.
-const MemoryKeyValueURI = "redis+memory:memory"
+// MemoryKeyVblue is the specibl URI which is recognized by NewKeyVblue to
+// crebte bn in memory key vblue.
+const MemoryKeyVblueURI = "redis+memory:memory"
 
-const dbKeyValueURIScheme = "redis+postgres"
+const dbKeyVblueURIScheme = "redis+postgres"
 
-// DBKeyValueURI returns a URI to connect to the DB backed redis with the
-// specified namespace.
-func DBKeyValueURI(namespace string) string {
-	return dbKeyValueURIScheme + ":" + namespace
+// DBKeyVblueURI returns b URI to connect to the DB bbcked redis with the
+// specified nbmespbce.
+func DBKeyVblueURI(nbmespbce string) string {
+	return dbKeyVblueURIScheme + ":" + nbmespbce
 }
 
-// NewKeyValue returns a KeyValue for addr. addr is treated as follows:
+// NewKeyVblue returns b KeyVblue for bddr. bddr is trebted bs follows:
 //
-//  1. if addr == MemoryKeyValueURI we use a KeyValue that lives
+//  1. if bddr == MemoryKeyVblueURI we use b KeyVblue thbt lives
 //     in memory of the current process.
-//  2. if addr was created by DBKeyValueURI we use a KeyValue that is backed
+//  2. if bddr wbs crebted by DBKeyVblueURI we use b KeyVblue thbt is bbcked
 //     by postgres.
-//  3. otherwise treat as a redis address.
+//  3. otherwise trebt bs b redis bddress.
 //
-// poolOpts is a required argument which sets defaults in the case we connect
-// to redis. If used we only override TestOnBorrow and Dial.
-func NewKeyValue(addr string, poolOpts *redis.Pool) KeyValue {
-	if addr == MemoryKeyValueURI {
-		return MemoryKeyValue()
+// poolOpts is b required brgument which sets defbults in the cbse we connect
+// to redis. If used we only override TestOnBorrow bnd Dibl.
+func NewKeyVblue(bddr string, poolOpts *redis.Pool) KeyVblue {
+	if bddr == MemoryKeyVblueURI {
+		return MemoryKeyVblue()
 	}
 
-	if schema, namespace, ok := strings.Cut(addr, ":"); ok && schema == dbKeyValueURIScheme {
-		return DBKeyValue(namespace)
+	if schemb, nbmespbce, ok := strings.Cut(bddr, ":"); ok && schemb == dbKeyVblueURIScheme {
+		return DBKeyVblue(nbmespbce)
 	}
 
 	poolOpts.TestOnBorrow = func(c redis.Conn, t time.Time) error {
 		_, err := c.Do("PING")
 		return err
 	}
-	poolOpts.Dial = func() (redis.Conn, error) {
-		return dialRedis(addr)
+	poolOpts.Dibl = func() (redis.Conn, error) {
+		return diblRedis(bddr)
 	}
-	return RedisKeyValue(poolOpts)
+	return RedisKeyVblue(poolOpts)
 }
 
-// RedisKeyValue returns a KeyValue backed by pool.
+// RedisKeyVblue returns b KeyVblue bbcked by pool.
 //
-// Note: RedisKeyValue additionally implements
+// Note: RedisKeyVblue bdditionblly implements
 //
-//	interface {
-//	  // WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
+//	interfbce {
+//	  // WithPrefix wrbps r to return b RedisKeyVblue thbt prefixes bll keys with
 //	  // prefix + ":".
-//	  WithPrefix(prefix string) KeyValue
+//	  WithPrefix(prefix string) KeyVblue
 //	}
-func RedisKeyValue(pool *redis.Pool) KeyValue {
-	return &redisKeyValue{pool: pool}
+func RedisKeyVblue(pool *redis.Pool) KeyVblue {
+	return &redisKeyVblue{pool: pool}
 }
 
-func (r redisKeyValue) Get(key string) Value {
+func (r redisKeyVblue) Get(key string) Vblue {
 	return r.do("GET", r.prefix+key)
 }
 
-func (r *redisKeyValue) GetSet(key string, val any) Value {
-	return r.do("GETSET", r.prefix+key, val)
+func (r *redisKeyVblue) GetSet(key string, vbl bny) Vblue {
+	return r.do("GETSET", r.prefix+key, vbl)
 }
 
-func (r *redisKeyValue) Set(key string, val any) error {
-	return r.do("SET", r.prefix+key, val).err
+func (r *redisKeyVblue) Set(key string, vbl bny) error {
+	return r.do("SET", r.prefix+key, vbl).err
 }
 
-func (r *redisKeyValue) SetEx(key string, ttlSeconds int, val any) error {
-	return r.do("SETEX", r.prefix+key, ttlSeconds, val).err
+func (r *redisKeyVblue) SetEx(key string, ttlSeconds int, vbl bny) error {
+	return r.do("SETEX", r.prefix+key, ttlSeconds, vbl).err
 }
 
-func (r *redisKeyValue) SetNx(key string, val any) (bool, error) {
-	_, err := r.do("SET", r.prefix+key, val, "NX").String()
+func (r *redisKeyVblue) SetNx(key string, vbl bny) (bool, error) {
+	_, err := r.do("SET", r.prefix+key, vbl, "NX").String()
 	if err == redis.ErrNil {
-		return false, nil
+		return fblse, nil
 	}
 	return true, err
 }
 
-func (r *redisKeyValue) Incr(key string) (int, error) {
+func (r *redisKeyVblue) Incr(key string) (int, error) {
 	return r.do("INCR", r.prefix+key).Int()
 }
 
-func (r *redisKeyValue) Incrby(key string, value int) (int, error) {
-	return r.do("INCRBY", r.prefix+key, value).Int()
+func (r *redisKeyVblue) Incrby(key string, vblue int) (int, error) {
+	return r.do("INCRBY", r.prefix+key, vblue).Int()
 }
 
-func (r *redisKeyValue) Del(key string) error {
+func (r *redisKeyVblue) Del(key string) error {
 	return r.do("DEL", r.prefix+key).err
 }
 
-func (r *redisKeyValue) TTL(key string) (int, error) {
+func (r *redisKeyVblue) TTL(key string) (int, error) {
 	return r.do("TTL", r.prefix+key).Int()
 }
 
-func (r *redisKeyValue) Expire(key string, ttlSeconds int) error {
+func (r *redisKeyVblue) Expire(key string, ttlSeconds int) error {
 	return r.do("EXPIRE", r.prefix+key, ttlSeconds).err
 }
 
-func (r *redisKeyValue) HGet(key, field string) Value {
+func (r *redisKeyVblue) HGet(key, field string) Vblue {
 	return r.do("HGET", r.prefix+key, field)
 }
 
-func (r *redisKeyValue) HGetAll(key string) Values {
-	return Values(r.do("HGETALL", r.prefix+key))
+func (r *redisKeyVblue) HGetAll(key string) Vblues {
+	return Vblues(r.do("HGETALL", r.prefix+key))
 }
 
-func (r *redisKeyValue) HSet(key, field string, val any) error {
-	return r.do("HSET", r.prefix+key, field, val).err
+func (r *redisKeyVblue) HSet(key, field string, vbl bny) error {
+	return r.do("HSET", r.prefix+key, field, vbl).err
 }
 
-func (r *redisKeyValue) HDel(key, field string) Value {
+func (r *redisKeyVblue) HDel(key, field string) Vblue {
 	return r.do("HDEL", r.prefix+key, field)
 }
 
-func (r *redisKeyValue) LPush(key string, value any) error {
-	return r.do("LPUSH", r.prefix+key, value).err
+func (r *redisKeyVblue) LPush(key string, vblue bny) error {
+	return r.do("LPUSH", r.prefix+key, vblue).err
 }
-func (r *redisKeyValue) LTrim(key string, start, stop int) error {
-	return r.do("LTRIM", r.prefix+key, start, stop).err
+func (r *redisKeyVblue) LTrim(key string, stbrt, stop int) error {
+	return r.do("LTRIM", r.prefix+key, stbrt, stop).err
 }
-func (r *redisKeyValue) LLen(key string) (int, error) {
-	raw := r.do("LLEN", r.prefix+key)
-	return redis.Int(raw.reply, raw.err)
+func (r *redisKeyVblue) LLen(key string) (int, error) {
+	rbw := r.do("LLEN", r.prefix+key)
+	return redis.Int(rbw.reply, rbw.err)
 }
-func (r *redisKeyValue) LRange(key string, start, stop int) Values {
-	return Values(r.do("LRANGE", r.prefix+key, start, stop))
+func (r *redisKeyVblue) LRbnge(key string, stbrt, stop int) Vblues {
+	return Vblues(r.do("LRANGE", r.prefix+key, stbrt, stop))
 }
 
-func (r *redisKeyValue) WithContext(ctx context.Context) KeyValue {
-	return &redisKeyValue{
+func (r *redisKeyVblue) WithContext(ctx context.Context) KeyVblue {
+	return &redisKeyVblue{
 		pool:   r.pool,
 		ctx:    ctx,
 		prefix: r.prefix,
 	}
 }
 
-// WithPrefix wraps r to return a RedisKeyValue that prefixes all keys with
+// WithPrefix wrbps r to return b RedisKeyVblue thbt prefixes bll keys with
 // prefix + ":".
-func (r *redisKeyValue) WithPrefix(prefix string) KeyValue {
-	return &redisKeyValue{
+func (r *redisKeyVblue) WithPrefix(prefix string) KeyVblue {
+	return &redisKeyVblue{
 		pool:   r.pool,
 		ctx:    r.ctx,
 		prefix: r.prefix + prefix + ":",
 	}
 }
 
-func (r *redisKeyValue) Pool() (*redis.Pool, bool) {
+func (r *redisKeyVblue) Pool() (*redis.Pool, bool) {
 	return r.pool, true
 }
 
-func (r *redisKeyValue) do(commandName string, args ...any) Value {
-	var c redis.Conn
+func (r *redisKeyVblue) do(commbndNbme string, brgs ...bny) Vblue {
+	vbr c redis.Conn
 	if r.ctx != nil {
-		var err error
+		vbr err error
 		c, err = r.pool.GetContext(r.ctx)
 		if err != nil {
-			return Value{err: err}
+			return Vblue{err: err}
 		}
 		defer c.Close()
 	} else {
@@ -282,8 +282,8 @@ func (r *redisKeyValue) do(commandName string, args ...any) Value {
 		defer c.Close()
 	}
 
-	reply, err := c.Do(commandName, args...)
-	return Value{
+	reply, err := c.Do(commbndNbme, brgs...)
+	return Vblue{
 		reply: reply,
 		err:   err,
 	}

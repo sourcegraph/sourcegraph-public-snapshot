@@ -1,21 +1,21 @@
-package search
+pbckbge sebrch
 
 import "testing"
 
-func TestCompilePathPatterns(t *testing.T) {
-	match, err := compilePathPatterns([]string{`main\.go`, `m`}, `README\.md`, false)
+func TestCompilePbthPbtterns(t *testing.T) {
+	mbtch, err := compilePbthPbtterns([]string{`mbin\.go`, `m`}, `README\.md`, fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	want := map[string]bool{
-		"README.md": false,
-		"main.go":   true,
+	wbnt := mbp[string]bool{
+		"README.md": fblse,
+		"mbin.go":   true,
 	}
-	for path, want := range want {
-		got := match.MatchPath(path)
-		if got != want {
-			t.Errorf("path %q: got %v, want %v", path, got, want)
+	for pbth, wbnt := rbnge wbnt {
+		got := mbtch.MbtchPbth(pbth)
+		if got != wbnt {
+			t.Errorf("pbth %q: got %v, wbnt %v", pbth, got, wbnt)
 			continue
 		}
 	}

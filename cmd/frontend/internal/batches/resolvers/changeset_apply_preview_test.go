@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -6,224 +6,224 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
-	"github.com/keegancsmith/sqlf"
-	"github.com/stretchr/testify/assert"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/keegbncsmith/sqlf"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/service"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-func TestChangesetApplyPreviewResolver(t *testing.T) {
+func TestChbngesetApplyPreviewResolver(t *testing.T) {
 	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observbtion.TestContext, nil)
 
-	// Create a batch spec for the target batch change.
-	oldBatchSpec := &btypes.BatchSpec{
+	// Crebte b bbtch spec for the tbrget bbtch chbnge.
+	oldBbtchSpec := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
+		NbmespbceUserID: userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, oldBatchSpec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, oldBbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
-	// Create a batch change and create a new spec targetting the same batch change again.
-	batchChangeName := "test-apply-preview-resolver"
-	batchChange := bt.CreateBatchChange(t, ctx, bstore, batchChangeName, userID, oldBatchSpec.ID)
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, batchChangeName, userID, batchChange.ID)
+	// Crebte b bbtch chbnge bnd crebte b new spec tbrgetting the sbme bbtch chbnge bgbin.
+	bbtchChbngeNbme := "test-bpply-preview-resolver"
+	bbtchChbnge := bt.CrebteBbtchChbnge(t, ctx, bstore, bbtchChbngeNbme, userID, oldBbtchSpec.ID)
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, bbtchChbngeNbme, userID, bbtchChbnge.ID)
 
-	esStore := database.ExternalServicesWith(logger, bstore)
-	repoStore := database.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
 
-	rs := make([]*types.Repo, 0, 3)
-	for i := 0; i < cap(rs); i++ {
-		name := fmt.Sprintf("github.com/sourcegraph/test-changeset-apply-preview-repo-%d", i)
-		r := newGitHubTestRepo(name, newGitHubExternalService(t, esStore))
-		if err := repoStore.Create(ctx, r); err != nil {
-			t.Fatal(err)
+	rs := mbke([]*types.Repo, 0, 3)
+	for i := 0; i < cbp(rs); i++ {
+		nbme := fmt.Sprintf("github.com/sourcegrbph/test-chbngeset-bpply-preview-repo-%d", i)
+		r := newGitHubTestRepo(nbme, newGitHubExternblService(t, esStore))
+		if err := repoStore.Crebte(ctx, r); err != nil {
+			t.Fbtbl(err)
 		}
-		rs = append(rs, r)
+		rs = bppend(rs, r)
 	}
 
-	changesetSpecs := make([]*btypes.ChangesetSpec, 0, 2)
-	for i, r := range rs[:2] {
-		s := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
+	chbngesetSpecs := mbke([]*btypes.ChbngesetSpec, 0, 2)
+	for i, r := rbnge rs[:2] {
+		s := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+			BbtchSpec: bbtchSpec.ID,
 			User:      userID,
 			Repo:      r.ID,
-			HeadRef:   fmt.Sprintf("d34db33f-%d", i),
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   fmt.Sprintf("d34db33f-%d", i),
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		})
 
-		changesetSpecs = append(changesetSpecs, s)
+		chbngesetSpecs = bppend(chbngesetSpecs, s)
 	}
 
-	// Add one changeset that doesn't match any new spec anymore but was there before (close, detach).
-	closingChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+	// Add one chbngeset thbt doesn't mbtch bny new spec bnymore but wbs there before (close, detbch).
+	closingChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		User:      userID,
 		Repo:      rs[2].ID,
-		BatchSpec: oldBatchSpec.ID,
-		HeadRef:   "d34db33f-2",
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		BbtchSpec: oldBbtchSpec.ID,
+		HebdRef:   "d34db33f-2",
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	closingChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	closingChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:             rs[2].ID,
-		BatchChange:      batchChange.ID,
-		CurrentSpec:      closingChangesetSpec.ID,
-		PublicationState: btypes.ChangesetPublicationStatePublished,
+		BbtchChbnge:      bbtchChbnge.ID,
+		CurrentSpec:      closingChbngesetSpec.ID,
+		PublicbtionStbte: btypes.ChbngesetPublicbtionStbtePublished,
 	})
 
-	// Add one changeset that doesn't matches a new spec (update).
-	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-		BatchSpec: oldBatchSpec.ID,
+	// Add one chbngeset thbt doesn't mbtches b new spec (updbte).
+	updbtedChbngesetSpec := bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+		BbtchSpec: oldBbtchSpec.ID,
 		User:      userID,
-		Repo:      changesetSpecs[1].BaseRepoID,
-		HeadRef:   changesetSpecs[1].HeadRef,
-		Typ:       btypes.ChangesetSpecTypeBranch,
+		Repo:      chbngesetSpecs[1].BbseRepoID,
+		HebdRef:   chbngesetSpecs[1].HebdRef,
+		Typ:       btypes.ChbngesetSpecTypeBrbnch,
 	})
-	updatedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	updbtedChbngeset := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:               rs[1].ID,
-		BatchChange:        batchChange.ID,
-		CurrentSpec:        updatedChangesetSpec.ID,
-		PublicationState:   btypes.ChangesetPublicationStatePublished,
-		OwnedByBatchChange: batchChange.ID,
+		BbtchChbnge:        bbtchChbnge.ID,
+		CurrentSpec:        updbtedChbngesetSpec.ID,
+		PublicbtionStbte:   btypes.ChbngesetPublicbtionStbtePublished,
+		OwnedByBbtchChbnge: bbtchChbnge.ID,
 	})
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	apiID := string(marshalBatchSpecRandID(batchSpec.RandID))
+	bpiID := string(mbrshblBbtchSpecRbndID(bbtchSpec.RbndID))
 
-	input := map[string]any{"batchSpec": apiID}
-	var response struct{ Node apitest.BatchSpec }
-	apitest.MustExec(ctx, t, s, input, &response, queryChangesetApplyPreview)
+	input := mbp[string]bny{"bbtchSpec": bpiID}
+	vbr response struct{ Node bpitest.BbtchSpec }
+	bpitest.MustExec(ctx, t, s, input, &response, queryChbngesetApplyPreview)
 
-	haveApplyPreview := response.Node.ApplyPreview.Nodes
+	hbveApplyPreview := response.Node.ApplyPreview.Nodes
 
-	wantApplyPreview := []apitest.ChangesetApplyPreview{
+	wbntApplyPreview := []bpitest.ChbngesetApplyPreview{
 		{
-			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []btypes.ReconcilerOperation{btypes.ReconcilerOperationDetach},
-			Targets: apitest.ChangesetApplyPreviewTargets{
-				Typename:  "VisibleApplyPreviewTargetsDetach",
-				Changeset: apitest.Changeset{ID: string(bgql.MarshalChangesetID(closingChangeset.ID))},
+			Typenbme:   "VisibleChbngesetApplyPreview",
+			Operbtions: []btypes.ReconcilerOperbtion{btypes.ReconcilerOperbtionDetbch},
+			Tbrgets: bpitest.ChbngesetApplyPreviewTbrgets{
+				Typenbme:  "VisibleApplyPreviewTbrgetsDetbch",
+				Chbngeset: bpitest.Chbngeset{ID: string(bgql.MbrshblChbngesetID(closingChbngeset.ID))},
 			},
 		},
 		{
-			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []btypes.ReconcilerOperation{},
-			Targets: apitest.ChangesetApplyPreviewTargets{
-				Typename:      "VisibleApplyPreviewTargetsAttach",
-				ChangesetSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(changesetSpecs[0].RandID))},
+			Typenbme:   "VisibleChbngesetApplyPreview",
+			Operbtions: []btypes.ReconcilerOperbtion{},
+			Tbrgets: bpitest.ChbngesetApplyPreviewTbrgets{
+				Typenbme:      "VisibleApplyPreviewTbrgetsAttbch",
+				ChbngesetSpec: bpitest.ChbngesetSpec{ID: string(mbrshblChbngesetSpecRbndID(chbngesetSpecs[0].RbndID))},
 			},
 		},
 		{
-			Typename:   "VisibleChangesetApplyPreview",
-			Operations: []btypes.ReconcilerOperation{},
-			Targets: apitest.ChangesetApplyPreviewTargets{
-				Typename:      "VisibleApplyPreviewTargetsUpdate",
-				ChangesetSpec: apitest.ChangesetSpec{ID: string(marshalChangesetSpecRandID(changesetSpecs[1].RandID))},
-				Changeset:     apitest.Changeset{ID: string(bgql.MarshalChangesetID(updatedChangeset.ID))},
+			Typenbme:   "VisibleChbngesetApplyPreview",
+			Operbtions: []btypes.ReconcilerOperbtion{},
+			Tbrgets: bpitest.ChbngesetApplyPreviewTbrgets{
+				Typenbme:      "VisibleApplyPreviewTbrgetsUpdbte",
+				ChbngesetSpec: bpitest.ChbngesetSpec{ID: string(mbrshblChbngesetSpecRbndID(chbngesetSpecs[1].RbndID))},
+				Chbngeset:     bpitest.Chbngeset{ID: string(bgql.MbrshblChbngesetID(updbtedChbngeset.ID))},
 			},
 		},
 	}
 
-	if diff := cmp.Diff(wantApplyPreview, haveApplyPreview); diff != "" {
-		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbntApplyPreview, hbveApplyPreview); diff != "" {
+		t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 	}
 }
 
-const queryChangesetApplyPreview = `
-query ($batchSpec: ID!, $first: Int = 50, $after: String, $publicationStates: [ChangesetSpecPublicationStateInput!]) {
-    node(id: $batchSpec) {
-      __typename
-      ... on BatchSpec {
+const queryChbngesetApplyPreview = `
+query ($bbtchSpec: ID!, $first: Int = 50, $bfter: String, $publicbtionStbtes: [ChbngesetSpecPublicbtionStbteInput!]) {
+    node(id: $bbtchSpec) {
+      __typenbme
+      ... on BbtchSpec {
         id
-        applyPreview(first: $first, after: $after, publicationStates: $publicationStates) {
-          totalCount
-          pageInfo {
-            hasNextPage
+        bpplyPreview(first: $first, bfter: $bfter, publicbtionStbtes: $publicbtionStbtes) {
+          totblCount
+          pbgeInfo {
+            hbsNextPbge
             endCursor
           }
           nodes {
-            __typename
-            ... on VisibleChangesetApplyPreview {
-			  operations
-              delta {
-                titleChanged
-                bodyChanged
-                undraft
-                baseRefChanged
-                diffChanged
-                commitMessageChanged
-                authorNameChanged
-                authorEmailChanged
+            __typenbme
+            ... on VisibleChbngesetApplyPreview {
+			  operbtions
+              deltb {
+                titleChbnged
+                bodyChbnged
+                undrbft
+                bbseRefChbnged
+                diffChbnged
+                commitMessbgeChbnged
+                buthorNbmeChbnged
+                buthorEmbilChbnged
               }
-              targets {
-                __typename
-                ... on VisibleApplyPreviewTargetsAttach {
-                  changesetSpec {
+              tbrgets {
+                __typenbme
+                ... on VisibleApplyPreviewTbrgetsAttbch {
+                  chbngesetSpec {
                     id
                   }
                 }
-                ... on VisibleApplyPreviewTargetsUpdate {
-                  changesetSpec {
+                ... on VisibleApplyPreviewTbrgetsUpdbte {
+                  chbngesetSpec {
                     id
                   }
-                  changeset {
+                  chbngeset {
                     id
                   }
                 }
-                ... on VisibleApplyPreviewTargetsDetach {
-                  changeset {
+                ... on VisibleApplyPreviewTbrgetsDetbch {
+                  chbngeset {
                     id
                   }
                 }
               }
             }
-            ... on HiddenChangesetApplyPreview {
-              operations
-              targets {
-                __typename
-                ... on HiddenApplyPreviewTargetsAttach {
-                  changesetSpec {
+            ... on HiddenChbngesetApplyPreview {
+              operbtions
+              tbrgets {
+                __typenbme
+                ... on HiddenApplyPreviewTbrgetsAttbch {
+                  chbngesetSpec {
                     id
                   }
                 }
-                ... on HiddenApplyPreviewTargetsUpdate {
-                  changesetSpec {
+                ... on HiddenApplyPreviewTbrgetsUpdbte {
+                  chbngesetSpec {
                     id
                   }
-                  changeset {
+                  chbngeset {
                     id
                   }
                 }
-                ... on HiddenApplyPreviewTargetsDetach {
-                  changeset {
+                ... on HiddenApplyPreviewTbrgetsDetbch {
+                  chbngeset {
                     id
                   }
                 }
@@ -236,230 +236,230 @@ query ($batchSpec: ID!, $first: Int = 50, $after: String, $publicationStates: [C
   }
 `
 
-func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
-	// We have multiple scenarios to test here: these essentially act as
-	// integration tests for the applyPreview() resolver when publication states
-	// are set.
+func TestChbngesetApplyPreviewResolverWithPublicbtionStbtes(t *testing.T) {
+	// We hbve multiple scenbrios to test here: these essentiblly bct bs
+	// integrbtion tests for the bpplyPreview() resolver when publicbtion stbtes
+	// bre set.
 	//
-	// The first is the case where we don't have a batch change yet (we're
-	// applying a new batch spec), and some changeset specs have associated
-	// publication states. We should get the appropriate actions on those
-	// changeset specs.
+	// The first is the cbse where we don't hbve b bbtch chbnge yet (we're
+	// bpplying b new bbtch spec), bnd some chbngeset specs hbve bssocibted
+	// publicbtion stbtes. We should get the bppropribte bctions on those
+	// chbngeset specs.
 	//
-	// The second is the case where we do have a batch change, and we're
-	// updating some publication states. Again, we should get the appropriate
-	// actions.
+	// The second is the cbse where we do hbve b bbtch chbnge, bnd we're
+	// updbting some publicbtion stbtes. Agbin, we should get the bppropribte
+	// bctions.
 	//
-	// Another interesting case is ensuring that we handle a scenario where a
-	// previously spec-published changeset is now UI-published (because the
-	// published field was removed from the spec). This should result in no
-	// action, since the changeset is already published.
+	// Another interesting cbse is ensuring thbt we hbndle b scenbrio where b
+	// previously spec-published chbngeset is now UI-published (becbuse the
+	// published field wbs removed from the spec). This should result in no
+	// bction, since the chbngeset is blrebdy published.
 	//
-	// Finally, we need to ensure that providing a conflicting UI publication
-	// state results in an error.
+	// Finblly, we need to ensure thbt providing b conflicting UI publicbtion
+	// stbte results in bn error.
 	//
-	// As ever, let's start with some boilerplate.
+	// As ever, let's stbrt with some boilerplbte.
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(logger, bstore)
-	repoStore := database.ReposWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
-	require.Nil(t, repoStore.Create(ctx, repo))
+	repo := newGitHubTestRepo("github.com/sourcegrbph/test", newGitHubExternblService(t, esStore))
+	require.Nil(t, repoStore.Crebte(ctx, repo))
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	require.Nil(t, err)
 
-	// To make it easier to assert against the operations in a preview node,
-	// here are some canned operations that we expect when publishing.
-	var (
-		publishOps = []btypes.ReconcilerOperation{
-			btypes.ReconcilerOperationPush,
-			btypes.ReconcilerOperationPublish,
+	// To mbke it ebsier to bssert bgbinst the operbtions in b preview node,
+	// here bre some cbnned operbtions thbt we expect when publishing.
+	vbr (
+		publishOps = []btypes.ReconcilerOperbtion{
+			btypes.ReconcilerOperbtionPush,
+			btypes.ReconcilerOperbtionPublish,
 		}
-		publishDraftOps = []btypes.ReconcilerOperation{
-			btypes.ReconcilerOperationPush,
-			btypes.ReconcilerOperationPublishDraft,
+		publishDrbftOps = []btypes.ReconcilerOperbtion{
+			btypes.ReconcilerOperbtionPush,
+			btypes.ReconcilerOperbtionPublishDrbft,
 		}
-		noOps = []btypes.ReconcilerOperation{}
+		noOps = []btypes.ReconcilerOperbtion{}
 	)
 
-	t.Run("new batch change", func(t *testing.T) {
+	t.Run("new bbtch chbnge", func(t *testing.T) {
 		fx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "new")
 
-		// We'll use a page size of 1 here to ensure that the publication states
-		// are correctly handled across pages.
-		previews := repeatApplyPreview(
+		// We'll use b pbge size of 1 here to ensure thbt the publicbtion stbtes
+		// bre correctly hbndled bcross pbges.
+		previews := repebtApplyPreview(
 			ctx, t, s,
-			fx.DecorateInput(map[string]any{}),
-			queryChangesetApplyPreview,
+			fx.DecorbteInput(mbp[string]bny{}),
+			queryChbngesetApplyPreview,
 			1,
 		)
 
-		assert.Len(t, previews, 5)
-		assertOperations(t, previews, fx.specPublished, publishOps)
-		assertOperations(t, previews, fx.specToBePublished, publishOps)
-		assertOperations(t, previews, fx.specToBeDraft, publishDraftOps)
-		assertOperations(t, previews, fx.specToBeUnpublished, noOps)
-		assertOperations(t, previews, fx.specToBeOmitted, noOps)
+		bssert.Len(t, previews, 5)
+		bssertOperbtions(t, previews, fx.specPublished, publishOps)
+		bssertOperbtions(t, previews, fx.specToBePublished, publishOps)
+		bssertOperbtions(t, previews, fx.specToBeDrbft, publishDrbftOps)
+		bssertOperbtions(t, previews, fx.specToBeUnpublished, noOps)
+		bssertOperbtions(t, previews, fx.specToBeOmitted, noOps)
 	})
 
-	t.Run("existing batch change", func(t *testing.T) {
-		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "existing")
+	t.Run("existing bbtch chbnge", func(t *testing.T) {
+		crebtedFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "existing")
 
-		// Apply the batch spec so we have an existing batch change.
+		// Apply the bbtch spec so we hbve bn existing bbtch chbnge.
 		svc := service.New(bstore)
-		batchChange, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
-			BatchSpecRandID:   createdFx.batchSpec.RandID,
-			PublicationStates: createdFx.DefaultUiPublicationStates(),
+		bbtchChbnge, err := svc.ApplyBbtchChbnge(ctx, service.ApplyBbtchChbngeOpts{
+			BbtchSpecRbndID:   crebtedFx.bbtchSpec.RbndID,
+			PublicbtionStbtes: crebtedFx.DefbultUiPublicbtionStbtes(),
 		})
 		require.Nil(t, err)
-		require.NotNil(t, batchChange)
+		require.NotNil(t, bbtchChbnge)
 
-		// Now we need a fresh batch spec.
+		// Now we need b fresh bbtch spec.
 		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "existing")
 
-		// Same as above, but this time we'll use a page size of 2 just to mix
+		// Sbme bs bbove, but this time we'll use b pbge size of 2 just to mix
 		// it up.
-		previews := repeatApplyPreview(
+		previews := repebtApplyPreview(
 			ctx, t, s,
-			newFx.DecorateInput(map[string]any{}),
-			queryChangesetApplyPreview,
+			newFx.DecorbteInput(mbp[string]bny{}),
+			queryChbngesetApplyPreview,
 			2,
 		)
 
-		assert.Len(t, previews, 5)
-		assertOperations(t, previews, newFx.specPublished, publishOps)
-		assertOperations(t, previews, newFx.specToBePublished, publishOps)
-		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
-		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
-		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
+		bssert.Len(t, previews, 5)
+		bssertOperbtions(t, previews, newFx.specPublished, publishOps)
+		bssertOperbtions(t, previews, newFx.specToBePublished, publishOps)
+		bssertOperbtions(t, previews, newFx.specToBeDrbft, publishDrbftOps)
+		bssertOperbtions(t, previews, newFx.specToBeUnpublished, noOps)
+		bssertOperbtions(t, previews, newFx.specToBeOmitted, noOps)
 	})
 
-	t.Run("already published changeset", func(t *testing.T) {
-		// The set up on this is pretty similar to the previous test case, but
-		// with the extra step of then modifying the relevant changeset to make
+	t.Run("blrebdy published chbngeset", func(t *testing.T) {
+		// The set up on this is pretty similbr to the previous test cbse, but
+		// with the extrb step of then modifying the relevbnt chbngeset to mbke
 		// it look like it's been published.
-		createdFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
+		crebtedFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "blrebdy-published")
 
-		// Apply the batch spec so we have an existing batch change.
+		// Apply the bbtch spec so we hbve bn existing bbtch chbnge.
 		svc := service.New(bstore)
-		batchChange, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
-			BatchSpecRandID:   createdFx.batchSpec.RandID,
-			PublicationStates: createdFx.DefaultUiPublicationStates(),
+		bbtchChbnge, err := svc.ApplyBbtchChbnge(ctx, service.ApplyBbtchChbngeOpts{
+			BbtchSpecRbndID:   crebtedFx.bbtchSpec.RbndID,
+			PublicbtionStbtes: crebtedFx.DefbultUiPublicbtionStbtes(),
 		})
 		require.Nil(t, err)
-		require.NotNil(t, batchChange)
+		require.NotNil(t, bbtchChbnge)
 
-		// Find the changeset for specPublished, and mock it up to look open.
-		changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
-			BatchChangeID: batchChange.ID,
+		// Find the chbngeset for specPublished, bnd mock it up to look open.
+		chbngesets, _, err := bstore.ListChbngesets(ctx, store.ListChbngesetsOpts{
+			BbtchChbngeID: bbtchChbnge.ID,
 		})
 		require.Nil(t, err)
-		for _, changeset := range changesets {
-			if changeset.CurrentSpecID == createdFx.specPublished.ID {
-				changeset.PublicationState = btypes.ChangesetPublicationStatePublished
-				changeset.ExternalID = "12345"
-				changeset.ExternalState = btypes.ChangesetExternalStateOpen
-				require.Nil(t, bstore.UpdateChangeset(ctx, changeset))
-				break
+		for _, chbngeset := rbnge chbngesets {
+			if chbngeset.CurrentSpecID == crebtedFx.specPublished.ID {
+				chbngeset.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+				chbngeset.ExternblID = "12345"
+				chbngeset.ExternblStbte = btypes.ChbngesetExternblStbteOpen
+				require.Nil(t, bstore.UpdbteChbngeset(ctx, chbngeset))
+				brebk
 			}
 		}
 
-		// Now we need a fresh batch spec.
-		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already-published")
+		// Now we need b fresh bbtch spec.
+		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "blrebdy-published")
 
-		// We need to modify the changeset spec to not have a published field.
-		newFx.specPublished.Published = batches.PublishedValue{Val: nil}
-		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, nil, newFx.specPublished.ID)
-		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
-			t.Fatal(err)
+		// We need to modify the chbngeset spec to not hbve b published field.
+		newFx.specPublished.Published = bbtches.PublishedVblue{Vbl: nil}
+		q := sqlf.Sprintf(`UPDATE chbngeset_specs SET published = %s WHERE id = %s`, nil, newFx.specPublished.ID)
+		if _, err := db.ExecContext(context.Bbckground(), q.Query(sqlf.PostgresBindVbr), q.Args()...); err != nil {
+			t.Fbtbl(err)
 		}
 
-		// Same as above, but this time we'll use a page size of 3 just to mix
+		// Sbme bs bbove, but this time we'll use b pbge size of 3 just to mix
 		// it up.
-		previews := repeatApplyPreview(
+		previews := repebtApplyPreview(
 			ctx, t, s,
-			newFx.DecorateInput(map[string]any{
-				"publicationStates": []map[string]any{
+			newFx.DecorbteInput(mbp[string]bny{
+				"publicbtionStbtes": []mbp[string]bny{
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(newFx.specPublished.RandID),
-						"publicationState": true,
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(newFx.specPublished.RbndID),
+						"publicbtionStbte": true,
 					},
 				},
 			}),
-			queryChangesetApplyPreview,
+			queryChbngesetApplyPreview,
 			3,
 		)
 
-		// The key point here is that specPublished has no operations, since
-		// it's already published.
-		assert.Len(t, previews, 5)
-		assertOperations(t, previews, newFx.specPublished, noOps)
-		assertOperations(t, previews, newFx.specToBePublished, publishOps)
-		assertOperations(t, previews, newFx.specToBeDraft, publishDraftOps)
-		assertOperations(t, previews, newFx.specToBeUnpublished, noOps)
-		assertOperations(t, previews, newFx.specToBeOmitted, noOps)
+		// The key point here is thbt specPublished hbs no operbtions, since
+		// it's blrebdy published.
+		bssert.Len(t, previews, 5)
+		bssertOperbtions(t, previews, newFx.specPublished, noOps)
+		bssertOperbtions(t, previews, newFx.specToBePublished, publishOps)
+		bssertOperbtions(t, previews, newFx.specToBeDrbft, publishDrbftOps)
+		bssertOperbtions(t, previews, newFx.specToBeUnpublished, noOps)
+		bssertOperbtions(t, previews, newFx.specToBeOmitted, noOps)
 	})
 
-	t.Run("conflicting publication state", func(t *testing.T) {
+	t.Run("conflicting publicbtion stbte", func(t *testing.T) {
 		fx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "conflicting")
 
-		var response struct{ Node apitest.BatchSpec }
-		err := apitest.Exec(
+		vbr response struct{ Node bpitest.BbtchSpec }
+		err := bpitest.Exec(
 			ctx, t, s,
-			fx.DecorateInput(map[string]any{
-				"publicationStates": []map[string]any{
+			fx.DecorbteInput(mbp[string]bny{
+				"publicbtionStbtes": []mbp[string]bny{
 					{
-						"changesetSpec":    marshalChangesetSpecRandID(fx.specPublished.RandID),
-						"publicationState": true,
+						"chbngesetSpec":    mbrshblChbngesetSpecRbndID(fx.specPublished.RbndID),
+						"publicbtionStbte": true,
 					},
 				},
 			}),
 			&response,
-			queryChangesetApplyPreview,
+			queryChbngesetApplyPreview,
 		)
 
-		assert.Greater(t, len(err), 0)
-		assert.Error(t, err[0])
+		bssert.Grebter(t, len(err), 0)
+		bssert.Error(t, err[0])
 	})
 }
 
-// assertOperations asserts that the given operations appear for the given
-// changeset spec within the array of preview nodes.
-func assertOperations(
+// bssertOperbtions bsserts thbt the given operbtions bppebr for the given
+// chbngeset spec within the brrby of preview nodes.
+func bssertOperbtions(
 	t *testing.T,
-	previews []apitest.ChangesetApplyPreview,
-	spec *btypes.ChangesetSpec,
-	want []btypes.ReconcilerOperation,
+	previews []bpitest.ChbngesetApplyPreview,
+	spec *btypes.ChbngesetSpec,
+	wbnt []btypes.ReconcilerOperbtion,
 ) {
 	t.Helper()
 
-	preview := findPreviewForChangesetSpec(previews, spec)
+	preview := findPreviewForChbngesetSpec(previews, spec)
 	if preview == nil {
-		t.Fatal("could not find changeset spec")
+		t.Fbtbl("could not find chbngeset spec")
 	}
 
-	assert.Equal(t, want, preview.Operations)
+	bssert.Equbl(t, wbnt, preview.Operbtions)
 }
 
-func findPreviewForChangesetSpec(
-	previews []apitest.ChangesetApplyPreview,
-	spec *btypes.ChangesetSpec,
-) *apitest.ChangesetApplyPreview {
-	id := string(marshalChangesetSpecRandID(spec.RandID))
-	for _, preview := range previews {
-		if preview.Targets.ChangesetSpec.ID == id {
+func findPreviewForChbngesetSpec(
+	previews []bpitest.ChbngesetApplyPreview,
+	spec *btypes.ChbngesetSpec,
+) *bpitest.ChbngesetApplyPreview {
+	id := string(mbrshblChbngesetSpecRbndID(spec.RbndID))
+	for _, preview := rbnge previews {
+		if preview.Tbrgets.ChbngesetSpec.ID == id {
 			return &preview
 		}
 	}
@@ -467,145 +467,145 @@ func findPreviewForChangesetSpec(
 	return nil
 }
 
-// repeatApplyPreview tests the applyPreview resolver's pagination behaviour by
-// retrieving the entire set of previews for the given input by making repeated
+// repebtApplyPreview tests the bpplyPreview resolver's pbginbtion behbviour by
+// retrieving the entire set of previews for the given input by mbking repebted
 // requests.
-func repeatApplyPreview(
+func repebtApplyPreview(
 	ctx context.Context,
 	t *testing.T,
-	schema *graphql.Schema,
-	in map[string]any,
+	schemb *grbphql.Schemb,
+	in mbp[string]bny,
 	query string,
-	pageSize int,
-) []apitest.ChangesetApplyPreview {
+	pbgeSize int,
+) []bpitest.ChbngesetApplyPreview {
 	t.Helper()
 
-	in["first"] = pageSize
-	in["after"] = nil
-	out := []apitest.ChangesetApplyPreview{}
+	in["first"] = pbgeSize
+	in["bfter"] = nil
+	out := []bpitest.ChbngesetApplyPreview{}
 
 	for {
-		var response struct{ Node apitest.BatchSpec }
-		apitest.MustExec(ctx, t, schema, in, &response, query)
-		out = append(out, response.Node.ApplyPreview.Nodes...)
+		vbr response struct{ Node bpitest.BbtchSpec }
+		bpitest.MustExec(ctx, t, schemb, in, &response, query)
+		out = bppend(out, response.Node.ApplyPreview.Nodes...)
 
-		if response.Node.ApplyPreview.PageInfo.HasNextPage {
-			in["after"] = *response.Node.ApplyPreview.PageInfo.EndCursor
+		if response.Node.ApplyPreview.PbgeInfo.HbsNextPbge {
+			in["bfter"] = *response.Node.ApplyPreview.PbgeInfo.EndCursor
 		} else {
 			return out
 		}
 	}
 }
 
-type applyPreviewTestFixture struct {
-	batchSpec           *btypes.BatchSpec
-	specPublished       *btypes.ChangesetSpec
-	specToBePublished   *btypes.ChangesetSpec
-	specToBeDraft       *btypes.ChangesetSpec
-	specToBeUnpublished *btypes.ChangesetSpec
-	specToBeOmitted     *btypes.ChangesetSpec
+type bpplyPreviewTestFixture struct {
+	bbtchSpec           *btypes.BbtchSpec
+	specPublished       *btypes.ChbngesetSpec
+	specToBePublished   *btypes.ChbngesetSpec
+	specToBeDrbft       *btypes.ChbngesetSpec
+	specToBeUnpublished *btypes.ChbngesetSpec
+	specToBeOmitted     *btypes.ChbngesetSpec
 }
 
 func newApplyPreviewTestFixture(
 	t *testing.T, ctx context.Context, bstore *store.Store,
 	userID int32,
-	repoID api.RepoID,
-	name string,
-) *applyPreviewTestFixture {
-	// We need a batch spec and a set of changeset specs that we can use to
-	// verify that the behaviour is as expected. We'll create one changeset spec
-	// with an explicit published field (so we can verify that UI publication
-	// states can't override that), and four changeset specs without published
-	// fields (one for each possible publication state).
-	batchSpec := bt.CreateBatchSpec(t, ctx, bstore, name, userID, 0)
+	repoID bpi.RepoID,
+	nbme string,
+) *bpplyPreviewTestFixture {
+	// We need b bbtch spec bnd b set of chbngeset specs thbt we cbn use to
+	// verify thbt the behbviour is bs expected. We'll crebte one chbngeset spec
+	// with bn explicit published field (so we cbn verify thbt UI publicbtion
+	// stbtes cbn't override thbt), bnd four chbngeset specs without published
+	// fields (one for ebch possible publicbtion stbte).
+	bbtchSpec := bt.CrebteBbtchSpec(t, ctx, bstore, nbme, userID, 0)
 
-	return &applyPreviewTestFixture{
-		batchSpec: batchSpec,
-		specPublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
+	return &bpplyPreviewTestFixture{
+		bbtchSpec: bbtchSpec,
+		specPublished: bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+			BbtchSpec: bbtchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
-			HeadRef:   "published " + name,
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   "published " + nbme,
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 			Published: true,
 		}),
-		specToBePublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
+		specToBePublished: bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+			BbtchSpec: bbtchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
-			HeadRef:   "to be published " + name,
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   "to be published " + nbme,
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		}),
-		specToBeDraft: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
+		specToBeDrbft: bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+			BbtchSpec: bbtchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
-			HeadRef:   "to be draft " + name,
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   "to be drbft " + nbme,
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		}),
-		specToBeUnpublished: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
+		specToBeUnpublished: bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+			BbtchSpec: bbtchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
-			HeadRef:   "to be unpublished " + name,
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   "to be unpublished " + nbme,
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		}),
-		specToBeOmitted: bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
-			BatchSpec: batchSpec.ID,
+		specToBeOmitted: bt.CrebteChbngesetSpec(t, ctx, bstore, bt.TestSpecOpts{
+			BbtchSpec: bbtchSpec.ID,
 			User:      userID,
 			Repo:      repoID,
-			HeadRef:   "to be omitted " + name,
-			Typ:       btypes.ChangesetSpecTypeBranch,
+			HebdRef:   "to be omitted " + nbme,
+			Typ:       btypes.ChbngesetSpecTypeBrbnch,
 		}),
 	}
 }
 
-func (fx *applyPreviewTestFixture) DecorateInput(in map[string]any) map[string]any {
-	commonInputs := map[string]any{
-		"batchSpec":         marshalBatchSpecRandID(fx.batchSpec.RandID),
-		"publicationStates": fx.DefaultPublicationStates(),
+func (fx *bpplyPreviewTestFixture) DecorbteInput(in mbp[string]bny) mbp[string]bny {
+	commonInputs := mbp[string]bny{
+		"bbtchSpec":         mbrshblBbtchSpecRbndID(fx.bbtchSpec.RbndID),
+		"publicbtionStbtes": fx.DefbultPublicbtionStbtes(),
 	}
 
-	for k, v := range in {
+	for k, v := rbnge in {
 		commonInputs[k] = v
 	}
 
 	return commonInputs
 }
 
-func (fx *applyPreviewTestFixture) DefaultPublicationStates() []map[string]any {
-	return []map[string]any{
+func (fx *bpplyPreviewTestFixture) DefbultPublicbtionStbtes() []mbp[string]bny {
+	return []mbp[string]bny{
 		{
-			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBePublished.RandID),
-			"publicationState": true,
+			"chbngesetSpec":    mbrshblChbngesetSpecRbndID(fx.specToBePublished.RbndID),
+			"publicbtionStbte": true,
 		},
 		{
-			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBeDraft.RandID),
-			"publicationState": "draft",
+			"chbngesetSpec":    mbrshblChbngesetSpecRbndID(fx.specToBeDrbft.RbndID),
+			"publicbtionStbte": "drbft",
 		},
 		{
-			"changesetSpec":    marshalChangesetSpecRandID(fx.specToBeUnpublished.RandID),
-			"publicationState": false,
+			"chbngesetSpec":    mbrshblChbngesetSpecRbndID(fx.specToBeUnpublished.RbndID),
+			"publicbtionStbte": fblse,
 		},
-		// We'll also toss in a spec that doesn't exist, since applyPreview() is
-		// documented to ignore unknown changeset specs due to its pagination
-		// behaviour.
+		// We'll blso toss in b spec thbt doesn't exist, since bpplyPreview() is
+		// documented to ignore unknown chbngeset specs due to its pbginbtion
+		// behbviour.
 		{
-			"changesetSpec":    marshalChangesetSpecRandID("this is not a valid random ID"),
-			"publicationState": true,
+			"chbngesetSpec":    mbrshblChbngesetSpecRbndID("this is not b vblid rbndom ID"),
+			"publicbtionStbte": true,
 		},
 	}
 }
 
-func (fx *applyPreviewTestFixture) DefaultUiPublicationStates() service.UiPublicationStates {
-	ups := service.UiPublicationStates{}
+func (fx *bpplyPreviewTestFixture) DefbultUiPublicbtionStbtes() service.UiPublicbtionStbtes {
+	ups := service.UiPublicbtionStbtes{}
 
-	for spec, state := range map[*btypes.ChangesetSpec]any{
+	for spec, stbte := rbnge mbp[*btypes.ChbngesetSpec]bny{
 		fx.specToBePublished:   true,
-		fx.specToBeDraft:       "draft",
-		fx.specToBeUnpublished: false,
+		fx.specToBeDrbft:       "drbft",
+		fx.specToBeUnpublished: fblse,
 	} {
-		ups.Add(spec.RandID, batches.PublishedValue{Val: state})
+		ups.Add(spec.RbndID, bbtches.PublishedVblue{Vbl: stbte})
 	}
 
 	return ups

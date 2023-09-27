@@ -1,4 +1,4 @@
-package window
+pbckbge window
 
 import (
 	"strconv"
@@ -6,14 +6,14 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 )
 
-func TestParseRateUnit(t *testing.T) {
+func TestPbrseRbteUnit(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for _, in := range []string{"", " ", "a"} {
+		for _, in := rbnge []string{"", " ", "b"} {
 			t.Run(in, func(t *testing.T) {
-				if _, err := parseRateUnit(in); err == nil {
+				if _, err := pbrseRbteUnit(in); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -21,29 +21,29 @@ func TestParseRateUnit(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for _, tc := range []struct {
+		for _, tc := rbnge []struct {
 			inputs []string
-			want   rateUnit
+			wbnt   rbteUnit
 		}{
 			{
 				inputs: []string{"s", "S", "sec", "SEC", "secs", "SECS", "second", "SECOND", "seconds", "SECONDS"},
-				want:   ratePerSecond,
+				wbnt:   rbtePerSecond,
 			},
 			{
 				inputs: []string{"m", "M", "min", "MIN", "mins", "MINS", "minute", "MINUTE", "minutes", "MINUTES"},
-				want:   ratePerMinute,
+				wbnt:   rbtePerMinute,
 			},
 			{
 				inputs: []string{"h", "H", "hr", "HR", "hrs", "HRS", "hour", "HOUR", "hours", "HOURS"},
-				want:   ratePerHour,
+				wbnt:   rbtePerHour,
 			},
 		} {
-			for _, in := range tc.inputs {
+			for _, in := rbnge tc.inputs {
 				t.Run(in, func(t *testing.T) {
-					if have, err := parseRateUnit(in); err != nil {
+					if hbve, err := pbrseRbteUnit(in); err != nil {
 						t.Errorf("unexpected error: %v", err)
-					} else if have != tc.want {
-						t.Errorf("unexpected rate: have=%v want=%v", have, tc.want)
+					} else if hbve != tc.wbnt {
+						t.Errorf("unexpected rbte: hbve=%v wbnt=%v", hbve, tc.wbnt)
 					}
 				})
 			}
@@ -51,23 +51,23 @@ func TestParseRateUnit(t *testing.T) {
 	})
 }
 
-func TestParseRate(t *testing.T) {
+func TestPbrseRbte(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for name, in := range map[string]any{
+		for nbme, in := rbnge mbp[string]bny{
 			"nil":                                nil,
 			"non-zero int":                       1,
 			"empty string":                       "",
-			"string without slash":               "20",
-			"string without a rate number":       "/min",
-			"string with an invalid rate number": "n/min",
-			"string with a negative rate number": "-1/min",
-			"string with an invalid rate unit":   "20/year",
+			"string without slbsh":               "20",
+			"string without b rbte number":       "/min",
+			"string with bn invblid rbte number": "n/min",
+			"string with b negbtive rbte number": "-1/min",
+			"string with bn invblid rbte unit":   "20/yebr",
 			"bool":                               true,
 			"slice":                              []string{},
-			"map":                                map[string]string{},
+			"mbp":                                mbp[string]string{},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if _, err := parseRate(in); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				if _, err := pbrseRbte(in); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -75,61 +75,61 @@ func TestParseRate(t *testing.T) {
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			in   any
-			want rate
+		for nbme, tc := rbnge mbp[string]struct {
+			in   bny
+			wbnt rbte
 		}{
 			"zero": {
 				in:   0,
-				want: rate{n: 0},
+				wbnt: rbte{n: 0},
 			},
 			"unlimited": {
 				in:   "unlimited",
-				want: rate{n: -1},
+				wbnt: rbte{n: -1},
 			},
-			"also unlimited": {
+			"blso unlimited": {
 				in:   "UNLIMITED",
-				want: rate{n: -1},
+				wbnt: rbte{n: -1},
 			},
-			"valid per-second rate": {
+			"vblid per-second rbte": {
 				in:   "20/sec",
-				want: rate{n: 20, unit: ratePerSecond},
+				wbnt: rbte{n: 20, unit: rbtePerSecond},
 			},
-			"valid per-minute rate": {
+			"vblid per-minute rbte": {
 				in:   "20/min",
-				want: rate{n: 20, unit: ratePerMinute},
+				wbnt: rbte{n: 20, unit: rbtePerMinute},
 			},
-			"valid per-hour rate": {
+			"vblid per-hour rbte": {
 				in:   "20/hr",
-				want: rate{n: 20, unit: ratePerHour},
+				wbnt: rbte{n: 20, unit: rbtePerHour},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if have, err := parseRate(tc.in); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				if hbve, err := pbrseRbte(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want, cmpOptions); diff != "" {
-					t.Errorf("unexpected rate (-have +want):\n%s", diff)
+				} else if diff := cmp.Diff(hbve, tc.wbnt, cmpOptions); diff != "" {
+					t.Errorf("unexpected rbte (-hbve +wbnt):\n%s", diff)
 				}
 			})
 		}
 	})
 }
 
-func TestRateUnit_AsDuration(t *testing.T) {
-	for in, want := range map[rateUnit]time.Duration{
-		ratePerSecond: time.Second,
-		ratePerMinute: time.Minute,
-		ratePerHour:   time.Hour,
+func TestRbteUnit_AsDurbtion(t *testing.T) {
+	for in, wbnt := rbnge mbp[rbteUnit]time.Durbtion{
+		rbtePerSecond: time.Second,
+		rbtePerMinute: time.Minute,
+		rbtePerHour:   time.Hour,
 	} {
-		t.Run(strconv.Itoa(int(in)), func(t *testing.T) {
-			if have := in.AsDuration(); have != want {
-				t.Errorf("unexpected duration: have=%v want=%v", have, want)
+		t.Run(strconv.Itob(int(in)), func(t *testing.T) {
+			if hbve := in.AsDurbtion(); hbve != wbnt {
+				t.Errorf("unexpected durbtion: hbve=%v wbnt=%v", hbve, wbnt)
 			}
 		})
 	}
 
-	assert.Panics(t, func() {
-		ru := rateUnit(4)
-		ru.AsDuration()
+	bssert.Pbnics(t, func() {
+		ru := rbteUnit(4)
+		ru.AsDurbtion()
 	})
 }

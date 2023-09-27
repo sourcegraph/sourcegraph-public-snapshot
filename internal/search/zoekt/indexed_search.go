@@ -1,4 +1,4 @@
-package zoekt
+pbckbge zoekt
 
 import (
 	"context"
@@ -6,133 +6,133 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/RoaringBitmap/roaring"
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
-	"go.opentelemetry.io/otel/attribute"
-	"go.uber.org/atomic"
+	"github.com/RobringBitmbp/robring"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
+	"go.opentelemetry.io/otel/bttribute"
+	"go.uber.org/btomic"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/backend"
-	"github.com/sourcegraph/sourcegraph/internal/search/filter"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/limits"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/xcontext"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/filter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/limits"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/xcontext"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// IndexedRepoRevs creates both the Sourcegraph and Zoekt representation of a
-// list of repository and refs to search.
+// IndexedRepoRevs crebtes both the Sourcegrbph bnd Zoekt representbtion of b
+// list of repository bnd refs to sebrch.
 type IndexedRepoRevs struct {
-	// RepoRevs is the Sourcegraph representation of a the list of repoRevs
-	// repository and revisions to search.
-	RepoRevs map[api.RepoID]*search.RepositoryRevisions
+	// RepoRevs is the Sourcegrbph representbtion of b the list of repoRevs
+	// repository bnd revisions to sebrch.
+	RepoRevs mbp[bpi.RepoID]*sebrch.RepositoryRevisions
 
-	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
-	// marshal and send to zoekt
-	branchRepos map[string]*zoektquery.BranchRepos
+	// brbnchRepos is used to construct b zoektquery.BrbnchesRepos to efficiently
+	// mbrshbl bnd send to zoekt
+	brbnchRepos mbp[string]*zoektquery.BrbnchRepos
 }
 
-// GetRepoRevsFromBranchRepos updates RepoRevs by replacing revision values that are not defined branches in
-// Zoekt and replaces with a known indexed branch.
-// This is used for structural search querying revisions of RepositoryRevisions that are indexed but not the branch name.
-func (rb *IndexedRepoRevs) GetRepoRevsFromBranchRepos() map[api.RepoID]*search.RepositoryRevisions {
-	repoRevs := make(map[api.RepoID]*search.RepositoryRevisions, len(rb.RepoRevs))
+// GetRepoRevsFromBrbnchRepos updbtes RepoRevs by replbcing revision vblues thbt bre not defined brbnches in
+// Zoekt bnd replbces with b known indexed brbnch.
+// This is used for structurbl sebrch querying revisions of RepositoryRevisions thbt bre indexed but not the brbnch nbme.
+func (rb *IndexedRepoRevs) GetRepoRevsFromBrbnchRepos() mbp[bpi.RepoID]*sebrch.RepositoryRevisions {
+	repoRevs := mbke(mbp[bpi.RepoID]*sebrch.RepositoryRevisions, len(rb.RepoRevs))
 
-	for repoID, repoRev := range rb.RepoRevs {
-		updated := *repoRev
+	for repoID, repoRev := rbnge rb.RepoRevs {
+		updbted := *repoRev
 
-		for i, rev := range updated.Revs {
-			// check if revision should be used as a branch name for zoekt branchRepos queries and replace if not
-			if rev != "" && rb.branchRepos[rev] == nil {
-				if len(rb.branchRepos) == 1 {
-					// use the single branch that zoekt returned in branchRepos as the revision
-					for k := range rb.branchRepos {
-						updated.Revs[i] = k
-						break
+		for i, rev := rbnge updbted.Revs {
+			// check if revision should be used bs b brbnch nbme for zoekt brbnchRepos queries bnd replbce if not
+			if rev != "" && rb.brbnchRepos[rev] == nil {
+				if len(rb.brbnchRepos) == 1 {
+					// use the single brbnch thbt zoekt returned in brbnchRepos bs the revision
+					for k := rbnge rb.brbnchRepos {
+						updbted.Revs[i] = k
+						brebk
 					}
 				} else {
-					// if there are multiple branches then fall back to HEAD
-					// clear value to identify to zoekt to utilize branch HEAD regardless of repo ID
-					updated.Revs[i] = ""
+					// if there bre multiple brbnches then fbll bbck to HEAD
+					// clebr vblue to identify to zoekt to utilize brbnch HEAD regbrdless of repo ID
+					updbted.Revs[i] = ""
 				}
 			}
 		}
 
-		repoRevs[repoID] = &updated
+		repoRevs[repoID] = &updbted
 	}
 
 	return repoRevs
 }
 
-// add will add reporev and repo to the list of repository and branches to
-// search if reporev's refs are a subset of repo's branches. It will return
-// the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo zoekt.MinimalRepoListEntry) []string {
-	// A repo should only appear once in revs. However, in case this
-	// invariant is broken we will treat later revs as if it isn't
+// bdd will bdd reporev bnd repo to the list of repository bnd brbnches to
+// sebrch if reporev's refs bre b subset of repo's brbnches. It will return
+// the revision specifiers it cbn't bdd.
+func (rb *IndexedRepoRevs) bdd(reporev *sebrch.RepositoryRevisions, repo zoekt.MinimblRepoListEntry) []string {
+	// A repo should only bppebr once in revs. However, in cbse this
+	// invbribnt is broken we will trebt lbter revs bs if it isn't
 	// indexed.
 	if _, ok := rb.RepoRevs[reporev.Repo.ID]; ok {
 		return reporev.Revs
 	}
 
-	// Assume for large searches they will mostly involve indexed
-	// revisions, so just allocate that.
-	var unindexed []string
+	// Assume for lbrge sebrches they will mostly involve indexed
+	// revisions, so just bllocbte thbt.
+	vbr unindexed []string
 
-	branches := make([]string, 0, len(reporev.Revs))
+	brbnches := mbke([]string, 0, len(reporev.Revs))
 	reporev = reporev.Copy()
 	indexed := reporev.Revs[:0]
 
-	for _, inputRev := range reporev.Revs {
-		found := false
+	for _, inputRev := rbnge reporev.Revs {
+		found := fblse
 		rev := inputRev
 		if rev == "" {
 			rev = "HEAD"
 		}
 
-		for _, branch := range repo.Branches {
-			if branch.Name == rev {
-				branches = append(branches, branch.Name)
+		for _, brbnch := rbnge repo.Brbnches {
+			if brbnch.Nbme == rev {
+				brbnches = bppend(brbnches, brbnch.Nbme)
 				found = true
-				break
+				brebk
 			}
-			// Check if rev is an abbrev commit SHA
-			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
-				branches = append(branches, branch.Name)
+			// Check if rev is bn bbbrev commit SHA
+			if len(rev) >= 4 && strings.HbsPrefix(brbnch.Version, rev) {
+				brbnches = bppend(brbnches, brbnch.Nbme)
 				found = true
-				break
+				brebk
 			}
 		}
 
 		if found {
-			indexed = append(indexed, inputRev)
+			indexed = bppend(indexed, inputRev)
 		} else {
-			unindexed = append(unindexed, inputRev)
+			unindexed = bppend(unindexed, inputRev)
 		}
 	}
 
-	// We found indexed branches! Track them.
+	// We found indexed brbnches! Trbck them.
 	if len(indexed) > 0 {
 		reporev.Revs = indexed
 		rb.RepoRevs[reporev.Repo.ID] = reporev
-		for _, branch := range branches {
-			br, ok := rb.branchRepos[branch]
+		for _, brbnch := rbnge brbnches {
+			br, ok := rb.brbnchRepos[brbnch]
 			if !ok {
-				br = &zoektquery.BranchRepos{Branch: branch, Repos: roaring.New()}
-				rb.branchRepos[branch] = br
+				br = &zoektquery.BrbnchRepos{Brbnch: brbnch, Repos: robring.New()}
+				rb.brbnchRepos[brbnch] = br
 			}
 			br.Repos.Add(uint32(reporev.Repo.ID))
 		}
@@ -141,130 +141,130 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo zoekt.M
 	return unindexed
 }
 
-func (rb *IndexedRepoRevs) BranchRepos() []zoektquery.BranchRepos {
-	brs := make([]zoektquery.BranchRepos, 0, len(rb.branchRepos))
-	for _, br := range rb.branchRepos {
-		brs = append(brs, *br)
+func (rb *IndexedRepoRevs) BrbnchRepos() []zoektquery.BrbnchRepos {
+	brs := mbke([]zoektquery.BrbnchRepos, 0, len(rb.brbnchRepos))
+	for _, br := rbnge rb.brbnchRepos {
+		brs = bppend(brs, *br)
 	}
 	return brs
 }
 
-// getRepoInputRev returns the repo and inputRev associated with file.
-func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
-	repoRev, ok := rb.RepoRevs[api.RepoID(file.RepositoryID)]
+// getRepoInputRev returns the repo bnd inputRev bssocibted with file.
+func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMbtch) (repo types.MinimblRepo, inputRevs []string) {
+	repoRev, ok := rb.RepoRevs[bpi.RepoID(file.RepositoryID)]
 
-	// We search zoekt by repo ID. It is possible that the name has come out
-	// of sync, so the above lookup will fail. We fallback to linking the rev
-	// hash in that case. We intend to restucture this code to avoid this, but
-	// this is the fix to avoid potential nil panics.
+	// We sebrch zoekt by repo ID. It is possible thbt the nbme hbs come out
+	// of sync, so the bbove lookup will fbil. We fbllbbck to linking the rev
+	// hbsh in thbt cbse. We intend to restucture this code to bvoid this, but
+	// this is the fix to bvoid potentibl nil pbnics.
 	if !ok {
-		repo := types.MinimalRepo{
-			ID:   api.RepoID(file.RepositoryID),
-			Name: api.RepoName(file.Repository),
+		repo := types.MinimblRepo{
+			ID:   bpi.RepoID(file.RepositoryID),
+			Nbme: bpi.RepoNbme(file.Repository),
 		}
 		return repo, []string{file.Version}
 	}
 
-	// We inverse the logic in add to work out the revspec from the zoekt
-	// branches.
+	// We inverse the logic in bdd to work out the revspec from the zoekt
+	// brbnches.
 	//
-	// Note: RevSpec is guaranteed to be explicit via zoektIndexedRepos
-	inputRevs = make([]string, 0, len(file.Branches))
-	for _, rev := range repoRev.Revs {
-		// We rely on the Sourcegraph implementation that the HEAD branch is
-		// indexed as "HEAD" rather than resolving the symref.
-		revBranchName := rev
-		if revBranchName == "" {
-			revBranchName = "HEAD" // empty string in Sourcegraph means HEAD
+	// Note: RevSpec is gubrbnteed to be explicit vib zoektIndexedRepos
+	inputRevs = mbke([]string, 0, len(file.Brbnches))
+	for _, rev := rbnge repoRev.Revs {
+		// We rely on the Sourcegrbph implementbtion thbt the HEAD brbnch is
+		// indexed bs "HEAD" rbther thbn resolving the symref.
+		revBrbnchNbme := rev
+		if revBrbnchNbme == "" {
+			revBrbnchNbme = "HEAD" // empty string in Sourcegrbph mebns HEAD
 		}
 
-		found := false
-		for _, branch := range file.Branches {
-			if branch == revBranchName {
+		found := fblse
+		for _, brbnch := rbnge file.Brbnches {
+			if brbnch == revBrbnchNbme {
 				found = true
-				break
+				brebk
 			}
 		}
 		if found {
-			inputRevs = append(inputRevs, rev)
+			inputRevs = bppend(inputRevs, rev)
 			continue
 		}
 
-		// Check if rev is an abbrev commit SHA
-		if len(rev) >= 4 && strings.HasPrefix(file.Version, rev) {
-			inputRevs = append(inputRevs, rev)
+		// Check if rev is bn bbbrev commit SHA
+		if len(rev) >= 4 && strings.HbsPrefix(file.Version, rev) {
+			inputRevs = bppend(inputRevs, rev)
 			continue
 		}
 	}
 
 	if len(inputRevs) == 0 {
-		// Did not find a match. This is unexpected, but we can fallback to
-		// file.Version to generate correct links.
-		inputRevs = append(inputRevs, file.Version)
+		// Did not find b mbtch. This is unexpected, but we cbn fbllbbck to
+		// file.Version to generbte correct links.
+		inputRevs = bppend(inputRevs, file.Version)
 	}
 
 	return repoRev.Repo, inputRevs
 }
 
-func PartitionRepos(
+func PbrtitionRepos(
 	ctx context.Context,
 	logger log.Logger,
-	repos []*search.RepositoryRevisions,
-	zoektStreamer zoekt.Streamer,
-	typ search.IndexedRequestType,
+	repos []*sebrch.RepositoryRevisions,
+	zoektStrebmer zoekt.Strebmer,
+	typ sebrch.IndexedRequestType,
 	useIndex query.YesNoOnly,
-	containsRefGlobs bool,
-) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
-	// Fallback to Unindexed if the query contains valid ref-globs.
-	if containsRefGlobs {
+	contbinsRefGlobs bool,
+) (indexed *IndexedRepoRevs, unindexed []*sebrch.RepositoryRevisions, err error) {
+	// Fbllbbck to Unindexed if the query contbins vblid ref-globs.
+	if contbinsRefGlobs {
 		return &IndexedRepoRevs{}, repos, nil
 	}
-	// Fallback to Unindexed if index:no
+	// Fbllbbck to Unindexed if index:no
 	if useIndex == query.No {
 		return &IndexedRepoRevs{}, repos, nil
 	}
 
-	tr, ctx := trace.New(ctx, "PartitionRepos", attribute.String("type", string(typ)))
+	tr, ctx := trbce.New(ctx, "PbrtitionRepos", bttribute.String("type", string(typ)))
 	defer tr.EndWithErr(&err)
 
-	// Only include indexes with symbol information if a symbol request.
-	var filterFunc func(repo zoekt.MinimalRepoListEntry) bool
-	if typ == search.SymbolRequest {
-		filterFunc = func(repo zoekt.MinimalRepoListEntry) bool {
-			return repo.HasSymbols
+	// Only include indexes with symbol informbtion if b symbol request.
+	vbr filterFunc func(repo zoekt.MinimblRepoListEntry) bool
+	if typ == sebrch.SymbolRequest {
+		filterFunc = func(repo zoekt.MinimblRepoListEntry) bool {
+			return repo.HbsSymbols
 		}
 	}
 
-	// Consult Zoekt to find out which repository revisions can be searched.
-	ctx, cancel := context.WithTimeout(ctx, time.Minute)
-	defer cancel()
-	list, err := zoektStreamer.List(ctx, &zoektquery.Const{Value: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMap})
+	// Consult Zoekt to find out which repository revisions cbn be sebrched.
+	ctx, cbncel := context.WithTimeout(ctx, time.Minute)
+	defer cbncel()
+	list, err := zoektStrebmer.List(ctx, &zoektquery.Const{Vblue: true}, &zoekt.ListOptions{Field: zoekt.RepoListFieldReposMbp})
 	if err != nil {
 		if ctx.Err() == nil {
-			// Only hard fail if the user specified index:only
+			// Only hbrd fbil if the user specified index:only
 			if useIndex == query.Only {
-				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
+				return nil, nil, errors.New("index:only fbiled since indexed sebrch is not bvbilbble yet")
 			}
 
-			logger.Warn("zoektIndexedRepos failed", log.Error(err))
+			logger.Wbrn("zoektIndexedRepos fbiled", log.Error(err))
 		}
 
 		return &IndexedRepoRevs{}, repos, ctx.Err()
 	}
 
-	// Note: We do not need to handle list.Crashes since we will fallback to
-	// unindexed search for any repository unavailable due to rollout.
+	// Note: We do not need to hbndle list.Crbshes since we will fbllbbck to
+	// unindexed sebrch for bny repository unbvbilbble due to rollout.
 
-	tr.SetAttributes(attribute.Int("all_indexed_set.size", len(list.ReposMap)))
+	tr.SetAttributes(bttribute.Int("bll_indexed_set.size", len(list.ReposMbp)))
 
-	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(list.ReposMap, repos, filterFunc) //nolint:staticcheck // See https://github.com/sourcegraph/sourcegraph/issues/45814
+	// Split bbsed on indexed vs unindexed
+	indexed, unindexed = zoektIndexedRepos(list.ReposMbp, repos, filterFunc) //nolint:stbticcheck // See https://github.com/sourcegrbph/sourcegrbph/issues/45814
 
 	tr.SetAttributes(
-		attribute.Int("indexed.size", len(indexed.RepoRevs)),
-		attribute.Int("unindexed.size", len(unindexed)))
+		bttribute.Int("indexed.size", len(indexed.RepoRevs)),
+		bttribute.Int("unindexed.size", len(unindexed)))
 
-	// Disable unindexed search
+	// Disbble unindexed sebrch
 	if useIndex == query.Only {
 		unindexed = unindexed[:0]
 	}
@@ -272,222 +272,222 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, params *search.ZoektParameters, pathRegexps []*regexp.Regexp, c streaming.Sender) error {
-	searchOpts := params.ToSearchOptions(ctx)
+func DoZoektSebrchGlobbl(ctx context.Context, client zoekt.Strebmer, pbrbms *sebrch.ZoektPbrbmeters, pbthRegexps []*regexp.Regexp, c strebming.Sender) error {
+	sebrchOpts := pbrbms.ToSebrchOptions(ctx)
 
-	if deadline, ok := ctx.Deadline(); ok {
-		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		searchOpts.MaxWallTime = time.Until(deadline)
-		if searchOpts.MaxWallTime < 0 {
+	if debdline, ok := ctx.Debdline(); ok {
+		// If the user mbnublly specified b timeout, bllow zoekt to use bll of the rembining timeout.
+		sebrchOpts.MbxWbllTime = time.Until(debdline)
+		if sebrchOpts.MbxWbllTime < 0 {
 			return ctx.Err()
 		}
-		// We don't want our context's deadline to cut off zoekt so that we can get the results
-		// found before the deadline.
+		// We don't wbnt our context's debdline to cut off zoekt so thbt we cbn get the results
+		// found before the debdline.
 		//
-		// We'll create a new context that gets cancelled if the other context is cancelled for any
-		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-		// will be `deadline + time for zoekt to cancel + network latency`.
-		var cancel context.CancelFunc
-		ctx, cancel = contextWithoutDeadline(ctx)
-		defer cancel()
+		// We'll crebte b new context thbt gets cbncelled if the other context is cbncelled for bny
+		// rebson other thbn the debdline being exceeded. This essentiblly mebns the debdline for the new context
+		// will be `debdline + time for zoekt to cbncel + network lbtency`.
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = contextWithoutDebdline(ctx)
+		defer cbncel()
 	}
 
-	return client.StreamSearch(ctx, params.Query, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, pathRegexps, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
-			repo := types.MinimalRepo{
-				ID:   api.RepoID(file.RepositoryID),
-				Name: api.RepoName(file.Repository),
+	return client.StrebmSebrch(ctx, pbrbms.Query, sebrchOpts, bbckend.ZoektStrebmFunc(func(event *zoekt.SebrchResult) {
+		sendMbtches(event, pbthRegexps, func(file *zoekt.FileMbtch) (types.MinimblRepo, []string) {
+			repo := types.MinimblRepo{
+				ID:   bpi.RepoID(file.RepositoryID),
+				Nbme: bpi.RepoNbme(file.Repository),
 			}
 			return repo, []string{""}
-		}, params.Typ, params.Select, c)
+		}, pbrbms.Typ, pbrbms.Select, c)
 	}))
 }
 
-// zoektSearch searches repositories using zoekt.
-func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pathRegexps []*regexp.Regexp, typ search.IndexedRequestType, client zoekt.Streamer, zoektParams *search.ZoektParameters, since func(t time.Time) time.Duration, c streaming.Sender) error {
+// zoektSebrch sebrches repositories using zoekt.
+func zoektSebrch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, pbthRegexps []*regexp.Regexp, typ sebrch.IndexedRequestType, client zoekt.Strebmer, zoektPbrbms *sebrch.ZoektPbrbmeters, since func(t time.Time) time.Durbtion, c strebming.Sender) error {
 	if len(repos.RepoRevs) == 0 {
 		return nil
 	}
 
-	brs := repos.BranchRepos()
+	brs := repos.BrbnchRepos()
 
-	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
-	searchOpts := zoektParams.ToSearchOptions(ctx)
+	finblQuery := zoektquery.NewAnd(&zoektquery.BrbnchesRepos{List: brs}, q)
+	sebrchOpts := zoektPbrbms.ToSebrchOptions(ctx)
 
-	// Start event stream.
+	// Stbrt event strebm.
 	t0 := time.Now()
 
-	if deadline, ok := ctx.Deadline(); ok {
-		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
-		searchOpts.MaxWallTime = time.Until(deadline)
-		if searchOpts.MaxWallTime < 0 {
+	if debdline, ok := ctx.Debdline(); ok {
+		// If the user mbnublly specified b timeout, bllow zoekt to use bll of the rembining timeout.
+		sebrchOpts.MbxWbllTime = time.Until(debdline)
+		if sebrchOpts.MbxWbllTime < 0 {
 			return ctx.Err()
 		}
-		// We don't want our context's deadline to cut off zoekt so that we can get the results
-		// found before the deadline.
+		// We don't wbnt our context's debdline to cut off zoekt so thbt we cbn get the results
+		// found before the debdline.
 		//
-		// We'll create a new context that gets cancelled if the other context is cancelled for any
-		// reason other than the deadline being exceeded. This essentially means the deadline for the new context
-		// will be `deadline + time for zoekt to cancel + network latency`.
-		var cancel context.CancelFunc
-		ctx, cancel = contextWithoutDeadline(ctx)
-		defer cancel()
+		// We'll crebte b new context thbt gets cbncelled if the other context is cbncelled for bny
+		// rebson other thbn the debdline being exceeded. This essentiblly mebns the debdline for the new context
+		// will be `debdline + time for zoekt to cbncel + network lbtency`.
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = contextWithoutDebdline(ctx)
+		defer cbncel()
 	}
 
-	foundResults := atomic.Bool{}
-	err := client.StreamSearch(ctx, finalQuery, searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		foundResults.CompareAndSwap(false, event.FileCount != 0 || event.MatchCount != 0)
-		sendMatches(event, pathRegexps, repos.getRepoInputRev, typ, zoektParams.Select, c)
+	foundResults := btomic.Bool{}
+	err := client.StrebmSebrch(ctx, finblQuery, sebrchOpts, bbckend.ZoektStrebmFunc(func(event *zoekt.SebrchResult) {
+		foundResults.CompbreAndSwbp(fblse, event.FileCount != 0 || event.MbtchCount != 0)
+		sendMbtches(event, pbthRegexps, repos.getRepoInputRev, typ, zoektPbrbms.Select, c)
 	}))
 	if err != nil {
 		return err
 	}
 
-	mkStatusMap := func(mask search.RepoStatus) search.RepoStatusMap {
-		var statusMap search.RepoStatusMap
-		for _, r := range repos.RepoRevs {
-			statusMap.Update(r.Repo.ID, mask)
+	mkStbtusMbp := func(mbsk sebrch.RepoStbtus) sebrch.RepoStbtusMbp {
+		vbr stbtusMbp sebrch.RepoStbtusMbp
+		for _, r := rbnge repos.RepoRevs {
+			stbtusMbp.Updbte(r.Repo.ID, mbsk)
 		}
-		return statusMap
+		return stbtusMbp
 	}
 
-	if !foundResults.Load() && since(t0) >= searchOpts.MaxWallTime {
-		c.Send(streaming.SearchEvent{Stats: streaming.Stats{Status: mkStatusMap(search.RepoStatusTimedout)}})
+	if !foundResults.Lobd() && since(t0) >= sebrchOpts.MbxWbllTime {
+		c.Send(strebming.SebrchEvent{Stbts: strebming.Stbts{Stbtus: mkStbtusMbp(sebrch.RepoStbtusTimedout)}})
 	}
 	return nil
 }
 
-func sendMatches(event *zoekt.SearchResult, pathRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ search.IndexedRequestType, selector filter.SelectPath, c streaming.Sender) {
+func sendMbtches(event *zoekt.SebrchResult, pbthRegexps []*regexp.Regexp, getRepoInputRev repoRevFunc, typ sebrch.IndexedRequestType, selector filter.SelectPbth, c strebming.Sender) {
 	files := event.Files
-	stats := streaming.Stats{
-		// In the case of Zoekt the only time we get non-zero Crashes in
-		// practice is when a backend is missing.
-		BackendsMissing: event.Crashes,
-		IsLimitHit:      event.FilesSkipped+event.ShardsSkipped > 0,
+	stbts := strebming.Stbts{
+		// In the cbse of Zoekt the only time we get non-zero Crbshes in
+		// prbctice is when b bbckend is missing.
+		BbckendsMissing: event.Crbshes,
+		IsLimitHit:      event.FilesSkipped+event.ShbrdsSkipped > 0,
 	}
 
 	if selector.Root() == filter.Repository {
-		// By default we stream up to "all" repository results per
-		// select:repo request, and we never communicate whether a limit
-		// is reached here based on Zoekt progress (because Zoekt can't
-		// tell us the value of something like `ReposSkipped`). Instead,
-		// limitHit is determined by other factors, like whether the
-		// request is cancelled, or when we find the maximum number of
-		// `count` results. I.e., from the webapp, this is
-		// `max(defaultMaxSearchResultsStreaming,count)` which comes to
-		// `max(500,count)`.
-		stats.IsLimitHit = false
+		// By defbult we strebm up to "bll" repository results per
+		// select:repo request, bnd we never communicbte whether b limit
+		// is rebched here bbsed on Zoekt progress (becbuse Zoekt cbn't
+		// tell us the vblue of something like `ReposSkipped`). Instebd,
+		// limitHit is determined by other fbctors, like whether the
+		// request is cbncelled, or when we find the mbximum number of
+		// `count` results. I.e., from the webbpp, this is
+		// `mbx(defbultMbxSebrchResultsStrebming,count)` which comes to
+		// `mbx(500,count)`.
+		stbts.IsLimitHit = fblse
 	}
 
 	if len(files) == 0 {
-		c.Send(streaming.SearchEvent{
-			Stats: stats,
+		c.Send(strebming.SebrchEvent{
+			Stbts: stbts,
 		})
 		return
 	}
 
-	matches := make([]result.Match, 0, len(files))
-	for _, file := range files {
+	mbtches := mbke([]result.Mbtch, 0, len(files))
+	for _, file := rbnge files {
 		repo, inputRevs := getRepoInputRev(&file)
 
 		if selector.Root() == filter.Repository {
-			matches = append(matches, &result.RepoMatch{
-				Name: repo.Name,
+			mbtches = bppend(mbtches, &result.RepoMbtch{
+				Nbme: repo.Nbme,
 				ID:   repo.ID,
 			})
 			continue
 		}
 
-		var hms result.ChunkMatches
-		if typ != search.SymbolRequest {
-			hms = zoektFileMatchToMultilineMatches(&file)
+		vbr hms result.ChunkMbtches
+		if typ != sebrch.SymbolRequest {
+			hms = zoektFileMbtchToMultilineMbtches(&file)
 		}
 
-		pathMatches := zoektFileMatchToPathMatchRanges(&file, pathRegexps)
+		pbthMbtches := zoektFileMbtchToPbthMbtchRbnges(&file, pbthRegexps)
 
-		for _, inputRev := range inputRevs {
-			inputRev := inputRev // copy so we can take the pointer
+		for _, inputRev := rbnge inputRevs {
+			inputRev := inputRev // copy so we cbn tbke the pointer
 
-			var symbols []*result.SymbolMatch
-			if typ == search.SymbolRequest {
-				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
+			vbr symbols []*result.SymbolMbtch
+			if typ == sebrch.SymbolRequest {
+				symbols = zoektFileMbtchToSymbolResults(repo, inputRev, &file)
 			}
-			fm := result.FileMatch{
-				ChunkMatches: hms,
+			fm := result.FileMbtch{
+				ChunkMbtches: hms,
 				Symbols:      symbols,
-				PathMatches:  pathMatches,
+				PbthMbtches:  pbthMbtches,
 				File: result.File{
 					InputRev: &inputRev,
-					CommitID: api.CommitID(file.Version),
+					CommitID: bpi.CommitID(file.Version),
 					Repo:     repo,
-					Path:     file.FileName,
+					Pbth:     file.FileNbme,
 				},
 			}
 			if debug := file.Debug; debug != "" {
 				fm.Debug = &debug
 			}
-			matches = append(matches, &fm)
+			mbtches = bppend(mbtches, &fm)
 		}
 	}
 
-	c.Send(streaming.SearchEvent{
-		Results: matches,
-		Stats:   stats,
+	c.Send(strebming.SebrchEvent{
+		Results: mbtches,
+		Stbts:   stbts,
 	})
 }
 
-func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
-	cms := make(result.ChunkMatches, 0, len(file.ChunkMatches))
-	for _, l := range file.LineMatches {
-		if l.FileName {
+func zoektFileMbtchToMultilineMbtches(file *zoekt.FileMbtch) result.ChunkMbtches {
+	cms := mbke(result.ChunkMbtches, 0, len(file.ChunkMbtches))
+	for _, l := rbnge file.LineMbtches {
+		if l.FileNbme {
 			continue
 		}
 
-		ranges := make(result.Ranges, 0, len(l.LineFragments))
-		for _, m := range l.LineFragments {
+		rbnges := mbke(result.Rbnges, 0, len(l.LineFrbgments))
+		for _, m := rbnge l.LineFrbgments {
 			offset := utf8.RuneCount(l.Line[:m.LineOffset])
-			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MatchLength])
+			length := utf8.RuneCount(l.Line[m.LineOffset : m.LineOffset+m.MbtchLength])
 
-			ranges = append(ranges, result.Range{
-				Start: result.Location{
+			rbnges = bppend(rbnges, result.Rbnge{
+				Stbrt: result.Locbtion{
 					Offset: int(m.Offset),
 					Line:   l.LineNumber - 1,
 					Column: offset,
 				},
-				End: result.Location{
-					Offset: int(m.Offset) + m.MatchLength,
+				End: result.Locbtion{
+					Offset: int(m.Offset) + m.MbtchLength,
 					Line:   l.LineNumber - 1,
 					Column: offset + length,
 				},
 			})
 		}
 
-		cms = append(cms, result.ChunkMatch{
+		cms = bppend(cms, result.ChunkMbtch{
 			Content: string(l.Line),
-			// zoekt line numbers are 1-based rather than 0-based so subtract 1
-			ContentStart: result.Location{
-				Offset: l.LineStart,
+			// zoekt line numbers bre 1-bbsed rbther thbn 0-bbsed so subtrbct 1
+			ContentStbrt: result.Locbtion{
+				Offset: l.LineStbrt,
 				Line:   l.LineNumber - 1,
 				Column: 0,
 			},
-			Ranges: ranges,
+			Rbnges: rbnges,
 		})
 	}
 
-	for _, cm := range file.ChunkMatches {
-		if cm.FileName {
+	for _, cm := rbnge file.ChunkMbtches {
+		if cm.FileNbme {
 			continue
 		}
 
-		ranges := make([]result.Range, 0, len(cm.Ranges))
-		for _, r := range cm.Ranges {
-			ranges = append(ranges, result.Range{
-				Start: result.Location{
-					Offset: int(r.Start.ByteOffset),
-					Line:   int(r.Start.LineNumber) - 1,
-					Column: int(r.Start.Column) - 1,
+		rbnges := mbke([]result.Rbnge, 0, len(cm.Rbnges))
+		for _, r := rbnge cm.Rbnges {
+			rbnges = bppend(rbnges, result.Rbnge{
+				Stbrt: result.Locbtion{
+					Offset: int(r.Stbrt.ByteOffset),
+					Line:   int(r.Stbrt.LineNumber) - 1,
+					Column: int(r.Stbrt.Column) - 1,
 				},
-				End: result.Location{
+				End: result.Locbtion{
 					Offset: int(r.End.ByteOffset),
 					Line:   int(r.End.LineNumber) - 1,
 					Column: int(r.End.Column) - 1,
@@ -495,98 +495,98 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 			})
 		}
 
-		cms = append(cms, result.ChunkMatch{
+		cms = bppend(cms, result.ChunkMbtch{
 			Content: string(cm.Content),
-			ContentStart: result.Location{
-				Offset: int(cm.ContentStart.ByteOffset),
-				Line:   int(cm.ContentStart.LineNumber) - 1,
-				Column: int(cm.ContentStart.Column) - 1,
+			ContentStbrt: result.Locbtion{
+				Offset: int(cm.ContentStbrt.ByteOffset),
+				Line:   int(cm.ContentStbrt.LineNumber) - 1,
+				Column: int(cm.ContentStbrt.Column) - 1,
 			},
-			Ranges: ranges,
+			Rbnges: rbnges,
 		})
 	}
 
 	return cms
 }
 
-func zoektFileMatchToPathMatchRanges(file *zoekt.FileMatch, pathRegexps []*regexp.Regexp) (pathMatchRanges []result.Range) {
-	for _, re := range pathRegexps {
-		pathSubmatches := re.FindAllStringSubmatchIndex(file.FileName, -1)
-		for _, sm := range pathSubmatches {
-			pathMatchRanges = append(pathMatchRanges, result.Range{
-				Start: result.Location{
+func zoektFileMbtchToPbthMbtchRbnges(file *zoekt.FileMbtch, pbthRegexps []*regexp.Regexp) (pbthMbtchRbnges []result.Rbnge) {
+	for _, re := rbnge pbthRegexps {
+		pbthSubmbtches := re.FindAllStringSubmbtchIndex(file.FileNbme, -1)
+		for _, sm := rbnge pbthSubmbtches {
+			pbthMbtchRbnges = bppend(pbthMbtchRbnges, result.Rbnge{
+				Stbrt: result.Locbtion{
 					Offset: sm[0],
-					Line:   0, // we can treat path matches as a single-line
-					Column: utf8.RuneCountInString(file.FileName[:sm[0]]),
+					Line:   0, // we cbn trebt pbth mbtches bs b single-line
+					Column: utf8.RuneCountInString(file.FileNbme[:sm[0]]),
 				},
-				End: result.Location{
+				End: result.Locbtion{
 					Offset: sm[1],
 					Line:   0,
-					Column: utf8.RuneCountInString(file.FileName[:sm[1]]),
+					Column: utf8.RuneCountInString(file.FileNbme[:sm[1]]),
 				},
 			})
 		}
 	}
 
-	return pathMatchRanges
+	return pbthMbtchRbnges
 }
 
-func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
+func zoektFileMbtchToSymbolResults(repoNbme types.MinimblRepo, inputRev string, file *zoekt.FileMbtch) []*result.SymbolMbtch {
 	newFile := &result.File{
-		Path:     file.FileName,
-		Repo:     repoName,
-		CommitID: api.CommitID(file.Version),
+		Pbth:     file.FileNbme,
+		Repo:     repoNbme,
+		CommitID: bpi.CommitID(file.Version),
 		InputRev: &inputRev,
 	}
 
-	symbols := make([]*result.SymbolMatch, 0, len(file.ChunkMatches))
-	for _, l := range file.LineMatches {
-		if l.FileName {
+	symbols := mbke([]*result.SymbolMbtch, 0, len(file.ChunkMbtches))
+	for _, l := rbnge file.LineMbtches {
+		if l.FileNbme {
 			continue
 		}
 
-		for _, m := range l.LineFragments {
+		for _, m := rbnge l.LineFrbgments {
 			if m.SymbolInfo == nil {
 				continue
 			}
 
-			symbols = append(symbols, result.NewSymbolMatch(
+			symbols = bppend(symbols, result.NewSymbolMbtch(
 				newFile,
 				l.LineNumber,
-				-1, // -1 means infer the column
+				-1, // -1 mebns infer the column
 				m.SymbolInfo.Sym,
 				m.SymbolInfo.Kind,
-				m.SymbolInfo.Parent,
-				m.SymbolInfo.ParentKind,
-				file.Language,
+				m.SymbolInfo.Pbrent,
+				m.SymbolInfo.PbrentKind,
+				file.Lbngubge,
 				string(l.Line),
-				false,
+				fblse,
 			))
 		}
 	}
 
-	for _, cm := range file.ChunkMatches {
-		if cm.FileName || len(cm.SymbolInfo) == 0 {
+	for _, cm := rbnge file.ChunkMbtches {
+		if cm.FileNbme || len(cm.SymbolInfo) == 0 {
 			continue
 		}
 
-		for i, r := range cm.Ranges {
+		for i, r := rbnge cm.Rbnges {
 			si := cm.SymbolInfo[i]
 			if si == nil {
 				continue
 			}
 
-			symbols = append(symbols, result.NewSymbolMatch(
+			symbols = bppend(symbols, result.NewSymbolMbtch(
 				newFile,
-				int(r.Start.LineNumber),
-				int(r.Start.Column)-1,
+				int(r.Stbrt.LineNumber),
+				int(r.Stbrt.Column)-1,
 				si.Sym,
 				si.Kind,
-				si.Parent,
-				si.ParentKind,
-				file.Language,
+				si.Pbrent,
+				si.PbrentKind,
+				file.Lbngubge,
 				"", // Unused when column is set
-				false,
+				fblse,
 			))
 		}
 	}
@@ -594,69 +594,69 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 	return symbols
 }
 
-// contextWithoutDeadline returns a context which will cancel if the cOld is
-// canceled.
-func contextWithoutDeadline(cOld context.Context) (context.Context, context.CancelFunc) {
-	cNew := xcontext.Detach(cOld)
-	cNew, cancel := context.WithCancel(cNew)
+// contextWithoutDebdline returns b context which will cbncel if the cOld is
+// cbnceled.
+func contextWithoutDebdline(cOld context.Context) (context.Context, context.CbncelFunc) {
+	cNew := xcontext.Detbch(cOld)
+	cNew, cbncel := context.WithCbncel(cNew)
 
 	go func() {
 		select {
-		case <-cOld.Done():
-			// cancel the new context if the old one is done for some reason other than the deadline passing.
-			if cOld.Err() != context.DeadlineExceeded {
-				cancel()
+		cbse <-cOld.Done():
+			// cbncel the new context if the old one is done for some rebson other thbn the debdline pbssing.
+			if cOld.Err() != context.DebdlineExceeded {
+				cbncel()
 			}
-		case <-cNew.Done():
+		cbse <-cNew.Done():
 		}
 	}()
 
-	return cNew, cancel
+	return cNew, cbncel
 }
 
-// zoektIndexedRepos splits the revs into two parts: (1) the repository
-// revisions in indexedSet (indexed) and (2) the repositories that are
+// zoektIndexedRepos splits the revs into two pbrts: (1) the repository
+// revisions in indexedSet (indexed) bnd (2) the repositories thbt bre
 // unindexed.
-func zoektIndexedRepos(indexedSet zoekt.ReposMap, revs []*search.RepositoryRevisions, filter func(repo zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
-	// PERF: If len(revs) is large, we expect to be doing an indexed
-	// search. So set indexed to the max size it can be to avoid growing.
+func zoektIndexedRepos(indexedSet zoekt.ReposMbp, revs []*sebrch.RepositoryRevisions, filter func(repo zoekt.MinimblRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*sebrch.RepositoryRevisions) {
+	// PERF: If len(revs) is lbrge, we expect to be doing bn indexed
+	// sebrch. So set indexed to the mbx size it cbn be to bvoid growing.
 	indexed = &IndexedRepoRevs{
-		RepoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
-		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
+		RepoRevs:    mbke(mbp[bpi.RepoID]*sebrch.RepositoryRevisions, len(revs)),
+		brbnchRepos: mbke(mbp[string]*zoektquery.BrbnchRepos, 1),
 	}
-	unindexed = make([]*search.RepositoryRevisions, 0)
+	unindexed = mbke([]*sebrch.RepositoryRevisions, 0)
 
-	for _, reporev := range revs {
+	for _, reporev := rbnge revs {
 		repo, ok := indexedSet[uint32(reporev.Repo.ID)]
 		if !ok || (filter != nil && !filter(repo)) {
-			unindexed = append(unindexed, reporev)
+			unindexed = bppend(unindexed, reporev)
 			continue
 		}
 
-		unindexedRevs := indexed.add(reporev, repo)
+		unindexedRevs := indexed.bdd(reporev, repo)
 		if len(unindexedRevs) > 0 {
 			copy := reporev.Copy()
 			copy.Revs = unindexedRevs
-			unindexed = append(unindexed, copy)
+			unindexed = bppend(unindexed, copy)
 		}
 	}
 
 	return indexed, unindexed
 }
 
-type RepoSubsetTextSearchJob struct {
-	Repos             *IndexedRepoRevs // the set of indexed repository revisions to search.
+type RepoSubsetTextSebrchJob struct {
+	Repos             *IndexedRepoRevs // the set of indexed repository revisions to sebrch.
 	Query             zoektquery.Q
-	ZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
-	Typ               search.IndexedRequestType
-	ZoektParams       *search.ZoektParameters
-	Since             func(time.Time) time.Duration `json:"-"` // since if non-nil will be used instead of time.Since. For tests
+	ZoektQueryRegexps []*regexp.Regexp // used for getting file pbth mbtch rbnges
+	Typ               sebrch.IndexedRequestType
+	ZoektPbrbms       *sebrch.ZoektPbrbmeters
+	Since             func(time.Time) time.Durbtion `json:"-"` // since if non-nil will be used instebd of time.Since. For tests
 }
 
-// ZoektSearch is a job that searches repositories using zoekt.
-func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, z)
-	defer func() { finish(alert, err) }()
+// ZoektSebrch is b job thbt sebrches repositories using zoekt.
+func (z *RepoSubsetTextSebrchJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, z)
+	defer func() { finish(blert, err) }()
 
 	if z.Repos == nil {
 		return nil, nil
@@ -670,122 +670,122 @@ func (z *RepoSubsetTextSearchJob) Run(ctx context.Context, clients job.RuntimeCl
 		since = z.Since
 	}
 
-	return nil, zoektSearch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektParams, since, stream)
+	return nil, zoektSebrch(ctx, z.Repos, z.Query, z.ZoektQueryRegexps, z.Typ, clients.Zoekt, z.ZoektPbrbms, since, strebm)
 }
 
-func (*RepoSubsetTextSearchJob) Name() string {
-	return "ZoektRepoSubsetTextSearchJob"
+func (*RepoSubsetTextSebrchJob) Nbme() string {
+	return "ZoektRepoSubsetTextSebrchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (z *RepoSubsetTextSebrchJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		res = append(res,
-			attribute.Int("fileMatchLimit", int(z.ZoektParams.FileMatchLimit)),
-			attribute.Stringer("select", z.ZoektParams.Select),
-			trace.Stringers("zoektQueryRegexps", z.ZoektQueryRegexps),
+	cbse job.VerbosityMbx:
+		res = bppend(res,
+			bttribute.Int("fileMbtchLimit", int(z.ZoektPbrbms.FileMbtchLimit)),
+			bttribute.Stringer("select", z.ZoektPbrbms.Select),
+			trbce.Stringers("zoektQueryRegexps", z.ZoektQueryRegexps),
 		)
-		// z.Repos is nil for un-indexed search
+		// z.Repos is nil for un-indexed sebrch
 		if z.Repos != nil {
-			res = append(res,
-				attribute.Int("numRepoRevs", len(z.Repos.RepoRevs)),
-				attribute.Int("numBranchRepos", len(z.Repos.branchRepos)),
+			res = bppend(res,
+				bttribute.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				bttribute.Int("numBrbnchRepos", len(z.Repos.brbnchRepos)),
 			)
 		}
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Stringer("query", z.Query),
-			attribute.String("type", string(z.Typ)),
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Stringer("query", z.Query),
+			bttribute.String("type", string(z.Typ)),
 		)
 	}
 	return res
 }
 
-func (*RepoSubsetTextSearchJob) Children() []job.Describer         { return nil }
-func (j *RepoSubsetTextSearchJob) MapChildren(job.MapFunc) job.Job { return j }
+func (*RepoSubsetTextSebrchJob) Children() []job.Describer         { return nil }
+func (j *RepoSubsetTextSebrchJob) MbpChildren(job.MbpFunc) job.Job { return j }
 
-type GlobalTextSearchJob struct {
-	GlobalZoektQuery        *GlobalZoektQuery
-	ZoektParams             *search.ZoektParameters
-	RepoOpts                search.RepoOptions
-	GlobalZoektQueryRegexps []*regexp.Regexp // used for getting file path match ranges
+type GlobblTextSebrchJob struct {
+	GlobblZoektQuery        *GlobblZoektQuery
+	ZoektPbrbms             *sebrch.ZoektPbrbmeters
+	RepoOpts                sebrch.RepoOptions
+	GlobblZoektQueryRegexps []*regexp.Regexp // used for getting file pbth mbtch rbnges
 }
 
-func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
-	defer func() { finish(alert, err) }()
+func (t *GlobblTextSebrchJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, t)
+	defer func() { finish(blert, err) }()
 
-	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
-	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
-	t.ZoektParams.Query = t.GlobalZoektQuery.Generate()
+	userPrivbteRepos := privbteReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
+	t.GlobblZoektQuery.ApplyPrivbteFilter(userPrivbteRepos)
+	t.ZoektPbrbms.Query = t.GlobblZoektQuery.Generbte()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektParams, t.GlobalZoektQueryRegexps, stream)
+	return nil, DoZoektSebrchGlobbl(ctx, clients.Zoekt, t.ZoektPbrbms, t.GlobblZoektQueryRegexps, strebm)
 }
 
-func (*GlobalTextSearchJob) Name() string {
-	return "ZoektGlobalTextSearchJob"
+func (*GlobblTextSebrchJob) Nbme() string {
+	return "ZoektGlobblTextSebrchJob"
 }
 
-func (t *GlobalTextSearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (t *GlobblTextSebrchJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		res = append(res,
-			attribute.Int("fileMatchLimit", int(t.ZoektParams.FileMatchLimit)),
-			attribute.Stringer("select", t.ZoektParams.Select),
-			trace.Stringers("repoScope", t.GlobalZoektQuery.RepoScope),
-			attribute.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
-			trace.Stringers("globalZoektQueryRegexps", t.GlobalZoektQueryRegexps),
+	cbse job.VerbosityMbx:
+		res = bppend(res,
+			bttribute.Int("fileMbtchLimit", int(t.ZoektPbrbms.FileMbtchLimit)),
+			bttribute.Stringer("select", t.ZoektPbrbms.Select),
+			trbce.Stringers("repoScope", t.GlobblZoektQuery.RepoScope),
+			bttribute.Bool("includePrivbte", t.GlobblZoektQuery.IncludePrivbte),
+			trbce.Stringers("globblZoektQueryRegexps", t.GlobblZoektQueryRegexps),
 		)
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Stringer("query", t.GlobalZoektQuery.Query),
-			attribute.String("type", string(t.ZoektParams.Typ)),
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Stringer("query", t.GlobblZoektQuery.Query),
+			bttribute.String("type", string(t.ZoektPbrbms.Typ)),
 		)
-		res = append(res, trace.Scoped("repoOpts", t.RepoOpts.Attributes()...)...)
+		res = bppend(res, trbce.Scoped("repoOpts", t.RepoOpts.Attributes()...)...)
 	}
 	return res
 }
 
-func (t *GlobalTextSearchJob) Children() []job.Describer       { return nil }
-func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }
+func (t *GlobblTextSebrchJob) Children() []job.Describer       { return nil }
+func (t *GlobblTextSebrchJob) MbpChildren(job.MbpFunc) job.Job { return t }
 
-// Get all private repos for the the current actor. On sourcegraph.com, those are
-// only the repos directly added by the user. Otherwise it's all repos the user has
-// access to on all connected code hosts / external services.
-func privateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "privateReposForActor")
+// Get bll privbte repos for the the current bctor. On sourcegrbph.com, those bre
+// only the repos directly bdded by the user. Otherwise it's bll repos the user hbs
+// bccess to on bll connected code hosts / externbl services.
+func privbteReposForActor(ctx context.Context, logger log.Logger, db dbtbbbse.DB, repoOptions sebrch.RepoOptions) []types.MinimblRepo {
+	tr, ctx := trbce.New(ctx, "privbteReposForActor")
 	defer tr.End()
 
 	userID := int32(0)
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			userID = a.UID
+	if envvbr.SourcegrbphDotComMode() {
+		if b := bctor.FromContext(ctx); b.IsAuthenticbted() {
+			userID = b.UID
 		} else {
-			tr.AddEvent("skipping private repo resolution for unauthed user")
+			tr.AddEvent("skipping privbte repo resolution for unbuthed user")
 			return nil
 		}
 	}
-	tr.SetAttributes(attribute.Int64("userID", int64(userID)))
+	tr.SetAttributes(bttribute.Int64("userID", int64(userID)))
 
 	// TODO: We should use repos.Resolve here. However, the logic for
 	// UserID is different to repos.Resolve, so we need to work out how
-	// best to address that first.
-	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		UserID:         userID, // Zero valued when not in sourcegraph.com mode
-		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
+	// best to bddress thbt first.
+	userPrivbteRepos, err := db.Repos().ListMinimblRepos(ctx, dbtbbbse.ReposListOptions{
+		UserID:         userID, // Zero vblued when not in sourcegrbph.com mode
+		OnlyPrivbte:    true,
+		LimitOffset:    &dbtbbbse.LimitOffset{Limit: limits.SebrchLimits(conf.Get()).MbxRepos + 1},
 		OnlyForks:      repoOptions.OnlyForks,
 		NoForks:        repoOptions.NoForks,
 		OnlyArchived:   repoOptions.OnlyArchived,
 		NoArchived:     repoOptions.NoArchived,
-		ExcludePattern: query.UnionRegExps(repoOptions.MinusRepoFilters),
+		ExcludePbttern: query.UnionRegExps(repoOptions.MinusRepoFilters),
 	})
 
 	if err != nil {
-		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
-		tr.AddEvent("error resolving user private repos", trace.Error(err))
+		logger.Error("doResults: fbiled to list user privbte repos", log.Error(err), log.Int32("user-id", userID))
+		tr.AddEvent("error resolving user privbte repos", trbce.Error(err))
 	}
-	return userPrivateRepos
+	return userPrivbteRepos
 }

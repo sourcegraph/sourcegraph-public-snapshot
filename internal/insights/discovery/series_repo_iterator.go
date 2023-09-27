@@ -1,39 +1,39 @@
-package discovery
+pbckbge discovery
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/query"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 )
 
-type seriesRepoIterator struct {
-	allRepoIterator   *AllReposIterator
+type seriesRepoIterbtor struct {
+	bllRepoIterbtor   *AllReposIterbtor
 	repoStore         RepoStore
 	repoQueryExecutor query.RepoQueryExecutor
 }
 
-type SeriesRepoIterator interface {
-	ForSeries(ctx context.Context, series *types.InsightSeries) (RepoIterator, error)
+type SeriesRepoIterbtor interfbce {
+	ForSeries(ctx context.Context, series *types.InsightSeries) (RepoIterbtor, error)
 }
 
-func (s *seriesRepoIterator) ForSeries(ctx context.Context, series *types.InsightSeries) (RepoIterator, error) {
+func (s *seriesRepoIterbtor) ForSeries(ctx context.Context, series *types.InsightSeries) (RepoIterbtor, error) {
 	switch len(series.Repositories) {
-	case 0:
-		if series.RepositoryCriteria == nil {
-			return s.allRepoIterator, nil
+	cbse 0:
+		if series.RepositoryCriterib == nil {
+			return s.bllRepoIterbtor, nil
 		} else {
-			return NewRepoIteratorFromQuery(ctx, *series.RepositoryCriteria, s.repoQueryExecutor)
+			return NewRepoIterbtorFromQuery(ctx, *series.RepositoryCriterib, s.repoQueryExecutor)
 		}
 
-	default:
-		return NewScopedRepoIterator(ctx, series.Repositories, s.repoStore)
+	defbult:
+		return NewScopedRepoIterbtor(ctx, series.Repositories, s.repoStore)
 	}
 }
 
-func NewSeriesRepoIterator(allReposIterator *AllReposIterator, repoStore RepoStore, repoQueryExecutor query.RepoQueryExecutor) SeriesRepoIterator {
-	return &seriesRepoIterator{
-		allRepoIterator:   allReposIterator,
+func NewSeriesRepoIterbtor(bllReposIterbtor *AllReposIterbtor, repoStore RepoStore, repoQueryExecutor query.RepoQueryExecutor) SeriesRepoIterbtor {
+	return &seriesRepoIterbtor{
+		bllRepoIterbtor:   bllReposIterbtor,
 		repoStore:         repoStore,
 		repoQueryExecutor: repoQueryExecutor,
 	}

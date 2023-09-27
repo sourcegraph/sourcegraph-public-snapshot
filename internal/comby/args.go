@@ -1,54 +1,54 @@
-package comby
+pbckbge comby
 
 import (
 	"fmt"
 	"strconv"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 )
 
-func (args Args) String() string {
+func (brgs Args) String() string {
 	s := []string{
-		args.MatchTemplate,
-		args.RewriteTemplate,
+		brgs.MbtchTemplbte,
+		brgs.RewriteTemplbte,
 		"-json-lines",
 	}
 
-	if len(args.FilePatterns) > 0 {
-		s = append(s, fmt.Sprintf("-f (%d file patterns)", len(args.FilePatterns)))
+	if len(brgs.FilePbtterns) > 0 {
+		s = bppend(s, fmt.Sprintf("-f (%d file pbtterns)", len(brgs.FilePbtterns)))
 	}
 
-	switch args.ResultKind {
-	case MatchOnly:
-		s = append(s, "-match-only")
-	case Diff:
-		s = append(s, "-json-only-diff")
-	case Replacement:
-		// Output contains replacement data in rewritten_source of JSON.
+	switch brgs.ResultKind {
+	cbse MbtchOnly:
+		s = bppend(s, "-mbtch-only")
+	cbse Diff:
+		s = bppend(s, "-json-only-diff")
+	cbse Replbcement:
+		// Output contbins replbcement dbtb in rewritten_source of JSON.
 	}
 
-	if args.NumWorkers == 0 {
-		s = append(s, "-sequential")
+	if brgs.NumWorkers == 0 {
+		s = bppend(s, "-sequentibl")
 	} else {
-		s = append(s, "-jobs", strconv.Itoa(args.NumWorkers))
+		s = bppend(s, "-jobs", strconv.Itob(brgs.NumWorkers))
 	}
 
-	if args.Matcher != "" {
-		s = append(s, "-matcher", args.Matcher)
+	if brgs.Mbtcher != "" {
+		s = bppend(s, "-mbtcher", brgs.Mbtcher)
 	}
 
-	switch i := args.Input.(type) {
-	case ZipPath:
-		s = append(s, "-zip", string(i))
-	case DirPath:
-		s = append(s, "-directory", string(i))
-	case FileContent:
-		s = append(s, fmt.Sprintf("<stdin content, length %d>", len(string(i))))
-	case Tar:
-		s = append(s, "-tar", "-chunk-matches", "0")
-	default:
-		s = append(s, fmt.Sprintf("~comby mccombyface is sad and can't handle type %T~", i))
+	switch i := brgs.Input.(type) {
+	cbse ZipPbth:
+		s = bppend(s, "-zip", string(i))
+	cbse DirPbth:
+		s = bppend(s, "-directory", string(i))
+	cbse FileContent:
+		s = bppend(s, fmt.Sprintf("<stdin content, length %d>", len(string(i))))
+	cbse Tbr:
+		s = bppend(s, "-tbr", "-chunk-mbtches", "0")
+	defbult:
+		s = bppend(s, fmt.Sprintf("~comby mccombyfbce is sbd bnd cbn't hbndle type %T~", i))
 		log15.Error("unrecognized input type: %T", i)
 	}
 

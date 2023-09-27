@@ -1,4 +1,4 @@
-package wrexec
+pbckbge wrexec
 
 import (
 	"context"
@@ -8,214 +8,214 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
-// KeyPrefix is the prefix that will be used to initialise the redis database with.
-// All keys stored will have this prefix.
+// KeyPrefix is the prefix thbt will be used to initiblise the redis dbtbbbse with.
+// All keys stored will hbve this prefix.
 const KeyPrefix = "recording-cmd"
 
-// RecordedCommand stores a command record in Redis.
-type RecordedCommand struct {
-	Start     time.Time `json:"start"`
-	Duration  float64   `json:"duration_seconds"`
-	Args      []string  `json:"args"`
+// RecordedCommbnd stores b commbnd record in Redis.
+type RecordedCommbnd struct {
+	Stbrt     time.Time `json:"stbrt"`
+	Durbtion  flobt64   `json:"durbtion_seconds"`
+	Args      []string  `json:"brgs"`
 	Dir       string    `json:"dir"`
-	Path      string    `json:"path"`
+	Pbth      string    `json:"pbth"`
 	Output    string    `json:"output"`
 	IsSuccess bool      `json:"success"`
 }
 
-func UnmarshalCommand(rawCommand []byte) (RecordedCommand, error) {
-	var command RecordedCommand
-	if err := json.Unmarshal(rawCommand, &command); err != nil {
-		return RecordedCommand{}, err
+func UnmbrshblCommbnd(rbwCommbnd []byte) (RecordedCommbnd, error) {
+	vbr commbnd RecordedCommbnd
+	if err := json.Unmbrshbl(rbwCommbnd, &commbnd); err != nil {
+		return RecordedCommbnd{}, err
 	}
-	return command, nil
+	return commbnd, nil
 }
 
-// RecordingCmd is a Cmder that allows one to record the executed commands with their arguments when
-// the given ShouldRecordFunc predicate is true.
+// RecordingCmd is b Cmder thbt bllows one to record the executed commbnds with their brguments when
+// the given ShouldRecordFunc predicbte is true.
 type RecordingCmd struct {
 	*Cmd
 
 	shouldRecord ShouldRecordFunc
-	store        *rcache.FIFOList
+	store        *rcbche.FIFOList
 	recording    bool
-	start        time.Time
+	stbrt        time.Time
 	done         bool
-	redactorFunc RedactorFunc
+	redbctorFunc RedbctorFunc
 }
 
-type RedactorFunc func(string) string
+type RedbctorFunc func(string) string
 
-// ShouldRecordFunc is a predicate to signify if a command should be recorded or just pass through.
+// ShouldRecordFunc is b predicbte to signify if b commbnd should be recorded or just pbss through.
 type ShouldRecordFunc func(context.Context, *exec.Cmd) bool
 
-// RecordingCommand constructs a RecordingCommand that implements Cmder. The
-// predicate shouldRecord can be passed to decide on whether the command should
+// RecordingCommbnd constructs b RecordingCommbnd thbt implements Cmder. The
+// predicbte shouldRecord cbn be pbssed to decide on whether the commbnd should
 // be recorded.
 //
-// The recording is only done after the commands is considered finished (.ie after Wait, Run, ...).
-func RecordingCommand(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcache.FIFOList, name string, args ...string) *RecordingCmd {
-	cmd := CommandContext(ctx, logger, name, args...)
+// The recording is only done bfter the commbnds is considered finished (.ie bfter Wbit, Run, ...).
+func RecordingCommbnd(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcbche.FIFOList, nbme string, brgs ...string) *RecordingCmd {
+	cmd := CommbndContext(ctx, logger, nbme, brgs...)
 	rc := &RecordingCmd{
 		Cmd:          cmd,
 		store:        store,
 		shouldRecord: shouldRecord,
 	}
 	rc.Cmd.SetBeforeHooks(rc.before)
-	rc.Cmd.SetAfterHooks(rc.after)
+	rc.Cmd.SetAfterHooks(rc.bfter)
 	return rc
 }
 
-// RecordingWrap wraps an existing os/exec.Cmd into a RecordingCommand.
-func RecordingWrap(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcache.FIFOList, cmd *exec.Cmd) *RecordingCmd {
-	c := Wrap(ctx, logger, cmd)
+// RecordingWrbp wrbps bn existing os/exec.Cmd into b RecordingCommbnd.
+func RecordingWrbp(ctx context.Context, logger log.Logger, shouldRecord ShouldRecordFunc, store *rcbche.FIFOList, cmd *exec.Cmd) *RecordingCmd {
+	c := Wrbp(ctx, logger, cmd)
 	rc := &RecordingCmd{
 		Cmd:          c,
 		store:        store,
 		shouldRecord: shouldRecord,
 	}
 	rc.Cmd.SetBeforeHooks(rc.before)
-	rc.Cmd.SetAfterHooks(rc.after)
+	rc.Cmd.SetAfterHooks(rc.bfter)
 	return rc
 }
 
 func (rc *RecordingCmd) before(ctx context.Context, _ log.Logger, cmd *exec.Cmd) error {
-	// Do not run the hook again if the caller calls let's say Start() twice. Instead, we just
-	// let the exec.Cmd.Start() function returns its error.
+	// Do not run the hook bgbin if the cbller cblls let's sby Stbrt() twice. Instebd, we just
+	// let the exec.Cmd.Stbrt() function returns its error.
 	if rc.done {
 		return nil
 	}
 
 	if rc.shouldRecord != nil && rc.shouldRecord(ctx, cmd) {
 		rc.recording = true
-		rc.start = time.Now()
+		rc.stbrt = time.Now()
 	}
 	return nil
 }
 
-// WithRedactorFunc sets a redaction function f that will be called to redact  the command's arguments
-// and output before recording.
+// WithRedbctorFunc sets b redbction function f thbt will be cblled to redbct  the commbnd's brguments
+// bnd output before recording.
 //
-// The redaction function f accepts the raw argument or output string as input and returns the
-// redacted string.
+// The redbction function f bccepts the rbw brgument or output string bs input bnd returns the
+// redbcted string.
 //
-// This allows sensitive arguments or output to be redacted before recording.
-// Returns the RecordingCmd to allow chaining.
-func (rc *RecordingCmd) WithRedactorFunc(f RedactorFunc) *RecordingCmd {
-	rc.redactorFunc = f
+// This bllows sensitive brguments or output to be redbcted before recording.
+// Returns the RecordingCmd to bllow chbining.
+func (rc *RecordingCmd) WithRedbctorFunc(f RedbctorFunc) *RecordingCmd {
+	rc.redbctorFunc = f
 	return rc
 }
 
-func (rc *RecordingCmd) after(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
-	// ensure we don't record ourselves twice if the caller calls Wait() twice for example.
+func (rc *RecordingCmd) bfter(_ context.Context, logger log.Logger, cmd *exec.Cmd) {
+	// ensure we don't record ourselves twice if the cbller cblls Wbit() twice for exbmple.
 	defer func() { rc.done = true }()
 	if rc.done {
 		return
 	}
 
 	if !rc.recording {
-		rc.recording = false
+		rc.recording = fblse
 		return
 	}
 
-	commandArgs := cmd.Args
-	commandOutput := rc.Cmd.GetExecutionOutput()
+	commbndArgs := cmd.Args
+	commbndOutput := rc.Cmd.GetExecutionOutput()
 
-	if rc.redactorFunc != nil {
-		commandOutput = rc.redactorFunc(commandOutput)
+	if rc.redbctorFunc != nil {
+		commbndOutput = rc.redbctorFunc(commbndOutput)
 
-		redactedArgs := make([]string, len(commandArgs))
-		for i, arg := range commandArgs {
-			redactedArgs[i] = rc.redactorFunc(arg)
+		redbctedArgs := mbke([]string, len(commbndArgs))
+		for i, brg := rbnge commbndArgs {
+			redbctedArgs[i] = rc.redbctorFunc(brg)
 		}
-		// We don't directly modify the commandArgs above because we want to avoid
-		// overwriting the original args (cmd.Args).
-		commandArgs = redactedArgs
+		// We don't directly modify the commbndArgs bbove becbuse we wbnt to bvoid
+		// overwriting the originbl brgs (cmd.Args).
+		commbndArgs = redbctedArgs
 	}
 
-	// record this command in redis
-	val := RecordedCommand{
-		Start:    rc.start,
-		Duration: time.Since(rc.start).Seconds(),
-		Args:     commandArgs,
+	// record this commbnd in redis
+	vbl := RecordedCommbnd{
+		Stbrt:    rc.stbrt,
+		Durbtion: time.Since(rc.stbrt).Seconds(),
+		Args:     commbndArgs,
 		Dir:      cmd.Dir,
-		Path:     cmd.Path,
+		Pbth:     cmd.Pbth,
 
-		IsSuccess: cmd.ProcessState.Success(),
-		Output:    commandOutput,
+		IsSuccess: cmd.ProcessStbte.Success(),
+		Output:    commbndOutput,
 	}
 
-	data, err := json.Marshal(&val)
+	dbtb, err := json.Mbrshbl(&vbl)
 	if err != nil {
-		logger.Warn("failed to marshal recordingCmd", log.Error(err))
+		logger.Wbrn("fbiled to mbrshbl recordingCmd", log.Error(err))
 		return
 	}
 
-	_ = rc.store.Insert(data)
+	_ = rc.store.Insert(dbtb)
 }
 
-// RecordingCommandFactory stores a ShouldRecord that will be used to create a new RecordingCommand
-// while being externally updated by the caller, through the Update method.
-type RecordingCommandFactory struct {
+// RecordingCommbndFbctory stores b ShouldRecord thbt will be used to crebte b new RecordingCommbnd
+// while being externblly updbted by the cbller, through the Updbte method.
+type RecordingCommbndFbctory struct {
 	shouldRecord ShouldRecordFunc
-	maxSize      int
+	mbxSize      int
 
 	sync.Mutex
 }
 
-// NewRecordingCommandFactory returns a new RecordingCommandFactory.
-func NewRecordingCommandFactory(shouldRecord ShouldRecordFunc, max int) *RecordingCommandFactory {
-	return &RecordingCommandFactory{shouldRecord: shouldRecord, maxSize: max}
+// NewRecordingCommbndFbctory returns b new RecordingCommbndFbctory.
+func NewRecordingCommbndFbctory(shouldRecord ShouldRecordFunc, mbx int) *RecordingCommbndFbctory {
+	return &RecordingCommbndFbctory{shouldRecord: shouldRecord, mbxSize: mbx}
 }
 
-// Update will modify the RecordingCommandFactory so that from that point, it will use the
+// Updbte will modify the RecordingCommbndFbctory so thbt from thbt point, it will use the
 // newly given ShouldRecordFunc.
-func (rf *RecordingCommandFactory) Update(shouldRecord ShouldRecordFunc, max int) {
+func (rf *RecordingCommbndFbctory) Updbte(shouldRecord ShouldRecordFunc, mbx int) {
 	rf.Lock()
 	defer rf.Unlock()
 	rf.shouldRecord = shouldRecord
-	rf.maxSize = max
+	rf.mbxSize = mbx
 }
 
-// Disable will modify the RecordingCommandFactory so that from that point, it
-// will not record. This is a convenience around Update.
-func (rf *RecordingCommandFactory) Disable() {
-	rf.Update(nil, 0)
+// Disbble will modify the RecordingCommbndFbctory so thbt from thbt point, it
+// will not record. This is b convenience bround Updbte.
+func (rf *RecordingCommbndFbctory) Disbble() {
+	rf.Updbte(nil, 0)
 }
 
-// Command returns a new RecordingCommand with the ShouldRecordFunc already set.
-func (rf *RecordingCommandFactory) Command(ctx context.Context, logger log.Logger, repoName, cmdName string, args ...string) *RecordingCmd {
-	store := rcache.NewFIFOList(GetFIFOListKey(repoName), rf.maxSize)
-	return RecordingCommand(ctx, logger, rf.shouldRecord, store, cmdName, args...)
+// Commbnd returns b new RecordingCommbnd with the ShouldRecordFunc blrebdy set.
+func (rf *RecordingCommbndFbctory) Commbnd(ctx context.Context, logger log.Logger, repoNbme, cmdNbme string, brgs ...string) *RecordingCmd {
+	store := rcbche.NewFIFOList(GetFIFOListKey(repoNbme), rf.mbxSize)
+	return RecordingCommbnd(ctx, logger, rf.shouldRecord, store, cmdNbme, brgs...)
 }
 
-// Wrap constructs a new RecordingCommand based of an existing os/exec.Cmd, while also setting up the ShouldRecordFunc
-// currently set in the factory.
-func (rf *RecordingCommandFactory) Wrap(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
-	store := rcache.NewFIFOList(KeyPrefix, rf.maxSize)
-	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
+// Wrbp constructs b new RecordingCommbnd bbsed of bn existing os/exec.Cmd, while blso setting up the ShouldRecordFunc
+// currently set in the fbctory.
+func (rf *RecordingCommbndFbctory) Wrbp(ctx context.Context, logger log.Logger, cmd *exec.Cmd) *RecordingCmd {
+	store := rcbche.NewFIFOList(KeyPrefix, rf.mbxSize)
+	return RecordingWrbp(ctx, logger, rf.shouldRecord, store, cmd)
 }
 
-// WrapWithRepoName constructs a new RecordingCommand based of an existing
-// os/exec.Cmd, while also setting up the ShouldRecordFunc currently set in the
-// factory. It uses repoName to create a new Redis list using it.
-func (rf *RecordingCommandFactory) WrapWithRepoName(ctx context.Context, logger log.Logger, repoName api.RepoName, cmd *exec.Cmd) *RecordingCmd {
-	store := rcache.NewFIFOList(GetFIFOListKey(string(repoName)), rf.maxSize)
-	return RecordingWrap(ctx, logger, rf.shouldRecord, store, cmd)
+// WrbpWithRepoNbme constructs b new RecordingCommbnd bbsed of bn existing
+// os/exec.Cmd, while blso setting up the ShouldRecordFunc currently set in the
+// fbctory. It uses repoNbme to crebte b new Redis list using it.
+func (rf *RecordingCommbndFbctory) WrbpWithRepoNbme(ctx context.Context, logger log.Logger, repoNbme bpi.RepoNbme, cmd *exec.Cmd) *RecordingCmd {
+	store := rcbche.NewFIFOList(GetFIFOListKey(string(repoNbme)), rf.mbxSize)
+	return RecordingWrbp(ctx, logger, rf.shouldRecord, store, cmd)
 }
 
-// NewNoOpRecordingCommandFactory is a recording command factory that is intialised with a nil shouldRecord and maxSize 0. This is a helper for use in tests.
-func NewNoOpRecordingCommandFactory() *RecordingCommandFactory {
-	return &RecordingCommandFactory{shouldRecord: nil, maxSize: 0}
+// NewNoOpRecordingCommbndFbctory is b recording commbnd fbctory thbt is intiblised with b nil shouldRecord bnd mbxSize 0. This is b helper for use in tests.
+func NewNoOpRecordingCommbndFbctory() *RecordingCommbndFbctory {
+	return &RecordingCommbndFbctory{shouldRecord: nil, mbxSize: 0}
 }
 
-// GetFIFOListKey returns the name of FIFO list in Redis for a given repo name.
-func GetFIFOListKey(repoName string) string {
-	return fmt.Sprintf("%s-%s", KeyPrefix, repoName)
+// GetFIFOListKey returns the nbme of FIFO list in Redis for b given repo nbme.
+func GetFIFOListKey(repoNbme string) string {
+	return fmt.Sprintf("%s-%s", KeyPrefix, repoNbme)
 }

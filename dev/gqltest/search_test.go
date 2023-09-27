@@ -1,8 +1,8 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
-	"math/rand"
+	"mbth/rbnd"
 	"sort"
 	"strconv"
 	"strings"
@@ -12,761 +12,761 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestSearch(t *testing.T) {
+func TestSebrch(t *testing.T) {
 	if len(*githubToken) == 0 {
-		t.Skip("Environment variable GITHUB_TOKEN is not set")
+		t.Skip("Environment vbribble GITHUB_TOKEN is not set")
 	}
 
-	// Set up external service
-	esID, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// Set up externbl service
+	esID, err := client.AddExternblService(gqltestutil.AddExternblServiceInput{
 		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(struct {
+		DisplbyNbme: "gqltest-github-sebrch",
+		Config: mustMbrshblJSONString(struct {
 			URL                   string   `json:"url"`
 			Token                 string   `json:"token"`
 			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
+			RepositoryPbthPbttern string   `json:"repositoryPbthPbttern"`
 		}{
 			URL:   "https://ghe.sgdev.org/",
 			Token: *githubToken,
 			Repos: []string{
-				"sgtest/java-langserver",
+				"sgtest/jbvb-lbngserver",
 				"sgtest/jsonrpc2",
 				"sgtest/go-diff",
-				"sgtest/appdash",
-				"sgtest/sourcegraph-typescript",
-				"sgtest/private",  // Private
+				"sgtest/bppdbsh",
+				"sgtest/sourcegrbph-typescript",
+				"sgtest/privbte",  // Privbte
 				"sgtest/mux",      // Fork
-				"sgtest/archived", // Archived
+				"sgtest/brchived", // Archived
 			},
-			RepositoryPathPattern: "github.com/{nameWithOwner}",
+			RepositoryPbthPbttern: "github.com/{nbmeWithOwner}",
 		}),
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	removeExternalServiceAfterTest(t, esID)
+	removeExternblServiceAfterTest(t, esID)
 
-	err = client.WaitForReposToBeCloned(
-		"github.com/sgtest/java-langserver",
+	err = client.WbitForReposToBeCloned(
+		"github.com/sgtest/jbvb-lbngserver",
 		"github.com/sgtest/jsonrpc2",
 		"github.com/sgtest/go-diff",
-		"github.com/sgtest/appdash",
-		"github.com/sgtest/sourcegraph-typescript",
-		"github.com/sgtest/private",  // Private
+		"github.com/sgtest/bppdbsh",
+		"github.com/sgtest/sourcegrbph-typescript",
+		"github.com/sgtest/privbte",  // Privbte
 		"github.com/sgtest/mux",      // Fork
-		"github.com/sgtest/archived", // Archived
+		"github.com/sgtest/brchived", // Archived
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = client.WaitForReposToBeIndexed(
-		"github.com/sgtest/java-langserver",
+	err = client.WbitForReposToBeIndexed(
+		"github.com/sgtest/jbvb-lbngserver",
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	addKVPs(t, client)
+	bddKVPs(t, client)
 
-	t.Run("search contexts", func(t *testing.T) {
-		testSearchContextsCRUD(t, client)
-		testListingSearchContexts(t, client)
+	t.Run("sebrch contexts", func(t *testing.T) {
+		testSebrchContextsCRUD(t, client)
+		testListingSebrchContexts(t, client)
 	})
 
-	t.Run("graphql", func(t *testing.T) {
-		testSearchClient(t, client)
+	t.Run("grbphql", func(t *testing.T) {
+		testSebrchClient(t, client)
 	})
 
-	streamClient := &gqltestutil.SearchStreamClient{Client: client}
-	t.Run("stream", func(t *testing.T) {
-		testSearchClient(t, streamClient)
+	strebmClient := &gqltestutil.SebrchStrebmClient{Client: client}
+	t.Run("strebm", func(t *testing.T) {
+		testSebrchClient(t, strebmClient)
 	})
 
-	testSearchOther(t)
+	testSebrchOther(t)
 
-	// Run the search tests with file-based ranking disabled
-	err = client.SetFeatureFlag("search-ranking", false)
+	// Run the sebrch tests with file-bbsed rbnking disbbled
+	err = client.SetFebtureFlbg("sebrch-rbnking", fblse)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("graphql with file ranking", func(t *testing.T) {
-		testSearchClient(t, client)
+	t.Run("grbphql with file rbnking", func(t *testing.T) {
+		testSebrchClient(t, client)
 	})
 
-	t.Run("stream with file ranking", func(t *testing.T) {
-		testSearchClient(t, streamClient)
+	t.Run("strebm with file rbnking", func(t *testing.T) {
+		testSebrchClient(t, strebmClient)
 	})
 }
 
-// searchClient is an interface so we can swap out a streaming vs graphql
-// based search API. It only supports the methods that streaming supports.
-type searchClient interface {
-	AddExternalService(input gqltestutil.AddExternalServiceInput) (string, error)
-	UpdateExternalService(input gqltestutil.UpdateExternalServiceInput) (string, error)
-	DeleteExternalService(id string, async bool) error
+// sebrchClient is bn interfbce so we cbn swbp out b strebming vs grbphql
+// bbsed sebrch API. It only supports the methods thbt strebming supports.
+type sebrchClient interfbce {
+	AddExternblService(input gqltestutil.AddExternblServiceInput) (string, error)
+	UpdbteExternblService(input gqltestutil.UpdbteExternblServiceInput) (string, error)
+	DeleteExternblService(id string, bsync bool) error
 
-	SearchRepositories(query string) (gqltestutil.SearchRepositoryResults, error)
-	SearchFiles(query string) (*gqltestutil.SearchFileResults, error)
-	SearchAll(query string) ([]*gqltestutil.AnyResult, error)
+	SebrchRepositories(query string) (gqltestutil.SebrchRepositoryResults, error)
+	SebrchFiles(query string) (*gqltestutil.SebrchFileResults, error)
+	SebrchAll(query string) ([]*gqltestutil.AnyResult, error)
 
-	UpdateSiteConfiguration(config *schema.SiteConfiguration, lastID int32) error
-	SiteConfiguration() (*schema.SiteConfiguration, int32, error)
+	UpdbteSiteConfigurbtion(config *schemb.SiteConfigurbtion, lbstID int32) error
+	SiteConfigurbtion() (*schemb.SiteConfigurbtion, int32, error)
 
 	OverwriteSettings(subjectID, contents string) error
-	AuthenticatedUserID() string
+	AuthenticbtedUserID() string
 
-	Repository(repositoryName string) (*gqltestutil.Repository, error)
-	WaitForReposToBeCloned(repos ...string) error
-	WaitForReposToBeClonedWithin(timeout time.Duration, repos ...string) error
+	Repository(repositoryNbme string) (*gqltestutil.Repository, error)
+	WbitForReposToBeCloned(repos ...string) error
+	WbitForReposToBeClonedWithin(timeout time.Durbtion, repos ...string) error
 
-	CreateSearchContext(input gqltestutil.CreateSearchContextInput, repositories []gqltestutil.SearchContextRepositoryRevisionsInput) (string, error)
-	GetSearchContext(id string) (*gqltestutil.GetSearchContextResult, error)
-	DeleteSearchContext(id string) error
+	CrebteSebrchContext(input gqltestutil.CrebteSebrchContextInput, repositories []gqltestutil.SebrchContextRepositoryRevisionsInput) (string, error)
+	GetSebrchContext(id string) (*gqltestutil.GetSebrchContextResult, error)
+	DeleteSebrchContext(id string) error
 }
 
-func addKVPs(t *testing.T, client *gqltestutil.Client) {
+func bddKVPs(t *testing.T, client *gqltestutil.Client) {
 	repo1, err := client.Repository("github.com/sgtest/go-diff")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	repo2, err := client.Repository("github.com/sgtest/appdash")
+	repo2, err := client.Repository("github.com/sgtest/bppdbsh")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testVal := "testval"
-	err = client.AddRepoMetadata(repo1.ID, "testkey", &testVal)
+	testVbl := "testvbl"
+	err = client.AddRepoMetbdbtb(repo1.ID, "testkey", &testVbl)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = client.AddRepoMetadata(repo2.ID, "testkey", &testVal)
+	err = client.AddRepoMetbdbtb(repo2.ID, "testkey", &testVbl)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	err = client.AddRepoMetadata(repo2.ID, "testtag", nil)
+	err = client.AddRepoMetbdbtb(repo2.ID, "testtbg", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }
 
-func testSearchClient(t *testing.T, client searchClient) {
-	// Temporary test until we have equivalence.
-	_, isStreaming := client.(*gqltestutil.SearchStreamClient)
+func testSebrchClient(t *testing.T, client sebrchClient) {
+	// Temporbry test until we hbve equivblence.
+	_, isStrebming := client.(*gqltestutil.SebrchStrebmClient)
 
 	const (
-		skipStream = 1 << iota
-		skipGraphQL
+		skipStrebm = 1 << iotb
+		skipGrbphQL
 	)
 	doSkip := func(t *testing.T, skip int) {
 		t.Helper()
-		if skip&skipStream != 0 && isStreaming {
-			t.Skip("does not support streaming")
+		if skip&skipStrebm != 0 && isStrebming {
+			t.Skip("does not support strebming")
 		}
-		if skip&skipGraphQL != 0 && !isStreaming {
-			t.Skip("does not support graphql")
+		if skip&skipGrbphQL != 0 && !isStrebming {
+			t.Skip("does not support grbphql")
 		}
 	}
 
 	t.Run("visibility", func(t *testing.T) {
 		tests := []struct {
 			query       string
-			wantMissing []string
+			wbntMissing []string
 		}{
 			{
-				query:       "type:repo visibility:private sgtest",
-				wantMissing: []string{},
+				query:       "type:repo visibility:privbte sgtest",
+				wbntMissing: []string{},
 			},
 			{
 				query:       "type:repo visibility:public sgtest",
-				wantMissing: []string{"github.com/sgtest/private"},
+				wbntMissing: []string{"github.com/sgtest/privbte"},
 			},
 			{
-				query:       "type:repo visibility:any sgtest",
-				wantMissing: []string{},
+				query:       "type:repo visibility:bny sgtest",
+				wbntMissing: []string{},
 			},
 		}
-		for _, test := range tests {
+		for _, test := rbnge tests {
 			t.Run(test.query, func(t *testing.T) {
-				results, err := client.SearchRepositories(test.query)
+				results, err := client.SebrchRepositories(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
-				missing := results.Exists("github.com/sgtest/private")
-				if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
-					t.Fatalf("Missing mismatch (-want +got):\n%s", diff)
+				missing := results.Exists("github.com/sgtest/privbte")
+				if diff := cmp.Diff(test.wbntMissing, missing); diff != "" {
+					t.Fbtblf("Missing mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("execute search with search parameters", func(t *testing.T) {
-		results, err := client.SearchFiles("repo:^github.com/sgtest/go-diff$ type:file file:.go -file:.md")
+	t.Run("execute sebrch with sebrch pbrbmeters", func(t *testing.T) {
+		results, err := client.SebrchFiles("repo:^github.com/sgtest/go-diff$ type:file file:.go -file:.md")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Make sure only got .go files and no .md files
-		for _, r := range results.Results {
-			if !strings.HasSuffix(r.File.Name, ".go") {
-				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+		// Mbke sure only got .go files bnd no .md files
+		for _, r := rbnge results.Results {
+			if !strings.HbsSuffix(r.File.Nbme, ".go") {
+				t.Fbtblf("Found file nbme does not end with .go: %s", r.File.Nbme)
 			}
 		}
 	})
 
-	t.Run("lang: filter", func(t *testing.T) {
-		// On our test repositories, `function` has results for go, ts, python, html
-		results, err := client.SearchFiles("function lang:go")
+	t.Run("lbng: filter", func(t *testing.T) {
+		// On our test repositories, `function` hbs results for go, ts, python, html
+		results, err := client.SebrchFiles("function lbng:go")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// Make sure we only got .go files
-		for _, r := range results.Results {
-			if !strings.Contains(r.File.Name, ".go") {
-				t.Fatalf("Found file name does not end with .go: %s", r.File.Name)
+		// Mbke sure we only got .go files
+		for _, r := rbnge results.Results {
+			if !strings.Contbins(r.File.Nbme, ".go") {
+				t.Fbtblf("Found file nbme does not end with .go: %s", r.File.Nbme)
 			}
 		}
 	})
 
 	t.Run("excluding repositories", func(t *testing.T) {
-		results, err := client.SearchFiles("fmt.Sprintf -repo:jsonrpc2")
+		results, err := client.SebrchFiles("fmt.Sprintf -repo:jsonrpc2")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// Make sure we got some results
+		// Mbke sure we got some results
 		if len(results.Results) == 0 {
-			t.Fatal("Want non-zero results but got 0")
+			t.Fbtbl("Wbnt non-zero results but got 0")
 		}
-		// Make sure we got no results from the excluded repository
-		for _, r := range results.Results {
-			if strings.Contains(r.Repository.Name, "jsonrpc2") {
-				t.Fatal("Got results for excluded repository")
+		// Mbke sure we got no results from the excluded repository
+		for _, r := rbnge results.Results {
+			if strings.Contbins(r.Repository.Nbme, "jsonrpc2") {
+				t.Fbtbl("Got results for excluded repository")
 			}
 		}
 	})
 
 	t.Run("multiple revisions per repository", func(t *testing.T) {
-		results, err := client.SearchFiles("repo:sgtest/go-diff$@master:print-options:*refs/heads/ func NewHunksReader")
+		results, err := client.SebrchFiles("repo:sgtest/go-diff$@mbster:print-options:*refs/hebds/ func NewHunksRebder")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		wantExprs := map[string]struct{}{
-			"master":        {},
+		wbntExprs := mbp[string]struct{}{
+			"mbster":        {},
 			"print-options": {},
 
-			// These next 2 branches are included because of the *refs/heads/ in the query.
-			"test-already-exist-pr": {},
+			// These next 2 brbnches bre included becbuse of the *refs/hebds/ in the query.
+			"test-blrebdy-exist-pr": {},
 			"bug-fix-wip":           {},
 		}
 
-		for _, r := range results.Results {
-			delete(wantExprs, r.RevSpec.Expr)
+		for _, r := rbnge results.Results {
+			delete(wbntExprs, r.RevSpec.Expr)
 		}
 
-		if len(wantExprs) > 0 {
-			missing := make([]string, 0, len(wantExprs))
-			for expr := range wantExprs {
-				missing = append(missing, expr)
+		if len(wbntExprs) > 0 {
+			missing := mbke([]string, 0, len(wbntExprs))
+			for expr := rbnge wbntExprs {
+				missing = bppend(missing, expr)
 			}
-			t.Fatalf("Missing exprs: %v", missing)
+			t.Fbtblf("Missing exprs: %v", missing)
 		}
 	})
 
-	t.Run("non fatal missing repo revs", func(t *testing.T) {
-		results, err := client.SearchFiles("repo:sgtest rev:print-options NewHunksReader")
+	t.Run("non fbtbl missing repo revs", func(t *testing.T) {
+		results, err := client.SebrchFiles("repo:sgtest rev:print-options NewHunksRebder")
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		if len(results.Results) == 0 {
-			t.Fatal("want results, got none")
+			t.Fbtbl("wbnt results, got none")
 		}
 
-		for _, r := range results.Results {
-			if want, have := "print-options", r.RevSpec.Expr; have != want {
-				t.Fatalf("want rev to be %q, got %q", want, have)
+		for _, r := rbnge results.Results {
+			if wbnt, hbve := "print-options", r.RevSpec.Expr; hbve != wbnt {
+				t.Fbtblf("wbnt rev to be %q, got %q", wbnt, hbve)
 			}
 		}
 	})
 
-	t.Run("context: search repo revs", func(t *testing.T) {
-		repo1, err := client.Repository("github.com/sgtest/java-langserver")
+	t.Run("context: sebrch repo revs", func(t *testing.T) {
+		repo1, err := client.Repository("github.com/sgtest/jbvb-lbngserver")
 		require.NoError(t, err)
 		repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
 		require.NoError(t, err)
 
-		namespace := client.AuthenticatedUserID()
-		searchContextID, err := client.CreateSearchContext(
-			gqltestutil.CreateSearchContextInput{Name: "SearchContext", Namespace: &namespace, Public: true},
-			[]gqltestutil.SearchContextRepositoryRevisionsInput{
+		nbmespbce := client.AuthenticbtedUserID()
+		sebrchContextID, err := client.CrebteSebrchContext(
+			gqltestutil.CrebteSebrchContextInput{Nbme: "SebrchContext", Nbmespbce: &nbmespbce, Public: true},
+			[]gqltestutil.SebrchContextRepositoryRevisionsInput{
 				{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
 				{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
 			})
 		require.NoError(t, err)
 
 		defer func() {
-			err = client.DeleteSearchContext(searchContextID)
+			err = client.DeleteSebrchContext(sebrchContextID)
 			require.NoError(t, err)
 		}()
 
-		searchContext, err := client.GetSearchContext(searchContextID)
+		sebrchContext, err := client.GetSebrchContext(sebrchContextID)
 		require.NoError(t, err)
 
-		query := fmt.Sprintf("context:%s type:repo", searchContext.Spec)
-		results, err := client.SearchRepositories(query)
+		query := fmt.Sprintf("context:%s type:repo", sebrchContext.Spec)
+		results, err := client.SebrchRepositories(query)
 		require.NoError(t, err)
 
-		wantRepos := []string{"github.com/sgtest/java-langserver", "github.com/sgtest/jsonrpc2"}
-		if d := cmp.Diff(wantRepos, results.Names()); d != "" {
-			t.Fatalf("unexpected repositories (-want +got):\n%s", d)
+		wbntRepos := []string{"github.com/sgtest/jbvb-lbngserver", "github.com/sgtest/jsonrpc2"}
+		if d := cmp.Diff(wbntRepos, results.Nbmes()); d != "" {
+			t.Fbtblf("unexpected repositories (-wbnt +got):\n%s", d)
 		}
 	})
 
-	t.Run("context: search query", func(t *testing.T) {
-		_, err := client.Repository("github.com/sgtest/java-langserver")
+	t.Run("context: sebrch query", func(t *testing.T) {
+		_, err := client.Repository("github.com/sgtest/jbvb-lbngserver")
 		require.NoError(t, err)
 		_, err = client.Repository("github.com/sgtest/jsonrpc2")
 		require.NoError(t, err)
 
-		namespace := client.AuthenticatedUserID()
-		searchContextID, err := client.CreateSearchContext(
-			gqltestutil.CreateSearchContextInput{
-				Name:      "SearchContextV2",
-				Namespace: &namespace,
+		nbmespbce := client.AuthenticbtedUserID()
+		sebrchContextID, err := client.CrebteSebrchContext(
+			gqltestutil.CrebteSebrchContextInput{
+				Nbme:      "SebrchContextV2",
+				Nbmespbce: &nbmespbce,
 				Public:    true,
-				Query:     `r:^github\.com/sgtest f:drop lang:java`,
-			}, []gqltestutil.SearchContextRepositoryRevisionsInput{})
+				Query:     `r:^github\.com/sgtest f:drop lbng:jbvb`,
+			}, []gqltestutil.SebrchContextRepositoryRevisionsInput{})
 		require.NoError(t, err)
 
 		defer func() {
-			err = client.DeleteSearchContext(searchContextID)
+			err = client.DeleteSebrchContext(sebrchContextID)
 			require.NoError(t, err)
 		}()
 
-		searchContext, err := client.GetSearchContext(searchContextID)
+		sebrchContext, err := client.GetSebrchContext(sebrchContextID)
 		require.NoError(t, err)
 
-		query := fmt.Sprintf("context:%s select:repo", searchContext.Spec)
-		results, err := client.SearchRepositories(query)
+		query := fmt.Sprintf("context:%s select:repo", sebrchContext.Spec)
+		results, err := client.SebrchRepositories(query)
 		require.NoError(t, err)
 
-		wantRepos := []string{"github.com/sgtest/java-langserver"}
-		if d := cmp.Diff(wantRepos, results.Names()); d != "" {
-			t.Fatalf("unexpected repositories (-want +got):\n%s", d)
+		wbntRepos := []string{"github.com/sgtest/jbvb-lbngserver"}
+		if d := cmp.Diff(wbntRepos, results.Nbmes()); d != "" {
+			t.Fbtblf("unexpected repositories (-wbnt +got):\n%s", d)
 		}
 	})
 
-	t.Run("repository search", func(t *testing.T) {
+	t.Run("repository sebrch", func(t *testing.T) {
 		tests := []struct {
-			name        string
+			nbme        string
 			query       string
 			zeroResult  bool
-			wantMissing []string
-			want        []string
+			wbntMissing []string
+			wbnt        []string
 		}{
 			{
-				name:       `archived excluded, zero results`,
-				query:      `type:repo archived`,
+				nbme:       `brchived excluded, zero results`,
+				query:      `type:repo brchived`,
 				zeroResult: true,
 			},
 			{
-				name:  `archived included, nonzero result`,
-				query: `type:repo archived archived:yes`,
+				nbme:  `brchived included, nonzero result`,
+				query: `type:repo brchived brchived:yes`,
 			},
 			{
-				name:  `archived included if exact without option, nonzero result`,
-				query: `repo:^github\.com/sgtest/archived$`,
+				nbme:  `brchived included if exbct without option, nonzero result`,
+				query: `repo:^github\.com/sgtest/brchived$`,
 			},
 			{
-				name:       `fork excluded, zero results`,
+				nbme:       `fork excluded, zero results`,
 				query:      `type:repo sgtest/mux`,
 				zeroResult: true,
 			},
 			{
-				name:  `fork included, nonzero result`,
+				nbme:  `fork included, nonzero result`,
 				query: `type:repo sgtest/mux fork:yes`,
 			},
 			{
-				name:  `fork included if exact without option, nonzero result`,
+				nbme:  `fork included if exbct without option, nonzero result`,
 				query: `repo:^github\.com/sgtest/mux$`,
 			},
 			{
-				name:  "repohasfile returns results for global search",
-				query: "repohasfile:README",
+				nbme:  "repohbsfile returns results for globbl sebrch",
+				query: "repohbsfile:README",
 			},
 			{
-				name:       "multiple repohasfile returns no results if one doesn't match",
-				query:      "repohasfile:README repohasfile:thisfiledoesnotexist_1571751",
+				nbme:       "multiple repohbsfile returns no results if one doesn't mbtch",
+				query:      "repohbsfile:README repohbsfile:thisfiledoesnotexist_1571751",
 				zeroResult: true,
 			},
 			{
-				name:  "repo search by name, nonzero result",
+				nbme:  "repo sebrch by nbme, nonzero result",
 				query: "repo:go-diff$",
 			},
 			{
-				name:  "true is an alias for yes when fork is set",
+				nbme:  "true is bn blibs for yes when fork is set",
 				query: `repo:github\.com/sgtest/mux fork:true`,
 			},
 			{
-				name:  `exclude counts for fork and archive`,
-				query: `repo:mux|archived|go-diff`,
-				wantMissing: []string{
-					"github.com/sgtest/archived",
+				nbme:  `exclude counts for fork bnd brchive`,
+				query: `repo:mux|brchived|go-diff`,
+				wbntMissing: []string{
+					"github.com/sgtest/brchived",
 					"github.com/sgtest/mux",
 				},
 			},
 			{
-				name:  `Structural search returns repo results if patterntype set but pattern is empty`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ patterntype:structural`,
+				nbme:  `Structurbl sebrch returns repo results if pbtterntype set but pbttern is empty`,
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ pbtterntype:structurbl`,
 			},
 			{
-				name:       `case sensitive`,
-				query:      `case:yes type:repo Diff`,
+				nbme:       `cbse sensitive`,
+				query:      `cbse:yes type:repo Diff`,
 				zeroResult: true,
 			},
 			{
-				name:  `case insensitive`,
-				query: `case:no type:repo Diff`,
-				want: []string{
+				nbme:  `cbse insensitive`,
+				query: `cbse:no type:repo Diff`,
+				wbnt: []string{
 					"github.com/sgtest/go-diff",
 				},
 			},
 			{
-				name:  `case insensitive regex`,
-				query: `case:no repo:Go-Diff|TypeScript`,
-				want: []string{
+				nbme:  `cbse insensitive regex`,
+				query: `cbse:no repo:Go-Diff|TypeScript`,
+				wbnt: []string{
 					"github.com/sgtest/go-diff",
-					"github.com/sgtest/sourcegraph-typescript",
+					"github.com/sgtest/sourcegrbph-typescript",
 				},
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchRepositories(test.query)
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				results, err := client.SebrchRepositories(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				if test.zeroResult {
 					if len(results) > 0 {
-						t.Errorf("Want zero result but got %d", len(results))
+						t.Errorf("Wbnt zero result but got %d", len(results))
 					}
 				} else {
 					if len(results) == 0 {
-						t.Errorf("Want non-zero results but got 0")
+						t.Errorf("Wbnt non-zero results but got 0")
 					}
 				}
 
-				if test.wantMissing != nil {
-					missing := results.Exists(test.wantMissing...)
+				if test.wbntMissing != nil {
+					missing := results.Exists(test.wbntMissing...)
 					sort.Strings(missing)
-					if diff := cmp.Diff(test.wantMissing, missing); diff != "" {
-						t.Errorf("Missing mismatch (-want +got):\n%s", diff)
+					if diff := cmp.Diff(test.wbntMissing, missing); diff != "" {
+						t.Errorf("Missing mismbtch (-wbnt +got):\n%s", diff)
 					}
 				}
 
-				if test.want != nil {
-					var have []string
-					for _, r := range results {
-						have = append(have, r.Name)
+				if test.wbnt != nil {
+					vbr hbve []string
+					for _, r := rbnge results {
+						hbve = bppend(hbve, r.Nbme)
 					}
 
-					sort.Strings(have)
-					if diff := cmp.Diff(test.want, have); diff != "" {
-						t.Errorf("Repos mismatch (-want +got):\n%s", diff)
+					sort.Strings(hbve)
+					if diff := cmp.Diff(test.wbnt, hbve); diff != "" {
+						t.Errorf("Repos mismbtch (-wbnt +got):\n%s", diff)
 					}
 				}
 			})
 		}
 	})
 
-	t.Run("global text search", func(t *testing.T) {
+	t.Run("globbl text sebrch", func(t *testing.T) {
 		tests := []struct {
-			name          string
+			nbme          string
 			query         string
 			zeroResult    bool
-			minMatchCount int64
-			wantAlert     *gqltestutil.SearchAlert
+			minMbtchCount int64
+			wbntAlert     *gqltestutil.SebrchAlert
 			skip          int
 		}{
-			// Global search
+			// Globbl sebrch
 			{
-				name:  "error",
+				nbme:  "error",
 				query: "error",
 			},
 			{
-				name:  "error count:1000",
+				nbme:  "error count:1000",
 				query: "error count:1000",
 			},
-			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// Flbkey test for exbctMbtchCount due to bug https://github.com/sourcegrbph/sourcegrbph/issues/29828
 			// {
-			// 	name:          "something with more than 1000 results and use count:1000",
+			// 	nbme:          "something with more thbn 1000 results bnd use count:1000",
 			// 	query:         ". count:1000",
-			// 	minMatchCount: 1000,
+			// 	minMbtchCount: 1000,
 			// },
 			{
-				name:          "default limit streaming",
+				nbme:          "defbult limit strebming",
 				query:         ".",
-				minMatchCount: 500,
-				skip:          skipGraphQL,
+				minMbtchCount: 500,
+				skip:          skipGrbphQL,
 			},
-			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// Flbkey test for exbctMbtchCount due to bug https://github.com/sourcegrbph/sourcegrbph/issues/29828
 			// {
-			// 	name:          "default limit graphql",
+			// 	nbme:          "defbult limit grbphql",
 			// 	query:         ".",
-			// 	minMatchCount: 30,
-			// 	skip:          skipStream,
+			// 	minMbtchCount: 30,
+			// 	skip:          skipStrebm,
 			// },
 			{
-				name:  "regular expression without indexed search",
-				query: "index:no patterntype:regexp ^func.*$",
+				nbme:  "regulbr expression without indexed sebrch",
+				query: "index:no pbtterntype:regexp ^func.*$",
 			},
-			// Failing test: https://github.com/sourcegraph/sourcegraph/issues/48109
+			// Fbiling test: https://github.com/sourcegrbph/sourcegrbph/issues/48109
 			//{
-			//	name:  "fork:only",
+			//	nbme:  "fork:only",
 			//	query: "fork:only router",
 			//},
 			{
-				name:  "double-quoted pattern, nonzero result",
-				query: `"func main() {\n" patterntype:regexp type:file`,
+				nbme:  "double-quoted pbttern, nonzero result",
+				query: `"func mbin() {\n" pbtterntype:regexp type:file`,
 			},
 			{
-				name:  "exclude repo, nonzero result",
-				query: `"func main() {\n" -repo:go-diff patterntype:regexp type:file`,
+				nbme:  "exclude repo, nonzero result",
+				query: `"func mbin() {\n" -repo:go-diff pbtterntype:regexp type:file`,
 			},
 			{
-				name:       "fork:no",
+				nbme:       "fork:no",
 				query:      "fork:no FORK" + "_SENTINEL",
 				zeroResult: true,
 			},
 			{
-				name:  "fork:yes",
+				nbme:  "fork:yes",
 				query: "fork:yes FORK" + "_SENTINEL",
 			},
 			{
-				name:       "random characters, zero results",
-				query:      "asdfalksd+jflaksjdfklas patterntype:literal -repo:sourcegraph",
+				nbme:       "rbndom chbrbcters, zero results",
+				query:      "bsdfblksd+jflbksjdfklbs pbtterntype:literbl -repo:sourcegrbph",
 				zeroResult: true,
 			},
-			// Global search visibility
+			// Globbl sebrch visibility
 			{
-				name: "visibility:all for global search includes private repo",
-				// match content in a private repo sgtest/private and a public repo sgtest/go-diff.
-				query:         `(#\ private|#\ go-diff) visibility:all patterntype:regexp`,
-				minMatchCount: 2,
+				nbme: "visibility:bll for globbl sebrch includes privbte repo",
+				// mbtch content in b privbte repo sgtest/privbte bnd b public repo sgtest/go-diff.
+				query:         `(#\ privbte|#\ go-diff) visibility:bll pbtterntype:regexp`,
+				minMbtchCount: 2,
 			},
 			{
-				name: "visibility:public for global search excludes private repo",
-				// expect no matches because pattern '# private' is only in a private repo.
-				query:      "# private visibility:public",
-				zeroResult: true,
-			},
-			{
-				name: "visibility:private for global includes only private repo",
-				// expect no matches because #go-diff doesn't exist in private repo.
-				query:      "# go-diff visibility:private",
+				nbme: "visibility:public for globbl sebrch excludes privbte repo",
+				// expect no mbtches becbuse pbttern '# privbte' is only in b privbte repo.
+				query:      "# privbte visibility:public",
 				zeroResult: true,
 			},
 			{
-				name: "visibility:private for global includes only private",
-				// expect a match because # private is only in a private repo.
-				query:      "# private visibility:private",
-				zeroResult: false,
-			},
-			// Repo search
-			{
-				name:  "repo search by name, case yes, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ String case:yes type:file`,
-			},
-			{
-				name:  "non-master branch, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$@v1 void sendPartialResult(Object requestId, JsonPatch jsonPatch); patterntype:literal type:file`,
-			},
-			{
-				name:  "indexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ runtime(.|\n)*BYTES_TO_GIGABYTES index:only patterntype:regexp type:file`,
-			},
-			{
-				name:  "unindexed multiline search, nonzero result",
-				query: `repo:^github\.com/sgtest/java-langserver$ \nimport index:no patterntype:regexp type:file`,
-			},
-			{
-				name:       "random characters, zero result",
-				query:      `repo:^github\.com/sgtest/java-langserver$ doesnot734734743734743exist`,
+				nbme: "visibility:privbte for globbl includes only privbte repo",
+				// expect no mbtches becbuse #go-diff doesn't exist in privbte repo.
+				query:      "# go-diff visibility:privbte",
 				zeroResult: true,
 			},
-			// Filename search
 			{
-				name:  "search for a known file",
+				nbme: "visibility:privbte for globbl includes only privbte",
+				// expect b mbtch becbuse # privbte is only in b privbte repo.
+				query:      "# privbte visibility:privbte",
+				zeroResult: fblse,
+			},
+			// Repo sebrch
+			{
+				nbme:  "repo sebrch by nbme, cbse yes, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ String cbse:yes type:file`,
+			},
+			{
+				nbme:  "non-mbster brbnch, nonzero result",
+				query: `repo:^github\.com/sgtest/jbvb-lbngserver$@v1 void sendPbrtiblResult(Object requestId, JsonPbtch jsonPbtch); pbtterntype:literbl type:file`,
+			},
+			{
+				nbme:  "indexed multiline sebrch, nonzero result",
+				query: `repo:^github\.com/sgtest/jbvb-lbngserver$ runtime(.|\n)*BYTES_TO_GIGABYTES index:only pbtterntype:regexp type:file`,
+			},
+			{
+				nbme:  "unindexed multiline sebrch, nonzero result",
+				query: `repo:^github\.com/sgtest/jbvb-lbngserver$ \nimport index:no pbtterntype:regexp type:file`,
+			},
+			{
+				nbme:       "rbndom chbrbcters, zero result",
+				query:      `repo:^github\.com/sgtest/jbvb-lbngserver$ doesnot734734743734743exist`,
+				zeroResult: true,
+			},
+			// Filenbme sebrch
+			{
+				nbme:  "sebrch for b known file",
 				query: "file:doc.go",
 			},
 			{
-				name:       "search for a non-existent file",
-				query:      "file:asdfasdf.go",
+				nbme:       "sebrch for b non-existent file",
+				query:      "file:bsdfbsdf.go",
 				zeroResult: true,
 			},
-			// Symbol search
+			// Symbol sebrch
 			{
-				name:  "search for a known symbol",
-				query: "type:symbol count:100 patterntype:regexp ^newroute",
+				nbme:  "sebrch for b known symbol",
+				query: "type:symbol count:100 pbtterntype:regexp ^newroute",
 			},
 			{
-				name:       "search for a non-existent symbol",
-				query:      "type:symbol asdfasdf",
+				nbme:       "sebrch for b non-existent symbol",
+				query:      "type:symbol bsdfbsdf",
 				zeroResult: true,
 			},
-			// Commit search
+			// Commit sebrch
 			{
-				name:  "commit search, nonzero result",
+				nbme:  "commit sebrch, nonzero result",
 				query: `repo:^github\.com/sgtest/go-diff$ type:commit`,
 			},
 			{
-				name:       "commit search, non-existent ref",
+				nbme:       "commit sebrch, non-existent ref",
 				query:      `repo:^github\.com/sgtest/go-diff$@ref/noexist type:commit`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:           "Some repositories could not be searched",
-					Description:     `The repository github.com/sgtest/go-diff matched by your repo: filter could not be searched because it does not contain the revision "ref/noexist".`,
+				wbntAlert: &gqltestutil.SebrchAlert{
+					Title:           "Some repositories could not be sebrched",
+					Description:     `The repository github.com/sgtest/go-diff mbtched by your repo: filter could not be sebrched becbuse it does not contbin the revision "ref/noexist".`,
 					ProposedQueries: nil,
 				},
 			},
 			{
-				name:  "commit search, non-zero result message",
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit message:test`,
+				nbme:  "commit sebrch, non-zero result messbge",
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ type:commit messbge:test`,
 			},
 			{
-				name:  "commit search, non-zero result pattern",
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit test`,
+				nbme:  "commit sebrch, non-zero result pbttern",
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ type:commit test`,
 			},
-			// Diff search
+			// Diff sebrch
 			{
-				name:  "diff search, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ type:diff main`,
+				nbme:  "diff sebrch, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ type:diff mbin`,
 			},
-			// Repohascommitafter
+			// Repohbscommitbfter
 			{
-				name:  `Repohascommitafter, nonzero result`,
-				query: `repo:^github\.com/sgtest/go-diff$ repohascommitafter:"2019-01-01" test patterntype:literal`,
+				nbme:  `Repohbscommitbfter, nonzero result`,
+				query: `repo:^github\.com/sgtest/go-diff$ repohbscommitbfter:"2019-01-01" test pbtterntype:literbl`,
 			},
-			// Regex text search
+			// Regex text sebrch
 			{
-				name:  `regex, unindexed, nonzero result`,
-				query: `^func.*$ patterntype:regexp index:only type:file`,
-			},
-			{
-				name:  `regex, fork only, nonzero result`,
-				query: `fork:only patterntype:regexp FORK_SENTINEL`,
+				nbme:  `regex, unindexed, nonzero result`,
+				query: `^func.*$ pbtterntype:regexp index:only type:file`,
 			},
 			{
-				name:  `regex, filter by language`,
-				query: `\bfunc\b lang:go type:file patterntype:regexp`,
+				nbme:  `regex, fork only, nonzero result`,
+				query: `fork:only pbtterntype:regexp FORK_SENTINEL`,
 			},
 			{
-				name:       `regex, filename, zero results`,
-				query:      `file:asdfasdf.go patterntype:regexp`,
+				nbme:  `regex, filter by lbngubge`,
+				query: `\bfunc\b lbng:go type:file pbtterntype:regexp`,
+			},
+			{
+				nbme:       `regex, filenbme, zero results`,
+				query:      `file:bsdfbsdf.go pbtterntype:regexp`,
 				zeroResult: true,
 			},
 			{
-				name:  `regexp, filename, nonzero result`,
-				query: `file:doc.go patterntype:regexp`,
+				nbme:  `regexp, filenbme, nonzero result`,
+				query: `file:doc.go pbtterntype:regexp`,
 			},
-			// Ensure repo resolution is correct in global. https://github.com/sourcegraph/sourcegraph/issues/27044
+			// Ensure repo resolution is correct in globbl. https://github.com/sourcegrbph/sourcegrbph/issues/27044
 			{
-				name:       `-repo excludes private repos`,
-				query:      `-repo:private // this is a change`,
+				nbme:       `-repo excludes privbte repos`,
+				query:      `-repo:privbte // this is b chbnge`,
 				zeroResult: true,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				doSkip(t, test.skip)
 
-				results, err := client.SearchFiles(test.query)
+				results, err := client.SebrchFiles(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
-					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(test.wbntAlert, results.Alert); diff != "" {
+					t.Fbtblf("Alert mismbtch (-wbnt +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
 					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
+						t.Fbtblf("Wbnt zero result but got %d", len(results.Results))
 					}
 				} else {
 					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
+						t.Fbtbl("Wbnt non-zero results but got 0")
 					}
 				}
 
-				if results.MatchCount < test.minMatchCount {
-					t.Fatalf("Want at least %d match count but got %d", test.minMatchCount, results.MatchCount)
+				if results.MbtchCount < test.minMbtchCount {
+					t.Fbtblf("Wbnt bt lebst %d mbtch count but got %d", test.minMbtchCount, results.MbtchCount)
 				}
 			})
 		}
 	})
 
-	t.Run("structural search", func(t *testing.T) {
+	t.Run("structurbl sebrch", func(t *testing.T) {
 		tests := []struct {
-			name       string
+			nbme       string
 			query      string
 			zeroResult bool
-			wantAlert  *gqltestutil.SearchAlert
+			wbntAlert  *gqltestutil.SebrchAlert
 			skip       int
 		}{
 			{
-				name:  "Structural, index only, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) index:only patterntype:structural count:3`,
-				skip:  skipStream | skipGraphQL,
+				nbme:  "Structurbl, index only, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ mbke(:[1]) index:only pbtterntype:structurbl count:3`,
+				skip:  skipStrebm | skipGrbphQL,
 			},
 			{
-				name:  "Structural, index only, backcompat, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$ make(:[1]) lang:go rule:'where "backcompat" == "backcompat"' patterntype:structural`,
+				nbme:  "Structurbl, index only, bbckcompbt, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$ mbke(:[1]) lbng:go rule:'where "bbckcompbt" == "bbckcompbt"' pbtterntype:structurbl`,
 			},
 			{
-				name:  "Structural, unindexed, nonzero result",
-				query: `repo:^github\.com/sgtest/go-diff$@adde71 make(:[1]) index:no patterntype:structural count:3`,
+				nbme:  "Structurbl, unindexed, nonzero result",
+				query: `repo:^github\.com/sgtest/go-diff$@bdde71 mbke(:[1]) index:no pbtterntype:structurbl count:3`,
 			},
 			{
-				name:  `Structural search quotes are interpreted literally`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ file:^README\.md "basic :[_] access :[_]" patterntype:structural`,
+				nbme:  `Structurbl sebrch quotes bre interpreted literblly`,
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ file:^README\.md "bbsic :[_] bccess :[_]" pbtterntype:structurbl`,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				doSkip(t, test.skip)
-				results, err := client.SearchFiles(test.query)
+				results, err := client.SebrchFiles(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
-					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(test.wbntAlert, results.Alert); diff != "" {
+					t.Fbtblf("Alert mismbtch (-wbnt +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
 					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
+						t.Fbtblf("Wbnt zero result but got %d", len(results.Results))
 					}
 				} else {
 					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
+						t.Fbtbl("Wbnt non-zero results but got 0")
 					}
 				}
 			})
@@ -775,308 +775,308 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 	t.Run("And/Or queries", func(t *testing.T) {
 		tests := []struct {
-			name       string
+			nbme       string
 			query      string
 			zeroResult bool
-			wantAlert  *gqltestutil.SearchAlert
+			wbntAlert  *gqltestutil.SebrchAlert
 			skip       int
 		}{
 			{
-				name:  `And operator, basic`,
-				query: `repo:^github\.com/sgtest/go-diff$ func and main type:file`,
+				nbme:  `And operbtor, bbsic`,
+				query: `repo:^github\.com/sgtest/go-diff$ func bnd mbin type:file`,
 			},
 			{
-				name:  `Or operator, single and double quoted`,
-				query: `repo:^github\.com/sgtest/go-diff$ "func PrintMultiFileDiff" or 'func readLine(' type:file patterntype:regexp`,
+				nbme:  `Or operbtor, single bnd double quoted`,
+				query: `repo:^github\.com/sgtest/go-diff$ "func PrintMultiFileDiff" or 'func rebdLine(' type:file pbtterntype:regexp`,
 			},
 			{
-				name:  `Literals, grouped parens with parens-as-patterns heuristic`,
-				query: `repo:^github\.com/sgtest/go-diff$ (() or ()) type:file patterntype:regexp`,
+				nbme:  `Literbls, grouped pbrens with pbrens-bs-pbtterns heuristic`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or ()) type:file pbtterntype:regexp`,
 			},
 			{
-				name:  `Literals, no grouped parens`,
-				query: `repo:^github\.com/sgtest/go-diff$ () or () type:file patterntype:regexp`,
+				nbme:  `Literbls, no grouped pbrens`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or () type:file pbtterntype:regexp`,
 			},
 			{
-				name:  `Literals, escaped parens`,
-				query: `repo:^github\.com/sgtest/go-diff$ \(\) or \(\) type:file patterntype:regexp`,
+				nbme:  `Literbls, escbped pbrens`,
+				query: `repo:^github\.com/sgtest/go-diff$ \(\) or \(\) type:file pbtterntype:regexp`,
 			},
 			{
-				name:  `Literals, escaped and unescaped parens, no group`,
-				query: `repo:^github\.com/sgtest/go-diff$ () or \(\) type:file patterntype:regexp`,
+				nbme:  `Literbls, escbped bnd unescbped pbrens, no group`,
+				query: `repo:^github\.com/sgtest/go-diff$ () or \(\) type:file pbtterntype:regexp`,
 			},
 			{
-				name:  `Literals, escaped and unescaped parens, grouped`,
-				query: `repo:^github\.com/sgtest/go-diff$ (() or \(\)) type:file patterntype:regexp`,
+				nbme:  `Literbls, escbped bnd unescbped pbrens, grouped`,
+				query: `repo:^github\.com/sgtest/go-diff$ (() or \(\)) type:file pbtterntype:regexp`,
 			},
 			{
-				name:       `Literals, double paren`,
+				nbme:       `Literbls, double pbren`,
 				query:      `repo:^github\.com/sgtest/go-diff$ ()() or ()()`,
 				zeroResult: true,
 			},
 			{
-				name:       `Literals, double paren, dangling paren right side`,
-				query:      `repo:^github\.com/sgtest/go-diff$ ()() or main()(`,
+				nbme:       `Literbls, double pbren, dbngling pbren right side`,
+				query:      `repo:^github\.com/sgtest/go-diff$ ()() or mbin()(`,
 				zeroResult: true,
 			},
 			{
-				name:       `Literals, double paren, dangling paren left side`,
+				nbme:       `Literbls, double pbren, dbngling pbren left side`,
 				query:      `repo:^github\.com/sgtest/go-diff$ ()( or ()()`,
 				zeroResult: true,
 			},
 			{
-				name:  `Mixed regexp and literal`,
-				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp func(.*) or does_not_exist_3744 type:file`,
+				nbme:  `Mixed regexp bnd literbl`,
+				query: `repo:^github\.com/sgtest/go-diff$ pbtternType:regexp func(.*) or does_not_exist_3744 type:file`,
 			},
 			{
-				name:  `Mixed regexp and literal heuristic`,
+				nbme:  `Mixed regexp bnd literbl heuristic`,
 				query: `repo:^github\.com/sgtest/go-diff$ func( or func(.*) type:file`,
 			},
 			{
-				name:       `Mixed regexp and quoted literal`,
-				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load type:file`,
+				nbme:       `Mixed regexp bnd quoted literbl`,
+				query:      `repo:^github\.com/sgtest/go-diff$ "*" bnd cert.*Lobd type:file`,
 				zeroResult: true,
 			},
-			// Disabled because it was flaky:
-			// https://buildkite.com/sourcegraph/sourcegraph/builds/161002
+			// Disbbled becbuse it wbs flbky:
+			// https://buildkite.com/sourcegrbph/sourcegrbph/builds/161002
 			// {
-			// 	name:  `Escape sequences`,
-			// 	query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
+			// 	nbme:  `Escbpe sequences`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ pbtternType:regexp \' bnd \" bnd \\ bnd /`,
 			// },
 			{
-				name:  `Escaped whitespace sequences with 'and'`,
-				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
+				nbme:  `Escbped whitespbce sequences with 'bnd'`,
+				query: `repo:^github\.com/sgtest/go-diff$ pbtternType:regexp \ bnd /`,
 			},
 			{
-				name:  `Concat converted to spaces for literal search`,
-				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:literal`,
+				nbme:  `Concbt converted to spbces for literbl sebrch`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time pbtterntype:literbl`,
 			},
 			{
-				name:  `Literal parentheses match pattern`,
-				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() and Time() patterntype:literal`,
+				nbme:  `Literbl pbrentheses mbtch pbttern`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go Bytes() bnd Time() pbtterntype:literbl`,
 			},
 			{
-				name:  `Literals, simple not keyword inside group`,
-				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) patterntype:literal`,
+				nbme:  `Literbls, simple not keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (not .svg) pbtterntype:literbl`,
 			},
 			{
-				name:  `Literals, not keyword and implicit and inside group`,
-				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
-				skip:  skipStream | skipGraphQL,
+				nbme:  `Literbls, not keyword bnd implicit bnd inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (b/foo not .svg) pbtterntype:literbl`,
+				skip:  skipStrebm | skipGrbphQL,
 			},
 			{
-				name:  `Literals, not and and keyword inside group`,
-				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
-				skip:  skipStream | skipGraphQL,
+				nbme:  `Literbls, not bnd bnd keyword inside group`,
+				query: `repo:^github\.com/sgtest/go-diff$ (b/foo bnd not .svg) pbtterntype:literbl`,
+				skip:  skipStrebm | skipGrbphQL,
 			},
 			{
-				name:  `Dangling right parens, supported via content: filter`,
-				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPath)" and main patterntype:literal`,
+				nbme:  `Dbngling right pbrens, supported vib content: filter`,
+				query: `repo:^github\.com/sgtest/go-diff$ content:"diffPbth)" bnd mbin pbtterntype:literbl`,
 			},
 			{
-				name:       `Dangling right parens, unsupported in literal search`,
-				query:      `repo:^github\.com/sgtest/go-diff$ diffPath) and main patterntype:literal`,
+				nbme:       `Dbngling right pbrens, unsupported in literbl sebrch`,
+				query:      `repo:^github\.com/sgtest/go-diff$ diffPbth) bnd mbin pbtterntype:literbl`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Unable To Process Query",
-					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				wbntAlert: &gqltestutil.SebrchAlert{
+					Title:       "Unbble To Process Query",
+					Description: "Unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses",
 				},
 			},
 			{
-				name:       `Dangling right parens, unsupported in literal search, double parens`,
-				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and OrigName)) patterntype:literal`,
+				nbme:       `Dbngling right pbrens, unsupported in literbl sebrch, double pbrens`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MbrshblTo bnd OrigNbme)) pbtterntype:literbl`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Unable To Process Query",
-					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				wbntAlert: &gqltestutil.SebrchAlert{
+					Title:       "Unbble To Process Query",
+					Description: "Unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses",
 				},
 			},
 			{
-				name:       `Dangling right parens, unsupported in literal search, simple group before right paren`,
-				query:      `repo:^github\.com/sgtest/go-diff$ MarshalTo and (m.OrigName)) patterntype:literal`,
+				nbme:       `Dbngling right pbrens, unsupported in literbl sebrch, simple group before right pbren`,
+				query:      `repo:^github\.com/sgtest/go-diff$ MbrshblTo bnd (m.OrigNbme)) pbtterntype:literbl`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Unable To Process Query",
-					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				wbntAlert: &gqltestutil.SebrchAlert{
+					Title:       "Unbble To Process Query",
+					Description: "Unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses",
 				},
 			},
 			{
-				name:       `Dangling right parens, heuristic for literal search, cannot succeed, too confusing`,
-				query:      `repo:^github\.com/sgtest/go-diff$ (respObj.Size and (data))) patterntype:literal`,
+				nbme:       `Dbngling right pbrens, heuristic for literbl sebrch, cbnnot succeed, too confusing`,
+				query:      `repo:^github\.com/sgtest/go-diff$ (respObj.Size bnd (dbtb))) pbtterntype:literbl`,
 				zeroResult: true,
-				wantAlert: &gqltestutil.SearchAlert{
-					Title:       "Unable To Process Query",
-					Description: "Unsupported expression. The combination of parentheses in the query have an unclear meaning. Try using the content: filter to quote patterns that contain parentheses",
+				wbntAlert: &gqltestutil.SebrchAlert{
+					Title:       "Unbble To Process Query",
+					Description: "Unsupported expression. The combinbtion of pbrentheses in the query hbve bn unclebr mebning. Try using the content: filter to quote pbtterns thbt contbin pbrentheses",
 				},
 			},
 			{
-				name:       `No result for confusing grouping`,
-				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or x\) ()) patterntype:literal`,
+				nbme:       `No result for confusing grouping`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bbr bnd (foo or x\) ()) pbtterntype:literbl`,
 				zeroResult: true,
 			},
 			{
-				name:       `Successful grouping removes alert`,
-				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bar and (foo or (x\) ())) patterntype:literal`,
+				nbme:       `Successful grouping removes blert`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^README\.md (bbr bnd (foo or (x\) ())) pbtterntype:literbl`,
 				zeroResult: true,
 			},
 			{
-				name:  `No dangling right paren with complex group for literal search`,
-				query: `repo:^github\.com/sgtest/go-diff$ (m *FileDiff and (data)) patterntype:literal`,
+				nbme:  `No dbngling right pbren with complex group for literbl sebrch`,
+				query: `repo:^github\.com/sgtest/go-diff$ (m *FileDiff bnd (dbtb)) pbtterntype:literbl`,
 			},
 			{
-				name:  `Concat converted to .* for regexp search`,
-				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time patterntype:regexp type:file`,
+				nbme:  `Concbt converted to .* for regexp sebrch`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go t := or ts Time pbtterntype:regexp type:file`,
 			},
 			{
-				name:  `Structural search uses literal search parser`,
-				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts and printFileHeader(:[_]) patterntype:structural`,
+				nbme:  `Structurbl sebrch uses literbl sebrch pbrser`,
+				query: `repo:^github\.com/sgtest/go-diff$ file:^diff/print\.go :[[v]] := ts bnd printFileHebder(:[_]) pbtterntype:structurbl`,
 			},
 			{
-				name:  `Union file matches per file and accurate counts`,
-				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func or package`,
+				nbme:  `Union file mbtches per file bnd bccurbte counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func or pbckbge`,
 			},
 			{
-				name:  `Intersect file matches per file and accurate counts`,
-				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and package`,
+				nbme:  `Intersect file mbtches per file bnd bccurbte counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func bnd pbckbge`,
 			},
 			{
-				name:  `Simple combined union and intersect file matches per file and accurate counts`,
-				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr and package diff) or return buf.Bytes())`,
+				nbme:  `Simple combined union bnd intersect file mbtches per file bnd bccurbte counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr bnd pbckbge diff) or return buf.Bytes())`,
 			},
 			{
-				name:  `Complex union of intersect file matches per file and accurate counts`,
-				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr and package diff) or (ts == nil and ts.Time()))`,
+				nbme:  `Complex union of intersect file mbtches per file bnd bccurbte counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr bnd pbckbge diff) or (ts == nil bnd ts.Time()))`,
 			},
 			{
-				name:  `Complex intersect of union file matches per file and accurate counts`,
-				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr or package diff) and (ts == nil or ts.Time()))`,
+				nbme:  `Complex intersect of union file mbtches per file bnd bccurbte counts`,
+				query: `repo:^github\.com/sgtest/go-diff file:^diff/print\.go ((func timePtr or pbckbge diff) bnd (ts == nil or ts.Time()))`,
 			},
 			{
-				name:       `Intersect file matches per file against an empty result set`,
-				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func and doesnotexist838338`,
+				nbme:       `Intersect file mbtches per file bgbinst bn empty result set`,
+				query:      `repo:^github\.com/sgtest/go-diff file:^diff/print\.go func bnd doesnotexist838338`,
 				zeroResult: true,
 			},
 			{
-				name:  `Dedupe union operation`,
-				query: `file:diff.go|print.go|parse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := range :[src.] { :[_] } or if :[s1] == :[s2] patterntype:structural`,
+				nbme:  `Dedupe union operbtion`,
+				query: `file:diff.go|print.go|pbrse.go repo:^github\.com/sgtest/go-diff _, :[[x]] := rbnge :[src.] { :[_] } or if :[s1] == :[s2] pbtterntype:structurbl`,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				doSkip(t, test.skip)
 
-				results, err := client.SearchFiles(test.query)
+				results, err := client.SebrchFiles(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
-					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(test.wbntAlert, results.Alert); diff != "" {
+					t.Fbtblf("Alert mismbtch (-wbnt +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
 					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
+						t.Fbtblf("Wbnt zero result but got %d", len(results.Results))
 					}
 				} else {
 					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
+						t.Fbtbl("Wbnt non-zero results but got 0")
 					}
 				}
 			})
 		}
 	})
 
-	t.Run("And/Or search expression queries", func(t *testing.T) {
+	t.Run("And/Or sebrch expression queries", func(t *testing.T) {
 		tests := []struct {
-			name            string
+			nbme            string
 			query           string
 			zeroResult      bool
-			exactMatchCount int64
-			wantAlert       *gqltestutil.SearchAlert
+			exbctMbtchCount int64
+			wbntAlert       *gqltestutil.SebrchAlert
 			skip            int
 		}{
 			{
-				name:  `Or distributive property on content and file`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (Fetches OR file:language-server.ts)`,
+				nbme:  `Or distributive property on content bnd file`,
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ (Fetches OR file:lbngubge-server.ts)`,
 			},
 			{
-				name:  `Or distributive property on nested file on content`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ ((file:^renovate\.json extends) or file:progress.ts createProgressProvider)`,
+				nbme:  `Or distributive property on nested file on content`,
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ ((file:^renovbte\.json extends) or file:progress.ts crebteProgressProvider)`,
 			},
 			{
-				name:  `Or distributive property on commit`,
-				query: `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) author:felix yarn`,
+				nbme:  `Or distributive property on commit`,
+				query: `repo:^github\.com/sgtest/sourcegrbph-typescript$ (type:diff or type:commit) buthor:felix ybrn`,
 			},
 			{
-				name:            `Or match on both diff and commit returns both`,
-				query:           `repo:^github\.com/sgtest/sourcegraph-typescript$ (type:diff or type:commit) subscription after:"june 11 2019" before:"june 13 2019"`,
-				exactMatchCount: 2,
+				nbme:            `Or mbtch on both diff bnd commit returns both`,
+				query:           `repo:^github\.com/sgtest/sourcegrbph-typescript$ (type:diff or type:commit) subscription bfter:"june 11 2019" before:"june 13 2019"`,
+				exbctMbtchCount: 2,
 			},
 			{
-				name:            `Or distributive property on rev`,
+				nbme:            `Or distributive property on rev`,
 				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2)`,
-				exactMatchCount: 2,
+				exbctMbtchCount: 2,
 			},
 			{
-				name:            `Or distributive property on rev with file`,
+				nbme:            `Or distributive property on rev with file`,
 				query:           `repo:^github\.com/sgtest/mux$ (rev:v1.7.3 or revision:v1.7.2) file:README.md`,
-				exactMatchCount: 2,
+				exbctMbtchCount: 2,
 			},
 			{
-				name:  `Or distributive property on repo`,
-				query: `(repo:^github\.com/sgtest/go-diff$@garo/lsif-indexing-campaign:test-already-exist-pr or repo:^github\.com/sgtest/sourcegraph-typescript$) file:README.md #`,
+				nbme:  `Or distributive property on repo`,
+				query: `(repo:^github\.com/sgtest/go-diff$@gbro/lsif-indexing-cbmpbign:test-blrebdy-exist-pr or repo:^github\.com/sgtest/sourcegrbph-typescript$) file:README.md #`,
 			},
 			{
-				name:  `Or distributive property on repo where only one repo contains match (tests repo cache is invalidated)`,
-				query: `(repo:^github\.com/sgtest/sourcegraph-typescript$ or repo:^github\.com/sgtest/go-diff$) package diff provides`,
+				nbme:  `Or distributive property on repo where only one repo contbins mbtch (tests repo cbche is invblidbted)`,
+				query: `(repo:^github\.com/sgtest/sourcegrbph-typescript$ or repo:^github\.com/sgtest/go-diff$) pbckbge diff provides`,
 			},
 			{
-				name:  `Or distributive property on commits deduplicates and merges`,
-				query: `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-				skip:  skipStream,
+				nbme:  `Or distributive property on commits deduplicbtes bnd merges`,
+				query: `repo:^github\.com/sgtest/go-diff$ type:commit (messbge:bdd or messbge:file)`,
+				skip:  skipStrebm,
 			},
 			{
-				name:  `Exact default count is respected in OR queries`,
-				query: `foo OR bar OR (type:repo diff)`,
+				nbme:  `Exbct defbult count is respected in OR queries`,
+				query: `foo OR bbr OR (type:repo diff)`,
 			},
-			// Flakey test for exactMatchCount due to bug https://github.com/sourcegraph/sourcegraph/issues/29828
+			// Flbkey test for exbctMbtchCount due to bug https://github.com/sourcegrbph/sourcegrbph/issues/29828
 			// {
-			//	name:            `Or distributive property on commits deduplicates and merges`,
-			//	query:           `repo:^github\.com/sgtest/go-diff$ type:commit (message:add or message:file)`,
-			//	exactMatchCount: 30,
-			//	skip:            skipStream,
+			//	nbme:            `Or distributive property on commits deduplicbtes bnd merges`,
+			//	query:           `repo:^github\.com/sgtest/go-diff$ type:commit (messbge:bdd or messbge:file)`,
+			//	exbctMbtchCount: 30,
+			//	skip:            skipStrebm,
 			// },
 			// {
-			//	name:            `Exact default count is respected in OR queries`,
-			//	query:           `foo OR bar OR (type:repo diff)`,
-			//	exactMatchCount: 30,
+			//	nbme:            `Exbct defbult count is respected in OR queries`,
+			//	query:           `foo OR bbr OR (type:repo diff)`,
+			//	exbctMbtchCount: 30,
 			// },
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				doSkip(t, test.skip)
 
-				results, err := client.SearchFiles(test.query)
+				results, err := client.SebrchFiles(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
-				if diff := cmp.Diff(test.wantAlert, results.Alert); diff != "" {
-					t.Fatalf("Alert mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(test.wbntAlert, results.Alert); diff != "" {
+					t.Fbtblf("Alert mismbtch (-wbnt +got):\n%s", diff)
 				}
 
 				if test.zeroResult {
 					if len(results.Results) > 0 {
-						t.Fatalf("Want zero result but got %d", len(results.Results))
+						t.Fbtblf("Wbnt zero result but got %d", len(results.Results))
 					}
 				} else {
 					if len(results.Results) == 0 {
-						t.Fatal("Want non-zero results but got 0")
+						t.Fbtbl("Wbnt non-zero results but got 0")
 					}
 				}
-				if test.exactMatchCount != 0 && results.MatchCount != test.exactMatchCount {
-					t.Fatalf("Want exactly %d results but got %d", test.exactMatchCount, results.MatchCount)
+				if test.exbctMbtchCount != 0 && results.MbtchCount != test.exbctMbtchCount {
+					t.Fbtblf("Wbnt exbctly %d results but got %d", test.exbctMbtchCount, results.MbtchCount)
 				}
 			})
 		}
@@ -1091,19 +1091,19 @@ func testSearchClient(t *testing.T, client searchClient) {
 	}
 
 	countResults := func(results []*gqltestutil.AnyResult) counts {
-		var count counts
-		for _, res := range results {
+		vbr count counts
+		for _, res := rbnge results {
 			switch v := res.Inner.(type) {
-			case gqltestutil.CommitResult:
+			cbse gqltestutil.CommitResult:
 				count.Commit += 1
-			case gqltestutil.RepositoryResult:
+			cbse gqltestutil.RepositoryResult:
 				count.Repo += 1
-			case gqltestutil.FileResult:
+			cbse gqltestutil.FileResult:
 				count.Symbol += len(v.Symbols)
-				for _, lm := range v.LineMatches {
+				for _, lm := rbnge v.LineMbtches {
 					count.Content += len(lm.OffsetAndLengths)
 				}
-				if len(v.Symbols) == 0 && len(v.LineMatches) == 0 {
+				if len(v.Symbols) == 0 && len(v.LineMbtches) == 0 {
 					count.File += 1
 				}
 			}
@@ -1111,223 +1111,223 @@ func testSearchClient(t *testing.T, client searchClient) {
 		return count
 	}
 
-	t.Run("Predicate Queries", func(t *testing.T) {
+	t.Run("Predicbte Queries", func(t *testing.T) {
 		tests := []struct {
-			name   string
+			nbme   string
 			query  string
 			counts counts
 		}{
 			{
-				name:   `repo contains file`,
-				query:  `repo:contains.file(path:go\.mod)`,
+				nbme:   `repo contbins file`,
+				query:  `repo:contbins.file(pbth:go\.mod)`,
 				counts: counts{Repo: 2},
 			},
 			{
-				name:   `repo contains file using deprecated syntax`,
-				query:  `repo:contains.file(go\.mod)`,
+				nbme:   `repo contbins file using deprecbted syntbx`,
+				query:  `repo:contbins.file(go\.mod)`,
 				counts: counts{Repo: 2},
 			},
 			{
-				name:   `repo contains file but not content`,
-				query:  `repo:contains.path(go\.mod) -repo:contains.content(go-diff)`,
+				nbme:   `repo contbins file but not content`,
+				query:  `repo:contbins.pbth(go\.mod) -repo:contbins.content(go-diff)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name: `repo does not contain file, but search for another file`,
-				// reader_util_test.go exists in go-diff
-				// appdash.go exists in appdash
-				query:  `-repo:contains.path(reader_util_test.go) file:appdash.go`,
+				nbme: `repo does not contbin file, but sebrch for bnother file`,
+				// rebder_util_test.go exists in go-diff
+				// bppdbsh.go exists in bppdbsh
+				query:  `-repo:contbins.pbth(rebder_util_test.go) file:bppdbsh.go`,
 				counts: counts{File: 1},
 			},
 			{
-				name: `repo does not contain content, but search for another file`,
+				nbme: `repo does not contbin content, but sebrch for bnother file`,
 				// TestHunkNoChunksize exists in go-diff
-				// appdash.go exists in appdash
-				query:  `-repo:contains.content(TestParseHunkNoChunksize) file:appdash.go`,
+				// bppdbsh.go exists in bppdbsh
+				query:  `-repo:contbins.content(TestPbrseHunkNoChunksize) file:bppdbsh.go`,
 				counts: counts{File: 1},
 			},
 			{
-				name: `repo does not contain content, but search for another file`,
-				// reader_util_test.go exists in go-diff
+				nbme: `repo does not contbin content, but sebrch for bnother file`,
+				// rebder_util_test.go exists in go-diff
 				// TestHunkNoChunksize exists in go-diff
-				query:  `-repo:contains.content(TestParseHunkNoChunksize) file:reader_util_test.go`,
+				query:  `-repo:contbins.content(TestPbrseHunkNoChunksize) file:rebder_util_test.go`,
 				counts: counts{},
 			},
 			{
-				name: `repo does not contain content, but search for another file`,
-				// reader_util_test.go exists in go-diff
+				nbme: `repo does not contbin content, but sebrch for bnother file`,
+				// rebder_util_test.go exists in go-diff
 				// TestHunkNoChunksize exists in go-diff
-				query:  `-repo:contains.file(reader_util_test.go) TestHunkNoChunksize`,
+				query:  `-repo:contbins.file(rebder_util_test.go) TestHunkNoChunksize`,
 				counts: counts{},
 			},
 			{
-				name:   `no repo contains file`,
-				query:  `repo:contains.file(path:noexist.go)`,
+				nbme:   `no repo contbins file`,
+				query:  `repo:contbins.file(pbth:noexist.go)`,
 				counts: counts{},
 			},
 			{
-				name:   `no repo contains file with pattern`,
-				query:  `repo:contains.file(path:noexist.go) test`,
+				nbme:   `no repo contbins file with pbttern`,
+				query:  `repo:contbins.file(pbth:noexist.go) test`,
 				counts: counts{},
 			},
 			{
-				name:   `repo contains content`,
-				query:  `repo:contains.file(content:nextFileFirstLine)`,
+				nbme:   `repo contbins content`,
+				query:  `repo:contbins.file(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains content scoped predicate`,
-				query:  `repo:contains.content(nextFileFirstLine)`,
+				nbme:   `repo contbins content scoped predicbte`,
+				query:  `repo:contbins.content(nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `or-expression on repo:contains.file`,
-				query:  `repo:contains.file(content:does-not-exist-D2E1E74C7279) or repo:contains.file(content:nextFileFirstLine)`,
+				nbme:   `or-expression on repo:contbins.file`,
+				query:  `repo:contbins.file(content:does-not-exist-D2E1E74C7279) or repo:contbins.file(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `negated repo:contains with another repo:contains`,
-				query:  `-repo:contains.content(does-not-exist-D2E1E74C7279) and repo:contains.content(nextFileFirstLine)`,
+				nbme:   `negbted repo:contbins with bnother repo:contbins`,
+				query:  `-repo:contbins.content(does-not-exist-D2E1E74C7279) bnd repo:contbins.content(nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `and-expression on repo:contains.file`,
-				query:  `repo:contains.file(content:does-not-exist-D2E1E74C7279) and repo:contains.file(content:nextFileFirstLine)`,
+				nbme:   `bnd-expression on repo:contbins.file`,
+				query:  `repo:contbins.file(content:does-not-exist-D2E1E74C7279) bnd repo:contbins.file(content:nextFileFirstLine)`,
 				counts: counts{Repo: 0},
 			},
-			// Flakey tests see: https://buildkite.com/organizations/sourcegraph/pipelines/sourcegraph/builds/169653/jobs/0182e8df-8be9-4235-8f4d-a3d458354249/raw_log
+			// Flbkey tests see: https://buildkite.com/orgbnizbtions/sourcegrbph/pipelines/sourcegrbph/builds/169653/jobs/0182e8df-8be9-4235-8f4d-b3d458354249/rbw_log
 			// {
-			// 	name:   `repo contains file then search common`,
-			// 	query:  `repo:contains.file(path:go.mod) count:100 fmt`,
+			// 	nbme:   `repo contbins file then sebrch common`,
+			// 	query:  `repo:contbins.file(pbth:go.mod) count:100 fmt`,
 			// 	counts: counts{Content: 61},
 			// },
 			// {
-			// 	name:   `repo contains path`,
-			// 	query:  `repo:contains.path(go.mod) count:100 fmt`,
+			// 	nbme:   `repo contbins pbth`,
+			// 	query:  `repo:contbins.pbth(go.mod) count:100 fmt`,
 			// 	counts: counts{Content: 61},
 			// },
 			{
-				name:   `repo contains file with matching repo filter`,
-				query:  `repo:go-diff repo:contains.file(path:diff.proto)`,
+				nbme:   `repo contbins file with mbtching repo filter`,
+				query:  `repo:go-diff repo:contbins.file(pbth:diff.proto)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo contains file with non-matching repo filter`,
-				query:  `repo:nonexist repo:contains.file(path:diff.proto)`,
+				nbme:   `repo contbins file with non-mbtching repo filter`,
+				query:  `repo:nonexist repo:contbins.file(pbth:diff.proto)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo contains path respects parameters that affect repo search (fork)`,
-				query:  `repo:sgtest/mux fork:yes repo:contains.path(README)`,
+				nbme:   `repo contbins pbth respects pbrbmeters thbt bffect repo sebrch (fork)`,
+				query:  `repo:sgtest/mux fork:yes repo:contbins.pbth(README)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `commit results without repo filter`,
+				nbme:   `commit results without repo filter`,
 				query:  `type:commit LSIF`,
 				counts: counts{Commit: 11},
 			},
 			{
-				name:   `commit results with repo filter`,
-				query:  `repo:contains.file(path:diff.pb.go) type:commit LSIF`,
+				nbme:   `commit results with repo filter`,
+				query:  `repo:contbins.file(pbth:diff.pb.go) type:commit LSIF`,
 				counts: counts{Commit: 2},
 			},
 			{
-				name:   `repo contains file using deprecated syntax`,
-				query:  `repo:contains(file:go\.mod)`,
+				nbme:   `repo contbins file using deprecbted syntbx`,
+				query:  `repo:contbins(file:go\.mod)`,
 				counts: counts{Repo: 2},
 			},
 			{
-				name:   `repo contains content using deprecated syntax`,
-				query:  `repo:contains(content:nextFileFirstLine)`,
+				nbme:   `repo contbins content using deprecbted syntbx`,
+				query:  `repo:contbins(content:nextFileFirstLine)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `predicate logic does not conflict with unrecognized patterns`,
+				nbme:   `predicbte logic does not conflict with unrecognized pbtterns`,
 				query:  `repo:sg(test)`,
 				counts: counts{Repo: 6},
 			},
 			{
-				name:   `repo has commit after`,
-				query:  `repo:go-diff repo:contains.commit.after(10 years ago)`,
+				nbme:   `repo hbs commit bfter`,
+				query:  `repo:go-diff repo:contbins.commit.bfter(10 yebrs bgo)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo does not have commit after`,
-				query:  `repo:go-diff -repo:contains.commit.after(10 years ago)`,
+				nbme:   `repo does not hbve commit bfter`,
+				query:  `repo:go-diff -repo:contbins.commit.bfter(10 yebrs bgo)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo has commit after no results`,
-				query:  `repo:go-diff repo:contains.commit.after(1 second ago)`,
+				nbme:   `repo hbs commit bfter no results`,
+				query:  `repo:go-diff repo:contbins.commit.bfter(1 second bgo)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo does not has commit after some results`,
-				query:  `repo:go-diff -repo:contains.commit.after(1 second ago)`,
+				nbme:   `repo does not hbs commit bfter some results`,
+				query:  `repo:go-diff -repo:contbins.commit.bfter(1 second bgo)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `unscoped repo has commit after no results`,
-				query:  `repo:contains.commit.after(1 second ago)`,
+				nbme:   `unscoped repo hbs commit bfter no results`,
+				query:  `repo:contbins.commit.bfter(1 second bgo)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo has tag that does not exist`,
-				query:  `repo:has.tag(noexist)`,
+				nbme:   `repo hbs tbg thbt does not exist`,
+				query:  `repo:hbs.tbg(noexist)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo has tag`,
-				query:  `repo:has.tag(testtag)`,
+				nbme:   `repo hbs tbg`,
+				query:  `repo:hbs.tbg(testtbg)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo has tag and not nonexistent tag`,
-				query:  `repo:has.tag(testtag) -repo:has.tag(noexist)`,
+				nbme:   `repo hbs tbg bnd not nonexistent tbg`,
+				query:  `repo:hbs.tbg(testtbg) -repo:hbs.tbg(noexist)`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `repo has kvp that does not exist`,
-				query:  `repo:has(noexist:false)`,
+				nbme:   `repo hbs kvp thbt does not exist`,
+				query:  `repo:hbs(noexist:fblse)`,
 				counts: counts{Repo: 0},
 			},
 			{
-				name:   `repo has kvp`,
-				query:  `repo:has(testkey:testval)`,
+				nbme:   `repo hbs kvp`,
+				query:  `repo:hbs(testkey:testvbl)`,
 				counts: counts{Repo: 2},
 			},
 			{
-				name:   `repo has kvp and not nonexistent kvp`,
-				query:  `repo:has(testkey:testval) -repo:has(noexist:false)`,
+				nbme:   `repo hbs kvp bnd not nonexistent kvp`,
+				query:  `repo:hbs(testkey:testvbl) -repo:hbs(noexist:fblse)`,
 				counts: counts{Repo: 2},
 			},
 			{
-				name:   `repo has topic`,
-				query:  `repo:has.topic(go)`, // jsonrpc2 and go-diff
+				nbme:   `repo hbs topic`,
+				query:  `repo:hbs.topic(go)`, // jsonrpc2 bnd go-diff
 				counts: counts{Repo: 2},
 			},
 			{
-				name:   `repo has topic plus exclusion`,
-				query:  `repo:has.topic(go) -repo:has.topic(json)`, // go-diff (not jsonrpc2)
+				nbme:   `repo hbs topic plus exclusion`,
+				query:  `repo:hbs.topic(go) -repo:hbs.topic(json)`, // go-diff (not jsonrpc2)
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `nonexistent topic`,
-				query:  `repo:has.topic(noexist)`,
+				nbme:   `nonexistent topic`,
+				query:  `repo:hbs.topic(noexist)`,
 				counts: counts{Repo: 0},
 			},
 		}
 
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchAll(test.query)
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				results, err := client.SebrchAll(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				count := countResults(results)
 				if diff := cmp.Diff(test.counts, count); diff != "" {
-					t.Fatalf("mismatch (-want +got):\n%s", diff)
+					t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
@@ -1335,170 +1335,170 @@ func testSearchClient(t *testing.T, client searchClient) {
 
 	t.Run("Select Queries", func(t *testing.T) {
 		tests := []struct {
-			name   string
+			nbme   string
 			query  string
 			counts counts
 		}{
 			{
-				name:   `select repo`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:repo`,
+				nbme:   `select repo`,
+				query:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:repo`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `select repo, only repo`,
+				nbme:   `select repo, only repo`,
 				query:  `repo:go-diff select:repo`,
 				counts: counts{Repo: 1},
 			},
 			{
-				name:   `select repo, only file`,
+				nbme:   `select repo, only file`,
 				query:  `file:go-diff.go select:repo`,
 				counts: counts{Repo: 1},
 			},
-			// Temporarily disabled as it can be flaky
+			// Temporbrily disbbled bs it cbn be flbky
 			//{
-			//	name:   `select file`,
-			//	query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+			//	nbme:   `select file`,
+			//	query:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:file`,
 			//	counts: counts{File: 1},
 			//},
 			{
-				name:   `or statement merges file`,
-				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
+				nbme:   `or stbtement merges file`,
+				query:  `repo:go-diff HunkNoChunksize or PbrseHunksAndPrintHunks select:file`,
 				counts: counts{File: 1},
 			},
 			{
-				name:   `select file.directory`,
+				nbme:   `select file.directory`,
 				query:  `repo:go-diff HunkNoChunksize or diffFile *os.File select:file.directory`,
 				counts: counts{File: 2},
 			},
 			{
-				name:   `select content`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:content`,
+				nbme:   `select content`,
+				query:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:content`,
 				counts: counts{Content: 1},
 			},
 			{
-				name:   `no select`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize`,
+				nbme:   `no select`,
+				query:  `repo:go-diff pbtterntype:literbl HunkNoChunksize`,
 				counts: counts{Content: 1},
 			},
 			{
-				name:   `select commit, no results`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:commit`,
+				nbme:   `select commit, no results`,
+				query:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:commit`,
 				counts: counts{},
 			},
 			{
-				name:   `select symbol, no results`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:symbol`,
+				nbme:   `select symbol, no results`,
+				query:  `repo:go-diff pbtterntype:literbl HunkNoChunksize select:symbol`,
 				counts: counts{},
 			},
 			{
-				name:   `select symbol`,
-				query:  `repo:go-diff patterntype:literal type:symbol HunkNoChunksize select:symbol`,
+				nbme:   `select symbol`,
+				query:  `repo:go-diff pbtterntype:literbl type:symbol HunkNoChunksize select:symbol`,
 				counts: counts{Symbol: 1},
 			},
 			{
-				name:   `search diffs with file start anchor`,
-				query:  `repo:go-diff patterntype:literal type:diff file:^README.md$ installing`,
+				nbme:   `sebrch diffs with file stbrt bnchor`,
+				query:  `repo:go-diff pbtterntype:literbl type:diff file:^README.md$ instblling`,
 				counts: counts{Commit: 1},
 			},
 			{
-				name:   `search diffs with file filter and time filters`,
-				query:  `repo:go-diff patterntype:literal type:diff lang:go before:"May 10 2020" after:"May 5 2020" unquotedOrigName`,
+				nbme:   `sebrch diffs with file filter bnd time filters`,
+				query:  `repo:go-diff pbtterntype:literbl type:diff lbng:go before:"Mby 10 2020" bfter:"Mby 5 2020" unquotedOrigNbme`,
 				counts: counts{Commit: 1},
 			},
 			{
-				name:   `select diffs with added lines containing pattern`,
-				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.added sample_binary_inline`,
+				nbme:   `select diffs with bdded lines contbining pbttern`,
+				query:  `repo:go-diff pbtterntype:literbl type:diff select:commit.diff.bdded sbmple_binbry_inline`,
 				counts: counts{Commit: 1},
 			},
 			{
-				name:   `select diffs with removed lines containing pattern`,
-				query:  `repo:go-diff patterntype:literal type:diff select:commit.diff.removed sample_binary_inline`,
+				nbme:   `select diffs with removed lines contbining pbttern`,
+				query:  `repo:go-diff pbtterntype:literbl type:diff select:commit.diff.removed sbmple_binbry_inline`,
 				counts: counts{Commit: 0},
 			},
 			{
-				name:   `file contains content predicate`, // equivalent to the `select file` test
-				query:  `repo:go-diff patterntype:literal file:contains.content(HunkNoChunkSize)`,
+				nbme:   `file contbins content predicbte`, // equivblent to the `select file` test
+				query:  `repo:go-diff pbtterntype:literbl file:contbins.content(HunkNoChunkSize)`,
 				counts: counts{File: 1},
 			},
 			{
-				name: `file contains content predicate type diff`,
-				// matches .travis.yml and in the last commit that added after_success, but not in previous commits
-				query:  `type:diff repo:go-diff file:contains.content(after_success)`,
+				nbme: `file contbins content predicbte type diff`,
+				// mbtches .trbvis.yml bnd in the lbst commit thbt bdded bfter_success, but not in previous commits
+				query:  `type:diff repo:go-diff file:contbins.content(bfter_success)`,
 				counts: counts{Commit: 1},
 			},
 			{
-				name:   `select repo on 'and' operation`,
-				query:  `repo:^github\.com/sgtest/go-diff$ (func and main) select:repo`,
+				nbme:   `select repo on 'bnd' operbtion`,
+				query:  `repo:^github\.com/sgtest/go-diff$ (func bnd mbin) select:repo`,
 				counts: counts{Repo: 1},
 			},
 		}
 
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				if test.name == "select symbol" {
-					t.Skip("streaming not supported yet")
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				if test.nbme == "select symbol" {
+					t.Skip("strebming not supported yet")
 				}
 
-				results, err := client.SearchAll(test.query)
+				results, err := client.SebrchAll(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				count := countResults(results)
 				if diff := cmp.Diff(test.counts, count); diff != "" {
-					t.Fatalf("mismatch (-want +got):\n%s", diff)
+					t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("Exact Counts", func(t *testing.T) {
+	t.Run("Exbct Counts", func(t *testing.T) {
 		tests := []struct {
-			name   string
+			nbme   string
 			query  string
 			counts counts
 		}{
 			{
-				name:   `no duplicate commits (#19460)`,
-				query:  `repo:^github\.com/sgtest/sourcegraph-typescript$ type:commit author:felix count:1000 before:"march 25 2021"`,
+				nbme:   `no duplicbte commits (#19460)`,
+				query:  `repo:^github\.com/sgtest/sourcegrbph-typescript$ type:commit buthor:felix count:1000 before:"mbrch 25 2021"`,
 				counts: counts{Commit: 317},
 			},
 		}
 
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				results, err := client.SearchAll(test.query)
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				results, err := client.SebrchAll(test.query)
 				if err != nil {
-					t.Fatal(err)
+					t.Fbtbl(err)
 				}
 
 				count := countResults(results)
 				if diff := cmp.Diff(test.counts, count); diff != "" {
-					t.Fatalf("mismatch (-want +got):\n%s", diff)
+					t.Fbtblf("mismbtch (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
 	})
 }
 
-// testSearchOther other contains search tests for parts of the GraphQL API
-// which are not replicated in the streaming API (statistics and suggestions).
-func testSearchOther(t *testing.T) {
-	t.Run("search statistics", func(t *testing.T) {
-		var lastResult *gqltestutil.SearchStatsResult
-		// Retry because the configuration update endpoint is eventually consistent
+// testSebrchOther other contbins sebrch tests for pbrts of the GrbphQL API
+// which bre not replicbted in the strebming API (stbtistics bnd suggestions).
+func testSebrchOther(t *testing.T) {
+	t.Run("sebrch stbtistics", func(t *testing.T) {
+		vbr lbstResult *gqltestutil.SebrchStbtsResult
+		// Retry becbuse the configurbtion updbte endpoint is eventublly consistent
 		err := gqltestutil.Retry(5*time.Second, func() error {
-			// This is a substring that appears in the sgtest/go-diff repository.
-			// It is OK if it starts to appear in other repositories, the test just
-			// checks that it is found in at least 1 Go file.
-			result, err := client.SearchStats("Incomplete-Lines")
+			// This is b substring thbt bppebrs in the sgtest/go-diff repository.
+			// It is OK if it stbrts to bppebr in other repositories, the test just
+			// checks thbt it is found in bt lebst 1 Go file.
+			result, err := client.SebrchStbts("Incomplete-Lines")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			lastResult = result
+			lbstResult = result
 
-			for _, lang := range result.Languages {
-				if strings.EqualFold(lang.Name, "Go") {
+			for _, lbng := rbnge result.Lbngubges {
+				if strings.EqublFold(lbng.Nbme, "Go") {
 					return nil
 				}
 			}
@@ -1506,111 +1506,111 @@ func testSearchOther(t *testing.T) {
 			return gqltestutil.ErrContinueRetry
 		})
 		if err != nil {
-			t.Fatal(err, "lastResult:", lastResult)
+			t.Fbtbl(err, "lbstResult:", lbstResult)
 		}
 	})
 }
 
-func testSearchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
-	repo1, err := client.Repository("github.com/sgtest/java-langserver")
+func testSebrchContextsCRUD(t *testing.T, client *gqltestutil.Client) {
+	repo1, err := client.Repository("github.com/sgtest/jbvb-lbngserver")
 	require.NoError(t, err)
 	repo2, err := client.Repository("github.com/sgtest/jsonrpc2")
 	require.NoError(t, err)
 
-	// Create a search context
-	scName := "TestSearchContext" + strconv.Itoa(int(rand.Int31()))
-	scID, err := client.CreateSearchContext(
-		gqltestutil.CreateSearchContextInput{Name: scName, Description: "test description", Public: true},
-		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+	// Crebte b sebrch context
+	scNbme := "TestSebrchContext" + strconv.Itob(int(rbnd.Int31()))
+	scID, err := client.CrebteSebrchContext(
+		gqltestutil.CrebteSebrchContextInput{Nbme: scNbme, Description: "test description", Public: true},
+		[]gqltestutil.SebrchContextRepositoryRevisionsInput{
 			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
 			{RepositoryID: repo2.ID, Revisions: []string{"HEAD"}},
 		},
 	)
 	require.NoError(t, err)
-	defer client.DeleteSearchContext(scID)
+	defer client.DeleteSebrchContext(scID)
 
-	// Retrieve the search context and check that it has the correct fields
-	resultContext, err := client.GetSearchContext(scID)
+	// Retrieve the sebrch context bnd check thbt it hbs the correct fields
+	resultContext, err := client.GetSebrchContext(scID)
 	require.NoError(t, err)
-	require.Equal(t, scName, resultContext.Spec)
-	require.Equal(t, "test description", resultContext.Description)
+	require.Equbl(t, scNbme, resultContext.Spec)
+	require.Equbl(t, "test description", resultContext.Description)
 
-	// Update the search context
-	updatedSCName := "TestUpdated" + strconv.Itoa(int(rand.Int31()))
-	scID, err = client.UpdateSearchContext(
+	// Updbte the sebrch context
+	updbtedSCNbme := "TestUpdbted" + strconv.Itob(int(rbnd.Int31()))
+	scID, err = client.UpdbteSebrchContext(
 		scID,
-		gqltestutil.UpdateSearchContextInput{
-			Name:        updatedSCName,
-			Public:      false,
-			Description: "Updated description",
+		gqltestutil.UpdbteSebrchContextInput{
+			Nbme:        updbtedSCNbme,
+			Public:      fblse,
+			Description: "Updbted description",
 		},
-		[]gqltestutil.SearchContextRepositoryRevisionsInput{
+		[]gqltestutil.SebrchContextRepositoryRevisionsInput{
 			{RepositoryID: repo1.ID, Revisions: []string{"HEAD"}},
 		},
 	)
 	require.NoError(t, err)
 
-	// Retrieve the search context and check that it has the updated fields
-	resultContext, err = client.GetSearchContext(scID)
+	// Retrieve the sebrch context bnd check thbt it hbs the updbted fields
+	resultContext, err = client.GetSebrchContext(scID)
 	require.NoError(t, err)
-	require.Equal(t, updatedSCName, resultContext.Spec)
-	require.Equal(t, "Updated description", resultContext.Description)
+	require.Equbl(t, updbtedSCNbme, resultContext.Spec)
+	require.Equbl(t, "Updbted description", resultContext.Description)
 
 	// Delete the context
-	err = client.DeleteSearchContext(scID)
+	err = client.DeleteSebrchContext(scID)
 	require.NoError(t, err)
 
-	// Check that retrieving the deleted search context fails
-	_, err = client.GetSearchContext(scID)
+	// Check thbt retrieving the deleted sebrch context fbils
+	_, err = client.GetSebrchContext(scID)
 	require.Error(t, err)
 }
 
-func testListingSearchContexts(t *testing.T, client *gqltestutil.Client) {
-	numSearchContexts := 10
-	searchContextIDs := make([]string, 0, numSearchContexts)
-	for i := 0; i < numSearchContexts; i++ {
-		scID, err := client.CreateSearchContext(
-			gqltestutil.CreateSearchContextInput{Name: fmt.Sprintf("SearchContext%d", i), Public: true},
-			[]gqltestutil.SearchContextRepositoryRevisionsInput{},
+func testListingSebrchContexts(t *testing.T, client *gqltestutil.Client) {
+	numSebrchContexts := 10
+	sebrchContextIDs := mbke([]string, 0, numSebrchContexts)
+	for i := 0; i < numSebrchContexts; i++ {
+		scID, err := client.CrebteSebrchContext(
+			gqltestutil.CrebteSebrchContextInput{Nbme: fmt.Sprintf("SebrchContext%d", i), Public: true},
+			[]gqltestutil.SebrchContextRepositoryRevisionsInput{},
 		)
 		require.NoError(t, err)
-		searchContextIDs = append(searchContextIDs, scID)
+		sebrchContextIDs = bppend(sebrchContextIDs, scID)
 	}
 	defer func() {
-		for i := 0; i < numSearchContexts; i++ {
-			err := client.DeleteSearchContext(searchContextIDs[i])
+		for i := 0; i < numSebrchContexts; i++ {
+			err := client.DeleteSebrchContext(sebrchContextIDs[i])
 			require.NoError(t, err)
 		}
 	}()
 
-	orderBySpec := gqltestutil.SearchContextsOrderBySpec
-	resultFirstPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+	orderBySpec := gqltestutil.SebrchContextsOrderBySpec
+	resultFirstPbge, err := client.ListSebrchContexts(gqltestutil.ListSebrchContextsOptions{
 		First:      5,
 		OrderBy:    &orderBySpec,
 		Descending: true,
 	})
 	require.NoError(t, err)
-	if len(resultFirstPage.Nodes) != 5 {
-		t.Fatalf("expected 5 search contexts, got %d", len(resultFirstPage.Nodes))
+	if len(resultFirstPbge.Nodes) != 5 {
+		t.Fbtblf("expected 5 sebrch contexts, got %d", len(resultFirstPbge.Nodes))
 	}
-	if resultFirstPage.Nodes[0].Spec != "global" {
-		t.Fatalf("expected first page first search context spec to be global, got %s", resultFirstPage.Nodes[0].Spec)
+	if resultFirstPbge.Nodes[0].Spec != "globbl" {
+		t.Fbtblf("expected first pbge first sebrch context spec to be globbl, got %s", resultFirstPbge.Nodes[0].Spec)
 	}
-	if resultFirstPage.Nodes[1].Spec != "SearchContext9" {
-		t.Fatalf("expected first page second search context spec to be SearchContext9, got %s", resultFirstPage.Nodes[1].Spec)
+	if resultFirstPbge.Nodes[1].Spec != "SebrchContext9" {
+		t.Fbtblf("expected first pbge second sebrch context spec to be SebrchContext9, got %s", resultFirstPbge.Nodes[1].Spec)
 	}
 
-	resultSecondPage, err := client.ListSearchContexts(gqltestutil.ListSearchContextsOptions{
+	resultSecondPbge, err := client.ListSebrchContexts(gqltestutil.ListSebrchContextsOptions{
 		First:      5,
-		After:      resultFirstPage.PageInfo.EndCursor,
+		After:      resultFirstPbge.PbgeInfo.EndCursor,
 		OrderBy:    &orderBySpec,
 		Descending: true,
 	})
 	require.NoError(t, err)
-	if len(resultSecondPage.Nodes) != 5 {
-		t.Fatalf("expected 5 search contexts, got %d", len(resultSecondPage.Nodes))
+	if len(resultSecondPbge.Nodes) != 5 {
+		t.Fbtblf("expected 5 sebrch contexts, got %d", len(resultSecondPbge.Nodes))
 	}
-	if resultSecondPage.Nodes[0].Spec != "SearchContext5" {
-		t.Fatalf("expected second page search context spec to be SearchContext5, got %s", resultSecondPage.Nodes[0].Spec)
+	if resultSecondPbge.Nodes[0].Spec != "SebrchContext5" {
+		t.Fbtblf("expected second pbge sebrch context spec to be SebrchContext5, got %s", resultSecondPbge.Nodes[0].Spec)
 	}
 }

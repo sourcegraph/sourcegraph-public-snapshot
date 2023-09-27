@@ -1,93 +1,93 @@
-package txemail
+pbckbge txembil
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-type mockSiteConf schema.SiteConfiguration
+type mockSiteConf schemb.SiteConfigurbtion
 
-func (m mockSiteConf) SiteConfig() schema.SiteConfiguration { return schema.SiteConfiguration(m) }
+func (m mockSiteConf) SiteConfig() schemb.SiteConfigurbtion { return schemb.SiteConfigurbtion(m) }
 
-func TestValidateSiteConfigTemplates(t *testing.T) {
-	for _, tt := range []struct {
-		name string
+func TestVblidbteSiteConfigTemplbtes(t *testing.T) {
+	for _, tt := rbnge []struct {
+		nbme string
 		conf mockSiteConf
-		want autogold.Value
+		wbnt butogold.Vblue
 	}{
 		{
-			name: "no email.templates",
+			nbme: "no embil.templbtes",
 			conf: mockSiteConf{
-				EmailTemplates: nil,
+				EmbilTemplbtes: nil,
 			},
-			want: autogold.Expect([]string{}),
+			wbnt: butogold.Expect([]string{}),
 		},
 		{
-			name: "no templates in email.templates",
+			nbme: "no templbtes in embil.templbtes",
 			conf: mockSiteConf{
-				EmailTemplates: &schema.EmailTemplates{},
+				EmbilTemplbtes: &schemb.EmbilTemplbtes{},
 			},
-			want: autogold.Expect([]string{}),
+			wbnt: butogold.Expect([]string{}),
 		},
 		{
-			name: "incomplete template",
+			nbme: "incomplete templbte",
 			conf: mockSiteConf{
-				EmailTemplates: &schema.EmailTemplates{
-					SetPassword: &schema.EmailTemplate{
+				EmbilTemplbtes: &schemb.EmbilTemplbtes{
+					SetPbssword: &schemb.EmbilTemplbte{
 						Subject: "",
 						Text:    "",
 						Html:    "<body>hello world from {{.Host}}</body>",
 					},
 				},
 			},
-			want: autogold.Expect([]string{"`email.templates.setPassword` is invalid: fields 'subject' and 'html' are required"}),
+			wbnt: butogold.Expect([]string{"`embil.templbtes.setPbssword` is invblid: fields 'subject' bnd 'html' bre required"}),
 		},
 		{
-			name: "text field is autofilled",
+			nbme: "text field is butofilled",
 			conf: mockSiteConf{
-				EmailTemplates: &schema.EmailTemplates{
-					SetPassword: &schema.EmailTemplate{
-						Subject: "Set up your Sourcegraph Cloud account for {{.Host}}!",
+				EmbilTemplbtes: &schemb.EmbilTemplbtes{
+					SetPbssword: &schemb.EmbilTemplbte{
+						Subject: "Set up your Sourcegrbph Cloud bccount for {{.Host}}!",
 						Text:    "",
 						Html:    "<body>hello world from {{.Host}}</body>",
 					},
 				},
 			},
-			want: autogold.Expect([]string{}),
+			wbnt: butogold.Expect([]string{}),
 		},
 		{
-			name: "broken template",
+			nbme: "broken templbte",
 			conf: mockSiteConf{
-				EmailTemplates: &schema.EmailTemplates{
-					SetPassword: &schema.EmailTemplate{
-						Subject: "Set up your Sourcegraph Cloud account for {{.Host}}!",
+				EmbilTemplbtes: &schemb.EmbilTemplbtes{
+					SetPbssword: &schemb.EmbilTemplbte{
+						Subject: "Set up your Sourcegrbph Cloud bccount for {{.Host}}!",
 						Text:    "hello world from {{.Hos",
 						Html:    "<body>hello world from {{.Host}}</body>",
 					},
 				},
 			},
-			want: autogold.Expect([]string{"`email.templates.setPassword` is invalid: template: :1: unclosed action"}),
+			wbnt: butogold.Expect([]string{"`embil.templbtes.setPbssword` is invblid: templbte: :1: unclosed bction"}),
 		},
 		{
-			name: "complete template",
+			nbme: "complete templbte",
 			conf: mockSiteConf{
-				EmailTemplates: &schema.EmailTemplates{
-					SetPassword: &schema.EmailTemplate{
-						Subject: "Set up your Sourcegraph Cloud account for {{.Host}}!",
+				EmbilTemplbtes: &schemb.EmbilTemplbtes{
+					SetPbssword: &schemb.EmbilTemplbte{
+						Subject: "Set up your Sourcegrbph Cloud bccount for {{.Host}}!",
 						Text:    "hello world from {{.Host}}",
 						Html:    "<body>hello world from {{.Host}}</body>",
 					},
 				},
 			},
-			want: autogold.Expect([]string{}),
+			wbnt: butogold.Expect([]string{}),
 		},
 	} {
-		t.Run(tt.name, func(t *testing.T) {
-			problems := validateSiteConfigTemplates(tt.conf)
-			tt.want.Equal(t, problems.Messages())
+		t.Run(tt.nbme, func(t *testing.T) {
+			problems := vblidbteSiteConfigTemplbtes(tt.conf)
+			tt.wbnt.Equbl(t, problems.Messbges())
 		})
 	}
 }

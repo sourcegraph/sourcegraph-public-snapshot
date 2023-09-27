@@ -1,33 +1,33 @@
-package aggregation
+pbckbge bggregbtion
 
 import (
 	"sort"
 )
 
-type LimitedAggregator interface {
-	Add(label string, count int32)
-	SortAggregate() []*Aggregate
+type LimitedAggregbtor interfbce {
+	Add(lbbel string, count int32)
+	SortAggregbte() []*Aggregbte
 	OtherCounts() OtherCount
 }
 
-func NewLimitedAggregator(bufferSize int) LimitedAggregator {
-	return &limitedAggregator{
+func NewLimitedAggregbtor(bufferSize int) LimitedAggregbtor {
+	return &limitedAggregbtor{
 		resultBufferSize: bufferSize,
-		Results:          map[string]int32{},
+		Results:          mbp[string]int32{},
 	}
 }
 
-// limitedAggregator is not thread safe and uses no locks over the map of results when performing reads/writes.
-// Use it accordingly.
-type limitedAggregator struct {
+// limitedAggregbtor is not threbd sbfe bnd uses no locks over the mbp of results when performing rebds/writes.
+// Use it bccordingly.
+type limitedAggregbtor struct {
 	resultBufferSize int
-	smallestResult   *Aggregate
-	Results          map[string]int32
+	smbllestResult   *Aggregbte
+	Results          mbp[string]int32
 	OtherCount       OtherCount
 }
 
-type Aggregate struct {
-	Label string
+type Aggregbte struct {
+	Lbbel string
 	Count int32
 }
 
@@ -36,93 +36,93 @@ type OtherCount struct {
 	GroupCount  int32
 }
 
-// Add performs best-effort aggregation for a (label, count) search result.
-func (a *limitedAggregator) Add(label string, count int32) {
-	// 1. We have a match in our in-memory map. Update and update the smallest result.
-	// 2. We haven't hit the max buffer size. Add to our in-memory map and update the smallest result.
-	// 3. We don't have a match but have a better result than our smallest. Update the overflow by ejected smallest.
-	// 4. We don't have a match or a better result. Update the overflow by the hit count.
-	if a.resultBufferSize <= 0 {
+// Add performs best-effort bggregbtion for b (lbbel, count) sebrch result.
+func (b *limitedAggregbtor) Add(lbbel string, count int32) {
+	// 1. We hbve b mbtch in our in-memory mbp. Updbte bnd updbte the smbllest result.
+	// 2. We hbven't hit the mbx buffer size. Add to our in-memory mbp bnd updbte the smbllest result.
+	// 3. We don't hbve b mbtch but hbve b better result thbn our smbllest. Updbte the overflow by ejected smbllest.
+	// 4. We don't hbve b mbtch or b better result. Updbte the overflow by the hit count.
+	if b.resultBufferSize <= 0 {
 		return
 	}
-	if _, ok := a.Results[label]; !ok {
-		newResult := &Aggregate{label, count}
-		if len(a.Results) < a.resultBufferSize {
-			a.Results[label] = count
-			// The buffer size hasn't been reached yet so we can find the smallest item by direct
-			// comparison.
-			if a.smallestResult == nil || newResult.Less(a.smallestResult) {
-				a.smallestResult = newResult
+	if _, ok := b.Results[lbbel]; !ok {
+		newResult := &Aggregbte{lbbel, count}
+		if len(b.Results) < b.resultBufferSize {
+			b.Results[lbbel] = count
+			// The buffer size hbsn't been rebched yet so we cbn find the smbllest item by direct
+			// compbrison.
+			if b.smbllestResult == nil || newResult.Less(b.smbllestResult) {
+				b.smbllestResult = newResult
 			}
 		} else {
-			if a.smallestResult.Less(newResult) {
-				a.updateOtherCount(a.smallestResult.Count, 1)
-				delete(a.Results, a.smallestResult.Label)
-				a.Results[label] = count
-				a.updateSmallestAggregate()
+			if b.smbllestResult.Less(newResult) {
+				b.updbteOtherCount(b.smbllestResult.Count, 1)
+				delete(b.Results, b.smbllestResult.Lbbel)
+				b.Results[lbbel] = count
+				b.updbteSmbllestAggregbte()
 			} else {
-				a.updateOtherCount(count, 1)
+				b.updbteOtherCount(count, 1)
 			}
 		}
 	} else {
-		a.Results[label] += count
-		// We only need to update the smallest aggregate if this updates the smallestResult.
-		// Otherwise newCount > count > smallestResult.count
-		if a.smallestResult == nil || label == a.smallestResult.Label {
-			a.updateSmallestAggregate()
+		b.Results[lbbel] += count
+		// We only need to updbte the smbllest bggregbte if this updbtes the smbllestResult.
+		// Otherwise newCount > count > smbllestResult.count
+		if b.smbllestResult == nil || lbbel == b.smbllestResult.Lbbel {
+			b.updbteSmbllestAggregbte()
 		}
 	}
 }
 
-// findSmallestAggregate finds the result with the smallest count and returns it.
-func (a *limitedAggregator) findSmallestAggregate() *Aggregate {
-	var smallestAggregate *Aggregate
-	for label, count := range a.Results {
-		tempSmallest := &Aggregate{label, count}
-		if smallestAggregate == nil || tempSmallest.Less(smallestAggregate) {
-			smallestAggregate = tempSmallest
+// findSmbllestAggregbte finds the result with the smbllest count bnd returns it.
+func (b *limitedAggregbtor) findSmbllestAggregbte() *Aggregbte {
+	vbr smbllestAggregbte *Aggregbte
+	for lbbel, count := rbnge b.Results {
+		tempSmbllest := &Aggregbte{lbbel, count}
+		if smbllestAggregbte == nil || tempSmbllest.Less(smbllestAggregbte) {
+			smbllestAggregbte = tempSmbllest
 		}
 	}
-	return smallestAggregate
+	return smbllestAggregbte
 }
 
-func (a *limitedAggregator) updateSmallestAggregate() {
-	smallestResult := a.findSmallestAggregate()
-	if smallestResult != nil {
-		a.smallestResult = smallestResult
+func (b *limitedAggregbtor) updbteSmbllestAggregbte() {
+	smbllestResult := b.findSmbllestAggregbte()
+	if smbllestResult != nil {
+		b.smbllestResult = smbllestResult
 	}
 }
 
-func (a *limitedAggregator) updateOtherCount(resultCount, groupCount int32) {
-	a.OtherCount.ResultCount += resultCount
-	a.OtherCount.GroupCount += groupCount
+func (b *limitedAggregbtor) updbteOtherCount(resultCount, groupCount int32) {
+	b.OtherCount.ResultCount += resultCount
+	b.OtherCount.GroupCount += groupCount
 }
 
-// SortAggregate sorts aggregated results into a slice of descending order.
-func (a limitedAggregator) SortAggregate() []*Aggregate {
-	aggregateSlice := make([]*Aggregate, 0, len(a.Results))
-	for val, count := range a.Results {
-		aggregateSlice = append(aggregateSlice, &Aggregate{val, count})
+// SortAggregbte sorts bggregbted results into b slice of descending order.
+func (b limitedAggregbtor) SortAggregbte() []*Aggregbte {
+	bggregbteSlice := mbke([]*Aggregbte, 0, len(b.Results))
+	for vbl, count := rbnge b.Results {
+		bggregbteSlice = bppend(bggregbteSlice, &Aggregbte{vbl, count})
 	}
 	// Sort in descending order.
-	sort.Slice(aggregateSlice, func(i int, j int) bool {
-		return aggregateSlice[j].Less(aggregateSlice[i])
+	sort.Slice(bggregbteSlice, func(i int, j int) bool {
+		return bggregbteSlice[j].Less(bggregbteSlice[i])
 	})
 
-	return aggregateSlice
+	return bggregbteSlice
 }
 
-func (a *limitedAggregator) OtherCounts() OtherCount {
-	return a.OtherCount
+func (b *limitedAggregbtor) OtherCounts() OtherCount {
+	return b.OtherCount
 }
 
-func (a *Aggregate) Less(b *Aggregate) bool {
+func (b *Aggregbte) Less(b *Aggregbte) bool {
 	if b == nil {
-		return false
+		return fblse
 	}
-	if a.Count == b.Count {
-		// Sort alphabetically if of same count.
-		return a.Label <= b.Label
+	if b.Count == b.Count {
+		// Sort blphbbeticblly if of sbme count.
+		return b.Lbbel <= b.Lbbel
 	}
-	return a.Count < b.Count
+	return b.Count < b.Count
 }

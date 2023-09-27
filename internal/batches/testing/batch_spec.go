@@ -1,71 +1,71 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 	"testing"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/ybml.v2"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	bbtcheslib "github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-type CreateBatchSpecer interface {
-	CreateBatchSpec(ctx context.Context, batchSpec *btypes.BatchSpec) error
+type CrebteBbtchSpecer interfbce {
+	CrebteBbtchSpec(ctx context.Context, bbtchSpec *btypes.BbtchSpec) error
 }
 
-func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32, bcID int64) *btypes.BatchSpec {
+func CrebteBbtchSpec(t *testing.T, ctx context.Context, store CrebteBbtchSpecer, nbme string, userID int32, bcID int64) *btypes.BbtchSpec {
 	t.Helper()
 
-	rawSpec, err := yaml.Marshal(struct {
-		Name        string `yaml:"name"`
-		Description string `yaml:"description"`
-	}{Name: name, Description: "the description"})
+	rbwSpec, err := ybml.Mbrshbl(struct {
+		Nbme        string `ybml:"nbme"`
+		Description string `ybml:"description"`
+	}{Nbme: nbme, Description: "the description"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	s := &btypes.BatchSpec{
+	s := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
-		Spec: &batcheslib.BatchSpec{
-			Name:        name,
+		NbmespbceUserID: userID,
+		Spec: &bbtcheslib.BbtchSpec{
+			Nbme:        nbme,
 			Description: "the description",
-			ChangesetTemplate: &batcheslib.ChangesetTemplate{
-				Branch: "branch-name",
+			ChbngesetTemplbte: &bbtcheslib.ChbngesetTemplbte{
+				Brbnch: "brbnch-nbme",
 			},
 		},
-		RawSpec:       string(rawSpec),
-		BatchChangeID: bcID,
+		RbwSpec:       string(rbwSpec),
+		BbtchChbngeID: bcID,
 	}
 
-	if err := store.CreateBatchSpec(ctx, s); err != nil {
-		t.Fatal(err)
+	if err := store.CrebteBbtchSpec(ctx, s); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return s
 }
 
-func CreateEmptyBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32, bcID int64) *btypes.BatchSpec {
+func CrebteEmptyBbtchSpec(t *testing.T, ctx context.Context, store CrebteBbtchSpecer, nbme string, userID int32, bcID int64) *btypes.BbtchSpec {
 	t.Helper()
 
-	rawSpec, err := yaml.Marshal(struct {
-		Name string `yaml:"name"`
-	}{Name: name})
+	rbwSpec, err := ybml.Mbrshbl(struct {
+		Nbme string `ybml:"nbme"`
+	}{Nbme: nbme})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	s := &btypes.BatchSpec{
+	s := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
-		Spec:            &batcheslib.BatchSpec{Name: name},
-		RawSpec:         string(rawSpec),
-		BatchChangeID:   bcID,
+		NbmespbceUserID: userID,
+		Spec:            &bbtcheslib.BbtchSpec{Nbme: nbme},
+		RbwSpec:         string(rbwSpec),
+		BbtchChbngeID:   bcID,
 	}
 
-	if err := store.CreateBatchSpec(ctx, s); err != nil {
-		t.Fatal(err)
+	if err := store.CrebteBbtchSpec(ctx, s); err != nil {
+		t.Fbtbl(err)
 	}
 
 	return s

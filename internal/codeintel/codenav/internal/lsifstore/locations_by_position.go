@@ -1,366 +1,366 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/scip/bindings/go/scip"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-// GetDefinitionLocations returns the set of locations defining the symbol at the given position.
-func (s *store) GetDefinitionLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "definition_ranges", extractDefinitionRanges, s.operations.getDefinitionLocations, bundleID, path, line, character, limit, offset)
+// GetDefinitionLocbtions returns the set of locbtions defining the symbol bt the given position.
+func (s *store) GetDefinitionLocbtions(ctx context.Context, bundleID int, pbth string, line, chbrbcter, limit, offset int) (_ []shbred.Locbtion, _ int, err error) {
+	return s.getLocbtions(ctx, "definition_rbnges", extrbctDefinitionRbnges, s.operbtions.getDefinitionLocbtions, bundleID, pbth, line, chbrbcter, limit, offset)
 }
 
-// GetReferenceLocations returns the set of locations referencing the symbol at the given position.
-func (s *store) GetReferenceLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "reference_ranges", extractReferenceRanges, s.operations.getReferenceLocations, bundleID, path, line, character, limit, offset)
+// GetReferenceLocbtions returns the set of locbtions referencing the symbol bt the given position.
+func (s *store) GetReferenceLocbtions(ctx context.Context, bundleID int, pbth string, line, chbrbcter, limit, offset int) (_ []shbred.Locbtion, _ int, err error) {
+	return s.getLocbtions(ctx, "reference_rbnges", extrbctReferenceRbnges, s.operbtions.getReferenceLocbtions, bundleID, pbth, line, chbrbcter, limit, offset)
 }
 
-// GetImplementationLocations returns the set of locations implementing the symbol at the given position.
-func (s *store) GetImplementationLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractImplementationRanges, s.operations.getImplementationLocations, bundleID, path, line, character, limit, offset)
+// GetImplementbtionLocbtions returns the set of locbtions implementing the symbol bt the given position.
+func (s *store) GetImplementbtionLocbtions(ctx context.Context, bundleID int, pbth string, line, chbrbcter, limit, offset int) (_ []shbred.Locbtion, _ int, err error) {
+	return s.getLocbtions(ctx, "implementbtion_rbnges", extrbctImplementbtionRbnges, s.operbtions.getImplementbtionLocbtions, bundleID, pbth, line, chbrbcter, limit, offset)
 }
 
-// GetPrototypeLocations returns the set of locations that are the prototypes of the symbol at the given position.
-func (s *store) GetPrototypeLocations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error) {
-	return s.getLocations(ctx, "implementation_ranges", extractPrototypesRanges, s.operations.getPrototypesLocations, bundleID, path, line, character, limit, offset)
+// GetPrototypeLocbtions returns the set of locbtions thbt bre the prototypes of the symbol bt the given position.
+func (s *store) GetPrototypeLocbtions(ctx context.Context, bundleID int, pbth string, line, chbrbcter, limit, offset int) (_ []shbred.Locbtion, _ int, err error) {
+	return s.getLocbtions(ctx, "implementbtion_rbnges", extrbctPrototypesRbnges, s.operbtions.getPrototypesLocbtions, bundleID, pbth, line, chbrbcter, limit, offset)
 }
 
-// GetBulkMonikerLocations returns the locations (within one of the given uploads) with an attached moniker
-// whose scheme+identifier matches one of the given monikers. This method also returns the size of the
-// complete result set to aid in pagination.
-func (s *store) GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
-		attribute.Int("numUploadIDs", len(uploadIDs)),
-		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numMonikers", len(monikers)),
-		attribute.String("monikers", monikersToString(monikers)),
-		attribute.Int("limit", limit),
-		attribute.Int("offset", offset),
+// GetBulkMonikerLocbtions returns the locbtions (within one of the given uplobds) with bn bttbched moniker
+// whose scheme+identifier mbtches one of the given monikers. This method blso returns the size of the
+// complete result set to bid in pbginbtion.
+func (s *store) GetBulkMonikerLocbtions(ctx context.Context, tbbleNbme string, uplobdIDs []int, monikers []precise.MonikerDbtb, limit, offset int) (_ []shbred.Locbtion, totblCount int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getBulkMonikerLocbtions.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("tbbleNbme", tbbleNbme),
+		bttribute.Int("numUplobdIDs", len(uplobdIDs)),
+		bttribute.IntSlice("uplobdIDs", uplobdIDs),
+		bttribute.Int("numMonikers", len(monikers)),
+		bttribute.String("monikers", monikersToString(monikers)),
+		bttribute.Int("limit", limit),
+		bttribute.Int("offset", offset),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
+	if len(uplobdIDs) == 0 || len(monikers) == 0 {
 		return nil, 0, nil
 	}
 
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
+	symbolNbmes := mbke([]string, 0, len(monikers))
+	for _, brg := rbnge monikers {
+		symbolNbmes = bppend(symbolNbmes, brg.Identifier)
 	}
 
 	query := sqlf.Sprintf(
 		bulkMonikerResultsQuery,
-		pq.Array(symbolNames),
-		pq.Array(uploadIDs),
-		sqlf.Sprintf(fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))),
+		pq.Arrby(symbolNbmes),
+		pq.Arrby(uplobdIDs),
+		sqlf.Sprintf(fmt.Sprintf("%s_rbnges", strings.TrimSuffix(tbbleNbme, "s"))),
 	)
 
-	locationData, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, query))
+	locbtionDbtb, err := s.scbnQublifiedMonikerLocbtions(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	totalCount = 0
-	for _, monikerLocations := range locationData {
-		totalCount += len(monikerLocations.Locations)
+	totblCount = 0
+	for _, monikerLocbtions := rbnge locbtionDbtb {
+		totblCount += len(monikerLocbtions.Locbtions)
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numDumps", len(locationData)),
-		attribute.Int("totalCount", totalCount))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("numDumps", len(locbtionDbtb)),
+		bttribute.Int("totblCount", totblCount))
 
-	max := totalCount
-	if totalCount > limit {
-		max = limit
+	mbx := totblCount
+	if totblCount > limit {
+		mbx = limit
 	}
 
-	locations := make([]shared.Location, 0, max)
+	locbtions := mbke([]shbred.Locbtion, 0, mbx)
 outer:
-	for _, monikerLocations := range locationData {
-		for _, row := range monikerLocations.Locations {
+	for _, monikerLocbtions := rbnge locbtionDbtb {
+		for _, row := rbnge monikerLocbtions.Locbtions {
 			offset--
 			if offset >= 0 {
 				continue
 			}
 
-			locations = append(locations, shared.Location{
-				DumpID: monikerLocations.DumpID,
-				Path:   row.URI,
-				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			locbtions = bppend(locbtions, shbred.Locbtion{
+				DumpID: monikerLocbtions.DumpID,
+				Pbth:   row.URI,
+				Rbnge:  newRbnge(row.StbrtLine, row.StbrtChbrbcter, row.EndLine, row.EndChbrbcter),
 			})
 
-			if len(locations) >= limit {
-				break outer
+			if len(locbtions) >= limit {
+				brebk outer
 			}
 		}
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numLocbtions", len(locbtions)))
 
-	return locations, totalCount, nil
+	return locbtions, totblCount, nil
 }
 
 const bulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
-	ss.upload_id,
+	ss.uplobd_id,
 	'scip',
-	msn.symbol_name,
+	msn.symbol_nbme,
 	%s,
-	document_path
-FROM matching_symbol_names msn
-JOIN codeintel_scip_symbols ss ON ss.upload_id = msn.upload_id AND ss.symbol_id = msn.id
+	document_pbth
+FROM mbtching_symbol_nbmes msn
+JOIN codeintel_scip_symbols ss ON ss.uplobd_id = msn.uplobd_id AND ss.symbol_id = msn.id
 JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-ORDER BY ss.upload_id, msn.symbol_name
+ORDER BY ss.uplobd_id, msn.symbol_nbme
 `
 
-func (s *store) getLocations(
+func (s *store) getLocbtions(
 	ctx context.Context,
-	scipFieldName string,
-	scipExtractor func(*scip.Document, *scip.Occurrence) []*scip.Range,
-	operation *observation.Operation,
+	scipFieldNbme string,
+	scipExtrbctor func(*scip.Document, *scip.Occurrence) []*scip.Rbnge,
+	operbtion *observbtion.Operbtion,
 	bundleID int,
-	path string,
-	line, character, limit, offset int,
-) (_ []shared.Location, _ int, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", bundleID),
-		attribute.String("path", path),
-		attribute.Int("line", line),
-		attribute.Int("character", character),
+	pbth string,
+	line, chbrbcter, limit, offset int,
+) (_ []shbred.Locbtion, _ int, err error) {
+	ctx, trbce, endObservbtion := operbtion.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bundleID", bundleID),
+		bttribute.String("pbth", pbth),
+		bttribute.Int("line", line),
+		bttribute.Int("chbrbcter", chbrbcter),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
-		locationsDocumentQuery,
+	documentDbtb, exists, err := s.scbnFirstDocumentDbtb(s.db.Query(ctx, sqlf.Sprintf(
+		locbtionsDocumentQuery,
 		bundleID,
-		path,
+		pbth,
 	)))
 	if err != nil || !exists {
 		return nil, 0, err
 	}
 
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(line), int32(character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	trbce.AddEvent("SCIPDbtb", bttribute.Int("numOccurrences", len(documentDbtb.SCIPDbtb.Occurrences)))
+	occurrences := scip.FindOccurrences(documentDbtb.SCIPDbtb.Occurrences, int32(line), int32(chbrbcter))
+	trbce.AddEvent("FindOccurences", bttribute.Int("numIntersectingOccurrences", len(occurrences)))
 
-	for _, occurrence := range occurrences {
-		var locations []shared.Location
-		if ranges := scipExtractor(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, bundleID, path)...)
+	for _, occurrence := rbnge occurrences {
+		vbr locbtions []shbred.Locbtion
+		if rbnges := scipExtrbctor(documentDbtb.SCIPDbtb, occurrence); len(rbnges) != 0 {
+			locbtions = bppend(locbtions, convertSCIPRbngesToLocbtions(rbnges, bundleID, pbth)...)
 		}
 
-		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			monikerLocations, err := s.scanQualifiedMonikerLocations(s.db.Query(ctx, sqlf.Sprintf(
-				locationsSymbolSearchQuery,
-				pq.Array([]string{occurrence.Symbol}),
-				pq.Array([]int{bundleID}),
-				sqlf.Sprintf(scipFieldName),
+		if occurrence.Symbol != "" && !scip.IsLocblSymbol(occurrence.Symbol) {
+			monikerLocbtions, err := s.scbnQublifiedMonikerLocbtions(s.db.Query(ctx, sqlf.Sprintf(
+				locbtionsSymbolSebrchQuery,
+				pq.Arrby([]string{occurrence.Symbol}),
+				pq.Arrby([]int{bundleID}),
+				sqlf.Sprintf(scipFieldNbme),
 				bundleID,
-				path,
-				sqlf.Sprintf(scipFieldName),
+				pbth,
+				sqlf.Sprintf(scipFieldNbme),
 			)))
 			if err != nil {
 				return nil, 0, err
 			}
-			for _, monikerLocation := range monikerLocations {
-				for _, row := range monikerLocation.Locations {
-					locations = append(locations, shared.Location{
-						DumpID: monikerLocation.DumpID,
-						Path:   row.URI,
-						Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			for _, monikerLocbtion := rbnge monikerLocbtions {
+				for _, row := rbnge monikerLocbtion.Locbtions {
+					locbtions = bppend(locbtions, shbred.Locbtion{
+						DumpID: monikerLocbtion.DumpID,
+						Pbth:   row.URI,
+						Rbnge:  newRbnge(row.StbrtLine, row.StbrtChbrbcter, row.EndLine, row.EndChbrbcter),
 					})
 				}
 			}
 		}
 
-		if len(locations) > 0 {
-			totalCount := len(locations)
+		if len(locbtions) > 0 {
+			totblCount := len(locbtions)
 
-			if offset < len(locations) {
-				locations = locations[offset:]
+			if offset < len(locbtions) {
+				locbtions = locbtions[offset:]
 			} else {
-				locations = []shared.Location{}
+				locbtions = []shbred.Locbtion{}
 			}
 
-			if len(locations) > limit {
-				locations = locations[:limit]
+			if len(locbtions) > limit {
+				locbtions = locbtions[:limit]
 			}
 
-			return locations, totalCount, nil
+			return locbtions, totblCount, nil
 		}
 	}
 
 	return nil, 0, nil
 }
 
-const locationsDocumentQuery = `
+const locbtionsDocumentQuery = `
 SELECT
 	sd.id,
-	sid.document_path,
-	sd.raw_scip_payload
+	sid.document_pbth,
+	sd.rbw_scip_pbylobd
 FROM codeintel_scip_document_lookup sid
 JOIN codeintel_scip_documents sd ON sd.id = sid.document_id
 WHERE
-	sid.upload_id = %s AND
-	sid.document_path = %s
+	sid.uplobd_id = %s AND
+	sid.document_pbth = %s
 LIMIT 1
 `
 
-const locationsSymbolSearchQuery = `
+const locbtionsSymbolSebrchQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
-	ss.upload_id,
+	ss.uplobd_id,
 	'' AS scheme,
 	'' AS identifier,
 	ss.%s,
-	sid.document_path
+	sid.document_pbth
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup sid ON sid.id = ss.document_lookup_id
-JOIN matching_symbol_names msn ON msn.id = ss.symbol_id
+JOIN mbtching_symbol_nbmes msn ON msn.id = ss.symbol_id
 WHERE
-	ss.upload_id = %s AND
-	sid.document_path != %s AND
+	ss.uplobd_id = %s AND
+	sid.document_pbth != %s AND
 	ss.%s IS NOT NULL
 `
 
-type extractedOccurrenceData struct {
-	definitions     []*scip.Range
-	references      []*scip.Range
-	implementations []*scip.Range
-	prototypes      []*scip.Range
+type extrbctedOccurrenceDbtb struct {
+	definitions     []*scip.Rbnge
+	references      []*scip.Rbnge
+	implementbtions []*scip.Rbnge
+	prototypes      []*scip.Rbnge
 	hoverText       []string
 }
 
-func extractDefinitionRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
-	return extractOccurrenceData(document, occurrence).definitions
+func extrbctDefinitionRbnges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Rbnge {
+	return extrbctOccurrenceDbtb(document, occurrence).definitions
 }
 
-func extractReferenceRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
-	return extractOccurrenceData(document, occurrence).references
+func extrbctReferenceRbnges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Rbnge {
+	return extrbctOccurrenceDbtb(document, occurrence).references
 }
 
-func extractImplementationRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
-	return extractOccurrenceData(document, occurrence).implementations
+func extrbctImplementbtionRbnges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Rbnge {
+	return extrbctOccurrenceDbtb(document, occurrence).implementbtions
 }
 
-func extractPrototypesRanges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range {
-	return extractOccurrenceData(document, occurrence).prototypes
+func extrbctPrototypesRbnges(document *scip.Document, occurrence *scip.Occurrence) []*scip.Rbnge {
+	return extrbctOccurrenceDbtb(document, occurrence).prototypes
 }
 
-func extractHoverData(document *scip.Document, occurrence *scip.Occurrence) []string {
-	return extractOccurrenceData(document, occurrence).hoverText
+func extrbctHoverDbtb(document *scip.Document, occurrence *scip.Occurrence) []string {
+	return extrbctOccurrenceDbtb(document, occurrence).hoverText
 }
 
-func extractOccurrenceData(document *scip.Document, occurrence *scip.Occurrence) extractedOccurrenceData {
+func extrbctOccurrenceDbtb(document *scip.Document, occurrence *scip.Occurrence) extrbctedOccurrenceDbtb {
 	if occurrence.Symbol == "" {
-		return extractedOccurrenceData{
-			hoverText: occurrence.OverrideDocumentation,
+		return extrbctedOccurrenceDbtb{
+			hoverText: occurrence.OverrideDocumentbtion,
 		}
 	}
 
-	var (
+	vbr (
 		hoverText               []string
 		definitionSymbol        = occurrence.Symbol
-		referencesBySymbol      = map[string]struct{}{}
-		implementationsBySymbol = map[string]struct{}{}
-		prototypeBySymbol       = map[string]struct{}{}
+		referencesBySymbol      = mbp[string]struct{}{}
+		implementbtionsBySymbol = mbp[string]struct{}{}
+		prototypeBySymbol       = mbp[string]struct{}{}
 	)
 
-	// Extract hover text and relationship data from the symbol information that
-	// matches the given occurrence. This will give us additional symbol names that
-	// we should include in reference and implementation searches.
+	// Extrbct hover text bnd relbtionship dbtb from the symbol informbtion thbt
+	// mbtches the given occurrence. This will give us bdditionbl symbol nbmes thbt
+	// we should include in reference bnd implementbtion sebrches.
 
 	if symbol := scip.FindSymbol(document, occurrence.Symbol); symbol != nil {
-		hoverText = symbol.Documentation
+		hoverText = symbol.Documentbtion
 
-		for _, rel := range symbol.Relationships {
+		for _, rel := rbnge symbol.Relbtionships {
 			if rel.IsDefinition {
 				definitionSymbol = rel.Symbol
 			}
 			if rel.IsReference {
 				referencesBySymbol[rel.Symbol] = struct{}{}
 			}
-			if rel.IsImplementation {
+			if rel.IsImplementbtion {
 				prototypeBySymbol[rel.Symbol] = struct{}{}
 			}
 		}
 	}
 
-	for _, sym := range document.Symbols {
-		for _, rel := range sym.Relationships {
-			if rel.IsImplementation {
+	for _, sym := rbnge document.Symbols {
+		for _, rel := rbnge sym.Relbtionships {
+			if rel.IsImplementbtion {
 				if rel.Symbol == occurrence.Symbol {
-					implementationsBySymbol[sym.Symbol] = struct{}{}
+					implementbtionsBySymbol[sym.Symbol] = struct{}{}
 				}
 			}
 		}
 	}
 
-	definitions := []*scip.Range{}
-	references := []*scip.Range{}
-	implementations := []*scip.Range{}
-	prototypes := []*scip.Range{}
+	definitions := []*scip.Rbnge{}
+	references := []*scip.Rbnge{}
+	implementbtions := []*scip.Rbnge{}
+	prototypes := []*scip.Rbnge{}
 
-	// Include original symbol names for reference search below
+	// Include originbl symbol nbmes for reference sebrch below
 	referencesBySymbol[occurrence.Symbol] = struct{}{}
 
-	// For each occurrence that references one of the definition, reference, or
-	// implementation symbol names, extract and aggregate their source positions.
+	// For ebch occurrence thbt references one of the definition, reference, or
+	// implementbtion symbol nbmes, extrbct bnd bggregbte their source positions.
 
-	for _, occ := range document.Occurrences {
-		isDefinition := scip.SymbolRole_Definition.Matches(occ)
+	for _, occ := rbnge document.Occurrences {
+		isDefinition := scip.SymbolRole_Definition.Mbtches(occ)
 
 		// This occurrence defines this symbol
 		if definitionSymbol == occ.Symbol && isDefinition {
-			definitions = append(definitions, scip.NewRange(occ.Range))
+			definitions = bppend(definitions, scip.NewRbnge(occ.Rbnge))
 		}
 
-		// This occurrence references this symbol (or a sibling of it)
+		// This occurrence references this symbol (or b sibling of it)
 		if _, ok := referencesBySymbol[occ.Symbol]; ok && !isDefinition {
-			references = append(references, scip.NewRange(occ.Range))
+			references = bppend(references, scip.NewRbnge(occ.Rbnge))
 		}
 
-		// This occurrence is a definition of a symbol with an implementation relationship
-		if _, ok := implementationsBySymbol[occ.Symbol]; ok && isDefinition && definitionSymbol != occ.Symbol {
-			implementations = append(implementations, scip.NewRange(occ.Range))
+		// This occurrence is b definition of b symbol with bn implementbtion relbtionship
+		if _, ok := implementbtionsBySymbol[occ.Symbol]; ok && isDefinition && definitionSymbol != occ.Symbol {
+			implementbtions = bppend(implementbtions, scip.NewRbnge(occ.Rbnge))
 		}
 
-		// This occurrence is a definition of a symbol with a prototype relationship
+		// This occurrence is b definition of b symbol with b prototype relbtionship
 		if _, ok := prototypeBySymbol[occ.Symbol]; ok && isDefinition {
-			prototypes = append(prototypes, scip.NewRange(occ.Range))
+			prototypes = bppend(prototypes, scip.NewRbnge(occ.Rbnge))
 		}
 	}
 
-	// Override symbol documentation with occurrence documentation, if it exists
-	if len(occurrence.OverrideDocumentation) != 0 {
-		hoverText = occurrence.OverrideDocumentation
+	// Override symbol documentbtion with occurrence documentbtion, if it exists
+	if len(occurrence.OverrideDocumentbtion) != 0 {
+		hoverText = occurrence.OverrideDocumentbtion
 	}
 
-	return extractedOccurrenceData{
+	return extrbctedOccurrenceDbtb{
 		definitions:     definitions,
 		references:      references,
-		implementations: implementations,
+		implementbtions: implementbtions,
 		hoverText:       hoverText,
 		prototypes:      prototypes,
 	}
 }
 
-func monikersToString(vs []precise.MonikerData) string {
-	strs := make([]string, 0, len(vs))
-	for _, v := range vs {
-		strs = append(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
+func monikersToString(vs []precise.MonikerDbtb) string {
+	strs := mbke([]string, 0, len(vs))
+	for _, v := rbnge vs {
+		strs = bppend(strs, fmt.Sprintf("%s:%s:%s", v.Kind, v.Scheme, v.Identifier))
 	}
 
 	return strings.Join(strs, ", ")
@@ -369,53 +369,53 @@ func monikersToString(vs []precise.MonikerData) string {
 //
 //
 
-func (s *store) ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractDefinitionRanges, symbolExtractDefault, s.operations.getDefinitionLocations, locationKey)
+func (s *store) ExtrbctDefinitionLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) (_ []shbred.Locbtion, _ []string, err error) {
+	return s.extrbctLocbtionsFromPosition(ctx, extrbctDefinitionRbnges, symbolExtrbctDefbult, s.operbtions.getDefinitionLocbtions, locbtionKey)
 }
 
-func (s *store) ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractReferenceRanges, symbolExtractDefault, s.operations.getReferenceLocations, locationKey)
+func (s *store) ExtrbctReferenceLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) (_ []shbred.Locbtion, _ []string, err error) {
+	return s.extrbctLocbtionsFromPosition(ctx, extrbctReferenceRbnges, symbolExtrbctDefbult, s.operbtions.getReferenceLocbtions, locbtionKey)
 }
 
-func (s *store) ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractImplementationRanges, symbolExtractImplementations, s.operations.getImplementationLocations, locationKey)
+func (s *store) ExtrbctImplementbtionLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) (_ []shbred.Locbtion, _ []string, err error) {
+	return s.extrbctLocbtionsFromPosition(ctx, extrbctImplementbtionRbnges, symbolExtrbctImplementbtions, s.operbtions.getImplementbtionLocbtions, locbtionKey)
 }
 
-func (s *store) ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) (_ []shared.Location, _ []string, err error) {
-	return s.extractLocationsFromPosition(ctx, extractPrototypesRanges, symbolExtractPrototype, s.operations.getPrototypesLocations, locationKey)
+func (s *store) ExtrbctPrototypeLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) (_ []shbred.Locbtion, _ []string, err error) {
+	return s.extrbctLocbtionsFromPosition(ctx, extrbctPrototypesRbnges, symbolExtrbctPrototype, s.operbtions.getPrototypesLocbtions, locbtionKey)
 }
 
-func symbolExtractDefault(document *scip.Document, symbolName string) (symbols []string) {
-	if symbol := scip.FindSymbol(document, symbolName); symbol != nil {
-		for _, rel := range symbol.Relationships {
+func symbolExtrbctDefbult(document *scip.Document, symbolNbme string) (symbols []string) {
+	if symbol := scip.FindSymbol(document, symbolNbme); symbol != nil {
+		for _, rel := rbnge symbol.Relbtionships {
 			if rel.IsReference {
-				symbols = append(symbols, rel.Symbol)
+				symbols = bppend(symbols, rel.Symbol)
 			}
 		}
 	}
 
-	return append(symbols, symbolName)
+	return bppend(symbols, symbolNbme)
 }
 
-func symbolExtractImplementations(document *scip.Document, symbolName string) (symbols []string) {
-	for _, sym := range document.Symbols {
-		for _, rel := range sym.Relationships {
-			if rel.IsImplementation {
-				if rel.Symbol == symbolName {
-					symbols = append(symbols, sym.Symbol)
+func symbolExtrbctImplementbtions(document *scip.Document, symbolNbme string) (symbols []string) {
+	for _, sym := rbnge document.Symbols {
+		for _, rel := rbnge sym.Relbtionships {
+			if rel.IsImplementbtion {
+				if rel.Symbol == symbolNbme {
+					symbols = bppend(symbols, sym.Symbol)
 				}
 			}
 		}
 	}
 
-	return append(symbols, symbolName)
+	return bppend(symbols, symbolNbme)
 }
 
-func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols []string) {
-	if symbol := scip.FindSymbol(document, symbolName); symbol != nil {
-		for _, rel := range symbol.Relationships {
-			if rel.IsImplementation {
-				symbols = append(symbols, rel.Symbol)
+func symbolExtrbctPrototype(document *scip.Document, symbolNbme string) (symbols []string) {
+	if symbol := scip.FindSymbol(document, symbolNbme); symbol != nil {
+		for _, rel := rbnge symbol.Relbtionships {
+			if rel.IsImplementbtion {
+				symbols = bppend(symbols, rel.Symbol)
 			}
 		}
 	}
@@ -426,180 +426,180 @@ func symbolExtractPrototype(document *scip.Document, symbolName string) (symbols
 //
 //
 
-func (s *store) extractLocationsFromPosition(
+func (s *store) extrbctLocbtionsFromPosition(
 	ctx context.Context,
-	extractRanges func(document *scip.Document, occurrence *scip.Occurrence) []*scip.Range,
-	extractSymbolNames func(document *scip.Document, symbolName string) []string,
-	operation *observation.Operation,
-	locationKey LocationKey,
-) (_ []shared.Location, _ []string, err error) {
-	ctx, trace, endObservation := operation.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("bundleID", locationKey.UploadID),
-		attribute.String("path", locationKey.Path),
-		attribute.Int("line", locationKey.Line),
-		attribute.Int("character", locationKey.Character),
+	extrbctRbnges func(document *scip.Document, occurrence *scip.Occurrence) []*scip.Rbnge,
+	extrbctSymbolNbmes func(document *scip.Document, symbolNbme string) []string,
+	operbtion *observbtion.Operbtion,
+	locbtionKey LocbtionKey,
+) (_ []shbred.Locbtion, _ []string, err error) {
+	ctx, trbce, endObservbtion := operbtion.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("bundleID", locbtionKey.UplobdID),
+		bttribute.String("pbth", locbtionKey.Pbth),
+		bttribute.Int("line", locbtionKey.Line),
+		bttribute.Int("chbrbcter", locbtionKey.Chbrbcter),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	documentData, exists, err := s.scanFirstDocumentData(s.db.Query(ctx, sqlf.Sprintf(
-		locationsDocumentQuery,
-		locationKey.UploadID,
-		locationKey.Path,
+	documentDbtb, exists, err := s.scbnFirstDocumentDbtb(s.db.Query(ctx, sqlf.Sprintf(
+		locbtionsDocumentQuery,
+		locbtionKey.UplobdID,
+		locbtionKey.Pbth,
 	)))
 	if err != nil || !exists {
 		return nil, nil, err
 	}
 
-	trace.AddEvent("SCIPData", attribute.Int("numOccurrences", len(documentData.SCIPData.Occurrences)))
-	occurrences := scip.FindOccurrences(documentData.SCIPData.Occurrences, int32(locationKey.Line), int32(locationKey.Character))
-	trace.AddEvent("FindOccurences", attribute.Int("numIntersectingOccurrences", len(occurrences)))
+	trbce.AddEvent("SCIPDbtb", bttribute.Int("numOccurrences", len(documentDbtb.SCIPDbtb.Occurrences)))
+	occurrences := scip.FindOccurrences(documentDbtb.SCIPDbtb.Occurrences, int32(locbtionKey.Line), int32(locbtionKey.Chbrbcter))
+	trbce.AddEvent("FindOccurences", bttribute.Int("numIntersectingOccurrences", len(occurrences)))
 
-	var locations []shared.Location
-	var symbols []string
-	for _, occurrence := range occurrences {
-		if ranges := extractRanges(documentData.SCIPData, occurrence); len(ranges) != 0 {
-			locations = append(locations, convertSCIPRangesToLocations(ranges, locationKey.UploadID, locationKey.Path)...)
+	vbr locbtions []shbred.Locbtion
+	vbr symbols []string
+	for _, occurrence := rbnge occurrences {
+		if rbnges := extrbctRbnges(documentDbtb.SCIPDbtb, occurrence); len(rbnges) != 0 {
+			locbtions = bppend(locbtions, convertSCIPRbngesToLocbtions(rbnges, locbtionKey.UplobdID, locbtionKey.Pbth)...)
 		}
 
-		if occurrence.Symbol != "" && !scip.IsLocalSymbol(occurrence.Symbol) {
-			symbols = append(symbols, extractSymbolNames(documentData.SCIPData, occurrence.Symbol)...)
+		if occurrence.Symbol != "" && !scip.IsLocblSymbol(occurrence.Symbol) {
+			symbols = bppend(symbols, extrbctSymbolNbmes(documentDbtb.SCIPDbtb, occurrence.Symbol)...)
 		}
 	}
 
-	return deduplicateLocations(locations), deduplicate(symbols, func(s string) string { return s }), nil
+	return deduplicbteLocbtions(locbtions), deduplicbte(symbols, func(s string) string { return s }), nil
 }
 
-func deduplicate[T any](locations []T, keyFn func(T) string) []T {
-	seen := map[string]struct{}{}
+func deduplicbte[T bny](locbtions []T, keyFn func(T) string) []T {
+	seen := mbp[string]struct{}{}
 
-	filtered := locations[:0]
-	for _, l := range locations {
+	filtered := locbtions[:0]
+	for _, l := rbnge locbtions {
 		k := keyFn(l)
 		if _, ok := seen[k]; ok {
 			continue
 		}
 
 		seen[k] = struct{}{}
-		filtered = append(filtered, l)
+		filtered = bppend(filtered, l)
 	}
 
 	return filtered
 }
 
-func deduplicateLocations(locations []shared.Location) []shared.Location {
-	return deduplicate(locations, locationKey)
+func deduplicbteLocbtions(locbtions []shbred.Locbtion) []shbred.Locbtion {
+	return deduplicbte(locbtions, locbtionKey)
 }
 
-func locationKey(l shared.Location) string {
+func locbtionKey(l shbred.Locbtion) string {
 	return fmt.Sprintf("%d:%s:%d:%d:%d:%d",
 		l.DumpID,
-		l.Path,
-		l.Range.Start.Line,
-		l.Range.Start.Character,
-		l.Range.End.Line,
-		l.Range.End.Character,
+		l.Pbth,
+		l.Rbnge.Stbrt.Line,
+		l.Rbnge.Stbrt.Chbrbcter,
+		l.Rbnge.End.Line,
+		l.Rbnge.End.Chbrbcter,
 	)
 }
 
 //
 //
 
-func (s *store) GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, trace, endObservation := s.operations.getBulkMonikerLocations.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("tableName", tableName),
-		attribute.Int("numUploadIDs", len(uploadIDs)),
-		attribute.IntSlice("uploadIDs", uploadIDs),
-		attribute.Int("numMonikers", len(monikers)),
-		attribute.String("monikers", monikersToString(monikers)),
-		attribute.Int("limit", limit),
-		attribute.Int("offset", offset),
+func (s *store) GetMinimblBulkMonikerLocbtions(ctx context.Context, tbbleNbme string, uplobdIDs []int, skipPbths mbp[int]string, monikers []precise.MonikerDbtb, limit, offset int) (_ []shbred.Locbtion, totblCount int, err error) {
+	ctx, trbce, endObservbtion := s.operbtions.getBulkMonikerLocbtions.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("tbbleNbme", tbbleNbme),
+		bttribute.Int("numUplobdIDs", len(uplobdIDs)),
+		bttribute.IntSlice("uplobdIDs", uplobdIDs),
+		bttribute.Int("numMonikers", len(monikers)),
+		bttribute.String("monikers", monikersToString(monikers)),
+		bttribute.Int("limit", limit),
+		bttribute.Int("offset", offset),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	if len(uploadIDs) == 0 || len(monikers) == 0 {
+	if len(uplobdIDs) == 0 || len(monikers) == 0 {
 		return nil, 0, nil
 	}
 
-	symbolNames := make([]string, 0, len(monikers))
-	for _, arg := range monikers {
-		symbolNames = append(symbolNames, arg.Identifier)
+	symbolNbmes := mbke([]string, 0, len(monikers))
+	for _, brg := rbnge monikers {
+		symbolNbmes = bppend(symbolNbmes, brg.Identifier)
 	}
 
-	var skipConds []*sqlf.Query
-	for _, id := range uploadIDs {
-		if path, ok := skipPaths[id]; ok {
-			skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", id, path))
+	vbr skipConds []*sqlf.Query
+	for _, id := rbnge uplobdIDs {
+		if pbth, ok := skipPbths[id]; ok {
+			skipConds = bppend(skipConds, sqlf.Sprintf("(%s, %s)", id, pbth))
 		}
 	}
 	if len(skipConds) == 0 {
-		skipConds = append(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
+		skipConds = bppend(skipConds, sqlf.Sprintf("(%s, %s)", -1, ""))
 	}
 
-	fieldName := fmt.Sprintf("%s_ranges", strings.TrimSuffix(tableName, "s"))
+	fieldNbme := fmt.Sprintf("%s_rbnges", strings.TrimSuffix(tbbleNbme, "s"))
 	query := sqlf.Sprintf(
-		minimalBulkMonikerResultsQuery,
-		pq.Array(symbolNames),
-		pq.Array(uploadIDs),
-		sqlf.Sprintf(fieldName),
-		sqlf.Sprintf(fieldName),
+		minimblBulkMonikerResultsQuery,
+		pq.Arrby(symbolNbmes),
+		pq.Arrby(uplobdIDs),
+		sqlf.Sprintf(fieldNbme),
+		sqlf.Sprintf(fieldNbme),
 		sqlf.Join(skipConds, ", "),
 	)
 
-	locationData, err := s.scanDeduplicatedQualifiedMonikerLocations(s.db.Query(ctx, query))
+	locbtionDbtb, err := s.scbnDeduplicbtedQublifiedMonikerLocbtions(s.db.Query(ctx, query))
 	if err != nil {
 		return nil, 0, err
 	}
 
-	totalCount = 0
-	for _, monikerLocations := range locationData {
-		totalCount += len(monikerLocations.Locations)
+	totblCount = 0
+	for _, monikerLocbtions := rbnge locbtionDbtb {
+		totblCount += len(monikerLocbtions.Locbtions)
 	}
-	trace.AddEvent("TODO Domain Owner",
-		attribute.Int("numDumps", len(locationData)),
-		attribute.Int("totalCount", totalCount))
+	trbce.AddEvent("TODO Dombin Owner",
+		bttribute.Int("numDumps", len(locbtionDbtb)),
+		bttribute.Int("totblCount", totblCount))
 
-	max := totalCount
-	if totalCount > limit {
-		max = limit
+	mbx := totblCount
+	if totblCount > limit {
+		mbx = limit
 	}
 
-	locations := make([]shared.Location, 0, max)
+	locbtions := mbke([]shbred.Locbtion, 0, mbx)
 outer:
-	for _, monikerLocations := range locationData {
-		for _, row := range monikerLocations.Locations {
+	for _, monikerLocbtions := rbnge locbtionDbtb {
+		for _, row := rbnge monikerLocbtions.Locbtions {
 			offset--
 			if offset >= 0 {
 				continue
 			}
 
-			locations = append(locations, shared.Location{
-				DumpID: monikerLocations.DumpID,
-				Path:   row.URI,
-				Range:  newRange(row.StartLine, row.StartCharacter, row.EndLine, row.EndCharacter),
+			locbtions = bppend(locbtions, shbred.Locbtion{
+				DumpID: monikerLocbtions.DumpID,
+				Pbth:   row.URI,
+				Rbnge:  newRbnge(row.StbrtLine, row.StbrtChbrbcter, row.EndLine, row.EndChbrbcter),
 			})
 
-			if len(locations) >= limit {
-				break outer
+			if len(locbtions) >= limit {
+				brebk outer
 			}
 		}
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("numLocations", len(locations)))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("numLocbtions", len(locbtions)))
 
-	return locations, totalCount, nil
+	return locbtions, totblCount, nil
 }
 
-const minimalBulkMonikerResultsQuery = `
+const minimblBulkMonikerResultsQuery = `
 WITH RECURSIVE
 ` + symbolIDsCTEs + `
 SELECT
-	ss.upload_id,
+	ss.uplobd_id,
 	%s,
-	document_path
+	document_pbth
 FROM codeintel_scip_symbols ss
 JOIN codeintel_scip_document_lookup dl ON dl.id = ss.document_lookup_id
-JOIN matching_symbol_names msn ON msn.upload_id = ss.upload_id AND msn.id = ss.symbol_id
+JOIN mbtching_symbol_nbmes msn ON msn.uplobd_id = ss.uplobd_id AND msn.id = ss.symbol_id
 WHERE
 	ss.%s IS NOT NULL AND
-	(ss.upload_id, dl.document_path) NOT IN (%s)
-ORDER BY ss.upload_id, dl.document_path
+	(ss.uplobd_id, dl.document_pbth) NOT IN (%s)
+ORDER BY ss.uplobd_id, dl.document_pbth
 `

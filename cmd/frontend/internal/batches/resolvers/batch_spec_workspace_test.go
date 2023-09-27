@@ -1,198 +1,198 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-func TestBatchSpecWorkspaceResolver(t *testing.T) {
+func TestBbtchSpecWorkspbceResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	repo, _ := bt.CreateTestRepo(t, ctx, db)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	repo, _ := bt.CrebteTestRepo(t, ctx, db)
 
-	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
+	repoID := grbphqlbbckend.MbrshblRepositoryID(repo.ID)
 
-	userID := bt.CreateTestUser(t, db, true).ID
-	adminCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
+	userID := bt.CrebteTestUser(t, db, true).ID
+	bdminCtx := bctor.WithActor(context.Bbckground(), bctor.FromUser(userID))
 
-	spec := &btypes.BatchSpec{
+	spec := &btypes.BbtchSpec{
 		UserID:          userID,
-		NamespaceUserID: userID,
-		Spec: &batches.BatchSpec{
-			Steps: []batches.Step{
+		NbmespbceUserID: userID,
+		Spec: &bbtches.BbtchSpec{
+			Steps: []bbtches.Step{
 				{
 					Run:       "echo 'hello world'",
-					Container: "alpine:3",
+					Contbiner: "blpine:3",
 				},
 			},
 		},
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec); err != nil {
+		t.Fbtbl(err)
 	}
-	specID := marshalBatchSpecRandID(spec.RandID)
+	specID := mbrshblBbtchSpecRbndID(spec.RbndID)
 
-	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
-	mockBackendCommits(t, testRev)
+	testRev := bpi.CommitID("b69072d5f687b31b9f6be3cebfdc24c259c4b9ec")
+	mockBbckendCommits(t, testRev)
 
-	workspace := &btypes.BatchSpecWorkspace{
+	workspbce := &btypes.BbtchSpecWorkspbce{
 		ID:                 0,
-		BatchSpecID:        spec.ID,
-		ChangesetSpecIDs:   []int64{},
+		BbtchSpecID:        spec.ID,
+		ChbngesetSpecIDs:   []int64{},
 		RepoID:             repo.ID,
-		Branch:             "refs/heads/main",
+		Brbnch:             "refs/hebds/mbin",
 		Commit:             string(testRev),
-		Path:               "a/b/c",
-		FileMatches:        []string{"a/b/c.go"},
-		OnlyFetchWorkspace: false,
+		Pbth:               "b/b/c",
+		FileMbtches:        []string{"b/b/c.go"},
+		OnlyFetchWorkspbce: fblse,
 		Unsupported:        true,
 		Ignored:            true,
 	}
 
-	if err := bstore.CreateBatchSpecWorkspace(ctx, workspace); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpecWorkspbce(ctx, workspbce); err != nil {
+		t.Fbtbl(err)
 	}
-	apiID := string(marshalBatchSpecWorkspaceID(workspace.ID))
+	bpiID := string(mbrshblBbtchSpecWorkspbceID(workspbce.ID))
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	wantTmpl := apitest.BatchSpecWorkspace{
-		Typename: "VisibleBatchSpecWorkspace",
-		ID:       apiID,
+	wbntTmpl := bpitest.BbtchSpecWorkspbce{
+		Typenbme: "VisibleBbtchSpecWorkspbce",
+		ID:       bpiID,
 
-		Repository: apitest.Repository{
-			Name: string(repo.Name),
+		Repository: bpitest.Repository{
+			Nbme: string(repo.Nbme),
 			ID:   string(repoID),
 		},
-		BatchSpec: apitest.BatchSpec{
+		BbtchSpec: bpitest.BbtchSpec{
 			ID: string(specID),
 		},
 
-		SearchResultPaths: []string{
-			"a/b/c.go",
+		SebrchResultPbths: []string{
+			"b/b/c.go",
 		},
-		Branch: apitest.GitRef{
-			DisplayName: "main",
-			Target:      apitest.GitTarget{OID: string(testRev)},
+		Brbnch: bpitest.GitRef{
+			DisplbyNbme: "mbin",
+			Tbrget:      bpitest.GitTbrget{OID: string(testRev)},
 		},
-		Path: "a/b/c",
+		Pbth: "b/b/c",
 
-		OnlyFetchWorkspace: false,
+		OnlyFetchWorkspbce: fblse,
 		Unsupported:        true,
 		Ignored:            true,
 
-		Steps: []apitest.BatchSpecWorkspaceStep{
+		Steps: []bpitest.BbtchSpecWorkspbceStep{
 			{
 				Run:       spec.Spec.Steps[0].Run,
-				Container: spec.Spec.Steps[0].Container,
+				Contbiner: spec.Spec.Steps[0].Contbiner,
 			},
 		},
 	}
 
 	t.Run("Pending", func(t *testing.T) {
-		want := wantTmpl
+		wbnt := wbntTmpl
 
-		want.State = "PENDING"
+		wbnt.Stbte = "PENDING"
 
-		queryAndAssertBatchSpecWorkspace(t, adminCtx, s, apiID, want)
+		queryAndAssertBbtchSpecWorkspbce(t, bdminCtx, s, bpiID, wbnt)
 	})
 	t.Run("Queued", func(t *testing.T) {
-		job := &btypes.BatchSpecWorkspaceExecutionJob{
-			BatchSpecWorkspaceID: workspace.ID,
+		job := &btypes.BbtchSpecWorkspbceExecutionJob{
+			BbtchSpecWorkspbceID: workspbce.ID,
 			UserID:               userID,
 		}
-		if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
-			t.Fatal(err)
+		if err := bt.CrebteBbtchSpecWorkspbceExecutionJob(ctx, bstore, store.ScbnBbtchSpecWorkspbceExecutionJob, job); err != nil {
+			t.Fbtbl(err)
 		}
 
-		want := wantTmpl
-		want.State = "QUEUED"
-		want.PlaceInQueue = 1
+		wbnt := wbntTmpl
+		wbnt.Stbte = "QUEUED"
+		wbnt.PlbceInQueue = 1
 
-		queryAndAssertBatchSpecWorkspace(t, adminCtx, s, apiID, want)
+		queryAndAssertBbtchSpecWorkspbce(t, bdminCtx, s, bpiID, wbnt)
 	})
 }
 
-func queryAndAssertBatchSpecWorkspace(t *testing.T, ctx context.Context, s *graphql.Schema, id string, want apitest.BatchSpecWorkspace) {
+func queryAndAssertBbtchSpecWorkspbce(t *testing.T, ctx context.Context, s *grbphql.Schemb, id string, wbnt bpitest.BbtchSpecWorkspbce) {
 	t.Helper()
 
-	input := map[string]any{"batchSpecWorkspace": id}
+	input := mbp[string]bny{"bbtchSpecWorkspbce": id}
 
-	var response struct{ Node apitest.BatchSpecWorkspace }
+	vbr response struct{ Node bpitest.BbtchSpecWorkspbce }
 
-	apitest.MustExec(ctx, t, s, input, &response, queryBatchSpecWorkspaceNode)
+	bpitest.MustExec(ctx, t, s, input, &response, queryBbtchSpecWorkspbceNode)
 
-	if diff := cmp.Diff(want, response.Node); diff != "" {
-		t.Fatalf("unexpected batch spec workspace (-want +got):\n%s", diff)
+	if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+		t.Fbtblf("unexpected bbtch spec workspbce (-wbnt +got):\n%s", diff)
 	}
 }
 
-const queryBatchSpecWorkspaceNode = `
-query($batchSpecWorkspace: ID!) {
-  node(id: $batchSpecWorkspace) {
-    __typename
+const queryBbtchSpecWorkspbceNode = `
+query($bbtchSpecWorkspbce: ID!) {
+  node(id: $bbtchSpecWorkspbce) {
+    __typenbme
 
-    ... on BatchSpecWorkspace {
+    ... on BbtchSpecWorkspbce {
       id
 
-      batchSpec {
+      bbtchSpec {
         id
       }
 
-      onlyFetchWorkspace
+      onlyFetchWorkspbce
       unsupported
       ignored
 
-      state
-      placeInQueue
+      stbte
+      plbceInQueue
     }
-    ... on VisibleBatchSpecWorkspace {
+    ... on VisibleBbtchSpecWorkspbce {
       repository {
         id
-        name
+        nbme
       }
 
-      searchResultPaths
-      branch {
-        displayName
-        target {
+      sebrchResultPbths
+      brbnch {
+        displbyNbme
+        tbrget {
           oid
         }
       }
 
-      path
+      pbth
 
       steps {
         run
-        container
+        contbiner
       }
     }
   }

@@ -1,12 +1,12 @@
-package dbtest
+pbckbge dbtest
 
 import (
-	crand "crypto/rand"
-	"database/sql"
-	"encoding/binary"
+	crbnd "crypto/rbnd"
+	"dbtbbbse/sql"
+	"encoding/binbry"
 	"fmt"
-	"hash/fnv"
-	"math/rand"
+	"hbsh/fnv"
+	"mbth/rbnd"
 	"net/url"
 	"os"
 	"strconv"
@@ -16,240 +16,240 @@ import (
 
 	"github.com/lib/pq"
 
-	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/test"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	connections "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/connections/test"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-// NewTx opens a transaction off of the given database, returning that
-// transaction if an error didn't occur.
+// NewTx opens b trbnsbction off of the given dbtbbbse, returning thbt
+// trbnsbction if bn error didn't occur.
 //
-// After opening this transaction, it executes the query
+// After opening this trbnsbction, it executes the query
 //
 //	SET CONSTRAINTS ALL DEFERRED
 //
-// which aids in testing.
+// which bids in testing.
 func NewTx(t testing.TB, db *sql.DB) *sql.Tx {
 	tx, err := db.Begin()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	_, err = tx.Exec("SET CONSTRAINTS ALL DEFERRED")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Cleanup(func() {
-		_ = tx.Rollback()
+	t.Clebnup(func() {
+		_ = tx.Rollbbck()
 	})
 
 	return tx
 }
 
-// Use a shared, locked RNG to avoid issues with multiple concurrent tests getting
-// the same random database number (unlikely, but has been observed).
-// Use crypto/rand.Read() to use an OS source of entropy, since, against all odds,
-// using nanotime was causing conflicts.
-var rng = rand.New(rand.NewSource(func() int64 {
+// Use b shbred, locked RNG to bvoid issues with multiple concurrent tests getting
+// the sbme rbndom dbtbbbse number (unlikely, but hbs been observed).
+// Use crypto/rbnd.Rebd() to use bn OS source of entropy, since, bgbinst bll odds,
+// using nbnotime wbs cbusing conflicts.
+vbr rng = rbnd.New(rbnd.NewSource(func() int64 {
 	b := [8]byte{}
-	if _, err := crand.Read(b[:]); err != nil {
-		panic(err)
+	if _, err := crbnd.Rebd(b[:]); err != nil {
+		pbnic(err)
 	}
-	return int64(binary.LittleEndian.Uint64(b[:]))
+	return int64(binbry.LittleEndibn.Uint64(b[:]))
 }()))
-var rngLock sync.Mutex
+vbr rngLock sync.Mutex
 
-// NewDB returns a connection to a clean, new temporary testing database with
-// the same schema as Sourcegraph's production Postgres database.
+// NewDB returns b connection to b clebn, new temporbry testing dbtbbbse with
+// the sbme schemb bs Sourcegrbph's production Postgres dbtbbbse.
 func NewDB(logger log.Logger, t testing.TB) *sql.DB {
-	return newDB(logger, t, "migrated", schemas.Frontend, schemas.CodeIntel)
+	return newDB(logger, t, "migrbted", schembs.Frontend, schembs.CodeIntel)
 }
 
-// NewDBAtRev returns a connection to a clean, new temporary testing database with
-// the same schema as Sourcegraph's production Postgres database at the given revision.
+// NewDBAtRev returns b connection to b clebn, new temporbry testing dbtbbbse with
+// the sbme schemb bs Sourcegrbph's production Postgres dbtbbbse bt the given revision.
 func NewDBAtRev(logger log.Logger, t testing.TB, rev string) *sql.DB {
 	return newDB(
 		logger,
 		t,
-		fmt.Sprintf("migrated-%s", rev),
-		getSchemaAtRev(t, "frontend", rev),
-		getSchemaAtRev(t, "codeintel", rev),
+		fmt.Sprintf("migrbted-%s", rev),
+		getSchembAtRev(t, "frontend", rev),
+		getSchembAtRev(t, "codeintel", rev),
 	)
 }
 
-func getSchemaAtRev(t testing.TB, name, rev string) *schemas.Schema {
-	schema, err := schemas.ResolveSchemaAtRev(name, rev)
+func getSchembAtRev(t testing.TB, nbme, rev string) *schembs.Schemb {
+	schemb, err := schembs.ResolveSchembAtRev(nbme, rev)
 	if err != nil {
-		t.Fatalf("failed to resolve %q schema: %s", name, err)
+		t.Fbtblf("fbiled to resolve %q schemb: %s", nbme, err)
 	}
 
-	return schema
+	return schemb
 }
 
-// NewInsightsDB returns a connection to a clean, new temporary testing database with
-// the same schema as Sourcegraph's CodeInsights production Postgres database.
+// NewInsightsDB returns b connection to b clebn, new temporbry testing dbtbbbse with
+// the sbme schemb bs Sourcegrbph's CodeInsights production Postgres dbtbbbse.
 func NewInsightsDB(logger log.Logger, t testing.TB) *sql.DB {
-	return newDB(logger, t, "insights", schemas.CodeInsights)
+	return newDB(logger, t, "insights", schembs.CodeInsights)
 }
 
-// NewRawDB returns a connection to a clean, new temporary testing database.
-func NewRawDB(logger log.Logger, t testing.TB) *sql.DB {
-	return newDB(logger, t, "raw")
+// NewRbwDB returns b connection to b clebn, new temporbry testing dbtbbbse.
+func NewRbwDB(logger log.Logger, t testing.TB) *sql.DB {
+	return newDB(logger, t, "rbw")
 }
 
-func newDB(logger log.Logger, t testing.TB, name string, schemas ...*schemas.Schema) *sql.DB {
+func newDB(logger log.Logger, t testing.TB, nbme string, schembs ...*schembs.Schemb) *sql.DB {
 	if testing.Short() {
-		t.Skip("DB tests disabled since go test -short is specified")
+		t.Skip("DB tests disbbled since go test -short is specified")
 	}
 
-	onceByName(name).Do(func() { initTemplateDB(logger, t, name, schemas) })
-	return newFromDSN(logger, t, name)
+	onceByNbme(nbme).Do(func() { initTemplbteDB(logger, t, nbme, schembs) })
+	return newFromDSN(logger, t, nbme)
 }
 
-var (
-	onceByNameMap   = map[string]*sync.Once{}
-	onceByNameMutex sync.Mutex
+vbr (
+	onceByNbmeMbp   = mbp[string]*sync.Once{}
+	onceByNbmeMutex sync.Mutex
 )
 
-func onceByName(name string) *sync.Once {
-	onceByNameMutex.Lock()
-	defer onceByNameMutex.Unlock()
+func onceByNbme(nbme string) *sync.Once {
+	onceByNbmeMutex.Lock()
+	defer onceByNbmeMutex.Unlock()
 
-	if once, ok := onceByNameMap[name]; ok {
+	if once, ok := onceByNbmeMbp[nbme]; ok {
 		return once
 	}
 
 	once := new(sync.Once)
-	onceByNameMap[name] = once
+	onceByNbmeMbp[nbme] = once
 	return once
 }
 
-func newFromDSN(logger log.Logger, t testing.TB, templateNamespace string) *sql.DB {
+func newFromDSN(logger log.Logger, t testing.TB, templbteNbmespbce string) *sql.DB {
 	if testing.Short() {
 		t.Skip("skipping DB test since -short specified")
 	}
 
 	config, err := GetDSN()
 	if err != nil {
-		t.Fatalf("failed to parse dsn: %s", err)
+		t.Fbtblf("fbiled to pbrse dsn: %s", err)
 	}
 
 	rngLock.Lock()
-	dbname := "sourcegraph-test-" + strconv.FormatUint(rng.Uint64(), 10)
+	dbnbme := "sourcegrbph-test-" + strconv.FormbtUint(rng.Uint64(), 10)
 	rngLock.Unlock()
 
 	db := dbConn(logger, t, config)
-	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbname)+` TEMPLATE `+pq.QuoteIdentifier(templateDBName(templateNamespace)))
+	dbExec(t, db, `CREATE DATABASE `+pq.QuoteIdentifier(dbnbme)+` TEMPLATE `+pq.QuoteIdentifier(templbteDBNbme(templbteNbmespbce)))
 
-	config.Path = "/" + dbname
+	config.Pbth = "/" + dbnbme
 	testDB := dbConn(logger, t, config)
 	t.Logf("testdb: %s", config.String())
 
-	// Some tests that exercise concurrency need lots of connections or they block forever.
-	// e.g. TestIntegration/DBStore/Syncer/MultipleServices
+	// Some tests thbt exercise concurrency need lots of connections or they block forever.
+	// e.g. TestIntegrbtion/DBStore/Syncer/MultipleServices
 	conns, err := strconv.Atoi(os.Getenv("TESTDB_MAXOPENCONNS"))
 	if err != nil || conns == 0 {
 		conns = 20
 	}
-	testDB.SetMaxOpenConns(conns)
-	testDB.SetMaxIdleConns(1) // Default is 2, and within tests, it's not that important to have more than one.
+	testDB.SetMbxOpenConns(conns)
+	testDB.SetMbxIdleConns(1) // Defbult is 2, bnd within tests, it's not thbt importbnt to hbve more thbn one.
 
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		defer db.Close()
 
-		if t.Failed() && os.Getenv("CI") != "true" {
-			t.Logf("DATABASE %s left intact for inspection", dbname)
+		if t.Fbiled() && os.Getenv("CI") != "true" {
+			t.Logf("DATABASE %s left intbct for inspection", dbnbme)
 			return
 		}
 
 		if err := testDB.Close(); err != nil {
-			t.Fatalf("failed to close test database: %s", err)
+			t.Fbtblf("fbiled to close test dbtbbbse: %s", err)
 		}
-		dbExec(t, db, killClientConnsQuery, dbname)
-		dbExec(t, db, `DROP DATABASE `+pq.QuoteIdentifier(dbname))
+		dbExec(t, db, killClientConnsQuery, dbnbme)
+		dbExec(t, db, `DROP DATABASE `+pq.QuoteIdentifier(dbnbme))
 	})
 
 	return testDB
 }
 
-// initTemplateDB creates a template database with a fully migrated schema for the
-// current package. New databases can then do a cheap copy of the migrated schema
-// rather than running the full migration every time.
-func initTemplateDB(logger log.Logger, t testing.TB, templateNamespace string, dbSchemas []*schemas.Schema) {
+// initTemplbteDB crebtes b templbte dbtbbbse with b fully migrbted schemb for the
+// current pbckbge. New dbtbbbses cbn then do b chebp copy of the migrbted schemb
+// rbther thbn running the full migrbtion every time.
+func initTemplbteDB(logger log.Logger, t testing.TB, templbteNbmespbce string, dbSchembs []*schembs.Schemb) {
 	config, err := GetDSN()
 	if err != nil {
-		t.Fatalf("failed to parse dsn: %s", err)
+		t.Fbtblf("fbiled to pbrse dsn: %s", err)
 	}
 
 	db := dbConn(logger, t, config)
 	defer db.Close()
 
-	init := func(templateNamespace string, schemas []*schemas.Schema) {
-		templateName := templateDBName(templateNamespace)
-		name := pq.QuoteIdentifier(templateName)
+	init := func(templbteNbmespbce string, schembs []*schembs.Schemb) {
+		templbteNbme := templbteDBNbme(templbteNbmespbce)
+		nbme := pq.QuoteIdentifier(templbteNbme)
 
-		// We must first drop the template database because
-		// migrations would not run on it if they had already ran,
-		// even if the content of the migrations had changed during development.
+		// We must first drop the templbte dbtbbbse becbuse
+		// migrbtions would not run on it if they hbd blrebdy rbn,
+		// even if the content of the migrbtions hbd chbnged during development.
 
-		dbExec(t, db, `DROP DATABASE IF EXISTS `+name)
-		dbExec(t, db, `CREATE DATABASE `+name+` TEMPLATE template0`)
+		dbExec(t, db, `DROP DATABASE IF EXISTS `+nbme)
+		dbExec(t, db, `CREATE DATABASE `+nbme+` TEMPLATE templbte0`)
 
 		cfgCopy := *config
-		cfgCopy.Path = "/" + templateName
-		dbConn(logger, t, &cfgCopy, schemas...).Close()
+		cfgCopy.Pbth = "/" + templbteNbme
+		dbConn(logger, t, &cfgCopy, schembs...).Close()
 	}
 
-	init(templateNamespace, dbSchemas)
+	init(templbteNbmespbce, dbSchembs)
 }
 
-// templateDBName returns the name of the template database for the currently running package and namespace.
-func templateDBName(templateNamespace string) string {
-	parts := []string{
-		"sourcegraph-test-template",
-		wdHash(),
-		templateNamespace,
+// templbteDBNbme returns the nbme of the templbte dbtbbbse for the currently running pbckbge bnd nbmespbce.
+func templbteDBNbme(templbteNbmespbce string) string {
+	pbrts := []string{
+		"sourcegrbph-test-templbte",
+		wdHbsh(),
+		templbteNbmespbce,
 	}
 
-	return strings.Join(parts, "-")
+	return strings.Join(pbrts, "-")
 }
 
-// wdHash returns a hash of the current working directory.
-// This is useful to get a stable identifier for the package running
+// wdHbsh returns b hbsh of the current working directory.
+// This is useful to get b stbble identifier for the pbckbge running
 // the tests.
-func wdHash() string {
+func wdHbsh() string {
 	h := fnv.New64()
 	wd, _ := os.Getwd()
 	h.Write([]byte(wd))
-	return strconv.FormatUint(h.Sum64(), 10)
+	return strconv.FormbtUint(h.Sum64(), 10)
 }
 
-func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schemas ...*schemas.Schema) *sql.DB {
+func dbConn(logger log.Logger, t testing.TB, cfg *url.URL, schembs ...*schembs.Schemb) *sql.DB {
 	t.Helper()
-	db, err := connections.NewTestDB(t, logger, cfg.String(), schemas...)
+	db, err := connections.NewTestDB(t, logger, cfg.String(), schembs...)
 	if err != nil {
-		if strings.Contains(err.Error(), "connection refused") && os.Getenv("BAZEL_TEST") == "1" {
-			t.Fatalf(`failed to connect to database %q: %s
-PROTIP: Ensure the below is part of the go_test rule in BUILD.bazel
-  tags = ["requires-network"]
-See https://docs.sourcegraph.com/dev/background-information/bazel/faq#tests-fail-with-connection-refuse`, cfg, err)
+		if strings.Contbins(err.Error(), "connection refused") && os.Getenv("BAZEL_TEST") == "1" {
+			t.Fbtblf(`fbiled to connect to dbtbbbse %q: %s
+PROTIP: Ensure the below is pbrt of the go_test rule in BUILD.bbzel
+  tbgs = ["requires-network"]
+See https://docs.sourcegrbph.com/dev/bbckground-informbtion/bbzel/fbq#tests-fbil-with-connection-refuse`, cfg, err)
 		}
-		t.Fatalf("failed to connect to database %q: %s", cfg, err)
+		t.Fbtblf("fbiled to connect to dbtbbbse %q: %s", cfg, err)
 	}
 	return db
 }
 
-func dbExec(t testing.TB, db *sql.DB, q string, args ...any) {
+func dbExec(t testing.TB, db *sql.DB, q string, brgs ...bny) {
 	t.Helper()
-	_, err := db.Exec(q, args...)
+	_, err := db.Exec(q, brgs...)
 	if err != nil {
-		t.Errorf("failed to exec %q: %s", q, err)
+		t.Errorf("fbiled to exec %q: %s", q, err)
 	}
 }
 
 const killClientConnsQuery = `
-SELECT pg_terminate_backend(pg_stat_activity.pid)
-FROM pg_stat_activity WHERE datname = $1
+SELECT pg_terminbte_bbckend(pg_stbt_bctivity.pid)
+FROM pg_stbt_bctivity WHERE dbtnbme = $1
 `

@@ -1,28 +1,28 @@
-// Command frontend is a service that serves the web frontend and API.
-package main
+// Commbnd frontend is b service thbt serves the web frontend bnd API.
+pbckbge mbin
 
 import (
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
-	"github.com/sourcegraph/sourcegraph/internal/tracer"
-	"github.com/sourcegraph/sourcegraph/ui/assets"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/svcmbin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbcer"
+	"github.com/sourcegrbph/sourcegrbph/ui/bssets"
 
-	_ "github.com/sourcegraph/sourcegraph/ui/assets/enterprise" // Select enterprise assets
+	_ "github.com/sourcegrbph/sourcegrbph/ui/bssets/enterprise" // Select enterprise bssets
 )
 
-func main() {
-	sanitycheck.Pass()
+func mbin() {
+	sbnitycheck.Pbss()
 	if os.Getenv("WEBPACK_DEV_SERVER") == "1" {
-		assets.UseDevAssetsProvider()
+		bssets.UseDevAssetsProvider()
 	}
-	svcmain.SingleServiceMainWithoutConf(shared.Service, svcmain.Config{}, svcmain.OutOfBandConfiguration{
-		// use a switchable config here so we can switch it out for a proper conf client
-		// once we can use it after autoupgrading
-		Logging: conf.NewLogsSinksSource(shared.SwitchableSiteConfig()),
-		Tracing: tracer.ConfConfigurationSource{WatchableSiteConfig: shared.SwitchableSiteConfig()},
+	svcmbin.SingleServiceMbinWithoutConf(shbred.Service, svcmbin.Config{}, svcmbin.OutOfBbndConfigurbtion{
+		// use b switchbble config here so we cbn switch it out for b proper conf client
+		// once we cbn use it bfter butoupgrbding
+		Logging: conf.NewLogsSinksSource(shbred.SwitchbbleSiteConfig()),
+		Trbcing: trbcer.ConfConfigurbtionSource{WbtchbbleSiteConfig: shbred.SwitchbbleSiteConfig()},
 	})
 }

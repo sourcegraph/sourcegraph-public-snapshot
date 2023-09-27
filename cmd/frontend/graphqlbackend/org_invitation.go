@@ -1,84 +1,84 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-// organizationInvitationResolver implements the GraphQL type OrganizationInvitation.
-type organizationInvitationResolver struct {
-	db database.DB
-	v  *database.OrgInvitation
+// orgbnizbtionInvitbtionResolver implements the GrbphQL type OrgbnizbtionInvitbtion.
+type orgbnizbtionInvitbtionResolver struct {
+	db dbtbbbse.DB
+	v  *dbtbbbse.OrgInvitbtion
 }
 
-func NewOrganizationInvitationResolver(db database.DB, v *database.OrgInvitation) *organizationInvitationResolver {
-	return &organizationInvitationResolver{db, v}
+func NewOrgbnizbtionInvitbtionResolver(db dbtbbbse.DB, v *dbtbbbse.OrgInvitbtion) *orgbnizbtionInvitbtionResolver {
+	return &orgbnizbtionInvitbtionResolver{db, v}
 }
 
-func orgInvitationByID(ctx context.Context, db database.DB, id graphql.ID) (*organizationInvitationResolver, error) {
-	orgInvitationID, err := UnmarshalOrgInvitationID(id)
+func orgInvitbtionByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (*orgbnizbtionInvitbtionResolver, error) {
+	orgInvitbtionID, err := UnmbrshblOrgInvitbtionID(id)
 	if err != nil {
 		return nil, err
 	}
-	return orgInvitationByIDInt64(ctx, db, orgInvitationID)
+	return orgInvitbtionByIDInt64(ctx, db, orgInvitbtionID)
 }
 
-func orgInvitationByIDInt64(ctx context.Context, db database.DB, id int64) (*organizationInvitationResolver, error) {
-	orgInvitation, err := db.OrgInvitations().GetByID(ctx, id)
+func orgInvitbtionByIDInt64(ctx context.Context, db dbtbbbse.DB, id int64) (*orgbnizbtionInvitbtionResolver, error) {
+	orgInvitbtion, err := db.OrgInvitbtions().GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
-	return &organizationInvitationResolver{db: db, v: orgInvitation}, nil
+	return &orgbnizbtionInvitbtionResolver{db: db, v: orgInvitbtion}, nil
 }
 
-func (r *organizationInvitationResolver) ID() graphql.ID {
-	return MarshalOrgInvitationID(r.v.ID)
+func (r *orgbnizbtionInvitbtionResolver) ID() grbphql.ID {
+	return MbrshblOrgInvitbtionID(r.v.ID)
 }
 
-func MarshalOrgInvitationID(id int64) graphql.ID { return relay.MarshalID("OrgInvitation", id) }
+func MbrshblOrgInvitbtionID(id int64) grbphql.ID { return relby.MbrshblID("OrgInvitbtion", id) }
 
-func UnmarshalOrgInvitationID(id graphql.ID) (orgInvitationID int64, err error) {
-	err = relay.UnmarshalSpec(id, &orgInvitationID)
+func UnmbrshblOrgInvitbtionID(id grbphql.ID) (orgInvitbtionID int64, err error) {
+	err = relby.UnmbrshblSpec(id, &orgInvitbtionID)
 	return
 }
 
-func (r *organizationInvitationResolver) Organization(ctx context.Context) (*OrgResolver, error) {
-	return orgByIDInt32WithForcedAccess(ctx, r.db, r.v.OrgID, r.v.RecipientEmail != "")
+func (r *orgbnizbtionInvitbtionResolver) Orgbnizbtion(ctx context.Context) (*OrgResolver, error) {
+	return orgByIDInt32WithForcedAccess(ctx, r.db, r.v.OrgID, r.v.RecipientEmbil != "")
 }
 
-func (r *organizationInvitationResolver) Sender(ctx context.Context) (*UserResolver, error) {
+func (r *orgbnizbtionInvitbtionResolver) Sender(ctx context.Context) (*UserResolver, error) {
 	return UserByIDInt32(ctx, r.db, r.v.SenderUserID)
 }
 
-func (r *organizationInvitationResolver) Recipient(ctx context.Context) (*UserResolver, error) {
+func (r *orgbnizbtionInvitbtionResolver) Recipient(ctx context.Context) (*UserResolver, error) {
 	if r.v.RecipientUserID == 0 {
 		return nil, nil
 	}
 	return UserByIDInt32(ctx, r.db, r.v.RecipientUserID)
 }
-func (r *organizationInvitationResolver) RecipientEmail() (*string, error) {
-	if r.v.RecipientEmail == "" {
+func (r *orgbnizbtionInvitbtionResolver) RecipientEmbil() (*string, error) {
+	if r.v.RecipientEmbil == "" {
 		return nil, nil
 	}
-	return &r.v.RecipientEmail, nil
+	return &r.v.RecipientEmbil, nil
 }
-func (r *organizationInvitationResolver) CreatedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: r.v.CreatedAt}
+func (r *orgbnizbtionInvitbtionResolver) CrebtedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: r.v.CrebtedAt}
 }
-func (r *organizationInvitationResolver) NotifiedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.v.NotifiedAt)
-}
-
-func (r *organizationInvitationResolver) RespondedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.v.RespondedAt)
+func (r *orgbnizbtionInvitbtionResolver) NotifiedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.v.NotifiedAt)
 }
 
-func (r *organizationInvitationResolver) ResponseType() *string {
+func (r *orgbnizbtionInvitbtionResolver) RespondedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.v.RespondedAt)
+}
+
+func (r *orgbnizbtionInvitbtionResolver) ResponseType() *string {
 	if r.v.ResponseType == nil {
 		return nil
 	}
@@ -88,18 +88,18 @@ func (r *organizationInvitationResolver) ResponseType() *string {
 	return strptr("REJECT")
 }
 
-func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*string, error) {
+func (r *orgbnizbtionInvitbtionResolver) RespondURL(ctx context.Context) (*string, error) {
 	if r.v.Pending() {
-		var url string
-		var err error
-		if orgInvitationConfigDefined() {
-			url, err = orgInvitationURL(*r.v, true)
-		} else { // TODO: remove this fallback once signing key is enforced for on-prem instances
+		vbr url string
+		vbr err error
+		if orgInvitbtionConfigDefined() {
+			url, err = orgInvitbtionURL(*r.v, true)
+		} else { // TODO: remove this fbllbbck once signing key is enforced for on-prem instbnces
 			org, err := r.db.Orgs().GetByID(ctx, r.v.OrgID)
 			if err != nil {
 				return nil, err
 			}
-			url = orgInvitationURLLegacy(org, true)
+			url = orgInvitbtionURLLegbcy(org, true)
 		}
 		if err != nil {
 			return nil, err
@@ -109,16 +109,16 @@ func (r *organizationInvitationResolver) RespondURL(ctx context.Context) (*strin
 	return nil, nil
 }
 
-func (r *organizationInvitationResolver) RevokedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.v.RevokedAt)
+func (r *orgbnizbtionInvitbtionResolver) RevokedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.v.RevokedAt)
 }
 
-func (r *organizationInvitationResolver) ExpiresAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.v.ExpiresAt)
+func (r *orgbnizbtionInvitbtionResolver) ExpiresAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.v.ExpiresAt)
 }
 
-func (r *organizationInvitationResolver) IsVerifiedEmail() *bool {
-	return &r.v.IsVerifiedEmail
+func (r *orgbnizbtionInvitbtionResolver) IsVerifiedEmbil() *bool {
+	return &r.v.IsVerifiedEmbil
 }
 
 func strptr(s string) *string { return &s }

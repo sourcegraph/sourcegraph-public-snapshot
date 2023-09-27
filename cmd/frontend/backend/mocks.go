@@ -1,23 +1,23 @@
-package backend
+pbckbge bbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 )
 
-var Mocks MockServices
+vbr Mocks MockServices
 
 type MockServices struct {
 	Repos MockRepos
 }
 
-// testContext creates a new context.Context for use by tests
+// testContext crebtes b new context.Context for use by tests
 func testContext() context.Context {
 	Mocks = MockServices{}
 
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+	ctx := context.Bbckground()
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
 
 	return ctx
 }

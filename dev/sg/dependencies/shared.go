@@ -1,204 +1,204 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"bytes"
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/run"
-	"go.bobheadxi.dev/streamline/pipeline"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/run"
+	"go.bobhebdxi.dev/strebmline/pipeline"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/usershell"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/check"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/usershell"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func categoryCloneRepositories() category {
-	return category{
-		Name:      depsCloneRepo,
-		DependsOn: []string{depsBaseUtilities},
+func cbtegoryCloneRepositories() cbtegory {
+	return cbtegory{
+		Nbme:      depsCloneRepo,
+		DependsOn: []string{depsBbseUtilities},
 		Checks: []*dependency{
 			{
-				Name: "SSH authentication with GitHub.com",
-				Description: `Make sure that you can clone git repositories from GitHub via SSH.
-See here on how to set that up:
+				Nbme: "SSH buthenticbtion with GitHub.com",
+				Description: `Mbke sure thbt you cbn clone git repositories from GitHub vib SSH.
+See here on how to set thbt up:
 
-https://docs.github.com/en/authentication/connecting-to-github-with-ssh`,
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					if args.Teammate {
-						return check.CommandOutputContains(
+https://docs.github.com/en/buthenticbtion/connecting-to-github-with-ssh`,
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+					if brgs.Tebmmbte {
+						return check.CommbndOutputContbins(
 							"ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no -T git@github.com",
-							"successfully authenticated")(ctx)
+							"successfully buthenticbted")(ctx)
 					}
-					// otherwise, we don't need auth set up at all, since everything is OSS
+					// otherwise, we don't need buth set up bt bll, since everything is OSS
 					return nil
 				},
-				// TODO we might be able to automate this fix
+				// TODO we might be bble to butombte this fix
 			},
 			{
-				Name:        "github.com/sourcegraph/sourcegraph",
-				Description: `The 'sourcegraph' repository contains the Sourcegraph codebase and everything to run Sourcegraph locally.`,
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+				Nbme:        "github.com/sourcegrbph/sourcegrbph",
+				Description: `The 'sourcegrbph' repository contbins the Sourcegrbph codebbse bnd everything to run Sourcegrbph locblly.`,
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
 					if _, err := root.RepositoryRoot(); err == nil {
 						return nil
 					}
 
-					ok, err := pathExists("sourcegraph")
+					ok, err := pbthExists("sourcegrbph")
 					if !ok || err != nil {
-						return errors.New("'sg setup' is not run in sourcegraph and repository is also not found in current directory")
+						return errors.New("'sg setup' is not run in sourcegrbph bnd repository is blso not found in current directory")
 					}
 					return nil
 				},
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					var cmd *run.Command
-					if args.Teammate {
-						cmd = run.Cmd(ctx, `git clone git@github.com:sourcegraph/sourcegraph.git`)
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					vbr cmd *run.Commbnd
+					if brgs.Tebmmbte {
+						cmd = run.Cmd(ctx, `git clone git@github.com:sourcegrbph/sourcegrbph.git`)
 					} else {
-						cmd = run.Cmd(ctx, `git clone https://github.com/sourcegraph/sourcegraph.git`)
+						cmd = run.Cmd(ctx, `git clone https://github.com/sourcegrbph/sourcegrbph.git`)
 					}
-					return cmd.Run().StreamLines(cio.Write)
+					return cmd.Run().StrebmLines(cio.Write)
 				},
 			},
 			{
-				Name: "github.com/sourcegraph/dev-private",
-				Description: `In order to run the local development environment as a Sourcegraph teammate,
-you'll need to clone another repository: github.com/sourcegraph/dev-private.
+				Nbme: "github.com/sourcegrbph/dev-privbte",
+				Description: `In order to run the locbl development environment bs b Sourcegrbph tebmmbte,
+you'll need to clone bnother repository: github.com/sourcegrbph/dev-privbte.
 
-It contains convenient preconfigured settings and code host connections.
+It contbins convenient preconfigured settings bnd code host connections.
 
-It needs to be cloned into the same folder as sourcegraph/sourcegraph,
-so they sit alongside each other, like this:
+It needs to be cloned into the sbme folder bs sourcegrbph/sourcegrbph,
+so they sit blongside ebch other, like this:
 
     /dir
-    |-- dev-private
-    +-- sourcegraph
+    |-- dev-privbte
+    +-- sourcegrbph
 
-NOTE: You can ignore this if you're not a Sourcegraph teammate.`,
-				Enabled: enableForTeammatesOnly(),
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					ok, err := pathExists("dev-private")
+NOTE: You cbn ignore this if you're not b Sourcegrbph tebmmbte.`,
+				Enbbled: enbbleForTebmmbtesOnly(),
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+					ok, err := pbthExists("dev-privbte")
 					if ok && err == nil {
 						return nil
 					}
 					wd, err := os.Getwd()
 					if err != nil {
-						return errors.Wrap(err, "failed to check for dev-private repository")
+						return errors.Wrbp(err, "fbiled to check for dev-privbte repository")
 					}
 
-					p := filepath.Join(wd, "..", "dev-private")
-					ok, err = pathExists(p)
+					p := filepbth.Join(wd, "..", "dev-privbte")
+					ok, err = pbthExists(p)
 					if ok && err == nil {
 						return nil
 					}
-					return errors.New("could not find dev-private repository either in current directory or one above")
+					return errors.New("could not find dev-privbte repository either in current directory or one bbove")
 				},
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
 					rootDir, err := root.RepositoryRoot()
 					if err != nil {
-						return errors.Wrap(err, "sourcegraph/sourcegraph should be cloned first")
+						return errors.Wrbp(err, "sourcegrbph/sourcegrbph should be cloned first")
 					}
 
-					return run.Cmd(ctx, `git clone git@github.com:sourcegraph/dev-private.git`).
-						// Clone to parent
-						Dir(filepath.Join(rootDir, "..")).
+					return run.Cmd(ctx, `git clone git@github.com:sourcegrbph/dev-privbte.git`).
+						// Clone to pbrent
+						Dir(filepbth.Join(rootDir, "..")).
 						Run().
-						StreamLines(cio.Verbose)
+						StrebmLines(cio.Verbose)
 				},
 			},
 		},
 	}
 }
 
-// categoryProgrammingLanguagesAndTools sets up programming languages and tooling using
-// asdf, which is uniform across platforms. It takes an optional list of additonalChecks, useful
-// when they depend on the plaftorm we're installing them on.
-func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) category {
-	categories := category{
-		Name:      "Programming languages & tooling",
-		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
-		Enabled:   enableOnlyInSourcegraphRepo(),
+// cbtegoryProgrbmmingLbngubgesAndTools sets up progrbmming lbngubges bnd tooling using
+// bsdf, which is uniform bcross plbtforms. It tbkes bn optionbl list of bdditonblChecks, useful
+// when they depend on the plbftorm we're instblling them on.
+func cbtegoryProgrbmmingLbngubgesAndTools(bdditionblChecks ...*dependency) cbtegory {
+	cbtegories := cbtegory{
+		Nbme:      "Progrbmming lbngubges & tooling",
+		DependsOn: []string{depsCloneRepo, depsBbseUtilities},
+		Enbbled:   enbbleOnlyInSourcegrbphRepo(),
 		Checks: []*dependency{
 			{
-				Name:  "go",
+				Nbme:  "go",
 				Check: checkGoVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "golang", "https://github.com/kennyp/asdf-golang.git"); err != nil {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "golbng", "https://github.com/kennyp/bsdf-golbng.git"); err != nil {
 						return err
 					}
-					return root.Run(usershell.Command(ctx, "asdf install golang")).StreamLines(cio.Verbose)
+					return root.Run(usershell.Commbnd(ctx, "bsdf instbll golbng")).StrebmLines(cio.Verbose)
 				},
 			},
 			{
-				Name:  "python",
+				Nbme:  "python",
 				Check: checkPythonVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "python", ""); err != nil {
 						return err
 					}
-					return root.Run(usershell.Command(ctx, "asdf install python")).StreamLines(cio.Verbose)
+					return root.Run(usershell.Commbnd(ctx, "bsdf instbll python")).StrebmLines(cio.Verbose)
 				},
 			},
 			{
-				Name:        "pnpm",
-				Description: "Run `asdf plugin add pnpm && asdf install pnpm`",
+				Nbme:        "pnpm",
+				Description: "Run `bsdf plugin bdd pnpm && bsdf instbll pnpm`",
 				Check:       checkPnpmVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
 					if err := forceASDFPluginAdd(ctx, "pnpm", ""); err != nil {
 						return err
 					}
-					return root.Run(usershell.Command(ctx, "asdf install pnpm")).StreamLines(cio.Verbose)
+					return root.Run(usershell.Commbnd(ctx, "bsdf instbll pnpm")).StrebmLines(cio.Verbose)
 				},
 			},
 			{
-				Name:  "node",
+				Nbme:  "node",
 				Check: checkNodeVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/asdf-vm/asdf-nodejs.git"); err != nil {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/bsdf-vm/bsdf-nodejs.git"); err != nil {
 						return err
 					}
-					return root.Run(usershell.Command(ctx, "asdf install nodejs")).StreamLines(cio.Verbose)
+					return root.Run(usershell.Commbnd(ctx, "bsdf instbll nodejs")).StrebmLines(cio.Verbose)
 				},
 			},
 			{
-				Name:  "rust",
+				Nbme:  "rust",
 				Check: checkRustVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/asdf-community/asdf-rust.git"); err != nil {
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/bsdf-community/bsdf-rust.git"); err != nil {
 						return err
 					}
-					return root.Run(usershell.Command(ctx, "asdf install rust")).StreamLines(cio.Verbose)
+					return root.Run(usershell.Commbnd(ctx, "bsdf instbll rust")).StrebmLines(cio.Verbose)
 				},
 			},
 			{
-				Name:        "asdf reshim",
-				Description: "Regenerate asdf shims",
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					// If any of these fail with ErrNotInPath, we may need to regenerate
-					// all our asdf shims.
-					for _, c := range []check.CheckAction[CheckArgs]{
+				Nbme:        "bsdf reshim",
+				Description: "Regenerbte bsdf shims",
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+					// If bny of these fbil with ErrNotInPbth, we mby need to regenerbte
+					// bll our bsdf shims.
+					for _, c := rbnge []check.CheckAction[CheckArgs]{
 						checkGoVersion, checkPnpmVersion, checkNodeVersion, checkRustVersion, checkPythonVersion,
 					} {
-						if err := c(ctx, out, args); err != nil {
-							return errors.Wrap(err, "we may need to regenerate asdf shims")
+						if err := c(ctx, out, brgs); err != nil {
+							return errors.Wrbp(err, "we mby need to regenerbte bsdf shims")
 						}
 					}
 					return nil
 				},
 				Fix: cmdFixes(
-					`rm -rf ~/.asdf/shims`,
-					`asdf reshim`,
+					`rm -rf ~/.bsdf/shims`,
+					`bsdf reshim`,
 				),
 			},
 			{
-				Name: "pre-commit.com is installed",
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
-					if args.DisablePreCommits {
+				Nbme: "pre-commit.com is instblled",
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
+					if brgs.DisbblePreCommits {
 						return nil
 					}
 
@@ -207,109 +207,109 @@ func categoryProgrammingLanguagesAndTools(additionalChecks ...*dependency) categ
 						return err
 					}
 					return check.Combine(
-						check.FileExists(filepath.Join(repoRoot, ".bin/pre-commit-3.3.2.pyz")),
+						check.FileExists(filepbth.Join(repoRoot, ".bin/pre-commit-3.3.2.pyz")),
 						func(context.Context) error {
-							return root.Run(usershell.Command(ctx, "cat .git/hooks/pre-commit | grep https://pre-commit.com")).Wait()
+							return root.Run(usershell.Commbnd(ctx, "cbt .git/hooks/pre-commit | grep https://pre-commit.com")).Wbit()
 						},
 					)(ctx)
 				},
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					err := root.Run(usershell.Command(ctx, "mkdir -p .bin && curl -L --retry 3 --retry-max-time 120 https://github.com/pre-commit/pre-commit/releases/download/v3.3.2/pre-commit-3.3.2.pyz --output .bin/pre-commit-3.3.2.pyz --silent")).StreamLines(cio.Verbose)
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					err := root.Run(usershell.Commbnd(ctx, "mkdir -p .bin && curl -L --retry 3 --retry-mbx-time 120 https://github.com/pre-commit/pre-commit/relebses/downlobd/v3.3.2/pre-commit-3.3.2.pyz --output .bin/pre-commit-3.3.2.pyz --silent")).StrebmLines(cio.Verbose)
 					if err != nil {
-						return errors.Wrap(err, "failed to download pre-commit release")
+						return errors.Wrbp(err, "fbiled to downlobd pre-commit relebse")
 					}
-					err = root.Run(usershell.Command(ctx, "python .bin/pre-commit-3.3.2.pyz install")).StreamLines(cio.Verbose)
+					err = root.Run(usershell.Commbnd(ctx, "python .bin/pre-commit-3.3.2.pyz instbll")).StrebmLines(cio.Verbose)
 					if err != nil {
-						return errors.Wrap(err, "failed to install pre-commit")
+						return errors.Wrbp(err, "fbiled to instbll pre-commit")
 					}
 					return nil
 				},
 			},
 		},
 	}
-	categories.Checks = append(categories.Checks, additionalChecks...)
-	return categories
+	cbtegories.Checks = bppend(cbtegories.Checks, bdditionblChecks...)
+	return cbtegories
 }
 
-func categoryAdditionalSGConfiguration() category {
-	return category{
-		Name: "Additional sg configuration",
+func cbtegoryAdditionblSGConfigurbtion() cbtegory {
+	return cbtegory{
+		Nbme: "Additionbl sg configurbtion",
 		Checks: []*dependency{
 			{
-				Name: "Autocompletions",
-				Check: func(ctx context.Context, out *std.Output, args CheckArgs) error {
+				Nbme: "Autocompletions",
+				Check: func(ctx context.Context, out *std.Output, brgs CheckArgs) error {
 					if !usershell.IsSupportedShell(ctx) {
 						return nil // dont do setup
 					}
-					sgHome, err := root.GetSGHomePath()
+					sgHome, err := root.GetSGHomePbth()
 					if err != nil {
 						return err
 					}
 					shell := usershell.ShellType(ctx)
-					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
-					if _, err := os.Stat(autocompletePath); err != nil {
-						return errors.Wrapf(err, "autocomplete script for shell %s not found", shell)
+					butocompletePbth := usershell.AutocompleteScriptPbth(sgHome, shell)
+					if _, err := os.Stbt(butocompletePbth); err != nil {
+						return errors.Wrbpf(err, "butocomplete script for shell %s not found", shell)
 					}
 
-					shellConfig := usershell.ShellConfigPath(ctx)
-					conf, err := os.ReadFile(shellConfig)
+					shellConfig := usershell.ShellConfigPbth(ctx)
+					conf, err := os.RebdFile(shellConfig)
 					if err != nil {
 						return err
 					}
-					if !strings.Contains(string(conf), autocompletePath) {
-						return errors.Newf("autocomplete script %s not found in shell config %s",
-							autocompletePath, shellConfig)
+					if !strings.Contbins(string(conf), butocompletePbth) {
+						return errors.Newf("butocomplete script %s not found in shell config %s",
+							butocompletePbth, shellConfig)
 					}
 					return nil
 				},
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					sgHome, err := root.GetSGHomePath()
+				Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
+					sgHome, err := root.GetSGHomePbth()
 					if err != nil {
 						return err
 					}
-					// sgHome needs to have appropriate permissions
+					// sgHome needs to hbve bppropribte permissions
 					if err := os.Chmod(sgHome, os.ModePerm); err != nil {
-						return errors.Wrap(err, "failed to chmod sg home")
+						return errors.Wrbp(err, "fbiled to chmod sg home")
 					}
 
 					shell := usershell.ShellType(ctx)
 					if shell == "" {
-						return errors.New("failed to detect shell type")
+						return errors.New("fbiled to detect shell type")
 					}
 
-					// Generate the completion script itself
-					autocompleteScript := usershell.AutocompleteScripts[shell]
-					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
-					_ = os.Remove(autocompletePath) // forcibly remove old version first
-					if err := os.WriteFile(autocompletePath, []byte(autocompleteScript), os.ModePerm); err != nil {
-						return errors.Wrap(err, "generatng autocomplete script")
+					// Generbte the completion script itself
+					butocompleteScript := usershell.AutocompleteScripts[shell]
+					butocompletePbth := usershell.AutocompleteScriptPbth(sgHome, shell)
+					_ = os.Remove(butocompletePbth) // forcibly remove old version first
+					if err := os.WriteFile(butocompletePbth, []byte(butocompleteScript), os.ModePerm); err != nil {
+						return errors.Wrbp(err, "generbtng butocomplete script")
 					}
 
 					// Add the completion script to shell
-					shellConfig := usershell.ShellConfigPath(ctx)
+					shellConfig := usershell.ShellConfigPbth(ctx)
 					if shellConfig == "" {
-						return errors.New("Failed to detect shell config path")
+						return errors.New("Fbiled to detect shell config pbth")
 					}
-					conf, err := os.ReadFile(shellConfig)
+					conf, err := os.RebdFile(shellConfig)
 					if err != nil {
 						return err
 					}
 
-					// Compinit needs to be initialized
-					if shell == usershell.ZshShell && !strings.Contains(string(conf), "compinit") {
+					// Compinit needs to be initiblized
+					if shell == usershell.ZshShell && !strings.Contbins(string(conf), "compinit") {
 						cio.Verbosef("Adding compinit to %s", shellConfig)
 						if err := usershell.Run(ctx,
-							"echo", run.Arg(`autoload -Uz compinit && compinit`), ">>", shellConfig,
-						).Wait(); err != nil {
+							"echo", run.Arg(`butolobd -Uz compinit && compinit`), ">>", shellConfig,
+						).Wbit(); err != nil {
 							return err
 						}
 					}
 
-					if !strings.Contains(string(conf), autocompletePath) {
-						cio.Verbosef("Adding configuration to %s", shellConfig)
+					if !strings.Contbins(string(conf), butocompletePbth) {
+						cio.Verbosef("Adding configurbtion to %s", shellConfig)
 						if err := usershell.Run(ctx,
-							"echo", run.Arg(`PROG=sg source `+autocompletePath), ">>", shellConfig,
-						).Wait(); err != nil {
+							"echo", run.Arg(`PROG=sg source `+butocompletePbth), ">>", shellConfig,
+						).Wbit(); err != nil {
 							return err
 						}
 					}
@@ -321,75 +321,75 @@ func categoryAdditionalSGConfiguration() category {
 	}
 }
 
-var gcloudSourceRegexp = regexp.MustCompile(`(Source \[)(?P<path>[^\]]*)(\] in your profile)`)
+vbr gcloudSourceRegexp = regexp.MustCompile(`(Source \[)(?P<pbth>[^\]]*)(\] in your profile)`)
 
 func dependencyGcloud() *dependency {
 	return &dependency{
-		Name: "gcloud",
+		Nbme: "gcloud",
 		Check: checkAction(
 			check.Combine(
-				check.InPath("gcloud"),
-				check.FileExists("~/.config/gcloud/application_default_credentials.json"),
-				// User should have logged in with a sourcegraph.com account
-				check.CommandOutputContains("gcloud auth list", "@sourcegraph.com"),
+				check.InPbth("gcloud"),
+				check.FileExists("~/.config/gcloud/bpplicbtion_defbult_credentibls.json"),
+				// User should hbve logged in with b sourcegrbph.com bccount
+				check.CommbndOutputContbins("gcloud buth list", "@sourcegrbph.com"),
 			),
 		),
-		Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
+		Fix: func(ctx context.Context, cio check.IO, brgs CheckArgs) error {
 			if cio.Input == nil {
-				return errors.New("interactive input required to fix this check")
+				return errors.New("interbctive input required to fix this check")
 			}
 
-			if err := check.InPath("gcloud")(ctx); err != nil {
-				var pathsToSource []string
+			if err := check.InPbth("gcloud")(ctx); err != nil {
+				vbr pbthsToSource []string
 
-				// This is the official interactive installer: https://cloud.google.com/sdk/docs/downloads-interactive
-				if err := usershell.Command(ctx,
-					"curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
+				// This is the officibl interbctive instbller: https://cloud.google.com/sdk/docs/downlobds-interbctive
+				if err := usershell.Commbnd(ctx,
+					"curl https://sdk.cloud.google.com | bbsh -s -- --disbble-prompts").
 					Input(cio.Input).
 					Run().
-					Pipeline(pipeline.Map(func(line []byte) []byte {
-						// Listen for gcloud telling us to source paths
-						if matches := gcloudSourceRegexp.FindSubmatch(line); len(matches) > 0 {
-							shouldSource := matches[gcloudSourceRegexp.SubexpIndex("path")]
+					Pipeline(pipeline.Mbp(func(line []byte) []byte {
+						// Listen for gcloud telling us to source pbths
+						if mbtches := gcloudSourceRegexp.FindSubmbtch(line); len(mbtches) > 0 {
+							shouldSource := mbtches[gcloudSourceRegexp.SubexpIndex("pbth")]
 							if len(shouldSource) > 0 {
-								pathsToSource = append(pathsToSource, string(shouldSource))
+								pbthsToSource = bppend(pbthsToSource, string(shouldSource))
 							}
 						}
 						return line
 					})).
-					StreamLines(cio.Write); err != nil {
+					StrebmLines(cio.Write); err != nil {
 					return err
 				}
 
 				// If gcloud tells us to source some stuff, try to do it
-				if len(pathsToSource) > 0 {
-					shellConfig := usershell.ShellConfigPath(ctx)
+				if len(pbthsToSource) > 0 {
+					shellConfig := usershell.ShellConfigPbth(ctx)
 					if shellConfig == "" {
-						return errors.New("Failed to detect shell config path")
+						return errors.New("Fbiled to detect shell config pbth")
 					}
-					conf, err := os.ReadFile(shellConfig)
+					conf, err := os.RebdFile(shellConfig)
 					if err != nil {
 						return err
 					}
-					for _, p := range pathsToSource {
-						if !bytes.Contains(conf, []byte(p)) {
+					for _, p := rbnge pbthsToSource {
+						if !bytes.Contbins(conf, []byte(p)) {
 							source := fmt.Sprintf("source %s", p)
 							cio.Verbosef("Adding %q to %s", source, shellConfig)
 							if err := usershell.Run(ctx,
 								"echo", run.Arg(source), ">>", shellConfig,
-							).Wait(); err != nil {
-								return errors.Wrapf(err, "adding %q", source)
+							).Wbit(); err != nil {
+								return errors.Wrbpf(err, "bdding %q", source)
 							}
 						}
 					}
 				}
 			}
 
-			if err := usershell.Command(ctx, "gcloud auth application-default login").Input(cio.Input).Run().StreamLines(cio.Write); err != nil {
+			if err := usershell.Commbnd(ctx, "gcloud buth bpplicbtion-defbult login").Input(cio.Input).Run().StrebmLines(cio.Write); err != nil {
 				return err
 			}
 
-			return usershell.Command(ctx, "gcloud auth configure-docker").Run().Wait()
+			return usershell.Commbnd(ctx, "gcloud buth configure-docker").Run().Wbit()
 		},
 	}
 }

@@ -1,67 +1,67 @@
-package encryption
+pbckbge encryption
 
 import (
 	"context"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const UnmigratedEncryptionKeyID = "unmigrated"
+const UnmigrbtedEncryptionKeyID = "unmigrbted"
 
-// MaybeEncrypt encrypts data with the given key. If the given key is nil, this function no-ops.
-func MaybeEncrypt(ctx context.Context, key Key, data string) (_, keyIdent string, err error) {
+// MbybeEncrypt encrypts dbtb with the given key. If the given key is nil, this function no-ops.
+func MbybeEncrypt(ctx context.Context, key Key, dbtb string) (_, keyIdent string, err error) {
 	if key == nil {
-		return data, "", nil
+		return dbtb, "", nil
 	}
 	if os.Getenv("ALLOW_DECRYPTION") == "true" {
-		// Do not encrypt new values while the worker is decrypting the database
-		return data, "", nil
+		// Do not encrypt new vblues while the worker is decrypting the dbtbbbse
+		return dbtb, "", nil
 	}
 
-	tr, trCtx := trace.New(ctx, "key.Encrypt")
-	encrypted, err := key.Encrypt(trCtx, []byte(data))
+	tr, trCtx := trbce.New(ctx, "key.Encrypt")
+	encrypted, err := key.Encrypt(trCtx, []byte(dbtb))
 	tr.EndWithErr(&err)
 	if err != nil {
 		return "", "", err
 	}
 
-	tr, trCtx = trace.New(ctx, "key.Version")
+	tr, trCtx = trbce.New(ctx, "key.Version")
 	version, err := key.Version(trCtx)
 	tr.EndWithErr(&err)
 	if err != nil {
-		return "", "", errors.Wrap(err, "failed to get encryption key version")
+		return "", "", errors.Wrbp(err, "fbiled to get encryption key version")
 	}
 
 	return string(encrypted), version.JSON(), nil
 }
 
-// MaybeDecrypt decrypts data given key. If the value is not encrypted, this function no-ops. If the given
-// key cannot decrypt the data, an error is returned.
-func MaybeDecrypt(ctx context.Context, key Key, data, keyIdent string) (string, error) {
-	if keyIdent == "" || keyIdent == UnmigratedEncryptionKeyID {
-		return data, nil
+// MbybeDecrypt decrypts dbtb given key. If the vblue is not encrypted, this function no-ops. If the given
+// key cbnnot decrypt the dbtb, bn error is returned.
+func MbybeDecrypt(ctx context.Context, key Key, dbtb, keyIdent string) (string, error) {
+	if keyIdent == "" || keyIdent == UnmigrbtedEncryptionKeyID {
+		return dbtb, nil
 	}
-	if data == "" {
-		return data, nil
+	if dbtb == "" {
+		return dbtb, nil
 	}
 	if key == nil {
-		return data, errors.Errorf("key mismatch: value is encrypted but no encryption key available in site-config")
+		return dbtb, errors.Errorf("key mismbtch: vblue is encrypted but no encryption key bvbilbble in site-config")
 	}
 
-	tr, innerCtx := trace.New(ctx, "key.Decrypt")
-	decrypted, err := key.Decrypt(innerCtx, []byte(data))
+	tr, innerCtx := trbce.New(ctx, "key.Decrypt")
+	decrypted, err := key.Decrypt(innerCtx, []byte(dbtb))
 	tr.EndWithErr(&err)
 	if err != nil {
-		tr, innerCtx = trace.New(ctx, "key.Version")
+		tr, innerCtx = trbce.New(ctx, "key.Version")
 		version, versionErr := key.Version(innerCtx)
 		tr.EndWithErr(&versionErr)
 		if versionErr == nil && keyIdent != version.JSON() {
-			return "", errors.New("key mismatch: value is encrypted with an encryption key distinct from the one available in site-config")
+			return "", errors.New("key mismbtch: vblue is encrypted with bn encryption key distinct from the one bvbilbble in site-config")
 		}
 
-		return data, err
+		return dbtb, err
 	}
 
 	return decrypted.Secret(), nil

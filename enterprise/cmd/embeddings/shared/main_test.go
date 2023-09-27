@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
@@ -6,22 +6,22 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/embeddings"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/embeddings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/endpoint"
 )
 
-func TestEmbeddingsSearch(t *testing.T) {
+func TestEmbeddingsSebrch(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	makeIndex := func(name api.RepoName, w int8) *embeddings.RepoEmbeddingIndex {
+	mbkeIndex := func(nbme bpi.RepoNbme, w int8) *embeddings.RepoEmbeddingIndex {
 		return &embeddings.RepoEmbeddingIndex{
-			RepoName:        name,
+			RepoNbme:        nbme,
 			Revision:        "",
-			EmbeddingsModel: "openai/text-embedding-ada-002",
+			EmbeddingsModel: "openbi/text-embedding-bdb-002",
 			CodeIndex: embeddings.EmbeddingIndex{
 				Embeddings: []int8{
 					w, 0, 0, 0,
@@ -30,11 +30,11 @@ func TestEmbeddingsSearch(t *testing.T) {
 					0, 0, 0, w,
 				},
 				ColumnDimension: 4,
-				RowMetadata: []embeddings.RepoEmbeddingRowMetadata{
-					{FileName: "codefile1", StartLine: 0, EndLine: 1},
-					{FileName: "codefile2", StartLine: 0, EndLine: 1},
-					{FileName: "codefile3", StartLine: 0, EndLine: 1},
-					{FileName: "codefile4", StartLine: 0, EndLine: 1},
+				RowMetbdbtb: []embeddings.RepoEmbeddingRowMetbdbtb{
+					{FileNbme: "codefile1", StbrtLine: 0, EndLine: 1},
+					{FileNbme: "codefile2", StbrtLine: 0, EndLine: 1},
+					{FileNbme: "codefile3", StbrtLine: 0, EndLine: 1},
+					{FileNbme: "codefile4", StbrtLine: 0, EndLine: 1},
 				},
 			},
 			TextIndex: embeddings.EmbeddingIndex{
@@ -45,201 +45,201 @@ func TestEmbeddingsSearch(t *testing.T) {
 					0, 0, 0, w,
 				},
 				ColumnDimension: 4,
-				RowMetadata: []embeddings.RepoEmbeddingRowMetadata{
-					{FileName: "textfile1", StartLine: 0, EndLine: 1},
-					{FileName: "textfile2", StartLine: 0, EndLine: 1},
-					{FileName: "textfile3", StartLine: 0, EndLine: 1},
-					{FileName: "textfile4", StartLine: 0, EndLine: 1},
+				RowMetbdbtb: []embeddings.RepoEmbeddingRowMetbdbtb{
+					{FileNbme: "textfile1", StbrtLine: 0, EndLine: 1},
+					{FileNbme: "textfile2", StbrtLine: 0, EndLine: 1},
+					{FileNbme: "textfile3", StbrtLine: 0, EndLine: 1},
+					{FileNbme: "textfile4", StbrtLine: 0, EndLine: 1},
 				},
 			},
 		}
 	}
 
-	indexes := map[api.RepoID]*embeddings.RepoEmbeddingIndex{
-		0: makeIndex("repo1", 1),
-		1: makeIndex("repo2", 2),
-		2: makeIndex("repo3", 3),
-		3: makeIndex("repo4", 4),
+	indexes := mbp[bpi.RepoID]*embeddings.RepoEmbeddingIndex{
+		0: mbkeIndex("repo1", 1),
+		1: mbkeIndex("repo2", 2),
+		2: mbkeIndex("repo3", 3),
+		3: mbkeIndex("repo4", 4),
 	}
 
-	getRepoEmbeddingIndex := func(_ context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
+	getRepoEmbeddingIndex := func(_ context.Context, repoID bpi.RepoID, repoNbme bpi.RepoNbme) (*embeddings.RepoEmbeddingIndex, error) {
 		return indexes[repoID], nil
 	}
-	getMockQueryEmbedding := func(_ context.Context, query string) ([]float32, string, error) {
-		model := "openai/text-embedding-ada-002"
+	getMockQueryEmbedding := func(_ context.Context, query string) ([]flobt32, string, error) {
+		model := "openbi/text-embedding-bdb-002"
 		switch query {
-		case "one":
-			return []float32{1, 0, 0, 0}, model, nil
-		case "two":
-			return []float32{0, 1, 0, 0}, model, nil
-		case "three":
-			return []float32{0, 0, 1, 0}, model, nil
-		case "four":
-			return []float32{0, 0, 1, 1}, model, nil
-		case "context detection":
-			return []float32{2, 4, 6, 8}, model, nil
-		default:
-			panic("unknown")
+		cbse "one":
+			return []flobt32{1, 0, 0, 0}, model, nil
+		cbse "two":
+			return []flobt32{0, 1, 0, 0}, model, nil
+		cbse "three":
+			return []flobt32{0, 0, 1, 0}, model, nil
+		cbse "four":
+			return []flobt32{0, 0, 1, 1}, model, nil
+		cbse "context detection":
+			return []flobt32{2, 4, 6, 8}, model, nil
+		defbult:
+			pbnic("unknown")
 		}
 	}
 
-	server1 := httptest.NewServer(NewHandler(
+	server1 := httptest.NewServer(NewHbndler(
 		logger,
 		getRepoEmbeddingIndex,
 		getMockQueryEmbedding,
 		nil,
 	))
 
-	server2 := httptest.NewServer(NewHandler(
+	server2 := httptest.NewServer(NewHbndler(
 		logger,
 		getRepoEmbeddingIndex,
 		getMockQueryEmbedding,
 		nil,
 	))
 
-	client := embeddings.NewClient(endpoint.Static(server1.URL, server2.URL), http.DefaultClient)
+	client := embeddings.NewClient(endpoint.Stbtic(server1.URL, server2.URL), http.DefbultClient)
 
 	{
-		// First test: we should return results for file1 based on the query.
-		// The rankings should have repo4 highest because it has the largest weighted
+		// First test: we should return results for file1 bbsed on the query.
+		// The rbnkings should hbve repo4 highest becbuse it hbs the lbrgest weighted
 		// embeddings.
-		params := embeddings.EmbeddingsSearchParameters{
-			RepoNames:        []api.RepoName{"repo1", "repo2", "repo3", "repo4"},
-			RepoIDs:          []api.RepoID{0, 1, 2, 3},
+		pbrbms := embeddings.EmbeddingsSebrchPbrbmeters{
+			RepoNbmes:        []bpi.RepoNbme{"repo1", "repo2", "repo3", "repo4"},
+			RepoIDs:          []bpi.RepoID{0, 1, 2, 3},
 			Query:            "one",
 			CodeResultsCount: 2,
 			TextResultsCount: 2,
-			UseDocumentRanks: false,
+			UseDocumentRbnks: fblse,
 		}
 
-		results, err := client.Search(context.Background(), params)
+		results, err := client.Sebrch(context.Bbckground(), pbrbms)
 		require.NoError(t, err)
 
-		require.Equal(t, &embeddings.EmbeddingCombinedSearchResults{
-			CodeResults: embeddings.EmbeddingSearchResults{{
-				RepoName:     "repo4",
-				FileName:     "codefile1",
-				StartLine:    0,
+		require.Equbl(t, &embeddings.EmbeddingCombinedSebrchResults{
+			CodeResults: embeddings.EmbeddingSebrchResults{{
+				RepoNbme:     "repo4",
+				FileNbme:     "codefile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 1016, SimilbrityScore: 1016},
 			}, {
-				RepoName:     "repo3",
-				FileName:     "codefile1",
-				StartLine:    0,
+				RepoNbme:     "repo3",
+				FileNbme:     "codefile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 762, SimilbrityScore: 762},
 			}},
-			TextResults: embeddings.EmbeddingSearchResults{{
-				RepoName:     "repo4",
-				FileName:     "textfile1",
-				StartLine:    0,
+			TextResults: embeddings.EmbeddingSebrchResults{{
+				RepoNbme:     "repo4",
+				FileNbme:     "textfile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 1016, SimilbrityScore: 1016},
 			}, {
-				RepoName:     "repo3",
-				FileName:     "textfile1",
-				StartLine:    0,
+				RepoNbme:     "repo3",
+				FileNbme:     "textfile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 762, SimilbrityScore: 762},
 			}},
 		}, results)
 	}
 
 	{
-		// Second test: providing a subset of repos should only search those repos
-		params := embeddings.EmbeddingsSearchParameters{
-			RepoNames:        []api.RepoName{"repo1", "repo3"},
-			RepoIDs:          []api.RepoID{0, 2},
+		// Second test: providing b subset of repos should only sebrch those repos
+		pbrbms := embeddings.EmbeddingsSebrchPbrbmeters{
+			RepoNbmes:        []bpi.RepoNbme{"repo1", "repo3"},
+			RepoIDs:          []bpi.RepoID{0, 2},
 			Query:            "one",
 			CodeResultsCount: 2,
 			TextResultsCount: 2,
-			UseDocumentRanks: false,
+			UseDocumentRbnks: fblse,
 		}
 
-		results, err := client.Search(context.Background(), params)
+		results, err := client.Sebrch(context.Bbckground(), pbrbms)
 		require.NoError(t, err)
 
-		require.Equal(t, &embeddings.EmbeddingCombinedSearchResults{
-			CodeResults: embeddings.EmbeddingSearchResults{{
-				RepoName:     "repo3",
-				FileName:     "codefile1",
-				StartLine:    0,
+		require.Equbl(t, &embeddings.EmbeddingCombinedSebrchResults{
+			CodeResults: embeddings.EmbeddingSebrchResults{{
+				RepoNbme:     "repo3",
+				FileNbme:     "codefile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 762, SimilbrityScore: 762},
 			}, {
-				RepoName:     "repo1",
-				FileName:     "codefile1",
-				StartLine:    0,
+				RepoNbme:     "repo1",
+				FileNbme:     "codefile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 254, SimilarityScore: 254},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 254, SimilbrityScore: 254},
 			}},
-			TextResults: embeddings.EmbeddingSearchResults{{
-				RepoName:     "repo3",
-				FileName:     "textfile1",
-				StartLine:    0,
+			TextResults: embeddings.EmbeddingSebrchResults{{
+				RepoNbme:     "repo3",
+				FileNbme:     "textfile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 762, SimilbrityScore: 762},
 			}, {
-				RepoName:     "repo1",
-				FileName:     "textfile1",
-				StartLine:    0,
+				RepoNbme:     "repo1",
+				FileNbme:     "textfile1",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 254, SimilarityScore: 254},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 254, SimilbrityScore: 254},
 			}},
 		}, results)
 	}
 
 	{
-		// Third test: try a different file just to be safe
-		params := embeddings.EmbeddingsSearchParameters{
-			RepoNames:        []api.RepoName{"repo1", "repo2", "repo3", "repo4"},
-			RepoIDs:          []api.RepoID{0, 1, 2, 3},
+		// Third test: try b different file just to be sbfe
+		pbrbms := embeddings.EmbeddingsSebrchPbrbmeters{
+			RepoNbmes:        []bpi.RepoNbme{"repo1", "repo2", "repo3", "repo4"},
+			RepoIDs:          []bpi.RepoID{0, 1, 2, 3},
 			Query:            "three",
 			CodeResultsCount: 2,
 			TextResultsCount: 2,
-			UseDocumentRanks: false,
+			UseDocumentRbnks: fblse,
 		}
 
-		results, err := client.Search(context.Background(), params)
+		results, err := client.Sebrch(context.Bbckground(), pbrbms)
 		require.NoError(t, err)
 
-		require.Equal(t, &embeddings.EmbeddingCombinedSearchResults{
-			CodeResults: embeddings.EmbeddingSearchResults{{
-				RepoName:     "repo4",
-				FileName:     "codefile3",
-				StartLine:    0,
+		require.Equbl(t, &embeddings.EmbeddingCombinedSebrchResults{
+			CodeResults: embeddings.EmbeddingSebrchResults{{
+				RepoNbme:     "repo4",
+				FileNbme:     "codefile3",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 1016, SimilbrityScore: 1016},
 			}, {
-				RepoName:     "repo3",
-				FileName:     "codefile3",
-				StartLine:    0,
+				RepoNbme:     "repo3",
+				FileNbme:     "codefile3",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 762, SimilbrityScore: 762},
 			}},
-			TextResults: embeddings.EmbeddingSearchResults{{
-				RepoName:     "repo4",
-				FileName:     "textfile3",
-				StartLine:    0,
+			TextResults: embeddings.EmbeddingSebrchResults{{
+				RepoNbme:     "repo4",
+				FileNbme:     "textfile3",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 1016, SimilarityScore: 1016},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 1016, SimilbrityScore: 1016},
 			}, {
-				RepoName:     "repo3",
-				FileName:     "textfile3",
-				StartLine:    0,
+				RepoNbme:     "repo3",
+				FileNbme:     "textfile3",
+				StbrtLine:    0,
 				EndLine:      1,
-				ScoreDetails: embeddings.SearchScoreDetails{Score: 762, SimilarityScore: 762},
+				ScoreDetbils: embeddings.SebrchScoreDetbils{Score: 762, SimilbrityScore: 762},
 			}},
 		}, results)
 	}
 }
 
-func TestEmbeddingModelMismatch(t *testing.T) {
+func TestEmbeddingModelMismbtch(t *testing.T) {
 	logger := logtest.Scoped(t)
 
-	makeIndex := func(name api.RepoName, model string) *embeddings.RepoEmbeddingIndex {
+	mbkeIndex := func(nbme bpi.RepoNbme, model string) *embeddings.RepoEmbeddingIndex {
 		return &embeddings.RepoEmbeddingIndex{
-			RepoName:        name,
+			RepoNbme:        nbme,
 			Revision:        "HEAD",
 			EmbeddingsModel: model,
 			CodeIndex: embeddings.EmbeddingIndex{
@@ -247,8 +247,8 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 					1, 0, 0, 0,
 				},
 				ColumnDimension: 4,
-				RowMetadata: []embeddings.RepoEmbeddingRowMetadata{
-					{FileName: "codefile1", StartLine: 0, EndLine: 1},
+				RowMetbdbtb: []embeddings.RepoEmbeddingRowMetbdbtb{
+					{FileNbme: "codefile1", StbrtLine: 0, EndLine: 1},
 				},
 			},
 			TextIndex: embeddings.EmbeddingIndex{
@@ -256,71 +256,71 @@ func TestEmbeddingModelMismatch(t *testing.T) {
 					0, 1, 0, 0,
 				},
 				ColumnDimension: 4,
-				RowMetadata: []embeddings.RepoEmbeddingRowMetadata{
-					{FileName: "textfile1", StartLine: 0, EndLine: 1},
+				RowMetbdbtb: []embeddings.RepoEmbeddingRowMetbdbtb{
+					{FileNbme: "textfile1", StbrtLine: 0, EndLine: 1},
 				},
 			},
 		}
 	}
 
-	indexes := map[api.RepoName]*embeddings.RepoEmbeddingIndex{
-		"repo1": makeIndex("repo1", "openai/text-embedding-ada-002"),
-		"repo2": makeIndex("repo2", "sourcegraph/code-graph-embeddings"),
-		"repo3": makeIndex("repo3", ""),
+	indexes := mbp[bpi.RepoNbme]*embeddings.RepoEmbeddingIndex{
+		"repo1": mbkeIndex("repo1", "openbi/text-embedding-bdb-002"),
+		"repo2": mbkeIndex("repo2", "sourcegrbph/code-grbph-embeddings"),
+		"repo3": mbkeIndex("repo3", ""),
 	}
 
-	getRepoEmbeddingIndex := func(_ context.Context, repoID api.RepoID, repoName api.RepoName) (*embeddings.RepoEmbeddingIndex, error) {
-		return indexes[repoName], nil
+	getRepoEmbeddingIndex := func(_ context.Context, repoID bpi.RepoID, repoNbme bpi.RepoNbme) (*embeddings.RepoEmbeddingIndex, error) {
+		return indexes[repoNbme], nil
 	}
 
-	getQueryEmbedding := func(_ context.Context, query string) ([]float32, string, error) {
-		model := "sourcegraph/code-graph-embeddings"
-		return []float32{1, 0, 0, 0}, model, nil
+	getQueryEmbedding := func(_ context.Context, query string) ([]flobt32, string, error) {
+		model := "sourcegrbph/code-grbph-embeddings"
+		return []flobt32{1, 0, 0, 0}, model, nil
 	}
 
-	server := httptest.NewServer(NewHandler(
+	server := httptest.NewServer(NewHbndler(
 		logger,
 		getRepoEmbeddingIndex,
 		getQueryEmbedding,
 		nil,
 	))
 
-	client := embeddings.NewClient(endpoint.Static(server.URL), http.DefaultClient)
+	client := embeddings.NewClient(endpoint.Stbtic(server.URL), http.DefbultClient)
 
-	cases := []struct {
-		name    string
+	cbses := []struct {
+		nbme    string
 		repo    string
-		wantErr bool
+		wbntErr bool
 	}{
 		{
-			name:    "index with old embedding model",
+			nbme:    "index with old embedding model",
 			repo:    "repo1",
-			wantErr: true,
+			wbntErr: true,
 		},
 		{
-			name:    "index with same embedding model",
+			nbme:    "index with sbme embedding model",
 			repo:    "repo2",
-			wantErr: false,
+			wbntErr: fblse,
 		},
 		{
-			name:    "old-style index with missing embedding model",
+			nbme:    "old-style index with missing embedding model",
 			repo:    "repo3",
-			wantErr: false,
+			wbntErr: fblse,
 		},
 	}
 
-	for _, tt := range cases {
-		t.Run(tt.name, func(t *testing.T) {
-			// Third test: try a different file just to be safe
-			params := embeddings.EmbeddingsSearchParameters{
-				RepoNames:        []api.RepoName{api.RepoName(tt.repo)},
-				RepoIDs:          []api.RepoID{1},
+	for _, tt := rbnge cbses {
+		t.Run(tt.nbme, func(t *testing.T) {
+			// Third test: try b different file just to be sbfe
+			pbrbms := embeddings.EmbeddingsSebrchPbrbmeters{
+				RepoNbmes:        []bpi.RepoNbme{bpi.RepoNbme(tt.repo)},
+				RepoIDs:          []bpi.RepoID{1},
 				Query:            "query",
 				CodeResultsCount: 2,
 				TextResultsCount: 2,
 			}
-			_, err := client.Search(context.Background(), params)
-			if tt.wantErr {
+			_, err := client.Sebrch(context.Bbckground(), pbrbms)
+			if tt.wbntErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)

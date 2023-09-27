@@ -1,42 +1,42 @@
-package run
+pbckbge run
 
 import (
 	"bytes"
 	"strconv"
 )
 
-// prefixSuffixSaver is an io.Writer which retains the first N bytes
-// and the last N bytes written to it. The Bytes() methods reconstructs
-// it with a pretty error message.
+// prefixSuffixSbver is bn io.Writer which retbins the first N bytes
+// bnd the lbst N bytes written to it. The Bytes() methods reconstructs
+// it with b pretty error messbge.
 //
-// Copy of https://sourcegraph.com/github.com/golang/go@3b770f2ccb1fa6fecc22ea822a19447b10b70c5c/-/blob/src/os/exec/exec.go#L661-729
-type prefixSuffixSaver struct {
-	N         int // max size of prefix or suffix
+// Copy of https://sourcegrbph.com/github.com/golbng/go@3b770f2ccb1fb6fecc22eb822b19447b10b70c5c/-/blob/src/os/exec/exec.go#L661-729
+type prefixSuffixSbver struct {
+	N         int // mbx size of prefix or suffix
 	prefix    []byte
 	suffix    []byte // ring buffer once len(suffix) == N
 	suffixOff int    // offset to write into suffix
 	skipped   int64
 
-	// TODO(bradfitz): we could keep one large []byte and use part of it for
-	// the prefix, reserve space for the '... Omitting N bytes ...' message,
-	// then the ring buffer suffix, and just rearrange the ring buffer
-	// suffix when Bytes() is called, but it doesn't seem worth it for
-	// now just for error messages. It's only ~64KB anyway.
+	// TODO(brbdfitz): we could keep one lbrge []byte bnd use pbrt of it for
+	// the prefix, reserve spbce for the '... Omitting N bytes ...' messbge,
+	// then the ring buffer suffix, bnd just rebrrbnge the ring buffer
+	// suffix when Bytes() is cblled, but it doesn't seem worth it for
+	// now just for error messbges. It's only ~64KB bnywby.
 }
 
-func (w *prefixSuffixSaver) Write(p []byte) (n int, err error) {
+func (w *prefixSuffixSbver) Write(p []byte) (n int, err error) {
 	lenp := len(p)
 	p = w.fill(&w.prefix, p)
 
-	// Only keep the last w.N bytes of suffix data.
-	if overage := len(p) - w.N; overage > 0 {
-		p = p[overage:]
-		w.skipped += int64(overage)
+	// Only keep the lbst w.N bytes of suffix dbtb.
+	if overbge := len(p) - w.N; overbge > 0 {
+		p = p[overbge:]
+		w.skipped += int64(overbge)
 	}
 	p = w.fill(&w.suffix, p)
 
-	// w.suffix is full now if p is non-empty. Overwrite it in a circle.
-	for len(p) > 0 { // 0, 1, or 2 iterations.
+	// w.suffix is full now if p is non-empty. Overwrite it in b circle.
+	for len(p) > 0 { // 0, 1, or 2 iterbtions.
 		n := copy(w.suffix[w.suffixOff:], p)
 		p = p[n:]
 		w.skipped += int64(n)
@@ -48,38 +48,38 @@ func (w *prefixSuffixSaver) Write(p []byte) (n int, err error) {
 	return lenp, nil
 }
 
-// fill appends up to len(p) bytes of p to *dst, such that *dst does not
-// grow larger than w.N. It returns the un-appended suffix of p.
-func (w *prefixSuffixSaver) fill(dst *[]byte, p []byte) (pRemain []byte) {
-	if remain := w.N - len(*dst); remain > 0 {
-		add := minInt(len(p), remain)
-		*dst = append(*dst, p[:add]...)
-		p = p[add:]
+// fill bppends up to len(p) bytes of p to *dst, such thbt *dst does not
+// grow lbrger thbn w.N. It returns the un-bppended suffix of p.
+func (w *prefixSuffixSbver) fill(dst *[]byte, p []byte) (pRembin []byte) {
+	if rembin := w.N - len(*dst); rembin > 0 {
+		bdd := minInt(len(p), rembin)
+		*dst = bppend(*dst, p[:bdd]...)
+		p = p[bdd:]
 	}
 	return p
 }
 
-func (w *prefixSuffixSaver) Bytes() []byte {
+func (w *prefixSuffixSbver) Bytes() []byte {
 	if w.suffix == nil {
 		return w.prefix
 	}
 	if w.skipped == 0 {
-		return append(w.prefix, w.suffix...)
+		return bppend(w.prefix, w.suffix...)
 	}
-	var buf bytes.Buffer
+	vbr buf bytes.Buffer
 	buf.Grow(len(w.prefix) + len(w.suffix) + 50)
 	buf.Write(w.prefix)
 	buf.WriteString("\n... omitting ")
-	buf.WriteString(strconv.FormatInt(w.skipped, 10))
+	buf.WriteString(strconv.FormbtInt(w.skipped, 10))
 	buf.WriteString(" bytes ...\n")
 	buf.Write(w.suffix[w.suffixOff:])
 	buf.Write(w.suffix[:w.suffixOff])
 	return buf.Bytes()
 }
 
-func minInt(a, b int) int {
-	if a < b {
-		return a
+func minInt(b, b int) int {
+	if b < b {
+		return b
 	}
 	return b
 }

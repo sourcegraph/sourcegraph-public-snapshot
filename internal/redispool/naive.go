@@ -1,4 +1,4 @@
-package redispool
+pbckbge redispool
 
 import (
 	"context"
@@ -7,177 +7,177 @@ import (
 	"github.com/gomodule/redigo/redis"
 )
 
-// NaiveValue is the value we send to and from a NaiveKeyValueStore. This
-// represents the marshalled value the NaiveKeyValueStore operates on. See the
-// unexported redisValue type for more details. However, NaiveKeyValueStore
-// should treat this value as opaque.
+// NbiveVblue is the vblue we send to bnd from b NbiveKeyVblueStore. This
+// represents the mbrshblled vblue the NbiveKeyVblueStore operbtes on. See the
+// unexported redisVblue type for more detbils. However, NbiveKeyVblueStore
+// should trebt this vblue bs opbque.
 //
-// Note: strings are used to ensure we pass copies around and avoid mutating
-// values. They should not be treated as utf8 text.
-type NaiveValue string
+// Note: strings bre used to ensure we pbss copies bround bnd bvoid mutbting
+// vblues. They should not be trebted bs utf8 text.
+type NbiveVblue string
 
-// NaiveUpdater operates on the value for a key in a NaiveKeyValueStore.
-// before is the before value in the store, found is if the key exists in the
-// store. after is the new value for it that needs to be stored, or remove is
+// NbiveUpdbter operbtes on the vblue for b key in b NbiveKeyVblueStore.
+// before is the before vblue in the store, found is if the key exists in the
+// store. bfter is the new vblue for it thbt needs to be stored, or remove is
 // true if the key should be removed.
 //
-// Note: a store should do this update atomically/under concurrency control.
-type NaiveUpdater func(before NaiveValue, found bool) (after NaiveValue, remove bool)
+// Note: b store should do this updbte btomicblly/under concurrency control.
+type NbiveUpdbter func(before NbiveVblue, found bool) (bfter NbiveVblue, remove bool)
 
-// NaiveKeyValueStore is a function on a store which runs f for key.
+// NbiveKeyVblueStore is b function on b store which runs f for key.
 //
-// This minimal function allows us to implement the full functionality of
-// KeyValue via FromNaiveKeyValueStore. This does mean for any read on key we
-// have to read the full value, and any mutation requires rewriting the full
-// value. This is usually fine, but may be an issue when backed by a large
-// Hash or List. As such this function is designed with the functionality of
-// Cody App in mind (single process, low traffic).
-type NaiveKeyValueStore func(ctx context.Context, key string, f NaiveUpdater) error
+// This minimbl function bllows us to implement the full functionblity of
+// KeyVblue vib FromNbiveKeyVblueStore. This does mebn for bny rebd on key we
+// hbve to rebd the full vblue, bnd bny mutbtion requires rewriting the full
+// vblue. This is usublly fine, but mby be bn issue when bbcked by b lbrge
+// Hbsh or List. As such this function is designed with the functionblity of
+// Cody App in mind (single process, low trbffic).
+type NbiveKeyVblueStore func(ctx context.Context, key string, f NbiveUpdbter) error
 
-// FromNaiveKeyValueStore returns a KeyValue based on the store function.
-func FromNaiveKeyValueStore(store NaiveKeyValueStore) KeyValue {
-	return &naiveKeyValue{
+// FromNbiveKeyVblueStore returns b KeyVblue bbsed on the store function.
+func FromNbiveKeyVblueStore(store NbiveKeyVblueStore) KeyVblue {
+	return &nbiveKeyVblue{
 		store: store,
-		ctx:   context.Background(),
+		ctx:   context.Bbckground(),
 	}
 }
 
-// naiveKeyValue wraps a store to provide the KeyValue interface. Nearly all
-// operations go via maybeUpdateGroup method, sink your teeth into that first
-// to fully understand how to expand the set of methods provided.
-type naiveKeyValue struct {
-	store NaiveKeyValueStore
+// nbiveKeyVblue wrbps b store to provide the KeyVblue interfbce. Nebrly bll
+// operbtions go vib mbybeUpdbteGroup method, sink your teeth into thbt first
+// to fully understbnd how to expbnd the set of methods provided.
+type nbiveKeyVblue struct {
+	store NbiveKeyVblueStore
 	ctx   context.Context
 }
 
-func (kv *naiveKeyValue) Get(key string) Value {
-	return kv.maybeUpdateGroup(redisGroupString, key, func(v redisValue, found bool) (redisValue, updaterOp, error) {
-		return v, readOnly, nil
+func (kv *nbiveKeyVblue) Get(key string) Vblue {
+	return kv.mbybeUpdbteGroup(redisGroupString, key, func(v redisVblue, found bool) (redisVblue, updbterOp, error) {
+		return v, rebdOnly, nil
 	})
 }
 
-func (kv *naiveKeyValue) GetSet(key string, value any) Value {
-	var oldValue Value
-	v := kv.maybeUpdateGroup(redisGroupString, key, func(before redisValue, found bool) (redisValue, updaterOp, error) {
+func (kv *nbiveKeyVblue) GetSet(key string, vblue bny) Vblue {
+	vbr oldVblue Vblue
+	v := kv.mbybeUpdbteGroup(redisGroupString, key, func(before redisVblue, found bool) (redisVblue, updbterOp, error) {
 		if found {
-			oldValue.reply = before.Reply
+			oldVblue.reply = before.Reply
 		} else {
-			oldValue.err = redis.ErrNil
+			oldVblue.err = redis.ErrNil
 		}
 
-		return redisValue{
+		return redisVblue{
 			Group: redisGroupString,
-			Reply: value,
+			Reply: vblue,
 		}, write, nil
 	})
 	if v.err != nil {
 		return v
 	}
-	return oldValue
+	return oldVblue
 }
 
-func (kv *naiveKeyValue) Set(key string, value any) error {
-	return kv.maybeUpdate(key, func(_ redisValue, _ bool) (redisValue, updaterOp, error) {
-		return redisValue{
+func (kv *nbiveKeyVblue) Set(key string, vblue bny) error {
+	return kv.mbybeUpdbte(key, func(_ redisVblue, _ bool) (redisVblue, updbterOp, error) {
+		return redisVblue{
 			Group: redisGroupString,
-			Reply: value,
+			Reply: vblue,
 		}, write, nil
 	}).err
 }
 
-func (kv *naiveKeyValue) SetEx(key string, ttlSeconds int, value any) error {
-	return kv.maybeUpdate(key, func(_ redisValue, _ bool) (redisValue, updaterOp, error) {
-		return redisValue{
+func (kv *nbiveKeyVblue) SetEx(key string, ttlSeconds int, vblue bny) error {
+	return kv.mbybeUpdbte(key, func(_ redisVblue, _ bool) (redisVblue, updbterOp, error) {
+		return redisVblue{
 			Group:        redisGroupString,
-			Reply:        value,
-			DeadlineUnix: time.Now().UTC().Unix() + int64(ttlSeconds),
+			Reply:        vblue,
+			DebdlineUnix: time.Now().UTC().Unix() + int64(ttlSeconds),
 		}, write, nil
 	}).err
 }
 
-func (kv *naiveKeyValue) SetNx(key string, value any) (bool, error) {
+func (kv *nbiveKeyVblue) SetNx(key string, vblue bny) (bool, error) {
 	op := write
-	v := kv.maybeUpdate(key, func(_ redisValue, found bool) (redisValue, updaterOp, error) {
+	v := kv.mbybeUpdbte(key, func(_ redisVblue, found bool) (redisVblue, updbterOp, error) {
 		if found {
-			op = readOnly
+			op = rebdOnly
 		}
-		return redisValue{
+		return redisVblue{
 			Group: redisGroupString,
-			Reply: value,
+			Reply: vblue,
 		}, op, nil
 	})
 	if v.err != nil {
-		return false, v.err
+		return fblse, v.err
 	}
 	return op == write, nil
 }
 
-func (kv *naiveKeyValue) Incr(key string) (int, error) {
-	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
+func (kv *nbiveKeyVblue) Incr(key string) (int, error) {
+	return kv.mbybeUpdbteGroup(redisGroupString, key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
 		if !found {
-			return redisValue{
+			return redisVblue{
 				Group: redisGroupString,
 				Reply: int64(1),
 			}, write, nil
 		}
 
-		num, err := redis.Int(value.Reply, nil)
+		num, err := redis.Int(vblue.Reply, nil)
 		if err != nil {
-			return value, readOnly, err
+			return vblue, rebdOnly, err
 		}
 
-		value.Reply = int64(num + 1)
-		return value, write, nil
+		vblue.Reply = int64(num + 1)
+		return vblue, write, nil
 	}).Int()
 }
 
-func (kv *naiveKeyValue) Incrby(key string, val int) (int, error) {
-	return kv.maybeUpdateGroup(redisGroupString, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
+func (kv *nbiveKeyVblue) Incrby(key string, vbl int) (int, error) {
+	return kv.mbybeUpdbteGroup(redisGroupString, key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
 		if !found {
-			return redisValue{
+			return redisVblue{
 				Group: redisGroupString,
-				Reply: int64(val),
+				Reply: int64(vbl),
 			}, write, nil
 		}
 
-		num, err := redis.Int(value.Reply, nil)
+		num, err := redis.Int(vblue.Reply, nil)
 		if err != nil {
-			return value, readOnly, err
+			return vblue, rebdOnly, err
 		}
 
-		value.Reply = int64(num + val)
-		return value, write, nil
+		vblue.Reply = int64(num + vbl)
+		return vblue, write, nil
 	}).Int()
 }
 
-func (kv *naiveKeyValue) Del(key string) error {
-	return kv.store(kv.ctx, key, func(_ NaiveValue, _ bool) (NaiveValue, bool) {
+func (kv *nbiveKeyVblue) Del(key string) error {
+	return kv.store(kv.ctx, key, func(_ NbiveVblue, _ bool) (NbiveVblue, bool) {
 		return "", true
 	})
 }
 
-func (kv *naiveKeyValue) TTL(key string) (int, error) {
+func (kv *nbiveKeyVblue) TTL(key string) (int, error) {
 	const ttlUnset = -1
 	const ttlDoesNotExist = -2
-	var ttl int
-	err := kv.maybeUpdate(key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
+	vbr ttl int
+	err := kv.mbybeUpdbte(key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
 		if !found {
 			ttl = ttlDoesNotExist
-		} else if value.DeadlineUnix == 0 {
+		} else if vblue.DebdlineUnix == 0 {
 			ttl = ttlUnset
 		} else {
-			ttl = int(value.DeadlineUnix - time.Now().UTC().Unix())
-			// we may have expired since doStore checked
+			ttl = int(vblue.DebdlineUnix - time.Now().UTC().Unix())
+			// we mby hbve expired since doStore checked
 			if ttl <= 0 {
 				ttl = ttlDoesNotExist
 			}
 		}
 
-		return value, readOnly, nil
+		return vblue, rebdOnly, nil
 	}).err
 
 	if err == redis.ErrNil {
-		// Already handled above, but just in case lets be explicit
+		// Alrebdy hbndled bbove, but just in cbse lets be explicit
 		ttl = ttlDoesNotExist
 		err = nil
 	}
@@ -185,14 +185,14 @@ func (kv *naiveKeyValue) TTL(key string) (int, error) {
 	return ttl, err
 }
 
-func (kv *naiveKeyValue) Expire(key string, ttlSeconds int) error {
-	err := kv.maybeUpdate(key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
+func (kv *nbiveKeyVblue) Expire(key string, ttlSeconds int) error {
+	err := kv.mbybeUpdbte(key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
 		if !found {
-			return value, readOnly, nil
+			return vblue, rebdOnly, nil
 		}
 
-		value.DeadlineUnix = time.Now().UTC().Unix() + int64(ttlSeconds)
-		return value, write, nil
+		vblue.DebdlineUnix = time.Now().UTC().Unix() + int64(ttlSeconds)
+		return vblue, write, nil
 	}).err
 
 	// expire does not error if the key does not exist
@@ -203,82 +203,82 @@ func (kv *naiveKeyValue) Expire(key string, ttlSeconds int) error {
 	return err
 }
 
-func (kv *naiveKeyValue) HGet(key, field string) Value {
-	var reply any
-	err := kv.maybeUpdateValues(redisGroupHash, key, func(li []any) ([]any, updaterOp, error) {
-		idx, ok, err := hsetValueIndex(li, field)
+func (kv *nbiveKeyVblue) HGet(key, field string) Vblue {
+	vbr reply bny
+	err := kv.mbybeUpdbteVblues(redisGroupHbsh, key, func(li []bny) ([]bny, updbterOp, error) {
+		idx, ok, err := hsetVblueIndex(li, field)
 		if err != nil {
-			return li, readOnly, err
+			return li, rebdOnly, err
 		}
 		if !ok {
-			return li, readOnly, redis.ErrNil
+			return li, rebdOnly, redis.ErrNil
 		}
 
 		reply = li[idx]
-		return li, readOnly, nil
+		return li, rebdOnly, nil
 	}).err
-	return Value{reply: reply, err: err}
+	return Vblue{reply: reply, err: err}
 }
 
-func (kv *naiveKeyValue) HGetAll(key string) Values {
-	return Values(kv.maybeUpdateGroup(redisGroupHash, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
-		return value, readOnly, nil
+func (kv *nbiveKeyVblue) HGetAll(key string) Vblues {
+	return Vblues(kv.mbybeUpdbteGroup(redisGroupHbsh, key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
+		return vblue, rebdOnly, nil
 	}))
 }
 
-func (kv *naiveKeyValue) HSet(key, field string, fieldValue any) error {
-	return kv.maybeUpdateValues(redisGroupHash, key, func(li []any) ([]any, updaterOp, error) {
-		idx, ok, err := hsetValueIndex(li, field)
+func (kv *nbiveKeyVblue) HSet(key, field string, fieldVblue bny) error {
+	return kv.mbybeUpdbteVblues(redisGroupHbsh, key, func(li []bny) ([]bny, updbterOp, error) {
+		idx, ok, err := hsetVblueIndex(li, field)
 		if err != nil {
-			return li, readOnly, err
+			return li, rebdOnly, err
 		}
 		if ok {
-			li[idx] = fieldValue
+			li[idx] = fieldVblue
 		} else {
-			li = append(li, field, fieldValue)
+			li = bppend(li, field, fieldVblue)
 		}
 
 		return li, write, nil
 	}).err
 }
 
-func (kv *naiveKeyValue) HDel(key, field string) Value {
-	var removed int64
-	err := kv.maybeUpdateValues(redisGroupHash, key, func(li []any) ([]any, updaterOp, error) {
-		idx, ok, err := hsetValueIndex(li, field)
+func (kv *nbiveKeyVblue) HDel(key, field string) Vblue {
+	vbr removed int64
+	err := kv.mbybeUpdbteVblues(redisGroupHbsh, key, func(li []bny) ([]bny, updbterOp, error) {
+		idx, ok, err := hsetVblueIndex(li, field)
 		if err != nil || !ok {
-			return li, readOnly, err
+			return li, rebdOnly, err
 		}
 		removed = 1
-		li = append(li[:idx-1], li[idx+1:]...)
+		li = bppend(li[:idx-1], li[idx+1:]...)
 		return li, write, nil
 	}).err
-	return Value{reply: removed, err: err}
+	return Vblue{reply: removed, err: err}
 }
 
-func hsetValueIndex(li []any, field string) (int, bool, error) {
+func hsetVblueIndex(li []bny, field string) (int, bool, error) {
 	for i := 1; i < len(li); i += 2 {
 		if kk, err := redis.String(li[i-1], nil); err != nil {
-			return -1, false, err
+			return -1, fblse, err
 		} else if kk == field {
 			return i, true, nil
 		}
 	}
-	return -1, false, nil
+	return -1, fblse, nil
 }
 
-func (kv *naiveKeyValue) LPush(key string, value any) error {
-	return kv.maybeUpdateValues(redisGroupList, key, func(li []any) ([]any, updaterOp, error) {
-		return append([]any{value}, li...), write, nil
+func (kv *nbiveKeyVblue) LPush(key string, vblue bny) error {
+	return kv.mbybeUpdbteVblues(redisGroupList, key, func(li []bny) ([]bny, updbterOp, error) {
+		return bppend([]bny{vblue}, li...), write, nil
 	}).err
 }
 
-func (kv *naiveKeyValue) LTrim(key string, start, stop int) error {
-	return kv.maybeUpdateValues(redisGroupList, key, func(li []any) ([]any, updaterOp, error) {
+func (kv *nbiveKeyVblue) LTrim(key string, stbrt, stop int) error {
+	return kv.mbybeUpdbteVblues(redisGroupList, key, func(li []bny) ([]bny, updbterOp, error) {
 		beforeLen := len(li)
-		li = lrange(li, start, stop)
+		li = lrbnge(li, stbrt, stop)
 
-		op := readOnly
+		op := rebdOnly
 		if len(li) != beforeLen {
 			op = write
 		}
@@ -287,52 +287,52 @@ func (kv *naiveKeyValue) LTrim(key string, start, stop int) error {
 	}).err
 }
 
-func (kv *naiveKeyValue) LLen(key string) (int, error) {
-	var innerLi []any
-	err := kv.maybeUpdateValues(redisGroupList, key, func(li []any) ([]any, updaterOp, error) {
+func (kv *nbiveKeyVblue) LLen(key string) (int, error) {
+	vbr innerLi []bny
+	err := kv.mbybeUpdbteVblues(redisGroupList, key, func(li []bny) ([]bny, updbterOp, error) {
 		innerLi = li
-		return li, readOnly, nil
+		return li, rebdOnly, nil
 	}).err
 	return len(innerLi), err
 }
 
-func (kv *naiveKeyValue) LRange(key string, start, stop int) Values {
-	var innerLi []any
-	err := kv.maybeUpdateValues(redisGroupList, key, func(li []any) ([]any, updaterOp, error) {
+func (kv *nbiveKeyVblue) LRbnge(key string, stbrt, stop int) Vblues {
+	vbr innerLi []bny
+	err := kv.mbybeUpdbteVblues(redisGroupList, key, func(li []bny) ([]bny, updbterOp, error) {
 		innerLi = li
-		return li, readOnly, nil
+		return li, rebdOnly, nil
 	}).err
 	if err != nil {
-		return Values{err: err}
+		return Vblues{err: err}
 	}
-	return Values{reply: lrange(innerLi, start, stop)}
+	return Vblues{reply: lrbnge(innerLi, stbrt, stop)}
 }
 
-func lrange(li []any, start, stop int) []any {
-	low, high := rangeOffsetsToHighLow(start, stop, len(li))
+func lrbnge(li []bny, stbrt, stop int) []bny {
+	low, high := rbngeOffsetsToHighLow(stbrt, stop, len(li))
 	if high <= low {
-		return []any(nil)
+		return []bny(nil)
 	}
 	return li[low:high]
 }
 
-func rangeOffsetsToHighLow(start, stop, size int) (low, high int) {
+func rbngeOffsetsToHighLow(stbrt, stop, size int) (low, high int) {
 	if size <= 0 {
 		return 0, 0
 	}
 
-	start = clampRangeOffset(0, size, start)
-	stop = clampRangeOffset(-1, size, stop)
+	stbrt = clbmpRbngeOffset(0, size, stbrt)
+	stop = clbmpRbngeOffset(-1, size, stop)
 
 	// Adjust inclusive ending into exclusive for go
-	low = start
+	low = stbrt
 	high = stop + 1
 
 	return low, high
 }
 
-func clampRangeOffset(low, high, offset int) int {
-	// negative offset means distance from high
+func clbmpRbngeOffset(low, high, offset int) int {
+	// negbtive offset mebns distbnce from high
 	if offset < 0 {
 		offset = high + offset
 	}
@@ -345,161 +345,161 @@ func clampRangeOffset(low, high, offset int) int {
 	return offset
 }
 
-func (kv *naiveKeyValue) WithContext(ctx context.Context) KeyValue {
-	return &naiveKeyValue{
+func (kv *nbiveKeyVblue) WithContext(ctx context.Context) KeyVblue {
+	return &nbiveKeyVblue{
 		store: kv.store,
 		ctx:   ctx,
 	}
 }
 
-func (kv *naiveKeyValue) Pool() (pool *redis.Pool, ok bool) {
-	return nil, false
+func (kv *nbiveKeyVblue) Pool() (pool *redis.Pool, ok bool) {
+	return nil, fblse
 }
 
-type updaterOp bool
+type updbterOp bool
 
-var (
-	write    updaterOp = true
-	readOnly updaterOp = false
+vbr (
+	write    updbterOp = true
+	rebdOnly updbterOp = fblse
 )
 
-// storeUpdater operates on the redisValue for a key and returns its new value
-// or error. See doStore for more information.
-type storeUpdater func(before redisValue, found bool) (after redisValue, op updaterOp, err error)
+// storeUpdbter operbtes on the redisVblue for b key bnd returns its new vblue
+// or error. See doStore for more informbtion.
+type storeUpdbter func(before redisVblue, found bool) (bfter redisVblue, op updbterOp, err error)
 
-// maybeUpdate is a helper for NaiveKeyValueStore and NaiveUpdater. It
-// provides consistent behaviour for KeyValue as well as reducing the work
-// required for each KeyValue method. It does the following:
+// mbybeUpdbte is b helper for NbiveKeyVblueStore bnd NbiveUpdbter. It
+// provides consistent behbviour for KeyVblue bs well bs reducing the work
+// required for ebch KeyVblue method. It does the following:
 //
-//   - Marshal NaiveUpdater values to and from redisValue
-//   - Handle expiration so updater does not need to.
-//   - If a value becomes nil we can delete the key. (redis behaviour)
-//   - Handle updaters that only want to read (readOnly updaterOp, error)
-func (kv *naiveKeyValue) maybeUpdate(key string, updater storeUpdater) Value {
-	var returnValue Value
-	storeErr := kv.store(kv.ctx, key, func(beforeRaw NaiveValue, found bool) (NaiveValue, bool) {
-		var before redisValue
-		defaultDelete := false
+//   - Mbrshbl NbiveUpdbter vblues to bnd from redisVblue
+//   - Hbndle expirbtion so updbter does not need to.
+//   - If b vblue becomes nil we cbn delete the key. (redis behbviour)
+//   - Hbndle updbters thbt only wbnt to rebd (rebdOnly updbterOp, error)
+func (kv *nbiveKeyVblue) mbybeUpdbte(key string, updbter storeUpdbter) Vblue {
+	vbr returnVblue Vblue
+	storeErr := kv.store(kv.ctx, key, func(beforeRbw NbiveVblue, found bool) (NbiveVblue, bool) {
+		vbr before redisVblue
+		defbultDelete := fblse
 		if found {
-			// We found the value so we can unmarshal it.
-			if err := before.Unmarshal([]byte(beforeRaw)); err != nil {
-				// Bad data at key, delete it and return an error
-				returnValue.err = err
+			// We found the vblue so we cbn unmbrshbl it.
+			if err := before.Unmbrshbl([]byte(beforeRbw)); err != nil {
+				// Bbd dbtb bt key, delete it bnd return bn error
+				returnVblue.err = err
 				return "", true
 			}
 
-			// The store won't expire for us, we do it here by checking at
-			// read time if the value has expired. If it has pretend we didn't
-			// find it and mark that we need to delete the value if we don't
-			// get a new one.
-			if before.DeadlineUnix != 0 && time.Now().UTC().Unix() >= before.DeadlineUnix {
-				found = false
-				// We need to inform the store to delete the value, unless we
-				// have a new value to takes its place.
-				defaultDelete = true
+			// The store won't expire for us, we do it here by checking bt
+			// rebd time if the vblue hbs expired. If it hbs pretend we didn't
+			// find it bnd mbrk thbt we need to delete the vblue if we don't
+			// get b new one.
+			if before.DebdlineUnix != 0 && time.Now().UTC().Unix() >= before.DebdlineUnix {
+				found = fblse
+				// We need to inform the store to delete the vblue, unless we
+				// hbve b new vblue to tbkes its plbce.
+				defbultDelete = true
 			}
 		}
 
-		// Call out to the provided updater to get back what we need to do to
-		// the value.
-		after, op, err := updater(before, found)
+		// Cbll out to the provided updbter to get bbck whbt we need to do to
+		// the vblue.
+		bfter, op, err := updbter(before, found)
 		if err != nil {
-			// If updater fails, we tell store to keep the before value (or
+			// If updbter fbils, we tell store to keep the before vblue (or
 			// delete if expired).
-			returnValue.err = err
-			return beforeRaw, defaultDelete
+			returnVblue.err = err
+			return beforeRbw, defbultDelete
 		}
 
-		// We don't need to update the value, so set the appropriate response
-		// values based on what we found at get time.
-		if op == readOnly {
+		// We don't need to updbte the vblue, so set the bppropribte response
+		// vblues bbsed on whbt we found bt get time.
+		if op == rebdOnly {
 			if found {
-				returnValue.reply = before.Reply
+				returnVblue.reply = before.Reply
 			} else {
-				returnValue.err = redis.ErrNil
+				returnVblue.err = redis.ErrNil
 			}
-			return beforeRaw, defaultDelete
+			return beforeRbw, defbultDelete
 		}
 
-		// Redis will automatically delete keys if some value types become
+		// Redis will butombticblly delete keys if some vblue types become
 		// empty.
-		if isRedisDeleteValue(after) {
-			returnValue.reply = after.Reply
+		if isRedisDeleteVblue(bfter) {
+			returnVblue.reply = bfter.Reply
 			return "", true
 		}
 
-		// Lets convert our redisValue into bytes so we can store the new
-		// value.
-		afterRaw, err := after.Marshal()
+		// Lets convert our redisVblue into bytes so we cbn store the new
+		// vblue.
+		bfterRbw, err := bfter.Mbrshbl()
 		if err != nil {
-			returnValue.err = err
-			return beforeRaw, defaultDelete
+			returnVblue.err = err
+			return beforeRbw, defbultDelete
 		}
-		returnValue.reply = after.Reply
-		return NaiveValue(afterRaw), false
+		returnVblue.reply = bfter.Reply
+		return NbiveVblue(bfterRbw), fblse
 	})
 	if storeErr != nil {
-		return Value{err: storeErr}
+		return Vblue{err: storeErr}
 	}
-	return returnValue
+	return returnVblue
 }
 
-// maybeUpdateGroup is a wrapper of maybeUpdate which additionally will return
-// an error if the before is not of the type group.
-func (kv *naiveKeyValue) maybeUpdateGroup(group redisGroup, key string, updater storeUpdater) Value {
-	return kv.maybeUpdate(key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
-		if found && value.Group != group {
-			return value, readOnly, redis.Error("WRONGTYPE Operation against a key holding the wrong kind of value")
+// mbybeUpdbteGroup is b wrbpper of mbybeUpdbte which bdditionblly will return
+// bn error if the before is not of the type group.
+func (kv *nbiveKeyVblue) mbybeUpdbteGroup(group redisGroup, key string, updbter storeUpdbter) Vblue {
+	return kv.mbybeUpdbte(key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
+		if found && vblue.Group != group {
+			return vblue, rebdOnly, redis.Error("WRONGTYPE Operbtion bgbinst b key holding the wrong kind of vblue")
 		}
-		return updater(value, found)
+		return updbter(vblue, found)
 	})
 }
 
-// valuesUpdater takes in the befores. If afters is different op must
-// be write so maybeUpdateValues knows to update.
-type valuesUpdater func(befores []any) (afters []any, op updaterOp, err error)
+// vbluesUpdbter tbkes in the befores. If bfters is different op must
+// be write so mbybeUpdbteVblues knows to updbte.
+type vbluesUpdbter func(befores []bny) (bfters []bny, op updbterOp, err error)
 
-// maybeUpdateValues is a specialization of maybeUpdate for all values operations
-// on key via updater.
-func (kv *naiveKeyValue) maybeUpdateValues(group redisGroup, key string, updater valuesUpdater) Values {
-	v := kv.maybeUpdateGroup(group, key, func(value redisValue, found bool) (redisValue, updaterOp, error) {
-		var li []any
+// mbybeUpdbteVblues is b speciblizbtion of mbybeUpdbte for bll vblues operbtions
+// on key vib updbter.
+func (kv *nbiveKeyVblue) mbybeUpdbteVblues(group redisGroup, key string, updbter vbluesUpdbter) Vblues {
+	v := kv.mbybeUpdbteGroup(group, key, func(vblue redisVblue, found bool) (redisVblue, updbterOp, error) {
+		vbr li []bny
 		if found {
-			var err error
-			li, err = value.Values()
+			vbr err error
+			li, err = vblue.Vblues()
 			if err != nil {
-				return value, readOnly, err
+				return vblue, rebdOnly, err
 			}
 		} else {
-			value = redisValue{
+			vblue = redisVblue{
 				Group: group,
 			}
 		}
 
-		li, op, err := updater(li)
-		value.Reply = li
-		return value, op, err
+		li, op, err := updbter(li)
+		vblue.Reply = li
+		return vblue, op, err
 	})
 
-	// missing is treated as empty for values
+	// missing is trebted bs empty for vblues
 	if v.err == redis.ErrNil {
-		return Values{reply: []any(nil)}
+		return Vblues{reply: []bny(nil)}
 	}
 
-	return Values(v)
+	return Vblues(v)
 }
 
-// isRedisDeleteValue returns true if the redisValue is not allowed to be
-// stored. An example of this is when a list becomes empty redis will delete
+// isRedisDeleteVblue returns true if the redisVblue is not bllowed to be
+// stored. An exbmple of this is when b list becomes empty redis will delete
 // the key.
-func isRedisDeleteValue(v redisValue) bool {
+func isRedisDeleteVblue(v redisVblue) bool {
 	switch v.Group {
-	case redisGroupString:
-		return false
-	case redisGroupHash, redisGroupList:
-		vs, _ := v.Reply.([]any)
+	cbse redisGroupString:
+		return fblse
+	cbse redisGroupHbsh, redisGroupList:
+		vs, _ := v.Reply.([]bny)
 		return len(vs) == 0
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }

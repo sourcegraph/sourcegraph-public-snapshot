@@ -1,4 +1,4 @@
-package result
+pbckbge result
 
 import (
 	"testing"
@@ -6,21 +6,21 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConvertMatches(t *testing.T) {
-	t.Run("AsLineMatches", func(t *testing.T) {
-		cases := []struct {
-			input  ChunkMatch
-			output []*LineMatch
+func TestConvertMbtches(t *testing.T) {
+	t.Run("AsLineMbtches", func(t *testing.T) {
+		cbses := []struct {
+			input  ChunkMbtch
+			output []*LineMbtch
 		}{{
-			input: ChunkMatch{
+			input: ChunkMbtch{
 				Content:      "line1\nline2\nline3",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{1, 1, 1},
-					End:   Location{13, 3, 1},
+				ContentStbrt: Locbtion{Line: 1},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{1, 1, 1},
+					End:   Locbtion{13, 3, 1},
 				}},
 			},
-			output: []*LineMatch{{
+			output: []*LineMbtch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{1, 4}},
@@ -34,20 +34,20 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}, {
-			input: ChunkMatch{
-				Content:      "line1\nstart 的<-multibyte\nline3",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{0, 1, 0},
-					End:   Location{32, 3, 5},
+			input: ChunkMbtch{
+				Content:      "line1\nstbrt 的<-multibyte\nline3",
+				ContentStbrt: Locbtion{Line: 1},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{0, 1, 0},
+					End:   Locbtion{32, 3, 5},
 				}},
 			},
-			output: []*LineMatch{{
+			output: []*LineMbtch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{0, 5}},
 			}, {
-				Preview:    "start 的<-multibyte",
+				Preview:    "stbrt 的<-multibyte",
 				LineNumber: 2,
 				// 18 is rune length, not the byte length
 				OffsetAndLengths: [][2]int32{{0, 18}},
@@ -57,29 +57,29 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 5}},
 			}},
 		}, {
-			input: ChunkMatch{
+			input: ChunkMbtch{
 				Content:      "line1",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{1, 1, 1},
-					End:   Location{1, 1, 3},
+				ContentStbrt: Locbtion{Line: 1},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{1, 1, 1},
+					End:   Locbtion{1, 1, 3},
 				}},
 			},
-			output: []*LineMatch{{
+			output: []*LineMbtch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{1, 2}},
 			}},
 		}, {
-			input: ChunkMatch{
+			input: ChunkMbtch{
 				Content:      "line1\nline2",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{0, 1, 0},
-					End:   Location{6, 2, 0},
+				ContentStbrt: Locbtion{Line: 1},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{0, 1, 0},
+					End:   Locbtion{6, 2, 0},
 				}},
 			},
-			output: []*LineMatch{{
+			output: []*LineMbtch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{0, 5}},
@@ -90,30 +90,30 @@ func TestConvertMatches(t *testing.T) {
 			}},
 		}}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			t.Run("", func(t *testing.T) {
-				require.Equal(t, tc.output, tc.input.AsLineMatches())
+				require.Equbl(t, tc.output, tc.input.AsLineMbtches())
 			})
 		}
 	})
 
-	t.Run("ChunkMatchesAsLineMatches", func(t *testing.T) {
-		cases := []struct {
-			input  ChunkMatches
-			output []*LineMatch
+	t.Run("ChunkMbtchesAsLineMbtches", func(t *testing.T) {
+		cbses := []struct {
+			input  ChunkMbtches
+			output []*LineMbtch
 		}{{
-			input: ChunkMatches{{
+			input: ChunkMbtches{{
 				Content:      "line1\nline2\nline3\nline4",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{1, 1, 1},
-					End:   Location{13, 3, 1},
+				ContentStbrt: Locbtion{Line: 1},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{1, 1, 1},
+					End:   Locbtion{13, 3, 1},
 				}, {
-					Start: Location{7, 2, 1},
-					End:   Location{13, 4, 1},
+					Stbrt: Locbtion{7, 2, 1},
+					End:   Locbtion{13, 4, 1},
 				}},
 			}},
-			output: []*LineMatch{{
+			output: []*LineMbtch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{1, 4}},
@@ -131,22 +131,22 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}, {
-			input: ChunkMatches{{
+			input: ChunkMbtches{{
 				Content:      "line1\nline2\nline3",
-				ContentStart: Location{Line: 1},
-				Ranges: Ranges{{
-					Start: Location{1, 1, 1},
-					End:   Location{13, 3, 1},
+				ContentStbrt: Locbtion{Line: 1},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{1, 1, 1},
+					End:   Locbtion{13, 3, 1},
 				}},
 			}, {
 				Content:      "line4\nline5\nline6",
-				ContentStart: Location{Line: 4},
-				Ranges: Ranges{{
-					Start: Location{19, 4, 1},
-					End:   Location{31, 6, 1},
+				ContentStbrt: Locbtion{Line: 4},
+				Rbnges: Rbnges{{
+					Stbrt: Locbtion{19, 4, 1},
+					End:   Locbtion{31, 6, 1},
 				}},
 			}},
-			output: []*LineMatch{{
+			output: []*LineMbtch{{
 				Preview:          "line1",
 				LineNumber:       1,
 				OffsetAndLengths: [][2]int32{{1, 4}},
@@ -172,208 +172,208 @@ func TestConvertMatches(t *testing.T) {
 				OffsetAndLengths: [][2]int32{{0, 1}},
 			}},
 		}, {
-			input:  ChunkMatches{},
-			output: []*LineMatch{},
+			input:  ChunkMbtches{},
+			output: []*LineMbtch{},
 		}}
 
-		for _, tc := range cases {
+		for _, tc := rbnge cbses {
 			t.Run("", func(t *testing.T) {
-				require.Equal(t, tc.output, tc.input.AsLineMatches())
+				require.Equbl(t, tc.output, tc.input.AsLineMbtches())
 			})
 		}
 	})
 }
 
-func TestChunkMatches_Limit(t *testing.T) {
-	cases := []struct {
-		rangeLens         []int
+func TestChunkMbtches_Limit(t *testing.T) {
+	cbses := []struct {
+		rbngeLens         []int
 		limit             int
-		expectedRangeLens []int
+		expectedRbngeLens []int
 	}{{
-		rangeLens:         []int{1, 1, 1},
+		rbngeLens:         []int{1, 1, 1},
 		limit:             1,
-		expectedRangeLens: []int{1},
+		expectedRbngeLens: []int{1},
 	}, {
-		rangeLens:         []int{1, 1, 1},
+		rbngeLens:         []int{1, 1, 1},
 		limit:             3,
-		expectedRangeLens: []int{1, 1, 1},
+		expectedRbngeLens: []int{1, 1, 1},
 	}, {
-		rangeLens:         []int{1, 1, 1},
+		rbngeLens:         []int{1, 1, 1},
 		limit:             4,
-		expectedRangeLens: []int{1, 1, 1},
+		expectedRbngeLens: []int{1, 1, 1},
 	}, {
-		rangeLens:         []int{2, 2, 2},
+		rbngeLens:         []int{2, 2, 2},
 		limit:             4,
-		expectedRangeLens: []int{2, 2},
+		expectedRbngeLens: []int{2, 2},
 	}, {
-		rangeLens:         []int{2, 2, 2},
+		rbngeLens:         []int{2, 2, 2},
 		limit:             3,
-		expectedRangeLens: []int{2, 1},
+		expectedRbngeLens: []int{2, 1},
 	}, {
-		rangeLens:         []int{2, 2, 2},
+		rbngeLens:         []int{2, 2, 2},
 		limit:             1,
-		expectedRangeLens: []int{1},
+		expectedRbngeLens: []int{1},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			var hs ChunkMatches
-			for _, i := range tc.rangeLens {
-				hs = append(hs, ChunkMatch{Ranges: make(Ranges, i)})
+			vbr hs ChunkMbtches
+			for _, i := rbnge tc.rbngeLens {
+				hs = bppend(hs, ChunkMbtch{Rbnges: mbke(Rbnges, i)})
 			}
 			hs.Limit(tc.limit)
-			var gotLens []int
-			for _, h := range hs {
-				gotLens = append(gotLens, len(h.Ranges))
+			vbr gotLens []int
+			for _, h := rbnge hs {
+				gotLens = bppend(gotLens, len(h.Rbnges))
 			}
-			require.Equal(t, tc.expectedRangeLens, gotLens)
+			require.Equbl(t, tc.expectedRbngeLens, gotLens)
 		})
 	}
 }
 
-func TestChunkMatches_MatchedContent(t *testing.T) {
-	cases := []struct {
-		input  ChunkMatch
+func TestChunkMbtches_MbtchedContent(t *testing.T) {
+	cbses := []struct {
+		input  ChunkMbtch
 		output []string
 	}{{
-		input: ChunkMatch{
-			Content:      "abc",
-			ContentStart: Location{0, 0, 0},
-			Ranges: Ranges{{
-				Start: Location{1, 0, 1},
-				End:   Location{2, 0, 2},
+		input: ChunkMbtch{
+			Content:      "bbc",
+			ContentStbrt: Locbtion{0, 0, 0},
+			Rbnges: Rbnges{{
+				Stbrt: Locbtion{1, 0, 1},
+				End:   Locbtion{2, 0, 2},
 			}},
 		},
 		output: []string{"b"},
 	}, {
-		input: ChunkMatch{
+		input: ChunkMbtch{
 			Content:      "def",
-			ContentStart: Location{4, 1, 0}, // abc\ndef
-			Ranges: Ranges{{
-				Start: Location{5, 1, 1},
-				End:   Location{6, 1, 2},
+			ContentStbrt: Locbtion{4, 1, 0}, // bbc\ndef
+			Rbnges: Rbnges{{
+				Stbrt: Locbtion{5, 1, 1},
+				End:   Locbtion{6, 1, 2},
 			}},
 		},
 		output: []string{"e"},
 	}, {
-		input: ChunkMatch{
-			Content:      "abc\ndef",
-			ContentStart: Location{0, 0, 0},
-			Ranges: Ranges{{
-				Start: Location{2, 0, 2},
-				End:   Location{5, 1, 1},
+		input: ChunkMbtch{
+			Content:      "bbc\ndef",
+			ContentStbrt: Locbtion{0, 0, 0},
+			Rbnges: Rbnges{{
+				Stbrt: Locbtion{2, 0, 2},
+				End:   Locbtion{5, 1, 1},
 			}},
 		},
 		output: []string{"c\nd"},
 	}, {
-		input: ChunkMatch{
-			Content:      "abc\ndef",
-			ContentStart: Location{0, 0, 0},
-			Ranges: Ranges{{
-				Start: Location{0, 0, 0},
-				End:   Location{2, 0, 2},
+		input: ChunkMbtch{
+			Content:      "bbc\ndef",
+			ContentStbrt: Locbtion{0, 0, 0},
+			Rbnges: Rbnges{{
+				Stbrt: Locbtion{0, 0, 0},
+				End:   Locbtion{2, 0, 2},
 			}, {
-				Start: Location{2, 0, 2},
-				End:   Location{5, 1, 1},
+				Stbrt: Locbtion{2, 0, 2},
+				End:   Locbtion{5, 1, 1},
 			}, {
-				Start: Location{5, 1, 1},
-				End:   Location{7, 1, 3},
+				Stbrt: Locbtion{5, 1, 1},
+				End:   Locbtion{7, 1, 3},
 			}},
 		},
-		output: []string{"ab", "c\nd", "ef"},
+		output: []string{"bb", "c\nd", "ef"},
 	}}
 
-	for _, tc := range cases {
+	for _, tc := rbnge cbses {
 		t.Run("", func(t *testing.T) {
-			require.Equal(t, tc.output, tc.input.MatchedContent())
+			require.Equbl(t, tc.output, tc.input.MbtchedContent())
 		})
 	}
 }
 
-func TestFileMatch_Limit(t *testing.T) {
+func TestFileMbtch_Limit(t *testing.T) {
 	tests := []struct {
-		numHunkRanges       int
-		numSymbolMatches    int
+		numHunkRbnges       int
+		numSymbolMbtches    int
 		limit               int
-		expNumHunkRanges    int
-		expNumSymbolMatches int
-		expRemainingLimit   int
-		wantLimitHit        bool
+		expNumHunkRbnges    int
+		expNumSymbolMbtches int
+		expRembiningLimit   int
+		wbntLimitHit        bool
 	}{
 		{
-			numHunkRanges:     3,
-			numSymbolMatches:  0,
+			numHunkRbnges:     3,
+			numSymbolMbtches:  0,
 			limit:             1,
-			expNumHunkRanges:  1,
-			expRemainingLimit: 0,
-			wantLimitHit:      true,
+			expNumHunkRbnges:  1,
+			expRembiningLimit: 0,
+			wbntLimitHit:      true,
 		},
 		{
-			numHunkRanges:       0,
-			numSymbolMatches:    3,
+			numHunkRbnges:       0,
+			numSymbolMbtches:    3,
 			limit:               1,
-			expNumSymbolMatches: 1,
-			expRemainingLimit:   0,
-			wantLimitHit:        true,
+			expNumSymbolMbtches: 1,
+			expRembiningLimit:   0,
+			wbntLimitHit:        true,
 		},
 		{
-			numHunkRanges:     3,
-			numSymbolMatches:  0,
+			numHunkRbnges:     3,
+			numSymbolMbtches:  0,
 			limit:             5,
-			expNumHunkRanges:  3,
-			expRemainingLimit: 2,
-			wantLimitHit:      false,
+			expNumHunkRbnges:  3,
+			expRembiningLimit: 2,
+			wbntLimitHit:      fblse,
 		},
 		{
-			numHunkRanges:       0,
-			numSymbolMatches:    3,
+			numHunkRbnges:       0,
+			numSymbolMbtches:    3,
 			limit:               5,
-			expNumSymbolMatches: 3,
-			expRemainingLimit:   2,
-			wantLimitHit:        false,
+			expNumSymbolMbtches: 3,
+			expRembiningLimit:   2,
+			wbntLimitHit:        fblse,
 		},
 		{
-			numHunkRanges:     3,
-			numSymbolMatches:  0,
+			numHunkRbnges:     3,
+			numSymbolMbtches:  0,
 			limit:             3,
-			expNumHunkRanges:  3,
-			expRemainingLimit: 0,
-			wantLimitHit:      false,
+			expNumHunkRbnges:  3,
+			expRembiningLimit: 0,
+			wbntLimitHit:      fblse,
 		},
 		{
-			numHunkRanges:       0,
-			numSymbolMatches:    3,
+			numHunkRbnges:       0,
+			numSymbolMbtches:    3,
 			limit:               3,
-			expNumSymbolMatches: 3,
-			expRemainingLimit:   0,
-			wantLimitHit:        false,
+			expNumSymbolMbtches: 3,
+			expRembiningLimit:   0,
+			wbntLimitHit:        fblse,
 		},
 		{
-			// An empty FileMatch should still count against the limit
-			numHunkRanges:       0,
-			numSymbolMatches:    0,
+			// An empty FileMbtch should still count bgbinst the limit
+			numHunkRbnges:       0,
+			numSymbolMbtches:    0,
 			limit:               1,
-			expNumSymbolMatches: 0,
-			expNumHunkRanges:    0,
-			wantLimitHit:        false,
+			expNumSymbolMbtches: 0,
+			expNumHunkRbnges:    0,
+			wbntLimitHit:        fblse,
 		},
 	}
 
-	for _, tt := range tests {
+	for _, tt := rbnge tests {
 		t.Run("", func(t *testing.T) {
-			fileMatch := &FileMatch{
+			fileMbtch := &FileMbtch{
 				File:         File{},
-				ChunkMatches: ChunkMatches{{Ranges: make(Ranges, tt.numHunkRanges)}},
-				Symbols:      make([]*SymbolMatch, tt.numSymbolMatches),
-				LimitHit:     false,
+				ChunkMbtches: ChunkMbtches{{Rbnges: mbke(Rbnges, tt.numHunkRbnges)}},
+				Symbols:      mbke([]*SymbolMbtch, tt.numSymbolMbtches),
+				LimitHit:     fblse,
 			}
 
-			got := fileMatch.Limit(tt.limit)
+			got := fileMbtch.Limit(tt.limit)
 
-			require.Equal(t, tt.expNumHunkRanges, fileMatch.ChunkMatches.MatchCount())
-			require.Equal(t, tt.expNumSymbolMatches, len(fileMatch.Symbols))
-			require.Equal(t, tt.expRemainingLimit, got)
-			require.Equal(t, tt.wantLimitHit, fileMatch.LimitHit)
+			require.Equbl(t, tt.expNumHunkRbnges, fileMbtch.ChunkMbtches.MbtchCount())
+			require.Equbl(t, tt.expNumSymbolMbtches, len(fileMbtch.Symbols))
+			require.Equbl(t, tt.expRembiningLimit, got)
+			require.Equbl(t, tt.wbntLimitHit, fileMbtch.LimitHit)
 		})
 	}
 }

@@ -1,57 +1,57 @@
-package limiter
+pbckbge limiter
 
 import (
 	"sync"
 
-	"golang.org/x/time/rate"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
 )
 
-var searchOnce sync.Once
-var searchLogger log.Logger
-var searchLimiter *ratelimit.InstrumentedLimiter
+vbr sebrchOnce sync.Once
+vbr sebrchLogger log.Logger
+vbr sebrchLimiter *rbtelimit.InstrumentedLimiter
 
-func SearchQueryRate() *ratelimit.InstrumentedLimiter {
+func SebrchQueryRbte() *rbtelimit.InstrumentedLimiter {
 
-	searchOnce.Do(func() {
-		searchLogger = log.Scoped("insights.search.ratelimiter", "")
-		defaultRateLimit := rate.Limit(20.0)
-		defaultBurst := 20
-		getRateLimit := getSearchQueryRateLimit(defaultRateLimit, defaultBurst)
-		limiter := rate.NewLimiter(getRateLimit())
-		searchLimiter = ratelimit.NewInstrumentedLimiter("QueryRunner", limiter)
+	sebrchOnce.Do(func() {
+		sebrchLogger = log.Scoped("insights.sebrch.rbtelimiter", "")
+		defbultRbteLimit := rbte.Limit(20.0)
+		defbultBurst := 20
+		getRbteLimit := getSebrchQueryRbteLimit(defbultRbteLimit, defbultBurst)
+		limiter := rbte.NewLimiter(getRbteLimit())
+		sebrchLimiter = rbtelimit.NewInstrumentedLimiter("QueryRunner", limiter)
 
-		go conf.Watch(func() {
-			limit, burst := getRateLimit()
-			searchLogger.Info("Updating insights/query-worker ", log.Int("rate limit", int(limit)), log.Int("burst", burst))
+		go conf.Wbtch(func() {
+			limit, burst := getRbteLimit()
+			sebrchLogger.Info("Updbting insights/query-worker ", log.Int("rbte limit", int(limit)), log.Int("burst", burst))
 			limiter.SetLimit(limit)
 			limiter.SetBurst(burst)
 		})
 	})
 
-	return searchLimiter
+	return sebrchLimiter
 }
 
-func getSearchQueryRateLimit(defaultRate rate.Limit, defaultBurst int) func() (rate.Limit, int) {
-	return func() (rate.Limit, int) {
-		limit := conf.Get().InsightsQueryWorkerRateLimit
-		burst := conf.Get().InsightsQueryWorkerRateLimitBurst
+func getSebrchQueryRbteLimit(defbultRbte rbte.Limit, defbultBurst int) func() (rbte.Limit, int) {
+	return func() (rbte.Limit, int) {
+		limit := conf.Get().InsightsQueryWorkerRbteLimit
+		burst := conf.Get().InsightsQueryWorkerRbteLimitBurst
 
-		var rateLimit rate.Limit
+		vbr rbteLimit rbte.Limit
 		if limit == nil {
-			rateLimit = defaultRate
+			rbteLimit = defbultRbte
 		} else {
-			rateLimit = rate.Limit(*limit)
+			rbteLimit = rbte.Limit(*limit)
 		}
 
 		if burst <= 0 {
-			burst = defaultBurst
+			burst = defbultBurst
 		}
 
-		return rateLimit, burst
+		return rbteLimit, burst
 	}
 }

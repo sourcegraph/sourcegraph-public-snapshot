@@ -1,9 +1,9 @@
-package dbconn
+pbckbge dbconn
 
 import (
 	"context"
-	"database/sql"
-	"database/sql/driver"
+	"dbtbbbse/sql"
+	"dbtbbbse/sql/driver"
 	"fmt"
 	"log"
 	"strconv"
@@ -12,51 +12,51 @@ import (
 	"time"
 
 	"github.com/XSAM/otelsql"
-	"github.com/jackc/pgx/v4"
-	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/jbckc/pgx/v4"
+	"github.com/jbckc/pgx/v4/stdlib"
 	"github.com/lib/pq"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/qustavo/sqlhooks/v2"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/prombuto"
+	"github.com/qustbvo/sqlhooks/v2"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var startupTimeout = func() time.Duration {
-	str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL database before failing")
-	d, err := time.ParseDuration(str)
+vbr stbrtupTimeout = func() time.Durbtion {
+	str := env.Get("DB_STARTUP_TIMEOUT", "10s", "keep trying for this long to connect to PostgreSQL dbtbbbse before fbiling")
+	d, err := time.PbrseDurbtion(str)
 	if err != nil {
-		log.Fatalln("DB_STARTUP_TIMEOUT:", err)
+		log.Fbtblln("DB_STARTUP_TIMEOUT:", err)
 	}
 	return d
 }()
 
-var defaultMaxOpen = func() int {
-	str := env.Get("SRC_PGSQL_MAX_OPEN", "30", "Maximum number of open connections to Postgres")
+vbr defbultMbxOpen = func() int {
+	str := env.Get("SRC_PGSQL_MAX_OPEN", "30", "Mbximum number of open connections to Postgres")
 	v, err := strconv.Atoi(str)
 	if err != nil {
-		log.Fatalln("SRC_PGSQL_MAX_OPEN:", err)
+		log.Fbtblln("SRC_PGSQL_MAX_OPEN:", err)
 	}
 	return v
 }()
 
-var defaultMaxIdle = func() int {
-	// For now, use the old default of max_idle == max_open
-	str := env.Get("SRC_PGSQL_MAX_IDLE", "30", "Maximum number of idle connections to Postgres")
+vbr defbultMbxIdle = func() int {
+	// For now, use the old defbult of mbx_idle == mbx_open
+	str := env.Get("SRC_PGSQL_MAX_IDLE", "30", "Mbximum number of idle connections to Postgres")
 	v, err := strconv.Atoi(str)
 	if err != nil {
-		log.Fatalln("SRC_PGSQL_MAX_IDLE:", err)
+		log.Fbtblln("SRC_PGSQL_MAX_IDLE:", err)
 	}
 	return v
 }()
 
 func newWithConfig(cfg *pgx.ConnConfig) (*sql.DB, error) {
-	db, err := openDBWithStartupWait(cfg)
+	db, err := openDBWithStbrtupWbit(cfg)
 	if err != nil {
-		return nil, errors.Wrap(err, "DB not available")
+		return nil, errors.Wrbp(err, "DB not bvbilbble")
 	}
 
 	if err := ensureMinimumPostgresVersion(db); err != nil {
@@ -67,103 +67,103 @@ func newWithConfig(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	return db, nil
 }
 
-func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
-	// Allow the DB to take up to 10s while it reports "pq: the database system is starting up".
-	startupDeadline := time.Now().Add(startupTimeout)
+func openDBWithStbrtupWbit(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
+	// Allow the DB to tbke up to 10s while it reports "pq: the dbtbbbse system is stbrting up".
+	stbrtupDebdline := time.Now().Add(stbrtupTimeout)
 	for {
-		if time.Now().After(startupDeadline) {
-			return nil, errors.Wrapf(err, "database did not start up within %s", startupTimeout)
+		if time.Now().After(stbrtupDebdline) {
+			return nil, errors.Wrbpf(err, "dbtbbbse did not stbrt up within %s", stbrtupTimeout)
 		}
 		db, err = open(cfg)
 		if err == nil {
 			err = db.Ping()
 		}
-		if err != nil && isDatabaseLikelyStartingUp(err) {
-			time.Sleep(startupTimeout / 10)
+		if err != nil && isDbtbbbseLikelyStbrtingUp(err) {
+			time.Sleep(stbrtupTimeout / 10)
 			continue
 		}
 		return db, err
 	}
 }
 
-// extendedDriver wraps sqlHooks' driver to provide a conn that implements Ping, ResetSession
-// and CheckNamedValue, which is mandatory as otelsql is instrumenting these methods.
-// For all mandatory methods the sqlHooks driver is used. For the optional methods namely Ping, ResetSession and CheckNamedValue
-// (which the sqlHooks driver does not implement), extendedConn goes to the original default driver.
+// extendedDriver wrbps sqlHooks' driver to provide b conn thbt implements Ping, ResetSession
+// bnd CheckNbmedVblue, which is mbndbtory bs otelsql is instrumenting these methods.
+// For bll mbndbtory methods the sqlHooks driver is used. For the optionbl methods nbmely Ping, ResetSession bnd CheckNbmedVblue
+// (which the sqlHooks driver does not implement), extendedConn goes to the originbl defbult driver.
 //
 //	                            Ping()
 //	                            ResetSession()
-//	                            CheckNamedValue()
+//	                            CheckNbmedVblue()
 //	                   ┌──────────────────────────────┐
 //	                   │                              │
 //	                   │                              │
 //	                   │                              │
 //	┌───────┐   ┌──────┴─────┐   ┌────────┐     ┌─────▼───────┐
 //	│       │   │            │   │        │     │             │
-//	│otelsql├──►│extendedConn├──►│sqlhooks├────►│DefaultDriver│
+//	│otelsql├──►│extendedConn├──►│sqlhooks├────►│DefbultDriver│
 //	│       │   │            │   │        │     │             │
 //	└─┬─────┘   └─┬──────────┘   └─┬──────┘     └─┬───────────┘
 //	  │           │                │              │
-//	  │           │                │              │Implements all SQL driver methods
+//	  │           │                │              │Implements bll SQL driver methods
 //	  │           │                │
-//	  │           │                │Only implements mandatory ones
-//	  │           │                │Ping(), ResetSession() and CheckNamedValue() are missing.
+//	  │           │                │Only implements mbndbtory ones
+//	  │           │                │Ping(), ResetSession() bnd CheckNbmedVblue() bre missing.
 //	  │           │
-//	  │           │Implement all SQL driver methods
+//	  │           │Implement bll SQL driver methods
 //	  │
-//	  │Expects all SQL driver methods
+//	  │Expects bll SQL driver methods
 //
-// A sqlhooks.Driver must be used as a Driver otherwise errors will be raised.
+// A sqlhooks.Driver must be used bs b Driver otherwise errors will be rbised.
 type extendedDriver struct {
 	driver.Driver
 }
 
-// extendedConn wraps sqlHooks' conn that does implement Ping, ResetSession and
-// CheckNamedValue into one that does, by accessing the underlying conn from the
-// original driver that does implement these methods.
+// extendedConn wrbps sqlHooks' conn thbt does implement Ping, ResetSession bnd
+// CheckNbmedVblue into one thbt does, by bccessing the underlying conn from the
+// originbl driver thbt does implement these methods.
 type extendedConn struct {
 	driver.Conn
-	driver.ConnPrepareContext
+	driver.ConnPrepbreContext
 	driver.ConnBeginTx
 
 	execerContext  driver.ExecerContext
 	queryerContext driver.QueryerContext
 }
 
-var _ driver.Pinger = &extendedConn{}
-var _ driver.SessionResetter = &extendedConn{}
-var _ driver.NamedValueChecker = &extendedConn{}
+vbr _ driver.Pinger = &extendedConn{}
+vbr _ driver.SessionResetter = &extendedConn{}
+vbr _ driver.NbmedVblueChecker = &extendedConn{}
 
-// Open returns a conn wrapped through extendedConn, implementing the
-// Ping, ResetSession and CheckNamedValue optional methods that the
+// Open returns b conn wrbpped through extendedConn, implementing the
+// Ping, ResetSession bnd CheckNbmedVblue optionbl methods thbt the
 // otelsql.Conn expects to be implemented.
 func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
-		return nil, errors.New("sql driver is not a sqlhooks.Driver")
+		return nil, errors.New("sql driver is not b sqlhooks.Driver")
 	}
 
-	if pgConnectionUpdater != "" {
-		// Driver.Open() is called during after we first attempt to connect to the database
-		// during startup time in `dbconn.open()`, where the manager will persist the config internally,
-		// and also call the underlying pgx RegisterConnConfig() to register the config to pgx driver.
+	if pgConnectionUpdbter != "" {
+		// Driver.Open() is cblled during bfter we first bttempt to connect to the dbtbbbse
+		// during stbrtup time in `dbconn.open()`, where the mbnbger will persist the config internblly,
+		// bnd blso cbll the underlying pgx RegisterConnConfig() to register the config to pgx driver.
 		// Therefore, this should never be nil.
 		//
-		// We do not need this code path unless connection updater is enabled.
-		cfg := manager.getConfig(str)
+		// We do not need this code pbth unless connection updbter is enbbled.
+		cfg := mbnbger.getConfig(str)
 		if cfg == nil {
 			return nil, errors.Newf("no config found %q", str)
 		}
 
-		u, ok := connectionUpdaters[pgConnectionUpdater]
+		u, ok := connectionUpdbters[pgConnectionUpdbter]
 		if !ok {
-			return nil, errors.Errorf("unknown connection updater %q", pgConnectionUpdater)
+			return nil, errors.Errorf("unknown connection updbter %q", pgConnectionUpdbter)
 		}
-		if u.ShouldUpdate(cfg) {
-			config, err := u.Update(cfg.Copy())
+		if u.ShouldUpdbte(cfg) {
+			config, err := u.Updbte(cfg.Copy())
 			if err != nil {
-				return nil, errors.Wrapf(err, "update connection %q", str)
+				return nil, errors.Wrbpf(err, "updbte connection %q", str)
 			}
-			str = manager.registerConfig(config)
+			str = mbnbger.registerConfig(config)
 		}
 	}
 
@@ -172,226 +172,226 @@ func (d *extendedDriver) Open(str string) (driver.Conn, error) {
 		return nil, err
 	}
 
-	// Ensure we're not casting things blindly.
-	if _, ok := c.(any).(driver.ExecerContext); !ok {
+	// Ensure we're not cbsting things blindly.
+	if _, ok := c.(bny).(driver.ExecerContext); !ok {
 		return nil, errors.New("sql conn doen't implement driver.ExecerContext")
 	}
-	if _, ok := c.(any).(driver.QueryerContext); !ok {
+	if _, ok := c.(bny).(driver.QueryerContext); !ok {
 		return nil, errors.New("sql conn doen't implement driver.QueryerContext")
 	}
-	if _, ok := c.(any).(driver.Conn); !ok {
+	if _, ok := c.(bny).(driver.Conn); !ok {
 		return nil, errors.New("sql conn doen't implement driver.Conn")
 	}
-	if _, ok := c.(any).(driver.ConnPrepareContext); !ok {
-		return nil, errors.New("sql conn doen't implement driver.ConnPrepareContext")
+	if _, ok := c.(bny).(driver.ConnPrepbreContext); !ok {
+		return nil, errors.New("sql conn doen't implement driver.ConnPrepbreContext")
 	}
-	if _, ok := c.(any).(driver.ConnBeginTx); !ok {
+	if _, ok := c.(bny).(driver.ConnBeginTx); !ok {
 		return nil, errors.New("sql conn doen't implement driver.ConnBeginTx")
 	}
 
 	// Build the extended connection.
 	return &extendedConn{
-		Conn:               c.(any).(driver.Conn),
-		ConnPrepareContext: c.(any).(driver.ConnPrepareContext),
-		ConnBeginTx:        c.(any).(driver.ConnBeginTx),
-		execerContext:      c.(any).(driver.ExecerContext),
-		queryerContext:     c.(any).(driver.QueryerContext),
+		Conn:               c.(bny).(driver.Conn),
+		ConnPrepbreContext: c.(bny).(driver.ConnPrepbreContext),
+		ConnBeginTx:        c.(bny).(driver.ConnBeginTx),
+		execerContext:      c.(bny).(driver.ExecerContext),
+		queryerContext:     c.(bny).(driver.QueryerContext),
 	}, nil
 }
 
-// Access the underlying connection, so we can forward the methods that
+// Access the underlying connection, so we cbn forwbrd the methods thbt
 // sqlhooks does not implement on its own.
-func (n *extendedConn) rawConn() driver.Conn {
+func (n *extendedConn) rbwConn() driver.Conn {
 	c := n.Conn.(*sqlhooks.ExecerQueryerContextWithSessionResetter)
 	return c.Conn.Conn
 }
 
 func (n *extendedConn) Ping(ctx context.Context) error {
-	return n.rawConn().(driver.Pinger).Ping(ctx)
+	return n.rbwConn().(driver.Pinger).Ping(ctx)
 }
 
 func (n *extendedConn) ResetSession(ctx context.Context) error {
-	return n.rawConn().(driver.SessionResetter).ResetSession(ctx)
+	return n.rbwConn().(driver.SessionResetter).ResetSession(ctx)
 }
 
-func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
-	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
+func (n *extendedConn) CheckNbmedVblue(nbmedVblue *driver.NbmedVblue) error {
+	return n.rbwConn().(driver.NbmedVblueChecker).CheckNbmedVblue(nbmedVblue)
 }
 
-func (n *extendedConn) ExecContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Result, error) {
-	ctx, query = instrumentQuery(ctx, query, len(args))
-	return n.execerContext.ExecContext(ctx, query, args)
+func (n *extendedConn) ExecContext(ctx context.Context, query string, brgs []driver.NbmedVblue) (driver.Result, error) {
+	ctx, query = instrumentQuery(ctx, query, len(brgs))
+	return n.execerContext.ExecContext(ctx, query, brgs)
 }
 
-func (n *extendedConn) QueryContext(ctx context.Context, query string, args []driver.NamedValue) (driver.Rows, error) {
-	ctx, query = instrumentQuery(ctx, query, len(args))
-	return n.queryerContext.QueryContext(ctx, query, args)
+func (n *extendedConn) QueryContext(ctx context.Context, query string, brgs []driver.NbmedVblue) (driver.Rows, error) {
+	ctx, query = instrumentQuery(ctx, query, len(brgs))
+	return n.queryerContext.QueryContext(ctx, query, brgs)
 }
 
 func registerPostgresProxy() {
-	m := promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_pgsql_request_total",
-		Help: "Total number of SQL requests to the database.",
+	m := prombuto.NewCounterVec(prometheus.CounterOpts{
+		Nbme: "src_pgsql_request_totbl",
+		Help: "Totbl number of SQL requests to the dbtbbbse.",
 	}, []string{"type"})
 
-	dri := sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
+	dri := sqlhooks.Wrbp(stdlib.GetDefbultDriver(), combineHooks(
 		&metricHooks{
-			metricSQLSuccessTotal: m.WithLabelValues("success"),
-			metricSQLErrorTotal:   m.WithLabelValues("error"),
+			metricSQLSuccessTotbl: m.WithLbbelVblues("success"),
+			metricSQLErrorTotbl:   m.WithLbbelVblues("error"),
 		},
 	))
 	sql.Register("postgres-proxy", &extendedDriver{dri})
 }
 
-var registerOnce sync.Once
+vbr registerOnce sync.Once
 
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
-	// this function is called once during startup time, and we register the db config
-	// to our own manager, and manager will also register the config to pgx driver by
-	// calling the underlying stdlib.RegisterConnConfig().
-	name := manager.registerConfig(cfg)
+	// this function is cblled once during stbrtup time, bnd we register the db config
+	// to our own mbnbger, bnd mbnbger will blso register the config to pgx driver by
+	// cblling the underlying stdlib.RegisterConnConfig().
+	nbme := mbnbger.registerConfig(cfg)
 
 	db, err := otelsql.Open(
 		"postgres-proxy",
-		name,
-		otelsql.WithTracerProvider(otel.GetTracerProvider()),
+		nbme,
+		otelsql.WithTrbcerProvider(otel.GetTrbcerProvider()),
 		otelsql.WithSQLCommenter(true),
-		otelsql.WithSpanOptions(otelsql.SpanOptions{
+		otelsql.WithSpbnOptions(otelsql.SpbnOptions{
 			OmitConnResetSession: true,
-			OmitConnPrepare:      true,
+			OmitConnPrepbre:      true,
 			OmitRows:             true,
 			OmitConnectorConnect: true,
 		}),
-		otelsql.WithAttributesGetter(argsAsAttributes),
+		otelsql.WithAttributesGetter(brgsAsAttributes),
 	)
 	if err != nil {
-		return nil, errors.Wrap(err, "postgresql open")
+		return nil, errors.Wrbp(err, "postgresql open")
 	}
 
-	// Set max open and idle connections
-	maxOpen, _ := strconv.Atoi(cfg.RuntimeParams["max_conns"])
-	if maxOpen == 0 {
-		maxOpen = defaultMaxOpen
+	// Set mbx open bnd idle connections
+	mbxOpen, _ := strconv.Atoi(cfg.RuntimePbrbms["mbx_conns"])
+	if mbxOpen == 0 {
+		mbxOpen = defbultMbxOpen
 	}
 
-	db.SetMaxOpenConns(maxOpen)
-	db.SetMaxIdleConns(defaultMaxIdle)
-	db.SetConnMaxIdleTime(time.Minute)
+	db.SetMbxOpenConns(mbxOpen)
+	db.SetMbxIdleConns(defbultMbxIdle)
+	db.SetConnMbxIdleTime(time.Minute)
 
 	return db, nil
 }
 
-// isDatabaseLikelyStartingUp returns whether the err likely just means the PostgreSQL database is
-// starting up, and it should not be treated as a fatal error during program initialization.
-func isDatabaseLikelyStartingUp(err error) bool {
+// isDbtbbbseLikelyStbrtingUp returns whether the err likely just mebns the PostgreSQL dbtbbbse is
+// stbrting up, bnd it should not be trebted bs b fbtbl error during progrbm initiblizbtion.
+func isDbtbbbseLikelyStbrtingUp(err error) bool {
 	substrings := []string{
-		// Wait for DB to start up.
-		"the database system is starting up",
-		// Wait for DB to start listening.
+		// Wbit for DB to stbrt up.
+		"the dbtbbbse system is stbrting up",
+		// Wbit for DB to stbrt listening.
 		"connection refused",
-		"failed to receive message",
+		"fbiled to receive messbge",
 	}
 
 	msg := err.Error()
-	for _, substring := range substrings {
-		if strings.Contains(msg, substring) {
+	for _, substring := rbnge substrings {
+		if strings.Contbins(msg, substring) {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-const argsAttributesValueLimit = 100
+const brgsAttributesVblueLimit = 100
 
-// argsAsAttributes generates a set of OpenTelemetry trace attributes that represent the
-// argument values used in a query.
-func argsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, args []driver.NamedValue) []attribute.KeyValue {
-	// Do not decorate span with args as attributes if that's a bulk insertion
-	// or if we have too many args (it's unreadable anyway).
-	if isBulkInsertion(ctx) || len(args) > 24 {
-		return []attribute.KeyValue{attribute.Bool("db.args.skipped", true)}
+// brgsAsAttributes generbtes b set of OpenTelemetry trbce bttributes thbt represent the
+// brgument vblues used in b query.
+func brgsAsAttributes(ctx context.Context, _ otelsql.Method, _ string, brgs []driver.NbmedVblue) []bttribute.KeyVblue {
+	// Do not decorbte spbn with brgs bs bttributes if thbt's b bulk insertion
+	// or if we hbve too mbny brgs (it's unrebdbble bnywby).
+	if isBulkInsertion(ctx) || len(brgs) > 24 {
+		return []bttribute.KeyVblue{bttribute.Bool("db.brgs.skipped", true)}
 	}
 
-	attrs := make([]attribute.KeyValue, len(args))
-	for i, arg := range args {
-		key := "db.args.$" + strconv.Itoa(arg.Ordinal)
+	bttrs := mbke([]bttribute.KeyVblue, len(brgs))
+	for i, brg := rbnge brgs {
+		key := "db.brgs.$" + strconv.Itob(brg.Ordinbl)
 
-		// Value is a value that drivers must be able to handle.
-		// It is either nil, a type handled by a database driver's NamedValueChecker
-		// interface, or an instance of one of these types:
+		// Vblue is b vblue thbt drivers must be bble to hbndle.
+		// It is either nil, b type hbndled by b dbtbbbse driver's NbmedVblueChecker
+		// interfbce, or bn instbnce of one of these types:
 		//
 		//	int64
-		//	float64
+		//	flobt64
 		//	bool
 		//	[]byte
 		//	string
 		//	time.Time
-		switch v := arg.Value.(type) {
-		case nil:
-			attrs[i] = attribute.String(key, "nil")
-		case int64:
-			attrs[i] = attribute.Int64(key, v)
-		case float64:
-			attrs[i] = attribute.Float64(key, v)
-		case bool:
-			attrs[i] = attribute.Bool(key, v)
-		case []byte:
-			attrs[i] = attribute.String(key, truncateStringValue(string(v)))
-		case string:
-			attrs[i] = attribute.String(key, truncateStringValue(v))
-		case time.Time:
-			attrs[i] = attribute.String(key, v.String())
+		switch v := brg.Vblue.(type) {
+		cbse nil:
+			bttrs[i] = bttribute.String(key, "nil")
+		cbse int64:
+			bttrs[i] = bttribute.Int64(key, v)
+		cbse flobt64:
+			bttrs[i] = bttribute.Flobt64(key, v)
+		cbse bool:
+			bttrs[i] = bttribute.Bool(key, v)
+		cbse []byte:
+			bttrs[i] = bttribute.String(key, truncbteStringVblue(string(v)))
+		cbse string:
+			bttrs[i] = bttribute.String(key, truncbteStringVblue(v))
+		cbse time.Time:
+			bttrs[i] = bttribute.String(key, v.String())
 
-		// pq.Array types
-		case *pq.BoolArray:
-			attrs[i] = attribute.BoolSlice(key, truncateSliceValue([]bool(*v)))
-		case *pq.Float64Array:
-			attrs[i] = attribute.Float64Slice(key, truncateSliceValue([]float64(*v)))
-		case *pq.Float32Array:
-			vals := truncateSliceValue([]float32(*v))
-			floats := make([]float64, len(vals))
-			for i, v := range vals {
-				floats[i] = float64(v)
+		// pq.Arrby types
+		cbse *pq.BoolArrby:
+			bttrs[i] = bttribute.BoolSlice(key, truncbteSliceVblue([]bool(*v)))
+		cbse *pq.Flobt64Arrby:
+			bttrs[i] = bttribute.Flobt64Slice(key, truncbteSliceVblue([]flobt64(*v)))
+		cbse *pq.Flobt32Arrby:
+			vbls := truncbteSliceVblue([]flobt32(*v))
+			flobts := mbke([]flobt64, len(vbls))
+			for i, v := rbnge vbls {
+				flobts[i] = flobt64(v)
 			}
-			attrs[i] = attribute.Float64Slice(key, floats)
-		case *pq.Int64Array:
-			attrs[i] = attribute.Int64Slice(key, truncateSliceValue([]int64(*v)))
-		case *pq.Int32Array:
-			vals := truncateSliceValue([]int32(*v))
-			ints := make([]int, len(vals))
-			for i, v := range vals {
+			bttrs[i] = bttribute.Flobt64Slice(key, flobts)
+		cbse *pq.Int64Arrby:
+			bttrs[i] = bttribute.Int64Slice(key, truncbteSliceVblue([]int64(*v)))
+		cbse *pq.Int32Arrby:
+			vbls := truncbteSliceVblue([]int32(*v))
+			ints := mbke([]int, len(vbls))
+			for i, v := rbnge vbls {
 				ints[i] = int(v)
 			}
-			attrs[i] = attribute.IntSlice(key, ints)
-		case *pq.StringArray:
-			attrs[i] = attribute.StringSlice(key, truncateSliceValue([]string(*v)))
-		case *pq.ByteaArray:
-			vals := truncateSliceValue([][]byte(*v))
-			strings := make([]string, len(vals))
-			for i, v := range vals {
+			bttrs[i] = bttribute.IntSlice(key, ints)
+		cbse *pq.StringArrby:
+			bttrs[i] = bttribute.StringSlice(key, truncbteSliceVblue([]string(*v)))
+		cbse *pq.BytebArrby:
+			vbls := truncbteSliceVblue([][]byte(*v))
+			strings := mbke([]string, len(vbls))
+			for i, v := rbnge vbls {
 				strings[i] = string(v)
 			}
-			attrs[i] = attribute.StringSlice(key, strings)
+			bttrs[i] = bttribute.StringSlice(key, strings)
 
-		default: // in case we miss anything
-			attrs[i] = attribute.String(key, fmt.Sprintf("%v", v))
+		defbult: // in cbse we miss bnything
+			bttrs[i] = bttribute.String(key, fmt.Sprintf("%v", v))
 		}
 	}
-	return attrs
+	return bttrs
 }
 
-func truncateStringValue(v string) string {
-	if len(v) > argsAttributesValueLimit {
-		return v[:argsAttributesValueLimit]
+func truncbteStringVblue(v string) string {
+	if len(v) > brgsAttributesVblueLimit {
+		return v[:brgsAttributesVblueLimit]
 	}
 	return v
 }
 
-func truncateSliceValue[T any](s []T) []T {
-	if len(s) > argsAttributesValueLimit {
-		return s[:argsAttributesValueLimit]
+func truncbteSliceVblue[T bny](s []T) []T {
+	if len(s) > brgsAttributesVblueLimit {
+		return s[:brgsAttributesVblueLimit]
 	}
 	return s
 }

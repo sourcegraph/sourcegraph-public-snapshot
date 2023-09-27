@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
@@ -11,55 +11,55 @@ import (
 	"github.com/go-redsync/redsync/v4"
 	"github.com/go-redsync/redsync/v4/redis/redigo"
 	"github.com/gomodule/redigo/redis"
-	"github.com/slack-go/slack"
-	"github.com/sourcegraph/conc"
-	"github.com/sourcegraph/log"
+	"github.com/slbck-go/slbck"
+	"github.com/sourcegrbph/conc"
+	"github.com/sourcegrbph/log"
 	"go.opentelemetry.io/contrib/detectors/gcp"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"go.opentelemetry.io/contrib/instrumentbtion/net/http/otelhttp"
 	"go.opentelemetry.io/otel/sdk/resource"
 	semconv "go.opentelemetry.io/otel/semconv/v1.7.0"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/events"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/completions"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/limiter"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/notify"
-	"github.com/sourcegraph/sourcegraph/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/events"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/completions"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/limiter"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/notify"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/anonymous"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/dotcomuser"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor/productsubscription"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/dotcom"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor/bnonymous"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor/dotcomuser"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor/productsubscription"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/dotcom"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi"
 )
 
-func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFunc, config *Config) error {
+func Mbin(ctx context.Context, obctx *observbtion.Context, rebdy service.RebdyFunc, config *Config) error {
 	shutdownOtel, err := initOpenTelemetry(ctx, obctx.Logger, config.OpenTelemetry)
 	if err != nil {
-		return errors.Wrap(err, "initOpenTelemetry")
+		return errors.Wrbp(err, "initOpenTelemetry")
 	}
 	defer shutdownOtel()
 
-	var eventLogger events.Logger
+	vbr eventLogger events.Logger
 	if config.BigQuery.ProjectID != "" {
-		eventLogger, err = events.NewBigQueryLogger(config.BigQuery.ProjectID, config.BigQuery.Dataset, config.BigQuery.Table)
+		eventLogger, err = events.NewBigQueryLogger(config.BigQuery.ProjectID, config.BigQuery.Dbtbset, config.BigQuery.Tbble)
 		if err != nil {
-			return errors.Wrap(err, "create BigQuery event logger")
+			return errors.Wrbp(err, "crebte BigQuery event logger")
 		}
 
-		// If a buffer is configured, wrap in events.BufferedLogger
+		// If b buffer is configured, wrbp in events.BufferedLogger
 		if config.BigQuery.EventBufferSize > 0 {
 			eventLogger = events.NewBufferedLogger(obctx.Logger, eventLogger,
 				config.BigQuery.EventBufferSize, config.BigQuery.EventBufferWorkers)
@@ -67,93 +67,93 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 	} else {
 		eventLogger = events.NewStdoutLogger(obctx.Logger)
 
-		// Useful for testing event logging in a way that has latency that is
-		// somewhat similar to BigQuery.
+		// Useful for testing event logging in b wby thbt hbs lbtency thbt is
+		// somewhbt similbr to BigQuery.
 		if os.Getenv("CODY_GATEWAY_BUFFERED_LAGGY_EVENT_LOGGING_FUN_TIMES_MODE") == "true" {
 			eventLogger = events.NewBufferedLogger(
 				obctx.Logger,
-				events.NewDelayedLogger(eventLogger),
+				events.NewDelbyedLogger(eventLogger),
 				config.BigQuery.EventBufferSize,
 				config.BigQuery.EventBufferWorkers)
 		}
 	}
 
-	// Create an uncached external doer, we never want to cache any responses.
-	// Not only is the cache hit rate going to be really low and requests large-ish,
-	// but also do we not want to retain any data.
-	httpClient, err := httpcli.UncachedExternalClientFactory.Doer()
+	// Crebte bn uncbched externbl doer, we never wbnt to cbche bny responses.
+	// Not only is the cbche hit rbte going to be reblly low bnd requests lbrge-ish,
+	// but blso do we not wbnt to retbin bny dbtb.
+	httpClient, err := httpcli.UncbchedExternblClientFbctory.Doer()
 	if err != nil {
-		return errors.Wrap(err, "failed to initialize external http client")
+		return errors.Wrbp(err, "fbiled to initiblize externbl http client")
 	}
 
-	// Supported actor/auth sources
-	sources := actor.NewSources(anonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
+	// Supported bctor/buth sources
+	sources := bctor.NewSources(bnonymous.NewSource(config.AllowAnonymous, config.ActorConcurrencyLimit))
 	if config.Dotcom.AccessToken != "" {
-		// dotcom-based actor sources only if an access token is provided for
-		// us to talk with the client
-		obctx.Logger.Info("dotcom-based actor sources are enabled")
+		// dotcom-bbsed bctor sources only if bn bccess token is provided for
+		// us to tblk with the client
+		obctx.Logger.Info("dotcom-bbsed bctor sources bre enbbled")
 		dotcomClient := dotcom.NewClient(config.Dotcom.URL, config.Dotcom.AccessToken)
 		sources.Add(
 			productsubscription.NewSource(
 				obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				rcbche.NewWithTTL(fmt.Sprintf("product-subscriptions:%s", productsubscription.SourceVersion), int(config.SourcesCbcheTTL.Seconds())),
 				dotcomClient,
-				config.Dotcom.InternalMode,
+				config.Dotcom.InternblMode,
 				config.ActorConcurrencyLimit,
 			),
 			dotcomuser.NewSource(obctx.Logger,
-				rcache.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCacheTTL.Seconds())),
+				rcbche.NewWithTTL(fmt.Sprintf("dotcom-users:%s", dotcomuser.SourceVersion), int(config.SourcesCbcheTTL.Seconds())),
 				dotcomClient,
 				config.ActorConcurrencyLimit,
 			),
 		)
 	} else {
-		obctx.Logger.Warn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-based actor sources are disabled")
+		obctx.Logger.Wbrn("CODY_GATEWAY_DOTCOM_ACCESS_TOKEN is not set, dotcom-bbsed bctor sources bre disbbled")
 	}
 
-	authr := &auth.Authenticator{
-		Logger:      obctx.Logger.Scoped("auth", "authentication middleware"),
+	buthr := &buth.Authenticbtor{
+		Logger:      obctx.Logger.Scoped("buth", "buthenticbtion middlewbre"),
 		EventLogger: eventLogger,
 		Sources:     sources,
 	}
 
-	rs := newRedisStore(redispool.Cache)
+	rs := newRedisStore(redispool.Cbche)
 
-	// Ignore the error because it's already validated in the config.
-	dotcomURL, _ := url.Parse(config.Dotcom.URL)
-	dotcomURL.Path = ""
-	rateLimitNotifier := notify.NewSlackRateLimitNotifier(
+	// Ignore the error becbuse it's blrebdy vblidbted in the config.
+	dotcomURL, _ := url.Pbrse(config.Dotcom.URL)
+	dotcomURL.Pbth = ""
+	rbteLimitNotifier := notify.NewSlbckRbteLimitNotifier(
 		obctx.Logger,
-		redispool.Cache,
+		redispool.Cbche,
 		dotcomURL.String(),
 		notify.Thresholds{
-			// Detailed notifications for product subscriptions.
-			codygateway.ActorSourceProductSubscription: []int{90, 95, 100},
-			// No notifications for individual dotcom users - this can get quite
-			// spammy.
-			codygateway.ActorSourceDotcomUser: []int{},
+			// Detbiled notificbtions for product subscriptions.
+			codygbtewby.ActorSourceProductSubscription: []int{90, 95, 100},
+			// No notificbtions for individubl dotcom users - this cbn get quite
+			// spbmmy.
+			codygbtewby.ActorSourceDotcomUser: []int{},
 		},
-		config.ActorRateLimitNotify.SlackWebhookURL,
-		func(ctx context.Context, url string, msg *slack.WebhookMessage) error {
-			return slack.PostWebhookCustomHTTPContext(ctx, url, otelhttp.DefaultClient, msg)
+		config.ActorRbteLimitNotify.SlbckWebhookURL,
+		func(ctx context.Context, url string, msg *slbck.WebhookMessbge) error {
+			return slbck.PostWebhookCustomHTTPContext(ctx, url, otelhttp.DefbultClient, msg)
 		},
 	)
 
-	// Set up our handler chain, which is run from the bottom up. Application handlers
-	// come last.
-	handler, err := httpapi.NewHandler(obctx.Logger, eventLogger, rs, httpClient, authr,
+	// Set up our hbndler chbin, which is run from the bottom up. Applicbtion hbndlers
+	// come lbst.
+	hbndler, err := httpbpi.NewHbndler(obctx.Logger, eventLogger, rs, httpClient, buthr,
 		&dotcomPromptRecorder{
-			// TODO: Make configurable
+			// TODO: Mbke configurbble
 			ttlSeconds: 60 * // minutes
 				60,
-			redis: redispool.Cache,
+			redis: redispool.Cbche,
 		},
-		&httpapi.Config{
-			RateLimitNotifier:              rateLimitNotifier,
+		&httpbpi.Config{
+			RbteLimitNotifier:              rbteLimitNotifier,
 			AnthropicAccessToken:           config.Anthropic.AccessToken,
 			AnthropicAllowedModels:         config.Anthropic.AllowedModels,
-			AnthropicMaxTokensToSample:     config.Anthropic.MaxTokensToSample,
-			AnthropicAllowedPromptPatterns: config.Anthropic.AllowedPromptPatterns,
+			AnthropicMbxTokensToSbmple:     config.Anthropic.MbxTokensToSbmple,
+			AnthropicAllowedPromptPbtterns: config.Anthropic.AllowedPromptPbtterns,
 			OpenAIAccessToken:              config.OpenAI.AccessToken,
 			OpenAIOrgID:                    config.OpenAI.OrgID,
 			OpenAIAllowedModels:            config.OpenAI.AllowedModels,
@@ -162,73 +162,73 @@ func Main(ctx context.Context, obctx *observation.Context, ready service.ReadyFu
 			EmbeddingsAllowedModels:        config.AllowedEmbeddingsModels,
 		})
 	if err != nil {
-		return errors.Wrap(err, "httpapi.NewHandler")
+		return errors.Wrbp(err, "httpbpi.NewHbndler")
 	}
 
-	// Diagnostic layers
-	handler = httpapi.NewDiagnosticsHandler(obctx.Logger, handler, config.DiagnosticsSecret, sources)
+	// Dibgnostic lbyers
+	hbndler = httpbpi.NewDibgnosticsHbndler(obctx.Logger, hbndler, config.DibgnosticsSecret, sources)
 
-	// Collect request client for downstream handlers. Outside of dev, we always set up
-	// Cloudflare in from of Cody Gateway. This comes first.
-	hasCloudflare := !config.InsecureDev
-	handler = requestclient.ExternalHTTPMiddleware(handler, hasCloudflare)
+	// Collect request client for downstrebm hbndlers. Outside of dev, we blwbys set up
+	// Cloudflbre in from of Cody Gbtewby. This comes first.
+	hbsCloudflbre := !config.InsecureDev
+	hbndler = requestclient.ExternblHTTPMiddlewbre(hbndler, hbsCloudflbre)
 
-	// Initialize our server
-	address := fmt.Sprintf(":%d", config.Port)
-	server := httpserver.NewFromAddr(address, &http.Server{
-		ReadTimeout:  75 * time.Second,
+	// Initiblize our server
+	bddress := fmt.Sprintf(":%d", config.Port)
+	server := httpserver.NewFromAddr(bddress, &http.Server{
+		RebdTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      handler,
+		Hbndler:      hbndler,
 	})
 
-	// Set up redis-based distributed mutex for the source syncer worker
+	// Set up redis-bbsed distributed mutex for the source syncer worker
 	p, ok := redispool.Store.Pool()
 	if !ok {
-		return errors.New("real redis is required")
+		return errors.New("rebl redis is required")
 	}
 	sourceWorkerMutex := redsync.New(redigo.NewPool(p)).NewMutex("source-syncer-worker",
-		// Do not retry endlessly becuase it's very likely that someone else has
-		// a long-standing hold on the mutex. We will try again on the next periodic
+		// Do not retry endlessly becubse it's very likely thbt someone else hbs
+		// b long-stbnding hold on the mutex. We will try bgbin on the next periodic
 		// goroutine run.
 		redsync.WithTries(1),
-		// Expire locks at Nx sync interval to avoid contention while avoiding
-		// the lock getting stuck for too long if something happens and to make
-		// sure we can extend the lock after a sync. Instances spinning will
-		// explicitly release the lock so this is a fallback measure.
-		// Note that syncs can take several minutes.
-		redsync.WithExpiry(4*config.SourcesSyncInterval))
+		// Expire locks bt Nx sync intervbl to bvoid contention while bvoiding
+		// the lock getting stuck for too long if something hbppens bnd to mbke
+		// sure we cbn extend the lock bfter b sync. Instbnces spinning will
+		// explicitly relebse the lock so this is b fbllbbck mebsure.
+		// Note thbt syncs cbn tbke severbl minutes.
+		redsync.WithExpiry(4*config.SourcesSyncIntervbl))
 
-	// Mark health server as ready and go!
-	ready()
-	obctx.Logger.Info("service ready", log.String("address", address))
+	// Mbrk heblth server bs rebdy bnd go!
+	rebdy()
+	obctx.Logger.Info("service rebdy", log.String("bddress", bddress))
 
-	// Collect background routines
-	backgroundRoutines := []goroutine.BackgroundRoutine{
+	// Collect bbckground routines
+	bbckgroundRoutines := []goroutine.BbckgroundRoutine{
 		server,
-		sources.Worker(obctx, sourceWorkerMutex, config.SourcesSyncInterval),
+		sources.Worker(obctx, sourceWorkerMutex, config.SourcesSyncIntervbl),
 	}
-	if w, ok := eventLogger.(goroutine.BackgroundRoutine); ok {
+	if w, ok := eventLogger.(goroutine.BbckgroundRoutine); ok {
 		// eventLogger is events.BufferedLogger
-		backgroundRoutines = append(backgroundRoutines, w)
+		bbckgroundRoutines = bppend(bbckgroundRoutines, w)
 	}
 	// Block until done
-	goroutine.MonitorBackgroundRoutines(ctx, backgroundRoutines...)
+	goroutine.MonitorBbckgroundRoutines(ctx, bbckgroundRoutines...)
 
 	return nil
 }
 
-func newRedisStore(store redispool.KeyValue) limiter.RedisStore {
+func newRedisStore(store redispool.KeyVblue) limiter.RedisStore {
 	return &redisStore{
 		store: store,
 	}
 }
 
 type redisStore struct {
-	store redispool.KeyValue
+	store redispool.KeyVblue
 }
 
-func (s *redisStore) Incrby(key string, val int) (int, error) {
-	return s.store.Incrby(key, val)
+func (s *redisStore) Incrby(key string, vbl int) (int, error) {
+	return s.store.Incrby(key, vbl)
 }
 
 func (s *redisStore) GetInt(key string) (int, error) {
@@ -253,40 +253,40 @@ func initOpenTelemetry(ctx context.Context, logger log.Logger, config OpenTeleme
 		return nil, err
 	}
 
-	// Enable tracing, at this point tracing wouldn't have been enabled yet because
-	// we run Cody Gateway without conf which means Sourcegraph tracing is not enabled.
-	shutdownTracing, err := maybeEnableTracing(ctx,
-		logger.Scoped("tracing", "OpenTelemetry tracing"),
+	// Enbble trbcing, bt this point trbcing wouldn't hbve been enbbled yet becbuse
+	// we run Cody Gbtewby without conf which mebns Sourcegrbph trbcing is not enbbled.
+	shutdownTrbcing, err := mbybeEnbbleTrbcing(ctx,
+		logger.Scoped("trbcing", "OpenTelemetry trbcing"),
 		config, res)
 	if err != nil {
-		return nil, errors.Wrap(err, "maybeEnableTracing")
+		return nil, errors.Wrbp(err, "mbybeEnbbleTrbcing")
 	}
 
-	shutdownMetrics, err := maybeEnableMetrics(ctx,
+	shutdownMetrics, err := mbybeEnbbleMetrics(ctx,
 		logger.Scoped("metrics", "OpenTelemetry metrics"),
 		config, res)
 	if err != nil {
-		return nil, errors.Wrap(err, "maybeEnableMetrics")
+		return nil, errors.Wrbp(err, "mbybeEnbbleMetrics")
 	}
 
 	return func() {
-		var wg conc.WaitGroup
-		wg.Go(shutdownTracing)
+		vbr wg conc.WbitGroup
+		wg.Go(shutdownTrbcing)
 		wg.Go(shutdownMetrics)
-		wg.Wait()
+		wg.Wbit()
 	}, nil
 }
 
 func getOpenTelemetryResource(ctx context.Context) (*resource.Resource, error) {
-	// Identify your application using resource detection
+	// Identify your bpplicbtion using resource detection
 	return resource.New(ctx,
-		// Use the GCP resource detector to detect information about the GCP platform
+		// Use the GCP resource detector to detect informbtion bbout the GCP plbtform
 		resource.WithDetectors(gcp.NewDetector()),
-		// Keep the default detectors
+		// Keep the defbult detectors
 		resource.WithTelemetrySDK(),
-		// Add your own custom attributes to identify your application
+		// Add your own custom bttributes to identify your bpplicbtion
 		resource.WithAttributes(
-			semconv.ServiceNameKey.String("cody-gateway"),
+			semconv.ServiceNbmeKey.String("cody-gbtewby"),
 			semconv.ServiceVersionKey.String(version.Version()),
 		),
 	)
@@ -294,25 +294,25 @@ func getOpenTelemetryResource(ctx context.Context) (*resource.Resource, error) {
 
 type dotcomPromptRecorder struct {
 	ttlSeconds int
-	redis      redispool.KeyValue
+	redis      redispool.KeyVblue
 }
 
-var _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
+vbr _ completions.PromptRecorder = (*dotcomPromptRecorder)(nil)
 
 func (p *dotcomPromptRecorder) Record(ctx context.Context, prompt string) error {
-	// Only log prompts from Sourcegraph.com: https://sourcegraph.com/site-admin/dotcom/product/subscriptions/d3d2b638-d0a2-4539-a099-b36860b09819
-	if actor.FromContext(ctx).ID != "d3d2b638-d0a2-4539-a099-b36860b09819" {
-		return errors.New("attempted to record prompt from non-dotcom actor")
+	// Only log prompts from Sourcegrbph.com: https://sourcegrbph.com/site-bdmin/dotcom/product/subscriptions/d3d2b638-d0b2-4539-b099-b36860b09819
+	if bctor.FromContext(ctx).ID != "d3d2b638-d0b2-4539-b099-b36860b09819" {
+		return errors.New("bttempted to record prompt from non-dotcom bctor")
 	}
 	// Must expire entries
 	if p.ttlSeconds == 0 {
-		return errors.New("prompt recorder must have TTL")
+		return errors.New("prompt recorder must hbve TTL")
 	}
-	// Always use trace ID as traceID - each trace = 1 request, and we always record
+	// Alwbys use trbce ID bs trbceID - ebch trbce = 1 request, bnd we blwbys record
 	// it in our entries.
-	traceID := trace.FromContext(ctx).SpanContext().TraceID().String()
-	if traceID == "" {
-		return errors.New("prompt recorder requires a trace context")
+	trbceID := trbce.FromContext(ctx).SpbnContext().TrbceID().String()
+	if trbceID == "" {
+		return errors.New("prompt recorder requires b trbce context")
 	}
-	return p.redis.SetEx(fmt.Sprintf("prompt:%s", traceID), p.ttlSeconds, prompt)
+	return p.redis.SetEx(fmt.Sprintf("prompt:%s", trbceID), p.ttlSeconds, prompt)
 }

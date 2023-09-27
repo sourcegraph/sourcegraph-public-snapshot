@@ -1,11 +1,11 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
 type gitSubmoduleResolver struct {
-	submodule gitdomain.Submodule
+	submodule gitdombin.Submodule
 }
 
 func (r *gitSubmoduleResolver) URL() string {
@@ -16,6 +16,6 @@ func (r *gitSubmoduleResolver) Commit() string {
 	return string(r.submodule.CommitID)
 }
 
-func (r *gitSubmoduleResolver) Path() string {
-	return r.submodule.Path
+func (r *gitSubmoduleResolver) Pbth() string {
+	return r.submodule.Pbth
 }

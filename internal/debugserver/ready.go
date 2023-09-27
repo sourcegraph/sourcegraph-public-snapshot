@@ -1,24 +1,24 @@
-package debugserver
+pbckbge debugserver
 
 import "net/http"
 
-// healthzHandler is the http.HandlerFunc that responds to /healthz
-// requests on the debugserver port. This always returns a 200 OK
-// while the binary can be reached.
-func healthzHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
+// heblthzHbndler is the http.HbndlerFunc thbt responds to /heblthz
+// requests on the debugserver port. This blwbys returns b 200 OK
+// while the binbry cbn be rebched.
+func heblthzHbndler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHebder(http.StbtusOK)
 }
 
-// readyHandler returns an http.HandlerFunc that responds to the /ready
-// requests on the debugserver port. This will return a 200 OK once the
-// given channel is closed, and a 503 Service Unavailable otherwise.
-func readyHandler(ready <-chan struct{}) http.HandlerFunc {
+// rebdyHbndler returns bn http.HbndlerFunc thbt responds to the /rebdy
+// requests on the debugserver port. This will return b 200 OK once the
+// given chbnnel is closed, bnd b 503 Service Unbvbilbble otherwise.
+func rebdyHbndler(rebdy <-chbn struct{}) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		select {
-		case <-ready:
-			w.WriteHeader(http.StatusOK)
-		default:
-			w.WriteHeader(http.StatusServiceUnavailable)
+		cbse <-rebdy:
+			w.WriteHebder(http.StbtusOK)
+		defbult:
+			w.WriteHebder(http.StbtusServiceUnbvbilbble)
 		}
 	}
 }

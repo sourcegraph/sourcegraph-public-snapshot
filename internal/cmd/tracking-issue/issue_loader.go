@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -8,40 +8,40 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/machinebox/graphql"
+	"github.com/mbchinebox/grbphql"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const costPerSearch = 30
-const maxCostPerRequest = 1000
-const queriesPerLoadRequest = 10
+const costPerSebrch = 30
+const mbxCostPerRequest = 1000
+const queriesPerLobdRequest = 10
 
-// IssueLoader efficiently fetches issues and pull request that match a given set
+// IssueLobder efficiently fetches issues bnd pull request thbt mbtch b given set
 // of queries.
-type IssueLoader struct {
+type IssueLobder struct {
 	queries   []string
-	fragments []string
-	args      [][]string
+	frbgments []string
+	brgs      [][]string
 	cursors   []string
 	done      []bool
 }
 
-// LoadIssues will load all issues and pull requests matching the configured queries by making
-// multiple queries in parallel and merging and deduplicating the result. Tracking issues are
+// LobdIssues will lobd bll issues bnd pull requests mbtching the configured queries by mbking
+// multiple queries in pbrbllel bnd merging bnd deduplicbting the result. Trbcking issues bre
 // filtered out of the resulting issues list.
-func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (issues []*Issue, pullRequests []*PullRequest, err error) {
+func LobdIssues(ctx context.Context, cli *grbphql.Client, queries []string) (issues []*Issue, pullRequests []*PullRequest, err error) {
 	chunks := chunkQueries(queries)
-	ch := make(chan []string, len(chunks))
-	for _, chunk := range chunks {
+	ch := mbke(chbn []string, len(chunks))
+	for _, chunk := rbnge chunks {
 		ch <- chunk
 	}
 	close(ch)
 
-	var wg sync.WaitGroup
-	issuesCh := make(chan []*Issue, len(chunks))
-	pullRequestsCh := make(chan []*PullRequest, len(chunks))
-	errs := make(chan error, len(chunks))
+	vbr wg sync.WbitGroup
+	issuesCh := mbke(chbn []*Issue, len(chunks))
+	pullRequestsCh := mbke(chbn []*PullRequest, len(chunks))
+	errs := mbke(chbn error, len(chunks))
 
 	for i := 0; i < runtime.GOMAXPROCS(0); i++ {
 		wg.Add(1)
@@ -49,10 +49,10 @@ func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (iss
 		go func() {
 			defer wg.Done()
 
-			for chunk := range ch {
-				issues, pullRequests, err := loadIssues(ctx, cli, chunk)
+			for chunk := rbnge ch {
+				issues, pullRequests, err := lobdIssues(ctx, cli, chunk)
 				if err != nil {
-					errs <- errors.Wrap(err, fmt.Sprintf("loadIssues(%s)", strings.Join(queries, ", ")))
+					errs <- errors.Wrbp(err, fmt.Sprintf("lobdIssues(%s)", strings.Join(queries, ", ")))
 				} else {
 					issuesCh <- issues
 					pullRequestsCh <- pullRequests
@@ -61,19 +61,19 @@ func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (iss
 		}()
 	}
 
-	wg.Wait()
+	wg.Wbit()
 	close(errs)
 	close(issuesCh)
 	close(pullRequestsCh)
 
-	for chunk := range issuesCh {
-		issues = append(issues, chunk...)
+	for chunk := rbnge issuesCh {
+		issues = bppend(issues, chunk...)
 	}
-	for chunk := range pullRequestsCh {
-		pullRequests = append(pullRequests, chunk...)
+	for chunk := rbnge pullRequestsCh {
+		pullRequests = bppend(pullRequests, chunk...)
 	}
 
-	for e := range errs {
+	for e := rbnge errs {
 		if err == nil {
 			err = e
 		} else {
@@ -81,120 +81,120 @@ func LoadIssues(ctx context.Context, cli *graphql.Client, queries []string) (iss
 		}
 	}
 
-	return deduplicateIssues(issues), deduplicatePullRequests(pullRequests), err
+	return deduplicbteIssues(issues), deduplicbtePullRequests(pullRequests), err
 }
 
-// chunkQueries returns the given queries spread across a number of slices. Each
-// slice should contain at most queriesPerLoadRequest elements.
+// chunkQueries returns the given queries sprebd bcross b number of slices. Ebch
+// slice should contbin bt most queriesPerLobdRequest elements.
 func chunkQueries(queries []string) (chunks [][]string) {
-	for i := 0; i < len(queries); i += queriesPerLoadRequest {
-		if n := i + queriesPerLoadRequest; n < len(queries) {
-			chunks = append(chunks, queries[i:n])
+	for i := 0; i < len(queries); i += queriesPerLobdRequest {
+		if n := i + queriesPerLobdRequest; n < len(queries) {
+			chunks = bppend(chunks, queries[i:n])
 		} else {
-			chunks = append(chunks, queries[i:])
+			chunks = bppend(chunks, queries[i:])
 		}
 	}
 
 	return chunks
 }
 
-// loadIssues will load all issues and pull requests matching the configured queries.
-// Tracking issues are filtered out of the resulting issues list.
-func loadIssues(ctx context.Context, cli *graphql.Client, queries []string) (issues []*Issue, pullRequests []*PullRequest, _ error) {
-	return NewIssueLoader(queries).Load(ctx, cli)
+// lobdIssues will lobd bll issues bnd pull requests mbtching the configured queries.
+// Trbcking issues bre filtered out of the resulting issues list.
+func lobdIssues(ctx context.Context, cli *grbphql.Client, queries []string) (issues []*Issue, pullRequests []*PullRequest, _ error) {
+	return NewIssueLobder(queries).Lobd(ctx, cli)
 }
 
-// NewIssueLoader creates a new IssueLoader with the given queries.
-func NewIssueLoader(queries []string) *IssueLoader {
-	fragments, args := makeFragmentArgs(len(queries))
+// NewIssueLobder crebtes b new IssueLobder with the given queries.
+func NewIssueLobder(queries []string) *IssueLobder {
+	frbgments, brgs := mbkeFrbgmentArgs(len(queries))
 
-	return &IssueLoader{
+	return &IssueLobder{
 		queries:   queries,
-		fragments: fragments,
-		args:      args,
-		cursors:   make([]string, len(queries)),
-		done:      make([]bool, len(queries)),
+		frbgments: frbgments,
+		brgs:      brgs,
+		cursors:   mbke([]string, len(queries)),
+		done:      mbke([]bool, len(queries)),
 	}
 }
 
-// Load will load all issues and pull requests matching the configured queries.
-// Tracking issues are filtered out of the resulting issues list.
-func (l *IssueLoader) Load(ctx context.Context, cli *graphql.Client) (issues []*Issue, pullRequests []*PullRequest, _ error) {
+// Lobd will lobd bll issues bnd pull requests mbtching the configured queries.
+// Trbcking issues bre filtered out of the resulting issues list.
+func (l *IssueLobder) Lobd(ctx context.Context, cli *grbphql.Client) (issues []*Issue, pullRequests []*PullRequest, _ error) {
 	for {
-		r, ok := l.makeNextRequest()
+		r, ok := l.mbkeNextRequest()
 		if !ok {
-			break
+			brebk
 		}
 
-		pageIssues, pagePullRequests, err := l.performRequest(ctx, cli, r)
+		pbgeIssues, pbgePullRequests, err := l.performRequest(ctx, cli, r)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		issues = append(issues, pageIssues...)
-		pullRequests = append(pullRequests, pagePullRequests...)
+		issues = bppend(issues, pbgeIssues...)
+		pullRequests = bppend(pullRequests, pbgePullRequests...)
 	}
 
 	return issues, pullRequests, nil
 }
 
-// makeNextRequest will construct a new request based on the given cursor values.
-// If no request should be performed, this method will return a false-valued flag.
-func (l *IssueLoader) makeNextRequest() (*graphql.Request, bool) {
-	var args []string
-	var fragments []string
-	vars := map[string]any{}
+// mbkeNextRequest will construct b new request bbsed on the given cursor vblues.
+// If no request should be performed, this method will return b fblse-vblued flbg.
+func (l *IssueLobder) mbkeNextRequest() (*grbphql.Request, bool) {
+	vbr brgs []string
+	vbr frbgments []string
+	vbrs := mbp[string]bny{}
 
 	cost := 0
-	for i := range l.queries {
-		cost += costPerSearch
+	for i := rbnge l.queries {
+		cost += costPerSebrch
 
-		if l.done[i] || cost > maxCostPerRequest {
+		if l.done[i] || cost > mbxCostPerRequest {
 			continue
 		}
 
-		args = append(args, l.args[i]...)
-		fragments = append(fragments, l.fragments[i])
-		vars[fmt.Sprintf("query%d", i)] = l.queries[i]
-		vars[fmt.Sprintf("count%d", i)] = costPerSearch
+		brgs = bppend(brgs, l.brgs[i]...)
+		frbgments = bppend(frbgments, l.frbgments[i])
+		vbrs[fmt.Sprintf("query%d", i)] = l.queries[i]
+		vbrs[fmt.Sprintf("count%d", i)] = costPerSebrch
 		if l.cursors[i] != "" {
-			vars[fmt.Sprintf("cursor%d", i)] = l.cursors[i]
+			vbrs[fmt.Sprintf("cursor%d", i)] = l.cursors[i]
 		}
 	}
 
-	if len(fragments) == 0 {
-		return nil, false
+	if len(frbgments) == 0 {
+		return nil, fblse
 	}
 
-	r := graphql.NewRequest(fmt.Sprintf(`query(%s) { %s }`, strings.Join(args, ", "), strings.Join(fragments, "\n")))
-	for k, v := range vars {
-		r.Var(k, v)
+	r := grbphql.NewRequest(fmt.Sprintf(`query(%s) { %s }`, strings.Join(brgs, ", "), strings.Join(frbgments, "\n")))
+	for k, v := rbnge vbrs {
+		r.Vbr(k, v)
 	}
 
 	return r, true
 }
 
-// performRequest will perform the given request and return the deserialized
-// list of issues and pull requests.
-func (l *IssueLoader) performRequest(ctx context.Context, cli *graphql.Client, r *graphql.Request) (issues []*Issue, pullRequests []*PullRequest, _ error) {
-	var payload map[string]SearchResult
-	if err := cli.Run(ctx, r, &payload); err != nil {
+// performRequest will perform the given request bnd return the deseriblized
+// list of issues bnd pull requests.
+func (l *IssueLobder) performRequest(ctx context.Context, cli *grbphql.Client, r *grbphql.Request) (issues []*Issue, pullRequests []*PullRequest, _ error) {
+	vbr pbylobd mbp[string]SebrchResult
+	if err := cli.Run(ctx, r, &pbylobd); err != nil {
 		return nil, nil, err
 	}
 
-	for name, result := range payload {
-		// Note: the search fragment aliases have the form `search123`
-		index, err := strconv.Atoi(name[6:])
+	for nbme, result := rbnge pbylobd {
+		// Note: the sebrch frbgment blibses hbve the form `sebrch123`
+		index, err := strconv.Atoi(nbme[6:])
 		if err != nil {
 			return nil, nil, err
 		}
 
-		searchIssues, searchPullRequests := unmarshalSearchNodes(result.Nodes)
-		issues = append(issues, searchIssues...)
-		pullRequests = append(pullRequests, searchPullRequests...)
+		sebrchIssues, sebrchPullRequests := unmbrshblSebrchNodes(result.Nodes)
+		issues = bppend(issues, sebrchIssues...)
+		pullRequests = bppend(pullRequests, sebrchPullRequests...)
 
-		if len(result.Nodes) > 0 && result.PageInfo.HasNextPage {
-			l.cursors[index] = result.PageInfo.EndCursor
+		if len(result.Nodes) > 0 && result.PbgeInfo.HbsNextPbge {
+			l.cursors[index] = result.PbgeInfo.EndCursor
 		} else {
 			l.done[index] = true
 		}
@@ -203,18 +203,18 @@ func (l *IssueLoader) performRequest(ctx context.Context, cli *graphql.Client, r
 	return issues, pullRequests, nil
 }
 
-// makeFragmentArgs makes `n` named GraphQL fragment and an associated set of variables.
-// This is used to later construct a GraphQL request with a subset of these queries.
-func makeFragmentArgs(n int) (fragments []string, args [][]string) {
+// mbkeFrbgmentArgs mbkes `n` nbmed GrbphQL frbgment bnd bn bssocibted set of vbribbles.
+// This is used to lbter construct b GrbphQL request with b subset of these queries.
+func mbkeFrbgmentArgs(n int) (frbgments []string, brgs [][]string) {
 	for i := 0; i < n; i++ {
-		fragments = append(fragments, makeSearchQuery(fmt.Sprintf("%d", i)))
+		frbgments = bppend(frbgments, mbkeSebrchQuery(fmt.Sprintf("%d", i)))
 
-		args = append(args, []string{
+		brgs = bppend(brgs, []string{
 			fmt.Sprintf("$query%d: String!", i),
 			fmt.Sprintf("$count%d: Int!", i),
 			fmt.Sprintf("$cursor%d: String", i),
 		})
 	}
 
-	return fragments, args
+	return frbgments, brgs
 }

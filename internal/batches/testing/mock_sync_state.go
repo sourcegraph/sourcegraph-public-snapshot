@@ -1,94 +1,94 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 	"encoding/hex"
 	"io"
-	"math/rand"
+	"mbth/rbnd"
 	"strings"
 
-	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter/protocol"
 )
 
-type MockedChangesetSyncState struct {
-	// DiffStat is the diff.Stat of the mocked "git diff" call to gitserver.
-	DiffStat *diff.Stat
+type MockedChbngesetSyncStbte struct {
+	// DiffStbt is the diff.Stbt of the mocked "git diff" cbll to gitserver.
+	DiffStbt *diff.Stbt
 
 	MockClient *gitserver.MockClient
 
 	mockRepoLookup func(protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error)
 }
 
-// MockChangesetSyncState sets up mocks such that invoking SetDerivedState() with
-// a Changeset will use the same diff (+1, ~1, -3) when setting the SyncState
-// on a Changeset.
+// MockChbngesetSyncStbte sets up mocks such thbt invoking SetDerivedStbte() with
+// b Chbngeset will use the sbme diff (+1, ~1, -3) when setting the SyncStbte
+// on b Chbngeset.
 //
-// state.Unmock() must called to clean up, usually via defer.
-func MockChangesetSyncState(repo *protocol.RepoInfo) *MockedChangesetSyncState {
-	state := &MockedChangesetSyncState{
-		// This diff.Stat matches the testGitHubDiff below
-		DiffStat: &diff.Stat{Added: 2, Deleted: 4},
+// stbte.Unmock() must cblled to clebn up, usublly vib defer.
+func MockChbngesetSyncStbte(repo *protocol.RepoInfo) *MockedChbngesetSyncStbte {
+	stbte := &MockedChbngesetSyncStbte{
+		// This diff.Stbt mbtches the testGitHubDiff below
+		DiffStbt: &diff.Stbt{Added: 2, Deleted: 4},
 
-		mockRepoLookup: repoupdater.MockRepoLookup,
+		mockRepoLookup: repoupdbter.MockRepoLookup,
 	}
 
-	repoupdater.MockRepoLookup = func(args protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
+	repoupdbter.MockRepoLookup = func(brgs protocol.RepoLookupArgs) (*protocol.RepoLookupResult, error) {
 		return &protocol.RepoLookupResult{
 			Repo: repo,
 		}, nil
 	}
 
 	gitserverClient := gitserver.NewMockClient()
-	gitserverClient.DiffFunc.SetDefaultHook(func(_ context.Context, _ authz.SubRepoPermissionChecker, opts gitserver.DiffOptions) (*gitserver.DiffFileIterator, error) {
-		// This provides a diff that will resolve to 1 added line, 1 changed
-		// line, and 3 deleted lines.
+	gitserverClient.DiffFunc.SetDefbultHook(func(_ context.Context, _ buthz.SubRepoPermissionChecker, opts gitserver.DiffOptions) (*gitserver.DiffFileIterbtor, error) {
+		// This provides b diff thbt will resolve to 1 bdded line, 1 chbnged
+		// line, bnd 3 deleted lines.
 		const testGitHubDiff = `
-diff --git a/test.py b/test.py
+diff --git b/test.py b/test.py
 index 884601b..c4886d5 100644
---- a/test.py
+--- b/test.py
 +++ b/test.py
 @@ -1,6 +1,4 @@
-+# square makes a value squarer.
- def square(a):
++# squbre mbkes b vblue squbrer.
+ def squbre(b):
 -    """
--    square makes a value squarer.
+-    squbre mbkes b vblue squbrer.
 -    """
 
--    return a * a
-+    return pow(a, 2)
+-    return b * b
++    return pow(b, 2)
 
 `
-		return gitserver.NewDiffFileIterator(io.NopCloser(strings.NewReader(testGitHubDiff))), nil
+		return gitserver.NewDiffFileIterbtor(io.NopCloser(strings.NewRebder(testGitHubDiff))), nil
 	})
-	gitserverClient.ResolveRevisionFunc.SetDefaultHook(func(context.Context, api.RepoName, string, gitserver.ResolveRevisionOptions) (api.CommitID, error) {
-		return api.CommitID(generateFakeCommitID()), nil
+	gitserverClient.ResolveRevisionFunc.SetDefbultHook(func(context.Context, bpi.RepoNbme, string, gitserver.ResolveRevisionOptions) (bpi.CommitID, error) {
+		return bpi.CommitID(generbteFbkeCommitID()), nil
 	})
 
-	state.MockClient = gitserverClient
-	return state
+	stbte.MockClient = gitserverClient
+	return stbte
 }
 
-func generateFakeCommitID() string {
-	// Generate a random byte slice with 20 bytes (160 bits)
-	commitBytes := make([]byte, 20)
-	_, err := rand.Read(commitBytes)
+func generbteFbkeCommitID() string {
+	// Generbte b rbndom byte slice with 20 bytes (160 bits)
+	commitBytes := mbke([]byte, 20)
+	_, err := rbnd.Rebd(commitBytes)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	// Convert the byte slice to a hexadecimal string
+	// Convert the byte slice to b hexbdecimbl string
 	commitID := hex.EncodeToString(commitBytes)
 
 	return commitID
 }
 
-// Unmock resets the mocks set up by MockGitHubChangesetSync.
-func (state *MockedChangesetSyncState) Unmock() {
-	repoupdater.MockRepoLookup = state.mockRepoLookup
+// Unmock resets the mocks set up by MockGitHubChbngesetSync.
+func (stbte *MockedChbngesetSyncStbte) Unmock() {
+	repoupdbter.MockRepoLookup = stbte.mockRepoLookup
 }

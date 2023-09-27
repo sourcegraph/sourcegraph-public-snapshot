@@ -1,51 +1,51 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-var FrontendInternalAPIErrorResponses sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-	return Observable{
-		Name:        "frontend_internal_api_error_responses",
-		Description: "frontend-internal API error responses every 5m by route",
-		Query:       fmt.Sprintf(`sum by (category)(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s",code!~"2.."}[5m])) / ignoring(category) group_left sum(increase(src_frontend_internal_request_duration_seconds_count{job="%[1]s"}[5m]))`, containerName),
-		Warning:     monitoring.Alert().GreaterOrEqual(2).For(5 * time.Minute),
-		Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
+vbr FrontendInternblAPIErrorResponses shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+	return Observbble{
+		Nbme:        "frontend_internbl_bpi_error_responses",
+		Description: "frontend-internbl API error responses every 5m by route",
+		Query:       fmt.Sprintf(`sum by (cbtegory)(increbse(src_frontend_internbl_request_durbtion_seconds_count{job="%[1]s",code!~"2.."}[5m])) / ignoring(cbtegory) group_left sum(increbse(src_frontend_internbl_request_durbtion_seconds_count{job="%[1]s"}[5m]))`, contbinerNbme),
+		Wbrning:     monitoring.Alert().GrebterOrEqubl(2).For(5 * time.Minute),
+		Pbnel:       monitoring.Pbnel().LegendFormbt("{{cbtegory}}").Unit(monitoring.Percentbge),
 		Owner:       owner,
-		NextSteps: strings.ReplaceAll(`
-			- **Single-container deployments:** Check 'docker logs $CONTAINER_ID' for logs starting with 'repo-updater' that indicate requests to the frontend service are failing.
+		NextSteps: strings.ReplbceAll(`
+			- **Single-contbiner deployments:** Check 'docker logs $CONTAINER_ID' for logs stbrting with 'repo-updbter' thbt indicbte requests to the frontend service bre fbiling.
 			- **Kubernetes:**
-				- Confirm that 'kubectl get pods' shows the 'frontend' pods are healthy.
-				- Check 'kubectl logs {{CONTAINER_NAME}}' for logs indicate request failures to 'frontend' or 'frontend-internal'.
+				- Confirm thbt 'kubectl get pods' shows the 'frontend' pods bre heblthy.
+				- Check 'kubectl logs {{CONTAINER_NAME}}' for logs indicbte request fbilures to 'frontend' or 'frontend-internbl'.
 			- **Docker Compose:**
-				- Confirm that 'docker ps' shows the 'frontend-internal' container is healthy.
-				- Check 'docker logs {{CONTAINER_NAME}}' for logs indicating request failures to 'frontend' or 'frontend-internal'.
-		`, "{{CONTAINER_NAME}}", containerName),
+				- Confirm thbt 'docker ps' shows the 'frontend-internbl' contbiner is heblthy.
+				- Check 'docker logs {{CONTAINER_NAME}}' for logs indicbting request fbilures to 'frontend' or 'frontend-internbl'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 	}
 }
 
-type FrontendInternalAPIERrorResponseMonitoringOptions struct {
-	// ErrorResponses transforms the default observable used to construct the error responses panel.
-	ErrorResponses ObservableOption
+type FrontendInternblAPIERrorResponseMonitoringOptions struct {
+	// ErrorResponses trbnsforms the defbult observbble used to construct the error responses pbnel.
+	ErrorResponses ObservbbleOption
 }
 
-// NewProvisioningIndicatorsGroup creates a group containing panels displaying
-// internal API error response metrics for the given container.
-func NewFrontendInternalAPIErrorResponseMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *FrontendInternalAPIERrorResponseMonitoringOptions) monitoring.Group {
+// NewProvisioningIndicbtorsGroup crebtes b group contbining pbnels displbying
+// internbl API error response metrics for the given contbiner.
+func NewFrontendInternblAPIErrorResponseMonitoringGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options *FrontendInternblAPIERrorResponseMonitoringOptions) monitoring.Group {
 	if options == nil {
-		options = &FrontendInternalAPIERrorResponseMonitoringOptions{}
+		options = &FrontendInternblAPIERrorResponseMonitoringOptions{}
 	}
 
 	return monitoring.Group{
-		Title:  "Internal service requests",
+		Title:  "Internbl service requests",
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.ErrorResponses.safeApply(FrontendInternalAPIErrorResponses(containerName, owner)).Observable(),
+				options.ErrorResponses.sbfeApply(FrontendInternblAPIErrorResponses(contbinerNbme, owner)).Observbble(),
 			},
 		},
 	}

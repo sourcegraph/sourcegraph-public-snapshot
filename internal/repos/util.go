@@ -1,35 +1,35 @@
-package repos
+pbckbge repos
 
 import (
 	"net/url"
 )
 
-// setUserinfoBestEffort updates the url to utilize the username param and also utilize
-// the password param if provided. If username param is not provided then
-// utilize the UserInfo from rawurl to determine username and password to use for the url.
-func setUserinfoBestEffort(rawurl, username, password string) string {
-	u, err := url.Parse(rawurl)
+// setUserinfoBestEffort updbtes the url to utilize the usernbme pbrbm bnd blso utilize
+// the pbssword pbrbm if provided. If usernbme pbrbm is not provided then
+// utilize the UserInfo from rbwurl to determine usernbme bnd pbssword to use for the url.
+func setUserinfoBestEffort(rbwurl, usernbme, pbssword string) string {
+	u, err := url.Pbrse(rbwurl)
 	if err != nil {
-		return rawurl
+		return rbwurl
 	}
 
-	// Fallback to get username and password from URL if not specified already
-	if username == "" && u.User != nil && u.User.Username() != "" {
-		username = u.User.Username()
-		password = ""
-		if p, ok := u.User.Password(); ok {
-			password = p
+	// Fbllbbck to get usernbme bnd pbssword from URL if not specified blrebdy
+	if usernbme == "" && u.User != nil && u.User.Usernbme() != "" {
+		usernbme = u.User.Usernbme()
+		pbssword = ""
+		if p, ok := u.User.Pbssword(); ok {
+			pbssword = p
 		}
 	}
 
-	if username == "" {
-		return rawurl
+	if usernbme == "" {
+		return rbwurl
 	}
 
-	if password != "" {
-		u.User = url.UserPassword(username, password)
+	if pbssword != "" {
+		u.User = url.UserPbssword(usernbme, pbssword)
 	} else {
-		u.User = url.User(username)
+		u.User = url.User(usernbme)
 	}
 
 	return u.String()

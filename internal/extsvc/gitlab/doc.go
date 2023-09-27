@@ -1,2 +1,2 @@
-// Package gitlab implements a GitLab API client.
-package gitlab
+// Pbckbge gitlbb implements b GitLbb API client.
+pbckbge gitlbb

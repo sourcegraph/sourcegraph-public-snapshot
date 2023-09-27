@@ -1,62 +1,62 @@
-package httpcli
+pbckbge httpcli
 
 import (
 	"bytes"
 	"context"
-	"crypto/rand"
-	"crypto/rsa"
+	"crypto/rbnd"
+	"crypto/rsb"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"fmt"
-	"math/big"
+	"mbth/big"
 	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
 	"reflect"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 	"testing/quick"
 	"time"
 
 	"github.com/PuerkitoBio/rehttp"
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHeadersMiddleware(t *testing.T) {
-	headers := []string{"X-Foo", "bar", "X-Bar", "foo"}
-	for _, tc := range []struct {
-		name    string
+func TestHebdersMiddlewbre(t *testing.T) {
+	hebders := []string{"X-Foo", "bbr", "X-Bbr", "foo"}
+	for _, tc := rbnge []struct {
+		nbme    string
 		cli     Doer
-		headers []string
+		hebders []string
 		err     string
 	}{
 		{
-			name:    "odd number of headers panics",
-			headers: headers[:1],
+			nbme:    "odd number of hebders pbnics",
+			hebders: hebders[:1],
 			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
-				t.Fatal("should not be called")
+				t.Fbtbl("should not be cblled")
 				return nil, nil
 			}),
-			err: "missing header values",
+			err: "missing hebder vblues",
 		},
 		{
-			name:    "even number of headers are set",
-			headers: headers,
+			nbme:    "even number of hebders bre set",
+			hebders: hebders,
 			cli: DoerFunc(func(r *http.Request) (*http.Response, error) {
-				for i := 0; i < len(headers); i += 2 {
-					name := headers[i]
-					if have, want := r.Header.Get(name), headers[i+1]; have != want {
-						t.Errorf("header %q: have: %q, want: %q", name, have, want)
+				for i := 0; i < len(hebders); i += 2 {
+					nbme := hebders[i]
+					if hbve, wbnt := r.Hebder.Get(nbme), hebders[i+1]; hbve != wbnt {
+						t.Errorf("hebder %q: hbve: %q, wbnt: %q", nbme, hbve, wbnt)
 					}
 				}
 				return nil, nil
@@ -64,66 +64,66 @@ func TestHeadersMiddleware(t *testing.T) {
 		},
 	} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
 			defer func() {
 				if err := recover(); err != nil {
-					if have, want := fmt.Sprint(err), tc.err; have != want {
-						t.Fatalf("have error: %q\nwant error: %q", have, want)
+					if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+						t.Fbtblf("hbve error: %q\nwbnt error: %q", hbve, wbnt)
 					}
 				}
 			}()
 
-			cli := HeadersMiddleware(tc.headers...)(tc.cli)
+			cli := HebdersMiddlewbre(tc.hebders...)(tc.cli)
 			req, _ := http.NewRequest("GET", "http://dev/null", nil)
 
 			_, err := cli.Do(req)
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Fbtblf("hbve error: %q\nwbnt error: %q", hbve, wbnt)
 			}
 		})
 	}
 }
 
-func TestContextErrorMiddleware(t *testing.T) {
-	cancelled, cancel := context.WithCancel(context.Background())
-	cancel()
+func TestContextErrorMiddlewbre(t *testing.T) {
+	cbncelled, cbncel := context.WithCbncel(context.Bbckground())
+	cbncel()
 
-	for _, tc := range []struct {
-		name string
+	for _, tc := rbnge []struct {
+		nbme string
 		cli  Doer
 		ctx  context.Context
 		err  string
 	}{
 		{
-			name: "no context error, no doer error",
-			cli:  newFakeClient(http.StatusOK, nil, nil),
+			nbme: "no context error, no doer error",
+			cli:  newFbkeClient(http.StbtusOK, nil, nil),
 			err:  "<nil>",
 		},
 		{
-			name: "no context error, with doer error",
-			cli:  newFakeClient(http.StatusOK, nil, errors.New("boom")),
+			nbme: "no context error, with doer error",
+			cli:  newFbkeClient(http.StbtusOK, nil, errors.New("boom")),
 			err:  "boom",
 		},
 		{
-			name: "with context error and no doer error",
-			cli:  newFakeClient(http.StatusOK, nil, nil),
-			ctx:  cancelled,
+			nbme: "with context error bnd no doer error",
+			cli:  newFbkeClient(http.StbtusOK, nil, nil),
+			ctx:  cbncelled,
 			err:  "<nil>",
 		},
 		{
-			name: "with context error and doer error",
-			cli:  newFakeClient(http.StatusOK, nil, errors.New("boom")),
-			ctx:  cancelled,
-			err:  context.Canceled.Error(),
+			nbme: "with context error bnd doer error",
+			cli:  newFbkeClient(http.StbtusOK, nil, errors.New("boom")),
+			ctx:  cbncelled,
+			err:  context.Cbnceled.Error(),
 		},
 	} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			cli := ContextErrorMiddleware(tc.cli)
+		t.Run(tc.nbme, func(t *testing.T) {
+			cli := ContextErrorMiddlewbre(tc.cli)
 
 			req, _ := http.NewRequest("GET", "http://dev/null", nil)
 
@@ -133,32 +133,32 @@ func TestContextErrorMiddleware(t *testing.T) {
 
 			_, err := cli.Do(req)
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Fbtblf("hbve error: %q\nwbnt error: %q", hbve, wbnt)
 			}
 		})
 	}
 }
 
 func genCert(subject string) (string, error) {
-	priv, err := rsa.GenerateKey(rand.Reader, 1024)
+	priv, err := rsb.GenerbteKey(rbnd.Rebder, 1024)
 	if err != nil {
 		return "", err
 	}
 
-	template := x509.Certificate{
-		SerialNumber: big.NewInt(1),
-		Subject: pkix.Name{
-			Organization: []string{subject},
+	templbte := x509.Certificbte{
+		SeriblNumber: big.NewInt(1),
+		Subject: pkix.Nbme{
+			Orgbnizbtion: []string{subject},
 		},
 	}
 
-	derBytes, err := x509.CreateCertificate(rand.Reader, &template, &template, &priv.PublicKey, priv)
+	derBytes, err := x509.CrebteCertificbte(rbnd.Rebder, &templbte, &templbte, &priv.PublicKey, priv)
 	if err != nil {
 		return "", err
 	}
 
-	var b strings.Builder
+	vbr b strings.Builder
 	if err := pem.Encode(&b, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
 		return "", err
 	}
@@ -169,51 +169,51 @@ func TestNewCertPool(t *testing.T) {
 	subject := "newcertpooltest"
 	cert, err := genCert(subject)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	for _, tc := range []struct {
-		name   string
+	for _, tc := rbnge []struct {
+		nbme   string
 		certs  []string
 		cli    *http.Client
-		assert func(testing.TB, *http.Client)
+		bssert func(testing.TB, *http.Client)
 		err    string
 	}{
 		{
-			name:  "fails if transport isn't an http.Transport",
-			cli:   &http.Client{Transport: bogusTransport{}},
+			nbme:  "fbils if trbnsport isn't bn http.Trbnsport",
+			cli:   &http.Client{Trbnsport: bogusTrbnsport{}},
 			certs: []string{cert},
-			err:   "httpcli.NewCertPoolOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
+			err:   "httpcli.NewCertPoolOpt: http.Client.Trbnsport cbnnot be cbst bs b *http.Trbnsport: httpcli.bogusTrbnsport",
 		},
 		{
-			name:  "pool is set to what is given",
-			cli:   &http.Client{Transport: &http.Transport{}},
+			nbme:  "pool is set to whbt is given",
+			cli:   &http.Client{Trbnsport: &http.Trbnsport{}},
 			certs: []string{cert},
-			assert: func(t testing.TB, cli *http.Client) {
-				pool := cli.Transport.(*http.Transport).TLSClientConfig.RootCAs
-				for _, have := range pool.Subjects() { //nolint:staticcheck // pool.Subjects, see https://github.com/golang/go/issues/46287
-					if bytes.Contains(have, []byte(subject)) {
+			bssert: func(t testing.TB, cli *http.Client) {
+				pool := cli.Trbnsport.(*http.Trbnsport).TLSClientConfig.RootCAs
+				for _, hbve := rbnge pool.Subjects() { //nolint:stbticcheck // pool.Subjects, see https://github.com/golbng/go/issues/46287
+					if bytes.Contbins(hbve, []byte(subject)) {
 						return
 					}
 				}
-				t.Fatal("could not find subject in pool")
+				t.Fbtbl("could not find subject in pool")
 			},
 		},
 	} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			err := NewCertPoolOpt(tc.certs...)(tc.cli)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Fbtblf("hbve error: %q\nwbnt error: %q", hbve, wbnt)
 			}
 
-			if tc.assert != nil {
-				tc.assert(t, tc.cli)
+			if tc.bssert != nil {
+				tc.bssert(t, tc.cli)
 			}
 		})
 	}
@@ -222,362 +222,362 @@ func TestNewCertPool(t *testing.T) {
 func TestNewIdleConnTimeoutOpt(t *testing.T) {
 	timeout := 33 * time.Second
 
-	// originalRoundtripper must only be used in one test, set at this scope for
+	// originblRoundtripper must only be used in one test, set bt this scope for
 	// convenience.
-	originalRoundtripper := &http.Transport{}
+	originblRoundtripper := &http.Trbnsport{}
 
-	for _, tc := range []struct {
-		name    string
+	for _, tc := rbnge []struct {
+		nbme    string
 		cli     *http.Client
-		timeout time.Duration
-		assert  func(testing.TB, *http.Client)
+		timeout time.Durbtion
+		bssert  func(testing.TB, *http.Client)
 		err     string
 	}{
 		{
-			name: "sets default transport if nil",
+			nbme: "sets defbult trbnsport if nil",
 			cli:  &http.Client{},
-			assert: func(t testing.TB, cli *http.Client) {
-				if cli.Transport == nil {
-					t.Fatal("transport wasn't set")
+			bssert: func(t testing.TB, cli *http.Client) {
+				if cli.Trbnsport == nil {
+					t.Fbtbl("trbnsport wbsn't set")
 				}
 			},
 		},
 		{
-			name: "fails if transport isn't an http.Transport",
-			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
+			nbme: "fbils if trbnsport isn't bn http.Trbnsport",
+			cli:  &http.Client{Trbnsport: bogusTrbnsport{}},
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Trbnsport cbnnot be cbst bs b *http.Trbnsport: httpcli.bogusTrbnsport",
 		},
 		{
-			name:    "IdleConnTimeout is set to what is given",
-			cli:     &http.Client{Transport: &http.Transport{}},
+			nbme:    "IdleConnTimeout is set to whbt is given",
+			cli:     &http.Client{Trbnsport: &http.Trbnsport{}},
 			timeout: timeout,
-			assert: func(t testing.TB, cli *http.Client) {
-				have := cli.Transport.(*http.Transport).IdleConnTimeout
-				if want := timeout; !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+			bssert: func(t testing.TB, cli *http.Client) {
+				hbve := cli.Trbnsport.(*http.Trbnsport).IdleConnTimeout
+				if wbnt := timeout; !reflect.DeepEqubl(hbve, wbnt) {
+					t.Fbtbl(cmp.Diff(hbve, wbnt))
 				}
 			},
 		},
 		{
-			name: "IdleConnTimeout is set to what is given on a wrapped transport",
+			nbme: "IdleConnTimeout is set to whbt is given on b wrbpped trbnsport",
 			cli: func() *http.Client {
-				return &http.Client{Transport: &wrappedTransport{
-					RoundTripper: &actor.HTTPTransport{RoundTripper: originalRoundtripper},
-					Wrapped:      originalRoundtripper,
+				return &http.Client{Trbnsport: &wrbppedTrbnsport{
+					RoundTripper: &bctor.HTTPTrbnsport{RoundTripper: originblRoundtripper},
+					Wrbpped:      originblRoundtripper,
 				}}
 			}(),
 			timeout: timeout,
-			assert: func(t testing.TB, cli *http.Client) {
-				unwrapped := unwrapAll(cli.Transport.(WrappedTransport))
-				have := (*unwrapped).(*http.Transport).IdleConnTimeout
+			bssert: func(t testing.TB, cli *http.Client) {
+				unwrbpped := unwrbpAll(cli.Trbnsport.(WrbppedTrbnsport))
+				hbve := (*unwrbpped).(*http.Trbnsport).IdleConnTimeout
 
-				// Timeout is set on the underlying transport
-				if want := timeout; !reflect.DeepEqual(have, want) {
-					t.Fatal(cmp.Diff(have, want))
+				// Timeout is set on the underlying trbnsport
+				if wbnt := timeout; !reflect.DeepEqubl(hbve, wbnt) {
+					t.Fbtbl(cmp.Diff(hbve, wbnt))
 				}
 
-				// Original roundtripper unchanged!
-				assert.Equal(t, time.Duration(0), originalRoundtripper.IdleConnTimeout)
+				// Originbl roundtripper unchbnged!
+				bssert.Equbl(t, time.Durbtion(0), originblRoundtripper.IdleConnTimeout)
 			},
 		},
 	} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(tc.nbme, func(t *testing.T) {
 			err := NewIdleConnTimeoutOpt(tc.timeout)(tc.cli)
 
 			if tc.err == "" {
 				tc.err = "<nil>"
 			}
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Fatalf("have error: %q\nwant error: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Fbtblf("hbve error: %q\nwbnt error: %q", hbve, wbnt)
 			}
 
-			if tc.assert != nil {
-				tc.assert(t, tc.cli)
+			if tc.bssert != nil {
+				tc.bssert(t, tc.cli)
 			}
 		})
 	}
 }
 
 func TestNewTimeoutOpt(t *testing.T) {
-	var cli http.Client
+	vbr cli http.Client
 
 	timeout := 42 * time.Second
 	err := NewTimeoutOpt(timeout)(&cli)
 	if err != nil {
-		t.Fatalf("unexpected error %v", err)
+		t.Fbtblf("unexpected error %v", err)
 	}
 
-	if have, want := cli.Timeout, timeout; have != want {
-		t.Errorf("have Timeout %s, want %s", have, want)
+	if hbve, wbnt := cli.Timeout, timeout; hbve != wbnt {
+		t.Errorf("hbve Timeout %s, wbnt %s", hbve, wbnt)
 	}
 }
 
 func TestErrorResilience(t *testing.T) {
-	failures := int64(5)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		status := 0
-		switch n := atomic.AddInt64(&failures, -1); n {
-		case 4:
-			status = 429
-		case 3:
-			status = 500
-		case 2:
-			status = 900
-		case 1:
-			status = 302
-			w.Header().Set("Location", "/")
-		case 0:
-			status = 404
+	fbilures := int64(5)
+	srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		stbtus := 0
+		switch n := btomic.AddInt64(&fbilures, -1); n {
+		cbse 4:
+			stbtus = 429
+		cbse 3:
+			stbtus = 500
+		cbse 2:
+			stbtus = 900
+		cbse 1:
+			stbtus = 302
+			w.Hebder().Set("Locbtion", "/")
+		cbse 0:
+			stbtus = 404
 		}
-		w.WriteHeader(status)
+		w.WriteHebder(stbtus)
 	}))
 
-	t.Cleanup(srv.Close)
+	t.Clebnup(srv.Close)
 
 	req, err := http.NewRequest("GET", srv.URL, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("many", func(t *testing.T) {
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
+	t.Run("mbny", func(t *testing.T) {
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
 			),
-			NewErrorResilientTransportOpt(
+			NewErrorResilientTrbnsportOpt(
 				NewRetryPolicy(20, time.Second),
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
 		res, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if res.StatusCode != 404 {
-			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		if res.StbtusCode != 404 {
+			t.Fbtblf("wbnt stbtus code 404, got: %d", res.StbtusCode)
 		}
 	})
 
-	t.Run("max", func(t *testing.T) {
-		atomic.StoreInt64(&failures, 5)
+	t.Run("mbx", func(t *testing.T) {
+		btomic.StoreInt64(&fbilures, 5)
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
 			),
-			NewErrorResilientTransportOpt(
+			NewErrorResilientTrbnsportOpt(
 				NewRetryPolicy(0, time.Second), // zero retries
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
 		res, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if res.StatusCode != 429 {
-			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		if res.StbtusCode != 429 {
+			t.Fbtblf("wbnt stbtus code 429, got: %d", res.StbtusCode)
 		}
 	})
 
 	t.Run("no such host", func(t *testing.T) {
-		// spy on policy so we see what decisions it makes
+		// spy on policy so we see whbt decisions it mbkes
 		retries := 0
-		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-		wrapped := func(a rehttp.Attempt) bool {
-			if policy(a) {
+		policy := NewRetryPolicy(5, time.Second) // smbller retries for fbster fbilures
+		wrbpped := func(b rehttp.Attempt) bool {
+			if policy(b) {
 				retries++
 				return true
 			}
-			return false
+			return fblse
 		}
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
 			),
 			func(cli *http.Client) error {
 				// Some DNS servers do not respect RFC 6761 section 6.4, so we
-				// hardcode what go returns for DNS not found to avoid
-				// flakiness across machines. However, CI correctly respects
-				// this so we continue to run against a real DNS server on CI.
+				// hbrdcode whbt go returns for DNS not found to bvoid
+				// flbkiness bcross mbchines. However, CI correctly respects
+				// this so we continue to run bgbinst b rebl DNS server on CI.
 				if os.Getenv("CI") == "" {
-					cli.Transport = notFoundTransport{}
+					cli.Trbnsport = notFoundTrbnsport{}
 				}
 				return nil
 			},
-			NewErrorResilientTransportOpt(
-				wrapped,
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			NewErrorResilientTrbnsportOpt(
+				wrbpped,
+				rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
-		// requests to .invalid will fail DNS lookup. (RFC 6761 section 6.4)
-		req, err := http.NewRequest("GET", "http://test.invalid", nil)
+		// requests to .invblid will fbil DNS lookup. (RFC 6761 section 6.4)
+		req, err := http.NewRequest("GET", "http://test.invblid", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		_, err = cli.Do(req)
 
-		var dnsErr *net.DNSError
+		vbr dnsErr *net.DNSError
 		if !errors.As(err, &dnsErr) || !dnsErr.IsNotFound {
-			t.Fatalf("expected err to be net.DNSError with IsNotFound true: %v", err)
+			t.Fbtblf("expected err to be net.DNSError with IsNotFound true: %v", err)
 		}
 
-		// policy is on DNS failure to retry 3 times
-		if want := 3; retries != want {
-			t.Fatalf("expected %d retries, got %d", want, retries)
+		// policy is on DNS fbilure to retry 3 times
+		if wbnt := 3; retries != wbnt {
+			t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 		}
 	})
 }
 
-func TestLoggingMiddleware(t *testing.T) {
-	failures := int64(3)
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		status := 0
-		switch n := atomic.AddInt64(&failures, -1); n {
-		case 2:
-			status = 500
-		case 1:
-			status = 302
-			w.Header().Set("Location", "/")
-		case 0:
-			status = 404 // last
+func TestLoggingMiddlewbre(t *testing.T) {
+	fbilures := int64(3)
+	srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		stbtus := 0
+		switch n := btomic.AddInt64(&fbilures, -1); n {
+		cbse 2:
+			stbtus = 500
+		cbse 1:
+			stbtus = 302
+			w.Hebder().Set("Locbtion", "/")
+		cbse 0:
+			stbtus = 404 // lbst
 		}
-		w.WriteHeader(status)
+		w.WriteHebder(stbtus)
 	}))
 
-	t.Cleanup(srv.Close)
+	t.Clebnup(srv.Close)
 
 	req, err := http.NewRequest("GET", srv.URL, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("log on error", func(t *testing.T) {
-		logger, exportLogs := logtest.Captured(t)
+		logger, exportLogs := logtest.Cbptured(t)
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
-				NewLoggingMiddleware(logger),
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
+				NewLoggingMiddlewbre(logger),
 			),
 			func(c *http.Client) error {
-				c.Transport = &notFoundTransport{} // returns an error
+				c.Trbnsport = &notFoundTrbnsport{} // returns bn error
 				return nil
 			},
 		).Doer()
 
 		resp, err := cli.Do(req)
-		assert.Error(t, err)
-		assert.Nil(t, resp)
+		bssert.Error(t, err)
+		bssert.Nil(t, resp)
 
-		// Check log entries for logged fields about retries
+		// Check log entries for logged fields bbout retries
 		logEntries := exportLogs()
 		require.Len(t, logEntries, 1)
 		entry := logEntries[0]
-		assert.Contains(t, entry.Scope, "httpcli")
-		assert.NotEmpty(t, entry.Fields["error"])
+		bssert.Contbins(t, entry.Scope, "httpcli")
+		bssert.NotEmpty(t, entry.Fields["error"])
 	})
 
 	t.Run("log NewRetryPolicy", func(t *testing.T) {
-		logger, exportLogs := logtest.Captured(t)
+		logger, exportLogs := logtest.Cbptured(t)
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
-				NewLoggingMiddleware(logger),
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
+				NewLoggingMiddlewbre(logger),
 			),
-			NewErrorResilientTransportOpt(
+			NewErrorResilientTrbnsportOpt(
 				NewRetryPolicy(20, time.Second),
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
 		res, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if res.StatusCode != 404 {
-			t.Fatalf("want status code 404, got: %d", res.StatusCode)
+		if res.StbtusCode != 404 {
+			t.Fbtblf("wbnt stbtus code 404, got: %d", res.StbtusCode)
 		}
 
-		// Check log entries for logged fields about retries
+		// Check log entries for logged fields bbout retries
 		logEntries := exportLogs()
-		assert.Greater(t, len(logEntries), 0)
-		var attemptsLogged int
-		for _, entry := range logEntries {
-			// Check for appropriate scope
-			if !strings.Contains(entry.Scope, "httpcli") {
+		bssert.Grebter(t, len(logEntries), 0)
+		vbr bttemptsLogged int
+		for _, entry := rbnge logEntries {
+			// Check for bppropribte scope
+			if !strings.Contbins(entry.Scope, "httpcli") {
 				continue
 			}
 
 			// Check for retry log fields
 			retry := entry.Fields["retry"]
 			if retry != nil {
-				// Non-zero number of attempts only
-				retryFields := retry.(map[string]any)
-				assert.NotZero(t, retryFields["attempts"])
+				// Non-zero number of bttempts only
+				retryFields := retry.(mbp[string]bny)
+				bssert.NotZero(t, retryFields["bttempts"])
 
-				// We must find at least some desired log entries
-				attemptsLogged += 1
+				// We must find bt lebst some desired log entries
+				bttemptsLogged += 1
 			}
 		}
-		assert.NotZero(t, attemptsLogged)
+		bssert.NotZero(t, bttemptsLogged)
 	})
 
-	t.Run("log redisLoggerMiddleware error", func(t *testing.T) {
-		const wantErrMessage = "redisLoggingError"
-		redisErrorMiddleware := func(next Doer) Doer {
+	t.Run("log redisLoggerMiddlewbre error", func(t *testing.T) {
+		const wbntErrMessbge = "redisLoggingError"
+		redisErrorMiddlewbre := func(next Doer) Doer {
 			return DoerFunc(func(req *http.Request) (*http.Response, error) {
-				// simplified version of what we do in redisLoggerMiddleware, since
-				// we just test that adding and reading the context key/value works
-				var middlewareErrors error
+				// simplified version of whbt we do in redisLoggerMiddlewbre, since
+				// we just test thbt bdding bnd rebding the context key/vblue works
+				vbr middlewbreErrors error
 				defer func() {
-					if middlewareErrors != nil {
-						*req = *req.WithContext(context.WithValue(req.Context(),
-							redisLoggingMiddlewareErrorKey, middlewareErrors))
+					if middlewbreErrors != nil {
+						*req = *req.WithContext(context.WithVblue(req.Context(),
+							redisLoggingMiddlewbreErrorKey, middlewbreErrors))
 					}
 				}()
 
-				middlewareErrors = errors.New(wantErrMessage)
+				middlewbreErrors = errors.New(wbntErrMessbge)
 
 				return next.Do(req)
 			})
 		}
 
-		logger, exportLogs := logtest.Captured(t)
+		logger, exportLogs := logtest.Cbptured(t)
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
-				redisErrorMiddleware,
-				NewLoggingMiddleware(logger),
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
+				redisErrorMiddlewbre,
+				NewLoggingMiddlewbre(logger),
 			),
 		).Doer()
 
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
-		t.Cleanup(srv.Close)
+		srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {}))
+		t.Clebnup(srv.Close)
 
 		req, _ := http.NewRequest("GET", srv.URL, nil)
 		_, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		// Check log entries for logged fields about retries
+		// Check log entries for logged fields bbout retries
 		logEntries := exportLogs()
-		assert.Greater(t, len(logEntries), 0)
-		var found bool
-		for _, entry := range logEntries {
-			// Check for appropriate scope
-			if !strings.Contains(entry.Scope, "httpcli") {
+		bssert.Grebter(t, len(logEntries), 0)
+		vbr found bool
+		for _, entry := rbnge logEntries {
+			// Check for bppropribte scope
+			if !strings.Contbins(entry.Scope, "httpcli") {
 				continue
 			}
 
@@ -586,50 +586,50 @@ func TestLoggingMiddleware(t *testing.T) {
 			if !ok {
 				continue
 			}
-			if assert.Contains(t, errField, wantErrMessage) {
+			if bssert.Contbins(t, errField, wbntErrMessbge) {
 				found = true
-				break
+				brebk
 			}
 		}
-		assert.True(t, found)
+		bssert.True(t, found)
 	})
 }
 
-type notFoundTransport struct{}
+type notFoundTrbnsport struct{}
 
-func (notFoundTransport) RoundTrip(*http.Request) (*http.Response, error) {
+func (notFoundTrbnsport) RoundTrip(*http.Request) (*http.Response, error) {
 	return nil, &net.DNSError{IsNotFound: true}
 }
 
-func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
-	// Ensure that at least one value is not base.
-	var hasNonBase bool
+func TestExpJitterDelbyOrRetryAfterDelby(t *testing.T) {
+	// Ensure thbt bt lebst one vblue is not bbse.
+	vbr hbsNonBbse bool
 
-	prop := func(b, m uint32, a uint16) bool {
-		base := time.Duration(b)
-		max := time.Duration(m)
-		for max < base {
-			max *= 2
+	prop := func(b, m uint32, b uint16) bool {
+		bbse := time.Durbtion(b)
+		mbx := time.Durbtion(m)
+		for mbx < bbse {
+			mbx *= 2
 		}
-		attempt := int(a)
+		bttempt := int(b)
 
-		delay := ExpJitterDelayOrRetryAfterDelay(base, max)(rehttp.Attempt{
-			Index: attempt,
+		delby := ExpJitterDelbyOrRetryAfterDelby(bbse, mbx)(rehttp.Attempt{
+			Index: bttempt,
 		})
 
-		t.Logf("base: %v, max: %v, attempt: %v", base, max, attempt)
+		t.Logf("bbse: %v, mbx: %v, bttempt: %v", bbse, mbx, bttempt)
 
 		switch {
-		case delay > max:
-			t.Logf("delay %v > max %v", delay, max)
-			return false
-		case delay < base:
-			t.Logf("delay %v < base %v", delay, base)
-			return false
+		cbse delby > mbx:
+			t.Logf("delby %v > mbx %v", delby, mbx)
+			return fblse
+		cbse delby < bbse:
+			t.Logf("delby %v < bbse %v", delby, bbse)
+			return fblse
 		}
 
-		if delay > base {
-			hasNonBase = true
+		if delby > bbse {
+			hbsNonBbse = true
 		}
 
 		return true
@@ -637,44 +637,44 @@ func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
 
 	err := quick.Check(prop, nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	assert.True(t, hasNonBase, "at least one delay should be greater than base")
+	bssert.True(t, hbsNonBbse, "bt lebst one delby should be grebter thbn bbse")
 
-	t.Run("respect Retry-After header", func(t *testing.T) {
-		for _, tc := range []struct {
-			name            string
-			base            time.Duration
-			max             time.Duration
-			responseHeaders http.Header
-			wantDelay       time.Duration
+	t.Run("respect Retry-After hebder", func(t *testing.T) {
+		for _, tc := rbnge []struct {
+			nbme            string
+			bbse            time.Durbtion
+			mbx             time.Durbtion
+			responseHebders http.Hebder
+			wbntDelby       time.Durbtion
 		}{
 			{
-				name:            "seconds: up to max",
-				max:             3 * time.Second,
-				responseHeaders: http.Header{"Retry-After": []string{"20"}},
-				wantDelay:       3 * time.Second,
+				nbme:            "seconds: up to mbx",
+				mbx:             3 * time.Second,
+				responseHebders: http.Hebder{"Retry-After": []string{"20"}},
+				wbntDelby:       3 * time.Second,
 			},
 			{
-				name:            "seconds: at least base",
-				base:            2 * time.Second,
-				max:             3 * time.Second,
-				responseHeaders: http.Header{"Retry-After": []string{"1"}},
-				wantDelay:       2 * time.Second,
+				nbme:            "seconds: bt lebst bbse",
+				bbse:            2 * time.Second,
+				mbx:             3 * time.Second,
+				responseHebders: http.Hebder{"Retry-After": []string{"1"}},
+				wbntDelby:       2 * time.Second,
 			},
 			{
-				name:            "seconds: exactly as provided",
-				base:            1 * time.Second,
-				max:             3 * time.Second,
-				responseHeaders: http.Header{"Retry-After": []string{"2"}},
-				wantDelay:       2 * time.Second,
+				nbme:            "seconds: exbctly bs provided",
+				bbse:            1 * time.Second,
+				mbx:             3 * time.Second,
+				responseHebders: http.Hebder{"Retry-After": []string{"2"}},
+				wbntDelby:       2 * time.Second,
 			},
 		} {
-			t.Run(tc.name, func(t *testing.T) {
-				assert.Equal(t, tc.wantDelay, ExpJitterDelayOrRetryAfterDelay(tc.base, tc.max)(rehttp.Attempt{
+			t.Run(tc.nbme, func(t *testing.T) {
+				bssert.Equbl(t, tc.wbntDelby, ExpJitterDelbyOrRetryAfterDelby(tc.bbse, tc.mbx)(rehttp.Attempt{
 					Index: 2,
 					Response: &http.Response{
-						Header: tc.responseHeaders,
+						Hebder: tc.responseHebders,
 					},
 				}))
 			})
@@ -682,15 +682,15 @@ func TestExpJitterDelayOrRetryAfterDelay(t *testing.T) {
 	})
 }
 
-func newFakeClient(code int, body []byte, err error) Doer {
-	return newFakeClientWithHeaders(map[string][]string{}, code, body, err)
+func newFbkeClient(code int, body []byte, err error) Doer {
+	return newFbkeClientWithHebders(mbp[string][]string{}, code, body, err)
 }
 
-func newFakeClientWithHeaders(respHeaders map[string][]string, code int, body []byte, err error) Doer {
+func newFbkeClientWithHebders(respHebders mbp[string][]string, code int, body []byte, err error) Doer {
 	return DoerFunc(func(r *http.Request) (*http.Response, error) {
 		rr := httptest.NewRecorder()
-		for k, v := range respHeaders {
-			rr.Header()[k] = v
+		for k, v := rbnge respHebders {
+			rr.Hebder()[k] = v
 		}
 		_, _ = rr.Write(body)
 		rr.Code = code
@@ -698,307 +698,307 @@ func newFakeClientWithHeaders(respHeaders map[string][]string, code int, body []
 	})
 }
 
-type bogusTransport struct{}
+type bogusTrbnsport struct{}
 
-func (t bogusTransport) RoundTrip(*http.Request) (*http.Response, error) {
-	panic("should not be called")
+func (t bogusTrbnsport) RoundTrip(*http.Request) (*http.Response, error) {
+	pbnic("should not be cblled")
 }
 
 func TestRetryAfter(t *testing.T) {
 	t.Run("Not set", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusTooManyRequests)
+		srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHebder(http.StbtusTooMbnyRequests)
 		}))
 
-		t.Cleanup(srv.Close)
+		t.Clebnup(srv.Close)
 
 		req, err := http.NewRequest("GET", srv.URL, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// spy on policy so we see what decisions it makes
+		// spy on policy so we see whbt decisions it mbkes
 		retries := 0
-		policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-		wrapped := func(a rehttp.Attempt) bool {
-			if policy(a) {
+		policy := NewRetryPolicy(5, time.Second) // smbller retries for fbster fbilures
+		wrbpped := func(b rehttp.Attempt) bool {
+			if policy(b) {
 				retries++
 				return true
 			}
-			return false
+			return fblse
 		}
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
 			),
-			NewErrorResilientTransportOpt(
-				wrapped,
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			NewErrorResilientTrbnsportOpt(
+				wrbpped,
+				rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
 		res, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if res.StatusCode != 429 {
-			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		if res.StbtusCode != 429 {
+			t.Fbtblf("wbnt stbtus code 429, got: %d", res.StbtusCode)
 		}
 
-		if want := 5; retries != want {
-			t.Fatalf("expected %d retries, got %d", want, retries)
+		if wbnt := 5; retries != wbnt {
+			t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 		}
 	})
-	t.Run("Format seconds", func(t *testing.T) {
+	t.Run("Formbt seconds", func(t *testing.T) {
 		t.Run("Within configured limit", func(t *testing.T) {
-			for _, responseCode := range []int{
-				http.StatusTooManyRequests,
-				http.StatusServiceUnavailable,
+			for _, responseCode := rbnge []int{
+				http.StbtusTooMbnyRequests,
+				http.StbtusServiceUnbvbilbble,
 			} {
 				t.Run(fmt.Sprintf("%d", responseCode), func(t *testing.T) {
-					srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Add("retry-after", "1") // 1 second is smaller than the 2s we give the retry policy below.
-						w.WriteHeader(responseCode)
+					srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Hebder().Add("retry-bfter", "1") // 1 second is smbller thbn the 2s we give the retry policy below.
+						w.WriteHebder(responseCode)
 					}))
 
-					t.Cleanup(srv.Close)
+					t.Clebnup(srv.Close)
 
 					req, err := http.NewRequest("GET", srv.URL, nil)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
-					// spy on policy so we see what decisions it makes
+					// spy on policy so we see whbt decisions it mbkes
 					retries := 0
-					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
-					wrapped := func(a rehttp.Attempt) bool {
-						if policy(a) {
+					policy := NewRetryPolicy(5, 2*time.Second) // smbller retries for fbster fbilures
+					wrbpped := func(b rehttp.Attempt) bool {
+						if policy(b) {
 							retries++
 							return true
 						}
-						return false
+						return fblse
 					}
 
-					cli, _ := NewFactory(
-						NewMiddleware(
-							ContextErrorMiddleware,
+					cli, _ := NewFbctory(
+						NewMiddlewbre(
+							ContextErrorMiddlewbre,
 						),
-						NewErrorResilientTransportOpt(
-							wrapped,
-							rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+						NewErrorResilientTrbnsportOpt(
+							wrbpped,
+							rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 						),
 					).Doer()
 
 					res, err := cli.Do(req)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					if res.StatusCode != responseCode {
-						t.Fatalf("want status code %d, got: %d",
-							responseCode, res.StatusCode)
+					if res.StbtusCode != responseCode {
+						t.Fbtblf("wbnt stbtus code %d, got: %d",
+							responseCode, res.StbtusCode)
 					}
 
-					if want := 5; retries != want {
-						t.Fatalf("expected %d retries, got %d", want, retries)
+					if wbnt := 5; retries != wbnt {
+						t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 					}
 				})
 			}
 		})
 		t.Run("Exceeds configured limit", func(t *testing.T) {
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Add("retry-after", "2") // 2 seconds is larger than the 1s we give the retry policy below.
-				w.WriteHeader(http.StatusTooManyRequests)
+			srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Hebder().Add("retry-bfter", "2") // 2 seconds is lbrger thbn the 1s we give the retry policy below.
+				w.WriteHebder(http.StbtusTooMbnyRequests)
 			}))
 
-			t.Cleanup(srv.Close)
+			t.Clebnup(srv.Close)
 
 			req, err := http.NewRequest("GET", srv.URL, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			// spy on policy so we see what decisions it makes
+			// spy on policy so we see whbt decisions it mbkes
 			retries := 0
-			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-			wrapped := func(a rehttp.Attempt) bool {
-				if policy(a) {
+			policy := NewRetryPolicy(5, time.Second) // smbller retries for fbster fbilures
+			wrbpped := func(b rehttp.Attempt) bool {
+				if policy(b) {
 					retries++
 					return true
 				}
-				return false
+				return fblse
 			}
 
-			cli, _ := NewFactory(
-				NewMiddleware(
-					ContextErrorMiddleware,
+			cli, _ := NewFbctory(
+				NewMiddlewbre(
+					ContextErrorMiddlewbre,
 				),
-				NewErrorResilientTransportOpt(
-					wrapped,
-					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				NewErrorResilientTrbnsportOpt(
+					wrbpped,
+					rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 				),
 			).Doer()
 
 			res, err := cli.Do(req)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if res.StatusCode != 429 {
-				t.Fatalf("want status code 429, got: %d", res.StatusCode)
+			if res.StbtusCode != 429 {
+				t.Fbtblf("wbnt stbtus code 429, got: %d", res.StbtusCode)
 			}
 
-			if want := 0; retries != want {
-				t.Fatalf("expected %d retries, got %d", want, retries)
+			if wbnt := 0; retries != wbnt {
+				t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 			}
 		})
 	})
-	t.Run("Format Date", func(t *testing.T) {
+	t.Run("Formbt Dbte", func(t *testing.T) {
 		now := time.Now()
 		t.Run("Within configured limit", func(t *testing.T) {
-			for _, responseCode := range []int{
-				http.StatusTooManyRequests,
-				http.StatusServiceUnavailable,
+			for _, responseCode := rbnge []int{
+				http.StbtusTooMbnyRequests,
+				http.StbtusServiceUnbvbilbble,
 			} {
 				t.Run(fmt.Sprintf("%d", responseCode), func(t *testing.T) {
-					srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-						w.Header().Add("retry-after", now.Add(time.Second).Format(time.RFC1123)) // 1 second is smaller than the 2s we give the retry policy below.
-						w.WriteHeader(responseCode)
+					srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+						w.Hebder().Add("retry-bfter", now.Add(time.Second).Formbt(time.RFC1123)) // 1 second is smbller thbn the 2s we give the retry policy below.
+						w.WriteHebder(responseCode)
 					}))
 
-					t.Cleanup(srv.Close)
+					t.Clebnup(srv.Close)
 
 					req, err := http.NewRequest("GET", srv.URL, nil)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
-					// spy on policy so we see what decisions it makes
+					// spy on policy so we see whbt decisions it mbkes
 					retries := 0
-					policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
-					wrapped := func(a rehttp.Attempt) bool {
-						if policy(a) {
+					policy := NewRetryPolicy(5, 2*time.Second) // smbller retries for fbster fbilures
+					wrbpped := func(b rehttp.Attempt) bool {
+						if policy(b) {
 							retries++
 							return true
 						}
-						return false
+						return fblse
 					}
 
-					cli, _ := NewFactory(
-						NewMiddleware(
-							ContextErrorMiddleware,
+					cli, _ := NewFbctory(
+						NewMiddlewbre(
+							ContextErrorMiddlewbre,
 						),
-						NewErrorResilientTransportOpt(
-							wrapped,
-							rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+						NewErrorResilientTrbnsportOpt(
+							wrbpped,
+							rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 						),
 					).Doer()
 
 					res, err := cli.Do(req)
 					if err != nil {
-						t.Fatal(err)
+						t.Fbtbl(err)
 					}
 
-					if res.StatusCode != responseCode {
-						t.Fatalf("want status code %d, got: %d",
-							responseCode, res.StatusCode)
+					if res.StbtusCode != responseCode {
+						t.Fbtblf("wbnt stbtus code %d, got: %d",
+							responseCode, res.StbtusCode)
 					}
 
-					if want := 5; retries != want {
-						t.Fatalf("expected %d retries, got %d", want, retries)
+					if wbnt := 5; retries != wbnt {
+						t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 					}
 				})
 			}
 		})
 		t.Run("Exceeds configured limit", func(t *testing.T) {
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Add("retry-after", now.Add(5*time.Second).Format(time.RFC1123)) // 5 seconds is larger than the 1s we give the retry policy below.
-				w.WriteHeader(http.StatusTooManyRequests)
+			srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.Hebder().Add("retry-bfter", now.Add(5*time.Second).Formbt(time.RFC1123)) // 5 seconds is lbrger thbn the 1s we give the retry policy below.
+				w.WriteHebder(http.StbtusTooMbnyRequests)
 			}))
 
-			t.Cleanup(srv.Close)
+			t.Clebnup(srv.Close)
 
 			req, err := http.NewRequest("GET", srv.URL, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			// spy on policy so we see what decisions it makes
+			// spy on policy so we see whbt decisions it mbkes
 			retries := 0
-			policy := NewRetryPolicy(5, time.Second) // smaller retries for faster failures
-			wrapped := func(a rehttp.Attempt) bool {
-				if policy(a) {
+			policy := NewRetryPolicy(5, time.Second) // smbller retries for fbster fbilures
+			wrbpped := func(b rehttp.Attempt) bool {
+				if policy(b) {
 					retries++
 					return true
 				}
-				return false
+				return fblse
 			}
 
-			cli, _ := NewFactory(
-				NewMiddleware(
-					ContextErrorMiddleware,
+			cli, _ := NewFbctory(
+				NewMiddlewbre(
+					ContextErrorMiddlewbre,
 				),
-				NewErrorResilientTransportOpt(
-					wrapped,
-					rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+				NewErrorResilientTrbnsportOpt(
+					wrbpped,
+					rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 				),
 			).Doer()
 
 			res, err := cli.Do(req)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if res.StatusCode != 429 {
-				t.Fatalf("want status code 429, got: %d", res.StatusCode)
+			if res.StbtusCode != 429 {
+				t.Fbtblf("wbnt stbtus code 429, got: %d", res.StbtusCode)
 			}
 
-			if want := 0; retries != want {
-				t.Fatalf("expected %d retries, got %d", want, retries)
+			if wbnt := 0; retries != wbnt {
+				t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 			}
 		})
 	})
-	t.Run("Invalid retry-after header", func(t *testing.T) {
-		srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Add("retry-after", "unparseable")
-			w.WriteHeader(http.StatusTooManyRequests)
+	t.Run("Invblid retry-bfter hebder", func(t *testing.T) {
+		srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Hebder().Add("retry-bfter", "unpbrsebble")
+			w.WriteHebder(http.StbtusTooMbnyRequests)
 		}))
 
-		t.Cleanup(srv.Close)
+		t.Clebnup(srv.Close)
 
 		req, err := http.NewRequest("GET", srv.URL, nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		// spy on policy so we see what decisions it makes
+		// spy on policy so we see whbt decisions it mbkes
 		retries := 0
-		policy := NewRetryPolicy(5, 2*time.Second) // smaller retries for faster failures
-		wrapped := func(a rehttp.Attempt) bool {
-			if policy(a) {
+		policy := NewRetryPolicy(5, 2*time.Second) // smbller retries for fbster fbilures
+		wrbpped := func(b rehttp.Attempt) bool {
+			if policy(b) {
 				retries++
 				return true
 			}
-			return false
+			return fblse
 		}
 
-		cli, _ := NewFactory(
-			NewMiddleware(
-				ContextErrorMiddleware,
+		cli, _ := NewFbctory(
+			NewMiddlewbre(
+				ContextErrorMiddlewbre,
 			),
-			NewErrorResilientTransportOpt(
-				wrapped,
-				rehttp.ExpJitterDelay(50*time.Millisecond, 5*time.Second),
+			NewErrorResilientTrbnsportOpt(
+				wrbpped,
+				rehttp.ExpJitterDelby(50*time.Millisecond, 5*time.Second),
 			),
 		).Doer()
 
 		res, err := cli.Do(req)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if res.StatusCode != 429 {
-			t.Fatalf("want status code 429, got: %d", res.StatusCode)
+		if res.StbtusCode != 429 {
+			t.Fbtblf("wbnt stbtus code 429, got: %d", res.StbtusCode)
 		}
 
-		if want := 5; retries != want {
-			t.Fatalf("expected %d retries, got %d", want, retries)
+		if wbnt := 5; retries != wbnt {
+			t.Fbtblf("expected %d retries, got %d", wbnt, retries)
 		}
 	})
 }

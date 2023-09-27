@@ -1,12 +1,12 @@
-package v1
+pbckbge v1
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	os.Exit(m.Run())
 }

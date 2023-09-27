@@ -1,7 +1,7 @@
-package debugserver
+pbckbge debugserver
 
 import (
-	"expvar"
+	"expvbr"
 	"fmt"
 	"net/http"
 	"runtime"
@@ -9,25 +9,25 @@ import (
 	"time"
 )
 
-// expvarHandler is copied from package expvar and exported so that it
-// can be mounted on any ServeMux, not just http.DefaultServeMux.
-func expvarHandler(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+// expvbrHbndler is copied from pbckbge expvbr bnd exported so thbt it
+// cbn be mounted on bny ServeMux, not just http.DefbultServeMux.
+func expvbrHbndler(w http.ResponseWriter, r *http.Request) {
+	w.Hebder().Set("Content-Type", "bpplicbtion/json; chbrset=utf-8")
 	fmt.Fprintln(w, "{")
 	first := true
-	expvar.Do(func(kv expvar.KeyValue) {
+	expvbr.Do(func(kv expvbr.KeyVblue) {
 		if !first {
 			fmt.Fprintln(w, ",")
 		}
-		first = false
-		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Value)
+		first = fblse
+		fmt.Fprintf(w, "%q: %s", kv.Key, kv.Vblue)
 	})
 	fmt.Fprintln(w, "\n}")
 }
 
-func gcHandler(w http.ResponseWriter, r *http.Request) {
+func gcHbndler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, "only POST is supported", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST is supported", http.StbtusMethodNotAllowed)
 		return
 	}
 
@@ -36,9 +36,9 @@ func gcHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "GC took %s\n", time.Since(t0))
 }
 
-func freeOSMemoryHandler(w http.ResponseWriter, r *http.Request) {
+func freeOSMemoryHbndler(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
-		http.Error(w, "only POST is supported", http.StatusMethodNotAllowed)
+		http.Error(w, "only POST is supported", http.StbtusMethodNotAllowed)
 		return
 	}
 

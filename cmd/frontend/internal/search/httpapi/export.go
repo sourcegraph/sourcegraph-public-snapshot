@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"fmt"
@@ -6,62 +6,62 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/search/exhaustive/service"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/exhbustive/service"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// search-jobs_<job-id>_2020-07-01_150405
-func filename(jobID int) string {
-	return fmt.Sprintf("search-jobs_%d_%s", jobID, time.Now().Format("2006-01-02_150405"))
+// sebrch-jobs_<job-id>_2020-07-01_150405
+func filenbme(jobID int) string {
+	return fmt.Sprintf("sebrch-jobs_%d_%s", jobID, time.Now().Formbt("2006-01-02_150405"))
 }
 
-func ServeSearchJobDownload(svc *service.Service) http.HandlerFunc {
+func ServeSebrchJobDownlobd(svc *service.Service) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		jobIDStr := mux.Vars(r)["id"]
+		jobIDStr := mux.Vbrs(r)["id"]
 		jobID, err := strconv.Atoi(jobIDStr)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.csv\"", filename(jobID)))
+		w.Hebder().Set("Content-Type", "text/csv")
+		w.Hebder().Set("Content-Disposition", fmt.Sprintf("bttbchment; filenbme=\"%s.csv\"", filenbme(jobID)))
 
-		err = svc.WriteSearchJobCSV(r.Context(), w, int64(jobID))
+		err = svc.WriteSebrchJobCSV(r.Context(), w, int64(jobID))
 		if err != nil {
-			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
-				http.Error(w, err.Error(), http.StatusForbidden)
+			if errors.Is(err, buth.ErrMustBeSiteAdminOrSbmeUser) {
+				http.Error(w, err.Error(), http.StbtusForbidden)
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 
 	}
 }
 
-func ServeSearchJobLogs(svc *service.Service) http.HandlerFunc {
+func ServeSebrchJobLogs(svc *service.Service) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		jobIDStr := mux.Vars(r)["id"]
+		jobIDStr := mux.Vbrs(r)["id"]
 		jobID, err := strconv.Atoi(jobIDStr)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
+			http.Error(w, err.Error(), http.StbtusBbdRequest)
 			return
 		}
 
-		w.Header().Set("Content-Type", "text/csv")
-		w.Header().Set("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s.log\"", filename(jobID)))
+		w.Hebder().Set("Content-Type", "text/csv")
+		w.Hebder().Set("Content-Disposition", fmt.Sprintf("bttbchment; filenbme=\"%s.log\"", filenbme(jobID)))
 
-		err = svc.WriteSearchJobLogs(r.Context(), w, int64(jobID))
+		err = svc.WriteSebrchJobLogs(r.Context(), w, int64(jobID))
 		if err != nil {
-			if errors.Is(err, auth.ErrMustBeSiteAdminOrSameUser) {
-				http.Error(w, err.Error(), http.StatusForbidden)
+			if errors.Is(err, buth.ErrMustBeSiteAdminOrSbmeUser) {
+				http.Error(w, err.Error(), http.StbtusForbidden)
 				return
 			}
-			http.Error(w, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StbtusInternblServerError)
 			return
 		}
 	}

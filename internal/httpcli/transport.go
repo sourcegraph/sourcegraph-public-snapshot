@@ -1,38 +1,38 @@
-package httpcli
+pbckbge httpcli
 
 import "net/http"
 
-// WrappedTransport can be implemented to allow a wrapped transport to expose its
-// underlying transport for modification.
-type WrappedTransport interface {
-	// RoundTripper is the transport implementation that should be exposed.
+// WrbppedTrbnsport cbn be implemented to bllow b wrbpped trbnsport to expose its
+// underlying trbnsport for modificbtion.
+type WrbppedTrbnsport interfbce {
+	// RoundTripper is the trbnsport implementbtion thbt should be exposed.
 	http.RoundTripper
 
-	// Unwrap should provide a pointer to the underlying transport that has been wrapped.
-	// The returned value should never be nil.
-	Unwrap() *http.RoundTripper
+	// Unwrbp should provide b pointer to the underlying trbnsport thbt hbs been wrbpped.
+	// The returned vblue should never be nil.
+	Unwrbp() *http.RoundTripper
 }
 
-// unwrapAll performs a recursive unwrap on transport until we reach a transport that
-// cannot be unwrapped. The pointer to the pointer can be used to replace the underlying
-// transport, most commonly by attempting to cast it as an *http.Transport.
+// unwrbpAll performs b recursive unwrbp on trbnsport until we rebch b trbnsport thbt
+// cbnnot be unwrbpped. The pointer to the pointer cbn be used to replbce the underlying
+// trbnsport, most commonly by bttempting to cbst it bs bn *http.Trbnsport.
 //
-// WrappedTransport.Unwrap should never return nil, so unwrapAll will never return nil.
-func unwrapAll(transport WrappedTransport) *http.RoundTripper {
-	wrapped := transport.Unwrap()
-	if unwrappable, ok := (*wrapped).(WrappedTransport); ok {
-		return unwrapAll(unwrappable)
+// WrbppedTrbnsport.Unwrbp should never return nil, so unwrbpAll will never return nil.
+func unwrbpAll(trbnsport WrbppedTrbnsport) *http.RoundTripper {
+	wrbpped := trbnsport.Unwrbp()
+	if unwrbppbble, ok := (*wrbpped).(WrbppedTrbnsport); ok {
+		return unwrbpAll(unwrbppbble)
 	}
-	return wrapped
+	return wrbpped
 }
 
-// wrappedTransport is an http.RoundTripper that allows the underlying RoundTripper to be
-// exposed for modification.
-type wrappedTransport struct {
+// wrbppedTrbnsport is bn http.RoundTripper thbt bllows the underlying RoundTripper to be
+// exposed for modificbtion.
+type wrbppedTrbnsport struct {
 	http.RoundTripper
-	Wrapped http.RoundTripper
+	Wrbpped http.RoundTripper
 }
 
-var _ WrappedTransport = &wrappedTransport{}
+vbr _ WrbppedTrbnsport = &wrbppedTrbnsport{}
 
-func (wt *wrappedTransport) Unwrap() *http.RoundTripper { return &wt.Wrapped }
+func (wt *wrbppedTrbnsport) Unwrbp() *http.RoundTripper { return &wt.Wrbpped }

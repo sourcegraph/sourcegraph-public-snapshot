@@ -1,146 +1,146 @@
-package overridable
+pbckbge overridbble
 
 import (
 	"encoding/json"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/ybml.v2"
 )
 
 func TestBoolIs(t *testing.T) {
-	for name, tc := range map[string]struct {
+	for nbme, tc := rbnge mbp[string]struct {
 		in   Bool
-		name string
-		want bool
+		nbme string
+		wbnt bool
 	}{
-		"wildcard false": {
+		"wildcbrd fblse": {
 			in: Bool{
-				rules: rules{{pattern: allPattern, value: false}},
+				rules: rules{{pbttern: bllPbttern, vblue: fblse}},
 			},
-			name: "foo",
-			want: false,
+			nbme: "foo",
+			wbnt: fblse,
 		},
-		"wildcard true": {
+		"wildcbrd true": {
 			in: Bool{
-				rules: rules{{pattern: allPattern, value: true}},
+				rules: rules{{pbttern: bllPbttern, vblue: true}},
 			},
-			name: "foo",
-			want: true,
+			nbme: "foo",
+			wbnt: true,
 		},
-		"list exhausted": {
+		"list exhbusted": {
 			in: Bool{
-				rules: rules{{pattern: "bar*", value: true}},
+				rules: rules{{pbttern: "bbr*", vblue: true}},
 			},
-			name: "foo",
-			want: false,
+			nbme: "foo",
+			wbnt: fblse,
 		},
-		"single match": {
+		"single mbtch": {
 			in: Bool{
-				rules: rules{{pattern: "bar*", value: true}},
+				rules: rules{{pbttern: "bbr*", vblue: true}},
 			},
-			name: "bar",
-			want: true,
+			nbme: "bbr",
+			wbnt: true,
 		},
-		"multiple matches": {
+		"multiple mbtches": {
 			in: Bool{
 				rules: rules{
-					{pattern: allPattern, value: true},
-					{pattern: "bar*", value: false},
+					{pbttern: bllPbttern, vblue: true},
+					{pbttern: "bbr*", vblue: fblse},
 				},
 			},
-			name: "bar",
-			want: false,
+			nbme: "bbr",
+			wbnt: fblse,
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			if err := initBool(&tc.in); err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			if have := tc.in.Value(tc.name); have != tc.want {
-				t.Errorf("unexpected value: have=%v want=%v", have, tc.want)
+			if hbve := tc.in.Vblue(tc.nbme); hbve != tc.wbnt {
+				t.Errorf("unexpected vblue: hbve=%v wbnt=%v", hbve, tc.wbnt)
 			}
 		})
 	}
 }
 
-func TestBoolMarshalJSON(t *testing.T) {
+func TestBoolMbrshblJSON(t *testing.T) {
 	bs := Bool{
 		rules{
-			{pattern: allPattern, value: true},
-			{pattern: "bar*", value: false},
+			{pbttern: bllPbttern, vblue: true},
+			{pbttern: "bbr*", vblue: fblse},
 		},
 	}
-	data, err := json.Marshal(&bs)
+	dbtb, err := json.Mbrshbl(&bs)
 	if err != nil {
 		t.Errorf("unexpected non-nil error: %v", err)
 	}
-	if have, want := string(data), `[{"*":true},{"bar*":false}]`; have != want {
-		t.Errorf("unexpected JSON: have=%q want=%q", have, want)
+	if hbve, wbnt := string(dbtb), `[{"*":true},{"bbr*":fblse}]`; hbve != wbnt {
+		t.Errorf("unexpected JSON: hbve=%q wbnt=%q", hbve, wbnt)
 	}
 }
 
-func TestBoolUnmarshalJSON(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+func TestBoolUnmbrshblJSON(t *testing.T) {
+	t.Run("vblid", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]struct {
 			in   string
-			want Bool
+			wbnt Bool
 		}{
-			"single false": {
-				in: `false`,
-				want: Bool{
+			"single fblse": {
+				in: `fblse`,
+				wbnt: Bool{
 					rules: rules{
-						{pattern: allPattern, value: false},
+						{pbttern: bllPbttern, vblue: fblse},
 					},
 				},
 			},
 			"single true": {
 				in: `true`,
-				want: Bool{
+				wbnt: Bool{
 					rules: rules{
-						{pattern: allPattern, value: true},
+						{pbttern: bllPbttern, vblue: true},
 					},
 				},
 			},
 			"empty list": {
 				in: `[]`,
-				want: Bool{
+				wbnt: Bool{
 					rules: rules{},
 				},
 			},
 			"multiple rule list": {
-				in: `[{"*":true},{"github.com/sourcegraph/*":false}]`,
-				want: Bool{
+				in: `[{"*":true},{"github.com/sourcegrbph/*":fblse}]`,
+				wbnt: Bool{
 					rules: rules{
-						{pattern: allPattern, value: true},
-						{pattern: "github.com/sourcegraph/*", value: false},
+						{pbttern: bllPbttern, vblue: true},
+						{pbttern: "github.com/sourcegrbph/*", vblue: fblse},
 					},
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var have Bool
-				if err := json.Unmarshal([]byte(tc.in), &have); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				vbr hbve Bool
+				if err := json.Unmbrshbl([]byte(tc.in), &hbve); err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
-				if diff := cmp.Diff(&have, &tc.want); diff != "" {
+				if diff := cmp.Diff(&hbve, &tc.wbnt); diff != "" {
 					t.Errorf("unexpected Bool: %s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		for name, in := range map[string]string{
+	t.Run("invblid", func(t *testing.T) {
+		for nbme, in := rbnge mbp[string]string{
 			"string":          `"foo"`,
 			"empty object":    `[{}]`,
-			"too many fields": `[{"foo": true,"bar":false}]`,
-			"invalid glob":    `[{"[":false}]`,
+			"too mbny fields": `[{"foo": true,"bbr":fblse}]`,
+			"invblid glob":    `[{"[":fblse}]`,
 		} {
-			t.Run(name, func(t *testing.T) {
-				var have Bool
-				if err := json.Unmarshal([]byte(in), &have); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				vbr hbve Bool
+				if err := json.Unmbrshbl([]byte(in), &hbve); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -149,65 +149,65 @@ func TestBoolUnmarshalJSON(t *testing.T) {
 }
 
 func TestBoolYAML(t *testing.T) {
-	t.Run("valid", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+	t.Run("vblid", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]struct {
 			in   string
-			want Bool
+			wbnt Bool
 		}{
-			"single false": {
-				in: `false`,
-				want: Bool{
+			"single fblse": {
+				in: `fblse`,
+				wbnt: Bool{
 					rules: rules{
-						{pattern: allPattern, value: false},
+						{pbttern: bllPbttern, vblue: fblse},
 					},
 				},
 			},
 			"single true": {
 				in: `true`,
-				want: Bool{
+				wbnt: Bool{
 					rules: rules{
-						{pattern: allPattern, value: true},
+						{pbttern: bllPbttern, vblue: true},
 					},
 				},
 			},
 			"empty list": {
 				in: `[]`,
-				want: Bool{
+				wbnt: Bool{
 					rules: rules{},
 				},
 			},
 			"multiple rule list": {
-				in: "- \"*\": true\n- github.com/sourcegraph/*: false",
-				want: Bool{
+				in: "- \"*\": true\n- github.com/sourcegrbph/*: fblse",
+				wbnt: Bool{
 					rules: rules{
-						{pattern: allPattern, value: true},
-						{pattern: "github.com/sourcegraph/*", value: false},
+						{pbttern: bllPbttern, vblue: true},
+						{pbttern: "github.com/sourcegrbph/*", vblue: fblse},
 					},
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				var have Bool
-				if err := yaml.Unmarshal([]byte(tc.in), &have); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				vbr hbve Bool
+				if err := ybml.Unmbrshbl([]byte(tc.in), &hbve); err != nil {
 					t.Errorf("unexpected non-nil error: %v", err)
 				}
-				if diff := cmp.Diff(&have, &tc.want); diff != "" {
+				if diff := cmp.Diff(&hbve, &tc.wbnt); diff != "" {
 					t.Errorf("unexpected Bool: %s", diff)
 				}
 			})
 		}
 	})
 
-	t.Run("invalid", func(t *testing.T) {
-		for name, in := range map[string]string{
+	t.Run("invblid", func(t *testing.T) {
+		for nbme, in := rbnge mbp[string]string{
 			"string":          `foo`,
 			"empty object":    `- {}`,
-			"too many fields": `- {"foo": true, "bar": false}`,
-			"invalid glob":    `- "[": false`,
+			"too mbny fields": `- {"foo": true, "bbr": fblse}`,
+			"invblid glob":    `- "[": fblse`,
 		} {
-			t.Run(name, func(t *testing.T) {
-				var have Bool
-				if err := yaml.Unmarshal([]byte(in), &have); err == nil {
+			t.Run(nbme, func(t *testing.T) {
+				vbr hbve Bool
+				if err := ybml.Unmbrshbl([]byte(in), &hbve); err == nil {
 					t.Error("unexpected nil error")
 				}
 			})
@@ -215,11 +215,11 @@ func TestBoolYAML(t *testing.T) {
 	})
 }
 
-// initBool ensures all rules are compiled.
+// initBool ensures bll rules bre compiled.
 func initBool(b *Bool) (err error) {
-	for i, rule := range b.rules {
+	for i, rule := rbnge b.rules {
 		if rule.compiled == nil {
-			b.rules[i], err = newRule(rule.pattern, rule.value)
+			b.rules[i], err = newRule(rule.pbttern, rule.vblue)
 			if err != nil {
 				return err
 			}

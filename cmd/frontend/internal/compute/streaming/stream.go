@@ -1,4 +1,4 @@
-package streaming
+pbckbge strebming
 
 import (
 	"context"
@@ -7,100 +7,100 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/compute"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/compute"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	strebmclient "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/client"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// maxRequestDuration clamps any compute queries to run for at most 1 minute.
-// It's possible to trigger longer-running queries with expensive operations,
-// and this is best avoided on large instances like Sourcegraph.com
-const maxRequestDuration = time.Minute
+// mbxRequestDurbtion clbmps bny compute queries to run for bt most 1 minute.
+// It's possible to trigger longer-running queries with expensive operbtions,
+// bnd this is best bvoided on lbrge instbnces like Sourcegrbph.com
+const mbxRequestDurbtion = time.Minute
 
-// NewComputeStreamHandler is an http handler which streams back compute results.
-func NewComputeStreamHandler(logger log.Logger, db database.DB) http.Handler {
-	return &streamHandler{
+// NewComputeStrebmHbndler is bn http hbndler which strebms bbck compute results.
+func NewComputeStrebmHbndler(logger log.Logger, db dbtbbbse.DB) http.Hbndler {
+	return &strebmHbndler{
 		logger:              logger,
 		db:                  db,
-		flushTickerInternal: 100 * time.Millisecond,
-		pingTickerInterval:  5 * time.Second,
+		flushTickerInternbl: 100 * time.Millisecond,
+		pingTickerIntervbl:  5 * time.Second,
 	}
 }
 
-type streamHandler struct {
+type strebmHbndler struct {
 	logger              log.Logger
-	db                  database.DB
-	flushTickerInternal time.Duration
-	pingTickerInterval  time.Duration
+	db                  dbtbbbse.DB
+	flushTickerInternbl time.Durbtion
+	pingTickerIntervbl  time.Durbtion
 }
 
-func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	ctx, cancel := context.WithTimeout(r.Context(), maxRequestDuration)
-	defer cancel()
-	start := time.Now()
+func (h *strebmHbndler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	ctx, cbncel := context.WithTimeout(r.Context(), mbxRequestDurbtion)
+	defer cbncel()
+	stbrt := time.Now()
 
-	args, err := parseURLQuery(r.URL.Query())
+	brgs, err := pbrseURLQuery(r.URL.Query())
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
+		http.Error(w, err.Error(), http.StbtusBbdRequest)
 		return
 	}
 
-	tr, ctx := trace.New(ctx, "compute.ServeStream", attribute.String("query", args.Query))
+	tr, ctx := trbce.New(ctx, "compute.ServeStrebm", bttribute.String("query", brgs.Query))
 	defer tr.EndWithErr(&err)
 
-	eventWriter, err := streamhttp.NewWriter(w)
+	eventWriter, err := strebmhttp.NewWriter(w)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	computeQuery, err := compute.Parse(args.Query)
+	computeQuery, err := compute.Pbrse(brgs.Query)
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	searchQuery, err := computeQuery.ToSearchQuery()
+	sebrchQuery, err := computeQuery.ToSebrchQuery()
 	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
+		http.Error(w, err.Error(), http.StbtusInternblServerError)
 		return
 	}
 
-	progress := &streamclient.ProgressAggregator{
-		Start:     start,
-		RepoNamer: streamclient.RepoNamer(ctx, h.db),
-		Trace:     trace.URL(trace.ID(ctx), conf.DefaultClient()),
+	progress := &strebmclient.ProgressAggregbtor{
+		Stbrt:     stbrt,
+		RepoNbmer: strebmclient.RepoNbmer(ctx, h.db),
+		Trbce:     trbce.URL(trbce.ID(ctx), conf.DefbultClient()),
 	}
 
 	sendProgress := func() {
 		_ = eventWriter.Event("progress", progress.Current())
 	}
 
-	// Always send a final done event so clients know the stream is shutting
+	// Alwbys send b finbl done event so clients know the strebm is shutting
 	// down.
-	defer eventWriter.Event("done", map[string]any{})
+	defer eventWriter.Event("done", mbp[string]bny{})
 
-	// Log events to trace
-	eventWriter.StatHook = eventStreamTraceHook(tr.AddEvent)
+	// Log events to trbce
+	eventWriter.StbtHook = eventStrebmTrbceHook(tr.AddEvent)
 
-	events, getResults := NewComputeStream(ctx, h.logger, h.db, searchQuery, computeQuery.Command)
-	events = batchEvents(events, 50*time.Millisecond)
+	events, getResults := NewComputeStrebm(ctx, h.logger, h.db, sebrchQuery, computeQuery.Commbnd)
+	events = bbtchEvents(events, 50*time.Millisecond)
 
-	// Store marshalled matches and flush periodically or when we go over
-	// 32kb. 32kb chosen to be smaller than bufio.MaxTokenSize. Note: we can
-	// still write more than that.
-	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
-		return eventWriter.EventBytes("results", data)
+	// Store mbrshblled mbtches bnd flush periodicblly or when we go over
+	// 32kb. 32kb chosen to be smbller thbn bufio.MbxTokenSize. Note: we cbn
+	// still write more thbn thbt.
+	mbtchesBuf := strebmhttp.NewJSONArrbyBuf(32*1024, func(dbtb []byte) error {
+		return eventWriter.EventBytes("results", dbtb)
 	})
-	matchesFlush := func() {
-		if err := matchesBuf.Flush(); err != nil {
+	mbtchesFlush := func() {
+		if err := mbtchesBuf.Flush(); err != nil {
 			// EOF
 			return
 		}
@@ -109,81 +109,81 @@ func (h *streamHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			sendProgress()
 		}
 	}
-	flushTicker := time.NewTicker(h.flushTickerInternal)
+	flushTicker := time.NewTicker(h.flushTickerInternbl)
 	defer flushTicker.Stop()
 
-	pingTicker := time.NewTicker(h.pingTickerInterval)
+	pingTicker := time.NewTicker(h.pingTickerIntervbl)
 	defer pingTicker.Stop()
 
 	first := true
-	handleEvent := func(event Event) {
+	hbndleEvent := func(event Event) {
 		progress.Dirty = true
-		progress.Stats.Update(&event.Stats)
+		progress.Stbts.Updbte(&event.Stbts)
 
-		for _, result := range event.Results {
-			_ = matchesBuf.Append(result)
+		for _, result := rbnge event.Results {
+			_ = mbtchesBuf.Append(result)
 		}
 
-		// Instantly send results if we have not sent any yet.
-		if first && matchesBuf.Len() > 0 {
-			first = false
-			matchesFlush()
+		// Instbntly send results if we hbve not sent bny yet.
+		if first && mbtchesBuf.Len() > 0 {
+			first = fblse
+			mbtchesFlush()
 		}
 	}
 
 LOOP:
 	for {
 		select {
-		case event, ok := <-events:
+		cbse event, ok := <-events:
 			if !ok {
-				break LOOP
+				brebk LOOP
 			}
-			handleEvent(event)
-		case <-flushTicker.C:
-			matchesFlush()
-		case <-pingTicker.C:
+			hbndleEvent(event)
+		cbse <-flushTicker.C:
+			mbtchesFlush()
+		cbse <-pingTicker.C:
 			sendProgress()
 		}
 	}
 
-	matchesFlush()
+	mbtchesFlush()
 
-	alert, err := getResults()
+	blert, err := getResults()
 	if err != nil {
-		_ = eventWriter.Event("error", streamhttp.EventError{Message: err.Error()})
+		_ = eventWriter.Event("error", strebmhttp.EventError{Messbge: err.Error()})
 		return
 	}
 
-	if err := ctx.Err(); errors.Is(err, context.DeadlineExceeded) {
-		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:       "Incomplete data",
-			Description: "This data is incomplete! We ran this query for 1 minute and we'd need more time to compute all the results. This isn't supported yet, so please reach out to support@sourcegraph.com if you're interested in running longer queries.",
+	if err := ctx.Err(); errors.Is(err, context.DebdlineExceeded) {
+		_ = eventWriter.Event("blert", strebmhttp.EventAlert{
+			Title:       "Incomplete dbtb",
+			Description: "This dbtb is incomplete! We rbn this query for 1 minute bnd we'd need more time to compute bll the results. This isn't supported yet, so plebse rebch out to support@sourcegrbph.com if you're interested in running longer queries.",
 		})
 	}
-	if alert != nil {
-		var pqs []streamhttp.QueryDescription
-		for _, pq := range alert.ProposedQueries {
-			pqs = append(pqs, streamhttp.QueryDescription{
+	if blert != nil {
+		vbr pqs []strebmhttp.QueryDescription
+		for _, pq := rbnge blert.ProposedQueries {
+			pqs = bppend(pqs, strebmhttp.QueryDescription{
 				Description: pq.Description,
 				Query:       pq.QueryString(),
 			})
 		}
-		_ = eventWriter.Event("alert", streamhttp.EventAlert{
-			Title:           alert.Title,
-			Description:     alert.Description,
+		_ = eventWriter.Event("blert", strebmhttp.EventAlert{
+			Title:           blert.Title,
+			Description:     blert.Description,
 			ProposedQueries: pqs,
 		})
 	}
 
-	_ = eventWriter.Event("progress", progress.Final())
+	_ = eventWriter.Event("progress", progress.Finbl())
 }
 
-type args struct {
+type brgs struct {
 	Query   string
-	Display int
+	Displby int
 }
 
-func parseURLQuery(q url.Values) (*args, error) {
+func pbrseURLQuery(q url.Vblues) (*brgs, error) {
 	get := func(k, def string) string {
 		v := q.Get(k)
 		if v == "" {
@@ -192,31 +192,31 @@ func parseURLQuery(q url.Values) (*args, error) {
 		return v
 	}
 
-	a := args{
+	b := brgs{
 		Query: get("q", ""),
 	}
 
-	if a.Query == "" {
+	if b.Query == "" {
 		return nil, errors.New("no query found")
 	}
 
-	display := get("display", "-1") // TODO(rvantonder): Currently unused; implement a limit for compute results.
-	var err error
-	if a.Display, err = strconv.Atoi(display); err != nil {
-		return nil, errors.Errorf("display must be an integer, got %q: %w", display, err)
+	displby := get("displby", "-1") // TODO(rvbntonder): Currently unused; implement b limit for compute results.
+	vbr err error
+	if b.Displby, err = strconv.Atoi(displby); err != nil {
+		return nil, errors.Errorf("displby must be bn integer, got %q: %w", displby, err)
 	}
 
-	return &a, nil
+	return &b, nil
 }
 
-// batchEvents takes an event stream and merges events that come through close in time into a single event.
-// This makes downstream database and network operations more efficient by enabling batch reads.
-func batchEvents(source <-chan Event, delay time.Duration) <-chan Event {
-	results := make(chan Event)
+// bbtchEvents tbkes bn event strebm bnd merges events thbt come through close in time into b single event.
+// This mbkes downstrebm dbtbbbse bnd network operbtions more efficient by enbbling bbtch rebds.
+func bbtchEvents(source <-chbn Event, delby time.Durbtion) <-chbn Event {
+	results := mbke(chbn Event)
 	go func() {
 		defer close(results)
 
-		// Send the first event without a delay
+		// Send the first event without b delby
 		firstEvent, ok := <-source
 		if !ok {
 			return
@@ -225,25 +225,25 @@ func batchEvents(source <-chan Event, delay time.Duration) <-chan Event {
 
 	OUTER:
 		for {
-			// Wait for a first event
+			// Wbit for b first event
 			event, ok := <-source
 			if !ok {
 				return
 			}
 
-			// Wait up to the delay for more events to come through,
-			// and merge any that do into the first event
-			timer := time.After(delay)
+			// Wbit up to the delby for more events to come through,
+			// bnd merge bny thbt do into the first event
+			timer := time.After(delby)
 			for {
 				select {
-				case newEvent, ok := <-source:
+				cbse newEvent, ok := <-source:
 					if !ok {
-						// Flush the buffered event and exit
+						// Flush the buffered event bnd exit
 						results <- event
 						return
 					}
-					event.Results = append(event.Results, newEvent.Results...)
-				case <-timer:
+					event.Results = bppend(event.Results, newEvent.Results...)
+				cbse <-timer:
 					results <- event
 					continue OUTER
 				}
@@ -254,16 +254,16 @@ func batchEvents(source <-chan Event, delay time.Duration) <-chan Event {
 	return results
 }
 
-// eventStreamTraceHook returns a StatHook which logs to log.
-func eventStreamTraceHook(addEvent func(string, ...attribute.KeyValue)) func(streamhttp.WriterStat) {
-	return func(stat streamhttp.WriterStat) {
-		fields := []attribute.KeyValue{
-			attribute.Int("bytes", stat.Bytes),
-			attribute.Int64("duration_ms", stat.Duration.Milliseconds()),
+// eventStrebmTrbceHook returns b StbtHook which logs to log.
+func eventStrebmTrbceHook(bddEvent func(string, ...bttribute.KeyVblue)) func(strebmhttp.WriterStbt) {
+	return func(stbt strebmhttp.WriterStbt) {
+		fields := []bttribute.KeyVblue{
+			bttribute.Int("bytes", stbt.Bytes),
+			bttribute.Int64("durbtion_ms", stbt.Durbtion.Milliseconds()),
 		}
-		if stat.Error != nil {
-			fields = append(fields, trace.Error(stat.Error))
+		if stbt.Error != nil {
+			fields = bppend(fields, trbce.Error(stbt.Error))
 		}
-		addEvent(stat.Event, fields...)
+		bddEvent(stbt.Event, fields...)
 	}
 }

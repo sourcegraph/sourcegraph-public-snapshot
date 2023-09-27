@@ -1,4 +1,4 @@
-package types
+pbckbge types
 
 import (
 	"encoding/json"
@@ -9,27 +9,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestJob_MarshalJSON(t *testing.T) {
-	modAt, err := time.Parse(time.RFC3339, "2022-10-07T18:55:45.831031-06:00")
+func TestJob_MbrshblJSON(t *testing.T) {
+	modAt, err := time.Pbrse(time.RFC3339, "2022-10-07T18:55:45.831031-06:00")
 	require.NoError(t, err)
 
 	tests := []struct {
-		name     string
+		nbme     string
 		input    Job
 		expected string
 	}{
 		{
-			name: "4.3",
+			nbme: "4.3",
 			input: Job{
 				Version:             2,
 				ID:                  1,
-				RepositoryName:      "my-repo",
-				RepositoryDirectory: "foo/bar",
+				RepositoryNbme:      "my-repo",
+				RepositoryDirectory: "foo/bbr",
 				Commit:              "xyz",
-				FetchTags:           true,
-				ShallowClone:        true,
-				SparseCheckout:      []string{"a", "b", "c"},
-				VirtualMachineFiles: map[string]VirtualMachineFile{
+				FetchTbgs:           true,
+				ShbllowClone:        true,
+				SpbrseCheckout:      []string{"b", "b", "c"},
+				VirtublMbchineFiles: mbp[string]VirtublMbchineFile{
 					"script1.sh": {
 						Content: []byte("hello"),
 					},
@@ -41,36 +41,36 @@ func TestJob_MarshalJSON(t *testing.T) {
 				},
 				DockerSteps: []DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"run"},
-						Dir:      "faz/baz",
+						Imbge:    "my-imbge",
+						Commbnds: []string{"run"},
+						Dir:      "fbz/bbz",
 						Env:      []string{"FOO=BAR"},
 					},
 				},
 				CliSteps: []CliStep{
 					{
-						Commands: []string{"x", "y", "z"},
-						Dir:      "raz/daz",
+						Commbnds: []string{"x", "y", "z"},
+						Dir:      "rbz/dbz",
 						Env:      []string{"BAZ=FAZ"},
 					},
 				},
-				RedactedValues: map[string]string{
-					"password": "foo",
+				RedbctedVblues: mbp[string]string{
+					"pbssword": "foo",
 				},
 			},
 			expected: `{
 		"version": 2,
 		"id": 1,
 		"token": "",
-		"repositoryName": "my-repo",
-		"repositoryDirectory": "foo/bar",
+		"repositoryNbme": "my-repo",
+		"repositoryDirectory": "foo/bbr",
 		"commit": "xyz",
-		"fetchTags": true,
-		"shallowClone": true,
-		"sparseCheckout": ["a", "b", "c"],
+		"fetchTbgs": true,
+		"shbllowClone": true,
+		"spbrseCheckout": ["b", "b", "c"],
 		"files": {
 			"script1.sh": {
-				"content": "aGVsbG8=",
+				"content": "bGVsbG8=",
 				"modifiedAt": "0001-01-01T00:00:00Z"
 			},
 			"script2.py": {
@@ -81,64 +81,64 @@ func TestJob_MarshalJSON(t *testing.T) {
 		},
 		"dockerAuthConfig": {},
 		"dockerSteps": [{
-			"image": "my-image",
-			"commands": ["run"],
-			"dir": "faz/baz",
+			"imbge": "my-imbge",
+			"commbnds": ["run"],
+			"dir": "fbz/bbz",
 			"env": ["FOO=BAR"]
 		}],
 		"cliSteps": [{
-			"command": ["x", "y", "z"],
-			"dir": "raz/daz",
+			"commbnd": ["x", "y", "z"],
+			"dir": "rbz/dbz",
 			"env": ["BAZ=FAZ"]
 		}],
-		"redactedValues": {
-			"password": "foo"
+		"redbctedVblues": {
+			"pbssword": "foo"
 		}
 	}`,
 		},
 		{
-			name: "4.2",
+			nbme: "4.2",
 			input: Job{
 				ID:                  1,
-				RepositoryName:      "my-repo",
-				RepositoryDirectory: "foo/bar",
+				RepositoryNbme:      "my-repo",
+				RepositoryDirectory: "foo/bbr",
 				Commit:              "xyz",
-				FetchTags:           true,
-				ShallowClone:        true,
-				SparseCheckout:      []string{"a", "b", "c"},
-				VirtualMachineFiles: map[string]VirtualMachineFile{
+				FetchTbgs:           true,
+				ShbllowClone:        true,
+				SpbrseCheckout:      []string{"b", "b", "c"},
+				VirtublMbchineFiles: mbp[string]VirtublMbchineFile{
 					"script1.sh": {
 						Content: []byte("hello"),
 					},
 				},
 				DockerSteps: []DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"run"},
-						Dir:      "faz/baz",
+						Imbge:    "my-imbge",
+						Commbnds: []string{"run"},
+						Dir:      "fbz/bbz",
 						Env:      []string{"FOO=BAR"},
 					},
 				},
 				CliSteps: []CliStep{
 					{
-						Commands: []string{"x", "y", "z"},
-						Dir:      "raz/daz",
+						Commbnds: []string{"x", "y", "z"},
+						Dir:      "rbz/dbz",
 						Env:      []string{"BAZ=FAZ"},
 					},
 				},
-				RedactedValues: map[string]string{
-					"password": "foo",
+				RedbctedVblues: mbp[string]string{
+					"pbssword": "foo",
 				},
 			},
 			expected: `{
 		"id": 1,
 		"token": "",
-		"repositoryName": "my-repo",
-		"repositoryDirectory": "foo/bar",
+		"repositoryNbme": "my-repo",
+		"repositoryDirectory": "foo/bbr",
 		"commit": "xyz",
-		"fetchTags": true,
-		"shallowClone": true,
-		"sparseCheckout": ["a", "b", "c"],
+		"fetchTbgs": true,
+		"shbllowClone": true,
+		"spbrseCheckout": ["b", "b", "c"],
 		"files": {
 			"script1.sh": {
 				"content": "hello",
@@ -146,63 +146,63 @@ func TestJob_MarshalJSON(t *testing.T) {
 			}
 		},
 		"dockerSteps": [{
-			"image": "my-image",
-			"commands": ["run"],
-			"dir": "faz/baz",
+			"imbge": "my-imbge",
+			"commbnds": ["run"],
+			"dir": "fbz/bbz",
 			"env": ["FOO=BAR"]
 		}],
 		"cliSteps": [{
-			"command": ["x", "y", "z"],
-			"dir": "raz/daz",
+			"commbnd": ["x", "y", "z"],
+			"dir": "rbz/dbz",
 			"env": ["BAZ=FAZ"]
 		}],
-		"redactedValues": {
-			"password": "foo"
+		"redbctedVblues": {
+			"pbssword": "foo"
 		}
 	}`,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			actual, err := json.Marshal(test.input)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			bctubl, err := json.Mbrshbl(test.input)
 			require.NoError(t, err)
-			var actualMap, expectedMap map[string]any
-			if err := json.Unmarshal(actual, &actualMap); err != nil {
-				t.Fatal(err)
+			vbr bctublMbp, expectedMbp mbp[string]bny
+			if err := json.Unmbrshbl(bctubl, &bctublMbp); err != nil {
+				t.Fbtbl(err)
 			}
-			if err := json.Unmarshal([]byte(test.expected), &expectedMap); err != nil {
-				t.Fatal(err)
+			if err := json.Unmbrshbl([]byte(test.expected), &expectedMbp); err != nil {
+				t.Fbtbl(err)
 			}
-			if diff := cmp.Diff(expectedMap, actualMap); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(expectedMbp, bctublMbp); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}
 }
 
-func TestJob_UnmarshalJSON(t *testing.T) {
-	modAt, err := time.Parse(time.RFC3339, "2022-10-07T18:55:45.831031-06:00")
+func TestJob_UnmbrshblJSON(t *testing.T) {
+	modAt, err := time.Pbrse(time.RFC3339, "2022-10-07T18:55:45.831031-06:00")
 	require.NoError(t, err)
 
 	tests := []struct {
-		name     string
+		nbme     string
 		input    string
 		expected Job
 	}{
 		{
-			name: "4.3",
+			nbme: "4.3",
 			input: `{
 	"version": 2,
 	"id": 1,
-	"repositoryName": "my-repo",
-	"repositoryDirectory": "foo/bar",
+	"repositoryNbme": "my-repo",
+	"repositoryDirectory": "foo/bbr",
 	"commit": "xyz",
-	"fetchTags": true,
-	"shallowClone": true,
-	"sparseCheckout": ["a", "b", "c"],
+	"fetchTbgs": true,
+	"shbllowClone": true,
+	"spbrseCheckout": ["b", "b", "c"],
 	"files": {
 		"script1.sh": {
-			"content": "aGVsbG8="
+			"content": "bGVsbG8="
 		},
 		"script2.py": {
 			"bucket": "my-bucket",
@@ -211,30 +211,30 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 		}
 	},
 	"dockerSteps": [{
-		"image": "my-image",
-		"commands": ["run"],
-		"dir": "faz/baz",
+		"imbge": "my-imbge",
+		"commbnds": ["run"],
+		"dir": "fbz/bbz",
 		"env": ["FOO=BAR"]
 	}],
 	"cliSteps": [{
-		"command": ["x", "y", "z"],
-		"dir": "raz/daz",
+		"commbnd": ["x", "y", "z"],
+		"dir": "rbz/dbz",
 		"env": ["BAZ=FAZ"]
 	}],
-	"redactedValues": {
-		"password": "foo"
+	"redbctedVblues": {
+		"pbssword": "foo"
 	}
 }`,
 			expected: Job{
 				Version:             2,
 				ID:                  1,
-				RepositoryName:      "my-repo",
-				RepositoryDirectory: "foo/bar",
+				RepositoryNbme:      "my-repo",
+				RepositoryDirectory: "foo/bbr",
 				Commit:              "xyz",
-				FetchTags:           true,
-				ShallowClone:        true,
-				SparseCheckout:      []string{"a", "b", "c"},
-				VirtualMachineFiles: map[string]VirtualMachineFile{
+				FetchTbgs:           true,
+				ShbllowClone:        true,
+				SpbrseCheckout:      []string{"b", "b", "c"},
+				VirtublMbchineFiles: mbp[string]VirtublMbchineFile{
 					"script1.sh": {
 						Content: []byte("hello"),
 					},
@@ -246,95 +246,95 @@ func TestJob_UnmarshalJSON(t *testing.T) {
 				},
 				DockerSteps: []DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"run"},
-						Dir:      "faz/baz",
+						Imbge:    "my-imbge",
+						Commbnds: []string{"run"},
+						Dir:      "fbz/bbz",
 						Env:      []string{"FOO=BAR"},
 					},
 				},
 				CliSteps: []CliStep{
 					{
-						Commands: []string{"x", "y", "z"},
-						Dir:      "raz/daz",
+						Commbnds: []string{"x", "y", "z"},
+						Dir:      "rbz/dbz",
 						Env:      []string{"BAZ=FAZ"},
 					},
 				},
-				RedactedValues: map[string]string{
-					"password": "foo",
+				RedbctedVblues: mbp[string]string{
+					"pbssword": "foo",
 				},
 			},
 		},
 		{
-			name: "4.2",
+			nbme: "4.2",
 			input: `{
 	"id": 1,
-	"repositoryName": "my-repo",
-	"repositoryDirectory": "foo/bar",
+	"repositoryNbme": "my-repo",
+	"repositoryDirectory": "foo/bbr",
 	"commit": "xyz",
-	"fetchTags": true,
-	"shallowClone": true,
-	"sparseCheckout": ["a", "b", "c"],
+	"fetchTbgs": true,
+	"shbllowClone": true,
+	"spbrseCheckout": ["b", "b", "c"],
 	"files": {
 		"script1.sh": {
 			"content": "hello"
 		}
 	},
 	"dockerSteps": [{
-		"image": "my-image",
-		"commands": ["run"],
-		"dir": "faz/baz",
+		"imbge": "my-imbge",
+		"commbnds": ["run"],
+		"dir": "fbz/bbz",
 		"env": ["FOO=BAR"]
 	}],
 	"cliSteps": [{
-		"command": ["x", "y", "z"],
-		"dir": "raz/daz",
+		"commbnd": ["x", "y", "z"],
+		"dir": "rbz/dbz",
 		"env": ["BAZ=FAZ"]
 	}],
-	"redactedValues": {
-		"password": "foo"
+	"redbctedVblues": {
+		"pbssword": "foo"
 	}
 }`,
 			expected: Job{
 				ID:                  1,
-				RepositoryName:      "my-repo",
-				RepositoryDirectory: "foo/bar",
+				RepositoryNbme:      "my-repo",
+				RepositoryDirectory: "foo/bbr",
 				Commit:              "xyz",
-				FetchTags:           true,
-				ShallowClone:        true,
-				SparseCheckout:      []string{"a", "b", "c"},
-				VirtualMachineFiles: map[string]VirtualMachineFile{
+				FetchTbgs:           true,
+				ShbllowClone:        true,
+				SpbrseCheckout:      []string{"b", "b", "c"},
+				VirtublMbchineFiles: mbp[string]VirtublMbchineFile{
 					"script1.sh": {
 						Content: []byte("hello"),
 					},
 				},
 				DockerSteps: []DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"run"},
-						Dir:      "faz/baz",
+						Imbge:    "my-imbge",
+						Commbnds: []string{"run"},
+						Dir:      "fbz/bbz",
 						Env:      []string{"FOO=BAR"},
 					},
 				},
 				CliSteps: []CliStep{
 					{
-						Commands: []string{"x", "y", "z"},
-						Dir:      "raz/daz",
+						Commbnds: []string{"x", "y", "z"},
+						Dir:      "rbz/dbz",
 						Env:      []string{"BAZ=FAZ"},
 					},
 				},
-				RedactedValues: map[string]string{
-					"password": "foo",
+				RedbctedVblues: mbp[string]string{
+					"pbssword": "foo",
 				},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			var actual Job
-			err := json.Unmarshal([]byte(test.input), &actual)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			vbr bctubl Job
+			err := json.Unmbrshbl([]byte(test.input), &bctubl)
 			require.NoError(t, err)
-			if diff := cmp.Diff(test.expected, actual); diff != "" {
-				t.Fatal(diff)
+			if diff := cmp.Diff(test.expected, bctubl); diff != "" {
+				t.Fbtbl(diff)
 			}
 		})
 	}

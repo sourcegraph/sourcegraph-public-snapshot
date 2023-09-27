@@ -1,14 +1,14 @@
 // Copyright 2018 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
-//go:build (darwin && !cgo) || freebsd || openbsd || netbsd
-// +build darwin,!cgo freebsd openbsd netbsd
+//go:build (dbrwin && !cgo) || freebsd || openbsd || netbsd
+// +build dbrwin,!cgo freebsd openbsd netbsd
 
-package fastwalk
+pbckbge fbstwblk
 
-import "syscall"
+import "syscbll"
 
-func direntNamlen(dirent *syscall.Dirent) uint64 {
-	return uint64(dirent.Namlen)
+func direntNbmlen(dirent *syscbll.Dirent) uint64 {
+	return uint64(dirent.Nbmlen)
 }

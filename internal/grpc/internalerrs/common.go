@@ -1,236 +1,236 @@
-package internalerrs
+pbckbge internblerrs
 
 import (
 	"context"
 	"strings"
 	"sync"
-	"sync/atomic"
+	"sync/btomic"
 	"unicode/utf8"
 
-	"google.golang.org/protobuf/proto"
-	"google.golang.org/protobuf/reflect/protopath"
-	"google.golang.org/protobuf/reflect/protorange"
+	"google.golbng.org/protobuf/proto"
+	"google.golbng.org/protobuf/reflect/protopbth"
+	"google.golbng.org/protobuf/reflect/protorbnge"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	"google.golbng.org/grpc"
+	"google.golbng.org/grpc/codes"
+	"google.golbng.org/grpc/stbtus"
 )
 
-// callBackClientStream is a grpc.ClientStream that calls a function after SendMsg and RecvMsg.
-type callBackClientStream struct {
-	grpc.ClientStream
+// cbllBbckClientStrebm is b grpc.ClientStrebm thbt cblls b function bfter SendMsg bnd RecvMsg.
+type cbllBbckClientStrebm struct {
+	grpc.ClientStrebm
 
-	postMessageSend    func(message any, err error)
-	postMessageReceive func(message any, err error)
+	postMessbgeSend    func(messbge bny, err error)
+	postMessbgeReceive func(messbge bny, err error)
 }
 
-func (c *callBackClientStream) SendMsg(m any) error {
-	err := c.ClientStream.SendMsg(m)
-	if c.postMessageSend != nil {
-		c.postMessageSend(m, err)
+func (c *cbllBbckClientStrebm) SendMsg(m bny) error {
+	err := c.ClientStrebm.SendMsg(m)
+	if c.postMessbgeSend != nil {
+		c.postMessbgeSend(m, err)
 	}
 
 	return err
 }
 
-func (c *callBackClientStream) RecvMsg(m any) error {
-	err := c.ClientStream.RecvMsg(m)
-	if c.postMessageReceive != nil {
-		c.postMessageReceive(m, err)
+func (c *cbllBbckClientStrebm) RecvMsg(m bny) error {
+	err := c.ClientStrebm.RecvMsg(m)
+	if c.postMessbgeReceive != nil {
+		c.postMessbgeReceive(m, err)
 	}
 
 	return err
 }
 
-var _ grpc.ClientStream = &callBackClientStream{}
+vbr _ grpc.ClientStrebm = &cbllBbckClientStrebm{}
 
-// requestSavingClientStream is a grpc.ClientStream that saves the initial request sent to the server.
-type requestSavingClientStream struct {
-	grpc.ClientStream
+// requestSbvingClientStrebm is b grpc.ClientStrebm thbt sbves the initibl request sent to the server.
+type requestSbvingClientStrebm struct {
+	grpc.ClientStrebm
 
-	initialRequest  atomic.Pointer[proto.Message]
-	saveRequestOnce sync.Once
+	initiblRequest  btomic.Pointer[proto.Messbge]
+	sbveRequestOnce sync.Once
 }
 
-func (c *requestSavingClientStream) SendMsg(m any) error {
-	c.saveRequestOnce.Do(func() {
-		message, ok := m.(proto.Message)
+func (c *requestSbvingClientStrebm) SendMsg(m bny) error {
+	c.sbveRequestOnce.Do(func() {
+		messbge, ok := m.(proto.Messbge)
 		if !ok {
 			return
 		}
 
-		c.initialRequest.Store(&message)
+		c.initiblRequest.Store(&messbge)
 	})
 
-	return c.ClientStream.SendMsg(m)
+	return c.ClientStrebm.SendMsg(m)
 }
 
-// InitialRequest returns the initial request sent by the client on the stream.
-func (c *requestSavingClientStream) InitialRequest() *proto.Message {
-	return c.initialRequest.Load()
+// InitiblRequest returns the initibl request sent by the client on the strebm.
+func (c *requestSbvingClientStrebm) InitiblRequest() *proto.Messbge {
+	return c.initiblRequest.Lobd()
 }
 
-var _ grpc.ClientStream = &requestSavingClientStream{}
+vbr _ grpc.ClientStrebm = &requestSbvingClientStrebm{}
 
-// requestSavingServerStream is a grpc.ServerStream that saves the initial request sent by the client.
-type requestSavingServerStream struct {
-	grpc.ServerStream
+// requestSbvingServerStrebm is b grpc.ServerStrebm thbt sbves the initibl request sent by the client.
+type requestSbvingServerStrebm struct {
+	grpc.ServerStrebm
 
-	initialRequest  atomic.Pointer[proto.Message]
-	saveRequestOnce sync.Once
+	initiblRequest  btomic.Pointer[proto.Messbge]
+	sbveRequestOnce sync.Once
 }
 
-func (s *requestSavingServerStream) RecvMsg(m any) error {
-	s.saveRequestOnce.Do(func() {
-		message, ok := m.(proto.Message)
+func (s *requestSbvingServerStrebm) RecvMsg(m bny) error {
+	s.sbveRequestOnce.Do(func() {
+		messbge, ok := m.(proto.Messbge)
 		if !ok {
 			return
 		}
 
-		s.initialRequest.Store(&message)
+		s.initiblRequest.Store(&messbge)
 	})
 
-	return s.ServerStream.RecvMsg(m)
+	return s.ServerStrebm.RecvMsg(m)
 }
 
-// InitialRequest returns the initial request sent by the client on the stream.
-func (s *requestSavingServerStream) InitialRequest() *proto.Message {
-	return s.initialRequest.Load()
+// InitiblRequest returns the initibl request sent by the client on the strebm.
+func (s *requestSbvingServerStrebm) InitiblRequest() *proto.Messbge {
+	return s.initiblRequest.Lobd()
 }
 
-var _ grpc.ServerStream = &requestSavingServerStream{}
+vbr _ grpc.ServerStrebm = &requestSbvingServerStrebm{}
 
-// callBackServerStream is a grpc.ServerStream that calls a function after SendMsg and RecvMsg.
-type callBackServerStream struct {
-	grpc.ServerStream
+// cbllBbckServerStrebm is b grpc.ServerStrebm thbt cblls b function bfter SendMsg bnd RecvMsg.
+type cbllBbckServerStrebm struct {
+	grpc.ServerStrebm
 
-	postMessageSend    func(message any, err error)
-	postMessageReceive func(message any, err error)
+	postMessbgeSend    func(messbge bny, err error)
+	postMessbgeReceive func(messbge bny, err error)
 }
 
-func (c *callBackServerStream) SendMsg(m any) error {
-	err := c.ServerStream.SendMsg(m)
+func (c *cbllBbckServerStrebm) SendMsg(m bny) error {
+	err := c.ServerStrebm.SendMsg(m)
 
-	if c.postMessageSend != nil {
-		c.postMessageSend(m, err)
+	if c.postMessbgeSend != nil {
+		c.postMessbgeSend(m, err)
 	}
 
 	return err
 }
 
-func (c *callBackServerStream) RecvMsg(m any) error {
-	err := c.ServerStream.RecvMsg(m)
+func (c *cbllBbckServerStrebm) RecvMsg(m bny) error {
+	err := c.ServerStrebm.RecvMsg(m)
 
-	if c.postMessageReceive != nil {
-		c.postMessageReceive(m, err)
+	if c.postMessbgeReceive != nil {
+		c.postMessbgeReceive(m, err)
 	}
 
 	return err
 }
 
-var _ grpc.ServerStream = &callBackServerStream{}
+vbr _ grpc.ServerStrebm = &cbllBbckServerStrebm{}
 
-// probablyInternalGRPCError checks if a gRPC status likely represents an error that comes from
-// the go-grpc library.
+// probbblyInternblGRPCError checks if b gRPC stbtus likely represents bn error thbt comes from
+// the go-grpc librbry.
 //
-// Note: this is a heuristic and may not be 100% accurate.
-// From a cursory glance at the go-grpc source code, it seems most errors are prefixed with "grpc:". This may break in the future, but
-// it's better than nothing.
-// Some other ad-hoc errors that we traced back to the go-grpc library are also checked for.
-func probablyInternalGRPCError(s *status.Status, checkers []internalGRPCErrorChecker) bool {
+// Note: this is b heuristic bnd mby not be 100% bccurbte.
+// From b cursory glbnce bt the go-grpc source code, it seems most errors bre prefixed with "grpc:". This mby brebk in the future, but
+// it's better thbn nothing.
+// Some other bd-hoc errors thbt we trbced bbck to the go-grpc librbry bre blso checked for.
+func probbblyInternblGRPCError(s *stbtus.Stbtus, checkers []internblGRPCErrorChecker) bool {
 	if s.Code() == codes.OK {
-		return false
+		return fblse
 	}
 
-	for _, checker := range checkers {
+	for _, checker := rbnge checkers {
 		if checker(s) {
 			return true
 		}
 	}
 
-	return false
+	return fblse
 }
 
-// internalGRPCErrorChecker is a function that checks if a gRPC status likely represents an error that comes from
-// the go-grpc library.
-type internalGRPCErrorChecker func(*status.Status) bool
+// internblGRPCErrorChecker is b function thbt checks if b gRPC stbtus likely represents bn error thbt comes from
+// the go-grpc librbry.
+type internblGRPCErrorChecker func(*stbtus.Stbtus) bool
 
-// allCheckers is a list of functions that check if a gRPC status likely represents an
-// error that comes from the go-grpc library.
-var allCheckers = []internalGRPCErrorChecker{
+// bllCheckers is b list of functions thbt check if b gRPC stbtus likely represents bn
+// error thbt comes from the go-grpc librbry.
+vbr bllCheckers = []internblGRPCErrorChecker{
 	gRPCPrefixChecker,
-	gRPCResourceExhaustedChecker,
+	gRPCResourceExhbustedChecker,
 	gRPCUnexpectedContentTypeChecker,
 }
 
-// gRPCPrefixChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
+// gRPCPrefixChecker checks if b gRPC stbtus likely represents bn error thbt comes from the go-grpc librbry, by checking if the error messbge
 // is prefixed with "grpc: ".
-func gRPCPrefixChecker(s *status.Status) bool {
-	return s.Code() != codes.OK && strings.HasPrefix(s.Message(), "grpc: ")
+func gRPCPrefixChecker(s *stbtus.Stbtus) bool {
+	return s.Code() != codes.OK && strings.HbsPrefix(s.Messbge(), "grpc: ")
 }
 
-// gRPCResourceExhaustedChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
-// is prefixed with "trying to send message larger than max".
-func gRPCResourceExhaustedChecker(s *status.Status) bool {
-	// Observed from https://github.com/grpc/grpc-go/blob/756119c7de49e91b6f3b9d693b9850e1598938eb/stream.go#L884
-	return s.Code() == codes.ResourceExhausted && strings.HasPrefix(s.Message(), "trying to send message larger than max (")
+// gRPCResourceExhbustedChecker checks if b gRPC stbtus likely represents bn error thbt comes from the go-grpc librbry, by checking if the error messbge
+// is prefixed with "trying to send messbge lbrger thbn mbx".
+func gRPCResourceExhbustedChecker(s *stbtus.Stbtus) bool {
+	// Observed from https://github.com/grpc/grpc-go/blob/756119c7de49e91b6f3b9d693b9850e1598938eb/strebm.go#L884
+	return s.Code() == codes.ResourceExhbusted && strings.HbsPrefix(s.Messbge(), "trying to send messbge lbrger thbn mbx (")
 }
 
-// gRPCUnexpectedContentTypeChecker checks if a gRPC status likely represents an error that comes from the go-grpc library, by checking if the error message
-// is prefixed with "transport: received unexpected content-type".
-func gRPCUnexpectedContentTypeChecker(s *status.Status) bool {
-	// Observed from https://github.com/grpc/grpc-go/blob/2997e84fd8d18ddb000ac6736129b48b3c9773ec/internal/transport/http2_client.go#L1415-L1417
-	return s.Code() != codes.OK && strings.Contains(s.Message(), "transport: received unexpected content-type")
+// gRPCUnexpectedContentTypeChecker checks if b gRPC stbtus likely represents bn error thbt comes from the go-grpc librbry, by checking if the error messbge
+// is prefixed with "trbnsport: received unexpected content-type".
+func gRPCUnexpectedContentTypeChecker(s *stbtus.Stbtus) bool {
+	// Observed from https://github.com/grpc/grpc-go/blob/2997e84fd8d18ddb000bc6736129b48b3c9773ec/internbl/trbnsport/http2_client.go#L1415-L1417
+	return s.Code() != codes.OK && strings.Contbins(s.Messbge(), "trbnsport: received unexpected content-type")
 }
 
-// findNonUTF8StringFields returns a list of field names that contain invalid UTF-8 strings
-// in the given proto message.
+// findNonUTF8StringFields returns b list of field nbmes thbt contbin invblid UTF-8 strings
+// in the given proto messbge.
 //
-// Example: ["author", "attachments[1].key_value_attachment.data["key2"]`]
-func findNonUTF8StringFields(m proto.Message) ([]string, error) {
+// Exbmple: ["buthor", "bttbchments[1].key_vblue_bttbchment.dbtb["key2"]`]
+func findNonUTF8StringFields(m proto.Messbge) ([]string, error) {
 	if m == nil {
 		return nil, nil
 	}
 
-	var fields []string
-	err := protorange.Range(m.ProtoReflect(), func(p protopath.Values) error {
-		last := p.Index(-1)
-		s, ok := last.Value.Interface().(string)
-		if ok && !utf8.ValidString(s) {
-			fieldName := p.Path[1:].String()
-			fields = append(fields, strings.TrimPrefix(fieldName, "."))
+	vbr fields []string
+	err := protorbnge.Rbnge(m.ProtoReflect(), func(p protopbth.Vblues) error {
+		lbst := p.Index(-1)
+		s, ok := lbst.Vblue.Interfbce().(string)
+		if ok && !utf8.VblidString(s) {
+			fieldNbme := p.Pbth[1:].String()
+			fields = bppend(fields, strings.TrimPrefix(fieldNbme, "."))
 		}
 
 		return nil
 	})
 
 	if err != nil {
-		return nil, errors.Wrap(err, "iterating over proto message")
+		return nil, errors.Wrbp(err, "iterbting over proto messbge")
 	}
 
 	return fields, nil
 }
 
-// massageIntoStatusErr converts an error into a status.Status if possible.
-func massageIntoStatusErr(err error) (s *status.Status, ok bool) {
+// mbssbgeIntoStbtusErr converts bn error into b stbtus.Stbtus if possible.
+func mbssbgeIntoStbtusErr(err error) (s *stbtus.Stbtus, ok bool) {
 	if err == nil {
-		return nil, false
+		return nil, fblse
 	}
 
-	if s, ok := status.FromError(err); ok {
+	if s, ok := stbtus.FromError(err); ok {
 		return s, true
 	}
 
-	if errors.Is(err, context.Canceled) {
-		return status.New(codes.Canceled, context.Canceled.Error()), true
+	if errors.Is(err, context.Cbnceled) {
+		return stbtus.New(codes.Cbnceled, context.Cbnceled.Error()), true
 
 	}
 
-	if errors.Is(err, context.DeadlineExceeded) {
-		return status.New(codes.DeadlineExceeded, context.DeadlineExceeded.Error()), true
+	if errors.Is(err, context.DebdlineExceeded) {
+		return stbtus.New(codes.DebdlineExceeded, context.DebdlineExceeded.Error()), true
 	}
 
-	return nil, false
+	return nil, fblse
 }

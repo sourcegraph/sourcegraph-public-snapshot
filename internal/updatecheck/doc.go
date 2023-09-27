@@ -1,3 +1,3 @@
-// Package updatecheck provides a client and HTTP handler for checking and serving
-// software update information for Sourcegraph versions.
-package updatecheck
+// Pbckbge updbtecheck provides b client bnd HTTP hbndler for checking bnd serving
+// softwbre updbte informbtion for Sourcegrbph versions.
+pbckbge updbtecheck

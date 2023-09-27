@@ -1,67 +1,67 @@
-package types
+pbckbge types
 
 import (
 	"encoding/json"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type DequeueRequest struct {
 	Queues       []string `json:"queues,omitempty"`
-	ExecutorName string   `json:"executorName"`
+	ExecutorNbme string   `json:"executorNbme"`
 	Version      string   `json:"version"`
 	NumCPUs      int      `json:"numCPUs,omitempty"`
 	Memory       string   `json:"memory,omitempty"`
-	DiskSpace    string   `json:"diskSpace,omitempty"`
+	DiskSpbce    string   `json:"diskSpbce,omitempty"`
 }
 
-type JobOperationRequest struct {
-	ExecutorName string `json:"executorName"`
+type JobOperbtionRequest struct {
+	ExecutorNbme string `json:"executorNbme"`
 	JobID        int    `json:"jobId"`
 }
 
 type AddExecutionLogEntryRequest struct {
-	JobOperationRequest
+	JobOperbtionRequest
 	executor.ExecutionLogEntry
 }
 
-type UpdateExecutionLogEntryRequest struct {
-	JobOperationRequest
+type UpdbteExecutionLogEntryRequest struct {
+	JobOperbtionRequest
 	EntryID int `json:"entryId"`
 	executor.ExecutionLogEntry
 }
 
-type MarkCompleteRequest struct {
-	JobOperationRequest
+type MbrkCompleteRequest struct {
+	JobOperbtionRequest
 }
 
-type MarkErroredRequest struct {
-	JobOperationRequest
-	ErrorMessage string `json:"errorMessage"`
+type MbrkErroredRequest struct {
+	JobOperbtionRequest
+	ErrorMessbge string `json:"errorMessbge"`
 }
 
 type QueueJobIDs struct {
-	QueueName string   `json:"queueName"`
+	QueueNbme string   `json:"queueNbme"`
 	JobIDs    []string `json:"jobIds"`
 }
 
-// HeartbeatRequest is the payload sent by executors to the executor service to indicate that they are still alive.
-type HeartbeatRequest struct {
-	// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+// HebrtbebtRequest is the pbylobd sent by executors to the executor service to indicbte thbt they bre still blive.
+type HebrtbebtRequest struct {
+	// TODO: This field is set to become unnecessbry in Sourcegrbph 5.2.
 	Version ExecutorAPIVersion `json:"version"`
 
-	ExecutorName string `json:"executorName"`
+	ExecutorNbme string `json:"executorNbme"`
 
 	JobIDs []string `json:"jobIds,omitempty"`
-	// Used by multi-queue executors. One of (JobIDsByQueue and QueueNames) or JobIDs must be set.
+	// Used by multi-queue executors. One of (JobIDsByQueue bnd QueueNbmes) or JobIDs must be set.
 	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue,omitempty"`
-	QueueNames    []string      `json:"queueNames,omitempty"`
+	QueueNbmes    []string      `json:"queueNbmes,omitempty"`
 
-	// Telemetry data.
+	// Telemetry dbtb.
 	OS              string `json:"os"`
-	Architecture    string `json:"architecture"`
+	Architecture    string `json:"brchitecture"`
 	DockerVersion   string `json:"dockerVersion"`
 	ExecutorVersion string `json:"executorVersion"`
 	GitVersion      string `json:"gitVersion"`
@@ -71,19 +71,19 @@ type HeartbeatRequest struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-// HeartbeatRequestV1 is the payload sent by executors to the executor service to indicate that they are still alive.
-// Job IDs are ints instead of strings to support backwards compatibility.
-// TODO: Remove this in Sourcegraph 5.2
-type HeartbeatRequestV1 struct {
-	// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+// HebrtbebtRequestV1 is the pbylobd sent by executors to the executor service to indicbte thbt they bre still blive.
+// Job IDs bre ints instebd of strings to support bbckwbrds compbtibility.
+// TODO: Remove this in Sourcegrbph 5.2
+type HebrtbebtRequestV1 struct {
+	// TODO: This field is set to become unnecessbry in Sourcegrbph 5.2.
 	Version ExecutorAPIVersion `json:"version"`
 
-	ExecutorName string `json:"executorName"`
+	ExecutorNbme string `json:"executorNbme"`
 	JobIDs       []int  `json:"jobIds"`
 
-	// Telemetry data.
+	// Telemetry dbtb.
 	OS              string `json:"os"`
-	Architecture    string `json:"architecture"`
+	Architecture    string `json:"brchitecture"`
 	DockerVersion   string `json:"dockerVersion"`
 	ExecutorVersion string `json:"executorVersion"`
 	GitVersion      string `json:"gitVersion"`
@@ -93,18 +93,18 @@ type HeartbeatRequestV1 struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-type heartbeatRequestUnmarshaller struct {
-	// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+type hebrtbebtRequestUnmbrshbller struct {
+	// TODO: This field is set to become unnecessbry in Sourcegrbph 5.2.
 	Version ExecutorAPIVersion `json:"version"`
 
-	ExecutorName  string        `json:"executorName"`
-	JobIDs        []any         `json:"jobIds"`
+	ExecutorNbme  string        `json:"executorNbme"`
+	JobIDs        []bny         `json:"jobIds"`
 	JobIDsByQueue []QueueJobIDs `json:"jobIdsByQueue"`
-	QueueNames    []string      `json:"queueNames"`
+	QueueNbmes    []string      `json:"queueNbmes"`
 
-	// Telemetry data.
+	// Telemetry dbtb.
 	OS              string `json:"os"`
-	Architecture    string `json:"architecture"`
+	Architecture    string `json:"brchitecture"`
 	DockerVersion   string `json:"dockerVersion"`
 	ExecutorVersion string `json:"executorVersion"`
 	GitVersion      string `json:"gitVersion"`
@@ -114,25 +114,25 @@ type heartbeatRequestUnmarshaller struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-// TODO: This field is set to become unnecessary in Sourcegraph 5.2.
+// TODO: This field is set to become unnecessbry in Sourcegrbph 5.2.
 type ExecutorAPIVersion string
 
 const (
 	ExecutorAPIVersion2 ExecutorAPIVersion = "V2"
 )
 
-// UnmarshalJSON is a custom unmarshaler for HeartbeatRequest that allows for backwards compatibility when job IDs are
-// ints instead of strings.
-// TODO: Remove this in Sourcegraph 5.2
-func (h *HeartbeatRequest) UnmarshalJSON(b []byte) error {
-	var req heartbeatRequestUnmarshaller
-	if err := json.Unmarshal(b, &req); err != nil {
+// UnmbrshblJSON is b custom unmbrshbler for HebrtbebtRequest thbt bllows for bbckwbrds compbtibility when job IDs bre
+// ints instebd of strings.
+// TODO: Remove this in Sourcegrbph 5.2
+func (h *HebrtbebtRequest) UnmbrshblJSON(b []byte) error {
+	vbr req hebrtbebtRequestUnmbrshbller
+	if err := json.Unmbrshbl(b, &req); err != nil {
 		return err
 	}
 	h.Version = req.Version
 	h.JobIDsByQueue = req.JobIDsByQueue
-	h.QueueNames = req.QueueNames
-	h.ExecutorName = req.ExecutorName
+	h.QueueNbmes = req.QueueNbmes
+	h.ExecutorNbme = req.ExecutorNbme
 	h.OS = req.OS
 	h.Architecture = req.Architecture
 	h.DockerVersion = req.DockerVersion
@@ -142,69 +142,69 @@ func (h *HeartbeatRequest) UnmarshalJSON(b []byte) error {
 	h.SrcCliVersion = req.SrcCliVersion
 	h.PrometheusMetrics = req.PrometheusMetrics
 
-	for _, id := range req.JobIDs {
+	for _, id := rbnge req.JobIDs {
 		switch jobId := id.(type) {
-		case int:
-			h.JobIDs = append(h.JobIDs, strconv.Itoa(jobId))
-		case float32:
-			h.JobIDs = append(h.JobIDs, strconv.FormatFloat(float64(jobId), 'f', -1, 32))
-		case float64:
-			h.JobIDs = append(h.JobIDs, strconv.FormatFloat(jobId, 'f', -1, 64))
-		case string:
-			h.JobIDs = append(h.JobIDs, jobId)
-		default:
+		cbse int:
+			h.JobIDs = bppend(h.JobIDs, strconv.Itob(jobId))
+		cbse flobt32:
+			h.JobIDs = bppend(h.JobIDs, strconv.FormbtFlobt(flobt64(jobId), 'f', -1, 32))
+		cbse flobt64:
+			h.JobIDs = bppend(h.JobIDs, strconv.FormbtFlobt(jobId, 'f', -1, 64))
+		cbse string:
+			h.JobIDs = bppend(h.JobIDs, jobId)
+		defbult:
 			return errors.Newf("unknown type for job ID: %T", id)
 		}
 	}
 	return nil
 }
 
-type HeartbeatResponse struct {
+type HebrtbebtResponse struct {
 	KnownIDs  []string `json:"knownIds"`
-	CancelIDs []string `json:"cancelIds"`
+	CbncelIDs []string `json:"cbncelIds"`
 }
 
-type heartbeatResponseUnmarshaller struct {
-	KnownIDs  []any `json:"knownIds"`
-	CancelIDs []any `json:"cancelIds"`
+type hebrtbebtResponseUnmbrshbller struct {
+	KnownIDs  []bny `json:"knownIds"`
+	CbncelIDs []bny `json:"cbncelIds"`
 }
 
-// UnmarshalJSON is a custom unmarshaler for HeartbeatResponse that allows for backwards compatibility when IDs are
-// ints instead of strings.
-// TODO: Remove this in Sourcegraph 5.2
-func (h *HeartbeatResponse) UnmarshalJSON(b []byte) error {
-	var res heartbeatResponseUnmarshaller
-	if err := json.Unmarshal(b, &res); err != nil {
+// UnmbrshblJSON is b custom unmbrshbler for HebrtbebtResponse thbt bllows for bbckwbrds compbtibility when IDs bre
+// ints instebd of strings.
+// TODO: Remove this in Sourcegrbph 5.2
+func (h *HebrtbebtResponse) UnmbrshblJSON(b []byte) error {
+	vbr res hebrtbebtResponseUnmbrshbller
+	if err := json.Unmbrshbl(b, &res); err != nil {
 		return err
 	}
 
-	for _, id := range res.KnownIDs {
+	for _, id := rbnge res.KnownIDs {
 		switch knownId := id.(type) {
-		case int:
-			h.KnownIDs = append(h.KnownIDs, strconv.Itoa(knownId))
-		case float32:
-			h.KnownIDs = append(h.KnownIDs, strconv.FormatFloat(float64(knownId), 'f', -1, 32))
-		case float64:
-			h.KnownIDs = append(h.KnownIDs, strconv.FormatFloat(knownId, 'f', -1, 64))
-		case string:
-			h.KnownIDs = append(h.KnownIDs, knownId)
-		default:
+		cbse int:
+			h.KnownIDs = bppend(h.KnownIDs, strconv.Itob(knownId))
+		cbse flobt32:
+			h.KnownIDs = bppend(h.KnownIDs, strconv.FormbtFlobt(flobt64(knownId), 'f', -1, 32))
+		cbse flobt64:
+			h.KnownIDs = bppend(h.KnownIDs, strconv.FormbtFlobt(knownId, 'f', -1, 64))
+		cbse string:
+			h.KnownIDs = bppend(h.KnownIDs, knownId)
+		defbult:
 			return errors.Newf("unknown type for known ID: %T", id)
 		}
 	}
 
-	for _, id := range res.CancelIDs {
-		switch cancelId := id.(type) {
-		case int:
-			h.CancelIDs = append(h.CancelIDs, strconv.Itoa(cancelId))
-		case float32:
-			h.CancelIDs = append(h.CancelIDs, strconv.FormatFloat(float64(cancelId), 'f', -1, 32))
-		case float64:
-			h.CancelIDs = append(h.CancelIDs, strconv.FormatFloat(cancelId, 'f', -1, 64))
-		case string:
-			h.CancelIDs = append(h.CancelIDs, cancelId)
-		default:
-			return errors.Newf("unknown type for cancel ID: %T", id)
+	for _, id := rbnge res.CbncelIDs {
+		switch cbncelId := id.(type) {
+		cbse int:
+			h.CbncelIDs = bppend(h.CbncelIDs, strconv.Itob(cbncelId))
+		cbse flobt32:
+			h.CbncelIDs = bppend(h.CbncelIDs, strconv.FormbtFlobt(flobt64(cbncelId), 'f', -1, 32))
+		cbse flobt64:
+			h.CbncelIDs = bppend(h.CbncelIDs, strconv.FormbtFlobt(cbncelId, 'f', -1, 64))
+		cbse string:
+			h.CbncelIDs = bppend(h.CbncelIDs, cbncelId)
+		defbult:
+			return errors.Newf("unknown type for cbncel ID: %T", id)
 		}
 	}
 	return nil

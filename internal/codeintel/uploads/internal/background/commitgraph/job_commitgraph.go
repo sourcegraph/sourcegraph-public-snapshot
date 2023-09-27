@@ -1,155 +1,155 @@
-package commitgraph
+pbckbge commitgrbph
 
 import (
 	"context"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/database/locker"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/internbl/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/locker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func NewCommitGraphUpdater(
+func NewCommitGrbphUpdbter(
 	store store.Store,
 	gitserverClient gitserver.Client,
 	config *Config,
-) goroutine.BackgroundRoutine {
-	updater := &commitGraphUpdater{
+) goroutine.BbckgroundRoutine {
+	updbter := &commitGrbphUpdbter{
 		store:           store,
-		locker:          locker.NewWith(store.Handle(), "codeintel"),
+		locker:          locker.NewWith(store.Hbndle(), "codeintel"),
 		gitserverClient: gitserverClient,
 	}
 
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(context.Background()),
-		goroutine.HandlerFunc(func(ctx context.Context) error {
-			return updater.UpdateAllDirtyCommitGraphs(ctx, config.MaxAgeForNonStaleBranches, config.MaxAgeForNonStaleTags)
+		bctor.WithInternblActor(context.Bbckground()),
+		goroutine.HbndlerFunc(func(ctx context.Context) error {
+			return updbter.UpdbteAllDirtyCommitGrbphs(ctx, config.MbxAgeForNonStbleBrbnches, config.MbxAgeForNonStbleTbgs)
 		}),
-		goroutine.WithName("codeintel.commitgraph-updater"),
-		goroutine.WithDescription("updates the visibility commit graph for dirty repos"),
-		goroutine.WithInterval(config.Interval),
+		goroutine.WithNbme("codeintel.commitgrbph-updbter"),
+		goroutine.WithDescription("updbtes the visibility commit grbph for dirty repos"),
+		goroutine.WithIntervbl(config.Intervbl),
 	)
 }
 
-type commitGraphUpdater struct {
+type commitGrbphUpdbter struct {
 	store           store.Store
 	locker          Locker
 	gitserverClient gitserver.Client
 }
 
-// Handle periodically re-calculates the commit and upload visibility graph for repositories
-// that are marked as dirty by the worker process. This is done out-of-band from the rest of
-// the upload processing as it is likely that we are processing multiple uploads concurrently
-// for the same repository and should not repeat the work since the last calculation performed
-// will always be the one we want.
-func (s *commitGraphUpdater) UpdateAllDirtyCommitGraphs(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
+// Hbndle periodicblly re-cblculbtes the commit bnd uplobd visibility grbph for repositories
+// thbt bre mbrked bs dirty by the worker process. This is done out-of-bbnd from the rest of
+// the uplobd processing bs it is likely thbt we bre processing multiple uplobds concurrently
+// for the sbme repository bnd should not repebt the work since the lbst cblculbtion performed
+// will blwbys be the one we wbnt.
+func (s *commitGrbphUpdbter) UpdbteAllDirtyCommitGrbphs(ctx context.Context, mbxAgeForNonStbleBrbnches time.Durbtion, mbxAgeForNonStbleTbgs time.Durbtion) (err error) {
 	dirtyRepositories, err := s.store.GetDirtyRepositories(ctx)
 	if err != nil {
-		return errors.Wrap(err, "uploadSvc.DirtyRepositories")
+		return errors.Wrbp(err, "uplobdSvc.DirtyRepositories")
 	}
 
-	var updateErr error
-	for _, dirtyRepository := range dirtyRepositories {
-		if err := s.lockAndUpdateUploadsVisibleToCommits(
+	vbr updbteErr error
+	for _, dirtyRepository := rbnge dirtyRepositories {
+		if err := s.lockAndUpdbteUplobdsVisibleToCommits(
 			ctx,
 			dirtyRepository.RepositoryID,
-			dirtyRepository.RepositoryName,
+			dirtyRepository.RepositoryNbme,
 			dirtyRepository.DirtyToken,
-			maxAgeForNonStaleBranches,
-			maxAgeForNonStaleTags,
+			mbxAgeForNonStbleBrbnches,
+			mbxAgeForNonStbleTbgs,
 		); err != nil {
-			if updateErr == nil {
-				updateErr = err
+			if updbteErr == nil {
+				updbteErr = err
 			} else {
-				updateErr = errors.Append(updateErr, err)
+				updbteErr = errors.Append(updbteErr, err)
 			}
 		}
 	}
 
-	return updateErr
+	return updbteErr
 }
 
-// lockAndUpdateUploadsVisibleToCommits will call UpdateUploadsVisibleToCommits while holding an advisory lock to give exclusive access to the
-// update procedure for this repository. If the lock is already held, this method will simply do nothing.
-func (s *commitGraphUpdater) lockAndUpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, repositoryName string, dirtyToken int, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error) {
-	ok, unlock, err := s.locker.Lock(ctx, int32(repositoryID), false)
+// lockAndUpdbteUplobdsVisibleToCommits will cbll UpdbteUplobdsVisibleToCommits while holding bn bdvisory lock to give exclusive bccess to the
+// updbte procedure for this repository. If the lock is blrebdy held, this method will simply do nothing.
+func (s *commitGrbphUpdbter) lockAndUpdbteUplobdsVisibleToCommits(ctx context.Context, repositoryID int, repositoryNbme string, dirtyToken int, mbxAgeForNonStbleBrbnches time.Durbtion, mbxAgeForNonStbleTbgs time.Durbtion) (err error) {
+	ok, unlock, err := s.locker.Lock(ctx, int32(repositoryID), fblse)
 	if err != nil || !ok {
-		return errors.Wrap(err, "locker.Lock")
+		return errors.Wrbp(err, "locker.Lock")
 	}
 	defer func() {
 		err = unlock(err)
 	}()
 
-	repo := api.RepoName(repositoryName)
+	repo := bpi.RepoNbme(repositoryNbme)
 
-	// The following process pulls the commit graph for the given repository from gitserver, pulls the set of LSIF
-	// upload objects for the given repository from Postgres, and correlates them into a visibility
-	// graph. This graph is then upserted back into Postgres for use by find closest dumps queries.
+	// The following process pulls the commit grbph for the given repository from gitserver, pulls the set of LSIF
+	// uplobd objects for the given repository from Postgres, bnd correlbtes them into b visibility
+	// grbph. This grbph is then upserted bbck into Postgres for use by find closest dumps queries.
 	//
-	// The user should supply a dirty token that is associated with the given repository so that
-	// the repository can be unmarked as long as the repository is not marked as dirty again before
-	// the update completes.
+	// The user should supply b dirty token thbt is bssocibted with the given repository so thbt
+	// the repository cbn be unmbrked bs long bs the repository is not mbrked bs dirty bgbin before
+	// the updbte completes.
 
-	// Construct a view of the git graph that we will later decorate with upload information.
-	commitGraph, err := s.getCommitGraph(ctx, repositoryID, repo)
+	// Construct b view of the git grbph thbt we will lbter decorbte with uplobd informbtion.
+	commitGrbph, err := s.getCommitGrbph(ctx, repositoryID, repo)
 	if err != nil {
 		return err
 	}
 
-	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, authz.DefaultSubRepoPermsChecker, repo)
+	refDescriptions, err := s.gitserverClient.RefDescriptions(ctx, buthz.DefbultSubRepoPermsChecker, repo)
 	if err != nil {
-		return errors.Wrap(err, "gitserver.RefDescriptions")
+		return errors.Wrbp(err, "gitserver.RefDescriptions")
 	}
 
-	// Decorate the commit graph with the set of processed uploads are visible from each commit,
-	// then bulk update the denormalized view in Postgres. We call this with an empty graph as well
-	// so that we end up clearing the stale data and bulk inserting nothing.
-	if err := s.store.UpdateUploadsVisibleToCommits(ctx, repositoryID, commitGraph, refDescriptions, maxAgeForNonStaleBranches, maxAgeForNonStaleTags, dirtyToken, time.Time{}); err != nil {
-		return errors.Wrap(err, "uploadSvc.UpdateUploadsVisibleToCommits")
+	// Decorbte the commit grbph with the set of processed uplobds bre visible from ebch commit,
+	// then bulk updbte the denormblized view in Postgres. We cbll this with bn empty grbph bs well
+	// so thbt we end up clebring the stble dbtb bnd bulk inserting nothing.
+	if err := s.store.UpdbteUplobdsVisibleToCommits(ctx, repositoryID, commitGrbph, refDescriptions, mbxAgeForNonStbleBrbnches, mbxAgeForNonStbleTbgs, dirtyToken, time.Time{}); err != nil {
+		return errors.Wrbp(err, "uplobdSvc.UpdbteUplobdsVisibleToCommits")
 	}
 
 	return nil
 }
 
-// getCommitGraph builds a partial commit graph that includes the most recent commits on each branch
-// extending back as as the date of the oldest commit for which we have a processed upload for this
+// getCommitGrbph builds b pbrtibl commit grbph thbt includes the most recent commits on ebch brbnch
+// extending bbck bs bs the dbte of the oldest commit for which we hbve b processed uplobd for this
 // repository.
 //
-// This optimization is necessary as decorating the commit graph is an operation that scales with
-// the size of both the git graph and the number of uploads (multiplicatively). For repositories with
-// a very large number of commits or distinct roots (most monorepos) this is a necessary optimization.
+// This optimizbtion is necessbry bs decorbting the commit grbph is bn operbtion thbt scbles with
+// the size of both the git grbph bnd the number of uplobds (multiplicbtively). For repositories with
+// b very lbrge number of commits or distinct roots (most monorepos) this is b necessbry optimizbtion.
 //
-// The number of commits pulled back here should not grow over time unless the repo is growing at an
-// accelerating rate, as we routinely expire old information for active repositories in a janitor
+// The number of commits pulled bbck here should not grow over time unless the repo is growing bt bn
+// bccelerbting rbte, bs we routinely expire old informbtion for bctive repositories in b jbnitor
 // process.
-func (s *commitGraphUpdater) getCommitGraph(ctx context.Context, repositoryID int, repo api.RepoName) (*gitdomain.CommitGraph, error) {
-	commitDate, ok, err := s.store.GetOldestCommitDate(ctx, repositoryID)
+func (s *commitGrbphUpdbter) getCommitGrbph(ctx context.Context, repositoryID int, repo bpi.RepoNbme) (*gitdombin.CommitGrbph, error) {
+	commitDbte, ok, err := s.store.GetOldestCommitDbte(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 	if !ok {
-		// No uploads exist for this repository
-		return gitdomain.ParseCommitGraph(nil), nil
+		// No uplobds exist for this repository
+		return gitdombin.PbrseCommitGrbph(nil), nil
 	}
 
-	// The --since flag for git log is exclusive, but we want to include the commit where the
-	// oldest dump is defined. This flag only has second resolution, so we shouldn't be pulling
-	// back any more data than we wanted.
-	commitDate = commitDate.Add(-time.Second)
+	// The --since flbg for git log is exclusive, but we wbnt to include the commit where the
+	// oldest dump is defined. This flbg only hbs second resolution, so we shouldn't be pulling
+	// bbck bny more dbtb thbn we wbnted.
+	commitDbte = commitDbte.Add(-time.Second)
 
-	commitGraph, err := s.gitserverClient.CommitGraph(ctx, repo, gitserver.CommitGraphOptions{
+	commitGrbph, err := s.gitserverClient.CommitGrbph(ctx, repo, gitserver.CommitGrbphOptions{
 		AllRefs: true,
-		Since:   &commitDate,
+		Since:   &commitDbte,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "gitserver.CommitGraph")
+		return nil, errors.Wrbp(err, "gitserver.CommitGrbph")
 	}
 
-	return commitGraph, nil
+	return commitGrbph, nil
 }

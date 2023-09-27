@@ -1,4 +1,4 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type mockDoer struct {
@@ -31,20 +31,20 @@ func (c *mockDoer) Do(r *http.Request) (*http.Response, error) {
 }
 
 func mustURL(t *testing.T, u string) *url.URL {
-	parsed, err := url.Parse(u)
+	pbrsed, err := url.Pbrse(u)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	return parsed
+	return pbrsed
 }
 
-func createTestServer() *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasSuffix(r.URL.Path, "/repositories") {
+func crebteTestServer() *httptest.Server {
+	return httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HbsSuffix(r.URL.Pbth, "/repositories") {
 			json.NewEncoder(w).Encode(struct {
-				Values []bitbucketcloud.Repo `json:"values"`
+				Vblues []bitbucketcloud.Repo `json:"vblues"`
 			}{
-				Values: []bitbucketcloud.Repo{
+				Vblues: []bitbucketcloud.Repo{
 					{UUID: "1"},
 					{UUID: "2"},
 					{UUID: "3"},
@@ -53,11 +53,11 @@ func createTestServer() *httptest.Server {
 			return
 		}
 
-		if strings.HasSuffix(r.URL.Path, "/permissions-config/users") {
+		if strings.HbsSuffix(r.URL.Pbth, "/permissions-config/users") {
 			json.NewEncoder(w).Encode(struct {
-				Values []bitbucketcloud.ExplicitUserPermsResponse `json:"values"`
+				Vblues []bitbucketcloud.ExplicitUserPermsResponse `json:"vblues"`
 			}{
-				Values: []bitbucketcloud.ExplicitUserPermsResponse{
+				Vblues: []bitbucketcloud.ExplicitUserPermsResponse{
 					{User: &bitbucketcloud.Account{UUID: "1"}},
 					{User: &bitbucketcloud.Account{UUID: "2"}},
 					{User: &bitbucketcloud.Account{UUID: "3"}},
@@ -66,7 +66,7 @@ func createTestServer() *httptest.Server {
 			return
 		}
 
-		if strings.HasSuffix(r.URL.Path, "/repositories/user/repo") {
+		if strings.HbsSuffix(r.URL.Pbth, "/repositories/user/repo") {
 			json.NewEncoder(w).Encode(bitbucketcloud.Repo{
 				Owner: &bitbucketcloud.Account{UUID: "4"},
 			})
@@ -76,84 +76,84 @@ func createTestServer() *httptest.Server {
 }
 
 func TestProvider_FetchUserPerms(t *testing.T) {
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
 	db := dbmocks.NewMockDB()
-	t.Run("nil account", func(t *testing.T) {
+	t.Run("nil bccount", func(t *testing.T) {
 		p := NewProvider(db,
 			&types.BitbucketCloudConnection{
-				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+				BitbucketCloudConnection: &schemb.BitbucketCloudConnection{
 					ApiURL: "https://bitbucket.org",
 					Url:    "https://bitbucket.org",
 				},
 			}, ProviderOptions{})
-		_, err := p.FetchUserPerms(context.Background(), nil, authz.FetchPermsOptions{})
-		want := "no account provided"
+		_, err := p.FetchUserPerms(context.Bbckground(), nil, buthz.FetchPermsOptions{})
+		wbnt := "no bccount provided"
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("not the code host of the account", func(t *testing.T) {
+	t.Run("not the code host of the bccount", func(t *testing.T) {
 		p := NewProvider(db,
 			&types.BitbucketCloudConnection{
-				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+				BitbucketCloudConnection: &schemb.BitbucketCloudConnection{
 					ApiURL: "https://bitbucket.org",
 					Url:    "https://bitbucket.org",
 				},
 			}, ProviderOptions{})
-		_, err := p.FetchUserPerms(context.Background(),
+		_, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: extsvc.TypeGitHub,
 					ServiceID:   "https://github.com/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `not a code host of the account: want "https://bitbucket.org/" but have "https://github.com/"`
+		wbnt := `not b code host of the bccount: wbnt "https://bitbucket.org/" but hbve "https://github.com/"`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	t.Run("no account data provided", func(t *testing.T) {
+	t.Run("no bccount dbtb provided", func(t *testing.T) {
 		p := NewProvider(db,
 			&types.BitbucketCloudConnection{
-				BitbucketCloudConnection: &schema.BitbucketCloudConnection{
+				BitbucketCloudConnection: &schemb.BitbucketCloudConnection{
 					ApiURL: "https://bitbucket.org",
 					Url:    "https://bitbucket.org",
 				},
 			}, ProviderOptions{})
-		_, err := p.FetchUserPerms(context.Background(),
+		_, err := p.FetchUserPerms(context.Bbckground(),
 			&extsvc.Account{
 				AccountSpec: extsvc.AccountSpec{
 					ServiceType: extsvc.TypeBitbucketCloud,
 					ServiceID:   "https://bitbucket.org/",
 				},
 			},
-			authz.FetchPermsOptions{},
+			buthz.FetchPermsOptions{},
 		)
-		want := `no account data provided`
+		wbnt := `no bccount dbtb provided`
 		got := fmt.Sprintf("%v", err)
-		if got != want {
-			t.Fatalf("err: want %q but got %q", want, got)
+		if got != wbnt {
+			t.Fbtblf("err: wbnt %q but got %q", wbnt, got)
 		}
 	})
 
-	server := createTestServer()
+	server := crebteTestServer()
 	defer server.Close()
 
 	t.Run("fetch user permissions", func(t *testing.T) {
-		conn := &schema.BitbucketCloudConnection{
+		conn := &schemb.BitbucketCloudConnection{
 			ApiURL: server.URL,
 			Url:    server.URL,
 		}
-		client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient)
+		client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefbultClient)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		p := NewProvider(db,
@@ -161,45 +161,45 @@ func TestProvider_FetchUserPerms(t *testing.T) {
 				BitbucketCloudConnection: conn,
 			}, ProviderOptions{BitbucketCloudClient: client})
 
-		var acctData extsvc.AccountData
-		err = bitbucketcloud.SetExternalAccountData(&acctData, &bitbucketcloud.Account{}, &oauth2.Token{AccessToken: "my-access-token"})
+		vbr bcctDbtb extsvc.AccountDbtb
+		err = bitbucketcloud.SetExternblAccountDbtb(&bcctDbtb, &bitbucketcloud.Account{}, &obuth2.Token{AccessToken: "my-bccess-token"})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		account := &extsvc.Account{
+		bccount := &extsvc.Account{
 			AccountSpec: extsvc.AccountSpec{
 				ServiceType: extsvc.TypeBitbucketCloud,
-				ServiceID:   extsvc.NormalizeBaseURL(mustURL(t, server.URL)).String(),
+				ServiceID:   extsvc.NormblizeBbseURL(mustURL(t, server.URL)).String(),
 			},
-			AccountData: acctData,
+			AccountDbtb: bcctDbtb,
 		}
-		userPerms, err := p.FetchUserPerms(context.Background(), account, authz.FetchPermsOptions{})
+		userPerms, err := p.FetchUserPerms(context.Bbckground(), bccount, buthz.FetchPermsOptions{})
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		expRepoIDs := []extsvc.RepoID{"1", "2", "3"}
-		if diff := cmp.Diff(expRepoIDs, userPerms.Exacts); diff != "" {
-			t.Fatal(diff)
+		if diff := cmp.Diff(expRepoIDs, userPerms.Exbcts); diff != "" {
+			t.Fbtbl(diff)
 		}
 	})
 }
 
 func TestProvider_FetchRepoPerms(t *testing.T) {
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	server := createTestServer()
+	server := crebteTestServer()
 	defer server.Close()
 	db := dbmocks.NewMockDB()
 
-	conn := &schema.BitbucketCloudConnection{
+	conn := &schemb.BitbucketCloudConnection{
 		ApiURL: server.URL,
 		Url:    server.URL,
 	}
-	client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefaultClient)
+	client, err := bitbucketcloud.NewClient(server.URL, conn, http.DefbultClient)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	p := NewProvider(db,
@@ -207,16 +207,16 @@ func TestProvider_FetchRepoPerms(t *testing.T) {
 			BitbucketCloudConnection: conn,
 		}, ProviderOptions{BitbucketCloudClient: client})
 
-	perms, err := p.FetchRepoPerms(context.Background(), &extsvc.Repository{
+	perms, err := p.FetchRepoPerms(context.Bbckground(), &extsvc.Repository{
 		URI: "bitbucket.org/user/repo",
-	}, authz.FetchPermsOptions{})
+	}, buthz.FetchPermsOptions{})
 
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	expUserIDs := []extsvc.AccountID{"1", "2", "3", "4"}
 	if diff := cmp.Diff(expUserIDs, perms); diff != "" {
-		t.Fatal(diff)
+		t.Fbtbl(diff)
 	}
 }

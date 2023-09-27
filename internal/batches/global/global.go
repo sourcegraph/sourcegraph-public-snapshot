@@ -1,16 +1,16 @@
-package global
+pbckbge globbl
 
 import (
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/types/scheduler/config"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types/scheduler/config"
 )
 
-// DefaultReconcilerEnqueueState returns the reconciler state that should be
-// used when enqueuing a changeset: this may be ReconcilerStateQueued or
-// ReconcilerStateScheduled depending on the site configuration.
-func DefaultReconcilerEnqueueState() btypes.ReconcilerState {
-	if window := config.ActiveWindow(); window != nil && window.HasRolloutWindows() {
-		return btypes.ReconcilerStateScheduled
+// DefbultReconcilerEnqueueStbte returns the reconciler stbte thbt should be
+// used when enqueuing b chbngeset: this mby be ReconcilerStbteQueued or
+// ReconcilerStbteScheduled depending on the site configurbtion.
+func DefbultReconcilerEnqueueStbte() btypes.ReconcilerStbte {
+	if window := config.ActiveWindow(); window != nil && window.HbsRolloutWindows() {
+		return btypes.ReconcilerStbteScheduled
 	}
-	return btypes.ReconcilerStateQueued
+	return btypes.ReconcilerStbteQueued
 }

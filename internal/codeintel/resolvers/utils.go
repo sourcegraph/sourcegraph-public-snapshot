@@ -1,24 +1,24 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-type ConnectionResolver[T any] interface {
+type ConnectionResolver[T bny] interfbce {
 	Nodes(ctx context.Context) ([]T, error)
 }
 
-type connectionResolver[T any] struct {
+type connectionResolver[T bny] struct {
 	nodes []T
 }
 
-func NewConnectionResolver[T any](nodes []T) ConnectionResolver[T] {
+func NewConnectionResolver[T bny](nodes []T) ConnectionResolver[T] {
 	return &connectionResolver[T]{
 		nodes: nodes,
 	}
@@ -31,17 +31,17 @@ func (r *connectionResolver[T]) Nodes(ctx context.Context) ([]T, error) {
 //
 //
 
-type PagedConnectionResolver[T any] interface {
+type PbgedConnectionResolver[T bny] interfbce {
 	ConnectionResolver[T]
-	PageInfo() PageInfo
+	PbgeInfo() PbgeInfo
 }
 
-type cursorConnectionResolver[T any] struct {
+type cursorConnectionResolver[T bny] struct {
 	*connectionResolver[T]
 	cursor string
 }
 
-func NewCursorConnectionResolver[T any](nodes []T, cursor string) PagedConnectionResolver[T] {
+func NewCursorConnectionResolver[T bny](nodes []T, cursor string) PbgedConnectionResolver[T] {
 	return &cursorConnectionResolver[T]{
 		connectionResolver: &connectionResolver[T]{
 			nodes: nodes,
@@ -50,162 +50,162 @@ func NewCursorConnectionResolver[T any](nodes []T, cursor string) PagedConnectio
 	}
 }
 
-func (r *cursorConnectionResolver[T]) PageInfo() PageInfo {
-	return NewPageInfoFromCursor(r.cursor)
+func (r *cursorConnectionResolver[T]) PbgeInfo() PbgeInfo {
+	return NewPbgeInfoFromCursor(r.cursor)
 }
 
 //
 //
 
-type lazyConnectionResolver[T any] struct {
+type lbzyConnectionResolver[T bny] struct {
 	resolveFunc func(ctx context.Context) ([]T, error)
 	cursor      string
 }
 
-func NewLazyConnectionResolver[T any](resolveFunc func(ctx context.Context) ([]T, error), cursor string) PagedConnectionResolver[T] {
-	return &lazyConnectionResolver[T]{
+func NewLbzyConnectionResolver[T bny](resolveFunc func(ctx context.Context) ([]T, error), cursor string) PbgedConnectionResolver[T] {
+	return &lbzyConnectionResolver[T]{
 		resolveFunc: resolveFunc,
 		cursor:      cursor,
 	}
 }
 
-func (r *lazyConnectionResolver[T]) Nodes(ctx context.Context) ([]T, error) {
+func (r *lbzyConnectionResolver[T]) Nodes(ctx context.Context) ([]T, error) {
 	return r.resolveFunc(ctx)
 }
 
-func (r *lazyConnectionResolver[T]) PageInfo() PageInfo {
-	return NewPageInfoFromCursor(r.cursor)
+func (r *lbzyConnectionResolver[T]) PbgeInfo() PbgeInfo {
+	return NewPbgeInfoFromCursor(r.cursor)
 }
 
 //
 //
 
-type PagedConnectionWithTotalCountResolver[T any] interface {
-	PagedConnectionResolver[T]
-	TotalCount() *int32
+type PbgedConnectionWithTotblCountResolver[T bny] interfbce {
+	PbgedConnectionResolver[T]
+	TotblCount() *int32
 }
 
-type cursorConnectionWithTotalCountResolver[T any] struct {
+type cursorConnectionWithTotblCountResolver[T bny] struct {
 	*cursorConnectionResolver[T]
-	totalCount int32
+	totblCount int32
 }
 
-func NewCursorWithTotalCountConnectionResolver[T any](nodes []T, cursor string, totalCount int32) PagedConnectionWithTotalCountResolver[T] {
-	return &cursorConnectionWithTotalCountResolver[T]{
+func NewCursorWithTotblCountConnectionResolver[T bny](nodes []T, cursor string, totblCount int32) PbgedConnectionWithTotblCountResolver[T] {
+	return &cursorConnectionWithTotblCountResolver[T]{
 		cursorConnectionResolver: &cursorConnectionResolver[T]{
 			connectionResolver: &connectionResolver[T]{
 				nodes: nodes,
 			},
 			cursor: cursor,
 		},
-		totalCount: totalCount,
+		totblCount: totblCount,
 	}
 }
 
-func (r *cursorConnectionWithTotalCountResolver[T]) TotalCount() *int32 {
-	return &r.totalCount
+func (r *cursorConnectionWithTotblCountResolver[T]) TotblCount() *int32 {
+	return &r.totblCount
 }
 
 //
 //
 
-type totalCountConnectionResolver[T any] struct {
+type totblCountConnectionResolver[T bny] struct {
 	*connectionResolver[T]
 	offset     int32
-	totalCount int32
+	totblCount int32
 }
 
-func NewTotalCountConnectionResolver[T any](nodes []T, offset, totalCount int32) PagedConnectionWithTotalCountResolver[T] {
-	return &totalCountConnectionResolver[T]{
+func NewTotblCountConnectionResolver[T bny](nodes []T, offset, totblCount int32) PbgedConnectionWithTotblCountResolver[T] {
+	return &totblCountConnectionResolver[T]{
 		connectionResolver: &connectionResolver[T]{
 			nodes: nodes,
 		},
 		offset:     offset,
-		totalCount: totalCount,
+		totblCount: totblCount,
 	}
 }
 
-func (r *totalCountConnectionResolver[T]) TotalCount() *int32 {
-	return &r.totalCount
+func (r *totblCountConnectionResolver[T]) TotblCount() *int32 {
+	return &r.totblCount
 }
 
-func (r *totalCountConnectionResolver[T]) PageInfo() PageInfo {
-	return NewSimplePageInfo(r.offset+int32(len(r.nodes)) < r.totalCount)
+func (r *totblCountConnectionResolver[T]) PbgeInfo() PbgeInfo {
+	return NewSimplePbgeInfo(r.offset+int32(len(r.nodes)) < r.totblCount)
 }
 
 //
 //
 
-type PageInfo interface {
-	HasNextPage() bool
+type PbgeInfo interfbce {
+	HbsNextPbge() bool
 	EndCursor() *string
 }
 
-type pageInfo struct {
+type pbgeInfo struct {
 	endCursor   *string
-	hasNextPage bool
+	hbsNextPbge bool
 }
 
-func NewSimplePageInfo(hasNextPage bool) PageInfo {
-	return &pageInfo{
-		hasNextPage: hasNextPage,
+func NewSimplePbgeInfo(hbsNextPbge bool) PbgeInfo {
+	return &pbgeInfo{
+		hbsNextPbge: hbsNextPbge,
 	}
 }
 
-func NewPageInfoFromCursor(endCursor string) PageInfo {
+func NewPbgeInfoFromCursor(endCursor string) PbgeInfo {
 	if endCursor == "" {
-		return &pageInfo{}
+		return &pbgeInfo{}
 	}
 
-	return &pageInfo{
-		hasNextPage: true,
+	return &pbgeInfo{
+		hbsNextPbge: true,
 		endCursor:   &endCursor,
 	}
 }
 
-func (r *pageInfo) EndCursor() *string { return r.endCursor }
-func (r *pageInfo) HasNextPage() bool  { return r.hasNextPage }
+func (r *pbgeInfo) EndCursor() *string { return r.endCursor }
+func (r *pbgeInfo) HbsNextPbge() bool  { return r.hbsNextPbge }
 
 type ConnectionArgs struct {
 	First *int32
 }
 
-func (a *ConnectionArgs) Limit(defaultValue int32) int32 {
-	return pointers.Deref(a.First, defaultValue)
+func (b *ConnectionArgs) Limit(defbultVblue int32) int32 {
+	return pointers.Deref(b.First, defbultVblue)
 }
 
-type PagedConnectionArgs struct {
+type PbgedConnectionArgs struct {
 	ConnectionArgs
 	After *string
 }
 
-func (a *PagedConnectionArgs) ParseOffset() (int32, error) {
-	if a.After == nil {
+func (b *PbgedConnectionArgs) PbrseOffset() (int32, error) {
+	if b.After == nil {
 		return 0, nil
 	}
 
-	v, err := strconv.ParseInt(*a.After, 10, 32)
+	v, err := strconv.PbrseInt(*b.After, 10, 32)
 	return int32(v), err
 }
 
-func (a *PagedConnectionArgs) ParseLimitOffset(defaultValue int32) (limit, offset int32, _ error) {
-	offset, err := a.ParseOffset()
-	return a.Limit(defaultValue), offset, err
+func (b *PbgedConnectionArgs) PbrseLimitOffset(defbultVblue int32) (limit, offset int32, _ error) {
+	offset, err := b.PbrseOffset()
+	return b.Limit(defbultVblue), offset, err
 }
 
 type EmptyResponse struct{}
 
-var Empty = &EmptyResponse{}
+vbr Empty = &EmptyResponse{}
 
-func (er *EmptyResponse) AlwaysNil() *string {
+func (er *EmptyResponse) AlwbysNil() *string {
 	return nil
 }
 
-func UnmarshalID[T any](id graphql.ID) (val T, err error) {
-	err = relay.UnmarshalSpec(id, &val)
+func UnmbrshblID[T bny](id grbphql.ID) (vbl T, err error) {
+	err = relby.UnmbrshblSpec(id, &vbl)
 	return
 }
 
-func MarshalID[T any](kind string, id T) graphql.ID {
-	return relay.MarshalID(kind, id)
+func MbrshblID[T bny](kind string, id T) grbphql.ID {
+	return relby.MbrshblID(kind, id)
 }

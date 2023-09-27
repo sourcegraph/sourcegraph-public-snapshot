@@ -1,229 +1,229 @@
-package bitbucketcloudoauth
+pbckbge bitbucketcloudobuth
 
 import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/oauth2"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/auth/oauth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/buth/obuth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestParseConfig(t *testing.T) {
+func TestPbrseConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	type args struct {
+	type brgs struct {
 		cfg *conf.Unified
 	}
 	tests := []struct {
-		name          string
-		args          args
-		wantProviders []Provider
-		wantProblems  []string
+		nbme          string
+		brgs          brgs
+		wbntProviders []Provider
+		wbntProblems  []string
 	}{
 		{
-			name:          "No configs",
-			args:          args{cfg: &conf.Unified{}},
-			wantProviders: []Provider(nil),
+			nbme:          "No configs",
+			brgs:          brgs{cfg: &conf.Unified{}},
+			wbntProviders: []Provider(nil),
 		},
 		{
-			name: "1 Bitbucket Cloud config",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{{
-					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+			nbme: "1 Bitbucket Cloud config",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{{
+					Bitbucketcloud: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Bitbucket Cloud",
+						DisplbyNbme:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					BitbucketCloudAuthProvider: &schema.BitbucketCloudAuthProvider{
+					BitbucketCloudAuthProvider: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Bitbucket Cloud",
+						DisplbyNbme:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
-					Provider: provider("https://bitbucket.org/", oauth2.Config{
+					Provider: provider("https://bitbucket.org/", obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://bitbucket.org/site/oauth2/authorize",
-							TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://bitbucket.org/site/obuth2/buthorize",
+							TokenURL: "https://bitbucket.org/site/obuth2/bccess_token",
 						},
-						Scopes: []string{"account", "email"},
+						Scopes: []string{"bccount", "embil"},
 					}),
 				},
 			},
 		},
 		{
-			name: "2 Bitbucket Cloud configs with the same Url and client IDs",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{{
-					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+			nbme: "2 Bitbucket Cloud configs with the sbme Url bnd client IDs",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{{
+					Bitbucketcloud: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Bitbucket Cloud",
+						DisplbyNbme:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
 				}, {
-					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+					Bitbucketcloud: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret2",
-						DisplayName:  "Bitbucket Cloud Duplicate",
+						DisplbyNbme:  "Bitbucket Cloud Duplicbte",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					BitbucketCloudAuthProvider: &schema.BitbucketCloudAuthProvider{
+					BitbucketCloudAuthProvider: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Bitbucket Cloud",
+						DisplbyNbme:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
-					Provider: provider("https://bitbucket.org/", oauth2.Config{
+					Provider: provider("https://bitbucket.org/", obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://bitbucket.org/site/oauth2/authorize",
-							TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://bitbucket.org/site/obuth2/buthorize",
+							TokenURL: "https://bitbucket.org/site/obuth2/bccess_token",
 						},
-						Scopes: []string{"account", "email"},
+						Scopes: []string{"bccount", "embil"},
 					}),
 				},
 			},
-			wantProblems: []string{
-				`Cannot have more than one Bitbucket Cloud auth provider with url "https://bitbucket.org/" and client ID "myclientid", only the first one will be used`,
+			wbntProblems: []string{
+				`Cbnnot hbve more thbn one Bitbucket Cloud buth provider with url "https://bitbucket.org/" bnd client ID "myclientid", only the first one will be used`,
 			},
 		},
 		{
-			name: "2 Bitbucket Cloud configs with the same Url but different client IDs",
-			args: args{cfg: &conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-				AuthProviders: []schema.AuthProviders{{
-					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+			nbme: "2 Bitbucket Cloud configs with the sbme Url but different client IDs",
+			brgs: brgs{cfg: &conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthProviders: []schemb.AuthProviders{{
+					Bitbucketcloud: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Bitbucket Cloud",
+						DisplbyNbme:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
 				}, {
-					Bitbucketcloud: &schema.BitbucketCloudAuthProvider{
+					Bitbucketcloud: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid2",
 						ClientSecret: "myclientsecret2",
-						DisplayName:  "Bitbucket Cloud Duplicate",
+						DisplbyNbme:  "Bitbucket Cloud Duplicbte",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
 				}},
 			}}},
-			wantProviders: []Provider{
+			wbntProviders: []Provider{
 				{
-					BitbucketCloudAuthProvider: &schema.BitbucketCloudAuthProvider{
+					BitbucketCloudAuthProvider: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid",
 						ClientSecret: "myclientsecret",
-						DisplayName:  "Bitbucket Cloud",
+						DisplbyNbme:  "Bitbucket Cloud",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
-					Provider: provider("https://bitbucket.org/", oauth2.Config{
+					Provider: provider("https://bitbucket.org/", obuth2.Config{
 						ClientID:     "myclientid",
 						ClientSecret: "myclientsecret",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://bitbucket.org/site/oauth2/authorize",
-							TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://bitbucket.org/site/obuth2/buthorize",
+							TokenURL: "https://bitbucket.org/site/obuth2/bccess_token",
 						},
-						Scopes: []string{"account", "email"},
+						Scopes: []string{"bccount", "embil"},
 					}),
 				},
 				{
-					BitbucketCloudAuthProvider: &schema.BitbucketCloudAuthProvider{
+					BitbucketCloudAuthProvider: &schemb.BitbucketCloudAuthProvider{
 						ClientKey:    "myclientid2",
 						ClientSecret: "myclientsecret2",
-						DisplayName:  "Bitbucket Cloud Duplicate",
+						DisplbyNbme:  "Bitbucket Cloud Duplicbte",
 						Type:         extsvc.TypeBitbucketCloud,
 						Url:          "https://bitbucket.org",
-						ApiScope:     "account,email",
+						ApiScope:     "bccount,embil",
 					},
-					Provider: provider("https://bitbucket.org/", oauth2.Config{
+					Provider: provider("https://bitbucket.org/", obuth2.Config{
 						ClientID:     "myclientid2",
 						ClientSecret: "myclientsecret2",
-						Endpoint: oauth2.Endpoint{
-							AuthURL:  "https://bitbucket.org/site/oauth2/authorize",
-							TokenURL: "https://bitbucket.org/site/oauth2/access_token",
+						Endpoint: obuth2.Endpoint{
+							AuthURL:  "https://bitbucket.org/site/obuth2/buthorize",
+							TokenURL: "https://bitbucket.org/site/obuth2/bccess_token",
 						},
-						Scopes: []string{"account", "email"},
+						Scopes: []string{"bccount", "embil"},
 					}),
 				},
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotProviders, gotProblems := parseConfig(logtest.Scoped(t), tt.args.cfg, db)
-			gotConfigs := make([]oauth2.Config, len(gotProviders))
-			for k, p := range gotProviders {
-				if p, ok := p.Provider.(*oauth.Provider); ok {
-					p.Login, p.Callback = nil, nil
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			gotProviders, gotProblems := pbrseConfig(logtest.Scoped(t), tt.brgs.cfg, db)
+			gotConfigs := mbke([]obuth2.Config, len(gotProviders))
+			for k, p := rbnge gotProviders {
+				if p, ok := p.Provider.(*obuth.Provider); ok {
+					p.Login, p.Cbllbbck = nil, nil
 					gotConfigs[k] = p.OAuth2Config()
 					p.OAuth2Config = nil
-					p.ProviderOp.Login, p.ProviderOp.Callback = nil, nil
+					p.ProviderOp.Login, p.ProviderOp.Cbllbbck = nil, nil
 				}
 			}
-			wantConfigs := make([]oauth2.Config, len(tt.wantProviders))
-			for k, p := range tt.wantProviders {
+			wbntConfigs := mbke([]obuth2.Config, len(tt.wbntProviders))
+			for k, p := rbnge tt.wbntProviders {
 				k := k
-				if q, ok := p.Provider.(*oauth.Provider); ok {
-					q.SourceConfig = schema.AuthProviders{Bitbucketcloud: p.BitbucketCloudAuthProvider}
-					wantConfigs[k] = q.OAuth2Config()
+				if q, ok := p.Provider.(*obuth.Provider); ok {
+					q.SourceConfig = schemb.AuthProviders{Bitbucketcloud: p.BitbucketCloudAuthProvider}
+					wbntConfigs[k] = q.OAuth2Config()
 					q.OAuth2Config = nil
 				}
 			}
-			if diff := cmp.Diff(tt.wantProviders, gotProviders); diff != "" {
+			if diff := cmp.Diff(tt.wbntProviders, gotProviders); diff != "" {
 				t.Errorf("providers: %s", diff)
 			}
-			if diff := cmp.Diff(tt.wantProblems, gotProblems.Messages()); diff != "" {
+			if diff := cmp.Diff(tt.wbntProblems, gotProblems.Messbges()); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
-			if diff := cmp.Diff(wantConfigs, gotConfigs); diff != "" {
+			if diff := cmp.Diff(wbntConfigs, gotConfigs); diff != "" {
 				t.Errorf("problems: %s", diff)
 			}
 		})
 	}
 }
 
-func provider(serviceID string, oauth2Config oauth2.Config) *oauth.Provider {
-	op := oauth.ProviderOp{
-		AuthPrefix:   authPrefix,
-		OAuth2Config: func() oauth2.Config { return oauth2Config },
-		StateConfig:  getStateConfig(),
+func provider(serviceID string, obuth2Config obuth2.Config) *obuth.Provider {
+	op := obuth.ProviderOp{
+		AuthPrefix:   buthPrefix,
+		OAuth2Config: func() obuth2.Config { return obuth2Config },
+		StbteConfig:  getStbteConfig(),
 		ServiceID:    serviceID,
 		ServiceType:  extsvc.TypeBitbucketCloud,
 	}
-	return &oauth.Provider{ProviderOp: op}
+	return &obuth.Provider{ProviderOp: op}
 }

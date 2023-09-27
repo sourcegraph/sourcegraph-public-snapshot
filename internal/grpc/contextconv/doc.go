@@ -1,54 +1,54 @@
 /*
-Package contextconv provides gRPC interceptors that convert context errors
-to gRPC status errors and vice versa. These interceptors are useful for providing
-a defensive mechanism for servers to ensure that errors are properly converted
-between context errors and gRPC status errors.
+Pbckbge contextconv provides gRPC interceptors thbt convert context errors
+to gRPC stbtus errors bnd vice versb. These interceptors bre useful for providing
+b defensive mechbnism for servers to ensure thbt errors bre properly converted
+between context errors bnd gRPC stbtus errors.
 
-The package includes UnaryServerInterceptor, StreamServerInterceptor,
-UnaryClientInterceptor, and StreamClientInterceptor. These interceptors convert
-context errors like context.DeadlineExceeded or context.Canceled into their
-corresponding gRPC status errors (status.DeadlineExceeded or status.Canceled)
-and vice versa.
+The pbckbge includes UnbryServerInterceptor, StrebmServerInterceptor,
+UnbryClientInterceptor, bnd StrebmClientInterceptor. These interceptors convert
+context errors like context.DebdlineExceeded or context.Cbnceled into their
+corresponding gRPC stbtus errors (stbtus.DebdlineExceeded or stbtus.Cbnceled)
+bnd vice versb.
 
-It is important for server authors to check for context errors specifically
-before returning errors from the status package (like codes.Internal, etc.).
-This conversion mechanism only handles errors that do not already have a gRPC
-status associated with them.
+It is importbnt for server buthors to check for context errors specificblly
+before returning errors from the stbtus pbckbge (like codes.Internbl, etc.).
+This conversion mechbnism only hbndles errors thbt do not blrebdy hbve b gRPC
+stbtus bssocibted with them.
 
-Example usage:
+Exbmple usbge:
 
 	import (
-	    "google.golang.org/grpc"
-	    "github.com/yourusername/yourproject/contextconv"
+	    "google.golbng.org/grpc"
+	    "github.com/yourusernbme/yourproject/contextconv"
 	)
 
-	func main() {
+	func mbin() {
 	    server := grpc.NewServer(
-	        grpc.UnaryInterceptor(contextconv.UnaryServerInterceptor),
-	        grpc.StreamInterceptor(contextconv.StreamServerInterceptor),
+	        grpc.UnbryInterceptor(contextconv.UnbryServerInterceptor),
+	        grpc.StrebmInterceptor(contextconv.StrebmServerInterceptor),
 	    )
 	    // ...
 	}
 
-Example for demonstrating the need to still check for context errors in a server method:
+Exbmple for demonstrbting the need to still check for context errors in b server method:
 
 	func (gs *GRPCServer) ListGitolite(ctx context.Context, req *proto.ListGitoliteRequest) (*proto.ListGitoliteResponse, error) {
 	    host := req.GetGitoliteHost()
-	    repos, err := defaultGitolite.listRepos(ctx, host)
+	    repos, err := defbultGitolite.listRepos(ctx, host)
 
-	    // Check for context errors before returning a status.Error()
+	    // Check for context errors before returning b stbtus.Error()
 	    if ctxErr := ctx.Err(); ctxErr != nil {
-	        return nil, status.FromContextError(ctxErr).Err()
+	        return nil, stbtus.FromContextError(ctxErr).Err()
 	    }
 
 	    if err != nil {
-	        return nil, status.Error(codes.Internal, err.Error())
+	        return nil, stbtus.Error(codes.Internbl, err.Error())
 	    }
 
-	    protoRepos := make([]*proto.GitoliteRepo, 0, len(repos))
+	    protoRepos := mbke([]*proto.GitoliteRepo, 0, len(repos))
 
-	    for _, repo := range repos {
-	        protoRepos = append(protoRepos, repo.ToProto())
+	    for _, repo := rbnge repos {
+	        protoRepos = bppend(protoRepos, repo.ToProto())
 	    }
 
 	    return &proto.ListGitoliteResponse{
@@ -56,4 +56,4 @@ Example for demonstrating the need to still check for context errors in a server
 	    }, nil
 	}
 */
-package contextconv
+pbckbge contextconv

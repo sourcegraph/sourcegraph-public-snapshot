@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
@@ -6,79 +6,79 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func Test_manualPurgeHandler(t *testing.T) {
+func Test_mbnublPurgeHbndler(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	gsr := dbmocks.NewMockGitserverRepoStore()
-	gsr.IterateRepoGitserverStatusFunc.SetDefaultHook(func(ctx context.Context, irgso database.IterateRepoGitserverStatusOptions) ([]types.RepoGitserverStatus, int, error) {
-		return []types.RepoGitserverStatus{}, 0, nil
+	gsr.IterbteRepoGitserverStbtusFunc.SetDefbultHook(func(ctx context.Context, irgso dbtbbbse.IterbteRepoGitserverStbtusOptions) ([]types.RepoGitserverStbtus, int, error) {
+		return []types.RepoGitserverStbtus{}, 0, nil
 	})
-	db.GitserverReposFunc.SetDefaultReturn(gsr)
+	db.GitserverReposFunc.SetDefbultReturn(gsr)
 
-	handler := manualPurgeHandler(db)
+	hbndler := mbnublPurgeHbndler(db)
 
-	for _, tt := range []struct {
-		name     string
+	for _, tt := rbnge []struct {
+		nbme     string
 		url      string
-		wantCode int
-		wantBody string
+		wbntCode int
+		wbntBody string
 	}{
 		{
-			name:     "missing limit",
-			url:      "https://example.com/manual_purge",
-			wantCode: http.StatusBadRequest,
-			wantBody: `invalid limit: strconv.Atoi: parsing "": invalid syntax
+			nbme:     "missing limit",
+			url:      "https://exbmple.com/mbnubl_purge",
+			wbntCode: http.StbtusBbdRequest,
+			wbntBody: `invblid limit: strconv.Atoi: pbrsing "": invblid syntbx
 `,
 		},
 		{
-			name:     "zero limit",
-			url:      "https://example.com/manual_purge?limit=0",
-			wantCode: http.StatusBadRequest,
-			wantBody: `limit must be greater than 0
+			nbme:     "zero limit",
+			url:      "https://exbmple.com/mbnubl_purge?limit=0",
+			wbntCode: http.StbtusBbdRequest,
+			wbntBody: `limit must be grebter thbn 0
 `,
 		},
 		{
-			name:     "limit too large",
-			url:      "https://example.com/manual_purge?limit=10001",
-			wantCode: http.StatusBadRequest,
-			wantBody: `limit must be less than 10000
+			nbme:     "limit too lbrge",
+			url:      "https://exbmple.com/mbnubl_purge?limit=10001",
+			wbntCode: http.StbtusBbdRequest,
+			wbntBody: `limit must be less thbn 10000
 `,
 		},
 		{
-			name:     "missing perSecond, default 1.0",
-			url:      "https://example.com/manual_purge?limit=100",
-			wantCode: http.StatusOK,
-			wantBody: `manual purge started with limit of 100 and rate of 1.000000`,
+			nbme:     "missing perSecond, defbult 1.0",
+			url:      "https://exbmple.com/mbnubl_purge?limit=100",
+			wbntCode: http.StbtusOK,
+			wbntBody: `mbnubl purge stbrted with limit of 100 bnd rbte of 1.000000`,
 		},
 		{
-			name:     "invalid perSecond",
-			url:      "https://example.com/manual_purge?limit=100&perSecond=0",
-			wantCode: http.StatusBadRequest,
-			wantBody: `invalid per second rate limit. Must be > 0.1, got 0.000000
+			nbme:     "invblid perSecond",
+			url:      "https://exbmple.com/mbnubl_purge?limit=100&perSecond=0",
+			wbntCode: http.StbtusBbdRequest,
+			wbntBody: `invblid per second rbte limit. Must be > 0.1, got 0.000000
 `,
 		},
 		{
-			name:     "valid perSecond",
-			url:      "https://example.com/manual_purge?limit=100&perSecond=2.0",
-			wantCode: http.StatusOK,
-			wantBody: `manual purge started with limit of 100 and rate of 2.000000`,
+			nbme:     "vblid perSecond",
+			url:      "https://exbmple.com/mbnubl_purge?limit=100&perSecond=2.0",
+			wbntCode: http.StbtusOK,
+			wbntBody: `mbnubl purge stbrted with limit of 100 bnd rbte of 2.000000`,
 		},
 	} {
-		t.Run(tt.name, func(t *testing.T) {
+		t.Run(tt.nbme, func(t *testing.T) {
 			rr := httptest.NewRecorder()
 			req, err := http.NewRequest("GET", tt.url, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			handler(rr, req)
-			assert.Equal(t, tt.wantCode, rr.Code)
-			assert.Equal(t, tt.wantBody, rr.Body.String())
+			hbndler(rr, req)
+			bssert.Equbl(t, tt.wbntCode, rr.Code)
+			bssert.Equbl(t, tt.wbntBody, rr.Body.String())
 		})
 	}
 }

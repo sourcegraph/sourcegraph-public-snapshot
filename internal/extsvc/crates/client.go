@@ -1,4 +1,4 @@
-package crates
+pbckbge crbtes
 
 import (
 	"context"
@@ -6,32 +6,32 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
 )
 
 type Client struct {
-	uncachedClient httpcli.Doer
+	uncbchedClient httpcli.Doer
 
-	// Self-imposed rate-limiter.
-	limiter *ratelimit.InstrumentedLimiter
+	// Self-imposed rbte-limiter.
+	limiter *rbtelimit.InstrumentedLimiter
 }
 
-func NewClient(urn string, httpfactory *httpcli.Factory) (*Client, error) {
-	uncached, err := httpfactory.Doer(httpcli.NewCachedTransportOpt(httpcli.NoopCache{}, false))
+func NewClient(urn string, httpfbctory *httpcli.Fbctory) (*Client, error) {
+	uncbched, err := httpfbctory.Doer(httpcli.NewCbchedTrbnsportOpt(httpcli.NoopCbche{}, fblse))
 	if err != nil {
 		return nil, err
 	}
 	return &Client{
-		uncachedClient: uncached,
-		limiter:        ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("RustCratesClient", ""), urn)),
+		uncbchedClient: uncbched,
+		limiter:        rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("RustCrbtesClient", ""), urn)),
 	}, nil
 }
 
-func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
-	if err := c.limiter.Wait(ctx); err != nil {
+func (c *Client) Get(ctx context.Context, url string) (io.RebdCloser, error) {
+	if err := c.limiter.Wbit(ctx); err != nil {
 		return nil, err
 	}
 
@@ -39,9 +39,9 @@ func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Add("User-Agent", "sourcegraph-crates-syncer (sourcegraph.com)")
+	req.Hebder.Add("User-Agent", "sourcegrbph-crbtes-syncer (sourcegrbph.com)")
 
-	b, err := c.do(c.uncachedClient, req)
+	b, err := c.do(c.uncbchedClient, req)
 	if err != nil {
 		return nil, err
 	}
@@ -49,33 +49,33 @@ func (c *Client) Get(ctx context.Context, url string) (io.ReadCloser, error) {
 }
 
 type Error struct {
-	path    string
+	pbth    string
 	code    int
-	message string
+	messbge string
 }
 
 func (e *Error) Error() string {
-	return fmt.Sprintf("bad response with status code %d for %s: %s", e.code, e.path, e.message)
+	return fmt.Sprintf("bbd response with stbtus code %d for %s: %s", e.code, e.pbth, e.messbge)
 }
 
 func (e *Error) NotFound() bool {
-	return e.code == http.StatusNotFound
+	return e.code == http.StbtusNotFound
 }
 
-func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.ReadCloser, error) {
+func (c *Client) do(doer httpcli.Doer, req *http.Request) (io.RebdCloser, error) {
 	resp, err := doer.Do(req)
 	if err != nil {
 		return nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StbtusCode != http.StbtusOK {
 		defer resp.Body.Close()
 
-		bs, err := io.ReadAll(resp.Body)
+		bs, err := io.RebdAll(resp.Body)
 		if err != nil {
-			return nil, &Error{path: req.URL.Path, code: resp.StatusCode, message: fmt.Sprintf("failed to read non-200 body: %v", err)}
+			return nil, &Error{pbth: req.URL.Pbth, code: resp.StbtusCode, messbge: fmt.Sprintf("fbiled to rebd non-200 body: %v", err)}
 		}
-		return nil, &Error{path: req.URL.Path, code: resp.StatusCode, message: string(bs)}
+		return nil, &Error{pbth: req.URL.Pbth, code: resp.StbtusCode, messbge: string(bs)}
 	}
 
 	return resp.Body, nil

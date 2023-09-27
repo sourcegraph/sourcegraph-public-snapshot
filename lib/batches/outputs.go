@@ -1,46 +1,46 @@
-package batches
+pbckbge bbtches
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches/templbte"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	yamlv3 "gopkg.in/yaml.v3"
+	ybmlv3 "gopkg.in/ybml.v3"
 )
 
-// SetOutputs renders the outputs of the current step into the global outputs
-// map using templating.
-func SetOutputs(stepOutputs Outputs, global map[string]interface{}, stepCtx *template.StepContext) error {
-	for name, output := range stepOutputs {
-		var value bytes.Buffer
+// SetOutputs renders the outputs of the current step into the globbl outputs
+// mbp using templbting.
+func SetOutputs(stepOutputs Outputs, globbl mbp[string]interfbce{}, stepCtx *templbte.StepContext) error {
+	for nbme, output := rbnge stepOutputs {
+		vbr vblue bytes.Buffer
 
-		if err := template.RenderStepTemplate("outputs-"+name, output.Value, &value, stepCtx); err != nil {
-			return errors.Wrap(err, "parsing step run")
+		if err := templbte.RenderStepTemplbte("outputs-"+nbme, output.Vblue, &vblue, stepCtx); err != nil {
+			return errors.Wrbp(err, "pbrsing step run")
 		}
-		fmt.Printf("Rendering step output %s %s: %q (stdout is %q)\n", name, output.Value, value.String(), stepCtx.Step.Stdout)
+		fmt.Printf("Rendering step output %s %s: %q (stdout is %q)\n", nbme, output.Vblue, vblue.String(), stepCtx.Step.Stdout)
 
-		switch output.Format {
-		case "yaml":
-			var out interface{}
-			// We use yamlv3 here, because it unmarshals YAML into
-			// map[string]interface{} which we need to serialize it back to
-			// JSON when we cache the results.
-			// See https://github.com/go-yaml/yaml/issues/139 for context
-			if err := yamlv3.NewDecoder(&value).Decode(&out); err != nil {
+		switch output.Formbt {
+		cbse "ybml":
+			vbr out interfbce{}
+			// We use ybmlv3 here, becbuse it unmbrshbls YAML into
+			// mbp[string]interfbce{} which we need to seriblize it bbck to
+			// JSON when we cbche the results.
+			// See https://github.com/go-ybml/ybml/issues/139 for context
+			if err := ybmlv3.NewDecoder(&vblue).Decode(&out); err != nil {
 				return err
 			}
-			global[name] = out
-		case "json":
-			var out interface{}
-			if err := json.NewDecoder(&value).Decode(&out); err != nil {
+			globbl[nbme] = out
+		cbse "json":
+			vbr out interfbce{}
+			if err := json.NewDecoder(&vblue).Decode(&out); err != nil {
 				return err
 			}
-			global[name] = out
-		default:
-			global[name] = value.String()
+			globbl[nbme] = out
+		defbult:
+			globbl[nbme] = vblue.String()
 		}
 	}
 

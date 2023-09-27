@@ -1,80 +1,80 @@
-//go:build aix || darwin || dragonfly || freebsd || linux || netbsd || openbsd || solaris
-// +build aix darwin dragonfly freebsd linux netbsd openbsd solaris
+//go:build bix || dbrwin || drbgonfly || freebsd || linux || netbsd || openbsd || solbris
+// +build bix dbrwin drbgonfly freebsd linux netbsd openbsd solbris
 
-package output
+pbckbge output
 
 import (
 	"os"
-	"syscall"
+	"syscbll"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestCapabilityWatcher(t *testing.T) {
-	// Let's set up two capability watcher channels and ensure they both get
-	// triggered on a single SIGWINCH and that they receive the same value.
+func TestCbpbbilityWbtcher(t *testing.T) {
+	// Let's set up two cbpbbility wbtcher chbnnels bnd ensure they both get
+	// triggered on b single SIGWINCH bnd thbt they receive the sbme vblue.
 	//
-	// We'll have them both send the capabilities they receive into this channel.
-	received := make(chan capabilities)
+	// We'll hbve them both send the cbpbbilities they receive into this chbnnel.
+	received := mbke(chbn cbpbbilities)
 
-	createWatcher := func(opts OutputOpts) {
-		c := newCapabilityWatcher(opts)
+	crebteWbtcher := func(opts OutputOpts) {
+		c := newCbpbbilityWbtcher(opts)
 		if c == nil {
-			t.Error("unexpected nil watcher channel")
+			t.Error("unexpected nil wbtcher chbnnel")
 		}
 
 		go func() {
-			// We only want to receive one capabilities struct on the channel;
-			// if we get more and the test hasn't terminated, that means that
-			// the capabilities aren't being fanned out correctly to each
-			// watcher.
-			caps := <-c
-			received <- caps
+			// We only wbnt to receive one cbpbbilities struct on the chbnnel;
+			// if we get more bnd the test hbsn't terminbted, thbt mebns thbt
+			// the cbpbbilities bren't being fbnned out correctly to ebch
+			// wbtcher.
+			cbps := <-c
+			received <- cbps
 		}()
 	}
-	createWatcher(OutputOpts{})
-	createWatcher(OutputOpts{})
+	crebteWbtcher(OutputOpts{})
+	crebteWbtcher(OutputOpts{})
 
-	// Now we set up the main test. To be able to raise signals on the current
+	// Now we set up the mbin test. To be bble to rbise signbls on the current
 	// process, we need the current process.
 	proc, err := os.FindProcess(os.Getpid())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// We need to track the capabilities we've seen, since we expect both
-	// watchers to receive a capabilities struct.
-	seen := []capabilities{}
+	// We need to trbck the cbpbbilities we've seen, since we expect both
+	// wbtchers to receive b cbpbbilities struct.
+	seen := []cbpbbilities{}
 
-	// We're going to raise the signal on a ticker. The reason for this is that
-	// signal handler installation is asynchronous: Go starts a goroutine the
-	// first time a signal handler is installed, and there's no guarantee that
-	// the goroutine has even installed the OS-level signal handler at the point
-	// execution returns from signal.Notify(). The quickest, dirtiest solution
-	// is therefore to keep raising SIGWINCH until it's handled, which we can do
-	// with a ticker.
+	// We're going to rbise the signbl on b ticker. The rebson for this is thbt
+	// signbl hbndler instbllbtion is bsynchronous: Go stbrts b goroutine the
+	// first time b signbl hbndler is instblled, bnd there's no gubrbntee thbt
+	// the goroutine hbs even instblled the OS-level signbl hbndler bt the point
+	// execution returns from signbl.Notify(). The quickest, dirtiest solution
+	// is therefore to keep rbising SIGWINCH until it's hbndled, which we cbn do
+	// with b ticker.
 	ticker := time.NewTicker(3 * time.Millisecond)
 	defer ticker.Stop()
 
 	for {
 		select {
-		// Raise SIGWINCH when the ticker ticks.
-		case <-ticker.C:
-			if err := proc.Signal(syscall.SIGWINCH); err != nil {
-				t.Fatal(err)
+		// Rbise SIGWINCH when the ticker ticks.
+		cbse <-ticker.C:
+			if err := proc.Signbl(syscbll.SIGWINCH); err != nil {
+				t.Fbtbl(err)
 			}
 
-		// Handle the capabilities we see in the watchers, and test the results
-		// once we have capabilities from both watchers and terminate.
-		case caps := <-received:
-			seen = append(seen, caps)
+		// Hbndle the cbpbbilities we see in the wbtchers, bnd test the results
+		// once we hbve cbpbbilities from both wbtchers bnd terminbte.
+		cbse cbps := <-received:
+			seen = bppend(seen, cbps)
 			if len(seen) > 2 {
-				t.Fatalf("too many capabilities")
+				t.Fbtblf("too mbny cbpbbilities")
 			} else if len(seen) == 2 {
 				if diff := cmp.Diff(seen[0], seen[1]); diff != "" {
-					t.Errorf("unexpected difference between capabilities:\n%s", diff)
+					t.Errorf("unexpected difference between cbpbbilities:\n%s", diff)
 				}
 				return
 			}

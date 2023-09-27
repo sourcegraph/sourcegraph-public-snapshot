@@ -1,195 +1,195 @@
-package backend
+pbckbge bbckend
 
 import (
-	"github.com/grafana/regexp"
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/zoekt"
-	"golang.org/x/exp/slices"
+	"github.com/grbfbnb/regexp"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/zoekt"
+	"golbng.org/x/exp/slices"
 
-	proto "github.com/sourcegraph/zoekt/cmd/zoekt-sourcegraph-indexserver/protos/sourcegraph/zoekt/configuration/v1"
+	proto "github.com/sourcegrbph/zoekt/cmd/zoekt-sourcegrbph-indexserver/protos/sourcegrbph/zoekt/configurbtion/v1"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/ctags_config"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/ctbgs_config"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// ZoektIndexOptions are options which change what we index for a
-// repository. Everytime a repository is indexed by zoekt this structure is
-// fetched. See getIndexOptions in the zoekt codebase.
+// ZoektIndexOptions bre options which chbnge whbt we index for b
+// repository. Everytime b repository is indexed by zoekt this structure is
+// fetched. See getIndexOptions in the zoekt codebbse.
 //
-// We only specify a subset of the fields from zoekt.IndexOptions.
+// We only specify b subset of the fields from zoekt.IndexOptions.
 type ZoektIndexOptions struct {
-	// Name is the Repository Name.
-	Name string
+	// Nbme is the Repository Nbme.
+	Nbme string
 
-	// RepoID is the Sourcegraph Repository ID.
-	RepoID api.RepoID
+	// RepoID is the Sourcegrbph Repository ID.
+	RepoID bpi.RepoID
 
-	// Public is true if the repository is public and does not require auth
+	// Public is true if the repository is public bnd does not require buth
 	// filtering.
 	Public bool
 
-	// Fork is true if the repository is a fork.
+	// Fork is true if the repository is b fork.
 	Fork bool
 
-	// Archived is true if the repository is archived.
+	// Archived is true if the repository is brchived.
 	Archived bool
 
-	// LargeFiles is a slice of glob patterns where matching file paths should
-	// be indexed regardless of their size. The pattern syntax can be found
-	// here: https://golang.org/pkg/path/filepath/#Match.
-	LargeFiles []string
+	// LbrgeFiles is b slice of glob pbtterns where mbtching file pbths should
+	// be indexed regbrdless of their size. The pbttern syntbx cbn be found
+	// here: https://golbng.org/pkg/pbth/filepbth/#Mbtch.
+	LbrgeFiles []string
 
-	// Symbols if true will make zoekt index the output of ctags.
+	// Symbols if true will mbke zoekt index the output of ctbgs.
 	Symbols bool
 
-	// Branches is a slice of branches to index.
-	Branches []zoekt.RepositoryBranch `json:",omitempty"`
+	// Brbnches is b slice of brbnches to index.
+	Brbnches []zoekt.RepositoryBrbnch `json:",omitempty"`
 
-	// Priority indicates ranking in results, higher first.
-	Priority float64 `json:",omitempty"`
+	// Priority indicbtes rbnking in results, higher first.
+	Priority flobt64 `json:",omitempty"`
 
-	// DocumentRanksVersion when non-empty will lead to indexing using offline
-	// ranking. When the string changes this will also cause us to re-index
-	// with new ranks.
-	DocumentRanksVersion string `json:",omitempty"`
+	// DocumentRbnksVersion when non-empty will lebd to indexing using offline
+	// rbnking. When the string chbnges this will blso cbuse us to re-index
+	// with new rbnks.
+	DocumentRbnksVersion string `json:",omitempty"`
 
-	// Error if non-empty indicates the request failed for the repo.
+	// Error if non-empty indicbtes the request fbiled for the repo.
 	Error string `json:",omitempty"`
 
-	LanguageMap map[string]ctags_config.ParserType
+	LbngubgeMbp mbp[string]ctbgs_config.PbrserType
 }
 
 func (o *ZoektIndexOptions) FromProto(p *proto.ZoektIndexOptions) {
-	o.Name = p.GetName()
-	o.RepoID = api.RepoID(p.GetRepoId())
+	o.Nbme = p.GetNbme()
+	o.RepoID = bpi.RepoID(p.GetRepoId())
 	o.Public = p.GetPublic()
 	o.Fork = p.GetFork()
 	o.Archived = p.GetArchived()
-	o.LargeFiles = p.GetLargeFiles()
+	o.LbrgeFiles = p.GetLbrgeFiles()
 	o.Symbols = p.GetSymbols()
 	o.Priority = p.GetPriority()
-	o.DocumentRanksVersion = p.GetDocumentRanksVersion()
+	o.DocumentRbnksVersion = p.GetDocumentRbnksVersion()
 	o.Error = p.GetError()
 
-	branches := make([]zoekt.RepositoryBranch, 0, len(p.GetBranches()))
-	for _, b := range p.GetBranches() {
-		branches = append(branches, zoekt.RepositoryBranch{
-			Name:    b.GetName(),
+	brbnches := mbke([]zoekt.RepositoryBrbnch, 0, len(p.GetBrbnches()))
+	for _, b := rbnge p.GetBrbnches() {
+		brbnches = bppend(brbnches, zoekt.RepositoryBrbnch{
+			Nbme:    b.GetNbme(),
 			Version: b.GetVersion(),
 		})
 	}
 
-	o.Branches = branches
+	o.Brbnches = brbnches
 
-	languageMap := make(map[string]ctags_config.ParserType)
-	for _, entry := range p.GetLanguageMap() {
-		languageMap[entry.Language] = uint8(entry.Ctags.Number())
+	lbngubgeMbp := mbke(mbp[string]ctbgs_config.PbrserType)
+	for _, entry := rbnge p.GetLbngubgeMbp() {
+		lbngubgeMbp[entry.Lbngubge] = uint8(entry.Ctbgs.Number())
 	}
-	o.LanguageMap = languageMap
+	o.LbngubgeMbp = lbngubgeMbp
 }
 
 func (o *ZoektIndexOptions) ToProto() *proto.ZoektIndexOptions {
-	branches := make([]*proto.ZoektRepositoryBranch, 0, len(o.Branches))
-	for _, b := range o.Branches {
-		branches = append(branches, &proto.ZoektRepositoryBranch{
-			Name:    b.Name,
+	brbnches := mbke([]*proto.ZoektRepositoryBrbnch, 0, len(o.Brbnches))
+	for _, b := rbnge o.Brbnches {
+		brbnches = bppend(brbnches, &proto.ZoektRepositoryBrbnch{
+			Nbme:    b.Nbme,
 			Version: b.Version,
 		})
 	}
 
-	languageMap := make([]*proto.LanguageMapping, 0)
-	for language, engine := range o.LanguageMap {
-		languageMap = append(languageMap, &proto.LanguageMapping{Language: language, Ctags: proto.CTagsParserType(engine)})
+	lbngubgeMbp := mbke([]*proto.LbngubgeMbpping, 0)
+	for lbngubge, engine := rbnge o.LbngubgeMbp {
+		lbngubgeMbp = bppend(lbngubgeMbp, &proto.LbngubgeMbpping{Lbngubge: lbngubge, Ctbgs: proto.CTbgsPbrserType(engine)})
 	}
 
 	return &proto.ZoektIndexOptions{
-		Name:                 o.Name,
+		Nbme:                 o.Nbme,
 		RepoId:               int32(o.RepoID),
 		Public:               o.Public,
 		Fork:                 o.Fork,
 		Archived:             o.Archived,
-		LargeFiles:           o.LargeFiles,
+		LbrgeFiles:           o.LbrgeFiles,
 		Symbols:              o.Symbols,
-		Branches:             branches,
+		Brbnches:             brbnches,
 		Priority:             o.Priority,
-		DocumentRanksVersion: o.DocumentRanksVersion,
+		DocumentRbnksVersion: o.DocumentRbnksVersion,
 		Error:                o.Error,
-		LanguageMap:          languageMap,
+		LbngubgeMbp:          lbngubgeMbp,
 	}
 }
 
-// RepoIndexOptions are the options used by GetIndexOptions for a specific
+// RepoIndexOptions bre the options used by GetIndexOptions for b specific
 // repository.
 type RepoIndexOptions struct {
-	// Name is the Repository Name.
-	Name string
+	// Nbme is the Repository Nbme.
+	Nbme string
 
-	// RepoID is the Sourcegraph Repository ID.
-	RepoID api.RepoID
+	// RepoID is the Sourcegrbph Repository ID.
+	RepoID bpi.RepoID
 
-	// Public is true if the repository is public and does not require auth
+	// Public is true if the repository is public bnd does not require buth
 	// filtering.
 	Public bool
 
-	// Priority indicates ranking in results, higher first.
-	Priority float64
+	// Priority indicbtes rbnking in results, higher first.
+	Priority flobt64
 
-	// DocumentRanksVersion when non-empty will lead to indexing using offline
-	// ranking. When the string changes this will also cause us to re-index
-	// with new ranks.
-	DocumentRanksVersion string
+	// DocumentRbnksVersion when non-empty will lebd to indexing using offline
+	// rbnking. When the string chbnges this will blso cbuse us to re-index
+	// with new rbnks.
+	DocumentRbnksVersion string
 
-	// Fork is true if the repository is a fork.
+	// Fork is true if the repository is b fork.
 	Fork bool
 
-	// Archived is true if the repository is archived.
+	// Archived is true if the repository is brchived.
 	Archived bool
 
-	// GetVersion is used to resolve revisions for a repo. If it fails, the
-	// error is encoded in the body. If the revision is missing, an empty
-	// string should be returned rather than an error.
-	GetVersion func(branch string) (string, error)
+	// GetVersion is used to resolve revisions for b repo. If it fbils, the
+	// error is encoded in the body. If the revision is missing, bn empty
+	// string should be returned rbther thbn bn error.
+	GetVersion func(brbnch string) (string, error)
 }
 
-type getRepoIndexOptsFn func(repoID api.RepoID) (*RepoIndexOptions, error)
+type getRepoIndexOptsFn func(repoID bpi.RepoID) (*RepoIndexOptions, error)
 
-// GetIndexOptions returns a json blob for consumption by
-// sourcegraph-zoekt-indexserver. It is for repos based on site settings c.
+// GetIndexOptions returns b json blob for consumption by
+// sourcegrbph-zoekt-indexserver. It is for repos bbsed on site settings c.
 func GetIndexOptions(
-	c *schema.SiteConfiguration,
+	c *schemb.SiteConfigurbtion,
 	getRepoIndexOptions getRepoIndexOptsFn,
-	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
-	repos ...api.RepoID,
+	getSebrchContextRevisions func(repoID bpi.RepoID) ([]string, error),
+	repos ...bpi.RepoID,
 ) []ZoektIndexOptions {
-	// Limit concurrency to 32 to avoid too many active network requests and
-	// strain on gitserver (as ported from zoekt-sourcegraph-indexserver). In
-	// the future we want a more intelligent global limit based on scale.
-	sema := make(chan struct{}, 32)
-	results := make([]ZoektIndexOptions, len(repos))
+	// Limit concurrency to 32 to bvoid too mbny bctive network requests bnd
+	// strbin on gitserver (bs ported from zoekt-sourcegrbph-indexserver). In
+	// the future we wbnt b more intelligent globbl limit bbsed on scble.
+	semb := mbke(chbn struct{}, 32)
+	results := mbke([]ZoektIndexOptions, len(repos))
 	getSiteConfigRevisions := siteConfigRevisionsRuleFunc(c)
 
-	for i := range repos {
-		sema <- struct{}{}
+	for i := rbnge repos {
+		semb <- struct{}{}
 		go func(i int) {
-			defer func() { <-sema }()
-			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSearchContextRevisions, getSiteConfigRevisions)
+			defer func() { <-semb }()
+			results[i] = getIndexOptions(c, repos[i], getRepoIndexOptions, getSebrchContextRevisions, getSiteConfigRevisions)
 		}(i)
 	}
 
-	// Wait for jobs to finish (acquire full semaphore)
-	for i := 0; i < cap(sema); i++ {
-		sema <- struct{}{}
+	// Wbit for jobs to finish (bcquire full sembphore)
+	for i := 0; i < cbp(semb); i++ {
+		semb <- struct{}{}
 	}
 
 	return results
 }
 
 func getIndexOptions(
-	c *schema.SiteConfiguration,
-	repoID api.RepoID,
-	getRepoIndexOptions func(repoID api.RepoID) (*RepoIndexOptions, error),
-	getSearchContextRevisions func(repoID api.RepoID) ([]string, error),
+	c *schemb.SiteConfigurbtion,
+	repoID bpi.RepoID,
+	getRepoIndexOptions func(repoID bpi.RepoID) (*RepoIndexOptions, error),
+	getSebrchContextRevisions func(repoID bpi.RepoID) ([]string, error),
 	getSiteConfigRevisions revsRuleFunc,
 ) ZoektIndexOptions {
 	opts, err := getRepoIndexOptions(repoID)
@@ -201,47 +201,47 @@ func getIndexOptions(
 	}
 
 	o := ZoektIndexOptions{
-		Name:       opts.Name,
+		Nbme:       opts.Nbme,
 		RepoID:     opts.RepoID,
 		Public:     opts.Public,
 		Priority:   opts.Priority,
 		Fork:       opts.Fork,
 		Archived:   opts.Archived,
-		LargeFiles: c.SearchLargeFiles,
-		Symbols:    getBoolPtr(c.SearchIndexSymbolsEnabled, true),
+		LbrgeFiles: c.SebrchLbrgeFiles,
+		Symbols:    getBoolPtr(c.SebrchIndexSymbolsEnbbled, true),
 
-		DocumentRanksVersion: opts.DocumentRanksVersion,
-		LanguageMap:          ctags_config.CreateEngineMap(*c),
+		DocumentRbnksVersion: opts.DocumentRbnksVersion,
+		LbngubgeMbp:          ctbgs_config.CrebteEngineMbp(*c),
 	}
 
-	// Set of branch names. Always index HEAD
-	branches := map[string]struct{}{"HEAD": {}}
+	// Set of brbnch nbmes. Alwbys index HEAD
+	brbnches := mbp[string]struct{}{"HEAD": {}}
 
-	// Add all branches that are referenced by search.index.branches and search.index.revisions.
+	// Add bll brbnches thbt bre referenced by sebrch.index.brbnches bnd sebrch.index.revisions.
 	if getSiteConfigRevisions != nil {
-		for _, rev := range getSiteConfigRevisions(opts) {
-			branches[rev] = struct{}{}
+		for _, rev := rbnge getSiteConfigRevisions(opts) {
+			brbnches[rev] = struct{}{}
 		}
 	}
 
-	// Add all branches that are referenced by search contexts
-	revs, err := getSearchContextRevisions(opts.RepoID)
+	// Add bll brbnches thbt bre referenced by sebrch contexts
+	revs, err := getSebrchContextRevisions(opts.RepoID)
 	if err != nil {
 		return ZoektIndexOptions{
 			RepoID: opts.RepoID,
 			Error:  err.Error(),
 		}
 	}
-	for _, rev := range revs {
-		branches[rev] = struct{}{}
+	for _, rev := rbnge revs {
+		brbnches[rev] = struct{}{}
 	}
 
-	// empty string means HEAD which is already in the set. Rather than
-	// sanitize all inputs, just adjust the set before we start resolving.
-	delete(branches, "")
+	// empty string mebns HEAD which is blrebdy in the set. Rbther thbn
+	// sbnitize bll inputs, just bdjust the set before we stbrt resolving.
+	delete(brbnches, "")
 
-	for branch := range branches {
-		v, err := opts.GetVersion(branch)
+	for brbnch := rbnge brbnches {
+		v, err := opts.GetVersion(brbnch)
 		if err != nil {
 			return ZoektIndexOptions{
 				RepoID: opts.RepoID,
@@ -249,34 +249,34 @@ func getIndexOptions(
 			}
 		}
 
-		// If we failed to resolve a branch, skip it
+		// If we fbiled to resolve b brbnch, skip it
 		if v == "" {
 			continue
 		}
 
-		o.Branches = append(o.Branches, zoekt.RepositoryBranch{
-			Name:    branch,
+		o.Brbnches = bppend(o.Brbnches, zoekt.RepositoryBrbnch{
+			Nbme:    brbnch,
 			Version: v,
 		})
 	}
 
-	slices.SortFunc(o.Branches, func(a, b zoekt.RepositoryBranch) bool {
-		// Zoekt treats first branch as default branch, so put HEAD first
-		if a.Name == "HEAD" || b.Name == "HEAD" {
-			return a.Name == "HEAD"
+	slices.SortFunc(o.Brbnches, func(b, b zoekt.RepositoryBrbnch) bool {
+		// Zoekt trebts first brbnch bs defbult brbnch, so put HEAD first
+		if b.Nbme == "HEAD" || b.Nbme == "HEAD" {
+			return b.Nbme == "HEAD"
 		}
-		return a.Name < b.Name
+		return b.Nbme < b.Nbme
 	})
 
-	// If the first branch is not HEAD, do not index anything. This should
-	// not happen, since HEAD should always exist if other branches exist.
-	if len(o.Branches) == 0 || o.Branches[0].Name != "HEAD" {
-		o.Branches = nil
+	// If the first brbnch is not HEAD, do not index bnything. This should
+	// not hbppen, since HEAD should blwbys exist if other brbnches exist.
+	if len(o.Brbnches) == 0 || o.Brbnches[0].Nbme != "HEAD" {
+		o.Brbnches = nil
 	}
 
-	// Zoekt has a limit of 64 branches
-	if len(o.Branches) > 64 {
-		o.Branches = o.Branches[:64]
+	// Zoekt hbs b limit of 64 brbnches
+	if len(o.Brbnches) > 64 {
+		o.Brbnches = o.Brbnches[:64]
 	}
 
 	return o
@@ -284,24 +284,24 @@ func getIndexOptions(
 
 type revsRuleFunc func(*RepoIndexOptions) (revs []string)
 
-func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
-	if c == nil || c.ExperimentalFeatures == nil {
+func siteConfigRevisionsRuleFunc(c *schemb.SiteConfigurbtion) revsRuleFunc {
+	if c == nil || c.ExperimentblFebtures == nil {
 		return nil
 	}
 
-	rules := make([]revsRuleFunc, 0, len(c.ExperimentalFeatures.SearchIndexRevisions))
-	for _, rule := range c.ExperimentalFeatures.SearchIndexRevisions {
+	rules := mbke([]revsRuleFunc, 0, len(c.ExperimentblFebtures.SebrchIndexRevisions))
+	for _, rule := rbnge c.ExperimentblFebtures.SebrchIndexRevisions {
 		rule := rule
 		switch {
-		case rule.Name != "":
-			namePattern, err := regexp.Compile(rule.Name)
+		cbse rule.Nbme != "":
+			nbmePbttern, err := regexp.Compile(rule.Nbme)
 			if err != nil {
-				log15.Error("error compiling regex from search.index.revisions", "regex", rule.Name, "err", err)
+				log15.Error("error compiling regex from sebrch.index.revisions", "regex", rule.Nbme, "err", err)
 				continue
 			}
 
-			rules = append(rules, func(o *RepoIndexOptions) []string {
-				if !namePattern.MatchString(o.Name) {
+			rules = bppend(rules, func(o *RepoIndexOptions) []string {
+				if !nbmePbttern.MbtchString(o.Nbme) {
 					return nil
 				}
 				return rule.Revisions
@@ -309,24 +309,24 @@ func siteConfigRevisionsRuleFunc(c *schema.SiteConfiguration) revsRuleFunc {
 		}
 	}
 
-	return func(o *RepoIndexOptions) (matched []string) {
-		cfg := c.ExperimentalFeatures
+	return func(o *RepoIndexOptions) (mbtched []string) {
+		cfg := c.ExperimentblFebtures
 
-		if len(cfg.SearchIndexBranches) != 0 {
-			matched = append(matched, cfg.SearchIndexBranches[o.Name]...)
+		if len(cfg.SebrchIndexBrbnches) != 0 {
+			mbtched = bppend(mbtched, cfg.SebrchIndexBrbnches[o.Nbme]...)
 		}
 
-		for _, rule := range rules {
-			matched = append(matched, rule(o)...)
+		for _, rule := rbnge rules {
+			mbtched = bppend(mbtched, rule(o)...)
 		}
 
-		return matched
+		return mbtched
 	}
 }
 
-func getBoolPtr(b *bool, default_ bool) bool {
+func getBoolPtr(b *bool, defbult_ bool) bool {
 	if b == nil {
-		return default_
+		return defbult_
 	}
 	return *b
 }

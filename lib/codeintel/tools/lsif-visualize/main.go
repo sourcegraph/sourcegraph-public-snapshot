@@ -1,26 +1,26 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 )
 
-func main() {
-	if err := mainErr(); err != nil {
+func mbin() {
+	if err := mbinErr(); err != nil {
 		fmt.Fprintf(os.Stderr, "\nerror: %v\n", err)
 		os.Exit(1)
 	}
 }
 
-func mainErr() error {
-	flag.Parse()
+func mbinErr() error {
+	flbg.Pbrse()
 
-	indexFile, err := os.OpenFile(*indexFilePath, os.O_RDONLY, 0)
+	indexFile, err := os.OpenFile(*indexFilePbth, os.O_RDONLY, 0)
 	if err != nil {
 		return err
 	}
 	defer indexFile.Close()
 
-	return visualize(indexFile, *fromID, *subgraphDepth, exclude)
+	return visublize(indexFile, *fromID, *subgrbphDepth, exclude)
 }

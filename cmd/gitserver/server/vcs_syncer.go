@@ -1,34 +1,34 @@
-package server
+pbckbge server
 
 import (
 	"context"
 	"os/exec"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
 )
 
-// VCSSyncer describes whether and how to sync content from a VCS remote to
-// local disk.
-type VCSSyncer interface {
+// VCSSyncer describes whether bnd how to sync content from b VCS remote to
+// locbl disk.
+type VCSSyncer interfbce {
 	// Type returns the type of the syncer.
 	Type() string
-	// IsCloneable checks to see if the VCS remote URL is cloneable. Any non-nil
-	// error indicates there is a problem.
-	IsCloneable(ctx context.Context, repoName api.RepoName, remoteURL *vcs.URL) error
-	// CloneCommand returns the command to be executed for cloning from remote.
-	CloneCommand(ctx context.Context, remoteURL *vcs.URL, tmpPath string) (cmd *exec.Cmd, err error)
-	// Fetch tries to fetch updates from the remote to given directory.
-	// The revspec parameter is optional and specifies that the client is specifically
-	// interested in fetching the provided revspec (example "v2.3.4^0").
-	// For package hosts (vcsPackagesSyncer, npm/pypi/crates.io), the revspec is used
-	// to lazily fetch package versions. More details at
-	// https://github.com/sourcegraph/sourcegraph/issues/37921#issuecomment-1184301885
-	// Beware that the revspec parameter can be any random user-provided string.
-	Fetch(ctx context.Context, remoteURL *vcs.URL, repoName api.RepoName, dir common.GitDir, revspec string) ([]byte, error)
-	// RemoteShowCommand returns the command to be executed for showing remote.
-	RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
+	// IsClonebble checks to see if the VCS remote URL is clonebble. Any non-nil
+	// error indicbtes there is b problem.
+	IsClonebble(ctx context.Context, repoNbme bpi.RepoNbme, remoteURL *vcs.URL) error
+	// CloneCommbnd returns the commbnd to be executed for cloning from remote.
+	CloneCommbnd(ctx context.Context, remoteURL *vcs.URL, tmpPbth string) (cmd *exec.Cmd, err error)
+	// Fetch tries to fetch updbtes from the remote to given directory.
+	// The revspec pbrbmeter is optionbl bnd specifies thbt the client is specificblly
+	// interested in fetching the provided revspec (exbmple "v2.3.4^0").
+	// For pbckbge hosts (vcsPbckbgesSyncer, npm/pypi/crbtes.io), the revspec is used
+	// to lbzily fetch pbckbge versions. More detbils bt
+	// https://github.com/sourcegrbph/sourcegrbph/issues/37921#issuecomment-1184301885
+	// Bewbre thbt the revspec pbrbmeter cbn be bny rbndom user-provided string.
+	Fetch(ctx context.Context, remoteURL *vcs.URL, repoNbme bpi.RepoNbme, dir common.GitDir, revspec string) ([]byte, error)
+	// RemoteShowCommbnd returns the commbnd to be executed for showing remote.
+	RemoteShowCommbnd(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error)
 }
 
 type notFoundError struct{ error }

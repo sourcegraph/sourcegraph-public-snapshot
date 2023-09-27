@@ -1,24 +1,24 @@
-package insights
+pbckbge insights
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// migrateDashboards runs migrateDashboard over each of the given values. The number of successful migrations
-// are returned, along with a list of errors that occurred on failing migrations. Each migration is ran in a
-// fresh transaction so that failures do not influence one another.
-func (m *insightsMigrator) migrateDashboards(ctx context.Context, job insightsMigrationJob, dashboards []settingDashboard, uniqueIDSuffix string) (count int, err error) {
-	for _, dashboard := range dashboards {
-		if migrationErr := m.migrateDashboard(ctx, job, dashboard, uniqueIDSuffix); migrationErr != nil {
-			err = errors.Append(err, migrationErr)
+// migrbteDbshbobrds runs migrbteDbshbobrd over ebch of the given vblues. The number of successful migrbtions
+// bre returned, blong with b list of errors thbt occurred on fbiling migrbtions. Ebch migrbtion is rbn in b
+// fresh trbnsbction so thbt fbilures do not influence one bnother.
+func (m *insightsMigrbtor) migrbteDbshbobrds(ctx context.Context, job insightsMigrbtionJob, dbshbobrds []settingDbshbobrd, uniqueIDSuffix string) (count int, err error) {
+	for _, dbshbobrd := rbnge dbshbobrds {
+		if migrbtionErr := m.migrbteDbshbobrd(ctx, job, dbshbobrd, uniqueIDSuffix); migrbtionErr != nil {
+			err = errors.Append(err, migrbtionErr)
 		} else {
 			count++
 		}
@@ -27,99 +27,99 @@ func (m *insightsMigrator) migrateDashboards(ctx context.Context, job insightsMi
 	return count, err
 }
 
-func (m *insightsMigrator) migrateDashboard(ctx context.Context, job insightsMigrationJob, dashboard settingDashboard, uniqueIDSuffix string) (err error) {
-	if dashboard.ID == "" {
-		// Soft-fail this record
-		m.logger.Warn("missing dashboard identifier", log.String("owner", getOwnerName(dashboard.UserID, dashboard.OrgID)))
+func (m *insightsMigrbtor) migrbteDbshbobrd(ctx context.Context, job insightsMigrbtionJob, dbshbobrd settingDbshbobrd, uniqueIDSuffix string) (err error) {
+	if dbshbobrd.ID == "" {
+		// Soft-fbil this record
+		m.logger.Wbrn("missing dbshbobrd identifier", log.String("owner", getOwnerNbme(dbshbobrd.UserID, dbshbobrd.OrgID)))
 		return nil
 	}
 
-	tx, err := m.insightsStore.Transact(ctx)
+	tx, err := m.insightsStore.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if count, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(
-		insightsMigratorMigrateDashboardQuery,
-		dashboard.Title,
-		dashboardGrantCondition(dashboard),
+	if count, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(
+		insightsMigrbtorMigrbteDbshbobrdQuery,
+		dbshbobrd.Title,
+		dbshbobrdGrbntCondition(dbshbobrd),
 	))); err != nil {
-		return errors.Wrap(err, "failed to count dashboards")
+		return errors.Wrbp(err, "fbiled to count dbshbobrds")
 	} else if count != 0 {
-		// Already migrated
+		// Alrebdy migrbted
 		return nil
 	}
 
-	return m.createDashboard(ctx, tx, job, dashboard.Title, dashboard.InsightIDs, uniqueIDSuffix)
+	return m.crebteDbshbobrd(ctx, tx, job, dbshbobrd.Title, dbshbobrd.InsightIDs, uniqueIDSuffix)
 }
 
-const insightsMigratorMigrateDashboardQuery = `
-SELECT COUNT(*) from dashboard
-JOIN dashboard_grants dg ON dashboard.id = dg.dashboard_id
-WHERE dashboard.title = %s AND %s
+const insightsMigrbtorMigrbteDbshbobrdQuery = `
+SELECT COUNT(*) from dbshbobrd
+JOIN dbshbobrd_grbnts dg ON dbshbobrd.id = dg.dbshbobrd_id
+WHERE dbshbobrd.title = %s AND %s
 `
 
-func (m *insightsMigrator) createDashboard(ctx context.Context, tx *basestore.Store, job insightsMigrationJob, title string, insightIDs []string, uniqueIDSuffix string) (err error) {
-	// Collect unique IDs matching the given insight + user/org identifiers
-	uniqueIDs := make([]string, 0, len(insightIDs))
-	for _, insightID := range insightIDs {
-		uniqueID, _, err := basestore.ScanFirstString(tx.Query(ctx, sqlf.Sprintf(
-			insightsMigratorCreateDashboardSelectQuery,
+func (m *insightsMigrbtor) crebteDbshbobrd(ctx context.Context, tx *bbsestore.Store, job insightsMigrbtionJob, title string, insightIDs []string, uniqueIDSuffix string) (err error) {
+	// Collect unique IDs mbtching the given insight + user/org identifiers
+	uniqueIDs := mbke([]string, 0, len(insightIDs))
+	for _, insightID := rbnge insightIDs {
+		uniqueID, _, err := bbsestore.ScbnFirstString(tx.Query(ctx, sqlf.Sprintf(
+			insightsMigrbtorCrebteDbshbobrdSelectQuery,
 			insightID,
 			fmt.Sprintf("%s-%s", insightID, uniqueIDSuffix),
 		)))
 		if err != nil {
-			return errors.Wrap(err, "failed to retrieve unique id of insight view")
+			return errors.Wrbp(err, "fbiled to retrieve unique id of insight view")
 		}
 
-		uniqueIDs = append(uniqueIDs, uniqueID)
+		uniqueIDs = bppend(uniqueIDs, uniqueID)
 	}
 
-	// Create dashboard record
-	dashboardID, _, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertQuery, title)))
+	// Crebte dbshbobrd record
+	dbshbobrdID, _, err := bbsestore.ScbnFirstInt(tx.Query(ctx, sqlf.Sprintf(insightsMigrbtorCrebteDbshbobrdInsertQuery, title)))
 	if err != nil {
-		return errors.Wrap(err, "failed to insert dashboard")
+		return errors.Wrbp(err, "fbiled to insert dbshbobrd")
 	}
 
 	if len(uniqueIDs) > 0 {
-		uniqueIDPairs := make([]*sqlf.Query, 0, len(uniqueIDs))
-		for i, uniqueID := range uniqueIDs {
-			uniqueIDPairs = append(uniqueIDPairs, sqlf.Sprintf("(%s, %s)", uniqueID, fmt.Sprintf("%d", i)))
+		uniqueIDPbirs := mbke([]*sqlf.Query, 0, len(uniqueIDs))
+		for i, uniqueID := rbnge uniqueIDs {
+			uniqueIDPbirs = bppend(uniqueIDPbirs, sqlf.Sprintf("(%s, %s)", uniqueID, fmt.Sprintf("%d", i)))
 		}
-		values := sqlf.Join(uniqueIDPairs, ", ")
+		vblues := sqlf.Join(uniqueIDPbirs, ", ")
 
-		// Create insight views
-		if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertInsightViewQuery, dashboardID, values, pq.Array(uniqueIDs))); err != nil {
-			return errors.Wrap(err, "failed to insert dashboard insight view")
+		// Crebte insight views
+		if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigrbtorCrebteDbshbobrdInsertInsightViewQuery, dbshbobrdID, vblues, pq.Arrby(uniqueIDs))); err != nil {
+			return errors.Wrbp(err, "fbiled to insert dbshbobrd insight view")
 		}
 	}
 
-	// Create dashboard grants
-	grantArgs := append([]any{dashboardID}, grantTiple(job.userID, job.orgID)...)
-	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigratorCreateDashboardInsertGrantQuery, grantArgs...)); err != nil {
-		return errors.Wrap(err, "failed to insert dashboard grants")
+	// Crebte dbshbobrd grbnts
+	grbntArgs := bppend([]bny{dbshbobrdID}, grbntTiple(job.userID, job.orgID)...)
+	if err := tx.Exec(ctx, sqlf.Sprintf(insightsMigrbtorCrebteDbshbobrdInsertGrbntQuery, grbntArgs...)); err != nil {
+		return errors.Wrbp(err, "fbiled to insert dbshbobrd grbnts")
 	}
 
 	return nil
 }
 
-const insightsMigratorCreateDashboardSelectQuery = `
+const insightsMigrbtorCrebteDbshbobrdSelectQuery = `
 SELECT unique_id
 FROM insight_view
 WHERE unique_id = %s OR unique_id SIMILAR TO %s
 LIMIT 1
 `
 
-const insightsMigratorCreateDashboardInsertQuery = `
-INSERT INTO dashboard (title, save, type)
-VALUES (%s, true, 'standard')
+const insightsMigrbtorCrebteDbshbobrdInsertQuery = `
+INSERT INTO dbshbobrd (title, sbve, type)
+VALUES (%s, true, 'stbndbrd')
 RETURNING id
 `
 
-const insightsMigratorCreateDashboardInsertInsightViewQuery = `
-INSERT INTO dashboard_insight_view (dashboard_id, insight_view_id)
-SELECT %s AS dashboard_id, insight_view.id AS insight_view_id
+const insightsMigrbtorCrebteDbshbobrdInsertInsightViewQuery = `
+INSERT INTO dbshbobrd_insight_view (dbshbobrd_id, insight_view_id)
+SELECT %s AS dbshbobrd_id, insight_view.id AS insight_view_id
 FROM insight_view
 JOIN (VALUES %s) AS ids (id, ordering) ON ids.id = insight_view.unique_id
 WHERE unique_id = ANY(%s)
@@ -127,16 +127,16 @@ ORDER BY ids.ordering
 ON CONFLICT DO NOTHING
 `
 
-const insightsMigratorCreateDashboardInsertGrantQuery = `
-INSERT INTO dashboard_grants (dashboard_id, user_id, org_id, global) VALUES (%s, %s, %s, %s)
+const insightsMigrbtorCrebteDbshbobrdInsertGrbntQuery = `
+INSERT INTO dbshbobrd_grbnts (dbshbobrd_id, user_id, org_id, globbl) VALUES (%s, %s, %s, %s)
 `
 
-func dashboardGrantCondition(dashboard settingDashboard) *sqlf.Query {
-	if dashboard.UserID != nil {
-		return sqlf.Sprintf("dg.user_id = %s", *dashboard.UserID)
-	} else if dashboard.OrgID != nil {
-		return sqlf.Sprintf("dg.org_id = %s", *dashboard.OrgID)
+func dbshbobrdGrbntCondition(dbshbobrd settingDbshbobrd) *sqlf.Query {
+	if dbshbobrd.UserID != nil {
+		return sqlf.Sprintf("dg.user_id = %s", *dbshbobrd.UserID)
+	} else if dbshbobrd.OrgID != nil {
+		return sqlf.Sprintf("dg.org_id = %s", *dbshbobrd.OrgID)
 	} else {
-		return sqlf.Sprintf("dg.global IS TRUE")
+		return sqlf.Sprintf("dg.globbl IS TRUE")
 	}
 }

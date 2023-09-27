@@ -1,24 +1,24 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
 type CodeInsights struct {
 	Ctx       context.Context
-	DateRange string
+	DbteRbnge string
 	Grouping  string
-	DB        database.DB
-	Cache     bool
+	DB        dbtbbbse.DB
+	Cbche     bool
 }
 
 // Insights:Hovers
 
-func (c *CodeInsights) InsightHovers() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		c.DateRange,
+func (c *CodeInsights) InsightHovers() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(
+		c.DbteRbnge,
 		c.Grouping,
 		[]string{"InsightHover"},
 	)
@@ -26,45 +26,45 @@ func (c *CodeInsights) InsightHovers() (*AnalyticsFetcher, error) {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           c.DB,
-		dateRange:    c.DateRange,
+		dbteRbnge:    c.DbteRbnge,
 		grouping:     c.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
+		summbryQuery: summbryQuery,
 		group:        "Insights:InsightHovers",
-		cache:        c.Cache,
+		cbche:        c.Cbche,
 	}, nil
 }
 
-// Insights:DataPointClicks
+// Insights:DbtbPointClicks
 
-func (c *CodeInsights) InsightDataPointClicks() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(
-		c.DateRange,
+func (c *CodeInsights) InsightDbtbPointClicks() (*AnblyticsFetcher, error) {
+	nodesQuery, summbryQuery, err := mbkeEventLogsQueries(
+		c.DbteRbnge,
 		c.Grouping,
-		[]string{"InsightDataPointClick"},
+		[]string{"InsightDbtbPointClick"},
 	)
 	if err != nil {
 		return nil, err
 	}
 
-	return &AnalyticsFetcher{
+	return &AnblyticsFetcher{
 		db:           c.DB,
-		dateRange:    c.DateRange,
+		dbteRbnge:    c.DbteRbnge,
 		grouping:     c.Grouping,
 		nodesQuery:   nodesQuery,
-		summaryQuery: summaryQuery,
-		group:        "Insights:InsightDataPointClicks",
-		cache:        c.Cache,
+		summbryQuery: summbryQuery,
+		group:        "Insights:InsightDbtbPointClicks",
+		cbche:        c.Cbche,
 	}, nil
 }
 
-// Insights caching job entrypoint
+// Insights cbching job entrypoint
 
-func (c *CodeInsights) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){c.InsightHovers, c.InsightDataPointClicks}
-	for _, buildFetcher := range fetcherBuilders {
+func (c *CodeInsights) CbcheAll(ctx context.Context) error {
+	fetcherBuilders := []func() (*AnblyticsFetcher, error){c.InsightHovers, c.InsightDbtbPointClicks}
+	for _, buildFetcher := rbnge fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {
 			return err
@@ -74,7 +74,7 @@ func (c *CodeInsights) CacheAll(ctx context.Context) error {
 			return err
 		}
 
-		if _, err := fetcher.Summary(ctx); err != nil {
+		if _, err := fetcher.Summbry(ctx); err != nil {
 			return err
 		}
 	}

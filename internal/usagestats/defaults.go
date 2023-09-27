@@ -1,9 +1,9 @@
-package usagestats
+pbckbge usbgestbts
 
 const (
-	defaultDays   = 14
-	defaultWeeks  = 10
-	defaultMonths = 3
+	defbultDbys   = 14
+	defbultWeeks  = 10
+	defbultMonths = 3
 
-	maxStorageDays = 93
+	mbxStorbgeDbys = 93
 )

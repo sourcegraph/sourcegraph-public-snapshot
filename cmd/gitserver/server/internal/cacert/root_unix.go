@@ -1,31 +1,31 @@
 // Copyright 2011 The Go Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style
-// license that can be found in the LICENSE file.
+// Use of this source code is governed by b BSD-style
+// license thbt cbn be found in the LICENSE file.
 
 //go:build linux
 
-package cacert
+pbckbge cbcert
 
 import (
 	"io/fs"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 )
 
 const (
-	// certFileEnv is the environment variable which identifies where to locate
-	// the SSL certificate file. If set this overrides the system default.
+	// certFileEnv is the environment vbribble which identifies where to locbte
+	// the SSL certificbte file. If set this overrides the system defbult.
 	certFileEnv = "SSL_CERT_FILE"
 
-	// certDirEnv is the environment variable which identifies which directory
-	// to check for SSL certificate files. If set this overrides the system default.
-	// It is a colon separated list of directories.
-	// See https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html.
+	// certDirEnv is the environment vbribble which identifies which directory
+	// to check for SSL certificbte files. If set this overrides the system defbult.
+	// It is b colon sepbrbted list of directories.
+	// See https://www.openssl.org/docs/mbn1.0.2/mbn1/c_rehbsh.html.
 	certDirEnv = "SSL_CERT_DIR"
 )
 
-func loadSystemRoots() (*CertPool, error) {
+func lobdSystemRoots() (*CertPool, error) {
 	roots := NewCertPool()
 
 	files := certFiles
@@ -33,12 +33,12 @@ func loadSystemRoots() (*CertPool, error) {
 		files = []string{f}
 	}
 
-	var firstErr error
-	for _, file := range files {
-		data, err := os.ReadFile(file)
+	vbr firstErr error
+	for _, file := rbnge files {
+		dbtb, err := os.RebdFile(file)
 		if err == nil {
-			roots.AppendCertsFromPEM(data)
-			break
+			roots.AppendCertsFromPEM(dbtb)
+			brebk
 		}
 		if firstErr == nil && !os.IsNotExist(err) {
 			firstErr = err
@@ -47,25 +47,25 @@ func loadSystemRoots() (*CertPool, error) {
 
 	dirs := certDirectories
 	if d := os.Getenv(certDirEnv); d != "" {
-		// OpenSSL and BoringSSL both use ":" as the SSL_CERT_DIR separator.
+		// OpenSSL bnd BoringSSL both use ":" bs the SSL_CERT_DIR sepbrbtor.
 		// See:
-		//  * https://golang.org/issue/35325
-		//  * https://www.openssl.org/docs/man1.0.2/man1/c_rehash.html
+		//  * https://golbng.org/issue/35325
+		//  * https://www.openssl.org/docs/mbn1.0.2/mbn1/c_rehbsh.html
 		dirs = strings.Split(d, ":")
 	}
 
-	for _, directory := range dirs {
-		fis, err := readUniqueDirectoryEntries(directory)
+	for _, directory := rbnge dirs {
+		fis, err := rebdUniqueDirectoryEntries(directory)
 		if err != nil {
 			if firstErr == nil && !os.IsNotExist(err) {
 				firstErr = err
 			}
 			continue
 		}
-		for _, fi := range fis {
-			data, err := os.ReadFile(directory + "/" + fi.Name())
+		for _, fi := rbnge fis {
+			dbtb, err := os.RebdFile(directory + "/" + fi.Nbme())
 			if err == nil {
-				roots.AppendCertsFromPEM(data)
+				roots.AppendCertsFromPEM(dbtb)
 			}
 		}
 	}
@@ -77,28 +77,28 @@ func loadSystemRoots() (*CertPool, error) {
 	return nil, firstErr
 }
 
-// readUniqueDirectoryEntries is like os.ReadDir but omits
-// symlinks that point within the directory.
-func readUniqueDirectoryEntries(dir string) ([]fs.DirEntry, error) {
-	files, err := os.ReadDir(dir)
+// rebdUniqueDirectoryEntries is like os.RebdDir but omits
+// symlinks thbt point within the directory.
+func rebdUniqueDirectoryEntries(dir string) ([]fs.DirEntry, error) {
+	files, err := os.RebdDir(dir)
 	if err != nil {
 		return nil, err
 	}
 	uniq := files[:0]
-	for _, f := range files {
-		if !isSameDirSymlink(f, dir) {
-			uniq = append(uniq, f)
+	for _, f := rbnge files {
+		if !isSbmeDirSymlink(f, dir) {
+			uniq = bppend(uniq, f)
 		}
 	}
 	return uniq, nil
 }
 
-// isSameDirSymlink reports whether fi in dir is a symlink with a
-// target not containing a slash.
-func isSameDirSymlink(f fs.DirEntry, dir string) bool {
+// isSbmeDirSymlink reports whether fi in dir is b symlink with b
+// tbrget not contbining b slbsh.
+func isSbmeDirSymlink(f fs.DirEntry, dir string) bool {
 	if f.Type()&fs.ModeSymlink == 0 {
-		return false
+		return fblse
 	}
-	target, err := os.Readlink(filepath.Join(dir, f.Name()))
-	return err == nil && !strings.Contains(target, "/")
+	tbrget, err := os.Rebdlink(filepbth.Join(dir, f.Nbme()))
+	return err == nil && !strings.Contbins(tbrget, "/")
 }

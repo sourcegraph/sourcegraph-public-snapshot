@@ -1,65 +1,65 @@
-package store
+pbckbge store
 
 import (
 	"context"
-	"database/sql/driver"
+	"dbtbbbse/sql/driver"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/jackc/pgconn"
-	"github.com/keegancsmith/sqlf"
+	"github.com/jbckc/pgconn"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
-	"golang.org/x/exp/slices"
+	"go.opentelemetry.io/otel/bttribute"
+	"golbng.org/x/exp/slices"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/batch"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbtch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Store provides the interface for package dependencies storage.
-type Store interface {
-	WithTransact(context.Context, func(Store) error) error
+// Store provides the interfbce for pbckbge dependencies storbge.
+type Store interfbce {
+	WithTrbnsbct(context.Context, func(Store) error) error
 
-	ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, hasMore bool, err error)
-	InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error)
-	DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error)
-	DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
+	ListPbckbgeRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shbred.PbckbgeRepoReference, totbl int, hbsMore bool, err error)
+	InsertPbckbgeRepoRefs(ctx context.Context, deps []shbred.MinimblPbckbgeRepoRef) (newDeps []shbred.PbckbgeRepoReference, newVersions []shbred.PbckbgeRepoRefVersion, err error)
+	DeletePbckbgeRepoRefsByID(ctx context.Context, ids ...int) (err error)
+	DeletePbckbgeRepoRefVersionsByID(ctx context.Context, ids ...int) (err error)
 
-	ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) ([]shared.PackageRepoFilter, bool, error)
-	CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error)
-	UpdatePackageRepoFilter(ctx context.Context, input shared.PackageRepoFilter) (err error)
-	DeletePacakgeRepoFilter(ctx context.Context, id int) (err error)
+	ListPbckbgeRepoRefFilters(ctx context.Context, opts ListPbckbgeRepoRefFiltersOpts) ([]shbred.PbckbgeRepoFilter, bool, error)
+	CrebtePbckbgeRepoFilter(ctx context.Context, input shbred.MinimblPbckbgeFilter) (filter *shbred.PbckbgeRepoFilter, err error)
+	UpdbtePbckbgeRepoFilter(ctx context.Context, input shbred.PbckbgeRepoFilter) (err error)
+	DeletePbcbkgeRepoFilter(ctx context.Context, id int) (err error)
 
-	ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error)
-	UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error)
+	ShouldRefilterPbckbgeRepoRefs(ctx context.Context) (exists bool, err error)
+	UpdbteAllBlockedStbtuses(ctx context.Context, pkgs []shbred.PbckbgeRepoReference, stbrtTime time.Time) (pkgsUpdbted, versionsUpdbted int, err error)
 }
 
-// store manages the database tables for package dependencies.
+// store mbnbges the dbtbbbse tbbles for pbckbge dependencies.
 type store struct {
-	db         *basestore.Store
-	operations *operations
+	db         *bbsestore.Store
+	operbtions *operbtions
 }
 
-// New returns a new store.
-func New(op *observation.Context, db database.DB) *store {
+// New returns b new store.
+func New(op *observbtion.Context, db dbtbbbse.DB) *store {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
-		operations: newOperations(op),
+		db:         bbsestore.NewWithHbndle(db.Hbndle()),
+		operbtions: newOperbtions(op),
 	}
 }
 
-func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error {
-	return s.db.WithTransact(ctx, func(tx *basestore.Store) error {
+func (s *store) WithTrbnsbct(ctx context.Context, f func(tx Store) error) error {
+	return s.db.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
 		return f(&store{
 			db:         tx,
-			operations: s.operations,
+			operbtions: s.operbtions,
 		})
 	})
 }
@@ -67,15 +67,15 @@ func (s *store) WithTransact(ctx context.Context, f func(tx Store) error) error 
 type fuzziness int
 
 const (
-	FuzzinessExactMatch fuzziness = iota
-	FuzzinessWildcard
+	FuzzinessExbctMbtch fuzziness = iotb
+	FuzzinessWildcbrd
 	FuzzinessRegex
 )
 
-// ListDependencyReposOpts are options for listing dependency repositories.
+// ListDependencyReposOpts bre options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme         string
-	Name           reposource.PackageName
+	Nbme           reposource.PbckbgeNbme
 	Fuzziness      fuzziness
 	After          int
 	Limit          int
@@ -83,98 +83,98 @@ type ListDependencyReposOpts struct {
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
-func (s *store) ListPackageRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.PackageRepoReference, total int, hasMore bool, err error) {
-	ctx, _, endObservation := s.operations.listPackageRepoRefs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("scheme", opts.Scheme),
+func (s *store) ListPbckbgeRepoRefs(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shbred.PbckbgeRepoReference, totbl int, hbsMore bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.listPbckbgeRepoRefs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("scheme", opts.Scheme),
 	}})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("numDependencyRepos", len(dependencyRepos)),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("numDependencyRepos", len(dependencyRepos)),
 		}})
 	}()
 
 	query := sqlf.Sprintf(
 		listDependencyReposQuery,
-		sqlf.Sprintf(groupedVersionedPackageReposColumns),
-		sqlf.Join([]*sqlf.Query{makeListDependencyReposConds(opts), makeOffset(opts.After)}, "AND"),
+		sqlf.Sprintf(groupedVersionedPbckbgeReposColumns),
+		sqlf.Join([]*sqlf.Query{mbkeListDependencyReposConds(opts), mbkeOffset(opts.After)}, "AND"),
 		sqlf.Sprintf("GROUP BY lr.id"),
 		sqlf.Sprintf("ORDER BY lr.id ASC"),
-		makeLimit(opts.Limit),
+		mbkeLimit(opts.Limit),
 	)
-	dependencyRepos, err = basestore.NewSliceScanner(scanDependencyRepoWithVersions)(s.db.Query(ctx, query))
+	dependencyRepos, err = bbsestore.NewSliceScbnner(scbnDependencyRepoWithVersions)(s.db.Query(ctx, query))
 	if err != nil {
-		return nil, 0, false, errors.Wrap(err, "error listing dependency repos")
+		return nil, 0, fblse, errors.Wrbp(err, "error listing dependency repos")
 	}
 
 	if opts.Limit != 0 && len(dependencyRepos) > opts.Limit {
 		dependencyRepos = dependencyRepos[:opts.Limit]
-		hasMore = true
+		hbsMore = true
 	}
 
 	query = sqlf.Sprintf(
 		listDependencyReposQuery,
 		sqlf.Sprintf("COUNT(DISTINCT(lr.id))"),
-		makeListDependencyReposConds(opts),
+		mbkeListDependencyReposConds(opts),
 		sqlf.Sprintf(""),
 		sqlf.Sprintf(""),
 		sqlf.Sprintf("LIMIT ALL"),
 	)
-	totalCount, _, err := basestore.ScanFirstInt(s.db.Query(ctx, query))
+	totblCount, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, query))
 	if err != nil {
-		return nil, 0, false, errors.Wrap(err, "error counting dependency repos")
+		return nil, 0, fblse, errors.Wrbp(err, "error counting dependency repos")
 	}
 
-	return dependencyRepos, totalCount, hasMore, err
+	return dependencyRepos, totblCount, hbsMore, err
 }
 
-const groupedVersionedPackageReposColumns = `
+const groupedVersionedPbckbgeReposColumns = `
 	lr.id,
 	lr.scheme,
-	lr.name,
+	lr.nbme,
 	lr.blocked,
-	lr.last_checked_at,
-	array_agg(prv.id ORDER BY prv.id) as vid,
-	array_agg(prv.version ORDER BY prv.id) as version,
-	array_agg(prv.blocked ORDER BY prv.id) as vers_blocked,
-	array_agg(prv.last_checked_at ORDER BY prv.id) as vers_last_checked_at
+	lr.lbst_checked_bt,
+	brrby_bgg(prv.id ORDER BY prv.id) bs vid,
+	brrby_bgg(prv.version ORDER BY prv.id) bs version,
+	brrby_bgg(prv.blocked ORDER BY prv.id) bs vers_blocked,
+	brrby_bgg(prv.lbst_checked_bt ORDER BY prv.id) bs vers_lbst_checked_bt
 `
 
 const listDependencyReposQuery = `
 SELECT %s
 FROM lsif_dependency_repos lr
 JOIN LATERAL (
-    SELECT id, package_id, version, blocked, last_checked_at
-    FROM package_repo_versions
-    WHERE package_id = lr.id
+    SELECT id, pbckbge_id, version, blocked, lbst_checked_bt
+    FROM pbckbge_repo_versions
+    WHERE pbckbge_id = lr.id
     ORDER BY id
 ) prv
-ON lr.id = prv.package_id
+ON lr.id = prv.pbckbge_id
 WHERE %s
 %s -- group by
 %s -- order by
 %s -- limit
 `
 
-func makeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
-	conds := make([]*sqlf.Query, 0, 4)
+func mbkeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
+	conds := mbke([]*sqlf.Query, 0, 4)
 
 	if opts.Scheme != "" {
-		conds = append(conds, sqlf.Sprintf("scheme = %s", opts.Scheme))
+		conds = bppend(conds, sqlf.Sprintf("scheme = %s", opts.Scheme))
 	}
 
-	if opts.Name != "" {
+	if opts.Nbme != "" {
 		switch opts.Fuzziness {
-		case FuzzinessExactMatch:
-			conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
-		case FuzzinessWildcard:
-			conds = append(conds, sqlf.Sprintf("name LIKE ('%%%%' || %s || '%%%%')", opts.Name))
-		case FuzzinessRegex:
-			conds = append(conds, sqlf.Sprintf("name ~ %s", opts.Name))
+		cbse FuzzinessExbctMbtch:
+			conds = bppend(conds, sqlf.Sprintf("nbme = %s", opts.Nbme))
+		cbse FuzzinessWildcbrd:
+			conds = bppend(conds, sqlf.Sprintf("nbme LIKE ('%%%%' || %s || '%%%%')", opts.Nbme))
+		cbse FuzzinessRegex:
+			conds = bppend(conds, sqlf.Sprintf("nbme ~ %s", opts.Nbme))
 		}
 	}
 
 	if !opts.IncludeBlocked {
-		conds = append(conds, sqlf.Sprintf("lr.blocked <> true AND prv.blocked <> true"))
+		conds = bppend(conds, sqlf.Sprintf("lr.blocked <> true AND prv.blocked <> true"))
 	}
 
 	if len(conds) > 0 {
@@ -184,15 +184,15 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) *sqlf.Query {
 	return sqlf.Sprintf("TRUE")
 }
 
-func makeLimit(limit int) *sqlf.Query {
+func mbkeLimit(limit int) *sqlf.Query {
 	if limit == 0 {
 		return sqlf.Sprintf("LIMIT ALL")
 	}
-	// + 1 to check if more pages
+	// + 1 to check if more pbges
 	return sqlf.Sprintf("LIMIT %s", limit+1)
 }
 
-func makeOffset(id int) *sqlf.Query {
+func mbkeOffset(id int) *sqlf.Query {
 	if id > 0 {
 		return sqlf.Sprintf("lr.id > %s", id)
 	}
@@ -200,17 +200,17 @@ func makeOffset(id int) *sqlf.Query {
 	return sqlf.Sprintf("TRUE")
 }
 
-// InsertDependencyRepos creates the given dependency repos if they don't yet exist. The values that did not exist previously are returned.
-// [{npm, @types/nodejs, [v0.0.1]}, {npm, @types/nodejs, [v0.0.2]}] will be collapsed into [{npm, @types/nodejs, [v0.0.1, v0.0.2]}]
-func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.MinimalPackageRepoRef) (newDeps []shared.PackageRepoReference, newVersions []shared.PackageRepoRefVersion, err error) {
-	ctx, _, endObservation := s.operations.insertPackageRepoRefs.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numInputDeps", len(deps)),
+// InsertDependencyRepos crebtes the given dependency repos if they don't yet exist. The vblues thbt did not exist previously bre returned.
+// [{npm, @types/nodejs, [v0.0.1]}, {npm, @types/nodejs, [v0.0.2]}] will be collbpsed into [{npm, @types/nodejs, [v0.0.1, v0.0.2]}]
+func (s *store) InsertPbckbgeRepoRefs(ctx context.Context, deps []shbred.MinimblPbckbgeRepoRef) (newDeps []shbred.PbckbgeRepoReference, newVersions []shbred.PbckbgeRepoRefVersion, err error) {
+	ctx, _, endObservbtion := s.operbtions.insertPbckbgeRepoRefs.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numInputDeps", len(deps)),
 	}})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("newDependencies", len(newDeps)),
-			attribute.Int("newVersion", len(newVersions)),
-			attribute.Int("numDedupedDeps", len(deps)),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("newDependencies", len(newDeps)),
+			bttribute.Int("newVersion", len(newVersions)),
+			bttribute.Int("numDedupedDeps", len(deps)),
 		}})
 	}()
 
@@ -218,36 +218,36 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		return
 	}
 
-	slices.SortStableFunc(deps, func(a, b shared.MinimalPackageRepoRef) bool {
-		if a.Scheme != b.Scheme {
-			return a.Scheme < b.Scheme
+	slices.SortStbbleFunc(deps, func(b, b shbred.MinimblPbckbgeRepoRef) bool {
+		if b.Scheme != b.Scheme {
+			return b.Scheme < b.Scheme
 		}
 
-		return a.Name < b.Name
+		return b.Nbme < b.Nbme
 	})
 
 	// first reduce
-	var lastCommon int
-	for i, dep := range deps[1:] {
-		if dep.Name == deps[lastCommon].Name && dep.Scheme == deps[lastCommon].Scheme {
-			deps[lastCommon].Versions = append(deps[lastCommon].Versions, dep.Versions...)
-			deps[i+1] = shared.MinimalPackageRepoRef{}
+	vbr lbstCommon int
+	for i, dep := rbnge deps[1:] {
+		if dep.Nbme == deps[lbstCommon].Nbme && dep.Scheme == deps[lbstCommon].Scheme {
+			deps[lbstCommon].Versions = bppend(deps[lbstCommon].Versions, dep.Versions...)
+			deps[i+1] = shbred.MinimblPbckbgeRepoRef{}
 		} else {
-			lastCommon = i + 1
+			lbstCommon = i + 1
 		}
 	}
 
-	// then collapse
+	// then collbpse
 	nonDupes := deps[:0]
-	for _, dep := range deps {
-		if dep.Name != "" && dep.Scheme != "" {
-			nonDupes = append(nonDupes, dep)
+	for _, dep := rbnge deps {
+		if dep.Nbme != "" && dep.Scheme != "" {
+			nonDupes = bppend(nonDupes, dep)
 		}
 	}
-	// replace the originals :wave
+	// replbce the originbls :wbve
 	deps = nonDupes
 
-	tx, err := s.db.Transact(ctx)
+	tx, err := s.db.Trbnsbct(ctx)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -255,21 +255,21 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		err = tx.Done(err)
 	}()
 
-	for _, tempTableQuery := range []string{temporaryPackageRepoRefsTableQuery, temporaryPackageRepoRefVersionsTableQuery} {
-		if err := tx.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
-			return nil, nil, errors.Wrap(err, "failed to create temporary tables")
+	for _, tempTbbleQuery := rbnge []string{temporbryPbckbgeRepoRefsTbbleQuery, temporbryPbckbgeRepoRefVersionsTbbleQuery} {
+		if err := tx.Exec(ctx, sqlf.Sprintf(tempTbbleQuery)); err != nil {
+			return nil, nil, errors.Wrbp(err, "fbiled to crebte temporbry tbbles")
 		}
 	}
 
-	err = batch.WithInserter(
+	err = bbtch.WithInserter(
 		ctx,
-		tx.Handle(),
-		"t_package_repo_refs",
-		batch.MaxNumPostgresParameters,
-		[]string{"scheme", "name", "blocked", "last_checked_at"},
-		func(inserter *batch.Inserter) error {
-			for _, pkg := range deps {
-				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Name, pkg.Blocked, pkg.LastCheckedAt); err != nil {
+		tx.Hbndle(),
+		"t_pbckbge_repo_refs",
+		bbtch.MbxNumPostgresPbrbmeters,
+		[]string{"scheme", "nbme", "blocked", "lbst_checked_bt"},
+		func(inserter *bbtch.Inserter) error {
+			for _, pkg := rbnge deps {
+				if err := inserter.Insert(ctx, pkg.Scheme, pkg.Nbme, pkg.Blocked, pkg.LbstCheckedAt); err != nil {
 					return err
 				}
 			}
@@ -277,71 +277,71 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 		},
 	)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to insert package repos in temporary table")
+		return nil, nil, errors.Wrbp(err, "fbiled to insert pbckbge repos in temporbry tbble")
 	}
 
-	newDeps, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (dep shared.PackageRepoReference, err error) {
-		err = rows.Scan(&dep.ID, &dep.Scheme, &dep.Name, &dep.Blocked, &dep.LastCheckedAt)
+	newDeps, err = bbsestore.NewSliceScbnner(func(rows dbutil.Scbnner) (dep shbred.PbckbgeRepoReference, err error) {
+		err = rows.Scbn(&dep.ID, &dep.Scheme, &dep.Nbme, &dep.Blocked, &dep.LbstCheckedAt)
 		return
-	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefsQuery)))
+	})(tx.Query(ctx, sqlf.Sprintf(trbnsferPbckbgeRepoRefsQuery)))
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to transfer package repos from temporary table")
+		return nil, nil, errors.Wrbp(err, "fbiled to trbnsfer pbckbge repos from temporbry tbble")
 	}
 
-	// we need the IDs of all newly inserted and already existing package repo references
-	// for all of the references in `deps`, so that we have the package repo reference ID that
-	// we need for the package repo reference versions table.
-	// We already have the IDs of newly inserted ones (in `newDeps`), but for simplicity we'll
-	// just search based on (scheme, name) tuple in `deps`.
+	// we need the IDs of bll newly inserted bnd blrebdy existing pbckbge repo references
+	// for bll of the references in `deps`, so thbt we hbve the pbckbge repo reference ID thbt
+	// we need for the pbckbge repo reference versions tbble.
+	// We blrebdy hbve the IDs of newly inserted ones (in `newDeps`), but for simplicity we'll
+	// just sebrch bbsed on (scheme, nbme) tuple in `deps`.
 
-	// we slice into `deps`, which will continuously shrink as we batch based on the amount of
-	// postgres parameters we can fit. Divide by 2 because for each entry in the batch, we need 2 free params
-	const maxBatchSize = batch.MaxNumPostgresParameters / 2
-	remainingDeps := deps
+	// we slice into `deps`, which will continuously shrink bs we bbtch bbsed on the bmount of
+	// postgres pbrbmeters we cbn fit. Divide by 2 becbuse for ebch entry in the bbtch, we need 2 free pbrbms
+	const mbxBbtchSize = bbtch.MbxNumPostgresPbrbmeters / 2
+	rembiningDeps := deps
 
-	allIDs := make([]int, 0, len(deps))
+	bllIDs := mbke([]int, 0, len(deps))
 
-	for len(remainingDeps) > 0 {
-		// avoid slice out of bounds nonsense
-		var batch []shared.MinimalPackageRepoRef
-		if len(remainingDeps) <= maxBatchSize {
-			batch, remainingDeps = remainingDeps, nil
+	for len(rembiningDeps) > 0 {
+		// bvoid slice out of bounds nonsense
+		vbr bbtch []shbred.MinimblPbckbgeRepoRef
+		if len(rembiningDeps) <= mbxBbtchSize {
+			bbtch, rembiningDeps = rembiningDeps, nil
 		} else {
-			batch, remainingDeps = remainingDeps[:maxBatchSize], remainingDeps[maxBatchSize:]
+			bbtch, rembiningDeps = rembiningDeps[:mbxBbtchSize], rembiningDeps[mbxBbtchSize:]
 		}
 
-		// dont over-allocate
-		max := maxBatchSize
-		if len(remainingDeps) < maxBatchSize {
-			max = len(remainingDeps)
+		// dont over-bllocbte
+		mbx := mbxBbtchSize
+		if len(rembiningDeps) < mbxBbtchSize {
+			mbx = len(rembiningDeps)
 		}
-		params := make([]*sqlf.Query, 0, max)
-		for _, dep := range batch {
-			params = append(params, sqlf.Sprintf("(%s, %s)", dep.Scheme, dep.Name))
+		pbrbms := mbke([]*sqlf.Query, 0, mbx)
+		for _, dep := rbnge bbtch {
+			pbrbms = bppend(pbrbms, sqlf.Sprintf("(%s, %s)", dep.Scheme, dep.Nbme))
 		}
 
 		query := sqlf.Sprintf(
 			getAttemptedInsertDependencyReposQuery,
-			sqlf.Join(params, ", "),
+			sqlf.Join(pbrbms, ", "),
 		)
 
-		allIDsWindow, err := basestore.ScanInts(tx.Query(ctx, query))
+		bllIDsWindow, err := bbsestore.ScbnInts(tx.Query(ctx, query))
 		if err != nil {
 			return nil, nil, err
 		}
-		allIDs = append(allIDs, allIDsWindow...)
+		bllIDs = bppend(bllIDs, bllIDsWindow...)
 	}
 
-	err = batch.WithInserter(
+	err = bbtch.WithInserter(
 		ctx,
-		tx.Handle(),
-		"t_package_repo_versions",
-		batch.MaxNumPostgresParameters,
-		[]string{"package_id", "version", "blocked", "last_checked_at"},
-		func(inserter *batch.Inserter) error {
-			for i, dep := range deps {
-				for _, version := range dep.Versions {
-					if err := inserter.Insert(ctx, allIDs[i], version.Version, version.Blocked, version.LastCheckedAt); err != nil {
+		tx.Hbndle(),
+		"t_pbckbge_repo_versions",
+		bbtch.MbxNumPostgresPbrbmeters,
+		[]string{"pbckbge_id", "version", "blocked", "lbst_checked_bt"},
+		func(inserter *bbtch.Inserter) error {
+			for i, dep := rbnge deps {
+				for _, version := rbnge dep.Versions {
+					if err := inserter.Insert(ctx, bllIDs[i], version.Version, version.Blocked, version.LbstCheckedAt); err != nil {
 						return err
 					}
 				}
@@ -349,87 +349,87 @@ func (s *store) InsertPackageRepoRefs(ctx context.Context, deps []shared.Minimal
 			return nil
 		})
 	if err != nil {
-		return nil, nil, errors.Wrapf(err, "failed to insert package repo versions in temporary table")
+		return nil, nil, errors.Wrbpf(err, "fbiled to insert pbckbge repo versions in temporbry tbble")
 	}
 
-	newVersions, err = basestore.NewSliceScanner(func(rows dbutil.Scanner) (version shared.PackageRepoRefVersion, err error) {
-		err = rows.Scan(&version.ID, &version.PackageRefID, &version.Version, &version.Blocked, &version.LastCheckedAt)
+	newVersions, err = bbsestore.NewSliceScbnner(func(rows dbutil.Scbnner) (version shbred.PbckbgeRepoRefVersion, err error) {
+		err = rows.Scbn(&version.ID, &version.PbckbgeRefID, &version.Version, &version.Blocked, &version.LbstCheckedAt)
 		return
-	})(tx.Query(ctx, sqlf.Sprintf(transferPackageRepoRefVersionsQuery)))
+	})(tx.Query(ctx, sqlf.Sprintf(trbnsferPbckbgeRepoRefVersionsQuery)))
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "failed to transfer package repos from temporary table")
+		return nil, nil, errors.Wrbp(err, "fbiled to trbnsfer pbckbge repos from temporbry tbble")
 	}
 
 	return newDeps, newVersions, err
 }
 
-const temporaryPackageRepoRefsTableQuery = `
-CREATE TEMPORARY TABLE t_package_repo_refs (
+const temporbryPbckbgeRepoRefsTbbleQuery = `
+CREATE TEMPORARY TABLE t_pbckbge_repo_refs (
 	scheme TEXT NOT NULL,
-	name TEXT NOT NULL,
+	nbme TEXT NOT NULL,
 	blocked BOOLEAN NOT NULL,
-	last_checked_at TIMESTAMPTZ
+	lbst_checked_bt TIMESTAMPTZ
 ) ON COMMIT DROP
 `
 
-const temporaryPackageRepoRefVersionsTableQuery = `
-CREATE TEMPORARY TABLE t_package_repo_versions (
-	package_id BIGINT NOT NULL,
+const temporbryPbckbgeRepoRefVersionsTbbleQuery = `
+CREATE TEMPORARY TABLE t_pbckbge_repo_versions (
+	pbckbge_id BIGINT NOT NULL,
 	version TEXT NOT NULL,
 	blocked BOOLEAN NOT NULL,
-	last_checked_at TIMESTAMPTZ
+	lbst_checked_bt TIMESTAMPTZ
 ) ON COMMIT DROP
 `
 
-const transferPackageRepoRefsQuery = `
-INSERT INTO lsif_dependency_repos (scheme, name, blocked, last_checked_at)
-SELECT scheme, name, blocked, last_checked_at
-FROM t_package_repo_refs t
+const trbnsferPbckbgeRepoRefsQuery = `
+INSERT INTO lsif_dependency_repos (scheme, nbme, blocked, lbst_checked_bt)
+SELECT scheme, nbme, blocked, lbst_checked_bt
+FROM t_pbckbge_repo_refs t
 WHERE NOT EXISTS (
-	SELECT scheme, name
+	SELECT scheme, nbme
 	FROM lsif_dependency_repos
 	WHERE scheme = t.scheme AND
-	name = t.name
+	nbme = t.nbme
 )
-ORDER BY name
-RETURNING id, scheme, name, blocked, last_checked_at
+ORDER BY nbme
+RETURNING id, scheme, nbme, blocked, lbst_checked_bt
 `
 
-const transferPackageRepoRefVersionsQuery = `
-INSERT INTO package_repo_versions (package_id, version, blocked, last_checked_at)
--- we dont reduce package repo versions,
--- so DISTINCT here to avoid conflict
-SELECT DISTINCT ON (package_id, version) package_id, version, blocked, last_checked_at
-FROM t_package_repo_versions t
+const trbnsferPbckbgeRepoRefVersionsQuery = `
+INSERT INTO pbckbge_repo_versions (pbckbge_id, version, blocked, lbst_checked_bt)
+-- we dont reduce pbckbge repo versions,
+-- so DISTINCT here to bvoid conflict
+SELECT DISTINCT ON (pbckbge_id, version) pbckbge_id, version, blocked, lbst_checked_bt
+FROM t_pbckbge_repo_versions t
 WHERE NOT EXISTS (
-	SELECT package_id, version
-	FROM package_repo_versions
-	WHERE package_id = t.package_id AND
+	SELECT pbckbge_id, version
+	FROM pbckbge_repo_versions
+	WHERE pbckbge_id = t.pbckbge_id AND
 	version = t.version
 )
--- unit tests rely on a certain order
-ORDER BY package_id, version
-RETURNING id, package_id, version, blocked, last_checked_at
+-- unit tests rely on b certbin order
+ORDER BY pbckbge_id, version
+RETURNING id, pbckbge_id, version, blocked, lbst_checked_bt
 `
 
 const getAttemptedInsertDependencyReposQuery = `
 SELECT id FROM lsif_dependency_repos
-WHERE (scheme, name) IN (VALUES %s)
-ORDER BY (scheme, name)
+WHERE (scheme, nbme) IN (VALUES %s)
+ORDER BY (scheme, nbme)
 `
 
 // DeleteDependencyReposByID removes the dependency repos with the given ids, if they exist.
-func (s *store) DeletePackageRepoRefsByID(ctx context.Context, ids ...int) (err error) {
-	ctx, _, endObservation := s.operations.deletePackageRepoRefsByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIDs", len(ids)),
+func (s *store) DeletePbckbgeRepoRefsByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deletePbckbgeRepoRefsByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numIDs", len(ids)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if len(ids) == 0 {
 		return nil
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Array(ids)))
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyReposByIDQuery, pq.Arrby(ids)))
 }
 
 const deleteDependencyReposByIDQuery = `
@@ -437,78 +437,78 @@ DELETE FROM lsif_dependency_repos
 WHERE id = ANY(%s)
 `
 
-func (s *store) DeletePackageRepoRefVersionsByID(ctx context.Context, ids ...int) (err error) {
-	ctx, _, endObservation := s.operations.deletePackageRepoRefVersionsByID.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numIDs", len(ids)),
+func (s *store) DeletePbckbgeRepoRefVersionsByID(ctx context.Context, ids ...int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deletePbckbgeRepoRefVersionsByID.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numIDs", len(ids)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	if len(ids) == 0 {
 		return nil
 	}
 
-	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyRepoVersionsByID, pq.Array(ids)))
+	return s.db.Exec(ctx, sqlf.Sprintf(deleteDependencyRepoVersionsByID, pq.Arrby(ids)))
 }
 
 const deleteDependencyRepoVersionsByID = `
-DELETE FROM package_repo_versions
+DELETE FROM pbckbge_repo_versions
 WHERE id = ANY(%s)
 `
 
-type ListPackageRepoRefFiltersOpts struct {
+type ListPbckbgeRepoRefFiltersOpts struct {
 	IDs            []int
-	PackageScheme  string
-	Behaviour      string
+	PbckbgeScheme  string
+	Behbviour      string
 	IncludeDeleted bool
 	After          int
 	Limit          int
 }
 
-func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageRepoRefFiltersOpts) (_ []shared.PackageRepoFilter, hasMore bool, err error) {
-	ctx, _, endObservation := s.operations.listPackageRepoFilters.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numPackageRepoFilterIDs", len(opts.IDs)),
-		attribute.String("packageScheme", opts.PackageScheme),
-		attribute.Int("after", opts.After),
-		attribute.Int("limit", opts.Limit),
-		attribute.String("behaviour", opts.Behaviour),
+func (s *store) ListPbckbgeRepoRefFilters(ctx context.Context, opts ListPbckbgeRepoRefFiltersOpts) (_ []shbred.PbckbgeRepoFilter, hbsMore bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.listPbckbgeRepoFilters.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numPbckbgeRepoFilterIDs", len(opts.IDs)),
+		bttribute.String("pbckbgeScheme", opts.PbckbgeScheme),
+		bttribute.Int("bfter", opts.After),
+		bttribute.Int("limit", opts.Limit),
+		bttribute.String("behbviour", opts.Behbviour),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	conds := make([]*sqlf.Query, 0, 6)
+	conds := mbke([]*sqlf.Query, 0, 6)
 
 	if !opts.IncludeDeleted {
-		conds = append(conds, sqlf.Sprintf("deleted_at IS NULL"))
+		conds = bppend(conds, sqlf.Sprintf("deleted_bt IS NULL"))
 	}
 
 	if len(opts.IDs) != 0 {
-		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(opts.IDs)))
+		conds = bppend(conds, sqlf.Sprintf("id = ANY(%s)", pq.Arrby(opts.IDs)))
 	}
 
-	if opts.PackageScheme != "" {
-		conds = append(conds, sqlf.Sprintf("scheme = %s", opts.PackageScheme))
+	if opts.PbckbgeScheme != "" {
+		conds = bppend(conds, sqlf.Sprintf("scheme = %s", opts.PbckbgeScheme))
 	}
 
 	if opts.After != 0 {
-		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		conds = bppend(conds, sqlf.Sprintf("id > %s", opts.After))
 	}
 
-	if opts.Behaviour != "" {
-		conds = append(conds, sqlf.Sprintf("behaviour = %s", opts.Behaviour))
+	if opts.Behbviour != "" {
+		conds = bppend(conds, sqlf.Sprintf("behbviour = %s", opts.Behbviour))
 	}
 
 	if len(conds) == 0 {
-		conds = append(conds, sqlf.Sprintf("TRUE"))
+		conds = bppend(conds, sqlf.Sprintf("TRUE"))
 	}
 
 	limit := sqlf.Sprintf("")
 	if opts.Limit != 0 {
-		// + 1 to check if more pages
+		// + 1 to check if more pbges
 		limit = sqlf.Sprintf("LIMIT %s", opts.Limit+1)
 	}
 
-	filters, err := basestore.NewSliceScanner(scanPackageFilter)(
+	filters, err := bbsestore.NewSliceScbnner(scbnPbckbgeFilter)(
 		s.db.Query(ctx, sqlf.Sprintf(
-			listPackageRepoRefFiltersQuery,
+			listPbckbgeRepoRefFiltersQuery,
 			sqlf.Join(conds, "AND"),
 			limit,
 		)),
@@ -516,15 +516,15 @@ func (s *store) ListPackageRepoRefFilters(ctx context.Context, opts ListPackageR
 
 	if opts.Limit != 0 && len(filters) > opts.Limit {
 		filters = filters[:opts.Limit]
-		hasMore = true
+		hbsMore = true
 	}
 
-	return filters, hasMore, err
+	return filters, hbsMore, err
 }
 
-const listPackageRepoRefFiltersQuery = `
-SELECT id, behaviour, scheme, matcher, deleted_at, updated_at
-FROM package_repo_filters
+const listPbckbgeRepoRefFiltersQuery = `
+SELECT id, behbviour, scheme, mbtcher, deleted_bt, updbted_bt
+FROM pbckbge_repo_filters
 -- filter
 WHERE %s
 -- limit
@@ -532,246 +532,246 @@ WHERE %s
 ORDER BY id
 `
 
-func (s *store) CreatePackageRepoFilter(ctx context.Context, input shared.MinimalPackageFilter) (filter *shared.PackageRepoFilter, err error) {
-	ctx, _, endObservation := s.operations.createPackageRepoFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("packageScheme", input.PackageScheme),
-		attribute.String("behaviour", *input.Behaviour),
-		attribute.String("versionFilter", fmt.Sprintf("%+v", input.VersionFilter)),
-		attribute.String("nameFilter", fmt.Sprintf("%+v", input.NameFilter)),
+func (s *store) CrebtePbckbgeRepoFilter(ctx context.Context, input shbred.MinimblPbckbgeFilter) (filter *shbred.PbckbgeRepoFilter, err error) {
+	ctx, _, endObservbtion := s.operbtions.crebtePbckbgeRepoFilter.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("pbckbgeScheme", input.PbckbgeScheme),
+		bttribute.String("behbviour", *input.Behbviour),
+		bttribute.String("versionFilter", fmt.Sprintf("%+v", input.VersionFilter)),
+		bttribute.String("nbmeFilter", fmt.Sprintf("%+v", input.NbmeFilter)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var matcherJSON driver.Value
-	if input.NameFilter != nil {
-		matcherJSON, err = json.Marshal(input.NameFilter)
-		err = errors.Wrapf(err, "error marshalling %+v", input.NameFilter)
+	vbr mbtcherJSON driver.Vblue
+	if input.NbmeFilter != nil {
+		mbtcherJSON, err = json.Mbrshbl(input.NbmeFilter)
+		err = errors.Wrbpf(err, "error mbrshblling %+v", input.NbmeFilter)
 	} else if input.VersionFilter != nil {
-		matcherJSON, err = json.Marshal(input.VersionFilter)
-		err = errors.Wrapf(err, "error marshalling %+v", input.VersionFilter)
+		mbtcherJSON, err = json.Mbrshbl(input.VersionFilter)
+		err = errors.Wrbpf(err, "error mbrshblling %+v", input.VersionFilter)
 	}
 	if err != nil {
 		return nil, err
 	}
 
-	hydrated := &shared.PackageRepoFilter{
-		Behaviour:     *input.Behaviour,
-		PackageScheme: input.PackageScheme,
-		NameFilter:    input.NameFilter,
+	hydrbted := &shbred.PbckbgeRepoFilter{
+		Behbviour:     *input.Behbviour,
+		PbckbgeScheme: input.PbckbgeScheme,
+		NbmeFilter:    input.NbmeFilter,
 		VersionFilter: input.VersionFilter,
 		DeletedAt:     nil,
 	}
 
-	err = basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
-		return false, s.Scan(&hydrated.ID, &hydrated.UpdatedAt)
-	})(s.db.Query(ctx, sqlf.Sprintf(createPackageRepoFilter, input.Behaviour, input.PackageScheme, matcherJSON)))
+	err = bbsestore.NewCbllbbckScbnner(func(s dbutil.Scbnner) (bool, error) {
+		return fblse, s.Scbn(&hydrbted.ID, &hydrbted.UpdbtedAt)
+	})(s.db.Query(ctx, sqlf.Sprintf(crebtePbckbgeRepoFilter, input.Behbviour, input.PbckbgeScheme, mbtcherJSON)))
 	if err != nil {
-		return nil, errors.Wrap(err, "error inserting package repo filter")
+		return nil, errors.Wrbp(err, "error inserting pbckbge repo filter")
 	}
 
-	return hydrated, nil
+	return hydrbted, nil
 }
 
-const createPackageRepoFilter = `
-INSERT INTO package_repo_filters (behaviour, scheme, matcher)
+const crebtePbckbgeRepoFilter = `
+INSERT INTO pbckbge_repo_filters (behbviour, scheme, mbtcher)
 VALUES (%s, %s, %s)
-ON CONFLICT (scheme, matcher)
+ON CONFLICT (scheme, mbtcher)
 DO UPDATE
-	SET deleted_at = NULL,
-	updated_at = now(),
-	behaviour = EXCLUDED.behaviour
-RETURNING id, updated_at
+	SET deleted_bt = NULL,
+	updbted_bt = now(),
+	behbviour = EXCLUDED.behbviour
+RETURNING id, updbted_bt
 `
 
-func (s *store) UpdatePackageRepoFilter(ctx context.Context, filter shared.PackageRepoFilter) (err error) {
-	ctx, _, endObservation := s.operations.updatePackageRepoFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", filter.ID),
-		attribute.String("packageScheme", filter.PackageScheme),
-		attribute.String("behaviour", filter.Behaviour),
-		attribute.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
-		attribute.String("nameFilter", fmt.Sprintf("%+v", filter.NameFilter)),
+func (s *store) UpdbtePbckbgeRepoFilter(ctx context.Context, filter shbred.PbckbgeRepoFilter) (err error) {
+	ctx, _, endObservbtion := s.operbtions.updbtePbckbgeRepoFilter.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", filter.ID),
+		bttribute.String("pbckbgeScheme", filter.PbckbgeScheme),
+		bttribute.String("behbviour", filter.Behbviour),
+		bttribute.String("versionFilter", fmt.Sprintf("%+v", filter.VersionFilter)),
+		bttribute.String("nbmeFilter", fmt.Sprintf("%+v", filter.NbmeFilter)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	var matcherJSON driver.Value
-	if filter.NameFilter != nil {
-		matcherJSON, err = json.Marshal(filter.NameFilter)
-		err = errors.Wrapf(err, "error marshalling %+v", filter.NameFilter)
+	vbr mbtcherJSON driver.Vblue
+	if filter.NbmeFilter != nil {
+		mbtcherJSON, err = json.Mbrshbl(filter.NbmeFilter)
+		err = errors.Wrbpf(err, "error mbrshblling %+v", filter.NbmeFilter)
 	} else if filter.VersionFilter != nil {
-		matcherJSON, err = json.Marshal(filter.VersionFilter)
-		err = errors.Wrapf(err, "error marshalling %+v", filter.VersionFilter)
+		mbtcherJSON, err = json.Mbrshbl(filter.VersionFilter)
+		err = errors.Wrbpf(err, "error mbrshblling %+v", filter.VersionFilter)
 	}
 	if err != nil {
 		return err
 	}
 
 	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(
-		updatePackageRepoFilterQuery,
-		filter.PackageScheme,
-		matcherJSON,
+		updbtePbckbgeRepoFilterQuery,
+		filter.PbckbgeScheme,
+		mbtcherJSON,
 		filter.ID,
 		filter.ID,
-		filter.Behaviour,
-		filter.PackageScheme,
-		matcherJSON,
+		filter.Behbviour,
+		filter.PbckbgeScheme,
+		mbtcherJSON,
 		filter.ID,
 	))
 	if err != nil {
-		var pgerr *pgconn.PgError
+		vbr pgerr *pgconn.PgError
 		// check if conflict error code
 		if errors.As(err, &pgerr) && pgerr.Code == "23505" {
-			return errors.Newf("conflicting package repo filter found for (scheme=%s,matcher=%s)", filter.PackageScheme, string(matcherJSON.([]byte)))
+			return errors.Newf("conflicting pbckbge repo filter found for (scheme=%s,mbtcher=%s)", filter.PbckbgeScheme, string(mbtcherJSON.([]byte)))
 		}
 		return err
 	}
 	if n, _ := result.RowsAffected(); n != 1 {
-		return errors.Newf("no package repo filters for ID %d", filter.ID)
+		return errors.Newf("no pbckbge repo filters for ID %d", filter.ID)
 	}
 	return nil
 }
 
-const updatePackageRepoFilterQuery = `
--- hard-delete a conflicting one if its soft-deleted
+const updbtePbckbgeRepoFilterQuery = `
+-- hbrd-delete b conflicting one if its soft-deleted
 WITH delete_conflicting_deleted AS (
-	DELETE FROM package_repo_filters
+	DELETE FROM pbckbge_repo_filters
 	WHERE
 		scheme = %s AND
-		matcher = %s AND
-		deleted_at IS NOT NULL
+		mbtcher = %s AND
+		deleted_bt IS NOT NULL
 	RETURNING %s::integer AS id
 ),
--- if the above matches nothing, we still need to return something
--- else we join on nothing below and attempt update nothing, hence union
-always_id AS (
+-- if the bbove mbtches nothing, we still need to return something
+-- else we join on nothing below bnd bttempt updbte nothing, hence union
+blwbys_id AS (
 	SELECT id
 	FROM delete_conflicting_deleted
 	UNION
 	SELECT %s::integer AS id
 )
-UPDATE package_repo_filters prv
+UPDATE pbckbge_repo_filters prv
 SET
-	behaviour = %s,
+	behbviour = %s,
 	scheme = %s,
-	matcher = %s
-FROM always_id
-WHERE prv.id = %s AND prv.id = always_id.id
+	mbtcher = %s
+FROM blwbys_id
+WHERE prv.id = %s AND prv.id = blwbys_id.id
 `
 
-func (s *store) DeletePacakgeRepoFilter(ctx context.Context, id int) (err error) {
-	ctx, _, endObservation := s.operations.deletePackageRepoFilter.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+func (s *store) DeletePbcbkgeRepoFilter(ctx context.Context, id int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.deletePbckbgeRepoFilter.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(deletePackagRepoFilterQuery, id))
+	result, err := s.db.ExecResult(ctx, sqlf.Sprintf(deletePbckbgRepoFilterQuery, id))
 	if err != nil {
 		return err
 	}
 	if n, _ := result.RowsAffected(); n != 1 {
-		return errors.Newf("no package repo filters for ID %d", id)
+		return errors.Newf("no pbckbge repo filters for ID %d", id)
 	}
 	return nil
 }
 
-const deletePackagRepoFilterQuery = `
-UPDATE package_repo_filters
-SET deleted_at = now()
+const deletePbckbgRepoFilterQuery = `
+UPDATE pbckbge_repo_filters
+SET deleted_bt = now()
 WHERE id = %s
 `
 
-func (s *store) ShouldRefilterPackageRepoRefs(ctx context.Context) (exists bool, err error) {
-	ctx, _, endObservation := s.operations.shouldRefilterPackageRepoRefs.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) ShouldRefilterPbckbgeRepoRefs(ctx context.Context) (exists bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.shouldRefilterPbckbgeRepoRefs.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	_, exists, err = basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(doPackageRepoRefsRequireRefilteringQuery)))
+	_, exists, err = bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(doPbckbgeRepoRefsRequireRefilteringQuery)))
 	return
 }
 
-const doPackageRepoRefsRequireRefilteringQuery = `
-WITH least_recently_checked AS (
-	-- select oldest last_checked_at from either package_repo_versions
+const doPbckbgeRepoRefsRequireRefilteringQuery = `
+WITH lebst_recently_checked AS (
+	-- select oldest lbst_checked_bt from either pbckbge_repo_versions
 	-- or lsif_dependency_repos, prioritising NULL
     SELECT * FROM (
         (
-			SELECT last_checked_at FROM lsif_dependency_repos
-			ORDER BY last_checked_at ASC NULLS FIRST
+			SELECT lbst_checked_bt FROM lsif_dependency_repos
+			ORDER BY lbst_checked_bt ASC NULLS FIRST
 			LIMIT 1
 		)
         UNION ALL
         (
-			SELECT last_checked_at FROM package_repo_versions
-			ORDER BY last_checked_at ASC NULLS FIRST
+			SELECT lbst_checked_bt FROM pbckbge_repo_versions
+			ORDER BY lbst_checked_bt ASC NULLS FIRST
 			LIMIT 1
 		)
     ) p
-    ORDER BY last_checked_at ASC NULLS FIRST
+    ORDER BY lbst_checked_bt ASC NULLS FIRST
     LIMIT 1
 ),
-most_recently_updated_filter AS (
-    SELECT COALESCE(deleted_at, updated_at)
-	FROM package_repo_filters
-	ORDER BY COALESCE(deleted_at, updated_at) DESC
+most_recently_updbted_filter AS (
+    SELECT COALESCE(deleted_bt, updbted_bt)
+	FROM pbckbge_repo_filters
+	ORDER BY COALESCE(deleted_bt, updbted_bt) DESC
 	LIMIT 1
 )
 SELECT 1
 WHERE
-	-- comparisons on empty table from either least_recently_checked or most_recently_updated_filter
-	-- will yield NULL, making the query return 1 if either CTE returns nothing
-    (SELECT COUNT(*) FROM most_recently_updated_filter) <> 0 AND
-    (SELECT COUNT(*) FROM least_recently_checked) <> 0 AND
+	-- compbrisons on empty tbble from either lebst_recently_checked or most_recently_updbted_filter
+	-- will yield NULL, mbking the query return 1 if either CTE returns nothing
+    (SELECT COUNT(*) FROM most_recently_updbted_filter) <> 0 AND
+    (SELECT COUNT(*) FROM lebst_recently_checked) <> 0 AND
     (
-        (SELECT * FROM least_recently_checked) IS NULL OR
-        (SELECT * FROM least_recently_checked) < (SELECT * FROM most_recently_updated_filter)
+        (SELECT * FROM lebst_recently_checked) IS NULL OR
+        (SELECT * FROM lebst_recently_checked) < (SELECT * FROM most_recently_updbted_filter)
     );
 `
 
-func (s *store) UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.PackageRepoReference, startTime time.Time) (pkgsUpdated, versionsUpdated int, err error) {
-	ctx, _, endObservation := s.operations.updateAllBlockedStatuses.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("numPackages", len(pkgs)),
-		attribute.String("startTime", startTime.Format(time.RFC3339)),
+func (s *store) UpdbteAllBlockedStbtuses(ctx context.Context, pkgs []shbred.PbckbgeRepoReference, stbrtTime time.Time) (pkgsUpdbted, versionsUpdbted int, err error) {
+	ctx, _, endObservbtion := s.operbtions.updbteAllBlockedStbtuses.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("numPbckbges", len(pkgs)),
+		bttribute.String("stbrtTime", stbrtTime.Formbt(time.RFC3339)),
 	}})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("packagesUpdated", pkgsUpdated),
-			attribute.Int("versionsUpdated", versionsUpdated),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("pbckbgesUpdbted", pkgsUpdbted),
+			bttribute.Int("versionsUpdbted", versionsUpdbted),
 		}})
 	}()
 
-	err = s.db.WithTransact(ctx, func(tx *basestore.Store) error {
-		for _, tempTableQuery := range []string{temporaryPackageRepoRefsBlockStatusTableQuery, temporaryPackageRepoRefVersionsBlockStatusTableQuery} {
-			if err := tx.Exec(ctx, sqlf.Sprintf(tempTableQuery)); err != nil {
-				return errors.Wrap(err, "failed to create temporary tables")
+	err = s.db.WithTrbnsbct(ctx, func(tx *bbsestore.Store) error {
+		for _, tempTbbleQuery := rbnge []string{temporbryPbckbgeRepoRefsBlockStbtusTbbleQuery, temporbryPbckbgeRepoRefVersionsBlockStbtusTbbleQuery} {
+			if err := tx.Exec(ctx, sqlf.Sprintf(tempTbbleQuery)); err != nil {
+				return errors.Wrbp(err, "fbiled to crebte temporbry tbbles")
 			}
 		}
 
-		err := batch.WithInserter(
+		err := bbtch.WithInserter(
 			ctx,
-			tx.Handle(),
+			tx.Hbndle(),
 			"t_lsif_dependency_repos",
-			batch.MaxNumPostgresParameters,
+			bbtch.MbxNumPostgresPbrbmeters,
 			[]string{"id", "blocked"},
-			func(inserter *batch.Inserter) error {
-				for _, pkg := range pkgs {
+			func(inserter *bbtch.Inserter) error {
+				for _, pkg := rbnge pkgs {
 					if err := inserter.Insert(ctx, pkg.ID, pkg.Blocked); err != nil {
-						return errors.Wrapf(err, "error inserting (id=%d,blocked=%t)", pkg.ID, pkg.Blocked)
+						return errors.Wrbpf(err, "error inserting (id=%d,blocked=%t)", pkg.ID, pkg.Blocked)
 					}
 				}
 				return nil
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "error inserting into temporary package repos table")
+			return errors.Wrbp(err, "error inserting into temporbry pbckbge repos tbble")
 		}
 
-		err = batch.WithInserter(ctx,
-			tx.Handle(),
-			"t_package_repo_versions",
-			batch.MaxNumPostgresParameters,
+		err = bbtch.WithInserter(ctx,
+			tx.Hbndle(),
+			"t_pbckbge_repo_versions",
+			bbtch.MbxNumPostgresPbrbmeters,
 			[]string{"id", "blocked"},
-			func(inserter *batch.Inserter) error {
-				for _, pkg := range pkgs {
-					for _, version := range pkg.Versions {
+			func(inserter *bbtch.Inserter) error {
+				for _, pkg := rbnge pkgs {
+					for _, version := rbnge pkg.Versions {
 						if err := inserter.Insert(ctx, version.ID, version.Blocked); err != nil {
-							return errors.Wrapf(err, "error inserting (id=%d,blocked=%t)", version.ID, version.Blocked)
+							return errors.Wrbpf(err, "error inserting (id=%d,blocked=%t)", version.ID, version.Blocked)
 						}
 					}
 				}
@@ -779,60 +779,60 @@ func (s *store) UpdateAllBlockedStatuses(ctx context.Context, pkgs []shared.Pack
 			},
 		)
 		if err != nil {
-			return errors.Wrap(err, "error inserting into temporary package repo versions table")
+			return errors.Wrbp(err, "error inserting into temporbry pbckbge repo versions tbble")
 		}
 
-		err = basestore.NewCallbackScanner(func(s dbutil.Scanner) (bool, error) {
-			return false, s.Scan(&pkgsUpdated, &versionsUpdated)
-		})(tx.Query(ctx, sqlf.Sprintf(updateAllBlockedStatusesQuery, startTime, startTime)))
-		return errors.Wrap(err, "error scanning update results")
+		err = bbsestore.NewCbllbbckScbnner(func(s dbutil.Scbnner) (bool, error) {
+			return fblse, s.Scbn(&pkgsUpdbted, &versionsUpdbted)
+		})(tx.Query(ctx, sqlf.Sprintf(updbteAllBlockedStbtusesQuery, stbrtTime, stbrtTime)))
+		return errors.Wrbp(err, "error scbnning updbte results")
 	})
 
 	return
 }
 
-const temporaryPackageRepoRefsBlockStatusTableQuery = `
+const temporbryPbckbgeRepoRefsBlockStbtusTbbleQuery = `
 CREATE TEMPORARY TABLE t_lsif_dependency_repos (
 	id BIGINT NOT NULL,
 	blocked BOOLEAN NOT NULL
 ) ON COMMIT DROP
 `
 
-const temporaryPackageRepoRefVersionsBlockStatusTableQuery = `
-CREATE TEMPORARY TABLE t_package_repo_versions (
+const temporbryPbckbgeRepoRefVersionsBlockStbtusTbbleQuery = `
+CREATE TEMPORARY TABLE t_pbckbge_repo_versions (
 	id BIGINT NOT NULL,
 	blocked BOOLEAN NOT NULL
 ) ON COMMIT DROP
 `
 
-const updateAllBlockedStatusesQuery = `
-WITH updated_package_repos AS (
+const updbteAllBlockedStbtusesQuery = `
+WITH updbted_pbckbge_repos AS (
 	UPDATE lsif_dependency_repos new
 	SET
 		blocked = temp.blocked,
-		last_checked_at = %s
+		lbst_checked_bt = %s
 	FROM t_lsif_dependency_repos temp
 	JOIN lsif_dependency_repos old
 	ON temp.id = old.id
 	WHERE old.id = new.id
-	RETURNING old.blocked <> new.blocked AS changed
+	RETURNING old.blocked <> new.blocked AS chbnged
 ),
-updated_package_repo_versions AS (
-	UPDATE package_repo_versions new
+updbted_pbckbge_repo_versions AS (
+	UPDATE pbckbge_repo_versions new
 	SET
 		blocked = temp.blocked,
-		last_checked_at = %s
-	FROM t_package_repo_versions temp
-	JOIN package_repo_versions old
+		lbst_checked_bt = %s
+	FROM t_pbckbge_repo_versions temp
+	JOIN pbckbge_repo_versions old
 	ON temp.id = old.id
 	WHERE old.id = new.id
-	RETURNING old.blocked <> new.blocked AS changed
+	RETURNING old.blocked <> new.blocked AS chbnged
 )
 SELECT (
-	SELECT COUNT(*) FILTER (WHERE changed)
-	FROM updated_package_repos
-) AS packages_changed, (
-	SELECT COUNT(*) FILTER (WHERE changed)
-	FROM updated_package_repo_versions
-) AS versions_changed
+	SELECT COUNT(*) FILTER (WHERE chbnged)
+	FROM updbted_pbckbge_repos
+) AS pbckbges_chbnged, (
+	SELECT COUNT(*) FILTER (WHERE chbnged)
+	FROM updbted_pbckbge_repo_versions
+) AS versions_chbnged
 `

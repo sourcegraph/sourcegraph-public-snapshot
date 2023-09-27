@@ -1,15 +1,15 @@
-package gitresolvers
+pbckbge gitresolvers
 
 import (
 	"context"
 	"fmt"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
 type commitResolver struct {
@@ -18,15 +18,15 @@ type commitResolver struct {
 	oid             resolverstubs.GitObjectID
 	rev             string
 
-	tags     []string
-	tagsErr  error
-	tagsOnce sync.Once
+	tbgs     []string
+	tbgsErr  error
+	tbgsOnce sync.Once
 }
 
 func NewGitCommitResolver(
 	gitserverClient gitserver.Client,
 	repo resolverstubs.RepositoryResolver,
-	commitID api.CommitID,
+	commitID bpi.CommitID,
 	inputRev string,
 ) resolverstubs.GitCommitResolver {
 	rev := string(commitID)
@@ -42,8 +42,8 @@ func NewGitCommitResolver(
 	}
 }
 
-func (r *commitResolver) ID() graphql.ID {
-	return resolverstubs.MarshalID("GitCommit", map[string]any{
+func (r *commitResolver) ID() grbphql.ID {
+	return resolverstubs.MbrshblID("GitCommit", mbp[string]bny{
 		"r": r.repo.ID(),
 		"c": r.oid,
 	})
@@ -51,23 +51,23 @@ func (r *commitResolver) ID() graphql.ID {
 
 func (r *commitResolver) Repository() resolverstubs.RepositoryResolver { return r.repo }
 func (r *commitResolver) OID() resolverstubs.GitObjectID               { return r.oid }
-func (r *commitResolver) AbbreviatedOID() string                       { return string(r.oid)[:7] }
-func (r *commitResolver) URL() string                                  { return fmt.Sprintf("/%s/-/commit/%s", r.repo.Name(), r.rev) }
-func (r *commitResolver) URI() string                                  { return fmt.Sprintf("/%s@%s", r.repo.Name(), r.rev) }
+func (r *commitResolver) AbbrevibtedOID() string                       { return string(r.oid)[:7] }
+func (r *commitResolver) URL() string                                  { return fmt.Sprintf("/%s/-/commit/%s", r.repo.Nbme(), r.rev) }
+func (r *commitResolver) URI() string                                  { return fmt.Sprintf("/%s@%s", r.repo.Nbme(), r.rev) }
 
-func (r *commitResolver) Tags(ctx context.Context) ([]string, error) {
-	r.tagsOnce.Do(func() {
-		rawTags, err := r.gitserverClient.ListTags(ctx, api.RepoName(r.repo.Name()), string(r.oid))
+func (r *commitResolver) Tbgs(ctx context.Context) ([]string, error) {
+	r.tbgsOnce.Do(func() {
+		rbwTbgs, err := r.gitserverClient.ListTbgs(ctx, bpi.RepoNbme(r.repo.Nbme()), string(r.oid))
 		if err != nil {
-			r.tagsErr = err
+			r.tbgsErr = err
 			return
 		}
 
-		r.tags = make([]string, 0, len(rawTags))
-		for _, tag := range rawTags {
-			r.tags = append(r.tags, tag.Name)
+		r.tbgs = mbke([]string, 0, len(rbwTbgs))
+		for _, tbg := rbnge rbwTbgs {
+			r.tbgs = bppend(r.tbgs, tbg.Nbme)
 		}
 	})
 
-	return r.tags, r.tagsErr
+	return r.tbgs, r.tbgsErr
 }

@@ -1,6 +1,6 @@
-package migrations
+pbckbge migrbtions
 
 import "embed"
 
 //go:embed **/*
-var QueryDefinitions embed.FS
+vbr QueryDefinitions embed.FS

@@ -1,11 +1,11 @@
-package shared
+pbckbge shbred
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
 )
 
-// GRPCWebUIDebugEndpoint returns a debug endpoint that serves the GRPCWebUI that targets
-// this gitserver instance.
-func GRPCWebUIDebugEndpoint(addr string) debugserver.Endpoint {
-	return debugserver.NewGRPCWebUIEndpoint("gitserver", addr)
+// GRPCWebUIDebugEndpoint returns b debug endpoint thbt serves the GRPCWebUI thbt tbrgets
+// this gitserver instbnce.
+func GRPCWebUIDebugEndpoint(bddr string) debugserver.Endpoint {
+	return debugserver.NewGRPCWebUIEndpoint("gitserver", bddr)
 }

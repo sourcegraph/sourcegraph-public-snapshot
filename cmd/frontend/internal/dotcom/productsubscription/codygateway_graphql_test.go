@@ -1,4 +1,4 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
@@ -6,58 +6,58 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
 )
 
-func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
+func TestCodeGbtewbyAccessResolverRbteLimit(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
 
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
+	u, err := db.Users().Crebte(ctx, dbtbbbse.NewUser{Usernbme: "u"})
 	require.NoError(t, err)
 
-	subID, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
+	subID, err := dbSubscriptions{db: db}.Crebte(ctx, u.ID, "")
 	require.NoError(t, err)
 	info := license.Info{
-		Tags:      []string{fmt.Sprintf("plan:%s", licensing.PlanEnterprise1)},
+		Tbgs:      []string{fmt.Sprintf("plbn:%s", licensing.PlbnEnterprise1)},
 		UserCount: 10,
 		ExpiresAt: timeutil.Now().Add(time.Minute),
 	}
-	_, err = dbLicenses{db: db}.Create(ctx, subID, "k2", 1, info)
+	_, err = dbLicenses{db: db}.Crebte(ctx, subID, "k2", 1, info)
 	require.NoError(t, err)
 
-	// Enable access to Cody Gateway.
+	// Enbble bccess to Cody Gbtewby.
 	tru := true
-	err = dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{Enabled: &tru}})
+	err = dbSubscriptions{db: db}.Updbte(ctx, subID, dbSubscriptionUpdbte{codyGbtewbyAccess: &grbphqlbbckend.UpdbteCodyGbtewbyAccessInput{Enbbled: &tru}})
 	require.NoError(t, err)
 
-	t.Run("default rate limit for a plan", func(t *testing.T) {
+	t.Run("defbult rbte limit for b plbn", func(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
 
-		r := codyGatewayAccessResolver{sub: &productSubscription{logger: logger, v: sub, db: db}}
-		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
+		r := codyGbtewbyAccessResolver{sub: &productSubscription{logger: logger, v: sub, db: db}}
+		rbteLimit, err := r.ChbtCompletionsRbteLimit(ctx)
 		require.NoError(t, err)
 
-		wantRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(int(info.UserCount)), []string{})
-		assert.Equal(t, graphqlbackend.BigInt(wantRateLimit.Limit), rateLimit.Limit())
-		assert.Equal(t, wantRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
+		wbntRbteLimit := licensing.NewCodyGbtewbyChbtRbteLimit(licensing.PlbnEnterprise1, pointify(int(info.UserCount)), []string{})
+		bssert.Equbl(t, grbphqlbbckend.BigInt(wbntRbteLimit.Limit), rbteLimit.Limit())
+		bssert.Equbl(t, wbntRbteLimit.IntervblSeconds, rbteLimit.IntervblSeconds())
 	})
 
-	t.Run("override default rate limit for a plan", func(t *testing.T) {
-		err := dbSubscriptions{db: db}.Update(ctx, subID, dbSubscriptionUpdate{
-			codyGatewayAccess: &graphqlbackend.UpdateCodyGatewayAccessInput{
-				ChatCompletionsRateLimit: pointify(graphqlbackend.BigInt(10)),
+	t.Run("override defbult rbte limit for b plbn", func(t *testing.T) {
+		err := dbSubscriptions{db: db}.Updbte(ctx, subID, dbSubscriptionUpdbte{
+			codyGbtewbyAccess: &grbphqlbbckend.UpdbteCodyGbtewbyAccessInput{
+				ChbtCompletionsRbteLimit: pointify(grbphqlbbckend.BigInt(10)),
 			},
 		})
 		require.NoError(t, err)
@@ -65,12 +65,12 @@ func TestCodeGatewayAccessResolverRateLimit(t *testing.T) {
 		sub, err := dbSubscriptions{db: db}.GetByID(ctx, subID)
 		require.NoError(t, err)
 
-		r := codyGatewayAccessResolver{sub: &productSubscription{logger: logger, v: sub, db: db}}
-		rateLimit, err := r.ChatCompletionsRateLimit(ctx)
+		r := codyGbtewbyAccessResolver{sub: &productSubscription{logger: logger, v: sub, db: db}}
+		rbteLimit, err := r.ChbtCompletionsRbteLimit(ctx)
 		require.NoError(t, err)
 
-		defaultRateLimit := licensing.NewCodyGatewayChatRateLimit(licensing.PlanEnterprise1, pointify(10), []string{})
-		assert.Equal(t, graphqlbackend.BigInt(10), rateLimit.Limit())
-		assert.Equal(t, defaultRateLimit.IntervalSeconds, rateLimit.IntervalSeconds())
+		defbultRbteLimit := licensing.NewCodyGbtewbyChbtRbteLimit(licensing.PlbnEnterprise1, pointify(10), []string{})
+		bssert.Equbl(t, grbphqlbbckend.BigInt(10), rbteLimit.Limit())
+		bssert.Equbl(t, defbultRbteLimit.IntervblSeconds, rbteLimit.IntervblSeconds())
 	})
 }

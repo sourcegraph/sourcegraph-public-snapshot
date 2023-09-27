@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -7,40 +7,40 @@ import (
 	"strings"
 	"testing"
 
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestUser(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("by username", func(t *testing.T) {
-		checkUserByUsername := func(t *testing.T) {
+	t.Run("by usernbme", func(t *testing.T) {
+		checkUserByUsernbme := func(t *testing.T) {
 			t.Helper()
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
 				{
-					user(username: "alice") {
-						username
+					user(usernbme: "blice") {
+						usernbme
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
 					"user": {
-						"username": "alice"
+						"usernbme": "blice"
 					}
 				}
 			`,
@@ -49,87 +49,87 @@ func TestUser(t *testing.T) {
 		}
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByUsernameFunc.SetDefaultHook(func(ctx context.Context, username string) (*types.User, error) {
-			assert.Equal(t, "alice", username)
-			return &types.User{ID: 1, Username: "alice"}, nil
+		users.GetByUsernbmeFunc.SetDefbultHook(func(ctx context.Context, usernbme string) (*types.User, error) {
+			bssert.Equbl(t, "blice", usernbme)
+			return &types.User{ID: 1, Usernbme: "blice"}, nil
 		})
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		t.Run("allowed on Sourcegraph.com", func(t *testing.T) {
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(true)
-			defer envvar.MockSourcegraphDotComMode(orig)
+		t.Run("bllowed on Sourcegrbph.com", func(t *testing.T) {
+			orig := envvbr.SourcegrbphDotComMode()
+			envvbr.MockSourcegrbphDotComMode(true)
+			defer envvbr.MockSourcegrbphDotComMode(orig)
 
-			checkUserByUsername(t)
+			checkUserByUsernbme(t)
 		})
 
-		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
-			checkUserByUsername(t)
+		t.Run("bllowed on non-Sourcegrbph.com", func(t *testing.T) {
+			checkUserByUsernbme(t)
 		})
 	})
 
-	t.Run("by email", func(t *testing.T) {
+	t.Run("by embil", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByVerifiedEmailFunc.SetDefaultHook(func(ctx context.Context, email string) (*types.User, error) {
-			assert.Equal(t, "alice@example.com", email)
-			return &types.User{ID: 1, Username: "alice"}, nil
+		users.GetByVerifiedEmbilFunc.SetDefbultHook(func(ctx context.Context, embil string) (*types.User, error) {
+			bssert.Equbl(t, "blice@exbmple.com", embil)
+			return &types.User{ID: 1, Usernbme: "blice"}, nil
 		})
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		t.Run("disallowed on Sourcegraph.com", func(t *testing.T) {
-			checkUserByEmailError := func(t *testing.T, wantErr string) {
+		t.Run("disbllowed on Sourcegrbph.com", func(t *testing.T) {
+			checkUserByEmbilError := func(t *testing.T, wbntErr string) {
 				t.Helper()
 				RunTests(t, []*Test{
 					{
-						Schema: mustParseGraphQLSchema(t, db),
+						Schemb: mustPbrseGrbphQLSchemb(t, db),
 						Query: `
 				{
-					user(email: "alice@example.com") {
-						username
+					user(embil: "blice@exbmple.com") {
+						usernbme
 					}
 				}
 			`,
 						ExpectedResult: `{"user": null}`,
 						ExpectedErrors: []*gqlerrors.QueryError{
 							{
-								Path:          []any{"user"},
-								Message:       wantErr,
-								ResolverError: errors.New(wantErr),
+								Pbth:          []bny{"user"},
+								Messbge:       wbntErr,
+								ResolverError: errors.New(wbntErr),
 							},
 						},
 					},
 				})
 			}
 
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(true)
-			defer envvar.MockSourcegraphDotComMode(orig)
+			orig := envvbr.SourcegrbphDotComMode()
+			envvbr.MockSourcegrbphDotComMode(true)
+			defer envvbr.MockSourcegrbphDotComMode(orig)
 
-			t.Run("for anonymous viewer", func(t *testing.T) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(nil, database.ErrNoCurrentUser)
-				checkUserByEmailError(t, "not authenticated")
+			t.Run("for bnonymous viewer", func(t *testing.T) {
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(nil, dbtbbbse.ErrNoCurrentUser)
+				checkUserByEmbilError(t, "not buthenticbted")
 			})
-			t.Run("for non-site-admin viewer", func(t *testing.T) {
-				users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: false}, nil)
-				checkUserByEmailError(t, "must be site admin")
+			t.Run("for non-site-bdmin viewer", func(t *testing.T) {
+				users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: fblse}, nil)
+				checkUserByEmbilError(t, "must be site bdmin")
 			})
 		})
 
-		t.Run("allowed on non-Sourcegraph.com", func(t *testing.T) {
+		t.Run("bllowed on non-Sourcegrbph.com", func(t *testing.T) {
 			RunTests(t, []*Test{
 				{
-					Schema: mustParseGraphQLSchema(t, db),
+					Schemb: mustPbrseGrbphQLSchemb(t, db),
 					Query: `
 				{
-					user(email: "alice@example.com") {
-						username
+					user(embil: "blice@exbmple.com") {
+						usernbme
 					}
 				}
 			`,
 					ExpectedResult: `
 				{
 					"user": {
-						"username": "alice"
+						"usernbme": "blice"
 					}
 				}
 			`,
@@ -139,158 +139,158 @@ func TestUser(t *testing.T) {
 	})
 }
 
-func TestUser_Email(t *testing.T) {
+func TestUser_Embil(t *testing.T) {
 	db := dbmocks.NewMockDB()
 	user := &types.User{ID: 1}
-	ctx := actor.WithActor(context.Background(), actor.FromActualUser(user))
+	ctx := bctor.WithActor(context.Bbckground(), bctor.FromActublUser(user))
 
-	t.Run("allowed by authenticated site admin user", func(t *testing.T) {
+	t.Run("bllowed by buthenticbted site bdmin user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 2, SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("john@doe.com", true, nil)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-		email, _ := NewUserResolver(ctx, db, user).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 2}))
-		got := fmt.Sprintf("%v", email)
-		want := "john@doe.com"
-		assert.Equal(t, want, got)
+		embil, _ := NewUserResolver(ctx, db, user).Embil(bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}))
+		got := fmt.Sprintf("%v", embil)
+		wbnt := "john@doe.com"
+		bssert.Equbl(t, wbnt, got)
 	})
 
-	t.Run("allowed by authenticated user", func(t *testing.T) {
+	t.Run("bllowed by buthenticbted user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(user, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.GetPrimaryEmailFunc.SetDefaultReturn("john@doe.com", true, nil)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.GetPrimbryEmbilFunc.SetDefbultReturn("john@doe.com", true, nil)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-		email, _ := NewUserResolver(ctx, db, user).Email(actor.WithActor(context.Background(), &actor.Actor{UID: 1}))
-		got := fmt.Sprintf("%v", email)
-		want := "john@doe.com"
-		assert.Equal(t, want, got)
+		embil, _ := NewUserResolver(ctx, db, user).Embil(bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}))
+		got := fmt.Sprintf("%v", embil)
+		wbnt := "john@doe.com"
+		bssert.Equbl(t, wbnt, got)
 	})
 }
 
-func TestUser_LatestSettings(t *testing.T) {
+func TestUser_LbtestSettings(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("only bllowed by buthenticbted user on Sourcegrbph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
 		tests := []struct {
-			name  string
+			nbme  string
 			ctx   context.Context
 			setup func()
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				nbme: "unbuthenticbted",
+				ctx:  context.Bbckground(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+					users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 				},
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id}, nil
 					})
 				},
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id, SiteAdmin: true}, nil
 					})
 				},
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				test.setup()
 
-				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).LatestSettings(test.ctx)
+				_, err := NewUserResolver(test.ctx, db, &types.User{ID: 1}).LbtestSettings(test.ctx)
 				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				wbnt := "must be buthenticbted bs user with id 1"
+				bssert.Equbl(t, wbnt, got)
 			})
 		}
 	})
 }
 
-func TestUser_ViewerCanAdminister(t *testing.T) {
+func TestUser_ViewerCbnAdminister(t *testing.T) {
 	db := dbmocks.NewMockDB()
-	t.Run("settings edit only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("settings edit only bllowed by buthenticbted user on Sourcegrbph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() {
-			envvar.MockSourcegraphDotComMode(orig)
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		t.Clebnup(func() {
+			envvbr.MockSourcegrbphDotComMode(orig)
 		})
 
 		tests := []struct {
-			name string
+			nbme string
 			ctx  context.Context
 		}{
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).viewerCanAdministerSettings()
-				assert.False(t, ok, "ViewerCanAdminister")
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).viewerCbnAdministerSettings()
+				bssert.Fblse(t, ok, "ViewerCbnAdminister")
 			})
 		}
 	})
 
-	t.Run("allowed by same user or site admin", func(t *testing.T) {
+	t.Run("bllowed by sbme user or site bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		tests := []struct {
-			name string
+			nbme string
 			ctx  context.Context
-			want bool
+			wbnt bool
 		}{
 			{
-				name: "same user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				want: true,
+				nbme: "sbme user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+				wbnt: true,
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-				want: false,
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
+				wbnt: fblse,
 			},
 			{
-				name: "another user, but site admin",
-				ctx:  actor.WithActor(context.Background(), actor.FromActualUser(&types.User{ID: 2, SiteAdmin: true})),
-				want: true,
+				nbme: "bnother user, but site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), bctor.FromActublUser(&types.User{ID: 2, SiteAdmin: true})),
+				wbnt: true,
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).ViewerCanAdminister()
-				assert.Equal(t, test.want, ok, "ViewerCanAdminister")
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				ok, _ := NewUserResolver(test.ctx, db, &types.User{ID: 1}).ViewerCbnAdminister()
+				bssert.Equbl(t, test.wbnt, ok, "ViewerCbnAdminister")
 			})
 		}
 	})
@@ -298,20 +298,20 @@ func TestUser_ViewerCanAdminister(t *testing.T) {
 
 func TestNode_User(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1, Username: "alice"}, nil)
+	users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1, Usernbme: "blice"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
+	db.UsersFunc.SetDefbultReturn(users)
 
 	RunTests(t, []*Test{
 		{
-			Schema: mustParseGraphQLSchema(t, db),
+			Schemb: mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					node(id: "VXNlcjox") {
 						id
 						... on User {
-							username
+							usernbme
 						}
 					}
 				}
@@ -320,7 +320,7 @@ func TestNode_User(t *testing.T) {
 				{
 					"node": {
 						"id": "VXNlcjox",
-						"username": "alice"
+						"usernbme": "blice"
 					}
 				}
 			`,
@@ -328,121 +328,121 @@ func TestNode_User(t *testing.T) {
 	})
 }
 
-func TestUpdateUser(t *testing.T) {
+func TestUpdbteUser(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
-	t.Run("not site admin nor the same user", func(t *testing.T) {
+	t.Run("not site bdmin nor the sbme user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
-				Username: strconv.Itoa(int(id)),
+				Usernbme: strconv.Itob(int(id)),
 			}, nil
 		})
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "2"}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(context.Background(),
-			&updateUserArgs{
+		result, err := newSchembResolver(db, gitserver.NewClient()).UpdbteUser(context.Bbckground(),
+			&updbteUserArgs{
 				User: "VXNlcjox",
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := auth.ErrMustBeSiteAdminOrSameUser.Error()
-		assert.Equal(t, want, got)
-		assert.Nil(t, result)
+		wbnt := buth.ErrMustBeSiteAdminOrSbmeUser.Error()
+		bssert.Equbl(t, wbnt, got)
+		bssert.Nil(t, result)
 	})
 
-	t.Run("disallow suspicious names", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	t.Run("disbllow suspicious nbmes", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(ctx,
-			&updateUserArgs{
-				User:     MarshalUserID(1),
-				Username: strptr("about"),
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		_, err := newSchembResolver(db, gitserver.NewClient()).UpdbteUser(ctx,
+			&updbteUserArgs{
+				User:     MbrshblUserID(1),
+				Usernbme: strptr("bbout"),
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := `rejected suspicious name "about"`
-		assert.Equal(t, want, got)
+		wbnt := `rejected suspicious nbme "bbout"`
+		bssert.Equbl(t, wbnt, got)
 	})
 
-	t.Run("non site admin cannot change username when not enabled", func(t *testing.T) {
+	t.Run("non site bdmin cbnnot chbnge usernbme when not enbbled", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthEnableUsernameChanges: false,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthEnbbleUsernbmeChbnges: fblse,
 			},
 		})
 		defer conf.Mock(nil)
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{ID: id}, nil
 		})
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
-		result, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(ctx,
-			&updateUserArgs{
+		ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1})
+		result, err := newSchembResolver(db, gitserver.NewClient()).UpdbteUser(ctx,
+			&updbteUserArgs{
 				User:     "VXNlcjox",
-				Username: strptr("alice"),
+				Usernbme: strptr("blice"),
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := "unable to change username because auth.enableUsernameChanges is false in site configuration"
-		assert.Equal(t, want, got)
-		assert.Nil(t, result)
+		wbnt := "unbble to chbnge usernbme becbuse buth.enbbleUsernbmeChbnges is fblse in site configurbtion"
+		bssert.Equbl(t, wbnt, got)
+		bssert.Nil(t, result)
 	})
 
-	t.Run("non site admin can change non-username fields", func(t *testing.T) {
+	t.Run("non site bdmin cbn chbnge non-usernbme fields", func(t *testing.T) {
 		conf.Mock(&conf.Unified{
-			SiteConfiguration: schema.SiteConfiguration{
-				AuthEnableUsernameChanges: false,
+			SiteConfigurbtion: schemb.SiteConfigurbtion{
+				AuthEnbbleUsernbmeChbnges: fblse,
 			},
 		})
 		defer conf.Mock(nil)
 
 		mockUser := &types.User{
 			ID:          1,
-			Username:    "alice",
-			DisplayName: "alice-updated",
-			AvatarURL:   "http://www.example.com/alice-updated",
+			Usernbme:    "blice",
+			DisplbyNbme: "blice-updbted",
+			AvbtbrURL:   "http://www.exbmple.com/blice-updbted",
 		}
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
-		users.UpdateFunc.SetDefaultReturn(nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByIDFunc.SetDefbultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(mockUser, nil)
+		users.UpdbteFunc.SetDefbultReturn(nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t, db),
+				Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-			mutation {
-				updateUser(
+			mutbtion {
+				updbteUser(
 					user: "VXNlcjox",
-					displayName: "alice-updated"
-					avatarURL: "http://www.example.com/alice-updated"
+					displbyNbme: "blice-updbted"
+					bvbtbrURL: "http://www.exbmple.com/blice-updbted"
 				) {
-					displayName,
-					avatarURL
+					displbyNbme,
+					bvbtbrURL
 				}
 			}
 		`,
 				ExpectedResult: `
 			{
-				"updateUser": {
-					"displayName": "alice-updated",
-					"avatarURL": "http://www.example.com/alice-updated"
+				"updbteUser": {
+					"displbyNbme": "blice-updbted",
+					"bvbtbrURL": "http://www.exbmple.com/blice-updbted"
 				}
 			}
 		`,
@@ -450,128 +450,128 @@ func TestUpdateUser(t *testing.T) {
 		})
 	})
 
-	t.Run("only allowed by authenticated user on Sourcegraph.com", func(t *testing.T) {
+	t.Run("only bllowed by buthenticbted user on Sourcegrbph.com", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		db.UsersFunc.SetDefaultReturn(users)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
 		tests := []struct {
-			name  string
+			nbme  string
 			ctx   context.Context
 			setup func()
 		}{
 			{
-				name: "unauthenticated",
-				ctx:  context.Background(),
+				nbme: "unbuthenticbted",
+				ctx:  context.Bbckground(),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultReturn(&types.User{ID: 1}, nil)
+					users.GetByIDFunc.SetDefbultReturn(&types.User{ID: 1}, nil)
 				},
 			},
 			{
-				name: "another user",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "bnother user",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id}, nil
 					})
 				},
 			},
 			{
-				name: "site admin",
-				ctx:  actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
+				nbme: "site bdmin",
+				ctx:  bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
 				setup: func() {
-					users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+					users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 						return &types.User{ID: id, SiteAdmin: true}, nil
 					})
 				},
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
 				test.setup()
 
-				_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(
+				_, err := newSchembResolver(db, gitserver.NewClient()).UpdbteUser(
 					test.ctx,
-					&updateUserArgs{
-						User: MarshalUserID(1),
+					&updbteUserArgs{
+						User: MbrshblUserID(1),
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				want := "must be authenticated as user with id 1"
-				assert.Equal(t, want, got)
+				wbnt := "must be buthenticbted bs user with id 1"
+				bssert.Equbl(t, wbnt, got)
 			})
 		}
 	})
 
-	t.Run("bad avatarURL", func(t *testing.T) {
+	t.Run("bbd bvbtbrURL", func(t *testing.T) {
 		tests := []struct {
-			name      string
-			avatarURL string
-			wantErr   string
+			nbme      string
+			bvbtbrURL string
+			wbntErr   string
 		}{
 			{
-				name:      "exceeded 3000 characters",
-				avatarURL: strings.Repeat("bad", 1001),
-				wantErr:   "avatar URL exceeded 3000 characters",
+				nbme:      "exceeded 3000 chbrbcters",
+				bvbtbrURL: strings.Repebt("bbd", 1001),
+				wbntErr:   "bvbtbr URL exceeded 3000 chbrbcters",
 			},
 			{
-				name:      "not HTTP nor HTTPS",
-				avatarURL: "ftp://avatars3.githubusercontent.com/u/404",
-				wantErr:   "avatar URL must be an HTTP or HTTPS URL",
+				nbme:      "not HTTP nor HTTPS",
+				bvbtbrURL: "ftp://bvbtbrs3.githubusercontent.com/u/404",
+				wbntErr:   "bvbtbr URL must be bn HTTP or HTTPS URL",
 			},
 		}
-		for _, test := range tests {
-			t.Run(test.name, func(t *testing.T) {
-				_, err := newSchemaResolver(db, gitserver.NewClient()).UpdateUser(
-					actor.WithActor(context.Background(), &actor.Actor{UID: 2}),
-					&updateUserArgs{
-						User:      MarshalUserID(2),
-						AvatarURL: &test.avatarURL,
+		for _, test := rbnge tests {
+			t.Run(test.nbme, func(t *testing.T) {
+				_, err := newSchembResolver(db, gitserver.NewClient()).UpdbteUser(
+					bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 2}),
+					&updbteUserArgs{
+						User:      MbrshblUserID(2),
+						AvbtbrURL: &test.bvbtbrURL,
 					},
 				)
 				got := fmt.Sprintf("%v", err)
-				assert.Equal(t, test.wantErr, got)
+				bssert.Equbl(t, test.wbntErr, got)
 			})
 		}
 	})
 
-	t.Run("success with an empty avatarURL", func(t *testing.T) {
+	t.Run("success with bn empty bvbtbrURL", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		siteAdminUser := &types.User{SiteAdmin: true}
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			if id == 0 {
 				return siteAdminUser, nil
 			}
 			return &types.User{
 				ID:       id,
-				Username: strconv.Itoa(int(id)),
+				Usernbme: strconv.Itob(int(id)),
 			}, nil
 		})
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(siteAdminUser, nil)
-		users.UpdateFunc.SetDefaultReturn(nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(siteAdminUser, nil)
+		users.UpdbteFunc.SetDefbultReturn(nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-			mutation {
-				updateUser(
+			mutbtion {
+				updbteUser(
 					user: "VXNlcjox",
-					username: "alice.bob-chris-",
-					avatarURL: ""
+					usernbme: "blice.bob-chris-",
+					bvbtbrURL: ""
 				) {
-					username
+					usernbme
 				}
 			}
 		`,
 				ExpectedResult: `
 			{
-				"updateUser": {
-					"username": "1"
+				"updbteUser": {
+					"usernbme": "1"
 				}
 			}
 		`,
@@ -583,37 +583,37 @@ func TestUpdateUser(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
 		siteAdminUser := &types.User{SiteAdmin: true}
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			if id == 0 {
 				return siteAdminUser, nil
 			}
 			return &types.User{
 				ID:       id,
-				Username: strconv.Itoa(int(id)),
+				Usernbme: strconv.Itob(int(id)),
 			}, nil
 		})
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{SiteAdmin: true}, nil)
-		users.UpdateFunc.SetDefaultReturn(nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{SiteAdmin: true}, nil)
+		users.UpdbteFunc.SetDefbultReturn(nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
 		RunTests(t, []*Test{
 			{
-				Schema: mustParseGraphQLSchema(t, db),
+				Schemb: mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-			mutation {
-				updateUser(
+			mutbtion {
+				updbteUser(
 					user: "VXNlcjox",
-					username: "alice.bob-chris-",
-					avatarURL: "https://avatars3.githubusercontent.com/u/404"
+					usernbme: "blice.bob-chris-",
+					bvbtbrURL: "https://bvbtbrs3.githubusercontent.com/u/404"
 				) {
-					username
+					usernbme
 				}
 			}
 		`,
 				ExpectedResult: `
 			{
-				"updateUser": {
-					"username": "1"
+				"updbteUser": {
+					"usernbme": "1"
 				}
 			}
 		`,
@@ -622,14 +622,14 @@ func TestUpdateUser(t *testing.T) {
 	})
 }
 
-func TestUser_Organizations(t *testing.T) {
+func TestUser_Orgbnizbtions(t *testing.T) {
 	users := dbmocks.NewMockUserStore()
-	users.GetByIDFunc.SetDefaultHook(func(_ context.Context, id int32) (*types.User, error) {
-		// Set up a mock set of users, consisting of two regular users and one site admin.
-		knownUsers := map[int32]*types.User{
-			1: {ID: 1, Username: "alice"},
-			2: {ID: 2, Username: "bob"},
-			3: {ID: 3, Username: "carol", SiteAdmin: true},
+	users.GetByIDFunc.SetDefbultHook(func(_ context.Context, id int32) (*types.User, error) {
+		// Set up b mock set of users, consisting of two regulbr users bnd one site bdmin.
+		knownUsers := mbp[int32]*types.User{
+			1: {ID: 1, Usernbme: "blice"},
+			2: {ID: 2, Usernbme: "bob"},
+			3: {ID: 3, Usernbme: "cbrol", SiteAdmin: true},
 		}
 
 		if user := knownUsers[id]; user != nil {
@@ -637,48 +637,48 @@ func TestUser_Organizations(t *testing.T) {
 		}
 
 		t.Errorf("unknown mock user: got ID %q", id)
-		return nil, errors.New("unreachable")
+		return nil, errors.New("unrebchbble")
 	})
-	users.GetByUsernameFunc.SetDefaultHook(func(_ context.Context, username string) (*types.User, error) {
-		if want := "alice"; username != want {
-			t.Errorf("got %q, want %q", username, want)
+	users.GetByUsernbmeFunc.SetDefbultHook(func(_ context.Context, usernbme string) (*types.User, error) {
+		if wbnt := "blice"; usernbme != wbnt {
+			t.Errorf("got %q, wbnt %q", usernbme, wbnt)
 		}
-		return &types.User{ID: 1, Username: "alice"}, nil
+		return &types.User{ID: 1, Usernbme: "blice"}, nil
 	})
-	users.GetByCurrentAuthUserFunc.SetDefaultHook(func(ctx context.Context) (*types.User, error) {
-		return users.GetByID(ctx, actor.FromContext(ctx).UID)
+	users.GetByCurrentAuthUserFunc.SetDefbultHook(func(ctx context.Context) (*types.User, error) {
+		return users.GetByID(ctx, bctor.FromContext(ctx).UID)
 	})
 
 	orgs := dbmocks.NewMockOrgStore()
-	orgs.GetByUserIDFunc.SetDefaultHook(func(_ context.Context, userID int32) ([]*types.Org, error) {
-		if want := int32(1); userID != want {
-			t.Errorf("got %q, want %q", userID, want)
+	orgs.GetByUserIDFunc.SetDefbultHook(func(_ context.Context, userID int32) ([]*types.Org, error) {
+		if wbnt := int32(1); userID != wbnt {
+			t.Errorf("got %q, wbnt %q", userID, wbnt)
 		}
 		return []*types.Org{
 			{
 				ID:   1,
-				Name: "org",
+				Nbme: "org",
 			},
 		}, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.UsersFunc.SetDefaultReturn(users)
-	db.OrgsFunc.SetDefaultReturn(orgs)
+	db.UsersFunc.SetDefbultReturn(users)
+	db.OrgsFunc.SetDefbultReturn(orgs)
 
-	expectOrgFailure := func(t *testing.T, actorUID int32) {
+	expectOrgFbilure := func(t *testing.T, bctorUID int32) {
 		t.Helper()
-		wantErr := auth.ErrMustBeSiteAdminOrSameUser.Error()
+		wbntErr := buth.ErrMustBeSiteAdminOrSbmeUser.Error()
 		RunTests(t, []*Test{
 			{
-				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),
-				Schema:  mustParseGraphQLSchema(t, db),
+				Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: bctorUID}),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 					{
-						user(username: "alice") {
-							username
-							organizations {
-								totalCount
+						user(usernbme: "blice") {
+							usernbme
+							orgbnizbtions {
+								totblCount
 							}
 						}
 					}
@@ -686,26 +686,26 @@ func TestUser_Organizations(t *testing.T) {
 				ExpectedResult: `{"user": null}`,
 				ExpectedErrors: []*gqlerrors.QueryError{
 					{
-						Path:          []any{"user", "organizations"},
-						Message:       wantErr,
-						ResolverError: errors.New(wantErr),
+						Pbth:          []bny{"user", "orgbnizbtions"},
+						Messbge:       wbntErr,
+						ResolverError: errors.New(wbntErr),
 					},
 				}},
 		})
 	}
 
-	expectOrgSuccess := func(t *testing.T, actorUID int32) {
+	expectOrgSuccess := func(t *testing.T, bctorUID int32) {
 		t.Helper()
 		RunTests(t, []*Test{
 			{
-				Context: actor.WithActor(context.Background(), &actor.Actor{UID: actorUID}),
-				Schema:  mustParseGraphQLSchema(t, db),
+				Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: bctorUID}),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
 					{
-						user(username: "alice") {
-							username
-							organizations {
-								totalCount
+						user(usernbme: "blice") {
+							usernbme
+							orgbnizbtions {
+								totblCount
 							}
 						}
 					}
@@ -713,9 +713,9 @@ func TestUser_Organizations(t *testing.T) {
 				ExpectedResult: `
 					{
 						"user": {
-							"username": "alice",
-							"organizations": {
-								"totalCount": 1
+							"usernbme": "blice",
+							"orgbnizbtions": {
+								"totblCount": 1
 							}
 						}
 					}
@@ -724,106 +724,106 @@ func TestUser_Organizations(t *testing.T) {
 		})
 	}
 
-	t.Run("on Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		t.Cleanup(func() { envvar.MockSourcegraphDotComMode(orig) })
+	t.Run("on Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		t.Clebnup(func() { envvbr.MockSourcegrbphDotComMode(orig) })
 
-		t.Run("same user", func(t *testing.T) {
+		t.Run("sbme user", func(t *testing.T) {
 			expectOrgSuccess(t, 1)
 		})
 
 		t.Run("different user", func(t *testing.T) {
-			expectOrgFailure(t, 2)
+			expectOrgFbilure(t, 2)
 		})
 
-		t.Run("site admin", func(t *testing.T) {
+		t.Run("site bdmin", func(t *testing.T) {
 			expectOrgSuccess(t, 3)
 		})
 	})
 
-	t.Run("on non-Sourcegraph.com", func(t *testing.T) {
-		t.Run("same user", func(t *testing.T) {
+	t.Run("on non-Sourcegrbph.com", func(t *testing.T) {
+		t.Run("sbme user", func(t *testing.T) {
 			expectOrgSuccess(t, 1)
 		})
 
 		t.Run("different user", func(t *testing.T) {
-			expectOrgFailure(t, 2)
+			expectOrgFbilure(t, 2)
 		})
 
-		t.Run("site admin", func(t *testing.T) {
+		t.Run("site bdmin", func(t *testing.T) {
 			expectOrgSuccess(t, 3)
 		})
 	})
 }
 
-func TestSchema_SetUserCompletionsQuota(t *testing.T) {
+func TestSchemb_SetUserCompletionsQuotb(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
-	t.Run("not site admin", func(t *testing.T) {
+	t.Run("not site bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
-				Username: strconv.Itoa(int(id)),
+				Usernbme: strconv.Itob(int(id)),
 			}, nil
 		})
 		// Different user.
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "2"}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		result, err := newSchemaResolver(db, gitserver.NewClient()).SetUserCompletionsQuota(context.Background(),
-			SetUserCompletionsQuotaArgs{
-				User:  MarshalUserID(1),
-				Quota: nil,
+		result, err := newSchembResolver(db, gitserver.NewClient()).SetUserCompletionsQuotb(context.Bbckground(),
+			SetUserCompletionsQuotbArgs{
+				User:  MbrshblUserID(1),
+				Quotb: nil,
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := auth.ErrMustBeSiteAdmin.Error()
-		assert.Equal(t, want, got)
-		assert.Nil(t, result)
+		wbnt := buth.ErrMustBeSiteAdmin.Error()
+		bssert.Equbl(t, wbnt, got)
+		bssert.Nil(t, result)
 	})
 
-	t.Run("site admin can change quota", func(t *testing.T) {
+	t.Run("site bdmin cbn chbnge quotb", func(t *testing.T) {
 		mockUser := &types.User{
 			ID:        1,
-			Username:  "alice",
+			Usernbme:  "blice",
 			SiteAdmin: true,
 		}
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
-		users.UpdateFunc.SetDefaultReturn(nil)
-		db.UsersFunc.SetDefaultReturn(users)
-		var quota *int
-		users.SetChatCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
-			quota = i2
+		users.GetByIDFunc.SetDefbultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(mockUser, nil)
+		users.UpdbteFunc.SetDefbultReturn(nil)
+		db.UsersFunc.SetDefbultReturn(users)
+		vbr quotb *int
+		users.SetChbtCompletionsQuotbFunc.SetDefbultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+			quotb = i2
 			return nil
 		})
-		users.GetChatCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
-			return quota, nil
+		users.GetChbtCompletionsQuotbFunc.SetDefbultHook(func(ctx context.Context, i int32) (*int, error) {
+			return quotb, nil
 		})
 
 		RunTests(t, []*Test{
 			{
-				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t, db),
+				Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-			mutation {
-				setUserCompletionsQuota(
+			mutbtion {
+				setUserCompletionsQuotb(
 					user: "VXNlcjox",
-					quota: 10
+					quotb: 10
 				) {
-					username
-					completionsQuotaOverride
+					usernbme
+					completionsQuotbOverride
 				}
 			}
 		`,
 				ExpectedResult: `
 			{
-				"setUserCompletionsQuota": {
-					"username": "alice",
-					"completionsQuotaOverride": 10
+				"setUserCompletionsQuotb": {
+					"usernbme": "blice",
+					"completionsQuotbOverride": 10
 				}
 			}
 		`,
@@ -832,74 +832,74 @@ func TestSchema_SetUserCompletionsQuota(t *testing.T) {
 	})
 }
 
-func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
+func TestSchemb_SetUserCodeCompletionsQuotb(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
-	t.Run("not site admin", func(t *testing.T) {
+	t.Run("not site bdmin", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
-				Username: strconv.Itoa(int(id)),
+				Usernbme: strconv.Itob(int(id)),
 			}, nil
 		})
 		// Different user.
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: 2, Username: "2"}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: 2, Usernbme: "2"}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		schemaResolver := newSchemaResolver(db, gitserver.NewClient())
-		result, err := schemaResolver.SetUserCodeCompletionsQuota(context.Background(),
-			SetUserCodeCompletionsQuotaArgs{
-				User:  MarshalUserID(1),
-				Quota: nil,
+		schembResolver := newSchembResolver(db, gitserver.NewClient())
+		result, err := schembResolver.SetUserCodeCompletionsQuotb(context.Bbckground(),
+			SetUserCodeCompletionsQuotbArgs{
+				User:  MbrshblUserID(1),
+				Quotb: nil,
 			},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := auth.ErrMustBeSiteAdmin.Error()
-		assert.Equal(t, want, got)
-		assert.Nil(t, result)
+		wbnt := buth.ErrMustBeSiteAdmin.Error()
+		bssert.Equbl(t, wbnt, got)
+		bssert.Nil(t, result)
 	})
 
-	t.Run("site admin can change quota", func(t *testing.T) {
+	t.Run("site bdmin cbn chbnge quotb", func(t *testing.T) {
 		mockUser := &types.User{
 			ID:        1,
-			Username:  "alice",
+			Usernbme:  "blice",
 			SiteAdmin: true,
 		}
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(mockUser, nil)
-		users.UpdateFunc.SetDefaultReturn(nil)
-		db.UsersFunc.SetDefaultReturn(users)
-		var quota *int
-		users.SetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i1 int32, i2 *int) error {
-			quota = i2
+		users.GetByIDFunc.SetDefbultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(mockUser, nil)
+		users.UpdbteFunc.SetDefbultReturn(nil)
+		db.UsersFunc.SetDefbultReturn(users)
+		vbr quotb *int
+		users.SetCodeCompletionsQuotbFunc.SetDefbultHook(func(ctx context.Context, i1 int32, i2 *int) error {
+			quotb = i2
 			return nil
 		})
-		users.GetCodeCompletionsQuotaFunc.SetDefaultHook(func(ctx context.Context, i int32) (*int, error) {
-			return quota, nil
+		users.GetCodeCompletionsQuotbFunc.SetDefbultHook(func(ctx context.Context, i int32) (*int, error) {
+			return quotb, nil
 		})
 
 		RunTests(t, []*Test{
 			{
-				Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-				Schema:  mustParseGraphQLSchema(t, db),
+				Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+				Schemb:  mustPbrseGrbphQLSchemb(t, db),
 				Query: `
-			mutation {
-				setUserCodeCompletionsQuota(
+			mutbtion {
+				setUserCodeCompletionsQuotb(
 					user: "VXNlcjox",
-					quota: 18
+					quotb: 18
 				) {
-					username
-					codeCompletionsQuotaOverride
+					usernbme
+					codeCompletionsQuotbOverride
 				}
 			}
 		`,
 				ExpectedResult: `
 			{
-				"setUserCodeCompletionsQuota": {
-					"username": "alice",
-					"codeCompletionsQuotaOverride": 18
+				"setUserCodeCompletionsQuotb": {
+					"usernbme": "blice",
+					"codeCompletionsQuotbOverride": 18
 				}
 			}
 		`,
@@ -908,110 +908,110 @@ func TestSchema_SetUserCodeCompletionsQuota(t *testing.T) {
 	})
 }
 
-func TestSchema_SetCompletedPostSignup(t *testing.T) {
+func TestSchemb_SetCompletedPostSignup(t *testing.T) {
 	db := dbmocks.NewMockDB()
 
 	currentUserID := int32(2)
 
-	t.Run("not site admin, not current user", func(t *testing.T) {
+	t.Run("not site bdmin, not current user", func(t *testing.T) {
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int32) (*types.User, error) {
+		users.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int32) (*types.User, error) {
 			return &types.User{
 				ID:       id,
-				Username: strconv.Itoa(int(id)),
+				Usernbme: strconv.Itob(int(id)),
 			}, nil
 		})
 		// Different user.
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2"}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: currentUserID, Usernbme: "2"}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 
-		userID := MarshalUserID(1)
-		result, err := newSchemaResolver(db, gitserver.NewClient()).SetCompletedPostSignup(context.Background(),
-			&userMutationArgs{UserID: &userID},
+		userID := MbrshblUserID(1)
+		result, err := newSchembResolver(db, gitserver.NewClient()).SetCompletedPostSignup(context.Bbckground(),
+			&userMutbtionArgs{UserID: &userID},
 		)
 		got := fmt.Sprintf("%v", err)
-		want := auth.ErrMustBeSiteAdminOrSameUser.Error()
-		assert.Equal(t, want, got)
-		assert.Nil(t, result)
+		wbnt := buth.ErrMustBeSiteAdminOrSbmeUser.Error()
+		bssert.Equbl(t, wbnt, got)
+		bssert.Nil(t, result)
 	})
 
-	t.Run("current user can set field on themselves", func(t *testing.T) {
-		currentUser := &types.User{ID: currentUserID, Username: "2", SiteAdmin: true}
+	t.Run("current user cbn set field on themselves", func(t *testing.T) {
+		currentUser := &types.User{ID: currentUserID, Usernbme: "2", SiteAdmin: true}
 
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(currentUser, nil)
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(currentUser, nil)
-		db.UsersFunc.SetDefaultReturn(users)
-		var called bool
-		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
-			called = true
+		users.GetByIDFunc.SetDefbultReturn(currentUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(currentUser, nil)
+		db.UsersFunc.SetDefbultReturn(users)
+		vbr cblled bool
+		users.UpdbteFunc.SetDefbultHook(func(ctx context.Context, id int32, updbte dbtbbbse.UserUpdbte) error {
+			cblled = true
 			return nil
 		})
 
-		userEmails := dbmocks.NewMockUserEmailsStore()
-		userEmails.HasVerifiedEmailFunc.SetDefaultReturn(true, nil)
-		db.UserEmailsFunc.SetDefaultReturn(userEmails)
+		userEmbils := dbmocks.NewMockUserEmbilsStore()
+		userEmbils.HbsVerifiedEmbilFunc.SetDefbultReturn(true, nil)
+		db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
 		RunTest(t, &Test{
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: currentUserID}),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: currentUserID}),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-			mutation {
+			mutbtion {
 				setCompletedPostSignup(userID: "VXNlcjoy") {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
 				"setCompletedPostSignup": {
-					"alwaysNil": null
+					"blwbysNil": null
 				}
 			}
 		`,
 		})
 
-		if !called {
-			t.Errorf("updatefunc was not called, but should have been")
+		if !cblled {
+			t.Errorf("updbtefunc wbs not cblled, but should hbve been")
 		}
 	})
 
-	t.Run("site admin can set post-signup complete", func(t *testing.T) {
+	t.Run("site bdmin cbn set post-signup complete", func(t *testing.T) {
 		mockUser := &types.User{
 			ID:       1,
-			Username: "alice",
+			Usernbme: "blice",
 		}
 		users := dbmocks.NewMockUserStore()
-		users.GetByIDFunc.SetDefaultReturn(mockUser, nil)
-		users.GetByCurrentAuthUserFunc.SetDefaultReturn(&types.User{ID: currentUserID, Username: "2", SiteAdmin: true}, nil)
-		db.UsersFunc.SetDefaultReturn(users)
-		var called bool
-		users.UpdateFunc.SetDefaultHook(func(ctx context.Context, id int32, update database.UserUpdate) error {
-			called = true
+		users.GetByIDFunc.SetDefbultReturn(mockUser, nil)
+		users.GetByCurrentAuthUserFunc.SetDefbultReturn(&types.User{ID: currentUserID, Usernbme: "2", SiteAdmin: true}, nil)
+		db.UsersFunc.SetDefbultReturn(users)
+		vbr cblled bool
+		users.UpdbteFunc.SetDefbultHook(func(ctx context.Context, id int32, updbte dbtbbbse.UserUpdbte) error {
+			cblled = true
 			return nil
 		})
 
 		RunTest(t, &Test{
-			Context: actor.WithActor(context.Background(), &actor.Actor{UID: 1}),
-			Schema:  mustParseGraphQLSchema(t, db),
+			Context: bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: 1}),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-			mutation {
+			mutbtion {
 				setCompletedPostSignup(userID: "VXNlcjox") {
-					alwaysNil
+					blwbysNil
 				}
 			}
 		`,
 			ExpectedResult: `
 			{
 				"setCompletedPostSignup": {
-					"alwaysNil": null
+					"blwbysNil": null
 				}
 			}
 		`,
 		})
 
-		if !called {
-			t.Errorf("updatefunc was not called, but should have been")
+		if !cblled {
+			t.Errorf("updbtefunc wbs not cblled, but should hbve been")
 		}
 	})
 }

@@ -1,23 +1,23 @@
-package output
+pbckbge output
 
-type ProgressWithStatusBars interface {
+type ProgressWithStbtusBbrs interfbce {
 	Progress
 
-	StatusBarUpdatef(i int, format string, args ...any)
-	StatusBarCompletef(i int, format string, args ...any)
-	StatusBarFailf(i int, format string, args ...any)
-	StatusBarResetf(i int, label, format string, args ...any)
+	StbtusBbrUpdbtef(i int, formbt string, brgs ...bny)
+	StbtusBbrCompletef(i int, formbt string, brgs ...bny)
+	StbtusBbrFbilf(i int, formbt string, brgs ...bny)
+	StbtusBbrResetf(i int, lbbel, formbt string, brgs ...bny)
 }
 
-func newProgressWithStatusBars(bars []ProgressBar, statusBars []*StatusBar, o *Output, opts *ProgressOpts) ProgressWithStatusBars {
-	barPtrs := make([]*ProgressBar, len(bars))
-	for i := range bars {
-		barPtrs[i] = &bars[i]
+func newProgressWithStbtusBbrs(bbrs []ProgressBbr, stbtusBbrs []*StbtusBbr, o *Output, opts *ProgressOpts) ProgressWithStbtusBbrs {
+	bbrPtrs := mbke([]*ProgressBbr, len(bbrs))
+	for i := rbnge bbrs {
+		bbrPtrs[i] = &bbrs[i]
 	}
 
-	if !o.caps.Isatty {
-		return newProgressWithStatusBarsSimple(barPtrs, statusBars, o, opts)
+	if !o.cbps.Isbtty {
+		return newProgressWithStbtusBbrsSimple(bbrPtrs, stbtusBbrs, o, opts)
 	}
 
-	return newProgressWithStatusBarsTTY(barPtrs, statusBars, o, opts)
+	return newProgressWithStbtusBbrsTTY(bbrPtrs, stbtusBbrs, o, opts)
 }

@@ -1,53 +1,53 @@
-package assets
+pbckbge bssets
 
 import (
 	"encoding/json"
 	"net/http"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// UseDevAssetsProvider installs the development variant of the UseDevAssetsProvider
-// which expects assets to be generated on the fly by an external Webpack process
-// under the ui/assets/ folder.
+// UseDevAssetsProvider instblls the development vbribnt of the UseDevAssetsProvider
+// which expects bssets to be generbted on the fly by bn externbl Webpbck process
+// under the ui/bssets/ folder.
 func UseDevAssetsProvider() {
-	Provider = DevProvider{assets: http.Dir("./ui/assets")}
+	Provider = DevProvider{bssets: http.Dir("./ui/bssets")}
 }
 
-// DevProvider is the development variant of the UseDevAssetsProvider
-// which expects assets to be generated on the fly by an external Webpack process
-// under the ui/assets/ folder.
+// DevProvider is the development vbribnt of the UseDevAssetsProvider
+// which expects bssets to be generbted on the fly by bn externbl Webpbck process
+// under the ui/bssets/ folder.
 type DevProvider struct {
-	assets http.FileSystem
+	bssets http.FileSystem
 }
 
-func (p DevProvider) LoadWebpackManifest() (*WebpackManifest, error) {
-	return loadWebpackManifest()
+func (p DevProvider) LobdWebpbckMbnifest() (*WebpbckMbnifest, error) {
+	return lobdWebpbckMbnifest()
 }
 
 func (p DevProvider) Assets() http.FileSystem {
-	return p.assets
+	return p.bssets
 }
 
-var MockLoadWebpackManifest func() (*WebpackManifest, error)
+vbr MockLobdWebpbckMbnifest func() (*WebpbckMbnifest, error)
 
-// loadWebpackManifest uses Webpack manifest to extract hashed bundle names to
-// serve to the client, see https://webpack.js.org/concepts/manifest/ for
-// details. In dev mode, we load this file from disk on demand, so it doesn't
-// have to exist at compile time, to avoid a build dependency between frontend
-// and client.
-func loadWebpackManifest() (m *WebpackManifest, err error) {
-	if MockLoadWebpackManifest != nil {
-		return MockLoadWebpackManifest()
+// lobdWebpbckMbnifest uses Webpbck mbnifest to extrbct hbshed bundle nbmes to
+// serve to the client, see https://webpbck.js.org/concepts/mbnifest/ for
+// detbils. In dev mode, we lobd this file from disk on dembnd, so it doesn't
+// hbve to exist bt compile time, to bvoid b build dependency between frontend
+// bnd client.
+func lobdWebpbckMbnifest() (m *WebpbckMbnifest, err error) {
+	if MockLobdWebpbckMbnifest != nil {
+		return MockLobdWebpbckMbnifest()
 	}
 
-	manifestContent, err := os.ReadFile("./ui/assets/webpack.manifest.json")
+	mbnifestContent, err := os.RebdFile("./ui/bssets/webpbck.mbnifest.json")
 	if err != nil {
-		return nil, errors.Wrap(err, "loading webpack manifest file from disk")
+		return nil, errors.Wrbp(err, "lobding webpbck mbnifest file from disk")
 	}
-	if err := json.Unmarshal(manifestContent, &m); err != nil {
-		return nil, errors.Wrap(err, "parsing manifest json")
+	if err := json.Unmbrshbl(mbnifestContent, &m); err != nil {
+		return nil, errors.Wrbp(err, "pbrsing mbnifest json")
 	}
 	return m, nil
 }

@@ -1,146 +1,146 @@
-package run
+pbckbge run
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/sourcegraph/log"
-	"github.com/urfave/cli/v2"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/sourcegrbph/log"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient/queue"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/ignite"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/janitor"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient/queue"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/ignite"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/jbnitor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func Run(cliCtx *cli.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config) error {
-	return StandaloneRun(cliCtx.Context, runner, logger, cfg, cliCtx.Bool("verify"))
+	return StbndbloneRun(cliCtx.Context, runner, logger, cfg, cliCtx.Bool("verify"))
 }
 
-func StandaloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
-	if err := cfg.Validate(); err != nil {
+func StbndbloneRun(ctx context.Context, runner util.CmdRunner, logger log.Logger, cfg *config.Config, runVerifyChecks bool) error {
+	if err := cfg.Vblidbte(); err != nil {
 		return err
 	}
 
 	logger = log.Scoped("service", "executor service")
 
-	// Initialize tracing/metrics
-	observationCtx := observation.NewContext(logger)
+	// Initiblize trbcing/metrics
+	observbtionCtx := observbtion.NewContext(logger)
 
-	// Determine telemetry data.
+	// Determine telemetry dbtb.
 	queueTelemetryOptions := func() queue.TelemetryOptions {
-		// Run for at most 5s to get telemetry options.
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+		// Run for bt most 5s to get telemetry options.
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 5*time.Second)
+		defer cbncel()
 
-		return newQueueTelemetryOptions(ctx, runner, cfg.UseFirecracker, logger)
+		return newQueueTelemetryOptions(ctx, runner, cfg.UseFirecrbcker, logger)
 	}()
-	logger.Debug("Telemetry information gathered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
+	logger.Debug("Telemetry informbtion gbthered", log.String("info", fmt.Sprintf("%+v", queueTelemetryOptions)))
 
-	opts := apiWorkerOptions(cfg, queueTelemetryOptions)
+	opts := bpiWorkerOptions(cfg, queueTelemetryOptions)
 
-	// TODO: This is too similar to the RunValidate func. Make it share even more code.
+	// TODO: This is too similbr to the RunVblidbte func. Mbke it shbre even more code.
 	if runVerifyChecks {
-		// Then, validate all tools that are required are installed.
-		if err := util.ValidateRequiredTools(runner, cfg.UseFirecracker); err != nil {
+		// Then, vblidbte bll tools thbt bre required bre instblled.
+		if err := util.VblidbteRequiredTools(runner, cfg.UseFirecrbcker); err != nil {
 			return err
 		}
 
-		// Validate git is of the right version.
-		if err := util.ValidateGitVersion(ctx, runner); err != nil {
+		// Vblidbte git is of the right version.
+		if err := util.VblidbteGitVersion(ctx, runner); err != nil {
 			return err
 		}
 
-		// TODO: Validate access token.
-		// Validate src-cli is of a good version, rely on the connected instance to tell
-		// us what "good" means.
-		client, err := apiclient.NewBaseClient(logger, opts.QueueOptions.BaseClientOptions)
+		// TODO: Vblidbte bccess token.
+		// Vblidbte src-cli is of b good version, rely on the connected instbnce to tell
+		// us whbt "good" mebns.
+		client, err := bpiclient.NewBbseClient(logger, opts.QueueOptions.BbseClientOptions)
 		if err != nil {
 			return err
 		}
-		if err = util.ValidateSrcCLIVersion(ctx, runner, client, opts.QueueOptions.BaseClientOptions.EndpointOptions); err != nil {
-			if errors.Is(err, util.ErrSrcPatchBehind) {
-				// This is ok. The patch just doesn't match but still works.
-				logger.Warn("A newer patch release version of src-cli is available, consider running executor install src-cli to upgrade", log.Error(err))
+		if err = util.VblidbteSrcCLIVersion(ctx, runner, client, opts.QueueOptions.BbseClientOptions.EndpointOptions); err != nil {
+			if errors.Is(err, util.ErrSrcPbtchBehind) {
+				// This is ok. The pbtch just doesn't mbtch but still works.
+				logger.Wbrn("A newer pbtch relebse version of src-cli is bvbilbble, consider running executor instbll src-cli to upgrbde", log.Error(err))
 			} else {
 				return err
 			}
 		}
 
-		if cfg.UseFirecracker {
-			// Validate ignite is installed.
-			if err = util.ValidateIgniteInstalled(ctx, runner); err != nil {
+		if cfg.UseFirecrbcker {
+			// Vblidbte ignite is instblled.
+			if err = util.VblidbteIgniteInstblled(ctx, runner); err != nil {
 				return err
 			}
 
-			// Validate all required CNI plugins are installed.
-			if err = util.ValidateCNIInstalled(runner); err != nil {
+			// Vblidbte bll required CNI plugins bre instblled.
+			if err = util.VblidbteCNIInstblled(runner); err != nil {
 				return err
 			}
 
-			// TODO: Validate ignite images are pulled and imported. Sadly, the
-			// output of ignite is not very parser friendly.
+			// TODO: Vblidbte ignite imbges bre pulled bnd imported. Sbdly, the
+			// output of ignite is not very pbrser friendly.
 		}
 	}
 
-	nameSet := janitor.NewNameSet()
-	ctx, cancel := context.WithCancel(ctx)
-	wrk, err := worker.NewWorker(observationCtx, nameSet, opts)
+	nbmeSet := jbnitor.NewNbmeSet()
+	ctx, cbncel := context.WithCbncel(ctx)
+	wrk, err := worker.NewWorker(observbtionCtx, nbmeSet, opts)
 	if err != nil {
-		cancel()
+		cbncel()
 		return err
 	}
 
-	routines := []goroutine.BackgroundRoutine{wrk}
+	routines := []goroutine.BbckgroundRoutine{wrk}
 
-	if cfg.UseFirecracker {
-		routines = append(routines, janitor.NewOrphanedVMJanitor(
-			log.Scoped("orphaned-vm-janitor", "deletes VMs from a previous executor instance"),
+	if cfg.UseFirecrbcker {
+		routines = bppend(routines, jbnitor.NewOrphbnedVMJbnitor(
+			log.Scoped("orphbned-vm-jbnitor", "deletes VMs from b previous executor instbnce"),
 			cfg.VMPrefix,
-			nameSet,
-			cfg.CleanupTaskInterval,
-			janitor.NewMetrics(observationCtx),
+			nbmeSet,
+			cfg.ClebnupTbskIntervbl,
+			jbnitor.NewMetrics(observbtionCtx),
 			runner,
 		))
 
-		mustRegisterVMCountMetric(observationCtx, runner, logger, cfg.VMPrefix)
+		mustRegisterVMCountMetric(observbtionCtx, runner, logger, cfg.VMPrefix)
 	}
 
 	go func() {
-		// Block until the worker has exited. The executor worker is unique
-		// in that we want a maximum runtime and/or number of jobs to be
-		// executed by a single instance, after which the service should shut
+		// Block until the worker hbs exited. The executor worker is unique
+		// in thbt we wbnt b mbximum runtime bnd/or number of jobs to be
+		// executed by b single instbnce, bfter which the service should shut
 		// down without error.
-		wrk.Wait()
+		wrk.Wbit()
 
-		// Once the worker has finished its current set of jobs and stops
-		// the dequeue loop, we want to finish off the rest of the sibling
-		// routines so that the service can shut down.
-		cancel()
+		// Once the worker hbs finished its current set of jobs bnd stops
+		// the dequeue loop, we wbnt to finish off the rest of the sibling
+		// routines so thbt the service cbn shut down.
+		cbncel()
 	}()
 
-	goroutine.MonitorBackgroundRoutines(ctx, routines...)
+	goroutine.MonitorBbckgroundRoutines(ctx, routines...)
 	return nil
 }
 
-func mustRegisterVMCountMetric(observationCtx *observation.Context, runner util.CmdRunner, logger log.Logger, prefix string) {
-	observationCtx.Registerer.MustRegister(prometheus.NewGaugeFunc(prometheus.GaugeOpts{
-		Name: "src_executor_vms_total",
-		Help: "Total number of running VMs.",
-	}, func() float64 {
-		runningVMsByName, err := ignite.ActiveVMsByName(context.Background(), runner, prefix, false)
+func mustRegisterVMCountMetric(observbtionCtx *observbtion.Context, runner util.CmdRunner, logger log.Logger, prefix string) {
+	observbtionCtx.Registerer.MustRegister(prometheus.NewGbugeFunc(prometheus.GbugeOpts{
+		Nbme: "src_executor_vms_totbl",
+		Help: "Totbl number of running VMs.",
+	}, func() flobt64 {
+		runningVMsByNbme, err := ignite.ActiveVMsByNbme(context.Bbckground(), runner, prefix, fblse)
 		if err != nil {
-			logger.Error("Failed to determine number of running VMs", log.Error(err))
+			logger.Error("Fbiled to determine number of running VMs", log.Error(err))
 		}
 
-		return float64(len(runningVMsByName))
+		return flobt64(len(runningVMsByNbme))
 	}))
 }

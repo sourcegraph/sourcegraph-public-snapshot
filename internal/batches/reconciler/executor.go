@@ -1,4 +1,4 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"bytes"
@@ -6,40 +6,40 @@ import (
 	"fmt"
 	"strings"
 	"sync"
-	"text/template"
+	"text/templbte"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
+	"github.com/inconshrevebble/log15"
+	"github.com/sourcegrbph/log"
 
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/sources"
-	"github.com/sourcegraph/sourcegraph/internal/batches/state"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/batches/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/repos"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/stbte"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (afterDone func(store *store.Store), err error) {
+// executePlbn executes the given reconciler plbn.
+func executePlbn(ctx context.Context, logger log.Logger, client gitserver.Client, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plbn *Plbn) (bfterDone func(store *store.Store), err error) {
 	e := &executor{
 		client:            client,
-		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
+		logger:            logger.Scoped("executor", "An executor for b single Bbtch Chbnges reconciler plbn"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
-		ch:                plan.Changeset,
-		spec:              plan.ChangesetSpec,
+		ch:                plbn.Chbngeset,
+		spec:              plbn.ChbngesetSpec,
 	}
 
-	return e.Run(ctx, plan)
+	return e.Run(ctx, plbn)
 }
 
 type executor struct {
@@ -48,293 +48,293 @@ type executor struct {
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
-	ch                *btypes.Changeset
-	spec              *btypes.ChangesetSpec
+	ch                *btypes.Chbngeset
+	spec              *btypes.ChbngesetSpec
 
-	// targetRepo represents the repo where the changeset should be opened.
-	targetRepo *types.Repo
+	// tbrgetRepo represents the repo where the chbngeset should be opened.
+	tbrgetRepo *types.Repo
 
-	// css represents the changeset source, and must be accessed via the
-	// changesetSource method.
-	css     sources.ChangesetSource
+	// css represents the chbngeset source, bnd must be bccessed vib the
+	// chbngesetSource method.
+	css     sources.ChbngesetSource
 	cssErr  error
 	cssOnce sync.Once
 
-	// remote represents the repo that should be pushed to, and must be accessed
-	// via the remoteRepo method.
+	// remote represents the repo thbt should be pushed to, bnd must be bccessed
+	// vib the remoteRepo method.
 	remote     *types.Repo
 	remoteErr  error
 	remoteOnce sync.Once
 }
 
-func (e *executor) Run(ctx context.Context, plan *Plan) (afterDone func(store *store.Store), err error) {
-	if plan.Ops.IsNone() {
+func (e *executor) Run(ctx context.Context, plbn *Plbn) (bfterDone func(store *store.Store), err error) {
+	if plbn.Ops.IsNone() {
 		return nil, nil
 	}
 
-	// Load the target repo.
+	// Lobd the tbrget repo.
 	//
-	// Note that the remote repo is lazily set when a changeset source is
-	// requested, since it isn't useful outside of that context.
-	e.targetRepo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
+	// Note thbt the remote repo is lbzily set when b chbngeset source is
+	// requested, since it isn't useful outside of thbt context.
+	e.tbrgetRepo, err = e.tx.Repos().Get(ctx, e.ch.RepoID)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to load repository")
+		return nil, errors.Wrbp(err, "fbiled to lobd repository")
 	}
 
-	// If we are only pushing, without publishing or updating, we want to be sure to
-	// trigger a webhooks.ChangesetUpdate event for this operation as well.
-	var triggerUpdateWebhook bool
-	if plan.Ops.Contains(btypes.ReconcilerOperationPush) && !plan.Ops.Contains(btypes.ReconcilerOperationPublish) && !plan.Ops.Contains(btypes.ReconcilerOperationUpdate) {
-		triggerUpdateWebhook = true
+	// If we bre only pushing, without publishing or updbting, we wbnt to be sure to
+	// trigger b webhooks.ChbngesetUpdbte event for this operbtion bs well.
+	vbr triggerUpdbteWebhook bool
+	if plbn.Ops.Contbins(btypes.ReconcilerOperbtionPush) && !plbn.Ops.Contbins(btypes.ReconcilerOperbtionPublish) && !plbn.Ops.Contbins(btypes.ReconcilerOperbtionUpdbte) {
+		triggerUpdbteWebhook = true
 	}
 
-	for _, op := range plan.Ops.ExecutionOrder() {
+	for _, op := rbnge plbn.Ops.ExecutionOrder() {
 		switch op {
-		case btypes.ReconcilerOperationSync:
-			err = e.syncChangeset(ctx)
+		cbse btypes.ReconcilerOperbtionSync:
+			err = e.syncChbngeset(ctx)
 
-		case btypes.ReconcilerOperationImport:
-			err = e.importChangeset(ctx)
+		cbse btypes.ReconcilerOperbtionImport:
+			err = e.importChbngeset(ctx)
 
-		case btypes.ReconcilerOperationPush:
-			afterDone, err = e.pushChangesetPatch(ctx, triggerUpdateWebhook)
+		cbse btypes.ReconcilerOperbtionPush:
+			bfterDone, err = e.pushChbngesetPbtch(ctx, triggerUpdbteWebhook)
 
-		case btypes.ReconcilerOperationPublish:
-			afterDone, err = e.publishChangeset(ctx, false)
+		cbse btypes.ReconcilerOperbtionPublish:
+			bfterDone, err = e.publishChbngeset(ctx, fblse)
 
-		case btypes.ReconcilerOperationPublishDraft:
-			afterDone, err = e.publishChangeset(ctx, true)
+		cbse btypes.ReconcilerOperbtionPublishDrbft:
+			bfterDone, err = e.publishChbngeset(ctx, true)
 
-		case btypes.ReconcilerOperationReopen:
-			afterDone, err = e.reopenChangeset(ctx)
+		cbse btypes.ReconcilerOperbtionReopen:
+			bfterDone, err = e.reopenChbngeset(ctx)
 
-		case btypes.ReconcilerOperationUpdate:
-			afterDone, err = e.updateChangeset(ctx)
+		cbse btypes.ReconcilerOperbtionUpdbte:
+			bfterDone, err = e.updbteChbngeset(ctx)
 
-		case btypes.ReconcilerOperationUndraft:
-			afterDone, err = e.undraftChangeset(ctx)
+		cbse btypes.ReconcilerOperbtionUndrbft:
+			bfterDone, err = e.undrbftChbngeset(ctx)
 
-		case btypes.ReconcilerOperationClose:
-			afterDone, err = e.closeChangeset(ctx)
+		cbse btypes.ReconcilerOperbtionClose:
+			bfterDone, err = e.closeChbngeset(ctx)
 
-		case btypes.ReconcilerOperationSleep:
+		cbse btypes.ReconcilerOperbtionSleep:
 			e.sleep()
 
-		case btypes.ReconcilerOperationDetach:
-			e.detachChangeset()
+		cbse btypes.ReconcilerOperbtionDetbch:
+			e.detbchChbngeset()
 
-		case btypes.ReconcilerOperationArchive:
-			e.archiveChangeset()
+		cbse btypes.ReconcilerOperbtionArchive:
+			e.brchiveChbngeset()
 
-		case btypes.ReconcilerOperationReattach:
-			e.reattachChangeset()
+		cbse btypes.ReconcilerOperbtionRebttbch:
+			e.rebttbchChbngeset()
 
-		default:
-			err = errors.Errorf("executor operation %q not implemented", op)
+		defbult:
+			err = errors.Errorf("executor operbtion %q not implemented", op)
 		}
 
 		if err != nil {
-			return afterDone, err
+			return bfterDone, err
 		}
 	}
 
 	events, err := e.ch.Events()
 	if err != nil {
 		log15.Error("Events", "err", err)
-		return afterDone, errcode.MakeNonRetryable(err)
+		return bfterDone, errcode.MbkeNonRetrybble(err)
 	}
-	state.SetDerivedState(ctx, e.tx.Repos(), e.client, e.ch, events)
+	stbte.SetDerivedStbte(ctx, e.tx.Repos(), e.client, e.ch, events)
 
-	if err := e.tx.UpsertChangesetEvents(ctx, events...); err != nil {
-		log15.Error("UpsertChangesetEvents", "err", err)
-		return afterDone, err
+	if err := e.tx.UpsertChbngesetEvents(ctx, events...); err != nil {
+		log15.Error("UpsertChbngesetEvents", "err", err)
+		return bfterDone, err
 	}
 
-	e.ch.PreviousFailureMessage = nil
+	e.ch.PreviousFbilureMessbge = nil
 
-	return afterDone, e.tx.UpdateChangeset(ctx, e.ch)
+	return bfterDone, e.tx.UpdbteChbngeset(ctx, e.ch)
 }
 
-var errCannotPushToArchivedRepo = errcode.MakeNonRetryable(errors.New("cannot push to an archived repo"))
+vbr errCbnnotPushToArchivedRepo = errcode.MbkeNonRetrybble(errors.New("cbnnot push to bn brchived repo"))
 
-// pushChangesetPatch creates the commits for the changeset on its codehost. If the option
-// triggerUpdateWebhook is set, it will also enqueue an update webhook for the changeset.
-func (e *executor) pushChangesetPatch(ctx context.Context, triggerUpdateWebhook bool) (afterDone func(store *store.Store), err error) {
-	if triggerUpdateWebhook {
-		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
+// pushChbngesetPbtch crebtes the commits for the chbngeset on its codehost. If the option
+// triggerUpdbteWebhook is set, it will blso enqueue bn updbte webhook for the chbngeset.
+func (e *executor) pushChbngesetPbtch(ctx context.Context, triggerUpdbteWebhook bool) (bfterDone func(store *store.Store), err error) {
+	if triggerUpdbteWebhook {
+		bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
 	}
 
-	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
-		ExternalServiceType: e.ch.ExternalServiceType,
+	existingSbmeBrbnch, err := e.tx.GetChbngeset(ctx, store.GetChbngesetOpts{
+		ExternblServiceType: e.ch.ExternblServiceType,
 		RepoID:              e.ch.RepoID,
-		ExternalBranch:      e.spec.HeadRef,
+		ExternblBrbnch:      e.spec.HebdRef,
 		// TODO: Do we need to check whether it's published or not?
 	})
 	if err != nil && err != store.ErrNoResults {
-		return afterDone, err
+		return bfterDone, err
 	}
 
-	if existingSameBranch != nil && existingSameBranch.ID != e.ch.ID {
-		return afterDone, errPublishSameBranch{}
+	if existingSbmeBrbnch != nil && existingSbmeBrbnch.ID != e.ch.ID {
+		return bfterDone, errPublishSbmeBrbnch{}
 	}
 
-	// Create a commit and push it
-	// Figure out which authenticator we should use to modify the changeset.
-	css, err := e.changesetSource(ctx)
+	// Crebte b commit bnd push it
+	// Figure out which buthenticbtor we should use to modify the chbngeset.
+	css, err := e.chbngesetSource(ctx)
 
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
-	// Short circuit any attempt to push to an archived repo, since we can save
-	// gitserver the work (and it'll keep retrying).
+	// Short circuit bny bttempt to push to bn brchived repo, since we cbn sbve
+	// gitserver the work (bnd it'll keep retrying).
 	if remoteRepo.Archived {
-		return afterDone, errCannotPushToArchivedRepo
+		return bfterDone, errCbnnotPushToArchivedRepo
 	}
 
 	pushConf, err := css.GitserverPushConfig(remoteRepo)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
-	opts := css.BuildCommitOpts(e.targetRepo, e.ch, e.spec, pushConf)
+	opts := css.BuildCommitOpts(e.tbrgetRepo, e.ch, e.spec, pushConf)
 	resp, err := e.pushCommit(ctx, opts)
 	if err != nil {
-		var pce pushCommitError
+		vbr pce pushCommitError
 		if errors.As(err, &pce) {
-			if acss, ok := css.(sources.ArchivableChangesetSource); ok {
-				if acss.IsArchivedPushError(pce.CombinedOutput) {
-					if err := e.handleArchivedRepo(ctx); err != nil {
-						return afterDone, errors.Wrap(err, "handling archived repo")
+			if bcss, ok := css.(sources.ArchivbbleChbngesetSource); ok {
+				if bcss.IsArchivedPushError(pce.CombinedOutput) {
+					if err := e.hbndleArchivedRepo(ctx); err != nil {
+						return bfterDone, errors.Wrbp(err, "hbndling brchived repo")
 					}
-					return afterDone, errCannotPushToArchivedRepo
+					return bfterDone, errCbnnotPushToArchivedRepo
 				}
 			}
-			// do not wrap the error (pushCommitError), so it can be nicely displayed in the UI
-			return afterDone, err
+			// do not wrbp the error (pushCommitError), so it cbn be nicely displbyed in the UI
+			return bfterDone, err
 		}
-		return afterDone, errors.Wrap(err, "pushing commit")
+		return bfterDone, errors.Wrbp(err, "pushing commit")
 	}
 
-	// update the changeset's external_id column if a changelist id is returned
-	// because that's going to make it back to the UI so that the user can see the changelist id and take action on it
-	if resp != nil && resp.ChangelistId != "" {
-		e.ch.ExternalID = resp.ChangelistId
+	// updbte the chbngeset's externbl_id column if b chbngelist id is returned
+	// becbuse thbt's going to mbke it bbck to the UI so thbt the user cbn see the chbngelist id bnd tbke bction on it
+	if resp != nil && resp.ChbngelistId != "" {
+		e.ch.ExternblID = resp.ChbngelistId
 	}
 
 	if err = e.runAfterCommit(ctx, css, resp, remoteRepo, opts); err != nil {
-		return afterDone, errors.Wrap(err, "running after commit routine")
+		return bfterDone, errors.Wrbp(err, "running bfter commit routine")
 	}
 
-	if triggerUpdateWebhook && err == nil {
-		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
+	if triggerUpdbteWebhook && err == nil {
+		bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbte) }
 	}
-	return afterDone, err
+	return bfterDone, err
 }
 
-// publishChangeset creates the given changeset on its code host.
-func (e *executor) publishChangeset(ctx context.Context, asDraft bool) (afterDone func(store *store.Store), err error) {
-	afterDoneUpdate := func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
-	afterDonePublish := func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
+// publishChbngeset crebtes the given chbngeset on its code host.
+func (e *executor) publishChbngeset(ctx context.Context, bsDrbft bool) (bfterDone func(store *store.Store), err error) {
+	bfterDoneUpdbte := func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
+	bfterDonePublish := func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
 
-	// Depending on the changeset, we may want to add to the body (for example,
-	// to add a backlink to Sourcegraph).
-	body, err := e.decorateChangesetBody(ctx)
+	// Depending on the chbngeset, we mby wbnt to bdd to the body (for exbmple,
+	// to bdd b bbcklink to Sourcegrbph).
+	body, err := e.decorbteChbngesetBody(ctx)
 	if err != nil {
-		// At this point in time, we haven't yet established if the changeset has already
-		// been published or not. When in doubt, we record a more generic "update error"
+		// At this point in time, we hbven't yet estbblished if the chbngeset hbs blrebdy
+		// been published or not. When in doubt, we record b more generic "updbte error"
 		// event.
-		return afterDoneUpdate, errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
+		return bfterDoneUpdbte, errors.Wrbpf(err, "decorbting body for chbngeset %d", e.ch.ID)
 	}
 
-	css, err := e.changesetSource(ctx)
+	css, err := e.chbngesetSource(ctx)
 	if err != nil {
-		return afterDoneUpdate, err
+		return bfterDoneUpdbte, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return afterDoneUpdate, err
+		return bfterDoneUpdbte, err
 	}
 
-	cs := &sources.Changeset{
+	cs := &sources.Chbngeset{
 		Title:      e.spec.Title,
 		Body:       body,
-		BaseRef:    e.spec.BaseRef,
-		HeadRef:    e.spec.HeadRef,
+		BbseRef:    e.spec.BbseRef,
+		HebdRef:    e.spec.HebdRef,
 		RemoteRepo: remoteRepo,
-		TargetRepo: e.targetRepo,
-		Changeset:  e.ch,
+		TbrgetRepo: e.tbrgetRepo,
+		Chbngeset:  e.ch,
 	}
 
-	var exists, outdated bool
-	if asDraft {
-		// If the changeset shall be published in draft mode, make sure the changeset source implements DraftChangesetSource.
-		draftCss, err := sources.ToDraftChangesetSource(css)
+	vbr exists, outdbted bool
+	if bsDrbft {
+		// If the chbngeset shbll be published in drbft mode, mbke sure the chbngeset source implements DrbftChbngesetSource.
+		drbftCss, err := sources.ToDrbftChbngesetSource(css)
 		if err != nil {
-			return afterDoneUpdate, err
+			return bfterDoneUpdbte, err
 		}
-		exists, err = draftCss.CreateDraftChangeset(ctx, cs)
+		exists, err = drbftCss.CrebteDrbftChbngeset(ctx, cs)
 		if err != nil {
-			// For several code hosts, it's also impossible to tell if a changeset exists
-			// already or not, yet. Since we're here *intending* to publish, we'll just
-			// emit ChangesetPublish webhook events here.
-			return afterDonePublish, errors.Wrap(err, "creating draft changeset")
+			// For severbl code hosts, it's blso impossible to tell if b chbngeset exists
+			// blrebdy or not, yet. Since we're here *intending* to publish, we'll just
+			// emit ChbngesetPublish webhook events here.
+			return bfterDonePublish, errors.Wrbp(err, "crebting drbft chbngeset")
 		}
 	} else {
-		// If we're running this method a second time, because we failed due to an
-		// ephemeral error, there's a race condition here.
-		// It's possible that `CreateChangeset` doesn't return the newest head ref
-		// commit yet, because the API of the codehost doesn't return it yet.
-		exists, err = css.CreateChangeset(ctx, cs)
+		// If we're running this method b second time, becbuse we fbiled due to bn
+		// ephemerbl error, there's b rbce condition here.
+		// It's possible thbt `CrebteChbngeset` doesn't return the newest hebd ref
+		// commit yet, becbuse the API of the codehost doesn't return it yet.
+		exists, err = css.CrebteChbngeset(ctx, cs)
 		if err != nil {
-			// For several code hosts, it's also impossible to tell if a changeset exists
-			// already or not, yet. Since we're here *intending* to publish, we'll just
-			// emit ChangesetPublish webhook events here.
-			return afterDonePublish, errors.Wrap(err, "creating changeset")
+			// For severbl code hosts, it's blso impossible to tell if b chbngeset exists
+			// blrebdy or not, yet. Since we're here *intending* to publish, we'll just
+			// emit ChbngesetPublish webhook events here.
+			return bfterDonePublish, errors.Wrbp(err, "crebting chbngeset")
 		}
 	}
 
-	// If the Changeset already exists and our source can update it, we try to update it
+	// If the Chbngeset blrebdy exists bnd our source cbn updbte it, we try to updbte it
 	if exists {
-		outdated, err = cs.IsOutdated()
+		outdbted, err = cs.IsOutdbted()
 		if err != nil {
-			return afterDonePublish, errors.Wrap(err, "could not determine whether changeset needs update")
+			return bfterDonePublish, errors.Wrbp(err, "could not determine whether chbngeset needs updbte")
 		}
 
-		// If the changeset is actually outdated, we can be reasonably sure it already
-		// exists on the code host. Here, we'll emit a ChangesetUpdate webhook event.
-		if outdated {
-			if err := css.UpdateChangeset(ctx, cs); err != nil {
-				return afterDoneUpdate, errors.Wrap(err, "updating changeset")
+		// If the chbngeset is bctublly outdbted, we cbn be rebsonbbly sure it blrebdy
+		// exists on the code host. Here, we'll emit b ChbngesetUpdbte webhook event.
+		if outdbted {
+			if err := css.UpdbteChbngeset(ctx, cs); err != nil {
+				return bfterDoneUpdbte, errors.Wrbp(err, "updbting chbngeset")
 			}
 		}
 	}
 
-	// Set the changeset to published.
-	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
+	// Set the chbngeset to published.
+	e.ch.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
 
-	// Enqueue the appropriate webhook.
-	if exists && outdated {
-		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
+	// Enqueue the bppropribte webhook.
+	if exists && outdbted {
+		bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbte) }
 	} else {
-		afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetPublish) }
+		bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetPublish) }
 	}
 
-	return afterDone, nil
+	return bfterDone, nil
 }
 
-func (e *executor) syncChangeset(ctx context.Context) error {
-	if err := e.loadChangeset(ctx); err != nil {
-		if !errors.HasType(err, sources.ChangesetNotFoundError{}) {
+func (e *executor) syncChbngeset(ctx context.Context) error {
+	if err := e.lobdChbngeset(ctx); err != nil {
+		if !errors.HbsType(err, sources.ChbngesetNotFoundError{}) {
 			return err
 		}
 
-		// If we're syncing a changeset and it can't be found anymore, we mark
-		// it as deleted.
+		// If we're syncing b chbngeset bnd it cbn't be found bnymore, we mbrk
+		// it bs deleted.
 		if !e.ch.IsDeleted() {
 			e.ch.SetDeleted()
 		}
@@ -343,19 +343,19 @@ func (e *executor) syncChangeset(ctx context.Context) error {
 	return nil
 }
 
-func (e *executor) importChangeset(ctx context.Context) error {
-	if err := e.loadChangeset(ctx); err != nil {
+func (e *executor) importChbngeset(ctx context.Context) error {
+	if err := e.lobdChbngeset(ctx); err != nil {
 		return err
 	}
 
-	// The changeset finished importing, so it is published now.
-	e.ch.PublicationState = btypes.ChangesetPublicationStatePublished
+	// The chbngeset finished importing, so it is published now.
+	e.ch.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
 
 	return nil
 }
 
-func (e *executor) loadChangeset(ctx context.Context) error {
-	css, err := e.changesetSource(ctx)
+func (e *executor) lobdChbngeset(ctx context.Context) error {
+	css, err := e.chbngesetSource(ctx)
 	if err != nil {
 		return err
 	}
@@ -365,192 +365,192 @@ func (e *executor) loadChangeset(ctx context.Context) error {
 		return err
 	}
 
-	repoChangeset := &sources.Changeset{
+	repoChbngeset := &sources.Chbngeset{
 		RemoteRepo: remoteRepo,
-		TargetRepo: e.targetRepo,
-		Changeset:  e.ch,
+		TbrgetRepo: e.tbrgetRepo,
+		Chbngeset:  e.ch,
 	}
-	return css.LoadChangeset(ctx, repoChangeset)
+	return css.LobdChbngeset(ctx, repoChbngeset)
 }
 
-// updateChangeset updates the given changeset's attribute on the code host
-// according to its ChangesetSpec and the delta previously computed.
-func (e *executor) updateChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
-	// Depending on the changeset, we may want to add to the body (for example,
-	// to add a backlink to Sourcegraph).
-	body, err := e.decorateChangesetBody(ctx)
+// updbteChbngeset updbtes the given chbngeset's bttribute on the code host
+// bccording to its ChbngesetSpec bnd the deltb previously computed.
+func (e *executor) updbteChbngeset(ctx context.Context) (bfterDone func(store *store.Store), err error) {
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
+	// Depending on the chbngeset, we mby wbnt to bdd to the body (for exbmple,
+	// to bdd b bbcklink to Sourcegrbph).
+	body, err := e.decorbteChbngesetBody(ctx)
 	if err != nil {
-		return afterDone, errors.Wrapf(err, "decorating body for changeset %d", e.ch.ID)
+		return bfterDone, errors.Wrbpf(err, "decorbting body for chbngeset %d", e.ch.ID)
 	}
 
-	css, err := e.changesetSource(ctx)
+	css, err := e.chbngesetSource(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
-	// We must construct the sources.Changeset after invoking changesetSource,
-	// since that may change the remoteRepo.
-	cs := sources.Changeset{
+	// We must construct the sources.Chbngeset bfter invoking chbngesetSource,
+	// since thbt mby chbnge the remoteRepo.
+	cs := sources.Chbngeset{
 		Title:      e.spec.Title,
 		Body:       body,
-		BaseRef:    e.spec.BaseRef,
-		HeadRef:    e.spec.HeadRef,
+		BbseRef:    e.spec.BbseRef,
+		HebdRef:    e.spec.HebdRef,
 		RemoteRepo: remoteRepo,
-		TargetRepo: e.targetRepo,
-		Changeset:  e.ch,
+		TbrgetRepo: e.tbrgetRepo,
+		Chbngeset:  e.ch,
 	}
 
-	if err := css.UpdateChangeset(ctx, &cs); err != nil {
+	if err := css.UpdbteChbngeset(ctx, &cs); err != nil {
 		if errcode.IsArchived(err) {
-			if err := e.handleArchivedRepo(ctx); err != nil {
-				return afterDone, err
+			if err := e.hbndleArchivedRepo(ctx); err != nil {
+				return bfterDone, err
 			}
 		} else {
-			return afterDone, errors.Wrap(err, "updating changeset")
+			return bfterDone, errors.Wrbp(err, "updbting chbngeset")
 		}
 	}
 
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
-	return afterDone, nil
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbte) }
+	return bfterDone, nil
 }
 
-// reopenChangeset reopens the given changeset attribute on the code host.
-func (e *executor) reopenChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
+// reopenChbngeset reopens the given chbngeset bttribute on the code host.
+func (e *executor) reopenChbngeset(ctx context.Context) (bfterDone func(store *store.Store), err error) {
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
 
-	css, err := e.changesetSource(ctx)
+	css, err := e.chbngesetSource(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
-	cs := sources.Changeset{
+	cs := sources.Chbngeset{
 		Title:      e.spec.Title,
 		Body:       e.spec.Body,
-		BaseRef:    e.spec.BaseRef,
-		HeadRef:    e.spec.HeadRef,
+		BbseRef:    e.spec.BbseRef,
+		HebdRef:    e.spec.HebdRef,
 		RemoteRepo: remoteRepo,
-		TargetRepo: e.targetRepo,
-		Changeset:  e.ch,
+		TbrgetRepo: e.tbrgetRepo,
+		Chbngeset:  e.ch,
 	}
-	if err := css.ReopenChangeset(ctx, &cs); err != nil {
-		return afterDone, errors.Wrap(err, "reopening changeset")
+	if err := css.ReopenChbngeset(ctx, &cs); err != nil {
+		return bfterDone, errors.Wrbp(err, "reopening chbngeset")
 	}
 
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
-	return afterDone, nil
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbte) }
+	return bfterDone, nil
 }
 
-func (e *executor) detachChangeset() {
-	for _, assoc := range e.ch.BatchChanges {
-		if assoc.Detach {
-			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
+func (e *executor) detbchChbngeset() {
+	for _, bssoc := rbnge e.ch.BbtchChbnges {
+		if bssoc.Detbch {
+			e.ch.RemoveBbtchChbngeID(bssoc.BbtchChbngeID)
 		}
 	}
-	// A changeset can be associated with multiple batch changes. Only set the detached_at field when the changeset is
-	// no longer associated with any batch changes.
-	if len(e.ch.BatchChanges) == 0 {
-		e.ch.DetachedAt = time.Now()
+	// A chbngeset cbn be bssocibted with multiple bbtch chbnges. Only set the detbched_bt field when the chbngeset is
+	// no longer bssocibted with bny bbtch chbnges.
+	if len(e.ch.BbtchChbnges) == 0 {
+		e.ch.DetbchedAt = time.Now()
 	}
 }
 
-// archiveChangeset sets all associations to archived that are marked as "to-be-archived".
-func (e *executor) archiveChangeset() {
-	for i, assoc := range e.ch.BatchChanges {
-		if assoc.Archive {
-			e.ch.BatchChanges[i].IsArchived = true
-			e.ch.BatchChanges[i].Archive = false
+// brchiveChbngeset sets bll bssocibtions to brchived thbt bre mbrked bs "to-be-brchived".
+func (e *executor) brchiveChbngeset() {
+	for i, bssoc := rbnge e.ch.BbtchChbnges {
+		if bssoc.Archive {
+			e.ch.BbtchChbnges[i].IsArchived = true
+			e.ch.BbtchChbnges[i].Archive = fblse
 		}
 	}
 }
 
-// reattachChangeset resets detached_at to zero.
-func (e *executor) reattachChangeset() {
-	if !e.ch.DetachedAt.IsZero() {
-		e.ch.DetachedAt = time.Time{}
+// rebttbchChbngeset resets detbched_bt to zero.
+func (e *executor) rebttbchChbngeset() {
+	if !e.ch.DetbchedAt.IsZero() {
+		e.ch.DetbchedAt = time.Time{}
 	}
 }
 
-// closeChangeset closes the given changeset on its code host if its ExternalState is OPEN or DRAFT.
-func (e *executor) closeChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
+// closeChbngeset closes the given chbngeset on its code host if its ExternblStbte is OPEN or DRAFT.
+func (e *executor) closeChbngeset(ctx context.Context) (bfterDone func(store *store.Store), err error) {
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
 
-	e.ch.Closing = false
+	e.ch.Closing = fblse
 
-	if e.ch.ExternalState != btypes.ChangesetExternalStateDraft && e.ch.ExternalState != btypes.ChangesetExternalStateOpen {
+	if e.ch.ExternblStbte != btypes.ChbngesetExternblStbteDrbft && e.ch.ExternblStbte != btypes.ChbngesetExternblStbteOpen {
 		// no-op
 		return nil, nil
 	}
 
-	css, err := e.changesetSource(ctx)
+	css, err := e.chbngesetSource(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
-	cs := &sources.Changeset{
-		Changeset:  e.ch,
+	cs := &sources.Chbngeset{
+		Chbngeset:  e.ch,
 		RemoteRepo: remoteRepo,
-		TargetRepo: e.targetRepo,
+		TbrgetRepo: e.tbrgetRepo,
 	}
 
-	if err := css.CloseChangeset(ctx, cs); err != nil {
-		return afterDone, errors.Wrap(err, "closing changeset")
+	if err := css.CloseChbngeset(ctx, cs); err != nil {
+		return bfterDone, errors.Wrbp(err, "closing chbngeset")
 	}
 
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetClose) }
-	return afterDone, nil
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetClose) }
+	return bfterDone, nil
 }
 
-// undraftChangeset marks the given changeset on its code host as ready for review.
-func (e *executor) undraftChangeset(ctx context.Context) (afterDone func(store *store.Store), err error) {
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdateError) }
+// undrbftChbngeset mbrks the given chbngeset on its code host bs rebdy for review.
+func (e *executor) undrbftChbngeset(ctx context.Context) (bfterDone func(store *store.Store), err error) {
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbteError) }
 
-	css, err := e.changesetSource(ctx)
+	css, err := e.chbngesetSource(ctx)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
-	draftCss, err := sources.ToDraftChangesetSource(css)
+	drbftCss, err := sources.ToDrbftChbngesetSource(css)
 	if err != nil {
-		return afterDone, err
+		return bfterDone, err
 	}
 
 	remoteRepo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return afterDone, nil
+		return bfterDone, nil
 	}
 
-	cs := &sources.Changeset{
+	cs := &sources.Chbngeset{
 		Title:      e.spec.Title,
 		Body:       e.spec.Body,
-		BaseRef:    e.spec.BaseRef,
-		HeadRef:    e.spec.HeadRef,
+		BbseRef:    e.spec.BbseRef,
+		HebdRef:    e.spec.HebdRef,
 		RemoteRepo: remoteRepo,
-		TargetRepo: e.targetRepo,
-		Changeset:  e.ch,
+		TbrgetRepo: e.tbrgetRepo,
+		Chbngeset:  e.ch,
 	}
 
-	if err := draftCss.UndraftChangeset(ctx, cs); err != nil {
-		return afterDone, errors.Wrap(err, "undrafting changeset")
+	if err := drbftCss.UndrbftChbngeset(ctx, cs); err != nil {
+		return bfterDone, errors.Wrbp(err, "undrbfting chbngeset")
 	}
 
-	afterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChangesetUpdate) }
-	return afterDone, nil
+	bfterDone = func(store *store.Store) { e.enqueueWebhook(ctx, store, webhooks.ChbngesetUpdbte) }
+	return bfterDone, nil
 }
 
 // sleep sleeps for 3 seconds.
@@ -560,9 +560,9 @@ func (e *executor) sleep() {
 	}
 }
 
-func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource, error) {
+func (e *executor) chbngesetSource(ctx context.Context) (sources.ChbngesetSource, error) {
 	e.cssOnce.Do(func() {
-		e.css, e.cssErr = loadChangesetSource(ctx, e.tx, e.sourcer, e.ch, e.targetRepo)
+		e.css, e.cssErr = lobdChbngesetSource(ctx, e.tx, e.sourcer, e.ch, e.tbrgetRepo)
 		if e.cssErr != nil {
 			return
 		}
@@ -573,36 +573,36 @@ func (e *executor) changesetSource(ctx context.Context) (sources.ChangesetSource
 
 func (e *executor) remoteRepo(ctx context.Context) (*types.Repo, error) {
 	e.remoteOnce.Do(func() {
-		css, err := e.changesetSource(ctx)
+		css, err := e.chbngesetSource(ctx)
 		if err != nil {
-			e.remoteErr = errors.Wrap(err, "getting changeset source")
+			e.remoteErr = errors.Wrbp(err, "getting chbngeset source")
 			return
 		}
 
-		// Set the remote repo, which may not be the same as the target repo if
-		// forking is enabled.
-		e.remote, e.remoteErr = sources.GetRemoteRepo(ctx, css, e.targetRepo, e.ch, e.spec)
+		// Set the remote repo, which mby not be the sbme bs the tbrget repo if
+		// forking is enbbled.
+		e.remote, e.remoteErr = sources.GetRemoteRepo(ctx, css, e.tbrgetRepo, e.ch, e.spec)
 	})
 
 	return e.remote, e.remoteErr
 }
 
-func (e *executor) decorateChangesetBody(ctx context.Context) (string, error) {
-	return decorateChangesetBody(ctx, e.tx, database.NamespacesWith(e.tx), e.ch, e.spec.Body)
+func (e *executor) decorbteChbngesetBody(ctx context.Context) (string, error) {
+	return decorbteChbngesetBody(ctx, e.tx, dbtbbbse.NbmespbcesWith(e.tx), e.ch, e.spec.Body)
 }
 
-func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Changeset, repo *types.Repo) (sources.ChangesetSource, error) {
-	css, err := sourcer.ForChangeset(ctx, s, ch, sources.AuthenticationStrategyUserCredential)
+func lobdChbngesetSource(ctx context.Context, s *store.Store, sourcer sources.Sourcer, ch *btypes.Chbngeset, repo *types.Repo) (sources.ChbngesetSource, error) {
+	css, err := sourcer.ForChbngeset(ctx, s, ch, sources.AuthenticbtionStrbtegyUserCredentibl)
 	if err != nil {
 		switch err {
-		case sources.ErrMissingCredentials:
-			return nil, &errMissingCredentials{repo: string(repo.Name)}
-		case sources.ErrNoSSHCredential:
-			return nil, &errNoSSHCredential{}
-		default:
-			var e sources.ErrNoPushCredentials
+		cbse sources.ErrMissingCredentibls:
+			return nil, &errMissingCredentibls{repo: string(repo.Nbme)}
+		cbse sources.ErrNoSSHCredentibl:
+			return nil, &errNoSSHCredentibl{}
+		defbult:
+			vbr e sources.ErrNoPushCredentibls
 			if errors.As(err, &e) {
-				return nil, &errNoPushCredentials{credentialsType: e.CredentialsType}
+				return nil, &errNoPushCredentibls{credentiblsType: e.CredentiblsType}
 			}
 			return nil, err
 		}
@@ -612,28 +612,28 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 }
 
 type pushCommitError struct {
-	*protocol.CreateCommitFromPatchError
+	*protocol.CrebteCommitFromPbtchError
 }
 
 func (e pushCommitError) Error() string {
 	return fmt.Sprintf(
-		"creating commit from patch for repository %q: %s\n"+
+		"crebting commit from pbtch for repository %q: %s\n"+
 			"```\n"+
 			"$ %s\n"+
 			"%s\n"+
 			"```",
-		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
+		e.RepositoryNbme, e.InternblError, e.Commbnd, strings.TrimSpbce(e.CombinedOutput))
 }
 
-func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) (*protocol.CreateCommitFromPatchResponse, error) {
-	res, err := e.client.CreateCommitFromPatch(ctx, opts)
+func (e *executor) pushCommit(ctx context.Context, opts protocol.CrebteCommitFromPbtchRequest) (*protocol.CrebteCommitFromPbtchResponse, error) {
+	res, err := e.client.CrebteCommitFromPbtch(ctx, opts)
 	if err != nil {
-		var e *protocol.CreateCommitFromPatchError
+		vbr e *protocol.CrebteCommitFromPbtchError
 		if errors.As(err, &e) {
-			// Make "patch does not apply" errors a fatal error. Retrying the changeset
-			// rollout won't help here and just causes noise.
-			if strings.Contains(e.CombinedOutput, "patch does not apply") {
-				return nil, errcode.MakeNonRetryable(pushCommitError{e})
+			// Mbke "pbtch does not bpply" errors b fbtbl error. Retrying the chbngeset
+			// rollout won't help here bnd just cbuses noise.
+			if strings.Contbins(e.CombinedOutput, "pbtch does not bpply") {
+				return nil, errcode.MbkeNonRetrybble(pushCommitError{e})
 			}
 			return nil, pushCommitError{e}
 		}
@@ -643,205 +643,205 @@ func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFro
 	return res, nil
 }
 
-func (e *executor) runAfterCommit(ctx context.Context, css sources.ChangesetSource, resp *protocol.CreateCommitFromPatchResponse, remoteRepo *types.Repo, opts protocol.CreateCommitFromPatchRequest) (err error) {
-	// If we're pushing to a GitHub code host, we should check if a GitHub App is
-	// configured for Batch Changes to sign commits on this code host with.
+func (e *executor) runAfterCommit(ctx context.Context, css sources.ChbngesetSource, resp *protocol.CrebteCommitFromPbtchResponse, remoteRepo *types.Repo, opts protocol.CrebteCommitFromPbtchRequest) (err error) {
+	// If we're pushing to b GitHub code host, we should check if b GitHub App is
+	// configured for Bbtch Chbnges to sign commits on this code host with.
 	if _, ok := css.(*sources.GitHubSource); ok {
-		// Attempt to get a ChangesetSource authenticated with a GitHub App.
-		css, err = e.sourcer.ForChangeset(ctx, e.tx, e.ch, sources.AuthenticationStrategyGitHubApp)
+		// Attempt to get b ChbngesetSource buthenticbted with b GitHub App.
+		css, err = e.sourcer.ForChbngeset(ctx, e.tx, e.ch, sources.AuthenticbtionStrbtegyGitHubApp)
 		if err != nil {
 			switch err {
-			case sources.ErrNoGitHubAppConfigured:
-				// If we didn't find any GitHub Apps configured for this code host, it's a
+			cbse sources.ErrNoGitHubAppConfigured:
+				// If we didn't find bny GitHub Apps configured for this code host, it's b
 				// noop; commit signing is not set up for this code host.
-				break
-			default:
+				brebk
+			defbult:
 				// We shouldn't block on this error, but we should still log it.
-				log15.Error("Failed to get GitHub App authenticated ChangesetSource", "err", err)
+				log15.Error("Fbiled to get GitHub App buthenticbted ChbngesetSource", "err", err)
 			}
 		} else {
-			// We found a GitHub App configured for Batch Changes; we should try to use it
+			// We found b GitHub App configured for Bbtch Chbnges; we should try to use it
 			// to sign the commit.
 			gcss, ok := css.(*sources.GitHubSource)
 			if !ok {
-				return errors.Wrap(err, "got non-GitHubSource for ChangesetSource when using GitHub App authentication strategy")
+				return errors.Wrbp(err, "got non-GitHubSource for ChbngesetSource when using GitHub App buthenticbtion strbtegy")
 			}
-			// Find the revision from the response from CreateCommitFromPatch.
+			// Find the revision from the response from CrebteCommitFromPbtch.
 			if resp == nil {
-				return errors.New("no response from CreateCommitFromPatch")
+				return errors.New("no response from CrebteCommitFromPbtch")
 			}
 			rev := resp.Rev
-			// We use the existing commit as the basis for the new commit, duplicating it
-			// over the REST API in order to produce a signed version of it to replace the
-			// original one with.
-			newCommit, err := gcss.DuplicateCommit(ctx, opts, remoteRepo, rev)
+			// We use the existing commit bs the bbsis for the new commit, duplicbting it
+			// over the REST API in order to produce b signed version of it to replbce the
+			// originbl one with.
+			newCommit, err := gcss.DuplicbteCommit(ctx, opts, remoteRepo, rev)
 			if err != nil {
-				return errors.Wrap(err, "failed to duplicate commit")
+				return errors.Wrbp(err, "fbiled to duplicbte commit")
 			}
-			if newCommit.Verification.Verified {
-				err = e.tx.UpdateChangesetCommitVerification(ctx, e.ch, newCommit)
+			if newCommit.Verificbtion.Verified {
+				err = e.tx.UpdbteChbngesetCommitVerificbtion(ctx, e.ch, newCommit)
 				if err != nil {
-					return errors.Wrap(err, "failed to update changeset with commit verification")
+					return errors.Wrbp(err, "fbiled to updbte chbngeset with commit verificbtion")
 				}
 			} else {
-				log15.Warn("Commit created with GitHub App was not signed", "changeset", e.ch.ID, "commit", newCommit.SHA)
+				log15.Wbrn("Commit crebted with GitHub App wbs not signed", "chbngeset", e.ch.ID, "commit", newCommit.SHA)
 			}
 		}
 	}
 	return nil
 }
 
-// handleArchivedRepo updates the changeset and repo once it has been
-// determined that the repo has been archived.
-func (e *executor) handleArchivedRepo(ctx context.Context) error {
+// hbndleArchivedRepo updbtes the chbngeset bnd repo once it hbs been
+// determined thbt the repo hbs been brchived.
+func (e *executor) hbndleArchivedRepo(ctx context.Context) error {
 	repo, err := e.remoteRepo(ctx)
 	if err != nil {
-		return errors.Wrap(err, "getting the archived remote repo")
+		return errors.Wrbp(err, "getting the brchived remote repo")
 	}
 
-	return handleArchivedRepo(
+	return hbndleArchivedRepo(
 		ctx,
-		repos.NewStore(e.logger, e.tx.DatabaseDB()),
+		repos.NewStore(e.logger, e.tx.DbtbbbseDB()),
 		repo,
 		e.ch,
 	)
 }
 
-func handleArchivedRepo(
+func hbndleArchivedRepo(
 	ctx context.Context,
 	store repos.Store,
 	repo *types.Repo,
-	ch *btypes.Changeset,
+	ch *btypes.Chbngeset,
 ) error {
-	// We need to mark the repo as archived so that the later check for whether
-	// the repo is still archived isn't confused.
+	// We need to mbrk the repo bs brchived so thbt the lbter check for whether
+	// the repo is still brchived isn't confused.
 	repo.Archived = true
-	if _, err := store.UpdateRepo(ctx, repo); err != nil {
-		return errors.Wrapf(err, "updating archived status of repo %d", int(repo.ID))
+	if _, err := store.UpdbteRepo(ctx, repo); err != nil {
+		return errors.Wrbpf(err, "updbting brchived stbtus of repo %d", int(repo.ID))
 	}
 
-	// Now we can set the ExternalState, and SetDerivedState will do the rest
-	// later with that and the updated repo.
-	ch.ExternalState = btypes.ChangesetExternalStateReadOnly
+	// Now we cbn set the ExternblStbte, bnd SetDerivedStbte will do the rest
+	// lbter with thbt bnd the updbted repo.
+	ch.ExternblStbte = btypes.ChbngesetExternblStbteRebdOnly
 
 	return nil
 }
 
 func (e *executor) enqueueWebhook(ctx context.Context, store *store.Store, eventType string) {
-	webhooks.EnqueueChangeset(ctx, e.logger, store, eventType, bgql.MarshalChangesetID(e.ch.ID))
+	webhooks.EnqueueChbngeset(ctx, e.logger, store, eventType, bgql.MbrshblChbngesetID(e.ch.ID))
 }
 
-type getBatchChanger interface {
-	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
+type getBbtchChbnger interfbce {
+	GetBbtchChbnge(ctx context.Context, opts store.GetBbtchChbngeOpts) (*btypes.BbtchChbnge, error)
 }
 
-func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes.BatchChange, error) {
+func lobdBbtchChbnge(ctx context.Context, tx getBbtchChbnger, id int64) (*btypes.BbtchChbnge, error) {
 	if id == 0 {
-		return nil, errors.New("changeset has no owning batch change")
+		return nil, errors.New("chbngeset hbs no owning bbtch chbnge")
 	}
 
-	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
+	bbtchChbnge, err := tx.GetBbtchChbnge(ctx, store.GetBbtchChbngeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
-		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
-	} else if batchChange == nil {
-		return nil, errors.Errorf("batch change not found: %d", id)
+		return nil, errors.Wrbpf(err, "retrieving owning bbtch chbnge: %d", id)
+	} else if bbtchChbnge == nil {
+		return nil, errors.Errorf("bbtch chbnge not found: %d", id)
 	}
 
-	return batchChange, nil
+	return bbtchChbnge, nil
 }
 
-type getNamespacer interface {
-	GetByID(ctx context.Context, orgID, userID int32) (*database.Namespace, error)
+type getNbmespbcer interfbce {
+	GetByID(ctx context.Context, orgID, userID int32) (*dbtbbbse.Nbmespbce, error)
 }
 
-func decorateChangesetBody(ctx context.Context, tx getBatchChanger, nsStore getNamespacer, cs *btypes.Changeset, body string) (string, error) {
-	batchChange, err := loadBatchChange(ctx, tx, cs.OwnedByBatchChangeID)
+func decorbteChbngesetBody(ctx context.Context, tx getBbtchChbnger, nsStore getNbmespbcer, cs *btypes.Chbngeset, body string) (string, error) {
+	bbtchChbnge, err := lobdBbtchChbnge(ctx, tx, cs.OwnedByBbtchChbngeID)
 	if err != nil {
-		return "", errors.Wrap(err, "failed to load batch change")
+		return "", errors.Wrbp(err, "fbiled to lobd bbtch chbnge")
 	}
 
-	// We need to get the namespace, since external batch change URLs are
-	// namespaced.
-	ns, err := nsStore.GetByID(ctx, batchChange.NamespaceOrgID, batchChange.NamespaceUserID)
+	// We need to get the nbmespbce, since externbl bbtch chbnge URLs bre
+	// nbmespbced.
+	ns, err := nsStore.GetByID(ctx, bbtchChbnge.NbmespbceOrgID, bbtchChbnge.NbmespbceUserID)
 	if err != nil {
-		return "", errors.Wrap(err, "retrieving namespace")
+		return "", errors.Wrbp(err, "retrieving nbmespbce")
 	}
 
-	u, err := batchChange.URL(ctx, ns.Name)
+	u, err := bbtchChbnge.URL(ctx, ns.Nbme)
 	if err != nil {
-		return "", errors.Wrap(err, "building URL")
+		return "", errors.Wrbp(err, "building URL")
 	}
 
-	bcl := fmt.Sprintf("[_Created by Sourcegraph batch change `%s/%s`._](%s)", ns.Name, batchChange.Name, u)
+	bcl := fmt.Sprintf("[_Crebted by Sourcegrbph bbtch chbnge `%s/%s`._](%s)", ns.Nbme, bbtchChbnge.Nbme, u)
 
-	// Check if the batch change link template variable is present in the changeset
-	// template body.
-	if strings.Contains(body, "batch_change_link") {
-		// Since we already ran this template before, `cs.Body` should only contain valid templates for `batch_change_link` at this point.
-		t, err := template.New("changeset_template").Delims("${{", "}}").Funcs(template.FuncMap{"batch_change_link": func() string { return bcl }}).Parse(body)
+	// Check if the bbtch chbnge link templbte vbribble is present in the chbngeset
+	// templbte body.
+	if strings.Contbins(body, "bbtch_chbnge_link") {
+		// Since we blrebdy rbn this templbte before, `cs.Body` should only contbin vblid templbtes for `bbtch_chbnge_link` bt this point.
+		t, err := templbte.New("chbngeset_templbte").Delims("${{", "}}").Funcs(templbte.FuncMbp{"bbtch_chbnge_link": func() string { return bcl }}).Pbrse(body)
 		if err != nil {
-			return "", errors.Wrap(err, "handling batch_change_link: parsing changeset template")
+			return "", errors.Wrbp(err, "hbndling bbtch_chbnge_link: pbrsing chbngeset templbte")
 		}
 
-		var out bytes.Buffer
+		vbr out bytes.Buffer
 		if err := t.Execute(&out, nil); err != nil {
-			return "", errors.Wrap(err, "handling batch_change_link: executing changeset template")
+			return "", errors.Wrbp(err, "hbndling bbtch_chbnge_link: executing chbngeset templbte")
 		}
 
 		return out.String(), nil
 	}
 
-	// Otherwise, append to the end of the body.
+	// Otherwise, bppend to the end of the body.
 	return fmt.Sprintf("%s\n\n%s", body, bcl), nil
 }
 
-// errPublishSameBranch is returned by publish changeset if a changeset with
-// the same external branch already exists in the database and is owned by
-// another batch change.
-// It is a terminal error that won't be fixed by retrying to publish the
-// changeset with the same spec.
-type errPublishSameBranch struct{}
+// errPublishSbmeBrbnch is returned by publish chbngeset if b chbngeset with
+// the sbme externbl brbnch blrebdy exists in the dbtbbbse bnd is owned by
+// bnother bbtch chbnge.
+// It is b terminbl error thbt won't be fixed by retrying to publish the
+// chbngeset with the sbme spec.
+type errPublishSbmeBrbnch struct{}
 
-func (e errPublishSameBranch) Error() string {
-	return "cannot create changeset on the same branch in multiple batch changes"
+func (e errPublishSbmeBrbnch) Error() string {
+	return "cbnnot crebte chbngeset on the sbme brbnch in multiple bbtch chbnges"
 }
 
-func (e errPublishSameBranch) NonRetryable() bool { return true }
+func (e errPublishSbmeBrbnch) NonRetrybble() bool { return true }
 
-// errNoSSHCredential is returned, if the  clone URL of the repository uses the
-// ssh:// scheme, but the authenticator doesn't support SSH pushes.
-type errNoSSHCredential struct{}
+// errNoSSHCredentibl is returned, if the  clone URL of the repository uses the
+// ssh:// scheme, but the buthenticbtor doesn't support SSH pushes.
+type errNoSSHCredentibl struct{}
 
-func (e errNoSSHCredential) Error() string {
-	return "The used credential doesn't support SSH pushes, but the repo requires pushing over SSH."
+func (e errNoSSHCredentibl) Error() string {
+	return "The used credentibl doesn't support SSH pushes, but the repo requires pushing over SSH."
 }
 
-func (e errNoSSHCredential) NonRetryable() bool { return true }
+func (e errNoSSHCredentibl) NonRetrybble() bool { return true }
 
-// errMissingCredentials is returned if the user that applied the last batch change
-// /changeset spec doesn't have a user credential for the given repository and is
-// not a site-admin (so no fallback to the global credentials is possible).
-type errMissingCredentials struct{ repo string }
+// errMissingCredentibls is returned if the user thbt bpplied the lbst bbtch chbnge
+// /chbngeset spec doesn't hbve b user credentibl for the given repository bnd is
+// not b site-bdmin (so no fbllbbck to the globbl credentibls is possible).
+type errMissingCredentibls struct{ repo string }
 
-func (e errMissingCredentials) Error() string {
-	return fmt.Sprintf("user does not have a valid credential for repository %q", e.repo)
+func (e errMissingCredentibls) Error() string {
+	return fmt.Sprintf("user does not hbve b vblid credentibl for repository %q", e.repo)
 }
 
-func (e errMissingCredentials) NonRetryable() bool { return true }
+func (e errMissingCredentibls) NonRetrybble() bool { return true }
 
-func (e errMissingCredentials) Is(target error) bool {
-	if t, ok := target.(errMissingCredentials); ok && t.repo == e.repo {
+func (e errMissingCredentibls) Is(tbrget error) bool {
+	if t, ok := tbrget.(errMissingCredentibls); ok && t.repo == e.repo {
 		return true
 	}
-	return false
+	return fblse
 }
 
-// errNoPushCredentials is returned if the authenticator cannot be used by git to
-// authenticate a `git push`.
-type errNoPushCredentials struct{ credentialsType string }
+// errNoPushCredentibls is returned if the buthenticbtor cbnnot be used by git to
+// buthenticbte b `git push`.
+type errNoPushCredentibls struct{ credentiblsType string }
 
-func (e errNoPushCredentials) Error() string {
-	return fmt.Sprintf("cannot use credentials of type %s to push commits", e.credentialsType)
+func (e errNoPushCredentibls) Error() string {
+	return fmt.Sprintf("cbnnot use credentibls of type %s to push commits", e.credentiblsType)
 }
 
-func (e errNoPushCredentials) NonRetryable() bool { return true }
+func (e errNoPushCredentibls) NonRetrybble() bool { return true }

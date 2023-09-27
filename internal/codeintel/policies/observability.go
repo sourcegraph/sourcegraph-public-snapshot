@@ -1,41 +1,41 @@
-package policies
+pbckbge policies
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	updateConfigurationPolicy  *observation.Operation
-	getRetentionPolicyOverview *observation.Operation
-	getPreviewRepositoryFilter *observation.Operation
-	getPreviewGitObjectFilter  *observation.Operation
+type operbtions struct {
+	updbteConfigurbtionPolicy  *observbtion.Operbtion
+	getRetentionPolicyOverview *observbtion.Operbtion
+	getPreviewRepositoryFilter *observbtion.Operbtion
+	getPreviewGitObjectFilter  *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
+			observbtionCtx.Registerer,
 			"codeintel_policies",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.policies.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.policies.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		updateConfigurationPolicy:  op("UpdateConfigurationPolicy"),
+	return &operbtions{
+		updbteConfigurbtionPolicy:  op("UpdbteConfigurbtionPolicy"),
 		getRetentionPolicyOverview: op("GetRetentionPolicyOverview"),
 		getPreviewRepositoryFilter: op("GetPreviewRepositoryFilter"),
 		getPreviewGitObjectFilter:  op("GetPreviewGitObjectFilter"),

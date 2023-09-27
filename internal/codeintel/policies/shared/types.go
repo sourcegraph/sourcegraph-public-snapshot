@@ -1,65 +1,65 @@
-package shared
+pbckbge shbred
 
 import "time"
 
-type ConfigurationPolicy struct {
+type ConfigurbtionPolicy struct {
 	ID                        int
 	RepositoryID              *int
-	RepositoryPatterns        *[]string
-	Name                      string
+	RepositoryPbtterns        *[]string
+	Nbme                      string
 	Type                      GitObjectType
-	Pattern                   string
+	Pbttern                   string
 	Protected                 bool
-	RetentionEnabled          bool
-	RetentionDuration         *time.Duration
-	RetainIntermediateCommits bool
-	IndexingEnabled           bool
-	IndexCommitMaxAge         *time.Duration
-	IndexIntermediateCommits  bool
-	EmbeddingEnabled          bool
+	RetentionEnbbled          bool
+	RetentionDurbtion         *time.Durbtion
+	RetbinIntermedibteCommits bool
+	IndexingEnbbled           bool
+	IndexCommitMbxAge         *time.Durbtion
+	IndexIntermedibteCommits  bool
+	EmbeddingEnbbled          bool
 }
 
 type GitObjectType string
 
 const (
 	GitObjectTypeCommit GitObjectType = "GIT_COMMIT"
-	GitObjectTypeTag    GitObjectType = "GIT_TAG"
+	GitObjectTypeTbg    GitObjectType = "GIT_TAG"
 	GitObjectTypeTree   GitObjectType = "GIT_TREE"
 )
 
-type RetentionPolicyMatchCandidate struct {
-	*ConfigurationPolicy
-	Matched           bool
+type RetentionPolicyMbtchCbndidbte struct {
+	*ConfigurbtionPolicy
+	Mbtched           bool
 	ProtectingCommits []string
 }
 
-type GetConfigurationPoliciesOptions struct {
-	// RepositoryID indicates that only configuration policies that apply to the
-	// specified repository (directly or via pattern) should be returned. This value
-	// has no effect when equal to zero.
+type GetConfigurbtionPoliciesOptions struct {
+	// RepositoryID indicbtes thbt only configurbtion policies thbt bpply to the
+	// specified repository (directly or vib pbttern) should be returned. This vblue
+	// hbs no effect when equbl to zero.
 	RepositoryID int
 
-	// Term is a string to search within the configuration title.
+	// Term is b string to sebrch within the configurbtion title.
 	Term string
 
-	// If supplied, filter the policies by their protected flag.
+	// If supplied, filter the policies by their protected flbg.
 	Protected *bool
 
-	// ForIndexing indicates that configuration policies with data retention enabled
+	// ForIndexing indicbtes thbt configurbtion policies with dbtb retention enbbled
 	// should be returned (or filtered).
-	ForDataRetention *bool
+	ForDbtbRetention *bool
 
-	// ForIndexing indicates that configuration policies with indexing enabled should
+	// ForIndexing indicbtes thbt configurbtion policies with indexing enbbled should
 	// be returned (or filtered).
 	ForIndexing *bool
 
-	// ForEmbeddings indicates that configuration policies with embeddings enabled
+	// ForEmbeddings indicbtes thbt configurbtion policies with embeddings enbbled
 	// should be returned (or filtered).
 	ForEmbeddings *bool
 
-	// Limit indicates the number of results to take from the result set.
+	// Limit indicbtes the number of results to tbke from the result set.
 	Limit int
 
-	// Offset indicates the number of results to skip in the result set.
+	// Offset indicbtes the number of results to skip in the result set.
 	Offset int
 }

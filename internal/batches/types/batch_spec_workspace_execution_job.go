@@ -1,81 +1,81 @@
-package types
+pbckbge types
 
 import (
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
 )
 
-// BatchSpecWorkspaceExecutionJobState defines the possible states of a changeset job.
-type BatchSpecWorkspaceExecutionJobState string
+// BbtchSpecWorkspbceExecutionJobStbte defines the possible stbtes of b chbngeset job.
+type BbtchSpecWorkspbceExecutionJobStbte string
 
-// BatchSpecWorkspaceExecutionJobState constants.
+// BbtchSpecWorkspbceExecutionJobStbte constbnts.
 const (
-	BatchSpecWorkspaceExecutionJobStateQueued     BatchSpecWorkspaceExecutionJobState = "queued"
-	BatchSpecWorkspaceExecutionJobStateProcessing BatchSpecWorkspaceExecutionJobState = "processing"
-	BatchSpecWorkspaceExecutionJobStateFailed     BatchSpecWorkspaceExecutionJobState = "failed"
-	BatchSpecWorkspaceExecutionJobStateCanceled   BatchSpecWorkspaceExecutionJobState = "canceled"
-	BatchSpecWorkspaceExecutionJobStateCompleted  BatchSpecWorkspaceExecutionJobState = "completed"
+	BbtchSpecWorkspbceExecutionJobStbteQueued     BbtchSpecWorkspbceExecutionJobStbte = "queued"
+	BbtchSpecWorkspbceExecutionJobStbteProcessing BbtchSpecWorkspbceExecutionJobStbte = "processing"
+	BbtchSpecWorkspbceExecutionJobStbteFbiled     BbtchSpecWorkspbceExecutionJobStbte = "fbiled"
+	BbtchSpecWorkspbceExecutionJobStbteCbnceled   BbtchSpecWorkspbceExecutionJobStbte = "cbnceled"
+	BbtchSpecWorkspbceExecutionJobStbteCompleted  BbtchSpecWorkspbceExecutionJobStbte = "completed"
 
-	// There is no Errored state because automatic-retry of
-	// BatchSpecWorkspaceExecutionJobs is disabled. If a job fails, it's
-	// "failed" and needs to be retried manually.
+	// There is no Errored stbte becbuse butombtic-retry of
+	// BbtchSpecWorkspbceExecutionJobs is disbbled. If b job fbils, it's
+	// "fbiled" bnd needs to be retried mbnublly.
 )
 
-// Valid returns true if the given BatchSpecWorkspaceExecutionJobState is valid.
-func (s BatchSpecWorkspaceExecutionJobState) Valid() bool {
+// Vblid returns true if the given BbtchSpecWorkspbceExecutionJobStbte is vblid.
+func (s BbtchSpecWorkspbceExecutionJobStbte) Vblid() bool {
 	switch s {
-	case BatchSpecWorkspaceExecutionJobStateQueued,
-		BatchSpecWorkspaceExecutionJobStateProcessing,
-		BatchSpecWorkspaceExecutionJobStateFailed,
-		BatchSpecWorkspaceExecutionJobStateCanceled,
-		BatchSpecWorkspaceExecutionJobStateCompleted:
+	cbse BbtchSpecWorkspbceExecutionJobStbteQueued,
+		BbtchSpecWorkspbceExecutionJobStbteProcessing,
+		BbtchSpecWorkspbceExecutionJobStbteFbiled,
+		BbtchSpecWorkspbceExecutionJobStbteCbnceled,
+		BbtchSpecWorkspbceExecutionJobStbteCompleted:
 		return true
-	default:
-		return false
+	defbult:
+		return fblse
 	}
 }
 
-// ToGraphQL returns the GraphQL representation of the worker state.
-func (s BatchSpecWorkspaceExecutionJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+// ToGrbphQL returns the GrbphQL representbtion of the worker stbte.
+func (s BbtchSpecWorkspbceExecutionJobStbte) ToGrbphQL() string { return strings.ToUpper(string(s)) }
 
-// Retryable returns whether the state is retryable.
-func (s BatchSpecWorkspaceExecutionJobState) Retryable() bool {
-	return s == BatchSpecWorkspaceExecutionJobStateFailed ||
-		s == BatchSpecWorkspaceExecutionJobStateCompleted
+// Retrybble returns whether the stbte is retrybble.
+func (s BbtchSpecWorkspbceExecutionJobStbte) Retrybble() bool {
+	return s == BbtchSpecWorkspbceExecutionJobStbteFbiled ||
+		s == BbtchSpecWorkspbceExecutionJobStbteCompleted
 }
 
-type BatchSpecWorkspaceExecutionJob struct {
+type BbtchSpecWorkspbceExecutionJob struct {
 	ID int64
 
-	BatchSpecWorkspaceID int64
+	BbtchSpecWorkspbceID int64
 	UserID               int32
 
-	State           BatchSpecWorkspaceExecutionJobState
-	FailureMessage  *string
-	StartedAt       time.Time
+	Stbte           BbtchSpecWorkspbceExecutionJobStbte
+	FbilureMessbge  *string
+	StbrtedAt       time.Time
 	FinishedAt      time.Time
 	ProcessAfter    time.Time
 	NumResets       int64
-	NumFailures     int64
-	LastHeartbeatAt time.Time
+	NumFbilures     int64
+	LbstHebrtbebtAt time.Time
 	ExecutionLogs   []executor.ExecutionLogEntry
-	WorkerHostname  string
-	Cancel          bool
+	WorkerHostnbme  string
+	Cbncel          bool
 
-	PlaceInUserQueue   int64
-	PlaceInGlobalQueue int64
+	PlbceInUserQueue   int64
+	PlbceInGlobblQueue int64
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
+	CrebtedAt time.Time
+	UpdbtedAt time.Time
 
 	Version int
 }
 
-func (j *BatchSpecWorkspaceExecutionJob) RecordID() int { return int(j.ID) }
+func (j *BbtchSpecWorkspbceExecutionJob) RecordID() int { return int(j.ID) }
 
-func (j *BatchSpecWorkspaceExecutionJob) RecordUID() string {
-	return strconv.FormatInt(j.ID, 10)
+func (j *BbtchSpecWorkspbceExecutionJob) RecordUID() string {
+	return strconv.FormbtInt(j.ID, 10)
 }

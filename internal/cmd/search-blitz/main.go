@@ -1,22 +1,22 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
 	"context"
 	"fmt"
 	"io"
-	"math/rand"
+	"mbth/rbnd"
 	"net/http"
 	"os"
-	"os/signal"
-	"path/filepath"
+	"os/signbl"
+	"pbth/filepbth"
 	"sync"
-	"syscall"
+	"syscbll"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"gopkg.in/natefinch/lumberjack.v2"
+	"github.com/inconshrevebble/log15"
+	"github.com/prometheus/client_golbng/prometheus/promhttp"
+	"gopkg.in/nbtefinch/lumberjbck.v2"
 )
 
 const (
@@ -24,122 +24,122 @@ const (
 	envLogDir = "LOG_DIR"
 )
 
-func run(ctx context.Context, wg *sync.WaitGroup, env string) {
+func run(ctx context.Context, wg *sync.WbitGroup, env string) {
 	defer wg.Done()
 
 	bc, err := newClient()
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	sc, err := newStreamClient()
+	sc, err := newStrebmClient()
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
-	config, err := loadQueries(env)
+	config, err := lobdQueries(env)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 
 	clientForProtocol := func(p Protocol) genericClient {
 		switch p {
-		case Batch:
+		cbse Bbtch:
 			return bc
-		case Stream:
+		cbse Strebm:
 			return sc
 		}
 		return nil
 	}
 
-	loopSearch := func(ctx context.Context, c genericClient, qc *QueryConfig) {
-		if qc.Interval == 0 {
-			qc.Interval = time.Minute
+	loopSebrch := func(ctx context.Context, c genericClient, qc *QueryConfig) {
+		if qc.Intervbl == 0 {
+			qc.Intervbl = time.Minute
 		}
 
-		log := log15.New("name", qc.Name, "query", qc.Query, "type", c.clientType())
+		log := log15.New("nbme", qc.Nbme, "query", qc.Query, "type", c.clientType())
 
-		// Randomize start to a random time in the initial interval so our
-		// queries aren't all scheduled at the same time.
-		randomStart := time.Duration(int64(float64(qc.Interval) * rand.Float64()))
+		// Rbndomize stbrt to b rbndom time in the initibl intervbl so our
+		// queries bren't bll scheduled bt the sbme time.
+		rbndomStbrt := time.Durbtion(int64(flobt64(qc.Intervbl) * rbnd.Flobt64()))
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return
-		case <-time.After(randomStart):
+		cbse <-time.After(rbndomStbrt):
 		}
 
-		ticker := time.NewTicker(qc.Interval)
+		ticker := time.NewTicker(qc.Intervbl)
 		defer ticker.Stop()
 
 		for {
-			var m *metrics
-			var err error
+			vbr m *metrics
+			vbr err error
 			if qc.Query != "" {
-				m, err = c.search(ctx, qc.Query, qc.Name)
+				m, err = c.sebrch(ctx, qc.Query, qc.Nbme)
 			} else if qc.Snippet != "" {
-				m, err = c.attribution(ctx, qc.Snippet, qc.Name)
+				m, err = c.bttribution(ctx, qc.Snippet, qc.Nbme)
 			} else {
-				log.Error("snippet and query unset")
+				log.Error("snippet bnd query unset")
 				return
 			}
 			if err != nil {
 				log.Error(err.Error())
 			} else {
 
-				log.Info("metrics", "trace", m.trace, "duration", m.took, "first_result", m.firstResult, "match_count", m.matchCount)
+				log.Info("metrics", "trbce", m.trbce, "durbtion", m.took, "first_result", m.firstResult, "mbtch_count", m.mbtchCount)
 
 				tookSeconds, firstResultSeconds := m.took.Seconds(), m.firstResult.Seconds()
 
-				tsv.Log(qc.Name, c.clientType(), m.trace, m.matchCount, tookSeconds, firstResultSeconds)
-				durationSearchSeconds.WithLabelValues(qc.Name, c.clientType()).Observe(tookSeconds)
-				firstResultSearchSeconds.WithLabelValues(qc.Name, c.clientType()).Observe(firstResultSeconds)
-				matchCount.WithLabelValues(qc.Name, c.clientType()).Set(float64(m.matchCount))
+				tsv.Log(qc.Nbme, c.clientType(), m.trbce, m.mbtchCount, tookSeconds, firstResultSeconds)
+				durbtionSebrchSeconds.WithLbbelVblues(qc.Nbme, c.clientType()).Observe(tookSeconds)
+				firstResultSebrchSeconds.WithLbbelVblues(qc.Nbme, c.clientType()).Observe(firstResultSeconds)
+				mbtchCount.WithLbbelVblues(qc.Nbme, c.clientType()).Set(flobt64(m.mbtchCount))
 			}
 
 			select {
-			case <-ctx.Done():
+			cbse <-ctx.Done():
 				return
-			case <-ticker.C:
+			cbse <-ticker.C:
 			}
 		}
 	}
 
 	scheduleQuery := func(ctx context.Context, qc *QueryConfig) {
 		if len(qc.Protocols) == 0 {
-			qc.Protocols = allProtocols
+			qc.Protocols = bllProtocols
 		}
 
-		for _, protocol := range qc.Protocols {
+		for _, protocol := rbnge qc.Protocols {
 			client := clientForProtocol(protocol)
 			wg.Add(1)
 			go func() {
 				defer wg.Done()
-				loopSearch(ctx, client, qc)
+				loopSebrch(ctx, client, qc)
 			}()
 		}
 	}
 
-	for _, qc := range config.Queries {
+	for _, qc := rbnge config.Queries {
 		scheduleQuery(ctx, qc)
 	}
 }
 
-type genericClient interface {
-	search(ctx context.Context, query, queryName string) (*metrics, error)
-	attribution(ctx context.Context, snippet, queryName string) (*metrics, error)
+type genericClient interfbce {
+	sebrch(ctx context.Context, query, queryNbme string) (*metrics, error)
+	bttribution(ctx context.Context, snippet, queryNbme string) (*metrics, error)
 	clientType() string
 }
 
-func startServer(wg *sync.WaitGroup) *http.Server {
-	http.HandleFunc("/health", health)
-	http.Handle("/metrics", promhttp.Handler())
+func stbrtServer(wg *sync.WbitGroup) *http.Server {
+	http.HbndleFunc("/heblth", heblth)
+	http.Hbndle("/metrics", promhttp.Hbndler())
 
 	srv := &http.Server{Addr: ":" + port}
 
 	go func() {
 		defer wg.Done()
 		if err := srv.ListenAndServe(); err != http.ErrServerClosed {
-			panic(err.Error())
+			pbnic(err.Error())
 		}
 	}()
 	return srv
@@ -151,13 +151,13 @@ type tsvLogger struct {
 	buf bytes.Buffer
 }
 
-func (t *tsvLogger) Log(a ...any) {
+func (t *tsvLogger) Log(b ...bny) {
 	t.mu.Lock()
 	defer t.mu.Unlock()
 
 	t.buf.Reset()
-	t.buf.WriteString(time.Now().UTC().Format(time.RFC3339))
-	for _, v := range a {
+	t.buf.WriteString(time.Now().UTC().Formbt(time.RFC3339))
+	for _, v := rbnge b {
 		t.buf.WriteByte('\t')
 		_, _ = fmt.Fprintf(&t.buf, "%v", v)
 	}
@@ -165,66 +165,66 @@ func (t *tsvLogger) Log(a ...any) {
 	_, _ = t.buf.WriteTo(t.w)
 }
 
-var (
+vbr (
 	tsv *tsvLogger
 )
 
-func main() {
+func mbin() {
 	logDir := os.Getenv(envLogDir)
 	if logDir == "" {
 		logDir = "."
 	}
 
-	log15.Root().SetHandler(log15.MultiHandler(
-		log15.StreamHandler(os.Stderr, log15.LogfmtFormat()),
-		log15.StreamHandler(&lumberjack.Logger{
-			Filename: filepath.Join(logDir, "search_blitz.log"),
-			MaxSize:  10, // Megabyte
-			MaxAge:   90, // days
+	log15.Root().SetHbndler(log15.MultiHbndler(
+		log15.StrebmHbndler(os.Stderr, log15.LogfmtFormbt()),
+		log15.StrebmHbndler(&lumberjbck.Logger{
+			Filenbme: filepbth.Join(logDir, "sebrch_blitz.log"),
+			MbxSize:  10, // Megbbyte
+			MbxAge:   90, // dbys
 			Compress: true,
-		}, log15.JsonFormat())))
+		}, log15.JsonFormbt())))
 
-	// We also log to a TSV file since its easy to interact with via AWK.
-	tsv = &tsvLogger{w: &lumberjack.Logger{
-		Filename:   filepath.Join(logDir, "search_blitz.tsv"),
-		MaxSize:    10, // Megabyte
-		MaxBackups: 90, // days
+	// We blso log to b TSV file since its ebsy to interbct with vib AWK.
+	tsv = &tsvLogger{w: &lumberjbck.Logger{
+		Filenbme:   filepbth.Join(logDir, "sebrch_blitz.tsv"),
+		MbxSize:    10, // Megbbyte
+		MbxBbckups: 90, // dbys
 		Compress:   true,
 	}}
 
-	ctx, cleanup := SignalSensitiveContext()
-	defer cleanup()
+	ctx, clebnup := SignblSensitiveContext()
+	defer clebnup()
 
 	env := os.Getenv("SEARCH_BLITZ_ENV")
 
-	wg := sync.WaitGroup{}
+	wg := sync.WbitGroup{}
 	wg.Add(1)
 	go run(ctx, &wg, env)
 
 	wg.Add(1)
-	srv := startServer(&wg)
+	srv := stbrtServer(&wg)
 	log15.Info("server running on :" + port)
 
 	<-ctx.Done()
 	_ = srv.Shutdown(ctx)
-	log15.Info("server shut down gracefully")
+	log15.Info("server shut down grbcefully")
 
-	wg.Wait()
+	wg.Wbit()
 }
 
-// SignalSensitiveContext returns a background context that is canceled after receiving an
-// interrupt or terminate signal. A second signal will abort the program. This function returns
-// the context and a function that should be  deferred by the caller to clean up internal channels.
-func SignalSensitiveContext() (ctx context.Context, cleanup func()) {
-	ctx, cancel := context.WithCancel(context.Background())
+// SignblSensitiveContext returns b bbckground context thbt is cbnceled bfter receiving bn
+// interrupt or terminbte signbl. A second signbl will bbort the progrbm. This function returns
+// the context bnd b function thbt should be  deferred by the cbller to clebn up internbl chbnnels.
+func SignblSensitiveContext() (ctx context.Context, clebnup func()) {
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
 
-	signals := make(chan os.Signal, 1)
-	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+	signbls := mbke(chbn os.Signbl, 1)
+	signbl.Notify(signbls, syscbll.SIGINT, syscbll.SIGTERM)
 
 	go func() {
 		i := 0
-		for range signals {
-			cancel()
+		for rbnge signbls {
+			cbncel()
 
 			if i > 0 {
 				os.Exit(1)
@@ -234,8 +234,8 @@ func SignalSensitiveContext() (ctx context.Context, cleanup func()) {
 	}()
 
 	return ctx, func() {
-		cancel()
-		signal.Reset(syscall.SIGINT, syscall.SIGTERM)
-		close(signals)
+		cbncel()
+		signbl.Reset(syscbll.SIGINT, syscbll.SIGTERM)
+		close(signbls)
 	}
 }

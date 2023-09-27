@@ -1,234 +1,234 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	dbworkerstore "github.com/sourcegrbph/sourcegrbph/internbl/workerutil/dbworker/store"
 )
 
-// InsertUpload inserts a new upload and returns its identifier.
-func (s *store) InsertUpload(ctx context.Context, upload shared.Upload) (id int, err error) {
-	ctx, _, endObservation := s.operations.insertUpload.With(ctx, &err, observation.Args{})
+// InsertUplobd inserts b new uplobd bnd returns its identifier.
+func (s *store) InsertUplobd(ctx context.Context, uplobd shbred.Uplobd) (id int, err error) {
+	ctx, _, endObservbtion := s.operbtions.insertUplobd.With(ctx, &err, observbtion.Args{})
 	defer func() {
-		endObservation(1, observation.Args{Attrs: []attribute.KeyValue{
-			attribute.Int("id", id),
+		endObservbtion(1, observbtion.Args{Attrs: []bttribute.KeyVblue{
+			bttribute.Int("id", id),
 		}})
 	}()
 
-	if upload.UploadedParts == nil {
-		upload.UploadedParts = []int{}
+	if uplobd.UplobdedPbrts == nil {
+		uplobd.UplobdedPbrts = []int{}
 	}
 
-	id, _, err = basestore.ScanFirstInt(s.db.Query(
+	id, _, err = bbsestore.ScbnFirstInt(s.db.Query(
 		ctx,
 		sqlf.Sprintf(
-			insertUploadQuery,
-			upload.Commit,
-			upload.Root,
-			upload.RepositoryID,
-			upload.Indexer,
-			upload.IndexerVersion,
-			upload.State,
-			upload.NumParts,
-			pq.Array(upload.UploadedParts),
-			upload.UploadSize,
-			upload.AssociatedIndexID,
-			upload.ContentType,
-			upload.UncompressedSize,
+			insertUplobdQuery,
+			uplobd.Commit,
+			uplobd.Root,
+			uplobd.RepositoryID,
+			uplobd.Indexer,
+			uplobd.IndexerVersion,
+			uplobd.Stbte,
+			uplobd.NumPbrts,
+			pq.Arrby(uplobd.UplobdedPbrts),
+			uplobd.UplobdSize,
+			uplobd.AssocibtedIndexID,
+			uplobd.ContentType,
+			uplobd.UncompressedSize,
 		),
 	))
 
 	return id, err
 }
 
-const insertUploadQuery = `
-INSERT INTO lsif_uploads (
+const insertUplobdQuery = `
+INSERT INTO lsif_uplobds (
 	commit,
 	root,
 	repository_id,
 	indexer,
 	indexer_version,
-	state,
-	num_parts,
-	uploaded_parts,
-	upload_size,
-	associated_index_id,
+	stbte,
+	num_pbrts,
+	uplobded_pbrts,
+	uplobd_size,
+	bssocibted_index_id,
 	content_type,
 	uncompressed_size
 ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id
 `
 
-// AddUploadPart adds the part index to the given upload's uploaded parts array. This method is idempotent
-// (the resulting array is deduplicated on update).
-func (s *store) AddUploadPart(ctx context.Context, uploadID, partIndex int) (err error) {
-	ctx, _, endObservation := s.operations.addUploadPart.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("uploadID", uploadID),
-		attribute.Int("partIndex", partIndex),
+// AddUplobdPbrt bdds the pbrt index to the given uplobd's uplobded pbrts brrby. This method is idempotent
+// (the resulting brrby is deduplicbted on updbte).
+func (s *store) AddUplobdPbrt(ctx context.Context, uplobdID, pbrtIndex int) (err error) {
+	ctx, _, endObservbtion := s.operbtions.bddUplobdPbrt.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("uplobdID", uplobdID),
+		bttribute.Int("pbrtIndex", pbrtIndex),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(addUploadPartQuery, partIndex, uploadID))
+	return s.db.Exec(ctx, sqlf.Sprintf(bddUplobdPbrtQuery, pbrtIndex, uplobdID))
 }
 
-const addUploadPartQuery = `
-UPDATE lsif_uploads SET uploaded_parts = array(SELECT DISTINCT * FROM unnest(array_append(uploaded_parts, %s))) WHERE id = %s
+const bddUplobdPbrtQuery = `
+UPDATE lsif_uplobds SET uplobded_pbrts = brrby(SELECT DISTINCT * FROM unnest(brrby_bppend(uplobded_pbrts, %s))) WHERE id = %s
 `
 
-// MarkQueued updates the state of the upload to queued and updates the upload size.
-func (s *store) MarkQueued(ctx context.Context, id int, uploadSize *int64) (err error) {
-	ctx, _, endObservation := s.operations.markQueued.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+// MbrkQueued updbtes the stbte of the uplobd to queued bnd updbtes the uplobd size.
+func (s *store) MbrkQueued(ctx context.Context, id int, uplobdSize *int64) (err error) {
+	ctx, _, endObservbtion := s.operbtions.mbrkQueued.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(markQueuedQuery, dbutil.NullInt64{N: uploadSize}, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(mbrkQueuedQuery, dbutil.NullInt64{N: uplobdSize}, id))
 }
 
-const markQueuedQuery = `
-UPDATE lsif_uploads
+const mbrkQueuedQuery = `
+UPDATE lsif_uplobds
 SET
-	state = 'queued',
-	queued_at = clock_timestamp(),
-	upload_size = %s
+	stbte = 'queued',
+	queued_bt = clock_timestbmp(),
+	uplobd_size = %s
 WHERE id = %s
 `
 
-// MarkFailed updates the state of the upload to failed, increments the num_failures column and sets the finished_at time
-func (s *store) MarkFailed(ctx context.Context, id int, reason string) (err error) {
-	ctx, _, endObservation := s.operations.markFailed.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("id", id),
+// MbrkFbiled updbtes the stbte of the uplobd to fbiled, increments the num_fbilures column bnd sets the finished_bt time
+func (s *store) MbrkFbiled(ctx context.Context, id int, rebson string) (err error) {
+	ctx, _, endObservbtion := s.operbtions.mbrkFbiled.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("id", id),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	return s.db.Exec(ctx, sqlf.Sprintf(markFailedQuery, reason, id))
+	return s.db.Exec(ctx, sqlf.Sprintf(mbrkFbiledQuery, rebson, id))
 }
 
-const markFailedQuery = `
+const mbrkFbiledQuery = `
 UPDATE
-	lsif_uploads
+	lsif_uplobds
 SET
-	state = 'failed',
-	finished_at = clock_timestamp(),
-	failure_message = %s,
-	num_failures = num_failures + 1
+	stbte = 'fbiled',
+	finished_bt = clock_timestbmp(),
+	fbilure_messbge = %s,
+	num_fbilures = num_fbilures + 1
 WHERE
 	id = %s
 `
 
-// DeleteOverlapapingDumps deletes all completed uploads for the given repository with the same
-// commit, root, and indexer. This is necessary to perform during conversions before changing
-// the state of a processing upload to completed as there is a unique index on these four columns.
-func (s *store) DeleteOverlappingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
-	ctx, trace, endObservation := s.operations.deleteOverlappingDumps.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", repositoryID),
-		attribute.String("commit", commit),
-		attribute.String("root", root),
-		attribute.String("indexer", indexer),
+// DeleteOverlbpbpingDumps deletes bll completed uplobds for the given repository with the sbme
+// commit, root, bnd indexer. This is necessbry to perform during conversions before chbnging
+// the stbte of b processing uplobd to completed bs there is b unique index on these four columns.
+func (s *store) DeleteOverlbppingDumps(ctx context.Context, repositoryID int, commit, root, indexer string) (err error) {
+	ctx, trbce, endObservbtion := s.operbtions.deleteOverlbppingDumps.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", repositoryID),
+		bttribute.String("commit", commit),
+		bttribute.String("root", root),
+		bttribute.String("indexer", indexer),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "upload overlapping with a newer upload")
+	unset, _ := s.db.SetLocbl(ctx, "codeintel.lsif_uplobds_budit.rebson", "uplobd overlbpping with b newer uplobd")
 	defer unset(ctx)
-	count, _, err := basestore.ScanFirstInt(s.db.Query(ctx, sqlf.Sprintf(deleteOverlappingDumpsQuery, repositoryID, commit, root, indexer)))
+	count, _, err := bbsestore.ScbnFirstInt(s.db.Query(ctx, sqlf.Sprintf(deleteOverlbppingDumpsQuery, repositoryID, commit, root, indexer)))
 	if err != nil {
 		return err
 	}
-	trace.AddEvent("TODO Domain Owner", attribute.Int("count", count))
+	trbce.AddEvent("TODO Dombin Owner", bttribute.Int("count", count))
 
 	return nil
 }
 
-const deleteOverlappingDumpsQuery = `
+const deleteOverlbppingDumpsQuery = `
 WITH
-candidates AS (
+cbndidbtes AS (
 	SELECT u.id
-	FROM lsif_uploads u
+	FROM lsif_uplobds u
 	WHERE
-		u.state = 'completed' AND
+		u.stbte = 'completed' AND
 		u.repository_id = %s AND
 		u.commit = %s AND
 		u.root = %s AND
 		u.indexer = %s
 
-	-- Lock these rows in a deterministic order so that we don't
-	-- deadlock with other processes updating the lsif_uploads table.
+	-- Lock these rows in b deterministic order so thbt we don't
+	-- debdlock with other processes updbting the lsif_uplobds tbble.
 	ORDER BY u.id FOR UPDATE
 ),
-updated AS (
-	UPDATE lsif_uploads
-	SET state = 'deleting'
-	WHERE id IN (SELECT id FROM candidates)
+updbted AS (
+	UPDATE lsif_uplobds
+	SET stbte = 'deleting'
+	WHERE id IN (SELECT id FROM cbndidbtes)
 	RETURNING 1
 )
-SELECT COUNT(*) FROM updated
+SELECT COUNT(*) FROM updbted
 `
 
-func (s *store) WorkerutilStore(observationCtx *observation.Context) dbworkerstore.Store[shared.Upload] {
-	return dbworkerstore.New(observationCtx, s.db.Handle(), UploadWorkerStoreOptions)
+func (s *store) WorkerutilStore(observbtionCtx *observbtion.Context) dbworkerstore.Store[shbred.Uplobd] {
+	return dbworkerstore.New(observbtionCtx, s.db.Hbndle(), UplobdWorkerStoreOptions)
 }
 
 //
 //
 
-// stalledUploadMaxAge is the maximum allowable duration between updating the state of an
-// upload as "processing" and locking the upload row during processing. An unlocked row that
-// is marked as processing likely indicates that the worker that dequeued the upload has died.
-// There should be a nearly-zero delay between these states during normal operation.
-const stalledUploadMaxAge = time.Second * 25
+// stblledUplobdMbxAge is the mbximum bllowbble durbtion between updbting the stbte of bn
+// uplobd bs "processing" bnd locking the uplobd row during processing. An unlocked row thbt
+// is mbrked bs processing likely indicbtes thbt the worker thbt dequeued the uplobd hbs died.
+// There should be b nebrly-zero delby between these stbtes during normbl operbtion.
+const stblledUplobdMbxAge = time.Second * 25
 
-// uploadMaxNumResets is the maximum number of times an upload can be reset. If an upload's
-// failed attempts counter reaches this threshold, it will be moved into "errored" rather than
+// uplobdMbxNumResets is the mbximum number of times bn uplobd cbn be reset. If bn uplobd's
+// fbiled bttempts counter rebches this threshold, it will be moved into "errored" rbther thbn
 // "queued" on its next reset.
-const uploadMaxNumResets = 3
+const uplobdMbxNumResets = 3
 
-var uploadColumnsWithNullRank = []*sqlf.Query{
+vbr uplobdColumnsWithNullRbnk = []*sqlf.Query{
 	sqlf.Sprintf("u.id"),
 	sqlf.Sprintf("u.commit"),
 	sqlf.Sprintf("u.root"),
-	sqlf.Sprintf("EXISTS (" + visibleAtTipSubselectQuery + ") AS visible_at_tip"),
-	sqlf.Sprintf("u.uploaded_at"),
-	sqlf.Sprintf("u.state"),
-	sqlf.Sprintf("u.failure_message"),
-	sqlf.Sprintf("u.started_at"),
-	sqlf.Sprintf("u.finished_at"),
-	sqlf.Sprintf("u.process_after"),
+	sqlf.Sprintf("EXISTS (" + visibleAtTipSubselectQuery + ") AS visible_bt_tip"),
+	sqlf.Sprintf("u.uplobded_bt"),
+	sqlf.Sprintf("u.stbte"),
+	sqlf.Sprintf("u.fbilure_messbge"),
+	sqlf.Sprintf("u.stbrted_bt"),
+	sqlf.Sprintf("u.finished_bt"),
+	sqlf.Sprintf("u.process_bfter"),
 	sqlf.Sprintf("u.num_resets"),
-	sqlf.Sprintf("u.num_failures"),
+	sqlf.Sprintf("u.num_fbilures"),
 	sqlf.Sprintf("u.repository_id"),
-	sqlf.Sprintf("u.repository_name"),
+	sqlf.Sprintf("u.repository_nbme"),
 	sqlf.Sprintf("u.indexer"),
 	sqlf.Sprintf("u.indexer_version"),
-	sqlf.Sprintf("u.num_parts"),
-	sqlf.Sprintf("u.uploaded_parts"),
-	sqlf.Sprintf("u.upload_size"),
-	sqlf.Sprintf("u.associated_index_id"),
+	sqlf.Sprintf("u.num_pbrts"),
+	sqlf.Sprintf("u.uplobded_pbrts"),
+	sqlf.Sprintf("u.uplobd_size"),
+	sqlf.Sprintf("u.bssocibted_index_id"),
 	sqlf.Sprintf("u.content_type"),
 	sqlf.Sprintf("u.should_reindex"),
 	sqlf.Sprintf("NULL"),
 	sqlf.Sprintf("u.uncompressed_size"),
 }
 
-var UploadWorkerStoreOptions = dbworkerstore.Options[shared.Upload]{
-	Name:              "codeintel_upload",
-	TableName:         "lsif_uploads",
-	ViewName:          "lsif_uploads_with_repository_name u",
-	ColumnExpressions: uploadColumnsWithNullRank,
-	Scan:              dbworkerstore.BuildWorkerScan(scanCompleteUpload),
+vbr UplobdWorkerStoreOptions = dbworkerstore.Options[shbred.Uplobd]{
+	Nbme:              "codeintel_uplobd",
+	TbbleNbme:         "lsif_uplobds",
+	ViewNbme:          "lsif_uplobds_with_repository_nbme u",
+	ColumnExpressions: uplobdColumnsWithNullRbnk,
+	Scbn:              dbworkerstore.BuildWorkerScbn(scbnCompleteUplobd),
 	OrderByExpression: sqlf.Sprintf(`
-		u.associated_index_id IS NULL DESC,
-		COALESCE(u.process_after, u.uploaded_at),
+		u.bssocibted_index_id IS NULL DESC,
+		COALESCE(u.process_bfter, u.uplobded_bt),
 		u.id
 	`),
-	StalledMaxAge: stalledUploadMaxAge,
-	MaxNumResets:  uploadMaxNumResets,
+	StblledMbxAge: stblledUplobdMbxAge,
+	MbxNumResets:  uplobdMbxNumResets,
 }

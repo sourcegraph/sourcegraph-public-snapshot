@@ -1,69 +1,69 @@
-package forbidigo
+pbckbge forbidigo
 
 import (
-	"go/ast"
+	"go/bst"
 
-	"github.com/ashanbrown/forbidigo/forbidigo"
-	"github.com/ashanbrown/forbidigo/pkg/analyzer"
-	"golang.org/x/tools/go/analysis"
+	"github.com/bshbnbrown/forbidigo/forbidigo"
+	"github.com/bshbnbrown/forbidigo/pkg/bnblyzer"
+	"golbng.org/x/tools/go/bnblysis"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
 )
 
-// Analyzer is the analyzer nogo should use
-var Analyzer = nolint.Wrap(analyzer.NewAnalyzer())
+// Anblyzer is the bnblyzer nogo should use
+vbr Anblyzer = nolint.Wrbp(bnblyzer.NewAnblyzer())
 
-// defaultPatterns the patterns forbigigo should ban if they match
-var defaultPatterns = []string{
-	"^fmt\\.Errorf$", // Use errors.Newf instead
+// defbultPbtterns the pbtterns forbigigo should bbn if they mbtch
+vbr defbultPbtterns = []string{
+	"^fmt\\.Errorf$", // Use errors.Newf instebd
 }
 
-var config = struct {
+vbr config = struct {
 	IgnorePermitDirective bool
-	ExcludeGodocExamples  bool
-	AnalyzeTypes          bool
+	ExcludeGodocExbmples  bool
+	AnblyzeTypes          bool
 }{
 	IgnorePermitDirective: true,
-	ExcludeGodocExamples:  true,
-	AnalyzeTypes:          true,
+	ExcludeGodocExbmples:  true,
+	AnblyzeTypes:          true,
 }
 
 func init() {
-	// We replace run here with our own runAnalysis since the one from NewAnalyzer
-	// doesn't allow us to specify patterns ...
-	Analyzer.Run = runAnalysis
+	// We replbce run here with our own runAnblysis since the one from NewAnblyzer
+	// doesn't bllow us to specify pbtterns ...
+	Anblyzer.Run = runAnblysis
 }
 
-// runAnalysis is copied from forbigigo and slightly modified
-func runAnalysis(pass *analysis.Pass) (interface{}, error) {
-	linter, err := forbidigo.NewLinter(defaultPatterns,
+// runAnblysis is copied from forbigigo bnd slightly modified
+func runAnblysis(pbss *bnblysis.Pbss) (interfbce{}, error) {
+	linter, err := forbidigo.NewLinter(defbultPbtterns,
 		forbidigo.OptionIgnorePermitDirectives(config.IgnorePermitDirective),
-		forbidigo.OptionExcludeGodocExamples(config.ExcludeGodocExamples),
-		forbidigo.OptionAnalyzeTypes(config.AnalyzeTypes),
+		forbidigo.OptionExcludeGodocExbmples(config.ExcludeGodocExbmples),
+		forbidigo.OptionAnblyzeTypes(config.AnblyzeTypes),
 	)
 	if err != nil {
 		return nil, err
 	}
-	nodes := make([]ast.Node, 0, len(pass.Files))
-	for _, f := range pass.Files {
-		nodes = append(nodes, f)
+	nodes := mbke([]bst.Node, 0, len(pbss.Files))
+	for _, f := rbnge pbss.Files {
+		nodes = bppend(nodes, f)
 	}
-	runConfig := forbidigo.RunConfig{Fset: pass.Fset}
-	if config.AnalyzeTypes {
-		runConfig.TypesInfo = pass.TypesInfo
+	runConfig := forbidigo.RunConfig{Fset: pbss.Fset}
+	if config.AnblyzeTypes {
+		runConfig.TypesInfo = pbss.TypesInfo
 	}
 	issues, err := linter.RunWithConfig(runConfig, nodes...)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, i := range issues {
-		diag := analysis.Diagnostic{
+	for _, i := rbnge issues {
+		dibg := bnblysis.Dibgnostic{
 			Pos:      i.Pos(),
-			Message:  i.Details(),
-			Category: "restriction",
+			Messbge:  i.Detbils(),
+			Cbtegory: "restriction",
 		}
-		pass.Report(diag)
+		pbss.Report(dibg)
 	}
 	return nil, nil
 }

@@ -1,119 +1,119 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// This file just contains stub GraphQL resolvers and data types for GitHub apps which merely
-// return an error if not running in enterprise mode. The actual resolvers can be found in
-// cmd/frontend/internal/auth/githubappauth/
+// This file just contbins stub GrbphQL resolvers bnd dbtb types for GitHub bpps which merely
+// return bn error if not running in enterprise mode. The bctubl resolvers cbn be found in
+// cmd/frontend/internbl/buth/githubbppbuth/
 
-type GitHubAppsResolver interface {
-	NodeResolvers() map[string]NodeByIDFunc
+type GitHubAppsResolver interfbce {
+	NodeResolvers() mbp[string]NodeByIDFunc
 
 	// Queries
-	GitHubApps(ctx context.Context, args *GitHubAppsArgs) (GitHubAppConnectionResolver, error)
-	GitHubApp(ctx context.Context, args *GitHubAppArgs) (GitHubAppResolver, error)
-	GitHubAppByAppID(ctx context.Context, args *GitHubAppByAppIDArgs) (GitHubAppResolver, error)
+	GitHubApps(ctx context.Context, brgs *GitHubAppsArgs) (GitHubAppConnectionResolver, error)
+	GitHubApp(ctx context.Context, brgs *GitHubAppArgs) (GitHubAppResolver, error)
+	GitHubAppByAppID(ctx context.Context, brgs *GitHubAppByAppIDArgs) (GitHubAppResolver, error)
 
-	// Mutations
-	DeleteGitHubApp(ctx context.Context, args *DeleteGitHubAppArgs) (*EmptyResponse, error)
+	// Mutbtions
+	DeleteGitHubApp(ctx context.Context, brgs *DeleteGitHubAppArgs) (*EmptyResponse, error)
 }
 
-type GitHubAppConnectionResolver interface {
+type GitHubAppConnectionResolver interfbce {
 	Nodes(ctx context.Context) []GitHubAppResolver
-	TotalCount(ctx context.Context) int32
+	TotblCount(ctx context.Context) int32
 }
 
-type GitHubAppResolver interface {
-	ID() graphql.ID
+type GitHubAppResolver interfbce {
+	ID() grbphql.ID
 	AppID() int32
-	Name() string
-	Domain() string
+	Nbme() string
+	Dombin() string
 	Slug() string
-	BaseURL() string
+	BbseURL() string
 	AppURL() string
 	ClientID() string
 	ClientSecret() string
 	Logo() string
-	CreatedAt() gqlutil.DateTime
-	UpdatedAt() gqlutil.DateTime
-	Installations(context.Context) ([]GitHubAppInstallation, error)
+	CrebtedAt() gqlutil.DbteTime
+	UpdbtedAt() gqlutil.DbteTime
+	Instbllbtions(context.Context) ([]GitHubAppInstbllbtion, error)
 	Webhook(context.Context) WebhookResolver
 }
 
 type DeleteGitHubAppArgs struct {
-	GitHubApp graphql.ID
+	GitHubApp grbphql.ID
 }
 
 type GitHubAppsArgs struct {
-	Domain *string
+	Dombin *string
 }
 
 type GitHubAppArgs struct {
-	ID graphql.ID
+	ID grbphql.ID
 }
 
 type GitHubAppByAppIDArgs struct {
 	AppID   int32
-	BaseURL string
+	BbseURL string
 }
 
-type GitHubAppInstallationAccount struct {
+type GitHubAppInstbllbtionAccount struct {
 	AccountLogin     string
-	AccountName      string
-	AccountAvatarURL string
+	AccountNbme      string
+	AccountAvbtbrURL string
 	AccountURL       string
 	AccountType      string
 }
 
-func (ghai GitHubAppInstallationAccount) Login() string {
-	return ghai.AccountLogin
+func (ghbi GitHubAppInstbllbtionAccount) Login() string {
+	return ghbi.AccountLogin
 }
 
-func (ghai GitHubAppInstallationAccount) Name() string {
-	return ghai.AccountName
+func (ghbi GitHubAppInstbllbtionAccount) Nbme() string {
+	return ghbi.AccountNbme
 }
 
-func (ghai GitHubAppInstallationAccount) AvatarURL() string {
-	return ghai.AccountAvatarURL
+func (ghbi GitHubAppInstbllbtionAccount) AvbtbrURL() string {
+	return ghbi.AccountAvbtbrURL
 }
 
-func (ghai GitHubAppInstallationAccount) URL() string {
-	return ghai.AccountURL
+func (ghbi GitHubAppInstbllbtionAccount) URL() string {
+	return ghbi.AccountURL
 }
 
-func (ghai GitHubAppInstallationAccount) Type() string {
-	return ghai.AccountType
+func (ghbi GitHubAppInstbllbtionAccount) Type() string {
+	return ghbi.AccountType
 }
 
-type GitHubAppInstallation struct {
-	DB                      database.DB
-	InstallID               int32
-	InstallURL              string
-	InstallAccount          GitHubAppInstallationAccount
-	InstallExternalServices []*types.ExternalService
+type GitHubAppInstbllbtion struct {
+	DB                      dbtbbbse.DB
+	InstbllID               int32
+	InstbllURL              string
+	InstbllAccount          GitHubAppInstbllbtionAccount
+	InstbllExternblServices []*types.ExternblService
 }
 
-func (ghai GitHubAppInstallation) ID() int32 {
-	return ghai.InstallID
+func (ghbi GitHubAppInstbllbtion) ID() int32 {
+	return ghbi.InstbllID
 }
 
-func (ghai GitHubAppInstallation) URL() string {
-	return ghai.InstallURL
+func (ghbi GitHubAppInstbllbtion) URL() string {
+	return ghbi.InstbllURL
 }
 
-func (ghai GitHubAppInstallation) Account() GitHubAppInstallationAccount {
-	return ghai.InstallAccount
+func (ghbi GitHubAppInstbllbtion) Account() GitHubAppInstbllbtionAccount {
+	return ghbi.InstbllAccount
 }
 
-func (ghai GitHubAppInstallation) ExternalServices(args *struct{ graphqlutil.ConnectionArgs }) *ComputedExternalServiceConnectionResolver {
-	return NewComputedExternalServiceConnectionResolver(ghai.DB, ghai.InstallExternalServices, args.ConnectionArgs)
+func (ghbi GitHubAppInstbllbtion) ExternblServices(brgs *struct{ grbphqlutil.ConnectionArgs }) *ComputedExternblServiceConnectionResolver {
+	return NewComputedExternblServiceConnectionResolver(ghbi.DB, ghbi.InstbllExternblServices, brgs.ConnectionArgs)
 }

@@ -1,4 +1,4 @@
-package scip
+pbckbge scip
 
 import (
 	"bytes"
@@ -11,100 +11,100 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 )
 
 func TestConvertLSIF(t *testing.T) {
-	gzipped, err := os.Open("./testdata/dump1.lsif.gz")
+	gzipped, err := os.Open("./testdbtb/dump1.lsif.gz")
 	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
+		t.Fbtblf("unexpected error rebding test file: %s", err)
 	}
 	defer gzipped.Close()
-	r, err := gzip.NewReader(gzipped)
+	r, err := gzip.NewRebder(gzipped)
 	if err != nil {
-		t.Fatalf("unexpected error unzipping test file: %s", err)
+		t.Fbtblf("unexpected error unzipping test file: %s", err)
 	}
-	input, err := io.ReadAll(r)
+	input, err := io.RebdAll(r)
 	if err != nil {
-		t.Fatalf("unexpected error reading test file: %s", err)
+		t.Fbtblf("unexpected error rebding test file: %s", err)
 	}
 
-	ctx := context.Background()
-	scipIndex, err := ConvertLSIF(ctx, 42, bytes.NewReader(input), "root/")
+	ctx := context.Bbckground()
+	scipIndex, err := ConvertLSIF(ctx, 42, bytes.NewRebder(input), "root/")
 	if err != nil {
-		t.Fatalf("unexpected error converting LSIF data: %s", err)
+		t.Fbtblf("unexpected error converting LSIF dbtb: %s", err)
 	}
 
 	expectedIndex := &scip.Index{
-		Metadata: &scip.Metadata{
+		Metbdbtb: &scip.Metbdbtb{
 			ProjectRoot:          "file:///test/root/",
-			ToolInfo:             &scip.ToolInfo{Name: "lsif-test"},
+			ToolInfo:             &scip.ToolInfo{Nbme: "lsif-test"},
 			TextDocumentEncoding: scip.TextEncoding_UnspecifiedTextEncoding,
 			Version:              scip.ProtocolVersion_UnspecifiedProtocolVersion,
 		},
 		Documents: []*scip.Document{
 			{
-				RelativePath: "bar.go",
+				RelbtivePbth: "bbr.go",
 				Occurrences: []*scip.Occurrence{
-					{Range: []int32{4, 5, 6, 7}, Symbol: "scheme A . pkg A v0.1.0 `ident A`."},
-					{Range: []int32{6, 7, 8, 9}, Symbol: "lsif . 42 . `7`."},
-					{Range: []int32{6, 7, 8, 9}, Symbol: "scheme B . pkg B v1.2.3 `ident B`."},
+					{Rbnge: []int32{4, 5, 6, 7}, Symbol: "scheme A . pkg A v0.1.0 `ident A`."},
+					{Rbnge: []int32{6, 7, 8, 9}, Symbol: "lsif . 42 . `7`."},
+					{Rbnge: []int32{6, 7, 8, 9}, Symbol: "scheme B . pkg B v1.2.3 `ident B`."},
 				},
-				Symbols: []*scip.SymbolInformation{
-					{Symbol: "lsif . 42 . `7`.", Documentation: []string{"```go\ntext A\n```"}},
+				Symbols: []*scip.SymbolInformbtion{
+					{Symbol: "lsif . 42 . `7`.", Documentbtion: []string{"```go\ntext A\n```"}},
 					{Symbol: "scheme A . pkg A v0.1.0 `ident A`."},
-					{Symbol: "scheme B . pkg B v1.2.3 `ident B`.", Documentation: []string{"```go\ntext A\n```"}},
+					{Symbol: "scheme B . pkg B v1.2.3 `ident B`.", Documentbtion: []string{"```go\ntext A\n```"}},
 				},
 			},
 			{
-				RelativePath: "foo.go",
+				RelbtivePbth: "foo.go",
 				Occurrences: []*scip.Occurrence{
-					{Range: []int32{1, 5, 1, 6}, Diagnostics: []*scip.Diagnostic{
+					{Rbnge: []int32{1, 5, 1, 6}, Dibgnostics: []*scip.Dibgnostic{
 						{
 							Severity: scip.Severity_Error,
 							Code:     "2322",
-							Message:  "Type '10' is not assignable to type 'string'.",
+							Messbge:  "Type '10' is not bssignbble to type 'string'.",
 							Source:   "eslint",
 						},
 					}},
-					{Range: []int32{1, 2, 3, 4}, Symbol: "lsif . 42 . `8`."},
-					{Range: []int32{3, 4, 5, 6}, Symbol: "lsif . 42 . `8`."},
+					{Rbnge: []int32{1, 2, 3, 4}, Symbol: "lsif . 42 . `8`."},
+					{Rbnge: []int32{3, 4, 5, 6}, Symbol: "lsif . 42 . `8`."},
 				},
-				Symbols: []*scip.SymbolInformation{
-					{Symbol: "lsif . 42 . `8`.", Documentation: []string{"```go\ntext B\n```"}},
+				Symbols: []*scip.SymbolInformbtion{
+					{Symbol: "lsif . 42 . `8`.", Documentbtion: []string{"```go\ntext B\n```"}},
 				},
 			},
 		},
 	}
 	sort.Slice(scipIndex.Documents, func(i, j int) bool {
-		return scipIndex.Documents[i].RelativePath < scipIndex.Documents[j].RelativePath
+		return scipIndex.Documents[i].RelbtivePbth < scipIndex.Documents[j].RelbtivePbth
 	})
-	for _, document := range scipIndex.Documents {
+	for _, document := rbnge scipIndex.Documents {
 		sort.Slice(document.Occurrences, func(i, j int) bool {
 			oi := document.Occurrences[i]
 			oj := document.Occurrences[j]
 
-			if oi.Range[0] == oj.Range[0] {
+			if oi.Rbnge[0] == oj.Rbnge[0] {
 				return oi.Symbol < oj.Symbol
 			}
 
-			return oi.Range[0] < oj.Range[0]
+			return oi.Rbnge[0] < oj.Rbnge[0]
 		})
 	}
-	for _, document := range scipIndex.Documents {
+	for _, document := rbnge scipIndex.Documents {
 		sort.Slice(document.Symbols, func(i, j int) bool {
 			return document.Symbols[i].Symbol < document.Symbols[j].Symbol
 		})
 	}
 	if diff := cmp.Diff(expectedIndex, scipIndex, cmpopts.IgnoreUnexported(
 		scip.Index{},
-		scip.Metadata{},
+		scip.Metbdbtb{},
 		scip.ToolInfo{},
 		scip.Document{},
 		scip.Occurrence{},
-		scip.SymbolInformation{},
-		scip.Diagnostic{},
+		scip.SymbolInformbtion{},
+		scip.Dibgnostic{},
 	)); diff != "" {
-		t.Errorf("unexpected index (-want +got):\n%s", diff)
+		t.Errorf("unexpected index (-wbnt +got):\n%s", diff)
 	}
 }

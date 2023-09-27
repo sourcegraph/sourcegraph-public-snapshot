@@ -1,14 +1,14 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-// ProductSubscriptionLicensingResolver implements the GraphQL Query and Mutation fields related to product
-// subscriptions and licensing.
+// ProductSubscriptionLicensingResolver implements the GrbphQL Query bnd Mutbtion fields relbted to product
+// subscriptions bnd licensing.
 type ProductSubscriptionLicensingResolver struct {
 	Logger log.Logger
-	DB     database.DB
+	DB     dbtbbbse.DB
 }

@@ -1,38 +1,38 @@
-package perforce
+pbckbge perforce
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	atypes "github.com/sourcegraph/sourcegraph/internal/authz/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/buthz/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewAuthzProviders returns the set of Perforce authz providers derived from the connections.
+// NewAuthzProviders returns the set of Perforce buthz providers derived from the connections.
 //
-// It also returns any simple validation problems with the config, separating these into "serious problems"
-// and "warnings". "Serious problems" are those that should make Sourcegraph set authz.allowAccessByDefault
-// to false. "Warnings" are all other validation problems.
+// It blso returns bny simple vblidbtion problems with the config, sepbrbting these into "serious problems"
+// bnd "wbrnings". "Serious problems" bre those thbt should mbke Sourcegrbph set buthz.bllowAccessByDefbult
+// to fblse. "Wbrnings" bre bll other vblidbtion problems.
 //
-// This constructor does not and should not directly check connectivity to external services - if
-// desired, callers should use `(*Provider).ValidateConnection` directly to get warnings related
+// This constructor does not bnd should not directly check connectivity to externbl services - if
+// desired, cbllers should use `(*Provider).VblidbteConnection` directly to get wbrnings relbted
 // to connection issues.
-func NewAuthzProviders(conns []*types.PerforceConnection) *atypes.ProviderInitResult {
-	initResults := &atypes.ProviderInitResult{}
-	for _, c := range conns {
-		p, err := newAuthzProvider(c.URN, c.Authorization, c.P4Port, c.P4User, c.P4Passwd, c.Depots)
+func NewAuthzProviders(conns []*types.PerforceConnection) *btypes.ProviderInitResult {
+	initResults := &btypes.ProviderInitResult{}
+	for _, c := rbnge conns {
+		p, err := newAuthzProvider(c.URN, c.Authorizbtion, c.P4Port, c.P4User, c.P4Pbsswd, c.Depots)
 		if err != nil {
-			initResults.InvalidConnections = append(initResults.InvalidConnections, extsvc.TypePerforce)
-			initResults.Problems = append(initResults.Problems, err.Error())
+			initResults.InvblidConnections = bppend(initResults.InvblidConnections, extsvc.TypePerforce)
+			initResults.Problems = bppend(initResults.Problems, err.Error())
 		} else if p != nil {
-			initResults.Providers = append(initResults.Providers, p)
+			initResults.Providers = bppend(initResults.Providers, p)
 		}
 	}
 
@@ -41,26 +41,26 @@ func NewAuthzProviders(conns []*types.PerforceConnection) *atypes.ProviderInitRe
 
 func newAuthzProvider(
 	urn string,
-	a *schema.PerforceAuthorization,
-	host, user, password string,
+	b *schemb.PerforceAuthorizbtion,
+	host, user, pbssword string,
 	depots []string,
-) (authz.Provider, error) {
-	// Call this function from ValidateAuthz if this function starts returning an error.
-	if a == nil {
+) (buthz.Provider, error) {
+	// Cbll this function from VblidbteAuthz if this function stbrts returning bn error.
+	if b == nil {
 		return nil, nil
 	}
 
-	logger := log.Scoped("authz", "parse providers from config")
-	if err := licensing.Check(licensing.FeatureACLs); err != nil {
+	logger := log.Scoped("buthz", "pbrse providers from config")
+	if err := licensing.Check(licensing.FebtureACLs); err != nil {
 		return nil, err
 	}
 
-	var depotIDs []extsvc.RepoID
-	if a.SubRepoPermissions {
-		depotIDs = make([]extsvc.RepoID, len(depots))
-		for i, depot := range depots {
-			// Force depots as directories
-			if strings.HasSuffix(depot, "/") {
+	vbr depotIDs []extsvc.RepoID
+	if b.SubRepoPermissions {
+		depotIDs = mbke([]extsvc.RepoID, len(depots))
+		for i, depot := rbnge depots {
+			// Force depots bs directories
+			if strings.HbsSuffix(depot, "/") {
 				depotIDs[i] = extsvc.RepoID(depot)
 			} else {
 				depotIDs[i] = extsvc.RepoID(depot + "/")
@@ -68,12 +68,12 @@ func newAuthzProvider(
 		}
 	}
 
-	return NewProvider(logger, gitserver.NewClient(), urn, host, user, password, depotIDs, a.IgnoreRulesWithHost), nil
+	return NewProvider(logger, gitserver.NewClient(), urn, host, user, pbssword, depotIDs, b.IgnoreRulesWithHost), nil
 }
 
-// ValidateAuthz validates the authorization fields of the given Perforce
-// external service config.
-func ValidateAuthz(_ *schema.PerforceConnection) error {
-	// newAuthzProvider always succeeds, so directly return nil here.
+// VblidbteAuthz vblidbtes the buthorizbtion fields of the given Perforce
+// externbl service config.
+func VblidbteAuthz(_ *schemb.PerforceConnection) error {
+	// newAuthzProvider blwbys succeeds, so directly return nil here.
 	return nil
 }

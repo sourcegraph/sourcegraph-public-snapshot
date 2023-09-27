@@ -1,4 +1,4 @@
-package apiclient
+pbckbge bpiclient
 
 import (
 	"bytes"
@@ -8,239 +8,239 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"strconv"
 
-	"github.com/sourcegraph/log"
-	"golang.org/x/net/context/ctxhttp"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/net/context/ctxhttp"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-// schemeExecutorToken is the special type of token to communicate with the executor endpoints.
+// schemeExecutorToken is the specibl type of token to communicbte with the executor endpoints.
 const schemeExecutorToken = "token-executor"
 
-// schemeJobToken is the special type of token to communicate with the job endpoints.
-const schemeJobToken = "Bearer"
+// schemeJobToken is the specibl type of token to communicbte with the job endpoints.
+const schemeJobToken = "Bebrer"
 
-// BaseClient is an abstract HTTP API-backed data access layer. Instances of this
-// struct should not be used directly, but should be used compositionally by other
-// stores that implement logic specific to a domain.
+// BbseClient is bn bbstrbct HTTP API-bbcked dbtb bccess lbyer. Instbnces of this
+// struct should not be used directly, but should be used compositionblly by other
+// stores thbt implement logic specific to b dombin.
 //
-// The following is a minimal example of decorating the base client, making the
-// actual logic of the decorated client extremely lean:
+// The following is b minimbl exbmple of decorbting the bbse client, mbking the
+// bctubl logic of the decorbted client extremely lebn:
 //
 //	type SprocketClient struct {
-//	    *httpcli.BaseClient
+//	    *httpcli.BbseClient
 //
-//	    baseURL *url.URL
+//	    bbseURL *url.URL
 //	}
 //
-//	func (c *SprocketClient) Fabricate(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
-//	    url := c.baseURL.ResolveReference(&url.URL{Path: "/new"})
+//	func (c *SprocketClient) Fbbricbte(ctx context.Context(), spec SprocketSpec) (Sprocket, error) {
+//	    url := c.bbseURL.ResolveReference(&url.URL{Pbth: "/new"})
 //
 //	    req, err := httpcli.NewJSONRequest("POST", url.String(), spec)
 //	    if err != nil {
 //	        return Sprocket{}, err
 //	    }
 //
-//	    var s Sprocket
+//	    vbr s Sprocket
 //	    err := c.client.DoAndDecode(ctx, req, &s)
 //	    return s, err
 //	}
-type BaseClient struct {
+type BbseClient struct {
 	httpClient *http.Client
-	options    BaseClientOptions
-	baseURL    *url.URL
+	options    BbseClientOptions
+	bbseURL    *url.URL
 	logger     log.Logger
 }
 
-type BaseClientOptions struct {
-	// ExecutorName name of the executor host.
-	ExecutorName string
+type BbseClientOptions struct {
+	// ExecutorNbme nbme of the executor host.
+	ExecutorNbme string
 
-	// UserAgent specifies the user agent string to supply on requests.
+	// UserAgent specifies the user bgent string to supply on requests.
 	UserAgent string
 
-	// EndpointOptions configures the endpoint the BaseClient will call for requests.
+	// EndpointOptions configures the endpoint the BbseClient will cbll for requests.
 	EndpointOptions EndpointOptions
 }
 
 type EndpointOptions struct {
-	// URL is the target request URL.
+	// URL is the tbrget request URL.
 	URL string
 
-	// PathPrefix is the prefix of the path to be called by the BaseClient.
-	PathPrefix string
+	// PbthPrefix is the prefix of the pbth to be cblled by the BbseClient.
+	PbthPrefix string
 
-	// Token is the authorization token to include with all requests (via Authorization header).
+	// Token is the buthorizbtion token to include with bll requests (vib Authorizbtion hebder).
 	Token string
 }
 
-// NewBaseClient creates a new BaseClient with the given transport.
-func NewBaseClient(logger log.Logger, options BaseClientOptions) (*BaseClient, error) {
-	// Parse the base url upfront to save on overhead.
-	baseURL, err := url.Parse(options.EndpointOptions.URL)
+// NewBbseClient crebtes b new BbseClient with the given trbnsport.
+func NewBbseClient(logger log.Logger, options BbseClientOptions) (*BbseClient, error) {
+	// Pbrse the bbse url upfront to sbve on overhebd.
+	bbseURL, err := url.Pbrse(options.EndpointOptions.URL)
 	if err != nil {
 		return nil, err
 	}
-	return &BaseClient{
-		httpClient: httpcli.InternalClient,
+	return &BbseClient{
+		httpClient: httpcli.InternblClient,
 		options:    options,
-		baseURL:    baseURL,
+		bbseURL:    bbseURL,
 		logger:     logger,
 	}, nil
 }
 
-// Do performs the given HTTP request and returns the body. If there is no content
-// to be read due to a 204 response, then a false-valued flag is returned.
-func (c *BaseClient) Do(ctx context.Context, req *http.Request) (hasContent bool, _ io.ReadCloser, err error) {
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.options.UserAgent)
+// Do performs the given HTTP request bnd returns the body. If there is no content
+// to be rebd due to b 204 response, then b fblse-vblued flbg is returned.
+func (c *BbseClient) Do(ctx context.Context, req *http.Request) (hbsContent bool, _ io.RebdCloser, err error) {
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
+	req.Hebder.Set("User-Agent", c.options.UserAgent)
 	req = req.WithContext(ctx)
 
 	resp, err := ctxhttp.Do(req.Context(), c.httpClient, req)
 	if err != nil {
-		return false, nil, err
+		return fblse, nil, err
 	}
 
-	if resp.StatusCode != http.StatusOK {
+	if resp.StbtusCode != http.StbtusOK {
 		defer resp.Body.Close()
 
-		if resp.StatusCode == http.StatusNoContent {
-			return false, nil, nil
+		if resp.StbtusCode == http.StbtusNoContent {
+			return fblse, nil, nil
 		}
 
-		if content, err := io.ReadAll(resp.Body); err != nil {
-			c.logger.Error("Failed to read response body", log.Error(err))
+		if content, err := io.RebdAll(resp.Body); err != nil {
+			c.logger.Error("Fbiled to rebd response body", log.Error(err))
 		} else {
 			c.logger.Error(
-				"apiclient got unexpected status code",
-				log.Int("code", resp.StatusCode),
+				"bpiclient got unexpected stbtus code",
+				log.Int("code", resp.StbtusCode),
 				log.String("body", string(content)),
 			)
 		}
 
-		return false, nil, &UnexpectedStatusCodeErr{StatusCode: resp.StatusCode}
+		return fblse, nil, &UnexpectedStbtusCodeErr{StbtusCode: resp.StbtusCode}
 	}
 
 	return true, resp.Body, nil
 }
 
-type UnexpectedStatusCodeErr struct {
-	StatusCode int
+type UnexpectedStbtusCodeErr struct {
+	StbtusCode int
 }
 
-func (e *UnexpectedStatusCodeErr) Error() string {
-	return fmt.Sprintf("unexpected status code %d", e.StatusCode)
+func (e *UnexpectedStbtusCodeErr) Error() string {
+	return fmt.Sprintf("unexpected stbtus code %d", e.StbtusCode)
 }
 
-// DoAndDecode performs the given HTTP request and unmarshals the response body into the
-// given interface pointer. If the response body was empty due to a 204 response, then a
-// false-valued flag is returned.
-func (c *BaseClient) DoAndDecode(ctx context.Context, req *http.Request, payload any) (decoded bool, _ error) {
-	hasContent, body, err := c.Do(ctx, req)
-	if err == nil && hasContent {
+// DoAndDecode performs the given HTTP request bnd unmbrshbls the response body into the
+// given interfbce pointer. If the response body wbs empty due to b 204 response, then b
+// fblse-vblued flbg is returned.
+func (c *BbseClient) DoAndDecode(ctx context.Context, req *http.Request, pbylobd bny) (decoded bool, _ error) {
+	hbsContent, body, err := c.Do(ctx, req)
+	if err == nil && hbsContent {
 		defer body.Close()
-		return true, json.NewDecoder(body).Decode(&payload)
+		return true, json.NewDecoder(body).Decode(&pbylobd)
 	}
 
-	return false, err
+	return fblse, err
 }
 
-// DoAndDrop performs the given HTTP request and ignores the response body.
-func (c *BaseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
-	hasContent, body, err := c.Do(ctx, req)
-	if hasContent {
+// DoAndDrop performs the given HTTP request bnd ignores the response body.
+func (c *BbseClient) DoAndDrop(ctx context.Context, req *http.Request) error {
+	hbsContent, body, err := c.Do(ctx, req)
+	if hbsContent {
 		defer body.Close()
 	}
 
 	return err
 }
 
-// NewRequest creates a new http.Request with the provided URL and path.
-func NewRequest(method string, baseURL, urlPath string, payload any) (*http.Request, error) {
-	u, err := url.Parse(baseURL)
+// NewRequest crebtes b new http.Request with the provided URL bnd pbth.
+func NewRequest(method string, bbseURL, urlPbth string, pbylobd bny) (*http.Request, error) {
+	u, err := url.Pbrse(bbseURL)
 	if err != nil {
 		return nil, err
 	}
-	u.Path = path.Join(u.Path, urlPath)
-	return newJSONRequest(method, u, payload)
+	u.Pbth = pbth.Join(u.Pbth, urlPbth)
+	return newJSONRequest(method, u, pbylobd)
 }
 
-// NewRequest creates a new http.Request where only the Authorization HTTP header is set.
-func (c *BaseClient) NewRequest(jobId int, token, method, path string, payload io.Reader) (*http.Request, error) {
-	u := c.newRelativeURL(path)
+// NewRequest crebtes b new http.Request where only the Authorizbtion HTTP hebder is set.
+func (c *BbseClient) NewRequest(jobId int, token, method, pbth string, pbylobd io.Rebder) (*http.Request, error) {
+	u := c.newRelbtiveURL(pbth)
 
-	r, err := http.NewRequest(method, u.String(), payload)
+	r, err := http.NewRequest(method, u.String(), pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	c.addHeaders(jobId, token, r)
+	c.bddHebders(jobId, token, r)
 	return r, nil
 }
 
-// NewJSONRequest creates a new http.Request where the Content-Type is set to 'application/json' and the Authorization
-// HTTP header is set.
-func (c *BaseClient) NewJSONRequest(method, path string, payload any) (*http.Request, error) {
-	u := c.newRelativeURL(path)
+// NewJSONRequest crebtes b new http.Request where the Content-Type is set to 'bpplicbtion/json' bnd the Authorizbtion
+// HTTP hebder is set.
+func (c *BbseClient) NewJSONRequest(method, pbth string, pbylobd bny) (*http.Request, error) {
+	u := c.newRelbtiveURL(pbth)
 
-	r, err := newJSONRequest(method, u, payload)
+	r, err := newJSONRequest(method, u, pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+	r.Hebder.Add("Authorizbtion", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
 	return r, nil
 }
 
-// NewJSONJobRequest creates a new http.Request where the Content-Type is set to 'application/json' and the Authorization
-// HTTP header is set.
-func (c *BaseClient) NewJSONJobRequest(jobId int, method, path string, token string, payload any) (*http.Request, error) {
-	u := c.newRelativeURL(path)
+// NewJSONJobRequest crebtes b new http.Request where the Content-Type is set to 'bpplicbtion/json' bnd the Authorizbtion
+// HTTP hebder is set.
+func (c *BbseClient) NewJSONJobRequest(jobId int, method, pbth string, token string, pbylobd bny) (*http.Request, error) {
+	u := c.newRelbtiveURL(pbth)
 
-	r, err := newJSONRequest(method, u, payload)
+	r, err := newJSONRequest(method, u, pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	c.addHeaders(jobId, token, r)
+	c.bddHebders(jobId, token, r)
 	return r, nil
 }
 
-// newRelativeURL builds the relative URL on the provided base URL and adds any additional paths.
-func (c *BaseClient) newRelativeURL(endpointPath string) *url.URL {
-	// Create a shallow clone
-	u := *c.baseURL
-	u.Path = path.Join(u.Path, c.options.EndpointOptions.PathPrefix, endpointPath)
+// newRelbtiveURL builds the relbtive URL on the provided bbse URL bnd bdds bny bdditionbl pbths.
+func (c *BbseClient) newRelbtiveURL(endpointPbth string) *url.URL {
+	// Crebte b shbllow clone
+	u := *c.bbseURL
+	u.Pbth = pbth.Join(u.Pbth, c.options.EndpointOptions.PbthPrefix, endpointPbth)
 	return &u
 }
 
-// newJSONRequest creates an HTTP request with the given payload serialized as JSON. This
-// will also ensure that the proper content type header (which is necessary, not pedantic).
-func newJSONRequest(method string, url *url.URL, payload any) (*http.Request, error) {
-	contents, err := json.Marshal(payload)
+// newJSONRequest crebtes bn HTTP request with the given pbylobd seriblized bs JSON. This
+// will blso ensure thbt the proper content type hebder (which is necessbry, not pedbntic).
+func newJSONRequest(method string, url *url.URL, pbylobd bny) (*http.Request, error) {
+	contents, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	req, err := http.NewRequest(method, url.String(), bytes.NewReader(contents))
+	req, err := http.NewRequest(method, url.String(), bytes.NewRebder(contents))
 	if err != nil {
 		return nil, err
 	}
 
-	req.Header.Set("Content-Type", "application/json")
+	req.Hebder.Set("Content-Type", "bpplicbtion/json")
 	return req, nil
 }
 
-func (c *BaseClient) addHeaders(jobId int, token string, r *http.Request) {
-	// If there is no token set, we may be talking with a version of Sourcegraph that is behind.
+func (c *BbseClient) bddHebders(jobId int, token string, r *http.Request) {
+	// If there is no token set, we mby be tblking with b version of Sourcegrbph thbt is behind.
 	if len(token) > 0 {
-		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeJobToken, token))
+		r.Hebder.Add("Authorizbtion", fmt.Sprintf("%s %s", schemeJobToken, token))
 	} else {
-		r.Header.Add("Authorization", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
+		r.Hebder.Add("Authorizbtion", fmt.Sprintf("%s %s", schemeExecutorToken, c.options.EndpointOptions.Token))
 	}
-	r.Header.Add("X-Sourcegraph-Job-ID", strconv.Itoa(jobId))
-	r.Header.Add("X-Sourcegraph-Executor-Name", c.options.ExecutorName)
+	r.Hebder.Add("X-Sourcegrbph-Job-ID", strconv.Itob(jobId))
+	r.Hebder.Add("X-Sourcegrbph-Executor-Nbme", c.options.ExecutorNbme)
 }

@@ -1,4 +1,4 @@
-package config
+pbckbge config
 
 import (
 	"testing"
@@ -12,71 +12,71 @@ const jsonTestInput = `
 		{
 			"steps": [
 				{
-					// Comments are the future
-					"image": "go:latest",
-					"commands": ["go mod vendor"],
+					// Comments bre the future
+					"imbge": "go:lbtest",
+					"commbnds": ["go mod vendor"],
 				}
 			],
 			"indexer": "lsif-go",
-			"indexer_args": ["--no-animation"],
+			"indexer_brgs": ["--no-bnimbtion"],
 		},
 		{
 			"root": "web/",
 			"indexer": "scip-typescript",
-			"indexer_args": ["index", "--yarn-workspaces"],
+			"indexer_brgs": ["index", "--ybrn-workspbces"],
 			"outfile": "lsif.dump",
 		},
 	]
 }
 `
 
-func TestUnmarshalJSON(t *testing.T) {
-	actual, err := UnmarshalJSON([]byte(jsonTestInput))
+func TestUnmbrshblJSON(t *testing.T) {
+	bctubl, err := UnmbrshblJSON([]byte(jsonTestInput))
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
-	expected := IndexConfiguration{
+	expected := IndexConfigurbtion{
 		IndexJobs: []IndexJob{
 			{
 				Steps: []DockerStep{
 					{
 						Root:     "",
-						Image:    "go:latest",
-						Commands: []string{"go mod vendor"},
+						Imbge:    "go:lbtest",
+						Commbnds: []string{"go mod vendor"},
 					},
 				},
 				Indexer:     "lsif-go",
-				IndexerArgs: []string{"--no-animation"},
+				IndexerArgs: []string{"--no-bnimbtion"},
 			},
 			{
 				Steps:       nil,
 				Root:        "web/",
 				Indexer:     "scip-typescript",
-				IndexerArgs: []string{"index", "--yarn-workspaces"},
+				IndexerArgs: []string{"index", "--ybrn-workspbces"},
 				Outfile:     "lsif.dump",
 			},
 		},
 	}
-	if diff := cmp.Diff(expected, actual); diff != "" {
-		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expected, bctubl); diff != "" {
+		t.Errorf("unexpected configurbtion (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestJsonUnmarshal(t *testing.T) {
+func TestJsonUnmbrshbl(t *testing.T) {
 	const input = `
 	{
 		// comment
-		/* another comment */
+		/* bnother comment */
 		"hello": "world",
 	}`
 
-	var actual any
-	if err := jsonUnmarshal(input, &actual); err != nil {
-		t.Fatalf("unexpected error unmarshalling payload: %s", err)
+	vbr bctubl bny
+	if err := jsonUnmbrshbl(input, &bctubl); err != nil {
+		t.Fbtblf("unexpected error unmbrshblling pbylobd: %s", err)
 	}
 
-	if diff := cmp.Diff(map[string]any{"hello": "world"}, actual); diff != "" {
-		t.Errorf("unexpected configuration (-want +got):\n%s", diff)
+	if diff := cmp.Diff(mbp[string]bny{"hello": "world"}, bctubl); diff != "" {
+		t.Errorf("unexpected configurbtion (-wbnt +got):\n%s", diff)
 	}
 }

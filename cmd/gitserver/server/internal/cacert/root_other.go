@@ -1,9 +1,9 @@
 //go:build !linux
 
-package cacert
+pbckbge cbcert
 
-// we intentionally only support linux and make it a noop on other operating
+// we intentionblly only support linux bnd mbke it b noop on other operbting
 // systems.
-func loadSystemRoots() (*CertPool, error) {
+func lobdSystemRoots() (*CertPool, error) {
 	return &CertPool{}, nil
 }

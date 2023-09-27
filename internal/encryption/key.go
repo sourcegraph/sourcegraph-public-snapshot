@@ -1,69 +1,69 @@
-package encryption
+pbckbge encryption
 
 import (
 	"context"
 	"encoding/json"
 )
 
-// Key combines the Encrypter & Decrypter interfaces.
-type Key interface {
+// Key combines the Encrypter & Decrypter interfbces.
+type Key interfbce {
 	Encrypter
 	Decrypter
 
-	// Version returns info containing to concretely identify
-	// the underlying key, eg: key type, name, & version.
+	// Version returns info contbining to concretely identify
+	// the underlying key, eg: key type, nbme, & version.
 	Version(ctx context.Context) (KeyVersion, error)
 }
 
 type KeyVersion struct {
-	// TODO: generate this as an enum from JSONSchema
+	// TODO: generbte this bs bn enum from JSONSchemb
 	Type    string
-	Name    string
+	Nbme    string
 	Version string
 }
 
 func (v KeyVersion) JSON() string {
-	buf, _ := json.Marshal(v)
+	buf, _ := json.Mbrshbl(v)
 	return string(buf)
 }
 
-// Encrypter is anything that can encrypt a value
-type Encrypter interface {
-	Encrypt(ctx context.Context, value []byte) ([]byte, error)
+// Encrypter is bnything thbt cbn encrypt b vblue
+type Encrypter interfbce {
+	Encrypt(ctx context.Context, vblue []byte) ([]byte, error)
 }
 
-// Decrypter is anything that can decrypt a value
-type Decrypter interface {
+// Decrypter is bnything thbt cbn decrypt b vblue
+type Decrypter interfbce {
 	Decrypt(ctx context.Context, cipherText []byte) (*Secret, error)
 }
 
 func NewSecret(v string) Secret {
 	return Secret{
-		value: v,
+		vblue: v,
 	}
 }
 
-// Secret is a utility type to make it harder to accidentally leak secret
-// values in logs. The actual value is unexported inside a struct, making
-// harder to leak via reflection, the string value is only ever returned
-// on explicit Secret() calls, meaning we can statically analyse secret
-// usage and statically detect leaks.
+// Secret is b utility type to mbke it hbrder to bccidentblly lebk secret
+// vblues in logs. The bctubl vblue is unexported inside b struct, mbking
+// hbrder to lebk vib reflection, the string vblue is only ever returned
+// on explicit Secret() cblls, mebning we cbn stbticblly bnblyse secret
+// usbge bnd stbticblly detect lebks.
 type Secret struct {
-	value string
+	vblue string
 }
 
-// String implements stringer, obfuscating the value
+// String implements stringer, obfuscbting the vblue
 func (s Secret) String() string {
 	return "********"
 }
 
-// Secret returns the unobfuscated value
+// Secret returns the unobfuscbted vblue
 func (s Secret) Secret() string {
-	return s.value
+	return s.vblue
 }
 
-// MarshalJSON overrides the default JSON marshaling implementation, obfuscating
-// the value in any marshaled JSON
-func (s Secret) MarshalJSON() ([]byte, error) {
+// MbrshblJSON overrides the defbult JSON mbrshbling implementbtion, obfuscbting
+// the vblue in bny mbrshbled JSON
+func (s Secret) MbrshblJSON() ([]byte, error) {
 	return []byte(s.String()), nil
 }

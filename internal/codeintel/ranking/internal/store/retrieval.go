@@ -1,166 +1,166 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/ranking/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/rbnking/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func (s *store) GetStarRank(ctx context.Context, repoName api.RepoName) (_ float64, err error) {
-	ctx, _, endObservation := s.operations.getStarRank.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) GetStbrRbnk(ctx context.Context, repoNbme bpi.RepoNbme) (_ flobt64, err error) {
+	ctx, _, endObservbtion := s.operbtions.getStbrRbnk.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rank, _, err := basestore.ScanFirstFloat(s.db.Query(ctx, sqlf.Sprintf(getStarRankQuery, repoName)))
-	return rank, err
+	rbnk, _, err := bbsestore.ScbnFirstFlobt(s.db.Query(ctx, sqlf.Sprintf(getStbrRbnkQuery, repoNbme)))
+	return rbnk, err
 }
 
-const getStarRankQuery = `
+const getStbrRbnkQuery = `
 SELECT
-	s.rank
+	s.rbnk
 FROM (
 	SELECT
-		name,
-		percent_rank() OVER (ORDER BY stars) AS rank
+		nbme,
+		percent_rbnk() OVER (ORDER BY stbrs) AS rbnk
 	FROM repo
 ) s
-WHERE s.name = %s
+WHERE s.nbme = %s
 `
 
-func (s *store) GetDocumentRanks(ctx context.Context, repoName api.RepoName) (_ map[string]float64, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getDocumentRanks.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) GetDocumentRbnks(ctx context.Context, repoNbme bpi.RepoNbme) (_ mbp[string]flobt64, _ bool, err error) {
+	ctx, _, endObservbtion := s.operbtions.getDocumentRbnks.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	pathRanksWithPrecision := map[string]float64{}
-	scanner := func(s dbutil.Scanner) (bool, error) {
-		var serialized string
-		if err := s.Scan(&serialized); err != nil {
-			return false, err
+	pbthRbnksWithPrecision := mbp[string]flobt64{}
+	scbnner := func(s dbutil.Scbnner) (bool, error) {
+		vbr seriblized string
+		if err := s.Scbn(&seriblized); err != nil {
+			return fblse, err
 		}
 
-		pathRanks := map[string]float64{}
-		if err := json.Unmarshal([]byte(serialized), &pathRanks); err != nil {
-			return false, err
+		pbthRbnks := mbp[string]flobt64{}
+		if err := json.Unmbrshbl([]byte(seriblized), &pbthRbnks); err != nil {
+			return fblse, err
 		}
 
-		for path, newRank := range pathRanks {
-			pathRanksWithPrecision[path] = newRank
+		for pbth, newRbnk := rbnge pbthRbnks {
+			pbthRbnksWithPrecision[pbth] = newRbnk
 		}
 
 		return true, nil
 	}
 
-	if err := basestore.NewCallbackScanner(scanner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRanksQuery, repoName))); err != nil {
-		return nil, false, err
+	if err := bbsestore.NewCbllbbckScbnner(scbnner)(s.db.Query(ctx, sqlf.Sprintf(getDocumentRbnksQuery, repoNbme))); err != nil {
+		return nil, fblse, err
 	}
-	return pathRanksWithPrecision, true, nil
+	return pbthRbnksWithPrecision, true, nil
 }
 
-const getDocumentRanksQuery = `
+const getDocumentRbnksQuery = `
 WITH
-last_completed_progress AS (
-	SELECT crp.graph_key
-	FROM codeintel_ranking_progress crp
-	WHERE crp.reducer_completed_at IS NOT NULL
-	ORDER BY crp.reducer_completed_at DESC
+lbst_completed_progress AS (
+	SELECT crp.grbph_key
+	FROM codeintel_rbnking_progress crp
+	WHERE crp.reducer_completed_bt IS NOT NULL
+	ORDER BY crp.reducer_completed_bt DESC
 	LIMIT 1
 )
-SELECT payload
-FROM codeintel_path_ranks pr
+SELECT pbylobd
+FROM codeintel_pbth_rbnks pr
 JOIN repo r ON r.id = pr.repository_id
 WHERE
-	pr.graph_key IN (SELECT graph_key FROM last_completed_progress) AND
-	r.name = %s AND
-	r.deleted_at IS NULL AND
+	pr.grbph_key IN (SELECT grbph_key FROM lbst_completed_progress) AND
+	r.nbme = %s AND
+	r.deleted_bt IS NULL AND
 	r.blocked IS NULL
 `
 
-func (s *store) GetReferenceCountStatistics(ctx context.Context) (logmean float64, err error) {
-	ctx, _, endObservation := s.operations.getReferenceCountStatistics.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) GetReferenceCountStbtistics(ctx context.Context) (logmebn flobt64, err error) {
+	ctx, _, endObservbtion := s.operbtions.getReferenceCountStbtistics.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	rows, err := s.db.Query(ctx, sqlf.Sprintf(getReferenceCountStatisticsQuery))
+	rows, err := s.db.Query(ctx, sqlf.Sprintf(getReferenceCountStbtisticsQuery))
 	if err != nil {
 		return 0, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
 	if rows.Next() {
-		if err := rows.Scan(&logmean); err != nil {
+		if err := rows.Scbn(&logmebn); err != nil {
 			return 0, err
 		}
 	}
 
-	return logmean, nil
+	return logmebn, nil
 }
 
-const getReferenceCountStatisticsQuery = `
+const getReferenceCountStbtisticsQuery = `
 WITH
-last_completed_progress AS (
-	SELECT crp.graph_key
-	FROM codeintel_ranking_progress crp
-	WHERE crp.reducer_completed_at IS NOT NULL
-	ORDER BY crp.reducer_completed_at DESC
+lbst_completed_progress AS (
+	SELECT crp.grbph_key
+	FROM codeintel_rbnking_progress crp
+	WHERE crp.reducer_completed_bt IS NOT NULL
+	ORDER BY crp.reducer_completed_bt DESC
 	LIMIT 1
 )
 SELECT
-	CASE WHEN COALESCE(SUM(pr.num_paths), 0) = 0
+	CASE WHEN COALESCE(SUM(pr.num_pbths), 0) = 0
 		THEN 0.0
-		ELSE SUM(pr.refcount_logsum) / SUM(pr.num_paths)::float
-	END AS logmean
-FROM codeintel_path_ranks pr
-WHERE pr.graph_key IN (SELECT graph_key FROM last_completed_progress)
+		ELSE SUM(pr.refcount_logsum) / SUM(pr.num_pbths)::flobt
+	END AS logmebn
+FROM codeintel_pbth_rbnks pr
+WHERE pr.grbph_key IN (SELECT grbph_key FROM lbst_completed_progress)
 `
 
-func (s *store) CoverageCounts(ctx context.Context, graphKey string) (_ shared.CoverageCounts, err error) {
-	ctx, _, endObservation := s.operations.coverageCounts.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) CoverbgeCounts(ctx context.Context, grbphKey string) (_ shbred.CoverbgeCounts, err error) {
+	ctx, _, endObservbtion := s.operbtions.coverbgeCounts.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	counts, _, err := scanFirstCoverageCounts(s.db.Query(ctx, sqlf.Sprintf(coverageCountsQuery, graphKey)))
+	counts, _, err := scbnFirstCoverbgeCounts(s.db.Query(ctx, sqlf.Sprintf(coverbgeCountsQuery, grbphKey)))
 	return counts, err
 }
 
-const coverageCountsQuery = `
+const coverbgeCountsQuery = `
 WITH
-targets AS (
-	SELECT uvt.upload_id
-	FROM lsif_uploads_visible_at_tip uvt
+tbrgets AS (
+	SELECT uvt.uplobd_id
+	FROM lsif_uplobds_visible_bt_tip uvt
 	JOIN repo r ON r.id = uvt.repository_id
 	WHERE
-		uvt.is_default_branch AND
-		r.deleted_at IS NULL AND
+		uvt.is_defbult_brbnch AND
+		r.deleted_bt IS NULL AND
 		r.blocked IS NULL
 ),
 exported AS (
 	SELECT re.id
-	FROM codeintel_ranking_exports re
-	JOIN targets t ON t.upload_id = re.upload_id
+	FROM codeintel_rbnking_exports re
+	JOIN tbrgets t ON t.uplobd_id = re.uplobd_id
 	WHERE
-		re.graph_key = %s AND
-		re.deleted_at IS NULL
+		re.grbph_key = %s AND
+		re.deleted_bt IS NULL
 ),
 progress AS (
 	SELECT pl.id
-	FROM codeintel_ranking_progress pl
-	WHERE pl.reducer_completed_at IS NOT NULL
-	ORDER BY pl.reducer_completed_at DESC
+	FROM codeintel_rbnking_progress pl
+	WHERE pl.reducer_completed_bt IS NOT NULL
+	ORDER BY pl.reducer_completed_bt DESC
 	LIMIT 1
 ),
 unindexed AS (
 	SELECT r.id
 	FROM repo r
-	JOIN codeintel_path_ranks pr ON pr.repository_id = r.id
-	JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
+	JOIN codeintel_pbth_rbnks pr ON pr.repository_id = r.id
+	JOIN codeintel_rbnking_progress crp ON crp.grbph_key = pr.grbph_key
 	WHERE
-		r.deleted_at IS NULL AND
+		r.deleted_bt IS NULL AND
 		r.blocked IS NULL AND
 		crp.id = (SELECT id FROM progress) AND
 		NOT EXISTS (
@@ -168,53 +168,53 @@ unindexed AS (
 			FROM zoekt_repos zr
 			WHERE
 				zr.repo_id = r.id AND
-				zr.index_status = 'indexed' AND
-				crp.reducer_completed_at < zr.last_indexed_at
+				zr.index_stbtus = 'indexed' AND
+				crp.reducer_completed_bt < zr.lbst_indexed_bt
 		)
 )
 SELECT
-	(SELECT COUNT(*) FROM targets) AS num_targets,
+	(SELECT COUNT(*) FROM tbrgets) AS num_tbrgets,
 	(SELECT COUNT(*) FROM exported) AS num_exported,
 	(SELECT COUNT(*) FROM unindexed) AS num_unindexed
 `
 
-var scanFirstCoverageCounts = basestore.NewFirstScanner[shared.CoverageCounts](func(s dbutil.Scanner) (c shared.CoverageCounts, _ error) {
-	err := s.Scan(&c.NumTargetIndexes, &c.NumExportedIndexes, &c.NumRepositoriesWithoutCurrentRanks)
+vbr scbnFirstCoverbgeCounts = bbsestore.NewFirstScbnner[shbred.CoverbgeCounts](func(s dbutil.Scbnner) (c shbred.CoverbgeCounts, _ error) {
+	err := s.Scbn(&c.NumTbrgetIndexes, &c.NumExportedIndexes, &c.NumRepositoriesWithoutCurrentRbnks)
 	return c, err
 })
 
-func (s *store) LastUpdatedAt(ctx context.Context, repoIDs []api.RepoID) (_ map[api.RepoID]time.Time, err error) {
-	ctx, _, endObservation := s.operations.lastUpdatedAt.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
+func (s *store) LbstUpdbtedAt(ctx context.Context, repoIDs []bpi.RepoID) (_ mbp[bpi.RepoID]time.Time, err error) {
+	ctx, _, endObservbtion := s.operbtions.lbstUpdbtedAt.With(ctx, &err, observbtion.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	pairs, err := scanLastUpdatedAtPairs(s.db.Query(ctx, sqlf.Sprintf(lastUpdatedAtQuery, pq.Array(repoIDs))))
+	pbirs, err := scbnLbstUpdbtedAtPbirs(s.db.Query(ctx, sqlf.Sprintf(lbstUpdbtedAtQuery, pq.Arrby(repoIDs))))
 	if err != nil {
 		return nil, err
 	}
 
-	return pairs, nil
+	return pbirs, nil
 }
 
-const lastUpdatedAtQuery = `
+const lbstUpdbtedAtQuery = `
 WITH
 progress AS (
 	SELECT pl.id
-	FROM codeintel_ranking_progress pl
-	WHERE pl.reducer_completed_at IS NOT NULL
-	ORDER BY pl.reducer_completed_at DESC
+	FROM codeintel_rbnking_progress pl
+	WHERE pl.reducer_completed_bt IS NOT NULL
+	ORDER BY pl.reducer_completed_bt DESC
 	LIMIT 1
 )
 SELECT
 	pr.repository_id,
-	crp.reducer_completed_at
-FROM codeintel_path_ranks pr
-JOIN codeintel_ranking_progress crp ON crp.graph_key = pr.graph_key
+	crp.reducer_completed_bt
+FROM codeintel_pbth_rbnks pr
+JOIN codeintel_rbnking_progress crp ON crp.grbph_key = pr.grbph_key
 WHERE
 	pr.repository_id = ANY(%s) AND
 	crp.id = (SELECT id FROM progress)
 `
 
-var scanLastUpdatedAtPairs = basestore.NewMapScanner(func(s dbutil.Scanner) (repoID api.RepoID, t time.Time, _ error) {
-	err := s.Scan(&repoID, &t)
+vbr scbnLbstUpdbtedAtPbirs = bbsestore.NewMbpScbnner(func(s dbutil.Scbnner) (repoID bpi.RepoID, t time.Time, _ error) {
+	err := s.Scbn(&repoID, &t)
 	return repoID, t, err
 })

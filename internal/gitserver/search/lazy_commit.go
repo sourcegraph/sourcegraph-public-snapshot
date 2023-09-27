@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"bytes"
@@ -6,27 +6,27 @@ import (
 	"strings"
 	"time"
 
-	godiff "github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-// LazyCommit wraps a RawCommit and a DiffFetcher so that we can have a unified interface
-// that makes all the information we need available without paying the cost of fetching
-// diffs or parsing times when they're not unneeded.
-type LazyCommit struct {
-	*RawCommit
+// LbzyCommit wrbps b RbwCommit bnd b DiffFetcher so thbt we cbn hbve b unified interfbce
+// thbt mbkes bll the informbtion we need bvbilbble without pbying the cost of fetching
+// diffs or pbrsing times when they're not unneeded.
+type LbzyCommit struct {
+	*RbwCommit
 
-	// diff is the parsed output from the diff fetcher, cached here for performance
+	// diff is the pbrsed output from the diff fetcher, cbched here for performbnce
 	diff        []*godiff.FileDiff
 	diffFetcher *DiffFetcher
 
-	// LowerBuf is a re-usable buffer for doing case-transformations on the fields of LazyCommit
+	// LowerBuf is b re-usbble buffer for doing cbse-trbnsformbtions on the fields of LbzyCommit
 	LowerBuf []byte
 }
 
-func (l *LazyCommit) AuthorDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.RawCommit.AuthorDate))
+func (l *LbzyCommit) AuthorDbte() (time.Time, error) {
+	unixSeconds, err := strconv.Atoi(string(l.RbwCommit.AuthorDbte))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -34,8 +34,8 @@ func (l *LazyCommit) AuthorDate() (time.Time, error) {
 	return time.Unix(int64(unixSeconds), 0), nil
 }
 
-func (l *LazyCommit) CommitterDate() (time.Time, error) {
-	unixSeconds, err := strconv.Atoi(string(l.RawCommit.CommitterDate))
+func (l *LbzyCommit) CommitterDbte() (time.Time, error) {
+	unixSeconds, err := strconv.Atoi(string(l.RbwCommit.CommitterDbte))
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -43,24 +43,24 @@ func (l *LazyCommit) CommitterDate() (time.Time, error) {
 	return time.Unix(int64(unixSeconds), 0), nil
 }
 
-// RawDiff returns the diff exactly as returned by git diff-tree
-func (l *LazyCommit) RawDiff() ([]byte, error) {
-	return l.diffFetcher.Fetch(l.Hash)
+// RbwDiff returns the diff exbctly bs returned by git diff-tree
+func (l *LbzyCommit) RbwDiff() ([]byte, error) {
+	return l.diffFetcher.Fetch(l.Hbsh)
 }
 
-// Diff fetches the diff, then parses it with go-diff, caching the result
-func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
+// Diff fetches the diff, then pbrses it with go-diff, cbching the result
+func (l *LbzyCommit) Diff() ([]*godiff.FileDiff, error) {
 	if l.diff != nil {
 		return l.diff, nil
 	}
 
-	rawDiff, err := l.RawDiff()
+	rbwDiff, err := l.RbwDiff()
 	if err != nil {
 		return nil, err
 	}
 
-	r := godiff.NewMultiFileDiffReader(bytes.NewReader(rawDiff))
-	diff, err := r.ReadAllFiles()
+	r := godiff.NewMultiFileDiffRebder(bytes.NewRebder(rbwDiff))
+	diff, err := r.RebdAllFiles()
 	if err != nil {
 		return nil, err
 	}
@@ -68,55 +68,55 @@ func (l *LazyCommit) Diff() ([]*godiff.FileDiff, error) {
 	return diff, nil
 }
 
-func (l *LazyCommit) ParentIDs() ([]api.CommitID, error) {
-	if len(l.ParentHashes) == 0 {
+func (l *LbzyCommit) PbrentIDs() ([]bpi.CommitID, error) {
+	if len(l.PbrentHbshes) == 0 {
 		return nil, nil
 	}
-	strs := strings.Split(string(l.ParentHashes), " ")
-	commitIDs := make([]api.CommitID, 0, len(strs))
-	for _, str := range strs {
-		commitID, err := api.NewCommitID(str)
+	strs := strings.Split(string(l.PbrentHbshes), " ")
+	commitIDs := mbke([]bpi.CommitID, 0, len(strs))
+	for _, str := rbnge strs {
+		commitID, err := bpi.NewCommitID(str)
 		if err != nil {
 			return nil, err
 		}
-		commitIDs = append(commitIDs, commitID)
+		commitIDs = bppend(commitIDs, commitID)
 	}
 	return commitIDs, nil
 }
 
-func (l *LazyCommit) RefNames() []string {
-	return strings.Split(utf8String(l.RawCommit.RefNames), ", ")
+func (l *LbzyCommit) RefNbmes() []string {
+	return strings.Split(utf8String(l.RbwCommit.RefNbmes), ", ")
 }
 
-func (l *LazyCommit) SourceRefs() []string {
-	return strings.Split(utf8String(l.RawCommit.SourceRefs), ", ")
+func (l *LbzyCommit) SourceRefs() []string {
+	return strings.Split(utf8String(l.RbwCommit.SourceRefs), ", ")
 }
 
-func (l *LazyCommit) ModifiedFiles() []string {
-	files := make([]string, 0, len(l.RawCommit.ModifiedFiles)/2)
+func (l *LbzyCommit) ModifiedFiles() []string {
+	files := mbke([]string, 0, len(l.RbwCommit.ModifiedFiles)/2)
 	i := 0
-	for i < len(l.RawCommit.ModifiedFiles) {
-		if len(l.RawCommit.ModifiedFiles[i]) == 0 {
+	for i < len(l.RbwCommit.ModifiedFiles) {
+		if len(l.RbwCommit.ModifiedFiles[i]) == 0 {
 			// SAFETY: don't trust input
 			return files
 		}
-		switch l.RawCommit.ModifiedFiles[i][0] {
-		case 'R':
-			// SAFETY: don't assume that we have the right number of things
-			if i+2 >= len(l.RawCommit.ModifiedFiles) {
+		switch l.RbwCommit.ModifiedFiles[i][0] {
+		cbse 'R':
+			// SAFETY: don't bssume thbt we hbve the right number of things
+			if i+2 >= len(l.RbwCommit.ModifiedFiles) {
 				return files
 			}
-			// A rename entry will be followed by two file names
-			files = append(files, utf8String(l.RawCommit.ModifiedFiles[i+1]))
-			files = append(files, utf8String(l.RawCommit.ModifiedFiles[i+2]))
+			// A renbme entry will be followed by two file nbmes
+			files = bppend(files, utf8String(l.RbwCommit.ModifiedFiles[i+1]))
+			files = bppend(files, utf8String(l.RbwCommit.ModifiedFiles[i+2]))
 			i += 3
-		default:
-			// SAFETY: don't assume that we have the right number of things
-			if i+1 >= len(l.RawCommit.ModifiedFiles) {
+		defbult:
+			// SAFETY: don't bssume thbt we hbve the right number of things
+			if i+1 >= len(l.RbwCommit.ModifiedFiles) {
 				return files
 			}
-			// Any entry that is not a rename entry will only be followed by one file name
-			files = append(files, utf8String(l.RawCommit.ModifiedFiles[i+1]))
+			// Any entry thbt is not b renbme entry will only be followed by one file nbme
+			files = bppend(files, utf8String(l.RbwCommit.ModifiedFiles[i+1]))
 			i += 2
 		}
 	}

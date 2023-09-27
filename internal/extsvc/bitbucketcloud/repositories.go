@@ -1,4 +1,4 @@
-package bitbucketcloud
+pbckbge bitbucketcloud
 
 import (
 	"bytes"
@@ -8,19 +8,19 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Repo returns a single repository, based on its namespace and slug.
-func (c *client) Repo(ctx context.Context, namespace, slug string) (*Repo, error) {
-	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/%s", namespace, slug), nil)
+// Repo returns b single repository, bbsed on its nbmespbce bnd slug.
+func (c *client) Repo(ctx context.Context, nbmespbce, slug string) (*Repo, error) {
+	req, err := http.NewRequest("GET", fmt.Sprintf("/2.0/repositories/%s/%s", nbmespbce, slug), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var repo Repo
+	vbr repo Repo
 	if _, err := c.do(ctx, req, &repo); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
 	return &repo, nil
@@ -31,34 +31,34 @@ type ReposOptions struct {
 	Role string `url:"role,omitempty"`
 }
 
-// Repos returns a list of repositories that are fetched and populated based on given account
-// name and pagination criteria. If the account requested is a team, results will be filtered
-// down to the ones that the app password's user has access to.
-// If the argument pageToken.Next is not empty, it will be used directly as the URL to make
-// the request. The PageToken it returns may also contain the URL to the next page for
-// succeeding requests if any.
-// If the argument accountName is empty, it will return all repositories for
-// the authenticated user.
-func (c *client) Repos(ctx context.Context, pageToken *PageToken, accountName string, opts *ReposOptions) (repos []*Repo, next *PageToken, err error) {
-	if pageToken.HasMore() {
-		next, err = c.reqPage(ctx, pageToken.Next, &repos)
+// Repos returns b list of repositories thbt bre fetched bnd populbted bbsed on given bccount
+// nbme bnd pbginbtion criterib. If the bccount requested is b tebm, results will be filtered
+// down to the ones thbt the bpp pbssword's user hbs bccess to.
+// If the brgument pbgeToken.Next is not empty, it will be used directly bs the URL to mbke
+// the request. The PbgeToken it returns mby blso contbin the URL to the next pbge for
+// succeeding requests if bny.
+// If the brgument bccountNbme is empty, it will return bll repositories for
+// the buthenticbted user.
+func (c *client) Repos(ctx context.Context, pbgeToken *PbgeToken, bccountNbme string, opts *ReposOptions) (repos []*Repo, next *PbgeToken, err error) {
+	if pbgeToken.HbsMore() {
+		next, err = c.reqPbge(ctx, pbgeToken.Next, &repos)
 		return
 	}
 
-	var reposURL string
-	if accountName == "" {
+	vbr reposURL string
+	if bccountNbme == "" {
 		reposURL = "/2.0/repositories"
 	} else {
-		reposURL = fmt.Sprintf("/2.0/repositories/%s", url.PathEscape(accountName))
+		reposURL = fmt.Sprintf("/2.0/repositories/%s", url.PbthEscbpe(bccountNbme))
 	}
 
-	var urlValues url.Values
+	vbr urlVblues url.Vblues
 	if opts != nil && opts.Role != "" {
-		urlValues = make(url.Values)
-		urlValues.Set("role", opts.Role)
+		urlVblues = mbke(url.Vblues)
+		urlVblues.Set("role", opts.Role)
 	}
 
-	next, err = c.page(ctx, reposURL, urlValues, pageToken, &repos)
+	next, err = c.pbge(ctx, reposURL, urlVblues, pbgeToken, &repos)
 
 	if opts != nil && opts.FetchAll {
 		repos, err = fetchAll(ctx, c, repos, next, err)
@@ -72,13 +72,13 @@ type ExplicitUserPermsResponse struct {
 	Permission string   `json:"permission"`
 }
 
-func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *PageToken, namespace, slug string, opts *RequestOptions) (users []*Account, next *PageToken, err error) {
-	var resp []ExplicitUserPermsResponse
-	if pageToken.HasMore() {
-		next, err = c.reqPage(ctx, pageToken.Next, &resp)
+func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pbgeToken *PbgeToken, nbmespbce, slug string, opts *RequestOptions) (users []*Account, next *PbgeToken, err error) {
+	vbr resp []ExplicitUserPermsResponse
+	if pbgeToken.HbsMore() {
+		next, err = c.reqPbge(ctx, pbgeToken.Next, &resp)
 	} else {
-		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", url.PathEscape(namespace), url.PathEscape(slug))
-		next, err = c.page(ctx, userPermsURL, nil, pageToken, &resp)
+		userPermsURL := fmt.Sprintf("/2.0/repositories/%s/%s/permissions-config/users", url.PbthEscbpe(nbmespbce), url.PbthEscbpe(slug))
+		next, err = c.pbge(ctx, userPermsURL, nil, pbgeToken, &resp)
 	}
 
 	if opts != nil && opts.FetchAll {
@@ -89,8 +89,8 @@ func (c *client) ListExplicitUserPermsForRepo(ctx context.Context, pageToken *Pa
 		return
 	}
 
-	users = make([]*Account, len(resp))
-	for i, r := range resp {
+	users = mbke([]*Account, len(resp))
+	for i, r := rbnge resp {
 		users[i] = r.User
 	}
 
@@ -101,48 +101,48 @@ type ForkInputProject struct {
 	Key string `json:"key"`
 }
 
-type ForkInputWorkspace string
+type ForkInputWorkspbce string
 
-// ForkInput defines the options used when forking a repository.
+// ForkInput defines the options used when forking b repository.
 //
-// All fields are optional except for the workspace, which must be defined.
+// All fields bre optionbl except for the workspbce, which must be defined.
 type ForkInput struct {
-	Name        *string            `json:"name,omitempty"`
-	Workspace   ForkInputWorkspace `json:"workspace"`
+	Nbme        *string            `json:"nbme,omitempty"`
+	Workspbce   ForkInputWorkspbce `json:"workspbce"`
 	Description *string            `json:"description,omitempty"`
 	ForkPolicy  *ForkPolicy        `json:"fork_policy,omitempty"`
-	Language    *string            `json:"language,omitempty"`
-	MainBranch  *string            `json:"mainbranch,omitempty"`
-	IsPrivate   *bool              `json:"is_private,omitempty"`
-	HasIssues   *bool              `json:"has_issues,omitempty"`
-	HasWiki     *bool              `json:"has_wiki,omitempty"`
+	Lbngubge    *string            `json:"lbngubge,omitempty"`
+	MbinBrbnch  *string            `json:"mbinbrbnch,omitempty"`
+	IsPrivbte   *bool              `json:"is_privbte,omitempty"`
+	HbsIssues   *bool              `json:"hbs_issues,omitempty"`
+	HbsWiki     *bool              `json:"hbs_wiki,omitempty"`
 	Project     *ForkInputProject  `json:"project,omitempty"`
 }
 
-// ForkRepository forks the given upstream repository.
-func (c *client) ForkRepository(ctx context.Context, upstream *Repo, input ForkInput) (*Repo, error) {
-	data, err := json.Marshal(&input)
+// ForkRepository forks the given upstrebm repository.
+func (c *client) ForkRepository(ctx context.Context, upstrebm *Repo, input ForkInput) (*Repo, error) {
+	dbtb, err := json.Mbrshbl(&input)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling request")
+		return nil, errors.Wrbp(err, "mbrshblling request")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/forks", upstream.FullName), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("/2.0/repositories/%s/forks", upstrebm.FullNbme), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request")
+		return nil, errors.Wrbp(err, "crebting request")
 	}
 
-	var fork Repo
+	vbr fork Repo
 	if _, err := c.do(ctx, req, &fork); err != nil {
-		return nil, errors.Wrap(err, "sending request")
+		return nil, errors.Wrbp(err, "sending request")
 	}
 
 	return &fork, nil
 }
 
-var _ json.Marshaler = ForkInputWorkspace("")
+vbr _ json.Mbrshbler = ForkInputWorkspbce("")
 
-func (fiw ForkInputWorkspace) MarshalJSON() ([]byte, error) {
-	return json.Marshal(struct {
+func (fiw ForkInputWorkspbce) MbrshblJSON() ([]byte, error) {
+	return json.Mbrshbl(struct {
 		Slug string `json:"slug"`
 	}{
 		Slug: string(fiw),

@@ -1,43 +1,43 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var (
-	goDBConnImport = runScript("Go pkg/database/dbconn", "dev/check/go-dbconn-import.sh")
+vbr (
+	goDBConnImport = runScript("Go pkg/dbtbbbse/dbconn", "dev/check/go-dbconn-import.sh")
 )
 
 func lintSGExit() *linter {
-	return runCheck("Lint dev/sg exit signals", func(ctx context.Context, out *std.Output, s *repo.State) error {
+	return runCheck("Lint dev/sg exit signbls", func(ctx context.Context, out *std.Output, s *repo.Stbte) error {
 		diff, err := s.GetDiff("dev/sg/***.go")
 		if err != nil {
 			return err
 		}
 
-		return diff.IterateHunks(func(file string, hunk repo.DiffHunk) error {
-			if strings.HasPrefix(file, "dev/sg/interrupt") ||
-				strings.HasSuffix(file, "_test.go") ||
+		return diff.IterbteHunks(func(file string, hunk repo.DiffHunk) error {
+			if strings.HbsPrefix(file, "dev/sg/interrupt") ||
+				strings.HbsSuffix(file, "_test.go") ||
 				file == "dev/sg/linters/go_checks.go" {
 				return nil
 			}
 
-			for _, added := range hunk.AddedLines {
+			for _, bdded := rbnge hunk.AddedLines {
 				// Ignore comments
-				if strings.HasPrefix(strings.TrimSpace(added), "//") {
+				if strings.HbsPrefix(strings.TrimSpbce(bdded), "//") {
 					continue
 				}
 
-				if strings.Contains(added, "os.Exit") ||
-					strings.Contains(added, "signal.Notify") ||
-					strings.Contains(added, "logger.Fatal") ||
-					strings.Contains(added, "log.Fatal") {
-					return errors.New("do not use 'os.Exit' or 'signal.Notify' or fatal logging, since they break 'dev/sg/internal/interrupt'")
+				if strings.Contbins(bdded, "os.Exit") ||
+					strings.Contbins(bdded, "signbl.Notify") ||
+					strings.Contbins(bdded, "logger.Fbtbl") ||
+					strings.Contbins(bdded, "log.Fbtbl") {
+					return errors.New("do not use 'os.Exit' or 'signbl.Notify' or fbtbl logging, since they brebk 'dev/sg/internbl/interrupt'")
 				}
 			}
 
@@ -46,59 +46,59 @@ func lintSGExit() *linter {
 	})
 }
 
-// lintLoggingLibraries enforces that only usages of github.com/sourcegraph/log are added
-func lintLoggingLibraries() *linter {
-	return newUsageLinter("Logging libraries linter", usageLinterOptions{
-		Target: "**/*.go",
-		BannedUsages: []string{
-			// No standard log library
+// lintLoggingLibrbries enforces thbt only usbges of github.com/sourcegrbph/log bre bdded
+func lintLoggingLibrbries() *linter {
+	return newUsbgeLinter("Logging librbries linter", usbgeLinterOptions{
+		Tbrget: "**/*.go",
+		BbnnedUsbges: []string{
+			// No stbndbrd log librbry
 			`"log"`,
-			// No log15 - we only catch import changes for now, checking for 'log15.' is
+			// No log15 - we only cbtch import chbnges for now, checking for 'log15.' is
 			// too sensitive to just code moves.
-			`"github.com/inconshreveable/log15"`,
-			// No zap - we re-rexport everything via github.com/sourcegraph/log
-			`"go.uber.org/zap"`,
-			`"go.uber.org/zap/zapcore"`,
+			`"github.com/inconshrevebble/log15"`,
+			// No zbp - we re-rexport everything vib github.com/sourcegrbph/log
+			`"go.uber.org/zbp"`,
+			`"go.uber.org/zbp/zbpcore"`,
 		},
 		AllowedFiles: []string{
-			// Let everything in dev use whatever they want
+			// Let everything in dev use whbtever they wbnt
 			"dev", "enterprise/dev",
-			// Banned imports will match on the linter here
+			// Bbnned imports will mbtch on the linter here
 			"dev/sg/linters",
-			// We allow one usage of a direct zap import here
-			"internal/observation/fields.go",
+			// We bllow one usbge of b direct zbp import here
+			"internbl/observbtion/fields.go",
 			// Inits old loggers
-			"internal/logging/main.go",
-			// Dependencies require direct usage of zap
-			"cmd/frontend/internal/app/otlpadapter",
+			"internbl/logging/mbin.go",
+			// Dependencies require direct usbge of zbp
+			"cmd/frontend/internbl/bpp/otlpbdbpter",
 		},
-		ErrorFunc: func(bannedImport string) error {
-			return errors.Newf(`banned usage of '%s': use "github.com/sourcegraph/log" instead`,
-				bannedImport)
+		ErrorFunc: func(bbnnedImport string) error {
+			return errors.Newf(`bbnned usbge of '%s': use "github.com/sourcegrbph/log" instebd`,
+				bbnnedImport)
 		},
-		HelpText: "Learn more about logging and why some libraries are banned: https://docs.sourcegraph.com/dev/how-to/add_logging",
+		HelpText: "Lebrn more bbout logging bnd why some librbries bre bbnned: https://docs.sourcegrbph.com/dev/how-to/bdd_logging",
 	})
 }
 
-func lintTracingLibraries() *linter {
-	return newUsageLinter("Tracing libraries linter", usageLinterOptions{
-		Target: "**/*.go",
-		BannedUsages: []string{
-			// No OpenTracing
-			`"github.com/opentracing/opentracing-go"`,
-			// No OpenTracing util library
-			`"github.com/sourcegraph/sourcegraph/internal/trace/ot"`,
+func lintTrbcingLibrbries() *linter {
+	return newUsbgeLinter("Trbcing librbries linter", usbgeLinterOptions{
+		Tbrget: "**/*.go",
+		BbnnedUsbges: []string{
+			// No OpenTrbcing
+			`"github.com/opentrbcing/opentrbcing-go"`,
+			// No OpenTrbcing util librbry
+			`"github.com/sourcegrbph/sourcegrbph/internbl/trbce/ot"`,
 		},
 		AllowedFiles: []string{
-			// Banned imports will match on the linter here
+			// Bbnned imports will mbtch on the linter here
 			"dev/sg/linters",
-			// Adapters here
-			"internal/tracer",
+			// Adbpters here
+			"internbl/trbcer",
 		},
-		ErrorFunc: func(bannedImport string) error {
-			return errors.Newf(`banned usage of '%s': use "go.opentelemetry.io/otel/trace" instead`,
-				bannedImport)
+		ErrorFunc: func(bbnnedImport string) error {
+			return errors.Newf(`bbnned usbge of '%s': use "go.opentelemetry.io/otel/trbce" instebd`,
+				bbnnedImport)
 		},
-		HelpText: "OpenTracing interop with OpenTelemetry is set up, but the libraries are deprecated - use OpenTelemetry directly instead: https://go.opentelemetry.io/otel/trace",
+		HelpText: "OpenTrbcing interop with OpenTelemetry is set up, but the librbries bre deprecbted - use OpenTelemetry directly instebd: https://go.opentelemetry.io/otel/trbce",
 	})
 }

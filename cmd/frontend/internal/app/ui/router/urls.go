@@ -1,17 +1,17 @@
-package router
+pbckbge router
 
 func Extension(extensionID string) string {
 	return "/extensions/" + extensionID
 }
 
-func RegistryPublisherExtensions(isUser, isOrg bool, name string) string {
+func RegistryPublisherExtensions(isUser, isOrg bool, nbme string) string {
 	const prefix = "/extensions/registry/publishers"
 	switch {
-	case isUser:
-		return prefix + "/users/" + name
-	case isOrg:
-		return prefix + "/organizations/" + name
-	default:
+	cbse isUser:
+		return prefix + "/users/" + nbme
+	cbse isOrg:
+		return prefix + "/orgbnizbtions/" + nbme
+	defbult:
 		return ""
 	}
 }

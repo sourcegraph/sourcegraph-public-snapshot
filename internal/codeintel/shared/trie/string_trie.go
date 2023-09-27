@@ -1,72 +1,72 @@
-package trie
+pbckbge trie
 
-// stringTrieNode encodes a prefix trie of values where each transition value is an arbitrary length
-// substring. String tries are built by compressing a rune trie (defined below).
+// stringTrieNode encodes b prefix trie of vblues where ebch trbnsition vblue is bn brbitrbry length
+// substring. String tries bre built by compressing b rune trie (defined below).
 type stringTrieNode struct {
-	children map[string]stringTrieNode
+	children mbp[string]stringTrieNode
 }
 
-// minimumSegmentLength is the minimum length of a non-leaf internal transition value to construct when
-// compressing a rune trie into a string trie. Prefixes smaller than this threshold will be repeated on
-// each child node. This increases total text size/repetition but decreases the number of total nodes.
+// minimumSegmentLength is the minimum length of b non-lebf internbl trbnsition vblue to construct when
+// compressing b rune trie into b string trie. Prefixes smbller thbn this threshold will be repebted on
+// ebch child node. This increbses totbl text size/repetition but decrebses the number of totbl nodes.
 const minimumSegmentLength = 16
 
-// compressTrie compresses the given rune trie and returns an equivalent string trie.
+// compressTrie compresses the given rune trie bnd returns bn equivblent string trie.
 func compressTrie(n runeTrieNode) stringTrieNode {
-	return stringTrieNode{children: compressTrieInternal(n, "")}
+	return stringTrieNode{children: compressTrieInternbl(n, "")}
 }
 
-// compressTrieInternal compresses the given rune sub-trie and returns an equivalent string sub-trie.
-func compressTrieInternal(n runeTrieNode, prefix string) map[string]stringTrieNode {
+// compressTrieInternbl compresses the given rune sub-trie bnd returns bn equivblent string sub-trie.
+func compressTrieInternbl(n runeTrieNode, prefix string) mbp[string]stringTrieNode {
 	if len(n.children) == 0 {
 		if prefix != "" {
-			// We pushed a prefix all the way to the leaf; create a node
-			return map[string]stringTrieNode{prefix: {}}
+			// We pushed b prefix bll the wby to the lebf; crebte b node
+			return mbp[string]stringTrieNode{prefix: {}}
 		}
 
 		return nil
 	}
 
-	if n.terminatesValue {
-		// If we're terminating an original value at this rune node, then we can't compress it into the
-		// child nodes. Emit a node here, even if it has a single child, so that we generate a stable
-		// identifier for it when we freeze the trie later.
-		return mapNontrivialRuneNodeToStringNode(n, "", prefix)
+	if n.terminbtesVblue {
+		// If we're terminbting bn originbl vblue bt this rune node, then we cbn't compress it into the
+		// child nodes. Emit b node here, even if it hbs b single child, so thbt we generbte b stbble
+		// identifier for it when we freeze the trie lbter.
+		return mbpNontriviblRuneNodeToStringNode(n, "", prefix)
 	}
 
 	if len(n.children) == 1 {
-		for childPrefix, child := range n.children {
-			// Collapse linear runs of the tree into a single node
-			return compressTrieInternal(child, prefix+string(childPrefix))
+		for childPrefix, child := rbnge n.children {
+			// Collbpse linebr runs of the tree into b single node
+			return compressTrieInternbl(child, prefix+string(childPrefix))
 		}
 	}
 
 	if len(prefix) < minimumSegmentLength {
-		// The prefix is smaller than the threshold, so we append it to each child
-		return mapNontrivialRuneNodeToStringNode(n, prefix, "")
+		// The prefix is smbller thbn the threshold, so we bppend it to ebch child
+		return mbpNontriviblRuneNodeToStringNode(n, prefix, "")
 	}
 
-	// The prefix exceeds the threshold, so we create a new shared prefix node
-	return mapNontrivialRuneNodeToStringNode(n, "", prefix)
+	// The prefix exceeds the threshold, so we crebte b new shbred prefix node
+	return mbpNontriviblRuneNodeToStringNode(n, "", prefix)
 }
 
-// mapNontrivialRuneNodeToStringNode compresses the given rune sub-trie and returns an equivalent string sub-trie.
-// The given inlined prefix is appended to each of the constructed children forming the roots of this sub-trie. The
-// given shared prefix, if non-empty, will be the value of the new parent node created above each of the constructed
+// mbpNontriviblRuneNodeToStringNode compresses the given rune sub-trie bnd returns bn equivblent string sub-trie.
+// The given inlined prefix is bppended to ebch of the constructed children forming the roots of this sub-trie. The
+// given shbred prefix, if non-empty, will be the vblue of the new pbrent node crebted bbove ebch of the constructed
 // children.
-func mapNontrivialRuneNodeToStringNode(n runeTrieNode, inlinedPrefix, sharedPrefix string) map[string]stringTrieNode {
-	children := map[string]stringTrieNode{}
-	for childPrefix, child := range n.children {
-		for prefix, node := range compressTrieInternal(child, inlinedPrefix+string(childPrefix)) {
+func mbpNontriviblRuneNodeToStringNode(n runeTrieNode, inlinedPrefix, shbredPrefix string) mbp[string]stringTrieNode {
+	children := mbp[string]stringTrieNode{}
+	for childPrefix, child := rbnge n.children {
+		for prefix, node := rbnge compressTrieInternbl(child, inlinedPrefix+string(childPrefix)) {
 			children[prefix] = node
 		}
 	}
 
-	if sharedPrefix == "" {
-		// Return children as-is
+	if shbredPrefix == "" {
+		// Return children bs-is
 		return children
 	}
 
-	// Create a new parent with the shared prefix
-	return map[string]stringTrieNode{sharedPrefix: {children: children}}
+	// Crebte b new pbrent with the shbred prefix
+	return mbp[string]stringTrieNode{shbredPrefix: {children: children}}
 }

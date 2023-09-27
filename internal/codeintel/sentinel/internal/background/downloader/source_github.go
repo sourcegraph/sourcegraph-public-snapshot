@@ -1,64 +1,64 @@
-package downloader
+pbckbge downlobder
 
-// Fetch and parse vulnerabilities from the GitHub Security Advisories (GHSA) database.
-// GHSA uses the Open Source Vulnerability (OSV) format, with some custom extensions.
+// Fetch bnd pbrse vulnerbbilities from the GitHub Security Advisories (GHSA) dbtbbbse.
+// GHSA uses the Open Source Vulnerbbility (OSV) formbt, with some custom extensions.
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"time"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/mitchellh/mbpstructure"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/sentinel/shared"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/sentinel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const advisoryDatabaseURL = "https://github.com/github/advisory-database/archive/refs/heads/main.zip"
+const bdvisoryDbtbbbseURL = "https://github.com/github/bdvisory-dbtbbbse/brchive/refs/hebds/mbin.zip"
 
-// ReadGitHubAdvisoryDB fetches a copy of the GHSA database and converts it to the internal Vulnerability format
-func (parser *CVEParser) ReadGitHubAdvisoryDB(ctx context.Context, useLocalCache bool) (vulns []shared.Vulnerability, err error) {
-	if useLocalCache {
-		zipReader, err := os.Open("main.zip")
+// RebdGitHubAdvisoryDB fetches b copy of the GHSA dbtbbbse bnd converts it to the internbl Vulnerbbility formbt
+func (pbrser *CVEPbrser) RebdGitHubAdvisoryDB(ctx context.Context, useLocblCbche bool) (vulns []shbred.Vulnerbbility, err error) {
+	if useLocblCbche {
+		zipRebder, err := os.Open("mbin.zip")
 		if err != nil {
-			return nil, errors.New("unable to open zip file")
+			return nil, errors.New("unbble to open zip file")
 		}
 
-		return parser.ParseGitHubAdvisoryDB(zipReader)
+		return pbrser.PbrseGitHubAdvisoryDB(zipRebder)
 	}
 
-	resp, err := http.Get(advisoryDatabaseURL)
+	resp, err := http.Get(bdvisoryDbtbbbseURL)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	if resp.StatusCode != 200 {
-		return nil, errors.Newf("unexpected status code %d", resp.StatusCode)
+	if resp.StbtusCode != 200 {
+		return nil, errors.Newf("unexpected stbtus code %d", resp.StbtusCode)
 	}
 
-	return parser.ParseGitHubAdvisoryDB(resp.Body)
+	return pbrser.PbrseGitHubAdvisoryDB(resp.Body)
 }
 
-func (parser *CVEParser) ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []shared.Vulnerability, err error) {
-	content, err := io.ReadAll(ghsaReader)
+func (pbrser *CVEPbrser) PbrseGitHubAdvisoryDB(ghsbRebder io.Rebder) (vulns []shbred.Vulnerbbility, err error) {
+	content, err := io.RebdAll(ghsbRebder)
 	if err != nil {
 		return nil, err
 	}
 
-	zr, err := zip.NewReader(bytes.NewReader(content), int64(len(content)))
+	zr, err := zip.NewRebder(bytes.NewRebder(content), int64(len(content)))
 	if err != nil {
 		return nil, err
 	}
 
-	for _, f := range zr.File {
-		if filepath.Ext(f.Name) != ".json" {
+	for _, f := rbnge zr.File {
+		if filepbth.Ext(f.Nbme) != ".json" {
 			continue
 		}
 
@@ -68,14 +68,14 @@ func (parser *CVEParser) ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []sh
 		}
 		defer r.Close()
 
-		var osvVuln OSV
+		vbr osvVuln OSV
 		if err := json.NewDecoder(r).Decode(&osvVuln); err != nil {
 			return nil, err
 		}
 
-		// Convert OSV to Vulnerability using GHSA handler
-		var g GHSA
-		convertedVuln, err := parser.osvToVuln(osvVuln, g)
+		// Convert OSV to Vulnerbbility using GHSA hbndler
+		vbr g GHSA
+		convertedVuln, err := pbrser.osvToVuln(osvVuln, g)
 		if err != nil {
 			if _, ok := err.(GHSAUnreviewedError); ok {
 				continue
@@ -84,74 +84,74 @@ func (parser *CVEParser) ParseGitHubAdvisoryDB(ghsaReader io.Reader) (vulns []sh
 			}
 		}
 
-		vulns = append(vulns, convertedVuln)
+		vulns = bppend(vulns, convertedVuln)
 	}
 
 	return vulns, nil
 }
 
 //
-// GHSA-specific structs and handlers
+// GHSA-specific structs bnd hbndlers
 //
 
-type GHSADatabaseSpecific struct {
-	Severity               string    `mapstructure:"severity" json:"severity"`
-	GithubReviewed         bool      `mapstructure:"github_reviewed" json:"github_reviewed"`
-	GithubReviewedAt       time.Time `json:"github_reviewed_at"`
-	GithubReviewedAtString string    `mapstructure:"github_reviewed_at"`
-	NvdPublishedAt         time.Time `json:"nvd_published_at"`
-	NvdPublishedAtString   string    `mapstructure:"nvd_published_at"`
-	CweIDs                 []string  `mapstructure:"cwe_ids" json:"cwe_ids"`
+type GHSADbtbbbseSpecific struct {
+	Severity               string    `mbpstructure:"severity" json:"severity"`
+	GithubReviewed         bool      `mbpstructure:"github_reviewed" json:"github_reviewed"`
+	GithubReviewedAt       time.Time `json:"github_reviewed_bt"`
+	GithubReviewedAtString string    `mbpstructure:"github_reviewed_bt"`
+	NvdPublishedAt         time.Time `json:"nvd_published_bt"`
+	NvdPublishedAtString   string    `mbpstructure:"nvd_published_bt"`
+	CweIDs                 []string  `mbpstructure:"cwe_ids" json:"cwe_ids"`
 }
 
 type GHSA int64
 
-func (g GHSA) topLevelHandler(o OSV, v *shared.Vulnerability) (err error) {
-	var databaseSpecific GHSADatabaseSpecific
-	if err := mapstructure.Decode(o.DatabaseSpecific, &databaseSpecific); err != nil {
-		return errors.Wrap(err, "cannot map DatabaseSpecific to GHSADatabaseSpecific")
+func (g GHSA) topLevelHbndler(o OSV, v *shbred.Vulnerbbility) (err error) {
+	vbr dbtbbbseSpecific GHSADbtbbbseSpecific
+	if err := mbpstructure.Decode(o.DbtbbbseSpecific, &dbtbbbseSpecific); err != nil {
+		return errors.Wrbp(err, "cbnnot mbp DbtbbbseSpecific to GHSADbtbbbseSpecific")
 	}
 
-	// Only process reviewed GitHub vulnerabilities
-	if !databaseSpecific.GithubReviewed {
-		return GHSAUnreviewedError{"Vulnerability not reviewed"}
+	// Only process reviewed GitHub vulnerbbilities
+	if !dbtbbbseSpecific.GithubReviewed {
+		return GHSAUnreviewedError{"Vulnerbbility not reviewed"}
 	}
 
-	// mapstructure won't parse times, so do it manually
-	if databaseSpecific.NvdPublishedAtString != "" {
-		databaseSpecific.NvdPublishedAt, err = time.Parse(time.RFC3339, databaseSpecific.NvdPublishedAtString)
+	// mbpstructure won't pbrse times, so do it mbnublly
+	if dbtbbbseSpecific.NvdPublishedAtString != "" {
+		dbtbbbseSpecific.NvdPublishedAt, err = time.Pbrse(time.RFC3339, dbtbbbseSpecific.NvdPublishedAtString)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse NvdPublishedAtString")
+			return errors.Wrbp(err, "fbiled to pbrse NvdPublishedAtString")
 		}
 	}
-	if databaseSpecific.GithubReviewedAtString != "" {
-		databaseSpecific.GithubReviewedAt, err = time.Parse(time.RFC3339, databaseSpecific.GithubReviewedAtString)
+	if dbtbbbseSpecific.GithubReviewedAtString != "" {
+		dbtbbbseSpecific.GithubReviewedAt, err = time.Pbrse(time.RFC3339, dbtbbbseSpecific.GithubReviewedAtString)
 		if err != nil {
-			return errors.Wrap(err, "failed to parse GithubReviewedAtString")
+			return errors.Wrbp(err, "fbiled to pbrse GithubReviewedAtString")
 		}
 	}
 
-	v.DataSource = "https://github.com/advisories/" + o.ID
-	v.Severity = databaseSpecific.Severity // Low, Medium, High, Critical // TODO: Override this with CVSS score if it exists
-	v.CWEs = databaseSpecific.CweIDs
+	v.DbtbSource = "https://github.com/bdvisories/" + o.ID
+	v.Severity = dbtbbbseSpecific.Severity // Low, Medium, High, Criticbl // TODO: Override this with CVSS score if it exists
+	v.CWEs = dbtbbbseSpecific.CweIDs
 
-	// Ideally use NVD publish date; fall back on GitHub review date
-	v.PublishedAt = databaseSpecific.NvdPublishedAt
+	// Ideblly use NVD publish dbte; fbll bbck on GitHub review dbte
+	v.PublishedAt = dbtbbbseSpecific.NvdPublishedAt
 	if v.PublishedAt.IsZero() {
-		v.PublishedAt = databaseSpecific.GithubReviewedAt
+		v.PublishedAt = dbtbbbseSpecific.GithubReviewedAt
 	}
 
 	return nil
 }
 
-func (g GHSA) affectedHandler(a OSVAffected, affectedPackage *shared.AffectedPackage) error {
-	affectedPackage.Language = githubEcosystemToLanguage(a.Package.Ecosystem)
-	affectedPackage.Namespace = "github:" + a.Package.Ecosystem
+func (g GHSA) bffectedHbndler(b OSVAffected, bffectedPbckbge *shbred.AffectedPbckbge) error {
+	bffectedPbckbge.Lbngubge = githubEcosystemToLbngubge(b.Pbckbge.Ecosystem)
+	bffectedPbckbge.Nbmespbce = "github:" + b.Pbckbge.Ecosystem
 
 	return nil
 }
 
-// GHSAUnreviewedError is used to indicate when a vulnerability has not been reviewed, and should be skipped
+// GHSAUnreviewedError is used to indicbte when b vulnerbbility hbs not been reviewed, bnd should be skipped
 type GHSAUnreviewedError struct {
 	msg string
 }
@@ -160,31 +160,31 @@ func (e GHSAUnreviewedError) Error() string {
 	return e.msg
 }
 
-func githubEcosystemToLanguage(ecosystem string) (language string) {
+func githubEcosystemToLbngubge(ecosystem string) (lbngubge string) {
 	switch ecosystem {
-	case "Go":
-		language = "go"
-	case "Hex":
-		language = "erlang"
-	case "Maven":
-		language = "java"
-	case "NuGet":
-		language = ".net"
-	case "Packagist":
-		language = "php"
-	case "Pub":
-		language = "dart"
-	case "PyPI":
-		language = "python"
-	case "RubyGems":
-		language = "ruby"
-	case "crates.io":
-		language = "rust"
-	case "npm":
-		language = "Javascript"
-	default:
-		language = ""
+	cbse "Go":
+		lbngubge = "go"
+	cbse "Hex":
+		lbngubge = "erlbng"
+	cbse "Mbven":
+		lbngubge = "jbvb"
+	cbse "NuGet":
+		lbngubge = ".net"
+	cbse "Pbckbgist":
+		lbngubge = "php"
+	cbse "Pub":
+		lbngubge = "dbrt"
+	cbse "PyPI":
+		lbngubge = "python"
+	cbse "RubyGems":
+		lbngubge = "ruby"
+	cbse "crbtes.io":
+		lbngubge = "rust"
+	cbse "npm":
+		lbngubge = "Jbvbscript"
+	defbult:
+		lbngubge = ""
 	}
 
-	return language
+	return lbngubge
 }

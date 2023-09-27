@@ -1,275 +1,275 @@
-package filter
+pbckbge filter
 
 import (
 	"testing"
 
-	"github.com/elimity-com/scim/schema"
+	"github.com/elimity-com/scim/schemb"
 )
 
-func TestPathValidator_Validate(t *testing.T) {
+func TestPbthVblidbtor_Vblidbte(t *testing.T) {
 	// More info: https://tools.ietf.org/html/rfc7644#section-3.5.2
-	t.Run("Valid", func(t *testing.T) {
-		for _, f := range []string{
-			`urn:ietf:params:scim:schemas:core:2.0:User:name`,
-			`urn:ietf:params:scim:schemas:core:2.0:User:name.familyName`,
-			`urn:ietf:params:scim:schemas:core:2.0:User:emails[type eq "work"]`,
-			`urn:ietf:params:scim:schemas:core:2.0:User:emails[type eq "work"].display`,
+	t.Run("Vblid", func(t *testing.T) {
+		for _, f := rbnge []string{
+			`urn:ietf:pbrbms:scim:schembs:core:2.0:User:nbme`,
+			`urn:ietf:pbrbms:scim:schembs:core:2.0:User:nbme.fbmilyNbme`,
+			`urn:ietf:pbrbms:scim:schembs:core:2.0:User:embils[type eq "work"]`,
+			`urn:ietf:pbrbms:scim:schembs:core:2.0:User:embils[type eq "work"].displby`,
 
-			`name`,
-			`name.familyName`,
-			`emails`,
-			`emails.value`,
-			`emails[type eq "work"]`,
-			`emails[type eq "work"].display`,
+			`nbme`,
+			`nbme.fbmilyNbme`,
+			`embils`,
+			`embils.vblue`,
+			`embils[type eq "work"]`,
+			`embils[type eq "work"].displby`,
 		} {
-			validator, err := NewPathValidator(f, schema.CoreUserSchema(), schema.ExtensionEnterpriseUser())
+			vblidbtor, err := NewPbthVblidbtor(f, schemb.CoreUserSchemb(), schemb.ExtensionEnterpriseUser())
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if err := validator.Validate(); err != nil {
+			if err := vblidbtor.Vblidbte(); err != nil {
 				t.Errorf("(%s) %v", f, err)
 			}
 		}
 	})
 
-	t.Run("Invalid", func(t *testing.T) {
-		for _, f := range []string{
-			`urn:ietf:params:scim:schemas:core:2.0:Invalid:name`,
+	t.Run("Invblid", func(t *testing.T) {
+		for _, f := rbnge []string{
+			`urn:ietf:pbrbms:scim:schembs:core:2.0:Invblid:nbme`,
 
-			`invalid`,
-			`name.invalid`,
-			`emails[invalid eq "work"]`,
-			`emails[type eq "work"].invalid`,
+			`invblid`,
+			`nbme.invblid`,
+			`embils[invblid eq "work"]`,
+			`embils[type eq "work"].invblid`,
 		} {
-			validator, err := NewPathValidator(f, schema.CoreUserSchema(), schema.ExtensionEnterpriseUser())
+			vblidbtor, err := NewPbthVblidbtor(f, schemb.CoreUserSchemb(), schemb.ExtensionEnterpriseUser())
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if err := validator.Validate(); err == nil {
-				t.Errorf("(%s) should not be valid", f)
+			if err := vblidbtor.Vblidbte(); err == nil {
+				t.Errorf("(%s) should not be vblid", f)
 			}
 		}
 	})
 }
 
-func TestValidator_PassesFilter(t *testing.T) {
+func TestVblidbtor_PbssesFilter(t *testing.T) {
 	t.Run("simple", func(t *testing.T) {
-		for _, test := range []struct {
+		for _, test := rbnge []struct {
 			filter  string
-			valid   map[string]interface{}
-			invalid map[string]interface{}
+			vblid   mbp[string]interfbce{}
+			invblid mbp[string]interfbce{}
 		}{
 			{
-				filter: `userName eq "john"`,
-				valid: map[string]interface{}{
-					"userName": "john",
+				filter: `userNbme eq "john"`,
+				vblid: mbp[string]interfbce{}{
+					"userNbme": "john",
 				},
-				invalid: map[string]interface{}{
-					"userName": "doe",
+				invblid: mbp[string]interfbce{}{
+					"userNbme": "doe",
 				},
 			},
 			{
-				filter: `emails[type eq "work"]`,
-				valid: map[string]interface{}{
-					"emails": []interface{}{
-						map[string]interface{}{
+				filter: `embils[type eq "work"]`,
+				vblid: mbp[string]interfbce{}{
+					"embils": []interfbce{}{
+						mbp[string]interfbce{}{
 							"type": "work",
 						},
 					},
 				},
-				invalid: map[string]interface{}{
-					"emails": []interface{}{
-						map[string]interface{}{
-							"type": "private",
+				invblid: mbp[string]interfbce{}{
+					"embils": []interfbce{}{
+						mbp[string]interfbce{}{
+							"type": "privbte",
 						},
 					},
 				},
 			},
 		} {
-			validator, err := NewValidator(test.filter, schema.CoreUserSchema())
+			vblidbtor, err := NewVblidbtor(test.filter, schemb.CoreUserSchemb())
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if resource := test.valid; resource != nil {
-				if err := validator.PassesFilter(resource); err != nil {
-					t.Errorf("(%v) should be valid: %v", resource, err)
+			if resource := test.vblid; resource != nil {
+				if err := vblidbtor.PbssesFilter(resource); err != nil {
+					t.Errorf("(%v) should be vblid: %v", resource, err)
 				}
 			}
-			if resource := test.invalid; resource != nil {
-				if err := validator.PassesFilter(resource); err == nil {
-					t.Errorf("(%v) should not be valid", resource)
+			if resource := test.invblid; resource != nil {
+				if err := vblidbtor.PbssesFilter(resource); err == nil {
+					t.Errorf("(%v) should not be vblid", resource)
 				}
 			}
 		}
 	})
 
-	for _, test := range []struct {
-		name   string
-		amount int
+	for _, test := rbnge []struct {
+		nbme   string
+		bmount int
 		filter string
 	}{
-		{name: "eq", amount: 1, filter: `userName eq "di-wu"`},
-		{name: "ne", amount: 5, filter: `userName ne "di-wu"`},
-		{name: "co", amount: 3, filter: `userName co "u"`},
-		{name: "co", amount: 2, filter: `name.familyName co "d"`},
-		{name: "sw", amount: 2, filter: `userName sw "a"`},
-		{name: "sw", amount: 2, filter: `urn:ietf:params:scim:schemas:core:2.0:User:userName sw "a"`},
-		{name: "ew", amount: 2, filter: `userName ew "n"`},
-		{name: "pr", amount: 6, filter: `userName pr`},
-		{name: "gt", amount: 2, filter: `userName gt "guest"`},
-		{name: "ge", amount: 3, filter: `userName ge "guest"`},
-		{name: "lt", amount: 3, filter: `userName lt "guest"`},
-		{name: "le", amount: 4, filter: `userName le "guest"`},
-		{name: "value", amount: 2, filter: `emails[type eq "work"]`},
-		{name: "and", amount: 1, filter: `name.familyName eq "ad" and userType eq "admin"`},
-		{name: "or", amount: 2, filter: `name.familyName eq "ad" or userType eq "admin"`},
-		{name: "not", amount: 5, filter: `not (userName eq "di-wu")`},
-		{name: "meta", amount: 1, filter: `meta.lastModified gt "2011-05-13T04:42:34Z"`},
-		{name: "schemas", amount: 2, filter: `schemas eq "urn:ietf:params:scim:schemas:core:2.0:User"`},
+		{nbme: "eq", bmount: 1, filter: `userNbme eq "di-wu"`},
+		{nbme: "ne", bmount: 5, filter: `userNbme ne "di-wu"`},
+		{nbme: "co", bmount: 3, filter: `userNbme co "u"`},
+		{nbme: "co", bmount: 2, filter: `nbme.fbmilyNbme co "d"`},
+		{nbme: "sw", bmount: 2, filter: `userNbme sw "b"`},
+		{nbme: "sw", bmount: 2, filter: `urn:ietf:pbrbms:scim:schembs:core:2.0:User:userNbme sw "b"`},
+		{nbme: "ew", bmount: 2, filter: `userNbme ew "n"`},
+		{nbme: "pr", bmount: 6, filter: `userNbme pr`},
+		{nbme: "gt", bmount: 2, filter: `userNbme gt "guest"`},
+		{nbme: "ge", bmount: 3, filter: `userNbme ge "guest"`},
+		{nbme: "lt", bmount: 3, filter: `userNbme lt "guest"`},
+		{nbme: "le", bmount: 4, filter: `userNbme le "guest"`},
+		{nbme: "vblue", bmount: 2, filter: `embils[type eq "work"]`},
+		{nbme: "bnd", bmount: 1, filter: `nbme.fbmilyNbme eq "bd" bnd userType eq "bdmin"`},
+		{nbme: "or", bmount: 2, filter: `nbme.fbmilyNbme eq "bd" or userType eq "bdmin"`},
+		{nbme: "not", bmount: 5, filter: `not (userNbme eq "di-wu")`},
+		{nbme: "metb", bmount: 1, filter: `metb.lbstModified gt "2011-05-13T04:42:34Z"`},
+		{nbme: "schembs", bmount: 2, filter: `schembs eq "urn:ietf:pbrbms:scim:schembs:core:2.0:User"`},
 	} {
-		t.Run(test.name, func(t *testing.T) {
-			userSchema := schema.CoreUserSchema()
-			userSchema.Attributes = append(userSchema.Attributes, schema.SchemasAttributes())
-			userSchema.Attributes = append(userSchema.Attributes, schema.CommonAttributes()...)
-			validator, err := NewValidator(test.filter, userSchema)
+		t.Run(test.nbme, func(t *testing.T) {
+			userSchemb := schemb.CoreUserSchemb()
+			userSchemb.Attributes = bppend(userSchemb.Attributes, schemb.SchembsAttributes())
+			userSchemb.Attributes = bppend(userSchemb.Attributes, schemb.CommonAttributes()...)
+			vblidbtor, err := NewVblidbtor(test.filter, userSchemb)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			var amount int
-			for _, resource := range testResources() {
-				if err := validator.PassesFilter(resource); err == nil {
-					amount++
+			vbr bmount int
+			for _, resource := rbnge testResources() {
+				if err := vblidbtor.PbssesFilter(resource); err == nil {
+					bmount++
 				}
 			}
-			if amount != test.amount {
-				t.Errorf("Expected %d resources to pass, got %d.", test.amount, amount)
+			if bmount != test.bmount {
+				t.Errorf("Expected %d resources to pbss, got %d.", test.bmount, bmount)
 			}
 		})
 	}
 
 	t.Run("extensions", func(t *testing.T) {
-		for _, test := range []struct {
-			amount int
+		for _, test := rbnge []struct {
+			bmount int
 			filter string
 		}{
 			{
-				amount: 1,
-				filter: `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager.displayName eq "di-wu"`,
+				bmount: 1,
+				filter: `urn:ietf:pbrbms:scim:schembs:extension:enterprise:2.0:User:mbnbger.displbyNbme eq "di-wu"`,
 			},
 			{
-				amount: 1,
-				filter: `urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:organization eq "Elimity"`,
+				bmount: 1,
+				filter: `urn:ietf:pbrbms:scim:schembs:extension:enterprise:2.0:User:orgbnizbtion eq "Elimity"`,
 			},
 		} {
-			validator, err := NewValidator(test.filter, schema.ExtensionEnterpriseUser())
+			vblidbtor, err := NewVblidbtor(test.filter, schemb.ExtensionEnterpriseUser())
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			var amount int
-			for _, resource := range testResources() {
-				if err := validator.PassesFilter(resource); err == nil {
-					amount++
+			vbr bmount int
+			for _, resource := rbnge testResources() {
+				if err := vblidbtor.PbssesFilter(resource); err == nil {
+					bmount++
 				}
 			}
-			if amount != test.amount {
-				t.Errorf("Expected %d resources to pass, got %d.", test.amount, amount)
+			if bmount != test.bmount {
+				t.Errorf("Expected %d resources to pbss, got %d.", test.bmount, bmount)
 			}
 		}
 	})
 }
 
-func TestValidator_Validate(t *testing.T) {
+func TestVblidbtor_Vblidbte(t *testing.T) {
 	// More info: https://tools.ietf.org/html/rfc7644#section-3.4.2.2
-	userSchema := schema.CoreUserSchema()
-	userSchema.Attributes = append(userSchema.Attributes, schema.CommonAttributes()...)
+	userSchemb := schemb.CoreUserSchemb()
+	userSchemb.Attributes = bppend(userSchemb.Attributes, schemb.CommonAttributes()...)
 
-	for _, f := range []string{
-		`userName Eq "john"`,
-		`Username eq "john"`,
+	for _, f := rbnge []string{
+		`userNbme Eq "john"`,
+		`Usernbme eq "john"`,
 
-		`userName eq "bjensen"`,
-		`name.familyName co "O'Malley"`,
-		`userName sw "J"`,
-		`urn:ietf:params:scim:schemas:core:2.0:User:userName sw "J"`,
+		`userNbme eq "bjensen"`,
+		`nbme.fbmilyNbme co "O'Mblley"`,
+		`userNbme sw "J"`,
+		`urn:ietf:pbrbms:scim:schembs:core:2.0:User:userNbme sw "J"`,
 		`title pr`,
-		`meta.lastModified gt "2011-05-13T04:42:34Z"`,
-		`meta.lastModified ge "2011-05-13T04:42:34Z"`,
-		`meta.lastModified lt "2011-05-13T04:42:34Z"`,
-		`meta.lastModified le "2011-05-13T04:42:34Z"`,
-		`title pr and userType eq "Employee"`,
+		`metb.lbstModified gt "2011-05-13T04:42:34Z"`,
+		`metb.lbstModified ge "2011-05-13T04:42:34Z"`,
+		`metb.lbstModified lt "2011-05-13T04:42:34Z"`,
+		`metb.lbstModified le "2011-05-13T04:42:34Z"`,
+		`title pr bnd userType eq "Employee"`,
 		`title pr or userType eq "Intern"`,
-		`schemas eq "urn:ietf:params:scim:schemas:extension:enterprise:2.0:User"`,
-		`userType eq "Employee" and (emails co "example.com" or emails.value co "example.org")`,
-		`userType ne "Employee" and not (emails co "example.com" or emails.value co "example.org")`,
-		`userType eq "Employee" and (emails.type eq "work")`,
-		`userType eq "Employee" and emails[type eq "work" and value co "@example.com"]`,
-		`emails[type eq "work" and value co "@example.com"] or ims[type eq "xmpp" and value co "@foo.com"]`,
+		`schembs eq "urn:ietf:pbrbms:scim:schembs:extension:enterprise:2.0:User"`,
+		`userType eq "Employee" bnd (embils co "exbmple.com" or embils.vblue co "exbmple.org")`,
+		`userType ne "Employee" bnd not (embils co "exbmple.com" or embils.vblue co "exbmple.org")`,
+		`userType eq "Employee" bnd (embils.type eq "work")`,
+		`userType eq "Employee" bnd embils[type eq "work" bnd vblue co "@exbmple.com"]`,
+		`embils[type eq "work" bnd vblue co "@exbmple.com"] or ims[type eq "xmpp" bnd vblue co "@foo.com"]`,
 	} {
-		validator, err := NewValidator(f, userSchema)
+		vblidbtor, err := NewVblidbtor(f, userSchemb)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
-		if err := validator.Validate(); err != nil {
+		if err := vblidbtor.Vblidbte(); err != nil {
 			t.Errorf("(%s) %v", f, err)
 		}
 	}
 }
 
-func testResources() []map[string]interface{} {
-	return []map[string]interface{}{
+func testResources() []mbp[string]interfbce{} {
+	return []mbp[string]interfbce{}{
 		{
-			"schemas": []interface{}{
-				"urn:ietf:params:scim:schemas:core:2.0:User",
+			"schembs": []interfbce{}{
+				"urn:ietf:pbrbms:scim:schembs:core:2.0:User",
 			},
-			"userName": "di-wu",
-			"userType": "admin",
-			"name": map[string]interface{}{
-				"familyName": "di",
-				"givenName":  "wu",
+			"userNbme": "di-wu",
+			"userType": "bdmin",
+			"nbme": mbp[string]interfbce{}{
+				"fbmilyNbme": "di",
+				"givenNbme":  "wu",
 			},
-			"emails": []interface{}{
-				map[string]interface{}{
-					"value": "quint@elimity.com",
+			"embils": []interfbce{}{
+				mbp[string]interfbce{}{
+					"vblue": "quint@elimity.com",
 					"type":  "work",
 				},
 			},
-			"meta": map[string]interface{}{
-				"lastModified": "2020-07-26T20:02:34Z",
+			"metb": mbp[string]interfbce{}{
+				"lbstModified": "2020-07-26T20:02:34Z",
 			},
-			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:organization": "Elimity",
+			"urn:ietf:pbrbms:scim:schembs:extension:enterprise:2.0:User:orgbnizbtion": "Elimity",
 		},
 		{
-			"schemas": []interface{}{
-				"urn:ietf:params:scim:schemas:core:2.0:User",
+			"schembs": []interfbce{}{
+				"urn:ietf:pbrbms:scim:schembs:core:2.0:User",
 			},
-			"userName": "noreply",
-			"emails": []interface{}{
-				map[string]interface{}{
-					"value": "noreply@elimity.com",
+			"userNbme": "noreply",
+			"embils": []interfbce{}{
+				mbp[string]interfbce{}{
+					"vblue": "noreply@elimity.com",
 					"type":  "work",
 				},
 			},
 		},
 		{
-			"userName": "admin",
-			"userType": "admin",
-			"name": map[string]interface{}{
-				"familyName": "ad",
-				"givenName":  "min",
+			"userNbme": "bdmin",
+			"userType": "bdmin",
+			"nbme": mbp[string]interfbce{}{
+				"fbmilyNbme": "bd",
+				"givenNbme":  "min",
 			},
-			"urn:ietf:params:scim:schemas:extension:enterprise:2.0:User:manager": map[string]interface{}{
-				"displayName": "di-wu",
+			"urn:ietf:pbrbms:scim:schembs:extension:enterprise:2.0:User:mbnbger": mbp[string]interfbce{}{
+				"displbyNbme": "di-wu",
 			},
 		},
-		{"userName": "guest"},
+		{"userNbme": "guest"},
 		{
-			"userName": "unknown",
-			"name": map[string]interface{}{
-				"familyName": "un",
-				"givenName":  "known",
+			"userNbme": "unknown",
+			"nbme": mbp[string]interfbce{}{
+				"fbmilyNbme": "un",
+				"givenNbme":  "known",
 			},
 		},
-		{"userName": "another"},
+		{"userNbme": "bnother"},
 	}
 }

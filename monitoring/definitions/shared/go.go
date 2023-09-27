@@ -1,42 +1,42 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Golang monitoring overviews.
+// Golbng monitoring overviews.
 //
-// Uses metrics exported by the Prometheus Golang library, so is available on all
+// Uses metrics exported by the Prometheus Golbng librbry, so is bvbilbble on bll
 // deployment types.
-const TitleGolangMonitoring = "Golang runtime monitoring"
+const TitleGolbngMonitoring = "Golbng runtime monitoring"
 
-var (
-	GoGoroutines = func(jobLabel, instanceLabel string) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			return Observable{
-				Name:           "go_goroutines",
-				Description:    "maximum active goroutines",
-				Query:          fmt.Sprintf(`max by(%s) (go_goroutines{%s=~".*%s"})`, instanceLabel, jobLabel, containerName),
-				Warning:        monitoring.Alert().GreaterOrEqual(10000).For(10 * time.Minute),
-				Panel:          monitoring.Panel().LegendFormat("{{name}}"),
+vbr (
+	GoGoroutines = func(jobLbbel, instbnceLbbel string) shbredObservbble {
+		return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+			return Observbble{
+				Nbme:           "go_goroutines",
+				Description:    "mbximum bctive goroutines",
+				Query:          fmt.Sprintf(`mbx by(%s) (go_goroutines{%s=~".*%s"})`, instbnceLbbel, jobLbbel, contbinerNbme),
+				Wbrning:        monitoring.Alert().GrebterOrEqubl(10000).For(10 * time.Minute),
+				Pbnel:          monitoring.Pbnel().LegendFormbt("{{nbme}}"),
 				Owner:          owner,
-				Interpretation: "A high value here indicates a possible goroutine leak.",
+				Interpretbtion: "A high vblue here indicbtes b possible goroutine lebk.",
 				NextSteps:      "none",
 			}
 		}
 	}
 
-	GoGcDuration = func(jobLabel, instanceLabel string) sharedObservable {
-		return func(containerName string, owner monitoring.ObservableOwner) Observable {
-			return Observable{
-				Name:        "go_gc_duration_seconds",
-				Description: "maximum go garbage collection duration",
-				Query:       fmt.Sprintf(`max by(%s) (go_gc_duration_seconds{%s=~".*%s"})`, instanceLabel, jobLabel, containerName),
-				Warning:     monitoring.Alert().GreaterOrEqual(2),
-				Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Seconds),
+	GoGcDurbtion = func(jobLbbel, instbnceLbbel string) shbredObservbble {
+		return func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+			return Observbble{
+				Nbme:        "go_gc_durbtion_seconds",
+				Description: "mbximum go gbrbbge collection durbtion",
+				Query:       fmt.Sprintf(`mbx by(%s) (go_gc_durbtion_seconds{%s=~".*%s"})`, instbnceLbbel, jobLbbel, contbinerNbme),
+				Wbrning:     monitoring.Alert().GrebterOrEqubl(2),
+				Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Seconds),
 				Owner:       owner,
 				NextSteps:   "none",
 			}
@@ -44,39 +44,39 @@ var (
 	}
 )
 
-type GolangMonitoringOptions struct {
-	// Goroutines transforms the default observable used to construct the Go goroutines count panel.
-	Goroutines ObservableOption
+type GolbngMonitoringOptions struct {
+	// Goroutines trbnsforms the defbult observbble used to construct the Go goroutines count pbnel.
+	Goroutines ObservbbleOption
 
-	// GCDuration transforms the default observable used to construct the Go GC duration panel.
-	GCDuration ObservableOption
+	// GCDurbtion trbnsforms the defbult observbble used to construct the Go GC durbtion pbnel.
+	GCDurbtion ObservbbleOption
 
-	JobLabelName string
+	JobLbbelNbme string
 
-	InstanceLabelName string
+	InstbnceLbbelNbme string
 }
 
-// NewGolangMonitoringGroup creates a group containing panels displaying Go monitoring
-// metrics for the given container.
-func NewGolangMonitoringGroup(containerName string, owner monitoring.ObservableOwner, options *GolangMonitoringOptions) monitoring.Group {
+// NewGolbngMonitoringGroup crebtes b group contbining pbnels displbying Go monitoring
+// metrics for the given contbiner.
+func NewGolbngMonitoringGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options *GolbngMonitoringOptions) monitoring.Group {
 	if options == nil {
-		options = &GolangMonitoringOptions{}
+		options = &GolbngMonitoringOptions{}
 	}
 
-	if options.InstanceLabelName == "" {
-		options.InstanceLabelName = "instance"
+	if options.InstbnceLbbelNbme == "" {
+		options.InstbnceLbbelNbme = "instbnce"
 	}
-	if options.JobLabelName == "" {
-		options.JobLabelName = "job"
+	if options.JobLbbelNbme == "" {
+		options.JobLbbelNbme = "job"
 	}
 
 	return monitoring.Group{
-		Title:  TitleGolangMonitoring,
+		Title:  TitleGolbngMonitoring,
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.Goroutines.safeApply(GoGoroutines(options.JobLabelName, options.InstanceLabelName)(containerName, owner)).Observable(),
-				options.GCDuration.safeApply(GoGcDuration(options.JobLabelName, options.InstanceLabelName)(containerName, owner)).Observable(),
+				options.Goroutines.sbfeApply(GoGoroutines(options.JobLbbelNbme, options.InstbnceLbbelNbme)(contbinerNbme, owner)).Observbble(),
+				options.GCDurbtion.sbfeApply(GoGcDurbtion(options.JobLbbelNbme, options.InstbnceLbbelNbme)(contbinerNbme, owner)).Observbble(),
 			},
 		},
 	}

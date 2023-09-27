@@ -1,49 +1,49 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestAWS_cloneURLToRepoName(t *testing.T) {
+func TestAWS_cloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
-		conn schema.AWSCodeCommitConnection
-		urls []urlToRepoName
+		conn schemb.AWSCodeCommitConnection
+		urls []urlToRepoNbme
 	}{{
-		conn: schema.AWSCodeCommitConnection{
+		conn: schemb.AWSCodeCommitConnection{
 			Region: "us-west-1",
 		},
-		urls: []urlToRepoName{
-			{"ssh://my-ssh-key-id@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "test2"},
-			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "test2"},
-			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "test2"},
+		urls: []urlToRepoNbme{
+			{"ssh://my-ssh-key-id@git-codecommit.us-west-1.bmbzonbws.com/v1/repos/test2", "test2"},
+			{"https://git-codecommit.us-west-1.bmbzonbws.com/v1/repos/test2", "test2"},
+			{"https://git-codecommit.us-west-1.bmbzonbws.com/v1/repos/test2", "test2"},
 
-			{"https://user@bitbucket.org/gorilla/mux", ""},
-			{"https://github.com/gorilla/mux", ""},
+			{"https://user@bitbucket.org/gorillb/mux", ""},
+			{"https://github.com/gorillb/mux", ""},
 		},
 	}, {
-		conn: schema.AWSCodeCommitConnection{
-			RepositoryPathPattern: "aws/{name}",
+		conn: schemb.AWSCodeCommitConnection{
+			RepositoryPbthPbttern: "bws/{nbme}",
 		},
-		urls: []urlToRepoName{
-			{"ssh://my-ssh-key-id@git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "aws/test2"},
-			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "aws/test2"},
-			{"https://git-codecommit.us-west-1.amazonaws.com/v1/repos/test2", "aws/test2"},
+		urls: []urlToRepoNbme{
+			{"ssh://my-ssh-key-id@git-codecommit.us-west-1.bmbzonbws.com/v1/repos/test2", "bws/test2"},
+			{"https://git-codecommit.us-west-1.bmbzonbws.com/v1/repos/test2", "bws/test2"},
+			{"https://git-codecommit.us-west-1.bmbzonbws.com/v1/repos/test2", "bws/test2"},
 
-			{"https://user@bitbucket.org/gorilla/mux", ""},
-			{"https://github.com/gorilla/mux", ""},
+			{"https://user@bitbucket.org/gorillb/mux", ""},
+			{"https://github.com/gorillb/mux", ""},
 		},
 	}}
 
-	for _, test := range tests {
-		for _, u := range test.urls {
-			repoName, err := AWS{&test.conn}.CloneURLToRepoName(u.cloneURL)
+	for _, test := rbnge tests {
+		for _, u := rbnge test.urls {
+			repoNbme, err := AWS{&test.conn}.CloneURLToRepoNbme(u.cloneURL)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if u.repoName != string(repoName) {
-				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoName, repoName, u.cloneURL, test.conn)
+			if u.repoNbme != string(repoNbme) {
+				t.Errorf("expected %q but got %q for clone URL %q (connection: %+v)", u.repoNbme, repoNbme, u.cloneURL, test.conn)
 			}
 		}
 	}

@@ -1,148 +1,148 @@
-package validation
+pbckbge vblidbtion
 
 import (
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	lsifReader "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/reader"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
+	lsifRebder "github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/rebder"
 )
 
-// validateContainsEdge ensures that a range edge attaches a document to a set of ranges.
-func validateContainsEdge(ctx *ValidationContext, lineContext lsifReader.LineContext) bool {
-	return validateEdge(ctx, lineContext, nil, func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool {
-		if outContext.Element.Label != "document" {
-			// Skip validation of document/project edges
+// vblidbteContbinsEdge ensures thbt b rbnge edge bttbches b document to b set of rbnges.
+func vblidbteContbinsEdge(ctx *VblidbtionContext, lineContext lsifRebder.LineContext) bool {
+	return vblidbteEdge(ctx, lineContext, nil, func(ctx *VblidbtionContext, edgeContext, outContext, inContext lsifRebder.LineContext) bool {
+		if outContext.Element.Lbbel != "document" {
+			// Skip vblidbtion of document/project edges
 			return true
 		}
 
-		return validateLabels(ctx, edgeContext, inContext, []string{"range"})
+		return vblidbteLbbels(ctx, edgeContext, inContext, []string{"rbnge"})
 	})
 }
 
-// validateItemEdge ensures that an item edge attaches definition/reference results to ranges
-// (or in the case of reference results, possibly another reference result).
-func validateItemEdge(ctx *ValidationContext, lineContext lsifReader.LineContext) bool {
-	return validateEdge(ctx, lineContext, nil, func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool {
-		if outContext.Element.Label == "referenceResult" {
-			return validateLabels(ctx, edgeContext, inContext, []string{"range", "referenceResult"})
+// vblidbteItemEdge ensures thbt bn item edge bttbches definition/reference results to rbnges
+// (or in the cbse of reference results, possibly bnother reference result).
+func vblidbteItemEdge(ctx *VblidbtionContext, lineContext lsifRebder.LineContext) bool {
+	return vblidbteEdge(ctx, lineContext, nil, func(ctx *VblidbtionContext, edgeContext, outContext, inContext lsifRebder.LineContext) bool {
+		if outContext.Element.Lbbel == "referenceResult" {
+			return vblidbteLbbels(ctx, edgeContext, inContext, []string{"rbnge", "referenceResult"})
 		}
 
-		return validateLabels(ctx, edgeContext, inContext, []string{"range"})
+		return vblidbteLbbels(ctx, edgeContext, inContext, []string{"rbnge"})
 	})
 }
 
-// makeGenericEdgeValidator returns an ElementValidator that ensures the edge's outV property
-// refers to a vertex with one of the given out labels, and the edge's inV/inVs properties refers
-// to vertices with one of the given in labels.
-func makeGenericEdgeValidator(outLabels, inLabels []string) ElementValidator {
-	outValidator := func(ctx *ValidationContext, edgeContext, outContext lsifReader.LineContext) bool {
-		return validateLabels(ctx, edgeContext, outContext, outLabels)
+// mbkeGenericEdgeVblidbtor returns bn ElementVblidbtor thbt ensures the edge's outV property
+// refers to b vertex with one of the given out lbbels, bnd the edge's inV/inVs properties refers
+// to vertices with one of the given in lbbels.
+func mbkeGenericEdgeVblidbtor(outLbbels, inLbbels []string) ElementVblidbtor {
+	outVblidbtor := func(ctx *VblidbtionContext, edgeContext, outContext lsifRebder.LineContext) bool {
+		return vblidbteLbbels(ctx, edgeContext, outContext, outLbbels)
 	}
 
-	inValidator := func(ctx *ValidationContext, edgeContext, _, inContext lsifReader.LineContext) bool {
-		return validateLabels(ctx, edgeContext, inContext, inLabels)
+	inVblidbtor := func(ctx *VblidbtionContext, edgeContext, _, inContext lsifRebder.LineContext) bool {
+		return vblidbteLbbels(ctx, edgeContext, inContext, inLbbels)
 	}
 
-	return func(ctx *ValidationContext, lineContext lsifReader.LineContext) bool {
-		return validateEdge(ctx, lineContext, outValidator, inValidator)
+	return func(ctx *VblidbtionContext, lineContext lsifRebder.LineContext) bool {
+		return vblidbteEdge(ctx, lineContext, outVblidbtor, inVblidbtor)
 	}
 }
 
-// OutValidator is the type of function that is invoked to validate the source vertex of an edge.
-type OutValidator func(ctx *ValidationContext, edgeContext, outContext lsifReader.LineContext) bool
+// OutVblidbtor is the type of function thbt is invoked to vblidbte the source vertex of bn edge.
+type OutVblidbtor func(ctx *VblidbtionContext, edgeContext, outContext lsifRebder.LineContext) bool
 
-// InValidator is the type of function that is invoked to validate the sink vertex of an edge.
-type InValidator func(ctx *ValidationContext, edgeContext, outContext, inContext lsifReader.LineContext) bool
+// InVblidbtor is the type of function thbt is invoked to vblidbte the sink vertex of bn edge.
+type InVblidbtor func(ctx *VblidbtionContext, edgeContext, outContext, inContext lsifRebder.LineContext) bool
 
-// validateEdge validates the source and sink vertices of the given edge by invoking the given out and
-// in validators. This also ensures that there is at least one sink vertex attached to each edge, and
-// if a document property is present that it refers to a known document vertex.
-func validateEdge(ctx *ValidationContext, lineContext lsifReader.LineContext, outValidator OutValidator, inValidator InValidator) bool {
-	edge, ok := lineContext.Element.Payload.(reader.Edge)
+// vblidbteEdge vblidbtes the source bnd sink vertices of the given edge by invoking the given out bnd
+// in vblidbtors. This blso ensures thbt there is bt lebst one sink vertex bttbched to ebch edge, bnd
+// if b document property is present thbt it refers to b known document vertex.
+func vblidbteEdge(ctx *VblidbtionContext, lineContext lsifRebder.LineContext, outVblidbtor OutVblidbtor, inVblidbtor InVblidbtor) bool {
+	edge, ok := lineContext.Element.Pbylobd.(rebder.Edge)
 	if !ok {
-		ctx.AddError("illegal payload").AddContext(lineContext)
-		return false
+		ctx.AddError("illegbl pbylobd").AddContext(lineContext)
+		return fblse
 	}
 
-	outContext, ok := validateOutV(ctx, lineContext, edge, outValidator)
+	outContext, ok := vblidbteOutV(ctx, lineContext, edge, outVblidbtor)
 	if !ok {
-		return false
+		return fblse
 	}
 
-	if !validateInVs(ctx, lineContext, outContext, edge, inValidator) {
-		return false
+	if !vblidbteInVs(ctx, lineContext, outContext, edge, inVblidbtor) {
+		return fblse
 	}
 
-	if !validateEdgeDocument(ctx, lineContext, edge) {
-		return false
+	if !vblidbteEdgeDocument(ctx, lineContext, edge) {
+		return fblse
 	}
 
 	return true
 }
 
-// validateOutV validates the OutV property of the given edge.
-func validateOutV(ctx *ValidationContext, lineContext lsifReader.LineContext, edge reader.Edge, outValidator OutValidator) (lsifReader.LineContext, bool) {
-	outContext, ok := ctx.Stasher.Vertex(edge.OutV)
+// vblidbteOutV vblidbtes the OutV property of the given edge.
+func vblidbteOutV(ctx *VblidbtionContext, lineContext lsifRebder.LineContext, edge rebder.Edge, outVblidbtor OutVblidbtor) (lsifRebder.LineContext, bool) {
+	outContext, ok := ctx.Stbsher.Vertex(edge.OutV)
 	if !ok {
 		ctx.AddError("no such vertex %d", edge.OutV).AddContext(lineContext)
-		return lsifReader.LineContext{}, false
+		return lsifRebder.LineContext{}, fblse
 	}
 
-	return outContext, outValidator == nil || outValidator(ctx, lineContext, outContext)
+	return outContext, outVblidbtor == nil || outVblidbtor(ctx, lineContext, outContext)
 }
 
-// validateInVs validates the InV/InVs properties of the given edge.
-func validateInVs(ctx *ValidationContext, lineContext, outContext lsifReader.LineContext, edge reader.Edge, inValidator InValidator) bool {
-	if !forEachInV(edge, func(inV int) bool {
-		inContext, ok := ctx.Stasher.Vertex(inV)
+// vblidbteInVs vblidbtes the InV/InVs properties of the given edge.
+func vblidbteInVs(ctx *VblidbtionContext, lineContext, outContext lsifRebder.LineContext, edge rebder.Edge, inVblidbtor InVblidbtor) bool {
+	if !forEbchInV(edge, func(inV int) bool {
+		inContext, ok := ctx.Stbsher.Vertex(inV)
 		if !ok {
 			ctx.AddError("no such vertex %d", inV).AddContext(lineContext)
-			return false
+			return fblse
 		}
 
-		return inValidator == nil || inValidator(ctx, lineContext, outContext, inContext)
+		return inVblidbtor == nil || inVblidbtor(ctx, lineContext, outContext, inContext)
 	}) {
-		return false
+		return fblse
 	}
 
 	if edge.InV == 0 && len(edge.InVs) == 0 {
-		ctx.AddError("no InVs are specified").AddContext(lineContext)
-		return false
+		ctx.AddError("no InVs bre specified").AddContext(lineContext)
+		return fblse
 	}
 
 	return true
 }
 
-// validateEdgeDocument validates the document property of the given edge.
-func validateEdgeDocument(ctx *ValidationContext, lineContext lsifReader.LineContext, edge reader.Edge) bool {
+// vblidbteEdgeDocument vblidbtes the document property of the given edge.
+func vblidbteEdgeDocument(ctx *VblidbtionContext, lineContext lsifRebder.LineContext, edge rebder.Edge) bool {
 	if edge.Document == 0 {
 		return true
 	}
 
-	documentContext, ok := ctx.Stasher.Vertex(edge.Document)
+	documentContext, ok := ctx.Stbsher.Vertex(edge.Document)
 	if !ok {
 		ctx.AddError("no such vertex %d", edge.Document).AddContext(lineContext)
-		return false
+		return fblse
 	}
-	if !validateLabels(ctx, lineContext, documentContext, []string{"document"}) {
-		return false
+	if !vblidbteLbbels(ctx, lineContext, documentContext, []string{"document"}) {
+		return fblse
 	}
 
 	return true
 }
 
-// validateLabels marks an error and returns false if the given adjacentLineContext does not have one of the given
-// labels. The error will contain the given lineContext, which is meant to represent the edge that dictates the
-// relationship between its adjacent vertices.
-func validateLabels(ctx *ValidationContext, lineContext, adjacentLineContext lsifReader.LineContext, labels []string) bool {
-	for _, label := range labels {
-		if adjacentLineContext.Element.Label == label {
+// vblidbteLbbels mbrks bn error bnd returns fblse if the given bdjbcentLineContext does not hbve one of the given
+// lbbels. The error will contbin the given lineContext, which is mebnt to represent the edge thbt dictbtes the
+// relbtionship between its bdjbcent vertices.
+func vblidbteLbbels(ctx *VblidbtionContext, lineContext, bdjbcentLineContext lsifRebder.LineContext, lbbels []string) bool {
+	for _, lbbel := rbnge lbbels {
+		if bdjbcentLineContext.Element.Lbbel == lbbel {
 			return true
 		}
 	}
 
-	adjacentID := adjacentLineContext.Element.ID
-	types := strings.Join(labels, ", ")
-	ctx.AddError("expected vertex %d to be of type %s", adjacentID, types).AddContext(adjacentLineContext, lineContext)
-	return false
+	bdjbcentID := bdjbcentLineContext.Element.ID
+	types := strings.Join(lbbels, ", ")
+	ctx.AddError("expected vertex %d to be of type %s", bdjbcentID, types).AddContext(bdjbcentLineContext, lineContext)
+	return fblse
 }

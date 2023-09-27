@@ -1,24 +1,24 @@
-package googleprovider
+pbckbge googleprovider
 
 import (
-	google "github.com/sourcegraph/managed-services-platform-cdktf/gen/google/provider"
+	google "github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/provider"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/stack"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/stbck"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-// With modifies a new stack to use the Google Terraform provider
+// With modifies b new stbck to use the Google Terrbform provider
 // with the given project ID.
 //
-// All GCP resources created under a stack with this option should still explicitly
-// configure ProjectID individually.
-func With(projectID string) stack.NewStackOption {
-	return func(s stack.Stack) {
-		var project *string
+// All GCP resources crebted under b stbck with this option should still explicitly
+// configure ProjectID individublly.
+func With(projectID string) stbck.NewStbckOption {
+	return func(s stbck.Stbck) {
+		vbr project *string
 		if projectID != "" {
 			project = pointers.Ptr(projectID)
 		}
-		_ = google.NewGoogleProvider(s.Stack, pointers.Ptr("google"), &google.GoogleProviderConfig{
+		_ = google.NewGoogleProvider(s.Stbck, pointers.Ptr("google"), &google.GoogleProviderConfig{
 			Project: project,
 		})
 	}

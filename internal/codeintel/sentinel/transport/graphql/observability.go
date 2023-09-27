@@ -1,43 +1,43 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	getVulnerabilities                    *observation.Operation
-	vulnerabilityByID                     *observation.Operation
-	getMatches                            *observation.Operation
-	vulnerabilityMatchByID                *observation.Operation
-	vulnerabilityMatchesSummaryCounts     *observation.Operation
-	vulnerabilityMatchesCountByRepository *observation.Operation
+type operbtions struct {
+	getVulnerbbilities                    *observbtion.Operbtion
+	vulnerbbilityByID                     *observbtion.Operbtion
+	getMbtches                            *observbtion.Operbtion
+	vulnerbbilityMbtchByID                *observbtion.Operbtion
+	vulnerbbilityMbtchesSummbryCounts     *observbtion.Operbtion
+	vulnerbbilityMbtchesCountByRepository *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_sentinel_transport_graphql",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"codeintel_sentinel_trbnsport_grbphql",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.sentinel.transport.graphql.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.sentinel.trbnsport.grbphql.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		getVulnerabilities:                    op("Vulnerabilities"),
-		vulnerabilityByID:                     op("VulnerabilityByID"),
-		getMatches:                            op("Matches"),
-		vulnerabilityMatchByID:                op("VulnerabilityMatchByID"),
-		vulnerabilityMatchesSummaryCounts:     op("VulnerabilityMatchesSummaryCounts"),
-		vulnerabilityMatchesCountByRepository: op("VulnerabilityMatchesCountByRepository"),
+	return &operbtions{
+		getVulnerbbilities:                    op("Vulnerbbilities"),
+		vulnerbbilityByID:                     op("VulnerbbilityByID"),
+		getMbtches:                            op("Mbtches"),
+		vulnerbbilityMbtchByID:                op("VulnerbbilityMbtchByID"),
+		vulnerbbilityMbtchesSummbryCounts:     op("VulnerbbilityMbtchesSummbryCounts"),
+		vulnerbbilityMbtchesCountByRepository: op("VulnerbbilityMbtchesCountByRepository"),
 	}
 }

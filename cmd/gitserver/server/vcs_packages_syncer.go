@@ -1,421 +1,421 @@
-package server
+pbckbge server
 
 import (
 	"context"
 	"os"
 	"os/exec"
-	"path"
+	"pbth"
 	"sort"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/internal/wrexec"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/wrexec"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// vcsPackagesSyncer implements the VCSSyncer interface for dependency repos
+// vcsPbckbgesSyncer implements the VCSSyncer interfbce for dependency repos
 // of different types.
-type vcsPackagesSyncer struct {
+type vcsPbckbgesSyncer struct {
 	logger log.Logger
 	typ    string
 	scheme string
 
-	// placeholder is used to set GIT_AUTHOR_NAME for git commands that don't create
-	// commits or tags. The name of this dependency should never be publicly visible,
-	// so it can have any random value.
-	placeholder reposource.VersionedPackage
+	// plbceholder is used to set GIT_AUTHOR_NAME for git commbnds thbt don't crebte
+	// commits or tbgs. The nbme of this dependency should never be publicly visible,
+	// so it cbn hbve bny rbndom vblue.
+	plbceholder reposource.VersionedPbckbge
 	configDeps  []string
-	source      packagesSource
+	source      pbckbgesSource
 	svc         dependenciesService
 }
 
-var _ VCSSyncer = &vcsPackagesSyncer{}
+vbr _ VCSSyncer = &vcsPbckbgesSyncer{}
 
-// packagesSource encapsulates the methods required to implement a source of
-// package dependencies e.g. npm, go modules, jvm, python.
-type packagesSource interface {
-	// Download the given dependency's archive and unpack it into dir.
-	Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error
+// pbckbgesSource encbpsulbtes the methods required to implement b source of
+// pbckbge dependencies e.g. npm, go modules, jvm, python.
+type pbckbgesSource interfbce {
+	// Downlobd the given dependency's brchive bnd unpbck it into dir.
+	Downlobd(ctx context.Context, dir string, dep reposource.VersionedPbckbge) error
 
-	ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error)
-	// ParseVersionedPackageFromConfiguration parses a package and version from the "dependencies"
-	// field from the site-admin interface.
-	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
-	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
-	ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error)
+	PbrseVersionedPbckbgeFromNbmeAndVersion(nbme reposource.PbckbgeNbme, version string) (reposource.VersionedPbckbge, error)
+	// PbrseVersionedPbckbgeFromConfigurbtion pbrses b pbckbge bnd version from the "dependencies"
+	// field from the site-bdmin interfbce.
+	PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error)
+	// PbrsePbckbgeFromRepoNbme pbrses b Sourcegrbph repository nbme of the pbckbge.
+	PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error)
 }
 
-type packagesDownloadSource interface {
-	// GetPackage sends a request to the package host to get metadata about this package, like the description.
-	GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error)
+type pbckbgesDownlobdSource interfbce {
+	// GetPbckbge sends b request to the pbckbge host to get metbdbtb bbout this pbckbge, like the description.
+	GetPbckbge(ctx context.Context, nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error)
 }
 
-// dependenciesService captures the methods we use of the codeintel/dependencies.Service,
-// used to make testing easier.
-type dependenciesService interface {
-	ListPackageRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PackageRepoReference, int, bool, error)
-	InsertPackageRepoRefs(ctx context.Context, deps []dependencies.MinimalPackageRepoRef) ([]dependencies.PackageRepoReference, []dependencies.PackageRepoRefVersion, error)
-	IsPackageRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PackageName, version string) (allowed bool, err error)
+// dependenciesService cbptures the methods we use of the codeintel/dependencies.Service,
+// used to mbke testing ebsier.
+type dependenciesService interfbce {
+	ListPbckbgeRepoRefs(context.Context, dependencies.ListDependencyReposOpts) ([]dependencies.PbckbgeRepoReference, int, bool, error)
+	InsertPbckbgeRepoRefs(ctx context.Context, deps []dependencies.MinimblPbckbgeRepoRef) ([]dependencies.PbckbgeRepoReference, []dependencies.PbckbgeRepoRefVersion, error)
+	IsPbckbgeRepoVersionAllowed(ctx context.Context, scheme string, pkg reposource.PbckbgeNbme, version string) (bllowed bool, err error)
 }
 
-func (s *vcsPackagesSyncer) IsCloneable(_ context.Context, _ api.RepoName, _ *vcs.URL) error {
+func (s *vcsPbckbgesSyncer) IsClonebble(_ context.Context, _ bpi.RepoNbme, _ *vcs.URL) error {
 	return nil
 }
 
-func (s *vcsPackagesSyncer) Type() string {
+func (s *vcsPbckbgesSyncer) Type() string {
 	return s.typ
 }
 
-func (s *vcsPackagesSyncer) RemoteShowCommand(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
-	return exec.CommandContext(ctx, "git", "remote", "show", "./"), nil
+func (s *vcsPbckbgesSyncer) RemoteShowCommbnd(ctx context.Context, remoteURL *vcs.URL) (cmd *exec.Cmd, err error) {
+	return exec.CommbndContext(ctx, "git", "remote", "show", "./"), nil
 }
 
-func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, bareGitDirectory string) (*exec.Cmd, error) {
-	err := os.MkdirAll(bareGitDirectory, 0o755)
+func (s *vcsPbckbgesSyncer) CloneCommbnd(ctx context.Context, remoteURL *vcs.URL, bbreGitDirectory string) (*exec.Cmd, error) {
+	err := os.MkdirAll(bbreGitDirectory, 0o755)
 	if err != nil {
 		return nil, err
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "--bare", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, bareGitDirectory, s.placeholder); err != nil {
+	cmd := exec.CommbndContext(ctx, "git", "--bbre", "init")
+	if _, err := runCommbndInDirectory(ctx, cmd, bbreGitDirectory, s.plbceholder); err != nil {
 		return nil, err
 	}
 
-	// The Fetch method is responsible for cleaning up temporary directories.
-	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(bareGitDirectory), ""); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch repo for %s", remoteURL)
+	// The Fetch method is responsible for clebning up temporbry directories.
+	if _, err := s.Fetch(ctx, remoteURL, "", common.GitDir(bbreGitDirectory), ""); err != nil {
+		return nil, errors.Wrbpf(err, "fbiled to fetch repo for %s", remoteURL)
 	}
 
-	// no-op command to satisfy VCSSyncer interface, see docstring for more details.
-	return exec.CommandContext(ctx, "git", "--version"), nil
+	// no-op commbnd to sbtisfy VCSSyncer interfbce, see docstring for more detbils.
+	return exec.CommbndContext(ctx, "git", "--version"), nil
 }
 
-func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ api.RepoName, dir common.GitDir, revspec string) ([]byte, error) {
-	var pkg reposource.Package
-	pkg, err := s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+func (s *vcsPbckbgesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, _ bpi.RepoNbme, dir common.GitDir, revspec string) ([]byte, error) {
+	vbr pkg reposource.Pbckbge
+	pkg, err := s.source.PbrsePbckbgeFromRepoNbme(bpi.RepoNbme(remoteURL.Pbth))
 	if err != nil {
 		return nil, err
 	}
-	name := pkg.PackageSyntax()
+	nbme := pkg.PbckbgeSyntbx()
 
-	versions, err := s.versions(ctx, name)
+	versions, err := s.versions(ctx, nbme)
 	if err != nil {
 		return nil, err
 	}
 
 	if revspec != "" {
-		return nil, s.fetchRevspec(ctx, name, dir, versions, revspec)
+		return nil, s.fetchRevspec(ctx, nbme, dir, versions, revspec)
 	}
 
-	return nil, s.fetchVersions(ctx, name, dir, versions)
+	return nil, s.fetchVersions(ctx, nbme, dir, versions)
 }
 
-// fetchRevspec fetches the given revspec if it's not contained in
-// existingVersions. If download and upserting the new version into database
-// succeeds, it calls s.fetchVersions with the newly-added version and the old
-// ones, to possibly update the "latest" tag.
-func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir common.GitDir, existingVersions []string, revspec string) error {
-	// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
-	// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
-	// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
-	// Package repos only create git tags using the format `"v${VERSION}"`.
+// fetchRevspec fetches the given revspec if it's not contbined in
+// existingVersions. If downlobd bnd upserting the new version into dbtbbbse
+// succeeds, it cblls s.fetchVersions with the newly-bdded version bnd the old
+// ones, to possibly updbte the "lbtest" tbg.
+func (s *vcsPbckbgesSyncer) fetchRevspec(ctx context.Context, nbme reposource.PbckbgeNbme, dir common.GitDir, existingVersions []string, revspec string) error {
+	// Optionblly try to resolve the version of the user-provided revspec (formbtted bs `"v${VERSION}^0"`).
+	// This logic lives inside `vcsPbckbgesSyncer` mebning this repo must be b pbckbge repo where bll
+	// the git tbgs bre crebted by our npm/crbtes/pypi/mbven integrbtions (no humbn commits/brbnches/tbgs).
+	// Pbckbge repos only crebte git tbgs using the formbt `"v${VERSION}"`.
 	//
-	// Unlike other versions, we silently ignore all errors from resolving requestedVersion because it could
-	// be any random user-provided string, with no guarantee that it's a valid version string that resolves
-	// to an existing dependency version.
+	// Unlike other versions, we silently ignore bll errors from resolving requestedVersion becbuse it could
+	// be bny rbndom user-provided string, with no gubrbntee thbt it's b vblid version string thbt resolves
+	// to bn existing dependency version.
 	//
-	// We assume the revspec is formatted as `"v${VERSION}^0"` but it could be any random string or
-	// a git commit SHA. It should be harmless if the string is invalid, worst case the resolution fails
-	// and we silently ignore the error.
+	// We bssume the revspec is formbtted bs `"v${VERSION}^0"` but it could be bny rbndom string or
+	// b git commit SHA. It should be hbrmless if the string is invblid, worst cbse the resolution fbils
+	// bnd we silently ignore the error.
 	requestedVersion := strings.TrimSuffix(strings.TrimPrefix(revspec, "v"), "^0")
 
-	for _, existingVersion := range existingVersions {
+	for _, existingVersion := rbnge existingVersions {
 		if existingVersion == requestedVersion {
 			return nil
 		}
 	}
 
-	dep, err := s.source.ParseVersionedPackageFromNameAndVersion(name, requestedVersion)
+	dep, err := s.source.PbrseVersionedPbckbgeFromNbmeAndVersion(nbme, requestedVersion)
 	if err != nil {
-		// Invalid version. Silently ignore error, see comment above why.
+		// Invblid version. Silently ignore error, see comment bbove why.
 		return nil
 	}
 
-	// if the next check passes, we know that any filters added/updated before this timestamp did not block it
-	instant := time.Now()
+	// if the next check pbsses, we know thbt bny filters bdded/updbted before this timestbmp did not block it
+	instbnt := time.Now()
 
-	if allowed, err := s.svc.IsPackageRepoVersionAllowed(ctx, s.scheme, dep.PackageSyntax(), dep.PackageVersion()); !allowed || err != nil {
-		// if err == nil && !allowed, this will return nil
-		return errors.Wrap(err, "error checking if package repo version is allowed")
+	if bllowed, err := s.svc.IsPbckbgeRepoVersionAllowed(ctx, s.scheme, dep.PbckbgeSyntbx(), dep.PbckbgeVersion()); !bllowed || err != nil {
+		// if err == nil && !bllowed, this will return nil
+		return errors.Wrbp(err, "error checking if pbckbge repo version is bllowed")
 	}
 
-	err = s.gitPushDependencyTag(ctx, string(dir), dep)
+	err = s.gitPushDependencyTbg(ctx, string(dir), dep)
 	if err != nil {
-		// Package could not be downloaded. Silently ignore error, see comment above why.
+		// Pbckbge could not be downlobded. Silently ignore error, see comment bbove why.
 		return nil
 	}
 
-	if _, _, err = s.svc.InsertPackageRepoRefs(ctx, []dependencies.MinimalPackageRepoRef{
+	if _, _, err = s.svc.InsertPbckbgeRepoRefs(ctx, []dependencies.MinimblPbckbgeRepoRef{
 		{
 			Scheme:        dep.Scheme(),
-			Name:          dep.PackageSyntax(),
-			Versions:      []dependencies.MinimalPackageRepoRefVersion{{Version: dep.PackageVersion(), LastCheckedAt: &instant}},
-			LastCheckedAt: &instant,
+			Nbme:          dep.PbckbgeSyntbx(),
+			Versions:      []dependencies.MinimblPbckbgeRepoRefVersion{{Version: dep.PbckbgeVersion(), LbstCheckedAt: &instbnt}},
+			LbstCheckedAt: &instbnt,
 		},
 	}); err != nil {
-		// We don't want to ignore when writing to the database failed, since
-		// we've already downloaded the package successfully.
+		// We don't wbnt to ignore when writing to the dbtbbbse fbiled, since
+		// we've blrebdy downlobded the pbckbge successfully.
 		return err
 	}
 
-	existingVersions = append(existingVersions, requestedVersion)
+	existingVersions = bppend(existingVersions, requestedVersion)
 
-	return s.fetchVersions(ctx, name, dir, existingVersions)
+	return s.fetchVersions(ctx, nbme, dir, existingVersions)
 }
 
-// fetchVersions checks whether the given versions are all valid version
-// specifiers, then checks whether they've already been downloaded and, if not,
-// downloads them.
-func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir common.GitDir, versions []string) error {
-	var errs errors.MultiError
-	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
-	for _, version := range versions {
-		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(name, version); err != nil {
+// fetchVersions checks whether the given versions bre bll vblid version
+// specifiers, then checks whether they've blrebdy been downlobded bnd, if not,
+// downlobds them.
+func (s *vcsPbckbgesSyncer) fetchVersions(ctx context.Context, nbme reposource.PbckbgeNbme, dir common.GitDir, versions []string) error {
+	vbr errs errors.MultiError
+	clonebble := mbke([]reposource.VersionedPbckbge, 0, len(versions))
+	for _, version := rbnge versions {
+		if d, err := s.source.PbrseVersionedPbckbgeFromNbmeAndVersion(nbme, version); err != nil {
 			errs = errors.Append(errs, err)
 		} else {
-			cloneable = append(cloneable, d)
+			clonebble = bppend(clonebble, d)
 		}
 	}
 	if errs != nil {
 		return errs
 	}
 
-	// We sort in descending order, so that the latest version is in the first position.
-	sort.SliceStable(cloneable, func(i, j int) bool {
-		return cloneable[i].Less(cloneable[j])
+	// We sort in descending order, so thbt the lbtest version is in the first position.
+	sort.SliceStbble(clonebble, func(i, j int) bool {
+		return clonebble[i].Less(clonebble[j])
 	})
 
-	// Create set of existing tags. We want to skip the download of a package if the
-	// tag already exists.
-	out, err := runCommandInDirectory(ctx, exec.CommandContext(ctx, "git", "tag"), string(dir), s.placeholder)
+	// Crebte set of existing tbgs. We wbnt to skip the downlobd of b pbckbge if the
+	// tbg blrebdy exists.
+	out, err := runCommbndInDirectory(ctx, exec.CommbndContext(ctx, "git", "tbg"), string(dir), s.plbceholder)
 	if err != nil {
 		return err
 	}
 
-	tags := map[string]struct{}{}
-	for _, line := range strings.Split(out, "\n") {
+	tbgs := mbp[string]struct{}{}
+	for _, line := rbnge strings.Split(out, "\n") {
 		if len(line) == 0 {
 			continue
 		}
-		tags[line] = struct{}{}
+		tbgs[line] = struct{}{}
 	}
 
-	var cloned []reposource.VersionedPackage
-	for _, dependency := range cloneable {
-		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
-			cloned = append(cloned, dependency)
+	vbr cloned []reposource.VersionedPbckbge
+	for _, dependency := rbnge clonebble {
+		if _, tbgExists := tbgs[dependency.GitTbgFromVersion()]; tbgExists {
+			cloned = bppend(cloned, dependency)
 			continue
 		}
-		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
-			errs = errors.Append(errs, errors.Wrapf(err, "error pushing dependency %q", dependency))
+		if err := s.gitPushDependencyTbg(ctx, string(dir), dependency); err != nil {
+			errs = errors.Append(errs, errors.Wrbpf(err, "error pushing dependency %q", dependency))
 		} else {
-			cloned = append(cloned, dependency)
+			cloned = bppend(cloned, dependency)
 		}
 	}
 
-	// Set the latest version as the default branch, if there was a successful download.
+	// Set the lbtest version bs the defbult brbnch, if there wbs b successful downlobd.
 	if len(cloned) > 0 {
-		latest := cloned[0]
-		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "latest", latest.GitTagFromVersion())
-		if _, err := runCommandInDirectory(ctx, cmd, string(dir), latest); err != nil {
+		lbtest := cloned[0]
+		cmd := exec.CommbndContext(ctx, "git", "brbnch", "--force", "lbtest", lbtest.GitTbgFromVersion())
+		if _, err := runCommbndInDirectory(ctx, cmd, string(dir), lbtest); err != nil {
 			return errors.Append(errs, err)
 		}
 	}
 
-	// Return error if at least one version failed to download.
+	// Return error if bt lebst one version fbiled to downlobd.
 	if errs != nil {
 		return errs
 	}
 
-	// Delete tags for versions we no longer track if there were no errors so far.
-	dependencyTags := make(map[string]struct{}, len(cloneable))
-	for _, dependency := range cloneable {
-		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
+	// Delete tbgs for versions we no longer trbck if there were no errors so fbr.
+	dependencyTbgs := mbke(mbp[string]struct{}, len(clonebble))
+	for _, dependency := rbnge clonebble {
+		dependencyTbgs[dependency.GitTbgFromVersion()] = struct{}{}
 	}
 
-	for tag := range tags {
-		if _, isDependencyTag := dependencyTags[tag]; !isDependencyTag {
-			cmd := exec.CommandContext(ctx, "git", "tag", "-d", tag)
-			if _, err := runCommandInDirectory(ctx, cmd, string(dir), s.placeholder); err != nil {
-				s.logger.Error("failed to delete git tag",
+	for tbg := rbnge tbgs {
+		if _, isDependencyTbg := dependencyTbgs[tbg]; !isDependencyTbg {
+			cmd := exec.CommbndContext(ctx, "git", "tbg", "-d", tbg)
+			if _, err := runCommbndInDirectory(ctx, cmd, string(dir), s.plbceholder); err != nil {
+				s.logger.Error("fbiled to delete git tbg",
 					log.Error(err),
-					log.String("tag", tag),
+					log.String("tbg", tbg),
 				)
 				continue
 			}
 		}
 	}
 
-	if len(cloneable) == 0 {
-		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "-D", "latest")
-		// Best-effort branch deletion since we don't know if this branch has been created yet.
-		_, _ = runCommandInDirectory(ctx, cmd, string(dir), s.placeholder)
+	if len(clonebble) == 0 {
+		cmd := exec.CommbndContext(ctx, "git", "brbnch", "--force", "-D", "lbtest")
+		// Best-effort brbnch deletion since we don't know if this brbnch hbs been crebted yet.
+		_, _ = runCommbndInDirectory(ctx, cmd, string(dir), s.plbceholder)
 	}
 
 	return nil
 }
 
-// gitPushDependencyTag downloads the dependency dep and updates
-// bareGitDirectory. If successful, bareGitDirectory will contain a new tag based
+// gitPushDependencyTbg downlobds the dependency dep bnd updbtes
+// bbreGitDirectory. If successful, bbreGitDirectory will contbin b new tbg bbsed
 // on dep.
 //
-// gitPushDependencyTag is responsible for cleaning up temporary directories
-// created in the process.
-func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDirectory string, dep reposource.VersionedPackage) error {
+// gitPushDependencyTbg is responsible for clebning up temporbry directories
+// crebted in the process.
+func (s *vcsPbckbgesSyncer) gitPushDependencyTbg(ctx context.Context, bbreGitDirectory string, dep reposource.VersionedPbckbge) error {
 	workDir, err := os.MkdirTemp("", s.Type())
 	if err != nil {
 		return err
 	}
 	defer os.RemoveAll(workDir)
 
-	err = s.source.Download(ctx, workDir, dep)
+	err = s.source.Downlobd(ctx, workDir, dep)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			s.logger.With(
-				log.String("dependency", dep.VersionedPackageSyntax()),
+				log.String("dependency", dep.VersionedPbckbgeSyntbx()),
 				log.String("error", err.Error()),
-			).Warn("Error during dependency download")
+			).Wbrn("Error during dependency downlobd")
 		}
 		return err
 	}
 
-	cmd := exec.CommandContext(ctx, "git", "init")
-	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
+	cmd := exec.CommbndContext(ctx, "git", "init")
+	if _, err := runCommbndInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "add", ".")
-	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
+	cmd = exec.CommbndContext(ctx, "git", "bdd", ".")
+	if _, err := runCommbndInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
-	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
-	cmd = exec.CommandContext(ctx, "git", "commit", "--no-verify",
-		"-m", dep.VersionedPackageSyntax(), "--date", stableGitCommitDate)
-	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
+	// Use --no-verify for security rebsons. See https://github.com/sourcegrbph/sourcegrbph/pull/23399
+	cmd = exec.CommbndContext(ctx, "git", "commit", "--no-verify",
+		"-m", dep.VersionedPbckbgeSyntbx(), "--dbte", stbbleGitCommitDbte)
+	if _, err := runCommbndInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "tag",
-		"-m", dep.VersionedPackageSyntax(), dep.GitTagFromVersion())
-	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
+	cmd = exec.CommbndContext(ctx, "git", "tbg",
+		"-m", dep.VersionedPbckbgeSyntbx(), dep.GitTbgFromVersion())
+	if _, err := runCommbndInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
-	cmd = exec.CommandContext(ctx, "git", "remote", "add", "origin", bareGitDirectory)
-	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
+	cmd = exec.CommbndContext(ctx, "git", "remote", "bdd", "origin", bbreGitDirectory)
+	if _, err := runCommbndInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
-	// Use --no-verify for security reasons. See https://github.com/sourcegraph/sourcegraph/pull/23399
-	cmd = exec.CommandContext(ctx, "git", "push", "--no-verify", "--force", "origin", "--tags")
-	if _, err := runCommandInDirectory(ctx, cmd, workDir, dep); err != nil {
+	// Use --no-verify for security rebsons. See https://github.com/sourcegrbph/sourcegrbph/pull/23399
+	cmd = exec.CommbndContext(ctx, "git", "push", "--no-verify", "--force", "origin", "--tbgs")
+	if _, err := runCommbndInDirectory(ctx, cmd, workDir, dep); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) (versions []string, _ error) {
-	var combinedVersions []string
-	for _, d := range s.configDeps {
-		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)
+func (s *vcsPbckbgesSyncer) versions(ctx context.Context, pbckbgeNbme reposource.PbckbgeNbme) (versions []string, _ error) {
+	vbr combinedVersions []string
+	for _, d := rbnge s.configDeps {
+		dep, err := s.source.PbrseVersionedPbckbgeFromConfigurbtion(d)
 		if err != nil {
-			s.logger.Warn("skipping malformed dependency", log.String("dep", d), log.Error(err))
+			s.logger.Wbrn("skipping mblformed dependency", log.String("dep", d), log.Error(err))
 			continue
 		}
 
-		if dep.PackageSyntax() == packageName {
-			combinedVersions = append(combinedVersions, dep.PackageVersion())
+		if dep.PbckbgeSyntbx() == pbckbgeNbme {
+			combinedVersions = bppend(combinedVersions, dep.PbckbgeVersion())
 		}
 	}
 
-	listedPackages, _, _, err := s.svc.ListPackageRepoRefs(ctx, dependencies.ListDependencyReposOpts{
+	listedPbckbges, _, _, err := s.svc.ListPbckbgeRepoRefs(ctx, dependencies.ListDependencyReposOpts{
 		Scheme:         s.scheme,
-		Name:           packageName,
-		ExactNameOnly:  true,
-		IncludeBlocked: false,
+		Nbme:           pbckbgeNbme,
+		ExbctNbmeOnly:  true,
+		IncludeBlocked: fblse,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to list dependencies from db")
+		return nil, errors.Wrbp(err, "fbiled to list dependencies from db")
 	}
 
-	if len(listedPackages) > 1 {
-		return nil, errors.Newf("unexpectedly got more than 1 dependency repo for (scheme=%q,name=%q)", s.scheme, packageName)
+	if len(listedPbckbges) > 1 {
+		return nil, errors.Newf("unexpectedly got more thbn 1 dependency repo for (scheme=%q,nbme=%q)", s.scheme, pbckbgeNbme)
 	}
 
-	if len(listedPackages) == 0 {
+	if len(listedPbckbges) == 0 {
 		return combinedVersions, nil
 	}
 
-	for _, versions := range listedPackages[0].Versions {
-		combinedVersions = append(combinedVersions, versions.Version)
+	for _, versions := rbnge listedPbckbges[0].Versions {
+		combinedVersions = bppend(combinedVersions, versions.Version)
 	}
 
 	return combinedVersions, nil
 }
 
-func runCommandInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.VersionedPackage) (string, error) {
-	gitName := dependency.VersionedPackageSyntax() + " authors"
-	gitEmail := "code-intel@sourcegraph.com"
+func runCommbndInDirectory(ctx context.Context, cmd *exec.Cmd, workingDirectory string, dependency reposource.VersionedPbckbge) (string, error) {
+	gitNbme := dependency.VersionedPbckbgeSyntbx() + " buthors"
+	gitEmbil := "code-intel@sourcegrbph.com"
 	cmd.Dir = workingDirectory
-	cmd.Env = append(cmd.Env, "EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_NAME="+gitName)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_AUTHOR_DATE="+stableGitCommitDate)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_NAME="+gitName)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmail)
-	cmd.Env = append(cmd.Env, "GIT_COMMITTER_DATE="+stableGitCommitDate)
-	output, err := runCommandCombinedOutput(ctx, wrexec.Wrap(ctx, nil, cmd))
+	cmd.Env = bppend(cmd.Env, "EMAIL="+gitEmbil)
+	cmd.Env = bppend(cmd.Env, "GIT_AUTHOR_NAME="+gitNbme)
+	cmd.Env = bppend(cmd.Env, "GIT_AUTHOR_EMAIL="+gitEmbil)
+	cmd.Env = bppend(cmd.Env, "GIT_AUTHOR_DATE="+stbbleGitCommitDbte)
+	cmd.Env = bppend(cmd.Env, "GIT_COMMITTER_NAME="+gitNbme)
+	cmd.Env = bppend(cmd.Env, "GIT_COMMITTER_EMAIL="+gitEmbil)
+	cmd.Env = bppend(cmd.Env, "GIT_COMMITTER_DATE="+stbbleGitCommitDbte)
+	output, err := runCommbndCombinedOutput(ctx, wrexec.Wrbp(ctx, nil, cmd))
 	if err != nil {
-		return "", errors.Wrapf(err, "command %s failed with output %s", cmd.Args, string(output))
+		return "", errors.Wrbpf(err, "commbnd %s fbiled with output %s", cmd.Args, string(output))
 	}
 	return string(output), nil
 }
 
-func isPotentiallyMaliciousFilepathInArchive(filepath, destinationDir string) bool {
-	if strings.HasSuffix(filepath, "/") {
+func isPotentibllyMbliciousFilepbthInArchive(filepbth, destinbtionDir string) bool {
+	if strings.HbsSuffix(filepbth, "/") {
 		// Skip directory entries. Directory entries must end
-		// with a forward slash (even on Windows) according to
-		// `file.Name` docstring.
+		// with b forwbrd slbsh (even on Windows) bccording to
+		// `file.Nbme` docstring.
 		return true
 	}
 
-	if strings.HasPrefix(filepath, "/") {
-		// Skip absolute paths. While they are extracted relative to `destination`,
-		// they should be unimportant. Related issue https://github.com/golang/go/issues/48085#issuecomment-912659635
+	if strings.HbsPrefix(filepbth, "/") {
+		// Skip bbsolute pbths. While they bre extrbcted relbtive to `destinbtion`,
+		// they should be unimportbnt. Relbted issue https://github.com/golbng/go/issues/48085#issuecomment-912659635
 		return true
 	}
 
-	for _, dirEntry := range strings.Split(filepath, string(os.PathSeparator)) {
+	for _, dirEntry := rbnge strings.Split(filepbth, string(os.PbthSepbrbtor)) {
 		if dirEntry == ".git" {
-			// For security reasons, don't unzip files under any `.git/`
-			// directory. See https://github.com/sourcegraph/security-issues/issues/163
+			// For security rebsons, don't unzip files under bny `.git/`
+			// directory. See https://github.com/sourcegrbph/security-issues/issues/163
 			return true
 		}
 	}
 
-	cleanedOutputPath := path.Join(destinationDir, filepath)
-	// For security reasons, skip file if it's not a child
-	// of the target directory. See "Zip Slip Vulnerability".
-	return !strings.HasPrefix(cleanedOutputPath, destinationDir)
+	clebnedOutputPbth := pbth.Join(destinbtionDir, filepbth)
+	// For security rebsons, skip file if it's not b child
+	// of the tbrget directory. See "Zip Slip Vulnerbbility".
+	return !strings.HbsPrefix(clebnedOutputPbth, destinbtionDir)
 }

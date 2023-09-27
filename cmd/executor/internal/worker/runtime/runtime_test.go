@@ -1,252 +1,252 @@
-package runtime_test
+pbckbge runtime_test
 
 import (
 	"os"
 	"os/exec"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runtime"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/workspace"
-	"github.com/sourcegraph/sourcegraph/internal/fileutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runtime"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/workspbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/fileutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestNew(t *testing.T) {
 	tests := []struct {
-		name           string
+		nbme           string
 		runnerOpts     runner.Options
 		mockFunc       func(cmdRunner *runtime.MockCmdRunner)
-		expectedName   runtime.Name
+		expectedNbme   runtime.Nbme
 		expectedErr    error
-		assertMockFunc func(t *testing.T, cmdRunner *runtime.MockCmdRunner)
+		bssertMockFunc func(t *testing.T, cmdRunner *runtime.MockCmdRunner)
 	}{
 		{
-			name: "Docker",
+			nbme: "Docker",
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				cmdRunner.LookPathFunc.SetDefaultReturn("", nil)
+				cmdRunner.LookPbthFunc.SetDefbultReturn("", nil)
 			},
-			expectedName: runtime.NameDocker,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 3)
-				assert.Equal(t, "docker", cmdRunner.LookPathFunc.History()[0].Arg0)
-				assert.Equal(t, "git", cmdRunner.LookPathFunc.History()[1].Arg0)
-				assert.Equal(t, "src", cmdRunner.LookPathFunc.History()[2].Arg0)
+			expectedNbme: runtime.NbmeDocker,
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 3)
+				bssert.Equbl(t, "docker", cmdRunner.LookPbthFunc.History()[0].Arg0)
+				bssert.Equbl(t, "git", cmdRunner.LookPbthFunc.History()[1].Arg0)
+				bssert.Equbl(t, "src", cmdRunner.LookPbthFunc.History()[2].Arg0)
 			},
 		},
 		{
-			name: "Firecracker",
+			nbme: "Firecrbcker",
 			runnerOpts: runner.Options{
-				FirecrackerOptions: runner.FirecrackerOptions{
-					Enabled: true,
+				FirecrbckerOptions: runner.FirecrbckerOptions{
+					Enbbled: true,
 				},
 			},
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				// ValidateFirecrackerTools + ValidateIgniteInstalled
-				cmdRunner.LookPathFunc.SetDefaultReturn("", nil)
-				// ValidateIgniteInstalled (GetIgniteVersion)
-				cmdRunner.CombinedOutputFunc.SetDefaultReturn([]byte("v0.10.5"), nil)
-				// ValidateCNIInstalled
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
-				cmdRunner.StatFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				// VblidbteFirecrbckerTools + VblidbteIgniteInstblled
+				cmdRunner.LookPbthFunc.SetDefbultReturn("", nil)
+				// VblidbteIgniteInstblled (GetIgniteVersion)
+				cmdRunner.CombinedOutputFunc.SetDefbultReturn([]byte("v0.10.5"), nil)
+				// VblidbteCNIInstblled
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: os.ModeDir}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
+				cmdRunner.StbtFunc.PushReturn(&fileutil.FileInfo{Mode_: 0}, nil)
 			},
-			expectedName: runtime.NameFirecracker,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 5)
-				assert.Equal(t, "dmsetup", cmdRunner.LookPathFunc.History()[0].Arg0)
-				assert.Equal(t, "losetup", cmdRunner.LookPathFunc.History()[1].Arg0)
-				assert.Equal(t, "mkfs.ext4", cmdRunner.LookPathFunc.History()[2].Arg0)
-				assert.Equal(t, "strings", cmdRunner.LookPathFunc.History()[3].Arg0)
-				assert.Equal(t, "ignite", cmdRunner.LookPathFunc.History()[4].Arg0)
+			expectedNbme: runtime.NbmeFirecrbcker,
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 5)
+				bssert.Equbl(t, "dmsetup", cmdRunner.LookPbthFunc.History()[0].Arg0)
+				bssert.Equbl(t, "losetup", cmdRunner.LookPbthFunc.History()[1].Arg0)
+				bssert.Equbl(t, "mkfs.ext4", cmdRunner.LookPbthFunc.History()[2].Arg0)
+				bssert.Equbl(t, "strings", cmdRunner.LookPbthFunc.History()[3].Arg0)
+				bssert.Equbl(t, "ignite", cmdRunner.LookPbthFunc.History()[4].Arg0)
 
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
-				assert.Equal(t, "ignite", cmdRunner.CombinedOutputFunc.History()[0].Arg1)
-				assert.Equal(t, []string{"version", "-o", "short"}, cmdRunner.CombinedOutputFunc.History()[0].Arg2)
+				bssert.Equbl(t, "ignite", cmdRunner.CombinedOutputFunc.History()[0].Arg1)
+				bssert.Equbl(t, []string{"version", "-o", "short"}, cmdRunner.CombinedOutputFunc.History()[0].Arg2)
 
-				require.Len(t, cmdRunner.StatFunc.History(), 8)
-				assert.Equal(t, "/opt/cni/bin", cmdRunner.StatFunc.History()[0].Arg0)
-				assert.Equal(t, "/opt/cni/bin/bandwidth", cmdRunner.StatFunc.History()[1].Arg0)
-				assert.Equal(t, "/opt/cni/bin/bridge", cmdRunner.StatFunc.History()[2].Arg0)
-				assert.Equal(t, "/opt/cni/bin/firewall", cmdRunner.StatFunc.History()[3].Arg0)
-				assert.Equal(t, "/opt/cni/bin/host-local", cmdRunner.StatFunc.History()[4].Arg0)
-				assert.Equal(t, "/opt/cni/bin/isolation", cmdRunner.StatFunc.History()[5].Arg0)
-				assert.Equal(t, "/opt/cni/bin/loopback", cmdRunner.StatFunc.History()[6].Arg0)
-				assert.Equal(t, "/opt/cni/bin/portmap", cmdRunner.StatFunc.History()[7].Arg0)
+				require.Len(t, cmdRunner.StbtFunc.History(), 8)
+				bssert.Equbl(t, "/opt/cni/bin", cmdRunner.StbtFunc.History()[0].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/bbndwidth", cmdRunner.StbtFunc.History()[1].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/bridge", cmdRunner.StbtFunc.History()[2].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/firewbll", cmdRunner.StbtFunc.History()[3].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/host-locbl", cmdRunner.StbtFunc.History()[4].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/isolbtion", cmdRunner.StbtFunc.History()[5].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/loopbbck", cmdRunner.StbtFunc.History()[6].Arg0)
+				bssert.Equbl(t, "/opt/cni/bin/portmbp", cmdRunner.StbtFunc.History()[7].Arg0)
 			},
 		},
 		{
-			name: "Missing Firecracker tools",
+			nbme: "Missing Firecrbcker tools",
 			runnerOpts: runner.Options{
-				FirecrackerOptions: runner.FirecrackerOptions{
-					Enabled: true,
+				FirecrbckerOptions: runner.FirecrbckerOptions{
+					Enbbled: true,
 				},
 			},
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				cmdRunner.LookPathFunc.SetDefaultReturn("", exec.ErrNotFound)
+				cmdRunner.LookPbthFunc.SetDefbultReturn("", exec.ErrNotFound)
 			},
-			expectedName: runtime.NameFirecracker,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 4)
+			expectedNbme: runtime.NbmeFirecrbcker,
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 4)
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
-				require.Len(t, cmdRunner.StatFunc.History(), 0)
+				require.Len(t, cmdRunner.StbtFunc.History(), 0)
 			},
-			expectedErr: errors.New("4 errors occurred:\n\t* dmsetup not found in PATH, is it installed?\n\t* losetup not found in PATH, is it installed?\n\t* mkfs.ext4 not found in PATH, is it installed?\n\t* strings not found in PATH, is it installed?"),
+			expectedErr: errors.New("4 errors occurred:\n\t* dmsetup not found in PATH, is it instblled?\n\t* losetup not found in PATH, is it instblled?\n\t* mkfs.ext4 not found in PATH, is it instblled?\n\t* strings not found in PATH, is it instblled?"),
 		},
 		{
-			name: "Ignite not installed",
+			nbme: "Ignite not instblled",
 			runnerOpts: runner.Options{
-				FirecrackerOptions: runner.FirecrackerOptions{
-					Enabled: true,
+				FirecrbckerOptions: runner.FirecrbckerOptions{
+					Enbbled: true,
 				},
 			},
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				// ValidateFirecrackerTools + ValidateIgniteInstalled
-				cmdRunner.LookPathFunc.PushReturn("", nil)
-				cmdRunner.LookPathFunc.PushReturn("", nil)
-				cmdRunner.LookPathFunc.PushReturn("", nil)
-				cmdRunner.LookPathFunc.PushReturn("", nil)
-				cmdRunner.LookPathFunc.PushReturn("", exec.ErrNotFound)
+				// VblidbteFirecrbckerTools + VblidbteIgniteInstblled
+				cmdRunner.LookPbthFunc.PushReturn("", nil)
+				cmdRunner.LookPbthFunc.PushReturn("", nil)
+				cmdRunner.LookPbthFunc.PushReturn("", nil)
+				cmdRunner.LookPbthFunc.PushReturn("", nil)
+				cmdRunner.LookPbthFunc.PushReturn("", exec.ErrNotFound)
 			},
-			expectedName: runtime.NameFirecracker,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 5)
+			expectedNbme: runtime.NbmeFirecrbcker,
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 5)
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 0)
-				require.Len(t, cmdRunner.StatFunc.History(), 0)
+				require.Len(t, cmdRunner.StbtFunc.History(), 0)
 			},
-			expectedErr: errors.New("Ignite not found in PATH. Is it installed correctly?\n\nTry running \"executor install ignite\", or:\n  $ curl -sfLo ignite https://github.com/sourcegraph/ignite/releases/download/v0.10.5/ignite-amd64\n  $ chmod +x ignite\n  $ mv ignite /usr/local/bin"),
+			expectedErr: errors.New("Ignite not found in PATH. Is it instblled correctly?\n\nTry running \"executor instbll ignite\", or:\n  $ curl -sfLo ignite https://github.com/sourcegrbph/ignite/relebses/downlobd/v0.10.5/ignite-bmd64\n  $ chmod +x ignite\n  $ mv ignite /usr/locbl/bin"),
 		},
 		{
-			name: "Wrong ignite version",
+			nbme: "Wrong ignite version",
 			runnerOpts: runner.Options{
-				FirecrackerOptions: runner.FirecrackerOptions{
-					Enabled: true,
+				FirecrbckerOptions: runner.FirecrbckerOptions{
+					Enbbled: true,
 				},
 			},
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				// ValidateFirecrackerTools + ValidateIgniteInstalled
-				cmdRunner.LookPathFunc.SetDefaultReturn("", nil)
-				// ValidateIgniteInstalled (GetIgniteVersion)
-				cmdRunner.CombinedOutputFunc.SetDefaultReturn([]byte("v0.1.0"), nil)
+				// VblidbteFirecrbckerTools + VblidbteIgniteInstblled
+				cmdRunner.LookPbthFunc.SetDefbultReturn("", nil)
+				// VblidbteIgniteInstblled (GetIgniteVersion)
+				cmdRunner.CombinedOutputFunc.SetDefbultReturn([]byte("v0.1.0"), nil)
 			},
-			expectedName: runtime.NameFirecracker,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 5)
+			expectedNbme: runtime.NbmeFirecrbcker,
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 5)
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
-				require.Len(t, cmdRunner.StatFunc.History(), 0)
+				require.Len(t, cmdRunner.StbtFunc.History(), 0)
 			},
-			expectedErr: errors.New("using unsupported ignite version, if things don't work alright, consider switching to the supported version. have=0.1.0, want=0.10.5"),
+			expectedErr: errors.New("using unsupported ignite version, if things don't work blright, consider switching to the supported version. hbve=0.1.0, wbnt=0.10.5"),
 		},
 		{
-			name: "CNI not installed",
+			nbme: "CNI not instblled",
 			runnerOpts: runner.Options{
-				FirecrackerOptions: runner.FirecrackerOptions{
-					Enabled: true,
+				FirecrbckerOptions: runner.FirecrbckerOptions{
+					Enbbled: true,
 				},
 			},
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				// ValidateFirecrackerTools + ValidateIgniteInstalled
-				cmdRunner.LookPathFunc.SetDefaultReturn("", nil)
-				// ValidateIgniteInstalled (GetIgniteVersion)
-				cmdRunner.CombinedOutputFunc.SetDefaultReturn([]byte("v0.10.5"), nil)
-				// ValidateCNIInstalled
-				cmdRunner.StatFunc.PushReturn(nil, os.ErrNotExist)
+				// VblidbteFirecrbckerTools + VblidbteIgniteInstblled
+				cmdRunner.LookPbthFunc.SetDefbultReturn("", nil)
+				// VblidbteIgniteInstblled (GetIgniteVersion)
+				cmdRunner.CombinedOutputFunc.SetDefbultReturn([]byte("v0.10.5"), nil)
+				// VblidbteCNIInstblled
+				cmdRunner.StbtFunc.PushReturn(nil, os.ErrNotExist)
 			},
-			expectedName: runtime.NameFirecracker,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 5)
+			expectedNbme: runtime.NbmeFirecrbcker,
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 5)
 				require.Len(t, cmdRunner.CombinedOutputFunc.History(), 1)
-				require.Len(t, cmdRunner.StatFunc.History(), 1)
+				require.Len(t, cmdRunner.StbtFunc.History(), 1)
 			},
-			expectedErr: errors.New("2 errors occurred:\n\t* Cannot find directory /opt/cni/bin. Are the CNI plugins for firecracker installed correctly?\n\t* Cannot find CNI plugins [bandwidth bridge firewall host-local isolation loopback portmap], are the CNI plugins for firecracker installed correctly?\nTo install the CNI plugins used by ignite run \"executor install cni\" or the following:\n  $ mkdir -p /opt/cni/bin\n  $ curl -sSL https://github.com/containernetworking/plugins/releases/download/v0.9.1/cni-plugins-linux-amd64-v0.9.1.tgz | tar -xz -C /opt/cni/bin\n  $ curl -sSL https://github.com/AkihiroSuda/cni-isolation/releases/download/v0.0.4/cni-isolation-amd64.tgz | tar -xz -C /opt/cni/bin"),
+			expectedErr: errors.New("2 errors occurred:\n\t* Cbnnot find directory /opt/cni/bin. Are the CNI plugins for firecrbcker instblled correctly?\n\t* Cbnnot find CNI plugins [bbndwidth bridge firewbll host-locbl isolbtion loopbbck portmbp], bre the CNI plugins for firecrbcker instblled correctly?\nTo instbll the CNI plugins used by ignite run \"executor instbll cni\" or the following:\n  $ mkdir -p /opt/cni/bin\n  $ curl -sSL https://github.com/contbinernetworking/plugins/relebses/downlobd/v0.9.1/cni-plugins-linux-bmd64-v0.9.1.tgz | tbr -xz -C /opt/cni/bin\n  $ curl -sSL https://github.com/AkihiroSudb/cni-isolbtion/relebses/downlobd/v0.0.4/cni-isolbtion-bmd64.tgz | tbr -xz -C /opt/cni/bin"),
 		},
 		{
-			name: "No Runtime",
+			nbme: "No Runtime",
 			mockFunc: func(cmdRunner *runtime.MockCmdRunner) {
-				cmdRunner.LookPathFunc.PushReturn("", exec.ErrNotFound)
+				cmdRunner.LookPbthFunc.PushReturn("", exec.ErrNotFound)
 			},
 			expectedErr: runtime.ErrNoRuntime,
-			assertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
-				require.Len(t, cmdRunner.LookPathFunc.History(), 3)
+			bssertMockFunc: func(t *testing.T, cmdRunner *runtime.MockCmdRunner) {
+				require.Len(t, cmdRunner.LookPbthFunc.History(), 3)
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
 			cmdRunner := runtime.NewMockCmdRunner()
 			if test.mockFunc != nil {
 				test.mockFunc(cmdRunner)
 			}
 			logger := logtest.Scoped(t)
-			// Most of the arguments can be nil/empty since we are not doing anything with them
+			// Most of the brguments cbn be nil/empty since we bre not doing bnything with them
 			r, err := runtime.New(
 				logger,
 				nil,
 				nil,
-				workspace.CloneOptions{},
+				workspbce.CloneOptions{},
 				test.runnerOpts,
 				cmdRunner,
 				nil,
 			)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.Nil(t, r)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.Nil(t, r)
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, r)
-				assert.Equal(t, test.expectedName, r.Name())
+				bssert.Equbl(t, test.expectedNbme, r.Nbme())
 			}
 
-			if test.assertMockFunc != nil {
-				test.assertMockFunc(t, cmdRunner)
+			if test.bssertMockFunc != nil {
+				test.bssertMockFunc(t, cmdRunner)
 			}
 		})
 	}
 }
 
 func TestNew_Kubernetes(t *testing.T) {
-	tempFile, err := os.CreateTemp("", "kubeconfig")
+	tempFile, err := os.CrebteTemp("", "kubeconfig")
 	require.NoError(t, err)
-	defer os.Remove(tempFile.Name())
+	defer os.Remove(tempFile.Nbme())
 	content := `
-apiVersion: v1
+bpiVersion: v1
 clusters:
 - cluster:
-    server: https://localhost:8080
-  name: foo-cluster
+    server: https://locblhost:8080
+  nbme: foo-cluster
 contexts:
 - context:
     cluster: foo-cluster
     user: foo-user
-    namespace: bar
-  name: foo-context
+    nbmespbce: bbr
+  nbme: foo-context
 current-context: foo-context
 kind: Config
 `
-	err = os.WriteFile(tempFile.Name(), []byte(content), 0644)
+	err = os.WriteFile(tempFile.Nbme(), []byte(content), 0644)
 	require.NoError(t, err)
 
 	r, err := runtime.New(
 		logtest.Scoped(t),
 		nil,
 		nil,
-		workspace.CloneOptions{},
+		workspbce.CloneOptions{},
 		runner.Options{
 			KubernetesOptions: runner.KubernetesOptions{
-				Enabled:          true,
-				ConfigPath:       tempFile.Name(),
-				ContainerOptions: command.KubernetesContainerOptions{},
+				Enbbled:          true,
+				ConfigPbth:       tempFile.Nbme(),
+				ContbinerOptions: commbnd.KubernetesContbinerOptions{},
 			},
 		},
 		runtime.NewMockCmdRunner(),
@@ -254,78 +254,78 @@ kind: Config
 	)
 	require.NoError(t, err)
 
-	assert.Equal(t, runtime.NameKubernetes, r.Name())
+	bssert.Equbl(t, runtime.NbmeKubernetes, r.Nbme())
 }
 
-func TestCommandKey(t *testing.T) {
+func TestCommbndKey(t *testing.T) {
 	tests := []struct {
-		name        string
-		runtimeName runtime.Name
+		nbme        string
+		runtimeNbme runtime.Nbme
 		key         string
 		index       int
 		expectedKey string
 	}{
 		{
-			name:        "Docker",
-			runtimeName: runtime.NameDocker,
+			nbme:        "Docker",
+			runtimeNbme: runtime.NbmeDocker,
 			key:         "step.1.pre",
 			index:       0,
 			expectedKey: "step.docker.step.1.pre",
 		},
 		{
-			name:        "Docker with index",
-			runtimeName: runtime.NameDocker,
+			nbme:        "Docker with index",
+			runtimeNbme: runtime.NbmeDocker,
 			key:         "",
 			index:       1,
 			expectedKey: "step.docker.1",
 		},
 		{
-			name:        "Firecracker",
-			runtimeName: runtime.NameFirecracker,
+			nbme:        "Firecrbcker",
+			runtimeNbme: runtime.NbmeFirecrbcker,
 			key:         "step.1.pre",
 			index:       0,
 			expectedKey: "step.docker.step.1.pre",
 		},
 		{
-			name:        "Firecracker with index",
-			runtimeName: runtime.NameFirecracker,
+			nbme:        "Firecrbcker with index",
+			runtimeNbme: runtime.NbmeFirecrbcker,
 			key:         "",
 			index:       1,
 			expectedKey: "step.docker.1",
 		},
 		{
-			name:        "Kubernetes",
-			runtimeName: runtime.NameKubernetes,
+			nbme:        "Kubernetes",
+			runtimeNbme: runtime.NbmeKubernetes,
 			key:         "step.1.pre",
 			index:       0,
 			expectedKey: "step.kubernetes.step.1.pre",
 		},
 		{
-			name:        "Kubernetes with index",
-			runtimeName: runtime.NameKubernetes,
+			nbme:        "Kubernetes with index",
+			runtimeNbme: runtime.NbmeKubernetes,
 			key:         "",
 			index:       1,
 			expectedKey: "step.kubernetes.1",
 		},
 		{
-			name:        "Shell",
-			runtimeName: runtime.NameShell,
+			nbme:        "Shell",
+			runtimeNbme: runtime.NbmeShell,
 			key:         "step.1.pre",
 			index:       0,
 			expectedKey: "step.docker.step.1.pre",
 		},
 		{
-			name:        "Shell with index",
-			runtimeName: runtime.NameShell,
+			nbme:        "Shell with index",
+			runtimeNbme: runtime.NbmeShell,
 			key:         "",
 			index:       1,
 			expectedKey: "step.docker.1",
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			key := runtime.CommandKey(test.runtimeName, test.key, test.index)
-			assert.Equal(t, test.expectedKey, key)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			key := runtime.CommbndKey(test.runtimeNbme, test.key, test.index)
+			bssert.Equbl(t, test.expectedKey, key)
 		})
 	}
 }

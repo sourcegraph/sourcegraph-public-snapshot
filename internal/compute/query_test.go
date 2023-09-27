@@ -1,64 +1,64 @@
-package compute
+pbckbge compute
 
 import (
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 )
 
-func TestParse(t *testing.T) {
+func TestPbrse(t *testing.T) {
 	test := func(input string) string {
-		q, err := Parse(input)
+		q, err := Pbrse(input)
 		if err != nil {
 			return err.Error()
 		}
 		return q.String()
 	}
 
-	autogold.Expect("compute endpoint expects a nonnegated pattern").
-		Equal(t, test("not a(foo)"))
+	butogold.Expect("compute endpoint expects b nonnegbted pbttern").
+		Equbl(t, test("not b(foo)"))
 
-	autogold.Expect("Command: `Match only search pattern: foo, compute pattern: (?i:foo)`").
-		Equal(t, test("content:'foo'"))
+	butogold.Expect("Commbnd: `Mbtch only sebrch pbttern: foo, compute pbttern: (?i:foo)`").
+		Equbl(t, test("content:'foo'"))
 
-	autogold.Expect("Command: `Match only search pattern: milk, compute pattern: milk`, Parameters: `case:yes`").
-		Equal(t, test("milk case:yes"))
+	butogold.Expect("Commbnd: `Mbtch only sebrch pbttern: milk, compute pbttern: milk`, Pbrbmeters: `cbse:yes`").
+		Equbl(t, test("milk cbse:yes"))
 
-	autogold.Expect("compute endpoint expects nonempty pattern").
-		Equal(t, test("repo:cool"))
+	butogold.Expect("compute endpoint expects nonempty pbttern").
+		Equbl(t, test("repo:cool"))
 
-	autogold.Expect("compute endpoint cannot currently support expressions in patterns containing 'and', 'or', 'not' (or negation) right now!").
-		Equal(t, test("a or b"))
+	butogold.Expect("compute endpoint cbnnot currently support expressions in pbtterns contbining 'bnd', 'or', 'not' (or negbtion) right now!").
+		Equbl(t, test("b or b"))
 
-	autogold.Expect("Command: `Replace in place: (sourcegraph) -> (smorgasboard)`").
-		Equal(t, test("content:replace(sourcegraph -> smorgasboard)"))
+	butogold.Expect("Commbnd: `Replbce in plbce: (sourcegrbph) -> (smorgbsbobrd)`").
+		Equbl(t, test("content:replbce(sourcegrbph -> smorgbsbobrd)"))
 
-	autogold.Expect("Command: `Replace in place: (a) -> (b -> c)`").
-		Equal(t, test("content:replace(a -> b -> c)"))
+	butogold.Expect("Commbnd: `Replbce in plbce: (b) -> (b -> c)`").
+		Equbl(t, test("content:replbce(b -> b -> c)"))
 
-	autogold.Expect("Command: `Replace in place: (a) -> (b)`").
-		Equal(t, test("content:replace(a->b)"))
+	butogold.Expect("Commbnd: `Replbce in plbce: (b) -> (b)`").
+		Equbl(t, test("content:replbce(b->b)"))
 
-	autogold.Expect("Command: `Replace in place: () -> (b)`").
-		Equal(t, test("content:replace(->b)"))
+	butogold.Expect("Commbnd: `Replbce in plbce: () -> (b)`").
+		Equbl(t, test("content:replbce(->b)"))
 }
 
-func TestToSearchQuery(t *testing.T) {
+func TestToSebrchQuery(t *testing.T) {
 	test := func(input string) string {
-		q, err := Parse(input)
+		q, err := Pbrse(input)
 		if err != nil {
 			return err.Error()
 		}
-		s, _ := q.ToSearchQuery()
+		s, _ := q.ToSebrchQuery()
 		return s
 	}
 
-	autogold.Expect("(repo:foo file:bar AND carolado)").
-		Equal(t, test("repo:foo file:bar carolado"))
+	butogold.Expect("(repo:foo file:bbr AND cbrolbdo)").
+		Equbl(t, test("repo:foo file:bbr cbrolbdo"))
 
-	autogold.Expect("(repo:foo file:bar AND colarado)").
-		Equal(t, test("content:replace(colarado -> colorodo) repo:foo file:bar"))
+	butogold.Expect("(repo:foo file:bbr AND colbrbdo)").
+		Equbl(t, test("content:replbce(colbrbdo -> colorodo) repo:foo file:bbr"))
 
-	autogold.Expect("((repo:foo file:bar lang:go OR repo:foo file:bar lang:text) AND colarado)").
-		Equal(t, test("content:replace(colarado -> colorodo) repo:foo file:bar (lang:go or lang:text)"))
+	butogold.Expect("((repo:foo file:bbr lbng:go OR repo:foo file:bbr lbng:text) AND colbrbdo)").
+		Equbl(t, test("content:replbce(colbrbdo -> colorodo) repo:foo file:bbr (lbng:go or lbng:text)"))
 }

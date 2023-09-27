@@ -1,56 +1,56 @@
-package limiter
+pbckbge limiter
 
 import (
 	"sync"
 
-	"github.com/sourcegraph/log"
-	"golang.org/x/time/rate"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/time/rbte"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
 )
 
-var historicalOnce sync.Once
-var historicalLogger log.Logger
-var historicalLimiter *ratelimit.InstrumentedLimiter
+vbr historicblOnce sync.Once
+vbr historicblLogger log.Logger
+vbr historicblLimiter *rbtelimit.InstrumentedLimiter
 
-func HistoricalWorkRate() *ratelimit.InstrumentedLimiter {
+func HistoricblWorkRbte() *rbtelimit.InstrumentedLimiter {
 
-	historicalOnce.Do(func() {
-		historicalLogger = log.Scoped("insights.historical.ratelimiter", "")
-		defaultRateLimit := rate.Limit(20.0)
-		defaultBurst := 20
-		getRateLimit := getHistoricalWorkerRateLimit(defaultRateLimit, defaultBurst)
-		limiter := rate.NewLimiter(getRateLimit())
-		historicalLimiter = ratelimit.NewInstrumentedLimiter("HistoricalInsight", limiter)
+	historicblOnce.Do(func() {
+		historicblLogger = log.Scoped("insights.historicbl.rbtelimiter", "")
+		defbultRbteLimit := rbte.Limit(20.0)
+		defbultBurst := 20
+		getRbteLimit := getHistoricblWorkerRbteLimit(defbultRbteLimit, defbultBurst)
+		limiter := rbte.NewLimiter(getRbteLimit())
+		historicblLimiter = rbtelimit.NewInstrumentedLimiter("HistoricblInsight", limiter)
 
-		go conf.Watch(func() {
-			limit, burst := getRateLimit()
-			historicalLogger.Info("Updating insights/historical rate limit", log.Int("rate limit", int(limit)), log.Int("burst", burst))
+		go conf.Wbtch(func() {
+			limit, burst := getRbteLimit()
+			historicblLogger.Info("Updbting insights/historicbl rbte limit", log.Int("rbte limit", int(limit)), log.Int("burst", burst))
 			limiter.SetLimit(limit)
 			limiter.SetBurst(burst)
 		})
 	})
 
-	return historicalLimiter
+	return historicblLimiter
 }
 
-func getHistoricalWorkerRateLimit(defaultRate rate.Limit, defaultBurst int) func() (rate.Limit, int) {
-	return func() (rate.Limit, int) {
-		limit := conf.Get().InsightsHistoricalWorkerRateLimit
-		burst := conf.Get().InsightsHistoricalWorkerRateLimitBurst
+func getHistoricblWorkerRbteLimit(defbultRbte rbte.Limit, defbultBurst int) func() (rbte.Limit, int) {
+	return func() (rbte.Limit, int) {
+		limit := conf.Get().InsightsHistoricblWorkerRbteLimit
+		burst := conf.Get().InsightsHistoricblWorkerRbteLimitBurst
 
-		var rateLimit rate.Limit
+		vbr rbteLimit rbte.Limit
 		if limit == nil {
-			rateLimit = defaultRate
+			rbteLimit = defbultRbte
 		} else {
-			rateLimit = rate.Limit(*limit)
+			rbteLimit = rbte.Limit(*limit)
 		}
 
 		if burst <= 0 {
-			burst = defaultBurst
+			burst = defbultBurst
 		}
 
-		return rateLimit, burst
+		return rbteLimit, burst
 	}
 }

@@ -1,46 +1,46 @@
-package discovery
+pbckbge discovery
 
 import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/insights/query/querybuilder"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/query/querybuilder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestRepoIteratorFromQuery(t *testing.T) {
+func TestRepoIterbtorFromQuery(t *testing.T) {
 	executor := NewMockRepoQueryExecutor()
-	mockResponse := []types.MinimalRepo{{
+	mockResponse := []types.MinimblRepo{{
 		ID:   5,
-		Name: "github.com/org/repo",
+		Nbme: "github.com/org/repo",
 	}, {
 		ID:   6,
-		Name: "gitlab.com/org1/repo1",
+		Nbme: "gitlbb.com/org1/repo1",
 	}}
-	executor.ExecuteRepoListFunc.SetDefaultReturn(mockResponse, nil)
+	executor.ExecuteRepoListFunc.SetDefbultReturn(mockResponse, nil)
 
-	iterator, err := NewRepoIteratorFromQuery(context.Background(), "repo:repo", executor)
+	iterbtor, err := NewRepoIterbtorFromQuery(context.Bbckground(), "repo:repo", executor)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	expectedScopeQuery, err := querybuilder.RepositoryScopeQuery("repo:repo")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	autogold.Expect(expectedScopeQuery.String()).Equal(t, executor.ExecuteRepoListFunc.History()[0].Arg1)
+	butogold.Expect(expectedScopeQuery.String()).Equbl(t, executor.ExecuteRepoListFunc.History()[0].Arg1)
 
-	var got []types.MinimalRepo
-	err = iterator.ForEach(context.Background(), func(repoName string, id api.RepoID) error {
-		got = append(got, types.MinimalRepo{ID: id, Name: api.RepoName(repoName)})
+	vbr got []types.MinimblRepo
+	err = iterbtor.ForEbch(context.Bbckground(), func(repoNbme string, id bpi.RepoID) error {
+		got = bppend(got, types.MinimblRepo{ID: id, Nbme: bpi.RepoNbme(repoNbme)})
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	autogold.Expect(mockResponse).Equal(t, got)
+	butogold.Expect(mockResponse).Equbl(t, got)
 }

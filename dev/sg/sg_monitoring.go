@@ -1,148 +1,148 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/grafana/regexp"
-	"github.com/urfave/cli/v2"
+	"github.com/grbfbnb/regexp"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	monitoringcmd "github.com/sourcegraph/sourcegraph/monitoring/command"
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	monitoringcmd "github.com/sourcegrbph/sourcegrbph/monitoring/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-var monitoringCommand = &cli.Command{
-	Name:  "monitoring",
-	Usage: "Sourcegraph's monitoring generator (dashboards, alerts, etc)",
-	Description: `Learn more about the Sourcegraph monitoring generator here: https://docs.sourcegraph.com/dev/background-information/observability/monitoring-generator
+vbr monitoringCommbnd = &cli.Commbnd{
+	Nbme:  "monitoring",
+	Usbge: "Sourcegrbph's monitoring generbtor (dbshbobrds, blerts, etc)",
+	Description: `Lebrn more bbout the Sourcegrbph monitoring generbtor here: https://docs.sourcegrbph.com/dev/bbckground-informbtion/observbbility/monitoring-generbtor
 
-Also refer to the generated reference documentation available for site admins:
+Also refer to the generbted reference documentbtion bvbilbble for site bdmins:
 
-- https://docs.sourcegraph.com/admin/observability/dashboards
-- https://docs.sourcegraph.com/admin/observability/alerts
+- https://docs.sourcegrbph.com/bdmin/observbbility/dbshbobrds
+- https://docs.sourcegrbph.com/bdmin/observbbility/blerts
 `,
-	Category: category.Dev,
-	Subcommands: []*cli.Command{
-		monitoringcmd.Generate("sg monitoring", func() string {
+	Cbtegory: cbtegory.Dev,
+	Subcommbnds: []*cli.Commbnd{
+		monitoringcmd.Generbte("sg monitoring", func() string {
 			root, _ := root.RepositoryRoot()
 			return root
 		}()),
 		{
-			Name:      "dashboards",
-			ArgsUsage: "<dashboard...>",
-			Usage:     "List and describe the default dashboards",
-			Flags: []cli.Flag{
-				&cli.BoolFlag{
-					Name:  "metrics",
-					Usage: "Show metrics used in dashboards",
+			Nbme:      "dbshbobrds",
+			ArgsUsbge: "<dbshbobrd...>",
+			Usbge:     "List bnd describe the defbult dbshbobrds",
+			Flbgs: []cli.Flbg{
+				&cli.BoolFlbg{
+					Nbme:  "metrics",
+					Usbge: "Show metrics used in dbshbobrds",
 				},
-				&cli.BoolFlag{
-					Name:  "groups",
-					Usage: "Show row groups",
+				&cli.BoolFlbg{
+					Nbme:  "groups",
+					Usbge: "Show row groups",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				dashboards, err := dashboardsFromArgs(c.Args())
+				dbshbobrds, err := dbshbobrdsFromArgs(c.Args())
 				if err != nil {
 					return err
 				}
 
-				metrics := make(map[*monitoring.Dashboard][]string)
+				metrics := mbke(mbp[*monitoring.Dbshbobrd][]string)
 				if c.Bool("metrics") {
-					var err error
-					metrics, err = monitoring.ListMetrics(dashboards...)
+					vbr err error
+					metrics, err = monitoring.ListMetrics(dbshbobrds...)
 					if err != nil {
-						return errors.Wrap(err, "failed to list metrics")
+						return errors.Wrbp(err, "fbiled to list metrics")
 					}
 				}
 
-				var summary strings.Builder
-				for _, d := range dashboards {
-					summary.WriteString(fmt.Sprintf("* **%s** (`%s`): %s\n",
-						d.Title, d.Name, d.Description))
+				vbr summbry strings.Builder
+				for _, d := rbnge dbshbobrds {
+					summbry.WriteString(fmt.Sprintf("* **%s** (`%s`): %s\n",
+						d.Title, d.Nbme, d.Description))
 
 					if c.Bool("metrics") {
-						summary.WriteString("  * Metrics used:\n")
-						for _, m := range metrics[d] {
-							summary.WriteString(fmt.Sprintf("    * `%s`\n", m))
+						summbry.WriteString("  * Metrics used:\n")
+						for _, m := rbnge metrics[d] {
+							summbry.WriteString(fmt.Sprintf("    * `%s`\n", m))
 						}
 					}
 
 					if c.Bool("groups") {
-						for _, g := range d.Groups {
-							summary.WriteString(fmt.Sprintf("  * %s (%d rows)\n",
+						for _, g := rbnge d.Groups {
+							summbry.WriteString(fmt.Sprintf("  * %s (%d rows)\n",
 								g.Title, len(g.Rows)))
 						}
 					}
 				}
-				return std.Out.WriteMarkdown(summary.String())
+				return std.Out.WriteMbrkdown(summbry.String())
 			},
 		},
 		{
-			Name:        "metrics",
-			ArgsUsage:   "<dashboard...>",
-			Usage:       "List metrics used in dashboards",
-			Description: `For per-dashboard summaries, use 'sg monitoring dashboards' instead.`,
-			Flags: []cli.Flag{
-				&cli.StringFlag{
-					Name:    "format",
-					Aliases: []string{"f"},
-					Usage:   "Output format of list ('markdown', 'plain', 'regexp')",
-					Value:   "markdown",
+			Nbme:        "metrics",
+			ArgsUsbge:   "<dbshbobrd...>",
+			Usbge:       "List metrics used in dbshbobrds",
+			Description: `For per-dbshbobrd summbries, use 'sg monitoring dbshbobrds' instebd.`,
+			Flbgs: []cli.Flbg{
+				&cli.StringFlbg{
+					Nbme:    "formbt",
+					Alibses: []string{"f"},
+					Usbge:   "Output formbt of list ('mbrkdown', 'plbin', 'regexp')",
+					Vblue:   "mbrkdown",
 				},
 			},
 			Action: func(c *cli.Context) error {
-				dashboards, err := dashboardsFromArgs(c.Args())
+				dbshbobrds, err := dbshbobrdsFromArgs(c.Args())
 				if err != nil {
 					return err
 				}
 
-				results, err := monitoring.ListMetrics(dashboards...)
+				results, err := monitoring.ListMetrics(dbshbobrds...)
 				if err != nil {
-					return errors.Wrap(err, "failed to list metrics")
+					return errors.Wrbp(err, "fbiled to list metrics")
 				}
 
-				foundMetrics := make(map[string]struct{})
-				var uniqueMetrics []string
-				for _, metrics := range results {
-					for _, metric := range metrics {
+				foundMetrics := mbke(mbp[string]struct{})
+				vbr uniqueMetrics []string
+				for _, metrics := rbnge results {
+					for _, metric := rbnge metrics {
 						if _, exists := foundMetrics[metric]; !exists {
-							uniqueMetrics = append(uniqueMetrics, metric)
+							uniqueMetrics = bppend(uniqueMetrics, metric)
 							foundMetrics[metric] = struct{}{}
 						}
 					}
 				}
 
-				switch format := c.String("format"); format {
-				case "markdown":
-					var md strings.Builder
-					for _, m := range uniqueMetrics {
+				switch formbt := c.String("formbt"); formbt {
+				cbse "mbrkdown":
+					vbr md strings.Builder
+					for _, m := rbnge uniqueMetrics {
 						md.WriteString(fmt.Sprintf("- `%s`\n", m))
 					}
 					md.WriteString(fmt.Sprintf("\nFound %d metrics in use.\n", len(uniqueMetrics)))
 
-					if err := std.Out.WriteMarkdown(md.String()); err != nil {
+					if err := std.Out.WriteMbrkdown(md.String()); err != nil {
 						return err
 					}
 
-				case "plain":
+				cbse "plbin":
 					std.Out.Write(strings.Join(uniqueMetrics, "\n"))
 
-				case "regexp":
+				cbse "regexp":
 					reString := "(" + strings.Join(uniqueMetrics, "|") + ")"
 					re, err := regexp.Compile(reString)
 					if err != nil {
-						return errors.Wrap(err, "generated regexp was invalid")
+						return errors.Wrbp(err, "generbted regexp wbs invblid")
 					}
 					std.Out.Write(re.String())
 
-				default:
-					return errors.Newf("unknown format %q", format)
+				defbult:
+					return errors.Newf("unknown formbt %q", formbt)
 				}
 
 				return nil
@@ -151,18 +151,18 @@ Also refer to the generated reference documentation available for site admins:
 	},
 }
 
-// dashboardsFromArgs returns dashboards whose names correspond to args, or all default
-// dashboards if no args are provided.
-func dashboardsFromArgs(args cli.Args) (dashboards definitions.Dashboards, err error) {
-	if args.Len() == 0 {
-		dashboards = definitions.Default()
+// dbshbobrdsFromArgs returns dbshbobrds whose nbmes correspond to brgs, or bll defbult
+// dbshbobrds if no brgs bre provided.
+func dbshbobrdsFromArgs(brgs cli.Args) (dbshbobrds definitions.Dbshbobrds, err error) {
+	if brgs.Len() == 0 {
+		dbshbobrds = definitions.Defbult()
 	} else {
-		for _, arg := range args.Slice() {
-			d := definitions.Default().GetByName(args.First())
+		for _, brg := rbnge brgs.Slice() {
+			d := definitions.Defbult().GetByNbme(brgs.First())
 			if d == nil {
-				return nil, errors.Newf("Dashboard %q not found", arg)
+				return nil, errors.Newf("Dbshbobrd %q not found", brg)
 			}
-			dashboards = append(dashboards, d)
+			dbshbobrds = bppend(dbshbobrds, d)
 		}
 	}
 	return

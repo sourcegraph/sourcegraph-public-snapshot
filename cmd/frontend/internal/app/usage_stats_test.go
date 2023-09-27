@@ -1,56 +1,56 @@
-package app
+pbckbge bpp
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestUsageStatsArchiveHandler(t *testing.T) {
+func TestUsbgeStbtsArchiveHbndler(t *testing.T) {
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	t.Run("non-admins can't download archive", func(t *testing.T) {
+	t.Run("non-bdmins cbn't downlobd brchive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)
 		rec := httptest.NewRecorder()
-		usageStatsArchiveHandler(db)(rec, req)
+		usbgeStbtsArchiveHbndler(db)(rec, req)
 
-		if have, want := rec.Code, http.StatusUnauthorized; have != want {
-			t.Errorf("status code: have %d, want %d", have, want)
+		if hbve, wbnt := rec.Code, http.StbtusUnbuthorized; hbve != wbnt {
+			t.Errorf("stbtus code: hbve %d, wbnt %d", hbve, wbnt)
 		}
 	})
 
-	t.Run("admins can download archive", func(t *testing.T) {
+	t.Run("bdmins cbn downlobd brchive", func(t *testing.T) {
 		req, _ := http.NewRequest("GET", "", nil)
 		rec := httptest.NewRecorder()
-		usageStatsArchiveHandler(db)(rec, req.WithContext(actor.WithInternalActor(context.Background())))
+		usbgeStbtsArchiveHbndler(db)(rec, req.WithContext(bctor.WithInternblActor(context.Bbckground())))
 
-		contentType := rec.Header().Get("Content-Type")
-		if have, want := contentType, "application/zip"; have != want {
-			t.Errorf("Content-Type: have %q, want %q", have, want)
+		contentType := rec.Hebder().Get("Content-Type")
+		if hbve, wbnt := contentType, "bpplicbtion/zip"; hbve != wbnt {
+			t.Errorf("Content-Type: hbve %q, wbnt %q", hbve, wbnt)
 		}
 
-		contentDisposition := rec.Header().Get("Content-Disposition")
-		if have, want := contentDisposition, "attachment; filename=\"SourcegraphUsersUsageArchive.zip\""; have != want {
-			t.Errorf("Content-Disposition: have %q, want %q", have, want)
+		contentDisposition := rec.Hebder().Get("Content-Disposition")
+		if hbve, wbnt := contentDisposition, "bttbchment; filenbme=\"SourcegrbphUsersUsbgeArchive.zip\""; hbve != wbnt {
+			t.Errorf("Content-Disposition: hbve %q, wbnt %q", hbve, wbnt)
 		}
 
-		zr, err := zip.NewReader(bytes.NewReader(rec.Body.Bytes()), int64(rec.Body.Len()))
+		zr, err := zip.NewRebder(bytes.NewRebder(rec.Body.Bytes()), int64(rec.Body.Len()))
 		if err != nil {
-			t.Errorf("Body: Failed to open ZIP: %s", err)
+			t.Errorf("Body: Fbiled to open ZIP: %s", err)
 		}
 
 		if len(zr.File) == 0 {
-			t.Errorf("Zero files in ZIP archive")
+			t.Errorf("Zero files in ZIP brchive")
 		}
 	})
 }

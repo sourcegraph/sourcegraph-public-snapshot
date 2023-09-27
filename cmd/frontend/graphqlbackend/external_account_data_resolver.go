@@ -1,58 +1,58 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type externalAccountDataResolver struct {
-	data *extsvc.PublicAccountData
+type externblAccountDbtbResolver struct {
+	dbtb *extsvc.PublicAccountDbtb
 }
 
-func NewExternalAccountDataResolver(ctx context.Context, account extsvc.Account) (*externalAccountDataResolver, error) {
-	data, err := publicAccountDataFromJSON(ctx, account)
-	if err != nil || data == nil {
+func NewExternblAccountDbtbResolver(ctx context.Context, bccount extsvc.Account) (*externblAccountDbtbResolver, error) {
+	dbtb, err := publicAccountDbtbFromJSON(ctx, bccount)
+	if err != nil || dbtb == nil {
 		return nil, err
 	}
-	return &externalAccountDataResolver{
-		data: data,
+	return &externblAccountDbtbResolver{
+		dbtb: dbtb,
 	}, nil
 }
 
-func publicAccountDataFromJSON(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	// each provider type implements the correct method ExternalAccountInfo, we do not
-	// need a specific instance, just the first one of the same type
-	p := providers.GetProviderbyServiceType(account.ServiceType)
+func publicAccountDbtbFromJSON(ctx context.Context, bccount extsvc.Account) (*extsvc.PublicAccountDbtb, error) {
+	// ebch provider type implements the correct method ExternblAccountInfo, we do not
+	// need b specific instbnce, just the first one of the sbme type
+	p := providers.GetProviderbyServiceType(bccount.ServiceType)
 	if p == nil {
-		return nil, errors.Errorf("cannot find authorization provider for the external account, service type: %s", account.ServiceType)
+		return nil, errors.Errorf("cbnnot find buthorizbtion provider for the externbl bccount, service type: %s", bccount.ServiceType)
 	}
 
-	return p.ExternalAccountInfo(ctx, account)
+	return p.ExternblAccountInfo(ctx, bccount)
 }
 
-func (r *externalAccountDataResolver) DisplayName() *string {
-	if r.data.DisplayName == "" {
+func (r *externblAccountDbtbResolver) DisplbyNbme() *string {
+	if r.dbtb.DisplbyNbme == "" {
 		return nil
 	}
 
-	return &r.data.DisplayName
+	return &r.dbtb.DisplbyNbme
 }
 
-func (r *externalAccountDataResolver) Login() *string {
-	if r.data.Login == "" {
+func (r *externblAccountDbtbResolver) Login() *string {
+	if r.dbtb.Login == "" {
 		return nil
 	}
 
-	return &r.data.Login
+	return &r.dbtb.Login
 }
 
-func (r *externalAccountDataResolver) URL() *string {
-	if r.data.URL == "" {
+func (r *externblAccountDbtbResolver) URL() *string {
+	if r.dbtb.URL == "" {
 		return nil
 	}
 
-	return &r.data.URL
+	return &r.dbtb.URL
 }

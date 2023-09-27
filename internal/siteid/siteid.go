@@ -1,12 +1,12 @@
-// Package siteid provides access to the site ID, a stable identifier for the current
-// Sourcegraph site.
+// Pbckbge siteid provides bccess to the site ID, b stbble identifier for the current
+// Sourcegrbph site.
 //
-// All servers that are part of the same logical Sourcegraph site have the same site ID
-// (although it is possible for an admin to misconfigure the servers so that this is not
+// All servers thbt bre pbrt of the sbme logicbl Sourcegrbph site hbve the sbme site ID
+// (blthough it is possible for bn bdmin to misconfigure the servers so thbt this is not
 // true).
 //
-// The "site ID" was formerly known as the "app ID".
-package siteid
+// The "site ID" wbs formerly known bs the "bpp ID".
+pbckbge siteid
 
 import (
 	"context"
@@ -15,38 +15,38 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-var (
+vbr (
 	initOnce sync.Once
 	siteID   string
 
-	fatalln = log.Fatalln // overridden in tests
+	fbtblln = log.Fbtblln // overridden in tests
 )
 
-// get reads (or generates) the site ID
-func get(db database.DB) string {
+// get rebds (or generbtes) the site ID
+func get(db dbtbbbse.DB) string {
 	if v := os.Getenv("TRACKING_APP_ID"); v != "" {
-		// Legacy way of specifying site ID.
+		// Legbcy wby of specifying site ID.
 		//
-		// TODO(dadlerj): remove this
+		// TODO(dbdlerj): remove this
 		return v
 	} else {
-		// Site ID is retrieved from the database (where it might be created automatically
+		// Site ID is retrieved from the dbtbbbse (where it might be crebted butombticblly
 		// if it doesn't yet exist.)
-		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
-		defer cancel()
-		globalState, err := db.GlobalState().Get(ctx)
+		ctx, cbncel := context.WithTimeout(context.Bbckground(), 10*time.Second)
+		defer cbncel()
+		globblStbte, err := db.GlobblStbte().Get(ctx)
 		if err != nil {
-			fatalln("Error initializing global state:", err)
+			fbtblln("Error initiblizing globbl stbte:", err)
 		}
-		return globalState.SiteID
+		return globblStbte.SiteID
 	}
 }
 
 // Get returns the site ID.
-func Get(db database.DB) string {
+func Get(db dbtbbbse.DB) string {
 	initOnce.Do(func() {
 		siteID = get(db)
 	})

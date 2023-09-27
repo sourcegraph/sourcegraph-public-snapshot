@@ -1,4 +1,4 @@
-package workspace
+pbckbge workspbce
 
 import (
 	"context"
@@ -6,55 +6,55 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
 )
 
-type dockerWorkspace struct {
-	scriptFilenames []string
-	workspaceDir    string
+type dockerWorkspbce struct {
+	scriptFilenbmes []string
+	workspbceDir    string
 	logger          cmdlogger.Logger
 }
 
-// NewDockerWorkspace creates a new workspace for docker-based execution. A path on
-// the host will be used to set up the workspace, clone the repo and put script files.
-func NewDockerWorkspace(
+// NewDockerWorkspbce crebtes b new workspbce for docker-bbsed execution. A pbth on
+// the host will be used to set up the workspbce, clone the repo bnd put script files.
+func NewDockerWorkspbce(
 	ctx context.Context,
 	filesStore files.Store,
 	job types.Job,
-	cmd command.Command,
+	cmd commbnd.Commbnd,
 	logger cmdlogger.Logger,
 	cloneOpts CloneOptions,
-	operations *command.Operations,
-) (Workspace, error) {
-	workspaceDir, err := makeTemporaryDirectory("workspace-" + strconv.Itoa(job.ID))
+	operbtions *commbnd.Operbtions,
+) (Workspbce, error) {
+	workspbceDir, err := mbkeTemporbryDirectory("workspbce-" + strconv.Itob(job.ID))
 	if err != nil {
 		return nil, err
 	}
 
-	if job.RepositoryName != "" {
-		if err = cloneRepo(ctx, workspaceDir, job, cmd, logger, cloneOpts, operations); err != nil {
-			_ = os.RemoveAll(workspaceDir)
+	if job.RepositoryNbme != "" {
+		if err = cloneRepo(ctx, workspbceDir, job, cmd, logger, cloneOpts, operbtions); err != nil {
+			_ = os.RemoveAll(workspbceDir)
 			return nil, err
 		}
 	}
 
-	scriptPaths, err := prepareScripts(ctx, filesStore, job, workspaceDir, logger)
+	scriptPbths, err := prepbreScripts(ctx, filesStore, job, workspbceDir, logger)
 	if err != nil {
-		_ = os.RemoveAll(workspaceDir)
+		_ = os.RemoveAll(workspbceDir)
 		return nil, err
 	}
 
-	return &dockerWorkspace{
-		scriptFilenames: scriptPaths,
-		workspaceDir:    workspaceDir,
+	return &dockerWorkspbce{
+		scriptFilenbmes: scriptPbths,
+		workspbceDir:    workspbceDir,
 		logger:          logger,
 	}, nil
 }
 
-func makeTemporaryDirectory(prefix string) (string, error) {
+func mbkeTemporbryDirectory(prefix string) (string, error) {
 	if tempdir := os.Getenv("TMPDIR"); tempdir != "" {
 		if err := os.MkdirAll(tempdir, os.ModePerm); err != nil {
 			return "", err
@@ -65,34 +65,34 @@ func makeTemporaryDirectory(prefix string) (string, error) {
 	return os.MkdirTemp("", prefix+"-*")
 }
 
-func (w dockerWorkspace) Path() string {
-	return w.workspaceDir
+func (w dockerWorkspbce) Pbth() string {
+	return w.workspbceDir
 }
 
-func (w dockerWorkspace) WorkingDirectory() string {
-	return w.workspaceDir
+func (w dockerWorkspbce) WorkingDirectory() string {
+	return w.workspbceDir
 }
 
-func (w dockerWorkspace) ScriptFilenames() []string {
-	return w.scriptFilenames
+func (w dockerWorkspbce) ScriptFilenbmes() []string {
+	return w.scriptFilenbmes
 }
 
-func (w dockerWorkspace) Remove(ctx context.Context, keepWorkspace bool) {
-	handle := w.logger.LogEntry("teardown.fs", nil)
+func (w dockerWorkspbce) Remove(ctx context.Context, keepWorkspbce bool) {
+	hbndle := w.logger.LogEntry("tebrdown.fs", nil)
 	defer func() {
-		// We always finish this with exit code 0 even if it errored, because workspace
-		// cleanup doesn't fail the execution job. We can deal with it separately.
-		handle.Finalize(0)
-		handle.Close()
+		// We blwbys finish this with exit code 0 even if it errored, becbuse workspbce
+		// clebnup doesn't fbil the execution job. We cbn debl with it sepbrbtely.
+		hbndle.Finblize(0)
+		hbndle.Close()
 	}()
 
-	if keepWorkspace {
-		fmt.Fprintf(handle, "Preserving workspace (%s) as per config", w.workspaceDir)
+	if keepWorkspbce {
+		fmt.Fprintf(hbndle, "Preserving workspbce (%s) bs per config", w.workspbceDir)
 		return
 	}
 
-	fmt.Fprintf(handle, "Removing %s\n", w.workspaceDir)
-	if rmErr := os.RemoveAll(w.workspaceDir); rmErr != nil {
-		fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
+	fmt.Fprintf(hbndle, "Removing %s\n", w.workspbceDir)
+	if rmErr := os.RemoveAll(w.workspbceDir); rmErr != nil {
+		fmt.Fprintf(hbndle, "Operbtion fbiled: %s\n", rmErr.Error())
 	}
 }

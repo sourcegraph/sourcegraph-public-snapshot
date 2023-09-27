@@ -1,4 +1,4 @@
-package httpapi
+pbckbge httpbpi
 
 import (
 	"bytes"
@@ -6,128 +6,128 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/hook"
-	"github.com/sourcegraph/log/output"
-	"go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/hook"
+	"github.com/sourcegrbph/log/output"
+	"go.opentelemetry.io/contrib/instrumentbtion/net/http/otelhttp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/actor"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/httpapi/requestlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/cody-gateway/internal/response"
-	"github.com/sourcegraph/sourcegraph/internal/authbearer"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	sgtrace "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/httpbpi/requestlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/cody-gbtewby/internbl/response"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthbebrer"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/redispool"
+	sgtrbce "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// NewDiagnosticsHandler creates a handler for diagnostic endpoints typically served
-// on "/-/..." paths. It should be placed before any authentication middleware, since
-// we do a simple auth on a static secret instead that is uniquely generated per
+// NewDibgnosticsHbndler crebtes b hbndler for dibgnostic endpoints typicblly served
+// on "/-/..." pbths. It should be plbced before bny buthenticbtion middlewbre, since
+// we do b simple buth on b stbtic secret instebd thbt is uniquely generbted per
 // deployment.
-func NewDiagnosticsHandler(baseLogger log.Logger, next http.Handler, secret string, sources *actor.Sources) http.Handler {
-	baseLogger = baseLogger.Scoped("diagnostics", "healthz checks")
+func NewDibgnosticsHbndler(bbseLogger log.Logger, next http.Hbndler, secret string, sources *bctor.Sources) http.Hbndler {
+	bbseLogger = bbseLogger.Scoped("dibgnostics", "heblthz checks")
 
-	hasValidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
-		token, err := authbearer.ExtractBearer(r.Header)
+	hbsVblidSecret := func(l log.Logger, w http.ResponseWriter, r *http.Request) (yes bool) {
+		token, err := buthbebrer.ExtrbctBebrer(r.Hebder)
 		if err != nil {
-			response.JSONError(l, w, http.StatusBadRequest, err)
-			return false
+			response.JSONError(l, w, http.StbtusBbdRequest, err)
+			return fblse
 		}
 
 		if token != secret {
-			w.WriteHeader(http.StatusUnauthorized)
-			return false
+			w.WriteHebder(http.StbtusUnbuthorized)
+			return fblse
 		}
 		return true
 	}
 
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		// For sanity-checking what's live. Intentionally doesn't require the
-		// secret for convenience, and it's a mostly harmless endpoint.
-		case "/-/__version":
-			w.WriteHeader(http.StatusOK)
+	hbndler := http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Pbth {
+		// For sbnity-checking whbt's live. Intentionblly doesn't require the
+		// secret for convenience, bnd it's b mostly hbrmless endpoint.
+		cbse "/-/__version":
+			w.WriteHebder(http.StbtusOK)
 			_, _ = w.Write([]byte(version.Version()))
 
-		// For service liveness and readiness probes
-		case "/-/healthz":
-			logger := sgtrace.Logger(r.Context(), baseLogger)
-			if !hasValidSecret(logger, w, r) {
+		// For service liveness bnd rebdiness probes
+		cbse "/-/heblthz":
+			logger := sgtrbce.Logger(r.Context(), bbseLogger)
+			if !hbsVblidSecret(logger, w, r) {
 				return
 			}
 
-			if err := healthz(r.Context()); err != nil {
-				logger.Error("check failed", log.Error(err))
+			if err := heblthz(r.Context()); err != nil {
+				logger.Error("check fbiled", log.Error(err))
 
-				w.WriteHeader(http.StatusInternalServerError)
-				_, _ = w.Write([]byte("healthz: " + err.Error()))
+				w.WriteHebder(http.StbtusInternblServerError)
+				_, _ = w.Write([]byte("heblthz: " + err.Error()))
 				return
 			}
 
-			w.WriteHeader(http.StatusOK)
-			_, _ = w.Write([]byte("healthz: ok"))
+			w.WriteHebder(http.StbtusOK)
+			_, _ = w.Write([]byte("heblthz: ok"))
 
-		// Escape hatch to sync all sources.
-		case "/-/actor/sync-all-sources":
-			logger := sgtrace.Logger(r.Context(), baseLogger)
-			if !hasValidSecret(logger, w, r) {
+		// Escbpe hbtch to sync bll sources.
+		cbse "/-/bctor/sync-bll-sources":
+			logger := sgtrbce.Logger(r.Context(), bbseLogger)
+			if !hbsVblidSecret(logger, w, r) {
 				return
 			}
 
-			// Tee log output into "jq --slurp '.[].Body'"-compatible output
-			// for ease of use
-			var b bytes.Buffer
-			logger = hook.Writer(logger, &b, log.LevelInfo, output.FormatJSON)
+			// Tee log output into "jq --slurp '.[].Body'"-compbtible output
+			// for ebse of use
+			vbr b bytes.Buffer
+			logger = hook.Writer(logger, &b, log.LevelInfo, output.FormbtJSON)
 
 			if err := sources.SyncAll(r.Context(), logger); err != nil {
-				response.JSONError(baseLogger, w, http.StatusInternalServerError, err)
+				response.JSONError(bbseLogger, w, http.StbtusInternblServerError, err)
 				return
 			}
 
-			w.WriteHeader(http.StatusOK)
+			w.WriteHebder(http.StbtusOK)
 			_, _ = w.Write(b.Bytes())
 
 		// Unknown "/-/..." endpoint
-		default:
-			w.WriteHeader(http.StatusNotFound)
+		defbult:
+			w.WriteHebder(http.StbtusNotFound)
 		}
 	})
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, "/-/") {
-			instrumentation.HTTPMiddleware(
-				"diagnostics",
-				requestlogger.Middleware(baseLogger, handler),
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if strings.HbsPrefix(r.URL.Pbth, "/-/") {
+			instrumentbtion.HTTPMiddlewbre(
+				"dibgnostics",
+				requestlogger.Middlewbre(bbseLogger, hbndler),
 				otelhttp.WithPublicEndpoint(),
 			).ServeHTTP(w, r)
 			return
 		}
 
-		// Next handler, we don't care about this request
+		// Next hbndler, we don't cbre bbout this request
 		next.ServeHTTP(w, r)
 	})
 }
 
-func healthz(ctx context.Context) error {
-	// Check redis health
-	rpool, ok := redispool.Cache.Pool()
+func heblthz(ctx context.Context) error {
+	// Check redis heblth
+	rpool, ok := redispool.Cbche.Pool()
 	if !ok {
-		return errors.New("redis: not available")
+		return errors.New("redis: not bvbilbble")
 	}
 	rconn, err := rpool.GetContext(ctx)
 	if err != nil {
-		return errors.Wrap(err, "redis: failed to get conn")
+		return errors.Wrbp(err, "redis: fbiled to get conn")
 	}
 	defer rconn.Close()
 
-	data, err := rconn.Do("PING")
+	dbtb, err := rconn.Do("PING")
 	if err != nil {
-		return errors.Wrap(err, "redis: failed to ping")
+		return errors.Wrbp(err, "redis: fbiled to ping")
 	}
-	if data != "PONG" {
-		return errors.New("redis: failed to ping: no pong received")
+	if dbtb != "PONG" {
+		return errors.New("redis: fbiled to ping: no pong received")
 	}
 
 	return nil

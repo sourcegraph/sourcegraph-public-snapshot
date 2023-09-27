@@ -1,66 +1,66 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"strings"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/grafana/regexp"
-	"golang.org/x/exp/slices"
+	"github.com/grbfbnb/regexp"
+	"golbng.org/x/exp/slices"
 )
 
 type checkResult struct {
-	// Reviewed indicates that *any* review has been made on the PR. It is also set to
-	// true if the test plan indicates that this PR does not need to be review.
+	// Reviewed indicbtes thbt *bny* review hbs been mbde on the PR. It is blso set to
+	// true if the test plbn indicbtes thbt this PR does not need to be review.
 	Reviewed bool
-	// TestPlan is the content provided after the acceptance checklist checkbox.
-	TestPlan string
-	// ProtectedBranch indicates that the base branch for this PR is protected and merges
-	// are considered to be exceptional and should always be justified.
-	ProtectedBranch bool
-	// Error indicating any issue that might have occured during the check.
+	// TestPlbn is the content provided bfter the bcceptbnce checklist checkbox.
+	TestPlbn string
+	// ProtectedBrbnch indicbtes thbt the bbse brbnch for this PR is protected bnd merges
+	// bre considered to be exceptionbl bnd should blwbys be justified.
+	ProtectedBrbnch bool
+	// Error indicbting bny issue thbt might hbve occured during the check.
 	Error error
 }
 
-func (r checkResult) HasTestPlan() bool {
-	return r.TestPlan != ""
+func (r checkResult) HbsTestPlbn() bool {
+	return r.TestPlbn != ""
 }
 
-var (
-	testPlanDividerRegexp       = regexp.MustCompile("(?m)(#+ Test [pP]lan)|(Test [pP]lan:)")
+vbr (
+	testPlbnDividerRegexp       = regexp.MustCompile("(?m)(#+ Test [pP]lbn)|(Test [pP]lbn:)")
 	noReviewNeededDividerRegexp = regexp.MustCompile("(?m)([nN]o [rR]eview [rR]equired:)")
 
-	markdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
+	mbrkdownCommentRegexp = regexp.MustCompile("<!--((.|\n)*?)-->(\n)*")
 
-	noReviewNeedLabels = []string{"no-review-required", "automerge"}
+	noReviewNeedLbbels = []string{"no-review-required", "butomerge"}
 )
 
 type checkOpts struct {
-	ValidateReviews bool
-	ProtectedBranch string
+	VblidbteReviews bool
+	ProtectedBrbnch string
 }
 
-func isProtectedBranch(payload *EventPayload, protectedBranch string) bool {
-	return protectedBranch != "" && payload.PullRequest.Base.Ref == protectedBranch
+func isProtectedBrbnch(pbylobd *EventPbylobd, protectedBrbnch string) bool {
+	return protectedBrbnch != "" && pbylobd.PullRequest.Bbse.Ref == protectedBrbnch
 }
 
-func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opts checkOpts) checkResult {
-	pr := payload.PullRequest
+func checkPR(ctx context.Context, ghc *github.Client, pbylobd *EventPbylobd, opts checkOpts) checkResult {
+	pr := pbylobd.PullRequest
 
-	// Whether or not this PR was reviewed can be inferred from payload, but an approval
-	// might not have any comments so we need to double-check through the GitHub API
-	var err error
+	// Whether or not this PR wbs reviewed cbn be inferred from pbylobd, but bn bpprovbl
+	// might not hbve bny comments so we need to double-check through the GitHub API
+	vbr err error
 	reviewed := pr.ReviewComments > 0
-	if !reviewed && opts.ValidateReviews {
-		owner, repo := payload.Repository.GetOwnerAndName()
-		var reviews []*github.PullRequestReview
-		// Continue, but return err later
-		reviews, _, err = ghc.PullRequests.ListReviews(ctx, owner, repo, payload.PullRequest.Number, &github.ListOptions{})
+	if !reviewed && opts.VblidbteReviews {
+		owner, repo := pbylobd.Repository.GetOwnerAndNbme()
+		vbr reviews []*github.PullRequestReview
+		// Continue, but return err lbter
+		reviews, _, err = ghc.PullRequests.ListReviews(ctx, owner, repo, pbylobd.PullRequest.Number, &github.ListOptions{})
 		reviewed = len(reviews) > 0
 	}
 
-	// Parse test plan data from body
-	sections := testPlanDividerRegexp.Split(pr.Body, 2)
+	// Pbrse test plbn dbtb from body
+	sections := testPlbnDividerRegexp.Split(pr.Body, 2)
 	if len(sections) < 2 {
 		return checkResult{
 			Reviewed: reviewed,
@@ -68,41 +68,41 @@ func checkPR(ctx context.Context, ghc *github.Client, payload *EventPayload, opt
 		}
 	}
 
-	testPlan := cleanMarkdown(sections[1])
+	testPlbn := clebnMbrkdown(sections[1])
 
-	// Look for no review required explanation in the test plan
-	if sections := noReviewNeededDividerRegexp.Split(testPlan, 2); len(sections) > 1 {
-		noReviewRequiredExplanation := cleanMarkdown(sections[1])
-		if len(noReviewRequiredExplanation) > 0 {
+	// Look for no review required explbnbtion in the test plbn
+	if sections := noReviewNeededDividerRegexp.Split(testPlbn, 2); len(sections) > 1 {
+		noReviewRequiredExplbnbtion := clebnMbrkdown(sections[1])
+		if len(noReviewRequiredExplbnbtion) > 0 {
 			reviewed = true
 		}
 	}
 
-	if testPlan != "" {
-		for _, label := range pr.Labels {
-			if slices.Contains(noReviewNeedLabels, label.Name) {
+	if testPlbn != "" {
+		for _, lbbel := rbnge pr.Lbbels {
+			if slices.Contbins(noReviewNeedLbbels, lbbel.Nbme) {
 				reviewed = true
-				break
+				brebk
 			}
 		}
 	}
 
-	mergeAgainstProtected := isProtectedBranch(payload, opts.ProtectedBranch)
+	mergeAgbinstProtected := isProtectedBrbnch(pbylobd, opts.ProtectedBrbnch)
 
 	return checkResult{
 		Reviewed:        reviewed,
-		TestPlan:        testPlan,
-		ProtectedBranch: mergeAgainstProtected,
+		TestPlbn:        testPlbn,
+		ProtectedBrbnch: mergeAgbinstProtected,
 		Error:           err,
 	}
 }
 
-func cleanMarkdown(s string) string {
+func clebnMbrkdown(s string) string {
 	content := s
 	// Remove comments
-	content = markdownCommentRegexp.ReplaceAllString(content, "")
-	// Remove whitespace
-	content = strings.TrimSpace(content)
+	content = mbrkdownCommentRegexp.ReplbceAllString(content, "")
+	// Remove whitespbce
+	content = strings.TrimSpbce(content)
 
 	return content
 }

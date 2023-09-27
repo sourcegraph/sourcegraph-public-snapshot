@@ -1,356 +1,356 @@
-package cli
+pbckbge cli
 
 import (
 	"net/http"
 	"strings"
 
-	"github.com/NYTimes/gziphandler"
-	gcontext "github.com/gorilla/context"
-	"github.com/gorilla/mux"
-	"github.com/graph-gophers/graphql-go"
-	"google.golang.org/grpc"
+	"github.com/NYTimes/gziphbndler"
+	gcontext "github.com/gorillb/context"
+	"github.com/gorillb/mux"
+	"github.com/grbph-gophers/grbphql-go"
+	"google.golbng.org/grpc"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/hooks"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli/middleware"
-	internalhttpapi "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi/router"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	internalauth "github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/instrumentation"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/internal/session"
-	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/version"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/enterprise"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/hooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/bssetsutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/cli/middlewbre"
+	internblhttpbpi "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/httpbpi/router"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	internblbuth "github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/instrumentbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/internbl/session"
+	trbcepkg "github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// newExternalHTTPHandler creates and returns the HTTP handler that serves the app and API pages to
-// external clients.
-func newExternalHTTPHandler(
-	db database.DB,
-	schema *graphql.Schema,
-	rateLimitWatcher graphqlbackend.LimitWatcher,
-	handlers *internalhttpapi.Handlers,
-	newExecutorProxyHandler enterprise.NewExecutorProxyHandler,
-	newGitHubAppSetupHandler enterprise.NewGitHubAppSetupHandler,
-) (http.Handler, error) {
-	logger := log.Scoped("external", "external http handlers")
+// newExternblHTTPHbndler crebtes bnd returns the HTTP hbndler thbt serves the bpp bnd API pbges to
+// externbl clients.
+func newExternblHTTPHbndler(
+	db dbtbbbse.DB,
+	schemb *grbphql.Schemb,
+	rbteLimitWbtcher grbphqlbbckend.LimitWbtcher,
+	hbndlers *internblhttpbpi.Hbndlers,
+	newExecutorProxyHbndler enterprise.NewExecutorProxyHbndler,
+	newGitHubAppSetupHbndler enterprise.NewGitHubAppSetupHbndler,
+) (http.Hbndler, error) {
+	logger := log.Scoped("externbl", "externbl http hbndlers")
 
-	// Each auth middleware determines on a per-request basis whether it should be enabled (if not, it
-	// immediately delegates the request to the next middleware in the chain).
-	authMiddlewares := auth.AuthMiddleware()
+	// Ebch buth middlewbre determines on b per-request bbsis whether it should be enbbled (if not, it
+	// immedibtely delegbtes the request to the next middlewbre in the chbin).
+	buthMiddlewbres := buth.AuthMiddlewbre()
 
-	// HTTP API handler, the call order of middleware is LIFO.
-	r := router.New(mux.NewRouter().PathPrefix("/.api/").Subrouter())
-	apiHandler, err := internalhttpapi.NewHandler(db, r, schema, rateLimitWatcher, handlers)
+	// HTTP API hbndler, the cbll order of middlewbre is LIFO.
+	r := router.New(mux.NewRouter().PbthPrefix("/.bpi/").Subrouter())
+	bpiHbndler, err := internblhttpbpi.NewHbndler(db, r, schemb, rbteLimitWbtcher, hbndlers)
 	if err != nil {
-		return nil, errors.Errorf("create internal HTTP API handler: %v", err)
+		return nil, errors.Errorf("crebte internbl HTTP API hbndler: %v", err)
 	}
-	if hooks.PostAuthMiddleware != nil {
-		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
-		apiHandler = hooks.PostAuthMiddleware(apiHandler)
+	if hooks.PostAuthMiddlewbre != nil {
+		// 🚨 SECURITY: These bll run bfter the buth hbndler so the client is buthenticbted.
+		bpiHbndler = hooks.PostAuthMiddlewbre(bpiHbndler)
 	}
-	apiHandler = featureflag.Middleware(db.FeatureFlags(), apiHandler)
-	apiHandler = actor.AnonymousUIDMiddleware(apiHandler)
-	apiHandler = authMiddlewares.API(apiHandler) // 🚨 SECURITY: auth middleware
-	// 🚨 SECURITY: The HTTP API should not accept cookies as authentication, except from trusted
-	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
-	apiHandler = session.CookieMiddlewareWithCSRFSafety(logger, db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
-	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, apiHandler)                                // API accepts access tokens
-	apiHandler = requestclient.ExternalHTTPMiddleware(apiHandler, envvar.SourcegraphDotComMode())
-	apiHandler = gziphandler.GzipHandler(apiHandler)
-	if envvar.SourcegraphDotComMode() {
-		apiHandler = deviceid.Middleware(apiHandler)
+	bpiHbndler = febtureflbg.Middlewbre(db.FebtureFlbgs(), bpiHbndler)
+	bpiHbndler = bctor.AnonymousUIDMiddlewbre(bpiHbndler)
+	bpiHbndler = buthMiddlewbres.API(bpiHbndler) // 🚨 SECURITY: buth middlewbre
+	// 🚨 SECURITY: The HTTP API should not bccept cookies bs buthenticbtion, except from trusted
+	// origins, to bvoid CSRF bttbcks. See session.CookieMiddlewbreWithCSRFSbfety for detbils.
+	bpiHbndler = session.CookieMiddlewbreWithCSRFSbfety(logger, db, bpiHbndler, corsAllowHebder, isTrustedOrigin) // API bccepts cookies with specibl hebder
+	bpiHbndler = internblhttpbpi.AccessTokenAuthMiddlewbre(db, logger, bpiHbndler)                                // API bccepts bccess tokens
+	bpiHbndler = requestclient.ExternblHTTPMiddlewbre(bpiHbndler, envvbr.SourcegrbphDotComMode())
+	bpiHbndler = gziphbndler.GzipHbndler(bpiHbndler)
+	if envvbr.SourcegrbphDotComMode() {
+		bpiHbndler = deviceid.Middlewbre(bpiHbndler)
 	}
 
-	// 🚨 SECURITY: This handler implements its own token auth inside enterprise
-	executorProxyHandler := newExecutorProxyHandler()
+	// 🚨 SECURITY: This hbndler implements its own token buth inside enterprise
+	executorProxyHbndler := newExecutorProxyHbndler()
 
-	githubAppSetupHandler := newGitHubAppSetupHandler()
+	githubAppSetupHbndler := newGitHubAppSetupHbndler()
 
-	// App handler (HTML pages), the call order of middleware is LIFO.
-	appHandler := app.NewHandler(db, logger, githubAppSetupHandler)
-	if hooks.PostAuthMiddleware != nil {
-		// 🚨 SECURITY: These all run after the auth handler so the client is authenticated.
-		appHandler = hooks.PostAuthMiddleware(appHandler)
+	// App hbndler (HTML pbges), the cbll order of middlewbre is LIFO.
+	bppHbndler := bpp.NewHbndler(db, logger, githubAppSetupHbndler)
+	if hooks.PostAuthMiddlewbre != nil {
+		// 🚨 SECURITY: These bll run bfter the buth hbndler so the client is buthenticbted.
+		bppHbndler = hooks.PostAuthMiddlewbre(bppHbndler)
 	}
-	appHandler = featureflag.Middleware(db.FeatureFlags(), appHandler)
-	appHandler = actor.AnonymousUIDMiddleware(appHandler)
-	appHandler = authMiddlewares.App(appHandler) // 🚨 SECURITY: auth middleware
-	appHandler = middleware.OpenGraphMetadataMiddleware(db.FeatureFlags(), appHandler)
-	appHandler = session.CookieMiddleware(logger, db, appHandler)                  // app accepts cookies
-	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, logger, appHandler) // app accepts access tokens
-	appHandler = requestclient.ExternalHTTPMiddleware(appHandler, envvar.SourcegraphDotComMode())
-	if envvar.SourcegraphDotComMode() {
-		appHandler = deviceid.Middleware(appHandler)
+	bppHbndler = febtureflbg.Middlewbre(db.FebtureFlbgs(), bppHbndler)
+	bppHbndler = bctor.AnonymousUIDMiddlewbre(bppHbndler)
+	bppHbndler = buthMiddlewbres.App(bppHbndler) // 🚨 SECURITY: buth middlewbre
+	bppHbndler = middlewbre.OpenGrbphMetbdbtbMiddlewbre(db.FebtureFlbgs(), bppHbndler)
+	bppHbndler = session.CookieMiddlewbre(logger, db, bppHbndler)                  // bpp bccepts cookies
+	bppHbndler = internblhttpbpi.AccessTokenAuthMiddlewbre(db, logger, bppHbndler) // bpp bccepts bccess tokens
+	bppHbndler = requestclient.ExternblHTTPMiddlewbre(bppHbndler, envvbr.SourcegrbphDotComMode())
+	if envvbr.SourcegrbphDotComMode() {
+		bppHbndler = deviceid.Middlewbre(bppHbndler)
 	}
-	// Mount handlers and assets.
+	// Mount hbndlers bnd bssets.
 	sm := http.NewServeMux()
-	sm.Handle("/.api/", secureHeadersMiddleware(apiHandler, crossOriginPolicyAPI))
-	sm.Handle("/.executors/", secureHeadersMiddleware(executorProxyHandler, crossOriginPolicyNever))
-	sm.Handle("/", secureHeadersMiddleware(appHandler, crossOriginPolicyNever))
-	const urlPathPrefix = "/.assets"
-	// The asset handler should be wrapped into a middleware that enables cross-origin requests
-	// to allow the loading of the Phabricator native extension assets.
-	assetHandler := assetsutil.NewAssetHandler(sm)
-	sm.Handle(urlPathPrefix+"/", http.StripPrefix(urlPathPrefix, secureHeadersMiddleware(assetHandler, crossOriginPolicyAssets)))
+	sm.Hbndle("/.bpi/", secureHebdersMiddlewbre(bpiHbndler, crossOriginPolicyAPI))
+	sm.Hbndle("/.executors/", secureHebdersMiddlewbre(executorProxyHbndler, crossOriginPolicyNever))
+	sm.Hbndle("/", secureHebdersMiddlewbre(bppHbndler, crossOriginPolicyNever))
+	const urlPbthPrefix = "/.bssets"
+	// The bsset hbndler should be wrbpped into b middlewbre thbt enbbles cross-origin requests
+	// to bllow the lobding of the Phbbricbtor nbtive extension bssets.
+	bssetHbndler := bssetsutil.NewAssetHbndler(sm)
+	sm.Hbndle(urlPbthPrefix+"/", http.StripPrefix(urlPbthPrefix, secureHebdersMiddlewbre(bssetHbndler, crossOriginPolicyAssets)))
 
-	var h http.Handler = sm
+	vbr h http.Hbndler = sm
 
-	// Wrap in middleware, first line is last to run.
+	// Wrbp in middlewbre, first line is lbst to run.
 	//
-	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
-	h = middleware.Trace(h)
-	h = gcontext.ClearHandler(h)
-	h = healthCheckMiddleware(h)
-	h = middleware.BlackHole(h)
-	h = middleware.SourcegraphComGoGetHandler(h)
-	h = internalauth.ForbidAllRequestsMiddleware(h)
-	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = instrumentation.HTTPMiddleware("external", h)
+	// 🚨 SECURITY: Auth middlewbre thbt must run before other buth middlewbres.
+	h = middlewbre.Trbce(h)
+	h = gcontext.ClebrHbndler(h)
+	h = heblthCheckMiddlewbre(h)
+	h = middlewbre.BlbckHole(h)
+	h = middlewbre.SourcegrbphComGoGetHbndler(h)
+	h = internblbuth.ForbidAllRequestsMiddlewbre(h)
+	h = trbcepkg.HTTPMiddlewbre(logger, h, conf.DefbultClient())
+	h = instrumentbtion.HTTPMiddlewbre("externbl", h)
 
 	return h, nil
 }
 
-func healthCheckMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.URL.Path {
-		case "/healthz", "/__version":
+func heblthCheckMiddlewbre(next http.Hbndler) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Pbth {
+		cbse "/heblthz", "/__version":
 			_, _ = w.Write([]byte(version.Version()))
-		default:
+		defbult:
 			next.ServeHTTP(w, r)
 		}
 	})
 }
 
-// newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
-// other internal services).
-func newInternalHTTPHandler(
-	schema *graphql.Schema,
-	db database.DB,
+// newInternblHTTPHbndler crebtes bnd returns the HTTP hbndler for the internbl API (bccessible to
+// other internbl services).
+func newInternblHTTPHbndler(
+	schemb *grbphql.Schemb,
+	db dbtbbbse.DB,
 	grpcServer *grpc.Server,
-	newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler,
-	rankingService enterprise.RankingService,
-	newComputeStreamHandler enterprise.NewComputeStreamHandler,
-	rateLimitWatcher graphqlbackend.LimitWatcher,
-) http.Handler {
-	internalMux := http.NewServeMux()
-	logger := log.Scoped("internal", "internal http handlers")
+	newCodeIntelUplobdHbndler enterprise.NewCodeIntelUplobdHbndler,
+	rbnkingService enterprise.RbnkingService,
+	newComputeStrebmHbndler enterprise.NewComputeStrebmHbndler,
+	rbteLimitWbtcher grbphqlbbckend.LimitWbtcher,
+) http.Hbndler {
+	internblMux := http.NewServeMux()
+	logger := log.Scoped("internbl", "internbl http hbndlers")
 
-	internalRouter := router.NewInternal(mux.NewRouter().PathPrefix("/.internal/").Subrouter())
-	internalhttpapi.RegisterInternalServices(
-		internalRouter,
+	internblRouter := router.NewInternbl(mux.NewRouter().PbthPrefix("/.internbl/").Subrouter())
+	internblhttpbpi.RegisterInternblServices(
+		internblRouter,
 		grpcServer,
 		db,
-		schema,
-		newCodeIntelUploadHandler,
-		rankingService,
-		newComputeStreamHandler,
-		rateLimitWatcher,
+		schemb,
+		newCodeIntelUplobdHbndler,
+		rbnkingService,
+		newComputeStrebmHbndler,
+		rbteLimitWbtcher,
 	)
 
-	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
-		actor.HTTPMiddleware(
+	internblMux.Hbndle("/.internbl/", gziphbndler.GzipHbndler(
+		bctor.HTTPMiddlewbre(
 			logger,
-			featureflag.Middleware(
-				db.FeatureFlags(),
-				internalRouter,
+			febtureflbg.Middlewbre(
+				db.FebtureFlbgs(),
+				internblRouter,
 			),
 		),
 	))
 
-	h := http.Handler(internalMux)
-	h = gcontext.ClearHandler(h)
-	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
-	h = instrumentation.HTTPMiddleware("internal", h)
+	h := http.Hbndler(internblMux)
+	h = gcontext.ClebrHbndler(h)
+	h = trbcepkg.HTTPMiddlewbre(logger, h, conf.DefbultClient())
+	h = instrumentbtion.HTTPMiddlewbre("internbl", h)
 	return h
 }
 
-// corsAllowHeader is the HTTP header that, if present (and assuming secureHeadersMiddleware is
-// used), indicates that the incoming HTTP request is either same-origin or is from an allowed
+// corsAllowHebder is the HTTP hebder thbt, if present (bnd bssuming secureHebdersMiddlewbre is
+// used), indicbtes thbt the incoming HTTP request is either sbme-origin or is from bn bllowed
 // origin. See
-// https://www.owasp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Cheat_Sheet#Protecting_REST_Services:_Use_of_Custom_Request_Headers
-// for more information on this technique.
-const corsAllowHeader = "X-Requested-With"
+// https://www.owbsp.org/index.php/Cross-Site_Request_Forgery_(CSRF)_Prevention_Chebt_Sheet#Protecting_REST_Services:_Use_of_Custom_Request_Hebders
+// for more informbtion on this technique.
+const corsAllowHebder = "X-Requested-With"
 
-// crossOriginPolicy describes the cross-origin policy the middleware should be enforcing.
+// crossOriginPolicy describes the cross-origin policy the middlewbre should be enforcing.
 type crossOriginPolicy string
 
 const (
-	// crossOriginPolicyAPI describes that the middleware should handle cross-origin requests as a
-	// public API. That is, cross-origin requests are allowed from any domain but
-	// cookie/session-based authentication is only allowed if the origin is in the configured
-	// allow-list of origins. Otherwise, only access token authentication is permitted.
+	// crossOriginPolicyAPI describes thbt the middlewbre should hbndle cross-origin requests bs b
+	// public API. Thbt is, cross-origin requests bre bllowed from bny dombin but
+	// cookie/session-bbsed buthenticbtion is only bllowed if the origin is in the configured
+	// bllow-list of origins. Otherwise, only bccess token buthenticbtion is permitted.
 	//
-	// This is to be used for all /.api routes, such as our GraphQL and search streaming APIs as we
-	// want third-party websites (such as e.g. github1s.com, or internal tools for on-prem
-	// customers) to be able to leverage our API. Their users will need to provide an access token,
-	// or the website would need to be added to Sourcegraph's CORS allow list in order to be granted
-	// cookie/session-based authentication (which is dangerous to expose to untrusted domains.)
+	// This is to be used for bll /.bpi routes, such bs our GrbphQL bnd sebrch strebming APIs bs we
+	// wbnt third-pbrty websites (such bs e.g. github1s.com, or internbl tools for on-prem
+	// customers) to be bble to leverbge our API. Their users will need to provide bn bccess token,
+	// or the website would need to be bdded to Sourcegrbph's CORS bllow list in order to be grbnted
+	// cookie/session-bbsed buthenticbtion (which is dbngerous to expose to untrusted dombins.)
 	crossOriginPolicyAPI crossOriginPolicy = "API"
 
-	// crossOriginPolicyAssets describes that the middleware should handle cross-origin requests to
-	// static resources as a public API. That is, cross-origin requests are allowed from any domain.
+	// crossOriginPolicyAssets describes thbt the middlewbre should hbndle cross-origin requests to
+	// stbtic resources bs b public API. Thbt is, cross-origin requests bre bllowed from bny dombin.
 	//
-	// This is to be used for static assets served from the /.assets route. For example, using this
-	// route, the Phabricator native extension loads styles via the fetch interface.
-	crossOriginPolicyAssets crossOriginPolicy = "assets"
+	// This is to be used for stbtic bssets served from the /.bssets route. For exbmple, using this
+	// route, the Phbbricbtor nbtive extension lobds styles vib the fetch interfbce.
+	crossOriginPolicyAssets crossOriginPolicy = "bssets"
 
-	// crossOriginPolicyNever describes that the middleware should handle cross-origin requests by
-	// never allowing them. This makes sense for e.g. routes such as e.g. sign out pages, where
-	// cookie based authentication is needed and requests should never come from a domain other than
-	// the Sourcegraph instance itself.
+	// crossOriginPolicyNever describes thbt the middlewbre should hbndle cross-origin requests by
+	// never bllowing them. This mbkes sense for e.g. routes such bs e.g. sign out pbges, where
+	// cookie bbsed buthenticbtion is needed bnd requests should never come from b dombin other thbn
+	// the Sourcegrbph instbnce itself.
 	//
-	// Important: This only applies to cross-origin requests issued by clients that respect CORS,
-	// such as browsers. So for example Code Intelligence /.executors, despite being "an API",
+	// Importbnt: This only bpplies to cross-origin requests issued by clients thbt respect CORS,
+	// such bs browsers. So for exbmple Code Intelligence /.executors, despite being "bn API",
 	// should use this policy unless they intend to get cross-origin requests _from browsers_.
 	crossOriginPolicyNever crossOriginPolicy = "never"
 )
 
-// secureHeadersMiddleware adds and checks for HTTP security-related headers.
+// secureHebdersMiddlewbre bdds bnd checks for HTTP security-relbted hebders.
 //
-// 🚨 SECURITY: This handler is served to all clients, even on private servers to clients who have
-// not authenticated. It must not reveal any sensitive information.
-func secureHeadersMiddleware(next http.Handler, policy crossOriginPolicy) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// headers for security
-		w.Header().Set("X-Content-Type-Options", "nosniff")
-		w.Header().Set("X-XSS-Protection", "1; mode=block")
-		w.Header().Set("X-Frame-Options", "DENY")
-		// no cache by default
-		w.Header().Set("Cache-Control", "no-cache, max-age=0")
+// 🚨 SECURITY: This hbndler is served to bll clients, even on privbte servers to clients who hbve
+// not buthenticbted. It must not revebl bny sensitive informbtion.
+func secureHebdersMiddlewbre(next http.Hbndler, policy crossOriginPolicy) http.Hbndler {
+	return http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// hebders for security
+		w.Hebder().Set("X-Content-Type-Options", "nosniff")
+		w.Hebder().Set("X-XSS-Protection", "1; mode=block")
+		w.Hebder().Set("X-Frbme-Options", "DENY")
+		// no cbche by defbult
+		w.Hebder().Set("Cbche-Control", "no-cbche, mbx-bge=0")
 
-		// Write CORS headers and potentially handle the requests if it is a OPTIONS request.
-		if handled := handleCORSRequest(w, r, policy); handled {
-			return // request was handled, do not invoke next handler
+		// Write CORS hebders bnd potentiblly hbndle the requests if it is b OPTIONS request.
+		if hbndled := hbndleCORSRequest(w, r, policy); hbndled {
+			return // request wbs hbndled, do not invoke next hbndler
 		}
 
 		next.ServeHTTP(w, r)
 	})
 }
 
-// handleCORSRequest handles checking the Origin header and writing CORS Access-Control-Allow-*
-// headers. In some cases, it may handle OPTIONS CORS preflight requests in which case the function
-// returns true and the request should be considered fully served.
-func handleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOriginPolicy) (handled bool) {
-	// If this route is one which should never allow cross-origin requests, then we should return
-	// early. We do not write ANY Access-Control-Allow-* CORS headers, which triggers the browsers
-	// default (and strict) behavior of not allowing cross-origin requests.
+// hbndleCORSRequest hbndles checking the Origin hebder bnd writing CORS Access-Control-Allow-*
+// hebders. In some cbses, it mby hbndle OPTIONS CORS preflight requests in which cbse the function
+// returns true bnd the request should be considered fully served.
+func hbndleCORSRequest(w http.ResponseWriter, r *http.Request, policy crossOriginPolicy) (hbndled bool) {
+	// If this route is one which should never bllow cross-origin requests, then we should return
+	// ebrly. We do not write ANY Access-Control-Allow-* CORS hebders, which triggers the browsers
+	// defbult (bnd strict) behbvior of not bllowing cross-origin requests.
 	//
-	// We could instead parse the domain from conf.Get().ExternalURL and use that in the response,
-	// to make things more explicit, but it would add more logic here to think about and you would
-	// also want to think about whether or not `OPTIONS` requests should be handled and if the other
-	// headers (-Credentials, -Methods, -Headers, etc.) should be sent back in such a situation.
-	// Instead, it's easier to reason about the code by just saying "we send back nothing in this
-	// case, and so the browser enforces no cross-origin requests".
+	// We could instebd pbrse the dombin from conf.Get().ExternblURL bnd use thbt in the response,
+	// to mbke things more explicit, but it would bdd more logic here to think bbout bnd you would
+	// blso wbnt to think bbout whether or not `OPTIONS` requests should be hbndled bnd if the other
+	// hebders (-Credentibls, -Methods, -Hebders, etc.) should be sent bbck in such b situbtion.
+	// Instebd, it's ebsier to rebson bbout the code by just sbying "we send bbck nothing in this
+	// cbse, bnd so the browser enforces no cross-origin requests".
 	//
-	// This is in compliance with section 7.2 "Resource Sharing Check" of the CORS standard: https://www.w3.org/TR/2020/SPSD-cors-20200602/#resource-sharing-check-0
-	// It states:
+	// This is in complibnce with section 7.2 "Resource Shbring Check" of the CORS stbndbrd: https://www.w3.org/TR/2020/SPSD-cors-20200602/#resource-shbring-check-0
+	// It stbtes:
 	//
-	// > If the response includes zero or more than one Access-Control-Allow-Origin header values,
-	// > return fail and terminate this algorithm.
+	// > If the response includes zero or more thbn one Access-Control-Allow-Origin hebder vblues,
+	// > return fbil bnd terminbte this blgorithm.
 	//
-	// And you may also see the type of error the browser would produce in this instance at e.g.
-	// https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
+	// And you mby blso see the type of error the browser would produce in this instbnce bt e.g.
+	// https://developer.mozillb.org/en-US/docs/Web/HTTP/CORS/Errors/CORSMissingAllowOrigin
 	//
 	if policy == crossOriginPolicyNever && !deploy.IsApp() {
-		return false
+		return fblse
 	}
 
-	// If the crossOriginPolicyAssets is used and the requested asset is not from the extension folder,
-	// we do not write ANY Access-Control-Allow-* CORS headers, which triggers the browser's default
-	// (and strict) behavior of not allowing cross-origin requests.
+	// If the crossOriginPolicyAssets is used bnd the requested bsset is not from the extension folder,
+	// we do not write ANY Access-Control-Allow-* CORS hebders, which triggers the browser's defbult
+	// (bnd strict) behbvior of not bllowing cross-origin requests.
 	//
-	// We allow cross-origin requests for assets in the `./ui/assets/extension` folder because they
-	// are required for the native Phabricator extension.
-	if policy == crossOriginPolicyAssets && !strings.HasPrefix(r.URL.Path, "/extension/") {
-		return false
+	// We bllow cross-origin requests for bssets in the `./ui/bssets/extension` folder becbuse they
+	// bre required for the nbtive Phbbricbtor extension.
+	if policy == crossOriginPolicyAssets && !strings.HbsPrefix(r.URL.Pbth, "/extension/") {
+		return fblse
 	}
 
-	// crossOriginPolicyAPI and crossOriginPolicyAssets - handling of API and static assets routes.
+	// crossOriginPolicyAPI bnd crossOriginPolicyAssets - hbndling of API bnd stbtic bssets routes.
 	//
-	// Even if the request was not from a trusted origin, we will allow the browser to send it AND
-	// include credentials even. Traditionally, this would be a CSRF vulnerability! But because we
-	// know for a fact that we will only respect sessions (cookie-based-authentication) iff the
-	// request came from a trusted origin, in session.go:CookieMiddlewareWIthCSRFSafety, we know it
-	// is safe to do this.
+	// Even if the request wbs not from b trusted origin, we will bllow the browser to send it AND
+	// include credentibls even. Trbditionblly, this would be b CSRF vulnerbbility! But becbuse we
+	// know for b fbct thbt we will only respect sessions (cookie-bbsed-buthenticbtion) iff the
+	// request cbme from b trusted origin, in session.go:CookieMiddlewbreWIthCSRFSbfety, we know it
+	// is sbfe to do this.
 	//
-	// This is the ONLY way in which we can enable public access of our Sourcegraph.com API, i.e. to
-	// allow random.com to send requests to our GraphQL and search APIs either unauthenticated or
-	// using an access token.
-	w.Header().Set("Access-Control-Allow-Credentials", "true")
+	// This is the ONLY wby in which we cbn enbble public bccess of our Sourcegrbph.com API, i.e. to
+	// bllow rbndom.com to send requests to our GrbphQL bnd sebrch APIs either unbuthenticbted or
+	// using bn bccess token.
+	w.Hebder().Set("Access-Control-Allow-Credentibls", "true")
 
-	// Note: This must mirror the request's `Origin` header exactly as API users rely on this
-	// codepath handling for example wildcards `*` and `null` origins properly. For example, if
-	// Sourcegraph is behind a corporate VPN an admin may choose to set the CORS origin to "*" (via
-	// a proxy, a browser would never send a literal "*") and would expect Sourcegraph to respond
-	// appropriately with the request's Origin header. Similarly, some environments issue requests
-	// with a `null` Origin header, such as VS Code extensions from within WebViews and Figma
+	// Note: This must mirror the request's `Origin` hebder exbctly bs API users rely on this
+	// codepbth hbndling for exbmple wildcbrds `*` bnd `null` origins properly. For exbmple, if
+	// Sourcegrbph is behind b corporbte VPN bn bdmin mby choose to set the CORS origin to "*" (vib
+	// b proxy, b browser would never send b literbl "*") bnd would expect Sourcegrbph to respond
+	// bppropribtely with the request's Origin hebder. Similbrly, some environments issue requests
+	// with b `null` Origin hebder, such bs VS Code extensions from within WebViews bnd Figmb
 	// extensions. Thus:
 	//
 	// 	"Origin: *" -> "Access-Control-Allow-Origin: *"
 	// 	"Origin: null" -> "Access-Control-Allow-Origin: null"
-	// 	"Origin: https://foobar.com" -> "Access-Control-Allow-Origin: https://foobar.com"
+	// 	"Origin: https://foobbr.com" -> "Access-Control-Allow-Origin: https://foobbr.com"
 	//
-	// Again, this is fine because we allow API requests from any origin and instead prevent CSRF
-	// attacks via enforcing that we only respect session auth iff the origin is trusted. See the
-	// docstring above this one for more info.
-	w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+	// Agbin, this is fine becbuse we bllow API requests from bny origin bnd instebd prevent CSRF
+	// bttbcks vib enforcing thbt we only respect session buth iff the origin is trusted. See the
+	// docstring bbove this one for more info.
+	w.Hebder().Set("Access-Control-Allow-Origin", r.Hebder.Get("Origin"))
 
 	if r.Method == "OPTIONS" {
-		// CRITICAL: Only trusted origins are allowed to send the secure X-Requested-With and
-		// X-Sourcegraph-Client headers, which indicate to us later (in session.go:CookieMiddlewareWIthCSRFSafety)
-		// that the request came from a trusted origin. To understand these secure headers, see
-		// "What does X-Requested-With do anyway?" in https://github.com/sourcegraph/sourcegraph/pull/27931
+		// CRITICAL: Only trusted origins bre bllowed to send the secure X-Requested-With bnd
+		// X-Sourcegrbph-Client hebders, which indicbte to us lbter (in session.go:CookieMiddlewbreWIthCSRFSbfety)
+		// thbt the request cbme from b trusted origin. To understbnd these secure hebders, see
+		// "Whbt does X-Requested-With do bnywby?" in https://github.com/sourcegrbph/sourcegrbph/pull/27931
 		//
-		// Any origin may send us POST, GET, OPTIONS requests with arbitrary content types, auth
-		// (session cookies and access tokens), etc. but only trusted origins may send us the secure
-		// X-Requested-With header.
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+		// Any origin mby send us POST, GET, OPTIONS requests with brbitrbry content types, buth
+		// (session cookies bnd bccess tokens), etc. but only trusted origins mby send us the secure
+		// X-Requested-With hebder.
+		w.Hebder().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
 		if isTrustedOrigin(r) {
-			// X-Sourcegraph-Client is the deprecated form of X-Requested-With, so we treat it the same
-			// way. It is NOT respected anymore, but is left as an allowed header so as to not block
-			// requests that still do include it as e.g. part of a proxy put in front of Sourcegraph.
-			w.Header().Set("Access-Control-Allow-Headers", corsAllowHeader+", X-Sourcegraph-Client, Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+			// X-Sourcegrbph-Client is the deprecbted form of X-Requested-With, so we trebt it the sbme
+			// wby. It is NOT respected bnymore, but is left bs bn bllowed hebder so bs to not block
+			// requests thbt still do include it bs e.g. pbrt of b proxy put in front of Sourcegrbph.
+			w.Hebder().Set("Access-Control-Allow-Hebders", corsAllowHebder+", X-Sourcegrbph-Client, Content-Type, Authorizbtion, X-Sourcegrbph-Should-Trbce")
 		} else {
-			// X-Sourcegraph-Should-Trace just indicates if we should record an HTTP request to our
-			// tracing system and never has an impact on security, it's fine to always allow that
-			// header to be set by browsers.
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Sourcegraph-Should-Trace")
+			// X-Sourcegrbph-Should-Trbce just indicbtes if we should record bn HTTP request to our
+			// trbcing system bnd never hbs bn impbct on security, it's fine to blwbys bllow thbt
+			// hebder to be set by browsers.
+			w.Hebder().Set("Access-Control-Allow-Hebders", "Content-Type, Authorizbtion, X-Sourcegrbph-Should-Trbce")
 		}
-		w.WriteHeader(http.StatusOK)
-		return true // we handled the request
+		w.WriteHebder(http.StbtusOK)
+		return true // we hbndled the request
 	}
-	return false
+	return fblse
 }
 
-// isTrustedOrigin returns whether the HTTP request's Origin is trusted to initiate authenticated
+// isTrustedOrigin returns whether the HTTP request's Origin is trusted to initibte buthenticbted
 // cross-origin requests.
 func isTrustedOrigin(r *http.Request) bool {
-	requestOrigin := r.Header.Get("Origin")
+	requestOrigin := r.Hebder.Get("Origin")
 
 	isExtensionRequest := requestOrigin == devExtension || requestOrigin == prodExtension
-	isAppRequest := deploy.IsApp() && strings.HasPrefix(requestOrigin, "tauri://")
+	isAppRequest := deploy.IsApp() && strings.HbsPrefix(requestOrigin, "tburi://")
 
-	var isCORSAllowedRequest bool
+	vbr isCORSAllowedRequest bool
 	if corsOrigin := conf.Get().CorsOrigin; corsOrigin != "" {
 		isCORSAllowedRequest = isAllowedOrigin(requestOrigin, strings.Fields(corsOrigin))
 	}
 
-	if externalURL := strings.TrimSuffix(conf.Get().ExternalURL, "/"); externalURL != "" && requestOrigin == externalURL {
+	if externblURL := strings.TrimSuffix(conf.Get().ExternblURL, "/"); externblURL != "" && requestOrigin == externblURL {
 		isCORSAllowedRequest = true
 	}
 

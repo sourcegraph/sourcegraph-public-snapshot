@@ -1,4 +1,4 @@
-package releasecache
+pbckbge relebsecbche
 
 import (
 	"bytes"
@@ -8,137 +8,137 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestHandler_HandleBranch(t *testing.T) {
-	logger, _ := logtest.Captured(t)
+func TestHbndler_HbndleBrbnch(t *testing.T) {
+	logger, _ := logtest.Cbptured(t)
 
-	t.Run("no branch in version cache", func(t *testing.T) {
-		rc := NewMockReleaseCache()
-		rc.CurrentFunc.SetDefaultHook(func(branch string) (string, error) {
-			assert.Equal(t, "3.43", branch)
-			return "", branchNotFoundError(branch)
+	t.Run("no brbnch in version cbche", func(t *testing.T) {
+		rc := NewMockRelebseCbche()
+		rc.CurrentFunc.SetDefbultHook(func(brbnch string) (string, error) {
+			bssert.Equbl(t, "3.43", brbnch)
+			return "", brbnchNotFoundError(brbnch)
 		})
-		handler := &handler{logger: logger, rc: rc}
+		hbndler := &hbndler{logger: logger, rc: rc}
 
 		rec := httptest.NewRecorder()
 
-		handler.handleBranch(rec, "3.43")
-		assert.Equal(t, http.StatusNotFound, rec.Code)
+		hbndler.hbndleBrbnch(rec, "3.43")
+		bssert.Equbl(t, http.StbtusNotFound, rec.Code)
 	})
 
-	t.Run("other error from version cache", func(t *testing.T) {
-		rc := NewMockReleaseCache()
-		rc.CurrentFunc.SetDefaultHook(func(branch string) (string, error) {
-			assert.Equal(t, "3.43", branch)
+	t.Run("other error from version cbche", func(t *testing.T) {
+		rc := NewMockRelebseCbche()
+		rc.CurrentFunc.SetDefbultHook(func(brbnch string) (string, error) {
+			bssert.Equbl(t, "3.43", brbnch)
 			return "", errors.New("error!")
 		})
-		handler := &handler{logger: logger, rc: rc}
+		hbndler := &hbndler{logger: logger, rc: rc}
 
 		rec := httptest.NewRecorder()
 
-		handler.handleBranch(rec, "3.43")
-		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		hbndler.hbndleBrbnch(rec, "3.43")
+		bssert.Equbl(t, http.StbtusInternblServerError, rec.Code)
 	})
 
 	t.Run("success", func(t *testing.T) {
-		rc := NewMockReleaseCache()
-		rc.CurrentFunc.SetDefaultHook(func(branch string) (string, error) {
-			assert.Equal(t, "3.43", branch)
+		rc := NewMockRelebseCbche()
+		rc.CurrentFunc.SetDefbultHook(func(brbnch string) (string, error) {
+			bssert.Equbl(t, "3.43", brbnch)
 			return "3.43.9", nil
 		})
-		handler := &handler{logger: logger, rc: rc}
+		hbndler := &hbndler{logger: logger, rc: rc}
 
 		rec := httptest.NewRecorder()
 
-		handler.handleBranch(rec, "3.43")
-		assert.Equal(t, http.StatusOK, rec.Code)
-		assert.Equal(t, "\"3.43.9\"", rec.Body.String())
+		hbndler.hbndleBrbnch(rec, "3.43")
+		bssert.Equbl(t, http.StbtusOK, rec.Code)
+		bssert.Equbl(t, "\"3.43.9\"", rec.Body.String())
 	})
 }
 
-func TestHandler_HandleWebhook(t *testing.T) {
-	logger, _ := logtest.Captured(t)
+func TestHbndler_HbndleWebhook(t *testing.T) {
+	logger, _ := logtest.Cbptured(t)
 
-	t.Run("payload error", func(t *testing.T) {
-		handler := &handler{logger: logger}
+	t.Run("pbylobd error", func(t *testing.T) {
+		hbndler := &hbndler{logger: logger}
 
 		rec := httptest.NewRecorder()
-		body := iotest.ErrReader(errors.New("error!"))
-		req := httptest.NewRequest("POST", "/.api/src-cli/versions/webhook", body)
+		body := iotest.ErrRebder(errors.New("error!"))
+		req := httptest.NewRequest("POST", "/.bpi/src-cli/versions/webhook", body)
 
-		handler.doHandleWebhook(rec, req, nil)
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.Equal(t, "invalid payload\n", rec.Body.String())
+		hbndler.doHbndleWebhook(rec, req, nil)
+		bssert.Equbl(t, http.StbtusBbdRequest, rec.Code)
+		bssert.Equbl(t, "invblid pbylobd\n", rec.Body.String())
 	})
 
-	t.Run("signature error", func(t *testing.T) {
-		handler := &handler{logger: logger, webhookSecret: "secret"}
+	t.Run("signbture error", func(t *testing.T) {
+		hbndler := &hbndler{logger: logger, webhookSecret: "secret"}
 
 		rec := httptest.NewRecorder()
 		body := bytes.NewBufferString("body")
-		req := httptest.NewRequest("POST", "/.api/src-cli/versions/webhook", body)
-		req.Header.Add("X-Hub-Signature", "signature")
+		req := httptest.NewRequest("POST", "/.bpi/src-cli/versions/webhook", body)
+		req.Hebder.Add("X-Hub-Signbture", "signbture")
 
-		handler.doHandleWebhook(rec, req, func(signature string, payload, secret []byte) error {
-			assert.Equal(t, "signature", signature)
-			assert.Equal(t, "body", string(payload))
-			assert.Equal(t, handler.webhookSecret, string(secret))
+		hbndler.doHbndleWebhook(rec, req, func(signbture string, pbylobd, secret []byte) error {
+			bssert.Equbl(t, "signbture", signbture)
+			bssert.Equbl(t, "body", string(pbylobd))
+			bssert.Equbl(t, hbndler.webhookSecret, string(secret))
 
 			return errors.New("error!")
 		})
-		assert.Equal(t, http.StatusBadRequest, rec.Code)
-		assert.Equal(t, "invalid signature\n", rec.Body.String())
+		bssert.Equbl(t, http.StbtusBbdRequest, rec.Code)
+		bssert.Equbl(t, "invblid signbture\n", rec.Body.String())
 	})
 
-	t.Run("update error", func(t *testing.T) {
-		rc := NewMockReleaseCache()
-		rc.UpdateNowFunc.SetDefaultReturn(errors.New("error!"))
-		handler := &handler{logger: logger, rc: rc, webhookSecret: "secret"}
+	t.Run("updbte error", func(t *testing.T) {
+		rc := NewMockRelebseCbche()
+		rc.UpdbteNowFunc.SetDefbultReturn(errors.New("error!"))
+		hbndler := &hbndler{logger: logger, rc: rc, webhookSecret: "secret"}
 
 		rec := httptest.NewRecorder()
 		body := bytes.NewBufferString("body")
-		req := httptest.NewRequest("POST", "/.api/src-cli/versions/webhook", body)
-		req.Header.Add("X-Hub-Signature", "signature")
+		req := httptest.NewRequest("POST", "/.bpi/src-cli/versions/webhook", body)
+		req.Hebder.Add("X-Hub-Signbture", "signbture")
 
-		handler.doHandleWebhook(rec, req, func(signature string, payload, secret []byte) error {
-			assert.Equal(t, "signature", signature)
-			assert.Equal(t, "body", string(payload))
-			assert.Equal(t, handler.webhookSecret, string(secret))
+		hbndler.doHbndleWebhook(rec, req, func(signbture string, pbylobd, secret []byte) error {
+			bssert.Equbl(t, "signbture", signbture)
+			bssert.Equbl(t, "body", string(pbylobd))
+			bssert.Equbl(t, hbndler.webhookSecret, string(secret))
 
 			return nil
 		})
-		assert.Equal(t, http.StatusInternalServerError, rec.Code)
+		bssert.Equbl(t, http.StbtusInternblServerError, rec.Code)
 	})
 
-	t.Run("valid", func(t *testing.T) {
-		rc := NewMockReleaseCache()
-		rc.UpdateNowFunc.SetDefaultReturn(nil)
-		handler := &handler{logger: logger, rc: rc, webhookSecret: "secret"}
+	t.Run("vblid", func(t *testing.T) {
+		rc := NewMockRelebseCbche()
+		rc.UpdbteNowFunc.SetDefbultReturn(nil)
+		hbndler := &hbndler{logger: logger, rc: rc, webhookSecret: "secret"}
 
 		rec := httptest.NewRecorder()
 		body := bytes.NewBufferString("body")
-		req := httptest.NewRequest("POST", "/.api/src-cli/versions/webhook", body)
-		req.Header.Add("X-Hub-Signature", "signature")
+		req := httptest.NewRequest("POST", "/.bpi/src-cli/versions/webhook", body)
+		req.Hebder.Add("X-Hub-Signbture", "signbture")
 
-		handler.doHandleWebhook(rec, req, func(signature string, payload, secret []byte) error {
-			assert.Equal(t, "signature", signature)
-			assert.Equal(t, "body", string(payload))
-			assert.Equal(t, handler.webhookSecret, string(secret))
+		hbndler.doHbndleWebhook(rec, req, func(signbture string, pbylobd, secret []byte) error {
+			bssert.Equbl(t, "signbture", signbture)
+			bssert.Equbl(t, "body", string(pbylobd))
+			bssert.Equbl(t, hbndler.webhookSecret, string(secret))
 
 			return nil
 		})
-		assert.Equal(t, http.StatusNoContent, rec.Code)
+		bssert.Equbl(t, http.StbtusNoContent, rec.Code)
 	})
 }
 
-func mustParseUrl(t *testing.T, uri string) *url.URL {
-	u, err := url.Parse(uri)
+func mustPbrseUrl(t *testing.T, uri string) *url.URL {
+	u, err := url.Pbrse(uri)
 	require.NoError(t, err)
 	return u
 }

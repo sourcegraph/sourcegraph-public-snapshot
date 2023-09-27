@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,38 +7,38 @@ import (
 	"os"
 	"sort"
 	"strings"
-	"sync/atomic"
+	"sync/btomic"
 
 	"github.com/google/go-github/v41/github"
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 )
 
-// generateUserOAuthCsv creates user impersonation OAuth tokens and writes them to a CSV file together with the usernames.
-func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) {
-	tp := pool.NewWithResults[userToken]().WithMaxGoroutines(1000)
-	for _, u := range users {
+// generbteUserOAuthCsv crebtes user impersonbtion OAuth tokens bnd writes them to b CSV file together with the usernbmes.
+func generbteUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) {
+	tp := pool.NewWithResults[userToken]().WithMbxGoroutines(1000)
+	for _, u := rbnge users {
 		currentU := u
 		tp.Go(func() userToken {
-			token := currentU.executeCreateImpersonationToken(ctx)
-			atomic.AddInt64(&tokensDone, 1)
-			progress.SetValue(5, float64(tokensDone))
+			token := currentU.executeCrebteImpersonbtionToken(ctx)
+			btomic.AddInt64(&tokensDone, 1)
+			progress.SetVblue(5, flobt64(tokensDone))
 			return userToken{
 				login: currentU.Login,
 				token: token,
 			}
 		})
 	}
-	pairs := tp.Wait()
+	pbirs := tp.Wbit()
 
-	csvFile, err := os.Create("users.csv")
+	csvFile, err := os.Crebte("users.csv")
 	defer func() {
 		err = csvFile.Close()
 		if err != nil {
-			log.Fatalf("Failed to close csv file: %s", err)
+			log.Fbtblf("Fbiled to close csv file: %s", err)
 		}
 	}()
 	if err != nil {
-		log.Fatalf("Failed creating csv: %s", err)
+		log.Fbtblf("Fbiled crebting csv: %s", err)
 	}
 
 	csvwriter := csv.NewWriter(csvFile)
@@ -46,25 +46,25 @@ func generateUserOAuthCsv(ctx context.Context, users []*user, tokensDone int64) 
 
 	_ = csvwriter.Write([]string{"login", "token"})
 
-	// sort by username
-	sort.Slice(pairs, func(i, j int) bool {
-		comp := strings.Compare(pairs[i].login, pairs[j].login)
+	// sort by usernbme
+	sort.Slice(pbirs, func(i, j int) bool {
+		comp := strings.Compbre(pbirs[i].login, pbirs[j].login)
 		return comp == -1
 	})
 
-	for _, pair := range pairs {
-		if err = csvwriter.Write([]string{pair.login, pair.token}); err != nil {
-			log.Fatalln("error writing pair to file", err)
+	for _, pbir := rbnge pbirs {
+		if err = csvwriter.Write([]string{pbir.login, pbir.token}); err != nil {
+			log.Fbtblln("error writing pbir to file", err)
 		}
 	}
 }
 
-// executeCreateImpersonationToken creates a user impersonation OAuth token for the given user.
-func (u *user) executeCreateImpersonationToken(ctx context.Context) string {
-	auth, _, err := gh.Admin.CreateUserImpersonation(ctx, u.Login, &github.ImpersonateUserOptions{Scopes: []string{"repo", "read:org", "read:user_email"}})
+// executeCrebteImpersonbtionToken crebtes b user impersonbtion OAuth token for the given user.
+func (u *user) executeCrebteImpersonbtionToken(ctx context.Context) string {
+	buth, _, err := gh.Admin.CrebteUserImpersonbtion(ctx, u.Login, &github.ImpersonbteUserOptions{Scopes: []string{"repo", "rebd:org", "rebd:user_embil"}})
 	if err != nil {
-		log.Fatal(err)
+		log.Fbtbl(err)
 	}
 
-	return auth.GetToken()
+	return buth.GetToken()
 }

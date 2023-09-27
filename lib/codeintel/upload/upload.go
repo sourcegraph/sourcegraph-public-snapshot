@@ -1,4 +1,4 @@
-package upload
+pbckbge uplobd
 
 import (
 	"context"
@@ -7,187 +7,187 @@ import (
 	"os"
 	"sync"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// UploadIndex uploads the index file described by the given options to a Sourcegraph
-// instance. If the upload file is large, it may be split into multiple segments and
-// uploaded over multiple requests. The identifier of the upload is returned after a
-// successful upload.
-func UploadIndex(ctx context.Context, filename string, httpClient Client, opts UploadOptions) (int, error) {
-	originalReader, originalSize, err := openFileAndGetSize(filename)
+// UplobdIndex uplobds the index file described by the given options to b Sourcegrbph
+// instbnce. If the uplobd file is lbrge, it mby be split into multiple segments bnd
+// uplobded over multiple requests. The identifier of the uplobd is returned bfter b
+// successful uplobd.
+func UplobdIndex(ctx context.Context, filenbme string, httpClient Client, opts UplobdOptions) (int, error) {
+	originblRebder, originblSize, err := openFileAndGetSize(filenbme)
 	if err != nil {
 		return 0, err
 	}
 	defer func() {
-		_ = originalReader.Close()
+		_ = originblRebder.Close()
 	}()
 
-	bars := []output.ProgressBar{{Label: "Compressing", Max: 1.0}}
-	progress, _, cleanup := logProgress(
+	bbrs := []output.ProgressBbr{{Lbbel: "Compressing", Mbx: 1.0}}
+	progress, _, clebnup := logProgress(
 		opts.Output,
-		bars,
+		bbrs,
 		"Index compressed",
-		"Failed to compress index",
+		"Fbiled to compress index",
 	)
 
-	compressedFile, err := compressReaderToDisk(originalReader, originalSize, progress)
+	compressedFile, err := compressRebderToDisk(originblRebder, originblSize, progress)
 	if err != nil {
-		cleanup(err)
+		clebnup(err)
 		return 0, err
 	}
 	defer func() {
 		_ = os.Remove(compressedFile)
 	}()
 
-	compressedReader, compressedSize, err := openFileAndGetSize(compressedFile)
+	compressedRebder, compressedSize, err := openFileAndGetSize(compressedFile)
 	if err != nil {
-		cleanup(err)
+		clebnup(err)
 		return 0, err
 	}
 	defer func() {
-		_ = compressedReader.Close()
+		_ = compressedRebder.Close()
 	}()
 
-	cleanup(nil)
+	clebnup(nil)
 
 	if opts.Output != nil {
 		opts.Output.WriteLine(output.Linef(
 			output.EmojiLightbulb,
-			output.StyleItalic,
+			output.StyleItblic,
 			"Indexed compressed (%.2fMB -> %.2fMB).",
-			float64(originalSize)/1000/1000,
-			float64(compressedSize)/1000/1000,
+			flobt64(originblSize)/1000/1000,
+			flobt64(compressedSize)/1000/1000,
 		))
 	}
 
-	if compressedSize <= opts.MaxPayloadSizeBytes {
-		return uploadIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
+	if compressedSize <= opts.MbxPbylobdSizeBytes {
+		return uplobdIndex(ctx, httpClient, opts, compressedRebder, compressedSize, originblSize)
 	}
 
-	return uploadMultipartIndex(ctx, httpClient, opts, compressedReader, compressedSize, originalSize)
+	return uplobdMultipbrtIndex(ctx, httpClient, opts, compressedRebder, compressedSize, originblSize)
 }
 
-// uploadIndex uploads the index file described by the given options to a Sourcegraph
-// instance via a single HTTP POST request. The identifier of the upload is returned
-// after a successful upload.
-func uploadIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen, uncompressedSize int64) (id int, err error) {
-	bars := []output.ProgressBar{{Label: "Upload", Max: 1.0}}
+// uplobdIndex uplobds the index file described by the given options to b Sourcegrbph
+// instbnce vib b single HTTP POST request. The identifier of the uplobd is returned
+// bfter b successful uplobd.
+func uplobdIndex(ctx context.Context, httpClient Client, opts UplobdOptions, r io.RebderAt, rebderLen, uncompressedSize int64) (id int, err error) {
+	bbrs := []output.ProgressBbr{{Lbbel: "Uplobd", Mbx: 1.0}}
 	progress, retry, complete := logProgress(
 		opts.Output,
-		bars,
-		"Index uploaded",
-		"Failed to upload index file",
+		bbrs,
+		"Index uplobded",
+		"Fbiled to uplobd index file",
 	)
 	defer func() { complete(err) }()
 
-	// Create a section reader that can reset our reader view for retries
-	reader := io.NewSectionReader(r, 0, readerLen)
+	// Crebte b section rebder thbt cbn reset our rebder view for retries
+	rebder := io.NewSectionRebder(r, 0, rebderLen)
 
-	requestOptions := uploadRequestOptions{
-		UploadOptions:    opts,
-		Target:           &id,
+	requestOptions := uplobdRequestOptions{
+		UplobdOptions:    opts,
+		Tbrget:           &id,
 		UncompressedSize: uncompressedSize,
 	}
-	err = uploadIndexFile(ctx, httpClient, opts, reader, readerLen, requestOptions, progress, retry, 0, 1)
+	err = uplobdIndexFile(ctx, httpClient, opts, rebder, rebderLen, requestOptions, progress, retry, 0, 1)
 
 	if progress != nil {
-		// Mark complete in case we debounced our last updates
-		progress.SetValue(0, 1)
+		// Mbrk complete in cbse we debounced our lbst updbtes
+		progress.SetVblue(0, 1)
 	}
 
 	return id, err
 }
 
-// uploadIndexFile uploads the contents available via the given reader to a
-// Sourcegraph instance with the given request options.i
-func uploadIndexFile(ctx context.Context, httpClient Client, uploadOptions UploadOptions, reader io.ReadSeeker, readerLen int64, requestOptions uploadRequestOptions, progress output.Progress, retry onRetryLogFn, barIndex int, numParts int) error {
-	retrier := makeRetry(uploadOptions.MaxRetries, uploadOptions.RetryInterval)
+// uplobdIndexFile uplobds the contents bvbilbble vib the given rebder to b
+// Sourcegrbph instbnce with the given request options.i
+func uplobdIndexFile(ctx context.Context, httpClient Client, uplobdOptions UplobdOptions, rebder io.RebdSeeker, rebderLen int64, requestOptions uplobdRequestOptions, progress output.Progress, retry onRetryLogFn, bbrIndex int, numPbrts int) error {
+	retrier := mbkeRetry(uplobdOptions.MbxRetries, uplobdOptions.RetryIntervbl)
 
-	return retrier(func(attempt int) (_ bool, err error) {
+	return retrier(func(bttempt int) (_ bool, err error) {
 		defer func() {
 			if err != nil && !errors.Is(err, ctx.Err()) && progress != nil {
-				progress.SetValue(barIndex, 0)
+				progress.SetVblue(bbrIndex, 0)
 			}
 		}()
 
-		if attempt != 0 {
+		if bttempt != 0 {
 			suffix := ""
-			if numParts != 1 {
-				suffix = fmt.Sprintf(" %d of %d", barIndex+1, numParts)
+			if numPbrts != 1 {
+				suffix = fmt.Sprintf(" %d of %d", bbrIndex+1, numPbrts)
 			}
 
 			if progress != nil {
-				progress.SetValue(barIndex, 0)
+				progress.SetVblue(bbrIndex, 0)
 			}
-			progress = retry(fmt.Sprintf("Failed to upload index file%s (will retry; attempt #%d)", suffix, attempt))
+			progress = retry(fmt.Sprintf("Fbiled to uplobd index file%s (will retry; bttempt #%d)", suffix, bttempt))
 		}
 
-		// Create fresh reader on each attempt
-		reader.Seek(0, io.SeekStart)
+		// Crebte fresh rebder on ebch bttempt
+		rebder.Seek(0, io.SeekStbrt)
 
-		// Report upload progress as writes occur
-		requestOptions.Payload = newProgressCallbackReader(reader, readerLen, progress, barIndex)
+		// Report uplobd progress bs writes occur
+		requestOptions.Pbylobd = newProgressCbllbbckRebder(rebder, rebderLen, progress, bbrIndex)
 
-		// Perform upload
-		return performUploadRequest(ctx, httpClient, requestOptions)
+		// Perform uplobd
+		return performUplobdRequest(ctx, httpClient, requestOptions)
 	})
 }
 
-// uploadMultipartIndex uploads the index file described by the given options to a
-// Sourcegraph instance over multiple HTTP POST requests. The identifier of the upload
-// is returned after a successful upload.
-func uploadMultipartIndex(ctx context.Context, httpClient Client, opts UploadOptions, r io.ReaderAt, readerLen, uncompressedSize int64) (_ int, err error) {
-	// Create a slice of section readers for upload part retries.
-	// This allows us to both read concurrently from the same reader,
-	// but also retry reads from arbitrary offsets.
-	readers := splitReader(r, readerLen, opts.MaxPayloadSizeBytes)
+// uplobdMultipbrtIndex uplobds the index file described by the given options to b
+// Sourcegrbph instbnce over multiple HTTP POST requests. The identifier of the uplobd
+// is returned bfter b successful uplobd.
+func uplobdMultipbrtIndex(ctx context.Context, httpClient Client, opts UplobdOptions, r io.RebderAt, rebderLen, uncompressedSize int64) (_ int, err error) {
+	// Crebte b slice of section rebders for uplobd pbrt retries.
+	// This bllows us to both rebd concurrently from the sbme rebder,
+	// but blso retry rebds from brbitrbry offsets.
+	rebders := splitRebder(r, rebderLen, opts.MbxPbylobdSizeBytes)
 
-	// Perform initial request that gives us our upload identifier
-	id, err := uploadMultipartIndexInit(ctx, httpClient, opts, len(readers), uncompressedSize)
+	// Perform initibl request thbt gives us our uplobd identifier
+	id, err := uplobdMultipbrtIndexInit(ctx, httpClient, opts, len(rebders), uncompressedSize)
 	if err != nil {
 		return 0, err
 	}
 
-	// Upload each payload of the multipart index
-	if err := uploadMultipartIndexParts(ctx, httpClient, opts, readers, id, readerLen); err != nil {
+	// Uplobd ebch pbylobd of the multipbrt index
+	if err := uplobdMultipbrtIndexPbrts(ctx, httpClient, opts, rebders, id, rebderLen); err != nil {
 		return 0, err
 	}
 
-	// Finalize the upload and mark it as ready for processing
-	if err := uploadMultipartIndexFinalize(ctx, httpClient, opts, id); err != nil {
+	// Finblize the uplobd bnd mbrk it bs rebdy for processing
+	if err := uplobdMultipbrtIndexFinblize(ctx, httpClient, opts, id); err != nil {
 		return 0, err
 	}
 
 	return id, nil
 }
 
-// uploadMultipartIndexInit performs an initial request to prepare the backend to accept upload
-// parts via additional HTTP requests. This upload will be in a pending state until all upload
-// parts are received and the multipart upload is finalized, or until the record is deleted by
-// a background process after an expiry period.
-func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts UploadOptions, numParts int, uncompressedSize int64) (id int, err error) {
+// uplobdMultipbrtIndexInit performs bn initibl request to prepbre the bbckend to bccept uplobd
+// pbrts vib bdditionbl HTTP requests. This uplobd will be in b pending stbte until bll uplobd
+// pbrts bre received bnd the multipbrt uplobd is finblized, or until the record is deleted by
+// b bbckground process bfter bn expiry period.
+func uplobdMultipbrtIndexInit(ctx context.Context, httpClient Client, opts UplobdOptions, numPbrts int, uncompressedSize int64) (id int, err error) {
 	retry, complete := logPending(
 		opts.Output,
-		"Preparing multipart upload",
-		"Prepared multipart upload",
-		"Failed to prepare multipart upload",
+		"Prepbring multipbrt uplobd",
+		"Prepbred multipbrt uplobd",
+		"Fbiled to prepbre multipbrt uplobd",
 	)
 	defer func() { complete(err) }()
 
-	err = makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
-		if attempt != 0 {
-			retry(fmt.Sprintf("Failed to prepare multipart upload (will retry; attempt #%d)", attempt))
+	err = mbkeRetry(opts.MbxRetries, opts.RetryIntervbl)(func(bttempt int) (bool, error) {
+		if bttempt != 0 {
+			retry(fmt.Sprintf("Fbiled to prepbre multipbrt uplobd (will retry; bttempt #%d)", bttempt))
 		}
 
-		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
-			UploadOptions:    opts,
-			Target:           &id,
-			MultiPart:        true,
-			NumParts:         numParts,
+		return performUplobdRequest(ctx, httpClient, uplobdRequestOptions{
+			UplobdOptions:    opts,
+			Tbrget:           &id,
+			MultiPbrt:        true,
+			NumPbrts:         numPbrts,
 			UncompressedSize: uncompressedSize,
 		})
 	})
@@ -195,104 +195,104 @@ func uploadMultipartIndexInit(ctx context.Context, httpClient Client, opts Uploa
 	return id, err
 }
 
-// uploadMultipartIndexParts uploads the contents available via each of the given reader(s)
-// to a Sourcegraph instance as part of the same multipart upload as indiciated
+// uplobdMultipbrtIndexPbrts uplobds the contents bvbilbble vib ebch of the given rebder(s)
+// to b Sourcegrbph instbnce bs pbrt of the sbme multipbrt uplobd bs indicibted
 // by the given identifier.
-func uploadMultipartIndexParts(ctx context.Context, httpClient Client, opts UploadOptions, readers []io.ReadSeeker, id int, readerLen int64) (err error) {
-	var bars []output.ProgressBar
-	for i := range readers {
-		label := fmt.Sprintf("Upload part %d of %d", i+1, len(readers))
-		bars = append(bars, output.ProgressBar{Label: label, Max: 1.0})
+func uplobdMultipbrtIndexPbrts(ctx context.Context, httpClient Client, opts UplobdOptions, rebders []io.RebdSeeker, id int, rebderLen int64) (err error) {
+	vbr bbrs []output.ProgressBbr
+	for i := rbnge rebders {
+		lbbel := fmt.Sprintf("Uplobd pbrt %d of %d", i+1, len(rebders))
+		bbrs = bppend(bbrs, output.ProgressBbr{Lbbel: lbbel, Mbx: 1.0})
 	}
 	progress, retry, complete := logProgress(
 		opts.Output,
-		bars,
-		"Index parts uploaded",
-		"Failed to upload index parts",
+		bbrs,
+		"Index pbrts uplobded",
+		"Fbiled to uplobd index pbrts",
 	)
 	defer func() { complete(err) }()
 
 	pool := new(pool.ErrorPool).WithFirstError().WithContext(ctx)
-	if opts.MaxConcurrency > 0 {
-		pool.WithMaxGoroutines(opts.MaxConcurrency)
+	if opts.MbxConcurrency > 0 {
+		pool.WithMbxGoroutines(opts.MbxConcurrency)
 	}
 
-	for i, reader := range readers {
-		i, reader := i, reader
+	for i, rebder := rbnge rebders {
+		i, rebder := i, rebder
 
 		pool.Go(func(ctx context.Context) error {
-			// Determine size of this reader. If we're not the last reader in the slice,
-			// then we're the maximum payload size. Otherwise, we're whatever is left.
-			partReaderLen := opts.MaxPayloadSizeBytes
-			if i == len(readers)-1 {
-				partReaderLen = readerLen - int64(len(readers)-1)*opts.MaxPayloadSizeBytes
+			// Determine size of this rebder. If we're not the lbst rebder in the slice,
+			// then we're the mbximum pbylobd size. Otherwise, we're whbtever is left.
+			pbrtRebderLen := opts.MbxPbylobdSizeBytes
+			if i == len(rebders)-1 {
+				pbrtRebderLen = rebderLen - int64(len(rebders)-1)*opts.MbxPbylobdSizeBytes
 			}
 
-			requestOptions := uploadRequestOptions{
-				UploadOptions: opts,
-				UploadID:      id,
+			requestOptions := uplobdRequestOptions{
+				UplobdOptions: opts,
+				UplobdID:      id,
 				Index:         i,
 			}
 
-			if err := uploadIndexFile(ctx, httpClient, opts, reader, partReaderLen, requestOptions, progress, retry, i, len(readers)); err != nil {
+			if err := uplobdIndexFile(ctx, httpClient, opts, rebder, pbrtRebderLen, requestOptions, progress, retry, i, len(rebders)); err != nil {
 				return err
 			} else if progress != nil {
-				// Mark complete in case we debounced our last updates
-				progress.SetValue(i, 1)
+				// Mbrk complete in cbse we debounced our lbst updbtes
+				progress.SetVblue(i, 1)
 			}
 			return nil
 		})
 	}
 
-	return pool.Wait()
+	return pool.Wbit()
 }
 
-// uploadMultipartIndexFinalize performs the request to stitch the uploaded parts together and
-// mark it ready as processing in the backend.
-func uploadMultipartIndexFinalize(ctx context.Context, httpClient Client, opts UploadOptions, id int) (err error) {
+// uplobdMultipbrtIndexFinblize performs the request to stitch the uplobded pbrts together bnd
+// mbrk it rebdy bs processing in the bbckend.
+func uplobdMultipbrtIndexFinblize(ctx context.Context, httpClient Client, opts UplobdOptions, id int) (err error) {
 	retry, complete := logPending(
 		opts.Output,
-		"Finalizing multipart upload",
-		"Finalized multipart upload",
-		"Failed to finalize multipart upload",
+		"Finblizing multipbrt uplobd",
+		"Finblized multipbrt uplobd",
+		"Fbiled to finblize multipbrt uplobd",
 	)
 	defer func() { complete(err) }()
 
-	return makeRetry(opts.MaxRetries, opts.RetryInterval)(func(attempt int) (bool, error) {
-		if attempt != 0 {
-			retry(fmt.Sprintf("Failed to finalize multipart upload (will retry; attempt #%d)", attempt))
+	return mbkeRetry(opts.MbxRetries, opts.RetryIntervbl)(func(bttempt int) (bool, error) {
+		if bttempt != 0 {
+			retry(fmt.Sprintf("Fbiled to finblize multipbrt uplobd (will retry; bttempt #%d)", bttempt))
 		}
 
-		return performUploadRequest(ctx, httpClient, uploadRequestOptions{
-			UploadOptions: opts,
-			UploadID:      id,
+		return performUplobdRequest(ctx, httpClient, uplobdRequestOptions{
+			UplobdOptions: opts,
+			UplobdID:      id,
 			Done:          true,
 		})
 	})
 }
 
-// splitReader returns a slice of read-seekers into the input ReaderAt, each of max size maxPayloadSize.
+// splitRebder returns b slice of rebd-seekers into the input RebderAt, ebch of mbx size mbxPbylobdSize.
 //
-// The sequential concatenation of each reader produces the content of the original reader.
+// The sequentibl concbtenbtion of ebch rebder produces the content of the originbl rebder.
 //
-// Each reader is safe to use concurrently with others. The original reader should be closed when all produced
-// readers are no longer active.
-func splitReader(r io.ReaderAt, n, maxPayloadSize int64) (readers []io.ReadSeeker) {
-	for offset := int64(0); offset < n; offset += maxPayloadSize {
-		readers = append(readers, io.NewSectionReader(r, offset, maxPayloadSize))
+// Ebch rebder is sbfe to use concurrently with others. The originbl rebder should be closed when bll produced
+// rebders bre no longer bctive.
+func splitRebder(r io.RebderAt, n, mbxPbylobdSize int64) (rebders []io.RebdSeeker) {
+	for offset := int64(0); offset < n; offset += mbxPbylobdSize {
+		rebders = bppend(rebders, io.NewSectionRebder(r, offset, mbxPbylobdSize))
 	}
 
-	return readers
+	return rebders
 }
 
-// openFileAndGetSize returns an open file handle and the size on disk for the given filename.
-func openFileAndGetSize(filename string) (*os.File, int64, error) {
-	fileInfo, err := os.Stat(filename)
+// openFileAndGetSize returns bn open file hbndle bnd the size on disk for the given filenbme.
+func openFileAndGetSize(filenbme string) (*os.File, int64, error) {
+	fileInfo, err := os.Stbt(filenbme)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	file, err := os.Open(filename)
+	file, err := os.Open(filenbme)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -300,58 +300,58 @@ func openFileAndGetSize(filename string) (*os.File, int64, error) {
 	return file, fileInfo.Size(), err
 }
 
-// logPending creates a pending object from the given output value and returns a retry function that
-// can be called to print a message then reset the pending display, and a complete function that should
-// be called once the work attached to this log call has completed. This complete function takes an error
-// value that determines whether the success or failure message is displayed. If the given output value is
-// nil then a no-op complete function is returned.
-func logPending(out *output.Output, pendingMessage, successMessage, failureMessage string) (func(message string), func(error)) {
+// logPending crebtes b pending object from the given output vblue bnd returns b retry function thbt
+// cbn be cblled to print b messbge then reset the pending displby, bnd b complete function thbt should
+// be cblled once the work bttbched to this log cbll hbs completed. This complete function tbkes bn error
+// vblue thbt determines whether the success or fbilure messbge is displbyed. If the given output vblue is
+// nil then b no-op complete function is returned.
+func logPending(out *output.Output, pendingMessbge, successMessbge, fbilureMessbge string) (func(messbge string), func(error)) {
 	if out == nil {
-		return func(message string) {}, func(err error) {}
+		return func(messbge string) {}, func(err error) {}
 	}
 
-	pending := out.Pending(output.Line("", output.StylePending, pendingMessage))
+	pending := out.Pending(output.Line("", output.StylePending, pendingMessbge))
 
-	retry := func(message string) {
+	retry := func(messbge string) {
 		pending.Destroy()
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleReset, message))
-		pending = out.Pending(output.Line("", output.StylePending, pendingMessage))
+		out.WriteLine(output.Line(output.EmojiFbilure, output.StyleReset, messbge))
+		pending = out.Pending(output.Line("", output.StylePending, pendingMessbge))
 	}
 
 	complete := func(err error) {
 		if err == nil {
-			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, successMessage))
+			pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, successMessbge))
 		} else {
-			pending.Complete(output.Line(output.EmojiFailure, output.StyleBold, failureMessage))
+			pending.Complete(output.Line(output.EmojiFbilure, output.StyleBold, fbilureMessbge))
 		}
 	}
 
 	return retry, complete
 }
 
-type onRetryLogFn func(message string) output.Progress
+type onRetryLogFn func(messbge string) output.Progress
 
-// logProgress creates and returns a progress from the given output value and bars configuration.
-// This function also returns a retry function that can be called to print a message then reset the
-// progress bar display, and a complete function that should be called once the work attached to
-// this log call has completed. This complete function takes an error value that determines whether
-// the success or failure message is displayed. If the given output value is nil then a no-op complete
+// logProgress crebtes bnd returns b progress from the given output vblue bnd bbrs configurbtion.
+// This function blso returns b retry function thbt cbn be cblled to print b messbge then reset the
+// progress bbr displby, bnd b complete function thbt should be cblled once the work bttbched to
+// this log cbll hbs completed. This complete function tbkes bn error vblue thbt determines whether
+// the success or fbilure messbge is displbyed. If the given output vblue is nil then b no-op complete
 // function is returned.
-func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, failureMessage string) (output.Progress, onRetryLogFn, func(error)) {
+func logProgress(out *output.Output, bbrs []output.ProgressBbr, successMessbge, fbilureMessbge string) (output.Progress, onRetryLogFn, func(error)) {
 	if out == nil {
-		return nil, func(message string) output.Progress { return nil }, func(err error) {}
+		return nil, func(messbge string) output.Progress { return nil }, func(err error) {}
 	}
 
-	var mu sync.Mutex
-	progress := out.Progress(bars, nil)
+	vbr mu sync.Mutex
+	progress := out.Progress(bbrs, nil)
 
-	retry := func(message string) output.Progress {
+	retry := func(messbge string) output.Progress {
 		mu.Lock()
 		defer mu.Unlock()
 
 		progress.Destroy()
-		out.WriteLine(output.Line(output.EmojiFailure, output.StyleReset, message))
-		progress = out.Progress(bars, nil)
+		out.WriteLine(output.Line(output.EmojiFbilure, output.StyleReset, messbge))
+		progress = out.Progress(bbrs, nil)
 		return progress
 	}
 
@@ -359,9 +359,9 @@ func logProgress(out *output.Output, bars []output.ProgressBar, successMessage, 
 		progress.Destroy()
 
 		if err == nil {
-			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, successMessage))
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, successMessbge))
 		} else {
-			out.WriteLine(output.Line(output.EmojiFailure, output.StyleBold, failureMessage))
+			out.WriteLine(output.Line(output.EmojiFbilure, output.StyleBold, fbilureMessbge))
 		}
 	}
 

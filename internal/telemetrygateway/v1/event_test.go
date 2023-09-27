@@ -1,4 +1,4 @@
-package v1_test
+pbckbge v1_test
 
 import (
 	context "context"
@@ -6,48 +6,48 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/protobuf/encoding/protojson"
+	"google.golbng.org/protobuf/encoding/protojson"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
 
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
 )
 
-func TestNewEventWithDefaults(t *testing.T) {
-	staticTime, err := time.Parse(time.RFC3339, "2023-02-24T14:48:30Z")
+func TestNewEventWithDefbults(t *testing.T) {
+	stbticTime, err := time.Pbrse(time.RFC3339, "2023-02-24T14:48:30Z")
 	require.NoError(t, err)
 
-	t.Run("extract actor and flags", func(t *testing.T) {
-		var userID int32 = 123
-		ctx := actor.WithActor(context.Background(), actor.FromMockUser(userID))
+	t.Run("extrbct bctor bnd flbgs", func(t *testing.T) {
+		vbr userID int32 = 123
+		ctx := bctor.WithActor(context.Bbckground(), bctor.FromMockUser(userID))
 
-		// NOTE: We can't test the feature flag part easily because
-		// featureflag.GetEvaluatedFlagSet depends on Redis, and the package
-		// is not designed for it to easily be stubbed out for testing.
+		// NOTE: We cbn't test the febture flbg pbrt ebsily becbuse
+		// febtureflbg.GetEvblubtedFlbgSet depends on Redis, bnd the pbckbge
+		// is not designed for it to ebsily be stubbed out for testing.
 		// Since it's used for existing telemetry, we trust it works.
 
-		got := telemetrygatewayv1.NewEventWithDefaults(ctx, staticTime, func() string { return "id" })
-		assert.NotNil(t, got.User)
+		got := telemetrygbtewbyv1.NewEventWithDefbults(ctx, stbticTime, func() string { return "id" })
+		bssert.NotNil(t, got.User)
 
-		protodata, err := protojson.Marshal(got)
+		protodbtb, err := protojson.Mbrshbl(got)
 		require.NoError(t, err)
 
-		// Protojson output isn't stable by injecting randomized whitespace,
-		// so we re-marshal it to stabilize the output for golden tests.
-		// https://github.com/golang/protobuf/issues/1082
-		var gotJSON map[string]any
-		require.NoError(t, json.Unmarshal(protodata, &gotJSON))
-		jsondata, err := json.MarshalIndent(gotJSON, "", "  ")
+		// Protojson output isn't stbble by injecting rbndomized whitespbce,
+		// so we re-mbrshbl it to stbbilize the output for golden tests.
+		// https://github.com/golbng/protobuf/issues/1082
+		vbr gotJSON mbp[string]bny
+		require.NoError(t, json.Unmbrshbl(protodbtb, &gotJSON))
+		jsondbtb, err := json.MbrshblIndent(gotJSON, "", "  ")
 		require.NoError(t, err)
-		autogold.Expect(`{
+		butogold.Expect(`{
   "id": "id",
-  "timestamp": "2023-02-24T14:48:30Z",
+  "timestbmp": "2023-02-24T14:48:30Z",
   "user": {
     "userId": "123"
   }
-}`).Equal(t, string(jsondata))
+}`).Equbl(t, string(jsondbtb))
 	})
 }

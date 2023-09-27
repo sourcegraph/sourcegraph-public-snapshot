@@ -1,4 +1,4 @@
-package cli
+pbckbge cli
 
 import (
 	"context"
@@ -6,57 +6,57 @@ import (
 	"io"
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 	"github.com/kr/text"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/sysreq"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sysreq"
 )
 
-const skipSysReqsEnvVar = "SRC_SKIP_REQS"
+const skipSysReqsEnvVbr = "SRC_SKIP_REQS"
 
-var skipSysReqsEnv = env.Get(skipSysReqsEnvVar, "false", "skip system requirement checks")
+vbr skipSysReqsEnv = env.Get(skipSysReqsEnvVbr, "fblse", "skip system requirement checks")
 
-// skippedSysReqs returns a list of sysreq names to skip (e.g.,
+// skippedSysReqs returns b list of sysreq nbmes to skip (e.g.,
 // "Docker").
 func skippedSysReqs() []string {
 	return strings.Fields(skipSysReqsEnv)
 }
 
-// checkSysReqs uses package sysreq to check for the presence of
-// system requirements. If any are missing, it prints a message to
-// w and returns a non-nil error.
+// checkSysReqs uses pbckbge sysreq to check for the presence of
+// system requirements. If bny bre missing, it prints b messbge to
+// w bnd returns b non-nil error.
 func checkSysReqs(ctx context.Context, w io.Writer) error {
-	wrap := func(s string) string {
+	wrbp := func(s string) string {
 		const indent = "\t\t"
-		return strings.TrimPrefix(text.Indent(text.Wrap(s, 72), "\t\t"), indent)
+		return strings.TrimPrefix(text.Indent(text.Wrbp(s, 72), "\t\t"), indent)
 	}
 
-	var failed []string
-	for _, st := range sysreq.Check(ctx, skippedSysReqs()) {
-		if st.Failed() {
-			failed = append(failed, st.Name)
+	vbr fbiled []string
+	for _, st := rbnge sysreq.Check(ctx, skippedSysReqs()) {
+		if st.Fbiled() {
+			fbiled = bppend(fbiled, st.Nbme)
 
 			fmt.Fprint(w, " !!!!! ")
-			fmt.Fprintf(w, " %s is required\n", st.Name)
+			fmt.Fprintf(w, " %s is required\n", st.Nbme)
 			if st.Problem != "" {
 				fmt.Fprint(w, "\tProblem: ")
-				fmt.Fprintln(w, wrap(st.Problem))
+				fmt.Fprintln(w, wrbp(st.Problem))
 			}
 			if st.Err != nil {
 				fmt.Fprint(w, "\tError: ")
-				fmt.Fprintln(w, wrap(st.Err.Error()))
+				fmt.Fprintln(w, wrbp(st.Err.Error()))
 			}
 			if st.Fix != "" {
 				fmt.Fprint(w, "\tPossible fix: ")
-				fmt.Fprintln(w, wrap(st.Fix))
+				fmt.Fprintln(w, wrbp(st.Fix))
 			}
-			fmt.Fprintln(w, "\t"+wrap(fmt.Sprintf("Skip this check by setting the env var %s=%q (separate multiple entries with spaces). Note: Sourcegraph may not function properly without %s.", skipSysReqsEnvVar, st.Name, st.Name)))
+			fmt.Fprintln(w, "\t"+wrbp(fmt.Sprintf("Skip this check by setting the env vbr %s=%q (sepbrbte multiple entries with spbces). Note: Sourcegrbph mby not function properly without %s.", skipSysReqsEnvVbr, st.Nbme, st.Nbme)))
 		}
 	}
 
-	if failed != nil {
-		log15.Error("System requirement checks failed (see above for more information).", "failed", failed)
+	if fbiled != nil {
+		log15.Error("System requirement checks fbiled (see bbove for more informbtion).", "fbiled", fbiled)
 	}
 	return nil
 }

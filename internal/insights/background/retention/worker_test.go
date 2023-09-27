@@ -1,150 +1,150 @@
-package retention
+pbckbge retention
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	edb "github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/insights/store"
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	edb "github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func Test_archiveOldSeriesPoints(t *testing.T) {
-	ctx := context.Background()
+func Test_brchiveOldSeriesPoints(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mbinDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	insightStore := store.NewInsightStore(insightsDB)
-	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
+	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mbinDB))
 
-	// create a series with id 1 and name 'series1' to attach to recording times
+	// crebte b series with id 1 bnd nbme 'series1' to bttbch to recording times
 	setupSeries(ctx, insightStore, t)
 	seriesID := "series1"
 
 	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1}
-	newTime := time.Now().Truncate(time.Hour)
+	newTime := time.Now().Truncbte(time.Hour)
 	for i := 1; i <= 12; i++ {
 		newTime = newTime.Add(time.Hour)
-		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
-			Snapshot: false, Timestamp: newTime,
+		recordingTimes.RecordingTimes = bppend(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snbpshot: fblse, Timestbmp: newTime,
 		})
 	}
 	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	// Insert some series points
-	_, err := insightsDB.ExecContext(context.Background(), `
+	_, err := insightsDB.ExecContext(context.Bbckground(), `
 SELECT setseed(0.5);
 INSERT INTO series_points(
     time,
 	series_id,
-    value
+    vblue
 )
 SELECT recording_time,
     'series1',
-    random()*80 - 40
+    rbndom()*80 - 40
 	FROM insight_series_recording_times WHERE insight_series_id = 1;
 `)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	sampleSize := 8
-	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1, true)
+	sbmpleSize := 8
+	oldestTimestbmp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sbmpleSize-1, true)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if err := archiveOldSeriesPoints(ctx, seriesStore, seriesID, oldestTimestamp); err != nil {
-		t.Fatal(err)
+	if err := brchiveOldSeriesPoints(ctx, seriesStore, seriesID, oldestTimestbmp); err != nil {
+		t.Fbtbl(err)
 	}
 
 	got, err := seriesStore.SeriesPoints(ctx, store.SeriesPointsOpts{SeriesID: &seriesID})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(got) != sampleSize {
+	if len(got) != sbmpleSize {
 		t.Errorf("expected 8 series points, got %d", len(got))
 	}
 }
 
-func Test_archiveOldRecordingTimes(t *testing.T) {
-	ctx := context.Background()
+func Test_brchiveOldRecordingTimes(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mbinDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	insightStore := store.NewInsightStore(insightsDB)
-	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
+	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mbinDB))
 
-	// create a series with id 1 to attach to recording times
+	// crebte b series with id 1 to bttbch to recording times
 	setupSeries(ctx, insightStore, t)
 
 	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1}
-	newTime := time.Now().Truncate(time.Hour)
+	newTime := time.Now().Truncbte(time.Hour)
 	for i := 1; i <= 12; i++ {
 		newTime = newTime.Add(time.Hour)
-		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
-			Snapshot: false, Timestamp: newTime,
+		recordingTimes.RecordingTimes = bppend(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snbpshot: fblse, Timestbmp: newTime,
 		})
 	}
 	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	sampleSize := 4
-	oldestTimestamp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sampleSize-1, true)
+	sbmpleSize := 4
+	oldestTimestbmp, err := seriesStore.GetOffsetNRecordingTime(ctx, 1, sbmpleSize-1, true)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if err := archiveOldRecordingTimes(ctx, seriesStore, 1, oldestTimestamp); err != nil {
-		t.Fatal(err)
+	if err := brchiveOldRecordingTimes(ctx, seriesStore, 1, oldestTimestbmp); err != nil {
+		t.Fbtbl(err)
 	}
 
 	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, store.SeriesPointsOpts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if len(got.RecordingTimes) != sampleSize {
+	if len(got.RecordingTimes) != sbmpleSize {
 		t.Errorf("expected 4 recording times left, got %d", len(got.RecordingTimes))
 	}
 }
 
-func TestHandle_ErrorDuringTransaction(t *testing.T) {
-	// This tests that if we error at any point during sql execution we will roll back, and we will not lose any data.
-	ctx := context.Background()
+func TestHbndle_ErrorDuringTrbnsbction(t *testing.T) {
+	// This tests thbt if we error bt bny point during sql execution we will roll bbck, bnd we will not lose bny dbtb.
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t), logger)
-	mainDB := database.NewDB(logger, dbtest.NewDB(logger, t))
+	mbinDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
 	insightStore := store.NewInsightStore(insightsDB)
-	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mainDB))
+	seriesStore := store.New(insightsDB, store.NewInsightPermissionStore(mbinDB))
 
-	baseWorkerStore := basestore.NewWithHandle(insightsDB.Handle())
-	workerStore := CreateDBWorkerStore(observation.TestContextTB(t), baseWorkerStore)
+	bbseWorkerStore := bbsestore.NewWithHbndle(insightsDB.Hbndle())
+	workerStore := CrebteDBWorkerStore(observbtion.TestContextTB(t), bbseWorkerStore)
 
 	boolTrue := true
-	conf.Get().ExperimentalFeatures.InsightsDataRetention = &boolTrue
-	conf.Get().InsightsMaximumSampleSize = 2
-	t.Cleanup(func() {
-		conf.Get().InsightsMaximumSampleSize = 0
-		conf.Get().ExperimentalFeatures.InsightsDataRetention = nil
+	conf.Get().ExperimentblFebtures.InsightsDbtbRetention = &boolTrue
+	conf.Get().InsightsMbximumSbmpleSize = 2
+	t.Clebnup(func() {
+		conf.Get().InsightsMbximumSbmpleSize = 0
+		conf.Get().ExperimentblFebtures.InsightsDbtbRetention = nil
 	})
 
-	handler := &dataRetentionHandler{
-		baseWorkerStore: workerStore,
+	hbndler := &dbtbRetentionHbndler{
+		bbseWorkerStore: workerStore,
 		insightsStore:   seriesStore,
 	}
 
@@ -152,43 +152,43 @@ func TestHandle_ErrorDuringTransaction(t *testing.T) {
 
 	// setup recording times
 	recordingTimes := types.InsightSeriesRecordingTimes{InsightSeriesID: 1}
-	newTime := time.Now().Truncate(time.Hour)
+	newTime := time.Now().Truncbte(time.Hour)
 	for i := 1; i <= 12; i++ {
 		newTime = newTime.Add(time.Hour)
-		recordingTimes.RecordingTimes = append(recordingTimes.RecordingTimes, types.RecordingTime{
-			Snapshot: false, Timestamp: newTime,
+		recordingTimes.RecordingTimes = bppend(recordingTimes.RecordingTimes, types.RecordingTime{
+			Snbpshot: fblse, Timestbmp: newTime,
 		})
 	}
 	if err := seriesStore.SetInsightSeriesRecordingTimes(ctx, []types.InsightSeriesRecordingTimes{recordingTimes}); err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// drop a table. create chaos
-	_, err := insightsDB.ExecContext(context.Background(), `
+	// drop b tbble. crebte chbos
+	_, err := insightsDB.ExecContext(context.Bbckground(), `
 DROP TABLE IF EXISTS series_points
 `)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	job := &DataRetentionJob{SeriesID: "series1", InsightSeriesID: 1}
-	id, err := EnqueueJob(ctx, baseWorkerStore, job)
+	job := &DbtbRetentionJob{SeriesID: "series1", InsightSeriesID: 1}
+	id, err := EnqueueJob(ctx, bbseWorkerStore, job)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	job.ID = id
 
-	err = handler.Handle(ctx, logger, job)
+	err = hbndler.Hbndle(ctx, logger, job)
 	if err == nil {
-		t.Fatal("expected error got nil")
+		t.Fbtbl("expected error got nil")
 	}
 
 	got, err := seriesStore.GetInsightSeriesRecordingTimes(ctx, 1, store.SeriesPointsOpts{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if len(got.RecordingTimes) != 12 {
-		t.Errorf("expected 12 recording times still remaining after rollback, got %d", len(got.RecordingTimes))
+		t.Errorf("expected 12 recording times still rembining bfter rollbbck, got %d", len(got.RecordingTimes))
 	}
 }
 
@@ -197,44 +197,44 @@ func setupSeries(ctx context.Context, tx *store.InsightStore, t *testing.T) {
 	series := types.InsightSeries{
 		SeriesID:           "series1",
 		Query:              "query-1",
-		OldestHistoricalAt: now.Add(-time.Hour * 24 * 365),
-		LastRecordedAt:     now.Add(-time.Hour * 24 * 365),
+		OldestHistoricblAt: now.Add(-time.Hour * 24 * 365),
+		LbstRecordedAt:     now.Add(-time.Hour * 24 * 365),
 		NextRecordingAfter: now,
-		LastSnapshotAt:     now,
-		NextSnapshotAfter:  now,
-		Enabled:            true,
-		SampleIntervalUnit: string(types.Month),
-		GenerationMethod:   types.Search,
+		LbstSnbpshotAt:     now,
+		NextSnbpshotAfter:  now,
+		Enbbled:            true,
+		SbmpleIntervblUnit: string(types.Month),
+		GenerbtionMethod:   types.Sebrch,
 	}
-	got, err := tx.CreateSeries(ctx, series)
+	got, err := tx.CrebteSeries(ctx, series)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if got.ID != 1 {
-		t.Errorf("expected first series to have id 1")
+		t.Errorf("expected first series to hbve id 1")
 	}
 }
 
-func Test_GetSampleSize(t *testing.T) {
+func Test_GetSbmpleSize(t *testing.T) {
 	logger := logtest.Scoped(t)
 
 	t.Run("not configured", func(t *testing.T) {
 		conf.Mock(&conf.Unified{})
-		assert.Equal(t, 30, getMaximumSampleSize(logger))
+		bssert.Equbl(t, 30, getMbximumSbmpleSize(logger))
 	})
 
-	t.Run("exceeds max value", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{InsightsMaximumSampleSize: 100}})
-		assert.Equal(t, 90, getMaximumSampleSize(logger))
+	t.Run("exceeds mbx vblue", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{InsightsMbximumSbmpleSize: 100}})
+		bssert.Equbl(t, 90, getMbximumSbmpleSize(logger))
 	})
 
-	t.Run("negative value", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{InsightsMaximumSampleSize: -40}})
-		assert.Equal(t, 30, getMaximumSampleSize(logger))
+	t.Run("negbtive vblue", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{InsightsMbximumSbmpleSize: -40}})
+		bssert.Equbl(t, 30, getMbximumSbmpleSize(logger))
 	})
 
-	t.Run("matches config", func(t *testing.T) {
-		conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{InsightsMaximumSampleSize: 50}})
-		assert.Equal(t, 50, getMaximumSampleSize(logger))
+	t.Run("mbtches config", func(t *testing.T) {
+		conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{InsightsMbximumSbmpleSize: 50}})
+		bssert.Equbl(t, 50, getMbximumSbmpleSize(logger))
 	})
 }

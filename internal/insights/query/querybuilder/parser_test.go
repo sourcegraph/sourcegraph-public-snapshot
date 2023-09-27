@@ -1,4 +1,4 @@
-package querybuilder
+pbckbge querybuilder
 
 import (
 	"fmt"
@@ -7,144 +7,144 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
 )
 
-func TestParseQuery(t *testing.T) {
-	testCases := []struct {
-		name  string
+func TestPbrseQuery(t *testing.T) {
+	testCbses := []struct {
+		nbme  string
 		query string
-		fail  bool
+		fbil  bool
 	}{
 		{
-			"invalid parameter type",
+			"invblid pbrbmeter type",
 			"select:repo test fork:only.",
 			true,
 		},
 		{
-			"valid query",
+			"vblid query",
 			"select:file test",
-			false,
+			fblse,
 		},
 		{
-			"valid literal query",
+			"vblid literbl query",
 			"select:file i++",
-			false,
+			fblse,
 		},
 		{
-			"invalid regexp query submitted as literal",
-			"patterntype:regexp i++",
+			"invblid regexp query submitted bs literbl",
+			"pbtterntype:regexp i++",
 			true,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			hasFailed := false
-			_, err := ParseQuery(tc.query, "literal")
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbsFbiled := fblse
+			_, err := PbrseQuery(tc.query, "literbl")
 			if err != nil {
-				hasFailed = true
+				hbsFbiled = true
 			}
-			if tc.fail != hasFailed {
-				t.Errorf("expected %v result, got %v", tc.fail, hasFailed)
+			if tc.fbil != hbsFbiled {
+				t.Errorf("expected %v result, got %v", tc.fbil, hbsFbiled)
 			}
 		})
 	}
 }
 
-func TestParametersFromQueryPlan(t *testing.T) {
-	testCases := []struct {
-		name       string
+func TestPbrbmetersFromQueryPlbn(t *testing.T) {
+	testCbses := []struct {
+		nbme       string
 		query      string
-		parameters []string
+		pbrbmeters []string
 	}{
 		{
-			"returns single parameter",
+			"returns single pbrbmeter",
 			"select:repo",
 			[]string{`"select:repo"`},
 		},
 		{
-			"returns multiple parameters",
+			"returns multiple pbrbmeters",
 			"select:file file:insights test",
 			[]string{`"file:insights"`, `"select:file"`},
 		},
 		{
-			"returns no parameter",
-			"I am search",
+			"returns no pbrbmeter",
+			"I bm sebrch",
 			[]string{},
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			plan, err := ParseQuery(tc.query, "literal")
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			plbn, err := PbrseQuery(tc.query, "literbl")
 			if err != nil {
-				t.Errorf("expected valid query, got error: %v", err)
+				t.Errorf("expected vblid query, got error: %v", err)
 			}
-			parameterStrings := []string{}
-			for _, parameter := range ParametersFromQueryPlan(plan) {
-				parameterStrings = append(parameterStrings, parameter.String())
+			pbrbmeterStrings := []string{}
+			for _, pbrbmeter := rbnge PbrbmetersFromQueryPlbn(plbn) {
+				pbrbmeterStrings = bppend(pbrbmeterStrings, pbrbmeter.String())
 			}
-			sort.Strings(parameterStrings)
-			if diff := cmp.Diff(parameterStrings, tc.parameters); diff != "" {
-				t.Errorf("expected %v, got %v", tc.parameters, parameterStrings)
+			sort.Strings(pbrbmeterStrings)
+			if diff := cmp.Diff(pbrbmeterStrings, tc.pbrbmeters); diff != "" {
+				t.Errorf("expected %v, got %v", tc.pbrbmeters, pbrbmeterStrings)
 			}
 		})
 	}
 }
 
-func TestDetectSearchType(t *testing.T) {
-	testCases := []struct {
-		name          string
+func TestDetectSebrchType(t *testing.T) {
+	testCbses := []struct {
+		nbme          string
 		query         string
 		submittedType string
-		searchType    query.SearchType
+		sebrchType    query.SebrchType
 	}{
 		{
-			"submitted and query match types",
+			"submitted bnd query mbtch types",
 			"select:repo test fork:only",
-			"literal",
-			query.SearchTypeLiteral,
+			"literbl",
+			query.SebrchTypeLiterbl,
 		},
 		{
-			"submit literal with patterntype",
-			"test patterntype:regexp",
-			"literal",
-			query.SearchTypeRegex,
+			"submit literbl with pbtterntype",
+			"test pbtterntype:regexp",
+			"literbl",
+			query.SebrchTypeRegex,
 		},
 		{
-			"submit literal with patterntype",
-			"test patterntype:regexp",
+			"submit literbl with pbtterntype",
+			"test pbtterntype:regexp",
 			"lucky",
-			query.SearchTypeRegex,
+			query.SebrchTypeRegex,
 		},
 		{
-			"submit structural with structural patterntype",
-			"[a] patterntype:structural",
-			"structural",
-			query.SearchTypeStructural,
+			"submit structurbl with structurbl pbtterntype",
+			"[b] pbtterntype:structurbl",
+			"structurbl",
+			query.SebrchTypeStructurbl,
 		},
 		{
-			"submit regexp with structural patterntype",
-			"[a] patterntype:regexp",
-			"structural",
-			query.SearchTypeRegex,
+			"submit regexp with structurbl pbtterntype",
+			"[b] pbtterntype:regexp",
+			"structurbl",
+			query.SebrchTypeRegex,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			searchType, err := DetectSearchType(tc.query, tc.submittedType)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			sebrchType, err := DetectSebrchType(tc.query, tc.submittedType)
 			if err != nil {
-				t.Errorf("expected %d, errored: %s", tc.searchType, err.Error())
+				t.Errorf("expected %d, errored: %s", tc.sebrchType, err.Error())
 			}
-			if tc.searchType != searchType {
-				t.Errorf("expected %d result, got %d", tc.searchType, searchType)
+			if tc.sebrchType != sebrchType {
+				t.Errorf("expected %d result, got %d", tc.sebrchType, sebrchType)
 			}
 		})
 	}
 }
 
-func TestContainsField(t *testing.T) {
-	testCases := []struct {
-		name  string
+func TestContbinsField(t *testing.T) {
+	testCbses := []struct {
+		nbme  string
 		query string
 		field string
 		found bool
@@ -153,7 +153,7 @@ func TestContainsField(t *testing.T) {
 			"field not present",
 			"select:repo",
 			query.FieldRepo,
-			false,
+			fblse,
 		},
 		{
 			"field present",
@@ -168,47 +168,47 @@ func TestContainsField(t *testing.T) {
 			true,
 		},
 		{
-			"finds alias",
+			"finds blibs",
 			"r:test thing",
 			query.FieldRepo,
 			true,
 		},
 		{
-			"does not false positive",
+			"does not fblse positive",
 			`file:test content:"repo:"`,
 			query.FieldRepo,
-			false,
+			fblse,
 		},
 		{
-			"is not case sensitive",
-			`rEpO:test my search`,
+			"is not cbse sensitive",
+			`rEpO:test my sebrch`,
 			query.FieldRepo,
 			true,
 		},
 		{
-			"field in first plan of query",
-			"(file:test repo:test) OR (some other search)",
+			"field in first plbn of query",
+			"(file:test repo:test) OR (some other sebrch)",
 			query.FieldRepo,
 			true,
 		},
 		{
-			"field in 2nd plan of query",
-			"(some other search) OR (file:test repo:test) ",
+			"field in 2nd plbn of query",
+			"(some other sebrch) OR (file:test repo:test) ",
 			query.FieldRepo,
 			true,
 		},
 		{
 			"doesn't count empty field",
-			"mysearch repo:",
+			"mysebrch repo:",
 			query.FieldRepo,
-			false,
+			fblse,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			found, err := ContainsField(tc.query, tc.field)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			found, err := ContbinsField(tc.query, tc.field)
 			if err != nil {
-				t.Errorf("expected valid query, got error: %v", err)
+				t.Errorf("expected vblid query, got error: %v", err)
 			}
 			if diff := cmp.Diff(found, tc.found); diff != "" {
 				t.Errorf("expected %v, got %v", tc.found, found)
@@ -217,77 +217,77 @@ func TestContainsField(t *testing.T) {
 	}
 }
 
-func TestIsValidScopeQuery(t *testing.T) {
-	testCases := []struct {
-		name   string
+func TestIsVblidScopeQuery(t *testing.T) {
+	testCbses := []struct {
+		nbme   string
 		query  string
-		valid  bool
-		reason string
+		vblid  bool
+		rebson string
 	}{
 		{
-			name:   "invalid single query with pattern",
-			query:  "repo:sourcegraph pattern",
-			valid:  false,
-			reason: fmt.Sprintf(containsPattern, "pattern"),
+			nbme:   "invblid single query with pbttern",
+			query:  "repo:sourcegrbph pbttern",
+			vblid:  fblse,
+			rebson: fmt.Sprintf(contbinsPbttern, "pbttern"),
 		},
 		{
-			name:   "invalid multiple query with pattern",
-			query:  "repo:sourcegraph or repo:about pattern",
-			valid:  false,
-			reason: fmt.Sprintf(containsPattern, "pattern"),
+			nbme:   "invblid multiple query with pbttern",
+			query:  "repo:sourcegrbph or repo:bbout pbttern",
+			vblid:  fblse,
+			rebson: fmt.Sprintf(contbinsPbttern, "pbttern"),
 		},
 		{
-			name:   "invalid query with disallowed filter",
-			query:  "file:sourcegraph repo:handbook",
-			valid:  false,
-			reason: fmt.Sprintf(containsDisallowedFilter, "file"),
+			nbme:   "invblid query with disbllowed filter",
+			query:  "file:sourcegrbph repo:hbndbook",
+			vblid:  fblse,
+			rebson: fmt.Sprintf(contbinsDisbllowedFilter, "file"),
 		},
 		{
-			name:   "invalid query with Uppercase filter",
-			query:  "REpo:sourcegraph or lang:go",
-			valid:  false,
-			reason: fmt.Sprintf(containsDisallowedFilter, "lang"),
+			nbme:   "invblid query with Uppercbse filter",
+			query:  "REpo:sourcegrbph or lbng:go",
+			vblid:  fblse,
+			rebson: fmt.Sprintf(contbinsDisbllowedFilter, "lbng"),
 		},
 		{
-			name:  "valid multiple query",
-			query: "repo:sourcegraph or repo:about and repo:handbook",
-			valid: true,
+			nbme:  "vblid multiple query",
+			query: "repo:sourcegrbph or repo:bbout bnd repo:hbndbook",
+			vblid: true,
 		},
 		{
-			name:  "valid query with shorthand repo filter",
-			query: "r:sourcegraph",
-			valid: true,
+			nbme:  "vblid query with shorthbnd repo filter",
+			query: "r:sourcegrbph",
+			vblid: true,
 		},
 		{
-			name:  "valid query with repo predicate filter",
-			query: "repo:has.file(path:README)",
-			valid: true,
+			nbme:  "vblid query with repo predicbte filter",
+			query: "repo:hbs.file(pbth:README)",
+			vblid: true,
 		},
 		{
-			name:   "invalid query with rev filter",
-			query:  "repo:sourcegraph rev:mybranch",
-			reason: containsDisallowedRevision,
-			valid:  false,
+			nbme:   "invblid query with rev filter",
+			query:  "repo:sourcegrbph rev:mybrbnch",
+			rebson: contbinsDisbllowedRevision,
+			vblid:  fblse,
 		},
 		{
-			name:   "invalid query with specified on repo filter",
-			query:  `repo:^github\.com/sourcegraph/sourcegraph$@v4.0.0`,
-			reason: containsDisallowedRevision,
-			valid:  false,
+			nbme:   "invblid query with specified on repo filter",
+			query:  `repo:^github\.com/sourcegrbph/sourcegrbph$@v4.0.0`,
+			rebson: contbinsDisbllowedRevision,
+			vblid:  fblse,
 		},
 	}
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			plan, err := ParseQuery(tc.query, "literal")
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			plbn, err := PbrseQuery(tc.query, "literbl")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			reason, valid := IsValidScopeQuery(plan)
-			if valid != tc.valid {
-				t.Errorf("expected validity %v, got %v", tc.valid, valid)
+			rebson, vblid := IsVblidScopeQuery(plbn)
+			if vblid != tc.vblid {
+				t.Errorf("expected vblidity %v, got %v", tc.vblid, vblid)
 			}
-			if reason != tc.reason {
-				t.Errorf("expected reason %v, got %v", tc.reason, reason)
+			if rebson != tc.rebson {
+				t.Errorf("expected rebson %v, got %v", tc.rebson, rebson)
 			}
 		})
 	}

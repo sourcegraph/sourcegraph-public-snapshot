@@ -1,44 +1,44 @@
-package streaming
+pbckbge strebming
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
 )
 
-type SearchClient interface {
-	Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error)
+type SebrchClient interfbce {
+	Sebrch(ctx context.Context, query string, pbtternType *string, sender strebming.Sender) (*sebrch.Alert, error)
 }
 
-func NewInsightsSearchClient(db database.DB) SearchClient {
-	logger := log.Scoped("insightsSearchClient", "")
-	return &insightsSearchClient{
+func NewInsightsSebrchClient(db dbtbbbse.DB) SebrchClient {
+	logger := log.Scoped("insightsSebrchClient", "")
+	return &insightsSebrchClient{
 		db:           db,
-		searchClient: client.New(logger, db),
+		sebrchClient: client.New(logger, db),
 	}
 }
 
-type insightsSearchClient struct {
-	db           database.DB
-	searchClient client.SearchClient
+type insightsSebrchClient struct {
+	db           dbtbbbse.DB
+	sebrchClient client.SebrchClient
 }
 
-func (r *insightsSearchClient) Search(ctx context.Context, query string, patternType *string, sender streaming.Sender) (*search.Alert, error) {
-	inputs, err := r.searchClient.Plan(
+func (r *insightsSebrchClient) Sebrch(ctx context.Context, query string, pbtternType *string, sender strebming.Sender) (*sebrch.Alert, error) {
+	inputs, err := r.sebrchClient.Plbn(
 		ctx,
 		"",
-		patternType,
+		pbtternType,
 		query,
-		search.Precise,
-		search.Streaming,
+		sebrch.Precise,
+		sebrch.Strebming,
 	)
 	if err != nil {
 		return nil, err
 	}
-	return r.searchClient.Execute(ctx, sender, inputs)
+	return r.sebrchClient.Execute(ctx, sender, inputs)
 }

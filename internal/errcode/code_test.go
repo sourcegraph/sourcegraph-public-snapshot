@@ -1,40 +1,40 @@
-package errcode_test
+pbckbge errcode_test
 
 import (
 	"net/http"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func TestHTTP(t *testing.T) {
 	tests := []struct {
 		err  error
-		want int
+		wbnt int
 	}{
-		{os.ErrNotExist, http.StatusNotFound},
-		{&notFoundErr{}, http.StatusNotFound},
-		{nil, http.StatusOK},
-		{errors.New(""), http.StatusInternalServerError},
+		{os.ErrNotExist, http.StbtusNotFound},
+		{&notFoundErr{}, http.StbtusNotFound},
+		{nil, http.StbtusOK},
+		{errors.New(""), http.StbtusInternblServerError},
 	}
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		c := errcode.HTTP(test.err)
-		if c != test.want {
-			t.Errorf("error %q: got %d, want %d", test.err, c, test.want)
+		if c != test.wbnt {
+			t.Errorf("error %q: got %d, wbnt %d", test.err, c, test.wbnt)
 		}
 	}
 }
 
-func TestMakeNonRetryable(t *testing.T) {
+func TestMbkeNonRetrybble(t *testing.T) {
 	err := errors.New("foo")
-	if errcode.IsNonRetryable(err) {
-		t.Errorf("unexpected non-retryable error: %+v", err)
+	if errcode.IsNonRetrybble(err) {
+		t.Errorf("unexpected non-retrybble error: %+v", err)
 	}
 
-	if nrerr := errcode.MakeNonRetryable(err); !errcode.IsNonRetryable(nrerr) {
-		t.Errorf("unexpected retryable error: %+v", nrerr)
+	if nrerr := errcode.MbkeNonRetrybble(err); !errcode.IsNonRetrybble(nrerr) {
+		t.Errorf("unexpected retrybble error: %+v", nrerr)
 	}
 }
 

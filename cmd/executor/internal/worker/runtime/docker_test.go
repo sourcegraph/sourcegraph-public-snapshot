@@ -1,194 +1,194 @@
-package runtime
+pbckbge runtime
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/runner"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestDockerRuntime_Name(t *testing.T) {
+func TestDockerRuntime_Nbme(t *testing.T) {
 	r := dockerRuntime{}
-	assert.Equal(t, "docker", string(r.Name()))
+	bssert.Equbl(t, "docker", string(r.Nbme()))
 }
 
 func TestDockerRuntime_NewRunnerSpecs(t *testing.T) {
-	operations := command.NewOperations(&observation.TestContext)
+	operbtions := commbnd.NewOperbtions(&observbtion.TestContext)
 
 	tests := []struct {
-		name           string
+		nbme           string
 		job            types.Job
-		mockFunc       func(ws *MockWorkspace)
+		mockFunc       func(ws *MockWorkspbce)
 		expected       []runner.Spec
 		expectedErr    error
-		assertMockFunc func(t *testing.T, ws *MockWorkspace)
+		bssertMockFunc func(t *testing.T, ws *MockWorkspbce)
 	}{
 		{
-			name:     "No steps",
+			nbme:     "No steps",
 			job:      types.Job{},
 			expected: []runner.Spec{},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 0)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 0)
 			},
 		},
 		{
-			name: "Single step",
+			nbme: "Single step",
 			job: types.Job{
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "key-1",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpecs: []command.Spec{
+				CommbndSpecs: []commbnd.Spec{
 					{
 						Key:       "step.docker.key-1",
-						Command:   []string(nil),
+						Commbnd:   []string(nil),
 						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+						Env:       []string{"FOO=bbr"},
+						Operbtion: operbtions.Exec,
 					},
 				},
-				Image:      "my-image",
-				ScriptPath: "script.sh",
+				Imbge:      "my-imbge",
+				ScriptPbth: "script.sh",
 			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 1)
 			},
 		},
 		{
-			name: "Multiple steps",
+			nbme: "Multiple steps",
 			job: types.Job{
 				DockerSteps: []types.DockerStep{
 					{
 						Key:      "key-1",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 					{
 						Key:      "key-2",
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script1.sh", "script2.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script1.sh", "script2.sh"})
 			},
 			expected: []runner.Spec{
 				{
-					CommandSpecs: []command.Spec{
+					CommbndSpecs: []commbnd.Spec{
 						{
 							Key:       "step.docker.key-1",
-							Command:   []string(nil),
+							Commbnd:   []string(nil),
 							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+							Env:       []string{"FOO=bbr"},
+							Operbtion: operbtions.Exec,
 						},
 					},
-					Image:      "my-image",
-					ScriptPath: "script1.sh",
+					Imbge:      "my-imbge",
+					ScriptPbth: "script1.sh",
 				},
 				{
-					CommandSpecs: []command.Spec{
+					CommbndSpecs: []commbnd.Spec{
 						{
 							Key:       "step.docker.key-2",
-							Command:   []string(nil),
+							Commbnd:   []string(nil),
 							Dir:       ".",
-							Env:       []string{"FOO=bar"},
-							Operation: operations.Exec,
+							Env:       []string{"FOO=bbr"},
+							Operbtion: operbtions.Exec,
 						},
 					},
-					Image:      "my-image",
-					ScriptPath: "script2.sh",
+					Imbge:      "my-imbge",
+					ScriptPbth: "script2.sh",
 				},
 			},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 2)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 2)
 			},
 		},
 		{
-			name: "Default key",
+			nbme: "Defbult key",
 			job: types.Job{
 				DockerSteps: []types.DockerStep{
 					{
-						Image:    "my-image",
-						Commands: []string{"echo", "hello"},
+						Imbge:    "my-imbge",
+						Commbnds: []string{"echo", "hello"},
 						Dir:      ".",
-						Env:      []string{"FOO=bar"},
+						Env:      []string{"FOO=bbr"},
 					},
 				},
 			},
-			mockFunc: func(ws *MockWorkspace) {
-				ws.ScriptFilenamesFunc.SetDefaultReturn([]string{"script.sh"})
+			mockFunc: func(ws *MockWorkspbce) {
+				ws.ScriptFilenbmesFunc.SetDefbultReturn([]string{"script.sh"})
 			},
 			expected: []runner.Spec{{
-				CommandSpecs: []command.Spec{
+				CommbndSpecs: []commbnd.Spec{
 					{
 						Key:       "step.docker.0",
-						Command:   []string(nil),
+						Commbnd:   []string(nil),
 						Dir:       ".",
-						Env:       []string{"FOO=bar"},
-						Operation: operations.Exec,
+						Env:       []string{"FOO=bbr"},
+						Operbtion: operbtions.Exec,
 					},
 				},
-				Image:      "my-image",
-				ScriptPath: "script.sh",
+				Imbge:      "my-imbge",
+				ScriptPbth: "script.sh",
 			}},
-			assertMockFunc: func(t *testing.T, ws *MockWorkspace) {
-				require.Len(t, ws.ScriptFilenamesFunc.History(), 1)
+			bssertMockFunc: func(t *testing.T, ws *MockWorkspbce) {
+				require.Len(t, ws.ScriptFilenbmesFunc.History(), 1)
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			ws := NewMockWorkspace()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			ws := NewMockWorkspbce()
 
 			if test.mockFunc != nil {
 				test.mockFunc(ws)
 			}
 
-			r := &dockerRuntime{operations: operations}
-			actual, err := r.NewRunnerSpecs(ws, test.job)
+			r := &dockerRuntime{operbtions: operbtions}
+			bctubl, err := r.NewRunnerSpecs(ws, test.job)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
-				require.Len(t, actual, len(test.expected))
-				for _, expected := range test.expected {
-					// find the matching actual spec based on the command spec key. There will only ever be one command spec per spec.
-					var actualSpec runner.Spec
-					for _, spec := range actual {
-						if spec.CommandSpecs[0].Key == expected.CommandSpecs[0].Key {
-							actualSpec = spec
-							break
+				require.Len(t, bctubl, len(test.expected))
+				for _, expected := rbnge test.expected {
+					// find the mbtching bctubl spec bbsed on the commbnd spec key. There will only ever be one commbnd spec per spec.
+					vbr bctublSpec runner.Spec
+					for _, spec := rbnge bctubl {
+						if spec.CommbndSpecs[0].Key == expected.CommbndSpecs[0].Key {
+							bctublSpec = spec
+							brebk
 						}
 					}
-					assert.Equal(t, expected.Image, actualSpec.Image)
-					assert.Equal(t, expected.ScriptPath, actualSpec.ScriptPath)
-					assert.Equal(t, expected.CommandSpecs[0], actualSpec.CommandSpecs[0])
+					bssert.Equbl(t, expected.Imbge, bctublSpec.Imbge)
+					bssert.Equbl(t, expected.ScriptPbth, bctublSpec.ScriptPbth)
+					bssert.Equbl(t, expected.CommbndSpecs[0], bctublSpec.CommbndSpecs[0])
 				}
 			}
 
-			test.assertMockFunc(t, ws)
+			test.bssertMockFunc(t, ws)
 		})
 	}
 }

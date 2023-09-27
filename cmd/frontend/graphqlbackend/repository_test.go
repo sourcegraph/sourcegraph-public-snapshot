@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,49 +6,49 @@ import (
 	"testing"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
-	"github.com/hexops/autogold/v2"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
+const exbmpleCommitSHA1 = "1234567890123456789012345678901234567890"
 
 func TestRepository_Commit(t *testing.T) {
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoID(2), repo.ID)
-		assert.Equal(t, "abc", rev)
-		return exampleCommitSHA1, nil
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		bssert.Equbl(t, bpi.RepoID(2), repo.ID)
+		bssert.Equbl(t, "bbc", rev)
+		return exbmpleCommitSHA1, nil
 	}
-	backend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdomain.Commit{ID: exampleCommitSHA1})
+	bbckend.Mocks.Repos.MockGetCommit_Return_NoCheck(t, &gitdombin.Commit{ID: exbmpleCommitSHA1})
 	defer func() {
-		backend.Mocks = backend.MockServices{}
+		bbckend.Mocks = bbckend.MockServices{}
 	}()
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(&types.Repo{ID: 2, Name: "github.com/gorilla/mux"}, nil)
+	repos.GetFunc.SetDefbultReturn(&types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
 				{
-					repository(name: "github.com/gorilla/mux") {
-						commit(rev: "abc") {
+					repository(nbme: "github.com/gorillb/mux") {
+						commit(rev: "bbc") {
 							oid
 						}
 					}
@@ -58,7 +58,7 @@ func TestRepository_Commit(t *testing.T) {
 				{
 					"repository": {
 						"commit": {
-							"oid": "` + exampleCommitSHA1 + `"
+							"oid": "` + exbmpleCommitSHA1 + `"
 						}
 					}
 				}
@@ -66,38 +66,38 @@ func TestRepository_Commit(t *testing.T) {
 	})
 }
 
-func TestRepository_Changelist(t *testing.T) {
-	repo := &types.Repo{ID: 2, Name: "github.com/gorilla/mux"}
+func TestRepository_Chbngelist(t *testing.T) {
+	repo := &types.Repo{ID: 2, Nbme: "github.com/gorillb/mux"}
 
-	backend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (api.CommitID, error) {
-		assert.Equal(t, api.RepoID(2), repo.ID)
-		return exampleCommitSHA1, nil
+	bbckend.Mocks.Repos.ResolveRev = func(ctx context.Context, repo *types.Repo, rev string) (bpi.CommitID, error) {
+		bssert.Equbl(t, bpi.RepoID(2), repo.ID)
+		return exbmpleCommitSHA1, nil
 	}
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetFunc.SetDefaultReturn(repo, nil)
-	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
+	repos.GetFunc.SetDefbultReturn(repo, nil)
+	repos.GetByNbmeFunc.SetDefbultReturn(repo, nil)
 
-	repoCommitsChangelists := dbmocks.NewMockRepoCommitsChangelistsStore()
-	repoCommitsChangelists.GetRepoCommitChangelistFunc.SetDefaultReturn(&types.RepoCommit{
+	repoCommitsChbngelists := dbmocks.NewMockRepoCommitsChbngelistsStore()
+	repoCommitsChbngelists.GetRepoCommitChbngelistFunc.SetDefbultReturn(&types.RepoCommit{
 		ID:                   1,
 		RepoID:               2,
-		CommitSHA:            dbutil.CommitBytea(exampleCommitSHA1),
-		PerforceChangelistID: 123,
+		CommitSHA:            dbutil.CommitByteb(exbmpleCommitSHA1),
+		PerforceChbngelistID: 123,
 	}, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
-	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsChangelists)
+	db.ReposFunc.SetDefbultReturn(repos)
+	db.RepoCommitsChbngelistsFunc.SetDefbultReturn(repoCommitsChbngelists)
 
 	RunTest(t, &Test{
-		Schema: mustParseGraphQLSchema(t, db),
+		Schemb: mustPbrseGrbphQLSchemb(t, db),
 		Query: `
 				{
-					repository(name: "github.com/gorilla/mux") {
-						changelist(cid: "123") {
+					repository(nbme: "github.com/gorillb/mux") {
+						chbngelist(cid: "123") {
 							cid
-							canonicalURL
+							cbnonicblURL
 							commit {
 								oid
 							}
@@ -108,173 +108,173 @@ func TestRepository_Changelist(t *testing.T) {
 		ExpectedResult: fmt.Sprintf(`
 				{
 					"repository": {
-						"changelist": {
+						"chbngelist": {
 							"cid": "123",
-							"canonicalURL": "/github.com/gorilla/mux/-/changelist/123",
+							"cbnonicblURL": "/github.com/gorillb/mux/-/chbngelist/123",
 "commit": {
 	"oid": "%s"
 }
 						}
 					}
 				}
-			`, exampleCommitSHA1),
+			`, exbmpleCommitSHA1),
 	})
 }
 
-func TestRepositoryHydration(t *testing.T) {
-	t.Parallel()
+func TestRepositoryHydrbtion(t *testing.T) {
+	t.Pbrbllel()
 
-	makeRepos := func() (*types.Repo, *types.Repo) {
+	mbkeRepos := func() (*types.Repo, *types.Repo) {
 		const id = 42
-		name := fmt.Sprintf("repo-%d", id)
+		nbme := fmt.Sprintf("repo-%d", id)
 
-		minimal := types.Repo{
-			ID:   api.RepoID(id),
-			Name: api.RepoName(name),
+		minimbl := types.Repo{
+			ID:   bpi.RepoID(id),
+			Nbme: bpi.RepoNbme(nbme),
 		}
 
-		hydrated := minimal
-		hydrated.ExternalRepo = api.ExternalRepoSpec{
-			ID:          name,
+		hydrbted := minimbl
+		hydrbted.ExternblRepo = bpi.ExternblRepoSpec{
+			ID:          nbme,
 			ServiceType: extsvc.TypeGitHub,
 			ServiceID:   "https://github.com",
 		}
-		hydrated.URI = fmt.Sprintf("github.com/foobar/%s", name)
-		hydrated.Description = "This is a description of a repository"
-		hydrated.Fork = false
+		hydrbted.URI = fmt.Sprintf("github.com/foobbr/%s", nbme)
+		hydrbted.Description = "This is b description of b repository"
+		hydrbted.Fork = fblse
 
-		return &minimal, &hydrated
+		return &minimbl, &hydrbted
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	t.Run("hydrated without errors", func(t *testing.T) {
-		minimalRepo, hydratedRepo := makeRepos()
+	t.Run("hydrbted without errors", func(t *testing.T) {
+		minimblRepo, hydrbtedRepo := mbkeRepos()
 
 		rs := dbmocks.NewMockRepoStore()
-		rs.GetFunc.SetDefaultReturn(hydratedRepo, nil)
+		rs.GetFunc.SetDefbultReturn(hydrbtedRepo, nil)
 		db := dbmocks.NewMockDB()
-		db.ReposFunc.SetDefaultReturn(rs)
+		db.ReposFunc.SetDefbultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
-		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
-		mockrequire.CalledOnce(t, rs.GetFunc)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimblRepo)
+		bssertRepoResolverHydrbted(ctx, t, repoResolver, hydrbtedRepo)
+		mockrequire.CblledOnce(t, rs.GetFunc)
 	})
 
-	t.Run("hydration results in errors", func(t *testing.T) {
-		minimalRepo, _ := makeRepos()
+	t.Run("hydrbtion results in errors", func(t *testing.T) {
+		minimblRepo, _ := mbkeRepos()
 
-		dbErr := errors.New("cannot load repo")
+		dbErr := errors.New("cbnnot lobd repo")
 
 		rs := dbmocks.NewMockRepoStore()
-		rs.GetFunc.SetDefaultReturn(nil, dbErr)
+		rs.GetFunc.SetDefbultReturn(nil, dbErr)
 		db := dbmocks.NewMockDB()
-		db.ReposFunc.SetDefaultReturn(rs)
+		db.ReposFunc.SetDefbultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimalRepo)
+		repoResolver := NewRepositoryResolver(db, gitserver.NewClient(), minimblRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
-		// Another call to make sure err does not disappear
+		// Another cbll to mbke sure err does not disbppebr
 		_, err = repoResolver.URI(ctx)
 		require.ErrorIs(t, err, dbErr)
 
-		mockrequire.CalledOnce(t, rs.GetFunc)
+		mockrequire.CblledOnce(t, rs.GetFunc)
 	})
 }
 
-func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *RepositoryResolver, hydrated *types.Repo) {
+func bssertRepoResolverHydrbted(ctx context.Context, t *testing.T, r *RepositoryResolver, hydrbted *types.Repo) {
 	t.Helper()
 
 	description, err := r.Description(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if description != hydrated.Description {
-		t.Fatalf("wrong Description. want=%q, have=%q", hydrated.Description, description)
+	if description != hydrbted.Description {
+		t.Fbtblf("wrong Description. wbnt=%q, hbve=%q", hydrbted.Description, description)
 	}
 
 	uri, err := r.URI(ctx)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if uri != hydrated.URI {
-		t.Fatalf("wrong URI. want=%q, have=%q", hydrated.URI, uri)
+	if uri != hydrbted.URI {
+		t.Fbtblf("wrong URI. wbnt=%q, hbve=%q", hydrbted.URI, uri)
 	}
 }
 
-func TestRepositoryLabel(t *testing.T) {
-	test := func(name string) string {
+func TestRepositoryLbbel(t *testing.T) {
+	test := func(nbme string) string {
 		r := &RepositoryResolver{
 			logger: logtest.Scoped(t),
-			RepoMatch: result.RepoMatch{
-				Name: api.RepoName(name),
-				ID:   api.RepoID(0),
+			RepoMbtch: result.RepoMbtch{
+				Nbme: bpi.RepoNbme(nbme),
+				ID:   bpi.RepoID(0),
 			},
 		}
-		markdown, _ := r.Label()
-		html, err := markdown.HTML()
+		mbrkdown, _ := r.Lbbel()
+		html, err := mbrkdown.HTML()
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		return html
 	}
 
-	autogold.Expect(`<p><a href="/repo%20with%20spaces" rel="nofollow">repo with spaces</a></p>
-`).Equal(t, test("repo with spaces"))
+	butogold.Expect(`<p><b href="/repo%20with%20spbces" rel="nofollow">repo with spbces</b></p>
+`).Equbl(t, test("repo with spbces"))
 }
 
-func TestRepository_DefaultBranch(t *testing.T) {
-	ctx := context.Background()
+func TestRepository_DefbultBrbnch(t *testing.T) {
+	ctx := context.Bbckground()
 	ts := []struct {
-		name                    string
-		getDefaultBranchRefName string
-		getDefaultBranchErr     error
-		wantBranch              *GitRefResolver
-		wantErr                 error
+		nbme                    string
+		getDefbultBrbnchRefNbme string
+		getDefbultBrbnchErr     error
+		wbntBrbnch              *GitRefResolver
+		wbntErr                 error
 	}{
 		{
-			name:                    "ref exists",
-			getDefaultBranchRefName: "refs/heads/main",
-			wantBranch:              &GitRefResolver{name: "refs/heads/main"},
+			nbme:                    "ref exists",
+			getDefbultBrbnchRefNbme: "refs/hebds/mbin",
+			wbntBrbnch:              &GitRefResolver{nbme: "refs/hebds/mbin"},
 		},
 		{
-			// When clone is in progress GetDefaultBranch returns "", nil
-			name: "clone in progress",
-			// Expect it to not fail and not return a resolver.
-			wantBranch: nil,
-			wantErr:    nil,
+			// When clone is in progress GetDefbultBrbnch returns "", nil
+			nbme: "clone in progress",
+			// Expect it to not fbil bnd not return b resolver.
+			wbntBrbnch: nil,
+			wbntErr:    nil,
 		},
 		{
-			name:                "symbolic ref fails",
-			getDefaultBranchErr: errors.New("bad git error"),
-			wantErr:             errors.New("bad git error"),
+			nbme:                "symbolic ref fbils",
+			getDefbultBrbnchErr: errors.New("bbd git error"),
+			wbntErr:             errors.New("bbd git error"),
 		},
 	}
-	for _, tt := range ts {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, tt := rbnge ts {
+		t.Run(tt.nbme, func(t *testing.T) {
 			gsClient := gitserver.NewMockClient()
-			gsClient.GetDefaultBranchFunc.SetDefaultReturn(tt.getDefaultBranchRefName, "", tt.getDefaultBranchErr)
+			gsClient.GetDefbultBrbnchFunc.SetDefbultReturn(tt.getDefbultBrbnchRefNbme, "", tt.getDefbultBrbnchErr)
 
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
-			branch, err := res.DefaultBranch(ctx)
-			if tt.wantErr != nil && err != nil {
-				if tt.wantErr.Error() != err.Error() {
-					t.Fatalf("incorrect error message, want=%q have=%q", tt.wantErr.Error(), err.Error())
+			res := &RepositoryResolver{RepoMbtch: result.RepoMbtch{Nbme: "repo"}, logger: logtest.Scoped(t), gitserverClient: gsClient}
+			brbnch, err := res.DefbultBrbnch(ctx)
+			if tt.wbntErr != nil && err != nil {
+				if tt.wbntErr.Error() != err.Error() {
+					t.Fbtblf("incorrect error messbge, wbnt=%q hbve=%q", tt.wbntErr.Error(), err.Error())
 				}
-			} else if tt.wantErr != err {
-				t.Fatalf("incorrect error, want=%v have=%v", tt.wantErr, err)
+			} else if tt.wbntErr != err {
+				t.Fbtblf("incorrect error, wbnt=%v hbve=%v", tt.wbntErr, err)
 			}
-			if branch == nil && tt.wantBranch != nil {
-				t.Fatal("invalid nil resolver returned")
+			if brbnch == nil && tt.wbntBrbnch != nil {
+				t.Fbtbl("invblid nil resolver returned")
 			}
-			if branch != nil && tt.wantBranch == nil {
-				t.Fatalf("expected nil resolver but got %q", branch.name)
+			if brbnch != nil && tt.wbntBrbnch == nil {
+				t.Fbtblf("expected nil resolver but got %q", brbnch.nbme)
 			}
-			if tt.wantBranch != nil && branch.name != tt.wantBranch.name {
-				t.Fatalf("wrong resolver returned, want=%q have=%q", branch.name, tt.wantBranch.name)
+			if tt.wbntBrbnch != nil && brbnch.nbme != tt.wbntBrbnch.nbme {
+				t.Fbtblf("wrong resolver returned, wbnt=%q hbve=%q", brbnch.nbme, tt.wbntBrbnch.nbme)
 			}
 		})
 	}

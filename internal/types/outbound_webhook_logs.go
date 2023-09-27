@@ -1,9 +1,9 @@
-package types
+pbckbge types
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
 type OutboundWebhookLog struct {
@@ -11,10 +11,10 @@ type OutboundWebhookLog struct {
 	JobID             int64
 	OutboundWebhookID int64
 	SentAt            time.Time
-	StatusCode        int
-	Request           *EncryptableWebhookLogMessage
-	Response          *EncryptableWebhookLogMessage
-	Error             *encryption.Encryptable
+	StbtusCode        int
+	Request           *EncryptbbleWebhookLogMessbge
+	Response          *EncryptbbleWebhookLogMessbge
+	Error             *encryption.Encryptbble
 }
 
-const OutboundWebhookLogUnsentStatusCode int = 0
+const OutboundWebhookLogUnsentStbtusCode int = 0

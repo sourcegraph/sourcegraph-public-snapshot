@@ -1,13 +1,13 @@
 // gitserver is the gitserver server.
-package main // import "github.com/sourcegraph/sourcegraph/cmd/gitserver"
+pbckbge mbin // import "github.com/sourcegrbph/sourcegrbph/cmd/gitserver"
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/shbred"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sourcegrbph/osscmd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
 )
 
-func main() {
-	sanitycheck.Pass()
-	osscmd.SingleServiceMainOSS(shared.Service)
+func mbin() {
+	sbnitycheck.Pbss()
+	osscmd.SingleServiceMbinOSS(shbred.Service)
 }

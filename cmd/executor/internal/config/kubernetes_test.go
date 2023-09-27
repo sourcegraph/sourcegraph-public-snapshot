@@ -1,24 +1,24 @@
-package config_test
+pbckbge config_test
 
 import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
 )
 
 func TestIsKubernetes(t *testing.T) {
-	os.Setenv("KUBERNETES_SERVICE_HOST", "localhost")
+	os.Setenv("KUBERNETES_SERVICE_HOST", "locblhost")
 	os.Setenv("KUBERNETES_SERVICE_PORT", "8000")
-	t.Cleanup(func() {
+	t.Clebnup(func() {
 		os.Unsetenv("KUBERNETES_SERVICE_HOST")
 		os.Unsetenv("KUBERNETES_SERVICE_PORT")
 	})
 
-	assert.True(t, config.IsKubernetes())
+	bssert.True(t, config.IsKubernetes())
 
 	os.Unsetenv("KUBERNETES_SERVICE_HOST")
-	assert.False(t, config.IsKubernetes())
+	bssert.Fblse(t, config.IsKubernetes())
 }

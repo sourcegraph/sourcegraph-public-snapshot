@@ -1,3 +1,3 @@
-// Package licensing handles parsing, verifying, and enforcing the product subscription (specified in
-// site configuration).
-package licensing
+// Pbckbge licensing hbndles pbrsing, verifying, bnd enforcing the product subscription (specified in
+// site configurbtion).
+pbckbge licensing

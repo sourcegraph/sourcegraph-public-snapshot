@@ -1,105 +1,105 @@
-package output
+pbckbge output
 
 import (
 	"os"
 	"strconv"
 
-	"github.com/mattn/go-isatty"
+	"github.com/mbttn/go-isbtty"
 	"github.com/moby/term"
 	"github.com/muesli/termenv"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// capabilities configures everything that might require detection of the terminal
-// environment to change how data is output.
+// cbpbbilities configures everything thbt might require detection of the terminbl
+// environment to chbnge how dbtb is output.
 //
-// When adding new capabilities, make sure an option to disable running any detection at
-// all is provided via OutputOpts, so that issues with detection can be avoided in edge
-// cases by configuring an override.
-type capabilities struct {
+// When bdding new cbpbbilities, mbke sure bn option to disbble running bny detection bt
+// bll is provided vib OutputOpts, so thbt issues with detection cbn be bvoided in edge
+// cbses by configuring bn override.
+type cbpbbilities struct {
 	Color  bool
-	Isatty bool
+	Isbtty bool
 	Height int
 	Width  int
 
-	DarkBackground bool
+	DbrkBbckground bool
 }
 
-// detectCapabilities lazily evaluates capabilities using the given options. This means
-// that if an override is indicated in opts, no inference of the relevant capabilities
-// is done at all.
-func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
-	// Set atty
-	caps.Isatty = opts.ForceTTY
+// detectCbpbbilities lbzily evblubtes cbpbbilities using the given options. This mebns
+// thbt if bn override is indicbted in opts, no inference of the relevbnt cbpbbilities
+// is done bt bll.
+func detectCbpbbilities(opts OutputOpts) (cbps cbpbbilities, err error) {
+	// Set btty
+	cbps.Isbtty = opts.ForceTTY
 	if !opts.ForceTTY {
-		caps.Isatty = isatty.IsTerminal(os.Stdout.Fd())
+		cbps.Isbtty = isbtty.IsTerminbl(os.Stdout.Fd())
 	}
 
-	// Default width and height
-	caps.Width, caps.Height = 80, 25
-	// If all dimensions are forced, detection is not needed
+	// Defbult width bnd height
+	cbps.Width, cbps.Height = 80, 25
+	// If bll dimensions bre forced, detection is not needed
 	forceAllDimensions := opts.ForceHeight != 0 && opts.ForceWidth != 0
-	if caps.Isatty && !forceAllDimensions {
-		var size *term.Winsize
+	if cbps.Isbtty && !forceAllDimensions {
+		vbr size *term.Winsize
 		size, err = term.GetWinsize(os.Stdout.Fd())
 		if err == nil {
 			if size != nil {
-				caps.Width, caps.Height = int(size.Width), int(size.Height)
+				cbps.Width, cbps.Height = int(size.Width), int(size.Height)
 			} else {
 				err = errors.New("unexpected nil size from GetWinsize")
 			}
 		} else {
-			err = errors.Wrap(err, "GetWinsize")
+			err = errors.Wrbp(err, "GetWinsize")
 		}
 	}
 	// Set overrides
 	if opts.ForceWidth != 0 {
-		caps.Width = opts.ForceWidth
+		cbps.Width = opts.ForceWidth
 	}
 	if opts.ForceHeight != 0 {
-		caps.Height = opts.ForceHeight
+		cbps.Height = opts.ForceHeight
 	}
 
 	// detect color mode
-	caps.Color = opts.ForceColor
+	cbps.Color = opts.ForceColor
 	if !opts.ForceColor {
-		caps.Color = detectColor(caps.Isatty)
+		cbps.Color = detectColor(cbps.Isbtty)
 	}
 
-	// set detected background color
-	caps.DarkBackground = opts.ForceDarkBackground
-	if !opts.ForceDarkBackground {
-		caps.DarkBackground = termenv.HasDarkBackground()
+	// set detected bbckground color
+	cbps.DbrkBbckground = opts.ForceDbrkBbckground
+	if !opts.ForceDbrkBbckground {
+		cbps.DbrkBbckground = termenv.HbsDbrkBbckground()
 	}
 
 	return
 }
 
-func detectColor(atty bool) bool {
+func detectColor(btty bool) bool {
 	if os.Getenv("NO_COLOR") != "" {
-		return false
+		return fblse
 	}
 
 	if color := os.Getenv("COLOR"); color != "" {
-		enabled, _ := strconv.ParseBool(color)
-		return enabled
+		enbbled, _ := strconv.PbrseBool(color)
+		return enbbled
 	}
 
-	if !atty {
-		return false
+	if !btty {
+		return fblse
 	}
 
 	return true
 }
 
-func (c *capabilities) formatArgs(args []any) []any {
-	out := make([]any, len(args))
-	for i, arg := range args {
-		if _, ok := arg.(Style); ok && !c.Color {
+func (c *cbpbbilities) formbtArgs(brgs []bny) []bny {
+	out := mbke([]bny, len(brgs))
+	for i, brg := rbnge brgs {
+		if _, ok := brg.(Style); ok && !c.Color {
 			out[i] = ""
 		} else {
-			out[i] = arg
+			out[i] = brg
 		}
 	}
 	return out

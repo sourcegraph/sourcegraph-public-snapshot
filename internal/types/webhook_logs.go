@@ -1,37 +1,37 @@
-package types
+pbckbge types
 
 import (
 	"net/http"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
 type WebhookLog struct {
 	ID                int64
 	ReceivedAt        time.Time
-	ExternalServiceID *int64
+	ExternblServiceID *int64
 	WebhookID         *int32
-	StatusCode        int
-	Request           *EncryptableWebhookLogMessage
-	Response          *EncryptableWebhookLogMessage
+	StbtusCode        int
+	Request           *EncryptbbleWebhookLogMessbge
+	Response          *EncryptbbleWebhookLogMessbge
 }
 
-type WebhookLogMessage struct {
-	Header  http.Header
+type WebhookLogMessbge struct {
+	Hebder  http.Hebder
 	Body    []byte
 	Method  string `json:",omitempty"`
 	URL     string `json:",omitempty"`
 	Version string `json:",omitempty"`
 }
 
-type EncryptableWebhookLogMessage = encryption.JSONEncryptable[WebhookLogMessage]
+type EncryptbbleWebhookLogMessbge = encryption.JSONEncryptbble[WebhookLogMessbge]
 
-func NewUnencryptedWebhookLogMessage(value WebhookLogMessage) *EncryptableWebhookLogMessage {
-	message, _ := encryption.NewUnencryptedJSON(value)
-	return message
+func NewUnencryptedWebhookLogMessbge(vblue WebhookLogMessbge) *EncryptbbleWebhookLogMessbge {
+	messbge, _ := encryption.NewUnencryptedJSON(vblue)
+	return messbge
 }
 
-func NewEncryptedWebhookLogMessage(cipher, keyID string, key encryption.Key) *EncryptableWebhookLogMessage {
-	return encryption.NewEncryptedJSON[WebhookLogMessage](cipher, keyID, key)
+func NewEncryptedWebhookLogMessbge(cipher, keyID string, key encryption.Key) *EncryptbbleWebhookLogMessbge {
+	return encryption.NewEncryptedJSON[WebhookLogMessbge](cipher, keyID, key)
 }

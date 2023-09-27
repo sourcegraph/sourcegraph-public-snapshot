@@ -1,222 +1,222 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 )
 
-type RootResolver interface {
+type RootResolver interfbce {
 	AutoindexingServiceResolver
-	CodeNavServiceResolver
+	CodeNbvServiceResolver
 	PoliciesServiceResolver
 	SentinelServiceResolver
-	UploadsServiceResolver
-	RankingServiceResolver
+	UplobdsServiceResolver
+	RbnkingServiceResolver
 }
 
 type Resolver struct {
-	autoIndexingRootResolver AutoindexingServiceResolver
-	codenavResolver          CodeNavServiceResolver
+	butoIndexingRootResolver AutoindexingServiceResolver
+	codenbvResolver          CodeNbvServiceResolver
 	policiesRootResolver     PoliciesServiceResolver
-	uploadsRootResolver      UploadsServiceResolver
+	uplobdsRootResolver      UplobdsServiceResolver
 	sentinelRootResolver     SentinelServiceResolver
-	rankingServiceResolver   RankingServiceResolver
+	rbnkingServiceResolver   RbnkingServiceResolver
 }
 
 func NewCodeIntelResolver(
-	autoIndexingRootResolver AutoindexingServiceResolver,
-	codenavResolver CodeNavServiceResolver,
+	butoIndexingRootResolver AutoindexingServiceResolver,
+	codenbvResolver CodeNbvServiceResolver,
 	policiesRootResolver PoliciesServiceResolver,
-	uploadsRootResolver UploadsServiceResolver,
+	uplobdsRootResolver UplobdsServiceResolver,
 	sentinelRootResolver SentinelServiceResolver,
-	rankingServiceResolver RankingServiceResolver,
+	rbnkingServiceResolver RbnkingServiceResolver,
 ) *Resolver {
 	return &Resolver{
-		autoIndexingRootResolver: autoIndexingRootResolver,
-		codenavResolver:          codenavResolver,
+		butoIndexingRootResolver: butoIndexingRootResolver,
+		codenbvResolver:          codenbvResolver,
 		policiesRootResolver:     policiesRootResolver,
-		uploadsRootResolver:      uploadsRootResolver,
+		uplobdsRootResolver:      uplobdsRootResolver,
 		sentinelRootResolver:     sentinelRootResolver,
-		rankingServiceResolver:   rankingServiceResolver,
+		rbnkingServiceResolver:   rbnkingServiceResolver,
 	}
 }
 
 type (
-	Node         interface{ ID() graphql.ID }
-	NodeByIDFunc = func(ctx context.Context, id graphql.ID) (Node, error)
+	Node         interfbce{ ID() grbphql.ID }
+	NodeByIDFunc = func(ctx context.Context, id grbphql.ID) (Node, error)
 )
 
-func (r *Resolver) NodeResolvers() map[string]NodeByIDFunc {
-	return map[string]NodeByIDFunc{
-		"LSIFUpload": func(ctx context.Context, id graphql.ID) (Node, error) {
-			uploadID, err := unmarshalLegacyUploadID(id)
+func (r *Resolver) NodeResolvers() mbp[string]NodeByIDFunc {
+	return mbp[string]NodeByIDFunc{
+		"LSIFUplobd": func(ctx context.Context, id grbphql.ID) (Node, error) {
+			uplobdID, err := unmbrshblLegbcyUplobdID(id)
 			if err != nil {
 				return nil, err
 			}
 
-			return r.uploadsRootResolver.PreciseIndexByID(ctx, MarshalID("PreciseIndex", fmt.Sprintf("U:%d", uploadID)))
+			return r.uplobdsRootResolver.PreciseIndexByID(ctx, MbrshblID("PreciseIndex", fmt.Sprintf("U:%d", uplobdID)))
 		},
-		"CodeIntelligenceConfigurationPolicy": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
+		"CodeIntelligenceConfigurbtionPolicy": func(ctx context.Context, id grbphql.ID) (Node, error) {
+			return r.policiesRootResolver.ConfigurbtionPolicyByID(ctx, id)
 		},
-		"PreciseIndex": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
+		"PreciseIndex": func(ctx context.Context, id grbphql.ID) (Node, error) {
+			return r.uplobdsRootResolver.PreciseIndexByID(ctx, id)
 		},
-		"Vulnerability": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
+		"Vulnerbbility": func(ctx context.Context, id grbphql.ID) (Node, error) {
+			return r.sentinelRootResolver.VulnerbbilityByID(ctx, id)
 		},
-		"VulnerabilityMatch": func(ctx context.Context, id graphql.ID) (Node, error) {
-			return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
+		"VulnerbbilityMbtch": func(ctx context.Context, id grbphql.ID) (Node, error) {
+			return r.sentinelRootResolver.VulnerbbilityMbtchByID(ctx, id)
 		},
 	}
 }
 
-func unmarshalLegacyUploadID(id graphql.ID) (int64, error) {
-	// New: supplied as int
-	if uploadID, err := UnmarshalID[int64](id); err == nil {
-		return uploadID, nil
+func unmbrshblLegbcyUplobdID(id grbphql.ID) (int64, error) {
+	// New: supplied bs int
+	if uplobdID, err := UnmbrshblID[int64](id); err == nil {
+		return uplobdID, nil
 	}
 
-	// Old: supplied as quoted string
-	rawID, err := UnmarshalID[string](id)
+	// Old: supplied bs quoted string
+	rbwID, err := UnmbrshblID[string](id)
 	if err != nil {
 		return 0, err
 	}
 
-	return strconv.ParseInt(rawID, 10, 64)
+	return strconv.PbrseInt(rbwID, 10, 64)
 }
 
-func (r *Resolver) Vulnerabilities(ctx context.Context, args GetVulnerabilitiesArgs) (_ VulnerabilityConnectionResolver, err error) {
-	return r.sentinelRootResolver.Vulnerabilities(ctx, args)
+func (r *Resolver) Vulnerbbilities(ctx context.Context, brgs GetVulnerbbilitiesArgs) (_ VulnerbbilityConnectionResolver, err error) {
+	return r.sentinelRootResolver.Vulnerbbilities(ctx, brgs)
 }
 
-func (r *Resolver) VulnerabilityMatches(ctx context.Context, args GetVulnerabilityMatchesArgs) (_ VulnerabilityMatchConnectionResolver, err error) {
-	return r.sentinelRootResolver.VulnerabilityMatches(ctx, args)
+func (r *Resolver) VulnerbbilityMbtches(ctx context.Context, brgs GetVulnerbbilityMbtchesArgs) (_ VulnerbbilityMbtchConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerbbilityMbtches(ctx, brgs)
 }
 
-func (r *Resolver) VulnerabilityByID(ctx context.Context, id graphql.ID) (_ VulnerabilityResolver, err error) {
-	return r.sentinelRootResolver.VulnerabilityByID(ctx, id)
+func (r *Resolver) VulnerbbilityByID(ctx context.Context, id grbphql.ID) (_ VulnerbbilityResolver, err error) {
+	return r.sentinelRootResolver.VulnerbbilityByID(ctx, id)
 }
 
-func (r *Resolver) VulnerabilityMatchByID(ctx context.Context, id graphql.ID) (_ VulnerabilityMatchResolver, err error) {
-	return r.sentinelRootResolver.VulnerabilityMatchByID(ctx, id)
+func (r *Resolver) VulnerbbilityMbtchByID(ctx context.Context, id grbphql.ID) (_ VulnerbbilityMbtchResolver, err error) {
+	return r.sentinelRootResolver.VulnerbbilityMbtchByID(ctx, id)
 }
 
-func (r *Resolver) VulnerabilityMatchesSummaryCounts(ctx context.Context) (_ VulnerabilityMatchesSummaryCountResolver, err error) {
-	return r.sentinelRootResolver.VulnerabilityMatchesSummaryCounts(ctx)
+func (r *Resolver) VulnerbbilityMbtchesSummbryCounts(ctx context.Context) (_ VulnerbbilityMbtchesSummbryCountResolver, err error) {
+	return r.sentinelRootResolver.VulnerbbilityMbtchesSummbryCounts(ctx)
 }
 
-func (r *Resolver) VulnerabilityMatchesCountByRepository(ctx context.Context, args GetVulnerabilityMatchCountByRepositoryArgs) (_ VulnerabilityMatchCountByRepositoryConnectionResolver, err error) {
-	return r.sentinelRootResolver.VulnerabilityMatchesCountByRepository(ctx, args)
+func (r *Resolver) VulnerbbilityMbtchesCountByRepository(ctx context.Context, brgs GetVulnerbbilityMbtchCountByRepositoryArgs) (_ VulnerbbilityMbtchCountByRepositoryConnectionResolver, err error) {
+	return r.sentinelRootResolver.VulnerbbilityMbtchesCountByRepository(ctx, brgs)
 }
 
 func (r *Resolver) IndexerKeys(ctx context.Context, opts *IndexerKeyQueryArgs) (_ []string, err error) {
-	return r.uploadsRootResolver.IndexerKeys(ctx, opts)
+	return r.uplobdsRootResolver.IndexerKeys(ctx, opts)
 }
 
-func (r *Resolver) PreciseIndexes(ctx context.Context, args *PreciseIndexesQueryArgs) (_ PreciseIndexConnectionResolver, err error) {
-	return r.uploadsRootResolver.PreciseIndexes(ctx, args)
+func (r *Resolver) PreciseIndexes(ctx context.Context, brgs *PreciseIndexesQueryArgs) (_ PreciseIndexConnectionResolver, err error) {
+	return r.uplobdsRootResolver.PreciseIndexes(ctx, brgs)
 }
 
-func (r *Resolver) PreciseIndexByID(ctx context.Context, id graphql.ID) (_ PreciseIndexResolver, err error) {
-	return r.uploadsRootResolver.PreciseIndexByID(ctx, id)
+func (r *Resolver) PreciseIndexByID(ctx context.Context, id grbphql.ID) (_ PreciseIndexResolver, err error) {
+	return r.uplobdsRootResolver.PreciseIndexByID(ctx, id)
 }
 
-func (r *Resolver) DeletePreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	return r.uploadsRootResolver.DeletePreciseIndex(ctx, args)
+func (r *Resolver) DeletePreciseIndex(ctx context.Context, brgs *struct{ ID grbphql.ID }) (*EmptyResponse, error) {
+	return r.uplobdsRootResolver.DeletePreciseIndex(ctx, brgs)
 }
 
-func (r *Resolver) DeletePreciseIndexes(ctx context.Context, args *DeletePreciseIndexesArgs) (*EmptyResponse, error) {
-	return r.uploadsRootResolver.DeletePreciseIndexes(ctx, args)
+func (r *Resolver) DeletePreciseIndexes(ctx context.Context, brgs *DeletePreciseIndexesArgs) (*EmptyResponse, error) {
+	return r.uplobdsRootResolver.DeletePreciseIndexes(ctx, brgs)
 }
 
-func (r *Resolver) ReindexPreciseIndex(ctx context.Context, args *struct{ ID graphql.ID }) (*EmptyResponse, error) {
-	return r.uploadsRootResolver.ReindexPreciseIndex(ctx, args)
+func (r *Resolver) ReindexPreciseIndex(ctx context.Context, brgs *struct{ ID grbphql.ID }) (*EmptyResponse, error) {
+	return r.uplobdsRootResolver.ReindexPreciseIndex(ctx, brgs)
 }
 
-func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, args *ReindexPreciseIndexesArgs) (*EmptyResponse, error) {
-	return r.uploadsRootResolver.ReindexPreciseIndexes(ctx, args)
+func (r *Resolver) ReindexPreciseIndexes(ctx context.Context, brgs *ReindexPreciseIndexesArgs) (*EmptyResponse, error) {
+	return r.uplobdsRootResolver.ReindexPreciseIndexes(ctx, brgs)
 }
 
-func (r *Resolver) CommitGraph(ctx context.Context, id graphql.ID) (_ CodeIntelligenceCommitGraphResolver, err error) {
-	return r.uploadsRootResolver.CommitGraph(ctx, id)
+func (r *Resolver) CommitGrbph(ctx context.Context, id grbphql.ID) (_ CodeIntelligenceCommitGrbphResolver, err error) {
+	return r.uplobdsRootResolver.CommitGrbph(ctx, id)
 }
 
-func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, args *QueueAutoIndexJobsForRepoArgs) (_ []PreciseIndexResolver, err error) {
-	return r.autoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, args)
+func (r *Resolver) QueueAutoIndexJobsForRepo(ctx context.Context, brgs *QueueAutoIndexJobsForRepoArgs) (_ []PreciseIndexResolver, err error) {
+	return r.butoIndexingRootResolver.QueueAutoIndexJobsForRepo(ctx, brgs)
 }
 
-func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, args *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
-	return r.autoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, args)
+func (r *Resolver) InferAutoIndexJobsForRepo(ctx context.Context, brgs *InferAutoIndexJobsForRepoArgs) (_ InferAutoIndexJobsResultResolver, err error) {
+	return r.butoIndexingRootResolver.InferAutoIndexJobsForRepo(ctx, brgs)
 }
 
-func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *GitBlobLSIFDataArgs) (_ GitBlobLSIFDataResolver, err error) {
-	return r.codenavResolver.GitBlobLSIFData(ctx, args)
+func (r *Resolver) GitBlobLSIFDbtb(ctx context.Context, brgs *GitBlobLSIFDbtbArgs) (_ GitBlobLSIFDbtbResolver, err error) {
+	return r.codenbvResolver.GitBlobLSIFDbtb(ctx, brgs)
 }
 
-func (r *Resolver) ConfigurationPolicyByID(ctx context.Context, id graphql.ID) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
-	return r.policiesRootResolver.ConfigurationPolicyByID(ctx, id)
+func (r *Resolver) ConfigurbtionPolicyByID(ctx context.Context, id grbphql.ID) (_ CodeIntelligenceConfigurbtionPolicyResolver, err error) {
+	return r.policiesRootResolver.ConfigurbtionPolicyByID(ctx, id)
 }
 
-func (r *Resolver) CodeIntelligenceConfigurationPolicies(ctx context.Context, args *CodeIntelligenceConfigurationPoliciesArgs) (_ CodeIntelligenceConfigurationPolicyConnectionResolver, err error) {
-	return r.policiesRootResolver.CodeIntelligenceConfigurationPolicies(ctx, args)
+func (r *Resolver) CodeIntelligenceConfigurbtionPolicies(ctx context.Context, brgs *CodeIntelligenceConfigurbtionPoliciesArgs) (_ CodeIntelligenceConfigurbtionPolicyConnectionResolver, err error) {
+	return r.policiesRootResolver.CodeIntelligenceConfigurbtionPolicies(ctx, brgs)
 }
 
-func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *CreateCodeIntelligenceConfigurationPolicyArgs) (_ CodeIntelligenceConfigurationPolicyResolver, err error) {
-	return r.policiesRootResolver.CreateCodeIntelligenceConfigurationPolicy(ctx, args)
+func (r *Resolver) CrebteCodeIntelligenceConfigurbtionPolicy(ctx context.Context, brgs *CrebteCodeIntelligenceConfigurbtionPolicyArgs) (_ CodeIntelligenceConfigurbtionPolicyResolver, err error) {
+	return r.policiesRootResolver.CrebteCodeIntelligenceConfigurbtionPolicy(ctx, brgs)
 }
 
-func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context, args *UpdateCodeIntelligenceConfigurationPolicyArgs) (_ *EmptyResponse, err error) {
-	return r.policiesRootResolver.UpdateCodeIntelligenceConfigurationPolicy(ctx, args)
+func (r *Resolver) UpdbteCodeIntelligenceConfigurbtionPolicy(ctx context.Context, brgs *UpdbteCodeIntelligenceConfigurbtionPolicyArgs) (_ *EmptyResponse, err error) {
+	return r.policiesRootResolver.UpdbteCodeIntelligenceConfigurbtionPolicy(ctx, brgs)
 }
 
-func (r *Resolver) DeleteCodeIntelligenceConfigurationPolicy(ctx context.Context, args *DeleteCodeIntelligenceConfigurationPolicyArgs) (_ *EmptyResponse, err error) {
-	return r.policiesRootResolver.DeleteCodeIntelligenceConfigurationPolicy(ctx, args)
+func (r *Resolver) DeleteCodeIntelligenceConfigurbtionPolicy(ctx context.Context, brgs *DeleteCodeIntelligenceConfigurbtionPolicyArgs) (_ *EmptyResponse, err error) {
+	return r.policiesRootResolver.DeleteCodeIntelligenceConfigurbtionPolicy(ctx, brgs)
 }
 
-func (r *Resolver) CodeIntelSummary(ctx context.Context) (_ CodeIntelSummaryResolver, err error) {
-	return r.uploadsRootResolver.CodeIntelSummary(ctx)
+func (r *Resolver) CodeIntelSummbry(ctx context.Context) (_ CodeIntelSummbryResolver, err error) {
+	return r.uplobdsRootResolver.CodeIntelSummbry(ctx)
 }
 
-func (r *Resolver) RepositorySummary(ctx context.Context, id graphql.ID) (_ CodeIntelRepositorySummaryResolver, err error) {
-	return r.uploadsRootResolver.RepositorySummary(ctx, id)
+func (r *Resolver) RepositorySummbry(ctx context.Context, id grbphql.ID) (_ CodeIntelRepositorySummbryResolver, err error) {
+	return r.uplobdsRootResolver.RepositorySummbry(ctx, id)
 }
 
-func (r *Resolver) IndexConfiguration(ctx context.Context, id graphql.ID) (_ IndexConfigurationResolver, err error) {
-	return r.autoIndexingRootResolver.IndexConfiguration(ctx, id)
+func (r *Resolver) IndexConfigurbtion(ctx context.Context, id grbphql.ID) (_ IndexConfigurbtionResolver, err error) {
+	return r.butoIndexingRootResolver.IndexConfigurbtion(ctx, id)
 }
 
-func (r *Resolver) UpdateRepositoryIndexConfiguration(ctx context.Context, args *UpdateRepositoryIndexConfigurationArgs) (_ *EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.UpdateRepositoryIndexConfiguration(ctx, args)
+func (r *Resolver) UpdbteRepositoryIndexConfigurbtion(ctx context.Context, brgs *UpdbteRepositoryIndexConfigurbtionArgs) (_ *EmptyResponse, err error) {
+	return r.butoIndexingRootResolver.UpdbteRepositoryIndexConfigurbtion(ctx, brgs)
 }
 
-func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *PreviewRepositoryFilterArgs) (_ RepositoryFilterPreviewResolver, err error) {
-	return r.policiesRootResolver.PreviewRepositoryFilter(ctx, args)
+func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, brgs *PreviewRepositoryFilterArgs) (_ RepositoryFilterPreviewResolver, err error) {
+	return r.policiesRootResolver.PreviewRepositoryFilter(ctx, brgs)
 }
 
 func (r *Resolver) CodeIntelligenceInferenceScript(ctx context.Context) (_ string, err error) {
-	return r.autoIndexingRootResolver.CodeIntelligenceInferenceScript(ctx)
+	return r.butoIndexingRootResolver.CodeIntelligenceInferenceScript(ctx)
 }
 
-func (r *Resolver) UpdateCodeIntelligenceInferenceScript(ctx context.Context, args *UpdateCodeIntelligenceInferenceScriptArgs) (_ *EmptyResponse, err error) {
-	return r.autoIndexingRootResolver.UpdateCodeIntelligenceInferenceScript(ctx, args)
+func (r *Resolver) UpdbteCodeIntelligenceInferenceScript(ctx context.Context, brgs *UpdbteCodeIntelligenceInferenceScriptArgs) (_ *EmptyResponse, err error) {
+	return r.butoIndexingRootResolver.UpdbteCodeIntelligenceInferenceScript(ctx, brgs)
 }
 
-func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id graphql.ID, args *PreviewGitObjectFilterArgs) (_ GitObjectFilterPreviewResolver, err error) {
-	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, args)
+func (r *Resolver) PreviewGitObjectFilter(ctx context.Context, id grbphql.ID, brgs *PreviewGitObjectFilterArgs) (_ GitObjectFilterPreviewResolver, err error) {
+	return r.policiesRootResolver.PreviewGitObjectFilter(ctx, id, brgs)
 }
 
-func (r *Resolver) RankingSummary(ctx context.Context) (_ GlobalRankingSummaryResolver, err error) {
-	return r.rankingServiceResolver.RankingSummary(ctx)
+func (r *Resolver) RbnkingSummbry(ctx context.Context) (_ GlobblRbnkingSummbryResolver, err error) {
+	return r.rbnkingServiceResolver.RbnkingSummbry(ctx)
 }
 
-func (r *Resolver) BumpDerivativeGraphKey(ctx context.Context) (_ *EmptyResponse, err error) {
-	return r.rankingServiceResolver.BumpDerivativeGraphKey(ctx)
+func (r *Resolver) BumpDerivbtiveGrbphKey(ctx context.Context) (_ *EmptyResponse, err error) {
+	return r.rbnkingServiceResolver.BumpDerivbtiveGrbphKey(ctx)
 }
 
-func (r *Resolver) DeleteRankingProgress(ctx context.Context, args *DeleteRankingProgressArgs) (_ *EmptyResponse, err error) {
-	return r.rankingServiceResolver.DeleteRankingProgress(ctx, args)
+func (r *Resolver) DeleteRbnkingProgress(ctx context.Context, brgs *DeleteRbnkingProgressArgs) (_ *EmptyResponse, err error) {
+	return r.rbnkingServiceResolver.DeleteRbnkingProgress(ctx, brgs)
 }

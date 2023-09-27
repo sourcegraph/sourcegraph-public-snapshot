@@ -1,97 +1,97 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
 )
 
-type SearchJobsResolver interface {
-	// Mutations
-	CreateSearchJob(ctx context.Context, args *CreateSearchJobArgs) (SearchJobResolver, error)
-	CancelSearchJob(ctx context.Context, args *CancelSearchJobArgs) (*EmptyResponse, error)
-	DeleteSearchJob(ctx context.Context, args *DeleteSearchJobArgs) (*EmptyResponse, error)
+type SebrchJobsResolver interfbce {
+	// Mutbtions
+	CrebteSebrchJob(ctx context.Context, brgs *CrebteSebrchJobArgs) (SebrchJobResolver, error)
+	CbncelSebrchJob(ctx context.Context, brgs *CbncelSebrchJobArgs) (*EmptyResponse, error)
+	DeleteSebrchJob(ctx context.Context, brgs *DeleteSebrchJobArgs) (*EmptyResponse, error)
 
 	// Queries
-	SearchJobs(ctx context.Context, args *SearchJobsArgs) (*graphqlutil.ConnectionResolver[SearchJobResolver], error)
+	SebrchJobs(ctx context.Context, brgs *SebrchJobsArgs) (*grbphqlutil.ConnectionResolver[SebrchJobResolver], error)
 
-	NodeResolvers() map[string]NodeByIDFunc
+	NodeResolvers() mbp[string]NodeByIDFunc
 }
 
-type ValidateSearchJobQueryArgs struct {
+type VblidbteSebrchJobQueryArgs struct {
 	Query string
 }
 
-type ValidateSearchJobQueryResolver interface {
+type VblidbteSebrchJobQueryResolver interfbce {
 	Query() string
-	Valid() bool
+	Vblid() bool
 	Errors() *[]string
 }
 
-type CreateSearchJobArgs struct {
+type CrebteSebrchJobArgs struct {
 	Query string
 }
 
-type SearchJobResolver interface {
-	ID() graphql.ID
+type SebrchJobResolver interfbce {
+	ID() grbphql.ID
 	Query() string
-	State(ctx context.Context) string
-	Creator(ctx context.Context) (*UserResolver, error)
-	CreatedAt() gqlutil.DateTime
-	StartedAt(ctx context.Context) *gqlutil.DateTime
-	FinishedAt(ctx context.Context) *gqlutil.DateTime
+	Stbte(ctx context.Context) string
+	Crebtor(ctx context.Context) (*UserResolver, error)
+	CrebtedAt() gqlutil.DbteTime
+	StbrtedAt(ctx context.Context) *gqlutil.DbteTime
+	FinishedAt(ctx context.Context) *gqlutil.DbteTime
 	URL(ctx context.Context) (*string, error)
 	LogURL(ctx context.Context) (*string, error)
-	RepoStats(ctx context.Context) (SearchJobStatsResolver, error)
+	RepoStbts(ctx context.Context) (SebrchJobStbtsResolver, error)
 }
 
-type SearchJobStatsResolver interface {
-	Total() int32
+type SebrchJobStbtsResolver interfbce {
+	Totbl() int32
 	Completed() int32
-	Failed() int32
+	Fbiled() int32
 	InProgress() int32
 }
 
-type SearchJobRepositoriesArgs struct {
+type SebrchJobRepositoriesArgs struct {
 	First int32
 	After *string
 }
 
-type SearchJobRepoRevisionsArgs struct {
+type SebrchJobRepoRevisionsArgs struct {
 	First int32
 	After *string
 }
 
-type CancelSearchJobArgs struct {
-	ID graphql.ID
+type CbncelSebrchJobArgs struct {
+	ID grbphql.ID
 }
 
-type DeleteSearchJobArgs struct {
-	ID graphql.ID
+type DeleteSebrchJobArgs struct {
+	ID grbphql.ID
 }
 
-type RetrySearchJobArgs struct {
-	ID graphql.ID
+type RetrySebrchJobArgs struct {
+	ID grbphql.ID
 }
 
-type SearchJobArgs struct {
-	ID graphql.ID
+type SebrchJobArgs struct {
+	ID grbphql.ID
 }
 
-type SearchJobsArgs struct {
-	graphqlutil.ConnectionResolverArgs
+type SebrchJobsArgs struct {
+	grbphqlutil.ConnectionResolverArgs
 	Query      *string
-	States     *[]string
+	Stbtes     *[]string
 	OrderBy    string
 	Descending bool
-	UserIDs    *[]graphql.ID
+	UserIDs    *[]grbphql.ID
 }
 
-type SearchJobsConnectionResolver interface {
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
-	Nodes(ctx context.Context) ([]SearchJobResolver, error)
+type SebrchJobsConnectionResolver interfbce {
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
+	Nodes(ctx context.Context) ([]SebrchJobResolver, error)
 }

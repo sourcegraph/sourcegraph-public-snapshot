@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"bytes"
@@ -8,58 +8,58 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gorilla/mux"
+	"github.com/gorillb/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/assetsutil"
-	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
-	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bpp/bssetsutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/deploy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
 )
 
-var allowRobotsVar = env.Get("ROBOTS_TXT_ALLOW", "false", "allow search engines to index the site")
+vbr bllowRobotsVbr = env.Get("ROBOTS_TXT_ALLOW", "fblse", "bllow sebrch engines to index the site")
 
 func robotsTxt(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/plain")
-	allowRobots, _ := strconv.ParseBool(allowRobotsVar)
-	robotsTxtHelper(w, allowRobots)
+	w.Hebder().Set("Content-Type", "text/plbin")
+	bllowRobots, _ := strconv.PbrseBool(bllowRobotsVbr)
+	robotsTxtHelper(w, bllowRobots)
 }
 
-func robotsTxtHelper(w io.Writer, allowRobots bool) {
-	var buf bytes.Buffer
-	fmt.Fprintln(&buf, "User-agent: *")
-	if allowRobots {
+func robotsTxtHelper(w io.Writer, bllowRobots bool) {
+	vbr buf bytes.Buffer
+	fmt.Fprintln(&buf, "User-bgent: *")
+	if bllowRobots {
 		fmt.Fprintln(&buf, "Allow: /")
-		if envvar.SourcegraphDotComMode() {
-			fmt.Fprintln(&buf, "Sitemap: https://sourcegraph.com/sitemap.xml.gz")
+		if envvbr.SourcegrbphDotComMode() {
+			fmt.Fprintln(&buf, "Sitembp: https://sourcegrbph.com/sitembp.xml.gz")
 		}
 	} else {
-		fmt.Fprintln(&buf, "Disallow: /")
+		fmt.Fprintln(&buf, "Disbllow: /")
 	}
 	fmt.Fprintln(&buf)
 	_, _ = buf.WriteTo(w)
 }
 
-func sitemapXmlGz(w http.ResponseWriter, r *http.Request) {
-	if envvar.SourcegraphDotComMode() || deploy.Type() == deploy.Dev {
-		number := mux.Vars(r)["number"]
-		http.Redirect(w, r, fmt.Sprintf("https://storage.googleapis.com/sitemap-sourcegraph-com/sitemap%s.xml.gz", number), http.StatusFound)
+func sitembpXmlGz(w http.ResponseWriter, r *http.Request) {
+	if envvbr.SourcegrbphDotComMode() || deploy.Type() == deploy.Dev {
+		number := mux.Vbrs(r)["number"]
+		http.Redirect(w, r, fmt.Sprintf("https://storbge.googlebpis.com/sitembp-sourcegrbph-com/sitembp%s.xml.gz", number), http.StbtusFound)
 		return
 	}
-	w.WriteHeader(http.StatusNotFound)
+	w.WriteHebder(http.StbtusNotFound)
 }
 
-func favicon(w http.ResponseWriter, r *http.Request) {
-	url := assetsutil.URL("/img/sourcegraph-mark.svg")
+func fbvicon(w http.ResponseWriter, r *http.Request) {
+	url := bssetsutil.URL("/img/sourcegrbph-mbrk.svg")
 
-	// Add query parameter for cache busting.
+	// Add query pbrbmeter for cbche busting.
 	query := url.Query()
 	query.Set("v2", "")
-	url.RawQuery = query.Encode()
-	path := strings.Replace(url.String(), "v2=", "v2", 1)
+	url.RbwQuery = query.Encode()
+	pbth := strings.Replbce(url.String(), "v2=", "v2", 1)
 
-	if branding := globals.Branding(); branding.Favicon != "" {
-		path = branding.Favicon
+	if brbnding := globbls.Brbnding(); brbnding.Fbvicon != "" {
+		pbth = brbnding.Fbvicon
 	}
-	http.Redirect(w, r, path, http.StatusMovedPermanently)
+	http.Redirect(w, r, pbth, http.StbtusMovedPermbnently)
 }

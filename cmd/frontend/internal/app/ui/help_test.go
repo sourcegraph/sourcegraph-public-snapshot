@@ -1,4 +1,4 @@
-package ui
+pbckbge ui
 
 import (
 	"bytes"
@@ -6,16 +6,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
 func TestServeHelp(t *testing.T) {
-	t.Run("unreleased dev version", func(t *testing.T) {
+	t.Run("unrelebsed dev version", func(t *testing.T) {
 		{
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(orig) // reset
+			orig := envvbr.SourcegrbphDotComMode()
+			envvbr.MockSourcegrbphDotComMode(fblse)
+			defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 		}
 		{
 			orig := version.Version()
@@ -25,22 +25,22 @@ func TestServeHelp(t *testing.T) {
 
 		rw := httptest.NewRecorder()
 		rw.Body = new(bytes.Buffer)
-		req, _ := http.NewRequest("GET", "/help/foo/bar", nil)
+		req, _ := http.NewRequest("GET", "/help/foo/bbr", nil)
 		serveHelp(rw, req)
 
-		if want := http.StatusTemporaryRedirect; rw.Code != want {
-			t.Errorf("got %d, want %d", rw.Code, want)
+		if wbnt := http.StbtusTemporbryRedirect; rw.Code != wbnt {
+			t.Errorf("got %d, wbnt %d", rw.Code, wbnt)
 		}
-		if got, want := rw.Header().Get("Location"), "http://localhost:5080/foo/bar"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		if got, wbnt := rw.Hebder().Get("Locbtion"), "http://locblhost:5080/foo/bbr"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("released version", func(t *testing.T) {
+	t.Run("relebsed version", func(t *testing.T) {
 		{
-			orig := envvar.SourcegraphDotComMode()
-			envvar.MockSourcegraphDotComMode(false)
-			defer envvar.MockSourcegraphDotComMode(orig) // reset
+			orig := envvbr.SourcegrbphDotComMode()
+			envvbr.MockSourcegrbphDotComMode(fblse)
+			defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 		}
 		{
 			orig := version.Version()
@@ -52,28 +52,28 @@ func TestServeHelp(t *testing.T) {
 		req, _ := http.NewRequest("GET", "/help/dev", nil)
 		serveHelp(rw, req)
 
-		if want := http.StatusTemporaryRedirect; rw.Code != want {
-			t.Errorf("got %d, want %d", rw.Code, want)
+		if wbnt := http.StbtusTemporbryRedirect; rw.Code != wbnt {
+			t.Errorf("got %d, wbnt %d", rw.Code, wbnt)
 		}
-		if got, want := rw.Header().Get("Location"), "https://docs.sourcegraph.com/@3.39/dev"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		if got, wbnt := rw.Hebder().Get("Locbtion"), "https://docs.sourcegrbph.com/@3.39/dev"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 
-	t.Run("Sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig) // reset
+	t.Run("Sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig) // reset
 
 		rw := httptest.NewRecorder()
-		req, _ := http.NewRequest("GET", "/help/foo/bar", nil)
+		req, _ := http.NewRequest("GET", "/help/foo/bbr", nil)
 		serveHelp(rw, req)
 
-		if want := http.StatusTemporaryRedirect; rw.Code != want {
-			t.Errorf("got %d, want %d", rw.Code, want)
+		if wbnt := http.StbtusTemporbryRedirect; rw.Code != wbnt {
+			t.Errorf("got %d, wbnt %d", rw.Code, wbnt)
 		}
-		if got, want := rw.Header().Get("Location"), "https://docs.sourcegraph.com/foo/bar"; got != want {
-			t.Errorf("got %q, want %q", got, want)
+		if got, wbnt := rw.Hebder().Get("Locbtion"), "https://docs.sourcegrbph.com/foo/bbr"; got != wbnt {
+			t.Errorf("got %q, wbnt %q", got, wbnt)
 		}
 	})
 }

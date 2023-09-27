@@ -1,4 +1,4 @@
-package webhooks
+pbckbge webhooks
 
 import (
 	"context"
@@ -8,35 +8,35 @@ import (
 	"net/http"
 	"strconv"
 
-	sglog "github.com/sourcegraph/log"
+	sglog "github.com/sourcegrbph/log"
 
-	fewebhooks "github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	bbcs "github.com/sourcegraph/sourcegraph/internal/batches/sources/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	fewebhooks "github.com/sourcegrbph/sourcegrbph/cmd/frontend/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	bbcs "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/sources/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-var bitbucketCloudEvents = []string{
-	"pullrequest:approved",
-	"pullrequest:changes_request_created",
-	"pullrequest:changes_request_removed",
-	"pullrequest:comment_created",
+vbr bitbucketCloudEvents = []string{
+	"pullrequest:bpproved",
+	"pullrequest:chbnges_request_crebted",
+	"pullrequest:chbnges_request_removed",
+	"pullrequest:comment_crebted",
 	"pullrequest:comment_deleted",
-	"pullrequest:comment_updated",
+	"pullrequest:comment_updbted",
 	"pullrequest:fulfilled",
 	"pullrequest:rejected",
-	"pullrequest:unapproved",
-	"pullrequest:updated",
-	"repo:commit_status_created",
-	"repo:commit_status_updated",
+	"pullrequest:unbpproved",
+	"pullrequest:updbted",
+	"repo:commit_stbtus_crebted",
+	"repo:commit_stbtus_updbted",
 }
 
 type BitbucketCloudWebhook struct {
@@ -51,27 +51,27 @@ func NewBitbucketCloudWebhook(store *store.Store, gitserverClient gitserver.Clie
 
 func (h *BitbucketCloudWebhook) Register(router *fewebhooks.Router) {
 	router.Register(
-		h.handleEvent,
+		h.hbndleEvent,
 		extsvc.KindBitbucketCloud,
 		bitbucketCloudEvents...,
 	)
 }
 
-func (h *BitbucketCloudWebhook) handleEvent(ctx context.Context, db database.DB, codeHostURN extsvc.CodeHostBaseURL, event any) error {
-	ctx = actor.WithInternalActor(ctx)
+func (h *BitbucketCloudWebhook) hbndleEvent(ctx context.Context, db dbtbbbse.DB, codeHostURN extsvc.CodeHostBbseURL, event bny) error {
+	ctx = bctor.WithInternblActor(ctx)
 
 	prs, ev, err := h.convertEvent(ctx, event, codeHostURN)
 	if err != nil {
 		return err
 	}
 
-	for _, pr := range prs {
+	for _, pr := rbnge prs {
 		if pr == (PR{}) {
-			h.logger.Warn("Dropping Bitbucket Cloud webhook event", sglog.String("type", fmt.Sprintf("%T", event)))
+			h.logger.Wbrn("Dropping Bitbucket Cloud webhook event", sglog.String("type", fmt.Sprintf("%T", event)))
 			continue
 		}
 
-		eventErr := h.upsertChangesetEvent(ctx, codeHostURN, pr, ev)
+		eventErr := h.upsertChbngesetEvent(ctx, codeHostURN, pr, ev)
 		if eventErr != nil {
 			err = errors.Append(err, eventErr)
 		}
@@ -80,134 +80,134 @@ func (h *BitbucketCloudWebhook) handleEvent(ctx context.Context, db database.DB,
 }
 
 func (h *BitbucketCloudWebhook) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	e, extSvc, hErr := h.parseEvent(r)
+	e, extSvc, hErr := h.pbrseEvent(r)
 	if hErr != nil {
 		respond(w, hErr.code, hErr)
 		return
 	}
 
-	fewebhooks.SetExternalServiceID(r.Context(), extSvc.ID)
+	fewebhooks.SetExternblServiceID(r.Context(), extSvc.ID)
 
-	// 🚨 SECURITY: now that the shared secret has been validated, we can use an
-	// internal actor on the context.
-	ctx := actor.WithInternalActor(r.Context())
+	// 🚨 SECURITY: now thbt the shbred secret hbs been vblidbted, we cbn use bn
+	// internbl bctor on the context.
+	ctx := bctor.WithInternblActor(r.Context())
 
-	c, err := extSvc.Configuration(ctx)
+	c, err := extSvc.Configurbtion(ctx)
 	if err != nil {
-		h.logger.Error("Could not decode external service config", sglog.Error(err))
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		h.logger.Error("Could not decode externbl service config", sglog.Error(err))
+		http.Error(w, "Invblid externbl service config", http.StbtusInternblServerError)
 		return
 	}
 
-	config, ok := c.(*schema.BitbucketCloudConnection)
+	config, ok := c.(*schemb.BitbucketCloudConnection)
 	if !ok {
-		h.logger.Error("Could not decode external service config", sglog.Error(err))
-		http.Error(w, "Invalid external service config", http.StatusInternalServerError)
+		h.logger.Error("Could not decode externbl service config", sglog.Error(err))
+		http.Error(w, "Invblid externbl service config", http.StbtusInternblServerError)
 		return
 	}
 
-	codeHostURN, err := extsvc.NewCodeHostBaseURL(config.Url)
+	codeHostURN, err := extsvc.NewCodeHostBbseURL(config.Url)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, errors.Wrap(err, "parsing code host base url"))
+		respond(w, http.StbtusInternblServerError, errors.Wrbp(err, "pbrsing code host bbse url"))
 	}
-	err = h.handleEvent(ctx, h.Store.DatabaseDB(), codeHostURN, e)
+	err = h.hbndleEvent(ctx, h.Store.DbtbbbseDB(), codeHostURN, e)
 	if err != nil {
-		respond(w, http.StatusInternalServerError, err)
+		respond(w, http.StbtusInternblServerError, err)
 	} else {
-		respond(w, http.StatusNoContent, nil)
+		respond(w, http.StbtusNoContent, nil)
 	}
 }
 
-func (h *BitbucketCloudWebhook) parseEvent(r *http.Request) (interface{}, *types.ExternalService, *httpError) {
+func (h *BitbucketCloudWebhook) pbrseEvent(r *http.Request) (interfbce{}, *types.ExternblService, *httpError) {
 	if r.Body == nil {
-		return nil, nil, &httpError{http.StatusBadRequest, errors.New("nil request body")}
+		return nil, nil, &httpError{http.StbtusBbdRequest, errors.New("nil request body")}
 	}
 
-	payload, err := io.ReadAll(r.Body)
+	pbylobd, err := io.RebdAll(r.Body)
 	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
+		return nil, nil, &httpError{http.StbtusInternblServerError, err}
 	}
 
-	rawID := r.FormValue(extsvc.IDParam)
-	var externalServiceID int64
-	// id could be blank temporarily if we haven't updated the hook url to include the param yet
-	if rawID != "" {
-		externalServiceID, err = strconv.ParseInt(rawID, 10, 64)
+	rbwID := r.FormVblue(extsvc.IDPbrbm)
+	vbr externblServiceID int64
+	// id could be blbnk temporbrily if we hbven't updbted the hook url to include the pbrbm yet
+	if rbwID != "" {
+		externblServiceID, err = strconv.PbrseInt(rbwID, 10, 64)
 		if err != nil {
-			return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "invalid external service id")}
+			return nil, nil, &httpError{http.StbtusBbdRequest, errors.Wrbp(err, "invblid externbl service id")}
 		}
 	}
 
-	args := database.ExternalServicesListOptions{Kinds: []string{extsvc.KindBitbucketCloud}}
-	if externalServiceID != 0 {
-		args.IDs = append(args.IDs, externalServiceID)
+	brgs := dbtbbbse.ExternblServicesListOptions{Kinds: []string{extsvc.KindBitbucketCloud}}
+	if externblServiceID != 0 {
+		brgs.IDs = bppend(brgs.IDs, externblServiceID)
 	}
-	es, err := h.Store.ExternalServices().List(r.Context(), args)
+	es, err := h.Store.ExternblServices().List(r.Context(), brgs)
 	if err != nil {
-		return nil, nil, &httpError{http.StatusInternalServerError, err}
+		return nil, nil, &httpError{http.StbtusInternblServerError, err}
 	}
 
-	var extSvc *types.ExternalService
-	for _, e := range es {
-		if externalServiceID != 0 && e.ID != externalServiceID {
+	vbr extSvc *types.ExternblService
+	for _, e := rbnge es {
+		if externblServiceID != 0 && e.ID != externblServiceID {
 			continue
 		}
 
-		c, _ := e.Configuration(r.Context())
-		con, ok := c.(*schema.BitbucketCloudConnection)
+		c, _ := e.Configurbtion(r.Context())
+		con, ok := c.(*schemb.BitbucketCloudConnection)
 		if !ok {
 			continue
 		}
 
 		if secret := con.WebhookSecret; secret != "" {
-			if subtle.ConstantTimeCompare([]byte(r.FormValue("secret")), []byte(secret)) == 1 {
+			if subtle.ConstbntTimeCompbre([]byte(r.FormVblue("secret")), []byte(secret)) == 1 {
 				extSvc = e
-				break
+				brebk
 			}
 		}
 	}
 
 	if extSvc == nil || err != nil {
-		return nil, nil, &httpError{http.StatusUnauthorized, err}
+		return nil, nil, &httpError{http.StbtusUnbuthorized, err}
 	}
 
-	e, err := bitbucketcloud.ParseWebhookEvent(r.Header.Get("X-Event-Key"), payload)
+	e, err := bitbucketcloud.PbrseWebhookEvent(r.Hebder.Get("X-Event-Key"), pbylobd)
 	if err != nil {
-		return nil, nil, &httpError{http.StatusBadRequest, errors.Wrap(err, "parsing webhook")}
+		return nil, nil, &httpError{http.StbtusBbdRequest, errors.Wrbp(err, "pbrsing webhook")}
 	}
 
 	return e, extSvc, nil
 }
 
-func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interface{}, externalServiceID extsvc.CodeHostBaseURL) ([]PR, keyer, error) {
+func (h *BitbucketCloudWebhook) convertEvent(ctx context.Context, theirs interfbce{}, externblServiceID extsvc.CodeHostBbseURL) ([]PR, keyer, error) {
 	switch e := theirs.(type) {
-	case *bitbucketcloud.PullRequestApprovedEvent:
+	cbse *bitbucketcloud.PullRequestApprovedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestChangesRequestCreatedEvent:
+	cbse *bitbucketcloud.PullRequestChbngesRequestCrebtedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestChangesRequestRemovedEvent:
+	cbse *bitbucketcloud.PullRequestChbngesRequestRemovedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestCommentCreatedEvent:
+	cbse *bitbucketcloud.PullRequestCommentCrebtedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestCommentDeletedEvent:
+	cbse *bitbucketcloud.PullRequestCommentDeletedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestCommentUpdatedEvent:
+	cbse *bitbucketcloud.PullRequestCommentUpdbtedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestFulfilledEvent:
+	cbse *bitbucketcloud.PullRequestFulfilledEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestRejectedEvent:
+	cbse *bitbucketcloud.PullRequestRejectedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestUnapprovedEvent:
+	cbse *bitbucketcloud.PullRequestUnbpprovedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.PullRequestUpdatedEvent:
+	cbse *bitbucketcloud.PullRequestUpdbtedEvent:
 		return bitbucketCloudPullRequestEventPRs(&e.PullRequestEvent), e, nil
-	case *bitbucketcloud.RepoCommitStatusCreatedEvent:
-		prs, err := bitbucketCloudRepoCommitStatusEventPRs(ctx, h.Store, &e.RepoCommitStatusEvent, externalServiceID)
+	cbse *bitbucketcloud.RepoCommitStbtusCrebtedEvent:
+		prs, err := bitbucketCloudRepoCommitStbtusEventPRs(ctx, h.Store, &e.RepoCommitStbtusEvent, externblServiceID)
 		return prs, e, err
-	case *bitbucketcloud.RepoCommitStatusUpdatedEvent:
-		prs, err := bitbucketCloudRepoCommitStatusEventPRs(ctx, h.Store, &e.RepoCommitStatusEvent, externalServiceID)
+	cbse *bitbucketcloud.RepoCommitStbtusUpdbtedEvent:
+		prs, err := bitbucketCloudRepoCommitStbtusEventPRs(ctx, h.Store, &e.RepoCommitStbtusEvent, externblServiceID)
 		return prs, e, err
-	default:
+	defbult:
 		return nil, nil, errors.Newf("unknown event type: %T", theirs)
 	}
 }
@@ -216,51 +216,51 @@ func bitbucketCloudPullRequestEventPRs(e *bitbucketcloud.PullRequestEvent) []PR 
 	return []PR{
 		{
 			ID:             e.PullRequest.ID,
-			RepoExternalID: e.Repository.UUID,
+			RepoExternblID: e.Repository.UUID,
 		},
 	}
 }
 
-func bitbucketCloudRepoCommitStatusEventPRs(
+func bitbucketCloudRepoCommitStbtusEventPRs(
 	ctx context.Context, bstore *store.Store,
-	e *bitbucketcloud.RepoCommitStatusEvent, externalServiceID extsvc.CodeHostBaseURL,
+	e *bitbucketcloud.RepoCommitStbtusEvent, externblServiceID extsvc.CodeHostBbseURL,
 ) ([]PR, error) {
-	// Bitbucket Cloud repo commit statuses only include the commit hash they
-	// relate to, not the branch or PR, so we have to go look up the relevant
-	// changeset(s) from the database.
+	// Bitbucket Cloud repo commit stbtuses only include the commit hbsh they
+	// relbte to, not the brbnch or PR, so we hbve to go look up the relevbnt
+	// chbngeset(s) from the dbtbbbse.
 
-	// First up, let's find the repos ID so we can limit the changeset search.
-	repos, err := bstore.Repos().List(ctx, database.ReposListOptions{
-		ExternalRepos: []api.ExternalRepoSpec{
+	// First up, let's find the repos ID so we cbn limit the chbngeset sebrch.
+	repos, err := bstore.Repos().List(ctx, dbtbbbse.ReposListOptions{
+		ExternblRepos: []bpi.ExternblRepoSpec{
 			{
 				ID:          e.Repository.UUID,
 				ServiceType: extsvc.TypeBitbucketCloud,
-				ServiceID:   externalServiceID.String(),
+				ServiceID:   externblServiceID.String(),
 			},
 		},
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "cannot find repo with ID=%q ServiceType=%q ServiceID=%q", e.Repository.UUID, extsvc.TypeBitbucketCloud, externalServiceID)
+		return nil, errors.Wrbpf(err, "cbnnot find repo with ID=%q ServiceType=%q ServiceID=%q", e.Repository.UUID, extsvc.TypeBitbucketCloud, externblServiceID)
 	}
 	if len(repos) != 1 {
-		return nil, errors.Wrapf(err, "unexpected number of repos matched: %d", len(repos))
+		return nil, errors.Wrbpf(err, "unexpected number of repos mbtched: %d", len(repos))
 	}
 	repo := repos[0]
 
-	// Now we can look up the changeset(s).
-	changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
-		BitbucketCloudCommit: e.CommitStatus.Commit.Hash,
-		RepoIDs:              []api.RepoID{repo.ID},
+	// Now we cbn look up the chbngeset(s).
+	chbngesets, _, err := bstore.ListChbngesets(ctx, store.ListChbngesetsOpts{
+		BitbucketCloudCommit: e.CommitStbtus.Commit.Hbsh,
+		RepoIDs:              []bpi.RepoID{repo.ID},
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "listing changesets matched to repo ID=%d", repo.ID)
+		return nil, errors.Wrbpf(err, "listing chbngesets mbtched to repo ID=%d", repo.ID)
 	}
 
-	prs := make([]PR, len(changesets))
-	for i, changeset := range changesets {
+	prs := mbke([]PR, len(chbngesets))
+	for i, chbngeset := rbnge chbngesets {
 		prs[i] = PR{
-			ID:             changeset.Metadata.(*bbcs.AnnotatedPullRequest).ID,
-			RepoExternalID: e.Repository.UUID,
+			ID:             chbngeset.Metbdbtb.(*bbcs.AnnotbtedPullRequest).ID,
+			RepoExternblID: e.Repository.UUID,
 		}
 	}
 	return prs, nil

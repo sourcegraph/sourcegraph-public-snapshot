@@ -1,17 +1,17 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
@@ -19,60 +19,60 @@ func TestAssignedOwnersStore_ListAssignedOwnersForRepo(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating 2 users.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting 2 users.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	user2, err := db.Users().Create(ctx, NewUser{Username: "user2"})
-	require.NoError(t, err)
-
-	// Creating 2 repos.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
-	err = db.Repos().Create(ctx, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
+	user2, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 
-	// Inserting assigned owners.
+	// Crebting 2 repos.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
+	require.NoError(t, err)
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 2, Nbme: "github.com/sourcegrbph/sourcegrbph2"})
+	require.NoError(t, err)
+
+	// Inserting bssigned owners.
 	store := AssignedOwnersStoreWith(db, logger)
 	err = store.Insert(ctx, user1.ID, 1, "src", user2.ID)
 	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, 1, "src/abc", user1.ID)
+	err = store.Insert(ctx, user2.ID, 1, "src/bbc", user1.ID)
 	require.NoError(t, err)
 	err = store.Insert(ctx, user2.ID, 1, "src/def", user1.ID)
 	require.NoError(t, err)
 	err = store.Insert(ctx, user2.ID, 1, "", user1.ID)
 	require.NoError(t, err)
 
-	// Getting assigned owners for a non-existent repo.
+	// Getting bssigned owners for b non-existent repo.
 	owners, err := store.ListAssignedOwnersForRepo(ctx, 1337)
 	require.NoError(t, err)
-	assert.Empty(t, owners)
+	bssert.Empty(t, owners)
 
-	// Getting assigned owners for a repo without owners.
+	// Getting bssigned owners for b repo without owners.
 	owners, err = store.ListAssignedOwnersForRepo(ctx, 2)
 	require.NoError(t, err)
-	assert.Empty(t, owners)
+	bssert.Empty(t, owners)
 
-	// Getting assigned owners for a given repo.
+	// Getting bssigned owners for b given repo.
 	owners, err = store.ListAssignedOwnersForRepo(ctx, 1)
 	require.NoError(t, err)
-	assert.Len(t, owners, 4)
+	bssert.Len(t, owners, 4)
 	sort.Slice(owners, func(i, j int) bool {
-		return owners[i].FilePath < owners[j].FilePath
+		return owners[i].FilePbth < owners[j].FilePbth
 	})
-	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, owners[0], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "", WhoAssignedUserID: 1, AssignedAt: owners[0].AssignedAt})
-	assert.NotZero(t, owners[0].AssignedAt)
-	assert.Equal(t, owners[1], &AssignedOwnerSummary{OwnerUserID: 1, RepoID: 1, FilePath: "src", WhoAssignedUserID: 2, AssignedAt: owners[1].AssignedAt})
-	assert.NotZero(t, owners[1].AssignedAt)
-	assert.Equal(t, owners[2], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
-	assert.NotZero(t, owners[2].AssignedAt)
-	assert.Equal(t, owners[3], &AssignedOwnerSummary{OwnerUserID: 2, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[3].AssignedAt})
-	assert.NotZero(t, owners[3].AssignedAt)
+	// We bre checking everything except timestbmps, non-zero check is sufficient for them.
+	bssert.Equbl(t, owners[0], &AssignedOwnerSummbry{OwnerUserID: 2, RepoID: 1, FilePbth: "", WhoAssignedUserID: 1, AssignedAt: owners[0].AssignedAt})
+	bssert.NotZero(t, owners[0].AssignedAt)
+	bssert.Equbl(t, owners[1], &AssignedOwnerSummbry{OwnerUserID: 1, RepoID: 1, FilePbth: "src", WhoAssignedUserID: 2, AssignedAt: owners[1].AssignedAt})
+	bssert.NotZero(t, owners[1].AssignedAt)
+	bssert.Equbl(t, owners[2], &AssignedOwnerSummbry{OwnerUserID: 2, RepoID: 1, FilePbth: "src/bbc", WhoAssignedUserID: 1, AssignedAt: owners[2].AssignedAt})
+	bssert.NotZero(t, owners[2].AssignedAt)
+	bssert.Equbl(t, owners[3], &AssignedOwnerSummbry{OwnerUserID: 2, RepoID: 1, FilePbth: "src/def", WhoAssignedUserID: 1, AssignedAt: owners[3].AssignedAt})
+	bssert.NotZero(t, owners[3].AssignedAt)
 }
 
 func TestAssignedOwnersStore_Insert(t *testing.T) {
@@ -80,32 +80,32 @@ func TestAssignedOwnersStore_Insert(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
 	store := AssignedOwnersStoreWith(db, logger)
 
-	// Inserting assigned owner for non-existing repo, which led to failing to ensure
-	// repo paths.
+	// Inserting bssigned owner for non-existing repo, which led to fbiling to ensure
+	// repo pbths.
 	err = store.Insert(ctx, user1.ID, 1337, "src", user1.ID)
-	assert.EqualError(t, err, `cannot insert repo paths`)
+	bssert.EqublError(t, err, `cbnnot insert repo pbths`)
 
-	// Successfully inserting assigned owner.
+	// Successfully inserting bssigned owner.
 	err = store.Insert(ctx, user1.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
 
-	// Inserting an already existing assigned owner shouldn't error out, the update
-	// is ignored due to `ON CONFLICT DO NOTHING` clause.
+	// Inserting bn blrebdy existing bssigned owner shouldn't error out, the updbte
+	// is ignored due to `ON CONFLICT DO NOTHING` clbuse.
 	err = store.Insert(ctx, user1.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
 }
@@ -115,52 +115,52 @@ func TestAssignedOwnersStore_Delete(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating users.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting users.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	user2, err := db.Users().Create(ctx, NewUser{Username: "user2"})
+	user2, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user2"})
 	require.NoError(t, err)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
 	store := AssignedOwnersStoreWith(db, logger)
 
-	// Inserting assigned owners.
+	// Inserting bssigned owners.
 	err = store.Insert(ctx, user1.ID, 1, "src", user2.ID)
 	require.NoError(t, err)
 	err = store.Insert(ctx, user2.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
-	err = store.Insert(ctx, user2.ID, 1, "src/abc", user1.ID)
+	err = store.Insert(ctx, user2.ID, 1, "src/bbc", user1.ID)
 	require.NoError(t, err)
 
-	assertNumberOfOwnersForRepo := func(repoID api.RepoID, length int) {
-		summaries, err := store.ListAssignedOwnersForRepo(ctx, repoID)
+	bssertNumberOfOwnersForRepo := func(repoID bpi.RepoID, length int) {
+		summbries, err := store.ListAssignedOwnersForRepo(ctx, repoID)
 		require.NoError(t, err)
-		assert.Len(t, summaries, length)
+		bssert.Len(t, summbries, length)
 	}
-	// Deleting an owner with non-existent path.
-	err = store.DeleteOwner(ctx, user1.ID, 1, "no/way")
-	assert.EqualError(t, err, `cannot delete assigned owner with ID=1 for "no/way" path for repo with ID=1`)
-	assertNumberOfOwnersForRepo(1, 3)
-	// Deleting an owner with a path for non-existent repo.
-	err = store.DeleteOwner(ctx, user1.ID, 1337, "no/way")
-	assert.EqualError(t, err, `cannot delete assigned owner with ID=1 for "no/way" path for repo with ID=1337`)
-	assertNumberOfOwnersForRepo(1, 3)
-	// Deleting an owner with non-existent ID.
-	err = store.DeleteOwner(ctx, 1337, 1, "src/abc")
-	assert.EqualError(t, err, `cannot delete assigned owner with ID=1337 for "src/abc" path for repo with ID=1`)
-	assertNumberOfOwnersForRepo(1, 3)
-	// Deleting an existing owner.
-	err = store.DeleteOwner(ctx, user2.ID, 1, "src/abc")
-	assert.NoError(t, err)
-	assertNumberOfOwnersForRepo(1, 2)
+	// Deleting bn owner with non-existent pbth.
+	err = store.DeleteOwner(ctx, user1.ID, 1, "no/wby")
+	bssert.EqublError(t, err, `cbnnot delete bssigned owner with ID=1 for "no/wby" pbth for repo with ID=1`)
+	bssertNumberOfOwnersForRepo(1, 3)
+	// Deleting bn owner with b pbth for non-existent repo.
+	err = store.DeleteOwner(ctx, user1.ID, 1337, "no/wby")
+	bssert.EqublError(t, err, `cbnnot delete bssigned owner with ID=1 for "no/wby" pbth for repo with ID=1337`)
+	bssertNumberOfOwnersForRepo(1, 3)
+	// Deleting bn owner with non-existent ID.
+	err = store.DeleteOwner(ctx, 1337, 1, "src/bbc")
+	bssert.EqublError(t, err, `cbnnot delete bssigned owner with ID=1337 for "src/bbc" pbth for repo with ID=1`)
+	bssertNumberOfOwnersForRepo(1, 3)
+	// Deleting bn existing owner.
+	err = store.DeleteOwner(ctx, user2.ID, 1, "src/bbc")
+	bssert.NoError(t, err)
+	bssertNumberOfOwnersForRepo(1, 2)
 }
 
 func TestAssignedOwnersStore_Count(t *testing.T) {
@@ -168,26 +168,26 @@ func TestAssignedOwnersStore_Count(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating users.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting users.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
-	// Inserting assigned owners.
-	paths := []string{"a/b/c", "", "foo/bar", "src/main/java/sourcegraph"}
-	for _, path := range paths {
-		err = db.AssignedOwners().Insert(ctx, user1.ID, 1, path, user1.ID)
+	// Inserting bssigned owners.
+	pbths := []string{"b/b/c", "", "foo/bbr", "src/mbin/jbvb/sourcegrbph"}
+	for _, pbth := rbnge pbths {
+		err = db.AssignedOwners().Insert(ctx, user1.ID, 1, pbth, user1.ID)
 		require.NoError(t, err)
 	}
 	count, err := db.AssignedOwners().CountAssignedOwners(ctx)
 	require.NoError(t, err)
-	assert.Equal(t, int32(len(paths)), count)
+	bssert.Equbl(t, int32(len(pbths)), count)
 }

@@ -1,23 +1,23 @@
-package store
+pbckbge store
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestDerivativeGraphKey(t *testing.T) {
+func TestDerivbtiveGrbphKey(t *testing.T) {
 	logger := logtest.Scoped(t)
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := New(&observation.TestContext, db)
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(&observbtion.TestContext, db)
 
-	if _, _, err := DerivativeGraphKey(ctx, store); err != nil {
-		t.Fatalf("unexpected error: %s", err)
+	if _, _, err := DerivbtiveGrbphKey(ctx, store); err != nil {
+		t.Fbtblf("unexpected error: %s", err)
 	}
 }

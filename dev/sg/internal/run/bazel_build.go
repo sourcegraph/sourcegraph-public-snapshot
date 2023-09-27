@@ -1,4 +1,4 @@
-package run
+pbckbge run
 
 import (
 	"context"
@@ -6,48 +6,48 @@ import (
 	"io"
 	"os/exec"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/sourcegraph/sourcegraph/lib/process"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/process"
 )
 
-// BazelBuild peforms a bazel build command with all the given targets and blocks until an
+// BbzelBuild peforms b bbzel build commbnd with bll the given tbrgets bnd blocks until bn
 // error is returned or the build is completed.
-func BazelBuild(ctx context.Context, cmds ...BazelCommand) error {
+func BbzelBuild(ctx context.Context, cmds ...BbzelCommbnd) error {
 	if len(cmds) == 0 {
-		// no Bazel commands so we return
+		// no Bbzel commbnds so we return
 		return nil
 	}
-	std.Out.WriteLine(output.Styled(output.StylePending, fmt.Sprintf("Detected %d bazel targets, running bazel build before anything else", len(cmds))))
+	std.Out.WriteLine(output.Styled(output.StylePending, fmt.Sprintf("Detected %d bbzel tbrgets, running bbzel build before bnything else", len(cmds))))
 
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
 		return err
 	}
 
-	targets := make([]string, 0, len(cmds))
-	for _, cmd := range cmds {
-		targets = append(targets, cmd.Target)
+	tbrgets := mbke([]string, 0, len(cmds))
+	for _, cmd := rbnge cmds {
+		tbrgets = bppend(tbrgets, cmd.Tbrget)
 	}
 
-	var cancel func()
-	ctx, cancel = context.WithCancel(ctx)
+	vbr cbncel func()
+	ctx, cbncel = context.WithCbncel(ctx)
 
-	args := append([]string{"build"}, targets...)
-	cmd := exec.CommandContext(ctx, "bazel", args...)
+	brgs := bppend([]string{"build"}, tbrgets...)
+	cmd := exec.CommbndContext(ctx, "bbzel", brgs...)
 
-	sc := &startedCmd{
-		stdoutBuf: &prefixSuffixSaver{N: 32 << 10},
-		stderrBuf: &prefixSuffixSaver{N: 32 << 10},
+	sc := &stbrtedCmd{
+		stdoutBuf: &prefixSuffixSbver{N: 32 << 10},
+		stderrBuf: &prefixSuffixSbver{N: 32 << 10},
 	}
 
-	sc.cancel = cancel
+	sc.cbncel = cbncel
 	sc.Cmd = cmd
 	sc.Cmd.Dir = repoRoot
 
-	var stdoutWriter, stderrWriter io.Writer
-	logger := newCmdLogger(ctx, "bazel", std.Out.Output)
+	vbr stdoutWriter, stderrWriter io.Writer
+	logger := newCmdLogger(ctx, "bbzel", std.Out.Output)
 	stdoutWriter = io.MultiWriter(logger, sc.stdoutBuf)
 	stderrWriter = io.MultiWriter(logger, sc.stderrBuf)
 	eg, err := process.PipeOutputUnbuffered(ctx, sc.Cmd, stdoutWriter, stderrWriter)
@@ -56,9 +56,9 @@ func BazelBuild(ctx context.Context, cmds ...BazelCommand) error {
 	}
 	sc.outEg = eg
 
-	// Bazel out directory should exist here before returning
-	if err := sc.Start(); err != nil {
+	// Bbzel out directory should exist here before returning
+	if err := sc.Stbrt(); err != nil {
 		return err
 	}
-	return sc.Wait()
+	return sc.Wbit()
 }

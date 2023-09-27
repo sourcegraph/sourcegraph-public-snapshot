@@ -1,130 +1,130 @@
-package azuredevops
+pbckbge bzuredevops
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 	"testing"
 	"time"
 
-	"github.com/dnaeon/go-vcr/cassette"
+	"github.com/dnbeon/go-vcr/cbssette"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/time/rate"
-	"gotest.tools/assert"
+	"golbng.org/x/time/rbte"
+	"gotest.tools/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
-var update = flag.Bool("update", false, "update testdata")
+vbr updbte = flbg.Bool("updbte", fblse, "updbte testdbtb")
 
-// NewTestClient returns an azuredevops.Client that records its interactions
-// to testdata/vcr/.
-func NewTestClient(t testing.TB, name string, update bool) (Client, func()) {
+// NewTestClient returns bn bzuredevops.Client thbt records its interbctions
+// to testdbtb/vcr/.
+func NewTestClient(t testing.TB, nbme string, updbte bool) (Client, func()) {
 	t.Helper()
 
-	cassete := filepath.Join("testdata/vcr/", normalize(name))
-	rec, err := httptestutil.NewRecorder(cassete, update)
+	cbssete := filepbth.Join("testdbtb/vcr/", normblize(nbme))
+	rec, err := httptestutil.NewRecorder(cbssete, updbte)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	rec.SetMatcher(ignoreHostMatcher)
+	rec.SetMbtcher(ignoreHostMbtcher)
 
-	hc, err := httpcli.NewFactory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
+	hc, err := httpcli.NewFbctory(nil, httptestutil.NewRecorderOpt(rec)).Doer()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	cli, err := NewClient(
 		"urn",
 		AzureDevOpsAPIURL,
-		&auth.BasicAuth{
-			Username: os.Getenv("AZURE_DEV_OPS_USERNAME"),
-			Password: os.Getenv("AZURE_DEV_OPS_TOKEN"),
+		&buth.BbsicAuth{
+			Usernbme: os.Getenv("AZURE_DEV_OPS_USERNAME"),
+			Pbssword: os.Getenv("AZURE_DEV_OPS_TOKEN"),
 		},
 		hc,
 	)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	cli.(*client).internalRateLimiter = ratelimit.NewInstrumentedLimiter("azuredevops", rate.NewLimiter(100, 10))
+	cli.(*client).internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("bzuredevops", rbte.NewLimiter(100, 10))
 
 	return cli, func() {
 		if err := rec.Stop(); err != nil {
-			t.Errorf("failed to update test data: %s", err)
+			t.Errorf("fbiled to updbte test dbtb: %s", err)
 		}
 	}
 }
 
-func TestRateLimitRetry(t *testing.T) {
-	rcache.SetupForTest(t)
-	ctx := context.Background()
+func TestRbteLimitRetry(t *testing.T) {
+	rcbche.SetupForTest(t)
+	ctx := context.Bbckground()
 
-	tests := map[string]struct {
-		useRateLimit     bool
+	tests := mbp[string]struct {
+		useRbteLimit     bool
 		useRetryAfter    bool
 		succeeded        bool
-		waitForRateLimit bool
-		wantNumRequests  int
+		wbitForRbteLimit bool
+		wbntNumRequests  int
 	}{
-		"retry-after hit": {
+		"retry-bfter hit": {
 			useRetryAfter:    true,
 			succeeded:        true,
-			waitForRateLimit: true,
-			wantNumRequests:  2,
+			wbitForRbteLimit: true,
+			wbntNumRequests:  2,
 		},
-		"rate limit hit": {
-			useRateLimit:     true,
+		"rbte limit hit": {
+			useRbteLimit:     true,
 			succeeded:        true,
-			waitForRateLimit: true,
-			wantNumRequests:  2,
+			wbitForRbteLimit: true,
+			wbntNumRequests:  2,
 		},
-		"no rate limit hit": {
+		"no rbte limit hit": {
 			succeeded:        true,
-			waitForRateLimit: true,
-			wantNumRequests:  1,
+			wbitForRbteLimit: true,
+			wbntNumRequests:  1,
 		},
-		"error if rate limit hit but no waitForRateLimit": {
-			useRateLimit:    true,
-			wantNumRequests: 1,
+		"error if rbte limit hit but no wbitForRbteLimit": {
+			useRbteLimit:    true,
+			wbntNumRequests: 1,
 		},
 	}
 
-	for name, tt := range tests {
+	for nbme, tt := rbnge tests {
 		tt := tt
-		t.Run(name, func(t *testing.T) {
+		t.Run(nbme, func(t *testing.T) {
 			numRequests := 0
-			succeeded := false
-			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			succeeded := fblse
+			srv := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				numRequests++
 				if tt.useRetryAfter {
-					w.Header().Add("Retry-After", "1")
-					w.WriteHeader(http.StatusTooManyRequests)
-					w.Write([]byte("Try again later"))
+					w.Hebder().Add("Retry-After", "1")
+					w.WriteHebder(http.StbtusTooMbnyRequests)
+					w.Write([]byte("Try bgbin lbter"))
 
-					tt.useRetryAfter = false
+					tt.useRetryAfter = fblse
 					return
 				}
 
-				if tt.useRateLimit {
-					w.Header().Add("X-RateLimit-Remaining", "0")
-					w.Header().Add("X-RateLimit-Limit", "60")
+				if tt.useRbteLimit {
+					w.Hebder().Add("X-RbteLimit-Rembining", "0")
+					w.Hebder().Add("X-RbteLimit-Limit", "60")
 					resetTime := time.Now().Add(time.Second)
-					w.Header().Add("X-RateLimit-Reset", strconv.Itoa(int(resetTime.Unix())))
-					w.WriteHeader(http.StatusTooManyRequests)
-					w.Write([]byte("Try again later"))
+					w.Hebder().Add("X-RbteLimit-Reset", strconv.Itob(int(resetTime.Unix())))
+					w.WriteHebder(http.StbtusTooMbnyRequests)
+					w.Write([]byte("Try bgbin lbter"))
 
-					tt.useRateLimit = false
+					tt.useRbteLimit = fblse
 					return
 				}
 
@@ -132,40 +132,40 @@ func TestRateLimitRetry(t *testing.T) {
 				w.Write([]byte(`{"some": "response"}`))
 			}))
 
-			t.Cleanup(srv.Close)
+			t.Clebnup(srv.Close)
 
-			MockVisualStudioAppURL = srv.URL
-			t.Cleanup(func() {
-				MockVisualStudioAppURL = ""
+			MockVisublStudioAppURL = srv.URL
+			t.Clebnup(func() {
+				MockVisublStudioAppURL = ""
 			})
-			a := &auth.BasicAuth{Username: "test", Password: "test"}
-			c, err := NewClient("test", srv.URL, a, nil)
-			c.(*client).internalRateLimiter = ratelimit.NewInstrumentedLimiter("azuredevops", rate.NewLimiter(100, 10))
+			b := &buth.BbsicAuth{Usernbme: "test", Pbssword: "test"}
+			c, err := NewClient("test", srv.URL, b, nil)
+			c.(*client).internblRbteLimiter = rbtelimit.NewInstrumentedLimiter("bzuredevops", rbte.NewLimiter(100, 10))
 			require.NoError(t, err)
-			c.SetWaitForRateLimit(tt.waitForRateLimit)
+			c.SetWbitForRbteLimit(tt.wbitForRbteLimit)
 
-			// We don't care about the result or if it errors, we monitor the server variables
+			// We don't cbre bbout the result or if it errors, we monitor the server vbribbles
 			_, _ = c.GetAuthorizedProfile(ctx)
 
-			assert.Equal(t, tt.succeeded, succeeded)
-			assert.Equal(t, tt.wantNumRequests, numRequests)
+			bssert.Equbl(t, tt.succeeded, succeeded)
+			bssert.Equbl(t, tt.wbntNumRequests, numRequests)
 		})
 	}
 }
 
-var normalizer = lazyregexp.New("[^A-Za-z0-9-]+")
+vbr normblizer = lbzyregexp.New("[^A-Zb-z0-9-]+")
 
-func normalize(path string) string {
-	return normalizer.ReplaceAllLiteralString(path, "-")
+func normblize(pbth string) string {
+	return normblizer.ReplbceAllLiterblString(pbth, "-")
 }
 
-func ignoreHostMatcher(r *http.Request, i cassette.Request) bool {
+func ignoreHostMbtcher(r *http.Request, i cbssette.Request) bool {
 	if r.Method != i.Method {
-		return false
+		return fblse
 	}
-	u, err := url.Parse(i.URL)
+	u, err := url.Pbrse(i.URL)
 	if err != nil {
-		return false
+		return fblse
 	}
 	u.Host = r.URL.Host
 	u.Scheme = r.URL.Scheme

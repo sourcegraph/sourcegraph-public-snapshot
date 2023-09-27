@@ -1,41 +1,41 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestPagureSource_ListRepos(t *testing.T) {
-	conf := &schema.PagureConnection{
-		Url:     "https://src.fedoraproject.org",
-		Pattern: "ac*",
+func TestPbgureSource_ListRepos(t *testing.T) {
+	conf := &schemb.PbgureConnection{
+		Url:     "https://src.fedorbproject.org",
+		Pbttern: "bc*",
 	}
-	cf, save := NewClientFactory(t, t.Name())
-	defer save(t)
+	cf, sbve := NewClientFbctory(t, t.Nbme())
+	defer sbve(t)
 
-	svc := &types.ExternalService{
-		Kind:   extsvc.KindPagure,
-		Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, conf)),
+	svc := &types.ExternblService{
+		Kind:   extsvc.KindPbgure,
+		Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, conf)),
 	}
 
-	ctx := context.Background()
-	src, err := NewPagureSource(ctx, svc, cf)
+	ctx := context.Bbckground()
+	src, err := NewPbgureSource(ctx, svc, cf)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	src.perPage = 25 // 2 pages for 47 results
+	src.perPbge = 25 // 2 pbges for 47 results
 
-	repos, err := ListAll(context.Background(), src)
+	repos, err := ListAll(context.Bbckground(), src)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), Update(t.Name()), repos)
+	testutil.AssertGolden(t, "testdbtb/sources/"+t.Nbme(), Updbte(t.Nbme()), repos)
 }

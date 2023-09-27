@@ -1,98 +1,98 @@
-package luasandbox
+pbckbge lubsbndbox
 
 import (
 	"embed"
 	"fmt"
 	"io"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"strings"
 )
 
-//go:embed lua/*
-var luaRuntime embed.FS
+//go:embed lub/*
+vbr lubRuntime embed.FS
 
-var DefaultLuaModules = map[string]string{}
+vbr DefbultLubModules = mbp[string]string{}
 
 func init() {
-	modules, err := LuaModulesFromFS(luaRuntime, "lua", "")
+	modules, err := LubModulesFromFS(lubRuntime, "lub", "")
 	if err != nil {
-		panic(fmt.Sprintf("error loading Lua runtime files: %s", err))
+		pbnic(fmt.Sprintf("error lobding Lub runtime files: %s", err))
 	}
 
-	DefaultLuaModules = modules
+	DefbultLubModules = modules
 }
 
-func LuaModulesFromFS(fs embed.FS, dir, prefix string) (map[string]string, error) {
-	files, err := getAllFilepaths(fs, dir)
+func LubModulesFromFS(fs embed.FS, dir, prefix string) (mbp[string]string, error) {
+	files, err := getAllFilepbths(fs, dir)
 	if err != nil {
 		return nil, err
 	}
 
-	modules := make(map[string]string, len(files))
-	for _, file := range files {
-		contents, err := readFile(fs, file)
+	modules := mbke(mbp[string]string, len(files))
+	for _, file := rbnge files {
+		contents, err := rebdFile(fs, file)
 		if err != nil {
 			return nil, err
 		}
 
-		// All paths in embed FS are unix paths, so we need to use Unix, even on windows.
-		// Thus, we don't use filepath here.
-		name := strings.Join(splitPathList(strings.TrimSuffix(filepath.Base(file), filepath.Ext(file))), ".")
+		// All pbths in embed FS bre unix pbths, so we need to use Unix, even on windows.
+		// Thus, we don't use filepbth here.
+		nbme := strings.Join(splitPbthList(strings.TrimSuffix(filepbth.Bbse(file), filepbth.Ext(file))), ".")
 
 		if prefix != "" {
-			name = prefix + "." + name
+			nbme = prefix + "." + nbme
 		}
 
-		modules[name] = contents
+		modules[nbme] = contents
 	}
 
 	return modules, nil
 }
 
-func getAllFilepaths(fs embed.FS, dir string) (out []string, err error) {
+func getAllFilepbths(fs embed.FS, dir string) (out []string, err error) {
 	if dir == "" {
 		dir = "."
 	}
 
-	entries, err := fs.ReadDir(dir)
+	entries, err := fs.RebdDir(dir)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, entry := range entries {
-		// All paths in embed FS are unix paths, so we need to use Unix, even on windows.
-		// Thus, we don't use filepath here.
-		f := path.Join(dir, entry.Name())
+	for _, entry := rbnge entries {
+		// All pbths in embed FS bre unix pbths, so we need to use Unix, even on windows.
+		// Thus, we don't use filepbth here.
+		f := pbth.Join(dir, entry.Nbme())
 
 		if entry.IsDir() {
-			descendents, err := getAllFilepaths(fs, f)
+			descendents, err := getAllFilepbths(fs, f)
 			if err != nil {
 				return nil, err
 			}
 
-			out = append(out, descendents...)
+			out = bppend(out, descendents...)
 		} else {
-			out = append(out, f)
+			out = bppend(out, f)
 		}
 	}
 	return
 }
 
-func splitPathList(path string) []string {
-	if path == "" {
+func splitPbthList(pbth string) []string {
+	if pbth == "" {
 		return []string{}
 	}
-	return strings.Split(path, ":")
+	return strings.Split(pbth, ":")
 }
 
-func readFile(fs embed.FS, filepath string) (string, error) {
-	f, err := fs.Open(filepath)
+func rebdFile(fs embed.FS, filepbth string) (string, error) {
+	f, err := fs.Open(filepbth)
 	if err != nil {
 		return "", err
 	}
 	defer f.Close()
 
-	contents, err := io.ReadAll(f)
+	contents, err := io.RebdAll(f)
 	return string(contents), err
 }

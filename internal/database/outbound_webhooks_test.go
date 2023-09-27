@@ -1,128 +1,128 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"fmt"
 	"testing"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	et "github.com/sourcegraph/sourcegraph/internal/encryption/testing"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	et "github.com/sourcegrbph/sourcegrbph/internbl/encryption/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 func TestOutboundWebhooks(t *testing.T) {
-	t.Parallel()
-	ctx := context.Background()
+	t.Pbrbllel()
+	ctx := context.Bbckground()
 
-	runBothEncryptionStates(t, func(t *testing.T, logger log.Logger, db DB, key encryption.Key) {
-		user, err := db.Users().Create(ctx, NewUser{
-			Username: "test",
+	runBothEncryptionStbtes(t, func(t *testing.T, logger log.Logger, db DB, key encryption.Key) {
+		user, err := db.Users().Crebte(ctx, NewUser{
+			Usernbme: "test",
 		})
 		require.NoError(t, err)
 
 		store := db.OutboundWebhooks(key)
 
-		var createdWebhook *types.OutboundWebhook
+		vbr crebtedWebhook *types.OutboundWebhook
 
-		t.Run("Create", func(t *testing.T) {
+		t.Run("Crebte", func(t *testing.T) {
 			t.Run("no event types", func(t *testing.T) {
 				webhook := newTestWebhook(t, user)
-				err := store.Create(ctx, webhook)
-				assert.ErrorIs(t, err, errOutboundWebhookHasNoEventTypes)
+				err := store.Crebte(ctx, webhook)
+				bssert.ErrorIs(t, err, errOutboundWebhookHbsNoEventTypes)
 			})
 
-			t.Run("encryption failure", func(t *testing.T) {
-				store := db.OutboundWebhooks(&et.BadKey{})
+			t.Run("encryption fbilure", func(t *testing.T) {
+				store := db.OutboundWebhooks(&et.BbdKey{})
 				webhook := newTestWebhook(t, user)
-				err := store.Create(ctx, webhook)
-				assert.Error(t, err)
+				err := store.Crebte(ctx, webhook)
+				bssert.Error(t, err)
 			})
 
 			t.Run("success", func(t *testing.T) {
-				createdWebhook = newTestWebhook(
+				crebtedWebhook = newTestWebhook(
 					t, user,
 					ScopedEventType{EventType: "foo"},
-					ScopedEventType{EventType: "bar"},
+					ScopedEventType{EventType: "bbr"},
 					ScopedEventType{EventType: "quux", Scope: pointers.Ptr("123")},
 				)
-				err := store.Create(ctx, createdWebhook)
-				assert.NoError(t, err)
-				assert.NotZero(t, createdWebhook.ID)
-				assert.NotZero(t, createdWebhook.CreatedAt)
-				assert.NotZero(t, createdWebhook.UpdatedAt)
-				for _, eventType := range createdWebhook.EventTypes {
-					assert.NotZero(t, eventType.ID)
-					assert.Equal(t, createdWebhook.ID, eventType.OutboundWebhookID)
+				err := store.Crebte(ctx, crebtedWebhook)
+				bssert.NoError(t, err)
+				bssert.NotZero(t, crebtedWebhook.ID)
+				bssert.NotZero(t, crebtedWebhook.CrebtedAt)
+				bssert.NotZero(t, crebtedWebhook.UpdbtedAt)
+				for _, eventType := rbnge crebtedWebhook.EventTypes {
+					bssert.NotZero(t, eventType.ID)
+					bssert.Equbl(t, crebtedWebhook.ID, eventType.OutboundWebhookID)
 				}
-				assertOutboundWebhookFieldsEncrypted(t, ctx, store, createdWebhook)
+				bssertOutboundWebhookFieldsEncrypted(t, ctx, store, crebtedWebhook)
 			})
 		})
 
 		t.Run("GetByID", func(t *testing.T) {
 			t.Run("not found", func(t *testing.T) {
 				webhook, err := store.GetByID(ctx, 0)
-				assert.True(t, errcode.IsNotFound(err))
-				assert.Nil(t, webhook)
+				bssert.True(t, errcode.IsNotFound(err))
+				bssert.Nil(t, webhook)
 			})
 
 			t.Run("found", func(t *testing.T) {
-				webhook, err := store.GetByID(ctx, createdWebhook.ID)
-				assert.NoError(t, err)
-				assertEqualWebhooks(t, ctx, createdWebhook, webhook)
+				webhook, err := store.GetByID(ctx, crebtedWebhook.ID)
+				bssert.NoError(t, err)
+				bssertEqublWebhooks(t, ctx, crebtedWebhook, webhook)
 			})
 		})
 
 		t.Run("List/Count", func(t *testing.T) {
-			// OK, let's create a few more webhooks now for testing
+			// OK, let's crebte b few more webhooks now for testing
 			// purposes.
-			newSavedTestWebhook := func(t *testing.T, user *types.User, scopes ...ScopedEventType) *types.OutboundWebhook {
+			newSbvedTestWebhook := func(t *testing.T, user *types.User, scopes ...ScopedEventType) *types.OutboundWebhook {
 				t.Helper()
 				webhook := newTestWebhook(t, user, scopes...)
-				require.NoError(t, store.Create(ctx, webhook))
+				require.NoError(t, store.Crebte(ctx, webhook))
 				return webhook
 			}
 
-			fooOnlyWebhook := newSavedTestWebhook(t, user, ScopedEventType{EventType: "foo"})
-			barOnlyWebhook := newSavedTestWebhook(t, user, ScopedEventType{EventType: "bar"})
-			quuxWithSameScopeWebhook := newSavedTestWebhook(
+			fooOnlyWebhook := newSbvedTestWebhook(t, user, ScopedEventType{EventType: "foo"})
+			bbrOnlyWebhook := newSbvedTestWebhook(t, user, ScopedEventType{EventType: "bbr"})
+			quuxWithSbmeScopeWebhook := newSbvedTestWebhook(
 				t, user,
 				ScopedEventType{EventType: "quux", Scope: pointers.Ptr("123")},
 			)
-			quuxWithDifferentScopeWebhook := newSavedTestWebhook(
+			quuxWithDifferentScopeWebhook := newSbvedTestWebhook(
 				t, user,
 				ScopedEventType{EventType: "quux", Scope: pointers.Ptr("456")},
 			)
 
-			allWebhooks := []*types.OutboundWebhook{
-				createdWebhook,
+			bllWebhooks := []*types.OutboundWebhook{
+				crebtedWebhook,
 				fooOnlyWebhook,
-				barOnlyWebhook,
-				quuxWithSameScopeWebhook,
+				bbrOnlyWebhook,
+				quuxWithSbmeScopeWebhook,
 				quuxWithDifferentScopeWebhook,
 			}
 
-			t.Run("unpaginated", func(t *testing.T) {
-				for name, tc := range map[string]struct {
+			t.Run("unpbginbted", func(t *testing.T) {
+				for nbme, tc := rbnge mbp[string]struct {
 					opts OutboundWebhookListOpts
-					want []*types.OutboundWebhook
+					wbnt []*types.OutboundWebhook
 				}{
-					"no matches based on event type": {
+					"no mbtches bbsed on event type": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{{EventType: "not found"}},
 							},
 						},
-						want: []*types.OutboundWebhook{},
+						wbnt: []*types.OutboundWebhook{},
 					},
 					"scoped, missing type": {
 						opts: OutboundWebhookListOpts{
@@ -132,17 +132,17 @@ func TestOutboundWebhooks(t *testing.T) {
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{},
+						wbnt: []*types.OutboundWebhook{},
 					},
 					"scoped, no scopes in type": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "foo", Scope: pointers.Ptr("bar")},
+									{EventType: "foo", Scope: pointers.Ptr("bbr")},
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{},
+						wbnt: []*types.OutboundWebhook{},
 					},
 					"scoped, missing scope in type": {
 						opts: OutboundWebhookListOpts{
@@ -152,25 +152,25 @@ func TestOutboundWebhooks(t *testing.T) {
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{},
+						wbnt: []*types.OutboundWebhook{},
 					},
-					"all": {
+					"bll": {
 						opts: OutboundWebhookListOpts{},
-						want: allWebhooks,
+						wbnt: bllWebhooks,
 					},
 					"unscoped": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								EventTypes: []FilterEventType{{EventType: "foo"}, {EventType: "bar"}},
+								EventTypes: []FilterEventType{{EventType: "foo"}, {EventType: "bbr"}},
 							},
 						},
-						want: []*types.OutboundWebhook{
-							createdWebhook, fooOnlyWebhook, barOnlyWebhook,
+						wbnt: []*types.OutboundWebhook{
+							crebtedWebhook, fooOnlyWebhook, bbrOnlyWebhook,
 						},
 					},
 					"scoped with null scopes": {
 						// This should return the foos, but no quuxs, since
-						// they have scopes attached.
+						// they hbve scopes bttbched.
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
@@ -179,26 +179,26 @@ func TestOutboundWebhooks(t *testing.T) {
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{
-							createdWebhook, fooOnlyWebhook,
+						wbnt: []*types.OutboundWebhook{
+							crebtedWebhook, fooOnlyWebhook,
 						},
 					},
 					"scoped with non-null scopes": {
 						// This should return the quuxs, but no foos, since
-						// the foos don't have scopes.
+						// the foos don't hbve scopes.
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
 								EventTypes: []FilterEventType{
-									{EventType: "foo", Scope: pointers.Ptr("no match")},
+									{EventType: "foo", Scope: pointers.Ptr("no mbtch")},
 									{EventType: "quux", Scope: pointers.Ptr("123")},
 									{EventType: "quux", Scope: pointers.Ptr("456")},
 									{EventType: "quux", Scope: pointers.Ptr("789")},
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{
-							createdWebhook,
-							quuxWithSameScopeWebhook,
+						wbnt: []*types.OutboundWebhook{
+							crebtedWebhook,
+							quuxWithSbmeScopeWebhook,
 							quuxWithDifferentScopeWebhook,
 						},
 					},
@@ -210,119 +210,119 @@ func TestOutboundWebhooks(t *testing.T) {
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{
-							createdWebhook,
-							quuxWithSameScopeWebhook,
+						wbnt: []*types.OutboundWebhook{
+							crebtedWebhook,
+							quuxWithSbmeScopeWebhook,
 						},
 					},
-					"mixed unscoped and scoped": {
+					"mixed unscoped bnd scoped": {
 						opts: OutboundWebhookListOpts{
 							OutboundWebhookCountOpts: OutboundWebhookCountOpts{
-								EventTypes: []FilterEventType{{EventType: "bar"},
+								EventTypes: []FilterEventType{{EventType: "bbr"},
 									{EventType: "quux", Scope: pointers.Ptr("123")},
 								},
 							},
 						},
-						want: []*types.OutboundWebhook{
-							createdWebhook,
-							barOnlyWebhook,
-							quuxWithSameScopeWebhook,
+						wbnt: []*types.OutboundWebhook{
+							crebtedWebhook,
+							bbrOnlyWebhook,
+							quuxWithSbmeScopeWebhook,
 						},
 					},
 				} {
-					t.Run(name, func(t *testing.T) {
-						have, err := store.List(ctx, tc.opts)
-						assert.NoError(t, err)
-						assertEqualWebhookSlices(t, ctx, tc.want, have)
+					t.Run(nbme, func(t *testing.T) {
+						hbve, err := store.List(ctx, tc.opts)
+						bssert.NoError(t, err)
+						bssertEqublWebhookSlices(t, ctx, tc.wbnt, hbve)
 
 						count, err := store.Count(ctx, tc.opts.OutboundWebhookCountOpts)
-						assert.NoError(t, err)
-						assert.EqualValues(t, len(tc.want), count)
+						bssert.NoError(t, err)
+						bssert.EqublVblues(t, len(tc.wbnt), count)
 					})
 				}
 			})
 
-			t.Run("pagination", func(t *testing.T) {
-				// We won't rehash all the unpaginated tests above, since
-				// that was really exercising the filtering; instead, we'll
-				// just ensure all results are paginated as we expect.
-				for i, want := range [][]*types.OutboundWebhook{
-					{createdWebhook, fooOnlyWebhook},
-					{barOnlyWebhook, quuxWithSameScopeWebhook},
+			t.Run("pbginbtion", func(t *testing.T) {
+				// We won't rehbsh bll the unpbginbted tests bbove, since
+				// thbt wbs reblly exercising the filtering; instebd, we'll
+				// just ensure bll results bre pbginbted bs we expect.
+				for i, wbnt := rbnge [][]*types.OutboundWebhook{
+					{crebtedWebhook, fooOnlyWebhook},
+					{bbrOnlyWebhook, quuxWithSbmeScopeWebhook},
 					{quuxWithDifferentScopeWebhook},
 					{},
 				} {
-					t.Run(fmt.Sprintf("page %d", i+1), func(t *testing.T) {
-						have, err := store.List(ctx, OutboundWebhookListOpts{
+					t.Run(fmt.Sprintf("pbge %d", i+1), func(t *testing.T) {
+						hbve, err := store.List(ctx, OutboundWebhookListOpts{
 							LimitOffset: &LimitOffset{
 								Offset: i * 2,
 								Limit:  2,
 							},
 						})
-						assert.NoError(t, err)
-						assertEqualWebhookSlices(t, ctx, want, have)
+						bssert.NoError(t, err)
+						bssertEqublWebhookSlices(t, ctx, wbnt, hbve)
 					})
 				}
 			})
 		})
 
-		t.Run("Update", func(t *testing.T) {
-			t.Run("fail due to missing event types", func(t *testing.T) {
-				createdWebhook.EventTypes = []types.OutboundWebhookEventType{}
-				err := store.Update(ctx, createdWebhook)
-				assert.ErrorIs(t, err, errOutboundWebhookHasNoEventTypes)
+		t.Run("Updbte", func(t *testing.T) {
+			t.Run("fbil due to missing event types", func(t *testing.T) {
+				crebtedWebhook.EventTypes = []types.OutboundWebhookEventType{}
+				err := store.Updbte(ctx, crebtedWebhook)
+				bssert.ErrorIs(t, err, errOutboundWebhookHbsNoEventTypes)
 			})
 
-			t.Run("replace all event types", func(t *testing.T) {
-				createdWebhook.EventTypes = []types.OutboundWebhookEventType{
+			t.Run("replbce bll event types", func(t *testing.T) {
+				crebtedWebhook.EventTypes = []types.OutboundWebhookEventType{
 					{EventType: "new"},
 				}
-				err := store.Update(ctx, createdWebhook)
-				assert.NoError(t, err)
+				err := store.Updbte(ctx, crebtedWebhook)
+				bssert.NoError(t, err)
 
-				have, err := store.GetByID(ctx, createdWebhook.ID)
+				hbve, err := store.GetByID(ctx, crebtedWebhook.ID)
 				require.NoError(t, err)
-				assertEqualEventTypes(t, have.ID, createdWebhook.EventTypes, have.EventTypes)
+				bssertEqublEventTypes(t, hbve.ID, crebtedWebhook.EventTypes, hbve.EventTypes)
 			})
 
-			t.Run("append to the current event types", func(t *testing.T) {
-				createdWebhook.EventTypes = append(
-					createdWebhook.EventTypes,
-					types.OutboundWebhookEventType{EventType: "newer", Scope: pointers.Ptr("abc")},
+			t.Run("bppend to the current event types", func(t *testing.T) {
+				crebtedWebhook.EventTypes = bppend(
+					crebtedWebhook.EventTypes,
+					types.OutboundWebhookEventType{EventType: "newer", Scope: pointers.Ptr("bbc")},
 				)
-				err := store.Update(ctx, createdWebhook)
-				assert.NoError(t, err)
+				err := store.Updbte(ctx, crebtedWebhook)
+				bssert.NoError(t, err)
 
-				have, err := store.GetByID(ctx, createdWebhook.ID)
+				hbve, err := store.GetByID(ctx, crebtedWebhook.ID)
 				require.NoError(t, err)
-				assertEqualEventTypes(t, have.ID, createdWebhook.EventTypes, have.EventTypes)
+				bssertEqublEventTypes(t, hbve.ID, crebtedWebhook.EventTypes, hbve.EventTypes)
 			})
 
-			t.Run("update other fields", func(t *testing.T) {
-				createdWebhook.URL.Set("https://a.new.value")
-				createdWebhook.Secret.Set("a whole new secret")
-				err := store.Update(ctx, createdWebhook)
-				assert.NoError(t, err)
+			t.Run("updbte other fields", func(t *testing.T) {
+				crebtedWebhook.URL.Set("https://b.new.vblue")
+				crebtedWebhook.Secret.Set("b whole new secret")
+				err := store.Updbte(ctx, crebtedWebhook)
+				bssert.NoError(t, err)
 
-				have, err := store.GetByID(ctx, createdWebhook.ID)
+				hbve, err := store.GetByID(ctx, crebtedWebhook.ID)
 				require.NoError(t, err)
-				assertEqualWebhooks(t, ctx, createdWebhook, have)
+				bssertEqublWebhooks(t, ctx, crebtedWebhook, hbve)
 
-				assertOutboundWebhookFieldsEncrypted(t, ctx, store, have)
+				bssertOutboundWebhookFieldsEncrypted(t, ctx, store, hbve)
 			})
 		})
 
 		t.Run("Delete", func(t *testing.T) {
-			err := store.Delete(ctx, createdWebhook.ID)
-			assert.NoError(t, err)
+			err := store.Delete(ctx, crebtedWebhook.ID)
+			bssert.NoError(t, err)
 
-			_, err = store.GetByID(ctx, createdWebhook.ID)
-			assert.True(t, errcode.IsNotFound(err))
+			_, err = store.GetByID(ctx, crebtedWebhook.ID)
+			bssert.True(t, errcode.IsNotFound(err))
 		})
 	})
 }
 
-func assertOutboundWebhookFieldsEncrypted(t *testing.T, ctx context.Context, store basestore.ShareableStore, webhook *types.OutboundWebhook) {
+func bssertOutboundWebhookFieldsEncrypted(t *testing.T, ctx context.Context, store bbsestore.ShbrebbleStore, webhook *types.OutboundWebhook) {
 	t.Helper()
 
 	if store.(*outboundWebhookStore).key == nil {
@@ -335,24 +335,24 @@ func assertOutboundWebhookFieldsEncrypted(t *testing.T, ctx context.Context, sto
 	secret, err := webhook.Secret.Decrypt(ctx)
 	require.NoError(t, err)
 
-	row := store.Handle().QueryRowContext(
+	row := store.Hbndle().QueryRowContext(
 		ctx,
 		"SELECT url, secret, encryption_key_id FROM outbound_webhooks WHERE id = $1",
 		webhook.ID,
 	)
-	var (
+	vbr (
 		dbURL    string
 		dbSecret string
 		keyID    string
 	)
-	err = row.Scan(&dbURL, &dbSecret, &dbutil.NullString{S: &keyID})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, keyID)
-	assert.NotEqual(t, dbURL, url)
-	assert.NotEqual(t, dbSecret, secret)
+	err = row.Scbn(&dbURL, &dbSecret, &dbutil.NullString{S: &keyID})
+	bssert.NoError(t, err)
+	bssert.NotEmpty(t, keyID)
+	bssert.NotEqubl(t, dbURL, url)
+	bssert.NotEqubl(t, dbSecret, secret)
 }
 
-func assertEqualEventTypes(t *testing.T, webhookID int64, want, have []types.OutboundWebhookEventType) {
+func bssertEqublEventTypes(t *testing.T, webhookID int64, wbnt, hbve []types.OutboundWebhookEventType) {
 	t.Helper()
 
 	type unidentifiedEventType struct {
@@ -361,12 +361,12 @@ func assertEqualEventTypes(t *testing.T, webhookID int64, want, have []types.Out
 		scope             *string
 	}
 
-	comparableEventTypes := func(eventTypes []types.OutboundWebhookEventType) []unidentifiedEventType {
+	compbrbbleEventTypes := func(eventTypes []types.OutboundWebhookEventType) []unidentifiedEventType {
 		t.Helper()
 
-		comp := make([]unidentifiedEventType, len(eventTypes))
-		for i, eventType := range eventTypes {
-			assert.Equal(t, webhookID, eventType.OutboundWebhookID)
+		comp := mbke([]unidentifiedEventType, len(eventTypes))
+		for i, eventType := rbnge eventTypes {
+			bssert.Equbl(t, webhookID, eventType.OutboundWebhookID)
 			comp[i] = unidentifiedEventType{
 				outboundWebhookID: eventType.OutboundWebhookID,
 				eventType:         eventType.EventType,
@@ -377,67 +377,67 @@ func assertEqualEventTypes(t *testing.T, webhookID int64, want, have []types.Out
 		return comp
 	}
 
-	assert.ElementsMatch(t, comparableEventTypes(want), comparableEventTypes(have))
+	bssert.ElementsMbtch(t, compbrbbleEventTypes(wbnt), compbrbbleEventTypes(hbve))
 }
 
-func assertEqualWebhooks(t *testing.T, ctx context.Context, want, have *types.OutboundWebhook) {
+func bssertEqublWebhooks(t *testing.T, ctx context.Context, wbnt, hbve *types.OutboundWebhook) {
 	t.Helper()
 
-	valueOf := func(e *encryption.Encryptable) string {
+	vblueOf := func(e *encryption.Encryptbble) string {
 		t.Helper()
-		return decryptedValue(t, ctx, e)
+		return decryptedVblue(t, ctx, e)
 	}
 
-	// We need this helper because the encryptable values need to be decrypted
-	// before it makes sense to compare them, and because event type IDs are (in
-	// practice) ephemeral, so we only really care about the actual values.
-	assert.Equal(t, want.ID, have.ID)
-	assert.Equal(t, want.CreatedBy, have.CreatedBy)
-	assert.Equal(t, want.CreatedAt, have.CreatedAt)
-	assert.Equal(t, want.UpdatedBy, have.UpdatedBy)
-	assert.Equal(t, want.UpdatedAt, have.UpdatedAt)
-	assert.Equal(t, valueOf(want.URL), valueOf(have.URL))
-	assert.Equal(t, valueOf(want.Secret), valueOf(have.Secret))
-	assertEqualEventTypes(t, want.ID, want.EventTypes, have.EventTypes)
+	// We need this helper becbuse the encryptbble vblues need to be decrypted
+	// before it mbkes sense to compbre them, bnd becbuse event type IDs bre (in
+	// prbctice) ephemerbl, so we only reblly cbre bbout the bctubl vblues.
+	bssert.Equbl(t, wbnt.ID, hbve.ID)
+	bssert.Equbl(t, wbnt.CrebtedBy, hbve.CrebtedBy)
+	bssert.Equbl(t, wbnt.CrebtedAt, hbve.CrebtedAt)
+	bssert.Equbl(t, wbnt.UpdbtedBy, hbve.UpdbtedBy)
+	bssert.Equbl(t, wbnt.UpdbtedAt, hbve.UpdbtedAt)
+	bssert.Equbl(t, vblueOf(wbnt.URL), vblueOf(hbve.URL))
+	bssert.Equbl(t, vblueOf(wbnt.Secret), vblueOf(hbve.Secret))
+	bssertEqublEventTypes(t, wbnt.ID, wbnt.EventTypes, hbve.EventTypes)
 }
 
-func assertEqualWebhookSlices(t *testing.T, ctx context.Context, want, have []*types.OutboundWebhook) {
-	assert.Equal(t, len(want), len(have))
-	for i := range want {
-		assertEqualWebhooks(t, ctx, want[i], have[i])
+func bssertEqublWebhookSlices(t *testing.T, ctx context.Context, wbnt, hbve []*types.OutboundWebhook) {
+	bssert.Equbl(t, len(wbnt), len(hbve))
+	for i := rbnge wbnt {
+		bssertEqublWebhooks(t, ctx, wbnt[i], hbve[i])
 	}
 }
 
-func decryptedValue(t *testing.T, ctx context.Context, e *encryption.Encryptable) string {
+func decryptedVblue(t *testing.T, ctx context.Context, e *encryption.Encryptbble) string {
 	t.Helper()
 
-	value, err := e.Decrypt(ctx)
+	vblue, err := e.Decrypt(ctx)
 	require.NoError(t, err)
-	return value
+	return vblue
 }
 
 func newTestWebhook(t *testing.T, user *types.User, scopes ...ScopedEventType) *types.OutboundWebhook {
 	t.Helper()
 
 	webhook := &types.OutboundWebhook{
-		CreatedBy:  user.ID,
-		UpdatedBy:  user.ID,
-		URL:        encryption.NewUnencrypted("https://example.com/"),
+		CrebtedBy:  user.ID,
+		UpdbtedBy:  user.ID,
+		URL:        encryption.NewUnencrypted("https://exbmple.com/"),
 		Secret:     encryption.NewUnencrypted("super secret"),
-		EventTypes: make([]types.OutboundWebhookEventType, 0, len(scopes)),
+		EventTypes: mbke([]types.OutboundWebhookEventType, 0, len(scopes)),
 	}
 
-	for _, scope := range scopes {
-		webhook.EventTypes = append(webhook.EventTypes, webhook.NewEventType(scope.EventType, scope.Scope))
+	for _, scope := rbnge scopes {
+		webhook.EventTypes = bppend(webhook.EventTypes, webhook.NewEventType(scope.EventType, scope.Scope))
 	}
 
 	return webhook
 }
 
-func runBothEncryptionStates(t *testing.T, f func(t *testing.T, logger log.Logger, db DB, key encryption.Key)) {
+func runBothEncryptionStbtes(t *testing.T, f func(t *testing.T, logger log.Logger, db DB, key encryption.Key)) {
 	t.Helper()
 
-	var key encryption.Key
+	vbr key encryption.Key
 
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
@@ -445,6 +445,6 @@ func runBothEncryptionStates(t *testing.T, f func(t *testing.T, logger log.Logge
 
 	logger = logtest.Scoped(t)
 	db = NewDB(logger, dbtest.NewDB(logger, t))
-	key = et.ByteaTestKey{}
+	key = et.BytebTestKey{}
 	t.Run("encrypted", func(t *testing.T) { f(t, logger, db, key) })
 }

@@ -1,4 +1,4 @@
-package search
+pbckbge sebrch
 
 import (
 	"context"
@@ -10,71 +10,71 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
-	"golang.org/x/sync/errgroup"
+	"golbng.org/x/sync/errgroup"
 
-	api2 "github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
-	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
-	"github.com/sourcegraph/sourcegraph/internal/settings"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	bpi2 "github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/client"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/bpi"
+	strebmhttp "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming/http"
+	"github.com/sourcegrbph/sourcegrbph/internbl/settings"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func TestServeStream_empty(t *testing.T) {
-	settings.MockCurrentUserFinal = &schema.Settings{}
-	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
+func TestServeStrebm_empty(t *testing.T) {
+	settings.MockCurrentUserFinbl = &schemb.Settings{}
+	t.Clebnup(func() { settings.MockCurrentUserFinbl = nil })
 
-	mock := client.NewMockSearchClient()
-	mock.PlanFunc.SetDefaultReturn(&search.Inputs{}, nil)
+	mock := client.NewMockSebrchClient()
+	mock.PlbnFunc.SetDefbultReturn(&sebrch.Inputs{}, nil)
 
-	ts := httptest.NewServer(&streamHandler{
+	ts := httptest.NewServer(&strebmHbndler{
 		logger:              logtest.Scoped(t),
-		flushTickerInternal: 1 * time.Millisecond,
-		pingTickerInterval:  1 * time.Millisecond,
-		searchClient:        mock,
+		flushTickerInternbl: 1 * time.Millisecond,
+		pingTickerIntervbl:  1 * time.Millisecond,
+		sebrchClient:        mock,
 	})
 	defer ts.Close()
 
 	res, err := http.Get(ts.URL + "?q=test")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	b, err := io.ReadAll(res.Body)
+	b, err := io.RebdAll(res.Body)
 	res.Body.Close()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if res.StatusCode != 200 {
-		t.Errorf("expected status 200, got %d", res.StatusCode)
+	if res.StbtusCode != 200 {
+		t.Errorf("expected stbtus 200, got %d", res.StbtusCode)
 	}
 	if testing.Verbose() {
 		t.Logf("GET:\n%s", b)
 	}
 }
 
-func TestServeStream_chunkMatches(t *testing.T) {
-	settings.MockCurrentUserFinal = &schema.Settings{}
-	t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
+func TestServeStrebm_chunkMbtches(t *testing.T) {
+	settings.MockCurrentUserFinbl = &schemb.Settings{}
+	t.Clebnup(func() { settings.MockCurrentUserFinbl = nil })
 
-	mock := client.NewMockSearchClient()
-	mock.PlanFunc.SetDefaultReturn(&search.Inputs{Query: query.Q{query.Parameter{Field: "count", Value: "1000"}}}, nil)
-	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
-		s.Send(streaming.SearchEvent{
-			Results: result.Matches{&result.FileMatch{
-				File: result.File{Path: "testpath"},
-				ChunkMatches: result.ChunkMatches{{
+	mock := client.NewMockSebrchClient()
+	mock.PlbnFunc.SetDefbultReturn(&sebrch.Inputs{Query: query.Q{query.Pbrbmeter{Field: "count", Vblue: "1000"}}}, nil)
+	mock.ExecuteFunc.SetDefbultHook(func(_ context.Context, s strebming.Sender, _ *sebrch.Inputs) (*sebrch.Alert, error) {
+		s.Send(strebming.SebrchEvent{
+			Results: result.Mbtches{&result.FileMbtch{
+				File: result.File{Pbth: "testpbth"},
+				ChunkMbtches: result.ChunkMbtches{{
 					Content: "line1",
-					Ranges: result.Ranges{{
-						Start: result.Location{0, 0, 0},
-						End:   result.Location{1, 0, 1},
+					Rbnges: result.Rbnges{{
+						Stbrt: result.Locbtion{0, 0, 0},
+						End:   result.Locbtion{1, 0, 1},
 					}},
 				}},
 			}},
@@ -83,204 +83,204 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	})
 
 	mockRepos := dbmocks.NewMockRepoStore()
-	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
-		out := make([]*types.SearchedRepo, 0, len(ids))
-		for _, id := range ids {
-			out = append(out, &types.SearchedRepo{ID: id})
+	mockRepos.MetbdbtbFunc.SetDefbultHook(func(_ context.Context, ids ...bpi2.RepoID) ([]*types.SebrchedRepo, error) {
+		out := mbke([]*types.SebrchedRepo, 0, len(ids))
+		for _, id := rbnge ids {
+			out = bppend(out, &types.SebrchedRepo{ID: id})
 		}
 		return out, nil
 	})
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(mockRepos)
+	db.ReposFunc.SetDefbultReturn(mockRepos)
 
-	ts := httptest.NewServer(&streamHandler{
+	ts := httptest.NewServer(&strebmHbndler{
 		logger:              logtest.Scoped(t),
 		db:                  db,
-		flushTickerInternal: 1 * time.Millisecond,
-		pingTickerInterval:  1 * time.Millisecond,
-		searchClient:        mock,
+		flushTickerInternbl: 1 * time.Millisecond,
+		pingTickerIntervbl:  1 * time.Millisecond,
+		sebrchClient:        mock,
 	})
 	defer ts.Close()
 
-	res, err := http.Get(ts.URL + "?q=test&cm=t&display=1000")
+	res, err := http.Get(ts.URL + "?q=test&cm=t&displby=1000")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	defer res.Body.Close()
 
-	var matches []streamhttp.EventMatch
-	decoder := streamhttp.FrontendStreamDecoder{
-		OnMatches: func(ev []streamhttp.EventMatch) {
-			matches = append(matches, ev...)
+	vbr mbtches []strebmhttp.EventMbtch
+	decoder := strebmhttp.FrontendStrebmDecoder{
+		OnMbtches: func(ev []strebmhttp.EventMbtch) {
+			mbtches = bppend(mbtches, ev...)
 		},
 	}
-	err = decoder.ReadAll(res.Body)
+	err = decoder.RebdAll(res.Body)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if res.StatusCode != 200 {
-		t.Errorf("expected status 200, got %d", res.StatusCode)
+	if res.StbtusCode != 200 {
+		t.Errorf("expected stbtus 200, got %d", res.StbtusCode)
 	}
-	require.Len(t, matches, 1)
-	chunkMatches := matches[0].(*streamhttp.EventContentMatch).ChunkMatches
-	require.Len(t, chunkMatches, 1)
-	require.Len(t, chunkMatches[0].Ranges, 1)
+	require.Len(t, mbtches, 1)
+	chunkMbtches := mbtches[0].(*strebmhttp.EventContentMbtch).ChunkMbtches
+	require.Len(t, chunkMbtches, 1)
+	require.Len(t, chunkMbtches[0].Rbnges, 1)
 }
 
-func TestDisplayLimit(t *testing.T) {
-	cases := []struct {
+func TestDisplbyLimit(t *testing.T) {
+	cbses := []struct {
 		queryString         string
-		displayLimit        int
-		wantDisplayLimitHit bool
-		wantMatchCount      int
-		wantMessage         string
+		displbyLimit        int
+		wbntDisplbyLimitHit bool
+		wbntMbtchCount      int
+		wbntMessbge         string
 	}{
 		{
 			queryString:         "foo count:2",
-			displayLimit:        1,
-			wantDisplayLimitHit: true,
-			wantMatchCount:      2,
-			wantMessage:         "We only display 1 result even if your search returned more results. To see all results and configure the display limit, use our CLI.",
+			displbyLimit:        1,
+			wbntDisplbyLimitHit: true,
+			wbntMbtchCount:      2,
+			wbntMessbge:         "We only displby 1 result even if your sebrch returned more results. To see bll results bnd configure the displby limit, use our CLI.",
 		},
 		{
 			queryString:         "foo count:2",
-			displayLimit:        2,
-			wantDisplayLimitHit: false,
-			wantMatchCount:      2,
+			displbyLimit:        2,
+			wbntDisplbyLimitHit: fblse,
+			wbntMbtchCount:      2,
 		},
 		{
 			queryString:         "foo count:2",
-			displayLimit:        3,
-			wantDisplayLimitHit: false,
-			wantMatchCount:      2,
+			displbyLimit:        3,
+			wbntDisplbyLimitHit: fblse,
+			wbntMbtchCount:      2,
 		},
 		{
 			queryString:         "foo count:100",
-			displayLimit:        -1, // no display limit set by caller
-			wantDisplayLimitHit: false,
-			wantMatchCount:      2,
+			displbyLimit:        -1, // no displby limit set by cbller
+			wbntDisplbyLimitHit: fblse,
+			wbntMbtchCount:      2,
 		},
 		{
 			queryString:         "foo count:1",
-			displayLimit:        -1, // no display limit set by caller
-			wantDisplayLimitHit: false,
-			wantMatchCount:      1,
+			displbyLimit:        -1, // no displby limit set by cbller
+			wbntDisplbyLimitHit: fblse,
+			wbntMbtchCount:      1,
 		},
 	}
 
-	// any returns item, true if skipped contains an item matching reason.
-	anySkipped := func(reason api.SkippedReason, skipped []api.Skipped) (api.Skipped, bool) {
-		for _, s := range skipped {
-			if s.Reason == reason {
+	// bny returns item, true if skipped contbins bn item mbtching rebson.
+	bnySkipped := func(rebson bpi.SkippedRebson, skipped []bpi.Skipped) (bpi.Skipped, bool) {
+		for _, s := rbnge skipped {
+			if s.Rebson == rebson {
 				return s, true
 			}
 		}
-		return api.Skipped{}, false
+		return bpi.Skipped{}, fblse
 	}
 
-	for _, c := range cases {
-		t.Run(fmt.Sprintf("q=%s;displayLimit=%d", c.queryString, c.displayLimit), func(t *testing.T) {
-			settings.MockCurrentUserFinal = &schema.Settings{}
-			t.Cleanup(func() { settings.MockCurrentUserFinal = nil })
+	for _, c := rbnge cbses {
+		t.Run(fmt.Sprintf("q=%s;displbyLimit=%d", c.queryString, c.displbyLimit), func(t *testing.T) {
+			settings.MockCurrentUserFinbl = &schemb.Settings{}
+			t.Clebnup(func() { settings.MockCurrentUserFinbl = nil })
 
-			mockInput := make(chan streaming.SearchEvent)
-			mock := client.NewMockSearchClient()
-			mock.PlanFunc.SetDefaultHook(func(_ context.Context, _ string, _ *string, queryString string, _ search.Mode, _ search.Protocol) (*search.Inputs, error) {
-				q, err := query.Parse(queryString, query.SearchTypeLiteral)
+			mockInput := mbke(chbn strebming.SebrchEvent)
+			mock := client.NewMockSebrchClient()
+			mock.PlbnFunc.SetDefbultHook(func(_ context.Context, _ string, _ *string, queryString string, _ sebrch.Mode, _ sebrch.Protocol) (*sebrch.Inputs, error) {
+				q, err := query.Pbrse(queryString, query.SebrchTypeLiterbl)
 				require.NoError(t, err)
-				return &search.Inputs{
+				return &sebrch.Inputs{
 					Query: q,
 				}, nil
 			})
-			mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, stream streaming.Sender, _ *search.Inputs) (*search.Alert, error) {
+			mock.ExecuteFunc.SetDefbultHook(func(_ context.Context, strebm strebming.Sender, _ *sebrch.Inputs) (*sebrch.Alert, error) {
 				event := <-mockInput
-				stream.Send(event)
+				strebm.Send(event)
 				return nil, nil
 			})
 
 			repos := dbmocks.NewStrictMockRepoStore()
-			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
-				res := make([]*types.SearchedRepo, 0, len(ids))
-				for _, id := range ids {
-					res = append(res, &types.SearchedRepo{
+			repos.MetbdbtbFunc.SetDefbultHook(func(_ context.Context, ids ...bpi2.RepoID) (_ []*types.SebrchedRepo, err error) {
+				res := mbke([]*types.SebrchedRepo, 0, len(ids))
+				for _, id := rbnge ids {
+					res = bppend(res, &types.SebrchedRepo{
 						ID: id,
 					})
 				}
 				return res, nil
 			})
 			db := dbmocks.NewStrictMockDB()
-			db.ReposFunc.SetDefaultReturn(repos)
+			db.ReposFunc.SetDefbultReturn(repos)
 
-			ts := httptest.NewServer(&streamHandler{
+			ts := httptest.NewServer(&strebmHbndler{
 				logger:              logtest.Scoped(t),
 				db:                  db,
-				flushTickerInternal: 1 * time.Millisecond,
-				pingTickerInterval:  1 * time.Millisecond,
-				searchClient:        mock,
+				flushTickerInternbl: 1 * time.Millisecond,
+				pingTickerIntervbl:  1 * time.Millisecond,
+				sebrchClient:        mock,
 			})
 			defer ts.Close()
 
-			req, _ := streamhttp.NewRequest(ts.URL, c.queryString)
-			if c.displayLimit != -1 {
+			req, _ := strebmhttp.NewRequest(ts.URL, c.queryString)
+			if c.displbyLimit != -1 {
 				q := req.URL.Query()
-				q.Add("display", strconv.Itoa(c.displayLimit))
-				req.URL.RawQuery = q.Encode()
+				q.Add("displby", strconv.Itob(c.displbyLimit))
+				req.URL.RbwQuery = q.Encode()
 			}
 
-			var displayLimitHit bool
-			var message string
-			var matchCount int
-			decoder := streamhttp.FrontendStreamDecoder{
-				OnProgress: func(progress *api.Progress) {
-					if skipped, ok := anySkipped(api.DisplayLimit, progress.Skipped); ok {
-						displayLimitHit = true
-						message = skipped.Message
+			vbr displbyLimitHit bool
+			vbr messbge string
+			vbr mbtchCount int
+			decoder := strebmhttp.FrontendStrebmDecoder{
+				OnProgress: func(progress *bpi.Progress) {
+					if skipped, ok := bnySkipped(bpi.DisplbyLimit, progress.Skipped); ok {
+						displbyLimitHit = true
+						messbge = skipped.Messbge
 					}
-					matchCount = progress.MatchCount
+					mbtchCount = progress.MbtchCount
 				},
 			}
 
-			resp, err := http.DefaultClient.Do(req)
+			resp, err := http.DefbultClient.Do(req)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			defer resp.Body.Close()
 
 			// Consume events.
 			g := errgroup.Group{}
 			g.Go(func() error {
-				return decoder.ReadAll(resp.Body)
+				return decoder.RebdAll(resp.Body)
 			})
 
-			// Send 2 repository matches.
-			mockInput <- streaming.SearchEvent{
-				Results: []result.Match{mkRepoMatch(1), mkRepoMatch(2)},
+			// Send 2 repository mbtches.
+			mockInput <- strebming.SebrchEvent{
+				Results: []result.Mbtch{mkRepoMbtch(1), mkRepoMbtch(2)},
 			}
-			if err := g.Wait(); err != nil {
-				t.Fatal(err)
-			}
-
-			if matchCount != c.wantMatchCount {
-				t.Fatalf("got %d, want %d", matchCount, c.wantMatchCount)
+			if err := g.Wbit(); err != nil {
+				t.Fbtbl(err)
 			}
 
-			if got := displayLimitHit; got != c.wantDisplayLimitHit {
-				t.Fatalf("got %t, want %t", got, c.wantDisplayLimitHit)
+			if mbtchCount != c.wbntMbtchCount {
+				t.Fbtblf("got %d, wbnt %d", mbtchCount, c.wbntMbtchCount)
 			}
 
-			if c.wantDisplayLimitHit {
-				if got := message; got != c.wantMessage {
-					t.Fatalf("got %s, want %s", got, c.wantMessage)
+			if got := displbyLimitHit; got != c.wbntDisplbyLimitHit {
+				t.Fbtblf("got %t, wbnt %t", got, c.wbntDisplbyLimitHit)
+			}
+
+			if c.wbntDisplbyLimitHit {
+				if got := messbge; got != c.wbntMessbge {
+					t.Fbtblf("got %s, wbnt %s", got, c.wbntMessbge)
 				}
 			}
 		})
 	}
 }
 
-func mkRepoMatch(id int) *result.RepoMatch {
-	return &result.RepoMatch{
-		ID:   api2.RepoID(id),
-		Name: api2.RepoName(fmt.Sprintf("repo%d", id)),
+func mkRepoMbtch(id int) *result.RepoMbtch {
+	return &result.RepoMbtch{
+		ID:   bpi2.RepoID(id),
+		Nbme: bpi2.RepoNbme(fmt.Sprintf("repo%d", id)),
 	}
 }

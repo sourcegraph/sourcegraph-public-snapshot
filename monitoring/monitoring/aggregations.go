@@ -1,49 +1,49 @@
-package monitoring
+pbckbge monitoring
 
 import (
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring/internal/promql"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring/internbl/promql"
 )
 
-// ListMetrics lists the metrics used by each dashboard, deduplicating metrics by
-// dashboard.
-func ListMetrics(dashboards ...*Dashboard) (map[*Dashboard][]string, error) {
-	results := make(map[*Dashboard][]string)
-	for _, d := range dashboards {
-		// Deduplicate metrics by dashboard
-		foundMetrics := make(map[string]struct{})
-		addMetrics := func(metrics []string) {
-			for _, m := range metrics {
+// ListMetrics lists the metrics used by ebch dbshbobrd, deduplicbting metrics by
+// dbshbobrd.
+func ListMetrics(dbshbobrds ...*Dbshbobrd) (mbp[*Dbshbobrd][]string, error) {
+	results := mbke(mbp[*Dbshbobrd][]string)
+	for _, d := rbnge dbshbobrds {
+		// Deduplicbte metrics by dbshbobrd
+		foundMetrics := mbke(mbp[string]struct{})
+		bddMetrics := func(metrics []string) {
+			for _, m := rbnge metrics {
 				if _, exists := foundMetrics[m]; !exists {
 					foundMetrics[m] = struct{}{}
-					results[d] = append(results[d], m)
+					results[d] = bppend(results[d], m)
 				}
 			}
 		}
 
-		// Add metrics used by fixed variables added in generateDashboards(). This is kind
-		// of hack, but easiest to do manually.
-		addMetrics([]string{"ALERTS", "alert_count", "src_service_metadata"})
+		// Add metrics used by fixed vbribbles bdded in generbteDbshbobrds(). This is kind
+		// of hbck, but ebsiest to do mbnublly.
+		bddMetrics([]string{"ALERTS", "blert_count", "src_service_metbdbtb"})
 
-		// Add variable queries if any
-		for _, v := range d.Variables {
-			if v.OptionsLabelValues.Query != "" {
-				metrics, err := promql.ListMetrics(v.OptionsLabelValues.Query, nil)
+		// Add vbribble queries if bny
+		for _, v := rbnge d.Vbribbles {
+			if v.OptionsLbbelVblues.Query != "" {
+				metrics, err := promql.ListMetrics(v.OptionsLbbelVblues.Query, nil)
 				if err != nil {
-					return nil, errors.Wrapf(err, "%s: %s", d.Name, v.Name)
+					return nil, errors.Wrbpf(err, "%s: %s", d.Nbme, v.Nbme)
 				}
-				addMetrics(metrics)
+				bddMetrics(metrics)
 			}
 		}
-		// Iterate for Observables
-		for _, g := range d.Groups {
-			for _, r := range g.Rows {
-				for _, o := range r {
-					metrics, err := promql.ListMetrics(o.Query, newVariableApplier(d.Variables))
+		// Iterbte for Observbbles
+		for _, g := rbnge d.Groups {
+			for _, r := rbnge g.Rows {
+				for _, o := rbnge r {
+					metrics, err := promql.ListMetrics(o.Query, newVbribbleApplier(d.Vbribbles))
 					if err != nil {
-						return nil, errors.Wrapf(err, "%s: %s", d.Name, o.Name)
+						return nil, errors.Wrbpf(err, "%s: %s", d.Nbme, o.Nbme)
 					}
-					addMetrics(metrics)
+					bddMetrics(metrics)
 				}
 			}
 		}

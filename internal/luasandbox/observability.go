@@ -1,47 +1,47 @@
-package luasandbox
+pbckbge lubsbndbox
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	call           *observation.Operation
-	callGenerator  *observation.Operation
-	createSandbox  *observation.Operation
-	runGoCallback  *observation.Operation
-	runScript      *observation.Operation
-	runScriptNamed *observation.Operation
+type operbtions struct {
+	cbll           *observbtion.Operbtion
+	cbllGenerbtor  *observbtion.Operbtion
+	crebteSbndbox  *observbtion.Operbtion
+	runGoCbllbbck  *observbtion.Operbtion
+	runScript      *observbtion.Operbtion
+	runScriptNbmed *observbtion.Operbtion
 }
 
-var m = new(metrics.SingletonREDMetrics)
+vbr m = new(metrics.SingletonREDMetrics)
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	redMetrics := m.Get(func() *metrics.REDMetrics {
 		return metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			"luasandbox",
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			"lubsbndbox",
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
 	})
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("luasandbox.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("lubsbndbox.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &operations{
-		call:           op("Call"),
-		callGenerator:  op("CallGenerator"),
-		createSandbox:  op("CreateSandbox"),
-		runGoCallback:  op("RunGoCallback"),
+	return &operbtions{
+		cbll:           op("Cbll"),
+		cbllGenerbtor:  op("CbllGenerbtor"),
+		crebteSbndbox:  op("CrebteSbndbox"),
+		runGoCbllbbck:  op("RunGoCbllbbck"),
 		runScript:      op("RunScript"),
-		runScriptNamed: op("RunScriptNamed"),
+		runScriptNbmed: op("RunScriptNbmed"),
 	}
 }

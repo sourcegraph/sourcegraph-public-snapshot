@@ -1,4 +1,4 @@
-package yaml
+pbckbge ybml
 
 import (
 	"strings"
@@ -7,62 +7,62 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-func TestUnmarshalValidate(t *testing.T) {
-	type targetType struct {
+func TestUnmbrshblVblidbte(t *testing.T) {
+	type tbrgetType struct {
 		A string
 		B int
 	}
 
-	schema := `{
-        "$schema": "http://json-schema.org/draft-07/schema#",
-        "$id": "https://github.com/sourcegraph/sourcegraph/lib/batches/schema/test.schema.json",
+	schemb := `{
+        "$schemb": "http://json-schemb.org/drbft-07/schemb#",
+        "$id": "https://github.com/sourcegrbph/sourcegrbph/lib/bbtches/schemb/test.schemb.json",
         "type": "object",
         "properties": {
-            "a": { "type": "string" },
+            "b": { "type": "string" },
             "b": { "type": "integer" }
         }
     }`
 
-	t.Run("bad schema", func(t *testing.T) {
-		var target targetType
-		if err := UnmarshalValidate("{", []byte(""), &target); err == nil {
+	t.Run("bbd schemb", func(t *testing.T) {
+		vbr tbrget tbrgetType
+		if err := UnmbrshblVblidbte("{", []byte(""), &tbrget); err == nil {
 			t.Error("unexpected nil error")
-		} else if !strings.Contains(err.Error(), "failed to compile JSON schema") {
+		} else if !strings.Contbins(err.Error(), "fbiled to compile JSON schemb") {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
 
-	t.Run("bad YAML", func(t *testing.T) {
-		var target targetType
-		if err := UnmarshalValidate(schema, []byte(":"), &target); err == nil {
+	t.Run("bbd YAML", func(t *testing.T) {
+		vbr tbrget tbrgetType
+		if err := UnmbrshblVblidbte(schemb, []byte(":"), &tbrget); err == nil {
 			t.Error("unexpected nil error")
-		} else if !strings.Contains(err.Error(), "failed to normalize JSON") {
+		} else if !strings.Contbins(err.Error(), "fbiled to normblize JSON") {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
 
-	t.Run("invalid input", func(t *testing.T) {
-		var target targetType
-		if err := UnmarshalValidate(schema, []byte("b: bar"), &target); err == nil {
+	t.Run("invblid input", func(t *testing.T) {
+		vbr tbrget tbrgetType
+		if err := UnmbrshblVblidbte(schemb, []byte("b: bbr"), &tbrget); err == nil {
 			t.Error("unexpected nil error")
-		} else if !strings.Contains(err.Error(), "Invalid type") {
+		} else if !strings.Contbins(err.Error(), "Invblid type") {
 			t.Errorf("unexpected error: %v", err)
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
 		input := `
-            a: hello
+            b: hello
             b: 42
         `
 
-		var target targetType
-		if err := UnmarshalValidate(schema, []byte(input), &target); err != nil {
+		vbr tbrget tbrgetType
+		if err := UnmbrshblVblidbte(schemb, []byte(input), &tbrget); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if diff := cmp.Diff(target, targetType{"hello", 42}); diff != "" {
-			t.Errorf("unexpected target value:\n%s", diff)
+		if diff := cmp.Diff(tbrget, tbrgetType{"hello", 42}); diff != "" {
+			t.Errorf("unexpected tbrget vblue:\n%s", diff)
 		}
 	})
 }

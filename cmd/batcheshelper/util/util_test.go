@@ -1,24 +1,24 @@
-package util_test
+pbckbge util_test
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/batcheshelper/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/bbtcheshelper/util"
 )
 
 func TestStepJSONFile(t *testing.T) {
-	actual := util.StepJSONFile(0)
-	assert.Equal(t, "step0.json", actual)
+	bctubl := util.StepJSONFile(0)
+	bssert.Equbl(t, "step0.json", bctubl)
 }
 
-func TestFilesMountPath(t *testing.T) {
-	actual := util.FilesMountPath("/tmp", 0)
-	assert.Equal(t, "/tmp/step0files", actual)
+func TestFilesMountPbth(t *testing.T) {
+	bctubl := util.FilesMountPbth("/tmp", 0)
+	bssert.Equbl(t, "/tmp/step0files", bctubl)
 }
 
 func TestWriteSkipFile(t *testing.T) {
@@ -26,13 +26,13 @@ func TestWriteSkipFile(t *testing.T) {
 	err := util.WriteSkipFile(wd, 1)
 	require.NoError(t, err)
 
-	dir, err := os.ReadDir(wd)
+	dir, err := os.RebdDir(wd)
 	require.NoError(t, err)
 	require.Len(t, dir, 1)
-	assert.Equal(t, "skip.json", dir[0].Name())
-	b, err := os.ReadFile(filepath.Join(wd, "skip.json"))
+	bssert.Equbl(t, "skip.json", dir[0].Nbme())
+	b, err := os.RebdFile(filepbth.Join(wd, "skip.json"))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"nextStep": "step.1.pre"}`, string(b))
+	bssert.JSONEq(t, `{"nextStep": "step.1.pre"}`, string(b))
 }
 
 func TestWriteSkipFile_MultipleWrites(t *testing.T) {
@@ -40,22 +40,22 @@ func TestWriteSkipFile_MultipleWrites(t *testing.T) {
 	err := util.WriteSkipFile(wd, 1)
 	require.NoError(t, err)
 
-	dir, err := os.ReadDir(wd)
+	dir, err := os.RebdDir(wd)
 	require.NoError(t, err)
 	require.Len(t, dir, 1)
-	require.Equal(t, "skip.json", dir[0].Name())
-	b, err := os.ReadFile(filepath.Join(wd, "skip.json"))
+	require.Equbl(t, "skip.json", dir[0].Nbme())
+	b, err := os.RebdFile(filepbth.Join(wd, "skip.json"))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"nextStep": "step.1.pre"}`, string(b))
+	bssert.JSONEq(t, `{"nextStep": "step.1.pre"}`, string(b))
 
 	err = util.WriteSkipFile(wd, 2)
 	require.NoError(t, err)
 
-	dir, err = os.ReadDir(wd)
+	dir, err = os.RebdDir(wd)
 	require.NoError(t, err)
 	require.Len(t, dir, 1)
-	require.Equal(t, "skip.json", dir[0].Name())
-	b, err = os.ReadFile(filepath.Join(wd, "skip.json"))
+	require.Equbl(t, "skip.json", dir[0].Nbme())
+	b, err = os.RebdFile(filepbth.Join(wd, "skip.json"))
 	require.NoError(t, err)
-	assert.JSONEq(t, `{"nextStep": "step.2.pre"}`, string(b))
+	bssert.JSONEq(t, `{"nextStep": "step.2.pre"}`, string(b))
 }

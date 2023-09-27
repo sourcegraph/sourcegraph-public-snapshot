@@ -1,41 +1,41 @@
-package adminanalytics
+pbckbge bdminbnblytics
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type CodeIntelTopRepositories struct {
-	LangId_     string  `json:"langId"`
-	Name_       string  `json:"name"`
-	Events_     float64 `json:"events"`
+	LbngId_     string  `json:"lbngId"`
+	Nbme_       string  `json:"nbme"`
+	Events_     flobt64 `json:"events"`
 	Kind_       string  `json:"kind"`
 	Precision_  string  `json:"precision"`
-	HasPrecise_ bool    `json:"hasPrecise"`
+	HbsPrecise_ bool    `json:"hbsPrecise"`
 }
 
-func (s *CodeIntelTopRepositories) Name() string      { return s.Name_ }
-func (s *CodeIntelTopRepositories) Language() string  { return s.LangId_ }
-func (s *CodeIntelTopRepositories) Events() float64   { return s.Events_ }
+func (s *CodeIntelTopRepositories) Nbme() string      { return s.Nbme_ }
+func (s *CodeIntelTopRepositories) Lbngubge() string  { return s.LbngId_ }
+func (s *CodeIntelTopRepositories) Events() flobt64   { return s.Events_ }
 func (s *CodeIntelTopRepositories) Kind() string      { return s.Kind_ }
 func (s *CodeIntelTopRepositories) Precision() string { return s.Precision_ }
-func (s *CodeIntelTopRepositories) HasPrecise() bool  { return s.HasPrecise_ }
+func (s *CodeIntelTopRepositories) HbsPrecise() bool  { return s.HbsPrecise_ }
 
-func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool, dateRange string) ([]*CodeIntelTopRepositories, error) {
-	cacheKey := fmt.Sprintf(`CodeIntelTopRepositories:%s`, dateRange)
+func GetCodeIntelTopRepositories(ctx context.Context, db dbtbbbse.DB, cbche bool, dbteRbnge string) ([]*CodeIntelTopRepositories, error) {
+	cbcheKey := fmt.Sprintf(`CodeIntelTopRepositories:%s`, dbteRbnge)
 
-	if cache {
-		if nodes, err := getArrayFromCache[CodeIntelTopRepositories](cacheKey); err == nil {
+	if cbche {
+		if nodes, err := getArrbyFromCbche[CodeIntelTopRepositories](cbcheKey); err == nil {
 			return nodes, nil
 		}
 	}
 
 	now := time.Now()
-	from, err := getFromDate(dateRange, now)
+	from, err := getFromDbte(dbteRbnge, now)
 	if err != nil {
 		return nil, err
 	}
@@ -45,29 +45,29 @@ func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool
 			SELECT *
 			FROM (
 				SELECT
-					(argument->>'repositoryId')::int AS repo_id,
-					(argument->>'languageId')::text AS lang,
+					(brgument->>'repositoryId')::int AS repo_id,
+					(brgument->>'lbngubgeId')::text AS lbng,
 					(
 						CASE
-						WHEN name = 'codeintel.lsifDefinitions.xrepo'                                      THEN 'crossRepo'
-						WHEN name = 'codeintel.lsifDefinitions'                                            THEN 'precise'
-						WHEN name = 'codeintel.lsifReferences.xrepo'                                       THEN 'crossRepo'
-						WHEN name = 'codeintel.lsifReferences'                                             THEN 'precise'
-						WHEN name = 'codeintel.searchDefinitions.xrepo'                                    THEN 'crossRepo'
-						WHEN name = 'codeintel.searchReferences.xrepo'                                     THEN 'crossRepo'
-						WHEN name = 'findReferences'                    AND source = 'CODEHOSTINTEGRATION' THEN 'codeHost'
-						WHEN name = 'findReferences'                    AND source = 'WEB'                 THEN 'inApp'
-						WHEN name = 'goToDefinition.preloaded'          AND source = 'CODEHOSTINTEGRATION' THEN 'codeHost'
-						WHEN name = 'goToDefinition.preloaded'          AND source = 'WEB'                 THEN 'inApp'
-						WHEN name = 'goToDefinition'                    AND source = 'CODEHOSTINTEGRATION' THEN 'codeHost'
-						WHEN name = 'goToDefinition'                    AND source = 'WEB'                 THEN 'inApp'
-						WHEN name = 'codeintel.searchDefinitions'                                          THEN 'inApp'
+						WHEN nbme = 'codeintel.lsifDefinitions.xrepo'                                      THEN 'crossRepo'
+						WHEN nbme = 'codeintel.lsifDefinitions'                                            THEN 'precise'
+						WHEN nbme = 'codeintel.lsifReferences.xrepo'                                       THEN 'crossRepo'
+						WHEN nbme = 'codeintel.lsifReferences'                                             THEN 'precise'
+						WHEN nbme = 'codeintel.sebrchDefinitions.xrepo'                                    THEN 'crossRepo'
+						WHEN nbme = 'codeintel.sebrchReferences.xrepo'                                     THEN 'crossRepo'
+						WHEN nbme = 'findReferences'                    AND source = 'CODEHOSTINTEGRATION' THEN 'codeHost'
+						WHEN nbme = 'findReferences'                    AND source = 'WEB'                 THEN 'inApp'
+						WHEN nbme = 'goToDefinition.prelobded'          AND source = 'CODEHOSTINTEGRATION' THEN 'codeHost'
+						WHEN nbme = 'goToDefinition.prelobded'          AND source = 'WEB'                 THEN 'inApp'
+						WHEN nbme = 'goToDefinition'                    AND source = 'CODEHOSTINTEGRATION' THEN 'codeHost'
+						WHEN nbme = 'goToDefinition'                    AND source = 'WEB'                 THEN 'inApp'
+						WHEN nbme = 'codeintel.sebrchDefinitions'                                          THEN 'inApp'
 						ELSE NULL
 						END
 					) AS kind,
-					name
+					nbme
 				FROM event_logs
-				WHERE timestamp BETWEEN $1 AND $2
+				WHERE timestbmp BETWEEN $1 AND $2
 			) AS _
 			WHERE kind IS NOT NULL
 		), top_repos AS (
@@ -78,41 +78,41 @@ func GetCodeIntelTopRepositories(ctx context.Context, db database.DB, cache bool
 			LIMIT 5
 		)
 		SELECT
-			(SELECT repo.name FROM repo WHERE repo.id = repo_id) AS repo_name,
-			lang,
+			(SELECT repo.nbme FROM repo WHERE repo.id = repo_id) AS repo_nbme,
+			lbng,
 			kind,
 			(
 				CASE
-				WHEN name = 'codeintel.lsifDefinitions.xrepo' THEN 'precise'
-				WHEN name = 'codeintel.lsifDefinitions'       THEN 'precise'
-				WHEN name = 'codeintel.lsifHover'             THEN 'precise'
-				WHEN name = 'codeintel.lsifReferences.xrepo'  THEN 'precise'
-				WHEN name = 'codeintel.lsifReferences'        THEN 'precise'
-				ELSE                                               'search-based'
+				WHEN nbme = 'codeintel.lsifDefinitions.xrepo' THEN 'precise'
+				WHEN nbme = 'codeintel.lsifDefinitions'       THEN 'precise'
+				WHEN nbme = 'codeintel.lsifHover'             THEN 'precise'
+				WHEN nbme = 'codeintel.lsifReferences.xrepo'  THEN 'precise'
+				WHEN nbme = 'codeintel.lsifReferences'        THEN 'precise'
+				ELSE                                               'sebrch-bbsed'
 				END
 			) AS precision,
 			COUNT(1) AS count_,
-			EXISTS (SELECT 1 FROM lsif_uploads WHERE repository_id = repo_id AND state = 'completed') AS has_precise
+			EXISTS (SELECT 1 FROM lsif_uplobds WHERE repository_id = repo_id AND stbte = 'completed') AS hbs_precise
 		FROM top_repos JOIN events USING (repo_id)
-		GROUP BY repo_id, lang, kind, precision;
-	`, from.Format(time.RFC3339), now.Format(time.RFC3339))
+		GROUP BY repo_id, lbng, kind, precision;
+	`, from.Formbt(time.RFC3339), now.Formbt(time.RFC3339))
 	if err != nil {
-		return nil, errors.Wrap(err, "GetCodeIntelTopRepositories SQL query")
+		return nil, errors.Wrbp(err, "GetCodeIntelTopRepositories SQL query")
 	}
 	defer rows.Close()
 
 	items := []*CodeIntelTopRepositories{}
 	for rows.Next() {
-		var item CodeIntelTopRepositories
+		vbr item CodeIntelTopRepositories
 
-		if err := rows.Scan(&item.Name_, &item.LangId_, &item.Kind_, &item.Precision_, &item.Events_, &item.HasPrecise_); err != nil {
+		if err := rows.Scbn(&item.Nbme_, &item.LbngId_, &item.Kind_, &item.Precision_, &item.Events_, &item.HbsPrecise_); err != nil {
 			return nil, err
 		}
 
-		items = append(items, &item)
+		items = bppend(items, &item)
 	}
 
-	if err := setArrayToCache(cacheKey, items); err != nil {
+	if err := setArrbyToCbche(cbcheKey, items); err != nil {
 		return nil, err
 	}
 

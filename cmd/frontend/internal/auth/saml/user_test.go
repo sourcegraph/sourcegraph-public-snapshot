@@ -1,133 +1,133 @@
-package saml
+pbckbge sbml
 
 import (
 	"context"
 	"crypto/x509"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/pem"
 	"reflect"
 	"testing"
 	"time"
 
-	saml2 "github.com/russellhaering/gosaml2"
-	dsig "github.com/russellhaering/goxmldsig"
+	sbml2 "github.com/russellhbering/gosbml2"
+	dsig "github.com/russellhbering/goxmldsig"
 	"github.com/stretchr/testify/require"
-	"gotest.tools/assert"
+	"gotest.tools/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
 )
 
-func TestReadAuthnResponse(t *testing.T) {
+func TestRebdAuthnResponse(t *testing.T) {
 	p := &provider{
-		samlSP: &saml2.SAMLServiceProvider{
-			IdentityProviderSSOURL:      "http://localhost:3220/auth/realms/master",
-			IdentityProviderIssuer:      "http://localhost:3220/auth/realms/master",
-			Clock:                       dsig.NewFakeClockAt(time.Date(2018, time.May, 20, 17, 12, 6, 0, time.UTC)),
-			IDPCertificateStore:         &dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{idpCert2}},
-			SPKeyStore:                  dsig.RandomKeyStoreForTest(),
-			AssertionConsumerServiceURL: "http://localhost:3080/.auth/saml/acs",
-			ServiceProviderIssuer:       "http://localhost:3080/.auth/saml/metadata",
-			AudienceURI:                 "http://localhost:3080/.auth/saml/metadata",
+		sbmlSP: &sbml2.SAMLServiceProvider{
+			IdentityProviderSSOURL:      "http://locblhost:3220/buth/reblms/mbster",
+			IdentityProviderIssuer:      "http://locblhost:3220/buth/reblms/mbster",
+			Clock:                       dsig.NewFbkeClockAt(time.Dbte(2018, time.Mby, 20, 17, 12, 6, 0, time.UTC)),
+			IDPCertificbteStore:         &dsig.MemoryX509CertificbteStore{Roots: []*x509.Certificbte{idpCert2}},
+			SPKeyStore:                  dsig.RbndomKeyStoreForTest(),
+			AssertionConsumerServiceURL: "http://locblhost:3080/.buth/sbml/bcs",
+			ServiceProviderIssuer:       "http://locblhost:3080/.buth/sbml/metbdbtb",
+			AudienceURI:                 "http://locblhost:3080/.buth/sbml/metbdbtb",
 		},
 	}
-	info, err := readAuthnResponse(p, base64.StdEncoding.EncodeToString([]byte(testAuthnResponse)))
+	info, err := rebdAuthnResponse(p, bbse64.StdEncoding.EncodeToString([]byte(testAuthnResponse)))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	info.accountData = nil // skip checking this field
-	if want := (&authnResponseInfo{
+	info.bccountDbtb = nil // skip checking this field
+	if wbnt := (&buthnResponseInfo{
 		spec: extsvc.AccountSpec{
-			ServiceType: "saml",
-			ServiceID:   "http://localhost:3220/auth/realms/master",
-			ClientID:    "http://localhost:3080/.auth/saml/metadata",
-			AccountID:   "G-58956f28-7bf5-448d-923a-bd39438c2a9e",
+			ServiceType: "sbml",
+			ServiceID:   "http://locblhost:3220/buth/reblms/mbster",
+			ClientID:    "http://locblhost:3080/.buth/sbml/metbdbtb",
+			AccountID:   "G-58956f28-7bf5-448d-923b-bd39438c2b9e",
 		},
-		email:                "bob@example.com",
-		unnormalizedUsername: "bob@example.com",
-		displayName:          "Bob Yang",
-	}); !reflect.DeepEqual(info, want) {
-		t.Errorf("got != want\n got %+v\nwant %+v", info, want)
+		embil:                "bob@exbmple.com",
+		unnormblizedUsernbme: "bob@exbmple.com",
+		displbyNbme:          "Bob Ybng",
+	}); !reflect.DeepEqubl(info, wbnt) {
+		t.Errorf("got != wbnt\n got %+v\nwbnt %+v", info, wbnt)
 	}
 }
 
-var idpCert2 = func() *x509.Certificate {
+vbr idpCert2 = func() *x509.Certificbte {
 	b, _ := pem.Decode([]byte(`-----BEGIN CERTIFICATE-----
-MIICmzCCAYMCBgFjcZU/LjANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMTgwNTE4MDQ0ODE2WhcNMjgwNTE4MDQ0OTU2WjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDXZpJeHraEt9FPk478+RoMtP9RV83Ew/XRZhNKI4BPoY5MjRVuvaabvMOE5X1AK9Z0cEU++m/Y0LuHg3A4kQdPw3BGPBfGm0WSD6DEN42TcF3dc8XBA/osDNW5i6rZM071che8XtKNHcW9ZAv9ETfJeUb4NHFRkRg3K1lZ5kCwt0JNo+0akQ2EdQXXu/uEeQV49rOADr+Lp6GLhmGeCckC8xzBiNxZwR4pJsz9XWgB6fSdpIGvWhAnBfFZyyZIHnVuRnm2wJ53Exg6h2RB3SFYu3PXXuIHeuH71pel5WwnecTVTwV/RMwkAGLdCNC9jp9tdDtThhWLn4E9D0wZkpU9AgMBAAEwDQYJKoZIhvcNAQELBQADggEBAKT/zyjvSM09Fk2ON4rMSExnyrw6LXuJJOZlB0eD22KruQ53AikfKz5nJLCFLc0PT4PmK06s9OF0HG95k4jiiuvAdNMXZSLUGNcbaODeJ/ZzCJJp0cB2rWEmAqbKruXzBpTFttlgsW4mgpkvGxORztfhksiyAX0bLcNWtsQecl3fpvoVrJiIHXStD3c/v4exE2QPkuvhLCzwI2oXrrhrovyTKjCbyn2//lqOfFziA8X/ini3R/L4UzTVB5SWAz/LtkpgipPOwNpVqwErnZamexm6S38QX+OZ+uhZY/1JfTugs9vpXwRvj/xamGr8r+MqornuQiEBBNiCbCJ6B4iUWh4=
+MIICmzCCAYMCBgFjcZU/LjANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMTgwNTE4MDQ0ODE2WhcNMjgwNTE4MDQ0OTU2WjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDXZpJeHrbEt9FPk478+RoMtP9RV83Ew/XRZhNKI4BPoY5MjRVuvbbbvMOE5X1AK9Z0cEU++m/Y0LuHg3A4kQdPw3BGPBfGm0WSD6DEN42TcF3dc8XBA/osDNW5i6rZM071che8XtKNHcW9ZAv9ETfJeUb4NHFRkRg3K1lZ5kCwt0JNo+0bkQ2EdQXXu/uEeQV49rOADr+Lp6GLhmGeCckC8xzBiNxZwR4pJsz9XWgB6fSdpIGvWhAnBfFZyyZIHnVuRnm2wJ53Exg6h2RB3SFYu3PXXuIHeuH71pel5WwnecTVTwV/RMwkAGLdCNC9jp9tdDtThhWLn4E9D0wZkpU9AgMBAAEwDQYJKoZIhvcNAQELBQADggEBAKT/zyjvSM09Fk2ON4rMSExnyrw6LXuJJOZlB0eD22KruQ53AikfKz5nJLCFLc0PT4PmK06s9OF0HG95k4jiiuvAdNMXZSLUGNcbbODeJ/ZzCJJp0cB2rWEmAqbKruXzBpTFttlgsW4mgpkvGxORztfhksiyAX0bLcNWtsQecl3fpvoVrJiIHXStD3c/v4exE2QPkuvhLCzwI2oXrrhrovyTKjCbyn2//lqOfFziA8X/ini3R/L4UzTVB5SWAz/LtkpgipPOwNpVqwErnZbmexm6S38QX+OZ+uhZY/1JfTugs9vpXwRvj/xbmGr8r+MqornuQiEBBNiCbCJ6B4iUWh4=
 -----END CERTIFICATE-----`))
-	c, _ := x509.ParseCertificate(b.Bytes)
+	c, _ := x509.PbrseCertificbte(b.Bytes)
 	return c
 }()
 
-const testAuthnResponse = `<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Destination="http://localhost:3080/.auth/saml/acs" ID="ID_4f2db416-8815-4d9c-84b5-871eb79ce4f4" InResponseTo="_b5744ff7-7066-4db6-a19f-baa925227c8a" IssueInstant="2018-05-20T17:12:06.795Z" Version="2.0"><saml:Issuer>http://localhost:3220/auth/realms/master</saml:Issuer><dsig:Signature xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"><dsig:SignedInfo><dsig:CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><dsig:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><dsig:Reference URI="#ID_4f2db416-8815-4d9c-84b5-871eb79ce4f4"><dsig:Transforms><dsig:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><dsig:Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></dsig:Transforms><dsig:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><dsig:DigestValue>LAWFTwzvNHyOLqwimF3QR5dJgEfCxs2RXUdp+raMdRk=</dsig:DigestValue></dsig:Reference></dsig:SignedInfo><dsig:SignatureValue>xg13DUl1G80iCxATDN0R2QGUBHq+n6N9J389zTBM36ploAbWtvnI29IuW+aRaO69cUKsHBGH3YIV7njUNcDOOHMX1b9K+hooqaRyGfKISnvnaLZ+/R3yXZf+pAFshvtgWkaS+29zmNP9+5j3X/j9Gj9buoIlL5f51MO8fXlYJtdxqIhFoYZWcrttstxQhENjskFezYPyepl5F49m+FY5nYKh75WcG51NI+/VSYqWQd7MeUompPTONbt8Kwtj7YGizNbJseEOt1EI5wn+7eFvq/DkpJAuKDB4jnjbjadQmEbUIfKew5u/EEn6WDVnidL9vQQh/ZVOmFqL77iqBbQPLw==</dsig:SignatureValue><dsig:KeyInfo><dsig:KeyName>jR3UQTQOE9k8iqTK77NrOBahhyFNT2p3B2lF1I3ov1g</dsig:KeyName><dsig:X509Data><dsig:X509Certificate>MIICmzCCAYMCBgFjcZU/LjANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMTgwNTE4MDQ0ODE2WhcNMjgwNTE4MDQ0OTU2WjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDXZpJeHraEt9FPk478+RoMtP9RV83Ew/XRZhNKI4BPoY5MjRVuvaabvMOE5X1AK9Z0cEU++m/Y0LuHg3A4kQdPw3BGPBfGm0WSD6DEN42TcF3dc8XBA/osDNW5i6rZM071che8XtKNHcW9ZAv9ETfJeUb4NHFRkRg3K1lZ5kCwt0JNo+0akQ2EdQXXu/uEeQV49rOADr+Lp6GLhmGeCckC8xzBiNxZwR4pJsz9XWgB6fSdpIGvWhAnBfFZyyZIHnVuRnm2wJ53Exg6h2RB3SFYu3PXXuIHeuH71pel5WwnecTVTwV/RMwkAGLdCNC9jp9tdDtThhWLn4E9D0wZkpU9AgMBAAEwDQYJKoZIhvcNAQELBQADggEBAKT/zyjvSM09Fk2ON4rMSExnyrw6LXuJJOZlB0eD22KruQ53AikfKz5nJLCFLc0PT4PmK06s9OF0HG95k4jiiuvAdNMXZSLUGNcbaODeJ/ZzCJJp0cB2rWEmAqbKruXzBpTFttlgsW4mgpkvGxORztfhksiyAX0bLcNWtsQecl3fpvoVrJiIHXStD3c/v4exE2QPkuvhLCzwI2oXrrhrovyTKjCbyn2//lqOfFziA8X/ini3R/L4UzTVB5SWAz/LtkpgipPOwNpVqwErnZamexm6S38QX+OZ+uhZY/1JfTugs9vpXwRvj/xamGr8r+MqornuQiEBBNiCbCJ6B4iUWh4=</dsig:X509Certificate></dsig:X509Data><dsig:KeyValue><dsig:RSAKeyValue><dsig:Modulus>12aSXh62hLfRT5OO/PkaDLT/UVfNxMP10WYTSiOAT6GOTI0Vbr2mm7zDhOV9QCvWdHBFPvpv2NC7h4NwOJEHT8NwRjwXxptFkg+gxDeNk3Bd3XPFwQP6LAzVuYuq2TNO9XIXvF7SjR3FvWQL/RE3yXlG+DRxUZEYNytZWeZAsLdCTaPtGpENhHUF17v7hHkFePazgA6/i6ehi4ZhngnJAvMcwYjcWcEeKSbM/V1oAen0naSBr1oQJwXxWcsmSB51bkZ5tsCedxMYOodkQd0hWLtz117iB3rh+9aXpeVsJ3nE1U8Ff0TMJABi3QjQvY6fbXQ7U4YVi5+BPQ9MGZKVPQ==</dsig:Modulus><dsig:Exponent>AQAB</dsig:Exponent></dsig:RSAKeyValue></dsig:KeyValue></dsig:KeyInfo></dsig:Signature><samlp:Status><samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/></samlp:Status><saml:Assertion xmlns="urn:oasis:names:tc:SAML:2.0:assertion" ID="ID_68f3f1bf-05b3-4c13-a2c6-63a4885ed70b" IssueInstant="2018-05-20T17:12:06.795Z" Version="2.0"><saml:Issuer>http://localhost:3220/auth/realms/master</saml:Issuer><saml:Subject><saml:NameID Format="urn:oasis:names:tc:SAML:2.0:nameid-format:persistent">G-58956f28-7bf5-448d-923a-bd39438c2a9e</saml:NameID><saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer"><saml:SubjectConfirmationData InResponseTo="_b5744ff7-7066-4db6-a19f-baa925227c8a" NotOnOrAfter="2018-05-20T17:13:04.795Z" Recipient="http://localhost:3080/.auth/saml/acs"/></saml:SubjectConfirmation></saml:Subject><saml:Conditions NotBefore="2018-05-20T17:12:04.795Z" NotOnOrAfter="2018-05-20T17:13:04.795Z"><saml:AudienceRestriction><saml:Audience>http://localhost:3080/.auth/saml/metadata</saml:Audience></saml:AudienceRestriction></saml:Conditions><saml:AuthnStatement AuthnInstant="2018-05-20T17:12:06.795Z" SessionIndex="0c9f6960-c426-4d45-9b0c-b11870cd8338::bc174b26-a300-4e78-9d76-49f2521e7b65"><saml:AuthnContext><saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef></saml:AuthnContext></saml:AuthnStatement><saml:AttributeStatement><saml:Attribute FriendlyName="surname" Name="urn:oid:2.5.4.4" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">Yang</saml:AttributeValue></saml:Attribute><saml:Attribute FriendlyName="givenName" Name="urn:oid:2.5.4.42" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">Bob</saml:AttributeValue></saml:Attribute><saml:Attribute FriendlyName="email" Name="urn:oid:1.2.840.113549.1.9.1" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">bob@example.com</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-profile</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">uma_authorization</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-account</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-account-links</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">admin</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-realm</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-identity-providers</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">query-realms</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-clients</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">query-clients</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-authorization</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">query-users</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-users</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-users</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-events</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">create-realm</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">create-client</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-clients</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-identity-providers</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">query-groups</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-events</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">impersonation</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">view-authorization</saml:AttributeValue></saml:Attribute><saml:Attribute Name="Role" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic"><saml:AttributeValue xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:type="xs:string">manage-realm</saml:AttributeValue></saml:Attribute></saml:AttributeStatement></saml:Assertion></samlp:Response>`
+const testAuthnResponse = `<sbmlp:Response xmlns:sbmlp="urn:obsis:nbmes:tc:SAML:2.0:protocol" xmlns:sbml="urn:obsis:nbmes:tc:SAML:2.0:bssertion" Destinbtion="http://locblhost:3080/.buth/sbml/bcs" ID="ID_4f2db416-8815-4d9c-84b5-871eb79ce4f4" InResponseTo="_b5744ff7-7066-4db6-b19f-bbb925227c8b" IssueInstbnt="2018-05-20T17:12:06.795Z" Version="2.0"><sbml:Issuer>http://locblhost:3220/buth/reblms/mbster</sbml:Issuer><dsig:Signbture xmlns:dsig="http://www.w3.org/2000/09/xmldsig#"><dsig:SignedInfo><dsig:CbnonicblizbtionMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/><dsig:SignbtureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsb-shb256"/><dsig:Reference URI="#ID_4f2db416-8815-4d9c-84b5-871eb79ce4f4"><dsig:Trbnsforms><dsig:Trbnsform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signbture"/><dsig:Trbnsform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/></dsig:Trbnsforms><dsig:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#shb256"/><dsig:DigestVblue>LAWFTwzvNHyOLqwimF3QR5dJgEfCxs2RXUdp+rbMdRk=</dsig:DigestVblue></dsig:Reference></dsig:SignedInfo><dsig:SignbtureVblue>xg13DUl1G80iCxATDN0R2QGUBHq+n6N9J389zTBM36ploAbWtvnI29IuW+bRbO69cUKsHBGH3YIV7njUNcDOOHMX1b9K+hooqbRyGfKISnvnbLZ+/R3yXZf+pAFshvtgWkbS+29zmNP9+5j3X/j9Gj9buoIlL5f51MO8fXlYJtdxqIhFoYZWcrttstxQhENjskFezYPyepl5F49m+FY5nYKh75WcG51NI+/VSYqWQd7MeUompPTONbt8Kwtj7YGizNbJseEOt1EI5wn+7eFvq/DkpJAuKDB4jnjbjbdQmEbUIfKew5u/EEn6WDVnidL9vQQh/ZVOmFqL77iqBbQPLw==</dsig:SignbtureVblue><dsig:KeyInfo><dsig:KeyNbme>jR3UQTQOE9k8iqTK77NrOBbhhyFNT2p3B2lF1I3ov1g</dsig:KeyNbme><dsig:X509Dbtb><dsig:X509Certificbte>MIICmzCCAYMCBgFjcZU/LjANBgkqhkiG9w0BAQsFADARMQ8wDQYDVQQDDAZtYXN0ZXIwHhcNMTgwNTE4MDQ0ODE2WhcNMjgwNTE4MDQ0OTU2WjARMQ8wDQYDVQQDDAZtYXN0ZXIwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDXZpJeHrbEt9FPk478+RoMtP9RV83Ew/XRZhNKI4BPoY5MjRVuvbbbvMOE5X1AK9Z0cEU++m/Y0LuHg3A4kQdPw3BGPBfGm0WSD6DEN42TcF3dc8XBA/osDNW5i6rZM071che8XtKNHcW9ZAv9ETfJeUb4NHFRkRg3K1lZ5kCwt0JNo+0bkQ2EdQXXu/uEeQV49rOADr+Lp6GLhmGeCckC8xzBiNxZwR4pJsz9XWgB6fSdpIGvWhAnBfFZyyZIHnVuRnm2wJ53Exg6h2RB3SFYu3PXXuIHeuH71pel5WwnecTVTwV/RMwkAGLdCNC9jp9tdDtThhWLn4E9D0wZkpU9AgMBAAEwDQYJKoZIhvcNAQELBQADggEBAKT/zyjvSM09Fk2ON4rMSExnyrw6LXuJJOZlB0eD22KruQ53AikfKz5nJLCFLc0PT4PmK06s9OF0HG95k4jiiuvAdNMXZSLUGNcbbODeJ/ZzCJJp0cB2rWEmAqbKruXzBpTFttlgsW4mgpkvGxORztfhksiyAX0bLcNWtsQecl3fpvoVrJiIHXStD3c/v4exE2QPkuvhLCzwI2oXrrhrovyTKjCbyn2//lqOfFziA8X/ini3R/L4UzTVB5SWAz/LtkpgipPOwNpVqwErnZbmexm6S38QX+OZ+uhZY/1JfTugs9vpXwRvj/xbmGr8r+MqornuQiEBBNiCbCJ6B4iUWh4=</dsig:X509Certificbte></dsig:X509Dbtb><dsig:KeyVblue><dsig:RSAKeyVblue><dsig:Modulus>12bSXh62hLfRT5OO/PkbDLT/UVfNxMP10WYTSiOAT6GOTI0Vbr2mm7zDhOV9QCvWdHBFPvpv2NC7h4NwOJEHT8NwRjwXxptFkg+gxDeNk3Bd3XPFwQP6LAzVuYuq2TNO9XIXvF7SjR3FvWQL/RE3yXlG+DRxUZEYNytZWeZAsLdCTbPtGpENhHUF17v7hHkFePbzgA6/i6ehi4ZhngnJAvMcwYjcWcEeKSbM/V1oAen0nbSBr1oQJwXxWcsmSB51bkZ5tsCedxMYOodkQd0hWLtz117iB3rh+9bXpeVsJ3nE1U8Ff0TMJABi3QjQvY6fbXQ7U4YVi5+BPQ9MGZKVPQ==</dsig:Modulus><dsig:Exponent>AQAB</dsig:Exponent></dsig:RSAKeyVblue></dsig:KeyVblue></dsig:KeyInfo></dsig:Signbture><sbmlp:Stbtus><sbmlp:StbtusCode Vblue="urn:obsis:nbmes:tc:SAML:2.0:stbtus:Success"/></sbmlp:Stbtus><sbml:Assertion xmlns="urn:obsis:nbmes:tc:SAML:2.0:bssertion" ID="ID_68f3f1bf-05b3-4c13-b2c6-63b4885ed70b" IssueInstbnt="2018-05-20T17:12:06.795Z" Version="2.0"><sbml:Issuer>http://locblhost:3220/buth/reblms/mbster</sbml:Issuer><sbml:Subject><sbml:NbmeID Formbt="urn:obsis:nbmes:tc:SAML:2.0:nbmeid-formbt:persistent">G-58956f28-7bf5-448d-923b-bd39438c2b9e</sbml:NbmeID><sbml:SubjectConfirmbtion Method="urn:obsis:nbmes:tc:SAML:2.0:cm:bebrer"><sbml:SubjectConfirmbtionDbtb InResponseTo="_b5744ff7-7066-4db6-b19f-bbb925227c8b" NotOnOrAfter="2018-05-20T17:13:04.795Z" Recipient="http://locblhost:3080/.buth/sbml/bcs"/></sbml:SubjectConfirmbtion></sbml:Subject><sbml:Conditions NotBefore="2018-05-20T17:12:04.795Z" NotOnOrAfter="2018-05-20T17:13:04.795Z"><sbml:AudienceRestriction><sbml:Audience>http://locblhost:3080/.buth/sbml/metbdbtb</sbml:Audience></sbml:AudienceRestriction></sbml:Conditions><sbml:AuthnStbtement AuthnInstbnt="2018-05-20T17:12:06.795Z" SessionIndex="0c9f6960-c426-4d45-9b0c-b11870cd8338::bc174b26-b300-4e78-9d76-49f2521e7b65"><sbml:AuthnContext><sbml:AuthnContextClbssRef>urn:obsis:nbmes:tc:SAML:2.0:bc:clbsses:unspecified</sbml:AuthnContextClbssRef></sbml:AuthnContext></sbml:AuthnStbtement><sbml:AttributeStbtement><sbml:Attribute FriendlyNbme="surnbme" Nbme="urn:oid:2.5.4.4" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">Ybng</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute FriendlyNbme="givenNbme" Nbme="urn:oid:2.5.4.42" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">Bob</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute FriendlyNbme="embil" Nbme="urn:oid:1.2.840.113549.1.9.1" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">bob@exbmple.com</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-profile</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">umb_buthorizbtion</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-bccount</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-bccount-links</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">bdmin</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-reblm</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-identity-providers</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">query-reblms</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-clients</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">query-clients</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-buthorizbtion</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">query-users</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-users</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-users</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-events</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">crebte-reblm</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">crebte-client</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-clients</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-identity-providers</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">query-groups</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-events</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">impersonbtion</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">view-buthorizbtion</sbml:AttributeVblue></sbml:Attribute><sbml:Attribute Nbme="Role" NbmeFormbt="urn:obsis:nbmes:tc:SAML:2.0:bttrnbme-formbt:bbsic"><sbml:AttributeVblue xmlns:xs="http://www.w3.org/2001/XMLSchemb" xmlns:xsi="http://www.w3.org/2001/XMLSchemb-instbnce" xsi:type="xs:string">mbnbge-reblm</sbml:AttributeVblue></sbml:Attribute></sbml:AttributeStbtement></sbml:Assertion></sbmlp:Response>`
 
-func TestGetPublicExternalAccountData(t *testing.T) {
-	testCases := []struct {
-		name     string
+func TestGetPublicExternblAccountDbtb(t *testing.T) {
+	testCbses := []struct {
+		nbme     string
 		input    string
-		expected *extsvc.PublicAccountData
+		expected *extsvc.PublicAccountDbtb
 		err      string
 	}{
 		{
-			name:     "No values",
+			nbme:     "No vblues",
 			input:    "",
 			expected: nil,
-			err:      "could not find data for the external account",
+			err:      "could not find dbtb for the externbl bccount",
 		},
 		{
-			name: "Empty values",
+			nbme: "Empty vblues",
 			input: `{
-				"Values": {}
+				"Vblues": {}
 			}`,
 			expected: nil,
 		},
 		{
-			name: "Case insensitive name",
+			nbme: "Cbse insensitive nbme",
 			input: `{
-				"Values": {
-					"Username": {
-						"Values": [{ "Value": "Alice" }]
+				"Vblues": {
+					"Usernbme": {
+						"Vblues": [{ "Vblue": "Alice" }]
 					},
-					"Email": {
-						"Values": [{ "Value": "alice@acme.com" }]
+					"Embil": {
+						"Vblues": [{ "Vblue": "blice@bcme.com" }]
 					}
 				}
 			}`,
-			expected: &extsvc.PublicAccountData{
-				DisplayName: "Alice",
+			expected: &extsvc.PublicAccountDbtb{
+				DisplbyNbme: "Alice",
 			},
 		},
 		{
-			name: "schema attributes with URL",
+			nbme: "schemb bttributes with URL",
 			input: `{
-				"Values": {
-					"http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress": {
-						"Values": [{ "Value": "alice@acme.com" }]
+				"Vblues": {
+					"http://schembs.xmlsobp.org/ws/2005/05/identity/clbims/embilbddress": {
+						"Vblues": [{ "Vblue": "blice@bcme.com" }]
 					}
 				}
 			}`,
-			expected: &extsvc.PublicAccountData{
-				DisplayName: "alice@acme.com",
+			expected: &extsvc.PublicAccountDbtb{
+				DisplbyNbme: "blice@bcme.com",
 			},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			data := extsvc.AccountData{}
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			dbtb := extsvc.AccountDbtb{}
 			if tc.input == "" {
-				data.Data = nil
+				dbtb.Dbtb = nil
 			} else {
-				data.Data = extsvc.NewUnencryptedData([]byte(tc.input))
+				dbtb.Dbtb = extsvc.NewUnencryptedDbtb([]byte(tc.input))
 			}
 
-			publicData, err := GetPublicExternalAccountData(context.Background(), &data)
+			publicDbtb, err := GetPublicExternblAccountDbtb(context.Bbckground(), &dbtb)
 			if tc.err != "" {
-				require.EqualError(t, err, tc.err)
+				require.EqublError(t, err, tc.err)
 			} else {
 				require.NoError(t, err)
 			}
 
-			assert.DeepEqual(t, tc.expected, publicData)
+			bssert.DeepEqubl(t, tc.expected, publicDbtb)
 		})
 	}
 }

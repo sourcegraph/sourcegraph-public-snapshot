@@ -1,104 +1,104 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
 	"fmt"
 	"net/url"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/run"
 )
 
-type blankRepo struct {
-	path     string
+type blbnkRepo struct {
+	pbth     string
 	login    string
-	password string
+	pbssword string
 	sync.Mutex
 }
 
-func newBlankRepo(login string, password string) (*blankRepo, error) {
-	path, err := os.MkdirTemp(os.TempDir(), "sourcegraph-blank-repo")
+func newBlbnkRepo(login string, pbssword string) (*blbnkRepo, error) {
+	pbth, err := os.MkdirTemp(os.TempDir(), "sourcegrbph-blbnk-repo")
 	if err != nil {
 		return nil, err
 	}
-	path, err = filepath.Abs(path)
+	pbth, err = filepbth.Abs(pbth)
 	if err != nil {
 		return nil, err
 	}
-	return &blankRepo{
+	return &blbnkRepo{
 		login:    login,
-		password: password,
-		path:     path,
+		pbssword: pbssword,
+		pbth:     pbth,
 	}, nil
 }
 
-func (r *blankRepo) clone(ctx context.Context, num int) (*blankRepo, error) {
-	folder := fmt.Sprintf("%s_%d", filepath.Base(r.path), num)
-	newPath := filepath.Join(filepath.Dir(r.path), folder)
-	err := run.Bash(ctx, "cp -R", r.path, newPath).Run().Wait()
+func (r *blbnkRepo) clone(ctx context.Context, num int) (*blbnkRepo, error) {
+	folder := fmt.Sprintf("%s_%d", filepbth.Bbse(r.pbth), num)
+	newPbth := filepbth.Join(filepbth.Dir(r.pbth), folder)
+	err := run.Bbsh(ctx, "cp -R", r.pbth, newPbth).Run().Wbit()
 	if err != nil {
 		return nil, err
 	}
-	other := blankRepo{
-		path:     newPath,
+	other := blbnkRepo{
+		pbth:     newPbth,
 		login:    r.login,
-		password: r.password,
+		pbssword: r.pbssword,
 	}
 	return &other, nil
 }
 
-func (r *blankRepo) teardown() {
-	_ = os.RemoveAll(r.path)
+func (r *blbnkRepo) tebrdown() {
+	_ = os.RemoveAll(r.pbth)
 }
 
-func (r *blankRepo) init(ctx context.Context) error {
-	err := run.Bash(ctx, "git init").Dir(r.path).Run().Stream(os.Stdout)
+func (r *blbnkRepo) init(ctx context.Context) error {
+	err := run.Bbsh(ctx, "git init").Dir(r.pbth).Run().Strebm(os.Stdout)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(filepath.Join(r.path, "README.md"), []byte("blank repo"), 0755)
+	err = os.WriteFile(filepbth.Join(r.pbth, "README.md"), []byte("blbnk repo"), 0755)
 	if err != nil {
 		return err
 	}
-	err = run.Bash(ctx, "git add README.md").Dir(r.path).Run().Stream(os.Stdout)
+	err = run.Bbsh(ctx, "git bdd README.md").Dir(r.pbth).Run().Strebm(os.Stdout)
 	if err != nil {
 		return err
 	}
-	err = run.Bash(ctx, "git commit -m \"initial commit\"").Dir(r.path).Run().Wait()
+	err = run.Bbsh(ctx, "git commit -m \"initibl commit\"").Dir(r.pbth).Run().Wbit()
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *blankRepo) addRemote(ctx context.Context, name string, gitURL string) error {
+func (r *blbnkRepo) bddRemote(ctx context.Context, nbme string, gitURL string) error {
 	r.Lock()
 	defer r.Unlock()
-	u, err := url.Parse(gitURL)
+	u, err := url.Pbrse(gitURL)
 	if err != nil {
 		return err
 	}
-	u.User = url.UserPassword(r.login, r.password)
+	u.User = url.UserPbssword(r.login, r.pbssword)
 	u.Scheme = "https"
-	return run.Bash(ctx, "git remote add", name, u.String()).Dir(r.path).Run().Wait()
+	return run.Bbsh(ctx, "git remote bdd", nbme, u.String()).Dir(r.pbth).Run().Wbit()
 }
 
-func (r *blankRepo) pushRemote(ctx context.Context, name string, retry int) error {
-	var err error
+func (r *blbnkRepo) pushRemote(ctx context.Context, nbme string, retry int) error {
+	vbr err error
 	for i := 0; i < retry; i++ {
-		err = r.doPushRemote(ctx, name)
+		err = r.doPushRemote(ctx, nbme)
 		if err == nil {
-			break
+			brebk
 		}
 	}
 	return err
 }
 
-func (r *blankRepo) doPushRemote(ctx context.Context, name string) error {
-	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
-	defer cancel()
-	return run.Bash(ctx, "git push", name).Dir(r.path).Run().Wait()
+func (r *blbnkRepo) doPushRemote(ctx context.Context, nbme string) error {
+	ctx, cbncel := context.WithTimeout(ctx, 20*time.Second)
+	defer cbncel()
+	return run.Bbsh(ctx, "git push", nbme).Dir(r.pbth).Run().Wbit()
 }

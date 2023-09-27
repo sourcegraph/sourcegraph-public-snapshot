@@ -1,38 +1,38 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// A Sourcer converts the given ExternalService to a Source whose yielded Repos
+// A Sourcer converts the given ExternblService to b Source whose yielded Repos
 // should be synced.
-type Sourcer func(context.Context, *types.ExternalService) (Source, error)
+type Sourcer func(context.Context, *types.ExternblService) (Source, error)
 
-// NewSourcer returns a Sourcer that converts the given ExternalService
-// into a Source that uses the provided httpcli.Factory to create the
-// http.Clients needed to contact the respective upstream code host APIs.
+// NewSourcer returns b Sourcer thbt converts the given ExternblService
+// into b Source thbt uses the provided httpcli.Fbctory to crebte the
+// http.Clients needed to contbct the respective upstrebm code host APIs.
 //
-// The provided decorator functions will be applied to the Source.
-func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
-	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
+// The provided decorbtor functions will be bpplied to the Source.
+func NewSourcer(logger log.Logger, db dbtbbbse.DB, cf *httpcli.Fbctory, decs ...func(Source) Source) Sourcer {
+	return func(ctx context.Context, svc *types.ExternblService) (Source, error) {
 		src, err := NewSource(ctx, logger.Scoped("source", ""), db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
 
-		for _, dec := range decs {
+		for _, dec := rbnge decs {
 			src = dec(src)
 		}
 
@@ -40,81 +40,81 @@ func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...
 	}
 }
 
-// NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+// NewSource returns b repository yielding Source from the given ExternblService configurbtion.
+func NewSource(ctx context.Context, logger log.Logger, db dbtbbbse.DB, svc *types.ExternblService, cf *httpcli.Fbctory) (Source, error) {
 	switch strings.ToUpper(svc.Kind) {
-	case extsvc.KindGitHub:
+	cbse extsvc.KindGitHub:
 		return NewGitHubSource(ctx, logger.Scoped("GithubSource", "GitHub repo source"), db, svc, cf)
-	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", "GitLab repo source"), svc, cf)
-	case extsvc.KindAzureDevOps:
-		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource", "GitLab repo source"), svc, cf)
-	case extsvc.KindGerrit:
+	cbse extsvc.KindGitLbb:
+		return NewGitLbbSource(ctx, logger.Scoped("GitLbbSource", "GitLbb repo source"), svc, cf)
+	cbse extsvc.KindAzureDevOps:
+		return NewAzureDevOpsSource(ctx, logger.Scoped("AzureDevOpsSource", "GitLbb repo source"), svc, cf)
+	cbse extsvc.KindGerrit:
 		return NewGerritSource(ctx, svc, cf)
-	case extsvc.KindBitbucketServer:
+	cbse extsvc.KindBitbucketServer:
 		return NewBitbucketServerSource(ctx, logger.Scoped("BitbucketServerSource", "bitbucket server repo source"), svc, cf)
-	case extsvc.KindBitbucketCloud:
+	cbse extsvc.KindBitbucketCloud:
 		return NewBitbucketCloudSource(ctx, logger.Scoped("BitbucketCloudSource", "bitbucket cloud repo source"), svc, cf)
-	case extsvc.KindGitolite:
+	cbse extsvc.KindGitolite:
 		return NewGitoliteSource(ctx, svc, cf)
-	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(ctx, logger.Scoped("PhabricatorSource", "phabricator repo source"), svc, cf)
-	case extsvc.KindAWSCodeCommit:
+	cbse extsvc.KindPhbbricbtor:
+		return NewPhbbricbtorSource(ctx, logger.Scoped("PhbbricbtorSource", "phbbricbtor repo source"), svc, cf)
+	cbse extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(ctx, svc, cf)
-	case extsvc.KindPerforce:
+	cbse extsvc.KindPerforce:
 		return NewPerforceSource(ctx, svc)
-	case extsvc.KindGoPackages:
-		return NewGoPackagesSource(ctx, svc, cf)
-	case extsvc.KindJVMPackages:
-		// JVM doesn't need a client factory because we use coursier.
-		return NewJVMPackagesSource(ctx, svc)
-	case extsvc.KindPagure:
-		return NewPagureSource(ctx, svc, cf)
-	case extsvc.KindNpmPackages:
-		return NewNpmPackagesSource(ctx, svc, cf)
-	case extsvc.KindPythonPackages:
-		return NewPythonPackagesSource(ctx, svc, cf)
-	case extsvc.KindRustPackages:
-		return NewRustPackagesSource(ctx, svc, cf)
-	case extsvc.KindRubyPackages:
-		return NewRubyPackagesSource(ctx, svc, cf)
-	case extsvc.KindOther:
+	cbse extsvc.KindGoPbckbges:
+		return NewGoPbckbgesSource(ctx, svc, cf)
+	cbse extsvc.KindJVMPbckbges:
+		// JVM doesn't need b client fbctory becbuse we use coursier.
+		return NewJVMPbckbgesSource(ctx, svc)
+	cbse extsvc.KindPbgure:
+		return NewPbgureSource(ctx, svc, cf)
+	cbse extsvc.KindNpmPbckbges:
+		return NewNpmPbckbgesSource(ctx, svc, cf)
+	cbse extsvc.KindPythonPbckbges:
+		return NewPythonPbckbgesSource(ctx, svc, cf)
+	cbse extsvc.KindRustPbckbges:
+		return NewRustPbckbgesSource(ctx, svc, cf)
+	cbse extsvc.KindRubyPbckbges:
+		return NewRubyPbckbgesSource(ctx, svc, cf)
+	cbse extsvc.KindOther:
 		return NewOtherSource(ctx, svc, cf, logger.Scoped("OtherSource", ""))
-	case extsvc.VariantLocalGit.AsKind():
-		return NewLocalGitSource(ctx, logger.Scoped("LocalSource", "local repo source"), svc)
-	default:
-		return nil, errors.Newf("cannot create source for kind %q", svc.Kind)
+	cbse extsvc.VbribntLocblGit.AsKind():
+		return NewLocblGitSource(ctx, logger.Scoped("LocblSource", "locbl repo source"), svc)
+	defbult:
+		return nil, errors.Newf("cbnnot crebte source for kind %q", svc.Kind)
 	}
 }
 
-// A Source yields repositories to be stored and analysed by Sourcegraph.
-// Successive calls to its ListRepos method may yield different results.
-type Source interface {
-	// ListRepos sends all the repos a source yields over the passed in channel
-	// as SourceResults
-	ListRepos(context.Context, chan SourceResult)
-	// CheckConnection returns an error if the Source service is not reachable
-	// or available to serve requests. The error is descriptive and can be displayed
+// A Source yields repositories to be stored bnd bnblysed by Sourcegrbph.
+// Successive cblls to its ListRepos method mby yield different results.
+type Source interfbce {
+	// ListRepos sends bll the repos b source yields over the pbssed in chbnnel
+	// bs SourceResults
+	ListRepos(context.Context, chbn SourceResult)
+	// CheckConnection returns bn error if the Source service is not rebchbble
+	// or bvbilbble to serve requests. The error is descriptive bnd cbn be displbyed
 	// to the user.
 	CheckConnection(context.Context) error
-	// ExternalServices returns the ExternalServices for the Source.
-	ExternalServices() types.ExternalServices
+	// ExternblServices returns the ExternblServices for the Source.
+	ExternblServices() types.ExternblServices
 }
 
-// RepoGetter captures the optional GetRepo method of a Source. It's used on
-// sourcegraph.com to lazily sync individual repos and to lazily sync dependency
-// repos on any customer instance.
-type RepoGetter interface {
+// RepoGetter cbptures the optionbl GetRepo method of b Source. It's used on
+// sourcegrbph.com to lbzily sync individubl repos bnd to lbzily sync dependency
+// repos on bny customer instbnce.
+type RepoGetter interfbce {
 	GetRepo(context.Context, string) (*types.Repo, error)
 }
 
-type DependenciesServiceSource interface {
+type DependenciesServiceSource interfbce {
 	Source
 	SetDependenciesService(depsSvc *dependencies.Service)
 }
 
-// WithDependenciesService returns a decorator used in NewSourcer that calls SetDB on
-// Sources that can be upgraded to it.
+// WithDependenciesService returns b decorbtor used in NewSourcer thbt cblls SetDB on
+// Sources thbt cbn be upgrbded to it.
 func WithDependenciesService(depsSvc *dependencies.Service) func(Source) Source {
 	return func(src Source) Source {
 		if s, ok := src.(DependenciesServiceSource); ok {
@@ -125,83 +125,83 @@ func WithDependenciesService(depsSvc *dependencies.Service) func(Source) Source 
 	}
 }
 
-// A UserSource is a source that can use a custom authenticator (such as one
-// contained in a user credential) to interact with the code host, rather than
-// global credentials.
-type UserSource interface {
-	// WithAuthenticator returns a copy of the original Source configured to use
-	// the given authenticator, provided that authenticator type is supported by
+// A UserSource is b source thbt cbn use b custom buthenticbtor (such bs one
+// contbined in b user credentibl) to interbct with the code host, rbther thbn
+// globbl credentibls.
+type UserSource interfbce {
+	// WithAuthenticbtor returns b copy of the originbl Source configured to use
+	// the given buthenticbtor, provided thbt buthenticbtor type is supported by
 	// the code host.
-	WithAuthenticator(auth.Authenticator) (Source, error)
-	// ValidateAuthenticator validates the currently set authenticator is usable.
-	// Returns an error, when validating the Authenticator yielded an error.
-	ValidateAuthenticator(ctx context.Context) error
+	WithAuthenticbtor(buth.Authenticbtor) (Source, error)
+	// VblidbteAuthenticbtor vblidbtes the currently set buthenticbtor is usbble.
+	// Returns bn error, when vblidbting the Authenticbtor yielded bn error.
+	VblidbteAuthenticbtor(ctx context.Context) error
 }
 
-type AffiliatedRepositorySource interface {
-	AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
+type AffilibtedRepositorySource interfbce {
+	AffilibtedRepositories(ctx context.Context) ([]types.CodeHostRepository, error)
 }
 
-// A VersionSource is a source that can query the version of the code host.
-type VersionSource interface {
+// A VersionSource is b source thbt cbn query the version of the code host.
+type VersionSource interfbce {
 	Version(context.Context) (string, error)
 }
 
-// UnsupportedAuthenticatorError is returned by WithAuthenticator if the
-// authenticator isn't supported on that code host.
-type UnsupportedAuthenticatorError struct {
-	have   string
+// UnsupportedAuthenticbtorError is returned by WithAuthenticbtor if the
+// buthenticbtor isn't supported on thbt code host.
+type UnsupportedAuthenticbtorError struct {
+	hbve   string
 	source string
 }
 
-func (e UnsupportedAuthenticatorError) Error() string {
-	return fmt.Sprintf("authenticator type unsupported for %s sources: %s", e.source, e.have)
+func (e UnsupportedAuthenticbtorError) Error() string {
+	return fmt.Sprintf("buthenticbtor type unsupported for %s sources: %s", e.source, e.hbve)
 }
 
-func newUnsupportedAuthenticatorError(source string, a auth.Authenticator) UnsupportedAuthenticatorError {
-	return UnsupportedAuthenticatorError{
-		have:   fmt.Sprintf("%T", a),
+func newUnsupportedAuthenticbtorError(source string, b buth.Authenticbtor) UnsupportedAuthenticbtorError {
+	return UnsupportedAuthenticbtorError{
+		hbve:   fmt.Sprintf("%T", b),
 		source: source,
 	}
 }
 
-// A SourceResult is sent by a Source over a channel for each repository it
+// A SourceResult is sent by b Source over b chbnnel for ebch repository it
 // yields when listing repositories
 type SourceResult struct {
-	// Source points to the Source that produced this result
+	// Source points to the Source thbt produced this result
 	Source Source
-	// Repo is the repository that was listed by the Source
+	// Repo is the repository thbt wbs listed by the Source
 	Repo *types.Repo
-	// Err is only set in case the Source ran into an error when listing repositories
+	// Err is only set in cbse the Source rbn into bn error when listing repositories
 	Err error
 }
 
 type SourceError struct {
 	Err    error
-	ExtSvc *types.ExternalService
+	ExtSvc *types.ExternblService
 }
 
 func (s *SourceError) Error() string {
-	var e errors.MultiError
+	vbr e errors.MultiError
 	if errors.As(s.Err, &e) {
-		// Create new Error with custom formatter. Do not mutate otherwise can
-		// race with other callers of Error.
-		return sourceErrorFormatFunc(e.Errors())
+		// Crebte new Error with custom formbtter. Do not mutbte otherwise cbn
+		// rbce with other cbllers of Error.
+		return sourceErrorFormbtFunc(e.Errors())
 	}
 	return s.Err.Error()
 }
 
-func (s *SourceError) Cause() error {
+func (s *SourceError) Cbuse() error {
 	return s.Err
 }
 
-func sourceErrorFormatFunc(es []error) string {
+func sourceErrorFormbtFunc(es []error) string {
 	if len(es) == 1 {
 		return es[0].Error()
 	}
 
-	points := make([]string, len(es))
-	for i, err := range es {
+	points := mbke([]string, len(es))
+	for i, err := rbnge es {
 		points[i] = fmt.Sprintf("* %s", err)
 	}
 
@@ -210,61 +210,61 @@ func sourceErrorFormatFunc(es []error) string {
 		len(es), strings.Join(points, "\n\t"))
 }
 
-// ListAll calls ListRepos on the given Source and collects the SourceResults
-// the Source sends over a channel into a slice of *types.Repo and a single error
+// ListAll cblls ListRepos on the given Source bnd collects the SourceResults
+// the Source sends over b chbnnel into b slice of *types.Repo bnd b single error
 func ListAll(ctx context.Context, src Source) ([]*types.Repo, error) {
-	results := make(chan SourceResult)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+	results := mbke(chbn SourceResult)
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
 	go func() {
 		src.ListRepos(ctx, results)
 		close(results)
 	}()
 
-	var (
+	vbr (
 		repos []*types.Repo
 		errs  error
 	)
 
-	for res := range results {
+	for res := rbnge results {
 		if res.Err != nil {
-			for _, extSvc := range res.Source.ExternalServices() {
+			for _, extSvc := rbnge res.Source.ExternblServices() {
 				errs = errors.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
 		}
-		repos = append(repos, res.Repo)
+		repos = bppend(repos, res.Repo)
 	}
 
 	return repos, errs
 }
 
-// searchRepositories calls SearchRepositories on the given DiscoverableSource and collects the SourceResults
-// the Source sends over a channel into a slice of *types.Repo and a single error
-func searchRepositories(ctx context.Context, src DiscoverableSource, query string, first int, excludeRepos []string) ([]*types.Repo, error) {
-	results := make(chan SourceResult)
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+// sebrchRepositories cblls SebrchRepositories on the given DiscoverbbleSource bnd collects the SourceResults
+// the Source sends over b chbnnel into b slice of *types.Repo bnd b single error
+func sebrchRepositories(ctx context.Context, src DiscoverbbleSource, query string, first int, excludeRepos []string) ([]*types.Repo, error) {
+	results := mbke(chbn SourceResult)
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
 	go func() {
-		src.SearchRepositories(ctx, query, first, excludeRepos, results)
+		src.SebrchRepositories(ctx, query, first, excludeRepos, results)
 		close(results)
 	}()
 
-	var (
+	vbr (
 		repos []*types.Repo
 		errs  error
 	)
 
-	for res := range results {
+	for res := rbnge results {
 		if res.Err != nil {
-			for _, extSvc := range res.Source.ExternalServices() {
+			for _, extSvc := rbnge res.Source.ExternblServices() {
 				errs = errors.Append(errs, &SourceError{Err: res.Err, ExtSvc: extSvc})
 			}
 			continue
 		}
-		repos = append(repos, res.Repo)
+		repos = bppend(repos, res.Repo)
 	}
 
 	return repos, errs

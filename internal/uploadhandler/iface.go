@@ -1,25 +1,25 @@
-package uploadhandler
+pbckbge uplobdhbndler
 
 import (
 	"context"
 )
 
-type Upload[T any] struct {
+type Uplobd[T bny] struct {
 	ID               int
-	State            string
-	NumParts         int
-	UploadedParts    []int
-	UploadSize       *int64
+	Stbte            string
+	NumPbrts         int
+	UplobdedPbrts    []int
+	UplobdSize       *int64
 	UncompressedSize *int64
-	Metadata         T
+	Metbdbtb         T
 }
 
-type DBStore[T any] interface {
-	WithTransaction(ctx context.Context, f func(tx DBStore[T]) error) error
+type DBStore[T bny] interfbce {
+	WithTrbnsbction(ctx context.Context, f func(tx DBStore[T]) error) error
 
-	GetUploadByID(ctx context.Context, uploadID int) (Upload[T], bool, error)
-	InsertUpload(ctx context.Context, upload Upload[T]) (int, error)
-	AddUploadPart(ctx context.Context, uploadID, partIndex int) error
-	MarkQueued(ctx context.Context, id int, uploadSize *int64) error
-	MarkFailed(ctx context.Context, id int, reason string) error
+	GetUplobdByID(ctx context.Context, uplobdID int) (Uplobd[T], bool, error)
+	InsertUplobd(ctx context.Context, uplobd Uplobd[T]) (int, error)
+	AddUplobdPbrt(ctx context.Context, uplobdID, pbrtIndex int) error
+	MbrkQueued(ctx context.Context, id int, uplobdSize *int64) error
+	MbrkFbiled(ctx context.Context, id int, rebson string) error
 }

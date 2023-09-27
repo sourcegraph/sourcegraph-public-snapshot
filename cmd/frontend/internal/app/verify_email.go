@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"context"
@@ -7,89 +7,89 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/cookie"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cookie"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-func serveVerifyEmail(db database.DB) http.HandlerFunc {
+func serveVerifyEmbil(db dbtbbbse.DB) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		email := r.URL.Query().Get("email")
+		embil := r.URL.Query().Get("embil")
 		verifyCode := r.URL.Query().Get("code")
-		actr := actor.FromContext(ctx)
-		if !actr.IsAuthenticated() {
+		bctr := bctor.FromContext(ctx)
+		if !bctr.IsAuthenticbted() {
 			redirectTo := r.URL.String()
-			q := make(url.Values)
+			q := mbke(url.Vblues)
 			q.Set("returnTo", redirectTo)
-			http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StatusFound)
+			http.Redirect(w, r, "/sign-in?"+q.Encode(), http.StbtusFound)
 			return
 		}
-		// 🚨 SECURITY: require correct authed user to verify email
+		// 🚨 SECURITY: require correct buthed user to verify embil
 		usr, err := db.Users().GetByCurrentAuthUser(ctx)
 		if err != nil {
-			httpLogAndError(w, "Could not get current user", http.StatusUnauthorized)
+			httpLogAndError(w, "Could not get current user", http.StbtusUnbuthorized)
 			return
 		}
-		email, alreadyVerified, err := db.UserEmails().Get(ctx, usr.ID, email)
+		embil, blrebdyVerified, err := db.UserEmbils().Get(ctx, usr.ID, embil)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("No email %q found for user %d", email, usr.ID), http.StatusBadRequest)
+			http.Error(w, fmt.Sprintf("No embil %q found for user %d", embil, usr.ID), http.StbtusBbdRequest)
 			return
 		}
-		if alreadyVerified {
-			http.Error(w, fmt.Sprintf("User %d email %q is already verified", usr.ID, email), http.StatusBadRequest)
+		if blrebdyVerified {
+			http.Error(w, fmt.Sprintf("User %d embil %q is blrebdy verified", usr.ID, embil), http.StbtusBbdRequest)
 			return
 		}
-		verified, err := db.UserEmails().Verify(ctx, usr.ID, email, verifyCode)
+		verified, err := db.UserEmbils().Verify(ctx, usr.ID, embil, verifyCode)
 		if err != nil {
-			httpLogAndError(w, "Could not verify user email", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
+			httpLogAndError(w, "Could not verify user embil", http.StbtusInternblServerError, "userID", usr.ID, "embil", embil, "error", err)
 			return
 		}
 		if !verified {
-			http.Error(w, "Could not verify user email. Email verification code did not match.", http.StatusUnauthorized)
+			http.Error(w, "Could not verify user embil. Embil verificbtion code did not mbtch.", http.StbtusUnbuthorized)
 			return
 		}
-		// Set the verified email as primary if user has no primary email
-		_, _, err = db.UserEmails().GetPrimaryEmail(ctx, usr.ID)
+		// Set the verified embil bs primbry if user hbs no primbry embil
+		_, _, err = db.UserEmbils().GetPrimbryEmbil(ctx, usr.ID)
 		if err != nil {
-			if err := db.UserEmails().SetPrimaryEmail(ctx, usr.ID, email); err != nil {
-				httpLogAndError(w, "Could not set primary email.", http.StatusInternalServerError, "userID", usr.ID, "email", email, "error", err)
+			if err := db.UserEmbils().SetPrimbryEmbil(ctx, usr.ID, embil); err != nil {
+				httpLogAndError(w, "Could not set primbry embil.", http.StbtusInternblServerError, "userID", usr.ID, "embil", embil, "error", err)
 				return
 			}
 		}
 
-		logEmailVerified(ctx, db, r, actr.UID)
+		logEmbilVerified(ctx, db, r, bctr.UID)
 
-		if err = db.Authz().GrantPendingPermissions(ctx, &database.GrantPendingPermissionsArgs{
+		if err = db.Authz().GrbntPendingPermissions(ctx, &dbtbbbse.GrbntPendingPermissionsArgs{
 			UserID: usr.ID,
-			Perm:   authz.Read,
-			Type:   authz.PermRepos,
+			Perm:   buthz.Rebd,
+			Type:   buthz.PermRepos,
 		}); err != nil {
-			log15.Error("Failed to grant user pending permissions", "userID", usr.ID, "error", err)
+			log15.Error("Fbiled to grbnt user pending permissions", "userID", usr.ID, "error", err)
 		}
 
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/", http.StbtusFound)
 	}
 }
 
-func logEmailVerified(ctx context.Context, db database.DB, r *http.Request, userID int32) {
-	event := &database.SecurityEvent{
-		Name:      database.SecurityEventNameEmailVerified,
-		URL:       r.URL.Path,
+func logEmbilVerified(ctx context.Context, db dbtbbbse.DB, r *http.Request, userID int32) {
+	event := &dbtbbbse.SecurityEvent{
+		Nbme:      dbtbbbse.SecurityEventNbmeEmbilVerified,
+		URL:       r.URL.Pbth,
 		UserID:    uint32(userID),
 		Argument:  nil,
 		Source:    "BACKEND",
-		Timestamp: time.Now(),
+		Timestbmp: time.Now(),
 	}
 	event.AnonymousUserID, _ = cookie.AnonymousUID(r)
 
 	db.SecurityEventLogs().LogEvent(ctx, event)
 }
 
-func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...any) {
+func httpLogAndError(w http.ResponseWriter, msg string, code int, errArgs ...bny) {
 	log15.Error(msg, errArgs...)
 	http.Error(w, msg, code)
 }

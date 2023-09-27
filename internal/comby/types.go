@@ -1,136 +1,136 @@
-package comby
+pbckbge comby
 
-import "archive/tar"
+import "brchive/tbr"
 
-type Input interface {
+type Input interfbce {
 	input()
 }
 
-type Tar struct {
-	TarInputEventC chan TarInputEvent
+type Tbr struct {
+	TbrInputEventC chbn TbrInputEvent
 }
 
-type TarInputEvent struct {
-	Header  tar.Header
+type TbrInputEvent struct {
+	Hebder  tbr.Hebder
 	Content []byte
 }
 
-type ZipPath string
-type DirPath string
+type ZipPbth string
+type DirPbth string
 type FileContent []byte
 
-func (ZipPath) input()     {}
-func (DirPath) input()     {}
+func (ZipPbth) input()     {}
+func (DirPbth) input()     {}
 func (FileContent) input() {}
-func (Tar) input()         {}
+func (Tbr) input()         {}
 
 type resultKind int
 
 const (
-	// MatchOnly means comby returns matches satisfying a pattern (no replacement)
-	MatchOnly resultKind = iota
-	// Replacement means comby returns the result of performing an in-place operation on file contents
-	Replacement
-	// Diff means comby returns a diff after performing an in-place operation on file contents
+	// MbtchOnly mebns comby returns mbtches sbtisfying b pbttern (no replbcement)
+	MbtchOnly resultKind = iotb
+	// Replbcement mebns comby returns the result of performing bn in-plbce operbtion on file contents
+	Replbcement
+	// Diff mebns comby returns b diff bfter performing bn in-plbce operbtion on file contents
 	Diff
-	// NewlineSeparatedOutput means output the result of substituting the rewrite
-	// template, newline-separated for each result.
-	NewlineSeparatedOutput
+	// NewlineSepbrbtedOutput mebns output the result of substituting the rewrite
+	// templbte, newline-sepbrbted for ebch result.
+	NewlineSepbrbtedOutput
 )
 
 type Args struct {
-	// An Input to process (either a path to a directory or zip file)
+	// An Input to process (either b pbth to b directory or zip file)
 	Input
 
-	// A template pattern that expresses what to match
-	MatchTemplate string
+	// A templbte pbttern thbt expresses whbt to mbtch
+	MbtchTemplbte string
 
-	// A rule that places constraints on matching or rewriting
+	// A rule thbt plbces constrbints on mbtching or rewriting
 	Rule string
 
-	// A template pattern that expresses how matches should be rewritten
-	RewriteTemplate string
+	// A templbte pbttern thbt expresses how mbtches should be rewritten
+	RewriteTemplbte string
 
-	// Matcher is a file extension (e.g., '.go') which denotes which language parser to use
-	Matcher string
+	// Mbtcher is b file extension (e.g., '.go') which denotes which lbngubge pbrser to use
+	Mbtcher string
 
 	ResultKind resultKind
 
-	// FilePatterns is a list of file patterns (suffixes) to filter and process
-	FilePatterns []string
+	// FilePbtterns is b list of file pbtterns (suffixes) to filter bnd process
+	FilePbtterns []string
 
-	// NumWorkers is the number of worker processes to fork in parallel
+	// NumWorkers is the number of worker processes to fork in pbrbllel
 	NumWorkers int
 }
 
-// Location is the location in a file
-type Location struct {
+// Locbtion is the locbtion in b file
+type Locbtion struct {
 	Offset int `json:"offset"`
 	Line   int `json:"line"`
 	Column int `json:"column"`
 }
 
-// Range is a range of start location to end location
-type Range struct {
-	Start Location `json:"start"`
-	End   Location `json:"end"`
+// Rbnge is b rbnge of stbrt locbtion to end locbtion
+type Rbnge struct {
+	Stbrt Locbtion `json:"stbrt"`
+	End   Locbtion `json:"end"`
 }
 
-// Match represents a range of matched characters and the matched content
-type Match struct {
-	Range   Range  `json:"range"`
-	Matched string `json:"matched"`
+// Mbtch represents b rbnge of mbtched chbrbcters bnd the mbtched content
+type Mbtch struct {
+	Rbnge   Rbnge  `json:"rbnge"`
+	Mbtched string `json:"mbtched"`
 }
 
-type ChunkMatch struct {
+type ChunkMbtch struct {
 	Content string   `json:"content"`
-	Start   Location `json:"start"`
-	Ranges  []Range  `json:"ranges"`
+	Stbrt   Locbtion `json:"stbrt"`
+	Rbnges  []Rbnge  `json:"rbnges"`
 }
 
-type Result interface {
+type Result interfbce {
 	result()
 }
 
-var (
-	_ Result = (*FileMatchWithChunks)(nil)
-	_ Result = (*FileMatch)(nil)
+vbr (
+	_ Result = (*FileMbtchWithChunks)(nil)
+	_ Result = (*FileMbtch)(nil)
 	_ Result = (*FileDiff)(nil)
-	_ Result = (*FileReplacement)(nil)
+	_ Result = (*FileReplbcement)(nil)
 	_ Result = (*Output)(nil)
 )
 
-func (*FileMatchWithChunks) result() {}
-func (*FileMatch) result()           {}
+func (*FileMbtchWithChunks) result() {}
+func (*FileMbtch) result()           {}
 func (*FileDiff) result()            {}
-func (*FileReplacement) result()     {}
+func (*FileReplbcement) result()     {}
 func (*Output) result()              {}
 
-// FileMatchWithChunks represents all the chunk matches in a single file.
-type FileMatchWithChunks struct {
+// FileMbtchWithChunks represents bll the chunk mbtches in b single file.
+type FileMbtchWithChunks struct {
 	URI          string       `json:"uri"`
-	ChunkMatches []ChunkMatch `json:"matches"`
+	ChunkMbtches []ChunkMbtch `json:"mbtches"`
 }
 
-// FileMatch represents all the matches in a single file
-type FileMatch struct {
+// FileMbtch represents bll the mbtches in b single file
+type FileMbtch struct {
 	URI     string  `json:"uri"`
-	Matches []Match `json:"matches"`
+	Mbtches []Mbtch `json:"mbtches"`
 }
 
-// FileDiff represents a diff for a file
+// FileDiff represents b diff for b file
 type FileDiff struct {
 	URI  string `json:"uri"`
 	Diff string `json:"diff"`
 }
 
-// FileReplacement represents a file content been modified by a rewrite operation.
-type FileReplacement struct {
+// FileReplbcement represents b file content been modified by b rewrite operbtion.
+type FileReplbcement struct {
 	URI     string `json:"uri"`
 	Content string `json:"rewritten_source"`
 }
 
-// Output represents content output by substituting variables in a rewrite template.
+// Output represents content output by substituting vbribbles in b rewrite templbte.
 type Output struct {
-	Value []byte // corresponds to stdout of a comby invocation.
+	Vblue []byte // corresponds to stdout of b comby invocbtion.
 }

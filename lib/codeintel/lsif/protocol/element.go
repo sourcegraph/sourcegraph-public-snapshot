@@ -1,4 +1,4 @@
-package protocol
+pbckbge protocol
 
 type Element struct {
 	ID   uint64      `json:"id"`
@@ -14,63 +14,63 @@ const (
 
 type Vertex struct {
 	Element
-	Label VertexLabel `json:"label"`
+	Lbbel VertexLbbel `json:"lbbel"`
 }
 
-type VertexLabel string
+type VertexLbbel string
 
 const (
-	VertexMetaData             VertexLabel = "metaData"
-	VertexProject              VertexLabel = "project"
-	VertexRange                VertexLabel = "range"
-	VertexLocation             VertexLabel = "location"
-	VertexDocument             VertexLabel = "document"
-	VertexMoniker              VertexLabel = "moniker"
-	VertexPackageInformation   VertexLabel = "packageInformation"
-	VertexResultSet            VertexLabel = "resultSet"
-	VertexDocumentSymbolResult VertexLabel = "documentSymbolResult"
-	VertexFoldingRangeResult   VertexLabel = "foldingRangeResult"
-	VertexDocumentLinkResult   VertexLabel = "documentLinkResult"
-	VertexDianosticResult      VertexLabel = "diagnosticResult"
-	VertexDeclarationResult    VertexLabel = "declarationResult"
-	VertexDefinitionResult     VertexLabel = "definitionResult"
-	VertexTypeDefinitionResult VertexLabel = "typeDefinitionResult"
-	VertexHoverResult          VertexLabel = "hoverResult"
-	VertexReferenceResult      VertexLabel = "referenceResult"
-	VertexImplementationResult VertexLabel = "implementationResult"
+	VertexMetbDbtb             VertexLbbel = "metbDbtb"
+	VertexProject              VertexLbbel = "project"
+	VertexRbnge                VertexLbbel = "rbnge"
+	VertexLocbtion             VertexLbbel = "locbtion"
+	VertexDocument             VertexLbbel = "document"
+	VertexMoniker              VertexLbbel = "moniker"
+	VertexPbckbgeInformbtion   VertexLbbel = "pbckbgeInformbtion"
+	VertexResultSet            VertexLbbel = "resultSet"
+	VertexDocumentSymbolResult VertexLbbel = "documentSymbolResult"
+	VertexFoldingRbngeResult   VertexLbbel = "foldingRbngeResult"
+	VertexDocumentLinkResult   VertexLbbel = "documentLinkResult"
+	VertexDibnosticResult      VertexLbbel = "dibgnosticResult"
+	VertexDeclbrbtionResult    VertexLbbel = "declbrbtionResult"
+	VertexDefinitionResult     VertexLbbel = "definitionResult"
+	VertexTypeDefinitionResult VertexLbbel = "typeDefinitionResult"
+	VertexHoverResult          VertexLbbel = "hoverResult"
+	VertexReferenceResult      VertexLbbel = "referenceResult"
+	VertexImplementbtionResult VertexLbbel = "implementbtionResult"
 
-	// Sourcegraph extensions
-	VertexSourcegraphDocumentationResult VertexLabel = "sourcegraph:documentationResult"
-	VertexSourcegraphDocumentationString VertexLabel = "sourcegraph:documentationString"
+	// Sourcegrbph extensions
+	VertexSourcegrbphDocumentbtionResult VertexLbbel = "sourcegrbph:documentbtionResult"
+	VertexSourcegrbphDocumentbtionString VertexLbbel = "sourcegrbph:documentbtionString"
 )
 
 type Edge struct {
 	Element
-	Label EdgeLabel `json:"label"`
+	Lbbel EdgeLbbel `json:"lbbel"`
 }
 
-type EdgeLabel string
+type EdgeLbbel string
 
 const (
-	EdgeContains                   EdgeLabel = "contains"
-	EdgeItem                       EdgeLabel = "item"
-	EdgeNext                       EdgeLabel = "next"
-	EdgeMoniker                    EdgeLabel = "moniker"
-	EdgeNextMoniker                EdgeLabel = "nextMoniker"
-	EdgePackageInformation         EdgeLabel = "packageInformation"
-	EdgeTextDocumentDocumentSymbol EdgeLabel = "textDocument/documentSymbol"
-	EdgeTextDocumentFoldingRange   EdgeLabel = "textDocument/foldingRange"
-	EdgeTextDocumentDocumentLink   EdgeLabel = "textDocument/documentLink"
-	EdgeTextDocumentDiagnostic     EdgeLabel = "textDocument/diagnostic"
-	EdgeTextDocumentDefinition     EdgeLabel = "textDocument/definition"
-	EdgeTextDocumentDeclaration    EdgeLabel = "textDocument/declaration"
-	EdgeTextDocumentTypeDefinition EdgeLabel = "textDocument/typeDefinition"
-	EdgeTextDocumentHover          EdgeLabel = "textDocument/hover"
-	EdgeTextDocumentReferences     EdgeLabel = "textDocument/references"
-	EdgeTextDocumentImplementation EdgeLabel = "textDocument/implementation"
+	EdgeContbins                   EdgeLbbel = "contbins"
+	EdgeItem                       EdgeLbbel = "item"
+	EdgeNext                       EdgeLbbel = "next"
+	EdgeMoniker                    EdgeLbbel = "moniker"
+	EdgeNextMoniker                EdgeLbbel = "nextMoniker"
+	EdgePbckbgeInformbtion         EdgeLbbel = "pbckbgeInformbtion"
+	EdgeTextDocumentDocumentSymbol EdgeLbbel = "textDocument/documentSymbol"
+	EdgeTextDocumentFoldingRbnge   EdgeLbbel = "textDocument/foldingRbnge"
+	EdgeTextDocumentDocumentLink   EdgeLbbel = "textDocument/documentLink"
+	EdgeTextDocumentDibgnostic     EdgeLbbel = "textDocument/dibgnostic"
+	EdgeTextDocumentDefinition     EdgeLbbel = "textDocument/definition"
+	EdgeTextDocumentDeclbrbtion    EdgeLbbel = "textDocument/declbrbtion"
+	EdgeTextDocumentTypeDefinition EdgeLbbel = "textDocument/typeDefinition"
+	EdgeTextDocumentHover          EdgeLbbel = "textDocument/hover"
+	EdgeTextDocumentReferences     EdgeLbbel = "textDocument/references"
+	EdgeTextDocumentImplementbtion EdgeLbbel = "textDocument/implementbtion"
 
-	// Sourcegraph extensions
-	EdgeSourcegraphDocumentationResult   EdgeLabel = "sourcegraph:documentationResult"
-	EdgeSourcegraphDocumentationChildren EdgeLabel = "sourcegraph:documentationChildren"
-	EdgeSourcegraphDocumentationString   EdgeLabel = "sourcegraph:documentationString"
+	// Sourcegrbph extensions
+	EdgeSourcegrbphDocumentbtionResult   EdgeLbbel = "sourcegrbph:documentbtionResult"
+	EdgeSourcegrbphDocumentbtionChildren EdgeLbbel = "sourcegrbph:documentbtionChildren"
+	EdgeSourcegrbphDocumentbtionString   EdgeLbbel = "sourcegrbph:documentbtionString"
 )

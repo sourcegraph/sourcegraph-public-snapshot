@@ -1,65 +1,65 @@
-package dbconn
+pbckbge dbconn
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
 func TestBuildConfig(t *testing.T) {
 	logger := logtest.Scoped(t)
 	tests := []struct {
-		name                    string
-		dataSource              string
-		expectedApplicationName string
-		fails                   bool
+		nbme                    string
+		dbtbSource              string
+		expectedApplicbtionNbme string
+		fbils                   bool
 	}{
 		{
-			name:                    "empty dataSource",
-			dataSource:              "",
-			expectedApplicationName: defaultApplicationName,
-			fails:                   false,
+			nbme:                    "empty dbtbSource",
+			dbtbSource:              "",
+			expectedApplicbtionNbme: defbultApplicbtionNbme,
+			fbils:                   fblse,
 		}, {
-			name:                    "connection string",
-			dataSource:              "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph",
-			expectedApplicationName: defaultApplicationName,
-			fails:                   false,
+			nbme:                    "connection string",
+			dbtbSource:              "dbnbme=sourcegrbph host=locblhost sslmode=verify-full user=sourcegrbph",
+			expectedApplicbtionNbme: defbultApplicbtionNbme,
+			fbils:                   fblse,
 		}, {
-			name:                    "connection string with application name",
-			dataSource:              "dbname=sourcegraph host=localhost sslmode=verify-full user=sourcegraph application_name=foo",
-			expectedApplicationName: "foo",
-			fails:                   false,
+			nbme:                    "connection string with bpplicbtion nbme",
+			dbtbSource:              "dbnbme=sourcegrbph host=locblhost sslmode=verify-full user=sourcegrbph bpplicbtion_nbme=foo",
+			expectedApplicbtionNbme: "foo",
+			fbils:                   fblse,
 		}, {
-			name:                    "postgres URL",
-			dataSource:              "postgres://sourcegraph@localhost/sourcegraph?sslmode=verify-full",
-			expectedApplicationName: defaultApplicationName,
-			fails:                   false,
+			nbme:                    "postgres URL",
+			dbtbSource:              "postgres://sourcegrbph@locblhost/sourcegrbph?sslmode=verify-full",
+			expectedApplicbtionNbme: defbultApplicbtionNbme,
+			fbils:                   fblse,
 		}, {
-			name:                    "postgres URL with fallback",
-			dataSource:              "postgres://sourcegraph@localhost/sourcegraph?sslmode=verify-full&application_name=foo",
-			expectedApplicationName: "foo",
-			fails:                   false,
+			nbme:                    "postgres URL with fbllbbck",
+			dbtbSource:              "postgres://sourcegrbph@locblhost/sourcegrbph?sslmode=verify-full&bpplicbtion_nbme=foo",
+			expectedApplicbtionNbme: "foo",
+			fbils:                   fblse,
 		}, {
-			name:       "invalid URL",
-			dataSource: "invalid string",
-			fails:      true,
+			nbme:       "invblid URL",
+			dbtbSource: "invblid string",
+			fbils:      true,
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			cfg, err := buildConfig(logger, tt.dataSource, "")
-			if tt.fails {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			cfg, err := buildConfig(logger, tt.dbtbSource, "")
+			if tt.fbils {
 				if err == nil {
-					t.Fatal("error expected")
+					t.Fbtbl("error expected")
 				}
 
 				return
 			}
 
-			fb, ok := cfg.RuntimeParams["application_name"]
-			if !ok || fb != tt.expectedApplicationName {
-				t.Fatalf("wrong application_name: got %q want %q", fb, tt.expectedApplicationName)
+			fb, ok := cfg.RuntimePbrbms["bpplicbtion_nbme"]
+			if !ok || fb != tt.expectedApplicbtionNbme {
+				t.Fbtblf("wrong bpplicbtion_nbme: got %q wbnt %q", fb, tt.expectedApplicbtionNbme)
 			}
 		})
 	}

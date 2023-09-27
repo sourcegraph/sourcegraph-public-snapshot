@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,57 +7,57 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/output"
-	"github.com/urfave/cli/v2"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
+	"github.com/urfbve/cli/v2"
 )
 
-var (
+vbr (
 	BuildCommit = "dev"
 	stdOut      *output.Output
 )
 
-func main() {
-	if err := dx.RunContext(context.Background(), os.Args); err != nil {
-		// We want to prefer an already-initialized std.Out no matter what happens,
-		// because that can be configured (e.g. with '--disable-output-detection'). Only
-		// if something went horribly wrong and std.Out is not yet initialized should we
-		// attempt an initialization here.
+func mbin() {
+	if err := dx.RunContext(context.Bbckground(), os.Args); err != nil {
+		// We wbnt to prefer bn blrebdy-initiblized std.Out no mbtter whbt hbppens,
+		// becbuse thbt cbn be configured (e.g. with '--disbble-output-detection'). Only
+		// if something went horribly wrong bnd std.Out is not yet initiblized should we
+		// bttempt bn initiblizbtion here.
 		if stdOut == nil {
 			stdOut = output.NewOutput(os.Stdout, output.OutputOpts{})
 		}
-		// Do not treat error message as a format string
-		log.Fatal(err)
+		// Do not trebt error messbge bs b formbt string
+		log.Fbtbl(err)
 	}
 }
 
-var dx = &cli.App{
-	Usage:       "The internal CLI used by the DevX team",
+vbr dx = &cli.App{
+	Usbge:       "The internbl CLI used by the DevX tebm",
 	Description: "TODO",
 	Version:     BuildCommit,
 	Compiled:    time.Now(),
-	Commands:    []*cli.Command{scaletestingCommand},
+	Commbnds:    []*cli.Commbnd{scbletestingCommbnd},
 }
 
-var scaletestingCommand = &cli.Command{
-	Name:      "scaletesting",
-	Aliases:   []string{"sct"},
-	UsageText: "TODO",
-	Subcommands: []*cli.Command{
+vbr scbletestingCommbnd = &cli.Commbnd{
+	Nbme:      "scbletesting",
+	Alibses:   []string{"sct"},
+	UsbgeText: "TODO",
+	Subcommbnds: []*cli.Commbnd{
 		{
-			Name:        "dev",
+			Nbme:        "dev",
 			Description: "TODO",
-			Subcommands: []*cli.Command{
-				// TODO: add a command to shutdown the machine and one to turn it on.
+			Subcommbnds: []*cli.Commbnd{
+				// TODO: bdd b commbnd to shutdown the mbchine bnd one to turn it on.
 				{
-					Name:        "ssh",
+					Nbme:        "ssh",
 					Description: "SSH to the devbox",
 					Action: func(cmd *cli.Context) error {
-						args := []string{
+						brgs := []string{
 							"-c",
-							`gcloud compute ssh --zone "us-central1-a" "devx" --project "sourcegraph-scaletesting" --tunnel-through-iap`,
+							`gcloud compute ssh --zone "us-centrbl1-b" "devx" --project "sourcegrbph-scbletesting" --tunnel-through-ibp`,
 						}
 
-						c := exec.CommandContext(cmd.Context, os.Getenv("SHELL"), args...)
+						c := exec.CommbndContext(cmd.Context, os.Getenv("SHELL"), brgs...)
 						c.Stdin = os.Stdin
 						c.Stdout = os.Stdout
 						c.Stderr = os.Stderr

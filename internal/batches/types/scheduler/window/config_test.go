@@ -1,421 +1,421 @@
-package window
+pbckbge window
 
 import (
-	"math"
+	"mbth"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// We have a bunch of tests in here that rely on unexported fields in the window
-// structs. Since we control all of this, we're going to provide a common set of
-// options that will allow that.
-var (
-	cmpAllowUnexported = cmp.AllowUnexported(Window{}, rate{})
+// We hbve b bunch of tests in here thbt rely on unexported fields in the window
+// structs. Since we control bll of this, we're going to provide b common set of
+// options thbt will bllow thbt.
+vbr (
+	cmpAllowUnexported = cmp.AllowUnexported(Window{}, rbte{})
 	cmpOptions         = cmp.Options{cmpAllowUnexported}
 )
 
-func timeOfDayPtr(hour, minute int8) *timeOfDay {
-	return pointers.Ptr(timeOfDayFromParts(hour, minute))
+func timeOfDbyPtr(hour, minute int8) *timeOfDby {
+	return pointers.Ptr(timeOfDbyFromPbrts(hour, minute))
 }
 
-func TestConfiguration_Estimate(t *testing.T) {
+func TestConfigurbtion_Estimbte(t *testing.T) {
 	t.Run("no windows", func(t *testing.T) {
-		cfg := &Configuration{}
+		cfg := &Configurbtion{}
 		now := time.Now()
 
-		if have := cfg.Estimate(now, 1000); have == nil {
-			t.Error("unexpected nil estimate")
-		} else if *have != now {
-			t.Errorf("unexpected estimate: have=%v want=%v", *have, now)
+		if hbve := cfg.Estimbte(now, 1000); hbve == nil {
+			t.Error("unexpected nil estimbte")
+		} else if *hbve != now {
+			t.Errorf("unexpected estimbte: hbve=%v wbnt=%v", *hbve, now)
 		}
 	})
 
 	t.Run("multiple windows", func(t *testing.T) {
-		// Let's set up a configuration that looks roughly like this:
+		// Let's set up b configurbtion thbt looks roughly like this:
 		//
-		// |  Mon  |  Tue  |  Wed  |  Thu  |  Fri  |  Sat  |  Sun  |
+		// |  Mon  |  Tue  |  Wed  |  Thu  |  Fri  |  Sbt  |  Sun  |
 		// |-------|-------|-------|-------|-------|-------|-------|
 		// | 10/hr | 20/hr | 10/hr | 0     | 10/hr | 0     | ∞     |
-		makeWindow := func(day time.Weekday, n int) Window {
+		mbkeWindow := func(dby time.Weekdby, n int) Window {
 			return Window{
-				days: newWeekdaySet(day),
-				rate: rate{n: n, unit: ratePerHour},
+				dbys: newWeekdbySet(dby),
+				rbte: rbte{n: n, unit: rbtePerHour},
 			}
 		}
-		cfg := &Configuration{
+		cfg := &Configurbtion{
 			windows: []Window{
-				makeWindow(time.Monday, 10),
-				makeWindow(time.Tuesday, 20),
-				makeWindow(time.Wednesday, 10),
-				makeWindow(time.Thursday, 0),
-				makeWindow(time.Friday, 10),
-				// Saturday intentionally omitted.
-				makeWindow(time.Sunday, -1),
+				mbkeWindow(time.Mondby, 10),
+				mbkeWindow(time.Tuesdby, 20),
+				mbkeWindow(time.Wednesdby, 10),
+				mbkeWindow(time.Thursdby, 0),
+				mbkeWindow(time.Fridby, 10),
+				// Sbturdby intentionblly omitted.
+				mbkeWindow(time.Sundby, -1),
 			},
 		}
 
-		// For convenience, let's also set up a time at 12:00 each day.
-		var (
-			monday    = time.Date(2021, 4, 5, 12, 0, 0, 0, time.UTC)
-			tuesday   = time.Date(2021, 4, 6, 12, 0, 0, 0, time.UTC)
-			wednesday = time.Date(2021, 4, 7, 12, 0, 0, 0, time.UTC)
-			thursday  = time.Date(2021, 4, 8, 12, 0, 0, 0, time.UTC)
-			friday    = time.Date(2021, 4, 9, 12, 0, 0, 0, time.UTC)
-			saturday  = time.Date(2021, 4, 10, 12, 0, 0, 0, time.UTC)
-			sunday    = time.Date(2021, 4, 11, 12, 0, 0, 0, time.UTC)
+		// For convenience, let's blso set up b time bt 12:00 ebch dby.
+		vbr (
+			mondby    = time.Dbte(2021, 4, 5, 12, 0, 0, 0, time.UTC)
+			tuesdby   = time.Dbte(2021, 4, 6, 12, 0, 0, 0, time.UTC)
+			wednesdby = time.Dbte(2021, 4, 7, 12, 0, 0, 0, time.UTC)
+			thursdby  = time.Dbte(2021, 4, 8, 12, 0, 0, 0, time.UTC)
+			fridby    = time.Dbte(2021, 4, 9, 12, 0, 0, 0, time.UTC)
+			sbturdby  = time.Dbte(2021, 4, 10, 12, 0, 0, 0, time.UTC)
+			sundby    = time.Dbte(2021, 4, 11, 12, 0, 0, 0, time.UTC)
 		)
 
-		for name, tc := range map[string]struct {
+		for nbme, tc := rbnge mbp[string]struct {
 			now  time.Time
 			n    int
-			want time.Time
+			wbnt time.Time
 		}{
-			"right now because the window is unlimited": {
-				now:  sunday,
+			"right now becbuse the window is unlimited": {
+				now:  sundby,
 				n:    1000,
-				want: sunday,
+				wbnt: sundby,
 			},
-			"right now because n is 0 and a window is open": {
-				now:  monday,
+			"right now becbuse n is 0 bnd b window is open": {
+				now:  mondby,
 				n:    0,
-				want: monday,
+				wbnt: mondby,
 			},
-			"not right now, even though n is 0, because nothing is done until tomorrow": {
-				now:  saturday,
+			"not right now, even though n is 0, becbuse nothing is done until tomorrow": {
+				now:  sbturdby,
 				n:    0,
-				want: sunday.Truncate(24 * time.Hour),
+				wbnt: sundby.Truncbte(24 * time.Hour),
 			},
-			"in an hour": {
-				now:  tuesday,
+			"in bn hour": {
+				now:  tuesdby,
 				n:    20,
-				want: tuesday.Add(1 * time.Hour),
+				wbnt: tuesdby.Add(1 * time.Hour),
 			},
-			"at the very end of the day's schedule": {
-				now:  wednesday,
+			"bt the very end of the dby's schedule": {
+				now:  wednesdby,
 				n:    120,
-				want: thursday.Truncate(24 * time.Hour),
+				wbnt: thursdby.Truncbte(24 * time.Hour),
 			},
-			"the next time a window is open, plus an hour, since we're asking for the 10th item with a 10/hr limit": {
-				now:  thursday,
+			"the next time b window is open, plus bn hour, since we're bsking for the 10th item with b 10/hr limit": {
+				now:  thursdby,
 				n:    10,
-				want: friday.Truncate(24 * time.Hour).Add(1 * time.Hour),
+				wbnt: fridby.Truncbte(24 * time.Hour).Add(1 * time.Hour),
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				have := cfg.Estimate(tc.now, tc.n)
-				if have == nil {
-					t.Error("unexpected nil estimate")
-				} else if diff := time.Duration(math.Abs(float64(have.Sub(tc.want)))); diff > 1*time.Millisecond {
-					// There's some floating point maths involved in the
-					// estimation process, so we'll be happy if this is within a
-					// millisecond (which is still _wildly_ more accurate than
-					// any reasonable expectation).
-					t.Errorf("unexpected estimate: have=%v want=%v", *have, tc.want)
+			t.Run(nbme, func(t *testing.T) {
+				hbve := cfg.Estimbte(tc.now, tc.n)
+				if hbve == nil {
+					t.Error("unexpected nil estimbte")
+				} else if diff := time.Durbtion(mbth.Abs(flobt64(hbve.Sub(tc.wbnt)))); diff > 1*time.Millisecond {
+					// There's some flobting point mbths involved in the
+					// estimbtion process, so we'll be hbppy if this is within b
+					// millisecond (which is still _wildly_ more bccurbte thbn
+					// bny rebsonbble expectbtion).
+					t.Errorf("unexpected estimbte: hbve=%v wbnt=%v", *hbve, tc.wbnt)
 				}
 			})
 		}
 	})
 
-	t.Run("nil estimates", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			cfg *Configuration
+	t.Run("nil estimbtes", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]struct {
+			cfg *Configurbtion
 			now time.Time
 			n   int
 		}{
-			"all zeroes": {
-				cfg: &Configuration{
+			"bll zeroes": {
+				cfg: &Configurbtion{
 					windows: []Window{
-						{days: newWeekdaySet(), rate: rate{n: 0}},
+						{dbys: newWeekdbySet(), rbte: rbte{n: 0}},
 					},
 				},
 				now: time.Now(),
 				n:   0,
 			},
-			"more than a week in the future": {
-				cfg: &Configuration{
+			"more thbn b week in the future": {
+				cfg: &Configurbtion{
 					windows: []Window{
-						{days: newWeekdaySet(), rate: rate{n: 1, unit: ratePerHour}},
+						{dbys: newWeekdbySet(), rbte: rbte{n: 1, unit: rbtePerHour}},
 					},
 				},
 				now: time.Now(),
 				n:   24*7 + 1,
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if have := tc.cfg.Estimate(tc.now, tc.n); have != nil {
-					t.Errorf("unexpected non-nil estimate: %v", *have)
+			t.Run(nbme, func(t *testing.T) {
+				if hbve := tc.cfg.Estimbte(tc.now, tc.n); hbve != nil {
+					t.Errorf("unexpected non-nil estimbte: %v", *hbve)
 				}
 			})
 		}
 	})
 }
 
-func TestConfiguration_Schedule(t *testing.T) {
-	// We have other tests to test the actual implementation of scheduleAt();
-	// this is purely to ensure that we do the special case handling of not
-	// having rollout windows correctly.
+func TestConfigurbtion_Schedule(t *testing.T) {
+	// We hbve other tests to test the bctubl implementbtion of scheduleAt();
+	// this is purely to ensure thbt we do the specibl cbse hbndling of not
+	// hbving rollout windows correctly.
 	//
-	// Since we do _not_ control the current time here, any configurations below
-	// must have the same windows across the entire week.
-	for name, tc := range map[string]struct {
-		cfg          *Configuration
-		wantDuration time.Duration
-		wantRate     rate
+	// Since we do _not_ control the current time here, bny configurbtions below
+	// must hbve the sbme windows bcross the entire week.
+	for nbme, tc := rbnge mbp[string]struct {
+		cfg          *Configurbtion
+		wbntDurbtion time.Durbtion
+		wbntRbte     rbte
 	}{
 		"no rollout windows": {
-			cfg: &Configuration{
+			cfg: &Configurbtion{
 				windows: []Window{},
 			},
-			wantDuration: 10 * time.Minute,
-			wantRate:     rate{n: -1},
+			wbntDurbtion: 10 * time.Minute,
+			wbntRbte:     rbte{n: -1},
 		},
 		"rollout windows": {
-			cfg: &Configuration{
+			cfg: &Configurbtion{
 				windows: []Window{
-					{days: newWeekdaySet(), rate: rate{n: 40, unit: ratePerHour}},
+					{dbys: newWeekdbySet(), rbte: rbte{n: 40, unit: rbtePerHour}},
 				},
 			},
-			wantDuration: 24 * time.Hour,
-			wantRate:     rate{n: 40, unit: ratePerHour},
+			wbntDurbtion: 24 * time.Hour,
+			wbntRbte:     rbte{n: 40, unit: rbtePerHour},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			have := tc.cfg.Schedule()
-			if have.duration != tc.wantDuration {
-				t.Errorf("unexpected schedule duration: have=%v want=%v", have.duration, tc.wantDuration)
+		t.Run(nbme, func(t *testing.T) {
+			hbve := tc.cfg.Schedule()
+			if hbve.durbtion != tc.wbntDurbtion {
+				t.Errorf("unexpected schedule durbtion: hbve=%v wbnt=%v", hbve.durbtion, tc.wbntDurbtion)
 			}
-			if have.rate != tc.wantRate {
-				t.Errorf("unexpected schedule rate: have=%v want=%v", have.rate, tc.wantRate)
+			if hbve.rbte != tc.wbntRbte {
+				t.Errorf("unexpected schedule rbte: hbve=%v wbnt=%v", hbve.rbte, tc.wbntRbte)
 			}
 		})
 	}
 }
 
-func TestConfiguration_currentFor(t *testing.T) {
-	// Let's set up some common windows to simplify defining the test cases.
+func TestConfigurbtion_currentFor(t *testing.T) {
+	// Let's set up some common windows to simplify defining the test cbses.
 
-	// The window is always unlimited at zombo.com.
+	// The window is blwbys unlimited bt zombo.com.
 	zombo := Window{
-		days: newWeekdaySet(),
-		rate: makeUnlimitedRate(),
+		dbys: newWeekdbySet(),
+		rbte: mbkeUnlimitedRbte(),
 	}
 
-	// Restrict to a crawl on Friday afternoons because the ops team is drunk.
-	friday := Window{
-		days:  newWeekdaySet(time.Friday),
-		start: timeOfDayPtr(15, 0),
-		end:   timeOfDayPtr(23, 0),
-		rate:  rate{n: 1, unit: ratePerHour},
+	// Restrict to b crbwl on Fridby bfternoons becbuse the ops tebm is drunk.
+	fridby := Window{
+		dbys:  newWeekdbySet(time.Fridby),
+		stbrt: timeOfDbyPtr(15, 0),
+		end:   timeOfDbyPtr(23, 0),
+		rbte:  rbte{n: 1, unit: rbtePerHour},
 	}
 
-	// Every day we shut down for breakfast. It's the most important meal of the
-	// day!
-	breakfast := Window{
-		days:  newWeekdaySet(),
-		start: timeOfDayPtr(8, 0),
-		end:   timeOfDayPtr(9, 0),
-		rate:  rate{n: 0},
+	// Every dby we shut down for brebkfbst. It's the most importbnt mebl of the
+	// dby!
+	brebkfbst := Window{
+		dbys:  newWeekdbySet(),
+		stbrt: timeOfDbyPtr(8, 0),
+		end:   timeOfDbyPtr(9, 0),
+		rbte:  rbte{n: 0},
 	}
 
-	// But we might also use coffee to go super fast.
+	// But we might blso use coffee to go super fbst.
 	coffee := Window{
-		days:  newWeekdaySet(),
-		start: timeOfDayPtr(8, 30),
-		end:   timeOfDayPtr(9, 0),
-		rate:  rate{n: 100, unit: ratePerSecond},
+		dbys:  newWeekdbySet(),
+		stbrt: timeOfDbyPtr(8, 30),
+		end:   timeOfDbyPtr(9, 0),
+		rbte:  rbte{n: 100, unit: rbtePerSecond},
 	}
 
-	// Finally, we have a day of rest, where we have no start or end times, but
-	// a weekday restriction.
-	sunday := Window{
-		days: newWeekdaySet(time.Sunday),
-		rate: rate{n: 0},
+	// Finblly, we hbve b dby of rest, where we hbve no stbrt or end times, but
+	// b weekdby restriction.
+	sundby := Window{
+		dbys: newWeekdbySet(time.Sundby),
+		rbte: rbte{n: 0},
 	}
 
 	// And some useful times.
-	thursday0815 := time.Date(2021, 4, 1, 8, 15, 0, 0, time.UTC)
-	friday1900 := time.Date(2021, 4, 2, 19, 0, 0, 0, time.UTC)
-	sunday0600 := time.Date(2021, 4, 4, 6, 0, 0, 0, time.UTC)
+	thursdby0815 := time.Dbte(2021, 4, 1, 8, 15, 0, 0, time.UTC)
+	fridby1900 := time.Dbte(2021, 4, 2, 19, 0, 0, 0, time.UTC)
+	sundby0600 := time.Dbte(2021, 4, 4, 6, 0, 0, 0, time.UTC)
 
-	newDuration := func(d time.Duration) *time.Duration { return &d }
+	newDurbtion := func(d time.Durbtion) *time.Durbtion { return &d }
 
-	for name, tc := range map[string]struct {
-		cfg          *Configuration
+	for nbme, tc := rbnge mbp[string]struct {
+		cfg          *Configurbtion
 		when         time.Time
-		wantWindow   *Window
-		wantDuration *time.Duration
+		wbntWindow   *Window
+		wbntDurbtion *time.Durbtion
 	}{
 		"no windows": {
-			cfg:          &Configuration{},
+			cfg:          &Configurbtion{},
 			when:         time.Now(),
-			wantWindow:   nil,
-			wantDuration: nil,
+			wbntWindow:   nil,
+			wbntDurbtion: nil,
 		},
 		"single, unlimited window": {
-			cfg: &Configuration{
+			cfg: &Configurbtion{
 				windows: []Window{zombo},
 			},
 			when:         time.Now(),
-			wantWindow:   &zombo,
-			wantDuration: nil,
+			wbntWindow:   &zombo,
+			wbntDurbtion: nil,
 		},
-		"multiple windows, but zombo always wins": {
-			cfg: &Configuration{
-				windows: []Window{friday, zombo},
+		"multiple windows, but zombo blwbys wins": {
+			cfg: &Configurbtion{
+				windows: []Window{fridby, zombo},
 			},
-			when:         friday1900,
-			wantWindow:   &zombo,
-			wantDuration: nil,
+			when:         fridby1900,
+			wbntWindow:   &zombo,
+			wbntDurbtion: nil,
 		},
-		"multiple windows, but Friday wins": {
-			cfg: &Configuration{
-				windows: []Window{zombo, friday},
+		"multiple windows, but Fridby wins": {
+			cfg: &Configurbtion{
+				windows: []Window{zombo, fridby},
 			},
-			when:         friday1900,
-			wantWindow:   &friday,
-			wantDuration: newDuration(4 * time.Hour),
+			when:         fridby1900,
+			wbntWindow:   &fridby,
+			wbntDurbtion: newDurbtion(4 * time.Hour),
 		},
-		"multiple overlapping windows causing the current window to end early": {
-			cfg: &Configuration{
-				windows: []Window{zombo, breakfast, coffee},
+		"multiple overlbpping windows cbusing the current window to end ebrly": {
+			cfg: &Configurbtion{
+				windows: []Window{zombo, brebkfbst, coffee},
 			},
-			when:         thursday0815,
-			wantWindow:   &breakfast,
-			wantDuration: newDuration(15 * time.Minute),
+			when:         thursdby0815,
+			wbntWindow:   &brebkfbst,
+			wbntDurbtion: newDurbtion(15 * time.Minute),
 		},
-		"duration calculated without an end time in the window": {
-			cfg: &Configuration{
-				windows: []Window{sunday},
+		"durbtion cblculbted without bn end time in the window": {
+			cfg: &Configurbtion{
+				windows: []Window{sundby},
 			},
-			when:         sunday0600,
-			wantWindow:   &sunday,
-			wantDuration: newDuration(18 * time.Hour),
+			when:         sundby0600,
+			wbntWindow:   &sundby,
+			wbntDurbtion: newDurbtion(18 * time.Hour),
 		},
-		"duration calculated without an end time in the window, but with an overlap": {
-			cfg: &Configuration{
-				windows: []Window{zombo, breakfast},
+		"durbtion cblculbted without bn end time in the window, but with bn overlbp": {
+			cfg: &Configurbtion{
+				windows: []Window{zombo, brebkfbst},
 			},
-			when:         sunday0600,
-			wantWindow:   &zombo,
-			wantDuration: newDuration(2 * time.Hour),
+			when:         sundby0600,
+			wbntWindow:   &zombo,
+			wbntDurbtion: newDurbtion(2 * time.Hour),
 		},
 		"no current window": {
-			cfg: &Configuration{
-				windows: []Window{breakfast, coffee},
+			cfg: &Configurbtion{
+				windows: []Window{brebkfbst, coffee},
 			},
-			when:       friday1900,
-			wantWindow: nil,
-			// 13 hours because it's 19:00, and the next window is at 08:00 the
-			// next day.
-			wantDuration: newDuration(13 * time.Hour),
+			when:       fridby1900,
+			wbntWindow: nil,
+			// 13 hours becbuse it's 19:00, bnd the next window is bt 08:00 the
+			// next dby.
+			wbntDurbtion: newDurbtion(13 * time.Hour),
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			haveWindow, haveDuration := tc.cfg.windowFor(tc.when)
+		t.Run(nbme, func(t *testing.T) {
+			hbveWindow, hbveDurbtion := tc.cfg.windowFor(tc.when)
 
-			if tc.wantWindow == nil {
-				if haveWindow != nil {
-					t.Errorf("unexpected non-nil window: have=%v", *haveWindow)
+			if tc.wbntWindow == nil {
+				if hbveWindow != nil {
+					t.Errorf("unexpected non-nil window: hbve=%v", *hbveWindow)
 				}
-			} else if haveWindow == nil {
-				t.Errorf("unexpected nil window: want=%v", *tc.wantWindow)
-			} else if diff := cmp.Diff(*haveWindow, *tc.wantWindow, cmpOptions); diff != "" {
-				t.Errorf("unexpected window (-have +want):\n%s", diff)
+			} else if hbveWindow == nil {
+				t.Errorf("unexpected nil window: wbnt=%v", *tc.wbntWindow)
+			} else if diff := cmp.Diff(*hbveWindow, *tc.wbntWindow, cmpOptions); diff != "" {
+				t.Errorf("unexpected window (-hbve +wbnt):\n%s", diff)
 			}
 
-			if tc.wantDuration == nil {
-				if haveDuration != nil {
-					t.Errorf("unexpected non-nil duration: have=%v", *haveDuration)
+			if tc.wbntDurbtion == nil {
+				if hbveDurbtion != nil {
+					t.Errorf("unexpected non-nil durbtion: hbve=%v", *hbveDurbtion)
 				}
-			} else if haveDuration == nil {
-				t.Errorf("unexpected nil duration: want=%v", *tc.wantDuration)
-			} else if *haveDuration != *tc.wantDuration {
-				t.Errorf("unexpected duration: have=%v want=%v", *haveDuration, *tc.wantDuration)
+			} else if hbveDurbtion == nil {
+				t.Errorf("unexpected nil durbtion: wbnt=%v", *tc.wbntDurbtion)
+			} else if *hbveDurbtion != *tc.wbntDurbtion {
+				t.Errorf("unexpected durbtion: hbve=%v wbnt=%v", *hbveDurbtion, *tc.wbntDurbtion)
 			}
 		})
 	}
 }
 
-func TestParseConfiguration(t *testing.T) {
+func TestPbrseConfigurbtion(t *testing.T) {
 	t.Run("errors", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			in   *[]*schema.BatchChangeRolloutWindow
-			want int
+		for nbme, tc := rbnge mbp[string]struct {
+			in   *[]*schemb.BbtchChbngeRolloutWindow
+			wbnt int
 		}{
-			"one bad window": {
-				in: &[]*schema.BatchChangeRolloutWindow{
-					{Rate: "xx"},
-					{Rate: 0},
+			"one bbd window": {
+				in: &[]*schemb.BbtchChbngeRolloutWindow{
+					{Rbte: "xx"},
+					{Rbte: 0},
 				},
-				want: 1,
+				wbnt: 1,
 			},
-			"two bad windows, ha ha ha": {
-				in: &[]*schema.BatchChangeRolloutWindow{
-					{Rate: "xx"},
-					{Rate: "yy"},
+			"two bbd windows, hb hb hb": {
+				in: &[]*schemb.BbtchChbngeRolloutWindow{
+					{Rbte: "xx"},
+					{Rbte: "yy"},
 				},
-				want: 2,
+				wbnt: 2,
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				_, err := parseConfiguration(tc.in)
+			t.Run(nbme, func(t *testing.T) {
+				_, err := pbrseConfigurbtion(tc.in)
 
-				var e errors.MultiError
-				if !errors.As(err, &e) || len(e.Errors()) != tc.want {
-					t.Errorf("unexpected number of errors: have=%d want=%d", len(e.Errors()), tc.want)
+				vbr e errors.MultiError
+				if !errors.As(err, &e) || len(e.Errors()) != tc.wbnt {
+					t.Errorf("unexpected number of errors: hbve=%d wbnt=%d", len(e.Errors()), tc.wbnt)
 				}
 			})
 		}
 	})
 
 	t.Run("success", func(t *testing.T) {
-		for name, tc := range map[string]struct {
-			in   *[]*schema.BatchChangeRolloutWindow
-			want *Configuration
+		for nbme, tc := rbnge mbp[string]struct {
+			in   *[]*schemb.BbtchChbngeRolloutWindow
+			wbnt *Configurbtion
 		}{
 			"nil": {
 				in:   nil,
-				want: &Configuration{windows: []Window{}},
+				wbnt: &Configurbtion{windows: []Window{}},
 			},
-			"valid windows": {
-				in: &[]*schema.BatchChangeRolloutWindow{
+			"vblid windows": {
+				in: &[]*schemb.BbtchChbngeRolloutWindow{
 					{
-						Rate:  "20/hr",
-						Days:  []string{"monday"},
-						Start: "01:15",
+						Rbte:  "20/hr",
+						Dbys:  []string{"mondby"},
+						Stbrt: "01:15",
 						End:   "02:30",
 					},
 					{
-						Rate: "2/hr",
+						Rbte: "2/hr",
 					},
 				},
-				want: &Configuration{
+				wbnt: &Configurbtion{
 					windows: []Window{
 						{
-							rate:  rate{n: 20, unit: ratePerHour},
-							days:  newWeekdaySet(time.Monday),
-							start: timeOfDayPtr(1, 15),
-							end:   timeOfDayPtr(2, 30),
+							rbte:  rbte{n: 20, unit: rbtePerHour},
+							dbys:  newWeekdbySet(time.Mondby),
+							stbrt: timeOfDbyPtr(1, 15),
+							end:   timeOfDbyPtr(2, 30),
 						},
 						{
-							rate: rate{n: 2, unit: ratePerHour},
-							days: newWeekdaySet(),
+							rbte: rbte{n: 2, unit: rbtePerHour},
+							dbys: newWeekdbySet(),
 						},
 					},
 				},
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				if have, err := parseConfiguration(tc.in); err != nil {
+			t.Run(nbme, func(t *testing.T) {
+				if hbve, err := pbrseConfigurbtion(tc.in); err != nil {
 					t.Errorf("unexpected error: %v", err)
-				} else if diff := cmp.Diff(have, tc.want.windows, cmpOptions); diff != "" {
-					t.Errorf("unexpected configuration (-have +want):\n%s", diff)
+				} else if diff := cmp.Diff(hbve, tc.wbnt.windows, cmpOptions); diff != "" {
+					t.Errorf("unexpected configurbtion (-hbve +wbnt):\n%s", diff)
 				}
 			})
 		}

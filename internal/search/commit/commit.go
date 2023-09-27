@@ -1,380 +1,380 @@
-package commit
+pbckbge commit
 
 import (
 	"context"
 	"strings"
 	"time"
 
-	"github.com/grafana/regexp"
-	"github.com/sourcegraph/conc/pool"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbfbnb/regexp"
+	"github.com/sourcegrbph/conc/pool"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	gitprotocol "github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	sebrchrepos "github.com/sourcegrbph/sourcegrbph/internbl/sebrch/repos"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type SearchJob struct {
+type SebrchJob struct {
 	Query                gitprotocol.Node
-	RepoOpts             search.RepoOptions
+	RepoOpts             sebrch.RepoOptions
 	Diff                 bool
 	Limit                int
 	IncludeModifiedFiles bool
 	Concurrency          int
 
-	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
-	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
+	// CodeMonitorSebrchWrbpper, if set, will wrbp the commit sebrch with extrb logic specific to code monitors.
+	CodeMonitorSebrchWrbpper CodeMonitorHook `json:"-"`
 }
 
-type DoSearchFunc func(*gitprotocol.SearchRequest) error
-type CodeMonitorHook func(context.Context, database.DB, GitserverClient, *gitprotocol.SearchRequest, api.RepoID, DoSearchFunc) error
+type DoSebrchFunc func(*gitprotocol.SebrchRequest) error
+type CodeMonitorHook func(context.Context, dbtbbbse.DB, GitserverClient, *gitprotocol.SebrchRequest, bpi.RepoID, DoSebrchFunc) error
 
-type GitserverClient interface {
-	Search(_ context.Context, _ *protocol.SearchRequest, onMatches func([]protocol.CommitMatch)) (limitHit bool, _ error)
-	ResolveRevisions(context.Context, api.RepoName, []gitprotocol.RevisionSpecifier) ([]string, error)
+type GitserverClient interfbce {
+	Sebrch(_ context.Context, _ *protocol.SebrchRequest, onMbtches func([]protocol.CommitMbtch)) (limitHit bool, _ error)
+	ResolveRevisions(context.Context, bpi.RepoNbme, []gitprotocol.RevisionSpecifier) ([]string, error)
 }
 
-func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
-	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
-	defer func() { finish(alert, err) }()
+func (j *SebrchJob) Run(ctx context.Context, clients job.RuntimeClients, strebm strebming.Sender) (blert *sebrch.Alert, err error) {
+	_, ctx, strebm, finish := job.StbrtSpbn(ctx, strebm, j)
+	defer func() { finish(blert, err) }()
 
-	if err := j.ExpandUsernames(ctx, clients.DB); err != nil {
+	if err := j.ExpbndUsernbmes(ctx, clients.DB); err != nil {
 		return nil, err
 	}
 
-	searchRepoRev := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
+	sebrchRepoRev := func(ctx context.Context, repoRev *sebrch.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			return nil
 		}
 
-		args := &protocol.SearchRequest{
-			Repo:                 repoRev.Repo.Name,
-			Revisions:            searchRevsToGitserverRevs(repoRev.Revs),
+		brgs := &protocol.SebrchRequest{
+			Repo:                 repoRev.Repo.Nbme,
+			Revisions:            sebrchRevsToGitserverRevs(repoRev.Revs),
 			Query:                j.Query,
 			IncludeDiff:          j.Diff,
 			Limit:                j.Limit,
 			IncludeModifiedFiles: j.IncludeModifiedFiles,
 		}
 
-		onMatches := func(in []protocol.CommitMatch) {
-			res := make([]result.Match, 0, len(in))
-			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
+		onMbtches := func(in []protocol.CommitMbtch) {
+			res := mbke([]result.Mbtch, 0, len(in))
+			for _, protocolMbtch := rbnge in {
+				res = bppend(res, protocolMbtchToCommitMbtch(repoRev.Repo, j.Diff, protocolMbtch))
 			}
-			stream.Send(streaming.SearchEvent{
+			strebm.Send(strebming.SebrchEvent{
 				Results: res,
 			})
 		}
 
-		doSearch := func(args *gitprotocol.SearchRequest) error {
-			limitHit, err := clients.Gitserver.Search(ctx, args, onMatches)
-			statusMap, limitHit, err := search.HandleRepoSearchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, false, err)
-			stream.Send(streaming.SearchEvent{
-				Stats: streaming.Stats{
+		doSebrch := func(brgs *gitprotocol.SebrchRequest) error {
+			limitHit, err := clients.Gitserver.Sebrch(ctx, brgs, onMbtches)
+			stbtusMbp, limitHit, err := sebrch.HbndleRepoSebrchResult(repoRev.Repo.ID, repoRev.Revs, limitHit, fblse, err)
+			strebm.Send(strebming.SebrchEvent{
+				Stbts: strebming.Stbts{
 					IsLimitHit: limitHit,
-					Status:     statusMap,
+					Stbtus:     stbtusMbp,
 				},
 			})
 			return err
 		}
 
-		if j.CodeMonitorSearchWrapper != nil {
-			return j.CodeMonitorSearchWrapper(ctx, clients.DB, clients.Gitserver, args, repoRev.Repo.ID, doSearch)
+		if j.CodeMonitorSebrchWrbpper != nil {
+			return j.CodeMonitorSebrchWrbpper(ctx, clients.DB, clients.Gitserver, brgs, repoRev.Repo.ID, doSebrch)
 		}
-		return doSearch(args)
+		return doSebrch(brgs)
 	}
 
-	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SearcherURLs, clients.Zoekt)
-	it := repos.Iterator(ctx, j.RepoOpts)
+	repos := sebrchrepos.NewResolver(clients.Logger, clients.DB, clients.Gitserver, clients.SebrcherURLs, clients.Zoekt)
+	it := repos.Iterbtor(ctx, j.RepoOpts)
 
-	p := pool.New().WithContext(ctx).WithMaxGoroutines(j.Concurrency).WithFirstError()
+	p := pool.New().WithContext(ctx).WithMbxGoroutines(j.Concurrency).WithFirstError()
 
 	for it.Next() {
-		page := it.Current()
-		page.MaybeSendStats(stream)
+		pbge := it.Current()
+		pbge.MbybeSendStbts(strebm)
 
-		for _, repoRev := range page.RepoRevs {
+		for _, repoRev := rbnge pbge.RepoRevs {
 			repoRev := repoRev
 			p.Go(func(ctx context.Context) error {
-				return searchRepoRev(ctx, repoRev)
+				return sebrchRepoRev(ctx, repoRev)
 			})
 		}
 	}
 
-	if err := p.Wait(); err != nil {
+	if err := p.Wbit(); err != nil {
 		return nil, err
 	}
 	return nil, it.Err()
 }
 
-func (j SearchJob) Name() string {
+func (j SebrchJob) Nbme() string {
 	if j.Diff {
-		return "DiffSearchJob"
+		return "DiffSebrchJob"
 	}
-	return "CommitSearchJob"
+	return "CommitSebrchJob"
 }
 
-func (j *SearchJob) Attributes(v job.Verbosity) (res []attribute.KeyValue) {
+func (j *SebrchJob) Attributes(v job.Verbosity) (res []bttribute.KeyVblue) {
 	switch v {
-	case job.VerbosityMax:
-		res = append(res,
-			attribute.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+	cbse job.VerbosityMbx:
+		res = bppend(res,
+			bttribute.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
 		)
-		fallthrough
-	case job.VerbosityBasic:
-		res = append(res,
-			attribute.Stringer("query", j.Query),
-			attribute.Bool("diff", j.Diff),
-			attribute.Int("limit", j.Limit),
+		fbllthrough
+	cbse job.VerbosityBbsic:
+		res = bppend(res,
+			bttribute.Stringer("query", j.Query),
+			bttribute.Bool("diff", j.Diff),
+			bttribute.Int("limit", j.Limit),
 		)
-		res = append(res, trace.Scoped("repoOpts", j.RepoOpts.Attributes()...)...)
+		res = bppend(res, trbce.Scoped("repoOpts", j.RepoOpts.Attributes()...)...)
 	}
 	return res
 }
 
-func (j *SearchJob) Children() []job.Describer       { return nil }
-func (j *SearchJob) MapChildren(job.MapFunc) job.Job { return j }
+func (j *SebrchJob) Children() []job.Describer       { return nil }
+func (j *SebrchJob) MbpChildren(job.MbpFunc) job.Job { return j }
 
-func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
+func (j *SebrchJob) ExpbndUsernbmes(ctx context.Context, db dbtbbbse.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {
 		if err != nil {
 			return n
 		}
 
-		var expr *string
+		vbr expr *string
 		switch v := n.(type) {
-		case *protocol.AuthorMatches:
+		cbse *protocol.AuthorMbtches:
 			expr = &v.Expr
-		case *protocol.CommitterMatches:
+		cbse *protocol.CommitterMbtches:
 			expr = &v.Expr
-		default:
+		defbult:
 			return n
 		}
 
-		var expanded []string
-		expanded, err = expandUsernamesToEmails(ctx, db, []string{*expr})
+		vbr expbnded []string
+		expbnded, err = expbndUsernbmesToEmbils(ctx, db, []string{*expr})
 		if err != nil {
 			return n
 		}
 
-		*expr = "(?:" + strings.Join(expanded, ")|(?:") + ")"
+		*expr = "(?:" + strings.Join(expbnded, ")|(?:") + ")"
 		return n
 	})
 	return err
 }
 
-// expandUsernamesToEmails expands references to usernames to mention all possible (known and
-// verified) email addresses for the user.
+// expbndUsernbmesToEmbils expbnds references to usernbmes to mention bll possible (known bnd
+// verified) embil bddresses for the user.
 //
-// For example, given a list ["foo", "@alice"] where the user "alice" has 2 email addresses
-// "alice@example.com" and "alice@example.org", it would return ["foo", "alice@example\\.com",
-// "alice@example\\.org"].
-func expandUsernamesToEmails(ctx context.Context, db database.DB, values []string) (expandedValues []string, err error) {
-	expandOne := func(ctx context.Context, value string) ([]string, error) {
-		if isPossibleUsernameReference := strings.HasPrefix(value, "@"); !isPossibleUsernameReference {
+// For exbmple, given b list ["foo", "@blice"] where the user "blice" hbs 2 embil bddresses
+// "blice@exbmple.com" bnd "blice@exbmple.org", it would return ["foo", "blice@exbmple\\.com",
+// "blice@exbmple\\.org"].
+func expbndUsernbmesToEmbils(ctx context.Context, db dbtbbbse.DB, vblues []string) (expbndedVblues []string, err error) {
+	expbndOne := func(ctx context.Context, vblue string) ([]string, error) {
+		if isPossibleUsernbmeReference := strings.HbsPrefix(vblue, "@"); !isPossibleUsernbmeReference {
 			return nil, nil
 		}
 
-		user, err := db.Users().GetByUsername(ctx, strings.TrimPrefix(value, "@"))
+		user, err := db.Users().GetByUsernbme(ctx, strings.TrimPrefix(vblue, "@"))
 		if errcode.IsNotFound(err) {
 			return nil, nil
 		} else if err != nil {
 			return nil, err
 		}
-		emails, err := db.UserEmails().ListByUser(ctx, database.UserEmailsListOptions{
+		embils, err := db.UserEmbils().ListByUser(ctx, dbtbbbse.UserEmbilsListOptions{
 			UserID: user.ID,
 		})
 		if err != nil {
 			return nil, err
 		}
-		values := make([]string, 0, len(emails))
-		for _, email := range emails {
-			if email.VerifiedAt != nil {
-				values = append(values, regexp.QuoteMeta(email.Email))
+		vblues := mbke([]string, 0, len(embils))
+		for _, embil := rbnge embils {
+			if embil.VerifiedAt != nil {
+				vblues = bppend(vblues, regexp.QuoteMetb(embil.Embil))
 			}
 		}
-		return values, nil
+		return vblues, nil
 	}
 
-	expandedValues = make([]string, 0, len(values))
-	for _, v := range values {
-		x, err := expandOne(ctx, v)
+	expbndedVblues = mbke([]string, 0, len(vblues))
+	for _, v := rbnge vblues {
+		x, err := expbndOne(ctx, v)
 		if err != nil {
 			return nil, err
 		}
 		if x == nil {
-			expandedValues = append(expandedValues, v) // not a username or couldn't expand
+			expbndedVblues = bppend(expbndedVblues, v) // not b usernbme or couldn't expbnd
 		} else {
-			expandedValues = append(expandedValues, x...)
+			expbndedVblues = bppend(expbndedVblues, x...)
 		}
 	}
-	return expandedValues, nil
+	return expbndedVblues, nil
 }
 
-func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
-	caseSensitive := b.IsCaseSensitive()
+func QueryToGitQuery(b query.Bbsic, diff bool) gitprotocol.Node {
+	cbseSensitive := b.IsCbseSensitive()
 
-	res := make([]gitprotocol.Node, 0, len(b.Parameters)+2)
+	res := mbke([]gitprotocol.Node, 0, len(b.Pbrbmeters)+2)
 
-	// Convert parameters to nodes
-	for _, parameter := range b.Parameters {
-		if parameter.Annotation.Labels.IsSet(query.IsPredicate) {
+	// Convert pbrbmeters to nodes
+	for _, pbrbmeter := rbnge b.Pbrbmeters {
+		if pbrbmeter.Annotbtion.Lbbels.IsSet(query.IsPredicbte) {
 			continue
 		}
-		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
+		newPred := queryPbrbmeterToPredicbte(pbrbmeter, cbseSensitive, diff)
 		if newPred != nil {
-			res = append(res, newPred)
+			res = bppend(res, newPred)
 		}
 	}
 
-	// Convert pattern to nodes
-	newPred := queryPatternToPredicate(b.Pattern, caseSensitive, diff)
+	// Convert pbttern to nodes
+	newPred := queryPbtternToPredicbte(b.Pbttern, cbseSensitive, diff)
 	if newPred != nil {
-		res = append(res, newPred)
+		res = bppend(res, newPred)
 	}
 
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
-func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
-	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
-	for _, rev := range in {
-		out = append(out, gitprotocol.RevisionSpecifier{
+func sebrchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
+	out := mbke([]gitprotocol.RevisionSpecifier, 0, len(in))
+	for _, rev := rbnge in {
+		out = bppend(out, gitprotocol.RevisionSpecifier{
 			RevSpec: rev,
 		})
 	}
 	return out
 }
 
-func queryPatternToPredicate(node query.Node, caseSensitive, diff bool) gitprotocol.Node {
+func queryPbtternToPredicbte(node query.Node, cbseSensitive, diff bool) gitprotocol.Node {
 	switch v := node.(type) {
-	case query.Operator:
-		return patternOperatorToPredicate(v, caseSensitive, diff)
-	case query.Pattern:
-		return patternAtomToPredicate(v, caseSensitive, diff)
-	default:
-		// Invariant: the node passed to queryPatternToPredicate should only contain pattern nodes
+	cbse query.Operbtor:
+		return pbtternOperbtorToPredicbte(v, cbseSensitive, diff)
+	cbse query.Pbttern:
+		return pbtternAtomToPredicbte(v, cbseSensitive, diff)
+	defbult:
+		// Invbribnt: the node pbssed to queryPbtternToPredicbte should only contbin pbttern nodes
 		return nil
 	}
 }
 
-func patternOperatorToPredicate(op query.Operator, caseSensitive, diff bool) gitprotocol.Node {
+func pbtternOperbtorToPredicbte(op query.Operbtor, cbseSensitive, diff bool) gitprotocol.Node {
 	switch op.Kind {
-	case query.And:
-		return gitprotocol.NewAnd(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
-	case query.Or:
-		return gitprotocol.NewOr(patternNodesToPredicates(op.Operands, caseSensitive, diff)...)
-	default:
+	cbse query.And:
+		return gitprotocol.NewAnd(pbtternNodesToPredicbtes(op.Operbnds, cbseSensitive, diff)...)
+	cbse query.Or:
+		return gitprotocol.NewOr(pbtternNodesToPredicbtes(op.Operbnds, cbseSensitive, diff)...)
+	defbult:
 		return nil
 	}
 }
 
-func patternNodesToPredicates(nodes []query.Node, caseSensitive, diff bool) []gitprotocol.Node {
-	res := make([]gitprotocol.Node, 0, len(nodes))
-	for _, node := range nodes {
-		newPred := queryPatternToPredicate(node, caseSensitive, diff)
+func pbtternNodesToPredicbtes(nodes []query.Node, cbseSensitive, diff bool) []gitprotocol.Node {
+	res := mbke([]gitprotocol.Node, 0, len(nodes))
+	for _, node := rbnge nodes {
+		newPred := queryPbtternToPredicbte(node, cbseSensitive, diff)
 		if newPred != nil {
-			res = append(res, newPred)
+			res = bppend(res, newPred)
 		}
 	}
 	return res
 }
 
-func patternAtomToPredicate(pattern query.Pattern, caseSensitive, diff bool) gitprotocol.Node {
-	patString := pattern.Value
-	if pattern.Annotation.Labels.IsSet(query.Literal) {
-		patString = regexp.QuoteMeta(pattern.Value)
+func pbtternAtomToPredicbte(pbttern query.Pbttern, cbseSensitive, diff bool) gitprotocol.Node {
+	pbtString := pbttern.Vblue
+	if pbttern.Annotbtion.Lbbels.IsSet(query.Literbl) {
+		pbtString = regexp.QuoteMetb(pbttern.Vblue)
 	}
 
-	var newPred gitprotocol.Node
+	vbr newPred gitprotocol.Node
 	if diff {
-		newPred = &gitprotocol.DiffMatches{Expr: patString, IgnoreCase: !caseSensitive}
+		newPred = &gitprotocol.DiffMbtches{Expr: pbtString, IgnoreCbse: !cbseSensitive}
 	} else {
-		newPred = &gitprotocol.MessageMatches{Expr: patString, IgnoreCase: !caseSensitive}
+		newPred = &gitprotocol.MessbgeMbtches{Expr: pbtString, IgnoreCbse: !cbseSensitive}
 	}
 
-	if pattern.Negated {
+	if pbttern.Negbted {
 		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
 }
 
-func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bool) gitprotocol.Node {
-	var newPred gitprotocol.Node
-	switch parameter.Field {
-	case query.FieldAuthor:
-		// TODO(@camdencheek) look up emails (issue #25180)
-		newPred = &gitprotocol.AuthorMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
-	case query.FieldCommitter:
-		newPred = &gitprotocol.CommitterMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
-	case query.FieldBefore:
-		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+func queryPbrbmeterToPredicbte(pbrbmeter query.Pbrbmeter, cbseSensitive, diff bool) gitprotocol.Node {
+	vbr newPred gitprotocol.Node
+	switch pbrbmeter.Field {
+	cbse query.FieldAuthor:
+		// TODO(@cbmdencheek) look up embils (issue #25180)
+		newPred = &gitprotocol.AuthorMbtches{Expr: pbrbmeter.Vblue, IgnoreCbse: !cbseSensitive}
+	cbse query.FieldCommitter:
+		newPred = &gitprotocol.CommitterMbtches{Expr: pbrbmeter.Vblue, IgnoreCbse: !cbseSensitive}
+	cbse query.FieldBefore:
+		t, _ := query.PbrseGitDbte(pbrbmeter.Vblue, time.Now) // field blrebdy vblidbted
 		newPred = &gitprotocol.CommitBefore{Time: t}
-	case query.FieldAfter:
-		t, _ := query.ParseGitDate(parameter.Value, time.Now) // field already validated
+	cbse query.FieldAfter:
+		t, _ := query.PbrseGitDbte(pbrbmeter.Vblue, time.Now) // field blrebdy vblidbted
 		newPred = &gitprotocol.CommitAfter{Time: t}
-	case query.FieldMessage:
-		newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
-	case query.FieldContent:
+	cbse query.FieldMessbge:
+		newPred = &gitprotocol.MessbgeMbtches{Expr: pbrbmeter.Vblue, IgnoreCbse: !cbseSensitive}
+	cbse query.FieldContent:
 		if diff {
-			newPred = &gitprotocol.DiffMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+			newPred = &gitprotocol.DiffMbtches{Expr: pbrbmeter.Vblue, IgnoreCbse: !cbseSensitive}
 		} else {
-			newPred = &gitprotocol.MessageMatches{Expr: parameter.Value, IgnoreCase: !caseSensitive}
+			newPred = &gitprotocol.MessbgeMbtches{Expr: pbrbmeter.Vblue, IgnoreCbse: !cbseSensitive}
 		}
-	case query.FieldFile:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: parameter.Value, IgnoreCase: !caseSensitive}
-	case query.FieldLang:
-		newPred = &gitprotocol.DiffModifiesFile{Expr: query.LangToFileRegexp(parameter.Value), IgnoreCase: true}
+	cbse query.FieldFile:
+		newPred = &gitprotocol.DiffModifiesFile{Expr: pbrbmeter.Vblue, IgnoreCbse: !cbseSensitive}
+	cbse query.FieldLbng:
+		newPred = &gitprotocol.DiffModifiesFile{Expr: query.LbngToFileRegexp(pbrbmeter.Vblue), IgnoreCbse: true}
 	}
 
-	if parameter.Negated && newPred != nil {
+	if pbrbmeter.Negbted && newPred != nil {
 		return gitprotocol.NewNot(newPred)
 	}
 	return newPred
 }
 
-func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
-	var diffPreview, messagePreview *result.MatchedString
-	var structuredDiff []result.DiffFile
+func protocolMbtchToCommitMbtch(repo types.MinimblRepo, diff bool, in protocol.CommitMbtch) *result.CommitMbtch {
+	vbr diffPreview, messbgePreview *result.MbtchedString
+	vbr structuredDiff []result.DiffFile
 	if diff {
 		diffPreview = &in.Diff
-		structuredDiff, _ = result.ParseDiffString(in.Diff.Content)
+		structuredDiff, _ = result.PbrseDiffString(in.Diff.Content)
 	} else {
-		messagePreview = &in.Message
+		messbgePreview = &in.Messbge
 	}
 
-	return &result.CommitMatch{
-		Commit: gitdomain.Commit{
+	return &result.CommitMbtch{
+		Commit: gitdombin.Commit{
 			ID: in.Oid,
-			Author: gitdomain.Signature{
-				Name:  in.Author.Name,
-				Email: in.Author.Email,
-				Date:  in.Author.Date,
+			Author: gitdombin.Signbture{
+				Nbme:  in.Author.Nbme,
+				Embil: in.Author.Embil,
+				Dbte:  in.Author.Dbte,
 			},
-			Committer: &gitdomain.Signature{
-				Name:  in.Committer.Name,
-				Email: in.Committer.Email,
-				Date:  in.Committer.Date,
+			Committer: &gitdombin.Signbture{
+				Nbme:  in.Committer.Nbme,
+				Embil: in.Committer.Embil,
+				Dbte:  in.Committer.Dbte,
 			},
-			Message: gitdomain.Message(in.Message.Content),
-			Parents: in.Parents,
+			Messbge: gitdombin.Messbge(in.Messbge.Content),
+			Pbrents: in.Pbrents,
 		},
 		Repo:           repo,
 		DiffPreview:    diffPreview,
 		Diff:           structuredDiff,
-		MessagePreview: messagePreview,
+		MessbgePreview: messbgePreview,
 		ModifiedFiles:  in.ModifiedFiles,
 	}
 }

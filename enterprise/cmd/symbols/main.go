@@ -1,14 +1,14 @@
-package main
+pbckbge mbin
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols/shared"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
-	"github.com/sourcegraph/sourcegraph/internal/service/svcmain"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/cmd/symbols/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service/svcmbin"
 )
 
-var config = svcmain.Config{}
+vbr config = svcmbin.Config{}
 
-func main() {
-	sanitycheck.Pass()
-	svcmain.SingleServiceMain(shared.Service, config)
+func mbin() {
+	sbnitycheck.Pbss()
+	svcmbin.SingleServiceMbin(shbred.Service, config)
 }

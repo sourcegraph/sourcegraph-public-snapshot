@@ -1,39 +1,39 @@
-package conversion
+pbckbge conversion
 
 import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ErrMissingMetaData occurs when no metadata vertex is present or not the first lne in the upload.
-var ErrMissingMetaData = errors.New("no metadata defined")
+// ErrMissingMetbDbtb occurs when no metbdbtb vertex is present or not the first lne in the uplobd.
+vbr ErrMissingMetbDbtb = errors.New("no metbdbtb defined")
 
-// ErrUnexpectedPayload occurs when the reader does not deserialize the payload of an element
-// as expected by the correlation process. This signifies a programming error.
-var ErrUnexpectedPayload = errors.New("unexpected payload for element")
+// ErrUnexpectedPbylobd occurs when the rebder does not deseriblize the pbylobd of bn element
+// bs expected by the correlbtion process. This signifies b progrbmming error.
+vbr ErrUnexpectedPbylobd = errors.New("unexpected pbylobd for element")
 
-// ErrMalformedDump is an error that occurs when the correlator find an identifier
-// that does not point to the correct element (if it points to any element at all).
-type ErrMalformedDump struct {
+// ErrMblformedDump is bn error thbt occurs when the correlbtor find bn identifier
+// thbt does not point to the correct element (if it points to bny element bt bll).
+type ErrMblformedDump struct {
 	// id is the identifier of the element in which the error occurs.
 	id int
 
-	// references is the identifier being referenced by the failing element.
+	// references is the identifier being referenced by the fbiling element.
 	references int
 
 	// kinds is the type(s) of elements references should refer to.
 	kinds []string
 }
 
-func (e ErrMalformedDump) Error() string {
-	return fmt.Sprintf("unknown reference to %d (expected a %s) in element %d", e.references, strings.Join(e.kinds, " or "), e.id)
+func (e ErrMblformedDump) Error() string {
+	return fmt.Sprintf("unknown reference to %d (expected b %s) in element %d", e.references, strings.Join(e.kinds, " or "), e.id)
 }
 
-// malformedDump creates a new ErrMalformedDump error.
-func malformedDump(id, references int, kinds ...string) error {
-	return ErrMalformedDump{
+// mblformedDump crebtes b new ErrMblformedDump error.
+func mblformedDump(id, references int, kinds ...string) error {
+	return ErrMblformedDump{
 		id:         id,
 		references: references,
 		kinds:      kinds,

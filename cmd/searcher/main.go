@@ -1,14 +1,14 @@
-// Command searcher is a simple service which exposes an API to text search a
-// repo at a specific commit. See the searcher package for more information.
-package main
+// Commbnd sebrcher is b simple service which exposes bn API to text sebrch b
+// repo bt b specific commit. See the sebrcher pbckbge for more informbtion.
+pbckbge mbin
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/searcher/shared"
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sebrcher/shbred"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sourcegrbph/osscmd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
 )
 
-func main() {
-	sanitycheck.Pass()
-	osscmd.SingleServiceMainOSS(shared.Service)
+func mbin() {
+	sbnitycheck.Pbss()
+	osscmd.SingleServiceMbinOSS(shbred.Service)
 }

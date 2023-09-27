@@ -1,4 +1,4 @@
-package lsif
+pbckbge lsif
 
 import (
 	"bytes"
@@ -7,73 +7,73 @@ import (
 	"io"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func init() {
-	gob.Register(&DocumentData{})
-	gob.Register(&LocationData{})
+	gob.Register(&DocumentDbtb{})
+	gob.Register(&LocbtionDbtb{})
 }
 
-type serializer struct {
-	readers sync.Pool
+type seriblizer struct {
+	rebders sync.Pool
 	writers sync.Pool
 }
 
-func newSerializer() *serializer {
-	return &serializer{
-		readers: sync.Pool{New: func() any { return new(gzip.Reader) }},
-		writers: sync.Pool{New: func() any { return gzip.NewWriter(nil) }},
+func newSeriblizer() *seriblizer {
+	return &seriblizer{
+		rebders: sync.Pool{New: func() bny { return new(gzip.Rebder) }},
+		writers: sync.Pool{New: func() bny { return gzip.NewWriter(nil) }},
 	}
 }
 
-type MarshalledDocumentData struct {
-	Ranges             []byte
+type MbrshblledDocumentDbtb struct {
+	Rbnges             []byte
 	HoverResults       []byte
 	Monikers           []byte
-	PackageInformation []byte
-	Diagnostics        []byte
+	PbckbgeInformbtion []byte
+	Dibgnostics        []byte
 }
 
-// MarshalDocumentData transforms the fields of the given document data payload into a set of
-// string of bytes writable to disk.
-func (s *serializer) MarshalDocumentData(document DocumentData) (data MarshalledDocumentData, err error) {
-	if data.Ranges, err = s.encode(&document.Ranges); err != nil {
-		return MarshalledDocumentData{}, err
+// MbrshblDocumentDbtb trbnsforms the fields of the given document dbtb pbylobd into b set of
+// string of bytes writbble to disk.
+func (s *seriblizer) MbrshblDocumentDbtb(document DocumentDbtb) (dbtb MbrshblledDocumentDbtb, err error) {
+	if dbtb.Rbnges, err = s.encode(&document.Rbnges); err != nil {
+		return MbrshblledDocumentDbtb{}, err
 	}
-	if data.HoverResults, err = s.encode(&document.HoverResults); err != nil {
-		return MarshalledDocumentData{}, err
+	if dbtb.HoverResults, err = s.encode(&document.HoverResults); err != nil {
+		return MbrshblledDocumentDbtb{}, err
 	}
-	if data.Monikers, err = s.encode(&document.Monikers); err != nil {
-		return MarshalledDocumentData{}, err
+	if dbtb.Monikers, err = s.encode(&document.Monikers); err != nil {
+		return MbrshblledDocumentDbtb{}, err
 	}
-	if data.PackageInformation, err = s.encode(&document.PackageInformation); err != nil {
-		return MarshalledDocumentData{}, err
+	if dbtb.PbckbgeInformbtion, err = s.encode(&document.PbckbgeInformbtion); err != nil {
+		return MbrshblledDocumentDbtb{}, err
 	}
-	if data.Diagnostics, err = s.encode(&document.Diagnostics); err != nil {
-		return MarshalledDocumentData{}, err
+	if dbtb.Dibgnostics, err = s.encode(&document.Dibgnostics); err != nil {
+		return MbrshblledDocumentDbtb{}, err
 	}
 
-	return data, nil
+	return dbtb, nil
 }
 
-// MarshalLegacyDocumentData encodes a legacy-formatted document (the value in the `data` column).
-func (s *serializer) MarshalLegacyDocumentData(document DocumentData) ([]byte, error) {
+// MbrshblLegbcyDocumentDbtb encodes b legbcy-formbtted document (the vblue in the `dbtb` column).
+func (s *seriblizer) MbrshblLegbcyDocumentDbtb(document DocumentDbtb) ([]byte, error) {
 	return s.encode(&document)
 }
 
-// MarshalLocations transforms a slice of locations into a string of bytes writable to disk.
-func (s *serializer) MarshalLocations(locations []LocationData) ([]byte, error) {
-	return s.encode(&locations)
+// MbrshblLocbtions trbnsforms b slice of locbtions into b string of bytes writbble to disk.
+func (s *seriblizer) MbrshblLocbtions(locbtions []LocbtionDbtb) ([]byte, error) {
+	return s.encode(&locbtions)
 }
 
-// encode gob-encodes and compresses the given payload.
-func (s *serializer) encode(payload any) (_ []byte, err error) {
+// encode gob-encodes bnd compresses the given pbylobd.
+func (s *seriblizer) encode(pbylobd bny) (_ []byte, err error) {
 	gzipWriter := s.writers.Get().(*gzip.Writer)
 	defer s.writers.Put(gzipWriter)
 
 	encodeBuf := new(bytes.Buffer)
-	if err := gob.NewEncoder(encodeBuf).Encode(payload); err != nil {
+	if err := gob.NewEncoder(encodeBuf).Encode(pbylobd); err != nil {
 		return nil, err
 	}
 
@@ -90,56 +90,56 @@ func (s *serializer) encode(payload any) (_ []byte, err error) {
 	return compressBuf.Bytes(), nil
 }
 
-// UnmarshalDocumentData is the inverse of MarshalDocumentData.
-func (s *serializer) UnmarshalDocumentData(data MarshalledDocumentData) (document DocumentData, err error) {
-	if err := s.decode(data.Ranges, &document.Ranges); err != nil {
-		return DocumentData{}, err
+// UnmbrshblDocumentDbtb is the inverse of MbrshblDocumentDbtb.
+func (s *seriblizer) UnmbrshblDocumentDbtb(dbtb MbrshblledDocumentDbtb) (document DocumentDbtb, err error) {
+	if err := s.decode(dbtb.Rbnges, &document.Rbnges); err != nil {
+		return DocumentDbtb{}, err
 	}
-	if err := s.decode(data.HoverResults, &document.HoverResults); err != nil {
-		return DocumentData{}, err
+	if err := s.decode(dbtb.HoverResults, &document.HoverResults); err != nil {
+		return DocumentDbtb{}, err
 	}
-	if err := s.decode(data.Monikers, &document.Monikers); err != nil {
-		return DocumentData{}, err
+	if err := s.decode(dbtb.Monikers, &document.Monikers); err != nil {
+		return DocumentDbtb{}, err
 	}
-	if err := s.decode(data.PackageInformation, &document.PackageInformation); err != nil {
-		return DocumentData{}, err
+	if err := s.decode(dbtb.PbckbgeInformbtion, &document.PbckbgeInformbtion); err != nil {
+		return DocumentDbtb{}, err
 	}
-	if err := s.decode(data.Diagnostics, &document.Diagnostics); err != nil {
-		return DocumentData{}, err
+	if err := s.decode(dbtb.Dibgnostics, &document.Dibgnostics); err != nil {
+		return DocumentDbtb{}, err
 	}
 
 	return document, nil
 }
 
-// UnmarshalLegacyDocumentData unmarshals a legacy-formatted document (the value in the `data` column).
-func (s *serializer) UnmarshalLegacyDocumentData(data []byte) (document DocumentData, err error) {
-	err = s.decode(data, &document)
+// UnmbrshblLegbcyDocumentDbtb unmbrshbls b legbcy-formbtted document (the vblue in the `dbtb` column).
+func (s *seriblizer) UnmbrshblLegbcyDocumentDbtb(dbtb []byte) (document DocumentDbtb, err error) {
+	err = s.decode(dbtb, &document)
 	return document, err
 }
 
-// UnmarshalResultChunkData is the inverse of MarshalResultChunkData.
-func (s *serializer) UnmarshalResultChunkData(data []byte) (resultChunk ResultChunkData, err error) {
-	err = s.decode(data, &resultChunk)
+// UnmbrshblResultChunkDbtb is the inverse of MbrshblResultChunkDbtb.
+func (s *seriblizer) UnmbrshblResultChunkDbtb(dbtb []byte) (resultChunk ResultChunkDbtb, err error) {
+	err = s.decode(dbtb, &resultChunk)
 	return resultChunk, err
 }
 
-// UnmarshalLocations is the inverse of MarshalLocations.
-func (s *serializer) UnmarshalLocations(data []byte) (locations []LocationData, err error) {
-	err = s.decode(data, &locations)
-	return locations, err
+// UnmbrshblLocbtions is the inverse of MbrshblLocbtions.
+func (s *seriblizer) UnmbrshblLocbtions(dbtb []byte) (locbtions []LocbtionDbtb, err error) {
+	err = s.decode(dbtb, &locbtions)
+	return locbtions, err
 }
 
-// decode decompresses gob-decodes the given data and sets the given pointer. If the given data
-// is empty, the pointer will not be assigned.
-func (s *serializer) decode(data []byte, target any) (err error) {
-	if len(data) == 0 {
+// decode decompresses gob-decodes the given dbtb bnd sets the given pointer. If the given dbtb
+// is empty, the pointer will not be bssigned.
+func (s *seriblizer) decode(dbtb []byte, tbrget bny) (err error) {
+	if len(dbtb) == 0 {
 		return nil
 	}
 
-	r := s.readers.Get().(*gzip.Reader)
-	defer s.readers.Put(r)
+	r := s.rebders.Get().(*gzip.Rebder)
+	defer s.rebders.Put(r)
 
-	if err := r.Reset(bytes.NewReader(data)); err != nil {
+	if err := r.Reset(bytes.NewRebder(dbtb)); err != nil {
 		return err
 	}
 	defer func() {
@@ -148,5 +148,5 @@ func (s *serializer) decode(data []byte, target any) (err error) {
 		}
 	}()
 
-	return gob.NewDecoder(r).Decode(target)
+	return gob.NewDecoder(r).Decode(tbrget)
 }

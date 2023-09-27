@@ -1,4 +1,4 @@
-package outbound
+pbckbge outbound
 
 import (
 	"context"
@@ -6,39 +6,39 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"code.gitea.io/gitea/modules/hostmatcher"
+	"code.giteb.io/giteb/modules/hostmbtcher"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type OutboundWebhookService interface {
-	// EnqueueWebhook creates an outbound webhook job for the given webhook
-	// event type, optional scope, and payload. In the normal course of events,
+type OutboundWebhookService interfbce {
+	// EnqueueWebhook crebtes bn outbound webhook job for the given webhook
+	// event type, optionbl scope, bnd pbylobd. In the normbl course of events,
 	// this will be picked up by the outbound webhook sender worker in short
-	// order, and the webhook will be dispatched to any registered webhooks that
-	// match the given type and scope.
-	Enqueue(ctx context.Context, eventType string, scope *string, payload []byte) error
+	// order, bnd the webhook will be dispbtched to bny registered webhooks thbt
+	// mbtch the given type bnd scope.
+	Enqueue(ctx context.Context, eventType string, scope *string, pbylobd []byte) error
 }
 
 type outboundWebhookService struct {
-	store database.OutboundWebhookJobStore
+	store dbtbbbse.OutboundWebhookJobStore
 }
 
-// NewOutboundWebhookService instantiates a new outbound webhook service. If key
-// is nil, then the outbound webhook key will be used from the default keyring.
-func NewOutboundWebhookService(db basestore.ShareableStore, key encryption.Key) OutboundWebhookService {
+// NewOutboundWebhookService instbntibtes b new outbound webhook service. If key
+// is nil, then the outbound webhook key will be used from the defbult keyring.
+func NewOutboundWebhookService(db bbsestore.ShbrebbleStore, key encryption.Key) OutboundWebhookService {
 	if key == nil {
-		key = keyring.Default().OutboundWebhookKey
+		key = keyring.Defbult().OutboundWebhookKey
 	}
 
 	return &outboundWebhookService{
-		store: database.OutboundWebhookJobsWith(db, key),
+		store: dbtbbbse.OutboundWebhookJobsWith(db, key),
 	}
 }
 
@@ -46,33 +46,33 @@ func (s *outboundWebhookService) Enqueue(
 	ctx context.Context,
 	eventType string,
 	scope *string,
-	payload []byte,
+	pbylobd []byte,
 ) error {
-	if _, err := s.store.Create(ctx, eventType, scope, payload); err != nil {
-		return errors.Wrap(err, "creating webhook job")
+	if _, err := s.store.Crebte(ctx, eventType, scope, pbylobd); err != nil {
+		return errors.Wrbp(err, "crebting webhook job")
 	}
 
 	return nil
 }
 
-// Based on https://www.ietf.org/archive/id/draft-chapin-rfc2606bis-00.html
-const reservedTLDs = "localhost|local|test|example|invalid|localdomain|domain|lan|home|host|corp"
+// Bbsed on https://www.ietf.org/brchive/id/drbft-chbpin-rfc2606bis-00.html
+const reservedTLDs = "locblhost|locbl|test|exbmple|invblid|locbldombin|dombin|lbn|home|host|corp"
 
-// CheckAddress validates the intended destination address for a webhook, checking that
-// it's not invalid, local, a bad IP, or anything else.
-func CheckAddress(address string) error {
-	// Try to interpret address as a URL, as an IP with a port, or as an IP without a port.
-	u, uErr := url.Parse(address)
-	// If it's an IP with a port, ipStr will contain the IP address without the port. If
-	// it doesn't have a port, the function will error and ipStr will be an empty string.
-	// We'll also try to parse it from the full address for that case.
-	ipStr, _, _ := net.SplitHostPort(address)
-	ip1 := net.ParseIP(ipStr)
-	ip2 := net.ParseIP(address)
+// CheckAddress vblidbtes the intended destinbtion bddress for b webhook, checking thbt
+// it's not invblid, locbl, b bbd IP, or bnything else.
+func CheckAddress(bddress string) error {
+	// Try to interpret bddress bs b URL, bs bn IP with b port, or bs bn IP without b port.
+	u, uErr := url.Pbrse(bddress)
+	// If it's bn IP with b port, ipStr will contbin the IP bddress without the port. If
+	// it doesn't hbve b port, the function will error bnd ipStr will be bn empty string.
+	// We'll blso try to pbrse it from the full bddress for thbt cbse.
+	ipStr, _, _ := net.SplitHostPort(bddress)
+	ip1 := net.PbrseIP(ipStr)
+	ip2 := net.PbrseIP(bddress)
 
 	if ip1 != nil || ip2 != nil {
-		// Address is likely an IP address
-		var ip net.IP
+		// Address is likely bn IP bddress
+		vbr ip net.IP
 		if ip1 != nil {
 			ip = ip1
 		} else {
@@ -80,36 +80,36 @@ func CheckAddress(address string) error {
 		}
 
 		if ip.To4() == nil && ip.To16() == nil {
-			return errors.New("Not a valid IPv4 or IPv6 address")
+			return errors.New("Not b vblid IPv4 or IPv6 bddress")
 		}
 
-		// This will match any valid non-private unicast IP, aka any public host. It will filter out:
-		// - Unspecified (zero'd) IP addresses
-		// - Link-local addresses
-		// - Loopback (localhost) addresses
-		hostAllowList := hostmatcher.ParseHostMatchList("", hostmatcher.MatchBuiltinExternal)
+		// This will mbtch bny vblid non-privbte unicbst IP, bkb bny public host. It will filter out:
+		// - Unspecified (zero'd) IP bddresses
+		// - Link-locbl bddresses
+		// - Loopbbck (locblhost) bddresses
+		hostAllowList := hostmbtcher.PbrseHostMbtchList("", hostmbtcher.MbtchBuiltinExternbl)
 
-		if !hostAllowList.MatchIPAddr(ip) {
-			return errors.New("Must not be unspecified, private, link-local, or loopback address")
+		if !hostAllowList.MbtchIPAddr(ip) {
+			return errors.New("Must not be unspecified, privbte, link-locbl, or loopbbck bddress")
 		}
 
 		return nil
 	} else if uErr != nil {
-		return errors.New("Could not parse address")
+		return errors.New("Could not pbrse bddress")
 	} else {
-		// Address is likely a URL
+		// Address is likely b URL
 		if u.Scheme != "http" && u.Scheme != "https" {
 			return errors.New("Must use http or https scheme")
 		}
 
-		if u.Hostname() == "" || u.Hostname() == "localhost" {
-			return errors.New("Must not be localhost")
+		if u.Hostnbme() == "" || u.Hostnbme() == "locblhost" {
+			return errors.New("Must not be locblhost")
 		}
 
-		parts := strings.Split(u.Hostname(), ".")
-		tld := strings.ToLower(parts[len(parts)-1])
-		if match, _ := regexp.MatchString(reservedTLDs, tld); match {
-			return errors.New("Must not be a reserved TLD")
+		pbrts := strings.Split(u.Hostnbme(), ".")
+		tld := strings.ToLower(pbrts[len(pbrts)-1])
+		if mbtch, _ := regexp.MbtchString(reservedTLDs, tld); mbtch {
+			return errors.New("Must not be b reserved TLD")
 		}
 
 		return nil

@@ -1,33 +1,33 @@
-package app
+pbckbge bpp
 
 import (
 	"net/http"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
 )
 
-func usageStatsArchiveHandler(db database.DB) http.HandlerFunc {
+func usbgeStbtsArchiveHbndler(db dbtbbbse.DB) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 🚨SECURITY: Only site admins may get this archive.
-		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+		// 🚨SECURITY: Only site bdmins mby get this brchive.
+		if err := buth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+			w.WriteHebder(http.StbtusUnbuthorized)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/zip")
-		w.Header().Set("Content-Disposition", "attachment; filename=\"SourcegraphUsersUsageArchive.zip\"")
+		w.Hebder().Set("Content-Type", "bpplicbtion/zip")
+		w.Hebder().Set("Content-Disposition", "bttbchment; filenbme=\"SourcegrbphUsersUsbgeArchive.zip\"")
 
-		archive, err := usagestats.GetArchive(r.Context(), db)
+		brchive, err := usbgestbts.GetArchive(r.Context(), db)
 		if err != nil {
-			log15.Error("usagestats.WriteArchive", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
+			log15.Error("usbgestbts.WriteArchive", "error", err)
+			w.WriteHebder(http.StbtusInternblServerError)
 			return
 		}
 
-		_, _ = w.Write(archive)
+		_, _ = w.Write(brchive)
 	}
 }

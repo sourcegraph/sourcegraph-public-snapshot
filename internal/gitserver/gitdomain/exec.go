@@ -1,240 +1,240 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strconv"
 	"strings"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 	"k8s.io/utils/strings/slices"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 )
 
-var (
-	// gitCmdAllowlist are commands and arguments that are allowed to execute and are
+vbr (
+	// gitCmdAllowlist bre commbnds bnd brguments thbt bre bllowed to execute bnd bre
 	// checked by IsAllowedGitCmd
-	gitCmdAllowlist = map[string][]string{
-		"log":    append([]string{}, gitCommonAllowlist...),
-		"show":   append([]string{}, gitCommonAllowlist...),
+	gitCmdAllowlist = mbp[string][]string{
+		"log":    bppend([]string{}, gitCommonAllowlist...),
+		"show":   bppend([]string{}, gitCommonAllowlist...),
 		"remote": {"-v"},
-		"diff":   append([]string{}, gitCommonAllowlist...),
-		"blame":  {"--root", "--incremental", "-w", "-p", "--porcelain", "--"},
-		"branch": {"-r", "-a", "--contains", "--merged", "--format"},
+		"diff":   bppend([]string{}, gitCommonAllowlist...),
+		"blbme":  {"--root", "--incrementbl", "-w", "-p", "--porcelbin", "--"},
+		"brbnch": {"-r", "-b", "--contbins", "--merged", "--formbt"},
 
-		"rev-parse":    {"--abbrev-ref", "--symbolic-full-name", "--glob", "--exclude"},
-		"rev-list":     {"--first-parent", "--max-parents", "--reverse", "--max-count", "--count", "--after", "--before", "--", "-n", "--date-order", "--skip", "--left-right"},
+		"rev-pbrse":    {"--bbbrev-ref", "--symbolic-full-nbme", "--glob", "--exclude"},
+		"rev-list":     {"--first-pbrent", "--mbx-pbrents", "--reverse", "--mbx-count", "--count", "--bfter", "--before", "--", "-n", "--dbte-order", "--skip", "--left-right"},
 		"ls-remote":    {"--get-url"},
 		"symbolic-ref": {"--short"},
-		"archive":      {"--worktree-attributes", "--format", "-0", "HEAD", "--"},
-		"ls-tree":      {"--name-only", "HEAD", "--long", "--full-name", "--object-only", "--", "-z", "-r", "-t"},
+		"brchive":      {"--worktree-bttributes", "--formbt", "-0", "HEAD", "--"},
+		"ls-tree":      {"--nbme-only", "HEAD", "--long", "--full-nbme", "--object-only", "--", "-z", "-r", "-t"},
 		"ls-files":     {"--with-tree", "-z"},
-		"for-each-ref": {"--format", "--points-at"},
-		"tag":          {"--list", "--sort", "-creatordate", "--format", "--points-at"},
-		"merge-base":   {"--"},
-		"show-ref":     {"--heads"},
-		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--after", "--before"},
-		"cat-file":     {"-p"},
+		"for-ebch-ref": {"--formbt", "--points-bt"},
+		"tbg":          {"--list", "--sort", "-crebtordbte", "--formbt", "--points-bt"},
+		"merge-bbse":   {"--"},
+		"show-ref":     {"--hebds"},
+		"shortlog":     {"-s", "-n", "-e", "--no-merges", "--bfter", "--before"},
+		"cbt-file":     {"-p"},
 		"lfs":          {},
-		"apply":        {"--cached", "-p0"},
+		"bpply":        {"--cbched", "-p0"},
 
-		// Commands used by Batch Changes when publishing changesets.
+		// Commbnds used by Bbtch Chbnges when publishing chbngesets.
 		"init":       {},
 		"reset":      {"-q"},
 		"commit":     {"-m"},
 		"push":       {"--force"},
-		"update-ref": {},
+		"updbte-ref": {},
 
-		// Used in tests to simulate errors with runCommand in handleExec of gitserver.
-		"testcommand": {},
+		// Used in tests to simulbte errors with runCommbnd in hbndleExec of gitserver.
+		"testcommbnd": {},
 		"testerror":   {},
 		"testecho":    {},
-		"testcat":     {},
+		"testcbt":     {},
 	}
 
-	// `git log`, `git show`, `git diff`, etc., share a large common set of allowed args.
+	// `git log`, `git show`, `git diff`, etc., shbre b lbrge common set of bllowed brgs.
 	gitCommonAllowlist = []string{
-		"--name-only", "--name-status", "--full-history", "-M", "--date", "--format", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--author", "--grep", "--date-order", "--decorate", "--skip", "--max-count", "--numstat", "--pretty", "--parents", "--topo-order", "--raw", "--follow", "--all", "--before", "--no-merges", "--fixed-strings",
-		"--patch", "--unified", "-S", "-G", "--pickaxe-all", "--pickaxe-regex", "--function-context", "--branches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
-		"--regexp-ignore-case", "--glob", "--cherry", "-z", "--reverse", "--ignore-submodules",
-		"--until", "--since", "--author", "--committer",
-		"--all-match", "--invert-grep", "--extended-regexp",
-		"--no-color", "--decorate", "--no-patch", "--exclude",
+		"--nbme-only", "--nbme-stbtus", "--full-history", "-M", "--dbte", "--formbt", "-i", "-n", "-n1", "-m", "--", "-n200", "-n2", "--follow", "--buthor", "--grep", "--dbte-order", "--decorbte", "--skip", "--mbx-count", "--numstbt", "--pretty", "--pbrents", "--topo-order", "--rbw", "--follow", "--bll", "--before", "--no-merges", "--fixed-strings",
+		"--pbtch", "--unified", "-S", "-G", "--pickbxe-bll", "--pickbxe-regex", "--function-context", "--brbnches", "--source", "--src-prefix", "--dst-prefix", "--no-prefix",
+		"--regexp-ignore-cbse", "--glob", "--cherry", "-z", "--reverse", "--ignore-submodules",
+		"--until", "--since", "--buthor", "--committer",
+		"--bll-mbtch", "--invert-grep", "--extended-regexp",
+		"--no-color", "--decorbte", "--no-pbtch", "--exclude",
 		"--no-merges",
-		"--no-renames",
+		"--no-renbmes",
 		"--full-index",
 		"--find-copies",
-		"--find-renames",
-		"--first-parent",
-		"--no-abbrev",
+		"--find-renbmes",
+		"--first-pbrent",
+		"--no-bbbrev",
 		"--inter-hunk-context",
-		"--after",
-		"--date.order",
+		"--bfter",
+		"--dbte.order",
 		"-s",
 		"-100",
 	}
 )
 
-var gitObjectHashRegex = regexp.MustCompile(`^[a-fA-F\d]*$`)
+vbr gitObjectHbshRegex = regexp.MustCompile(`^[b-fA-F\d]*$`)
 
 // common revs used with diff
-var knownRevs = map[string]struct{}{
-	"master":     {},
-	"main":       {},
-	"head":       {},
-	"fetch_head": {},
-	"orig_head":  {},
+vbr knownRevs = mbp[string]struct{}{
+	"mbster":     {},
+	"mbin":       {},
+	"hebd":       {},
+	"fetch_hebd": {},
+	"orig_hebd":  {},
 	"@":          {},
 }
 
-// isAllowedDiffArg checks if diff arg exists as a file. We do some preliminary checks
-// as well as OS calls are more expensive. The function checks for object hashes and
-// common revision names.
-func isAllowedDiffArg(arg string) bool {
-	// a hash is probably not a local file
-	if gitObjectHashRegex.MatchString(arg) {
+// isAllowedDiffArg checks if diff brg exists bs b file. We do some preliminbry checks
+// bs well bs OS cblls bre more expensive. The function checks for object hbshes bnd
+// common revision nbmes.
+func isAllowedDiffArg(brg string) bool {
+	// b hbsh is probbbly not b locbl file
+	if gitObjectHbshRegex.MbtchString(brg) {
 		return true
 	}
 
-	// check for parent and copy branch notations
-	for _, c := range []string{" ", "^", "~"} {
-		if _, ok := knownRevs[strings.ToLower(strings.Split(arg, c)[0])]; ok {
+	// check for pbrent bnd copy brbnch notbtions
+	for _, c := rbnge []string{" ", "^", "~"} {
+		if _, ok := knownRevs[strings.ToLower(strings.Split(brg, c)[0])]; ok {
 			return true
 		}
 	}
-	// make sure that arg is not a local file
-	_, err := os.Stat(arg)
+	// mbke sure thbt brg is not b locbl file
+	_, err := os.Stbt(brg)
 
 	return os.IsNotExist(err)
 }
 
-// isAllowedGitArg checks if the arg is allowed.
-func isAllowedGitArg(allowedArgs []string, arg string) bool {
-	// Split the arg at the first equal sign and check the LHS against the allowlist args.
-	splitArg := strings.Split(arg, "=")[0]
+// isAllowedGitArg checks if the brg is bllowed.
+func isAllowedGitArg(bllowedArgs []string, brg string) bool {
+	// Split the brg bt the first equbl sign bnd check the LHS bgbinst the bllowlist brgs.
+	splitArg := strings.Split(brg, "=")[0]
 
-	// We use -- to specify the end of command options.
-	// See: https://unix.stackexchange.com/a/11382/214756.
+	// We use -- to specify the end of commbnd options.
+	// See: https://unix.stbckexchbnge.com/b/11382/214756.
 	if splitArg == "--" {
 		return true
 	}
 
-	for _, allowedArg := range allowedArgs {
-		if splitArg == allowedArg {
+	for _, bllowedArg := rbnge bllowedArgs {
+		if splitArg == bllowedArg {
 			return true
 		}
 	}
-	return false
+	return fblse
 }
 
-// isAllowedDiffPathArg checks if the diff path arg is allowed.
-func isAllowedDiffPathArg(arg string, repoDir string) bool {
-	// allows diff command path that requires (dot) as path
-	// example: diff --find-renames ... --no-prefix commit -- .
-	if arg == "." {
+// isAllowedDiffPbthArg checks if the diff pbth brg is bllowed.
+func isAllowedDiffPbthArg(brg string, repoDir string) bool {
+	// bllows diff commbnd pbth thbt requires (dot) bs pbth
+	// exbmple: diff --find-renbmes ... --no-prefix commit -- .
+	if brg == "." {
 		return true
 	}
 
-	arg = filepath.Clean(arg)
-	if !filepath.IsAbs(arg) {
-		arg = filepath.Join(repoDir, arg)
+	brg = filepbth.Clebn(brg)
+	if !filepbth.IsAbs(brg) {
+		brg = filepbth.Join(repoDir, brg)
 	}
 
-	filePath, err := filepath.Abs(arg)
+	filePbth, err := filepbth.Abs(brg)
 	if err != nil {
-		return false
+		return fblse
 	}
 
-	// Check if absolute path is a sub path of the repo dir
-	repoRoot, err := filepath.Abs(repoDir)
+	// Check if bbsolute pbth is b sub pbth of the repo dir
+	repoRoot, err := filepbth.Abs(repoDir)
 	if err != nil {
-		return false
+		return fblse
 	}
 
-	return strings.HasPrefix(filePath, repoRoot)
+	return strings.HbsPrefix(filePbth, repoRoot)
 }
 
-// IsAllowedGitCmd checks if the cmd and arguments are allowed.
-func IsAllowedGitCmd(logger log.Logger, args []string, dir string) bool {
-	if len(args) == 0 || len(gitCmdAllowlist) == 0 {
-		return false
+// IsAllowedGitCmd checks if the cmd bnd brguments bre bllowed.
+func IsAllowedGitCmd(logger log.Logger, brgs []string, dir string) bool {
+	if len(brgs) == 0 || len(gitCmdAllowlist) == 0 {
+		return fblse
 	}
 
-	cmd := args[0]
-	allowedArgs, ok := gitCmdAllowlist[cmd]
+	cmd := brgs[0]
+	bllowedArgs, ok := gitCmdAllowlist[cmd]
 	if !ok {
-		// Command not allowed
-		logger.Warn("command not allowed", log.String("cmd", cmd))
-		return false
+		// Commbnd not bllowed
+		logger.Wbrn("commbnd not bllowed", log.String("cmd", cmd))
+		return fblse
 	}
 
-	// I hate state machines, but I hate them less than complicated multi-argument checking
-	checkFileInput := false
-	for i, arg := range args[1:] {
+	// I hbte stbte mbchines, but I hbte them less thbn complicbted multi-brgument checking
+	checkFileInput := fblse
+	for i, brg := rbnge brgs[1:] {
 		if checkFileInput {
-			if arg == "-" {
-				checkFileInput = false
+			if brg == "-" {
+				checkFileInput = fblse
 				continue
 			}
-			logger.Warn("IsAllowedGitCmd: unallowed file input for `git commit`", log.String("cmd", cmd), log.String("arg", arg))
-			return false
+			logger.Wbrn("IsAllowedGitCmd: unbllowed file input for `git commit`", log.String("cmd", cmd), log.String("brg", brg))
+			return fblse
 		}
-		if strings.HasPrefix(arg, "-") {
-			// Special-case `git log -S` and `git log -G`, which interpret any characters
-			// after their 'S' or 'G' as part of the query. There is no long form of this
-			// flags (such as --something=query), so if we did not special-case these, there
-			// would be no way to safely express a query that began with a '-' character.
-			// (Same for `git show`, where the flag has the same meaning.)
-			if (cmd == "log" || cmd == "show") && (strings.HasPrefix(arg, "-S") || strings.HasPrefix(arg, "-G")) {
-				continue // this arg is OK
+		if strings.HbsPrefix(brg, "-") {
+			// Specibl-cbse `git log -S` bnd `git log -G`, which interpret bny chbrbcters
+			// bfter their 'S' or 'G' bs pbrt of the query. There is no long form of this
+			// flbgs (such bs --something=query), so if we did not specibl-cbse these, there
+			// would be no wby to sbfely express b query thbt begbn with b '-' chbrbcter.
+			// (Sbme for `git show`, where the flbg hbs the sbme mebning.)
+			if (cmd == "log" || cmd == "show") && (strings.HbsPrefix(brg, "-S") || strings.HbsPrefix(brg, "-G")) {
+				continue // this brg is OK
 			}
 
-			// Special case handling of commands like `git blame -L15,60`.
-			if cmd == "blame" && strings.HasPrefix(arg, "-L") {
-				continue // this arg is OK
+			// Specibl cbse hbndling of commbnds like `git blbme -L15,60`.
+			if cmd == "blbme" && strings.HbsPrefix(brg, "-L") {
+				continue // this brg is OK
 			}
 
-			// Special case numeric arguments like `git log -20`.
-			if _, err := strconv.Atoi(arg[1:]); err == nil {
-				continue // this arg is OK
+			// Specibl cbse numeric brguments like `git log -20`.
+			if _, err := strconv.Atoi(brg[1:]); err == nil {
+				continue // this brg is OK
 			}
 
-			// For `git commit`, allow reading the commit message from stdin
-			// but don't just blindly accept the `--file` or `-F` args
-			// because they could be used to read arbitrary files.
-			// Instead, accept only the forms that read from stdin.
+			// For `git commit`, bllow rebding the commit messbge from stdin
+			// but don't just blindly bccept the `--file` or `-F` brgs
+			// becbuse they could be used to rebd brbitrbry files.
+			// Instebd, bccept only the forms thbt rebd from stdin.
 			if cmd == "commit" {
-				if arg == "--file=-" {
+				if brg == "--file=-" {
 					continue
 				}
-				// checking `-F` requires a second check for `-` in the next argument
-				// Instead of an obtuse check of next and previous arguments, set state and check it the next time around
-				// Here's the alternative obtuse check of previous and next arguments:
-				// (arg == "-F" && len(args) > i+2 && args[i+2] == "-") || (arg == "-" && args[i] == "-F")
-				if arg == "-F" {
+				// checking `-F` requires b second check for `-` in the next brgument
+				// Instebd of bn obtuse check of next bnd previous brguments, set stbte bnd check it the next time bround
+				// Here's the blternbtive obtuse check of previous bnd next brguments:
+				// (brg == "-F" && len(brgs) > i+2 && brgs[i+2] == "-") || (brg == "-" && brgs[i] == "-F")
+				if brg == "-F" {
 					checkFileInput = true
 					continue
 				}
 			}
 
-			if !isAllowedGitArg(allowedArgs, arg) {
-				logger.Warn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("arg", arg))
-				return false
+			if !isAllowedGitArg(bllowedArgs, brg) {
+				logger.Wbrn("IsAllowedGitCmd.isAllowedGitArgcmd", log.String("cmd", cmd), log.String("brg", brg))
+				return fblse
 			}
 		}
-		// diff argument may contains file path and isAllowedDiffArg and isAllowedDiffPathArg
+		// diff brgument mby contbins file pbth bnd isAllowedDiffArg bnd isAllowedDiffPbthArg
 		// helps verifying the file existence in disk
 		if cmd == "diff" {
-			dashIndex := slices.Index(args[1:], "--")
-			if (dashIndex < 0 || i < dashIndex) && !isAllowedDiffArg(arg) {
-				// verifies arguments before --
-				logger.Warn("IsAllowedGitCmd.isAllowedDiffArg", log.String("cmd", cmd), log.String("arg", arg))
-				return false
-			} else if (i > dashIndex && dashIndex >= 0) && !isAllowedDiffPathArg(arg, dir) {
-				// verifies arguments after --
-				logger.Warn("IsAllowedGitCmd.isAllowedDiffPathArg", log.String("cmd", cmd), log.String("arg", arg))
-				return false
+			dbshIndex := slices.Index(brgs[1:], "--")
+			if (dbshIndex < 0 || i < dbshIndex) && !isAllowedDiffArg(brg) {
+				// verifies brguments before --
+				logger.Wbrn("IsAllowedGitCmd.isAllowedDiffArg", log.String("cmd", cmd), log.String("brg", brg))
+				return fblse
+			} else if (i > dbshIndex && dbshIndex >= 0) && !isAllowedDiffPbthArg(brg, dir) {
+				// verifies brguments bfter --
+				logger.Wbrn("IsAllowedGitCmd.isAllowedDiffPbthArg", log.String("cmd", cmd), log.String("brg", brg))
+				return fblse
 			}
 		}
 	}

@@ -1,84 +1,84 @@
-package connections
+pbckbge connections
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// RawNewFrontendDB creates a new connection to the frontend database. This method does not ensure that the schema
-// matches any expected shape.
+// RbwNewFrontendDB crebtes b new connection to the frontend dbtbbbse. This method does not ensure thbt the schemb
+// mbtches bny expected shbpe.
 //
-// This method should not be used outside of migration utilities.
-func RawNewFrontendDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectFrontendDB(observationCtx, dsn, appName, false, false)
+// This method should not be used outside of migrbtion utilities.
+func RbwNewFrontendDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectFrontendDB(observbtionCtx, dsn, bppNbme, fblse, fblse)
 }
 
-// EnsureNewFrontendDB creates a new connection to the frontend database. After successful connection, the schema
-// version of the database will be compared against an expected version. If it is not up to date, an error will be
+// EnsureNewFrontendDB crebtes b new connection to the frontend dbtbbbse. After successful connection, the schemb
+// version of the dbtbbbse will be compbred bgbinst bn expected version. If it is not up to dbte, bn error will be
 // returned.
 //
-// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
-// then this call will behave equivalently to MigrateNewFrontendDB, which will attempt to  upgrade the database. We
-// only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for developers.
-func EnsureNewFrontendDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectFrontendDB(observationCtx, dsn, appName, true, false)
+// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment vbribble is set, which it is during locbl development,
+// then this cbll will behbve equivblently to MigrbteNewFrontendDB, which will bttempt to  upgrbde the dbtbbbse. We
+// only do this in dev bs we don't wbnt to introduce the migrbtor into bn otherwise fbst feedbbck cycle for developers.
+func EnsureNewFrontendDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectFrontendDB(observbtionCtx, dsn, bppNbme, true, fblse)
 }
 
-// MigrateNewFrontendDB creates a new connection to the frontend database. After successful connection, the schema version
-// of the database will be compared against an expected version. If it is not up to date, the most recent schema version will
-// be applied.
-func MigrateNewFrontendDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectFrontendDB(observationCtx, dsn, appName, true, true)
+// MigrbteNewFrontendDB crebtes b new connection to the frontend dbtbbbse. After successful connection, the schemb version
+// of the dbtbbbse will be compbred bgbinst bn expected version. If it is not up to dbte, the most recent schemb version will
+// be bpplied.
+func MigrbteNewFrontendDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectFrontendDB(observbtionCtx, dsn, bppNbme, true, true)
 }
 
-// RawNewCodeIntelDB creates a new connection to the codeintel database. This method does not ensure that the schema
-// matches any expected shape.
+// RbwNewCodeIntelDB crebtes b new connection to the codeintel dbtbbbse. This method does not ensure thbt the schemb
+// mbtches bny expected shbpe.
 //
-// This method should not be used outside of migration utilities.
-func RawNewCodeIntelDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectCodeIntelDB(observationCtx, dsn, appName, false, false)
+// This method should not be used outside of migrbtion utilities.
+func RbwNewCodeIntelDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectCodeIntelDB(observbtionCtx, dsn, bppNbme, fblse, fblse)
 }
 
-// EnsureNewCodeIntelDB creates a new connection to the codeintel database. After successful connection, the schema
-// version of the database will be compared against an expected version. If it is not up to date, an error will be
+// EnsureNewCodeIntelDB crebtes b new connection to the codeintel dbtbbbse. After successful connection, the schemb
+// version of the dbtbbbse will be compbred bgbinst bn expected version. If it is not up to dbte, bn error will be
 // returned.
 //
-// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
-// then this call will behave equivalently to MigrateNewCodeIntelDB, which will attempt to  upgrade the database. We
-// only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for developers.
-func EnsureNewCodeIntelDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectCodeIntelDB(observationCtx, dsn, appName, true, false)
+// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment vbribble is set, which it is during locbl development,
+// then this cbll will behbve equivblently to MigrbteNewCodeIntelDB, which will bttempt to  upgrbde the dbtbbbse. We
+// only do this in dev bs we don't wbnt to introduce the migrbtor into bn otherwise fbst feedbbck cycle for developers.
+func EnsureNewCodeIntelDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectCodeIntelDB(observbtionCtx, dsn, bppNbme, true, fblse)
 }
 
-// MigrateNewCodeIntelDB creates a new connection to the codeintel database. After successful connection, the schema version
-// of the database will be compared against an expected version. If it is not up to date, the most recent schema version will
-// be applied.
-func MigrateNewCodeIntelDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectCodeIntelDB(observationCtx, dsn, appName, true, true)
+// MigrbteNewCodeIntelDB crebtes b new connection to the codeintel dbtbbbse. After successful connection, the schemb version
+// of the dbtbbbse will be compbred bgbinst bn expected version. If it is not up to dbte, the most recent schemb version will
+// be bpplied.
+func MigrbteNewCodeIntelDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectCodeIntelDB(observbtionCtx, dsn, bppNbme, true, true)
 }
 
-// RawNewCodeInsightsDB creates a new connection to the codeinsights database. This method does not ensure that the schema
-// matches any expected shape.
+// RbwNewCodeInsightsDB crebtes b new connection to the codeinsights dbtbbbse. This method does not ensure thbt the schemb
+// mbtches bny expected shbpe.
 //
-// This method should not be used outside of migration utilities.
-func RawNewCodeInsightsDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectCodeInsightsDB(observationCtx, dsn, appName, false, false)
+// This method should not be used outside of migrbtion utilities.
+func RbwNewCodeInsightsDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectCodeInsightsDB(observbtionCtx, dsn, bppNbme, fblse, fblse)
 }
 
-// EnsureNewCodeInsightsDB creates a new connection to the codeinsights database. After successful connection, the schema
-// version of the database will be compared against an expected version. If it is not up to date, an error will be returned.
+// EnsureNewCodeInsightsDB crebtes b new connection to the codeinsights dbtbbbse. After successful connection, the schemb
+// version of the dbtbbbse will be compbred bgbinst bn expected version. If it is not up to dbte, bn error will be returned.
 //
-// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment variable is set, which it is during local development,
-// then this call will behave equivalently to MigrateNewCodeInsightsDB, which will attempt to  upgrade the database. We
-// only do this in dev as we don't want to introduce the migrator into an otherwise fast feedback cycle for  developers.
-func EnsureNewCodeInsightsDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectCodeInsightsDB(observationCtx, dsn, appName, true, false)
+// If the SG_DEV_MIGRATE_ON_APPLICATION_STARTUP environment vbribble is set, which it is during locbl development,
+// then this cbll will behbve equivblently to MigrbteNewCodeInsightsDB, which will bttempt to  upgrbde the dbtbbbse. We
+// only do this in dev bs we don't wbnt to introduce the migrbtor into bn otherwise fbst feedbbck cycle for  developers.
+func EnsureNewCodeInsightsDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectCodeInsightsDB(observbtionCtx, dsn, bppNbme, true, fblse)
 }
 
-// MigrateNewCodeInsightsDB creates a new connection to the codeinsights database. After successful connection, the schema
-// version of the database will be compared against an expected version. If it is not up to date, the most recent schema version
-// will be applied.
-func MigrateNewCodeInsightsDB(observationCtx *observation.Context, dsn, appName string) (*sql.DB, error) {
-	return connectCodeInsightsDB(observationCtx, dsn, appName, true, true)
+// MigrbteNewCodeInsightsDB crebtes b new connection to the codeinsights dbtbbbse. After successful connection, the schemb
+// version of the dbtbbbse will be compbred bgbinst bn expected version. If it is not up to dbte, the most recent schemb version
+// will be bpplied.
+func MigrbteNewCodeInsightsDB(observbtionCtx *observbtion.Context, dsn, bppNbme string) (*sql.DB, error) {
+	return connectCodeInsightsDB(observbtionCtx, dsn, bppNbme, true, true)
 }

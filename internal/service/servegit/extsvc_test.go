@@ -1,28 +1,28 @@
-package servegit
+pbckbge servegit
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-// TestEnsureExtSVC is a light integration test just to check we successfully
+// TestEnsureExtSVC is b light integrbtion test just to check we successfully
 // insert into the DB.
 func TestEnsureExtSVC(t *testing.T) {
 	logger := logtest.Scoped(t)
-	testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := testDB.ExternalServices()
+	testDB := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := testDB.ExternblServices()
 
-	err := doEnsureExtSVC(context.Background(), store, "http://test", "/fake")
+	err := doEnsureExtSVC(context.Bbckground(), store, "http://test", "/fbke")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	_, err = store.GetByID(context.Background(), ExtSVCID)
+	_, err = store.GetByID(context.Bbckground(), ExtSVCID)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 }

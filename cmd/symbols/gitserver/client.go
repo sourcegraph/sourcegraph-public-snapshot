@@ -1,43 +1,43 @@
-package gitserver
+pbckbge gitserver
 
 import (
 	"bytes"
 	"context"
 	"io"
 
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type GitserverClient interface {
-	// FetchTar returns an io.ReadCloser to a tar archive of a repository at the specified Git
-	// remote URL and commit ID. If the error implements "BadRequest() bool", it will be used to
-	// determine if the error is a bad request (eg invalid repo).
-	FetchTar(context.Context, api.RepoName, api.CommitID, []string) (io.ReadCloser, error)
+type GitserverClient interfbce {
+	// FetchTbr returns bn io.RebdCloser to b tbr brchive of b repository bt the specified Git
+	// remote URL bnd commit ID. If the error implements "BbdRequest() bool", it will be used to
+	// determine if the error is b bbd request (eg invblid repo).
+	FetchTbr(context.Context, bpi.RepoNbme, bpi.CommitID, []string) (io.RebdCloser, error)
 
-	// GitDiff returns the paths that have changed between two commits.
-	GitDiff(context.Context, api.RepoName, api.CommitID, api.CommitID) (Changes, error)
+	// GitDiff returns the pbths thbt hbve chbnged between two commits.
+	GitDiff(context.Context, bpi.RepoNbme, bpi.CommitID, bpi.CommitID) (Chbnges, error)
 
-	// ReadFile returns the file content for the given file at a repo commit.
-	ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error)
+	// RebdFile returns the file content for the given file bt b repo commit.
+	RebdFile(ctx context.Context, repoCommitPbth types.RepoCommitPbth) ([]byte, error)
 
-	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
-	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+	// LogReverseEbch runs git log in reverse order bnd cblls the given cbllbbck for ebch entry.
+	LogReverseEbch(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdombin.LogEntry) error) error
 
-	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
-	// onCommit function for each.
+	// RevList mbkes b git rev-list cbll bnd iterbtes through the resulting commits, cblling the provided
+	// onCommit function for ebch.
 	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 }
 
-// Changes are added, deleted, and modified paths.
-type Changes struct {
+// Chbnges bre bdded, deleted, bnd modified pbths.
+type Chbnges struct {
 	Added    []string
 	Modified []string
 	Deleted  []string
@@ -45,97 +45,97 @@ type Changes struct {
 
 type gitserverClient struct {
 	innerClient gitserver.Client
-	operations  *operations
+	operbtions  *operbtions
 }
 
-func NewClient(observationCtx *observation.Context, db database.DB) GitserverClient {
+func NewClient(observbtionCtx *observbtion.Context, db dbtbbbse.DB) GitserverClient {
 	return &gitserverClient{
 		innerClient: gitserver.NewClient(),
-		operations:  newOperations(observationCtx),
+		operbtions:  newOperbtions(observbtionCtx),
 	}
 }
 
-func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (_ io.ReadCloser, err error) {
-	ctx, _, endObservation := c.operations.fetchTar.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (c *gitserverClient) FetchTbr(ctx context.Context, repo bpi.RepoNbme, commit bpi.CommitID, pbths []string) (_ io.RebdCloser, err error) {
+	ctx, _, endObservbtion := c.operbtions.fetchTbr.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
 		commit.Attr(),
-		attribute.Int("paths", len(paths)),
+		bttribute.Int("pbths", len(pbths)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
-	pathSpecs := []gitdomain.Pathspec{}
-	for _, path := range paths {
-		pathSpecs = append(pathSpecs, gitdomain.PathspecLiteral(path))
+	pbthSpecs := []gitdombin.Pbthspec{}
+	for _, pbth := rbnge pbths {
+		pbthSpecs = bppend(pbthSpecs, gitdombin.PbthspecLiterbl(pbth))
 	}
 
 	opts := gitserver.ArchiveOptions{
 		Treeish:   string(commit),
-		Format:    gitserver.ArchiveFormatTar,
-		Pathspecs: pathSpecs,
+		Formbt:    gitserver.ArchiveFormbtTbr,
+		Pbthspecs: pbthSpecs,
 	}
 
-	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level
-	return c.innerClient.ArchiveReader(ctx, nil, repo, opts)
+	// Note: the sub-repo perms checker is nil here becbuse we do the sub-repo filtering bt b higher level
+	return c.innerClient.ArchiveRebder(ctx, nil, repo, opts)
 }
 
-func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
-	ctx, _, endObservation := c.operations.gitDiff.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
+func (c *gitserverClient) GitDiff(ctx context.Context, repo bpi.RepoNbme, commitA, commitB bpi.CommitID) (_ Chbnges, err error) {
+	ctx, _, endObservbtion := c.operbtions.gitDiff.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
 		repo.Attr(),
-		attribute.String("commitA", string(commitA)),
-		attribute.String("commitB", string(commitB)),
+		bttribute.String("commitA", string(commitA)),
+		bttribute.String("commitB", string(commitB)),
 	}})
-	defer endObservation(1, observation.Args{})
+	defer endObservbtion(1, observbtion.Args{})
 
 	output, err := c.innerClient.DiffSymbols(ctx, repo, commitA, commitB)
 
-	changes, err := parseGitDiffOutput(output)
+	chbnges, err := pbrseGitDiffOutput(output)
 	if err != nil {
-		return Changes{}, errors.Wrap(err, "failed to parse git diff output")
+		return Chbnges{}, errors.Wrbp(err, "fbiled to pbrse git diff output")
 	}
 
-	return changes, nil
+	return chbnges, nil
 }
 
-func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	data, err := c.innerClient.ReadFile(ctx, nil, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path)
+func (c *gitserverClient) RebdFile(ctx context.Context, repoCommitPbth types.RepoCommitPbth) ([]byte, error) {
+	dbtb, err := c.innerClient.RebdFile(ctx, nil, bpi.RepoNbme(repoCommitPbth.Repo), bpi.CommitID(repoCommitPbth.Commit), repoCommitPbth.Pbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get file contents")
+		return nil, errors.Wrbp(err, "fbiled to get file contents")
 	}
-	return data, nil
+	return dbtb, nil
 }
 
-func (c *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return c.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
+func (c *gitserverClient) LogReverseEbch(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdombin.LogEntry) error) error {
+	return c.innerClient.LogReverseEbch(ctx, repo, commit, n, onLogEntry)
 }
 
 func (c *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
 	return c.innerClient.RevList(ctx, repo, commit, onCommit)
 }
 
-var NUL = []byte{0}
+vbr NUL = []byte{0}
 
-// parseGitDiffOutput parses the output of a git diff command, which consists
-// of a repeated sequence of `<status> NUL <path> NUL` where NUL is the 0 byte.
-func parseGitDiffOutput(output []byte) (changes Changes, _ error) {
+// pbrseGitDiffOutput pbrses the output of b git diff commbnd, which consists
+// of b repebted sequence of `<stbtus> NUL <pbth> NUL` where NUL is the 0 byte.
+func pbrseGitDiffOutput(output []byte) (chbnges Chbnges, _ error) {
 	if len(output) == 0 {
-		return Changes{}, nil
+		return Chbnges{}, nil
 	}
 
 	slices := bytes.Split(bytes.TrimRight(output, string(NUL)), NUL)
 	if len(slices)%2 != 0 {
-		return changes, errors.Newf("uneven pairs")
+		return chbnges, errors.Newf("uneven pbirs")
 	}
 
 	for i := 0; i < len(slices); i += 2 {
 		switch slices[i][0] {
-		case 'A':
-			changes.Added = append(changes.Added, string(slices[i+1]))
-		case 'M':
-			changes.Modified = append(changes.Modified, string(slices[i+1]))
-		case 'D':
-			changes.Deleted = append(changes.Deleted, string(slices[i+1]))
+		cbse 'A':
+			chbnges.Added = bppend(chbnges.Added, string(slices[i+1]))
+		cbse 'M':
+			chbnges.Modified = bppend(chbnges.Modified, string(slices[i+1]))
+		cbse 'D':
+			chbnges.Deleted = bppend(chbnges.Deleted, string(slices[i+1]))
 		}
 	}
 
-	return changes, nil
+	return chbnges, nil
 }

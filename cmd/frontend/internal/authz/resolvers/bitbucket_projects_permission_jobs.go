@@ -1,38 +1,38 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"strings"
 
-	"github.com/graph-gophers/graphql-go"
+	"github.com/grbph-gophers/grbphql-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 type bitbucketProjectsPermissionJobsResolver struct {
 	jobs []*types.BitbucketProjectPermissionJob
 }
 
-func NewBitbucketProjectsPermissionJobsResolver(jobs []*types.BitbucketProjectPermissionJob) graphqlbackend.BitbucketProjectsPermissionJobsResolver {
+func NewBitbucketProjectsPermissionJobsResolver(jobs []*types.BitbucketProjectPermissionJob) grbphqlbbckend.BitbucketProjectsPermissionJobsResolver {
 	return &bitbucketProjectsPermissionJobsResolver{
 		jobs: jobs,
 	}
 }
 
-func (b bitbucketProjectsPermissionJobsResolver) TotalCount() int32 {
+func (b bitbucketProjectsPermissionJobsResolver) TotblCount() int32 {
 	return int32(len(b.jobs))
 }
 
-func (b bitbucketProjectsPermissionJobsResolver) Nodes() ([]graphqlbackend.BitbucketProjectsPermissionJobResolver, error) {
-	resolvers := make([]graphqlbackend.BitbucketProjectsPermissionJobResolver, 0, len(b.jobs))
-	for _, job := range b.jobs {
-		resolvers = append(resolvers, convertJobToResolver(job))
+func (b bitbucketProjectsPermissionJobsResolver) Nodes() ([]grbphqlbbckend.BitbucketProjectsPermissionJobResolver, error) {
+	resolvers := mbke([]grbphqlbbckend.BitbucketProjectsPermissionJobResolver, 0, len(b.jobs))
+	for _, job := rbnge b.jobs {
+		resolvers = bppend(resolvers, convertJobToResolver(job))
 	}
 	return resolvers, nil
 }
 
-func convertJobToResolver(job *types.BitbucketProjectPermissionJob) graphqlbackend.BitbucketProjectsPermissionJobResolver {
+func convertJobToResolver(job *types.BitbucketProjectPermissionJob) grbphqlbbckend.BitbucketProjectsPermissionJobResolver {
 	return bitbucketProjectsPermissionJobResolver{job: *job}
 }
 
@@ -40,51 +40,51 @@ type bitbucketProjectsPermissionJobResolver struct {
 	job types.BitbucketProjectPermissionJob
 }
 
-func (j bitbucketProjectsPermissionJobResolver) InternalJobID() int32 {
+func (j bitbucketProjectsPermissionJobResolver) InternblJobID() int32 {
 	return int32(j.job.ID)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) State() string {
-	return j.job.State
+func (j bitbucketProjectsPermissionJobResolver) Stbte() string {
+	return j.job.Stbte
 }
 
-func (j bitbucketProjectsPermissionJobResolver) FailureMessage() *string {
-	return j.job.FailureMessage
+func (j bitbucketProjectsPermissionJobResolver) FbilureMessbge() *string {
+	return j.job.FbilureMessbge
 }
 
-func (j bitbucketProjectsPermissionJobResolver) QueuedAt() gqlutil.DateTime {
-	return gqlutil.DateTime{Time: j.job.QueuedAt}
+func (j bitbucketProjectsPermissionJobResolver) QueuedAt() gqlutil.DbteTime {
+	return gqlutil.DbteTime{Time: j.job.QueuedAt}
 }
 
-func (j bitbucketProjectsPermissionJobResolver) StartedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(j.job.StartedAt)
+func (j bitbucketProjectsPermissionJobResolver) StbrtedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(j.job.StbrtedAt)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) FinishedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(j.job.FinishedAt)
+func (j bitbucketProjectsPermissionJobResolver) FinishedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(j.job.FinishedAt)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) ProcessAfter() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(j.job.ProcessAfter)
+func (j bitbucketProjectsPermissionJobResolver) ProcessAfter() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(j.job.ProcessAfter)
 }
 
 func (j bitbucketProjectsPermissionJobResolver) NumResets() int32 {
 	return int32(j.job.NumResets)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) NumFailures() int32 {
-	return int32(j.job.NumFailures)
+func (j bitbucketProjectsPermissionJobResolver) NumFbilures() int32 {
+	return int32(j.job.NumFbilures)
 }
 
 func (j bitbucketProjectsPermissionJobResolver) ProjectKey() string {
 	return j.job.ProjectKey
 }
 
-func (j bitbucketProjectsPermissionJobResolver) ExternalServiceID() graphql.ID {
-	return graphqlbackend.MarshalExternalServiceID(j.job.ExternalServiceID)
+func (j bitbucketProjectsPermissionJobResolver) ExternblServiceID() grbphql.ID {
+	return grbphqlbbckend.MbrshblExternblServiceID(j.job.ExternblServiceID)
 }
 
-func (j bitbucketProjectsPermissionJobResolver) Permissions() []graphqlbackend.UserPermissionResolver {
+func (j bitbucketProjectsPermissionJobResolver) Permissions() []grbphqlbbckend.UserPermissionResolver {
 	return permissionsToPermissionResolvers(j.job.Permissions)
 }
 
@@ -97,17 +97,17 @@ type userPermissionResolver struct {
 	permission string
 }
 
-func NewUserPermissionResolver(bindID, permission string) graphqlbackend.UserPermissionResolver {
+func NewUserPermissionResolver(bindID, permission string) grbphqlbbckend.UserPermissionResolver {
 	return userPermissionResolver{
 		bindID:     bindID,
 		permission: permission,
 	}
 }
 
-func permissionsToPermissionResolvers(perms []types.UserPermission) []graphqlbackend.UserPermissionResolver {
-	resolvers := make([]graphqlbackend.UserPermissionResolver, 0, len(perms))
-	for _, perm := range perms {
-		resolvers = append(resolvers, NewUserPermissionResolver(perm.BindID, perm.Permission))
+func permissionsToPermissionResolvers(perms []types.UserPermission) []grbphqlbbckend.UserPermissionResolver {
+	resolvers := mbke([]grbphqlbbckend.UserPermissionResolver, 0, len(perms))
+	for _, perm := rbnge perms {
+		resolvers = bppend(resolvers, NewUserPermissionResolver(perm.BindID, perm.Permission))
 	}
 	return resolvers
 }

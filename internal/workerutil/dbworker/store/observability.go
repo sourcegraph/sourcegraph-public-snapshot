@@ -1,74 +1,74 @@
-package store
+pbckbge store
 
 import (
 	"fmt"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	addExecutionLogEntry    *observation.Operation
-	dequeue                 *observation.Operation
-	heartbeat               *observation.Operation
-	markComplete            *observation.Operation
-	markErrored             *observation.Operation
-	markFailed              *observation.Operation
-	maxDurationInQueue      *observation.Operation
-	queuedCount             *observation.Operation
-	requeue                 *observation.Operation
-	resetStalled            *observation.Operation
-	updateExecutionLogEntry *observation.Operation
-	canceledJobs            *observation.Operation
+type operbtions struct {
+	bddExecutionLogEntry    *observbtion.Operbtion
+	dequeue                 *observbtion.Operbtion
+	hebrtbebt               *observbtion.Operbtion
+	mbrkComplete            *observbtion.Operbtion
+	mbrkErrored             *observbtion.Operbtion
+	mbrkFbiled              *observbtion.Operbtion
+	mbxDurbtionInQueue      *observbtion.Operbtion
+	queuedCount             *observbtion.Operbtion
+	requeue                 *observbtion.Operbtion
+	resetStblled            *observbtion.Operbtion
+	updbteExecutionLogEntry *observbtion.Operbtion
+	cbnceledJobs            *observbtion.Operbtion
 }
 
-// as newOperations changes based on the store name passed in, and a dbworker store
-// for a given store can be created more than once (once for actual use and once for metrics),
-// we avoid a "panic: duplicate metrics collector registration attempted" this way.
-var (
-	metricsMap = map[string]*metrics.REDMetrics{}
+// bs newOperbtions chbnges bbsed on the store nbme pbssed in, bnd b dbworker store
+// for b given store cbn be crebted more thbn once (once for bctubl use bnd once for metrics),
+// we bvoid b "pbnic: duplicbte metrics collector registrbtion bttempted" this wby.
+vbr (
+	metricsMbp = mbp[string]*metrics.REDMetrics{}
 	metricsMu  sync.Mutex
 )
 
-func newOperations(observationCtx *observation.Context, storeName string) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context, storeNbme string) *operbtions {
 	metricsMu.Lock()
 
-	var red *metrics.REDMetrics
-	if m, ok := metricsMap[storeName]; ok {
+	vbr red *metrics.REDMetrics
+	if m, ok := metricsMbp[storeNbme]; ok {
 		red = m
 	} else {
 		red = metrics.NewREDMetrics(
-			observationCtx.Registerer,
-			fmt.Sprintf("workerutil_dbworker_store_%s", storeName),
-			metrics.WithLabels("op"),
-			metrics.WithCountHelp("Total number of method invocations."),
+			observbtionCtx.Registerer,
+			fmt.Sprintf("workerutil_dbworker_store_%s", storeNbme),
+			metrics.WithLbbels("op"),
+			metrics.WithCountHelp("Totbl number of method invocbtions."),
 		)
-		metricsMap[storeName] = red
+		metricsMbp[storeNbme] = red
 	}
 
 	metricsMu.Unlock()
 
-	op := func(opName string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("workerutil.dbworker.store.%s.%s", storeName, opName),
-			MetricLabelValues: []string{opName},
+	op := func(opNbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("workerutil.dbworker.store.%s.%s", storeNbme, opNbme),
+			MetricLbbelVblues: []string{opNbme},
 			Metrics:           red,
 		})
 	}
 
-	return &operations{
-		addExecutionLogEntry:    op("AddExecutionLogEntry"),
+	return &operbtions{
+		bddExecutionLogEntry:    op("AddExecutionLogEntry"),
 		dequeue:                 op("Dequeue"),
-		heartbeat:               op("Heartbeat"),
-		markComplete:            op("MarkComplete"),
-		markErrored:             op("MarkErrored"),
-		markFailed:              op("MarkFailed"),
-		maxDurationInQueue:      op("MaxDurationInQueue"),
+		hebrtbebt:               op("Hebrtbebt"),
+		mbrkComplete:            op("MbrkComplete"),
+		mbrkErrored:             op("MbrkErrored"),
+		mbrkFbiled:              op("MbrkFbiled"),
+		mbxDurbtionInQueue:      op("MbxDurbtionInQueue"),
 		queuedCount:             op("QueuedCount"),
 		requeue:                 op("Requeue"),
-		resetStalled:            op("ResetStalled"),
-		updateExecutionLogEntry: op("UpdateExecutionLogEntry"),
-		canceledJobs:            op("CanceledJobs"),
+		resetStblled:            op("ResetStblled"),
+		updbteExecutionLogEntry: op("UpdbteExecutionLogEntry"),
+		cbnceledJobs:            op("CbnceledJobs"),
 	}
 }

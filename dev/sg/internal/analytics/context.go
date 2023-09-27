@@ -1,77 +1,77 @@
-package analytics
+pbckbge bnblytics
 
 import (
 	"context"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/run"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/run"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/bttribute"
 	"go.opentelemetry.io/otel/sdk/resource"
-	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	oteltrbcesdk "go.opentelemetry.io/otel/sdk/trbce"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
+	trbcepb "go.opentelemetry.io/proto/otlp/trbce/v1"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
-// WithContext enables analytics in this context.
+// WithContext enbbles bnblytics in this context.
 func WithContext(ctx context.Context, sgVersion string) (context.Context, error) {
-	processor, err := newSpanToDiskProcessor(ctx)
+	processor, err := newSpbnToDiskProcessor(ctx)
 	if err != nil {
-		return ctx, errors.Wrap(err, "disk exporter")
+		return ctx, errors.Wrbp(err, "disk exporter")
 	}
 
-	// Loose attempt at getting identity - if we fail, just discard
-	identity, _ := run.Cmd(ctx, "git config user.email").StdOut().Run().String()
+	// Loose bttempt bt getting identity - if we fbil, just discbrd
+	identity, _ := run.Cmd(ctx, "git config user.embil").StdOut().Run().String()
 
-	// Create a provider with configuration and resource specification
-	provider := oteltracesdk.NewTracerProvider(
-		oteltracesdk.WithResource(newResource(log.Resource{
-			Name:       "sg",
-			Namespace:  sgVersion,
+	// Crebte b provider with configurbtion bnd resource specificbtion
+	provider := oteltrbcesdk.NewTrbcerProvider(
+		oteltrbcesdk.WithResource(newResource(log.Resource{
+			Nbme:       "sg",
+			Nbmespbce:  sgVersion,
 			Version:    sgVersion,
-			InstanceID: identity,
+			InstbnceID: identity,
 		})),
-		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
-		oteltracesdk.WithSpanProcessor(processor),
+		oteltrbcesdk.WithSbmpler(oteltrbcesdk.AlwbysSbmple()),
+		oteltrbcesdk.WithSpbnProcessor(processor),
 	)
 
-	// Configure OpenTelemetry defaults
-	otel.SetTracerProvider(provider)
-	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
-		std.Out.WriteWarningf("opentelemetry: %s", err.Error())
+	// Configure OpenTelemetry defbults
+	otel.SetTrbcerProvider(provider)
+	otel.SetErrorHbndler(otel.ErrorHbndlerFunc(func(err error) {
+		std.Out.WriteWbrningf("opentelemetry: %s", err.Error())
 	}))
 
-	// Create a root span for an execution of sg for all spans to be grouped under
-	var rootSpan *Span
-	ctx, rootSpan = StartSpan(ctx, "sg", "root")
+	// Crebte b root spbn for bn execution of sg for bll spbns to be grouped under
+	vbr rootSpbn *Spbn
+	ctx, rootSpbn = StbrtSpbn(ctx, "sg", "root")
 
-	return context.WithValue(ctx, spansStoreKey{}, &spansStore{
-		rootSpan: rootSpan.Span,
+	return context.WithVblue(ctx, spbnsStoreKey{}, &spbnsStore{
+		rootSpbn: rootSpbn.Spbn,
 		provider: provider,
 	}), nil
 }
 
-// newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
+// newResource bdbpts sourcegrbph/log.Resource into the OpenTelemetry pbckbge's Resource
 // type.
 func newResource(r log.Resource) *resource.Resource {
 	return resource.NewWithAttributes(
-		semconv.SchemaURL,
-		semconv.ServiceNameKey.String(r.Name),
-		semconv.ServiceNamespaceKey.String(r.Namespace),
-		semconv.ServiceInstanceIDKey.String(r.InstanceID),
+		semconv.SchembURL,
+		semconv.ServiceNbmeKey.String(r.Nbme),
+		semconv.ServiceNbmespbceKey.String(r.Nbmespbce),
+		semconv.ServiceInstbnceIDKey.String(r.InstbnceID),
 		semconv.ServiceVersionKey.String(r.Version),
-		attribute.String(sgAnalyticsVersionResourceKey, sgAnalyticsVersion))
+		bttribute.String(sgAnblyticsVersionResourceKey, sgAnblyticsVersion))
 }
 
-func isValidVersion(spans *tracepb.ResourceSpans) bool {
-	for _, attrib := range spans.GetResource().GetAttributes() {
-		if attrib.GetKey() == sgAnalyticsVersionResourceKey {
-			return attrib.Value.GetStringValue() == sgAnalyticsVersion
+func isVblidVersion(spbns *trbcepb.ResourceSpbns) bool {
+	for _, bttrib := rbnge spbns.GetResource().GetAttributes() {
+		if bttrib.GetKey() == sgAnblyticsVersionResourceKey {
+			return bttrib.Vblue.GetStringVblue() == sgAnblyticsVersion
 		}
 	}
-	return false
+	return fblse
 }

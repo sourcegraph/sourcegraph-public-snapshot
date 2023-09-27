@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"context"
@@ -7,124 +7,124 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 // GetMergeRequestNotes retrieves the notes for the given merge request. As the
-// notes are paginated, a function is returned that may be invoked to return the
-// next page of results. An empty slice and a nil error indicates that all pages
-// have been returned.
+// notes bre pbginbted, b function is returned thbt mby be invoked to return the
+// next pbge of results. An empty slice bnd b nil error indicbtes thbt bll pbges
+// hbve been returned.
 func (c *Client) GetMergeRequestNotes(ctx context.Context, project *Project, iid ID) func() ([]*Note, error) {
 	if MockGetMergeRequestNotes != nil {
 		return MockGetMergeRequestNotes(c, ctx, project, iid)
 	}
 
-	baseURL := fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid)
-	currentPage := "1"
+	bbseURL := fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, iid)
+	currentPbge := "1"
 	return func() ([]*Note, error) {
-		page := []*Note{}
+		pbge := []*Note{}
 
-		// If there aren't any further pages, we'll return the empty slice we
-		// just created.
-		if currentPage == "" {
-			return page, nil
+		// If there bren't bny further pbges, we'll return the empty slice we
+		// just crebted.
+		if currentPbge == "" {
+			return pbge, nil
 		}
 
-		parsedUrl, err := url.Parse(baseURL)
+		pbrsedUrl, err := url.Pbrse(bbseURL)
 		if err != nil {
 			return nil, err
 		}
-		q := parsedUrl.Query()
-		q.Add("page", currentPage)
-		parsedUrl.RawQuery = q.Encode()
+		q := pbrsedUrl.Query()
+		q.Add("pbge", currentPbge)
+		pbrsedUrl.RbwQuery = q.Encode()
 
-		req, err := http.NewRequest("GET", parsedUrl.String(), nil)
+		req, err := http.NewRequest("GET", pbrsedUrl.String(), nil)
 		if err != nil {
-			return nil, errors.Wrap(err, "creating notes request")
+			return nil, errors.Wrbp(err, "crebting notes request")
 		}
 
-		header, _, err := c.do(ctx, req, &page)
+		hebder, _, err := c.do(ctx, req, &pbge)
 		if err != nil {
-			return nil, errors.Wrap(err, "requesting notes page")
+			return nil, errors.Wrbp(err, "requesting notes pbge")
 		}
 
-		// If there's another page, this will be a page number. If there's not, then
-		// this will be an empty string, and we can detect that next iteration
+		// If there's bnother pbge, this will be b pbge number. If there's not, then
+		// this will be bn empty string, bnd we cbn detect thbt next iterbtion
 		// to short circuit.
-		currentPage = header.Get("X-Next-Page")
+		currentPbge = hebder.Get("X-Next-Pbge")
 
-		return page, nil
+		return pbge, nil
 	}
 }
 
-// SystemNoteBody is a type of all known system message bodies.
+// SystemNoteBody is b type of bll known system messbge bodies.
 type SystemNoteBody string
 
 const (
-	SystemNoteBodyReviewApproved         SystemNoteBody = "approved this merge request"
-	SystemNoteBodyReviewUnapproved       SystemNoteBody = "unapproved this merge request"
-	SystemNoteBodyUnmarkedWorkInProgress SystemNoteBody = "unmarked as a **Work In Progress**"
-	SystemNoteBodyMarkedWorkInProgress   SystemNoteBody = "marked as a **Work In Progress**"
-	SystemNoteBodyMarkedDraft            SystemNoteBody = "marked this merge request as **draft**"
-	SystemNoteBodyMarkedReady            SystemNoteBody = "marked this merge request as **ready**"
+	SystemNoteBodyReviewApproved         SystemNoteBody = "bpproved this merge request"
+	SystemNoteBodyReviewUnbpproved       SystemNoteBody = "unbpproved this merge request"
+	SystemNoteBodyUnmbrkedWorkInProgress SystemNoteBody = "unmbrked bs b **Work In Progress**"
+	SystemNoteBodyMbrkedWorkInProgress   SystemNoteBody = "mbrked bs b **Work In Progress**"
+	SystemNoteBodyMbrkedDrbft            SystemNoteBody = "mbrked this merge request bs **drbft**"
+	SystemNoteBodyMbrkedRebdy            SystemNoteBody = "mbrked this merge request bs **rebdy**"
 )
 
 type Note struct {
 	ID        ID             `json:"id"`
 	Body      SystemNoteBody `json:"body"`
-	Author    User           `json:"author"`
-	CreatedAt Time           `json:"created_at"`
+	Author    User           `json:"buthor"`
+	CrebtedAt Time           `json:"crebted_bt"`
 	System    bool           `json:"system"`
 }
 
-// Notes are not strongly typed, but also provide the only real method we have
-// of getting historical approval events. We'll define a couple of fake types to
-// better match what other external services provide, and a function to convert
-// a Note into one of those types if the Note is a system approval comment.
+// Notes bre not strongly typed, but blso provide the only rebl method we hbve
+// of getting historicbl bpprovbl events. We'll define b couple of fbke types to
+// better mbtch whbt other externbl services provide, bnd b function to convert
+// b Note into one of those types if the Note is b system bpprovbl comment.
 
 type ReviewApprovedEvent struct{ *Note }
 
 func (e *ReviewApprovedEvent) Key() string {
-	return fmt.Sprintf("approved:%s:%s", e.Author.Username, e.CreatedAt.Time.Truncate(time.Second))
+	return fmt.Sprintf("bpproved:%s:%s", e.Author.Usernbme, e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-type ReviewUnapprovedEvent struct{ *Note }
+type ReviewUnbpprovedEvent struct{ *Note }
 
-func (e *ReviewUnapprovedEvent) Key() string {
-	return fmt.Sprintf("unapproved:%s:%s", e.Author.Username, e.CreatedAt.Time.Truncate(time.Second))
+func (e *ReviewUnbpprovedEvent) Key() string {
+	return fmt.Sprintf("unbpproved:%s:%s", e.Author.Usernbme, e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-type MarkWorkInProgressEvent struct{ *Note }
+type MbrkWorkInProgressEvent struct{ *Note }
 
-func (e *MarkWorkInProgressEvent) Key() string {
-	return fmt.Sprintf("wip:%s", e.CreatedAt.Time.Truncate(time.Second))
+func (e *MbrkWorkInProgressEvent) Key() string {
+	return fmt.Sprintf("wip:%s", e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-type UnmarkWorkInProgressEvent struct{ *Note }
+type UnmbrkWorkInProgressEvent struct{ *Note }
 
-func (e *UnmarkWorkInProgressEvent) Key() string {
-	return fmt.Sprintf("unwip:%s", e.CreatedAt.Time.Truncate(time.Second))
+func (e *UnmbrkWorkInProgressEvent) Key() string {
+	return fmt.Sprintf("unwip:%s", e.CrebtedAt.Time.Truncbte(time.Second))
 }
 
-type keyer interface {
+type keyer interfbce {
 	Key() string
 }
 
-// ToEvent returns a pointer to a more specific struct, or
-// nil if the Note is not of a known kind.
+// ToEvent returns b pointer to b more specific struct, or
+// nil if the Note is not of b known kind.
 func (n *Note) ToEvent() keyer {
 	if n.System {
 		switch n.Body {
-		case SystemNoteBodyReviewApproved:
+		cbse SystemNoteBodyReviewApproved:
 			return &ReviewApprovedEvent{n}
-		case SystemNoteBodyReviewUnapproved:
-			return &ReviewUnapprovedEvent{n}
-		case SystemNoteBodyMarkedReady,
-			SystemNoteBodyUnmarkedWorkInProgress:
-			return &UnmarkWorkInProgressEvent{n}
-		case SystemNoteBodyMarkedDraft,
-			SystemNoteBodyMarkedWorkInProgress:
-			return &MarkWorkInProgressEvent{n}
+		cbse SystemNoteBodyReviewUnbpproved:
+			return &ReviewUnbpprovedEvent{n}
+		cbse SystemNoteBodyMbrkedRebdy,
+			SystemNoteBodyUnmbrkedWorkInProgress:
+			return &UnmbrkWorkInProgressEvent{n}
+		cbse SystemNoteBodyMbrkedDrbft,
+			SystemNoteBodyMbrkedWorkInProgress:
+			return &MbrkWorkInProgressEvent{n}
 		}
 	}
 

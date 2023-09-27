@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -8,56 +8,56 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func teamByID(ctx context.Context, db database.DB, id graphql.ID) (Node, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func tebmByID(ctx context.Context, db dbtbbbse.DB, id grbphql.ID) (Node, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	team, err := findTeam(ctx, db.Teams(), &id, nil)
+	tebm, err := findTebm(ctx, db.Tebms(), &id, nil)
 	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(db, team), nil
+	return NewTebmResolver(db, tebm), nil
 }
 
-type ListTeamsArgs struct {
+type ListTebmsArgs struct {
 	First  *int32
 	After  *string
-	Search *string
+	Sebrch *string
 }
 
-type teamConnectionResolver struct {
-	db               database.DB
-	parentID         int32
-	search           string
+type tebmConnectionResolver struct {
+	db               dbtbbbse.DB
+	pbrentID         int32
+	sebrch           string
 	cursor           int32
 	limit            int
 	once             sync.Once
-	teams            []*types.Team
-	onlyRootTeams    bool
+	tebms            []*types.Tebm
+	onlyRootTebms    bool
 	exceptAncestorID int32
-	pageInfo         *graphqlutil.PageInfo
+	pbgeInfo         *grbphqlutil.PbgeInfo
 	err              error
 }
 
-// applyArgs unmarshals query conditions and limites set in `ListTeamsArgs`
-// into `teamConnectionResolver` fields for convenient use in database query.
-func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
-	if args.After != nil {
-		cursor, err := graphqlutil.DecodeIntCursor(args.After)
+// bpplyArgs unmbrshbls query conditions bnd limites set in `ListTebmsArgs`
+// into `tebmConnectionResolver` fields for convenient use in dbtbbbse query.
+func (r *tebmConnectionResolver) bpplyArgs(brgs *ListTebmsArgs) error {
+	if brgs.After != nil {
+		cursor, err := grbphqlutil.DecodeIntCursor(brgs.After)
 		if err != nil {
 			return err
 		}
@@ -66,686 +66,686 @@ func (r *teamConnectionResolver) applyArgs(args *ListTeamsArgs) error {
 			return errors.Newf("cursor int32 overflow: %d", cursor)
 		}
 	}
-	if args.Search != nil {
-		r.search = *args.Search
+	if brgs.Sebrch != nil {
+		r.sebrch = *brgs.Sebrch
 	}
-	if args.First != nil {
-		r.limit = int(*args.First)
+	if brgs.First != nil {
+		r.limit = int(*brgs.First)
 	}
 	return nil
 }
 
-// compute resolves teams queried for this resolver.
-// The result of running it is setting `teams`, `next` and `err`
-// fields on the resolver. This ensures that resolving multiple
-// graphQL attributes that require listing (like `pageInfo` and `nodes`)
+// compute resolves tebms queried for this resolver.
+// The result of running it is setting `tebms`, `next` bnd `err`
+// fields on the resolver. This ensures thbt resolving multiple
+// grbphQL bttributes thbt require listing (like `pbgeInfo` bnd `nodes`)
 // results in just one query.
-func (r *teamConnectionResolver) compute(ctx context.Context) {
+func (r *tebmConnectionResolver) compute(ctx context.Context) {
 	r.once.Do(func() {
-		opts := database.ListTeamsOpts{
+		opts := dbtbbbse.ListTebmsOpts{
 			Cursor:           r.cursor,
-			WithParentID:     r.parentID,
-			Search:           r.search,
-			RootOnly:         r.onlyRootTeams,
+			WithPbrentID:     r.pbrentID,
+			Sebrch:           r.sebrch,
+			RootOnly:         r.onlyRootTebms,
 			ExceptAncestorID: r.exceptAncestorID,
 		}
 		if r.limit != 0 {
-			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+			opts.LimitOffset = &dbtbbbse.LimitOffset{Limit: r.limit}
 		}
-		teams, next, err := r.db.Teams().ListTeams(ctx, opts)
+		tebms, next, err := r.db.Tebms().ListTebms(ctx, opts)
 		if err != nil {
 			r.err = err
 			return
 		}
-		r.teams = teams
+		r.tebms = tebms
 		if next > 0 {
-			r.pageInfo = graphqlutil.EncodeIntCursor(&next)
+			r.pbgeInfo = grbphqlutil.EncodeIntCursor(&next)
 		} else {
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pbgeInfo = grbphqlutil.HbsNextPbge(fblse)
 		}
 	})
 }
 
-func (r *teamConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	// Not taking into account limit or cursor for count.
-	opts := database.ListTeamsOpts{
-		WithParentID: r.parentID,
-		Search:       r.search,
-		RootOnly:     r.onlyRootTeams,
+func (r *tebmConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	// Not tbking into bccount limit or cursor for count.
+	opts := dbtbbbse.ListTebmsOpts{
+		WithPbrentID: r.pbrentID,
+		Sebrch:       r.sebrch,
+		RootOnly:     r.onlyRootTebms,
 	}
-	return r.db.Teams().CountTeams(ctx, opts)
+	return r.db.Tebms().CountTebms(ctx, opts)
 }
 
-func (r *teamConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *tebmConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	r.compute(ctx)
-	return r.pageInfo, r.err
+	return r.pbgeInfo, r.err
 }
 
-func (r *teamConnectionResolver) Nodes(ctx context.Context) ([]*TeamResolver, error) {
+func (r *tebmConnectionResolver) Nodes(ctx context.Context) ([]*TebmResolver, error) {
 	r.compute(ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
-	var rs []*TeamResolver
-	for _, t := range r.teams {
-		rs = append(rs, NewTeamResolver(r.db, t))
+	vbr rs []*TebmResolver
+	for _, t := rbnge r.tebms {
+		rs = bppend(rs, NewTebmResolver(r.db, t))
 	}
 	return rs, nil
 }
 
-func NewTeamResolver(db database.DB, team *types.Team) *TeamResolver {
-	return &TeamResolver{
+func NewTebmResolver(db dbtbbbse.DB, tebm *types.Tebm) *TebmResolver {
+	return &TebmResolver{
 		db:   db,
-		team: team,
+		tebm: tebm,
 	}
 }
 
-type TeamResolver struct {
-	db   database.DB
-	team *types.Team
+type TebmResolver struct {
+	db   dbtbbbse.DB
+	tebm *types.Tebm
 }
 
-const teamIDKind = "Team"
+const tebmIDKind = "Tebm"
 
-func MarshalTeamID(id int32) graphql.ID {
-	return relay.MarshalID("Team", id)
+func MbrshblTebmID(id int32) grbphql.ID {
+	return relby.MbrshblID("Tebm", id)
 }
 
-func UnmarshalTeamID(id graphql.ID) (teamID int32, err error) {
-	err = relay.UnmarshalSpec(id, &teamID)
+func UnmbrshblTebmID(id grbphql.ID) (tebmID int32, err error) {
+	err = relby.UnmbrshblSpec(id, &tebmID)
 	return
 }
 
-func (r *TeamResolver) ID() graphql.ID {
-	return relay.MarshalID("Team", r.team.ID)
+func (r *TebmResolver) ID() grbphql.ID {
+	return relby.MbrshblID("Tebm", r.tebm.ID)
 }
 
-func (r *TeamResolver) Name() string {
-	return r.team.Name
+func (r *TebmResolver) Nbme() string {
+	return r.tebm.Nbme
 }
 
-func (r *TeamResolver) URL() string {
-	if r.External() {
+func (r *TebmResolver) URL() string {
+	if r.Externbl() {
 		return ""
 	}
-	absolutePath := fmt.Sprintf("/teams/%s", r.team.Name)
-	u := &url.URL{Path: absolutePath}
+	bbsolutePbth := fmt.Sprintf("/tebms/%s", r.tebm.Nbme)
+	u := &url.URL{Pbth: bbsolutePbth}
 	return u.String()
 }
 
-func (r *TeamResolver) AvatarURL() *string {
+func (r *TebmResolver) AvbtbrURL() *string {
 	return nil
 }
 
-func (r *TeamResolver) Creator(ctx context.Context) (*UserResolver, error) {
-	if r.team.CreatorID == 0 {
-		// User was deleted.
+func (r *TebmResolver) Crebtor(ctx context.Context) (*UserResolver, error) {
+	if r.tebm.CrebtorID == 0 {
+		// User wbs deleted.
 		return nil, nil
 	}
-	return UserByIDInt32(ctx, r.db, r.team.CreatorID)
+	return UserByIDInt32(ctx, r.db, r.tebm.CrebtorID)
 }
 
-func (r *TeamResolver) DisplayName() *string {
-	if r.team.DisplayName == "" {
+func (r *TebmResolver) DisplbyNbme() *string {
+	if r.tebm.DisplbyNbme == "" {
 		return nil
 	}
-	return &r.team.DisplayName
+	return &r.tebm.DisplbyNbme
 }
 
-func (r *TeamResolver) Readonly() bool {
-	return r.team.ReadOnly || r.External()
+func (r *TebmResolver) Rebdonly() bool {
+	return r.tebm.RebdOnly || r.Externbl()
 }
 
-func (r *TeamResolver) ParentTeam(ctx context.Context) (*TeamResolver, error) {
-	if r.team.ParentTeamID == 0 {
+func (r *TebmResolver) PbrentTebm(ctx context.Context) (*TebmResolver, error) {
+	if r.tebm.PbrentTebmID == 0 {
 		return nil, nil
 	}
-	parentTeam, err := r.db.Teams().GetTeamByID(ctx, r.team.ParentTeamID)
+	pbrentTebm, err := r.db.Tebms().GetTebmByID(ctx, r.tebm.PbrentTebmID)
 	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, parentTeam), nil
+	return NewTebmResolver(r.db, pbrentTebm), nil
 }
 
-func (r *TeamResolver) ViewerCanAdminister(ctx context.Context) (bool, error) {
-	return canModifyTeam(ctx, r.db, r.team)
+func (r *TebmResolver) ViewerCbnAdminister(ctx context.Context) (bool, error) {
+	return cbnModifyTebm(ctx, r.db, r.tebm)
 }
 
-func (r *TeamResolver) Members(_ context.Context, args *ListTeamMembersArgs) (*teamMemberConnection, error) {
-	if r.External() {
-		return nil, errors.New("cannot get members of external team")
+func (r *TebmResolver) Members(_ context.Context, brgs *ListTebmMembersArgs) (*tebmMemberConnection, error) {
+	if r.Externbl() {
+		return nil, errors.New("cbnnot get members of externbl tebm")
 	}
-	c := &teamMemberConnection{
+	c := &tebmMemberConnection{
 		db:     r.db,
-		teamID: r.team.ID,
+		tebmID: r.tebm.ID,
 	}
-	if err := c.applyArgs(args); err != nil {
+	if err := c.bpplyArgs(brgs); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func (r *TeamResolver) ChildTeams(_ context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
-	if r.External() {
-		return nil, errors.New("cannot get child teams of external team")
+func (r *TebmResolver) ChildTebms(_ context.Context, brgs *ListTebmsArgs) (*tebmConnectionResolver, error) {
+	if r.Externbl() {
+		return nil, errors.New("cbnnot get child tebms of externbl tebm")
 	}
-	c := &teamConnectionResolver{
+	c := &tebmConnectionResolver{
 		db:       r.db,
-		parentID: r.team.ID,
+		pbrentID: r.tebm.ID,
 	}
-	if err := c.applyArgs(args); err != nil {
+	if err := c.bpplyArgs(brgs); err != nil {
 		return nil, err
 	}
 	return c, nil
 }
 
-func (r *TeamResolver) OwnerField() string {
-	return EnterpriseResolvers.ownResolver.TeamOwnerField(r)
+func (r *TebmResolver) OwnerField() string {
+	return EnterpriseResolvers.ownResolver.TebmOwnerField(r)
 }
 
-func (r *TeamResolver) External() bool {
-	return r.team.ID == 0
+func (r *TebmResolver) Externbl() bool {
+	return r.tebm.ID == 0
 }
 
-type ListTeamMembersArgs struct {
+type ListTebmMembersArgs struct {
 	First  *int32
 	After  *string
-	Search *string
+	Sebrch *string
 }
 
-type teamMemberConnection struct {
-	db       database.DB
-	teamID   int32
-	cursor   teamMemberListCursor
-	search   string
+type tebmMemberConnection struct {
+	db       dbtbbbse.DB
+	tebmID   int32
+	cursor   tebmMemberListCursor
+	sebrch   string
 	limit    int
 	once     sync.Once
-	nodes    []*types.TeamMember
-	pageInfo *graphqlutil.PageInfo
+	nodes    []*types.TebmMember
+	pbgeInfo *grbphqlutil.PbgeInfo
 	err      error
 }
 
-type teamMemberListCursor struct {
-	TeamID int32 `json:"team,omitempty"`
+type tebmMemberListCursor struct {
+	TebmID int32 `json:"tebm,omitempty"`
 	UserID int32 `json:"user,omitempty"`
 }
 
-// applyArgs unmarshals query conditions and limites set in `ListTeamMembersArgs`
-// into `teamMemberConnection` fields for convenient use in database query.
-func (r *teamMemberConnection) applyArgs(args *ListTeamMembersArgs) error {
-	if args.After != nil && *args.After != "" {
-		cursorText, err := graphqlutil.DecodeCursor(args.After)
+// bpplyArgs unmbrshbls query conditions bnd limites set in `ListTebmMembersArgs`
+// into `tebmMemberConnection` fields for convenient use in dbtbbbse query.
+func (r *tebmMemberConnection) bpplyArgs(brgs *ListTebmMembersArgs) error {
+	if brgs.After != nil && *brgs.After != "" {
+		cursorText, err := grbphqlutil.DecodeCursor(brgs.After)
 		if err != nil {
 			return err
 		}
-		if err := json.Unmarshal([]byte(cursorText), &r.cursor); err != nil {
+		if err := json.Unmbrshbl([]byte(cursorText), &r.cursor); err != nil {
 			return err
 		}
 	}
-	if args.Search != nil {
-		r.search = *args.Search
+	if brgs.Sebrch != nil {
+		r.sebrch = *brgs.Sebrch
 	}
-	if args.First != nil {
-		r.limit = int(*args.First)
+	if brgs.First != nil {
+		r.limit = int(*brgs.First)
 	}
 	return nil
 }
 
-// compute resolves team members queried for this resolver.
-// The result of running it is setting `nodes`, `pageInfo` and `err`
-// fields on the resolver. This ensures that resolving multiple
-// graphQL attributes that require listing (like `pageInfo` and `nodes`)
+// compute resolves tebm members queried for this resolver.
+// The result of running it is setting `nodes`, `pbgeInfo` bnd `err`
+// fields on the resolver. This ensures thbt resolving multiple
+// grbphQL bttributes thbt require listing (like `pbgeInfo` bnd `nodes`)
 // results in just one query.
-func (r *teamMemberConnection) compute(ctx context.Context) {
+func (r *tebmMemberConnection) compute(ctx context.Context) {
 	r.once.Do(func() {
-		opts := database.ListTeamMembersOpts{
-			Cursor: database.TeamMemberListCursor{
-				TeamID: r.cursor.TeamID,
+		opts := dbtbbbse.ListTebmMembersOpts{
+			Cursor: dbtbbbse.TebmMemberListCursor{
+				TebmID: r.cursor.TebmID,
 				UserID: r.cursor.UserID,
 			},
-			TeamID: r.teamID,
-			Search: r.search,
+			TebmID: r.tebmID,
+			Sebrch: r.sebrch,
 		}
 		if r.limit != 0 {
-			opts.LimitOffset = &database.LimitOffset{Limit: r.limit}
+			opts.LimitOffset = &dbtbbbse.LimitOffset{Limit: r.limit}
 		}
-		nodes, next, err := r.db.Teams().ListTeamMembers(ctx, opts)
+		nodes, next, err := r.db.Tebms().ListTebmMembers(ctx, opts)
 		if err != nil {
 			r.err = err
 			return
 		}
 		r.nodes = nodes
 		if next != nil {
-			cursorStruct := teamMemberListCursor{
-				TeamID: next.TeamID,
+			cursorStruct := tebmMemberListCursor{
+				TebmID: next.TebmID,
 				UserID: next.UserID,
 			}
-			cursorBytes, err := json.Marshal(&cursorStruct)
+			cursorBytes, err := json.Mbrshbl(&cursorStruct)
 			if err != nil {
-				r.err = errors.Wrap(err, "error encoding pageInfo")
+				r.err = errors.Wrbp(err, "error encoding pbgeInfo")
 			}
 			cursorString := string(cursorBytes)
-			r.pageInfo = graphqlutil.EncodeCursor(&cursorString)
+			r.pbgeInfo = grbphqlutil.EncodeCursor(&cursorString)
 		} else {
-			r.pageInfo = graphqlutil.HasNextPage(false)
+			r.pbgeInfo = grbphqlutil.HbsNextPbge(fblse)
 		}
 	})
 }
 
-func (r *teamMemberConnection) TotalCount(ctx context.Context) (int32, error) {
-	// Not taking into account limit or cursor for count.
-	opts := database.ListTeamMembersOpts{
-		TeamID: r.teamID,
-		Search: r.search,
+func (r *tebmMemberConnection) TotblCount(ctx context.Context) (int32, error) {
+	// Not tbking into bccount limit or cursor for count.
+	opts := dbtbbbse.ListTebmMembersOpts{
+		TebmID: r.tebmID,
+		Sebrch: r.sebrch,
 	}
-	return r.db.Teams().CountTeamMembers(ctx, opts)
+	return r.db.Tebms().CountTebmMembers(ctx, opts)
 }
 
-func (r *teamMemberConnection) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *tebmMemberConnection) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	r.compute(ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
-	return r.pageInfo, nil
+	return r.pbgeInfo, nil
 }
 
-func (r *teamMemberConnection) Nodes(ctx context.Context) ([]*UserResolver, error) {
+func (r *tebmMemberConnection) Nodes(ctx context.Context) ([]*UserResolver, error) {
 	r.compute(ctx)
 	if r.err != nil {
 		return nil, r.err
 	}
-	var rs []*UserResolver
-	// 🚨 Query in a loop is inefficient: Follow up with another pull request
-	// to where team members query joins with users and fetches them in one go.
-	for _, n := range r.nodes {
+	vbr rs []*UserResolver
+	// 🚨 Query in b loop is inefficient: Follow up with bnother pull request
+	// to where tebm members query joins with users bnd fetches them in one go.
+	for _, n := rbnge r.nodes {
 		if n.UserID == 0 {
-			// 🚨 At this point only User can be a team member, so user ID should
-			// always be present. If not, return a `null` team member.
-			rs = append(rs, nil)
+			// 🚨 At this point only User cbn be b tebm member, so user ID should
+			// blwbys be present. If not, return b `null` tebm member.
+			rs = bppend(rs, nil)
 			continue
 		}
 		user, err := r.db.Users().GetByID(ctx, n.UserID)
 		if err != nil {
 			return nil, err
 		}
-		rs = append(rs, NewUserResolver(ctx, r.db, user))
+		rs = bppend(rs, NewUserResolver(ctx, r.db, user))
 	}
 	return rs, nil
 }
 
-type CreateTeamArgs struct {
-	Name           string
-	DisplayName    *string
-	ReadOnly       bool
-	ParentTeam     *graphql.ID
-	ParentTeamName *string
+type CrebteTebmArgs struct {
+	Nbme           string
+	DisplbyNbme    *string
+	RebdOnly       bool
+	PbrentTebm     *grbphql.ID
+	PbrentTebmNbme *string
 }
 
-func (r *schemaResolver) CreateTeam(ctx context.Context, args *CreateTeamArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) CrebteTebm(ctx context.Context, brgs *CrebteTebmArgs) (*TebmResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	if args.ReadOnly {
+	if brgs.RebdOnly {
 		if !isSiteAdmin(ctx, r.db) {
-			return nil, errors.New("only site admins can create read-only teams")
+			return nil, errors.New("only site bdmins cbn crebte rebd-only tebms")
 		}
 	}
 
-	teams := r.db.Teams()
-	var t types.Team
-	t.Name = args.Name
-	if args.DisplayName != nil {
-		t.DisplayName = *args.DisplayName
+	tebms := r.db.Tebms()
+	vbr t types.Tebm
+	t.Nbme = brgs.Nbme
+	if brgs.DisplbyNbme != nil {
+		t.DisplbyNbme = *brgs.DisplbyNbme
 	}
-	t.ReadOnly = args.ReadOnly
-	if args.ParentTeam != nil && args.ParentTeamName != nil {
-		return nil, errors.New("must specify at most one: ParentTeam or ParentTeamName")
+	t.RebdOnly = brgs.RebdOnly
+	if brgs.PbrentTebm != nil && brgs.PbrentTebmNbme != nil {
+		return nil, errors.New("must specify bt most one: PbrentTebm or PbrentTebmNbme")
 	}
-	parentTeam, err := findTeam(ctx, teams, args.ParentTeam, args.ParentTeamName)
+	pbrentTebm, err := findTebm(ctx, tebms, brgs.PbrentTebm, brgs.PbrentTebmNbme)
 	if err != nil {
-		return nil, errors.Wrap(err, "parent team")
+		return nil, errors.Wrbp(err, "pbrent tebm")
 	}
-	if parentTeam != nil {
-		t.ParentTeamID = parentTeam.ID
-		if ok, err := canModifyTeam(ctx, r.db, parentTeam); err != nil {
+	if pbrentTebm != nil {
+		t.PbrentTebmID = pbrentTebm.ID
+		if ok, err := cbnModifyTebm(ctx, r.db, pbrentTebm); err != nil {
 			return nil, err
 		} else if !ok {
-			return nil, ErrNoAccessToTeam
+			return nil, ErrNoAccessToTebm
 		}
 	}
-	t.CreatorID = actor.FromContext(ctx).UID
-	team, err := teams.CreateTeam(ctx, &t)
+	t.CrebtorID = bctor.FromContext(ctx).UID
+	tebm, err := tebms.CrebteTebm(ctx, &t)
 	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, team), nil
+	return NewTebmResolver(r.db, tebm), nil
 }
 
-type UpdateTeamArgs struct {
-	ID             *graphql.ID
-	Name           *string
-	DisplayName    *string
-	ParentTeam     *graphql.ID
-	ParentTeamName *string
-	MakeRoot       *bool
+type UpdbteTebmArgs struct {
+	ID             *grbphql.ID
+	Nbme           *string
+	DisplbyNbme    *string
+	PbrentTebm     *grbphql.ID
+	PbrentTebmNbme *string
+	MbkeRoot       *bool
 }
 
-func (r *schemaResolver) UpdateTeam(ctx context.Context, args *UpdateTeamArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) UpdbteTebm(ctx context.Context, brgs *UpdbteTebmArgs) (*TebmResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	if args.ID == nil && args.Name == nil {
-		return nil, errors.New("team to update is identified by either id or name, but neither was specified")
+	if brgs.ID == nil && brgs.Nbme == nil {
+		return nil, errors.New("tebm to updbte is identified by either id or nbme, but neither wbs specified")
 	}
-	if args.ID != nil && args.Name != nil {
-		return nil, errors.New("team to update is identified by either id or name, but both were specified")
+	if brgs.ID != nil && brgs.Nbme != nil {
+		return nil, errors.New("tebm to updbte is identified by either id or nbme, but both were specified")
 	}
-	if (args.ParentTeam != nil || args.ParentTeamName != nil) && args.MakeRoot != nil {
-		return nil, errors.New("specifying a parent team contradicts making a team root (no parent team)")
+	if (brgs.PbrentTebm != nil || brgs.PbrentTebmNbme != nil) && brgs.MbkeRoot != nil {
+		return nil, errors.New("specifying b pbrent tebm contrbdicts mbking b tebm root (no pbrent tebm)")
 	}
-	if args.ParentTeam != nil && args.ParentTeamName != nil {
-		return nil, errors.New("parent team is identified by either id or name, but both were specified")
+	if brgs.PbrentTebm != nil && brgs.PbrentTebmNbme != nil {
+		return nil, errors.New("pbrent tebm is identified by either id or nbme, but both were specified")
 	}
-	if args.MakeRoot != nil && !*args.MakeRoot {
-		return nil, errors.New("the only possible value for makeRoot is true (if set); to assign a parent team please use parentTeam or parentTeamName parameters")
+	if brgs.MbkeRoot != nil && !*brgs.MbkeRoot {
+		return nil, errors.New("the only possible vblue for mbkeRoot is true (if set); to bssign b pbrent tebm plebse use pbrentTebm or pbrentTebmNbme pbrbmeters")
 	}
-	var t *types.Team
-	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
-		t, err = findTeam(ctx, tx.Teams(), args.ID, args.Name)
+	vbr t *types.Tebm
+	err := r.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) (err error) {
+		t, err = findTebm(ctx, tx.Tebms(), brgs.ID, brgs.Nbme)
 		if err != nil {
 			return err
 		}
 
-		if ok, err := canModifyTeam(ctx, r.db, t); err != nil {
+		if ok, err := cbnModifyTebm(ctx, r.db, t); err != nil {
 			return err
 		} else if !ok {
-			return ErrNoAccessToTeam
+			return ErrNoAccessToTebm
 		}
 
-		var needsUpdate bool
-		if args.DisplayName != nil && *args.DisplayName != t.DisplayName {
-			needsUpdate = true
-			t.DisplayName = *args.DisplayName
+		vbr needsUpdbte bool
+		if brgs.DisplbyNbme != nil && *brgs.DisplbyNbme != t.DisplbyNbme {
+			needsUpdbte = true
+			t.DisplbyNbme = *brgs.DisplbyNbme
 		}
-		if args.ParentTeam != nil || args.ParentTeamName != nil {
-			parentTeam, err := findTeam(ctx, tx.Teams(), args.ParentTeam, args.ParentTeamName)
+		if brgs.PbrentTebm != nil || brgs.PbrentTebmNbme != nil {
+			pbrentTebm, err := findTebm(ctx, tx.Tebms(), brgs.PbrentTebm, brgs.PbrentTebmNbme)
 			if err != nil {
-				return errors.Wrap(err, "cannot find parent team")
+				return errors.Wrbp(err, "cbnnot find pbrent tebm")
 			}
-			if parentTeam.ID != t.ParentTeamID {
-				parentOutsideOfTeamsDescendants, err := tx.Teams().ContainsTeam(ctx, parentTeam.ID, database.ListTeamsOpts{
+			if pbrentTebm.ID != t.PbrentTebmID {
+				pbrentOutsideOfTebmsDescendbnts, err := tx.Tebms().ContbinsTebm(ctx, pbrentTebm.ID, dbtbbbse.ListTebmsOpts{
 					ExceptAncestorID: t.ID,
 				})
 				if err != nil {
-					return errors.Newf("could not determine ancestorship on team update: %s", err)
+					return errors.Newf("could not determine bncestorship on tebm updbte: %s", err)
 				}
-				if !parentOutsideOfTeamsDescendants {
-					return errors.Newf("circular dependency: new parent %q is descendant of updated team %q", parentTeam.Name, t.Name)
+				if !pbrentOutsideOfTebmsDescendbnts {
+					return errors.Newf("circulbr dependency: new pbrent %q is descendbnt of updbted tebm %q", pbrentTebm.Nbme, t.Nbme)
 				}
-				needsUpdate = true
-				t.ParentTeamID = parentTeam.ID
+				needsUpdbte = true
+				t.PbrentTebmID = pbrentTebm.ID
 			}
 		}
-		if args.MakeRoot != nil && *args.MakeRoot && t.ParentTeamID != 0 {
-			needsUpdate = true
-			t.ParentTeamID = 0
+		if brgs.MbkeRoot != nil && *brgs.MbkeRoot && t.PbrentTebmID != 0 {
+			needsUpdbte = true
+			t.PbrentTebmID = 0
 		}
-		if needsUpdate {
-			return tx.Teams().UpdateTeam(ctx, t)
+		if needsUpdbte {
+			return tx.Tebms().UpdbteTebm(ctx, t)
 		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, t), nil
+	return NewTebmResolver(r.db, t), nil
 }
 
-// findTeam returns a team by either GraphQL ID or name.
-// If both parameters are nil, the result is nil.
-func findTeam(ctx context.Context, teams database.TeamStore, graphqlID *graphql.ID, name *string) (*types.Team, error) {
-	if graphqlID != nil {
-		var id int32
-		id, err := UnmarshalTeamID(*graphqlID)
+// findTebm returns b tebm by either GrbphQL ID or nbme.
+// If both pbrbmeters bre nil, the result is nil.
+func findTebm(ctx context.Context, tebms dbtbbbse.TebmStore, grbphqlID *grbphql.ID, nbme *string) (*types.Tebm, error) {
+	if grbphqlID != nil {
+		vbr id int32
+		id, err := UnmbrshblTebmID(*grbphqlID)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot interpret team id: %q", *graphqlID)
+			return nil, errors.Wrbpf(err, "cbnnot interpret tebm id: %q", *grbphqlID)
 		}
-		team, err := teams.GetTeamByID(ctx, id)
+		tebm, err := tebms.GetTebmByID(ctx, id)
 		if errcode.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "team id=%d not found", id)
+			return nil, errors.Wrbpf(err, "tebm id=%d not found", id)
 		}
 		if err != nil {
-			return nil, errors.Wrapf(err, "error fetching team id=%d", id)
+			return nil, errors.Wrbpf(err, "error fetching tebm id=%d", id)
 		}
-		return team, nil
+		return tebm, nil
 	}
-	if name != nil {
-		team, err := teams.GetTeamByName(ctx, *name)
+	if nbme != nil {
+		tebm, err := tebms.GetTebmByNbme(ctx, *nbme)
 		if errcode.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "team name=%q not found", *name)
+			return nil, errors.Wrbpf(err, "tebm nbme=%q not found", *nbme)
 		}
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not fetch team name=%q", *name)
+			return nil, errors.Wrbpf(err, "could not fetch tebm nbme=%q", *nbme)
 		}
-		return team, nil
+		return tebm, nil
 	}
 	return nil, nil
 }
 
-type DeleteTeamArgs struct {
-	ID   *graphql.ID
-	Name *string
+type DeleteTebmArgs struct {
+	ID   *grbphql.ID
+	Nbme *string
 }
 
-func (r *schemaResolver) DeleteTeam(ctx context.Context, args *DeleteTeamArgs) (*EmptyResponse, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) DeleteTebm(ctx context.Context, brgs *DeleteTebmArgs) (*EmptyResponse, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	if args.ID == nil && args.Name == nil {
-		return nil, errors.New("team to delete is identified by either id or name, but neither was specified")
+	if brgs.ID == nil && brgs.Nbme == nil {
+		return nil, errors.New("tebm to delete is identified by either id or nbme, but neither wbs specified")
 	}
-	if args.ID != nil && args.Name != nil {
-		return nil, errors.New("team to delete is identified by either id or name, but both were specified")
+	if brgs.ID != nil && brgs.Nbme != nil {
+		return nil, errors.New("tebm to delete is identified by either id or nbme, but both were specified")
 	}
-	t, err := findTeam(ctx, r.db.Teams(), args.ID, args.Name)
+	t, err := findTebm(ctx, r.db.Tebms(), brgs.ID, brgs.Nbme)
 	if err != nil {
 		return nil, err
 	}
 
-	if ok, err := canModifyTeam(ctx, r.db, t); err != nil {
+	if ok, err := cbnModifyTebm(ctx, r.db, t); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, ErrNoAccessToTeam
+		return nil, ErrNoAccessToTebm
 	}
 
-	if err := r.db.Teams().DeleteTeam(ctx, t.ID); err != nil {
+	if err := r.db.Tebms().DeleteTebm(ctx, t.ID); err != nil {
 		return nil, err
 	}
 	return &EmptyResponse{}, nil
 }
 
-type TeamMembersArgs struct {
-	Team                 *graphql.ID
-	TeamName             *string
-	Members              []TeamMemberInput
-	SkipUnmatchedMembers bool
+type TebmMembersArgs struct {
+	Tebm                 *grbphql.ID
+	TebmNbme             *string
+	Members              []TebmMemberInput
+	SkipUnmbtchedMembers bool
 }
 
-type TeamMemberInput struct {
-	UserID                     *graphql.ID
-	Username                   *string
-	Email                      *string
-	ExternalAccountServiceID   *string
-	ExternalAccountServiceType *string
-	ExternalAccountAccountID   *string
-	ExternalAccountLogin       *string
+type TebmMemberInput struct {
+	UserID                     *grbphql.ID
+	Usernbme                   *string
+	Embil                      *string
+	ExternblAccountServiceID   *string
+	ExternblAccountServiceType *string
+	ExternblAccountAccountID   *string
+	ExternblAccountLogin       *string
 }
 
-func (t TeamMemberInput) String() string {
+func (t TebmMemberInput) String() string {
 	conds := []string{}
 
 	if t.UserID != nil {
-		conds = append(conds, fmt.Sprintf("ID=%s", string(*t.UserID)))
+		conds = bppend(conds, fmt.Sprintf("ID=%s", string(*t.UserID)))
 	}
-	if t.Username != nil {
-		conds = append(conds, fmt.Sprintf("Username=%s", *t.Username))
+	if t.Usernbme != nil {
+		conds = bppend(conds, fmt.Sprintf("Usernbme=%s", *t.Usernbme))
 	}
-	if t.Email != nil {
-		conds = append(conds, fmt.Sprintf("Email=%s", *t.Email))
+	if t.Embil != nil {
+		conds = bppend(conds, fmt.Sprintf("Embil=%s", *t.Embil))
 	}
-	if t.ExternalAccountServiceID != nil {
-		maybeString := func(s *string) string {
+	if t.ExternblAccountServiceID != nil {
+		mbybeString := func(s *string) string {
 			if s == nil {
 				return ""
 			}
 			return *s
 		}
-		conds = append(conds, fmt.Sprintf(
-			"ExternalAccount(ServiceID=%s, ServiceType=%s, AccountID=%s, Login=%s)",
-			maybeString(t.ExternalAccountServiceID),
-			maybeString(t.ExternalAccountServiceType),
-			maybeString(t.ExternalAccountAccountID),
-			maybeString(t.ExternalAccountLogin),
+		conds = bppend(conds, fmt.Sprintf(
+			"ExternblAccount(ServiceID=%s, ServiceType=%s, AccountID=%s, Login=%s)",
+			mbybeString(t.ExternblAccountServiceID),
+			mbybeString(t.ExternblAccountServiceType),
+			mbybeString(t.ExternblAccountAccountID),
+			mbybeString(t.ExternblAccountLogin),
 		))
 	}
 
-	return fmt.Sprintf("team member (%s)", strings.Join(conds, ","))
+	return fmt.Sprintf("tebm member (%s)", strings.Join(conds, ","))
 }
 
-func (r *schemaResolver) AddTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) AddTebmMembers(ctx context.Context, brgs *TebmMembersArgs) (*TebmResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	if args.Team == nil && args.TeamName == nil {
-		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	if brgs.Tebm == nil && brgs.TebmNbme == nil {
+		return nil, errors.New("tebm must be identified by either id (tebm pbrbmeter) or nbme (tebmNbme pbrbmeter), none specified")
 	}
-	if args.Team != nil && args.TeamName != nil {
-		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	if brgs.Tebm != nil && brgs.TebmNbme != nil {
+		return nil, errors.New("tebm must be identified by either id (tebm pbrbmeter) or nbme (tebmNbme pbrbmeter), both specified")
 	}
 
-	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTebmMembers(ctx, r.db, brgs.Members)
 	if err != nil {
 		return nil, err
 	}
-	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
-		var err error
-		for _, member := range notFound {
+	if len(notFound) > 0 && !brgs.SkipUnmbtchedMembers {
+		vbr err error
+		for _, member := rbnge notFound {
 			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
 		return nil, err
 	}
-	usersMap := make(map[int32]*types.User, len(users))
-	for _, user := range users {
-		usersMap[user.ID] = user
+	usersMbp := mbke(mbp[int32]*types.User, len(users))
+	for _, user := rbnge users {
+		usersMbp[user.ID] = user
 	}
 
-	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	tebm, err := findTebm(ctx, r.db.Tebms(), brgs.Tebm, brgs.TebmNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	if ok, err := canModifyTeam(ctx, r.db, team); err != nil {
+	if ok, err := cbnModifyTebm(ctx, r.db, tebm); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, ErrNoAccessToTeam
+		return nil, ErrNoAccessToTebm
 	}
 
-	ms := make([]*types.TeamMember, 0, len(users))
-	for _, u := range users {
-		ms = append(ms, &types.TeamMember{
+	ms := mbke([]*types.TebmMember, 0, len(users))
+	for _, u := rbnge users {
+		ms = bppend(ms, &types.TebmMember{
 			UserID: u.ID,
-			TeamID: team.ID,
+			TebmID: tebm.ID,
 		})
 	}
-	if err := r.db.Teams().CreateTeamMember(ctx, ms...); err != nil {
+	if err := r.db.Tebms().CrebteTebmMember(ctx, ms...); err != nil {
 		return nil, err
 	}
 
-	return NewTeamResolver(r.db, team), nil
+	return NewTebmResolver(r.db, tebm), nil
 }
 
-func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) SetTebmMembers(ctx context.Context, brgs *TebmMembersArgs) (*TebmResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	if args.Team == nil && args.TeamName == nil {
-		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	if brgs.Tebm == nil && brgs.TebmNbme == nil {
+		return nil, errors.New("tebm must be identified by either id (tebm pbrbmeter) or nbme (tebmNbme pbrbmeter), none specified")
 	}
-	if args.Team != nil && args.TeamName != nil {
-		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	if brgs.Tebm != nil && brgs.TebmNbme != nil {
+		return nil, errors.New("tebm must be identified by either id (tebm pbrbmeter) or nbme (tebmNbme pbrbmeter), both specified")
 	}
 
-	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTebmMembers(ctx, r.db, brgs.Members)
 	if err != nil {
 		return nil, err
 	}
-	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
-		var err error
-		for _, member := range notFound {
+	if len(notFound) > 0 && !brgs.SkipUnmbtchedMembers {
+		vbr err error
+		for _, member := rbnge notFound {
 			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
 		return nil, err
 	}
-	usersMap := make(map[int32]*types.User, len(users))
-	for _, user := range users {
-		usersMap[user.ID] = user
+	usersMbp := mbke(mbp[int32]*types.User, len(users))
+	for _, user := rbnge users {
+		usersMbp[user.ID] = user
 	}
 
-	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	tebm, err := findTebm(ctx, r.db.Tebms(), brgs.Tebm, brgs.TebmNbme)
 	if err != nil {
 		return nil, err
 	}
 
-	if ok, err := canModifyTeam(ctx, r.db, team); err != nil {
+	if ok, err := cbnModifyTebm(ctx, r.db, tebm); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, ErrNoAccessToTeam
+		return nil, ErrNoAccessToTebm
 	}
 
-	if err := r.db.WithTransact(ctx, func(tx database.DB) error {
-		var membersToRemove []*types.TeamMember
-		listOpts := database.ListTeamMembersOpts{
-			TeamID: team.ID,
+	if err := r.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) error {
+		vbr membersToRemove []*types.TebmMember
+		listOpts := dbtbbbse.ListTebmMembersOpts{
+			TebmID: tebm.ID,
 		}
 		for {
-			existingMembers, cursor, err := tx.Teams().ListTeamMembers(ctx, listOpts)
+			existingMembers, cursor, err := tx.Tebms().ListTebmMembers(ctx, listOpts)
 			if err != nil {
 				return err
 			}
-			for _, m := range existingMembers {
-				if _, ok := usersMap[m.UserID]; ok {
-					delete(usersMap, m.UserID)
+			for _, m := rbnge existingMembers {
+				if _, ok := usersMbp[m.UserID]; ok {
+					delete(usersMbp, m.UserID)
 				} else {
-					membersToRemove = append(membersToRemove, &types.TeamMember{
+					membersToRemove = bppend(membersToRemove, &types.TebmMember{
 						UserID: m.UserID,
-						TeamID: team.ID,
+						TebmID: tebm.ID,
 					})
 				}
 			}
 			if cursor == nil {
-				break
+				brebk
 			}
 			listOpts.Cursor = *cursor
 		}
-		var membersToAdd []*types.TeamMember
-		for _, user := range users {
-			membersToAdd = append(membersToAdd, &types.TeamMember{
+		vbr membersToAdd []*types.TebmMember
+		for _, user := rbnge users {
+			membersToAdd = bppend(membersToAdd, &types.TebmMember{
 				UserID: user.ID,
-				TeamID: team.ID,
+				TebmID: tebm.ID,
 			})
 		}
 		if len(membersToRemove) > 0 {
-			if err := tx.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+			if err := tx.Tebms().DeleteTebmMember(ctx, membersToRemove...); err != nil {
 				return err
 			}
 		}
 		if len(membersToAdd) > 0 {
-			if err := tx.Teams().CreateTeamMember(ctx, membersToAdd...); err != nil {
+			if err := tx.Tebms().CrebteTebmMember(ctx, membersToAdd...); err != nil {
 				return err
 			}
 		}
@@ -753,95 +753,95 @@ func (r *schemaResolver) SetTeamMembers(ctx context.Context, args *TeamMembersAr
 	}); err != nil {
 		return nil, err
 	}
-	return NewTeamResolver(r.db, team), nil
+	return NewTebmResolver(r.db, tebm), nil
 }
 
-func (r *schemaResolver) RemoveTeamMembers(ctx context.Context, args *TeamMembersArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) RemoveTebmMembers(ctx context.Context, brgs *TebmMembersArgs) (*TebmResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	if args.Team == nil && args.TeamName == nil {
-		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), none specified")
+	if brgs.Tebm == nil && brgs.TebmNbme == nil {
+		return nil, errors.New("tebm must be identified by either id (tebm pbrbmeter) or nbme (tebmNbme pbrbmeter), none specified")
 	}
-	if args.Team != nil && args.TeamName != nil {
-		return nil, errors.New("team must be identified by either id (team parameter) or name (teamName parameter), both specified")
+	if brgs.Tebm != nil && brgs.TebmNbme != nil {
+		return nil, errors.New("tebm must be identified by either id (tebm pbrbmeter) or nbme (tebmNbme pbrbmeter), both specified")
 	}
 
-	users, notFound, err := usersForTeamMembers(ctx, r.db, args.Members)
+	users, notFound, err := usersForTebmMembers(ctx, r.db, brgs.Members)
 	if err != nil {
 		return nil, err
 	}
-	if len(notFound) > 0 && !args.SkipUnmatchedMembers {
-		var err error
-		for _, member := range notFound {
+	if len(notFound) > 0 && !brgs.SkipUnmbtchedMembers {
+		vbr err error
+		for _, member := rbnge notFound {
 			err = errors.Append(err, errors.Newf("member not found: %s", member))
 		}
 		return nil, err
 	}
 
-	team, err := findTeam(ctx, r.db.Teams(), args.Team, args.TeamName)
+	tebm, err := findTebm(ctx, r.db.Tebms(), brgs.Tebm, brgs.TebmNbme)
 	if err != nil {
 		return nil, err
 	}
-	if ok, err := canModifyTeam(ctx, r.db, team); err != nil {
+	if ok, err := cbnModifyTebm(ctx, r.db, tebm); err != nil {
 		return nil, err
 	} else if !ok {
-		return nil, ErrNoAccessToTeam
+		return nil, ErrNoAccessToTebm
 	}
-	var membersToRemove []*types.TeamMember
-	for _, user := range users {
-		membersToRemove = append(membersToRemove, &types.TeamMember{
+	vbr membersToRemove []*types.TebmMember
+	for _, user := rbnge users {
+		membersToRemove = bppend(membersToRemove, &types.TebmMember{
 			UserID: user.ID,
-			TeamID: team.ID,
+			TebmID: tebm.ID,
 		})
 	}
 	if len(membersToRemove) > 0 {
-		if err := r.db.Teams().DeleteTeamMember(ctx, membersToRemove...); err != nil {
+		if err := r.db.Tebms().DeleteTebmMember(ctx, membersToRemove...); err != nil {
 			return nil, err
 		}
 	}
-	return NewTeamResolver(r.db, team), nil
+	return NewTebmResolver(r.db, tebm), nil
 }
 
-type QueryTeamsArgs struct {
-	ListTeamsArgs
-	ExceptAncestor    *graphql.ID
-	IncludeChildTeams *bool
+type QueryTebmsArgs struct {
+	ListTebmsArgs
+	ExceptAncestor    *grbphql.ID
+	IncludeChildTebms *bool
 }
 
-func (r *schemaResolver) Teams(ctx context.Context, args *QueryTeamsArgs) (*teamConnectionResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) Tebms(ctx context.Context, brgs *QueryTebmsArgs) (*tebmConnectionResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
-	c := &teamConnectionResolver{db: r.db}
-	if err := c.applyArgs(&args.ListTeamsArgs); err != nil {
+	c := &tebmConnectionResolver{db: r.db}
+	if err := c.bpplyArgs(&brgs.ListTebmsArgs); err != nil {
 		return nil, err
 	}
-	if args.ExceptAncestor != nil {
-		id, err := UnmarshalTeamID(*args.ExceptAncestor)
+	if brgs.ExceptAncestor != nil {
+		id, err := UnmbrshblTebmID(*brgs.ExceptAncestor)
 		if err != nil {
-			return nil, errors.Wrapf(err, "cannot interpret exceptAncestor id: %q", *args.ExceptAncestor)
+			return nil, errors.Wrbpf(err, "cbnnot interpret exceptAncestor id: %q", *brgs.ExceptAncestor)
 		}
 		c.exceptAncestorID = id
 	}
-	c.onlyRootTeams = true
-	if args.IncludeChildTeams != nil && *args.IncludeChildTeams {
-		c.onlyRootTeams = false
+	c.onlyRootTebms = true
+	if brgs.IncludeChildTebms != nil && *brgs.IncludeChildTebms {
+		c.onlyRootTebms = fblse
 	}
 	return c, nil
 }
 
-type TeamArgs struct {
-	Name string
+type TebmArgs struct {
+	Nbme string
 }
 
-func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *schembResolver) Tebm(ctx context.Context, brgs *TebmArgs) (*TebmResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	t, err := r.db.Teams().GetTeamByName(ctx, args.Name)
+	t, err := r.db.Tebms().GetTebmByNbme(ctx, brgs.Nbme)
 	if err != nil {
 		if errcode.IsNotFound(err) {
 			return nil, nil
@@ -849,179 +849,179 @@ func (r *schemaResolver) Team(ctx context.Context, args *TeamArgs) (*TeamResolve
 		return nil, err
 	}
 
-	return NewTeamResolver(r.db, t), nil
+	return NewTebmResolver(r.db, t), nil
 }
 
-func (r *UserResolver) Teams(ctx context.Context, args *ListTeamsArgs) (*teamConnectionResolver, error) {
-	if err := areTeamEndpointsAvailable(); err != nil {
+func (r *UserResolver) Tebms(ctx context.Context, brgs *ListTebmsArgs) (*tebmConnectionResolver, error) {
+	if err := breTebmEndpointsAvbilbble(); err != nil {
 		return nil, err
 	}
 
-	c := &teamConnectionResolver{db: r.db}
-	if err := c.applyArgs(args); err != nil {
+	c := &tebmConnectionResolver{db: r.db}
+	if err := c.bpplyArgs(brgs); err != nil {
 		return nil, err
 	}
-	c.onlyRootTeams = true
+	c.onlyRootTebms = true
 	return c, nil
 }
 
-// usersForTeamMembers returns the matching users for the given slice of TeamMemberInput.
-// For each input, we look at ID, Username, Email, and then External Account in this precedence
-// order. If one field is specified, it is used. If not found, under that predicate, the
-// next one is tried. If the record doesn't match a user entirely, it is skipped. (As opposed
-// to an error being returned. This is more convenient for ingestion as it allows us to
-// skip over users for now.) We might want to revisit this later.
-func usersForTeamMembers(ctx context.Context, db database.DB, members []TeamMemberInput) (users []*types.User, noMatch []TeamMemberInput, err error) {
-	// First, look at IDs.
+// usersForTebmMembers returns the mbtching users for the given slice of TebmMemberInput.
+// For ebch input, we look bt ID, Usernbme, Embil, bnd then Externbl Account in this precedence
+// order. If one field is specified, it is used. If not found, under thbt predicbte, the
+// next one is tried. If the record doesn't mbtch b user entirely, it is skipped. (As opposed
+// to bn error being returned. This is more convenient for ingestion bs it bllows us to
+// skip over users for now.) We might wbnt to revisit this lbter.
+func usersForTebmMembers(ctx context.Context, db dbtbbbse.DB, members []TebmMemberInput) (users []*types.User, noMbtch []TebmMemberInput, err error) {
+	// First, look bt IDs.
 	ids := []int32{}
-	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
+	members, err = extrbctMembers(members, func(m TebmMemberInput) (drop bool, err error) {
 		// If ID is specified for the member, we try to find the user by ID.
 		if m.UserID == nil {
-			return false, nil
+			return fblse, nil
 		}
-		id, err := UnmarshalUserID(*m.UserID)
+		id, err := UnmbrshblUserID(*m.UserID)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		ids = append(ids, id)
+		ids = bppend(ids, id)
 		return true, nil
 	})
 	if err != nil {
 		return nil, nil, err
 	}
 	if len(ids) > 0 {
-		users, err = db.Users().List(ctx, &database.UsersListOptions{UserIDs: ids})
+		users, err = db.Users().List(ctx, &dbtbbbse.UsersListOptions{UserIDs: ids})
 		if err != nil {
 			return nil, nil, err
 		}
 	}
 
-	// Now, look at all that have username set.
-	usernames := []string{}
-	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
-		if m.Username == nil {
-			return false, nil
+	// Now, look bt bll thbt hbve usernbme set.
+	usernbmes := []string{}
+	members, err = extrbctMembers(members, func(m TebmMemberInput) (drop bool, err error) {
+		if m.Usernbme == nil {
+			return fblse, nil
 		}
-		usernames = append(usernames, *m.Username)
+		usernbmes = bppend(usernbmes, *m.Usernbme)
 		return true, nil
 	})
 	if err != nil {
 		return nil, nil, err
 	}
-	if len(usernames) > 0 {
-		us, err := db.Users().List(ctx, &database.UsersListOptions{Usernames: usernames})
+	if len(usernbmes) > 0 {
+		us, err := db.Users().List(ctx, &dbtbbbse.UsersListOptions{Usernbmes: usernbmes})
 		if err != nil {
 			return nil, nil, err
 		}
-		users = append(users, us...)
+		users = bppend(users, us...)
 	}
 
-	// Next up: Email.
-	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
-		if m.Email == nil {
-			return false, nil
+	// Next up: Embil.
+	members, err = extrbctMembers(members, func(m TebmMemberInput) (drop bool, err error) {
+		if m.Embil == nil {
+			return fblse, nil
 		}
-		user, err := db.Users().GetByVerifiedEmail(ctx, *m.Email)
+		user, err := db.Users().GetByVerifiedEmbil(ctx, *m.Embil)
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		users = append(users, user)
+		users = bppend(users, user)
 		return true, nil
 	})
 	if err != nil {
 		return nil, nil, err
 	}
 
-	// Next up: ExternalAccount.
-	members, err = extractMembers(members, func(m TeamMemberInput) (drop bool, err error) {
-		if m.ExternalAccountServiceID == nil || m.ExternalAccountServiceType == nil {
-			return false, nil
+	// Next up: ExternblAccount.
+	members, err = extrbctMembers(members, func(m TebmMemberInput) (drop bool, err error) {
+		if m.ExternblAccountServiceID == nil || m.ExternblAccountServiceType == nil {
+			return fblse, nil
 		}
 
-		eas, err := db.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-			ServiceType: *m.ExternalAccountServiceType,
-			ServiceID:   *m.ExternalAccountServiceID,
+		ebs, err := db.UserExternblAccounts().List(ctx, dbtbbbse.ExternblAccountsListOptions{
+			ServiceType: *m.ExternblAccountServiceType,
+			ServiceID:   *m.ExternblAccountServiceID,
 		})
 		if err != nil {
-			return false, err
+			return fblse, err
 		}
-		for _, ea := range eas {
-			if m.ExternalAccountAccountID != nil {
-				if ea.AccountID == *m.ExternalAccountAccountID {
-					u, err := db.Users().GetByID(ctx, ea.UserID)
+		for _, eb := rbnge ebs {
+			if m.ExternblAccountAccountID != nil {
+				if eb.AccountID == *m.ExternblAccountAccountID {
+					u, err := db.Users().GetByID(ctx, eb.UserID)
 					if err != nil {
-						return false, err
+						return fblse, err
 					}
-					users = append(users, u)
+					users = bppend(users, u)
 					return true, nil
 				}
 				continue
 			}
-			if m.ExternalAccountLogin != nil {
-				if ea.PublicAccountData.Login == *m.ExternalAccountAccountID {
-					u, err := db.Users().GetByID(ctx, ea.UserID)
+			if m.ExternblAccountLogin != nil {
+				if eb.PublicAccountDbtb.Login == *m.ExternblAccountAccountID {
+					u, err := db.Users().GetByID(ctx, eb.UserID)
 					if err != nil {
-						return false, err
+						return fblse, err
 					}
-					users = append(users, u)
+					users = bppend(users, u)
 					return true, nil
 				}
 				continue
 			}
 		}
-		return false, nil
+		return fblse, nil
 	})
 
 	return users, members, err
 }
 
-// extractMembers calls pred on each member, and returns a new slice of members
-// for which the predicate was falsey.
-func extractMembers(members []TeamMemberInput, pred func(member TeamMemberInput) (drop bool, err error)) ([]TeamMemberInput, error) {
-	remaining := []TeamMemberInput{}
-	for _, member := range members {
+// extrbctMembers cblls pred on ebch member, bnd returns b new slice of members
+// for which the predicbte wbs fblsey.
+func extrbctMembers(members []TebmMemberInput, pred func(member TebmMemberInput) (drop bool, err error)) ([]TebmMemberInput, error) {
+	rembining := []TebmMemberInput{}
+	for _, member := rbnge members {
 		ok, err := pred(member)
 		if err != nil {
 			return nil, err
 		}
 		if !ok {
-			remaining = append(remaining, member)
+			rembining = bppend(rembining, member)
 		}
 	}
-	return remaining, nil
+	return rembining, nil
 }
 
-var ErrNoAccessToTeam = errors.New("user cannot modify team")
+vbr ErrNoAccessToTebm = errors.New("user cbnnot modify tebm")
 
-func areTeamEndpointsAvailable() error {
-	if envvar.SourcegraphDotComMode() {
-		return errors.New("teams are not available on sourcegraph.com")
+func breTebmEndpointsAvbilbble() error {
+	if envvbr.SourcegrbphDotComMode() {
+		return errors.New("tebms bre not bvbilbble on sourcegrbph.com")
 	}
 	return nil
 }
 
-func canModifyTeam(ctx context.Context, db database.DB, team *types.Team) (bool, error) {
-	if team.ID == 0 {
-		return false, nil
+func cbnModifyTebm(ctx context.Context, db dbtbbbse.DB, tebm *types.Tebm) (bool, error) {
+	if tebm.ID == 0 {
+		return fblse, nil
 	}
 	if isSiteAdmin(ctx, db) {
 		return true, nil
 	}
-	if team.ReadOnly {
-		return false, nil
+	if tebm.RebdOnly {
+		return fblse, nil
 	}
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return false, auth.ErrNotAuthenticated
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return fblse, buth.ErrNotAuthenticbted
 	}
-	// The creator can always modify a team.
-	if team.CreatorID != 0 && team.CreatorID == a.UID {
+	// The crebtor cbn blwbys modify b tebm.
+	if tebm.CrebtorID != 0 && tebm.CrebtorID == b.UID {
 		return true, nil
 	}
-	return db.Teams().IsTeamMember(ctx, team.ID, a.UID)
+	return db.Tebms().IsTebmMember(ctx, tebm.ID, b.UID)
 }
 
-func isSiteAdmin(ctx context.Context, db database.DB) bool {
-	err := auth.CheckCurrentUserIsSiteAdmin(ctx, db)
+func isSiteAdmin(ctx context.Context, db dbtbbbse.DB) bool {
+	err := buth.CheckCurrentUserIsSiteAdmin(ctx, db)
 	return err == nil
 }

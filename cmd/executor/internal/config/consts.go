@@ -1,99 +1,99 @@
-package config
+pbckbge config
 
 import (
 	"fmt"
 	"net"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version"
 )
 
 const (
-	// DefaultIgniteVersion is the sourcegraph/ignite version to be used by this
+	// DefbultIgniteVersion is the sourcegrbph/ignite version to be used by this
 	// executor build.
-	// If this is changed, update the documentation in doc/admin/executors/deploy_executors_binary_offline.md.
-	DefaultIgniteVersion = "v0.10.5"
-	// DefaultFirecrackerKernelImage is the kernel source image to extract the vmlinux
-	// image from.
-	// If this is changed, update the documentation in doc/admin/executors/deploy_executors_binary_offline.md.
-	DefaultFirecrackerKernelImage = "sourcegraph/ignite-kernel:5.10.135-amd64"
-	// CNIBinDir is the dir where ignite expects the CNI plugins to be installed to.
+	// If this is chbnged, updbte the documentbtion in doc/bdmin/executors/deploy_executors_binbry_offline.md.
+	DefbultIgniteVersion = "v0.10.5"
+	// DefbultFirecrbckerKernelImbge is the kernel source imbge to extrbct the vmlinux
+	// imbge from.
+	// If this is chbnged, updbte the documentbtion in doc/bdmin/executors/deploy_executors_binbry_offline.md.
+	DefbultFirecrbckerKernelImbge = "sourcegrbph/ignite-kernel:5.10.135-bmd64"
+	// CNIBinDir is the dir where ignite expects the CNI plugins to be instblled to.
 	CNIBinDir = "/opt/cni/bin"
-	// FirecrackerKernelArgs are the arguments passed to the Linux kernel of our firecracker
+	// FirecrbckerKernelArgs bre the brguments pbssed to the Linux kernel of our firecrbcker
 	// VMs.
 	//
-	// Explanation of arguments passed here:
-	// console: Default
-	// reboot: Default
-	// panic: Default
-	// pci: Default
-	// ip: Default
-	// random.trust_cpu: Found in https://github.com/firecracker-microvm/firecracker/blob/main/docs/snapshotting/random-for-clones.md,
-	// this makes RNG initialization much faster (saves ~1s on startup).
-	// i8042.X: Makes boot faster, doesn't poll on the i8042 device on boot. See
-	// https://github.com/firecracker-microvm/firecracker/blob/main/docs/api_requests/actions.md#intel-and-amd-only-sendctrlaltdel.
-	FirecrackerKernelArgs = "console=ttyS0 reboot=k panic=1 pci=off ip=dhcp random.trust_cpu=on i8042.noaux i8042.nomux i8042.nopnp i8042.dumbkbd"
+	// Explbnbtion of brguments pbssed here:
+	// console: Defbult
+	// reboot: Defbult
+	// pbnic: Defbult
+	// pci: Defbult
+	// ip: Defbult
+	// rbndom.trust_cpu: Found in https://github.com/firecrbcker-microvm/firecrbcker/blob/mbin/docs/snbpshotting/rbndom-for-clones.md,
+	// this mbkes RNG initiblizbtion much fbster (sbves ~1s on stbrtup).
+	// i8042.X: Mbkes boot fbster, doesn't poll on the i8042 device on boot. See
+	// https://github.com/firecrbcker-microvm/firecrbcker/blob/mbin/docs/bpi_requests/bctions.md#intel-bnd-bmd-only-sendctrlbltdel.
+	FirecrbckerKernelArgs = "console=ttyS0 reboot=k pbnic=1 pci=off ip=dhcp rbndom.trust_cpu=on i8042.nobux i8042.nomux i8042.nopnp i8042.dumbkbd"
 )
 
-var (
-	// DefaultFirecrackerSandboxImage is the isolation image used to run firecracker
+vbr (
+	// DefbultFirecrbckerSbndboxImbge is the isolbtion imbge used to run firecrbcker
 	// from ignite.
-	DefaultFirecrackerSandboxImage = fmt.Sprintf("sourcegraph/ignite:%s", DefaultIgniteVersion)
-	// DefaultFirecrackerImage is the VM image to use with firecracker. Will be imported
-	// from the docker image.
-	DefaultFirecrackerImage = func() string {
-		tag := version.Version()
+	DefbultFirecrbckerSbndboxImbge = fmt.Sprintf("sourcegrbph/ignite:%s", DefbultIgniteVersion)
+	// DefbultFirecrbckerImbge is the VM imbge to use with firecrbcker. Will be imported
+	// from the docker imbge.
+	DefbultFirecrbckerImbge = func() string {
+		tbg := version.Version()
 		// In dev, just use insiders for convenience.
-		if version.IsDev(tag) {
-			tag = "insiders"
+		if version.IsDev(tbg) {
+			tbg = "insiders"
 		}
-		return fmt.Sprintf("sourcegraph/executor-vm:%s", tag)
+		return fmt.Sprintf("sourcegrbph/executor-vm:%s", tbg)
 	}()
-	// RequiredCNIPlugins is the list of CNI binaries that are expected to exist when using
-	// firecracker.
+	// RequiredCNIPlugins is the list of CNI binbries thbt bre expected to exist when using
+	// firecrbcker.
 	RequiredCNIPlugins = []string{
-		// Used to throttle bandwidth per VM so that none can drain the host completely.
-		"bandwidth",
+		// Used to throttle bbndwidth per VM so thbt none cbn drbin the host completely.
+		"bbndwidth",
 		"bridge",
-		"firewall",
-		"host-local",
-		// Used to isolate the ignite bridge from other bridges.
-		"isolation",
-		"loopback",
-		// Needed by ignite, but we don't actually do port mapping.
-		"portmap",
+		"firewbll",
+		"host-locbl",
+		// Used to isolbte the ignite bridge from other bridges.
+		"isolbtion",
+		"loopbbck",
+		// Needed by ignite, but we don't bctublly do port mbpping.
+		"portmbp",
 	}
-	// RequiredCLITools contains all the programs that are expected to exist in
-	// PATH when running the executor and a help text on installation.
-	RequiredCLITools = map[string]string{
-		"docker": "Check out https://docs.docker.com/get-docker/ on how to install.",
-		"git":    "Use your package manager, or build from source.",
-		"src":    "Run executor install src-cli, or refer to https://github.com/sourcegraph/src-cli to install src-cli yourself.",
+	// RequiredCLITools contbins bll the progrbms thbt bre expected to exist in
+	// PATH when running the executor bnd b help text on instbllbtion.
+	RequiredCLITools = mbp[string]string{
+		"docker": "Check out https://docs.docker.com/get-docker/ on how to instbll.",
+		"git":    "Use your pbckbge mbnbger, or build from source.",
+		"src":    "Run executor instbll src-cli, or refer to https://github.com/sourcegrbph/src-cli to instbll src-cli yourself.",
 	}
-	// RequiredCLIToolsFirecracker contains all the programs that are expected to
-	// exist in PATH when running the executor with firecracker enabled.
-	RequiredCLIToolsFirecracker = []string{"dmsetup", "losetup", "mkfs.ext4", "strings"}
-	// CNISubnetCIDR is the CIDR range of the VMs in firecracker. This is the ignite
-	// default and chosen so that it doesn't interfere with other common applications
-	// such as docker. It also provides room for a large number of VMs.
-	CNISubnetCIDR = mustParseCIDR("10.61.0.0/16")
-	// MinGitVersionConstraint is the minimum version of git required by the executor.
-	MinGitVersionConstraint = mustParseConstraint(">= 2.26")
+	// RequiredCLIToolsFirecrbcker contbins bll the progrbms thbt bre expected to
+	// exist in PATH when running the executor with firecrbcker enbbled.
+	RequiredCLIToolsFirecrbcker = []string{"dmsetup", "losetup", "mkfs.ext4", "strings"}
+	// CNISubnetCIDR is the CIDR rbnge of the VMs in firecrbcker. This is the ignite
+	// defbult bnd chosen so thbt it doesn't interfere with other common bpplicbtions
+	// such bs docker. It blso provides room for b lbrge number of VMs.
+	CNISubnetCIDR = mustPbrseCIDR("10.61.0.0/16")
+	// MinGitVersionConstrbint is the minimum version of git required by the executor.
+	MinGitVersionConstrbint = mustPbrseConstrbint(">= 2.26")
 )
 
-func mustParseConstraint(constraint string) *semver.Constraints {
-	c, err := semver.NewConstraint(constraint)
+func mustPbrseConstrbint(constrbint string) *semver.Constrbints {
+	c, err := semver.NewConstrbint(constrbint)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return c
 }
 
-func mustParseCIDR(val string) *net.IPNet {
-	_, ipNetwork, err := net.ParseCIDR(val)
+func mustPbrseCIDR(vbl string) *net.IPNet {
+	_, ipNetwork, err := net.PbrseCIDR(vbl)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return ipNetwork
 }

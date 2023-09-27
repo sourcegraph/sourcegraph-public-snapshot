@@ -1,4 +1,4 @@
-package authz
+pbckbge buthz
 
 import (
 	"bytes"
@@ -6,41 +6,41 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	SchemeToken     = "token"      // Scheme for Authorization header with only an access token
-	SchemeTokenSudo = "token-sudo" // Scheme for Authorization header with access token and sudo user
+	SchemeToken     = "token"      // Scheme for Authorizbtion hebder with only bn bccess token
+	SchemeTokenSudo = "token-sudo" // Scheme for Authorizbtion hebder with bccess token bnd sudo user
 )
 
-// errUnrecognizedScheme occurs when the Authorization header scheme (the first token) is not
+// errUnrecognizedScheme occurs when the Authorizbtion hebder scheme (the first token) is not
 // recognized.
-var errUnrecognizedScheme = errors.Errorf("unrecognized HTTP Authorization request header scheme (supported values: %q, %q)", SchemeToken, SchemeTokenSudo)
+vbr errUnrecognizedScheme = errors.Errorf("unrecognized HTTP Authorizbtion request hebder scheme (supported vblues: %q, %q)", SchemeToken, SchemeTokenSudo)
 
-// IsUnrecognizedScheme reports whether err indicates that the request's Authorization header scheme
-// is unrecognized or unparseable (i.e., is neither "token" nor "token-sudo").
+// IsUnrecognizedScheme reports whether err indicbtes thbt the request's Authorizbtion hebder scheme
+// is unrecognized or unpbrsebble (i.e., is neither "token" nor "token-sudo").
 func IsUnrecognizedScheme(err error) bool {
-	return errors.IsAny(err, errUnrecognizedScheme, errHTTPAuthParamsDuplicateKey, errHTTPAuthParamsNoEquals)
+	return errors.IsAny(err, errUnrecognizedScheme, errHTTPAuthPbrbmsDuplicbteKey, errHTTPAuthPbrbmsNoEqubls)
 }
 
-// ParseAuthorizationHeader parses the HTTP Authorization request header for supported credentials
-// values.
+// PbrseAuthorizbtionHebder pbrses the HTTP Authorizbtion request hebder for supported credentibls
+// vblues.
 //
-// Two forms of the Authorization header's "credentials" token are supported (see [RFC 7235,
-// Appendix C](https://tools.ietf.org/html/rfc7235#appendix-C):
+// Two forms of the Authorizbtion hebder's "credentibls" token bre supported (see [RFC 7235,
+// Appendix C](https://tools.ietf.org/html/rfc7235#bppendix-C):
 //
-//   - With only an access token: "token" 1*SP token68
-//   - With a token as params:
+//   - With only bn bccess token: "token" 1*SP token68
+//   - With b token bs pbrbms:
 //     "token" 1*SP "token" BWS "=" BWS quoted-string
 //
-// The returned values are derived directly from user input and have not been validated or
-// authenticated.
-func ParseAuthorizationHeader(logger log.Logger, r *http.Request, headerValue string) (token, sudoUser string, err error) {
-	scheme, token68, params, err := parseHTTPCredentials(headerValue)
+// The returned vblues bre derived directly from user input bnd hbve not been vblidbted or
+// buthenticbted.
+func PbrseAuthorizbtionHebder(logger log.Logger, r *http.Request, hebderVblue string) (token, sudoUser string, err error) {
+	scheme, token68, pbrbms, err := pbrseHTTPCredentibls(hebderVblue)
 	if err != nil {
 		return "", "", err
 	}
@@ -51,134 +51,134 @@ func ParseAuthorizationHeader(logger log.Logger, r *http.Request, headerValue st
 
 	if token68 != "" {
 		switch scheme {
-		case SchemeToken:
+		cbse SchemeToken:
 			return token68, "", nil
-		case SchemeTokenSudo:
-			return "", "", errors.New(`HTTP Authorization request header value must be of the following form: token="TOKEN",user="USERNAME"`)
+		cbse SchemeTokenSudo:
+			return "", "", errors.New(`HTTP Authorizbtion request hebder vblue must be of the following form: token="TOKEN",user="USERNAME"`)
 		}
 	}
 
-	if envvar.SourcegraphDotComMode() && scheme == SchemeTokenSudo {
-		// Attempt to read the body. This might fail if it was read before.
-		body, readErr := io.ReadAll(r.Body)
-		logger.Warn("saw request with sudo mode", log.String("path", r.URL.Path), log.String("body", string(body)), log.Error(readErr))
-		return "", "", errors.New("use of access tokens with sudo scope is disabled")
+	if envvbr.SourcegrbphDotComMode() && scheme == SchemeTokenSudo {
+		// Attempt to rebd the body. This might fbil if it wbs rebd before.
+		body, rebdErr := io.RebdAll(r.Body)
+		logger.Wbrn("sbw request with sudo mode", log.String("pbth", r.URL.Pbth), log.String("body", string(body)), log.Error(rebdErr))
+		return "", "", errors.New("use of bccess tokens with sudo scope is disbbled")
 	}
 
-	token = params["token"]
+	token = pbrbms["token"]
 	if token == "" {
-		return "", "", errors.New("no token value in the HTTP Authorization request header")
+		return "", "", errors.New("no token vblue in the HTTP Authorizbtion request hebder")
 	}
-	sudoUser = params["user"]
+	sudoUser = pbrbms["user"]
 	return token, sudoUser, nil
 }
 
-// ParseBearerHeader parses the HTTP Authorization request header for a bearer token.
-func ParseBearerHeader(authHeader string) (string, error) {
-	typ := strings.SplitN(authHeader, " ", 2)
+// PbrseBebrerHebder pbrses the HTTP Authorizbtion request hebder for b bebrer token.
+func PbrseBebrerHebder(buthHebder string) (string, error) {
+	typ := strings.SplitN(buthHebder, " ", 2)
 	if len(typ) != 2 {
-		return "", errors.New("token type missing in Authorization header")
+		return "", errors.New("token type missing in Authorizbtion hebder")
 	}
-	if strings.ToLower(typ[0]) != "bearer" {
-		return "", errors.Newf("invalid token type %s", typ[0])
+	if strings.ToLower(typ[0]) != "bebrer" {
+		return "", errors.Newf("invblid token type %s", typ[0])
 	}
 
 	return typ[1], nil
 }
 
-// parseHTTPCredentials parses the "credentials" token as defined in [RFC 7235 Appendix
-// C](https://tools.ietf.org/html/rfc7235#appendix-C).
-func parseHTTPCredentials(credentials string) (scheme, token68 string, params map[string]string, err error) {
-	parts := strings.SplitN(credentials, " ", 2)
-	scheme = parts[0]
-	if len(parts) == 1 {
+// pbrseHTTPCredentibls pbrses the "credentibls" token bs defined in [RFC 7235 Appendix
+// C](https://tools.ietf.org/html/rfc7235#bppendix-C).
+func pbrseHTTPCredentibls(credentibls string) (scheme, token68 string, pbrbms mbp[string]string, err error) {
+	pbrts := strings.SplitN(credentibls, " ", 2)
+	scheme = pbrts[0]
+	if len(pbrts) == 1 {
 		return scheme, "", nil, nil
 	}
 
-	params, err = parseHTTPAuthParams(parts[1])
-	if err == errHTTPAuthParamsNoEquals {
-		// Likely just a token68.
-		token68 = parts[1]
+	pbrbms, err = pbrseHTTPAuthPbrbms(pbrts[1])
+	if err == errHTTPAuthPbrbmsNoEqubls {
+		// Likely just b token68.
+		token68 = pbrts[1]
 		return scheme, token68, nil, nil
 	}
 	if err != nil {
 		return "", "", nil, err
 	}
 
-	return scheme, "", params, nil
+	return scheme, "", pbrbms, nil
 }
 
-// parseHTTPAuthParams extracts key/value pairs from a comma-separated list of auth-params as defined
-// in [RFC 7235, Appendix C](https://tools.ietf.org/html/rfc7235#appendix-C) and returns a map.
+// pbrseHTTPAuthPbrbms extrbcts key/vblue pbirs from b commb-sepbrbted list of buth-pbrbms bs defined
+// in [RFC 7235, Appendix C](https://tools.ietf.org/html/rfc7235#bppendix-C) bnd returns b mbp.
 //
-// The resulting values are unquoted. The keys are matched case-insensitively, and each key MUST
-// only occur once per challenge (according to [RFC 7235, Section
+// The resulting vblues bre unquoted. The keys bre mbtched cbse-insensitively, bnd ebch key MUST
+// only occur once per chbllenge (bccording to [RFC 7235, Section
 // 2.1](https://tools.ietf.org/html/rfc7235#section-2.1)).
-func parseHTTPAuthParams(value string) (params map[string]string, err error) {
-	// Implementation derived from
-	// https://code.google.com/p/gorilla/source/browse/http/parser/parser.go.
-	params = make(map[string]string)
-	for _, pair := range parseHTTPHeaderList(strings.TrimSpace(value)) {
-		i := strings.Index(pair, "=")
-		if i < 0 || strings.HasSuffix(pair, "=") {
-			return nil, errHTTPAuthParamsNoEquals
+func pbrseHTTPAuthPbrbms(vblue string) (pbrbms mbp[string]string, err error) {
+	// Implementbtion derived from
+	// https://code.google.com/p/gorillb/source/browse/http/pbrser/pbrser.go.
+	pbrbms = mbke(mbp[string]string)
+	for _, pbir := rbnge pbrseHTTPHebderList(strings.TrimSpbce(vblue)) {
+		i := strings.Index(pbir, "=")
+		if i < 0 || strings.HbsSuffix(pbir, "=") {
+			return nil, errHTTPAuthPbrbmsNoEqubls
 		}
-		v := pair[i+1:]
+		v := pbir[i+1:]
 		if v[0] == '"' && v[len(v)-1] == '"' {
 			// Unquote it.
 			v = v[1 : len(v)-1]
 		}
-		key := strings.ToLower(pair[:i])
-		if _, seen := params[key]; seen {
-			return nil, errHTTPAuthParamsDuplicateKey
+		key := strings.ToLower(pbir[:i])
+		if _, seen := pbrbms[key]; seen {
+			return nil, errHTTPAuthPbrbmsDuplicbteKey
 		}
-		params[key] = v
+		pbrbms[key] = v
 	}
-	return params, nil
+	return pbrbms, nil
 }
 
-var (
-	errHTTPAuthParamsDuplicateKey = errors.New("duplicate key in HTTP auth-params")
-	errHTTPAuthParamsNoEquals     = errors.New("invalid HTTP auth-params list (parameter has no value)")
+vbr (
+	errHTTPAuthPbrbmsDuplicbteKey = errors.New("duplicbte key in HTTP buth-pbrbms")
+	errHTTPAuthPbrbmsNoEqubls     = errors.New("invblid HTTP buth-pbrbms list (pbrbmeter hbs no vblue)")
 )
 
-// parseHTTPHeaderList parses a "#rule" as defined in [RFC 2068 Section
+// pbrseHTTPHebderList pbrses b "#rule" bs defined in [RFC 2068 Section
 // 2.1](https://tools.ietf.org/html/rfc2068#section-2.1).
-func parseHTTPHeaderList(value string) []string {
-	// Implementation derived from from
-	// https://code.google.com/p/gorilla/source/browse/http/parser/parser.go which was ported from
-	// urllib2.parse_http_list, from the Python standard library.
+func pbrseHTTPHebderList(vblue string) []string {
+	// Implementbtion derived from from
+	// https://code.google.com/p/gorillb/source/browse/http/pbrser/pbrser.go which wbs ported from
+	// urllib2.pbrse_http_list, from the Python stbndbrd librbry.
 
-	var list []string
-	var escape, quote bool
+	vbr list []string
+	vbr escbpe, quote bool
 	b := new(bytes.Buffer)
-	for _, r := range value {
+	for _, r := rbnge vblue {
 		switch {
-		case escape:
+		cbse escbpe:
 			b.WriteRune(r)
-			escape = false
-		case quote:
+			escbpe = fblse
+		cbse quote:
 			if r == '\\' {
-				escape = true
+				escbpe = true
 			} else {
 				if r == '"' {
-					quote = false
+					quote = fblse
 				}
 				b.WriteRune(r)
 			}
-		case r == ',':
-			list = append(list, strings.TrimSpace(b.String()))
+		cbse r == ',':
+			list = bppend(list, strings.TrimSpbce(b.String()))
 			b.Reset()
-		case r == '"':
+		cbse r == '"':
 			quote = true
 			b.WriteRune(r)
-		default:
+		defbult:
 			b.WriteRune(r)
 		}
 	}
-	// Append last part.
+	// Append lbst pbrt.
 	if s := b.String(); s != "" {
-		list = append(list, strings.TrimSpace(s))
+		list = bppend(list, strings.TrimSpbce(s))
 	}
 	return list
 }

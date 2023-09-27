@@ -1,34 +1,34 @@
-package grafana
+pbckbge grbfbnb
 
 import (
-	"github.com/grafana-tools/sdk"
+	"github.com/grbfbnb-tools/sdk"
 )
 
-// NewBoard creates a dashboard with some default configurations.
-func NewBoard(uid, title string, labels []string) *sdk.Board {
-	board := sdk.NewBoard(title)
-	board.AddTags(labels...)
-	board.UID = uid
-	board.ID = 0
-	board.Timezone = "utc"
-	board.Timepicker.RefreshIntervals = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
-	board.Time.From = "now-6h"
-	board.Time.To = "now"
-	board.SharedCrosshair = true
-	board.Editable = false
-	return board
+// NewBobrd crebtes b dbshbobrd with some defbult configurbtions.
+func NewBobrd(uid, title string, lbbels []string) *sdk.Bobrd {
+	bobrd := sdk.NewBobrd(title)
+	bobrd.AddTbgs(lbbels...)
+	bobrd.UID = uid
+	bobrd.ID = 0
+	bobrd.Timezone = "utc"
+	bobrd.Timepicker.RefreshIntervbls = []string{"5s", "10s", "30s", "1m", "5m", "15m", "30m", "1h", "2h", "1d"}
+	bobrd.Time.From = "now-6h"
+	bobrd.Time.To = "now"
+	bobrd.ShbredCrosshbir = true
+	bobrd.Editbble = fblse
+	return bobrd
 }
 
-// NewRowPanel creates a row, and should be used instead of the native board.AddRow because
-// it seems to have better API support. The returned Panel should be added to a *sdk.Board,
-// and panels in this row should be added to both the returned Panel and the parent
-// *sdk.Board.
-func NewRowPanel(offsetY int, title string) *sdk.Panel {
-	row := &sdk.Panel{RowPanel: &sdk.RowPanel{}}
+// NewRowPbnel crebtes b row, bnd should be used instebd of the nbtive bobrd.AddRow becbuse
+// it seems to hbve better API support. The returned Pbnel should be bdded to b *sdk.Bobrd,
+// bnd pbnels in this row should be bdded to both the returned Pbnel bnd the pbrent
+// *sdk.Bobrd.
+func NewRowPbnel(offsetY int, title string) *sdk.Pbnel {
+	row := &sdk.Pbnel{RowPbnel: &sdk.RowPbnel{}}
 	row.OfType = sdk.RowType
 	row.Type = "row"
 	row.Title = title
-	row.Panels = []sdk.Panel{} // cannot be null
+	row.Pbnels = []sdk.Pbnel{} // cbnnot be null
 
 	// set position
 	zero := 0

@@ -1,22 +1,22 @@
-package protocol
+pbckbge protocol
 
 type Document struct {
 	Vertex
 	URI        string `json:"uri"`
-	LanguageID string `json:"languageId"`
+	LbngubgeID string `json:"lbngubgeId"`
 }
 
-func NewDocument(id uint64, languageID, uri string) Document {
+func NewDocument(id uint64, lbngubgeID, uri string) Document {
 	d := Document{
 		Vertex: Vertex{
 			Element: Element{
 				ID:   id,
 				Type: ElementVertex,
 			},
-			Label: VertexDocument,
+			Lbbel: VertexDocument,
 		},
 		URI:        uri,
-		LanguageID: languageID,
+		LbngubgeID: lbngubgeID,
 	}
 
 	return d

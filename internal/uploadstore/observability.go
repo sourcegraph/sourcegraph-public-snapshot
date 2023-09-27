@@ -1,40 +1,40 @@
-package uploadstore
+pbckbge uplobdstore
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type Operations struct {
-	Get           *observation.Operation
-	Upload        *observation.Operation
-	Compose       *observation.Operation
-	Delete        *observation.Operation
-	ExpireObjects *observation.Operation
-	List          *observation.Operation
+type Operbtions struct {
+	Get           *observbtion.Operbtion
+	Uplobd        *observbtion.Operbtion
+	Compose       *observbtion.Operbtion
+	Delete        *observbtion.Operbtion
+	ExpireObjects *observbtion.Operbtion
+	List          *observbtion.Operbtion
 }
 
-func NewOperations(observationCtx *observation.Context, domain, storeName string) *Operations {
+func NewOperbtions(observbtionCtx *observbtion.Context, dombin, storeNbme string) *Operbtions {
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		fmt.Sprintf("%s_%s", domain, storeName),
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		fmt.Sprintf("%s_%s", dombin, storeNbme),
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("%s.%s.%s", domain, storeName, name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("%s.%s.%s", dombin, storeNbme, nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	return &Operations{
+	return &Operbtions{
 		Get:           op("Get"),
-		Upload:        op("Upload"),
+		Uplobd:        op("Uplobd"),
 		Compose:       op("Compose"),
 		Delete:        op("Delete"),
 		ExpireObjects: op("ExpireObjects"),

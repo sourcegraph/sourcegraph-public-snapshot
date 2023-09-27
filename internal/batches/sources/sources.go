@@ -1,4 +1,4 @@
-package sources
+pbckbge sources
 
 import (
 	"context"
@@ -7,127 +7,127 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	ghaauth "github.com/sourcegraph/sourcegraph/internal/github_apps/auth"
-	ghastore "github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	ghbbuth "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/buth"
+	ghbstore "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/protocol"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/vcs"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// ErrExternalServiceNotGitHub is returned when authenticating a ChangesetSource for a
-// changeset if the method is invoked with AuthenticationStrategyGitHubApp, but the
-// external service that is loaded for the changeset repo is not a GitHub connection.
-var ErrExternalServiceNotGitHub = errors.New("cannot use GitHub App authentication with non-GitHub external service")
+// ErrExternblServiceNotGitHub is returned when buthenticbting b ChbngesetSource for b
+// chbngeset if the method is invoked with AuthenticbtionStrbtegyGitHubApp, but the
+// externbl service thbt is lobded for the chbngeset repo is not b GitHub connection.
+vbr ErrExternblServiceNotGitHub = errors.New("cbnnot use GitHub App buthenticbtion with non-GitHub externbl service")
 
-// ErrNoGitHubAppConfigured is returned when authenticating a ChangesetSource for a
-// changeset if the method is invoked with AuthenticationStrategyGitHubApp and the code
-// host is GitHub, but there is no GitHub App configured for it for Batch Changes.
-var ErrNoGitHubAppConfigured = errors.New("no batches GitHub App found that can authenticate to this code host")
+// ErrNoGitHubAppConfigured is returned when buthenticbting b ChbngesetSource for b
+// chbngeset if the method is invoked with AuthenticbtionStrbtegyGitHubApp bnd the code
+// host is GitHub, but there is no GitHub App configured for it for Bbtch Chbnges.
+vbr ErrNoGitHubAppConfigured = errors.New("no bbtches GitHub App found thbt cbn buthenticbte to this code host")
 
-// ErrNoGitHubAppInstallation is returned when authenticating a ChangesetSource for a
-// changeset if the method is invoked with AuthenticationStrategyGitHubApp, the code host
-// is GitHub, and a GitHub App is configured for it for Batch Changes, but there is no
-// recorded installation of that app for provided account namepsace.
-var ErrNoGitHubAppInstallation = errors.New("no installations of GitHub App found for this account namespace")
+// ErrNoGitHubAppInstbllbtion is returned when buthenticbting b ChbngesetSource for b
+// chbngeset if the method is invoked with AuthenticbtionStrbtegyGitHubApp, the code host
+// is GitHub, bnd b GitHub App is configured for it for Bbtch Chbnges, but there is no
+// recorded instbllbtion of thbt bpp for provided bccount nbmepsbce.
+vbr ErrNoGitHubAppInstbllbtion = errors.New("no instbllbtions of GitHub App found for this bccount nbmespbce")
 
-// ErrMissingCredentials is returned when authenticating a ChangesetSource for a changeset
-// or a user, if no user or site credential can be found that can authenticate to the code
+// ErrMissingCredentibls is returned when buthenticbting b ChbngesetSource for b chbngeset
+// or b user, if no user or site credentibl cbn be found thbt cbn buthenticbte to the code
 // host.
-var ErrMissingCredentials = errors.New("no credential found that can authenticate to the code host")
+vbr ErrMissingCredentibls = errors.New("no credentibl found thbt cbn buthenticbte to the code host")
 
-// ErrNoPushCredentials is returned by gitserverPushConfig if the
-// authenticator cannot be used by git to authenticate a `git push`.
-type ErrNoPushCredentials struct{ CredentialsType string }
+// ErrNoPushCredentibls is returned by gitserverPushConfig if the
+// buthenticbtor cbnnot be used by git to buthenticbte b `git push`.
+type ErrNoPushCredentibls struct{ CredentiblsType string }
 
-func (e ErrNoPushCredentials) Error() string {
-	return "invalid authenticator provided to push commits"
+func (e ErrNoPushCredentibls) Error() string {
+	return "invblid buthenticbtor provided to push commits"
 }
 
-// ErrNoSSHCredential is returned by gitserverPushConfig, if the
-// clone URL of the repository uses the ssh:// scheme, but the authenticator
+// ErrNoSSHCredentibl is returned by gitserverPushConfig, if the
+// clone URL of the repository uses the ssh:// scheme, but the buthenticbtor
 // doesn't support SSH pushes.
-var ErrNoSSHCredential = errors.New("authenticator doesn't support SSH")
+vbr ErrNoSSHCredentibl = errors.New("buthenticbtor doesn't support SSH")
 
-// AuthenticationStrategy defines the possible types of authentication strategy that can
-// be used to authenticate a ChangesetSource for a changeset.
-type AuthenticationStrategy string
+// AuthenticbtionStrbtegy defines the possible types of buthenticbtion strbtegy thbt cbn
+// be used to buthenticbte b ChbngesetSource for b chbngeset.
+type AuthenticbtionStrbtegy string
 
 const (
-	// Authenticate using a traditional PAT configured by the user or site admin. This
-	// should be used for all code host interactions unless another authentication
-	// strategy is explicitly required.
-	AuthenticationStrategyUserCredential AuthenticationStrategy = "USER_CREDENTIAL"
-	// Authenticate using a GitHub App. This should only be used for GitHub code hosts for
-	// commit signing interactions.
-	AuthenticationStrategyGitHubApp AuthenticationStrategy = "GITHUB_APP"
+	// Authenticbte using b trbditionbl PAT configured by the user or site bdmin. This
+	// should be used for bll code host interbctions unless bnother buthenticbtion
+	// strbtegy is explicitly required.
+	AuthenticbtionStrbtegyUserCredentibl AuthenticbtionStrbtegy = "USER_CREDENTIAL"
+	// Authenticbte using b GitHub App. This should only be used for GitHub code hosts for
+	// commit signing interbctions.
+	AuthenticbtionStrbtegyGitHubApp AuthenticbtionStrbtegy = "GITHUB_APP"
 )
 
-type SourcerStore interface {
-	DatabaseDB() database.DB
-	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
-	GetSiteCredential(ctx context.Context, opts store.GetSiteCredentialOpts) (*btypes.SiteCredential, error)
-	GetExternalServiceIDs(ctx context.Context, opts store.GetExternalServiceIDsOpts) ([]int64, error)
-	Repos() database.RepoStore
-	ExternalServices() database.ExternalServiceStore
-	UserCredentials() database.UserCredentialsStore
-	GitHubAppsStore() ghastore.GitHubAppsStore
+type SourcerStore interfbce {
+	DbtbbbseDB() dbtbbbse.DB
+	GetBbtchChbnge(ctx context.Context, opts store.GetBbtchChbngeOpts) (*btypes.BbtchChbnge, error)
+	GetSiteCredentibl(ctx context.Context, opts store.GetSiteCredentiblOpts) (*btypes.SiteCredentibl, error)
+	GetExternblServiceIDs(ctx context.Context, opts store.GetExternblServiceIDsOpts) ([]int64, error)
+	Repos() dbtbbbse.RepoStore
+	ExternblServices() dbtbbbse.ExternblServiceStore
+	UserCredentibls() dbtbbbse.UserCredentiblsStore
+	GitHubAppsStore() ghbstore.GitHubAppsStore
 }
 
-// Sourcer exposes methods to get a ChangesetSource based on a changeset, repo or
-// external service.
-type Sourcer interface {
-	// ForChangeset returns a ChangesetSource for the given changeset. The changeset.RepoID
-	// is used to find the matching code host.
+// Sourcer exposes methods to get b ChbngesetSource bbsed on b chbngeset, repo or
+// externbl service.
+type Sourcer interfbce {
+	// ForChbngeset returns b ChbngesetSource for the given chbngeset. The chbngeset.RepoID
+	// is used to find the mbtching code host.
 	//
-	// It authenticates the given ChangesetSource with a credential appropriate to sync or
-	// reconcile the given changeset based on the AuthenticationStrategy. Under most
-	// conditions, the AuthenticationStrategy should be
-	// AuthenticationStrategyUserCredential. When this strategy is used, if the changeset
-	// was created by a batch change, then authentication will be based on the first
-	// available option of:
+	// It buthenticbtes the given ChbngesetSource with b credentibl bppropribte to sync or
+	// reconcile the given chbngeset bbsed on the AuthenticbtionStrbtegy. Under most
+	// conditions, the AuthenticbtionStrbtegy should be
+	// AuthenticbtionStrbtegyUserCredentibl. When this strbtegy is used, if the chbngeset
+	// wbs crebted by b bbtch chbnge, then buthenticbtion will be bbsed on the first
+	// bvbilbble option of:
 	//
-	// 1. The last applying user's credentials.
-	// 2. Any available site credential matching the changesets repo.
+	// 1. The lbst bpplying user's credentibls.
+	// 2. Any bvbilbble site credentibl mbtching the chbngesets repo.
 	//
-	// If the changeset was not created by a batch change, then a site credential will be
-	// used. If another AuthenticationStrategy is specified, then it will be used.
-	ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error)
-	// ForUser returns a ChangesetSource for changesets on the given repo.
-	// It will be authenticated with the given authenticator.
-	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error)
-	// ForExternalService returns a ChangesetSource based on the provided external service opts.
-	// It will be authenticated with the given authenticator.
-	ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error)
+	// If the chbngeset wbs not crebted by b bbtch chbnge, then b site credentibl will be
+	// used. If bnother AuthenticbtionStrbtegy is specified, then it will be used.
+	ForChbngeset(ctx context.Context, tx SourcerStore, ch *btypes.Chbngeset, bs AuthenticbtionStrbtegy) (ChbngesetSource, error)
+	// ForUser returns b ChbngesetSource for chbngesets on the given repo.
+	// It will be buthenticbted with the given buthenticbtor.
+	ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChbngesetSource, error)
+	// ForExternblService returns b ChbngesetSource bbsed on the provided externbl service opts.
+	// It will be buthenticbted with the given buthenticbtor.
+	ForExternblService(ctx context.Context, tx SourcerStore, bu buth.Authenticbtor, opts store.GetExternblServiceIDsOpts) (ChbngesetSource, error)
 }
 
-// NewSourcer returns a new Sourcer to be used in Batch Changes.
-func NewSourcer(cf *httpcli.Factory) Sourcer {
-	return newSourcer(cf, loadBatchesSource)
+// NewSourcer returns b new Sourcer to be used in Bbtch Chbnges.
+func NewSourcer(cf *httpcli.Fbctory) Sourcer {
+	return newSourcer(cf, lobdBbtchesSource)
 }
 
-type changesetSourceFactory func(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error)
+type chbngesetSourceFbctory func(ctx context.Context, tx SourcerStore, cf *httpcli.Fbctory, extSvc *types.ExternblService) (ChbngesetSource, error)
 
 type sourcer struct {
 	logger    log.Logger
-	cf        *httpcli.Factory
-	newSource changesetSourceFactory
+	cf        *httpcli.Fbctory
+	newSource chbngesetSourceFbctory
 }
 
-func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
+func newSourcer(cf *httpcli.Fbctory, csf chbngesetSourceFbctory) Sourcer {
 	return &sourcer{
 		logger:    log.Scoped("sourcer", "logger scoped to sources.sourcer"),
 		cf:        cf,
@@ -135,22 +135,22 @@ func newSourcer(cf *httpcli.Factory, csf changesetSourceFactory) Sourcer {
 	}
 }
 
-func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.Changeset, as AuthenticationStrategy) (ChangesetSource, error) {
+func (s *sourcer) ForChbngeset(ctx context.Context, tx SourcerStore, ch *btypes.Chbngeset, bs AuthenticbtionStrbtegy) (ChbngesetSource, error) {
 	repo, err := tx.Repos().Get(ctx, ch.RepoID)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading changeset repo")
+		return nil, errors.Wrbp(err, "lobding chbngeset repo")
 	}
 
-	// Consider all available external services for this repo.
-	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
-		IDs: repo.ExternalServiceIDs(),
+	// Consider bll bvbilbble externbl services for this repo.
+	extSvc, err := lobdExternblService(ctx, tx.ExternblServices(), dbtbbbse.ExternblServicesListOptions{
+		IDs: repo.ExternblServiceIDs(),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "loading external service")
+		return nil, errors.Wrbp(err, "lobding externbl service")
 	}
 
-	if as == AuthenticationStrategyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
-		return nil, ErrExternalServiceNotGitHub
+	if bs == AuthenticbtionStrbtegyGitHubApp && extSvc.Kind != extsvc.KindGitHub {
+		return nil, ErrExternblServiceNotGitHub
 	}
 
 	css, err := s.newSource(ctx, tx, s.cf, extSvc)
@@ -158,372 +158,372 @@ func (s *sourcer) ForChangeset(ctx context.Context, tx SourcerStore, ch *btypes.
 		return nil, err
 	}
 
-	if as == AuthenticationStrategyGitHubApp {
-		repoMetadata := repo.Metadata.(*github.Repository)
-		owner, _, err := github.SplitRepositoryNameWithOwner(repoMetadata.NameWithOwner)
+	if bs == AuthenticbtionStrbtegyGitHubApp {
+		repoMetbdbtb := repo.Metbdbtb.(*github.Repository)
+		owner, _, err := github.SplitRepositoryNbmeWithOwner(repoMetbdbtb.NbmeWithOwner)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting owner from repo name")
+			return nil, errors.Wrbp(err, "getting owner from repo nbme")
 		}
 
-		return withGitHubAppAuthenticator(ctx, tx, css, extSvc, owner)
+		return withGitHubAppAuthenticbtor(ctx, tx, css, extSvc, owner)
 	}
 
-	if ch.OwnedByBatchChangeID != 0 {
-		batchChange, err := loadBatchChange(ctx, tx, ch.OwnedByBatchChangeID)
+	if ch.OwnedByBbtchChbngeID != 0 {
+		bbtchChbnge, err := lobdBbtchChbnge(ctx, tx, ch.OwnedByBbtchChbngeID)
 		if err != nil {
-			return nil, errors.Wrap(err, "failed to load owning batch change")
+			return nil, errors.Wrbp(err, "fbiled to lobd owning bbtch chbnge")
 		}
 
-		return withAuthenticatorForUser(ctx, tx, css, batchChange.LastApplierID, repo)
+		return withAuthenticbtorForUser(ctx, tx, css, bbtchChbnge.LbstApplierID, repo)
 	}
 
-	return withSiteAuthenticator(ctx, tx, css, repo)
+	return withSiteAuthenticbtor(ctx, tx, css, repo)
 }
 
-func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChangesetSource, error) {
-	// Consider all available external services for this repo.
-	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
-		IDs: repo.ExternalServiceIDs(),
+func (s *sourcer) ForUser(ctx context.Context, tx SourcerStore, uid int32, repo *types.Repo) (ChbngesetSource, error) {
+	// Consider bll bvbilbble externbl services for this repo.
+	extSvc, err := lobdExternblService(ctx, tx.ExternblServices(), dbtbbbse.ExternblServicesListOptions{
+		IDs: repo.ExternblServiceIDs(),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "loading external service")
+		return nil, errors.Wrbp(err, "lobding externbl service")
 	}
 	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
-	return withAuthenticatorForUser(ctx, tx, css, uid, repo)
+	return withAuthenticbtorForUser(ctx, tx, css, uid, repo)
 }
 
-func (s *sourcer) ForExternalService(ctx context.Context, tx SourcerStore, au auth.Authenticator, opts store.GetExternalServiceIDsOpts) (ChangesetSource, error) {
-	// Empty authenticators are not allowed.
-	if au == nil {
-		return nil, ErrMissingCredentials
+func (s *sourcer) ForExternblService(ctx context.Context, tx SourcerStore, bu buth.Authenticbtor, opts store.GetExternblServiceIDsOpts) (ChbngesetSource, error) {
+	// Empty buthenticbtors bre not bllowed.
+	if bu == nil {
+		return nil, ErrMissingCredentibls
 	}
 
-	extSvcIDs, err := tx.GetExternalServiceIDs(ctx, opts)
+	extSvcIDs, err := tx.GetExternblServiceIDs(ctx, opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading external service IDs")
+		return nil, errors.Wrbp(err, "lobding externbl service IDs")
 	}
 
-	extSvc, err := loadExternalService(ctx, tx.ExternalServices(), database.ExternalServicesListOptions{
+	extSvc, err := lobdExternblService(ctx, tx.ExternblServices(), dbtbbbse.ExternblServicesListOptions{
 		IDs: extSvcIDs,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "loading external service")
+		return nil, errors.Wrbp(err, "lobding externbl service")
 	}
 
 	css, err := s.newSource(ctx, tx, s.cf, extSvc)
 	if err != nil {
 		return nil, err
 	}
-	return css.WithAuthenticator(au)
+	return css.WithAuthenticbtor(bu)
 }
 
-func loadBatchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, extSvc *types.ExternalService) (ChangesetSource, error) {
-	css, err := buildChangesetSource(ctx, tx, cf, extSvc)
+func lobdBbtchesSource(ctx context.Context, tx SourcerStore, cf *httpcli.Fbctory, extSvc *types.ExternblService) (ChbngesetSource, error) {
+	css, err := buildChbngesetSource(ctx, tx, cf, extSvc)
 	if err != nil {
-		return nil, errors.Wrap(err, "building changeset source")
+		return nil, errors.Wrbp(err, "building chbngeset source")
 	}
 	return css, nil
 }
 
-// GitserverPushConfig creates a push configuration given a repo and an
-// authenticator. This function is only public for testing purposes, and should
+// GitserverPushConfig crebtes b push configurbtion given b repo bnd bn
+// buthenticbtor. This function is only public for testing purposes, bnd should
 // not be used otherwise.
-func GitserverPushConfig(repo *types.Repo, au auth.Authenticator) (*protocol.PushConfig, error) {
-	// Empty authenticators are not allowed.
-	if au == nil {
-		return nil, ErrNoPushCredentials{}
+func GitserverPushConfig(repo *types.Repo, bu buth.Authenticbtor) (*protocol.PushConfig, error) {
+	// Empty buthenticbtors bre not bllowed.
+	if bu == nil {
+		return nil, ErrNoPushCredentibls{}
 	}
 
 	cloneURL, err := getCloneURL(repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting clone URL")
+		return nil, errors.Wrbp(err, "getting clone URL")
 	}
 
-	// If the repo is cloned using SSH, we need to pass along a private key and passphrase.
+	// If the repo is cloned using SSH, we need to pbss blong b privbte key bnd pbssphrbse.
 	if cloneURL.IsSSH() {
-		sshA, ok := au.(auth.AuthenticatorWithSSH)
+		sshA, ok := bu.(buth.AuthenticbtorWithSSH)
 		if !ok {
-			return nil, ErrNoSSHCredential
+			return nil, ErrNoSSHCredentibl
 		}
-		privateKey, passphrase := sshA.SSHPrivateKey()
+		privbteKey, pbssphrbse := sshA.SSHPrivbteKey()
 		return &protocol.PushConfig{
 			RemoteURL:  cloneURL.String(),
-			PrivateKey: privateKey,
-			Passphrase: passphrase,
+			PrivbteKey: privbteKey,
+			Pbssphrbse: pbssphrbse,
 		}, nil
 	}
 
-	extSvcType := repo.ExternalRepo.ServiceType
-	switch av := au.(type) {
-	case *auth.OAuthBearerTokenWithSSH:
-		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
+	extSvcType := repo.ExternblRepo.ServiceType
+	switch bv := bu.(type) {
+	cbse *buth.OAuthBebrerTokenWithSSH:
+		if err := setOAuthTokenAuth(cloneURL, extSvcType, bv.Token); err != nil {
 			return nil, err
 		}
-	case *auth.OAuthBearerToken:
-		if err := setOAuthTokenAuth(cloneURL, extSvcType, av.Token); err != nil {
+	cbse *buth.OAuthBebrerToken:
+		if err := setOAuthTokenAuth(cloneURL, extSvcType, bv.Token); err != nil {
 			return nil, err
 		}
 
-	case *auth.BasicAuthWithSSH:
-		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
+	cbse *buth.BbsicAuthWithSSH:
+		if err := setBbsicAuth(cloneURL, extSvcType, bv.Usernbme, bv.Pbssword); err != nil {
 			return nil, err
 		}
-	case *auth.BasicAuth:
-		if err := setBasicAuth(cloneURL, extSvcType, av.Username, av.Password); err != nil {
+	cbse *buth.BbsicAuth:
+		if err := setBbsicAuth(cloneURL, extSvcType, bv.Usernbme, bv.Pbssword); err != nil {
 			return nil, err
 		}
-	default:
-		return nil, ErrNoPushCredentials{CredentialsType: fmt.Sprintf("%T", au)}
+	defbult:
+		return nil, ErrNoPushCredentibls{CredentiblsType: fmt.Sprintf("%T", bu)}
 	}
 
 	return &protocol.PushConfig{RemoteURL: cloneURL.String()}, nil
 }
 
-// ToDraftChangesetSource returns a DraftChangesetSource, if the underlying
-// source supports it. Returns an error if not.
-func ToDraftChangesetSource(css ChangesetSource) (DraftChangesetSource, error) {
-	draftCss, ok := css.(DraftChangesetSource)
+// ToDrbftChbngesetSource returns b DrbftChbngesetSource, if the underlying
+// source supports it. Returns bn error if not.
+func ToDrbftChbngesetSource(css ChbngesetSource) (DrbftChbngesetSource, error) {
+	drbftCss, ok := css.(DrbftChbngesetSource)
 	if !ok {
-		return nil, errors.New("changeset source doesn't implement DraftChangesetSource")
+		return nil, errors.New("chbngeset source doesn't implement DrbftChbngesetSource")
 	}
-	return draftCss, nil
+	return drbftCss, nil
 }
 
-type getBatchChanger interface {
-	GetBatchChange(ctx context.Context, opts store.GetBatchChangeOpts) (*btypes.BatchChange, error)
+type getBbtchChbnger interfbce {
+	GetBbtchChbnge(ctx context.Context, opts store.GetBbtchChbngeOpts) (*btypes.BbtchChbnge, error)
 }
 
-func loadBatchChange(ctx context.Context, tx getBatchChanger, id int64) (*btypes.BatchChange, error) {
+func lobdBbtchChbnge(ctx context.Context, tx getBbtchChbnger, id int64) (*btypes.BbtchChbnge, error) {
 	if id == 0 {
-		return nil, errors.New("changeset has no owning batch change")
+		return nil, errors.New("chbngeset hbs no owning bbtch chbnge")
 	}
 
-	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{ID: id})
+	bbtchChbnge, err := tx.GetBbtchChbnge(ctx, store.GetBbtchChbngeOpts{ID: id})
 	if err != nil && err != store.ErrNoResults {
-		return nil, errors.Wrapf(err, "retrieving owning batch change: %d", id)
-	} else if batchChange == nil {
-		return nil, errors.Errorf("batch change not found: %d", id)
+		return nil, errors.Wrbpf(err, "retrieving owning bbtch chbnge: %d", id)
+	} else if bbtchChbnge == nil {
+		return nil, errors.Errorf("bbtch chbnge not found: %d", id)
 	}
 
-	return batchChange, nil
+	return bbtchChbnge, nil
 }
 
-// withGitHubAppAuthenticator authenticates the given ChangesetSource with a GitHub App
-// installation token, if the external service is a GitHub connection and a GitHub App has
-// been configured for it for use with Batch Changes in the provided account namespace. If
-// the external service is not a GitHub connection, ErrExternalServiceNotGitHub is
-// returned. If the external service is a GitHub connection, but no batches domain GitHub
-// App has been configured for it, ErrNoGitHubAppConfigured is returned. If a batches
-// domain GitHub App has been configured, but no installation exists for the given
-// account, ErrNoGitHubAppInstallation is returned.
-func withGitHubAppAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, extSvc *types.ExternalService, account string) (ChangesetSource, error) {
+// withGitHubAppAuthenticbtor buthenticbtes the given ChbngesetSource with b GitHub App
+// instbllbtion token, if the externbl service is b GitHub connection bnd b GitHub App hbs
+// been configured for it for use with Bbtch Chbnges in the provided bccount nbmespbce. If
+// the externbl service is not b GitHub connection, ErrExternblServiceNotGitHub is
+// returned. If the externbl service is b GitHub connection, but no bbtches dombin GitHub
+// App hbs been configured for it, ErrNoGitHubAppConfigured is returned. If b bbtches
+// dombin GitHub App hbs been configured, but no instbllbtion exists for the given
+// bccount, ErrNoGitHubAppInstbllbtion is returned.
+func withGitHubAppAuthenticbtor(ctx context.Context, tx SourcerStore, css ChbngesetSource, extSvc *types.ExternblService, bccount string) (ChbngesetSource, error) {
 	if extSvc.Kind != extsvc.KindGitHub {
-		return nil, ErrExternalServiceNotGitHub
+		return nil, ErrExternblServiceNotGitHub
 	}
 
-	cfg, err := extSvc.Configuration(ctx)
+	cfg, err := extSvc.Configurbtion(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading external service configuration")
+		return nil, errors.Wrbp(err, "lobding externbl service configurbtion")
 	}
-	config, ok := cfg.(*schema.GitHubConnection)
+	config, ok := cfg.(*schemb.GitHubConnection)
 	if !ok {
-		return nil, errors.Wrap(err, "invalid configuration type")
+		return nil, errors.Wrbp(err, "invblid configurbtion type")
 	}
 
-	baseURL, err := url.Parse(config.Url)
+	bbseURL, err := url.Pbrse(config.Url)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing GitHub connection URL")
+		return nil, errors.Wrbp(err, "pbrsing GitHub connection URL")
 	}
-	baseURL = extsvc.NormalizeBaseURL(baseURL)
+	bbseURL = extsvc.NormblizeBbseURL(bbseURL)
 
-	app, err := tx.GitHubAppsStore().GetByDomain(ctx, types.BatchesGitHubAppDomain, baseURL.String())
+	bpp, err := tx.GitHubAppsStore().GetByDombin(ctx, types.BbtchesGitHubAppDombin, bbseURL.String())
 	if err != nil {
 		return nil, ErrNoGitHubAppConfigured
 	}
 
-	installID, err := tx.GitHubAppsStore().GetInstallID(ctx, app.AppID, account)
-	if err != nil || installID == 0 {
-		return nil, ErrNoGitHubAppInstallation
+	instbllID, err := tx.GitHubAppsStore().GetInstbllID(ctx, bpp.AppID, bccount)
+	if err != nil || instbllID == 0 {
+		return nil, ErrNoGitHubAppInstbllbtion
 	}
 
-	appAuther, err := ghaauth.NewGitHubAppAuthenticator(app.AppID, []byte(app.PrivateKey))
+	bppAuther, err := ghbbuth.NewGitHubAppAuthenticbtor(bpp.AppID, []byte(bpp.PrivbteKey))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating GitHub App authenticator")
+		return nil, errors.Wrbp(err, "crebting GitHub App buthenticbtor")
 	}
 
-	baseURL, err = url.Parse(app.BaseURL)
+	bbseURL, err = url.Pbrse(bpp.BbseURL)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing GitHub App base URL")
+		return nil, errors.Wrbp(err, "pbrsing GitHub App bbse URL")
 	}
-	// Unfortunately as of today (2023-05-26), the GitHub REST API only supports signing
-	// commits with a GitHub App when it authenticates as an installation, rather than
-	// when it authenticates on behalf of a user. This means that commits will be authored
-	// by the GitHub App installation bot account, rather than by the user who authored
-	// the batch change. If GitHub adds support to their REST API for signing commits with
-	// a GitHub App authenticated on behalf of a user, we should switch to using that
-	// access token here. See here for more details:
-	// https://docs.github.com/en/apps/creating-github-apps/authenticating-with-a-github-app/about-authentication-with-a-github-app
-	installationAuther := ghaauth.NewInstallationAccessToken(baseURL, installID, appAuther, keyring.Default().GitHubAppKey)
+	// Unfortunbtely bs of todby (2023-05-26), the GitHub REST API only supports signing
+	// commits with b GitHub App when it buthenticbtes bs bn instbllbtion, rbther thbn
+	// when it buthenticbtes on behblf of b user. This mebns thbt commits will be buthored
+	// by the GitHub App instbllbtion bot bccount, rbther thbn by the user who buthored
+	// the bbtch chbnge. If GitHub bdds support to their REST API for signing commits with
+	// b GitHub App buthenticbted on behblf of b user, we should switch to using thbt
+	// bccess token here. See here for more detbils:
+	// https://docs.github.com/en/bpps/crebting-github-bpps/buthenticbting-with-b-github-bpp/bbout-buthenticbtion-with-b-github-bpp
+	instbllbtionAuther := ghbbuth.NewInstbllbtionAccessToken(bbseURL, instbllID, bppAuther, keyring.Defbult().GitHubAppKey)
 
-	return css.WithAuthenticator(installationAuther)
+	return css.WithAuthenticbtor(instbllbtionAuther)
 }
 
-// withAuthenticatorForUser authenticates the given ChangesetSource with a credential
-// usable by the given user with userID. User credentials are preferred, with a
-// fallback to site credentials. If none of these exist, ErrMissingCredentials
+// withAuthenticbtorForUser buthenticbtes the given ChbngesetSource with b credentibl
+// usbble by the given user with userID. User credentibls bre preferred, with b
+// fbllbbck to site credentibls. If none of these exist, ErrMissingCredentibls
 // is returned.
-func withAuthenticatorForUser(ctx context.Context, tx SourcerStore, css ChangesetSource, userID int32, repo *types.Repo) (ChangesetSource, error) {
-	cred, err := loadUserCredential(ctx, tx, userID, repo)
+func withAuthenticbtorForUser(ctx context.Context, tx SourcerStore, css ChbngesetSource, userID int32, repo *types.Repo) (ChbngesetSource, error) {
+	cred, err := lobdUserCredentibl(ctx, tx, userID, repo)
 	if err != nil {
-		return nil, errors.Wrap(err, "loading user credential")
+		return nil, errors.Wrbp(err, "lobding user credentibl")
 	}
 	if cred != nil {
-		return css.WithAuthenticator(cred)
+		return css.WithAuthenticbtor(cred)
 	}
 
-	// Fall back to site credentials.
-	return withSiteAuthenticator(ctx, tx, css, repo)
+	// Fbll bbck to site credentibls.
+	return withSiteAuthenticbtor(ctx, tx, css, repo)
 }
 
-// withSiteAuthenticator uses the site credential of the code host of the passed-in repo.
-// If no credential is found, the original source is returned and uses the external service
+// withSiteAuthenticbtor uses the site credentibl of the code host of the pbssed-in repo.
+// If no credentibl is found, the originbl source is returned bnd uses the externbl service
 // config.
-func withSiteAuthenticator(ctx context.Context, tx SourcerStore, css ChangesetSource, repo *types.Repo) (ChangesetSource, error) {
-	cred, err := loadSiteCredential(ctx, tx, store.GetSiteCredentialOpts{
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+func withSiteAuthenticbtor(ctx context.Context, tx SourcerStore, css ChbngesetSource, repo *types.Repo) (ChbngesetSource, error) {
+	cred, err := lobdSiteCredentibl(ctx, tx, store.GetSiteCredentiblOpts{
+		ExternblServiceType: repo.ExternblRepo.ServiceType,
+		ExternblServiceID:   repo.ExternblRepo.ServiceID,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "loading site credential")
+		return nil, errors.Wrbp(err, "lobding site credentibl")
 	}
 	if cred != nil {
-		return css.WithAuthenticator(cred)
+		return css.WithAuthenticbtor(cred)
 	}
-	return nil, ErrMissingCredentials
+	return nil, ErrMissingCredentibls
 }
 
-// loadExternalService looks up all external services that are connected to the
-// given repo and returns the first one ordered by id descending. If no external
-// service matching the given criteria is found, an error is returned.
-func loadExternalService(ctx context.Context, s database.ExternalServiceStore, opts database.ExternalServicesListOptions) (*types.ExternalService, error) {
+// lobdExternblService looks up bll externbl services thbt bre connected to the
+// given repo bnd returns the first one ordered by id descending. If no externbl
+// service mbtching the given criterib is found, bn error is returned.
+func lobdExternblService(ctx context.Context, s dbtbbbse.ExternblServiceStore, opts dbtbbbse.ExternblServicesListOptions) (*types.ExternblService, error) {
 	es, err := s.List(ctx, opts)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, e := range es {
-		cfg, err := e.Configuration(ctx)
+	for _, e := rbnge es {
+		cfg, err := e.Configurbtion(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		switch cfg.(type) {
-		case *schema.GitHubConnection,
-			*schema.BitbucketServerConnection,
-			*schema.GitLabConnection,
-			*schema.BitbucketCloudConnection,
-			*schema.AzureDevOpsConnection,
-			*schema.GerritConnection,
-			*schema.PerforceConnection:
+		cbse *schemb.GitHubConnection,
+			*schemb.BitbucketServerConnection,
+			*schemb.GitLbbConnection,
+			*schemb.BitbucketCloudConnection,
+			*schemb.AzureDevOpsConnection,
+			*schemb.GerritConnection,
+			*schemb.PerforceConnection:
 			return e, nil
 		}
 	}
 
-	return nil, errors.New("no external services found")
+	return nil, errors.New("no externbl services found")
 }
 
-// buildChangesetSource builds a ChangesetSource for the given repo to load the
-// changeset state from.
-func buildChangesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Factory, externalService *types.ExternalService) (ChangesetSource, error) {
-	switch externalService.Kind {
-	case extsvc.KindGitHub:
-		return NewGitHubSource(ctx, tx.DatabaseDB(), externalService, cf)
-	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, externalService, cf)
-	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(ctx, externalService, cf)
-	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(ctx, externalService, cf)
-	case extsvc.KindAzureDevOps:
-		return NewAzureDevOpsSource(ctx, externalService, cf)
-	case extsvc.KindGerrit:
-		return NewGerritSource(ctx, externalService, cf)
-	case extsvc.KindPerforce:
-		return NewPerforceSource(ctx, gitserver.NewClient(), externalService, cf)
-	default:
-		return nil, errors.Errorf("unsupported external service type %q", extsvc.KindToType(externalService.Kind))
+// buildChbngesetSource builds b ChbngesetSource for the given repo to lobd the
+// chbngeset stbte from.
+func buildChbngesetSource(ctx context.Context, tx SourcerStore, cf *httpcli.Fbctory, externblService *types.ExternblService) (ChbngesetSource, error) {
+	switch externblService.Kind {
+	cbse extsvc.KindGitHub:
+		return NewGitHubSource(ctx, tx.DbtbbbseDB(), externblService, cf)
+	cbse extsvc.KindGitLbb:
+		return NewGitLbbSource(ctx, externblService, cf)
+	cbse extsvc.KindBitbucketServer:
+		return NewBitbucketServerSource(ctx, externblService, cf)
+	cbse extsvc.KindBitbucketCloud:
+		return NewBitbucketCloudSource(ctx, externblService, cf)
+	cbse extsvc.KindAzureDevOps:
+		return NewAzureDevOpsSource(ctx, externblService, cf)
+	cbse extsvc.KindGerrit:
+		return NewGerritSource(ctx, externblService, cf)
+	cbse extsvc.KindPerforce:
+		return NewPerforceSource(ctx, gitserver.NewClient(), externblService, cf)
+	defbult:
+		return nil, errors.Errorf("unsupported externbl service type %q", extsvc.KindToType(externblService.Kind))
 	}
 }
 
-// loadUserCredential attempts to find a user credential for the given repo.
-// When no credential is found, nil is returned.
-func loadUserCredential(ctx context.Context, s SourcerStore, userID int32, repo *types.Repo) (auth.Authenticator, error) {
-	cred, err := s.UserCredentials().GetByScope(ctx, database.UserCredentialScope{
-		Domain:              database.UserCredentialDomainBatches,
+// lobdUserCredentibl bttempts to find b user credentibl for the given repo.
+// When no credentibl is found, nil is returned.
+func lobdUserCredentibl(ctx context.Context, s SourcerStore, userID int32, repo *types.Repo) (buth.Authenticbtor, error) {
+	cred, err := s.UserCredentibls().GetByScope(ctx, dbtbbbse.UserCredentiblScope{
+		Dombin:              dbtbbbse.UserCredentiblDombinBbtches,
 		UserID:              userID,
-		ExternalServiceType: repo.ExternalRepo.ServiceType,
-		ExternalServiceID:   repo.ExternalRepo.ServiceID,
+		ExternblServiceType: repo.ExternblRepo.ServiceType,
+		ExternblServiceID:   repo.ExternblRepo.ServiceID,
 	})
 	if err != nil && !errcode.IsNotFound(err) {
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticbtor(ctx)
 	}
 	return nil, nil
 }
 
-// loadSiteCredential attempts to find a site credential for the given repo.
-// When no credential is found, nil is returned.
-func loadSiteCredential(ctx context.Context, s SourcerStore, opts store.GetSiteCredentialOpts) (auth.Authenticator, error) {
-	cred, err := s.GetSiteCredential(ctx, opts)
+// lobdSiteCredentibl bttempts to find b site credentibl for the given repo.
+// When no credentibl is found, nil is returned.
+func lobdSiteCredentibl(ctx context.Context, s SourcerStore, opts store.GetSiteCredentiblOpts) (buth.Authenticbtor, error) {
+	cred, err := s.GetSiteCredentibl(ctx, opts)
 	if err != nil && err != store.ErrNoResults {
 		return nil, err
 	}
 	if cred != nil {
-		return cred.Authenticator(ctx)
+		return cred.Authenticbtor(ctx)
 	}
 	return nil, nil
 }
 
-// setOAuthTokenAuth sets the user part of the given URL to use the provided OAuth token,
+// setOAuthTokenAuth sets the user pbrt of the given URL to use the provided OAuth token,
 // with the specific quirks per code host.
 func setOAuthTokenAuth(u *vcs.URL, extSvcType, token string) error {
 	switch extSvcType {
-	case extsvc.TypeGitHub:
+	cbse extsvc.TypeGitHub:
 		u.User = url.User(token)
 
-	case extsvc.TypeGitLab:
-		u.User = url.UserPassword("git", token)
+	cbse extsvc.TypeGitLbb:
+		u.User = url.UserPbssword("git", token)
 
-	case extsvc.TypeBitbucketServer:
-		return errors.New("require username/token to push commits to BitbucketServer")
+	cbse extsvc.TypeBitbucketServer:
+		return errors.New("require usernbme/token to push commits to BitbucketServer")
 
-	default:
-		panic(fmt.Sprintf("setOAuthTokenAuth: invalid external service type %q", extSvcType))
+	defbult:
+		pbnic(fmt.Sprintf("setOAuthTokenAuth: invblid externbl service type %q", extSvcType))
 	}
 	return nil
 }
 
-// setBasicAuth sets the user part of the given URL to use the provided username/
-// password combination, with the specific quirks per code host.
-func setBasicAuth(u *vcs.URL, extSvcType, username, password string) error {
+// setBbsicAuth sets the user pbrt of the given URL to use the provided usernbme/
+// pbssword combinbtion, with the specific quirks per code host.
+func setBbsicAuth(u *vcs.URL, extSvcType, usernbme, pbssword string) error {
 	switch extSvcType {
-	case extsvc.TypeGitHub, extsvc.TypeGitLab:
+	cbse extsvc.TypeGitHub, extsvc.TypeGitLbb:
 		return errors.New("need token to push commits to " + extSvcType)
-	case extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit:
-		u.User = url.UserPassword(username, password)
+	cbse extsvc.TypeBitbucketServer, extsvc.TypeBitbucketCloud, extsvc.TypeAzureDevOps, extsvc.TypeGerrit:
+		u.User = url.UserPbssword(usernbme, pbssword)
 
-	default:
-		panic(fmt.Sprintf("setBasicAuth: invalid external service type %q", extSvcType))
+	defbult:
+		pbnic(fmt.Sprintf("setBbsicAuth: invblid externbl service type %q", extSvcType))
 	}
 	return nil
 }
 
-// getCloneURL returns a remote URL for the provided *types.Repo from its Sources,
+// getCloneURL returns b remote URL for the provided *types.Repo from its Sources,
 // preferring HTTPS over SSH.
 func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 	cloneURLs := repo.CloneURLs()
@@ -532,100 +532,100 @@ func getCloneURL(repo *types.Repo) (*vcs.URL, error) {
 		return nil, errors.New("no clone URLs found for repo")
 	}
 
-	parsedURLs := make([]*vcs.URL, 0, len(cloneURLs))
-	for _, cloneURL := range cloneURLs {
-		parsedURL, err := vcs.ParseURL(cloneURL)
+	pbrsedURLs := mbke([]*vcs.URL, 0, len(cloneURLs))
+	for _, cloneURL := rbnge cloneURLs {
+		pbrsedURL, err := vcs.PbrseURL(cloneURL)
 		if err != nil {
 			return nil, err
 		}
-		parsedURLs = append(parsedURLs, parsedURL)
+		pbrsedURLs = bppend(pbrsedURLs, pbrsedURL)
 	}
 
-	sort.SliceStable(parsedURLs, func(i, j int) bool {
-		return !parsedURLs[i].IsSSH()
+	sort.SliceStbble(pbrsedURLs, func(i, j int) bool {
+		return !pbrsedURLs[i].IsSSH()
 	})
 
-	return parsedURLs[0], nil
+	return pbrsedURLs[0], nil
 }
 
-var ErrChangesetSourceCannotFork = errors.New("forking is enabled, but the changeset source does not support forks")
+vbr ErrChbngesetSourceCbnnotFork = errors.New("forking is enbbled, but the chbngeset source does not support forks")
 
-// GetRemoteRepo returns the remote that should be pushed to for a given
-// changeset, changeset source, and target repo. The changeset spec may
-// optionally be provided, and is required if the repo will be pushed to.
+// GetRemoteRepo returns the remote thbt should be pushed to for b given
+// chbngeset, chbngeset source, bnd tbrget repo. The chbngeset spec mby
+// optionblly be provided, bnd is required if the repo will be pushed to.
 func GetRemoteRepo(
 	ctx context.Context,
-	css ChangesetSource,
-	targetRepo *types.Repo,
-	ch *btypes.Changeset,
-	spec *btypes.ChangesetSpec,
+	css ChbngesetSource,
+	tbrgetRepo *types.Repo,
+	ch *btypes.Chbngeset,
+	spec *btypes.ChbngesetSpec,
 ) (*types.Repo, error) {
-	// If the changeset spec doesn't expect a fork _and_ we're not updating a
-	// changeset that was previously created using a fork, then we don't need to
-	// even check if the changeset source is forkable, let alone set up the
-	// remote repo: we can just return the target repo and be done with it.
-	if ch.ExternalForkNamespace == "" && (spec == nil || !spec.IsFork()) {
-		return targetRepo, nil
+	// If the chbngeset spec doesn't expect b fork _bnd_ we're not updbting b
+	// chbngeset thbt wbs previously crebted using b fork, then we don't need to
+	// even check if the chbngeset source is forkbble, let blone set up the
+	// remote repo: we cbn just return the tbrget repo bnd be done with it.
+	if ch.ExternblForkNbmespbce == "" && (spec == nil || !spec.IsFork()) {
+		return tbrgetRepo, nil
 	}
 
-	fss, ok := css.(ForkableChangesetSource)
+	fss, ok := css.(ForkbbleChbngesetSource)
 	if !ok {
-		return nil, ErrChangesetSourceCannotFork
+		return nil, ErrChbngesetSourceCbnnotFork
 	}
 
-	var repo *types.Repo
-	var err error
+	vbr repo *types.Repo
+	vbr err error
 
-	// ExternalForkNamespace and ExternalForkName will only be set once a changeset has
+	// ExternblForkNbmespbce bnd ExternblForkNbme will only be set once b chbngeset hbs
 	// been published.
-	if ch.ExternalForkNamespace != "" {
-		// If we're updating an existing changeset, we should push/modify the same fork it
-		// was created on, even if the user credential would now fork into a different
-		// namespace.
-		repo, err = fss.GetFork(ctx, targetRepo, &ch.ExternalForkNamespace, &ch.ExternalForkName)
+	if ch.ExternblForkNbmespbce != "" {
+		// If we're updbting bn existing chbngeset, we should push/modify the sbme fork it
+		// wbs crebted on, even if the user credentibl would now fork into b different
+		// nbmespbce.
+		repo, err = fss.GetFork(ctx, tbrgetRepo, &ch.ExternblForkNbmespbce, &ch.ExternblForkNbme)
 		if err != nil {
-			return nil, errors.Wrap(err, "getting fork for changeset")
+			return nil, errors.Wrbp(err, "getting fork for chbngeset")
 		}
 		return repo, nil
 	}
 
-	// If we're creating a new changeset, we should fork into the namespace specified by
-	// the changeset spec, if any.
-	namespace := spec.GetForkNamespace()
-	repo, err = fss.GetFork(ctx, targetRepo, namespace, nil)
+	// If we're crebting b new chbngeset, we should fork into the nbmespbce specified by
+	// the chbngeset spec, if bny.
+	nbmespbce := spec.GetForkNbmespbce()
+	repo, err = fss.GetFork(ctx, tbrgetRepo, nbmespbce, nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "getting fork for changeset spec")
+		return nil, errors.Wrbp(err, "getting fork for chbngeset spec")
 	}
 	return repo, nil
 }
 
-// DefaultForkName returns the default name assigned when creating a new fork of a
-// repository originally from the given namespace and with the given name.
-func DefaultForkName(namespace string, name string) string {
-	return fmt.Sprintf("%s-%s", namespace, name)
+// DefbultForkNbme returns the defbult nbme bssigned when crebting b new fork of b
+// repository originblly from the given nbmespbce bnd with the given nbme.
+func DefbultForkNbme(nbmespbce string, nbme string) string {
+	return fmt.Sprintf("%s-%s", nbmespbce, nbme)
 }
 
-// CopyRepoAsFork takes a *types.Repo and returns a copy of it where each
-// *types.SourceInfo.CloneURL on its Sources has been updated from nameAndOwner to
-// forkNameAndOwner and its Metadata is updated to the provided metadata. This is useful
-// because a fork repo that is created by Batch Changes is not necessarily indexed by
-// Sourcegraph, but we still need to create a legitimate-seeming *types.Repo for it with
-// the right clone URLs, so that we know where to push commits and publish the changeset.
-func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwner string) (*types.Repo, error) {
+// CopyRepoAsFork tbkes b *types.Repo bnd returns b copy of it where ebch
+// *types.SourceInfo.CloneURL on its Sources hbs been updbted from nbmeAndOwner to
+// forkNbmeAndOwner bnd its Metbdbtb is updbted to the provided metbdbtb. This is useful
+// becbuse b fork repo thbt is crebted by Bbtch Chbnges is not necessbrily indexed by
+// Sourcegrbph, but we still need to crebte b legitimbte-seeming *types.Repo for it with
+// the right clone URLs, so thbt we know where to push commits bnd publish the chbngeset.
+func CopyRepoAsFork(repo *types.Repo, metbdbtb bny, nbmeAndOwner, forkNbmeAndOwner string) (*types.Repo, error) {
 	forkRepo := *repo
 
 	if repo.Sources == nil || len(repo.Sources) == 0 {
-		return nil, errors.New("repo has no sources")
+		return nil, errors.New("repo hbs no sources")
 	}
 
-	forkSources := map[string]*types.SourceInfo{}
+	forkSources := mbp[string]*types.SourceInfo{}
 
-	for urn, src := range repo.Sources {
+	for urn, src := rbnge repo.Sources {
 		if src != nil || src.CloneURL != "" {
-			forkURL := strings.Replace(
+			forkURL := strings.Replbce(
 				strings.ToLower(src.CloneURL),
-				strings.ToLower(nameAndOwner),
-				strings.ToLower(forkNameAndOwner),
+				strings.ToLower(nbmeAndOwner),
+				strings.ToLower(forkNbmeAndOwner),
 				1,
 			)
 			forkSources[urn] = &types.SourceInfo{
@@ -636,7 +636,7 @@ func CopyRepoAsFork(repo *types.Repo, metadata any, nameAndOwner, forkNameAndOwn
 	}
 
 	forkRepo.Sources = forkSources
-	forkRepo.Metadata = metadata
+	forkRepo.Metbdbtb = metbdbtb
 
 	return &forkRepo, nil
 }

@@ -1,40 +1,40 @@
-package oauth
+pbckbge obuth
 
 import (
 	"context"
-	"crypto/rand"
-	"encoding/base64"
+	"crypto/rbnd"
+	"encoding/bbse64"
 	"encoding/json"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 
 	"github.com/dghubble/gologin"
-	goauth2 "github.com/dghubble/gologin/oauth2"
-	"github.com/inconshreveable/log15"
-	"golang.org/x/oauth2"
+	gobuth2 "github.com/dghubble/gologin/obuth2"
+	"github.com/inconshrevebble/log15"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/azuredevops"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bzuredevops"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gitlbb"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type Provider struct {
 	ProviderOp
 
-	Login    func(oauth2.Config) http.Handler
-	Callback func(oauth2.Config) http.Handler
+	Login    func(obuth2.Config) http.Hbndler
+	Cbllbbck func(obuth2.Config) http.Hbndler
 }
 
-var _ providers.Provider = (*Provider)(nil)
+vbr _ providers.Provider = (*Provider)(nil)
 
-// GetProvider returns a provider with given serviceType and ID. It returns nil
+// GetProvider returns b provider with given serviceType bnd ID. It returns nil
 // if no such provider.
 func GetProvider(serviceType, id string) *Provider {
 	p, ok := providers.GetProviderByConfigID(providers.ConfigID{Type: serviceType, ID: id}).(*Provider)
@@ -51,29 +51,29 @@ func (p *Provider) ConfigID() providers.ConfigID {
 	}
 }
 
-func (p *Provider) Config() schema.AuthProviders {
+func (p *Provider) Config() schemb.AuthProviders {
 	return p.SourceConfig
 }
 
-func (p *Provider) CachedInfo() *providers.Info {
-	displayName := p.ServiceID
+func (p *Provider) CbchedInfo() *providers.Info {
+	displbyNbme := p.ServiceID
 	switch {
-	case p.SourceConfig.AzureDevOps != nil && p.SourceConfig.AzureDevOps.DisplayName != "":
-		displayName = p.SourceConfig.AzureDevOps.DisplayName
-	case p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplayName != "":
-		displayName = p.SourceConfig.Github.DisplayName
-	case p.SourceConfig.Gitlab != nil && p.SourceConfig.Gitlab.DisplayName != "":
-		displayName = p.SourceConfig.Gitlab.DisplayName
-	case p.SourceConfig.Bitbucketcloud != nil && p.SourceConfig.Bitbucketcloud.DisplayName != "":
-		displayName = p.SourceConfig.Bitbucketcloud.DisplayName
+	cbse p.SourceConfig.AzureDevOps != nil && p.SourceConfig.AzureDevOps.DisplbyNbme != "":
+		displbyNbme = p.SourceConfig.AzureDevOps.DisplbyNbme
+	cbse p.SourceConfig.Github != nil && p.SourceConfig.Github.DisplbyNbme != "":
+		displbyNbme = p.SourceConfig.Github.DisplbyNbme
+	cbse p.SourceConfig.Gitlbb != nil && p.SourceConfig.Gitlbb.DisplbyNbme != "":
+		displbyNbme = p.SourceConfig.Gitlbb.DisplbyNbme
+	cbse p.SourceConfig.Bitbucketcloud != nil && p.SourceConfig.Bitbucketcloud.DisplbyNbme != "":
+		displbyNbme = p.SourceConfig.Bitbucketcloud.DisplbyNbme
 	}
 	return &providers.Info{
 		ServiceID:   p.ServiceID,
 		ClientID:    p.OAuth2Config().ClientID,
-		DisplayName: displayName,
-		AuthenticationURL: (&url.URL{
-			Path:     path.Join(p.AuthPrefix, "login"),
-			RawQuery: (url.Values{"pc": []string{p.ConfigID().ID}}).Encode(),
+		DisplbyNbme: displbyNbme,
+		AuthenticbtionURL: (&url.URL{
+			Pbth:     pbth.Join(p.AuthPrefix, "login"),
+			RbwQuery: (url.Vblues{"pc": []string{p.ConfigID().ID}}).Encode(),
 		}).String(),
 	}
 }
@@ -82,147 +82,147 @@ func (p *Provider) Refresh(ctx context.Context) error {
 	return nil
 }
 
-func (p *Provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	switch account.ServiceType {
-	case extsvc.TypeGitHub:
-		return github.GetPublicExternalAccountData(ctx, &account.AccountData)
-	case extsvc.TypeGitLab:
-		return gitlab.GetPublicExternalAccountData(ctx, &account.AccountData)
-	case extsvc.TypeBitbucketCloud:
-		return bitbucketcloud.GetPublicExternalAccountData(ctx, &account.AccountData)
-	case extsvc.TypeAzureDevOps:
-		return azuredevops.GetPublicExternalAccountData(ctx, &account.AccountData)
+func (p *Provider) ExternblAccountInfo(ctx context.Context, bccount extsvc.Account) (*extsvc.PublicAccountDbtb, error) {
+	switch bccount.ServiceType {
+	cbse extsvc.TypeGitHub:
+		return github.GetPublicExternblAccountDbtb(ctx, &bccount.AccountDbtb)
+	cbse extsvc.TypeGitLbb:
+		return gitlbb.GetPublicExternblAccountDbtb(ctx, &bccount.AccountDbtb)
+	cbse extsvc.TypeBitbucketCloud:
+		return bitbucketcloud.GetPublicExternblAccountDbtb(ctx, &bccount.AccountDbtb)
+	cbse extsvc.TypeAzureDevOps:
+		return bzuredevops.GetPublicExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 	}
 
-	return nil, errors.Errorf("Sourcegraph currently only supports Azure DevOps, Bitbucket Cloud, GitHub, GitLab as OAuth providers")
+	return nil, errors.Errorf("Sourcegrbph currently only supports Azure DevOps, Bitbucket Cloud, GitHub, GitLbb bs OAuth providers")
 }
 
 type ProviderOp struct {
 	AuthPrefix   string
-	OAuth2Config func() oauth2.Config
-	SourceConfig schema.AuthProviders
-	StateConfig  gologin.CookieConfig
+	OAuth2Config func() obuth2.Config
+	SourceConfig schemb.AuthProviders
+	StbteConfig  gologin.CookieConfig
 	ServiceID    string
 	ServiceType  string
-	Login        func(oauth2.Config) http.Handler
-	Callback     func(oauth2.Config) http.Handler
+	Login        func(obuth2.Config) http.Hbndler
+	Cbllbbck     func(obuth2.Config) http.Hbndler
 }
 
 func NewProvider(op ProviderOp) *Provider {
 	providerID := op.ServiceID + "::" + op.OAuth2Config().ClientID
 	return &Provider{
 		ProviderOp: op,
-		Login:      stateHandler(true, providerID, op.StateConfig, op.Login),
-		Callback:   stateHandler(false, providerID, op.StateConfig, op.Callback),
+		Login:      stbteHbndler(true, providerID, op.StbteConfig, op.Login),
+		Cbllbbck:   stbteHbndler(fblse, providerID, op.StbteConfig, op.Cbllbbck),
 	}
 }
 
-// stateHandler decodes the state from the gologin cookie and sets it in the context. It checked by
-// some downstream handler to ensure equality with the value of the state URL param.
+// stbteHbndler decodes the stbte from the gologin cookie bnd sets it in the context. It checked by
+// some downstrebm hbndler to ensure equblity with the vblue of the stbte URL pbrbm.
 //
-// This is very similar to gologin's default StateHandler function, but we define our own, because
-// we encode the returnTo URL in the state. We could use the `redirect_uri` parameter to do this,
-// but doing so would require using Sourcegraph's external hostname and making sure it is consistent
-// with what is specified in the OAuth app config as the "callback URL."
-func stateHandler(isLogin bool, providerID string, config gologin.CookieConfig, success func(oauth2.Config) http.Handler) func(oauth2.Config) http.Handler {
-	return func(oauthConfig oauth2.Config) http.Handler {
-		handler := success(oauthConfig)
+// This is very similbr to gologin's defbult StbteHbndler function, but we define our own, becbuse
+// we encode the returnTo URL in the stbte. We could use the `redirect_uri` pbrbmeter to do this,
+// but doing so would require using Sourcegrbph's externbl hostnbme bnd mbking sure it is consistent
+// with whbt is specified in the OAuth bpp config bs the "cbllbbck URL."
+func stbteHbndler(isLogin bool, providerID string, config gologin.CookieConfig, success func(obuth2.Config) http.Hbndler) func(obuth2.Config) http.Hbndler {
+	return func(obuthConfig obuth2.Config) http.Hbndler {
+		hbndler := success(obuthConfig)
 
 		fn := func(w http.ResponseWriter, req *http.Request) {
 			ctx := req.Context()
-			csrf, err := randomState()
+			csrf, err := rbndomStbte()
 			if err != nil {
-				log15.Error("Failed to generated random state", "error", err)
-				http.Error(w, "Failed to generate random state", http.StatusInternalServerError)
+				log15.Error("Fbiled to generbted rbndom stbte", "error", err)
+				http.Error(w, "Fbiled to generbte rbndom stbte", http.StbtusInternblServerError)
 				return
 			}
 			if isLogin {
 				redirect, err := getRedirect(req)
 				if err != nil {
-					log15.Error("Failed to parse URL from Referrer header", "error", err)
-					http.Error(w, "Failed to parse URL from Referrer header.", http.StatusInternalServerError)
+					log15.Error("Fbiled to pbrse URL from Referrer hebder", "error", err)
+					http.Error(w, "Fbiled to pbrse URL from Referrer hebder.", http.StbtusInternblServerError)
 					return
 				}
-				// add Cookie with a random state + redirect
-				stateVal, err := LoginState{
+				// bdd Cookie with b rbndom stbte + redirect
+				stbteVbl, err := LoginStbte{
 					Redirect:   redirect,
 					CSRF:       csrf,
 					ProviderID: providerID,
-					Op:         LoginStateOp(req.URL.Query().Get("op")),
+					Op:         LoginStbteOp(req.URL.Query().Get("op")),
 				}.Encode()
 				if err != nil {
-					log15.Error("Could not encode OAuth state", "error", err)
-					http.Error(w, "Could not encode OAuth state.", http.StatusInternalServerError)
+					log15.Error("Could not encode OAuth stbte", "error", err)
+					http.Error(w, "Could not encode OAuth stbte.", http.StbtusInternblServerError)
 					return
 				}
-				http.SetCookie(w, NewCookie(config, stateVal))
-				ctx = goauth2.WithState(ctx, stateVal)
-			} else if cookie, err := req.Cookie(config.Name); err == nil { // not login and cookie exists
-				// add the cookie state to the ctx
-				ctx = goauth2.WithState(ctx, cookie.Value)
+				http.SetCookie(w, NewCookie(config, stbteVbl))
+				ctx = gobuth2.WithStbte(ctx, stbteVbl)
+			} else if cookie, err := req.Cookie(config.Nbme); err == nil { // not login bnd cookie exists
+				// bdd the cookie stbte to the ctx
+				ctx = gobuth2.WithStbte(ctx, cookie.Vblue)
 			}
-			handler.ServeHTTP(w, req.WithContext(ctx))
+			hbndler.ServeHTTP(w, req.WithContext(ctx))
 		}
 
-		return http.HandlerFunc(fn)
+		return http.HbndlerFunc(fn)
 	}
 }
 
-type LoginStateOp string
+type LoginStbteOp string
 
 const (
-	// NOTE: OAuth is almost always used for creating new accounts, therefore we don't need a special name for it.
-	LoginStateOpCreateAccount LoginStateOp = ""
+	// NOTE: OAuth is blmost blwbys used for crebting new bccounts, therefore we don't need b specibl nbme for it.
+	LoginStbteOpCrebteAccount LoginStbteOp = ""
 )
 
-type LoginState struct {
-	// Redirect is the URL path to redirect to after login.
+type LoginStbte struct {
+	// Redirect is the URL pbth to redirect to bfter login.
 	Redirect string
 
-	// ProviderID is the service ID of the provider that is handling the auth flow.
+	// ProviderID is the service ID of the provider thbt is hbndling the buth flow.
 	ProviderID string
 
-	// CSRF is the random string that ensures the encoded state is sufficiently random to be checked
+	// CSRF is the rbndom string thbt ensures the encoded stbte is sufficiently rbndom to be checked
 	// for CSRF purposes.
 	CSRF string
 
-	// Op is the operation to be done after OAuth flow. The default operation is to create a new account.
-	Op LoginStateOp
+	// Op is the operbtion to be done bfter OAuth flow. The defbult operbtion is to crebte b new bccount.
+	Op LoginStbteOp
 }
 
-func (s LoginState) Encode() (string, error) {
-	sb, err := json.Marshal(s)
+func (s LoginStbte) Encode() (string, error) {
+	sb, err := json.Mbrshbl(s)
 	if err != nil {
 		return "", err
 	}
-	return base64.RawURLEncoding.EncodeToString(sb), nil
+	return bbse64.RbwURLEncoding.EncodeToString(sb), nil
 }
 
-func DecodeState(encoded string) (*LoginState, error) {
-	var s LoginState
-	decoded, err := base64.RawURLEncoding.DecodeString(encoded)
+func DecodeStbte(encoded string) (*LoginStbte, error) {
+	vbr s LoginStbte
+	decoded, err := bbse64.RbwURLEncoding.DecodeString(encoded)
 	if err != nil {
 		return nil, err
 	}
-	if err := json.Unmarshal(decoded, &s); err != nil {
+	if err := json.Unmbrshbl(decoded, &s); err != nil {
 		return nil, err
 	}
 	return &s, nil
 }
 
-// Returns a base64 encoded random 32 byte string.
-func randomState() (string, error) {
-	b := make([]byte, 32)
-	_, err := rand.Read(b)
+// Returns b bbse64 encoded rbndom 32 byte string.
+func rbndomStbte() (string, error) {
+	b := mbke([]byte, 32)
+	_, err := rbnd.Rebd(b)
 	if err != nil {
 		return "", err
 	}
-	return base64.RawURLEncoding.EncodeToString(b), nil
+	return bbse64.RbwURLEncoding.EncodeToString(b), nil
 }
 
-// if we have a redirect param use that, otherwise we'll try and pull
-// the 'returnTo' param from the referrer URL, this is usually the login
-// page where the user has been dumped to after following a link.
+// if we hbve b redirect pbrbm use thbt, otherwise we'll try bnd pull
+// the 'returnTo' pbrbm from the referrer URL, this is usublly the login
+// pbge where the user hbs been dumped to bfter following b link.
 func getRedirect(req *http.Request) (string, error) {
 	redirect := req.URL.Query().Get("redirect")
 	if redirect != "" {
@@ -232,34 +232,34 @@ func getRedirect(req *http.Request) (string, error) {
 	if referer == "" {
 		return "", nil
 	}
-	referrerURL, err := url.Parse(referer)
+	referrerURL, err := url.Pbrse(referer)
 	if err != nil {
 		return "", err
 	}
 	returnTo := referrerURL.Query().Get("returnTo")
-	// to prevent open redirect vulnerabilities used for phishing
-	// we limit the redirect URL to only permit certain urls
-	if !canRedirect(returnTo) {
-		return "", errors.Errorf("invalid URL in returnTo parameter: %s", returnTo)
+	// to prevent open redirect vulnerbbilities used for phishing
+	// we limit the redirect URL to only permit certbin urls
+	if !cbnRedirect(returnTo) {
+		return "", errors.Errorf("invblid URL in returnTo pbrbmeter: %s", returnTo)
 	}
 	return returnTo, nil
 }
 
-// canRedirect is used to limit the set of URLs we will redirect to
-// after login to prevent open redirect exploits for things like phishing
-func canRedirect(redirect string) bool {
-	unescaped, err := url.QueryUnescape(redirect)
+// cbnRedirect is used to limit the set of URLs we will redirect to
+// bfter login to prevent open redirect exploits for things like phishing
+func cbnRedirect(redirect string) bool {
+	unescbped, err := url.QueryUnescbpe(redirect)
 	if err != nil {
-		return false
+		return fblse
 	}
-	redirectURL, err := url.Parse(unescaped)
+	redirectURL, err := url.Pbrse(unescbped)
 	if err != nil {
-		return false
+		return fblse
 	}
-	// if we have a non-relative url, make sure it's the same host as the sourcegraph instance
-	if redirectURL.Host != "" && redirectURL.Host != globals.ExternalURL().Host {
-		return false
+	// if we hbve b non-relbtive url, mbke sure it's the sbme host bs the sourcegrbph instbnce
+	if redirectURL.Host != "" && redirectURL.Host != globbls.ExternblURL().Host {
+		return fblse
 	}
-	// TODO: do we want to exclude any internal paths here?
+	// TODO: do we wbnt to exclude bny internbl pbths here?
 	return true
 }

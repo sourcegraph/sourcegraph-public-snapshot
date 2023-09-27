@@ -1,37 +1,37 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type uploadJanitorJob struct{}
+type uplobdJbnitorJob struct{}
 
-func NewUploadJanitorJob() job.Job {
-	return &uploadJanitorJob{}
+func NewUplobdJbnitorJob() job.Job {
+	return &uplobdJbnitorJob{}
 }
 
-func (j *uploadJanitorJob) Description() string {
+func (j *uplobdJbnitorJob) Description() string {
 	return ""
 }
 
-func (j *uploadJanitorJob) Config() []env.Config {
+func (j *uplobdJbnitorJob) Config() []env.Config {
 	return []env.Config{
-		uploads.JanitorConfigInst,
+		uplobds.JbnitorConfigInst,
 	}
 }
 
-func (j *uploadJanitorJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *uplobdJbnitorJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return uploads.NewJanitor(observationCtx, services.UploadsService, services.GitserverClient), nil
+	return uplobds.NewJbnitor(observbtionCtx, services.UplobdsService, services.GitserverClient), nil
 }

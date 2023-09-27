@@ -1,62 +1,62 @@
-package lsifstore
+pbckbge lsifstore
 
 import (
 	"context"
 
-	"github.com/sourcegraph/scip/bindings/go/scip"
+	"github.com/sourcegrbph/scip/bindings/go/scip"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	codeintelshared "github.com/sourcegraph/sourcegraph/internal/codeintel/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	codeintelshbred "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-type LsifStore interface {
-	// Whole-document metadata
-	GetPathExists(ctx context.Context, bundleID int, path string) (bool, error)
-	GetStencil(ctx context.Context, bundleID int, path string) ([]shared.Range, error)
-	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]shared.CodeIntelligenceRange, error)
+type LsifStore interfbce {
+	// Whole-document metbdbtb
+	GetPbthExists(ctx context.Context, bundleID int, pbth string) (bool, error)
+	GetStencil(ctx context.Context, bundleID int, pbth string) ([]shbred.Rbnge, error)
+	GetRbnges(ctx context.Context, bundleID int, pbth string, stbrtLine, endLine int) ([]shbred.CodeIntelligenceRbnge, error)
 
-	// Fetch symbol names by position
-	GetMonikersByPosition(ctx context.Context, uploadID int, path string, line, character int) ([][]precise.MonikerData, error)
-	GetPackageInformation(ctx context.Context, uploadID int, path, packageInformationID string) (precise.PackageInformationData, bool, error)
+	// Fetch symbol nbmes by position
+	GetMonikersByPosition(ctx context.Context, uplobdID int, pbth string, line, chbrbcter int) ([][]precise.MonikerDbtb, error)
+	GetPbckbgeInformbtion(ctx context.Context, uplobdID int, pbth, pbckbgeInformbtionID string) (precise.PbckbgeInformbtionDbtb, bool, error)
 
-	// Fetch locations by position
-	GetDefinitionLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-	GetImplementationLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-	GetPrototypeLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-	GetReferenceLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) ([]shared.Location, int, error)
-	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) ([]shared.Location, int, error)
-	GetMinimalBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, skipPaths map[int]string, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, totalCount int, err error)
+	// Fetch locbtions by position
+	GetDefinitionLocbtions(ctx context.Context, uplobdID int, pbth string, line, chbrbcter, limit, offset int) ([]shbred.Locbtion, int, error)
+	GetImplementbtionLocbtions(ctx context.Context, uplobdID int, pbth string, line, chbrbcter, limit, offset int) ([]shbred.Locbtion, int, error)
+	GetPrototypeLocbtions(ctx context.Context, uplobdID int, pbth string, line, chbrbcter, limit, offset int) ([]shbred.Locbtion, int, error)
+	GetReferenceLocbtions(ctx context.Context, uplobdID int, pbth string, line, chbrbcter, limit, offset int) ([]shbred.Locbtion, int, error)
+	GetBulkMonikerLocbtions(ctx context.Context, tbbleNbme string, uplobdIDs []int, monikers []precise.MonikerDbtb, limit, offset int) ([]shbred.Locbtion, int, error)
+	GetMinimblBulkMonikerLocbtions(ctx context.Context, tbbleNbme string, uplobdIDs []int, skipPbths mbp[int]string, monikers []precise.MonikerDbtb, limit, offset int) (_ []shbred.Locbtion, totblCount int, err error)
 
-	// Metadata by position
-	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
-	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shared.Diagnostic, int, error)
-	SCIPDocument(ctx context.Context, id int, path string) (_ *scip.Document, err error)
+	// Metbdbtb by position
+	GetHover(ctx context.Context, bundleID int, pbth string, line, chbrbcter int) (string, shbred.Rbnge, bool, error)
+	GetDibgnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]shbred.Dibgnostic, int, error)
+	SCIPDocument(ctx context.Context, id int, pbth string) (_ *scip.Document, err error)
 
-	// Extraction methods
-	ExtractDefinitionLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractReferenceLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractImplementationLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
-	ExtractPrototypeLocationsFromPosition(ctx context.Context, locationKey LocationKey) ([]shared.Location, []string, error)
+	// Extrbction methods
+	ExtrbctDefinitionLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) ([]shbred.Locbtion, []string, error)
+	ExtrbctReferenceLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) ([]shbred.Locbtion, []string, error)
+	ExtrbctImplementbtionLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) ([]shbred.Locbtion, []string, error)
+	ExtrbctPrototypeLocbtionsFromPosition(ctx context.Context, locbtionKey LocbtionKey) ([]shbred.Locbtion, []string, error)
 }
 
-type LocationKey struct {
-	UploadID  int
-	Path      string
+type LocbtionKey struct {
+	UplobdID  int
+	Pbth      string
 	Line      int
-	Character int
+	Chbrbcter int
 }
 
 type store struct {
-	db         *basestore.Store
-	operations *operations
+	db         *bbsestore.Store
+	operbtions *operbtions
 }
 
-func New(observationCtx *observation.Context, db codeintelshared.CodeIntelDB) LsifStore {
+func New(observbtionCtx *observbtion.Context, db codeintelshbred.CodeIntelDB) LsifStore {
 	return &store{
-		db:         basestore.NewWithHandle(db.Handle()),
-		operations: newOperations(observationCtx),
+		db:         bbsestore.NewWithHbndle(db.Hbndle()),
+		operbtions: newOperbtions(observbtionCtx),
 	}
 }

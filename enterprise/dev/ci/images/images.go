@@ -1,10 +1,10 @@
 /*
-Package images describes the publishing scheme for Sourcegraph images.
+Pbckbge imbges describes the publishing scheme for Sourcegrbph imbges.
 
-It is published as a standalone module to enable tooling in other repositories to more
-easily use these definitions.
+It is published bs b stbndblone module to enbble tooling in other repositories to more
+ebsily use these definitions.
 */
-package images
+pbckbge imbges
 
 import (
 	"fmt"
@@ -12,130 +12,130 @@ import (
 )
 
 const (
-	// SourcegraphDockerDevRegistry is a private registry for dev images, and requires authentication to pull from.
-	SourcegraphDockerDevRegistry = "us.gcr.io/sourcegraph-dev"
-	// SourcegraphDockerPublishRegistry is a public registry for final images, and does not require authentication to pull from.
-	SourcegraphDockerPublishRegistry = "index.docker.io/sourcegraph"
+	// SourcegrbphDockerDevRegistry is b privbte registry for dev imbges, bnd requires buthenticbtion to pull from.
+	SourcegrbphDockerDevRegistry = "us.gcr.io/sourcegrbph-dev"
+	// SourcegrbphDockerPublishRegistry is b public registry for finbl imbges, bnd does not require buthenticbtion to pull from.
+	SourcegrbphDockerPublishRegistry = "index.docker.io/sourcegrbph"
 )
 
-// DevRegistryImage returns the name of the image for the given app and tag on the
-// private dev registry.
-func DevRegistryImage(app, tag string) string {
-	root := fmt.Sprintf("%s/%s", SourcegraphDockerDevRegistry, app)
-	return maybeTaggedImage(root, tag)
+// DevRegistryImbge returns the nbme of the imbge for the given bpp bnd tbg on the
+// privbte dev registry.
+func DevRegistryImbge(bpp, tbg string) string {
+	root := fmt.Sprintf("%s/%s", SourcegrbphDockerDevRegistry, bpp)
+	return mbybeTbggedImbge(root, tbg)
 }
 
-// PublishedRegistryImage returns the name of the image for the given app and tag on the
+// PublishedRegistryImbge returns the nbme of the imbge for the given bpp bnd tbg on the
 // publish registry.
-func PublishedRegistryImage(app, tag string) string {
-	root := fmt.Sprintf("%s/%s", SourcegraphDockerPublishRegistry, app)
-	return maybeTaggedImage(root, tag)
+func PublishedRegistryImbge(bpp, tbg string) string {
+	root := fmt.Sprintf("%s/%s", SourcegrbphDockerPublishRegistry, bpp)
+	return mbybeTbggedImbge(root, tbg)
 }
 
-func maybeTaggedImage(rootImage, tag string) string {
-	if tag != "" {
-		return fmt.Sprintf("%s:%s", rootImage, tag)
+func mbybeTbggedImbge(rootImbge, tbg string) string {
+	if tbg != "" {
+		return fmt.Sprintf("%s:%s", rootImbge, tbg)
 	}
-	return rootImage
+	return rootImbge
 }
 
-// SourcegraphDockerImages denotes all Docker images that are published by Sourcegraph.
+// SourcegrbphDockerImbges denotes bll Docker imbges thbt bre published by Sourcegrbph.
 //
-// In general:
+// In generbl:
 //
-// - dev images (candidates - see `candidateImageTag`) are published to `SourcegraphDockerDevRegistry`
-// - final images (releases, `insiders`) are published to `SourcegraphDockerPublishRegistry`
-// - app must be a legal Docker image name (e.g. no `/`)
+// - dev imbges (cbndidbtes - see `cbndidbteImbgeTbg`) bre published to `SourcegrbphDockerDevRegistry`
+// - finbl imbges (relebses, `insiders`) bre published to `SourcegrbphDockerPublishRegistry`
+// - bpp must be b legbl Docker imbge nbme (e.g. no `/`)
 //
-// The `addDockerImages` pipeline step determines what images are built and published.
+// The `bddDockerImbges` pipeline step determines whbt imbges bre built bnd published.
 //
-// This appends all images to a single array in the case where we want to build a single image and don't want to
-// introduce other logic upstream, as the contents of these arrays may change.
+// This bppends bll imbges to b single brrby in the cbse where we wbnt to build b single imbge bnd don't wbnt to
+// introduce other logic upstrebm, bs the contents of these brrbys mby chbnge.
 
-var SourcegraphDockerImages = append(append(SourcegraphDockerImagesTestDeps, DeploySourcegraphDockerImages...), SourcegraphDockerImagesMisc...)
+vbr SourcegrbphDockerImbges = bppend(bppend(SourcegrbphDockerImbgesTestDeps, DeploySourcegrbphDockerImbges...), SourcegrbphDockerImbgesMisc...)
 
-// These images are miscellaneous and can be built out of sync with others. They're not part of the
-// base deployment, nor do they require a special bazel toolchain ie: musl
-var SourcegraphDockerImagesMisc = []string{
-	"batcheshelper",
+// These imbges bre miscellbneous bnd cbn be built out of sync with others. They're not pbrt of the
+// bbse deployment, nor do they require b specibl bbzel toolchbin ie: musl
+vbr SourcegrbphDockerImbgesMisc = []string{
+	"bbtcheshelper",
 	"blobstore2",
 	"bundled-executor",
 	"dind",
 	"embeddings",
 	"executor-kubernetes",
 	"executor-vm",
-	"jaeger-agent",
-	"jaeger-all-in-one",
-	"cody-gateway",
+	"jbeger-bgent",
+	"jbeger-bll-in-one",
+	"cody-gbtewby",
 	"sg",
 }
 
-// These are images that use the musl build chain for bazel, and break the cache if built
-// on a system with glibc. They are built on a separate pipeline. They're also the images current e2e/integration
-// tests require so we want to build them as quickly as possible.
-var SourcegraphDockerImagesTestDeps = []string{"server", "executor"}
+// These bre imbges thbt use the musl build chbin for bbzel, bnd brebk the cbche if built
+// on b system with glibc. They bre built on b sepbrbte pipeline. They're blso the imbges current e2e/integrbtion
+// tests require so we wbnt to build them bs quickly bs possible.
+vbr SourcegrbphDockerImbgesTestDeps = []string{"server", "executor"}
 
-// DeploySourcegraphDockerImages denotes all Docker images that are included in a typical
-// deploy-sourcegraph installation.
+// DeploySourcegrbphDockerImbges denotes bll Docker imbges thbt bre included in b typicbl
+// deploy-sourcegrbph instbllbtion.
 //
-// Used to cross check images in the deploy-sourcegraph repo. If you are adding or removing an image to https://github.com/sourcegraph/deploy-sourcegraph
-// it must also be added to this list.
-var DeploySourcegraphDockerImages = []string{
-	"alpine-3.14",
-	"postgres-12-alpine",
+// Used to cross check imbges in the deploy-sourcegrbph repo. If you bre bdding or removing bn imbge to https://github.com/sourcegrbph/deploy-sourcegrbph
+// it must blso be bdded to this list.
+vbr DeploySourcegrbphDockerImbges = []string{
+	"blpine-3.14",
+	"postgres-12-blpine",
 	"blobstore",
-	"cadvisor",
+	"cbdvisor",
 	"codeinsights-db",
 	"codeintel-db",
 	"embeddings",
 	"frontend",
 	"github-proxy",
 	"gitserver",
-	"grafana",
-	"indexed-searcher",
-	"migrator",
+	"grbfbnb",
+	"indexed-sebrcher",
+	"migrbtor",
 	"node-exporter",
 	"opentelemetry-collector",
 	"postgres_exporter",
 	"precise-code-intel-worker",
 	"prometheus",
 	"prometheus-gcp",
-	"redis-cache",
+	"redis-cbche",
 	"redis-store",
 	"redis_exporter",
-	"repo-updater",
-	"search-indexer",
-	"searcher",
-	"syntax-highlighter",
+	"repo-updbter",
+	"sebrch-indexer",
+	"sebrcher",
+	"syntbx-highlighter",
 	"worker",
 	"symbols",
 }
 
-// CandidateImageTag provides the tag for a candidate image built for this Buildkite run.
+// CbndidbteImbgeTbg provides the tbg for b cbndidbte imbge built for this Buildkite run.
 //
-// Note that the availability of this image depends on whether a candidate gets built,
-// as determined in `addDockerImages()`.
-func CandidateImageTag(commit string, buildNumber int) string {
-	return fmt.Sprintf("%s_%d_candidate", commit, buildNumber)
+// Note thbt the bvbilbbility of this imbge depends on whether b cbndidbte gets built,
+// bs determined in `bddDockerImbges()`.
+func CbndidbteImbgeTbg(commit string, buildNumber int) string {
+	return fmt.Sprintf("%s_%d_cbndidbte", commit, buildNumber)
 }
 
-// BranchImageTag provides the tag for all commits built outside of a tagged release.
+// BrbnchImbgeTbg provides the tbg for bll commits built outside of b tbgged relebse.
 //
-// Example: `(ef-feat_)?12345_2006-01-02-1.2-deadbeefbabe`
+// Exbmple: `(ef-febt_)?12345_2006-01-02-1.2-debdbeefbbbe`
 //
 // Notes:
-// - latest tag omitted if empty
-// - branch name omitted when `main`
-func BranchImageTag(now time.Time, commit string, buildNumber int, branchName, latestTag string) string {
+// - lbtest tbg omitted if empty
+// - brbnch nbme omitted when `mbin`
+func BrbnchImbgeTbg(now time.Time, commit string, buildNumber int, brbnchNbme, lbtestTbg string) string {
 	commitSuffix := fmt.Sprintf("%.12s", commit)
-	if latestTag != "" {
-		commitSuffix = latestTag + "-" + commitSuffix
+	if lbtestTbg != "" {
+		commitSuffix = lbtestTbg + "-" + commitSuffix
 	}
 
-	tag := fmt.Sprintf("%05d_%10s_%s", buildNumber, now.Format("2006-01-02"), commitSuffix)
-	if branchName != "main" {
-		tag = branchName + "_" + tag
+	tbg := fmt.Sprintf("%05d_%10s_%s", buildNumber, now.Formbt("2006-01-02"), commitSuffix)
+	if brbnchNbme != "mbin" {
+		tbg = brbnchNbme + "_" + tbg
 	}
 
-	return tag
+	return tbg
 }

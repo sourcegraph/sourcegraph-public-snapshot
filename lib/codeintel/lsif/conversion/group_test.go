@@ -1,4 +1,4 @@
-package conversion
+pbckbge conversion
 
 import (
 	"context"
@@ -8,680 +8,680 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/conversion/datastructures"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol/reader"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/conversion/dbtbstructures"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/lsif/protocol/rebder"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
-func TestGroupBundleData(t *testing.T) {
-	state := &State{
-		DocumentData: map[int]string{
+func TestGroupBundleDbtb(t *testing.T) {
+	stbte := &Stbte{
+		DocumentDbtb: mbp[int]string{
 			1001: "foo.go",
-			1002: "bar.go",
-			1003: "baz.go",
+			1002: "bbr.go",
+			1003: "bbz.go",
 		},
-		RangeData: map[int]Range{
+		RbngeDbtb: mbp[int]Rbnge{
 			2001: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 1, Character: 2},
-						End:   protocol.Pos{Line: 3, Character: 4},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 1, Chbrbcter: 2},
+						End:   protocol.Pos{Line: 3, Chbrbcter: 4},
 					},
 				},
 				DefinitionResultID: 0,
 				ReferenceResultID:  3006,
 			},
 			2002: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 2, Character: 3},
-						End:   protocol.Pos{Line: 4, Character: 5},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 2, Chbrbcter: 3},
+						End:   protocol.Pos{Line: 4, Chbrbcter: 5},
 					},
 				},
 				DefinitionResultID: 3001,
 				ReferenceResultID:  0,
 			},
 			2003: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 3, Character: 4},
-						End:   protocol.Pos{Line: 5, Character: 6},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 3, Chbrbcter: 4},
+						End:   protocol.Pos{Line: 5, Chbrbcter: 6},
 					},
 				},
 				DefinitionResultID: 3002,
 				ReferenceResultID:  0,
 			},
 			2004: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 4, Character: 5},
-						End:   protocol.Pos{Line: 6, Character: 7},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 4, Chbrbcter: 5},
+						End:   protocol.Pos{Line: 6, Chbrbcter: 7},
 					},
 				},
 				DefinitionResultID: 0,
 				ReferenceResultID:  3007,
 			},
 			2005: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 5, Character: 6},
-						End:   protocol.Pos{Line: 7, Character: 8},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 5, Chbrbcter: 6},
+						End:   protocol.Pos{Line: 7, Chbrbcter: 8},
 					},
 				},
 				DefinitionResultID: 3003,
 				ReferenceResultID:  0,
 			},
 			2006: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 6, Character: 7},
-						End:   protocol.Pos{Line: 8, Character: 9},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 6, Chbrbcter: 7},
+						End:   protocol.Pos{Line: 8, Chbrbcter: 9},
 					},
 				},
 				DefinitionResultID: 0,
 				HoverResultID:      3008,
 			},
 			2007: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 7, Character: 8},
-						End:   protocol.Pos{Line: 9, Character: 0},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 7, Chbrbcter: 8},
+						End:   protocol.Pos{Line: 9, Chbrbcter: 0},
 					},
 				},
 				DefinitionResultID: 3004,
 				ReferenceResultID:  0,
 			},
 			2008: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 8, Character: 9},
-						End:   protocol.Pos{Line: 0, Character: 1},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 8, Chbrbcter: 9},
+						End:   protocol.Pos{Line: 0, Chbrbcter: 1},
 					},
 				},
 				DefinitionResultID: 0,
 				HoverResultID:      3009,
 			},
 			2009: {
-				Range: reader.Range{
-					RangeData: protocol.RangeData{
-						Start: protocol.Pos{Line: 9, Character: 0},
-						End:   protocol.Pos{Line: 1, Character: 2},
+				Rbnge: rebder.Rbnge{
+					RbngeDbtb: protocol.RbngeDbtb{
+						Stbrt: protocol.Pos{Line: 9, Chbrbcter: 0},
+						End:   protocol.Pos{Line: 1, Chbrbcter: 2},
 					},
 				},
 				DefinitionResultID: 3005,
 				ReferenceResultID:  0,
 			},
 		},
-		DefinitionData: map[int]*datastructures.DefaultIDSetMap{
-			3001: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2003),
-				1002: datastructures.IDSetWith(2004),
-				1003: datastructures.IDSetWith(2007),
+		DefinitionDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			3001: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2003),
+				1002: dbtbstructures.IDSetWith(2004),
+				1003: dbtbstructures.IDSetWith(2007),
 			}),
-			3002: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2002),
-				1002: datastructures.IDSetWith(2005),
-				1003: datastructures.IDSetWith(2008),
+			3002: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2002),
+				1002: dbtbstructures.IDSetWith(2005),
+				1003: dbtbstructures.IDSetWith(2008),
 			}),
-			3003: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2001),
-				1002: datastructures.IDSetWith(2006),
-				1003: datastructures.IDSetWith(2009),
+			3003: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2001),
+				1002: dbtbstructures.IDSetWith(2006),
+				1003: dbtbstructures.IDSetWith(2009),
 			}),
-			3004: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2003),
-				1002: datastructures.IDSetWith(2005),
-				1003: datastructures.IDSetWith(2007),
+			3004: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2003),
+				1002: dbtbstructures.IDSetWith(2005),
+				1003: dbtbstructures.IDSetWith(2007),
 			}),
-			3005: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2002),
-				1002: datastructures.IDSetWith(2006),
-				1003: datastructures.IDSetWith(2008),
-			}),
-		},
-		ReferenceData: map[int]*datastructures.DefaultIDSetMap{
-			3006: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2003),
-				1003: datastructures.IDSetWith(2007, 2009),
-			}),
-			3007: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-				1001: datastructures.IDSetWith(2002),
-				1003: datastructures.IDSetWith(2007, 2009),
+			3005: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2002),
+				1002: dbtbstructures.IDSetWith(2006),
+				1003: dbtbstructures.IDSetWith(2008),
 			}),
 		},
-		HoverData: map[int]string{
+		ReferenceDbtb: mbp[int]*dbtbstructures.DefbultIDSetMbp{
+			3006: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2003),
+				1003: dbtbstructures.IDSetWith(2007, 2009),
+			}),
+			3007: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+				1001: dbtbstructures.IDSetWith(2002),
+				1003: dbtbstructures.IDSetWith(2007, 2009),
+			}),
+		},
+		HoverDbtb: mbp[int]string{
 			3008: "foo",
-			3009: "bar",
+			3009: "bbr",
 		},
-		MonikerData: map[int]Moniker{
+		MonikerDbtb: mbp[int]Moniker{
 			4001: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "import",
 					Scheme:     "scheme A",
 					Identifier: "ident A",
 				},
-				PackageInformationID: 5001,
+				PbckbgeInformbtionID: 5001,
 			},
 			4002: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "import",
 					Scheme:     "scheme B",
 					Identifier: "ident B",
 				},
-				PackageInformationID: 0,
+				PbckbgeInformbtionID: 0,
 			},
 			4003: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "export",
 					Scheme:     "scheme C",
 					Identifier: "ident C",
 				},
-				PackageInformationID: 5002,
+				PbckbgeInformbtionID: 5002,
 			},
 			4004: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "export",
 					Scheme:     "scheme D",
 					Identifier: "ident D",
 				},
-				PackageInformationID: 0,
+				PbckbgeInformbtionID: 0,
 			},
 			4005: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "export",
 					Scheme:     "scheme E",
 					Identifier: "ident E",
 				},
-				PackageInformationID: 5003,
+				PbckbgeInformbtionID: 5003,
 			},
 			4006: {
-				Moniker: reader.Moniker{
+				Moniker: rebder.Moniker{
 					Kind:       "import",
 					Scheme:     "scheme E",
 					Identifier: "ident E",
 				},
-				PackageInformationID: 5003,
+				PbckbgeInformbtionID: 5003,
 			},
 			4007: {
-				Moniker: reader.Moniker{
-					Kind:       "implementation",
+				Moniker: rebder.Moniker{
+					Kind:       "implementbtion",
 					Scheme:     "scheme F",
 					Identifier: "ident F",
 				},
-				PackageInformationID: 5002,
+				PbckbgeInformbtionID: 5002,
 			},
 		},
-		PackageInformationData: map[int]PackageInformation{
+		PbckbgeInformbtionDbtb: mbp[int]PbckbgeInformbtion{
 			5001: {
-				Name:    "pkg A",
+				Nbme:    "pkg A",
 				Version: "0.1.0",
 			},
 			5002: {
-				Name:    "pkg B",
+				Nbme:    "pkg B",
 				Version: "1.2.3",
 			},
 			5003: {
-				Name:    "pkg C",
+				Nbme:    "pkg C",
 				Version: "3.2.1",
 			},
 		},
-		DiagnosticResults: map[int][]Diagnostic{
+		DibgnosticResults: mbp[int][]Dibgnostic{
 			1001: {
 				{
 					Severity:       1,
 					Code:           "1234",
-					Message:        "m1",
+					Messbge:        "m1",
 					Source:         "s1",
-					StartLine:      11,
-					StartCharacter: 12,
+					StbrtLine:      11,
+					StbrtChbrbcter: 12,
 					EndLine:        13,
-					EndCharacter:   14,
+					EndChbrbcter:   14,
 				},
 			},
 			1002: {
 				{
 					Severity:       2,
 					Code:           "2",
-					Message:        "m2",
+					Messbge:        "m2",
 					Source:         "s2",
-					StartLine:      21,
-					StartCharacter: 22,
+					StbrtLine:      21,
+					StbrtChbrbcter: 22,
 					EndLine:        23,
-					EndCharacter:   24,
+					EndChbrbcter:   24,
 				},
 			},
 			1003: {
 				{
 					Severity:       3,
 					Code:           "3234",
-					Message:        "m3",
+					Messbge:        "m3",
 					Source:         "s3",
-					StartLine:      31,
-					StartCharacter: 32,
+					StbrtLine:      31,
+					StbrtChbrbcter: 32,
 					EndLine:        33,
-					EndCharacter:   34,
+					EndChbrbcter:   34,
 				},
 				{
 					Severity:       4,
 					Code:           "4234",
-					Message:        "m4",
+					Messbge:        "m4",
 					Source:         "s4",
-					StartLine:      41,
-					StartCharacter: 42,
+					StbrtLine:      41,
+					StbrtChbrbcter: 42,
 					EndLine:        43,
-					EndCharacter:   44,
+					EndChbrbcter:   44,
 				},
 			},
 		},
-		ImportedMonikers:    datastructures.IDSetWith(4001, 4006),
-		ExportedMonikers:    datastructures.IDSetWith(4003, 4005),
-		ImplementedMonikers: datastructures.NewIDSet(),
-		Contains: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			1001: datastructures.IDSetWith(2001, 2002, 2003),
-			1002: datastructures.IDSetWith(2004, 2005, 2006),
-			1003: datastructures.IDSetWith(2007, 2008, 2009),
+		ImportedMonikers:    dbtbstructures.IDSetWith(4001, 4006),
+		ExportedMonikers:    dbtbstructures.IDSetWith(4003, 4005),
+		ImplementedMonikers: dbtbstructures.NewIDSet(),
+		Contbins: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+			1001: dbtbstructures.IDSetWith(2001, 2002, 2003),
+			1002: dbtbstructures.IDSetWith(2004, 2005, 2006),
+			1003: dbtbstructures.IDSetWith(2007, 2008, 2009),
 		}),
-		Monikers: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			2001: datastructures.IDSetWith(4001, 4002),
-			2002: datastructures.IDSetWith(4003, 4004, 4007),
+		Monikers: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+			2001: dbtbstructures.IDSetWith(4001, 4002),
+			2002: dbtbstructures.IDSetWith(4003, 4004, 4007),
 		}),
-		Diagnostics: datastructures.DefaultIDSetMapWith(map[int]*datastructures.IDSet{
-			1001: datastructures.IDSetWith(1001, 1002),
-			1002: datastructures.IDSetWith(1003),
+		Dibgnostics: dbtbstructures.DefbultIDSetMbpWith(mbp[int]*dbtbstructures.IDSet{
+			1001: dbtbstructures.IDSetWith(1001, 1002),
+			1002: dbtbstructures.IDSetWith(1003),
 		}),
 	}
 
-	actualBundleData := groupBundleData(context.Background(), state)
+	bctublBundleDbtb := groupBundleDbtb(context.Bbckground(), stbte)
 
-	expectedMetaData := precise.MetaData{
+	expectedMetbDbtb := precise.MetbDbtb{
 		NumResultChunks: 1,
 	}
-	if diff := cmp.Diff(expectedMetaData, actualBundleData.Meta); diff != "" {
-		t.Errorf("unexpected meta data (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedMetbDbtb, bctublBundleDbtb.Metb); diff != "" {
+		t.Errorf("unexpected metb dbtb (-wbnt +got):\n%s", diff)
 	}
 
-	expectedPackages := []precise.Package{
-		{Scheme: "scheme C", Name: "pkg B", Version: "1.2.3"},
-		{Scheme: "scheme E", Name: "pkg C", Version: "3.2.1"},
+	expectedPbckbges := []precise.Pbckbge{
+		{Scheme: "scheme C", Nbme: "pkg B", Version: "1.2.3"},
+		{Scheme: "scheme E", Nbme: "pkg C", Version: "3.2.1"},
 	}
-	sort.Slice(actualBundleData.Packages, func(i, j int) bool {
-		return actualBundleData.Packages[i].Scheme < actualBundleData.Packages[j].Scheme
+	sort.Slice(bctublBundleDbtb.Pbckbges, func(i, j int) bool {
+		return bctublBundleDbtb.Pbckbges[i].Scheme < bctublBundleDbtb.Pbckbges[j].Scheme
 	})
-	if diff := cmp.Diff(expectedPackages, actualBundleData.Packages); diff != "" {
-		t.Errorf("unexpected packages (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedPbckbges, bctublBundleDbtb.Pbckbges); diff != "" {
+		t.Errorf("unexpected pbckbges (-wbnt +got):\n%s", diff)
 	}
 
-	expectedPackageReferences := []precise.PackageReference{
+	expectedPbckbgeReferences := []precise.PbckbgeReference{
 		{
-			Package: precise.Package{Scheme: "scheme A", Name: "pkg A", Version: "0.1.0"},
+			Pbckbge: precise.Pbckbge{Scheme: "scheme A", Nbme: "pkg A", Version: "0.1.0"},
 		},
 	}
-	sort.Slice(actualBundleData.PackageReferences, func(i, j int) bool {
-		return actualBundleData.PackageReferences[i].Scheme < actualBundleData.PackageReferences[j].Scheme
+	sort.Slice(bctublBundleDbtb.PbckbgeReferences, func(i, j int) bool {
+		return bctublBundleDbtb.PbckbgeReferences[i].Scheme < bctublBundleDbtb.PbckbgeReferences[j].Scheme
 	})
-	if diff := cmp.Diff(expectedPackageReferences, actualBundleData.PackageReferences); diff != "" {
-		t.Errorf("unexpected package references (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedPbckbgeReferences, bctublBundleDbtb.PbckbgeReferences); diff != "" {
+		t.Errorf("unexpected pbckbge references (-wbnt +got):\n%s", diff)
 	}
 
-	documents := map[string]precise.DocumentData{}
-	for v := range actualBundleData.Documents {
-		documents[v.Path] = v.Document
+	documents := mbp[string]precise.DocumentDbtb{}
+	for v := rbnge bctublBundleDbtb.Documents {
+		documents[v.Pbth] = v.Document
 	}
-	for _, document := range documents {
-		sortDiagnostics(document.Diagnostics)
+	for _, document := rbnge documents {
+		sortDibgnostics(document.Dibgnostics)
 
-		for _, r := range document.Ranges {
+		for _, r := rbnge document.Rbnges {
 			sortMonikerIDs(r.MonikerIDs)
 		}
 	}
 
-	expectedDocumentData := map[string]precise.DocumentData{
+	expectedDocumentDbtb := mbp[string]precise.DocumentDbtb{
 		"foo.go": {
-			Ranges: map[precise.ID]precise.RangeData{
+			Rbnges: mbp[precise.ID]precise.RbngeDbtb{
 				"2001": {
-					StartLine:          1,
-					StartCharacter:     2,
+					StbrtLine:          1,
+					StbrtChbrbcter:     2,
 					EndLine:            3,
-					EndCharacter:       4,
+					EndChbrbcter:       4,
 					DefinitionResultID: "",
 					ReferenceResultID:  "3006",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{"4001", "4002"},
 				},
 				"2002": {
-					StartLine:          2,
-					StartCharacter:     3,
+					StbrtLine:          2,
+					StbrtChbrbcter:     3,
 					EndLine:            4,
-					EndCharacter:       5,
+					EndChbrbcter:       5,
 					DefinitionResultID: "3001",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{"4003", "4004", "4007"},
 				},
 				"2003": {
-					StartLine:          3,
-					StartCharacter:     4,
+					StbrtLine:          3,
+					StbrtChbrbcter:     4,
 					EndLine:            5,
-					EndCharacter:       6,
+					EndChbrbcter:       6,
 					DefinitionResultID: "3002",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{},
 				},
 			},
-			HoverResults: map[precise.ID]string{},
-			Monikers: map[precise.ID]precise.MonikerData{
+			HoverResults: mbp[precise.ID]string{},
+			Monikers: mbp[precise.ID]precise.MonikerDbtb{
 				"4001": {
 					Kind:                 "import",
 					Scheme:               "scheme A",
 					Identifier:           "ident A",
-					PackageInformationID: "5001",
+					PbckbgeInformbtionID: "5001",
 				},
 				"4002": {
 					Kind:                 "import",
 					Scheme:               "scheme B",
 					Identifier:           "ident B",
-					PackageInformationID: "",
+					PbckbgeInformbtionID: "",
 				},
 				"4003": {
 					Kind:                 "export",
 					Scheme:               "scheme C",
 					Identifier:           "ident C",
-					PackageInformationID: "5002",
+					PbckbgeInformbtionID: "5002",
 				},
 				"4004": {
 					Kind:                 "export",
 					Scheme:               "scheme D",
 					Identifier:           "ident D",
-					PackageInformationID: "",
+					PbckbgeInformbtionID: "",
 				},
 				"4007": {
-					Kind:                 "implementation",
+					Kind:                 "implementbtion",
 					Scheme:               "scheme F",
 					Identifier:           "ident F",
-					PackageInformationID: "5002",
+					PbckbgeInformbtionID: "5002",
 				},
 			},
-			PackageInformation: map[precise.ID]precise.PackageInformationData{
+			PbckbgeInformbtion: mbp[precise.ID]precise.PbckbgeInformbtionDbtb{
 				"5001": {
-					Name:    "pkg A",
+					Nbme:    "pkg A",
 					Version: "0.1.0",
 				},
 				"5002": {
-					Name:    "pkg B",
+					Nbme:    "pkg B",
 					Version: "1.2.3",
 				},
 			},
-			Diagnostics: []precise.DiagnosticData{
+			Dibgnostics: []precise.DibgnosticDbtb{
 				{
 					Severity:       1,
 					Code:           "1234",
-					Message:        "m1",
+					Messbge:        "m1",
 					Source:         "s1",
-					StartLine:      11,
-					StartCharacter: 12,
+					StbrtLine:      11,
+					StbrtChbrbcter: 12,
 					EndLine:        13,
-					EndCharacter:   14,
+					EndChbrbcter:   14,
 				},
 				{
 					Severity:       2,
 					Code:           "2",
-					Message:        "m2",
+					Messbge:        "m2",
 					Source:         "s2",
-					StartLine:      21,
-					StartCharacter: 22,
+					StbrtLine:      21,
+					StbrtChbrbcter: 22,
 					EndLine:        23,
-					EndCharacter:   24,
+					EndChbrbcter:   24,
 				},
 			},
 		},
-		"bar.go": {
-			Ranges: map[precise.ID]precise.RangeData{
+		"bbr.go": {
+			Rbnges: mbp[precise.ID]precise.RbngeDbtb{
 				"2004": {
-					StartLine:          4,
-					StartCharacter:     5,
+					StbrtLine:          4,
+					StbrtChbrbcter:     5,
 					EndLine:            6,
-					EndCharacter:       7,
+					EndChbrbcter:       7,
 					DefinitionResultID: "",
 					ReferenceResultID:  "3007",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{},
 				},
 				"2005": {
-					StartLine:          5,
-					StartCharacter:     6,
+					StbrtLine:          5,
+					StbrtChbrbcter:     6,
 					EndLine:            7,
-					EndCharacter:       8,
+					EndChbrbcter:       8,
 					DefinitionResultID: "3003",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{},
 				},
 				"2006": {
-					StartLine:          6,
-					StartCharacter:     7,
+					StbrtLine:          6,
+					StbrtChbrbcter:     7,
 					EndLine:            8,
-					EndCharacter:       9,
+					EndChbrbcter:       9,
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3008",
 					MonikerIDs:         []precise.ID{},
 				},
 			},
-			HoverResults:       map[precise.ID]string{"3008": "foo"},
-			Monikers:           map[precise.ID]precise.MonikerData{},
-			PackageInformation: map[precise.ID]precise.PackageInformationData{},
-			Diagnostics: []precise.DiagnosticData{
+			HoverResults:       mbp[precise.ID]string{"3008": "foo"},
+			Monikers:           mbp[precise.ID]precise.MonikerDbtb{},
+			PbckbgeInformbtion: mbp[precise.ID]precise.PbckbgeInformbtionDbtb{},
+			Dibgnostics: []precise.DibgnosticDbtb{
 				{
 					Severity:       3,
 					Code:           "3234",
-					Message:        "m3",
+					Messbge:        "m3",
 					Source:         "s3",
-					StartLine:      31,
-					StartCharacter: 32,
+					StbrtLine:      31,
+					StbrtChbrbcter: 32,
 					EndLine:        33,
-					EndCharacter:   34,
+					EndChbrbcter:   34,
 				},
 				{
 					Severity:       4,
 					Code:           "4234",
-					Message:        "m4",
+					Messbge:        "m4",
 					Source:         "s4",
-					StartLine:      41,
-					StartCharacter: 42,
+					StbrtLine:      41,
+					StbrtChbrbcter: 42,
 					EndLine:        43,
-					EndCharacter:   44,
+					EndChbrbcter:   44,
 				},
 			},
 		},
-		"baz.go": {
-			Ranges: map[precise.ID]precise.RangeData{
+		"bbz.go": {
+			Rbnges: mbp[precise.ID]precise.RbngeDbtb{
 				"2007": {
-					StartLine:          7,
-					StartCharacter:     8,
+					StbrtLine:          7,
+					StbrtChbrbcter:     8,
 					EndLine:            9,
-					EndCharacter:       0,
+					EndChbrbcter:       0,
 					DefinitionResultID: "3004",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{},
 				},
 				"2008": {
-					StartLine:          8,
-					StartCharacter:     9,
+					StbrtLine:          8,
+					StbrtChbrbcter:     9,
 					EndLine:            0,
-					EndCharacter:       1,
+					EndChbrbcter:       1,
 					DefinitionResultID: "",
 					ReferenceResultID:  "",
 					HoverResultID:      "3009",
 					MonikerIDs:         []precise.ID{},
 				},
 				"2009": {
-					StartLine:          9,
-					StartCharacter:     0,
+					StbrtLine:          9,
+					StbrtChbrbcter:     0,
 					EndLine:            1,
-					EndCharacter:       2,
+					EndChbrbcter:       2,
 					DefinitionResultID: "3005",
 					ReferenceResultID:  "",
 					HoverResultID:      "",
 					MonikerIDs:         []precise.ID{},
 				},
 			},
-			HoverResults:       map[precise.ID]string{"3009": "bar"},
-			Monikers:           map[precise.ID]precise.MonikerData{},
-			PackageInformation: map[precise.ID]precise.PackageInformationData{},
-			Diagnostics:        []precise.DiagnosticData{},
+			HoverResults:       mbp[precise.ID]string{"3009": "bbr"},
+			Monikers:           mbp[precise.ID]precise.MonikerDbtb{},
+			PbckbgeInformbtion: mbp[precise.ID]precise.PbckbgeInformbtionDbtb{},
+			Dibgnostics:        []precise.DibgnosticDbtb{},
 		},
 	}
-	if diff := cmp.Diff(expectedDocumentData, documents, datastructures.Comparers...); diff != "" {
-		t.Errorf("unexpected document data (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedDocumentDbtb, documents, dbtbstructures.Compbrers...); diff != "" {
+		t.Errorf("unexpected document dbtb (-wbnt +got):\n%s", diff)
 	}
 
-	resultChunkData := map[int]precise.ResultChunkData{}
-	for v := range actualBundleData.ResultChunks {
-		resultChunkData[v.Index] = v.ResultChunk
+	resultChunkDbtb := mbp[int]precise.ResultChunkDbtb{}
+	for v := rbnge bctublBundleDbtb.ResultChunks {
+		resultChunkDbtb[v.Index] = v.ResultChunk
 	}
-	for _, resultChunk := range resultChunkData {
-		for _, documentRanges := range resultChunk.DocumentIDRangeIDs {
-			sortDocumentIDRangeIDs(documentRanges)
+	for _, resultChunk := rbnge resultChunkDbtb {
+		for _, documentRbnges := rbnge resultChunk.DocumentIDRbngeIDs {
+			sortDocumentIDRbngeIDs(documentRbnges)
 		}
 	}
 
-	expectedResultChunkData := map[int]precise.ResultChunkData{
+	expectedResultChunkDbtb := mbp[int]precise.ResultChunkDbtb{
 		0: {
-			DocumentPaths: map[precise.ID]string{
+			DocumentPbths: mbp[precise.ID]string{
 				"1001": "foo.go",
-				"1002": "bar.go",
-				"1003": "baz.go",
+				"1002": "bbr.go",
+				"1003": "bbz.go",
 			},
-			DocumentIDRangeIDs: map[precise.ID][]precise.DocumentIDRangeID{
+			DocumentIDRbngeIDs: mbp[precise.ID][]precise.DocumentIDRbngeID{
 				"3001": {
-					{DocumentID: "1001", RangeID: "2003"},
-					{DocumentID: "1002", RangeID: "2004"},
-					{DocumentID: "1003", RangeID: "2007"},
+					{DocumentID: "1001", RbngeID: "2003"},
+					{DocumentID: "1002", RbngeID: "2004"},
+					{DocumentID: "1003", RbngeID: "2007"},
 				},
 				"3002": {
-					{DocumentID: "1001", RangeID: "2002"},
-					{DocumentID: "1002", RangeID: "2005"},
-					{DocumentID: "1003", RangeID: "2008"},
+					{DocumentID: "1001", RbngeID: "2002"},
+					{DocumentID: "1002", RbngeID: "2005"},
+					{DocumentID: "1003", RbngeID: "2008"},
 				},
 				"3003": {
-					{DocumentID: "1001", RangeID: "2001"},
-					{DocumentID: "1002", RangeID: "2006"},
-					{DocumentID: "1003", RangeID: "2009"},
+					{DocumentID: "1001", RbngeID: "2001"},
+					{DocumentID: "1002", RbngeID: "2006"},
+					{DocumentID: "1003", RbngeID: "2009"},
 				},
 				"3004": {
-					{DocumentID: "1001", RangeID: "2003"},
-					{DocumentID: "1002", RangeID: "2005"},
-					{DocumentID: "1003", RangeID: "2007"},
+					{DocumentID: "1001", RbngeID: "2003"},
+					{DocumentID: "1002", RbngeID: "2005"},
+					{DocumentID: "1003", RbngeID: "2007"},
 				},
 				"3005": {
-					{DocumentID: "1001", RangeID: "2002"},
-					{DocumentID: "1002", RangeID: "2006"},
-					{DocumentID: "1003", RangeID: "2008"},
+					{DocumentID: "1001", RbngeID: "2002"},
+					{DocumentID: "1002", RbngeID: "2006"},
+					{DocumentID: "1003", RbngeID: "2008"},
 				},
 				"3006": {
-					{DocumentID: "1001", RangeID: "2003"},
-					{DocumentID: "1003", RangeID: "2007"},
-					{DocumentID: "1003", RangeID: "2009"},
+					{DocumentID: "1001", RbngeID: "2003"},
+					{DocumentID: "1003", RbngeID: "2007"},
+					{DocumentID: "1003", RbngeID: "2009"},
 				},
 				"3007": {
-					{DocumentID: "1001", RangeID: "2002"},
-					{DocumentID: "1003", RangeID: "2007"},
-					{DocumentID: "1003", RangeID: "2009"},
+					{DocumentID: "1001", RbngeID: "2002"},
+					{DocumentID: "1003", RbngeID: "2007"},
+					{DocumentID: "1003", RbngeID: "2009"},
 				},
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedResultChunkData, resultChunkData); diff != "" {
-		t.Errorf("unexpected result chunk data (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedResultChunkDbtb, resultChunkDbtb); diff != "" {
+		t.Errorf("unexpected result chunk dbtb (-wbnt +got):\n%s", diff)
 	}
 
-	var definitions []precise.MonikerLocations
-	for v := range actualBundleData.Definitions {
-		definitions = append(definitions, v)
+	vbr definitions []precise.MonikerLocbtions
+	for v := rbnge bctublBundleDbtb.Definitions {
+		definitions = bppend(definitions, v)
 	}
-	sortMonikerLocations(definitions)
+	sortMonikerLocbtions(definitions)
 
-	expectedDefinitions := []precise.MonikerLocations{
+	expectedDefinitions := []precise.MonikerLocbtions{
 		{
 			Kind:       "export",
 			Scheme:     "scheme C",
 			Identifier: "ident C",
-			Locations: []precise.LocationData{
-				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			Locbtions: []precise.LocbtionDbtb{
+				{URI: "bbr.go", StbrtLine: 4, StbrtChbrbcter: 5, EndLine: 6, EndChbrbcter: 7},
+				{URI: "bbz.go", StbrtLine: 7, StbrtChbrbcter: 8, EndLine: 9, EndChbrbcter: 0},
+				{URI: "foo.go", StbrtLine: 3, StbrtChbrbcter: 4, EndLine: 5, EndChbrbcter: 6},
 			},
 		},
 		{
 			Kind:       "export",
 			Scheme:     "scheme D",
 			Identifier: "ident D",
-			Locations: []precise.LocationData{
-				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			Locbtions: []precise.LocbtionDbtb{
+				{URI: "bbr.go", StbrtLine: 4, StbrtChbrbcter: 5, EndLine: 6, EndChbrbcter: 7},
+				{URI: "bbz.go", StbrtLine: 7, StbrtChbrbcter: 8, EndLine: 9, EndChbrbcter: 0},
+				{URI: "foo.go", StbrtLine: 3, StbrtChbrbcter: 4, EndLine: 5, EndChbrbcter: 6},
 			},
 		},
 	}
 	if diff := cmp.Diff(expectedDefinitions, definitions); diff != "" {
-		t.Errorf("unexpected definitions (-want +got):\n%s", diff)
+		t.Errorf("unexpected definitions (-wbnt +got):\n%s", diff)
 	}
 
-	var references []precise.MonikerLocations
-	for v := range actualBundleData.References {
-		references = append(references, v)
+	vbr references []precise.MonikerLocbtions
+	for v := rbnge bctublBundleDbtb.References {
+		references = bppend(references, v)
 	}
-	sortMonikerLocations(references)
+	sortMonikerLocbtions(references)
 
-	expectedReferences := []precise.MonikerLocations{
+	expectedReferences := []precise.MonikerLocbtions{
 		{
 			Kind:       "import",
 			Scheme:     "scheme A",
 			Identifier: "ident A",
-			Locations: []precise.LocationData{
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			Locbtions: []precise.LocbtionDbtb{
+				{URI: "bbz.go", StbrtLine: 7, StbrtChbrbcter: 8, EndLine: 9, EndChbrbcter: 0},
+				{URI: "bbz.go", StbrtLine: 9, StbrtChbrbcter: 0, EndLine: 1, EndChbrbcter: 2},
+				{URI: "foo.go", StbrtLine: 3, StbrtChbrbcter: 4, EndLine: 5, EndChbrbcter: 6},
 			},
 		},
 		{
 			Kind:       "import",
 			Scheme:     "scheme B",
 			Identifier: "ident B",
-			Locations: []precise.LocationData{
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "baz.go", StartLine: 9, StartCharacter: 0, EndLine: 1, EndCharacter: 2},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			Locbtions: []precise.LocbtionDbtb{
+				{URI: "bbz.go", StbrtLine: 7, StbrtChbrbcter: 8, EndLine: 9, EndChbrbcter: 0},
+				{URI: "bbz.go", StbrtLine: 9, StbrtChbrbcter: 0, EndLine: 1, EndChbrbcter: 2},
+				{URI: "foo.go", StbrtLine: 3, StbrtChbrbcter: 4, EndLine: 5, EndChbrbcter: 6},
 			},
 		},
 	}
 	if diff := cmp.Diff(expectedReferences, references); diff != "" {
-		t.Errorf("unexpected references (-want +got):\n%s", diff)
+		t.Errorf("unexpected references (-wbnt +got):\n%s", diff)
 	}
 
-	var implementations []precise.MonikerLocations
-	for v := range actualBundleData.Implementations {
-		implementations = append(implementations, v)
+	vbr implementbtions []precise.MonikerLocbtions
+	for v := rbnge bctublBundleDbtb.Implementbtions {
+		implementbtions = bppend(implementbtions, v)
 	}
-	sortMonikerLocations(implementations)
+	sortMonikerLocbtions(implementbtions)
 
-	expectedImplementations := []precise.MonikerLocations{
+	expectedImplementbtions := []precise.MonikerLocbtions{
 		{
-			Kind:       "implementation",
+			Kind:       "implementbtion",
 			Scheme:     "scheme F",
 			Identifier: "ident F",
-			Locations: []precise.LocationData{
-				{URI: "bar.go", StartLine: 4, StartCharacter: 5, EndLine: 6, EndCharacter: 7},
-				{URI: "baz.go", StartLine: 7, StartCharacter: 8, EndLine: 9, EndCharacter: 0},
-				{URI: "foo.go", StartLine: 3, StartCharacter: 4, EndLine: 5, EndCharacter: 6},
+			Locbtions: []precise.LocbtionDbtb{
+				{URI: "bbr.go", StbrtLine: 4, StbrtChbrbcter: 5, EndLine: 6, EndChbrbcter: 7},
+				{URI: "bbz.go", StbrtLine: 7, StbrtChbrbcter: 8, EndLine: 9, EndChbrbcter: 0},
+				{URI: "foo.go", StbrtLine: 3, StbrtChbrbcter: 4, EndLine: 5, EndChbrbcter: 6},
 			},
 		},
 	}
-	if diff := cmp.Diff(expectedImplementations, implementations); diff != "" {
-		t.Errorf("unexpected implementations (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedImplementbtions, implementbtions); diff != "" {
+		t.Errorf("unexpected implementbtions (-wbnt +got):\n%s", diff)
 	}
 }
 
@@ -690,47 +690,47 @@ func TestGroupBundleData(t *testing.T) {
 
 func sortMonikerIDs(s []precise.ID) {
 	sort.Slice(s, func(i, j int) bool {
-		return strings.Compare(string(s[i]), string(s[j])) < 0
+		return strings.Compbre(string(s[i]), string(s[j])) < 0
 	})
 }
 
-func sortDiagnostics(s []precise.DiagnosticData) {
+func sortDibgnostics(s []precise.DibgnosticDbtb) {
 	sort.Slice(s, func(i, j int) bool {
-		return strings.Compare(s[i].Message, s[j].Message) < 0
+		return strings.Compbre(s[i].Messbge, s[j].Messbge) < 0
 	})
 }
 
-func sortDocumentIDRangeIDs(s []precise.DocumentIDRangeID) {
+func sortDocumentIDRbngeIDs(s []precise.DocumentIDRbngeID) {
 	sort.Slice(s, func(i, j int) bool {
-		if compareResult := strings.Compare(string(s[i].DocumentID), string(s[j].DocumentID)); compareResult != 0 {
-			return compareResult < 0
+		if compbreResult := strings.Compbre(string(s[i].DocumentID), string(s[j].DocumentID)); compbreResult != 0 {
+			return compbreResult < 0
 		} else {
-			return strings.Compare(string(s[i].RangeID), string(s[j].RangeID)) < 0
+			return strings.Compbre(string(s[i].RbngeID), string(s[j].RbngeID)) < 0
 		}
 	})
 }
 
-func sortMonikerLocations(monikerLocations []precise.MonikerLocations) {
-	sort.Slice(monikerLocations, func(i, j int) bool {
-		if compareResult := strings.Compare(monikerLocations[i].Scheme, monikerLocations[j].Scheme); compareResult != 0 {
-			return compareResult < 0
-		} else if compareResult := strings.Compare(monikerLocations[i].Identifier, monikerLocations[j].Identifier); compareResult != 0 {
-			return compareResult < 0
+func sortMonikerLocbtions(monikerLocbtions []precise.MonikerLocbtions) {
+	sort.Slice(monikerLocbtions, func(i, j int) bool {
+		if compbreResult := strings.Compbre(monikerLocbtions[i].Scheme, monikerLocbtions[j].Scheme); compbreResult != 0 {
+			return compbreResult < 0
+		} else if compbreResult := strings.Compbre(monikerLocbtions[i].Identifier, monikerLocbtions[j].Identifier); compbreResult != 0 {
+			return compbreResult < 0
 		}
-		return false
+		return fblse
 	})
 
-	for _, ml := range monikerLocations {
-		sortLocations(ml.Locations)
+	for _, ml := rbnge monikerLocbtions {
+		sortLocbtions(ml.Locbtions)
 	}
 }
 
-func sortLocations(locations []precise.LocationData) {
-	sort.Slice(locations, func(i, j int) bool {
-		if compareResult := strings.Compare(locations[i].URI, locations[j].URI); compareResult != 0 {
-			return compareResult < 0
+func sortLocbtions(locbtions []precise.LocbtionDbtb) {
+	sort.Slice(locbtions, func(i, j int) bool {
+		if compbreResult := strings.Compbre(locbtions[i].URI, locbtions[j].URI); compbreResult != 0 {
+			return compbreResult < 0
 		}
 
-		return locations[i].StartLine < locations[j].StartLine
+		return locbtions[i].StbrtLine < locbtions[j].StbrtLine
 	})
 }

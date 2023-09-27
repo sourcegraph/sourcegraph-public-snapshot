@@ -1,50 +1,50 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/own"
-	"github.com/sourcegraph/sourcegraph/internal/own/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own"
+	"github.com/sourcegrbph/sourcegrbph/internbl/own/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func computeRecentContributorSignals(ctx context.Context, db database.DB, path string, repoID api.RepoID) ([]reasonAndReference, error) {
-	enabled, err := db.OwnSignalConfigurations().IsEnabled(ctx, types.SignalRecentContributors)
+func computeRecentContributorSignbls(ctx context.Context, db dbtbbbse.DB, pbth string, repoID bpi.RepoID) ([]rebsonAndReference, error) {
+	enbbled, err := db.OwnSignblConfigurbtions().IsEnbbled(ctx, types.SignblRecentContributors)
 	if err != nil {
-		return nil, errors.Wrap(err, "IsEnabled")
+		return nil, errors.Wrbp(err, "IsEnbbled")
 	}
-	if !enabled {
+	if !enbbled {
 		return nil, nil
 	}
 
-	recentAuthors, err := db.RecentContributionSignals().FindRecentAuthors(ctx, repoID, path)
+	recentAuthors, err := db.RecentContributionSignbls().FindRecentAuthors(ctx, repoID, pbth)
 	if err != nil {
-		return nil, errors.Wrap(err, "FindRecentAuthors")
+		return nil, errors.Wrbp(err, "FindRecentAuthors")
 	}
 
-	var rrs []reasonAndReference
-	for _, a := range recentAuthors {
-		rrs = append(rrs, reasonAndReference{
-			reason: ownershipReason{recentContributionsCount: a.ContributionCount},
+	vbr rrs []rebsonAndReference
+	for _, b := rbnge recentAuthors {
+		rrs = bppend(rrs, rebsonAndReference{
+			rebson: ownershipRebson{recentContributionsCount: b.ContributionCount},
 			reference: own.Reference{
-				// Just use the email.
-				Email: a.AuthorEmail,
+				// Just use the embil.
+				Embil: b.AuthorEmbil,
 			},
 		})
 	}
 	return rrs, nil
 }
 
-type recentContributorOwnershipSignal struct {
-	total int32
+type recentContributorOwnershipSignbl struct {
+	totbl int32
 }
 
-func (g *recentContributorOwnershipSignal) Title() (string, error) {
+func (g *recentContributorOwnershipSignbl) Title() (string, error) {
 	return "recent contributor", nil
 }
 
-func (g *recentContributorOwnershipSignal) Description() (string, error) {
-	return "Associated because they have contributed to this file in the last 90 days.", nil
+func (g *recentContributorOwnershipSignbl) Description() (string, error) {
+	return "Associbted becbuse they hbve contributed to this file in the lbst 90 dbys.", nil
 }

@@ -1,4 +1,4 @@
-package actor
+pbckbge bctor
 
 import (
 	"context"
@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,164 +17,164 @@ func (f roundTripFunc) RoundTrip(req *http.Request) (*http.Response, error) {
 	return f(req), nil
 }
 
-func TestHTTPTransport(t *testing.T) {
+func TestHTTPTrbnsport(t *testing.T) {
 	tests := []struct {
-		name        string
-		actor       *Actor
-		wantHeaders map[string]string
+		nbme        string
+		bctor       *Actor
+		wbntHebders mbp[string]string
 	}{{
-		name:  "unauthenticated",
-		actor: nil,
-		wantHeaders: map[string]string{
-			headerKeyActorUID: headerValueNoActor,
+		nbme:  "unbuthenticbted",
+		bctor: nil,
+		wbntHebders: mbp[string]string{
+			hebderKeyActorUID: hebderVblueNoActor,
 		},
 	}, {
-		name:  "internal actor",
-		actor: &Actor{Internal: true},
-		wantHeaders: map[string]string{
-			headerKeyActorUID: headerValueInternalActor,
+		nbme:  "internbl bctor",
+		bctor: &Actor{Internbl: true},
+		wbntHebders: mbp[string]string{
+			hebderKeyActorUID: hebderVblueInternblActor,
 		},
 	}, {
-		name:  "user actor",
-		actor: &Actor{UID: 1234},
-		wantHeaders: map[string]string{
-			headerKeyActorUID: "1234",
+		nbme:  "user bctor",
+		bctor: &Actor{UID: 1234},
+		wbntHebders: mbp[string]string{
+			hebderKeyActorUID: "1234",
 		},
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			transport := &HTTPTransport{
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			trbnsport := &HTTPTrbnsport{
 				RoundTripper: roundTripFunc(func(req *http.Request) *http.Response {
-					for k, want := range tt.wantHeaders {
-						if got := req.Header.Get(k); got == "" {
-							t.Errorf("did not find expected header %q", k)
-						} else if diff := cmp.Diff(want, got); diff != "" {
-							t.Errorf("headers mismatch (-want +got):\n%s", diff)
+					for k, wbnt := rbnge tt.wbntHebders {
+						if got := req.Hebder.Get(k); got == "" {
+							t.Errorf("did not find expected hebder %q", k)
+						} else if diff := cmp.Diff(wbnt, got); diff != "" {
+							t.Errorf("hebders mismbtch (-wbnt +got):\n%s", diff)
 						}
 					}
-					return &http.Response{StatusCode: http.StatusOK}
+					return &http.Response{StbtusCode: http.StbtusOK}
 				}),
 			}
-			ctx := WithActor(context.Background(), tt.actor)
+			ctx := WithActor(context.Bbckground(), tt.bctor)
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "/test", nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			got, err := transport.RoundTrip(req)
+			got, err := trbnsport.RoundTrip(req)
 			if err != nil {
-				t.Fatalf("Transport.RoundTrip() error = %v", err)
+				t.Fbtblf("Trbnsport.RoundTrip() error = %v", err)
 			}
-			if got.StatusCode != http.StatusOK {
-				t.Fatalf("Unexpected response: %+v", got)
+			if got.StbtusCode != http.StbtusOK {
+				t.Fbtblf("Unexpected response: %+v", got)
 			}
 		})
 	}
 }
 
-func TestHTTPMiddleware(t *testing.T) {
+func TestHTTPMiddlewbre(t *testing.T) {
 	tests := []struct {
-		name      string
-		headers   map[string]string
-		wantActor *Actor
+		nbme      string
+		hebders   mbp[string]string
+		wbntActor *Actor
 	}{{
-		name: "unauthenticated",
-		headers: map[string]string{
-			headerKeyActorUID: headerValueNoActor,
+		nbme: "unbuthenticbted",
+		hebders: mbp[string]string{
+			hebderKeyActorUID: hebderVblueNoActor,
 		},
-		wantActor: &Actor{}, // FromContext provides a zero-value actor if one is not present
+		wbntActor: &Actor{}, // FromContext provides b zero-vblue bctor if one is not present
 	}, {
-		name: "invalid actor",
-		headers: map[string]string{
-			headerKeyActorUID: "not-a-valid-id",
+		nbme: "invblid bctor",
+		hebders: mbp[string]string{
+			hebderKeyActorUID: "not-b-vblid-id",
 		},
-		wantActor: &Actor{}, // FromContext provides a zero-value actor  if one is not present
+		wbntActor: &Actor{}, // FromContext provides b zero-vblue bctor  if one is not present
 	}, {
-		name: "internal actor",
-		headers: map[string]string{
-			headerKeyActorUID: headerValueInternalActor,
+		nbme: "internbl bctor",
+		hebders: mbp[string]string{
+			hebderKeyActorUID: hebderVblueInternblActor,
 		},
-		wantActor: &Actor{Internal: true},
+		wbntActor: &Actor{Internbl: true},
 	}, {
-		name: "user actor",
-		headers: map[string]string{
-			headerKeyActorUID: "1234",
+		nbme: "user bctor",
+		hebders: mbp[string]string{
+			hebderKeyActorUID: "1234",
 		},
-		wantActor: &Actor{UID: 1234},
+		wbntActor: &Actor{UID: 1234},
 	}, {
-		name: "no actor info as internal",
-		headers: map[string]string{
-			headerKeyActorUID: "",
+		nbme: "no bctor info bs internbl",
+		hebders: mbp[string]string{
+			hebderKeyActorUID: "",
 		},
-		wantActor: &Actor{Internal: false},
+		wbntActor: &Actor{Internbl: fblse},
 	}, {
-		name: "anonymous UID for unauthed actor",
-		headers: map[string]string{
-			headerKeyActorUID:          "none",
-			headerKeyActorAnonymousUID: "anonymousUID",
+		nbme: "bnonymous UID for unbuthed bctor",
+		hebders: mbp[string]string{
+			hebderKeyActorUID:          "none",
+			hebderKeyActorAnonymousUID: "bnonymousUID",
 		},
-		wantActor: &Actor{AnonymousUID: "anonymousUID"},
+		wbntActor: &Actor{AnonymousUID: "bnonymousUID"},
 	}}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			handler := HTTPMiddleware(logtest.Scoped(t), http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			hbndler := HTTPMiddlewbre(logtest.Scoped(t), http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 				got := FromContext(r.Context())
-				// Compare string representation
-				if diff := cmp.Diff(tt.wantActor.String(), got.String()); diff != "" {
-					t.Errorf("actor mismatch (-want +got):\n%s", diff)
+				// Compbre string representbtion
+				if diff := cmp.Diff(tt.wbntActor.String(), got.String()); diff != "" {
+					t.Errorf("bctor mismbtch (-wbnt +got):\n%s", diff)
 				}
 			}))
 			req, err := http.NewRequest(http.MethodGet, "/test", nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			for k, v := range tt.headers {
-				req.Header.Set(k, v)
+			for k, v := rbnge tt.hebders {
+				req.Hebder.Set(k, v)
 			}
-			handler.ServeHTTP(httptest.NewRecorder(), req)
+			hbndler.ServeHTTP(httptest.NewRecorder(), req)
 		})
 	}
 }
 
-func TestAnonymousUIDMiddleware(t *testing.T) {
-	t.Run("cookie value is respected", func(t *testing.T) {
-		handler := AnonymousUIDMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+func TestAnonymousUIDMiddlewbre(t *testing.T) {
+	t.Run("cookie vblue is respected", func(t *testing.T) {
+		hbndler := AnonymousUIDMiddlewbre(http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			got := FromContext(r.Context())
-			require.Equal(t, "anon", got.AnonymousUID)
+			require.Equbl(t, "bnon", got.AnonymousUID)
 		}))
 
 		req, err := http.NewRequest(http.MethodGet, "/test", nil)
 		require.NoError(t, err)
-		req.AddCookie(&http.Cookie{Name: "sourcegraphAnonymousUid", Value: "anon"})
-		handler.ServeHTTP(httptest.NewRecorder(), req)
+		req.AddCookie(&http.Cookie{Nbme: "sourcegrbphAnonymousUid", Vblue: "bnon"})
+		hbndler.ServeHTTP(httptest.NewRecorder(), req)
 	})
 
-	t.Run("header value is respected", func(t *testing.T) {
-		handler := AnonymousUIDMiddleware(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	t.Run("hebder vblue is respected", func(t *testing.T) {
+		hbndler := AnonymousUIDMiddlewbre(http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			got := FromContext(r.Context())
-			require.Equal(t, "anon", got.AnonymousUID)
+			require.Equbl(t, "bnon", got.AnonymousUID)
 		}))
 
 		req, err := http.NewRequest(http.MethodGet, "/test", nil)
 		require.NoError(t, err)
-		req.Header.Set(headerKeyActorAnonymousUID, "anon")
-		handler.ServeHTTP(httptest.NewRecorder(), req)
+		req.Hebder.Set(hebderKeyActorAnonymousUID, "bnon")
+		hbndler.ServeHTTP(httptest.NewRecorder(), req)
 	})
 
-	t.Run("cookie doesn't overwrite existing middleware", func(t *testing.T) {
-		handler := http.Handler(http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+	t.Run("cookie doesn't overwrite existing middlewbre", func(t *testing.T) {
+		hbndler := http.Hbndler(http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
 			got := FromContext(r.Context())
-			require.Equal(t, int32(132), got.UID)
-			require.Equal(t, "", got.AnonymousUID)
+			require.Equbl(t, int32(132), got.UID)
+			require.Equbl(t, "", got.AnonymousUID)
 		}))
-		anonHandler := AnonymousUIDMiddleware(handler)
-		userHandler := http.HandlerFunc(func(rw http.ResponseWriter, r *http.Request) {
-			// Add an authenticated actor
-			anonHandler.ServeHTTP(rw, r.WithContext(WithActor(r.Context(), FromUser(132))))
+		bnonHbndler := AnonymousUIDMiddlewbre(hbndler)
+		userHbndler := http.HbndlerFunc(func(rw http.ResponseWriter, r *http.Request) {
+			// Add bn buthenticbted bctor
+			bnonHbndler.ServeHTTP(rw, r.WithContext(WithActor(r.Context(), FromUser(132))))
 		})
 
 		req, err := http.NewRequest(http.MethodGet, "/test", nil)
 		require.NoError(t, err)
-		req.AddCookie(&http.Cookie{Name: "sourcegraphAnonymousUid", Value: "anon"})
-		userHandler.ServeHTTP(httptest.NewRecorder(), req)
+		req.AddCookie(&http.Cookie{Nbme: "sourcegrbphAnonymousUid", Vblue: "bnon"})
+		userHbndler.ServeHTTP(httptest.NewRecorder(), req)
 	})
 }

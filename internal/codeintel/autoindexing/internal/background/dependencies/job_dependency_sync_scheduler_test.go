@@ -1,36 +1,36 @@
-package dependencies
+pbckbge dependencies
 
 import (
 	"context"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/lib/codeintel/precise"
 )
 
 func init() {
-	autoIndexingEnabled = func() bool { return true }
+	butoIndexingEnbbled = func() bool { return true }
 }
 
 func TestDependencySyncSchedulerJVM(t *testing.T) {
 	mockWorkerStore := NewMockWorkerStore[dependencySyncingJob]()
-	mockUploadsSvc := NewMockUploadService()
+	mockUplobdsSvc := NewMockUplobdService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()
-	mockExtsvcStore := NewMockExternalServiceStore()
-	mockScanner := NewMockPackageReferenceScanner()
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "scip-java"}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: dependencies.JVMPackagesScheme, Name: "name1", Version: "v2.2.0"}}, true, nil)
+	mockExtsvcStore := NewMockExternblServiceStore()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 50, Indexer: "scip-jbvb"}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: dependencies.JVMPbckbgesScheme, Nbme: "nbme1", Version: "v2.2.0"}}, true, nil)
 
-	handler := dependencySyncSchedulerHandler{
-		uploadsSvc:  mockUploadsSvc,
+	hbndler := dependencySyncSchedulerHbndler{
+		uplobdsSvc:  mockUplobdsSvc,
 		depsSvc:     mockDepedenciesSvc,
 		store:       mockStore,
 		workerStore: mockWorkerStore,
@@ -39,49 +39,49 @@ func TestDependencySyncSchedulerJVM(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	job := dependencySyncingJob{
-		UploadID: 42,
+		UplobdID: 42,
 	}
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
 	if len(mockStore.InsertDependencyIndexingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockStore.InsertDependencyIndexingJobFunc.History()))
+		t.Errorf("unexpected number of cblls to InsertDependencyIndexingJob. wbnt=%d hbve=%d", 1, len(mockStore.InsertDependencyIndexingJobFunc.History()))
 	} else {
-		var kinds []string
-		for _, call := range mockStore.InsertDependencyIndexingJobFunc.History() {
-			kinds = append(kinds, call.Arg2)
+		vbr kinds []string
+		for _, cbll := rbnge mockStore.InsertDependencyIndexingJobFunc.History() {
+			kinds = bppend(kinds, cbll.Arg2)
 		}
 
-		expectedKinds := []string{extsvc.KindJVMPackages}
+		expectedKinds := []string{extsvc.KindJVMPbckbges}
 		if diff := cmp.Diff(expectedKinds, kinds); diff != "" {
-			t.Errorf("unexpected kinds (-want +got):\n%s", diff)
+			t.Errorf("unexpected kinds (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if len(mockExtsvcStore.ListFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to extsvc.List. want=%d have=%d", 1, len(mockExtsvcStore.ListFunc.History()))
+		t.Errorf("unexpected number of cblls to extsvc.List. wbnt=%d hbve=%d", 1, len(mockExtsvcStore.ListFunc.History()))
 	}
 
-	if len(mockDepedenciesSvc.InsertPackageRepoRefsFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 1, len(mockDepedenciesSvc.InsertPackageRepoRefsFunc.History()))
+	if len(mockDepedenciesSvc.InsertPbckbgeRepoRefsFunc.History()) != 1 {
+		t.Errorf("unexpected number of cblls to InsertClonebbleDependencyRepo. wbnt=%d hbve=%d", 1, len(mockDepedenciesSvc.InsertPbckbgeRepoRefsFunc.History()))
 	}
 }
 
 func TestDependencySyncSchedulerGomod(t *testing.T) {
 	t.Skip()
 	mockWorkerStore := NewMockWorkerStore[dependencySyncingJob]()
-	mockUploadsSvc := NewMockUploadService()
+	mockUplobdsSvc := NewMockUplobdService()
 	mockDepedenciesSvc := NewMockDependenciesService()
 	mockStore := NewMockStore()
-	mockExtsvcStore := NewMockExternalServiceStore()
-	mockScanner := NewMockPackageReferenceScanner()
-	mockUploadsSvc.ReferencesForUploadFunc.SetDefaultReturn(mockScanner, nil)
-	mockUploadsSvc.GetUploadByIDFunc.SetDefaultReturn(shared.Upload{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
-	mockScanner.NextFunc.PushReturn(shared.PackageReference{Package: shared.Package{DumpID: 42, Scheme: "gomod", Name: "name1", Version: "v2.2.0"}}, true, nil)
+	mockExtsvcStore := NewMockExternblServiceStore()
+	mockScbnner := NewMockPbckbgeReferenceScbnner()
+	mockUplobdsSvc.ReferencesForUplobdFunc.SetDefbultReturn(mockScbnner, nil)
+	mockUplobdsSvc.GetUplobdByIDFunc.SetDefbultReturn(shbred.Uplobd{ID: 42, RepositoryID: 50, Indexer: "lsif-go"}, true, nil)
+	mockScbnner.NextFunc.PushReturn(shbred.PbckbgeReference{Pbckbge: shbred.Pbckbge{DumpID: 42, Scheme: "gomod", Nbme: "nbme1", Version: "v2.2.0"}}, true, nil)
 
-	handler := dependencySyncSchedulerHandler{
-		uploadsSvc:  mockUploadsSvc,
+	hbndler := dependencySyncSchedulerHbndler{
+		uplobdsSvc:  mockUplobdsSvc,
 		depsSvc:     mockDepedenciesSvc,
 		store:       mockStore,
 		workerStore: mockWorkerStore,
@@ -90,116 +90,116 @@ func TestDependencySyncSchedulerGomod(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	job := dependencySyncingJob{
-		UploadID: 42,
+		UplobdID: 42,
 	}
-	if err := handler.Handle(context.Background(), logger, job); err != nil {
-		t.Fatalf("unexpected error performing update: %s", err)
+	if err := hbndler.Hbndle(context.Bbckground(), logger, job); err != nil {
+		t.Fbtblf("unexpected error performing updbte: %s", err)
 	}
 
 	if len(mockStore.InsertDependencyIndexingJobFunc.History()) != 1 {
-		t.Errorf("unexpected number of calls to InsertDependencyIndexingJob. want=%d have=%d", 1, len(mockStore.InsertDependencyIndexingJobFunc.History()))
+		t.Errorf("unexpected number of cblls to InsertDependencyIndexingJob. wbnt=%d hbve=%d", 1, len(mockStore.InsertDependencyIndexingJobFunc.History()))
 	} else {
-		var kinds []string
-		for _, call := range mockStore.InsertDependencyIndexingJobFunc.History() {
-			kinds = append(kinds, call.Arg2)
+		vbr kinds []string
+		for _, cbll := rbnge mockStore.InsertDependencyIndexingJobFunc.History() {
+			kinds = bppend(kinds, cbll.Arg2)
 		}
 
 		expectedKinds := []string{""}
 
 		if diff := cmp.Diff(expectedKinds, kinds); diff != "" {
-			t.Errorf("unexpected kinds (-want +got):\n%s", diff)
+			t.Errorf("unexpected kinds (-wbnt +got):\n%s", diff)
 		}
 	}
 
 	if len(mockExtsvcStore.ListFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to extsvc.List. want=%d have=%d", 0, len(mockExtsvcStore.ListFunc.History()))
+		t.Errorf("unexpected number of cblls to extsvc.List. wbnt=%d hbve=%d", 0, len(mockExtsvcStore.ListFunc.History()))
 	}
 
-	if len(mockDepedenciesSvc.InsertPackageRepoRefsFunc.History()) != 0 {
-		t.Errorf("unexpected number of calls to InsertCloneableDependencyRepo. want=%d have=%d", 0, len(mockDepedenciesSvc.InsertPackageRepoRefsFunc.History()))
+	if len(mockDepedenciesSvc.InsertPbckbgeRepoRefsFunc.History()) != 0 {
+		t.Errorf("unexpected number of cblls to InsertClonebbleDependencyRepo. wbnt=%d hbve=%d", 0, len(mockDepedenciesSvc.InsertPbckbgeRepoRefsFunc.History()))
 	}
 }
 
-func TestNewPackage(t *testing.T) {
-	for _, tc := range []struct {
-		name string
-		in   shared.Package
-		out  *precise.Package
+func TestNewPbckbge(t *testing.T) {
+	for _, tc := rbnge []struct {
+		nbme string
+		in   shbred.Pbckbge
+		out  *precise.Pbckbge
 	}{
 		{
-			name: "jvm name normalization",
-			in: shared.Package{
-				Scheme:  dependencies.JVMPackagesScheme,
-				Name:    "maven/junit/junit",
+			nbme: "jvm nbme normblizbtion",
+			in: shbred.Pbckbge{
+				Scheme:  dependencies.JVMPbckbgesScheme,
+				Nbme:    "mbven/junit/junit",
 				Version: "4.2",
 			},
-			out: &precise.Package{
-				Scheme:  dependencies.JVMPackagesScheme,
-				Name:    "junit:junit",
-				Version: "4.2",
-			},
-		},
-		{
-			name: "jvm name normalization no-op",
-			in: shared.Package{
-				Scheme:  dependencies.JVMPackagesScheme,
-				Name:    "junit:junit",
-				Version: "4.2",
-			},
-			out: &precise.Package{
-				Scheme:  dependencies.JVMPackagesScheme,
-				Name:    "junit:junit",
+			out: &precise.Pbckbge{
+				Scheme:  dependencies.JVMPbckbgesScheme,
+				Nbme:    "junit:junit",
 				Version: "4.2",
 			},
 		},
 		{
-			name: "npm no-op",
-			in: shared.Package{
-				Scheme:  dependencies.NpmPackagesScheme,
-				Name:    "@graphql-mesh/graphql",
+			nbme: "jvm nbme normblizbtion no-op",
+			in: shbred.Pbckbge{
+				Scheme:  dependencies.JVMPbckbgesScheme,
+				Nbme:    "junit:junit",
+				Version: "4.2",
+			},
+			out: &precise.Pbckbge{
+				Scheme:  dependencies.JVMPbckbgesScheme,
+				Nbme:    "junit:junit",
+				Version: "4.2",
+			},
+		},
+		{
+			nbme: "npm no-op",
+			in: shbred.Pbckbge{
+				Scheme:  dependencies.NpmPbckbgesScheme,
+				Nbme:    "@grbphql-mesh/grbphql",
 				Version: "0.24.0",
 			},
-			out: &precise.Package{
-				Scheme:  dependencies.NpmPackagesScheme,
-				Name:    "@graphql-mesh/graphql",
+			out: &precise.Pbckbge{
+				Scheme:  dependencies.NpmPbckbgesScheme,
+				Nbme:    "@grbphql-mesh/grbphql",
 				Version: "0.24.0",
 			},
 		},
 		{
-			name: "npm bad-name",
-			in: shared.Package{
-				Scheme:  dependencies.NpmPackagesScheme,
-				Name:    "@automapper/classes/transformer-plugin",
+			nbme: "npm bbd-nbme",
+			in: shbred.Pbckbge{
+				Scheme:  dependencies.NpmPbckbgesScheme,
+				Nbme:    "@butombpper/clbsses/trbnsformer-plugin",
 				Version: "0.24.0",
 			},
 			out: nil,
 		},
 		{
-			name: "go no-op",
-			in: shared.Package{
-				Scheme:  dependencies.GoPackagesScheme,
-				Name:    "github.com/tsenart/vegeta/v12",
+			nbme: "go no-op",
+			in: shbred.Pbckbge{
+				Scheme:  dependencies.GoPbckbgesScheme,
+				Nbme:    "github.com/tsenbrt/vegetb/v12",
 				Version: "12.7.0",
 			},
-			out: &precise.Package{
-				Scheme:  dependencies.GoPackagesScheme,
-				Name:    "github.com/tsenart/vegeta/v12",
+			out: &precise.Pbckbge{
+				Scheme:  dependencies.GoPbckbgesScheme,
+				Nbme:    "github.com/tsenbrt/vegetb/v12",
 				Version: "12.7.0",
 			},
 		},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			have, err := newPackage(tc.in)
-			want := tc.out
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve, err := newPbckbge(tc.in)
+			wbnt := tc.out
 
-			if want == nil {
-				require.Nil(t, have)
+			if wbnt == nil {
+				require.Nil(t, hbve)
 				require.NotNil(t, err)
 				return
 			}
 
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Fatalf("mismatch (-want, +have): %s", diff)
+			if diff := cmp.Diff(wbnt, hbve); diff != "" {
+				t.Fbtblf("mismbtch (-wbnt, +hbve): %s", diff)
 			}
 		})
 	}

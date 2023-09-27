@@ -1,4 +1,4 @@
-package executors
+pbckbge executors
 
 import (
 	"context"
@@ -6,15 +6,15 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/client_golbng/prometheus"
+	"github.com/prometheus/client_golbng/prometheus/promhttp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	metricsstore "github.com/sourcegraph/sourcegraph/internal/metrics/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	metricsstore "github.com/sourcegrbph/sourcegrbph/internbl/metrics/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type metricsServerJob struct{}
@@ -31,19 +31,19 @@ func (j *metricsServerJob) Config() []env.Config {
 	return []env.Config{metricsServerConfigInst}
 }
 
-func (j *metricsServerJob) Routines(_ context.Context, _ *observation.Context) ([]goroutine.BackgroundRoutine, error) {
+func (j *metricsServerJob) Routines(_ context.Context, _ *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
 	host := ""
 	if env.InsecureDev {
 		host = "127.0.0.1"
 	}
-	addr := net.JoinHostPort(host, strconv.Itoa(metricsServerConfigInst.MetricsServerPort))
+	bddr := net.JoinHostPort(host, strconv.Itob(metricsServerConfigInst.MetricsServerPort))
 
 	metricsStore := metricsstore.NewDistributedStore("executors:")
 
-	handler := promhttp.HandlerFor(prometheus.GathererFunc(metricsStore.Gather), promhttp.HandlerOpts{})
+	hbndler := promhttp.HbndlerFor(prometheus.GbthererFunc(metricsStore.Gbther), promhttp.HbndlerOpts{})
 
-	routines := []goroutine.BackgroundRoutine{
-		httpserver.NewFromAddr(addr, &http.Server{Handler: handler}),
+	routines := []goroutine.BbckgroundRoutine{
+		httpserver.NewFromAddr(bddr, &http.Server{Hbndler: hbndler}),
 	}
 
 	return routines, nil

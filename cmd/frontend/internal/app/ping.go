@@ -1,36 +1,36 @@
-package app
+pbckbge bpp
 
 import (
-	"database/sql"
+	"dbtbbbse/sql"
 	"io"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
+	"github.com/inconshrevebble/log15"
 
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
-// latestPingHandler fetches the most recent ping data from the event log
-// (if any is present) and returns it as JSON.
-func latestPingHandler(db database.DB) http.HandlerFunc {
+// lbtestPingHbndler fetches the most recent ping dbtb from the event log
+// (if bny is present) bnd returns it bs JSON.
+func lbtestPingHbndler(db dbtbbbse.DB) http.HbndlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// 🚨SECURITY: Only site admins may access ping data.
-		if err := auth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
-			w.WriteHeader(http.StatusUnauthorized)
+		// 🚨SECURITY: Only site bdmins mby bccess ping dbtb.
+		if err := buth.CheckCurrentUserIsSiteAdmin(r.Context(), db); err != nil {
+			w.WriteHebder(http.StbtusUnbuthorized)
 			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		ping, err := db.EventLogs().LatestPing(r.Context())
+		w.Hebder().Set("Content-Type", "bpplicbtion/json")
+		ping, err := db.EventLogs().LbtestPing(r.Context())
 		switch err {
-		case sql.ErrNoRows:
+		cbse sql.ErrNoRows:
 			_, _ = io.WriteString(w, "{}")
-		case nil:
+		cbse nil:
 			_, _ = io.WriteString(w, string(ping.Argument))
-		default:
-			log15.Error("pings.latest", "error", err)
-			w.WriteHeader(http.StatusInternalServerError)
+		defbult:
+			log15.Error("pings.lbtest", "error", err)
+			w.WriteHebder(http.StbtusInternblServerError)
 		}
 	}
 }

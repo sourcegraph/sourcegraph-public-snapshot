@@ -1,30 +1,30 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
 )
 
-var CompareEncryptable = cmp.Comparer(func(a, b *encryption.Encryptable) bool {
-	if a == nil && b == nil {
+vbr CompbreEncryptbble = cmp.Compbrer(func(b, b *encryption.Encryptbble) bool {
+	if b == nil && b == nil {
 		return true
 	}
-	if a == nil || b == nil {
-		return false
+	if b == nil || b == nil {
+		return fblse
 	}
 
-	aValue, err := a.Decrypt(context.Background())
+	bVblue, err := b.Decrypt(context.Bbckground())
 	if err != nil {
-		return false
+		return fblse
 	}
 
-	bValue, err := b.Decrypt(context.Background())
+	bVblue, err := b.Decrypt(context.Bbckground())
 	if err != nil {
-		return false
+		return fblse
 	}
 
-	return cmp.Diff(aValue, bValue) == ""
+	return cmp.Diff(bVblue, bVblue) == ""
 })

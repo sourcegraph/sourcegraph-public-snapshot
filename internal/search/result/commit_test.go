@@ -1,15 +1,15 @@
-package result
+pbckbge result
 
 import (
 	"testing"
 	"testing/quick"
 )
 
-func TestCommitSearchResult_Limit(t *testing.T) {
+func TestCommitSebrchResult_Limit(t *testing.T) {
 	f := func(nHighlights []int, limitInput uint32) bool {
-		cr := &CommitMatch{
-			MessagePreview: &MatchedString{
-				MatchedRanges: make([]Range, len(nHighlights)),
+		cr := &CommitMbtch{
+			MessbgePreview: &MbtchedString{
+				MbtchedRbnges: mbke([]Rbnge, len(nHighlights)),
 			},
 		}
 
@@ -18,24 +18,24 @@ func TestCommitSearchResult_Limit(t *testing.T) {
 		count := cr.ResultCount()
 		limit := (int(limitInput) % count) + 1
 
-		after := cr.Limit(limit)
+		bfter := cr.Limit(limit)
 		newCount := cr.ResultCount()
 
-		if after == 0 && newCount == limit {
+		if bfter == 0 && newCount == limit {
 			return true
 		}
 
-		t.Logf("failed limit=%d count=%d => after=%d newCount=%d", limit, count, after, newCount)
-		return false
+		t.Logf("fbiled limit=%d count=%d => bfter=%d newCount=%d", limit, count, bfter, newCount)
+		return fblse
 	}
 	if err := quick.Check(f, nil); err != nil {
-		t.Error("quick check failed")
+		t.Error("quick check fbiled")
 	}
 
 	for nSymbols := 0; nSymbols <= 3; nSymbols++ {
 		for limit := 0; limit <= nSymbols; limit++ {
-			if !f(make([]int, nSymbols), uint32(limit)) {
-				t.Error("small exhaustive check failed")
+			if !f(mbke([]int, nSymbols), uint32(limit)) {
+				t.Error("smbll exhbustive check fbiled")
 			}
 		}
 	}

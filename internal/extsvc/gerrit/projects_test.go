@@ -1,26 +1,26 @@
-package gerrit
+pbckbge gerrit
 
 import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
 )
 
 func TestClient_ListProjects(t *testing.T) {
-	cli, save := NewTestClient(t, "ListProjects", *update)
-	defer save()
+	cli, sbve := NewTestClient(t, "ListProjects", *updbte)
+	defer sbve()
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	args := ListProjectsArgs{
-		Cursor: &Pagination{PerPage: 5, Page: 1},
+	brgs := ListProjectsArgs{
+		Cursor: &Pbginbtion{PerPbge: 5, Pbge: 1},
 	}
 
-	resp, _, err := cli.ListProjects(ctx, args)
+	resp, _, err := cli.ListProjects(ctx, brgs)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	testutil.AssertGolden(t, "testdata/golden/ListProjects.json", *update, resp)
+	testutil.AssertGolden(t, "testdbtb/golden/ListProjects.json", *updbte, resp)
 }

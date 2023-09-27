@@ -1,46 +1,46 @@
-package connections
+pbckbge connections
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"os"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbconn"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbconn"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func connectFrontendDB(observationCtx *observation.Context, dsn, appName string, validate, migrate bool) (*sql.DB, error) {
-	schema := schemas.Frontend
-	if !validate {
-		schema = nil
+func connectFrontendDB(observbtionCtx *observbtion.Context, dsn, bppNbme string, vblidbte, migrbte bool) (*sql.DB, error) {
+	schemb := schembs.Frontend
+	if !vblidbte {
+		schemb = nil
 	}
 
-	return connect(observationCtx, dsn, appName, "frontend", schema, migrate)
+	return connect(observbtionCtx, dsn, bppNbme, "frontend", schemb, migrbte)
 }
 
-func connectCodeIntelDB(observationCtx *observation.Context, dsn, appName string, validate, migrate bool) (*sql.DB, error) {
-	schema := schemas.CodeIntel
-	if !validate {
-		schema = nil
+func connectCodeIntelDB(observbtionCtx *observbtion.Context, dsn, bppNbme string, vblidbte, migrbte bool) (*sql.DB, error) {
+	schemb := schembs.CodeIntel
+	if !vblidbte {
+		schemb = nil
 	}
 
-	return connect(observationCtx, dsn, appName, "codeintel", schema, migrate)
+	return connect(observbtionCtx, dsn, bppNbme, "codeintel", schemb, migrbte)
 }
 
-func connectCodeInsightsDB(observationCtx *observation.Context, dsn, appName string, validate, migrate bool) (*sql.DB, error) {
-	schema := schemas.CodeInsights
-	if !validate {
-		schema = nil
+func connectCodeInsightsDB(observbtionCtx *observbtion.Context, dsn, bppNbme string, vblidbte, migrbte bool) (*sql.DB, error) {
+	schemb := schembs.CodeInsights
+	if !vblidbte {
+		schemb = nil
 	}
 
-	return connect(observationCtx, dsn, appName, "codeinsights", schema, migrate)
+	return connect(observbtionCtx, dsn, bppNbme, "codeinsights", schemb, migrbte)
 }
 
-func connect(observationCtx *observation.Context, dsn, appName, dbName string, schema *schemas.Schema, migrate bool) (*sql.DB, error) {
-	db, err := dbconn.ConnectInternal(observationCtx.Logger, dsn, appName, dbName)
+func connect(observbtionCtx *observbtion.Context, dsn, bppNbme, dbNbme string, schemb *schembs.Schemb, migrbte bool) (*sql.DB, error) {
+	db, err := dbconn.ConnectInternbl(observbtionCtx.Logger, dsn, bppNbme, dbNbme)
 	if err != nil {
 		return nil, err
 	}
@@ -52,8 +52,8 @@ func connect(observationCtx *observation.Context, dsn, appName, dbName string, s
 		}
 	}()
 
-	if schema != nil {
-		if err := validateSchema(observationCtx, db, schema, !migrate); err != nil {
+	if schemb != nil {
+		if err := vblidbteSchemb(observbtionCtx, db, schemb, !migrbte); err != nil {
 			return nil, err
 		}
 	}
@@ -61,25 +61,25 @@ func connect(observationCtx *observation.Context, dsn, appName, dbName string, s
 	return db, nil
 }
 
-func validateSchema(observationCtx *observation.Context, db *sql.DB, schema *schemas.Schema, validateOnly bool) error {
-	ctx := context.Background()
-	storeFactory := newStoreFactory(observationCtx)
-	migrationRunner := runnerFromDB(observationCtx.Logger, storeFactory, db, schema)
+func vblidbteSchemb(observbtionCtx *observbtion.Context, db *sql.DB, schemb *schembs.Schemb, vblidbteOnly bool) error {
+	ctx := context.Bbckground()
+	storeFbctory := newStoreFbctory(observbtionCtx)
+	migrbtionRunner := runnerFromDB(observbtionCtx.Logger, storeFbctory, db, schemb)
 
-	if err := migrationRunner.Validate(ctx, schema.Name); err != nil {
-		outOfDateError := new(runner.SchemaOutOfDateError)
-		if !errors.As(err, &outOfDateError) {
+	if err := migrbtionRunner.Vblidbte(ctx, schemb.Nbme); err != nil {
+		outOfDbteError := new(runner.SchembOutOfDbteError)
+		if !errors.As(err, &outOfDbteError) {
 			return err
 		}
-		if !shouldMigrate(validateOnly) {
-			return errors.Newf("database schema out of date")
+		if !shouldMigrbte(vblidbteOnly) {
+			return errors.Newf("dbtbbbse schemb out of dbte")
 		}
 
-		return migrationRunner.Run(ctx, runner.Options{
-			Operations: []runner.MigrationOperation{
+		return migrbtionRunner.Run(ctx, runner.Options{
+			Operbtions: []runner.MigrbtionOperbtion{
 				{
-					SchemaName: schema.Name,
-					Type:       runner.MigrationOperationTypeUpgrade,
+					SchembNbme: schemb.Nbme,
+					Type:       runner.MigrbtionOperbtionTypeUpgrbde,
 				},
 			},
 		})
@@ -88,6 +88,6 @@ func validateSchema(observationCtx *observation.Context, db *sql.DB, schema *sch
 	return nil
 }
 
-func shouldMigrate(validateOnly bool) bool {
-	return !validateOnly || os.Getenv("SG_DEV_MIGRATE_ON_APPLICATION_STARTUP") != ""
+func shouldMigrbte(vblidbteOnly bool) bool {
+	return !vblidbteOnly || os.Getenv("SG_DEV_MIGRATE_ON_APPLICATION_STARTUP") != ""
 }

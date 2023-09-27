@@ -1,65 +1,65 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"net/http"
 	"testing"
 )
 
-func TestSudoableToken(t *testing.T) {
-	t.Run("Authenticate without Sudo", func(t *testing.T) {
-		token := SudoableToken{Token: "abcdef"}
+func TestSudobbleToken(t *testing.T) {
+	t.Run("Authenticbte without Sudo", func(t *testing.T) {
+		token := SudobbleToken{Token: "bbcdef"}
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := token.Authenticate(req); err != nil {
+		if err := token.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if have, want := req.Header.Get("Private-Token"), "abcdef"; have != want {
-			t.Errorf("unexpected Private-Token header: have=%q want=%q", have, want)
+		if hbve, wbnt := req.Hebder.Get("Privbte-Token"), "bbcdef"; hbve != wbnt {
+			t.Errorf("unexpected Privbte-Token hebder: hbve=%q wbnt=%q", hbve, wbnt)
 		}
-		if have := req.Header.Get("Sudo"); have != "" {
-			t.Errorf("unexpected Sudo header: %v", have)
+		if hbve := req.Hebder.Get("Sudo"); hbve != "" {
+			t.Errorf("unexpected Sudo hebder: %v", hbve)
 		}
 	})
 
-	t.Run("Authenticate with Sudo", func(t *testing.T) {
-		token := SudoableToken{Token: "abcdef", Sudo: "neo"}
+	t.Run("Authenticbte with Sudo", func(t *testing.T) {
+		token := SudobbleToken{Token: "bbcdef", Sudo: "neo"}
 
 		req, err := http.NewRequest("GET", "/", nil)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
-		if err := token.Authenticate(req); err != nil {
+		if err := token.Authenticbte(req); err != nil {
 			t.Errorf("unexpected non-nil error: %v", err)
 		}
 
-		if have, want := req.Header.Get("Private-Token"), "abcdef"; have != want {
-			t.Errorf("unexpected Private-Token header: have=%q want=%q", have, want)
+		if hbve, wbnt := req.Hebder.Get("Privbte-Token"), "bbcdef"; hbve != wbnt {
+			t.Errorf("unexpected Privbte-Token hebder: hbve=%q wbnt=%q", hbve, wbnt)
 		}
-		if have, want := req.Header.Get("Sudo"), "neo"; have != want {
-			t.Errorf("unexpected Sudo header: have=%q want=%q", have, want)
+		if hbve, wbnt := req.Hebder.Get("Sudo"), "neo"; hbve != wbnt {
+			t.Errorf("unexpected Sudo hebder: hbve=%q wbnt=%q", hbve, wbnt)
 		}
 	})
 
-	t.Run("Hash", func(t *testing.T) {
-		hashes := []string{
-			(&SudoableToken{Token: ""}).Hash(),
-			(&SudoableToken{Token: "foobar"}).Hash(),
-			(&SudoableToken{Token: "foobar", Sudo: "neo"}).Hash(),
-			(&SudoableToken{Token: "foobar\x00"}).Hash(),
+	t.Run("Hbsh", func(t *testing.T) {
+		hbshes := []string{
+			(&SudobbleToken{Token: ""}).Hbsh(),
+			(&SudobbleToken{Token: "foobbr"}).Hbsh(),
+			(&SudobbleToken{Token: "foobbr", Sudo: "neo"}).Hbsh(),
+			(&SudobbleToken{Token: "foobbr\x00"}).Hbsh(),
 		}
 
-		seen := make(map[string]struct{})
-		for _, hash := range hashes {
-			if _, ok := seen[hash]; ok {
-				t.Errorf("non-unique hash: %q", hash)
+		seen := mbke(mbp[string]struct{})
+		for _, hbsh := rbnge hbshes {
+			if _, ok := seen[hbsh]; ok {
+				t.Errorf("non-unique hbsh: %q", hbsh)
 			}
-			seen[hash] = struct{}{}
+			seen[hbsh] = struct{}{}
 		}
 	})
 }

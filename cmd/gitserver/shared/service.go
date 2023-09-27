@@ -1,20 +1,20 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "gitserver" }
+func (svc) Nbme() string { return "gitserver" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	c := LoadConfig()
+	c := LobdConfig()
 	endpoints := []debugserver.Endpoint{
 		GRPCWebUIDebugEndpoint(c.ListenAddress),
 	}
@@ -22,8 +22,8 @@ func (svc) Configure() (env.Config, []debugserver.Endpoint) {
 	return c, endpoints
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return Main(ctx, observationCtx, ready, config.(*Config))
+func (svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config env.Config) error {
+	return Mbin(ctx, observbtionCtx, rebdy, config.(*Config))
 }
 
-var Service service.Service = svc{}
+vbr Service service.Service = svc{}

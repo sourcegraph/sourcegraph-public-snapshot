@@ -1,7 +1,7 @@
-package api
+pbckbge bpi
 
-type ExternalServiceConfigsRequest struct {
+type ExternblServiceConfigsRequest struct {
 	Kind    string `json:"kind"`
 	Limit   int    `json:"limit"`
-	AfterID int    `json:"after_id"`
+	AfterID int    `json:"bfter_id"`
 }

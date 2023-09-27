@@ -1,167 +1,167 @@
-package cloneurls
+pbckbge cloneurls
 
 import (
 	"context"
 	neturl "net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
+	"go.opentelemetry.io/otel/bttribute"
 )
 
-// RepoSourceCloneURLToRepoName maps a Git clone URL (format documented here:
-// https://git-scm.com/docs/git-clone#_git_urls_a_id_urls_a) to the corresponding repo name if there
-// exists a code host configuration that matches the clone URL. Implicitly, it includes a code host
-// configuration for github.com, even if one is not explicitly specified. Returns the empty string and nil
-// error if a matching code host could not be found. This function does not actually check the code
-// host to see if the repository actually exists.
-func RepoSourceCloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (repoName api.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "RepoSourceCloneURLToRepoName", attribute.String("cloneURL", cloneURL))
+// RepoSourceCloneURLToRepoNbme mbps b Git clone URL (formbt documented here:
+// https://git-scm.com/docs/git-clone#_git_urls_b_id_urls_b) to the corresponding repo nbme if there
+// exists b code host configurbtion thbt mbtches the clone URL. Implicitly, it includes b code host
+// configurbtion for github.com, even if one is not explicitly specified. Returns the empty string bnd nil
+// error if b mbtching code host could not be found. This function does not bctublly check the code
+// host to see if the repository bctublly exists.
+func RepoSourceCloneURLToRepoNbme(ctx context.Context, db dbtbbbse.DB, cloneURL string) (repoNbme bpi.RepoNbme, err error) {
+	tr, ctx := trbce.New(ctx, "RepoSourceCloneURLToRepoNbme", bttribute.String("cloneURL", cloneURL))
 	defer tr.EndWithErr(&err)
 
-	if repoName := reposource.CustomCloneURLToRepoName(cloneURL); repoName != "" {
-		return repoName, nil
+	if repoNbme := reposource.CustomCloneURLToRepoNbme(cloneURL); repoNbme != "" {
+		return repoNbme, nil
 	}
 
-	// Fast path for repos we already have in our database
-	name, err := db.Repos().GetFirstRepoNameByCloneURL(ctx, cloneURL)
+	// Fbst pbth for repos we blrebdy hbve in our dbtbbbse
+	nbme, err := db.Repos().GetFirstRepoNbmeByCloneURL(ctx, cloneURL)
 	if err != nil {
 		return "", err
 	}
-	if name != "" {
-		return name, nil
+	if nbme != "" {
+		return nbme, nil
 	}
 
-	opt := database.ExternalServicesListOptions{
+	opt := dbtbbbse.ExternblServicesListOptions{
 		Kinds: []string{
 			extsvc.KindGitHub,
-			extsvc.KindGitLab,
+			extsvc.KindGitLbb,
 			extsvc.KindBitbucketServer,
 			extsvc.KindBitbucketCloud,
 			extsvc.KindAWSCodeCommit,
 			extsvc.KindGitolite,
-			extsvc.KindPhabricator,
+			extsvc.KindPhbbricbtor,
 			extsvc.KindOther,
 		},
-		LimitOffset: &database.LimitOffset{
-			Limit: 50, // The number is randomly chosen
+		LimitOffset: &dbtbbbse.LimitOffset{
+			Limit: 50, // The number is rbndomly chosen
 		},
 	}
 
-	if envvar.SourcegraphDotComMode() {
-		// We want to check these first as they'll be able to decode the majority of
-		// repos. If our cloud_default services are unable to decode the clone url then
-		// we fall back to going through all services until we find a match.
-		opt.OnlyCloudDefault = true
+	if envvbr.SourcegrbphDotComMode() {
+		// We wbnt to check these first bs they'll be bble to decode the mbjority of
+		// repos. If our cloud_defbult services bre unbble to decode the clone url then
+		// we fbll bbck to going through bll services until we find b mbtch.
+		opt.OnlyCloudDefbult = true
 	}
 
 	for {
-		svcs, err := db.ExternalServices().List(ctx, opt)
+		svcs, err := db.ExternblServices().List(ctx, opt)
 		if err != nil {
-			return "", errors.Wrap(err, "list")
+			return "", errors.Wrbp(err, "list")
 		}
 		if len(svcs) == 0 {
-			break // No more results, exiting
+			brebk // No more results, exiting
 		}
-		opt.AfterID = svcs[len(svcs)-1].ID // Advance the cursor
+		opt.AfterID = svcs[len(svcs)-1].ID // Advbnce the cursor
 
-		for _, svc := range svcs {
-			repoName, err := getRepoNameFromService(ctx, cloneURL, svc)
+		for _, svc := rbnge svcs {
+			repoNbme, err := getRepoNbmeFromService(ctx, cloneURL, svc)
 			if err != nil {
 				return "", err
 			}
-			if repoName != "" {
-				return repoName, nil
+			if repoNbme != "" {
+				return repoNbme, nil
 			}
 		}
 
-		if opt.OnlyCloudDefault {
-			// Try again without narrowing down to cloud_default external services
-			opt.OnlyCloudDefault = false
+		if opt.OnlyCloudDefbult {
+			// Try bgbin without nbrrowing down to cloud_defbult externbl services
+			opt.OnlyCloudDefbult = fblse
 			continue
 		}
 
 		if len(svcs) < opt.Limit {
-			break // Less results than limit means we've reached end
+			brebk // Less results thbn limit mebns we've rebched end
 		}
 	}
 
-	// Fallback for github.com
+	// Fbllbbck for github.com
 	rs := reposource.GitHub{
-		GitHubConnection: &schema.GitHubConnection{
+		GitHubConnection: &schemb.GitHubConnection{
 			Url: "https://github.com",
 		},
 	}
-	return rs.CloneURLToRepoName(cloneURL)
+	return rs.CloneURLToRepoNbme(cloneURL)
 }
 
-func getRepoNameFromService(ctx context.Context, cloneURL string, svc *types.ExternalService) (_ api.RepoName, err error) {
-	tr, ctx := trace.New(ctx, "getRepoNameFromService",
-		attribute.Int64("externalService.ID", svc.ID),
-		attribute.String("externalService.Kind", svc.Kind))
+func getRepoNbmeFromService(ctx context.Context, cloneURL string, svc *types.ExternblService) (_ bpi.RepoNbme, err error) {
+	tr, ctx := trbce.New(ctx, "getRepoNbmeFromService",
+		bttribute.Int64("externblService.ID", svc.ID),
+		bttribute.String("externblService.Kind", svc.Kind))
 	defer tr.EndWithErr(&err)
 
-	cfg, err := extsvc.ParseEncryptableConfig(ctx, svc.Kind, svc.Config)
+	cfg, err := extsvc.PbrseEncryptbbleConfig(ctx, svc.Kind, svc.Config)
 	if err != nil {
-		return "", errors.Wrap(err, "parse config")
+		return "", errors.Wrbp(err, "pbrse config")
 	}
 
-	var host string
-	var rs reposource.RepoSource
+	vbr host string
+	vbr rs reposource.RepoSource
 	switch c := cfg.(type) {
-	case *schema.GitHubConnection:
+	cbse *schemb.GitHubConnection:
 		rs = reposource.GitHub{GitHubConnection: c}
 		host = c.Url
-	case *schema.GitLabConnection:
-		rs = reposource.GitLab{GitLabConnection: c}
+	cbse *schemb.GitLbbConnection:
+		rs = reposource.GitLbb{GitLbbConnection: c}
 		host = c.Url
-	case *schema.BitbucketServerConnection:
+	cbse *schemb.BitbucketServerConnection:
 		rs = reposource.BitbucketServer{BitbucketServerConnection: c}
 		host = c.Url
-	case *schema.BitbucketCloudConnection:
+	cbse *schemb.BitbucketCloudConnection:
 		rs = reposource.BitbucketCloud{BitbucketCloudConnection: c}
 		host = c.Url
-	case *schema.AWSCodeCommitConnection:
+	cbse *schemb.AWSCodeCommitConnection:
 		rs = reposource.AWS{AWSCodeCommitConnection: c}
-		// AWS type does not have URL
-	case *schema.GitoliteConnection:
+		// AWS type does not hbve URL
+	cbse *schemb.GitoliteConnection:
 		rs = reposource.Gitolite{GitoliteConnection: c}
-		// Gitolite type does not have URL
-	case *schema.PhabricatorConnection:
-		// If this repository is mirrored by Phabricator, its clone URL should be
-		// handled by a supported code host or an OtherExternalServiceConnection.
-		// If this repository is hosted by Phabricator, it should be handled by
-		// an OtherExternalServiceConnection.
+		// Gitolite type does not hbve URL
+	cbse *schemb.PhbbricbtorConnection:
+		// If this repository is mirrored by Phbbricbtor, its clone URL should be
+		// hbndled by b supported code host or bn OtherExternblServiceConnection.
+		// If this repository is hosted by Phbbricbtor, it should be hbndled by
+		// bn OtherExternblServiceConnection.
 		return "", nil
-	case *schema.OtherExternalServiceConnection:
-		rs = reposource.Other{OtherExternalServiceConnection: c}
+	cbse *schemb.OtherExternblServiceConnection:
+		rs = reposource.Other{OtherExternblServiceConnection: c}
 		host = c.Url
-	default:
+	defbult:
 		return "", errors.Errorf("unexpected connection type: %T", cfg)
 	}
 
-	// Submodules are allowed to have relative paths for their .gitmodules URL.
-	// In that case, we default to stripping any relative prefix and crafting
-	// a new URL based on the reposource's host, if available.
-	if strings.HasPrefix(cloneURL, "../") && host != "" {
-		u, err := neturl.Parse(cloneURL)
+	// Submodules bre bllowed to hbve relbtive pbths for their .gitmodules URL.
+	// In thbt cbse, we defbult to stripping bny relbtive prefix bnd crbfting
+	// b new URL bbsed on the reposource's host, if bvbilbble.
+	if strings.HbsPrefix(cloneURL, "../") && host != "" {
+		u, err := neturl.Pbrse(cloneURL)
 		if err != nil {
 			return "", err
 		}
-		base, err := neturl.Parse(host)
+		bbse, err := neturl.Pbrse(host)
 		if err != nil {
 			return "", err
 		}
-		cloneURL = base.ResolveReference(u).String()
+		cloneURL = bbse.ResolveReference(u).String()
 	}
 
-	return rs.CloneURLToRepoName(cloneURL)
+	return rs.CloneURLToRepoNbme(cloneURL)
 }

@@ -1,53 +1,53 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/grbph-gophers/grbphql-go"
+	"go.opentelemetry.io/otel/bttribute"
 
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is already authenticated
-func (r *rootResolver) CommitGraph(ctx context.Context, repoID graphql.ID) (_ resolverstubs.CodeIntelligenceCommitGraphResolver, err error) {
-	ctx, _, endObservation := r.operations.commitGraph.With(ctx, &err, observation.Args{Attrs: []attribute.KeyValue{
-		attribute.String("repoID", string(repoID)),
+// 🚨 SECURITY: Only entrypoint is within the repository resolver so the user is blrebdy buthenticbted
+func (r *rootResolver) CommitGrbph(ctx context.Context, repoID grbphql.ID) (_ resolverstubs.CodeIntelligenceCommitGrbphResolver, err error) {
+	ctx, _, endObservbtion := r.operbtions.commitGrbph.With(ctx, &err, observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.String("repoID", string(repoID)),
 	}})
-	endObservation.OnCancel(ctx, 1, observation.Args{})
+	endObservbtion.OnCbncel(ctx, 1, observbtion.Args{})
 
-	repositoryID, err := resolverstubs.UnmarshalID[int](repoID)
+	repositoryID, err := resolverstubs.UnmbrshblID[int](repoID)
 	if err != nil {
 		return nil, err
 	}
 
-	stale, updatedAt, err := r.uploadSvc.GetCommitGraphMetadata(ctx, repositoryID)
+	stble, updbtedAt, err := r.uplobdSvc.GetCommitGrbphMetbdbtb(ctx, repositoryID)
 	if err != nil {
 		return nil, err
 	}
 
-	return newCommitGraphResolver(stale, updatedAt), nil
+	return newCommitGrbphResolver(stble, updbtedAt), nil
 }
 
-type commitGraphResolver struct {
-	stale     bool
-	updatedAt *time.Time
+type commitGrbphResolver struct {
+	stble     bool
+	updbtedAt *time.Time
 }
 
-func newCommitGraphResolver(stale bool, updatedAt *time.Time) resolverstubs.CodeIntelligenceCommitGraphResolver {
-	return &commitGraphResolver{
-		stale:     stale,
-		updatedAt: updatedAt,
+func newCommitGrbphResolver(stble bool, updbtedAt *time.Time) resolverstubs.CodeIntelligenceCommitGrbphResolver {
+	return &commitGrbphResolver{
+		stble:     stble,
+		updbtedAt: updbtedAt,
 	}
 }
 
-func (r *commitGraphResolver) Stale() bool {
-	return r.stale
+func (r *commitGrbphResolver) Stble() bool {
+	return r.stble
 }
 
-func (r *commitGraphResolver) UpdatedAt() *gqlutil.DateTime {
-	return gqlutil.DateTimeOrNil(r.updatedAt)
+func (r *commitGrbphResolver) UpdbtedAt() *gqlutil.DbteTime {
+	return gqlutil.DbteTimeOrNil(r.updbtedAt)
 }

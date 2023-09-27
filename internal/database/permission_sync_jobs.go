@@ -1,4 +1,4 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
@@ -6,44 +6,44 @@ import (
 	"strings"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/internal/executor"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-const CancellationReasonHigherPriority = "A job with higher priority was added."
+const CbncellbtionRebsonHigherPriority = "A job with higher priority wbs bdded."
 
-type PermissionsSyncSearchType string
+type PermissionsSyncSebrchType string
 
 const (
-	PermissionsSyncSearchTypeUser PermissionsSyncSearchType = "USER"
-	PermissionsSyncSearchTypeRepo PermissionsSyncSearchType = "REPOSITORY"
+	PermissionsSyncSebrchTypeUser PermissionsSyncSebrchType = "USER"
+	PermissionsSyncSebrchTypeRepo PermissionsSyncSebrchType = "REPOSITORY"
 )
 
-type PermissionsSyncJobState string
+type PermissionsSyncJobStbte string
 
-// PermissionsSyncJobState constants.
+// PermissionsSyncJobStbte constbnts.
 const (
-	PermissionsSyncJobStateQueued     PermissionsSyncJobState = "queued"
-	PermissionsSyncJobStateProcessing PermissionsSyncJobState = "processing"
-	PermissionsSyncJobStateErrored    PermissionsSyncJobState = "errored"
-	PermissionsSyncJobStateFailed     PermissionsSyncJobState = "failed"
-	PermissionsSyncJobStateCompleted  PermissionsSyncJobState = "completed"
-	PermissionsSyncJobStateCanceled   PermissionsSyncJobState = "canceled"
+	PermissionsSyncJobStbteQueued     PermissionsSyncJobStbte = "queued"
+	PermissionsSyncJobStbteProcessing PermissionsSyncJobStbte = "processing"
+	PermissionsSyncJobStbteErrored    PermissionsSyncJobStbte = "errored"
+	PermissionsSyncJobStbteFbiled     PermissionsSyncJobStbte = "fbiled"
+	PermissionsSyncJobStbteCompleted  PermissionsSyncJobStbte = "completed"
+	PermissionsSyncJobStbteCbnceled   PermissionsSyncJobStbte = "cbnceled"
 )
 
-// ToGraphQL returns the GraphQL representation of the worker state.
-func (s PermissionsSyncJobState) ToGraphQL() string { return strings.ToUpper(string(s)) }
+// ToGrbphQL returns the GrbphQL representbtion of the worker stbte.
+func (s PermissionsSyncJobStbte) ToGrbphQL() string { return strings.ToUpper(string(s)) }
 
 type PermissionsSyncJobPriority int
 
@@ -55,258 +55,258 @@ const (
 
 func (p PermissionsSyncJobPriority) ToString() string {
 	switch p {
-	case HighPriorityPermissionsSync:
+	cbse HighPriorityPermissionsSync:
 		return "HIGH"
-	case MediumPriorityPermissionsSync:
+	cbse MediumPriorityPermissionsSync:
 		return "MEDIUM"
-	case LowPriorityPermissionsSync:
-		fallthrough
-	default:
+	cbse LowPriorityPermissionsSync:
+		fbllthrough
+	defbult:
 		return "LOW"
 	}
 }
 
-// PermissionsSyncJobReasonGroup combines multiple permission sync job trigger
-// reasons into groups with similar grounds.
-type PermissionsSyncJobReasonGroup string
+// PermissionsSyncJobRebsonGroup combines multiple permission sync job trigger
+// rebsons into groups with similbr grounds.
+type PermissionsSyncJobRebsonGroup string
 
-// PermissionsSyncJobReasonGroup constants.
+// PermissionsSyncJobRebsonGroup constbnts.
 const (
-	PermissionsSyncJobReasonGroupManual      PermissionsSyncJobReasonGroup = "MANUAL"
-	PermissionsSyncJobReasonGroupWebhook     PermissionsSyncJobReasonGroup = "WEBHOOK"
-	PermissionsSyncJobReasonGroupSchedule    PermissionsSyncJobReasonGroup = "SCHEDULE"
-	PermissionsSyncJobReasonGroupSourcegraph PermissionsSyncJobReasonGroup = "SOURCEGRAPH"
-	PermissionsSyncJobReasonGroupUnknown     PermissionsSyncJobReasonGroup = "UNKNOWN"
+	PermissionsSyncJobRebsonGroupMbnubl      PermissionsSyncJobRebsonGroup = "MANUAL"
+	PermissionsSyncJobRebsonGroupWebhook     PermissionsSyncJobRebsonGroup = "WEBHOOK"
+	PermissionsSyncJobRebsonGroupSchedule    PermissionsSyncJobRebsonGroup = "SCHEDULE"
+	PermissionsSyncJobRebsonGroupSourcegrbph PermissionsSyncJobRebsonGroup = "SOURCEGRAPH"
+	PermissionsSyncJobRebsonGroupUnknown     PermissionsSyncJobRebsonGroup = "UNKNOWN"
 )
 
-var ReasonGroupToReasons = map[PermissionsSyncJobReasonGroup][]PermissionsSyncJobReason{
-	PermissionsSyncJobReasonGroupManual: {
-		ReasonManualRepoSync,
-		ReasonManualUserSync,
+vbr RebsonGroupToRebsons = mbp[PermissionsSyncJobRebsonGroup][]PermissionsSyncJobRebson{
+	PermissionsSyncJobRebsonGroupMbnubl: {
+		RebsonMbnublRepoSync,
+		RebsonMbnublUserSync,
 	},
-	PermissionsSyncJobReasonGroupWebhook: {
-		ReasonGitHubUserEvent,
-		ReasonGitHubUserAddedEvent,
-		ReasonGitHubUserRemovedEvent,
-		ReasonGitHubUserMembershipAddedEvent,
-		ReasonGitHubUserMembershipRemovedEvent,
-		ReasonGitHubTeamAddedToRepoEvent,
-		ReasonGitHubTeamRemovedFromRepoEvent,
-		ReasonGitHubOrgMemberAddedEvent,
-		ReasonGitHubOrgMemberRemovedEvent,
-		ReasonGitHubRepoEvent,
-		ReasonGitHubRepoMadePrivateEvent,
+	PermissionsSyncJobRebsonGroupWebhook: {
+		RebsonGitHubUserEvent,
+		RebsonGitHubUserAddedEvent,
+		RebsonGitHubUserRemovedEvent,
+		RebsonGitHubUserMembershipAddedEvent,
+		RebsonGitHubUserMembershipRemovedEvent,
+		RebsonGitHubTebmAddedToRepoEvent,
+		RebsonGitHubTebmRemovedFromRepoEvent,
+		RebsonGitHubOrgMemberAddedEvent,
+		RebsonGitHubOrgMemberRemovedEvent,
+		RebsonGitHubRepoEvent,
+		RebsonGitHubRepoMbdePrivbteEvent,
 	},
-	PermissionsSyncJobReasonGroupSchedule: {
-		ReasonUserOutdatedPermissions,
-		ReasonUserNoPermissions,
-		ReasonRepoOutdatedPermissions,
-		ReasonRepoNoPermissions,
-		ReasonRepoUpdatedFromCodeHost,
+	PermissionsSyncJobRebsonGroupSchedule: {
+		RebsonUserOutdbtedPermissions,
+		RebsonUserNoPermissions,
+		RebsonRepoOutdbtedPermissions,
+		RebsonRepoNoPermissions,
+		RebsonRepoUpdbtedFromCodeHost,
 	},
-	PermissionsSyncJobReasonGroupSourcegraph: {
-		ReasonUserEmailRemoved,
-		ReasonUserEmailVerified,
-		ReasonUserAddedToOrg,
-		ReasonUserRemovedFromOrg,
-		ReasonUserAcceptedOrgInvite,
+	PermissionsSyncJobRebsonGroupSourcegrbph: {
+		RebsonUserEmbilRemoved,
+		RebsonUserEmbilVerified,
+		RebsonUserAddedToOrg,
+		RebsonUserRemovedFromOrg,
+		RebsonUserAcceptedOrgInvite,
 	},
 }
 
-// sqlConds returns SQL query conditions to filter by reasons which are included
-// into given PermissionsSyncJobReasonGroup.
+// sqlConds returns SQL query conditions to filter by rebsons which bre included
+// into given PermissionsSyncJobRebsonGroup.
 //
-// If provided PermissionsSyncJobReasonGroup doesn't contain any reasons
-// (currently it is only PermissionsSyncJobReasonGroupUnknown), then nil is
+// If provided PermissionsSyncJobRebsonGroup doesn't contbin bny rebsons
+// (currently it is only PermissionsSyncJobRebsonGroupUnknown), then nil is
 // returned.
-func (g PermissionsSyncJobReasonGroup) sqlConds() (conditions *sqlf.Query) {
-	if reasons, ok := ReasonGroupToReasons[g]; ok {
-		reasonQueries := make([]*sqlf.Query, 0, len(reasons))
-		for _, reason := range reasons {
-			reasonQueries = append(reasonQueries, sqlf.Sprintf("%s", reason))
+func (g PermissionsSyncJobRebsonGroup) sqlConds() (conditions *sqlf.Query) {
+	if rebsons, ok := RebsonGroupToRebsons[g]; ok {
+		rebsonQueries := mbke([]*sqlf.Query, 0, len(rebsons))
+		for _, rebson := rbnge rebsons {
+			rebsonQueries = bppend(rebsonQueries, sqlf.Sprintf("%s", rebson))
 		}
-		conditions = sqlf.Sprintf("reason IN (%s)", sqlf.Join(reasonQueries, ", "))
+		conditions = sqlf.Sprintf("rebson IN (%s)", sqlf.Join(rebsonQueries, ", "))
 	}
 	return
 }
 
-type PermissionsSyncJobReason string
+type PermissionsSyncJobRebson string
 
-// ResolveGroup returns a PermissionsSyncJobReasonGroup for a given
-// PermissionsSyncJobReason or PermissionsSyncJobReasonGroupUnknown if the reason
-// doesn't belong to any of groups.
-func (r PermissionsSyncJobReason) ResolveGroup() PermissionsSyncJobReasonGroup {
+// ResolveGroup returns b PermissionsSyncJobRebsonGroup for b given
+// PermissionsSyncJobRebson or PermissionsSyncJobRebsonGroupUnknown if the rebson
+// doesn't belong to bny of groups.
+func (r PermissionsSyncJobRebson) ResolveGroup() PermissionsSyncJobRebsonGroup {
 	switch r {
-	case ReasonManualRepoSync,
-		ReasonManualUserSync:
-		return PermissionsSyncJobReasonGroupManual
-	case ReasonGitHubUserEvent,
-		ReasonGitHubUserAddedEvent,
-		ReasonGitHubUserRemovedEvent,
-		ReasonGitHubUserMembershipAddedEvent,
-		ReasonGitHubUserMembershipRemovedEvent,
-		ReasonGitHubTeamAddedToRepoEvent,
-		ReasonGitHubTeamRemovedFromRepoEvent,
-		ReasonGitHubOrgMemberAddedEvent,
-		ReasonGitHubOrgMemberRemovedEvent,
-		ReasonGitHubRepoEvent,
-		ReasonGitHubRepoMadePrivateEvent:
-		return PermissionsSyncJobReasonGroupWebhook
-	case ReasonUserOutdatedPermissions,
-		ReasonUserNoPermissions,
-		ReasonRepoOutdatedPermissions,
-		ReasonRepoNoPermissions,
-		ReasonRepoUpdatedFromCodeHost:
-		return PermissionsSyncJobReasonGroupSchedule
-	case ReasonUserEmailRemoved,
-		ReasonUserEmailVerified,
-		ReasonUserAdded,
-		ReasonUserAddedToOrg,
-		ReasonUserRemovedFromOrg,
-		ReasonUserAcceptedOrgInvite,
-		ReasonExternalAccountAdded,
-		ReasonExternalAccountDeleted:
-		return PermissionsSyncJobReasonGroupSourcegraph
-	default:
-		return PermissionsSyncJobReasonGroupUnknown
+	cbse RebsonMbnublRepoSync,
+		RebsonMbnublUserSync:
+		return PermissionsSyncJobRebsonGroupMbnubl
+	cbse RebsonGitHubUserEvent,
+		RebsonGitHubUserAddedEvent,
+		RebsonGitHubUserRemovedEvent,
+		RebsonGitHubUserMembershipAddedEvent,
+		RebsonGitHubUserMembershipRemovedEvent,
+		RebsonGitHubTebmAddedToRepoEvent,
+		RebsonGitHubTebmRemovedFromRepoEvent,
+		RebsonGitHubOrgMemberAddedEvent,
+		RebsonGitHubOrgMemberRemovedEvent,
+		RebsonGitHubRepoEvent,
+		RebsonGitHubRepoMbdePrivbteEvent:
+		return PermissionsSyncJobRebsonGroupWebhook
+	cbse RebsonUserOutdbtedPermissions,
+		RebsonUserNoPermissions,
+		RebsonRepoOutdbtedPermissions,
+		RebsonRepoNoPermissions,
+		RebsonRepoUpdbtedFromCodeHost:
+		return PermissionsSyncJobRebsonGroupSchedule
+	cbse RebsonUserEmbilRemoved,
+		RebsonUserEmbilVerified,
+		RebsonUserAdded,
+		RebsonUserAddedToOrg,
+		RebsonUserRemovedFromOrg,
+		RebsonUserAcceptedOrgInvite,
+		RebsonExternblAccountAdded,
+		RebsonExternblAccountDeleted:
+		return PermissionsSyncJobRebsonGroupSourcegrbph
+	defbult:
+		return PermissionsSyncJobRebsonGroupUnknown
 	}
 }
 
 const (
-	// ReasonUserOutdatedPermissions and below are reasons of scheduled permission
+	// RebsonUserOutdbtedPermissions bnd below bre rebsons of scheduled permission
 	// syncs.
-	ReasonUserOutdatedPermissions PermissionsSyncJobReason = "REASON_USER_OUTDATED_PERMS"
-	ReasonUserNoPermissions       PermissionsSyncJobReason = "REASON_USER_NO_PERMS"
-	ReasonRepoOutdatedPermissions PermissionsSyncJobReason = "REASON_REPO_OUTDATED_PERMS"
-	ReasonRepoNoPermissions       PermissionsSyncJobReason = "REASON_REPO_NO_PERMS"
-	ReasonRepoUpdatedFromCodeHost PermissionsSyncJobReason = "REASON_REPO_UPDATED_FROM_CODE_HOST"
+	RebsonUserOutdbtedPermissions PermissionsSyncJobRebson = "REASON_USER_OUTDATED_PERMS"
+	RebsonUserNoPermissions       PermissionsSyncJobRebson = "REASON_USER_NO_PERMS"
+	RebsonRepoOutdbtedPermissions PermissionsSyncJobRebson = "REASON_REPO_OUTDATED_PERMS"
+	RebsonRepoNoPermissions       PermissionsSyncJobRebson = "REASON_REPO_NO_PERMS"
+	RebsonRepoUpdbtedFromCodeHost PermissionsSyncJobRebson = "REASON_REPO_UPDATED_FROM_CODE_HOST"
 
-	// ReasonUserEmailRemoved and below are reasons of permission syncs scheduled due
-	// to Sourcegraph internal events.
-	ReasonUserEmailRemoved       PermissionsSyncJobReason = "REASON_USER_EMAIL_REMOVED"
-	ReasonUserEmailVerified      PermissionsSyncJobReason = "REASON_USER_EMAIL_VERIFIED"
-	ReasonUserAdded              PermissionsSyncJobReason = "REASON_USER_ADDED"
-	ReasonUserAddedToOrg         PermissionsSyncJobReason = "REASON_USER_ADDED_TO_ORG"
-	ReasonUserRemovedFromOrg     PermissionsSyncJobReason = "REASON_USER_REMOVED_FROM_ORG"
-	ReasonUserAcceptedOrgInvite  PermissionsSyncJobReason = "REASON_USER_ACCEPTED_ORG_INVITE"
-	ReasonExternalAccountAdded   PermissionsSyncJobReason = "REASON_EXTERNAL_ACCOUNT_ADDED"
-	ReasonExternalAccountDeleted PermissionsSyncJobReason = "REASON_EXTERNAL_ACCOUNT_DELETED"
+	// RebsonUserEmbilRemoved bnd below bre rebsons of permission syncs scheduled due
+	// to Sourcegrbph internbl events.
+	RebsonUserEmbilRemoved       PermissionsSyncJobRebson = "REASON_USER_EMAIL_REMOVED"
+	RebsonUserEmbilVerified      PermissionsSyncJobRebson = "REASON_USER_EMAIL_VERIFIED"
+	RebsonUserAdded              PermissionsSyncJobRebson = "REASON_USER_ADDED"
+	RebsonUserAddedToOrg         PermissionsSyncJobRebson = "REASON_USER_ADDED_TO_ORG"
+	RebsonUserRemovedFromOrg     PermissionsSyncJobRebson = "REASON_USER_REMOVED_FROM_ORG"
+	RebsonUserAcceptedOrgInvite  PermissionsSyncJobRebson = "REASON_USER_ACCEPTED_ORG_INVITE"
+	RebsonExternblAccountAdded   PermissionsSyncJobRebson = "REASON_EXTERNAL_ACCOUNT_ADDED"
+	RebsonExternblAccountDeleted PermissionsSyncJobRebson = "REASON_EXTERNAL_ACCOUNT_DELETED"
 
-	// ReasonGitHubUserEvent and below are reasons of permission syncs triggered by
+	// RebsonGitHubUserEvent bnd below bre rebsons of permission syncs triggered by
 	// webhook events.
-	ReasonGitHubUserEvent                  PermissionsSyncJobReason = "REASON_GITHUB_USER_EVENT"
-	ReasonGitHubUserAddedEvent             PermissionsSyncJobReason = "REASON_GITHUB_USER_ADDED_EVENT"
-	ReasonGitHubUserRemovedEvent           PermissionsSyncJobReason = "REASON_GITHUB_USER_REMOVED_EVENT"
-	ReasonGitHubUserMembershipAddedEvent   PermissionsSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
-	ReasonGitHubUserMembershipRemovedEvent PermissionsSyncJobReason = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
-	ReasonGitHubTeamAddedToRepoEvent       PermissionsSyncJobReason = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
-	ReasonGitHubTeamRemovedFromRepoEvent   PermissionsSyncJobReason = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
-	ReasonGitHubOrgMemberAddedEvent        PermissionsSyncJobReason = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
-	ReasonGitHubOrgMemberRemovedEvent      PermissionsSyncJobReason = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
-	ReasonGitHubRepoEvent                  PermissionsSyncJobReason = "REASON_GITHUB_REPO_EVENT"
-	ReasonGitHubRepoMadePrivateEvent       PermissionsSyncJobReason = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
+	RebsonGitHubUserEvent                  PermissionsSyncJobRebson = "REASON_GITHUB_USER_EVENT"
+	RebsonGitHubUserAddedEvent             PermissionsSyncJobRebson = "REASON_GITHUB_USER_ADDED_EVENT"
+	RebsonGitHubUserRemovedEvent           PermissionsSyncJobRebson = "REASON_GITHUB_USER_REMOVED_EVENT"
+	RebsonGitHubUserMembershipAddedEvent   PermissionsSyncJobRebson = "REASON_GITHUB_USER_MEMBERSHIP_ADDED_EVENT"
+	RebsonGitHubUserMembershipRemovedEvent PermissionsSyncJobRebson = "REASON_GITHUB_USER_MEMBERSHIP_REMOVED_EVENT"
+	RebsonGitHubTebmAddedToRepoEvent       PermissionsSyncJobRebson = "REASON_GITHUB_TEAM_ADDED_TO_REPO_EVENT"
+	RebsonGitHubTebmRemovedFromRepoEvent   PermissionsSyncJobRebson = "REASON_GITHUB_TEAM_REMOVED_FROM_REPO_EVENT"
+	RebsonGitHubOrgMemberAddedEvent        PermissionsSyncJobRebson = "REASON_GITHUB_ORG_MEMBER_ADDED_EVENT"
+	RebsonGitHubOrgMemberRemovedEvent      PermissionsSyncJobRebson = "REASON_GITHUB_ORG_MEMBER_REMOVED_EVENT"
+	RebsonGitHubRepoEvent                  PermissionsSyncJobRebson = "REASON_GITHUB_REPO_EVENT"
+	RebsonGitHubRepoMbdePrivbteEvent       PermissionsSyncJobRebson = "REASON_GITHUB_REPO_MADE_PRIVATE_EVENT"
 
-	// ReasonManualRepoSync and below are reasons of permission syncs triggered
-	// manually.
-	ReasonManualRepoSync PermissionsSyncJobReason = "REASON_MANUAL_REPO_SYNC"
-	ReasonManualUserSync PermissionsSyncJobReason = "REASON_MANUAL_USER_SYNC"
+	// RebsonMbnublRepoSync bnd below bre rebsons of permission syncs triggered
+	// mbnublly.
+	RebsonMbnublRepoSync PermissionsSyncJobRebson = "REASON_MANUAL_REPO_SYNC"
+	RebsonMbnublUserSync PermissionsSyncJobRebson = "REASON_MANUAL_USER_SYNC"
 )
 
 type PermissionSyncJobOpts struct {
 	Priority          PermissionsSyncJobPriority
-	InvalidateCaches  bool
+	InvblidbteCbches  bool
 	ProcessAfter      time.Time
-	Reason            PermissionsSyncJobReason
+	Rebson            PermissionsSyncJobRebson
 	TriggeredByUserID int32
 	NoPerms           bool
 }
 
-type PermissionSyncJobStore interface {
-	basestore.ShareableStore
-	With(other basestore.ShareableStore) PermissionSyncJobStore
-	// Transact begins a new transaction and make a new PermissionSyncJobStore over it.
-	Transact(ctx context.Context) (PermissionSyncJobStore, error)
+type PermissionSyncJobStore interfbce {
+	bbsestore.ShbrebbleStore
+	With(other bbsestore.ShbrebbleStore) PermissionSyncJobStore
+	// Trbnsbct begins b new trbnsbction bnd mbke b new PermissionSyncJobStore over it.
+	Trbnsbct(ctx context.Context) (PermissionSyncJobStore, error)
 	Done(err error) error
 
-	CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error
-	CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error
+	CrebteUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error
+	CrebteRepoSyncJob(ctx context.Context, repo bpi.RepoID, opts PermissionSyncJobOpts) error
 
 	List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error)
-	GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
+	GetLbtestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error)
 	Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error)
-	CountUsersWithFailingSyncJob(ctx context.Context) (int32, error)
-	CountReposWithFailingSyncJob(ctx context.Context) (int32, error)
-	CancelQueuedJob(ctx context.Context, reason string, id int) error
-	SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, codeHostStatuses CodeHostStatusesSet) error
+	CountUsersWithFbilingSyncJob(ctx context.Context) (int32, error)
+	CountReposWithFbilingSyncJob(ctx context.Context) (int32, error)
+	CbncelQueuedJob(ctx context.Context, rebson string, id int) error
+	SbveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, codeHostStbtuses CodeHostStbtusesSet) error
 }
 
 type permissionSyncJobStore struct {
 	logger log.Logger
-	*basestore.Store
+	*bbsestore.Store
 }
 
-var _ PermissionSyncJobStore = (*permissionSyncJobStore)(nil)
+vbr _ PermissionSyncJobStore = (*permissionSyncJobStore)(nil)
 
-func PermissionSyncJobsWith(logger log.Logger, other basestore.ShareableStore) PermissionSyncJobStore {
-	return &permissionSyncJobStore{logger: logger, Store: basestore.NewWithHandle(other.Handle())}
+func PermissionSyncJobsWith(logger log.Logger, other bbsestore.ShbrebbleStore) PermissionSyncJobStore {
+	return &permissionSyncJobStore{logger: logger, Store: bbsestore.NewWithHbndle(other.Hbndle())}
 }
 
-func (s *permissionSyncJobStore) With(other basestore.ShareableStore) PermissionSyncJobStore {
+func (s *permissionSyncJobStore) With(other bbsestore.ShbrebbleStore) PermissionSyncJobStore {
 	return &permissionSyncJobStore{logger: s.logger, Store: s.Store.With(other)}
 }
 
-func (s *permissionSyncJobStore) Transact(ctx context.Context) (PermissionSyncJobStore, error) {
-	return s.transact(ctx)
+func (s *permissionSyncJobStore) Trbnsbct(ctx context.Context) (PermissionSyncJobStore, error) {
+	return s.trbnsbct(ctx)
 }
 
-func (s *permissionSyncJobStore) transact(ctx context.Context) (*permissionSyncJobStore, error) {
-	txBase, err := s.Store.Transact(ctx)
-	return &permissionSyncJobStore{Store: txBase}, err
+func (s *permissionSyncJobStore) trbnsbct(ctx context.Context) (*permissionSyncJobStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
+	return &permissionSyncJobStore{Store: txBbse}, err
 }
 
 func (s *permissionSyncJobStore) Done(err error) error {
 	return s.Store.Done(err)
 }
 
-func (s *permissionSyncJobStore) CreateUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
+func (s *permissionSyncJobStore) CrebteUserSyncJob(ctx context.Context, user int32, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		UserID:            int(user),
 		Priority:          opts.Priority,
-		InvalidateCaches:  opts.InvalidateCaches,
-		Reason:            opts.Reason,
+		InvblidbteCbches:  opts.InvblidbteCbches,
+		Rebson:            opts.Rebson,
 		TriggeredByUserID: opts.TriggeredByUserID,
 		NoPerms:           opts.NoPerms,
 	}
 	if !opts.ProcessAfter.IsZero() {
 		job.ProcessAfter = opts.ProcessAfter
 	}
-	return s.createSyncJob(ctx, job)
+	return s.crebteSyncJob(ctx, job)
 }
 
-func (s *permissionSyncJobStore) CreateRepoSyncJob(ctx context.Context, repo api.RepoID, opts PermissionSyncJobOpts) error {
+func (s *permissionSyncJobStore) CrebteRepoSyncJob(ctx context.Context, repo bpi.RepoID, opts PermissionSyncJobOpts) error {
 	job := &PermissionSyncJob{
 		RepositoryID:      int(repo),
 		Priority:          opts.Priority,
-		InvalidateCaches:  opts.InvalidateCaches,
-		Reason:            opts.Reason,
+		InvblidbteCbches:  opts.InvblidbteCbches,
+		Rebson:            opts.Rebson,
 		TriggeredByUserID: opts.TriggeredByUserID,
 		NoPerms:           opts.NoPerms,
 	}
 	if !opts.ProcessAfter.IsZero() {
 		job.ProcessAfter = opts.ProcessAfter
 	}
-	return s.createSyncJob(ctx, job)
+	return s.crebteSyncJob(ctx, job)
 }
 
-const permissionSyncJobCreateQueryFmtstr = `
+const permissionSyncJobCrebteQueryFmtstr = `
 INSERT INTO permission_sync_jobs (
-	reason,
+	rebson,
 	triggered_by_user_id,
-	process_after,
+	process_bfter,
 	repository_id,
 	user_id,
 	priority,
-	invalidate_caches,
+	invblidbte_cbches,
 	no_perms
 )
 VALUES (
@@ -323,110 +323,110 @@ ON CONFLICT DO NOTHING
 RETURNING %s
 `
 
-// createSyncJob inserts a postponed (`process_after IS NOT NULL`) sync job right
-// away and checks new sync jobs without provided delay for duplicates.
-func (s *permissionSyncJobStore) createSyncJob(ctx context.Context, job *PermissionSyncJob) error {
+// crebteSyncJob inserts b postponed (`process_bfter IS NOT NULL`) sync job right
+// bwby bnd checks new sync jobs without provided delby for duplicbtes.
+func (s *permissionSyncJobStore) crebteSyncJob(ctx context.Context, job *PermissionSyncJob) error {
 	if job.ProcessAfter.IsZero() {
-		// sync jobs without delay are checked for duplicates
-		return s.checkDuplicateAndCreateSyncJob(ctx, job)
+		// sync jobs without delby bre checked for duplicbtes
+		return s.checkDuplicbteAndCrebteSyncJob(ctx, job)
 	}
-	return s.create(ctx, job)
+	return s.crebte(ctx, job)
 }
 
-func (s *permissionSyncJobStore) create(ctx context.Context, job *PermissionSyncJob) error {
+func (s *permissionSyncJobStore) crebte(ctx context.Context, job *PermissionSyncJob) error {
 	q := sqlf.Sprintf(
-		permissionSyncJobCreateQueryFmtstr,
-		job.Reason,
+		permissionSyncJobCrebteQueryFmtstr,
+		job.Rebson,
 		dbutil.NewNullInt32(job.TriggeredByUserID),
 		dbutil.NullTimeColumn(job.ProcessAfter),
 		dbutil.NewNullInt(job.RepositoryID),
 		dbutil.NewNullInt(job.UserID),
 		job.Priority,
-		job.InvalidateCaches,
+		job.InvblidbteCbches,
 		job.NoPerms,
 		sqlf.Join(PermissionSyncJobColumns, ", "),
 	)
 
-	return scanPermissionSyncJob(job, s.QueryRow(ctx, q))
+	return scbnPermissionSyncJob(job, s.QueryRow(ctx, q))
 }
 
-// checkDuplicateAndCreateSyncJob adds a new perms sync job with `process_after
-// IS NULL` if there is no present duplicate of it.
+// checkDuplicbteAndCrebteSyncJob bdds b new perms sync job with `process_bfter
+// IS NULL` if there is no present duplicbte of it.
 //
-// Duplicates are handled in this way:
+// Duplicbtes bre hbndled in this wby:
 //
-// 1) If there is no existing job for given user/repo ID in a queued state, we
-// insert right away.
+// 1) If there is no existing job for given user/repo ID in b queued stbte, we
+// insert right bwby.
 //
-// 2) If there is an existing job with lower priority, we cancel it and insert a
+// 2) If there is bn existing job with lower priority, we cbncel it bnd insert b
 // new one with higher priority.
 //
-// 3) If there is an existing job with higher priority, we don't insert new job.
-func (s *permissionSyncJobStore) checkDuplicateAndCreateSyncJob(ctx context.Context, job *PermissionSyncJob) (err error) {
-	tx, err := s.transact(ctx)
+// 3) If there is bn existing job with higher priority, we don't insert new job.
+func (s *permissionSyncJobStore) checkDuplicbteAndCrebteSyncJob(ctx context.Context, job *PermissionSyncJob) (err error) {
+	tx, err := s.trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() {
 		err = tx.Done(err)
 	}()
-	opts := ListPermissionSyncJobOpts{UserID: job.UserID, RepoID: job.RepositoryID, State: PermissionsSyncJobStateQueued, NotCanceled: true, NullProcessAfter: true}
+	opts := ListPermissionSyncJobOpts{UserID: job.UserID, RepoID: job.RepositoryID, Stbte: PermissionsSyncJobStbteQueued, NotCbnceled: true, NullProcessAfter: true}
 	syncJobs, err := tx.List(ctx, opts)
 	if err != nil {
 		return err
 	}
-	// Job doesn't exist -- create it
+	// Job doesn't exist -- crebte it
 	if len(syncJobs) == 0 {
-		return tx.create(ctx, job)
+		return tx.crebte(ctx, job)
 	}
-	// Database constraint guarantees that we have at most 1 job with NULL
-	// `process_after` value for the same user/repo ID.
+	// Dbtbbbse constrbint gubrbntees thbt we hbve bt most 1 job with NULL
+	// `process_bfter` vblue for the sbme user/repo ID.
 	existingJob := syncJobs[0]
 
 	// Existing job with higher priority should not be overridden. Existing
-	// priority job shouldn't be overridden by another same priority job.
+	// priority job shouldn't be overridden by bnother sbme priority job.
 	if existingJob.Priority >= job.Priority {
 		logField := "repositoryID"
-		id := strconv.Itoa(job.RepositoryID)
+		id := strconv.Itob(job.RepositoryID)
 		if job.RepositoryID == 0 {
 			logField = "userID"
-			id = strconv.Itoa(job.UserID)
+			id = strconv.Itob(job.UserID)
 		}
 		s.logger.Debug(
-			"Permissions sync job is not added because a job with similar or higher priority already exists",
+			"Permissions sync job is not bdded becbuse b job with similbr or higher priority blrebdy exists",
 			log.String(logField, id),
 		)
 		return nil
 	}
 
-	err = tx.CancelQueuedJob(ctx, CancellationReasonHigherPriority, existingJob.ID)
+	err = tx.CbncelQueuedJob(ctx, CbncellbtionRebsonHigherPriority, existingJob.ID)
 	if err != nil && !errcode.IsNotFound(err) {
 		return err
 	}
-	return tx.create(ctx, job)
+	return tx.crebte(ctx, job)
 }
 
 type notFoundError struct{ error }
 
 func (e notFoundError) NotFound() bool { return true }
 
-func (s *permissionSyncJobStore) CancelQueuedJob(ctx context.Context, reason string, id int) error {
+func (s *permissionSyncJobStore) CbncelQueuedJob(ctx context.Context, rebson string, id int) error {
 	now := timeutil.Now()
 	q := sqlf.Sprintf(`
 UPDATE permission_sync_jobs
-SET cancel = TRUE, state = 'canceled', finished_at = %s, cancellation_reason = %s
-WHERE id = %s AND state = 'queued' AND cancel IS FALSE
-`, now, reason, id)
+SET cbncel = TRUE, stbte = 'cbnceled', finished_bt = %s, cbncellbtion_rebson = %s
+WHERE id = %s AND stbte = 'queued' AND cbncel IS FALSE
+`, now, rebson, id)
 
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
 	}
-	af, err := res.RowsAffected()
+	bf, err := res.RowsAffected()
 	if err != nil {
 		return err
 	}
-	if af != 1 {
+	if bf != 1 {
 		return notFoundError{errors.Newf("sync job with id %d not found", id)}
 	}
 	return nil
@@ -438,31 +438,31 @@ type SetPermissionsResult struct {
 	Found   int
 }
 
-func (s *permissionSyncJobStore) SaveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, statuses CodeHostStatusesSet) error {
-	var added, removed, found int
-	partialSuccess := false
+func (s *permissionSyncJobStore) SbveSyncResult(ctx context.Context, id int, finishedSuccessfully bool, result *SetPermissionsResult, stbtuses CodeHostStbtusesSet) error {
+	vbr bdded, removed, found int
+	pbrtiblSuccess := fblse
 	if result != nil {
-		added = result.Added
+		bdded = result.Added
 		removed = result.Removed
 		found = result.Found
 	}
-	// If the job is successful, then we need to check for partial success.
+	// If the job is successful, then we need to check for pbrtibl success.
 	if finishedSuccessfully {
-		_, success, failed := statuses.CountStatuses()
-		if success > 0 && failed > 0 {
-			partialSuccess = true
+		_, success, fbiled := stbtuses.CountStbtuses()
+		if success > 0 && fbiled > 0 {
+			pbrtiblSuccess = true
 		}
 	}
 	q := sqlf.Sprintf(`
 		UPDATE permission_sync_jobs
 		SET
-			permissions_added = %d,
+			permissions_bdded = %d,
 			permissions_removed = %d,
 			permissions_found = %d,
-			code_host_states = %s,
-			is_partial_success = %s
+			code_host_stbtes = %s,
+			is_pbrtibl_success = %s
 		WHERE id = %d
-		`, added, removed, found, pq.Array(statuses), partialSuccess, id)
+		`, bdded, removed, found, pq.Arrby(stbtuses), pbrtiblSuccess, id)
 
 	_, err := s.ExecResult(ctx, q)
 	return err
@@ -472,88 +472,88 @@ type ListPermissionSyncJobOpts struct {
 	ID                  int
 	UserID              int
 	RepoID              int
-	Reason              PermissionsSyncJobReason
-	ReasonGroup         PermissionsSyncJobReasonGroup
-	State               PermissionsSyncJobState
+	Rebson              PermissionsSyncJobRebson
+	RebsonGroup         PermissionsSyncJobRebsonGroup
+	Stbte               PermissionsSyncJobStbte
 	NullProcessAfter    bool
 	NotNullProcessAfter bool
-	NotCanceled         bool
-	PartialSuccess      bool
-	WithPlaceInQueue    bool
+	NotCbnceled         bool
+	PbrtiblSuccess      bool
+	WithPlbceInQueue    bool
 
-	// SearchType and Query are related to text search for sync jobs.
-	SearchType PermissionsSyncSearchType
+	// SebrchType bnd Query bre relbted to text sebrch for sync jobs.
+	SebrchType PermissionsSyncSebrchType
 	Query      string
 
-	// Cursor-based pagination arguments.
-	PaginationArgs *PaginationArgs
+	// Cursor-bbsed pbginbtion brguments.
+	PbginbtionArgs *PbginbtionArgs
 }
 
 func (opts ListPermissionSyncJobOpts) sqlConds() []*sqlf.Query {
-	conds := make([]*sqlf.Query, 0)
+	conds := mbke([]*sqlf.Query, 0)
 
 	if opts.ID != 0 {
-		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.id = %s", opts.ID))
+		conds = bppend(conds, sqlf.Sprintf("permission_sync_jobs.id = %s", opts.ID))
 	}
 	if opts.UserID != 0 {
-		conds = append(conds, sqlf.Sprintf("user_id = %s", opts.UserID))
+		conds = bppend(conds, sqlf.Sprintf("user_id = %s", opts.UserID))
 	}
 	if opts.RepoID != 0 {
-		conds = append(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
+		conds = bppend(conds, sqlf.Sprintf("repository_id = %s", opts.RepoID))
 	}
-	// If both reason group and reason are provided, we narrow down the filtering to
-	// just a reason.
-	if opts.ReasonGroup != "" && opts.Reason == "" {
-		if reasonConds := opts.ReasonGroup.sqlConds(); reasonConds != nil {
-			conds = append(conds, reasonConds)
+	// If both rebson group bnd rebson bre provided, we nbrrow down the filtering to
+	// just b rebson.
+	if opts.RebsonGroup != "" && opts.Rebson == "" {
+		if rebsonConds := opts.RebsonGroup.sqlConds(); rebsonConds != nil {
+			conds = bppend(conds, rebsonConds)
 		}
 	}
-	if opts.Reason != "" {
-		conds = append(conds, sqlf.Sprintf("reason = %s", opts.Reason))
+	if opts.Rebson != "" {
+		conds = bppend(conds, sqlf.Sprintf("rebson = %s", opts.Rebson))
 	}
-	// If partial success parameter is set, we skip the `state` parameter because it
-	// should be `completed`, otherwise it won't make any sense.
-	if opts.PartialSuccess {
-		conds = append(conds, sqlf.Sprintf("is_partial_success = TRUE"))
-		conds = append(conds, sqlf.Sprintf("state = lower(%s)", PermissionsSyncJobStateCompleted))
-	} else if opts.State != "" {
-		conds = append(conds, sqlf.Sprintf("state = lower(%s)", opts.State))
-		conds = append(conds, sqlf.Sprintf("is_partial_success = FALSE"))
+	// If pbrtibl success pbrbmeter is set, we skip the `stbte` pbrbmeter becbuse it
+	// should be `completed`, otherwise it won't mbke bny sense.
+	if opts.PbrtiblSuccess {
+		conds = bppend(conds, sqlf.Sprintf("is_pbrtibl_success = TRUE"))
+		conds = bppend(conds, sqlf.Sprintf("stbte = lower(%s)", PermissionsSyncJobStbteCompleted))
+	} else if opts.Stbte != "" {
+		conds = bppend(conds, sqlf.Sprintf("stbte = lower(%s)", opts.Stbte))
+		conds = bppend(conds, sqlf.Sprintf("is_pbrtibl_success = FALSE"))
 	}
 	if opts.NullProcessAfter {
-		conds = append(conds, sqlf.Sprintf("process_after IS NULL"))
+		conds = bppend(conds, sqlf.Sprintf("process_bfter IS NULL"))
 	}
 	if opts.NotNullProcessAfter {
-		conds = append(conds, sqlf.Sprintf("process_after IS NOT NULL"))
+		conds = bppend(conds, sqlf.Sprintf("process_bfter IS NOT NULL"))
 	}
-	if opts.NotCanceled {
-		conds = append(conds, sqlf.Sprintf("cancel = false"))
+	if opts.NotCbnceled {
+		conds = bppend(conds, sqlf.Sprintf("cbncel = fblse"))
 	}
 
-	if opts.SearchType == PermissionsSyncSearchTypeRepo {
-		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.repository_id IS NOT NULL"))
+	if opts.SebrchType == PermissionsSyncSebrchTypeRepo {
+		conds = bppend(conds, sqlf.Sprintf("permission_sync_jobs.repository_id IS NOT NULL"))
 		if opts.Query != "" {
-			conds = append(conds, sqlf.Sprintf("repo.name ILIKE %s", "%"+opts.Query+"%"))
+			conds = bppend(conds, sqlf.Sprintf("repo.nbme ILIKE %s", "%"+opts.Query+"%"))
 		}
 	}
-	if opts.SearchType == PermissionsSyncSearchTypeUser {
-		conds = append(conds, sqlf.Sprintf("permission_sync_jobs.user_id IS NOT NULL"))
+	if opts.SebrchType == PermissionsSyncSebrchTypeUser {
+		conds = bppend(conds, sqlf.Sprintf("permission_sync_jobs.user_id IS NOT NULL"))
 		if opts.Query != "" {
-			searchTerm := "%" + opts.Query + "%"
-			conds = append(conds, sqlf.Sprintf("(users.username ILIKE %s OR users.display_name ILIKE %s)", searchTerm, searchTerm))
+			sebrchTerm := "%" + opts.Query + "%"
+			conds = bppend(conds, sqlf.Sprintf("(users.usernbme ILIKE %s OR users.displby_nbme ILIKE %s)", sebrchTerm, sebrchTerm))
 		}
 	}
 	return conds
 }
 
-func (s *permissionSyncJobStore) GetLatestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
+func (s *permissionSyncJobStore) GetLbtestFinishedSyncJob(ctx context.Context, opts ListPermissionSyncJobOpts) (*PermissionSyncJob, error) {
 	first := 1
-	opts.PaginationArgs = &PaginationArgs{
+	opts.PbginbtionArgs = &PbginbtionArgs{
 		First:     &first,
-		Ascending: false,
+		Ascending: fblse,
 		OrderBy: []OrderByOption{{
-			Field: "permission_sync_jobs.finished_at",
-			Nulls: OrderByNullsLast,
+			Field: "permission_sync_jobs.finished_bt",
+			Nulls: OrderByNullsLbst,
 		}},
 	}
 	jobs, err := s.List(ctx, opts)
@@ -569,345 +569,345 @@ func (s *permissionSyncJobStore) GetLatestFinishedSyncJob(ctx context.Context, o
 const listPermissionSyncJobQueryFmtstr = `
 SELECT %s
 FROM permission_sync_jobs
-%s -- optional join with repo/user tables for search
-%s -- whereClause
+%s -- optionbl join with repo/user tbbles for sebrch
+%s -- whereClbuse
 `
 
 func (s *permissionSyncJobStore) List(ctx context.Context, opts ListPermissionSyncJobOpts) ([]*PermissionSyncJob, error) {
 	conds := opts.sqlConds()
 
 	orderByID := []OrderByOption{{Field: "permission_sync_jobs.id"}}
-	paginationArgs := PaginationArgs{OrderBy: orderByID, Ascending: true}
-	// If pagination args contain only one OrderBy statement for "id" column, then it
-	// is added by generic pagination logic and we can continue with OrderBy above
-	// because it fixes ambiguity error for "id" column in case of joins with
-	// repo/users table.
-	if opts.PaginationArgs != nil {
-		paginationArgs = *opts.PaginationArgs
+	pbginbtionArgs := PbginbtionArgs{OrderBy: orderByID, Ascending: true}
+	// If pbginbtion brgs contbin only one OrderBy stbtement for "id" column, then it
+	// is bdded by generic pbginbtion logic bnd we cbn continue with OrderBy bbove
+	// becbuse it fixes bmbiguity error for "id" column in cbse of joins with
+	// repo/users tbble.
+	if opts.PbginbtionArgs != nil {
+		pbginbtionArgs = *opts.PbginbtionArgs
 	}
-	if paginationOrderByContainsOnlyIDColumn(opts.PaginationArgs) {
-		paginationArgs.OrderBy = orderByID
+	if pbginbtionOrderByContbinsOnlyIDColumn(opts.PbginbtionArgs) {
+		pbginbtionArgs.OrderBy = orderByID
 	}
-	pagination := paginationArgs.SQL()
+	pbginbtion := pbginbtionArgs.SQL()
 
-	if pagination.Where != nil {
-		conds = append(conds, pagination.Where)
+	if pbginbtion.Where != nil {
+		conds = bppend(conds, pbginbtion.Where)
 	}
 
-	whereClause := sqlf.Sprintf("")
+	whereClbuse := sqlf.Sprintf("")
 	if len(conds) > 0 {
-		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+		whereClbuse = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
 	}
 
-	joinClause := sqlf.Sprintf("")
+	joinClbuse := sqlf.Sprintf("")
 	if opts.Query != "" {
-		switch opts.SearchType {
-		case PermissionsSyncSearchTypeRepo:
-			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
-		case PermissionsSyncSearchTypeUser:
-			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		switch opts.SebrchType {
+		cbse PermissionsSyncSebrchTypeRepo:
+			joinClbuse = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		cbse PermissionsSyncSebrchTypeUser:
+			joinClbuse = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
 		}
 	}
 
 	columns := sqlf.Join(PermissionSyncJobColumns, ", ")
-	if opts.WithPlaceInQueue {
-		columns = sqlf.Sprintf("%s, queue_ranks.rank AS queue_rank", columns)
-		joinClause = sqlf.Sprintf(`
+	if opts.WithPlbceInQueue {
+		columns = sqlf.Sprintf("%s, queue_rbnks.rbnk AS queue_rbnk", columns)
+		joinClbuse = sqlf.Sprintf(`
 			%s
 			LEFT JOIN (
-				SELECT id, ROW_NUMBER() OVER (ORDER BY permission_sync_jobs.priority DESC, permission_sync_jobs.process_after ASC NULLS FIRST, permission_sync_jobs.id ASC) AS rank
+				SELECT id, ROW_NUMBER() OVER (ORDER BY permission_sync_jobs.priority DESC, permission_sync_jobs.process_bfter ASC NULLS FIRST, permission_sync_jobs.id ASC) AS rbnk
 				FROM permission_sync_jobs
-				WHERE state = 'queued'
-			) AS queue_ranks ON queue_ranks.id = permission_sync_jobs.id
-		`, joinClause)
+				WHERE stbte = 'queued'
+			) AS queue_rbnks ON queue_rbnks.id = permission_sync_jobs.id
+		`, joinClbuse)
 	}
 
 	q := sqlf.Sprintf(
 		listPermissionSyncJobQueryFmtstr,
 		columns,
-		joinClause,
-		whereClause,
+		joinClbuse,
+		whereClbuse,
 	)
-	q = pagination.AppendOrderToQuery(q)
-	q = pagination.AppendLimitToQuery(q)
+	q = pbginbtion.AppendOrderToQuery(q)
+	q = pbginbtion.AppendLimitToQuery(q)
 
 	rows, err := s.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
+	defer func() { err = bbsestore.CloseRows(rows, err) }()
 
-	var syncJobs []*PermissionSyncJob
+	vbr syncJobs []*PermissionSyncJob
 	for rows.Next() {
-		var job PermissionSyncJob
-		if opts.WithPlaceInQueue {
-			if err := scanPermissionSyncJobWithPlaceInQueue(&job, rows); err != nil {
+		vbr job PermissionSyncJob
+		if opts.WithPlbceInQueue {
+			if err := scbnPermissionSyncJobWithPlbceInQueue(&job, rows); err != nil {
 				return nil, err
 			}
-		} else if err := scanPermissionSyncJob(&job, rows); err != nil {
+		} else if err := scbnPermissionSyncJob(&job, rows); err != nil {
 			return nil, err
 		}
-		syncJobs = append(syncJobs, &job)
+		syncJobs = bppend(syncJobs, &job)
 	}
 
 	return syncJobs, nil
 }
 
-func paginationOrderByContainsOnlyIDColumn(pagination *PaginationArgs) bool {
-	if pagination == nil {
-		return false
+func pbginbtionOrderByContbinsOnlyIDColumn(pbginbtion *PbginbtionArgs) bool {
+	if pbginbtion == nil {
+		return fblse
 	}
-	columns := pagination.OrderBy.Columns()
+	columns := pbginbtion.OrderBy.Columns()
 	if len(columns) != 1 {
-		return false
+		return fblse
 	}
 	if columns[0] == "id" {
 		return true
 	}
-	return false
+	return fblse
 }
 
 const countPermissionSyncJobsQuery = `
 SELECT COUNT(*)
 FROM permission_sync_jobs
-%s -- optional join with repo/user tables for search
-%s -- whereClause
+%s -- optionbl join with repo/user tbbles for sebrch
+%s -- whereClbuse
 `
 
 func (s *permissionSyncJobStore) Count(ctx context.Context, opts ListPermissionSyncJobOpts) (int, error) {
 	conds := opts.sqlConds()
 
-	whereClause := sqlf.Sprintf("")
+	whereClbuse := sqlf.Sprintf("")
 	if len(conds) > 0 {
-		whereClause = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
+		whereClbuse = sqlf.Sprintf("WHERE %s", sqlf.Join(conds, "\n AND "))
 	}
 
-	joinClause := sqlf.Sprintf("")
+	joinClbuse := sqlf.Sprintf("")
 	if opts.Query != "" {
-		switch opts.SearchType {
-		case PermissionsSyncSearchTypeRepo:
-			joinClause = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
-		case PermissionsSyncSearchTypeUser:
-			joinClause = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
+		switch opts.SebrchType {
+		cbse PermissionsSyncSebrchTypeRepo:
+			joinClbuse = sqlf.Sprintf("JOIN repo ON permission_sync_jobs.repository_id = repo.id")
+		cbse PermissionsSyncSebrchTypeUser:
+			joinClbuse = sqlf.Sprintf("JOIN users ON permission_sync_jobs.user_id = users.id")
 		}
 	}
 
-	q := sqlf.Sprintf(countPermissionSyncJobsQuery, joinClause, whereClause)
-	var count int
-	if err := s.QueryRow(ctx, q).Scan(&count); err != nil {
+	q := sqlf.Sprintf(countPermissionSyncJobsQuery, joinClbuse, whereClbuse)
+	vbr count int
+	if err := s.QueryRow(ctx, q).Scbn(&count); err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-const countUsersWithFailingSyncJobsQuery = `
+const countUsersWithFbilingSyncJobsQuery = `
 SELECT COUNT(*)
 FROM (
-  SELECT DISTINCT ON (user_id) id, state
+  SELECT DISTINCT ON (user_id) id, stbte
   FROM permission_sync_jobs
   WHERE
 	user_id is NOT NULL
-	AND state IN ('completed', 'failed')
-  ORDER BY user_id, finished_at DESC
+	AND stbte IN ('completed', 'fbiled')
+  ORDER BY user_id, finished_bt DESC
 ) AS tmp
-WHERE state = 'failed';
+WHERE stbte = 'fbiled';
 `
 
-// CountUsersWithFailingSyncJob returns count of users with LATEST sync job failing.
-func (s *permissionSyncJobStore) CountUsersWithFailingSyncJob(ctx context.Context) (int32, error) {
-	var count int32
+// CountUsersWithFbilingSyncJob returns count of users with LATEST sync job fbiling.
+func (s *permissionSyncJobStore) CountUsersWithFbilingSyncJob(ctx context.Context) (int32, error) {
+	vbr count int32
 
-	err := s.QueryRow(ctx, sqlf.Sprintf(countUsersWithFailingSyncJobsQuery)).Scan(&count)
+	err := s.QueryRow(ctx, sqlf.Sprintf(countUsersWithFbilingSyncJobsQuery)).Scbn(&count)
 
 	return count, err
 }
 
-const countReposWithFailingSyncJobsQuery = `
+const countReposWithFbilingSyncJobsQuery = `
 SELECT COUNT(*)
 FROM (
-  SELECT DISTINCT ON (repository_id) id, state
+  SELECT DISTINCT ON (repository_id) id, stbte
   FROM permission_sync_jobs
   WHERE
 	repository_id is NOT NULL
-	AND state IN ('completed', 'failed')
-  ORDER BY repository_id, finished_at DESC
+	AND stbte IN ('completed', 'fbiled')
+  ORDER BY repository_id, finished_bt DESC
 ) AS tmp
-WHERE state = 'failed';
+WHERE stbte = 'fbiled';
 `
 
-// CountReposWithFailingSyncJob returns count of repos with LATEST sync job failing.
-func (s *permissionSyncJobStore) CountReposWithFailingSyncJob(ctx context.Context) (int32, error) {
-	var count int32
+// CountReposWithFbilingSyncJob returns count of repos with LATEST sync job fbiling.
+func (s *permissionSyncJobStore) CountReposWithFbilingSyncJob(ctx context.Context) (int32, error) {
+	vbr count int32
 
-	err := s.QueryRow(ctx, sqlf.Sprintf(countReposWithFailingSyncJobsQuery)).Scan(&count)
+	err := s.QueryRow(ctx, sqlf.Sprintf(countReposWithFbilingSyncJobsQuery)).Scbn(&count)
 
 	return count, err
 }
 
 type PermissionSyncJob struct {
 	ID                 int
-	State              PermissionsSyncJobState
-	FailureMessage     *string
-	Reason             PermissionsSyncJobReason
-	CancellationReason *string
+	Stbte              PermissionsSyncJobStbte
+	FbilureMessbge     *string
+	Rebson             PermissionsSyncJobRebson
+	CbncellbtionRebson *string
 	TriggeredByUserID  int32
 	QueuedAt           time.Time
-	StartedAt          time.Time
+	StbrtedAt          time.Time
 	FinishedAt         time.Time
 	ProcessAfter       time.Time
 	NumResets          int
-	NumFailures        int
-	LastHeartbeatAt    time.Time
+	NumFbilures        int
+	LbstHebrtbebtAt    time.Time
 	ExecutionLogs      []executor.ExecutionLogEntry
-	WorkerHostname     string
-	Cancel             bool
+	WorkerHostnbme     string
+	Cbncel             bool
 
 	RepositoryID int
 	UserID       int
 
 	Priority         PermissionsSyncJobPriority
 	NoPerms          bool
-	InvalidateCaches bool
+	InvblidbteCbches bool
 
 	PermissionsAdded   int
 	PermissionsRemoved int
 	PermissionsFound   int
-	CodeHostStates     []PermissionSyncCodeHostState
-	IsPartialSuccess   bool
-	PlaceInQueue       *int32
+	CodeHostStbtes     []PermissionSyncCodeHostStbte
+	IsPbrtiblSuccess   bool
+	PlbceInQueue       *int32
 }
 
 func (j *PermissionSyncJob) RecordID() int { return j.ID }
 
 func (j *PermissionSyncJob) RecordUID() string {
-	return strconv.Itoa(j.ID)
+	return strconv.Itob(j.ID)
 }
 
-var PermissionSyncJobColumns = []*sqlf.Query{
+vbr PermissionSyncJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("permission_sync_jobs.id"),
-	sqlf.Sprintf("permission_sync_jobs.state"),
-	sqlf.Sprintf("permission_sync_jobs.reason"),
-	sqlf.Sprintf("permission_sync_jobs.cancellation_reason"),
+	sqlf.Sprintf("permission_sync_jobs.stbte"),
+	sqlf.Sprintf("permission_sync_jobs.rebson"),
+	sqlf.Sprintf("permission_sync_jobs.cbncellbtion_rebson"),
 	sqlf.Sprintf("permission_sync_jobs.triggered_by_user_id"),
-	sqlf.Sprintf("permission_sync_jobs.failure_message"),
-	sqlf.Sprintf("permission_sync_jobs.queued_at"),
-	sqlf.Sprintf("permission_sync_jobs.started_at"),
-	sqlf.Sprintf("permission_sync_jobs.finished_at"),
-	sqlf.Sprintf("permission_sync_jobs.process_after"),
+	sqlf.Sprintf("permission_sync_jobs.fbilure_messbge"),
+	sqlf.Sprintf("permission_sync_jobs.queued_bt"),
+	sqlf.Sprintf("permission_sync_jobs.stbrted_bt"),
+	sqlf.Sprintf("permission_sync_jobs.finished_bt"),
+	sqlf.Sprintf("permission_sync_jobs.process_bfter"),
 	sqlf.Sprintf("permission_sync_jobs.num_resets"),
-	sqlf.Sprintf("permission_sync_jobs.num_failures"),
-	sqlf.Sprintf("permission_sync_jobs.last_heartbeat_at"),
+	sqlf.Sprintf("permission_sync_jobs.num_fbilures"),
+	sqlf.Sprintf("permission_sync_jobs.lbst_hebrtbebt_bt"),
 	sqlf.Sprintf("permission_sync_jobs.execution_logs"),
-	sqlf.Sprintf("permission_sync_jobs.worker_hostname"),
-	sqlf.Sprintf("permission_sync_jobs.cancel"),
+	sqlf.Sprintf("permission_sync_jobs.worker_hostnbme"),
+	sqlf.Sprintf("permission_sync_jobs.cbncel"),
 
 	sqlf.Sprintf("permission_sync_jobs.repository_id"),
 	sqlf.Sprintf("permission_sync_jobs.user_id"),
 
 	sqlf.Sprintf("permission_sync_jobs.priority"),
 	sqlf.Sprintf("permission_sync_jobs.no_perms"),
-	sqlf.Sprintf("permission_sync_jobs.invalidate_caches"),
+	sqlf.Sprintf("permission_sync_jobs.invblidbte_cbches"),
 
-	sqlf.Sprintf("permission_sync_jobs.permissions_added"),
+	sqlf.Sprintf("permission_sync_jobs.permissions_bdded"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_removed"),
 	sqlf.Sprintf("permission_sync_jobs.permissions_found"),
-	sqlf.Sprintf("permission_sync_jobs.code_host_states"),
-	sqlf.Sprintf("permission_sync_jobs.is_partial_success"),
+	sqlf.Sprintf("permission_sync_jobs.code_host_stbtes"),
+	sqlf.Sprintf("permission_sync_jobs.is_pbrtibl_success"),
 }
 
-func ScanPermissionSyncJob(s dbutil.Scanner) (*PermissionSyncJob, error) {
-	var job PermissionSyncJob
-	if err := scanPermissionSyncJob(&job, s); err != nil {
+func ScbnPermissionSyncJob(s dbutil.Scbnner) (*PermissionSyncJob, error) {
+	vbr job PermissionSyncJob
+	if err := scbnPermissionSyncJob(&job, s); err != nil {
 		return nil, err
 	}
 	return &job, nil
 }
 
-func scanPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scanner) error {
-	var executionLogs []executor.ExecutionLogEntry
-	var codeHostStates []PermissionSyncCodeHostState
+func scbnPermissionSyncJob(job *PermissionSyncJob, s dbutil.Scbnner) error {
+	vbr executionLogs []executor.ExecutionLogEntry
+	vbr codeHostStbtes []PermissionSyncCodeHostStbte
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&job.ID,
-		&job.State,
-		&job.Reason,
-		&job.CancellationReason,
+		&job.Stbte,
+		&job.Rebson,
+		&job.CbncellbtionRebson,
 		&dbutil.NullInt32{N: &job.TriggeredByUserID},
-		&job.FailureMessage,
+		&job.FbilureMessbge,
 		&job.QueuedAt,
-		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.StbrtedAt},
 		&dbutil.NullTime{Time: &job.FinishedAt},
 		&dbutil.NullTime{Time: &job.ProcessAfter},
 		&job.NumResets,
-		&job.NumFailures,
-		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
-		pq.Array(&executionLogs),
-		&job.WorkerHostname,
-		&job.Cancel,
+		&job.NumFbilures,
+		&dbutil.NullTime{Time: &job.LbstHebrtbebtAt},
+		pq.Arrby(&executionLogs),
+		&job.WorkerHostnbme,
+		&job.Cbncel,
 
 		&dbutil.NullInt{N: &job.RepositoryID},
 		&dbutil.NullInt{N: &job.UserID},
 
 		&job.Priority,
 		&job.NoPerms,
-		&job.InvalidateCaches,
+		&job.InvblidbteCbches,
 
 		&job.PermissionsAdded,
 		&job.PermissionsRemoved,
 		&job.PermissionsFound,
-		pq.Array(&codeHostStates),
-		&job.IsPartialSuccess,
+		pq.Arrby(&codeHostStbtes),
+		&job.IsPbrtiblSuccess,
 	); err != nil {
 		return err
 	}
 
-	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
-	job.CodeHostStates = append(job.CodeHostStates, codeHostStates...)
+	job.ExecutionLogs = bppend(job.ExecutionLogs, executionLogs...)
+	job.CodeHostStbtes = bppend(job.CodeHostStbtes, codeHostStbtes...)
 
 	return nil
 }
 
-func scanPermissionSyncJobWithPlaceInQueue(job *PermissionSyncJob, s dbutil.Scanner) error {
-	var executionLogs []executor.ExecutionLogEntry
-	var codeHostStates []PermissionSyncCodeHostState
+func scbnPermissionSyncJobWithPlbceInQueue(job *PermissionSyncJob, s dbutil.Scbnner) error {
+	vbr executionLogs []executor.ExecutionLogEntry
+	vbr codeHostStbtes []PermissionSyncCodeHostStbte
 
-	if err := s.Scan(
+	if err := s.Scbn(
 		&job.ID,
-		&job.State,
-		&job.Reason,
-		&job.CancellationReason,
+		&job.Stbte,
+		&job.Rebson,
+		&job.CbncellbtionRebson,
 		&dbutil.NullInt32{N: &job.TriggeredByUserID},
-		&job.FailureMessage,
+		&job.FbilureMessbge,
 		&job.QueuedAt,
-		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.StbrtedAt},
 		&dbutil.NullTime{Time: &job.FinishedAt},
 		&dbutil.NullTime{Time: &job.ProcessAfter},
 		&job.NumResets,
-		&job.NumFailures,
-		&dbutil.NullTime{Time: &job.LastHeartbeatAt},
-		pq.Array(&executionLogs),
-		&job.WorkerHostname,
-		&job.Cancel,
+		&job.NumFbilures,
+		&dbutil.NullTime{Time: &job.LbstHebrtbebtAt},
+		pq.Arrby(&executionLogs),
+		&job.WorkerHostnbme,
+		&job.Cbncel,
 
 		&dbutil.NullInt{N: &job.RepositoryID},
 		&dbutil.NullInt{N: &job.UserID},
 
 		&job.Priority,
 		&job.NoPerms,
-		&job.InvalidateCaches,
+		&job.InvblidbteCbches,
 
 		&job.PermissionsAdded,
 		&job.PermissionsRemoved,
 		&job.PermissionsFound,
-		pq.Array(&codeHostStates),
-		&job.IsPartialSuccess,
-		&job.PlaceInQueue,
+		pq.Arrby(&codeHostStbtes),
+		&job.IsPbrtiblSuccess,
+		&job.PlbceInQueue,
 	); err != nil {
 		return err
 	}
 
-	job.ExecutionLogs = append(job.ExecutionLogs, executionLogs...)
-	job.CodeHostStates = append(job.CodeHostStates, codeHostStates...)
+	job.ExecutionLogs = bppend(job.ExecutionLogs, executionLogs...)
+	job.CodeHostStbtes = bppend(job.CodeHostStbtes, codeHostStbtes...)
 
 	return nil
 }

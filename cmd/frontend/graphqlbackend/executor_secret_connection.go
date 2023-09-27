@@ -1,21 +1,21 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
 )
 
 type executorSecretConnectionResolver struct {
-	db    database.DB
+	db    dbtbbbse.DB
 	scope ExecutorSecretScope
-	opts  database.ExecutorSecretsListOpts
+	opts  dbtbbbse.ExecutorSecretsListOpts
 
 	computeOnce sync.Once
-	secrets     []*database.ExecutorSecret
+	secrets     []*dbtbbbse.ExecutorSecret
 	next        int
 	err         error
 }
@@ -26,21 +26,21 @@ func (r *executorSecretConnectionResolver) Nodes(ctx context.Context) ([]*execut
 		return nil, err
 	}
 
-	resolvers := make([]*executorSecretResolver, 0, len(secrets))
-	for _, secret := range secrets {
-		resolvers = append(resolvers, &executorSecretResolver{db: r.db, secret: secret})
+	resolvers := mbke([]*executorSecretResolver, 0, len(secrets))
+	for _, secret := rbnge secrets {
+		resolvers = bppend(resolvers, &executorSecretResolver{db: r.db, secret: secret})
 	}
 
 	return resolvers, nil
 }
 
-func (r *executorSecretConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
-	totalCount, err := store.Count(ctx, r.scope.ToDatabaseScope(), r.opts)
-	return int32(totalCount), err
+func (r *executorSecretConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	store := r.db.ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
+	totblCount, err := store.Count(ctx, r.scope.ToDbtbbbseScope(), r.opts)
+	return int32(totblCount), err
 }
 
-func (r *executorSecretConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *executorSecretConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
@@ -48,16 +48,16 @@ func (r *executorSecretConnectionResolver) PageInfo(ctx context.Context) (*graph
 
 	if next != 0 {
 		n := int32(next)
-		return graphqlutil.EncodeIntCursor(&n), nil
+		return grbphqlutil.EncodeIntCursor(&n), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *executorSecretConnectionResolver) compute(ctx context.Context) ([]*database.ExecutorSecret, int, error) {
+func (r *executorSecretConnectionResolver) compute(ctx context.Context) ([]*dbtbbbse.ExecutorSecret, int, error) {
 	r.computeOnce.Do(func() {
-		store := r.db.ExecutorSecrets(keyring.Default().ExecutorSecretKey)
+		store := r.db.ExecutorSecrets(keyring.Defbult().ExecutorSecretKey)
 
-		r.secrets, r.next, r.err = store.List(ctx, r.scope.ToDatabaseScope(), r.opts)
+		r.secrets, r.next, r.err = store.List(ctx, r.scope.ToDbtbbbseScope(), r.opts)
 	})
 	return r.secrets, r.next, r.err
 }

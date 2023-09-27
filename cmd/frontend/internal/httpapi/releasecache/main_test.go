@@ -1,71 +1,71 @@
-package releasecache
+pbckbge relebsecbche
 
 import (
-	"flag"
+	"flbg"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"testing"
 
-	"github.com/dnaeon/go-vcr/cassette"
-	"github.com/dnaeon/go-vcr/recorder"
-	"github.com/grafana/regexp"
+	"github.com/dnbeon/go-vcr/cbssette"
+	"github.com/dnbeon/go-vcr/recorder"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httptestutil"
 )
 
-var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
+vbr updbteRegex = flbg.String("updbte", "", "Updbte testdbtb of tests mbtching the given regex")
 
-func update(name string) bool {
-	if updateRegex == nil || *updateRegex == "" {
-		return false
+func updbte(nbme string) bool {
+	if updbteRegex == nil || *updbteRegex == "" {
+		return fblse
 	}
-	return regexp.MustCompile(*updateRegex).MatchString(name)
+	return regexp.MustCompile(*updbteRegex).MbtchString(nbme)
 }
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	os.Exit(m.Run())
 }
 
-func newClientFactory(t testing.TB, name string) (*httpcli.Factory, func(testing.TB)) {
-	cassetteName := filepath.Join("testdata", strings.ReplaceAll(name, " ", "-"))
-	rec := newRecorder(t, cassetteName, update(name))
-	return httpcli.NewFactory(httpcli.NewMiddleware(), httptestutil.NewRecorderOpt(rec)),
-		func(t testing.TB) { save(t, rec) }
+func newClientFbctory(t testing.TB, nbme string) (*httpcli.Fbctory, func(testing.TB)) {
+	cbssetteNbme := filepbth.Join("testdbtb", strings.ReplbceAll(nbme, " ", "-"))
+	rec := newRecorder(t, cbssetteNbme, updbte(nbme))
+	return httpcli.NewFbctory(httpcli.NewMiddlewbre(), httptestutil.NewRecorderOpt(rec)),
+		func(t testing.TB) { sbve(t, rec) }
 }
 
-func save(t testing.TB, rec *recorder.Recorder) {
+func sbve(t testing.TB, rec *recorder.Recorder) {
 	if err := rec.Stop(); err != nil {
-		t.Errorf("failed to update test data: %s", err)
+		t.Errorf("fbiled to updbte test dbtb: %s", err)
 	}
 }
 
 func newRecorder(t testing.TB, file string, record bool) *recorder.Recorder {
-	rec, err := httptestutil.NewRecorder(file, record, func(i *cassette.Interaction) error {
-		// The ratelimit.Monitor type resets its internal timestamp if it's
-		// updated with a timestamp in the past. This makes tests ran with
-		// recorded interations just wait for a very long time. Removing
-		// these headers from the cassette effectively disables rate-limiting
-		// in tests which replay HTTP interactions, which is desired behaviour.
-		for _, name := range [...]string{
-			"RateLimit-Limit",
-			"RateLimit-Observed",
-			"RateLimit-Remaining",
-			"RateLimit-Reset",
-			"RateLimit-Resettime",
-			"X-RateLimit-Limit",
-			"X-RateLimit-Remaining",
-			"X-RateLimit-Reset",
+	rec, err := httptestutil.NewRecorder(file, record, func(i *cbssette.Interbction) error {
+		// The rbtelimit.Monitor type resets its internbl timestbmp if it's
+		// updbted with b timestbmp in the pbst. This mbkes tests rbn with
+		// recorded interbtions just wbit for b very long time. Removing
+		// these hebders from the cbssette effectively disbbles rbte-limiting
+		// in tests which replby HTTP interbctions, which is desired behbviour.
+		for _, nbme := rbnge [...]string{
+			"RbteLimit-Limit",
+			"RbteLimit-Observed",
+			"RbteLimit-Rembining",
+			"RbteLimit-Reset",
+			"RbteLimit-Resettime",
+			"X-RbteLimit-Limit",
+			"X-RbteLimit-Rembining",
+			"X-RbteLimit-Reset",
 		} {
-			i.Response.Headers.Del(name)
+			i.Response.Hebders.Del(nbme)
 		}
 
 		return nil
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	return rec

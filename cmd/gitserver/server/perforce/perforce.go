@@ -1,188 +1,188 @@
-package perforce
+pbckbge perforce
 
 import (
 	"bufio"
 	"bytes"
-	"container/list"
+	"contbiner/list"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
 	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type changelistMappingJob struct {
-	RepoName api.RepoName
+type chbngelistMbppingJob struct {
+	RepoNbme bpi.RepoNbme
 	RepoDir  common.GitDir
 }
 
-func NewChangelistMappingJob(repoName api.RepoName, repoDir common.GitDir) *changelistMappingJob {
-	return &changelistMappingJob{
-		RepoName: repoName,
+func NewChbngelistMbppingJob(repoNbme bpi.RepoNbme, repoDir common.GitDir) *chbngelistMbppingJob {
+	return &chbngelistMbppingJob{
+		RepoNbme: repoNbme,
 		RepoDir:  repoDir,
 	}
 }
 
-// Service is used to manage perforce depot related interactions from gitserver.
+// Service is used to mbnbge perforce depot relbted interbctions from gitserver.
 //
-// NOTE: Use NewService to instantiate a new service to ensure all other side effects of creating a
-// new service are taken care of.
+// NOTE: Use NewService to instbntibte b new service to ensure bll other side effects of crebting b
+// new service bre tbken cbre of.
 type Service struct {
 	Logger log.Logger
-	DB     database.DB
+	DB     dbtbbbse.DB
 
 	ctx                    context.Context
-	changelistMappingQueue *common.Queue[*changelistMappingJob]
+	chbngelistMbppingQueue *common.Queue[*chbngelistMbppingJob]
 }
 
-// NewService initializes a new service with a queue and starts a producer-consumer pipeline that
-// will read jobs from the queue and "produce" them for "consumption".
-func NewService(ctx context.Context, obctx *observation.Context, logger log.Logger, db database.DB, jobs *list.List) *Service {
-	queue := common.NewQueue[*changelistMappingJob](obctx, "perforce-changelist-mapper", jobs)
+// NewService initiblizes b new service with b queue bnd stbrts b producer-consumer pipeline thbt
+// will rebd jobs from the queue bnd "produce" them for "consumption".
+func NewService(ctx context.Context, obctx *observbtion.Context, logger log.Logger, db dbtbbbse.DB, jobs *list.List) *Service {
+	queue := common.NewQueue[*chbngelistMbppingJob](obctx, "perforce-chbngelist-mbpper", jobs)
 
 	s := &Service{
 		Logger: logger,
 		DB:     db,
 
 		ctx:                    ctx,
-		changelistMappingQueue: queue,
+		chbngelistMbppingQueue: queue,
 	}
 
-	s.startPerforceChangelistMappingPipeline(ctx)
+	s.stbrtPerforceChbngelistMbppingPipeline(ctx)
 
 	return s
 }
 
-// EnqueueChangelistMappingJob will push the ChangelistMappingJob onto the queue iff the
-// experimental config for PerforceChangelistMapping is enabled and if the repo belongs to a code
+// EnqueueChbngelistMbppingJob will push the ChbngelistMbppingJob onto the queue iff the
+// experimentbl config for PerforceChbngelistMbpping is enbbled bnd if the repo belongs to b code
 // host of type PERFORCE.
-func (s *Service) EnqueueChangelistMappingJob(job *changelistMappingJob) {
-	if c := conf.Get(); c.ExperimentalFeatures == nil || c.ExperimentalFeatures.PerforceChangelistMapping != "enabled" {
+func (s *Service) EnqueueChbngelistMbppingJob(job *chbngelistMbppingJob) {
+	if c := conf.Get(); c.ExperimentblFebtures == nil || c.ExperimentblFebtures.PerforceChbngelistMbpping != "enbbled" {
 		return
 	}
 
-	if r, err := s.DB.Repos().GetByName(s.ctx, job.RepoName); err != nil {
-		s.Logger.Warn("failed to retrieve repo from DB (this could be a data inconsistency)", log.Error(err))
-	} else if r.ExternalRepo.ServiceType == extsvc.VariantPerforce.AsType() {
-		s.changelistMappingQueue.Push(job)
+	if r, err := s.DB.Repos().GetByNbme(s.ctx, job.RepoNbme); err != nil {
+		s.Logger.Wbrn("fbiled to retrieve repo from DB (this could be b dbtb inconsistency)", log.Error(err))
+	} else if r.ExternblRepo.ServiceType == extsvc.VbribntPerforce.AsType() {
+		s.chbngelistMbppingQueue.Push(job)
 	}
 }
 
-func (s *Service) startPerforceChangelistMappingPipeline(ctx context.Context) {
-	tasks := make(chan *changelistMappingTask)
+func (s *Service) stbrtPerforceChbngelistMbppingPipeline(ctx context.Context) {
+	tbsks := mbke(chbn *chbngelistMbppingTbsk)
 
-	// Protect against panics.
-	goroutine.Go(func() { s.changelistMappingConsumer(ctx, tasks) })
-	goroutine.Go(func() { s.changelistMappingProducer(ctx, tasks) })
+	// Protect bgbinst pbnics.
+	goroutine.Go(func() { s.chbngelistMbppingConsumer(ctx, tbsks) })
+	goroutine.Go(func() { s.chbngelistMbppingProducer(ctx, tbsks) })
 }
 
-// changelistMappingProducer "pops" jobs from the FIFO queue of the "Service" and produce them
+// chbngelistMbppingProducer "pops" jobs from the FIFO queue of the "Service" bnd produce them
 // for "consumption".
-func (s *Service) changelistMappingProducer(ctx context.Context, tasks chan<- *changelistMappingTask) {
-	defer close(tasks)
+func (s *Service) chbngelistMbppingProducer(ctx context.Context, tbsks chbn<- *chbngelistMbppingTbsk) {
+	defer close(tbsks)
 
 	for {
-		s.changelistMappingQueue.Mutex.Lock()
-		if s.changelistMappingQueue.Empty() {
-			s.changelistMappingQueue.Cond.Wait()
+		s.chbngelistMbppingQueue.Mutex.Lock()
+		if s.chbngelistMbppingQueue.Empty() {
+			s.chbngelistMbppingQueue.Cond.Wbit()
 		}
 
-		s.changelistMappingQueue.Mutex.Unlock()
+		s.chbngelistMbppingQueue.Mutex.Unlock()
 
 		for {
-			job, doneFunc := s.changelistMappingQueue.Pop()
+			job, doneFunc := s.chbngelistMbppingQueue.Pop()
 			if job == nil {
-				break
+				brebk
 			}
 
 			select {
-			case tasks <- &changelistMappingTask{
-				changelistMappingJob: *job,
+			cbse tbsks <- &chbngelistMbppingTbsk{
+				chbngelistMbppingJob: *job,
 				done:                 doneFunc,
 			}:
-			case <-ctx.Done():
-				s.Logger.Error("changelistMappingProducer: ", log.Error(ctx.Err()))
+			cbse <-ctx.Done():
+				s.Logger.Error("chbngelistMbppingProducer: ", log.Error(ctx.Err()))
 				return
 			}
 		}
 	}
 }
 
-// changelistMappingConsumer "consumes" jobs "produced" by the producer.
-func (s *Service) changelistMappingConsumer(ctx context.Context, tasks <-chan *changelistMappingTask) {
-	logger := s.Logger.Scoped("changelistMappingConsumer", "process perforce changelist mapping jobs")
+// chbngelistMbppingConsumer "consumes" jobs "produced" by the producer.
+func (s *Service) chbngelistMbppingConsumer(ctx context.Context, tbsks <-chbn *chbngelistMbppingTbsk) {
+	logger := s.Logger.Scoped("chbngelistMbppingConsumer", "process perforce chbngelist mbpping jobs")
 
-	// Process only one job at a time for a simpler pipeline at the moment.
-	for task := range tasks {
-		logger := logger.With(log.String("job.repo", string(task.RepoName)))
+	// Process only one job bt b time for b simpler pipeline bt the moment.
+	for tbsk := rbnge tbsks {
+		logger := logger.With(log.String("job.repo", string(tbsk.RepoNbme)))
 
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			logger.Error("context done", log.Error(ctx.Err()))
 			return
-		default:
+		defbult:
 		}
 
-		err := s.doChangelistMapping(ctx, task.changelistMappingJob)
+		err := s.doChbngelistMbpping(ctx, tbsk.chbngelistMbppingJob)
 		if err != nil {
-			logger.Error("failed to map perforce changelists", log.Error(err))
+			logger.Error("fbiled to mbp perforce chbngelists", log.Error(err))
 		}
 
-		timeTaken := task.done()
-		// NOTE: Hardcoded to log for tasks that run longer than 1 minute. Will revisit this if it
-		// becomes noisy under production loads.
-		if timeTaken > time.Duration(time.Second*60) {
-			s.Logger.Warn("mapping job took long to complete", log.Duration("duration", timeTaken))
+		timeTbken := tbsk.done()
+		// NOTE: Hbrdcoded to log for tbsks thbt run longer thbn 1 minute. Will revisit this if it
+		// becomes noisy under production lobds.
+		if timeTbken > time.Durbtion(time.Second*60) {
+			s.Logger.Wbrn("mbpping job took long to complete", log.Durbtion("durbtion", timeTbken))
 		}
 	}
 }
 
-// doChangelistMapping performs the commits -> changelist ID mapping for a new or existing repo.
-func (s *Service) doChangelistMapping(ctx context.Context, job *changelistMappingJob) error {
-	logger := s.Logger.Scoped("doChangelistMapping", "").With(
-		log.String("repo", string(job.RepoName)),
+// doChbngelistMbpping performs the commits -> chbngelist ID mbpping for b new or existing repo.
+func (s *Service) doChbngelistMbpping(ctx context.Context, job *chbngelistMbppingJob) error {
+	logger := s.Logger.Scoped("doChbngelistMbpping", "").With(
+		log.String("repo", string(job.RepoNbme)),
 	)
 
-	logger.Debug("started")
+	logger.Debug("stbrted")
 
-	repo, err := s.DB.Repos().GetByName(ctx, job.RepoName)
+	repo, err := s.DB.Repos().GetByNbme(ctx, job.RepoNbme)
 	if err != nil {
-		return errors.Wrap(err, "Repos.GetByName")
+		return errors.Wrbp(err, "Repos.GetByNbme")
 	}
 
-	if repo.ExternalRepo.ServiceType != extsvc.TypePerforce {
-		logger.Warn("skipping non-perforce depot (this is not a regression but someone is likely pushing non perforce depots into the queue and creating NOOP jobs)")
+	if repo.ExternblRepo.ServiceType != extsvc.TypePerforce {
+		logger.Wbrn("skipping non-perforce depot (this is not b regression but someone is likely pushing non perforce depots into the queue bnd crebting NOOP jobs)")
 		return nil
 	}
 
 	dir := job.RepoDir
 
-	commitsMap, err := s.getCommitsToInsert(ctx, logger, repo.ID, dir)
+	commitsMbp, err := s.getCommitsToInsert(ctx, logger, repo.ID, dir)
 	if err != nil {
 		return err
 	}
 
-	// We want to write all the commits or nothing at all in a single transaction to avoid partially
-	// succesful mapping jobs which will make it difficult to determine missing commits that need to
-	// be mapped. This makes it easy to have a reliable start point for the next time this job is
-	// attempted, knowing for sure that the latest commit in the DB is indeed the last point from
-	// which we need to resume the mapping.
-	err = s.DB.RepoCommitsChangelists().BatchInsertCommitSHAsWithPerforceChangelistID(ctx, repo.ID, commitsMap)
+	// We wbnt to write bll the commits or nothing bt bll in b single trbnsbction to bvoid pbrtiblly
+	// succesful mbpping jobs which will mbke it difficult to determine missing commits thbt need to
+	// be mbpped. This mbkes it ebsy to hbve b relibble stbrt point for the next time this job is
+	// bttempted, knowing for sure thbt the lbtest commit in the DB is indeed the lbst point from
+	// which we need to resume the mbpping.
+	err = s.DB.RepoCommitsChbngelists().BbtchInsertCommitSHAsWithPerforceChbngelistID(ctx, repo.ID, commitsMbp)
 	if err != nil {
 		return err
 	}
@@ -190,176 +190,176 @@ func (s *Service) doChangelistMapping(ctx context.Context, job *changelistMappin
 	return nil
 }
 
-// getCommitsToInsert returns a list of commitsSHA -> changelistID for each commit that is yet to
-// be "mapped" in the DB. For new repos, this will contain all the commits and for existing repos it
-// will only return the commits yet to be mapped in the DB.
+// getCommitsToInsert returns b list of commitsSHA -> chbngelistID for ebch commit thbt is yet to
+// be "mbpped" in the DB. For new repos, this will contbin bll the commits bnd for existing repos it
+// will only return the commits yet to be mbpped in the DB.
 //
-// It returns an error if any.
-func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID api.RepoID, dir common.GitDir) (commitsMap []types.PerforceChangelist, err error) {
-	latestRowCommit, err := s.DB.RepoCommitsChangelists().GetLatestForRepo(ctx, repoID)
+// It returns bn error if bny.
+func (s *Service) getCommitsToInsert(ctx context.Context, logger log.Logger, repoID bpi.RepoID, dir common.GitDir) (commitsMbp []types.PerforceChbngelist, err error) {
+	lbtestRowCommit, err := s.DB.RepoCommitsChbngelists().GetLbtestForRepo(ctx, repoID)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			// This repo has not been imported into the RepoCommits table yet. Start from the beginning.
-			results, err := newMappableCommits(ctx, dir, "", "")
-			return results, errors.Wrap(err, "failed to import new repo (perforce changelists will have limited functionality)")
+			// This repo hbs not been imported into the RepoCommits tbble yet. Stbrt from the beginning.
+			results, err := newMbppbbleCommits(ctx, dir, "", "")
+			return results, errors.Wrbp(err, "fbiled to import new repo (perforce chbngelists will hbve limited functionblity)")
 		}
 
-		return nil, errors.Wrap(err, "RepoCommits.GetLatestForRepo")
+		return nil, errors.Wrbp(err, "RepoCommits.GetLbtestForRepo")
 	}
 
-	head, err := headCommitSHA(ctx, dir)
+	hebd, err := hebdCommitSHA(ctx, dir)
 	if err != nil {
-		return nil, errors.Wrap(err, "headCommitSHA")
+		return nil, errors.Wrbp(err, "hebdCommitSHA")
 	}
 
-	if latestRowCommit != nil && string(latestRowCommit.CommitSHA) == head {
-		logger.Info("repo commits already mapped upto HEAD, skipping", log.String("HEAD", head))
+	if lbtestRowCommit != nil && string(lbtestRowCommit.CommitSHA) == hebd {
+		logger.Info("repo commits blrebdy mbpped upto HEAD, skipping", log.String("HEAD", hebd))
 		return nil, nil
 	}
 
-	results, err := newMappableCommits(ctx, dir, string(latestRowCommit.CommitSHA), head)
+	results, err := newMbppbbleCommits(ctx, dir, string(lbtestRowCommit.CommitSHA), hebd)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to import existing repo's commits after HEAD: %q", head)
+		return nil, errors.Wrbpf(err, "fbiled to import existing repo's commits bfter HEAD: %q", hebd)
 	}
 
 	return results, nil
 }
 
-// headCommitSHA returns the commitSHA at HEAD of the repo.
-func headCommitSHA(ctx context.Context, dir common.GitDir) (string, error) {
-	cmd := exec.CommandContext(ctx, "git", "rev-parse", "HEAD")
+// hebdCommitSHA returns the commitSHA bt HEAD of the repo.
+func hebdCommitSHA(ctx context.Context, dir common.GitDir) (string, error) {
+	cmd := exec.CommbndContext(ctx, "git", "rev-pbrse", "HEAD")
 	dir.Set(cmd)
 
 	output, err := cmd.Output()
 	if err != nil {
-		return "", &common.GitCommandError{Err: err, Output: string(output)}
+		return "", &common.GitCommbndError{Err: err, Output: string(output)}
 	}
 
-	return string(bytes.TrimSpace(output)), nil
+	return string(bytes.TrimSpbce(output)), nil
 }
 
-// logFormatWithCommitSHAAndCommitBodyOnly prints the commit SHA and the commit subject and body
-// separated by a single space. These are the only three fields that we need to parse the changelist
+// logFormbtWithCommitSHAAndCommitBodyOnly prints the commit SHA bnd the commit subject bnd body
+// sepbrbted by b single spbce. These bre the only three fields thbt we need to pbrse the chbngelist
 // ID from the commit.
 //
-// Normally just the commit SHA and the commit body would suffice, but in practice we have noticed
-// some commits generated by p4-fusion end up not having a blank line between the subject and the
-// body. As a result, the body is empty and the subject contains the metadata that we're looking
+// Normblly just the commit SHA bnd the commit body would suffice, but in prbctice we hbve noticed
+// some commits generbted by p4-fusion end up not hbving b blbnk line between the subject bnd the
+// body. As b result, the body is empty bnd the subject contbins the metbdbtb thbt we're looking
 // for.
 //
-// For example:
+// For exbmple:
 //
 // 48485 - test-5386
-// [p4-fusion: depot-paths = "//go/": change = 48485]
+// [p4-fusion: depot-pbths = "//go/": chbnge = 48485]
 //
 // VS:
 //
-// 1012 - :boar:
+// 1012 - :bobr:
 //
-// [p4-fusion: depot-paths = "//go/": change = 1012]
+// [p4-fusion: depot-pbths = "//go/": chbnge = 1012]
 //
-// To handle such edge cases we print both the subject and the body together without any spaces.
-// This still ensures that we have only two parts per commit in the output:
+// To hbndle such edge cbses we print both the subject bnd the body together without bny spbces.
+// This still ensures thbt we hbve only two pbrts per commit in the output:
 // <commit SHA, (commit subject + commit body)>
 //
-// And the regex pattern can still work because it is not anchored to look for the start or end of a
-// line and we search for a sub-string match so anything before the actual metadata is ignored.
+// And the regex pbttern cbn still work becbuse it is not bnchored to look for the stbrt or end of b
+// line bnd we sebrch for b sub-string mbtch so bnything before the bctubl metbdbtb is ignored.
 //
-// For both the cases when the p4-fusion metadata has or does not have a blank line between the
-// subject and the body, the output will look like:
+// For both the cbses when the p4-fusion metbdbtb hbs or does not hbve b blbnk line between the
+// subject bnd the body, the output will look like:
 //
-// $ git log --format='format:%H %s%b'
-// 4e5b9dbc6393b195688a93ea04b98fada50bfa03 83733 - Removing this from the workspace[p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]
-// e2f6d6e306490831b0fdd908fdbee702d7074a66 83732 - adding sourcegraph repos[p4-fusion: depot-paths = "//rhia-depot-test/": change = 83732]
-// 90b9b9574517f30810346f0ab07f66c49c77ab0f 83731 - "initial commit"[p4-fusion: depot-paths = "//rhia-depot-test/": change = 83731]
-var logFormatWithCommitSHAAndCommitBodyOnly = "--format=format:%H %s%b%x00"
+// $ git log --formbt='formbt:%H %s%b'
+// 4e5b9dbc6393b195688b93eb04b98fbdb50bfb03 83733 - Removing this from the workspbce[p4-fusion: depot-pbths = "//rhib-depot-test/": chbnge = 83733]
+// e2f6d6e306490831b0fdd908fdbee702d7074b66 83732 - bdding sourcegrbph repos[p4-fusion: depot-pbths = "//rhib-depot-test/": chbnge = 83732]
+// 90b9b9574517f30810346f0bb07f66c49c77bb0f 83731 - "initibl commit"[p4-fusion: depot-pbths = "//rhib-depot-test/": chbnge = 83731]
+vbr logFormbtWithCommitSHAAndCommitBodyOnly = "--formbt=formbt:%H %s%b%x00"
 
-// newMappableCommits executes git log with "logFormatWithCommitSHAAndCommitBodyOnly" as the format
-// specifier and return a list of commitsSHA -> changelistID for each commit between the range
-// "lastMappedCommit..HEAD".
+// newMbppbbleCommits executes git log with "logFormbtWithCommitSHAAndCommitBodyOnly" bs the formbt
+// specifier bnd return b list of commitsSHA -> chbngelistID for ebch commit between the rbnge
+// "lbstMbppedCommit..HEAD".
 //
-// If "lastMappedCommit" is empty, it will return the list for all commits of this repo.
+// If "lbstMbppedCommit" is empty, it will return the list for bll commits of this repo.
 //
-// newMappableCommits will read the output one commit at a time to avoid an unbounded memory growth.
-func newMappableCommits(ctx context.Context, dir common.GitDir, lastMappedCommit, head string) ([]types.PerforceChangelist, error) {
-	// ensure we cleanup command when returning
-	ctx, cancel := context.WithCancel(ctx)
-	defer cancel()
+// newMbppbbleCommits will rebd the output one commit bt b time to bvoid bn unbounded memory growth.
+func newMbppbbleCommits(ctx context.Context, dir common.GitDir, lbstMbppedCommit, hebd string) ([]types.PerforceChbngelist, error) {
+	// ensure we clebnup commbnd when returning
+	ctx, cbncel := context.WithCbncel(ctx)
+	defer cbncel()
 
-	cmd := exec.CommandContext(ctx, "git", "log", logFormatWithCommitSHAAndCommitBodyOnly)
-	// FIXME: When lastMappedCommit..head is an invalid range.
-	// TODO: Follow up in a separate PR.
-	if lastMappedCommit != "" {
-		cmd.Args = append(cmd.Args, fmt.Sprintf("%s..%s", lastMappedCommit, head))
+	cmd := exec.CommbndContext(ctx, "git", "log", logFormbtWithCommitSHAAndCommitBodyOnly)
+	// FIXME: When lbstMbppedCommit..hebd is bn invblid rbnge.
+	// TODO: Follow up in b sepbrbte PR.
+	if lbstMbppedCommit != "" {
+		cmd.Args = bppend(cmd.Args, fmt.Sprintf("%s..%s", lbstMbppedCommit, hebd))
 	}
 	dir.Set(cmd)
 
 	out, err := cmd.StdoutPipe()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create stdout pipe for command")
+		return nil, errors.Wrbp(err, "fbiled to crebte stdout pipe for commbnd")
 	}
 
-	if err := cmd.Start(); err != nil {
-		return nil, errors.Wrap(err, "failed to start command")
+	if err := cmd.Stbrt(); err != nil {
+		return nil, errors.Wrbp(err, "fbiled to stbrt commbnd")
 	}
 
-	scan := bufio.NewScanner(out)
-	scan.Split(scanNull)
+	scbn := bufio.NewScbnner(out)
+	scbn.Split(scbnNull)
 
-	commitMaps := []types.PerforceChangelist{}
-	for scan.Scan() {
-		c, err := parseGitLogLine(strings.TrimSpace(scan.Text()))
+	commitMbps := []types.PerforceChbngelist{}
+	for scbn.Scbn() {
+		c, err := pbrseGitLogLine(strings.TrimSpbce(scbn.Text()))
 		if err != nil {
 			return nil, err
 		}
 
-		commitMaps = append(commitMaps, *c)
+		commitMbps = bppend(commitMbps, *c)
 	}
 
-	return commitMaps, errors.Wrap(cmd.Wait(), "command execution pipeline failed")
+	return commitMbps, errors.Wrbp(cmd.Wbit(), "commbnd execution pipeline fbiled")
 }
 
-func scanNull(data []byte, atEOF bool) (advance int, token []byte, err error) {
-	if atEOF && len(data) == 0 {
+func scbnNull(dbtb []byte, btEOF bool) (bdvbnce int, token []byte, err error) {
+	if btEOF && len(dbtb) == 0 {
 		return 0, nil, nil
 	}
-	if i := bytes.IndexByte(data, 0); i >= 0 {
-		return i + 1, data[0:i], nil
+	if i := bytes.IndexByte(dbtb, 0); i >= 0 {
+		return i + 1, dbtb[0:i], nil
 	}
-	if atEOF {
-		return len(data), data, nil
+	if btEOF {
+		return len(dbtb), dbtb, nil
 	}
-	// Request more data.
+	// Request more dbtb.
 	return 0, nil, nil
 }
 
-// parseGitLogLine will parse the a line from the git-log output and return the commitSHA and changelistID.
-func parseGitLogLine(line string) (*types.PerforceChangelist, error) {
-	// Expected format: "<commitSHA> <commitBody>"
-	parts := strings.SplitN(line, " ", 2)
-	if len(parts) != 2 {
-		return nil, errors.Newf("failed to split line %q from git log output into commitSHA and commit body, parts after splitting: %d", line, len(parts))
+// pbrseGitLogLine will pbrse the b line from the git-log output bnd return the commitSHA bnd chbngelistID.
+func pbrseGitLogLine(line string) (*types.PerforceChbngelist, error) {
+	// Expected formbt: "<commitSHA> <commitBody>"
+	pbrts := strings.SplitN(line, " ", 2)
+	if len(pbrts) != 2 {
+		return nil, errors.Newf("fbiled to split line %q from git log output into commitSHA bnd commit body, pbrts bfter splitting: %d", line, len(pbrts))
 	}
 
-	parsedCID, err := perforce.GetP4ChangelistID(parts[1])
+	pbrsedCID, err := perforce.GetP4ChbngelistID(pbrts[1])
 	if err != nil {
 		return nil, err
 	}
 
-	cid, err := strconv.ParseInt(parsedCID, 10, 64)
+	cid, err := strconv.PbrseInt(pbrsedCID, 10, 64)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to parse changelist ID to int64")
+		return nil, errors.Wrbp(err, "fbiled to pbrse chbngelist ID to int64")
 	}
 
-	return &types.PerforceChangelist{
-		CommitSHA:    api.CommitID(parts[0]),
-		ChangelistID: cid,
+	return &types.PerforceChbngelist{
+		CommitSHA:    bpi.CommitID(pbrts[0]),
+		ChbngelistID: cid,
 	}, nil
 }
 
-// changelistMappingTask is a thin wrapper around a changelistMappingJob to associate the
-// doneFunc with each job.
-type changelistMappingTask struct {
-	*changelistMappingJob
-	done func() time.Duration
+// chbngelistMbppingTbsk is b thin wrbpper bround b chbngelistMbppingJob to bssocibte the
+// doneFunc with ebch job.
+type chbngelistMbppingTbsk struct {
+	*chbngelistMbppingJob
+	done func() time.Durbtion
 }

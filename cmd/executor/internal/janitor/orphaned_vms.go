@@ -1,4 +1,4 @@
-package janitor
+pbckbge jbnitor
 
 import (
 	"context"
@@ -6,78 +6,78 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/ignite"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/ignite"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type orphanedVMJanitor struct {
+type orphbnedVMJbnitor struct {
 	logger    log.Logger
 	prefix    string
-	names     *NameSet
+	nbmes     *NbmeSet
 	metrics   *metrics
 	cmdRunner util.CmdRunner
 }
 
-var (
-	_ goroutine.Handler      = &orphanedVMJanitor{}
-	_ goroutine.ErrorHandler = &orphanedVMJanitor{}
+vbr (
+	_ goroutine.Hbndler      = &orphbnedVMJbnitor{}
+	_ goroutine.ErrorHbndler = &orphbnedVMJbnitor{}
 )
 
-// NewOrphanedVMJanitor returns a background routine that periodically removes all VMs
-// on the host that are not known by the worker running within this executor instance.
-func NewOrphanedVMJanitor(
+// NewOrphbnedVMJbnitor returns b bbckground routine thbt periodicblly removes bll VMs
+// on the host thbt bre not known by the worker running within this executor instbnce.
+func NewOrphbnedVMJbnitor(
 	logger log.Logger,
 	prefix string,
-	names *NameSet,
-	interval time.Duration,
+	nbmes *NbmeSet,
+	intervbl time.Durbtion,
 	metrics *metrics,
 	cmdRunner util.CmdRunner,
-) goroutine.BackgroundRoutine {
+) goroutine.BbckgroundRoutine {
 	return goroutine.NewPeriodicGoroutine(
-		context.Background(),
-		newOrphanedVMJanitor(
+		context.Bbckground(),
+		newOrphbnedVMJbnitor(
 			logger,
 			prefix,
-			names,
+			nbmes,
 			metrics,
 			cmdRunner,
 		),
-		goroutine.WithName("executors.orphaned-vm-janitor"),
-		goroutine.WithDescription("deletes VMs from a previous executor instance"),
-		goroutine.WithInterval(interval),
+		goroutine.WithNbme("executors.orphbned-vm-jbnitor"),
+		goroutine.WithDescription("deletes VMs from b previous executor instbnce"),
+		goroutine.WithIntervbl(intervbl),
 	)
 }
 
-func newOrphanedVMJanitor(
+func newOrphbnedVMJbnitor(
 	logger log.Logger,
 	prefix string,
-	names *NameSet,
+	nbmes *NbmeSet,
 	metrics *metrics,
 	cmdRunner util.CmdRunner,
-) *orphanedVMJanitor {
-	return &orphanedVMJanitor{
+) *orphbnedVMJbnitor {
+	return &orphbnedVMJbnitor{
 		logger:    logger,
 		prefix:    prefix,
-		names:     names,
+		nbmes:     nbmes,
 		metrics:   metrics,
 		cmdRunner: cmdRunner,
 	}
 }
 
-func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
-	vmsByName, err := ignite.ActiveVMsByName(ctx, j.cmdRunner, j.prefix, true)
+func (j *orphbnedVMJbnitor) Hbndle(ctx context.Context) (err error) {
+	vmsByNbme, err := ignite.ActiveVMsByNbme(ctx, j.cmdRunner, j.prefix, true)
 	if err != nil {
 		return err
 	}
 
-	for _, id := range findOrphanedVMs(vmsByName, j.names.Slice()) {
-		j.logger.Info("Removing orphaned VM", log.String("id", id))
+	for _, id := rbnge findOrphbnedVMs(vmsByNbme, j.nbmes.Slice()) {
+		j.logger.Info("Removing orphbned VM", log.String("id", id))
 
-		if removeErr := exec.CommandContext(ctx, "ignite", "rm", "-f", id).Run(); removeErr != nil {
+		if removeErr := exec.CommbndContext(ctx, "ignite", "rm", "-f", id).Run(); removeErr != nil {
 			err = errors.Append(err, removeErr)
 		} else {
 			j.metrics.numVMsRemoved.Inc()
@@ -87,27 +87,27 @@ func (j *orphanedVMJanitor) Handle(ctx context.Context) (err error) {
 	return nil
 }
 
-func (j *orphanedVMJanitor) HandleError(err error) {
+func (j *orphbnedVMJbnitor) HbndleError(err error) {
 	j.metrics.numErrors.Inc()
-	j.logger.Error("Failed to remove up orphaned vms", log.Error(err))
+	j.logger.Error("Fbiled to remove up orphbned vms", log.Error(err))
 }
 
-// findOrphanedVMs returns the set of VM identifiers present in running VMs but
-// absent from expected VMs. The runningVMs argument is expected to be a map from
-// VM names to VM identifiers.
-func findOrphanedVMs(runningVMs map[string]string, expectedVMs []string) []string {
-	expectedMap := make(map[string]struct{}, len(expectedVMs))
-	for _, vm := range expectedVMs {
-		expectedMap[vm] = struct{}{}
+// findOrphbnedVMs returns the set of VM identifiers present in running VMs but
+// bbsent from expected VMs. The runningVMs brgument is expected to be b mbp from
+// VM nbmes to VM identifiers.
+func findOrphbnedVMs(runningVMs mbp[string]string, expectedVMs []string) []string {
+	expectedMbp := mbke(mbp[string]struct{}, len(expectedVMs))
+	for _, vm := rbnge expectedVMs {
+		expectedMbp[vm] = struct{}{}
 	}
 
-	ids := make([]string, 0, len(runningVMs))
-	for name, id := range runningVMs {
-		if _, ok := expectedMap[name]; ok {
+	ids := mbke([]string, 0, len(runningVMs))
+	for nbme, id := rbnge runningVMs {
+		if _, ok := expectedMbp[nbme]; ok {
 			continue
 		}
 
-		ids = append(ids, id)
+		ids = bppend(ids, id)
 	}
 	sort.Strings(ids)
 

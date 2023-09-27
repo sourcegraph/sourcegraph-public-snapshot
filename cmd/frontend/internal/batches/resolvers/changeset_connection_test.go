@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -8,239 +8,239 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	bgql "github.com/sourcegraph/sourcegraph/internal/batches/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	bgql "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/grbphql"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-func TestChangesetConnectionResolver(t *testing.T) {
+func TestChbngesetConnectionResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 	logger := logtest.Scoped(t)
 
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	repoStore := database.ReposWith(logger, bstore)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-connection-test", newGitHubExternalService(t, esStore))
-	inaccessibleRepo := newGitHubTestRepo("github.com/sourcegraph/private", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo, inaccessibleRepo); err != nil {
-		t.Fatal(err)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/chbngeset-connection-test", newGitHubExternblService(t, esStore))
+	inbccessibleRepo := newGitHubTestRepo("github.com/sourcegrbph/privbte", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo, inbccessibleRepo); err != nil {
+		t.Fbtbl(err)
 	}
 	bt.MockRepoPermissions(t, db, userID, repo.ID)
 
-	spec := &btypes.BatchSpec{
-		NamespaceUserID: userID,
+	spec := &btypes.BbtchSpec{
+		NbmespbceUserID: userID,
 		UserID:          userID,
 	}
-	if err := bstore.CreateBatchSpec(ctx, spec); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchSpec(ctx, spec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	batchChange := &btypes.BatchChange{
-		Name:            "my-unique-name",
-		NamespaceUserID: userID,
-		CreatorID:       userID,
-		LastApplierID:   userID,
-		LastAppliedAt:   time.Now(),
-		BatchSpecID:     spec.ID,
+	bbtchChbnge := &btypes.BbtchChbnge{
+		Nbme:            "my-unique-nbme",
+		NbmespbceUserID: userID,
+		CrebtorID:       userID,
+		LbstApplierID:   userID,
+		LbstAppliedAt:   time.Now(),
+		BbtchSpecID:     spec.ID,
 	}
-	if err := bstore.CreateBatchChange(ctx, batchChange); err != nil {
-		t.Fatal(err)
+	if err := bstore.CrebteBbtchChbnge(ctx, bbtchChbnge); err != nil {
+		t.Fbtbl(err)
 	}
 
-	changeset1 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	chbngeset1 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		PublicationState:    btypes.ChangesetPublicationStateUnpublished,
-		ExternalReviewState: btypes.ChangesetReviewStatePending,
-		OwnedByBatchChange:  batchChange.ID,
-		BatchChange:         batchChange.ID,
+		ExternblServiceType: "github",
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbteUnpublished,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbtePending,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		BbtchChbnge:         bbtchChbnge.ID,
 	})
 
-	changeset2 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	chbngeset2 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "12345",
-		ExternalBranch:      "open-pr",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ExternalReviewState: btypes.ChangesetReviewStatePending,
-		OwnedByBatchChange:  batchChange.ID,
-		BatchChange:         batchChange.ID,
+		ExternblServiceType: "github",
+		ExternblID:          "12345",
+		ExternblBrbnch:      "open-pr",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbtePending,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		BbtchChbnge:         bbtchChbnge.ID,
 	})
 
-	changeset3 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
+	chbngeset3 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
 		Repo:                repo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "56789",
-		ExternalBranch:      "merged-pr",
-		ExternalState:       btypes.ChangesetExternalStateMerged,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ExternalReviewState: btypes.ChangesetReviewStatePending,
-		OwnedByBatchChange:  batchChange.ID,
-		BatchChange:         batchChange.ID,
+		ExternblServiceType: "github",
+		ExternblID:          "56789",
+		ExternblBrbnch:      "merged-pr",
+		ExternblStbte:       btypes.ChbngesetExternblStbteMerged,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbtePending,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		BbtchChbnge:         bbtchChbnge.ID,
 	})
-	changeset4 := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
-		Repo:                inaccessibleRepo.ID,
-		ExternalServiceType: "github",
-		ExternalID:          "987651",
-		ExternalBranch:      "open-hidden-pr",
-		ExternalState:       btypes.ChangesetExternalStateOpen,
-		PublicationState:    btypes.ChangesetPublicationStatePublished,
-		ExternalReviewState: btypes.ChangesetReviewStatePending,
-		OwnedByBatchChange:  batchChange.ID,
-		BatchChange:         batchChange.ID,
+	chbngeset4 := bt.CrebteChbngeset(t, ctx, bstore, bt.TestChbngesetOpts{
+		Repo:                inbccessibleRepo.ID,
+		ExternblServiceType: "github",
+		ExternblID:          "987651",
+		ExternblBrbnch:      "open-hidden-pr",
+		ExternblStbte:       btypes.ChbngesetExternblStbteOpen,
+		PublicbtionStbte:    btypes.ChbngesetPublicbtionStbtePublished,
+		ExternblReviewStbte: btypes.ChbngesetReviewStbtePending,
+		OwnedByBbtchChbnge:  bbtchChbnge.ID,
+		BbtchChbnge:         bbtchChbnge.ID,
 	})
 
-	addChangeset(t, ctx, bstore, changeset1, batchChange.ID)
-	addChangeset(t, ctx, bstore, changeset2, batchChange.ID)
-	addChangeset(t, ctx, bstore, changeset3, batchChange.ID)
-	addChangeset(t, ctx, bstore, changeset4, batchChange.ID)
+	bddChbngeset(t, ctx, bstore, chbngeset1, bbtchChbnge.ID)
+	bddChbngeset(t, ctx, bstore, chbngeset2, bbtchChbnge.ID)
+	bddChbngeset(t, ctx, bstore, chbngeset3, bbtchChbnge.ID)
+	bddChbngeset(t, ctx, bstore, chbngeset4, bbtchChbnge.ID)
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	batchChangeAPIID := string(bgql.MarshalBatchChangeID(batchChange.ID))
-	nodes := []apitest.Changeset{
+	bbtchChbngeAPIID := string(bgql.MbrshblBbtchChbngeID(bbtchChbnge.ID))
+	nodes := []bpitest.Chbngeset{
 		{
-			Typename:   "ExternalChangeset",
-			ID:         string(bgql.MarshalChangesetID(changeset1.ID)),
-			Repository: apitest.Repository{Name: string(repo.Name)},
+			Typenbme:   "ExternblChbngeset",
+			ID:         string(bgql.MbrshblChbngesetID(chbngeset1.ID)),
+			Repository: bpitest.Repository{Nbme: string(repo.Nbme)},
 		},
 		{
-			Typename:   "ExternalChangeset",
-			ID:         string(bgql.MarshalChangesetID(changeset2.ID)),
-			Repository: apitest.Repository{Name: string(repo.Name)},
+			Typenbme:   "ExternblChbngeset",
+			ID:         string(bgql.MbrshblChbngesetID(chbngeset2.ID)),
+			Repository: bpitest.Repository{Nbme: string(repo.Nbme)},
 		},
 		{
-			Typename:   "ExternalChangeset",
-			ID:         string(bgql.MarshalChangesetID(changeset3.ID)),
-			Repository: apitest.Repository{Name: string(repo.Name)},
+			Typenbme:   "ExternblChbngeset",
+			ID:         string(bgql.MbrshblChbngesetID(chbngeset3.ID)),
+			Repository: bpitest.Repository{Nbme: string(repo.Nbme)},
 		},
 		{
-			Typename: "HiddenExternalChangeset",
-			ID:       string(bgql.MarshalChangesetID(changeset4.ID)),
+			Typenbme: "HiddenExternblChbngeset",
+			ID:       string(bgql.MbrshblChbngesetID(chbngeset4.ID)),
 		},
 	}
 
 	tests := []struct {
-		firstParam      int
-		useUnsafeOpts   bool
-		wantHasNextPage bool
-		wantEndCursor   string
-		wantTotalCount  int
-		wantOpen        int
-		wantNodes       []apitest.Changeset
+		firstPbrbm      int
+		useUnsbfeOpts   bool
+		wbntHbsNextPbge bool
+		wbntEndCursor   string
+		wbntTotblCount  int
+		wbntOpen        int
+		wbntNodes       []bpitest.Chbngeset
 	}{
-		{firstParam: 1, wantHasNextPage: true, wantEndCursor: "2", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:1]},
-		{firstParam: 2, wantHasNextPage: true, wantEndCursor: "3", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:2]},
-		{firstParam: 3, wantHasNextPage: true, wantEndCursor: "4", wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:3]},
-		{firstParam: 4, wantHasNextPage: false, wantTotalCount: 4, wantOpen: 2, wantNodes: nodes[:4]},
-		// Expect only 3 changesets to be returned when an unsafe filter is applied.
-		{firstParam: 1, useUnsafeOpts: true, wantEndCursor: "2", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:1]},
-		{firstParam: 2, useUnsafeOpts: true, wantEndCursor: "3", wantHasNextPage: true, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:2]},
-		{firstParam: 3, useUnsafeOpts: true, wantHasNextPage: false, wantTotalCount: 3, wantOpen: 1, wantNodes: nodes[:3]},
+		{firstPbrbm: 1, wbntHbsNextPbge: true, wbntEndCursor: "2", wbntTotblCount: 4, wbntOpen: 2, wbntNodes: nodes[:1]},
+		{firstPbrbm: 2, wbntHbsNextPbge: true, wbntEndCursor: "3", wbntTotblCount: 4, wbntOpen: 2, wbntNodes: nodes[:2]},
+		{firstPbrbm: 3, wbntHbsNextPbge: true, wbntEndCursor: "4", wbntTotblCount: 4, wbntOpen: 2, wbntNodes: nodes[:3]},
+		{firstPbrbm: 4, wbntHbsNextPbge: fblse, wbntTotblCount: 4, wbntOpen: 2, wbntNodes: nodes[:4]},
+		// Expect only 3 chbngesets to be returned when bn unsbfe filter is bpplied.
+		{firstPbrbm: 1, useUnsbfeOpts: true, wbntEndCursor: "2", wbntHbsNextPbge: true, wbntTotblCount: 3, wbntOpen: 1, wbntNodes: nodes[:1]},
+		{firstPbrbm: 2, useUnsbfeOpts: true, wbntEndCursor: "3", wbntHbsNextPbge: true, wbntTotblCount: 3, wbntOpen: 1, wbntNodes: nodes[:2]},
+		{firstPbrbm: 3, useUnsbfeOpts: true, wbntHbsNextPbge: fblse, wbntTotblCount: 3, wbntOpen: 1, wbntNodes: nodes[:3]},
 	}
 
-	for _, tc := range tests {
-		t.Run(fmt.Sprintf("Unsafe opts %t, first %d", tc.useUnsafeOpts, tc.firstParam), func(t *testing.T) {
-			input := map[string]any{"batchChange": batchChangeAPIID, "first": int64(tc.firstParam)}
-			if tc.useUnsafeOpts {
-				input["reviewState"] = btypes.ChangesetReviewStatePending
+	for _, tc := rbnge tests {
+		t.Run(fmt.Sprintf("Unsbfe opts %t, first %d", tc.useUnsbfeOpts, tc.firstPbrbm), func(t *testing.T) {
+			input := mbp[string]bny{"bbtchChbnge": bbtchChbngeAPIID, "first": int64(tc.firstPbrbm)}
+			if tc.useUnsbfeOpts {
+				input["reviewStbte"] = btypes.ChbngesetReviewStbtePending
 			}
-			var response struct{ Node apitest.BatchChange }
-			apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
+			vbr response struct{ Node bpitest.BbtchChbnge }
+			bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryChbngesetConnection)
 
-			var wantEndCursor *string
-			if tc.wantEndCursor != "" {
-				wantEndCursor = &tc.wantEndCursor
+			vbr wbntEndCursor *string
+			if tc.wbntEndCursor != "" {
+				wbntEndCursor = &tc.wbntEndCursor
 			}
 
-			wantChangesets := apitest.ChangesetConnection{
-				TotalCount: tc.wantTotalCount,
-				PageInfo: apitest.PageInfo{
-					EndCursor:   wantEndCursor,
-					HasNextPage: tc.wantHasNextPage,
+			wbntChbngesets := bpitest.ChbngesetConnection{
+				TotblCount: tc.wbntTotblCount,
+				PbgeInfo: bpitest.PbgeInfo{
+					EndCursor:   wbntEndCursor,
+					HbsNextPbge: tc.wbntHbsNextPbge,
 				},
-				Nodes: tc.wantNodes,
+				Nodes: tc.wbntNodes,
 			}
 
-			if diff := cmp.Diff(wantChangesets, response.Node.Changesets); diff != "" {
-				t.Fatalf("wrong changesets response (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbntChbngesets, response.Node.Chbngesets); diff != "" {
+				t.Fbtblf("wrong chbngesets response (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 
-	var endCursor *string
-	for i := range nodes {
-		input := map[string]any{"batchChange": batchChangeAPIID, "first": 1}
+	vbr endCursor *string
+	for i := rbnge nodes {
+		input := mbp[string]bny{"bbtchChbnge": bbtchChbngeAPIID, "first": 1}
 		if endCursor != nil {
-			input["after"] = *endCursor
+			input["bfter"] = *endCursor
 		}
-		wantHasNextPage := i != len(nodes)-1
+		wbntHbsNextPbge := i != len(nodes)-1
 
-		var response struct{ Node apitest.BatchChange }
-		apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(userID)), t, s, input, &response, queryChangesetConnection)
+		vbr response struct{ Node bpitest.BbtchChbnge }
+		bpitest.MustExec(bctor.WithActor(context.Bbckground(), bctor.FromUser(userID)), t, s, input, &response, queryChbngesetConnection)
 
-		changesets := response.Node.Changesets
-		if diff := cmp.Diff(1, len(changesets.Nodes)); diff != "" {
-			t.Fatalf("unexpected number of nodes (-want +got):\n%s", diff)
-		}
-
-		if diff := cmp.Diff(len(nodes), changesets.TotalCount); diff != "" {
-			t.Fatalf("unexpected total count (-want +got):\n%s", diff)
+		chbngesets := response.Node.Chbngesets
+		if diff := cmp.Diff(1, len(chbngesets.Nodes)); diff != "" {
+			t.Fbtblf("unexpected number of nodes (-wbnt +got):\n%s", diff)
 		}
 
-		if diff := cmp.Diff(wantHasNextPage, changesets.PageInfo.HasNextPage); diff != "" {
-			t.Fatalf("unexpected hasNextPage (-want +got):\n%s", diff)
+		if diff := cmp.Diff(len(nodes), chbngesets.TotblCount); diff != "" {
+			t.Fbtblf("unexpected totbl count (-wbnt +got):\n%s", diff)
 		}
 
-		endCursor = changesets.PageInfo.EndCursor
-		if want, have := wantHasNextPage, endCursor != nil; have != want {
-			t.Fatalf("unexpected endCursor existence. want=%t, have=%t", want, have)
+		if diff := cmp.Diff(wbntHbsNextPbge, chbngesets.PbgeInfo.HbsNextPbge); diff != "" {
+			t.Fbtblf("unexpected hbsNextPbge (-wbnt +got):\n%s", diff)
+		}
+
+		endCursor = chbngesets.PbgeInfo.EndCursor
+		if wbnt, hbve := wbntHbsNextPbge, endCursor != nil; hbve != wbnt {
+			t.Fbtblf("unexpected endCursor existence. wbnt=%t, hbve=%t", wbnt, hbve)
 		}
 	}
 }
 
-const queryChangesetConnection = `
-query($batchChange: ID!, $first: Int, $after: String, $reviewState: ChangesetReviewState){
-  node(id: $batchChange) {
-    ... on BatchChange {
-      changesets(first: $first, after: $after, reviewState: $reviewState) {
-        totalCount
+const queryChbngesetConnection = `
+query($bbtchChbnge: ID!, $first: Int, $bfter: String, $reviewStbte: ChbngesetReviewStbte){
+  node(id: $bbtchChbnge) {
+    ... on BbtchChbnge {
+      chbngesets(first: $first, bfter: $bfter, reviewStbte: $reviewStbte) {
+        totblCount
         nodes {
-          __typename
+          __typenbme
 
-          ... on ExternalChangeset {
+          ... on ExternblChbngeset {
             id
-            repository { name }
+            repository { nbme }
             nextSyncAt
           }
-          ... on HiddenExternalChangeset {
+          ... on HiddenExternblChbngeset {
             id
             nextSyncAt
           }
         }
-        pageInfo {
+        pbgeInfo {
           endCursor
-          hasNextPage
+          hbsNextPbge
         }
       }
     }

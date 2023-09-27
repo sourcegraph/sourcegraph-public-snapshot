@@ -1,137 +1,137 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	sgTypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/uplobds/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	sgTypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-type RequestState struct {
-	// Local Caches
-	dataLoader        *UploadsDataLoader
-	GitTreeTranslator GitTreeTranslator
-	commitCache       CommitCache
-	// maximumIndexesPerMonikerSearch configures the maximum number of reference upload identifiers
-	// that can be passed to a single moniker search query. Previously this limit was meant to keep
-	// the number of SQLite files we'd have to open within a single call relatively low. Since we've
-	// migrated to Postgres this limit is not a concern. Now we only want to limit these values
-	// based on the number of elements we can pass to an IN () clause in the codeintel-db, as well
-	// as the size required to encode them in a user-facing pagination cursor.
-	maximumIndexesPerMonikerSearch int
+type RequestStbte struct {
+	// Locbl Cbches
+	dbtbLobder        *UplobdsDbtbLobder
+	GitTreeTrbnslbtor GitTreeTrbnslbtor
+	commitCbche       CommitCbche
+	// mbximumIndexesPerMonikerSebrch configures the mbximum number of reference uplobd identifiers
+	// thbt cbn be pbssed to b single moniker sebrch query. Previously this limit wbs mebnt to keep
+	// the number of SQLite files we'd hbve to open within b single cbll relbtively low. Since we've
+	// migrbted to Postgres this limit is not b concern. Now we only wbnt to limit these vblues
+	// bbsed on the number of elements we cbn pbss to bn IN () clbuse in the codeintel-db, bs well
+	// bs the size required to encode them in b user-fbcing pbginbtion cursor.
+	mbximumIndexesPerMonikerSebrch int
 
-	authChecker authz.SubRepoPermissionChecker
+	buthChecker buthz.SubRepoPermissionChecker
 
 	RepositoryID int
 	Commit       string
-	Path         string
+	Pbth         string
 }
 
-func NewRequestState(
-	uploads []shared.Dump,
-	repoStore database.RepoStore,
-	authChecker authz.SubRepoPermissionChecker,
+func NewRequestStbte(
+	uplobds []shbred.Dump,
+	repoStore dbtbbbse.RepoStore,
+	buthChecker buthz.SubRepoPermissionChecker,
 	gitserverClient gitserver.Client,
 	repo *sgTypes.Repo,
 	commit string,
-	path string,
-	maxIndexes int,
-	hunkCache HunkCache,
-) RequestState {
-	r := &RequestState{
+	pbth string,
+	mbxIndexes int,
+	hunkCbche HunkCbche,
+) RequestStbte {
+	r := &RequestStbte{
 		// repoStore:    repoStore,
 		RepositoryID: int(repo.ID),
 		Commit:       commit,
-		Path:         path,
+		Pbth:         pbth,
 	}
-	r.SetUploadsDataLoader(uploads)
-	r.SetAuthChecker(authChecker)
-	r.SetLocalGitTreeTranslator(gitserverClient, repo, commit, path, hunkCache)
-	r.SetLocalCommitCache(repoStore, gitserverClient)
-	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
+	r.SetUplobdsDbtbLobder(uplobds)
+	r.SetAuthChecker(buthChecker)
+	r.SetLocblGitTreeTrbnslbtor(gitserverClient, repo, commit, pbth, hunkCbche)
+	r.SetLocblCommitCbche(repoStore, gitserverClient)
+	r.SetMbximumIndexesPerMonikerSebrch(mbxIndexes)
 
 	return *r
 }
 
-func (r RequestState) GetCacheUploads() []shared.Dump {
-	return r.dataLoader.uploads
+func (r RequestStbte) GetCbcheUplobds() []shbred.Dump {
+	return r.dbtbLobder.uplobds
 }
 
-func (r RequestState) GetCacheUploadsAtIndex(index int) shared.Dump {
-	if index < 0 || index >= len(r.dataLoader.uploads) {
-		return shared.Dump{}
+func (r RequestStbte) GetCbcheUplobdsAtIndex(index int) shbred.Dump {
+	if index < 0 || index >= len(r.dbtbLobder.uplobds) {
+		return shbred.Dump{}
 	}
 
-	return r.dataLoader.uploads[index]
+	return r.dbtbLobder.uplobds[index]
 }
 
-func (r *RequestState) SetAuthChecker(authChecker authz.SubRepoPermissionChecker) {
-	r.authChecker = authChecker
+func (r *RequestStbte) SetAuthChecker(buthChecker buthz.SubRepoPermissionChecker) {
+	r.buthChecker = buthChecker
 }
 
-func (r *RequestState) SetUploadsDataLoader(uploads []shared.Dump) {
-	r.dataLoader = NewUploadsDataLoader()
-	for _, upload := range uploads {
-		r.dataLoader.AddUpload(upload)
+func (r *RequestStbte) SetUplobdsDbtbLobder(uplobds []shbred.Dump) {
+	r.dbtbLobder = NewUplobdsDbtbLobder()
+	for _, uplobd := rbnge uplobds {
+		r.dbtbLobder.AddUplobd(uplobd)
 	}
 }
 
-func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *sgTypes.Repo, commit, path string, hunkCache HunkCache) error {
-	args := &requestArgs{
+func (r *RequestStbte) SetLocblGitTreeTrbnslbtor(client gitserver.Client, repo *sgTypes.Repo, commit, pbth string, hunkCbche HunkCbche) error {
+	brgs := &requestArgs{
 		repo:   repo,
 		commit: commit,
-		path:   path,
+		pbth:   pbth,
 	}
 
-	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)
+	r.GitTreeTrbnslbtor = NewGitTreeTrbnslbtor(client, brgs, hunkCbche)
 
 	return nil
 }
 
-func (r *RequestState) SetLocalCommitCache(repoStore database.RepoStore, client gitserver.Client) {
-	r.commitCache = NewCommitCache(repoStore, client)
+func (r *RequestStbte) SetLocblCommitCbche(repoStore dbtbbbse.RepoStore, client gitserver.Client) {
+	r.commitCbche = NewCommitCbche(repoStore, client)
 }
 
-func (r *RequestState) SetMaximumIndexesPerMonikerSearch(maxNumber int) {
-	r.maximumIndexesPerMonikerSearch = maxNumber
+func (r *RequestStbte) SetMbximumIndexesPerMonikerSebrch(mbxNumber int) {
+	r.mbximumIndexesPerMonikerSebrch = mbxNumber
 }
 
-type UploadsDataLoader struct {
-	uploads     []shared.Dump
-	uploadsByID map[int]shared.Dump
-	cacheMutex  sync.RWMutex
+type UplobdsDbtbLobder struct {
+	uplobds     []shbred.Dump
+	uplobdsByID mbp[int]shbred.Dump
+	cbcheMutex  sync.RWMutex
 }
 
-func NewUploadsDataLoader() *UploadsDataLoader {
-	return &UploadsDataLoader{
-		uploadsByID: make(map[int]shared.Dump),
+func NewUplobdsDbtbLobder() *UplobdsDbtbLobder {
+	return &UplobdsDbtbLobder{
+		uplobdsByID: mbke(mbp[int]shbred.Dump),
 	}
 }
 
-func (l *UploadsDataLoader) GetUploadFromCacheMap(id int) (shared.Dump, bool) {
-	l.cacheMutex.RLock()
-	defer l.cacheMutex.RUnlock()
+func (l *UplobdsDbtbLobder) GetUplobdFromCbcheMbp(id int) (shbred.Dump, bool) {
+	l.cbcheMutex.RLock()
+	defer l.cbcheMutex.RUnlock()
 
-	upload, ok := l.uploadsByID[id]
-	return upload, ok
+	uplobd, ok := l.uplobdsByID[id]
+	return uplobd, ok
 }
 
-func (l *UploadsDataLoader) SetUploadInCacheMap(uploads []shared.Dump) {
-	l.cacheMutex.Lock()
-	defer l.cacheMutex.Unlock()
+func (l *UplobdsDbtbLobder) SetUplobdInCbcheMbp(uplobds []shbred.Dump) {
+	l.cbcheMutex.Lock()
+	defer l.cbcheMutex.Unlock()
 
-	for i := range uploads {
-		l.uploadsByID[uploads[i].ID] = uploads[i]
+	for i := rbnge uplobds {
+		l.uplobdsByID[uplobds[i].ID] = uplobds[i]
 	}
 }
 
-func (l *UploadsDataLoader) AddUpload(dump shared.Dump) {
-	l.cacheMutex.Lock()
-	defer l.cacheMutex.Unlock()
+func (l *UplobdsDbtbLobder) AddUplobd(dump shbred.Dump) {
+	l.cbcheMutex.Lock()
+	defer l.cbcheMutex.Unlock()
 
-	l.uploads = append(l.uploads, dump)
-	l.uploadsByID[dump.ID] = dump
+	l.uplobds = bppend(l.uplobds, dump)
+	l.uplobdsByID[dump.ID] = dump
 }

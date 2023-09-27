@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,19 +6,19 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestSiteConfigurationDiff(t *testing.T) {
+func TestSiteConfigurbtionDiff(t *testing.T) {
 	stubs := setupSiteConfigStubs(t)
 
-	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: stubs.users[0].ID})
-	schemaResolver, err := newSchemaResolver(stubs.db, gitserver.NewClient()).Site().Configuration(ctx, &SiteConfigurationArgs{})
+	ctx := bctor.WithActor(context.Bbckground(), &bctor.Actor{UID: stubs.users[0].ID})
+	schembResolver, err := newSchembResolver(stubs.db, gitserver.NewClient()).Site().Configurbtion(ctx, &SiteConfigurbtionArgs{})
 	if err != nil {
-		t.Fatalf("failed to create schemaResolver: %v", err)
+		t.Fbtblf("fbiled to crebte schembResolver: %v", err)
 	}
 
 	expectedDiffs := stubs.expectedDiffs
@@ -55,52 +55,52 @@ func TestSiteConfigurationDiff(t *testing.T) {
 		},
 	}
 
-	testCases := []struct {
-		name string
-		args *graphqlutil.ConnectionResolverArgs
+	testCbses := []struct {
+		nbme string
+		brgs *grbphqlutil.ConnectionResolverArgs
 	}{
-		// We have tests for pagination so we can skip that here and just check for the diff for all
+		// We hbve tests for pbginbtion so we cbn skip thbt here bnd just check for the diff for bll
 		// the nodes in both the directions.
 		{
-			name: "first: 10",
-			args: &graphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(10))},
+			nbme: "first: 10",
+			brgs: &grbphqlutil.ConnectionResolverArgs{First: pointers.Ptr(int32(10))},
 		},
 		{
-			name: "last: 10",
-			args: &graphqlutil.ConnectionResolverArgs{Last: pointers.Ptr(int32(10))},
+			nbme: "lbst: 10",
+			brgs: &grbphqlutil.ConnectionResolverArgs{Lbst: pointers.Ptr(int32(10))},
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			connectionResolver, err := schemaResolver.History(ctx, tc.args)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			connectionResolver, err := schembResolver.History(ctx, tc.brgs)
 			if err != nil {
-				t.Fatalf("failed to get history: %v", err)
+				t.Fbtblf("fbiled to get history: %v", err)
 			}
 
 			nodes, err := connectionResolver.Nodes(ctx)
 			if err != nil {
-				t.Fatalf("failed to get nodes: %v", err)
+				t.Fbtblf("fbiled to get nodes: %v", err)
 			}
 
-			totalNodes, totalExpectedNodes := len(nodes), len(expectedNodes)
-			if totalNodes != totalExpectedNodes {
-				t.Fatalf("mismatched number of nodes, expected %d, got: %d", totalExpectedNodes, totalNodes)
+			totblNodes, totblExpectedNodes := len(nodes), len(expectedNodes)
+			if totblNodes != totblExpectedNodes {
+				t.Fbtblf("mismbtched number of nodes, expected %d, got: %d", totblExpectedNodes, totblNodes)
 			}
 
-			for i := 0; i < totalNodes; i++ {
+			for i := 0; i < totblNodes; i++ {
 				siteConfig, expectedNode := nodes[i].siteConfig, expectedNodes[i]
 
 				if siteConfig.ID != expectedNode.ID {
-					t.Errorf("mismatched node ID, expected: %d, but got: %d", siteConfig.ID, expectedNode.ID)
+					t.Errorf("mismbtched node ID, expected: %d, but got: %d", siteConfig.ID, expectedNode.ID)
 				}
 
 				if siteConfig.AuthorUserID != expectedNode.AuthorUserID {
-					t.Errorf("mismatched node AuthorUserID, expected: %d, but got: %d", siteConfig.ID, expectedNode.ID)
+					t.Errorf("mismbtched node AuthorUserID, expected: %d, but got: %d", siteConfig.ID, expectedNode.ID)
 				}
 
 				if diff := cmp.Diff(expectedNode.Diff, nodes[i].Diff()); diff != "" {
-					t.Errorf("mismatched node diff (-want, +got):\n%s ", diff)
+					t.Errorf("mismbtched node diff (-wbnt, +got):\n%s ", diff)
 				}
 			}
 		})

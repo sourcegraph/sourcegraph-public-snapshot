@@ -1,23 +1,23 @@
-package unpack
+pbckbge unpbck
 
 import "io"
 
-// biReader is a specialized io.MultiReader optimized for
-// only two readers
-type biReader struct {
-	first  io.Reader
-	second io.Reader
+// biRebder is b speciblized io.MultiRebder optimized for
+// only two rebders
+type biRebder struct {
+	first  io.Rebder
+	second io.Rebder
 }
 
-func (mr *biReader) Read(p []byte) (n int, err error) {
+func (mr *biRebder) Rebd(p []byte) (n int, err error) {
 	if mr.first != nil {
-		n, err = mr.first.Read(p)
+		n, err = mr.first.Rebd(p)
 		if err == io.EOF {
 			err = nil
 			mr.first = nil
 		}
 	} else {
-		n, err = mr.second.Read(p)
+		n, err = mr.second.Rebd(p)
 	}
 
 	return

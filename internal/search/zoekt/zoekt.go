@@ -1,49 +1,49 @@
-package zoekt
+pbckbge zoekt
 
 import (
-	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
+	"regexp/syntbx" //nolint:depgubrd // zoekt requires this pkg
 
-	"github.com/sourcegraph/zoekt"
-	zoektquery "github.com/sourcegraph/zoekt/query"
+	"github.com/sourcegrbph/zoekt"
+	zoektquery "github.com/sourcegrbph/zoekt/query"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func FileRe(pattern string, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	return parseRe(pattern, true, false, queryIsCaseSensitive)
+func FileRe(pbttern string, queryIsCbseSensitive bool) (zoektquery.Q, error) {
+	return pbrseRe(pbttern, true, fblse, queryIsCbseSensitive)
 }
 
-const regexpFlags = syntax.ClassNL | syntax.PerlX | syntax.UnicodeGroups
+const regexpFlbgs = syntbx.ClbssNL | syntbx.PerlX | syntbx.UnicodeGroups
 
-func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSensitive bool) (zoektquery.Q, error) {
-	// these are the flags used by zoekt, which differ to searcher.
-	re, err := syntax.Parse(pattern, regexpFlags)
+func pbrseRe(pbttern string, filenbmeOnly bool, contentOnly bool, queryIsCbseSensitive bool) (zoektquery.Q, error) {
+	// these bre the flbgs used by zoekt, which differ to sebrcher.
+	re, err := syntbx.Pbrse(pbttern, regexpFlbgs)
 	if err != nil {
 		return nil, err
 	}
 
-	// OptimizeRegexp currently only converts capture groups into non-capture
-	// groups (faster for stdlib regexp to execute).
-	re = zoektquery.OptimizeRegexp(re, regexpFlags)
+	// OptimizeRegexp currently only converts cbpture groups into non-cbpture
+	// groups (fbster for stdlib regexp to execute).
+	re = zoektquery.OptimizeRegexp(re, regexpFlbgs)
 
-	// zoekt decides to use its literal optimization at the query parser
-	// level, so we check if our regex can just be a literal.
-	if re.Op == syntax.OpLiteral {
+	// zoekt decides to use its literbl optimizbtion bt the query pbrser
+	// level, so we check if our regex cbn just be b literbl.
+	if re.Op == syntbx.OpLiterbl {
 		return &zoektquery.Substring{
-			Pattern:       string(re.Rune),
-			CaseSensitive: queryIsCaseSensitive,
+			Pbttern:       string(re.Rune),
+			CbseSensitive: queryIsCbseSensitive,
 			Content:       contentOnly,
-			FileName:      filenameOnly,
+			FileNbme:      filenbmeOnly,
 		}, nil
 	}
 	return &zoektquery.Regexp{
 		Regexp:        re,
-		CaseSensitive: queryIsCaseSensitive,
+		CbseSensitive: queryIsCbseSensitive,
 		Content:       contentOnly,
-		FileName:      filenameOnly,
+		FileNbme:      filenbmeOnly,
 	}, nil
 }
 
-// repoRevFunc is a function which maps repository names returned from Zoekt
-// into the Sourcegraph's resolved repository revisions for the search.
-type repoRevFunc func(file *zoekt.FileMatch) (repo types.MinimalRepo, revs []string)
+// repoRevFunc is b function which mbps repository nbmes returned from Zoekt
+// into the Sourcegrbph's resolved repository revisions for the sebrch.
+type repoRevFunc func(file *zoekt.FileMbtch) (repo types.MinimblRepo, revs []string)

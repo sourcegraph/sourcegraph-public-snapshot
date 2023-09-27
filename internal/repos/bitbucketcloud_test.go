@@ -1,259 +1,259 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
-	bbtest "github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud/testing"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/testutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud"
+	bbtest "github.com/sourcegrbph/sourcegrbph/internbl/extsvc/bitbucketcloud/testing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/testutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types/typestest"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestBitbucketCloudSource_ListRepos(t *testing.T) {
-	ratelimit.SetupForTest(t)
+	rbtelimit.SetupForTest(t)
 
-	assertAllReposListed := func(want []string) typestest.ReposAssertion {
+	bssertAllReposListed := func(wbnt []string) typestest.ReposAssertion {
 		return func(t testing.TB, rs types.Repos) {
 			t.Helper()
 
-			have := rs.Names()
-			sort.Strings(have)
-			sort.Strings(want)
+			hbve := rs.Nbmes()
+			sort.Strings(hbve)
+			sort.Strings(wbnt)
 
-			if diff := cmp.Diff(want, have); diff != "" {
-				t.Errorf("Mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(wbnt, hbve); diff != "" {
+				t.Errorf("Mismbtch (-wbnt +got):\n%s", diff)
 			}
 		}
 	}
 
-	testCases := []struct {
-		name   string
-		assert typestest.ReposAssertion
-		conf   *schema.BitbucketCloudConnection
+	testCbses := []struct {
+		nbme   string
+		bssert typestest.ReposAssertion
+		conf   *schemb.BitbucketCloudConnection
 		err    string
 	}{
 		{
-			name: "found",
-			assert: assertAllReposListed([]string{
-				"/sourcegraph-testing/src-cli",
-				"/sourcegraph-testing/sourcegraph",
+			nbme: "found",
+			bssert: bssertAllReposListed([]string{
+				"/sourcegrbph-testing/src-cli",
+				"/sourcegrbph-testing/sourcegrbph",
 			}),
-			conf: &schema.BitbucketCloudConnection{
-				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
-				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
-				Teams: []string{
-					bbtest.GetenvTestBitbucketCloudUsername(),
+			conf: &schemb.BitbucketCloudConnection{
+				Usernbme:    bbtest.GetenvTestBitbucketCloudUsernbme(),
+				AppPbssword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				Tebms: []string{
+					bbtest.GetenvTestBitbucketCloudUsernbme(),
 				},
 			},
 			err: "<nil>",
 		},
 		{
-			name: "with teams",
-			assert: assertAllReposListed([]string{
-				"/sglocal/go-langserver",
-				"/sglocal/python-langserver",
-				"/sourcegraph-testing/src-cli",
-				"/sourcegraph-testing/sourcegraph",
+			nbme: "with tebms",
+			bssert: bssertAllReposListed([]string{
+				"/sglocbl/go-lbngserver",
+				"/sglocbl/python-lbngserver",
+				"/sourcegrbph-testing/src-cli",
+				"/sourcegrbph-testing/sourcegrbph",
 			}),
-			conf: &schema.BitbucketCloudConnection{
-				Username:    bbtest.GetenvTestBitbucketCloudUsername(),
-				AppPassword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
-				Teams: []string{
-					"sglocal",
-					bbtest.GetenvTestBitbucketCloudUsername(),
+			conf: &schemb.BitbucketCloudConnection{
+				Usernbme:    bbtest.GetenvTestBitbucketCloudUsernbme(),
+				AppPbssword: os.Getenv("BITBUCKET_CLOUD_APP_PASSWORD"),
+				Tebms: []string{
+					"sglocbl",
+					bbtest.GetenvTestBitbucketCloudUsernbme(),
 				},
 			},
 			err: "<nil>",
 		},
 	}
 
-	for _, tc := range testCases {
+	for _, tc := rbnge testCbses {
 		tc := tc
-		tc.name = "BITBUCKETCLOUD-LIST-REPOS/" + tc.name
-		t.Run(tc.name, func(t *testing.T) {
-			cf, save := NewClientFactory(t, tc.name)
-			defer save(t)
+		tc.nbme = "BITBUCKETCLOUD-LIST-REPOS/" + tc.nbme
+		t.Run(tc.nbme, func(t *testing.T) {
+			cf, sbve := NewClientFbctory(t, tc.nbme)
+			defer sbve(t)
 
-			svc := &types.ExternalService{
+			svc := &types.ExternblService{
 				Kind:   extsvc.KindBitbucketCloud,
-				Config: extsvc.NewUnencryptedConfig(MarshalJSON(t, tc.conf)),
+				Config: extsvc.NewUnencryptedConfig(MbrshblJSON(t, tc.conf)),
 			}
 
 			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			repos, err := ListAll(context.Background(), bbcSrc)
+			repos, err := ListAll(context.Bbckground(), bbcSrc)
 
-			if have, want := fmt.Sprint(err), tc.err; have != want {
-				t.Errorf("error:\nhave: %q\nwant: %q", have, want)
+			if hbve, wbnt := fmt.Sprint(err), tc.err; hbve != wbnt {
+				t.Errorf("error:\nhbve: %q\nwbnt: %q", hbve, wbnt)
 			}
 
-			if tc.assert != nil {
-				tc.assert(t, repos)
+			if tc.bssert != nil {
+				tc.bssert(t, repos)
 			}
 		})
 	}
 }
 
-func TestBitbucketCloudSource_makeRepo(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
+func TestBitbucketCloudSource_mbkeRepo(t *testing.T) {
+	b, err := os.RebdFile(filepbth.Join("testdbtb", "bitbucketcloud-repos.json"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var repos []*bitbucketcloud.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
+	vbr repos []*bitbucketcloud.Repo
+	if err := json.Unmbrshbl(b, &repos); err != nil {
+		t.Fbtbl(err)
 	}
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindBitbucketCloud,
 		Config: extsvc.NewEmptyConfig(),
 	}
 
 	tests := []struct {
-		name   string
-		schema *schema.BitbucketCloudConnection
+		nbme   string
+		schemb *schemb.BitbucketCloudConnection
 	}{
 		{
-			name: "simple",
-			schema: &schema.BitbucketCloudConnection{
+			nbme: "simple",
+			schemb: &schemb.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
-				Username:    "alice",
-				AppPassword: "secret",
+				Usernbme:    "blice",
+				AppPbssword: "secret",
 			},
 		}, {
-			name: "ssh",
-			schema: &schema.BitbucketCloudConnection{
+			nbme: "ssh",
+			schemb: &schemb.BitbucketCloudConnection{
 				Url:         "https://bitbucket.org",
-				Username:    "alice",
-				AppPassword: "secret",
+				Usernbme:    "blice",
+				AppPbssword: "secret",
 				GitURLType:  "ssh",
 			},
 		}, {
-			name: "path-pattern",
-			schema: &schema.BitbucketCloudConnection{
+			nbme: "pbth-pbttern",
+			schemb: &schemb.BitbucketCloudConnection{
 				Url:                   "https://bitbucket.org",
-				Username:              "alice",
-				AppPassword:           "secret",
-				RepositoryPathPattern: "bb/{nameWithOwner}",
+				Usernbme:              "blice",
+				AppPbssword:           "secret",
+				RepositoryPbthPbttern: "bb/{nbmeWithOwner}",
 			},
 		},
 	}
-	for _, test := range tests {
-		test.name = "BitbucketCloudSource_makeRepo_" + test.name
-		t.Run(test.name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, test.schema, nil)
+	for _, test := rbnge tests {
+		test.nbme = "BitbucketCloudSource_mbkeRepo_" + test.nbme
+		t.Run(test.nbme, func(t *testing.T) {
+			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, test.schemb, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
-			var got []*types.Repo
-			for _, r := range repos {
-				got = append(got, s.makeRepo(r))
+			vbr got []*types.Repo
+			for _, r := rbnge repos {
+				got = bppend(got, s.mbkeRepo(r))
 			}
 
-			testutil.AssertGolden(t, "testdata/golden/"+test.name, Update(test.name), got)
+			testutil.AssertGolden(t, "testdbtb/golden/"+test.nbme, Updbte(test.nbme), got)
 		})
 	}
 }
 
 func TestBitbucketCloudSource_Exclude(t *testing.T) {
-	b, err := os.ReadFile(filepath.Join("testdata", "bitbucketcloud-repos.json"))
+	b, err := os.RebdFile(filepbth.Join("testdbtb", "bitbucketcloud-repos.json"))
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	var repos []*bitbucketcloud.Repo
-	if err := json.Unmarshal(b, &repos); err != nil {
-		t.Fatal(err)
+	vbr repos []*bitbucketcloud.Repo
+	if err := json.Unmbrshbl(b, &repos); err != nil {
+		t.Fbtbl(err)
 	}
 
-	cases := map[string]*schema.BitbucketCloudConnection{
+	cbses := mbp[string]*schemb.BitbucketCloudConnection{
 		"none": {
 			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
+			Usernbme:    "blice",
+			AppPbssword: "secret",
 		},
-		"name": {
+		"nbme": {
 			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
-			Exclude: []*schema.ExcludedBitbucketCloudRepo{
-				{Name: "SG/go-langserver"},
+			Usernbme:    "blice",
+			AppPbssword: "secret",
+			Exclude: []*schemb.ExcludedBitbucketCloudRepo{
+				{Nbme: "SG/go-lbngserver"},
 			},
 		},
 		"uuid": {
 			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
-			Exclude: []*schema.ExcludedBitbucketCloudRepo{
-				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
+			Usernbme:    "blice",
+			AppPbssword: "secret",
+			Exclude: []*schemb.ExcludedBitbucketCloudRepo{
+				{Uuid: "{fceb73c7-cef6-4bbe-956d-e471281126bd}"},
 			},
 		},
-		"pattern": {
+		"pbttern": {
 			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
-			Exclude: []*schema.ExcludedBitbucketCloudRepo{
-				{Pattern: ".*-fork$"},
+			Usernbme:    "blice",
+			AppPbssword: "secret",
+			Exclude: []*schemb.ExcludedBitbucketCloudRepo{
+				{Pbttern: ".*-fork$"},
 			},
 		},
-		"all": {
+		"bll": {
 			Url:         "https://bitbucket.org",
-			Username:    "alice",
-			AppPassword: "secret",
-			Exclude: []*schema.ExcludedBitbucketCloudRepo{
-				{Name: "SG/go-LanGserVer"},
-				{Uuid: "{fceb73c7-cef6-4abe-956d-e471281126bd}"},
-				{Pattern: ".*-fork$"},
+			Usernbme:    "blice",
+			AppPbssword: "secret",
+			Exclude: []*schemb.ExcludedBitbucketCloudRepo{
+				{Nbme: "SG/go-LbnGserVer"},
+				{Uuid: "{fceb73c7-cef6-4bbe-956d-e471281126bd}"},
+				{Pbttern: ".*-fork$"},
 			},
 		},
 	}
 
-	svc := types.ExternalService{
+	svc := types.ExternblService{
 		ID:     1,
 		Kind:   extsvc.KindBitbucketCloud,
 		Config: extsvc.NewEmptyConfig(),
 	}
 
-	for name, config := range cases {
-		t.Run(name, func(t *testing.T) {
+	for nbme, config := rbnge cbses {
+		t.Run(nbme, func(t *testing.T) {
 			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 
 			type output struct {
 				Include []string
 				Exclude []string
 			}
-			var got output
-			for _, r := range repos {
+			vbr got output
+			for _, r := rbnge repos {
 				if s.excludes(r) {
-					got.Exclude = append(got.Exclude, r.FullName)
+					got.Exclude = bppend(got.Exclude, r.FullNbme)
 				} else {
-					got.Include = append(got.Include, r.FullName)
+					got.Include = bppend(got.Include, r.FullNbme)
 				}
 			}
 
-			path := filepath.Join("testdata", "bitbucketcloud-repos-exclude-"+name+".golden")
-			testutil.AssertGolden(t, path, Update(name), got)
+			pbth := filepbth.Join("testdbtb", "bitbucketcloud-repos-exclude-"+nbme+".golden")
+			testutil.AssertGolden(t, pbth, Updbte(nbme), got)
 		})
 	}
 }

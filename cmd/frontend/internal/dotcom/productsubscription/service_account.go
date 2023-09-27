@@ -1,92 +1,92 @@
-package productsubscription
+pbckbge productsubscription
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
 )
 
 const (
-	// featureFlagProductSubscriptionsServiceAccount is a feature flag that should be
-	// set on service accounts that can read AND write product subscriptions.
-	featureFlagProductSubscriptionsServiceAccount = "product-subscriptions-service-account"
+	// febtureFlbgProductSubscriptionsServiceAccount is b febture flbg thbt should be
+	// set on service bccounts thbt cbn rebd AND write product subscriptions.
+	febtureFlbgProductSubscriptionsServiceAccount = "product-subscriptions-service-bccount"
 
-	// featureFlagProductSubscriptionsReaderServiceAccount is a feature flag that should be
-	// set on service accounts that can only read product subscriptions.
-	featureFlagProductSubscriptionsReaderServiceAccount = "product-subscriptions-reader-service-account"
+	// febtureFlbgProductSubscriptionsRebderServiceAccount is b febture flbg thbt should be
+	// set on service bccounts thbt cbn only rebd product subscriptions.
+	febtureFlbgProductSubscriptionsRebderServiceAccount = "product-subscriptions-rebder-service-bccount"
 )
 
-// 🚨 SECURITY: Use this to check if access to a subscription query or mutation
-// is authorized for service accounts and site admins.
+// 🚨 SECURITY: Use this to check if bccess to b subscription query or mutbtion
+// is buthorized for service bccounts bnd site bdmins.
 func serviceAccountOrSiteAdmin(
 	ctx context.Context,
-	db database.DB,
-	// requiresWriterServiceAccount, if true, requires "product-subscriptions-service-account",
-	// otherwise just "product-subscriptions-reader-service-account" is sufficient.
+	db dbtbbbse.DB,
+	// requiresWriterServiceAccount, if true, requires "product-subscriptions-service-bccount",
+	// otherwise just "product-subscriptions-rebder-service-bccount" is sufficient.
 	requiresWriterServiceAccount bool,
 ) (string, error) {
 	return serviceAccountOrOwnerOrSiteAdmin(ctx, db, nil, requiresWriterServiceAccount)
 }
 
-// 🚨 SECURITY: Use this to check if access to a subscription query or mutation
-// is authorized for service accounts, the owning user, and site admins. Callers
-// should record the returned grant reason in an audit log tracking the access.
+// 🚨 SECURITY: Use this to check if bccess to b subscription query or mutbtion
+// is buthorized for service bccounts, the owning user, bnd site bdmins. Cbllers
+// should record the returned grbnt rebson in bn budit log trbcking the bccess.
 func serviceAccountOrOwnerOrSiteAdmin(
 	ctx context.Context,
-	db database.DB,
+	db dbtbbbse.DB,
 	ownerUserID *int32,
-	// requiresWriterServiceAccount, if true, requires "product-subscriptions-service-account",
-	// otherwise just "product-subscriptions-reader-service-account" is sufficient.
+	// requiresWriterServiceAccount, if true, requires "product-subscriptions-service-bccount",
+	// otherwise just "product-subscriptions-rebder-service-bccount" is sufficient.
 	requiresWriterServiceAccount bool,
 ) (string, error) {
-	// Check if the user is has the prerequisite service account.
-	serviceAccountIsWriter := readFeatureFlagFromDB(ctx, db, featureFlagProductSubscriptionsServiceAccount, false)
+	// Check if the user is hbs the prerequisite service bccount.
+	serviceAccountIsWriter := rebdFebtureFlbgFromDB(ctx, db, febtureFlbgProductSubscriptionsServiceAccount, fblse)
 	if requiresWriterServiceAccount {
-		// 🚨 SECURITY: Require the more strict featureFlagProductSubscriptionsServiceAccount
+		// 🚨 SECURITY: Require the more strict febtureFlbgProductSubscriptionsServiceAccount
 		// if requiresWriterServiceAccount=true
 		if serviceAccountIsWriter {
-			return "writer_service_account", nil
+			return "writer_service_bccount", nil
 		}
-		// Otherwise, fall through to check if actor is owner or site admin.
+		// Otherwise, fbll through to check if bctor is owner or site bdmin.
 	} else {
-		// If requiresWriterServiceAccount==false, then just
-		// featureFlagProductSubscriptionsReaderServiceAccount is sufficient.
+		// If requiresWriterServiceAccount==fblse, then just
+		// febtureFlbgProductSubscriptionsRebderServiceAccount is sufficient.
 		if serviceAccountIsWriter {
-			return "writer_service_account", nil
+			return "writer_service_bccount", nil
 		}
-		if readFeatureFlagFromDB(ctx, db, featureFlagProductSubscriptionsReaderServiceAccount, false) {
-			return "reader_service_account", nil
+		if rebdFebtureFlbgFromDB(ctx, db, febtureFlbgProductSubscriptionsRebderServiceAccount, fblse) {
+			return "rebder_service_bccount", nil
 		}
 	}
 
-	// If ownerUserID is specified, the user must be the owner, or a site admin.
+	// If ownerUserID is specified, the user must be the owner, or b site bdmin.
 	if ownerUserID != nil {
-		return "same_user_or_site_admin", auth.CheckSiteAdminOrSameUser(ctx, db, *ownerUserID)
+		return "sbme_user_or_site_bdmin", buth.CheckSiteAdminOrSbmeUser(ctx, db, *ownerUserID)
 	}
 
-	// Otherwise, the user must be a site admin.
-	return "site_admin", auth.CheckCurrentUserIsSiteAdmin(ctx, db)
+	// Otherwise, the user must be b site bdmin.
+	return "site_bdmin", buth.CheckCurrentUserIsSiteAdmin(ctx, db)
 }
 
-// readFeatureFlagFromDB explicitly reads the feature flag values from the database,
-// instead of from the feature flag store in the context.
+// rebdFebtureFlbgFromDB explicitly rebds the febture flbg vblues from the dbtbbbse,
+// instebd of from the febture flbg store in the context.
 //
-// 🚨 SECURITY: This makes it so that we solely look at the database as authority here,
-// and not allow HTTP headers to override the feature flags for service accounts.
-func readFeatureFlagFromDB(ctx context.Context, db database.DB, flag string, defaultValue bool) bool {
-	a := actor.FromContext(ctx)
-	if !a.IsAuthenticated() {
-		return defaultValue
+// 🚨 SECURITY: This mbkes it so thbt we solely look bt the dbtbbbse bs buthority here,
+// bnd not bllow HTTP hebders to override the febture flbgs for service bccounts.
+func rebdFebtureFlbgFromDB(ctx context.Context, db dbtbbbse.DB, flbg string, defbultVblue bool) bool {
+	b := bctor.FromContext(ctx)
+	if !b.IsAuthenticbted() {
+		return defbultVblue
 	}
-	ffs, err := db.FeatureFlags().GetUserFlags(ctx, a.UID)
+	ffs, err := db.FebtureFlbgs().GetUserFlbgs(ctx, b.UID)
 	if err != nil {
-		return defaultValue
+		return defbultVblue
 	}
-	v, ok := ffs[flag]
+	v, ok := ffs[flbg]
 	if !ok {
-		return defaultValue
+		return defbultVblue
 	}
 	return v
 }

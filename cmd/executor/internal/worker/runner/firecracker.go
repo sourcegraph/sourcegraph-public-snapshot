@@ -1,339 +1,339 @@
-package runner
+pbckbge runner
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"os"
-	"path"
-	"path/filepath"
+	"pbth"
+	"pbth/filepbth"
 	"sort"
 	"strconv"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/config"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/cmdlogger"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/command"
-	"github.com/sourcegraph/sourcegraph/internal/executor/types"
-	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/config"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/cmdlogger"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/commbnd"
+	"github.com/sourcegrbph/sourcegrbph/internbl/executor/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lbzyregexp"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type firecrackerRunner struct {
-	cmd              command.Command
-	vmName           string
-	workspaceDevice  string
-	internalLogger   log.Logger
+type firecrbckerRunner struct {
+	cmd              commbnd.Commbnd
+	vmNbme           string
+	workspbceDevice  string
+	internblLogger   log.Logger
 	cmdLogger        cmdlogger.Logger
-	options          FirecrackerOptions
+	options          FirecrbckerOptions
 	dockerAuthConfig types.DockerAuthConfig
-	// tmpDir is used to store temporary files used for firecracker execution.
+	// tmpDir is used to store temporbry files used for firecrbcker execution.
 	tmpDir     string
-	operations *command.Operations
+	operbtions *commbnd.Operbtions
 }
 
-type FirecrackerOptions struct {
-	// Enabled determines if commands will be run in Firecracker virtual machines.
-	Enabled bool
-	// Image is the base image used for all Firecracker virtual machines.
-	Image string
-	// KernelImage is the base image containing the kernel binary for all Firecracker
-	// virtual machines.
-	KernelImage string
-	// SandboxImage is the docker image used by ignite for isolation of the Firecracker
+type FirecrbckerOptions struct {
+	// Enbbled determines if commbnds will be run in Firecrbcker virtubl mbchines.
+	Enbbled bool
+	// Imbge is the bbse imbge used for bll Firecrbcker virtubl mbchines.
+	Imbge string
+	// KernelImbge is the bbse imbge contbining the kernel binbry for bll Firecrbcker
+	// virtubl mbchines.
+	KernelImbge string
+	// SbndboxImbge is the docker imbge used by ignite for isolbtion of the Firecrbcker
 	// process.
-	SandboxImage string
-	// VMStartupScriptPath is a path to a file on the host that is loaded into a fresh
-	// virtual machine and executed on startup.
-	VMStartupScriptPath string
-	// DockerRegistryMirrorURLs is an optional parameter to configure docker
-	// registry mirrors for the VMs docker daemon on startup. When set, /etc/docker/daemon.json
+	SbndboxImbge string
+	// VMStbrtupScriptPbth is b pbth to b file on the host thbt is lobded into b fresh
+	// virtubl mbchine bnd executed on stbrtup.
+	VMStbrtupScriptPbth string
+	// DockerRegistryMirrorURLs is bn optionbl pbrbmeter to configure docker
+	// registry mirrors for the VMs docker dbemon on stbrtup. When set, /etc/docker/dbemon.json
 	// will be mounted into the VM.
 	DockerRegistryMirrorURLs []string
 	// DockerOptions
-	DockerOptions command.DockerOptions
-	// KeepWorkspaces prevents deletion of a workspace after a job completes. Setting
-	// this value to true will continually use more and more disk, so it should only
-	// be used as a debugging mechanism.
-	KeepWorkspaces bool
+	DockerOptions commbnd.DockerOptions
+	// KeepWorkspbces prevents deletion of b workspbce bfter b job completes. Setting
+	// this vblue to true will continublly use more bnd more disk, so it should only
+	// be used bs b debugging mechbnism.
+	KeepWorkspbces bool
 }
 
-var _ Runner = &firecrackerRunner{}
+vbr _ Runner = &firecrbckerRunner{}
 
-func NewFirecrackerRunner(
-	cmd command.Command,
+func NewFirecrbckerRunner(
+	cmd commbnd.Commbnd,
 	logger cmdlogger.Logger,
-	workspaceDevice string,
-	vmName string,
-	options FirecrackerOptions,
+	workspbceDevice string,
+	vmNbme string,
+	options FirecrbckerOptions,
 	dockerAuthConfig types.DockerAuthConfig,
-	operations *command.Operations,
+	operbtions *commbnd.Operbtions,
 ) Runner {
-	// Use the option configuration unless the user has provided a custom configuration.
-	actualDockerAuthConfig := options.DockerOptions.DockerAuthConfig
+	// Use the option configurbtion unless the user hbs provided b custom configurbtion.
+	bctublDockerAuthConfig := options.DockerOptions.DockerAuthConfig
 	if len(dockerAuthConfig.Auths) > 0 {
-		actualDockerAuthConfig = dockerAuthConfig
+		bctublDockerAuthConfig = dockerAuthConfig
 	}
 
-	return &firecrackerRunner{
+	return &firecrbckerRunner{
 		cmd:              cmd,
-		vmName:           vmName,
-		workspaceDevice:  workspaceDevice,
-		internalLogger:   log.Scoped("firecracker-runner", ""),
+		vmNbme:           vmNbme,
+		workspbceDevice:  workspbceDevice,
+		internblLogger:   log.Scoped("firecrbcker-runner", ""),
 		cmdLogger:        logger,
 		options:          options,
-		dockerAuthConfig: actualDockerAuthConfig,
-		operations:       operations,
+		dockerAuthConfig: bctublDockerAuthConfig,
+		operbtions:       operbtions,
 	}
 }
 
-func (r *firecrackerRunner) TempDir() string {
+func (r *firecrbckerRunner) TempDir() string {
 	return r.tmpDir
 }
 
-func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	dir, err := os.MkdirTemp("", "executor-firecracker-runner")
+func (r *firecrbckerRunner) Setup(ctx context.Context) error {
+	dir, err := os.MkdirTemp("", "executor-firecrbcker-runner")
 	if err != nil {
-		return errors.Wrap(err, "failed to create tmp dir for firecracker runner")
+		return errors.Wrbp(err, "fbiled to crebte tmp dir for firecrbcker runner")
 	}
 	r.tmpDir = dir
 
-	dockerConfigPath, err := r.setupFirecracker(ctx)
-	r.options.DockerOptions.ConfigPath = dockerConfigPath
+	dockerConfigPbth, err := r.setupFirecrbcker(ctx)
+	r.options.DockerOptions.ConfigPbth = dockerConfigPbth
 	return err
 }
 
-// setupFirecracker invokes a set of commands to provision and prepare a Firecracker virtual
-// machine instance. If a startup script path (an executable file on the host) is supplied,
-// it will be mounted into the new virtual machine instance and executed.
-func (r *firecrackerRunner) setupFirecracker(ctx context.Context) (string, error) {
-	var daemonConfigFile string
+// setupFirecrbcker invokes b set of commbnds to provision bnd prepbre b Firecrbcker virtubl
+// mbchine instbnce. If b stbrtup script pbth (bn executbble file on the host) is supplied,
+// it will be mounted into the new virtubl mbchine instbnce bnd executed.
+func (r *firecrbckerRunner) setupFirecrbcker(ctx context.Context) (string, error) {
+	vbr dbemonConfigFile string
 	if len(r.options.DockerRegistryMirrorURLs) > 0 {
-		var err error
-		daemonConfigFile, err = newDockerDaemonConfig(r.tmpDir, r.options.DockerRegistryMirrorURLs)
+		vbr err error
+		dbemonConfigFile, err = newDockerDbemonConfig(r.tmpDir, r.options.DockerRegistryMirrorURLs)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	// If docker auth config is present, write it.
-	var dockerConfigPath string
+	// If docker buth config is present, write it.
+	vbr dockerConfigPbth string
 	if len(r.dockerAuthConfig.Auths) > 0 {
-		d, err := json.Marshal(r.dockerAuthConfig)
+		d, err := json.Mbrshbl(r.dockerAuthConfig)
 		if err != nil {
 			return "", err
 		}
-		dockerConfigPath, err = os.MkdirTemp(r.tmpDir, "docker_auth")
+		dockerConfigPbth, err = os.MkdirTemp(r.tmpDir, "docker_buth")
 		if err != nil {
 			return "", err
 		}
-		if err = os.WriteFile(filepath.Join(dockerConfigPath, "config.json"), d, os.ModePerm); err != nil {
+		if err = os.WriteFile(filepbth.Join(dockerConfigPbth, "config.json"), d, os.ModePerm); err != nil {
 			return "", err
 		}
 	}
 
-	// Make subdirectory called "cni" to store CNI config in. All files from a directory
-	// will be considered so this has to be it's own directory with just our config file.
-	cniConfigDir := path.Join(r.tmpDir, "cni")
+	// Mbke subdirectory cblled "cni" to store CNI config in. All files from b directory
+	// will be considered so this hbs to be it's own directory with just our config file.
+	cniConfigDir := pbth.Join(r.tmpDir, "cni")
 	err := os.Mkdir(cniConfigDir, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
-	cniConfigFile := path.Join(cniConfigDir, "10-sourcegraph-executors.conflist")
-	err = os.WriteFile(cniConfigFile, []byte(cniConfig(r.options.DockerOptions.Resources.MaxIngressBandwidth, r.options.DockerOptions.Resources.MaxEgressBandwidth)), os.ModePerm)
+	cniConfigFile := pbth.Join(cniConfigDir, "10-sourcegrbph-executors.conflist")
+	err = os.WriteFile(cniConfigFile, []byte(cniConfig(r.options.DockerOptions.Resources.MbxIngressBbndwidth, r.options.DockerOptions.Resources.MbxEgressBbndwidth)), os.ModePerm)
 	if err != nil {
 		return "", err
 	}
 
-	// Start the VM and wait for the SSH server to become available.
-	startCommandSpec := command.Spec{
-		Key: "setup.firecracker.start",
-		// Tell ignite to use our temporary config file for maximum isolation of
+	// Stbrt the VM bnd wbit for the SSH server to become bvbilbble.
+	stbrtCommbndSpec := commbnd.Spec{
+		Key: "setup.firecrbcker.stbrt",
+		// Tell ignite to use our temporbry config file for mbximum isolbtion of
 		// envs.
 		Env: []string{fmt.Sprintf("CNI_CONF_DIR=%s", cniConfigDir)},
-		Command: command.Flatten(
+		Commbnd: commbnd.Flbtten(
 			"ignite", "run",
 			"--runtime", "docker",
 			"--network-plugin", "cni",
-			firecrackerResourceFlags(r.options.DockerOptions.Resources),
-			firecrackerCopyfileFlags(r.options.VMStartupScriptPath, daemonConfigFile, dockerConfigPath),
-			firecrackerVolumeFlags(r.workspaceDevice),
+			firecrbckerResourceFlbgs(r.options.DockerOptions.Resources),
+			firecrbckerCopyfileFlbgs(r.options.VMStbrtupScriptPbth, dbemonConfigFile, dockerConfigPbth),
+			firecrbckerVolumeFlbgs(r.workspbceDevice),
 			"--ssh",
-			"--name", r.vmName,
-			"--kernel-image", sanitizeImage(r.options.KernelImage),
-			"--kernel-args", config.FirecrackerKernelArgs,
-			"--sandbox-image", sanitizeImage(r.options.SandboxImage),
-			sanitizeImage(r.options.Image),
+			"--nbme", r.vmNbme,
+			"--kernel-imbge", sbnitizeImbge(r.options.KernelImbge),
+			"--kernel-brgs", config.FirecrbckerKernelArgs,
+			"--sbndbox-imbge", sbnitizeImbge(r.options.SbndboxImbge),
+			sbnitizeImbge(r.options.Imbge),
 		),
-		Operation: r.operations.SetupFirecrackerStart,
+		Operbtion: r.operbtions.SetupFirecrbckerStbrt,
 	}
 
-	if err = r.cmd.Run(ctx, r.cmdLogger, startCommandSpec); err != nil {
-		return "", errors.Wrap(err, "failed to start firecracker vm")
+	if err = r.cmd.Run(ctx, r.cmdLogger, stbrtCommbndSpec); err != nil {
+		return "", errors.Wrbp(err, "fbiled to stbrt firecrbcker vm")
 	}
 
-	if r.options.VMStartupScriptPath != "" {
-		startupScriptCommandSpec := command.Spec{
-			Key:       "setup.startup-script",
-			Command:   command.Flatten("ignite", "exec", r.vmName, "--", r.options.VMStartupScriptPath),
-			Operation: r.operations.SetupStartupScript,
+	if r.options.VMStbrtupScriptPbth != "" {
+		stbrtupScriptCommbndSpec := commbnd.Spec{
+			Key:       "setup.stbrtup-script",
+			Commbnd:   commbnd.Flbtten("ignite", "exec", r.vmNbme, "--", r.options.VMStbrtupScriptPbth),
+			Operbtion: r.operbtions.SetupStbrtupScript,
 		}
-		if err = r.cmd.Run(ctx, r.cmdLogger, startupScriptCommandSpec); err != nil {
-			return "", errors.Wrap(err, "failed to run startup script")
+		if err = r.cmd.Run(ctx, r.cmdLogger, stbrtupScriptCommbndSpec); err != nil {
+			return "", errors.Wrbp(err, "fbiled to run stbrtup script")
 		}
 	}
 
-	if dockerConfigPath != "" {
-		return command.FirecrackerDockerConfDir, nil
+	if dockerConfigPbth != "" {
+		return commbnd.FirecrbckerDockerConfDir, nil
 	}
 
 	return "", nil
 }
 
-func newDockerDaemonConfig(tmpDir string, mirrorAddresses []string) (_ string, err error) {
-	c, err := json.Marshal(&dockerDaemonConfig{RegistryMirrors: mirrorAddresses})
+func newDockerDbemonConfig(tmpDir string, mirrorAddresses []string) (_ string, err error) {
+	c, err := json.Mbrshbl(&dockerDbemonConfig{RegistryMirrors: mirrorAddresses})
 	if err != nil {
-		return "", errors.Wrap(err, "marshalling docker daemon config")
+		return "", errors.Wrbp(err, "mbrshblling docker dbemon config")
 	}
 
-	tmpFilePath := path.Join(tmpDir, dockerDaemonConfigFilename)
-	err = os.WriteFile(tmpFilePath, c, os.ModePerm)
-	return tmpFilePath, errors.Wrap(err, "writing docker daemon config file")
+	tmpFilePbth := pbth.Join(tmpDir, dockerDbemonConfigFilenbme)
+	err = os.WriteFile(tmpFilePbth, c, os.ModePerm)
+	return tmpFilePbth, errors.Wrbp(err, "writing docker dbemon config file")
 }
 
-// dockerDaemonConfig is a struct that marshals into a valid docker daemon config.
-type dockerDaemonConfig struct {
+// dockerDbemonConfig is b struct thbt mbrshbls into b vblid docker dbemon config.
+type dockerDbemonConfig struct {
 	RegistryMirrors []string `json:"registry-mirrors"`
 }
 
-// dockerDaemonConfigFilename is the filename in the firecracker state tmp directory
-// for the optional docker daemon config file.
-const dockerDaemonConfigFilename = "docker-daemon.json"
+// dockerDbemonConfigFilenbme is the filenbme in the firecrbcker stbte tmp directory
+// for the optionbl docker dbemon config file.
+const dockerDbemonConfigFilenbme = "docker-dbemon.json"
 
-// cniConfig generates a config file that configures the CNI explicitly and adds
-// the isolation plugin to the chain.
-// This is used to prevent cross-network communication (which currently doesn't
-// happen as we only have 1 bridge).
-// We also set the maximum bandwidth usable per VM to the configured value to avoid
-// abuse and to make sure multiple VMs on the same host won't starve others.
-func cniConfig(maxIngressBandwidth, maxEgressBandwidth int) string {
+// cniConfig generbtes b config file thbt configures the CNI explicitly bnd bdds
+// the isolbtion plugin to the chbin.
+// This is used to prevent cross-network communicbtion (which currently doesn't
+// hbppen bs we only hbve 1 bridge).
+// We blso set the mbximum bbndwidth usbble per VM to the configured vblue to bvoid
+// bbuse bnd to mbke sure multiple VMs on the sbme host won't stbrve others.
+func cniConfig(mbxIngressBbndwidth, mbxEgressBbndwidth int) string {
 	return fmt.Sprintf(
-		defaultCNIConfig,
+		defbultCNIConfig,
 		config.CNISubnetCIDR,
-		maxIngressBandwidth,
-		2*maxIngressBandwidth,
-		maxEgressBandwidth,
-		2*maxEgressBandwidth,
+		mbxIngressBbndwidth,
+		2*mbxIngressBbndwidth,
+		mbxEgressBbndwidth,
+		2*mbxEgressBbndwidth,
 	)
 }
 
-// defaultCNIConfig is the CNI config used for our firecracker VMs.
-// TODO: Can we remove the portmap completely?
-const defaultCNIConfig = `
+// defbultCNIConfig is the CNI config used for our firecrbcker VMs.
+// TODO: Cbn we remove the portmbp completely?
+const defbultCNIConfig = `
 {
   "cniVersion": "0.4.0",
-  "name": "ignite-cni-bridge",
+  "nbme": "ignite-cni-bridge",
   "plugins": [
     {
   	  "type": "bridge",
   	  "bridge": "ignite0",
-  	  "isGateway": true,
-  	  "isDefaultGateway": true,
-  	  "promiscMode": false,
-  	  "ipMasq": true,
-  	  "ipam": {
-  	    "type": "host-local",
+  	  "isGbtewby": true,
+  	  "isDefbultGbtewby": true,
+  	  "promiscMode": fblse,
+  	  "ipMbsq": true,
+  	  "ipbm": {
+  	    "type": "host-locbl",
   	    "subnet": %q
   	  }
     },
     {
-  	  "type": "portmap",
-  	  "capabilities": {
-  	    "portMappings": true
+  	  "type": "portmbp",
+  	  "cbpbbilities": {
+  	    "portMbppings": true
   	  }
     },
     {
-  	  "type": "firewall"
+  	  "type": "firewbll"
     },
     {
-  	  "type": "isolation"
+  	  "type": "isolbtion"
     },
     {
-  	  "name": "slowdown",
-  	  "type": "bandwidth",
-  	  "ingressRate": %d,
+  	  "nbme": "slowdown",
+  	  "type": "bbndwidth",
+  	  "ingressRbte": %d,
   	  "ingressBurst": %d,
-  	  "egressRate": %d,
+  	  "egressRbte": %d,
   	  "egressBurst": %d
     }
   ]
 }
 `
 
-func firecrackerResourceFlags(options command.ResourceOptions) []string {
+func firecrbckerResourceFlbgs(options commbnd.ResourceOptions) []string {
 	return []string{
-		"--cpus", strconv.Itoa(options.NumCPUs),
+		"--cpus", strconv.Itob(options.NumCPUs),
 		"--memory", options.Memory,
-		"--size", options.DiskSpace,
+		"--size", options.DiskSpbce,
 	}
 }
 
-func firecrackerCopyfileFlags(vmStartupScriptPath, daemonConfigFile, dockerConfigPath string) []string {
-	copyfiles := make([]string, 0, 3)
-	if vmStartupScriptPath != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", vmStartupScriptPath, vmStartupScriptPath))
+func firecrbckerCopyfileFlbgs(vmStbrtupScriptPbth, dbemonConfigFile, dockerConfigPbth string) []string {
+	copyfiles := mbke([]string, 0, 3)
+	if vmStbrtupScriptPbth != "" {
+		copyfiles = bppend(copyfiles, fmt.Sprintf("%s:%s", vmStbrtupScriptPbth, vmStbrtupScriptPbth))
 	}
 
-	if daemonConfigFile != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", daemonConfigFile, "/etc/docker/daemon.json"))
+	if dbemonConfigFile != "" {
+		copyfiles = bppend(copyfiles, fmt.Sprintf("%s:%s", dbemonConfigFile, "/etc/docker/dbemon.json"))
 	}
 
-	if dockerConfigPath != "" {
-		copyfiles = append(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPath, command.FirecrackerDockerConfDir))
+	if dockerConfigPbth != "" {
+		copyfiles = bppend(copyfiles, fmt.Sprintf("%s:%s", dockerConfigPbth, commbnd.FirecrbckerDockerConfDir))
 	}
 
 	sort.Strings(copyfiles)
-	return command.Intersperse("--copy-files", copyfiles)
+	return commbnd.Intersperse("--copy-files", copyfiles)
 }
 
-func firecrackerVolumeFlags(workspaceDevice string) []string {
-	return []string{"--volumes", fmt.Sprintf("%s:%s", workspaceDevice, command.FirecrackerContainerDir)}
+func firecrbckerVolumeFlbgs(workspbceDevice string) []string {
+	return []string{"--volumes", fmt.Sprintf("%s:%s", workspbceDevice, commbnd.FirecrbckerContbinerDir)}
 }
 
-// sanitizeImage sanitizes the given docker image for use by ignite. The ignite utility
-// has some issue parsing docker tags that include a sha256 hash, so we try to remove it
-// from any of the image references before passing it to the ignite command.
-func sanitizeImage(image string) string {
-	if matches := imagePattern.FindStringSubmatch(image); len(matches) == 4 {
-		if matches[2] == "" {
-			return matches[1]
+// sbnitizeImbge sbnitizes the given docker imbge for use by ignite. The ignite utility
+// hbs some issue pbrsing docker tbgs thbt include b shb256 hbsh, so we try to remove it
+// from bny of the imbge references before pbssing it to the ignite commbnd.
+func sbnitizeImbge(imbge string) string {
+	if mbtches := imbgePbttern.FindStringSubmbtch(imbge); len(mbtches) == 4 {
+		if mbtches[2] == "" {
+			return mbtches[1]
 		}
 
-		return fmt.Sprintf("%s:%s", matches[1], matches[2])
+		return fmt.Sprintf("%s:%s", mbtches[1], mbtches[2])
 	}
 
-	return image
+	return imbge
 }
 
-var imagePattern = lazyregexp.New(`([^:@]+)(?::([^@]+))?(?:@sha256:([a-z0-9]{64}))?`)
+vbr imbgePbttern = lbzyregexp.New(`([^:@]+)(?::([^@]+))?(?:@shb256:([b-z0-9]{64}))?`)
 
-func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	removeCommandSpec := r.newCommandSpec(
-		"teardown.firecracker.remove",
-		command.Flatten("ignite", "rm", "-f", r.vmName),
+func (r *firecrbckerRunner) Tebrdown(ctx context.Context) error {
+	removeCommbndSpec := r.newCommbndSpec(
+		"tebrdown.firecrbcker.remove",
+		commbnd.Flbtten("ignite", "rm", "-f", r.vmNbme),
 		nil,
-		r.operations.TeardownFirecrackerRemove,
+		r.operbtions.TebrdownFirecrbckerRemove,
 	)
-	if err := r.cmd.Run(ctx, r.cmdLogger, removeCommandSpec); err != nil {
-		r.internalLogger.Error("Failed to remove firecracker vm", log.String("name", r.vmName), log.Error(err))
+	if err := r.cmd.Run(ctx, r.cmdLogger, removeCommbndSpec); err != nil {
+		r.internblLogger.Error("Fbiled to remove firecrbcker vm", log.String("nbme", r.vmNbme), log.Error(err))
 	}
 
 	if err := os.RemoveAll(r.tmpDir); err != nil {
-		r.internalLogger.Error(
-			"Failed to remove firecracker vm",
-			log.String("name", r.vmName),
+		r.internblLogger.Error(
+			"Fbiled to remove firecrbcker vm",
+			log.String("nbme", r.vmNbme),
 			log.String("tmpDir", r.tmpDir),
 			log.Error(err),
 		)
@@ -342,16 +342,16 @@ func (r *firecrackerRunner) Teardown(ctx context.Context) error {
 	return nil
 }
 
-func (r *firecrackerRunner) newCommandSpec(key string, cmd []string, env []string, operations *observation.Operation) command.Spec {
-	return command.Spec{
+func (r *firecrbckerRunner) newCommbndSpec(key string, cmd []string, env []string, operbtions *observbtion.Operbtion) commbnd.Spec {
+	return commbnd.Spec{
 		Key:       key,
-		Command:   cmd,
+		Commbnd:   cmd,
 		Env:       env,
-		Operation: operations,
+		Operbtion: operbtions,
 	}
 }
 
-func (r *firecrackerRunner) Run(ctx context.Context, spec Spec) error {
-	firecrackerSpec := command.NewFirecrackerSpec(r.vmName, spec.Image, spec.ScriptPath, spec.CommandSpecs[0], r.options.DockerOptions)
-	return r.cmd.Run(ctx, r.cmdLogger, firecrackerSpec)
+func (r *firecrbckerRunner) Run(ctx context.Context, spec Spec) error {
+	firecrbckerSpec := commbnd.NewFirecrbckerSpec(r.vmNbme, spec.Imbge, spec.ScriptPbth, spec.CommbndSpecs[0], r.options.DockerOptions)
+	return r.cmd.Run(ctx, r.cmdLogger, firecrbckerSpec)
 }

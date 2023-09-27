@@ -1,59 +1,59 @@
-package graphql
+pbckbge grbphql
 
 import (
 	"context"
 	"fmt"
 	"time"
 
-	"github.com/sourcegraph/log"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/sourcegrbph/log"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
-type operations struct {
-	gitBlobLsifData *observation.Operation
-	hover           *observation.Operation
-	definitions     *observation.Operation
-	references      *observation.Operation
-	implementations *observation.Operation
-	prototypes      *observation.Operation
-	diagnostics     *observation.Operation
-	stencil         *observation.Operation
-	ranges          *observation.Operation
-	snapshot        *observation.Operation
-	visibleIndexes  *observation.Operation
+type operbtions struct {
+	gitBlobLsifDbtb *observbtion.Operbtion
+	hover           *observbtion.Operbtion
+	definitions     *observbtion.Operbtion
+	references      *observbtion.Operbtion
+	implementbtions *observbtion.Operbtion
+	prototypes      *observbtion.Operbtion
+	dibgnostics     *observbtion.Operbtion
+	stencil         *observbtion.Operbtion
+	rbnges          *observbtion.Operbtion
+	snbpshot        *observbtion.Operbtion
+	visibleIndexes  *observbtion.Operbtion
 }
 
-func newOperations(observationCtx *observation.Context) *operations {
+func newOperbtions(observbtionCtx *observbtion.Context) *operbtions {
 	m := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		"codeintel_codenav_transport_graphql",
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		"codeintel_codenbv_trbnsport_grbphql",
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              fmt.Sprintf("codeintel.codenav.transport.graphql.%s", name),
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              fmt.Sprintf("codeintel.codenbv.trbnsport.grbphql.%s", nbme),
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           m,
 		})
 	}
 
-	return &operations{
-		gitBlobLsifData: op("GitBlobLsifData"),
+	return &operbtions{
+		gitBlobLsifDbtb: op("GitBlobLsifDbtb"),
 		hover:           op("Hover"),
 		definitions:     op("Definitions"),
 		references:      op("References"),
-		implementations: op("Implementations"),
+		implementbtions: op("Implementbtions"),
 		prototypes:      op("Prototypes"),
-		diagnostics:     op("Diagnostics"),
+		dibgnostics:     op("Dibgnostics"),
 		stencil:         op("Stencil"),
-		ranges:          op("Ranges"),
-		snapshot:        op("Snapshot"),
+		rbnges:          op("Rbnges"),
+		snbpshot:        op("Snbpshot"),
 		visibleIndexes:  op("VisibleIndexes"),
 	}
 }
@@ -61,39 +61,39 @@ func newOperations(observationCtx *observation.Context) *operations {
 func observeResolver(
 	ctx context.Context,
 	err *error,
-	operation *observation.Operation,
-	threshold time.Duration, //nolint:unparam // same value everywhere but probably want to keep this
-	observationArgs observation.Args,
-) (context.Context, observation.TraceLogger, func()) { //nolint:unparam // observation.TraceLogger is never used, but it makes sense API wise
-	start := time.Now()
-	ctx, trace, endObservation := operation.With(ctx, err, observationArgs)
+	operbtion *observbtion.Operbtion,
+	threshold time.Durbtion, //nolint:unpbrbm // sbme vblue everywhere but probbbly wbnt to keep this
+	observbtionArgs observbtion.Args,
+) (context.Context, observbtion.TrbceLogger, func()) { //nolint:unpbrbm // observbtion.TrbceLogger is never used, but it mbkes sense API wise
+	stbrt := time.Now()
+	ctx, trbce, endObservbtion := operbtion.With(ctx, err, observbtionArgs)
 
-	return ctx, trace, func() {
-		duration := time.Since(start)
-		endObservation(1, observation.Args{})
+	return ctx, trbce, func() {
+		durbtion := time.Since(stbrt)
+		endObservbtion(1, observbtion.Args{})
 
-		if duration >= threshold {
-			// use trace logger which includes all relevant fields
-			lowSlowRequest(trace, duration, err)
+		if durbtion >= threshold {
+			// use trbce logger which includes bll relevbnt fields
+			lowSlowRequest(trbce, durbtion, err)
 		}
 	}
 }
 
-func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
-	fields := []log.Field{log.Duration("duration", duration)}
+func lowSlowRequest(logger log.Logger, durbtion time.Durbtion, err *error) {
+	fields := []log.Field{log.Durbtion("durbtion", durbtion)}
 	if err != nil && *err != nil {
-		fields = append(fields, log.Error(*err))
+		fields = bppend(fields, log.Error(*err))
 	}
-	logger.Warn("Slow codeintel request", fields...)
+	logger.Wbrn("Slow codeintel request", fields...)
 }
 
-func getObservationArgs(args codenav.PositionalRequestArgs) observation.Args {
-	return observation.Args{Attrs: []attribute.KeyValue{
-		attribute.Int("repositoryID", args.RepositoryID),
-		attribute.String("commit", args.Commit),
-		attribute.String("path", args.Path),
-		attribute.Int("line", args.Line),
-		attribute.Int("character", args.Character),
-		attribute.Int("limit", args.Limit),
+func getObservbtionArgs(brgs codenbv.PositionblRequestArgs) observbtion.Args {
+	return observbtion.Args{Attrs: []bttribute.KeyVblue{
+		bttribute.Int("repositoryID", brgs.RepositoryID),
+		bttribute.String("commit", brgs.Commit),
+		bttribute.String("pbth", brgs.Pbth),
+		bttribute.Int("line", brgs.Line),
+		bttribute.Int("chbrbcter", brgs.Chbrbcter),
+		bttribute.Int("limit", brgs.Limit),
 	}}
 }

@@ -1,51 +1,51 @@
-package codeintel
+pbckbge codeintel
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/codeintel"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/codeintel"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/butoindexing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/repoupdbter"
 )
 
-type autoindexingDependencyScheduler struct{}
+type butoindexingDependencyScheduler struct{}
 
 func NewAutoindexingDependencySchedulerJob() job.Job {
-	return &autoindexingDependencyScheduler{}
+	return &butoindexingDependencyScheduler{}
 }
 
-func (j *autoindexingDependencyScheduler) Description() string {
+func (j *butoindexingDependencyScheduler) Description() string {
 	return ""
 }
 
-func (j *autoindexingDependencyScheduler) Config() []env.Config {
+func (j *butoindexingDependencyScheduler) Config() []env.Config {
 	return []env.Config{
-		autoindexing.DependenciesConfigInst,
+		butoindexing.DependenciesConfigInst,
 	}
 }
 
-func (j *autoindexingDependencyScheduler) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	services, err := codeintel.InitServices(observationCtx)
+func (j *butoindexingDependencyScheduler) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	services, err := codeintel.InitServices(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	db, err := workerdb.InitDB(observationCtx)
+	db, err := workerdb.InitDB(observbtionCtx)
 	if err != nil {
 		return nil, err
 	}
 
-	return autoindexing.NewDependencyIndexSchedulers(
-		observationCtx,
+	return butoindexing.NewDependencyIndexSchedulers(
+		observbtionCtx,
 		db,
-		services.UploadsService,
+		services.UplobdsService,
 		services.DependenciesService,
 		services.AutoIndexingService,
-		repoupdater.DefaultClient,
+		repoupdbter.DefbultClient,
 	), nil
 }

@@ -1,4 +1,4 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
@@ -7,310 +7,310 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/batches/resolvers/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	bt "github.com/sourcegraph/sourcegraph/internal/batches/testing"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/bbtches/resolvers/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	bt "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/testing"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
 )
 
-func TestChangesetSpecResolver(t *testing.T) {
+func TestChbngesetSpecResolver(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := bt.CreateTestUser(t, db, false).ID
+	userID := bt.CrebteTestUser(t, db, fblse).ID
 
-	bstore := store.New(db, &observation.TestContext, nil)
-	esStore := database.ExternalServicesWith(logger, bstore)
+	bstore := store.New(db, &observbtion.TestContext, nil)
+	esStore := dbtbbbse.ExternblServicesWith(logger, bstore)
 
-	// Creating user with matching email to the changeset spec author.
-	user, err := database.UsersWith(logger, bstore).Create(ctx, database.NewUser{
-		Username:        "mary",
-		Email:           bt.ChangesetSpecAuthorEmail,
-		EmailIsVerified: true,
-		DisplayName:     "Mary Tester",
+	// Crebting user with mbtching embil to the chbngeset spec buthor.
+	user, err := dbtbbbse.UsersWith(logger, bstore).Crebte(ctx, dbtbbbse.NewUser{
+		Usernbme:        "mbry",
+		Embil:           bt.ChbngesetSpecAuthorEmbil,
+		EmbilIsVerified: true,
+		DisplbyNbme:     "Mbry Tester",
 	})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	repoStore := database.ReposWith(logger, bstore)
-	repo := newGitHubTestRepo("github.com/sourcegraph/changeset-spec-resolver-test", newGitHubExternalService(t, esStore))
-	if err := repoStore.Create(ctx, repo); err != nil {
-		t.Fatal(err)
+	repoStore := dbtbbbse.ReposWith(logger, bstore)
+	repo := newGitHubTestRepo("github.com/sourcegrbph/chbngeset-spec-resolver-test", newGitHubExternblService(t, esStore))
+	if err := repoStore.Crebte(ctx, repo); err != nil {
+		t.Fbtbl(err)
 	}
-	repoID := graphqlbackend.MarshalRepositoryID(repo.ID)
+	repoID := grbphqlbbckend.MbrshblRepositoryID(repo.ID)
 
-	testRev := api.CommitID("b69072d5f687b31b9f6ae3ceafdc24c259c4b9ec")
-	mockBackendCommits(t, testRev)
+	testRev := bpi.CommitID("b69072d5f687b31b9f6be3cebfdc24c259c4b9ec")
+	mockBbckendCommits(t, testRev)
 
-	batchSpec, err := btypes.NewBatchSpecFromRaw(`name: awesome-test`)
+	bbtchSpec, err := btypes.NewBbtchSpecFromRbw(`nbme: bwesome-test`)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	batchSpec.NamespaceUserID = userID
-	if err := bstore.CreateBatchSpec(ctx, batchSpec); err != nil {
-		t.Fatal(err)
+	bbtchSpec.NbmespbceUserID = userID
+	if err := bstore.CrebteBbtchSpec(ctx, bbtchSpec); err != nil {
+		t.Fbtbl(err)
 	}
 
-	s, err := newSchema(db, &Resolver{store: bstore})
+	s, err := newSchemb(db, &Resolver{store: bstore})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	tests := []struct {
-		name    string
-		rawSpec string
-		want    func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec
+		nbme    string
+		rbwSpec string
+		wbnt    func(spec *btypes.ChbngesetSpec) bpitest.ChbngesetSpec
 	}{
 		{
-			name:    "GitBranchChangesetDescription",
-			rawSpec: bt.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
-			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
-				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
-					Description: apitest.ChangesetSpecDescription{
-						Typename: "GitBranchChangesetDescription",
-						BaseRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
+			nbme:    "GitBrbnchChbngesetDescription",
+			rbwSpec: bt.NewRbwChbngesetSpecGitBrbnch(repoID, string(testRev)),
+			wbnt: func(spec *btypes.ChbngesetSpec) bpitest.ChbngesetSpec {
+				return bpitest.ChbngesetSpec{
+					Typenbme: "VisibleChbngesetSpec",
+					ID:       string(mbrshblChbngesetSpecRbndID(spec.RbndID)),
+					Description: bpitest.ChbngesetSpecDescription{
+						Typenbme: "GitBrbnchChbngesetDescription",
+						BbseRepository: bpitest.Repository{
+							ID: string(grbphqlbbckend.MbrshblRepositoryID(spec.BbseRepoID)),
 						},
-						ExternalID: "",
-						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						ExternblID: "",
+						BbseRef:    gitdombin.AbbrevibteRef(spec.BbseRef),
+						HebdRef:    gitdombin.AbbrevibteRef(spec.HebdRef),
 						Title:      spec.Title,
 						Body:       spec.Body,
-						Commits: []apitest.GitCommitDescription{
+						Commits: []bpitest.GitCommitDescription{
 							{
-								Author: apitest.Person{
-									Email: spec.CommitAuthorEmail,
-									Name:  user.Username,
-									User: &apitest.User{
-										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+								Author: bpitest.Person{
+									Embil: spec.CommitAuthorEmbil,
+									Nbme:  user.Usernbme,
+									User: &bpitest.User{
+										ID: string(grbphqlbbckend.MbrshblUserID(user.ID)),
 									},
 								},
 								Diff:    string(spec.Diff),
-								Message: spec.CommitMessage,
-								Subject: "git commit message",
-								Body:    "and some more content in a second paragraph.",
+								Messbge: spec.CommitMessbge,
+								Subject: "git commit messbge",
+								Body:    "bnd some more content in b second pbrbgrbph.",
 							},
 						},
-						Published: batches.PublishedValue{Val: false},
-						Diff: struct{ FileDiffs apitest.FileDiffs }{
-							FileDiffs: apitest.FileDiffs{
-								DiffStat: apitest.DiffStat{
+						Published: bbtches.PublishedVblue{Vbl: fblse},
+						Diff: struct{ FileDiffs bpitest.FileDiffs }{
+							FileDiffs: bpitest.FileDiffs{
+								DiffStbt: bpitest.DiffStbt{
 									Added:   3,
 									Deleted: 3,
 								},
 							},
 						},
-						DiffStat: apitest.DiffStat{
+						DiffStbt: bpitest.DiffStbt{
 							Added:   3,
 							Deleted: 3,
 						},
 					},
-					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DbteTime{Time: spec.ExpiresAt().Truncbte(time.Second)},
 				}
 			},
 		},
 		{
-			name:    "GitBranchChangesetDescription Draft",
-			rawSpec: bt.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: "draft"}),
-			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
-				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
-					Description: apitest.ChangesetSpecDescription{
-						Typename: "GitBranchChangesetDescription",
-						BaseRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
+			nbme:    "GitBrbnchChbngesetDescription Drbft",
+			rbwSpec: bt.NewPublishedRbwChbngesetSpecGitBrbnch(repoID, string(testRev), bbtches.PublishedVblue{Vbl: "drbft"}),
+			wbnt: func(spec *btypes.ChbngesetSpec) bpitest.ChbngesetSpec {
+				return bpitest.ChbngesetSpec{
+					Typenbme: "VisibleChbngesetSpec",
+					ID:       string(mbrshblChbngesetSpecRbndID(spec.RbndID)),
+					Description: bpitest.ChbngesetSpecDescription{
+						Typenbme: "GitBrbnchChbngesetDescription",
+						BbseRepository: bpitest.Repository{
+							ID: string(grbphqlbbckend.MbrshblRepositoryID(spec.BbseRepoID)),
 						},
-						ExternalID: "",
-						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						ExternblID: "",
+						BbseRef:    gitdombin.AbbrevibteRef(spec.BbseRef),
+						HebdRef:    gitdombin.AbbrevibteRef(spec.HebdRef),
 						Title:      spec.Title,
 						Body:       spec.Body,
-						Commits: []apitest.GitCommitDescription{
+						Commits: []bpitest.GitCommitDescription{
 							{
-								Author: apitest.Person{
-									Email: spec.CommitAuthorEmail,
-									Name:  user.Username,
-									User: &apitest.User{
-										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+								Author: bpitest.Person{
+									Embil: spec.CommitAuthorEmbil,
+									Nbme:  user.Usernbme,
+									User: &bpitest.User{
+										ID: string(grbphqlbbckend.MbrshblUserID(user.ID)),
 									},
 								},
 								Diff:    string(spec.Diff),
-								Message: spec.CommitMessage,
-								Subject: "git commit message",
-								Body:    "and some more content in a second paragraph.",
+								Messbge: spec.CommitMessbge,
+								Subject: "git commit messbge",
+								Body:    "bnd some more content in b second pbrbgrbph.",
 							},
 						},
-						Published: batches.PublishedValue{Val: "draft"},
-						Diff: struct{ FileDiffs apitest.FileDiffs }{
-							FileDiffs: apitest.FileDiffs{
-								DiffStat: apitest.DiffStat{
+						Published: bbtches.PublishedVblue{Vbl: "drbft"},
+						Diff: struct{ FileDiffs bpitest.FileDiffs }{
+							FileDiffs: bpitest.FileDiffs{
+								DiffStbt: bpitest.DiffStbt{
 									Added:   3,
 									Deleted: 3,
 								},
 							},
 						},
-						DiffStat: apitest.DiffStat{
+						DiffStbt: bpitest.DiffStbt{
 							Added:   3,
 							Deleted: 3,
 						},
 					},
-					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DbteTime{Time: spec.ExpiresAt().Truncbte(time.Second)},
 				}
 			},
 		},
 		{
-			name:    "GitBranchChangesetDescription publish from UI",
-			rawSpec: bt.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: nil}),
-			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
-				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
-					Description: apitest.ChangesetSpecDescription{
-						Typename: "GitBranchChangesetDescription",
-						BaseRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
+			nbme:    "GitBrbnchChbngesetDescription publish from UI",
+			rbwSpec: bt.NewPublishedRbwChbngesetSpecGitBrbnch(repoID, string(testRev), bbtches.PublishedVblue{Vbl: nil}),
+			wbnt: func(spec *btypes.ChbngesetSpec) bpitest.ChbngesetSpec {
+				return bpitest.ChbngesetSpec{
+					Typenbme: "VisibleChbngesetSpec",
+					ID:       string(mbrshblChbngesetSpecRbndID(spec.RbndID)),
+					Description: bpitest.ChbngesetSpecDescription{
+						Typenbme: "GitBrbnchChbngesetDescription",
+						BbseRepository: bpitest.Repository{
+							ID: string(grbphqlbbckend.MbrshblRepositoryID(spec.BbseRepoID)),
 						},
-						ExternalID: "",
-						BaseRef:    gitdomain.AbbreviateRef(spec.BaseRef),
-						HeadRef:    gitdomain.AbbreviateRef(spec.HeadRef),
+						ExternblID: "",
+						BbseRef:    gitdombin.AbbrevibteRef(spec.BbseRef),
+						HebdRef:    gitdombin.AbbrevibteRef(spec.HebdRef),
 						Title:      spec.Title,
 						Body:       spec.Body,
-						Commits: []apitest.GitCommitDescription{
+						Commits: []bpitest.GitCommitDescription{
 							{
-								Author: apitest.Person{
-									Email: spec.CommitAuthorEmail,
-									Name:  user.Username,
-									User: &apitest.User{
-										ID: string(graphqlbackend.MarshalUserID(user.ID)),
+								Author: bpitest.Person{
+									Embil: spec.CommitAuthorEmbil,
+									Nbme:  user.Usernbme,
+									User: &bpitest.User{
+										ID: string(grbphqlbbckend.MbrshblUserID(user.ID)),
 									},
 								},
 								Diff:    string(spec.Diff),
-								Message: spec.CommitMessage,
-								Subject: "git commit message",
-								Body:    "and some more content in a second paragraph.",
+								Messbge: spec.CommitMessbge,
+								Subject: "git commit messbge",
+								Body:    "bnd some more content in b second pbrbgrbph.",
 							},
 						},
-						Published: batches.PublishedValue{Val: nil},
-						Diff: struct{ FileDiffs apitest.FileDiffs }{
-							FileDiffs: apitest.FileDiffs{
-								DiffStat: apitest.DiffStat{
+						Published: bbtches.PublishedVblue{Vbl: nil},
+						Diff: struct{ FileDiffs bpitest.FileDiffs }{
+							FileDiffs: bpitest.FileDiffs{
+								DiffStbt: bpitest.DiffStbt{
 									Added:   3,
 									Deleted: 3,
 								},
 							},
 						},
-						DiffStat: apitest.DiffStat{
+						DiffStbt: bpitest.DiffStbt{
 							Added:   3,
 							Deleted: 3,
 						},
 					},
-					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DbteTime{Time: spec.ExpiresAt().Truncbte(time.Second)},
 				}
 			},
 		},
 		{
-			name:    "ExistingChangesetReference",
-			rawSpec: bt.NewRawChangesetSpecExisting(repoID, "9999"),
-			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
-				return apitest.ChangesetSpec{
-					Typename: "VisibleChangesetSpec",
-					ID:       string(marshalChangesetSpecRandID(spec.RandID)),
-					Description: apitest.ChangesetSpecDescription{
-						Typename: "ExistingChangesetReference",
-						BaseRepository: apitest.Repository{
-							ID: string(graphqlbackend.MarshalRepositoryID(spec.BaseRepoID)),
+			nbme:    "ExistingChbngesetReference",
+			rbwSpec: bt.NewRbwChbngesetSpecExisting(repoID, "9999"),
+			wbnt: func(spec *btypes.ChbngesetSpec) bpitest.ChbngesetSpec {
+				return bpitest.ChbngesetSpec{
+					Typenbme: "VisibleChbngesetSpec",
+					ID:       string(mbrshblChbngesetSpecRbndID(spec.RbndID)),
+					Description: bpitest.ChbngesetSpecDescription{
+						Typenbme: "ExistingChbngesetReference",
+						BbseRepository: bpitest.Repository{
+							ID: string(grbphqlbbckend.MbrshblRepositoryID(spec.BbseRepoID)),
 						},
-						ExternalID: spec.ExternalID,
+						ExternblID: spec.ExternblID,
 					},
-					ExpiresAt: &gqlutil.DateTime{Time: spec.ExpiresAt().Truncate(time.Second)},
+					ExpiresAt: &gqlutil.DbteTime{Time: spec.ExpiresAt().Truncbte(time.Second)},
 				}
 			},
 		},
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			spec, err := btypes.NewChangesetSpecFromRaw(tc.rawSpec)
+	for _, tc := rbnge tests {
+		t.Run(tc.nbme, func(t *testing.T) {
+			spec, err := btypes.NewChbngesetSpecFromRbw(tc.rbwSpec)
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
 			spec.UserID = userID
-			spec.BaseRepoID = repo.ID
-			spec.BatchSpecID = batchSpec.ID
+			spec.BbseRepoID = repo.ID
+			spec.BbtchSpecID = bbtchSpec.ID
 
-			if err := bstore.CreateChangesetSpec(ctx, spec); err != nil {
-				t.Fatal(err)
+			if err := bstore.CrebteChbngesetSpec(ctx, spec); err != nil {
+				t.Fbtbl(err)
 			}
 
-			input := map[string]any{"id": marshalChangesetSpecRandID(spec.RandID)}
-			var response struct{ Node apitest.ChangesetSpec }
-			apitest.MustExec(ctx, t, s, input, &response, queryChangesetSpecNode)
+			input := mbp[string]bny{"id": mbrshblChbngesetSpecRbndID(spec.RbndID)}
+			vbr response struct{ Node bpitest.ChbngesetSpec }
+			bpitest.MustExec(ctx, t, s, input, &response, queryChbngesetSpecNode)
 
-			want := tc.want(spec)
-			if diff := cmp.Diff(want, response.Node); diff != "" {
-				t.Fatalf("unexpected response (-want +got):\n%s", diff)
+			wbnt := tc.wbnt(spec)
+			if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+				t.Fbtblf("unexpected response (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-const queryChangesetSpecNode = `
+const queryChbngesetSpecNode = `
 query($id: ID!) {
   node(id: $id) {
-    __typename
+    __typenbme
 
-    ... on VisibleChangesetSpec {
+    ... on VisibleChbngesetSpec {
       id
       description {
-        __typename
+        __typenbme
 
-        ... on ExistingChangesetReference {
-          baseRepository {
+        ... on ExistingChbngesetReference {
+          bbseRepository {
              id
           }
-          externalID
+          externblID
         }
 
-        ... on GitBranchChangesetDescription {
-          baseRepository {
+        ... on GitBrbnchChbngesetDescription {
+          bbseRepository {
               id
           }
-          baseRef
-          baseRev
+          bbseRef
+          bbseRev
 
-          headRef
+          hebdRef
 
           title
           body
 
           commits {
-            message
+            messbge
             subject
             body
             diff
-            author {
-              name
-              email
+            buthor {
+              nbme
+              embil
               user {
                 id
               }
@@ -321,10 +321,10 @@ query($id: ID!) {
 
           diff {
             fileDiffs {
-              diffStat { added, deleted }
+              diffStbt { bdded, deleted }
             }
           }
-          diffStat { added, deleted }
+          diffStbt { bdded, deleted }
         }
       }
 

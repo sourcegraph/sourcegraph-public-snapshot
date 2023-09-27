@@ -1,237 +1,237 @@
-package audit
+pbckbge budit
 
 import (
 	"context"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/requestclient"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/requestclient"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 func TestLog(t *testing.T) {
-	testCases := []struct {
-		name              string
-		actor             *actor.Actor
+	testCbses := []struct {
+		nbme              string
+		bctor             *bctor.Actor
 		client            *requestclient.Client
-		additionalContext []log.Field
-		expectedEntry     autogold.Value
+		bdditionblContext []log.Field
+		expectedEntry     butogold.Vblue
 	}{
 		{
-			name:  "fully populated audit data",
-			actor: &actor.Actor{UID: 1},
+			nbme:  "fully populbted budit dbtb",
+			bctor: &bctor.Actor{UID: 1},
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
-				ForwardedFor: "192.168.0.1",
-				UserAgent:    "Foobar",
+				ForwbrdedFor: "192.168.0.1",
+				UserAgent:    "Foobbr",
 			},
-			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
-				"action": "test audit action",
-				"actor": map[string]interface{}{
-					"X-Forwarded-For": "192.168.0.1",
-					"actorUID":        "1",
+			bdditionblContext: []log.Field{log.String("bdditionbl", "stuff")},
+			expectedEntry: butogold.Expect(mbp[string]interfbce{}{"bdditionbl": "stuff", "budit": mbp[string]interfbce{}{
+				"bction": "test budit bction",
+				"bctor": mbp[string]interfbce{}{
+					"X-Forwbrded-For": "192.168.0.1",
+					"bctorUID":        "1",
 					"ip":              "192.168.0.1",
-					"userAgent":       "Foobar",
+					"userAgent":       "Foobbr",
 				},
-				"auditId": "test-audit-id-1234",
+				"buditId": "test-budit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
 		{
-			name:  "anonymous actor",
-			actor: &actor.Actor{AnonymousUID: "anonymous"},
+			nbme:  "bnonymous bctor",
+			bctor: &bctor.Actor{AnonymousUID: "bnonymous"},
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
-				ForwardedFor: "192.168.0.1",
-				UserAgent:    "Foobar",
+				ForwbrdedFor: "192.168.0.1",
+				UserAgent:    "Foobbr",
 			},
-			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
-				"action": "test audit action",
-				"actor": map[string]interface{}{
-					"X-Forwarded-For": "192.168.0.1",
-					"actorUID":        "anonymous",
+			bdditionblContext: []log.Field{log.String("bdditionbl", "stuff")},
+			expectedEntry: butogold.Expect(mbp[string]interfbce{}{"bdditionbl": "stuff", "budit": mbp[string]interfbce{}{
+				"bction": "test budit bction",
+				"bctor": mbp[string]interfbce{}{
+					"X-Forwbrded-For": "192.168.0.1",
+					"bctorUID":        "bnonymous",
 					"ip":              "192.168.0.1",
-					"userAgent":       "Foobar",
+					"userAgent":       "Foobbr",
 				},
-				"auditId": "test-audit-id-1234",
+				"buditId": "test-budit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
 		{
-			name:  "missing actor",
-			actor: &actor.Actor{ /*missing data*/ },
+			nbme:  "missing bctor",
+			bctor: &bctor.Actor{ /*missing dbtb*/ },
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
-				ForwardedFor: "192.168.0.1",
-				UserAgent:    "Foobar",
+				ForwbrdedFor: "192.168.0.1",
+				UserAgent:    "Foobbr",
 			},
-			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
-				"action": "test audit action",
-				"actor": map[string]interface{}{
-					"X-Forwarded-For": "192.168.0.1",
-					"actorUID":        "unknown",
+			bdditionblContext: []log.Field{log.String("bdditionbl", "stuff")},
+			expectedEntry: butogold.Expect(mbp[string]interfbce{}{"bdditionbl": "stuff", "budit": mbp[string]interfbce{}{
+				"bction": "test budit bction",
+				"bctor": mbp[string]interfbce{}{
+					"X-Forwbrded-For": "192.168.0.1",
+					"bctorUID":        "unknown",
 					"ip":              "192.168.0.1",
-					"userAgent":       "Foobar",
+					"userAgent":       "Foobbr",
 				},
-				"auditId": "test-audit-id-1234",
+				"buditId": "test-budit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
 		{
-			name:              "missing client info",
-			actor:             &actor.Actor{UID: 1},
+			nbme:              "missing client info",
+			bctor:             &bctor.Actor{UID: 1},
 			client:            nil,
-			additionalContext: []log.Field{log.String("additional", "stuff")},
-			expectedEntry: autogold.Expect(map[string]interface{}{"additional": "stuff", "audit": map[string]interface{}{
-				"action": "test audit action",
-				"actor": map[string]interface{}{
-					"X-Forwarded-For": "unknown",
-					"actorUID":        "1",
+			bdditionblContext: []log.Field{log.String("bdditionbl", "stuff")},
+			expectedEntry: butogold.Expect(mbp[string]interfbce{}{"bdditionbl": "stuff", "budit": mbp[string]interfbce{}{
+				"bction": "test budit bction",
+				"bctor": mbp[string]interfbce{}{
+					"X-Forwbrded-For": "unknown",
+					"bctorUID":        "1",
 					"ip":              "unknown",
 					"userAgent":       "unknown",
 				},
-				"auditId": "test-audit-id-1234",
+				"buditId": "test-budit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
 		{
-			name:  "no additional context",
-			actor: &actor.Actor{UID: 1},
+			nbme:  "no bdditionbl context",
+			bctor: &bctor.Actor{UID: 1},
 			client: &requestclient.Client{
 				IP:           "192.168.0.1",
-				ForwardedFor: "192.168.0.1",
-				UserAgent:    "Foobar",
+				ForwbrdedFor: "192.168.0.1",
+				UserAgent:    "Foobbr",
 			},
-			additionalContext: nil,
-			expectedEntry: autogold.Expect(map[string]interface{}{"audit": map[string]interface{}{
-				"action": "test audit action", "actor": map[string]interface{}{
-					"X-Forwarded-For": "192.168.0.1",
-					"actorUID":        "1",
+			bdditionblContext: nil,
+			expectedEntry: butogold.Expect(mbp[string]interfbce{}{"budit": mbp[string]interfbce{}{
+				"bction": "test budit bction", "bctor": mbp[string]interfbce{}{
+					"X-Forwbrded-For": "192.168.0.1",
+					"bctorUID":        "1",
 					"ip":              "192.168.0.1",
-					"userAgent":       "Foobar",
+					"userAgent":       "Foobbr",
 				},
-				"auditId": "test-audit-id-1234",
+				"buditId": "test-budit-id-1234",
 				"entity":  "test entity",
 			}}),
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			ctx := context.Background()
-			ctx = actor.WithActor(ctx, tc.actor)
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
+			ctx := context.Bbckground()
+			ctx = bctor.WithActor(ctx, tc.bctor)
 			ctx = requestclient.WithClient(ctx, tc.client)
 
 			fields := Record{
 				Entity: "test entity",
-				Action: "test audit action",
-				Fields: tc.additionalContext,
+				Action: "test budit bction",
+				Fields: tc.bdditionblContext,
 
-				auditIDGenerator: func() string { return "test-audit-id-1234" },
+				buditIDGenerbtor: func() string { return "test-budit-id-1234" },
 			}
 
-			logger, exportLogs := logtest.Captured(t)
+			logger, exportLogs := logtest.Cbptured(t)
 
 			Log(ctx, logger, fields)
 
 			logs := exportLogs()
 			if len(logs) != 1 {
-				t.Fatal("expected to capture one log exactly")
+				t.Fbtbl("expected to cbpture one log exbctly")
 			}
 
-			assert.Contains(t, logs[0].Message, "test audit action (sampling immunity token")
+			bssert.Contbins(t, logs[0].Messbge, "test budit bction (sbmpling immunity token")
 
-			// non-audit fields are preserved
-			tc.expectedEntry.Equal(t, logs[0].Fields)
+			// non-budit fields bre preserved
+			tc.expectedEntry.Equbl(t, logs[0].Fields)
 		})
 	}
 }
 
-func TestIsEnabled(t *testing.T) {
+func TestIsEnbbled(t *testing.T) {
 	tests := []struct {
-		name     string
-		cfg      schema.SiteConfiguration
-		expected map[AuditLogSetting]bool
+		nbme     string
+		cfg      schemb.SiteConfigurbtion
+		expected mbp[AuditLogSetting]bool
 	}{
 		{
-			name:     "empty log results in default audit log settings",
-			cfg:      schema.SiteConfiguration{},
-			expected: map[AuditLogSetting]bool{GitserverAccess: false, InternalTraffic: false, GraphQL: false},
+			nbme:     "empty log results in defbult budit log settings",
+			cfg:      schemb.SiteConfigurbtion{},
+			expected: mbp[AuditLogSetting]bool{GitserverAccess: fblse, InternblTrbffic: fblse, GrbphQL: fblse},
 		},
 		{
-			name:     "empty audit log config results in default audit log settings",
-			cfg:      schema.SiteConfiguration{Log: &schema.Log{}},
-			expected: map[AuditLogSetting]bool{GitserverAccess: false, InternalTraffic: false, GraphQL: false},
+			nbme:     "empty budit log config results in defbult budit log settings",
+			cfg:      schemb.SiteConfigurbtion{Log: &schemb.Log{}},
+			expected: mbp[AuditLogSetting]bool{GitserverAccess: fblse, InternblTrbffic: fblse, GrbphQL: fblse},
 		},
 		{
-			name: "fully populated audit log is read  correctly",
-			cfg: schema.SiteConfiguration{
-				Log: &schema.Log{
-					AuditLog: &schema.AuditLog{
-						InternalTraffic: true,
+			nbme: "fully populbted budit log is rebd  correctly",
+			cfg: schemb.SiteConfigurbtion{
+				Log: &schemb.Log{
+					AuditLog: &schemb.AuditLog{
+						InternblTrbffic: true,
 						GitserverAccess: true,
-						GraphQL:         true,
+						GrbphQL:         true,
 					}}},
-			expected: map[AuditLogSetting]bool{GitserverAccess: true, InternalTraffic: true, GraphQL: true},
+			expected: mbp[AuditLogSetting]bool{GitserverAccess: true, InternblTrbffic: true, GrbphQL: true},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			for setting, want := range tt.expected {
-				assert.Equalf(t, want, IsEnabled(tt.cfg, setting), "IsEnabled(%v, %v)", tt.cfg, setting)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			for setting, wbnt := rbnge tt.expected {
+				bssert.Equblf(t, wbnt, IsEnbbled(tt.cfg, setting), "IsEnbbled(%v, %v)", tt.cfg, setting)
 			}
 		})
 	}
 }
 
-// Remove when deprecated audit log schema.Log.AuditLog.SeverityLevel is removed.
+// Remove when deprecbted budit log schemb.Log.AuditLog.SeverityLevel is removed.
 func TestSwitchingSeverityLevelDoesNothing(t *testing.T) {
 	useAuditLogLevel("INFO")
 	defer conf.Mock(nil)
 
-	logs := auditLogMessage(t)
-	assert.Equal(t, 1, len(logs))
-	assert.Equal(t, log.Level(env.LogLevel), logs[0].Level)
+	logs := buditLogMessbge(t)
+	bssert.Equbl(t, 1, len(logs))
+	bssert.Equbl(t, log.Level(env.LogLevel), logs[0].Level)
 
 	useAuditLogLevel("WARN")
-	logs = auditLogMessage(t)
-	assert.Equal(t, 1, len(logs))
-	assert.Equal(t, log.Level(env.LogLevel), logs[0].Level)
+	logs = buditLogMessbge(t)
+	bssert.Equbl(t, 1, len(logs))
+	bssert.Equbl(t, log.Level(env.LogLevel), logs[0].Level)
 }
 
 func useAuditLogLevel(level string) {
-	conf.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{
-		Log: &schema.Log{
-			AuditLog: &schema.AuditLog{
-				InternalTraffic: true,
+	conf.Mock(&conf.Unified{SiteConfigurbtion: schemb.SiteConfigurbtion{
+		Log: &schemb.Log{
+			AuditLog: &schemb.AuditLog{
+				InternblTrbffic: true,
 				GitserverAccess: true,
-				GraphQL:         true,
+				GrbphQL:         true,
 				SeverityLevel:   level,
 			}}}})
 }
 
-func auditLogMessage(t *testing.T) []logtest.CapturedLog {
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+func buditLogMessbge(t *testing.T) []logtest.CbpturedLog {
+	ctx := context.Bbckground()
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
 	ctx = requestclient.WithClient(ctx, &requestclient.Client{IP: "192.168.1.1"})
 
 	record := Record{
 		Entity: "test entity",
-		Action: "test audit action",
+		Action: "test budit bction",
 		Fields: nil,
 	}
 
-	logger, exportLogs := logtest.Captured(t)
+	logger, exportLogs := logtest.Cbptured(t)
 	Log(ctx, logger, record)
 
 	return exportLogs()

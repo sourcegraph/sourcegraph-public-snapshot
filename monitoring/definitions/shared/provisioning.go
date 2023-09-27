@@ -1,130 +1,130 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Provisioning indicator overviews - these provide long-term overviews of container
-// resource usage. The goal of these observables are to provide guidance on whether or not
-// a service requires more or less resources.
+// Provisioning indicbtor overviews - these provide long-term overviews of contbiner
+// resource usbge. The gobl of these observbbles bre to provide guidbnce on whether or not
+// b service requires more or less resources.
 //
-// These observables should only use cAdvisor metrics, and are thus only available on
-// Kubernetes and docker-compose deployments.
-const TitleProvisioningIndicators = "Provisioning indicators (not available on server)"
+// These observbbles should only use cAdvisor metrics, bnd bre thus only bvbilbble on
+// Kubernetes bnd docker-compose deployments.
+const TitleProvisioningIndicbtors = "Provisioning indicbtors (not bvbilbble on server)"
 
-var (
-	ProvisioningCPUUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "provisioning_container_cpu_usage_long_term",
-			Description: "container cpu usage total (90th percentile over 1d) across all cores by instance",
-			Query:       fmt.Sprintf(`quantile_over_time(0.9, cadvisor_container_cpu_usage_percentage_total{%s}[1d])`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
+vbr (
+	ProvisioningCPUUsbgeLongTerm shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "provisioning_contbiner_cpu_usbge_long_term",
+			Description: "contbiner cpu usbge totbl (90th percentile over 1d) bcross bll cores by instbnce",
+			Query:       fmt.Sprintf(`qubntile_over_time(0.9, cbdvisor_contbiner_cpu_usbge_percentbge_totbl{%s}[1d])`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(80).For(14 * 24 * time.Hour),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Mbx(100).Min(0),
 			Owner:       owner,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing CPU limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
-			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing CPU limits in the 'Deployment.ybml' for the {{CONTAINER_NAME}} service.
+			- **Docker Compose:** Consider increbsing 'cpus:' of the {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	ProvisioningMemoryUsageLongTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "provisioning_container_memory_usage_long_term",
-			Description: "container memory usage (1d maximum) by instance",
-			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[1d])`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(80).For(14 * 24 * time.Hour),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Max(100).Min(0),
+	ProvisioningMemoryUsbgeLongTerm shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "provisioning_contbiner_memory_usbge_long_term",
+			Description: "contbiner memory usbge (1d mbximum) by instbnce",
+			Query:       fmt.Sprintf(`mbx_over_time(cbdvisor_contbiner_memory_usbge_percentbge_totbl{%s}[1d])`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(80).For(14 * 24 * time.Hour),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Mbx(100).Min(0),
 			Owner:       owner,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing memory limits in the 'Deployment.yaml' for the {{CONTAINER_NAME}} service.
-			- **Docker Compose:** Consider increasing 'memory:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing memory limits in the 'Deployment.ybml' for the {{CONTAINER_NAME}} service.
+			- **Docker Compose:** Consider increbsing 'memory:' of the {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	ProvisioningCPUUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "provisioning_container_cpu_usage_short_term",
-			Description: "container cpu usage total (5m maximum) across all cores by instance",
-			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_cpu_usage_percentage_total{%s}[5m])`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(90).For(30 * time.Minute),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
+	ProvisioningCPUUsbgeShortTerm shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "provisioning_contbiner_cpu_usbge_short_term",
+			Description: "contbiner cpu usbge totbl (5m mbximum) bcross bll cores by instbnce",
+			Query:       fmt.Sprintf(`mbx_over_time(cbdvisor_contbiner_cpu_usbge_percentbge_totbl{%s}[5m])`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(90).For(30 * time.Minute),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
 			Owner:       owner,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing CPU limits in the the relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'cpus:' of the {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing CPU limits in the the relevbnt 'Deployment.ybml'.
+			- **Docker Compose:** Consider increbsing 'cpus:' of the {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	ProvisioningMemoryUsageShortTerm sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "provisioning_container_memory_usage_short_term",
-			Description: "container memory usage (5m maximum) by instance",
-			Query:       fmt.Sprintf(`max_over_time(cadvisor_container_memory_usage_percentage_total{%s}[5m])`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(90),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}").Unit(monitoring.Percentage).Interval(100).Max(100).Min(0),
+	ProvisioningMemoryUsbgeShortTerm shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "provisioning_contbiner_memory_usbge_short_term",
+			Description: "contbiner memory usbge (5m mbximum) by instbnce",
+			Query:       fmt.Sprintf(`mbx_over_time(cbdvisor_contbiner_memory_usbge_percentbge_totbl{%s}[5m])`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(90),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}").Unit(monitoring.Percentbge).Intervbl(100).Mbx(100).Min(0),
 			Owner:       owner,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing memory limit in relevbnt 'Deployment.ybml'.
+			- **Docker Compose:** Consider increbsing 'memory:' of {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 
-	ContainerOOMKILLEvents sharedObservable = func(containerName string, owner monitoring.ObservableOwner) Observable {
-		return Observable{
-			Name:        "container_oomkill_events_total",
-			Description: "container OOMKILL events total by instance",
-			Query:       fmt.Sprintf(`max by (name) (container_oom_events_total{%s})`, CadvisorContainerNameMatcher(containerName)),
-			Warning:     monitoring.Alert().GreaterOrEqual(1),
-			Panel:       monitoring.Panel().LegendFormat("{{name}}"),
+	ContbinerOOMKILLEvents shbredObservbble = func(contbinerNbme string, owner monitoring.ObservbbleOwner) Observbble {
+		return Observbble{
+			Nbme:        "contbiner_oomkill_events_totbl",
+			Description: "contbiner OOMKILL events totbl by instbnce",
+			Query:       fmt.Sprintf(`mbx by (nbme) (contbiner_oom_events_totbl{%s})`, CbdvisorContbinerNbmeMbtcher(contbinerNbme)),
+			Wbrning:     monitoring.Alert().GrebterOrEqubl(1),
+			Pbnel:       monitoring.Pbnel().LegendFormbt("{{nbme}}"),
 			Owner:       owner,
-			Interpretation: `
-				This value indicates the total number of times the container main process or child processes were terminated by OOM killer.
-				When it occurs frequently, it is an indicator of underprovisioning.
+			Interpretbtion: `
+				This vblue indicbtes the totbl number of times the contbiner mbin process or child processes were terminbted by OOM killer.
+				When it occurs frequently, it is bn indicbtor of underprovisioning.
 			`,
-			NextSteps: strings.ReplaceAll(`
-			- **Kubernetes:** Consider increasing memory limit in relevant 'Deployment.yaml'.
-			- **Docker Compose:** Consider increasing 'memory:' of {{CONTAINER_NAME}} container in 'docker-compose.yml'.
-		`, "{{CONTAINER_NAME}}", containerName),
+			NextSteps: strings.ReplbceAll(`
+			- **Kubernetes:** Consider increbsing memory limit in relevbnt 'Deployment.ybml'.
+			- **Docker Compose:** Consider increbsing 'memory:' of {{CONTAINER_NAME}} contbiner in 'docker-compose.yml'.
+		`, "{{CONTAINER_NAME}}", contbinerNbme),
 		}
 	}
 )
 
-type ContainerProvisioningIndicatorsGroupOptions struct {
-	// LongTermCPUUsage transforms the default observable used to construct the long-term CPU usage panel.
-	LongTermCPUUsage ObservableOption
+type ContbinerProvisioningIndicbtorsGroupOptions struct {
+	// LongTermCPUUsbge trbnsforms the defbult observbble used to construct the long-term CPU usbge pbnel.
+	LongTermCPUUsbge ObservbbleOption
 
-	// LongTermMemoryUsage transforms the default observable used to construct the long-term memory usage panel.
-	LongTermMemoryUsage ObservableOption
+	// LongTermMemoryUsbge trbnsforms the defbult observbble used to construct the long-term memory usbge pbnel.
+	LongTermMemoryUsbge ObservbbleOption
 
-	// ShortTermCPUUsage transforms the default observable used to construct the short-term CPU usage panel.
-	ShortTermCPUUsage ObservableOption
+	// ShortTermCPUUsbge trbnsforms the defbult observbble used to construct the short-term CPU usbge pbnel.
+	ShortTermCPUUsbge ObservbbleOption
 
-	// ShortTermMemoryUsage transforms the default observable used to construct the short-term memory usage panel.
-	ShortTermMemoryUsage ObservableOption
+	// ShortTermMemoryUsbge trbnsforms the defbult observbble used to construct the short-term memory usbge pbnel.
+	ShortTermMemoryUsbge ObservbbleOption
 
-	OOMKILLEvents ObservableOption
+	OOMKILLEvents ObservbbleOption
 
-	// CustomTitle, if provided, provides a custom title for this provisioning group that will be displayed in Grafana.
+	// CustomTitle, if provided, provides b custom title for this provisioning group thbt will be displbyed in Grbfbnb.
 	CustomTitle string
 }
 
-// NewProvisioningIndicatorsGroup creates a group containing panels displaying
-// provisioning indication metrics - long and short term usage for both CPU and
-// memory usage - for the given container.
-func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.ObservableOwner, options *ContainerProvisioningIndicatorsGroupOptions) monitoring.Group {
+// NewProvisioningIndicbtorsGroup crebtes b group contbining pbnels displbying
+// provisioning indicbtion metrics - long bnd short term usbge for both CPU bnd
+// memory usbge - for the given contbiner.
+func NewProvisioningIndicbtorsGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options *ContbinerProvisioningIndicbtorsGroupOptions) monitoring.Group {
 	if options == nil {
-		options = &ContainerProvisioningIndicatorsGroupOptions{}
+		options = &ContbinerProvisioningIndicbtorsGroupOptions{}
 	}
 
-	title := TitleProvisioningIndicators
+	title := TitleProvisioningIndicbtors
 	if options.CustomTitle != "" {
 		title = options.CustomTitle
 	}
@@ -134,13 +134,13 @@ func NewProvisioningIndicatorsGroup(containerName string, owner monitoring.Obser
 		Hidden: true,
 		Rows: []monitoring.Row{
 			{
-				options.LongTermCPUUsage.safeApply(ProvisioningCPUUsageLongTerm(containerName, owner)).Observable(),
-				options.LongTermMemoryUsage.safeApply(ProvisioningMemoryUsageLongTerm(containerName, owner)).Observable(),
+				options.LongTermCPUUsbge.sbfeApply(ProvisioningCPUUsbgeLongTerm(contbinerNbme, owner)).Observbble(),
+				options.LongTermMemoryUsbge.sbfeApply(ProvisioningMemoryUsbgeLongTerm(contbinerNbme, owner)).Observbble(),
 			},
 			{
-				options.ShortTermCPUUsage.safeApply(ProvisioningCPUUsageShortTerm(containerName, owner)).Observable(),
-				options.ShortTermMemoryUsage.safeApply(ProvisioningMemoryUsageShortTerm(containerName, owner)).Observable(),
-				options.OOMKILLEvents.safeApply(ContainerOOMKILLEvents(containerName, owner)).Observable(),
+				options.ShortTermCPUUsbge.sbfeApply(ProvisioningCPUUsbgeShortTerm(contbinerNbme, owner)).Observbble(),
+				options.ShortTermMemoryUsbge.sbfeApply(ProvisioningMemoryUsbgeShortTerm(contbinerNbme, owner)).Observbble(),
+				options.OOMKILLEvents.sbfeApply(ContbinerOOMKILLEvents(contbinerNbme, owner)).Observbble(),
 			},
 		},
 	}

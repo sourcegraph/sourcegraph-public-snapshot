@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,89 +6,89 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
-	"path"
+	"pbth"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"go.opentelemetry.io/otel/attribute"
+	"github.com/inconshrevebble/log15"
+	"go.opentelemetry.io/otel/bttribute"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/binary"
-	"github.com/sourcegraph/sourcegraph/internal/cloneurls"
-	resolverstubs "github.com/sourcegraph/sourcegraph/internal/codeintel/resolvers"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/highlight"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/externbllink"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/binbry"
+	"github.com/sourcegrbph/sourcegrbph/internbl/cloneurls"
+	resolverstubs "github.com/sourcegrbph/sourcegrbph/internbl/codeintel/resolvers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
+	"github.com/sourcegrbph/sourcegrbph/internbl/highlight"
+	"github.com/sourcegrbph/sourcegrbph/internbl/symbols"
+	"github.com/sourcegrbph/sourcegrbph/internbl/trbce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// GitTreeEntryResolver resolves an entry in a Git tree in a repository. The entry can be any Git
-// object type that is valid in a tree.
+// GitTreeEntryResolver resolves bn entry in b Git tree in b repository. The entry cbn be bny Git
+// object type thbt is vblid in b tree.
 //
 // Prefer using the constructor, NewGitTreeEntryResolver.
 type GitTreeEntryResolver struct {
-	db              database.DB
+	db              dbtbbbse.DB
 	gitserverClient gitserver.Client
 	commit          *GitCommitResolver
 
 	contentOnce      sync.Once
 	fullContentBytes []byte
 	contentErr       error
-	// stat is this tree entry's file info. Its Name method must return the full path relative to
-	// the root, not the basename.
-	stat          fs.FileInfo
-	isRecursive   bool  // whether entries is populated recursively (otherwise just current level of hierarchy)
-	isSingleChild *bool // whether this is the single entry in its parent. Only set by the (&GitTreeEntryResolver) entries.
+	// stbt is this tree entry's file info. Its Nbme method must return the full pbth relbtive to
+	// the root, not the bbsenbme.
+	stbt          fs.FileInfo
+	isRecursive   bool  // whether entries is populbted recursively (otherwise just current level of hierbrchy)
+	isSingleChild *bool // whether this is the single entry in its pbrent. Only set by the (&GitTreeEntryResolver) entries.
 }
 
 type GitTreeEntryResolverOpts struct {
 	Commit *GitCommitResolver
-	Stat   fs.FileInfo
+	Stbt   fs.FileInfo
 }
 
-type GitTreeContentPageArgs struct {
-	StartLine *int32
+type GitTreeContentPbgeArgs struct {
+	StbrtLine *int32
 	EndLine   *int32
 }
 
-func NewGitTreeEntryResolver(db database.DB, gitserverClient gitserver.Client, opts GitTreeEntryResolverOpts) *GitTreeEntryResolver {
+func NewGitTreeEntryResolver(db dbtbbbse.DB, gitserverClient gitserver.Client, opts GitTreeEntryResolverOpts) *GitTreeEntryResolver {
 	return &GitTreeEntryResolver{
 		db:              db,
 		commit:          opts.Commit,
-		stat:            opts.Stat,
+		stbt:            opts.Stbt,
 		gitserverClient: gitserverClient,
 	}
 }
 
-func (r *GitTreeEntryResolver) Path() string { return r.stat.Name() }
-func (r *GitTreeEntryResolver) Name() string { return path.Base(r.stat.Name()) }
+func (r *GitTreeEntryResolver) Pbth() string { return r.stbt.Nbme() }
+func (r *GitTreeEntryResolver) Nbme() string { return pbth.Bbse(r.stbt.Nbme()) }
 
 func (r *GitTreeEntryResolver) ToGitTree() (*GitTreeEntryResolver, bool) { return r, r.IsDirectory() }
 func (r *GitTreeEntryResolver) ToGitBlob() (*GitTreeEntryResolver, bool) { return r, !r.IsDirectory() }
 
-func (r *GitTreeEntryResolver) ToVirtualFile() (*VirtualFileResolver, bool) { return nil, false }
-func (r *GitTreeEntryResolver) ToBatchSpecWorkspaceFile() (BatchWorkspaceFileResolver, bool) {
-	return nil, false
+func (r *GitTreeEntryResolver) ToVirtublFile() (*VirtublFileResolver, bool) { return nil, fblse }
+func (r *GitTreeEntryResolver) ToBbtchSpecWorkspbceFile() (BbtchWorkspbceFileResolver, bool) {
+	return nil, fblse
 }
 
-func (r *GitTreeEntryResolver) TotalLines(ctx context.Context) (int32, error) {
-	// If it is a binary, return 0
-	binary, err := r.Binary(ctx)
-	if err != nil || binary {
+func (r *GitTreeEntryResolver) TotblLines(ctx context.Context) (int32, error) {
+	// If it is b binbry, return 0
+	binbry, err := r.Binbry(ctx)
+	if err != nil || binbry {
 		return 0, err
 	}
 
-	// We only care about the full content length here, so we just need content to be set.
-	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
+	// We only cbre bbout the full content length here, so we just need content to be set.
+	content, err := r.Content(ctx, &GitTreeContentPbgeArgs{})
 	if err != nil {
 		return 0, err
 	}
@@ -96,92 +96,92 @@ func (r *GitTreeEntryResolver) TotalLines(ctx context.Context) (int32, error) {
 }
 
 func (r *GitTreeEntryResolver) ByteSize(ctx context.Context) (int32, error) {
-	// We only care about the full content length here, so we just need content to be set.
-	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+	// We only cbre bbout the full content length here, so we just need content to be set.
+	_, err := r.Content(ctx, &GitTreeContentPbgeArgs{})
 	if err != nil {
 		return 0, err
 	}
 	return int32(len(r.fullContentBytes)), nil
 }
 
-func (r *GitTreeEntryResolver) Content(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
+func (r *GitTreeEntryResolver) Content(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error) {
 	r.contentOnce.Do(func() {
-		r.fullContentBytes, r.contentErr = r.gitserverClient.ReadFile(
+		r.fullContentBytes, r.contentErr = r.gitserverClient.RebdFile(
 			ctx,
-			authz.DefaultSubRepoPermsChecker,
-			r.commit.repoResolver.RepoName(),
-			api.CommitID(r.commit.OID()),
-			r.Path(),
+			buthz.DefbultSubRepoPermsChecker,
+			r.commit.repoResolver.RepoNbme(),
+			bpi.CommitID(r.commit.OID()),
+			r.Pbth(),
 		)
 	})
 
-	return pageContent(strings.Split(string(r.fullContentBytes), "\n"), args.StartLine, args.EndLine), r.contentErr
+	return pbgeContent(strings.Split(string(r.fullContentBytes), "\n"), brgs.StbrtLine, brgs.EndLine), r.contentErr
 }
 
-func pageContent(content []string, startLine, endLine *int32) string {
-	totalContentLength := len(content)
-	startCursor := 0
-	endCursor := totalContentLength
+func pbgeContent(content []string, stbrtLine, endLine *int32) string {
+	totblContentLength := len(content)
+	stbrtCursor := 0
+	endCursor := totblContentLength
 
-	// Any nil or illegal value for startLine or endLine gets set to either the start or
+	// Any nil or illegbl vblue for stbrtLine or endLine gets set to either the stbrt or
 	// end of the file respectively.
 
-	// If startLine is set and is a legit value, set the cursor to point to it.
-	if startLine != nil && *startLine > 0 {
-		// The left index is inclusive, so we have to shift it back by 1
-		startCursor = int(*startLine) - 1
+	// If stbrtLine is set bnd is b legit vblue, set the cursor to point to it.
+	if stbrtLine != nil && *stbrtLine > 0 {
+		// The left index is inclusive, so we hbve to shift it bbck by 1
+		stbrtCursor = int(*stbrtLine) - 1
 	}
-	if startCursor >= totalContentLength {
-		startCursor = totalContentLength
+	if stbrtCursor >= totblContentLength {
+		stbrtCursor = totblContentLength
 	}
 
-	// If endLine is set and is a legit value, set the cursor to point to it.
+	// If endLine is set bnd is b legit vblue, set the cursor to point to it.
 	if endLine != nil && *endLine >= 0 {
 		endCursor = int(*endLine)
 	}
-	if endCursor > totalContentLength {
-		endCursor = totalContentLength
+	if endCursor > totblContentLength {
+		endCursor = totblContentLength
 	}
 
-	// Final failsafe in case someone is really messing around with this API.
-	if endCursor < startCursor {
-		return strings.Join(content[0:totalContentLength], "\n")
+	// Finbl fbilsbfe in cbse someone is reblly messing bround with this API.
+	if endCursor < stbrtCursor {
+		return strings.Join(content[0:totblContentLength], "\n")
 	}
 
-	return strings.Join(content[startCursor:endCursor], "\n")
+	return strings.Join(content[stbrtCursor:endCursor], "\n")
 }
 
-func (r *GitTreeEntryResolver) RichHTML(ctx context.Context, args *GitTreeContentPageArgs) (string, error) {
-	content, err := r.Content(ctx, args)
+func (r *GitTreeEntryResolver) RichHTML(ctx context.Context, brgs *GitTreeContentPbgeArgs) (string, error) {
+	content, err := r.Content(ctx, brgs)
 	if err != nil {
 		return "", err
 	}
-	return richHTML(content, path.Ext(r.Path()))
+	return richHTML(content, pbth.Ext(r.Pbth()))
 }
 
-func (r *GitTreeEntryResolver) Binary(ctx context.Context) (bool, error) {
-	// We only care about the full content length here, so we just need r.fullContentLines to be set.
-	_, err := r.Content(ctx, &GitTreeContentPageArgs{})
+func (r *GitTreeEntryResolver) Binbry(ctx context.Context) (bool, error) {
+	// We only cbre bbout the full content length here, so we just need r.fullContentLines to be set.
+	_, err := r.Content(ctx, &GitTreeContentPbgeArgs{})
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
-	return binary.IsBinary(r.fullContentBytes), nil
+	return binbry.IsBinbry(r.fullContentBytes), nil
 }
 
-func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArgs) (*HighlightedFileResolver, error) {
-	// Currently, pagination + highlighting is not supported, throw out an error if it is attempted.
-	if (args.StartLine != nil || args.EndLine != nil) && args.Format != "HTML_PLAINTEXT" {
-		return nil, errors.New("pagination is not supported with formats other than HTML_PLAINTEXT, don't " +
-			"set startLine or endLine with other formats")
+func (r *GitTreeEntryResolver) Highlight(ctx context.Context, brgs *HighlightArgs) (*HighlightedFileResolver, error) {
+	// Currently, pbginbtion + highlighting is not supported, throw out bn error if it is bttempted.
+	if (brgs.StbrtLine != nil || brgs.EndLine != nil) && brgs.Formbt != "HTML_PLAINTEXT" {
+		return nil, errors.New("pbginbtion is not supported with formbts other thbn HTML_PLAINTEXT, don't " +
+			"set stbrtLine or endLine with other formbts")
 	}
 
-	content, err := r.Content(ctx, &GitTreeContentPageArgs{StartLine: args.StartLine, EndLine: args.EndLine})
+	content, err := r.Content(ctx, &GitTreeContentPbgeArgs{StbrtLine: brgs.StbrtLine, EndLine: brgs.EndLine})
 	if err != nil {
 		return nil, err
 	}
 
-	return highlightContent(ctx, args, content, r.Path(), highlight.Metadata{
-		RepoName: r.commit.repoResolver.Name(),
+	return highlightContent(ctx, brgs, content, r.Pbth(), highlight.Metbdbtb{
+		RepoNbme: r.commit.repoResolver.Nbme(),
 		Revision: string(r.commit.oid),
 	})
 }
@@ -197,31 +197,31 @@ func (r *GitTreeEntryResolver) URL(ctx context.Context) (string, error) {
 }
 
 func (r *GitTreeEntryResolver) url(ctx context.Context) *url.URL {
-	tr, ctx := trace.New(ctx, "GitTreeEntryResolver.url")
+	tr, ctx := trbce.New(ctx, "GitTreeEntryResolver.url")
 	defer tr.End()
 
 	if submodule := r.Submodule(); submodule != nil {
-		tr.SetAttributes(attribute.Bool("submodule", true))
+		tr.SetAttributes(bttribute.Bool("submodule", true))
 		submoduleURL := submodule.URL()
-		if strings.HasPrefix(submoduleURL, "../") {
-			submoduleURL = path.Join(r.Repository().Name(), submoduleURL)
+		if strings.HbsPrefix(submoduleURL, "../") {
+			submoduleURL = pbth.Join(r.Repository().Nbme(), submoduleURL)
 		}
-		repoName, err := cloneURLToRepoName(ctx, r.db, submoduleURL)
+		repoNbme, err := cloneURLToRepoNbme(ctx, r.db, submoduleURL)
 		if err != nil {
-			log15.Error("Failed to resolve submodule repository name from clone URL", "cloneURL", submodule.URL(), "err", err)
+			log15.Error("Fbiled to resolve submodule repository nbme from clone URL", "cloneURL", submodule.URL(), "err", err)
 			return &url.URL{}
 		}
-		return &url.URL{Path: "/" + repoName + "@" + submodule.Commit()}
+		return &url.URL{Pbth: "/" + repoNbme + "@" + submodule.Commit()}
 	}
-	return r.urlPath(r.commit.repoRevURL())
+	return r.urlPbth(r.commit.repoRevURL())
 }
 
-func (r *GitTreeEntryResolver) CanonicalURL() string {
-	canonicalUrl := r.commit.canonicalRepoRevURL()
-	return r.urlPath(canonicalUrl).String()
+func (r *GitTreeEntryResolver) CbnonicblURL() string {
+	cbnonicblUrl := r.commit.cbnonicblRepoRevURL()
+	return r.urlPbth(cbnonicblUrl).String()
 }
 
-func (r *GitTreeEntryResolver) ChangelistURL(ctx context.Context) (*string, error) {
+func (r *GitTreeEntryResolver) ChbngelistURL(ctx context.Context) (*string, error) {
 	repo := r.Repository()
 	source, err := repo.SourceType(ctx)
 	if err != nil {
@@ -232,29 +232,29 @@ func (r *GitTreeEntryResolver) ChangelistURL(ctx context.Context) (*string, erro
 		return nil, nil
 	}
 
-	cl, err := r.commit.PerforceChangelist(ctx)
+	cl, err := r.commit.PerforceChbngelist(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// This is an oddity. We have checked above that this repository is a perforce depot. Then this
-	// commit of this blob must also have a changelist ID associated with it.
+	// This is bn oddity. We hbve checked bbove thbt this repository is b perforce depot. Then this
+	// commit of this blob must blso hbve b chbngelist ID bssocibted with it.
 	//
-	// If we ever hit this check, this is a bug and the error should be propagated out.
+	// If we ever hit this check, this is b bug bnd the error should be propbgbted out.
 	if cl == nil {
 		return nil, errors.Newf(
-			"failed to retrieve changelist from commit %q in repo %q",
+			"fbiled to retrieve chbngelist from commit %q in repo %q",
 			string(r.commit.OID()),
-			string(repo.RepoName()),
+			string(repo.RepoNbme()),
 		)
 	}
 
-	u := r.urlPath(cl.cidURL()).String()
+	u := r.urlPbth(cl.cidURL()).String()
 	return &u, nil
 }
 
-func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
-	// Dereference to copy to avoid mutating the input
+func (r *GitTreeEntryResolver) urlPbth(prefix *url.URL) *url.URL {
+	// Dereference to copy to bvoid mutbting the input
 	u := *prefix
 	if r.IsRoot() {
 		return &u
@@ -265,70 +265,70 @@ func (r *GitTreeEntryResolver) urlPath(prefix *url.URL) *url.URL {
 		typ = "tree"
 	}
 
-	u.Path = path.Join(u.Path, "-", typ, r.Path())
+	u.Pbth = pbth.Join(u.Pbth, "-", typ, r.Pbth())
 	return &u
 }
 
-func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stat.Mode().IsDir() }
+func (r *GitTreeEntryResolver) IsDirectory() bool { return r.stbt.Mode().IsDir() }
 
-func (r *GitTreeEntryResolver) ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error) {
+func (r *GitTreeEntryResolver) ExternblURLs(ctx context.Context) ([]*externbllink.Resolver, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return externallink.FileOrDir(ctx, r.db, r.gitserverClient, repo, r.commit.inputRevOrImmutableRev(), r.Path(), r.stat.Mode().IsDir())
+	return externbllink.FileOrDir(ctx, r.db, r.gitserverClient, repo, r.commit.inputRevOrImmutbbleRev(), r.Pbth(), r.stbt.Mode().IsDir())
 }
 
-func (r *GitTreeEntryResolver) RawZipArchiveURL() string {
-	return globals.ExternalURL().ResolveReference(&url.URL{
-		Path:     path.Join(r.Repository().URL(), "-/raw/", r.Path()),
-		RawQuery: "format=zip",
+func (r *GitTreeEntryResolver) RbwZipArchiveURL() string {
+	return globbls.ExternblURL().ResolveReference(&url.URL{
+		Pbth:     pbth.Join(r.Repository().URL(), "-/rbw/", r.Pbth()),
+		RbwQuery: "formbt=zip",
 	}).String()
 }
 
 func (r *GitTreeEntryResolver) Submodule() *gitSubmoduleResolver {
-	if submoduleInfo, ok := r.stat.Sys().(gitdomain.Submodule); ok {
+	if submoduleInfo, ok := r.stbt.Sys().(gitdombin.Submodule); ok {
 		return &gitSubmoduleResolver{submodule: submoduleInfo}
 	}
 	return nil
 }
 
-func cloneURLToRepoName(ctx context.Context, db database.DB, cloneURL string) (_ string, err error) {
-	tr, ctx := trace.New(ctx, "cloneURLToRepoName")
+func cloneURLToRepoNbme(ctx context.Context, db dbtbbbse.DB, cloneURL string) (_ string, err error) {
+	tr, ctx := trbce.New(ctx, "cloneURLToRepoNbme")
 	defer tr.EndWithErr(&err)
 
-	repoName, err := cloneurls.RepoSourceCloneURLToRepoName(ctx, db, cloneURL)
+	repoNbme, err := cloneurls.RepoSourceCloneURLToRepoNbme(ctx, db, cloneURL)
 	if err != nil {
 		return "", err
 	}
-	if repoName == "" {
-		return "", errors.Errorf("no matching code host found for %s", cloneURL)
+	if repoNbme == "" {
+		return "", errors.Errorf("no mbtching code host found for %s", cloneURL)
 	}
-	return string(repoName), nil
+	return string(repoNbme), nil
 }
 
-func CreateFileInfo(path string, isDir bool) fs.FileInfo {
-	return fileInfo{path: path, isDir: isDir}
+func CrebteFileInfo(pbth string, isDir bool) fs.FileInfo {
+	return fileInfo{pbth: pbth, isDir: isDir}
 }
 
-func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, args *gitTreeEntryConnectionArgs) (bool, error) {
+func (r *GitTreeEntryResolver) IsSingleChild(ctx context.Context, brgs *gitTreeEntryConnectionArgs) (bool, error) {
 	if !r.IsDirectory() {
-		return false, nil
+		return fblse, nil
 	}
 	if r.isSingleChild != nil {
 		return *r.isSingleChild, nil
 	}
-	entries, err := r.gitserverClient.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()), path.Dir(r.Path()), false)
+	entries, err := r.gitserverClient.RebdDir(ctx, buthz.DefbultSubRepoPermsChecker, r.commit.repoResolver.RepoNbme(), bpi.CommitID(r.commit.OID()), pbth.Dir(r.Pbth()), fblse)
 	if err != nil {
-		return false, err
+		return fblse, err
 	}
 	return len(entries) == 1, nil
 }
 
-func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName *string }) (resolverstubs.GitBlobLSIFDataResolver, error) {
-	var toolName string
-	if args.ToolName != nil {
-		toolName = *args.ToolName
+func (r *GitTreeEntryResolver) LSIF(ctx context.Context, brgs *struct{ ToolNbme *string }) (resolverstubs.GitBlobLSIFDbtbResolver, error) {
+	vbr toolNbme string
+	if brgs.ToolNbme != nil {
+		toolNbme = *brgs.ToolNbme
 	}
 
 	repo, err := r.commit.repoResolver.repo(ctx)
@@ -336,41 +336,41 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
-	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &resolverstubs.GitBlobLSIFDataArgs{
+	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFDbtb(ctx, &resolverstubs.GitBlobLSIFDbtbArgs{
 		Repo:      repo,
-		Commit:    api.CommitID(r.Commit().OID()),
-		Path:      r.Path(),
-		ExactPath: !r.stat.IsDir(),
-		ToolName:  toolName,
+		Commit:    bpi.CommitID(r.Commit().OID()),
+		Pbth:      r.Pbth(),
+		ExbctPbth: !r.stbt.IsDir(),
+		ToolNbme:  toolNbme,
 	})
 }
 
-func (r *GitTreeEntryResolver) LocalCodeIntel(ctx context.Context) (*JSONValue, error) {
+func (r *GitTreeEntryResolver) LocblCodeIntel(ctx context.Context) (*JSONVblue, error) {
 	repo, err := r.commit.repoResolver.repo(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	payload, err := symbols.DefaultClient.LocalCodeIntel(ctx, types.RepoCommitPath{
-		Repo:   string(repo.Name),
+	pbylobd, err := symbols.DefbultClient.LocblCodeIntel(ctx, types.RepoCommitPbth{
+		Repo:   string(repo.Nbme),
 		Commit: string(r.commit.oid),
-		Path:   r.Path(),
+		Pbth:   r.Pbth(),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	jsonValue, err := json.Marshal(payload)
+	jsonVblue, err := json.Mbrshbl(pbylobd)
 	if err != nil {
 		return nil, err
 	}
 
-	return &JSONValue{Value: string(jsonValue)}, nil
+	return &JSONVblue{Vblue: string(jsonVblue)}, nil
 }
 
-func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoArgs) (*symbolInfoResolver, error) {
-	if args == nil {
-		return nil, errors.New("expected arguments to symbolInfo")
+func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, brgs *symbolInfoArgs) (*symbolInfoResolver, error) {
+	if brgs == nil {
+		return nil, errors.New("expected brguments to symbolInfo")
 	}
 
 	repo, err := r.commit.repoResolver.repo(ctx)
@@ -378,19 +378,19 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 		return nil, err
 	}
 
-	start := types.RepoCommitPathPoint{
-		RepoCommitPath: types.RepoCommitPath{
-			Repo:   string(repo.Name),
+	stbrt := types.RepoCommitPbthPoint{
+		RepoCommitPbth: types.RepoCommitPbth{
+			Repo:   string(repo.Nbme),
 			Commit: string(r.commit.oid),
-			Path:   r.Path(),
+			Pbth:   r.Pbth(),
 		},
 		Point: types.Point{
-			Row:    int(args.Line),
-			Column: int(args.Character),
+			Row:    int(brgs.Line),
+			Column: int(brgs.Chbrbcter),
 		},
 	}
 
-	result, err := symbols.DefaultClient.SymbolInfo(ctx, start)
+	result, err := symbols.DefbultClient.SymbolInfo(ctx, stbrt)
 	if err != nil {
 		return nil, err
 	}
@@ -403,44 +403,44 @@ func (r *GitTreeEntryResolver) SymbolInfo(ctx context.Context, args *symbolInfoA
 }
 
 func (r *GitTreeEntryResolver) LFS(ctx context.Context) (*lfsResolver, error) {
-	// We only care about the full content length here, so we just need content to be set.
-	content, err := r.Content(ctx, &GitTreeContentPageArgs{})
+	// We only cbre bbout the full content length here, so we just need content to be set.
+	content, err := r.Content(ctx, &GitTreeContentPbgeArgs{})
 	if err != nil {
 		return nil, err
 	}
-	return parseLFSPointer(content), nil
+	return pbrseLFSPointer(content), nil
 }
 
-func (r *GitTreeEntryResolver) Ownership(ctx context.Context, args ListOwnershipArgs) (OwnershipConnectionResolver, error) {
+func (r *GitTreeEntryResolver) Ownership(ctx context.Context, brgs ListOwnershipArgs) (OwnershipConnectionResolver, error) {
 	if _, ok := r.ToGitBlob(); ok {
-		return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, args)
+		return EnterpriseResolvers.ownResolver.GitBlobOwnership(ctx, r, brgs)
 	}
 	if _, ok := r.ToGitTree(); ok {
-		return EnterpriseResolvers.ownResolver.GitTreeOwnership(ctx, r, args)
+		return EnterpriseResolvers.ownResolver.GitTreeOwnership(ctx, r, brgs)
 	}
 	return nil, nil
 }
 
-type OwnershipStatsArgs struct {
-	Reasons *[]OwnershipReasonType
+type OwnershipStbtsArgs struct {
+	Rebsons *[]OwnershipRebsonType
 }
 
-func (r *GitTreeEntryResolver) OwnershipStats(ctx context.Context) (OwnershipStatsResolver, error) {
+func (r *GitTreeEntryResolver) OwnershipStbts(ctx context.Context) (OwnershipStbtsResolver, error) {
 	if _, ok := r.ToGitTree(); !ok {
 		return nil, nil
 	}
-	return EnterpriseResolvers.ownResolver.GitTreeOwnershipStats(ctx, r)
+	return EnterpriseResolvers.ownResolver.GitTreeOwnershipStbts(ctx, r)
 }
 
-func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolver, error) {
+func (r *GitTreeEntryResolver) pbrent(ctx context.Context) (*GitTreeEntryResolver, error) {
 	if r.IsRoot() {
 		return nil, nil
 	}
 
-	parentPath := path.Dir(r.Path())
-	return r.commit.path(ctx, parentPath, func(stat fs.FileInfo) error {
-		if !stat.Mode().IsDir() {
-			return errors.Errorf("not a directory: %q", parentPath)
+	pbrentPbth := pbth.Dir(r.Pbth())
+	return r.commit.pbth(ctx, pbrentPbth, func(stbt fs.FileInfo) error {
+		if !stbt.Mode().IsDir() {
+			return errors.Errorf("not b directory: %q", pbrentPbth)
 		}
 		return nil
 	})
@@ -448,69 +448,69 @@ func (r *GitTreeEntryResolver) parent(ctx context.Context) (*GitTreeEntryResolve
 
 type symbolInfoArgs struct {
 	Line      int32
-	Character int32
+	Chbrbcter int32
 }
 
 type symbolInfoResolver struct{ symbolInfo *types.SymbolInfo }
 
-func (r *symbolInfoResolver) Definition(ctx context.Context) (*symbolLocationResolver, error) {
-	return &symbolLocationResolver{location: r.symbolInfo.Definition}, nil
+func (r *symbolInfoResolver) Definition(ctx context.Context) (*symbolLocbtionResolver, error) {
+	return &symbolLocbtionResolver{locbtion: r.symbolInfo.Definition}, nil
 }
 
 func (r *symbolInfoResolver) Hover(ctx context.Context) (*string, error) {
 	return r.symbolInfo.Hover, nil
 }
 
-type symbolLocationResolver struct {
-	location types.RepoCommitPathMaybeRange
+type symbolLocbtionResolver struct {
+	locbtion types.RepoCommitPbthMbybeRbnge
 }
 
-func (r *symbolLocationResolver) Repo() string   { return r.location.Repo }
-func (r *symbolLocationResolver) Commit() string { return r.location.Commit }
-func (r *symbolLocationResolver) Path() string   { return r.location.Path }
-func (r *symbolLocationResolver) Line() int32 {
-	if r.location.Range == nil {
+func (r *symbolLocbtionResolver) Repo() string   { return r.locbtion.Repo }
+func (r *symbolLocbtionResolver) Commit() string { return r.locbtion.Commit }
+func (r *symbolLocbtionResolver) Pbth() string   { return r.locbtion.Pbth }
+func (r *symbolLocbtionResolver) Line() int32 {
+	if r.locbtion.Rbnge == nil {
 		return 0
 	}
-	return int32(r.location.Range.Row)
+	return int32(r.locbtion.Rbnge.Row)
 }
 
-func (r *symbolLocationResolver) Character() int32 {
-	if r.location.Range == nil {
+func (r *symbolLocbtionResolver) Chbrbcter() int32 {
+	if r.locbtion.Rbnge == nil {
 		return 0
 	}
-	return int32(r.location.Range.Column)
+	return int32(r.locbtion.Rbnge.Column)
 }
 
-func (r *symbolLocationResolver) Length() int32 {
-	if r.location.Range == nil {
+func (r *symbolLocbtionResolver) Length() int32 {
+	if r.locbtion.Rbnge == nil {
 		return 0
 	}
-	return int32(r.location.Range.Length)
+	return int32(r.locbtion.Rbnge.Length)
 }
 
-func (r *symbolLocationResolver) Range() (*lineRangeResolver, error) {
-	if r.location.Range == nil {
+func (r *symbolLocbtionResolver) Rbnge() (*lineRbngeResolver, error) {
+	if r.locbtion.Rbnge == nil {
 		return nil, nil
 	}
-	return &lineRangeResolver{rnge: r.location.Range}, nil
+	return &lineRbngeResolver{rnge: r.locbtion.Rbnge}, nil
 }
 
-type lineRangeResolver struct {
-	rnge *types.Range
+type lineRbngeResolver struct {
+	rnge *types.Rbnge
 }
 
-func (r *lineRangeResolver) Line() int32      { return int32(r.rnge.Row) }
-func (r *lineRangeResolver) Character() int32 { return int32(r.rnge.Column) }
-func (r *lineRangeResolver) Length() int32    { return int32(r.rnge.Length) }
+func (r *lineRbngeResolver) Line() int32      { return int32(r.rnge.Row) }
+func (r *lineRbngeResolver) Chbrbcter() int32 { return int32(r.rnge.Column) }
+func (r *lineRbngeResolver) Length() int32    { return int32(r.rnge.Length) }
 
 type fileInfo struct {
-	path  string
+	pbth  string
 	size  int64
 	isDir bool
 }
 
-func (f fileInfo) Name() string { return f.path }
+func (f fileInfo) Nbme() string { return f.pbth }
 func (f fileInfo) Size() int64  { return f.size }
 func (f fileInfo) IsDir() bool  { return f.isDir }
 func (f fileInfo) Mode() os.FileMode {
@@ -520,4 +520,4 @@ func (f fileInfo) Mode() os.FileMode {
 	return 0
 }
 func (f fileInfo) ModTime() time.Time { return time.Now() }
-func (f fileInfo) Sys() any           { return any(nil) }
+func (f fileInfo) Sys() bny           { return bny(nil) }

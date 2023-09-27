@@ -1,4 +1,4 @@
-package util_test
+pbckbge util_test
 
 import (
 	"context"
@@ -9,59 +9,59 @@ import (
 	"os/exec"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/apiclient"
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/bpiclient"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestValidateGitVersion(t *testing.T) {
-	t.Parallel()
+func TestVblidbteGitVersion(t *testing.T) {
+	t.Pbrbllel()
 
 	tests := []struct {
-		name        string
-		exitStatus  int
+		nbme        string
+		exitStbtus  int
 		stdout      string
 		expectedErr error
 	}{
 		{
-			name:       "Version is minimum",
-			exitStatus: 0,
+			nbme:       "Version is minimum",
+			exitStbtus: 0,
 			stdout:     "2.26",
 		},
 		{
-			name:        "Version is below minimum",
-			exitStatus:  0,
+			nbme:        "Version is below minimum",
+			exitStbtus:  0,
 			stdout:      "1.1",
-			expectedErr: errors.New("git version is too old, install at least git 2.26, current version: 1.1"),
+			expectedErr: errors.New("git version is too old, instbll bt lebst git 2.26, current version: 1.1"),
 		},
 		{
-			name:        "Failed to parse version",
-			exitStatus:  0,
+			nbme:        "Fbiled to pbrse version",
+			exitStbtus:  0,
 			stdout:      "",
-			expectedErr: errors.New("failed to semver parse git version: "),
+			expectedErr: errors.New("fbiled to semver pbrse git version: "),
 		},
 		{
-			name:        "Failed to get version",
-			exitStatus:  1,
-			stdout:      "failed to get version",
-			expectedErr: errors.New("getting git version: 'git version': failed to get version: exit status 1"),
+			nbme:        "Fbiled to get version",
+			exitStbtus:  1,
+			stdout:      "fbiled to get version",
+			expectedErr: errors.New("getting git version: 'git version': fbiled to get version: exit stbtus 1"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			runner := new(fakeCmdRunner)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			runner := new(fbkeCmdRunner)
 			runner.On("CombinedOutput", mock.Anything, mock.Anything, mock.Anything).
-				Return(test.exitStatus, fmt.Sprintf(test.stdout))
+				Return(test.exitStbtus, fmt.Sprintf(test.stdout))
 
-			err := util.ValidateGitVersion(context.Background(), runner)
+			err := util.VblidbteGitVersion(context.Bbckground(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -69,204 +69,204 @@ func TestValidateGitVersion(t *testing.T) {
 	}
 }
 
-func TestValidateSrcCLIVersion(t *testing.T) {
-	t.Parallel()
+func TestVblidbteSrcCLIVersion(t *testing.T) {
+	t.Pbrbllel()
 
 	tests := []struct {
-		name           string
-		latestVersion  string
+		nbme           string
+		lbtestVersion  string
 		currentVersion string
 		expectedErr    error
-		isSrcPatchErr  bool
+		isSrcPbtchErr  bool
 	}{
 		{
-			name:           "Matches",
-			latestVersion:  "1.2.3",
+			nbme:           "Mbtches",
+			lbtestVersion:  "1.2.3",
 			currentVersion: "1.2.3",
 		},
 		{
-			name:           "Current patch behind",
-			latestVersion:  "1.2.3",
+			nbme:           "Current pbtch behind",
+			lbtestVersion:  "1.2.3",
 			currentVersion: "1.2.2",
-			expectedErr:    errors.New("consider upgrading actual=1.2.2, latest=1.2.3: installed src-cli is not the latest version"),
-			isSrcPatchErr:  true,
+			expectedErr:    errors.New("consider upgrbding bctubl=1.2.2, lbtest=1.2.3: instblled src-cli is not the lbtest version"),
+			isSrcPbtchErr:  true,
 		},
 		{
-			name:           "Latest patch behind",
-			latestVersion:  "1.2.2",
+			nbme:           "Lbtest pbtch behind",
+			lbtestVersion:  "1.2.2",
 			currentVersion: "1.2.3",
 		},
 		{
-			name:           "Current minor behind",
-			latestVersion:  "1.2.3",
+			nbme:           "Current minor behind",
+			lbtestVersion:  "1.2.3",
 			currentVersion: "1.1.0",
-			expectedErr:    errors.New("installed src-cli is not the recommended version, consider switching actual=1.1.0, recommended=1.2.3"),
-			isSrcPatchErr:  false,
+			expectedErr:    errors.New("instblled src-cli is not the recommended version, consider switching bctubl=1.1.0, recommended=1.2.3"),
+			isSrcPbtchErr:  fblse,
 		},
 		{
-			name:           "Latest minor behind",
-			latestVersion:  "1.1.0",
+			nbme:           "Lbtest minor behind",
+			lbtestVersion:  "1.1.0",
 			currentVersion: "1.2.0",
-			expectedErr:    errors.New("installed src-cli is not the recommended version, consider switching actual=1.2.0, recommended=1.1.0"),
-			isSrcPatchErr:  false,
+			expectedErr:    errors.New("instblled src-cli is not the recommended version, consider switching bctubl=1.2.0, recommended=1.1.0"),
+			isSrcPbtchErr:  fblse,
 		},
 		{
-			name:           "Current major behind",
-			latestVersion:  "2.0.0",
+			nbme:           "Current mbjor behind",
+			lbtestVersion:  "2.0.0",
 			currentVersion: "1.0.0",
-			expectedErr:    errors.New("installed src-cli is not the recommended version, consider switching actual=1.0.0, recommended=2.0.0"),
-			isSrcPatchErr:  false,
+			expectedErr:    errors.New("instblled src-cli is not the recommended version, consider switching bctubl=1.0.0, recommended=2.0.0"),
+			isSrcPbtchErr:  fblse,
 		},
 		{
-			name:           "Latest major behind",
-			latestVersion:  "1.0.0",
+			nbme:           "Lbtest mbjor behind",
+			lbtestVersion:  "1.0.0",
 			currentVersion: "2.0.0",
-			expectedErr:    errors.New("installed src-cli is not the recommended version, consider switching actual=2.0.0, recommended=1.0.0"),
-			isSrcPatchErr:  false,
+			expectedErr:    errors.New("instblled src-cli is not the recommended version, consider switching bctubl=2.0.0, recommended=1.0.0"),
+			isSrcPbtchErr:  fblse,
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			server := httptest.NewServer(http.HbndlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				err := json.NewEncoder(w).Encode(struct {
 					Version string `json:"version"`
-				}{test.latestVersion})
+				}{test.lbtestVersion})
 				require.NoError(t, err)
 			}))
 			defer server.Close()
 
-			client, err := apiclient.NewBaseClient(logtest.Scoped(t), apiclient.BaseClientOptions{
-				EndpointOptions: apiclient.EndpointOptions{
+			client, err := bpiclient.NewBbseClient(logtest.Scoped(t), bpiclient.BbseClientOptions{
+				EndpointOptions: bpiclient.EndpointOptions{
 					URL: server.URL,
 				},
 			})
 			require.NoError(t, err)
 
-			runner := new(fakeCmdRunner)
+			runner := new(fbkeCmdRunner)
 			runner.On("CombinedOutput", mock.Anything, "src", []string{"version", "-client-only"}).
 				Return(0, fmt.Sprintf("Current version: %s", test.currentVersion))
 
-			err = util.ValidateSrcCLIVersion(context.Background(), runner, client, apiclient.EndpointOptions{URL: server.URL})
+			err = util.VblidbteSrcCLIVersion(context.Bbckground(), runner, client, bpiclient.EndpointOptions{URL: server.URL})
 			if test.expectedErr != nil {
-				assert.NotNil(t, err)
-				assert.Equal(t, errors.Is(err, util.ErrSrcPatchBehind), test.isSrcPatchErr)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.NotNil(t, err)
+				bssert.Equbl(t, errors.Is(err, util.ErrSrcPbtchBehind), test.isSrcPbtchErr)
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
-				assert.Nil(t, err)
+				bssert.Nil(t, err)
 			}
 		})
 	}
 }
 
-func TestValidateDockerTools(t *testing.T) {
-	t.Parallel()
+func TestVblidbteDockerTools(t *testing.T) {
+	t.Pbrbllel()
 
 	tests := []struct {
-		name        string
-		mockFunc    func(runner *fakeCmdRunner)
+		nbme        string
+		mockFunc    func(runner *fbkeCmdRunner)
 		expectedErr error
 	}{
 		{
-			name: "Docker is valid",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
+			nbme: "Docker is vblid",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
 					Return("", nil)
-				runner.On("LookPath", "git").
+				runner.On("LookPbth", "git").
 					Return("", nil)
-				runner.On("LookPath", "src").
+				runner.On("LookPbth", "src").
 					Return("", nil)
 			},
 		},
 		{
-			name: "Docker missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
+			nbme: "Docker missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
 					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "git").
+				runner.On("LookPbth", "git").
 					Return("", nil)
-				runner.On("LookPath", "src").
+				runner.On("LookPbth", "src").
 					Return("", nil)
 			},
-			expectedErr: errors.New("docker not found in PATH, is it installed?\nCheck out https://docs.docker.com/get-docker/ on how to install."),
+			expectedErr: errors.New("docker not found in PATH, is it instblled?\nCheck out https://docs.docker.com/get-docker/ on how to instbll."),
 		},
 		{
-			name: "Docker error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
-					Return("", errors.New("failed to find docker"))
+			nbme: "Docker error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
+					Return("", errors.New("fbiled to find docker"))
 			},
-			expectedErr: errors.New("failed to find docker"),
+			expectedErr: errors.New("fbiled to find docker"),
 		},
 		{
-			name: "Git missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
+			nbme: "Git missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
 					Return("", nil)
-				runner.On("LookPath", "git").
+				runner.On("LookPbth", "git").
 					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "src").
+				runner.On("LookPbth", "src").
 					Return("", nil)
 			},
-			expectedErr: errors.New("git not found in PATH, is it installed?\nUse your package manager, or build from source."),
+			expectedErr: errors.New("git not found in PATH, is it instblled?\nUse your pbckbge mbnbger, or build from source."),
 		},
 		{
-			name: "Git error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
+			nbme: "Git error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
 					Return("", nil)
-				runner.On("LookPath", "git").
-					Return("", errors.New("failed to find git"))
+				runner.On("LookPbth", "git").
+					Return("", errors.New("fbiled to find git"))
 			},
-			expectedErr: errors.New("failed to find git"),
+			expectedErr: errors.New("fbiled to find git"),
 		},
 		{
-			name: "Src missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
+			nbme: "Src missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
 					Return("", nil)
-				runner.On("LookPath", "git").
+				runner.On("LookPbth", "git").
 					Return("", nil)
-				runner.On("LookPath", "src").
-					Return("", exec.ErrNotFound)
-			},
-			expectedErr: errors.New("src not found in PATH, is it installed?\nRun executor install src-cli, or refer to https://github.com/sourcegraph/src-cli to install src-cli yourself."),
-		},
-		{
-			name: "Src error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
-					Return("", nil)
-				runner.On("LookPath", "git").
-					Return("", nil)
-				runner.On("LookPath", "src").
-					Return("", errors.New("failed to find src"))
-			},
-			expectedErr: errors.New("failed to find src"),
-		},
-		{
-			name: "Missing all",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "docker").
-					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "git").
-					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "src").
+				runner.On("LookPbth", "src").
 					Return("", exec.ErrNotFound)
 			},
-			expectedErr: errors.New("3 errors occurred:\n\t* docker not found in PATH, is it installed?\nCheck out https://docs.docker.com/get-docker/ on how to install.\n\t* git not found in PATH, is it installed?\nUse your package manager, or build from source.\n\t* src not found in PATH, is it installed?\nRun executor install src-cli, or refer to https://github.com/sourcegraph/src-cli to install src-cli yourself."),
+			expectedErr: errors.New("src not found in PATH, is it instblled?\nRun executor instbll src-cli, or refer to https://github.com/sourcegrbph/src-cli to instbll src-cli yourself."),
+		},
+		{
+			nbme: "Src error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
+					Return("", nil)
+				runner.On("LookPbth", "git").
+					Return("", nil)
+				runner.On("LookPbth", "src").
+					Return("", errors.New("fbiled to find src"))
+			},
+			expectedErr: errors.New("fbiled to find src"),
+		},
+		{
+			nbme: "Missing bll",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "docker").
+					Return("", exec.ErrNotFound)
+				runner.On("LookPbth", "git").
+					Return("", exec.ErrNotFound)
+				runner.On("LookPbth", "src").
+					Return("", exec.ErrNotFound)
+			},
+			expectedErr: errors.New("3 errors occurred:\n\t* docker not found in PATH, is it instblled?\nCheck out https://docs.docker.com/get-docker/ on how to instbll.\n\t* git not found in PATH, is it instblled?\nUse your pbckbge mbnbger, or build from source.\n\t* src not found in PATH, is it instblled?\nRun executor instbll src-cli, or refer to https://github.com/sourcegrbph/src-cli to instbll src-cli yourself."),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			runner := new(fakeCmdRunner)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			runner := new(fbkeCmdRunner)
 			if test.mockFunc != nil {
 				test.mockFunc(runner)
 			}
 
-			err := util.ValidateDockerTools(runner)
+			err := util.VblidbteDockerTools(runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -274,153 +274,153 @@ func TestValidateDockerTools(t *testing.T) {
 	}
 }
 
-func TestValidateFirecrackerTools(t *testing.T) {
-	t.Parallel()
+func TestVblidbteFirecrbckerTools(t *testing.T) {
+	t.Pbrbllel()
 
 	tests := []struct {
-		name        string
-		mockFunc    func(runner *fakeCmdRunner)
+		nbme        string
+		mockFunc    func(runner *fbkeCmdRunner)
 		expectedErr error
 	}{
 		{
-			name: "Firecracker is valid",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Firecrbcker is vblid",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", nil)
-				runner.On("LookPath", "losetup").
+				runner.On("LookPbth", "losetup").
 					Return("", nil)
-				runner.On("LookPath", "mkfs.ext4").
+				runner.On("LookPbth", "mkfs.ext4").
 					Return("", nil)
-				runner.On("LookPath", "strings").
+				runner.On("LookPbth", "strings").
 					Return("", nil)
 			},
 		},
 		{
-			name: "Dmsetup missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Dmsetup missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "losetup").
+				runner.On("LookPbth", "losetup").
 					Return("", nil)
-				runner.On("LookPath", "mkfs.ext4").
+				runner.On("LookPbth", "mkfs.ext4").
 					Return("", nil)
-				runner.On("LookPath", "strings").
+				runner.On("LookPbth", "strings").
 					Return("", nil)
 			},
-			expectedErr: errors.New("dmsetup not found in PATH, is it installed?"),
+			expectedErr: errors.New("dmsetup not found in PATH, is it instblled?"),
 		},
 		{
-			name: "Dmsetup error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
-					Return("", errors.New("failed to find"))
+			nbme: "Dmsetup error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
+					Return("", errors.New("fbiled to find"))
 			},
-			expectedErr: errors.New("failed to find"),
+			expectedErr: errors.New("fbiled to find"),
 		},
 		{
-			name: "Losetup missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Losetup missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", nil)
-				runner.On("LookPath", "losetup").
+				runner.On("LookPbth", "losetup").
 					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "mkfs.ext4").
+				runner.On("LookPbth", "mkfs.ext4").
 					Return("", nil)
-				runner.On("LookPath", "strings").
+				runner.On("LookPbth", "strings").
 					Return("", nil)
 			},
-			expectedErr: errors.New("losetup not found in PATH, is it installed?"),
+			expectedErr: errors.New("losetup not found in PATH, is it instblled?"),
 		},
 		{
-			name: "Losetup error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Losetup error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", nil)
-				runner.On("LookPath", "losetup").
-					Return("", errors.New("failed to find"))
+				runner.On("LookPbth", "losetup").
+					Return("", errors.New("fbiled to find"))
 			},
-			expectedErr: errors.New("failed to find"),
+			expectedErr: errors.New("fbiled to find"),
 		},
 		{
-			name: "Mkfs missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Mkfs missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", nil)
-				runner.On("LookPath", "losetup").
+				runner.On("LookPbth", "losetup").
 					Return("", nil)
-				runner.On("LookPath", "mkfs.ext4").
+				runner.On("LookPbth", "mkfs.ext4").
 					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "strings").
+				runner.On("LookPbth", "strings").
 					Return("", nil)
 			},
-			expectedErr: errors.New("mkfs.ext4 not found in PATH, is it installed?"),
+			expectedErr: errors.New("mkfs.ext4 not found in PATH, is it instblled?"),
 		},
 		{
-			name: "Mkfs error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Mkfs error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", nil)
-				runner.On("LookPath", "losetup").
+				runner.On("LookPbth", "losetup").
 					Return("", nil)
-				runner.On("LookPath", "mkfs.ext4").
-					Return("", errors.New("failed to find"))
+				runner.On("LookPbth", "mkfs.ext4").
+					Return("", errors.New("fbiled to find"))
 			},
-			expectedErr: errors.New("failed to find"),
+			expectedErr: errors.New("fbiled to find"),
 		},
 		{
-			name: "Strings missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
+			nbme: "Strings missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
 					Return("", nil)
-				runner.On("LookPath", "losetup").
+				runner.On("LookPbth", "losetup").
 					Return("", nil)
-				runner.On("LookPath", "mkfs.ext4").
+				runner.On("LookPbth", "mkfs.ext4").
 					Return("", nil)
-				runner.On("LookPath", "strings").
-					Return("", exec.ErrNotFound)
-			},
-			expectedErr: errors.New("strings not found in PATH, is it installed?"),
-		},
-		{
-			name: "Strings error",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
-					Return("", nil)
-				runner.On("LookPath", "losetup").
-					Return("", nil)
-				runner.On("LookPath", "mkfs.ext4").
-					Return("", nil)
-				runner.On("LookPath", "strings").
-					Return("", errors.New("failed to find"))
-			},
-			expectedErr: errors.New("failed to find"),
-		},
-		{
-			name: "All missing",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "dmsetup").
-					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "losetup").
-					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "mkfs.ext4").
-					Return("", exec.ErrNotFound)
-				runner.On("LookPath", "strings").
+				runner.On("LookPbth", "strings").
 					Return("", exec.ErrNotFound)
 			},
-			expectedErr: errors.New("4 errors occurred:\n\t* dmsetup not found in PATH, is it installed?\n\t* losetup not found in PATH, is it installed?\n\t* mkfs.ext4 not found in PATH, is it installed?\n\t* strings not found in PATH, is it installed?"),
+			expectedErr: errors.New("strings not found in PATH, is it instblled?"),
+		},
+		{
+			nbme: "Strings error",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
+					Return("", nil)
+				runner.On("LookPbth", "losetup").
+					Return("", nil)
+				runner.On("LookPbth", "mkfs.ext4").
+					Return("", nil)
+				runner.On("LookPbth", "strings").
+					Return("", errors.New("fbiled to find"))
+			},
+			expectedErr: errors.New("fbiled to find"),
+		},
+		{
+			nbme: "All missing",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "dmsetup").
+					Return("", exec.ErrNotFound)
+				runner.On("LookPbth", "losetup").
+					Return("", exec.ErrNotFound)
+				runner.On("LookPbth", "mkfs.ext4").
+					Return("", exec.ErrNotFound)
+				runner.On("LookPbth", "strings").
+					Return("", exec.ErrNotFound)
+			},
+			expectedErr: errors.New("4 errors occurred:\n\t* dmsetup not found in PATH, is it instblled?\n\t* losetup not found in PATH, is it instblled?\n\t* mkfs.ext4 not found in PATH, is it instblled?\n\t* strings not found in PATH, is it instblled?"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			runner := new(fakeCmdRunner)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			runner := new(fbkeCmdRunner)
 			if test.mockFunc != nil {
 				test.mockFunc(runner)
 			}
 
-			err := util.ValidateFirecrackerTools(runner)
+			err := util.VblidbteFirecrbckerTools(runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -428,63 +428,63 @@ func TestValidateFirecrackerTools(t *testing.T) {
 	}
 }
 
-func TestValidateIgniteInstalled(t *testing.T) {
-	t.Parallel()
+func TestVblidbteIgniteInstblled(t *testing.T) {
+	t.Pbrbllel()
 
 	tests := []struct {
-		name        string
-		mockFunc    func(runner *fakeCmdRunner)
+		nbme        string
+		mockFunc    func(runner *fbkeCmdRunner)
 		expectedErr error
 	}{
 		{
-			name: "Ignite valid",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "ignite").
+			nbme: "Ignite vblid",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "ignite").
 					Return("", nil)
 				runner.On("CombinedOutput", mock.Anything, mock.Anything, mock.Anything).
 					Return(0, "0.10.5")
 			},
 		},
 		{
-			name: "Unsupported ignite version",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "ignite").
+			nbme: "Unsupported ignite version",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "ignite").
 					Return("", nil)
 				runner.On("CombinedOutput", mock.Anything, mock.Anything, mock.Anything).
 					Return(0, "1.2.3")
 			},
-			expectedErr: errors.New("using unsupported ignite version, if things don't work alright, consider switching to the supported version. have=1.2.3, want=0.10.5"),
+			expectedErr: errors.New("using unsupported ignite version, if things don't work blright, consider switching to the supported version. hbve=1.2.3, wbnt=0.10.5"),
 		},
 		{
-			name: "Missing ignite",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "ignite").
+			nbme: "Missing ignite",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "ignite").
 					Return("", exec.ErrNotFound)
 			},
-			expectedErr: errors.New("Ignite not found in PATH. Is it installed correctly?\n\nTry running \"executor install ignite\", or:\n  $ curl -sfLo ignite https://github.com/sourcegraph/ignite/releases/download/v0.10.5/ignite-amd64\n  $ chmod +x ignite\n  $ mv ignite /usr/local/bin"),
+			expectedErr: errors.New("Ignite not found in PATH. Is it instblled correctly?\n\nTry running \"executor instbll ignite\", or:\n  $ curl -sfLo ignite https://github.com/sourcegrbph/ignite/relebses/downlobd/v0.10.5/ignite-bmd64\n  $ chmod +x ignite\n  $ mv ignite /usr/locbl/bin"),
 		},
 		{
-			name: "Failed to parse ignite version",
-			mockFunc: func(runner *fakeCmdRunner) {
-				runner.On("LookPath", "ignite").
+			nbme: "Fbiled to pbrse ignite version",
+			mockFunc: func(runner *fbkeCmdRunner) {
+				runner.On("LookPbth", "ignite").
 					Return("", nil)
 				runner.On("CombinedOutput", mock.Anything, mock.Anything, mock.Anything).
 					Return(0, "")
 			},
-			expectedErr: errors.New("failed to parse ignite version: Invalid Semantic Version"),
+			expectedErr: errors.New("fbiled to pbrse ignite version: Invblid Sembntic Version"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			runner := new(fakeCmdRunner)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			runner := new(fbkeCmdRunner)
 			if test.mockFunc != nil {
 				test.mockFunc(runner)
 			}
 
-			err := util.ValidateIgniteInstalled(context.Background(), runner)
+			err := util.VblidbteIgniteInstblled(context.Bbckground(), runner)
 			if test.expectedErr != nil {
 				require.Error(t, err)
-				assert.EqualError(t, err, test.expectedErr.Error())
+				bssert.EqublError(t, err, test.expectedErr.Error())
 			} else {
 				require.NoError(t, err)
 			}
@@ -492,14 +492,14 @@ func TestValidateIgniteInstalled(t *testing.T) {
 	}
 }
 
-// TODO: visit this later. It uses os.Stat on a constant path. Maybe mock os.Stat or use a temp dir??
-//func TestValidateCNIInstalled(t *testing.T) {
+// TODO: visit this lbter. It uses os.Stbt on b constbnt pbth. Mbybe mock os.Stbt or use b temp dir??
+//func TestVblidbteCNIInstblled(t *testing.T) {
 //	tests := []struct {
-//		name string
+//		nbme string
 //	}{
 //	}
-//	for _, test := range tests {
-//		t.Run(test.name, func(t *testing.T) {
+//	for _, test := rbnge tests {
+//		t.Run(test.nbme, func(t *testing.T) {
 //		})
 //	}
 //}

@@ -1,65 +1,65 @@
-package shared
+pbckbge shbred
 
 import (
 	"net"
-	"path/filepath"
+	"pbth/filepbth"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func LoadConfig() *Config {
-	var config Config
-	config.Load()
+func LobdConfig() *Config {
+	vbr config Config
+	config.Lobd()
 	return &config
 }
 
 type Config struct {
-	env.BaseConfig
+	env.BbseConfig
 
 	ReposDir         string
-	CoursierCacheDir string
+	CoursierCbcheDir string
 
-	// ExternalAddress is the name of this gitserver as it would appear in
+	// ExternblAddress is the nbme of this gitserver bs it would bppebr in
 	// SRC_GIT_SERVERS.
 	//
-	// Note: we can't just rely on the listen address since more than likely
-	// gitserver is behind a k8s service.
-	ExternalAddress string
+	// Note: we cbn't just rely on the listen bddress since more thbn likely
+	// gitserver is behind b k8s service.
+	ExternblAddress string
 
 	ListenAddress string
 
-	SyncRepoStateInterval          time.Duration
-	SyncRepoStateBatchSize         int
-	SyncRepoStateUpdatePerSecond   int
-	BatchLogGlobalConcurrencyLimit int
+	SyncRepoStbteIntervbl          time.Durbtion
+	SyncRepoStbteBbtchSize         int
+	SyncRepoStbteUpdbtePerSecond   int
+	BbtchLogGlobblConcurrencyLimit int
 
-	JanitorReposDesiredPercentFree int
-	JanitorInterval                time.Duration
+	JbnitorReposDesiredPercentFree int
+	JbnitorIntervbl                time.Durbtion
 }
 
-func (c *Config) Load() {
-	c.ReposDir = c.Get("SRC_REPOS_DIR", "/data/repos", "Root dir containing repos.")
+func (c *Config) Lobd() {
+	c.ReposDir = c.Get("SRC_REPOS_DIR", "/dbtb/repos", "Root dir contbining repos.")
 	if c.ReposDir == "" {
 		c.AddError(errors.New("SRC_REPOS_DIR is required"))
 	}
 
-	// if COURSIER_CACHE_DIR is set, try create that dir and use it. If not set, use the SRC_REPOS_DIR value (or default).
-	c.CoursierCacheDir = c.GetOptional("COURSIER_CACHE_DIR", "Directory in which coursier data is cached for JVM package repos.")
-	if c.CoursierCacheDir == "" && c.ReposDir != "" {
-		c.CoursierCacheDir = filepath.Join(c.ReposDir, "coursier")
+	// if COURSIER_CACHE_DIR is set, try crebte thbt dir bnd use it. If not set, use the SRC_REPOS_DIR vblue (or defbult).
+	c.CoursierCbcheDir = c.GetOptionbl("COURSIER_CACHE_DIR", "Directory in which coursier dbtb is cbched for JVM pbckbge repos.")
+	if c.CoursierCbcheDir == "" && c.ReposDir != "" {
+		c.CoursierCbcheDir = filepbth.Join(c.ReposDir, "coursier")
 	}
 
 	// First we check for it being explicitly set. This should only be
-	// happening in environments were we run gitserver on localhost.
-	// Otherwise we assume we can reach gitserver via its hostname / its
-	// hostname is a prefix of the reachable address (see hostnameMatch).
-	c.ExternalAddress = c.Get("GITSERVER_EXTERNAL_ADDR", hostname.Get(), "The name of this gitserver as it would appear in SRC_GIT_SERVERS.")
+	// hbppening in environments were we run gitserver on locblhost.
+	// Otherwise we bssume we cbn rebch gitserver vib its hostnbme / its
+	// hostnbme is b prefix of the rebchbble bddress (see hostnbmeMbtch).
+	c.ExternblAddress = c.Get("GITSERVER_EXTERNAL_ADDR", hostnbme.Get(), "The nbme of this gitserver bs it would bppebr in SRC_GIT_SERVERS.")
 
-	c.ListenAddress = c.GetOptional("GITSERVER_ADDR", "The address under which the gitserver API listens. Can include a port.")
-	// Fall back to a reasonable default.
+	c.ListenAddress = c.GetOptionbl("GITSERVER_ADDR", "The bddress under which the gitserver API listens. Cbn include b port.")
+	// Fbll bbck to b rebsonbble defbult.
 	if c.ListenAddress == "" {
 		port := "3178"
 		host := ""
@@ -69,19 +69,19 @@ func (c *Config) Load() {
 		c.ListenAddress = net.JoinHostPort(host, port)
 	}
 
-	c.SyncRepoStateInterval = c.GetInterval("SRC_REPOS_SYNC_STATE_INTERVAL", "10m", "Interval between state syncs")
-	c.SyncRepoStateBatchSize = c.GetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", "500", "Number of updates to perform per batch")
-	c.SyncRepoStateUpdatePerSecond = c.GetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", "500", "The number of updated rows allowed per second across all gitserver instances")
-	c.BatchLogGlobalConcurrencyLimit = c.GetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", "256", "The maximum number of in-flight Git commands from all /batch-log requests combined")
+	c.SyncRepoStbteIntervbl = c.GetIntervbl("SRC_REPOS_SYNC_STATE_INTERVAL", "10m", "Intervbl between stbte syncs")
+	c.SyncRepoStbteBbtchSize = c.GetInt("SRC_REPOS_SYNC_STATE_BATCH_SIZE", "500", "Number of updbtes to perform per bbtch")
+	c.SyncRepoStbteUpdbtePerSecond = c.GetInt("SRC_REPOS_SYNC_STATE_UPSERT_PER_SEC", "500", "The number of updbted rows bllowed per second bcross bll gitserver instbnces")
+	c.BbtchLogGlobblConcurrencyLimit = c.GetInt("SRC_BATCH_LOG_GLOBAL_CONCURRENCY_LIMIT", "256", "The mbximum number of in-flight Git commbnds from bll /bbtch-log requests combined")
 
-	// Align these variables with the 'disk_space_remaining' alerts in monitoring
-	c.JanitorReposDesiredPercentFree = c.GetInt("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Target percentage of free space on disk.")
-	if c.JanitorReposDesiredPercentFree < 0 {
-		c.AddError(errors.Errorf("negative value given for SRC_REPOS_DESIRED_PERCENT_FREE: %d", c.JanitorReposDesiredPercentFree))
+	// Align these vbribbles with the 'disk_spbce_rembining' blerts in monitoring
+	c.JbnitorReposDesiredPercentFree = c.GetInt("SRC_REPOS_DESIRED_PERCENT_FREE", "10", "Tbrget percentbge of free spbce on disk.")
+	if c.JbnitorReposDesiredPercentFree < 0 {
+		c.AddError(errors.Errorf("negbtive vblue given for SRC_REPOS_DESIRED_PERCENT_FREE: %d", c.JbnitorReposDesiredPercentFree))
 	}
-	if c.JanitorReposDesiredPercentFree > 100 {
-		c.AddError(errors.Errorf("excessively high value given for SRC_REPOS_DESIRED_PERCENT_FREE: %d", c.JanitorReposDesiredPercentFree))
+	if c.JbnitorReposDesiredPercentFree > 100 {
+		c.AddError(errors.Errorf("excessively high vblue given for SRC_REPOS_DESIRED_PERCENT_FREE: %d", c.JbnitorReposDesiredPercentFree))
 	}
 
-	c.JanitorInterval = c.GetInterval("SRC_REPOS_JANITOR_INTERVAL", "1m", "Interval between cleanup runs")
+	c.JbnitorIntervbl = c.GetIntervbl("SRC_REPOS_JANITOR_INTERVAL", "1m", "Intervbl between clebnup runs")
 }

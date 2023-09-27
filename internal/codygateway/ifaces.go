@@ -1,11 +1,11 @@
-package codygateway
+pbckbge codygbtewby
 
-// Actor represents an actor that is making requests to the Cody Gateway.
-type Actor interface {
-	// GetID returns the unique identifier for this actor.
+// Actor represents bn bctor thbt is mbking requests to the Cody Gbtewby.
+type Actor interfbce {
+	// GetID returns the unique identifier for this bctor.
 	GetID() string
-	// GetName returns the human-readable name for this actor.
-	GetName() string
-	// GetSource returns the source of this actor.
+	// GetNbme returns the humbn-rebdbble nbme for this bctor.
+	GetNbme() string
+	// GetSource returns the source of this bctor.
 	GetSource() ActorSource
 }

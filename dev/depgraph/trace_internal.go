@@ -1,70 +1,70 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"strings"
 
 	"github.com/peterbourgon/ff/v3/ffcli"
 
-	depgraph "github.com/sourcegraph/sourcegraph/dev/depgraph/internal/graph"
-	"github.com/sourcegraph/sourcegraph/dev/depgraph/internal/visualization"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	depgrbph "github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/grbph"
+	"github.com/sourcegrbph/sourcegrbph/dev/depgrbph/internbl/visublizbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var traceInternalFlagSet = flag.NewFlagSet("depgraph trace-internal", flag.ExitOnError)
+vbr trbceInternblFlbgSet = flbg.NewFlbgSet("depgrbph trbce-internbl", flbg.ExitOnError)
 
-var traceInternalCommand = &ffcli.Command{
-	Name:       "trace-internal",
-	ShortUsage: "depgraph trace-internal {package}",
-	ShortHelp:  "Outputs a DOT-formatted graph of the given package's internal dependencies",
-	FlagSet:    traceInternalFlagSet,
-	Exec:       traceInternal,
+vbr trbceInternblCommbnd = &ffcli.Commbnd{
+	Nbme:       "trbce-internbl",
+	ShortUsbge: "depgrbph trbce-internbl {pbckbge}",
+	ShortHelp:  "Outputs b DOT-formbtted grbph of the given pbckbge's internbl dependencies",
+	FlbgSet:    trbceInternblFlbgSet,
+	Exec:       trbceInternbl,
 }
 
-func traceInternal(ctx context.Context, args []string) error {
-	if len(args) != 1 {
-		return errors.Errorf("expected exactly one package")
+func trbceInternbl(ctx context.Context, brgs []string) error {
+	if len(brgs) != 1 {
+		return errors.Errorf("expected exbctly one pbckbge")
 	}
-	pkg := args[0]
+	pkg := brgs[0]
 
 	root, err := findRoot()
 	if err != nil {
 		return err
 	}
 
-	graph, err := depgraph.Load(root)
+	grbph, err := depgrbph.Lobd(root)
 	if err != nil {
 		return err
 	}
-	if _, ok := graph.PackageNames[pkg]; !ok {
+	if _, ok := grbph.PbckbgeNbmes[pkg]; !ok {
 		return errors.Newf("pkg %q not found", pkg)
 	}
 
-	packages, dependencyEdges := filterExternalReferences(graph, pkg)
-	fmt.Printf("%s\n", visualization.Dotify(packages, dependencyEdges, nil))
+	pbckbges, dependencyEdges := filterExternblReferences(grbph, pkg)
+	fmt.Printf("%s\n", visublizbtion.Dotify(pbckbges, dependencyEdges, nil))
 	return nil
 }
 
-func filterExternalReferences(graph *depgraph.DependencyGraph, prefix string) ([]string, map[string][]string) {
-	packages := make([]string, 0, len(graph.Packages))
-	for _, pkg := range graph.Packages {
-		if strings.HasPrefix(pkg, prefix) {
-			packages = append(packages, pkg)
+func filterExternblReferences(grbph *depgrbph.DependencyGrbph, prefix string) ([]string, mbp[string][]string) {
+	pbckbges := mbke([]string, 0, len(grbph.Pbckbges))
+	for _, pkg := rbnge grbph.Pbckbges {
+		if strings.HbsPrefix(pkg, prefix) {
+			pbckbges = bppend(pbckbges, pkg)
 		}
 	}
 
-	dependencyEdges := map[string][]string{}
-	for pkg, dependencies := range graph.Dependencies {
-		if strings.HasPrefix(pkg, prefix) {
-			for _, dependency := range dependencies {
-				if strings.HasPrefix(dependency, prefix) {
-					dependencyEdges[pkg] = append(dependencyEdges[pkg], dependency)
+	dependencyEdges := mbp[string][]string{}
+	for pkg, dependencies := rbnge grbph.Dependencies {
+		if strings.HbsPrefix(pkg, prefix) {
+			for _, dependency := rbnge dependencies {
+				if strings.HbsPrefix(dependency, prefix) {
+					dependencyEdges[pkg] = bppend(dependencyEdges[pkg], dependency)
 				}
 			}
 		}
 	}
 
-	return packages, dependencyEdges
+	return pbckbges, dependencyEdges
 }

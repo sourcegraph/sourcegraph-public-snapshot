@@ -1,118 +1,118 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"reflect"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
 )
 
-func TestNamespaces(t *testing.T) {
+func TestNbmespbces(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Create user and organization to test lookups.
-	user, err := db.Users().Create(ctx, NewUser{Username: "alice"})
+	// Crebte user bnd orgbnizbtion to test lookups.
+	user, err := db.Users().Crebte(ctx, NewUser{Usernbme: "blice"})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	org, err := db.Orgs().Create(ctx, "Acme", nil)
+	org, err := db.Orgs().Crebte(ctx, "Acme", nil)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	t.Run("GetByID", func(t *testing.T) {
 		t.Run("no ID", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByID(ctx, 0, 0)
+			ns, err := db.Nbmespbces().GetByID(ctx, 0, 0)
 			if ns != nil {
-				t.Errorf("unexpected non-nil namespace: %v", ns)
+				t.Errorf("unexpected non-nil nbmespbce: %v", ns)
 			}
-			if want := ErrNamespaceNoID; err != want {
-				t.Errorf("unexpected error: have=%v want=%v", err, want)
+			if wbnt := ErrNbmespbceNoID; err != wbnt {
+				t.Errorf("unexpected error: hbve=%v wbnt=%v", err, wbnt)
 			}
 		})
 
 		t.Run("multiple IDs", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByID(ctx, 123, 456)
+			ns, err := db.Nbmespbces().GetByID(ctx, 123, 456)
 			if ns != nil {
-				t.Errorf("unexpected non-nil namespace: %v", ns)
+				t.Errorf("unexpected non-nil nbmespbce: %v", ns)
 			}
-			if want := ErrNamespaceMultipleIDs; err != want {
-				t.Errorf("unexpected error: have=%v want=%v", err, want)
+			if wbnt := ErrNbmespbceMultipleIDs; err != wbnt {
+				t.Errorf("unexpected error: hbve=%v wbnt=%v", err, wbnt)
 			}
 		})
 
 		t.Run("user not found", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByID(ctx, user.ID+1, 0)
+			ns, err := db.Nbmespbces().GetByID(ctx, user.ID+1, 0)
 			if ns != nil {
-				t.Errorf("unexpected non-nil namespace: %v", ns)
+				t.Errorf("unexpected non-nil nbmespbce: %v", ns)
 			}
-			if want := ErrNamespaceNotFound; err != want {
-				t.Errorf("unexpected error: have=%v want=%v", err, want)
+			if wbnt := ErrNbmespbceNotFound; err != wbnt {
+				t.Errorf("unexpected error: hbve=%v wbnt=%v", err, wbnt)
 			}
 		})
 
-		t.Run("organization not found", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByID(ctx, 0, org.ID+1)
+		t.Run("orgbnizbtion not found", func(t *testing.T) {
+			ns, err := db.Nbmespbces().GetByID(ctx, 0, org.ID+1)
 			if ns != nil {
-				t.Errorf("unexpected non-nil namespace: %v", ns)
+				t.Errorf("unexpected non-nil nbmespbce: %v", ns)
 			}
-			if want := ErrNamespaceNotFound; err != want {
-				t.Errorf("unexpected error: have=%v want=%v", err, want)
+			if wbnt := ErrNbmespbceNotFound; err != wbnt {
+				t.Errorf("unexpected error: hbve=%v wbnt=%v", err, wbnt)
 			}
 		})
 
 		t.Run("user", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByID(ctx, 0, user.ID)
+			ns, err := db.Nbmespbces().GetByID(ctx, 0, user.ID)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
-			if want := (&Namespace{Name: "alice", User: user.ID}); !reflect.DeepEqual(ns, want) {
-				t.Errorf("unexpected namespace: have=%v want=%v", ns, want)
+			if wbnt := (&Nbmespbce{Nbme: "blice", User: user.ID}); !reflect.DeepEqubl(ns, wbnt) {
+				t.Errorf("unexpected nbmespbce: hbve=%v wbnt=%v", ns, wbnt)
 			}
 		})
 
-		t.Run("organization", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByID(ctx, org.ID, 0)
+		t.Run("orgbnizbtion", func(t *testing.T) {
+			ns, err := db.Nbmespbces().GetByID(ctx, org.ID, 0)
 			if err != nil {
 				t.Errorf("unexpected non-nil error: %v", err)
 			}
-			if want := (&Namespace{Name: "Acme", Organization: org.ID}); !reflect.DeepEqual(ns, want) {
-				t.Errorf("unexpected namespace: have=%v want=%v", ns, want)
+			if wbnt := (&Nbmespbce{Nbme: "Acme", Orgbnizbtion: org.ID}); !reflect.DeepEqubl(ns, wbnt) {
+				t.Errorf("unexpected nbmespbce: hbve=%v wbnt=%v", ns, wbnt)
 			}
 		})
 	})
 
-	t.Run("GetByName", func(t *testing.T) {
+	t.Run("GetByNbme", func(t *testing.T) {
 		t.Run("user", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByName(ctx, "Alice")
+			ns, err := db.Nbmespbces().GetByNbme(ctx, "Alice")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if want := (&Namespace{Name: "alice", User: user.ID}); !reflect.DeepEqual(ns, want) {
-				t.Errorf("got %+v, want %+v", ns, want)
+			if wbnt := (&Nbmespbce{Nbme: "blice", User: user.ID}); !reflect.DeepEqubl(ns, wbnt) {
+				t.Errorf("got %+v, wbnt %+v", ns, wbnt)
 			}
 		})
-		t.Run("organization", func(t *testing.T) {
-			ns, err := db.Namespaces().GetByName(ctx, "acme")
+		t.Run("orgbnizbtion", func(t *testing.T) {
+			ns, err := db.Nbmespbces().GetByNbme(ctx, "bcme")
 			if err != nil {
-				t.Fatal(err)
+				t.Fbtbl(err)
 			}
-			if want := (&Namespace{Name: "Acme", Organization: org.ID}); !reflect.DeepEqual(ns, want) {
-				t.Errorf("got %+v, want %+v", ns, want)
+			if wbnt := (&Nbmespbce{Nbme: "Acme", Orgbnizbtion: org.ID}); !reflect.DeepEqubl(ns, wbnt) {
+				t.Errorf("got %+v, wbnt %+v", ns, wbnt)
 			}
 		})
 		t.Run("not found", func(t *testing.T) {
-			if _, err := db.Namespaces().GetByName(ctx, "doesntexist"); err != ErrNamespaceNotFound {
-				t.Fatal(err)
+			if _, err := db.Nbmespbces().GetByNbme(ctx, "doesntexist"); err != ErrNbmespbceNotFound {
+				t.Fbtbl(err)
 			}
 		})
 	})

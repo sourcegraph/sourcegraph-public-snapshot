@@ -1,18 +1,18 @@
-package datastructures
+pbckbge dbtbstructures
 
 import "github.com/google/go-cmp/cmp"
 
-var Comparers = []cmp.Option{
-	IDSetComparer,
-	DefaultIDSetMapComparer,
+vbr Compbrers = []cmp.Option{
+	IDSetCompbrer,
+	DefbultIDSetMbpCompbrer,
 }
 
-// IDSetComparer is a github.com/google/go-cmp/cmp comparer that can be
+// IDSetCompbrer is b github.com/google/go-cmp/cmp compbrer thbt cbn be
 // supplied to the cmp.Diff method to determine if two identifier sets
-// contain the same set of identifiers.
-var IDSetComparer = cmp.Comparer(compareIDSets)
+// contbin the sbme set of identifiers.
+vbr IDSetCompbrer = cmp.Compbrer(compbreIDSets)
 
-// DefaultIDSetMapComparer is a github.com/google/go-cmp/cmp comparer that can
-// be supplied to the cmp.Diff method to determine if two identifier sets contain
-// the same set of identifiers.
-var DefaultIDSetMapComparer = cmp.Comparer(compareDefaultIDSetMaps)
+// DefbultIDSetMbpCompbrer is b github.com/google/go-cmp/cmp compbrer thbt cbn
+// be supplied to the cmp.Diff method to determine if two identifier sets contbin
+// the sbme set of identifiers.
+vbr DefbultIDSetMbpCompbrer = cmp.Compbrer(compbreDefbultIDSetMbps)

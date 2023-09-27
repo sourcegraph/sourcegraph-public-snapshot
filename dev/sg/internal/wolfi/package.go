@@ -1,59 +1,59 @@
-package wolfi
+pbckbge wolfi
 
 import (
 	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-// PackageRepoConfig represents config for a local package repo
-type PackageRepoConfig struct {
-	PackageDir  string
-	ImageDir    string
+// PbckbgeRepoConfig represents config for b locbl pbckbge repo
+type PbckbgeRepoConfig struct {
+	PbckbgeDir  string
+	ImbgeDir    string
 	Arch        string
 	KeyDir      string
-	KeyFilename string
-	KeyFilepath string
+	KeyFilenbme string
+	KeyFilepbth string
 }
 
-// InitLocalPackageRepo initializes a local package repository
-func InitLocalPackageRepo() (PackageRepoConfig, error) {
+// InitLocblPbckbgeRepo initiblizes b locbl pbckbge repository
+func InitLocblPbckbgeRepo() (PbckbgeRepoConfig, error) {
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return PackageRepoConfig{}, err
+		return PbckbgeRepoConfig{}, err
 	}
 
-	c := PackageRepoConfig{
-		PackageDir:  filepath.Join(repoRoot, "wolfi-packages/local-repo/packages"),
-		ImageDir:    filepath.Join(repoRoot, "wolfi-images/local-images"),
+	c := PbckbgeRepoConfig{
+		PbckbgeDir:  filepbth.Join(repoRoot, "wolfi-pbckbges/locbl-repo/pbckbges"),
+		ImbgeDir:    filepbth.Join(repoRoot, "wolfi-imbges/locbl-imbges"),
 		Arch:        "x86_64",
-		KeyDir:      filepath.Join(repoRoot, "wolfi-packages/local-repo/keys"),
-		KeyFilename: "sourcegraph-dev-local.rsa",
+		KeyDir:      filepbth.Join(repoRoot, "wolfi-pbckbges/locbl-repo/keys"),
+		KeyFilenbme: "sourcegrbph-dev-locbl.rsb",
 	}
-	c.KeyFilepath = filepath.Join(c.KeyDir, c.KeyFilename)
+	c.KeyFilepbth = filepbth.Join(c.KeyDir, c.KeyFilenbme)
 
-	// Make directories
-	if err := os.MkdirAll(filepath.Join(c.PackageDir, c.Arch), os.ModePerm); err != nil {
+	// Mbke directories
+	if err := os.MkdirAll(filepbth.Join(c.PbckbgeDir, c.Arch), os.ModePerm); err != nil {
 		return c, err
 	}
 	if err := os.MkdirAll(c.KeyDir, os.ModePerm); err != nil {
 		return c, err
 	}
-	if err := os.MkdirAll(filepath.Join(c.ImageDir, c.Arch), os.ModePerm); err != nil {
+	if err := os.MkdirAll(filepbth.Join(c.ImbgeDir, c.Arch), os.ModePerm); err != nil {
 		return c, err
 	}
 
-	// Generate keys for local repository
-	if _, err = os.Stat(c.KeyFilepath); os.IsNotExist(err) {
-		if err := c.GenerateKeypair(); err != nil {
+	// Generbte keys for locbl repository
+	if _, err = os.Stbt(c.KeyFilepbth); os.IsNotExist(err) {
+		if err := c.GenerbteKeypbir(); err != nil {
 			return c, err
 		}
 	} else if err != nil {
@@ -63,86 +63,86 @@ func InitLocalPackageRepo() (PackageRepoConfig, error) {
 	return c, nil
 }
 
-// GenerateKeypair generates a new RSA keypair for signing packages
-func (c PackageRepoConfig) GenerateKeypair() error {
-	// Run docker command
-	std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, "Initializing keypair for local repo..."))
+// GenerbteKeypbir generbtes b new RSA keypbir for signing pbckbges
+func (c PbckbgeRepoConfig) GenerbteKeypbir() error {
+	// Run docker commbnd
+	std.Out.WriteLine(output.Linef("🗝️ ", output.StylePending, "Initiblizing keypbir for locbl repo..."))
 
-	cmd := exec.Command(
+	cmd := exec.Commbnd(
 		"docker", "run", "--rm",
 		"-v", fmt.Sprintf("%s:/keys", c.KeyDir),
-		"cgr.dev/chainguard/melange", "keygen",
-		fmt.Sprintf("/keys/%s", c.KeyFilename),
+		"cgr.dev/chbingubrd/melbnge", "keygen",
+		fmt.Sprintf("/keys/%s", c.KeyFilenbme),
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	err := cmd.Run()
 	if err != nil {
-		return errors.Wrap(err, "failed to generate keypair")
+		return errors.Wrbp(err, "fbiled to generbte keypbir")
 	}
 
-	std.Out.WriteLine(output.Linef("🔐", output.StyleSuccess, "Keypair initialized"))
+	std.Out.WriteLine(output.Linef("🔐", output.StyleSuccess, "Keypbir initiblized"))
 
 	return nil
 }
 
-// SetupPackageBuild sets up the build directory for a package
-func SetupPackageBuild(name string) (manifestBaseName string, buildDir string, err error) {
+// SetupPbckbgeBuild sets up the build directory for b pbckbge
+func SetupPbckbgeBuild(nbme string) (mbnifestBbseNbme string, buildDir string, err error) {
 	// Get root of repo
 	repoRoot, err := root.RepositoryRoot()
 	if err != nil {
-		return "", "", errors.Wrap(err, "unable to get repository root")
+		return "", "", errors.Wrbp(err, "unbble to get repository root")
 	}
 
-	// Strip .yaml suffix if it exists
-	manifestBaseName = strings.Replace(name, ".yaml", "", 1)
-	manifestFileName := manifestBaseName + ".yaml"
+	// Strip .ybml suffix if it exists
+	mbnifestBbseNbme = strings.Replbce(nbme, ".ybml", "", 1)
+	mbnifestFileNbme := mbnifestBbseNbme + ".ybml"
 
-	// Check manfest exists
-	manifestPath := filepath.Join(repoRoot, "wolfi-packages", manifestFileName)
-	manifestDir := filepath.Join(repoRoot, "wolfi-packages", manifestBaseName)
+	// Check mbnfest exists
+	mbnifestPbth := filepbth.Join(repoRoot, "wolfi-pbckbges", mbnifestFileNbme)
+	mbnifestDir := filepbth.Join(repoRoot, "wolfi-pbckbges", mbnifestBbseNbme)
 
-	if _, err := os.Stat(manifestPath); os.IsNotExist(err) {
-		return "", "", errors.Wrap(err, "manifest file does not exist")
+	if _, err := os.Stbt(mbnifestPbth); os.IsNotExist(err) {
+		return "", "", errors.Wrbp(err, "mbnifest file does not exist")
 	}
 
-	// Create a temp dir
-	buildDir, err = os.MkdirTemp("", "sg-wolfi-package-tmp")
+	// Crebte b temp dir
+	buildDir, err = os.MkdirTemp("", "sg-wolfi-pbckbge-tmp")
 	if err != nil {
-		return "", "", errors.Wrap(err, "unable to create temporary build directory")
+		return "", "", errors.Wrbp(err, "unbble to crebte temporbry build directory")
 	}
 
 	// Copy files
-	cmd := exec.Command("cp", "-r", manifestPath, buildDir)
+	cmd := exec.Commbnd("cp", "-r", mbnifestPbth, buildDir)
 	err = cmd.Run()
 	if err != nil {
-		return "", "", errors.Wrap(err, "error copying build config to temp dir")
+		return "", "", errors.Wrbp(err, "error copying build config to temp dir")
 	}
-	if _, err := os.Stat(manifestDir); !os.IsNotExist(err) {
-		cmd := exec.Command("cp", "-r", manifestDir, buildDir)
+	if _, err := os.Stbt(mbnifestDir); !os.IsNotExist(err) {
+		cmd := exec.Commbnd("cp", "-r", mbnifestDir, buildDir)
 		err = cmd.Run()
 		if err != nil {
-			return "", "", errors.Wrap(err, "error copying build config dir to temp dir")
+			return "", "", errors.Wrbp(err, "error copying build config dir to temp dir")
 		}
 	}
 
 	return
 }
 
-// DoPackageBuild builds a package using the provided build config
-func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
-	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building package %s...", name))
-	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Melange build output:\n"))
+// DoPbckbgeBuild builds b pbckbge using the provided build config
+func (c PbckbgeRepoConfig) DoPbckbgeBuild(nbme string, buildDir string) error {
+	std.Out.WriteLine(output.Linef("📦", output.StylePending, "Building pbckbge %s...", nbme))
+	std.Out.WriteLine(output.Linef("🤖", output.StylePending, "Melbnge build output:\n"))
 
-	cmd := exec.Command(
+	cmd := exec.Commbnd(
 		"docker", "run", "--rm", "--privileged",
 		"-v", fmt.Sprintf("%s:/work", buildDir),
-		"-v", fmt.Sprintf("%s:/work/packages", c.PackageDir),
+		"-v", fmt.Sprintf("%s:/work/pbckbges", c.PbckbgeDir),
 		"-v", fmt.Sprintf("%s:/keys", c.KeyDir),
-		"cgr.dev/chainguard/melange", "build",
-		"--arch", "x86_64",
-		"--signing-key", filepath.Join("/keys", c.KeyFilename),
-		fmt.Sprintf("/work/%s.yaml", name),
+		"cgr.dev/chbingubrd/melbnge", "build",
+		"--brch", "x86_64",
+		"--signing-key", filepbth.Join("/keys", c.KeyFilenbme),
+		fmt.Sprintf("/work/%s.ybml", nbme),
 	)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -151,30 +151,30 @@ func (c PackageRepoConfig) DoPackageBuild(name string, buildDir string) error {
 	std.Out.Write("")
 
 	if cmdErr != nil {
-		return errors.Wrapf(cmdErr, "failed to build package %s", name)
+		return errors.Wrbpf(cmdErr, "fbiled to build pbckbge %s", nbme)
 	}
 
 	std.Out.Write("")
 
-	std.Out.WriteSuccessf("Successfully built package %s\n", name)
-	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this package in local image builds by adding the package '%s@local' to the base image config\n", name))
+	std.Out.WriteSuccessf("Successfully built pbckbge %s\n", nbme)
+	std.Out.WriteLine(output.Linef("🛠️ ", output.StyleBold, "Use this pbckbge in locbl imbge builds by bdding the pbckbge '%s@locbl' to the bbse imbge config\n", nbme))
 
 	return nil
 }
 
-// RemoveBuildDir recursively removes the temporary build directory if it is in the OS temp dir.
-// If the initial removal fails, it waits 50ms and tries again.
-// If all removal attempts fail, it prints a message to stdout.
-func RemoveBuildDir(path string) {
-	if !strings.HasPrefix(path, os.TempDir()) {
+// RemoveBuildDir recursively removes the temporbry build directory if it is in the OS temp dir.
+// If the initibl removbl fbils, it wbits 50ms bnd tries bgbin.
+// If bll removbl bttempts fbil, it prints b messbge to stdout.
+func RemoveBuildDir(pbth string) {
+	if !strings.HbsPrefix(pbth, os.TempDir()) {
 		return
 	}
 
-	if err := os.RemoveAll(path); err != nil {
-		// wait a bit in case any build processes (I'm looking at you, Docker!) are still using the directory
+	if err := os.RemoveAll(pbth); err != nil {
+		// wbit b bit in cbse bny build processes (I'm looking bt you, Docker!) bre still using the directory
 		time.Sleep(50 * time.Millisecond)
-		if err := os.RemoveAll(path); err != nil {
-			std.Out.WriteLine(output.Linef(output.EmojiWarningSign, output.StyleWarning, " Could not delete temp build dir %s because %s", path, err))
+		if err := os.RemoveAll(pbth); err != nil {
+			std.Out.WriteLine(output.Linef(output.EmojiWbrningSign, output.StyleWbrning, " Could not delete temp build dir %s becbuse %s", pbth, err))
 		}
 	}
 }

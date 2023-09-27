@@ -1,4 +1,4 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
@@ -6,15 +6,15 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/apitest"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/bpitest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
 func TestRoleConnectionResolver(t *testing.T) {
@@ -23,87 +23,87 @@ func TestRoleConnectionResolver(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := createTestUser(t, db, false).ID
-	userCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	userID := crebteTestUser(t, db, fblse).ID
+	userCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	adminID := createTestUser(t, db, true).ID
-	adminCtx := actor.WithActor(ctx, actor.FromUser(adminID))
+	bdminID := crebteTestUser(t, db, true).ID
+	bdminCtx := bctor.WithActor(ctx, bctor.FromUser(bdminID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchembWithoutResolvers(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	// All sourcegraph instances are seeded with two system roles at migration,
-	// so we take those into account when querying roles.
-	siteAdminRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
-		Name: string(types.SiteAdministratorSystemRole),
+	// All sourcegrbph instbnces bre seeded with two system roles bt migrbtion,
+	// so we tbke those into bccount when querying roles.
+	siteAdminRole, err := db.Roles().Get(ctx, dbtbbbse.GetRoleOpts{
+		Nbme: string(types.SiteAdministrbtorSystemRole),
 	})
 	require.NoError(t, err)
 
-	userRole, err := db.Roles().Get(ctx, database.GetRoleOpts{
-		Name: string(types.UserSystemRole),
+	userRole, err := db.Roles().Get(ctx, dbtbbbse.GetRoleOpts{
+		Nbme: string(types.UserSystemRole),
 	})
 	require.NoError(t, err)
 
-	r, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	r, err := db.Roles().Crebte(ctx, "TEST-ROLE", fblse)
 	require.NoError(t, err)
 
-	t.Run("as non site-administrator", func(t *testing.T) {
-		input := map[string]any{"first": 1}
-		var response struct{ Permissions apitest.PermissionConnection }
-		errs := apitest.Exec(userCtx, t, s, input, &response, queryRoleConnection)
+	t.Run("bs non site-bdministrbtor", func(t *testing.T) {
+		input := mbp[string]bny{"first": 1}
+		vbr response struct{ Permissions bpitest.PermissionConnection }
+		errs := bpitest.Exec(userCtx, t, s, input, &response, queryRoleConnection)
 
 		require.Len(t, errs, 1)
-		require.Equal(t, errs[0].Message, "must be site admin")
+		require.Equbl(t, errs[0].Messbge, "must be site bdmin")
 	})
 
-	t.Run("as site-administrator", func(t *testing.T) {
-		want := []apitest.Role{
+	t.Run("bs site-bdministrbtor", func(t *testing.T) {
+		wbnt := []bpitest.Role{
 			{
-				ID: string(MarshalRoleID(userRole.ID)),
+				ID: string(MbrshblRoleID(userRole.ID)),
 			},
 			{
-				ID: string(MarshalRoleID(siteAdminRole.ID)),
+				ID: string(MbrshblRoleID(siteAdminRole.ID)),
 			},
 			{
-				ID: string(MarshalRoleID(r.ID)),
+				ID: string(MbrshblRoleID(r.ID)),
 			},
 		}
 
 		tests := []struct {
-			firstParam          int
-			wantHasNextPage     bool
-			wantHasPreviousPage bool
-			wantTotalCount      int
-			wantNodes           []apitest.Role
+			firstPbrbm          int
+			wbntHbsNextPbge     bool
+			wbntHbsPreviousPbge bool
+			wbntTotblCount      int
+			wbntNodes           []bpitest.Role
 		}{
-			{firstParam: 1, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:1]},
-			{firstParam: 2, wantHasNextPage: true, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want[:2]},
-			{firstParam: 3, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
-			{firstParam: 4, wantHasNextPage: false, wantHasPreviousPage: false, wantTotalCount: 3, wantNodes: want},
+			{firstPbrbm: 1, wbntHbsNextPbge: true, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt[:1]},
+			{firstPbrbm: 2, wbntHbsNextPbge: true, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt[:2]},
+			{firstPbrbm: 3, wbntHbsNextPbge: fblse, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt},
+			{firstPbrbm: 4, wbntHbsNextPbge: fblse, wbntHbsPreviousPbge: fblse, wbntTotblCount: 3, wbntNodes: wbnt},
 		}
 
-		for _, tc := range tests {
-			t.Run(fmt.Sprintf("first=%d", tc.firstParam), func(t *testing.T) {
-				input := map[string]any{"first": int64(tc.firstParam)}
-				var response struct{ Roles apitest.RoleConnection }
-				apitest.MustExec(adminCtx, t, s, input, &response, queryRoleConnection)
+		for _, tc := rbnge tests {
+			t.Run(fmt.Sprintf("first=%d", tc.firstPbrbm), func(t *testing.T) {
+				input := mbp[string]bny{"first": int64(tc.firstPbrbm)}
+				vbr response struct{ Roles bpitest.RoleConnection }
+				bpitest.MustExec(bdminCtx, t, s, input, &response, queryRoleConnection)
 
-				wantConnection := apitest.RoleConnection{
-					TotalCount: tc.wantTotalCount,
-					PageInfo: apitest.PageInfo{
-						HasNextPage:     tc.wantHasNextPage,
-						HasPreviousPage: tc.wantHasPreviousPage,
+				wbntConnection := bpitest.RoleConnection{
+					TotblCount: tc.wbntTotblCount,
+					PbgeInfo: bpitest.PbgeInfo{
+						HbsNextPbge:     tc.wbntHbsNextPbge,
+						HbsPreviousPbge: tc.wbntHbsPreviousPbge,
 					},
-					Nodes: tc.wantNodes,
+					Nodes: tc.wbntNodes,
 				}
 
-				if diff := cmp.Diff(wantConnection, response.Roles); diff != "" {
-					t.Fatalf("wrong roles response (-want +got):\n%s", diff)
+				if diff := cmp.Diff(wbntConnection, response.Roles); diff != "" {
+					t.Fbtblf("wrong roles response (-wbnt +got):\n%s", diff)
 				}
 			})
 		}
@@ -113,10 +113,10 @@ func TestRoleConnectionResolver(t *testing.T) {
 const queryRoleConnection = `
 query($first: Int!) {
 	roles(first: $first) {
-		totalCount
-		pageInfo {
-			hasNextPage
-			hasPreviousPage
+		totblCount
+		pbgeInfo {
+			hbsNextPbge
+			hbsPreviousPbge
 		}
 		nodes {
 			id
@@ -131,119 +131,119 @@ func TestUserRoleListing(t *testing.T) {
 		t.Skip()
 	}
 
-	ctx := context.Background()
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Bbckground()
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := createTestUser(t, db, false).ID
-	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+	userID := crebteTestUser(t, db, fblse).ID
+	bctorCtx := bctor.WithActor(ctx, bctor.FromUser(userID))
 
-	adminUserID := createTestUser(t, db, true).ID
-	adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
+	bdminUserID := crebteTestUser(t, db, true).ID
+	bdminActorCtx := bctor.WithActor(ctx, bctor.FromUser(bdminUserID))
 
-	s, err := NewSchemaWithoutResolvers(db)
+	s, err := NewSchembWithoutResolvers(db)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	require.NoError(t, err)
 
-	// create a new role
-	role, err := db.Roles().Create(ctx, "TEST-ROLE", false)
+	// crebte b new role
+	role, err := db.Roles().Crebte(ctx, "TEST-ROLE", fblse)
 	require.NoError(t, err)
 
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
 		RoleID: role.ID,
 		UserID: userID,
 	})
 	require.NoError(t, err)
 
-	err = db.UserRoles().Assign(ctx, database.AssignUserRoleOpts{
+	err = db.UserRoles().Assign(ctx, dbtbbbse.AssignUserRoleOpts{
 		RoleID: role.ID,
-		UserID: adminUserID,
+		UserID: bdminUserID,
 	})
 	require.NoError(t, err)
 
-	t.Run("on sourcegraph.com", func(t *testing.T) {
-		orig := envvar.SourcegraphDotComMode()
-		envvar.MockSourcegraphDotComMode(true)
-		defer envvar.MockSourcegraphDotComMode(orig)
+	t.Run("on sourcegrbph.com", func(t *testing.T) {
+		orig := envvbr.SourcegrbphDotComMode()
+		envvbr.MockSourcegrbphDotComMode(true)
+		defer envvbr.MockSourcegrbphDotComMode(orig)
 
-		userAPIID := string(MarshalUserID(userID))
-		input := map[string]any{"node": userAPIID}
+		userAPIID := string(MbrshblUserID(userID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		var response struct{ Node apitest.User }
-		errs := apitest.Exec(actorCtx, t, s, input, &response, listUserRoles)
-		require.ErrorContains(t, errs[0], "roles are not available on sourcegraph.com")
+		vbr response struct{ Node bpitest.User }
+		errs := bpitest.Exec(bctorCtx, t, s, input, &response, listUserRoles)
+		require.ErrorContbins(t, errs[0], "roles bre not bvbilbble on sourcegrbph.com")
 	})
 
-	t.Run("listing a user's roles (same user)", func(t *testing.T) {
-		userAPIID := string(MarshalUserID(userID))
-		input := map[string]any{"node": userAPIID}
+	t.Run("listing b user's roles (sbme user)", func(t *testing.T) {
+		userAPIID := string(MbrshblUserID(userID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		want := apitest.User{
+		wbnt := bpitest.User{
 			ID: userAPIID,
-			Roles: apitest.RoleConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Role{
+			Roles: bpitest.RoleConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.Role{
 					{
-						ID: string(MarshalRoleID(role.ID)),
+						ID: string(MbrshblRoleID(role.ID)),
 					},
 				},
 			},
 		}
 
-		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listUserRoles)
+		vbr response struct{ Node bpitest.User }
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listUserRoles)
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong role response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("wrong role response (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("listing a user's roles (site admin)", func(t *testing.T) {
-		userAPIID := string(MarshalUserID(userID))
-		input := map[string]any{"node": userAPIID}
+	t.Run("listing b user's roles (site bdmin)", func(t *testing.T) {
+		userAPIID := string(MbrshblUserID(userID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		want := apitest.User{
+		wbnt := bpitest.User{
 			ID: userAPIID,
-			Roles: apitest.RoleConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Role{
+			Roles: bpitest.RoleConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.Role{
 					{
-						ID: string(MarshalRoleID(role.ID)),
+						ID: string(MbrshblRoleID(role.ID)),
 					},
 				},
 			},
 		}
 
-		var response struct{ Node apitest.User }
-		apitest.MustExec(adminActorCtx, t, s, input, &response, listUserRoles)
+		vbr response struct{ Node bpitest.User }
+		bpitest.MustExec(bdminActorCtx, t, s, input, &response, listUserRoles)
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong roles response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("wrong roles response (-wbnt +got):\n%s", diff)
 		}
 	})
 
-	t.Run("non site-admin listing another user's roles", func(t *testing.T) {
-		userAPIID := string(MarshalUserID(adminUserID))
-		input := map[string]any{"node": userAPIID}
+	t.Run("non site-bdmin listing bnother user's roles", func(t *testing.T) {
+		userAPIID := string(MbrshblUserID(bdminUserID))
+		input := mbp[string]bny{"node": userAPIID}
 
-		var response struct{ Node apitest.User }
-		apitest.MustExec(actorCtx, t, s, input, &response, listUserRoles)
+		vbr response struct{ Node bpitest.User }
+		bpitest.MustExec(bctorCtx, t, s, input, &response, listUserRoles)
 
-		want := apitest.User{
+		wbnt := bpitest.User{
 			ID: userAPIID,
-			Roles: apitest.RoleConnection{
-				TotalCount: 1,
-				Nodes: []apitest.Role{
+			Roles: bpitest.RoleConnection{
+				TotblCount: 1,
+				Nodes: []bpitest.Role{
 					{
-						ID: string(MarshalRoleID(role.ID)),
+						ID: string(MbrshblRoleID(role.ID)),
 					},
 				},
 			},
 		}
 
-		if diff := cmp.Diff(want, response.Node); diff != "" {
-			t.Fatalf("wrong roles response (-want +got):\n%s", diff)
+		if diff := cmp.Diff(wbnt, response.Node); diff != "" {
+			t.Fbtblf("wrong roles response (-wbnt +got):\n%s", diff)
 		}
 	})
 }
@@ -254,7 +254,7 @@ query ($node: ID!) {
 		... on User {
 			id
 			roles(first: 50) {
-				totalCount
+				totblCount
 				nodes {
 					id
 				}

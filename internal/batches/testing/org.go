@@ -1,4 +1,4 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
@@ -6,20 +6,20 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func CreateTestOrg(t *testing.T, db database.DB, name string, userIDs ...int32) *types.Org {
+func CrebteTestOrg(t *testing.T, db dbtbbbse.DB, nbme string, userIDs ...int32) *types.Org {
 	t.Helper()
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	org, err := database.OrgsWith(db).Create(ctx, name, nil)
+	org, err := dbtbbbse.OrgsWith(db).Crebte(ctx, nbme, nil)
 	require.NoError(t, err)
 
-	orgMembersStore := database.OrgMembersWith(db)
-	for _, userID := range userIDs {
-		_, err := orgMembersStore.Create(ctx, org.ID, userID)
+	orgMembersStore := dbtbbbse.OrgMembersWith(db)
+	for _, userID := rbnge userIDs {
+		_, err := orgMembersStore.Crebte(ctx, org.ID, userID)
 		require.NoError(t, err)
 	}
 

@@ -1,79 +1,79 @@
-package compute
+pbckbge compute
 
 import (
 	"encoding/json"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 
-	"github.com/grafana/regexp"
-	"github.com/hexops/autogold/v2"
+	"github.com/grbfbnb/regexp"
+	"github.com/hexops/butogold/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-type serializer func(*MatchContext) any
+type seriblizer func(*MbtchContext) bny
 
-func match(r *MatchContext) any {
+func mbtch(r *MbtchContext) bny {
 	return r
 }
 
-func environment(r *MatchContext) any {
-	env := make(map[string]string)
-	for _, m := range r.Matches {
-		for k, v := range m.Environment {
-			env[k] = v.Value
+func environment(r *MbtchContext) bny {
+	env := mbke(mbp[string]string)
+	for _, m := rbnge r.Mbtches {
+		for k, v := rbnge m.Environment {
+			env[k] = v.Vblue
 		}
 	}
 	return env
 }
 
-type want struct {
+type wbnt struct {
 	Input  string
-	Result any
+	Result bny
 }
 
-func Test_matchOnly(t *testing.T) {
-	content := "abcdefgh\n123\n!@#"
-	data := &result.FileMatch{
-		File: result.File{Path: "bedge", Repo: types.MinimalRepo{
+func Test_mbtchOnly(t *testing.T) {
+	content := "bbcdefgh\n123\n!@#"
+	dbtb := &result.FileMbtch{
+		File: result.File{Pbth: "bedge", Repo: types.MinimblRepo{
 			ID:   5,
-			Name: "codehost.com/myorg/myrepo",
+			Nbme: "codehost.com/myorg/myrepo",
 		}},
-		ChunkMatches: result.ChunkMatches{{
+		ChunkMbtches: result.ChunkMbtches{{
 			Content:      content,
-			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
-			Ranges: result.Ranges{{
-				Start: result.Location{Offset: 0, Line: 1, Column: 0},
-				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
+			ContentStbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+			Rbnges: result.Rbnges{{
+				Stbrt: result.Locbtion{Offset: 0, Line: 1, Column: 0},
+				End:   result.Locbtion{Offset: len(content), Line: 1, Column: len(content)},
 			}},
 		}},
 	}
 
-	test := func(input string, serialize serializer) string {
+	test := func(input string, seriblize seriblizer) string {
 		r, _ := regexp.Compile(input)
-		matchContext := matchOnly(data, r)
-		w := want{Input: input, Result: serialize(matchContext)}
-		v, _ := json.MarshalIndent(w, "", "  ")
+		mbtchContext := mbtchOnly(dbtb, r)
+		w := wbnt{Input: input, Result: seriblize(mbtchContext)}
+		v, _ := json.MbrshblIndent(w, "", "  ")
 		return string(v)
 	}
 
-	cases := []struct {
+	cbses := []struct {
 		input      string
-		serializer serializer
+		seriblizer seriblizer
 	}{
-		{input: "nothing", serializer: match},
-		{input: "(a)(?P<ThisIsNamed>b)", serializer: environment},
-		{input: "(lasvegans)|abcdefgh", serializer: environment},
-		{input: "a(b(c))(de)f(g)h", serializer: match},
-		{input: "([ag])", serializer: match},
-		{input: "g(h(?:(?:.|\n)+)@)#", serializer: match},
-		{input: "g(h\n1)23\n!@", serializer: match},
+		{input: "nothing", seriblizer: mbtch},
+		{input: "(b)(?P<ThisIsNbmed>b)", seriblizer: environment},
+		{input: "(lbsvegbns)|bbcdefgh", seriblizer: environment},
+		{input: "b(b(c))(de)f(g)h", seriblizer: mbtch},
+		{input: "([bg])", seriblizer: mbtch},
+		{input: "g(h(?:(?:.|\n)+)@)#", seriblizer: mbtch},
+		{input: "g(h\n1)23\n!@", seriblizer: mbtch},
 	}
 
-	for _, c := range cases {
-		t.Run("match_only", func(t *testing.T) {
-			autogold.ExpectFile(t, autogold.Raw(test(c.input, c.serializer)))
+	for _, c := rbnge cbses {
+		t.Run("mbtch_only", func(t *testing.T) {
+			butogold.ExpectFile(t, butogold.Rbw(test(c.input, c.seriblizer)))
 		})
 	}
 }

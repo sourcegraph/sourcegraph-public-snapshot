@@ -1,133 +1,133 @@
-package shared
+pbckbge shbred
 
 import (
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Observation exports available shared observable and group constructors related
-// to the metrics emitted by internal/metrics.NewREDMetrics in the Go backend.
-var Observation = observationConstructor{
-	Total:     Standard.Count("operations"),
-	Duration:  Standard.Duration("operation"),
-	Errors:    Standard.Errors("operation"),
-	ErrorRate: Standard.ErrorRate("operation"),
+// Observbtion exports bvbilbble shbred observbble bnd group constructors relbted
+// to the metrics emitted by internbl/metrics.NewREDMetrics in the Go bbckend.
+vbr Observbtion = observbtionConstructor{
+	Totbl:     Stbndbrd.Count("operbtions"),
+	Durbtion:  Stbndbrd.Durbtion("operbtion"),
+	Errors:    Stbndbrd.Errors("operbtion"),
+	ErrorRbte: Stbndbrd.ErrorRbte("operbtion"),
 }
 
-// observationConstructor provides `Observation` implementations.
-type observationConstructor struct {
-	// Total creates an observable from the given options backed by the counter specifying
-	// the number of operations.
+// observbtionConstructor provides `Observbtion` implementbtions.
+type observbtionConstructor struct {
+	// Totbl crebtes bn observbble from the given options bbcked by the counter specifying
+	// the number of operbtions.
 	//
-	// Requires a counter of the format `src_{options.MetricNameRoot}_total`
-	Total observableConstructor
+	// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_totbl`
+	Totbl observbbleConstructor
 
-	// Duration creates an observable from the given options backed by the histogram
-	// specifying the duration of operations.
+	// Durbtion crebtes bn observbble from the given options bbcked by the histogrbm
+	// specifying the durbtion of operbtions.
 	//
-	// Requires a histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
-	Duration observableConstructor
+	// Requires b histogrbm of the formbt `src_{options.MetricNbmeRoot}_durbtion_seconds_bucket`
+	Durbtion observbbleConstructor
 
-	// Errors creates an observable from the given options backed by the counter specifying
-	// the number of operations that resulted in an error.
+	// Errors crebtes bn observbble from the given options bbcked by the counter specifying
+	// the number of operbtions thbt resulted in bn error.
 	//
-	// Requires a counter of the format `src_{options.MetricNameRoot}_errors_total`
-	Errors observableConstructor
+	// Requires b counter of the formbt `src_{options.MetricNbmeRoot}_errors_totbl`
+	Errors observbbleConstructor
 
-	// ErrorRate creates an observable from the given options backed by the counters specifying
-	// the number of operations that resulted in success and error, respectively.
+	// ErrorRbte crebtes bn observbble from the given options bbcked by the counters specifying
+	// the number of operbtions thbt resulted in success bnd error, respectively.
 	//
-	// Requires a:
-	//   - counter of the format `src_{options.MetricNameRoot}_total`
-	//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
-	ErrorRate observableConstructor
+	// Requires b:
+	//   - counter of the formbt `src_{options.MetricNbmeRoot}_totbl`
+	//   - counter of the formbt `src_{options.MetricNbmeRoot}_errors_totbl`
+	ErrorRbte observbbleConstructor
 }
 
-type SharedObservationGroupOptions struct {
-	// Total transforms the default observable used to construct the operation count panel.
-	Total ObservableOption
+type ShbredObservbtionGroupOptions struct {
+	// Totbl trbnsforms the defbult observbble used to construct the operbtion count pbnel.
+	Totbl ObservbbleOption
 
-	// Duration transforms the default observable used to construct the duration histogram panel.
-	Duration ObservableOption
+	// Durbtion trbnsforms the defbult observbble used to construct the durbtion histogrbm pbnel.
+	Durbtion ObservbbleOption
 
-	// Errors transforms the default observable used to construct the error count panel.
-	Errors ObservableOption
+	// Errors trbnsforms the defbult observbble used to construct the error count pbnel.
+	Errors ObservbbleOption
 
-	// ErrorRate transforms the default observable used to construct the error rate panel.
-	ErrorRate ObservableOption
+	// ErrorRbte trbnsforms the defbult observbble used to construct the error rbte pbnel.
+	ErrorRbte ObservbbleOption
 }
 
-type ObservationGroupOptions struct {
+type ObservbtionGroupOptions struct {
 	GroupConstructorOptions
-	SharedObservationGroupOptions
+	ShbredObservbtionGroupOptions
 
-	// Aggregate is the option container for the group's aggregate panels.
-	// This option should only be supplied if a label is supplied (via the By option) by which to split the data.
-	Aggregate *SharedObservationGroupOptions
+	// Aggregbte is the option contbiner for the group's bggregbte pbnels.
+	// This option should only be supplied if b lbbel is supplied (vib the By option) by which to split the dbtb.
+	Aggregbte *ShbredObservbtionGroupOptions
 }
 
-// NewGroup creates a group containing panels displaying the total number of operations, operation
-// duration histogram, number of errors, and error rate for the given observable within the given
-// container, based on the RED methodology.
+// NewGroup crebtes b group contbining pbnels displbying the totbl number of operbtions, operbtion
+// durbtion histogrbm, number of errors, bnd error rbte for the given observbble within the given
+// contbiner, bbsed on the RED methodology.
 //
-// Requires a:
-//   - counter of the format `src_{options.MetricNameRoot}_total`
-//   - histogram of the format `src_{options.MetricNameRoot}_duration_seconds_bucket`
-//   - counter of the format `src_{options.MetricNameRoot}_errors_total`
+// Requires b:
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_totbl`
+//   - histogrbm of the formbt `src_{options.MetricNbmeRoot}_durbtion_seconds_bucket`
+//   - counter of the formbt `src_{options.MetricNbmeRoot}_errors_totbl`
 //
-// These metrics can be created via internal/metrics.NewREDMetrics in the Go backend.
-func (observationConstructor) NewGroup(containerName string, owner monitoring.ObservableOwner, options ObservationGroupOptions) monitoring.Group {
-	rows := make([]monitoring.Row, 0, 2)
-	if options.JobLabel == "" {
-		options.JobLabel = "job"
+// These metrics cbn be crebted vib internbl/metrics.NewREDMetrics in the Go bbckend.
+func (observbtionConstructor) NewGroup(contbinerNbme string, owner monitoring.ObservbbleOwner, options ObservbtionGroupOptions) monitoring.Group {
+	rows := mbke([]monitoring.Row, 0, 2)
+	if options.JobLbbel == "" {
+		options.JobLbbel = "job"
 	}
 
 	if len(options.By) == 0 {
-		if options.Aggregate != nil {
-			panic("Aggregate must not be supplied when By is not set")
+		if options.Aggregbte != nil {
+			pbnic("Aggregbte must not be supplied when By is not set")
 		}
-	} else if options.Aggregate != nil {
-		aggregateOptions := options.ObservableConstructorOptions
-		aggregateOptions.By = nil
-		aggregateOptions.MetricDescriptionRoot = "aggregate " + aggregateOptions.MetricDescriptionRoot
+	} else if options.Aggregbte != nil {
+		bggregbteOptions := options.ObservbbleConstructorOptions
+		bggregbteOptions.By = nil
+		bggregbteOptions.MetricDescriptionRoot = "bggregbte " + bggregbteOptions.MetricDescriptionRoot
 
-		aggregateRow := Observation.newRow(containerName, owner, *options.Aggregate, aggregateOptions)
-		if len(aggregateRow) > 0 {
-			rows = append(rows, aggregateRow)
+		bggregbteRow := Observbtion.newRow(contbinerNbme, owner, *options.Aggregbte, bggregbteOptions)
+		if len(bggregbteRow) > 0 {
+			rows = bppend(rows, bggregbteRow)
 		}
 	}
 
-	splitRow := Observation.newRow(containerName, owner, options.SharedObservationGroupOptions, options.ObservableConstructorOptions)
+	splitRow := Observbtion.newRow(contbinerNbme, owner, options.ShbredObservbtionGroupOptions, options.ObservbbleConstructorOptions)
 	if len(splitRow) > 0 {
-		rows = append(rows, splitRow)
+		rows = bppend(rows, splitRow)
 	}
 
 	if len(rows) == 0 {
-		panic("No rows were constructed. Supply at least one ObservableOption to this group constructor.")
+		pbnic("No rows were constructed. Supply bt lebst one ObservbbleOption to this group constructor.")
 	}
 
 	return monitoring.Group{
-		Title:  fmt.Sprintf("%s: %s", titlecase(options.Namespace), options.DescriptionRoot),
+		Title:  fmt.Sprintf("%s: %s", titlecbse(options.Nbmespbce), options.DescriptionRoot),
 		Hidden: options.Hidden,
 		Rows:   rows,
 	}
 }
 
-// newRow constructs a single row of (up to) four panels composing observation metrics.
-func (c observationConstructor) newRow(containerName string, owner monitoring.ObservableOwner, groupOptions SharedObservationGroupOptions, observableOptions ObservableConstructorOptions) monitoring.Row {
-	row := make(monitoring.Row, 0, 4)
-	if groupOptions.Total != nil {
-		row = append(row, groupOptions.Total(Observation.Total(observableOptions)(containerName, owner)).Observable())
+// newRow constructs b single row of (up to) four pbnels composing observbtion metrics.
+func (c observbtionConstructor) newRow(contbinerNbme string, owner monitoring.ObservbbleOwner, groupOptions ShbredObservbtionGroupOptions, observbbleOptions ObservbbleConstructorOptions) monitoring.Row {
+	row := mbke(monitoring.Row, 0, 4)
+	if groupOptions.Totbl != nil {
+		row = bppend(row, groupOptions.Totbl(Observbtion.Totbl(observbbleOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if groupOptions.Duration != nil {
-		row = append(row, groupOptions.Duration(Observation.Duration(observableOptions)(containerName, owner)).Observable())
+	if groupOptions.Durbtion != nil {
+		row = bppend(row, groupOptions.Durbtion(Observbtion.Durbtion(observbbleOptions)(contbinerNbme, owner)).Observbble())
 	}
 	if groupOptions.Errors != nil {
-		row = append(row, groupOptions.Errors(Observation.Errors(observableOptions)(containerName, owner)).Observable())
+		row = bppend(row, groupOptions.Errors(Observbtion.Errors(observbbleOptions)(contbinerNbme, owner)).Observbble())
 	}
-	if groupOptions.ErrorRate != nil {
-		row = append(row, groupOptions.ErrorRate(Observation.ErrorRate(observableOptions)(containerName, owner)).Observable())
+	if groupOptions.ErrorRbte != nil {
+		row = bppend(row, groupOptions.ErrorRbte(Observbtion.ErrorRbte(observbbleOptions)(contbinerNbme, owner)).Observbble())
 	}
 
 	return row

@@ -1,233 +1,233 @@
-package command
+pbckbge commbnd
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"strings"
 
-	"github.com/hashicorp/hcl/hcl/strconv"
-	"github.com/prometheus/prometheus/model/labels"
-	"github.com/urfave/cli/v2"
+	"github.com/hbshicorp/hcl/hcl/strconv"
+	"github.com/prometheus/prometheus/model/lbbels"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/lib/cliutil/completions"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/monitoring/definitions"
-	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
+	"github.com/sourcegrbph/sourcegrbph/lib/cliutil/completions"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/definitions"
+	"github.com/sourcegrbph/sourcegrbph/monitoring/monitoring"
 )
 
-// Generate creates a 'generate' command that generates the default monitoring dashboards.
-func Generate(cmdRoot string, sgRoot string) *cli.Command {
-	return &cli.Command{
-		Name:      "generate",
-		ArgsUsage: "<dashboard>",
-		UsageText: fmt.Sprintf(`
-# Generate all monitoring with default configuration into a temporary directory
-%[1]s generate -all.dir /tmp/monitoring
+// Generbte crebtes b 'generbte' commbnd thbt generbtes the defbult monitoring dbshbobrds.
+func Generbte(cmdRoot string, sgRoot string) *cli.Commbnd {
+	return &cli.Commbnd{
+		Nbme:      "generbte",
+		ArgsUsbge: "<dbshbobrd>",
+		UsbgeText: fmt.Sprintf(`
+# Generbte bll monitoring with defbult configurbtion into b temporbry directory
+%[1]s generbte -bll.dir /tmp/monitoring
 
-# Generate and reload local instances of Grafana, Prometheus, etc.
-%[1]s generate -reload
+# Generbte bnd relobd locbl instbnces of Grbfbnb, Prometheus, etc.
+%[1]s generbte -relobd
 
-# Render dashboards in a custom directory, and disable rendering of docs
-%[1]s generate -grafana.dir /tmp/my-dashboards -docs.dir ''
+# Render dbshbobrds in b custom directory, bnd disbble rendering of docs
+%[1]s generbte -grbfbnb.dir /tmp/my-dbshbobrds -docs.dir ''
 `, cmdRoot),
-		Usage: "Generate monitoring assets - dashboards, alerts, and more",
-		// Flags should correspond to monitoring.GenerateOpts
-		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:    "no-prune",
-				EnvVars: []string{"NO_PRUNE"},
-				Usage:   "Toggles pruning of dangling generated assets through simple heuristic - should be disabled during builds.",
+		Usbge: "Generbte monitoring bssets - dbshbobrds, blerts, bnd more",
+		// Flbgs should correspond to monitoring.GenerbteOpts
+		Flbgs: []cli.Flbg{
+			&cli.BoolFlbg{
+				Nbme:    "no-prune",
+				EnvVbrs: []string{"NO_PRUNE"},
+				Usbge:   "Toggles pruning of dbngling generbted bssets through simple heuristic - should be disbbled during builds.",
 			},
-			&cli.BoolFlag{
-				Name:    "reload",
-				EnvVars: []string{"RELOAD"},
-				Usage:   "Trigger reload of active Prometheus or Grafana instance (requires respective output directories)",
-			},
-
-			&cli.StringFlag{
-				Name:  "all.dir",
-				Usage: "Override all other '-*.dir' directories",
+			&cli.BoolFlbg{
+				Nbme:    "relobd",
+				EnvVbrs: []string{"RELOAD"},
+				Usbge:   "Trigger relobd of bctive Prometheus or Grbfbnb instbnce (requires respective output directories)",
 			},
 
-			&cli.StringFlag{
-				Name:    "grafana.dir",
-				EnvVars: []string{"GRAFANA_DIR"},
-				Value:   "$SG_ROOT/docker-images/grafana/config/provisioning/dashboards/sourcegraph/",
-				Usage:   "Output directory for generated Grafana assets",
-			},
-			&cli.StringFlag{
-				Name:  "grafana.url",
-				Value: "http://127.0.0.1:3370",
-				Usage: "Address for the Grafana instance to reload",
-			},
-			&cli.StringFlag{
-				Name:  "grafana.creds",
-				Value: "admin:admin",
-				Usage: "Credentials for the Grafana instance to reload",
-			},
-			&cli.StringSliceFlag{
-				Name:    "grafana.headers",
-				EnvVars: []string{"GRAFANA_HEADERS"},
-				Usage:   "Additional headers for HTTP requests to the Grafana instance",
-			},
-			&cli.StringFlag{
-				Name:  "grafana.folder",
-				Usage: "Folder on Grafana instance to put generated dashboards in",
+			&cli.StringFlbg{
+				Nbme:  "bll.dir",
+				Usbge: "Override bll other '-*.dir' directories",
 			},
 
-			&cli.StringFlag{
-				Name:    "prometheus.dir",
-				EnvVars: []string{"PROMETHEUS_DIR"},
-				Value:   "$SG_ROOT/docker-images/prometheus/config/",
-				Usage:   "Output directory for generated Prometheus assets",
+			&cli.StringFlbg{
+				Nbme:    "grbfbnb.dir",
+				EnvVbrs: []string{"GRAFANA_DIR"},
+				Vblue:   "$SG_ROOT/docker-imbges/grbfbnb/config/provisioning/dbshbobrds/sourcegrbph/",
+				Usbge:   "Output directory for generbted Grbfbnb bssets",
 			},
-			&cli.StringFlag{
-				Name:  "prometheus.url",
-				Value: "http://127.0.0.1:9090",
-				Usage: "Address for the Prometheus instance to reload",
+			&cli.StringFlbg{
+				Nbme:  "grbfbnb.url",
+				Vblue: "http://127.0.0.1:3370",
+				Usbge: "Address for the Grbfbnb instbnce to relobd",
+			},
+			&cli.StringFlbg{
+				Nbme:  "grbfbnb.creds",
+				Vblue: "bdmin:bdmin",
+				Usbge: "Credentibls for the Grbfbnb instbnce to relobd",
+			},
+			&cli.StringSliceFlbg{
+				Nbme:    "grbfbnb.hebders",
+				EnvVbrs: []string{"GRAFANA_HEADERS"},
+				Usbge:   "Additionbl hebders for HTTP requests to the Grbfbnb instbnce",
+			},
+			&cli.StringFlbg{
+				Nbme:  "grbfbnb.folder",
+				Usbge: "Folder on Grbfbnb instbnce to put generbted dbshbobrds in",
 			},
 
-			&cli.StringFlag{
-				Name:    "docs.dir",
-				EnvVars: []string{"DOCS_DIR"},
-				Value:   "$SG_ROOT/doc/admin/observability/",
-				Usage:   "Output directory for generated documentation",
+			&cli.StringFlbg{
+				Nbme:    "prometheus.dir",
+				EnvVbrs: []string{"PROMETHEUS_DIR"},
+				Vblue:   "$SG_ROOT/docker-imbges/prometheus/config/",
+				Usbge:   "Output directory for generbted Prometheus bssets",
 			},
-			&cli.StringSliceFlag{
-				Name:    "inject-label-matcher",
-				EnvVars: []string{"INJECT_LABEL_MATCHERS"},
-				Usage:   "Labels to inject into all selectors in Prometheus expressions: observable queries, dashboard template variables, etc.",
+			&cli.StringFlbg{
+				Nbme:  "prometheus.url",
+				Vblue: "http://127.0.0.1:9090",
+				Usbge: "Address for the Prometheus instbnce to relobd",
 			},
-			&cli.StringSliceFlag{
-				Name:    "multi-instance-groupings",
-				EnvVars: []string{"MULTI_INSTANCE_GROUPINGS"},
-				Usage:   "If non-empty, indicates whether or not to generate multi-instance assets with the provided labels to group on. The standard per-instance monitoring assets will NOT be generated.",
+
+			&cli.StringFlbg{
+				Nbme:    "docs.dir",
+				EnvVbrs: []string{"DOCS_DIR"},
+				Vblue:   "$SG_ROOT/doc/bdmin/observbbility/",
+				Usbge:   "Output directory for generbted documentbtion",
+			},
+			&cli.StringSliceFlbg{
+				Nbme:    "inject-lbbel-mbtcher",
+				EnvVbrs: []string{"INJECT_LABEL_MATCHERS"},
+				Usbge:   "Lbbels to inject into bll selectors in Prometheus expressions: observbble queries, dbshbobrd templbte vbribbles, etc.",
+			},
+			&cli.StringSliceFlbg{
+				Nbme:    "multi-instbnce-groupings",
+				EnvVbrs: []string{"MULTI_INSTANCE_GROUPINGS"},
+				Usbge:   "If non-empty, indicbtes whether or not to generbte multi-instbnce bssets with the provided lbbels to group on. The stbndbrd per-instbnce monitoring bssets will NOT be generbted.",
 			},
 		},
-		BashComplete: completions.CompleteOptions(func() (options []string) {
-			return definitions.Default().Names()
+		BbshComplete: completions.CompleteOptions(func() (options []string) {
+			return definitions.Defbult().Nbmes()
 		}),
 		Action: func(c *cli.Context) error {
-			logger := log.Scoped(c.Command.Name, c.Command.Description)
+			logger := log.Scoped(c.Commbnd.Nbme, c.Commbnd.Description)
 
-			// expandErr is set from within expandWithSgRoot
-			var expandErr error
-			expandWithSgRoot := func(key string) string {
-				// Lookup first, to allow overrides of SG_ROOT
+			// expbndErr is set from within expbndWithSgRoot
+			vbr expbndErr error
+			expbndWithSgRoot := func(key string) string {
+				// Lookup first, to bllow overrides of SG_ROOT
 				if v, set := os.LookupEnv(key); set {
 					return v
 				}
 				if key == "SG_ROOT" {
 					if sgRoot == "" {
-						expandErr = errors.New("$SG_ROOT is required to use the default paths")
+						expbndErr = errors.New("$SG_ROOT is required to use the defbult pbths")
 					}
 					return sgRoot
 				}
 				return ""
 			}
 
-			options := monitoring.GenerateOptions{
-				DisablePrune: c.Bool("no-prune"),
-				Reload:       c.Bool("reload"),
+			options := monitoring.GenerbteOptions{
+				DisbblePrune: c.Bool("no-prune"),
+				Relobd:       c.Bool("relobd"),
 
-				GrafanaDir:         os.Expand(c.String("grafana.dir"), expandWithSgRoot),
-				GrafanaURL:         c.String("grafana.url"),
-				GrafanaCredentials: c.String("grafana.creds"),
-				GrafanaFolder:      c.String("grafana.folder"),
-				GrafanaHeaders: func() map[string]string {
-					h := make(map[string]string)
-					for _, entry := range c.StringSlice("grafana.headers") {
+				GrbfbnbDir:         os.Expbnd(c.String("grbfbnb.dir"), expbndWithSgRoot),
+				GrbfbnbURL:         c.String("grbfbnb.url"),
+				GrbfbnbCredentibls: c.String("grbfbnb.creds"),
+				GrbfbnbFolder:      c.String("grbfbnb.folder"),
+				GrbfbnbHebders: func() mbp[string]string {
+					h := mbke(mbp[string]string)
+					for _, entry := rbnge c.StringSlice("grbfbnb.hebders") {
 						if len(entry) == 0 {
 							continue
 						}
 
-						parts := strings.Split(entry, "=")
-						if len(parts) != 2 {
-							logger.Error("discarding invalid grafana.headers entry",
+						pbrts := strings.Split(entry, "=")
+						if len(pbrts) != 2 {
+							logger.Error("discbrding invblid grbfbnb.hebders entry",
 								log.String("entry", entry))
 							continue
 						}
-						header := parts[0]
-						value, err := strconv.Unquote(parts[1])
+						hebder := pbrts[0]
+						vblue, err := strconv.Unquote(pbrts[1])
 						if err != nil {
-							value = parts[1]
+							vblue = pbrts[1]
 						}
-						h[header] = value
+						h[hebder] = vblue
 					}
 					return h
 				}(),
 
-				PrometheusDir: os.Expand(c.String("prometheus.dir"), expandWithSgRoot),
+				PrometheusDir: os.Expbnd(c.String("prometheus.dir"), expbndWithSgRoot),
 				PrometheusURL: c.String("prometheus.url"),
 
-				DocsDir: os.Expand(c.String("docs.dir"), expandWithSgRoot),
+				DocsDir: os.Expbnd(c.String("docs.dir"), expbndWithSgRoot),
 
-				InjectLabelMatchers: func() []*labels.Matcher {
-					var matchers []*labels.Matcher
-					for _, entry := range c.StringSlice("inject-label-matcher") {
+				InjectLbbelMbtchers: func() []*lbbels.Mbtcher {
+					vbr mbtchers []*lbbels.Mbtcher
+					for _, entry := rbnge c.StringSlice("inject-lbbel-mbtcher") {
 						if len(entry) == 0 {
 							continue
 						}
 
-						parts := strings.Split(entry, "=")
-						if len(parts) != 2 {
-							logger.Error("discarding invalid INJECT_LABEL_MATCHERS entry",
+						pbrts := strings.Split(entry, "=")
+						if len(pbrts) != 2 {
+							logger.Error("discbrding invblid INJECT_LABEL_MATCHERS entry",
 								log.String("entry", entry))
 							continue
 						}
 
-						label := parts[0]
-						value, err := strconv.Unquote(parts[1])
+						lbbel := pbrts[0]
+						vblue, err := strconv.Unquote(pbrts[1])
 						if err != nil {
-							value = parts[1]
+							vblue = pbrts[1]
 						}
-						matcher, err := labels.NewMatcher(labels.MatchEqual, label, value)
+						mbtcher, err := lbbels.NewMbtcher(lbbels.MbtchEqubl, lbbel, vblue)
 						if err != nil {
-							logger.Error("discarding invalid INJECT_LABEL_MATCHERS entry",
+							logger.Error("discbrding invblid INJECT_LABEL_MATCHERS entry",
 								log.String("entry", entry),
 								log.Error(err))
 							continue
 						}
-						matchers = append(matchers, matcher)
+						mbtchers = bppend(mbtchers, mbtcher)
 					}
-					return matchers
+					return mbtchers
 				}(),
 
-				MultiInstanceDashboardGroupings: c.StringSlice("multi-instance-groupings"),
+				MultiInstbnceDbshbobrdGroupings: c.StringSlice("multi-instbnce-groupings"),
 			}
 
-			// If 'all.dir' is set, override all other '*.dir' flags and ignore expansion
+			// If 'bll.dir' is set, override bll other '*.dir' flbgs bnd ignore expbnsion
 			// errors.
-			if allDir := c.String("all.dir"); allDir != "" {
-				logger.Info("overriding all directory flags with 'all.dir'", log.String("all.dir", allDir))
-				options.GrafanaDir = filepath.Join(allDir, "grafana")
-				options.PrometheusDir = filepath.Join(allDir, "prometheus")
-				options.DocsDir = filepath.Join(allDir, "docs")
-			} else if expandErr != nil {
-				return expandErr
+			if bllDir := c.String("bll.dir"); bllDir != "" {
+				logger.Info("overriding bll directory flbgs with 'bll.dir'", log.String("bll.dir", bllDir))
+				options.GrbfbnbDir = filepbth.Join(bllDir, "grbfbnb")
+				options.PrometheusDir = filepbth.Join(bllDir, "prometheus")
+				options.DocsDir = filepbth.Join(bllDir, "docs")
+			} else if expbndErr != nil {
+				return expbndErr
 			}
 
-			// Decide which dashboards to generate
-			var dashboards definitions.Dashboards
+			// Decide which dbshbobrds to generbte
+			vbr dbshbobrds definitions.Dbshbobrds
 			if c.Args().Len() == 0 {
-				dashboards = definitions.Default()
+				dbshbobrds = definitions.Defbult()
 			} else {
-				for _, arg := range c.Args().Slice() {
-					d := definitions.Default().GetByName(c.Args().First())
+				for _, brg := rbnge c.Args().Slice() {
+					d := definitions.Defbult().GetByNbme(c.Args().First())
 					if d == nil {
-						return errors.Newf("Dashboard %q not found", arg)
+						return errors.Newf("Dbshbobrd %q not found", brg)
 					}
-					dashboards = append(dashboards, d)
+					dbshbobrds = bppend(dbshbobrds, d)
 				}
 			}
 
-			logger.Info("generating dashboards",
-				log.Strings("dashboards", dashboards.Names()))
+			logger.Info("generbting dbshbobrds",
+				log.Strings("dbshbobrds", dbshbobrds.Nbmes()))
 
-			return monitoring.Generate(logger, options, dashboards...)
+			return monitoring.Generbte(logger, options, dbshbobrds...)
 		},
 	}
 

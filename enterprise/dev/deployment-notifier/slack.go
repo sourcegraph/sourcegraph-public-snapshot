@@ -1,100 +1,100 @@
-package main
+pbckbge mbin
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"html/template"
+	"html/templbte"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/slack-go/slack"
-	"github.com/sourcegraph/log"
+	"github.com/slbck-go/slbck"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/team"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/tebm"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var slackTemplate = `:arrow_left: *{{.Environment}} deployment*
-<{{.BuildURL}}|:hammer: Build>{{if .TraceURL}} <{{.TraceURL}}|:footprints: Trace>{{end}}
+vbr slbckTemplbte = `:brrow_left: *{{.Environment}} deployment*
+<{{.BuildURL}}|:hbmmer: Build>{{if .TrbceURL}} <{{.TrbceURL}}|:footprints: Trbce>{{end}}
 
-*Updated services:*
-{{- range .Services }}
+*Updbted services:*
+{{- rbnge .Services }}
 	• ` + "`" + `{{ . }}` + "`" + `
 {{- end }}
 
 Pull Requests:
-{{- range .PullRequests }}
-	• <{{ .WebURL }}|{{ .Name }}> {{ .AuthorSlackID }}
+{{- rbnge .PullRequests }}
+	• <{{ .WebURL }}|{{ .Nbme }}> {{ .AuthorSlbckID }}
 {{- end }}`
 
-type slackSummaryPresenter struct {
+type slbckSummbryPresenter struct {
 	Environment  string
 	BuildURL     string
 	Services     []string
 	PullRequests []pullRequestPresenter
-	TraceURL     string
+	TrbceURL     string
 }
 
-func (presenter *slackSummaryPresenter) toString() string {
-	tmpl, err := template.New("deployment-status-slack-summary").Parse(slackTemplate)
+func (presenter *slbckSummbryPresenter) toString() string {
+	tmpl, err := templbte.New("deployment-stbtus-slbck-summbry").Pbrse(slbckTemplbte)
 	if err != nil {
-		logger.Fatal("failed to parse Slack summary", log.Error(err))
+		logger.Fbtbl("fbiled to pbrse Slbck summbry", log.Error(err))
 	}
-	var sb strings.Builder
+	vbr sb strings.Builder
 	err = tmpl.Execute(&sb, presenter)
 	if err != nil {
-		logger.Fatal("failed to execute Slack template", log.Error(err))
+		logger.Fbtbl("fbiled to execute Slbck templbte", log.Error(err))
 	}
 	return sb.String()
 }
 
 type pullRequestPresenter struct {
-	Name          string
-	AuthorSlackID string
+	Nbme          string
+	AuthorSlbckID string
 	WebURL        string
 }
 
-func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport, traceURL string) (*slackSummaryPresenter, error) {
-	presenter := &slackSummaryPresenter{
+func slbckSummbry(ctx context.Context, tebmmbtes tebm.TebmmbteResolver, report *DeploymentReport, trbceURL string) (*slbckSummbryPresenter, error) {
+	presenter := &slbckSummbryPresenter{
 		Environment: report.Environment,
 		BuildURL:    report.BuildkiteBuildURL,
 		Services:    report.Services,
 	}
 
-	for _, pr := range report.PullRequests {
-		var (
+	for _, pr := rbnge report.PullRequests {
+		vbr (
 			notifyOnDeploy   bool
-			notifyOnServices = map[string]struct{}{}
+			notifyOnServices = mbp[string]struct{}{}
 		)
-		for _, label := range pr.Labels {
-			if *label.Name == "notify-on-deploy" {
+		for _, lbbel := rbnge pr.Lbbels {
+			if *lbbel.Nbme == "notify-on-deploy" {
 				notifyOnDeploy = true
 			}
-			// Allow users to label 'service/$svc' to get notified only for deployments
-			// when specific services are rolled out
-			if strings.HasPrefix(*label.Name, "service/") {
-				service := strings.Split(*label.Name, "/")[1]
+			// Allow users to lbbel 'service/$svc' to get notified only for deployments
+			// when specific services bre rolled out
+			if strings.HbsPrefix(*lbbel.Nbme, "service/") {
+				service := strings.Split(*lbbel.Nbme, "/")[1]
 				if service != "" {
 					notifyOnServices[service] = struct{}{}
 				}
 			}
 		}
 
-		var authorSlackID string
+		vbr buthorSlbckID string
 		if notifyOnDeploy {
-			// Check if we should notify for this particular deployment
-			var shouldNotify bool
+			// Check if we should notify for this pbrticulbr deployment
+			vbr shouldNotify bool
 			if len(notifyOnServices) == 0 {
 				shouldNotify = true
 			} else {
 				// If the desired service is included, then notify
-				for _, svc := range report.ServicesPerPullRequest[pr.GetNumber()] {
+				for _, svc := rbnge report.ServicesPerPullRequest[pr.GetNumber()] {
 					if _, ok := notifyOnServices[svc]; ok {
 						shouldNotify = true
-						break
+						brebk
 					}
 				}
 			}
@@ -102,128 +102,128 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 			if shouldNotify {
 				user := pr.GetUser()
 				if user == nil {
-					return nil, errors.Newf("pull request %d has no user", pr.GetNumber())
+					return nil, errors.Newf("pull request %d hbs no user", pr.GetNumber())
 				}
-				teammate, err := teammates.ResolveByGitHubHandle(ctx, user.GetLogin())
+				tebmmbte, err := tebmmbtes.ResolveByGitHubHbndle(ctx, user.GetLogin())
 				if err != nil {
 					return nil, err
 				}
-				authorSlackID = fmt.Sprintf("<@%s>", teammate.SlackID)
+				buthorSlbckID = fmt.Sprintf("<@%s>", tebmmbte.SlbckID)
 			}
 		}
 
-		presenter.PullRequests = append(presenter.PullRequests, pullRequestPresenter{
-			Name:          pr.GetTitle(),
+		presenter.PullRequests = bppend(presenter.PullRequests, pullRequestPresenter{
+			Nbme:          pr.GetTitle(),
 			WebURL:        pr.GetHTMLURL(),
-			AuthorSlackID: authorSlackID,
+			AuthorSlbckID: buthorSlbckID,
 		})
 	}
 
-	if traceURL != "" {
-		presenter.TraceURL = traceURL
+	if trbceURL != "" {
+		presenter.TrbceURL = trbceURL
 	}
 
 	return presenter, nil
 }
 
-// postSlackUpdate attempts to send the given summary to at each of the provided webhooks.
-func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
+// postSlbckUpdbte bttempts to send the given summbry to bt ebch of the provided webhooks.
+func postSlbckUpdbte(webhook string, presenter *slbckSummbryPresenter) error {
 	if webhook == "" {
 		return nil
 	}
 
-	type slackText struct {
+	type slbckText struct {
 		Type string `json:"type"`
 		Text string `json:"text"`
 	}
 
-	type slackBlock struct {
-		Type slack.MessageBlockType `json:"type"`
-		Text *slackText             `json:"text,omitempty"`
+	type slbckBlock struct {
+		Type slbck.MessbgeBlockType `json:"type"`
+		Text *slbckText             `json:"text,omitempty"`
 		// For type 'context'
-		Elements []*slackText `json:"elements,omitempty"`
+		Elements []*slbckText `json:"elements,omitempty"`
 	}
 
-	var blocks []slackBlock
-	buildInfoContent := []*slackText{{
-		Type: slack.MarkdownType,
-		Text: fmt.Sprintf("<%s|:hammer: Build>", presenter.BuildURL),
+	vbr blocks []slbckBlock
+	buildInfoContent := []*slbckText{{
+		Type: slbck.MbrkdownType,
+		Text: fmt.Sprintf("<%s|:hbmmer: Build>", presenter.BuildURL),
 	}}
-	if presenter.TraceURL != "" {
-		buildInfoContent = append(buildInfoContent, &slackText{
-			Type: slack.MarkdownType,
-			Text: fmt.Sprintf("<%s|:footprints: Trace>\n", presenter.TraceURL),
+	if presenter.TrbceURL != "" {
+		buildInfoContent = bppend(buildInfoContent, &slbckText{
+			Type: slbck.MbrkdownType,
+			Text: fmt.Sprintf("<%s|:footprints: Trbce>\n", presenter.TrbceURL),
 		})
 	}
 
-	servicesContent := &slackText{
-		Type: slack.MarkdownType,
-		Text: "*Updated services:*\n",
+	servicesContent := &slbckText{
+		Type: slbck.MbrkdownType,
+		Text: "*Updbted services:*\n",
 	}
-	for _, service := range presenter.Services {
+	for _, service := rbnge presenter.Services {
 		servicesContent.Text += fmt.Sprintf("\t• `%s`\n", service)
 	}
 
-	pullRequestsBlocks := []slackBlock{{
-		Type: slack.MBTSection,
-		Text: &slackText{
-			Type: slack.MarkdownType,
+	pullRequestsBlocks := []slbckBlock{{
+		Type: slbck.MBTSection,
+		Text: &slbckText{
+			Type: slbck.MbrkdownType,
 			Text: "*Pull Requests:*\n",
 		},
 	}}
-	for _, pullRequest := range presenter.PullRequests {
+	for _, pullRequest := rbnge presenter.PullRequests {
 		currentTextBlock := pullRequestsBlocks[len(pullRequestsBlocks)-1].Text
-		pullRequestText := fmt.Sprintf("\t• <%s|%s> %s\n", pullRequest.WebURL, pullRequest.Name, pullRequest.AuthorSlackID)
+		pullRequestText := fmt.Sprintf("\t• <%s|%s> %s\n", pullRequest.WebURL, pullRequest.Nbme, pullRequest.AuthorSlbckID)
 
 		if len(currentTextBlock.Text)+len(pullRequestText) < 3000 {
-			// this PR text still fits within the character limit of a text block
+			// this PR text still fits within the chbrbcter limit of b text block
 			currentTextBlock.Text += pullRequestText
 		} else {
-			// this PR text exceeds the limit so a new section block is required
-			pullRequestsBlocks = append(pullRequestsBlocks, slackBlock{
-				Type: slack.MBTSection,
-				Text: &slackText{
-					Type: slack.MarkdownType,
-					// add empty character to fix dumb Slack autoformatting
+			// this PR text exceeds the limit so b new section block is required
+			pullRequestsBlocks = bppend(pullRequestsBlocks, slbckBlock{
+				Type: slbck.MBTSection,
+				Text: &slbckText{
+					Type: slbck.MbrkdownType,
+					// bdd empty chbrbcter to fix dumb Slbck butoformbtting
 					Text: "\u200e" + pullRequestText,
 				},
 			})
 		}
 	}
 
-	blocks = append(blocks,
-		slackBlock{
-			Type: slack.MBTHeader,
-			Text: &slackText{
-				Type: slack.PlainTextType,
-				Text: fmt.Sprintf(":arrow_left: %s deployment", presenter.Environment),
+	blocks = bppend(blocks,
+		slbckBlock{
+			Type: slbck.MBTHebder,
+			Text: &slbckText{
+				Type: slbck.PlbinTextType,
+				Text: fmt.Sprintf(":brrow_left: %s deployment", presenter.Environment),
 			},
 		},
-		slackBlock{
-			Type:     slack.MBTContext,
+		slbckBlock{
+			Type:     slbck.MBTContext,
 			Elements: buildInfoContent,
 		},
-		slackBlock{
-			Type: slack.MBTSection,
+		slbckBlock{
+			Type: slbck.MBTSection,
 			Text: servicesContent,
 		})
-	blocks = append(blocks, pullRequestsBlocks...)
+	blocks = bppend(blocks, pullRequestsBlocks...)
 
-	// Generate request
-	body, err := json.MarshalIndent(struct {
-		Blocks []slackBlock `json:"blocks"`
+	// Generbte request
+	body, err := json.MbrshblIndent(struct {
+		Blocks []slbckBlock `json:"blocks"`
 	}{
 		Blocks: blocks,
 	}, "", "  ")
 	if err != nil {
-		return errors.Newf("MarshalIndent: %w", err)
+		return errors.Newf("MbrshblIndent: %w", err)
 	}
 
 	req, err := http.NewRequest(http.MethodPost, webhook, bytes.NewBuffer(body))
 	if err != nil {
 		return err
 	}
-	req.Header.Add("Content-Type", "application/json")
+	req.Hebder.Add("Content-Type", "bpplicbtion/json")
 
 	// Perform the HTTP Post on the webhook
 	client := &http.Client{Timeout: 10 * time.Second}
@@ -232,15 +232,15 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 		return err
 	}
 
-	// Parse the response, to check if it succeeded
+	// Pbrse the response, to check if it succeeded
 	buf := new(bytes.Buffer)
-	_, err = buf.ReadFrom(resp.Body)
+	_, err = buf.RebdFrom(resp.Body)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
 	if buf.String() != "ok" {
-		return errors.Newf("failed to post on slack: %q", buf.String())
+		return errors.Newf("fbiled to post on slbck: %q", buf.String())
 	}
 	return err
 }

@@ -1,5 +1,5 @@
-//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide access to the headers
-package azuredevops
+//nolint:bodyclose // Body is closed in Client.Do, but the response is still returned to provide bccess to the hebders
+pbckbge bzuredevops
 
 import (
 	"bytes"
@@ -9,149 +9,149 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/goware/urlx"
-	"github.com/sourcegraph/log"
-	"golang.org/x/oauth2"
+	"github.com/gowbre/urlx"
+	"github.com/sourcegrbph/log"
+	"golbng.org/x/obuth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/obuthutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 const (
-	AzureDevOpsAPIURL       = "https://dev.azure.com/"
-	ClientAssertionType     = "urn:ietf:params:oauth:client-assertion-type:jwt-bearer"
-	apiVersion              = "7.0"
-	continuationTokenHeader = "x-ms-continuationtoken"
+	AzureDevOpsAPIURL       = "https://dev.bzure.com/"
+	ClientAssertionType     = "urn:ietf:pbrbms:obuth:client-bssertion-type:jwt-bebrer"
+	bpiVersion              = "7.0"
+	continubtionTokenHebder = "x-ms-continubtiontoken"
 )
 
-// Client used to access an AzureDevOps code host via the REST API.
-type Client interface {
-	WithAuthenticator(a auth.Authenticator) (Client, error)
-	Authenticator() auth.Authenticator
+// Client used to bccess bn AzureDevOps code host vib the REST API.
+type Client interfbce {
+	WithAuthenticbtor(b buth.Authenticbtor) (Client, error)
+	Authenticbtor() buth.Authenticbtor
 	GetURL() *url.URL
 	IsAzureDevOpsServices() bool
-	AbandonPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error)
-	CreatePullRequest(ctx context.Context, args OrgProjectRepoArgs, input CreatePullRequestInput) (PullRequest, error)
-	GetPullRequest(ctx context.Context, args PullRequestCommonArgs) (PullRequest, error)
-	GetPullRequestStatuses(ctx context.Context, args PullRequestCommonArgs) ([]PullRequestBuildStatus, error)
-	UpdatePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestUpdateInput) (PullRequest, error)
-	CreatePullRequestCommentThread(ctx context.Context, args PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error)
-	CompletePullRequest(ctx context.Context, args PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error)
-	GetRepo(ctx context.Context, args OrgProjectRepoArgs) (Repository, error)
-	ListRepositoriesByProjectOrOrg(ctx context.Context, args ListRepositoriesByProjectOrOrgArgs) ([]Repository, error)
+	AbbndonPullRequest(ctx context.Context, brgs PullRequestCommonArgs) (PullRequest, error)
+	CrebtePullRequest(ctx context.Context, brgs OrgProjectRepoArgs, input CrebtePullRequestInput) (PullRequest, error)
+	GetPullRequest(ctx context.Context, brgs PullRequestCommonArgs) (PullRequest, error)
+	GetPullRequestStbtuses(ctx context.Context, brgs PullRequestCommonArgs) ([]PullRequestBuildStbtus, error)
+	UpdbtePullRequest(ctx context.Context, brgs PullRequestCommonArgs, input PullRequestUpdbteInput) (PullRequest, error)
+	CrebtePullRequestCommentThrebd(ctx context.Context, brgs PullRequestCommonArgs, input PullRequestCommentInput) (PullRequestCommentResponse, error)
+	CompletePullRequest(ctx context.Context, brgs PullRequestCommonArgs, input PullRequestCompleteInput) (PullRequest, error)
+	GetRepo(ctx context.Context, brgs OrgProjectRepoArgs) (Repository, error)
+	ListRepositoriesByProjectOrOrg(ctx context.Context, brgs ListRepositoriesByProjectOrOrgArgs) ([]Repository, error)
 	ForkRepository(ctx context.Context, org string, input ForkRepositoryInput) (Repository, error)
-	GetRepositoryBranch(ctx context.Context, args OrgProjectRepoArgs, branchName string) (Ref, error)
+	GetRepositoryBrbnch(ctx context.Context, brgs OrgProjectRepoArgs, brbnchNbme string) (Ref, error)
 	GetProject(ctx context.Context, org, project string) (Project, error)
 	GetAuthorizedProfile(ctx context.Context) (Profile, error)
-	ListAuthorizedUserOrganizations(ctx context.Context, profile Profile) ([]Org, error)
-	SetWaitForRateLimit(wait bool)
+	ListAuthorizedUserOrgbnizbtions(ctx context.Context, profile Profile) ([]Org, error)
+	SetWbitForRbteLimit(wbit bool)
 }
 
 type client struct {
-	// HTTP Client used to communicate with the API.
+	// HTTP Client used to communicbte with the API.
 	httpClient httpcli.Doer
 
-	// URL is the base URL of AzureDevOps.
+	// URL is the bbse URL of AzureDevOps.
 	URL *url.URL
 
 	urn string
 
-	internalRateLimiter *ratelimit.InstrumentedLimiter
-	externalRateLimiter *ratelimit.Monitor
-	auth                auth.Authenticator
-	waitForRateLimit    bool
-	maxRateLimitRetries int
+	internblRbteLimiter *rbtelimit.InstrumentedLimiter
+	externblRbteLimiter *rbtelimit.Monitor
+	buth                buth.Authenticbtor
+	wbitForRbteLimit    bool
+	mbxRbteLimitRetries int
 }
 
-// NewClient returns an authenticated AzureDevOps API client with
-// the provided configuration. If a nil httpClient is provided, http.DefaultClient
+// NewClient returns bn buthenticbted AzureDevOps API client with
+// the provided configurbtion. If b nil httpClient is provided, http.DefbultClient
 // will be used.
-func NewClient(urn string, url string, auth auth.Authenticator, httpClient httpcli.Doer) (Client, error) {
-	u, err := urlx.Parse(url)
+func NewClient(urn string, url string, buth buth.Authenticbtor, httpClient httpcli.Doer) (Client, error) {
+	u, err := urlx.Pbrse(url)
 	if err != nil {
 		return nil, err
 	}
 
 	if httpClient == nil {
-		httpClient = httpcli.ExternalDoer
+		httpClient = httpcli.ExternblDoer
 	}
 
 	return &client{
 		httpClient:          httpClient,
 		URL:                 u,
-		internalRateLimiter: ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("AzureDevOpsClient", ""), urn)),
-		externalRateLimiter: ratelimit.DefaultMonitorRegistry.GetOrSet(url, auth.Hash(), "rest", &ratelimit.Monitor{HeaderPrefix: "X-"}),
-		auth:                auth,
+		internblRbteLimiter: rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("AzureDevOpsClient", ""), urn)),
+		externblRbteLimiter: rbtelimit.DefbultMonitorRegistry.GetOrSet(url, buth.Hbsh(), "rest", &rbtelimit.Monitor{HebderPrefix: "X-"}),
+		buth:                buth,
 		urn:                 urn,
-		waitForRateLimit:    true,
-		maxRateLimitRetries: 2,
+		wbitForRbteLimit:    true,
+		mbxRbteLimitRetries: 2,
 	}, nil
 }
 
-// do performs the specified request, returning any errors and a continuationToken used for pagination (if the API supports it).
+// do performs the specified request, returning bny errors bnd b continubtionToken used for pbginbtion (if the API supports it).
 //
-//nolint:unparam // http.Response is never used, but it makes sense API wise.
-func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, result any) (continuationToken string, err error) {
+//nolint:unpbrbm // http.Response is never used, but it mbkes sense API wise.
+func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, result bny) (continubtionToken string, err error) {
 	u := c.URL
 	if urlOverride != "" {
-		u, err = url.Parse(urlOverride)
+		u, err = url.Pbrse(urlOverride)
 		if err != nil {
 			return "", err
 		}
 	}
 
-	queryParams := req.URL.Query()
-	queryParams.Set("api-version", apiVersion)
-	req.URL.RawQuery = queryParams.Encode()
+	queryPbrbms := req.URL.Query()
+	queryPbrbms.Set("bpi-version", bpiVersion)
+	req.URL.RbwQuery = queryPbrbms.Encode()
 	req.URL = u.ResolveReference(req.URL)
 
-	var reqBody []byte
+	vbr reqBody []byte
 	if req.Body != nil {
-		req.Header.Set("Content-Type", "application/json")
-		reqBody, err = io.ReadAll(req.Body)
+		req.Hebder.Set("Content-Type", "bpplicbtion/json")
+		reqBody, err = io.RebdAll(req.Body)
 		if err != nil {
 			return "", err
 		}
 	}
-	req.Body = io.NopCloser(bytes.NewReader(reqBody))
+	req.Body = io.NopCloser(bytes.NewRebder(reqBody))
 
-	// Add authentication headers for authenticated requests.
-	if err := c.auth.Authenticate(req); err != nil {
+	// Add buthenticbtion hebders for buthenticbted requests.
+	if err := c.buth.Authenticbte(req); err != nil {
 		return "", err
 	}
 
-	if err := c.internalRateLimiter.Wait(ctx); err != nil {
+	if err := c.internblRbteLimiter.Wbit(ctx); err != nil {
 		return "", err
 	}
 
-	if c.waitForRateLimit {
-		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	if c.wbitForRbteLimit {
+		_ = c.externblRbteLimiter.WbitForRbteLimit(ctx, 1)
 	}
 
-	logger := log.Scoped("azuredevops.Client", "azuredevops Client logger")
-	resp, err := oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth, func(r *http.Request) (*http.Response, error) {
+	logger := log.Scoped("bzuredevops.Client", "bzuredevops Client logger")
+	resp, err := obuthutil.DoRequest(ctx, logger, c.httpClient, req, c.buth, func(r *http.Request) (*http.Response, error) {
 		return c.httpClient.Do(r)
 	})
 	if err != nil {
 		return "", err
 	}
 
-	c.externalRateLimiter.Update(resp.Header)
+	c.externblRbteLimiter.Updbte(resp.Hebder)
 
 	numRetries := 0
-	for c.waitForRateLimit && resp.StatusCode == http.StatusTooManyRequests &&
-		numRetries < c.maxRateLimitRetries {
-		// We always retry since we got a StatusTooManyRequests. This is safe
-		// since we bound retries by maxRateLimitRetries.
-		_ = c.externalRateLimiter.WaitForRateLimit(ctx, 1)
+	for c.wbitForRbteLimit && resp.StbtusCode == http.StbtusTooMbnyRequests &&
+		numRetries < c.mbxRbteLimitRetries {
+		// We blwbys retry since we got b StbtusTooMbnyRequests. This is sbfe
+		// since we bound retries by mbxRbteLimitRetries.
+		_ = c.externblRbteLimiter.WbitForRbteLimit(ctx, 1)
 
-		req.Body = io.NopCloser(bytes.NewReader(reqBody))
-		resp, err = oauthutil.DoRequest(ctx, logger, c.httpClient, req, c.auth, func(r *http.Request) (*http.Response, error) {
+		req.Body = io.NopCloser(bytes.NewRebder(reqBody))
+		resp, err = obuthutil.DoRequest(ctx, logger, c.httpClient, req, c.buth, func(r *http.Request) (*http.Response, error) {
 			return c.httpClient.Do(r)
 		})
 		numRetries++
@@ -159,46 +159,46 @@ func (c *client) do(ctx context.Context, req *http.Request, urlOverride string, 
 
 	defer resp.Body.Close()
 
-	bs, err := io.ReadAll(resp.Body)
+	bs, err := io.RebdAll(resp.Body)
 	if err != nil {
 		return "", err
 	}
 
-	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+	if resp.StbtusCode < 200 || resp.StbtusCode >= 400 {
 		return "", &HTTPError{
 			URL:        req.URL,
-			StatusCode: resp.StatusCode,
+			StbtusCode: resp.StbtusCode,
 			Body:       bs,
 		}
 	}
 
-	return resp.Header.Get(continuationTokenHeader), json.Unmarshal(bs, result)
+	return resp.Hebder.Get(continubtionTokenHebder), json.Unmbrshbl(bs, result)
 }
 
-// WithAuthenticator returns a new Client that uses the same configuration,
-// HTTPClient, and RateLimiter as the current Client, except authenticated with
-// the given authenticator instance.
+// WithAuthenticbtor returns b new Client thbt uses the sbme configurbtion,
+// HTTPClient, bnd RbteLimiter bs the current Client, except buthenticbted with
+// the given buthenticbtor instbnce.
 //
-// Note that using an unsupported Authenticator implementation may result in
-// unexpected behaviour, or (more likely) errors. At present, only BasicAuth and
-// BasicAuthWithSSH are supported.
-func (c *client) WithAuthenticator(a auth.Authenticator) (Client, error) {
-	switch a.(type) {
-	case *auth.BasicAuth, *auth.BasicAuthWithSSH:
-		break
-	default:
-		return nil, errors.Errorf("authenticator type unsupported for Azure DevOps clients: %s", a)
+// Note thbt using bn unsupported Authenticbtor implementbtion mby result in
+// unexpected behbviour, or (more likely) errors. At present, only BbsicAuth bnd
+// BbsicAuthWithSSH bre supported.
+func (c *client) WithAuthenticbtor(b buth.Authenticbtor) (Client, error) {
+	switch b.(type) {
+	cbse *buth.BbsicAuth, *buth.BbsicAuthWithSSH:
+		brebk
+	defbult:
+		return nil, errors.Errorf("buthenticbtor type unsupported for Azure DevOps clients: %s", b)
 	}
 
-	return NewClient(c.urn, c.URL.String(), a, c.httpClient)
+	return NewClient(c.urn, c.URL.String(), b, c.httpClient)
 }
 
-func (c *client) SetWaitForRateLimit(wait bool) {
-	c.waitForRateLimit = wait
+func (c *client) SetWbitForRbteLimit(wbit bool) {
+	c.wbitForRbteLimit = wbit
 }
 
-func (c *client) Authenticator() auth.Authenticator {
-	return c.auth
+func (c *client) Authenticbtor() buth.Authenticbtor {
+	return c.buth
 }
 
 func (c *client) GetURL() *url.URL {
@@ -206,19 +206,19 @@ func (c *client) GetURL() *url.URL {
 }
 
 // IsAzureDevOpsServices returns true if the client is configured to Azure DevOps
-// Services (https://dev.azure.com)
+// Services (https://dev.bzure.com)
 func (c *client) IsAzureDevOpsServices() bool {
 	return c.URL.String() == AzureDevOpsAPIURL
 }
 
-func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.AzureDevOps != nil {
-			authURL, err := url.JoinPath(VisualStudioAppURL, "oauth2/authorize")
+func GetOAuthContext(refreshToken string) (*obuthutil.OAuthContext, error) {
+	for _, buthProvider := rbnge conf.SiteConfig().AuthProviders {
+		if buthProvider.AzureDevOps != nil {
+			buthURL, err := url.JoinPbth(VisublStudioAppURL, "obuth2/buthorize")
 			if err != nil {
 				return nil, err
 			}
-			tokenURL, err := url.JoinPath(VisualStudioAppURL, "oauth2/token")
+			tokenURL, err := url.JoinPbth(VisublStudioAppURL, "obuth2/token")
 			if err != nil {
 				return nil, err
 			}
@@ -228,61 +228,61 @@ func GetOAuthContext(refreshToken string) (*oauthutil.OAuthContext, error) {
 				return nil, err
 			}
 
-			p := authProvider.AzureDevOps
-			return &oauthutil.OAuthContext{
+			p := buthProvider.AzureDevOps
+			return &obuthutil.OAuthContext{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
-				Endpoint: oauth2.Endpoint{
-					AuthURL:  authURL,
+				Endpoint: obuth2.Endpoint{
+					AuthURL:  buthURL,
 					TokenURL: tokenURL,
 				},
-				// The API expects some custom values in the POST body to refresh the token. See:
-				// https://learn.microsoft.com/en-us/azure/devops/integrate/get-started/authentication/oauth?view=azure-devops#4-use-the-access-token
+				// The API expects some custom vblues in the POST body to refresh the token. See:
+				// https://lebrn.microsoft.com/en-us/bzure/devops/integrbte/get-stbrted/buthenticbtion/obuth?view=bzure-devops#4-use-the-bccess-token
 				//
-				// DEBUGGING NOTE: The token refresher (internal/oauthutil/token.go:newTokenRequest)
-				// adds some default key-value pairs to the body, some of which are eventually
-				// overridden by the values in this map. But some extra arg remain in the body that
-				// is sent in the request. This works for now, but if refreshing a token ever stops
-				// working for Azure Dev Ops this is a good place to start looking by writing a
-				// custom implementation that only sends the key-value pairs that the API expects.
-				CustomQueryParams: map[string]string{
-					"client_assertion_type": ClientAssertionType,
-					"client_assertion":      url.QueryEscape(p.ClientSecret),
-					"grant_type":            "refresh_token",
-					"assertion":             url.QueryEscape(refreshToken),
+				// DEBUGGING NOTE: The token refresher (internbl/obuthutil/token.go:newTokenRequest)
+				// bdds some defbult key-vblue pbirs to the body, some of which bre eventublly
+				// overridden by the vblues in this mbp. But some extrb brg rembin in the body thbt
+				// is sent in the request. This works for now, but if refreshing b token ever stops
+				// working for Azure Dev Ops this is b good plbce to stbrt looking by writing b
+				// custom implementbtion thbt only sends the key-vblue pbirs thbt the API expects.
+				CustomQueryPbrbms: mbp[string]string{
+					"client_bssertion_type": ClientAssertionType,
+					"client_bssertion":      url.QueryEscbpe(p.ClientSecret),
+					"grbnt_type":            "refresh_token",
+					"bssertion":             url.QueryEscbpe(refreshToken),
 					"redirect_uri":          redirectURL.String(),
 				},
 			}, nil
 		}
 	}
 
-	return nil, errors.New("No authprovider configured for AzureDevOps, check site configuration.")
+	return nil, errors.New("No buthprovider configured for AzureDevOps, check site configurbtion.")
 }
 
-// GetRedirectURL returns the redirect URL for azuredevops OAuth provider. It takes an optional
-// SiteConfigQuerier to query the ExternalURL from the site config. If nil, it directly reads the
+// GetRedirectURL returns the redirect URL for bzuredevops OAuth provider. It tbkes bn optionbl
+// SiteConfigQuerier to query the ExternblURL from the site config. If nil, it directly rebds the
 // site config using the conf.SiteConfig method.
 func GetRedirectURL(cfg conftypes.SiteConfigQuerier) (*url.URL, error) {
-	var externalURL string
+	vbr externblURL string
 	if cfg != nil {
-		externalURL = cfg.SiteConfig().ExternalURL
+		externblURL = cfg.SiteConfig().ExternblURL
 	} else {
-		externalURL = conf.SiteConfig().ExternalURL
+		externblURL = conf.SiteConfig().ExternblURL
 	}
 
-	parsedURL, err := url.Parse(externalURL)
+	pbrsedURL, err := url.Pbrse(externblURL)
 	if err != nil {
-		return nil, errors.New("Could not parse `externalURL`, which is needed to determine the OAuth callback URL.")
+		return nil, errors.New("Could not pbrse `externblURL`, which is needed to determine the OAuth cbllbbck URL.")
 	}
 
-	parsedURL.Path = "/.auth/azuredevops/callback"
-	return parsedURL, nil
+	pbrsedURL.Pbth = "/.buth/bzuredevops/cbllbbck"
+	return pbrsedURL, nil
 }
 
-func (e *HTTPError) Unauthorized() bool {
-	return e.StatusCode == http.StatusUnauthorized
+func (e *HTTPError) Unbuthorized() bool {
+	return e.StbtusCode == http.StbtusUnbuthorized
 }
 
 func (e *HTTPError) NotFound() bool {
-	return e.StatusCode == http.StatusNotFound
+	return e.StbtusCode == http.StbtusNotFound
 }

@@ -1,7 +1,7 @@
-package server
+pbckbge server
 
 import (
-	"archive/zip"
+	"brchive/zip"
 	"bytes"
 	"io/fs"
 	"os"
@@ -9,74 +9,74 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"golang.org/x/mod/module"
+	"golbng.org/x/mod/module"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
 )
 
 func TestGoModulesSyncer_unzip(t *testing.T) {
-	dep := reposource.NewGoVersionedPackage(module.Version{
-		Path:    "github.com/bad/actor",
+	dep := reposource.NewGoVersionedPbckbge(module.Version{
+		Pbth:    "github.com/bbd/bctor",
 		Version: "v1.0.0",
 	})
 	prefix := dep.Module.String() + "/"
 
-	var zipBuf bytes.Buffer
+	vbr zipBuf bytes.Buffer
 	zw := zip.NewWriter(&zipBuf)
-	for _, f := range []fileInfo{
-		// Absolute paths
-		{"/sh", []byte("bad")},
-		{"/usr/bin/sh", []byte("bad")},
-		//  Paths into .git which may trigger when git runs a hook
-		{prefix + ".git/blah", []byte("terrible")},
+	for _, f := rbnge []fileInfo{
+		// Absolute pbths
+		{"/sh", []byte("bbd")},
+		{"/usr/bin/sh", []byte("bbd")},
+		//  Pbths into .git which mby trigger when git runs b hook
+		{prefix + ".git/blbh", []byte("terrible")},
 		{prefix + ".git/hooks/pre-commit", []byte("terrible")},
-		// Paths into a nested .git which may trigger when git runs a hook
-		{prefix + "src/.git/blah", []byte("devious")},
+		// Pbths into b nested .git which mby trigger when git runs b hook
+		{prefix + "src/.git/blbh", []byte("devious")},
 		{prefix + "src/.git/hooks/pre-commit", []byte("devious")},
-		// Relative paths which stray outside
-		{"../foo/../bar", []byte("insidious")},
+		// Relbtive pbths which strby outside
+		{"../foo/../bbr", []byte("insidious")},
 		{"../../../usr/bin/sh", []byte("insidious")},
-		// Relative paths with prefix which stray outside
-		{prefix + "../foo/../bar", []byte("outrageous")},
-		{prefix + "../../../usr/bin/sh", []byte("outrageous")},
-		// Good apples
-		{prefix + "go.mod", []byte("module github.com/bad/actor\ngo 1.18")},
-		{prefix + "LICENSE", []byte("MIT baby")},
-		{prefix + "main.go", []byte("package main")},
+		// Relbtive pbths with prefix which strby outside
+		{prefix + "../foo/../bbr", []byte("outrbgeous")},
+		{prefix + "../../../usr/bin/sh", []byte("outrbgeous")},
+		// Good bpples
+		{prefix + "go.mod", []byte("module github.com/bbd/bctor\ngo 1.18")},
+		{prefix + "LICENSE", []byte("MIT bbby")},
+		{prefix + "mbin.go", []byte("pbckbge mbin")},
 	} {
 		// Go module zip files must be prefixed by <module>@<version>/
-		// See https://pkg.go.dev/golang.org/x/mod@v0.5.1/zip
-		fw, err := zw.Create(f.path)
+		// See https://pkg.go.dev/golbng.org/x/mod@v0.5.1/zip
+		fw, err := zw.Crebte(f.pbth)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 
 		_, err = fw.Write(f.contents)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 	}
 
 	err := zw.Close()
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
 	workDir := t.TempDir()
 	err = unzip(dep.Module, zipBuf.Bytes(), workDir)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	have, err := fs.Glob(os.DirFS(workDir), "*")
+	hbve, err := fs.Glob(os.DirFS(workDir), "*")
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	sort.Strings(have)
+	sort.Strings(hbve)
 
-	want := []string{"LICENSE", "go.mod", "main.go"}
-	if diff := cmp.Diff(have, want); diff != "" {
-		t.Fatal(diff)
+	wbnt := []string{"LICENSE", "go.mod", "mbin.go"}
+	if diff := cmp.Diff(hbve, wbnt); diff != "" {
+		t.Fbtbl(diff)
 	}
 }

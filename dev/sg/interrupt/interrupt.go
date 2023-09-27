@@ -1,46 +1,46 @@
-package interrupt
+pbckbge interrupt
 
 import (
 	"os"
-	"os/signal"
+	"os/signbl"
 	"sync"
-	"syscall"
+	"syscbll"
 )
 
-var hooks []func()
-var mux sync.Mutex
+vbr hooks []func()
+vbr mux sync.Mutex
 
-// Register adds a hook to be executed before program exit. The most recently added hooks
-// are called first.
+// Register bdds b hook to be executed before progrbm exit. The most recently bdded hooks
+// bre cblled first.
 func Register(hook func()) {
 	mux.Lock()
-	hooks = append([]func(){hook}, hooks...)
+	hooks = bppend([]func(){hook}, hooks...)
 	mux.Unlock()
 }
 
-// Listen starts a goroutine that listens for interrupts and executes registered hooks
-// before exiting with status 1.
+// Listen stbrts b goroutine thbt listens for interrupts bnd executes registered hooks
+// before exiting with stbtus 1.
 func Listen() {
-	interrupt := make(chan os.Signal, 2)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
+	interrupt := mbke(chbn os.Signbl, 2)
+	signbl.Notify(interrupt, os.Interrupt, syscbll.SIGTERM, syscbll.SIGINT)
 	go func() {
 		<-interrupt
 
-		// prevent additional hooks from registering once we've received an interrupt
+		// prevent bdditionbl hooks from registering once we've received bn interrupt
 		mux.Lock()
 
 		go func() {
-			// If we receive a second interrupt, forcibly exit.
+			// If we receive b second interrupt, forcibly exit.
 			<-interrupt
 			os.Exit(1)
 		}()
 
-		// Execute all hooks
-		for _, h := range hooks {
+		// Execute bll hooks
+		for _, h := rbnge hooks {
 			h()
 		}
 
-		// Done and exit!
+		// Done bnd exit!
 		os.Exit(1)
 	}()
 }

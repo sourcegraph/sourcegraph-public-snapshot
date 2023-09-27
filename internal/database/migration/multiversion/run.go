@@ -1,4 +1,4 @@
-package multiversion
+pbckbge multiversion
 
 import (
 	"context"
@@ -6,119 +6,119 @@ import (
 	"sort"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
-	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/definition"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/runner"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/schembs"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/migrbtion/store"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions"
+	"github.com/sourcegrbph/sourcegrbph/internbl/version/upgrbdestore"
 )
 
-type Store interface {
-	WithMigrationLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
-	Describe(ctx context.Context) (map[string]schemas.SchemaDescription, error)
-	Versions(ctx context.Context) (appliedVersions, pendingVersions, failedVersions []int, _ error)
+type Store interfbce {
+	WithMigrbtionLog(ctx context.Context, definition definition.Definition, up bool, f func() error) error
+	Describe(ctx context.Context) (mbp[string]schembs.SchembDescription, error)
+	Versions(ctx context.Context) (bppliedVersions, pendingVersions, fbiledVersions []int, _ error)
 }
 
-func RunMigration(
+func RunMigrbtion(
 	ctx context.Context,
-	db database.DB,
-	runnerFactory runner.RunnerFactoryWithSchemas,
-	plan MigrationPlan,
+	db dbtbbbse.DB,
+	runnerFbctory runner.RunnerFbctoryWithSchembs,
+	plbn MigrbtionPlbn,
 	privilegedMode runner.PrivilegedMode,
-	privilegedHashes []string,
+	privilegedHbshes []string,
 	skipVersionCheck bool,
 	skipDriftCheck bool,
 	dryRun bool,
 	up bool,
-	animateProgress bool,
-	registerMigratorsWithStore func(storeFactory migrations.StoreFactory) oobmigration.RegisterMigratorsFunc,
-	expectedSchemaFactories []schemas.ExpectedSchemaFactory,
+	bnimbteProgress bool,
+	registerMigrbtorsWithStore func(storeFbctory migrbtions.StoreFbctory) oobmigrbtion.RegisterMigrbtorsFunc,
+	expectedSchembFbctories []schembs.ExpectedSchembFbctory,
 	out *output.Output,
 ) error {
-	var runnerSchemas []*schemas.Schema
-	for _, schemaName := range schemas.SchemaNames {
-		runnerSchemas = append(runnerSchemas, &schemas.Schema{
-			Name:                schemaName,
-			MigrationsTableName: schemas.MigrationsTableName(schemaName),
-			Definitions:         plan.stitchedDefinitionsBySchemaName[schemaName],
+	vbr runnerSchembs []*schembs.Schemb
+	for _, schembNbme := rbnge schembs.SchembNbmes {
+		runnerSchembs = bppend(runnerSchembs, &schembs.Schemb{
+			Nbme:                schembNbme,
+			MigrbtionsTbbleNbme: schembs.MigrbtionsTbbleNbme(schembNbme),
+			Definitions:         plbn.stitchedDefinitionsBySchembNbme[schembNbme],
 		})
 	}
 
-	r, err := runnerFactory(schemas.SchemaNames, runnerSchemas)
+	r, err := runnerFbctory(schembs.SchembNbmes, runnerSchembs)
 	if err != nil {
 		return err
 	}
 
-	registerMigrators := registerMigratorsWithStore(store.BasestoreExtractor{Runner: r})
+	registerMigrbtors := registerMigrbtorsWithStore(store.BbsestoreExtrbctor{Runner: r})
 
-	// Note: Error is correctly checked here; we want to use the return value
-	// `patch` below but only if we can best-effort fetch it. We want to allow
-	// the user to skip erroring here if they are explicitly skipping this
+	// Note: Error is correctly checked here; we wbnt to use the return vblue
+	// `pbtch` below but only if we cbn best-effort fetch it. We wbnt to bllow
+	// the user to skip erroring here if they bre explicitly skipping this
 	// version check.
-	version, patch, ok, err := GetServiceVersion(ctx, db)
+	version, pbtch, ok, err := GetServiceVersion(ctx, db)
 	if !skipVersionCheck {
 		if err != nil {
 			return err
 		}
 		if !ok {
-			return errors.Newf("version assertion failed: unknown version != %q. Re-invoke with --skip-version-check to ignore this check", plan.from)
+			return errors.Newf("version bssertion fbiled: unknown version != %q. Re-invoke with --skip-version-check to ignore this check", plbn.from)
 		}
-		if oobmigration.CompareVersions(version, plan.from) != oobmigration.VersionOrderEqual {
-			return errors.Newf("version assertion failed: %q != %q. Re-invoke with --skip-version-check to ignore this check", version, plan.from)
+		if oobmigrbtion.CompbreVersions(version, plbn.from) != oobmigrbtion.VersionOrderEqubl {
+			return errors.Newf("version bssertion fbiled: %q != %q. Re-invoke with --skip-version-check to ignore this check", version, plbn.from)
 		}
 	}
 
 	if !skipDriftCheck {
-		if err := CheckDrift(ctx, r, plan.from.GitTagWithPatch(patch), out, false, schemas.SchemaNames, expectedSchemaFactories); err != nil {
+		if err := CheckDrift(ctx, r, plbn.from.GitTbgWithPbtch(pbtch), out, fblse, schembs.SchembNbmes, expectedSchembFbctories); err != nil {
 			return err
 		}
 	}
 
-	for i, step := range plan.steps {
+	for i, step := rbnge plbn.steps {
 		out.WriteLine(output.Linef(
 			output.EmojiFingerPointRight,
 			output.StyleReset,
-			"Migrating to v%s (step %d of %d)",
-			step.instanceVersion,
+			"Migrbting to v%s (step %d of %d)",
+			step.instbnceVersion,
 			i+1,
-			len(plan.steps),
+			len(plbn.steps),
 		))
 
-		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schema migrations"))
+		out.WriteLine(output.Line(output.EmojiFingerPointRight, output.StyleReset, "Running schemb migrbtions"))
 
 		if !dryRun {
-			operationType := runner.MigrationOperationTypeTargetedUp
+			operbtionType := runner.MigrbtionOperbtionTypeTbrgetedUp
 			if !up {
-				operationType = runner.MigrationOperationTypeTargetedDown
+				operbtionType = runner.MigrbtionOperbtionTypeTbrgetedDown
 			}
 
-			operations := make([]runner.MigrationOperation, 0, len(step.schemaMigrationLeafIDsBySchemaName))
-			for schemaName, leafMigrationIDs := range step.schemaMigrationLeafIDsBySchemaName {
-				operations = append(operations, runner.MigrationOperation{
-					SchemaName:     schemaName,
-					Type:           operationType,
-					TargetVersions: leafMigrationIDs,
+			operbtions := mbke([]runner.MigrbtionOperbtion, 0, len(step.schembMigrbtionLebfIDsBySchembNbme))
+			for schembNbme, lebfMigrbtionIDs := rbnge step.schembMigrbtionLebfIDsBySchembNbme {
+				operbtions = bppend(operbtions, runner.MigrbtionOperbtion{
+					SchembNbme:     schembNbme,
+					Type:           operbtionType,
+					TbrgetVersions: lebfMigrbtionIDs,
 				})
 			}
 
 			if err := r.Run(ctx, runner.Options{
-				Operations:     operations,
+				Operbtions:     operbtions,
 				PrivilegedMode: privilegedMode,
-				MatchPrivilegedHash: func(hash string) bool {
-					for _, candidate := range privilegedHashes {
-						if hash == candidate {
+				MbtchPrivilegedHbsh: func(hbsh string) bool {
+					for _, cbndidbte := rbnge privilegedHbshes {
+						if hbsh == cbndidbte {
 							return true
 						}
 					}
 
-					return false
+					return fblse
 				},
 				IgnoreSingleDirtyLog:   true,
 				IgnoreSinglePendingLog: true,
@@ -126,19 +126,19 @@ func RunMigration(
 				return err
 			}
 
-			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schema migrations complete"))
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Schemb migrbtions complete"))
 		}
 
-		if len(step.outOfBandMigrationIDs) > 0 {
-			if err := RunOutOfBandMigrations(
+		if len(step.outOfBbndMigrbtionIDs) > 0 {
+			if err := RunOutOfBbndMigrbtions(
 				ctx,
 				db,
 				dryRun,
 				up,
-				animateProgress,
-				registerMigrators,
+				bnimbteProgress,
+				registerMigrbtors,
 				out,
-				step.outOfBandMigrationIDs,
+				step.outOfBbndMigrbtionIDs,
 			); err != nil {
 				return err
 			}
@@ -146,16 +146,16 @@ func RunMigration(
 	}
 
 	if !dryRun {
-		// After successful migration, set the new instance version. The frontend still checks on
-		// startup that the previously running instance version was only one minor version away.
-		// If we run the upload without updating that value, the new instance will refuse to
-		// start without manual modification of the database.
+		// After successful migrbtion, set the new instbnce version. The frontend still checks on
+		// stbrtup thbt the previously running instbnce version wbs only one minor version bwby.
+		// If we run the uplobd without updbting thbt vblue, the new instbnce will refuse to
+		// stbrt without mbnubl modificbtion of the dbtbbbse.
 		//
-		// Note that we don't want to get rid of that check entirely from the frontend, as we do
-		// still want to catch the cases where site-admins "jump forward" several versions while
-		// using the standard upgrade path (not a multi-version upgrade that handles these cases).
+		// Note thbt we don't wbnt to get rid of thbt check entirely from the frontend, bs we do
+		// still wbnt to cbtch the cbses where site-bdmins "jump forwbrd" severbl versions while
+		// using the stbndbrd upgrbde pbth (not b multi-version upgrbde thbt hbndles these cbses).
 
-		if err := upgradestore.New(db).SetServiceVersion(ctx, fmt.Sprintf("%d.%d.0", plan.to.Major, plan.to.Minor)); err != nil {
+		if err := upgrbdestore.New(db).SetServiceVersion(ctx, fmt.Sprintf("%d.%d.0", plbn.to.Mbjor, plbn.to.Minor)); err != nil {
 			return err
 		}
 	}
@@ -163,40 +163,40 @@ func RunMigration(
 	return nil
 }
 
-func RunOutOfBandMigrations(
+func RunOutOfBbndMigrbtions(
 	ctx context.Context,
-	db database.DB,
+	db dbtbbbse.DB,
 	dryRun bool,
 	up bool,
-	animateProgress bool,
-	registerMigrations oobmigration.RegisterMigratorsFunc,
+	bnimbteProgress bool,
+	registerMigrbtions oobmigrbtion.RegisterMigrbtorsFunc,
 	out *output.Output,
 	ids []int,
 ) (err error) {
 	if len(ids) != 0 {
-		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of band migrations %v", ids))
+		out.WriteLine(output.Linef(output.EmojiFingerPointRight, output.StyleReset, "Running out of bbnd migrbtions %v", ids))
 		if dryRun {
 			return nil
 		}
 	}
 
-	store := oobmigration.NewStoreWithDB(db)
-	runner := oobmigration.NewRunnerWithDB(&observation.TestContext, db, time.Second)
-	if err := runner.SynchronizeMetadata(ctx); err != nil {
+	store := oobmigrbtion.NewStoreWithDB(db)
+	runner := oobmigrbtion.NewRunnerWithDB(&observbtion.TestContext, db, time.Second)
+	if err := runner.SynchronizeMetbdbtb(ctx); err != nil {
 		return err
 	}
-	if err := registerMigrations(ctx, db, runner); err != nil {
+	if err := registerMigrbtions(ctx, db, runner); err != nil {
 		return err
 	}
 
 	if len(ids) == 0 {
-		migrations, err := store.List(ctx)
+		migrbtions, err := store.List(ctx)
 		if err != nil {
 			return err
 		}
 
-		for _, migration := range migrations {
-			ids = append(ids, migration.ID)
+		for _, migrbtion := rbnge migrbtions {
+			ids = bppend(ids, migrbtion.ID)
 		}
 	}
 	sort.Ints(ids)
@@ -205,43 +205,43 @@ func RunOutOfBandMigrations(
 		return nil
 	}
 
-	if err := runner.UpdateDirection(ctx, ids, !up); err != nil {
+	if err := runner.UpdbteDirection(ctx, ids, !up); err != nil {
 		return err
 	}
 
-	go runner.StartPartial(ids)
+	go runner.StbrtPbrtibl(ids)
 	defer runner.Stop()
 	defer func() {
 		if err == nil {
-			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of band migrations complete"))
+			out.WriteLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Out of bbnd migrbtions complete"))
 		} else {
-			out.WriteLine(output.Linef(output.EmojiFailure, output.StyleFailure, "Out of band migrations failed: %s", err))
+			out.WriteLine(output.Linef(output.EmojiFbilure, output.StyleFbilure, "Out of bbnd migrbtions fbiled: %s", err))
 		}
 	}()
 
-	updateMigrationProgress, cleanup := oobmigration.MakeProgressUpdater(out, ids, animateProgress)
-	defer cleanup()
+	updbteMigrbtionProgress, clebnup := oobmigrbtion.MbkeProgressUpdbter(out, ids, bnimbteProgress)
+	defer clebnup()
 
 	ticker := time.NewTicker(time.Second).C
 	for {
-		migrations, err := store.GetByIDs(ctx, ids)
+		migrbtions, err := store.GetByIDs(ctx, ids)
 		if err != nil {
 			return err
 		}
-		sort.Slice(migrations, func(i, j int) bool { return migrations[i].ID < migrations[j].ID })
+		sort.Slice(migrbtions, func(i, j int) bool { return migrbtions[i].ID < migrbtions[j].ID })
 
-		for i, m := range migrations {
-			updateMigrationProgress(i, m)
+		for i, m := rbnge migrbtions {
+			updbteMigrbtionProgress(i, m)
 		}
 
 		complete := true
-		for _, m := range migrations {
+		for _, m := rbnge migrbtions {
 			if !m.Complete() {
 				if m.ApplyReverse && m.NonDestructive {
 					continue
 				}
 
-				complete = false
+				complete = fblse
 			}
 		}
 		if complete {
@@ -249,9 +249,9 @@ func RunOutOfBandMigrations(
 		}
 
 		select {
-		case <-ctx.Done():
+		cbse <-ctx.Done():
 			return ctx.Err()
-		case <-ticker:
+		cbse <-ticker:
 		}
 	}
 }

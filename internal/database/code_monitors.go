@@ -1,118 +1,118 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/keegancsmith/sqlf"
+	"github.com/grbph-gophers/grbphql-go"
+	"github.com/grbph-gophers/grbphql-go/relby"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log"
+	"github.com/sourcegrbph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/timeutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-// CodeMonitorStore is an interface for interacting with the code monitor tables in the database
-type CodeMonitorStore interface {
-	basestore.ShareableStore
-	Transact(context.Context) (CodeMonitorStore, error)
+// CodeMonitorStore is bn interfbce for interbcting with the code monitor tbbles in the dbtbbbse
+type CodeMonitorStore interfbce {
+	bbsestore.ShbrebbleStore
+	Trbnsbct(context.Context) (CodeMonitorStore, error)
 	Done(error) error
 	Now() time.Time
 	Clock() func() time.Time
 	Exec(ctx context.Context, query *sqlf.Query) error
 
-	CreateMonitor(ctx context.Context, args MonitorArgs) (*Monitor, error)
-	UpdateMonitor(ctx context.Context, id int64, args MonitorArgs) (*Monitor, error)
-	UpdateMonitorEnabled(ctx context.Context, id int64, enabled bool) (*Monitor, error)
+	CrebteMonitor(ctx context.Context, brgs MonitorArgs) (*Monitor, error)
+	UpdbteMonitor(ctx context.Context, id int64, brgs MonitorArgs) (*Monitor, error)
+	UpdbteMonitorEnbbled(ctx context.Context, id int64, enbbled bool) (*Monitor, error)
 	DeleteMonitor(ctx context.Context, id int64) error
 	GetMonitor(ctx context.Context, monitorID int64) (*Monitor, error)
 	ListMonitors(context.Context, ListMonitorsOpts) ([]*Monitor, error)
 	CountMonitors(ctx context.Context, userID *int32) (int32, error)
 
-	CreateQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error)
-	UpdateQueryTrigger(ctx context.Context, id int64, query string) error
+	CrebteQueryTrigger(ctx context.Context, monitorID int64, query string) (*QueryTrigger, error)
+	UpdbteQueryTrigger(ctx context.Context, id int64, query string) error
 	GetQueryTriggerForMonitor(ctx context.Context, monitorID int64) (*QueryTrigger, error)
-	ResetQueryTriggerTimestamps(ctx context.Context, queryID int64) error
-	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, latestResults time.Time) error
+	ResetQueryTriggerTimestbmps(ctx context.Context, queryID int64) error
+	SetQueryTriggerNextRun(ctx context.Context, triggerQueryID int64, next time.Time, lbtestResults time.Time) error
 	GetQueryTriggerForJob(ctx context.Context, triggerJob int32) (*QueryTrigger, error)
 	EnqueueQueryTriggerJobs(context.Context) ([]*TriggerJob, error)
 	ListQueryTriggerJobs(context.Context, ListTriggerJobsOpts) ([]*TriggerJob, error)
 	CountQueryTriggerJobs(ctx context.Context, queryID int64) (int32, error)
 
-	UpdateTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMatch) error
-	DeleteOldTriggerJobs(ctx context.Context, retentionInDays int) error
+	UpdbteTriggerJobWithResults(ctx context.Context, triggerJobID int32, queryString string, results []*result.CommitMbtch) error
+	DeleteOldTriggerJobs(ctx context.Context, retentionInDbys int) error
 
-	UpdateEmailAction(_ context.Context, id int64, _ *EmailActionArgs) (*EmailAction, error)
-	CreateEmailAction(ctx context.Context, monitorID int64, _ *EmailActionArgs) (*EmailAction, error)
-	DeleteEmailActions(ctx context.Context, actionIDs []int64, monitorID int64) error
-	GetEmailAction(ctx context.Context, emailID int64) (*EmailAction, error)
-	ListEmailActions(context.Context, ListActionsOpts) ([]*EmailAction, error)
+	UpdbteEmbilAction(_ context.Context, id int64, _ *EmbilActionArgs) (*EmbilAction, error)
+	CrebteEmbilAction(ctx context.Context, monitorID int64, _ *EmbilActionArgs) (*EmbilAction, error)
+	DeleteEmbilActions(ctx context.Context, bctionIDs []int64, monitorID int64) error
+	GetEmbilAction(ctx context.Context, embilID int64) (*EmbilAction, error)
+	ListEmbilActions(context.Context, ListActionsOpts) ([]*EmbilAction, error)
 
-	UpdateWebhookAction(_ context.Context, id int64, enabled, includeResults bool, url string) (*WebhookAction, error)
-	CreateWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*WebhookAction, error)
+	UpdbteWebhookAction(_ context.Context, id int64, enbbled, includeResults bool, url string) (*WebhookAction, error)
+	CrebteWebhookAction(ctx context.Context, monitorID int64, enbbled, includeResults bool, url string) (*WebhookAction, error)
 	DeleteWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
 	CountWebhookActions(ctx context.Context, monitorID int64) (int, error)
 	GetWebhookAction(ctx context.Context, id int64) (*WebhookAction, error)
 	ListWebhookActions(context.Context, ListActionsOpts) ([]*WebhookAction, error)
 
-	UpdateSlackWebhookAction(_ context.Context, id int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error)
-	CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error)
-	DeleteSlackWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
-	CountSlackWebhookActions(ctx context.Context, monitorID int64) (int, error)
-	GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error)
-	ListSlackWebhookActions(context.Context, ListActionsOpts) ([]*SlackWebhookAction, error)
+	UpdbteSlbckWebhookAction(_ context.Context, id int64, enbbled, includeResults bool, url string) (*SlbckWebhookAction, error)
+	CrebteSlbckWebhookAction(ctx context.Context, monitorID int64, enbbled, includeResults bool, url string) (*SlbckWebhookAction, error)
+	DeleteSlbckWebhookActions(ctx context.Context, monitorID int64, ids ...int64) error
+	CountSlbckWebhookActions(ctx context.Context, monitorID int64) (int, error)
+	GetSlbckWebhookAction(ctx context.Context, id int64) (*SlbckWebhookAction, error)
+	ListSlbckWebhookActions(context.Context, ListActionsOpts) ([]*SlbckWebhookAction, error)
 
-	CreateRecipient(ctx context.Context, emailID int64, userID, orgID *int32) (*Recipient, error)
-	DeleteRecipients(ctx context.Context, emailID int64) error
+	CrebteRecipient(ctx context.Context, embilID int64, userID, orgID *int32) (*Recipient, error)
+	DeleteRecipients(ctx context.Context, embilID int64) error
 	ListRecipients(context.Context, ListRecipientsOpts) ([]*Recipient, error)
-	CountRecipients(ctx context.Context, emailID int64) (int32, error)
+	CountRecipients(ctx context.Context, embilID int64) (int32, error)
 
 	ListActionJobs(context.Context, ListActionJobsOpts) ([]*ActionJob, error)
 	CountActionJobs(context.Context, ListActionJobsOpts) (int, error)
-	GetActionJobMetadata(ctx context.Context, jobID int32) (*ActionJobMetadata, error)
+	GetActionJobMetbdbtb(ctx context.Context, jobID int32) (*ActionJobMetbdbtb, error)
 	GetActionJob(ctx context.Context, jobID int32) (*ActionJob, error)
 	EnqueueActionJobsForMonitor(ctx context.Context, monitorID int64, triggerJob int32) ([]*ActionJob, error)
 
-	// HasAnyLastSearched returns whether there have ever been any repo-aware code monitor
-	// searches executed for this code monitor. This should only be needed during the transition
-	// version so that we don't detect every repo as a new repo and search their entire history
-	// when a code monitor transitions from non-repo-aware to repo-aware.
-	HasAnyLastSearched(ctx context.Context, monitorID int64) (bool, error)
-	UpsertLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID, lastSearched []string) error
-	GetLastSearched(ctx context.Context, monitorID int64, repoID api.RepoID) ([]string, error)
+	// HbsAnyLbstSebrched returns whether there hbve ever been bny repo-bwbre code monitor
+	// sebrches executed for this code monitor. This should only be needed during the trbnsition
+	// version so thbt we don't detect every repo bs b new repo bnd sebrch their entire history
+	// when b code monitor trbnsitions from non-repo-bwbre to repo-bwbre.
+	HbsAnyLbstSebrched(ctx context.Context, monitorID int64) (bool, error)
+	UpsertLbstSebrched(ctx context.Context, monitorID int64, repoID bpi.RepoID, lbstSebrched []string) error
+	GetLbstSebrched(ctx context.Context, monitorID int64, repoID bpi.RepoID) ([]string, error)
 }
 
-// codeMonitorStore exposes methods to read and write codemonitors domain models
-// from persistent storage.
+// codeMonitorStore exposes methods to rebd bnd write codemonitors dombin models
+// from persistent storbge.
 type codeMonitorStore struct {
-	*basestore.Store
+	*bbsestore.Store
 	userStore UserStore
 	now       func() time.Time
 }
 
-var _ CodeMonitorStore = (*codeMonitorStore)(nil)
+vbr _ CodeMonitorStore = (*codeMonitorStore)(nil)
 
-// CodeMonitorsWith returns a new Store backed by the given database.
-func CodeMonitorsWith(other basestore.ShareableStore) *codeMonitorStore {
+// CodeMonitorsWith returns b new Store bbcked by the given dbtbbbse.
+func CodeMonitorsWith(other bbsestore.ShbrebbleStore) *codeMonitorStore {
 	return CodeMonitorsWithClock(other, timeutil.Now)
 }
 
-// CodeMonitorsWithClock returns a new Store backed by the given database and
-// clock for timestamps.
-func CodeMonitorsWithClock(other basestore.ShareableStore, clock func() time.Time) *codeMonitorStore {
-	handle := basestore.NewWithHandle(other.Handle())
-	return &codeMonitorStore{Store: handle, userStore: UsersWith(log.Scoped("codemonitors", ""), handle), now: clock}
+// CodeMonitorsWithClock returns b new Store bbcked by the given dbtbbbse bnd
+// clock for timestbmps.
+func CodeMonitorsWithClock(other bbsestore.ShbrebbleStore, clock func() time.Time) *codeMonitorStore {
+	hbndle := bbsestore.NewWithHbndle(other.Hbndle())
+	return &codeMonitorStore{Store: hbndle, userStore: UsersWith(log.Scoped("codemonitors", ""), hbndle), now: clock}
 }
 
 // Clock returns the clock of the underlying store.
@@ -124,46 +124,46 @@ func (s *codeMonitorStore) Now() time.Time {
 	return s.now()
 }
 
-// Transact creates a new transaction.
-// It's required to implement this method and wrap the Transact method of the
-// underlying basestore.Store.
-func (s *codeMonitorStore) Transact(ctx context.Context) (CodeMonitorStore, error) {
-	txBase, err := s.Store.Transact(ctx)
+// Trbnsbct crebtes b new trbnsbction.
+// It's required to implement this method bnd wrbp the Trbnsbct method of the
+// underlying bbsestore.Store.
+func (s *codeMonitorStore) Trbnsbct(ctx context.Context) (CodeMonitorStore, error) {
+	txBbse, err := s.Store.Trbnsbct(ctx)
 	if err != nil {
 		return nil, err
 	}
-	return &codeMonitorStore{Store: txBase, now: s.now}, nil
+	return &codeMonitorStore{Store: txBbse, now: s.now}, nil
 }
 
-type JobTable int
+type JobTbble int
 
 const (
-	TriggerJobs JobTable = iota
+	TriggerJobs JobTbble = iotb
 	ActionJobs
 )
 
-type JobState int
+type JobStbte int
 
 const (
-	Queued JobState = iota
+	Queued JobStbte = iotb
 	Processing
 	Completed
 	Errored
-	Failed
+	Fbiled
 )
 
-const setStatusFmtStr = `
+const setStbtusFmtStr = `
 UPDATE %s
-SET state = %s,
-    started_at = %s,
-    finished_at = %s
+SET stbte = %s,
+    stbrted_bt = %s,
+    finished_bt = %s
 WHERE id = %s;
 `
 
-func (s *TestStore) SetJobStatus(ctx context.Context, table JobTable, state JobState, id int) error {
-	st := []string{"queued", "processing", "completed", "errored", "failed"}[state]
-	t := []string{"cm_trigger_jobs", "cm_action_jobs"}[table]
-	return s.Exec(ctx, sqlf.Sprintf(setStatusFmtStr, quote(t), st, s.Now(), s.Now(), id))
+func (s *TestStore) SetJobStbtus(ctx context.Context, tbble JobTbble, stbte JobStbte, id int) error {
+	st := []string{"queued", "processing", "completed", "errored", "fbiled"}[stbte]
+	t := []string{"cm_trigger_jobs", "cm_bction_jobs"}[tbble]
+	return s.Exec(ctx, sqlf.Sprintf(setStbtusFmtStr, quote(t), st, s.Now(), s.Now(), id))
 }
 
 type TestStore struct {
@@ -173,85 +173,85 @@ type TestStore struct {
 func (s *TestStore) InsertTestMonitor(ctx context.Context, t *testing.T) (*Monitor, error) {
 	t.Helper()
 
-	actions := []*EmailActionArgs{
+	bctions := []*EmbilActionArgs{
 		{
-			Enabled:        true,
-			IncludeResults: false,
+			Enbbled:        true,
+			IncludeResults: fblse,
 			Priority:       "NORMAL",
-			Header:         "test header 1",
+			Hebder:         "test hebder 1",
 		},
 		{
-			Enabled:        true,
-			IncludeResults: false,
+			Enbbled:        true,
+			IncludeResults: fblse,
 			Priority:       "CRITICAL",
-			Header:         "test header 2",
+			Hebder:         "test hebder 2",
 		},
 	}
 
-	// Create monitor.
-	uid := actor.FromContext(ctx).UID
-	m, err := s.CreateMonitor(ctx, MonitorArgs{
+	// Crebte monitor.
+	uid := bctor.FromContext(ctx).UID
+	m, err := s.CrebteMonitor(ctx, MonitorArgs{
 		Description:     testDescription,
-		Enabled:         true,
-		NamespaceUserID: &uid,
+		Enbbled:         true,
+		NbmespbceUserID: &uid,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	// Create trigger.
-	_, err = s.CreateQueryTrigger(ctx, m.ID, testQuery)
+	// Crebte trigger.
+	_, err = s.CrebteQueryTrigger(ctx, m.ID, testQuery)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, a := range actions {
-		e, err := s.CreateEmailAction(ctx, m.ID, &EmailActionArgs{
-			Enabled:        a.Enabled,
-			IncludeResults: a.IncludeResults,
-			Priority:       a.Priority,
-			Header:         a.Header,
+	for _, b := rbnge bctions {
+		e, err := s.CrebteEmbilAction(ctx, m.ID, &EmbilActionArgs{
+			Enbbled:        b.Enbbled,
+			IncludeResults: b.IncludeResults,
+			Priority:       b.Priority,
+			Hebder:         b.Hebder,
 		})
 		if err != nil {
 			return nil, err
 		}
 
-		_, err = s.CreateRecipient(ctx, e.ID, &uid, nil)
+		_, err = s.CrebteRecipient(ctx, e.ID, &uid, nil)
 		if err != nil {
 			return nil, err
 		}
-		// TODO(camdencheek): add other action types (webhooks) here
+		// TODO(cbmdencheek): bdd other bction types (webhooks) here
 	}
 	return m, nil
 }
 
-func namespaceScopeQuery(user *types.User) *sqlf.Query {
-	namespaceScope := sqlf.Sprintf("cm_monitors.namespace_user_id = %s", user.ID)
+func nbmespbceScopeQuery(user *types.User) *sqlf.Query {
+	nbmespbceScope := sqlf.Sprintf("cm_monitors.nbmespbce_user_id = %s", user.ID)
 	if user.SiteAdmin {
-		namespaceScope = sqlf.Sprintf("TRUE")
+		nbmespbceScope = sqlf.Sprintf("TRUE")
 	}
-	return namespaceScope
+	return nbmespbceScope
 }
 
 func NewTestStore(t *testing.T, db DB) (context.Context, *TestStore) {
-	ctx := actor.WithInternalActor(context.Background())
-	now := time.Now().Truncate(time.Microsecond)
+	ctx := bctor.WithInternblActor(context.Bbckground())
+	now := time.Now().Truncbte(time.Microsecond)
 	return ctx, &TestStore{CodeMonitorsWithClock(db, func() time.Time { return now })}
 }
 
-func NewTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, namespace graphql.ID, userContext context.Context) {
+func NewTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (nbme string, id int32, nbmespbce grbphql.ID, userContext context.Context) {
 	t.Helper()
 
-	name = "cm-user1"
-	id = insertTestUser(ctx, t, db, name, true)
-	namespace = relay.MarshalID("User", id)
-	ctx = actor.WithActor(ctx, actor.FromUser(id))
-	return name, id, namespace, ctx
+	nbme = "cm-user1"
+	id = insertTestUser(ctx, t, db, nbme, true)
+	nbmespbce = relby.MbrshblID("User", id)
+	ctx = bctor.WithActor(ctx, bctor.FromUser(id))
+	return nbme, id, nbmespbce, ctx
 }
 
 const (
 	//nolint:unused // used in tests
-	testQuery = "repo:github\\.com/sourcegraph/sourcegraph func type:diff patternType:literal"
+	testQuery = "repo:github\\.com/sourcegrbph/sourcegrbph func type:diff pbtternType:literbl"
 	//nolint:unused // used in tests
 	testDescription = "test description"
 )
@@ -259,29 +259,29 @@ const (
 //nolint:unused // used in tests
 func newTestStore(t *testing.T) (context.Context, DB, *codeMonitorStore) {
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := bctor.WithInternblActor(context.Bbckground())
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	now := time.Now().Truncate(time.Microsecond)
+	now := time.Now().Truncbte(time.Microsecond)
 	return ctx, db, CodeMonitorsWithClock(db, func() time.Time { return now })
 }
 
 //nolint:unused // used in tests
-func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (name string, id int32, userContext context.Context) {
+func newTestUser(ctx context.Context, t *testing.T, db dbutil.DB) (nbme string, id int32, userContext context.Context) {
 	t.Helper()
 
-	name = "cm-user1"
-	id = insertTestUser(ctx, t, db, name, true)
-	_ = relay.MarshalID("User", id)
-	ctx = actor.WithActor(ctx, actor.FromUser(id))
-	return name, id, ctx
+	nbme = "cm-user1"
+	id = insertTestUser(ctx, t, db, nbme, true)
+	_ = relby.MbrshblID("User", id)
+	ctx = bctor.WithActor(ctx, bctor.FromUser(id))
+	return nbme, id, ctx
 }
 
 //nolint:unused // used in tests
-func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, name string, isAdmin bool) (userID int32) {
+func insertTestUser(ctx context.Context, t *testing.T, db dbutil.DB, nbme string, isAdmin bool) (userID int32) {
 	t.Helper()
 
-	q := sqlf.Sprintf("INSERT INTO users (username, site_admin) VALUES (%s, %t) RETURNING id", name, isAdmin)
-	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&userID)
+	q := sqlf.Sprintf("INSERT INTO users (usernbme, site_bdmin) VALUES (%s, %t) RETURNING id", nbme, isAdmin)
+	err := db.QueryRowContext(ctx, q.Query(sqlf.PostgresBindVbr), q.Args()...).Scbn(&userID)
 	require.NoError(t, err)
 	return userID
 }

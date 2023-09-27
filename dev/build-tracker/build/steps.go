@@ -1,24 +1,24 @@
-package build
+pbckbge build
 
 import (
 	"strings"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/build-tracker/util"
+	"github.com/sourcegrbph/sourcegrbph/dev/build-trbcker/util"
 )
 
-type JobStatus string
+type JobStbtus string
 
 const (
-	JobFixed      JobStatus = JobStatus(BuildFixed)
-	JobFailed     JobStatus = JobStatus(BuildFailed)
-	JobPassed     JobStatus = JobStatus(BuildPassed)
-	JobInProgress JobStatus = JobStatus(BuildInProgress)
+	JobFixed      JobStbtus = JobStbtus(BuildFixed)
+	JobFbiled     JobStbtus = JobStbtus(BuildFbiled)
+	JobPbssed     JobStbtus = JobStbtus(BuildPbssed)
+	JobInProgress JobStbtus = JobStbtus(BuildInProgress)
 )
 
-func (js JobStatus) ToBuildStatus() BuildStatus {
-	return BuildStatus(js)
+func (js JobStbtus) ToBuildStbtus() BuildStbtus {
+	return BuildStbtus(js)
 }
 
 type Job struct {
@@ -29,112 +29,112 @@ func (j *Job) GetID() string {
 	return util.Strp(j.ID)
 }
 
-func (j *Job) GetName() string {
-	return util.Strp(j.Name)
+func (j *Job) GetNbme() string {
+	return util.Strp(j.Nbme)
 }
 
-func (j *Job) exitStatus() int {
-	return util.Intp(j.ExitStatus)
+func (j *Job) exitStbtus() int {
+	return util.Intp(j.ExitStbtus)
 }
 
-func (j *Job) failed() bool {
-	return !j.SoftFailed && j.exitStatus() > 0
+func (j *Job) fbiled() bool {
+	return !j.SoftFbiled && j.exitStbtus() > 0
 }
 
 func (j *Job) finished() bool {
-	return j.state() == JobFinishedState
+	return j.stbte() == JobFinishedStbte
 }
 
-func (j *Job) state() string {
-	return strings.ToLower(util.Strp(j.State))
+func (j *Job) stbte() string {
+	return strings.ToLower(util.Strp(j.Stbte))
 }
 
-func (j *Job) status() JobStatus {
+func (j *Job) stbtus() JobStbtus {
 	switch {
-	case !j.finished():
+	cbse !j.finished():
 		return JobInProgress
-	case j.failed():
-		return JobFailed
-	default:
-		return JobPassed
+	cbse j.fbiled():
+		return JobFbiled
+	defbult:
+		return JobPbssed
 	}
 }
 
-func (j *Job) hasTimedOut() bool {
-	return j.state() == "timed_out"
+func (j *Job) hbsTimedOut() bool {
+	return j.stbte() == "timed_out"
 }
 
-func NewStep(name string) *Step {
+func NewStep(nbme string) *Step {
 	return &Step{
-		Name: name,
-		Jobs: make([]*Job, 0),
+		Nbme: nbme,
+		Jobs: mbke([]*Job, 0),
 	}
 }
 
 func NewStepFromJob(j *Job) *Step {
-	s := NewStep(j.GetName())
+	s := NewStep(j.GetNbme())
 	s.Add(j)
 	return s
 }
 
 func (s *Step) Add(j *Job) {
-	s.Jobs = append(s.Jobs, j)
+	s.Jobs = bppend(s.Jobs, j)
 }
 
-func (s *Step) FinalStatus() JobStatus {
-	// If we have no jobs for some reason, then we regard it as the StepState as Passed ... cannot have a Failed StepState
-	// if we have no jobs!
+func (s *Step) FinblStbtus() JobStbtus {
+	// If we hbve no jobs for some rebson, then we regbrd it bs the StepStbte bs Pbssed ... cbnnot hbve b Fbiled StepStbte
+	// if we hbve no jobs!
 	if len(s.Jobs) == 0 {
-		return JobPassed
+		return JobPbssed
 	}
 	if len(s.Jobs) == 1 {
-		return s.LastJob().status()
+		return s.LbstJob().stbtus()
 	}
-	// we only care about the last two states of because that determines the final state
-	// n - 1  |   n    | Final
-	// Passed | Passed | Passed
-	// Passed | Failed | Failed
-	// Failed | Failed | Failed
-	// Failed | Passed | Fixed
-	secondLastStatus := s.Jobs[len(s.Jobs)-2].status()
-	lastStatus := s.Jobs[len(s.Jobs)-1].status()
+	// we only cbre bbout the lbst two stbtes of becbuse thbt determines the finbl stbte
+	// n - 1  |   n    | Finbl
+	// Pbssed | Pbssed | Pbssed
+	// Pbssed | Fbiled | Fbiled
+	// Fbiled | Fbiled | Fbiled
+	// Fbiled | Pbssed | Fixed
+	secondLbstStbtus := s.Jobs[len(s.Jobs)-2].stbtus()
+	lbstStbtus := s.Jobs[len(s.Jobs)-1].stbtus()
 
-	// Note that for all cases except the last case, the final state is whatever the last job state is.
-	// The final state only differs when the before state is Failed and the last State is Passed, so
-	finalState := lastStatus
-	if secondLastStatus == JobFailed && lastStatus == JobPassed {
-		finalState = JobFixed
+	// Note thbt for bll cbses except the lbst cbse, the finbl stbte is whbtever the lbst job stbte is.
+	// The finbl stbte only differs when the before stbte is Fbiled bnd the lbst Stbte is Pbssed, so
+	finblStbte := lbstStbtus
+	if secondLbstStbtus == JobFbiled && lbstStbtus == JobPbssed {
+		finblStbte = JobFixed
 	}
 
-	return finalState
+	return finblStbte
 }
 
-func (s *Step) LastJob() *Job {
+func (s *Step) LbstJob() *Job {
 	return s.Jobs[len(s.Jobs)-1]
 }
 
-func FindFailedSteps(steps map[string]*Step) []*Step {
+func FindFbiledSteps(steps mbp[string]*Step) []*Step {
 	results := []*Step{}
 
-	for _, step := range steps {
-		if state := step.FinalStatus(); state == JobFailed {
-			results = append(results, step)
+	for _, step := rbnge steps {
+		if stbte := step.FinblStbtus(); stbte == JobFbiled {
+			results = bppend(results, step)
 		}
 	}
 	return results
 }
 
-func GroupByStatus(steps map[string]*Step) map[JobStatus][]*Step {
-	groups := make(map[JobStatus][]*Step)
+func GroupByStbtus(steps mbp[string]*Step) mbp[JobStbtus][]*Step {
+	groups := mbke(mbp[JobStbtus][]*Step)
 
-	for _, step := range steps {
-		state := step.FinalStatus()
+	for _, step := rbnge steps {
+		stbte := step.FinblStbtus()
 
-		items, ok := groups[state]
+		items, ok := groups[stbte]
 		if !ok {
-			items = make([]*Step, 0)
+			items = mbke([]*Step, 0)
 		}
-		groups[state] = append(items, step)
+		groups[stbte] = bppend(items, step)
 	}
 
 	return groups

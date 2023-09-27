@@ -1,4 +1,4 @@
-package testing
+pbckbge testing
 
 import (
 	"context"
@@ -6,464 +6,464 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	godiff "github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver/gitdombin"
 )
 
-type TestChangesetOpts struct {
-	Repo         api.RepoID
-	BatchChange  int64
+type TestChbngesetOpts struct {
+	Repo         bpi.RepoID
+	BbtchChbnge  int64
 	CurrentSpec  int64
 	PreviousSpec int64
 
-	BatchChanges []btypes.BatchChangeAssoc
+	BbtchChbnges []btypes.BbtchChbngeAssoc
 
-	ExternalServiceType   string
-	ExternalID            string
-	ExternalBranch        string
-	ExternalForkNamespace string
-	ExternalForkName      string
-	ExternalState         btypes.ChangesetExternalState
-	ExternalReviewState   btypes.ChangesetReviewState
-	ExternalCheckState    btypes.ChangesetCheckState
+	ExternblServiceType   string
+	ExternblID            string
+	ExternblBrbnch        string
+	ExternblForkNbmespbce string
+	ExternblForkNbme      string
+	ExternblStbte         btypes.ChbngesetExternblStbte
+	ExternblReviewStbte   btypes.ChbngesetReviewStbte
+	ExternblCheckStbte    btypes.ChbngesetCheckStbte
 	CommitVerified        bool
 
-	DiffStatAdded   int32
-	DiffStatDeleted int32
+	DiffStbtAdded   int32
+	DiffStbtDeleted int32
 
-	PublicationState   btypes.ChangesetPublicationState
-	UiPublicationState *btypes.ChangesetUiPublicationState
+	PublicbtionStbte   btypes.ChbngesetPublicbtionStbte
+	UiPublicbtionStbte *btypes.ChbngesetUiPublicbtionStbte
 
-	ReconcilerState btypes.ReconcilerState
-	FailureMessage  string
-	NumFailures     int64
+	ReconcilerStbte btypes.ReconcilerStbte
+	FbilureMessbge  string
+	NumFbilures     int64
 	NumResets       int64
 
-	SyncErrorMessage string
+	SyncErrorMessbge string
 
-	OwnedByBatchChange int64
+	OwnedByBbtchChbnge int64
 
 	Closing    bool
 	IsArchived bool
 	Archive    bool
 
-	Metadata               any
-	PreviousFailureMessage string
+	Metbdbtb               bny
+	PreviousFbilureMessbge string
 }
 
-type CreateChangeseter interface {
-	CreateChangeset(ctx context.Context, changesets ...*btypes.Changeset) error
+type CrebteChbngeseter interfbce {
+	CrebteChbngeset(ctx context.Context, chbngesets ...*btypes.Chbngeset) error
 }
 
-func CreateChangeset(
+func CrebteChbngeset(
 	t *testing.T,
 	ctx context.Context,
-	store CreateChangeseter,
-	opts TestChangesetOpts,
-) *btypes.Changeset {
+	store CrebteChbngeseter,
+	opts TestChbngesetOpts,
+) *btypes.Chbngeset {
 	t.Helper()
 
-	changeset := BuildChangeset(opts)
+	chbngeset := BuildChbngeset(opts)
 
-	if err := store.CreateChangeset(ctx, changeset); err != nil {
-		t.Fatalf("creating changeset failed: %s", err)
+	if err := store.CrebteChbngeset(ctx, chbngeset); err != nil {
+		t.Fbtblf("crebting chbngeset fbiled: %s", err)
 	}
 
-	return changeset
+	return chbngeset
 }
 
-func BuildChangeset(opts TestChangesetOpts) *btypes.Changeset {
-	if opts.ExternalServiceType == "" {
-		opts.ExternalServiceType = extsvc.TypeGitHub
+func BuildChbngeset(opts TestChbngesetOpts) *btypes.Chbngeset {
+	if opts.ExternblServiceType == "" {
+		opts.ExternblServiceType = extsvc.TypeGitHub
 	}
 
-	changeset := &btypes.Changeset{
+	chbngeset := &btypes.Chbngeset{
 		RepoID:         opts.Repo,
 		CurrentSpecID:  opts.CurrentSpec,
 		PreviousSpecID: opts.PreviousSpec,
-		BatchChanges:   opts.BatchChanges,
+		BbtchChbnges:   opts.BbtchChbnges,
 
-		ExternalServiceType: opts.ExternalServiceType,
-		ExternalID:          opts.ExternalID,
-		ExternalState:       opts.ExternalState,
-		ExternalReviewState: opts.ExternalReviewState,
-		ExternalCheckState:  opts.ExternalCheckState,
+		ExternblServiceType: opts.ExternblServiceType,
+		ExternblID:          opts.ExternblID,
+		ExternblStbte:       opts.ExternblStbte,
+		ExternblReviewStbte: opts.ExternblReviewStbte,
+		ExternblCheckStbte:  opts.ExternblCheckStbte,
 
-		PublicationState:   opts.PublicationState,
-		UiPublicationState: opts.UiPublicationState,
+		PublicbtionStbte:   opts.PublicbtionStbte,
+		UiPublicbtionStbte: opts.UiPublicbtionStbte,
 
-		OwnedByBatchChangeID: opts.OwnedByBatchChange,
+		OwnedByBbtchChbngeID: opts.OwnedByBbtchChbnge,
 
 		Closing: opts.Closing,
 
-		ReconcilerState: opts.ReconcilerState,
-		NumFailures:     opts.NumFailures,
+		ReconcilerStbte: opts.ReconcilerStbte,
+		NumFbilures:     opts.NumFbilures,
 		NumResets:       opts.NumResets,
 
-		Metadata: opts.Metadata,
-		SyncState: btypes.ChangesetSyncState{
-			HeadRefOid: generateFakeCommitID(),
-			BaseRefOid: generateFakeCommitID(),
+		Metbdbtb: opts.Metbdbtb,
+		SyncStbte: btypes.ChbngesetSyncStbte{
+			HebdRefOid: generbteFbkeCommitID(),
+			BbseRefOid: generbteFbkeCommitID(),
 		},
 	}
 
-	if opts.SyncErrorMessage != "" {
-		changeset.SyncErrorMessage = &opts.SyncErrorMessage
+	if opts.SyncErrorMessbge != "" {
+		chbngeset.SyncErrorMessbge = &opts.SyncErrorMessbge
 	}
 
-	if opts.ExternalBranch != "" {
-		changeset.ExternalBranch = gitdomain.EnsureRefPrefix(opts.ExternalBranch)
+	if opts.ExternblBrbnch != "" {
+		chbngeset.ExternblBrbnch = gitdombin.EnsureRefPrefix(opts.ExternblBrbnch)
 	}
 
-	if opts.ExternalForkNamespace != "" {
-		changeset.ExternalForkNamespace = opts.ExternalForkNamespace
+	if opts.ExternblForkNbmespbce != "" {
+		chbngeset.ExternblForkNbmespbce = opts.ExternblForkNbmespbce
 	}
 
-	if opts.ExternalForkName != "" {
-		changeset.ExternalForkName = opts.ExternalForkName
+	if opts.ExternblForkNbme != "" {
+		chbngeset.ExternblForkNbme = opts.ExternblForkNbme
 	}
 
 	if opts.CommitVerified {
-		changeset.CommitVerification = &github.Verification{
+		chbngeset.CommitVerificbtion = &github.Verificbtion{
 			Verified:  true,
-			Reason:    "valid",
-			Signature: "*********",
-			Payload:   "*********",
+			Rebson:    "vblid",
+			Signbture: "*********",
+			Pbylobd:   "*********",
 		}
 	}
 
-	if opts.FailureMessage != "" {
-		changeset.FailureMessage = &opts.FailureMessage
+	if opts.FbilureMessbge != "" {
+		chbngeset.FbilureMessbge = &opts.FbilureMessbge
 	}
 
-	if opts.BatchChange != 0 {
-		changeset.BatchChanges = []btypes.BatchChangeAssoc{
-			{BatchChangeID: opts.BatchChange, IsArchived: opts.IsArchived, Archive: opts.Archive},
+	if opts.BbtchChbnge != 0 {
+		chbngeset.BbtchChbnges = []btypes.BbtchChbngeAssoc{
+			{BbtchChbngeID: opts.BbtchChbnge, IsArchived: opts.IsArchived, Archive: opts.Archive},
 		}
 	}
 
-	if opts.DiffStatAdded > 0 || opts.DiffStatDeleted > 0 {
-		changeset.DiffStatAdded = &opts.DiffStatAdded
-		changeset.DiffStatDeleted = &opts.DiffStatDeleted
+	if opts.DiffStbtAdded > 0 || opts.DiffStbtDeleted > 0 {
+		chbngeset.DiffStbtAdded = &opts.DiffStbtAdded
+		chbngeset.DiffStbtDeleted = &opts.DiffStbtDeleted
 	}
 
-	return changeset
+	return chbngeset
 }
 
-type ChangesetAssertions struct {
-	Repo                  api.RepoID
+type ChbngesetAssertions struct {
+	Repo                  bpi.RepoID
 	CurrentSpec           int64
 	PreviousSpec          int64
-	OwnedByBatchChange    int64
-	ReconcilerState       btypes.ReconcilerState
-	PublicationState      btypes.ChangesetPublicationState
-	UiPublicationState    *btypes.ChangesetUiPublicationState
-	ExternalState         btypes.ChangesetExternalState
-	ExternalID            string
-	ExternalBranch        string
-	ExternalForkNamespace string
-	DiffStat              *godiff.Stat
+	OwnedByBbtchChbnge    int64
+	ReconcilerStbte       btypes.ReconcilerStbte
+	PublicbtionStbte      btypes.ChbngesetPublicbtionStbte
+	UiPublicbtionStbte    *btypes.ChbngesetUiPublicbtionStbte
+	ExternblStbte         btypes.ChbngesetExternblStbte
+	ExternblID            string
+	ExternblBrbnch        string
+	ExternblForkNbmespbce string
+	DiffStbt              *godiff.Stbt
 	Closing               bool
 
 	Title string
 	Body  string
 
-	FailureMessage   *string
-	SyncErrorMessage *string
-	NumFailures      int64
+	FbilureMessbge   *string
+	SyncErrorMessbge *string
+	NumFbilures      int64
 	NumResets        int64
 
-	AttachedTo []int64
-	DetachFrom []int64
+	AttbchedTo []int64
+	DetbchFrom []int64
 
 	ArchiveIn                  int64
-	ArchivedInOwnerBatchChange bool
-	PreviousFailureMessage     *string
+	ArchivedInOwnerBbtchChbnge bool
+	PreviousFbilureMessbge     *string
 }
 
-func AssertChangeset(t *testing.T, c *btypes.Changeset, a ChangesetAssertions) {
+func AssertChbngeset(t *testing.T, c *btypes.Chbngeset, b ChbngesetAssertions) {
 	t.Helper()
 
 	if c == nil {
-		t.Fatalf("changeset is nil")
+		t.Fbtblf("chbngeset is nil")
 	}
 
-	if have, want := c.RepoID, a.Repo; have != want {
-		t.Fatalf("changeset RepoID wrong. want=%d, have=%d", want, have)
+	if hbve, wbnt := c.RepoID, b.Repo; hbve != wbnt {
+		t.Fbtblf("chbngeset RepoID wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if have, want := c.CurrentSpecID, a.CurrentSpec; have != want {
-		t.Fatalf("changeset CurrentSpecID wrong. want=%d, have=%d", want, have)
+	if hbve, wbnt := c.CurrentSpecID, b.CurrentSpec; hbve != wbnt {
+		t.Fbtblf("chbngeset CurrentSpecID wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if have, want := c.PreviousSpecID, a.PreviousSpec; have != want {
-		t.Fatalf("changeset PreviousSpecID wrong. want=%d, have=%d", want, have)
+	if hbve, wbnt := c.PreviousSpecID, b.PreviousSpec; hbve != wbnt {
+		t.Fbtblf("chbngeset PreviousSpecID wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if have, want := c.OwnedByBatchChangeID, a.OwnedByBatchChange; have != want {
-		t.Fatalf("changeset OwnedByBatchChangeID wrong. want=%d, have=%d", want, have)
+	if hbve, wbnt := c.OwnedByBbtchChbngeID, b.OwnedByBbtchChbnge; hbve != wbnt {
+		t.Fbtblf("chbngeset OwnedByBbtchChbngeID wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if have, want := c.ReconcilerState, a.ReconcilerState; have != want {
-		t.Fatalf("changeset ReconcilerState wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.ReconcilerStbte, b.ReconcilerStbte; hbve != wbnt {
+		t.Fbtblf("chbngeset ReconcilerStbte wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if have, want := c.PublicationState, a.PublicationState; have != want {
-		t.Fatalf("changeset PublicationState wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.PublicbtionStbte, b.PublicbtionStbte; hbve != wbnt {
+		t.Fbtblf("chbngeset PublicbtionStbte wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if diff := cmp.Diff(c.UiPublicationState, a.UiPublicationState); diff != "" {
-		t.Fatalf("changeset UiPublicationState wrong. (-have +want):\n%s", diff)
+	if diff := cmp.Diff(c.UiPublicbtionStbte, b.UiPublicbtionStbte); diff != "" {
+		t.Fbtblf("chbngeset UiPublicbtionStbte wrong. (-hbve +wbnt):\n%s", diff)
 	}
 
-	if have, want := c.ExternalState, a.ExternalState; have != want {
-		t.Fatalf("changeset ExternalState wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.ExternblStbte, b.ExternblStbte; hbve != wbnt {
+		t.Fbtblf("chbngeset ExternblStbte wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if have, want := c.ExternalID, a.ExternalID; have != want {
-		t.Fatalf("changeset ExternalID wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.ExternblID, b.ExternblID; hbve != wbnt {
+		t.Fbtblf("chbngeset ExternblID wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if have, want := c.ExternalBranch, a.ExternalBranch; have != want {
-		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.ExternblBrbnch, b.ExternblBrbnch; hbve != wbnt {
+		t.Fbtblf("chbngeset ExternblBrbnch wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if have, want := c.ExternalForkNamespace, a.ExternalForkNamespace; have != want {
-		t.Fatalf("changeset ExternalForkNamespace wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.ExternblForkNbmespbce, b.ExternblForkNbmespbce; hbve != wbnt {
+		t.Fbtblf("chbngeset ExternblForkNbmespbce wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if want, have := a.FailureMessage, c.FailureMessage; want == nil && have != nil {
-		t.Fatalf("expected no failure message, but have=%q", *have)
+	if wbnt, hbve := b.FbilureMessbge, c.FbilureMessbge; wbnt == nil && hbve != nil {
+		t.Fbtblf("expected no fbilure messbge, but hbve=%q", *hbve)
 	}
 
-	if want, have := a.PreviousFailureMessage, c.PreviousFailureMessage; want == nil && have != nil {
-		t.Fatalf("expected no previous failure message, but have=%q", *have)
+	if wbnt, hbve := b.PreviousFbilureMessbge, c.PreviousFbilureMessbge; wbnt == nil && hbve != nil {
+		t.Fbtblf("expected no previous fbilure messbge, but hbve=%q", *hbve)
 	}
 
-	if diff := cmp.Diff(a.DiffStat, c.DiffStat()); diff != "" {
-		t.Fatalf("changeset DiffStat wrong. (-want +got):\n%s", diff)
+	if diff := cmp.Diff(b.DiffStbt, c.DiffStbt()); diff != "" {
+		t.Fbtblf("chbngeset DiffStbt wrong. (-wbnt +got):\n%s", diff)
 	}
 
-	if diff := cmp.Diff(a.Closing, c.Closing); diff != "" {
-		t.Fatalf("changeset Closing wrong. (-want +got):\n%s", diff)
+	if diff := cmp.Diff(b.Closing, c.Closing); diff != "" {
+		t.Fbtblf("chbngeset Closing wrong. (-wbnt +got):\n%s", diff)
 	}
 
-	toDetach := []int64{}
-	for _, assoc := range c.BatchChanges {
-		if assoc.Detach {
-			toDetach = append(toDetach, assoc.BatchChangeID)
+	toDetbch := []int64{}
+	for _, bssoc := rbnge c.BbtchChbnges {
+		if bssoc.Detbch {
+			toDetbch = bppend(toDetbch, bssoc.BbtchChbngeID)
 		}
 	}
-	if a.DetachFrom == nil {
-		a.DetachFrom = []int64{}
+	if b.DetbchFrom == nil {
+		b.DetbchFrom = []int64{}
 	}
-	sort.Slice(toDetach, func(i, j int) bool { return toDetach[i] < toDetach[j] })
-	sort.Slice(a.DetachFrom, func(i, j int) bool { return a.DetachFrom[i] < a.DetachFrom[j] })
-	if diff := cmp.Diff(a.DetachFrom, toDetach); diff != "" {
-		t.Fatalf("changeset DetachFrom wrong. (-want +got):\n%s", diff)
+	sort.Slice(toDetbch, func(i, j int) bool { return toDetbch[i] < toDetbch[j] })
+	sort.Slice(b.DetbchFrom, func(i, j int) bool { return b.DetbchFrom[i] < b.DetbchFrom[j] })
+	if diff := cmp.Diff(b.DetbchFrom, toDetbch); diff != "" {
+		t.Fbtblf("chbngeset DetbchFrom wrong. (-wbnt +got):\n%s", diff)
 	}
 
-	attachedTo := []int64{}
-	for _, assoc := range c.BatchChanges {
-		if !assoc.Detach {
-			attachedTo = append(attachedTo, assoc.BatchChangeID)
+	bttbchedTo := []int64{}
+	for _, bssoc := rbnge c.BbtchChbnges {
+		if !bssoc.Detbch {
+			bttbchedTo = bppend(bttbchedTo, bssoc.BbtchChbngeID)
 		}
 	}
-	if a.AttachedTo == nil {
-		a.AttachedTo = []int64{}
+	if b.AttbchedTo == nil {
+		b.AttbchedTo = []int64{}
 	}
-	sort.Slice(attachedTo, func(i, j int) bool { return attachedTo[i] < attachedTo[j] })
-	sort.Slice(a.AttachedTo, func(i, j int) bool { return a.AttachedTo[i] < a.AttachedTo[j] })
-	if diff := cmp.Diff(a.AttachedTo, attachedTo); diff != "" {
-		t.Fatalf("changeset AttachedTo wrong. (-want +got):\n%s", diff)
+	sort.Slice(bttbchedTo, func(i, j int) bool { return bttbchedTo[i] < bttbchedTo[j] })
+	sort.Slice(b.AttbchedTo, func(i, j int) bool { return b.AttbchedTo[i] < b.AttbchedTo[j] })
+	if diff := cmp.Diff(b.AttbchedTo, bttbchedTo); diff != "" {
+		t.Fbtblf("chbngeset AttbchedTo wrong. (-wbnt +got):\n%s", diff)
 	}
 
-	if a.ArchiveIn != 0 {
-		found := false
-		for _, assoc := range c.BatchChanges {
-			if assoc.BatchChangeID == a.ArchiveIn {
+	if b.ArchiveIn != 0 {
+		found := fblse
+		for _, bssoc := rbnge c.BbtchChbnges {
+			if bssoc.BbtchChbngeID == b.ArchiveIn {
 				found = true
-				if !assoc.Archive {
-					t.Fatalf("changeset association to %d not set to Archive", a.ArchiveIn)
+				if !bssoc.Archive {
+					t.Fbtblf("chbngeset bssocibtion to %d not set to Archive", b.ArchiveIn)
 				}
 			}
 		}
 		if !found {
-			t.Fatalf("no changeset batchChange association set to archive")
+			t.Fbtblf("no chbngeset bbtchChbnge bssocibtion set to brchive")
 		}
 	}
 
-	if a.ArchivedInOwnerBatchChange {
-		found := false
-		for _, assoc := range c.BatchChanges {
-			if assoc.BatchChangeID == c.OwnedByBatchChangeID {
+	if b.ArchivedInOwnerBbtchChbnge {
+		found := fblse
+		for _, bssoc := rbnge c.BbtchChbnges {
+			if bssoc.BbtchChbngeID == c.OwnedByBbtchChbngeID {
 				found = true
-				if !assoc.IsArchived {
-					t.Fatalf("changeset association to %d not set to Archived", c.OwnedByBatchChangeID)
+				if !bssoc.IsArchived {
+					t.Fbtblf("chbngeset bssocibtion to %d not set to Archived", c.OwnedByBbtchChbngeID)
 				}
 
-				if assoc.Archive {
-					t.Fatalf("changeset association to %d set to Archive, but should be Archived already", c.OwnedByBatchChangeID)
+				if bssoc.Archive {
+					t.Fbtblf("chbngeset bssocibtion to %d set to Archive, but should be Archived blrebdy", c.OwnedByBbtchChbngeID)
 				}
 			}
 		}
 		if !found {
-			t.Fatalf("no changeset batchChange association archived")
+			t.Fbtblf("no chbngeset bbtchChbnge bssocibtion brchived")
 		}
 	}
 
-	if want := a.FailureMessage; want != nil {
-		if c.FailureMessage == nil {
-			t.Fatalf("expected failure message %q but have none", *want)
+	if wbnt := b.FbilureMessbge; wbnt != nil {
+		if c.FbilureMessbge == nil {
+			t.Fbtblf("expected fbilure messbge %q but hbve none", *wbnt)
 		}
-		if want, have := *a.FailureMessage, *c.FailureMessage; have != want {
-			t.Fatalf("wrong failure message. want=%q, have=%q", want, have)
-		}
-	}
-
-	if want := a.PreviousFailureMessage; want != nil {
-		if c.PreviousFailureMessage == nil {
-			t.Fatalf("expected previous failure message %q but have none", *want)
-		}
-		if want, have := *a.PreviousFailureMessage, *c.PreviousFailureMessage; have != want {
-			t.Fatalf("wrong previous failure message. want=%q, have=%q", want, have)
+		if wbnt, hbve := *b.FbilureMessbge, *c.FbilureMessbge; hbve != wbnt {
+			t.Fbtblf("wrong fbilure messbge. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	}
 
-	if want := a.SyncErrorMessage; want != nil {
-		if c.SyncErrorMessage == nil {
-			t.Fatalf("expected sync error message %q but have none", *want)
+	if wbnt := b.PreviousFbilureMessbge; wbnt != nil {
+		if c.PreviousFbilureMessbge == nil {
+			t.Fbtblf("expected previous fbilure messbge %q but hbve none", *wbnt)
 		}
-		if want, have := *a.SyncErrorMessage, *c.SyncErrorMessage; have != want {
-			t.Fatalf("wrong sync error message. want=%q, have=%q", want, have)
+		if wbnt, hbve := *b.PreviousFbilureMessbge, *c.PreviousFbilureMessbge; hbve != wbnt {
+			t.Fbtblf("wrong previous fbilure messbge. wbnt=%q, hbve=%q", wbnt, hbve)
 		}
 	}
 
-	if have, want := c.NumFailures, a.NumFailures; have != want {
-		t.Fatalf("changeset NumFailures wrong. want=%d, have=%d", want, have)
+	if wbnt := b.SyncErrorMessbge; wbnt != nil {
+		if c.SyncErrorMessbge == nil {
+			t.Fbtblf("expected sync error messbge %q but hbve none", *wbnt)
+		}
+		if wbnt, hbve := *b.SyncErrorMessbge, *c.SyncErrorMessbge; hbve != wbnt {
+			t.Fbtblf("wrong sync error messbge. wbnt=%q, hbve=%q", wbnt, hbve)
+		}
 	}
 
-	if have, want := c.NumResets, a.NumResets; have != want {
-		t.Fatalf("changeset NumResets wrong. want=%d, have=%d", want, have)
+	if hbve, wbnt := c.NumFbilures, b.NumFbilures; hbve != wbnt {
+		t.Fbtblf("chbngeset NumFbilures wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if have, want := c.ExternalBranch, a.ExternalBranch; have != want {
-		t.Fatalf("changeset ExternalBranch wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.NumResets, b.NumResets; hbve != wbnt {
+		t.Fbtblf("chbngeset NumResets wrong. wbnt=%d, hbve=%d", wbnt, hbve)
 	}
 
-	if have, want := c.ExternalForkNamespace, a.ExternalForkNamespace; have != want {
-		t.Fatalf("changeset ExternalForkNamespace wrong. want=%s, have=%s", want, have)
+	if hbve, wbnt := c.ExternblBrbnch, b.ExternblBrbnch; hbve != wbnt {
+		t.Fbtblf("chbngeset ExternblBrbnch wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 	}
 
-	if want := a.Title; want != "" {
-		have, err := c.Title()
+	if hbve, wbnt := c.ExternblForkNbmespbce, b.ExternblForkNbmespbce; hbve != wbnt {
+		t.Fbtblf("chbngeset ExternblForkNbmespbce wrong. wbnt=%s, hbve=%s", wbnt, hbve)
+	}
+
+	if wbnt := b.Title; wbnt != "" {
+		hbve, err := c.Title()
 		if err != nil {
-			t.Fatalf("changeset.Title failed: %s", err)
+			t.Fbtblf("chbngeset.Title fbiled: %s", err)
 		}
 
-		if have != want {
-			t.Fatalf("changeset Title wrong. want=%s, have=%s", want, have)
+		if hbve != wbnt {
+			t.Fbtblf("chbngeset Title wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 		}
 	}
 
-	if want := a.Body; want != "" {
-		have, err := c.Body()
+	if wbnt := b.Body; wbnt != "" {
+		hbve, err := c.Body()
 		if err != nil {
-			t.Fatalf("changeset.Body failed: %s", err)
+			t.Fbtblf("chbngeset.Body fbiled: %s", err)
 		}
 
-		if have != want {
-			t.Fatalf("changeset Body wrong. want=%s, have=%s", want, have)
+		if hbve != wbnt {
+			t.Fbtblf("chbngeset Body wrong. wbnt=%s, hbve=%s", wbnt, hbve)
 		}
 	}
 }
 
-type GetChangesetByIDer interface {
-	GetChangesetByID(ctx context.Context, id int64) (*btypes.Changeset, error)
+type GetChbngesetByIDer interfbce {
+	GetChbngesetByID(ctx context.Context, id int64) (*btypes.Chbngeset, error)
 }
 
-func ReloadAndAssertChangeset(t *testing.T, ctx context.Context, s GetChangesetByIDer, c *btypes.Changeset, a ChangesetAssertions) (reloaded *btypes.Changeset) {
+func RelobdAndAssertChbngeset(t *testing.T, ctx context.Context, s GetChbngesetByIDer, c *btypes.Chbngeset, b ChbngesetAssertions) (relobded *btypes.Chbngeset) {
 	t.Helper()
 
-	reloaded, err := s.GetChangesetByID(ctx, c.ID)
+	relobded, err := s.GetChbngesetByID(ctx, c.ID)
 	if err != nil {
-		t.Fatalf("reloading changeset %d failed: %s", c.ID, err)
+		t.Fbtblf("relobding chbngeset %d fbiled: %s", c.ID, err)
 	}
 
-	AssertChangeset(t, reloaded, a)
+	AssertChbngeset(t, relobded, b)
 
-	return reloaded
+	return relobded
 }
 
-type UpdateChangeseter interface {
-	UpdateChangeset(ctx context.Context, changeset *btypes.Changeset) error
+type UpdbteChbngeseter interfbce {
+	UpdbteChbngeset(ctx context.Context, chbngeset *btypes.Chbngeset) error
 }
 
-func SetChangesetPublished(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset, externalID, externalBranch string) {
+func SetChbngesetPublished(t *testing.T, ctx context.Context, s UpdbteChbngeseter, c *btypes.Chbngeset, externblID, externblBrbnch string) {
 	t.Helper()
 
-	c.ExternalBranch = externalBranch
-	c.ExternalID = externalID
-	c.PublicationState = btypes.ChangesetPublicationStatePublished
-	c.ReconcilerState = btypes.ReconcilerStateCompleted
-	c.ExternalState = btypes.ChangesetExternalStateOpen
+	c.ExternblBrbnch = externblBrbnch
+	c.ExternblID = externblID
+	c.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+	c.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+	c.ExternblStbte = btypes.ChbngesetExternblStbteOpen
 
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to update changeset: %s", err)
-	}
-}
-
-var FailedChangesetFailureMessage = "Failed test"
-
-func SetChangesetFailed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
-	t.Helper()
-
-	c.ReconcilerState = btypes.ReconcilerStateFailed
-	c.FailureMessage = &FailedChangesetFailureMessage
-	c.NumFailures = 5
-
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to update changeset: %s", err)
+	if err := s.UpdbteChbngeset(ctx, c); err != nil {
+		t.Fbtblf("fbiled to updbte chbngeset: %s", err)
 	}
 }
 
-func SetChangesetClosed(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
+vbr FbiledChbngesetFbilureMessbge = "Fbiled test"
+
+func SetChbngesetFbiled(t *testing.T, ctx context.Context, s UpdbteChbngeseter, c *btypes.Chbngeset) {
 	t.Helper()
 
-	c.PublicationState = btypes.ChangesetPublicationStatePublished
-	c.ReconcilerState = btypes.ReconcilerStateCompleted
-	c.Closing = false
-	c.ExternalState = btypes.ChangesetExternalStateClosed
+	c.ReconcilerStbte = btypes.ReconcilerStbteFbiled
+	c.FbilureMessbge = &FbiledChbngesetFbilureMessbge
+	c.NumFbilures = 5
 
-	assocs := make([]btypes.BatchChangeAssoc, 0)
-	for _, assoc := range c.BatchChanges {
-		if !assoc.Detach {
-			if assoc.Archive {
-				assoc.IsArchived = true
-				assoc.Archive = false
+	if err := s.UpdbteChbngeset(ctx, c); err != nil {
+		t.Fbtblf("fbiled to updbte chbngeset: %s", err)
+	}
+}
+
+func SetChbngesetClosed(t *testing.T, ctx context.Context, s UpdbteChbngeseter, c *btypes.Chbngeset) {
+	t.Helper()
+
+	c.PublicbtionStbte = btypes.ChbngesetPublicbtionStbtePublished
+	c.ReconcilerStbte = btypes.ReconcilerStbteCompleted
+	c.Closing = fblse
+	c.ExternblStbte = btypes.ChbngesetExternblStbteClosed
+
+	bssocs := mbke([]btypes.BbtchChbngeAssoc, 0)
+	for _, bssoc := rbnge c.BbtchChbnges {
+		if !bssoc.Detbch {
+			if bssoc.Archive {
+				bssoc.IsArchived = true
+				bssoc.Archive = fblse
 			}
-			assocs = append(assocs, assoc)
+			bssocs = bppend(bssocs, bssoc)
 		}
 	}
 
-	c.BatchChanges = assocs
+	c.BbtchChbnges = bssocs
 
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to update changeset: %s", err)
+	if err := s.UpdbteChbngeset(ctx, c); err != nil {
+		t.Fbtblf("fbiled to updbte chbngeset: %s", err)
 	}
 }
 
-func DeleteChangeset(t *testing.T, ctx context.Context, s UpdateChangeseter, c *btypes.Changeset) {
+func DeleteChbngeset(t *testing.T, ctx context.Context, s UpdbteChbngeseter, c *btypes.Chbngeset) {
 	t.Helper()
 
 	c.SetDeleted()
 
-	if err := s.UpdateChangeset(ctx, c); err != nil {
-		t.Fatalf("failed to delete changeset: %s", err)
+	if err := s.UpdbteChbngeset(ctx, c); err != nil {
+		t.Fbtblf("fbiled to delete chbngeset: %s", err)
 	}
 }

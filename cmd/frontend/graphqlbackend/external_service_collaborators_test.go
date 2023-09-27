@@ -1,62 +1,62 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"strings"
 
-	"github.com/hexops/autogold/v2"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/hexops/butogold/v2"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
 
 	"context"
-	"math/rand"
+	"mbth/rbnd"
 	"sort"
 	"sync"
 	"testing"
 )
 
-func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
-	ctx := context.Background()
+func TestExternblServiceCollbborbtors_pbrbllelRecentCommitters(t *testing.T) {
+	ctx := context.Bbckground()
 
-	var (
-		callsMu sync.Mutex
-		calls   []*github.RecentCommittersParams
+	vbr (
+		cbllsMu sync.Mutex
+		cblls   []*github.RecentCommittersPbrbms
 	)
-	recentCommittersFunc := func(ctx context.Context, params *github.RecentCommittersParams) (*github.RecentCommittersResults, error) {
-		callsMu.Lock()
-		calls = append(calls, params)
-		callsMu.Unlock()
+	recentCommittersFunc := func(ctx context.Context, pbrbms *github.RecentCommittersPbrbms) (*github.RecentCommittersResults, error) {
+		cbllsMu.Lock()
+		cblls = bppend(cblls, pbrbms)
+		cbllsMu.Unlock()
 
-		var results github.RecentCommittersResults
-		results.Nodes = append(results.Nodes, struct {
+		vbr results github.RecentCommittersResults
+		results.Nodes = bppend(results.Nodes, struct {
 			Authors struct {
 				Nodes []struct {
-					Date      string
-					Email     string
-					Name      string
+					Dbte      string
+					Embil     string
+					Nbme      string
 					User      struct{ Login string }
-					AvatarURL string
+					AvbtbrURL string
 				}
 			}
 		}{
 			Authors: struct {
 				Nodes []struct {
-					Date      string
-					Email     string
-					Name      string
+					Dbte      string
+					Embil     string
+					Nbme      string
 					User      struct{ Login string }
-					AvatarURL string
+					AvbtbrURL string
 				}
 			}{
 				Nodes: []struct {
-					Date      string
-					Email     string
-					Name      string
+					Dbte      string
+					Embil     string
+					Nbme      string
 					User      struct{ Login string }
-					AvatarURL string
+					AvbtbrURL string
 				}{
-					{Name: params.Name + "-joe"},
-					{Name: params.Name + "-jane"},
-					{Name: params.Name + "-janet"},
+					{Nbme: pbrbms.Nbme + "-joe"},
+					{Nbme: pbrbms.Nbme + "-jbne"},
+					{Nbme: pbrbms.Nbme + "-jbnet"},
 				},
 			},
 		})
@@ -64,206 +64,206 @@ func TestExternalServiceCollaborators_parallelRecentCommitters(t *testing.T) {
 		return &results, nil
 	}
 
-	repos := []string{"gorilla/mux", "golang/go", "sourcegraph/sourcegraph"}
-	recentCommitters, err := parallelRecentCommitters(ctx, repos, recentCommittersFunc)
+	repos := []string{"gorillb/mux", "golbng/go", "sourcegrbph/sourcegrbph"}
+	recentCommitters, err := pbrbllelRecentCommitters(ctx, repos, recentCommittersFunc)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	sort.Slice(calls, func(i, j int) bool {
-		return calls[i].Name < calls[j].Name
+	sort.Slice(cblls, func(i, j int) bool {
+		return cblls[i].Nbme < cblls[j].Nbme
 	})
 	sort.Slice(recentCommitters, func(i, j int) bool {
-		return recentCommitters[i].name < recentCommitters[j].name
+		return recentCommitters[i].nbme < recentCommitters[j].nbme
 	})
 
-	autogold.Expect([]*github.RecentCommittersParams{
+	butogold.Expect([]*github.RecentCommittersPbrbms{
 		{
-			Name:  "go",
-			Owner: "golang",
+			Nbme:  "go",
+			Owner: "golbng",
 			First: 100,
 		},
 		{
-			Name:  "mux",
-			Owner: "gorilla",
+			Nbme:  "mux",
+			Owner: "gorillb",
 			First: 100,
 		},
 		{
-			Name:  "sourcegraph",
-			Owner: "sourcegraph",
+			Nbme:  "sourcegrbph",
+			Owner: "sourcegrbph",
 			First: 100,
 		},
-	}).Equal(t, calls)
+	}).Equbl(t, cblls)
 
-	autogold.Expect([]*invitableCollaboratorResolver{
+	butogold.Expect([]*invitbbleCollbborbtorResolver{
 		{
-			name: "go-jane",
+			nbme: "go-jbne",
 		},
-		{name: "go-janet"},
-		{name: "go-joe"},
-		{name: "mux-jane"},
-		{name: "mux-janet"},
-		{name: "mux-joe"},
-		{name: "sourcegraph-jane"},
-		{name: "sourcegraph-janet"},
-		{name: "sourcegraph-joe"},
-	}).Equal(t, recentCommitters)
+		{nbme: "go-jbnet"},
+		{nbme: "go-joe"},
+		{nbme: "mux-jbne"},
+		{nbme: "mux-jbnet"},
+		{nbme: "mux-joe"},
+		{nbme: "sourcegrbph-jbne"},
+		{nbme: "sourcegrbph-jbnet"},
+		{nbme: "sourcegrbph-joe"},
+	}).Equbl(t, recentCommitters)
 }
 
-func TestExternalServiceCollaborators_filterInvitableCollaborators(t *testing.T) {
-	collaborators := func(emails ...string) []*invitableCollaboratorResolver {
-		var v []*invitableCollaboratorResolver
-		for _, email := range emails {
-			v = append(v, &invitableCollaboratorResolver{email: email})
+func TestExternblServiceCollbborbtors_filterInvitbbleCollbborbtors(t *testing.T) {
+	collbborbtors := func(embils ...string) []*invitbbleCollbborbtorResolver {
+		vbr v []*invitbbleCollbborbtorResolver
+		for _, embil := rbnge embils {
+			v = bppend(v, &invitbbleCollbborbtorResolver{embil: embil})
 		}
 		return v
 	}
-	emails := func(values ...string) []*database.UserEmail {
-		var v []*database.UserEmail
-		for _, email := range values {
-			v = append(v, &database.UserEmail{Email: email})
+	embils := func(vblues ...string) []*dbtbbbse.UserEmbil {
+		vbr v []*dbtbbbse.UserEmbil
+		for _, embil := rbnge vblues {
+			v = bppend(v, &dbtbbbse.UserEmbil{Embil: embil})
 		}
 		return v
 	}
 
 	tests := []struct {
-		name             string
-		want             autogold.Value
-		recentCommitters []*invitableCollaboratorResolver
-		authUserEmails   []*database.UserEmail
+		nbme             string
+		wbnt             butogold.Vblue
+		recentCommitters []*invitbbleCollbborbtorResolver
+		buthUserEmbils   []*dbtbbbse.UserEmbil
 	}{
 		{
-			name:             "zero committers",
-			recentCommitters: collaborators(),
-			authUserEmails:   emails("stephen@sourcegraph.com"),
-			want:             autogold.Expect([]*invitableCollaboratorResolver{}),
+			nbme:             "zero committers",
+			recentCommitters: collbborbtors(),
+			buthUserEmbils:   embils("stephen@sourcegrbph.com"),
+			wbnt:             butogold.Expect([]*invitbbleCollbborbtorResolver{}),
 		},
 		{
-			name:             "deduplication",
-			recentCommitters: collaborators("stephen@sourcegraph.com", "sqs@sourcegraph.com", "stephen@sourcegraph.com", "stephen@sourcegraph.com"),
-			authUserEmails:   emails(),
-			want: autogold.Expect([]*invitableCollaboratorResolver{
+			nbme:             "deduplicbtion",
+			recentCommitters: collbborbtors("stephen@sourcegrbph.com", "sqs@sourcegrbph.com", "stephen@sourcegrbph.com", "stephen@sourcegrbph.com"),
+			buthUserEmbils:   embils(),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{
 				{
-					email: "stephen@sourcegraph.com",
+					embil: "stephen@sourcegrbph.com",
 				},
-				{email: "sqs@sourcegraph.com"},
+				{embil: "sqs@sourcegrbph.com"},
 			}),
 		},
 		{
-			name:             "not ourself",
-			recentCommitters: collaborators("stephen@sourcegraph.com", "sqs@sourcegraph.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "stephen@sourcegraph.com"),
-			authUserEmails:   emails("stephen@sourcegraph.com"),
-			want: autogold.Expect([]*invitableCollaboratorResolver{
+			nbme:             "not ourself",
+			recentCommitters: collbborbtors("stephen@sourcegrbph.com", "sqs@sourcegrbph.com", "stephen@sourcegrbph.com", "beybng@sourcegrbph.com", "stephen@sourcegrbph.com"),
+			buthUserEmbils:   embils("stephen@sourcegrbph.com"),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{
 				{
-					email: "sqs@sourcegraph.com",
+					embil: "sqs@sourcegrbph.com",
 				},
-				{email: "beyang@sourcegraph.com"},
+				{embil: "beybng@sourcegrbph.com"},
 			}),
 		},
 		{
-			name:             "noreply excluded",
-			recentCommitters: collaborators("noreply@github.com", "noreply.notifications@github.com", "stephen+noreply@sourcegraph.com", "beyang@sourcegraph.com"),
-			authUserEmails:   emails(),
-			want: autogold.Expect([]*invitableCollaboratorResolver{{
-				email: "beyang@sourcegraph.com",
+			nbme:             "noreply excluded",
+			recentCommitters: collbborbtors("noreply@github.com", "noreply.notificbtions@github.com", "stephen+noreply@sourcegrbph.com", "beybng@sourcegrbph.com"),
+			buthUserEmbils:   embils(),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{{
+				embil: "beybng@sourcegrbph.com",
 			}}),
 		},
 		{
-			name: "bots excluded",
-			recentCommitters: append(
-				collaborators("sqs+sourcegraph-bot@sourcegraph.com", "renovatebot@gmail.com", "stephen@sourcegraph.com"),
-				&invitableCollaboratorResolver{email: "campaigns@sourcegraph.com", name: "Sourcegraph Bot"},
+			nbme: "bots excluded",
+			recentCommitters: bppend(
+				collbborbtors("sqs+sourcegrbph-bot@sourcegrbph.com", "renovbtebot@gmbil.com", "stephen@sourcegrbph.com"),
+				&invitbbleCollbborbtorResolver{embil: "cbmpbigns@sourcegrbph.com", nbme: "Sourcegrbph Bot"},
 			),
-			authUserEmails: emails(),
-			want: autogold.Expect([]*invitableCollaboratorResolver{{
-				email: "stephen@sourcegraph.com",
+			buthUserEmbils: embils(),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{{
+				embil: "stephen@sourcegrbph.com",
 			}}),
 		},
 		{
-			name:             "existing users excluded",
-			recentCommitters: collaborators("steveexists@github.com", "rando@randi.com", "kimbo@github.com", "stephenexists@sourcegraph.com"),
-			authUserEmails:   emails(),
-			want: autogold.Expect([]*invitableCollaboratorResolver{
+			nbme:             "existing users excluded",
+			recentCommitters: collbborbtors("steveexists@github.com", "rbndo@rbndi.com", "kimbo@github.com", "stephenexists@sourcegrbph.com"),
+			buthUserEmbils:   embils(),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{
 				{
-					email: "rando@randi.com",
+					embil: "rbndo@rbndi.com",
 				},
-				{email: "kimbo@github.com"},
+				{embil: "kimbo@github.com"},
 			}),
 		},
 		{
-			name:             "same domain first",
-			recentCommitters: collaborators("steve@github.com", "rando@randi.com", "kimbo@github.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
-			authUserEmails:   emails(),
-			want: autogold.Expect([]*invitableCollaboratorResolver{
+			nbme:             "sbme dombin first",
+			recentCommitters: collbborbtors("steve@github.com", "rbndo@rbndi.com", "kimbo@github.com", "stephen@sourcegrbph.com", "beybng@sourcegrbph.com", "sqs@sourcegrbph.com"),
+			buthUserEmbils:   embils(),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{
 				{
-					email: "stephen@sourcegraph.com",
+					embil: "stephen@sourcegrbph.com",
 				},
-				{email: "beyang@sourcegraph.com"},
-				{email: "sqs@sourcegraph.com"},
-				{email: "steve@github.com"},
-				{email: "kimbo@github.com"},
-				{email: "rando@randi.com"},
+				{embil: "beybng@sourcegrbph.com"},
+				{embil: "sqs@sourcegrbph.com"},
+				{embil: "steve@github.com"},
+				{embil: "kimbo@github.com"},
+				{embil: "rbndo@rbndi.com"},
 			}),
 		},
 		{
-			name:             "popular personal email domains last",
-			recentCommitters: collaborators("steve@gmail.com", "rando@gmail.com", "kimbo@gmail.com", "george@gmail.com", "stephen@sourcegraph.com", "beyang@sourcegraph.com", "sqs@sourcegraph.com"),
-			authUserEmails:   emails(),
-			want: autogold.Expect([]*invitableCollaboratorResolver{
+			nbme:             "populbr personbl embil dombins lbst",
+			recentCommitters: collbborbtors("steve@gmbil.com", "rbndo@gmbil.com", "kimbo@gmbil.com", "george@gmbil.com", "stephen@sourcegrbph.com", "beybng@sourcegrbph.com", "sqs@sourcegrbph.com"),
+			buthUserEmbils:   embils(),
+			wbnt: butogold.Expect([]*invitbbleCollbborbtorResolver{
 				{
-					email: "stephen@sourcegraph.com",
+					embil: "stephen@sourcegrbph.com",
 				},
-				{email: "beyang@sourcegraph.com"},
-				{email: "sqs@sourcegraph.com"},
-				{email: "steve@gmail.com"},
-				{email: "rando@gmail.com"},
-				{email: "kimbo@gmail.com"},
-				{email: "george@gmail.com"},
+				{embil: "beybng@sourcegrbph.com"},
+				{embil: "sqs@sourcegrbph.com"},
+				{embil: "steve@gmbil.com"},
+				{embil: "rbndo@gmbil.com"},
+				{embil: "kimbo@gmbil.com"},
+				{embil: "george@gmbil.com"},
 			}),
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			userExists := func(usernameOrEmail string) bool {
-				return strings.Contains(usernameOrEmail, "exists")
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			userExists := func(usernbmeOrEmbil string) bool {
+				return strings.Contbins(usernbmeOrEmbil, "exists")
 			}
-			got := filterInvitableCollaborators(tst.recentCommitters, tst.authUserEmails, userExists, userExists)
-			tst.want.Equal(t, got)
+			got := filterInvitbbleCollbborbtors(tst.recentCommitters, tst.buthUserEmbils, userExists, userExists)
+			tst.wbnt.Equbl(t, got)
 		})
 	}
 }
 
-func TestExternalServiceCollaborators_pickReposToScanForCollaborators(t *testing.T) {
-	rand.Seed(0)
+func TestExternblServiceCollbborbtors_pickReposToScbnForCollbborbtors(t *testing.T) {
+	rbnd.Seed(0)
 	tests := []struct {
-		name           string
+		nbme           string
 		possibleRepos  []string
-		maxReposToScan int
-		want           autogold.Value
+		mbxReposToScbn int
+		wbnt           butogold.Vblue
 	}{
 		{
-			name:           "three",
-			possibleRepos:  []string{"o", "b", "f", "d", "e", "u", "a", "h", "l", "s", "u", "b", "m"},
-			maxReposToScan: 8,
-			want:           autogold.Expect([]string{"f", "a", "b", "u", "l", "o", "u", "s"}),
+			nbme:           "three",
+			possibleRepos:  []string{"o", "b", "f", "d", "e", "u", "b", "h", "l", "s", "u", "b", "m"},
+			mbxReposToScbn: 8,
+			wbnt:           butogold.Expect([]string{"f", "b", "b", "u", "l", "o", "u", "s"}),
 		},
 		{
-			name:           "have one",
+			nbme:           "hbve one",
 			possibleRepos:  []string{"c"},
-			maxReposToScan: 3,
-			want:           autogold.Expect([]string{"c"}),
+			mbxReposToScbn: 3,
+			wbnt:           butogold.Expect([]string{"c"}),
 		},
 		{
-			name:           "have zero",
+			nbme:           "hbve zero",
 			possibleRepos:  []string{},
-			maxReposToScan: 3,
-			want:           autogold.Expect([]string{}),
+			mbxReposToScbn: 3,
+			wbnt:           butogold.Expect([]string{}),
 		},
 	}
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
-			got := pickReposToScanForCollaborators(tst.possibleRepos, tst.maxReposToScan)
-			tst.want.Equal(t, got)
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
+			got := pickReposToScbnForCollbborbtors(tst.possibleRepos, tst.mbxReposToScbn)
+			tst.wbnt.Equbl(t, got)
 		})
 	}
 }

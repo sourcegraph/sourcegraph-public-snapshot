@@ -1,43 +1,43 @@
-package server
+pbckbge server
 
 import (
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/metric"
 )
 
-var meter = otel.GetMeterProvider().Meter("cmd/telemetry-gateway/internal/server")
+vbr meter = otel.GetMeterProvider().Meter("cmd/telemetry-gbtewby/internbl/server")
 
 type recordEventsMetrics struct {
-	// Record total event lengths of requests
-	totalLength metric.Int64Histogram
-	// Record per-payload metrics
-	payload recordEventsRequestPayloadMetrics
+	// Record totbl event lengths of requests
+	totblLength metric.Int64Histogrbm
+	// Record per-pbylobd metrics
+	pbylobd recordEventsRequestPbylobdMetrics
 }
 
-type recordEventsRequestPayloadMetrics struct {
-	// Record event length of individual payloads
-	length metric.Int64Histogram
-	// Count number of failedEvents
-	failedEvents metric.Int64Counter
+type recordEventsRequestPbylobdMetrics struct {
+	// Record event length of individubl pbylobds
+	length metric.Int64Histogrbm
+	// Count number of fbiledEvents
+	fbiledEvents metric.Int64Counter
 }
 
 func newRecordEventsMetrics() (m recordEventsMetrics, err error) {
-	m.totalLength, err = meter.Int64Histogram(
-		"telemetry-gateway.record_events.total_length",
-		metric.WithDescription("Total number of events in record_events requests"))
+	m.totblLength, err = meter.Int64Histogrbm(
+		"telemetry-gbtewby.record_events.totbl_length",
+		metric.WithDescription("Totbl number of events in record_events requests"))
 	if err != nil {
 		return m, err
 	}
 
-	m.payload.length, err = meter.Int64Histogram(
-		"telemetry-gateway.record_events.payload_length",
-		metric.WithDescription("Number of events in indvidiual record_events request payloads"))
+	m.pbylobd.length, err = meter.Int64Histogrbm(
+		"telemetry-gbtewby.record_events.pbylobd_length",
+		metric.WithDescription("Number of events in indvidiubl record_events request pbylobds"))
 	if err != nil {
 		return m, err
 	}
-	m.payload.failedEvents, err = meter.Int64Counter(
-		"telemetry-gateway.record_events.payload_failed_events_count",
-		metric.WithDescription("Number of events that failed to submit in indvidiual record_events request payloads"))
+	m.pbylobd.fbiledEvents, err = meter.Int64Counter(
+		"telemetry-gbtewby.record_events.pbylobd_fbiled_events_count",
+		metric.WithDescription("Number of events thbt fbiled to submit in indvidiubl record_events request pbylobds"))
 	if err != nil {
 		return m, err
 	}

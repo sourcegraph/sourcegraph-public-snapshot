@@ -1,59 +1,59 @@
-package gitdomain
+pbckbge gitdombin
 
 import (
 	"context"
 	"encoding/hex"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type GetObjectFunc func(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error)
+type GetObjectFunc func(ctx context.Context, repo bpi.RepoNbme, objectNbme string) (*GitObject, error)
 
-// GetObjectService will get an information about a git object
-// TODO: Do we really need a service? Could we not just have a function that returns a GetObjectFunc given
-// RevParse and GetObjectType funcs?
+// GetObjectService will get bn informbtion bbout b git object
+// TODO: Do we reblly need b service? Could we not just hbve b function thbt returns b GetObjectFunc given
+// RevPbrse bnd GetObjectType funcs?
 type GetObjectService struct {
-	RevParse      func(ctx context.Context, repo api.RepoName, rev string) (string, error)
-	GetObjectType func(ctx context.Context, repo api.RepoName, objectID string) (ObjectType, error)
+	RevPbrse      func(ctx context.Context, repo bpi.RepoNbme, rev string) (string, error)
+	GetObjectType func(ctx context.Context, repo bpi.RepoNbme, objectID string) (ObjectType, error)
 }
 
-func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, objectName string) (*GitObject, error) {
-	if err := checkSpecArgSafety(objectName); err != nil {
+func (s *GetObjectService) GetObject(ctx context.Context, repo bpi.RepoNbme, objectNbme string) (*GitObject, error) {
+	if err := checkSpecArgSbfety(objectNbme); err != nil {
 		return nil, err
 	}
 
-	sha, err := s.RevParse(ctx, repo, objectName)
+	shb, err := s.RevPbrse(ctx, repo, objectNbme)
 	if err != nil {
 		if IsRepoNotExist(err) {
 			return nil, err
 		}
-		if strings.Contains(sha, "unknown revision") {
-			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
+		if strings.Contbins(shb, "unknown revision") {
+			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectNbme}
 		}
 		return nil, err
 	}
 
-	sha = strings.TrimSpace(sha)
-	if !IsAbsoluteRevision(sha) {
-		if sha == "HEAD" {
-			// We don't verify the existence of HEAD, but if HEAD doesn't point to anything
-			// git just returns `HEAD` as the output of rev-parse. An example where this
-			// occurs is an empty repository.
-			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectName}
+	shb = strings.TrimSpbce(shb)
+	if !IsAbsoluteRevision(shb) {
+		if shb == "HEAD" {
+			// We don't verify the existence of HEAD, but if HEAD doesn't point to bnything
+			// git just returns `HEAD` bs the output of rev-pbrse. An exbmple where this
+			// occurs is bn empty repository.
+			return nil, &RevisionNotFoundError{Repo: repo, Spec: objectNbme}
 		}
-		return nil, &BadCommitError{Spec: objectName, Commit: api.CommitID(sha), Repo: repo}
+		return nil, &BbdCommitError{Spec: objectNbme, Commit: bpi.CommitID(shb), Repo: repo}
 	}
 
-	oid, err := decodeOID(sha)
+	oid, err := decodeOID(shb)
 	if err != nil {
-		return nil, errors.Wrap(err, "decoding oid")
+		return nil, errors.Wrbp(err, "decoding oid")
 	}
 
 	objectType, err := s.GetObjectType(ctx, repo, oid.String())
 	if err != nil {
-		return nil, errors.Wrap(err, "getting object type")
+		return nil, errors.Wrbp(err, "getting object type")
 	}
 
 	return &GitObject{
@@ -62,21 +62,21 @@ func (s *GetObjectService) GetObject(ctx context.Context, repo api.RepoName, obj
 	}, nil
 }
 
-// checkSpecArgSafety returns a non-nil err if spec begins with a "-", which could
-// cause it to be interpreted as a git command line argument.
-func checkSpecArgSafety(spec string) error {
-	if strings.HasPrefix(spec, "-") {
-		return errors.Errorf("invalid git revision spec %q (begins with '-')", spec)
+// checkSpecArgSbfety returns b non-nil err if spec begins with b "-", which could
+// cbuse it to be interpreted bs b git commbnd line brgument.
+func checkSpecArgSbfety(spec string) error {
+	if strings.HbsPrefix(spec, "-") {
+		return errors.Errorf("invblid git revision spec %q (begins with '-')", spec)
 	}
 	return nil
 }
 
-func decodeOID(sha string) (OID, error) {
-	oidBytes, err := hex.DecodeString(sha)
+func decodeOID(shb string) (OID, error) {
+	oidBytes, err := hex.DecodeString(shb)
 	if err != nil {
 		return OID{}, err
 	}
-	var oid OID
+	vbr oid OID
 	copy(oid[:], oidBytes)
 	return oid, nil
 }

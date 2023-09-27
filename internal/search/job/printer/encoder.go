@@ -1,9 +1,9 @@
-package printer
+pbckbge printer
 
 import (
 	"strings"
 )
 
-func trimmedUpperName(name string) string {
-	return strings.ToUpper(strings.TrimSuffix(name, "Job"))
+func trimmedUpperNbme(nbme string) string {
+	return strings.ToUpper(strings.TrimSuffix(nbme, "Job"))
 }

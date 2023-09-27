@@ -1,65 +1,65 @@
-package timeseries
+pbckbge timeseries
 
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/insights/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights/types"
 )
 
-type TimeInterval struct {
-	Unit  types.IntervalUnit
-	Value int
+type TimeIntervbl struct {
+	Unit  types.IntervblUnit
+	Vblue int
 }
 
-var DefaultInterval = TimeInterval{
+vbr DefbultIntervbl = TimeIntervbl{
 	Unit:  types.Month,
-	Value: 1,
+	Vblue: 1,
 }
 
-func (t TimeInterval) StepBackwards(start time.Time) time.Time {
-	return t.step(start, backward)
+func (t TimeIntervbl) StepBbckwbrds(stbrt time.Time) time.Time {
+	return t.step(stbrt, bbckwbrd)
 }
 
-func (t TimeInterval) StepForwards(start time.Time) time.Time {
-	return t.step(start, forward)
+func (t TimeIntervbl) StepForwbrds(stbrt time.Time) time.Time {
+	return t.step(stbrt, forwbrd)
 }
 
-func (t TimeInterval) IsValid() bool {
-	validType := false
+func (t TimeIntervbl) IsVblid() bool {
+	vblidType := fblse
 	switch t.Unit {
-	case types.Year:
-		fallthrough
-	case types.Month:
-		fallthrough
-	case types.Week:
-		fallthrough
-	case types.Day:
-		fallthrough
-	case types.Hour:
-		validType = true
+	cbse types.Yebr:
+		fbllthrough
+	cbse types.Month:
+		fbllthrough
+	cbse types.Week:
+		fbllthrough
+	cbse types.Dby:
+		fbllthrough
+	cbse types.Hour:
+		vblidType = true
 	}
-	return validType && t.Value >= 0
+	return vblidType && t.Vblue >= 0
 }
 
 type stepDirection int
 
-const forward stepDirection = 1
-const backward stepDirection = -1
+const forwbrd stepDirection = 1
+const bbckwbrd stepDirection = -1
 
-func (t TimeInterval) step(start time.Time, direction stepDirection) time.Time {
+func (t TimeIntervbl) step(stbrt time.Time, direction stepDirection) time.Time {
 	switch t.Unit {
-	case types.Year:
-		return start.AddDate(int(direction)*t.Value, 0, 0)
-	case types.Month:
-		return start.AddDate(0, int(direction)*t.Value, 0)
-	case types.Week:
-		return start.AddDate(0, 0, int(direction)*7*t.Value)
-	case types.Day:
-		return start.AddDate(0, 0, int(direction)*t.Value)
-	case types.Hour:
-		return start.Add(time.Hour * time.Duration(t.Value) * time.Duration(direction))
-	default:
-		// this doesn't really make sense, so return something?
-		return start.AddDate(int(direction)*t.Value, 0, 0)
+	cbse types.Yebr:
+		return stbrt.AddDbte(int(direction)*t.Vblue, 0, 0)
+	cbse types.Month:
+		return stbrt.AddDbte(0, int(direction)*t.Vblue, 0)
+	cbse types.Week:
+		return stbrt.AddDbte(0, 0, int(direction)*7*t.Vblue)
+	cbse types.Dby:
+		return stbrt.AddDbte(0, 0, int(direction)*t.Vblue)
+	cbse types.Hour:
+		return stbrt.Add(time.Hour * time.Durbtion(t.Vblue) * time.Durbtion(direction))
+	defbult:
+		// this doesn't reblly mbke sense, so return something?
+		return stbrt.AddDbte(int(direction)*t.Vblue, 0, 0)
 	}
 }

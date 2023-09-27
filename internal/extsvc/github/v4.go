@@ -1,4 +1,4 @@
-package github
+pbckbge github
 
 import (
 	"bytes"
@@ -12,289 +12,289 @@ import (
 	"strings"
 	"time"
 
-	"github.com/Masterminds/semver"
-	"github.com/graphql-go/graphql/language/ast"
-	"github.com/graphql-go/graphql/language/parser"
-	"github.com/graphql-go/graphql/language/visitor"
+	"github.com/Mbsterminds/semver"
+	"github.com/grbphql-go/grbphql/lbngubge/bst"
+	"github.com/grbphql-go/grbphql/lbngubge/pbrser"
+	"github.com/grbphql-go/grbphql/lbngubge/visitor"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// V4Client is a GitHub GraphQL API client.
+// V4Client is b GitHub GrbphQL API client.
 type V4Client struct {
 	log log.Logger
 
-	// The URN of the external service that the client is derived from.
+	// The URN of the externbl service thbt the client is derived from.
 	urn string
 
-	// apiURL is the base URL of a GitHub API. It must point to the base URL of the GitHub API. This
-	// is https://api.github.com for GitHub.com and http[s]://[github-enterprise-hostname]/api for
+	// bpiURL is the bbse URL of b GitHub API. It must point to the bbse URL of the GitHub API. This
+	// is https://bpi.github.com for GitHub.com bnd http[s]://[github-enterprise-hostnbme]/bpi for
 	// GitHub Enterprise.
-	apiURL *url.URL
+	bpiURL *url.URL
 
 	// githubDotCom is true if this client connects to github.com.
 	githubDotCom bool
 
-	// auth is used to authenticate requests. May be empty, in which case the
-	// default behavior is to make unauthenticated requests.
-	// 🚨 SECURITY: Should not be changed after client creation to prevent
-	// unauthorized access to the repository cache. Use `WithAuthenticator` to
-	// create a new client with a different authenticator instead.
-	auth auth.Authenticator
+	// buth is used to buthenticbte requests. Mby be empty, in which cbse the
+	// defbult behbvior is to mbke unbuthenticbted requests.
+	// 🚨 SECURITY: Should not be chbnged bfter client crebtion to prevent
+	// unbuthorized bccess to the repository cbche. Use `WithAuthenticbtor` to
+	// crebte b new client with b different buthenticbtor instebd.
+	buth buth.Authenticbtor
 
-	// httpClient is the HTTP client used to make requests to the GitHub API.
+	// httpClient is the HTTP client used to mbke requests to the GitHub API.
 	httpClient httpcli.Doer
 
-	// externalRateLimiter is the API rate limit monitor.
-	externalRateLimiter *ratelimit.Monitor
+	// externblRbteLimiter is the API rbte limit monitor.
+	externblRbteLimiter *rbtelimit.Monitor
 
-	// internalRateLimiter is our self imposed rate limiter.
-	internalRateLimiter *ratelimit.InstrumentedLimiter
+	// internblRbteLimiter is our self imposed rbte limiter.
+	internblRbteLimiter *rbtelimit.InstrumentedLimiter
 
-	// waitForRateLimit determines whether or not the client will wait and retry a request if external rate limits are encountered
-	waitForRateLimit bool
+	// wbitForRbteLimit determines whether or not the client will wbit bnd retry b request if externbl rbte limits bre encountered
+	wbitForRbteLimit bool
 
-	// maxRateLimitRetries determines how many times we retry requests due to rate limits
-	maxRateLimitRetries int
+	// mbxRbteLimitRetries determines how mbny times we retry requests due to rbte limits
+	mbxRbteLimitRetries int
 }
 
-// NewV4Client creates a new GitHub GraphQL API client with an optional default
-// authenticator.
+// NewV4Client crebtes b new GitHub GrbphQL API client with bn optionbl defbult
+// buthenticbtor.
 //
-// apiURL must point to the base URL of the GitHub API. See the docstring for
-// V4Client.apiURL.
-func NewV4Client(urn string, apiURL *url.URL, a auth.Authenticator, cli httpcli.Doer) *V4Client {
-	apiURL = canonicalizedURL(apiURL)
-	if gitHubDisable {
-		cli = disabledClient{}
+// bpiURL must point to the bbse URL of the GitHub API. See the docstring for
+// V4Client.bpiURL.
+func NewV4Client(urn string, bpiURL *url.URL, b buth.Authenticbtor, cli httpcli.Doer) *V4Client {
+	bpiURL = cbnonicblizedURL(bpiURL)
+	if gitHubDisbble {
+		cli = disbbledClient{}
 	}
 	if cli == nil {
-		cli = httpcli.ExternalDoer
+		cli = httpcli.ExternblDoer
 	}
 
 	cli = requestCounter.Doer(cli, func(u *url.URL) string {
-		// The first component of the Path mostly maps to the type of API
-		// request we are making. See `curl https://api.github.com` for the
-		// exact mapping
-		var category string
-		if parts := strings.SplitN(u.Path, "/", 3); len(parts) > 1 {
-			category = parts[1]
+		// The first component of the Pbth mostly mbps to the type of API
+		// request we bre mbking. See `curl https://bpi.github.com` for the
+		// exbct mbpping
+		vbr cbtegory string
+		if pbrts := strings.SplitN(u.Pbth, "/", 3); len(pbrts) > 1 {
+			cbtegory = pbrts[1]
 		}
-		return category
+		return cbtegory
 	})
 
-	var tokenHash string
-	if a != nil {
-		tokenHash = a.Hash()
+	vbr tokenHbsh string
+	if b != nil {
+		tokenHbsh = b.Hbsh()
 	}
 
-	rl := ratelimit.NewInstrumentedLimiter(urn, ratelimit.NewGlobalRateLimiter(log.Scoped("GitHubClient", ""), urn))
-	rlm := ratelimit.DefaultMonitorRegistry.GetOrSet(apiURL.String(), tokenHash, "graphql", &ratelimit.Monitor{HeaderPrefix: "X-"})
+	rl := rbtelimit.NewInstrumentedLimiter(urn, rbtelimit.NewGlobblRbteLimiter(log.Scoped("GitHubClient", ""), urn))
+	rlm := rbtelimit.DefbultMonitorRegistry.GetOrSet(bpiURL.String(), tokenHbsh, "grbphql", &rbtelimit.Monitor{HebderPrefix: "X-"})
 
 	return &V4Client{
 		log:                 log.Scoped("github.v4", "github v4 client"),
 		urn:                 urn,
-		apiURL:              apiURL,
-		githubDotCom:        urlIsGitHubDotCom(apiURL),
-		auth:                a,
+		bpiURL:              bpiURL,
+		githubDotCom:        urlIsGitHubDotCom(bpiURL),
+		buth:                b,
 		httpClient:          cli,
-		internalRateLimiter: rl,
-		externalRateLimiter: rlm,
-		waitForRateLimit:    true,
-		maxRateLimitRetries: 2,
+		internblRbteLimiter: rl,
+		externblRbteLimiter: rlm,
+		wbitForRbteLimit:    true,
+		mbxRbteLimitRetries: 2,
 	}
 }
 
-// WithAuthenticator returns a new V4Client that uses the same configuration as
-// the current V4Client, except authenticated as the GitHub user with the given
-// authenticator instance (most likely a token).
-func (c *V4Client) WithAuthenticator(a auth.Authenticator) *V4Client {
-	return NewV4Client(c.urn, c.apiURL, a, c.httpClient)
+// WithAuthenticbtor returns b new V4Client thbt uses the sbme configurbtion bs
+// the current V4Client, except buthenticbted bs the GitHub user with the given
+// buthenticbtor instbnce (most likely b token).
+func (c *V4Client) WithAuthenticbtor(b buth.Authenticbtor) *V4Client {
+	return NewV4Client(c.urn, c.bpiURL, b, c.httpClient)
 }
 
-// ExternalRateLimiter exposes the rate limit monitor.
-func (c *V4Client) ExternalRateLimiter() *ratelimit.Monitor {
-	return c.externalRateLimiter
+// ExternblRbteLimiter exposes the rbte limit monitor.
+func (c *V4Client) ExternblRbteLimiter() *rbtelimit.Monitor {
+	return c.externblRbteLimiter
 }
 
-func (c *V4Client) requestGraphQL(ctx context.Context, query string, vars map[string]any, result any) (err error) {
-	reqBody, err := json.Marshal(struct {
+func (c *V4Client) requestGrbphQL(ctx context.Context, query string, vbrs mbp[string]bny, result bny) (err error) {
+	reqBody, err := json.Mbrshbl(struct {
 		Query     string         `json:"query"`
-		Variables map[string]any `json:"variables"`
+		Vbribbles mbp[string]bny `json:"vbribbles"`
 	}{
 		Query:     query,
-		Variables: vars,
+		Vbribbles: vbrs,
 	})
 	if err != nil {
 		return err
 	}
 
-	// GitHub.com GraphQL endpoint is api.github.com/graphql. GitHub Enterprise is /api/graphql (the
-	// REST endpoint is /api/v3, necessitating the "..").
-	graphqlEndpoint := "/graphql"
+	// GitHub.com GrbphQL endpoint is bpi.github.com/grbphql. GitHub Enterprise is /bpi/grbphql (the
+	// REST endpoint is /bpi/v3, necessitbting the "..").
+	grbphqlEndpoint := "/grbphql"
 	if !c.githubDotCom {
-		graphqlEndpoint = "../graphql"
+		grbphqlEndpoint = "../grbphql"
 	}
-	req, err := http.NewRequest("POST", graphqlEndpoint, bytes.NewReader(reqBody))
+	req, err := http.NewRequest("POST", grbphqlEndpoint, bytes.NewRebder(reqBody))
 	if err != nil {
 		return err
 	}
 	urlCopy := *req.URL
 
-	// Enable Checks API
+	// Enbble Checks API
 	// https://developer.github.com/v4/previews/#checks
-	req.Header.Add("Accept", "application/vnd.github.antiope-preview+json")
-	var respBody struct {
-		Data   json.RawMessage `json:"data"`
-		Errors graphqlErrors   `json:"errors"`
+	req.Hebder.Add("Accept", "bpplicbtion/vnd.github.bntiope-preview+json")
+	vbr respBody struct {
+		Dbtb   json.RbwMessbge `json:"dbtb"`
+		Errors grbphqlErrors   `json:"errors"`
 	}
 
-	cost, err := estimateGraphQLCost(query)
+	cost, err := estimbteGrbphQLCost(query)
 	if err != nil {
-		return errors.Wrap(err, "estimating graphql cost")
+		return errors.Wrbp(err, "estimbting grbphql cost")
 	}
 
-	if err := c.internalRateLimiter.WaitN(ctx, cost); err != nil {
-		return errors.Wrap(err, "rate limit")
+	if err := c.internblRbteLimiter.WbitN(ctx, cost); err != nil {
+		return errors.Wrbp(err, "rbte limit")
 	}
 
-	if c.waitForRateLimit {
-		_ = c.externalRateLimiter.WaitForRateLimit(ctx, cost)
+	if c.wbitForRbteLimit {
+		_ = c.externblRbteLimiter.WbitForRbteLimit(ctx, cost)
 	}
 
-	_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
+	_, err = doRequest(ctx, c.log, c.bpiURL, c.buth, c.externblRbteLimiter, c.httpClient, req, &respBody)
 
-	apiError := &APIError{}
+	bpiError := &APIError{}
 	numRetries := 0
 
-	for c.waitForRateLimit && err != nil && numRetries < c.maxRateLimitRetries &&
-		errors.As(err, &apiError) && apiError.Code == http.StatusForbidden {
-		// Reset Body/URL to the originals, to ignore changes a previous
-		// `doRequest` might have made.
+	for c.wbitForRbteLimit && err != nil && numRetries < c.mbxRbteLimitRetries &&
+		errors.As(err, &bpiError) && bpiError.Code == http.StbtusForbidden {
+		// Reset Body/URL to the originbls, to ignore chbnges b previous
+		// `doRequest` might hbve mbde.
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
-		// Create a copy of the URL, because this loop might execute
+		// Crebte b copy of the URL, becbuse this loop might execute
 		// multiple times.
 		reqURLCopy := urlCopy
 		req.URL = &reqURLCopy
 
-		// Because GitHub responds with http.StatusForbidden when a rate limit is hit, we cannot
-		// say with absolute certainty that a rate limit was hit. It might have been an honest
-		// http.StatusForbidden. So we use the externalRateLimiter's WaitForRateLimit function
-		// to calculate the amount of time we need to wait before retrying the request.
-		// If that calculated time is zero or in the past, we have to assume that the
-		// rate limiting information we have is old and no longer relevant.
+		// Becbuse GitHub responds with http.StbtusForbidden when b rbte limit is hit, we cbnnot
+		// sby with bbsolute certbinty thbt b rbte limit wbs hit. It might hbve been bn honest
+		// http.StbtusForbidden. So we use the externblRbteLimiter's WbitForRbteLimit function
+		// to cblculbte the bmount of time we need to wbit before retrying the request.
+		// If thbt cblculbted time is zero or in the pbst, we hbve to bssume thbt the
+		// rbte limiting informbtion we hbve is old bnd no longer relevbnt.
 		//
-		// There is an extremely unlikely edge case where we will falsely not retry a request.
-		// If a request is rejected because we have no more rate limit tokens, but the token reset
-		// time is just around the corner (like 1 second from now), and for some reason the time
-		// between reading the headers and doing this "should we retry" check is greater than
-		// that time, the rate limit information we will have will look like old information and
+		// There is bn extremely unlikely edge cbse where we will fblsely not retry b request.
+		// If b request is rejected becbuse we hbve no more rbte limit tokens, but the token reset
+		// time is just bround the corner (like 1 second from now), bnd for some rebson the time
+		// between rebding the hebders bnd doing this "should we retry" check is grebter thbn
+		// thbt time, the rbte limit informbtion we will hbve will look like old informbtion bnd
 		// we won't retry the request.
-		if c.externalRateLimiter.WaitForRateLimit(ctx, cost) {
-			_, err = doRequest(ctx, c.log, c.apiURL, c.auth, c.externalRateLimiter, c.httpClient, req, &respBody)
+		if c.externblRbteLimiter.WbitForRbteLimit(ctx, cost) {
+			_, err = doRequest(ctx, c.log, c.bpiURL, c.buth, c.externblRbteLimiter, c.httpClient, req, &respBody)
 			numRetries++
 		} else {
-			break
+			brebk
 		}
 	}
 
-	// If the GraphQL response has errors, still attempt to unmarshal the data portion, as some
-	// requests may expect errors but have useful responses (e.g., querying a list of repositories,
+	// If the GrbphQL response hbs errors, still bttempt to unmbrshbl the dbtb portion, bs some
+	// requests mby expect errors but hbve useful responses (e.g., querying b list of repositories,
 	// some of which you expect to 404).
 	if len(respBody.Errors) > 0 {
 		err = respBody.Errors
 	}
-	if result != nil && respBody.Data != nil {
-		if err0 := unmarshal(respBody.Data, result); err0 != nil && err == nil {
+	if result != nil && respBody.Dbtb != nil {
+		if err0 := unmbrshbl(respBody.Dbtb, result); err0 != nil && err == nil {
 			return err0
 		}
 	}
 	return err
 }
 
-// estimateGraphQLCost estimates the cost of the query as described here:
-// https://developer.github.com/v4/guides/resource-limitations/#calculating-a-rate-limit-score-before-running-the-call
-func estimateGraphQLCost(query string) (int, error) {
-	doc, err := parser.Parse(parser.ParseParams{
+// estimbteGrbphQLCost estimbtes the cost of the query bs described here:
+// https://developer.github.com/v4/guides/resource-limitbtions/#cblculbting-b-rbte-limit-score-before-running-the-cbll
+func estimbteGrbphQLCost(query string) (int, error) {
+	doc, err := pbrser.Pbrse(pbrser.PbrsePbrbms{
 		Source: query,
 	})
 	if err != nil {
-		return 0, errors.Wrap(err, "parsing query")
+		return 0, errors.Wrbp(err, "pbrsing query")
 	}
 
-	var totalCost int
-	for _, def := range doc.Definitions {
-		cost := calcDefinitionCost(def)
-		totalCost += cost
+	vbr totblCost int
+	for _, def := rbnge doc.Definitions {
+		cost := cblcDefinitionCost(def)
+		totblCost += cost
 	}
 
-	// As per the calculation spec, cost should be divided by 100
-	totalCost /= 100
-	if totalCost < 1 {
+	// As per the cblculbtion spec, cost should be divided by 100
+	totblCost /= 100
+	if totblCost < 1 {
 		return 1, nil
 	}
-	return totalCost, nil
+	return totblCost, nil
 }
 
 type limitDepth struct {
-	// The 'first' or 'last' limit
+	// The 'first' or 'lbst' limit
 	limit int
-	// The depth at which it was added
+	// The depth bt which it wbs bdded
 	depth int
 }
 
-func calcDefinitionCost(def ast.Node) int {
-	var cost int
-	limitStack := make([]limitDepth, 0)
+func cblcDefinitionCost(def bst.Node) int {
+	vbr cost int
+	limitStbck := mbke([]limitDepth, 0)
 
 	v := &visitor.VisitorOptions{
-		Enter: func(p visitor.VisitFuncParams) (string, any) {
+		Enter: func(p visitor.VisitFuncPbrbms) (string, bny) {
 			switch node := p.Node.(type) {
-			case *ast.IntValue:
-				// We're looking for a 'first' or 'last' param indicating a limit
-				parent, ok := p.Parent.(*ast.Argument)
+			cbse *bst.IntVblue:
+				// We're looking for b 'first' or 'lbst' pbrbm indicbting b limit
+				pbrent, ok := p.Pbrent.(*bst.Argument)
 				if !ok {
-					return visitor.ActionNoChange, nil
+					return visitor.ActionNoChbnge, nil
 				}
-				if parent.Name == nil {
-					return visitor.ActionNoChange, nil
+				if pbrent.Nbme == nil {
+					return visitor.ActionNoChbnge, nil
 				}
-				if parent.Name.Value != "first" && parent.Name.Value != "last" {
-					return visitor.ActionNoChange, nil
+				if pbrent.Nbme.Vblue != "first" && pbrent.Nbme.Vblue != "lbst" {
+					return visitor.ActionNoChbnge, nil
 				}
 
-				// Prune anything above our current depth as we may have started walking
-				// back down the tree
+				// Prune bnything bbove our current depth bs we mby hbve stbrted wblking
+				// bbck down the tree
 				currentDepth := len(p.Ancestors)
-				limitStack = filterInPlace(limitStack, currentDepth)
+				limitStbck = filterInPlbce(limitStbck, currentDepth)
 
-				limit, err := strconv.Atoi(node.Value)
+				limit, err := strconv.Atoi(node.Vblue)
 				if err != nil {
-					return "", errors.Wrap(err, "parsing limit")
+					return "", errors.Wrbp(err, "pbrsing limit")
 				}
-				limitStack = append(limitStack, limitDepth{limit: limit, depth: currentDepth})
-				// The first item in the tree is always worth 1
-				if len(limitStack) == 1 {
+				limitStbck = bppend(limitStbck, limitDepth{limit: limit, depth: currentDepth})
+				// The first item in the tree is blwbys worth 1
+				if len(limitStbck) == 1 {
 					cost++
-					return visitor.ActionNoChange, nil
+					return visitor.ActionNoChbnge, nil
 				}
-				// The cost of the current item is calculated using the limits of
+				// The cost of the current item is cblculbted using the limits of
 				// its children
-				children := limitStack[:len(limitStack)-1]
+				children := limitStbck[:len(limitStbck)-1]
 				product := 1
-				// Multiply them all together
-				for _, n := range children {
+				// Multiply them bll together
+				for _, n := rbnge children {
 					product = n.limit * product
 				}
 				cost += product
 			}
-			return visitor.ActionNoChange, nil
+			return visitor.ActionNoChbnge, nil
 		},
 	}
 
@@ -303,119 +303,119 @@ func calcDefinitionCost(def ast.Node) int {
 	return cost
 }
 
-func filterInPlace(limitStack []limitDepth, depth int) []limitDepth {
+func filterInPlbce(limitStbck []limitDepth, depth int) []limitDepth {
 	n := 0
-	for _, x := range limitStack {
+	for _, x := rbnge limitStbck {
 		if depth > x.depth {
-			limitStack[n] = x
+			limitStbck[n] = x
 			n++
 		}
 	}
-	limitStack = limitStack[:n]
-	return limitStack
+	limitStbck = limitStbck[:n]
+	return limitStbck
 }
 
-type graphqlError struct {
-	Message   string `json:"message"`
+type grbphqlError struct {
+	Messbge   string `json:"messbge"`
 	Type      string `json:"type"`
-	Path      []any  `json:"path"`
-	Locations []struct {
+	Pbth      []bny  `json:"pbth"`
+	Locbtions []struct {
 		Line   int `json:"line"`
 		Column int `json:"column"`
-	} `json:"locations,omitempty"`
+	} `json:"locbtions,omitempty"`
 }
 
-// graphqlErrors describes the errors in a GraphQL response. It contains at least 1 element when returned by
-// requestGraphQL. See https://graphql.github.io/graphql-spec/June2018/#sec-Errors.
-type graphqlErrors []graphqlError
+// grbphqlErrors describes the errors in b GrbphQL response. It contbins bt lebst 1 element when returned by
+// requestGrbphQL. See https://grbphql.github.io/grbphql-spec/June2018/#sec-Errors.
+type grbphqlErrors []grbphqlError
 
-const graphqlErrTypeNotFound = "NOT_FOUND"
+const grbphqlErrTypeNotFound = "NOT_FOUND"
 
-func (e graphqlErrors) Error() string {
-	return fmt.Sprintf("error in GraphQL response: %s", e[0].Message)
+func (e grbphqlErrors) Error() string {
+	return fmt.Sprintf("error in GrbphQL response: %s", e[0].Messbge)
 }
 
-// unmarshal wraps json.Unmarshal, but includes extra context in the case of
-// json.UnmarshalTypeError
-func unmarshal(data []byte, v any) error {
-	err := json.Unmarshal(data, v)
-	var e *json.UnmarshalTypeError
+// unmbrshbl wrbps json.Unmbrshbl, but includes extrb context in the cbse of
+// json.UnmbrshblTypeError
+func unmbrshbl(dbtb []byte, v bny) error {
+	err := json.Unmbrshbl(dbtb, v)
+	vbr e *json.UnmbrshblTypeError
 	if errors.As(err, &e) && e.Offset >= 0 {
-		a := e.Offset - 100
+		b := e.Offset - 100
 		b := e.Offset + 100
-		if a < 0 {
-			a = 0
+		if b < 0 {
+			b = 0
 		}
-		if b > int64(len(data)) {
-			b = int64(len(data))
+		if b > int64(len(dbtb)) {
+			b = int64(len(dbtb))
 		}
-		if e.Offset >= int64(len(data)) {
-			return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q", e.Offset, string(data[a:e.Offset]))
+		if e.Offset >= int64(len(dbtb)) {
+			return errors.Wrbpf(err, "grbphql: cbnnot unmbrshbl bt offset %d: before %q", e.Offset, string(dbtb[b:e.Offset]))
 		}
-		return errors.Wrapf(err, "graphql: cannot unmarshal at offset %d: before %q; after %q", e.Offset, string(data[a:e.Offset]), string(data[e.Offset:b]))
+		return errors.Wrbpf(err, "grbphql: cbnnot unmbrshbl bt offset %d: before %q; bfter %q", e.Offset, string(dbtb[b:e.Offset]), string(dbtb[e.Offset:b]))
 	}
 	return err
 }
 
-// determineGitHubVersion returns a *semver.Version for the targetted GitHub instance by this client. When an
-// error occurs, we print a warning to the logs but don't fail and return the allMatchingSemver.
+// determineGitHubVersion returns b *semver.Version for the tbrgetted GitHub instbnce by this client. When bn
+// error occurs, we print b wbrning to the logs but don't fbil bnd return the bllMbtchingSemver.
 func (c *V4Client) determineGitHubVersion(ctx context.Context) *semver.Version {
-	urlStr := normalizeURL(c.apiURL.String())
-	globalVersionCache.mu.Lock()
-	defer globalVersionCache.mu.Unlock()
+	urlStr := normblizeURL(c.bpiURL.String())
+	globblVersionCbche.mu.Lock()
+	defer globblVersionCbche.mu.Unlock()
 
-	if globalVersionCache.lastReset.IsZero() || time.Now().After(globalVersionCache.lastReset.Add(versionCacheResetTime)) {
-		// Clear cache and set last expiry to now.
-		globalVersionCache.lastReset = time.Now()
-		globalVersionCache.versions = make(map[string]*semver.Version)
+	if globblVersionCbche.lbstReset.IsZero() || time.Now().After(globblVersionCbche.lbstReset.Add(versionCbcheResetTime)) {
+		// Clebr cbche bnd set lbst expiry to now.
+		globblVersionCbche.lbstReset = time.Now()
+		globblVersionCbche.versions = mbke(mbp[string]*semver.Version)
 	}
-	if version, ok := globalVersionCache.versions[urlStr]; ok {
+	if version, ok := globblVersionCbche.versions[urlStr]; ok {
 		return version
 	}
 	version := c.fetchGitHubVersion(ctx)
-	globalVersionCache.versions[urlStr] = version
+	globblVersionCbche.versions[urlStr] = version
 	return version
 }
 
-// fetchGitHubVersion will attempt to identify the GitHub Enterprise Server's version.  If the
-// method is called by a client configured to use github.com, it will return allMatchingSemver.
+// fetchGitHubVersion will bttempt to identify the GitHub Enterprise Server's version.  If the
+// method is cblled by b client configured to use github.com, it will return bllMbtchingSemver.
 //
-// Additionally if it fails to parse the version. or the API request fails with an error, it
-// defaults to returning allMatchingSemver as well.
+// Additionblly if it fbils to pbrse the version. or the API request fbils with bn error, it
+// defbults to returning bllMbtchingSemver bs well.
 func (c *V4Client) fetchGitHubVersion(ctx context.Context) (version *semver.Version) {
 	if c.githubDotCom {
-		return allMatchingSemver
+		return bllMbtchingSemver
 	}
 
-	// Initiate a v3Client since this requires a V3 API request.
-	logger := c.log.Scoped("fetchGitHubVersion", "temporary client for fetching github version")
-	v3Client := NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient)
+	// Initibte b v3Client since this requires b V3 API request.
+	logger := c.log.Scoped("fetchGitHubVersion", "temporbry client for fetching github version")
+	v3Client := NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient)
 	v, err := v3Client.GetVersion(ctx)
 	if err != nil {
-		c.log.Warn("Failed to fetch GitHub enterprise version",
+		c.log.Wbrn("Fbiled to fetch GitHub enterprise version",
 			log.String("method", "fetchGitHubVersion"),
-			log.String("apiURL", c.apiURL.String()),
+			log.String("bpiURL", c.bpiURL.String()),
 			log.Error(err),
 		)
-		return allMatchingSemver
+		return bllMbtchingSemver
 	}
 
 	version, err = semver.NewVersion(v)
 	if err != nil {
-		return allMatchingSemver
+		return bllMbtchingSemver
 	}
 
 	return version
 }
 
-func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
-	var result struct {
+func (c *V4Client) GetAuthenticbtedUser(ctx context.Context) (*Actor, error) {
+	vbr result struct {
 		Viewer Actor `json:"viewer"`
 	}
-	err := c.requestGraphQL(ctx, `query GetAuthenticatedUser {
+	err := c.requestGrbphQL(ctx, `query GetAuthenticbtedUser {
     viewer {
         login
-        avatarUrl
+        bvbtbrUrl
         url
     }
 }`, nil, &result)
@@ -425,155 +425,155 @@ func (c *V4Client) GetAuthenticatedUser(ctx context.Context) (*Actor, error) {
 	return &result.Viewer, nil
 }
 
-// A Cursor is a pagination cursor returned by the API in fields like endCursor.
+// A Cursor is b pbginbtion cursor returned by the API in fields like endCursor.
 type Cursor string
 
-// SearchReposParams are the inputs to the SearchRepos method.
-type SearchReposParams struct {
-	// Query is the GitHub search query. See https://docs.github.com/en/github/searching-for-information-on-github/searching-on-github/searching-for-repositories
+// SebrchReposPbrbms bre the inputs to the SebrchRepos method.
+type SebrchReposPbrbms struct {
+	// Query is the GitHub sebrch query. See https://docs.github.com/en/github/sebrching-for-informbtion-on-github/sebrching-on-github/sebrching-for-repositories
 	Query string
-	// After is the cursor to paginate from.
+	// After is the cursor to pbginbte from.
 	After Cursor
-	// First is the page size. Default to 100 if left zero.
+	// First is the pbge size. Defbult to 100 if left zero.
 	First int
 }
 
-// SearchReposResults is the result type of SearchRepos.
-type SearchReposResults struct {
-	// The repos that matched the Query in SearchReposParams.
+// SebrchReposResults is the result type of SebrchRepos.
+type SebrchReposResults struct {
+	// The repos thbt mbtched the Query in SebrchReposPbrbms.
 	Repos []Repository
-	// The total result count of the Query in SearchReposParams.
-	// Since GitHub's search API limits result sets to 1000, we can
-	// use this to determine if we need to refine the search query to
+	// The totbl result count of the Query in SebrchReposPbrbms.
+	// Since GitHub's sebrch API limits result sets to 1000, we cbn
+	// use this to determine if we need to refine the sebrch query to
 	// not miss results.
-	TotalCount int
-	// The cursor pointing to the next page of results.
+	TotblCount int
+	// The cursor pointing to the next pbge of results.
 	EndCursor Cursor
 }
 
-// SearchRepos searches for repositories matching the given search query (https://github.com/search/advanced), using
-// the given pagination parameters provided by the caller.
-func (c *V4Client) SearchRepos(ctx context.Context, p SearchReposParams) (SearchReposResults, error) {
+// SebrchRepos sebrches for repositories mbtching the given sebrch query (https://github.com/sebrch/bdvbnced), using
+// the given pbginbtion pbrbmeters provided by the cbller.
+func (c *V4Client) SebrchRepos(ctx context.Context, p SebrchReposPbrbms) (SebrchReposResults, error) {
 	if p.First == 0 {
 		p.First = 100
 	}
 
-	vars := map[string]any{
+	vbrs := mbp[string]bny{
 		"query": p.Query,
 		"type":  "REPOSITORY",
 		"first": p.First,
 	}
 
 	if p.After != "" {
-		vars["after"] = p.After
+		vbrs["bfter"] = p.After
 	}
 
-	query := c.buildSearchReposQuery(ctx)
+	query := c.buildSebrchReposQuery(ctx)
 
-	var resp struct {
-		Search struct {
+	vbr resp struct {
+		Sebrch struct {
 			RepositoryCount int
-			PageInfo        struct {
-				HasNextPage bool
+			PbgeInfo        struct {
+				HbsNextPbge bool
 				EndCursor   Cursor
 			}
 			Nodes []Repository
 		}
 	}
 
-	err := c.requestGraphQL(ctx, query, vars, &resp)
+	err := c.requestGrbphQL(ctx, query, vbrs, &resp)
 	if err != nil {
-		return SearchReposResults{}, err
+		return SebrchReposResults{}, err
 	}
 
-	results := SearchReposResults{
-		Repos:      resp.Search.Nodes,
-		TotalCount: resp.Search.RepositoryCount,
+	results := SebrchReposResults{
+		Repos:      resp.Sebrch.Nodes,
+		TotblCount: resp.Sebrch.RepositoryCount,
 	}
 
-	if resp.Search.PageInfo.HasNextPage {
-		results.EndCursor = resp.Search.PageInfo.EndCursor
+	if resp.Sebrch.PbgeInfo.HbsNextPbge {
+		results.EndCursor = resp.Sebrch.PbgeInfo.EndCursor
 	}
 
 	return results, nil
 }
 
-func (c *V4Client) buildSearchReposQuery(ctx context.Context) string {
-	var b strings.Builder
-	b.WriteString(c.repositoryFieldsGraphQLFragment(ctx))
+func (c *V4Client) buildSebrchReposQuery(ctx context.Context) string {
+	vbr b strings.Builder
+	b.WriteString(c.repositoryFieldsGrbphQLFrbgment(ctx))
 	b.WriteString(`
-query($query: String!, $type: SearchType!, $after: String, $first: Int!) {
-	search(query: $query, type: $type, after: $after, first: $first) {
+query($query: String!, $type: SebrchType!, $bfter: String, $first: Int!) {
+	sebrch(query: $query, type: $type, bfter: $bfter, first: $first) {
 		repositoryCount
-		pageInfo { hasNextPage,  endCursor }
+		pbgeInfo { hbsNextPbge,  endCursor }
 		nodes { ... on Repository { ...RepositoryFields } }
 	}
 }`)
 	return b.String()
 }
 
-// GetReposByNameWithOwner fetches the specified repositories (namesWithOwners)
-// from the GitHub GraphQL API and returns a slice of repositories.
-// If a repository is not found, it will return an error.
+// GetReposByNbmeWithOwner fetches the specified repositories (nbmesWithOwners)
+// from the GitHub GrbphQL API bnd returns b slice of repositories.
+// If b repository is not found, it will return bn error.
 //
-// The maximum number of repositories to be fetched is 30. If more
-// namesWithOwners are given, the method returns an error. 30 is not a official
-// limit of the API, but based on the observation that the GitHub GraphQL does
-// not return results when more than 37 aliases are specified in a query. 30 is
-// the conservative step back from 37.
+// The mbximum number of repositories to be fetched is 30. If more
+// nbmesWithOwners bre given, the method returns bn error. 30 is not b officibl
+// limit of the API, but bbsed on the observbtion thbt the GitHub GrbphQL does
+// not return results when more thbn 37 blibses bre specified in b query. 30 is
+// the conservbtive step bbck from 37.
 //
-// This method does not cache.
-func (c *V4Client) GetReposByNameWithOwner(ctx context.Context, namesWithOwners ...string) ([]*Repository, error) {
-	if len(namesWithOwners) > 30 {
-		return nil, ErrBatchTooLarge
+// This method does not cbche.
+func (c *V4Client) GetReposByNbmeWithOwner(ctx context.Context, nbmesWithOwners ...string) ([]*Repository, error) {
+	if len(nbmesWithOwners) > 30 {
+		return nil, ErrBbtchTooLbrge
 	}
 
-	query, err := c.buildGetReposBatchQuery(ctx, namesWithOwners)
+	query, err := c.buildGetReposBbtchQuery(ctx, nbmesWithOwners)
 	if err != nil {
 		return nil, err
 	}
 
-	var result map[string]*Repository
-	err = c.requestGraphQL(ctx, query, map[string]any{}, &result)
+	vbr result mbp[string]*Repository
+	err = c.requestGrbphQL(ctx, query, mbp[string]bny{}, &result)
 	if err != nil {
-		var e graphqlErrors
+		vbr e grbphqlErrors
 		if errors.As(err, &e) {
-			for _, err2 := range e {
-				if err2.Type == graphqlErrTypeNotFound {
-					c.log.Warn("GitHub repository not found", graphQLErrorField(err2))
+			for _, err2 := rbnge e {
+				if err2.Type == grbphqlErrTypeNotFound {
+					c.log.Wbrn("GitHub repository not found", grbphQLErrorField(err2))
 					continue
 				}
 				return nil, err
 			}
-			// The lack of an error return here is intentional. Do not use this
-			// as a basis for implementing other functions that need normal
-			// error handling!
+			// The lbck of bn error return here is intentionbl. Do not use this
+			// bs b bbsis for implementing other functions thbt need normbl
+			// error hbndling!
 		} else {
 			return nil, err
 		}
 	}
 
-	repos := make([]*Repository, 0, len(result))
-	for _, r := range result {
+	repos := mbke([]*Repository, 0, len(result))
+	for _, r := rbnge result {
 		if r != nil {
-			repos = append(repos, r)
+			repos = bppend(repos, r)
 		}
 	}
 	return repos, nil
 }
 
-func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners []string) (string, error) {
-	var b strings.Builder
-	b.WriteString(c.repositoryFieldsGraphQLFragment(ctx))
+func (c *V4Client) buildGetReposBbtchQuery(ctx context.Context, nbmesWithOwners []string) (string, error) {
+	vbr b strings.Builder
+	b.WriteString(c.repositoryFieldsGrbphQLFrbgment(ctx))
 	b.WriteString("query {\n")
 
-	for i, pair := range namesWithOwners {
-		owner, name, err := SplitRepositoryNameWithOwner(pair)
+	for i, pbir := rbnge nbmesWithOwners {
+		owner, nbme, err := SplitRepositoryNbmeWithOwner(pbir)
 		if err != nil {
 			return "", err
 		}
-		fmt.Fprintf(&b, "repo%d: repository(owner: %q, name: %q) { ", i, owner, name)
-		b.WriteString("... on Repository { ...RepositoryFields parent { nameWithOwner, isFork } } }\n")
+		fmt.Fprintf(&b, "repo%d: repository(owner: %q, nbme: %q) { ", i, owner, nbme)
+		b.WriteString("... on Repository { ...RepositoryFields pbrent { nbmeWithOwner, isFork } } }\n")
 	}
 
 	b.WriteString("}")
@@ -581,134 +581,134 @@ func (c *V4Client) buildGetReposBatchQuery(ctx context.Context, namesWithOwners 
 	return b.String(), nil
 }
 
-// repositoryFieldsGraphQLFragment returns a GraphQL fragment that contains the fields needed to populate the
+// repositoryFieldsGrbphQLFrbgment returns b GrbphQL frbgment thbt contbins the fields needed to populbte the
 // Repository struct.
-func (c *V4Client) repositoryFieldsGraphQLFragment(ctx context.Context) string {
+func (c *V4Client) repositoryFieldsGrbphQLFrbgment(ctx context.Context) string {
 	if c.githubDotCom {
 		return `
-fragment RepositoryFields on Repository {
+frbgment RepositoryFields on Repository {
 	id
-	databaseId
-	nameWithOwner
+	dbtbbbseId
+	nbmeWithOwner
 	description
 	url
-	isPrivate
+	isPrivbte
 	isFork
 	isArchived
 	isLocked
-	isDisabled
+	isDisbbled
 	viewerPermission
-	stargazerCount
+	stbrgbzerCount
 	forkCount
 	repositoryTopics(first:100) {
 		nodes {
 			topic {
-				name
+				nbme
 			}
 		}
 	}
 }
 	`
 	}
-	conditionalGHEFields := []string{}
+	conditionblGHEFields := []string{}
 	version := c.determineGitHubVersion(ctx)
 
 	if ghe300PlusOrDotComSemver.Check(version) {
-		conditionalGHEFields = append(conditionalGHEFields, "stargazerCount")
+		conditionblGHEFields = bppend(conditionblGHEFields, "stbrgbzerCount")
 	}
 
-	if conf.ExperimentalFeatures().EnableGithubInternalRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
-		conditionalGHEFields = append(conditionalGHEFields, "visibility")
+	if conf.ExperimentblFebtures().EnbbleGithubInternblRepoVisibility && ghe330PlusOrDotComSemver.Check(version) {
+		conditionblGHEFields = bppend(conditionblGHEFields, "visibility")
 	}
 
-	// Some fields are not yet available on GitHub Enterprise yet
-	// or are available but too new to expect our customers to have updated:
+	// Some fields bre not yet bvbilbble on GitHub Enterprise yet
+	// or bre bvbilbble but too new to expect our customers to hbve updbted:
 	// - viewerPermission
 	return fmt.Sprintf(`
-fragment RepositoryFields on Repository {
+frbgment RepositoryFields on Repository {
 	id
-	databaseId
-	nameWithOwner
+	dbtbbbseId
+	nbmeWithOwner
 	description
 	url
-	isPrivate
+	isPrivbte
 	isFork
 	isArchived
 	isLocked
-	isDisabled
+	isDisbbled
 	forkCount
 	repositoryTopics(first:100) {
 		nodes {
 			topic {
-				name
+				nbme
 			}
 		}
 	}
 	%s
 }
-	`, strings.Join(conditionalGHEFields, "\n	"))
+	`, strings.Join(conditionblGHEFields, "\n	"))
 }
 
 func (c *V4Client) GetRepo(ctx context.Context, owner, repo string) (*Repository, error) {
-	logger := c.log.Scoped("GetRepo", "temporary client for getting GitHub repository")
-	// We technically don't need to use the REST API for this but it's just a bit easier.
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRepo(ctx, owner, repo)
+	logger := c.log.Scoped("GetRepo", "temporbry client for getting GitHub repository")
+	// We technicblly don't need to use the REST API for this but it's just b bit ebsier.
+	return NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient).GetRepo(ctx, owner, repo)
 }
 
 // Fork forks the given repository. If org is given, then the repository will
-// be forked into that organisation, otherwise the repository is forked into
-// the authenticated user's account.
-func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkName string) (*Repository, error) {
-	// Unfortunately, the GraphQL API doesn't provide a mutation to fork as of
-	// December 2021, so we have to fall back to the REST API.
-	logger := c.log.Scoped("Fork", "temporary client for forking GitHub repository")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).Fork(ctx, owner, repo, org, forkName)
+// be forked into thbt orgbnisbtion, otherwise the repository is forked into
+// the buthenticbted user's bccount.
+func (c *V4Client) Fork(ctx context.Context, owner, repo string, org *string, forkNbme string) (*Repository, error) {
+	// Unfortunbtely, the GrbphQL API doesn't provide b mutbtion to fork bs of
+	// December 2021, so we hbve to fbll bbck to the REST API.
+	logger := c.log.Scoped("Fork", "temporbry client for forking GitHub repository")
+	return NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient).Fork(ctx, owner, repo, org, forkNbme)
 }
 
-// DeleteBranch deletes the given branch from the given repository.
-func (c *V4Client) DeleteBranch(ctx context.Context, owner, repo, branch string) error {
-	// Unfortunately, the GraphQL API doesn't provide a mutation to delete a ref/branch as
-	// of May 2023, so we have to fall back to the REST API.
-	logger := c.log.Scoped("DeleteBranch", "temporary client for deleting a branch")
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).DeleteBranch(ctx, owner, repo, branch)
+// DeleteBrbnch deletes the given brbnch from the given repository.
+func (c *V4Client) DeleteBrbnch(ctx context.Context, owner, repo, brbnch string) error {
+	// Unfortunbtely, the GrbphQL API doesn't provide b mutbtion to delete b ref/brbnch bs
+	// of Mby 2023, so we hbve to fbll bbck to the REST API.
+	logger := c.log.Scoped("DeleteBrbnch", "temporbry client for deleting b brbnch")
+	return NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient).DeleteBrbnch(ctx, owner, repo, brbnch)
 }
 
-// GetRef gets the contents of a single commit reference in a repository. The ref should
-// be supplied in a fully qualified format, such as `refs/heads/branch` or
-// `refs/tags/tag`.
+// GetRef gets the contents of b single commit reference in b repository. The ref should
+// be supplied in b fully qublified formbt, such bs `refs/hebds/brbnch` or
+// `refs/tbgs/tbg`.
 func (c *V4Client) GetRef(ctx context.Context, owner, repo, ref string) (*restCommitRef, error) {
-	logger := c.log.Scoped("GetRef", "temporary client for getting a ref on GitHub")
-	// We technically don't need to use the REST API for this but it's just a bit easier.
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).GetRef(ctx, owner, repo, ref)
+	logger := c.log.Scoped("GetRef", "temporbry client for getting b ref on GitHub")
+	// We technicblly don't need to use the REST API for this but it's just b bit ebsier.
+	return NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient).GetRef(ctx, owner, repo, ref)
 }
 
-// CreateCommit creates a commit in the given repository based on a tree object.
-func (c *V4Client) CreateCommit(ctx context.Context, owner, repo, message, tree string, parents []string, author, committer *restAuthorCommiter) (*RestCommit, error) {
-	logger := c.log.Scoped("CreateCommit", "temporary client for creating a commit on GitHub")
-	// As of May 2023, the GraphQL API does not expose any mutations for creating commits
-	// other than one which requires sending the entire file contents for any files
-	// changed by the commit, which is not feasible for creating large commits. Therefore,
-	// we fall back on a REST API endpoint which allows us to create a commit based on a
+// CrebteCommit crebtes b commit in the given repository bbsed on b tree object.
+func (c *V4Client) CrebteCommit(ctx context.Context, owner, repo, messbge, tree string, pbrents []string, buthor, committer *restAuthorCommiter) (*RestCommit, error) {
+	logger := c.log.Scoped("CrebteCommit", "temporbry client for crebting b commit on GitHub")
+	// As of Mby 2023, the GrbphQL API does not expose bny mutbtions for crebting commits
+	// other thbn one which requires sending the entire file contents for bny files
+	// chbnged by the commit, which is not febsible for crebting lbrge commits. Therefore,
+	// we fbll bbck on b REST API endpoint which bllows us to crebte b commit bbsed on b
 	// tree object.
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).CreateCommit(ctx, owner, repo, message, tree, parents, author, committer)
+	return NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient).CrebteCommit(ctx, owner, repo, messbge, tree, pbrents, buthor, committer)
 }
 
-// UpdateRef updates the ref of a branch to point to the given commit. The ref should be
-// supplied in a fully qualified format, such as `refs/heads/branch` or `refs/tags/tag`.
-func (c *V4Client) UpdateRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdatedRef, error) {
-	logger := c.log.Scoped("UpdateRef", "temporary client for updating a ref on GitHub")
-	// We technically don't need to use the REST API for this but it's just a bit easier.
-	return NewV3Client(logger, c.urn, c.apiURL, c.auth, c.httpClient).UpdateRef(ctx, owner, repo, ref, commit)
+// UpdbteRef updbtes the ref of b brbnch to point to the given commit. The ref should be
+// supplied in b fully qublified formbt, such bs `refs/hebds/brbnch` or `refs/tbgs/tbg`.
+func (c *V4Client) UpdbteRef(ctx context.Context, owner, repo, ref, commit string) (*restUpdbtedRef, error) {
+	logger := c.log.Scoped("UpdbteRef", "temporbry client for updbting b ref on GitHub")
+	// We technicblly don't need to use the REST API for this but it's just b bit ebsier.
+	return NewV3Client(logger, c.urn, c.bpiURL, c.buth, c.httpClient).UpdbteRef(ctx, owner, repo, ref, commit)
 }
 
-type RecentCommittersParams struct {
-	// Repository name
-	Name string
+type RecentCommittersPbrbms struct {
+	// Repository nbme
+	Nbme string
 	// Repository owner
 	Owner string
-	// After is the cursor to paginate from.
+	// After is the cursor to pbginbte from.
 	After Cursor
-	// First is the page size. Default to 100 if left zero.
+	// First is the pbge size. Defbult to 100 if left zero.
 	First int
 }
 
@@ -716,46 +716,46 @@ type RecentCommittersResults struct {
 	Nodes []struct {
 		Authors struct {
 			Nodes []struct {
-				Date  string
-				Email string
-				Name  string
+				Dbte  string
+				Embil string
+				Nbme  string
 				User  struct {
 					Login string
 				}
-				AvatarURL string
+				AvbtbrURL string
 			}
 		}
 	}
-	PageInfo struct {
-		HasNextPage bool
+	PbgeInfo struct {
+		HbsNextPbge bool
 		EndCursor   Cursor
 	}
 }
 
-// Lists recent committers for a repository.
-func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommittersParams) (*RecentCommittersResults, error) {
-	if params.First == 0 {
-		params.First = 100
+// Lists recent committers for b repository.
+func (c *V4Client) RecentCommitters(ctx context.Context, pbrbms *RecentCommittersPbrbms) (*RecentCommittersResults, error) {
+	if pbrbms.First == 0 {
+		pbrbms.First = 100
 	}
 
 	query := `
-	  query($name: String!, $owner: String!, $after: String, $first: Int!) {
-		repository(name: $name, owner: $owner) {
-		  defaultBranchRef {
-			target {
+	  query($nbme: String!, $owner: String!, $bfter: String, $first: Int!) {
+		repository(nbme: $nbme, owner: $owner) {
+		  defbultBrbnchRef {
+			tbrget {
 			  ... on Commit {
-				history(after: $after, first: $first) {
-				  pageInfo { hasNextPage, endCursor }
+				history(bfter: $bfter, first: $first) {
+				  pbgeInfo { hbsNextPbge, endCursor }
 				  nodes {
-					authors(first: 50) {
+					buthors(first: 50) {
 					  nodes {
-						email
-						name
+						embil
+						nbme
 						user {
 							login
 						}
-						avatarUrl
-						date
+						bvbtbrUrl
+						dbte
 					  }
 					}
 				  }
@@ -767,31 +767,31 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 	  }
 	`
 
-	vars := map[string]any{
-		"name":  params.Name,
-		"owner": params.Owner,
-		"first": params.First,
+	vbrs := mbp[string]bny{
+		"nbme":  pbrbms.Nbme,
+		"owner": pbrbms.Owner,
+		"first": pbrbms.First,
 	}
-	if params.After != "" {
-		vars["after"] = params.After
+	if pbrbms.After != "" {
+		vbrs["bfter"] = pbrbms.After
 	}
 
-	var result struct {
+	vbr result struct {
 		Repository struct {
-			DefaultBranchRef struct {
-				Target struct {
+			DefbultBrbnchRef struct {
+				Tbrget struct {
 					History RecentCommittersResults
 				}
 			}
 		}
 	}
-	err := c.requestGraphQL(ctx, query, vars, &result)
+	err := c.requestGrbphQL(ctx, query, vbrs, &result)
 	if err != nil {
-		var e graphqlErrors
+		vbr e grbphqlErrors
 		if errors.As(err, &e) {
-			for _, err2 := range e {
-				if err2.Type == graphqlErrTypeNotFound {
-					c.log.Warn("RecentCommitters: GitHub repository not found")
+			for _, err2 := rbnge e {
+				if err2.Type == grbphqlErrTypeNotFound {
+					c.log.Wbrn("RecentCommitters: GitHub repository not found")
 					continue
 				}
 				return nil, err
@@ -799,48 +799,48 @@ func (c *V4Client) RecentCommitters(ctx context.Context, params *RecentCommitter
 		}
 		return nil, err
 	}
-	return &result.Repository.DefaultBranchRef.Target.History, nil
+	return &result.Repository.DefbultBrbnchRef.Tbrget.History, nil
 }
 
-type Release struct {
-	TagName      string
-	IsDraft      bool
-	IsPrerelease bool
+type Relebse struct {
+	TbgNbme      string
+	IsDrbft      bool
+	IsPrerelebse bool
 }
 
-type ReleasesResult struct {
-	Nodes    []Release
-	PageInfo struct {
-		HasNextPage bool
+type RelebsesResult struct {
+	Nodes    []Relebse
+	PbgeInfo struct {
+		HbsNextPbge bool
 		EndCursor   Cursor
 	}
 }
 
-type ReleasesParams struct {
-	// Repository name
-	Name string
+type RelebsesPbrbms struct {
+	// Repository nbme
+	Nbme string
 	// Repository owner
 	Owner string
-	// After is the cursor to paginate from.
+	// After is the cursor to pbginbte from.
 	After Cursor
-	// First is the page size. Default to 100 if left zero.
+	// First is the pbge size. Defbult to 100 if left zero.
 	First int
 }
 
-// Releases returns the releases for the given repository, ordered from newest
-// to oldest. This excludes pre-release and draft releases.
-func (c *V4Client) Releases(ctx context.Context, params *ReleasesParams) (*ReleasesResult, error) {
+// Relebses returns the relebses for the given repository, ordered from newest
+// to oldest. This excludes pre-relebse bnd drbft relebses.
+func (c *V4Client) Relebses(ctx context.Context, pbrbms *RelebsesPbrbms) (*RelebsesResult, error) {
 	const query = `
-		query($owner: String!, $name: String!, $first: Int!, $after: String, $order: ReleaseOrder!) {
-			repository(owner: $owner, name: $name) {
-				releases(first: $first, after: $after, orderBy: $order) {
+		query($owner: String!, $nbme: String!, $first: Int!, $bfter: String, $order: RelebseOrder!) {
+			repository(owner: $owner, nbme: $nbme) {
+				relebses(first: $first, bfter: $bfter, orderBy: $order) {
 					nodes {
-						tagName
-						isDraft
-						isPrerelease
+						tbgNbme
+						isDrbft
+						isPrerelebse
 					}
-					pageInfo {
-						hasNextPage
+					pbgeInfo {
+						hbsNextPbge
 						endCursor
 					}
 				}
@@ -848,35 +848,35 @@ func (c *V4Client) Releases(ctx context.Context, params *ReleasesParams) (*Relea
 		}
 	`
 
-	if params.First == 0 {
-		params.First = 100
+	if pbrbms.First == 0 {
+		pbrbms.First = 100
 	}
 
-	vars := map[string]any{
-		"name":  params.Name,
-		"owner": params.Owner,
-		"first": params.First,
-		"order": map[string]any{
+	vbrs := mbp[string]bny{
+		"nbme":  pbrbms.Nbme,
+		"owner": pbrbms.Owner,
+		"first": pbrbms.First,
+		"order": mbp[string]bny{
 			"field":     "CREATED_AT",
 			"direction": "DESC",
 		},
 	}
-	if params.After != "" {
-		vars["after"] = params.After
+	if pbrbms.After != "" {
+		vbrs["bfter"] = pbrbms.After
 	}
 
-	var result struct {
+	vbr result struct {
 		Repository struct {
-			Releases ReleasesResult
+			Relebses RelebsesResult
 		}
 	}
-	err := c.requestGraphQL(ctx, query, vars, &result)
+	err := c.requestGrbphQL(ctx, query, vbrs, &result)
 	if err != nil {
-		var e graphqlErrors
+		vbr e grbphqlErrors
 		if errors.As(err, &e) {
-			for _, err2 := range e {
-				if err2.Type == graphqlErrTypeNotFound {
-					c.log.Warn("GitHub repository not found", graphQLErrorField(err2))
+			for _, err2 := rbnge e {
+				if err2.Type == grbphqlErrTypeNotFound {
+					c.log.Wbrn("GitHub repository not found", grbphQLErrorField(err2))
 					continue
 				}
 				return nil, err
@@ -885,13 +885,13 @@ func (c *V4Client) Releases(ctx context.Context, params *ReleasesParams) (*Relea
 		return nil, err
 	}
 
-	return &result.Repository.Releases, nil
+	return &result.Repository.Relebses, nil
 }
 
-func graphQLErrorField(err graphqlError) log.Field {
+func grbphQLErrorField(err grbphqlError) log.Field {
 	return log.Object("err",
-		log.String("message", err.Message),
+		log.String("messbge", err.Messbge),
 		log.String("type", err.Type),
-		log.String("path", fmt.Sprintf("%+v", err.Path)),
-		log.String("locations", fmt.Sprintf("%+v", err.Locations)))
+		log.String("pbth", fmt.Sprintf("%+v", err.Pbth)),
+		log.String("locbtions", fmt.Sprintf("%+v", err.Locbtions)))
 }

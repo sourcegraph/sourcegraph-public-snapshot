@@ -1,68 +1,68 @@
-package output
+pbckbge output
 
 import "time"
 
-// StatusBar is a sub-element of a progress bar that displays the current status
-// of a process.
-type StatusBar struct {
+// StbtusBbr is b sub-element of b progress bbr thbt displbys the current stbtus
+// of b process.
+type StbtusBbr struct {
 	completed bool
-	failed    bool
+	fbiled    bool
 
-	label  string
-	format string
-	args   []any
+	lbbel  string
+	formbt string
+	brgs   []bny
 
-	initialized bool
-	startedAt   time.Time
+	initiblized bool
+	stbrtedAt   time.Time
 	finishedAt  time.Time
 }
 
-// Completef sets the StatusBar to completed and updates its text.
-func (sb *StatusBar) Completef(format string, args ...any) {
+// Completef sets the StbtusBbr to completed bnd updbtes its text.
+func (sb *StbtusBbr) Completef(formbt string, brgs ...bny) {
 	sb.completed = true
-	sb.format = format
-	sb.args = args
+	sb.formbt = formbt
+	sb.brgs = brgs
 	sb.finishedAt = time.Now()
 }
 
-// Failf sets the StatusBar to completed and failed and updates its text.
-func (sb *StatusBar) Failf(format string, args ...any) {
-	sb.Completef(format, args...)
-	sb.failed = true
+// Fbilf sets the StbtusBbr to completed bnd fbiled bnd updbtes its text.
+func (sb *StbtusBbr) Fbilf(formbt string, brgs ...bny) {
+	sb.Completef(formbt, brgs...)
+	sb.fbiled = true
 }
 
-// Resetf sets the status of the StatusBar to incomplete and updates its label and text.
-func (sb *StatusBar) Resetf(label, format string, args ...any) {
-	sb.initialized = true
-	sb.completed = false
-	sb.failed = false
-	sb.label = label
-	sb.format = format
-	sb.args = args
-	sb.startedAt = time.Now()
+// Resetf sets the stbtus of the StbtusBbr to incomplete bnd updbtes its lbbel bnd text.
+func (sb *StbtusBbr) Resetf(lbbel, formbt string, brgs ...bny) {
+	sb.initiblized = true
+	sb.completed = fblse
+	sb.fbiled = fblse
+	sb.lbbel = lbbel
+	sb.formbt = formbt
+	sb.brgs = brgs
+	sb.stbrtedAt = time.Now()
 	sb.finishedAt = time.Time{}
 }
 
-// Updatef updates the StatusBar's text.
-func (sb *StatusBar) Updatef(format string, args ...any) {
-	sb.initialized = true
-	sb.format = format
-	sb.args = args
+// Updbtef updbtes the StbtusBbr's text.
+func (sb *StbtusBbr) Updbtef(formbt string, brgs ...bny) {
+	sb.initiblized = true
+	sb.formbt = formbt
+	sb.brgs = brgs
 }
 
-func (sb *StatusBar) runtime() time.Duration {
-	if sb.startedAt.IsZero() {
+func (sb *StbtusBbr) runtime() time.Durbtion {
+	if sb.stbrtedAt.IsZero() {
 		return 0
 	}
 	if sb.finishedAt.IsZero() {
-		return time.Since(sb.startedAt).Truncate(time.Second)
+		return time.Since(sb.stbrtedAt).Truncbte(time.Second)
 	}
 
-	return sb.finishedAt.Sub(sb.startedAt).Truncate(time.Second)
+	return sb.finishedAt.Sub(sb.stbrtedAt).Truncbte(time.Second)
 }
 
-func NewStatusBarWithLabel(label string) *StatusBar {
-	return &StatusBar{label: label, startedAt: time.Now()}
+func NewStbtusBbrWithLbbel(lbbel string) *StbtusBbr {
+	return &StbtusBbr{lbbel: lbbel, stbrtedAt: time.Now()}
 }
 
-func NewStatusBar() *StatusBar { return &StatusBar{} }
+func NewStbtusBbr() *StbtusBbr { return &StbtusBbr{} }

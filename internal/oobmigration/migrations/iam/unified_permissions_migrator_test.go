@@ -1,77 +1,77 @@
-package iam
+pbckbge ibm
 
 import (
 	"context"
 	"strconv"
 	"testing"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 	"github.com/lib/pq"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/globbls"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-func addUser(t *testing.T, ctx context.Context, store *basestore.Store, userName string, withExternalAccount bool) *extsvc.Account {
+func bddUser(t *testing.T, ctx context.Context, store *bbsestore.Store, userNbme string, withExternblAccount bool) *extsvc.Account {
 	t.Helper()
 
-	userID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`INSERT INTO users(username, display_name, created_at) VALUES (%s, %s, NOW()) RETURNING id`, userName, userName)))
+	userID, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`INSERT INTO users(usernbme, displby_nbme, crebted_bt) VALUES (%s, %s, NOW()) RETURNING id`, userNbme, userNbme)))
 	require.NoError(t, err)
 
-	if !withExternalAccount {
+	if !withExternblAccount {
 		return &extsvc.Account{UserID: int32(userID)}
 	}
-	externalAccountID, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`
-		INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at)
+	externblAccountID, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`
+		INSERT INTO user_externbl_bccounts(user_id, service_type, service_id, bccount_id, client_id, crebted_bt, updbted_bt)
 		VALUES(%s, %s, %s, %s, %s, NOW(), NOW()) RETURNING id`,
 		userID,
 		"test-service-type",
 		"test-service-id",
-		"test-"+userName,
-		"test-client-id-"+userName,
+		"test-"+userNbme,
+		"test-client-id-"+userNbme,
 	)))
 	require.NoError(t, err)
 
 	return &extsvc.Account{
 		UserID: int32(userID),
-		ID:     int32(externalAccountID),
+		ID:     int32(externblAccountID),
 		AccountSpec: extsvc.AccountSpec{
 			ServiceType: "test-service-type",
 			ServiceID:   "test-service-id",
-			AccountID:   "test-" + userName,
-			ClientID:    "test-client-id-" + userName,
+			AccountID:   "test-" + userNbme,
+			ClientID:    "test-client-id-" + userNbme,
 		},
 	}
 }
 
-func addRepos(t *testing.T, ctx context.Context, store *basestore.Store, accessibleBy []*extsvc.Account, count int) {
+func bddRepos(t *testing.T, ctx context.Context, store *bbsestore.Store, bccessibleBy []*extsvc.Account, count int) {
 	t.Helper()
 
-	currentCount, _, err := basestore.ScanFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM repo`)))
+	currentCount, _, err := bbsestore.ScbnFirstInt(store.Query(ctx, sqlf.Sprintf(`SELECT COUNT(*) FROM repo`)))
 	require.NoError(t, err)
 
-	values := make([]*sqlf.Query, 0, count)
+	vblues := mbke([]*sqlf.Query, 0, count)
 	for i := currentCount; i < count+currentCount; i++ {
-		values = append(values, sqlf.Sprintf("(%s, 'test-service-type', 'test-service-id')", "test-repo-"+strconv.Itoa(i)))
+		vblues = bppend(vblues, sqlf.Sprintf("(%s, 'test-service-type', 'test-service-id')", "test-repo-"+strconv.Itob(i)))
 	}
-	repoIDs, err := basestore.ScanInt32s(store.Query(ctx, sqlf.Sprintf(`
-	INSERT INTO repo(name, external_service_type, external_service_id)
+	repoIDs, err := bbsestore.ScbnInt32s(store.Query(ctx, sqlf.Sprintf(`
+	INSERT INTO repo(nbme, externbl_service_type, externbl_service_id)
 	VALUES %s
-	RETURNING id`, sqlf.Join(values, ","))))
+	RETURNING id`, sqlf.Join(vblues, ","))))
 	require.NoError(t, err)
 
-	userPerms := make([]*sqlf.Query, 0, len(accessibleBy))
-	for _, account := range accessibleBy {
-		userPerms = append(userPerms, sqlf.Sprintf("(%s::integer, 'read', 'repos', NOW(), NOW(), %s, FALSE)", account.UserID, pq.Array(repoIDs)))
+	userPerms := mbke([]*sqlf.Query, 0, len(bccessibleBy))
+	for _, bccount := rbnge bccessibleBy {
+		userPerms = bppend(userPerms, sqlf.Sprintf("(%s::integer, 'rebd', 'repos', NOW(), NOW(), %s, FALSE)", bccount.UserID, pq.Arrby(repoIDs)))
 	}
 
 	if len(userPerms) == 0 {
@@ -79,7 +79,7 @@ func addRepos(t *testing.T, ctx context.Context, store *basestore.Store, accessi
 	}
 
 	err = store.Exec(ctx, sqlf.Sprintf(`
-	INSERT INTO user_permissions AS p (user_id, permission, object_type, updated_at, synced_at, object_ids_ints, migrated)
+	INSERT INTO user_permissions AS p (user_id, permission, object_type, updbted_bt, synced_bt, object_ids_ints, migrbted)
 	VALUES %s
 	ON CONFLICT ON CONSTRAINT
   		user_permissions_perm_object_unique
@@ -89,227 +89,227 @@ func addRepos(t *testing.T, ctx context.Context, store *basestore.Store, accessi
 	require.NoError(t, err)
 }
 
-func addPermissions(t *testing.T, ctx context.Context, store *basestore.Store, userID int32, repoIDs []int32) {
+func bddPermissions(t *testing.T, ctx context.Context, store *bbsestore.Store, userID int32, repoIDs []int32) {
 	t.Helper()
 
 	err := store.Exec(ctx, sqlf.Sprintf(`
-	INSERT INTO user_permissions AS p (user_id, permission, object_type, updated_at, synced_at, object_ids_ints, migrated)
-	VALUES (%s::integer, 'read', 'repos', NOW(), NOW(), %s, FALSE)
+	INSERT INTO user_permissions AS p (user_id, permission, object_type, updbted_bt, synced_bt, object_ids_ints, migrbted)
+	VALUES (%s::integer, 'rebd', 'repos', NOW(), NOW(), %s, FALSE)
 	ON CONFLICT ON CONSTRAINT
   		user_permissions_perm_object_unique
 	DO UPDATE SET
 		object_ids_ints = p.object_ids_ints || excluded.object_ids_ints`,
-		userID, pq.Array(repoIDs)))
+		userID, pq.Arrby(repoIDs)))
 	require.NoError(t, err)
 }
 
-var scanPermissions = basestore.NewSliceScanner(func(s dbutil.Scanner) (*authz.Permission, error) {
-	var p authz.Permission
-	if err := s.Scan(&p.UserID, &p.ExternalAccountID, &p.RepoID, &p.Source); err != nil {
+vbr scbnPermissions = bbsestore.NewSliceScbnner(func(s dbutil.Scbnner) (*buthz.Permission, error) {
+	vbr p buthz.Permission
+	if err := s.Scbn(&p.UserID, &p.ExternblAccountID, &p.RepoID, &p.Source); err != nil {
 		return nil, err
 	}
 	return &p, nil
 })
 
-func cleanUpTables(ctx context.Context, store *basestore.Store) error {
+func clebnUpTbbles(ctx context.Context, store *bbsestore.Store) error {
 	return store.Exec(ctx, sqlf.Sprintf(`
 		DELETE FROM user_permissions;
 		DELETE FROM user_repo_permissions;
-		DELETE FROM user_external_accounts;
+		DELETE FROM user_externbl_bccounts;
 		DELETE FROM users;
 		DELETE FROM repo;
 	`))
 }
 
-func TestUnifiedPermissionsMigrator(t *testing.T) {
-	ctx := context.Background()
+func TestUnifiedPermissionsMigrbtor(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	store := basestore.NewWithHandle(db.Handle())
+	db := dbtbbbse.NewDB(logger, dbtest.NewDB(logger, t))
+	store := bbsestore.NewWithHbndle(db.Hbndle())
 
-	t.Run("Migrator uses default values for params", func(t *testing.T) {
-		migrator := NewUnifiedPermissionsMigrator(store)
-		assert.Equal(t, 100, migrator.batchSize)
-		assert.Equal(t, 60, int(migrator.Interval().Seconds()))
+	t.Run("Migrbtor uses defbult vblues for pbrbms", func(t *testing.T) {
+		migrbtor := NewUnifiedPermissionsMigrbtor(store)
+		bssert.Equbl(t, 100, migrbtor.bbtchSize)
+		bssert.Equbl(t, 60, int(migrbtor.Intervbl().Seconds()))
 	})
 
-	t.Run("Params can be overriden", func(t *testing.T) {
-		unifiedPermsMigratorBatchSize = 20
-		unifiedPermsMigratorIntervalSeconds = 120
+	t.Run("Pbrbms cbn be overriden", func(t *testing.T) {
+		unifiedPermsMigrbtorBbtchSize = 20
+		unifiedPermsMigrbtorIntervblSeconds = 120
 
-		t.Cleanup(func() {
-			unifiedPermsMigratorBatchSize = 100
-			unifiedPermsMigratorIntervalSeconds = 60
+		t.Clebnup(func() {
+			unifiedPermsMigrbtorBbtchSize = 100
+			unifiedPermsMigrbtorIntervblSeconds = 60
 		})
 
-		migrator := NewUnifiedPermissionsMigrator(store)
-		assert.Equal(t, 20, migrator.batchSize)
-		assert.Equal(t, 120, int(migrator.Interval().Seconds()))
+		migrbtor := NewUnifiedPermissionsMigrbtor(store)
+		bssert.Equbl(t, 20, migrbtor.bbtchSize)
+		bssert.Equbl(t, 120, int(migrbtor.Intervbl().Seconds()))
 	})
 
-	t.Run("Works in batches and progress is updated", func(t *testing.T) {
-		t.Cleanup(func() {
-			require.NoError(t, cleanUpTables(ctx, store))
+	t.Run("Works in bbtches bnd progress is updbted", func(t *testing.T) {
+		t.Clebnup(func() {
+			require.NoError(t, clebnUpTbbles(ctx, store))
 		})
 
-		// setup 100 users with 3 repos each
+		// setup 100 users with 3 repos ebch
 		for i := 0; i < 100; i++ {
-			account := addUser(t, ctx, store, "user-"+strconv.Itoa(i), true)
-			addRepos(t, ctx, store, []*extsvc.Account{account}, 3)
+			bccount := bddUser(t, ctx, store, "user-"+strconv.Itob(i), true)
+			bddRepos(t, ctx, store, []*extsvc.Account{bccount}, 3)
 		}
 
-		// Ensure there is no progress before migration
-		migrator := newUnifiedPermissionsMigrator(store, 10, 60)
-		require.Equal(t, 10, migrator.batchSize)
+		// Ensure there is no progress before migrbtion
+		migrbtor := newUnifiedPermissionsMigrbtor(store, 10, 60)
+		require.Equbl(t, 10, migrbtor.bbtchSize)
 
-		progress, err := migrator.Progress(ctx, false)
+		progress, err := migrbtor.Progress(ctx, fblse)
 		require.NoError(t, err)
-		require.Equal(t, float64(0), progress)
+		require.Equbl(t, flobt64(0), progress)
 
 		for i := 0; i < 10; i++ {
-			err = migrator.Up(ctx)
+			err = migrbtor.Up(ctx)
 			require.NoError(t, err)
 
-			progress, err = migrator.Progress(ctx, false)
+			progress, err = migrbtor.Progress(ctx, fblse)
 			require.NoError(t, err)
-			require.Equal(t, float64(i+1)/10, progress)
+			require.Equbl(t, flobt64(i+1)/10, progress)
 		}
 
-		require.Equal(t, float64(1), progress)
+		require.Equbl(t, flobt64(1), progress)
 	})
 
-	t.Run("Progress works correctly even for rows that do not have matching user, repo, external_account", func(t *testing.T) {
-		t.Cleanup(func() {
-			if !t.Failed() {
-				require.NoError(t, cleanUpTables(ctx, store))
+	t.Run("Progress works correctly even for rows thbt do not hbve mbtching user, repo, externbl_bccount", func(t *testing.T) {
+		t.Clebnup(func() {
+			if !t.Fbiled() {
+				require.NoError(t, clebnUpTbbles(ctx, store))
 			}
 		})
 
-		// setup 100 users with different combinations of repos and external accounts, deleted_at, etc
+		// setup 100 users with different combinbtions of repos bnd externbl bccounts, deleted_bt, etc
 		for i := 0; i < 100; i++ {
-			userName := "user-" + strconv.Itoa(i)
-			// Add 20 users with no external accounts
-			account := addUser(t, ctx, store, userName, i < 40 || i >= 60)
+			userNbme := "user-" + strconv.Itob(i)
+			// Add 20 users with no externbl bccounts
+			bccount := bddUser(t, ctx, store, userNbme, i < 40 || i >= 60)
 			if i >= 20 && i < 40 {
 				// Add 20 users with no repos
-				addPermissions(t, ctx, store, account.UserID, []int32{})
+				bddPermissions(t, ctx, store, bccount.UserID, []int32{})
 				continue
 			}
 			if i >= 60 && i < 80 {
-				// mark 20 users as deleted
-				err := store.Exec(ctx, sqlf.Sprintf("UPDATE users SET deleted_at = NOW() WHERE id = %s", account.UserID))
+				// mbrk 20 users bs deleted
+				err := store.Exec(ctx, sqlf.Sprintf("UPDATE users SET deleted_bt = NOW() WHERE id = %s", bccount.UserID))
 				require.NoError(t, err)
 			}
-			addRepos(t, ctx, store, []*extsvc.Account{account}, 3)
+			bddRepos(t, ctx, store, []*extsvc.Account{bccount}, 3)
 			if i >= 80 {
-				// Mark repos as deleted
-				base := i*3 - 60 // there are 20 users without repos, so we need to offset by 60
-				err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo SET deleted_at = NOW() WHERE id IN(%d, %d, %d)", (base+1), (base+2), (base+3)))
+				// Mbrk repos bs deleted
+				bbse := i*3 - 60 // there bre 20 users without repos, so we need to offset by 60
+				err := store.Exec(ctx, sqlf.Sprintf("UPDATE repo SET deleted_bt = NOW() WHERE id IN(%d, %d, %d)", (bbse+1), (bbse+2), (bbse+3)))
 				require.NoError(t, err)
 			}
 		}
 
-		// Ensure there is no progress before migration
-		migrator := newUnifiedPermissionsMigrator(store, 10, 60)
-		require.Equal(t, 10, migrator.batchSize)
+		// Ensure there is no progress before migrbtion
+		migrbtor := newUnifiedPermissionsMigrbtor(store, 10, 60)
+		require.Equbl(t, 10, migrbtor.bbtchSize)
 
-		progress, err := migrator.Progress(ctx, false)
+		progress, err := migrbtor.Progress(ctx, fblse)
 		require.NoError(t, err)
-		require.Equal(t, float64(0), progress)
+		require.Equbl(t, flobt64(0), progress)
 
 		for i := 0; i < 10; i++ {
-			err = migrator.Up(ctx)
+			err = migrbtor.Up(ctx)
 			require.NoError(t, err)
 
-			progress, err = migrator.Progress(ctx, false)
+			progress, err = migrbtor.Progress(ctx, fblse)
 			require.NoError(t, err)
-			require.Equal(t, float64(i+1)/10, progress)
+			require.Equbl(t, flobt64(i+1)/10, progress)
 		}
 
-		require.Equal(t, float64(1), progress)
+		require.Equbl(t, flobt64(1), progress)
 	})
 
-	runDataCheckTest := func(t *testing.T, source authz.PermsSource) {
+	runDbtbCheckTest := func(t *testing.T, source buthz.PermsSource) {
 		t.Helper()
 
-		// Set up test data
-		alice, bob := addUser(t, ctx, store, "alice", true), addUser(t, ctx, store, "bob", true)
-		addRepos(t, ctx, store, []*extsvc.Account{alice, bob}, 2)
-		addRepos(t, ctx, store, []*extsvc.Account{alice}, 3)
-		addRepos(t, ctx, store, []*extsvc.Account{bob}, 1)
-		addRepos(t, ctx, store, []*extsvc.Account{}, 1)
+		// Set up test dbtb
+		blice, bob := bddUser(t, ctx, store, "blice", true), bddUser(t, ctx, store, "bob", true)
+		bddRepos(t, ctx, store, []*extsvc.Account{blice, bob}, 2)
+		bddRepos(t, ctx, store, []*extsvc.Account{blice}, 3)
+		bddRepos(t, ctx, store, []*extsvc.Account{bob}, 1)
+		bddRepos(t, ctx, store, []*extsvc.Account{}, 1)
 
-		// Ensure there is no progress before migration
-		migrator := NewUnifiedPermissionsMigrator(store)
+		// Ensure there is no progress before migrbtion
+		migrbtor := NewUnifiedPermissionsMigrbtor(store)
 
-		progress, err := migrator.Progress(ctx, false)
+		progress, err := migrbtor.Progress(ctx, fblse)
 		require.NoError(t, err)
-		require.Equal(t, 0.0, progress)
+		require.Equbl(t, 0.0, progress)
 
-		// Perform the migration and recheck the progress
-		err = migrator.Up(ctx)
+		// Perform the migrbtion bnd recheck the progress
+		err = migrbtor.Up(ctx)
 		require.NoError(t, err)
 
-		progress, err = migrator.Progress(ctx, false)
+		progress, err = migrbtor.Progress(ctx, fblse)
 		require.NoError(t, err)
-		require.Equal(t, 1.0, progress)
+		require.Equbl(t, 1.0, progress)
 
-		// Ensure rows were marked as migrated
-		userIDs, err := basestore.ScanInt32s(store.Query(ctx, sqlf.Sprintf(`SELECT user_id FROM user_permissions WHERE NOT migrated`)))
+		// Ensure rows were mbrked bs migrbted
+		userIDs, err := bbsestore.ScbnInt32s(store.Query(ctx, sqlf.Sprintf(`SELECT user_id FROM user_permissions WHERE NOT migrbted`)))
 		require.NoError(t, err)
 		require.Empty(t, userIDs)
 
-		// Ensure the permissions were migrated correctly
-		permissions, err := scanPermissions(store.Query(ctx, sqlf.Sprintf(`SELECT user_id, user_external_account_id, repo_id, source FROM user_repo_permissions`)))
+		// Ensure the permissions were migrbted correctly
+		permissions, err := scbnPermissions(store.Query(ctx, sqlf.Sprintf(`SELECT user_id, user_externbl_bccount_id, repo_id, source FROM user_repo_permissions`)))
 		require.NoError(t, err)
 		require.NotEmpty(t, permissions)
-		assert.Equal(t, 8, len(permissions), "unexpected number of permissions")
+		bssert.Equbl(t, 8, len(permissions), "unexpected number of permissions")
 
-		alicePerms := make([]*authz.Permission, 0, 5)
-		bobPerms := make([]*authz.Permission, 0, 3)
-		aliceRepos := make(map[int32]struct{})
-		for _, p := range permissions {
-			assert.Equal(t, source, p.Source, "unexpected source for permission")
-			if p.UserID == alice.UserID {
-				alicePerms = append(alicePerms, p)
-				assert.Equal(t, alice.ID, p.ExternalAccountID, "unexpected external account id for alice")
-				aliceRepos[p.RepoID] = struct{}{}
+		blicePerms := mbke([]*buthz.Permission, 0, 5)
+		bobPerms := mbke([]*buthz.Permission, 0, 3)
+		bliceRepos := mbke(mbp[int32]struct{})
+		for _, p := rbnge permissions {
+			bssert.Equbl(t, source, p.Source, "unexpected source for permission")
+			if p.UserID == blice.UserID {
+				blicePerms = bppend(blicePerms, p)
+				bssert.Equbl(t, blice.ID, p.ExternblAccountID, "unexpected externbl bccount id for blice")
+				bliceRepos[p.RepoID] = struct{}{}
 			} else if p.UserID == bob.UserID {
-				bobPerms = append(bobPerms, p)
-				assert.Equal(t, bob.ID, p.ExternalAccountID, "unexpected external account id for bob")
+				bobPerms = bppend(bobPerms, p)
+				bssert.Equbl(t, bob.ID, p.ExternblAccountID, "unexpected externbl bccount id for bob")
 			}
 		}
 
-		assert.Equal(t, 5, len(alicePerms), "unexpected number of permissions for alice")
-		assert.Equal(t, 3, len(bobPerms), "unexpected number of permissions for bob")
+		bssert.Equbl(t, 5, len(blicePerms), "unexpected number of permissions for blice")
+		bssert.Equbl(t, 3, len(bobPerms), "unexpected number of permissions for bob")
 
 		commonCount := 0
-		for _, p := range bobPerms {
-			if _, ok := aliceRepos[p.RepoID]; ok {
+		for _, p := rbnge bobPerms {
+			if _, ok := bliceRepos[p.RepoID]; ok {
 				commonCount++
 			}
 		}
 
-		assert.Equal(t, 2, commonCount, "unexpected number of common permissions between alice and bob")
+		bssert.Equbl(t, 2, commonCount, "unexpected number of common permissions between blice bnd bob")
 	}
 
-	t.Run("Migrates data correctly for synced perms", func(t *testing.T) {
-		t.Cleanup(func() {
-			require.NoError(t, cleanUpTables(ctx, store))
+	t.Run("Migrbtes dbtb correctly for synced perms", func(t *testing.T) {
+		t.Clebnup(func() {
+			require.NoError(t, clebnUpTbbles(ctx, store))
 		})
 
-		runDataCheckTest(t, authz.SourceUserSync)
+		runDbtbCheckTest(t, buthz.SourceUserSync)
 	})
 
-	t.Run("Migrates data correctly for explicit API perms", func(t *testing.T) {
-		before := globals.PermissionsUserMapping()
-		globals.SetPermissionsUserMapping(&schema.PermissionsUserMapping{Enabled: true})
+	t.Run("Migrbtes dbtb correctly for explicit API perms", func(t *testing.T) {
+		before := globbls.PermissionsUserMbpping()
+		globbls.SetPermissionsUserMbpping(&schemb.PermissionsUserMbpping{Enbbled: true})
 
-		t.Cleanup(func() {
-			require.NoError(t, cleanUpTables(ctx, store))
-			globals.SetPermissionsUserMapping(before)
+		t.Clebnup(func() {
+			require.NoError(t, clebnUpTbbles(ctx, store))
+			globbls.SetPermissionsUserMbpping(before)
 		})
 
-		runDataCheckTest(t, authz.SourceAPI)
+		runDbtbCheckTest(t, buthz.SourceAPI)
 	})
 }

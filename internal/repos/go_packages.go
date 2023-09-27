@@ -1,54 +1,54 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/gomodproxy"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewGoPackagesSource returns a new GoModulesSource from the given external service.
-func NewGoPackagesSource(ctx context.Context, svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+// NewGoPbckbgesSource returns b new GoModulesSource from the given externbl service.
+func NewGoPbckbgesSource(ctx context.Context, svc *types.ExternblService, cf *httpcli.Fbctory) (*PbckbgesSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.GoModulesConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.GoModulesConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 
-	return &PackagesSource{
+	return &PbckbgesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
-		scheme:     dependencies.GoPackagesScheme,
-		src: &goPackagesSource{
+		scheme:     dependencies.GoPbckbgesScheme,
+		src: &goPbckbgesSource{
 			client: gomodproxy.NewClient(svc.URN(), c.Urls, cf),
 		},
 	}, nil
 }
 
-type goPackagesSource struct {
+type goPbckbgesSource struct {
 	client *gomodproxy.Client
 }
 
-var _ packagesSource = &goPackagesSource{}
+vbr _ pbckbgesSource = &goPbckbgesSource{}
 
-func (goPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseGoVersionedPackage(dep)
+func (goPbckbgesSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseGoVersionedPbckbge(dep)
 }
 
-func (goPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseGoDependencyFromName(name)
+func (goPbckbgesSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseGoDependencyFromNbme(nbme)
 }
 
-func (goPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParseGoDependencyFromRepoName(repoName)
+func (goPbckbgesSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseGoDependencyFromRepoNbme(repoNbme)
 }

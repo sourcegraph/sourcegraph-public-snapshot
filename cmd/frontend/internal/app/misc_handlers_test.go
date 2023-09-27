@@ -1,4 +1,4 @@
-package app
+pbckbge bpp
 
 import (
 	"bufio"
@@ -11,18 +11,18 @@ import (
 func TestRobotsTxt(t *testing.T) {
 	tests := []struct {
 		url  string
-		want bool
+		wbnt bool
 	}{
 		{
 			"/",
 			true,
 		},
 		{
-			"/blog/announcing-the-sourcegraph-chrome-extension-for/",
+			"/blog/bnnouncing-the-sourcegrbph-chrome-extension-for/",
 			true,
 		},
 		{
-			"/blog/announcing-the-sourcegraph-chrome-extension-for",
+			"/blog/bnnouncing-the-sourcegrbph-chrome-extension-for",
 			true,
 		},
 		{
@@ -34,23 +34,23 @@ func TestRobotsTxt(t *testing.T) {
 			true,
 		},
 		{
-			"/github.com/golang/go/-/info/GoPackage/net/http/httptrace/-/ClientTrace",
+			"/github.com/golbng/go/-/info/GoPbckbge/net/http/httptrbce/-/ClientTrbce",
 			true,
 		},
 		{
-			"/sourcegraph/sourcegraph/-/info/GoPackage/github.com/mediocregopher/radix.v2/util/-/Cmder",
+			"/sourcegrbph/sourcegrbph/-/info/GoPbckbge/github.com/mediocregopher/rbdix.v2/util/-/Cmder",
 			true,
 		},
 	}
-	var b bytes.Buffer
+	vbr b bytes.Buffer
 	writer := bufio.NewWriter(&b)
 	robotsTxtHelper(writer, true)
 	writer.Flush()
 	robots, _ := robotstxt.FromBytes(b.Bytes())
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		got := robots.TestAgent(test.url, "GoogleBot")
-		if got != test.want {
-			t.Errorf("%q: got %t, want %t", test.url, got, test.want)
+		if got != test.wbnt {
+			t.Errorf("%q: got %t, wbnt %t", test.url, got, test.wbnt)
 		}
 	}
 }

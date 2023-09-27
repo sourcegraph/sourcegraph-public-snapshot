@@ -1,201 +1,201 @@
-package perforce
+pbckbge perforce
 
 import (
-	"container/list"
+	"contbiner/list"
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"fmt"
-	"path"
+	"pbth"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/common"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/cmd/gitserver/server/common"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 	"github.com/stretchr/testify/require"
 )
 
-// setupTestRepo will setup a git repo with 5 commits using p4-fusion as the format in the commit
-// messages and returns the directory where the repo is created and a list of (commits, changelist
-// IDs) ordered latest to oldest.
-func setupTestRepo(t *testing.T) (common.GitDir, []types.PerforceChangelist) {
-	commitMessage := `%d - test change
+// setupTestRepo will setup b git repo with 5 commits using p4-fusion bs the formbt in the commit
+// messbges bnd returns the directory where the repo is crebted bnd b list of (commits, chbngelist
+// IDs) ordered lbtest to oldest.
+func setupTestRepo(t *testing.T) (common.GitDir, []types.PerforceChbngelist) {
+	commitMessbge := `%d - test chbnge
 
-[p4-fusion: depot-paths = "//test-perms/": change = %d]`
+[p4-fusion: depot-pbths = "//test-perms/": chbnge = %d]`
 
-	commitCommand := "GIT_AUTHOR_NAME=a GIT_AUTHOR_EMAIL=a@a.com GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com git commit --allow-empty -m '%s'"
+	commitCommbnd := "GIT_AUTHOR_NAME=b GIT_AUTHOR_EMAIL=b@b.com GIT_COMMITTER_NAME=b GIT_COMMITTER_EMAIL=b@b.com git commit --bllow-empty -m '%s'"
 
-	gitCommands := []string{}
+	gitCommbnds := []string{}
 	for cid := 1; cid <= 4; cid++ {
-		gitCommands = append(
-			gitCommands,
-			fmt.Sprintf(commitCommand, fmt.Sprintf(commitMessage, cid, cid)),
+		gitCommbnds = bppend(
+			gitCommbnds,
+			fmt.Sprintf(commitCommbnd, fmt.Sprintf(commitMessbge, cid, cid)),
 		)
 	}
 
-	// We want to test this edge case becase p4-fusion does this sometimes and we're not sure why.
-	// But it is trivial for us to support this edge case so we do that and make sure we're always
-	// doing that.
-	commitMessageWithNoBlankLine := `%d - test change
-[p4-fusion: depot-paths = "//test-perms/": change = %d]`
+	// We wbnt to test this edge cbse becbse p4-fusion does this sometimes bnd we're not sure why.
+	// But it is trivibl for us to support this edge cbse so we do thbt bnd mbke sure we're blwbys
+	// doing thbt.
+	commitMessbgeWithNoBlbnkLine := `%d - test chbnge
+[p4-fusion: depot-pbths = "//test-perms/": chbnge = %d]`
 
-	// 5th and final changelist.
-	gitCommands = append(
-		gitCommands,
-		fmt.Sprintf(commitCommand, fmt.Sprintf(commitMessageWithNoBlankLine, 5, 5)),
+	// 5th bnd finbl chbngelist.
+	gitCommbnds = bppend(
+		gitCommbnds,
+		fmt.Sprintf(commitCommbnd, fmt.Sprintf(commitMessbgeWithNoBlbnkLine, 5, 5)),
 	)
 
-	dir := gitserver.InitGitRepository(t, gitCommands...)
+	dir := gitserver.InitGitRepository(t, gitCommbnds...)
 
-	// Get a list of the commits.
-	cmd := gitserver.CreateGitCommand(dir, "bash", "-c", "git rev-list HEAD")
+	// Get b list of the commits.
+	cmd := gitserver.CrebteGitCommbnd(dir, "bbsh", "-c", "git rev-list HEAD")
 	revList, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Fatalf("failed to run git rev-list HEAD: %q", err.Error())
+		t.Fbtblf("fbiled to run git rev-list HEAD: %q", err.Error())
 	}
 
 	commitSHAs := strings.Split(string(revList), "\n")
-	allCommitMaps := []types.PerforceChangelist{}
+	bllCommitMbps := []types.PerforceChbngelist{}
 
-	// Latest commit first, so will have the highest changelist ID (5) and decreases so on until the
-	// first commit's changelist ID is 1.
+	// Lbtest commit first, so will hbve the highest chbngelist ID (5) bnd decrebses so on until the
+	// first commit's chbngelist ID is 1.
 	cid := int64(5)
-	for _, commitSHA := range commitSHAs {
-		// Drop the last empty item because we split by newline above.
+	for _, commitSHA := rbnge commitSHAs {
+		// Drop the lbst empty item becbuse we split by newline bbove.
 		if commitSHA == "" {
 			continue
 		}
 
-		allCommitMaps = append(allCommitMaps, types.PerforceChangelist{
-			CommitSHA:    api.CommitID(strings.TrimSpace(commitSHA)),
-			ChangelistID: cid,
+		bllCommitMbps = bppend(bllCommitMbps, types.PerforceChbngelist{
+			CommitSHA:    bpi.CommitID(strings.TrimSpbce(commitSHA)),
+			ChbngelistID: cid,
 		})
 
 		cid -= 1
 	}
 
-	return common.GitDir(path.Join(dir, ".git")), allCommitMaps
+	return common.GitDir(pbth.Join(dir, ".git")), bllCommitMbps
 }
 
 func TestGetCommitsToInsert(t *testing.T) {
-	dir, allCommitMaps := setupTestRepo(t)
+	dir, bllCommitMbps := setupTestRepo(t)
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	logger := logtest.NoOp(t)
 	db := dbmocks.NewMockDB()
-	repoCommitsStore := dbmocks.NewMockRepoCommitsChangelistsStore()
-	db.RepoCommitsChangelistsFunc.SetDefaultReturn(repoCommitsStore)
+	repoCommitsStore := dbmocks.NewMockRepoCommitsChbngelistsStore()
+	db.RepoCommitsChbngelistsFunc.SetDefbultReturn(repoCommitsStore)
 
 	s := &Service{
 		Logger: logger,
 		DB:     db,
 	}
 
-	t.Run("new repo, never mapped", func(t *testing.T) {
-		repoCommitsStore.GetLatestForRepoFunc.SetDefaultReturn(nil, sql.ErrNoRows)
+	t.Run("new repo, never mbpped", func(t *testing.T) {
+		repoCommitsStore.GetLbtestForRepoFunc.SetDefbultReturn(nil, sql.ErrNoRows)
 
-		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), dir)
+		commitMbps, err := s.getCommitsToInsert(ctx, logger, bpi.RepoID(1), dir)
 		require.NoError(t, err)
 
-		if diff := cmp.Diff(allCommitMaps, commitMaps); diff != "" {
-			t.Fatalf("mismatched commit maps, (-want,+got)\n:%v", diff)
+		if diff := cmp.Diff(bllCommitMbps, commitMbps); diff != "" {
+			t.Fbtblf("mismbtched commit mbps, (-wbnt,+got)\n:%v", diff)
 		}
 	})
 
-	t.Run("existing repo, partially mapped", func(t *testing.T) {
-		// Commits are latest to oldest and we have a total of 5 commits.
-		secondCommit := allCommitMaps[3]
+	t.Run("existing repo, pbrtiblly mbpped", func(t *testing.T) {
+		// Commits bre lbtest to oldest bnd we hbve b totbl of 5 commits.
+		secondCommit := bllCommitMbps[3]
 
-		latestRepoCommit := &types.RepoCommit{
+		lbtestRepoCommit := &types.RepoCommit{
 			ID:                   2,
 			RepoID:               1,
-			CommitSHA:            dbutil.CommitBytea(strings.TrimSpace(string(secondCommit.CommitSHA))),
-			PerforceChangelistID: secondCommit.ChangelistID,
+			CommitSHA:            dbutil.CommitByteb(strings.TrimSpbce(string(secondCommit.CommitSHA))),
+			PerforceChbngelistID: secondCommit.ChbngelistID,
 		}
 
-		repoCommitsStore.GetLatestForRepoFunc.SetDefaultReturn(latestRepoCommit, nil)
+		repoCommitsStore.GetLbtestForRepoFunc.SetDefbultReturn(lbtestRepoCommit, nil)
 
-		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), dir)
+		commitMbps, err := s.getCommitsToInsert(ctx, logger, bpi.RepoID(1), dir)
 		require.NoError(t, err)
 
-		if diff := cmp.Diff(allCommitMaps[:3], commitMaps); diff != "" {
-			t.Fatalf("mismatched commit maps, (-want,+got)\n:%v", diff)
+		if diff := cmp.Diff(bllCommitMbps[:3], commitMbps); diff != "" {
+			t.Fbtblf("mismbtched commit mbps, (-wbnt,+got)\n:%v", diff)
 		}
 	})
 
-	t.Run("existing repo, fully mapped", func(t *testing.T) {
-		// Commits are latest to oldest.
-		latestCommit := allCommitMaps[0]
+	t.Run("existing repo, fully mbpped", func(t *testing.T) {
+		// Commits bre lbtest to oldest.
+		lbtestCommit := bllCommitMbps[0]
 
-		latestRepoCommit := &types.RepoCommit{
+		lbtestRepoCommit := &types.RepoCommit{
 			ID:                   2,
 			RepoID:               1,
-			CommitSHA:            dbutil.CommitBytea(strings.TrimSpace(string(latestCommit.CommitSHA))),
-			PerforceChangelistID: latestCommit.ChangelistID,
+			CommitSHA:            dbutil.CommitByteb(strings.TrimSpbce(string(lbtestCommit.CommitSHA))),
+			PerforceChbngelistID: lbtestCommit.ChbngelistID,
 		}
 
-		repoCommitsStore.GetLatestForRepoFunc.SetDefaultReturn(latestRepoCommit, nil)
+		repoCommitsStore.GetLbtestForRepoFunc.SetDefbultReturn(lbtestRepoCommit, nil)
 
-		commitMaps, err := s.getCommitsToInsert(ctx, logger, api.RepoID(1), dir)
+		commitMbps, err := s.getCommitsToInsert(ctx, logger, bpi.RepoID(1), dir)
 		require.NoError(t, err)
-		require.Nil(t, commitMaps)
+		require.Nil(t, commitMbps)
 	})
 }
 
-func TestHeadCommitSHA(t *testing.T) {
-	dir, allCommitMaps := setupTestRepo(t)
-	ctx := context.Background()
+func TestHebdCommitSHA(t *testing.T) {
+	dir, bllCommitMbps := setupTestRepo(t)
+	ctx := context.Bbckground()
 
-	commitSHA, err := headCommitSHA(ctx, dir)
+	commitSHA, err := hebdCommitSHA(ctx, dir)
 
 	require.NoError(t, err)
-	require.Equal(t, string(allCommitMaps[0].CommitSHA), commitSHA)
+	require.Equbl(t, string(bllCommitMbps[0].CommitSHA), commitSHA)
 }
 
-func TestNewMappableCommits(t *testing.T) {
-	ctx := context.Background()
+func TestNewMbppbbleCommits(t *testing.T) {
+	ctx := context.Bbckground()
 
-	dir, allCommitMaps := setupTestRepo(t)
+	dir, bllCommitMbps := setupTestRepo(t)
 
-	gotCommitMaps, err := newMappableCommits(ctx, dir, "", "")
-	require.NoError(t, err, "unexpected error in newMapppableCommits")
+	gotCommitMbps, err := newMbppbbleCommits(ctx, dir, "", "")
+	require.NoError(t, err, "unexpected error in newMbpppbbleCommits")
 
-	if diff := cmp.Diff(allCommitMaps, gotCommitMaps); diff != "" {
-		t.Fatalf("mismatched commit maps, (-want,+got)\n:%v", diff)
+	if diff := cmp.Diff(bllCommitMbps, gotCommitMbps); diff != "" {
+		t.Fbtblf("mismbtched commit mbps, (-wbnt,+got)\n:%v", diff)
 	}
 }
 
-func TestParseGitLogLine(t *testing.T) {
-	t.Run("passes valid perforce commit", func(t *testing.T) {
-		testCases := []string{
-			`4e5b9dbc6393b195688a93ea04b98fada50bfa03 [p4-fusion: depot-paths = "//rhia-depot-test/": change = 83733]`,
-			`4e5b9dbc6393b195688a93ea04b98fada50bfa03 48485 - test-5386 [p4-fusion: depot-paths = "//go/": change = 83733]`,
+func TestPbrseGitLogLine(t *testing.T) {
+	t.Run("pbsses vblid perforce commit", func(t *testing.T) {
+		testCbses := []string{
+			`4e5b9dbc6393b195688b93eb04b98fbdb50bfb03 [p4-fusion: depot-pbths = "//rhib-depot-test/": chbnge = 83733]`,
+			`4e5b9dbc6393b195688b93eb04b98fbdb50bfb03 48485 - test-5386 [p4-fusion: depot-pbths = "//go/": chbnge = 83733]`,
 		}
 
-		for _, tc := range testCases {
-			got, err := parseGitLogLine(tc)
+		for _, tc := rbnge testCbses {
+			got, err := pbrseGitLogLine(tc)
 
-			want := &types.PerforceChangelist{
-				CommitSHA:    api.CommitID("4e5b9dbc6393b195688a93ea04b98fada50bfa03"),
-				ChangelistID: 83733,
+			wbnt := &types.PerforceChbngelist{
+				CommitSHA:    bpi.CommitID("4e5b9dbc6393b195688b93eb04b98fbdb50bfb03"),
+				ChbngelistID: 83733,
 			}
 
 			require.NoError(t, err)
-			require.Equal(t, want, got)
+			require.Equbl(t, wbnt, got)
 		}
 	})
 
-	t.Run("fails invalid perforce commit", func(t *testing.T) {
-		got, err := parseGitLogLine(`4e5b9dbc6393b195688a93ea04b98fada50bfa03 invalid format`)
+	t.Run("fbils invblid perforce commit", func(t *testing.T) {
+		got, err := pbrseGitLogLine(`4e5b9dbc6393b195688b93eb04b98fbdb50bfb03 invblid formbt`)
 
 		require.Error(t, err)
 		require.Nil(t, got)
@@ -203,70 +203,70 @@ func TestParseGitLogLine(t *testing.T) {
 }
 
 func TestServicePipeline(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Ensure that goroutines exit cleanly when the test ends.
-	t.Cleanup(func() { ctx.Done() })
+	// Ensure thbt goroutines exit clebnly when the test ends.
+	t.Clebnup(func() { ctx.Done() })
 
 	repo := &types.Repo{
-		Name: api.RepoName("foo"),
-		ExternalRepo: api.ExternalRepoSpec{
-			ServiceType: extsvc.VariantPerforce.AsType(),
+		Nbme: bpi.RepoNbme("foo"),
+		ExternblRepo: bpi.ExternblRepoSpec{
+			ServiceType: extsvc.VbribntPerforce.AsType(),
 		},
 	}
 
 	repos := dbmocks.NewMockRepoStore()
-	repos.GetByNameFunc.SetDefaultReturn(repo, nil)
+	repos.GetByNbmeFunc.SetDefbultReturn(repo, nil)
 
 	db := dbmocks.NewMockDB()
-	db.ReposFunc.SetDefaultReturn(repos)
+	db.ReposFunc.SetDefbultReturn(repos)
 
 	logger := logtest.NoOp(t)
-	svc := NewService(ctx, observation.NewContext(logger), logger, db, list.New())
+	svc := NewService(ctx, observbtion.NewContext(logger), logger, db, list.New())
 
-	job := NewChangelistMappingJob(repo.Name, common.GitDir("foo"))
+	job := NewChbngelistMbppingJob(repo.Nbme, common.GitDir("foo"))
 
-	testCases := []struct {
-		name          string
+	testCbses := []struct {
+		nbme          string
 		config        string
 		serviceType   string
 		expectedEmpty bool
 	}{
 		{
-			name:          "feature flag disabled",
-			config:        "disabled",
-			serviceType:   extsvc.VariantPerforce.AsType(),
+			nbme:          "febture flbg disbbled",
+			config:        "disbbled",
+			serviceType:   extsvc.VbribntPerforce.AsType(),
 			expectedEmpty: true,
 		},
 		{
-			name:          "feature flag enabled, non-perforce repo",
-			config:        "enabled",
-			serviceType:   extsvc.VariantGitHub.AsType(),
+			nbme:          "febture flbg enbbled, non-perforce repo",
+			config:        "enbbled",
+			serviceType:   extsvc.VbribntGitHub.AsType(),
 			expectedEmpty: true,
 		},
 		{
-			name:          "feature flag enabled, perforce depot",
-			config:        "enabled",
-			serviceType:   extsvc.VariantPerforce.AsType(),
-			expectedEmpty: false,
+			nbme:          "febture flbg enbbled, perforce depot",
+			config:        "enbbled",
+			serviceType:   extsvc.VbribntPerforce.AsType(),
+			expectedEmpty: fblse,
 		},
 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
+	for _, tc := rbnge testCbses {
+		t.Run(tc.nbme, func(t *testing.T) {
 			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						PerforceChangelistMapping: tc.config,
+				SiteConfigurbtion: schemb.SiteConfigurbtion{
+					ExperimentblFebtures: &schemb.ExperimentblFebtures{
+						PerforceChbngelistMbpping: tc.config,
 					},
 				},
 			})
 
-			repo.ExternalRepo.ServiceType = tc.serviceType
-			svc.EnqueueChangelistMappingJob(job)
+			repo.ExternblRepo.ServiceType = tc.serviceType
+			svc.EnqueueChbngelistMbppingJob(job)
 
-			if got := svc.changelistMappingQueue.Empty(); got != tc.expectedEmpty {
-				t.Errorf("expected empty state of queue: %v, but got: %v", tc.expectedEmpty, got)
+			if got := svc.chbngelistMbppingQueue.Empty(); got != tc.expectedEmpty {
+				t.Errorf("expected empty stbte of queue: %v, but got: %v", tc.expectedEmpty, got)
 			}
 		})
 	}

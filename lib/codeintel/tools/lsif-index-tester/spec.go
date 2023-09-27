@@ -1,15 +1,15 @@
-package main
+pbckbge mbin
 
 type Position struct {
-	// zero-based line index
+	// zero-bbsed line index
 	Line int `json:"line"`
 
-	// one-based character index
-	Character int `json:"character"`
+	// one-bbsed chbrbcter index
+	Chbrbcter int `json:"chbrbcter"`
 }
 
-type Range struct {
-	Start Position `json:"start"`
+type Rbnge struct {
+	Stbrt Position `json:"stbrt"`
 	End   Position `json:"end"`
 }
 
@@ -18,19 +18,19 @@ type DefinitionRequest struct {
 	Position     Position `json:"position"`
 }
 
-type Location struct {
+type Locbtion struct {
 	URI   string `json:"uri"`
-	Range Range  `json:"range"`
+	Rbnge Rbnge  `json:"rbnge"`
 }
 
 type DefinitionTest struct {
-	Name     string            `json:"name"`
+	Nbme     string            `json:"nbme"`
 	Request  DefinitionRequest `json:"request"`
-	Response Location          `json:"response"`
+	Response Locbtion          `json:"response"`
 }
 
 type ReferenceContext struct {
-	IncludeDeclaration bool
+	IncludeDeclbrbtion bool
 }
 
 type ReferenceRequest struct {
@@ -39,10 +39,10 @@ type ReferenceRequest struct {
 	Context      ReferenceContext `json:"context"`
 }
 
-type ReferenceResponse []Location
+type ReferenceResponse []Locbtion
 
 type ReferencesTest struct {
-	Name     string            `json:"name"`
+	Nbme     string            `json:"nbme"`
 	Request  ReferenceRequest  `json:"request"`
 	Response ReferenceResponse `json:"response"`
 }

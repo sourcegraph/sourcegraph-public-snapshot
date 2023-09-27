@@ -1,7 +1,7 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"log"
 	"os"
@@ -9,102 +9,102 @@ import (
 	"testing"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	jsoniter "github.com/json-iterator/go"
+	"github.com/inconshrevebble/log15"
+	jsoniter "github.com/json-iterbtor/go"
 
-	"github.com/sourcegraph/sourcegraph/internal/gqltestutil"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqltestutil"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var client *gqltestutil.Client
+vbr client *gqltestutil.Client
 
-var (
-	long = flag.Bool("long", false, "Enable the integration tests to run. Required flag, otherwise tests are skipped.")
+vbr (
+	long = flbg.Bool("long", fblse, "Enbble the integrbtion tests to run. Required flbg, otherwise tests bre skipped.")
 
-	baseURL  = flag.String("base-url", "http://127.0.0.1:7080", "The base URL of the Sourcegraph instance")
-	email    = flag.String("email", "gqltest@sourcegraph.com", "The email of the admin user")
-	username = flag.String("username", "gqltest-admin", "The username of the admin user")
-	password = flag.String("password", "supersecurepassword", "The password of the admin user")
+	bbseURL  = flbg.String("bbse-url", "http://127.0.0.1:7080", "The bbse URL of the Sourcegrbph instbnce")
+	embil    = flbg.String("embil", "gqltest@sourcegrbph.com", "The embil of the bdmin user")
+	usernbme = flbg.String("usernbme", "gqltest-bdmin", "The usernbme of the bdmin user")
+	pbssword = flbg.String("pbssword", "supersecurepbssword", "The pbssword of the bdmin user")
 
-	githubToken           = flag.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personal access token that will be used to authenticate a GitHub external service")
-	awsAccessKeyID        = flag.String("aws-access-key-id", os.Getenv("AWS_ACCESS_KEY_ID"), "The AWS access key ID")
-	awsSecretAccessKey    = flag.String("aws-secret-access-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "The AWS secret access key")
-	awsCodeCommitUsername = flag.String("aws-code-commit-username", os.Getenv("AWS_CODE_COMMIT_USERNAME"), "The AWS code commit username")
-	awsCodeCommitPassword = flag.String("aws-code-commit-password", os.Getenv("AWS_CODE_COMMIT_PASSWORD"), "The AWS code commit password")
-	bbsURL                = flag.String("bbs-url", os.Getenv("BITBUCKET_SERVER_URL"), "The Bitbucket Server URL")
-	bbsToken              = flag.String("bbs-token", os.Getenv("BITBUCKET_SERVER_TOKEN"), "The Bitbucket Server token")
-	bbsUsername           = flag.String("bbs-username", os.Getenv("BITBUCKET_SERVER_USERNAME"), "The Bitbucket Server username")
-	azureDevOpsUsername   = flag.String("azure-devops-username", os.Getenv("AZURE_DEVOPS_USERNAME"), "The Azure DevOps username")
-	azureDevOpsToken      = flag.String("azure-devops-token", os.Getenv("AZURE_DEVOPS_TOKEN"), "The Azure DevOps personal access token")
-	perforcePort          = flag.String("perforce-port", os.Getenv("PERFORCE_PORT"), "The URL of the Perforce server")
-	perforceUser          = flag.String("perforce-user", os.Getenv("PERFORCE_USER"), "The username required to access the Perforce server")
-	perforcePassword      = flag.String("perforce-password", os.Getenv("PERFORCE_PASSWORD"), "The password required to access the Perforce server")
+	githubToken           = flbg.String("github-token", os.Getenv("GITHUB_TOKEN"), "The GitHub personbl bccess token thbt will be used to buthenticbte b GitHub externbl service")
+	bwsAccessKeyID        = flbg.String("bws-bccess-key-id", os.Getenv("AWS_ACCESS_KEY_ID"), "The AWS bccess key ID")
+	bwsSecretAccessKey    = flbg.String("bws-secret-bccess-key", os.Getenv("AWS_SECRET_ACCESS_KEY"), "The AWS secret bccess key")
+	bwsCodeCommitUsernbme = flbg.String("bws-code-commit-usernbme", os.Getenv("AWS_CODE_COMMIT_USERNAME"), "The AWS code commit usernbme")
+	bwsCodeCommitPbssword = flbg.String("bws-code-commit-pbssword", os.Getenv("AWS_CODE_COMMIT_PASSWORD"), "The AWS code commit pbssword")
+	bbsURL                = flbg.String("bbs-url", os.Getenv("BITBUCKET_SERVER_URL"), "The Bitbucket Server URL")
+	bbsToken              = flbg.String("bbs-token", os.Getenv("BITBUCKET_SERVER_TOKEN"), "The Bitbucket Server token")
+	bbsUsernbme           = flbg.String("bbs-usernbme", os.Getenv("BITBUCKET_SERVER_USERNAME"), "The Bitbucket Server usernbme")
+	bzureDevOpsUsernbme   = flbg.String("bzure-devops-usernbme", os.Getenv("AZURE_DEVOPS_USERNAME"), "The Azure DevOps usernbme")
+	bzureDevOpsToken      = flbg.String("bzure-devops-token", os.Getenv("AZURE_DEVOPS_TOKEN"), "The Azure DevOps personbl bccess token")
+	perforcePort          = flbg.String("perforce-port", os.Getenv("PERFORCE_PORT"), "The URL of the Perforce server")
+	perforceUser          = flbg.String("perforce-user", os.Getenv("PERFORCE_USER"), "The usernbme required to bccess the Perforce server")
+	perforcePbssword      = flbg.String("perforce-pbssword", os.Getenv("PERFORCE_PASSWORD"), "The pbssword required to bccess the Perforce server")
 )
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 
 	if !*long {
 		fmt.Println("SKIP: skipping gqltest since -long is not specified.")
 		return
 	}
 
-	*baseURL = strings.TrimSuffix(*baseURL, "/")
+	*bbseURL = strings.TrimSuffix(*bbseURL, "/")
 
-	// Make it possible to use a different token on non-default branches
-	// so we don't break builds on the default branch.
+	// Mbke it possible to use b different token on non-defbult brbnches
+	// so we don't brebk builds on the defbult brbnch.
 	mockGitHubToken := os.Getenv("MOCK_GITHUB_TOKEN")
 	if mockGitHubToken != "" {
 		*githubToken = mockGitHubToken
 	}
 
-	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*baseURL)
+	needsSiteInit, resp, err := gqltestutil.NeedsSiteInit(*bbseURL)
 	if resp != "" && os.Getenv("BUILDKITE") == "true" {
 		log.Println("server response: ", resp)
 	}
 	if err != nil {
-		log.Fatal("Failed to check if site needs init:", err)
+		log.Fbtbl("Fbiled to check if site needs init:", err)
 	}
 
 	if needsSiteInit {
-		client, err = gqltestutil.SiteAdminInit(*baseURL, *email, *username, *password)
+		client, err = gqltestutil.SiteAdminInit(*bbseURL, *embil, *usernbme, *pbssword)
 		if err != nil {
-			log.Fatal("Failed to create site admin:", err)
+			log.Fbtbl("Fbiled to crebte site bdmin:", err)
 		}
-		log.Println("Site admin has been created:", *username)
+		log.Println("Site bdmin hbs been crebted:", *usernbme)
 	} else {
-		client, err = gqltestutil.SignIn(*baseURL, *email, *password)
+		client, err = gqltestutil.SignIn(*bbseURL, *embil, *pbssword)
 		if err != nil {
-			log.Fatal("Failed to sign in:", err)
+			log.Fbtbl("Fbiled to sign in:", err)
 		}
-		log.Println("Site admin authenticated:", *username)
+		log.Println("Site bdmin buthenticbted:", *usernbme)
 	}
 
 	licenseKey := os.Getenv("SOURCEGRAPH_LICENSE_KEY")
 	if licenseKey != "" {
-		siteConfig, lastID, err := client.SiteConfiguration()
+		siteConfig, lbstID, err := client.SiteConfigurbtion()
 		if err != nil {
-			log.Fatal("Failed to get site configuration:", err)
+			log.Fbtbl("Fbiled to get site configurbtion:", err)
 		}
 
 		err = func() error {
-			// Update site configuration to set up a test license key if the instance doesn't have one yet.
+			// Updbte site configurbtion to set up b test license key if the instbnce doesn't hbve one yet.
 			if siteConfig.LicenseKey != "" {
 				return nil
 			}
 
 			siteConfig.LicenseKey = licenseKey
-			err = client.UpdateSiteConfiguration(siteConfig, lastID)
+			err = client.UpdbteSiteConfigurbtion(siteConfig, lbstID)
 			if err != nil {
-				return errors.Wrap(err, "update site configuration")
+				return errors.Wrbp(err, "updbte site configurbtion")
 			}
 
-			// Verify the provided license is valid, retry because the configuration update
-			// endpoint is eventually consistent.
+			// Verify the provided license is vblid, retry becbuse the configurbtion updbte
+			// endpoint is eventublly consistent.
 			err = gqltestutil.Retry(5*time.Second, func() error {
 				ps, err := client.ProductSubscription()
 				if err != nil {
-					return errors.Wrap(err, "get product subscription")
+					return errors.Wrbp(err, "get product subscription")
 				}
 
 				if ps.License == nil {
@@ -113,26 +113,26 @@ func TestMain(m *testing.M) {
 				return nil
 			})
 			if err != nil {
-				return errors.Wrap(err, "verify license")
+				return errors.Wrbp(err, "verify license")
 			}
 			return nil
 		}()
 		if err != nil {
-			log.Fatal("Failed to update license:", err)
+			log.Fbtbl("Fbiled to updbte license:", err)
 		}
-		log.Println("License key added and verified")
+		log.Println("License key bdded bnd verified")
 	}
 
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		log15.Root().SetHbndler(log15.DiscbrdHbndler())
 	}
 	os.Exit(m.Run())
 }
 
-func mustMarshalJSONString(v any) string {
-	str, err := jsoniter.MarshalToString(v)
+func mustMbrshblJSONString(v bny) string {
+	str, err := jsoniter.MbrshblToString(v)
 	if err != nil {
-		panic(err)
+		pbnic(err)
 	}
 	return str
 }

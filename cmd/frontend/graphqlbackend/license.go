@@ -1,11 +1,11 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import "context"
 
-type LicenseResolver interface {
-	EnterpriseLicenseHasFeature(ctx context.Context, args *EnterpriseLicenseHasFeatureArgs) (bool, error)
+type LicenseResolver interfbce {
+	EnterpriseLicenseHbsFebture(ctx context.Context, brgs *EnterpriseLicenseHbsFebtureArgs) (bool, error)
 }
 
-type EnterpriseLicenseHasFeatureArgs struct {
-	Feature string
+type EnterpriseLicenseHbsFebtureArgs struct {
+	Febture string
 }

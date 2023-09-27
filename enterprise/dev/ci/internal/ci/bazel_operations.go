@@ -1,553 +1,553 @@
-package ci
+pbckbge ci
 
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"pbth/filepbth"
 	"regexp"
 	"strconv"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
-	bk "github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
-	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/operations"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/ci/runtype"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/imbges"
+	bk "github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/buildkite"
+	"github.com/sourcegrbph/sourcegrbph/enterprise/dev/ci/internbl/ci/operbtions"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func BazelOperations(buildOpts bk.BuildOptions, isMain bool) []operations.Operation {
-	ops := []operations.Operation{}
-	ops = append(ops, bazelPrechecks())
-	if isMain {
-		ops = append(ops, bazelTest("//...", "//client/web:test", "//testing:codeintel_integration_test", "//testing:grpc_backend_integration_test"))
+func BbzelOperbtions(buildOpts bk.BuildOptions, isMbin bool) []operbtions.Operbtion {
+	ops := []operbtions.Operbtion{}
+	ops = bppend(ops, bbzelPrechecks())
+	if isMbin {
+		ops = bppend(ops, bbzelTest("//...", "//client/web:test", "//testing:codeintel_integrbtion_test", "//testing:grpc_bbckend_integrbtion_test"))
 	} else {
-		ops = append(ops, bazelTest("//...", "//client/web:test"))
+		ops = bppend(ops, bbzelTest("//...", "//client/web:test"))
 	}
 
-	ops = append(ops, triggerBackCompatTest(buildOpts))
+	ops = bppend(ops, triggerBbckCompbtTest(buildOpts))
 	return ops
 }
 
-func bazelCmd(args ...string) string {
+func bbzelCmd(brgs ...string) string {
 	pre := []string{
-		"bazel",
-		"--bazelrc=.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"bbzel",
+		"--bbzelrc=.bbzelrc",
+		"--bbzelrc=.bspect/bbzelrc/ci.bbzelrc",
+		"--bbzelrc=.bspect/bbzelrc/ci.sourcegrbph.bbzelrc",
 	}
-	Cmd := append(pre, args...)
+	Cmd := bppend(pre, brgs...)
 	return strings.Join(Cmd, " ")
 }
 
-// Used in default run type
-func bazelPushImagesCandidates(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, true, "bazel-tests")
+// Used in defbult run type
+func bbzelPushImbgesCbndidbtes(version string) func(*bk.Pipeline) {
+	return bbzelPushImbgesCmd(version, true, "bbzel-tests")
 }
 
-// Used in default run type
-func bazelPushImagesFinal(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, "bazel-tests")
+// Used in defbult run type
+func bbzelPushImbgesFinbl(version string) func(*bk.Pipeline) {
+	return bbzelPushImbgesCmd(version, fblse, "bbzel-tests")
 }
 
-// Used in CandidateNoTest run type
-func bazelPushImagesNoTest(version string) func(*bk.Pipeline) {
-	return bazelPushImagesCmd(version, false, "pipeline-gen")
+// Used in CbndidbteNoTest run type
+func bbzelPushImbgesNoTest(version string) func(*bk.Pipeline) {
+	return bbzelPushImbgesCmd(version, fblse, "pipeline-gen")
 }
 
-func bazelPushImagesCmd(version string, isCandidate bool, depKey string) func(*bk.Pipeline) {
-	stepName := ":bazel::docker: Push final images"
-	stepKey := "bazel-push-images"
-	candidate := ""
+func bbzelPushImbgesCmd(version string, isCbndidbte bool, depKey string) func(*bk.Pipeline) {
+	stepNbme := ":bbzel::docker: Push finbl imbges"
+	stepKey := "bbzel-push-imbges"
+	cbndidbte := ""
 
-	if isCandidate {
-		stepName = ":bazel::docker: Push candidate Images"
-		stepKey = stepKey + "-candidate"
-		candidate = "true"
+	if isCbndidbte {
+		stepNbme = ":bbzel::docker: Push cbndidbte Imbges"
+		stepKey = stepKey + "-cbndidbte"
+		cbndidbte = "true"
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(stepName,
-			bk.Agent("queue", "bazel"),
+		pipeline.AddStep(stepNbme,
+			bk.Agent("queue", "bbzel"),
 			bk.DependsOn(depKey),
 			bk.Key(stepKey),
 			bk.Env("PUSH_VERSION", version),
-			bk.Env("CANDIDATE_ONLY", candidate),
-			bazelApplyPrecheckChanges(),
-			bk.Cmd(bazelStampedCmd(`build $$(bazel query 'kind("oci_push rule", //...)')`)),
-			bk.Cmd("./enterprise/dev/ci/push_all.sh"),
+			bk.Env("CANDIDATE_ONLY", cbndidbte),
+			bbzelApplyPrecheckChbnges(),
+			bk.Cmd(bbzelStbmpedCmd(`build $$(bbzel query 'kind("oci_push rule", //...)')`)),
+			bk.Cmd("./enterprise/dev/ci/push_bll.sh"),
 		)
 	}
 }
 
-func bazelStampedCmd(args ...string) string {
+func bbzelStbmpedCmd(brgs ...string) string {
 	pre := []string{
-		"bazel",
-		"--bazelrc=.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.bazelrc",
-		"--bazelrc=.aspect/bazelrc/ci.sourcegraph.bazelrc",
+		"bbzel",
+		"--bbzelrc=.bbzelrc",
+		"--bbzelrc=.bspect/bbzelrc/ci.bbzelrc",
+		"--bbzelrc=.bspect/bbzelrc/ci.sourcegrbph.bbzelrc",
 	}
 	post := []string{
-		"--stamp",
-		"--workspace_status_command=./dev/bazel_stamp_vars.sh",
+		"--stbmp",
+		"--workspbce_stbtus_commbnd=./dev/bbzel_stbmp_vbrs.sh",
 	}
 
-	cmd := append(pre, args...)
-	cmd = append(cmd, post...)
+	cmd := bppend(pre, brgs...)
+	cmd = bppend(cmd, post...)
 	return strings.Join(cmd, " ")
 }
 
-// bazelAnalysisPhase only runs the analasys phase, ensure that the buildfiles
-// are correct, but do not actually build anything.
-func bazelAnalysisPhase() func(*bk.Pipeline) {
-	cmd := bazelCmd(
+// bbzelAnblysisPhbse only runs the bnblbsys phbse, ensure thbt the buildfiles
+// bre correct, but do not bctublly build bnything.
+func bbzelAnblysisPhbse() func(*bk.Pipeline) {
+	cmd := bbzelCmd(
 		"build",
-		"--nobuild", // this is the key flag to enable this.
+		"--nobuild", // this is the key flbg to enbble this.
 		"//...",
 	)
 
 	cmds := []bk.StepOpt{
-		bk.Key("bazel-analysis"),
-		bk.Agent("queue", "bazel"),
+		bk.Key("bbzel-bnblysis"),
+		bk.Agent("queue", "bbzel"),
 		bk.Cmd(cmd),
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Analysis phase",
+		pipeline.AddStep(":bbzel: Anblysis phbse",
 			cmds...,
 		)
 	}
 }
 
-func bazelPrechecks() func(*bk.Pipeline) {
+func bbzelPrechecks() func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.Key("bazel-prechecks"),
-		bk.SoftFail(100),
-		bk.Agent("queue", "bazel"),
-		bk.ArtifactPaths("./bazel-configure.diff"),
-		bk.AnnotatedCmd("dev/ci/bazel-prechecks.sh", bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{
-				Type:         bk.AnnotationTypeError,
-				IncludeNames: false,
+		bk.Key("bbzel-prechecks"),
+		bk.SoftFbil(100),
+		bk.Agent("queue", "bbzel"),
+		bk.ArtifbctPbths("./bbzel-configure.diff"),
+		bk.AnnotbtedCmd("dev/ci/bbzel-prechecks.sh", bk.AnnotbtedCmdOpts{
+			Annotbtions: &bk.AnnotbtionOpts{
+				Type:         bk.AnnotbtionTypeError,
+				IncludeNbmes: fblse,
 			},
 		}),
 	}
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Perform bazel prechecks",
+		pipeline.AddStep(":bbzel: Perform bbzel prechecks",
 			cmds...,
 		)
 	}
 }
 
-func bazelAnnouncef(format string, args ...any) bk.StepOpt {
-	msg := fmt.Sprintf(format, args...)
-	return bk.Cmd(fmt.Sprintf(`echo "--- :bazel: %s"`, msg))
+func bbzelAnnouncef(formbt string, brgs ...bny) bk.StepOpt {
+	msg := fmt.Sprintf(formbt, brgs...)
+	return bk.Cmd(fmt.Sprintf(`echo "--- :bbzel: %s"`, msg))
 }
 
-func bazelApplyPrecheckChanges() bk.StepOpt {
-	return bk.Cmd("dev/ci/bazel-prechecks-apply.sh")
+func bbzelApplyPrecheckChbnges() bk.StepOpt {
+	return bk.Cmd("dev/ci/bbzel-prechecks-bpply.sh")
 }
 
-func bazelTest(targets ...string) func(*bk.Pipeline) {
+func bbzelTest(tbrgets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.DependsOn("bazel-prechecks"),
-		bk.AllowDependencyFailure(),
-		bk.Agent("queue", "bazel"),
-		bk.Key("bazel-tests"),
-		bk.ArtifactPaths("./bazel-testlogs/enterprise/cmd/embeddings/shared/shared_test/*.log", "./command.profile.gz"),
-		bk.AutomaticRetry(1), // TODO @jhchabran flaky stuff are breaking builds
+		bk.DependsOn("bbzel-prechecks"),
+		bk.AllowDependencyFbilure(),
+		bk.Agent("queue", "bbzel"),
+		bk.Key("bbzel-tests"),
+		bk.ArtifbctPbths("./bbzel-testlogs/enterprise/cmd/embeddings/shbred/shbred_test/*.log", "./commbnd.profile.gz"),
+		bk.AutombticRetry(1), // TODO @jhchbbrbn flbky stuff bre brebking builds
 	}
 
-	// Test commands
-	bazelTestCmds := []bk.StepOpt{}
+	// Test commbnds
+	bbzelTestCmds := []bk.StepOpt{}
 
-	cmds = append(cmds, bazelApplyPrecheckChanges())
+	cmds = bppend(cmds, bbzelApplyPrecheckChbnges())
 
-	// bazel build //client/web:bundle is very resource hungry and often crashes when ran along other targets
-	// so we run it first to avoid failing builds midway.
-	cmds = append(cmds,
-		bazelAnnouncef("bazel build //client/web:bundle-enterprise"),
-		bk.Cmd(bazelCmd("build //client/web:bundle-enterprise")),
+	// bbzel build //client/web:bundle is very resource hungry bnd often crbshes when rbn blong other tbrgets
+	// so we run it first to bvoid fbiling builds midwby.
+	cmds = bppend(cmds,
+		bbzelAnnouncef("bbzel build //client/web:bundle-enterprise"),
+		bk.Cmd(bbzelCmd("build //client/web:bundle-enterprise")),
 	)
 
-	for _, target := range targets {
-		cmd := bazelCmd(fmt.Sprintf("test %s", target))
-		bazelTestCmds = append(bazelTestCmds,
-			bazelAnnouncef("bazel test %s", target),
+	for _, tbrget := rbnge tbrgets {
+		cmd := bbzelCmd(fmt.Sprintf("test %s", tbrget))
+		bbzelTestCmds = bppend(bbzelTestCmds,
+			bbzelAnnouncef("bbzel test %s", tbrget),
 			bk.Cmd(cmd))
 	}
-	cmds = append(cmds, bazelTestCmds...)
+	cmds = bppend(cmds, bbzelTestCmds...)
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Tests",
+		pipeline.AddStep(":bbzel: Tests",
 			cmds...,
 		)
 	}
 }
 
-func triggerBackCompatTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
+func triggerBbckCompbtTest(buildOpts bk.BuildOptions) func(*bk.Pipeline) {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddTrigger(":bazel::snail: Async BackCompat Tests", "sourcegraph-backcompat",
-			bk.Key("trigger-backcompat"),
-			bk.DependsOn("bazel-prechecks"),
-			bk.AllowDependencyFailure(),
+		pipeline.AddTrigger(":bbzel::snbil: Async BbckCompbt Tests", "sourcegrbph-bbckcompbt",
+			bk.Key("trigger-bbckcompbt"),
+			bk.DependsOn("bbzel-prechecks"),
+			bk.AllowDependencyFbilure(),
 			bk.Build(buildOpts),
 		)
 	}
 }
 
-func bazelTestWithDepends(optional bool, dependsOn string, targets ...string) func(*bk.Pipeline) {
+func bbzelTestWithDepends(optionbl bool, dependsOn string, tbrgets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.Agent("queue", "bazel"),
+		bk.Agent("queue", "bbzel"),
 	}
 
-	bazelCmd := bazelCmd(fmt.Sprintf("test %s", strings.Join(targets, " ")))
-	cmds = append(cmds, bk.Cmd(bazelCmd))
-	cmds = append(cmds, bk.DependsOn(dependsOn))
+	bbzelCmd := bbzelCmd(fmt.Sprintf("test %s", strings.Join(tbrgets, " ")))
+	cmds = bppend(cmds, bk.Cmd(bbzelCmd))
+	cmds = bppend(cmds, bk.DependsOn(dependsOn))
 
 	return func(pipeline *bk.Pipeline) {
-		if optional {
-			cmds = append(cmds, bk.SoftFail())
+		if optionbl {
+			cmds = bppend(cmds, bk.SoftFbil())
 		}
-		pipeline.AddStep(":bazel: Tests",
+		pipeline.AddStep(":bbzel: Tests",
 			cmds...,
 		)
 	}
 }
 
-func bazelBuild(targets ...string) func(*bk.Pipeline) {
+func bbzelBuild(tbrgets ...string) func(*bk.Pipeline) {
 	cmds := []bk.StepOpt{
-		bk.Key("bazel_build"),
-		bk.Agent("queue", "bazel"),
+		bk.Key("bbzel_build"),
+		bk.Agent("queue", "bbzel"),
 	}
-	cmd := bazelStampedCmd(fmt.Sprintf("build %s", strings.Join(targets, " ")))
-	cmds = append(
+	cmd := bbzelStbmpedCmd(fmt.Sprintf("build %s", strings.Join(tbrgets, " ")))
+	cmds = bppend(
 		cmds,
 		bk.Cmd(cmd),
-		bk.Cmd(bazelStampedCmd("run //cmd/server:candidate_push")),
+		bk.Cmd(bbzelStbmpedCmd("run //cmd/server:cbndidbte_push")),
 	)
 
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":bazel: Build ...",
+		pipeline.AddStep(":bbzel: Build ...",
 			cmds...,
 		)
 	}
 }
 
-// Keep: allows building an array of images on one agent. Useful for streamlining and rules_oci in the future.
-func bazelBuildCandidateDockerImages(apps []string, version string, tag string, rt runtype.RunType) operations.Operation {
+// Keep: bllows building bn brrby of imbges on one bgent. Useful for strebmlining bnd rules_oci in the future.
+func bbzelBuildCbndidbteDockerImbges(bpps []string, version string, tbg string, rt runtype.RunType) operbtions.Operbtion {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
 
-		cmds = append(cmds,
-			bk.Key(candidateImageStepKey(apps[0])),
+		cmds = bppend(cmds,
+			bk.Key(cbndidbteImbgeStepKey(bpps[0])),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("DOCKER_BUILDKIT", "1"),
 			bk.Env("VERSION", version),
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", "bbzel"),
 		)
 
-		// Allow all build scripts to emit info annotations
-		// TODO(JH) probably remove
-		buildAnnotationOptions := bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{
-				Type:         bk.AnnotationTypeInfo,
-				IncludeNames: true,
+		// Allow bll build scripts to emit info bnnotbtions
+		// TODO(JH) probbbly remove
+		buildAnnotbtionOptions := bk.AnnotbtedCmdOpts{
+			Annotbtions: &bk.AnnotbtionOpts{
+				Type:         bk.AnnotbtionTypeInfo,
+				IncludeNbmes: true,
 			},
 		}
 
-		for _, app := range apps {
-			image := strings.ReplaceAll(app, "/", "-")
-			localImage := "sourcegraph/" + image + ":" + version
+		for _, bpp := rbnge bpps {
+			imbge := strings.ReplbceAll(bpp, "/", "-")
+			locblImbge := "sourcegrbph/" + imbge + ":" + version
 
-			// Add Sentry environment variables if we are building off main branch
-			// to enable building the webapp with source maps enabled
-			if rt.Is(runtype.MainDryRun) && app == "frontend" {
-				cmds = append(cmds,
+			// Add Sentry environment vbribbles if we bre building off mbin brbnch
+			// to enbble building the webbpp with source mbps enbbled
+			if rt.Is(runtype.MbinDryRun) && bpp == "frontend" {
+				cmds = bppend(cmds,
 					bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-					bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-					bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+					bk.Env("SENTRY_ORGANIZATION", "sourcegrbph"),
+					bk.Env("SENTRY_PROJECT", "sourcegrbph-dot-com"),
 				)
 			}
 
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
-				bk.Cmd("export IMAGE='"+localImage+"'"),
+			cmds = bppend(cmds,
+				bk.Cmd(fmt.Sprintf(`echo "--- Building cbndidbte %s imbge..."`, bpp)),
+				bk.Cmd("export IMAGE='"+locblImbge+"'"),
 			)
 
-			if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
-				// Building Docker image located under $REPO_ROOT/docker-images/
-				buildScriptPath := filepath.Join("docker-images", app, "build.sh")
-				_, err := os.Stat(filepath.Join("docker-images", app, "build-bazel.sh"))
+			if _, err := os.Stbt(filepbth.Join("docker-imbges", bpp)); err == nil {
+				// Building Docker imbge locbted under $REPO_ROOT/docker-imbges/
+				buildScriptPbth := filepbth.Join("docker-imbges", bpp, "build.sh")
+				_, err := os.Stbt(filepbth.Join("docker-imbges", bpp, "build-bbzel.sh"))
 				if err == nil {
 					// If the file exists.
-					buildScriptPath = filepath.Join("docker-images", app, "build-bazel.sh")
+					buildScriptPbth = filepbth.Join("docker-imbges", bpp, "build-bbzel.sh")
 				}
 
-				cmds = append(cmds,
-					bk.Cmd("ls -lah "+buildScriptPath),
-					bk.Cmd(buildScriptPath),
+				cmds = bppend(cmds,
+					bk.Cmd("ls -lbh "+buildScriptPbth),
+					bk.Cmd(buildScriptPbth),
 				)
-			} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
-				// Building Docker image located under $REPO_ROOT/client/
-				cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
+			} else if _, err := os.Stbt(filepbth.Join("client", bpp)); err == nil {
+				// Building Docker imbge locbted under $REPO_ROOT/client/
+				cmds = bppend(cmds, bk.AnnotbtedCmd("client/"+bpp+"/build.sh", buildAnnotbtionOptions))
 			} else {
-				// Building Docker images located under $REPO_ROOT/cmd/
+				// Building Docker imbges locbted under $REPO_ROOT/cmd/
 				cmdDir := func() string {
-					folder := app
-					if app == "blobstore2" {
-						// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-						// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
-						// under the same name.
-						// https://github.com/sourcegraph/sourcegraph/issues/45594
-						// TODO(blobstore): remove this when making Go blobstore the default
+					folder := bpp
+					if bpp == "blobstore2" {
+						// experiment: cmd/blobstore is b Go rewrite of docker-imbges/blobstore. While
+						// it is incomplete, we do not wbnt cmd/blobstore/Dockerfile to get published
+						// under the sbme nbme.
+						// https://github.com/sourcegrbph/sourcegrbph/issues/45594
+						// TODO(blobstore): remove this when mbking Go blobstore the defbult
 						folder = "blobstore"
 					}
-					// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
-					if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
+					// If /enterprise/cmd/... does not exist, build just /cmd/... instebd.
+					if _, err := os.Stbt(filepbth.Join("enterprise/cmd", folder)); err != nil {
 						return "cmd/" + folder
 					}
 					return "enterprise/cmd/" + folder
 				}()
-				buildScriptPath := filepath.Join(cmdDir, "build.sh")
-				_, err := os.Stat(filepath.Join(cmdDir, "build-bazel.sh"))
+				buildScriptPbth := filepbth.Join(cmdDir, "build.sh")
+				_, err := os.Stbt(filepbth.Join(cmdDir, "build-bbzel.sh"))
 				if err == nil {
 					// If the file exists.
-					buildScriptPath = filepath.Join(cmdDir, "build-bazel.sh")
+					buildScriptPbth = filepbth.Join(cmdDir, "build-bbzel.sh")
 				}
-				cmds = append(cmds, bk.AnnotatedCmd(buildScriptPath, buildAnnotationOptions))
+				cmds = bppend(cmds, bk.AnnotbtedCmd(buildScriptPbth, buildAnnotbtionOptions))
 			}
 
-			devImage := images.DevRegistryImage(app, tag)
-			cmds = append(cmds,
-				bk.Cmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
-				// Retag the local image for dev registry
-				bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
-				// Publish tagged image
-				bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
-				// Retry in case of flakes when pushing
-				// bk.AutomaticRetryStatus(3, 10),
-				// Retry in case of flakes when pushing
-				// bk.AutomaticRetryStatus(3, 222),
+			devImbge := imbges.DevRegistryImbge(bpp, tbg)
+			cmds = bppend(cmds,
+				bk.Cmd(fmt.Sprintf(`echo "--- Tbgging bnd Pushing cbndidbte %s imbge..."`, bpp)),
+				// Retbg the locbl imbge for dev registry
+				bk.Cmd(fmt.Sprintf("docker tbg %s %s", locblImbge, devImbge)),
+				// Publish tbgged imbge
+				bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImbge)),
+				// Retry in cbse of flbkes when pushing
+				// bk.AutombticRetryStbtus(3, 10),
+				// Retry in cbse of flbkes when pushing
+				// bk.AutombticRetryStbtus(3, 222),
 			)
 		}
-		pipeline.AddStep(":bazel::docker: :construction: Build Docker images", cmds...)
+		pipeline.AddStep(":bbzel::docker: :construction: Build Docker imbges", cmds...)
 	}
 }
 
-func bazelBuildCandidateDockerImage(app string, version string, tag string, rt runtype.RunType) operations.Operation {
+func bbzelBuildCbndidbteDockerImbge(bpp string, version string, tbg string, rt runtype.RunType) operbtions.Operbtion {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
-		cmds = append(cmds,
-			bk.Key(candidateImageStepKey(app)),
+		cmds = bppend(cmds,
+			bk.Key(cbndidbteImbgeStepKey(bpp)),
 			bk.Env("DOCKER_BAZEL", "true"),
 			bk.Env("VERSION", version),
-			bk.Agent("queue", "bazel"),
+			bk.Agent("queue", "bbzel"),
 		)
 
-		// Allow all build scripts to emit info annotations
-		// TODO(JH) probably remove
-		buildAnnotationOptions := bk.AnnotatedCmdOpts{
-			Annotations: &bk.AnnotationOpts{
-				Type:         bk.AnnotationTypeInfo,
-				IncludeNames: true,
+		// Allow bll build scripts to emit info bnnotbtions
+		// TODO(JH) probbbly remove
+		buildAnnotbtionOptions := bk.AnnotbtedCmdOpts{
+			Annotbtions: &bk.AnnotbtionOpts{
+				Type:         bk.AnnotbtionTypeInfo,
+				IncludeNbmes: true,
 			},
 		}
 
-		image := strings.ReplaceAll(app, "/", "-")
-		localImage := "sourcegraph/" + image + ":" + version
+		imbge := strings.ReplbceAll(bpp, "/", "-")
+		locblImbge := "sourcegrbph/" + imbge + ":" + version
 
-		// Add Sentry environment variables if we are building off main branch
-		// to enable building the webapp with source maps enabled
-		if rt.Is(runtype.MainDryRun) && app == "frontend" {
-			cmds = append(cmds,
+		// Add Sentry environment vbribbles if we bre building off mbin brbnch
+		// to enbble building the webbpp with source mbps enbbled
+		if rt.Is(runtype.MbinDryRun) && bpp == "frontend" {
+			cmds = bppend(cmds,
 				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
-				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
-				bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+				bk.Env("SENTRY_ORGANIZATION", "sourcegrbph"),
+				bk.Env("SENTRY_PROJECT", "sourcegrbph-dot-com"),
 			)
 		}
 
-		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf(`echo "--- Building candidate %s image..."`, app)),
-			bk.Cmd("export IMAGE='"+localImage+"'"),
+		cmds = bppend(cmds,
+			bk.Cmd(fmt.Sprintf(`echo "--- Building cbndidbte %s imbge..."`, bpp)),
+			bk.Cmd("export IMAGE='"+locblImbge+"'"),
 		)
 
-		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
-			// Building Docker image located under $REPO_ROOT/docker-images/
-			buildScriptPath := filepath.Join("docker-images", app, "build.sh")
-			_, err := os.Stat(filepath.Join("docker-images", app, "build-bazel.sh"))
+		if _, err := os.Stbt(filepbth.Join("docker-imbges", bpp)); err == nil {
+			// Building Docker imbge locbted under $REPO_ROOT/docker-imbges/
+			buildScriptPbth := filepbth.Join("docker-imbges", bpp, "build.sh")
+			_, err := os.Stbt(filepbth.Join("docker-imbges", bpp, "build-bbzel.sh"))
 			if err == nil {
 				// If the file exists.
-				buildScriptPath = filepath.Join("docker-images", app, "build-bazel.sh")
+				buildScriptPbth = filepbth.Join("docker-imbges", bpp, "build-bbzel.sh")
 			}
 
-			cmds = append(cmds,
-				bk.Cmd("ls -lah "+buildScriptPath),
-				bk.Cmd(buildScriptPath),
+			cmds = bppend(cmds,
+				bk.Cmd("ls -lbh "+buildScriptPbth),
+				bk.Cmd(buildScriptPbth),
 			)
-		} else if _, err := os.Stat(filepath.Join("client", app)); err == nil {
-			// Building Docker image located under $REPO_ROOT/client/
-			cmds = append(cmds, bk.AnnotatedCmd("client/"+app+"/build.sh", buildAnnotationOptions))
+		} else if _, err := os.Stbt(filepbth.Join("client", bpp)); err == nil {
+			// Building Docker imbge locbted under $REPO_ROOT/client/
+			cmds = bppend(cmds, bk.AnnotbtedCmd("client/"+bpp+"/build.sh", buildAnnotbtionOptions))
 		} else {
-			// Building Docker images located under $REPO_ROOT/cmd/
+			// Building Docker imbges locbted under $REPO_ROOT/cmd/
 			cmdDir := func() string {
-				folder := app
-				if app == "blobstore2" {
-					// experiment: cmd/blobstore is a Go rewrite of docker-images/blobstore. While
-					// it is incomplete, we do not want cmd/blobstore/Dockerfile to get published
-					// under the same name.
-					// https://github.com/sourcegraph/sourcegraph/issues/45594
-					// TODO(blobstore): remove this when making Go blobstore the default
+				folder := bpp
+				if bpp == "blobstore2" {
+					// experiment: cmd/blobstore is b Go rewrite of docker-imbges/blobstore. While
+					// it is incomplete, we do not wbnt cmd/blobstore/Dockerfile to get published
+					// under the sbme nbme.
+					// https://github.com/sourcegrbph/sourcegrbph/issues/45594
+					// TODO(blobstore): remove this when mbking Go blobstore the defbult
 					folder = "blobstore"
 				}
-				// If /enterprise/cmd/... does not exist, build just /cmd/... instead.
-				if _, err := os.Stat(filepath.Join("enterprise/cmd", folder)); err != nil {
+				// If /enterprise/cmd/... does not exist, build just /cmd/... instebd.
+				if _, err := os.Stbt(filepbth.Join("enterprise/cmd", folder)); err != nil {
 					return "cmd/" + folder
 				}
 				return "enterprise/cmd/" + folder
 			}()
-			buildScriptPath := filepath.Join(cmdDir, "build.sh")
-			_, err := os.Stat(filepath.Join(cmdDir, "build-bazel.sh"))
+			buildScriptPbth := filepbth.Join(cmdDir, "build.sh")
+			_, err := os.Stbt(filepbth.Join(cmdDir, "build-bbzel.sh"))
 			if err == nil {
 				// If the file exists.
-				buildScriptPath = filepath.Join(cmdDir, "build-bazel.sh")
+				buildScriptPbth = filepbth.Join(cmdDir, "build-bbzel.sh")
 			}
-			cmds = append(cmds, bk.AnnotatedCmd(buildScriptPath, buildAnnotationOptions))
+			cmds = bppend(cmds, bk.AnnotbtedCmd(buildScriptPbth, buildAnnotbtionOptions))
 		}
 
-		devImage := images.DevRegistryImage(app, tag)
-		cmds = append(cmds,
-			bk.Cmd(fmt.Sprintf(`echo "--- Tagging and Pushing candidate %s image..."`, app)),
-			// Retag the local image for dev registry
-			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
-			// Publish tagged image
-			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImage)),
-			// Retry in case of flakes when pushing
-			// bk.AutomaticRetryStatus(3, 10),
-			// Retry in case of flakes when pushing
-			// bk.AutomaticRetryStatus(3, 222),
+		devImbge := imbges.DevRegistryImbge(bpp, tbg)
+		cmds = bppend(cmds,
+			bk.Cmd(fmt.Sprintf(`echo "--- Tbgging bnd Pushing cbndidbte %s imbge..."`, bpp)),
+			// Retbg the locbl imbge for dev registry
+			bk.Cmd(fmt.Sprintf("docker tbg %s %s", locblImbge, devImbge)),
+			// Publish tbgged imbge
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", devImbge)),
+			// Retry in cbse of flbkes when pushing
+			// bk.AutombticRetryStbtus(3, 10),
+			// Retry in cbse of flbkes when pushing
+			// bk.AutombticRetryStbtus(3, 222),
 		)
-		pipeline.AddStep(fmt.Sprintf(":bazel::docker: :construction: Build %s", app), cmds...)
+		pipeline.AddStep(fmt.Sprintf(":bbzel::docker: :construction: Build %s", bpp), cmds...)
 	}
 }
 
-// Tag and push final Docker image for the service defined by `app`
-// after the e2e tests pass.
+// Tbg bnd push finbl Docker imbge for the service defined by `bpp`
+// bfter the e2e tests pbss.
 //
-// It requires Config as an argument because published images require a lot of metadata.
-func bazelPublishFinalDockerImage(c Config, apps []string) operations.Operation {
+// It requires Config bs bn brgument becbuse published imbges require b lot of metbdbtb.
+func bbzelPublishFinblDockerImbge(c Config, bpps []string) operbtions.Operbtion {
 	return func(pipeline *bk.Pipeline) {
 		cmds := []bk.StepOpt{}
-		cmds = append(cmds, bk.Agent("queue", "bazel"))
+		cmds = bppend(cmds, bk.Agent("queue", "bbzel"))
 
-		for _, app := range apps {
+		for _, bpp := rbnge bpps {
 
-			devImage := images.DevRegistryImage(app, "")
-			publishImage := images.PublishedRegistryImage(app, "")
+			devImbge := imbges.DevRegistryImbge(bpp, "")
+			publishImbge := imbges.PublishedRegistryImbge(bpp, "")
 
-			var imgs []string
-			for _, image := range []string{publishImage, devImage} {
-				if app != "server" || c.RunType.Is(runtype.TaggedRelease, runtype.ImagePatch, runtype.ImagePatchNoTest) {
-					imgs = append(imgs, fmt.Sprintf("%s:%s", image, c.Version))
+			vbr imgs []string
+			for _, imbge := rbnge []string{publishImbge, devImbge} {
+				if bpp != "server" || c.RunType.Is(runtype.TbggedRelebse, runtype.ImbgePbtch, runtype.ImbgePbtchNoTest) {
+					imgs = bppend(imgs, fmt.Sprintf("%s:%s", imbge, c.Version))
 				}
 
-				if app == "server" && c.RunType.Is(runtype.ReleaseBranch) {
-					imgs = append(imgs, fmt.Sprintf("%s:%s-insiders", image, c.Branch))
+				if bpp == "server" && c.RunType.Is(runtype.RelebseBrbnch) {
+					imgs = bppend(imgs, fmt.Sprintf("%s:%s-insiders", imbge, c.Brbnch))
 				}
 
-				if c.RunType.Is(runtype.MainBranch) {
-					imgs = append(imgs, fmt.Sprintf("%s:insiders", image))
+				if c.RunType.Is(runtype.MbinBrbnch) {
+					imgs = bppend(imgs, fmt.Sprintf("%s:insiders", imbge))
 				}
 			}
 
-			// these tags are pushed to our dev registry, and are only
-			// used internally
-			for _, tag := range []string{
+			// these tbgs bre pushed to our dev registry, bnd bre only
+			// used internblly
+			for _, tbg := rbnge []string{
 				c.Version,
 				c.Commit,
 				c.shortCommit(),
-				fmt.Sprintf("%s_%s_%d", c.shortCommit(), c.Time.Format("2006-01-02"), c.BuildNumber),
+				fmt.Sprintf("%s_%s_%d", c.shortCommit(), c.Time.Formbt("2006-01-02"), c.BuildNumber),
 				fmt.Sprintf("%s_%d", c.shortCommit(), c.BuildNumber),
 				fmt.Sprintf("%s_%d", c.Commit, c.BuildNumber),
-				strconv.Itoa(c.BuildNumber),
+				strconv.Itob(c.BuildNumber),
 			} {
-				internalImage := fmt.Sprintf("%s:%s", devImage, tag)
-				imgs = append(imgs, internalImage)
+				internblImbge := fmt.Sprintf("%s:%s", devImbge, tbg)
+				imgs = bppend(imgs, internblImbge)
 			}
 
-			candidateImage := fmt.Sprintf("%s:%s", devImage, c.candidateImageTag())
-			cmds = append(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", candidateImage, strings.Join(imgs, " "))))
+			cbndidbteImbge := fmt.Sprintf("%s:%s", devImbge, c.cbndidbteImbgeTbg())
+			cmds = bppend(cmds, bk.Cmd(fmt.Sprintf("./dev/ci/docker-publish.sh %s %s", cbndidbteImbge, strings.Join(imgs, " "))))
 		}
-		pipeline.AddStep(":docker: :truck: Publish images", cmds...)
-		// This step just pulls a prebuild image and pushes it to some registries. The
-		// only possible failure here is a registry flake, so we retry a few times.
-		bk.AutomaticRetry(3)
+		pipeline.AddStep(":docker: :truck: Publish imbges", cmds...)
+		// This step just pulls b prebuild imbge bnd pushes it to some registries. The
+		// only possible fbilure here is b registry flbke, so we retry b few times.
+		bk.AutombticRetry(3)
 	}
 }
 
-var allowedBazelFlags = map[string]struct{}{
+vbr bllowedBbzelFlbgs = mbp[string]struct{}{
 	"--runs_per_test":        {},
 	"--nobuild":              {},
-	"--local_test_jobs":      {},
-	"--test_arg":             {},
-	"--nocache_test_results": {},
-	"--test_tag_filters":     {},
+	"--locbl_test_jobs":      {},
+	"--test_brg":             {},
+	"--nocbche_test_results": {},
+	"--test_tbg_filters":     {},
 	"--test_timeout":         {},
 }
 
-var bazelFlagsRe = regexp.MustCompile(`--\w+`)
+vbr bbzelFlbgsRe = regexp.MustCompile(`--\w+`)
 
-func verifyBazelCommand(command string) error {
-	// check for shell escape mechanisms.
-	if strings.Contains(command, ";") {
-		return errors.New("unauthorized input for bazel command: ';'")
+func verifyBbzelCommbnd(commbnd string) error {
+	// check for shell escbpe mechbnisms.
+	if strings.Contbins(commbnd, ";") {
+		return errors.New("unbuthorized input for bbzel commbnd: ';'")
 	}
-	if strings.Contains(command, "&") {
-		return errors.New("unauthorized input for bazel command: '&'")
+	if strings.Contbins(commbnd, "&") {
+		return errors.New("unbuthorized input for bbzel commbnd: '&'")
 	}
-	if strings.Contains(command, "|") {
-		return errors.New("unauthorized input for bazel command: '|'")
+	if strings.Contbins(commbnd, "|") {
+		return errors.New("unbuthorized input for bbzel commbnd: '|'")
 	}
-	if strings.Contains(command, "$") {
-		return errors.New("unauthorized input for bazel command: '$'")
+	if strings.Contbins(commbnd, "$") {
+		return errors.New("unbuthorized input for bbzel commbnd: '$'")
 	}
-	if strings.Contains(command, "`") {
-		return errors.New("unauthorized input for bazel command: '`'")
+	if strings.Contbins(commbnd, "`") {
+		return errors.New("unbuthorized input for bbzel commbnd: '`'")
 	}
-	if strings.Contains(command, ">") {
-		return errors.New("unauthorized input for bazel command: '>'")
+	if strings.Contbins(commbnd, ">") {
+		return errors.New("unbuthorized input for bbzel commbnd: '>'")
 	}
-	if strings.Contains(command, "<") {
-		return errors.New("unauthorized input for bazel command: '<'")
+	if strings.Contbins(commbnd, "<") {
+		return errors.New("unbuthorized input for bbzel commbnd: '<'")
 	}
-	if strings.Contains(command, "(") {
-		return errors.New("unauthorized input for bazel command: '('")
+	if strings.Contbins(commbnd, "(") {
+		return errors.New("unbuthorized input for bbzel commbnd: '('")
 	}
 
-	// check for command and targets
-	strs := strings.Split(command, " ")
+	// check for commbnd bnd tbrgets
+	strs := strings.Split(commbnd, " ")
 	if len(strs) < 2 {
-		return errors.New("invalid command")
+		return errors.New("invblid commbnd")
 	}
 
-	// command must be either build or test.
+	// commbnd must be either build or test.
 	switch strs[0] {
-	case "build":
-	case "test":
-	default:
-		return errors.Newf("disallowed bazel command: %q", strs[0])
+	cbse "build":
+	cbse "test":
+	defbult:
+		return errors.Newf("disbllowed bbzel commbnd: %q", strs[0])
 	}
 
-	// need at least one target.
-	if !strings.HasPrefix(strs[1], "//") {
-		return errors.New("misconstructed command, need at least one target")
+	// need bt lebst one tbrget.
+	if !strings.HbsPrefix(strs[1], "//") {
+		return errors.New("misconstructed commbnd, need bt lebst one tbrget")
 	}
 
-	// ensure flags are in the allow-list.
-	matches := bazelFlagsRe.FindAllString(command, -1)
-	for _, m := range matches {
-		if _, ok := allowedBazelFlags[m]; !ok {
-			return errors.Newf("disallowed bazel flag: %q", m)
+	// ensure flbgs bre in the bllow-list.
+	mbtches := bbzelFlbgsRe.FindAllString(commbnd, -1)
+	for _, m := rbnge mbtches {
+		if _, ok := bllowedBbzelFlbgs[m]; !ok {
+			return errors.Newf("disbllowed bbzel flbg: %q", m)
 		}
 	}
 	return nil

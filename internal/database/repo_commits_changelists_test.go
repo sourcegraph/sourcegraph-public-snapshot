@@ -1,135 +1,135 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"encoding/hex"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
-	"github.com/sourcegraph/sourcegraph/internal/perforce"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/perforce"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func TestRepoCommitsChangelists(t *testing.T) {
-	ctx := context.Background()
+func TestRepoCommitsChbngelists(t *testing.T) {
+	ctx := context.Bbckground()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
 
 	repos := db.Repos()
-	err := repos.Create(ctx, &types.Repo{ID: 1, Name: "foo"})
-	require.NoError(t, err, "failed to insert repo")
+	err := repos.Crebte(ctx, &types.Repo{ID: 1, Nbme: "foo"})
+	require.NoError(t, err, "fbiled to insert repo")
 
 	repoID := int32(1)
 
-	commitSHA1 := "98d3ec26623660f17f6c298943f55aa339aa894a"
-	commitSHA2 := "4b6152a804c4c177f5fe0dfd61e71cacb64d64dd"
-	commitSHA3 := "e9c83398bbd4c4e9481fd20f100a7e49d68d7510"
+	commitSHA1 := "98d3ec26623660f17f6c298943f55bb339bb894b"
+	commitSHA2 := "4b6152b804c4c177f5fe0dfd61e71cbcb64d64dd"
+	commitSHA3 := "e9c83398bbd4c4e9481fd20f100b7e49d68d7510"
 
-	data := []types.PerforceChangelist{
+	dbtb := []types.PerforceChbngelist{
 		{
-			CommitSHA:    api.CommitID(commitSHA1),
-			ChangelistID: 123,
+			CommitSHA:    bpi.CommitID(commitSHA1),
+			ChbngelistID: 123,
 		},
 		{
-			CommitSHA:    api.CommitID(commitSHA2),
-			ChangelistID: 124,
+			CommitSHA:    bpi.CommitID(commitSHA2),
+			ChbngelistID: 124,
 		},
 		{
-			CommitSHA:    api.CommitID(commitSHA3),
-			ChangelistID: 125,
+			CommitSHA:    bpi.CommitID(commitSHA3),
+			ChbngelistID: 125,
 		},
 	}
 
-	s := RepoCommitsChangelistsWith(logger, db)
+	s := RepoCommitsChbngelistsWith(logger, db)
 
-	err = s.BatchInsertCommitSHAsWithPerforceChangelistID(ctx, api.RepoID(repoID), data)
+	err = s.BbtchInsertCommitSHAsWithPerforceChbngelistID(ctx, bpi.RepoID(repoID), dbtb)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	t.Run("BatchInsertCommitSHAsWithPerforceChangelistID", func(t *testing.T) {
-		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_sha, perforce_changelist_id, created_at FROM repo_commits_changelists ORDER by id`)
+	t.Run("BbtchInsertCommitSHAsWithPerforceChbngelistID", func(t *testing.T) {
+		rows, err := db.QueryContext(ctx, `SELECT repo_id, commit_shb, perforce_chbngelist_id, crebted_bt FROM repo_commits_chbngelists ORDER by id`)
 		if err != nil {
-			t.Fatal(err)
+			t.Fbtbl(err)
 		}
 		defer rows.Close()
 
 		type repoCommitRow struct {
 			RepoID       int32
 			CommitSHA    string
-			ChangelistID int64
+			ChbngelistID int64
 		}
 
-		want := []repoCommitRow{
+		wbnt := []repoCommitRow{
 			{
 				RepoID:       1,
 				CommitSHA:    commitSHA1,
-				ChangelistID: 123,
+				ChbngelistID: 123,
 			},
 			{
 				RepoID:       1,
 				CommitSHA:    commitSHA2,
-				ChangelistID: 124,
+				ChbngelistID: 124,
 			},
 			{
 				RepoID:       1,
 				CommitSHA:    commitSHA3,
-				ChangelistID: 125,
+				ChbngelistID: 125,
 			},
 		}
 
 		got := []repoCommitRow{}
 
 		for rows.Next() {
-			var r repoCommitRow
-			var hexCommitSHA []byte
-			var createdAt time.Time
+			vbr r repoCommitRow
+			vbr hexCommitSHA []byte
+			vbr crebtedAt time.Time
 
-			if err := rows.Scan(&r.RepoID, &hexCommitSHA, &r.ChangelistID, &createdAt); err != nil {
-				t.Fatal(err)
+			if err := rows.Scbn(&r.RepoID, &hexCommitSHA, &r.ChbngelistID, &crebtedAt); err != nil {
+				t.Fbtbl(err)
 			}
 
-			// All we care is that createdAt has a value, we don't really care about what that is.
-			require.NotNil(t, createdAt)
+			// All we cbre is thbt crebtedAt hbs b vblue, we don't reblly cbre bbout whbt thbt is.
+			require.NotNil(t, crebtedAt)
 
 			r.CommitSHA = hex.EncodeToString(hexCommitSHA)
-			got = append(got, r)
+			got = bppend(got, r)
 		}
 
-		if diff := cmp.Diff(want, got); diff != "" {
-			t.Errorf("mismatched rows, diff (-want, +got):\n %v\n", diff)
+		if diff := cmp.Diff(wbnt, got); diff != "" {
+			t.Errorf("mismbtched rows, diff (-wbnt, +got):\n %v\n", diff)
 		}
 	})
 
-	t.Run("GetLatestForRepo", func(t *testing.T) {
+	t.Run("GetLbtestForRepo", func(t *testing.T) {
 		t.Run("existing repo", func(t *testing.T) {
-			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(repoID))
-			require.NoError(t, err, "unexpected error in GetLatestForRepo")
-			require.NotNil(t, repoCommit, "repoCommit was not expected to be nil")
-			require.Equal(
+			repoCommit, err := s.GetLbtestForRepo(ctx, bpi.RepoID(repoID))
+			require.NoError(t, err, "unexpected error in GetLbtestForRepo")
+			require.NotNil(t, repoCommit, "repoCommit wbs not expected to be nil")
+			require.Equbl(
 				t,
 				&types.RepoCommit{
 					ID:                   3,
-					RepoID:               api.RepoID(repoID),
-					CommitSHA:            dbutil.CommitBytea(commitSHA3),
-					PerforceChangelistID: 125,
+					RepoID:               bpi.RepoID(repoID),
+					CommitSHA:            dbutil.CommitByteb(commitSHA3),
+					PerforceChbngelistID: 125,
 				},
 				repoCommit,
-				"repoCommit row is not as expected",
+				"repoCommit row is not bs expected",
 			)
 		})
 
 		t.Run("non existing repo", func(t *testing.T) {
-			repoCommit, err := s.GetLatestForRepo(ctx, api.RepoID(2))
+			repoCommit, err := s.GetLbtestForRepo(ctx, bpi.RepoID(2))
 			require.Error(t, err)
 			require.True(t, errors.Is(err, sql.ErrNoRows))
 			require.Nil(t, repoCommit)
@@ -138,28 +138,28 @@ func TestRepoCommitsChangelists(t *testing.T) {
 
 	t.Run("GetRepoCommit", func(t *testing.T) {
 		t.Run("existing row", func(t *testing.T) {
-			gotRow, err := s.GetRepoCommitChangelist(ctx, 1, 123)
+			gotRow, err := s.GetRepoCommitChbngelist(ctx, 1, 123)
 			require.NoError(t, err)
 			if diff := cmp.Diff(&types.RepoCommit{
 				ID:                   1,
-				RepoID:               api.RepoID(1),
-				CommitSHA:            dbutil.CommitBytea(commitSHA1),
-				PerforceChangelistID: 123,
+				RepoID:               bpi.RepoID(1),
+				CommitSHA:            dbutil.CommitByteb(commitSHA1),
+				PerforceChbngelistID: 123,
 			}, gotRow); diff != "" {
-				t.Errorf("mismatched row, (-want, +got)\n%s", diff)
+				t.Errorf("mismbtched row, (-wbnt, +got)\n%s", diff)
 			}
 		})
 
 		t.Run("non existing row", func(t *testing.T) {
-			_, err := s.GetRepoCommitChangelist(ctx, 2, 999)
+			_, err := s.GetRepoCommitChbngelist(ctx, 2, 999)
 			require.Error(t, err)
 
-			var notFoundError *perforce.ChangelistNotFoundError
+			vbr notFoundError *perforce.ChbngelistNotFoundError
 			if errors.As(err, &notFoundError) {
-				require.Equal(t, api.RepoID(2), notFoundError.RepoID)
-				require.Equal(t, int64(999), notFoundError.ID)
+				require.Equbl(t, bpi.RepoID(2), notFoundError.RepoID)
+				require.Equbl(t, int64(999), notFoundError.ID)
 			} else {
-				t.Fatalf("wrong error type, want ChangelistNotFoundError, got %T", err)
+				t.Fbtblf("wrong error type, wbnt ChbngelistNotFoundError, got %T", err)
 			}
 		})
 	})

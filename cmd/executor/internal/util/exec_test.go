@@ -1,4 +1,4 @@
-package util_test
+pbckbge util_test
 
 import (
 	"context"
@@ -11,37 +11,37 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/util"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/util"
 )
 
-type fakeCmdRunner struct {
+type fbkeCmdRunner struct {
 	mock.Mock
 }
 
-var _ util.CmdRunner = &fakeCmdRunner{}
+vbr _ util.CmdRunner = &fbkeCmdRunner{}
 
-func (f *fakeCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	panic("not needed")
+func (f *fbkeCmdRunner) CommbndContext(ctx context.Context, nbme string, brgs ...string) *exec.Cmd {
+	pbnic("not needed")
 }
 
-func (f *fakeCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
-	cs := []string{"-test.run=TestExecCommandHelper", "--"}
-	cs = append(cs, args...)
-	calledArgs := f.Called(ctx, name, args)
-	cmd := exec.Command(os.Args[0], cs...)
+func (f *fbkeCmdRunner) CombinedOutput(ctx context.Context, nbme string, brgs ...string) ([]byte, error) {
+	cs := []string{"-test.run=TestExecCommbndHelper", "--"}
+	cs = bppend(cs, brgs...)
+	cblledArgs := f.Cblled(ctx, nbme, brgs)
+	cmd := exec.Commbnd(os.Args[0], cs...)
 	cmd.Env = []string{
 		"GO_WANT_HELPER_PROCESS=1",
-		fmt.Sprintf("EXIT_STATUS=%d", calledArgs.Int(0)),
-		fmt.Sprintf("STDOUT=%s", calledArgs.String(1)),
+		fmt.Sprintf("EXIT_STATUS=%d", cblledArgs.Int(0)),
+		fmt.Sprintf("STDOUT=%s", cblledArgs.String(1)),
 	}
 	out, err := cmd.CombinedOutput()
 	return out, err
 }
 
-// TestExecCommandHelper a fake test that fakeExecCommand will run instead of calling the actual exec.CommandContext.
-func TestExecCommandHelper(t *testing.T) {
-	// Since this function must be big T test. We don't want to actually test anything. So if GO_WANT_HELPER_PROCESS
-	// is not set, just exit right away.
+// TestExecCommbndHelper b fbke test thbt fbkeExecCommbnd will run instebd of cblling the bctubl exec.CommbndContext.
+func TestExecCommbndHelper(t *testing.T) {
+	// Since this function must be big T test. We don't wbnt to bctublly test bnything. So if GO_WANT_HELPER_PROCESS
+	// is not set, just exit right bwby.
 	if os.Getenv("GO_WANT_HELPER_PROCESS") != "1" {
 		return
 	}
@@ -55,11 +55,11 @@ func TestExecCommandHelper(t *testing.T) {
 	os.Exit(i)
 }
 
-func (f *fakeCmdRunner) LookPath(file string) (string, error) {
-	args := f.Called(file)
-	return args.String(0), args.Error(1)
+func (f *fbkeCmdRunner) LookPbth(file string) (string, error) {
+	brgs := f.Cblled(file)
+	return brgs.String(0), brgs.Error(1)
 }
 
-func (f *fakeCmdRunner) Stat(filename string) (os.FileInfo, error) {
-	panic("not needed")
+func (f *fbkeCmdRunner) Stbt(filenbme string) (os.FileInfo, error) {
+	pbnic("not needed")
 }

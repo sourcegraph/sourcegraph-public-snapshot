@@ -1,114 +1,114 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbutil"
 )
 
-type SlackWebhookAction struct {
+type SlbckWebhookAction struct {
 	ID             int64
 	Monitor        int64
-	Enabled        bool
+	Enbbled        bool
 	URL            string
 	IncludeResults bool
 
-	CreatedBy int32
-	CreatedAt time.Time
-	ChangedBy int32
-	ChangedAt time.Time
+	CrebtedBy int32
+	CrebtedAt time.Time
+	ChbngedBy int32
+	ChbngedAt time.Time
 }
 
-const updateSlackWebhookActionQuery = `
-UPDATE cm_slack_webhooks
-SET enabled = %s,
+const updbteSlbckWebhookActionQuery = `
+UPDATE cm_slbck_webhooks
+SET enbbled = %s,
 	include_results = %s,
 	url = %s,
-	changed_by = %s,
-	changed_at = %s
+	chbnged_by = %s,
+	chbnged_bt = %s
 WHERE
 	id = %s
 	AND EXISTS (
 		SELECT 1 FROM cm_monitors
-		WHERE cm_monitors.id = cm_slack_webhooks.monitor
+		WHERE cm_monitors.id = cm_slbck_webhooks.monitor
 			AND %s
 	)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) UpdateSlackWebhookAction(ctx context.Context, id int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error) {
-	a := actor.FromContext(ctx)
+func (s *codeMonitorStore) UpdbteSlbckWebhookAction(ctx context.Context, id int64, enbbled, includeResults bool, url string) (*SlbckWebhookAction, error) {
+	b := bctor.FromContext(ctx)
 
-	user, err := a.User(ctx, s.userStore)
+	user, err := b.User(ctx, s.userStore)
 	if err != nil {
 		return nil, err
 	}
 
 	q := sqlf.Sprintf(
-		updateSlackWebhookActionQuery,
-		enabled,
+		updbteSlbckWebhookActionQuery,
+		enbbled,
 		includeResults,
 		url,
-		a.UID,
+		b.UID,
 		s.Now(),
 		id,
-		namespaceScopeQuery(user),
-		sqlf.Join(slackWebhookActionColumns, ","),
+		nbmespbceScopeQuery(user),
+		sqlf.Join(slbckWebhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanSlackWebhookAction(row)
+	return scbnSlbckWebhookAction(row)
 }
 
-const createSlackWebhookActionQuery = `
-INSERT INTO cm_slack_webhooks
-(monitor, enabled, include_results, url, created_by, created_at, changed_by, changed_at)
+const crebteSlbckWebhookActionQuery = `
+INSERT INTO cm_slbck_webhooks
+(monitor, enbbled, include_results, url, crebted_by, crebted_bt, chbnged_by, chbnged_bt)
 VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
 RETURNING %s;
 `
 
-func (s *codeMonitorStore) CreateSlackWebhookAction(ctx context.Context, monitorID int64, enabled, includeResults bool, url string) (*SlackWebhookAction, error) {
+func (s *codeMonitorStore) CrebteSlbckWebhookAction(ctx context.Context, monitorID int64, enbbled, includeResults bool, url string) (*SlbckWebhookAction, error) {
 	now := s.Now()
-	a := actor.FromContext(ctx)
+	b := bctor.FromContext(ctx)
 	q := sqlf.Sprintf(
-		createSlackWebhookActionQuery,
+		crebteSlbckWebhookActionQuery,
 		monitorID,
-		enabled,
+		enbbled,
 		includeResults,
 		url,
-		a.UID,
+		b.UID,
 		now,
-		a.UID,
+		b.UID,
 		now,
-		sqlf.Join(slackWebhookActionColumns, ","),
+		sqlf.Join(slbckWebhookActionColumns, ","),
 	)
 
 	row := s.QueryRow(ctx, q)
-	return scanSlackWebhookAction(row)
+	return scbnSlbckWebhookAction(row)
 }
 
-const deleteSlackWebhookActionQuery = `
-DELETE FROM cm_slack_webhooks
+const deleteSlbckWebhookActionQuery = `
+DELETE FROM cm_slbck_webhooks
 WHERE id in (%s)
 	AND MONITOR = %s
 `
 
-func (s *codeMonitorStore) DeleteSlackWebhookActions(ctx context.Context, monitorID int64, webhookIDs ...int64) error {
+func (s *codeMonitorStore) DeleteSlbckWebhookActions(ctx context.Context, monitorID int64, webhookIDs ...int64) error {
 	if len(webhookIDs) == 0 {
 		return nil
 	}
 
-	deleteIDs := make([]*sqlf.Query, 0, len(webhookIDs))
-	for _, ids := range webhookIDs {
-		deleteIDs = append(deleteIDs, sqlf.Sprintf("%d", ids))
+	deleteIDs := mbke([]*sqlf.Query, 0, len(webhookIDs))
+	for _, ids := rbnge webhookIDs {
+		deleteIDs = bppend(deleteIDs, sqlf.Sprintf("%d", ids))
 	}
 	q := sqlf.Sprintf(
-		deleteSlackWebhookActionQuery,
+		deleteSlbckWebhookActionQuery,
 		sqlf.Join(deleteIDs, ","),
 		monitorID,
 	)
@@ -116,46 +116,46 @@ func (s *codeMonitorStore) DeleteSlackWebhookActions(ctx context.Context, monito
 	return s.Exec(ctx, q)
 }
 
-const countSlackWebhookActionsQuery = `
+const countSlbckWebhookActionsQuery = `
 SELECT COUNT(*)
-FROM cm_slack_webhooks
+FROM cm_slbck_webhooks
 WHERE monitor = %s;
 `
 
-func (s *codeMonitorStore) CountSlackWebhookActions(ctx context.Context, monitorID int64) (int, error) {
-	var count int
-	err := s.QueryRow(ctx, sqlf.Sprintf(countSlackWebhookActionsQuery, monitorID)).Scan(&count)
+func (s *codeMonitorStore) CountSlbckWebhookActions(ctx context.Context, monitorID int64) (int, error) {
+	vbr count int
+	err := s.QueryRow(ctx, sqlf.Sprintf(countSlbckWebhookActionsQuery, monitorID)).Scbn(&count)
 	return count, err
 }
 
-const getSlackWebhookActionQuery = `
-SELECT %s -- SlackWebhookActionColumns
-FROM cm_slack_webhooks
+const getSlbckWebhookActionQuery = `
+SELECT %s -- SlbckWebhookActionColumns
+FROM cm_slbck_webhooks
 WHERE id = %s
 `
 
-func (s *codeMonitorStore) GetSlackWebhookAction(ctx context.Context, id int64) (*SlackWebhookAction, error) {
+func (s *codeMonitorStore) GetSlbckWebhookAction(ctx context.Context, id int64) (*SlbckWebhookAction, error) {
 	q := sqlf.Sprintf(
-		getSlackWebhookActionQuery,
-		sqlf.Join(slackWebhookActionColumns, ","),
+		getSlbckWebhookActionQuery,
+		sqlf.Join(slbckWebhookActionColumns, ","),
 		id,
 	)
 	row := s.QueryRow(ctx, q)
-	return scanSlackWebhookAction(row)
+	return scbnSlbckWebhookAction(row)
 }
 
-const listSlackWebhookActionsQuery = `
-SELECT %s -- SlackWebhookActionColumns
-FROM cm_slack_webhooks
+const listSlbckWebhookActionsQuery = `
+SELECT %s -- SlbckWebhookActionColumns
+FROM cm_slbck_webhooks
 WHERE %s
 ORDER BY id ASC
 LIMIT %s;
 `
 
-func (s *codeMonitorStore) ListSlackWebhookActions(ctx context.Context, opts ListActionsOpts) ([]*SlackWebhookAction, error) {
+func (s *codeMonitorStore) ListSlbckWebhookActions(ctx context.Context, opts ListActionsOpts) ([]*SlbckWebhookAction, error) {
 	q := sqlf.Sprintf(
-		listSlackWebhookActionsQuery,
-		sqlf.Join(slackWebhookActionColumns, ","),
+		listSlbckWebhookActionsQuery,
+		sqlf.Join(slbckWebhookActionColumns, ","),
 		opts.Conds(),
 		opts.Limit(),
 	)
@@ -164,49 +164,49 @@ func (s *codeMonitorStore) ListSlackWebhookActions(ctx context.Context, opts Lis
 		return nil, err
 	}
 	defer rows.Close()
-	return scanSlackWebhookActions(rows)
+	return scbnSlbckWebhookActions(rows)
 }
 
-// slackWebhookActionColumns is the set of columns in the cm_slack_webhooks table
-// This must be kept in sync with scanSlackWebhook
-var slackWebhookActionColumns = []*sqlf.Query{
-	sqlf.Sprintf("cm_slack_webhooks.id"),
-	sqlf.Sprintf("cm_slack_webhooks.monitor"),
-	sqlf.Sprintf("cm_slack_webhooks.enabled"),
-	sqlf.Sprintf("cm_slack_webhooks.url"),
-	sqlf.Sprintf("cm_slack_webhooks.include_results"),
-	sqlf.Sprintf("cm_slack_webhooks.created_by"),
-	sqlf.Sprintf("cm_slack_webhooks.created_at"),
-	sqlf.Sprintf("cm_slack_webhooks.changed_by"),
-	sqlf.Sprintf("cm_slack_webhooks.changed_at"),
+// slbckWebhookActionColumns is the set of columns in the cm_slbck_webhooks tbble
+// This must be kept in sync with scbnSlbckWebhook
+vbr slbckWebhookActionColumns = []*sqlf.Query{
+	sqlf.Sprintf("cm_slbck_webhooks.id"),
+	sqlf.Sprintf("cm_slbck_webhooks.monitor"),
+	sqlf.Sprintf("cm_slbck_webhooks.enbbled"),
+	sqlf.Sprintf("cm_slbck_webhooks.url"),
+	sqlf.Sprintf("cm_slbck_webhooks.include_results"),
+	sqlf.Sprintf("cm_slbck_webhooks.crebted_by"),
+	sqlf.Sprintf("cm_slbck_webhooks.crebted_bt"),
+	sqlf.Sprintf("cm_slbck_webhooks.chbnged_by"),
+	sqlf.Sprintf("cm_slbck_webhooks.chbnged_bt"),
 }
 
-func scanSlackWebhookActions(rows *sql.Rows) ([]*SlackWebhookAction, error) {
-	var ws []*SlackWebhookAction
+func scbnSlbckWebhookActions(rows *sql.Rows) ([]*SlbckWebhookAction, error) {
+	vbr ws []*SlbckWebhookAction
 	for rows.Next() {
-		w, err := scanSlackWebhookAction(rows)
+		w, err := scbnSlbckWebhookAction(rows)
 		if err != nil {
 			return nil, err
 		}
-		ws = append(ws, w)
+		ws = bppend(ws, w)
 	}
 	return ws, rows.Err()
 }
 
-// scanSlackWebhookAction scans a SlackWebhookAction from a *sql.Row or *sql.Rows.
-// It must be kept in sync with slackWebhookActionColumns.
-func scanSlackWebhookAction(scanner dbutil.Scanner) (*SlackWebhookAction, error) {
-	var w SlackWebhookAction
-	err := scanner.Scan(
+// scbnSlbckWebhookAction scbns b SlbckWebhookAction from b *sql.Row or *sql.Rows.
+// It must be kept in sync with slbckWebhookActionColumns.
+func scbnSlbckWebhookAction(scbnner dbutil.Scbnner) (*SlbckWebhookAction, error) {
+	vbr w SlbckWebhookAction
+	err := scbnner.Scbn(
 		&w.ID,
 		&w.Monitor,
-		&w.Enabled,
+		&w.Enbbled,
 		&w.URL,
 		&w.IncludeResults,
-		&w.CreatedBy,
-		&w.CreatedAt,
-		&w.ChangedBy,
-		&w.ChangedAt,
+		&w.CrebtedBy,
+		&w.CrebtedAt,
+		&w.ChbngedBy,
+		&w.ChbngedAt,
 	)
 	return &w, err
 }

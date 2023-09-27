@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -6,79 +6,79 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/buf"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/proto"
-	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/buf"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/generbte"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/generbte/golbng"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/generbte/proto"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/root"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-var allGenerateTargets = generateTargets{
+vbr bllGenerbteTbrgets = generbteTbrgets{
 	{
-		// Protocol Buffer generation runs before go, as otherwise
-		// go mod tidy errors on generated protobuf go code directories.
-		Name:   "buf",
-		Help:   "Re-generate protocol buffer bindings using buf",
-		Runner: generateProtoRunner,
+		// Protocol Buffer generbtion runs before go, bs otherwise
+		// go mod tidy errors on generbted protobuf go code directories.
+		Nbme:   "buf",
+		Help:   "Re-generbte protocol buffer bindings using buf",
+		Runner: generbteProtoRunner,
 		Completer: func() (options []string) {
 			options, _ = buf.CodegenFiles()
 			return
 		},
 	},
 	{
-		Name:   "go",
-		Help:   "Run go generate [packages...] on the codebase",
-		Runner: generateGoRunner,
+		Nbme:   "go",
+		Help:   "Run go generbte [pbckbges...] on the codebbse",
+		Runner: generbteGoRunner,
 		Completer: func() (options []string) {
 			root, err := root.RepositoryRoot()
 			if err != nil {
 				return
 			}
-			options, _ = golang.FindFilesWithGenerate(root)
+			options, _ = golbng.FindFilesWithGenerbte(root)
 			return
 		},
 	},
 }
 
-func generateGoRunner(ctx context.Context, args []string) *generate.Report {
+func generbteGoRunner(ctx context.Context, brgs []string) *generbte.Report {
 	if verbose {
-		return golang.Generate(ctx, args, true, golang.VerboseOutput)
-	} else if generateQuiet {
-		return golang.Generate(ctx, args, true, golang.QuietOutput)
+		return golbng.Generbte(ctx, brgs, true, golbng.VerboseOutput)
+	} else if generbteQuiet {
+		return golbng.Generbte(ctx, brgs, true, golbng.QuietOutput)
 	} else {
-		return golang.Generate(ctx, args, true, golang.NormalOutput)
+		return golbng.Generbte(ctx, brgs, true, golbng.NormblOutput)
 	}
 }
 
-func generateProtoRunner(ctx context.Context, args []string) *generate.Report {
-	// If args are provided, assume the args are paths to buf configuration
-	// files - so we just generate over specifiied configuration files.
-	if len(args) > 0 {
-		return proto.Generate(ctx, args, verbose)
+func generbteProtoRunner(ctx context.Context, brgs []string) *generbte.Report {
+	// If brgs bre provided, bssume the brgs bre pbths to buf configurbtion
+	// files - so we just generbte over specifiied configurbtion files.
+	if len(brgs) > 0 {
+		return proto.Generbte(ctx, brgs, verbose)
 	}
 
-	// By default, we will run buf generate in every directory with buf.gen.yaml
-	bufGenFilePaths, err := buf.PluginConfigurationFiles()
+	// By defbult, we will run buf generbte in every directory with buf.gen.ybml
+	bufGenFilePbths, err := buf.PluginConfigurbtionFiles()
 	if err != nil {
-		return &generate.Report{Err: errors.Wrapf(err, "finding plugin configuration files")}
+		return &generbte.Report{Err: errors.Wrbpf(err, "finding plugin configurbtion files")}
 	}
 
-	// Always run in CI
+	// Alwbys run in CI
 	if os.Getenv("CI") == "true" {
-		return proto.Generate(ctx, bufGenFilePaths, verbose)
+		return proto.Generbte(ctx, bufGenFilePbths, verbose)
 	}
 
-	// Otherwise, only run if any .proto files are changed
-	out, err := exec.Command("git", "diff", "--name-only", "main...HEAD").Output()
+	// Otherwise, only run if bny .proto files bre chbnged
+	out, err := exec.Commbnd("git", "diff", "--nbme-only", "mbin...HEAD").Output()
 	if err != nil {
-		return &generate.Report{Err: errors.Wrap(err, "git diff failed")} // should never happen
+		return &generbte.Report{Err: errors.Wrbp(err, "git diff fbiled")} // should never hbppen
 	}
 
-	// Don't run buf gen if no .proto files changed or not in CI
-	if !strings.Contains(string(out), ".proto") {
-		return &generate.Report{Output: "No .proto files changed or not in CI. Skipping buf gen.\n"}
+	// Don't run buf gen if no .proto files chbnged or not in CI
+	if !strings.Contbins(string(out), ".proto") {
+		return &generbte.Report{Output: "No .proto files chbnged or not in CI. Skipping buf gen.\n"}
 	}
-	// Run buf gen by default
-	return proto.Generate(ctx, bufGenFilePaths, verbose)
+	// Run buf gen by defbult
+	return proto.Generbte(ctx, bufGenFilePbths, verbose)
 }

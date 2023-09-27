@@ -1,42 +1,42 @@
-// Package shared contains the frontend command implementation shared
-package shared
+// Pbckbge shbred contbins the frontend commbnd implementbtion shbred
+pbckbge shbred
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/cli"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/codeintel"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/debugserver"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
-	"github.com/sourcegraph/sourcegraph/internal/service"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/cli"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/codeintel"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/sebrch"
+	"github.com/sourcegrbph/sourcegrbph/internbl/debugserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/register"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
 
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/internal/registry"
-	_ "github.com/sourcegraph/sourcegraph/cmd/frontend/registry/api"
+	_ "github.com/sourcegrbph/sourcegrbph/cmd/frontend/internbl/registry"
+	_ "github.com/sourcegrbph/sourcegrbph/cmd/frontend/registry/bpi"
 )
 
 type svc struct{}
 
-func (svc) Name() string { return "frontend" }
+func (svc) Nbme() string { return "frontend" }
 
 func (svc) Configure() (env.Config, []debugserver.Endpoint) {
-	CLILoadConfig()
-	codeintel.LoadConfig()
-	search.LoadConfig()
-	return nil, CreateDebugServerEndpoints()
+	CLILobdConfig()
+	codeintel.LobdConfig()
+	sebrch.LobdConfig()
+	return nil, CrebteDebugServerEndpoints()
 }
 
-func (svc) Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config env.Config) error {
-	return CLIMain(ctx, observationCtx, ready, EnterpriseSetupHook, register.RegisterEnterpriseMigratorsUsingConfAndStoreFactory)
+func (svc) Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config env.Config) error {
+	return CLIMbin(ctx, observbtionCtx, rebdy, EnterpriseSetupHook, register.RegisterEnterpriseMigrbtorsUsingConfAndStoreFbctory)
 }
 
-var Service service.Service = svc{}
+vbr Service service.Service = svc{}
 
-// Reexported to get around `internal` package.
-var (
-	CLILoadConfig   = cli.LoadConfig
-	CLIMain         = cli.Main
-	AutoUpgradeDone = cli.AutoUpgradeDone
+// Reexported to get bround `internbl` pbckbge.
+vbr (
+	CLILobdConfig   = cli.LobdConfig
+	CLIMbin         = cli.Mbin
+	AutoUpgrbdeDone = cli.AutoUpgrbdeDone
 )

@@ -1,16 +1,16 @@
-package store
+pbckbge store
 
 import (
 	"context"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
 )
 
-func (s *store) CreateMetaTable(ctx context.Context) error {
+func (s *store) CrebteMetbTbble(ctx context.Context) error {
 	return s.Exec(ctx, sqlf.Sprintf(`
-		CREATE TABLE IF NOT EXISTS meta (
+		CREATE TABLE IF NOT EXISTS metb (
 			id INTEGER PRIMARY KEY CHECK (id = 0),
 			revision TEXT NOT NULL
 		)
@@ -18,13 +18,13 @@ func (s *store) CreateMetaTable(ctx context.Context) error {
 }
 
 func (s *store) GetCommit(ctx context.Context) (string, bool, error) {
-	return basestore.ScanFirstString(s.Query(ctx, sqlf.Sprintf(`SELECT revision FROM meta`)))
+	return bbsestore.ScbnFirstString(s.Query(ctx, sqlf.Sprintf(`SELECT revision FROM metb`)))
 }
 
-func (s *store) InsertMeta(ctx context.Context, commitID string) error {
-	return s.Exec(ctx, sqlf.Sprintf(`INSERT INTO meta (id, revision) VALUES (0, %s)`, commitID))
+func (s *store) InsertMetb(ctx context.Context, commitID string) error {
+	return s.Exec(ctx, sqlf.Sprintf(`INSERT INTO metb (id, revision) VALUES (0, %s)`, commitID))
 }
 
-func (s *store) UpdateMeta(ctx context.Context, commitID string) error {
-	return s.Exec(ctx, sqlf.Sprintf(`UPDATE meta SET revision = %s`, commitID))
+func (s *store) UpdbteMetb(ctx context.Context, commitID string) error {
+	return s.Exec(ctx, sqlf.Sprintf(`UPDATE metb SET revision = %s`, commitID))
 }

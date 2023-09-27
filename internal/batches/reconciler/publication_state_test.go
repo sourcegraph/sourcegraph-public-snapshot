@@ -1,72 +1,72 @@
-package reconciler
+pbckbge reconciler
 
 import (
 	"testing"
 
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/bbtches"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
-func TestPublicationStateCalculator(t *testing.T) {
-	type want struct {
+func TestPublicbtionStbteCblculbtor(t *testing.T) {
+	type wbnt struct {
 		published   bool
-		draft       bool
+		drbft       bool
 		unpublished bool
 	}
 
-	for name, tc := range map[string]struct {
-		spec batches.PublishedValue
-		ui   *btypes.ChangesetUiPublicationState
-		want want
+	for nbme, tc := rbnge mbp[string]struct {
+		spec bbtches.PublishedVblue
+		ui   *btypes.ChbngesetUiPublicbtionStbte
+		wbnt wbnt
 	}{
 		"unpublished; no ui": {
-			spec: batches.PublishedValue{Val: false},
+			spec: bbtches.PublishedVblue{Vbl: fblse},
 			ui:   nil,
-			want: want{false, false, true},
+			wbnt: wbnt{fblse, fblse, true},
 		},
-		"draft; no ui": {
-			spec: batches.PublishedValue{Val: "draft"},
+		"drbft; no ui": {
+			spec: bbtches.PublishedVblue{Vbl: "drbft"},
 			ui:   nil,
-			want: want{false, true, false},
+			wbnt: wbnt{fblse, true, fblse},
 		},
 		"published; no ui": {
-			spec: batches.PublishedValue{Val: true},
+			spec: bbtches.PublishedVblue{Vbl: true},
 			ui:   nil,
-			want: want{true, false, false},
+			wbnt: wbnt{true, fblse, fblse},
 		},
-		"no published value; no ui": {
-			spec: batches.PublishedValue{Val: nil},
+		"no published vblue; no ui": {
+			spec: bbtches.PublishedVblue{Vbl: nil},
 			ui:   nil,
-			want: want{false, false, true},
+			wbnt: wbnt{fblse, fblse, true},
 		},
-		"no published value; unpublished ui": {
-			spec: batches.PublishedValue{Val: nil},
-			ui:   pointers.Ptr(btypes.ChangesetUiPublicationStateUnpublished),
-			want: want{false, false, true},
+		"no published vblue; unpublished ui": {
+			spec: bbtches.PublishedVblue{Vbl: nil},
+			ui:   pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteUnpublished),
+			wbnt: wbnt{fblse, fblse, true},
 		},
-		"no published value; draft ui": {
-			spec: batches.PublishedValue{Val: nil},
-			ui:   pointers.Ptr(btypes.ChangesetUiPublicationStateDraft),
-			want: want{false, true, false},
+		"no published vblue; drbft ui": {
+			spec: bbtches.PublishedVblue{Vbl: nil},
+			ui:   pointers.Ptr(btypes.ChbngesetUiPublicbtionStbteDrbft),
+			wbnt: wbnt{fblse, true, fblse},
 		},
-		"no published value; published ui": {
-			spec: batches.PublishedValue{Val: nil},
-			ui:   pointers.Ptr(btypes.ChangesetUiPublicationStatePublished),
-			want: want{true, false, false},
+		"no published vblue; published ui": {
+			spec: bbtches.PublishedVblue{Vbl: nil},
+			ui:   pointers.Ptr(btypes.ChbngesetUiPublicbtionStbtePublished),
+			wbnt: wbnt{true, fblse, fblse},
 		},
 	} {
-		t.Run(name, func(t *testing.T) {
-			calc := &publicationStateCalculator{tc.spec, tc.ui}
+		t.Run(nbme, func(t *testing.T) {
+			cblc := &publicbtionStbteCblculbtor{tc.spec, tc.ui}
 
-			if have, want := calc.IsPublished(), tc.want.published; have != want {
-				t.Errorf("unexpected IsPublished result: have=%v want=%v", have, want)
+			if hbve, wbnt := cblc.IsPublished(), tc.wbnt.published; hbve != wbnt {
+				t.Errorf("unexpected IsPublished result: hbve=%v wbnt=%v", hbve, wbnt)
 			}
-			if have, want := calc.IsDraft(), tc.want.draft; have != want {
-				t.Errorf("unexpected IsDraft result: have=%v want=%v", have, want)
+			if hbve, wbnt := cblc.IsDrbft(), tc.wbnt.drbft; hbve != wbnt {
+				t.Errorf("unexpected IsDrbft result: hbve=%v wbnt=%v", hbve, wbnt)
 			}
-			if have, want := calc.IsUnpublished(), tc.want.unpublished; have != want {
-				t.Errorf("unexpected IsUnpublished result: have=%v want=%v", have, want)
+			if hbve, wbnt := cblc.IsUnpublished(), tc.wbnt.unpublished; hbve != wbnt {
+				t.Errorf("unexpected IsUnpublished result: hbve=%v wbnt=%v", hbve, wbnt)
 			}
 		})
 	}

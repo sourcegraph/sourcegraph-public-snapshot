@@ -1,53 +1,53 @@
-package extsvc
+pbckbge extsvc
 
 import (
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
 func TestCodeHostOf(t *testing.T) {
-	for _, tc := range []struct {
-		name      string
-		repo      api.RepoName
+	for _, tc := rbnge []struct {
+		nbme      string
+		repo      bpi.RepoNbme
 		codehosts []*CodeHost
-		want      *CodeHost
+		wbnt      *CodeHost
 	}{{
-		name:      "none",
-		repo:      "github.com/foo/bar",
+		nbme:      "none",
+		repo:      "github.com/foo/bbr",
 		codehosts: nil,
-		want:      nil,
+		wbnt:      nil,
 	}, {
-		name:      "out",
-		repo:      "github.com/foo/bar",
-		codehosts: []*CodeHost{GitLabDotCom},
-		want:      nil,
+		nbme:      "out",
+		repo:      "github.com/foo/bbr",
+		codehosts: []*CodeHost{GitLbbDotCom},
+		wbnt:      nil,
 	}, {
-		name:      "in",
-		repo:      "github.com/foo/bar",
+		nbme:      "in",
+		repo:      "github.com/foo/bbr",
 		codehosts: PublicCodeHosts,
-		want:      GitHubDotCom,
+		wbnt:      GitHubDotCom,
 	}, {
-		name:      "case-insensitive",
-		repo:      "GITHUB.COM/foo/bar",
+		nbme:      "cbse-insensitive",
+		repo:      "GITHUB.COM/foo/bbr",
 		codehosts: PublicCodeHosts,
-		want:      GitHubDotCom,
+		wbnt:      GitHubDotCom,
 	}, {
-		name:      "invalid",
-		repo:      "github.com.example.com/foo/bar",
+		nbme:      "invblid",
+		repo:      "github.com.exbmple.com/foo/bbr",
 		codehosts: PublicCodeHosts,
-		want:      nil,
+		wbnt:      nil,
 	},
 	} {
-		t.Run(tc.name, func(t *testing.T) {
-			have := CodeHostOf(tc.repo, tc.codehosts...)
-			if have != tc.want {
+		t.Run(tc.nbme, func(t *testing.T) {
+			hbve := CodeHostOf(tc.repo, tc.codehosts...)
+			if hbve != tc.wbnt {
 				t.Errorf(
-					"CodeHostOf(%q, %#v): want %#v, have %#v",
+					"CodeHostOf(%q, %#v): wbnt %#v, hbve %#v",
 					tc.repo,
 					tc.codehosts,
-					tc.want,
-					have,
+					tc.wbnt,
+					hbve,
 				)
 			}
 		})

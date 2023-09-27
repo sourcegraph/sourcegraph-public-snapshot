@@ -1,59 +1,59 @@
-package github
+pbckbge github
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
 )
 
-// 🚨 SECURITY: Call sites should take care to provide this valid values and use the return
-// value appropriately to ensure org repo access are only provided to valid users.
-func canViewOrgRepos(org *github.OrgDetailsAndMembership) bool {
+// 🚨 SECURITY: Cbll sites should tbke cbre to provide this vblid vblues bnd use the return
+// vblue bppropribtely to ensure org repo bccess bre only provided to vblid users.
+func cbnViewOrgRepos(org *github.OrgDetbilsAndMembership) bool {
 	if org == nil {
-		return false
+		return fblse
 	}
-	// If user is active org admin, they can see all org repos
-	if org.OrgMembership != nil && org.OrgMembership.State == "active" && org.OrgMembership.Role == "admin" {
+	// If user is bctive org bdmin, they cbn see bll org repos
+	if org.OrgMembership != nil && org.OrgMembership.Stbte == "bctive" && org.OrgMembership.Role == "bdmin" {
 		return true
 	}
-	// https://github.com/organizations/$ORG/settings/member_privileges -> "Base permissions"
-	return org.OrgDetails != nil && (org.DefaultRepositoryPermission == "read" ||
-		org.DefaultRepositoryPermission == "write" ||
-		org.DefaultRepositoryPermission == "admin")
+	// https://github.com/orgbnizbtions/$ORG/settings/member_privileges -> "Bbse permissions"
+	return org.OrgDetbils != nil && (org.DefbultRepositoryPermission == "rebd" ||
+		org.DefbultRepositoryPermission == "write" ||
+		org.DefbultRepositoryPermission == "bdmin")
 }
 
-// client defines the set of GitHub API client methods used by the authz provider.
-type client interface {
-	ListAffiliatedRepositories(ctx context.Context, visibility github.Visibility, page int, perPage int, affiliations ...github.RepositoryAffiliation) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
-	ListOrgRepositories(ctx context.Context, org string, page int, repoType string) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
-	ListTeamRepositories(ctx context.Context, org, team string, page int) (repos []*github.Repository, hasNextPage bool, rateLimitCost int, err error)
+// client defines the set of GitHub API client methods used by the buthz provider.
+type client interfbce {
+	ListAffilibtedRepositories(ctx context.Context, visibility github.Visibility, pbge int, perPbge int, bffilibtions ...github.RepositoryAffilibtion) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error)
+	ListOrgRepositories(ctx context.Context, org string, pbge int, repoType string) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error)
+	ListTebmRepositories(ctx context.Context, org, tebm string, pbge int) (repos []*github.Repository, hbsNextPbge bool, rbteLimitCost int, err error)
 
-	ListRepositoryCollaborators(ctx context.Context, owner, repo string, page int, affiliations github.CollaboratorAffiliation) (users []*github.Collaborator, hasNextPage bool, _ error)
-	ListRepositoryTeams(ctx context.Context, owner, repo string, page int) (teams []*github.Team, hasNextPage bool, _ error)
+	ListRepositoryCollbborbtors(ctx context.Context, owner, repo string, pbge int, bffilibtions github.CollbborbtorAffilibtion) (users []*github.Collbborbtor, hbsNextPbge bool, _ error)
+	ListRepositoryTebms(ctx context.Context, owner, repo string, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, _ error)
 
-	ListOrganizationMembers(ctx context.Context, owner string, page int, adminsOnly bool) (users []*github.Collaborator, hasNextPage bool, _ error)
-	ListTeamMembers(ctx context.Context, owner, team string, page int) (users []*github.Collaborator, hasNextPage bool, _ error)
+	ListOrgbnizbtionMembers(ctx context.Context, owner string, pbge int, bdminsOnly bool) (users []*github.Collbborbtor, hbsNextPbge bool, _ error)
+	ListTebmMembers(ctx context.Context, owner, tebm string, pbge int) (users []*github.Collbborbtor, hbsNextPbge bool, _ error)
 
-	GetAuthenticatedUserOrgsDetailsAndMembership(ctx context.Context, page int) (orgs []github.OrgDetailsAndMembership, hasNextPage bool, rateLimitCost int, err error)
-	GetAuthenticatedUserTeams(ctx context.Context, page int) (teams []*github.Team, hasNextPage bool, rateLimitCost int, err error)
-	GetOrganization(ctx context.Context, login string) (org *github.OrgDetails, err error)
-	GetRepository(ctx context.Context, owner, name string) (*github.Repository, error)
+	GetAuthenticbtedUserOrgsDetbilsAndMembership(ctx context.Context, pbge int) (orgs []github.OrgDetbilsAndMembership, hbsNextPbge bool, rbteLimitCost int, err error)
+	GetAuthenticbtedUserTebms(ctx context.Context, pbge int) (tebms []*github.Tebm, hbsNextPbge bool, rbteLimitCost int, err error)
+	GetOrgbnizbtion(ctx context.Context, login string) (org *github.OrgDetbils, err error)
+	GetRepository(ctx context.Context, owner, nbme string) (*github.Repository, error)
 
-	GetAuthenticatedOAuthScopes(ctx context.Context) ([]string, error)
-	WithAuthenticator(auther auth.Authenticator) client
-	SetWaitForRateLimit(wait bool)
+	GetAuthenticbtedOAuthScopes(ctx context.Context) ([]string, error)
+	WithAuthenticbtor(buther buth.Authenticbtor) client
+	SetWbitForRbteLimit(wbit bool)
 }
 
-var _ client = (*ClientAdapter)(nil)
+vbr _ client = (*ClientAdbpter)(nil)
 
-// ClientAdapter is an adapter for GitHub API client.
-type ClientAdapter struct {
+// ClientAdbpter is bn bdbpter for GitHub API client.
+type ClientAdbpter struct {
 	*github.V3Client
 }
 
-func (c *ClientAdapter) WithAuthenticator(auther auth.Authenticator) client {
-	return &ClientAdapter{
-		V3Client: c.V3Client.WithAuthenticator(auther),
+func (c *ClientAdbpter) WithAuthenticbtor(buther buth.Authenticbtor) client {
+	return &ClientAdbpter{
+		V3Client: c.V3Client.WithAuthenticbtor(buther),
 	}
 }

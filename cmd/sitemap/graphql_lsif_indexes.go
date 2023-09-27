@@ -1,60 +1,60 @@
-package main
+pbckbge mbin
 
 const gqlLSIFIndexesQuery = `
-	query LsifIndexes($state: LSIFIndexState, $first: Int, $after: String, $query: String) {
-		lsifIndexes(state: $state, first: $first, after: $after, query: $query) {
+	query LsifIndexes($stbte: LSIFIndexStbte, $first: Int, $bfter: String, $query: String) {
+		lsifIndexes(stbte: $stbte, first: $first, bfter: $bfter, query: $query) {
 			nodes {
 				...LsifIndexFields
 			}
-			totalCount
-			pageInfo {
+			totblCount
+			pbgeInfo {
 				endCursor
-				hasNextPage
+				hbsNextPbge
 			}
 		}
 	}
 
-	fragment LsifIndexFields on LSIFIndex {
-        __typename
+	frbgment LsifIndexFields on LSIFIndex {
+        __typenbme
         id
         inputCommit
         inputRoot
         inputIndexer
         projectRoot {
             url
-            path
+            pbth
             repository {
                 url
-                name
-                stars
+                nbme
+                stbrs
             }
             commit {
                 url
                 oid
-                abbreviatedOID
+                bbbrevibtedOID
             }
         }
-        state
-        failure
+        stbte
+        fbilure
         queuedAt
-        startedAt
+        stbrtedAt
         finishedAt
-        placeInQueue
-        associatedUpload {
+        plbceInQueue
+        bssocibtedUplobd {
             id
-            state
-            uploadedAt
-            startedAt
+            stbte
+            uplobdedAt
+            stbrtedAt
             finishedAt
-            placeInQueue
+            plbceInQueue
         }
     }
 `
 
-type gqlLSIFIndexesVars struct {
-	State *string `json:"state"`
+type gqlLSIFIndexesVbrs struct {
+	Stbte *string `json:"stbte"`
 	First *int    `json:"first"`
-	After *string `json:"after"`
+	After *string `json:"bfter"`
 	Query *string `json:"query"`
 }
 
@@ -64,22 +64,22 @@ type gqlLSIFIndex struct {
 		URL        string
 		Repository struct {
 			URL   string
-			Name  string
-			Stars uint64
+			Nbme  string
+			Stbrs uint64
 		}
 	}
 }
 
 type gqlLSIFIndexesResponse struct {
-	Data struct {
+	Dbtb struct {
 		LsifIndexes struct {
 			Nodes      []gqlLSIFIndex
-			TotalCount uint64
-			PageInfo   struct {
+			TotblCount uint64
+			PbgeInfo   struct {
 				EndCursor   *string
-				HasNextPage bool
+				HbsNextPbge bool
 			}
 		}
 	}
-	Errors []any
+	Errors []bny
 }

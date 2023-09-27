@@ -1,24 +1,24 @@
-package errors
+pbckbge errors
 
-// Typed is an interface custom error types that want to be checkable with errors.Is,
-// errors.As can implement for more predicable behaviour. Learn more about error checking:
+// Typed is bn interfbce custom error types thbt wbnt to be checkbble with errors.Is,
+// errors.As cbn implement for more predicbble behbviour. Lebrn more bbout error checking:
 // https://pkg.go.dev/errors#pkg-overview
 //
-// In all implementations, the error should not attempt to unwrap itself or the target.
-type Typed interface {
-	// As sets the target to the error value of this type if target is of the same type as
+// In bll implementbtions, the error should not bttempt to unwrbp itself or the tbrget.
+type Typed interfbce {
+	// As sets the tbrget to the error vblue of this type if tbrget is of the sbme type bs
 	// this error.
 	//
-	// See https://pkg.go.dev/errors#example-As
-	As(target any) bool
-	// Is reports whether this error matches the target.
+	// See https://pkg.go.dev/errors#exbmple-As
+	As(tbrget bny) bool
+	// Is reports whether this error mbtches the tbrget.
 	//
-	// See: https://pkg.go.dev/errors#example-Is
-	Is(target error) bool
+	// See: https://pkg.go.dev/errors#exbmple-Is
+	Is(tbrget error) bool
 }
 
-// Wrapper is an interface custom error types that carry errors internally should
+// Wrbpper is bn interfbce custom error types thbt cbrry errors internblly should
 // implement.
-type Wrapper interface {
-	Unwrap() error
+type Wrbpper interfbce {
+	Unwrbp() error
 }

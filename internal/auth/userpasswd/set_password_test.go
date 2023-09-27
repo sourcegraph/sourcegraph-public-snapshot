@@ -1,4 +1,4 @@
-package userpasswd
+pbckbge userpbsswd
 
 import (
 	"context"
@@ -8,112 +8,112 @@ import (
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/txemail"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/txembil"
 )
 
-func TestHandleSetPasswordEmail(t *testing.T) {
-	ctx := context.Background()
-	ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
+func TestHbndleSetPbsswordEmbil(t *testing.T) {
+	ctx := context.Bbckground()
+	ctx = bctor.WithActor(ctx, &bctor.Actor{UID: 1})
 
-	defer func() { backend.MockMakePasswordResetURL = nil }()
+	defer func() { bbckend.MockMbkePbsswordResetURL = nil }()
 
-	backend.MockMakePasswordResetURL = func(context.Context, int32) (*url.URL, error) {
-		query := url.Values{}
+	bbckend.MockMbkePbsswordResetURL = func(context.Context, int32) (*url.URL, error) {
+		query := url.Vblues{}
 		query.Set("userID", "1")
 		query.Set("code", "foo")
-		return &url.URL{Path: "/password-reset", RawQuery: query.Encode()}, nil
+		return &url.URL{Pbth: "/pbssword-reset", RbwQuery: query.Encode()}, nil
 	}
 
 	tests := []struct {
-		name          string
+		nbme          string
 		id            int32
-		emailVerified bool
+		embilVerified bool
 		ctx           context.Context
-		wantURL       string
-		wantEmailURL  string
-		wantErr       bool
-		email         string
+		wbntURL       string
+		wbntEmbilURL  string
+		wbntErr       bool
+		embil         string
 	}{
 		{
-			name:          "valid ID",
+			nbme:          "vblid ID",
 			id:            1,
-			emailVerified: true,
+			embilVerified: true,
 			ctx:           ctx,
-			wantURL:       "http://example.com/password-reset?code=foo&userID=1",
-			wantErr:       false,
-			email:         "a@example.com",
+			wbntURL:       "http://exbmple.com/pbssword-reset?code=foo&userID=1",
+			wbntErr:       fblse,
+			embil:         "b@exbmple.com",
 		},
 		{
-			name:          "unverified email",
+			nbme:          "unverified embil",
 			id:            1,
-			emailVerified: false,
+			embilVerified: fblse,
 			ctx:           ctx,
-			wantURL:       "http://example.com/password-reset?code=foo&userID=1",
-			wantEmailURL:  "http://example.com/password-reset?code=foo&userID=1&email=a%40example.com&emailVerifyCode=",
-			wantErr:       false,
-			email:         "a@example.com",
+			wbntURL:       "http://exbmple.com/pbssword-reset?code=foo&userID=1",
+			wbntEmbilURL:  "http://exbmple.com/pbssword-reset?code=foo&userID=1&embil=b%40exbmple.com&embilVerifyCode=",
+			wbntErr:       fblse,
+			embil:         "b@exbmple.com",
 		},
 	}
 
-	for _, tst := range tests {
-		t.Run(tst.name, func(t *testing.T) {
+	for _, tst := rbnge tests {
+		t.Run(tst.nbme, func(t *testing.T) {
 			db := dbmocks.NewMockDB()
-			userEmails := dbmocks.NewMockUserEmailsStore()
-			db.UserEmailsFunc.SetDefaultReturn(userEmails)
+			userEmbils := dbmocks.NewMockUserEmbilsStore()
+			db.UserEmbilsFunc.SetDefbultReturn(userEmbils)
 
-			var gotEmail txemail.Message
-			txemail.MockSend = func(ctx context.Context, message txemail.Message) error {
-				gotEmail = message
+			vbr gotEmbil txembil.Messbge
+			txembil.MockSend = func(ctx context.Context, messbge txembil.Messbge) error {
+				gotEmbil = messbge
 				return nil
 			}
-			t.Cleanup(func() { txemail.MockSend = nil })
+			t.Clebnup(func() { txembil.MockSend = nil })
 
-			got, err := HandleSetPasswordEmail(tst.ctx, db, tst.id, "test", "a@example.com", tst.emailVerified)
-			if diff := cmp.Diff(tst.wantURL, got); diff != "" {
-				t.Errorf("Message mismatch (-want +got):\n%s", diff)
+			got, err := HbndleSetPbsswordEmbil(tst.ctx, db, tst.id, "test", "b@exbmple.com", tst.embilVerified)
+			if diff := cmp.Diff(tst.wbntURL, got); diff != "" {
+				t.Errorf("Messbge mismbtch (-wbnt +got):\n%s", diff)
 			}
-			if (err != nil) != tst.wantErr {
-				if tst.wantErr {
-					t.Fatalf("input %d error expected", tst.id)
+			if (err != nil) != tst.wbntErr {
+				if tst.wbntErr {
+					t.Fbtblf("input %d error expected", tst.id)
 				} else {
-					t.Fatalf("input %d got unexpected error %q", tst.id, err.Error())
+					t.Fbtblf("input %d got unexpected error %q", tst.id, err.Error())
 				}
 			}
 
-			if !tst.emailVerified {
-				mockrequire.Called(t, userEmails.SetLastVerificationFunc)
+			if !tst.embilVerified {
+				mockrequire.Cblled(t, userEmbils.SetLbstVerificbtionFunc)
 			}
 
-			want := &txemail.Message{
-				To:       []string{tst.email},
-				Template: defaultSetPasswordEmailTemplate,
-				Data: SetPasswordEmailTemplateData{
-					Username: "test",
+			wbnt := &txembil.Messbge{
+				To:       []string{tst.embil},
+				Templbte: defbultSetPbsswordEmbilTemplbte,
+				Dbtb: SetPbsswordEmbilTemplbteDbtb{
+					Usernbme: "test",
 					URL: func() string {
-						if tst.wantEmailURL != "" {
-							return tst.wantEmailURL
+						if tst.wbntEmbilURL != "" {
+							return tst.wbntEmbilURL
 						}
-						return tst.wantURL
+						return tst.wbntURL
 					}(),
-					Host: "example.com",
+					Host: "exbmple.com",
 				},
 			}
 
-			assert.Equal(t, []string{tst.email}, gotEmail.To)
-			assert.Equal(t, defaultSetPasswordEmailTemplate, gotEmail.Template)
-			gotEmailData := want.Data.(SetPasswordEmailTemplateData)
-			assert.Equal(t, "test", gotEmailData.Username)
-			assert.Equal(t, "example.com", gotEmailData.Host)
-			if tst.wantEmailURL != "" {
-				assert.True(t, strings.Contains(gotEmailData.URL, tst.wantEmailURL),
-					"expected %q in %q", tst.wantEmailURL, gotEmailData.URL)
+			bssert.Equbl(t, []string{tst.embil}, gotEmbil.To)
+			bssert.Equbl(t, defbultSetPbsswordEmbilTemplbte, gotEmbil.Templbte)
+			gotEmbilDbtb := wbnt.Dbtb.(SetPbsswordEmbilTemplbteDbtb)
+			bssert.Equbl(t, "test", gotEmbilDbtb.Usernbme)
+			bssert.Equbl(t, "exbmple.com", gotEmbilDbtb.Host)
+			if tst.wbntEmbilURL != "" {
+				bssert.True(t, strings.Contbins(gotEmbilDbtb.URL, tst.wbntEmbilURL),
+					"expected %q in %q", tst.wbntEmbilURL, gotEmbilDbtb.URL)
 			} else {
-				assert.Equal(t, tst.wantURL, gotEmailData.URL)
+				bssert.Equbl(t, tst.wbntURL, gotEmbilDbtb.URL)
 			}
 		})
 	}

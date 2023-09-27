@@ -1,41 +1,41 @@
-package saml
+pbckbge sbml
 
 import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/base64"
+	"encoding/bbse64"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"path"
+	"pbth"
 	"sync"
 	"time"
 
 	"github.com/beevik/etree"
-	saml2 "github.com/russellhaering/gosaml2"
-	"github.com/russellhaering/gosaml2/types"
-	dsig "github.com/russellhaering/goxmldsig"
+	sbml2 "github.com/russellhbering/gosbml2"
+	"github.com/russellhbering/gosbml2/types"
+	dsig "github.com/russellhbering/goxmldsig"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
-	"github.com/sourcegraph/sourcegraph/internal/auth/providers"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth/providers"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-const providerType = "saml"
+const providerType = "sbml"
 
 type provider struct {
-	config   schema.SAMLAuthProvider
-	multiple bool // whether there are multiple SAML auth providers
+	config   schemb.SAMLAuthProvider
+	multiple bool // whether there bre multiple SAML buth providers
 
 	mu         sync.Mutex
-	samlSP     *saml2.SAMLServiceProvider
+	sbmlSP     *sbml2.SAMLServiceProvider
 	refreshErr error
 }
 
@@ -48,138 +48,138 @@ func (p *provider) ConfigID() providers.ConfigID {
 }
 
 // Config implements providers.Provider.
-func (p *provider) Config() schema.AuthProviders {
-	return schema.AuthProviders{Saml: &p.config}
+func (p *provider) Config() schemb.AuthProviders {
+	return schemb.AuthProviders{Sbml: &p.config}
 }
 
 // Refresh implements providers.Provider.
 func (p *provider) Refresh(ctx context.Context) error {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	p.samlSP, p.refreshErr = getServiceProvider(ctx, &p.config)
+	p.sbmlSP, p.refreshErr = getServiceProvider(ctx, &p.config)
 	return p.refreshErr
 }
 
-func (p *provider) ExternalAccountInfo(ctx context.Context, account extsvc.Account) (*extsvc.PublicAccountData, error) {
-	return GetPublicExternalAccountData(ctx, &account.AccountData)
+func (p *provider) ExternblAccountInfo(ctx context.Context, bccount extsvc.Account) (*extsvc.PublicAccountDbtb, error) {
+	return GetPublicExternblAccountDbtb(ctx, &bccount.AccountDbtb)
 }
 
-func providerIDQuery(pc *schema.SAMLAuthProvider, multiple bool) url.Values {
+func providerIDQuery(pc *schemb.SAMLAuthProvider, multiple bool) url.Vblues {
 	if multiple {
-		return url.Values{"pc": []string{providerConfigID(pc, multiple)}}
+		return url.Vblues{"pc": []string{providerConfigID(pc, multiple)}}
 	}
-	return url.Values{}
+	return url.Vblues{}
 }
 
-func (p *provider) getCachedInfoAndError() (*providers.Info, error) {
+func (p *provider) getCbchedInfoAndError() (*providers.Info, error) {
 	info := providers.Info{
-		DisplayName: p.config.DisplayName,
-		AuthenticationURL: (&url.URL{
-			Path:     path.Join(auth.AuthURLPrefix, "saml", "login"),
-			RawQuery: providerIDQuery(&p.config, p.multiple).Encode(),
+		DisplbyNbme: p.config.DisplbyNbme,
+		AuthenticbtionURL: (&url.URL{
+			Pbth:     pbth.Join(buth.AuthURLPrefix, "sbml", "login"),
+			RbwQuery: providerIDQuery(&p.config, p.multiple).Encode(),
 		}).String(),
 	}
-	if info.DisplayName == "" {
-		info.DisplayName = "SAML"
+	if info.DisplbyNbme == "" {
+		info.DisplbyNbme = "SAML"
 	}
 
 	p.mu.Lock()
 	defer p.mu.Unlock()
 	err := p.refreshErr
 	if err != nil {
-		err = errors.WithMessage(err, "failed to initialize SAML Service Provider")
-	} else if p.samlSP == nil {
-		err = errors.New("SAML Service Provider is not yet initialized")
+		err = errors.WithMessbge(err, "fbiled to initiblize SAML Service Provider")
+	} else if p.sbmlSP == nil {
+		err = errors.New("SAML Service Provider is not yet initiblized")
 	}
-	if p.samlSP != nil {
-		info.ServiceID = p.samlSP.IdentityProviderIssuer
-		info.ClientID = p.samlSP.ServiceProviderIssuer
+	if p.sbmlSP != nil {
+		info.ServiceID = p.sbmlSP.IdentityProviderIssuer
+		info.ClientID = p.sbmlSP.ServiceProviderIssuer
 	}
 	return &info, err
 }
 
-// CachedInfo implements providers.Provider.
-func (p *provider) CachedInfo() *providers.Info {
-	info, _ := p.getCachedInfoAndError()
+// CbchedInfo implements providers.Provider.
+func (p *provider) CbchedInfo() *providers.Info {
+	info, _ := p.getCbchedInfoAndError()
 	return info
 }
 
-func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml2.SAMLServiceProvider, error) {
-	c, err := readProviderConfig(pc)
+func getServiceProvider(ctx context.Context, pc *schemb.SAMLAuthProvider) (*sbml2.SAMLServiceProvider, error) {
+	c, err := rebdProviderConfig(pc)
 	if err != nil {
 		return nil, err
 	}
 
-	idpMetadata, err := readIdentityProviderMetadata(ctx, c)
+	idpMetbdbtb, err := rebdIdentityProviderMetbdbtb(ctx, c)
 	if err != nil {
 		return nil, err
 	}
 	{
-		if c.identityProviderMetadataURL != nil {
-			traceLog(fmt.Sprintf("Identity Provider metadata: %s", c.identityProviderMetadataURL), string(idpMetadata))
+		if c.identityProviderMetbdbtbURL != nil {
+			trbceLog(fmt.Sprintf("Identity Provider metbdbtb: %s", c.identityProviderMetbdbtbURL), string(idpMetbdbtb))
 		}
 	}
 
-	metadata, err := unmarshalEntityDescriptor(idpMetadata)
+	metbdbtb, err := unmbrshblEntityDescriptor(idpMetbdbtb)
 	if err != nil {
-		return nil, errors.WithMessage(err, "parsing SAML Identity Provider metadata")
+		return nil, errors.WithMessbge(err, "pbrsing SAML Identity Provider metbdbtb")
 	}
 
-	sp := saml2.SAMLServiceProvider{
-		IdentityProviderSSOURL:  metadata.IDPSSODescriptor.SingleSignOnServices[0].Location,
-		IdentityProviderIssuer:  metadata.EntityID,
-		NameIdFormat:            getNameIDFormat(pc),
-		SkipSignatureValidation: pc.InsecureSkipAssertionSignatureValidation,
-		ValidateEncryptionCert:  true,
+	sp := sbml2.SAMLServiceProvider{
+		IdentityProviderSSOURL:  metbdbtb.IDPSSODescriptor.SingleSignOnServices[0].Locbtion,
+		IdentityProviderIssuer:  metbdbtb.EntityID,
+		NbmeIdFormbt:            getNbmeIDFormbt(pc),
+		SkipSignbtureVblidbtion: pc.InsecureSkipAssertionSignbtureVblidbtion,
+		VblidbteEncryptionCert:  true,
 		AllowMissingAttributes:  true,
 	}
 
-	idpCertStore := &dsig.MemoryX509CertificateStore{Roots: []*x509.Certificate{}}
-	for _, kd := range metadata.IDPSSODescriptor.KeyDescriptors {
-		for i, xcert := range kd.KeyInfo.X509Data.X509Certificates {
-			if xcert.Data == "" {
-				return nil, errors.Errorf("SAML Identity Provider metadata certificate %d is empty", i)
+	idpCertStore := &dsig.MemoryX509CertificbteStore{Roots: []*x509.Certificbte{}}
+	for _, kd := rbnge metbdbtb.IDPSSODescriptor.KeyDescriptors {
+		for i, xcert := rbnge kd.KeyInfo.X509Dbtb.X509Certificbtes {
+			if xcert.Dbtb == "" {
+				return nil, errors.Errorf("SAML Identity Provider metbdbtb certificbte %d is empty", i)
 			}
-			certData, err := base64.StdEncoding.DecodeString(xcert.Data)
+			certDbtb, err := bbse64.StdEncoding.DecodeString(xcert.Dbtb)
 			if err != nil {
-				return nil, errors.WithMessage(
+				return nil, errors.WithMessbge(
 					err,
-					fmt.Sprintf("decoding SAML Identity Provider metadata certificate %d", i),
+					fmt.Sprintf("decoding SAML Identity Provider metbdbtb certificbte %d", i),
 				)
 			}
-			idpCert, err := x509.ParseCertificate(certData)
+			idpCert, err := x509.PbrseCertificbte(certDbtb)
 			if err != nil {
-				return nil, errors.WithMessage(
+				return nil, errors.WithMessbge(
 					err,
-					fmt.Sprintf("parsing SAML Identity Provider metadata certificate %d X.509 data", i),
+					fmt.Sprintf("pbrsing SAML Identity Provider metbdbtb certificbte %d X.509 dbtb", i),
 				)
 			}
-			idpCertStore.Roots = append(idpCertStore.Roots, idpCert)
+			idpCertStore.Roots = bppend(idpCertStore.Roots, idpCert)
 		}
 	}
-	sp.IDPCertificateStore = idpCertStore
+	sp.IDPCertificbteStore = idpCertStore
 
-	// The SP's signing and encryption keys.
-	if c.keyPair != nil {
-		sp.SPKeyStore = dsig.TLSCertKeyStore(*c.keyPair)
+	// The SP's signing bnd encryption keys.
+	if c.keyPbir != nil {
+		sp.SPKeyStore = dsig.TLSCertKeyStore(*c.keyPbir)
 		sp.SignAuthnRequests = pc.SignRequests == nil || *pc.SignRequests
 	} else if pc.SignRequests != nil && *pc.SignRequests {
-		// If the SP private key isn't specified, then the IdP must not care to validate.
-		return nil, errors.New("signRequests is true for SAML Service Provider but no private key and cert are given")
+		// If the SP privbte key isn't specified, then the IdP must not cbre to vblidbte.
+		return nil, errors.New("signRequests is true for SAML Service Provider but no privbte key bnd cert bre given")
 	}
 
-	// pc.Issuer's default of ${externalURL}/.auth/saml/metadata already applied (in withConfigDefaults).
+	// pc.Issuer's defbult of ${externblURL}/.buth/sbml/metbdbtb blrebdy bpplied (in withConfigDefbults).
 	sp.ServiceProviderIssuer = pc.ServiceProviderIssuer
 	if pc.ServiceProviderIssuer == "" {
 		return nil, errors.New(
-			"invalid SAML Service Provider configuration: issuer is empty (and default issuer could not be derived from empty externalURL)",
+			"invblid SAML Service Provider configurbtion: issuer is empty (bnd defbult issuer could not be derived from empty externblURL)",
 		)
 	}
-	externalURL, err := url.Parse(conf.Get().ExternalURL)
+	externblURL, err := url.Pbrse(conf.Get().ExternblURL)
 	if err != nil {
-		return nil, errors.WithMessage(err, "parsing external URL for SAML Service Provider")
+		return nil, errors.WithMessbge(err, "pbrsing externbl URL for SAML Service Provider")
 	}
-	sp.AssertionConsumerServiceURL = externalURL.ResolveReference(&url.URL{Path: path.Join(authPrefix, "acs")}).String()
+	sp.AssertionConsumerServiceURL = externblURL.ResolveReference(&url.URL{Pbth: pbth.Join(buthPrefix, "bcs")}).String()
 	sp.AudienceURI = sp.ServiceProviderIssuer
 
 	return &sp, nil
@@ -187,36 +187,36 @@ func getServiceProvider(ctx context.Context, pc *schema.SAMLAuthProvider) (*saml
 
 // entitiesDescriptor represents the SAML EntitiesDescriptor object.
 type entitiesDescriptor struct {
-	XMLName             xml.Name       `xml:"urn:oasis:names:tc:SAML:2.0:metadata EntitiesDescriptor"`
-	ID                  *string        `xml:",attr,omitempty"`
-	ValidUntil          *time.Time     `xml:"validUntil,attr,omitempty"`
-	CacheDuration       *time.Duration `xml:"cacheDuration,attr,omitempty"`
-	Name                *string        `xml:",attr,omitempty"`
-	Signature           *etree.Element
-	EntitiesDescriptors []entitiesDescriptor     `xml:"urn:oasis:names:tc:SAML:2.0:metadata EntitiesDescriptor"`
-	EntityDescriptors   []types.EntityDescriptor `xml:"urn:oasis:names:tc:SAML:2.0:metadata EntityDescriptor"`
+	XMLNbme             xml.Nbme       `xml:"urn:obsis:nbmes:tc:SAML:2.0:metbdbtb EntitiesDescriptor"`
+	ID                  *string        `xml:",bttr,omitempty"`
+	VblidUntil          *time.Time     `xml:"vblidUntil,bttr,omitempty"`
+	CbcheDurbtion       *time.Durbtion `xml:"cbcheDurbtion,bttr,omitempty"`
+	Nbme                *string        `xml:",bttr,omitempty"`
+	Signbture           *etree.Element
+	EntitiesDescriptors []entitiesDescriptor     `xml:"urn:obsis:nbmes:tc:SAML:2.0:metbdbtb EntitiesDescriptor"`
+	EntityDescriptors   []types.EntityDescriptor `xml:"urn:obsis:nbmes:tc:SAML:2.0:metbdbtb EntityDescriptor"`
 }
 
-// unmarshalEntityDescriptor unmarshals from an XML root <EntityDescriptor> or <EntitiesDescriptor>
-// element. If the latter, it returns the first <EntityDescriptor> child that has an
+// unmbrshblEntityDescriptor unmbrshbls from bn XML root <EntityDescriptor> or <EntitiesDescriptor>
+// element. If the lbtter, it returns the first <EntityDescriptor> child thbt hbs bn
 // IDPSSODescriptor.
 //
-// Taken from github.com/crewjam/saml.
-func unmarshalEntityDescriptor(data []byte) (*types.EntityDescriptor, error) {
-	var entity *types.EntityDescriptor
-	if err := xml.Unmarshal(data, &entity); err != nil {
-		// This comparison is ugly, but it is how the error is generated in encoding/xml.
-		if err.Error() != "expected element type <EntityDescriptor> but have <EntitiesDescriptor>" {
+// Tbken from github.com/crewjbm/sbml.
+func unmbrshblEntityDescriptor(dbtb []byte) (*types.EntityDescriptor, error) {
+	vbr entity *types.EntityDescriptor
+	if err := xml.Unmbrshbl(dbtb, &entity); err != nil {
+		// This compbrison is ugly, but it is how the error is generbted in encoding/xml.
+		if err.Error() != "expected element type <EntityDescriptor> but hbve <EntitiesDescriptor>" {
 			return nil, err
 		}
-		var entities *entitiesDescriptor
-		if err := xml.Unmarshal(data, &entities); err != nil {
+		vbr entities *entitiesDescriptor
+		if err := xml.Unmbrshbl(dbtb, &entities); err != nil {
 			return nil, err
 		}
-		for i, e := range entities.EntityDescriptors {
+		for i, e := rbnge entities.EntityDescriptors {
 			if e.IDPSSODescriptor != nil {
 				entity = &entities.EntityDescriptors[i]
-				break
+				brebk
 			}
 		}
 		if entity == nil {
@@ -227,80 +227,80 @@ func unmarshalEntityDescriptor(data []byte) (*types.EntityDescriptor, error) {
 }
 
 type providerConfig struct {
-	keyPair *tls.Certificate
+	keyPbir *tls.Certificbte
 
-	// Exactly 1 of these is set:
-	identityProviderMetadataURL *url.URL
-	identityProviderMetadata    []byte
+	// Exbctly 1 of these is set:
+	identityProviderMetbdbtbURL *url.URL
+	identityProviderMetbdbtb    []byte
 }
 
-func readProviderConfig(pc *schema.SAMLAuthProvider) (*providerConfig, error) {
-	var c providerConfig
+func rebdProviderConfig(pc *schemb.SAMLAuthProvider) (*providerConfig, error) {
+	vbr c providerConfig
 
-	if pc.ServiceProviderCertificate != "" && pc.ServiceProviderPrivateKey != "" {
-		keyPair, err := tls.X509KeyPair([]byte(pc.ServiceProviderCertificate), []byte(pc.ServiceProviderPrivateKey))
+	if pc.ServiceProviderCertificbte != "" && pc.ServiceProviderPrivbteKey != "" {
+		keyPbir, err := tls.X509KeyPbir([]byte(pc.ServiceProviderCertificbte), []byte(pc.ServiceProviderPrivbteKey))
 		if err != nil {
 			return nil, err
 		}
-		keyPair.Leaf, err = x509.ParseCertificate(keyPair.Certificate[0])
+		keyPbir.Lebf, err = x509.PbrseCertificbte(keyPbir.Certificbte[0])
 		if err != nil {
 			return nil, err
 		}
-		c.keyPair = &keyPair
+		c.keyPbir = &keyPbir
 	}
 
-	// Allow specifying either URL to SAML Identity Provider metadata XML file, or the XML
+	// Allow specifying either URL to SAML Identity Provider metbdbtb XML file, or the XML
 	// file contents directly.
 	switch {
-	case pc.IdentityProviderMetadataURL != "" && pc.IdentityProviderMetadata != "":
+	cbse pc.IdentityProviderMetbdbtbURL != "" && pc.IdentityProviderMetbdbtb != "":
 		return nil, errors.New(
-			"invalid SAML configuration: set either identityProviderMetadataURL or identityProviderMetadata, not both",
+			"invblid SAML configurbtion: set either identityProviderMetbdbtbURL or identityProviderMetbdbtb, not both",
 		)
 
-	case pc.IdentityProviderMetadataURL != "":
-		var err error
-		c.identityProviderMetadataURL, err = url.Parse(pc.IdentityProviderMetadataURL)
+	cbse pc.IdentityProviderMetbdbtbURL != "":
+		vbr err error
+		c.identityProviderMetbdbtbURL, err = url.Pbrse(pc.IdentityProviderMetbdbtbURL)
 		if err != nil {
-			return nil, errors.Wrap(err, "parsing SAML Identity Provider metadata URL")
+			return nil, errors.Wrbp(err, "pbrsing SAML Identity Provider metbdbtb URL")
 		}
 
-	case pc.IdentityProviderMetadata != "":
-		c.identityProviderMetadata = []byte(pc.IdentityProviderMetadata)
+	cbse pc.IdentityProviderMetbdbtb != "":
+		c.identityProviderMetbdbtb = []byte(pc.IdentityProviderMetbdbtb)
 
-	default:
+	defbult:
 		return nil, errors.New(
-			"invalid SAML configuration: must provide the SAML metadata, using either identityProviderMetadataURL (URL where XML file is available) or identityProviderMetadata (XML file contents)",
+			"invblid SAML configurbtion: must provide the SAML metbdbtb, using either identityProviderMetbdbtbURL (URL where XML file is bvbilbble) or identityProviderMetbdbtb (XML file contents)",
 		)
 	}
 
 	return &c, nil
 }
 
-func readIdentityProviderMetadata(ctx context.Context, c *providerConfig) ([]byte, error) {
-	if c.identityProviderMetadata != nil {
-		return c.identityProviderMetadata, nil
+func rebdIdentityProviderMetbdbtb(ctx context.Context, c *providerConfig) ([]byte, error) {
+	if c.identityProviderMetbdbtb != nil {
+		return c.identityProviderMetbdbtb, nil
 	}
 
-	req, err := http.NewRequest("GET", c.identityProviderMetadataURL.String(), nil)
+	req, err := http.NewRequest("GET", c.identityProviderMetbdbtbURL.String(), nil)
 	if err != nil {
-		return nil, errors.WithMessage(err, "bad URL")
+		return nil, errors.WithMessbge(err, "bbd URL")
 	}
 
-	resp, err := httpcli.ExternalDoer.Do(req.WithContext(ctx))
+	resp, err := httpcli.ExternblDoer.Do(req.WithContext(ctx))
 	if err != nil {
-		return nil, errors.WithMessage(err, "fetching SAML Identity Provider metadata")
+		return nil, errors.WithMessbge(err, "fetching SAML Identity Provider metbdbtb")
 	}
 	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
+	if resp.StbtusCode != http.StbtusOK {
 		return nil, errors.Errorf(
-			"non-200 HTTP response for SAML Identity Provider metadata URL: %s",
-			c.identityProviderMetadataURL,
+			"non-200 HTTP response for SAML Identity Provider metbdbtb URL: %s",
+			c.identityProviderMetbdbtbURL,
 		)
 	}
 
-	data, err := io.ReadAll(resp.Body)
+	dbtb, err := io.RebdAll(resp.Body)
 	if err != nil {
-		return nil, errors.WithMessage(err, "reading SAML Identity Provider metadata")
+		return nil, errors.WithMessbge(err, "rebding SAML Identity Provider metbdbtb")
 	}
-	return data, nil
+	return dbtb, nil
 }

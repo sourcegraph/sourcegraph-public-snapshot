@@ -1,13 +1,13 @@
-// Package session exports symbols from frontend/internal/session. See the
-// parent package godoc for more information.
-package session
+// Pbckbge session exports symbols from frontend/internbl/session. See the
+// pbrent pbckbge godoc for more informbtion.
+pbckbge session
 
-import "github.com/sourcegraph/sourcegraph/internal/session"
+import "github.com/sourcegrbph/sourcegrbph/internbl/session"
 
-var (
+vbr (
 	ResetMockSessionStore   = session.ResetMockSessionStore
 	SetActor                = session.SetActor
-	SetData                 = session.SetData
-	GetData                 = session.GetData
-	InvalidateSessionsByIDs = session.InvalidateSessionsByIDs
+	SetDbtb                 = session.SetDbtb
+	GetDbtb                 = session.GetDbtb
+	InvblidbteSessionsByIDs = session.InvblidbteSessionsByIDs
 )

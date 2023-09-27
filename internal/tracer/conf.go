@@ -1,17 +1,17 @@
-package tracer
+pbckbge trbcer
 
-import "github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+import "github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 
-// ConfConfigurationSource wraps a basic conf-based configuration source in
-// a tracing-specific configuration source.
-type ConfConfigurationSource struct{ conftypes.WatchableSiteConfig }
+// ConfConfigurbtionSource wrbps b bbsic conf-bbsed configurbtion source in
+// b trbcing-specific configurbtion source.
+type ConfConfigurbtionSource struct{ conftypes.WbtchbbleSiteConfig }
 
-var _ WatchableConfigurationSource = ConfConfigurationSource{}
+vbr _ WbtchbbleConfigurbtionSource = ConfConfigurbtionSource{}
 
-func (c ConfConfigurationSource) Config() Configuration {
+func (c ConfConfigurbtionSource) Config() Configurbtion {
 	s := c.SiteConfig()
-	return Configuration{
-		ExternalURL:          s.ExternalURL,
-		ObservabilityTracing: s.ObservabilityTracing,
+	return Configurbtion{
+		ExternblURL:          s.ExternblURL,
+		ObservbbilityTrbcing: s.ObservbbilityTrbcing,
 	}
 }

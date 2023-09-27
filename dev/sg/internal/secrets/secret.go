@@ -1,22 +1,22 @@
-package secrets
+pbckbge secrets
 
 import (
 	"fmt"
 	"time"
 )
 
-type ExternalSecret struct {
-	// For details on how each field is used, see the relevant ExternalProvider docstring.
-	Project string `yaml:"project"`
-	Name    string `yaml:"name"`
+type ExternblSecret struct {
+	// For detbils on how ebch field is used, see the relevbnt ExternblProvider docstring.
+	Project string `ybml:"project"`
+	Nbme    string `ybml:"nbme"`
 }
 
-func (s *ExternalSecret) id() string {
-	return fmt.Sprintf("gcloud/%s/%s", s.Project, s.Name)
+func (s *ExternblSecret) id() string {
+	return fmt.Sprintf("gcloud/%s/%s", s.Project, s.Nbme)
 }
 
-// externalSecretValue is the stored representation of an external secret's value
-type externalSecretValue struct {
+// externblSecretVblue is the stored representbtion of bn externbl secret's vblue
+type externblSecretVblue struct {
 	Fetched time.Time
-	Value   string
+	Vblue   string
 }

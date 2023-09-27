@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"bytes"
@@ -9,21 +9,21 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/Masterminds/semver"
+	"github.com/Mbsterminds/semver"
 
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/errcode"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type ID int64
 
-type MergeRequestState string
+type MergeRequestStbte string
 
 const (
-	MergeRequestStateOpened MergeRequestState = "opened"
-	MergeRequestStateClosed MergeRequestState = "closed"
-	MergeRequestStateLocked MergeRequestState = "locked"
-	MergeRequestStateMerged MergeRequestState = "merged"
+	MergeRequestStbteOpened MergeRequestStbte = "opened"
+	MergeRequestStbteClosed MergeRequestStbte = "closed"
+	MergeRequestStbteLocked MergeRequestStbte = "locked"
+	MergeRequestStbteMerged MergeRequestStbte = "merged"
 )
 
 type MergeRequest struct {
@@ -31,119 +31,119 @@ type MergeRequest struct {
 	IID                     ID `json:"iid"`
 	ProjectID               ID `json:"project_id"`
 	SourceProjectID         ID `json:"source_project_id"`
-	SourceProjectNamespace  string
-	SourceProjectName       string
+	SourceProjectNbmespbce  string
+	SourceProjectNbme       string
 	Title                   string            `json:"title"`
 	Description             string            `json:"description"`
-	State                   MergeRequestState `json:"state"`
-	CreatedAt               Time              `json:"created_at"`
-	UpdatedAt               Time              `json:"updated_at"`
-	MergedAt                *Time             `json:"merged_at"`
-	ClosedAt                *Time             `json:"closed_at"`
-	HeadPipeline            *Pipeline         `json:"head_pipeline"`
-	Labels                  []string          `json:"labels"`
-	SourceBranch            string            `json:"source_branch"`
-	TargetBranch            string            `json:"target_branch"`
+	Stbte                   MergeRequestStbte `json:"stbte"`
+	CrebtedAt               Time              `json:"crebted_bt"`
+	UpdbtedAt               Time              `json:"updbted_bt"`
+	MergedAt                *Time             `json:"merged_bt"`
+	ClosedAt                *Time             `json:"closed_bt"`
+	HebdPipeline            *Pipeline         `json:"hebd_pipeline"`
+	Lbbels                  []string          `json:"lbbels"`
+	SourceBrbnch            string            `json:"source_brbnch"`
+	TbrgetBrbnch            string            `json:"tbrget_brbnch"`
 	WebURL                  string            `json:"web_url"`
 	WorkInProgress          bool              `json:"work_in_progress"`
-	Draft                   bool              `json:"draft"`
-	ForceRemoveSourceBranch bool              `json:"force_remove_source_branch"`
-	// We only get a partial User object back from the REST API. For example, it lacks
-	// `Email` and `Identities`. If we need more, we need to issue an additional API
-	// request. Otherwise, we should use a different type here.
-	Author User `json:"author"`
+	Drbft                   bool              `json:"drbft"`
+	ForceRemoveSourceBrbnch bool              `json:"force_remove_source_brbnch"`
+	// We only get b pbrtibl User object bbck from the REST API. For exbmple, it lbcks
+	// `Embil` bnd `Identities`. If we need more, we need to issue bn bdditionbl API
+	// request. Otherwise, we should use b different type here.
+	Author User `json:"buthor"`
 
 	DiffRefs DiffRefs `json:"diff_refs"`
 
-	// The fields below are computed from other REST API requests when getting a
-	// Merge Request. Once our minimum version is GitLab 12.0, we can use the
-	// GraphQL API to retrieve all of this data at once, but until then, we have
-	// to do it the old fashioned way with lots of REST requests.
+	// The fields below bre computed from other REST API requests when getting b
+	// Merge Request. Once our minimum version is GitLbb 12.0, we cbn use the
+	// GrbphQL API to retrieve bll of this dbtb bt once, but until then, we hbve
+	// to do it the old fbshioned wby with lots of REST requests.
 	Notes               []*Note
 	Pipelines           []*Pipeline
-	ResourceStateEvents []*ResourceStateEvent
+	ResourceStbteEvents []*ResourceStbteEvent
 }
 
-// IsWIPOrDraft returns true if the given title would result in GitLab rendering the MR as 'work in progress'.
-func IsWIPOrDraft(title string) bool {
-	return strings.HasPrefix(title, "Draft:") || strings.HasPrefix(title, "WIP:")
+// IsWIPOrDrbft returns true if the given title would result in GitLbb rendering the MR bs 'work in progress'.
+func IsWIPOrDrbft(title string) bool {
+	return strings.HbsPrefix(title, "Drbft:") || strings.HbsPrefix(title, "WIP:")
 }
 
-// SetWIPOrDraft ensures the title is prefixed with either "WIP:" or "Draft: " depending on the Gitlab version.
-func SetWIPOrDraft(t string, v *semver.Version) string {
-	// Gitlab >=14.0 requires the prefix of a draft MR to be "Draft:"
-	if v.Major() >= 14 {
-		return setDraft(t)
+// SetWIPOrDrbft ensures the title is prefixed with either "WIP:" or "Drbft: " depending on the Gitlbb version.
+func SetWIPOrDrbft(t string, v *semver.Version) string {
+	// Gitlbb >=14.0 requires the prefix of b drbft MR to be "Drbft:"
+	if v.Mbjor() >= 14 {
+		return setDrbft(t)
 	}
 	return setWIP(t)
 }
 
-// SetWIP ensures a "WIP:" prefix on the given title. If a "Draft:" prefix is found, that one is retained instead.
+// SetWIP ensures b "WIP:" prefix on the given title. If b "Drbft:" prefix is found, thbt one is retbined instebd.
 func setWIP(title string) string {
-	t := UnsetWIPOrDraft(title)
+	t := UnsetWIPOrDrbft(title)
 	return "WIP: " + t
 }
 
-// SetDraft ensures a "Draft:" prefix on the given title. If a "WIP:" prefix is found, we strip it off.
-func setDraft(title string) string {
-	t := UnsetWIPOrDraft(title)
-	return "Draft: " + t
+// SetDrbft ensures b "Drbft:" prefix on the given title. If b "WIP:" prefix is found, we strip it off.
+func setDrbft(title string) string {
+	t := UnsetWIPOrDrbft(title)
+	return "Drbft: " + t
 }
 
-// UnsetWIP removes "WIP:" and "Draft:" prefixes from the given title.
-// Depending on the GitLab version, either of them are used so we need to strip them both.
-func UnsetWIPOrDraft(title string) string {
-	return strings.TrimPrefix(strings.TrimPrefix(title, "Draft: "), "WIP: ")
+// UnsetWIP removes "WIP:" bnd "Drbft:" prefixes from the given title.
+// Depending on the GitLbb version, either of them bre used so we need to strip them both.
+func UnsetWIPOrDrbft(title string) string {
+	return strings.TrimPrefix(strings.TrimPrefix(title, "Drbft: "), "WIP: ")
 }
 
 type DiffRefs struct {
-	BaseSHA  string `json:"base_sha"`
-	HeadSHA  string `json:"head_sha"`
-	StartSHA string `json:"start_sha"`
+	BbseSHA  string `json:"bbse_shb"`
+	HebdSHA  string `json:"hebd_shb"`
+	StbrtSHA string `json:"stbrt_shb"`
 }
 
-var (
-	ErrMergeRequestAlreadyExists = errors.New("merge request already exists")
-	ErrTooManyMergeRequests      = errors.New("retrieved too many merge requests")
+vbr (
+	ErrMergeRequestAlrebdyExists = errors.New("merge request blrebdy exists")
+	ErrTooMbnyMergeRequests      = errors.New("retrieved too mbny merge requests")
 )
 
-type CreateMergeRequestOpts struct {
-	SourceBranch       string `json:"source_branch"`
-	TargetBranch       string `json:"target_branch"`
-	TargetProjectID    int    `json:"target_project_id,omitempty"`
+type CrebteMergeRequestOpts struct {
+	SourceBrbnch       string `json:"source_brbnch"`
+	TbrgetBrbnch       string `json:"tbrget_brbnch"`
+	TbrgetProjectID    int    `json:"tbrget_project_id,omitempty"`
 	Title              string `json:"title"`
 	Description        string `json:"description,omitempty"`
-	RemoveSourceBranch bool   `json:"remove_source_branch,omitempty"`
-	// TODO: other fields at
-	// https://docs.gitlab.com/ee/api/merge_requests.html#create-mr as needed.
+	RemoveSourceBrbnch bool   `json:"remove_source_brbnch,omitempty"`
+	// TODO: other fields bt
+	// https://docs.gitlbb.com/ee/bpi/merge_requests.html#crebte-mr bs needed.
 }
 
-func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts CreateMergeRequestOpts) (*MergeRequest, error) {
-	if MockCreateMergeRequest != nil {
-		return MockCreateMergeRequest(c, ctx, project, opts)
+func (c *Client) CrebteMergeRequest(ctx context.Context, project *Project, opts CrebteMergeRequestOpts) (*MergeRequest, error) {
+	if MockCrebteMergeRequest != nil {
+		return MockCrebteMergeRequest(c, ctx, project, opts)
 	}
 
-	data, err := json.Marshal(opts)
+	dbtb, err := json.Mbrshbl(opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling options")
+		return nil, errors.Wrbp(err, "mbrshblling options")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests", project.ID), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests", project.ID), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request to create a merge request")
+		return nil, errors.Wrbp(err, "crebting request to crebte b merge request")
 	}
 
 	resp := &MergeRequest{}
 	if _, code, err := c.do(ctx, req, resp); err != nil {
-		if code == http.StatusConflict {
-			return nil, ErrMergeRequestAlreadyExists
+		if code == http.StbtusConflict {
+			return nil, ErrMergeRequestAlrebdyExists
 		}
 
-		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
-			return nil, aerr
+		if berr := c.convertToArchivedError(ctx, err, project); berr != nil {
+			return nil, berr
 		}
 
-		return nil, errors.Wrap(errcode.MaybeMakeNonRetryable(code, err), "sending request to create a merge request")
+		return nil, errors.Wrbp(errcode.MbybeMbkeNonRetrybble(code, err), "sending request to crebte b merge request")
 	}
 
 	return resp, nil
@@ -156,60 +156,60 @@ func (c *Client) GetMergeRequest(ctx context.Context, project *Project, iid ID) 
 
 	req, err := http.NewRequest("GET", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, iid), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request to get a merge request")
+		return nil, errors.Wrbp(err, "crebting request to get b merge request")
 	}
 
 	resp := &MergeRequest{}
 	if _, _, err := c.do(ctx, req, resp); err != nil {
-		var e HTTPError
-		if errors.As(err, &e) && e.Code() == http.StatusNotFound {
-			if strings.Contains(e.Message(), "Project Not Found") {
+		vbr e HTTPError
+		if errors.As(err, &e) && e.Code() == http.StbtusNotFound {
+			if strings.Contbins(e.Messbge(), "Project Not Found") {
 				err = ErrProjectNotFound
 			} else {
 				err = ErrMergeRequestNotFound
 			}
 		}
-		return nil, errors.Wrap(err, "sending request to get a merge request")
+		return nil, errors.Wrbp(err, "sending request to get b merge request")
 	}
 
 	return resp, nil
 }
 
-func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project, source, target string) (*MergeRequest, error) {
+func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project, source, tbrget string) (*MergeRequest, error) {
 	if MockGetOpenMergeRequestByRefs != nil {
-		return MockGetOpenMergeRequestByRefs(c, ctx, project, source, target)
+		return MockGetOpenMergeRequestByRefs(c, ctx, project, source, tbrget)
 	}
 
-	values := make(url.Values)
-	// Since GitLab only allows one merge request per source/target branch pair,
-	// we don't need to enumerate the full list of merge requests if more than
-	// one matches: just the existence of a second merge request is sufficient
-	// for us to return an error from this function.
-	values.Add("per_page", "2")
-	values.Add("source_branch", source)
-	values.Add("target_branch", target)
-	// The list endpoint doesn't return the full set of fields that we get from
-	// the create and get single endpoints, and we need some of those fields
-	// (specifically, diff_refs), so we'll just get the minimal set of fields
-	// necessary from the list endpoint and then call the get endpoint to flesh
+	vblues := mbke(url.Vblues)
+	// Since GitLbb only bllows one merge request per source/tbrget brbnch pbir,
+	// we don't need to enumerbte the full list of merge requests if more thbn
+	// one mbtches: just the existence of b second merge request is sufficient
+	// for us to return bn error from this function.
+	vblues.Add("per_pbge", "2")
+	vblues.Add("source_brbnch", source)
+	vblues.Add("tbrget_brbnch", tbrget)
+	// The list endpoint doesn't return the full set of fields thbt we get from
+	// the crebte bnd get single endpoints, bnd we need some of those fields
+	// (specificblly, diff_refs), so we'll just get the minimbl set of fields
+	// necessbry from the list endpoint bnd then cbll the get endpoint to flesh
 	// out the response.
-	values.Add("view", "simple")
+	vblues.Add("view", "simple")
 	u := &url.URL{
-		Path: fmt.Sprintf("projects/%d/merge_requests", project.ID), RawQuery: values.Encode(),
+		Pbth: fmt.Sprintf("projects/%d/merge_requests", project.ID), RbwQuery: vblues.Encode(),
 	}
 
 	req, err := http.NewRequest("GET", u.String(), nil)
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request to get merge request by refs")
+		return nil, errors.Wrbp(err, "crebting request to get merge request by refs")
 	}
 
 	resp := []*MergeRequest{}
 	if _, _, err := c.do(ctx, req, &resp); err != nil {
-		return nil, errors.Wrap(err, "sending request to get merge request by refs")
+		return nil, errors.Wrbp(err, "sending request to get merge request by refs")
 	}
 
 	if len(resp) > 1 {
-		return nil, ErrTooManyMergeRequests
+		return nil, ErrTooMbnyMergeRequests
 	} else if len(resp) == 0 {
 		return nil, ErrMergeRequestNotFound
 	}
@@ -217,144 +217,144 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 	return c.GetMergeRequest(ctx, project, resp[0].IID)
 }
 
-type UpdateMergeRequestOpts struct {
-	TargetBranch       string                       `json:"target_branch,omitempty"`
+type UpdbteMergeRequestOpts struct {
+	TbrgetBrbnch       string                       `json:"tbrget_brbnch,omitempty"`
 	Title              string                       `json:"title,omitempty"`
 	Description        string                       `json:"description,omitempty"`
-	StateEvent         UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
-	RemoveSourceBranch bool                         `json:"remove_source_branch,omitempty"`
+	StbteEvent         UpdbteMergeRequestStbteEvent `json:"stbte_event,omitempty"`
+	RemoveSourceBrbnch bool                         `json:"remove_source_brbnch,omitempty"`
 }
 
-type UpdateMergeRequestStateEvent string
+type UpdbteMergeRequestStbteEvent string
 
 const (
-	UpdateMergeRequestStateEventClose  UpdateMergeRequestStateEvent = "close"
-	UpdateMergeRequestStateEventReopen UpdateMergeRequestStateEvent = "reopen"
+	UpdbteMergeRequestStbteEventClose  UpdbteMergeRequestStbteEvent = "close"
+	UpdbteMergeRequestStbteEventReopen UpdbteMergeRequestStbteEvent = "reopen"
 
-	// GitLab's update MR API is also used to perform state transitions on MRs:
-	// they can be closed or reopened by setting a specific field exposed via
-	// UpdateMergeRequestOpts above. To update a merge request _without_
-	// changing the state, you omit that field, which is done via the
-	// combination of this empty string constant and the omitempty JSON option
-	// above on the relevant field.
-	UpdateMergeRequestStateEventUnchanged UpdateMergeRequestStateEvent = ""
+	// GitLbb's updbte MR API is blso used to perform stbte trbnsitions on MRs:
+	// they cbn be closed or reopened by setting b specific field exposed vib
+	// UpdbteMergeRequestOpts bbove. To updbte b merge request _without_
+	// chbnging the stbte, you omit thbt field, which is done vib the
+	// combinbtion of this empty string constbnt bnd the omitempty JSON option
+	// bbove on the relevbnt field.
+	UpdbteMergeRequestStbteEventUnchbnged UpdbteMergeRequestStbteEvent = ""
 )
 
-func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdateMergeRequestOpts) (*MergeRequest, error) {
-	if MockUpdateMergeRequest != nil {
-		return MockUpdateMergeRequest(c, ctx, project, mr, opts)
+func (c *Client) UpdbteMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, opts UpdbteMergeRequestOpts) (*MergeRequest, error) {
+	if MockUpdbteMergeRequest != nil {
+		return MockUpdbteMergeRequest(c, ctx, project, mr, opts)
 	}
 
-	data, err := json.Marshal(opts)
+	dbtb, err := json.Mbrshbl(opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling options")
+		return nil, errors.Wrbp(err, "mbrshblling options")
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, mr.IID), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d", project.ID, mr.IID), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request to update a merge request")
+		return nil, errors.Wrbp(err, "crebting request to updbte b merge request")
 	}
 
 	resp := &MergeRequest{}
 	if _, _, err := c.do(ctx, req, resp); err != nil {
-		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
-			return nil, aerr
+		if berr := c.convertToArchivedError(ctx, err, project); berr != nil {
+			return nil, berr
 		}
-		return nil, errors.Wrap(err, "sending request to update a merge request")
+		return nil, errors.Wrbp(err, "sending request to updbte b merge request")
 	}
 
 	return resp, nil
 }
 
-// ErrNotMergeable is returned by MergeMergeRequest when the merge request cannot
-// be merged, because a precondition isn't met.
-var ErrNotMergeable = errors.New("merge request is not in a mergeable state")
+// ErrNotMergebble is returned by MergeMergeRequest when the merge request cbnnot
+// be merged, becbuse b precondition isn't met.
+vbr ErrNotMergebble = errors.New("merge request is not in b mergebble stbte")
 
-func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, squash bool) (*MergeRequest, error) {
+func (c *Client) MergeMergeRequest(ctx context.Context, project *Project, mr *MergeRequest, squbsh bool) (*MergeRequest, error) {
 	if MockMergeMergeRequest != nil {
-		return MockMergeMergeRequest(c, ctx, project, mr, squash)
+		return MockMergeMergeRequest(c, ctx, project, mr, squbsh)
 	}
 
-	payload := struct {
-		Squash              bool   `json:"squash,omitempty"`
-		SquashCommitMessage string `json:"squash_commit_message,omitempty"`
+	pbylobd := struct {
+		Squbsh              bool   `json:"squbsh,omitempty"`
+		SqubshCommitMessbge string `json:"squbsh_commit_messbge,omitempty"`
 	}{
-		Squash: squash,
+		Squbsh: squbsh,
 	}
-	if squash {
-		payload.SquashCommitMessage = mr.Title + "\n\n" + mr.Description
+	if squbsh {
+		pbylobd.SqubshCommitMessbge = mr.Title + "\n\n" + mr.Description
 	}
-	data, err := json.Marshal(payload)
+	dbtb, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return nil, errors.Wrap(err, "marshalling options")
+		return nil, errors.Wrbp(err, "mbrshblling options")
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d/merge", project.ID, mr.IID), bytes.NewBuffer(data))
+	req, err := http.NewRequest("PUT", fmt.Sprintf("projects/%d/merge_requests/%d/merge", project.ID, mr.IID), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return nil, errors.Wrap(err, "creating request to merge a merge request")
+		return nil, errors.Wrbp(err, "crebting request to merge b merge request")
 	}
 
 	resp := &MergeRequest{}
 	if _, _, err := c.do(ctx, req, resp); err != nil {
-		var e HTTPError
-		if errors.As(err, &e) && e.Code() == http.StatusMethodNotAllowed {
-			return nil, errors.Wrap(ErrNotMergeable, err.Error())
+		vbr e HTTPError
+		if errors.As(err, &e) && e.Code() == http.StbtusMethodNotAllowed {
+			return nil, errors.Wrbp(ErrNotMergebble, err.Error())
 		}
-		return nil, errors.Wrap(err, "sending request to merge a merge request")
+		return nil, errors.Wrbp(err, "sending request to merge b merge request")
 	}
 
 	return resp, nil
 }
 
-func (c *Client) CreateMergeRequestNote(ctx context.Context, project *Project, mr *MergeRequest, body string) error {
-	if MockCreateMergeRequestNote != nil {
-		return MockCreateMergeRequestNote(c, ctx, project, mr, body)
+func (c *Client) CrebteMergeRequestNote(ctx context.Context, project *Project, mr *MergeRequest, body string) error {
+	if MockCrebteMergeRequestNote != nil {
+		return MockCrebteMergeRequestNote(c, ctx, project, mr, body)
 	}
 
-	var payload = struct {
+	vbr pbylobd = struct {
 		Body string `json:"body"`
 	}{
 		Body: body,
 	}
-	data, err := json.Marshal(payload)
+	dbtb, err := json.Mbrshbl(pbylobd)
 	if err != nil {
-		return errors.Wrap(err, "marshalling payload")
+		return errors.Wrbp(err, "mbrshblling pbylobd")
 	}
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, mr.IID), bytes.NewBuffer(data))
+	req, err := http.NewRequest("POST", fmt.Sprintf("projects/%d/merge_requests/%d/notes", project.ID, mr.IID), bytes.NewBuffer(dbtb))
 	if err != nil {
-		return errors.Wrap(err, "creating request to comment on a merge request")
+		return errors.Wrbp(err, "crebting request to comment on b merge request")
 	}
 
-	var resp struct {
+	vbr resp struct {
 		ID int32 `json:"id"`
 	}
 	if _, _, err := c.do(ctx, req, &resp); err != nil {
-		return errors.Wrap(err, "sending request to comment on a merge request")
+		return errors.Wrbp(err, "sending request to comment on b merge request")
 	}
 
 	return nil
 }
 
-// convertToArchivedError converts the given error to a ProjectArchivedError if
-// the error wraps a HTTP 403 and the project is actually archived. If the
-// error does not represent a project being archived, then nil is returned, and
-// the caller should perform whatever other error handling is appropriate on
-// the original error.
+// convertToArchivedError converts the given error to b ProjectArchivedError if
+// the error wrbps b HTTP 403 bnd the project is bctublly brchived. If the
+// error does not represent b project being brchived, then nil is returned, bnd
+// the cbller should perform whbtever other error hbndling is bppropribte on
+// the originbl error.
 //
-// This should only be used on errors returned from requests that return a 403
-// if the project is archived, such as the merge request mutation endpoints.
+// This should only be used on errors returned from requests thbt return b 403
+// if the project is brchived, such bs the merge request mutbtion endpoints.
 func (c *Client) convertToArchivedError(ctx context.Context, rerr error, project *Project) error {
-	var e HTTPError
-	if errors.As(rerr, &e) && e.Code() == http.StatusForbidden {
-		// 403 _may_ mean that the project is now archived, but we need to check.
-		// We'll bypass the cache because it's likely that the cache is out of date
+	vbr e HTTPError
+	if errors.As(rerr, &e) && e.Code() == http.StbtusForbidden {
+		// 403 _mby_ mebn thbt the project is now brchived, but we need to check.
+		// We'll bypbss the cbche becbuse it's likely thbt the cbche is out of dbte
 		// if we got here.
-		project, perr := c.getProjectFromAPI(ctx, project.ID, project.PathWithNamespace)
+		project, perr := c.getProjectFromAPI(ctx, project.ID, project.PbthWithNbmespbce)
 		// We won't bother bubbling up the nested error if one occurred; let's just
-		// check if the project is archived if we got the project back.
+		// check if the project is brchived if we got the project bbck.
 		if perr == nil && project.Archived {
-			return &ProjectArchivedError{Name: project.PathWithNamespace}
+			return &ProjectArchivedError{Nbme: project.PbthWithNbmespbce}
 		}
 	}
 

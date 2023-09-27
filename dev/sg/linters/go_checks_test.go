@@ -1,52 +1,52 @@
-package linters
+pbckbge linters
 
 import (
 	"context"
 	"io"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/repo"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
 )
 
 func TestLibLogLinter(t *testing.T) {
-	lint := lintLoggingLibraries()
-	discard := std.NewFixedOutput(io.Discard, false)
+	lint := lintLoggingLibrbries()
+	discbrd := std.NewFixedOutput(io.Discbrd, fblse)
 
-	t.Run("no false positives", func(t *testing.T) {
-		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
-			"cmd/foobar/command.go": []repo.DiffHunk{
+	t.Run("no fblse positives", func(t *testing.T) {
+		err := lint.Check(context.Bbckground(), discbrd, repo.NewMockStbte(repo.Diff{
+			"cmd/foobbr/commbnd.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{
-						`args: []string{"log", "--name-status"}`,
-						`// do not use "github.com/inconshreveable/log15"`,
+						`brgs: []string{"log", "--nbme-stbtus"}`,
+						`// do not use "github.com/inconshrevebble/log15"`,
 					},
 				},
 			},
 		}))
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 	})
 
-	t.Run("catch imports", func(t *testing.T) {
-		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
-			"cmd/foobar/command.go": []repo.DiffHunk{
+	t.Run("cbtch imports", func(t *testing.T) {
+		err := lint.Check(context.Bbckground(), discbrd, repo.NewMockStbte(repo.Diff{
+			"cmd/foobbr/commbnd.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{
 						`import (`,
-						`	"github.com/inconshreveable/log15"`,
+						`	"github.com/inconshrevebble/log15"`,
 						`)`,
 					},
 				},
 			},
 		}))
-		assert.NotNil(t, err)
+		bssert.NotNil(t, err)
 	})
 
-	t.Run("allowlist", func(t *testing.T) {
-		err := lint.Check(context.Background(), discard, repo.NewMockState(repo.Diff{
-			"dev/foobar.go": []repo.DiffHunk{
+	t.Run("bllowlist", func(t *testing.T) {
+		err := lint.Check(context.Bbckground(), discbrd, repo.NewMockStbte(repo.Diff{
+			"dev/foobbr.go": []repo.DiffHunk{
 				{
 					AddedLines: []string{
 						`log15.Info("hi!")`,
@@ -54,6 +54,6 @@ func TestLibLogLinter(t *testing.T) {
 				},
 			},
 		}))
-		assert.Nil(t, err)
+		bssert.Nil(t, err)
 	})
 }

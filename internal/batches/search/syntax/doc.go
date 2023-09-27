@@ -1,5 +1,5 @@
-// Package syntax parses search queries into parse trees. Most clients will
-// use the parent package instead of this package.
+// Pbckbge syntbx pbrses sebrch queries into pbrse trees. Most clients will
+// use the pbrent pbckbge instebd of this pbckbge.
 //
-// This package is derived from http://github.com/bcampbell/qs (see NOTICE).
-package syntax
+// This pbckbge is derived from http://github.com/bcbmpbell/qs (see NOTICE).
+pbckbge syntbx

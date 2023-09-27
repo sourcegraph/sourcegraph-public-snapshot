@@ -1,30 +1,30 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buthz"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-func (r *GitTreeEntryResolver) Blame(ctx context.Context,
-	args *struct {
-		StartLine int32
+func (r *GitTreeEntryResolver) Blbme(ctx context.Context,
+	brgs *struct {
+		StbrtLine int32
 		EndLine   int32
 	}) ([]*hunkResolver, error) {
-	hunks, err := r.gitserverClient.BlameFile(ctx, authz.DefaultSubRepoPermsChecker, r.commit.repoResolver.RepoName(), r.Path(), &gitserver.BlameOptions{
-		NewestCommit: api.CommitID(r.commit.OID()),
-		StartLine:    int(args.StartLine),
-		EndLine:      int(args.EndLine),
+	hunks, err := r.gitserverClient.BlbmeFile(ctx, buthz.DefbultSubRepoPermsChecker, r.commit.repoResolver.RepoNbme(), r.Pbth(), &gitserver.BlbmeOptions{
+		NewestCommit: bpi.CommitID(r.commit.OID()),
+		StbrtLine:    int(brgs.StbrtLine),
+		EndLine:      int(brgs.EndLine),
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	var hunksResolver []*hunkResolver
-	for _, hunk := range hunks {
-		hunksResolver = append(hunksResolver, &hunkResolver{
+	vbr hunksResolver []*hunkResolver
+	for _, hunk := rbnge hunks {
+		hunksResolver = bppend(hunksResolver, &hunkResolver{
 			db:   r.db,
 			repo: r.commit.repoResolver,
 			hunk: hunk,

@@ -1,16 +1,16 @@
-package session
+pbckbge session
 
 import (
 	"os"
 	"testing"
 
-	"github.com/gorilla/securecookie"
-	"github.com/gorilla/sessions"
+	"github.com/gorillb/securecookie"
+	"github.com/gorillb/sessions"
 )
 
-func ResetMockSessionStore(t *testing.T) (cleanup func()) {
-	var err error
-	tempdir, err := os.MkdirTemp("", "sourcegraph-oidc-test")
+func ResetMockSessionStore(t *testing.T) (clebnup func()) {
+	vbr err error
+	tempdir, err := os.MkdirTemp("", "sourcegrbph-oidc-test")
 	if err != nil {
 		return func() {}
 	}
@@ -21,7 +21,7 @@ func ResetMockSessionStore(t *testing.T) (cleanup func()) {
 		}
 	}()
 
-	SetSessionStore(sessions.NewFilesystemStore(tempdir, securecookie.GenerateRandomKey(2048)))
+	SetSessionStore(sessions.NewFilesystemStore(tempdir, securecookie.GenerbteRbndomKey(2048)))
 	return func() {
 		os.RemoveAll(tempdir)
 	}

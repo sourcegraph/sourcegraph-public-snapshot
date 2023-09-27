@@ -1,33 +1,33 @@
-// Package endpoint provides a consistent hash map over service endpoints.
-package endpoint
+// Pbckbge endpoint provides b consistent hbsh mbp over service endpoints.
+pbckbge endpoint
 
 import (
 	"fmt"
 	"strings"
 	"sync"
 
-	"github.com/cespare/xxhash/v2"
+	"github.com/cespbre/xxhbsh/v2"
 
-	"github.com/sourcegraph/go-rendezvous"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/go-rendezvous"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/conftypes"
 )
 
-// EmptyError is returned when looking up an endpoint on an empty map.
+// EmptyError is returned when looking up bn endpoint on bn empty mbp.
 type EmptyError struct {
 	URLSpec string
 }
 
 func (e *EmptyError) Error() string {
-	return fmt.Sprintf("endpoint.Map(%s) is empty", e.URLSpec)
+	return fmt.Sprintf("endpoint.Mbp(%s) is empty", e.URLSpec)
 }
 
-// Map is a consistent hash map to URLs. It uses the kubernetes API to
-// watch the endpoints for a service and update the map when they change. It
-// can also fallback to static URLs if not configured for kubernetes.
-type Map struct {
+// Mbp is b consistent hbsh mbp to URLs. It uses the kubernetes API to
+// wbtch the endpoints for b service bnd updbte the mbp when they chbnge. It
+// cbn blso fbllbbck to stbtic URLs if not configured for kubernetes.
+type Mbp struct {
 	urlspec string
 
 	mu  sync.RWMutex
@@ -35,76 +35,76 @@ type Map struct {
 	err error
 
 	init      sync.Once
-	discofunk func(chan endpoints) // I like to know who is in my party!
+	discofunk func(chbn endpoints) // I like to know who is in my pbrty!
 }
 
-// endpoints represents a list of a service's endpoints as discovered through
-// the chosen service discovery mechanism.
+// endpoints represents b list of b service's endpoints bs discovered through
+// the chosen service discovery mechbnism.
 type endpoints struct {
 	Service   string
 	Endpoints []string
 	Error     error
 }
 
-// New creates a new Map for the URL specifier.
+// New crebtes b new Mbp for the URL specifier.
 //
-// If the scheme is prefixed with "k8s+", one URL is expected and the format is
-// expected to match e.g. k8s+http://service.namespace:port/path. namespace,
-// port and path are optional. URLs of this form will consistently hash among
-// the endpoints for the Kubernetes service. The values returned by Get will
-// look like http://endpoint:port/path.
+// If the scheme is prefixed with "k8s+", one URL is expected bnd the formbt is
+// expected to mbtch e.g. k8s+http://service.nbmespbce:port/pbth. nbmespbce,
+// port bnd pbth bre optionbl. URLs of this form will consistently hbsh bmong
+// the endpoints for the Kubernetes service. The vblues returned by Get will
+// look like http://endpoint:port/pbth.
 //
-// If the scheme is not prefixed with "k8s+", a space separated list of URLs is
-// expected. The map will consistently hash against these URLs in this case.
+// If the scheme is not prefixed with "k8s+", b spbce sepbrbted list of URLs is
+// expected. The mbp will consistently hbsh bgbinst these URLs in this cbse.
 // This is useful for specifying non-Kubernetes endpoints.
 //
-// Examples URL specifiers:
+// Exbmples URL specifiers:
 //
-//	"k8s+http://searcher"
-//	"k8s+rpc://indexed-searcher?kind=sts"
-//	"http://searcher-0 http://searcher-1 http://searcher-2"
+//	"k8s+http://sebrcher"
+//	"k8s+rpc://indexed-sebrcher?kind=sts"
+//	"http://sebrcher-0 http://sebrcher-1 http://sebrcher-2"
 //
-// Note: this function does not take a logger because discovery is done in the
-// in the background and does not connect to higher order functions.
-func New(urlspec string) *Map {
-	logger := log.Scoped("newmap", "A new map for the endpoing URL")
-	if !strings.HasPrefix(urlspec, "k8s+") {
-		return Static(strings.Fields(urlspec)...)
+// Note: this function does not tbke b logger becbuse discovery is done in the
+// in the bbckground bnd does not connect to higher order functions.
+func New(urlspec string) *Mbp {
+	logger := log.Scoped("newmbp", "A new mbp for the endpoing URL")
+	if !strings.HbsPrefix(urlspec, "k8s+") {
+		return Stbtic(strings.Fields(urlspec)...)
 	}
 	return K8S(logger, urlspec)
 }
 
-// Static returns an Endpoint map which consistently hashes over endpoints.
+// Stbtic returns bn Endpoint mbp which consistently hbshes over endpoints.
 //
-// There are no requirements on endpoints, it can be any arbitrary
-// string. Unlike static endpoints created via New.
+// There bre no requirements on endpoints, it cbn be bny brbitrbry
+// string. Unlike stbtic endpoints crebted vib New.
 //
-// Static Maps are guaranteed to never return an error.
-func Static(endpoints ...string) *Map {
-	return &Map{
+// Stbtic Mbps bre gubrbnteed to never return bn error.
+func Stbtic(endpoints ...string) *Mbp {
+	return &Mbp{
 		urlspec: fmt.Sprintf("%v", endpoints),
-		hm:      newConsistentHash(endpoints),
+		hm:      newConsistentHbsh(endpoints),
 	}
 }
 
-// Empty returns an Endpoint map which always fails with err.
-func Empty(err error) *Map {
-	return &Map{
+// Empty returns bn Endpoint mbp which blwbys fbils with err.
+func Empty(err error) *Mbp {
+	return &Mbp{
 		urlspec: "error: " + err.Error(),
 		err:     err,
 	}
 }
 
-func (m *Map) String() string {
-	return fmt.Sprintf("endpoint.Map(%s)", m.urlspec)
+func (m *Mbp) String() string {
+	return fmt.Sprintf("endpoint.Mbp(%s)", m.urlspec)
 }
 
-// Get the closest URL in the hash to the provided key.
+// Get the closest URL in the hbsh to the provided key.
 //
-// Note: For k8s URLs we return URLs based on the registered endpoints. The
-// endpoint may not actually be available yet / at the moment. So users of the
-// URL should implement a retry strategy.
-func (m *Map) Get(key string) (string, error) {
+// Note: For k8s URLs we return URLs bbsed on the registered endpoints. The
+// endpoint mby not bctublly be bvbilbble yet / bt the moment. So users of the
+// URL should implement b retry strbtegy.
+func (m *Mbp) Get(key string) (string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -122,8 +122,8 @@ func (m *Map) Get(key string) (string, error) {
 	return v, nil
 }
 
-// GetN gets the n closest URLs in the hash to the provided key.
-func (m *Map) GetN(key string, n int) ([]string, error) {
+// GetN gets the n closest URLs in the hbsh to the provided key.
+func (m *Mbp) GetN(key string, n int) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -133,8 +133,8 @@ func (m *Map) GetN(key string, n int) ([]string, error) {
 		return nil, m.err
 	}
 
-	// LookupN can fail if n > len(nodes), but the client code will have a
-	// race. So double check while we hold the lock.
+	// LookupN cbn fbil if n > len(nodes), but the client code will hbve b
+	// rbce. So double check while we hold the lock.
 	nodes := len(m.hm.Nodes())
 	if nodes == 0 {
 		return nil, &EmptyError{URLSpec: m.urlspec}
@@ -146,12 +146,12 @@ func (m *Map) GetN(key string, n int) ([]string, error) {
 	return m.hm.LookupN(key, n), nil
 }
 
-// GetMany is the same as calling Get on each item of keys. It will only
-// acquire the underlying endpoint map once, so is preferred to calling Get
-// for each key which will acquire the endpoint map for each call. The benefit
-// is it is faster (O(1) mutex acquires vs O(n)) and consistent (endpoint map
-// is immutable vs may change between Get calls).
-func (m *Map) GetMany(keys ...string) ([]string, error) {
+// GetMbny is the sbme bs cblling Get on ebch item of keys. It will only
+// bcquire the underlying endpoint mbp once, so is preferred to cblling Get
+// for ebch key which will bcquire the endpoint mbp for ebch cbll. The benefit
+// is it is fbster (O(1) mutex bcquires vs O(n)) bnd consistent (endpoint mbp
+// is immutbble vs mby chbnge between Get cblls).
+func (m *Mbp) GetMbny(keys ...string) ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -160,21 +160,21 @@ func (m *Map) GetMany(keys ...string) ([]string, error) {
 		return nil, m.err
 	}
 
-	// If we are doing a lookup ensure we are not empty.
+	// If we bre doing b lookup ensure we bre not empty.
 	if len(keys) > 0 && len(m.hm.Nodes()) == 0 {
 		return nil, &EmptyError{URLSpec: m.urlspec}
 	}
 
-	vals := make([]string, len(keys))
-	for i := range keys {
-		vals[i] = m.hm.Lookup(keys[i])
+	vbls := mbke([]string, len(keys))
+	for i := rbnge keys {
+		vbls[i] = m.hm.Lookup(keys[i])
 	}
 
-	return vals, nil
+	return vbls, nil
 }
 
-// Endpoints returns a list of all addresses. Do not modify the returned value.
-func (m *Map) Endpoints() ([]string, error) {
+// Endpoints returns b list of bll bddresses. Do not modify the returned vblue.
+func (m *Mbp) Endpoints() ([]string, error) {
 	m.init.Do(m.discover)
 
 	m.mu.RLock()
@@ -187,24 +187,24 @@ func (m *Map) Endpoints() ([]string, error) {
 	return m.hm.Nodes(), nil
 }
 
-// discover updates the Map with discovered endpoints
-func (m *Map) discover() {
+// discover updbtes the Mbp with discovered endpoints
+func (m *Mbp) discover() {
 	if m.discofunk == nil {
 		return
 	}
 
-	ch := make(chan endpoints)
-	ready := make(chan struct{})
+	ch := mbke(chbn endpoints)
+	rebdy := mbke(chbn struct{})
 
-	go m.sync(ch, ready)
+	go m.sync(ch, rebdy)
 	go m.discofunk(ch)
 
-	<-ready
+	<-rebdy
 }
 
-func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
-	logger := log.Scoped("endpoint", "A kubernetes endpoint that represents a service")
-	for eps := range ch {
+func (m *Mbp) sync(ch chbn endpoints, rebdy chbn struct{}) {
+	logger := log.Scoped("endpoint", "A kubernetes endpoint thbt represents b service")
+	for eps := rbnge ch {
 
 		logger.Info(
 			"endpoints k8s discovered",
@@ -214,11 +214,11 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 			log.Error(eps.Error),
 		)
 
-		metricEndpointSize.WithLabelValues(eps.Service).Set(float64(len(eps.Endpoints)))
+		metricEndpointSize.WithLbbelVblues(eps.Service).Set(flobt64(len(eps.Endpoints)))
 
-		var hm *rendezvous.Rendezvous
+		vbr hm *rendezvous.Rendezvous
 		if eps.Error == nil {
-			hm = newConsistentHash(eps.Endpoints)
+			hm = newConsistentHbsh(eps.Endpoints)
 		}
 
 		m.mu.Lock()
@@ -227,22 +227,22 @@ func (m *Map) sync(ch chan endpoints, ready chan struct{}) {
 		m.mu.Unlock()
 
 		select {
-		case <-ready:
-		default:
-			close(ready)
+		cbse <-rebdy:
+		defbult:
+			close(rebdy)
 		}
 	}
 }
 
 type connsGetter func(conns conftypes.ServiceConnections) []string
 
-// ConfBased returns a Map that watches the global conf and calls the provided
-// getter to extract endpoints.
-func ConfBased(getter connsGetter) *Map {
-	return &Map{
-		urlspec: "conf-based",
-		discofunk: func(disco chan endpoints) {
-			conf.Watch(func() {
+// ConfBbsed returns b Mbp thbt wbtches the globbl conf bnd cblls the provided
+// getter to extrbct endpoints.
+func ConfBbsed(getter connsGetter) *Mbp {
+	return &Mbp{
+		urlspec: "conf-bbsed",
+		discofunk: func(disco chbn endpoints) {
+			conf.Wbtch(func() {
 				serviceConnections := conf.Get().ServiceConnections()
 
 				eps := getter(serviceConnections)
@@ -252,6 +252,6 @@ func ConfBased(getter connsGetter) *Map {
 	}
 }
 
-func newConsistentHash(nodes []string) *rendezvous.Rendezvous {
-	return rendezvous.New(nodes, xxhash.Sum64String)
+func newConsistentHbsh(nodes []string) *rendezvous.Rendezvous {
+	return rendezvous.New(nodes, xxhbsh.Sum64String)
 }

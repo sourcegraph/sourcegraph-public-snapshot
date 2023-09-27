@@ -1,74 +1,74 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetSearchOnboarding(ctx context.Context, db database.DB) (*types.SearchOnboarding, error) {
-	const getSearchOnboardingQuery = `
+func GetSebrchOnbobrding(ctx context.Context, db dbtbbbse.DB) (*types.SebrchOnbobrding, error) {
+	const getSebrchOnbobrdingQuery = `
 SELECT
-    viewOnboardingTour AS totalOnboardingTourViews,
-    viewedOnboardingTourFilterLangStep AS viewedLangStepPercentage,
-    viewedOnboardingTourFilterRepoStep AS viewedFilterRepoStepPercentage,
-    viewedOnboardingTourAddQueryTermStep AS viewedAddQueryTermStepPercentage,
-    viewedOnboardingTourSubmitSearchStep AS viewedSubmitSearchStepPercentage,
-    viewedOnboardingTourSearchReferenceStep AS viewedSearchReferenceStepPercentage,
-    closeOnboardingTourClicked AS closedOnboardingTourPercentage
+    viewOnbobrdingTour AS totblOnbobrdingTourViews,
+    viewedOnbobrdingTourFilterLbngStep AS viewedLbngStepPercentbge,
+    viewedOnbobrdingTourFilterRepoStep AS viewedFilterRepoStepPercentbge,
+    viewedOnbobrdingTourAddQueryTermStep AS viewedAddQueryTermStepPercentbge,
+    viewedOnbobrdingTourSubmitSebrchStep AS viewedSubmitSebrchStepPercentbge,
+    viewedOnbobrdingTourSebrchReferenceStep AS viewedSebrchReferenceStepPercentbge,
+    closeOnbobrdingTourClicked AS closedOnbobrdingTourPercentbge
 FROM (
     SELECT
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewOnboardingTour'), 0) :: INT AS viewOnboardingTour,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewedOnboardingTourFilterLangStep'), 0) :: INT AS viewedOnboardingTourFilterLangStep,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewedOnboardingTourFilterRepoStep'), 0) :: INT AS viewedOnboardingTourFilterRepoStep,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewedOnboardingTourAddQueryTermStep'), 0) :: INT AS viewedOnboardingTourAddQueryTermStep,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewedOnboardingTourSubmitSearchStep'), 0) :: INT AS viewedOnboardingTourSubmitSearchStep,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'ViewedOnboardingTourSearchReferenceStep'), 0) :: INT AS viewedOnboardingTourSearchReferenceStep,
-        NULLIF(COUNT(*) FILTER (WHERE name = 'CloseOnboardingTourClicked'), 0) :: INT AS closeOnboardingTourClicked
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'ViewOnbobrdingTour'), 0) :: INT AS viewOnbobrdingTour,
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'ViewedOnbobrdingTourFilterLbngStep'), 0) :: INT AS viewedOnbobrdingTourFilterLbngStep,
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'ViewedOnbobrdingTourFilterRepoStep'), 0) :: INT AS viewedOnbobrdingTourFilterRepoStep,
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'ViewedOnbobrdingTourAddQueryTermStep'), 0) :: INT AS viewedOnbobrdingTourAddQueryTermStep,
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'ViewedOnbobrdingTourSubmitSebrchStep'), 0) :: INT AS viewedOnbobrdingTourSubmitSebrchStep,
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'ViewedOnbobrdingTourSebrchReferenceStep'), 0) :: INT AS viewedOnbobrdingTourSebrchReferenceStep,
+        NULLIF(COUNT(*) FILTER (WHERE nbme = 'CloseOnbobrdingTourClicked'), 0) :: INT AS closeOnbobrdingTourClicked
     FROM event_logs
     WHERE
-        name IN (
-            'ViewOnboardingTour',
-            'ViewedOnboardingTourFilterLangStep',
-            'ViewedOnboardingTourFilterRepoStep',
-            'ViewedOnboardingTourAddQueryTermStep',
-            'ViewedOnboardingTourSubmitSearchStep',
-            'ViewedOnboardingTourSearchReferenceStep',
-            'CloseOnboardingTourClicked'
+        nbme IN (
+            'ViewOnbobrdingTour',
+            'ViewedOnbobrdingTourFilterLbngStep',
+            'ViewedOnbobrdingTourFilterRepoStep',
+            'ViewedOnbobrdingTourAddQueryTermStep',
+            'ViewedOnbobrdingTourSubmitSebrchStep',
+            'ViewedOnbobrdingTourSebrchReferenceStep',
+            'CloseOnbobrdingTourClicked'
         )
-    AND DATE(TIMEZONE('UTC', timestamp)) >= DATE_TRUNC('week', current_date)
+    AND DATE(TIMEZONE('UTC', timestbmp)) >= DATE_TRUNC('week', current_dbte)
 ) sub
 	`
 
-	var (
-		totalOnboardingTourViews   *int32
-		viewedLangStep             *int32
+	vbr (
+		totblOnbobrdingTourViews   *int32
+		viewedLbngStep             *int32
 		viewedFilterRepoStep       *int32
 		viewedAddQueryTermStep     *int32
-		viewedSubmitSearchStep     *int32
-		viewedSearchReferenceStep  *int32
-		closeOnboardingTourClicked *int32
+		viewedSubmitSebrchStep     *int32
+		viewedSebrchReferenceStep  *int32
+		closeOnbobrdingTourClicked *int32
 	)
-	if err := db.QueryRowContext(ctx, getSearchOnboardingQuery).Scan(
-		&totalOnboardingTourViews,
-		&viewedLangStep,
+	if err := db.QueryRowContext(ctx, getSebrchOnbobrdingQuery).Scbn(
+		&totblOnbobrdingTourViews,
+		&viewedLbngStep,
 		&viewedFilterRepoStep,
 		&viewedAddQueryTermStep,
-		&viewedSubmitSearchStep,
-		&viewedSearchReferenceStep,
-		&closeOnboardingTourClicked,
+		&viewedSubmitSebrchStep,
+		&viewedSebrchReferenceStep,
+		&closeOnbobrdingTourClicked,
 	); err != nil {
 		return nil, err
 	}
-	s := &types.SearchOnboarding{
-		TotalOnboardingTourViews:   totalOnboardingTourViews,
-		ViewedLangStep:             viewedLangStep,
+	s := &types.SebrchOnbobrding{
+		TotblOnbobrdingTourViews:   totblOnbobrdingTourViews,
+		ViewedLbngStep:             viewedLbngStep,
 		ViewedFilterRepoStep:       viewedFilterRepoStep,
 		ViewedAddQueryTermStep:     viewedAddQueryTermStep,
-		ViewedSubmitSearchStep:     viewedSubmitSearchStep,
-		ViewedSearchReferenceStep:  viewedSearchReferenceStep,
-		CloseOnboardingTourClicked: closeOnboardingTourClicked,
+		ViewedSubmitSebrchStep:     viewedSubmitSebrchStep,
+		ViewedSebrchReferenceStep:  viewedSebrchReferenceStep,
+		CloseOnbobrdingTourClicked: closeOnbobrdingTourClicked,
 	}
 
 	return s, nil

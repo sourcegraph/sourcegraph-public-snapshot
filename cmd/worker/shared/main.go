@@ -1,4 +1,4 @@
-package shared
+pbckbge shbred
 
 import (
 	"context"
@@ -9,271 +9,271 @@ import (
 	"sync"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine/recorder"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine/recorder"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codygateway"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/licensecheck"
-	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/outboundwebhooks"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/repostatistics"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/zoektrepos"
-	workerjob "github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/httpserver"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations/register"
-	"github.com/sourcegraph/sourcegraph/internal/service"
-	"github.com/sourcegraph/sourcegraph/internal/symbols"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/codygbtewby"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/licensecheck"
+	workermigrbtions "github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/migrbtions"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/outboundwebhooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/repostbtistics"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/webhooks"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/internbl/zoektrepos"
+	workerjob "github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	workerdb "github.com/sourcegrbph/sourcegrbph/cmd/worker/shbred/init/db"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption/keyring"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion/migrbtions/register"
+	"github.com/sourcegrbph/sourcegrbph/internbl/service"
+	"github.com/sourcegrbph/sourcegrbph/internbl/symbols"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-const addr = ":3189"
+const bddr = ":3189"
 
-type EnterpriseInit = func(db database.DB)
+type EnterpriseInit = func(db dbtbbbse.DB)
 
-type namedBackgroundRoutine struct {
-	Routine goroutine.BackgroundRoutine
-	JobName string
+type nbmedBbckgroundRoutine struct {
+	Routine goroutine.BbckgroundRoutine
+	JobNbme string
 }
 
-func LoadConfig(additionalJobs map[string]workerjob.Job, registerEnterpriseMigrators oobmigration.RegisterMigratorsFunc) *Config {
-	symbols.LoadConfig()
+func LobdConfig(bdditionblJobs mbp[string]workerjob.Job, registerEnterpriseMigrbtors oobmigrbtion.RegisterMigrbtorsFunc) *Config {
+	symbols.LobdConfig()
 
-	registerMigrators := oobmigration.ComposeRegisterMigratorsFuncs(register.RegisterOSSMigrators, registerEnterpriseMigrators)
+	registerMigrbtors := oobmigrbtion.ComposeRegisterMigrbtorsFuncs(register.RegisterOSSMigrbtors, registerEnterpriseMigrbtors)
 
-	builtins := map[string]workerjob.Job{
-		"webhook-log-janitor":       webhooks.NewJanitor(),
-		"out-of-band-migrations":    workermigrations.NewMigrator(registerMigrators),
+	builtins := mbp[string]workerjob.Job{
+		"webhook-log-jbnitor":       webhooks.NewJbnitor(),
+		"out-of-bbnd-migrbtions":    workermigrbtions.NewMigrbtor(registerMigrbtors),
 		"gitserver-metrics":         gitserver.NewMetricsJob(),
 		"record-encrypter":          encryption.NewRecordEncrypterJob(),
-		"repo-statistics-compactor": repostatistics.NewCompactor(),
-		"zoekt-repos-updater":       zoektrepos.NewUpdater(),
+		"repo-stbtistics-compbctor": repostbtistics.NewCompbctor(),
+		"zoekt-repos-updbter":       zoektrepos.NewUpdbter(),
 		"outbound-webhook-sender":   outboundwebhooks.NewSender(),
 		"license-check":             licensecheck.NewJob(),
-		"cody-gateway-usage-check":  codygateway.NewUsageJob(),
-		"rate-limit-config":         ratelimit.NewRateLimitConfigJob(),
+		"cody-gbtewby-usbge-check":  codygbtewby.NewUsbgeJob(),
+		"rbte-limit-config":         rbtelimit.NewRbteLimitConfigJob(),
 	}
 
-	var config Config
-	config.Jobs = map[string]workerjob.Job{}
+	vbr config Config
+	config.Jobs = mbp[string]workerjob.Job{}
 
-	for name, job := range builtins {
-		config.Jobs[name] = job
+	for nbme, job := rbnge builtins {
+		config.Jobs[nbme] = job
 	}
-	for name, job := range additionalJobs {
-		config.Jobs[name] = job
+	for nbme, job := rbnge bdditionblJobs {
+		config.Jobs[nbme] = job
 	}
 
-	// Setup environment variables
-	loadConfigs(config.Jobs)
+	// Setup environment vbribbles
+	lobdConfigs(config.Jobs)
 
-	// Validate environment variables
-	if err := validateConfigs(config.Jobs); err != nil {
+	// Vblidbte environment vbribbles
+	if err := vblidbteConfigs(config.Jobs); err != nil {
 		config.AddError(err)
 	}
 
 	return &config
 }
 
-// Start runs the worker.
-func Start(ctx context.Context, observationCtx *observation.Context, ready service.ReadyFunc, config *Config, enterpriseInit EnterpriseInit) error {
+// Stbrt runs the worker.
+func Stbrt(ctx context.Context, observbtionCtx *observbtion.Context, rebdy service.RebdyFunc, config *Config, enterpriseInit EnterpriseInit) error {
 	if err := keyring.Init(ctx); err != nil {
-		return errors.Wrap(err, "initializing keyring")
+		return errors.Wrbp(err, "initiblizing keyring")
 	}
 
 	if enterpriseInit != nil {
-		db, err := workerdb.InitDB(observationCtx)
+		db, err := workerdb.InitDB(observbtionCtx)
 		if err != nil {
-			return errors.Wrap(err, "Failed to create database connection")
+			return errors.Wrbp(err, "Fbiled to crebte dbtbbbse connection")
 		}
 
 		enterpriseInit(db)
 	}
 
-	// Emit metrics to help site admins detect instances that accidentally
-	// omit a job from from the instance's deployment configuration.
+	// Emit metrics to help site bdmins detect instbnces thbt bccidentblly
+	// omit b job from from the instbnce's deployment configurbtion.
 	emitJobCountMetrics(config.Jobs)
 
-	// Create the background routines that the worker will monitor for its
-	// lifetime. There may be a non-trivial startup time on this step as we
-	// connect to external databases, wait for migrations, etc.
-	allRoutinesWithJobNames, err := createBackgroundRoutines(observationCtx, config.Jobs)
+	// Crebte the bbckground routines thbt the worker will monitor for its
+	// lifetime. There mby be b non-trivibl stbrtup time on this step bs we
+	// connect to externbl dbtbbbses, wbit for migrbtions, etc.
+	bllRoutinesWithJobNbmes, err := crebteBbckgroundRoutines(observbtionCtx, config.Jobs)
 	if err != nil {
 		return err
 	}
 
-	// Initialize health server
-	server := httpserver.NewFromAddr(addr, &http.Server{
-		ReadTimeout:  75 * time.Second,
+	// Initiblize heblth server
+	server := httpserver.NewFromAddr(bddr, &http.Server{
+		RebdTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      httpserver.NewHandler(nil),
+		Hbndler:      httpserver.NewHbndler(nil),
 	})
-	serverRoutineWithJobName := namedBackgroundRoutine{Routine: server, JobName: "health-server"}
-	allRoutinesWithJobNames = append(allRoutinesWithJobNames, serverRoutineWithJobName)
+	serverRoutineWithJobNbme := nbmedBbckgroundRoutine{Routine: server, JobNbme: "heblth-server"}
+	bllRoutinesWithJobNbmes = bppend(bllRoutinesWithJobNbmes, serverRoutineWithJobNbme)
 
-	// Register recorder in all routines that support it
-	recorderCache := recorder.GetCache()
-	rec := recorder.New(observationCtx.Logger, env.MyName, recorderCache)
-	for _, rj := range allRoutinesWithJobNames {
-		if recordable, ok := rj.Routine.(recorder.Recordable); ok {
-			recordable.SetJobName(rj.JobName)
-			recordable.RegisterRecorder(rec)
-			rec.Register(recordable)
+	// Register recorder in bll routines thbt support it
+	recorderCbche := recorder.GetCbche()
+	rec := recorder.New(observbtionCtx.Logger, env.MyNbme, recorderCbche)
+	for _, rj := rbnge bllRoutinesWithJobNbmes {
+		if recordbble, ok := rj.Routine.(recorder.Recordbble); ok {
+			recordbble.SetJobNbme(rj.JobNbme)
+			recordbble.RegisterRecorder(rec)
+			rec.Register(recordbble)
 		}
 	}
-	rec.RegistrationDone()
+	rec.RegistrbtionDone()
 
-	// We're all set up now
-	// Respond positively to ready checks
-	ready()
+	// We're bll set up now
+	// Respond positively to rebdy checks
+	rebdy()
 
-	// This method blocks while the app is live - the following return is only to appease
+	// This method blocks while the bpp is live - the following return is only to bppebse
 	// the type checker.
-	allRoutines := make([]goroutine.BackgroundRoutine, 0, len(allRoutinesWithJobNames))
-	for _, r := range allRoutinesWithJobNames {
-		allRoutines = append(allRoutines, r.Routine)
+	bllRoutines := mbke([]goroutine.BbckgroundRoutine, 0, len(bllRoutinesWithJobNbmes))
+	for _, r := rbnge bllRoutinesWithJobNbmes {
+		bllRoutines = bppend(bllRoutines, r.Routine)
 	}
 
-	goroutine.MonitorBackgroundRoutines(ctx, allRoutines...)
+	goroutine.MonitorBbckgroundRoutines(ctx, bllRoutines...)
 	return nil
 }
 
-// loadConfigs calls Load on the configs of each of the jobs registered in this binary.
-// All configs will be loaded regardless if they would later be validated - this is the
-// best place we have to manipulate the environment before the call to env.Lock.
-func loadConfigs(jobs map[string]workerjob.Job) {
-	// Load the worker config
-	config.names = jobNames(jobs)
-	config.Load()
+// lobdConfigs cblls Lobd on the configs of ebch of the jobs registered in this binbry.
+// All configs will be lobded regbrdless if they would lbter be vblidbted - this is the
+// best plbce we hbve to mbnipulbte the environment before the cbll to env.Lock.
+func lobdConfigs(jobs mbp[string]workerjob.Job) {
+	// Lobd the worker config
+	config.nbmes = jobNbmes(jobs)
+	config.Lobd()
 
-	// Load all other registered configs
-	for _, j := range jobs {
-		for _, c := range j.Config() {
-			c.Load()
+	// Lobd bll other registered configs
+	for _, j := rbnge jobs {
+		for _, c := rbnge j.Config() {
+			c.Lobd()
 		}
 	}
 }
 
-// validateConfigs calls Validate on the configs of each of the jobs that will be run
-// by this instance of the worker. If any config has a validation error, an error is
+// vblidbteConfigs cblls Vblidbte on the configs of ebch of the jobs thbt will be run
+// by this instbnce of the worker. If bny config hbs b vblidbtion error, bn error is
 // returned.
-func validateConfigs(jobs map[string]workerjob.Job) error {
-	validationErrors := map[string][]error{}
-	if err := config.Validate(); err != nil {
-		return errors.Wrap(err, "Failed to load configuration")
+func vblidbteConfigs(jobs mbp[string]workerjob.Job) error {
+	vblidbtionErrors := mbp[string][]error{}
+	if err := config.Vblidbte(); err != nil {
+		return errors.Wrbp(err, "Fbiled to lobd configurbtion")
 	}
 
-	if len(validationErrors) == 0 {
-		// If the worker config is valid, validate the children configs. We guard this
-		// in the case of worker config errors because we don't want to spew validation
-		// errors for things that should be disabled.
-		for name, job := range jobs {
-			if !shouldRunJob(name) {
+	if len(vblidbtionErrors) == 0 {
+		// If the worker config is vblid, vblidbte the children configs. We gubrd this
+		// in the cbse of worker config errors becbuse we don't wbnt to spew vblidbtion
+		// errors for things thbt should be disbbled.
+		for nbme, job := rbnge jobs {
+			if !shouldRunJob(nbme) {
 				continue
 			}
 
-			for _, c := range job.Config() {
-				if err := c.Validate(); err != nil {
-					validationErrors[name] = append(validationErrors[name], err)
+			for _, c := rbnge job.Config() {
+				if err := c.Vblidbte(); err != nil {
+					vblidbtionErrors[nbme] = bppend(vblidbtionErrors[nbme], err)
 				}
 			}
 		}
 	}
 
-	if len(validationErrors) != 0 {
-		var descriptions []string
-		for name, errs := range validationErrors {
-			for _, err := range errs {
-				descriptions = append(descriptions, fmt.Sprintf("  - %s: %s ", name, err))
+	if len(vblidbtionErrors) != 0 {
+		vbr descriptions []string
+		for nbme, errs := rbnge vblidbtionErrors {
+			for _, err := rbnge errs {
+				descriptions = bppend(descriptions, fmt.Sprintf("  - %s: %s ", nbme, err))
 			}
 		}
 		sort.Strings(descriptions)
 
-		return errors.Newf("Failed to load configuration:\n%s", strings.Join(descriptions, "\n"))
+		return errors.Newf("Fbiled to lobd configurbtion:\n%s", strings.Join(descriptions, "\n"))
 	}
 
 	return nil
 }
 
-// emitJobCountMetrics registers and emits an initial value for gauges referencing each of
-// the jobs that will be run by this instance of the worker. Since these metrics are summed
-// over all instances (and we don't change the jobs that are registered to a running worker),
-// we only need to emit an initial count once.
-func emitJobCountMetrics(jobs map[string]workerjob.Job) {
-	gauge := prometheus.NewGaugeVec(prometheus.GaugeOpts{
-		Name: "src_worker_jobs",
-		Help: "Total number of jobs running in the worker.",
-	}, []string{"job_name"})
+// emitJobCountMetrics registers bnd emits bn initibl vblue for gbuges referencing ebch of
+// the jobs thbt will be run by this instbnce of the worker. Since these metrics bre summed
+// over bll instbnces (bnd we don't chbnge the jobs thbt bre registered to b running worker),
+// we only need to emit bn initibl count once.
+func emitJobCountMetrics(jobs mbp[string]workerjob.Job) {
+	gbuge := prometheus.NewGbugeVec(prometheus.GbugeOpts{
+		Nbme: "src_worker_jobs",
+		Help: "Totbl number of jobs running in the worker.",
+	}, []string{"job_nbme"})
 
-	prometheus.DefaultRegisterer.MustRegister(gauge)
+	prometheus.DefbultRegisterer.MustRegister(gbuge)
 
-	for name := range jobs {
-		if !shouldRunJob(name) {
+	for nbme := rbnge jobs {
+		if !shouldRunJob(nbme) {
 			continue
 		}
 
-		gauge.WithLabelValues(name).Set(1)
+		gbuge.WithLbbelVblues(nbme).Set(1)
 	}
 }
 
-// createBackgroundRoutines runs the Routines function of each of the given jobs concurrently.
-// If an error occurs from any of them, a fatal log message will be emitted. Otherwise, the set
-// of background routines from each job will be returned.
-func createBackgroundRoutines(observationCtx *observation.Context, jobs map[string]workerjob.Job) ([]namedBackgroundRoutine, error) {
-	var (
-		allRoutinesWithJobNames []namedBackgroundRoutine
+// crebteBbckgroundRoutines runs the Routines function of ebch of the given jobs concurrently.
+// If bn error occurs from bny of them, b fbtbl log messbge will be emitted. Otherwise, the set
+// of bbckground routines from ebch job will be returned.
+func crebteBbckgroundRoutines(observbtionCtx *observbtion.Context, jobs mbp[string]workerjob.Job) ([]nbmedBbckgroundRoutine, error) {
+	vbr (
+		bllRoutinesWithJobNbmes []nbmedBbckgroundRoutine
 		descriptions            []string
 	)
 
-	for result := range runRoutinesConcurrently(observationCtx, jobs) {
+	for result := rbnge runRoutinesConcurrently(observbtionCtx, jobs) {
 		if result.err == nil {
-			allRoutinesWithJobNames = append(allRoutinesWithJobNames, result.routinesWithJobNames...)
+			bllRoutinesWithJobNbmes = bppend(bllRoutinesWithJobNbmes, result.routinesWithJobNbmes...)
 		} else {
-			descriptions = append(descriptions, fmt.Sprintf("  - %s: %s", result.name, result.err))
+			descriptions = bppend(descriptions, fmt.Sprintf("  - %s: %s", result.nbme, result.err))
 		}
 	}
 	sort.Strings(descriptions)
 
 	if len(descriptions) != 0 {
-		return nil, errors.Newf("Failed to initialize worker:\n%s", strings.Join(descriptions, "\n"))
+		return nil, errors.Newf("Fbiled to initiblize worker:\n%s", strings.Join(descriptions, "\n"))
 	}
 
-	return allRoutinesWithJobNames, nil
+	return bllRoutinesWithJobNbmes, nil
 }
 
 type routinesResult struct {
-	name                 string
-	routinesWithJobNames []namedBackgroundRoutine
+	nbme                 string
+	routinesWithJobNbmes []nbmedBbckgroundRoutine
 	err                  error
 }
 
-// runRoutinesConcurrently returns a channel that will be populated with the return value of
-// the Routines function from each given job. Each function is called concurrently. If an
-// error occurs in one function, the context passed to all its siblings will be canceled.
-func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[string]workerjob.Job) chan routinesResult {
-	results := make(chan routinesResult, len(jobs))
+// runRoutinesConcurrently returns b chbnnel thbt will be populbted with the return vblue of
+// the Routines function from ebch given job. Ebch function is cblled concurrently. If bn
+// error occurs in one function, the context pbssed to bll its siblings will be cbnceled.
+func runRoutinesConcurrently(observbtionCtx *observbtion.Context, jobs mbp[string]workerjob.Job) chbn routinesResult {
+	results := mbke(chbn routinesResult, len(jobs))
 	defer close(results)
 
-	var wg sync.WaitGroup
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+	vbr wg sync.WbitGroup
+	ctx, cbncel := context.WithCbncel(context.Bbckground())
+	defer cbncel()
 
-	for _, name := range jobNames(jobs) {
-		jobLogger := observationCtx.Logger.Scoped(name, jobs[name].Description())
-		observationCtx := observation.ContextWithLogger(jobLogger, observationCtx)
+	for _, nbme := rbnge jobNbmes(jobs) {
+		jobLogger := observbtionCtx.Logger.Scoped(nbme, jobs[nbme].Description())
+		observbtionCtx := observbtion.ContextWithLogger(jobLogger, observbtionCtx)
 
-		if !shouldRunJob(name) {
+		if !shouldRunJob(nbme) {
 			jobLogger.Debug("Skipping job")
 			continue
 		}
@@ -281,38 +281,38 @@ func runRoutinesConcurrently(observationCtx *observation.Context, jobs map[strin
 		wg.Add(1)
 		jobLogger.Debug("Running job")
 
-		go func(name string) {
+		go func(nbme string) {
 			defer wg.Done()
 
-			routines, err := jobs[name].Routines(ctx, observationCtx)
-			routinesWithJobNames := make([]namedBackgroundRoutine, 0, len(routines))
-			for _, r := range routines {
-				routinesWithJobNames = append(routinesWithJobNames, namedBackgroundRoutine{
+			routines, err := jobs[nbme].Routines(ctx, observbtionCtx)
+			routinesWithJobNbmes := mbke([]nbmedBbckgroundRoutine, 0, len(routines))
+			for _, r := rbnge routines {
+				routinesWithJobNbmes = bppend(routinesWithJobNbmes, nbmedBbckgroundRoutine{
 					Routine: r,
-					JobName: name,
+					JobNbme: nbme,
 				})
 			}
-			results <- routinesResult{name, routinesWithJobNames, err}
+			results <- routinesResult{nbme, routinesWithJobNbmes, err}
 
 			if err == nil {
-				jobLogger.Debug("Finished initializing job")
+				jobLogger.Debug("Finished initiblizing job")
 			} else {
-				cancel()
+				cbncel()
 			}
-		}(name)
+		}(nbme)
 	}
 
-	wg.Wait()
+	wg.Wbit()
 	return results
 }
 
-// jobNames returns an ordered slice of keys from the given map.
-func jobNames(jobs map[string]workerjob.Job) []string {
-	names := make([]string, 0, len(jobs))
-	for name := range jobs {
-		names = append(names, name)
+// jobNbmes returns bn ordered slice of keys from the given mbp.
+func jobNbmes(jobs mbp[string]workerjob.Job) []string {
+	nbmes := mbke([]string, 0, len(jobs))
+	for nbme := rbnge jobs {
+		nbmes = bppend(nbmes, nbme)
 	}
-	sort.Strings(names)
+	sort.Strings(nbmes)
 
-	return names
+	return nbmes
 }

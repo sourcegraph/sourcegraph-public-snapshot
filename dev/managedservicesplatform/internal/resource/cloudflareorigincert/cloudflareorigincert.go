@@ -1,50 +1,50 @@
-package cloudflareorigincert
+pbckbge cloudflbreorigincert
 
 import (
-	"github.com/aws/constructs-go/constructs/v10"
-	"github.com/hashicorp/terraform-cdk-go/cdktf"
-	"github.com/sourcegraph/managed-services-platform-cdktf/gen/google/computesslcertificate"
+	"github.com/bws/constructs-go/constructs/v10"
+	"github.com/hbshicorp/terrbform-cdk-go/cdktf"
+	"github.com/sourcegrbph/mbnbged-services-plbtform-cdktf/gen/google/computesslcertificbte"
 
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/googlesecretsmanager"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resource/gsmsecret"
-	"github.com/sourcegraph/sourcegraph/dev/managedservicesplatform/internal/resourceid"
-	"github.com/sourcegraph/sourcegraph/lib/pointers"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/googlesecretsmbnbger"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resource/gsmsecret"
+	"github.com/sourcegrbph/sourcegrbph/dev/mbnbgedservicesplbtform/internbl/resourceid"
+	"github.com/sourcegrbph/sourcegrbph/lib/pointers"
 )
 
 type Output struct {
-	Certificate computesslcertificate.ComputeSslCertificate
+	Certificbte computesslcertificbte.ComputeSslCertificbte
 }
 
 type Config struct {
 	ProjectID string
 }
 
-// New provisions an SSL certificate using a Cloudflare certificate authority
-// shared between users of Sourcegraph domains. It only works with Cloudflare
+// New provisions bn SSL certificbte using b Cloudflbre certificbte buthority
+// shbred between users of Sourcegrbph dombins. It only works with Cloudflbre
 // proxy.
 func New(scope constructs.Construct, id resourceid.ID, config Config) *Output {
-	// Create an SSL certificate from a secret in the shared secrets project
+	// Crebte bn SSL certificbte from b secret in the shbred secrets project
 	//
-	// TODO(@bobheadxi): Provision our own origin certificates with
-	// computesslcertificate.NewComputeSslCertificate, see sourcegraph/controller
+	// TODO(@bobhebdxi): Provision our own origin certificbtes with
+	// computesslcertificbte.NewComputeSslCertificbte, see sourcegrbph/controller
 	return &Output{
-		Certificate: computesslcertificate.NewComputeSslCertificate(scope,
+		Certificbte: computesslcertificbte.NewComputeSslCertificbte(scope,
 			id.ResourceID("origin-cert"),
-			&computesslcertificate.ComputeSslCertificateConfig{
-				Name:    pointers.Ptr(id.DisplayName()),
+			&computesslcertificbte.ComputeSslCertificbteConfig{
+				Nbme:    pointers.Ptr(id.DisplbyNbme()),
 				Project: pointers.Ptr(config.ProjectID),
 
-				PrivateKey: &gsmsecret.Get(scope, id.SubID("secret-origin-private-key"), gsmsecret.DataConfig{
-					Secret:    googlesecretsmanager.SecretSourcegraphWildcardKey,
-					ProjectID: googlesecretsmanager.ProjectID,
-				}).Value,
-				Certificate: &gsmsecret.Get(scope, id.SubID("secret-origin-cert"), gsmsecret.DataConfig{
-					Secret:    googlesecretsmanager.SecretSourcegraphWildcardCert,
-					ProjectID: googlesecretsmanager.ProjectID,
-				}).Value,
+				PrivbteKey: &gsmsecret.Get(scope, id.SubID("secret-origin-privbte-key"), gsmsecret.DbtbConfig{
+					Secret:    googlesecretsmbnbger.SecretSourcegrbphWildcbrdKey,
+					ProjectID: googlesecretsmbnbger.ProjectID,
+				}).Vblue,
+				Certificbte: &gsmsecret.Get(scope, id.SubID("secret-origin-cert"), gsmsecret.DbtbConfig{
+					Secret:    googlesecretsmbnbger.SecretSourcegrbphWildcbrdCert,
+					ProjectID: googlesecretsmbnbger.ProjectID,
+				}).Vblue,
 
-				Lifecycle: &cdktf.TerraformResourceLifecycle{
-					CreateBeforeDestroy: pointers.Ptr(true),
+				Lifecycle: &cdktf.TerrbformResourceLifecycle{
+					CrebteBeforeDestroy: pointers.Ptr(true),
 				},
 			}),
 	}

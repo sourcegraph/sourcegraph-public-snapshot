@@ -1,313 +1,313 @@
-package github
+pbckbge github
 
 import (
 	"context"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/github_apps/store"
-	ghatypes "github.com/sourcegraph/sourcegraph/internal/github_apps/types"
-	"github.com/sourcegraph/sourcegraph/internal/license"
-	"github.com/sourcegraph/sourcegraph/internal/licensing"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/extsvc/github"
+	"github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/store"
+	ghbtypes "github.com/sourcegrbph/sourcegrbph/internbl/github_bpps/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/licensing"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-const testPrivateKey = `-----BEGIN RSA PRIVATE KEY-----
+const testPrivbteKey = `-----BEGIN RSA PRIVATE KEY-----
 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
-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
+zc8Sug5qkOtZTS5xiHgTtmZkDLuLZ26H5Gfx3zZk5Gv2Jy/+fLsGninbiwTRsZf6
 RgPgmdlkuM8OhSm4GtlpzoK0D3iZEhf4pITo1CK2U4Cs7vzkU0UkQ+J/z6dDmVBJ
-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
+gkblH1SHsboRqjNxkStEqGnbWwdtbl01skbGOwIDAQABAoIBAQCls54oll17V5g5
+0Htu3BdxBsNdG3gv6kcY85n7gqy4ZbHA83/zSsiPkW4/gbsqzzQbiU8Sf9U2IDDj
 wAImygy2SPzSRklk4QbBcKs/VSztMcoJOTprFGno+xShsexpe0j+kWdQYJK6JU0g
 +ouL6FHmlRC1qn/4tn0L2t6Rpl+Aq4peDLqdwFHXj8GxGv0S10qMQ4/ER7onP6f0
-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
+99WDTvNQR5DugKqHxooOV5HfUP70scqhCcFhp2zc7/bYQFVt/k4hDOMu/w4HhkD3
+r34y4EJoZsugGD1kPbJCw2rbSdoTtQHCqG5tfidY+XUIoC9mfmN8243jeRrhbyeT
+4ewiDuNhAoGBAPszeqN/+V8EVrlbBiBG+xVYGzWU0KgHu1TUiIrOSmKb6rTwbYMb
+dKI8N4gYwFtb24AeDLfGnpbZAKSvNnrf8ObpyLik7zXDylY0DBU7tRxQiUvNsVTs
+7CYjxih5GWzUeP/xgpfVbHIIGdTHbZ6JWiDHWOolAw3hQyw6V/uQTDtxAoGBANjK
+6vlctX55MjE2tuPk3ZCtCjgDFmWQjvFuiYYE/2cP4v4UBqgZn1vObLRCnFm10ycl
+peBLxPVpeeNBWc2ep2YNnJ+hm+SbvhIDesLJTxuhC4wtcKMVAtq83VQmMQTU5wRO
+KcUpviXLv2Z0UfbMWcohR4fJY1SkREwbxneHZc5rAoGBAIpT8c/BNBhPslYFutzh
 WXiKeQlLdo9hGpZ/JuWQ7cNY3bBfxyqMXvDLyiSmxJ5KehgV9BjrRf9WJ9WIKq8F
-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
+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
-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
+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
 -----END RSA PRIVATE KEY-----`
 
 func TestNewAuthzProviders(t *testing.T) {
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	db := dbmocks.NewMockDB()
-	t.Run("no authorization", func(t *testing.T) {
+	t.Run("no buthorizbtion", func(t *testing.T) {
 		initResults := NewAuthzProviders(
 			ctx,
 			db,
-			[]*ExternalConnection{
+			[]*ExternblConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
 						URN: "",
-						GitHubConnection: &schema.GitHubConnection{
-							Url:           schema.DefaultGitHubURL,
-							Authorization: nil,
+						GitHubConnection: &schemb.GitHubConnection{
+							Url:           schemb.DefbultGitHubURL,
+							Authorizbtion: nil,
 						},
 					},
 				},
 			},
-			[]schema.AuthProviders{},
-			false,
+			[]schemb.AuthProviders{},
+			fblse,
 		)
 
-		assertion := assert.New(t)
+		bssertion := bssert.New(t)
 
-		assertion.Len(initResults.Providers, 0, "unexpected a providers: %+v", initResults.Providers)
-		assertion.Len(initResults.Problems, 0, "unexpected problems: %+v", initResults.Problems)
-		assertion.Len(initResults.Warnings, 0, "unexpected warnings: %+v", initResults.Warnings)
-		assertion.Len(initResults.InvalidConnections, 0, "unexpected invalidConnections: %+v", initResults.InvalidConnections)
+		bssertion.Len(initResults.Providers, 0, "unexpected b providers: %+v", initResults.Providers)
+		bssertion.Len(initResults.Problems, 0, "unexpected problems: %+v", initResults.Problems)
+		bssertion.Len(initResults.Wbrnings, 0, "unexpected wbrnings: %+v", initResults.Wbrnings)
+		bssertion.Len(initResults.InvblidConnections, 0, "unexpected invblidConnections: %+v", initResults.InvblidConnections)
 	})
 
-	t.Run("no matching auth provider", func(t *testing.T) {
-		t.Cleanup(licensing.TestingSkipFeatureChecks())
+	t.Run("no mbtching buth provider", func(t *testing.T) {
+		t.Clebnup(licensing.TestingSkipFebtureChecks())
 		initResults := NewAuthzProviders(
 			ctx,
 			db,
-			[]*ExternalConnection{
+			[]*ExternblConnection{
 				{
 					GitHubConnection: &types.GitHubConnection{
 						URN: "",
-						GitHubConnection: &schema.GitHubConnection{
+						GitHubConnection: &schemb.GitHubConnection{
 							Url:           "https://github.com/my-org", // incorrect
-							Authorization: &schema.GitHubAuthorization{},
+							Authorizbtion: &schemb.GitHubAuthorizbtion{},
 						},
 					},
 				},
 			},
-			[]schema.AuthProviders{{
-				Github: &schema.GitHubAuthProvider{
-					Url: schema.DefaultGitHubURL,
+			[]schemb.AuthProviders{{
+				Github: &schemb.GitHubAuthProvider{
+					Url: schemb.DefbultGitHubURL,
 				},
 			}},
-			false,
+			fblse,
 		)
 
-		require.Len(t, initResults.Providers, 1, "expect exactly one provider")
-		assert.NotNil(t, initResults.Providers[0])
+		require.Len(t, initResults.Providers, 1, "expect exbctly one provider")
+		bssert.NotNil(t, initResults.Providers[0])
 
-		assert.Empty(t, initResults.Problems)
-		assert.Empty(t, initResults.InvalidConnections)
+		bssert.Empty(t, initResults.Problems)
+		bssert.Empty(t, initResults.InvblidConnections)
 
-		require.Len(t, initResults.Warnings, 1, "expect exactly one warning")
-		assert.Contains(t, initResults.Warnings[0], "no authentication provider")
+		require.Len(t, initResults.Wbrnings, 1, "expect exbctly one wbrning")
+		bssert.Contbins(t, initResults.Wbrnings[0], "no buthenticbtion provider")
 	})
 
-	t.Run("matching auth provider found", func(t *testing.T) {
-		t.Run("default case", func(t *testing.T) {
-			t.Cleanup(licensing.TestingSkipFeatureChecks())
+	t.Run("mbtching buth provider found", func(t *testing.T) {
+		t.Run("defbult cbse", func(t *testing.T) {
+			t.Clebnup(licensing.TestingSkipFebtureChecks())
 			initResults := NewAuthzProviders(
 				ctx,
 				db,
-				[]*ExternalConnection{
+				[]*ExternblConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
 							URN: "",
-							GitHubConnection: &schema.GitHubConnection{
-								Url:           schema.DefaultGitHubURL,
-								Authorization: &schema.GitHubAuthorization{},
+							GitHubConnection: &schemb.GitHubConnection{
+								Url:           schemb.DefbultGitHubURL,
+								Authorizbtion: &schemb.GitHubAuthorizbtion{},
 							},
 						},
 					},
 				},
-				[]schema.AuthProviders{{
-					// falls back to schema.DefaultGitHubURL
-					Github: &schema.GitHubAuthProvider{},
+				[]schemb.AuthProviders{{
+					// fblls bbck to schemb.DefbultGitHubURL
+					Github: &schemb.GitHubAuthProvider{},
 				}},
-				false,
+				fblse,
 			)
 
-			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
-			assert.NotNil(t, initResults.Providers[0])
+			require.Len(t, initResults.Providers, 1, "expect exbctly one provider")
+			bssert.NotNil(t, initResults.Providers[0])
 
-			assert.Empty(t, initResults.Problems)
-			assert.Empty(t, initResults.Warnings)
-			assert.Empty(t, initResults.InvalidConnections)
+			bssert.Empty(t, initResults.Problems)
+			bssert.Empty(t, initResults.Wbrnings)
+			bssert.Empty(t, initResults.InvblidConnections)
 		})
 
-		t.Run("license does not have ACLs feature", func(t *testing.T) {
-			t.Cleanup(licensing.MockCheckFeatureError("failed"))
+		t.Run("license does not hbve ACLs febture", func(t *testing.T) {
+			t.Clebnup(licensing.MockCheckFebtureError("fbiled"))
 			initResults := NewAuthzProviders(
 				ctx,
 				db,
-				[]*ExternalConnection{
+				[]*ExternblConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
 							URN: "",
-							GitHubConnection: &schema.GitHubConnection{
-								Url:           schema.DefaultGitHubURL,
-								Authorization: &schema.GitHubAuthorization{},
+							GitHubConnection: &schemb.GitHubConnection{
+								Url:           schemb.DefbultGitHubURL,
+								Authorizbtion: &schemb.GitHubAuthorizbtion{},
 							},
 						},
 					},
 				},
-				[]schema.AuthProviders{{
-					Github: &schema.GitHubAuthProvider{},
+				[]schemb.AuthProviders{{
+					Github: &schemb.GitHubAuthProvider{},
 				}},
-				false,
+				fblse,
 			)
 
-			expectedError := []string{"failed"}
-			expInvalidConnectionErr := []string{"github"}
-			assert.Equal(t, expectedError, initResults.Problems)
-			assert.Equal(t, expInvalidConnectionErr, initResults.InvalidConnections)
-			assert.Empty(t, initResults.Providers)
-			assert.Empty(t, initResults.Warnings)
+			expectedError := []string{"fbiled"}
+			expInvblidConnectionErr := []string{"github"}
+			bssert.Equbl(t, expectedError, initResults.Problems)
+			bssert.Equbl(t, expInvblidConnectionErr, initResults.InvblidConnections)
+			bssert.Empty(t, initResults.Providers)
+			bssert.Empty(t, initResults.Wbrnings)
 		})
 
-		t.Run("groups cache enabled, but not allowGroupsPermissionsSync", func(t *testing.T) {
-			t.Cleanup(licensing.TestingSkipFeatureChecks())
+		t.Run("groups cbche enbbled, but not bllowGroupsPermissionsSync", func(t *testing.T) {
+			t.Clebnup(licensing.TestingSkipFebtureChecks())
 			initResults := NewAuthzProviders(
 				ctx,
 				db,
-				[]*ExternalConnection{
+				[]*ExternblConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
 							URN: "",
-							GitHubConnection: &schema.GitHubConnection{
-								Url: schema.DefaultGitHubURL,
-								Authorization: &schema.GitHubAuthorization{
-									GroupsCacheTTL: 72,
+							GitHubConnection: &schemb.GitHubConnection{
+								Url: schemb.DefbultGitHubURL,
+								Authorizbtion: &schemb.GitHubAuthorizbtion{
+									GroupsCbcheTTL: 72,
 								},
 							},
 						},
 					},
 				},
-				[]schema.AuthProviders{{
-					Github: &schema.GitHubAuthProvider{
-						Url:                        schema.DefaultGitHubURL,
-						AllowGroupsPermissionsSync: false,
+				[]schemb.AuthProviders{{
+					Github: &schemb.GitHubAuthProvider{
+						Url:                        schemb.DefbultGitHubURL,
+						AllowGroupsPermissionsSync: fblse,
 					},
 				}},
-				false,
+				fblse,
 			)
 
-			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
-			assert.NotNil(t, initResults.Providers[0])
-			assert.Nil(t, initResults.Providers[0].(*Provider).groupsCache, "expect groups cache to be disabled")
+			require.Len(t, initResults.Providers, 1, "expect exbctly one provider")
+			bssert.NotNil(t, initResults.Providers[0])
+			bssert.Nil(t, initResults.Providers[0].(*Provider).groupsCbche, "expect groups cbche to be disbbled")
 
-			assert.Empty(t, initResults.Problems)
+			bssert.Empty(t, initResults.Problems)
 
-			require.Len(t, initResults.Warnings, 1, "expect exactly one warning")
-			assert.Contains(t, initResults.Warnings[0], "allowGroupsPermissionsSync")
-			assert.Empty(t, initResults.InvalidConnections)
+			require.Len(t, initResults.Wbrnings, 1, "expect exbctly one wbrning")
+			bssert.Contbins(t, initResults.Wbrnings[0], "bllowGroupsPermissionsSync")
+			bssert.Empty(t, initResults.InvblidConnections)
 		})
 
-		t.Run("groups cache and allowGroupsPermissionsSync enabled", func(t *testing.T) {
-			t.Cleanup(licensing.TestingSkipFeatureChecks())
-			github.MockGetAuthenticatedOAuthScopes = func(context.Context) ([]string, error) {
-				return []string{"read:org"}, nil
+		t.Run("groups cbche bnd bllowGroupsPermissionsSync enbbled", func(t *testing.T) {
+			t.Clebnup(licensing.TestingSkipFebtureChecks())
+			github.MockGetAuthenticbtedOAuthScopes = func(context.Context) ([]string, error) {
+				return []string{"rebd:org"}, nil
 			}
 			initResults := NewAuthzProviders(
 				ctx,
 				db,
-				[]*ExternalConnection{
+				[]*ExternblConnection{
 					{
 						GitHubConnection: &types.GitHubConnection{
 							URN: "",
-							GitHubConnection: &schema.GitHubConnection{
-								Url: schema.DefaultGitHubURL,
-								Authorization: &schema.GitHubAuthorization{
-									GroupsCacheTTL: 72,
+							GitHubConnection: &schemb.GitHubConnection{
+								Url: schemb.DefbultGitHubURL,
+								Authorizbtion: &schemb.GitHubAuthorizbtion{
+									GroupsCbcheTTL: 72,
 								},
 							},
 						},
 					},
 				},
-				[]schema.AuthProviders{{
-					Github: &schema.GitHubAuthProvider{
+				[]schemb.AuthProviders{{
+					Github: &schemb.GitHubAuthProvider{
 						Url:                        "https://github.com",
 						AllowGroupsPermissionsSync: true,
 					},
 				}},
-				false,
+				fblse,
 			)
 
-			require.Len(t, initResults.Providers, 1, "expect exactly one provider")
-			assert.NotNil(t, initResults.Providers[0])
-			assert.NotNil(t, initResults.Providers[0].(*Provider).groupsCache, "expect groups cache to be enabled")
+			require.Len(t, initResults.Providers, 1, "expect exbctly one provider")
+			bssert.NotNil(t, initResults.Providers[0])
+			bssert.NotNil(t, initResults.Providers[0].(*Provider).groupsCbche, "expect groups cbche to be enbbled")
 
-			assert.Empty(t, initResults.Problems)
-			assert.Empty(t, initResults.Warnings)
-			assert.Empty(t, initResults.InvalidConnections)
+			bssert.Empty(t, initResults.Problems)
+			bssert.Empty(t, initResults.Wbrnings)
+			bssert.Empty(t, initResults.InvblidConnections)
 		})
 	})
 }
 
-func TestValidateAuthz(t *testing.T) {
+func TestVblidbteAuthz(t *testing.T) {
 	licensing.MockGetConfiguredProductLicenseInfo = func() (*license.Info, string, error) {
 		return &license.Info{
-			Tags: []string{"acls"},
-		}, "test-signature", nil
+			Tbgs: []string{"bcls"},
+		}, "test-signbture", nil
 	}
 
 	defer func() {
 		licensing.MockGetConfiguredProductLicenseInfo = nil
 	}()
 
-	type testCase struct {
+	type testCbse struct {
 		conn    *types.GitHubConnection
-		wantErr bool
+		wbntErr bool
 	}
 
-	testCases := map[string]testCase{
-		"regular github conn": {
+	testCbses := mbp[string]testCbse{
+		"regulbr github conn": {
 			conn: &types.GitHubConnection{
 				URN: "",
-				GitHubConnection: &schema.GitHubConnection{
-					Url: schema.DefaultGitHubURL,
-					Authorization: &schema.GitHubAuthorization{
-						GroupsCacheTTL: 72,
+				GitHubConnection: &schemb.GitHubConnection{
+					Url: schemb.DefbultGitHubURL,
+					Authorizbtion: &schemb.GitHubAuthorizbtion{
+						GroupsCbcheTTL: 72,
 					},
 				},
 			},
 		},
-		"github app conn": {
+		"github bpp conn": {
 			conn: &types.GitHubConnection{
 				URN: "",
-				GitHubConnection: &schema.GitHubConnection{
-					Url: schema.DefaultGitHubURL,
-					Authorization: &schema.GitHubAuthorization{
-						GroupsCacheTTL: 72,
+				GitHubConnection: &schemb.GitHubConnection{
+					Url: schemb.DefbultGitHubURL,
+					Authorizbtion: &schemb.GitHubAuthorizbtion{
+						GroupsCbcheTTL: 72,
 					},
-					GitHubAppDetails: &schema.GitHubAppDetails{
+					GitHubAppDetbils: &schemb.GitHubAppDetbils{
 						AppID:          1,
-						BaseURL:        schema.DefaultGitHubURL,
-						InstallationID: 1,
+						BbseURL:        schemb.DefbultGitHubURL,
+						InstbllbtionID: 1,
 					},
 				},
 			},
 		},
-		"github app conn invalid": {
-			wantErr: true,
+		"github bpp conn invblid": {
+			wbntErr: true,
 			conn: &types.GitHubConnection{
 				URN: "",
-				GitHubConnection: &schema.GitHubConnection{
-					Url: schema.DefaultGitHubURL,
-					Authorization: &schema.GitHubAuthorization{
-						GroupsCacheTTL: 72,
+				GitHubConnection: &schemb.GitHubConnection{
+					Url: schemb.DefbultGitHubURL,
+					Authorizbtion: &schemb.GitHubAuthorizbtion{
+						GroupsCbcheTTL: 72,
 					},
-					GitHubAppDetails: &schema.GitHubAppDetails{
+					GitHubAppDetbils: &schemb.GitHubAppDetbils{
 						AppID:          2,
-						BaseURL:        schema.DefaultGitHubURL,
-						InstallationID: 1,
+						BbseURL:        schemb.DefbultGitHubURL,
+						InstbllbtionID: 1,
 					},
 				},
 			},
@@ -316,20 +316,20 @@ func TestValidateAuthz(t *testing.T) {
 
 	dbm := dbmocks.NewMockDB()
 	mockGHA := store.NewMockGitHubAppsStore()
-	mockGHA.GetByAppIDFunc.SetDefaultHook(func(ctx context.Context, i int, s string) (*ghatypes.GitHubApp, error) {
+	mockGHA.GetByAppIDFunc.SetDefbultHook(func(ctx context.Context, i int, s string) (*ghbtypes.GitHubApp, error) {
 		if i == 1 {
-			return &ghatypes.GitHubApp{ID: 1, PrivateKey: testPrivateKey}, nil
+			return &ghbtypes.GitHubApp{ID: 1, PrivbteKey: testPrivbteKey}, nil
 		}
 
 		return nil, errors.New("Not found")
 	})
 
-	dbm.GitHubAppsFunc.SetDefaultReturn(mockGHA)
+	dbm.GitHubAppsFunc.SetDefbultReturn(mockGHA)
 
-	for name, tc := range testCases {
-		t.Run(name, func(t *testing.T) {
-			err := ValidateAuthz(dbm, tc.conn)
-			if tc.wantErr {
+	for nbme, tc := rbnge testCbses {
+		t.Run(nbme, func(t *testing.T) {
+			err := VblidbteAuthz(dbm, tc.conn)
+			if tc.wbntErr {
 				require.Error(t, err)
 			} else {
 				require.NoError(t, err)

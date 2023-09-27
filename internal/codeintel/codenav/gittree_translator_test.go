@@ -1,4 +1,4 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"bytes"
@@ -8,392 +8,392 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	godiff "github.com/sourcegraph/go-diff/diff"
+	godiff "github.com/sourcegrbph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	sgtypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/codenbv/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	sgtypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
+func TestGetTbrgetCommitPbthFromSourcePbth(t *testing.T) {
 	client := gitserver.NewMockClient()
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, ok, err := adjuster.GetTargetCommitPathFromSourcePath(context.Background(), "deadbeef2", "/foo/bar.go", false)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, ok, err := bdjuster.GetTbrgetCommitPbthFromSourcePbth(context.Bbckground(), "debdbeef2", "/foo/bbr.go", fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 }
 
-func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
-	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
+func TestGetTbrgetCommitPositionFromSourcePosition(t *testing.T) {
+	client := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (rebder io.RebdCloser, err error) {
+		expectedArgs := []string{"diff", "debdbeef1", "debdbeef2", "--", "/foo/bbr.go"}
+		if diff := cmp.Diff(expectedArgs, brgs); diff != "" {
+			t.Errorf("unexpected exec rebder brgs (-wbnt +got):\n%s", diff)
 		}
 
-		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewRebder([]byte(hugoDiff))), nil
 	})
 
-	posIn := shared.Position{Line: 302, Character: 15}
+	posIn := shbred.Position{Line: 302, Chbrbcter: 15}
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, posOut, ok, err := bdjuster.GetTbrgetCommitPositionFromSourcePosition(context.Bbckground(), "debdbeef2", posIn, fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 
-	expectedPos := shared.Position{Line: 294, Character: 15}
+	expectedPos := shbred.Position{Line: 294, Chbrbcter: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
-		t.Errorf("unexpected position (-want +got):\n%s", diff)
+		t.Errorf("unexpected position (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
-	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		return io.NopCloser(bytes.NewReader(nil)), nil
+func TestGetTbrgetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
+	client := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (rebder io.RebdCloser, err error) {
+		return io.NopCloser(bytes.NewRebder(nil)), nil
 	})
 
-	posIn := shared.Position{Line: 10, Character: 15}
+	posIn := shbred.Position{Line: 10, Chbrbcter: 15}
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, posOut, ok, err := bdjuster.GetTbrgetCommitPositionFromSourcePosition(context.Bbckground(), "debdbeef2", posIn, fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 	if diff := cmp.Diff(posOut, posIn); diff != "" {
-		t.Errorf("unexpected position (-want +got):\n%s", diff)
+		t.Errorf("unexpected position (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
-	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
+func TestGetTbrgetCommitPositionFromSourcePositionReverse(t *testing.T) {
+	client := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (rebder io.RebdCloser, err error) {
+		expectedArgs := []string{"diff", "debdbeef2", "debdbeef1", "--", "/foo/bbr.go"}
+		if diff := cmp.Diff(expectedArgs, brgs); diff != "" {
+			t.Errorf("unexpected exec rebder brgs (-wbnt +got):\n%s", diff)
 		}
 
-		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewRebder([]byte(hugoDiff))), nil
 	})
 
-	posIn := shared.Position{Line: 302, Character: 15}
+	posIn := shbred.Position{Line: 302, Chbrbcter: 15}
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, true)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, posOut, ok, err := bdjuster.GetTbrgetCommitPositionFromSourcePosition(context.Bbckground(), "debdbeef2", posIn, true)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 
-	expectedPos := shared.Position{Line: 294, Character: 15}
+	expectedPos := shbred.Position{Line: 294, Chbrbcter: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
-		t.Errorf("unexpected position (-want +got):\n%s", diff)
+		t.Errorf("unexpected position (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
-	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef1", "deadbeef2", "--", "/foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
+func TestGetTbrgetCommitRbngeFromSourceRbnge(t *testing.T) {
+	client := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (rebder io.RebdCloser, err error) {
+		expectedArgs := []string{"diff", "debdbeef1", "debdbeef2", "--", "/foo/bbr.go"}
+		if diff := cmp.Diff(expectedArgs, brgs); diff != "" {
+			t.Errorf("unexpected exec rebder brgs (-wbnt +got):\n%s", diff)
 		}
 
-		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewRebder([]byte(hugoDiff))), nil
 	})
 
-	rIn := shared.Range{
-		Start: shared.Position{Line: 302, Character: 15},
-		End:   shared.Position{Line: 305, Character: 20},
+	rIn := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 302, Chbrbcter: 15},
+		End:   shbred.Position{Line: 305, Chbrbcter: 20},
 	}
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, rOut, ok, err := bdjuster.GetTbrgetCommitRbngeFromSourceRbnge(context.Bbckground(), "debdbeef2", "/foo/bbr.go", rIn, fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 294, Character: 15},
-		End:   shared.Position{Line: 297, Character: 20},
+	expectedRbnge := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 294, Chbrbcter: 15},
+		End:   shbred.Position{Line: 297, Chbrbcter: 20},
 	}
-	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
-		t.Errorf("unexpected position (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnge, rOut); diff != "" {
+		t.Errorf("unexpected position (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
-	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		return io.NopCloser(bytes.NewReader([]byte(nil))), nil
+func TestGetTbrgetCommitRbngeFromSourceRbngeEmptyDiff(t *testing.T) {
+	client := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (rebder io.RebdCloser, err error) {
+		return io.NopCloser(bytes.NewRebder([]byte(nil))), nil
 	})
 
-	rIn := shared.Range{
-		Start: shared.Position{Line: 302, Character: 15},
-		End:   shared.Position{Line: 305, Character: 20},
+	rIn := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 302, Chbrbcter: 15},
+		End:   shbred.Position{Line: 305, Chbrbcter: 20},
 	}
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, rOut, ok, err := bdjuster.GetTbrgetCommitRbngeFromSourceRbnge(context.Bbckground(), "debdbeef2", "/foo/bbr.go", rIn, fblse)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 	if diff := cmp.Diff(rOut, rIn); diff != "" {
-		t.Errorf("unexpected position (-want +got):\n%s", diff)
+		t.Errorf("unexpected position (-wbnt +got):\n%s", diff)
 	}
 }
 
-func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
-	client := gitserver.NewMockClientWithExecReader(func(_ context.Context, _ api.RepoName, args []string) (reader io.ReadCloser, err error) {
-		expectedArgs := []string{"diff", "deadbeef2", "deadbeef1", "--", "/foo/bar.go"}
-		if diff := cmp.Diff(expectedArgs, args); diff != "" {
-			t.Errorf("unexpected exec reader args (-want +got):\n%s", diff)
+func TestGetTbrgetCommitRbngeFromSourceRbngeReverse(t *testing.T) {
+	client := gitserver.NewMockClientWithExecRebder(func(_ context.Context, _ bpi.RepoNbme, brgs []string) (rebder io.RebdCloser, err error) {
+		expectedArgs := []string{"diff", "debdbeef2", "debdbeef1", "--", "/foo/bbr.go"}
+		if diff := cmp.Diff(expectedArgs, brgs); diff != "" {
+			t.Errorf("unexpected exec rebder brgs (-wbnt +got):\n%s", diff)
 		}
 
-		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
+		return io.NopCloser(bytes.NewRebder([]byte(hugoDiff))), nil
 	})
 
-	rIn := shared.Range{
-		Start: shared.Position{Line: 302, Character: 15},
-		End:   shared.Position{Line: 305, Character: 20},
+	rIn := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 302, Chbrbcter: 15},
+		End:   shbred.Position{Line: 305, Chbrbcter: 20},
 	}
 
-	args := &requestArgs{
+	brgs := &requestArgs{
 		repo:   &sgtypes.Repo{ID: 50},
-		commit: "deadbeef1",
-		path:   "/foo/bar.go",
+		commit: "debdbeef1",
+		pbth:   "/foo/bbr.go",
 	}
-	adjuster := NewGitTreeTranslator(client, args, nil)
-	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, true)
+	bdjuster := NewGitTreeTrbnslbtor(client, brgs, nil)
+	pbth, rOut, ok, err := bdjuster.GetTbrgetCommitRbngeFromSourceRbnge(context.Bbckground(), "debdbeef2", "/foo/bbr.go", rIn, true)
 	if err != nil {
-		t.Fatalf("unexpected error: %s", err)
+		t.Fbtblf("unexpected error: %s", err)
 	}
 
 	if !ok {
-		t.Errorf("expected translation to succeed")
+		t.Errorf("expected trbnslbtion to succeed")
 	}
-	if path != "/foo/bar.go" {
-		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
+	if pbth != "/foo/bbr.go" {
+		t.Errorf("unexpected pbth. wbnt=%s hbve=%s", "/foo/bbr.go", pbth)
 	}
 
-	expectedRange := shared.Range{
-		Start: shared.Position{Line: 294, Character: 15},
-		End:   shared.Position{Line: 297, Character: 20},
+	expectedRbnge := shbred.Rbnge{
+		Stbrt: shbred.Position{Line: 294, Chbrbcter: 15},
+		End:   shbred.Position{Line: 297, Chbrbcter: 20},
 	}
-	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
-		t.Errorf("unexpected position (-want +got):\n%s", diff)
+	if diff := cmp.Diff(expectedRbnge, rOut); diff != "" {
+		t.Errorf("unexpected position (-wbnt +got):\n%s", diff)
 	}
 }
 
-type gitTreeTranslatorTestCase struct {
+type gitTreeTrbnslbtorTestCbse struct {
 	diff         string // The git diff output
-	diffName     string // The git diff output name
+	diffNbme     string // The git diff output nbme
 	description  string // The description of the test
-	line         int    // The target line (one-indexed)
-	expectedOk   bool   // Whether the operation should succeed
-	expectedLine int    // The expected adjusted line (one-indexed)
+	line         int    // The tbrget line (one-indexed)
+	expectedOk   bool   // Whether the operbtion should succeed
+	expectedLine int    // The expected bdjusted line (one-indexed)
 }
 
-// hugoDiff is a diff from github.com/gohugoio/hugo generated via the following command.
-// git diff 8947c3fa0beec021e14b3f8040857335e1ecd473 3e9db2ad951dbb1000cd0f8f25e4a95445046679 -- resources/image.go
+// hugoDiff is b diff from github.com/gohugoio/hugo generbted vib the following commbnd.
+// git diff 8947c3fb0beec021e14b3f8040857335e1ecd473 3e9db2bd951dbb1000cd0f8f25e4b95445046679 -- resources/imbge.go
 const hugoDiff = `
-diff --git a/resources/image.go b/resources/image.go
-index d1d9f650d673..076f2ae4d63b 100644
---- a/resources/image.go
-+++ b/resources/image.go
+diff --git b/resources/imbge.go b/resources/imbge.go
+index d1d9f650d673..076f2be4d63b 100644
+--- b/resources/imbge.go
++++ b/resources/imbge.go
 @@ -36,7 +36,6 @@ import (
 
         "github.com/gohugoio/hugo/resources/resource"
 
--       "github.com/sourcegraph/sourcegraph/lib/errors"
-        _errors "github.com/sourcegraph/sourcegraph/lib/errors"
+-       "github.com/sourcegrbph/sourcegrbph/lib/errors"
+        _errors "github.com/sourcegrbph/sourcegrbph/lib/errors"
 
         "github.com/gohugoio/hugo/helpers"
-@@ -235,7 +234,7 @@ const imageProcWorkers = 1
- var imageProcSem = make(chan bool, imageProcWorkers)
+@@ -235,7 +234,7 @@ const imbgeProcWorkers = 1
+ vbr imbgeProcSem = mbke(chbn bool, imbgeProcWorkers)
 
- func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src image.Image) (image.Image, error)) (resource.Image, error) {
--       img, err := i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
-+       return i.getSpec().imageCache.getOrCreate(i, conf, func() (*imageResource, image.Image, error) {
-                imageProcSem <- true
+ func (i *imbgeResource) doWithImbgeConfig(conf imbges.ImbgeConfig, f func(src imbge.Imbge) (imbge.Imbge, error)) (resource.Imbge, error) {
+-       img, err := i.getSpec().imbgeCbche.getOrCrebte(i, conf, func() (*imbgeResource, imbge.Imbge, error) {
++       return i.getSpec().imbgeCbche.getOrCrebte(i, conf, func() (*imbgeResource, imbge.Imbge, error) {
+                imbgeProcSem <- true
                 defer func() {
-                        <-imageProcSem
-@@ -292,13 +291,6 @@ func (i *imageResource) doWithImageConfig(conf images.ImageConfig, f func(src im
+                        <-imbgeProcSem
+@@ -292,13 +291,6 @@ func (i *imbgeResource) doWithImbgeConfig(conf imbges.ImbgeConfig, f func(src im
 
                 return ci, converted, nil
         })
 -
 -       if err != nil {
 -               if i.root != nil && i.root.getFileInfo() != nil {
--                       return nil, errors.Wrapf(err, "image %q", i.root.getFileInfo().Meta().Filename())
+-                       return nil, errors.Wrbpf(err, "imbge %q", i.root.getFileInfo().Metb().Filenbme())
 -               }
 -       }
 -       return img, nil
  }
 
- func (i *imageResource) decodeImageConfig(action, spec string) (images.ImageConfig, error) {
+ func (i *imbgeResource) decodeImbgeConfig(bction, spec string) (imbges.ImbgeConfig, error) {
 `
 
-var hugoTestCases = []gitTreeTranslatorTestCase{
+vbr hugoTestCbses = []gitTreeTrbnslbtorTestCbse{
 	// Between hunks
 	{hugoDiff, "hugo", "before first hunk", 10, true, 10},
 	{hugoDiff, "hugo", "between hunks (1x deletion)", 150, true, 149},
 	{hugoDiff, "hugo", "between hunks (1x deletion, 1x edit)", 250, true, 249},
-	{hugoDiff, "hugo", "after last hunk (2x deletions, 1x edit)", 350, true, 342},
+	{hugoDiff, "hugo", "bfter lbst hunk (2x deletions, 1x edit)", 350, true, 342},
 
 	// Hunk 1
 	{hugoDiff, "hugo", "before first hunk deletion", 38, true, 38},
-	{hugoDiff, "hugo", "on first hunk deletion", 39, false, 0},
-	{hugoDiff, "hugo", "after first hunk deletion", 40, true, 39},
+	{hugoDiff, "hugo", "on first hunk deletion", 39, fblse, 0},
+	{hugoDiff, "hugo", "bfter first hunk deletion", 40, true, 39},
 
 	// Hunk 1 (lower border)
-	{hugoDiff, "hugo", "inside first hunk context (last line)", 43, true, 42},
-	{hugoDiff, "hugo", "directly after first hunk", 44, true, 43},
+	{hugoDiff, "hugo", "inside first hunk context (lbst line)", 43, true, 42},
+	{hugoDiff, "hugo", "directly bfter first hunk", 44, true, 43},
 
 	// Hunk 2
 	{hugoDiff, "hugo", "before second hunk edit", 237, true, 236},
-	{hugoDiff, "hugo", "on edited hunk edit", 238, false, 0},
-	{hugoDiff, "hugo", "after second hunk edit", 239, true, 238},
+	{hugoDiff, "hugo", "on edited hunk edit", 238, fblse, 0},
+	{hugoDiff, "hugo", "bfter second hunk edit", 239, true, 238},
 
 	// Hunk 3
 	{hugoDiff, "hugo", "before third hunk deletion", 294, true, 293},
-	{hugoDiff, "hugo", "on third hunk deletion", 295, false, 0},
-	{hugoDiff, "hugo", "on third hunk deletion", 301, false, 0},
-	{hugoDiff, "hugo", "after third hunk deletion", 302, true, 294},
+	{hugoDiff, "hugo", "on third hunk deletion", 295, fblse, 0},
+	{hugoDiff, "hugo", "on third hunk deletion", 301, fblse, 0},
+	{hugoDiff, "hugo", "bfter third hunk deletion", 302, true, 294},
 }
 
-// prometheusDiff is a diff from github.com/prometheus/prometheus generated via the following command.
-// git diff 52025bd7a9446c3178bf01dd2949d4874dd45f24 45fbed94d6ee17840254e78cfc421ab1db78f734 -- discovery/manager.go
+// prometheusDiff is b diff from github.com/prometheus/prometheus generbted vib the following commbnd.
+// git diff 52025bd7b9446c3178bf01dd2949d4874dd45f24 45fbed94d6ee17840254e78cfc421bb1db78f734 -- discovery/mbnbger.go
 const prometheusDiff = `
-diff --git a/discovery/manager.go b/discovery/manager.go
-index 49bcbf86b7ba..d135cd54e700 100644
---- a/discovery/manager.go
-+++ b/discovery/manager.go
-@@ -293,11 +293,11 @@ func (m *Manager) updateGroup(poolKey poolKey, tgs []*targetgroup.Group) {
+diff --git b/discovery/mbnbger.go b/discovery/mbnbger.go
+index 49bcbf86b7bb..d135cd54e700 100644
+--- b/discovery/mbnbger.go
++++ b/discovery/mbnbger.go
+@@ -293,11 +293,11 @@ func (m *Mbnbger) updbteGroup(poolKey poolKey, tgs []*tbrgetgroup.Group) {
         m.mtx.Lock()
         defer m.mtx.Unlock()
 
--       if _, ok := m.targets[poolKey]; !ok {
--               m.targets[poolKey] = make(map[string]*targetgroup.Group)
+-       if _, ok := m.tbrgets[poolKey]; !ok {
+-               m.tbrgets[poolKey] = mbke(mbp[string]*tbrgetgroup.Group)
 -       }
-        for _, tg := range tgs {
-                if tg != nil { // Some Discoverers send nil target group so need to check for it to avoid panics.
-+                       if _, ok := m.targets[poolKey]; !ok {
-+                               m.targets[poolKey] = make(map[string]*targetgroup.Group)
+        for _, tg := rbnge tgs {
+                if tg != nil { // Some Discoverers send nil tbrget group so need to check for it to bvoid pbnics.
++                       if _, ok := m.tbrgets[poolKey]; !ok {
++                               m.tbrgets[poolKey] = mbke(mbp[string]*tbrgetgroup.Group)
 +                       }
-                        m.targets[poolKey][tg.Source] = tg
+                        m.tbrgets[poolKey][tg.Source] = tg
                 }
         }
 `
 
-var prometheusTestCases = []gitTreeTranslatorTestCase{
+vbr prometheusTestCbses = []gitTreeTrbnslbtorTestCbse{
 	{prometheusDiff, "prometheus", "before hunk", 100, true, 100},
 	{prometheusDiff, "prometheus", "before deletion", 295, true, 295},
-	{prometheusDiff, "prometheus", "on deletion 1", 296, false, 0},
-	{prometheusDiff, "prometheus", "on deletion 2", 297, false, 0},
-	{prometheusDiff, "prometheus", "on deletion 3", 298, false, 0},
-	{prometheusDiff, "prometheus", "after deletion", 299, true, 296},
+	{prometheusDiff, "prometheus", "on deletion 1", 296, fblse, 0},
+	{prometheusDiff, "prometheus", "on deletion 2", 297, fblse, 0},
+	{prometheusDiff, "prometheus", "on deletion 3", 298, fblse, 0},
+	{prometheusDiff, "prometheus", "bfter deletion", 299, true, 296},
 	{prometheusDiff, "prometheus", "before insertion", 300, true, 297},
-	{prometheusDiff, "prometheus", "after insertion", 301, true, 301},
-	{prometheusDiff, "prometheus", "after hunk", 500, true, 500},
+	{prometheusDiff, "prometheus", "bfter insertion", 301, true, 301},
+	{prometheusDiff, "prometheus", "bfter hunk", 500, true, 500},
 }
 
-func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
-	for _, testCase := range append(append([]gitTreeTranslatorTestCase(nil), hugoTestCases...), prometheusTestCases...) {
-		name := fmt.Sprintf("%s : %s", testCase.diffName, testCase.description)
+func TestRbwGetTbrgetCommitPositionFromSourcePosition(t *testing.T) {
+	for _, testCbse := rbnge bppend(bppend([]gitTreeTrbnslbtorTestCbse(nil), hugoTestCbses...), prometheusTestCbses...) {
+		nbme := fmt.Sprintf("%s : %s", testCbse.diffNbme, testCbse.description)
 
-		t.Run(name, func(t *testing.T) {
-			diff, err := godiff.NewFileDiffReader(bytes.NewReader([]byte(testCase.diff))).Read()
+		t.Run(nbme, func(t *testing.T) {
+			diff, err := godiff.NewFileDiffRebder(bytes.NewRebder([]byte(testCbse.diff))).Rebd()
 			if err != nil {
-				t.Fatalf("unexpected error reading file diff: %s", err)
+				t.Fbtblf("unexpected error rebding file diff: %s", err)
 			}
 			hunks := diff.Hunks
 
-			pos := shared.Position{
-				Line:      testCase.line - 1, // 1-index -> 0-index
-				Character: 10,
+			pos := shbred.Position{
+				Line:      testCbse.line - 1, // 1-index -> 0-index
+				Chbrbcter: 10,
 			}
 
-			if adjusted, ok := translatePosition(hunks, pos); ok != testCase.expectedOk {
-				t.Errorf("unexpected ok. want=%v have=%v", testCase.expectedOk, ok)
+			if bdjusted, ok := trbnslbtePosition(hunks, pos); ok != testCbse.expectedOk {
+				t.Errorf("unexpected ok. wbnt=%v hbve=%v", testCbse.expectedOk, ok)
 			} else if ok {
 				// Adjust from zero-index to one-index
-				if adjusted.Line+1 != testCase.expectedLine {
-					t.Errorf("unexpected line. want=%d have=%d", testCase.expectedLine, adjusted.Line+1) // 0-index -> 1-index
+				if bdjusted.Line+1 != testCbse.expectedLine {
+					t.Errorf("unexpected line. wbnt=%d hbve=%d", testCbse.expectedLine, bdjusted.Line+1) // 0-index -> 1-index
 				}
-				if adjusted.Character != 10 {
-					t.Errorf("unexpected character. want=%d have=%d", 10, adjusted.Character)
+				if bdjusted.Chbrbcter != 10 {
+					t.Errorf("unexpected chbrbcter. wbnt=%d hbve=%d", 10, bdjusted.Chbrbcter)
 				}
 			}
 		})

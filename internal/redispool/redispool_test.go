@@ -1,34 +1,34 @@
-package redispool
+pbckbge redispool
 
 import (
-	"flag"
+	"flbg"
 	"os"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestSchemeMatcher(t *testing.T) {
+func TestSchemeMbtcher(t *testing.T) {
 	tests := []struct {
-		urlMaybe  string
-		hasScheme bool
+		urlMbybe  string
+		hbsScheme bool
 	}{
 		{"redis://foo.com", true},
 		{"https://foo.com", true},
-		{"redis://:password@foo.com/0", true},
-		{"redis://foo.com/0?password=foo", true},
-		{"foo:1234", false},
+		{"redis://:pbssword@foo.com/0", true},
+		{"redis://foo.com/0?pbssword=foo", true},
+		{"foo:1234", fblse},
 	}
-	for _, test := range tests {
-		hasScheme := schemeMatcher.MatchString(test.urlMaybe)
-		if hasScheme != test.hasScheme {
-			t.Errorf("for string %q, exp != got: %v != %v", test.urlMaybe, test.hasScheme, hasScheme)
+	for _, test := rbnge tests {
+		hbsScheme := schemeMbtcher.MbtchString(test.urlMbybe)
+		if hbsScheme != test.hbsScheme {
+			t.Errorf("for string %q, exp != got: %v != %v", test.urlMbybe, test.hbsScheme, hbsScheme)
 		}
 	}
 }
 
-func TestMain(m *testing.M) {
-	flag.Parse()
+func TestMbin(m *testing.M) {
+	flbg.Pbrse()
 	logtest.Init(m)
 	os.Exit(m.Run())
 }

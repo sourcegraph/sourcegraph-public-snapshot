@@ -1,64 +1,64 @@
-package usagestats
+pbckbge usbgestbts
 
 import (
 	"context"
-	"database/sql"
+	"dbtbbbse/sql"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func GetAggregatedRepoMetadataStats(ctx context.Context, db database.DB) (*types.RepoMetadataAggregatedStats, error) {
+func GetAggregbtedRepoMetbdbtbStbts(ctx context.Context, db dbtbbbse.DB) (*types.RepoMetbdbtbAggregbtedStbts, error) {
 	now := time.Now().UTC()
-	daily, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, now, database.Daily)
+	dbily, err := db.EventLogs().AggregbtedRepoMetbdbtbEvents(ctx, now, dbtbbbse.Dbily)
 	if err != nil {
 		return nil, err
 	}
 
-	weekly, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, now, database.Weekly)
+	weekly, err := db.EventLogs().AggregbtedRepoMetbdbtbEvents(ctx, now, dbtbbbse.Weekly)
 	if err != nil {
 		return nil, err
 	}
 
-	monthly, err := db.EventLogs().AggregatedRepoMetadataEvents(ctx, now, database.Monthly)
+	monthly, err := db.EventLogs().AggregbtedRepoMetbdbtbEvents(ctx, now, dbtbbbse.Monthly)
 	if err != nil {
 		return nil, err
 	}
 
-	summary, err := getAggregatedRepoMetadataSummary(ctx, db)
+	summbry, err := getAggregbtedRepoMetbdbtbSummbry(ctx, db)
 	if err != nil {
 		return nil, err
 	}
 
-	return &types.RepoMetadataAggregatedStats{
-		Summary: summary,
-		Daily:   daily,
+	return &types.RepoMetbdbtbAggregbtedStbts{
+		Summbry: summbry,
+		Dbily:   dbily,
 		Weekly:  weekly,
 		Monthly: monthly,
 	}, nil
 }
 
-func getAggregatedRepoMetadataSummary(ctx context.Context, db database.DB) (*types.RepoMetadataAggregatedSummary, error) {
+func getAggregbtedRepoMetbdbtbSummbry(ctx context.Context, db dbtbbbse.DB) (*types.RepoMetbdbtbAggregbtedSummbry, error) {
 	q := `
 	SELECT
-		COUNT(*) AS total_count,
-		COUNT(DISTINCT repo_id) AS total_repos_count
+		COUNT(*) AS totbl_count,
+		COUNT(DISTINCT repo_id) AS totbl_repos_count
 	FROM repo_kvps
 	`
-	var summary types.RepoMetadataAggregatedSummary
-	err := db.QueryRowContext(ctx, q).Scan(&summary.RepoMetadataCount, &summary.ReposWithMetadataCount)
+	vbr summbry types.RepoMetbdbtbAggregbtedSummbry
+	err := db.QueryRowContext(ctx, q).Scbn(&summbry.RepoMetbdbtbCount, &summbry.ReposWithMetbdbtbCount)
 	if err != nil {
 		return nil, err
 	}
 
-	flag, err := db.FeatureFlags().GetFeatureFlag(ctx, "repository-metadata")
+	flbg, err := db.FebtureFlbgs().GetFebtureFlbg(ctx, "repository-metbdbtb")
 	if err != nil {
 		if err != sql.ErrNoRows {
 			return nil, err
 		}
 	}
-	summary.IsEnabled = flag == nil || flag.Bool.Value
+	summbry.IsEnbbled = flbg == nil || flbg.Bool.Vblue
 
-	return &summary, nil
+	return &summbry, nil
 }

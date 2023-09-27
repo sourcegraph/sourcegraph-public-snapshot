@@ -1,48 +1,48 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"encoding/json"
 	"time"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/telemetry/teestore"
-	telemetrygatewayv1 "github.com/sourcegraph/sourcegraph/internal/telemetrygateway/v1"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/telemetry/teestore"
+	telemetrygbtewbyv1 "github.com/sourcegrbph/sourcegrbph/internbl/telemetrygbtewby/v1"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Resolver is the GraphQL resolver of all things related to telemetry V2.
+// Resolver is the GrbphQL resolver of bll things relbted to telemetry V2.
 type Resolver struct {
 	logger   log.Logger
 	teestore *teestore.Store
 }
 
-// New returns a new Resolver whose store uses the given database
-func New(logger log.Logger, db database.DB) graphqlbackend.TelemetryResolver {
+// New returns b new Resolver whose store uses the given dbtbbbse
+func New(logger log.Logger, db dbtbbbse.DB) grbphqlbbckend.TelemetryResolver {
 	return &Resolver{logger: logger, teestore: teestore.NewStore(db.TelemetryEventsExportQueue(), db.EventLogs())}
 }
 
-var _ graphqlbackend.TelemetryResolver = &Resolver{}
+vbr _ grbphqlbbckend.TelemetryResolver = &Resolver{}
 
-func (r *Resolver) RecordEvents(ctx context.Context, args *graphqlbackend.RecordEventsArgs) (*graphqlbackend.EmptyResponse, error) {
-	if args == nil || len(args.Events) == 0 {
+func (r *Resolver) RecordEvents(ctx context.Context, brgs *grbphqlbbckend.RecordEventsArgs) (*grbphqlbbckend.EmptyResponse, error) {
+	if brgs == nil || len(brgs.Events) == 0 {
 		return nil, errors.New("no events provided")
 	}
-	gatewayEvents, err := newTelemetryGatewayEvents(ctx, time.Now(), telemetrygatewayv1.DefaultEventIDFunc, args.Events)
+	gbtewbyEvents, err := newTelemetryGbtewbyEvents(ctx, time.Now(), telemetrygbtewbyv1.DefbultEventIDFunc, brgs.Events)
 	if err != nil {
-		// This is an important failure, make sure we surface it, as it could be
-		// an implementation error.
-		data, _ := json.Marshal(args.Events)
-		r.logger.Error("failed to convert telemetry events to internal format",
+		// This is bn importbnt fbilure, mbke sure we surfbce it, bs it could be
+		// bn implementbtion error.
+		dbtb, _ := json.Mbrshbl(brgs.Events)
+		r.logger.Error("fbiled to convert telemetry events to internbl formbt",
 			log.Error(err),
-			log.String("eventData", string(data)))
-		return nil, errors.Wrap(err, "invalid events provided")
+			log.String("eventDbtb", string(dbtb)))
+		return nil, errors.Wrbp(err, "invblid events provided")
 	}
-	if err := r.teestore.StoreEvents(ctx, gatewayEvents); err != nil {
-		return nil, errors.Wrap(err, "error storing events")
+	if err := r.teestore.StoreEvents(ctx, gbtewbyEvents); err != nil {
+		return nil, errors.Wrbp(err, "error storing events")
 	}
-	return &graphqlbackend.EmptyResponse{}, nil
+	return &grbphqlbbckend.EmptyResponse{}, nil
 }

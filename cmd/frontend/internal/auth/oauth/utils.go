@@ -1,17 +1,17 @@
-package oauth
+pbckbge obuth
 
 import (
 	"github.com/dghubble/gologin"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf"
 )
 
-func GetStateConfig(name string) gologin.CookieConfig {
+func GetStbteConfig(nbme string) gologin.CookieConfig {
 	cfg := gologin.CookieConfig{
-		Name:     name,
-		Path:     "/",
-		MaxAge:   900, // 15 minutes
+		Nbme:     nbme,
+		Pbth:     "/",
+		MbxAge:   900, // 15 minutes
 		HTTPOnly: true,
-		Secure:   conf.IsExternalURLSecure(),
+		Secure:   conf.IsExternblURLSecure(),
 	}
 	return cfg
 }

@@ -1,188 +1,188 @@
-package luatypes
+pbckbge lubtypes
 
 import (
-	lua "github.com/yuin/gopher-lua"
+	lub "github.com/yuin/gopher-lub"
 
-	"github.com/sourcegraph/sourcegraph/internal/luasandbox/util"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/lubsbndbox/util"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// Recognizer is a Go struct that is constructed and manipulated by Lua
-// scripts via UserData values. This struct can take one of two mutually
+// Recognizer is b Go struct thbt is constructed bnd mbnipulbted by Lub
+// scripts vib UserDbtb vblues. This struct cbn tbke one of two mutublly
 // exclusive forms:
 //
-//	(1) An applicable recognizer with patterns and a generate function.
-//	(2) A fallback recognizer, which consists of a list of children.
-//	    Execution of a fallback recognizer will invoke its children,
-//	    in order and recursively, until the non-empty value is yielded.
+//	(1) An bpplicbble recognizer with pbtterns bnd b generbte function.
+//	(2) A fbllbbck recognizer, which consists of b list of children.
+//	    Execution of b fbllbbck recognizer will invoke its children,
+//	    in order bnd recursively, until the non-empty vblue is yielded.
 type Recognizer struct {
-	patterns           []*PathPattern
-	patternsForContent []*PathPattern
-	generate           *lua.LFunction
-	hints              *lua.LFunction
-	fallback           []*Recognizer
+	pbtterns           []*PbthPbttern
+	pbtternsForContent []*PbthPbttern
+	generbte           *lub.LFunction
+	hints              *lub.LFunction
+	fbllbbck           []*Recognizer
 }
 
-// Patterns returns the set of filepath patterns in which this recognizer is
-// interested. If the given forContent flag is true, then the patterns will
-// consist of the files for which we want full content. By default we only
-// need to expand the path patterns to concrete repo-relative file paths.
-func (r *Recognizer) Patterns(forContent bool) []*PathPattern {
+// Pbtterns returns the set of filepbth pbtterns in which this recognizer is
+// interested. If the given forContent flbg is true, then the pbtterns will
+// consist of the files for which we wbnt full content. By defbult we only
+// need to expbnd the pbth pbtterns to concrete repo-relbtive file pbths.
+func (r *Recognizer) Pbtterns(forContent bool) []*PbthPbttern {
 	if forContent {
-		return r.patternsForContent
+		return r.pbtternsForContent
 	}
 
-	return r.patterns
+	return r.pbtterns
 }
 
-// Generator returns the registered Lua generate callback and its suspended environment.
-func (r *Recognizer) Generator() *lua.LFunction {
-	return r.generate
+// Generbtor returns the registered Lub generbte cbllbbck bnd its suspended environment.
+func (r *Recognizer) Generbtor() *lub.LFunction {
+	return r.generbte
 }
 
-// Hinter returns the registered Lua hints callback and its suspended environment.
-func (r *Recognizer) Hinter() *lua.LFunction {
+// Hinter returns the registered Lub hints cbllbbck bnd its suspended environment.
+func (r *Recognizer) Hinter() *lub.LFunction {
 	return r.hints
 }
 
-// NewFallback returns a new fallback recognizer.
-func NewFallback(fallback []*Recognizer) *Recognizer {
-	return &Recognizer{fallback: fallback}
+// NewFbllbbck returns b new fbllbbck recognizer.
+func NewFbllbbck(fbllbbck []*Recognizer) *Recognizer {
+	return &Recognizer{fbllbbck: fbllbbck}
 }
 
-// FlattenRecognizerPatterns returns a concatenation of results from calling the function
-// FlattenRecognizerPattern on each of the inputs.
-func FlattenRecognizerPatterns(recognizers []*Recognizer, forContent bool) (flatten []*PathPattern) {
-	for _, recognizer := range recognizers {
-		flatten = append(flatten, FlattenRecognizerPattern(recognizer, forContent)...)
+// FlbttenRecognizerPbtterns returns b concbtenbtion of results from cblling the function
+// FlbttenRecognizerPbttern on ebch of the inputs.
+func FlbttenRecognizerPbtterns(recognizers []*Recognizer, forContent bool) (flbtten []*PbthPbttern) {
+	for _, recognizer := rbnge recognizers {
+		flbtten = bppend(flbtten, FlbttenRecognizerPbttern(recognizer, forContent)...)
 	}
 
 	return
 }
 
-// FlattenRecognizerPattern flattens all patterns reachable from the given recognizer.
-func FlattenRecognizerPattern(recognizer *Recognizer, forContent bool) (patterns []*PathPattern) {
-	patterns = append(patterns, recognizer.Patterns(forContent)...)
+// FlbttenRecognizerPbttern flbttens bll pbtterns rebchbble from the given recognizer.
+func FlbttenRecognizerPbttern(recognizer *Recognizer, forContent bool) (pbtterns []*PbthPbttern) {
+	pbtterns = bppend(pbtterns, recognizer.Pbtterns(forContent)...)
 
-	for _, recognizer := range recognizer.fallback {
-		patterns = append(patterns, FlattenRecognizerPattern(recognizer, forContent)...)
+	for _, recognizer := rbnge recognizer.fbllbbck {
+		pbtterns = bppend(pbtterns, FlbttenRecognizerPbttern(recognizer, forContent)...)
 	}
 
 	return
 }
 
-// LinearizeGenerators returns a concatenation of results from calling the function
-// LinearizeRecognizer on each of the inputs.
-func LinearizeGenerators(recognizers []*Recognizer) (linearized []*Recognizer) {
-	for _, recognizer := range recognizers {
-		linearized = append(linearized, LinearizeGenerator(recognizer)...)
+// LinebrizeGenerbtors returns b concbtenbtion of results from cblling the function
+// LinebrizeRecognizer on ebch of the inputs.
+func LinebrizeGenerbtors(recognizers []*Recognizer) (linebrized []*Recognizer) {
+	for _, recognizer := rbnge recognizers {
+		linebrized = bppend(linebrized, LinebrizeGenerbtor(recognizer)...)
 	}
 
 	return
 }
 
-// LinearizeGenerator returns the depth-first ordering of recognizers whose generate functions
-// should be invoked in order of fallback. If this is not a fallback recognizer, it should invoke
-// only itself. All recognizers returned by this function should have an associated non-nil
-// generate function.
-func LinearizeGenerator(recognizer *Recognizer) (recognizers []*Recognizer) {
-	if recognizer.generate != nil {
-		recognizers = append(recognizers, recognizer)
+// LinebrizeGenerbtor returns the depth-first ordering of recognizers whose generbte functions
+// should be invoked in order of fbllbbck. If this is not b fbllbbck recognizer, it should invoke
+// only itself. All recognizers returned by this function should hbve bn bssocibted non-nil
+// generbte function.
+func LinebrizeGenerbtor(recognizer *Recognizer) (recognizers []*Recognizer) {
+	if recognizer.generbte != nil {
+		recognizers = bppend(recognizers, recognizer)
 	}
 
-	for _, recognizer := range recognizer.fallback {
-		recognizers = append(recognizers, LinearizeGenerator(recognizer)...)
-	}
-
-	return
-}
-
-// LinearizeHinters returns a concatenation of results from calling the function
-// LinearizeHinter on each of the inputs.
-func LinearizeHinters(recognizers []*Recognizer) (linearized []*Recognizer) {
-	for _, recognizer := range recognizers {
-		linearized = append(linearized, LinearizeHinter(recognizer)...)
+	for _, recognizer := rbnge recognizer.fbllbbck {
+		recognizers = bppend(recognizers, LinebrizeGenerbtor(recognizer)...)
 	}
 
 	return
 }
 
-// LinearizeHinter returns the depth-first ordering of recognizers whose hints functions
-// should be invoked in order of fallback. If this is not a fallback recognizer, it should invoke
-// only itself. All recognizers returned by this function should have an associated non-nil
+// LinebrizeHinters returns b concbtenbtion of results from cblling the function
+// LinebrizeHinter on ebch of the inputs.
+func LinebrizeHinters(recognizers []*Recognizer) (linebrized []*Recognizer) {
+	for _, recognizer := rbnge recognizers {
+		linebrized = bppend(linebrized, LinebrizeHinter(recognizer)...)
+	}
+
+	return
+}
+
+// LinebrizeHinter returns the depth-first ordering of recognizers whose hints functions
+// should be invoked in order of fbllbbck. If this is not b fbllbbck recognizer, it should invoke
+// only itself. All recognizers returned by this function should hbve bn bssocibted non-nil
 // hints function.
-func LinearizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
+func LinebrizeHinter(recognizer *Recognizer) (recognizers []*Recognizer) {
 	if recognizer.hints != nil {
-		recognizers = append(recognizers, recognizer)
+		recognizers = bppend(recognizers, recognizer)
 	}
 
-	for _, recognizer := range recognizer.fallback {
-		recognizers = append(recognizers, LinearizeHinter(recognizer)...)
+	for _, recognizer := rbnge recognizer.fbllbbck {
+		recognizers = bppend(recognizers, LinebrizeHinter(recognizer)...)
 	}
 
 	return
 }
 
-// NamedRecognizersFromUserDataMap decodes a keyed map of recognizers from the given Lua value.
-// If allowFalseAsNil is true, then a `false` value for a recognizer will be interpreted as a
-// nil recognizer value in Go. This is to allow the user to disable the built-in recognizers.
-func NamedRecognizersFromUserDataMap(value lua.LValue, allowFalseAsNil bool) (recognizers map[string]*Recognizer, err error) {
-	recognizers = map[string]*Recognizer{}
+// NbmedRecognizersFromUserDbtbMbp decodes b keyed mbp of recognizers from the given Lub vblue.
+// If bllowFblseAsNil is true, then b `fblse` vblue for b recognizer will be interpreted bs b
+// nil recognizer vblue in Go. This is to bllow the user to disbble the built-in recognizers.
+func NbmedRecognizersFromUserDbtbMbp(vblue lub.LVblue, bllowFblseAsNil bool) (recognizers mbp[string]*Recognizer, err error) {
+	recognizers = mbp[string]*Recognizer{}
 
-	if err := util.CheckTypeProperty(value, "sg.recognizer"); err != nil {
+	if err := util.CheckTypeProperty(vblue, "sg.recognizer"); err != nil {
 		return nil, err
 	}
 
-	err = util.ForEach(value, func(key, value lua.LValue) error {
-		name := key.String()
-		if name == "__type" {
+	err = util.ForEbch(vblue, func(key, vblue lub.LVblue) error {
+		nbme := key.String()
+		if nbme == "__type" {
 			return nil
 		}
 
-		if allowFalseAsNil && value.Type() == lua.LTBool && !lua.LVAsBool(value) {
-			recognizers[name] = nil
+		if bllowFblseAsNil && vblue.Type() == lub.LTBool && !lub.LVAsBool(vblue) {
+			recognizers[nbme] = nil
 			return nil
 		}
 
-		recognizer, err := util.TypecheckUserData[*Recognizer](value, "*Recognizer")
+		recognizer, err := util.TypecheckUserDbtb[*Recognizer](vblue, "*Recognizer")
 		if err != nil {
 			return err
 		}
-		recognizers[name] = recognizer
+		recognizers[nbme] = recognizer
 		return nil
 	})
 
 	return
 }
 
-// RecognizerFromTable decodes a single Lua table value into a recognizer instance.
-func RecognizerFromTable(table *lua.LTable) (*Recognizer, error) {
+// RecognizerFromTbble decodes b single Lub tbble vblue into b recognizer instbnce.
+func RecognizerFromTbble(tbble *lub.LTbble) (*Recognizer, error) {
 	recognizer := &Recognizer{}
 
-	if err := util.DecodeTable(table, map[string]func(lua.LValue) error{
-		"patterns":             setPathPatterns(&recognizer.patterns),
-		"patterns_for_content": setPathPatterns(&recognizer.patternsForContent),
-		"generate":             util.SetLuaFunction(&recognizer.generate),
-		"hints":                util.SetLuaFunction(&recognizer.hints),
+	if err := util.DecodeTbble(tbble, mbp[string]func(lub.LVblue) error{
+		"pbtterns":             setPbthPbtterns(&recognizer.pbtterns),
+		"pbtterns_for_content": setPbthPbtterns(&recognizer.pbtternsForContent),
+		"generbte":             util.SetLubFunction(&recognizer.generbte),
+		"hints":                util.SetLubFunction(&recognizer.hints),
 	}); err != nil {
 		return nil, err
 	}
 
-	if recognizer.generate == nil && recognizer.hints == nil {
-		return nil, errors.Newf("no generate or hints function supplied - at least one is required")
+	if recognizer.generbte == nil && recognizer.hints == nil {
+		return nil, errors.Newf("no generbte or hints function supplied - bt lebst one is required")
 	}
-	if recognizer.patterns == nil && recognizer.patternsForContent == nil {
-		return nil, errors.Newf("no patterns supplied")
+	if recognizer.pbtterns == nil && recognizer.pbtternsForContent == nil {
+		return nil, errors.Newf("no pbtterns supplied")
 	}
 
 	return recognizer, nil
 }
 
-// setPathPatterns returns a decoder function that updates the given path patterns
-// slice value on invocation. For use in util.DecodeTable.
-func setPathPatterns(ptr *[]*PathPattern) func(lua.LValue) error {
-	return func(value lua.LValue) (err error) {
-		*ptr, err = PathPatternsFromUserData(value)
+// setPbthPbtterns returns b decoder function thbt updbtes the given pbth pbtterns
+// slice vblue on invocbtion. For use in util.DecodeTbble.
+func setPbthPbtterns(ptr *[]*PbthPbttern) func(lub.LVblue) error {
+	return func(vblue lub.LVblue) (err error) {
+		*ptr, err = PbthPbtternsFromUserDbtb(vblue)
 		return
 	}
 }

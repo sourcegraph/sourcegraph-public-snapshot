@@ -1,51 +1,51 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/stretchr/testify/bssert"
 )
 
 func TestFreeUsersExceeded(t *testing.T) {
-	var MaxUsers int32 = 10
-	NoLicenseWarningUserCount = &MaxUsers
+	vbr MbxUsers int32 = 10
+	NoLicenseWbrningUserCount = &MbxUsers
 
 	GetConfiguredProductLicenseInfo = func() (*ProductLicenseInfo, error) {
 		return &ProductLicenseInfo{
-			TagsValue:      []string{"plan:free-0"},
-			UserCountValue: 10,
-			ExpiresAtValue: time.Now().Add(time.Hour * 8600),
+			TbgsVblue:      []string{"plbn:free-0"},
+			UserCountVblue: 10,
+			ExpiresAtVblue: time.Now().Add(time.Hour * 8600),
 		}, nil
 	}
 
-	IsFreePlan = func(*ProductLicenseInfo) bool {
+	IsFreePlbn = func(*ProductLicenseInfo) bool {
 		return true
 	}
 
 	t.Run("Free users not exceeded", func(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		users := dbmocks.NewMockUserStore()
-		users.CountFunc.SetDefaultReturn(5, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.CountFunc.SetDefbultReturn(5, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 		s := &siteResolver{db: db, gqlID: ""}
 
-		exceeded, err := s.FreeUsersExceeded(context.Background())
-		assert.NoError(t, err)
-		assert.False(t, exceeded)
+		exceeded, err := s.FreeUsersExceeded(context.Bbckground())
+		bssert.NoError(t, err)
+		bssert.Fblse(t, exceeded)
 	})
 
 	t.Run("Free users exceeded", func(t *testing.T) {
 		db := dbmocks.NewMockDB()
 		users := dbmocks.NewMockUserStore()
-		users.CountFunc.SetDefaultReturn(10, nil)
-		db.UsersFunc.SetDefaultReturn(users)
+		users.CountFunc.SetDefbultReturn(10, nil)
+		db.UsersFunc.SetDefbultReturn(users)
 		s := &siteResolver{db: db, gqlID: ""}
 
-		exceeded, err := s.FreeUsersExceeded(context.Background())
-		assert.NoError(t, err)
-		assert.True(t, exceeded)
+		exceeded, err := s.FreeUsersExceeded(context.Bbckground())
+		bssert.NoError(t, err)
+		bssert.True(t, exceeded)
 	})
 }

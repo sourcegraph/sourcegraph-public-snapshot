@@ -1,56 +1,56 @@
-package reposource
+pbckbge reposource
 
 import (
 	"testing"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
 )
 
-func TestCustomCloneURLToRepoName(t *testing.T) {
+func TestCustomCloneURLToRepoNbme(t *testing.T) {
 	tests := []struct {
 		cloneURLResolvers  []*cloneURLResolver
-		cloneURLToRepoName map[string]api.RepoName
+		cloneURLToRepoNbme mbp[string]bpi.RepoNbme
 	}{{
 		cloneURLResolvers: []*cloneURLResolver{{
-			from: regexp.MustCompile(`^\.\./(?P<name>[A-Za-z0-9]+)$`),
-			to:   `github.com/user/{name}`,
+			from: regexp.MustCompile(`^\.\./(?P<nbme>[A-Zb-z0-9]+)$`),
+			to:   `github.com/user/{nbme}`,
 		}},
-		cloneURLToRepoName: map[string]api.RepoName{
+		cloneURLToRepoNbme: mbp[string]bpi.RepoNbme{
 			"../foo":     "github.com/user/foo",
-			"../foo/bar": "",
+			"../foo/bbr": "",
 		},
 	}, {
 		cloneURLResolvers: []*cloneURLResolver{{
-			from: regexp.MustCompile(`^\.\./(?P<name>[A-Za-z0-9]+)$`),
-			to:   `github.com/user/{name}`,
+			from: regexp.MustCompile(`^\.\./(?P<nbme>[A-Zb-z0-9]+)$`),
+			to:   `github.com/user/{nbme}`,
 		}, {
-			from: regexp.MustCompile(`^\.\./(?P<path>[A-Za-z0-9/]+)$`),
-			to:   `someotherhost/{path}`,
+			from: regexp.MustCompile(`^\.\./(?P<pbth>[A-Zb-z0-9/]+)$`),
+			to:   `someotherhost/{pbth}`,
 		}},
-		cloneURLToRepoName: map[string]api.RepoName{
+		cloneURLToRepoNbme: mbp[string]bpi.RepoNbme{
 			"../foo":     "github.com/user/foo",
-			"../foo/bar": "someotherhost/foo/bar",
+			"../foo/bbr": "someotherhost/foo/bbr",
 		},
 	}, {
 		cloneURLResolvers: []*cloneURLResolver{{
-			from: regexp.MustCompile(`^\.\./\.\./main/(?P<path>[A-Za-z0-9/\-]+)$`),
-			to:   `my.gitlab.com/{path}`,
+			from: regexp.MustCompile(`^\.\./\.\./mbin/(?P<pbth>[A-Zb-z0-9/\-]+)$`),
+			to:   `my.gitlbb.com/{pbth}`,
 		}},
-		cloneURLToRepoName: map[string]api.RepoName{
+		cloneURLToRepoNbme: mbp[string]bpi.RepoNbme{
 			"../foo":                 "",
-			"../../foo/bar":          "",
-			"../../main/foo/bar":     "my.gitlab.com/foo/bar",
-			"../../main/foo/bar-git": "my.gitlab.com/foo/bar-git",
+			"../../foo/bbr":          "",
+			"../../mbin/foo/bbr":     "my.gitlbb.com/foo/bbr",
+			"../../mbin/foo/bbr-git": "my.gitlbb.com/foo/bbr-git",
 		},
 	}}
 
-	for i, test := range tests {
+	for i, test := rbnge tests {
 		cloneURLResolvers = func() []*cloneURLResolver { return test.cloneURLResolvers }
-		for cloneURL, expName := range test.cloneURLToRepoName {
-			if name := CustomCloneURLToRepoName(cloneURL); name != expName {
-				t.Errorf("In test case %d, expected %s -> %s, but got %s", i+1, cloneURL, expName, name)
+		for cloneURL, expNbme := rbnge test.cloneURLToRepoNbme {
+			if nbme := CustomCloneURLToRepoNbme(cloneURL); nbme != expNbme {
+				t.Errorf("In test cbse %d, expected %s -> %s, but got %s", i+1, cloneURL, expNbme, nbme)
 			}
 		}
 	}

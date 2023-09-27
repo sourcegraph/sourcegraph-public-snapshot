@@ -1,59 +1,59 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
-	"flag"
+	"flbg"
 	"fmt"
 	"os"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegrbph/sourcegrbph/dev/codeintel-qb/internbl"
 )
 
-var (
+vbr (
 	indexDir             string
-	numConcurrentUploads int
+	numConcurrentUplobds int
 	verbose              bool
-	pollInterval         time.Duration
-	timeout              time.Duration
+	pollIntervbl         time.Durbtion
+	timeout              time.Durbtion
 
-	start = time.Now()
+	stbrt = time.Now()
 )
 
 func init() {
-	// Default assumes running from the dev/codeintel-qa directory
-	flag.StringVar(&indexDir, "index-dir", "./testdata/indexes", "The location of the testdata directory")
-	flag.IntVar(&numConcurrentUploads, "num-concurrent-uploads", 5, "The maximum number of concurrent uploads")
-	flag.BoolVar(&verbose, "verbose", false, "Display full state from graphql")
-	flag.DurationVar(&pollInterval, "poll-interval", time.Second*5, "The time to wait between graphql requests")
-	flag.DurationVar(&timeout, "timeout", 0, "The time it should take to upload and process all targets")
+	// Defbult bssumes running from the dev/codeintel-qb directory
+	flbg.StringVbr(&indexDir, "index-dir", "./testdbtb/indexes", "The locbtion of the testdbtb directory")
+	flbg.IntVbr(&numConcurrentUplobds, "num-concurrent-uplobds", 5, "The mbximum number of concurrent uplobds")
+	flbg.BoolVbr(&verbose, "verbose", fblse, "Displby full stbte from grbphql")
+	flbg.DurbtionVbr(&pollIntervbl, "poll-intervbl", time.Second*5, "The time to wbit between grbphql requests")
+	flbg.DurbtionVbr(&timeout, "timeout", 0, "The time it should tbke to uplobd bnd process bll tbrgets")
 }
 
-func main() {
-	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
+func mbin() {
+	if err := flbg.CommbndLine.Pbrse(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
 	}
 
-	ctx := context.Background()
+	ctx := context.Bbckground()
 	if timeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, timeout)
-		defer cancel()
+		vbr cbncel context.CbncelFunc
+		ctx, cbncel = context.WithTimeout(ctx, timeout)
+		defer cbncel()
 	}
 
-	if err := mainErr(ctx); err != nil {
-		fmt.Printf("%s error: %s\n", internal.EmojiFailure, err.Error())
+	if err := mbinErr(ctx); err != nil {
+		fmt.Printf("%s error: %s\n", internbl.EmojiFbilure, err.Error())
 		os.Exit(1)
 	}
 }
 
-func mainErr(ctx context.Context) error {
-	if err := internal.InitializeGraphQLClient(); err != nil {
+func mbinErr(ctx context.Context) error {
+	if err := internbl.InitiblizeGrbphQLClient(); err != nil {
 		return err
 	}
 
-	if err := clearAllPreciseIndexes(ctx); err != nil {
+	if err := clebrAllPreciseIndexes(ctx); err != nil {
 		return err
 	}
 

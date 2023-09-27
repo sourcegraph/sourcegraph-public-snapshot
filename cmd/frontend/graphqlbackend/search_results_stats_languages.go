@@ -1,192 +1,192 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"io/fs"
 	"sync"
 
-	"github.com/sourcegraph/conc/pool"
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/conc/pool"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/inventory"
-	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/bbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/inventory"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/job/jobutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/strebming"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-func (srs *searchResultsStats) Languages(ctx context.Context) ([]*languageStatisticsResolver, error) {
-	matches, err := srs.getResults(ctx)
+func (srs *sebrchResultsStbts) Lbngubges(ctx context.Context) ([]*lbngubgeStbtisticsResolver, error) {
+	mbtches, err := srs.getResults(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	logger := srs.logger.Scoped("languages", "provide stats on langauges from the search results")
-	langs, err := searchResultsStatsLanguages(ctx, logger, srs.sr.db, gitserver.NewClient(), matches)
+	logger := srs.logger.Scoped("lbngubges", "provide stbts on lbngbuges from the sebrch results")
+	lbngs, err := sebrchResultsStbtsLbngubges(ctx, logger, srs.sr.db, gitserver.NewClient(), mbtches)
 	if err != nil {
 		return nil, err
 	}
 
-	wrapped := make([]*languageStatisticsResolver, len(langs))
-	for i, lang := range langs {
-		wrapped[i] = &languageStatisticsResolver{lang}
+	wrbpped := mbke([]*lbngubgeStbtisticsResolver, len(lbngs))
+	for i, lbng := rbnge lbngs {
+		wrbpped[i] = &lbngubgeStbtisticsResolver{lbng}
 	}
-	return wrapped, nil
+	return wrbpped, nil
 }
 
-func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, error) {
+func (srs *sebrchResultsStbts) getResults(ctx context.Context) (result.Mbtches, error) {
 	srs.once.Do(func() {
-		b, err := query.ToBasicQuery(srs.sr.SearchInputs.Query)
+		b, err := query.ToBbsicQuery(srs.sr.SebrchInputs.Query)
 		if err != nil {
 			srs.err = err
 			return
 		}
-		j, err := jobutil.NewBasicJob(srs.sr.SearchInputs, b)
+		j, err := jobutil.NewBbsicJob(srs.sr.SebrchInputs, b)
 		if err != nil {
 			srs.err = err
 			return
 		}
-		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, srs.sr.client.JobClients(), agg)
+		bgg := strebming.NewAggregbtingStrebm()
+		_, err = j.Run(ctx, srs.sr.client.JobClients(), bgg)
 		if err != nil {
 			srs.err = err
 			return
 		}
-		srs.results = agg.Results
+		srs.results = bgg.Results
 	})
 	return srs.results, srs.err
 }
 
-func searchResultsStatsLanguages(ctx context.Context, logger log.Logger, db database.DB, gsClient gitserver.Client, matches []result.Match) ([]inventory.Lang, error) {
-	// Batch our operations by repo-commit.
+func sebrchResultsStbtsLbngubges(ctx context.Context, logger log.Logger, db dbtbbbse.DB, gsClient gitserver.Client, mbtches []result.Mbtch) ([]inventory.Lbng, error) {
+	// Bbtch our operbtions by repo-commit.
 	type repoCommit struct {
-		repo     api.RepoID
-		commitID api.CommitID
+		repo     bpi.RepoID
+		commitID bpi.CommitID
 	}
 
-	// Records the work necessary for a batch (repoCommit).
-	type fileStatsWork struct {
-		fullEntries  []fs.FileInfo     // matched these full files
-		partialFiles map[string]uint64 // file with line matches (path) -> count of lines matching
+	// Records the work necessbry for b bbtch (repoCommit).
+	type fileStbtsWork struct {
+		fullEntries  []fs.FileInfo     // mbtched these full files
+		pbrtiblFiles mbp[string]uint64 // file with line mbtches (pbth) -> count of lines mbtching
 	}
 
-	var (
-		repos    = map[api.RepoID]types.MinimalRepo{}
-		filesMap = map[repoCommit]*fileStatsWork{}
+	vbr (
+		repos    = mbp[bpi.RepoID]types.MinimblRepo{}
+		filesMbp = mbp[repoCommit]*fileStbtsWork{}
 
-		allInventories   []inventory.Inventory
-		allInventoriesMu sync.Mutex
+		bllInventories   []inventory.Inventory
+		bllInventoriesMu sync.Mutex
 	)
 
-	p := pool.New().WithErrors().WithMaxGoroutines(16)
+	p := pool.New().WithErrors().WithMbxGoroutines(16)
 
-	// Track the mapping of repo ID -> repo object as we iterate.
-	sawRepo := func(repo types.MinimalRepo) {
+	// Trbck the mbpping of repo ID -> repo object bs we iterbte.
+	sbwRepo := func(repo types.MinimblRepo) {
 		if _, ok := repos[repo.ID]; !ok {
 			repos[repo.ID] = repo
 		}
 	}
 
-	// Only count repo matches if all matches are repo matches. Otherwise, it would get confusing
-	// because we might have a match of a repo *and* a file in the repo. We would need to avoid
-	// double-counting. In this case, we will just count the matching files.
-	hasNonRepoMatches := false
-	for _, match := range matches {
-		if _, ok := match.(*result.RepoMatch); !ok {
-			hasNonRepoMatches = true
+	// Only count repo mbtches if bll mbtches bre repo mbtches. Otherwise, it would get confusing
+	// becbuse we might hbve b mbtch of b repo *bnd* b file in the repo. We would need to bvoid
+	// double-counting. In this cbse, we will just count the mbtching files.
+	hbsNonRepoMbtches := fblse
+	for _, mbtch := rbnge mbtches {
+		if _, ok := mbtch.(*result.RepoMbtch); !ok {
+			hbsNonRepoMbtches = true
 		}
 	}
 
-	for _, res := range matches {
-		if fileMatch, ok := res.(*result.FileMatch); ok {
-			sawRepo(fileMatch.Repo)
-			key := repoCommit{repo: fileMatch.Repo.ID, commitID: fileMatch.CommitID}
+	for _, res := rbnge mbtches {
+		if fileMbtch, ok := res.(*result.FileMbtch); ok {
+			sbwRepo(fileMbtch.Repo)
+			key := repoCommit{repo: fileMbtch.Repo.ID, commitID: fileMbtch.CommitID}
 
-			if _, ok := filesMap[key]; !ok {
-				filesMap[key] = &fileStatsWork{}
+			if _, ok := filesMbp[key]; !ok {
+				filesMbp[key] = &fileStbtsWork{}
 			}
 
-			if len(fileMatch.ChunkMatches) > 0 {
-				// Only count matching lines. TODO(sqs): bytes are not counted for these files
-				if filesMap[key].partialFiles == nil {
-					filesMap[key].partialFiles = map[string]uint64{}
+			if len(fileMbtch.ChunkMbtches) > 0 {
+				// Only count mbtching lines. TODO(sqs): bytes bre not counted for these files
+				if filesMbp[key].pbrtiblFiles == nil {
+					filesMbp[key].pbrtiblFiles = mbp[string]uint64{}
 				}
-				filesMap[key].partialFiles[fileMatch.Path] += uint64(fileMatch.ChunkMatches.MatchCount())
+				filesMbp[key].pbrtiblFiles[fileMbtch.Pbth] += uint64(fileMbtch.ChunkMbtches.MbtchCount())
 			} else {
 				// Count entire file.
-				filesMap[key].fullEntries = append(filesMap[key].fullEntries, &fileInfo{
-					path:  fileMatch.Path,
-					isDir: false,
+				filesMbp[key].fullEntries = bppend(filesMbp[key].fullEntries, &fileInfo{
+					pbth:  fileMbtch.Pbth,
+					isDir: fblse,
 				})
 			}
-		} else if repoMatch, ok := res.(*result.RepoMatch); ok && !hasNonRepoMatches {
-			sawRepo(repoMatch.RepoName())
+		} else if repoMbtch, ok := res.(*result.RepoMbtch); ok && !hbsNonRepoMbtches {
+			sbwRepo(repoMbtch.RepoNbme())
 			p.Go(func() error {
-				repoName := repoMatch.RepoName()
-				_, oid, err := gsClient.GetDefaultBranch(ctx, repoName.Name, false)
+				repoNbme := repoMbtch.RepoNbme()
+				_, oid, err := gsClient.GetDefbultBrbnch(ctx, repoNbme.Nbme, fblse)
 				if err != nil {
 					return err
 				}
-				inv, err := backend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoName.ToRepo(), oid, true)
+				inv, err := bbckend.NewRepos(logger, db, gsClient).GetInventory(ctx, repoNbme.ToRepo(), oid, true)
 				if err != nil {
 					return err
 				}
-				allInventoriesMu.Lock()
-				allInventories = append(allInventories, *inv)
-				allInventoriesMu.Unlock()
+				bllInventoriesMu.Lock()
+				bllInventories = bppend(bllInventories, *inv)
+				bllInventoriesMu.Unlock()
 				return nil
 			})
-		} else if _, ok := res.(*result.CommitMatch); ok {
-			return nil, errors.New("language statistics do not support diff searches")
+		} else if _, ok := res.(*result.CommitMbtch); ok {
+			return nil, errors.New("lbngubge stbtistics do not support diff sebrches")
 		}
 	}
 
-	for key_, work_ := range filesMap {
+	for key_, work_ := rbnge filesMbp {
 		key := key_
 		work := work_
 		p.Go(func() error {
-			invCtx, err := backend.InventoryContext(logger, repos[key.repo].Name, gsClient, key.commitID, true)
+			invCtx, err := bbckend.InventoryContext(logger, repos[key.repo].Nbme, gsClient, key.commitID, true)
 			if err != nil {
 				return err
 			}
 
-			// Inventory all full-entry (files and trees) matches together.
+			// Inventory bll full-entry (files bnd trees) mbtches together.
 			inv, err := invCtx.Entries(ctx, work.fullEntries...)
 			if err != nil {
 				return err
 			}
-			allInventoriesMu.Lock()
-			allInventories = append(allInventories, inv)
-			allInventoriesMu.Unlock()
+			bllInventoriesMu.Lock()
+			bllInventories = bppend(bllInventories, inv)
+			bllInventoriesMu.Unlock()
 
-			// Separately inventory each partial-file match because we only increment the language lines
-			// by the number of matched lines in the file.
-			for partialFile, lines := range work.partialFiles {
+			// Sepbrbtely inventory ebch pbrtibl-file mbtch becbuse we only increment the lbngubge lines
+			// by the number of mbtched lines in the file.
+			for pbrtiblFile, lines := rbnge work.pbrtiblFiles {
 				inv, err := invCtx.Entries(ctx,
-					fileInfo{path: partialFile, isDir: false},
+					fileInfo{pbth: pbrtiblFile, isDir: fblse},
 				)
 				if err != nil {
 					return err
 				}
-				for i := range inv.Languages {
-					inv.Languages[i].TotalLines = lines
+				for i := rbnge inv.Lbngubges {
+					inv.Lbngubges[i].TotblLines = lines
 				}
-				allInventoriesMu.Lock()
-				allInventories = append(allInventories, inv)
-				allInventoriesMu.Unlock()
+				bllInventoriesMu.Lock()
+				bllInventories = bppend(bllInventories, inv)
+				bllInventoriesMu.Unlock()
 			}
 			return nil
 		})
 	}
 
-	if err := p.Wait(); err != nil {
+	if err := p.Wbit(); err != nil {
 		return nil, err
 	}
-	return inventory.Sum(allInventories).Languages, nil
+	return inventory.Sum(bllInventories).Lbngubges, nil
 }

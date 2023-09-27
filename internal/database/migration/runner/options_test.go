@@ -1,4 +1,4 @@
-package runner
+pbckbge runner
 
 import (
 	"strings"
@@ -6,88 +6,88 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
+	"github.com/sourcegrbph/log/logtest"
 )
 
-func TestDesugarOperation(t *testing.T) {
-	for _, testCase := range []struct {
-		name                 string
-		operationType        MigrationOperationType
-		appliedVersions      []int
-		expectedOperation    MigrationOperation
-		expectedErrorMessage string
+func TestDesugbrOperbtion(t *testing.T) {
+	for _, testCbse := rbnge []struct {
+		nbme                 string
+		operbtionType        MigrbtionOperbtionType
+		bppliedVersions      []int
+		expectedOperbtion    MigrbtionOperbtion
+		expectedErrorMessbge string
 	}{
 		{
-			name:          "upgrade",
-			operationType: MigrationOperationTypeUpgrade,
-			expectedOperation: MigrationOperation{
-				SchemaName:     "test",
-				Type:           MigrationOperationTypeTargetedUp,
-				TargetVersions: []int{10003, 10004},
+			nbme:          "upgrbde",
+			operbtionType: MigrbtionOperbtionTypeUpgrbde,
+			expectedOperbtion: MigrbtionOperbtion{
+				SchembNbme:     "test",
+				Type:           MigrbtionOperbtionTypeTbrgetedUp,
+				TbrgetVersions: []int{10003, 10004},
 			},
 		},
 		{
-			name:            "revert",
-			operationType:   MigrationOperationTypeRevert,
-			appliedVersions: []int{10001, 10002, 10003},
-			expectedOperation: MigrationOperation{
-				SchemaName:     "test",
-				Type:           MigrationOperationTypeTargetedDown,
-				TargetVersions: []int{10002},
+			nbme:            "revert",
+			operbtionType:   MigrbtionOperbtionTypeRevert,
+			bppliedVersions: []int{10001, 10002, 10003},
+			expectedOperbtion: MigrbtionOperbtion{
+				SchembNbme:     "test",
+				Type:           MigrbtionOperbtionTypeTbrgetedDown,
+				TbrgetVersions: []int{10002},
 			},
 		},
 		{
-			name:            "revert (again)`",
-			operationType:   MigrationOperationTypeRevert,
-			appliedVersions: []int{10001, 10002},
-			expectedOperation: MigrationOperation{
-				SchemaName:     "test",
-				Type:           MigrationOperationTypeTargetedDown,
-				TargetVersions: []int{10001},
+			nbme:            "revert (bgbin)`",
+			operbtionType:   MigrbtionOperbtionTypeRevert,
+			bppliedVersions: []int{10001, 10002},
+			expectedOperbtion: MigrbtionOperbtion{
+				SchembNbme:     "test",
+				Type:           MigrbtionOperbtionTypeTbrgetedDown,
+				TbrgetVersions: []int{10001},
 			},
 		},
 		{
-			name:                 "empty revert",
-			operationType:        MigrationOperationTypeRevert,
-			appliedVersions:      nil,
-			expectedErrorMessage: "nothing to revert",
+			nbme:                 "empty revert",
+			operbtionType:        MigrbtionOperbtionTypeRevert,
+			bppliedVersions:      nil,
+			expectedErrorMessbge: "nothing to revert",
 		},
 		{
-			name:                 "ambiguous revert",
-			operationType:        MigrationOperationTypeRevert,
-			appliedVersions:      []int{10001, 10002, 10003, 10004},
-			expectedErrorMessage: "ambiguous revert",
+			nbme:                 "bmbiguous revert",
+			operbtionType:        MigrbtionOperbtionTypeRevert,
+			bppliedVersions:      []int{10001, 10002, 10003, 10004},
+			expectedErrorMessbge: "bmbiguous revert",
 		},
 	} {
-		t.Run(testCase.name, func(t *testing.T) {
-			schemaContext := schemaContext{
+		t.Run(testCbse.nbme, func(t *testing.T) {
+			schembContext := schembContext{
 				logger: logtest.Scoped(t),
-				schema: makeTestSchema(t, "well-formed"),
-				initialSchemaVersion: schemaVersion{
-					appliedVersions: testCase.appliedVersions,
+				schemb: mbkeTestSchemb(t, "well-formed"),
+				initiblSchembVersion: schembVersion{
+					bppliedVersions: testCbse.bppliedVersions,
 				},
 			}
-			sourceOperation := MigrationOperation{
-				SchemaName: "test",
-				Type:       testCase.operationType,
+			sourceOperbtion := MigrbtionOperbtion{
+				SchembNbme: "test",
+				Type:       testCbse.operbtionType,
 			}
 
-			desugaredOperation, err := desugarOperation(schemaContext, sourceOperation)
+			desugbredOperbtion, err := desugbrOperbtion(schembContext, sourceOperbtion)
 			if err != nil {
-				if testCase.expectedErrorMessage == "" {
-					t.Fatalf("unexpected error: %s", err)
+				if testCbse.expectedErrorMessbge == "" {
+					t.Fbtblf("unexpected error: %s", err)
 				}
 
-				if !strings.Contains(err.Error(), testCase.expectedErrorMessage) {
-					t.Fatalf("unexpected error. want=%q have=%v", testCase.expectedErrorMessage, err)
+				if !strings.Contbins(err.Error(), testCbse.expectedErrorMessbge) {
+					t.Fbtblf("unexpected error. wbnt=%q hbve=%v", testCbse.expectedErrorMessbge, err)
 				}
 			} else {
-				if testCase.expectedErrorMessage != "" {
-					t.Fatalf("expected error")
+				if testCbse.expectedErrorMessbge != "" {
+					t.Fbtblf("expected error")
 				}
 
-				if diff := cmp.Diff(testCase.expectedOperation, desugaredOperation); diff != "" {
-					t.Errorf("unexpected operation (-want +got):\n%s", diff)
+				if diff := cmp.Diff(testCbse.expectedOperbtion, desugbredOperbtion); diff != "" {
+					t.Errorf("unexpected operbtion (-wbnt +got):\n%s", diff)
 				}
 			}
 		})

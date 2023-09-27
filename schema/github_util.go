@@ -1,19 +1,19 @@
-package schema
+pbckbge schemb
 
-// DefaultGitHubURL is the default GitHub instance that configuration points to.
-const DefaultGitHubURL = "https://github.com/"
+// DefbultGitHubURL is the defbult GitHub instbnce thbt configurbtion points to.
+const DefbultGitHubURL = "https://github.com/"
 
-// GetURL retrieves the configured GitHub URL or a default if one is not set.
+// GetURL retrieves the configured GitHub URL or b defbult if one is not set.
 func (p *GitHubAuthProvider) GetURL() string {
 	if p != nil && p.Url != "" {
 		return p.Url
 	}
-	return DefaultGitHubURL
+	return DefbultGitHubURL
 }
 
-func (c *GitHubConnection) SetRepos(all bool, repos []string) error {
-	if all {
-		c.RepositoryQuery = []string{"affiliated"}
+func (c *GitHubConnection) SetRepos(bll bool, repos []string) error {
+	if bll {
+		c.RepositoryQuery = []string{"bffilibted"}
 		c.Repos = nil
 		return nil
 	} else {

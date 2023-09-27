@@ -1,176 +1,176 @@
-package database
+pbckbge dbtbbbse
 
 import (
 	"context"
 	"sort"
 	"testing"
 
-	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/stretchr/testify/assert"
+	"github.com/sourcegrbph/log/logtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbtest"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
-	teamName  = "a-team"
-	teamName2 = "a2-team"
+	tebmNbme  = "b-tebm"
+	tebmNbme2 = "b2-tebm"
 )
 
-func TestAssignedTeamsStore_ListAssignedTeamsForRepo(t *testing.T) {
+func TestAssignedTebmsStore_ListAssignedTebmsForRepo(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user and 2 teams.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user bnd 2 tebms.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	team1 := createTeam(t, ctx, db, teamName)
-	team2 := createTeam(t, ctx, db, teamName2)
+	tebm1 := crebteTebm(t, ctx, db, tebmNbme)
+	tebm2 := crebteTebm(t, ctx, db, tebmNbme2)
 
-	// Creating 2 repos.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
+	// Crebting 2 repos.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
-	err = db.Repos().Create(ctx, &types.Repo{ID: 2, Name: "github.com/sourcegraph/sourcegraph2"})
-	require.NoError(t, err)
-
-	// Inserting assigned teams.
-	store := AssignedTeamsStoreWith(db, logger)
-	err = store.Insert(ctx, team1.ID, 1, "src", user1.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, team2.ID, 1, "src/abc", user1.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, team2.ID, 1, "src/def", user1.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, team1.ID, 1, "", user1.ID)
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 2, Nbme: "github.com/sourcegrbph/sourcegrbph2"})
 	require.NoError(t, err)
 
-	// Getting assigned teams for a non-existent repo.
-	teams, err := store.ListAssignedTeamsForRepo(ctx, 1337)
+	// Inserting bssigned tebms.
+	store := AssignedTebmsStoreWith(db, logger)
+	err = store.Insert(ctx, tebm1.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
-	assert.Empty(t, teams)
+	err = store.Insert(ctx, tebm2.ID, 1, "src/bbc", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, tebm2.ID, 1, "src/def", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, tebm1.ID, 1, "", user1.ID)
+	require.NoError(t, err)
 
-	// Getting assigned teams for a repo without owners.
-	teams, err = store.ListAssignedTeamsForRepo(ctx, 2)
+	// Getting bssigned tebms for b non-existent repo.
+	tebms, err := store.ListAssignedTebmsForRepo(ctx, 1337)
 	require.NoError(t, err)
-	assert.Empty(t, teams)
+	bssert.Empty(t, tebms)
 
-	// Getting assigned teams for a given repo.
-	teams, err = store.ListAssignedTeamsForRepo(ctx, 1)
+	// Getting bssigned tebms for b repo without owners.
+	tebms, err = store.ListAssignedTebmsForRepo(ctx, 2)
 	require.NoError(t, err)
-	assert.Len(t, teams, 4)
-	sort.Slice(teams, func(i, j int) bool {
-		return teams[i].FilePath < teams[j].FilePath
+	bssert.Empty(t, tebms)
+
+	// Getting bssigned tebms for b given repo.
+	tebms, err = store.ListAssignedTebmsForRepo(ctx, 1)
+	require.NoError(t, err)
+	bssert.Len(t, tebms, 4)
+	sort.Slice(tebms, func(i, j int) bool {
+		return tebms[i].FilePbth < tebms[j].FilePbth
 	})
-	// We are checking everything except timestamps, non-zero check is sufficient for them.
-	assert.Equal(t, teams[0], &AssignedTeamSummary{OwnerTeamID: team1.ID, RepoID: 1, FilePath: "", WhoAssignedUserID: 1, AssignedAt: teams[0].AssignedAt})
-	assert.NotZero(t, teams[0].AssignedAt)
-	assert.Equal(t, teams[1], &AssignedTeamSummary{OwnerTeamID: team1.ID, RepoID: 1, FilePath: "src", WhoAssignedUserID: 1, AssignedAt: teams[1].AssignedAt})
-	assert.NotZero(t, teams[1].AssignedAt)
-	assert.Equal(t, teams[2], &AssignedTeamSummary{OwnerTeamID: team2.ID, RepoID: 1, FilePath: "src/abc", WhoAssignedUserID: 1, AssignedAt: teams[2].AssignedAt})
-	assert.NotZero(t, teams[2].AssignedAt)
-	assert.Equal(t, teams[3], &AssignedTeamSummary{OwnerTeamID: team2.ID, RepoID: 1, FilePath: "src/def", WhoAssignedUserID: 1, AssignedAt: teams[3].AssignedAt})
-	assert.NotZero(t, teams[3].AssignedAt)
+	// We bre checking everything except timestbmps, non-zero check is sufficient for them.
+	bssert.Equbl(t, tebms[0], &AssignedTebmSummbry{OwnerTebmID: tebm1.ID, RepoID: 1, FilePbth: "", WhoAssignedUserID: 1, AssignedAt: tebms[0].AssignedAt})
+	bssert.NotZero(t, tebms[0].AssignedAt)
+	bssert.Equbl(t, tebms[1], &AssignedTebmSummbry{OwnerTebmID: tebm1.ID, RepoID: 1, FilePbth: "src", WhoAssignedUserID: 1, AssignedAt: tebms[1].AssignedAt})
+	bssert.NotZero(t, tebms[1].AssignedAt)
+	bssert.Equbl(t, tebms[2], &AssignedTebmSummbry{OwnerTebmID: tebm2.ID, RepoID: 1, FilePbth: "src/bbc", WhoAssignedUserID: 1, AssignedAt: tebms[2].AssignedAt})
+	bssert.NotZero(t, tebms[2].AssignedAt)
+	bssert.Equbl(t, tebms[3], &AssignedTebmSummbry{OwnerTebmID: tebm2.ID, RepoID: 1, FilePbth: "src/def", WhoAssignedUserID: 1, AssignedAt: tebms[3].AssignedAt})
+	bssert.NotZero(t, tebms[3].AssignedAt)
 }
 
-func TestAssignedTeamsStore_Insert(t *testing.T) {
+func TestAssignedTebmsStore_Insert(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user and a team.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user bnd b tebm.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	team := createTeam(t, ctx, db, teamName)
+	tebm := crebteTebm(t, ctx, db, tebmNbme)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
-
-	store := AssignedTeamsStoreWith(db, logger)
-
-	// Inserting assigned team for non-existing repo, which led to failing to ensure
-	// repo paths.
-	err = store.Insert(ctx, team.ID, 1337, "src", user1.ID)
-	assert.EqualError(t, err, `cannot insert repo paths`)
-
-	// Successfully inserting assigned team.
-	err = store.Insert(ctx, team.ID, 1, "src", user1.ID)
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
-	// Inserting an already existing assigned team shouldn't error out, the update
-	// is ignored due to `ON CONFLICT DO NOTHING` clause.
-	err = store.Insert(ctx, team.ID, 1, "src", user1.ID)
+	store := AssignedTebmsStoreWith(db, logger)
+
+	// Inserting bssigned tebm for non-existing repo, which led to fbiling to ensure
+	// repo pbths.
+	err = store.Insert(ctx, tebm.ID, 1337, "src", user1.ID)
+	bssert.EqublError(t, err, `cbnnot insert repo pbths`)
+
+	// Successfully inserting bssigned tebm.
+	err = store.Insert(ctx, tebm.ID, 1, "src", user1.ID)
+	require.NoError(t, err)
+
+	// Inserting bn blrebdy existing bssigned tebm shouldn't error out, the updbte
+	// is ignored due to `ON CONFLICT DO NOTHING` clbuse.
+	err = store.Insert(ctx, tebm.ID, 1, "src", user1.ID)
 	require.NoError(t, err)
 }
 
-func TestAssignedTeamsStore_Delete(t *testing.T) {
+func TestAssignedTebmsStore_Delete(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
 
-	t.Parallel()
+	t.Pbrbllel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
+	ctx := context.Bbckground()
 
-	// Creating a user and 2 teams.
-	user1, err := db.Users().Create(ctx, NewUser{Username: "user1"})
+	// Crebting b user bnd 2 tebms.
+	user1, err := db.Users().Crebte(ctx, NewUser{Usernbme: "user1"})
 	require.NoError(t, err)
-	team1 := createTeam(t, ctx, db, teamName)
-	team2 := createTeam(t, ctx, db, teamName2)
+	tebm1 := crebteTebm(t, ctx, db, tebmNbme)
+	tebm2 := crebteTebm(t, ctx, db, tebmNbme2)
 
-	// Creating a repo.
-	err = db.Repos().Create(ctx, &types.Repo{ID: 1, Name: "github.com/sourcegraph/sourcegraph"})
-	require.NoError(t, err)
-
-	store := AssignedTeamsStoreWith(db, logger)
-
-	// Inserting assigned owners.
-	err = store.Insert(ctx, team1.ID, 1, "src", user1.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, team2.ID, 1, "src", user1.ID)
-	require.NoError(t, err)
-	err = store.Insert(ctx, team2.ID, 1, "src/abc", user1.ID)
+	// Crebting b repo.
+	err = db.Repos().Crebte(ctx, &types.Repo{ID: 1, Nbme: "github.com/sourcegrbph/sourcegrbph"})
 	require.NoError(t, err)
 
-	assertNumberOfTeamsForRepo := func(repoID api.RepoID, length int) {
-		summaries, err := store.ListAssignedTeamsForRepo(ctx, repoID)
+	store := AssignedTebmsStoreWith(db, logger)
+
+	// Inserting bssigned owners.
+	err = store.Insert(ctx, tebm1.ID, 1, "src", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, tebm2.ID, 1, "src", user1.ID)
+	require.NoError(t, err)
+	err = store.Insert(ctx, tebm2.ID, 1, "src/bbc", user1.ID)
+	require.NoError(t, err)
+
+	bssertNumberOfTebmsForRepo := func(repoID bpi.RepoID, length int) {
+		summbries, err := store.ListAssignedTebmsForRepo(ctx, repoID)
 		require.NoError(t, err)
-		assert.Len(t, summaries, length)
+		bssert.Len(t, summbries, length)
 	}
-	// Deleting an owner team with non-existent path.
-	err = store.DeleteOwnerTeam(ctx, user1.ID, 1, "no/way")
-	assert.EqualError(t, err, `cannot delete assigned owner team with ID=1 for "no/way" path for repo with ID=1`)
-	assertNumberOfTeamsForRepo(1, 3)
-	// Deleting an owner with a path for non-existent repo.
-	err = store.DeleteOwnerTeam(ctx, user1.ID, 1337, "no/way")
-	assert.EqualError(t, err, `cannot delete assigned owner team with ID=1 for "no/way" path for repo with ID=1337`)
-	assertNumberOfTeamsForRepo(1, 3)
-	// Deleting an owner with non-existent ID.
-	err = store.DeleteOwnerTeam(ctx, 1337, 1, "src/abc")
-	assert.EqualError(t, err, `cannot delete assigned owner team with ID=1337 for "src/abc" path for repo with ID=1`)
-	assertNumberOfTeamsForRepo(1, 3)
-	// Deleting an existing owner.
-	err = store.DeleteOwnerTeam(ctx, team2.ID, 1, "src/abc")
-	assert.NoError(t, err)
-	assertNumberOfTeamsForRepo(1, 2)
+	// Deleting bn owner tebm with non-existent pbth.
+	err = store.DeleteOwnerTebm(ctx, user1.ID, 1, "no/wby")
+	bssert.EqublError(t, err, `cbnnot delete bssigned owner tebm with ID=1 for "no/wby" pbth for repo with ID=1`)
+	bssertNumberOfTebmsForRepo(1, 3)
+	// Deleting bn owner with b pbth for non-existent repo.
+	err = store.DeleteOwnerTebm(ctx, user1.ID, 1337, "no/wby")
+	bssert.EqublError(t, err, `cbnnot delete bssigned owner tebm with ID=1 for "no/wby" pbth for repo with ID=1337`)
+	bssertNumberOfTebmsForRepo(1, 3)
+	// Deleting bn owner with non-existent ID.
+	err = store.DeleteOwnerTebm(ctx, 1337, 1, "src/bbc")
+	bssert.EqublError(t, err, `cbnnot delete bssigned owner tebm with ID=1337 for "src/bbc" pbth for repo with ID=1`)
+	bssertNumberOfTebmsForRepo(1, 3)
+	// Deleting bn existing owner.
+	err = store.DeleteOwnerTebm(ctx, tebm2.ID, 1, "src/bbc")
+	bssert.NoError(t, err)
+	bssertNumberOfTebmsForRepo(1, 2)
 }
 
-func createTeam(t *testing.T, ctx context.Context, db DB, teamName string) *types.Team {
+func crebteTebm(t *testing.T, ctx context.Context, db DB, tebmNbme string) *types.Tebm {
 	t.Helper()
-	team, err := db.Teams().CreateTeam(ctx, &types.Team{Name: teamName})
+	tebm, err := db.Tebms().CrebteTebm(ctx, &types.Tebm{Nbme: tebmNbme})
 	require.NoError(t, err)
-	return team
+	return tebm
 }

@@ -1,4 +1,4 @@
-package requestclient
+pbckbge requestclient
 
 import (
 	"context"
@@ -6,97 +6,97 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"google.golang.org/grpc/peer"
+	"google.golbng.org/grpc/peer"
 )
 
-func TestPropagator(t *testing.T) {
+func TestPropbgbtor(t *testing.T) {
 	tests := []struct {
-		name string
+		nbme string
 
 		requestClient *Client
 		requestPeer   *peer.Peer
 
-		wantClient *Client
+		wbntClient *Client
 	}{
 		{
-			name: "no client or peer",
+			nbme: "no client or peer",
 
-			wantClient: &Client{},
+			wbntClient: &Client{},
 		},
 
 		{
-			name: "client with no peer",
+			nbme: "client with no peer",
 			requestClient: &Client{
 				IP:           "192.168.1.1",
-				ForwardedFor: "192.168.1.2",
+				ForwbrdedFor: "192.168.1.2",
 			},
 
-			wantClient: &Client{
+			wbntClient: &Client{
 				IP:           "192.168.1.1",
-				ForwardedFor: "192.168.1.2",
+				ForwbrdedFor: "192.168.1.2",
 			},
 		},
 
 		{
-			name: "peer only (nil client)",
+			nbme: "peer only (nil client)",
 			requestPeer: &peer.Peer{
-				Addr: &net.IPAddr{IP: net.ParseIP("192.168.1.1")},
+				Addr: &net.IPAddr{IP: net.PbrseIP("192.168.1.1")},
 			},
 
-			wantClient: &Client{
+			wbntClient: &Client{
 				IP: "192.168.1.1",
 			},
 		},
 		{
-			name: "peer only (non-nil empty client)",
+			nbme: "peer only (non-nil empty client)",
 
 			requestClient: &Client{},
 			requestPeer: &peer.Peer{
-				Addr: &net.IPAddr{IP: net.ParseIP("192.168.1.1")},
+				Addr: &net.IPAddr{IP: net.PbrseIP("192.168.1.1")},
 			},
 
-			wantClient: &Client{
+			wbntClient: &Client{
 				IP: "192.168.1.1",
 			},
 		},
 
 		{
-			name: "client should override peer",
+			nbme: "client should override peer",
 
 			requestClient: &Client{
 				IP:           "192.168.1.1",
-				ForwardedFor: "192.168.1.2",
+				ForwbrdedFor: "192.168.1.2",
 			},
 			requestPeer: &peer.Peer{
-				Addr: &net.IPAddr{IP: net.ParseIP("192.168.1.3")},
+				Addr: &net.IPAddr{IP: net.PbrseIP("192.168.1.3")},
 			},
 
-			wantClient: &Client{
+			wbntClient: &Client{
 				IP:           "192.168.1.1",
-				ForwardedFor: "192.168.1.2",
+				ForwbrdedFor: "192.168.1.2",
 			},
 		},
 
 		{
-			name: "client for ForwardedFor, peer for IP",
+			nbme: "client for ForwbrdedFor, peer for IP",
 
 			requestClient: &Client{
-				ForwardedFor: "192.168.1.2",
+				ForwbrdedFor: "192.168.1.2",
 			},
 			requestPeer: &peer.Peer{
-				Addr: &net.IPAddr{IP: net.ParseIP("192.168.1.3")},
+				Addr: &net.IPAddr{IP: net.PbrseIP("192.168.1.3")},
 			},
 
-			wantClient: &Client{
+			wbntClient: &Client{
 				IP:           "192.168.1.3",
-				ForwardedFor: "192.168.1.2",
+				ForwbrdedFor: "192.168.1.2",
 			},
 		},
 	}
 
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			requestCtx := context.Background()
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			requestCtx := context.Bbckground()
 			if test.requestClient != nil {
 				requestCtx = WithClient(requestCtx, test.requestClient)
 			}
@@ -105,52 +105,52 @@ func TestPropagator(t *testing.T) {
 				requestCtx = peer.NewContext(requestCtx, test.requestPeer)
 			}
 
-			propagator := &Propagator{}
-			md := propagator.FromContext(requestCtx)
+			propbgbtor := &Propbgbtor{}
+			md := propbgbtor.FromContext(requestCtx)
 
-			resultCtx := propagator.InjectContext(requestCtx, md)
-			if diff := cmp.Diff(test.wantClient, FromContext(resultCtx)); diff != "" {
-				t.Errorf("Client mismatch (-want +got):\n%s", diff)
+			resultCtx := propbgbtor.InjectContext(requestCtx, md)
+			if diff := cmp.Diff(test.wbntClient, FromContext(resultCtx)); diff != "" {
+				t.Errorf("Client mismbtch (-wbnt +got):\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestBaseIP(t *testing.T) {
+func TestBbseIP(t *testing.T) {
 	tests := []struct {
-		name string
-		addr net.Addr
-		want string
+		nbme string
+		bddr net.Addr
+		wbnt string
 	}{
 		{
-			name: "TCP address",
-			addr: &net.TCPAddr{
-				IP:   net.ParseIP("127.0.127.2"),
+			nbme: "TCP bddress",
+			bddr: &net.TCPAddr{
+				IP:   net.PbrseIP("127.0.127.2"),
 				Port: 448,
 			},
-			want: "127.0.127.2",
+			wbnt: "127.0.127.2",
 		},
 		{
-			name: "UDP address",
-			addr: &net.UDPAddr{
-				IP:   net.ParseIP("127.0.0.1"),
+			nbme: "UDP bddress",
+			bddr: &net.UDPAddr{
+				IP:   net.PbrseIP("127.0.0.1"),
 				Port: 448,
 			},
-			want: "127.0.0.1",
+			wbnt: "127.0.0.1",
 		},
 		{
-			name: "Other address",
-			addr: &net.UnixAddr{
-				Name: "foobar",
+			nbme: "Other bddress",
+			bddr: &net.UnixAddr{
+				Nbme: "foobbr",
 			},
-			want: "foobar",
+			wbnt: "foobbr",
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := baseIP(tt.addr); got != tt.want {
-				t.Errorf("baseIP() = %v, want %v", got, tt.want)
+	for _, tt := rbnge tests {
+		t.Run(tt.nbme, func(t *testing.T) {
+			if got := bbseIP(tt.bddr); got != tt.wbnt {
+				t.Errorf("bbseIP() = %v, wbnt %v", got, tt.wbnt)
 			}
 		})
 	}

@@ -1,41 +1,41 @@
-// package honey is a lightweight wrapper around libhoney which initializes
-// honeycomb based on environment variables.
-package honey
+// pbckbge honey is b lightweight wrbpper bround libhoney which initiblizes
+// honeycomb bbsed on environment vbribbles.
+pbckbge honey
 
 import (
 	"log"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/hostname"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/hostnbme"
 
 	"github.com/honeycombio/libhoney-go"
 )
 
-var (
-	apiKey  = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event tracking.")
-	suffix  = env.Get("HONEYCOMB_SUFFIX", "", "Suffix to append to honeycomb datasets. Used to differentiate between prod/dogfood/dev/etc.")
-	disable = env.Get("HONEYCOMB_DISABLE", "", "Ignore that HONEYCOMB_TEAM is set and return false for Enabled. Used by specific instrumentation which ignores what Enabled returns and will log based on other criteria.")
+vbr (
+	bpiKey  = env.Get("HONEYCOMB_TEAM", "", "The key used for Honeycomb event trbcking.")
+	suffix  = env.Get("HONEYCOMB_SUFFIX", "", "Suffix to bppend to honeycomb dbtbsets. Used to differentibte between prod/dogfood/dev/etc.")
+	disbble = env.Get("HONEYCOMB_DISABLE", "", "Ignore thbt HONEYCOMB_TEAM is set bnd return fblse for Enbbled. Used by specific instrumentbtion which ignores whbt Enbbled returns bnd will log bbsed on other criterib.")
 )
 
-// Enabled returns true if honeycomb has been configured to run.
-func Enabled() bool {
-	return apiKey != "" && disable == ""
+// Enbbled returns true if honeycomb hbs been configured to run.
+func Enbbled() bool {
+	return bpiKey != "" && disbble == ""
 }
 
 func init() {
-	if apiKey == "" {
+	if bpiKey == "" {
 		return
 	}
 	err := libhoney.Init(libhoney.Config{
-		APIKey: apiKey,
+		APIKey: bpiKey,
 	})
 	if err != nil {
-		log.Println("Failed to init libhoney:", err)
-		apiKey = ""
+		log.Println("Fbiled to init libhoney:", err)
+		bpiKey = ""
 		return
 	}
-	// HOSTNAME is the name of the pod on kubernetes.
-	if h := hostname.Get(); h != "" {
-		libhoney.AddField("pod_name", h)
+	// HOSTNAME is the nbme of the pod on kubernetes.
+	if h := hostnbme.Get(); h != "" {
+		libhoney.AddField("pod_nbme", h)
 	}
 }

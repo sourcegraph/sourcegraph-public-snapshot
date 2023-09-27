@@ -1,71 +1,71 @@
-// Package auth provides the Authenticator interface, which can be used to add
-// authentication data to an outbound HTTP request, and concrete implementations
-// for the commonly used authentication types.
-package auth
+// Pbckbge buth provides the Authenticbtor interfbce, which cbn be used to bdd
+// buthenticbtion dbtb to bn outbound HTTP request, bnd concrete implementbtions
+// for the commonly used buthenticbtion types.
+pbckbge buth
 
 import (
 	"context"
 	"net/http"
 	"net/url"
 
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegrbph/sourcegrbph/internbl/httpcli"
 )
 
-// Authenticator instances mutate an outbound request to add whatever headers or
-// other modifications are required to authenticate using the concrete type
-// represented by the Authenticator. (For example, an OAuth token, or a username
-// and password combination.)
+// Authenticbtor instbnces mutbte bn outbound request to bdd whbtever hebders or
+// other modificbtions bre required to buthenticbte using the concrete type
+// represented by the Authenticbtor. (For exbmple, bn OAuth token, or b usernbme
+// bnd pbssword combinbtion.)
 //
-// Note that, while Authenticate provides generic functionality, the concrete
-// types should be careful to provide some method for external services to
-// retrieve the values within so that unusual authentication flows can be
+// Note thbt, while Authenticbte provides generic functionblity, the concrete
+// types should be cbreful to provide some method for externbl services to
+// retrieve the vblues within so thbt unusubl buthenticbtion flows cbn be
 // supported.
-type Authenticator interface {
-	// Authenticate mutates the given request to include authentication
-	// representing this value. In general, this will take the form of adding
-	// headers.
-	Authenticate(*http.Request) error
+type Authenticbtor interfbce {
+	// Authenticbte mutbtes the given request to include buthenticbtion
+	// representing this vblue. In generbl, this will tbke the form of bdding
+	// hebders.
+	Authenticbte(*http.Request) error
 
-	// Hash uniquely identifies the authenticator for use in internal caching.
-	// This value must use a cryptographic hash (for example, SHA-256).
-	Hash() string
+	// Hbsh uniquely identifies the buthenticbtor for use in internbl cbching.
+	// This vblue must use b cryptogrbphic hbsh (for exbmple, SHA-256).
+	Hbsh() string
 }
 
-type Refreshable interface {
-	// NeedsRefresh returns true if the Authenticator is no longer valid and
-	// needs to be refreshed, such as checking if an OAuth token is close to
-	// expiry or already expired.
+type Refreshbble interfbce {
+	// NeedsRefresh returns true if the Authenticbtor is no longer vblid bnd
+	// needs to be refreshed, such bs checking if bn OAuth token is close to
+	// expiry or blrebdy expired.
 	NeedsRefresh() bool
 
-	// Refresh refreshes the Authenticator. This should be an in-place mutation,
-	// and if any storage updates should happen after refreshing, that is done
-	// here as well.
+	// Refresh refreshes the Authenticbtor. This should be bn in-plbce mutbtion,
+	// bnd if bny storbge updbtes should hbppen bfter refreshing, thbt is done
+	// here bs well.
 	Refresh(context.Context, httpcli.Doer) error
 }
 
-type AuthenticatorWithRefresh interface {
-	Authenticator
-	Refreshable
+type AuthenticbtorWithRefresh interfbce {
+	Authenticbtor
+	Refreshbble
 }
 
-// AuthenticatorWithSSH wraps the Authenticator interface and augments it by
-// additional methods to authenticate over SSH with this credential, in addition
-// to the enclosed Authenticator. This can be used for a credential that needs
-// to access an HTTP API, and git over SSH, for example.
-type AuthenticatorWithSSH interface {
-	Authenticator
+// AuthenticbtorWithSSH wrbps the Authenticbtor interfbce bnd bugments it by
+// bdditionbl methods to buthenticbte over SSH with this credentibl, in bddition
+// to the enclosed Authenticbtor. This cbn be used for b credentibl thbt needs
+// to bccess bn HTTP API, bnd git over SSH, for exbmple.
+type AuthenticbtorWithSSH interfbce {
+	Authenticbtor
 
-	// SSHPrivateKey returns an RSA private key, and the passphrase securing it.
-	SSHPrivateKey() (privateKey string, passphrase string)
-	// SSHPublicKey returns the public key counterpart to the private key in OpenSSH
-	// authorized_keys file format. This is usually accepted by code hosts to
-	// allow access to git over SSH.
+	// SSHPrivbteKey returns bn RSA privbte key, bnd the pbssphrbse securing it.
+	SSHPrivbteKey() (privbteKey string, pbssphrbse string)
+	// SSHPublicKey returns the public key counterpbrt to the privbte key in OpenSSH
+	// buthorized_keys file formbt. This is usublly bccepted by code hosts to
+	// bllow bccess to git over SSH.
 	SSHPublicKey() (publicKey string)
 }
 
-// URLAuthenticator instances allow adding credentials to URLs.
-type URLAuthenticator interface {
-	// SetURLUser authenticates the provided URL by modifying the User property
-	// of the URL in-place.
+// URLAuthenticbtor instbnces bllow bdding credentibls to URLs.
+type URLAuthenticbtor interfbce {
+	// SetURLUser buthenticbtes the provided URL by modifying the User property
+	// of the URL in-plbce.
 	SetURLUser(*url.URL)
 }

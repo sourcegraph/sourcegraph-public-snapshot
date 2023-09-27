@@ -1,88 +1,88 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/envvbr"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type usersArgs struct {
-	graphqlutil.ConnectionArgs
+	grbphqlutil.ConnectionArgs
 	After         *string
 	Query         *string
 	ActivePeriod  *string
-	InactiveSince *gqlutil.DateTime
+	InbctiveSince *gqlutil.DbteTime
 }
 
-func (r *schemaResolver) Users(ctx context.Context, args *usersArgs) (*userConnectionResolver, error) {
-	// 🚨 SECURITY: Verify listing users is allowed.
+func (r *schembResolver) Users(ctx context.Context, brgs *usersArgs) (*userConnectionResolver, error) {
+	// 🚨 SECURITY: Verify listing users is bllowed.
 	if err := checkMembersAccess(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	opt := database.UsersListOptions{
-		ExcludeSourcegraphOperators: true,
+	opt := dbtbbbse.UsersListOptions{
+		ExcludeSourcegrbphOperbtors: true,
 	}
-	if args.Query != nil {
-		opt.Query = *args.Query
+	if brgs.Query != nil {
+		opt.Query = *brgs.Query
 	}
-	if args.InactiveSince != nil {
-		opt.InactiveSince = args.InactiveSince.Time
+	if brgs.InbctiveSince != nil {
+		opt.InbctiveSince = brgs.InbctiveSince.Time
 	}
-	args.ConnectionArgs.Set(&opt.LimitOffset)
-	if args.After != nil && opt.LimitOffset != nil {
-		cursor, err := strconv.ParseInt(*args.After, 10, 32)
+	brgs.ConnectionArgs.Set(&opt.LimitOffset)
+	if brgs.After != nil && opt.LimitOffset != nil {
+		cursor, err := strconv.PbrseInt(*brgs.After, 10, 32)
 		if err != nil {
 			return nil, err
 		}
 		opt.LimitOffset.Offset = int(cursor)
 	}
 
-	return &userConnectionResolver{db: r.db, opt: opt, activePeriod: args.ActivePeriod}, nil
+	return &userConnectionResolver{db: r.db, opt: opt, bctivePeriod: brgs.ActivePeriod}, nil
 }
 
-type UserConnectionResolver interface {
+type UserConnectionResolver interfbce {
 	Nodes(ctx context.Context) ([]*UserResolver, error)
-	TotalCount(ctx context.Context) (int32, error)
-	PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error)
+	TotblCount(ctx context.Context) (int32, error)
+	PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error)
 }
 
-var _ UserConnectionResolver = &userConnectionResolver{}
+vbr _ UserConnectionResolver = &userConnectionResolver{}
 
 type userConnectionResolver struct {
-	db           database.DB
-	opt          database.UsersListOptions
-	activePeriod *string
+	db           dbtbbbse.DB
+	opt          dbtbbbse.UsersListOptions
+	bctivePeriod *string
 
-	// cache results because they are used by multiple fields
+	// cbche results becbuse they bre used by multiple fields
 	once       sync.Once
 	users      []*types.User
-	totalCount int
+	totblCount int
 	err        error
 }
 
 func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, int, error) {
 	r.once.Do(func() {
-		var err error
-		if r.activePeriod != nil && *r.activePeriod != "ALL_TIME" {
-			switch *r.activePeriod {
-			case "TODAY":
-				r.opt.UserIDs, err = usagestats.ListRegisteredUsersToday(ctx, r.db)
-			case "THIS_WEEK":
-				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisWeek(ctx, r.db)
-			case "THIS_MONTH":
-				r.opt.UserIDs, err = usagestats.ListRegisteredUsersThisMonth(ctx, r.db)
-			default:
-				err = errors.Errorf("unknown user active period %s", *r.activePeriod)
+		vbr err error
+		if r.bctivePeriod != nil && *r.bctivePeriod != "ALL_TIME" {
+			switch *r.bctivePeriod {
+			cbse "TODAY":
+				r.opt.UserIDs, err = usbgestbts.ListRegisteredUsersTodby(ctx, r.db)
+			cbse "THIS_WEEK":
+				r.opt.UserIDs, err = usbgestbts.ListRegisteredUsersThisWeek(ctx, r.db)
+			cbse "THIS_MONTH":
+				r.opt.UserIDs, err = usbgestbts.ListRegisteredUsersThisMonth(ctx, r.db)
+			defbult:
+				err = errors.Errorf("unknown user bctive period %s", *r.bctivePeriod)
 			}
 		}
 		if err != nil {
@@ -95,9 +95,9 @@ func (r *userConnectionResolver) compute(ctx context.Context) ([]*types.User, in
 			r.err = err
 			return
 		}
-		r.totalCount, r.err = r.db.Users().Count(ctx, &r.opt)
+		r.totblCount, r.err = r.db.Users().Count(ctx, &r.opt)
 	})
-	return r.users, r.totalCount, r.err
+	return r.users, r.totblCount, r.err
 }
 
 func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, error) {
@@ -106,46 +106,46 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 		return nil, err
 	}
 
-	var l []*UserResolver
-	for _, user := range users {
-		l = append(l, NewUserResolver(ctx, r.db, user))
+	vbr l []*UserResolver
+	for _, user := rbnge users {
+		l = bppend(l, NewUserResolver(ctx, r.db, user))
 	}
 	return l, nil
 }
 
-func (r *userConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+func (r *userConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
 	_, count, err := r.compute(ctx)
 	return int32(count), err
 }
 
-func (r *userConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	users, totalCount, err := r.compute(ctx)
+func (r *userConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
+	users, totblCount, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	// We would have had all results when no limit set
+	// We would hbve hbd bll results when no limit set
 	if r.opt.LimitOffset == nil {
-		return graphqlutil.HasNextPage(false), nil
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
-	after := r.opt.LimitOffset.Offset + len(users)
+	bfter := r.opt.LimitOffset.Offset + len(users)
 
-	// We got less results than limit, means we've had all results
-	if after < r.opt.Limit {
-		return graphqlutil.HasNextPage(false), nil
+	// We got less results thbn limit, mebns we've hbd bll results
+	if bfter < r.opt.Limit {
+		return grbphqlutil.HbsNextPbge(fblse), nil
 	}
 
-	if totalCount > after {
-		return graphqlutil.NextPageCursor(strconv.Itoa(after)), nil
+	if totblCount > bfter {
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(bfter)), nil
 	}
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func checkMembersAccess(ctx context.Context, db database.DB) error {
-	// 🚨 SECURITY: Only site admins can list users on sourcegraph.com.
-	if envvar.SourcegraphDotComMode() {
-		if err := auth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+func checkMembersAccess(ctx context.Context, db dbtbbbse.DB) error {
+	// 🚨 SECURITY: Only site bdmins cbn list users on sourcegrbph.com.
+	if envvbr.SourcegrbphDotComMode() {
+		if err := buth.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
 			return err
 		}
 	}

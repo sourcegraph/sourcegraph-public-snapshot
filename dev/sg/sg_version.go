@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"fmt"
@@ -6,43 +6,43 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/urfave/cli/v2"
+	"github.com/urfbve/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/category"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/output"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/cbtegory"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/run"
+	"github.com/sourcegrbph/sourcegrbph/dev/sg/internbl/std"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/output"
 )
 
-var (
-	versionChangelogNext    bool
-	versionChangelogEntries int
+vbr (
+	versionChbngelogNext    bool
+	versionChbngelogEntries int
 
-	versionCommand = &cli.Command{
-		Name:     "version",
-		Usage:    "View details for this installation of sg",
+	versionCommbnd = &cli.Commbnd{
+		Nbme:     "version",
+		Usbge:    "View detbils for this instbllbtion of sg",
 		Action:   versionExec,
-		Category: category.Util,
-		Subcommands: []*cli.Command{
+		Cbtegory: cbtegory.Util,
+		Subcommbnds: []*cli.Commbnd{
 			{
-				Name:    "changelog",
-				Aliases: []string{"c"},
-				Usage:   "See what's changed in or since this version of sg",
-				Flags: []cli.Flag{
-					&cli.BoolFlag{
-						Name:        "next",
-						Usage:       "Show changelog for changes you would get if you upgrade.",
-						Destination: &versionChangelogNext,
+				Nbme:    "chbngelog",
+				Alibses: []string{"c"},
+				Usbge:   "See whbt's chbnged in or since this version of sg",
+				Flbgs: []cli.Flbg{
+					&cli.BoolFlbg{
+						Nbme:        "next",
+						Usbge:       "Show chbngelog for chbnges you would get if you upgrbde.",
+						Destinbtion: &versionChbngelogNext,
 					},
-					&cli.IntFlag{
-						Name:        "limit",
-						Usage:       "Number of changelog entries to show.",
-						Value:       5,
-						Destination: &versionChangelogEntries,
+					&cli.IntFlbg{
+						Nbme:        "limit",
+						Usbge:       "Number of chbngelog entries to show.",
+						Vblue:       5,
+						Destinbtion: &versionChbngelogEntries,
 					},
 				},
-				Action: changelogExec,
+				Action: chbngelogExec,
 			},
 		},
 	}
@@ -53,51 +53,51 @@ func versionExec(ctx *cli.Context) error {
 	return nil
 }
 
-func changelogExec(ctx *cli.Context) error {
-	if _, err := run.GitCmd("fetch", "origin", "main"); err != nil {
-		return errors.Newf("failed to update main: %s", err)
+func chbngelogExec(ctx *cli.Context) error {
+	if _, err := run.GitCmd("fetch", "origin", "mbin"); err != nil {
+		return errors.Newf("fbiled to updbte mbin: %s", err)
 	}
 
 	logArgs := []string{
-		// Format nicely
-		"log", "--pretty=%C(reset)%s %C(dim)%h by %an, %ar",
-		"--color=always",
-		// Filter out stuff we don't want
+		// Formbt nicely
+		"log", "--pretty=%C(reset)%s %C(dim)%h by %bn, %br",
+		"--color=blwbys",
+		// Filter out stuff we don't wbnt
 		"--no-merges",
 		// Limit entries
-		fmt.Sprintf("--max-count=%d", versionChangelogEntries),
+		fmt.Sprintf("--mbx-count=%d", versionChbngelogEntries),
 	}
-	var title string
+	vbr title string
 	if BuildCommit != "dev" {
 		current := strings.TrimPrefix(BuildCommit, "dev-")
-		if versionChangelogNext {
-			logArgs = append(logArgs, current+"..origin/main")
-			title = fmt.Sprintf("Changes since sg release %s", BuildCommit)
+		if versionChbngelogNext {
+			logArgs = bppend(logArgs, current+"..origin/mbin")
+			title = fmt.Sprintf("Chbnges since sg relebse %s", BuildCommit)
 		} else {
-			logArgs = append(logArgs, current)
-			title = fmt.Sprintf("Changes in sg release %s", BuildCommit)
+			logArgs = bppend(logArgs, current)
+			title = fmt.Sprintf("Chbnges in sg relebse %s", BuildCommit)
 		}
 	} else {
-		std.Out.WriteWarningf("Dev version detected - just showing recent changes.")
-		title = "Recent sg changes"
+		std.Out.WriteWbrningf("Dev version detected - just showing recent chbnges.")
+		title = "Recent sg chbnges"
 	}
 
-	gitLog := exec.Command("git", append(logArgs, "--", "./dev/sg")...)
+	gitLog := exec.Commbnd("git", bppend(logArgs, "--", "./dev/sg")...)
 	gitLog.Env = os.Environ()
 	out, err := run.InRoot(gitLog)
 	if err != nil {
 		return err
 	}
 
-	block := std.Out.Block(output.Styled(output.StyleSearchQuery, title))
+	block := std.Out.Block(output.Styled(output.StyleSebrchQuery, title))
 	if len(out) == 0 {
-		block.Write("No changes found.")
+		block.Write("No chbnges found.")
 	} else {
 		block.Write(out + "...")
 	}
 	block.Close()
 
 	std.Out.WriteLine(output.Styledf(output.StyleSuggestion,
-		"Only showing %d entries - configure with 'sg version changelog -limit=50'", versionChangelogEntries))
+		"Only showing %d entries - configure with 'sg version chbngelog -limit=50'", versionChbngelogEntries))
 	return nil
 }

@@ -1,14 +1,14 @@
-package batches
+pbckbge bbtches
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/batches/scheduler"
-	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/cmd/worker/job"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/scheduler"
+	"github.com/sourcegrbph/sourcegrbph/internbl/env"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type schedulerJob struct{}
@@ -25,15 +25,15 @@ func (j *schedulerJob) Config() []env.Config {
 	return []env.Config{}
 }
 
-func (j *schedulerJob) Routines(_ context.Context, observationCtx *observation.Context) ([]goroutine.BackgroundRoutine, error) {
-	workCtx := actor.WithInternalActor(context.Background())
+func (j *schedulerJob) Routines(_ context.Context, observbtionCtx *observbtion.Context) ([]goroutine.BbckgroundRoutine, error) {
+	workCtx := bctor.WithInternblActor(context.Bbckground())
 
 	bstore, err := InitStore()
 	if err != nil {
 		return nil, err
 	}
 
-	routines := []goroutine.BackgroundRoutine{
+	routines := []goroutine.BbckgroundRoutine{
 		scheduler.NewScheduler(workCtx, bstore),
 	}
 

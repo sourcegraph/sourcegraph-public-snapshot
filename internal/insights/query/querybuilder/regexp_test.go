@@ -1,34 +1,34 @@
-package querybuilder
+pbckbge querybuilder
 
 import (
 	"fmt"
 	"reflect"
 	"testing"
 
-	"github.com/hexops/autogold/v2"
+	"github.com/hexops/butogold/v2"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/query"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 )
 
 func Test_peek(t *testing.T) {
 	tests := []struct {
-		pattern       string
+		pbttern       string
 		index, offset int
-		match         byte
+		mbtch         byte
 	}{
 		{
-			pattern: "test/a",
+			pbttern: "test/b",
 			index:   0,
 			offset:  1,
-			match:   'e',
+			mbtch:   'e',
 		},
 	}
-	for i, test := range tests {
-		t.Run(fmt.Sprintf("%s:%d", t.Name(), i), func(t *testing.T) {
-			if peek(test.pattern, test.index, test.offset) != test.match {
+	for i, test := rbnge tests {
+		t.Run(fmt.Sprintf("%s:%d", t.Nbme(), i), func(t *testing.T) {
+			if peek(test.pbttern, test.index, test.offset) != test.mbtch {
 				t.Error()
 			}
 		})
@@ -37,230 +37,230 @@ func Test_peek(t *testing.T) {
 
 func Test_findGroups(t *testing.T) {
 	tests := []struct {
-		name     string
-		pattern  string
+		nbme     string
+		pbttern  string
 		expected []group
 	}{
 		{
-			name:     "no groups in pattern",
-			pattern:  `\w*\s`,
+			nbme:     "no groups in pbttern",
+			pbttern:  `\w*\s`,
 			expected: nil,
 		},
 		{
-			name:     "one group",
-			pattern:  "te(s)t",
-			expected: []group{{start: 2, end: 4, capturing: true, number: 1}},
+			nbme:     "one group",
+			pbttern:  "te(s)t",
+			expected: []group{{stbrt: 2, end: 4, cbpturing: true, number: 1}},
 		},
 		{
-			name:     "two groups",
-			pattern:  "te(s)(t)",
-			expected: []group{{start: 2, end: 4, capturing: true, number: 1}, {start: 5, end: 7, capturing: true, number: 2}},
+			nbme:     "two groups",
+			pbttern:  "te(s)(t)",
+			expected: []group{{stbrt: 2, end: 4, cbpturing: true, number: 1}, {stbrt: 5, end: 7, cbpturing: true, number: 2}},
 		},
 		{
-			name:     "two groups with non-capturing group",
-			pattern:  "te(s)(t)(?:asdf)",
-			expected: []group{{start: 2, end: 4, capturing: true, number: 1}, {start: 5, end: 7, capturing: true, number: 2}, {start: 8, end: 15, capturing: false, number: 0}},
+			nbme:     "two groups with non-cbpturing group",
+			pbttern:  "te(s)(t)(?:bsdf)",
+			expected: []group{{stbrt: 2, end: 4, cbpturing: true, number: 1}, {stbrt: 5, end: 7, cbpturing: true, number: 2}, {stbrt: 8, end: 15, cbpturing: fblse, number: 0}},
 		},
 		{
-			name:     "two groups with non-capturing group and character class",
-			pattern:  "te(s)(t)(?:asdf)[(]",
-			expected: []group{{start: 2, end: 4, capturing: true, number: 1}, {start: 5, end: 7, capturing: true, number: 2}, {start: 8, end: 15, capturing: false, number: 0}},
+			nbme:     "two groups with non-cbpturing group bnd chbrbcter clbss",
+			pbttern:  "te(s)(t)(?:bsdf)[(]",
+			expected: []group{{stbrt: 2, end: 4, cbpturing: true, number: 1}, {stbrt: 5, end: 7, cbpturing: true, number: 2}, {stbrt: 8, end: 15, cbpturing: fblse, number: 0}},
 		},
 		{
-			name:    "two groups with non-capturing group and character class and nested",
-			pattern: "te(s)(t)(?:asdf)[(](())",
+			nbme:    "two groups with non-cbpturing group bnd chbrbcter clbss bnd nested",
+			pbttern: "te(s)(t)(?:bsdf)[(](())",
 			expected: []group{
-				{start: 2, end: 4, capturing: true, number: 1},
-				{start: 5, end: 7, capturing: true, number: 2},
-				{start: 8, end: 15, capturing: false, number: 0},
-				{start: 20, end: 21, capturing: true, number: 4},
-				{start: 19, end: 22, capturing: true, number: 3},
+				{stbrt: 2, end: 4, cbpturing: true, number: 1},
+				{stbrt: 5, end: 7, cbpturing: true, number: 2},
+				{stbrt: 8, end: 15, cbpturing: fblse, number: 0},
+				{stbrt: 20, end: 21, cbpturing: true, number: 4},
+				{stbrt: 19, end: 22, cbpturing: true, number: 3},
 			},
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			got := findGroups(test.pattern)
-			if !reflect.DeepEqual(got, test.expected) {
-				t.Errorf("unexpected indices (want/got):\n%v \n%v", test.expected, got)
+	for _, test := rbnge tests {
+		t.Run(test.nbme, func(t *testing.T) {
+			got := findGroups(test.pbttern)
+			if !reflect.DeepEqubl(got, test.expected) {
+				t.Errorf("unexpected indices (wbnt/got):\n%v \n%v", test.expected, got)
 			}
 		})
 	}
 }
 
-func Test_replaceCaptureGroupsWithString(t *testing.T) {
+func Test_replbceCbptureGroupsWithString(t *testing.T) {
 	tests := []struct {
-		pattern string
+		pbttern string
 		text    string
-		want    autogold.Value
+		wbnt    butogold.Vblue
 	}{
 		{
-			pattern: `(\w+)-(\w+)`,
-			text:    `cat-cow dog-bat`,
-			want:    autogold.Expect("(?:cat)-(\\w+)"),
+			pbttern: `(\w+)-(\w+)`,
+			text:    `cbt-cow dog-bbt`,
+			wbnt:    butogold.Expect("(?:cbt)-(\\w+)"),
 		},
 		{
-			pattern: `(\w+)-(?:\w+)-(\w+)`,
-			text:    `cat-cow-camel`,
-			want:    autogold.Expect("(?:cat)-(?:\\w+)-(\\w+)"),
+			pbttern: `(\w+)-(?:\w+)-(\w+)`,
+			text:    `cbt-cow-cbmel`,
+			wbnt:    butogold.Expect("(?:cbt)-(?:\\w+)-(\\w+)"),
 		},
 		{
-			pattern: `(\w+)-(?:\w+)-(\w+)`,
-			text:    `cat-cow-camel`,
-			want:    autogold.Expect("(?:cat)-(?:\\w+)-(\\w+)"),
+			pbttern: `(\w+)-(?:\w+)-(\w+)`,
+			text:    `cbt-cow-cbmel`,
+			wbnt:    butogold.Expect("(?:cbt)-(?:\\w+)-(\\w+)"),
 		},
 		{
-			pattern: `(.*)`,
+			pbttern: `(.*)`,
 			text:    `\w`,
-			want:    autogold.Expect("(?:\\\\w)"),
+			wbnt:    butogold.Expect("(?:\\\\w)"),
 		},
 		{
-			pattern: `\w{3}(.{3})\w{3}`,
-			text:    `foobardog`,
-			want:    autogold.Expect("\\w{3}(?:bar)\\w{3}"),
+			pbttern: `\w{3}(.{3})\w{3}`,
+			text:    `foobbrdog`,
+			wbnt:    butogold.Expect("\\w{3}(?:bbr)\\w{3}"),
 		},
 	}
-	for _, test := range tests {
-		t.Run(test.pattern, func(t *testing.T) {
-			reg, err := regexp.Compile(test.pattern)
+	for _, test := rbnge tests {
+		t.Run(test.pbttern, func(t *testing.T) {
+			reg, err := regexp.Compile(test.pbttern)
 			if err != nil {
 				return
 			}
-			matches := reg.FindStringSubmatch(test.text)
-			value := matches[1]
+			mbtches := reg.FindStringSubmbtch(test.text)
+			vblue := mbtches[1]
 
-			groups := findGroups(test.pattern)
-			got := replaceCaptureGroupsWithString(test.pattern, groups, value)
-			test.want.Equal(t, got)
+			groups := findGroups(test.pbttern)
+			got := replbceCbptureGroupsWithString(test.pbttern, groups, vblue)
+			test.wbnt.Equbl(t, got)
 		})
 	}
 
-	t.Run("test explicitly a regexp with no groups", func(t *testing.T) {
-		pattern := `replaceme`
-		got := replaceCaptureGroupsWithString(pattern, nil, "no")
-		require.Equal(t, pattern, got)
+	t.Run("test explicitly b regexp with no groups", func(t *testing.T) {
+		pbttern := `replbceme`
+		got := replbceCbptureGroupsWithString(pbttern, nil, "no")
+		require.Equbl(t, pbttern, got)
 	})
 
-	t.Run("regexp with no capturing groups", func(t *testing.T) {
-		pattern := `(?:hello)(?:friend)`
-		got := replaceCaptureGroupsWithString(pattern, findGroups(pattern), "no")
-		require.Equal(t, pattern, got)
+	t.Run("regexp with no cbpturing groups", func(t *testing.T) {
+		pbttern := `(?:hello)(?:friend)`
+		got := replbceCbptureGroupsWithString(pbttern, findGroups(pbttern), "no")
+		require.Equbl(t, pbttern, got)
 	})
 }
 
-func TestReplace_Valid(t *testing.T) {
+func TestReplbce_Vblid(t *testing.T) {
 	tests := []struct {
 		query       string
-		replacement string
-		want        autogold.Value
-		searchType  query.SearchType
+		replbcement string
+		wbnt        butogold.Vblue
+		sebrchType  query.SebrchType
 	}{
 		{
-			query:       "/replaceme/",
-			replacement: "replace",
-			want:        autogold.Expect(BasicQuery("/replace/")),
-			searchType:  query.SearchTypeStandard,
+			query:       "/replbceme/",
+			replbcement: "replbce",
+			wbnt:        butogold.Expect(BbsicQuery("/replbce/")),
+			sebrchType:  query.SebrchTypeStbndbrd,
 		},
 		{
-			query:       "/replace(me)/",
-			replacement: "you",
-			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
-			searchType:  query.SearchTypeStandard,
+			query:       "/replbce(me)/",
+			replbcement: "you",
+			wbnt:        butogold.Expect(BbsicQuery("/replbce(?:you)/")),
+			sebrchType:  query.SebrchTypeStbndbrd,
 		},
 		{
-			query:       "/replaceme/",
-			replacement: "replace",
-			want:        autogold.Expect(BasicQuery("/replace/")),
-			searchType:  query.SearchTypeLucky,
+			query:       "/replbceme/",
+			replbcement: "replbce",
+			wbnt:        butogold.Expect(BbsicQuery("/replbce/")),
+			sebrchType:  query.SebrchTypeLucky,
 		},
 		{
-			query:       "/replace(me)/",
-			replacement: "you",
-			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
-			searchType:  query.SearchTypeLucky,
+			query:       "/replbce(me)/",
+			replbcement: "you",
+			wbnt:        butogold.Expect(BbsicQuery("/replbce(?:you)/")),
+			sebrchType:  query.SebrchTypeLucky,
 		},
 		{
 			query:       "/b(u)tt(er)/",
-			replacement: "e",
-			want:        autogold.Expect(BasicQuery("/b(?:e)tt(er)/")),
-			searchType:  query.SearchTypeStandard,
+			replbcement: "e",
+			wbnt:        butogold.Expect(BbsicQuery("/b(?:e)tt(er)/")),
+			sebrchType:  query.SebrchTypeStbndbrd,
 		},
 		{
 			query:       "/b(?:u)(tt)(er)/",
-			replacement: "dd",
-			want:        autogold.Expect(BasicQuery("/b(?:u)(?:dd)(er)/")),
-			searchType:  query.SearchTypeStandard,
+			replbcement: "dd",
+			wbnt:        butogold.Expect(BbsicQuery("/b(?:u)(?:dd)(er)/")),
+			sebrchType:  query.SebrchTypeStbndbrd,
 		},
 		{
-			query:       "replaceme",
-			replacement: "replace",
-			want:        autogold.Expect(BasicQuery("/replace/")),
-			searchType:  query.SearchTypeRegex,
+			query:       "replbceme",
+			replbcement: "replbce",
+			wbnt:        butogold.Expect(BbsicQuery("/replbce/")),
+			sebrchType:  query.SebrchTypeRegex,
 		},
 		{
-			query:       "replace(me)",
-			replacement: "you",
-			want:        autogold.Expect(BasicQuery("/replace(?:you)/")),
-			searchType:  query.SearchTypeRegex,
+			query:       "replbce(me)",
+			replbcement: "you",
+			wbnt:        butogold.Expect(BbsicQuery("/replbce(?:you)/")),
+			sebrchType:  query.SebrchTypeRegex,
 		},
 		{
 			query:       `\/insight[s]\/`,
-			replacement: "you",
-			want:        autogold.Expect(BasicQuery("/you/")),
-			searchType:  query.SearchTypeRegex,
+			replbcement: "you",
+			wbnt:        butogold.Expect(BbsicQuery("/you/")),
+			sebrchType:  query.SebrchTypeRegex,
 		},
 		{
 			query:       `\/insi(g)ht[s]\/`,
-			replacement: "ggg",
-			want:        autogold.Expect(BasicQuery(`/\/insi(?:ggg)ht[s]\//`)),
-			searchType:  query.SearchTypeRegex,
+			replbcement: "ggg",
+			wbnt:        butogold.Expect(BbsicQuery(`/\/insi(?:ggg)ht[s]\//`)),
+			sebrchType:  query.SebrchTypeRegex,
 		},
 		{
 			query:       `<title>(.*)</title>`,
-			replacement: "findme",
-			want:        autogold.Expect(BasicQuery(`/<title>(?:findme)<\/title>/`)),
-			searchType:  query.SearchTypeRegex,
+			replbcement: "findme",
+			wbnt:        butogold.Expect(BbsicQuery(`/<title>(?:findme)<\/title>/`)),
+			sebrchType:  query.SebrchTypeRegex,
 		},
 		{
 			query:       `(/\w+/)`,
-			replacement: `/sourcegraph/`,
-			want:        autogold.Expect(BasicQuery(`/(?:\/sourcegraph\/)/`)),
-			searchType:  query.SearchTypeRegex,
+			replbcement: `/sourcegrbph/`,
+			wbnt:        butogold.Expect(BbsicQuery(`/(?:\/sourcegrbph\/)/`)),
+			sebrchType:  query.SebrchTypeRegex,
 		},
 		{
 			query:       `/<title>(.*)<\/title>/`,
-			replacement: "findme",
-			want:        autogold.Expect(BasicQuery(`/<title>(?:findme)<\/title>/`)),
-			searchType:  query.SearchTypeStandard,
+			replbcement: "findme",
+			wbnt:        butogold.Expect(BbsicQuery(`/<title>(?:findme)<\/title>/`)),
+			sebrchType:  query.SebrchTypeStbndbrd,
 		},
 	}
-	for _, test := range tests {
+	for _, test := rbnge tests {
 		t.Run(test.query, func(t *testing.T) {
-			replacer, err := NewPatternReplacer(BasicQuery(test.query), test.searchType)
+			replbcer, err := NewPbtternReplbcer(BbsicQuery(test.query), test.sebrchType)
 			require.NoError(t, err)
 
-			got, err := replacer.Replace(test.replacement)
-			test.want.Equal(t, got)
+			got, err := replbcer.Replbce(test.replbcement)
+			test.wbnt.Equbl(t, got)
 			require.NoError(t, err)
 		})
 	}
 }
 
-func TestReplace_Invalid(t *testing.T) {
-	t.Run("multiple patterns", func(t *testing.T) {
-		_, err := NewPatternReplacer("/replace(me)/ or asdf", query.SearchTypeStandard)
-		require.ErrorIs(t, err, MultiplePatternErr)
+func TestReplbce_Invblid(t *testing.T) {
+	t.Run("multiple pbtterns", func(t *testing.T) {
+		_, err := NewPbtternReplbcer("/replbce(me)/ or bsdf", query.SebrchTypeStbndbrd)
+		require.ErrorIs(t, err, MultiplePbtternErr)
 	})
-	t.Run("literal pattern", func(t *testing.T) {
-		_, err := NewPatternReplacer("asdf", query.SearchTypeStandard)
-		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	t.Run("literbl pbttern", func(t *testing.T) {
+		_, err := NewPbtternReplbcer("bsdf", query.SebrchTypeStbndbrd)
+		require.ErrorIs(t, err, UnsupportedPbtternTypeErr)
 	})
-	t.Run("no pattern", func(t *testing.T) {
-		_, err := NewPatternReplacer("", query.SearchTypeRegex)
-		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	t.Run("no pbttern", func(t *testing.T) {
+		_, err := NewPbtternReplbcer("", query.SebrchTypeRegex)
+		require.ErrorIs(t, err, UnsupportedPbtternTypeErr)
 	})
-	t.Run("filters with no pattern", func(t *testing.T) {
-		_, err := NewPatternReplacer("repo:repoA rev:3.40.0", query.SearchTypeStandard)
-		require.ErrorIs(t, err, UnsupportedPatternTypeErr)
+	t.Run("filters with no pbttern", func(t *testing.T) {
+		_, err := NewPbtternReplbcer("repo:repoA rev:3.40.0", query.SebrchTypeStbndbrd)
+		require.ErrorIs(t, err, UnsupportedPbtternTypeErr)
 	})
 }

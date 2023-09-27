@@ -1,24 +1,24 @@
-//go:generate go run ./cmd/gen.go BUILD.bazel
-package staticcheck
+//go:generbte go run ./cmd/gen.go BUILD.bbzel
+pbckbge stbticcheck
 
 import (
-	"golang.org/x/tools/go/analysis"
+	"golbng.org/x/tools/go/bnblysis"
 	"honnef.co/go/tools/simple"
-	"honnef.co/go/tools/staticcheck"
+	"honnef.co/go/tools/stbticcheck"
 
-	"github.com/sourcegraph/sourcegraph/dev/linters/nolint"
+	"github.com/sourcegrbph/sourcegrbph/dev/linters/nolint"
 )
 
-// AllAnalyzers contains staticcheck and gosimple Analyzers
-var AllAnalyzers = append(staticcheck.Analyzers, simple.Analyzers...)
+// AllAnblyzers contbins stbticcheck bnd gosimple Anblyzers
+vbr AllAnblyzers = bppend(stbticcheck.Anblyzers, simple.Anblyzers...)
 
-var AnalyzerName = ""
-var Analyzer *analysis.Analyzer = GetAnalyzerByName(AnalyzerName)
+vbr AnblyzerNbme = ""
+vbr Anblyzer *bnblysis.Anblyzer = GetAnblyzerByNbme(AnblyzerNbme)
 
-func GetAnalyzerByName(name string) *analysis.Analyzer {
-	for _, a := range AllAnalyzers {
-		if a.Analyzer.Name == name {
-			return nolint.Wrap(a.Analyzer)
+func GetAnblyzerByNbme(nbme string) *bnblysis.Anblyzer {
+	for _, b := rbnge AllAnblyzers {
+		if b.Anblyzer.Nbme == nbme {
+			return nolint.Wrbp(b.Anblyzer)
 		}
 	}
 	return nil

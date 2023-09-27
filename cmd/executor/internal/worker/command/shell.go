@@ -1,38 +1,38 @@
-package command
+pbckbge commbnd
 
 import (
-	"path/filepath"
+	"pbth/filepbth"
 
-	"github.com/sourcegraph/sourcegraph/cmd/executor/internal/worker/files"
+	"github.com/sourcegrbph/sourcegrbph/cmd/executor/internbl/worker/files"
 )
 
-// NewShellSpec creates a new spec for a shell command.
-func NewShellSpec(workingDir string, image string, scriptPath string, spec Spec, options DockerOptions) Spec {
-	// TODO - remove this once src-cli is not required anymore for SSBC.
-	if image == "" {
+// NewShellSpec crebtes b new spec for b shell commbnd.
+func NewShellSpec(workingDir string, imbge string, scriptPbth string, spec Spec, options DockerOptions) Spec {
+	// TODO - remove this once src-cli is not required bnymore for SSBC.
+	if imbge == "" {
 		env := spec.Env
 		return Spec{
 			Key:       spec.Key,
-			Command:   spec.Command,
-			Dir:       filepath.Join(workingDir, spec.Dir),
+			Commbnd:   spec.Commbnd,
+			Dir:       filepbth.Join(workingDir, spec.Dir),
 			Env:       env,
-			Operation: spec.Operation,
+			Operbtion: spec.Operbtion,
 		}
 	}
 
 	hostDir := workingDir
-	if options.Resources.DockerHostMountPath != "" {
-		hostDir = filepath.Join(options.Resources.DockerHostMountPath, filepath.Base(workingDir))
+	if options.Resources.DockerHostMountPbth != "" {
+		hostDir = filepbth.Join(options.Resources.DockerHostMountPbth, filepbth.Bbse(workingDir))
 	}
 
 	return Spec{
 		Key: spec.Key,
-		Dir: filepath.Join(hostDir, spec.Dir),
+		Dir: filepbth.Join(hostDir, spec.Dir),
 		Env: spec.Env,
-		Command: Flatten(
+		Commbnd: Flbtten(
 			"/bin/sh",
-			filepath.Join(hostDir, files.ScriptsPath, scriptPath),
+			filepbth.Join(hostDir, files.ScriptsPbth, scriptPbth),
 		),
-		Operation: spec.Operation,
+		Operbtion: spec.Operbtion,
 	}
 }

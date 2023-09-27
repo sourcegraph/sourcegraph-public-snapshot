@@ -1,68 +1,68 @@
-package repos
+pbckbge repos
 
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
-	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/codeintel/dependencies"
+	"github.com/sourcegrbph/sourcegrbph/internbl/conf/reposource"
+	"github.com/sourcegrbph/sourcegrbph/internbl/jsonc"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
-// NewJVMPackagesSource returns a new MavenSource from the given external
+// NewJVMPbckbgesSource returns b new MbvenSource from the given externbl
 // service.
-func NewJVMPackagesSource(ctx context.Context, svc *types.ExternalService) (*PackagesSource, error) {
-	rawConfig, err := svc.Config.Decrypt(ctx)
+func NewJVMPbckbgesSource(ctx context.Context, svc *types.ExternblService) (*PbckbgesSource, error) {
+	rbwConfig, err := svc.Config.Decrypt(ctx)
 	if err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
-	var c schema.JVMPackagesConnection
-	if err := jsonc.Unmarshal(rawConfig, &c); err != nil {
-		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	vbr c schemb.JVMPbckbgesConnection
+	if err := jsonc.Unmbrshbl(rbwConfig, &c); err != nil {
+		return nil, errors.Errorf("externbl service id=%d config error: %s", svc.ID, err)
 	}
 
-	return &PackagesSource{
+	return &PbckbgesSource{
 		svc:        svc,
-		configDeps: c.Maven.Dependencies,
-		scheme:     dependencies.JVMPackagesScheme,
-		src:        &jvmPackagesSource{config: &c},
+		configDeps: c.Mbven.Dependencies,
+		scheme:     dependencies.JVMPbckbgesScheme,
+		src:        &jvmPbckbgesSource{config: &c},
 	}, nil
 }
 
-// A jvmPackagesSource creates git repositories from `*-sources.jar` files of
-// published Maven dependencies from the JVM ecosystem.
-type jvmPackagesSource struct {
-	config *schema.JVMPackagesConnection
+// A jvmPbckbgesSource crebtes git repositories from `*-sources.jbr` files of
+// published Mbven dependencies from the JVM ecosystem.
+type jvmPbckbgesSource struct {
+	config *schemb.JVMPbckbgesConnection
 }
 
-var _ packagesSource = &jvmPackagesSource{}
+vbr _ pbckbgesSource = &jvmPbckbgesSource{}
 
-// Commented out as importing 'internal/extsvc/jvmpackages/coursier' here includes it in the frontend and repo-updater binaries.
-// We don't want that due to the side-effects of importing that package.
-/* func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	mavenDependency, err := reposource.ParseMavenVersionedPackage(name + ":" + version)
+// Commented out bs importing 'internbl/extsvc/jvmpbckbges/coursier' here includes it in the frontend bnd repo-updbter binbries.
+// We don't wbnt thbt due to the side-effects of importing thbt pbckbge.
+/* func (s *jvmPbckbgesSource) Get(ctx context.Context, nbme, version string) (reposource.VersionedPbckbge, error) {
+	mbvenDependency, err := reposource.PbrseMbvenVersionedPbckbge(nbme + ":" + version)
 	if err != nil {
 		return nil, err
 	}
 
-	err = coursier.Exists(ctx, s.config, mavenDependency)
+	err = coursier.Exists(ctx, s.config, mbvenDependency)
 	if err != nil {
 		return nil, err
 	}
-	return mavenDependency, nil
+	return mbvenDependency, nil
 } */
 
-func (jvmPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
-	return reposource.ParseMavenVersionedPackage(dep)
+func (jvmPbckbgesSource) PbrseVersionedPbckbgeFromConfigurbtion(dep string) (reposource.VersionedPbckbge, error) {
+	return reposource.PbrseMbvenVersionedPbckbge(dep)
 }
 
-func (jvmPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
-	return reposource.ParseMavenPackageFromName(name)
+func (jvmPbckbgesSource) PbrsePbckbgeFromNbme(nbme reposource.PbckbgeNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseMbvenPbckbgeFromNbme(nbme)
 }
 
-func (jvmPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
-	return reposource.ParseMavenPackageFromRepoName(repoName)
+func (jvmPbckbgesSource) PbrsePbckbgeFromRepoNbme(repoNbme bpi.RepoNbme) (reposource.Pbckbge, error) {
+	return reposource.PbrseMbvenPbckbgeFromRepoNbme(repoNbme)
 }

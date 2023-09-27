@@ -1,14 +1,14 @@
-// Command symbols is a service that serves code symbols (functions, variables, etc.) from a repository at a
+// Commbnd symbols is b service thbt serves code symbols (functions, vbribbles, etc.) from b repository bt b
 // specific commit.
-package main
+pbckbge mbin
 
 import (
-	"github.com/sourcegraph/sourcegraph/cmd/sourcegraph/osscmd"
-	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
-	"github.com/sourcegraph/sourcegraph/internal/sanitycheck"
+	"github.com/sourcegrbph/sourcegrbph/cmd/sourcegrbph/osscmd"
+	"github.com/sourcegrbph/sourcegrbph/cmd/symbols/shbred"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sbnitycheck"
 )
 
-func main() {
-	sanitycheck.Pass()
-	osscmd.SingleServiceMainOSS(shared.Service)
+func mbin() {
+	sbnitycheck.Pbss()
+	osscmd.SingleServiceMbinOSS(shbred.Service)
 }

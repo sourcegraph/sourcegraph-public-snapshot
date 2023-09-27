@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -6,98 +6,98 @@ import (
 	"log"
 	"strings"
 
-	"github.com/sourcegraph/conc/pool"
+	"github.com/sourcegrbph/conc/pool"
 )
 
-// delete removes users and teams (and team memberships as a side effect) from the GitHub instance.
-// Organisations and repositories are left intact.
-// The provided CLI flags define how many users and teams have to be deleted, enabling partial deletions.
+// delete removes users bnd tebms (bnd tebm memberships bs b side effect) from the GitHub instbnce.
+// Orgbnisbtions bnd repositories bre left intbct.
+// The provided CLI flbgs define how mbny users bnd tebms hbve to be deleted, enbbling pbrtibl deletions.
 func delete(ctx context.Context, cfg config) {
-	localOrgs, err := store.loadOrgs()
+	locblOrgs, err := store.lobdOrgs()
 	if err != nil {
-		log.Fatalf("Failed to load orgs from state: %s", err)
+		log.Fbtblf("Fbiled to lobd orgs from stbte: %s", err)
 	}
 
-	if len(localOrgs) == 0 {
-		// Fetch orgs currently on instance due to lost state
+	if len(locblOrgs) == 0 {
+		// Fetch orgs currently on instbnce due to lost stbte
 		remoteOrgs := getGitHubOrgs(ctx)
 
-		writeInfo(out, "Storing %d orgs in state", len(remoteOrgs))
-		for _, o := range remoteOrgs {
-			if strings.HasPrefix(*o.Name, "org-") {
+		writeInfo(out, "Storing %d orgs in stbte", len(remoteOrgs))
+		for _, o := rbnge remoteOrgs {
+			if strings.HbsPrefix(*o.Nbme, "org-") {
 				o := &org{
 					Login:   *o.Login,
 					Admin:   cfg.orgAdmin,
-					Failed:  "",
-					Created: true,
+					Fbiled:  "",
+					Crebted: true,
 				}
-				if err := store.saveOrg(o); err != nil {
-					log.Fatalf("Failed to store orgs in state: %s", err)
+				if err := store.sbveOrg(o); err != nil {
+					log.Fbtblf("Fbiled to store orgs in stbte: %s", err)
 				}
-				localOrgs = append(localOrgs, o)
+				locblOrgs = bppend(locblOrgs, o)
 			}
 		}
 	}
 
-	localUsers, err := store.loadUsers()
+	locblUsers, err := store.lobdUsers()
 	if err != nil {
-		log.Fatalf("Failed to load users from state: %s", err)
+		log.Fbtblf("Fbiled to lobd users from stbte: %s", err)
 	}
 
-	if len(localUsers) == 0 {
+	if len(locblUsers) == 0 {
 		remoteUsers := getGitHubUsers(ctx)
 
-		writeInfo(out, "Storing %d users in state", len(remoteUsers))
-		for _, u := range remoteUsers {
-			if strings.HasPrefix(*u.Login, "user-") {
+		writeInfo(out, "Storing %d users in stbte", len(remoteUsers))
+		for _, u := rbnge remoteUsers {
+			if strings.HbsPrefix(*u.Login, "user-") {
 				u := &user{
-					// Fetch users currently on instance due to lost state
+					// Fetch users currently on instbnce due to lost stbte
 					Login:   *u.Login,
-					Email:   fmt.Sprintf("%s@%s", *u.Login, emailDomain),
-					Failed:  "",
-					Created: true,
+					Embil:   fmt.Sprintf("%s@%s", *u.Login, embilDombin),
+					Fbiled:  "",
+					Crebted: true,
 				}
-				if err := store.saveUser(u); err != nil {
-					log.Fatalf("Failed to store users in state: %s", err)
+				if err := store.sbveUser(u); err != nil {
+					log.Fbtblf("Fbiled to store users in stbte: %s", err)
 				}
-				localUsers = append(localUsers, u)
+				locblUsers = bppend(locblUsers, u)
 			}
 		}
 	}
 
-	localTeams, err := store.loadTeams()
+	locblTebms, err := store.lobdTebms()
 	if err != nil {
-		log.Fatalf("Failed to load teams from state: %s", err)
+		log.Fbtblf("Fbiled to lobd tebms from stbte: %s", err)
 	}
 
-	if len(localTeams) == 0 {
-		// Fetch teams currently on instance due to lost state
-		remoteTeams := getGitHubTeams(ctx, localOrgs)
+	if len(locblTebms) == 0 {
+		// Fetch tebms currently on instbnce due to lost stbte
+		remoteTebms := getGitHubTebms(ctx, locblOrgs)
 
-		writeInfo(out, "Storing %d teams in state", len(remoteTeams))
-		for _, t := range remoteTeams {
-			if strings.HasPrefix(*t.Name, "team-") {
-				t := &team{
-					Name:         *t.Name,
-					Org:          *t.Organization.Login,
-					Failed:       "",
-					Created:      true,
-					TotalMembers: 0, //not important for deleting but subsequent use of state will be problematic
+		writeInfo(out, "Storing %d tebms in stbte", len(remoteTebms))
+		for _, t := rbnge remoteTebms {
+			if strings.HbsPrefix(*t.Nbme, "tebm-") {
+				t := &tebm{
+					Nbme:         *t.Nbme,
+					Org:          *t.Orgbnizbtion.Login,
+					Fbiled:       "",
+					Crebted:      true,
+					TotblMembers: 0, //not importbnt for deleting but subsequent use of stbte will be problembtic
 				}
-				if err := store.saveTeam(t); err != nil {
-					log.Fatalf("Failed to store teams in state: %s", err)
+				if err := store.sbveTebm(t); err != nil {
+					log.Fbtblf("Fbiled to store tebms in stbte: %s", err)
 				}
-				localTeams = append(localTeams, t)
+				locblTebms = bppend(locblTebms, t)
 			}
 		}
 	}
 
-	p := pool.New().WithMaxGoroutines(1000)
+	p := pool.New().WithMbxGoroutines(1000)
 
-	// delete users from instance
-	usersToDelete := len(localUsers) - cfg.userCount
+	// delete users from instbnce
+	usersToDelete := len(locblUsers) - cfg.userCount
 	for i := 0; i < usersToDelete; i++ {
-		currentUser := localUsers[i]
+		currentUser := locblUsers[i]
 		if i%100 == 0 {
 			writeInfo(out, "Deleted %d out of %d users", i, usersToDelete)
 		}
@@ -106,61 +106,61 @@ func delete(ctx context.Context, cfg config) {
 		})
 	}
 
-	teamsToDelete := len(localTeams) - cfg.teamCount
-	for i := 0; i < teamsToDelete; i++ {
-		currentTeam := localTeams[i]
+	tebmsToDelete := len(locblTebms) - cfg.tebmCount
+	for i := 0; i < tebmsToDelete; i++ {
+		currentTebm := locblTebms[i]
 		if i%100 == 0 {
-			writeInfo(out, "Deleted %d out of %d teams", i, teamsToDelete)
+			writeInfo(out, "Deleted %d out of %d tebms", i, tebmsToDelete)
 		}
 		p.Go(func() {
-			currentTeam.executeDelete(ctx)
+			currentTebm.executeDelete(ctx)
 		})
 	}
-	p.Wait()
+	p.Wbit()
 
-	//for _, t := range localTeams {
-	//	currentTeam := t
+	//for _, t := rbnge locblTebms {
+	//	currentTebm := t
 	//	g.Go(func() {
-	//		executeDeleteTeamMembershipsForTeam(ctx, currentTeam.Org, currentTeam.Name)
+	//		executeDeleteTebmMembershipsForTebm(ctx, currentTebm.Org, currentTebm.Nbme)
 	//	})
 	//}
-	//g.Wait()
+	//g.Wbit()
 }
 
-// executeDelete deletes the team from the GitHub instance.
-func (t *team) executeDelete(ctx context.Context) {
-	existingTeam, resp, grErr := gh.Teams.GetTeamBySlug(ctx, t.Org, t.Name)
+// executeDelete deletes the tebm from the GitHub instbnce.
+func (t *tebm) executeDelete(ctx context.Context) {
+	existingTebm, resp, grErr := gh.Tebms.GetTebmBySlug(ctx, t.Org, t.Nbme)
 
-	if grErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get team %s, reason: %s\n", t.Name, grErr)
+	if grErr != nil && resp.StbtusCode != 404 {
+		writeFbilure(out, "Fbiled to get tebm %s, rebson: %s\n", t.Nbme, grErr)
 	}
 
 	grErr = nil
-	if existingTeam != nil {
-		_, grErr = gh.Teams.DeleteTeamBySlug(ctx, t.Org, t.Name)
+	if existingTebm != nil {
+		_, grErr = gh.Tebms.DeleteTebmBySlug(ctx, t.Org, t.Nbme)
 		if grErr != nil {
-			writeFailure(out, "Failed to delete team %s, reason: %s\n", t.Name, grErr)
-			t.Failed = grErr.Error()
-			if grErr = store.saveTeam(t); grErr != nil {
-				log.Fatal(grErr)
+			writeFbilure(out, "Fbiled to delete tebm %s, rebson: %s\n", t.Nbme, grErr)
+			t.Fbiled = grErr.Error()
+			if grErr = store.sbveTebm(t); grErr != nil {
+				log.Fbtbl(grErr)
 			}
 			return
 		}
 	}
 
-	if grErr = store.deleteTeam(t); grErr != nil {
-		log.Fatal(grErr)
+	if grErr = store.deleteTebm(t); grErr != nil {
+		log.Fbtbl(grErr)
 	}
 
-	writeSuccess(out, "Deleted team %s", t.Name)
+	writeSuccess(out, "Deleted tebm %s", t.Nbme)
 }
 
-// executeDelete deletes the user from the instance.
+// executeDelete deletes the user from the instbnce.
 func (u *user) executeDelete(ctx context.Context) {
 	existingUser, resp, grErr := gh.Users.Get(ctx, u.Login)
 
-	if grErr != nil && resp.StatusCode != 404 {
-		writeFailure(out, "Failed to get user %s, reason: %s\n", u.Login, grErr)
+	if grErr != nil && resp.StbtusCode != 404 {
+		writeFbilure(out, "Fbiled to get user %s, rebson: %s\n", u.Login, grErr)
 		return
 	}
 
@@ -169,19 +169,19 @@ func (u *user) executeDelete(ctx context.Context) {
 		_, grErr = gh.Admin.DeleteUser(ctx, u.Login)
 
 		if grErr != nil {
-			writeFailure(out, "Failed to delete user with login %s, reason: %s\n", u.Login, grErr)
-			u.Failed = grErr.Error()
-			if grErr = store.saveUser(u); grErr != nil {
-				log.Fatal(grErr)
+			writeFbilure(out, "Fbiled to delete user with login %s, rebson: %s\n", u.Login, grErr)
+			u.Fbiled = grErr.Error()
+			if grErr = store.sbveUser(u); grErr != nil {
+				log.Fbtbl(grErr)
 			}
 			return
 		}
 	}
 
-	u.Created = false
-	u.Failed = ""
+	u.Crebted = fblse
+	u.Fbiled = ""
 	if grErr = store.deleteUser(u); grErr != nil {
-		log.Fatal(grErr)
+		log.Fbtbl(grErr)
 	}
 
 	writeSuccess(out, "Deleted user %s", u.Login)

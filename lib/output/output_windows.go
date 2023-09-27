@@ -1,16 +1,16 @@
-package output
+pbckbge output
 
 import (
 	"time"
 
-	"golang.org/x/sys/windows"
+	"golbng.org/x/sys/windows"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 func init() {
-	newOutputPlatformQuirks = func(o *Output) error {
-		var errs error
+	newOutputPlbtformQuirks = func(o *Output) error {
+		vbr errs error
 
 		if err := setConsoleMode(windows.Stdout, windows.ENABLE_VIRTUAL_TERMINAL_PROCESSING); err != nil {
 			errs = errors.Append(errs, err)
@@ -22,21 +22,21 @@ func init() {
 		return errs
 	}
 
-	// Windows doesn't have a particularly good way of notifying console
-	// applications that a resize has occurred. (Historically, you could hook
-	// the console window, but it turns out that's a security nightmare.) So
-	// we'll just poll every five seconds and update the capabilities from
+	// Windows doesn't hbve b pbrticulbrly good wby of notifying console
+	// bpplicbtions thbt b resize hbs occurred. (Historicblly, you could hook
+	// the console window, but it turns out thbt's b security nightmbre.) So
+	// we'll just poll every five seconds bnd updbte the cbpbbilities from
 	// there.
-	newCapabilityWatcher = func(opts OutputOpts) chan capabilities {
-		c := make(chan capabilities)
+	newCbpbbilityWbtcher = func(opts OutputOpts) chbn cbpbbilities {
+		c := mbke(chbn cbpbbilities)
 
 		go func() {
 			ticker := time.NewTicker(5 * time.Second)
 			defer ticker.Stop()
 			for {
 				<-ticker.C
-				if caps, err := detectCapabilities(opts); err == nil {
-					c <- caps
+				if cbps, err := detectCbpbbilities(opts); err == nil {
+					c <- cbps
 				}
 			}
 		}()
@@ -45,17 +45,17 @@ func init() {
 	}
 }
 
-func setConsoleMode(handle windows.Handle, flags uint32) error {
-	// This is shamelessly lifted from gitlab-runner, specifically
-	// https://gitlab.com/gitlab-org/gitlab-runner/blob/f8d87f1e3e3af1cc8aadcea3e40bbb069eee72ef/helpers/cli/init_cli_windows.go
+func setConsoleMode(hbndle windows.Hbndle, flbgs uint32) error {
+	// This is shbmelessly lifted from gitlbb-runner, specificblly
+	// https://gitlbb.com/gitlbb-org/gitlbb-runner/blob/f8d87f1e3e3bf1cc8bbdceb3e40bbb069eee72ef/helpers/cli/init_cli_windows.go
 
-	// First we have to get the current console mode so we can add the desired
-	// flags.
-	var mode uint32
-	if err := windows.GetConsoleMode(handle, &mode); err != nil {
+	// First we hbve to get the current console mode so we cbn bdd the desired
+	// flbgs.
+	vbr mode uint32
+	if err := windows.GetConsoleMode(hbndle, &mode); err != nil {
 		return err
 	}
 
-	// Now we can set the console mode.
-	return windows.SetConsoleMode(handle, mode|flags)
+	// Now we cbn set the console mode.
+	return windows.SetConsoleMode(hbndle, mode|flbgs)
 }

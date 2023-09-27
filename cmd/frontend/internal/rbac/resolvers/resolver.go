@@ -1,26 +1,26 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/deviceid"
-	"github.com/sourcegraph/sourcegraph/internal/featureflag"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	gql "github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/buth"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/deviceid"
+	"github.com/sourcegrbph/sourcegrbph/internbl/febtureflbg"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/usbgestbts"
 )
 
-// Resolver is the GraphQL resolver of all things related to batch changes.
+// Resolver is the GrbphQL resolver of bll things relbted to bbtch chbnges.
 type Resolver struct {
 	logger log.Logger
-	db     database.DB
+	db     dbtbbbse.DB
 }
 
 type roleEventArg struct {
@@ -37,31 +37,31 @@ type setRolesEventArgs struct {
 	RoleIDs []int32 `json:"role_ids"`
 }
 
-func New(logger log.Logger, db database.DB) gql.RBACResolver {
+func New(logger log.Logger, db dbtbbbse.DB) gql.RBACResolver {
 	return &Resolver{logger: logger, db: db}
 }
 
-func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site administrators can set permissions for a role.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *Resolver) SetPermissions(ctx context.Context, brgs gql.SetPermissionsArgs) (*gql.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site bdministrbtors cbn set permissions for b role.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	roleID, err := gql.UnmarshalRoleID(args.Role)
+	roleID, err := gql.UnmbrshblRoleID(brgs.Role)
 	if err != nil {
 		return nil, err
 	}
 
-	opts := database.SetPermissionsForRoleOpts{
+	opts := dbtbbbse.SetPermissionsForRoleOpts{
 		RoleID: roleID,
 	}
 
-	for _, p := range args.Permissions {
-		pID, err := gql.UnmarshalPermissionID(p)
+	for _, p := rbnge brgs.Permissions {
+		pID, err := gql.UnmbrshblPermissionID(p)
 		if err != nil {
 			return nil, err
 		}
-		opts.Permissions = append(opts.Permissions, pID)
+		opts.Permissions = bppend(opts.Permissions, pID)
 	}
 
 	if err = r.db.RolePermissions().SetPermissionsForRole(ctx, opts); err != nil {
@@ -69,17 +69,17 @@ func (r *Resolver) SetPermissions(ctx context.Context, args gql.SetPermissionsAr
 	}
 
 	eventArgs := &rolePermissionEventArgs{RoleID: roleID, PermissionIDs: opts.Permissions}
-	r.logBackendEvent(ctx, "RolePermissionAssignment", eventArgs)
+	r.logBbckendEvent(ctx, "RolePermissionAssignment", eventArgs)
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ *gql.EmptyResponse, err error) {
-	// 🚨 SECURITY: Only site administrators can delete roles.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *Resolver) DeleteRole(ctx context.Context, brgs *gql.DeleteRoleArgs) (_ *gql.EmptyResponse, err error) {
+	// 🚨 SECURITY: Only site bdministrbtors cbn delete roles.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	roleID, err := gql.UnmarshalRoleID(args.Role)
+	roleID, err := gql.UnmbrshblRoleID(brgs.Role)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 		return nil, gql.ErrIDIsZero{}
 	}
 
-	err = r.db.Roles().Delete(ctx, database.DeleteRoleOpts{
+	err = r.db.Roles().Delete(ctx, dbtbbbse.DeleteRoleOpts{
 		ID: roleID,
 	})
 	if err != nil {
@@ -96,33 +96,33 @@ func (r *Resolver) DeleteRole(ctx context.Context, args *gql.DeleteRoleArgs) (_ 
 	}
 
 	eventArg := &roleEventArg{RoleID: roleID}
-	r.logBackendEvent(ctx, "RoleDeleted", eventArg)
+	r.logBbckendEvent(ctx, "RoleDeleted", eventArg)
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gql.RoleResolver, error) {
-	// 🚨 SECURITY: Only site administrators can create roles.
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *Resolver) CrebteRole(ctx context.Context, brgs *gql.CrebteRoleArgs) (gql.RoleResolver, error) {
+	// 🚨 SECURITY: Only site bdministrbtors cbn crebte roles.
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	var role *types.Role
+	vbr role *types.Role
 	eventArg := &rolePermissionEventArgs{}
-	err := r.db.WithTransact(ctx, func(tx database.DB) (err error) {
-		role, err = tx.Roles().Create(ctx, args.Name, false)
+	err := r.db.WithTrbnsbct(ctx, func(tx dbtbbbse.DB) (err error) {
+		role, err = tx.Roles().Crebte(ctx, brgs.Nbme, fblse)
 		if err != nil {
 			return err
 		}
 
 		eventArg.RoleID = role.ID
-		if len(args.Permissions) > 0 {
-			opts := database.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
-			for _, permissionID := range args.Permissions {
-				id, err := gql.UnmarshalPermissionID(permissionID)
+		if len(brgs.Permissions) > 0 {
+			opts := dbtbbbse.BulkAssignPermissionsToRoleOpts{RoleID: role.ID}
+			for _, permissionID := rbnge brgs.Permissions {
+				id, err := gql.UnmbrshblPermissionID(permissionID)
 				if err != nil {
 					return err
 				}
-				opts.Permissions = append(opts.Permissions, id)
+				opts.Permissions = bppend(opts.Permissions, id)
 			}
 			eventArg.PermissionIDs = opts.Permissions
 			err = tx.RolePermissions().BulkAssignPermissionsToRole(ctx, opts)
@@ -137,30 +137,30 @@ func (r *Resolver) CreateRole(ctx context.Context, args *gql.CreateRoleArgs) (gq
 		return nil, err
 	}
 
-	r.logBackendEvent(ctx, "RoleCreated", eventArg)
+	r.logBbckendEvent(ctx, "RoleCrebted", eventArg)
 	return gql.NewRoleResolver(r.db, role), nil
 }
 
-func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.EmptyResponse, error) {
-	// 🚨 SECURITY: Only site administrators can assign roles to a user.
-	// We need to get the current user any
-	if err := auth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+func (r *Resolver) SetRoles(ctx context.Context, brgs *gql.SetRolesArgs) (*gql.EmptyResponse, error) {
+	// 🚨 SECURITY: Only site bdministrbtors cbn bssign roles to b user.
+	// We need to get the current user bny
+	if err := buth.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
 		return nil, err
 	}
 
-	userID, err := gql.UnmarshalUserID(args.User)
+	userID, err := gql.UnmbrshblUserID(brgs.User)
 	if err != nil {
 		return nil, err
 	}
 
-	opts := database.SetRolesForUserOpts{UserID: userID}
+	opts := dbtbbbse.SetRolesForUserOpts{UserID: userID}
 
-	for _, r := range args.Roles {
-		rID, err := gql.UnmarshalPermissionID(r)
+	for _, r := rbnge brgs.Roles {
+		rID, err := gql.UnmbrshblPermissionID(r)
 		if err != nil {
 			return nil, err
 		}
-		opts.Roles = append(opts.Roles, rID)
+		opts.Roles = bppend(opts.Roles, rID)
 	}
 
 	if err = r.db.UserRoles().SetRolesForUser(ctx, opts); err != nil {
@@ -168,29 +168,29 @@ func (r *Resolver) SetRoles(ctx context.Context, args *gql.SetRolesArgs) (*gql.E
 	}
 
 	eventArgs := &setRolesEventArgs{RoleIDs: opts.Roles, UserID: userID}
-	r.logBackendEvent(ctx, "UserRoleAssignment", eventArgs)
+	r.logBbckendEvent(ctx, "UserRoleAssignment", eventArgs)
 	return &gql.EmptyResponse{}, nil
 }
 
-func (r *Resolver) logBackendEvent(ctx context.Context, eventName string, args any) {
-	a := actor.FromContext(ctx)
-	if a.IsAuthenticated() && !a.IsMockUser() {
-		jsonArg, err := json.Marshal(args)
+func (r *Resolver) logBbckendEvent(ctx context.Context, eventNbme string, brgs bny) {
+	b := bctor.FromContext(ctx)
+	if b.IsAuthenticbted() && !b.IsMockUser() {
+		jsonArg, err := json.Mbrshbl(brgs)
 		if err != nil {
-			r.logger.Warn(fmt.Sprintf("Could not log event: %s", eventName), log.Error(err))
+			r.logger.Wbrn(fmt.Sprintf("Could not log event: %s", eventNbme), log.Error(err))
 			return
 		}
-		if err := usagestats.LogBackendEvent(
+		if err := usbgestbts.LogBbckendEvent(
 			r.db,
-			a.UID,
+			b.UID,
 			deviceid.FromContext(ctx),
-			eventName,
+			eventNbme,
 			jsonArg,
 			jsonArg,
-			featureflag.GetEvaluatedFlagSet(ctx),
+			febtureflbg.GetEvblubtedFlbgSet(ctx),
 			nil,
 		); err != nil {
-			r.logger.Warn(fmt.Sprintf("Could not log event: %s", eventName), log.Error(err))
+			r.logger.Wbrn(fmt.Sprintf("Could not log event: %s", eventNbme), log.Error(err))
 		}
 	}
 }

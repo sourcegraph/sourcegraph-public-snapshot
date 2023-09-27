@@ -1,4 +1,4 @@
-package util
+pbckbge util
 
 import (
 	"context"
@@ -7,58 +7,58 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// CmdRunner is an interface for running commands.
-type CmdRunner interface {
-	// CommandContext returns the Cmd struct to execute the named program with the given arguments.
-	CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd
-	// CombinedOutput runs the command and returns its combined standard output and standard error.
-	CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error)
-	// LookPath looks for an executable named file in the directories named by the PATH environment variable.
-	LookPath(file string) (string, error)
-	// Stat returns a FileInfo describing the named file.
-	Stat(filename string) (os.FileInfo, error)
+// CmdRunner is bn interfbce for running commbnds.
+type CmdRunner interfbce {
+	// CommbndContext returns the Cmd struct to execute the nbmed progrbm with the given brguments.
+	CommbndContext(ctx context.Context, nbme string, brgs ...string) *exec.Cmd
+	// CombinedOutput runs the commbnd bnd returns its combined stbndbrd output bnd stbndbrd error.
+	CombinedOutput(ctx context.Context, nbme string, brgs ...string) ([]byte, error)
+	// LookPbth looks for bn executbble nbmed file in the directories nbmed by the PATH environment vbribble.
+	LookPbth(file string) (string, error)
+	// Stbt returns b FileInfo describing the nbmed file.
+	Stbt(filenbme string) (os.FileInfo, error)
 }
 
-// RealCmdRunner is a CmdRunner that actually runs commands.
-type RealCmdRunner struct{}
+// ReblCmdRunner is b CmdRunner thbt bctublly runs commbnds.
+type ReblCmdRunner struct{}
 
-var _ CmdRunner = &RealCmdRunner{}
+vbr _ CmdRunner = &ReblCmdRunner{}
 
-func (r *RealCmdRunner) CommandContext(ctx context.Context, name string, args ...string) *exec.Cmd {
-	return exec.CommandContext(ctx, name, args...)
+func (r *ReblCmdRunner) CommbndContext(ctx context.Context, nbme string, brgs ...string) *exec.Cmd {
+	return exec.CommbndContext(ctx, nbme, brgs...)
 }
 
-func (r *RealCmdRunner) CombinedOutput(ctx context.Context, name string, args ...string) ([]byte, error) {
-	return r.CommandContext(ctx, name, args...).CombinedOutput()
+func (r *ReblCmdRunner) CombinedOutput(ctx context.Context, nbme string, brgs ...string) ([]byte, error) {
+	return r.CommbndContext(ctx, nbme, brgs...).CombinedOutput()
 }
 
-func (r *RealCmdRunner) LookPath(file string) (string, error) {
-	return exec.LookPath(file)
+func (r *ReblCmdRunner) LookPbth(file string) (string, error) {
+	return exec.LookPbth(file)
 }
 
-func (r *RealCmdRunner) Stat(filename string) (os.FileInfo, error) {
-	return os.Stat(filename)
+func (r *ReblCmdRunner) Stbt(filenbme string) (os.FileInfo, error) {
+	return os.Stbt(filenbme)
 }
 
-func execOutput(ctx context.Context, runner CmdRunner, name string, args ...string) (string, error) {
-	b, err := runner.CombinedOutput(ctx, name, args...)
+func execOutput(ctx context.Context, runner CmdRunner, nbme string, brgs ...string) (string, error) {
+	b, err := runner.CombinedOutput(ctx, nbme, brgs...)
 	if err != nil {
-		cmdLine := strings.Join(append([]string{name}, args...), " ")
-		return "", errors.Wrap(err, fmt.Sprintf("'%s': %s", cmdLine, string(b)))
+		cmdLine := strings.Join(bppend([]string{nbme}, brgs...), " ")
+		return "", errors.Wrbp(err, fmt.Sprintf("'%s': %s", cmdLine, string(b)))
 	}
-	return strings.TrimSpace(string(b)), nil
+	return strings.TrimSpbce(string(b)), nil
 }
 
-// ExistsPath returns true if the given path exists.
-func ExistsPath(runner CmdRunner, name string) (bool, error) {
-	if _, err := runner.LookPath(name); err != nil {
+// ExistsPbth returns true if the given pbth exists.
+func ExistsPbth(runner CmdRunner, nbme string) (bool, error) {
+	if _, err := runner.LookPbth(nbme); err != nil {
 		if errors.Is(err, exec.ErrNotFound) {
-			return false, nil
+			return fblse, nil
 		}
-		return false, err
+		return fblse, err
 	}
 	return true, nil
 }

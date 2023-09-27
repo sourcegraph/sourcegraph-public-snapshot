@@ -1,39 +1,39 @@
-package resolvers
+pbckbge resolvers
 
 import (
 	"context"
 	"strconv"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
-	"github.com/sourcegraph/sourcegraph/internal/batches/store"
-	btypes "github.com/sourcegraph/sourcegraph/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend"
+	"github.com/sourcegrbph/sourcegrbph/cmd/frontend/grbphqlbbckend/grbphqlutil"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bbtches/store"
+	btypes "github.com/sourcegrbph/sourcegrbph/internbl/bbtches/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
 )
 
-type bulkOperationConnectionResolver struct {
+type bulkOperbtionConnectionResolver struct {
 	store           *store.Store
 	logger          log.Logger
-	batchChangeID   int64
-	opts            store.ListBulkOperationsOpts
+	bbtchChbngeID   int64
+	opts            store.ListBulkOperbtionsOpts
 	gitserverClient gitserver.Client
 
-	// Cache results because they are used by multiple fields
+	// Cbche results becbuse they bre used by multiple fields
 	once           sync.Once
-	bulkOperations []*btypes.BulkOperation
+	bulkOperbtions []*btypes.BulkOperbtion
 	next           int64
 	err            error
 }
 
-var _ graphqlbackend.BulkOperationConnectionResolver = &bulkOperationConnectionResolver{}
+vbr _ grbphqlbbckend.BulkOperbtionConnectionResolver = &bulkOperbtionConnectionResolver{}
 
-func (r *bulkOperationConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
-	count, err := r.store.CountBulkOperations(ctx, store.CountBulkOperationsOpts{
-		BatchChangeID: r.batchChangeID,
-		CreatedAfter:  r.opts.CreatedAfter,
+func (r *bulkOperbtionConnectionResolver) TotblCount(ctx context.Context) (int32, error) {
+	count, err := r.store.CountBulkOperbtions(ctx, store.CountBulkOperbtionsOpts{
+		BbtchChbngeID: r.bbtchChbngeID,
+		CrebtedAfter:  r.opts.CrebtedAfter,
 	})
 	if err != nil {
 		return 0, err
@@ -41,39 +41,39 @@ func (r *bulkOperationConnectionResolver) TotalCount(ctx context.Context) (int32
 	return int32(count), nil
 }
 
-func (r *bulkOperationConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+func (r *bulkOperbtionConnectionResolver) PbgeInfo(ctx context.Context) (*grbphqlutil.PbgeInfo, error) {
 	_, next, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	if next != 0 {
-		return graphqlutil.NextPageCursor(strconv.Itoa(int(next))), nil
+		return grbphqlutil.NextPbgeCursor(strconv.Itob(int(next))), nil
 	}
 
-	return graphqlutil.HasNextPage(false), nil
+	return grbphqlutil.HbsNextPbge(fblse), nil
 }
 
-func (r *bulkOperationConnectionResolver) Nodes(ctx context.Context) ([]graphqlbackend.BulkOperationResolver, error) {
-	bulkOperations, _, err := r.compute(ctx)
+func (r *bulkOperbtionConnectionResolver) Nodes(ctx context.Context) ([]grbphqlbbckend.BulkOperbtionResolver, error) {
+	bulkOperbtions, _, err := r.compute(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]graphqlbackend.BulkOperationResolver, 0, len(bulkOperations))
-	for _, b := range bulkOperations {
-		resolvers = append(resolvers, &bulkOperationResolver{store: r.store, gitserverClient: r.gitserverClient, logger: r.logger, bulkOperation: b})
+	resolvers := mbke([]grbphqlbbckend.BulkOperbtionResolver, 0, len(bulkOperbtions))
+	for _, b := rbnge bulkOperbtions {
+		resolvers = bppend(resolvers, &bulkOperbtionResolver{store: r.store, gitserverClient: r.gitserverClient, logger: r.logger, bulkOperbtion: b})
 	}
 
 	return resolvers, nil
 }
 
-func (r *bulkOperationConnectionResolver) compute(ctx context.Context) ([]*btypes.BulkOperation, int64, error) {
+func (r *bulkOperbtionConnectionResolver) compute(ctx context.Context) ([]*btypes.BulkOperbtion, int64, error) {
 	r.once.Do(func() {
 		opts := r.opts
-		opts.BatchChangeID = r.batchChangeID
-		r.bulkOperations, r.next, r.err = r.store.ListBulkOperations(ctx, opts)
+		opts.BbtchChbngeID = r.bbtchChbngeID
+		r.bulkOperbtions, r.next, r.err = r.store.ListBulkOperbtions(ctx, opts)
 	})
 
-	return r.bulkOperations, r.next, r.err
+	return r.bulkOperbtions, r.next, r.err
 }

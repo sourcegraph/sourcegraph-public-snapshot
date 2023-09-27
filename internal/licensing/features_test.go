@@ -1,4 +1,4 @@
-package licensing
+pbckbge licensing
 
 import (
 	"testing"
@@ -6,208 +6,208 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/sourcegraph/internal/license"
+	"github.com/sourcegrbph/sourcegrbph/internbl/license"
 )
 
-func TestCheckFeature(t *testing.T) {
-	licenseInfo := func(tags ...string) *Info {
-		return &Info{Info: license.Info{Tags: tags, ExpiresAt: time.Now().Add(1 * time.Hour)}}
+func TestCheckFebture(t *testing.T) {
+	licenseInfo := func(tbgs ...string) *Info {
+		return &Info{Info: license.Info{Tbgs: tbgs, ExpiresAt: time.Now().Add(1 * time.Hour)}}
 	}
 
-	check := func(t *testing.T, feature Feature, info *Info, wantEnabled bool) {
+	check := func(t *testing.T, febture Febture, info *Info, wbntEnbbled bool) {
 		t.Helper()
-		if got := feature.Check(info) == nil; got != wantEnabled {
-			t.Errorf("got enabled %v, want %v, for %q", got, wantEnabled, info)
+		if got := febture.Check(info) == nil; got != wbntEnbbled {
+			t.Errorf("got enbbled %v, wbnt %v, for %q", got, wbntEnbbled, info)
 		}
 	}
 
-	checkAs := func(t *testing.T, feature Feature, info *Info, wantEnabled bool, wantFeature Feature) {
+	checkAs := func(t *testing.T, febture Febture, info *Info, wbntEnbbled bool, wbntFebture Febture) {
 		t.Helper()
-		enabled := feature.Check(info) == nil
-		if enabled != wantEnabled {
-			t.Errorf("got enabled %v, want %v, for %q", enabled, wantEnabled, info)
+		enbbled := febture.Check(info) == nil
+		if enbbled != wbntEnbbled {
+			t.Errorf("got enbbled %v, wbnt %v, for %q", enbbled, wbntEnbbled, info)
 		}
-		if enabled {
-			if cmp.Diff(feature, wantFeature) != "" {
-				t.Errorf("got %v want %v, for %q", feature, wantFeature, info)
+		if enbbled {
+			if cmp.Diff(febture, wbntFebture) != "" {
+				t.Errorf("got %v wbnt %v, for %q", febture, wbntFebture, info)
 			}
 		}
 	}
 
-	plan := func(p Plan) string {
-		return "plan:" + string(p)
+	plbn := func(p Plbn) string {
+		return "plbn:" + string(p)
 	}
 
-	t.Run(string(FeatureSSO), func(t *testing.T) {
-		check(t, FeatureSSO, nil, false)
+	t.Run(string(FebtureSSO), func(t *testing.T) {
+		check(t, FebtureSSO, nil, fblse)
 
-		check(t, FeatureSSO, licenseInfo("starter"), false)
-		check(t, FeatureSSO, licenseInfo("starter", string(FeatureSSO)), true)
-		check(t, FeatureSSO, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureSSO, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureSSO, licenseInfo(), true)
+		check(t, FebtureSSO, licenseInfo("stbrter"), fblse)
+		check(t, FebtureSSO, licenseInfo("stbrter", string(FebtureSSO)), true)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureSSO, licenseInfo(), true)
 
-		check(t, FeatureSSO, licenseInfo(plan(PlanTeam0)), true)
-		check(t, FeatureSSO, licenseInfo(plan(PlanEnterprise0)), true)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnTebm0)), true)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnEnterprise0)), true)
 
-		check(t, FeatureSSO, licenseInfo(plan(PlanBusiness0)), true)
-		check(t, FeatureSSO, licenseInfo(plan(PlanEnterprise1)), true)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnBusiness0)), true)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnEnterprise1)), true)
 
-		check(t, FeatureSSO, licenseInfo(plan(PlanFree0)), true)
+		check(t, FebtureSSO, licenseInfo(plbn(PlbnFree0)), true)
 	})
 
-	t.Run(string(FeatureExplicitPermissionsAPI), func(t *testing.T) {
-		check(t, FeatureExplicitPermissionsAPI, nil, false)
+	t.Run(string(FebtureExplicitPermissionsAPI), func(t *testing.T) {
+		check(t, FebtureExplicitPermissionsAPI, nil, fblse)
 
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo("starter"), false)
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo("starter", string(FeatureExplicitPermissionsAPI)), true)
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(), true)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo("stbrter"), fblse)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo("stbrter", string(FebtureExplicitPermissionsAPI)), true)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(), true)
 
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(plan(PlanTeam0)), true)
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(plan(PlanEnterprise0)), true)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(plbn(PlbnTebm0)), true)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(plbn(PlbnEnterprise0)), true)
 
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(plan(PlanBusiness0)), false)
-		check(t, FeatureExplicitPermissionsAPI, licenseInfo(plan(PlanEnterprise1)), true)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(plbn(PlbnBusiness0)), fblse)
+		check(t, FebtureExplicitPermissionsAPI, licenseInfo(plbn(PlbnEnterprise1)), true)
 	})
 
-	t.Run(string(FeatureACLs), func(t *testing.T) {
-		check(t, FeatureACLs, nil, false)
+	t.Run(string(FebtureACLs), func(t *testing.T) {
+		check(t, FebtureACLs, nil, fblse)
 
-		check(t, FeatureACLs, licenseInfo("starter"), false)
-		check(t, FeatureACLs, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureACLs, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureACLs, licenseInfo(), true)
+		check(t, FebtureACLs, licenseInfo("stbrter"), fblse)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureACLs, licenseInfo(), true)
 
-		check(t, FeatureACLs, licenseInfo(plan(PlanTeam0)), true)
-		check(t, FeatureACLs, licenseInfo(plan(PlanEnterprise0)), true)
-		check(t, FeatureACLs, licenseInfo(plan(PlanEnterprise0), string(FeatureACLs)), true)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnTebm0)), true)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnEnterprise0)), true)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnEnterprise0), string(FebtureACLs)), true)
 
-		check(t, FeatureACLs, licenseInfo(plan(PlanBusiness0)), true)
-		check(t, FeatureACLs, licenseInfo(plan(PlanEnterprise1)), true)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnBusiness0)), true)
+		check(t, FebtureACLs, licenseInfo(plbn(PlbnEnterprise1)), true)
 	})
 
-	t.Run(string(FeatureExtensionRegistry), func(t *testing.T) {
-		check(t, FeatureExtensionRegistry, nil, false)
+	t.Run(string(FebtureExtensionRegistry), func(t *testing.T) {
+		check(t, FebtureExtensionRegistry, nil, fblse)
 
-		check(t, FeatureExtensionRegistry, licenseInfo("starter"), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureExtensionRegistry, licenseInfo(), true)
+		check(t, FebtureExtensionRegistry, licenseInfo("stbrter"), fblse)
+		check(t, FebtureExtensionRegistry, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureExtensionRegistry, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureExtensionRegistry, licenseInfo(), true)
 
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureExtensionRegistry, licenseInfo(plan(PlanEnterprise0), string(FeatureExtensionRegistry)), true)
+		check(t, FebtureExtensionRegistry, licenseInfo(plbn(PlbnTebm0)), fblse)
+		check(t, FebtureExtensionRegistry, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+		check(t, FebtureExtensionRegistry, licenseInfo(plbn(PlbnEnterprise0), string(FebtureExtensionRegistry)), true)
 	})
 
-	t.Run(string(FeatureRemoteExtensionsAllowDisallow), func(t *testing.T) {
-		check(t, FeatureRemoteExtensionsAllowDisallow, nil, false)
+	t.Run(string(FebtureRemoteExtensionsAllowDisbllow), func(t *testing.T) {
+		check(t, FebtureRemoteExtensionsAllowDisbllow, nil, fblse)
 
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo("starter"), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(), true)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo("stbrter"), fblse)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo(), true)
 
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureRemoteExtensionsAllowDisallow, licenseInfo(plan(PlanEnterprise0), string(FeatureRemoteExtensionsAllowDisallow)), true)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo(plbn(PlbnTebm0)), fblse)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+		check(t, FebtureRemoteExtensionsAllowDisbllow, licenseInfo(plbn(PlbnEnterprise0), string(FebtureRemoteExtensionsAllowDisbllow)), true)
 	})
 
-	t.Run(string(FeatureBranding), func(t *testing.T) {
-		check(t, FeatureBranding, nil, false)
+	t.Run(string(FebtureBrbnding), func(t *testing.T) {
+		check(t, FebtureBrbnding, nil, fblse)
 
-		check(t, FeatureBranding, licenseInfo("starter"), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureBranding, licenseInfo(), true)
+		check(t, FebtureBrbnding, licenseInfo("stbrter"), fblse)
+		check(t, FebtureBrbnding, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureBrbnding, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureBrbnding, licenseInfo(), true)
 
-		check(t, FeatureBranding, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureBranding, licenseInfo(plan(PlanEnterprise0), string(FeatureBranding)), true)
+		check(t, FebtureBrbnding, licenseInfo(plbn(PlbnTebm0)), fblse)
+		check(t, FebtureBrbnding, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+		check(t, FebtureBrbnding, licenseInfo(plbn(PlbnEnterprise0), string(FebtureBrbnding)), true)
 	})
 
-	t.Run((&FeatureBatchChanges{}).FeatureName(), func(t *testing.T) {
-		check(t, &FeatureBatchChanges{}, nil, false)
+	t.Run((&FebtureBbtchChbnges{}).FebtureNbme(), func(t *testing.T) {
+		check(t, &FebtureBbtchChbnges{}, nil, fblse)
 
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo("starter"), true, &FeatureBatchChanges{MaxNumChangesets: 10})
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanOldEnterpriseStarter)), true, &FeatureBatchChanges{MaxNumChangesets: 10})
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanOldEnterprise)), true, &FeatureBatchChanges{Unrestricted: true})
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(), true, &FeatureBatchChanges{Unrestricted: true})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo("stbrter"), true, &FebtureBbtchChbnges{MbxNumChbngesets: 10})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), true, &FebtureBbtchChbnges{MbxNumChbngesets: 10})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnOldEnterprise)), true, &FebtureBbtchChbnges{Unrestricted: true})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(), true, &FebtureBbtchChbnges{Unrestricted: true})
 
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanTeam0)), true, &FeatureBatchChanges{MaxNumChangesets: 10})
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanEnterprise0)), true, &FeatureBatchChanges{MaxNumChangesets: 10})
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanEnterprise0), (&FeatureBatchChanges{}).FeatureName()), true, &FeatureBatchChanges{Unrestricted: true})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnTebm0)), true, &FebtureBbtchChbnges{MbxNumChbngesets: 10})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnEnterprise0)), true, &FebtureBbtchChbnges{MbxNumChbngesets: 10})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnEnterprise0), (&FebtureBbtchChbnges{}).FebtureNbme()), true, &FebtureBbtchChbnges{Unrestricted: true})
 
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanBusiness0)), true, &FeatureBatchChanges{Unrestricted: true})
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo(plan(PlanEnterprise1)), true, &FeatureBatchChanges{Unrestricted: true})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnBusiness0)), true, &FebtureBbtchChbnges{Unrestricted: true})
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo(plbn(PlbnEnterprise1)), true, &FebtureBbtchChbnges{Unrestricted: true})
 
-		// Batch changes should be unrestricted if Campaigns is set.
-		checkAs(t, &FeatureBatchChanges{}, licenseInfo("starter", string(FeatureCampaigns)), true, &FeatureBatchChanges{Unrestricted: true})
+		// Bbtch chbnges should be unrestricted if Cbmpbigns is set.
+		checkAs(t, &FebtureBbtchChbnges{}, licenseInfo("stbrter", string(FebtureCbmpbigns)), true, &FebtureBbtchChbnges{Unrestricted: true})
 	})
 
-	testCodeInsights := func(feature Feature) func(*testing.T) {
+	testCodeInsights := func(febture Febture) func(*testing.T) {
 		return func(t *testing.T) {
-			check(t, feature, nil, false)
+			check(t, febture, nil, fblse)
 
-			check(t, feature, licenseInfo("starter"), false)
-			check(t, feature, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-			check(t, feature, licenseInfo(plan(PlanOldEnterprise)), true)
-			check(t, feature, licenseInfo(), true)
+			check(t, febture, licenseInfo("stbrter"), fblse)
+			check(t, febture, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+			check(t, febture, licenseInfo(plbn(PlbnOldEnterprise)), true)
+			check(t, febture, licenseInfo(), true)
 
-			check(t, feature, licenseInfo(plan(PlanTeam0)), false)
-			check(t, feature, licenseInfo(plan(PlanEnterprise0)), false)
-			check(t, feature, licenseInfo(plan(PlanEnterprise0), feature.FeatureName()), true)
+			check(t, febture, licenseInfo(plbn(PlbnTebm0)), fblse)
+			check(t, febture, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+			check(t, febture, licenseInfo(plbn(PlbnEnterprise0), febture.FebtureNbme()), true)
 
-			check(t, feature, licenseInfo(plan(PlanBusiness0)), true)
-			check(t, feature, licenseInfo(plan(PlanEnterprise1)), true)
+			check(t, febture, licenseInfo(plbn(PlbnBusiness0)), true)
+			check(t, febture, licenseInfo(plbn(PlbnEnterprise1)), true)
 		}
 	}
 	// Code Insights
-	t.Run(string(FeatureCodeInsights), testCodeInsights(FeatureCodeInsights))
+	t.Run(string(FebtureCodeInsights), testCodeInsights(FebtureCodeInsights))
 
-	t.Run(string(FeatureMonitoring), func(t *testing.T) {
-		check(t, FeatureMonitoring, nil, false)
+	t.Run(string(FebtureMonitoring), func(t *testing.T) {
+		check(t, FebtureMonitoring, nil, fblse)
 
-		check(t, FeatureMonitoring, licenseInfo("starter"), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureMonitoring, licenseInfo(), true)
+		check(t, FebtureMonitoring, licenseInfo("stbrter"), fblse)
+		check(t, FebtureMonitoring, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureMonitoring, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureMonitoring, licenseInfo(), true)
 
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureMonitoring, licenseInfo(plan(PlanEnterprise0), string(FeatureMonitoring)), true)
+		check(t, FebtureMonitoring, licenseInfo(plbn(PlbnTebm0)), fblse)
+		check(t, FebtureMonitoring, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+		check(t, FebtureMonitoring, licenseInfo(plbn(PlbnEnterprise0), string(FebtureMonitoring)), true)
 	})
 
-	t.Run(string(FeatureBackupAndRestore), func(t *testing.T) {
-		check(t, FeatureBackupAndRestore, nil, false)
+	t.Run(string(FebtureBbckupAndRestore), func(t *testing.T) {
+		check(t, FebtureBbckupAndRestore, nil, fblse)
 
-		check(t, FeatureBackupAndRestore, licenseInfo("starter"), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanOldEnterprise)), true)
-		check(t, FeatureBackupAndRestore, licenseInfo(), true)
+		check(t, FebtureBbckupAndRestore, licenseInfo("stbrter"), fblse)
+		check(t, FebtureBbckupAndRestore, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureBbckupAndRestore, licenseInfo(plbn(PlbnOldEnterprise)), true)
+		check(t, FebtureBbckupAndRestore, licenseInfo(), true)
 
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureBackupAndRestore, licenseInfo(plan(PlanEnterprise0), string(FeatureBackupAndRestore)), true)
+		check(t, FebtureBbckupAndRestore, licenseInfo(plbn(PlbnTebm0)), fblse)
+		check(t, FebtureBbckupAndRestore, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+		check(t, FebtureBbckupAndRestore, licenseInfo(plbn(PlbnEnterprise0), string(FebtureBbckupAndRestore)), true)
 	})
 
-	t.Run(string(FeatureAllowAirGapped), func(t *testing.T) {
-		check(t, FeatureAllowAirGapped, nil, false)
+	t.Run(string(FebtureAllowAirGbpped), func(t *testing.T) {
+		check(t, FebtureAllowAirGbpped, nil, fblse)
 
-		check(t, FeatureAllowAirGapped, licenseInfo("starter"), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanOldEnterpriseStarter)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanOldEnterprise)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanTeam0)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterprise0)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanBusiness0)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterprise1)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterpriseExtension)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanFree0)), false)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanFree1)), false)
+		check(t, FebtureAllowAirGbpped, licenseInfo("stbrter"), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnOldEnterpriseStbrter)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnOldEnterprise)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnTebm0)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnEnterprise0)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnBusiness0)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnEnterprise1)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnEnterpriseExtension)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnFree0)), fblse)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnFree1)), fblse)
 
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanEnterprise0), string(FeatureAllowAirGapped)), true)
-		check(t, FeatureAllowAirGapped, licenseInfo(plan(PlanAirGappedEnterprise)), true)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnEnterprise0), string(FebtureAllowAirGbpped)), true)
+		check(t, FebtureAllowAirGbpped, licenseInfo(plbn(PlbnAirGbppedEnterprise)), true)
 	})
 }

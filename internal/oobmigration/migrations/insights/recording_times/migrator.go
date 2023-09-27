@@ -1,84 +1,84 @@
-package recording_times
+pbckbge recording_times
 
 import (
 	"context"
 	"time"
 
-	"github.com/keegancsmith/sqlf"
+	"github.com/keegbncsmith/sqlf"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/insights"
-	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/bbsestore"
+	"github.com/sourcegrbph/sourcegrbph/internbl/insights"
+	"github.com/sourcegrbph/sourcegrbph/internbl/oobmigrbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-type recordingTimesMigrator struct {
-	store *basestore.Store
+type recordingTimesMigrbtor struct {
+	store *bbsestore.Store
 
-	batchSize int
+	bbtchSize int
 }
 
-func NewRecordingTimesMigrator(store *basestore.Store, batchSize int) *recordingTimesMigrator {
-	return &recordingTimesMigrator{
+func NewRecordingTimesMigrbtor(store *bbsestore.Store, bbtchSize int) *recordingTimesMigrbtor {
+	return &recordingTimesMigrbtor{
 		store:     store,
-		batchSize: batchSize,
+		bbtchSize: bbtchSize,
 	}
 }
 
-var _ oobmigration.Migrator = &recordingTimesMigrator{}
+vbr _ oobmigrbtion.Migrbtor = &recordingTimesMigrbtor{}
 
-func (m *recordingTimesMigrator) ID() int                 { return 17 }
-func (m *recordingTimesMigrator) Interval() time.Duration { return time.Second * 10 }
+func (m *recordingTimesMigrbtor) ID() int                 { return 17 }
+func (m *recordingTimesMigrbtor) Intervbl() time.Durbtion { return time.Second * 10 }
 
-func (m *recordingTimesMigrator) Progress(ctx context.Context, _ bool) (float64, error) {
-	if !insights.IsEnabled() {
+func (m *recordingTimesMigrbtor) Progress(ctx context.Context, _ bool) (flobt64, error) {
+	if !insights.IsEnbbled() {
 		return 1, nil
 	}
-	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
+	progress, _, err := bbsestore.ScbnFirstFlobt(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
 			CASE c2.count WHEN 0 THEN 1 ELSE
-				cast(c1.count as float) / cast(c2.count as float)
+				cbst(c1.count bs flobt) / cbst(c2.count bs flobt)
 			END
 		FROM
-			(SELECT count(*) as count FROM insight_series WHERE supports_augmentation IS TRUE) c1,
-			(SELECT count(*) as count FROM insight_series) c2
+			(SELECT count(*) bs count FROM insight_series WHERE supports_bugmentbtion IS TRUE) c1,
+			(SELECT count(*) bs count FROM insight_series) c2
 	`)))
 	return progress, err
 }
 
-type seriesMetadata struct {
+type seriesMetbdbtb struct {
 	id             int
 	seriesID       string
-	createdAt      time.Time
-	lastRecordedAt time.Time
-	interval       timeInterval
+	crebtedAt      time.Time
+	lbstRecordedAt time.Time
+	intervbl       timeIntervbl
 }
 
-func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
-	if !insights.IsEnabled() {
+func (m *recordingTimesMigrbtor) Up(ctx context.Context) (err error) {
+	if !insights.IsEnbbled() {
 		return nil
 	}
-	tx, err := m.store.Transact(ctx)
+	tx, err := m.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	series, err := selectSeriesMetadata(ctx, tx, m.batchSize)
+	series, err := selectSeriesMetbdbtb(ctx, tx, m.bbtchSize)
 	if err != nil {
-		return errors.Wrap(err, "selectSeriesMetadata")
+		return errors.Wrbp(err, "selectSeriesMetbdbtb")
 	}
 
-	for id, metadata := range series {
-		recordingTimes, err := selectExistingRecordingTimes(ctx, tx, metadata.seriesID)
+	for id, metbdbtb := rbnge series {
+		recordingTimes, err := selectExistingRecordingTimes(ctx, tx, metbdbtb.seriesID)
 		if err != nil {
-			return errors.Wrap(err, "selectExistingRecordingTimes")
+			return errors.Wrbp(err, "selectExistingRecordingTimes")
 		}
 
-		calculatedTimes := calculateRecordingTimes(metadata.createdAt, metadata.lastRecordedAt, metadata.interval, recordingTimes)
-		for _, recordTime := range calculatedTimes {
+		cblculbtedTimes := cblculbteRecordingTimes(metbdbtb.crebtedAt, metbdbtb.lbstRecordedAt, metbdbtb.intervbl, recordingTimes)
+		for _, recordTime := rbnge cblculbtedTimes {
 			if err := tx.Exec(ctx, sqlf.Sprintf(
-				"INSERT INTO insight_series_recording_times (insight_series_id, recording_time, snapshot) VALUES(%s, %s, false) ON CONFLICT DO NOTHING",
+				"INSERT INTO insight_series_recording_times (insight_series_id, recording_time, snbpshot) VALUES(%s, %s, fblse) ON CONFLICT DO NOTHING",
 				id,
 				recordTime.UTC(),
 			)); err != nil {
@@ -86,7 +86,7 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 			}
 		}
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE insight_series SET supports_augmentation = TRUE WHERE id = %s",
+			"UPDATE insight_series SET supports_bugmentbtion = TRUE WHERE id = %s",
 			id,
 		)); err != nil {
 			return err
@@ -96,75 +96,75 @@ func (m *recordingTimesMigrator) Up(ctx context.Context) (err error) {
 	return nil
 }
 
-func selectSeriesMetadata(ctx context.Context, tx *basestore.Store, batchSize int) (map[int]seriesMetadata, error) {
+func selectSeriesMetbdbtb(ctx context.Context, tx *bbsestore.Store, bbtchSize int) (mbp[int]seriesMetbdbtb, error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
-		"SELECT id, series_id, created_at, last_recorded_at, sample_interval_unit, sample_interval_value FROM insight_series WHERE supports_augmentation IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
-		batchSize,
+		"SELECT id, series_id, crebted_bt, lbst_recorded_bt, sbmple_intervbl_unit, sbmple_intervbl_vblue FROM insight_series WHERE supports_bugmentbtion IS FALSE ORDER BY id LIMIT %s FOR UPDATE SKIP LOCKED",
+		bbtchSize,
 	))
 	if err != nil {
 		return nil, err
 	}
 
-	series := make(map[int]seriesMetadata) // id -> metadata
+	series := mbke(mbp[int]seriesMetbdbtb) // id -> metbdbtb
 	for rows.Next() {
-		var id int
-		var seriesID string
-		var createdAt, lastRecordedAt time.Time
-		var sampleIntervalUnit string
-		var sampleIntervalValue int
-		if err := rows.Scan(
+		vbr id int
+		vbr seriesID string
+		vbr crebtedAt, lbstRecordedAt time.Time
+		vbr sbmpleIntervblUnit string
+		vbr sbmpleIntervblVblue int
+		if err := rows.Scbn(
 			&id,
 			&seriesID,
-			&createdAt,
-			&lastRecordedAt,
-			&sampleIntervalUnit,
-			&sampleIntervalValue,
+			&crebtedAt,
+			&lbstRecordedAt,
+			&sbmpleIntervblUnit,
+			&sbmpleIntervblVblue,
 		); err != nil {
 			return nil, err
 		}
-		series[id] = seriesMetadata{
+		series[id] = seriesMetbdbtb{
 			id:             id,
 			seriesID:       seriesID,
-			createdAt:      createdAt,
-			lastRecordedAt: lastRecordedAt,
-			interval: timeInterval{
-				unit:  intervalUnit(sampleIntervalUnit),
-				value: sampleIntervalValue,
+			crebtedAt:      crebtedAt,
+			lbstRecordedAt: lbstRecordedAt,
+			intervbl: timeIntervbl{
+				unit:  intervblUnit(sbmpleIntervblUnit),
+				vblue: sbmpleIntervblVblue,
 			},
 		}
 	}
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 	return series, nil
 }
 
-func selectExistingRecordingTimes(ctx context.Context, tx *basestore.Store, seriesID string) ([]time.Time, error) {
+func selectExistingRecordingTimes(ctx context.Context, tx *bbsestore.Store, seriesID string) ([]time.Time, error) {
 	rows, err := tx.Query(ctx, sqlf.Sprintf(
 		"SELECT DISTINCT time FROM series_points WHERE series_id = %s ORDER by time ASC", seriesID,
 	))
 	if err != nil {
 		return nil, err
 	}
-	var recordingTimes []time.Time
+	vbr recordingTimes []time.Time
 	for rows.Next() {
-		var record time.Time
-		if err := rows.Scan(&record); err != nil {
+		vbr record time.Time
+		if err := rows.Scbn(&record); err != nil {
 			return nil, err
 		}
-		recordingTimes = append(recordingTimes, record)
+		recordingTimes = bppend(recordingTimes, record)
 	}
-	if err = basestore.CloseRows(rows, err); err != nil {
+	if err = bbsestore.CloseRows(rows, err); err != nil {
 		return nil, err
 	}
 	return recordingTimes, nil
 }
 
-func (m *recordingTimesMigrator) Down(ctx context.Context) error {
-	if !insights.IsEnabled() {
+func (m *recordingTimesMigrbtor) Down(ctx context.Context) error {
+	if !insights.IsEnbbled() {
 		return nil
 	}
-	tx, err := m.store.Transact(ctx)
+	tx, err := m.store.Trbnsbct(ctx)
 	if err != nil {
 		return err
 	}
@@ -173,11 +173,11 @@ func (m *recordingTimesMigrator) Down(ctx context.Context) error {
 	if err := tx.Exec(ctx, sqlf.Sprintf(
 		`WITH deleted AS (
 			DELETE FROM insight_series_recording_times
-			WHERE insight_series_id IN (SELECT id FROM insight_series WHERE supports_augmentation = TRUE LIMIT %s)
+			WHERE insight_series_id IN (SELECT id FROM insight_series WHERE supports_bugmentbtion = TRUE LIMIT %s)
             RETURNING insight_series_id
 		)
-        UPDATE insight_series SET supports_augmentation = FALSE where id IN (SELECT * from deleted)`,
-		m.batchSize,
+        UPDATE insight_series SET supports_bugmentbtion = FALSE where id IN (SELECT * from deleted)`,
+		m.bbtchSize,
 	)); err != nil {
 		return err
 	}

@@ -1,98 +1,98 @@
-package compute
+pbckbge compute
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/grafana/regexp"
+	"github.com/grbfbnb/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegrbph/sourcegrbph/internbl/gitserver"
+	"github.com/sourcegrbph/sourcegrbph/internbl/sebrch/result"
 )
 
-type MatchOnly struct {
-	SearchPattern MatchPattern
+type MbtchOnly struct {
+	SebrchPbttern MbtchPbttern
 
-	// ComputePattern is the valid, semantically-equivalent representation
-	// of MatchPattern that mirrors implicit Sourcegraph search behavior
-	// (e.g., default case insensitivity), but which may differ
-	// syntactically (e.g., by wrapping a pattern in (?i:<MatchPattern>).
-	ComputePattern MatchPattern
+	// ComputePbttern is the vblid, sembnticblly-equivblent representbtion
+	// of MbtchPbttern thbt mirrors implicit Sourcegrbph sebrch behbvior
+	// (e.g., defbult cbse insensitivity), but which mby differ
+	// syntbcticblly (e.g., by wrbpping b pbttern in (?i:<MbtchPbttern>).
+	ComputePbttern MbtchPbttern
 }
 
-func (c *MatchOnly) ToSearchPattern() string {
-	return c.SearchPattern.String()
+func (c *MbtchOnly) ToSebrchPbttern() string {
+	return c.SebrchPbttern.String()
 }
 
-func (c *MatchOnly) String() string {
+func (c *MbtchOnly) String() string {
 	return fmt.Sprintf(
-		"Match only search pattern: %s, compute pattern: %s",
-		c.SearchPattern.String(),
-		c.ComputePattern.String(),
+		"Mbtch only sebrch pbttern: %s, compute pbttern: %s",
+		c.SebrchPbttern.String(),
+		c.ComputePbttern.String(),
 	)
 }
 
-func fromRegexpMatches(submatches []int, namedGroups []string, content string, range_ result.Range) Match {
-	env := make(Environment)
-	var firstValue string
-	var firstRange Range
-	// iterate over pairs of offsets. Cf. FindAllStringSubmatchIndex
-	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmatchIndex.
-	for j := 0; j < len(submatches); j += 2 {
-		start := submatches[j]
-		end := submatches[j+1]
-		if start == -1 || end == -1 {
-			// The entire regexp matched, but a capture
+func fromRegexpMbtches(submbtches []int, nbmedGroups []string, content string, rbnge_ result.Rbnge) Mbtch {
+	env := mbke(Environment)
+	vbr firstVblue string
+	vbr firstRbnge Rbnge
+	// iterbte over pbirs of offsets. Cf. FindAllStringSubmbtchIndex
+	// https://pkg.go.dev/regexp#Regexp.FindAllStringSubmbtchIndex.
+	for j := 0; j < len(submbtches); j += 2 {
+		stbrt := submbtches[j]
+		end := submbtches[j+1]
+		if stbrt == -1 || end == -1 {
+			// The entire regexp mbtched, but b cbpture
 			// group inside it did not. Ignore this entry.
 			continue
 		}
-		value := content[start:end]
-		captureRange := newRange(range_.Start.Offset+start, range_.Start.Offset+end)
+		vblue := content[stbrt:end]
+		cbptureRbnge := newRbnge(rbnge_.Stbrt.Offset+stbrt, rbnge_.Stbrt.Offset+end)
 
 		if j == 0 {
-			// The first submatch is the overall match
-			// value. Don't add this to the Environment
-			firstValue = value
-			firstRange = captureRange
+			// The first submbtch is the overbll mbtch
+			// vblue. Don't bdd this to the Environment
+			firstVblue = vblue
+			firstRbnge = cbptureRbnge
 			continue
 		}
 
-		var v string
-		if namedGroups[j/2] == "" {
-			v = strconv.Itoa(j / 2)
+		vbr v string
+		if nbmedGroups[j/2] == "" {
+			v = strconv.Itob(j / 2)
 		} else {
-			v = namedGroups[j/2]
+			v = nbmedGroups[j/2]
 		}
-		env[v] = Data{Value: value, Range: captureRange}
+		env[v] = Dbtb{Vblue: vblue, Rbnge: cbptureRbnge}
 	}
-	return Match{Value: firstValue, Range: firstRange, Environment: env}
+	return Mbtch{Vblue: firstVblue, Rbnge: firstRbnge, Environment: env}
 }
 
-func chunkContent(c result.ChunkMatch, r result.Range) string {
-	// Set range relative to the start of the content.
-	rr := r.Sub(c.ContentStart)
-	return c.Content[rr.Start.Offset:rr.End.Offset]
+func chunkContent(c result.ChunkMbtch, r result.Rbnge) string {
+	// Set rbnge relbtive to the stbrt of the content.
+	rr := r.Sub(c.ContentStbrt)
+	return c.Content[rr.Stbrt.Offset:rr.End.Offset]
 }
 
-func matchOnly(fm *result.FileMatch, r *regexp.Regexp) *MatchContext {
-	chunkMatches := fm.ChunkMatches
-	matches := make([]Match, 0, len(chunkMatches))
-	for _, cm := range chunkMatches {
-		for _, range_ := range cm.Ranges {
-			content := chunkContent(cm, range_)
-			for _, submatches := range r.FindAllStringSubmatchIndex(content, -1) {
-				matches = append(matches, fromRegexpMatches(submatches, r.SubexpNames(), content, range_))
+func mbtchOnly(fm *result.FileMbtch, r *regexp.Regexp) *MbtchContext {
+	chunkMbtches := fm.ChunkMbtches
+	mbtches := mbke([]Mbtch, 0, len(chunkMbtches))
+	for _, cm := rbnge chunkMbtches {
+		for _, rbnge_ := rbnge cm.Rbnges {
+			content := chunkContent(cm, rbnge_)
+			for _, submbtches := rbnge r.FindAllStringSubmbtchIndex(content, -1) {
+				mbtches = bppend(mbtches, fromRegexpMbtches(submbtches, r.SubexpNbmes(), content, rbnge_))
 			}
 		}
 	}
-	return &MatchContext{Matches: matches, Path: fm.Path, RepositoryID: int32(fm.Repo.ID), Repository: string(fm.Repo.Name)}
+	return &MbtchContext{Mbtches: mbtches, Pbth: fm.Pbth, RepositoryID: int32(fm.Repo.ID), Repository: string(fm.Repo.Nbme)}
 }
 
-func (c *MatchOnly) Run(_ context.Context, _ gitserver.Client, r result.Match) (Result, error) {
+func (c *MbtchOnly) Run(_ context.Context, _ gitserver.Client, r result.Mbtch) (Result, error) {
 	switch m := r.(type) {
-	case *result.FileMatch:
-		return matchOnly(m, c.ComputePattern.(*Regexp).Value), nil
+	cbse *result.FileMbtch:
+		return mbtchOnly(m, c.ComputePbttern.(*Regexp).Vblue), nil
 	}
 	return nil, nil
 }

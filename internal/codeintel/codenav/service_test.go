@@ -1,22 +1,22 @@
-package codenav
+pbckbge codenbv
 
 import (
 	"context"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	internaltypes "github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	internbltypes "github.com/sourcegrbph/sourcegrbph/internbl/types"
 )
 
-func defaultMockRepoStore() *dbmocks.MockRepoStore {
+func defbultMockRepoStore() *dbmocks.MockRepoStore {
 	repoStore := dbmocks.NewMockRepoStore()
-	repoStore.GetReposSetByIDsFunc.SetDefaultHook(func(ctx context.Context, ids ...api.RepoID) (map[api.RepoID]*internaltypes.Repo, error) {
-		m := map[api.RepoID]*internaltypes.Repo{}
-		for _, id := range ids {
-			m[id] = &internaltypes.Repo{
+	repoStore.GetReposSetByIDsFunc.SetDefbultHook(func(ctx context.Context, ids ...bpi.RepoID) (mbp[bpi.RepoID]*internbltypes.Repo, error) {
+		m := mbp[bpi.RepoID]*internbltypes.Repo{}
+		for _, id := rbnge ids {
+			m[id] = &internbltypes.Repo{
 				ID:   id,
-				Name: api.RepoName(fmt.Sprintf("r%d", id)),
+				Nbme: bpi.RepoNbme(fmt.Sprintf("r%d", id)),
 			}
 		}
 

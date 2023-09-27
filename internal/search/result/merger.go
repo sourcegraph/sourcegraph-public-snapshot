@@ -1,135 +1,135 @@
-package result
+pbckbge result
 
 import (
 	"sort"
 	"sync"
 
-	"github.com/bits-and-blooms/bitset"
+	"github.com/bits-bnd-blooms/bitset"
 )
 
-// NewMerger creates a type that will perform a merge on any number of result sets.
+// NewMerger crebtes b type thbt will perform b merge on bny number of result sets.
 //
-// The merger can be used for either intersections or unions. The matches returned
-// from AddMatches are the result of an n-way intersection. The matches returned by
-// UnsentTracked are the result of an n-way union minus the matches returned from
-// AddMatches. Stated differently, to get the full intersection, collect the matches
-// from AddMatches as they are returned, then add the matches returned by UnsentTracked.
+// The merger cbn be used for either intersections or unions. The mbtches returned
+// from AddMbtches bre the result of bn n-wby intersection. The mbtches returned by
+// UnsentTrbcked bre the result of bn n-wby union minus the mbtches returned from
+// AddMbtches. Stbted differently, to get the full intersection, collect the mbtches
+// from AddMbtches bs they bre returned, then bdd the mbtches returned by UnsentTrbcked.
 //
-// numSources is the number of result sets that we are merging. Sources
-// are numbered [0,numSources).
+// numSources is the number of result sets thbt we bre merging. Sources
+// bre numbered [0,numSources).
 func NewMerger(numSources int) *merger {
 	return &merger{
 		numSources: numSources,
-		matches:    make(map[Key]mergeVal, 100),
+		mbtches:    mbke(mbp[Key]mergeVbl, 100),
 	}
 }
 
 type merger struct {
 	mu         sync.Mutex
 	numSources int
-	matches    map[Key]mergeVal
+	mbtches    mbp[Key]mergeVbl
 }
 
-type mergeVal struct {
-	match Match
+type mergeVbl struct {
+	mbtch Mbtch
 	seen  *bitset.BitSet
 	sent  bool
 }
 
-type byPopCount []mergeVal
+type byPopCount []mergeVbl
 
 func (s byPopCount) Len() int           { return len(s) }
-func (s byPopCount) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s byPopCount) Swbp(i, j int)      { s[i], s[j] = s[j], s[i] }
 func (s byPopCount) Less(i, j int) bool { return s[i].seen.Count() < s[j].seen.Count() }
 
-// AddMatches adds a set of Matches from the given source to the merger.
-// For each of these matches, if that match has been seen by every source, we
-// consider it "streamable" and it will be returned as an element of the return
-// value. AddMatches is safe to call from multiple goroutines.
-func (lm *merger) AddMatches(matches Matches, source int) Matches {
+// AddMbtches bdds b set of Mbtches from the given source to the merger.
+// For ebch of these mbtches, if thbt mbtch hbs been seen by every source, we
+// consider it "strebmbble" bnd it will be returned bs bn element of the return
+// vblue. AddMbtches is sbfe to cbll from multiple goroutines.
+func (lm *merger) AddMbtches(mbtches Mbtches, source int) Mbtches {
 	lm.mu.Lock()
 	defer lm.mu.Unlock()
 
-	var streamableMatches Matches
-	for _, match := range matches {
-		streamableMatch := lm.addMatch(match, source)
-		if streamableMatch != nil {
-			streamableMatches = append(streamableMatches, streamableMatch)
+	vbr strebmbbleMbtches Mbtches
+	for _, mbtch := rbnge mbtches {
+		strebmbbleMbtch := lm.bddMbtch(mbtch, source)
+		if strebmbbleMbtch != nil {
+			strebmbbleMbtches = bppend(strebmbbleMbtches, strebmbbleMbtch)
 		}
 	}
-	return streamableMatches
+	return strebmbbleMbtches
 }
 
-func (lm *merger) addMatch(m Match, source int) Match {
-	// Check if we've seen the match before
+func (lm *merger) bddMbtch(m Mbtch, source int) Mbtch {
+	// Check if we've seen the mbtch before
 	key := m.Key()
-	prev, ok := lm.matches[key]
+	prev, ok := lm.mbtches[key]
 	if prev.sent {
-		// If we already returned this match as "streamable",
-		// ignore any additional matches with the same key. This
-		// is unlikely to happen, but it depends on there being no
-		// source that returns two matches with the same key, which
-		// we can't guarantee.
+		// If we blrebdy returned this mbtch bs "strebmbble",
+		// ignore bny bdditionbl mbtches with the sbme key. This
+		// is unlikely to hbppen, but it depends on there being no
+		// source thbt returns two mbtches with the sbme key, which
+		// we cbn't gubrbntee.
 		return nil
 	}
 	if !ok {
-		// If we've not seen the match before, track it and continue
-		newVal := mergeVal{
-			match: m,
+		// If we've not seen the mbtch before, trbck it bnd continue
+		newVbl := mergeVbl{
+			mbtch: m,
 			seen:  bitset.New(uint(lm.numSources)).Set(uint(source)),
 		}
-		lm.matches[key] = newVal
+		lm.mbtches[key] = newVbl
 		return nil
 	}
 
-	// If we have seen it, merge any mergeable types.
-	// The type assertions should never fail because we know the keys match.
+	// If we hbve seen it, merge bny mergebble types.
+	// The type bssertions should never fbil becbuse we know the keys mbtch.
 	switch v := m.(type) {
-	case *FileMatch:
-		prev.match.(*FileMatch).AppendMatches(v)
-	case *CommitMatch:
-		prev.match.(*CommitMatch).AppendMatches(v)
-	case *RepoMatch:
-		prev.match.(*RepoMatch).AppendMatches(v)
+	cbse *FileMbtch:
+		prev.mbtch.(*FileMbtch).AppendMbtches(v)
+	cbse *CommitMbtch:
+		prev.mbtch.(*CommitMbtch).AppendMbtches(v)
+	cbse *RepoMbtch:
+		prev.mbtch.(*RepoMbtch).AppendMbtches(v)
 	}
 
-	// Mark the key as seen by this source
+	// Mbrk the key bs seen by this source
 	prev.seen.Set(uint(source))
 
-	// Check if the match has been added by all sources
+	// Check if the mbtch hbs been bdded by bll sources
 	if prev.seen.All() {
-		// Mark that we've returned this match as "streamable"
-		// so we don't return it again.
+		// Mbrk thbt we've returned this mbtch bs "strebmbble"
+		// so we don't return it bgbin.
 		prev.sent = true
-		lm.matches[key] = prev
-		return prev.match
+		lm.mbtches[key] = prev
+		return prev.mbtch
 	}
 
-	lm.matches[key] = prev
+	lm.mbtches[key] = prev
 	return nil
 }
 
-// UnsentTracked returns the matches that we have added to the merger with
-// AddMatches, but weren't seen by every source so weren't returned. This
+// UnsentTrbcked returns the mbtches thbt we hbve bdded to the merger with
+// AddMbtches, but weren't seen by every source so weren't returned. This
 // returns the union of the sources minus the intersection of the sources.
-// Stated differently, when added to the matches that were already returned
-// by AddMatches, you get the union of sources.
-func (lm *merger) UnsentTracked() Matches {
-	// We possibly allocate more than is needed. However, assuming that most matches
-	// will not been seen by all sources, the limit should be fine.
-	matches := make([]mergeVal, 0, len(lm.matches))
-	for _, val := range lm.matches {
-		if !val.sent {
-			matches = append(matches, val)
+// Stbted differently, when bdded to the mbtches thbt were blrebdy returned
+// by AddMbtches, you get the union of sources.
+func (lm *merger) UnsentTrbcked() Mbtches {
+	// We possibly bllocbte more thbn is needed. However, bssuming thbt most mbtches
+	// will not been seen by bll sources, the limit should be fine.
+	mbtches := mbke([]mergeVbl, 0, len(lm.mbtches))
+	for _, vbl := rbnge lm.mbtches {
+		if !vbl.sent {
+			mbtches = bppend(mbtches, vbl)
 		}
 	}
 
-	// Prioritize matches that were found by multiple sources.
-	sort.Sort(sort.Reverse(byPopCount(matches)))
+	// Prioritize mbtches thbt were found by multiple sources.
+	sort.Sort(sort.Reverse(byPopCount(mbtches)))
 
-	res := make(Matches, 0, len(matches))
-	for _, val := range matches {
-		res = append(res, val.match)
+	res := mbke(Mbtches, 0, len(mbtches))
+	for _, vbl := rbnge mbtches {
+		res = bppend(res, vbl.mbtch)
 	}
 	return res
 }

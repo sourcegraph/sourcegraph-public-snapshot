@@ -1,4 +1,4 @@
-package gitlab
+pbckbge gitlbb
 
 import (
 	"bytes"
@@ -8,49 +8,49 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
-	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rbtelimit"
+	"github.com/sourcegrbph/sourcegrbph/internbl/rcbche"
 )
 
 type mockHTTPResponseBody struct {
 	count        int
-	header       http.Header
+	hebder       http.Hebder
 	responseBody string
-	statusCode   int
+	stbtusCode   int
 }
 
 func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	s.count++
-	statusCode := http.StatusOK
-	if s.statusCode != 0 {
-		statusCode = s.statusCode
+	stbtusCode := http.StbtusOK
+	if s.stbtusCode != 0 {
+		stbtusCode = s.stbtusCode
 	}
 	return &http.Response{
 		Request:    req,
-		StatusCode: statusCode,
-		Body:       io.NopCloser(strings.NewReader(s.responseBody)),
-		Header:     s.header,
+		StbtusCode: stbtusCode,
+		Body:       io.NopCloser(strings.NewRebder(s.responseBody)),
+		Hebder:     s.hebder,
 	}, nil
 }
 
 type mockHTTPEmptyResponse struct {
-	statusCode int
+	stbtusCode int
 }
 
 func (s mockHTTPEmptyResponse) Do(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		Request:    req,
-		StatusCode: s.statusCode,
-		Body:       io.NopCloser(bytes.NewReader(nil)),
+		StbtusCode: s.stbtusCode,
+		Body:       io.NopCloser(bytes.NewRebder(nil)),
 	}, nil
 }
 
 func newTestClient(t *testing.T) *Client {
-	rcache.SetupForTest(t)
+	rcbche.SetupForTest(t)
 	return &Client{
-		baseURL:             &url.URL{Scheme: "https", Host: "example.com", Path: "/"},
+		bbseURL:             &url.URL{Scheme: "https", Host: "exbmple.com", Pbth: "/"},
 		httpClient:          &http.Client{},
-		externalRateLimiter: &ratelimit.Monitor{},
-		projCache:           rcache.NewWithTTL("__test__gl_proj", 1000),
+		externblRbteLimiter: &rbtelimit.Monitor{},
+		projCbche:           rcbche.NewWithTTL("__test__gl_proj", 1000),
 	}
 }

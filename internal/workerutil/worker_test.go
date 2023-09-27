@@ -1,4 +1,4 @@
-package workerutil
+pbckbge workerutil
 
 import (
 	"context"
@@ -11,15 +11,15 @@ import (
 
 	"github.com/derision-test/glock"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegrbph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
 type TestRecord struct {
 	ID    int
-	State string
+	Stbte string
 }
 
 func (v TestRecord) RecordID() int {
@@ -27,181 +27,181 @@ func (v TestRecord) RecordID() int {
 }
 
 func (v TestRecord) RecordUID() string {
-	return strconv.Itoa(v.ID)
+	return strconv.Itob(v.ID)
 }
 
-func TestWorkerHandlerSuccess(t *testing.T) {
+func TestWorkerHbndlerSuccess(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
-	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
+	store.MbrkCompleteFunc.SetDefbultReturn(true, nil)
 
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
-	dequeueClock.BlockingAdvance(time.Second)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	go func() { worker.Stbrt() }()
+	dequeueClock.BlockingAdvbnce(time.Second)
 	worker.Stop()
 
-	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
-		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
-		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
+	if cbllCount := len(hbndler.HbndleFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected hbndle cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+	} else if brg := hbndler.HbndleFunc.History()[0].Arg2; brg.RecordID() != 42 {
+		t.Errorf("unexpected record. wbnt=%d hbve=%d", 42, brg.RecordID())
 	}
 
-	if callCount := len(store.MarkCompleteFunc.History()); callCount != 1 {
-		t.Errorf("unexpected mark complete call count. want=%d have=%d", 1, callCount)
-	} else if id := store.MarkCompleteFunc.History()[0].Arg1.RecordID(); id != 42 {
-		t.Errorf("unexpected id argument to mark complete. want=%v have=%v", 42, id)
+	if cbllCount := len(store.MbrkCompleteFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected mbrk complete cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+	} else if id := store.MbrkCompleteFunc.History()[0].Arg1.RecordID(); id != 42 {
+		t.Errorf("unexpected id brgument to mbrk complete. wbnt=%v hbve=%v", 42, id)
 	}
 }
 
-func TestWorkerHandlerFailure(t *testing.T) {
+func TestWorkerHbndlerFbilure(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
-	store.MarkErroredFunc.SetDefaultReturn(true, nil)
-	handler.HandleFunc.SetDefaultReturn(errors.Errorf("oops"))
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
+	store.MbrkErroredFunc.SetDefbultReturn(true, nil)
+	hbndler.HbndleFunc.SetDefbultReturn(errors.Errorf("oops"))
 
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
-	dequeueClock.BlockingAdvance(time.Second)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	go func() { worker.Stbrt() }()
+	dequeueClock.BlockingAdvbnce(time.Second)
 	worker.Stop()
 
-	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
-		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
-		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
+	if cbllCount := len(hbndler.HbndleFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected hbndle cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+	} else if brg := hbndler.HbndleFunc.History()[0].Arg2; brg.RecordID() != 42 {
+		t.Errorf("unexpected record. wbnt=%d hbve=%d", 42, brg.RecordID())
 	}
 
-	if callCount := len(store.MarkErroredFunc.History()); callCount != 1 {
-		t.Errorf("unexpected mark errored call count. want=%d have=%d", 1, callCount)
-	} else if id := store.MarkErroredFunc.History()[0].Arg1.RecordID(); id != 42 {
-		t.Errorf("unexpected id argument to mark errored. want=%v have=%v", 42, id)
-	} else if failureMessage := store.MarkErroredFunc.History()[0].Arg2; failureMessage != "oops" {
-		t.Errorf("unexpected failure message argument to mark errored. want=%q have=%q", "oops", failureMessage)
+	if cbllCount := len(store.MbrkErroredFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected mbrk errored cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+	} else if id := store.MbrkErroredFunc.History()[0].Arg1.RecordID(); id != 42 {
+		t.Errorf("unexpected id brgument to mbrk errored. wbnt=%v hbve=%v", 42, id)
+	} else if fbilureMessbge := store.MbrkErroredFunc.History()[0].Arg2; fbilureMessbge != "oops" {
+		t.Errorf("unexpected fbilure messbge brgument to mbrk errored. wbnt=%q hbve=%q", "oops", fbilureMessbge)
 	}
 }
 
-type nonRetryableTestErr struct{}
+type nonRetrybbleTestErr struct{}
 
-func (e nonRetryableTestErr) Error() string      { return "just retry me and see what happens" }
-func (e nonRetryableTestErr) NonRetryable() bool { return true }
+func (e nonRetrybbleTestErr) Error() string      { return "just retry me bnd see whbt hbppens" }
+func (e nonRetrybbleTestErr) NonRetrybble() bool { return true }
 
-func TestWorkerHandlerNonRetryableFailure(t *testing.T) {
+func TestWorkerHbndlerNonRetrybbleFbilure(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
-	store.MarkFailedFunc.SetDefaultReturn(true, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
+	store.MbrkFbiledFunc.SetDefbultReturn(true, nil)
 
-	testErr := nonRetryableTestErr{}
-	handler.HandleFunc.SetDefaultReturn(testErr)
+	testErr := nonRetrybbleTestErr{}
+	hbndler.HbndleFunc.SetDefbultReturn(testErr)
 
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
-	dequeueClock.BlockingAdvance(time.Second)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	go func() { worker.Stbrt() }()
+	dequeueClock.BlockingAdvbnce(time.Second)
 	worker.Stop()
 
-	if callCount := len(handler.HandleFunc.History()); callCount != 1 {
-		t.Errorf("unexpected handle call count. want=%d have=%d", 1, callCount)
-	} else if arg := handler.HandleFunc.History()[0].Arg2; arg.RecordID() != 42 {
-		t.Errorf("unexpected record. want=%d have=%d", 42, arg.RecordID())
+	if cbllCount := len(hbndler.HbndleFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected hbndle cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+	} else if brg := hbndler.HbndleFunc.History()[0].Arg2; brg.RecordID() != 42 {
+		t.Errorf("unexpected record. wbnt=%d hbve=%d", 42, brg.RecordID())
 	}
 
-	if callCount := len(store.MarkFailedFunc.History()); callCount != 1 {
-		t.Errorf("unexpected mark failed call count. want=%d have=%d", 1, callCount)
-	} else if id := store.MarkFailedFunc.History()[0].Arg1.RecordID(); id != 42 {
-		t.Errorf("unexpected id argument to mark failed. want=%v have=%v", 42, id)
-	} else if failureMessage := store.MarkFailedFunc.History()[0].Arg2; failureMessage != testErr.Error() {
-		t.Errorf("unexpected failure message argument to mark failed. want=%q have=%q", testErr.Error(), failureMessage)
+	if cbllCount := len(store.MbrkFbiledFunc.History()); cbllCount != 1 {
+		t.Errorf("unexpected mbrk fbiled cbll count. wbnt=%d hbve=%d", 1, cbllCount)
+	} else if id := store.MbrkFbiledFunc.History()[0].Arg1.RecordID(); id != 42 {
+		t.Errorf("unexpected id brgument to mbrk fbiled. wbnt=%v hbve=%v", 42, id)
+	} else if fbilureMessbge := store.MbrkFbiledFunc.History()[0].Arg2; fbilureMessbge != testErr.Error() {
+		t.Errorf("unexpected fbilure messbge brgument to mbrk fbiled. wbnt=%q hbve=%q", testErr.Error(), fbilureMessbge)
 	}
 }
 
 func TestWorkerConcurrent(t *testing.T) {
 	NumTestRecords := 50
 
-	for numHandlers := 1; numHandlers < NumTestRecords; numHandlers++ {
-		name := fmt.Sprintf("numHandlers=%d", numHandlers)
+	for numHbndlers := 1; numHbndlers < NumTestRecords; numHbndlers++ {
+		nbme := fmt.Sprintf("numHbndlers=%d", numHbndlers)
 
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
+		t.Run(nbme, func(t *testing.T) {
+			t.Pbrbllel()
 
 			store := NewMockStore[*TestRecord]()
-			handler := NewMockHandlerWithHooks[*TestRecord]()
+			hbndler := NewMockHbndlerWithHooks[*TestRecord]()
 			dequeueClock := glock.NewMockClock()
-			heartbeatClock := glock.NewMockClock()
+			hebrtbebtClock := glock.NewMockClock()
 			shutdownClock := glock.NewMockClock()
 			options := WorkerOptions{
-				Name:           "test",
-				WorkerHostname: "test",
-				NumHandlers:    numHandlers,
-				Interval:       time.Second,
-				Metrics:        NewMetrics(&observation.TestContext, ""),
+				Nbme:           "test",
+				WorkerHostnbme: "test",
+				NumHbndlers:    numHbndlers,
+				Intervbl:       time.Second,
+				Metrics:        NewMetrics(&observbtion.TestContext, ""),
 			}
 
 			for i := 0; i < NumTestRecords; i++ {
 				index := i
 				store.DequeueFunc.PushReturn(&TestRecord{ID: index}, true, nil)
 			}
-			store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+			store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
 
-			var m sync.Mutex
-			times := map[int][2]time.Time{}
-			markTime := func(recordID, index int) {
+			vbr m sync.Mutex
+			times := mbp[int][2]time.Time{}
+			mbrkTime := func(recordID, index int) {
 				m.Lock()
-				pair := times[recordID]
-				pair[index] = time.Now()
-				times[recordID] = pair
+				pbir := times[recordID]
+				pbir[index] = time.Now()
+				times[recordID] = pbir
 				m.Unlock()
 			}
 
-			handler.PreHandleFunc.SetDefaultHook(func(ctx context.Context, _ log.Logger, record *TestRecord) { markTime(record.RecordID(), 0) })
-			handler.PostHandleFunc.SetDefaultHook(func(ctx context.Context, _ log.Logger, record *TestRecord) { markTime(record.RecordID(), 1) })
-			handler.HandleFunc.SetDefaultHook(func(context.Context, log.Logger, *TestRecord) error {
-				// Do a _very_ small sleep to make it very unlikely that the scheduler
-				// will happen to invoke all of the handlers sequentially.
+			hbndler.PreHbndleFunc.SetDefbultHook(func(ctx context.Context, _ log.Logger, record *TestRecord) { mbrkTime(record.RecordID(), 0) })
+			hbndler.PostHbndleFunc.SetDefbultHook(func(ctx context.Context, _ log.Logger, record *TestRecord) { mbrkTime(record.RecordID(), 1) })
+			hbndler.HbndleFunc.SetDefbultHook(func(context.Context, log.Logger, *TestRecord) error {
+				// Do b _very_ smbll sleep to mbke it very unlikely thbt the scheduler
+				// will hbppen to invoke bll of the hbndlers sequentiblly.
 				<-time.After(time.Millisecond * 10)
 				return nil
 			})
 
-			worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-			go func() { worker.Start() }()
+			worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+			go func() { worker.Stbrt() }()
 			for i := 0; i < NumTestRecords; i++ {
-				dequeueClock.BlockingAdvance(time.Second)
+				dequeueClock.BlockingAdvbnce(time.Second)
 			}
 			worker.Stop()
 
@@ -209,24 +209,24 @@ func TestWorkerConcurrent(t *testing.T) {
 			for i := 0; i < NumTestRecords; i++ {
 				for j := i + 1; j < NumTestRecords; j++ {
 					if !times[i][1].Before(times[j][0]) {
-						if j-i > 2*numHandlers-1 {
-							// The greatest distance between two "batches" that can overlap is
-							// just under 2x the number of concurrent handler routines. For example
+						if j-i > 2*numHbndlers-1 {
+							// The grebtest distbnce between two "bbtches" thbt cbn overlbp is
+							// just under 2x the number of concurrent hbndler routines. For exbmple
 							// if n=3:
 							//
-							// t1: dequeue A (1 active) *
-							// t2: dequeue B (2 active)
-							// t3: dequeue C (3 active)
-							// t4: process C (2 active)
-							// t5: dequeue D (3 active)
-							// t6: process B (2 active)
-							// t7: dequeue E (3 active) *
-							// t8: process A (2 active) *
+							// t1: dequeue A (1 bctive) *
+							// t2: dequeue B (2 bctive)
+							// t3: dequeue C (3 bctive)
+							// t4: process C (2 bctive)
+							// t5: dequeue D (3 bctive)
+							// t6: process B (2 bctive)
+							// t7: dequeue E (3 bctive) *
+							// t8: process A (2 bctive) *
 							//
-							// Here, A finishes after E is dequeued, which has a distance of 5 (2*3-1).
+							// Here, A finishes bfter E is dequeued, which hbs b distbnce of 5 (2*3-1).
 
 							t.Errorf(
-								"times %[1]d (%[3]s-%[4]s) and %[2]d (%[5]s-%[6]s) failed validation",
+								"times %[1]d (%[3]s-%[4]s) bnd %[2]d (%[5]s-%[6]s) fbiled vblidbtion",
 								i,
 								j,
 								times[i][0],
@@ -241,8 +241,8 @@ func TestWorkerConcurrent(t *testing.T) {
 				}
 			}
 
-			if numHandlers > 1 && intersecting == 0 {
-				t.Errorf("no handler routines were concurrent")
+			if numHbndlers > 1 && intersecting == 0 {
+				t.Errorf("no hbndler routines were concurrent")
 			}
 		})
 	}
@@ -250,429 +250,429 @@ func TestWorkerConcurrent(t *testing.T) {
 
 func TestWorkerBlockingPreDequeueHook(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandlerWithPreDequeue[*TestRecord]()
+	hbndler := NewMockHbndlerWithPreDequeue[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
 
-	// Block all dequeues
-	handler.PreDequeueFunc.SetDefaultReturn(false, nil, nil)
+	// Block bll dequeues
+	hbndler.PreDequeueFunc.SetDefbultReturn(fblse, nil, nil)
 
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
-	dequeueClock.BlockingAdvance(time.Second)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	go func() { worker.Stbrt() }()
+	dequeueClock.BlockingAdvbnce(time.Second)
 	worker.Stop()
 
-	if callCount := len(handler.HandleFunc.History()); callCount != 0 {
-		t.Errorf("unexpected handle call count. want=%d have=%d", 0, callCount)
+	if cbllCount := len(hbndler.HbndleFunc.History()); cbllCount != 0 {
+		t.Errorf("unexpected hbndle cbll count. wbnt=%d hbve=%d", 0, cbllCount)
 	}
 }
 
-func TestWorkerConditionalPreDequeueHook(t *testing.T) {
+func TestWorkerConditionblPreDequeueHook(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandlerWithPreDequeue[*TestRecord]()
+	hbndler := NewMockHbndlerWithPreDequeue[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 43}, true, nil)
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 44}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
 
-	// Return additional arguments
-	handler.PreDequeueFunc.PushReturn(true, "A", nil)
-	handler.PreDequeueFunc.PushReturn(true, "B", nil)
-	handler.PreDequeueFunc.PushReturn(true, "C", nil)
+	// Return bdditionbl brguments
+	hbndler.PreDequeueFunc.PushReturn(true, "A", nil)
+	hbndler.PreDequeueFunc.PushReturn(true, "B", nil)
+	hbndler.PreDequeueFunc.PushReturn(true, "C", nil)
 
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
-	dequeueClock.BlockingAdvance(time.Second)
-	dequeueClock.BlockingAdvance(time.Second)
-	dequeueClock.BlockingAdvance(time.Second)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	go func() { worker.Stbrt() }()
+	dequeueClock.BlockingAdvbnce(time.Second)
+	dequeueClock.BlockingAdvbnce(time.Second)
+	dequeueClock.BlockingAdvbnce(time.Second)
 	worker.Stop()
 
-	if callCount := len(handler.HandleFunc.History()); callCount != 3 {
-		t.Errorf("unexpected handle call count. want=%d have=%d", 3, callCount)
+	if cbllCount := len(hbndler.HbndleFunc.History()); cbllCount != 3 {
+		t.Errorf("unexpected hbndle cbll count. wbnt=%d hbve=%d", 3, cbllCount)
 	}
 
-	if callCount := len(store.DequeueFunc.History()); callCount != 3 {
-		t.Errorf("unexpected dequeue call count. want=%d have=%d", 3, callCount)
+	if cbllCount := len(store.DequeueFunc.History()); cbllCount != 3 {
+		t.Errorf("unexpected dequeue cbll count. wbnt=%d hbve=%d", 3, cbllCount)
 	} else {
-		for i, expected := range []string{"A", "B", "C"} {
-			if extra := store.DequeueFunc.History()[i].Arg2; extra != expected {
-				t.Errorf("unexpected extra argument for dequeue call %d. want=%q have=%q", i, expected, extra)
+		for i, expected := rbnge []string{"A", "B", "C"} {
+			if extrb := store.DequeueFunc.History()[i].Arg2; extrb != expected {
+				t.Errorf("unexpected extrb brgument for dequeue cbll %d. wbnt=%q hbve=%q", i, expected, extrb)
 			}
 		}
 	}
 }
 
-type MockHandlerWithPreDequeue[T Record] struct {
-	*MockHandler[T]
+type MockHbndlerWithPreDequeue[T Record] struct {
+	*MockHbndler[T]
 	*MockWithPreDequeue
 }
 
-func NewMockHandlerWithPreDequeue[T Record]() *MockHandlerWithPreDequeue[T] {
-	return &MockHandlerWithPreDequeue[T]{
-		MockHandler:        NewMockHandler[T](),
+func NewMockHbndlerWithPreDequeue[T Record]() *MockHbndlerWithPreDequeue[T] {
+	return &MockHbndlerWithPreDequeue[T]{
+		MockHbndler:        NewMockHbndler[T](),
 		MockWithPreDequeue: NewMockWithPreDequeue(),
 	}
 }
 
-type MockHandlerWithHooks[T Record] struct {
-	*MockHandler[T]
+type MockHbndlerWithHooks[T Record] struct {
+	*MockHbndler[T]
 	*MockWithHooks[T]
 }
 
-func NewMockHandlerWithHooks[T Record]() *MockHandlerWithHooks[T] {
-	return &MockHandlerWithHooks[T]{
-		MockHandler:   NewMockHandler[T](),
+func NewMockHbndlerWithHooks[T Record]() *MockHbndlerWithHooks[T] {
+	return &MockHbndlerWithHooks[T]{
+		MockHbndler:   NewMockHbndler[T](),
 		MockWithHooks: NewMockWithHooks[T](),
 	}
 }
 
-func TestWorkerDequeueHeartbeat(t *testing.T) {
+func TestWorkerDequeueHebrtbebt(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
-	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
+	store.MbrkCompleteFunc.SetDefbultReturn(true, nil)
 
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
-	heartbeatInterval := time.Second
+	hebrtbebtIntervbl := time.Second
 	options := WorkerOptions{
-		Name:              "test",
-		WorkerHostname:    "test",
-		NumHandlers:       1,
-		HeartbeatInterval: heartbeatInterval,
-		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Nbme:              "test",
+		WorkerHostnbme:    "test",
+		NumHbndlers:       1,
+		HebrtbebtIntervbl: hebrtbebtIntervbl,
+		Intervbl:          time.Second,
+		Metrics:           NewMetrics(&observbtion.TestContext, ""),
 	}
 
-	dequeued := make(chan struct{})
-	doneHandling := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(c context.Context, l log.Logger, r *TestRecord) error {
+	dequeued := mbke(chbn struct{})
+	doneHbndling := mbke(chbn struct{})
+	hbndler.HbndleFunc.defbultHook = func(c context.Context, l log.Logger, r *TestRecord) error {
 		close(dequeued)
-		<-doneHandling
+		<-doneHbndling
 		return nil
 	}
 
-	heartbeats := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []string) ([]string, []string, error) {
-		heartbeats <- struct{}{}
+	hebrtbebts := mbke(chbn struct{})
+	store.HebrtbebtFunc.SetDefbultHook(func(c context.Context, i []string) ([]string, []string, error) {
+		hebrtbebts <- struct{}{}
 		return i, nil, nil
 	})
 
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	go func() { worker.Start() }()
-	t.Cleanup(func() {
-		close(doneHandling)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	go func() { worker.Stbrt() }()
+	t.Clebnup(func() {
+		close(doneHbndling)
 		worker.Stop()
 	})
 	<-dequeued
 
-	for range []int{1, 2, 3, 4, 5} {
-		heartbeatClock.BlockingAdvance(heartbeatInterval)
+	for rbnge []int{1, 2, 3, 4, 5} {
+		hebrtbebtClock.BlockingAdvbnce(hebrtbebtIntervbl)
 		select {
-		case <-heartbeats:
-		case <-time.After(5 * time.Second):
-			t.Fatal("timeout waiting for heartbeat")
+		cbse <-hebrtbebts:
+		cbse <-time.After(5 * time.Second):
+			t.Fbtbl("timeout wbiting for hebrtbebt")
 		}
 	}
 }
 
-func TestWorkerNumTotalJobs(t *testing.T) {
+func TestWorkerNumTotblJobs(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		NumTotalJobs:   5,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		NumTotblJobs:   5,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
-	store.DequeueFunc.SetDefaultReturn(&TestRecord{ID: 42}, true, nil)
-	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	store.DequeueFunc.SetDefbultReturn(&TestRecord{ID: 42}, true, nil)
+	store.MbrkCompleteFunc.SetDefbultReturn(true, nil)
 
 	// Should process 5 then shut down
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-	worker.Start()
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+	worker.Stbrt()
 
-	if callCount := len(store.DequeueFunc.History()); callCount != 5 {
-		t.Errorf("unexpected call count. want=%d have=%d", 5, callCount)
+	if cbllCount := len(store.DequeueFunc.History()); cbllCount != 5 {
+		t.Errorf("unexpected cbll count. wbnt=%d hbve=%d", 5, cbllCount)
 	}
 }
 
-func TestWorkerMaxActiveTime(t *testing.T) {
+func TestWorkerMbxActiveTime(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	dequeueClock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
+	hebrtbebtClock := glock.NewMockClock()
 	shutdownClock := glock.NewMockClock()
 	options := WorkerOptions{
-		Name:           "test",
-		WorkerHostname: "test",
-		NumHandlers:    1,
-		NumTotalJobs:   50,
-		MaxActiveTime:  time.Second * 5,
-		Interval:       time.Second,
-		Metrics:        NewMetrics(&observation.TestContext, ""),
+		Nbme:           "test",
+		WorkerHostnbme: "test",
+		NumHbndlers:    1,
+		NumTotblJobs:   50,
+		MbxActiveTime:  time.Second * 5,
+		Intervbl:       time.Second,
+		Metrics:        NewMetrics(&observbtion.TestContext, ""),
 	}
 
-	called := make(chan struct{})
-	defer close(called)
+	cblled := mbke(chbn struct{})
+	defer close(cblled)
 
-	dequeueHook := func(c context.Context, s string, i any) (*TestRecord, bool, error) {
-		called <- struct{}{}
+	dequeueHook := func(c context.Context, s string, i bny) (*TestRecord, bool, error) {
+		cblled <- struct{}{}
 		return &TestRecord{ID: 42}, true, nil
 	}
 
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
-	store.MarkCompleteFunc.SetDefaultReturn(true, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
+	store.MbrkCompleteFunc.SetDefbultReturn(true, nil)
 
 	for i := 0; i < 5; i++ {
 		store.DequeueFunc.PushHook(dequeueHook)
 	}
 
-	stopped := make(chan struct{})
+	stopped := mbke(chbn struct{})
 	go func() {
 		defer close(stopped)
-		worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, dequeueClock, heartbeatClock, shutdownClock)
-		worker.Start()
+		worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, dequeueClock, hebrtbebtClock, shutdownClock)
+		worker.Stbrt()
 	}()
 
 	timeout := time.After(time.Second * 5)
 	for i := 0; i < 5; i++ {
 		select {
-		case <-timeout:
-			t.Fatal("timeout waiting for dequeues")
-		case <-called:
+		cbse <-timeout:
+			t.Fbtbl("timeout wbiting for dequeues")
+		cbse <-cblled:
 		}
 	}
 
-	// Wait for a fixed number of records to be processed, then
-	// send a shutdown signal based on time after that. If the
-	// goroutine running the worker is released, then it's has
+	// Wbit for b fixed number of records to be processed, then
+	// send b shutdown signbl bbsed on time bfter thbt. If the
+	// goroutine running the worker is relebsed, then it's hbs
 	// shut down properly.
-	shutdownClock.BlockingAdvance(time.Second * 5)
+	shutdownClock.BlockingAdvbnce(time.Second * 5)
 
 	select {
-	case <-timeout:
-		t.Fatal("timeout waiting for shutdown")
-	case <-stopped:
+	cbse <-timeout:
+		t.Fbtbl("timeout wbiting for shutdown")
+	cbse <-stopped:
 	}
 
-	// Might dequeue 5 or 6 based on timing
-	if callCount := len(store.DequeueFunc.History()); callCount != 5 && callCount != 6 {
-		t.Errorf("unexpected call count. want=5 or 6 have=%d", callCount)
+	// Might dequeue 5 or 6 bbsed on timing
+	if cbllCount := len(store.DequeueFunc.History()); cbllCount != 5 && cbllCount != 6 {
+		t.Errorf("unexpected cbll count. wbnt=5 or 6 hbve=%d", cbllCount)
 	}
 }
 
-func TestWorkerCancelJobs(t *testing.T) {
+func TestWorkerCbncelJobs(t *testing.T) {
 	recordID := 42
 	store := NewMockStore[*TestRecord]()
 	// Return one record from dequeue.
 	store.DequeueFunc.PushReturn(&TestRecord{ID: recordID}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
 
-	// Record when markFailed is called.
-	markedFailedCalled := make(chan struct{})
-	store.MarkFailedFunc.SetDefaultHook(func(c context.Context, record *TestRecord, s string) (bool, error) {
-		close(markedFailedCalled)
+	// Record when mbrkFbiled is cblled.
+	mbrkedFbiledCblled := mbke(chbn struct{})
+	store.MbrkFbiledFunc.SetDefbultHook(func(c context.Context, record *TestRecord, s string) (bool, error) {
+		close(mbrkedFbiledCblled)
 		return true, nil
 	})
 
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	options := WorkerOptions{
-		Name:              "test",
-		WorkerHostname:    "test",
-		NumHandlers:       1,
-		HeartbeatInterval: time.Second,
-		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Nbme:              "test",
+		WorkerHostnbme:    "test",
+		NumHbndlers:       1,
+		HebrtbebtIntervbl: time.Second,
+		Intervbl:          time.Second,
+		Metrics:           NewMetrics(&observbtion.TestContext, ""),
 	}
 
-	dequeued := make(chan struct{})
-	doneHandling := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r *TestRecord) error {
+	dequeued := mbke(chbn struct{})
+	doneHbndling := mbke(chbn struct{})
+	hbndler.HbndleFunc.defbultHook = func(ctx context.Context, l log.Logger, r *TestRecord) error {
 		close(dequeued)
-		// wait until the context is canceled (through cancelation), or until the test is over.
+		// wbit until the context is cbnceled (through cbncelbtion), or until the test is over.
 		select {
-		case <-ctx.Done():
-		case <-doneHandling:
+		cbse <-ctx.Done():
+		cbse <-doneHbndling:
 		}
 		return ctx.Err()
 	}
 
-	canceledJobsCalled := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []string) ([]string, []string, error) {
-		close(canceledJobsCalled)
-		// Cancel all jobs.
+	cbnceledJobsCblled := mbke(chbn struct{})
+	store.HebrtbebtFunc.SetDefbultHook(func(c context.Context, i []string) ([]string, []string, error) {
+		close(cbnceledJobsCblled)
+		// Cbncel bll jobs.
 		return i, i, nil
 	})
 
 	clock := glock.NewMockClock()
-	heartbeatClock := glock.NewMockClock()
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, clock, heartbeatClock, clock)
-	go func() { worker.Start() }()
-	t.Cleanup(func() {
-		// Keep the handler working until context is canceled.
-		close(doneHandling)
+	hebrtbebtClock := glock.NewMockClock()
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, clock, hebrtbebtClock, clock)
+	go func() { worker.Stbrt() }()
+	t.Clebnup(func() {
+		// Keep the hbndler working until context is cbnceled.
+		close(doneHbndling)
 		worker.Stop()
 	})
 
-	// Wait until a job has been dequeued.
+	// Wbit until b job hbs been dequeued.
 	select {
-	case <-dequeued:
-	case <-time.After(1 * time.Second):
-		t.Fatal("timeout waiting for Dequeue call")
+	cbse <-dequeued:
+	cbse <-time.After(1 * time.Second):
+		t.Fbtbl("timeout wbiting for Dequeue cbll")
 	}
-	// Trigger a heartbeat call.
-	heartbeatClock.BlockingAdvance(time.Second)
-	// Wait for cancelled jobs to be called.
+	// Trigger b hebrtbebt cbll.
+	hebrtbebtClock.BlockingAdvbnce(time.Second)
+	// Wbit for cbncelled jobs to be cblled.
 	select {
-	case <-canceledJobsCalled:
-	case <-time.After(1 * time.Second):
-		t.Fatal("timeout waiting for CanceledJobs call")
+	cbse <-cbnceledJobsCblled:
+	cbse <-time.After(1 * time.Second):
+		t.Fbtbl("timeout wbiting for CbnceledJobs cbll")
 	}
-	// Expect that markFailed is called eventually.
+	// Expect thbt mbrkFbiled is cblled eventublly.
 	select {
-	case <-markedFailedCalled:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timeout waiting for markFailed call")
+	cbse <-mbrkedFbiledCblled:
+	cbse <-time.After(5 * time.Second):
+		t.Fbtbl("timeout wbiting for mbrkFbiled cbll")
 	}
 }
 
-func TestWorkerDeadline(t *testing.T) {
+func TestWorkerDebdline(t *testing.T) {
 	recordID := 42
 	store := NewMockStore[*TestRecord]()
 	// Return one record from dequeue.
 	store.DequeueFunc.PushReturn(&TestRecord{ID: recordID}, true, nil)
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
 
-	// Record when markErrored is called.
-	markedErroredCalled := make(chan struct{})
-	store.MarkErroredFunc.SetDefaultHook(func(c context.Context, record *TestRecord, s string) (bool, error) {
-		if !strings.Contains(s, "job exceeded maximum execution time of 10ms") {
-			t.Fatal("incorrect error message")
+	// Record when mbrkErrored is cblled.
+	mbrkedErroredCblled := mbke(chbn struct{})
+	store.MbrkErroredFunc.SetDefbultHook(func(c context.Context, record *TestRecord, s string) (bool, error) {
+		if !strings.Contbins(s, "job exceeded mbximum execution time of 10ms") {
+			t.Fbtbl("incorrect error messbge")
 		}
-		close(markedErroredCalled)
+		close(mbrkedErroredCblled)
 		return true, nil
 	})
 
-	handler := NewMockHandler[*TestRecord]()
+	hbndler := NewMockHbndler[*TestRecord]()
 	options := WorkerOptions{
-		Name:              "test",
-		WorkerHostname:    "test",
-		NumHandlers:       1,
-		HeartbeatInterval: time.Second,
-		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
-		// The handler runs forever but should be canceled after 10ms.
-		MaximumRuntimePerJob: 10 * time.Millisecond,
+		Nbme:              "test",
+		WorkerHostnbme:    "test",
+		NumHbndlers:       1,
+		HebrtbebtIntervbl: time.Second,
+		Intervbl:          time.Second,
+		Metrics:           NewMetrics(&observbtion.TestContext, ""),
+		// The hbndler runs forever but should be cbnceled bfter 10ms.
+		MbximumRuntimePerJob: 10 * time.Millisecond,
 	}
 
-	dequeued := make(chan struct{})
-	doneHandling := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r *TestRecord) error {
+	dequeued := mbke(chbn struct{})
+	doneHbndling := mbke(chbn struct{})
+	hbndler.HbndleFunc.defbultHook = func(ctx context.Context, l log.Logger, r *TestRecord) error {
 		close(dequeued)
 		select {
-		case <-ctx.Done():
-		case <-doneHandling:
+		cbse <-ctx.Done():
+		cbse <-doneHbndling:
 		}
 		return ctx.Err()
 	}
 
-	heartbeats := make(chan struct{})
-	store.HeartbeatFunc.SetDefaultHook(func(c context.Context, i []string) ([]string, []string, error) {
-		heartbeats <- struct{}{}
+	hebrtbebts := mbke(chbn struct{})
+	store.HebrtbebtFunc.SetDefbultHook(func(c context.Context, i []string) ([]string, []string, error) {
+		hebrtbebts <- struct{}{}
 		return i, nil, nil
 	})
 
 	clock := glock.NewMockClock()
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, clock, clock, clock)
-	go func() { worker.Start() }()
-	t.Cleanup(func() {
-		// Keep the handler working until context is canceled.
-		close(doneHandling)
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, clock, clock, clock)
+	go func() { worker.Stbrt() }()
+	t.Clebnup(func() {
+		// Keep the hbndler working until context is cbnceled.
+		close(doneHbndling)
 		worker.Stop()
 	})
 
-	// Wait until a job has been dequeued.
+	// Wbit until b job hbs been dequeued.
 	<-dequeued
 
-	// Expect that markErrored is called eventually.
+	// Expect thbt mbrkErrored is cblled eventublly.
 	select {
-	case <-markedErroredCalled:
-	case <-time.After(5 * time.Second):
-		t.Fatal("timeout waiting for markErrored call")
+	cbse <-mbrkedErroredCblled:
+	cbse <-time.After(5 * time.Second):
+		t.Fbtbl("timeout wbiting for mbrkErrored cbll")
 	}
 }
 
-func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
+func TestWorkerStopDrbinsDequeueLoopOnly(t *testing.T) {
 	store := NewMockStore[*TestRecord]()
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 42}, true, nil)
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 43}, true, nil) // not dequeued
 	store.DequeueFunc.PushReturn(&TestRecord{ID: 44}, true, nil) // not dequeued
-	store.DequeueFunc.SetDefaultReturn(nil, false, nil)
+	store.DequeueFunc.SetDefbultReturn(nil, fblse, nil)
 
-	handler := NewMockHandlerWithPreDequeue[*TestRecord]()
+	hbndler := NewMockHbndlerWithPreDequeue[*TestRecord]()
 	options := WorkerOptions{
-		Name:              "test",
-		WorkerHostname:    "test",
-		NumHandlers:       1,
-		HeartbeatInterval: time.Second,
-		Interval:          time.Second,
-		Metrics:           NewMetrics(&observation.TestContext, ""),
+		Nbme:              "test",
+		WorkerHostnbme:    "test",
+		NumHbndlers:       1,
+		HebrtbebtIntervbl: time.Second,
+		Intervbl:          time.Second,
+		Metrics:           NewMetrics(&observbtion.TestContext, ""),
 	}
 
-	dequeued := make(chan struct{})
-	block := make(chan struct{})
-	handler.HandleFunc.defaultHook = func(ctx context.Context, l log.Logger, r *TestRecord) error {
+	dequeued := mbke(chbn struct{})
+	block := mbke(chbn struct{})
+	hbndler.HbndleFunc.defbultHook = func(ctx context.Context, l log.Logger, r *TestRecord) error {
 		close(dequeued)
 		<-block
 		return ctx.Err()
 	}
 
-	var dequeueContext context.Context
-	handler.PreDequeueFunc.SetDefaultHook(func(ctx context.Context, l log.Logger) (bool, any, error) {
-		// Store dequeueContext in outer function so we can tell when Stop has
-		// reliably been called. Unfortunately we need to peek a bit into the
-		// internals here so we're not dependent on time-based unit tests.
+	vbr dequeueContext context.Context
+	hbndler.PreDequeueFunc.SetDefbultHook(func(ctx context.Context, l log.Logger) (bool, bny, error) {
+		// Store dequeueContext in outer function so we cbn tell when Stop hbs
+		// relibbly been cblled. Unfortunbtely we need to peek b bit into the
+		// internbls here so we're not dependent on time-bbsed unit tests.
 		dequeueContext = ctx
 		return true, nil, nil
 	})
 
 	clock := glock.NewMockClock()
-	worker := newWorker(context.Background(), Store[*TestRecord](store), Handler[*TestRecord](handler), options, clock, clock, clock)
-	go func() { worker.Start() }()
-	t.Cleanup(func() { worker.Stop() })
+	worker := newWorker(context.Bbckground(), Store[*TestRecord](store), Hbndler[*TestRecord](hbndler), options, clock, clock, clock)
+	go func() { worker.Stbrt() }()
+	t.Clebnup(func() { worker.Stop() })
 
-	// Wait until a job has been dequeued.
+	// Wbit until b job hbs been dequeued.
 	<-dequeued
 
 	go func() {
@@ -680,16 +680,16 @@ func TestWorkerStopDrainsDequeueLoopOnly(t *testing.T) {
 		block <- struct{}{}
 	}()
 
-	// Drain dequeue loop and wait for the one active handler to finish.
+	// Drbin dequeue loop bnd wbit for the one bctive hbndler to finish.
 	worker.Stop()
 
-	for _, call := range handler.HandleFunc.History() {
-		if call.Result0 != nil {
-			t.Errorf("unexpected handler error: %s", call.Result0)
+	for _, cbll := rbnge hbndler.HbndleFunc.History() {
+		if cbll.Result0 != nil {
+			t.Errorf("unexpected hbndler error: %s", cbll.Result0)
 		}
 	}
 
-	if handlerCallCount := len(handler.HandleFunc.History()); handlerCallCount != 1 {
-		t.Errorf("incorrect number of handler calls. want=%d have=%d", 1, handlerCallCount)
+	if hbndlerCbllCount := len(hbndler.HbndleFunc.History()); hbndlerCbllCount != 1 {
+		t.Errorf("incorrect number of hbndler cblls. wbnt=%d hbve=%d", 1, hbndlerCbllCount)
 	}
 }

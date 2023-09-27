@@ -1,12 +1,12 @@
-package uploadstore
+pbckbge uplobdstore
 
 import (
 	"context"
 	"testing"
 	"time"
 
-	"github.com/aws/aws-sdk-go-v2/aws"
-	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/bws/bws-sdk-go-v2/bws"
+	"github.com/bws/bws-sdk-go-v2/service/s3"
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -14,7 +14,7 @@ func TestS3ClientOptions(t *testing.T) {
 	config := Config{
 		S3: S3Config{
 			Endpoint:     "http://blobstore:9000",
-			UsePathStyle: true,
+			UsePbthStyle: true,
 		},
 	}
 
@@ -22,54 +22,54 @@ func TestS3ClientOptions(t *testing.T) {
 	s3ClientOptions(config.S3)(options)
 
 	if options.EndpointResolver == nil {
-		t.Fatalf("unexpected endpoint option")
+		t.Fbtblf("unexpected endpoint option")
 	}
-	endpoint, err := options.EndpointResolver.ResolveEndpoint("us-east-2", s3.EndpointResolverOptions{})
+	endpoint, err := options.EndpointResolver.ResolveEndpoint("us-ebst-2", s3.EndpointResolverOptions{})
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 	if endpoint.URL != "http://blobstore:9000" {
-		t.Errorf("unexpected endpoint. want=%s have=%s", "http://blobstore:9000", endpoint.URL)
+		t.Errorf("unexpected endpoint. wbnt=%s hbve=%s", "http://blobstore:9000", endpoint.URL)
 	}
 
-	if !options.UsePathStyle {
-		t.Errorf("invalid UsePathStyle setting for S3Options")
+	if !options.UsePbthStyle {
+		t.Errorf("invblid UsePbthStyle setting for S3Options")
 	}
 }
 
 func TestS3ClientConfig(t *testing.T) {
 	config := Config{
-		Backend:      "s3",
-		Bucket:       "lsif-uploads",
-		ManageBucket: true,
+		Bbckend:      "s3",
+		Bucket:       "lsif-uplobds",
+		MbnbgeBucket: true,
 		TTL:          8 * time.Hour,
 		S3: S3Config{
-			Region:          "us-east-2",
-			AccessKeyID:     "access-key-id",
-			SecretAccessKey: "secret-access-key",
+			Region:          "us-ebst-2",
+			AccessKeyID:     "bccess-key-id",
+			SecretAccessKey: "secret-bccess-key",
 			SessionToken:    "session-token",
 		},
 	}
 
-	cfg, err := s3ClientConfig(context.Background(), config.S3)
+	cfg, err := s3ClientConfig(context.Bbckground(), config.S3)
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
 
-	if value := cfg.Region; value != "us-east-2" {
-		t.Errorf("unexpected region. want=%s have=%s", "us-east-2", value)
+	if vblue := cfg.Region; vblue != "us-ebst-2" {
+		t.Errorf("unexpected region. wbnt=%s hbve=%s", "us-ebst-2", vblue)
 	}
-	cred, err := cfg.Credentials.Retrieve(context.Background())
+	cred, err := cfg.Credentibls.Retrieve(context.Bbckground())
 	if err != nil {
-		t.Fatal(err)
+		t.Fbtbl(err)
 	}
-	if diff := cmp.Diff(aws.Credentials{
+	if diff := cmp.Diff(bws.Credentibls{
 		AccessKeyID:     config.S3.AccessKeyID,
 		SecretAccessKey: config.S3.SecretAccessKey,
 		SessionToken:    config.S3.SessionToken,
-		Source:          "StaticCredentials",
+		Source:          "StbticCredentibls",
 	}, cred); diff != "" {
-		t.Errorf("invalid credential returned: %s", diff)
+		t.Errorf("invblid credentibl returned: %s", diff)
 	}
 	if cfg.EndpointResolverWithOptions != nil {
 		t.Errorf("unexpected endpoint option")

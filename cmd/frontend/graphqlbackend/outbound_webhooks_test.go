@@ -1,44 +1,44 @@
-package graphqlbackend
+pbckbge grbphqlbbckend
 
 import (
 	"context"
-	"sync/atomic"
+	"sync/btomic"
 	"testing"
 
-	mockassert "github.com/derision-test/go-mockgen/testutil/assert"
-	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/stretchr/testify/assert"
+	mockbssert "github.com/derision-test/go-mockgen/testutil/bssert"
+	gqlerrors "github.com/grbph-gophers/grbphql-go/errors"
+	"github.com/stretchr/testify/bssert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbmocks"
-	"github.com/sourcegraph/sourcegraph/internal/encryption"
-	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/webhooks/outbound"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse"
+	"github.com/sourcegrbph/sourcegrbph/internbl/dbtbbbse/dbmocks"
+	"github.com/sourcegrbph/sourcegrbph/internbl/encryption"
+	"github.com/sourcegrbph/sourcegrbph/internbl/types"
+	"github.com/sourcegrbph/sourcegrbph/internbl/webhooks/outbound"
 )
 
-func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
-	t.Parallel()
+func TestSchembResolver_OutboundWebhooks(t *testing.T) {
+	t.Pbrbllel()
 
-	t.Run("not site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("not site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		db := dbmocks.NewMockDB()
-		ctx, _, _ := fakeUser(t, context.Background(), db, false)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, fblse)
 
-		runMustBeSiteAdminTest(t, []any{"outboundWebhooks"}, &Test{
+		runMustBeSiteAdminTest(t, []bny{"outboundWebhooks"}, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					outboundWebhooks {
 						nodes {
 							url
 						}
-						totalCount
-						pageInfo {
-							hasNextPage
+						totblCount
+						pbgeInfo {
+							hbsNextPbge
 						}
 					}
 				}
@@ -46,76 +46,76 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 		})
 	})
 
-	t.Run("site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
-		for name, tc := range map[string]struct {
-			params    string
+		for nbme, tc := rbnge mbp[string]struct {
+			pbrbms    string
 			first     int32
-			after     int32
+			bfter     int32
 			eventType string
 		}{
 			"first only": {
-				params: `first: 2`,
+				pbrbms: `first: 2`,
 				first:  2,
 			},
-			"first and after": {
-				params: `first: 2, after: "1"`,
+			"first bnd bfter": {
+				pbrbms: `first: 2, bfter: "1"`,
 				first:  2,
-				after:  1,
+				bfter:  1,
 			},
 			"event type": {
-				params:    `first:2, eventType: "foo"`,
+				pbrbms:    `first:2, eventType: "foo"`,
 				first:     2,
 				eventType: "foo",
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
-				assertEventTypes := func(t *testing.T, have []database.FilterEventType) {
+			t.Run(nbme, func(t *testing.T) {
+				bssertEventTypes := func(t *testing.T, hbve []dbtbbbse.FilterEventType) {
 					t.Helper()
 
 					if tc.eventType == "" {
-						assert.Empty(t, have)
+						bssert.Empty(t, hbve)
 					} else {
-						assert.Equal(t, []database.FilterEventType{{EventType: tc.eventType}}, have)
+						bssert.Equbl(t, []dbtbbbse.FilterEventType{{EventType: tc.eventType}}, hbve)
 					}
 				}
 
 				store := dbmocks.NewMockOutboundWebhookStore()
-				store.CountFunc.SetDefaultHook(func(ctx context.Context, opts database.OutboundWebhookCountOpts) (int64, error) {
-					assertEventTypes(t, opts.EventTypes)
+				store.CountFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.OutboundWebhookCountOpts) (int64, error) {
+					bssertEventTypes(t, opts.EventTypes)
 					return 4, nil
 				})
-				store.ListFunc.SetDefaultHook(func(ctx context.Context, opts database.OutboundWebhookListOpts) ([]*types.OutboundWebhook, error) {
-					// The limit is +1 because the resolver adds an extra item
-					// for pagination purposes.
-					assert.EqualValues(t, tc.first+1, opts.Limit)
-					assert.EqualValues(t, tc.after, opts.Offset)
-					assertEventTypes(t, opts.EventTypes)
+				store.ListFunc.SetDefbultHook(func(ctx context.Context, opts dbtbbbse.OutboundWebhookListOpts) ([]*types.OutboundWebhook, error) {
+					// The limit is +1 becbuse the resolver bdds bn extrb item
+					// for pbginbtion purposes.
+					bssert.EqublVblues(t, tc.first+1, opts.Limit)
+					bssert.EqublVblues(t, tc.bfter, opts.Offset)
+					bssertEventTypes(t, opts.EventTypes)
 
 					return []*types.OutboundWebhook{
-						{URL: encryption.NewUnencrypted("http://example.com/1")},
-						{URL: encryption.NewUnencrypted("http://example.com/2")},
-						{URL: encryption.NewUnencrypted("http://example.com/3")},
+						{URL: encryption.NewUnencrypted("http://exbmple.com/1")},
+						{URL: encryption.NewUnencrypted("http://exbmple.com/2")},
+						{URL: encryption.NewUnencrypted("http://exbmple.com/3")},
 					}, nil
 				})
 
 				db := dbmocks.NewMockDB()
-				db.OutboundWebhooksFunc.SetDefaultReturn(store)
-				ctx, _, _ := fakeUser(t, context.Background(), db, true)
+				db.OutboundWebhooksFunc.SetDefbultReturn(store)
+				ctx, _, _ := fbkeUser(t, context.Bbckground(), db, true)
 
 				RunTest(t, &Test{
 					Context: ctx,
-					Schema:  mustParseGraphQLSchema(t, db),
+					Schemb:  mustPbrseGrbphQLSchemb(t, db),
 					Query: `
 						{
-							outboundWebhooks(` + tc.params + `) {
+							outboundWebhooks(` + tc.pbrbms + `) {
 								nodes {
 									url
 								}
-								totalCount
-								pageInfo {
-									hasNextPage
+								totblCount
+								pbgeInfo {
+									hbsNextPbge
 								}
 							}
 						}
@@ -125,36 +125,36 @@ func TestSchemaResolver_OutboundWebhooks(t *testing.T) {
 							"outboundWebhooks": {
 								"nodes": [
 									{
-										"url": "http://example.com/1"
+										"url": "http://exbmple.com/1"
 									},
 									{
-										"url": "http://example.com/2"
+										"url": "http://exbmple.com/2"
 									}
 								],
-								"totalCount": 4,
-								"pageInfo": {
-									"hasNextPage": true
+								"totblCount": 4,
+								"pbgeInfo": {
+									"hbsNextPbge": true
 								}
 							}
 						}
 					`,
 				})
 
-				mockassert.CalledOnce(t, store.CountFunc)
-				mockassert.CalledOnce(t, store.ListFunc)
+				mockbssert.CblledOnce(t, store.CountFunc)
+				mockbssert.CblledOnce(t, store.ListFunc)
 			})
 		}
 	})
 }
 
-func TestSchemaResolver_OutboundWebhookEventTypes(t *testing.T) {
-	t.Run("not site admin", func(t *testing.T) {
+func TestSchembResolver_OutboundWebhookEventTypes(t *testing.T) {
+	t.Run("not site bdmin", func(t *testing.T) {
 		db := dbmocks.NewMockDB()
-		ctx, _, _ := fakeUser(t, context.Background(), db, false)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, fblse)
 
-		runMustBeSiteAdminTest(t, []any{"outboundWebhookEventTypes"}, &Test{
+		runMustBeSiteAdminTest(t, []bny{"outboundWebhookEventTypes"}, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
 				{
 					outboundWebhookEventTypes {
@@ -166,26 +166,26 @@ func TestSchemaResolver_OutboundWebhookEventTypes(t *testing.T) {
 		})
 	})
 
-	t.Run("site admin", func(t *testing.T) {
-		for name, tc := range map[string]struct {
+	t.Run("site bdmin", func(t *testing.T) {
+		for nbme, tc := rbnge mbp[string]struct {
 			eventTypes []outbound.EventType
-			want       string
+			wbnt       string
 		}{
 			"empty": {
 				eventTypes: []outbound.EventType{},
-				want:       `{"outboundWebhookEventTypes":[]}`,
+				wbnt:       `{"outboundWebhookEventTypes":[]}`,
 			},
 			"not empty": {
 				eventTypes: []outbound.EventType{
-					{Key: "test:a", Description: "a test"},
+					{Key: "test:b", Description: "b test"},
 					{Key: "test:b", Description: "b test"},
 				},
-				want: `
+				wbnt: `
 					{
 						"outboundWebhookEventTypes": [
 							{
-								"key": "test:a",
-								"description": "a test"
+								"key": "test:b",
+								"description": "b test"
 							},
 							{
 								"key": "test:b",
@@ -196,20 +196,20 @@ func TestSchemaResolver_OutboundWebhookEventTypes(t *testing.T) {
 				`,
 			},
 		} {
-			t.Run(name, func(t *testing.T) {
+			t.Run(nbme, func(t *testing.T) {
 				outbound.MockGetRegisteredEventTypes = func() []outbound.EventType {
 					return tc.eventTypes
 				}
-				t.Cleanup(func() {
+				t.Clebnup(func() {
 					outbound.MockGetRegisteredEventTypes = nil
 				})
 
 				db := dbmocks.NewMockDB()
-				ctx, _, _ := fakeUser(t, context.Background(), db, true)
+				ctx, _, _ := fbkeUser(t, context.Bbckground(), db, true)
 
 				RunTest(t, &Test{
 					Context: ctx,
-					Schema:  mustParseGraphQLSchema(t, db),
+					Schemb:  mustPbrseGrbphQLSchemb(t, db),
 					Query: `
 						{
 							outboundWebhookEventTypes {
@@ -218,68 +218,68 @@ func TestSchemaResolver_OutboundWebhookEventTypes(t *testing.T) {
 							}
 						}
 					`,
-					ExpectedResult: tc.want,
+					ExpectedResult: tc.wbnt,
 				})
 			})
 		}
 	})
 }
 
-func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
-	t.Parallel()
+func TestSchembResolver_CrebteOutboundWebhook(t *testing.T) {
+	t.Pbrbllel()
 
-	var (
-		url       = "http://example.com"
+	vbr (
+		url       = "http://exbmple.com"
 		secret    = "super secret"
 		eventType = "test:event"
-		inputVars = map[string]any{
-			"input": map[string]any{
+		inputVbrs = mbp[string]bny{
+			"input": mbp[string]bny{
 				"url":    url,
 				"secret": secret,
-				"eventTypes": []any{
-					map[string]any{"eventType": eventType},
+				"eventTypes": []bny{
+					mbp[string]bny{"eventType": eventType},
 				},
 			},
 		}
 	)
 
-	t.Run("not site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("not site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		db := dbmocks.NewMockDB()
-		ctx, _, _ := fakeUser(t, context.Background(), db, false)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, fblse)
 
-		runMustBeSiteAdminTest(t, []any{"createOutboundWebhook"}, &Test{
+		runMustBeSiteAdminTest(t, []bny{"crebteOutboundWebhook"}, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation CreateOutboundWebhook($input: OutboundWebhookCreateInput!) {
-					createOutboundWebhook(input: $input) {
+				mutbtion CrebteOutboundWebhook($input: OutboundWebhookCrebteInput!) {
+					crebteOutboundWebhook(input: $input) {
 						id
 					}
 				}
 			`,
-			Variables: inputVars,
+			Vbribbles: inputVbrs,
 		})
 	})
 
-	t.Run("site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		store := dbmocks.NewMockOutboundWebhookStore()
-		store.CreateFunc.SetDefaultHook(func(ctx context.Context, webhook *types.OutboundWebhook) error {
-			valueOf := func(e *encryption.Encryptable) string {
+		store.CrebteFunc.SetDefbultHook(func(ctx context.Context, webhook *types.OutboundWebhook) error {
+			vblueOf := func(e *encryption.Encryptbble) string {
 				t.Helper()
 
-				value, err := e.Decrypt(ctx)
+				vblue, err := e.Decrypt(ctx)
 				require.NoError(t, err)
 
-				return value
+				return vblue
 			}
 
-			assert.Equal(t, url, valueOf(webhook.URL))
-			assert.Equal(t, secret, valueOf(webhook.Secret))
-			assert.Equal(t, []types.OutboundWebhookEventType{
+			bssert.Equbl(t, url, vblueOf(webhook.URL))
+			bssert.Equbl(t, secret, vblueOf(webhook.Secret))
+			bssert.Equbl(t, []types.OutboundWebhookEventType{
 				{EventType: eventType},
 			}, webhook.EventTypes)
 
@@ -288,15 +288,15 @@ func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OutboundWebhooksFunc.SetDefaultReturn(store)
-		ctx, _, _ := fakeUser(t, context.Background(), db, true)
+		db.OutboundWebhooksFunc.SetDefbultReturn(store)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, true)
 
 		RunTest(t, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation CreateOutboundWebhook($input: OutboundWebhookCreateInput!) {
-					createOutboundWebhook(input: $input) {
+				mutbtion CrebteOutboundWebhook($input: OutboundWebhookCrebteInput!) {
+					crebteOutboundWebhook(input: $input) {
 						id
 						url
 						eventTypes {
@@ -305,10 +305,10 @@ func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
 					}
 				}
 			`,
-			Variables: inputVars,
+			Vbribbles: inputVbrs,
 			ExpectedResult: `
 				{
-					"createOutboundWebhook": {
+					"crebteOutboundWebhook": {
 						"id": "T3V0Ym91bmRXZWJob29rOjE=",
 						"url": "` + url + `",
 						"eventTypes": [
@@ -321,113 +321,113 @@ func TestSchemaResolver_CreateOutboundWebhook(t *testing.T) {
 			`,
 		})
 
-		mockassert.CalledOnce(t, store.CreateFunc)
+		mockbssert.CblledOnce(t, store.CrebteFunc)
 	})
 }
 
-func TestSchemaResolver_DeleteOutboundWebhook(t *testing.T) {
-	t.Parallel()
+func TestSchembResolver_DeleteOutboundWebhook(t *testing.T) {
+	t.Pbrbllel()
 
 	// Outbound webhook ID 1.
 	id := "T3V0Ym91bmRXZWJob29rOjE="
 
-	t.Run("not site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("not site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		db := dbmocks.NewMockDB()
-		ctx, _, _ := fakeUser(t, context.Background(), db, false)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, fblse)
 
-		runMustBeSiteAdminTest(t, []any{"deleteOutboundWebhook"}, &Test{
+		runMustBeSiteAdminTest(t, []bny{"deleteOutboundWebhook"}, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation DeleteOutboundWebhook($id: ID!) {
+				mutbtion DeleteOutboundWebhook($id: ID!) {
 					deleteOutboundWebhook(id: $id) {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
-			Variables: map[string]any{"id": id},
+			Vbribbles: mbp[string]bny{"id": id},
 		})
 	})
 
-	t.Run("site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		store := dbmocks.NewMockOutboundWebhookStore()
-		store.DeleteFunc.SetDefaultHook(func(ctx context.Context, id int64) error {
-			assert.EqualValues(t, 1, id)
+		store.DeleteFunc.SetDefbultHook(func(ctx context.Context, id int64) error {
+			bssert.EqublVblues(t, 1, id)
 			return nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OutboundWebhooksFunc.SetDefaultReturn(store)
-		ctx, _, _ := fakeUser(t, context.Background(), db, true)
+		db.OutboundWebhooksFunc.SetDefbultReturn(store)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, true)
 
 		RunTest(t, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation DeleteOutboundWebhook($id: ID!) {
+				mutbtion DeleteOutboundWebhook($id: ID!) {
 					deleteOutboundWebhook(id: $id) {
-						alwaysNil
+						blwbysNil
 					}
 				}
 			`,
-			Variables: map[string]any{"id": id},
+			Vbribbles: mbp[string]bny{"id": id},
 			ExpectedResult: `
 				{
 					"deleteOutboundWebhook": {
-						"alwaysNil": null
+						"blwbysNil": null
 					}
 				}
 			`,
 		})
 
-		mockassert.CalledOnce(t, store.DeleteFunc)
+		mockbssert.CblledOnce(t, store.DeleteFunc)
 	})
 }
 
-func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
-	t.Parallel()
+func TestSchembResolver_UpdbteOutboundWebhook(t *testing.T) {
+	t.Pbrbllel()
 
-	var (
+	vbr (
 		id        = "T3V0Ym91bmRXZWJob29rOjE="
-		url       = "http://example.com"
+		url       = "http://exbmple.com"
 		eventType = "test:event"
-		inputVars = map[string]any{
+		inputVbrs = mbp[string]bny{
 			"id": id,
-			"input": map[string]any{
+			"input": mbp[string]bny{
 				"url": url,
-				"eventTypes": []any{
-					map[string]any{"eventType": eventType},
+				"eventTypes": []bny{
+					mbp[string]bny{"eventType": eventType},
 				},
 			},
 		}
 	)
 
-	t.Run("not site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("not site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		db := dbmocks.NewMockDB()
-		ctx, _, _ := fakeUser(t, context.Background(), db, false)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, fblse)
 
-		runMustBeSiteAdminTest(t, []any{"updateOutboundWebhook"}, &Test{
+		runMustBeSiteAdminTest(t, []bny{"updbteOutboundWebhook"}, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation UpdateOutboundWebhook($id: ID!, $input: OutboundWebhookUpdateInput!) {
-					updateOutboundWebhook(id: $id, input: $input) {
+				mutbtion UpdbteOutboundWebhook($id: ID!, $input: OutboundWebhookUpdbteInput!) {
+					updbteOutboundWebhook(id: $id, input: $input) {
 						id
 					}
 				}
 			`,
-			Variables: inputVars,
+			Vbribbles: inputVbrs,
 		})
 	})
 
-	t.Run("site admin", func(t *testing.T) {
-		t.Parallel()
+	t.Run("site bdmin", func(t *testing.T) {
+		t.Pbrbllel()
 
 		webhook := &types.OutboundWebhook{
 			ID:  1,
@@ -439,30 +439,30 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 
 		store := dbmocks.NewMockOutboundWebhookStore()
 
-		// The update happens in a transaction, so we need to mock those methods
-		// as well.
-		store.DoneFunc.SetDefaultReturn(nil)
-		store.TransactFunc.SetDefaultReturn(store, nil)
+		// The updbte hbppens in b trbnsbction, so we need to mock those methods
+		// bs well.
+		store.DoneFunc.SetDefbultReturn(nil)
+		store.TrbnsbctFunc.SetDefbultReturn(store, nil)
 
-		store.GetByIDFunc.SetDefaultHook(func(ctx context.Context, id int64) (*types.OutboundWebhook, error) {
-			assert.EqualValues(t, 1, webhook.ID)
+		store.GetByIDFunc.SetDefbultHook(func(ctx context.Context, id int64) (*types.OutboundWebhook, error) {
+			bssert.EqublVblues(t, 1, webhook.ID)
 			return webhook, nil
 		})
-		store.UpdateFunc.SetDefaultHook(func(ctx context.Context, have *types.OutboundWebhook) error {
-			assert.Same(t, webhook, have)
+		store.UpdbteFunc.SetDefbultHook(func(ctx context.Context, hbve *types.OutboundWebhook) error {
+			bssert.Sbme(t, webhook, hbve)
 			return nil
 		})
 
 		db := dbmocks.NewMockDB()
-		db.OutboundWebhooksFunc.SetDefaultReturn(store)
-		ctx, _, _ := fakeUser(t, context.Background(), db, true)
+		db.OutboundWebhooksFunc.SetDefbultReturn(store)
+		ctx, _, _ := fbkeUser(t, context.Bbckground(), db, true)
 
 		RunTest(t, &Test{
 			Context: ctx,
-			Schema:  mustParseGraphQLSchema(t, db),
+			Schemb:  mustPbrseGrbphQLSchemb(t, db),
 			Query: `
-				mutation UpdateOutboundWebhook($id: ID!, $input: OutboundWebhookUpdateInput!) {
-					updateOutboundWebhook(id: $id, input: $input) {
+				mutbtion UpdbteOutboundWebhook($id: ID!, $input: OutboundWebhookUpdbteInput!) {
+					updbteOutboundWebhook(id: $id, input: $input) {
 						id
 						url
 						eventTypes {
@@ -471,10 +471,10 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 					}
 				}
 			`,
-			Variables: inputVars,
+			Vbribbles: inputVbrs,
 			ExpectedResult: `
 				{
-					"updateOutboundWebhook": {
+					"updbteOutboundWebhook": {
 						"id": "T3V0Ym91bmRXZWJob29rOjE=",
 						"url": "` + url + `",
 						"eventTypes": [
@@ -487,45 +487,45 @@ func TestSchemaResolver_UpdateOutboundWebhook(t *testing.T) {
 			`,
 		})
 
-		mockassert.CalledOnce(t, store.GetByIDFunc)
-		mockassert.CalledOnce(t, store.UpdateFunc)
+		mockbssert.CblledOnce(t, store.GetByIDFunc)
+		mockbssert.CblledOnce(t, store.UpdbteFunc)
 	})
 }
 
-var fakeUserID int32
+vbr fbkeUserID int32
 
-func fakeUser(t *testing.T, inputCtx context.Context, db *dbmocks.MockDB, siteAdmin bool) (ctx context.Context, user *types.User, store *dbmocks.MockUserStore) {
+func fbkeUser(t *testing.T, inputCtx context.Context, db *dbmocks.MockDB, siteAdmin bool) (ctx context.Context, user *types.User, store *dbmocks.MockUserStore) {
 	t.Helper()
 
 	user = &types.User{
-		ID:        atomic.AddInt32(&fakeUserID, 1),
+		ID:        btomic.AddInt32(&fbkeUserID, 1),
 		SiteAdmin: siteAdmin,
 	}
 
 	store = dbmocks.NewMockUserStore()
-	store.GetByCurrentAuthUserFunc.SetDefaultReturn(user, nil)
-	db.UsersFunc.SetDefaultReturn(store)
+	store.GetByCurrentAuthUserFunc.SetDefbultReturn(user, nil)
+	db.UsersFunc.SetDefbultReturn(store)
 
-	ctx = actor.WithActor(inputCtx, &actor.Actor{UID: user.ID})
+	ctx = bctor.WithActor(inputCtx, &bctor.Actor{UID: user.ID})
 
 	return
 }
 
-func runMustBeSiteAdminTest(t *testing.T, path []any, test *Test) {
+func runMustBeSiteAdminTest(t *testing.T, pbth []bny, test *Test) {
 	t.Helper()
 
-	// Check that the test doesn't already have expectations.
+	// Check thbt the test doesn't blrebdy hbve expectbtions.
 	require.Empty(t, test.ExpectedErrors)
 	require.Empty(t, test.ExpectedResult)
 
 	test.ExpectedErrors = []*gqlerrors.QueryError{
 		{
-			Message: "must be site admin",
-			Path:    path,
+			Messbge: "must be site bdmin",
+			Pbth:    pbth,
 		},
 	}
 
-	// Yes, the literal string "null".
+	// Yes, the literbl string "null".
 	test.ExpectedResult = "null"
 
 	RunTest(t, test)

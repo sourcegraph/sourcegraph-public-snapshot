@@ -1,4 +1,4 @@
-package background
+pbckbge bbckground
 
 import (
 	"context"
@@ -6,145 +6,145 @@ import (
 	"strings"
 	"time"
 
-	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golbng/prometheus"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
-	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bctor"
+	"github.com/sourcegrbph/sourcegrbph/internbl/goroutine"
+	"github.com/sourcegrbph/sourcegrbph/internbl/metrics"
+	"github.com/sourcegrbph/sourcegrbph/internbl/observbtion"
 )
 
 type PipelineOptions struct {
-	Name        string
+	Nbme        string
 	Description string
-	Interval    time.Duration
+	Intervbl    time.Durbtion
 	Metrics     *PipelineMetrics
 	ProcessFunc ProcessFunc
 }
-type ProcessFunc func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered TaggedCounts, err error)
+type ProcessFunc func(ctx context.Context) (numRecordsProcessed int, numRecordsAltered TbggedCounts, err error)
 
-type TaggedCounts interface {
-	RecordsAltered() map[string]int
+type TbggedCounts interfbce {
+	RecordsAltered() mbp[string]int
 }
 
 type PipelineMetrics struct {
-	op                  *observation.Operation
+	op                  *observbtion.Operbtion
 	numRecordsProcessed prometheus.Counter
 	numRecordsAltered   *prometheus.CounterVec
 }
 
-func NewPipelineMetrics(observationCtx *observation.Context, name string) *PipelineMetrics {
-	replacer := strings.NewReplacer(
+func NewPipelineMetrics(observbtionCtx *observbtion.Context, nbme string) *PipelineMetrics {
+	replbcer := strings.NewReplbcer(
 		".", "_",
 		"-", "_",
 	)
-	metricName := replacer.Replace(name)
+	metricNbme := replbcer.Replbce(nbme)
 
 	redMetrics := metrics.NewREDMetrics(
-		observationCtx.Registerer,
-		metricName,
-		metrics.WithLabels("op"),
-		metrics.WithCountHelp("Total number of method invocations."),
+		observbtionCtx.Registerer,
+		metricNbme,
+		metrics.WithLbbels("op"),
+		metrics.WithCountHelp("Totbl number of method invocbtions."),
 	)
 
-	op := func(name string) *observation.Operation {
-		return observationCtx.Operation(observation.Op{
-			Name:              name,
-			MetricLabelValues: []string{name},
+	op := func(nbme string) *observbtion.Operbtion {
+		return observbtionCtx.Operbtion(observbtion.Op{
+			Nbme:              nbme,
+			MetricLbbelVblues: []string{nbme},
 			Metrics:           redMetrics,
 		})
 	}
 
-	counter := func(name, help string) prometheus.Counter {
+	counter := func(nbme, help string) prometheus.Counter {
 		counter := prometheus.NewCounter(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
-	counterVec := func(name, help string) *prometheus.CounterVec {
+	counterVec := func(nbme, help string) *prometheus.CounterVec {
 		counter := prometheus.NewCounterVec(prometheus.CounterOpts{
-			Name: name,
+			Nbme: nbme,
 			Help: help,
 		}, []string{"record"})
 
-		observationCtx.Registerer.MustRegister(counter)
+		observbtionCtx.Registerer.MustRegister(counter)
 		return counter
 	}
 
 	numRecordsProcessed := counter(
-		fmt.Sprintf("src_%s_records_processed_total", metricName),
-		fmt.Sprintf("The number of records processed by %s.", name),
+		fmt.Sprintf("src_%s_records_processed_totbl", metricNbme),
+		fmt.Sprintf("The number of records processed by %s.", nbme),
 	)
 
 	numRecordsAltered := counterVec(
-		fmt.Sprintf("src_%s_records_altered_total", metricName),
-		fmt.Sprintf("The number of records written/modified by %s.", name),
+		fmt.Sprintf("src_%s_records_bltered_totbl", metricNbme),
+		fmt.Sprintf("The number of records written/modified by %s.", nbme),
 	)
 
 	return &PipelineMetrics{
-		op:                  op("Handle"),
+		op:                  op("Hbndle"),
 		numRecordsProcessed: numRecordsProcessed,
 		numRecordsAltered:   numRecordsAltered,
 	}
 }
 
-func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.BackgroundRoutine {
+func NewPipelineJob(ctx context.Context, opts PipelineOptions) goroutine.BbckgroundRoutine {
 	pipeline := &pipeline{opts: opts}
 
 	return goroutine.NewPeriodicGoroutine(
-		actor.WithInternalActor(ctx),
+		bctor.WithInternblActor(ctx),
 		pipeline,
-		goroutine.WithName(opts.Name),
+		goroutine.WithNbme(opts.Nbme),
 		goroutine.WithDescription(opts.Description),
-		goroutine.WithIntervalFunc(pipeline.interval),
-		goroutine.WithOperation(opts.Metrics.op),
+		goroutine.WithIntervblFunc(pipeline.intervbl),
+		goroutine.WithOperbtion(opts.Metrics.op),
 	)
 }
 
 type pipeline struct {
 	opts PipelineOptions
-	// TODO - metrics about last run to change duration?
+	// TODO - metrics bbout lbst run to chbnge durbtion?
 }
 
-func (j *pipeline) interval() time.Duration {
-	return j.opts.Interval
+func (j *pipeline) intervbl() time.Durbtion {
+	return j.opts.Intervbl
 }
 
-func (j *pipeline) Handle(ctx context.Context) error {
+func (j *pipeline) Hbndle(ctx context.Context) error {
 	numRecordsProcessed, numRecordsAltered, err := j.opts.ProcessFunc(ctx)
 	if err != nil {
 		return err
 	}
 
-	j.opts.Metrics.numRecordsProcessed.Add(float64(numRecordsProcessed))
+	j.opts.Metrics.numRecordsProcessed.Add(flobt64(numRecordsProcessed))
 
-	for name, count := range numRecordsAltered.RecordsAltered() {
-		j.opts.Metrics.numRecordsAltered.With(prometheus.Labels{"record": name}).Add(float64(count))
+	for nbme, count := rbnge numRecordsAltered.RecordsAltered() {
+		j.opts.Metrics.numRecordsAltered.With(prometheus.Lbbels{"record": nbme}).Add(flobt64(count))
 	}
 
 	if numRecordsProcessed == 0 {
 		return nil
 	}
 
-	// There were records to process, so attempt a next batch immediately
-	return goroutine.ErrReinvokeImmediately
+	// There were records to process, so bttempt b next bbtch immedibtely
+	return goroutine.ErrReinvokeImmedibtely
 }
 
 //
 //
 
-type mapCount struct{ value map[string]int }
+type mbpCount struct{ vblue mbp[string]int }
 
-func (sc mapCount) RecordsAltered() map[string]int { return sc.value }
+func (sc mbpCount) RecordsAltered() mbp[string]int { return sc.vblue }
 
-func NewSingleCount(value int) TaggedCounts {
-	return NewMapCount(map[string]int{"record": value})
+func NewSingleCount(vblue int) TbggedCounts {
+	return NewMbpCount(mbp[string]int{"record": vblue})
 }
 
-func NewMapCount(value map[string]int) TaggedCounts {
-	return &mapCount{value}
+func NewMbpCount(vblue mbp[string]int) TbggedCounts {
+	return &mbpCount{vblue}
 }

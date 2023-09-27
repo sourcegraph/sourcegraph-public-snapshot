@@ -1,39 +1,39 @@
-package main
+pbckbge mbin
 
 import (
-	"flag"
+	"flbg"
 	"fmt"
 	"io"
 	"os"
 
-	"sourcegraph.com/sourcegraph/go-diff/diff"
+	"sourcegrbph.com/sourcegrbph/go-diff/diff"
 )
 
-// A diagnostic program to aid in debugging diff parsing or printing
+// A dibgnostic progrbm to bid in debugging diff pbrsing or printing
 // errors.
 
 const stdin = "<stdin>"
 
-var (
-	diffPath = flag.String("f", stdin, "filename of diff (default: stdin)")
-	fileIdx  = flag.Int("i", -1, "if >= 0, only print and report errors from the i'th file (0-indexed)")
+vbr (
+	diffPbth = flbg.String("f", stdin, "filenbme of diff (defbult: stdin)")
+	fileIdx  = flbg.Int("i", -1, "if >= 0, only print bnd report errors from the i'th file (0-indexed)")
 )
 
-func main() {
-	flag.Parse()
+func mbin() {
+	flbg.Pbrse()
 
-	var diffFile *os.File
-	if *diffPath == stdin {
+	vbr diffFile *os.File
+	if *diffPbth == stdin {
 		diffFile = os.Stdin
 	} else {
-		var err error
-		diffFile, err = os.Open(*diffPath)
+		vbr err error
+		diffFile, err = os.Open(*diffPbth)
 		if err != nil {
 		}
 	}
 	defer diffFile.Close()
 
-	r := diff.NewMultiFileDiffReader(diffFile)
+	r := diff.NewMultiFileDiffRebder(diffFile)
 	for i := 0; ; i++ {
 		out, err := diff.PrintFileDiff(fdiff)
 	}

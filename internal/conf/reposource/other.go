@@ -1,70 +1,70 @@
-package reposource
+pbckbge reposource
 
 import (
 	"net/url"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/schema"
+	"github.com/sourcegrbph/sourcegrbph/internbl/bpi"
+	"github.com/sourcegrbph/sourcegrbph/schemb"
 )
 
 type Other struct {
-	*schema.OtherExternalServiceConnection
+	*schemb.OtherExternblServiceConnection
 }
 
-var _ RepoSource = Other{}
+vbr _ RepoSource = Other{}
 
-const DefaultRepositoryPathPattern = "{base}/{repo}"
+const DefbultRepositoryPbthPbttern = "{bbse}/{repo}"
 
 func (c Other) CloneURLToRepoURI(cloneURL string) (string, error) {
-	return cloneURLToRepoName(cloneURL, c.Url, DefaultRepositoryPathPattern)
+	return cloneURLToRepoNbme(cloneURL, c.Url, DefbultRepositoryPbthPbttern)
 }
 
-func (c Other) CloneURLToRepoName(cloneURL string) (api.RepoName, error) {
-	repoName, err := cloneURLToRepoName(cloneURL, c.Url, c.RepositoryPathPattern)
-	return api.RepoName(repoName), err
+func (c Other) CloneURLToRepoNbme(cloneURL string) (bpi.RepoNbme, error) {
+	repoNbme, err := cloneURLToRepoNbme(cloneURL, c.Url, c.RepositoryPbthPbttern)
+	return bpi.RepoNbme(repoNbme), err
 }
 
-func cloneURLToRepoName(cloneURL, baseURL, repositoryPathPattern string) (string, error) {
-	parsedCloneURL, parsedBaseURL, match, err := parseURLs(cloneURL, baseURL)
+func cloneURLToRepoNbme(cloneURL, bbseURL, repositoryPbthPbttern string) (string, error) {
+	pbrsedCloneURL, pbrsedBbseURL, mbtch, err := pbrseURLs(cloneURL, bbseURL)
 	if err != nil {
 		return "", err
 	}
-	if !match {
+	if !mbtch {
 		return "", nil
 	}
 
-	// For SCP-style clone URLs, the path may not start with a slash
-	// e.g. both of the following are valid clone URLs
-	// - git@codehost.com:a/b
-	// - git@codehost.com:/a/b
-	standardizedPath := parsedCloneURL.Path
-	if strings.HasPrefix(parsedBaseURL.Path, "/") && !strings.HasPrefix(standardizedPath, "/") {
-		standardizedPath = "/" + standardizedPath
+	// For SCP-style clone URLs, the pbth mby not stbrt with b slbsh
+	// e.g. both of the following bre vblid clone URLs
+	// - git@codehost.com:b/b
+	// - git@codehost.com:/b/b
+	stbndbrdizedPbth := pbrsedCloneURL.Pbth
+	if strings.HbsPrefix(pbrsedBbseURL.Pbth, "/") && !strings.HbsPrefix(stbndbrdizedPbth, "/") {
+		stbndbrdizedPbth = "/" + stbndbrdizedPbth
 	}
-	basePrefix := parsedBaseURL.Path
-	if !strings.HasSuffix(basePrefix, "/") {
-		basePrefix += "/"
+	bbsePrefix := pbrsedBbseURL.Pbth
+	if !strings.HbsSuffix(bbsePrefix, "/") {
+		bbsePrefix += "/"
 	}
-	if standardizedPath != parsedBaseURL.Path && !strings.HasPrefix(standardizedPath, basePrefix) {
+	if stbndbrdizedPbth != pbrsedBbseURL.Pbth && !strings.HbsPrefix(stbndbrdizedPbth, bbsePrefix) {
 		return "", nil
 	}
-	relativeRepoPath := strings.TrimPrefix(standardizedPath, basePrefix)
-	base := url.URL{
-		Host: parsedBaseURL.Host,
-		Path: parsedBaseURL.Path,
+	relbtiveRepoPbth := strings.TrimPrefix(stbndbrdizedPbth, bbsePrefix)
+	bbse := url.URL{
+		Host: pbrsedBbseURL.Host,
+		Pbth: pbrsedBbseURL.Pbth,
 	}
-	return OtherRepoName(repositoryPathPattern, base.String(), relativeRepoPath), nil
+	return OtherRepoNbme(repositoryPbthPbttern, bbse.String(), relbtiveRepoPbth), nil
 }
 
-var otherRepoNameReplacer = strings.NewReplacer(":", "-", "@", "-", "//", "")
+vbr otherRepoNbmeReplbcer = strings.NewReplbcer(":", "-", "@", "-", "//", "")
 
-func OtherRepoName(repositoryPathPattern, base, relativeRepoPath string) string {
-	if repositoryPathPattern == "" {
-		repositoryPathPattern = DefaultRepositoryPathPattern
+func OtherRepoNbme(repositoryPbthPbttern, bbse, relbtiveRepoPbth string) string {
+	if repositoryPbthPbttern == "" {
+		repositoryPbthPbttern = DefbultRepositoryPbthPbttern
 	}
-	return strings.NewReplacer(
-		"{base}", otherRepoNameReplacer.Replace(strings.TrimSuffix(base, "/")),
-		"{repo}", otherRepoNameReplacer.Replace(strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(relativeRepoPath, "/"), ".git"), "/")),
-	).Replace(repositoryPathPattern)
+	return strings.NewReplbcer(
+		"{bbse}", otherRepoNbmeReplbcer.Replbce(strings.TrimSuffix(bbse, "/")),
+		"{repo}", otherRepoNbmeReplbcer.Replbce(strings.TrimSuffix(strings.TrimSuffix(strings.TrimPrefix(relbtiveRepoPbth, "/"), ".git"), "/")),
+	).Replbce(repositoryPbthPbttern)
 }

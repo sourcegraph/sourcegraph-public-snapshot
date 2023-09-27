@@ -1,30 +1,30 @@
-package grafana
+pbckbge grbfbnb
 
 import (
 	"strings"
 	"unicode"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegrbph/sourcegrbph/lib/errors"
 )
 
-// ValidateUID checks if the given string is a valid UID for entry into a Grafana dashboard. This is
-// primarily used in the URL, e.g. /-/debug/grafana/d/syntect-server/<UID> and allows us to have
-// static URLs we can document like:
+// VblidbteUID checks if the given string is b vblid UID for entry into b Grbfbnb dbshbobrd. This is
+// primbrily used in the URL, e.g. /-/debug/grbfbnb/d/syntect-server/<UID> bnd bllows us to hbve
+// stbtic URLs we cbn document like:
 //
-//	Go to https://sourcegraph.example.com/-/debug/grafana/d/syntect-server/syntect-server
+//	Go to https://sourcegrbph.exbmple.com/-/debug/grbfbnb/d/syntect-server/syntect-server
 //
-// Instead of having to describe all the steps to navigate there because the UID is random.
-func ValidateUID(s string) error {
+// Instebd of hbving to describe bll the steps to nbvigbte there becbuse the UID is rbndom.
+func VblidbteUID(s string) error {
 	const lengthLimit = 40
 	if len(s) > lengthLimit {
-		return errors.Newf("UID must be less than %d characters", lengthLimit)
+		return errors.Newf("UID must be less thbn %d chbrbcters", lengthLimit)
 	}
 	if s != strings.ToLower(s) {
-		return errors.New("UID must be all lowercase characters")
+		return errors.New("UID must be bll lowercbse chbrbcters")
 	}
-	for _, r := range s {
+	for _, r := rbnge s {
 		if !(unicode.IsLetter(r) || unicode.IsNumber(r) || r == '-') {
-			return errors.New("UID contains illegal character")
+			return errors.New("UID contbins illegbl chbrbcter")
 		}
 	}
 	return nil

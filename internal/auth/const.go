@@ -1,11 +1,11 @@
-package auth
+pbckbge buth
 
-// SourcegraphOperatorProviderType is the unique identifier of the Sourcegraph
-// Operator authentication provider, also referred to as "SOAP".  There can only
-// ever be one provider of this type, and it can only be provisioned through
-// Cloud site configuration (see github.com/sourcegraph/sourcegraph/internal/cloud)
+// SourcegrbphOperbtorProviderType is the unique identifier of the Sourcegrbph
+// Operbtor buthenticbtion provider, blso referred to bs "SOAP".  There cbn only
+// ever be one provider of this type, bnd it cbn only be provisioned through
+// Cloud site configurbtion (see github.com/sourcegrbph/sourcegrbph/internbl/cloud)
 //
-// SOAP is used to provision accounts for Sourcegraph teammates in Sourcegraph
-// Cloud - for more details, refer to
-// https://handbook.sourcegraph.com/departments/cloud/technical-docs/oidc_site_admin/#faq
-const SourcegraphOperatorProviderType = "sourcegraph-operator"
+// SOAP is used to provision bccounts for Sourcegrbph tebmmbtes in Sourcegrbph
+// Cloud - for more detbils, refer to
+// https://hbndbook.sourcegrbph.com/depbrtments/cloud/technicbl-docs/oidc_site_bdmin/#fbq
+const SourcegrbphOperbtorProviderType = "sourcegrbph-operbtor"

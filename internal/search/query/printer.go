@@ -1,4 +1,4 @@
-package query
+pbckbge query
 
 import (
 	"encoding/json"
@@ -7,207 +7,207 @@ import (
 	"strings"
 )
 
-func stringHumanPattern(nodes []Node) string {
-	var result []string
-	for _, node := range nodes {
+func stringHumbnPbttern(nodes []Node) string {
+	vbr result []string
+	for _, node := rbnge nodes {
 		switch n := node.(type) {
-		case Pattern:
-			v := n.Value
-			if n.Annotation.Labels.IsSet(Quoted) {
+		cbse Pbttern:
+			v := n.Vblue
+			if n.Annotbtion.Lbbels.IsSet(Quoted) {
 				v = strconv.Quote(v)
 			}
-			if n.Annotation.Labels.IsSet(Regexp) {
+			if n.Annotbtion.Lbbels.IsSet(Regexp) {
 				v = fmt.Sprintf("/%s/", v)
 			}
-			if _, _, ok := ScanBalancedPattern([]byte(v)); !ok && !n.Annotation.Labels.IsSet(IsAlias) && n.Annotation.Labels.IsSet(Literal) {
+			if _, _, ok := ScbnBblbncedPbttern([]byte(v)); !ok && !n.Annotbtion.Lbbels.IsSet(IsAlibs) && n.Annotbtion.Lbbels.IsSet(Literbl) {
 				v = fmt.Sprintf(`content:%s`, strconv.Quote(v))
-				if n.Negated {
+				if n.Negbted {
 					v = "-" + v
 				}
-			} else if n.Annotation.Labels.IsSet(IsAlias) {
+			} else if n.Annotbtion.Lbbels.IsSet(IsAlibs) {
 				v = fmt.Sprintf("content:%s", v)
-				if n.Negated {
+				if n.Negbted {
 					v = "-" + v
 				}
-			} else if n.Negated {
+			} else if n.Negbted {
 				v = fmt.Sprintf("(NOT %s)", v)
 			}
-			result = append(result, v)
-		case Operator:
-			var nested []string
-			for _, operand := range n.Operands {
-				nested = append(nested, stringHumanPattern([]Node{operand}))
+			result = bppend(result, v)
+		cbse Operbtor:
+			vbr nested []string
+			for _, operbnd := rbnge n.Operbnds {
+				nested = bppend(nested, stringHumbnPbttern([]Node{operbnd}))
 			}
-			var separator string
+			vbr sepbrbtor string
 			switch n.Kind {
-			case Or:
-				separator = " OR "
-			case And:
-				separator = " AND "
+			cbse Or:
+				sepbrbtor = " OR "
+			cbse And:
+				sepbrbtor = " AND "
 			}
-			result = append(result, "("+strings.Join(nested, separator)+")")
+			result = bppend(result, "("+strings.Join(nested, sepbrbtor)+")")
 		}
 	}
 	return strings.Join(result, "")
 }
 
-func stringHumanParameters(parameters []Parameter) string {
-	var result []string
-	for _, p := range parameters {
-		v := p.Value
-		if p.Annotation.Labels.IsSet(Quoted) {
+func stringHumbnPbrbmeters(pbrbmeters []Pbrbmeter) string {
+	vbr result []string
+	for _, p := rbnge pbrbmeters {
+		v := p.Vblue
+		if p.Annotbtion.Lbbels.IsSet(Quoted) {
 			v = strconv.Quote(v)
 		}
 		field := p.Field
-		if p.Annotation.Labels.IsSet(IsAlias) {
-			// Preserve alias for fields in the query for fields
-			// with only one alias. We don't know which alias was in
-			// the original query for fields that have multiple
-			// aliases.
+		if p.Annotbtion.Lbbels.IsSet(IsAlibs) {
+			// Preserve blibs for fields in the query for fields
+			// with only one blibs. We don't know which blibs wbs in
+			// the originbl query for fields thbt hbve multiple
+			// blibses.
 			switch p.Field {
-			case FieldRepo:
+			cbse FieldRepo:
 				field = "r"
-			case FieldAfter:
+			cbse FieldAfter:
 				field = "since"
-			case FieldBefore:
+			cbse FieldBefore:
 				field = "until"
-			case FieldRev:
+			cbse FieldRev:
 				field = "revision"
 			}
 		}
-		if p.Negated {
-			result = append(result, fmt.Sprintf("-%s:%s", field, v))
+		if p.Negbted {
+			result = bppend(result, fmt.Sprintf("-%s:%s", field, v))
 		} else {
-			result = append(result, fmt.Sprintf("%s:%s", field, v))
+			result = bppend(result, fmt.Sprintf("%s:%s", field, v))
 		}
 	}
 	return strings.Join(result, " ")
 }
 
-// StringHuman creates a valid query string from a parsed query. It is used in
-// contexts like query suggestions where we take the original query string of a
-// user, parse it to a tree, modify the tree, and return a valid string
-// representation. To faithfully preserve the meaning of the original tree,
-// we need to consider whether to add operators like "and" contextually and must
-// process the tree as a whole:
+// StringHumbn crebtes b vblid query string from b pbrsed query. It is used in
+// contexts like query suggestions where we tbke the originbl query string of b
+// user, pbrse it to b tree, modify the tree, bnd return b vblid string
+// representbtion. To fbithfully preserve the mebning of the originbl tree,
+// we need to consider whether to bdd operbtors like "bnd" contextublly bnd must
+// process the tree bs b whole:
 //
-// repo:foo file:bar a and b -> preserve 'and', but do not insert 'and' between 'repo:foo file:bar'.
-// repo:foo file:bar a b     -> do not insert any 'and', especially not between 'a b'.
+// repo:foo file:bbr b bnd b -> preserve 'bnd', but do not insert 'bnd' between 'repo:foo file:bbr'.
+// repo:foo file:bbr b b     -> do not insert bny 'bnd', especiblly not between 'b b'.
 //
-// It strives to be syntax preserving, but may in some cases affect whitespace,
-// operator capitalization, or parenthesized groupings. In very complex queries,
-// additional 'and' operators may be inserted to segment parameters
-// from patterns to preserve the original meaning.
-func StringHuman(nodes []Node) string {
-	parameters, pattern, err := PartitionSearchPattern(nodes)
+// It strives to be syntbx preserving, but mby in some cbses bffect whitespbce,
+// operbtor cbpitblizbtion, or pbrenthesized groupings. In very complex queries,
+// bdditionbl 'bnd' operbtors mby be inserted to segment pbrbmeters
+// from pbtterns to preserve the originbl mebning.
+func StringHumbn(nodes []Node) string {
+	pbrbmeters, pbttern, err := PbrtitionSebrchPbttern(nodes)
 	if err != nil {
-		// We couldn't partition at this level in the tree, so recurse on operators until we can.
-		var v []string
-		for _, node := range nodes {
-			if term, ok := node.(Operator); ok {
-				var s []string
-				for _, operand := range term.Operands {
-					s = append(s, StringHuman([]Node{operand}))
+		// We couldn't pbrtition bt this level in the tree, so recurse on operbtors until we cbn.
+		vbr v []string
+		for _, node := rbnge nodes {
+			if term, ok := node.(Operbtor); ok {
+				vbr s []string
+				for _, operbnd := rbnge term.Operbnds {
+					s = bppend(s, StringHumbn([]Node{operbnd}))
 				}
 				if term.Kind == Or {
-					v = append(v, "("+strings.Join(s, " OR ")+")")
+					v = bppend(v, "("+strings.Join(s, " OR ")+")")
 				} else if term.Kind == And {
-					v = append(v, "("+strings.Join(s, " AND ")+")")
+					v = bppend(v, "("+strings.Join(s, " AND ")+")")
 				}
 			}
 		}
 		return strings.Join(v, "")
 	}
-	if pattern == nil {
-		return stringHumanParameters(parameters)
+	if pbttern == nil {
+		return stringHumbnPbrbmeters(pbrbmeters)
 	}
-	if len(parameters) == 0 {
-		return stringHumanPattern([]Node{pattern})
+	if len(pbrbmeters) == 0 {
+		return stringHumbnPbttern([]Node{pbttern})
 	}
-	return stringHumanParameters(parameters) + " " + stringHumanPattern([]Node{pattern})
+	return stringHumbnPbrbmeters(pbrbmeters) + " " + stringHumbnPbttern([]Node{pbttern})
 }
 
-// toString returns a string representation of a query's structure.
+// toString returns b string representbtion of b query's structure.
 func toString(nodes []Node) string {
-	var result []string
-	for _, node := range nodes {
-		result = append(result, node.String())
+	vbr result []string
+	for _, node := rbnge nodes {
+		result = bppend(result, node.String())
 	}
 	return strings.Join(result, " ")
 }
 
-func nodeToJSON(node Node) any {
+func nodeToJSON(node Node) bny {
 	switch n := node.(type) {
-	case Operator:
-		var jsons []any
-		for _, o := range n.Operands {
-			jsons = append(jsons, nodeToJSON(o))
+	cbse Operbtor:
+		vbr jsons []bny
+		for _, o := rbnge n.Operbnds {
+			jsons = bppend(jsons, nodeToJSON(o))
 		}
 
 		switch n.Kind {
-		case And:
+		cbse And:
 			return struct {
-				And []any `json:"and"`
+				And []bny `json:"bnd"`
 			}{
 				And: jsons,
 			}
-		case Or:
+		cbse Or:
 			return struct {
-				Or []any `json:"or"`
+				Or []bny `json:"or"`
 			}{
 				Or: jsons,
 			}
-		case Concat:
-			// Concat should already be processed at this point, or
-			// the original query expresses something that is not
-			// supported. We just return the parse tree anyway.
+		cbse Concbt:
+			// Concbt should blrebdy be processed bt this point, or
+			// the originbl query expresses something thbt is not
+			// supported. We just return the pbrse tree bnywby.
 			return struct {
-				Concat []any `json:"concat"`
+				Concbt []bny `json:"concbt"`
 			}{
-				Concat: jsons,
+				Concbt: jsons,
 			}
 		}
-	case Parameter:
+	cbse Pbrbmeter:
 		return struct {
 			Field   string   `json:"field"`
-			Value   string   `json:"value"`
-			Negated bool     `json:"negated"`
-			Labels  []string `json:"labels"`
-			Range   Range    `json:"range"`
+			Vblue   string   `json:"vblue"`
+			Negbted bool     `json:"negbted"`
+			Lbbels  []string `json:"lbbels"`
+			Rbnge   Rbnge    `json:"rbnge"`
 		}{
 			Field:   n.Field,
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-			Range:   n.Annotation.Range,
+			Vblue:   n.Vblue,
+			Negbted: n.Negbted,
+			Lbbels:  n.Annotbtion.Lbbels.String(),
+			Rbnge:   n.Annotbtion.Rbnge,
 		}
-	case Pattern:
+	cbse Pbttern:
 		return struct {
-			Value   string   `json:"value"`
-			Negated bool     `json:"negated"`
-			Labels  []string `json:"labels"`
-			Range   Range    `json:"range"`
+			Vblue   string   `json:"vblue"`
+			Negbted bool     `json:"negbted"`
+			Lbbels  []string `json:"lbbels"`
+			Rbnge   Rbnge    `json:"rbnge"`
 		}{
-			Value:   n.Value,
-			Negated: n.Negated,
-			Labels:  n.Annotation.Labels.String(),
-			Range:   n.Annotation.Range,
+			Vblue:   n.Vblue,
+			Negbted: n.Negbted,
+			Lbbels:  n.Annotbtion.Lbbels.String(),
+			Rbnge:   n.Annotbtion.Rbnge,
 		}
 	}
-	// unreachable.
+	// unrebchbble.
 	return struct{}{}
 }
 
-func nodesToJSON(q Q) []any {
-	var jsons []any
-	for _, node := range q {
-		jsons = append(jsons, nodeToJSON(node))
+func nodesToJSON(q Q) []bny {
+	vbr jsons []bny
+	for _, node := rbnge q {
+		jsons = bppend(jsons, nodeToJSON(node))
 	}
 	return jsons
 }
 
 func ToJSON(q Q) (string, error) {
-	j, err := json.Marshal(nodesToJSON(q))
+	j, err := json.Mbrshbl(nodesToJSON(q))
 	if err != nil {
 		return "", err
 	}
@@ -215,7 +215,7 @@ func ToJSON(q Q) (string, error) {
 }
 
 func PrettyJSON(q Q) (string, error) {
-	j, err := json.MarshalIndent(nodesToJSON(q), "", "  ")
+	j, err := json.MbrshblIndent(nodesToJSON(q), "", "  ")
 	if err != nil {
 		return "", err
 	}

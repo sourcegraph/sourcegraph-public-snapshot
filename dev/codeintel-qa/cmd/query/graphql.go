@@ -1,4 +1,4 @@
-package main
+pbckbge mbin
 
 import (
 	"context"
@@ -7,83 +7,83 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/dev/codeintel-qa/internal"
+	"github.com/sourcegrbph/sourcegrbph/dev/codeintel-qb/internbl"
 )
 
-var m sync.Mutex
-var durations = map[string][]float64{}
+vbr m sync.Mutex
+vbr durbtions = mbp[string][]flobt64{}
 
-// queryGraphQL performs a GraphQL request and stores its latency not the global durations
-// map. If the verbose flag is set, a line with the request's latency is printed.
-func queryGraphQL(_ context.Context, queryName, query string, variables map[string]any, target any) error {
-	requestStart := time.Now()
+// queryGrbphQL performs b GrbphQL request bnd stores its lbtency not the globbl durbtions
+// mbp. If the verbose flbg is set, b line with the request's lbtency is printed.
+func queryGrbphQL(_ context.Context, queryNbme, query string, vbribbles mbp[string]bny, tbrget bny) error {
+	requestStbrt := time.Now()
 
-	if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, query, variables, target); err != nil {
+	if err := internbl.GrbphQLClient().GrbphQL(internbl.SourcegrbphAccessToken, query, vbribbles, tbrget); err != nil {
 		return err
 	}
 
-	duration := time.Since(requestStart)
+	durbtion := time.Since(requestStbrt)
 
 	m.Lock()
-	durations[queryName] = append(durations[queryName], float64(duration)/float64(time.Millisecond))
+	durbtions[queryNbme] = bppend(durbtions[queryNbme], flobt64(durbtion)/flobt64(time.Millisecond))
 	m.Unlock()
 
 	if verbose {
-		fmt.Printf("[%5s] %s Completed %s request in %s\n", internal.TimeSince(start), internal.EmojiSuccess, queryName, duration)
+		fmt.Printf("[%5s] %s Completed %s request in %s\n", internbl.TimeSince(stbrt), internbl.EmojiSuccess, queryNbme, durbtion)
 	}
 
 	return nil
 }
 
-// formatPercentiles returns a string slice describing latency histograms for each query.
-func formatPercentiles() []string {
-	names := queryNames()
-	lines := make([]string, 0, len(names))
-	sort.Strings(names)
+// formbtPercentiles returns b string slice describing lbtency histogrbms for ebch query.
+func formbtPercentiles() []string {
+	nbmes := queryNbmes()
+	lines := mbke([]string, 0, len(nbmes))
+	sort.Strings(nbmes)
 
-	for _, queryName := range names {
-		numRequests, percentileValues := percentiles(queryName, 0.50, 0.95, 0.99)
+	for _, queryNbme := rbnge nbmes {
+		numRequests, percentileVblues := percentiles(queryNbme, 0.50, 0.95, 0.99)
 
-		lines = append(
+		lines = bppend(
 			lines,
-			fmt.Sprintf("queryName=%s\trequests=%d\tp50=%s\tp95=%s\tp99=%s",
-				queryName,
+			fmt.Sprintf("queryNbme=%s\trequests=%d\tp50=%s\tp95=%s\tp99=%s",
+				queryNbme,
 				numRequests,
-				percentileValues[0.50],
-				percentileValues[0.95],
-				percentileValues[0.99],
+				percentileVblues[0.50],
+				percentileVblues[0.95],
+				percentileVblues[0.99],
 			))
 	}
 
 	return lines
 }
 
-// queryNames returns the keys of the duration map.
-func queryNames() (names []string) {
+// queryNbmes returns the keys of the durbtion mbp.
+func queryNbmes() (nbmes []string) {
 	m.Lock()
 	defer m.Unlock()
 
-	names = make([]string, 0, len(durations))
-	for queryName := range durations {
-		names = append(names, queryName)
+	nbmes = mbke([]string, 0, len(durbtions))
+	for queryNbme := rbnge durbtions {
+		nbmes = bppend(nbmes, queryNbme)
 	}
 
-	return names
+	return nbmes
 }
 
-// percentiles returns the number of samples and the ps[i]th percentile durations of the given query type.
-func percentiles(queryName string, ps ...float64) (int, map[float64]time.Duration) {
+// percentiles returns the number of sbmples bnd the ps[i]th percentile durbtions of the given query type.
+func percentiles(queryNbme string, ps ...flobt64) (int, mbp[flobt64]time.Durbtion) {
 	m.Lock()
 	defer m.Unlock()
 
-	queryDurations := durations[queryName]
-	sort.Float64s(queryDurations)
+	queryDurbtions := durbtions[queryNbme]
+	sort.Flobt64s(queryDurbtions)
 
-	percentiles := make(map[float64]time.Duration, len(ps))
-	for _, p := range ps {
-		index := int(float64(len(queryDurations)) * p)
-		percentiles[p] = time.Duration(queryDurations[index]) * time.Millisecond
+	percentiles := mbke(mbp[flobt64]time.Durbtion, len(ps))
+	for _, p := rbnge ps {
+		index := int(flobt64(len(queryDurbtions)) * p)
+		percentiles[p] = time.Durbtion(queryDurbtions[index]) * time.Millisecond
 	}
 
-	return len(queryDurations), percentiles
+	return len(queryDurbtions), percentiles
 }
